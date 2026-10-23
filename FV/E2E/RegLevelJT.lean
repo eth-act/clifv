@@ -135,12 +135,12 @@ label line: since #553 the branch check requires a representing label for every 
 final line, so the emitted target may be an alias whose line represents the block. -/
 theorem jt_machine {R : RL} (hR : R.Wf) {s : Arm.ArmState} {j0 : Nat} {d : Label}
     {ts : List Label} {nr na nb : Nat} (hr : nr < 29) (ha : na < 29) (hb : nb < 29)
-    (hab : na ≠ nb) {jt : Lbl} (hjt : jt ≠ .skip) {bc W T : List Line}
+    (hab : na ≠ nb) {jt : Lbl} (hjt : jt ≠ .skip) {bc : Line} {W T : List Line}
     (hdrop : R.L.drop j0 = relaxLine R.far bc ++
       (jtHead ts (.x nr) (.x na) (.x nb) jt ++ W ++ T))
     (hbc : ∃ l', bc = .ins (.bcond .hs l') none ∧
       RepLbl (planRep R.fa.k R.af) (blockLabelIdx (planLines R.fa.k R.af)) d l')
-    (hW : ∀ i l, ts[i]? = some l → ∃ l', W[i]? = some (.word (.block l') jt) ∧
+    (hW : ∀ (i : Nat) (l : Label), ts[i]? = some l → ∃ l', W[i]? = some (Line.word l' jt) ∧
       RepLbl (planRep R.fa.k R.af) (blockLabelIdx (planLines R.fa.k R.af)) l l')
     (hWl : W.length = ts.length)
     (hprog : s.program = R.fb.program R.base) (hpc : Arm.r .PC s = R.pcOf j0)
@@ -157,8 +157,10 @@ theorem jt_machine {R : RL} (hR : R.Wf) {s : Arm.ArmState} {j0 : Nat} {d : Label
         s'.mem = s.mem ∧ s'.program = s.program ∧
         ∀ i < n, R.GoodX (iterN R.step i s)) := by
   obtain ⟨l', rfl, hrepd⟩ := hbc
-  obtain ⟨l0, -, rfl, -, -⟩ := hrepd
-  obtain ⟨n0, j1, hn0, hj1t, hj1f, -, hn1, hgx0⟩ := reach_rcbX hR hdrop (.inl ⟨.hs, rfl⟩) (by simp)
+  have hnskip : l' ≠ .skip := by
+    obtain ⟨l0, -, rfl, -, -⟩ := hrepd
+    simp
+  obtain ⟨n0, j1, hn0, hj1t, hj1f, -, hn1, hgx0⟩ := reach_rcbX hR hdrop (.inl ⟨.hs, rfl⟩) hnskip
     (Arm.ConditionHolds Cond.hs.bits s) (fun env a ha => brCond_bcond ha s)
     (fun _ env a ha => by
       simp only [Insn.invertTo] at ha
@@ -174,9 +176,10 @@ theorem jt_machine {R : RL} (hR : R.Wf) {s : Arm.ArmState} {j0 : Nat} {d : Label
   have hL : ∀ t ln, (jtHead ts (.x nr) (.x na) (.x nb) jt ++ W ++ T)[t]? = some ln →
       R.L[j1 + t]? = some ln := by
     intro t ln ht
-    have := congrArg (·[t]?) hdrop1
-    simp only [List.getElem?_drop] at this
-    rw [this, List.getElem?_append_left (List.getElem?_eq_some_iff.1 ht).1]
+    have h1 : R.L.drop j1 = jtHead ts (.x nr) (.x na) (.x nb) jt ++ W ++ T := hdrop1
+    have h2 := congrArg (·[t]?) h1
+    simp only [List.getElem?_drop] at h2
+    rw [h2]
     exact ht
   have h1 : R.L[j1]? = some (.ins (.csel (.x nb) .xzr (.x nr) .hs)) := hL 0 _ rfl
   have h2 : R.L[j1 + 1]? = some (.ins (.adr (.x na) jt)) := hL 1 _ rfl
@@ -259,10 +262,10 @@ theorem jt_machine {R : RL} (hR : R.Wf) {s : Arm.ArmState} {j0 : Nat} {d : Label
     rw [extend_uxtw2, hi]
   -- the table word
   have hil : i < ts.length := (List.getElem?_eq_some_iff.1 hl).1
-  obtain ⟨l2, hwiW, hrepw⟩ := hW i l hi
+  obtain ⟨l2, hwiW, hrepw⟩ := hW i l hl
   have hhead : (jtHead ts (.x nr) (.x na) (.x nb) jt).length = 6 := by simp [jtHead]
   have hdW : R.L.drop (j1 + 6) = W ++ T := by
-    rw [← List.drop_drop, hdrop1, ← hhead, List.drop_left]
+    rw [← List.drop_drop, hdrop1, List.append_assoc, ← hhead, List.drop_left]
   have hWw : ∀ ln ∈ W, ∃ x y, ln = .word x y := by
     intro ln hln
     obtain ⟨k, hk⟩ := List.mem_iff_getElem?.1 hln
@@ -276,11 +279,10 @@ theorem jt_machine {R : RL} (hR : R.Wf) {s : Arm.ArmState} {j0 : Nat} {d : Label
   have hwo := lineOffset_words hdW hWw i (by rw [hWl]; omega)
   have h7 : lineOffset R.L (j1 + 6) = lineOffset R.L (j1 + 5) := by
     rw [lineOffset_succ _ _ _ h6]; simp [Line.size]
-  have hwi : R.L[j1 + 6 + i]? = some (.word (.block l2) jt) := by
-    have hcon := congrArg (·[6 + i]?) hdrop1
+  have hwi : R.L[j1 + 6 + i]? = some (Line.word l2 jt) := by
+    have hcon := congrArg (·[i]?) hdW
     simp only [List.getElem?_drop] at hcon
-    rw [hcon, List.getElem?_append_right (by rw [hhead]; omega),
-      Nat.add_sub_cancel_left, List.getElem?_append_left (by rw [hWl]; omega)]
+    rw [hcon, List.getElem?_append_left (by rw [hWl]; omega)]
     exact hwiW
   obtain ⟨wd, hwd, ⟨jtl, jbl, hjtl, -⟩, hwv⟩ := FnAsm.layout_jumpTable hR.layout hR.lm hwi
   have hwv' := hwv jtl (j1 + 5) hjtl h6
@@ -491,7 +493,8 @@ theorem putOp_vreg_ok {regs : Array Reg} {sp : OpSpec} {n : Nat} {cls : RegClass
   rw [putOp_vreg_run_eq] at h
   split at h
   · rename_i w heq
-    exact ⟨w, heq, rfl⟩
+    rw [Except.ok.injEq] at h
+    exact ⟨w, heq, h.symm⟩
   · simp at h
 
 /-- The assigned form of a `jtSequence` over vreg operands is a `jtSequence` (never a `jump`,
@@ -516,8 +519,9 @@ theorem assign_jtVreg {d : Label} {ts : List Label} {vr va vb : Nat} {regs : Arr
   have hq2r : StateT.run (putOp regs .earlyDef (Reg.vreg vb .int)) 2 = .ok q2 := hq2
   obtain ⟨w2, hw2, hq2e⟩ := putOp_vreg_ok hq2r
   subst hq2e
-  simp only [StateT.run_pure, Except.ok.injEq] at hgo2
-  have hgo2a : MInst.jtSequence d ts w0 w1 w2 = p.1 := congrArg Prod.fst hgo2
+  have hgo2' : Except.ok (MInst.jtSequence d ts w0 w1 w2, (2:Nat) + 1) = Except.ok p := hgo2
+  rw [Except.ok.injEq] at hgo2'
+  have hgo2a := congrArg Prod.fst hgo2'
   have hres' : ((if (p.2 != regs.size) = true then
       (do let __r ← throw "more allocations than operands"; pure p.1) else pure p.1)) =
       Except.ok y := hres
@@ -561,7 +565,7 @@ theorem realizes_jt {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {allocs 
       have h0 := hsem
       simp only [RL.sem, csemV, csem] at h0
       split at h0 <;> (try split at h0) <;> (try split at h0) <;> simp at h0
-    | ret hh => cases hh
+    | ret hh => simp at hh
     | halt =>
       have h0 := hsem
       simp only [RL.sem, csemV, csem] at h0
@@ -589,7 +593,7 @@ theorem realizes_jt {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {allocs 
   rw [hvb] at hvb0; cases hvb0
   obtain rfl : its = [] := hchk0.tail_nil hk1
   obtain ⟨j0, vb0, items, pre, c1, X, ps1, psm, ps2, x, hvb0, hit, hsplit, hchk, hc1, hX, hT,
-    htr, hdrop, hpc, hst, hx, hterm⟩ := qs_term hR hqs
+    htr, hdrop, hpc, hst, hterm⟩ := qs_term hR hqs
   rw [hvb] at hvb0; cases hvb0
   obtain ⟨regs, i0, i', rfl, hi0, hasg, hc1'⟩ := itemCode_op hc1
   rw [hi] at hi0; cases hi0
@@ -623,9 +627,11 @@ theorem realizes_jt {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {allocs 
     · cases h
     · cases h
   -- the block's last instruction's lines: the jump-table body
-  have hdl : c1.dropLast = [] := by cases c1 <;> simp
-  have hgl : c1.getLast?.toList = [AInst.inst (.jtSequence d ts (.x nr) (.x na) (.x nb))] := by
-    simp [c1]
+  have hdl : ([AInst.inst (.jtSequence d ts (.x nr) (.x na) (.x nb))]).dropLast = [] := by
+    simp
+  have hgl : ([AInst.inst (.jtSequence d ts (.x nr) (.x na) (.x nb))]).getLast?.toList =
+      [AInst.inst (.jtSequence d ts (.x nr) (.x na) (.x nb))] := by
+    simp
   rw [hdl] at hX
   rw [hgl] at hT
   have hXe : codeLinesE R.ctx R.af [] ps1 = .ok ([], ps1) := by simp [codeLinesE]
@@ -638,122 +644,29 @@ theorem realizes_jt {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {allocs 
   simp only [MInst.lines, pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at hl3
   obtain ⟨hls1, -⟩ := hl3
   have htJ : x.1.term = jtBody d ts (.x nr) (.x na) (.x nb) (.jt ps1.jt) := by
-    rw [← hls1]
-  have hlenT : x.1.term.length = 7 + ts.length := by rw [htJ]; simp [jtBody]
-  have hlen2' : x.2.1.length = 7 + ts.length := by rw [hlenO]; exact hlenT
+    rw [← hls1]; simp [jtBody]
+  have hlenT : x.1.term.length = 7 + ts.length := by rw [htJ]; simp [jtBody]; omega
   -- the emitted segment: each line kept or retargeted (`LineOut`; a kept line has no block
   -- target, so the default branch and the table words are retargeted to representing labels)
   obtain ⟨hlenO, hLO⟩ := termOk_kept (by simp) (by simp) (by simp) (by simp) hterm
+  have hlen2' : x.2.1.length = 7 + ts.length := by rw [hlenO]; exact hlenT
   have jtBody_cons : jtBody d ts (.x nr) (.x na) (.x nb) (.jt ps1.jt) =
       Line.ins (.bcond .hs (.block d)) :: (jtHead ts (.x nr) (.x na) (.x nb) (.jt ps1.jt) ++
         ts.map (fun l => Line.word (.block l) (.jt ps1.jt))) := rfl
   have hhead : (jtHead ts (.x nr) (.x na) (.x nb) (.jt ps1.jt)).length = 6 := by simp [jtHead]
   have hheadT : ∀ ln ∈ jtHead ts (.x nr) (.x na) (.x nb) (.jt ps1.jt), Line.target? ln = none := by
     intro ln hln
-    simp only [jtHead, List.cons_append, List.nil_append, List.mem_cons] at hln
+    simp only [jtHead, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil,
+      or_false] at hln
     rcases hln with rfl | rfl | rfl | rfl | rfl | rfl <;> rfl
   -- the raw line at a segment index `k` with `1 ≤ k ≤ 6`
   have htermK : ∀ k, 1 ≤ k → k < 7 → x.1.term[k]? =
       (jtHead ts (.x nr) (.x na) (.x nb) (.jt ps1.jt))[k - 1]? := by
     intro k h1 h2
-    rw [htJ, jtBody_cons, List.getElem?_cons_succ,
-      List.getElem?_append_left (by rw [hhead]; omega)]
-  -- the default branch's line: retargeted to a label representing `d`
-  have hlen1 : 0 < x.2.1.length := by omega
-  obtain ⟨y0, hy0⟩ : ∃ y, x.2.1[0]? = some y := ⟨_, List.getElem?_eq_getElem hlen1⟩
-  rcases hLO 0 _ _ (by rw [htJ]; simp [jtBody]) hy0 with ⟨-, hnb0⟩ |
-    ⟨lb, l2, hxt0, hyt0, hre0, hrep0⟩
-  · exact (hnb0 d rfl).elim
-  · simp only [Line.target?, Option.some.injEq, Label.block.injEq] at hxt0
-    subst hxt0
-    have hbc0 : y0 = .ins (.bcond .hs l2) none := by
-      rw [hre0]; rfl
-    have hcons : x.2.1 = y0 :: x.2.1.drop 1 := by
-      cases h21 : x.2.1 with
-      | nil => rw [h21] at hlen1; simp at hlen1
-      | cons a as =>
-        rw [h21] at hy0
-        simp only [List.getElem?_cons_zero, Option.some.injEq] at hy0
-        subst hy0
-        simp [h21]
-    have hWlJ : (x.2.1.drop 7).length = ts.length := by
-      rw [List.length_drop]; omega
-    have hWJ : ∀ i l, ts[i]? = some l → ∃ l', x.2.1.drop 7[i]? =
-        some (.word (.block l') (.jt ps1.jt)) ∧
-        RepLbl (planRep R.fa.k R.af) (blockLabelIdx (planLines R.fa.k R.af)) l l' := by
-      intro i l hiw
-      have hleni : 7 + i < x.2.1.length := by omega
-      obtain ⟨y, hy⟩ : ∃ y, x.2.1[7 + i]? = some y := ⟨_, List.getElem?_eq_getElem hleni⟩
-      have htword : x.1.term[7 + i]? = some (Line.word (.block l) (.jt ps1.jt)) := by
-        rw [htJ, jtBody_cons, List.getElem?_cons_succ,
-          List.getElem?_append_right (by rw [hhead]; omega), List.getElem?_map, hiw]
-        simp
-      rcases hLO (7 + i) _ _ htword hy with ⟨-, hnb⟩ | ⟨l3, l4, hxt, hyt, hre, hrep⟩
-      · exact (hnb l rfl).elim
-      · refine ⟨l4, ?_, hrep⟩
-        rw [List.getElem?_drop, hy, hre]
-        rfl
-    have hrelNone : ∀ ln ∈ jtHead ts (.x nr) (.x na) (.x nb) (.jt ps1.jt) ++ x.2.1.drop 7,
-        ln.relaxable? = none := by
-      intro ln hln
-      rcases List.mem_append.1 hln with hln | hln
-      · simp only [jtHead, List.cons_append, List.nil_append, List.mem_cons] at hln
-        rcases hln with rfl | rfl | rfl | rfl | rfl | rfl <;> rfl
-      · obtain ⟨k, hk⟩ := List.mem_iff_getElem?.1 hln
-        have hkL : k < ts.length := by
-          have := (List.getElem?_eq_some_iff.1 hk).1
-          rw [hWlJ] at this; exact this
-        obtain ⟨l5, hw5, -⟩ := hWJ k _ (List.getElem?_eq_getElem hkL)
-        rw [hw5] at hk
-        rw [(Option.some.inj hk).symm]
-        rfl
-    have hrest : x.2.1.drop 1 = jtHead ts (.x nr) (.x na) (.x nb) (.jt ps1.jt) ++ x.2.1.drop 7 := by
-      apply List.ext_getElem?
-      intro k
-      rw [List.getElem?_drop]
-      rcases Nat.lt_or_ge (k + 1) 7 with h7 | h7
-      · obtain ⟨y, hy⟩ : ∃ y, x.2.1[k + 1]? = some y := ⟨_, List.getElem?_eq_getElem (by omega)⟩
-        obtain ⟨xl, hxl⟩ : ∃ xw, x.1.term[k + 1]? = some xw := by
-          refine ⟨(jtHead ts (.x nr) (.x na) (.x nb) (.jt ps1.jt))[k], ?_⟩
-          rw [htermK (k + 1) (by omega) (by omega), List.getElem?_eq_some_iff]
-          exact ⟨by rw [hhead]; omega, rfl⟩
-        rcases hLO (k + 1) xl y hxl hy with ⟨heq, -⟩ | ⟨l3, l4, hxt, -, -, -⟩
-        · rw [hy, heq, htermK (k + 1) (by omega) (by omega)]
-        · exfalso
-          have hxT : Line.target? xl = none :=
-            hheadT xl (List.mem_append_left _ (List.getElem_mem (by rw [hhead]; omega)))
-          rw [hxT] at hxt
-          simp at hxt
-      · rw [List.getElem?_append_right (by rw [hhead]; omega), List.getElem?_drop,
-          show (7:Nat) + (k - 6) = k + 1 from by omega]
-    have hWlJ : (x.2.1.drop 7).length = ts.length := by
-      rw [List.length_drop]; omega
-    have hWJ : ∀ i l, ts[i]? = some l → ∃ l', x.2.1.drop 7[i]? =
-        some (.word (.block l') (.jt ps1.jt)) ∧
-        RepLbl (planRep R.fa.k R.af) (blockLabelIdx (planLines R.fa.k R.af)) l l' := by
-      intro i l hiw
-      have hleni : 7 + i < x.2.1.length := by omega
-      obtain ⟨y, hy⟩ : ∃ y, x.2.1[7 + i]? = some y := ⟨_, List.getElem?_eq_getElem hleni⟩
-      have htword : x.1.term[7 + i]? = some (Line.word (.block l) (.jt ps1.jt)) := by
-        rw [htJ, jtBody_cons, List.getElem?_cons_succ,
-          List.getElem?_append_right (by rw [hhead]; omega), List.getElem?_map, hiw]
-        simp
-      rcases hLO (7 + i) _ _ htword hy with ⟨-, hnb⟩ | ⟨l3, l4, hxt, hyt, hre, hrep⟩
-      · exact (hnb l rfl).elim
-      · refine ⟨l4, ?_, hrep⟩
-        rw [List.getElem?_drop, hy, hre]
-        rfl
-    have hbcJ : ∃ l', y0 = .ins (.bcond .hs l') none ∧
-        RepLbl (planRep R.fa.k R.af) (blockLabelIdx (planLines R.fa.k R.af)) d l' :=
-      ⟨l2, hbc0, hrep0⟩
-    have hdropJT : R.L.drop j0 = relaxLine R.far y0 ++
-        (jtHead ts (.x nr) (.x na) (.x nb) (.jt ps1.jt) ++ x.2.1.drop 7 ++
-          R.L.drop (rix R.far (planLines R.fa.k R.af) x.2.2)) := by
-      rw [hdrop, List.nil_append, hcons, relaxLines_cons, hrest,
-        relaxLines_of_none hrelNone, List.append_assoc]
-    obtain ⟨hmTaken, hmNot⟩ := jt_machine hR hnr hna hnb hab (by simp) hdropJT hbcJ hWJ hWlJ
-      hst.prog hpc hst.err hst.sp
-      hst.code
+    obtain ⟨k', hk'⟩ : ∃ k', k = k' + 1 := ⟨k - 1, by omega⟩
+    rw [hk', htJ, jtBody_cons, List.getElem?_cons_succ,
+      List.getElem?_append_left (by rw [hhead]; omega),
+      show (k':Nat) + 1 - 1 = k' from by omega]
   have hU : (((#[(⟨vr, .int, .use, .early, .reg⟩ : Operand), ⟨va, .int, .def, .early, .reg⟩,
       ⟨vb', .int, .def, .early, .reg⟩].zip (#[Reg.x nr, .x na, .x nb].map Loc.reg)).toList.filter
       (·.1.isUse)).map (m ·.2)) = [regVal s (.x nr)] := by
@@ -784,67 +697,173 @@ theorem realizes_jt {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {allocs 
   have hcl0 : ∀ (m' : Loc → CV), Clobbered ckeep
       (MInst.jtSequence d ts (.vreg vr .int) (.vreg va .int) (.vreg vb' .int)).clobbers m' m' :=
     fun m' => ⟨fun _ _ => rfl, fun c hc => by simp [MInst.clobbers] at hc⟩
-  cases hn with
-  | next _ => split at hsem <;> (try split at hsem) <;> simp at hsem
-  | ret h => cases h
-  | halt => split at hsem <;> (try split at hsem) <;> simp at hsem
-  | @goto jj st items' hk1 hsucc hitems =>
-  have hsucc' := hsucc
-  simp only [succOf, hcfg, hss, Option.bind_some] at hsucc'
-  have hst0 : st ≠ 0 := ctlCheck_succ hck hsucc
-  obtain ⟨vs, hvs, hlj⟩ := hlab _ st hsucc'
-  have hw2 : w' = w ∧ outs.length = 2 := by
-    split at hsem
-    · simp only [Option.some.injEq, Prod.mk.injEq] at hsem; rw [← hsem.1, ← hsem.2.1]; exact ⟨rfl, rfl⟩
-    · split at hsem
+  -- the default branch's line: retargeted to a label representing `d`
+  have hlen1 : 0 < x.2.1.length := by omega
+  have ht0 : x.1.term[0]? = some (Line.ins (Insn.bcond Cond.hs (Lbl.block d)) none) := by
+    rw [htJ]; simp [jtBody]
+  obtain ⟨y0, hy0⟩ : ∃ y, x.2.1[0]? = some y := ⟨_, List.getElem?_eq_getElem hlen1⟩
+  rcases hLO 0 _ _ ht0 hy0 with ⟨-, hnb0⟩ | ⟨lb, l2, hxt0, hyt0, hre0, hrep0⟩
+  · exact (hnb0 d rfl).elim
+  · simp only [Line.target?, Option.some.injEq, Lbl.block.injEq] at hxt0
+    subst hxt0
+    have hbc0 : y0 = .ins (.bcond .hs l2) none := by
+      rw [hre0]; rfl
+    have hcons : x.2.1 = y0 :: x.2.1.drop 1 := by
+      cases h21 : x.2.1 with
+      | nil => rw [h21] at hlen1; simp at hlen1
+      | cons a as =>
+        rw [h21] at hy0
+        simp only [List.getElem?_cons_zero, Option.some.injEq] at hy0
+        subst hy0
+        simp [h21]
+    have hWlJ : (x.2.1.drop 7).length = ts.length := by
+      rw [List.length_drop]; omega
+    have hWJ : ∀ (i : Nat) (l : Label), ts[i]? = some l → ∃ l', (x.2.1.drop 7)[i]? =
+        some (Line.word l' (.jt ps1.jt)) ∧
+        RepLbl (planRep R.fa.k R.af) (blockLabelIdx (planLines R.fa.k R.af)) l l' := by
+      intro i l hiw
+      have hil' : i < ts.length := (List.getElem?_eq_some_iff.1 hiw).1
+      have hleni : 7 + i < x.2.1.length := by omega
+      obtain ⟨y, hy⟩ : ∃ y, x.2.1[7 + i]? = some y := ⟨_, List.getElem?_eq_getElem hleni⟩
+      have htword : x.1.term[7 + i]? = some (Line.word (Lbl.block l) (.jt ps1.jt)) := by
+        rw [show (7:Nat) + i = 6 + i + 1 from by omega, htJ, jtBody_cons,
+          List.getElem?_cons_succ, List.getElem?_append_right (by rw [hhead]; omega), hhead,
+          show (6:Nat) + i - 6 = i from by omega, List.getElem?_map, hiw]
+        simp
+      rcases hLO (7 + i) _ _ htword hy with ⟨-, hnb⟩ | ⟨l3, l4, hxt, hyt, hre, hrep⟩
+      · exact (hnb l rfl).elim
+      · simp only [Line.target?, Option.some.injEq, Lbl.block.injEq] at hxt
+        subst hxt
+        refine ⟨l4, ?_, hrep⟩
+        rw [List.getElem?_drop, hy, hre]
+        rfl
+    have hrelNone : ∀ ln ∈ jtHead ts (.x nr) (.x na) (.x nb) (.jt ps1.jt) ++ x.2.1.drop 7,
+        ln.relaxable? = none := by
+      intro ln hln
+      rcases List.mem_append.1 hln with hln | hln
+      · simp only [jtHead, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil,
+          or_false] at hln
+        rcases hln with rfl | rfl | rfl | rfl | rfl | rfl <;> rfl
+      · obtain ⟨k, hk⟩ := List.mem_iff_getElem?.1 hln
+        have hkL : k < ts.length := by
+          have := (List.getElem?_eq_some_iff.1 hk).1
+          rw [hWlJ] at this; exact this
+        obtain ⟨l5, hw5, -⟩ := hWJ k _ (List.getElem?_eq_getElem hkL)
+        rw [hw5] at hk
+        rw [(Option.some.inj hk).symm]
+        rfl
+    have hrest : x.2.1.drop 1 = jtHead ts (.x nr) (.x na) (.x nb) (.jt ps1.jt) ++ x.2.1.drop 7 := by
+      apply List.ext_getElem?
+      intro k
+      rw [List.getElem?_drop]
+      rcases Nat.lt_or_ge (k + 1) 7 with h7 | h7
+      · obtain ⟨y, hy⟩ : ∃ y, x.2.1[1 + k]? = some y := ⟨_, List.getElem?_eq_getElem (by omega)⟩
+        have htk : x.1.term[1 + k]? =
+            (jtHead ts (.x nr) (.x na) (.x nb) (.jt ps1.jt))[k]? := by
+          have h0 := htermK (k + 1) (by omega) (by omega)
+          rw [show (k:Nat) + 1 = 1 + k from Nat.add_comm k 1,
+            show (1:Nat) + k - 1 = k from by omega] at h0
+          exact h0
+        obtain ⟨xl, hxl⟩ : ∃ xw, x.1.term[1 + k]? = some xw := by
+          refine ⟨(jtHead ts (.x nr) (.x na) (.x nb) (.jt ps1.jt))[k], ?_⟩
+          rw [htk, List.getElem?_eq_some_iff]
+          exact ⟨by rw [hhead]; omega, rfl⟩
+        rcases hLO (1 + k) xl y hxl hy with ⟨heq, -⟩ | ⟨l3, l4, hxt, -, -, -⟩
+        · rw [hy, heq, List.getElem?_append_left (by rw [hhead]; omega), ← htk, hxl]
+        · exfalso
+          have hk6 : (k:Nat) < (jtHead ts (.x nr) (.x na) (.x nb) (.jt ps1.jt)).length := by
+            rw [hhead]; omega
+          have hxe : (jtHead ts (.x nr) (.x na) (.x nb) (.jt ps1.jt))[k]? = some xl := by
+            rw [← htk, hxl]
+          obtain ⟨hik2, hxe2⟩ := List.getElem?_eq_some_iff.1 hxe
+          have hxT0 : Line.target? ((jtHead ts (.x nr) (.x na) (.x nb) (.jt ps1.jt))[k]) = none :=
+            hheadT _ (List.getElem_mem (l := jtHead ts (.x nr) (.x na) (.x nb) (.jt ps1.jt)) hk6)
+          rw [hxe2] at hxT0
+          have hxT : Line.target? xl = none := hxT0
+          rw [hxT] at hxt
+          simp at hxt
+      · rw [List.getElem?_append_right (by rw [hhead]; omega), hhead, List.getElem?_drop,
+          show (7:Nat) + (k - 6) = k + 1 from by omega, Nat.add_comm 1 k]
+    have hbcJ : ∃ l', y0 = .ins (.bcond .hs l') none ∧
+        RepLbl (planRep R.fa.k R.af) (blockLabelIdx (planLines R.fa.k R.af)) d l' :=
+      ⟨l2, hbc0, hrep0⟩
+    have hdropJT : R.L.drop j0 = relaxLine R.far y0 ++
+        (jtHead ts (.x nr) (.x na) (.x nb) (.jt ps1.jt) ++ x.2.1.drop 7 ++
+          R.L.drop (rix R.far (planLines R.fa.k R.af) x.2.2)) := by
+      rw [hdrop, List.nil_append, hcons, relaxLines_cons, hrest,
+        relaxLines_of_none hrelNone]
+      have hd7 : List.drop 7 (y0 :: (jtHead ts (.x nr) (.x na) (.x nb) (.jt ps1.jt) ++
+          List.drop 7 x.snd.fst)) = List.drop 7 x.snd.fst := by
+        rw [List.drop_cons (by omega), List.drop_append,
+          List.drop_eq_nil_of_le (by rw [hhead]; omega), List.nil_append,
+          show (7:Nat) - 1 - (jtHead ts (.x nr) (.x na) (.x nb) (.jt ps1.jt)).length = 0
+            from by omega, List.drop_zero]
+      rw [hd7]
+      simp only [List.append_assoc]
+    obtain ⟨hmTaken, hmNot⟩ := jt_machine hR hnr hna hnb hab (by simp) hdropJT hbcJ hWJ hWlJ
+      hst.prog hpc hst.err hst.sp
+      hst.code
+    cases hn with
+    | next _ => split at hsem <;> (try split at hsem) <;> simp at hsem
+    | ret h => simp at h
+    | halt => split at hsem <;> (try split at hsem) <;> simp at hsem
+    | @goto jj st items' hk1 hsucc hitems =>
+    have hsucc' := hsucc
+    simp only [succOf, hcfg, hss, Option.bind_some] at hsucc'
+    have hst0 : st ≠ 0 := ctlCheck_succ hck hsucc
+    obtain ⟨vs, hvs, hlj⟩ := hlab _ st hsucc'
+    have hw2 : w' = w ∧ outs.length = 2 := by
+      split at hsem
       · simp only [Option.some.injEq, Prod.mk.injEq] at hsem; rw [← hsem.1, ← hsem.2.1]; exact ⟨rfl, rfl⟩
-      · cases hsem
-  obtain ⟨hw', hout2⟩ := hw2
-  subst w'
-  -- the MStep with the machine's temporaries, and `Q` at the successor
-  have fin : ∀ (s' : Arm.ArmState) (n jl : Nat), iterN R.step n s = s' →
-      Arm.r .PC s' = R.pcOf jl → RepL R.af (planOwn R.fa.k R.af) R.L vs.label jl →
-      (∀ f, f ≠ .PC → f ≠ .GPR (rnum na) → f ≠ .GPR (rnum nb) → Arm.r f s' = Arm.r f s) →
-      s'.mem = s.mem → s'.program = s.program → (∀ i < n, R.GoodX (iterN R.step i s)) →
-      ∃ n c'', MStep R.vc R.sem ckeep R.rf (.run ⟨b, .op k (#[Reg.x nr, .x na, .x nb].map Loc.reg) :: its, m, w⟩) c'' ∧
-        Q R (iterN R.step n s) c'' ∧ ∀ i < n, R.GoodX (iterN R.step i s) := by
-    intro s' n jl hn hpc' hjl hf hmem hprog hsp
-    have hsem' : R.sem (.jtSequence d ts (.vreg vr .int) (.vreg va .int) (.vreg vb' .int))
-        (((#[(⟨vr, .int, .use, .early, .reg⟩ : Operand), ⟨va, .int, .def, .early, .reg⟩,
-          ⟨vb', .int, .def, .early, .reg⟩].zip (#[Reg.x nr, .x na, .x nb].map Loc.reg)).toList.filter
-          (·.1.isUse)).map (m ·.2)) w = some (outs, w, .goto jj) := by
-      rw [hU]; simp only [RL.sem, csemV, csem, hhs]; exact hsem
-    refine ⟨n, _, MStep.op (outs' := [regVal s' (.x na), regVal s' (.x nb)]) (w' := w) hvb hi hops hsz'
-      hsem' hlen ⟨by rw [hout2]; rfl,
-        fun h => by simp [havocFrom, MInst.keptDefs, MInst.isBranch] at h,
-        fun n h => by simp [havocFrom, MInst.keptDefs, MInst.isBranch] at h; subst h; rfl⟩
-      (hcl0 _) (MNext.goto hk1 hsucc hitems), ?_, hsp⟩
-    rw [hstore, hn]
-    exact q_entry hR hst0 hvs hitems hjl hpc' (stRel_regs hst hna hnb hna18 hnb18 hf hmem hprog)
-  -- which successor
-  split at hsem
-  · rename_i hhs'
-    simp only [Option.some.injEq, Prod.mk.injEq] at hsem
-    obtain ⟨-, -, hj⟩ := hsem
-    injection hj with hj
-    subst hj
-    obtain ⟨n, jl, hn', hrep, hsp⟩ := hmTaken hhs'
-    simp only [MInst.targets, List.getElem?_cons_zero, Option.some.injEq] at hlj
-    rw [hlj] at hrep
-    exact fin _ n jl hn' (Arm.r_of_w_same ..) hrep
-      (fun f hf _ _ => Arm.r_of_w_different hf) (by simp [Arm.ArmState.mem_w_eq_mem])
-      (by simp [Arm.w_program]) hsp
-  · rename_i hhs'
+      · split at hsem
+        · simp only [Option.some.injEq, Prod.mk.injEq] at hsem; rw [← hsem.1, ← hsem.2.1]; exact ⟨rfl, rfl⟩
+        · cases hsem
+    obtain ⟨hw', hout2⟩ := hw2
+    subst w'
+    -- the MStep with the machine's temporaries, and `Q` at the successor
+    have fin : ∀ (s' : Arm.ArmState) (n jl : Nat), iterN R.step n s = s' →
+        Arm.r .PC s' = R.pcOf jl → RepL R.af (planOwn R.fa.k R.af) R.L vs.label jl →
+        (∀ f, f ≠ .PC → f ≠ .GPR (rnum na) → f ≠ .GPR (rnum nb) → Arm.r f s' = Arm.r f s) →
+        s'.mem = s.mem → s'.program = s.program → (∀ i < n, R.GoodX (iterN R.step i s)) →
+        ∃ n c'', MStep R.vc R.sem ckeep R.rf (.run ⟨b, .op k (#[Reg.x nr, .x na, .x nb].map Loc.reg) :: [], m, w⟩) c'' ∧
+          Q R (iterN R.step n s) c'' ∧ ∀ i < n, R.GoodX (iterN R.step i s) := by
+      intro s' n jl hn hpc' hjl hf hmem hprog hsp
+      have hsem' : R.sem (.jtSequence d ts (.vreg vr .int) (.vreg va .int) (.vreg vb' .int))
+          (((#[(⟨vr, .int, .use, .early, .reg⟩ : Operand), ⟨va, .int, .def, .early, .reg⟩,
+            ⟨vb', .int, .def, .early, .reg⟩].zip (#[Reg.x nr, .x na, .x nb].map Loc.reg)).toList.filter
+            (·.1.isUse)).map (m ·.2)) w = some (outs, w, .goto jj) := by
+        rw [hU]; simp only [RL.sem, csemV, csem, hhs]; exact hsem
+      refine ⟨n, _, MStep.op (outs' := [regVal s' (.x na), regVal s' (.x nb)]) (w' := w) hvb hi hops' hsz'
+        hsem' hlen ⟨by rw [hout2]; rfl,
+          fun h => by simp [havocFrom, MInst.keptDefs, MInst.isBranch] at h,
+          fun n h => by simp [havocFrom, MInst.keptDefs, MInst.isBranch] at h; subst h; rfl⟩
+        (hcl0 _) (MNext.goto hk1 hsucc hitems), ?_, hsp⟩
+      rw [hstore, hn]
+      exact q_entry hR hst0 hvs hitems hjl hpc' (stRel_regs hst hna hnb hna18 hnb18 hf hmem hprog)
+    -- which successor
     split at hsem
-    · rename_i hlt
+    · rename_i hhs'
       simp only [Option.some.injEq, Prod.mk.injEq] at hsem
       obtain ⟨-, -, hj⟩ := hsem
       injection hj with hj
       subst hj
-      simp only [MInst.targets, List.getElem?_cons_succ] at hlj
-      obtain ⟨n, jl, s', hn', hpc', hrep, hf, hmem, hprog, hsp⟩ := hmNot (by simpa using hhs') _ vs.label
-        (by simp [lo64, regVal, BitVec.toNat_setWidth]) hlj
-      exact fin s' n jl hn' hpc' hrep hf hmem hprog hsp
-    · cases hsem
+      obtain ⟨n, jl, hn', hrep, hsp⟩ := hmTaken hhs'
+      simp only [MInst.targets, List.getElem?_cons_zero, Option.some.injEq] at hlj
+      rw [hlj] at hrep
+      exact fin _ n jl hn' (Arm.r_of_w_same ..) hrep
+        (fun f hf _ _ => Arm.r_of_w_different hf) (by simp [Arm.ArmState.mem_w_eq_mem])
+        (by simp [Arm.w_program]) hsp
+    · rename_i hhs'
+      split at hsem
+      · rename_i hlt
+        simp only [Option.some.injEq, Prod.mk.injEq] at hsem
+        obtain ⟨-, -, hj⟩ := hsem
+        injection hj with hj
+        subst hj
+        simp only [MInst.targets, List.getElem?_cons_succ] at hlj
+        obtain ⟨n, jl, s', hn', hpc', hrep, hf, hmem, hprog, hsp⟩ := hmNot (by simpa using hhs') _ vs.label
+          (by simp [lo64, regVal, BitVec.toNat_setWidth]) hlj
+        exact fin s' n jl hn' hpc' hrep hf hmem hprog hsp
+      · cases hsem
 
 end Backend.Proof
