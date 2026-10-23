@@ -922,6 +922,18 @@ they are; the per-thread layers are new files.
         (`match_atCall` with the arity), `resume_allP` (`resume_all` with `habi` only at the paused
         instruction; `resume_all` its corollary), **`resume_allA`** (`resume_all` with `habi`
         replaced by `CallDefsRet` + `callArityBl`; `rvals.length ≤ defs` by `returns_le_sigRets`).
+        **The call's arguments at the `bl` (done, `CallArgsAt.lean`, `CallArgsL2.lean`, witnesses
+        `usesV_fC`, `useOps_iC`, `resLen_fC`)**: layers 3–4b, **`call_uses_q`** (with `Q` and the
+        checker's `MatchRun` at a direct `call` item with virtual uses, `CallUsesVirt` checked by
+        `callUsesVirtB_iff`: the `j`-th use `(v, p)` has in register `p` the `j`-th VCode use value;
+        `useOps_eq`); layer 2, **`isel_argsAt`** (at a matched call statement the VCode is at
+        `call (.sym ext.name)` whose use values satisfy `ArgsAt ext.sig vals`), read off the
+        driver's call step under a *guarded* external semantics (`xcallG`/`ArgG`: its `call`
+        steps only when `ArgsAt` holds, which `XCallsOk` grants; `isel_resumeG`, `argG_of_vstep`),
+        with probe results of the right types (`callResLenB`: results as many as the extern's
+        returns). Left for the callee's `ArgsAtEntry`: the call's use registers are `locsOf
+        ext.sig`'s registers in order (a check like `callArityB`), the callee's signature is
+        `ext.sig`, and the callee's `RelW`.
         (iv) the thread-wide private set (every activation's `PrivA` and the CLIF events' avoidance
         of it; with CLIF stack slots in callees the private sets of different activations overlap
         other activations' slots); then `SegOk`, `link_compose_ext`, and `realizes_call_full`/the
