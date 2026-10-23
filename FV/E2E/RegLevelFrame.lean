@@ -1039,4 +1039,35 @@ theorem realizesQA {R : RL} (hR : R.Wf) {sem : ISem CV Arm.ArmState} {keep : Reg
     · simp only [RetTail] at hrt
     · simp only [RetTail] at hrt
 
+/-- `QA` at an item gives `Q` with the machine's store. -/
+theorem qa_q {R : RL} {s : Arm.ArmState} {b : Nat} {its : List RItem} {m : Loc → CV}
+    {w : Arm.ArmState} (h : QA R s (.run ⟨b, its, m, w⟩)) :
+    ∃ mt, Q R s (.run ⟨b, its, mt, w⟩) := by
+  rcases h with ⟨hq, -⟩ | h
+  · exact ⟨m, hq⟩
+  · simp only [RetTail] at h
+    obtain ⟨mt, -, hq, -⟩ := h
+    exact ⟨mt, hq⟩
+
+/-- `QA` at an instruction other than a `Rets` is `Q ∧ AInv` (a return tail ends at its
+`Rets`). -/
+theorem qa_op {R : RL} {s : Arm.ArmState} {b k : Nat} {a : Array Loc} {its : List RItem}
+    {m : Loc → CV} {w : Arm.ArmState} (h : QA R s (.run ⟨b, .op k a :: its, m, w⟩)) {vb : VBlock}
+    {i : MInst} (hvb : R.vc.blocks[b]? = some vb) (hi : vb.insts[k]? = some i)
+    (hnr : ∀ us, i ≠ .rets us) :
+    Q R s (.run ⟨b, .op k a :: its, m, w⟩) ∧ AInv R (.run ⟨b, .op k a :: its, m, w⟩) := by
+  rcases h with h | h
+  · exact h
+  · simp only [RetTail] at h
+    obtain ⟨_mt, _D, _hq, _hm, vb', pend, k', a', rest, us, hvb', he, hk', htl⟩ := h
+    rcases pend with _ | ⟨it, pend⟩
+    · simp only [List.nil_append, List.cons.injEq, RItem.op.injEq] at he
+      obtain ⟨⟨rfl, -⟩, -⟩ := he
+      rw [hvb] at hvb'; cases hvb'
+      rw [hi] at hk'; cases hk'
+      exact absurd rfl (hnr us)
+    · simp only [List.cons_append, List.cons.injEq] at he
+      obtain ⟨rfl, -⟩ := he
+      simp [retTailOk, RItem.restoreReg, RItem.isRestore, RItem.avoids] at htl
+
 end Backend.Proof
