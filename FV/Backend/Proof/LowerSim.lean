@@ -1052,9 +1052,11 @@ theorem term_step_abi (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
       by simpa [fr', restrict, hslots] using hmr, by rw [hcm, hslots]⟩
     · have hvl : vs.length = (sretRet ctx.func).length := by
         rw [H.shape.ctxInv.func]; exact (getMany_spec hvs0).1.symm
+      have hvl' : (sretRet (termCtx ctx (L.start + B.body.length) L.data).func).length =
+          (sretRet ctx.func).length := by simp [termCtx]
       unfold RetPins
       simp only [List.map_map, List.length_map, Function.comp_def]
-      rw [hus, List.length_append, hvl, Nat.add_sub_cancel]
+      rw [hus, List.length_append, hvl, hvl', Nat.add_sub_cancel]
     · simp only [List.length_map]; rw [hlen]; exact hall.1
   | trap c =>
     rw [hT] at hrun' hstep

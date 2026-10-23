@@ -377,8 +377,8 @@ theorem LowerTermOk.toT {W : Type} {isem : ISem CV W} {MR : MemRelTW W} {ctx : C
     have hm : xs.map (valClassOf ctx) = List.replicate xs.length .int := by
       rw [List.eq_replicate_iff]; simp [hE]
     rw [hm, List.take_replicate, retRegsT_int, h2, h3, getMany_length hg]
-    rw [show min xs.length (xs.length - (sretRet ctx.func).length) =
-      xs.length - (sretRet ctx.func).length from by simp; omega]
+    rw [show min (xs.length - (sretRet ctx.func).length) xs.length =
+      xs.length - (sretRet ctx.func).length from by omega]
     rw [map_retX_ge (by omega : xs.length - (sretRet ctx.func).length ≤ xs.length)]
     simp [List.range_eq_range']
   | _ => exact this
