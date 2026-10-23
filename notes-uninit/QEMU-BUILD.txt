@@ -1,0 +1,18 @@
+Plugin-enabled qemu-aarch64 (qemu-aarch64-static in ~/.local/bin has no TCG plugin support):
+  mkdir /tmp/uninitsem_qemu && cd /tmp/uninitsem_qemu
+  curl -sSLO https://download.qemu.org/qemu-10.2.1.tar.xz && tar xf qemu-10.2.1.tar.xz
+  # glib headers without root: apt download libglib2.0-dev libglib2.0-dev-bin libgio-2.0-dev libpcre2-dev
+  #   libffi-dev zlib1g-dev libmount-dev libselinux-dev libsepol-dev libblkid-dev libsysprof-capture-4-dev
+  # dpkg-deb -x each into sysroot/; point dangling sysroot/usr/lib/x86_64-linux-gnu/*.so links at /usr/lib/x86_64-linux-gnu/*
+  cd qemu-10.2.1 && mkdir build && cd build
+  PKG_CONFIG_PATH=$S/usr/lib/x86_64-linux-gnu/pkgconfig:$S/usr/share/pkgconfig PKG_CONFIG_SYSROOT_DIR=$S \
+    ../configure --target-list=aarch64-linux-user --enable-plugins --disable-docs --disable-werror --disable-tools
+  ninja -j12 qemu-aarch64          # ~35 s on 32 cores
+Plugin:
+  gcc -shared -fPIC -O2 -I qemu-10.2.1/include/qemu -I $S/usr/include/glib-2.0 \
+    -I $S/usr/lib/x86_64-linux-gnu/glib-2.0/include -o uninit_plugin.so uninit_plugin.c -L $S/usr/lib/x86_64-linux-gnu -lglib-2.0
+Executables: in examples/{fv-demo,survey}:
+  PATH=$WT/rust/target/release:$PATH FV_ROOT=$WT FV_CG_CLIF=<patched cg_clif .so> cargo fv test --workspace --lean-link --verified --keep-temps --no-run
+  (test harnesses: target/fv/plain-leanlink-verified-leanld/aarch64-unknown-linux-musl/debug/build/<pkg>/<hash>/out/{values,fv_demo}-*)
+Run: python3 uninit_dyn.py OUT.jsonl EXE...   (UNINIT_QEMU / UNINIT_PLUGIN override the paths)
+Results: uninitsem_dyn2_{fvdemo,survey}.jsonl, dyn2_summary.txt, zcost.txt
