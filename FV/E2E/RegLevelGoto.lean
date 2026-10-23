@@ -512,17 +512,17 @@ theorem condTarget_invertTo_isSome {ci : Insn}
   · rfl
   · rfl
 
-/-- The state after `n` steps that changed only the pc, then `n'` more. -/
-theorem reach_then {R : RL} {s : Arm.ArmState} {n n' : Nat} {v v' : BitVec 64}
+/-- The state after `n` steps that changed only the pc, then `n'` more (`P`: `GoodX`/`GoodXW`). -/
+theorem reach_then {R : RL} {P : Arm.ArmState → Prop} {s : Arm.ArmState} {n n' : Nat} {v v' : BitVec 64}
     (hn : iterN R.step n s = Arm.w .PC v s)
     (hn' : iterN R.step n' (Arm.w .PC v s) = Arm.w .PC v' (Arm.w .PC v s))
     (hsp : ∀ i < n, spOf (iterN R.step i s) = spOf s)
     (hsp' : ∀ i < n', spOf (iterN R.step i (Arm.w .PC v s)) = spOf (Arm.w .PC v s))
-    (hg : ∀ i < n, R.GoodX (iterN R.step i s))
-    (hg' : ∀ i < n', R.GoodX (iterN R.step i (Arm.w .PC v s))) :
+    (hg : ∀ i < n, P (iterN R.step i s))
+    (hg' : ∀ i < n', P (iterN R.step i (Arm.w .PC v s))) :
     iterN R.step (n + n') s = Arm.w .PC v' s ∧
       (∀ i < n + n', spOf (iterN R.step i s) = spOf s) ∧
-      ∀ i < n + n', R.GoodX (iterN R.step i s) := by
+      ∀ i < n + n', P (iterN R.step i s) := by
   refine ⟨by rw [iterN_add, hn, hn', Arm.w_of_w_shadow], fun i hi => ?_, fun i hi => ?_⟩
   · rcases Nat.lt_or_ge i n with h | h
     · exact hsp i h
