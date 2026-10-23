@@ -131,7 +131,7 @@ theorem valIn_single {x : Nat} (h : ValIn ctx x eCTys) : ∃ t ∈ eCTys, ValIn 
     exact ⟨fun u hu => (by rw [hty] at hu; cases hu), fun _ => ⟨.int 64, List.mem_singleton_self _, rfl⟩⟩
 
 /-- `aApply` of an internal term does not depend on the result type. -/
-theorem aApply_internal_eqT {t : TermId} {term : Term} {flags : TermFlags} {ex : Option Extractor}
+theorem aApply_internal_eqSzT {t : TermId} {term : Term} {flags : TermFlags} {ex : Option Extractor}
     (ht : termOf program t = .ok term) (hk : term.kind = .decl flags (some .internal) ex)
     (ty : TypeId) (as : List AT) : aApply program covTabT actor apre aOracle ty t as =
       if as.any AT.isBot then some .bot else
@@ -188,7 +188,7 @@ theorem subOk_parts {t : TermId} {term : Term} {flags : TermFlags} {ex : Option 
   unfold subOk at h
   simp only [Bool.and_eq_true] at h
   obtain ⟨⟨h1, h2⟩, h3⟩ := h
-  refine ⟨fun ty => ?_, fun ty => ?_, fun ty => by rw [aApply_internal_eqT ht hk]; exact eq_of_isReg1 h3⟩
+  refine ⟨fun ty => ?_, fun ty => ?_, fun ty => by rw [aApply_internal_eqSzT ht hk]; exact eq_of_isReg1 h3⟩
   · rw [cApply_tyT]
     revert h1
     cases cApply program covTabT actorW szCTabT apre aOracle 0 t as with
