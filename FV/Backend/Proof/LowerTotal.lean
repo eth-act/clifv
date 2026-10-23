@@ -683,7 +683,7 @@ theorem tryOk_of {f : Clif.Function} {ctx : Ctx} {et : Clif.ExnTable} (hin : try
         have := hnargs a ha
         cases a with
         | val v => exact hval _ htdm v ha
-        | ret i => exact ⟨hkh, Nat.lt_of_lt_of_le (hret s hs i ha) (returns_le_sigRets s)⟩
+        | ret i => exact ⟨hkh, hret s hs i ha⟩
         | exn i => simp at this
 
 /-- The terminator's data computes. -/

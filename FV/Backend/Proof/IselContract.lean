@@ -74,6 +74,15 @@ theorem PrefixHold.append {vals : List Clif.Val} {xs : List CV} (h : PrefixHold 
   have hlt : j < xs.length := Nat.lt_of_lt_of_le (List.getElem?_eq_some_iff.mp hj).1 h.1
   rwa [List.getElem?_append_left hlt] at hx
 
+/-- Values held by a prefix of `xs` are held by `xs.take n` when there are at most `n`. -/
+theorem PrefixHold.take {vals : List Clif.Val} {xs : List CV} (h : PrefixHold vals xs) {n : Nat}
+    (hn : vals.length ≤ n) : PrefixHold vals (xs.take n) := by
+  refine ⟨by have := h.1; simp only [List.length_take]; omega, fun j v x hj hx => h.2 j v x hj ?_⟩
+  rw [List.getElem?_take] at hx
+  split at hx
+  · exact hx
+  · cases hx
+
 /-- An `ordinary` signature (no struct pointer among its ABI returns) returns its declared
 values only: `lowerFunction` appends nothing to its `return`s (`sretRet`). -/
 theorem sretRet_eq_nil {f : Clif.Function}

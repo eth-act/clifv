@@ -162,7 +162,7 @@ theorem driverSem_csem (F : BitVec 64 → Prop) (ctx : FnCtx) (X : ExtSem) :
     cases i with
     | call info =>
       obtain ⟨dest, us, ds⟩ := info
-      cases dest <;> rfl
+      cases dest <;> simp [csem, MInst.mapRegs, List.map_map, Function.comp_def]
     | tryCall info ti =>
       obtain ⟨dest, us, ds⟩ := info
       cases dest <;> simp [csem, MInst.mapRegs, List.map_drop, List.map_map, Function.comp_def]
@@ -279,32 +279,44 @@ theorem xCallsOk_of_results {env : Clif.Env} {exts : List Clif.ExtFunc} {MR : Me
       (hd.imp id fun ⟨h1, _, h2⟩ => ⟨h1, h2⟩) hlen hall hmr hret rfl
   exact ⟨outs, w', hc, by rw [sigRets_of_noSret (hns ext hin), ← hrl, ho.1], ho.prefixHold, hm⟩
 
+private theorem returns_le_sigRets' (s : Clif.Signature) :
+    s.returns.length ≤ (sigRets s).length := by
+  rcases sigRets_cases s with h | ⟨h0, h1⟩
+  · rw [h]; exact Nat.le_refl _
+  · rw [h0, h1]; exact Nat.zero_le _
+
 /-- **`CallsRefine` for `csem`**, from the external contract. -/
 theorem callsRefine_csem {F : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem} {env : Clif.Env}
     {exts : List Clif.ExtFunc} {MR : MemRelT} (hX : XCallsOk env exts MR X) :
     CallsRefine F env exts MR (csem F ctx X) := by
   refine ⟨fun n => X.sym n 0, fun rd n w => ⟨w, rfl, fun _ _ _ => rfl, fun _ _ => rfl, rfl⟩, ?_, ?_⟩
   · intro ext hin g sl cm w dest us ds uses args vals rvals cm' hg hd hds hargs hmr hret hrl
+    have hle := returns_le_sigRets' ext.sig
     rcases hd with ⟨rfl, rfl⟩ | ⟨r, rfl, hcol, rfl⟩
     · obtain ⟨outs, w', hc, hol, ho, hm⟩ := hX ext hin g sl cm w (some ext.name) uses uses vals rvals
         cm' hg (.inl ⟨rfl, rfl⟩) hargs hmr hret hrl
-      exact ⟨outs, w', by simp [csem, hc], by rw [hol, hds], ho, hm⟩
+      exact ⟨outs.take ds.length, w', by simp [csem, hc], by simp only [List.length_take]; omega,
+        ho.take (by omega), hm⟩
     · obtain ⟨outs, w', hc, hol, ho, hm⟩ := hX ext hin g sl cm w none _ args vals rvals cm'
         hg (.inr ⟨rfl, hcol, rfl⟩) hargs hmr hret hrl
-      exact ⟨outs, w', by simp [csem, hc], by rw [hol, hds], ho, hm⟩
+      exact ⟨outs.take ds.length, w', by simp [csem, hc], by simp only [List.length_take]; omega,
+        ho.take (by omega), hm⟩
   · intro ext hin g sl cm w dest us ds ti uses args vals rvals cm' hg hd hds hti hargs hmr hret hrl
+    have hle := returns_le_sigRets' ext.sig
     rcases hd with ⟨rfl, rfl⟩ | ⟨r, rfl, hcol, rfl⟩
     · obtain ⟨outs, w', hc, hol, ho, hm⟩ := hX ext hin g sl cm w (some ext.name) uses uses vals
         rvals cm' hg (.inl ⟨rfl, rfl⟩) hargs hmr hret hrl
-      refine ⟨_, w', by simp only [csem, hc, Option.filter_some, hol, hti, decide_true,
-        ↓reduceIte, Option.map_some]; rfl, ?_, ho.append _, hm⟩
-      simp only [List.length_append, List.length_map, List.length_drop]
+      have hti' : ti.rets ≤ outs.length := by omega
+      refine ⟨_, w', by simp only [csem, hc, Option.filter_some, hti', decide_true,
+        ↓reduceIte, Option.map_some]; rfl, ?_, (ho.append _).take (by omega), hm⟩
+      simp only [List.length_take, List.length_append, List.length_map, List.length_drop]
       omega
     · obtain ⟨outs, w', hc, hol, ho, hm⟩ := hX ext hin g sl cm w none _ args vals rvals cm' hg
         (.inr ⟨rfl, hcol, rfl⟩) hargs hmr hret hrl
-      refine ⟨_, w', by simp only [csem, hc, Option.filter_some, hol, hti, decide_true,
-        ↓reduceIte, Option.map_some]; rfl, ?_, ho.append _, hm⟩
-      simp only [List.length_append, List.length_map, List.length_drop]
+      have hti' : ti.rets ≤ outs.length := by omega
+      refine ⟨_, w', by simp only [csem, hc, Option.filter_some, hti', decide_true,
+        ↓reduceIte, Option.map_some]; rfl, ?_, (ho.append _).take (by omega), hm⟩
+      simp only [List.length_take, List.length_append, List.length_map, List.length_drop]
       omega
 
 /-! ## Indirect calls -/
@@ -347,18 +359,22 @@ theorem indCallsRefine_csem {F : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem} 
   refine ⟨?_, ?_⟩
   · intro sig hin n g sl cm w a r us ds u args vals rvals cm' hg hsg ha hu hds hlen hall hmr hret
       hrl hty
+    have hle := returns_le_sigRets' sig
     have hs : X.sym n 0 = BitVec.ofNat 64 a := hsym n a (by rw [← hMRs sl cm w hmr]; exact ha)
     obtain ⟨outs, w', hc, hol, ho, hm⟩ := hX sig hin n g sl cm w u args vals rvals cm' hg hsg
       (by rw [hu, hs]) hlen hall hmr hret hrl hty
-    exact ⟨outs, w', by simp [csem, hc], by rw [hol, hds], ho, hm⟩
+    exact ⟨outs.take ds.length, w', by simp [csem, hc], by simp only [List.length_take]; omega,
+      ho.take (by omega), hm⟩
   · intro sig hin n g sl cm w a r us ds ti u args vals rvals cm' hg hsg ha hu hds hti hlen hall
       hmr hret hrl hty
+    have hle := returns_le_sigRets' sig
     have hs : X.sym n 0 = BitVec.ofNat 64 a := hsym n a (by rw [← hMRs sl cm w hmr]; exact ha)
     obtain ⟨outs, w', hc, hol, ho, hm⟩ := hX sig hin n g sl cm w u args vals rvals cm' hg hsg
       (by rw [hu, hs]) hlen hall hmr hret hrl hty
-    refine ⟨_, w', by simp only [csem, hc, Option.filter_some, hol, hti, decide_true,
-      ↓reduceIte, Option.map_some]; rfl, ?_, ho.append _, hm⟩
-    simp only [List.length_append, List.length_map, List.length_drop]
+    have hti' : ti.rets ≤ outs.length := by omega
+    refine ⟨_, w', by simp only [csem, hc, Option.filter_some, hti', decide_true,
+      ↓reduceIte, Option.map_some]; rfl, ?_, (ho.append _).take (by omega), hm⟩
+    simp only [List.length_take, List.length_append, List.length_map, List.length_drop]
     omega
 
 end Backend.Proof

@@ -399,6 +399,7 @@ theorem results_callC {fr : Clif.Frame} {ρ : Nat → CV} {st : LState} {rvals :
   | nil => left; rw [h0] at hres; exact List.eq_nil_of_length_eq_zero hres
   | cons a l =>
     right
+    rw [h0] at hps hrN hol
     refine resultsHeld_callC hps (by rw [List.length_map]; exact hrN) ?_
     exact hro.allHold (by rw [hol, hrN])
 
