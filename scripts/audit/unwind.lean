@@ -1,3 +1,4 @@
+import FV.Link.UnwCondInWitness
 import FV.E2E.RegLevelUnwind
 import FV.E2E.DeadCleanupUnwindWitness
 import FV.E2E.LinkUnwind
@@ -194,6 +195,10 @@ import FV.E2E.WorldUnwindNIWitness
 #print axioms Link.EhCheck.Complete.unwFnsB_of_conds
 #print axioms Link.DeadCleanup.compileExeU_total_ldIn
 #print axioms Link.DeadCleanup.ULdInWitness.compileExeU_total_ldIn_witness -- witness: native_decide
+#print axioms Link.EhCheck.Complete.unwCondB_of_in
+#print axioms Link.EhCheck.Complete.unwCondsB_of_in
+#print axioms Link.DeadCleanup.compileExeU_total_ldCond
+#print axioms Link.DeadCleanup.ULdCondWitness.compileExeU_total_ldCond_witness -- witness: native_decide
 #print axioms Link.EhCheck.Complete.saveFrameB_always
 #print axioms Link.EhCheck.Complete.frame_saves_far
 #print axioms Link.EhCheck.Complete.savedCheck_pipe_out
