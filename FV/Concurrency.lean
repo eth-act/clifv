@@ -241,3 +241,5 @@ import FV.Concurrency.CallSegAbi
 import FV.Concurrency.CallSegAbiWitness
 import FV.Concurrency.CallSegT
 import FV.Concurrency.CallSegTWitness
+import FV.Concurrency.CallEntryLink
+import FV.Concurrency.CallEntryLinkWitness
