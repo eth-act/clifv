@@ -115,15 +115,53 @@ theorem seqRun_cons_stop {sem : ISem V W} {i : MInst} {ms : List MInst} {ρ : Na
           exact ⟨rfl, rfl, hops, rfl, rfl, hsem, hlen, fun e => hne e⟩
       · cases h
 
+/-- **A run each of whose steps starts from a configuration satisfying `P`** (`Star`, with the
+places it executes from recorded). The skipped-instruction driver (`LowerSimSkip.lean`) moves
+such runs to a VCode with fewer instructions, so it needs to know where they execute. -/
+inductive StarP {α : Type} (r : α → α → Prop) (P : α → Prop) : α → α → Prop
+  | refl (a : α) : StarP r P a a
+  | step {a b c : α} : P a → r a b → StarP r P b c → StarP r P a c
+
+theorem StarP.star {α : Type} {r : α → α → Prop} {P : α → Prop} :
+    ∀ {a b : α}, StarP r P a b → Star r a b
+  | _, _, .refl _ => .refl _
+  | _, _, .step _ h t => .step h t.star
+
+theorem StarP.mono {α : Type} {r : α → α → Prop} {P Q : α → Prop} (hPQ : ∀ a, P a → Q a) :
+    ∀ {a b : α}, StarP r P a b → StarP r Q a b
+  | _, _, .refl _ => .refl _
+  | _, _, .step hp h t => .step (hPQ _ hp) h (t.mono hPQ)
+
+theorem StarP.trans {α : Type} {r : α → α → Prop} {P : α → Prop} :
+    ∀ {a b c : α}, StarP r P a b → StarP r P b c → StarP r P a c
+  | _, _, _, .refl _, h => h
+  | _, _, _, .step hp h t, h' => .step hp h (t.trans h')
+
+theorem StarP.single {α : Type} {r : α → α → Prop} {P : α → Prop} {a b : α} (hp : P a)
+    (h : r a b) : StarP r P a b := .step hp h (.refl _)
+
+/-- The configuration runs at instruction `k0 + i` of block `b`, for some `i < len`. -/
+def AtSeg (b k0 len : Nat) (c : VConf V W) : Prop :=
+  ∃ i < len, ∃ ρ w, c = .run ⟨b, k0 + i, ρ, w⟩
+
+theorem AtSeg.succ {b k0 len : Nat} {c : VConf V W} (h : AtSeg b (k0 + 1) len c) :
+    AtSeg b k0 (len + 1) c := by
+  obtain ⟨i, hi, ρ, w, rfl⟩ := h
+  exact ⟨i + 1, by omega, ρ, w, by rw [Nat.add_assoc, Nat.add_comm 1 i]⟩
+
+theorem AtSeg.zero (b k0 len : Nat) (hl : 0 < len) (ρ : Nat → V) (w : W) :
+    AtSeg b k0 len (VConf.run ⟨b, k0, ρ, w⟩) := ⟨0, hl, ρ, w, rfl⟩
+
 variable {vc : VCode} {sem : ISem V W}
 
 /-- A straight-line run of a segment that falls through is a sequence of `VStep`s, if the
-block continues after the segment. -/
-theorem seqRun_fall_star {b : Nat} {vb : VBlock} (hvb : vc.blocks[b]? = some vb) :
+block continues after the segment, each from an instruction of the segment. -/
+theorem seqRun_fall_starP {b : Nat} {vb : VBlock} (hvb : vc.blocks[b]? = some vb) :
     ∀ {ms : List MInst} {k0 : Nat} {ρ : Nat → V} {w : W} {ρ' : Nat → V} {w' : W},
     SegAt vb k0 ms → k0 + ms.length < vb.insts.size →
     seqRun sem ms ρ w = some (.fall ρ' w') →
-    Star (VStep vc sem) (.run ⟨b, k0, ρ, w⟩) (.run ⟨b, k0 + ms.length, ρ', w'⟩) := by
+    StarP (VStep vc sem) (AtSeg b k0 ms.length) (.run ⟨b, k0, ρ, w⟩)
+      (.run ⟨b, k0 + ms.length, ρ', w'⟩) := by
   intro ms
   induction ms with
   | nil =>
@@ -139,15 +177,25 @@ theorem seqRun_fall_star {b : Nat} {vb : VBlock} (hvb : vc.blocks[b]? = some vb)
     have := ih hseg.tail (by simp at hlt ⊢; omega) hrest
     simp only [List.length_cons] at this ⊢
     rw [show k0 + (ms.length + 1) = k0 + 1 + ms.length by omega]
-    exact .step hstep this
+    exact .step (AtSeg.zero _ _ _ (by omega) _ _) hstep (this.mono fun _ h => AtSeg.succ h)
 
-/-- A straight-line run of a segment that stops at instruction `k`: the `VStep`s up to it, and
-the facts `VStep` needs to execute it. -/
-theorem seqRun_stop_star {b : Nat} {vb : VBlock} (hvb : vc.blocks[b]? = some vb) :
+/-- A straight-line run of a segment that falls through is a sequence of `VStep`s, if the
+block continues after the segment. -/
+theorem seqRun_fall_star {b : Nat} {vb : VBlock} (hvb : vc.blocks[b]? = some vb)
+    {ms : List MInst} {k0 : Nat} {ρ : Nat → V} {w : W} {ρ' : Nat → V} {w' : W}
+    (hseg : SegAt vb k0 ms) (hlt : k0 + ms.length < vb.insts.size)
+    (h : seqRun sem ms ρ w = some (.fall ρ' w')) :
+    Star (VStep vc sem) (.run ⟨b, k0, ρ, w⟩) (.run ⟨b, k0 + ms.length, ρ', w'⟩) :=
+  (seqRun_fall_starP hvb hseg hlt h).star
+
+/-- A straight-line run of a segment that stops at instruction `k`: the `VStep`s up to it, each
+from an instruction of the segment, and the facts `VStep` needs to execute it. -/
+theorem seqRun_stop_starP {b : Nat} {vb : VBlock} (hvb : vc.blocks[b]? = some vb) :
     ∀ {ms : List MInst} {k0 : Nat} {ρ : Nat → V} {w : W} {k : Nat} {i : MInst}
       {ops : Array Operand} {ρ₁ : Nat → V} {w₁ : W} {outs : List V} {w₂ : W} {ctl : Ctl},
     SegAt vb k0 ms → seqRun sem ms ρ w = some (.stop k i ops ρ₁ w₁ outs w₂ ctl) →
-    Star (VStep vc sem) (.run ⟨b, k0, ρ, w⟩) (.run ⟨b, k0 + k, ρ₁, w₁⟩) ∧ k < ms.length ∧
+    StarP (VStep vc sem) (AtSeg b k0 ms.length) (.run ⟨b, k0, ρ, w⟩)
+        (.run ⟨b, k0 + k, ρ₁, w₁⟩) ∧ k < ms.length ∧
       vb.insts[k0 + k]? = some i ∧ i.operands = .ok ops ∧
       sem i (vuses ops ρ₁) w₁ = some (outs, w₂, ctl) ∧
       outs.length = (ops.toList.filter Operand.isDef).length ∧ ctl ≠ .next := by
@@ -158,7 +206,7 @@ theorem seqRun_stop_star {b : Nat} {vb : VBlock} (hvb : vc.blocks[b]? = some vb)
     intro k0 ρ w k i ops ρ₁ w₁ outs w₂ ctl hseg h
     rcases seqRun_cons_stop h with
       ⟨rfl, rfl, hops, rfl, rfl, hsem, hlen, hne⟩ | ⟨k', ops₀, outs₀, w₃, rfl, hops₀, hsem₀, hlen₀, hrest⟩
-    · exact ⟨by simpa using Star.refl _, by simp, by simpa using hseg.head, hops, hsem, hlen, hne⟩
+    · exact ⟨by simpa using StarP.refl _, by simp, by simpa using hseg.head, hops, hsem, hlen, hne⟩
     · obtain ⟨hstar, hk, hi, hops, hsem, hlen, hne⟩ := ih hseg.tail hrest
       have hlt : k0 + 1 < vb.insts.size := by
         have := (Array.getElem?_eq_some_iff.mp hi).1; omega
@@ -168,7 +216,54 @@ theorem seqRun_stop_star {b : Nat} {vb : VBlock} (hvb : vc.blocks[b]? = some vb)
       refine ⟨?_, by simp; omega, by simpa [Nat.add_assoc, Nat.add_comm 1 k'] using hi, hops,
         hsem, hlen, hne⟩
       rw [show k0 + (k' + 1) = k0 + 1 + k' by omega]
-      exact .step hstep hstar
+      exact .step (AtSeg.zero _ _ _ (by simp) _ _) hstep (hstar.mono fun _ h => AtSeg.succ h)
+
+/-- A straight-line run of a segment that stops at instruction `k`: the `VStep`s up to it, and
+the facts `VStep` needs to execute it. -/
+theorem seqRun_stop_star {b : Nat} {vb : VBlock} (hvb : vc.blocks[b]? = some vb)
+    {ms : List MInst} {k0 : Nat} {ρ : Nat → V} {w : W} {k : Nat} {i : MInst}
+    {ops : Array Operand} {ρ₁ : Nat → V} {w₁ : W} {outs : List V} {w₂ : W} {ctl : Ctl}
+    (hseg : SegAt vb k0 ms) (h : seqRun sem ms ρ w = some (.stop k i ops ρ₁ w₁ outs w₂ ctl)) :
+    Star (VStep vc sem) (.run ⟨b, k0, ρ, w⟩) (.run ⟨b, k0 + k, ρ₁, w₁⟩) ∧ k < ms.length ∧
+      vb.insts[k0 + k]? = some i ∧ i.operands = .ok ops ∧
+      sem i (vuses ops ρ₁) w₁ = some (outs, w₂, ctl) ∧
+      outs.length = (ops.toList.filter Operand.isDef).length ∧ ctl ≠ .next :=
+  let ⟨h1, h2⟩ := seqRun_stop_starP hvb hseg h
+  ⟨h1.star, h2⟩
+
+/-- A run that stops in a prefix stops there in the whole list. -/
+theorem seqRun_stop_append {ms ns : List MInst} {ρ : Nat → V} {w : W} {k : Nat} {i : MInst}
+    {ops : Array Operand} {ρ₁ : Nat → V} {w₁ : W} {outs : List V} {w₂ : W} {ctl : Ctl}
+    (h : seqRun sem ms ρ w = some (.stop k i ops ρ₁ w₁ outs w₂ ctl)) :
+    seqRun sem (ms ++ ns) ρ w = some (.stop k i ops ρ₁ w₁ outs w₂ ctl) := by
+  induction ms generalizing ρ w k with
+  | nil => simp [seqRun] at h
+  | cons j ms ih =>
+    simp only [List.cons_append, seqRun] at h ⊢
+    split at h
+    · cases h
+    · rename_i ops' hops
+      split at h
+      · cases h
+      · rename_i outs' w' ctl' hs
+        split at h
+        · rename_i hlen
+          simp only [hlen, ↓reduceIte]
+          split at h
+          · cases hr : seqRun sem ms (vdefUpd ops' outs' ρ) w' with
+            | none => rw [hr] at h; cases h
+            | some e =>
+              rw [hr] at h
+              simp only [Option.map_some, Option.some.injEq] at h
+              cases e with
+              | fall ρ' w'' => cases h
+              | stop k' i' ops'' ρ' w'' outs'' w''' ctl'' =>
+                simp only [SeqEnd.succ, SeqEnd.stop.injEq] at h
+                obtain ⟨rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩ := h
+                rw [ih hr]
+                rfl
+          · exact h
+        · cases h
 
 /-! ## Frame: a run changes only def vregs -/
 
