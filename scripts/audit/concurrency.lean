@@ -891,3 +891,15 @@ import FVTest.Concurrency.LitmusFull
 #print axioms Concurrency.CallRetResume.resume_premises_of_retEnd
 #print axioms Concurrency.CallRetResume.Witness.resume_RX -- witness: native_decide
 #print axioms Concurrency.CallRetResume.Witness.not_hpres_yX -- witness: native_decide
+#print axioms Concurrency.CallRetResume.defOps_eq
+#print axioms Concurrency.CallRetResume.defPairs_locs
+#print axioms Concurrency.CallRetResume.hdef_of_static
+#print axioms Concurrency.CallRetResume.hdef_of_q
+#print axioms Concurrency.CallRetResume.prefixHold_outs
+#print axioms Concurrency.CallRetResume.relW_after_callee
+#print axioms Concurrency.CallRetResume.realized_rets
+#print axioms Concurrency.CallRetResume.Witness.defsC1_q -- witness: native_decide
+#print axioms Concurrency.CallRetResume.Witness.locsC1 -- witness: native_decide
+#print axioms Concurrency.CallRetResume.Witness.prefixHold_RX -- witness: native_decide
+#print axioms Concurrency.CallRetResume.Witness.rets_RC -- witness: native_decide
+#print axioms Concurrency.CallRetResume.Witness.relW_id
