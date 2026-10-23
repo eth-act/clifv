@@ -1,4 +1,5 @@
 import FV.E2E.RegLevelMachine
+import FV.E2E.RegLevelPlan
 import FV.Backend.Proof.RegallocLayout
 
 /-!
@@ -9,7 +10,9 @@ The Arm machine `ArmStepX` running the laid-out function realises the allocated 
 `c` of the activation `R`:
 
 * **position**: the pc is at line `j` of the final line list, and the lines from `j` on are the
-  `fallthrough` of the remaining items' lines (followed by the next block's label);
+  relaxation of the remaining items' lines with the block's last instruction's lines replaced by
+  its final lines in the emission plan (`Qs`); or the configuration is at the entry of a block
+  reached through forwarding blocks (a single `jump`, without machine steps, `QE`);
 * **store**: every valid location (allocatable register, spill/save slot) holds in `s` what the
   store `m` says (`locVal`);
 * **world**: `s` has the world `w` (`SameWorld (R.F)`: equal outside allocatable registers,
@@ -409,17 +412,39 @@ structure StRel (R : RL) (s : Arm.ArmState) (m : Loc → CV) (w : Arm.ArmState) 
 def ItemsChecked (R : RL) (vb : VBlock) (its : List RItem) : Prop :=
   ∃ (c : CheckCtx) (k : Nat) (a out : AState), c.rf = R.rf ∧ c.vc = R.vc ∧ c.runItems vb k its a = .ok out
 
-/-- **The simulation relation.** -/
+/-- **The simulation relation inside a block** (`b`, remaining items `its`): the remaining
+items' lines are `X` and the block's last instruction's (`x.1.term`, `x` = the block's segment
+in the emission plan, `segX`); the lines from `j` on are the relaxation of `X` and the
+segment's final lines (`x.2.1`), then the lines from the one after them (`x.2.2`) on; the
+segment passes the branch check (`SegChecked`). -/
+def Qs (R : RL) (s : Arm.ArmState) (b : Nat) (its : List RItem) (m : Loc → CV)
+    (w : Arm.ArmState) : Prop :=
+  ∃ j vb items pre code ls ps1 ps2 T X x,
+    R.vc.blocks[b]? = some vb ∧ R.rf.blocks[b]? = some items ∧ items.toList = pre ++ its ∧
+    ItemsChecked R vb its ∧
+    itemsCode R.fr vb its = .ok code ∧
+    codeLinesE R.ctx R.af code ps1 = .ok (ls, ps2) ∧
+    ps2.traps.toList <+: R.psF.traps.toList ∧
+    R.L.drop j = relaxLines R.far (X ++ x.2.1) ++ T ∧
+    Arm.r .PC s = R.pcOf j ∧ StRel R s m w ∧
+    segX R.fa.k R.af b = some x ∧ SegChecked R.fa.k R.af b ∧ ls = X ++ x.1.term ∧
+    T = R.L.drop (rix R.far (planLines R.fa.k R.af) x.2.2)
+
+/-- **Entering block `b`** with store `m` and world `w` in state `s`: at its first item
+(`Qs`), or `b` forwards (`fwd?`: its code is one `jump`, whose `b` the emission may have
+removed or aliased) to a block `bx` entered so, without a machine step. -/
+inductive QE (R : RL) (s : Arm.ArmState) (m : Loc → CV) (w : Arm.ArmState) : Nat → Prop
+  | std {b : Nat} {items : Array RItem} : R.rf.blocks[b]? = some items →
+      Qs R s b items.toList m w → QE R s m w b
+  | fwd {b bx : Nat} {vb vbx : VBlock} {x : Label} : R.vc.blocks[b]? = some vb →
+      R.af.fwd? vb.label = some x → R.vc.blocks[bx]? = some vbx → vbx.label = x →
+      QE R s m w bx → QE R s m w b
+
+/-- **The simulation relation**: inside a block (`Qs`), or at the entry of a block entered
+through forwarding blocks (`QE`). -/
 def Q (R : RL) (s : Arm.ArmState) : MConf CV Arm.ArmState → Prop
   | .run ⟨b, its, m, w⟩ =>
-    ∃ j vb items pre code ls ps1 ps2 T,
-      R.vc.blocks[b]? = some vb ∧ R.rf.blocks[b]? = some items ∧ items.toList = pre ++ its ∧
-      ItemsChecked R vb its ∧
-      itemsCode R.fr vb its = .ok code ∧
-      codeLinesE R.ctx R.af code ps1 = .ok (ls, ps2) ∧
-      ps2.traps.toList <+: R.psF.traps.toList ∧
-      R.L.drop j = relaxLines R.far (ftList (ls ++ nxtOf R.af b)) ++ T ∧
-      Arm.r .PC s = R.pcOf j ∧ StRel R s m w
+    Qs R s b its m w ∨ ∃ items, R.rf.blocks[b]? = some items ∧ its = items.toList ∧ QE R s m w b
   | _ => True
 
 end Backend.Proof

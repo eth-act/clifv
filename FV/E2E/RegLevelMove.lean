@@ -269,8 +269,8 @@ structure RL.Wf (R : RL) : Prop where
   lm : labelOffsets R.fa.lines = .ok R.lm
   fit : 4 * R.fb.words.size ≤ 2 ^ 64
   stack : StackAvail R.K R.af R.s0
-  /-- `psF` is the emitter's final state -/
-  psF : ∃ body, blocksLinesE R.ctx R.af R.af.blocks.toList {} = .ok (body, R.psF)
+  /-- `psF` is the emitter's final state (that of the emission plan) -/
+  psF : ∃ p, emitPlan R.fa.k R.af = .ok p ∧ p.ps = R.psF
   /-- the entry state holds the function's program -/
   prog0 : R.s0.program = R.fb.program R.base
   /-- the kept addresses are not in the frame or the callees' dead stack -/
