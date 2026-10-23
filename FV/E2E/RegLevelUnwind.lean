@@ -32,8 +32,8 @@ def dwarfVal (s : Arm.ArmState) (d : Nat) : BitVec 64 :=
   else if 64 ≤ d ∧ d < 96 then (Arm.r (.SFP (BitVec.ofNat 5 (d - 64))) s).setWidth 64
   else 0
 
-theorem frameRow_rule (fs : Nat) (saved : List (Nat × Int)) (n : Nat) :
-    (frameRow fs saved).rule n =
+theorem frameRow_rule (saved : List (Nat × Int)) (n : Nat) :
+    (frameRow saved).rule n =
       (saved.reverse.lookup n).or (if n = 30 then some (-8) else if n = 29 then some (-16) else none) := by
   simp only [Row.rule, frameRow, List.lookup_append]
   congr 1
@@ -45,12 +45,12 @@ theorem frameRow_rule (fs : Nat) (saved : List (Nat × Int)) (n : Nat) :
     · rw [if_neg h30, if_neg h29, show (n == 30) = false by simpa using h30,
         show (n == 29) = false by simpa using h29]
 
-/-- **The frame invariant of the backend's frame row** from the facts the compiled code keeps
-at its calls: sp + `fs` + 16 = entry sp (the body's sp); the entry x29 and x30 at CFA − 16
-and CFA − 8; each callee-save slot of `saved` holds its register's entry value; every
-callee-saved register without a slot keeps its entry value. -/
-theorem frameAt_frameRow {fs : Nat} {saved : List (Nat × Int)} {s0 t : Arm.ArmState}
-    (hsp : spv t + BitVec.ofNat 64 (fs + 16) = spv s0)
+/-- **The frame invariant of the backend's frame row** (Cranelift's, CFA = x29 + 16) from the
+facts the compiled code keeps at its calls: x29 + 16 = entry sp (the body keeps x29); the entry
+x29 and x30 at CFA − 16 and CFA − 8; each pushed register's slot of `saved` holds its entry
+value; every callee-saved register without a slot keeps its entry value. -/
+theorem frameAt_frameRow {saved : List (Nat × Int)} {s0 t : Arm.ArmState}
+    (hfp : xreg 29 t + 16#64 = spv s0)
     (hfpS : ld64 (spv s0 + BitVec.ofInt 64 (-16)) t = xreg 29 s0)
     (hlr : ld64 (spv s0 + BitVec.ofInt 64 (-8)) t = xreg 30 s0)
     (hsv : ∀ d off, saved.reverse.lookup d = some off →
@@ -58,10 +58,10 @@ theorem frameAt_frameRow {fs : Nat} {saved : List (Nat × Int)} {s0 t : Arm.ArmS
     (hx : ∀ n ∈ calleeSavedX, n ≠ 29 → saved.reverse.lookup n = none → xreg n t = xreg n s0)
     (hv : ∀ n, 8 ≤ n → n < 16 → saved.reverse.lookup (64 + n) = none →
       (Arm.r (.SFP (BitVec.ofNat 5 n)) t).setWidth 64 = (Arm.r (.SFP (BitVec.ofNat 5 n)) s0).setWidth 64) :
-    FrameAt (frameRow fs saved) s0 t where
+    FrameAt (frameRow saved) s0 t where
   cfa := by
     simp only [Row.cfa?, regVal?, frameRow]
-    rw [← hsp]
+    rw [← hfp]
     rfl
   regs := by
     intro n hn
@@ -100,12 +100,10 @@ theorem frameAt_frameRow {fs : Nat} {saved : List (Nat × Int)} {s0 t : Arm.ArmS
       simp only [Option.none_or]
       exact hv n h8 h16 hl
 
-/-- The facts `frameAt_frameRow` needs, for the callee-saves of `af`'s entry block, when the
-activation was entered in `s0` and is at a call in `t`. -/
+/-- The facts `frameAt_frameRow` needs, for the prologue's pushes of `af`, when the activation
+was entered in `s0` and is at a call in `t`. -/
 def FrameSaved (af : AFunc) (s0 t : Arm.ArmState) : Prop :=
-  ∀ lab code saved, af.blocks[0]? = some (lab, code) →
-    ((code.toList.drop 1).takeWhile (·.calleeSave?.isSome)).mapM (saveRow af.frameSize) =
-      some saved → FrameAt (frameRow af.frameSize saved) s0 t
+  FrameAt (frameRow ((pushRows af.saves 8).map offsetPair)) s0 t
 
 /-- **The emitted CFI unwinds a frame at every call** (S10c + S10d): for a function with a
 frame, the FDE bytes `cfiProgram rows` decode, and at every call's return offset − 1 the
@@ -117,10 +115,10 @@ theorem unwind_call_restores {af : AFunc} {fa : FnAsm} {rows : List (Nat × Cfi)
     decodeCfa? (cfiProgram rows).data.toList = some (insnsFrom 0 rows) ∧
     ∃ t', restore (rowAt cieInsns (insnsFrom 0 rows) (ret - 1)) t = some t' ∧
       ArmRet (xreg 30 s0) s0 t' ∧ t'.program = t.program ∧ t'.mem = t.mem := by
-  obtain ⟨hok, lab, code, saved, hb, hsv, hrow⟩ := unwindRows_frame h hf
+  obtain ⟨hok, hrow⟩ := unwindRows_frame h hf
   refine ⟨decodeCfa?_cfiProgram rows hok, ?_⟩
   rw [hrow ret hret]
-  exact restore_frame (hfr lab code saved hb hsv) herr
+  exact restore_frame hfr herr
 
 /-! ## The personality at the backend's calls -/
 
@@ -160,28 +158,31 @@ namespace Witness
 /-- Any state with sp := 4096. -/
 def s0 (s : Arm.ArmState) : Arm.ArmState := Arm.w (.GPR 31#5) 4096#64 s
 
-/-- The frame `t s` of a function with frame size 0 entered in `s0 s`, at a call: entry x29
-at 4080, entry x30 at 4088, sp := 4080. -/
+/-- The frame `t s` of a function with no fixed frame and no pushes entered in `s0 s`, at a
+call: entry x29 at 4080, entry x30 at 4088, x29 = sp := 4080. -/
 def t (s : Arm.ArmState) : Arm.ArmState :=
   Arm.write_mem_bytes 8 4080#64 (xreg 29 (s0 s))
-    (Arm.write_mem_bytes 8 4088#64 (xreg 30 (s0 s)) (Arm.w (.GPR 31#5) 4080#64 (s0 s)))
+    (Arm.write_mem_bytes 8 4088#64 (xreg 30 (s0 s))
+      (Arm.w (.GPR 29#5) 4080#64 (Arm.w (.GPR 31#5) 4080#64 (s0 s))))
 
-theorem t_gpr (s : Arm.ArmState) (n : Nat) (hn : n < 31) :
+theorem t_gpr (s : Arm.ArmState) (n : Nat) (hn : n < 31) (h29 : n ≠ 29) :
     xreg n (t s) = xreg n (s0 s) := by
   simp only [t, xreg, Arm.r_of_write_mem_bytes]
   rw [Arm.r_of_w_different (by
     simp only [ne_eq, Arm.StateField.GPR.injEq]
+    exact ofNat5_ne (b := 29) (by omega) (by omega) h29), Arm.r_of_w_different (by
+    simp only [ne_eq, Arm.StateField.GPR.injEq]
     exact ofNat5_ne (b := 31) (by omega) (by omega) (by omega))]
 
-/-- **Non-vacuity of `restore_frame`**: the frame row of a function with frame size 0 and no
-callee-saves unwinds the frame `t s` to the ABI return of the activation entered in `s0 s`. -/
+/-- **Non-vacuity of `restore_frame`**: the frame row of a function without pushes unwinds the
+frame `t s` to the ABI return of the activation entered in `s0 s`. -/
 theorem restores (s : Arm.ArmState) (herr : Arm.r .ERR s = .None) :
-    ∃ t', restore (frameRow 0 []) (t s) = some t' ∧ ArmRet (xreg 30 (s0 s)) (s0 s) t' := by
+    ∃ t', restore (frameRow []) (t s) = some t' ∧ ArmRet (xreg 30 (s0 s)) (s0 s) t' := by
   have hsp : spv (s0 s) = 4096#64 := by simp [spv, s0, Arm.r_of_w_same]
-  have hfr : FrameAt (frameRow 0 []) (s0 s) (t s) := by
+  have hfr : FrameAt (frameRow []) (s0 s) (t s) := by
     apply frameAt_frameRow
     · rw [hsp]
-      simp only [t, spv, Arm.r_of_write_mem_bytes, Arm.r_of_w_same]
+      simp only [t, xreg, Arm.r_of_write_mem_bytes, Arm.r_of_w_same]
       decide
     · rw [hsp, show (4096#64 + BitVec.ofInt 64 (-16)) = 4080#64 by decide]
       simp only [ld64, t]
@@ -191,14 +192,15 @@ theorem restores (s : Arm.ArmState) (herr : Arm.r .ERR s = .None) :
       rw [Arm.read_mem_bytes_of_write_mem_bytes_different (by decide) (by decide) (by decide)]
       exact Arm.read_mem_bytes_of_write_mem_bytes_same (by decide)
     · intro d off h; simp at h
-    · intro n hn _ _
-      exact t_gpr s n (by simp only [calleeSavedX, List.mem_map, List.mem_range] at hn; omega)
+    · intro n hn h29 _
+      exact t_gpr s n (by simp only [calleeSavedX, List.mem_map, List.mem_range] at hn; omega) h29
     · intro n _ _ _
       simp only [t, Arm.r_of_write_mem_bytes]
-      rw [Arm.r_of_w_different (by simp)]
+      rw [Arm.r_of_w_different (by simp), Arm.r_of_w_different (by simp)]
   have herr' : Arm.r .ERR (t s) = .None := by
     simp only [t, s0, Arm.r_of_write_mem_bytes]
-    rw [Arm.r_of_w_different (by simp), Arm.r_of_w_different (by simp), herr]
+    rw [Arm.r_of_w_different (by simp), Arm.r_of_w_different (by simp),
+      Arm.r_of_w_different (by simp), herr]
   obtain ⟨t', hr, hret, -, -⟩ := restore_frame hfr herr'
   exact ⟨t', hr, hret⟩
 
