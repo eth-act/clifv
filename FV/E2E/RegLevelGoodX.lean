@@ -505,7 +505,8 @@ theorem q_save {R : RL} {s : Arm.ArmState} {b : Nat} {src dst : Loc}
   obtain ⟨rfl, rfl⟩ := h1
   refine ⟨j, vb, items, pre ++ [.move src (.save r)], c2, ls2, ps1, ps2, T, hvb, hit,
     by rw [hsplit]; simp, itemsChecked_move_tail hchk, hc2, h2, htr, by simpa using hdrop, hpc,
-    ⟨fun l hv hL => ?_, hst.world, hst.err, hst.prog, hst.sp, hst.align, hst.fplr, hst.code, hst.gkeep⟩⟩
+    ⟨fun l hv hL => ?_, hst.world, hst.err, hst.prog, hst.sp, hst.align, hst.fplr, hst.code, hst.gkeep,
+      hst.fp⟩⟩
   have hne : l ≠ .save r := by rintro rfl; exact hL
   simp only [upd, hne, ite_false]
   exact hst.store l hv hL

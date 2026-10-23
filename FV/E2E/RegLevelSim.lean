@@ -416,6 +416,9 @@ structure StRel (R : RL) (s : Arm.ArmState) (m : Loc → CV) (w : Arm.ArmState) 
     Arm.read_mem_bytes 4 (R.base + BitVec.ofNat 64 (4 * k)) s = w
   /-- the kept addresses hold what they held at entry -/
   gkeep : ∀ a, R.G a → s.mem a = R.s0.mem a
+  /-- the frame pointer as the prologue set it: x29 = entry sp − 16 (Cranelift's unwind rows
+  define the CFA from x29; the body never writes x29, the callees keep it) -/
+  fp : R.af.frame = true → xreg 29 s = spv R.s0 - 16#64
 
 /-- The checker accepts the remaining items of block `vb` (from VCode index `k`). -/
 def ItemsChecked (R : RL) (vb : VBlock) (its : List RItem) : Prop :=

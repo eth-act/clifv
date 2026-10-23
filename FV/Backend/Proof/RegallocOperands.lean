@@ -121,9 +121,10 @@ def defRegs (ops : Array Operand) (regs : Array Reg) (outs : List CV) : List ((O
 /-- The stack pointer. -/
 def spOf (s : Arm.ArmState) : BitVec 64 := Arm.r (.GPR 31#5) s
 
-/-- `s'` keeps the frame of `s`: same `sp`, same bytes at the frame addresses `F`. -/
+/-- `s'` keeps the frame of `s`: same `sp`, same bytes at the frame addresses `F`, same frame
+pointer x29 (Cranelift's unwind rows define the CFA from x29). -/
 def FrameKeep (F : BitVec 64 → Prop) (s s' : Arm.ArmState) : Prop :=
-  spOf s' = spOf s ∧ ∀ a, F a → s'.mem a = s.mem a
+  spOf s' = spOf s ∧ (∀ a, F a → s'.mem a = s.mem a) ∧ Arm.r (.GPR 29#5) s' = Arm.r (.GPR 29#5) s
 
 /-- **The operand-view obligation** for instruction `i` with control outcome `ctl` (the def
 values, world and preserved registers of the executed instruction; a `try_call`'s call has
@@ -172,7 +173,7 @@ theorem OperandsSoundCtl.at {F FK : BitVec 64 → Prop}
     (s : Arm.ArmState) : OperandsSoundCtlAt F FK exec sem i ctl s := by
   intro c wh ops regs i' w outs w' hops hst hasg hw hal herr hsem
   obtain ⟨s', hex, hW, hK, hd, ho, hc⟩ := h c wh ops regs i' s w outs w' hops hst hasg hw hal herr hsem
-  exact ⟨s', hex, hW, ⟨hK.1, fun a ha => hK.2 a (hFK a ha)⟩, hd, ho, hc⟩
+  exact ⟨s', hex, hW, ⟨hK.1, fun a ha => hK.2.1 a (hFK a ha), hK.2.2⟩, hd, ho, hc⟩
 
 theorem OperandsSoundCtlAt.mono {F FK FK' : BitVec 64 → Prop}
     {exec : MInst → Arm.ArmState → Option Arm.ArmState} {sem : ISem CV Arm.ArmState} {i : MInst}
@@ -180,7 +181,7 @@ theorem OperandsSoundCtlAt.mono {F FK FK' : BitVec 64 → Prop}
     (hFK : ∀ a, FK' a → FK a) : OperandsSoundCtlAt F FK' exec sem i ctl s := by
   intro c wh ops regs i' w outs w' hops hst hasg hw hal herr hsem
   obtain ⟨s', hex, hW, hK, hd, ho, hc⟩ := h c wh ops regs i' w outs w' hops hst hasg hw hal herr hsem
-  exact ⟨s', hex, hW, ⟨hK.1, fun a ha => hK.2 a (hFK a ha)⟩, hd, ho, hc⟩
+  exact ⟨s', hex, hW, ⟨hK.1, fun a ha => hK.2.1 a (hFK a ha), hK.2.2⟩, hd, ho, hc⟩
 
 deriving instance ReflBEq, LawfulBEq for RegClass
 deriving instance ReflBEq, LawfulBEq for Reg
