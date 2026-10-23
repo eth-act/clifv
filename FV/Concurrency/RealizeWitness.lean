@@ -31,7 +31,7 @@ open Arm ArmThread Prog ClifThread ProgE2E Backend Backend.Proof Backend.Proof.D
 program). -/
 theorem inSubset_of {f : Clif.Function} (hv : verifiable f = true) (hext : f.externs = [])
     (p : Clif.Program) : InSubset p f := by
-  simp only [verifiable, abiSigs, indSigsOk, Bool.and_eq_true, List.all_eq_true,
+  simp only [verifiable, abiSigs, indSigsAbiOk, Bool.and_eq_true, List.all_eq_true,
     decide_eq_true_eq, and_assoc] at hv
   obtain ⟨hE, hf, hext', hind⟩ := hv
   have hno : ∀ fn e, f.extern? fn = some e → False := fun fn e he => by
