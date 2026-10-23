@@ -928,3 +928,24 @@ import FVTest.Concurrency.LitmusFull
 #print axioms Concurrency.ArmAllocThread.resume_premises_of_retC
 #print axioms Concurrency.CallRetResume.Witness.retC_RX -- witness: native_decide
 #print axioms Concurrency.CallRetResume.Witness.resume_premises_RX -- witness: native_decide
+#print axioms Concurrency.LinkedMachine.Link.prog_ne
+#print axioms Concurrency.LinkedMachine.Link.find_eq
+#print axioms Concurrency.LinkedMachine.Link.cur_eq
+#print axioms Concurrency.LinkedMachine.Link.M_eq_step
+#print axioms Concurrency.LinkedMachine.Link.agreesAt_M
+#print axioms Concurrency.LinkedMachine.Link.M_bl
+#print axioms Concurrency.LinkedMachine.Link.M_ret
+#print axioms Concurrency.LinkedMachine.Link.M_ret_prog
+#print axioms Concurrency.LinkedMachine.Link.M_ret_x30
+#print axioms Concurrency.LinkedMachine.Witness.ok2 -- witness: native_decide
+#print axioms Concurrency.LinkedMachine.Witness.H_ld -- witness: native_decide
+#print axioms Concurrency.LinkedMachine.Witness.M_blC -- witness: native_decide
+#print axioms Concurrency.LinkedMachine.Witness.M_retL -- witness: native_decide
+#print axioms Concurrency.LinkedMachine.Witness.agreesAtC -- witness: native_decide
+#print axioms Concurrency.LinkedMachine.Witness.agreesAtL -- witness: native_decide
+#print axioms Concurrency.CallResumeAll.setTargets_call
+#print axioms Concurrency.CallResumeAll.sameInst_call
+#print axioms Concurrency.CallResumeAll.pmatch_call_fwd
+#print axioms Concurrency.CallResumeAll.atCall_of_pause
+#print axioms Concurrency.CallResumeAll.resume_all
+#print axioms Concurrency.CallResumeAll.Witness.resume_all_fC -- witness: native_decide

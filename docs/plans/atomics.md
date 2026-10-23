@@ -869,11 +869,29 @@ they are; the per-thread layers are new files.
         entry, callee-saved registers up to `ckeep` the checker entry values),
         **`retC_of_retEnd`**, **`resume_premises_of_retC`** (every premise of `resume_layersR`
         but the program from `RetC` of a callee entered at the caller's call); witnesses
-        `retC_RX`, `resume_premises_RX` (the `atomic_load` callee at `sBF`, a return with `42`);
+        `retC_RX`, `resume_premises_RX` (the `atomic_load` callee at `sBF`, a return with `42`).
+        **The caller resumed at every layer (done, `CallResumeAll.lean`, witness
+        `CallResumeAllWitness.resume_all_fC`)**: `atCall_of_pause` (at the call end of
+        `arm_isel_refinesCRN` the allocated configuration is at the `call` item, with
+        `pmatch_call_fwd`: `prepare` keeps a `call`), **`resume_all`** (from that end and a
+        callee's `RetC`, its returned values in its `rets` registers and its `MemRel` at its
+        `rets`: `Match`/`PMatch`/`MatchRun`/`Q`/`AInv` at the item after the call, i.e.
+        `arm_isel_refinesCRN`'s premises for the caller's next segment; layer 2 by
+        `isel_resumeC`, layers 3–4b by `mstep_callR`/`alloc_call_vstep`/`prep_vstep_next`/
+        `resumeQW`, the two VCode steps equal by `vstep_det`). Static premises left to the
+        general theorem: the call's defs virtual, the callee's `rets` registers the call's def
+        registers, `#defs = #sigRets` (checks on the lowered code). **The linked machine (done,
+        `LinkedMachine.lean`, witness `LinkedMachineWitness.lean`)**: `LFn` (an activation's
+        static data), `Link` (named functions), `Link.enter`/`Link.H` (a `bl` of a linked
+        function enters it as `enterL` does), `Link.act F s0 K G` (the activation), `Link.M`
+        (the current function's step; at its `ret` the program of the function containing the
+        return address); under `Link.Ok` (laid out, disjoint code ranges): `agreesAt_M`,
+        `M_eq_step`, `M_bl`, `M_ret`, `M_ret_prog`, `M_ret_x30`; witness `link2` (the two
+        witness functions; `M_blC`, `M_retL`, `agreesAtC`, `agreesAtL`).
         (iv) the thread-wide private set (every activation's `PrivA` and the CLIF events' avoidance
         of it; with CLIF stack slots in callees the private sets of different activations overlap
-        other activations' slots) and a linked machine dispatching on the program of the return
-        address; then `SegOk`, `link_compose_ext`, and `realizes_call_full`/the rmw-callee witness
+        other activations' slots); then `SegOk`, `link_compose_ext`, and `realizes_call_full`/the
+        rmw-callee witness
         as instances. **Scope measurement (2026-10-23)** for the planned first scope "functions
         without CLIF stack slots" (`f.slots = []`), on the retained `bin-check` CLIF dumps:
         functions using atomics (`atomic_load/store/rmw/cas`, `fence`) without slots — fv-demo
