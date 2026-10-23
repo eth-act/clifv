@@ -451,7 +451,8 @@ theorem chainP_entry (hS : StatOk L env p g) {cs : Clif.State} {B0 : Clif.Block}
 done `return` (below its caller's frame), the epilogue and `ret` realize the CLIF return into the
 caller: the whole run, the caller's result registers not fitting (no label realized), or the
 return realized, ending at the caller's resumed frame on the caller's program. -/
-theorem ret_seg {Bnd : Nat → Prop} (hS : StatOk L env p g) (hb : ∀ a, PrivA (g.RL L) a → Bnd a)
+theorem ret_seg {Bnd : Nat → Prop} (hok : L.Ok) (hmem : (g.nm, g.F) ∈ L.fns) (hwf : (g.RL L).Wf)
+    (habi : AbiCall g.F.fb g.F.base g.ra g.s0) (hb : ∀ a, PrivA (g.RL L) a → Bnd a)
     {cnm : String} (hcA : (cnm, g.caller) ∈ L.fns) (hrA : g.caller.InRange g.ra)
     (hra : ∀ k < g.F.fb.words.size, g.ra ≠ g.F.base + BitVec.ofNat 64 (4 * k))
     {caller : Clif.Frame} {results : List Clif.ValueId} {cs : List (Clif.Frame × List Clif.ValueId)}
@@ -471,7 +472,7 @@ theorem ret_seg {Bnd : Nat → Prop} (hS : StatOk L env p g) (hb : ∀ a, PrivA 
           d' = (encT U (.run ⟨{ caller with regs := regs }, cs, cm⟩),
             fun a => D a ∨ PrivA (g.RL L) a)) := by
   obtain ⟨n, vals, cm, -, hdone, hRC, -, hall⟩ :=
-    CallRetT.realizedT_ret (Bnd := Bnd) hS.ok hS.mem hS.wf hS.abi hra hcA hrA hret hat hcall hb
+    CallRetT.realizedT_ret (Bnd := Bnd) hok hmem hwf habi hra hcA hrA hret hat hcall hb
   cases hreg : caller.regs.setMany results vals with
   | none =>
     exact ⟨0, (encT U (.run (ClifLift.pushC g.ext sR)), D), RealizedT.zero _ _ _,

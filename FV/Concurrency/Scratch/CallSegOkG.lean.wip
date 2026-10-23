@@ -1,6 +1,8 @@
 import FV.Concurrency.CallSegOkG
 
-/-! SCRATCH (WIP, contains `sorry`; imported by nothing). -/
+/-! SCRATCH (#473, WIP, contains `sorry`). Not a module: the `.wip` extension keeps it out of the
+`FV.+` glob and of every import, so no build sees it. Check it by hand with
+`lake env lean FV/Concurrency/Scratch/CallSegOkG.lean.wip` after `lake build FV.Concurrency`. -/
 
 namespace Concurrency.CallSegOkG
 
