@@ -250,7 +250,8 @@ theorem segsOf_spec {c : FnCtx} {af : AFunc} :
     ∀ {bs : List ((Label × Array AInst) × Nat)} {ps psF : PState} {ss : List Seg},
       segsOf c af bs ps = .ok (ss, psF) →
       ss.length = bs.length ∧ ps.traps.toList <+: psF.traps.toList ∧
-      ∀ i s, ss[i]? = some s → ∃ code ps1 psm ps2, bs[i]? = some ((s.label, code), s.idx) ∧
+      ∀ (i : Nat) (s : Seg), ss[i]? = some s → ∃ (code : Array AInst) (ps1 psm ps2 : PState),
+        bs[i]? = some ((s.label, code), s.idx) ∧
         codeLinesE c af code.toList.dropLast ps1 = .ok (s.body, psm) ∧
         codeLinesE c af code.toList.getLast?.toList psm = .ok (s.term, ps2) ∧
         ps.traps.toList <+: ps1.traps.toList ∧ ps2.traps.toList <+: psF.traps.toList
@@ -311,8 +312,7 @@ theorem emitOrder_nodup (af : AFunc) : ((emitOrder af).map (·.2)).Nodup := by
   have hp := (emitOrder_perm af).map (·.2)
   refine hp.nodup_iff.mpr ?_
   have : (af.blocks.toList.zipIdx.map (·.2)) = List.range af.blocks.toList.length := by
-    rw [List.zipIdx_eq_zip_range']
-    simp [List.range_eq_range']
+    rw [List.zipIdx_eq_zip_range', List.map_snd_zip (by simp), List.range_eq_range']
   rw [this]
   exact List.nodup_range
 
@@ -330,26 +330,12 @@ theorem emitOrder_get {af : AFunc} {x : (Label × Array AInst) × Nat} (h : x �
   rw [List.mem_zipIdx_iff_getElem?] at this
   simpa using this
 
-/-- `splitSegs` gives one final line list per segment. -/
-theorem splitSegs_length : ∀ {ss : List Seg} {L : List Line} {os : List (List Line)},
-    splitSegs ss L = some os → os.length = ss.length
-  | [], [], os, h => by simp [splitSegs] at h; subst h; rfl
-  | [], _ :: _, _, h => by simp [splitSegs] at h
-  | s :: ss, [], _, h => by simp [splitSegs] at h
-  | s :: ss, ln :: L, os, h => by
-    unfold splitSegs at h
-    split at h
-    · rename_i l rest he
-      simp only [List.cons.injEq] at he
-      obtain ⟨rfl, rfl⟩ := he
-      split at h
-      · cases h
-      split at h
-      · cases h
-      simp only [Option.map_eq_some_iff] at h
-      obtain ⟨os', h', rfl⟩ := h
-      simp [splitSegs_length h']
-    · cases h
+/-- `segsOk` pairs every segment with one final line list. -/
+theorem segsOk_length {af : AFunc} {ss : List Seg} {os : List (List Line)} {L : List Line}
+    (h : segsOk af ss os L = true) : os.length = ss.length := by
+  unfold segsOk at h
+  simp only [Bool.and_eq_true, beq_iff_eq] at h
+  exact h.1.1.symm
 
 /-- What `machPlan` accepts. -/
 theorem machPlan_spec {af : AFunc} {a : Bool} {ss : List Seg} {ps : PState} {p : Plan}
@@ -361,11 +347,12 @@ theorem machPlan_spec {af : AFunc} {a : Bool} {ss : List Seg} {ps : PState} {p :
   split at h
   · cases h
   rename_i os hos
+  dsimp only at h
   split at h
   · rename_i hok
     simp only [Option.some.injEq] at h
     subst h
-    refine ⟨rfl, rfl, splitSegs_length hos, hok, fun x hx => ?_⟩
+    refine ⟨rfl, rfl, segsOk_length hok, hok, fun x hx => ?_⟩
     simp only [List.mem_filter] at hx
     exact hx.2
   · cases h
@@ -399,7 +386,7 @@ theorem emitPlan_spec {k : Nat} {af : AFunc} {p : Plan} (h : emitPlan k af = .ok
       exact ⟨by rw [e1, e2]; exact hr, by rw [e1]; exact e3, .inl (by rw [← e1] at e4; exact e4), e5⟩
     | none =>
       simp only [h1, h2, Option.orElse, Option.getD]
-      exact ⟨hr, by simp, .inr ⟨rfl, rfl⟩, fun x hx => by simp at hx⟩
+      exact ⟨hr, by simp, .inr ⟨trivial, trivial⟩, fun x hx => by simp at hx⟩
 
 /-- Segment `i` in `segLines`: its label line, its body and final lines, then the next
 segments. -/
@@ -493,14 +480,16 @@ theorem segAt_of {k : Nat} {af : AFunc} {p : Plan} (hp : emitPlan k af = .ok p) 
     have := (List.getElem?_eq_some_iff.mp hz).1; simp at this; omega
   have hjz : j < (p.segs.zip p.outs).length := by
     have := (List.getElem?_eq_some_iff.mp hz).1; omega
-  simp only [List.getElem_zip, beq_iff_eq, Bool.not_eq_true', decide_eq_false_iff_not]
-  intro he
   have hi : i < p.segs.length := by
     have := (List.getElem?_eq_some_iff.mp hz).1; simp at this; omega
   have hsi : p.segs[i] = s := by simpa using (List.getElem?_eq_some_iff.mp hs).2
-  have := (List.Nodup.getElem_inj_iff hnd (i := j) (j := i) (by simpa using hj') (by simpa using hi)).mp
-    (by simp [he, hsi])
-  omega
+  simp only [List.getElem_zip]
+  have hne : p.segs[j].idx ≠ s.idx := by
+    intro he
+    have := (List.Nodup.getElem_inj hnd (i := j) (j := i) (hi := by simpa using hj')
+      (hj := by simpa using hi)).mp (by simp [he, hsi])
+    omega
+  simpa using hne
 
 /-- **Block `b` in the final lines**: its label at line `j`, then the relaxation of its body and
 its final lines, then the following segments and the traps. -/
@@ -524,12 +513,10 @@ theorem emit_seg {k : Nat} {af : AFunc} {fa : FnAsm} (h : emitFunc k af = .ok fa
   obtain ⟨hl, -, hss⟩ := segsOf_spec hseg
   have hm := emitOrder_mem hbc
   obtain ⟨i, hi⟩ := List.getElem?_of_mem hm
-  obtain ⟨s, hs⟩ : ∃ s, p.segs[i]? = some s := by
-    refine Option.isSome_iff_exists.mp ?_
-    rw [List.isSome_getElem?, hl]; exact (List.getElem?_eq_some_iff.mp hi).1
-  obtain ⟨o, ho⟩ : ∃ o, p.outs[i]? = some o := by
-    refine Option.isSome_iff_exists.mp ?_
-    rw [List.isSome_getElem?, hlen, hl]; exact (List.getElem?_eq_some_iff.mp hi).1
+  have hil : i < p.segs.length := by rw [hl]; exact (List.getElem?_eq_some_iff.mp hi).1
+  obtain ⟨s, hs⟩ : ∃ s, p.segs[i]? = some s := ⟨_, List.getElem?_eq_getElem hil⟩
+  obtain ⟨o, ho⟩ : ∃ o, p.outs[i]? = some o :=
+    ⟨_, List.getElem?_eq_getElem (by rw [hlen]; exact hil)⟩
   obtain ⟨code', ps1, psm, ps2, hb, e1, e2, -, p2⟩ := hss i s hs
   rw [hi] at hb
   simp only [Option.some.injEq, Prod.mk.injEq] at hb
@@ -538,9 +525,9 @@ theorem emit_seg {k : Nat} {af : AFunc} {fa : FnAsm} (h : emitFunc k af = .ok fa
   refine ⟨i, s, o, (relaxLines F A).length, ps1, psm, ps2, hs, ho, rfl, rfl, segAt_of hp hs ho,
     ?_, ?_, e1, e2, p2, fun h0 => ?_⟩
   · rw [hL, Plan.lines, hA]
-    simp [relaxLines, relaxLine]
+    simp [relaxLines, relaxLine, Line.relaxable?]
   · rw [hL, Plan.lines, hA]
-    simp [relaxLines, relaxLine, List.drop_append]
+    simp [relaxLines, relaxLine, Line.relaxable?, List.drop_append]
   · -- the entry block is the first segment
     rw [h0] at hi hbc
     have hh := emitOrder_head (af := af) (e := (s.label, code)) hbc
@@ -551,7 +538,7 @@ theorem emit_seg {k : Nat} {af : AFunc} {fa : FnAsm} (h : emitFunc k af = .ok fa
     have e : ((emitOrder af).map (·.2))[i]'(by simpa using hlt) =
         ((emitOrder af).map (·.2))[0]'(by simpa using hlt0) := by
       simp [(List.getElem?_eq_some_iff.mp hi).2, (List.getElem?_eq_some_iff.mp hi0).2]
-    have : i = 0 := (List.Nodup.getElem_inj_iff (emitOrder_nodup af)).mp e
-    simp [hA0 this]
+    have : i = 0 := (List.Nodup.eq_of_getElem_eq (emitOrder_nodup af) _ _ e)
+    simp [hA0 this, relaxLines]
 
 end Backend
