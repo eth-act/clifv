@@ -318,3 +318,7 @@ constants and a complete non-final-division source witness. All old variants and
 existing consumer imports remain. Continue immediately with the generalized
 source return/trap domain, classifier and default consumers; this dependency
 alone is not broader production activation or full140completion.
+
+## Returned division at arbitrary scalar body positions
+
+Implementation `b1990ec02ff083882720dcc436d638c0db5f2b04` passes the current author gates; [terminal evidence](../research/stock-returned-div-production-activation.md) records the actual results and remote backup. The arbitrary-position class extends the default shared consumers while keeping old selectors, theorem variants and original inputs. Full #140 remains open; next derive genuine sink exclusion for unused/consumed division and continue every original effect/control/whole-driver/completeness obligation.
