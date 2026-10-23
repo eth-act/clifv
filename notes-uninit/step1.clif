@@ -1,0 +1,119 @@
+test interpret
+test run
+target aarch64
+
+function %f184() -> i32, i32 system_v {
+    ss0 = explicit_slot 8, align = 4
+                                block0:
+                                    nop 
+                                    jump block1
+                                block1:
+                                    nop 
+                               v0 = iconst.i32 2
+                               v1 = stack_addr.i64 ss0
+                               store notrap v0, v1  ; v0 = 2
+                               v2 = stack_addr.i64 ss0
+                               v3 = load.i32 notrap v2
+                               v4 = stack_addr.i64 ss0+4
+                               v5 = load.i32 notrap v4
+                               return v3, v5
+}
+; run: %f184() == [2, 0]
+
+function %f379() -> i64, i64 system_v {
+    ss0 = explicit_slot 16, align = 8
+                                block0:
+                                    nop 
+                                    jump block1
+                                block1:
+                                    nop 
+                               v0 = iconst.i64 0
+                               v1 = stack_addr.i64 ss0
+                               store notrap v0, v1  ; v0 = 0
+                               v2 = stack_addr.i64 ss0
+                               v3 = load.i64 notrap v2
+                               v4 = stack_addr.i64 ss0+8
+                               v5 = load.i64 notrap v4
+                               return v3, v5
+}
+; run: %f379() == [0, 0]
+
+function %f398() -> i64, i64 system_v {
+    ss0 = explicit_slot 16, align = 8
+                                block0:
+                                    nop 
+                                    jump block1
+                                block1:
+                                    nop 
+                               v0 = iconst.i64 0
+                               v1 = iconst.i64 0
+                               v2 = icmp eq v0, v1  ; v0 = 0, v1 = 0
+                               v3 = iconst.i64 0
+                               v4 = stack_addr.i64 ss0
+                               store notrap v3, v4  ; v3 = 0
+                               v5 = stack_addr.i64 ss0
+                               v6 = load.i64 notrap v5
+                               v7 = stack_addr.i64 ss0+8
+                               v8 = load.i64 notrap v7
+                               return v6, v8
+}
+; run: %f398() == [0, 0]
+
+function %f388(i64, i64) -> i64, i64 system_v {
+    ss0 = explicit_slot 16, align = 8
+    ss1 = explicit_slot 16, align = 8
+                                block0(v0: i64, v1: i64):
+                                    nop 
+                                    v2 = stack_addr.i64 ss1
+                                    store notrap v0, v2
+                                    v3 = stack_addr.i64 ss1+8
+                                    store notrap v1, v3
+                                    jump block1
+                                block1:
+                                    nop 
+                               v4 = stack_addr.i64 ss1
+                               v5 = load.i64 notrap v4
+                               v6 = iconst.i64 0xffff_ffff
+                               v7 = icmp ugt v5, v6  ; v6 = 0xffff_ffff
+                               brif v7, block2, block6
+                                block6:
+                               v8 = ireduce.i32 v5
+                               br_table v8, block2, [block3, block4]
+                                block2 cold:
+                               nop 
+                               trap user1
+                                block3:
+                               nop 
+                               v9 = iconst.i64 1
+                               v10 = stack_addr.i64 ss0
+                               store notrap v9, v10  ; v9 = 1
+                               v11 = stack_addr.i64 ss0
+                               v12 = load.i64 notrap v11
+                               v13 = stack_addr.i64 ss0+8
+                               v14 = load.i64 notrap v13
+                               return v12, v14
+                                block4:
+                               nop 
+                               v15 = stack_addr.i64 ss1+8
+                               v16 = load.i64 notrap v15
+                               v17 = stack_addr.i64 ss0+8
+                               store notrap v16, v17
+                               v18 = iconst.i64 0
+                               v19 = stack_addr.i64 ss0
+                               store notrap v18, v19  ; v18 = 0
+                               v20 = stack_addr.i64 ss0
+                               v21 = load.i64 notrap v20
+                               v22 = stack_addr.i64 ss0+8
+                               v23 = load.i64 notrap v22
+                               return v21, v23
+                                block5:
+                               nop 
+                               v24 = stack_addr.i64 ss0
+                               v25 = load.i64 notrap v24
+                               v26 = stack_addr.i64 ss0+8
+                               v27 = load.i64 notrap v26
+                               return v25, v27
+}
+; run: %f388(0, 7) == [1, 0]
+; run: %f388(1, 7) == [0, 7]
+

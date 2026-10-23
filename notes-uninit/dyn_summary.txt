@@ -1,0 +1,2 @@
+fv-demo: test runs 21, runs with >=1 uninit stack read by Lean code 9, uninit reads 135, distinct functions 34, Lean loads 30404 (stack-checked 29083), Lean activations 14052
+survey: test runs 53, runs with >=1 uninit stack read by Lean code 46, uninit reads 3039, distinct functions 149, Lean loads 5538955 (stack-checked 5338980), Lean activations 1267573
