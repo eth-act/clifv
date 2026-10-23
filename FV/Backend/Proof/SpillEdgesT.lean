@@ -144,7 +144,7 @@ end
 theorem lowOk_ofT {f : Clif.Function} {vc : VCode} (hd : Dominated f) (hs : LowerScopeT f)
     (ha : ArityOk f) (htc : Compile.tryArgClassOk f = true) (h : lowerFunction f = .ok vc) :
     LowOk vc := by
-  obtain ⟨ctx, st0, bl, RR, H⟩ := lowT_of h
+  obtain ⟨ctx, st0, bl, RR, H⟩ := lowT_of hs.externsE h
   obtain ⟨gn, hRR⟩ := H.ren
   have hbt : ∀ B ∈ f.blocks, BrIdxTyped ctx B.term := by
     obtain ⟨ctx', st0', R', gn', bl', A', hshape, -, hbt'⟩ :=
@@ -384,7 +384,7 @@ theorem lowOk_ofT {f : Clif.Function} {vc : VCode} (hd : Dominated f) (hs : Lowe
 /-- **`lowerFunction`'s VCode is in `prepare`'s domain** (`prepDomain_of_lower`, typed scope). -/
 theorem prepDomain_ofT {f : Clif.Function} {vc : VCode} (hd : Dominated f) (hs : LowerScopeT f)
     (h : lowerFunction f = .ok vc) : Prep.PrepDomain vc := by
-  obtain ⟨ctx, st0, bl, RR, H⟩ := lowT_of h
+  obtain ⟨ctx, st0, bl, RR, H⟩ := lowT_of hs.externsE h
   have hbt : ∀ B ∈ f.blocks, BrIdxTyped ctx B.term := by
     obtain ⟨ctx', st0', R', gn', bl', A', hshape, -, hbt'⟩ :=
       loweringT_of_check (lowerCheckT_complete hd hs h)

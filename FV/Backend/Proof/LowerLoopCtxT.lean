@@ -142,6 +142,13 @@ theorem LowerScope.toT {f : Clif.Function} (hs : LowerScope f) : LowerScopeT f :
   ⟨Compile.functionET_of_functionE hs.subsetE, hs.nonempty, hs.noEntryPred, hs.ctxFacts,
     hs.tryRet, hs.stackLayout⟩
 
+/-- The externs of a typed-scope function have integer signatures. -/
+theorem LowerScopeT.externsE {f : Clif.Function} (hs : LowerScopeT f) :
+    f.externs.all (Compile.sigE ·.2.sig) = true := by
+  have h := hs.subsetT
+  simp only [Compile.functionET, Bool.and_eq_true] at h
+  exact h.1.1.1.2
+
 /-! ## Construction -/
 
 theorem mem_mCTys_of_valTyOk {ty : Clif.Ty} (h : valTyOk ty = true) : CTy.ofClif ty ∈ mCTys := by

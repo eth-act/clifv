@@ -4,7 +4,9 @@ import FV.Backend.Proof.LowerLoop
 /-!
 # The typed loop simulation (S11e5 Stage C, slice 3)
 
-`lowerFunction_runT`: on every input, `lowerFunction`'s VCode is `vcBlocksOfT f ctx bl`, the
+`lowerFunction_runT`: for a function whose externs have integer signatures (`Compile.sigE`; the
+recorded lowering `lowBlocks` lowers a `try_call` only on integer signatures, `lowerFunction`
+also on `f32`/`f64` ones, S11e6), `lowerFunction`'s VCode is `vcBlocksOfT f ctx bl`, the
 typed raw blocks (`rawBlockT`) and edge blocks (`edgeBlocksT`) of the recorded lowering, renamed
 by the alias resolution, with the typed loop facts `LoopFactsT` (branch and `try_call` arguments
 in their values' class vregs `vregOf ctx`).
@@ -51,14 +53,16 @@ structure LoopFactsT (f : Clif.Function) (ctx : Ctx) (bl : List BLow) : Prop whe
 
 variable {f : Clif.Function} {vc : VCode}
 
-/-- **The typed loop simulation (V1d)**, on every input: `lowerFunction`'s imperative loop
-computes what `lowBlocks` records, and its VCode is `vcBlocksOfT f ctx bl`. -/
-theorem lowerFunction_runT (h : lowerFunction f = .ok vc) :
+/-- **The typed loop simulation (V1d)**, for a function whose externs have integer signatures:
+`lowerFunction`'s imperative loop computes what `lowBlocks` records, and its VCode is
+`vcBlocksOfT f ctx bl`. -/
+theorem lowerFunction_runT (hx : f.externs.all (Compile.sigE ·.2.sig) = true)
+    (h : lowerFunction f = .ok vc) :
     ∃ ctx ranges st0 bl, buildCtx f = .ok (ctx, ranges, st0) ∧
       lowBlocks f (stmtCall ctx) (termCallF ctx) (tryCallF ctx) 0 f.blocks st0 f.blocks.length =
         some bl ∧
       vc.blocks = vcBlocksOfT f ctx bl ∧ vc.outgoing = outOf st0 bl ∧ LoopFactsT f ctx bl := by
-  obtain ⟨ctx, ranges, st0, pb, d, bl, hb, hpb, hI, rfl⟩ := loop_runT h
+  obtain ⟨ctx, ranges, st0, pb, d, bl, hb, hpb, hI, rfl⟩ := loop_runT hx h
   have hlow := hI.low
   rw [List.take_of_length_le (Nat.le_refl _)] at hlow
   have hmem : ∀ B ∈ f.blocks, ∃ bi, bi < f.blocks.length ∧ f.blocks[bi]? = some B := by
@@ -144,7 +148,9 @@ theorem lowerFunction_run_of_runT (hE : Compile.functionE f = true) (h : lowerFu
       lowBlocks f (stmtCall ctx) (termCallF ctx) (tryCallF ctx) 0 f.blocks st0 f.blocks.length =
         some bl ∧
       vc.blocks = vcBlocksOf f bl ∧ vc.outgoing = outOf st0 bl ∧ LoopFacts f ctx bl := by
-  obtain ⟨ctx, ranges, st0, bl, hb, hl, hvb, hout, hlf⟩ := lowerFunction_runT h
+  have hx : f.externs.all (Compile.sigE ·.2.sig) = true := by
+    simp only [Compile.functionE, Bool.and_eq_true] at hE; exact hE.1.2
+  obtain ⟨ctx, ranges, st0, bl, hb, hl, hvb, hout, hlf⟩ := lowerFunction_runT hx h
   have hc : CtxE ctx := (ctxSpec_of hb).ctxE hE
   exact ⟨ctx, ranges, st0, bl, hb, hl, by rw [hvb, vcBlocksOfT_int hc], hout, hlf.toInt hc⟩
 

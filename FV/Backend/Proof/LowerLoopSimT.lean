@@ -6,9 +6,14 @@ import FV.Backend.Proof.LowerLoopSim
 
 `LowerLoopSim.lean` over the typed model: the loop invariant `LIT` holds the typed raw blocks
 `rawBlockT` (entry `Args`/`stackArgLoad`s `preT`, typed result copies `segT`, parameters and jump
-arguments of their classes) and the typed edge blocks `edgeBlocksT`. `loop_runT` needs no premise
-on `f`: `buildCtx` gives every value the vreg of its type's class, which is what the typed model
-says (`loop_run` takes `Compile.functionE` because its model is integer).
+arguments of their classes) and the typed edge blocks `edgeBlocksT`. `loop_runT` takes one
+premise on `f`, that its externs have integer signatures (`Compile.sigE`, part of
+`Compile.functionE`/`functionET`): `buildCtx` gives every value the vreg of its type's class,
+which is what the typed model says, but the recorded lowering `lowBlocks` lowers a `try_call`
+with the integer operand (`lowTerm`: `exnTableOpnd`, `tryRegsOf`), while `lowerFunction` also
+lowers one of a callee with `f32`/`f64` parameters or returns (`exnTableOpndC`, S11e6); on
+integer externs they agree (`tryCallData_of_C`). `loop_run` takes `Compile.functionE` because
+its model is integer.
 -/
 
 namespace Backend.Proof.Driver
@@ -71,7 +76,8 @@ def rawBlockT (f : Clif.Function) (ctx : Ctx) (bl : List BLow) (bi : Nat) (B : C
       | _ => #[] }
 
 theorem bodyPart_okT {f : Clif.Function} {ctx : Ctx} {ranges : Array (Nat × Nat)} {st0 : LState}
-    (sp : CtxSpec f ctx ranges st0) {k : Nat} {B : Clif.Block} (hB : f.blocks[k]? = some B)
+    (sp : CtxSpec f ctx ranges st0) (hx : f.externs.all (Compile.sigE ·.2.sig) = true)
+    {k : Nat} {B : Clif.Block} (hB : f.blocks[k]? = some B)
     {d : DState} {code : Array MInst} {d' : DState} (he : d.st.emitted = #[])
     (h : bodyPart f ctx B k (blockStart f k) (blockStart f k + B.body.length + 1) d code = .ok (.yield d')) :
     ∃ s data, SInvT ctx (blockStart f k) B.body d code B.body.length s ∧ DataOk f B.term data ∧
@@ -90,12 +96,12 @@ theorem bodyPart_okT {f : Clif.Function} {ctx : Ctx} {ranges : Array (Nat × Nat
     split at h
     · cases h
     rename_i data hd
-    exact ⟨data, hS, by simp only [DataOk, ht]; rw [← ht]; exact hd, h⟩
+    exact ⟨data, hS, by simp only [DataOk, ht]; rw [← ht]; exact tryCallData_of_C hx hd, h⟩
   · rename_i c args et ht
     split at h
     · cases h
     rename_i data hd
-    exact ⟨data, hS, by simp only [DataOk, ht]; rw [← ht]; exact hd, h⟩
+    exact ⟨data, hS, by simp only [DataOk, ht]; rw [← ht]; exact tryCallData_of_C hx hd, h⟩
   · rename_i hn1 hn2
     split at h
     · cases h
@@ -161,7 +167,8 @@ theorem rawBlock_lastT {f : Clif.Function} {ctx : Ctx} {bl : List BLow} {k : Nat
   rcases B.body[j]? with _ | stm <;> rcases L.sl[j]? with _ | sl <;> rfl
 
 theorem blockStepT {f : Clif.Function} {ctx : Ctx} {ranges : Array (Nat × Nat)} {st0 : LState}
-    (sp : CtxSpec f ctx ranges st0) {paramBytes : List Nat}
+    (sp : CtxSpec f ctx ranges st0) (hx : f.externs.all (Compile.sigE ·.2.sig) = true)
+    {paramBytes : List Nat}
     (hpb : sigParamBytes f.sig = .ok paramBytes)
     {k : Nat} {B : Clif.Block} (hB : f.blocks[k]? = some B) {d d' : DState} {blk : List BLow}
     (hI : LIT f ctx st0 k d blk) (h : blockBody f ctx ranges paramBytes (B, k) d = .ok (.yield d')) :
@@ -200,7 +207,7 @@ theorem blockStepT {f : Clif.Function} {ctx : Ctx} {ranges : Array (Nat × Nat)}
       refine ⟨#[], ?_, h, fun h' => absurd h' hk0'⟩
       obtain ⟨k', rfl⟩ := Nat.exists_eq_succ_of_ne_zero hk0'
       simp [preT]
-  obtain ⟨s, data, hS, hdata, hT⟩ := bodyPart_okT sp hB hI.em hbp
+  obtain ⟨s, data, hS, hdata, hT⟩ := bodyPart_okT sp hx hB hI.em hbp
   obtain ⟨sls, hl, hbl, hed, hnl, hal, hcode, hem, hres⟩ := hS
   rw [List.take_length] at hl hal hcode hres
   have hsls := lowStmts_len hl
@@ -292,8 +299,10 @@ theorem blockStepT {f : Clif.Function} {ctx : Ctx} {ranges : Array (Nat × Nat)}
 /-! ## The whole loop -/
 
 /-- **The loop, run, typed**: `lowerFunction`'s final loop state satisfies the typed invariant
-after all blocks, on every input (no scope premise). -/
-theorem loop_runT {f : Clif.Function} {vc : VCode} (h : lowerFunction f = .ok vc) :
+after all blocks, for a function whose externs have integer signatures (S11e6: `lowerFunction`
+lowers a `try_call` of a float signature, the recorded lowering `lowTerm` does not). -/
+theorem loop_runT {f : Clif.Function} {vc : VCode} (hxe : f.externs.all (Compile.sigE ·.2.sig) = true)
+    (h : lowerFunction f = .ok vc) :
     ∃ ctx ranges st0 paramBytes d bl, buildCtx f = .ok (ctx, ranges, st0) ∧
       sigParamBytes f.sig = .ok paramBytes ∧ LIT f ctx st0 f.blocks.length d bl ∧
       vc = finishVC f d (slotLayout f.slots).2 := by
@@ -336,7 +345,7 @@ theorem loop_runT {f : Clif.Function} {vc : VCode} (h : lowerFunction f = .ok vc
       rw [hB] at hx
       simp only [Option.map_some, Option.some.injEq, Nat.zero_add] at hx
       subst hx
-      obtain ⟨L, hL⟩ := blockStepT sp hpb hB hI hs
+      obtain ⟨L, hL⟩ := blockStepT sp hxe hpb hB hI hs
       exact ⟨_, hL⟩
   · intro x b b' hb'
     have := blockBody_yield hb'
