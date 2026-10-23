@@ -23,6 +23,11 @@ def sha(path):
 
 
 def expected_roots(prefix="Mixed"):
+    if prefix == "GeneralDivProduction":
+        return set().union(*(expected_roots(prefix + layout) - {
+            f"Stock{prefix}{layout}2Retained{mode}FallbackGlobal"
+            for mode in ("Plain", "Cleanup") if layout != "unused"
+        } for layout in ("unused", "consumed", "multiple")))
     roots = set()
     for mode in ("Plain", "Cleanup"):
         for policy in ("Strict", "Fallback"):
@@ -158,10 +163,12 @@ def main():
         # Keep every Crates module under one import root; Lean chooses the first
         # matching package directory and does not search another partial root.
         cli_hashes = {}
+        layouts = ("unused", "consumed", "multiple") if options.kind == "generaldiv" else ("",)
         for mode, flags in (("Plain", ["--no-dead-cleanup"]), ("Cleanup", [])):
-            bundle = generated / f"Stock{prefix}2{mode}FallbackGlobal-bundle"
-            retained = generated / f"Stock{prefix}2Retained{mode}FallbackGlobal-bundle"
-            for label, source in (("current", bundle), ("retained", retained)):
+            cases = [("current" + layout, generated / f"Stock{prefix}{layout}2{mode}FallbackGlobal-bundle")
+                     for layout in layouts]
+            retained = generated / f"Stock{prefix}{layouts[0]}2Retained{mode}FallbackGlobal-bundle"
+            for label, source in [*cases, ("retained", retained)]:
                 proof = generated / "Crates" / f"{prefix}CLI{label}{mode}.lean"
                 proof.parent.mkdir(exist_ok=True)
                 run(f"link-check-{label}-{mode}", ["lake", "env", str(view / ".lake/build/bin/link-check"),
@@ -178,10 +185,13 @@ def main():
                     env.pop("LEAN_PATH", None)
                 else:
                     env["LEAN_PATH"] = original_leanpath
-            linked = run("verified-link-" + mode, ["lake", "env", str(view / ".lake/build/bin/lean-link"),
-                str(bundle), "--verified", *flags])
-            assert "written by Link.SemanticCompilerWith.compile" in linked
-            assert "attempt_correct_source_peak" in linked
+            for layout in layouts:
+                bundle = generated / f"Stock{prefix}{layout}2{mode}FallbackGlobal-bundle"
+                label = "verified-link-" + (layout + "-" if layout else "") + mode
+                linked = run(label, ["lake", "env", str(view / ".lake/build/bin/lean-link"),
+                    str(bundle), "--verified", *flags])
+                assert "written by Link.SemanticCompilerWith.compile" in linked
+                assert "attempt_correct_source_peak" in linked
         audit = output / "GeneratedAxioms.lean"
         audit.write_text("\n".join("import " + module for module in audit_imports) + r'''
 open Lean Elab Command
