@@ -2,7 +2,10 @@ import FV.E2E.SpillKillFree
 import FV.Backend.Proof.KillDriverT
 import FV.Backend.Proof.KillTryDefsT
 import FV.Backend.Proof.KillAssembleT
-import FV.E2E.LinkScopeInputT
+import FV.E2E.LinkScopeInputDefsT
+import FV.E2E.LinkScopeT
+import FV.Backend.Proof.LowerDecide
+import FV.Backend.Proof.SpillArity
 
 /-!
 # `killFreeB` on the typed scope, proven (S11 slice 8, totality half)
@@ -61,13 +64,6 @@ theorem killFreeB_of_scopeT {g : Clif.Function} {vc vcp : VCode} (hd : dominated
     Spill.killFreeB vcp = true :=
   spillKillFreeT (dominated_of hd) (lowerScopeT_of hs) (abiSigsOk_of_checks habi hext hind)
     (Spill.arityOk_of har) htc hl hp
-
-/-- **`lowerOutTB`'s `killFreeB` conjunct is implied by the rest of the typed input scope.** -/
-theorem killFreeB_of_fnScopeInT {g : Clif.Function} {vc vcp : VCode} (h : fnScopeInTB g = true)
-    (hl : lowerFunction g = .ok vc) (hp : Backend.prepare vc = .ok vcp) :
-    Spill.killFreeB vcp = true := by
-  obtain ⟨-, -, htc, habi, hext, hind, -, -, -, -, hd, hs, har, -⟩ := fnScopeInT_parts h
-  exact killFreeB_of_scopeT hd hs habi hext hind har htc hl hp
 
 end LinkCheck
 

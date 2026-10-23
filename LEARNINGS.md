@@ -27,6 +27,7 @@ None of these weaken what is proven: every compiler theorem still prints only `p
 ### Never reduce the whole generated program in the kernel
 - **Trick:** compute table properties with an untrusted generator that writes literal data, then check the data with small leaf-wise `decide +kernel` certificates (e.g. `TermSetData.lean` + `KillTab.lean`, `IselPrgTab.lean`). Split each conjunction and check one entry per leaf.
 - **Why:** whole-table `decide`/`native_decide` hit 20+ GB or needed compiled evaluation. Leaf-wise checks stay small and need no extra axioms (T6 removed every `native_decide` from the compiler theorems this way).
+- **Cost (measured 2026-10-22, `LEAN_NUM_THREADS=2`):** the per-entry `chkEntry` certificates of the ISLE progress tables are the slowest leaf-wise checks: `IselPrgTab` (V7, ~1000 entries) 3100 s at 5.0 GB, `IselPrgTabT` (typed scope, 1090 entries) 68.6 min. The time is the sum of the entries' kernel checks (each one already its own leaf), so smaller chunks do not shorten it; keep their imports narrow so they rebuild rarely (S11 FloatProg).
 
 ### Split one leaf further: chunk its environments
 - **Problem:** one leaf of the typed coverage table (`stmtOkT rule_lower_2267`, a `select` rule on the integer-`select` family) has 256 pattern environments; its single `decide +kernel` was killed at 8, 16 and 22 GB, while its 30 other families take ~1 s together. Kernel memory grows with the environments checked in one `decide` (32 environments: 4.7 GB incl. 2.8 GB of imports).

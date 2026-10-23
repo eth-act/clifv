@@ -152,9 +152,17 @@ The proof covers them as follows.
   dumps (2026-10-22): every function returning its `sret` pointer passes (fv-demo 234, survey
   249, `examples/deps` 4966). Witness: `SretReturnWitness.sw_returns_sret` (the cg_clif shape
   `(i64 sret, i64)` storing its argument through the pointer, compiled by the real pipeline,
-  all contract premises discharged by the `NonVacuity` callees). The variants (`_cleanup`, the
-  typed `…T`, `_unwind`, the linked and executable theorems) keep the CLIF-values conclusion:
-  in a linked program the callers are Lean-compiled and never read x0 after an `sret` call.
+  all contract premises discharged by the `NonVacuity` callees). The dead-cleanup variant has
+  its `_abi` copies (`FV/E2E/SretReturnCleanup.lean`: `backend_correct_final_cleanup_abi`,
+  `backend_correct_final_cleanup_sret`, witness `SretReturnCleanup.sw_returns_sret_cleanup`),
+  and so has the typed chain (`FV/E2E/SretReturnT.lean`: `ArmRefinesTAbi`, each value of
+  `vals ++ sretArg f args` in the return register of its class in the combined list;
+  `backend_correct_finalT_abi`, `backend_correct_finalT_sret` for an integer `sret` parameter;
+  driver `term_stepT_abi`/`sim_runT_abi`/`driver_correctT_abi`, `term_stepT`/`sim_runT`/
+  `driver_correctT` the corollaries; witness `SretReturnWitness.sw_returns_sretT`).
+  The other variants (`_unwind`, the linked and executable theorems) keep the
+  CLIF-values conclusion: in a linked program the callers are Lean-compiled and never read x0
+  after an `sret` call.
 * **Calls**: `gen_call_args` puts argument `i` at `(locsOf sig)[i]`: a register (with at most 8
   parameters `x (abiArgIdx …)[i]`, `sigArgLocs_regs`) or a store to `[sp + off]` of the outgoing
   area (`argStores_run`); `gen_call_output` allocates one def per
@@ -510,6 +518,21 @@ the `retN`/value arguments).
   handlers' labels are CFG successors (`cfg_spec`) and none is the entry block (`EdgesOk.entry`,
   `preds_empty`). Corollaries `callSites_complete_input`, `padsNonzero_complete_input`; witness
   `Witness.tryInfoOk_applies`/`input_applies` (`FV/Link/UnwTryInWitness.lean`, on `tc`).
+  **`unwCheck` from the input** (`FV/Link/UnwCheckIn.lean`): `unwCheck_complete` — on input in
+  `Dominated`/`LowerScope` with `tryTablesB` and **`tryRetsB f`** (every `try_call` signature has
+  at most two ABI returns, so the call defines x0 and x1 only, as `tryUOk` requires; decidable on
+  the CLIF function), `unwCheck f vc` holds for `lowerFunction f = .ok vc`. Parts: a call
+  statement's code contains a call (`Backend.Proof.stmtCall_hasCall`, `UnwCallStmt.lean`: the
+  rules of `lower` whose root format is `Call`/`CallIndirect` are the `call` rules 1031–1033 and
+  the `return_call` rules 1038–1040, which never match a call; one kernel decision
+  `lower_callHas_fmts`); a `try_call` rule emits call-free code then one call with the
+  `try_call` defs (`Backend.Proof.UnwShape.tryEmS_run`, `UnwTryShape.lean`, the inversions of
+  `KillTryDefs` with the code kept), so the call is last, its operands compute, its defs are late
+  with distinct vregs and fixed to x0/x1, and an `exnN` argument is the def in `xN`; the first
+  handler's label holds `lowerFunction`'s edge block (`edgeBlocks`, found at its label by
+  `LowerShape.labels`); the edge into the handler's block satisfies `Cert`'s edge conditions
+  (`Driver.edgeOk_succ`: `certBlock_ok`'s edge argument for every successor, not only the normal
+  edge). Witness `Witness.unwCheck_applies` (`FV/Link/UnwCheckInWitness.lean`, on `tc`).
   **`savedCheck` and `SaveOk`** (`FV/Link/UnwSavedIn.lean`): the allocation part by construction —
   `savedCheckRF_spill` (spill allocation), `savedCheckRF_build` (regalloc2's answer as `buildRFunc`
   reads it: the saved registers are every callee-saved register its locations mention), so
@@ -520,8 +543,28 @@ the `retN`/value arguments).
   (no further callee-save store right after the saves; an allocator answer storing a
   callee-saved register into a spill slot there passes `checkAlloc` but gives wrong rows, so
   `savedCheckAF` rightly rejects it). Witness `Witness.savedCheck_applies`/`unwindRows_frame_applies`.
-  Open: `unwCheck`, `lastCallsOk` (needs an input condition: a callee called by a `try_call` and
-  by a call of the last block), `ehOkR` on lean-ld's output, the totality theorem.
+  **What is left, collected** (`FV/Link/UnwFnIn.lean`): `unwCondB g a` = the input condition
+  `tryTablesB`, the frame conditions `saveFrameB`/`leadOkB`, code below 4 GiB, and the two checks
+  without a completeness proof yet, `unwCheck` and `lastCallsOk`; `fnUnwB_of_pipe` (a function
+  of `fnScopeB` whose cleanup pipeline succeeded, any allocator answer, passes `fnUnwB`) and
+  `unwFnsB_of_conds` (on an `InScopeIn` input, `unwCondsB` of the compiled functions gives
+  `unwFnsB`). **Totality with unwinding on `lean-ld`'s inputs** (`FV/Link/ExeULdIn.lean`):
+  `Link.DeadCleanup.compileExeU_total_ldIn` — `compileExe_total_ldIn`'s premises plus `unwCondsB`:
+  `lean-ld` links, `compileExe` succeeds, and `compileExeU` succeeds once the written executable
+  passes `ehOkR`; witness `ULdInWitness.compileExeU_total_ldIn_witness`.
+  **Measured** (report only: `lake exe lean-link` prints `unwinding conditions:` per executable,
+  `Link.DeadCleanup.unwReport`; debug, panic=unwind, `--lean-link --verified`, lean-ld): fv-demo
+  2 executables (461 and 903 functions, 83/173 with `try_call`), survey 18 executables (3,179
+  functions, 498 with `try_call`), fv-demo `--build-std` (28,554 functions, 3,596 with
+  `try_call`) and deps' `deps_demo` (17,091 functions, 2,588 with `try_call`): `saveFrameB` 0,
+  `leadOkB` 0, `tryTablesB` 0, `unwCheck` 0, `ehOkR` 0, `lastCallsOk` 3 in deps (3 `regex`
+  functions; 5 before #484) and 1 in std (measured before #484). `saveFrameB` is a real
+  run-time limit of the current frame layout (save slots after the spill area): a function with
+  a > 32 KiB spill area stores its callee-saves through x16 without CFI rows, and a panic
+  unwinding through it does not restore them (repro on #479; stock cg_clif saves them under the
+  frame record and is not affected). Frame change tracked in #479.
+  Open: completeness of `unwCheck` and `lastCallsOk` (needs an input condition: a callee called
+  by a `try_call` and by a call of the last block), `ehOkR` on lean-ld's output.
 * **The executable-bytes machine with unwinding (S10g, #404)** (`FV/E2E/DeadCleanupExecUnwind.lean`):
   `E2E.DeadCleanupExecBytes.stepU I B Ub file` is `DeadCleanupExecBytes.step` (the processor on
   the file's words; calls of code outside the program and TLS by the base hooks; a call of a
@@ -4085,10 +4128,28 @@ functions over the validation budget (`Backend.validationBudget`: instructions �
 `compiled, unverified (validation budget)`.
 
 **Functions outside the theorem** (`FV/Backend.lean` `unverifiedReason?`: outside
-clif-subset-v2 E, calls (also `try_call`s) of functions of the same file, special-purpose parameters other than one `sret` pointer (`abiSigs`), indirect calls
+clif-subset-v2 E and its typed scope, calls (also `try_call`s) of functions of the same file, special-purpose parameters other than one `sret` pointer (`abiSigs`), indirect calls
 with more than 8 parameters or special-purpose parameters (`indSigsOk`)) are still
 compiled, without validation, and reported as unverified (`FileAsm.unverified`; `lean-backend`
 prints `compiled, unverified (outside backend_correct): …`).
+
+**The typed scope (S11e5 Stage C).** A function outside subset E is inside the theorem when
+it is in the typed scope (`Backend.verifiableT`: `Compile.functionET` — float parameters,
+returns, block parameters, loads, stores, constants, `select`, `bitcast` — with
+`Compile.storeTypedB`, `abiSigs`, `indSigsOk`); its lowering is validated by the typed
+validator `lowerCheckT` (`Backend.lowerCheckFor`: `lowerCheck` on subset E, `lowerCheckT`
+outside it; `lowerCheckT_of_lowerCheck`), and the theorems are `backend_correct_finalT`/
+`backend_correct_final_cleanupT` with `E2E.typedRules_program` (returns by class,
+`ArmRefinesT`). `FV/E2E/VerifiableT.lean`: `InSubsetT.of_verifiableT`,
+`verifiable_or_verifiableT_of_unverifiedReason`, `lowerChecked_spec`; witness
+`FVTest/E2E/FloatVerifiedW.lean`. Float arithmetic (`fadd` …, `fcmp`, conversions) stays
+outside (`functionET` has no arithmetic). The Stock routes are integer-only (their eligibility
+requires `i32`/`i64` signatures and bodies): on a typed function they produce `lowerFunction`'s
+code, accepted only by `lowerCheck` (which implies `lowerCheckT`, `lowerCheckT_of_lowerCheck`) or,
+as the last retry, by `lowerChecked`'s `lowerCheckT`.
+`lean-link --verified` stays integer-only (decision 2026-10-22): its claim reaches the Rust
+source through front-end theorems (`Front.bundle_correct_raw*`) that exist only for integers;
+the typed scope widens plain `lean-link` only.
 
 ## Contract changes taken (byte-identical)
 
