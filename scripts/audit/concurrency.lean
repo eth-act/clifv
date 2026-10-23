@@ -1028,3 +1028,10 @@ import FVTest.Concurrency.LitmusFull
 #print axioms Concurrency.CallSegT.Witness.avoid_written
 #print axioms Concurrency.CallSegT.Witness.cut_unwritten
 #print axioms Concurrency.CallSegT.Witness.seg_nil
+#print axioms Concurrency.IselCheck.obligations_of_checksA
+#print axioms Concurrency.IselResume.driverHypT_ofA
+#print axioms Concurrency.LinkedMachine.Link.call_end
+#print axioms Concurrency.LinkedMachine.Witness.sig_fL -- witness: native_decide
+#print axioms Concurrency.LinkedMachine.Witness.name_extF -- witness: native_decide
+#print axioms Concurrency.LinkedMachine.Witness.driverA_fC -- witness: native_decide
+#print axioms Concurrency.LinkedMachine.Witness.call_end_fC -- witness: native_decide
