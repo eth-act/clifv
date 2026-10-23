@@ -259,7 +259,7 @@ allocation was lowered.
 
 Measured (`scripts/stock-crate-parity.py`, debug, byte-identical functions vs cg_clif):
 fv-demo 303 (Lean allocator) → 338 (regalloc2 on the legacy numbering) → 491 of 1372;
-survey a_arith/d_loops_iters/f_crypto/g_u128 293 → 523 of 1562. Every regalloc2 answer was
+survey a_arith/d_loops_iters/f_crypto/g_u128 293 → 531 of 1562. Every regalloc2 answer was
 accepted (0 spill fallbacks); in fv-demo 486 functions get the Stock numbering, and of the
 functions where the allocation is the only remaining cause none does: their code differs from
 Cranelift's (causes in #551).
