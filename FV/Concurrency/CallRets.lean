@@ -1,5 +1,6 @@
 import FV.Concurrency.IselCallRet
 import FV.Concurrency.CallLayers
+import FV.Concurrency.CallResume
 
 /-!
 # The `rets` end of an activation (#473, (1))
@@ -65,6 +66,28 @@ theorem ret_pause (H : DriverHypT f vc ctx st0 R gn bl A (csem F fc X) MR env p)
     exact .inl (.inl (done_of_step (evShape_term hbody) (by rw [hs]; rfl)))
   | stuck m =>
     exact .inl (.inl (done_of_step (evShape_term hbody) (by rw [hs]; rfl)))
+
+/-- **The CLIF return pop in a linked thread**: a bottom frame whose `return` is done with
+`vals` and `cm`, under suspended callers `(caller, results) :: cs`, steps without events to the
+caller with the results bound and the memory `cm` (`ClifCStepTerm.cstep_ret_pop`). -/
+theorem ret_pop {env : Clif.Env} {p : Clif.Program} {s : Clif.State} (hcall : s.callers = [])
+    (hbody : s.frame.body = []) {xs : List Clif.ValueId} (hT : s.frame.term = .ret xs)
+    {vals : List Clif.Val} {cm : Clif.Mem}
+    (hs : Clif.step env p s = .done vals cm) {caller : Clif.Frame}
+    {results : List Clif.ValueId} {cs : List (Clif.Frame × List Clif.ValueId)}
+    {regs : Clif.Regs} (hr : caller.regs.setMany results vals = some regs) :
+    CStep env p (.run (ClifLift.pushC ((caller, results) :: cs) s)) []
+      (.run ⟨{ caller with regs := regs }, cs, cm⟩) := by
+  rw [Clif.step_term env p s hbody, hT] at hs
+  obtain ⟨-, -, hdn⟩ := stepTerm_ret (env := env) (p := p) (s := s) (xs := xs) hcall
+  obtain ⟨hg, rfl⟩ := hdn vals cm hs
+  have hs' := hs
+  simp only [Clif.stepTerm, hg, Clif.StepResult.ofRes, Clif.returnValues, hcall] at hs'
+  rcases checkTys_cases s!"return values of %{s.frame.func.name}" vals
+    (Clif.AbiParam.tys s.frame.func.sig.returns) with ⟨hc, -⟩ | ⟨m, hc⟩
+  · exact cstep_ret_pop (s := ClifLift.pushC ((caller, results) :: cs) s) hbody hT hg hc
+      (by simp [ClifLift.pushC, hcall]) hr
+  · rw [hc] at hs'; cases hs'
 
 theorem thin_refl {α : Type} : ∀ (l : List (List α)), Thin l l
   | [] => .nil
