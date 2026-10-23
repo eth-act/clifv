@@ -1004,3 +1004,14 @@ import FVTest.Concurrency.LitmusFull
 #print axioms Concurrency.CallArgsL2.setMany_some
 #print axioms Concurrency.CallArgsL2.isel_argsAt
 #print axioms Concurrency.CallArgsL2.Witness.resLen_fC -- witness: native_decide
+#print axioms Concurrency.CallArgsEntry.allRegs?_eq
+#print axioms Concurrency.CallArgsEntry.callUseRegsBl_of_C
+#print axioms Concurrency.CallArgsEntry.callUseRegs_of
+#print axioms Concurrency.CallArgsEntry.match_atCallU
+#print axioms Concurrency.CallArgsEntry.regArgs_get
+#print axioms Concurrency.CallArgsEntry.argsHold_of_uses
+#print axioms Concurrency.CallArgsEntry.callee_args
+#print axioms Concurrency.CallArgsEntry.regVal_bodyOf_enter
+#print axioms Concurrency.CallArgsEntry.callee_argsAtEntry
+#print axioms Concurrency.CallArgsEntry.callee_argsAtEntry_sig
+#print axioms Concurrency.CallArgsEntry.Witness.useRegs_fC -- witness: native_decide
