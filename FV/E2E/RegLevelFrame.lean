@@ -59,24 +59,6 @@ theorem spAdjLines_tail (sub : Bool) (size : Nat) :
       · simp only [List.mem_singleton, Line.ins.injEq] at hln
         obtain ⟨rfl, -⟩ := hln; cases sub <;> rfl
 
-theorem spAdjLines_noLoads (sub : Bool) (size : Nat) :
-    ∀ i t, Line.ins i t ∈ spAdjLines sub size → i.loads = false := by
-  intro i t hln
-  unfold spAdjLines at hln
-  split at hln
-  · simp at hln
-  · split at hln
-    · simp only [List.mem_singleton, Line.ins.injEq] at hln
-      obtain ⟨rfl, -⟩ := hln; rfl
-    · rw [List.mem_append] at hln
-      rcases hln with hln | hln
-      · exact loadConst64_noLoads _ _ _ _ hln
-      · simp only [List.mem_singleton, Line.ins.injEq] at hln
-        obtain ⟨rfl, -⟩ := hln; rfl
-
-
-
-
 theorem stepsOk_interOk {env : Env} {ls : List Line} {s s' : Arm.ArmState} (h : StepsOk env ls s s')
     (herr : Arm.r .ERR s = .None) : InterOk env ls s := by
   intro k _ _ s1 h1
