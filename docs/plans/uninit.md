@@ -1,7 +1,7 @@
 # SEM1: reads of uninitialised stack bytes (#537)
 
-Status: design (2026-10-23, agent UninitSem). Implementation has not started; the decision in §5 is
-open.
+Status: design (2026-10-23, agent UninitSem). The decision in §5 is open. A design-B prototype
+and its checks are in §8.
 
 ## 1. The gap
 
@@ -168,8 +168,8 @@ returned during the outside call is then out of bounds in CLIF memory (a `notrap
 plus an environment that simulates the allocator byte-exactly. That is impractical: 44/53 survey
 and 5/21 fv-demo test runs do such accesses. Uninitialised heap *bytes* are never read (0 runs),
 so a fix needs only allocating externs: the allocation must avoid the stack and the code, which is
-what the `valid` clauses of `OutsideCall` already demand of the entry memory. This needs its own
-issue and plan.
+what the `valid` clauses of `OutsideCall` already demand of the entry memory. Tracked in
+[#547](https://github.com/eth-act/clifv/issues/547).
 
 ## 7. Interaction with the atomics layer
 
@@ -179,3 +179,25 @@ byte stuck, which matches today's `Clif.run`.
   applies to every step of `Z P`.
 - Under A a masked byte has a value, so the mask places no constraint on the oracle runs; the
   `CStepI` lemmas stay true for `init = none`.
+
+## 8. Prototype and checks (branch `agent/uninit-sem`, not merged)
+
+`Opt.zeroSlots` (design B's `Z`, `FV/Opt/ZeroSlots.lean`) and `clif-filetest --zero-slots`.
+Test input: every leaf function among the static scan's findings with integer
+parameters/returns, 310 functions (`notes-uninit/gen_uninit_runtests.py`), each on 5 argument
+tuples. Compared with the Cranelift interpreter (`clif-oracle interp`, zero-filled stack):
+- without `Z`: 742 runs `stuck (read of uninitialised memory)`;
+- with `Z`: 0 such runs, and 1,070 runs agree with the interpreter;
+- the remaining 314 disagreements are out-of-bounds accesses through the synthetic pointer
+  arguments (the interpreter does not check them), not slot reads.
+
+Run-time cost of `Z` on the test runs: 0.94 (fv-demo) and 1.70 (survey) extra stores per Lean
+activation, about 0.4 per load executed by Lean code (`notes-uninit/zcost.txt`).
+
+Design A, statement preservation: with the oracle inside `enterSlots`, several internal lemmas
+quantified over every memory become false on oracle states: `ClifThreadI.enterSlots_bytes`
+(slot bytes masked to `none`), `LinkArm.initState_mem` (callee slot bytes `none`), and
+`enterSlots_place` if the counter lives in `Place`. They would need an `init = none` premise, or
+the oracle semantics would have to be a separate copy of the interpreter. Either way that adds to
+A's cost.
+
