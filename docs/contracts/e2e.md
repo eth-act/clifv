@@ -160,9 +160,45 @@ The proof covers them as follows.
   `backend_correct_finalT_abi`, `backend_correct_finalT_sret` for an integer `sret` parameter;
   driver `term_stepT_abi`/`sim_runT_abi`/`driver_correctT_abi`, `term_stepT`/`sim_runT`/
   `driver_correctT` the corollaries; witness `SretReturnWitness.sw_returns_sretT`).
-  The other variants (`_unwind`, the linked and executable theorems) keep the
-  CLIF-values conclusion: in a linked program the callers are Lean-compiled and never read x0
-  after an `sret` call.
+  The executable theorem has its copy too: `Link.DeadCleanup.compileExe_correct_abi`
+  (`FV/Link/DeadCleanupExeAbi.lean`; premise `sretStableB f` for the outside-called `f`,
+  conclusion `ExecRefinesAbi … (sretArg f args)`), through `FV/E2E/SretReturnLink.lean`
+  (`backend_correct_program_{core,budget,stack}_abi`, `binary_correct{,_of_checks}_abi`,
+  `binary_correct_exec_{staticN,of_reads,of_insn,proven}_abi`) and `FV/E2E/SretReturnWorld.lean`
+  (`backend_correct_world{,_cleanup,_pipeline}_abi`). Only the outside activation's return is
+  strengthened: its return branch applies `backend_correct_world_pipeline_abi` to `f` with the
+  callee contracts of the unchanged linked induction (`LinkSys.thm` at depth `M - 1`), so a
+  compiled callee's contract still claims only its CLIF results (a Lean-compiled caller never
+  reads x0 after an `sret` call). `sret_reach` holds for the per-activation run on `P.bare`
+  (no program functions, every call an extern). Witness: `Link.DeadCleanup.SretWitness
+  .exec_returns_sret` (`function %s(i64 sret)` compiled by `compileExeU`, x0 = the pointer).
+  Over the mid-end: `backend_correct_opt_abi`/`backend_correct_opt_proven_abi`
+  (`FV/E2E/SretReturnOpt.lean`; premise `sretStableB (Opt.optimize f cfg)`, the optimiser keeps
+  the signature so `sretArg` is the source's; witness `SretReturnWitness.sw_opt_abi`). Through
+  the `i128` legalisation: `backend_correct_legal{,_env,_wide,_env_wide}_abi`
+  (`FV/E2E/SretReturnLegal.lean`; premise `sretStableB g` on the legalised `g`, conclusion
+  `ArmRefinesLegalAbi … (sretArg g args')`; witness `SretReturnWitness.swl_legal_abi`, an
+  `(i64 sret, i128)` function legalised by the compiler's pass); the dead-cleanup copies
+  `backend_correct_legal{,_env}_cleanup_abi` (`FV/E2E/SretReturnLegalCleanup.lean`, witness
+  `swl_legal_cleanup_abi`). The other variants (the linked `_unwind` theorems, the direct/opt
+  legalisation copies, `OptX`/`_opt_exe*`) keep the CLIF-values conclusion.
+  *With unwinding* (`agent/AbiS7d-unw`, `FV/E2E/SretReturnUnwind.lean`):
+  `E2E.backend_correct_final_unwind_abi` (and `_ex_abi` for `CompiledA`) has
+  `backend_correct_final_unwind`'s premises plus `sretStableXB f` and the conclusion
+  `ArmRefinesUAbi … (sretArg f args) (Clif.runLoopX …)` (returns: x0.. hold `vals ++ sretArg f
+  args`; traps and exceptions as `ArmRefinesU`, `ArmRefinesUAbi.armRefinesU`);
+  `backend_correct_final_unwind_sret`: for an `sret` parameter `i` and no returns, a returned run
+  with unwinding leaves `args[i]` in x0 (`vals = []` by `runLoopX_returned_tys_entry`). Chain:
+  `sim_runX_abi`/`driver_correctU_abi` (`RunOkUAbi Q`, `FV/Backend/Proof/LowerSimUAbi.lean`),
+  `IselSimUAbi`, `iselSimUAbi_of_driver`, `iselSimU_final_abi`,
+  `backend_correct_of_layersU_ex_abi`. A caught exception continues at a `try_call`'s handler
+  block, which `sretStableB`'s `runTargets` do not include, so the CLIF fact (`sret_reachX`,
+  `FV/Backend/Proof/SretStableX.lean`: `StOkX`, `stOkX_stepX`, `stOkX_reach` over
+  `E2E.ReachX`; pending `jump`s to normal-return or handler blocks) takes the stronger check
+  `sretStableXB f` = `sretStableB f` and no handler block (`exnTargets`) has the `sretRet f` value
+  as a parameter (also guaranteed by Cranelift's verifier; not measured on the crates). Witness:
+  `SretReturnUnwindWitness.sw_returns_sret_unwind` (`sw` with its compilation and unwinding
+  tables, `unwCheck`, `XRaise.none`/`Unw.UnwHooks.none`).
 * **Calls**: `gen_call_args` puts argument `i` at `(locsOf sig)[i]`: a register (with at most 8
   parameters `x (abiArgIdx …)[i]`, `sigArgLocs_regs`) or a store to `[sp + off]` of the outgoing
   area (`argStores_run`); `gen_call_output` allocates one def per

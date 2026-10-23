@@ -59,26 +59,39 @@ theorem brInsn_of {bc : Insn} {t : Lbl}
   · exact .inr (.inr (.inl ⟨_, _, _, _, rfl⟩))
   · exact .inr (.inr (.inr ⟨_, _, _, _, rfl⟩))
 
+/-- A branch instruction is unhooked and not a `ret`. -/
+theorem brInsn_hooked {x : Insn} (hx : BrInsn x) : x.hooked = false ∧ x ≠ .ret := by
+  rcases hx with ⟨l, rfl⟩ | ⟨c, l, rfl⟩ | ⟨nz, w, r, l, rfl⟩ | ⟨nz, r, bit, l, rfl⟩ <;>
+    exact ⟨rfl, by simp⟩
+
 /-- **`reach_b` with the steps' facts**: the steps have no event and are no store exclusive; no
-step only when the `b` was dropped, the next line defining the target. -/
+step only when the `b` was dropped, the next line defining the target; every state before the
+last step is at an unhooked line other than `ret`. -/
 theorem reach_bE {R : RL} (hR : R.Wf) {s : ArmState} {j0 : Nat} {x : Lbl} {Z T : List Line}
     (hdrop : R.L.drop j0 = relaxLines R.far (ftList (.ins (.b x) none :: Z)) ++ T) (hx : x ≠ .skip)
     (hprog : s.program = R.fb.program R.base) (hpc : Arm.r .PC s = R.pcOf j0)
     (herr : Arm.r .ERR s = .None) :
     ∃ n jl, iterN R.step n s = Arm.w .PC (R.pcOf jl) s ∧ R.L[jl]? = some (.label x) ∧
-      NoEvSteps R n s ∧ (n = 0 → ∃ Z', Z = .label x :: Z') := by
+      NoEvSteps R n s ∧ (n = 0 → ∃ Z', Z = .label x :: Z') ∧
+      ∀ i < n, AtNonRet R (iterN R.step i s) := by
   rcases ft_b x Z with ⟨Z', rfl, he⟩ | he
   · rw [he, ft_label, relaxLines_cons, relaxLine_label, List.singleton_append] at hdrop
-    refine ⟨0, j0, ?_, drop_get hdrop, fun i hi => by omega, fun _ => ⟨Z', rfl⟩⟩
+    refine ⟨0, j0, ?_, drop_get hdrop, fun i hi => absurd hi (by omega),
+      (And.intro (fun _ => ⟨Z', rfl⟩) fun i hi => absurd hi (by omega))⟩
     simp only [iterN]; rw [← hpc, Arm.w_irrelevant]
   · rw [he, relaxLines_cons, relaxLine_of_none rfl, List.singleton_append] at hdrop
     obtain ⟨a, jl, ha, hjl, hstep⟩ := step_branch hR (drop_get hdrop) (.inl rfl) hx hprog hpc herr
-    refine ⟨1, jl, ?_, hjl, fun i hi => ?_, fun h => by cases h⟩
+    refine ⟨1, jl, ?_, hjl, fun i hi => ?_,
+      (And.intro (fun h => absurd h (by omega)) fun i hi => ?_)⟩
     · simp only [iterN]; rw [hstep, brCond_b ha]; rfl
     · obtain rfl : i = 0 := by omega
       exact br_noEv hR (drop_get hdrop) (.inl ⟨_, rfl⟩) hprog hpc herr
+    · obtain rfl : i = 0 := by omega
+      exact ⟨j0, .b x, none, drop_get hdrop, (brInsn_hooked (x := .b x) (.inl ⟨x, rfl⟩)).2,
+        (brInsn_hooked (x := .b x) (.inl ⟨x, rfl⟩)).1, hpc⟩
 
-/-- **`reach_rcb` with the steps' facts**, at least one step. -/
+/-- **`reach_rcb` with the steps' facts**, at least one step; every state before the last step is
+at an unhooked line other than `ret`. -/
 theorem reach_rcbE {R : RL} (hR : R.Wf) {s : ArmState} {j0 : Nat} {bc : Insn} {t : Lbl}
     {T : List Line} (hdrop : R.L.drop j0 = relaxLine R.far (.ins bc none) ++ T)
     (hbc : (∃ c, bc = .bcond c t) ∨ (∃ nz w r, bc = .cbz nz w r t) ∨ (∃ nz r bit, bc = .tbz nz r bit t))
@@ -90,7 +103,7 @@ theorem reach_rcbE {R : RL} (hR : R.Wf) {s : ArmState} {j0 : Nat} {bc : Insn} {t
     ∃ n jl, iterN R.step n s = Arm.w .PC (R.pcOf jl) s ∧
       (cond = true → R.L[jl]? = some (.label t)) ∧
       (cond = false → jl = j0 + (relaxLine R.far (.ins bc none)).length) ∧
-      NoEvSteps R n s ∧ 0 < n := by
+      NoEvSteps R n s ∧ 0 < n ∧ ∀ i < n, AtNonRet R (iterN R.step i s) := by
   have hform : bc = .b t ∨ (∃ c, bc = .bcond c t) ∨ (∃ nz w r, bc = .cbz nz w r t) ∨
       (∃ nz r bit, bc = .tbz nz r bit t) := .inr hbc
   rcases relaxLine_cases R.far bc with h | ⟨t', ht', h⟩
@@ -100,11 +113,16 @@ theorem reach_rcbE {R : RL} (hR : R.Wf) {s : ArmState} {j0 : Nat} {bc : Insn} {t
     have h1 : NoEvSteps R 1 s := fun i hi => by
       obtain rfl : i = 0 := by omega
       exact br_noEv hR hj (brInsn_of hbc) hprog hpc herr
+    have hAT : ∀ i < 1, AtNonRet R (iterN R.step i s) := fun i hi => by
+      obtain rfl : i = 0 := by omega
+      exact ⟨j0, bc, none, hj, (brInsn_hooked (brInsn_of hbc)).2,
+        (brInsn_hooked (brInsn_of hbc)).1, hpc⟩
     rw [hc _ _ ha] at hstep
     cases cond
     · exact ⟨1, j0 + 1, by simp only [iterN]; rw [hstep]; rfl, by simp, by simp [h], h1,
-        Nat.one_pos⟩
-    · exact ⟨1, jl, by simp only [iterN]; rw [hstep]; rfl, fun _ => hjl, by simp, h1, Nat.one_pos⟩
+        Nat.one_pos, hAT⟩
+    · exact ⟨1, jl, by simp only [iterN]; rw [hstep]; rfl, fun _ => hjl, by simp, h1, Nat.one_pos,
+        hAT⟩
   · have hct := relaxTarget_condTarget ht'
     obtain rfl : t' = t := by
       rcases hbc with ⟨c, rfl⟩ | ⟨nz, w, r, rfl⟩ | ⟨nz, r, bit, rfl⟩ <;>
@@ -117,12 +135,17 @@ theorem reach_rcbE {R : RL} (hR : R.Wf) {s : ArmState} {j0 : Nat} {bc : Insn} {t
     have hj1 := drop_succ2 hdrop
     obtain ⟨a, ha, hstep⟩ := step_skip hR hj0 hj1 (invertTo_form hbc) hprog hpc herr
     have hn0 := br_noEv hR hj0 (brInsn_of (t := .skip) (invertTo_form hbc)) hprog hpc herr
+    have hAT0 : AtNonRet R s := ⟨j0, bc.invertTo .skip, none, hj0,
+      (brInsn_hooked (brInsn_of (t := .skip) (invertTo_form hbc))).2,
+      (brInsn_hooked (brInsn_of (t := .skip) (invertTo_form hbc))).1, hpc⟩
     rw [hcs hct _ _ ha] at hstep
     cases cond
     · exact ⟨1, j0 + 2, by simp only [iterN]; rw [hstep]; rfl, by simp, by simp [h],
         fun i hi => by
           obtain rfl : i = 0 := by omega
-          exact hn0, Nat.one_pos⟩
+          exact hn0, Nat.one_pos, fun i hi => by
+            obtain rfl : i = 0 := by omega
+            exact hAT0⟩
     · have hprog1 : (Arm.w .PC (R.pcOf (j0 + 1)) s).program = R.fb.program R.base := by
         rw [Arm.w_program, hprog]
       have herr1 : Arm.r .ERR (Arm.w .PC (R.pcOf (j0 + 1)) s) = .None := by
@@ -132,7 +155,7 @@ theorem reach_rcbE {R : RL} (hR : R.Wf) {s : ArmState} {j0 : Nat} {bc : Insn} {t
       have hn1 := br_noEv hR hj1 (.inl ⟨_, rfl⟩) hprog1 (Arm.r_of_w_same ..) herr1
       rw [brCond_b ha'] at hstep'
       simp only [Bool.not_true, Bool.false_eq_true, ite_false] at hstep
-      refine ⟨2, jl, ?_, fun _ => hjl, by simp, fun i hi => ?_, by omega⟩
+      refine ⟨2, jl, ?_, fun _ => hjl, by simp, fun i hi => ?_, by omega, fun i hi => ?_⟩
       · simp only [iterN]
         rw [hstep, hstep', Arm.w_of_w_shadow]
         rfl
@@ -141,8 +164,15 @@ theorem reach_rcbE {R : RL} (hR : R.Wf) {s : ArmState} {j0 : Nat} {bc : Insn} {t
         · simp only [iterN]
           rw [hstep]
           exact hn1
+      · rcases (by omega : i = 0 ∨ i = 1) with rfl | rfl
+        · exact hAT0
+        · simp only [iterN]
+          rw [hstep]
+          exact ⟨j0 + 1, .b t', none, hj1, (brInsn_hooked (x := .b t') (.inl ⟨t', rfl⟩)).2,
+            (brInsn_hooked (x := .b t') (.inl ⟨t', rfl⟩)).1, Arm.r_of_w_same ..⟩
 
-/-- **`reach_cb` with the steps' facts**, at least one step. -/
+/-- **`reach_cb` with the steps' facts**, at least one step; every state before the last step is
+at an unhooked line other than `ret`. -/
 theorem reach_cbE {R : RL} (hR : R.Wf) {s : ArmState} {j0 : Nat} {bc : Insn} {t e : Lbl}
     {Z T : List Line}
     (hdrop : R.L.drop j0 = relaxLines R.far (ftList (.ins bc none :: .ins (.b e) none :: Z)) ++ T)
@@ -156,7 +186,8 @@ theorem reach_cbE {R : RL} (hR : R.Wf) {s : ArmState} {j0 : Nat} {bc : Insn} {t 
     (hprog : s.program = R.fb.program R.base) (hpc : Arm.r .PC s = R.pcOf j0)
     (herr : Arm.r .ERR s = .None) :
     ∃ n jl, iterN R.step n s = Arm.w .PC (R.pcOf jl) s ∧
-      R.L[jl]? = some (.label (if cond then t else e)) ∧ NoEvSteps R n s ∧ 0 < n := by
+      R.L[jl]? = some (.label (if cond then t else e)) ∧ NoEvSteps R n s ∧ 0 < n ∧
+      ∀ i < n, AtNonRet R (iterN R.step i s) := by
   have hnb : ∀ x, bc ≠ .b x := by
     rcases hbc with ⟨c, rfl⟩ | ⟨nz, w, r, rfl⟩ | ⟨nz, r, bit, rfl⟩ <;> intro x h <;> cases h
   rcases ft_cb bc e Z hnb with ⟨L, Z', rfl, hct, hft⟩ | hft
@@ -169,32 +200,37 @@ theorem reach_cbE {R : RL} (hR : R.Wf) {s : ArmState} {j0 : Nat} {bc : Insn} {t 
     subst hLt
     rw [hft, ft_label, relaxLines_cons, relaxLines_cons, relaxLine_label, List.append_assoc] at hdrop
     have hform := invertTo_form (e := e) hbc
-    obtain ⟨n, jl, hn, hjt, hjf, hne, hpos⟩ := reach_rcbE hR hdrop hform he (!cond) (hc' hct e)
-      (fun _ env a ha => by rw [hcc hct env a ha, Bool.not_not]) hprog hpc herr
-    refine ⟨n, jl, hn, ?_, hne, hpos⟩
+    obtain ⟨n, jl, hn, hjt, hjf, hne, hpos, hAT⟩ := reach_rcbE hR hdrop hform he (!cond)
+      (hc' hct e) (fun _ env a ha => by rw [hcc hct env a ha, Bool.not_not]) hprog hpc herr
+    refine ⟨n, jl, hn, ?_, hne, hpos, hAT⟩
     cases cond
     · simpa using hjt rfl
     · have hd' : R.L.drop jl = [Line.label L] ++ relaxLines R.far (ftList Z') ++ T := by
         rw [hjf rfl, ← List.drop_drop, hdrop, List.drop_left, List.append_assoc]
       simpa using drop_get (by simpa using hd')
   · rw [hft, relaxLines_cons, List.append_assoc] at hdrop
-    obtain ⟨n, jl, hn, hjt, hjf, hne, hpos⟩ := reach_rcbE hR hdrop hbc ht cond hc
+    obtain ⟨n, jl, hn, hjt, hjf, hne, hpos, hAT⟩ := reach_rcbE hR hdrop hbc ht cond hc
       (fun hct' => hc' hct' .skip) hprog hpc herr
     cases cond
     · have hd1 : R.L.drop jl = relaxLines R.far (ftList (.ins (.b e) none :: Z)) ++ T := by
         rw [hjf rfl, ← List.drop_drop, hdrop, List.drop_left]
       have hs1 : (iterN R.step n s).program = R.fb.program R.base := by
         rw [hn, Arm.w_program, hprog]
-      obtain ⟨n', jl', hn', hjl', hne', -⟩ := reach_bE hR hd1 he hs1
+      obtain ⟨n', jl', hn', hjl', hne', -, hAT'⟩ := reach_bE hR hd1 he hs1
         (by rw [hn]; exact Arm.r_of_w_same ..) (by rw [hn, Arm.r_of_w_different (by simp), herr])
-      refine ⟨n + n', jl', ?_, by simpa using hjl', fun i hi => ?_, by omega⟩
+      refine ⟨n + n', jl', ?_, by simpa using hjl', fun i hi => ?_, by omega, fun i hi => ?_⟩
       · rw [iterN_add, hn', hn, Arm.w_of_w_shadow]
       · rcases Nat.lt_or_ge i n with h | h
         · exact hne i h
         · obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le h
           rw [iterN_add]
           exact hne' k (by omega)
-    · exact ⟨n, jl, hn, by simpa using hjt rfl, hne, hpos⟩
+      · rcases Nat.lt_or_ge i n with h | h
+        · exact hAT i h
+        · obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le h
+          rw [iterN_add]
+          exact hAT' k (by omega)
+    · exact ⟨n, jl, hn, by simpa using hjt rfl, hne, hpos, hAT⟩
 
 /-! ## The block labels are distinct -/
 
@@ -394,7 +430,8 @@ theorem realizes_gotoE {R : RL} (hR : R.Wf) {s : ArmState} {b k : Nat} {allocs :
     (hvb : R.vc.blocks[b]? = some vb) (hi : vb.insts[k]? = some i) (hbr : BrForm i)
     (h : MStep R.vc R.sem ckeep R.rf (.run ⟨b, .op k allocs :: its, m, w⟩) c') :
     ∃ n, Q R (iterN R.step n s) c' ∧ NoEvSteps R n s ∧
-      (n = 0 → μR R c' < μR R (.run ⟨b, .op k allocs :: its, m, w⟩)) := by
+      (n = 0 → μR R c' < μR R (.run ⟨b, .op k allocs :: its, m, w⟩)) ∧
+      ∀ i < n, AtNonRet R (iterN R.step i s) := by
   have hck := (lowerRFunc_ok hR.alloc).2.2
   obtain ⟨j0, vb0, items, pre, code, ls, ps1, ps2, T, hvb0, hit, hsplit, hchk, hcode, hls, htr, hdrop,
     hpc, hst⟩ := hq
@@ -469,7 +506,8 @@ theorem realizes_gotoE {R : RL} (hR : R.Wf) {s : ArmState} {b k : Nat} {allocs :
   have hst0 : st ≠ 0 := ctlCheck_succ hck hsucc
   -- the machine reaches the successor's label
   have hreach : ∃ n jl, iterN R.step n s = Arm.w .PC (R.pcOf jl) s ∧
-      R.L[jl]? = some (.label (.block vs.label)) ∧ NoEvSteps R n s ∧ (n = 0 → st = b + 1) := by
+      R.L[jl]? = some (.label (.block vs.label)) ∧ NoEvSteps R n s ∧ (n = 0 → st = b + 1) ∧
+      ∀ i < n, AtNonRet R (iterN R.step i s) := by
     rw [List.append_assoc] at hdrop
     rcases hbr with ⟨l, rfl⟩ | ⟨t, e, kk, rfl⟩ | ⟨kd, t, e, rn, bit, rfl⟩
     · obtain ⟨rfl, rfl⟩ := assign_none (fun f => rfl) hasg
@@ -484,9 +522,9 @@ theorem realizes_gotoE {R : RL} (hR : R.Wf) {s : ArmState} {b k : Nat} {allocs :
       rw [hj0 l rfl] at hlj
       simp only [MInst.targets, List.getElem?_cons_zero, Option.some.injEq] at hlj
       rw [← hlj]
-      obtain ⟨n, jl, hn, hjl, hne, h0⟩ := reach_bE hR (by simpa using hdrop) (by simp)
+      obtain ⟨n, jl, hn, hjl, hne, h0, hAt⟩ := reach_bE hR (by simpa using hdrop) (by simp)
         (by rw [hst.prog]) hpc hst.err
-      refine ⟨n, jl, hn, hjl, hne, fun hn0 => ?_⟩
+      refine ⟨n, jl, hn, hjl, hne, fun hn0 => ?_, hAt⟩
       obtain ⟨Z', hZ⟩ := h0 hn0
       obtain ⟨p, hp, hpl⟩ := head_label h2 hZ
       exact succ_of_label hR hvs hitems hp (hpl.trans hlj)
@@ -508,13 +546,13 @@ theorem realizes_gotoE {R : RL} (hR : R.Wf) {s : ArmState} {b k : Nat} {allocs :
           (∃ nz w r, k'.insn (.block t) = .cbz nz w r (.block t)) ∨
           (∃ nz r bit, k'.insn (.block t) = .tbz nz r bit (.block t)) := by
         cases k' <;> simp [CondBrKind.insn]
-      obtain ⟨n, jl, hn, hjl, hne, hpos⟩ := reach_cbE hR (by simpa using hdrop) hbc (by simp)
+      obtain ⟨n, jl, hn, hjl, hne, hpos, hAt⟩ := reach_cbE hR (by simpa using hdrop) hbc (by simp)
         (by simp) (kk.holds _ w)
         (fun env a ha => kind_brCond hst hkr _ ha)
         (fun hct e' env a ha => kind_brCond_inv hst hkr _ _ hct ha)
         (fun _ env a ha => kind_brCond hst hkr _ (by rwa [CondBrKind.insn_invertTo_invertTo] at ha))
         (by rw [hst.prog]) hpc hst.err
-      refine ⟨n, jl, hn, ?_, hne, fun h0 => absurd h0 (by omega)⟩
+      refine ⟨n, jl, hn, ?_, hne, fun h0 => absurd h0 (by omega), hAt⟩
       rw [hjl, hU]
       rw [hjc t e kk rfl] at hlj
       simp only [MInst.targets] at hlj
@@ -545,7 +583,7 @@ theorem realizes_gotoE {R : RL} (hR : R.Wf) {s : ArmState} {b k : Nat} {allocs :
       simp only [CheckCtx.locOk, Bool.and_eq_true] at hal
       have hm : m (.reg (.x n')) = (Arm.r (.GPR (rnum n')) s).setWidth 128 := by
         rw [hst.store (.reg (.x n')) (fun r e => by cases e; exact hal.2) trivial]; rfl
-      obtain ⟨n, jl, hn, hjl, hne, hpos⟩ := reach_cbE hR (by simpa using hdrop)
+      obtain ⟨n, jl, hn, hjl, hne, hpos, hAt⟩ := reach_cbE hR (by simpa using hdrop)
         (bc := .tbz (kd == .nz) (.x n') bit (.block t)) (.inr (.inr ⟨_, _, _, rfl⟩)) (by simp)
         (by simp) ((Arm.r (.GPR (rnum n')) s).getLsbD bit == (kd == .nz))
         (fun env a ha => brCond_tbz (by omega) ha s)
@@ -556,7 +594,7 @@ theorem realizes_gotoE {R : RL} (hR : R.Wf) {s : ArmState} {b k : Nat} {allocs :
           simp only [Insn.invertTo, Bool.not_not] at ha
           exact brCond_tbz (by omega) ha s)
         (by rw [hst.prog]) hpc hst.err
-      refine ⟨n, jl, hn, ?_, hne, fun h0 => absurd h0 (by omega)⟩
+      refine ⟨n, jl, hn, ?_, hne, fun h0 => absurd h0 (by omega), hAt⟩
       rw [hjl]
       obtain ⟨a, hUa, hja⟩ := hjt kd t e _ bit rfl
       have ha : a = m (.reg (.x n')) := by
@@ -568,8 +606,8 @@ theorem realizes_gotoE {R : RL} (hR : R.Wf) {s : ArmState} {b k : Nat} {allocs :
       simp only [MInst.targets, hm, lo64_regX] at hlj
       cases hcond : ((Arm.r (.GPR (rnum n')) s).getLsbD bit == (kd == .nz)) <;>
         simp only [hcond] at hlj ⊢ <;> simp at hlj <;> rw [hlj] <;> simp
-  obtain ⟨n, jl, hn, hjl, hne, h0⟩ := hreach
-  refine ⟨n, ?_, hne, fun hn0 => ?_⟩
+  obtain ⟨n, jl, hn, hjl, hne, h0, hAt⟩ := hreach
+  refine ⟨n, ?_, hne, fun hn0 => ?_, hAt⟩
   · rw [hn]
     exact q_entry hR hst0 hvs hitems hjl (Arm.r_of_w_same ..) (hst.pc _)
   · obtain rfl := h0 hn0
@@ -583,15 +621,16 @@ abbrev OpOutR (R : RL) (ok : ArmState → Lab → Prop) (t : ArmState × Mon) (c
 
 /-- **The per-item obligation at a block-ending branch** (module doc): the Arm runs the branch
 lines (no event, no store exclusive) to the successor's label, where `Q` holds; the source step
-has no event. -/
-theorem goto_op {R : RL} (hR : R.Wf) {ok : ArmState → Lab → Prop} {s : ArmState} {mon : Mon}
+has no event; a run ending inside the branch (before reaching the successor) is at a line other
+than `ret`. -/
+theorem goto_opR {R : RL} (hR : R.Wf) {ok : ArmState → Lab → Prop} {s : ArmState} {mon : Mon}
     {b k : Nat} {allocs : Array Loc} {its : List RItem} {m : Loc → CV} {w : ArmState}
     {evs0 : List Ev} {c0 : MConf CV ArmState}
     (hq : Q R s (OpC b k allocs its m w)) (hA : AInv R (OpC b k allocs its m w))
     (hs0 : SrcStep R (OpC b k allocs its m w) evs0 c0)
     (hform : ∀ vb i, R.vc.blocks[b]? = some vb → vb.insts[k]? = some i → BrForm i)
     {ls : List Lab} {t' : ArmState × Mon} (hr : PRun Policy.arm R.step ok (s, mon) ls t') :
-    OpOutR R ok (s, mon) (OpC b k allocs its m w) ls := by
+    OpOutN R ok (μR R) (s, mon) (OpC b k allocs its m w) ls t' := by
   have hs0' := hs0
   cases hs0' with
   | @op _ _ _ _ _ _ vb i ops _ _ hvb hi hops hevs hfoot hst =>
@@ -601,7 +640,7 @@ theorem goto_op {R : RL} (hR : R.Wf) {ok : ArmState → Lab → Prop} {s : ArmSt
   have he : evs0 = [] := hevs.trans (cEvs_nil hak _ _)
   subst he
   rw [patch_nil] at hst
-  obtain ⟨n, hq', hne, hμ⟩ := realizes_gotoE hR hq hvb hi hbr hst
+  obtain ⟨n, hq', hne, hμ, hAt⟩ := realizes_gotoE hR hq hvb hi hbr hst
   have hA' := aInv_step hR hq hA hst
   by_cases hN : n ≤ ls.length
   · obtain ⟨⟨s1, mon1⟩, r1, -⟩ := PRun.split (ls.take n) (ls.drop n)
@@ -615,8 +654,23 @@ theorem goto_op {R : RL} (hR : R.Wf) {ok : ArmState → Lab → Prop} {s : ArmSt
     rcases Nat.eq_zero_or_pos n with h0 | h0
     · exact .inr (hμ h0)
     · exact .inl h0
-  · obtain ⟨-, hev, -⟩ := prun_nil hr fun i hi => hne i (by omega)
-    exact .inr (.inr (.inr (privW_of_nil hev)))
+  · obtain ⟨hs', hev, -⟩ := prun_nil hr fun i hi => hne i (by omega)
+    refine .inr (.inr (.inr ⟨privW_of_nil hev, ?_⟩))
+    rw [hs']
+    exact hAt ls.length (by omega)
+
+/-- **The per-item obligation at a block-ending branch** (module doc): the Arm runs the branch
+lines (no event, no store exclusive) to the successor's label, where `Q` holds; the source step
+has no event. -/
+theorem goto_op {R : RL} (hR : R.Wf) {ok : ArmState → Lab → Prop} {s : ArmState} {mon : Mon}
+    {b k : Nat} {allocs : Array Loc} {its : List RItem} {m : Loc → CV} {w : ArmState}
+    {evs0 : List Ev} {c0 : MConf CV ArmState}
+    (hq : Q R s (OpC b k allocs its m w)) (hA : AInv R (OpC b k allocs its m w))
+    (hs0 : SrcStep R (OpC b k allocs its m w) evs0 c0)
+    (hform : ∀ vb i, R.vc.blocks[b]? = some vb → vb.insts[k]? = some i → BrForm i)
+    {ls : List Lab} {t' : ArmState × Mon} (hr : PRun Policy.arm R.step ok (s, mon) ls t') :
+    OpOutR R ok (s, mon) (OpC b k allocs its m w) ls :=
+  (goto_opR hR hq hA hs0 hform hr).out
 
 /-! ## The other items, with `μR` -/
 

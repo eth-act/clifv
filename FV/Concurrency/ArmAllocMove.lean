@@ -255,17 +255,60 @@ theorem move_lines {R : RL} (hR : R.Wf) {s : ArmState} {b : Nat} {src dst : Loc}
         have := fplr_outside hR hframe k hk o ho
         rwa [show R.spB = spOf s by rw [hst.sp]] at this ⊢)
 
-/-- **The per-item obligation at a move** (module doc). -/
-theorem move_op {R : RL} (hR : R.Wf) {s : ArmState} {mon : Mon} {b : Nat}
+/-- Every item of a move's code is an `inst` (`moveInsts` emits machine instructions only). -/
+theorem moveInsts_inst {fr : RAFrame} {src dst : Loc} {code : List AInst}
+    (h : fr.moveInsts src dst = .ok code) (a : AInst) (ha : a ∈ code) : ∃ m, a = .inst m := by
+  unfold RAFrame.moveInsts at h
+  split at h
+  · rename_i s d
+    split at h
+    · simp only [pure, Except.pure, Except.ok.injEq] at h
+      obtain rfl := h
+      simp at ha
+      exact ⟨_, ha⟩
+    · simp only [pure, Except.pure, Except.ok.injEq] at h
+      obtain rfl := h
+      rw [List.mem_map] at ha
+      obtain ⟨x, -, rfl⟩ := ha
+      exact ⟨x, rfl⟩
+  · rename_i s m
+    simp only [bind, Except.bind] at h
+    split at h
+    · simp at h
+    · rename_i off
+      simp only [pure, Except.pure, Except.ok.injEq] at h
+      obtain rfl := h
+      rw [List.mem_map] at ha
+      obtain ⟨x, -, rfl⟩ := ha
+      exact ⟨x, rfl⟩
+  · rename_i m d
+    simp only [bind, Except.bind] at h
+    split at h
+    · simp at h
+    · rename_i off
+      simp only [pure, Except.pure, Except.ok.injEq] at h
+      obtain rfl := h
+      rw [List.mem_map] at ha
+      obtain ⟨x, -, rfl⟩ := ha
+      exact ⟨x, rfl⟩
+  · simp at h
+
+/-- **The per-item obligation at a move** (module doc): the Arm runs the move's lines (the
+single-core run, `Q` after it, `realizes_move`'s proof), all of whose events are private
+(`MoveCodeOk`), the source step has no event, and a run ending inside the move (with no Arm step
+through all its lines) is at a line other than `ret`. -/
+theorem move_opR {R : RL} (hR : R.Wf) {s : ArmState} {mon : Mon} {b : Nat}
     {src dst : Loc} {its : List RItem} {m : Loc → CV} {w : ArmState}
     (hq : Q R s (MvC b src dst its m w)) (hA : AInv R (MvC b src dst its m w))
     {ls : List Lab} {t' : ArmState × Mon}
     (hr : PRun Policy.arm R.step (OkPriv R) (s, mon) ls t') :
     ItemSimOut Policy.arm R.step (OkPriv R) (SrcStep R) (RelQ R) (PrivA R) (fun c => c.measure)
-        (s, mon) (MvC b src dst its m w) ls ∨ PrivW (PrivA R) (evTr ls) := by
-  obtain ⟨j, ls1', s', code, -, -, hlat, hq', hpriv⟩ := move_lines hR hq
+        (s, mon) (MvC b src dst its m w) ls ∨ (PrivW (PrivA R) (evTr ls) ∧ AtNonRet R t'.1) := by
+  obtain ⟨j, ls1', s', code, hcode, hcl, hlat, hq', hpriv⟩ := move_lines hR hq
   have hiter := hlat.iter hR
   have hA' : AInv R (.run ⟨b, its, upd m dst (m src), w⟩) := aInv_step hR hq hA .move
+  have hnr : NoRet ls1' :=
+    noRet_codeLinesE (fun a ha => moveInsts_inst hcode a ha) (hcl ⟨0, 0, #[]⟩)
   by_cases hN : ls1'.length ≤ ls.length
   · obtain ⟨⟨s1, mon1⟩, r1, -⟩ := PRun.split (ls.take ls1'.length) (ls.drop ls1'.length)
       (by rw [List.take_append_drop]; exact hr)
@@ -279,9 +322,22 @@ theorem move_op {R : RL} (hR : R.Wf) {s : ArmState} {mon : Mon} {b : Nat}
       .inr (by simp [measure_run]), .move, r1, ⟨hq', hA'⟩, ?_⟩
     rw [hev1]
     exact img_privW (privW_segEvs fun i hi => (hpriv i hi).1) _
-  · obtain ⟨-, hev1⟩ := prun_priv hr fun i hi => hpriv i (by omega)
+  · obtain ⟨hs', hev1⟩ := prun_priv hr fun i hi => hpriv i (by omega)
     rw [hev1]
-    exact .inr (privW_segEvs fun i hi => (hpriv i (by omega)).1)
+    refine .inr ⟨privW_segEvs fun i hi => (hpriv i (by omega)).1, ?_⟩
+    rw [hs']
+    exact nonRet_execLines hR hlat.at_ hlat.hook hlat.prog hlat.pc hlat.err hlat.inter hlat.run hnr _
+      (by omega)
+
+/-- **The per-item obligation at a move** (module doc). -/
+theorem move_op {R : RL} (hR : R.Wf) {s : ArmState} {mon : Mon} {b : Nat}
+    {src dst : Loc} {its : List RItem} {m : Loc → CV} {w : ArmState}
+    (hq : Q R s (MvC b src dst its m w)) (hA : AInv R (MvC b src dst its m w))
+    {ls : List Lab} {t' : ArmState × Mon}
+    (hr : PRun Policy.arm R.step (OkPriv R) (s, mon) ls t') :
+    ItemSimOut Policy.arm R.step (OkPriv R) (SrcStep R) (RelQ R) (PrivA R) (fun c => c.measure)
+        (s, mon) (MvC b src dst its m w) ls ∨ PrivW (PrivA R) (evTr ls) :=
+  (move_opR hR hq hA hr).imp_right And.left
 
 /-! ## The run level -/
 

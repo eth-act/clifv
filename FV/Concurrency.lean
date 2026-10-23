@@ -181,3 +181,5 @@ import FV.Concurrency.CallRmwData
 import FV.Concurrency.CallRmwWitness
 import FV.Concurrency.ArmAllocPause
 import FV.Concurrency.ArmAllocPauseWitness
+import FV.Concurrency.ArmAllocLinked
+import FV.Concurrency.ArmAllocLinkedWitness

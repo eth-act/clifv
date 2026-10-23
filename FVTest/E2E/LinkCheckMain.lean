@@ -2,6 +2,8 @@ import FV.E2E.ProductionPipelineWith
 import FV.Backend.Lowering.StockScalarNI
 import FVTest.E2E.LinkProof
 import FVTest.E2E.SemanticLinkProofWith
+import FV.E2E.BinCheckFast
+import FV.Link.Image
 
 open E2E E2E.LinkCheck E2E.StackBound Lean Backend E2E.Elf E2E.BinCheck
 
@@ -25,24 +27,26 @@ def main (args : List String) : IO UInt32 := do
   -- Other supported compiler modes and whole-file retries can retain earlier
   -- artifacts. Recover their routing from actual bytes, then validate every
   -- selected artifact normally. These are data choices, not source assumptions.
-  let mut choices : List (String × Nat) := []
-  if let some phs := phdrs (fileRd file) then
-    for fi in I0.funcs do
-      let f := fi.func
-      if (Stock.Arithmetic.eligible f || Stock.Mixed.activationEligible f ||
-          Stock.Logical.activationEligible f || Stock.Scalar.activationEligible f) &&
-          !(Stock.D0.eligible f || Stock.ScalarAdd.activationEligible f) then
-        -- Probe each complete route before its transactional retry. A retained
-        -- logical/mixed artifact must not be skipped directly to legacy.
-        let mut found : Option Nat := none
-        for (lower,idx) in Stock.Scalar.lowerRoutes.zipIdx do
-          if found.isNone then
-            let sameBytes := match I0.pipeOfWithLowering lower (productionStage o.deadCleanup) fi with
-              | .error _ => false
-              | .ok a => artB I0 (fileRd file) phs a
-            if sameBytes then found := some idx
-        let idx := found.getD 4
-        if idx != 0 then choices := choices ++ [(f.name,idx)]
+  -- One task per function (`Link.parMap`, T3d: up to five pipelines per function).
+  let choices : List (String × Nat) := match phdrs (fileRd file) with
+    | none => []
+    | some phs =>
+      let rd := fileRd file
+      let route (fi : FnInput) : Option (String × Nat) :=
+        let f := fi.func
+        if (Stock.Arithmetic.eligible f || Stock.Mixed.activationEligible f ||
+            Stock.Logical.activationEligible f || Stock.Scalar.activationEligible f) &&
+            !(Stock.D0.eligible f || Stock.ScalarAdd.activationEligible f) then
+          -- Probe each complete route before its transactional retry. A retained
+          -- logical/mixed artifact must not be skipped directly to legacy.
+          let found := Stock.Scalar.lowerRoutes.zipIdx.find? fun (lower, _) =>
+            match I0.pipeOfWithLowering lower (productionStage o.deadCleanup) fi with
+            | .error _ => false
+            | .ok a => artB I0 rd phs a
+          let idx := (found.map (·.2)).getD 4
+          if idx != 0 then some (f.name, idx) else none
+        else none
+      (Link.parMap route I0.funcs).filterMap id
   let actualLower := Stock.Scalar.lowerWithRoutes choices
   let lowerName := "(Backend.Stock.Scalar.lowerWithRoutes [" ++
     ", ".intercalate (choices.map fun (name,idx) => "(" ++ leanStr name ++ ", " ++ toString idx ++ ")") ++ "])"
@@ -66,12 +70,13 @@ def main (args : List String) : IO UInt32 := do
       IO.println s!"  profile: {t} ms {n} (pipeline {a}, lowerCheck {b}, checkAlloc {c})"
     IO.println s!"  profile: {(tot.map (·.1)).foldl (· + ·) 0} ms in total"
   let t0 ← IO.monoMsNow
-  let R0 := I0.resultsProductionWith actualLower o.deadCleanup
+  -- `I0.resultsProductionWith actualLower o.deadCleanup`, one task per function (`Link.parMap_eq`)
+  let R0 : Res := Link.parMap (fun fi => (fi.func, I0.pipeProductionWith actualLower o.deadCleanup fi)) I0.funcs
   -- the CLIF image's symbols and the call-level stack
   -- the checks that do not depend on the rest of the program, once (`staticChks`: the
   -- validators); then `diagR` with them (`chks = staticChks ++ linkChks`)
   let D0 := (R0.map fun e => frameDrop (getOk e.2).af).foldl max 0
-  let stat := R0.map fun e => (e.1.name, staticChksSemanticNI (productionStage o.deadCleanup) { I0 with D := D0 } e.1 e.2)
+  let stat := Link.parMap (fun e => (e.1.name, staticChksSemanticNI (productionStage o.deadCleanup) { I0 with D := D0 } e.1 e.2)) R0
   let nStat := (stat.filter fun e => !(bad e.2).isEmpty).length
   IO.println s!"  static checks (the validators): {nStat} function(s) fail"
   IO.println s!"  static checks done in {(← IO.monoMsNow) - t0} ms"
@@ -79,17 +84,23 @@ def main (args : List String) : IO UInt32 := do
   let mut dropped : List (String × List String) := []
   let mut d : List (String × List String) := []
   let mut I := I0
+  -- hash maps instead of list scans per element (T3d: a 28k-function program); the checks are
+  -- `globalChks`/`linkChks` evaluated through `LinkCtx.of` (`globalChksWith_of`, `linkChksWith_of`)
+  let addrs0 := assocMap I0.addrs
+  let statM := assocMap stat
   repeat
-    let names := ((keep.flatMap fun e => addrNames e.1) ++
-      dataSyms.filter (fun n => keep.any (·.1.name == n))).eraseDups
-    let syms := names.filterMap fun n => (I0.addrs.lookup n).map (n, ·)
+    let keepSet : Std.HashSet String := keep.foldl (fun s e => s.insert e.1.name) {}
+    let names := Front.dedupFirst ((keep.flatMap fun e => addrNames e.1) ++
+      dataSyms.filter keepSet.contains)
+    let syms := names.filterMap fun n => addrs0[n]?.map (n, ·)
     let D := (keep.map fun e => frameDrop (getOk e.2).af).foldl max 0
     I := { I0 with syms, D }
     let P := progOf keep
     let T := tabOf keep
-    let gl := bad (globalChks I P T)
-    let fs := keep.filterMap fun e =>
-      match bad ((stat.lookup e.1.name).getD [] ++ linkChks I P T e.1 e.2) with
+    let C := LinkCtx.of I P T
+    let gl := bad (globalChksWith C I P T)
+    let fs := (keep.zip (Link.parMap (fun e => bad ((statM[e.1.name]?).getD [] ++ linkChksWith C P e.1 e.2)) keep)).filterMap fun (e, b) =>
+      match b with
       | [] => none
       | b => some (e.1.name, b ++ (match e.2 with | .error m => [m] | .ok _ => []))
     d := (if gl.isEmpty then [] else [("(program)", gl)]) ++ fs
@@ -98,14 +109,13 @@ def main (args : List String) : IO UInt32 := do
     dropped := dropped ++ bad
     -- and their callers in the program, so that what is left is closed under calls (no function
     -- of the crate becomes an extern of the base environment)
-    let mut gone := bad.map (·.1)
+    let mut gone : Std.HashSet String := bad.foldl (fun s b => s.insert b.1) {}
     repeat
       let callers := keep.filter fun e => !gone.contains e.1.name &&
         e.1.externs.any fun x => gone.contains x.2.name
       if callers.isEmpty then break
-      for e in callers do
-        dropped := dropped ++ [(e.1.name, ["(calls a dropped function)"])]
-      gone := gone ++ callers.map (·.1.name)
+      dropped := dropped ++ callers.map fun e => (e.1.name, ["(calls a dropped function)"])
+      gone := callers.foldl (fun s e => s.insert e.1.name) gone
     keep := keep.filter fun e => !gone.contains e.1.name
   let ms := (← IO.monoMsNow) - t0
   -- report
@@ -131,9 +141,12 @@ def main (args : List String) : IO UInt32 := do
   IO.println (if ok then "  okB: true" else "  okB: false")
   -- the (pruned) program
   let keepNames := keep.map (·.1.name)
-  let funcs := (I0.funcs.zip (R0.map (·.1.name))).filter (keepNames.contains ·.2)
-  let kAliases := I.aliases.filter fun p => keepNames.contains p.1
-  let kAddrs := I.addrs.filter fun p => !(I0.aliases.any (·.1 == p.1)) || kAliases.any (·.1 == p.1)
+  let keepSet : Std.HashSet String := keepNames.foldl (·.insert ·) {}
+  let funcs := (I0.funcs.zip (R0.map (·.1.name))).filter (keepSet.contains ·.2)
+  let kAliases := I.aliases.filter fun p => keepSet.contains p.1
+  let aliases0 : Std.HashSet String := I0.aliases.foldl (fun s p => s.insert p.1) {}
+  let kAliasSet : Std.HashSet String := kAliases.foldl (fun s p => s.insert p.1) {}
+  let kAddrs := I.addrs.filter fun p => !aliases0.contains p.1 || kAliasSet.contains p.1
   let I' : LinkInput := { I with funcs := funcs.map (·.1), aliases := kAliases, addrs := kAddrs }
   -- the binary checks (`FV/E2E/BinCheck.lean`) on the executable: its code, data objects and
   -- symbols against the program
@@ -144,11 +157,16 @@ def main (args : List String) : IO UInt32 := do
     | some e => staticB e phs
     | none => false
   let arts := keep.map fun e => (e.1.name, getOk e.2)
+  -- the link map and the aliases in hash maps, built once (`artWithB_assocMap`, `objWithB_assocMap`)
+  let addrM := assocMap I'.addrs
+  let aliasM := assocMap I'.aliases
+  let ad := fun n => (addrM[n]?).getD 0
+  let al := fun n => aliasM[n]?
   let mut codeBad := 0
   let mut words := 0
   for (n, a) in arts do
     words := words + a.fb.words.size
-    if !artB I' r phs a then
+    if !artWithB ad al r phs a then
       codeBad := codeBad + 1
       IO.println s!"  BIN code {n}:"
       for m in (artDiag I' r phs a).take 8 do IO.println s!"      {m}"
@@ -174,23 +192,27 @@ def main (args : List String) : IO UInt32 := do
   IO.println s!"  relocations: {nBl} bl, address pairs {nNopAdr} nop+adr, {nAdrpAdd} adrp+add, {nGot} adrp+ldr (GOT), {nTls} TLSDESC sequences"
   -- the data objects the kept functions reach
   let allData := parseData dataLines
-  let mut reach : List String := (keep.flatMap fun e => addrNames e.1).eraseDups
-  let mut todo := reach
+  -- the first object of each name (`find?`'s answer)
+  let dataM : Std.HashMap String Clif.DataObject :=
+    allData.foldl (fun m o => if m.contains o.name then m else m.insert o.name o) {}
+  let roots := Front.dedupFirst (keep.flatMap fun e => addrNames e.1)
+  let mut reach : Std.HashSet String := roots.foldl (·.insert ·) {}
+  let mut todo := roots
   repeat
     match todo with
     | [] => break
     | n :: rest =>
       todo := rest
-      if let some o := allData.find? (·.name == n) then
+      if let some o := dataM[n]? then
         for it in o.items do
           if let .addr m _ := it then
             if !reach.contains m then
-              reach := reach ++ [m]
-              todo := todo ++ [m]
+              reach := reach.insert m
+              todo := m :: todo
   let D := allData.filter (reach.contains ·.name)
   let mut dataBad := 0
   for o in D do
-    if !objB I' r phs o then
+    if !objWithB (fun n => addrM[n]?) r phs o then
       dataBad := dataBad + 1
       IO.println s!"  BIN data {o.name}:"
       for m in (objDiag I' r phs o).take 8 do IO.println s!"      {m}"
@@ -199,10 +221,11 @@ def main (args : List String) : IO UInt32 := do
   let cert : List (String × Nat × Nat) := I'.addrs.filterMap fun p =>
     (idx.get? (symName p.1, p.2)).map (p.1, ·)
   let ex : Excerpt := [(0, file)]
-  let symsBad := I'.addrs.filter fun p => !(I'.aliases.lookup p.1).isSome && !(cert.lookup p.1).isSome
+  let certM := assocMap cert
+  let symsBad := I'.addrs.filter fun p => !(aliasM[p.1]?).isSome && !(certM[p.1]?).isSome
   for p in symsBad do
     IO.println s!"  BIN symbol {p.1}: no defined symbol {symName p.1} = {hexN p.2} in the executable's symbol table"
-  let symsOk := symsB I' ex cert
+  let symsOk := symsWithB (fun n => aliasM[n]?) (fun n => certM[n]?) I' ex
   let binOk := hdrOk && codeBad == 0 && dataBad == 0 && symsOk
   IO.println s!"  binary checks done in {(← IO.monoMsNow) - tb} ms"
   IO.println (if binOk then
@@ -210,21 +233,27 @@ def main (args : List String) : IO UInt32 := do
     else s!"  binary: FAIL code={codeBad} data={dataBad} syms={symsBad.length} hdr={if hdrOk then 0 else 1}")
   -- the code map of the executable machine (`codeMapB`, `FV/E2E/CodeMap.lean`: a premise of the
   -- theorem about the executable's own words, not of `okB`)
-  IO.println (if codeMapB I' (tabOf keep) then "  code map: ok" else "  code map: FAIL (codeMapB)")
+  IO.println (if codeMapFastB (fun n => (assocMap I'.addrs)[n]?) (fun n => (assocMap I'.syms)[n]?) (tabOf keep)
+    then "  code map: ok" else "  code map: FAIL (codeMapB)")
   -- the stack bound (`budMap`) of the (pruned) program: a function has a budget iff no call
   -- cycle is reachable from it (`StackBound.budC_isSome_iff`)
   let Pk := progOf keep
-  let Sk := fun n => I.syms.lookup n
-  let stackM := budMap I keep
+  let sk := assocMap I.syms
+  let stackM := budMapFast I keep
+  let artM := artMap keep
   let stackOf (g : Clif.Function) : Option Nat :=
-    (stackM.get? g.name).map (frameDrop (artOf keep g).af + ·)
+    (stackM.get? g.name).map (frameDrop ((artM[g.name]?).getD default).af + ·)
   let bad := Pk.funcs.filter fun g => (stackOf g).isNone
   let s := Pk.funcs.foldl (fun x g => max x ((stackOf g).getD 0)) 0
   if bad.isEmpty then
     IO.println s!"  stack: {s} bytes at most (no call cycle)"
   else
     IO.println s!"  stack: recursive: the calls of {bad.length} function(s) reach a call cycle (their stack stays a premise): {(bad.map (·.name)).take 10}{if bad.length > 10 then " …" else ""}; the other {Pk.funcs.length - bad.length}: {s} bytes at most"
-  let es := (Pk.funcs.filter fun h => !Pk.funcs.any fun g => edgeB Sk g h).map fun g =>
+  -- no caller: no function declares it, and no indirect call can enter it (`edgeB`)
+  let cs := calleeSet Pk
+  let iSigs := (Pk.funcs.filter (!indFreeB ·)).flatMap indSigs
+  let es := (Pk.funcs.filter fun h => !(cs.contains h.name ||
+      ((sk[h.name]?).isSome && iSigs.any fun s => decide (LinkSys.IndSigMatch s h)))).map fun g =>
     (g.name, stackOf g)
   let es := es.mergeSort fun x y => x.2.getD (2 ^ 64) ≥ y.2.getD (2 ^ 64)
   IO.println s!"  stack: {es.length} entries (no caller in the program):"

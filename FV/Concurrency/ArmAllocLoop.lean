@@ -438,13 +438,303 @@ theorem privA_of_avoid {R : RL} {n : Nat} {a : BitVec 64} (h : Avoids R.F n a) (
   have := h 0 hn
   simpa [PrivA] using this
 
+/-- The `casLoopCmp` comparison is not a `ret`. -/
+theorem casLoopCmp_ne_ret (bits : Nat) : casLoopCmp bits ≠ .ret := by
+  unfold casLoopCmp; split <;> simp
+
+/-- The `atomic_rmw` loop's middle instructions are not `ret`s. -/
+theorem rmwLoopMid_ne_ret {bits : Nat} {op : AtomicRmwLoopOp} {x : Insn}
+    (h : x ∈ rmwLoopMid op bits) : x ≠ .ret := by
+  unfold rmwLoopMid at h
+  split at h
+  · simp at h
+  · simp only [List.mem_cons, List.not_mem_nil, or_false] at h
+    rcases h with h | h <;> first
+      | (subst h; intro h'; injection h')
+      | exact h.elim
+  · simp only [List.mem_cons, List.not_mem_nil, or_false] at h; subst h; intro h'; injection h'
+  · simp only [List.mem_cons, List.not_mem_nil, or_false] at h; subst h; intro h'; injection h'
+  · simp only [List.mem_cons, List.not_mem_nil, or_false] at h; subst h; intro h'; injection h'
+  · simp only [List.mem_cons, List.not_mem_nil, or_false] at h; subst h; intro h'; injection h'
+  · simp only [List.mem_cons, List.not_mem_nil, or_false] at h; subst h; intro h'; injection h'
+  · rcases List.mem_append.1 h with h | h
+    · exact rmwLoopSext_ne_ret h
+    · simp only [List.mem_cons, List.not_mem_nil, or_false] at h; rcases h with h | h
+      · rw [h]; exact rmwLoopCmp_ne_ret _ _
+      · subst h; intro h'; injection h'
+  · rcases List.mem_append.1 h with h | h
+    · exact rmwLoopSext_ne_ret h
+    · simp only [List.mem_cons, List.not_mem_nil, or_false] at h; rcases h with h | h
+      · rw [h]; exact rmwLoopCmp_ne_ret _ _
+      · subst h; intro h'; injection h'
+  · simp only [List.mem_cons, List.not_mem_nil, or_false] at h; rcases h with h | h
+    · rw [h]; exact rmwLoopCmp_ne_ret _ _
+    · subst h; intro h'; injection h'
+  · simp only [List.mem_cons, List.not_mem_nil, or_false] at h; rcases h with h | h
+    · rw [h]; exact rmwLoopCmp_ne_ret _ _
+    · subst h; intro h'; injection h'
+
+/-- Every line of the `atomic_rmw` loop's body is an unhooked instruction other than `ret`. -/
+theorem rmwBody_ne_ret {bits : Nat} {op : AtomicRmwLoopOp} {fl : Clif.MemFlags} {x : Insn} {tc}
+    (h : Line.ins x tc ∈ rmwLoopBody bits op fl) : x ≠ .ret := by
+  have hx : (x = .ldaxr bits (.x 27) (.x 25) ∧ tc = fl.trapCode) ∨
+      (∃ a, a ∈ rmwLoopMid op bits ∧ a = x ∧ none = tc) ∨
+      (x = .stlxr bits (.x 24) (rmwLoopStored op) (.x 25) ∧ tc = fl.trapCode) := by
+    simpa [rmwLoopBody, List.mem_cons, List.mem_append, List.mem_map, Line.ins.injEq] using h
+  rcases hx with ⟨h1, -⟩ | ⟨a, ha, h2, -⟩ | ⟨h1, -⟩
+  · subst h1; intro h'; injection h'
+  · subst h2; exact rmwLoopMid_ne_ret ha
+  · subst h1; intro h'; injection h'
+
+/-- The lines and the states of the `atomic_rmw` loop's body, from its first line (`rmw_at` of
+`ArmAllocLoopFwd`, here for the runs ending inside the item). -/
+theorem rmwBodyAt {R : RL} (hR : R.Wf) {ty : CTy} (hty : AtomTy ty) {op : AtomicRmwLoopOp}
+    {fl : Clif.MemFlags} {j0 n : Nat} {T : List Line}
+    (hd1 : R.L.drop (j0 + 1) =
+      rmwLoopBody ty.bits op fl ++ (.ins (.cbz true true (.x 24) (.loop n)) none :: T))
+    {s : ArmState} (hprog : s.program = R.fb.program R.base)
+    (hpc : Arm.r .PC s = R.pcOf (j0 + 1))
+    (herr : Arm.r .ERR s = .None) (i : Nat) (hi : i < (rmwLoopMid op ty.bits).length + 2) :
+    ∃ x tc, R.fa.lines.toList[j0 + 1 + i]? = some (.ins x tc) ∧ x.hooked = false ∧ x ≠ .ret ∧
+      (iterN R.step i s).program = R.fb.program R.base ∧
+      Arm.r .PC (iterN R.step i s) = R.pcOf (j0 + 1 + i) ∧
+      Arm.r .ERR (iterN R.step i s) = .None := by
+  have hlen := rmwBody_len ty.bits op fl
+  obtain ⟨t', hrun, hint, -⟩ := rmwBody_spec hty op fl (R.envOf (j0 + 1)) s herr
+  have hat := lines_at' hd1
+  obtain ⟨ln, hln⟩ : ∃ ln, (rmwLoopBody ty.bits op fl)[i]? = some ln :=
+    ⟨_, List.getElem?_eq_getElem (by omega)⟩
+  obtain ⟨x, tc, he, hh⟩ := rmwBody_ins hty op fl _ (List.mem_of_getElem? hln)
+  subst he
+  refine ⟨x, tc, hat i _ hln, hh, rmwBody_ne_ret (List.mem_of_getElem? hln), ?_⟩
+  rcases Nat.eq_zero_or_pos i with rfl | h0
+  · exact ⟨hprog, by rw [Nat.add_zero]; exact hpc, herr⟩
+  obtain ⟨s1, hs1⟩ := execLines_take hrun i
+  have hd' : R.L.drop (j0 + 1) = (rmwLoopBody ty.bits op fl).take i ++
+      ((rmwLoopBody ty.bits op fl).drop i ++ (.ins (.cbz true true (.x 24) (.loop n)) none :: T)) := by
+    rw [hd1, ← List.append_assoc, List.take_append_drop]
+  obtain ⟨hit, hpcs, -, -⟩ := run_ins hR hd'
+    (fun l hl => rmwBody_ins hty op fl l (List.mem_of_mem_take hl)) hprog hpc herr
+    (interOk_take hint i) hs1
+  rw [List.length_take, Nat.min_eq_left (by omega)] at hit hpcs
+  obtain ⟨he, hp⟩ := hint i h0 (by omega) s1 hs1
+  rw [hit]
+  exact ⟨hp.trans hprog, hpcs, he⟩
+
+/-- A trace without writes stays so at its tails. -/
+theorem noW_tail {A B : List (List Ev)} (h : NoW (A ++ B)) : NoW B := by
+  intro p y hy
+  refine h (A.length + p.1, p.2) y ?_
+  rw [evAt_append_ge _ _ (Nat.le_add_right _ _), Nat.add_sub_cancel_left]
+  exact hy
+
+/-- `RetryOut` without its no-write case. -/
+abbrev RetryOutR (P : Policy) (f : ArmState → ArmState) (ok : ArmState → Lab → Prop)
+    (Hd : ArmState → Prop) (rd : ArmState → Ev) (p : Nat) (rs : BitVec 5) (Ex : ArmState → Prop)
+    (t : ArmState × Mon) (ls : List Lab) : Prop :=
+  ∃ q y1 e, Final P f ok Hd rd p t ls q y1 e ∧
+    (Ex (iterN f p (patch [e] y1)) ∨
+      (¬ Ex (iterN f p (patch [e] y1)) ∧ StoreAt f Hd rs (iterN f p (patch [e] y1)) ∧
+        q + p + 1 ≤ ls.length ∧
+        ∃ wv : Ev, wv.k.dir = .W ∧ stepEvs (iterN f p (patch [e] y1)) = [wv] ∧
+          evTr (ls.take (q + p + 1)) = evTr (ls.take q) ++ segR e p ++ [[wv]] ∧
+          (q + p + 2 ≤ ls.length →
+            evTr (ls.take (q + p + 2)) = evTr (ls.take q) ++ segR e p ++ [[wv], []] ∧
+            ∃ mon2, PRun P f ok t (ls.take (q + p + 2))
+              (f (f (iterN f p (patch [e] y1))), mon2))))
+
+/-- `retryOut_shift` for `RetryOutR`. -/
+theorem retryOutR_shift {P : Policy} {f : ArmState → ArmState} {ok : ArmState → Lab → Prop}
+    {Hd : ArmState → Prop} {rd : ArmState → Ev} {p : Nat} {rs : BitVec 5} {Ex : ArmState → Prop}
+    {B0 rest : List Lab} {t t0 : ArmState × Mon} (hB : PRun P f ok t B0 t0)
+    (hnw : NoW (evTr B0)) (h : RetryOutR P f ok Hd rd p rs Ex t0 rest) :
+    RetryOutR P f ok Hd rd p rs Ex t (B0 ++ rest) := by
+  obtain ⟨q, y1, e, hF, hX⟩ := h
+  have hT : ∀ k, (B0 ++ rest).take (B0.length + k) = B0 ++ rest.take k := take_app B0 rest
+  have e1 : B0.length + q + p = B0.length + (q + p) := by omega
+  have e2 : B0.length + q + p + 1 = B0.length + (q + p + 1) := by omega
+  have e3 : B0.length + q + p + 2 = B0.length + (q + p + 2) := by omega
+  refine ⟨B0.length + q, y1, e, ⟨hF.hd, hF.acc, by simp; have := hF.le; omega, ?_, ?_, ?_⟩, ?_⟩
+  · rw [hT, evTr_append]; exact noW_append hnw hF.pre
+  · rw [e1, hT, hT, evTr_append, evTr_append, hF.seg, List.append_assoc]
+  · obtain ⟨mon1, hr1⟩ := hF.run; exact ⟨mon1, by rw [e1, hT]; exact PRun.append hB hr1⟩
+  rcases hX with hx | ⟨hnx, hst, hle, wv, hW, hwv, hs1, hs2⟩
+  · exact .inl hx
+  refine .inr ⟨hnx, hst, by simp; omega, wv, hW, hwv, ?_, fun h2 => ?_⟩
+  · rw [e2, hT, hT, evTr_append, evTr_append, hs1]; simp [List.append_assoc]
+  · obtain ⟨h3, mon2, hr2⟩ := hs2 (by simp at h2; omega)
+    refine ⟨by rw [e3, hT, hT, evTr_append, evTr_append, h3]; simp [List.append_assoc], mon2, ?_⟩
+    rw [e3, hT]; exact PRun.append hB hr2
+
+/-- **`retry_run`, with the no-write case's last state at a non-`ret` line**: a precise run of a
+retry loop from a head either writes nothing and ends at a state `At`, or has the `RetryOutR`
+outcome (a final iteration at the exit or at a successful store exclusive). -/
+theorem retry_run_det {P : Policy} {f : ArmState → ArmState} {ok : ArmState → Lab → Prop}
+    {Hd : ArmState → Prop} {rd : ArmState → Ev} {p : Nat} {rs : BitVec 5} {Ex : ArmState → Prop}
+    {At : ArmState → Prop} (hL : RetryLoop f Hd rd p rs Ex)
+    (hhd : ∀ y, Hd y → At y)
+    (hpatch : ∀ y e, Hd y → SameAcc e (rd y) → At (patch [e] y))
+    (hmid : ∀ y e, Hd y → SameAcc e (rd y) → ∀ i, 0 < i → i < p → At (iterN f i (patch [e] y)))
+    (hlast : ∀ y e, Hd y → SameAcc e (rd y) → ¬ Ex (iterN f p (patch [e] y)) →
+      At (iterN f p (patch [e] y)))
+    (hfail : ∀ y e, Hd y → SameAcc e (rd y) → ¬ Ex (iterN f p (patch [e] y)) →
+      At (failState rs (iterN f p (patch [e] y)))) :
+    ∀ (N : Nat) (ls : List Lab) (y : ArmState) (mon : Mon) (t' : ArmState × Mon),
+      ls.length ≤ N → Hd y → PRun P f ok (y, mon) ls t' →
+      (NoW (evTr ls) ∧ At t'.1) ∨ RetryOutR P f ok Hd rd p rs Ex (y, mon) ls := by
+  intro N
+  induction N with
+  | zero =>
+    intro ls y mon t' hN hy hr
+    obtain rfl : ls = [] := List.eq_nil_of_length_eq_zero (by omega)
+    cases hr
+    exact .inl ⟨noW_nil, hhd y hy⟩
+  | succ N ih =>
+  intro ls y mon t' hN hy hr
+  obtain ⟨hR, hn, hat, hx0⟩ := hL.read y hy
+  obtain ⟨tp, r1, r2⟩ := PRun.split (ls.take p) (ls.drop p) (by rw [List.take_append_drop]; exact hr)
+  rcases prun_one_read (N := p) (i0 := 0) hR hn hL.pos (fun i hi => absurd hi (Nat.not_lt_zero _))
+      hat hx0 (fun e he i h0 hi => hL.mid y hy e he i h0 hi) r1
+      (List.length_take_le p ls) with ⟨hle, -, -⟩ | ⟨e, he, ht1, hevT, hstep⟩
+  · have : ls = [] := by
+      rcases ls with _ | ⟨l, ls⟩
+      · rfl
+      · simp at hle; have := hL.pos; omega
+    subst this
+    cases hr
+    exact .inl ⟨noW_nil, hhd y hy⟩
+  have heR : e.k.dir = .R := by rw [he.1]; exact hR
+  by_cases hlt : ls.length < p
+  · refine .inl ⟨?_, ?_⟩
+    · have hL' : ls.take p = ls := List.take_of_length_le (by omega)
+      rw [hL'] at hevT
+      rw [hevT]
+      refine noW_of fun x hx y' hy' => ?_
+      obtain ⟨i, hi, rfl⟩ := mem_segEvs hx
+      rw [hstep i (by omega)] at hy'
+      split at hy'
+      · simp only [List.mem_singleton] at hy'; subst hy'; rw [heR]; decide
+      · cases hy'
+    · have hL' : ls.take p = ls := List.take_of_length_le (by omega)
+      rw [hL'] at r1 ht1
+      obtain rfl := PRun.det r1 hr
+      rw [ht1]
+      rcases ls with _ | ⟨l, ls⟩
+      · exact hpatch y e hy he
+      · rw [List.length_cons] at hlt
+        exact hmid y e hy he (ls.length + 1) (by omega) (by omega)
+  obtain ⟨A, B, rfl, hA⟩ : ∃ A B, ls = A ++ B ∧ A.length = p :=
+    ⟨ls.take p, ls.drop p, (List.take_append_drop p ls).symm, by simp; omega⟩
+  rw [List.take_left' hA] at r1 ht1 hevT
+  rw [List.drop_left' hA] at r2
+  rw [hA] at ht1 hevT
+  have hsegp : evTr A = segR e p := hevT.trans (segEvs_segR hL.pos fun i hi => hstep i hi)
+  obtain ⟨z0, mon1⟩ := tp
+  simp only at ht1
+  subst ht1
+  have hT : ∀ k, (A ++ B).take (A.length + k) = A ++ B.take k := take_app A B
+  have hfin : Final P f ok Hd rd p (y, mon) (A ++ B) 0 y e := by
+    refine ⟨hy, he, by simp; omega, by simpa [evTr] using noW_nil, ?_, ⟨mon1, ?_⟩⟩
+    · rw [Nat.zero_add, List.take_left' hA, List.take_zero]
+      exact hsegp
+    · rw [Nat.zero_add, List.take_left' hA]; exact r1
+  rcases hL.last y hy e he with hex | ⟨hnx, hst⟩
+  · exact .inr ⟨0, y, e, hfin, .inl hex⟩
+  cases B with
+  | nil =>
+    cases r2
+    refine .inl ⟨?_, hlast y e hy he hnx⟩
+    rw [List.append_nil, hsegp]
+    exact noW_segR heR p
+  | cons l rest =>
+  cases r2 with
+  | @cons _ t1 _ _ _ hs hp hok r3 =>
+  cases hxf : l.xfail with
+  | false =>
+    obtain ⟨wv, hW, hwv⟩ := hst.wr
+    obtain ⟨hl, ht1⟩ := tstep_store hs hp hxf hW hwv
+    refine .inr ⟨0, y, e, hfin, .inr ⟨hnx, hst, by simp; omega, wv, hW, hwv, ?_, fun h2 => ?_⟩⟩
+    · rw [show 0 + p + 1 = A.length + 1 by omega, hT, List.take_zero, evTr_append, hsegp]
+      simp [evTr, hl]
+    · cases rest with
+      | nil => simp at h2; omega
+      | cons l2 rest2 =>
+      cases r3 with
+      | @cons _ t2 _ _ _ hs2 hp2 hok2 r4 =>
+      obtain ⟨s1, mon1'⟩ := t1
+      simp only at ht1
+      subst ht1
+      obtain ⟨h21, hl2, -⟩ := tstep_nil hs2 hp2 hst.next.1 hst.next.2
+      obtain ⟨s2, mon2⟩ := t2
+      simp only at h21
+      subst h21
+      refine ⟨?_, mon2, ?_⟩
+      · rw [show 0 + p + 2 = A.length + 2 by omega, hT, List.take_zero, evTr_append, hsegp]
+        simp [evTr, hl, hl2]
+      · rw [show 0 + p + 2 = A.length + 2 by omega, hT]
+        simp only [List.take_succ_cons, List.take_zero]
+        exact PRun.append r1 (.cons hs hp hok (.cons hs2 hp2 hok2 .nil))
+  | true =>
+    have hl0 : l.evs = [] := by
+      cases hs with
+      | exec => cases hxf
+      | xfail => rfl
+    obtain ⟨rel0, rn0, hc0⟩ := hst.stx
+    have ht1 : t1.1 = failState rs (iterN f p (patch [e] y)) := by
+      cases hs with
+      | exec => cases hxf
+      | xfail hc =>
+        rw [hc0] at hc
+        cases hc
+        rfl
+    cases rest with
+    | nil =>
+      refine .inl ⟨?_, ?_⟩
+      · rw [evTr_append]
+        refine noW_append (hsegp ▸ noW_segR heR p) (noW_nils fun x hx => ?_)
+        simp only [evTr, List.map_cons, List.map_nil, List.mem_singleton] at hx
+        rw [hx, hl0]
+      · cases r3
+        rw [ht1]
+        exact hfail y e hy he hnx
+    | cons l2 rest2 =>
+    cases r3 with
+    | @cons _ t2 _ _ _ hs2 hp2 hok2 r4 =>
+    obtain ⟨s1, mon1'⟩ := t1
+    simp only at ht1
+    subst ht1
+    obtain ⟨h21, hl2, -⟩ := tstep_nil hs2 hp2 hst.fnext.1 hst.fnext.2
+    obtain ⟨s2, mon2⟩ := t2
+    simp only at h21
+    subst h21
+    have hnwB : NoW (evTr (A ++ [l, l2])) := by
+      rw [evTr_append, hsegp]
+      refine noW_append (noW_segR heR p) (noW_nils fun x hx => ?_)
+      simp only [evTr, List.map_cons, List.map_nil, List.mem_cons, List.not_mem_nil, hl0, hl2] at hx
+      rcases hx with rfl | rfl | hx
+      · rfl
+      · rfl
+      · exact hx.elim
+    have hout := ih rest2 _ mon2 t' (by simp at hN; omega) hst.back r4
+    rcases hout with ⟨hnw2, hat2⟩ | hout2
+    · refine .inl ⟨?_, hat2⟩
+      rw [show A ++ l :: l2 :: rest2 = (A ++ [l, l2]) ++ rest2 from by simp [List.append_assoc],
+        evTr_append]
+      exact noW_append hnwB hnw2
+    · refine .inr ?_
+      have hres := retryOutR_shift (B0 := A ++ [l, l2])
+        (PRun.append r1 (.cons hs hp hok (.cons hs2 hp2 hok2 .nil))) hnwB hout2
+      rw [List.append_assoc] at hres
+      exact hres
+
 set_option maxHeartbeats 4000000 in
 /-- **The per-item obligation at the `atomic_rmw` loop** (module doc): every precise Arm run from
 `Q`-related states goes through failed iterations (reading any bytes, writing nothing) and ends
 before a successful `stlxr` (private writes only: none), or its final iteration's `ldaxr` read `e`
 and successful `stlxr` write `wv` are the events of the allocated code's step `[e, wv]` (on the
-world patched with `e`; a monitor pair), the states after the `cbnz` related. -/
-theorem rmw_op {R : RL} (hR : R.Wf) {ok : ArmState → Lab → Prop} {s : ArmState} {mon : Mon}
+world patched with `e`; a monitor pair), the states after the `cbnz` related; a run ending inside
+the loop (with no successful `stlxr`) is at a line other than `ret`. -/
+theorem rmw_opR {R : RL} (hR : R.Wf) {ok : ArmState → Lab → Prop} {s : ArmState} {mon : Mon}
     {b k : Nat} {allocs : Array Loc} {its' : List RItem} {m : Loc → CV} {w : ArmState}
     {evs0 : List Ev} {c0 : MConf CV ArmState}
     (hq : Q R s (OpC b k allocs its' m w)) (hA : AInv R (OpC b k allocs its' m w))
@@ -453,7 +743,7 @@ theorem rmw_op {R : RL} (hR : R.Wf) {ok : ArmState → Lab → Prop} {s : ArmSta
       ∃ ty op fl ra ro rd r1 r2, i = .atomicRmwLoop ty op fl ra ro rd r1 r2)
     {ls : List Lab} {t' : ArmState × Mon}
     (hr : PRun Policy.arm R.step ok (s, mon) ls t') :
-    OpOutG R ok (s, mon) (OpC b k allocs its' m w) ls := by
+    OpOutN R ok (fun c => c.measure) (s, mon) (OpC b k allocs its' m w) ls t' := by
   cases hs0 with
   | @op _ _ _ _ _ _ vb i ops _ _ hvb hi hops0 hevs0 hfoot0 hst0 =>
   obtain ⟨ty, op, fl, ra, ro, rd, r1, r2, rfl⟩ := hform vb i hvb hi
@@ -539,9 +829,66 @@ theorem rmw_op {R : RL} (hR : R.Wf) {ok : ArmState → Lab → Prop} {s : ArmSta
     rw [← List.drop_drop, hdrop']; simp [rmwLoopLines]
   -- the run
   have hloop := rmw_retry hR hty hd1 hL0 hst.prog hpc hst.err
-  rcases retry_run (P := Policy.arm) (ok := ok) hloop ls.length ls s mon t' (Nat.le_refl _)
-      (loopInv_refl s _ _ _) hr with hnw | ⟨q, y1, e, hF, hX⟩
-  · exact .inr (.inr (.inr (privW_of_noW hnw)))
+  -- the loop's heads are at unhooked non-`ret` lines (for the runs ending inside the item)
+  have hy0 : ∀ y : ArmState, RmwHd ty op s y → ∀ E : List Ev,
+      (patch E y).program = R.fb.program R.base ∧ Arm.r .PC (patch E y) = R.pcOf (j0 + 1) ∧
+        Arm.r .ERR (patch E y) = .None := by
+    intro y hy E
+    refine ⟨by rw [patch, setMem_program, hy.prog, hst.prog], ?_, ?_⟩
+    · rw [patch, r_setMem, hy.pc, hpc, RL.pcOf_succ_label hL0]
+    · rw [patch, r_setMem, hy.err, hst.err]
+  have hatb := lines_at' hd1
+  have hhk : ∀ x tc, Line.ins x tc ∈ rmwLoopBody ty.bits op fl → x.hooked = false := by
+    intro x tc h
+    obtain ⟨x', t', e, hh⟩ := rmwBody_ins hty op fl _ h; cases e; exact hh
+  have hld : Insn.ldaxr ty.bits (.x 27) (.x 25) ≠ .ret := by simp
+  have hhd : ∀ y, RmwHd ty op s y → AtNonRet R y := by
+    intro y hy
+    obtain ⟨-, hp2, -⟩ := hy0 y hy []
+    rw [patch_nil] at hp2
+    exact ⟨j0 + 1, .ldaxr ty.bits (.x 27) (.x 25), fl.trapCode, hatb 0 _ (rmwBody_get0 ty.bits op fl), hld,
+      hhk _ _ (List.mem_of_getElem? (rmwBody_get0 ty.bits op fl)), hp2⟩
+  have hpatchC : ∀ y e, RmwHd ty op s y → SameAcc e (loopRd ty s y) →
+      AtNonRet R (patch [e] y) := by
+    intro y e hy he
+    obtain ⟨-, hp2, -⟩ := hy0 y hy [e]
+    exact ⟨j0 + 1, .ldaxr ty.bits (.x 27) (.x 25), fl.trapCode, hatb 0 _ (rmwBody_get0 ty.bits op fl), hld,
+      hhk _ _ (List.mem_of_getElem? (rmwBody_get0 ty.bits op fl)), hp2⟩
+  have hmidC : ∀ y e, RmwHd ty op s y → SameAcc e (loopRd ty s y) → ∀ i, 0 < i →
+      i < (rmwLoopMid op ty.bits).length + 1 →
+      AtNonRet R (iterN R.step i (patch [e] y)) := by
+    intro y e hy he i h0 hi
+    obtain ⟨hp1, hp2, hp3⟩ := hy0 y hy [e]
+    obtain ⟨x, tc, hj, hh, hnr, -, hpc, -⟩ := rmwBodyAt (ty := ty) (op := op) hR hty hd1 hp1 hp2 hp3 i (by omega)
+    exact ⟨j0 + 1 + i, x, tc, hj, hnr, hh, hpc⟩
+  have hlastC : ∀ y e, RmwHd ty op s y → SameAcc e (loopRd ty s y) →
+      ¬ (fun _ => False) (iterN R.step ((rmwLoopMid op ty.bits).length + 1) (patch [e] y)) →
+      AtNonRet R (iterN R.step ((rmwLoopMid op ty.bits).length + 1) (patch [e] y)) := by
+    intro y e hy he _
+    obtain ⟨hp1, hp2, hp3⟩ := hy0 y hy [e]
+    obtain ⟨x, tc, hj, hh, hnr, -, hpc, -⟩ := rmwBodyAt (ty := ty) (op := op) hR hty hd1 hp1 hp2 hp3 ((rmwLoopMid op ty.bits).length + 1) (by omega)
+    exact ⟨j0 + 1 + ((rmwLoopMid op ty.bits).length + 1), x, tc, hj, hnr, hh, hpc⟩
+  have hcbz : Insn.cbz true true (.x 24) (.loop ps1.aloop) ≠ .ret := by simp
+  have hLcbnz : R.L[j0 + ((rmwLoopMid op ty.bits).length + 3)]? =
+      some (.ins (.cbz true true (.x 24) (.loop ps1.aloop)) none) :=
+    lines_at' hdrop' ((rmwLoopMid op ty.bits).length + 3) _ (by simp [rmwLoopLines, rmwBody_len])
+  have hfailC : ∀ y e, RmwHd ty op s y → SameAcc e (loopRd ty s y) →
+      ¬ (fun _ => False) (iterN R.step ((rmwLoopMid op ty.bits).length + 1) (patch [e] y)) →
+      AtNonRet R (failState 24#5
+        (iterN R.step ((rmwLoopMid op ty.bits).length + 1) (patch [e] y))) := by
+    intro y e hy he _
+    obtain ⟨hp1, hp2, hp3⟩ := hy0 y hy [e]
+    obtain ⟨x, tc, hj, hh, hnr, -, hpc, -⟩ := rmwBodyAt (ty := ty) (op := op) hR hty hd1 hp1 hp2 hp3 ((rmwLoopMid op ty.bits).length + 1) (by omega)
+    refine ⟨j0 + ((rmwLoopMid op ty.bits).length + 3),
+      .cbz true true (.x 24) (.loop ps1.aloop), none, hLcbnz, hcbz, by simp [Insn.hooked], ?_⟩
+    rw [pc_failState, hpc, ← RL.pcOf_succ_ins (hatb ((rmwLoopMid op ty.bits).length + 1) _
+      (rmwBody_getLast ty.bits op fl)),
+      show (j0 + 1 + ((rmwLoopMid op ty.bits).length + 1)) + 1 =
+        j0 + ((rmwLoopMid op ty.bits).length + 3) from by omega]
+  rcases retry_run_det (P := Policy.arm) (ok := ok) hloop hhd hpatchC hmidC hlastC hfailC
+    ls.length ls s mon t' (Nat.le_refl _)
+    (loopInv_refl s _ _ _) hr with ⟨hnw, hat⟩ | ⟨q, y1, e, hF, hX⟩
+  · exact .inr (.inr (.inr (And.intro (privW_of_noW hnw) hat)))
   rcases hX with hfalse | ⟨-, -, hle1, wv, hW, hwv, hseg1, hseg2⟩
   · exact hfalse.elim
   -- the final iteration: its read `e`, its write `wv`
@@ -761,10 +1108,102 @@ theorem rmw_op {R : RL} (hR : R.Wf) {ok : ArmState → Lab → Prop} {s : ArmSta
   · have hls : ls.take (q + ((rmwLoopMid op ty.bits).length + 1) + 1) = ls :=
       List.take_of_length_le (by omega)
     rw [hls] at hseg1
-    refine .inr (.inr (.inl ⟨_, c'', fun j => if j = 0 then ((evTr (ls.take q)).length, 0) else
-      ((evTr (ls.take q)).length + ((rmwLoopMid op ty.bits).length + 1), 0), hsrc, ?_⟩))
-    rw [hseg1, List.append_assoc]
-    exact img_pair hpos hF.pre rfl rfl hsh (T := []) (by simp)
+    have hIMG : Img (PrivA R)
+        [⟨.acqXR, Arm.r (.GPR 25#5) s, ty.bytes, v⟩, ⟨.relXW, Arm.r (.GPR 25#5) s, ty.bytes,
+          rmwNew ty op (patch [⟨.acqXR, Arm.r (.GPR 25#5) s, ty.bytes, v⟩] y1)⟩] (evTr ls)
+        (fun j => if j = 0 then ((evTr (ls.take q)).length, 0) else
+          ((evTr (ls.take q)).length + ((rmwLoopMid op ty.bits).length + 1), 0)) := by
+      rw [hseg1, List.append_assoc]
+      exact img_pair hpos hF.pre rfl rfl hsh (T := []) (by simp)
+    refine .inr (.inr (.inl (And.intro ⟨_, c'', fun j => if j = 0 then ((evTr (ls.take q)).length, 0) else
+      ((evTr (ls.take q)).length + ((rmwLoopMid op ty.bits).length + 1), 0), hsrc, hIMG⟩ ?_)))
+    · -- the run ends with the final iteration's successful `stlxr`, at the `cbnz` line
+      have hlen1 : ls.length = q + ((rmwLoopMid op ty.bits).length + 1) + 1 := by omega
+      obtain ⟨mon1, hr1⟩ := hF.run
+      obtain ⟨t0, rA, rB⟩ := PRun.split (ls.take (q + ((rmwLoopMid op ty.bits).length + 1)))
+        (ls.drop (q + ((rmwLoopMid op ty.bits).length + 1)))
+        (by rw [List.take_append_drop]; exact hr)
+      obtain rfl := PRun.det rA hr1
+      obtain ⟨l, hdl⟩ : ∃ l, ls.drop (q + ((rmwLoopMid op ty.bits).length + 1)) = [l] := by
+        have h1 : (ls.drop (q + ((rmwLoopMid op ty.bits).length + 1))).length = 1 := by
+          rw [List.length_drop]; omega
+        cases hl : ls.drop (q + ((rmwLoopMid op ty.bits).length + 1)) with
+        | nil => rw [hl] at h1; simp at h1
+        | cons l t =>
+          cases t with
+          | nil => exact ⟨l, rfl⟩
+          | cons _ _ => rw [hl, List.length_cons, List.length_cons] at h1; omega
+      rw [hdl] at rB
+      cases rB with
+      | @cons _ t1 _ _ _ hsB hpB hokB rB' =>
+      cases rB'
+      rw [h25y] at hwev'
+      have hlev : l.evs = [⟨.relXW, Arm.r (.GPR 25#5) s, ty.bytes,
+        rmwNew ty op (patch [⟨.acqXR, Arm.r (.GPR 25#5) s, ty.bytes, v⟩] y1)⟩] := by
+        have e1 : (evTr ls)[q + ((rmwLoopMid op ty.bits).length + 1)]? =
+            some [⟨.relXW, Arm.r (.GPR 25#5) s, ty.bytes,
+              rmwNew ty op (patch [⟨.acqXR, Arm.r (.GPR 25#5) s, ty.bytes, v⟩] y1)⟩] := by
+          rw [hseg1, List.append_assoc, List.getElem?_append,
+            if_neg (by simp only [evTr, List.length_map, List.length_take]; omega),
+            show (q + ((rmwLoopMid op ty.bits).length + 1)) - (evTr (ls.take q)).length =
+              (rmwLoopMid op ty.bits).length + 1 from by
+              simp only [evTr, List.length_map, List.length_take]; omega,
+            List.getElem?_append,
+            if_neg (by rw [segR_length ⟨.acqXR, Arm.r (.GPR 25#5) s, ty.bytes, v⟩ (by omega)]; omega),
+            segR_length ⟨.acqXR, Arm.r (.GPR 25#5) s, ty.bytes, v⟩ (by omega), Nat.sub_self, List.getElem?_cons_zero]
+        have e3 : ls[q + ((rmwLoopMid op ty.bits).length + 1)]? = some l := by
+          have h4 : (ls.drop (q + ((rmwLoopMid op ty.bits).length + 1)))[0]? = some l := by
+            rw [hdl]; simp
+          rw [List.getElem?_drop] at h4
+          simpa using h4
+        have e2 : (evTr ls)[q + ((rmwLoopMid op ty.bits).length + 1)]? = some l.evs := by
+          simp only [evTr, List.getElem?_map]
+          rw [e3]
+          simp
+        rw [e2] at e1
+        exact Option.some.inj e1
+      have hxfB : l.xfail = false := by
+        rcases hpB with hx | ⟨M', hM'⟩
+        · have hl0 : l.evs = [] := by cases hsB with | exec => cases hx | xfail => rfl
+          rw [hlev] at hl0
+          exact absurd hl0 (by simp)
+        · rw [ArmPrecise.stepEvs_setMem, hwev'] at hM'
+          rw [reread_W hW M' (Arm.r (.GPR 25#5) s) ty.bytes
+            (rmwNew ty op (patch [⟨.acqXR, Arm.r (.GPR 25#5) s, ty.bytes, v⟩] y1))] at hM'
+          cases hb : l.xfail with
+          | false => rfl
+          | true =>
+            have hl0 : l.evs = [] := by cases hsB with | exec => cases hb | xfail => rfl
+            rw [hl0] at hM'
+            injection hM'
+      obtain ⟨-, htB⟩ := tstep_store hsB hpB hxfB hW hwev'
+      rw [htB]
+      obtain ⟨t4, hrun4, hint4, -, -, -, -, -⟩ :=
+        rmwBody_spec hty op fl (R.envOf (j0 + 1))
+          (patch [⟨.acqXR, Arm.r (.GPR 25#5) s, ty.bytes, v⟩] y1) hp3
+      obtain ⟨hit, hpcs, -, -⟩ := run_ins hR hd1 (rmwBody_ins hty op fl) hp1 hp2 hp3 hint4 hrun
+      rw [rmwBody_len] at hpcs
+      exact ⟨j0 + ((rmwLoopMid op ty.bits).length + 3),
+        .cbz true true (.x 24) (.loop ps1.aloop), none, hLcbnz, hcbz, by simp [Insn.hooked],
+        by rw [hstep, hpcs, show j0 + 1 + ((rmwLoopMid op ty.bits).length + 2) =
+          j0 + ((rmwLoopMid op ty.bits).length + 3) from by omega]⟩
+
+/-- **The per-item obligation at the `atomic_rmw` loop** (module doc): every precise Arm run from
+`Q`-related states goes through failed iterations (reading any bytes, writing nothing) and ends
+before a successful `stlxr` (private writes only: none), or its final iteration's `ldaxr` read `e`
+and successful `stlxr` write `wv` are the events of the allocated code's step `[e, wv]` (on the
+world patched with `e`; a monitor pair), the states after the `cbnz` related. -/
+theorem rmw_op {R : RL} (hR : R.Wf) {ok : ArmState → Lab → Prop} {s : ArmState} {mon : Mon}
+    {b k : Nat} {allocs : Array Loc} {its' : List RItem} {m : Loc → CV} {w : ArmState}
+    {evs0 : List Ev} {c0 : MConf CV ArmState}
+    (hq : Q R s (OpC b k allocs its' m w)) (hA : AInv R (OpC b k allocs its' m w))
+    (hs0 : SrcStep R (OpC b k allocs its' m w) evs0 c0)
+    (hform : ∀ vb i, R.vc.blocks[b]? = some vb → vb.insts[k]? = some i →
+      ∃ ty op fl ra ro rd r1 r2, i = .atomicRmwLoop ty op fl ra ro rd r1 r2)
+    {ls : List Lab} {t' : ArmState × Mon}
+    (hr : PRun Policy.arm R.step ok (s, mon) ls t') :
+    OpOutG R ok (s, mon) (OpC b k allocs its' m w) ls :=
+  (rmw_opR hR hq hA hs0 hform hr).out
 
 /-! ## The `atomic_cas` loop on the machine -/
 
@@ -1010,8 +1449,9 @@ set_option maxHeartbeats 8000000 in
 before a successful `stlxr` or the exit (no write), or its final iteration's `ldaxr` read `e` is
 the event of the allocated code's step `[e]` (the values differ: the `b.ne` exit), or `e` and the
 successful `stlxr` write `wv` are the events of its step `[e, wv]` (a monitor pair), on the world
-patched with `e`, the states after the item related. -/
-theorem cas_op {R : RL} (hR : R.Wf) {ok : ArmState → Lab → Prop} {s : ArmState} {mon : Mon}
+world patched with `e`, the states after the item related; a run ending inside the loop (before
+the successful `stlxr`'s `cbnz`) is at a line other than `ret`. -/
+theorem cas_opR {R : RL} (hR : R.Wf) {ok : ArmState → Lab → Prop} {s : ArmState} {mon : Mon}
     {b k : Nat} {allocs : Array Loc} {its' : List RItem} {m : Loc → CV} {w : ArmState}
     {evs0 : List Ev} {c0 : MConf CV ArmState}
     (hq : Q R s (OpC b k allocs its' m w)) (hA : AInv R (OpC b k allocs its' m w))
@@ -1020,7 +1460,7 @@ theorem cas_op {R : RL} (hR : R.Wf) {ok : ArmState → Lab → Prop} {s : ArmSta
       ∃ ty fl ra re rx rd r1, i = .atomicCasLoop ty fl ra re rx rd r1)
     {ls : List Lab} {t' : ArmState × Mon}
     (hr : PRun Policy.arm R.step ok (s, mon) ls t') :
-    OpOutG R ok (s, mon) (OpC b k allocs its' m w) ls := by
+    OpOutN R ok (fun c => c.measure) (s, mon) (OpC b k allocs its' m w) ls t' := by
   cases hs0 with
   | @op _ _ _ _ _ _ vb i ops _ _ hvb hi hops0 hevs0 hfoot0 hst0 =>
   obtain ⟨ty, fl, ra, re, rx, rd, r1, rfl⟩ := hform vb i hvb hi
@@ -1112,9 +1552,100 @@ theorem cas_op {R : RL} (hR : R.Wf) {ok : ArmState → Lab → Prop} {s : ArmSta
   have hL0 : R.L[j0]? = some (.label (.loop ps1.aloop)) := lines_at' hdrop' 0 _ rfl
   -- the run
   have hloop := cas_retry hR hty hdrop' hst.prog hpc hst.err
-  rcases retry_run (P := Policy.arm) (ok := ok) hloop ls.length ls s mon t' (Nat.le_refl _)
-      (loopInv_refl s _ _ _) hr with hnw | ⟨q, y1, e, hF, hX⟩
-  · exact .inr (.inr (.inr (privW_of_noW hnw)))
+  -- the loop's heads are at unhooked non-`ret` lines (for the runs ending inside the item)
+  have hy0 : ∀ y : ArmState, CasHd ty s y → ∀ E : List Ev,
+      (patch E y).program = R.fb.program R.base ∧ Arm.r .PC (patch E y) = R.pcOf (j0 + 1) ∧
+        Arm.r .ERR (patch E y) = .None := by
+    intro y hy E
+    refine ⟨by rw [patch, setMem_program, hy.prog, hst.prog], ?_, ?_⟩
+    · rw [patch, r_setMem, hy.pc, hpc, RL.pcOf_succ_label hL0]
+    · rw [patch, r_setMem, hy.err, hst.err]
+  have hatc := lines_at' hdrop'
+  have hL1 : R.L[j0 + 1]? = some (.ins (.ldaxr ty.bits (.x 27) (.x 25)) fl.trapCode) :=
+    hatc 1 _ (by simp [casLoopLines, casLoopHead])
+  have hL2 : R.L[j0 + 2]? = some (.ins (casLoopCmp ty.bits)) :=
+    hatc 2 _ (by simp [casLoopLines, casLoopHead])
+  have hL3 : R.L[j0 + 3]? = some (.ins (.bcond .ne (.loop (ps1.aloop + 1))) none) :=
+    hatc 3 _ (by simp [casLoopLines, casLoopHead])
+  have hL4 : R.L[j0 + 4]? = some (.ins (.stlxr ty.bits (.x 24) (.x 28) (.x 25)) fl.trapCode) :=
+    hatc 4 _ (by simp [casLoopLines, casLoopHead])
+  have hL5 : R.L[j0 + 5]? = some (.ins (.cbz true true (.x 24) (.loop ps1.aloop)) none) :=
+    hatc 5 _ (by simp [casLoopLines, casLoopHead])
+  have hpcy : ∀ y, CasHd ty s y → Arm.r .PC y = R.pcOf (j0 + 1) := by
+    intro y hy
+    obtain ⟨-, hp2, -⟩ := hy0 y hy []
+    rw [patch_nil] at hp2
+    exact hp2
+  have hhd : ∀ y, CasHd ty s y → AtNonRet R y := fun y hy =>
+    ⟨j0 + 1, .ldaxr ty.bits (.x 27) (.x 25), fl.trapCode, hL1, by simp, by simp [Insn.hooked],
+      hpcy y hy⟩
+  have hpatchC : ∀ y e, CasHd ty s y → SameAcc e (loopRd ty s y) → AtNonRet R (patch [e] y) :=
+    fun y e hy _ =>
+      ⟨j0 + 1, .ldaxr ty.bits (.x 27) (.x 25), fl.trapCode, hL1, by simp, by simp [Insn.hooked],
+        (hy0 y hy [e]).2.1⟩
+  have hd1' : R.L.drop (j0 + 1) = casLoopHead ty.bits fl ++
+      (.ins (.bcond .ne (.loop (ps1.aloop + 1))) none ::
+        .ins (.stlxr ty.bits (.x 24) (.x 28) (.x 25)) fl.trapCode ::
+        .ins (.cbz true true (.x 24) (.loop ps1.aloop)) none ::
+        .label (.loop (ps1.aloop + 1)) ::
+          (relaxLines R.far (ftList (ls2 ++ nxtOf R.af b)) ++ T)) := by
+    rw [← List.drop_drop, hdrop']; simp [casLoopLines, casLoopHead]
+  have hmidC : ∀ y e, CasHd ty s y → SameAcc e (loopRd ty s y) → ∀ i, 0 < i → i < 3 →
+      AtNonRet R (iterN R.step i (patch [e] y)) := by
+    intro y e hy he i h0 hi
+    obtain ⟨hp1, hp2, hp3⟩ := hy0 y hy [e]
+    obtain ⟨s1, hrun1, hint1, -, -, -, -, -⟩ := casHead_spec hty fl (R.envOf (j0 + 1))
+      (patch [e] y) hp3
+    obtain ⟨hit1, hpcs1, -, -⟩ := run_ins hR hd1' (casHead_ins ty.bits fl) hp1 hp2 hp3 hint1 hrun1
+    have hhk1 : ∀ x t, Line.ins x t ∈ casLoopHead ty.bits fl → x.hooked = false := by
+      intro x t h
+      obtain ⟨x', t', e', hh⟩ := casHead_ins ty.bits fl _ h; cases e'; exact hh
+    have hpcI : ∀ j ≤ 2, Arm.r .PC (iterN R.step j (patch [e] y)) = R.pcOf (j0 + 1 + j) :=
+      fun j hj => iterN_execLines_pc hR.layout hR.lm hR.fit (casLoopHead ty.bits fl) (j0 + 1)
+        (patch [e] y) s1 (lines_at' hd1') hhk1 hp1 hp2 hp3 hint1 hrun1 j hj
+    have h12 : i = 1 ∨ i = 2 := by omega
+    rcases h12 with rfl | rfl
+    · exact ⟨j0 + 2, casLoopCmp ty.bits, none, hL2, casLoopCmp_ne_ret _,
+        hhk1 (casLoopCmp ty.bits) none (by simp [casLoopHead]), hpcI 1 (by omega)⟩
+    · exact ⟨j0 + 3, .bcond .ne (.loop (ps1.aloop + 1)), none, hL3, by simp,
+        by simp [Insn.hooked], hpcI 2 (by omega)⟩
+  have hlastC : ∀ y e, CasHd ty s y → SameAcc e (loopRd ty s y) →
+      ¬ (fun z => Arm.ConditionHolds Cond.ne.bits z = true)
+        (iterN R.step 3 (patch [e] y)) →
+      AtNonRet R (iterN R.step 3 (patch [e] y)) := by
+    intro y e hy he hnEx
+    obtain ⟨hp1, hp2, hp3⟩ := hy0 y hy [e]
+    obtain ⟨s1, hrun1, hit1, -, -, -, hstepb, -⟩ := cas_steps hR hty hdrop' hp1 hp2 hp3
+    have hz3 : iterN R.step 3 (patch [e] y) = R.step s1 := by
+      rw [show 3 = 2 + 1 from rfl, iterN_succ', hit1]
+    have hcond : Arm.ConditionHolds Cond.ne.bits s1 = false := by
+      rw [hz3, hstepb] at hnEx
+      simp only [condHolds_w_pc] at hnEx
+      simpa using hnEx
+    rw [hz3, hstepb, hcond, if_neg (by simp)]
+    exact ⟨j0 + 4, .stlxr ty.bits (.x 24) (.x 28) (.x 25), fl.trapCode, hL4, by simp,
+      by simp [Insn.hooked], Arm.r_of_w_same ..⟩
+  have hfailC : ∀ y e, CasHd ty s y → SameAcc e (loopRd ty s y) →
+      ¬ (fun z => Arm.ConditionHolds Cond.ne.bits z = true)
+        (iterN R.step 3 (patch [e] y)) →
+      AtNonRet R (failState 24#5 (iterN R.step 3 (patch [e] y))) := by
+    intro y e hy he hnEx
+    obtain ⟨hp1, hp2, hp3⟩ := hy0 y hy [e]
+    obtain ⟨s1, hrun1, hit1, -, -, -, hstepb, -⟩ := cas_steps hR hty hdrop' hp1 hp2 hp3
+    have hz3 : iterN R.step 3 (patch [e] y) = R.step s1 := by
+      rw [show 3 = 2 + 1 from rfl, iterN_succ', hit1]
+    have hcond : Arm.ConditionHolds Cond.ne.bits s1 = false := by
+      rw [hz3, hstepb] at hnEx
+      simp only [condHolds_w_pc] at hnEx
+      simpa using hnEx
+    refine ⟨j0 + 5, .cbz true true (.x 24) (.loop ps1.aloop), none, hL5, by simp,
+      by simp [Insn.hooked], ?_⟩
+    rw [pc_failState, hz3, hstepb, hcond, if_neg (by simp), Arm.r_of_w_same,
+      show (j0 + 4) + 1 = j0 + 5 from rfl, RL.pcOf_succ_ins hL4]
+  rcases retry_run_det (P := Policy.arm) (ok := ok) hloop hhd hpatchC hmidC hlastC hfailC
+    ls.length ls s mon t' (Nat.le_refl _)
+    (loopInv_refl s _ _ _) hr with ⟨hnw, hat⟩ | ⟨q, y1, e, hF, hX⟩
+  · exact .inr (.inr (.inr (And.intro (privW_of_noW hnw) hat)))
   -- the final iteration: its read `e`
   obtain ⟨k0, a0, n0, v⟩ := e
   obtain ⟨hk1, ha1, hn1⟩ := hF.acc
@@ -1484,9 +2015,108 @@ theorem cas_op {R : RL} (hR : R.Wf) {ok : ArmState → Lab → Prop} {s : ArmSta
     exact img_pair (by omega) hF.pre rfl rfl hsh (T := [[]]) (by simp)
   · have hls : ls.take (q + 3 + 1) = ls := List.take_of_length_le (by omega)
     rw [hls] at hseg1
-    refine .inr (.inr (.inl ⟨_, c'', fun j => if j = 0 then ((evTr (ls.take q)).length, 0) else
-      ((evTr (ls.take q)).length + 3, 0), hsrc, ?_⟩))
-    rw [hseg1, List.append_assoc]
-    exact img_pair (by omega) hF.pre rfl rfl hsh (T := []) (by simp)
+    have hIMG : Img (PrivA R)
+        [⟨.acqXR, Arm.r (.GPR 25#5) s, ty.bytes, v⟩, ⟨.relXW, Arm.r (.GPR 25#5) s, ty.bytes,
+          (Arm.r (.GPR 28#5) s).setWidth (ty.bytes * 8)⟩] (evTr ls)
+        (fun j => if j = 0 then ((evTr (ls.take q)).length, 0) else
+          ((evTr (ls.take q)).length + 3, 0)) := by
+      rw [hseg1, List.append_assoc]
+      exact img_pair (by omega) hF.pre rfl rfl hsh (T := []) (by simp)
+    refine .inr (.inr (.inl (And.intro ⟨_, c'', fun j => if j = 0 then ((evTr (ls.take q)).length, 0) else
+      ((evTr (ls.take q)).length + 3, 0), hsrc, hIMG⟩ ?_)))
+    · -- the run ends with the final iteration's successful `stlxr`, at the `cbnz` line
+      have hlen1 : ls.length = q + 3 + 1 := by omega
+      obtain ⟨mon1, hr1⟩ := hF.run
+      obtain ⟨t0, rA, rB⟩ := PRun.split (ls.take (q + 3)) (ls.drop (q + 3))
+        (by rw [List.take_append_drop]; exact hr)
+      obtain rfl := PRun.det rA hr1
+      obtain ⟨l, hdl⟩ : ∃ l, ls.drop (q + 3) = [l] := by
+        have h1 : (ls.drop (q + 3)).length = 1 := by rw [List.length_drop]; omega
+        cases hl : ls.drop (q + 3) with
+        | nil => rw [hl] at h1; simp at h1
+        | cons l t =>
+          cases t with
+          | nil => exact ⟨l, rfl⟩
+          | cons _ _ => rw [hl, List.length_cons, List.length_cons] at h1; omega
+      rw [hdl] at rB
+      cases rB with
+      | @cons _ t1 _ _ _ hsB hpB hokB rB' =>
+      cases rB'
+      have hz0 : iterN R.step 3 (patch [⟨.acqXR, Arm.r (.GPR 25#5) s, ty.bytes, v⟩] y1) = zS := by
+        rw [hz, hstepb]
+        simp only [hne', Bool.false_eq_true, ite_false]
+        exact hzS
+      rw [hzS] at hwevA
+      rw [← hz0, h25s1, h28s1] at hwevA
+      have hlev : l.evs = [⟨.relXW, Arm.r (.GPR 25#5) s, ty.bytes,
+        (Arm.r (.GPR 28#5) s).setWidth (ty.bytes * 8)⟩] := by
+        have e1 : (evTr ls)[q + 3]? = some [⟨.relXW, Arm.r (.GPR 25#5) s, ty.bytes,
+          (Arm.r (.GPR 28#5) s).setWidth (ty.bytes * 8)⟩] := by
+          rw [hseg1, List.append_assoc, List.getElem?_append,
+            if_neg (by simp only [evTr, List.length_map, List.length_take]; omega),
+            show (q + 3) - (evTr (ls.take q)).length = 3 from by
+              simp only [evTr, List.length_map, List.length_take]; omega,
+            List.getElem?_append,
+            if_neg (by rw [segR_length ⟨.acqXR, Arm.r (.GPR 25#5) s, ty.bytes, v⟩ (by omega)]; omega),
+            segR_length ⟨.acqXR, Arm.r (.GPR 25#5) s, ty.bytes, v⟩ (by omega), Nat.sub_self, List.getElem?_cons_zero]
+        have e3 : ls[q + 3]? = some l := by
+          have h4 : (ls.drop (q + 3))[0]? = some l := by rw [hdl]; simp
+          rw [List.getElem?_drop] at h4
+          simpa using h4
+        have e2 : (evTr ls)[q + 3]? = some l.evs := by
+          simp only [evTr, List.getElem?_map]
+          rw [e3]
+          simp
+        rw [e2] at e1
+        exact Option.some.inj e1
+      have hxfB : l.xfail = false := by
+        rcases hpB with hx | ⟨M', hM'⟩
+        · have hl0 : l.evs = [] := by cases hsB with | exec => cases hx | xfail => rfl
+          rw [hlev] at hl0
+          exact absurd hl0 (by simp)
+        · rw [ArmPrecise.stepEvs_setMem, hwevA] at hM'
+          rw [reread_W hW M' (Arm.r (.GPR 25#5) s) ty.bytes
+            ((Arm.r (.GPR 28#5) s).setWidth (ty.bytes * 8))] at hM'
+          cases hb : l.xfail with
+          | false => rfl
+          | true =>
+            have hl0 : l.evs = [] := by cases hsB with | exec => cases hb | xfail => rfl
+            rw [hl0] at hM'
+            injection hM'
+      obtain ⟨-, htB⟩ := tstep_store hsB hpB hxfB hW hwevA
+      rw [htB, hz0, hstep3]
+      have hd4 : R.L.drop (j0 + 4) = casStore ty.bits fl ++
+          (.ins (.cbz true true (.x 24) (.loop ps1.aloop)) none ::
+            .label (.loop (ps1.aloop + 1)) ::
+              (relaxLines R.far (ftList (ls2 ++ nxtOf R.af b)) ++ T)) := by
+        rw [← List.drop_drop, hdrop']; simp [casLoopLines, casLoopHead, casStore]
+      have hint3 : LinesInterOk (R.envOf (j0 + 4)) (casStore ty.bits fl) zS :=
+        fun q h0 h1 => by simp [casStore] at h1; omega
+      have hprogzS : zS.program = R.fb.program R.base := by
+        rw [← hzS, Arm.w_program, hprogs1, hst.prog]
+      have hpczS : Arm.r .PC zS = R.pcOf (j0 + 4) := by rw [← hzS, Arm.r_of_w_same]
+      obtain ⟨-, hpcs3, -, -⟩ := run_ins hR hd4 (by simp [casStore, Insn.hooked]) hprogzS hpczS
+        herrzS hint3 hrun3
+      simp only [casStore, List.length_singleton] at hpcs3
+      exact ⟨j0 + 5, .cbz true true (.x 24) (.loop ps1.aloop), none, hL5, by simp,
+        by simp [Insn.hooked], by rw [hpcs3, show (j0 + 4) + 1 = j0 + 5 from rfl]⟩
+
+/-- **The per-item obligation at the `atomic_cas` loop** (module doc): every precise Arm run from
+`Q`-related states goes through failed iterations (reading any bytes, writing nothing) and ends
+before a successful `stlxr` or the exit (no write), or its final iteration's `ldaxr` read `e` is
+the event of the allocated code's step `[e]` (the values differ: the `b.ne` exit), or `e` and the
+successful `stlxr` write `wv` are the events of its step `[e, wv]` (a monitor pair), on the world
+patched with `e`, the states after the item related. -/
+theorem cas_op {R : RL} (hR : R.Wf) {ok : ArmState → Lab → Prop} {s : ArmState} {mon : Mon}
+    {b k : Nat} {allocs : Array Loc} {its' : List RItem} {m : Loc → CV} {w : ArmState}
+    {evs0 : List Ev} {c0 : MConf CV ArmState}
+    (hq : Q R s (OpC b k allocs its' m w)) (hA : AInv R (OpC b k allocs its' m w))
+    (hs0 : SrcStep R (OpC b k allocs its' m w) evs0 c0)
+    (hform : ∀ vb i, R.vc.blocks[b]? = some vb → vb.insts[k]? = some i →
+      ∃ ty fl ra re rx rd r1, i = .atomicCasLoop ty fl ra re rx rd r1)
+    {ls : List Lab} {t' : ArmState × Mon}
+    (hr : PRun Policy.arm R.step ok (s, mon) ls t') :
+    OpOutG R ok (s, mon) (OpC b k allocs its' m w) ls :=
+  (cas_opR hR hq hA hs0 hform hr).out
 
 end Concurrency.ArmAllocThread

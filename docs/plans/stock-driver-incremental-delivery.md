@@ -309,3 +309,12 @@ original SSA and actual selection, rather than adding accepted-input premises.
 All original #140 effects, calls, control, widths/ABIs, block/whole-driver
 simulation and universal Stock-only/downstream completeness remain active.
 Fallback and successful Stock.lower do not establish Stock completeness.
+
+
+Returned-definition retention is now proved across arbitrary original source
+positions on27003599/current-main61934c30. [Evidence](../research/stock-returned-definition-retention.md)
+records682normal keys,20audited roots,134standard-only core/16fixed-witness
+constants and a complete non-final-division source witness. All old variants and
+existing consumer imports remain. Continue immediately with the generalized
+source return/trap domain, classifier and default consumers; this dependency
+alone is not broader production activation or full140completion.
