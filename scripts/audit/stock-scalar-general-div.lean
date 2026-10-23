@@ -9,6 +9,8 @@ import FV.Backend.Proof.StockNoLoadDriverWitness
 import FV.Backend.Proof.StockNoLoadBranchWitness
 import FV.Backend.Proof.StockScalarDivSourceWitness
 
+set_option pp.privateNames true
+
 #print axioms Backend.Stock.Proof.SinkRules.no_load_frames
 #print axioms Backend.Stock.Proof.SinkRules.no_load_apply
 #print axioms Backend.Stock.Proof.SinkRules.no_load_lower
