@@ -140,12 +140,13 @@ theorem step_pushC_stuck {s : Clif.State} {vals : List Clif.Val} {cm : Clif.Mem}
 /-- **The ends of a realized prefix short of the whole run** (module doc): the innermost frame
 `s` of the CLIF thread (below callers `ext`) stops (`IselThread.Stop`: no step, or an
 `atomic_cas` on read-only data), is at an event-free return the prefix did not realize, or the
-thread's CLIF step from it is stuck (e.g. a return whose results do not fit the caller); or the
-next CLIF step reads a masked byte; or the thread returns with masked bytes. -/
+thread's CLIF step from it is stuck or traps (e.g. a return whose results do not fit the
+caller); or the next CLIF step reads a masked byte; or the thread returns with masked bytes. -/
 def EndT (env : Clif.Env) (p : Clif.Program) (_P : List Lab) (d : TState × (Nat → Prop)) : Prop :=
   (∃ ext s, strip d.1 = strip (.run (pushC ext s)) ∧
     (IselThread.Stop env p (.run s) ∨ (∃ v, CStep env p (.run s) [] (.ret v)) ∨
-      ∃ msg, Clif.step env p (pushC ext s) = .stuck msg)) ∨
+      (∃ msg, Clif.step env p (pushC ext s) = .stuck msg) ∨
+      ∃ c, Clif.step env p (pushC ext s) = .trapped c)) ∨
   (∃ evs t'', CStep env p d.1 evs t'' ∧ ReadsMasked (maskOf d.1) evs) ∨
   (∃ v, CStep env p d.1 [] (.ret v) ∧ ∃ a, maskOf d.1 a)
 
@@ -337,6 +338,27 @@ structure StatOk (L : Link) (env : Clif.Env) (p : Clif.Program) (g : Act) : Prop
   uv : CallUsesVirt g.F.vc
   dv : CallDefsVirt g.F.vc
   uniq : ∀ e ∈ g.f.externs, ∀ e' ∈ g.f.externs, e.2.name = e'.2.name → e.2 = e'.2
+  envx : ∀ e ∈ g.f.externs, env.extern e.2.name = none
+  sigs : ∀ e ∈ g.f.externs, ∀ callee, p.func? e.2.name = some callee → callee.sig = e.2.sig
+
+/-- **The static facts of a compiled function of the link** (module doc): the lowering, prep and
+allocation data of the CLIF function `f` compiled to `F` (named `nm`), such that every activation
+of `F` (well formed, entered at an ABI call, its body-entry stack pointer 16-aligned) has its
+`StatOk` with the memory relation of its world (`Γ`: its private set, the link's symbols `syms`,
+its slot base). -/
+def FnOk (L : Link) (env : Clif.Env) (p : Clif.Program) (syms : String → Option Nat)
+    (nm : String) (F : LFn) (f : Clif.Function) : Prop :=
+  F.Static ∧ F.af.frameSize % 16 = 0 ∧
+  ∃ (vc : VCode) (ctx : Ctx) (st0 : LState) (R : Reg → Reg) (gn : Nat → Nat) (bl : List BLow)
+    (A : Nat → Nat → List Clif.ValueId) (Lp : Nat → Prop) (ss ss' : Array (Array Nat))
+    (cc : CheckCtx) (ins : Array (Option AState)) (a0 : AState),
+    ∀ (s0 : ArmState) (K : Nat) (G : BitVec 64 → Prop) (ra c : BitVec 64)
+      (slots : List (Clif.SlotId × Nat)) (ext : List (Clif.Frame × List Clif.ValueId))
+      (caller : LFn) (opens : List (Clif.Mem × Nat)),
+      (L.act F s0 K G).Wf → AbiCall F.fb F.base ra s0 → c.toNat % 16 = 0 →
+      StatOk L env p ⟨nm, F, s0, K, G, ra, f, vc, ctx, st0, R, gn, bl, A,
+        ⟨(L.act F s0 K G).F, syms, (L.act F s0 K G).ctx.slotBase, 0⟩, c, Lp, ss, ss', cc, ins, a0,
+        slots, ext, caller, opens⟩
 
 /-- The pause of a chain segment at a call: the three relations and `Q` at the paused `call`. -/
 def CallPz (L : Link) (g : Act) (r₀ : Reg → CV) (x0 : ArmState × Mon) (P : List Lab)

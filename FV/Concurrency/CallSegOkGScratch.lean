@@ -55,7 +55,10 @@ end thread
 
 /-- **`SegOkG` for every activation of a link of compiled functions** (WIP). -/
 theorem segOkG {L : Link} {env : Clif.Env} {p : Clif.Program} {Bnd : Nat → Prop} {c0 : TState}
-    {Loc : Nat → Nat → Prop} (hP : PartsOk env p c0 Loc) (hdisj : PartDisj Loc) (g : Act) :
+    {Loc : Nat → Nat → Prop} (hP : PartsOk env p c0 Loc) (hdisj : PartDisj Loc)
+    {syms : String → Option Nat}
+    (hlink : ∀ n f, p.func? n = some f → ∃ F, (n, F) ∈ L.fns ∧ FnOk L env p syms n F f)
+    (g : Act) :
     SegOkG (RealT env p Bnd) L.M (OkB Bnd) (Ent L env p Bnd c0 Loc) (Ret L env p c0 Loc)
       (EndT env p) (Inv L env p Bnd c0 Loc g) g := by
   intro u c x d hI ls t' hr
@@ -72,7 +75,41 @@ theorem segOkG {L : Link} {env : Clif.Env} {p : Clif.Program} {Bnd : Nat → Pro
   · exact ⟨k', d', hR, .inl h⟩
   · exact ⟨k', d', hR, .inr (.inl h)⟩
   rcases hz with hcall | ⟨tE, hpre, hat, hret⟩
-  · sorry
+  · -- the call pause
+    obtain ⟨tE, vV', vP', cM', hpre, hRQ, hPz, hat, hm2, hm3, hm4⟩ := hcall
+    obtain ⟨v0, hv0, hrest⟩ := CallCompose.take_prun hr k'
+    obtain rfl : v0 = tE := PRun.det (prun_okPriv hLv.bnd hv0) hpre
+    by_cases hlen : ls.length ≤ k'
+    · exact ⟨k', _, hR, .inl (by omega)⟩
+    obtain ⟨l, rest, hdrop⟩ : ∃ l rest, ls.drop k' = l :: rest := by
+      cases h : ls.drop k' with
+      | nil => simp at h; omega
+      | cons l rest => exact ⟨l, rest, rfl⟩
+    have hm2' := hm2
+    obtain ⟨stm, rest', fn, args, hbody, hcl⟩ := hat
+    have hb' : s'.frame.body = { results := stm.results, inst := .call fn args } :: rest' := by
+      rw [hbody, ← hcl]
+    have hRe : RReach env p c0 (encT M (.run (pushC g.ext s'))) :=
+      hreach'.strip (strip_encT M _).symm
+    cases hstep : Clif.step env p (pushC g.ext s') with
+    | stuck msg =>
+      exact ⟨k', _, hR, .inr (.inl (.inl ⟨g.ext, s',
+        by exact strip_encT M (.run (pushC g.ext s')), .inr (.inr (.inl ⟨msg, hstep⟩))⟩))⟩
+    | trapped c' =>
+      exact ⟨k', _, hR, .inr (.inl (.inl ⟨g.ext, s',
+        by exact strip_encT M (.run (pushC g.ext s')), .inr (.inr (.inr ⟨c', hstep⟩))⟩))⟩
+    | done v m =>
+      exfalso
+      rw [Clif.step_call env p _ rest' stm.results fn args (by simpa [pushC] using hb')] at hstep
+      exact ClifLift.stepCall_ne_done env p _ _ _ _ _ v m hstep
+    | next s1 =>
+      obtain ⟨hcalls, hfunc, -, -⟩ := hm2
+      obtain ⟨e, vals, callee, he, hvals, htys, hpf, -, -⟩ :=
+        call_next hb' (hfunc ▸ hLv.stat.envx) hstep
+      have hemem : (fn, e) ∈ g.f.externs := mem_of_lookup (hfunc ▸ he)
+      obtain ⟨FB, hFBm, hFBs, hFB16, hFn⟩ := hlink e.name callee hpf
+      have hsig : callee.sig = e.sig := hLv.stat.sigs _ hemem callee hpf
+      sorry
   · -- the return pause
     obtain ⟨v0, hv0, hrest⟩ := CallCompose.take_prun hr k'
     obtain rfl : v0 = tE := PRun.det (prun_okPriv hLv.bnd hv0) hpre
@@ -97,7 +134,7 @@ theorem segOkG {L : Link} {env : Clif.Env} {p : Clif.Program} {Bnd : Nat → Pro
       rw [h2]; simp; omega
     · refine ⟨k' + 0, _, hR12, .inr (.inl (.inl ⟨g.ext, s',
         by exact strip_encT M (.run (pushC g.ext s')), .inr (.inr ?_)⟩))⟩
-      rw [hext]; exact step_pushC_stuck hdone hn
+      rw [hext]; exact .inl (step_pushC_stuck hdone hn)
     · obtain ⟨v', hv', -⟩ := CallCompose.take_prun hrest k2
       obtain rfl : v' = v := PRun.det (prun_okPriv hLv.bnd hv') hv
       refine ⟨k' + k2, _, hR12, .inr (.inr (.inl ⟨v', ?_, .inr ⟨caller, results, cs, hext, v0.1, s',
