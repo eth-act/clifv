@@ -21,13 +21,7 @@ module gives `lean-regalloc` the prepared VCode `vcp` of a function lowered by t
 * **`args`**: Cranelift's `gen_arg_setup` skips the entry parameters without IR uses
   (`ValueUseState::Unused`) and `take_args` emits no `args` when none is left; `lowerFunction`
   lists every register-passed parameter and emits `args []` (#586). Here a pair is dropped when
-  its parameter has no CLIF use (and its vreg no use in `vcp`), and an empty `args` is dropped;
-* **calls to an `sret` callee**: Cranelift's `gen_call_output` allocates a vreg per CLIF
-  return only and `gen_call_rets` skips the `StructReturn` return (`machinst/abi.rs:1991`), so
-  such a call (and such a `try_call`, whose defs are then the payloads x0/x1 only) has no
-  return def and clobbers x8; `lowerFunction` makes x8 (the return register of that return,
-  `retX`) a def of a fresh vreg without use (#587). Here that def is dropped (x8 becomes a
-  clobber again).
+  its parameter has no CLIF use (and its vreg no use in `vcp`), and an empty `args` is dropped.
 
 Nothing here is trusted: the dropped operands are fixed-register defs of vregs with no use, and
 an empty `args` does nothing, so regalloc2's answer for `code` is read back against `vcp`
@@ -115,15 +109,6 @@ def usedVregs (vc : VCode) : Std.HashSet Nat :=
     b.insts.foldl (fun s i => match i.operands with
       | .ok ops => ops.foldl (fun s o => if o.kind == .use then s.insert o.vreg else s) s
       | .error _ => s) s
-
-/-- The vregs of the x8 defs of `vc`'s calls and `try_call`s (the struct pointer of an `sret`
-callee: Cranelift has no vreg for it, so `numbering` need not give one to a `try_call`'s). -/
-def x8Defs (vc : VCode) : Std.HashSet Nat :=
-  vc.blocks.foldl (init := {}) fun s b => b.insts.foldl (fun s i =>
-    let ds := match i with
-      | .call info | .tryCall info _ => info.defs
-      | _ => []
-    ds.foldl (fun s q => match q with | (.x 8, .vreg n _) => s.insert n | _ => s) s) s
 
 /-- The values of `f` with a CLIF use (`compute_use_states`: every instruction's and
 terminator's value operands; the `sret` parameter has the epilogue's implicit use). -/
@@ -231,8 +216,7 @@ def indegrees (f : Clif.Function) : Array Nat := Id.run do
   pure n
 
 /-- `vcp` without the `args` pairs of parameters without IR use (`ir`) or use in `vcp`, without
-an empty `args`, without the x8 defs (the struct pointer of an `sret` callee, `retX`; no other
-call def is in x8) without use of calls and `try_call`s, and without the edge
+an empty `args`, and without the edge
 blocks Cranelift does not make; renamed by `m`. `lowerFunction` reaches every successor of a
 `try_call`, and every successor with block arguments of a `brif`/`br_table`, through an edge
 block of its own (labels `nb` on, `nb` the number of CLIF blocks: one `jump` with the
@@ -243,22 +227,10 @@ successor itself (regalloc2's per-successor branch arguments, `vcodeJsonAt`). -/
 def reshape (vcp : VCode) (ir : Std.HashSet Nat) (m : Std.HashMap Nat Nat) (next : Nat)
     (nb : Nat) (indeg : Array Nat) : Shape := Id.run do
   let used := usedVregs vcp
-  -- the operand indices of the x8 defs without use of a call (operands: the destination
-  -- register, the uses, then the defs; vregs only), and the call without them
-  let sretDefs (info : CallInfo) : List Nat × CallInfo :=
-    let dead : Reg × Reg → Bool := fun
-      | (.x 8, .vreg t _) => !used.contains t
-      | _ => false
-    let nUses := (match info.dest with | .reg (.vreg ..) => 1 | _ => 0) +
-      (info.uses.filter fun (r, _) => r matches .vreg ..).length
-    let vdefs := info.defs.filter fun (_, r) => r matches .vreg ..
-    ((vdefs.zipIdx.filter fun (q, _) => dead q).map (nUses + ·.2),
-      { info with defs := info.defs.filter fun q => !dead q })
   let mut dropInst : Array Bool := #[]
   let mut dropOps : Array (List Nat) := #[]
   let mut blocks : Array VBlock := #[]
   let mut nArgs := 0
-  let mut nSret := 0
   for (b, bi) in vcp.blocks.zipIdx do
     let mut insts : Array MInst := #[]
     for (i, k) in b.insts.zipIdx do
@@ -275,16 +247,6 @@ def reshape (vcp : VCode) (ir : Std.HashSet Nat) (m : Std.HashMap Nat Nat) (next
           let keep := ps.filter fun q => !dead q
           nArgs := nArgs + ds.length
           i' := if keep.isEmpty then none else some (.args keep)
-      | .call info =>
-        let (d, info') := sretDefs info
-        ds := d
-        nSret := nSret + ds.length
-        i' := some (.call info')
-      | .tryCall info ti =>
-        let (d, info') := sretDefs info
-        ds := d
-        nSret := nSret + ds.length
-        i' := some (.tryCall info' ti)
       | _ => pure ()
       dropInst := dropInst.push i'.isNone
       dropOps := dropOps.push (if i'.isNone then [] else ds)
@@ -343,7 +305,7 @@ def reshape (vcp : VCode) (ir : Std.HashSet Nat) (m : Std.HashMap Nat Nat) (next
     | r => r
   pure { code := rename m next { vcp with blocks := code' },
          edges := some (edges'.map (·.map (·.map R))), dropInst, dropOps,
-         why := s!"cranelift (args pairs -{nArgs}, insts -{dropped}, sret call defs -{nSret}, edge blocks -{gone.size})" }
+         why := s!"cranelift (args pairs -{nArgs}, insts -{dropped}, edge blocks -{gone.size})" }
 
 /-- regalloc2's input for the prepared `vcp` of `f` (`deadCleanup`: the allocator's input was
 pruned), in Cranelift's form when `vcp` is `lowerFunction f`'s code. -/
@@ -365,8 +327,7 @@ def shape (f : Option Clif.Function) (deadCleanup : Bool) (vcp : VCode) : Shape 
         match r with
         | .error e => .same vcp s!"numbering: {e}"
         | .ok (m, next) =>
-          let x8 := x8Defs vcp
-          if !(vregsOf vcp).toList.all (fun n => m.contains n || x8.contains n) then
+          if !(vregsOf vcp).toList.all m.contains then
             .same vcp "numbering: unmapped vreg"
           else reshape vcp (irUsed f) m next f.blocks.length (indegrees f)
 

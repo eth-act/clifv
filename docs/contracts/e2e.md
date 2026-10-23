@@ -109,9 +109,14 @@ Conclusion: `ArmRefines fb base ra (ArmStepX X H fa) s (Clif.runLoop env p fuel 
 
 The ABI facts are the compiler's (`FV/Backend/Isel.lean`, differentially tested against
 Cranelift): an `sret` parameter is passed in x8 and does not take a slot of x0..x7
-(`sigArgLocs`); a signature with an `sret` parameter and no returns returns the pointer in x0
-(`sigRets`); `lowerFunction` appends the entry block's `sret` parameter to every `return`
-(`sretRet`, `abiTerm`); a call of an `sret` callee places the pointer in x8 and defines x0.
+(`sigArgLocs`); a signature with an `sret` parameter and no returns returns the pointer in x8
+(`sigRets`, `retX`, `retRegsK`: Cranelift's aarch64 `compute_arg_locs` gives the `StructReturn`
+return x8, `isa/aarch64/abi.rs:255-270`, `machinst/abi.rs:902` in cranelift-codegen 0.135.0;
+until #587 the backend moved it to x0 with a `mov x0, x8` Cranelift does not emit);
+`lowerFunction` appends the entry block's `sret` parameter to every `return` (`sretRet`,
+`abiTerm`); a call of an `sret` callee places the pointer in x8 and defines only the declared
+returns (none: `gen_call_output`, `tryRegsOf`, as Cranelift's `gen_call_rets` skips the
+`StructReturn` return, `machinst/abi.rs:1991`).
 The proof covers them as follows.
 
 * **Scope** `InSubset.abiSigs`: `sigAbiOk` of `f`'s signature and of every extern's — `normal`
@@ -127,16 +132,19 @@ The proof covers them as follows.
 * **Return**: `LowerShape`/`lowerCheck` lower `abiTerm f B.term`; the certificate makes the
   appended `sret` value available at every `return` (`Cert.term`), so the `rets` returns the
   CLIF values followed by the pointer. The driver's and the layer statements' return clause is
+  `RetPins vals us` (the CLIF values in x0.., the ABI returns after them in x8, `retX`) and
   `PrefixHold vals outs` (the CLIF values are the first ABI returns); the conclusion
   `ArmRefines` is unchanged (CLIF return values in x0.., memory), so for an `sret` function it
   claims the memory the function wrote through the pointer, not the value of x0.
-* **Return register** (S7, #31, `agent/abi-s7`): `E2E.backend_correct_final_abi`
+* **Return register** (S7, #31, `agent/abi-s7`; restated for #587): `E2E.backend_correct_final_abi`
   (`FV/E2E/SretReturn.lean`) has `backend_correct_final`'s premises plus `sretStableB f`
-  and the conclusion `ArmRefinesAbi … (sretArg f args)`: on a return, x0.. hold `vals ++
-  sretArg f args` (`sretArg`: the `sret` argument when `sigRets` returns the pointer, else
+  and the conclusion `ArmRefinesAbi … (sretArg f args)`: on a return, x0.. hold `vals` and x8
+  holds `sretArg f args` (`sretArg`: the `sret` argument when `sigRets` returns the pointer, else
   nothing; `ArmRefinesAbi.armRefines` gives back `ArmRefines`). `backend_correct_final_sret`:
-  for a function with an `sret` parameter `i` and no returns, x0 holds `args[i]` (the pointer
-  the caller passed in x8; `vals = []` by `runLoop_returned_tys_entry`). The chain: `term_step_abi`
+  for a function with an `sret` parameter `i` and no returns, x8 holds `args[i]` (the pointer
+  the caller passed in x8). Both keep their names; until #587 they said x0, which was true of
+  the backend's `mov x0, x8` and became false when the compiler stopped emitting it to match
+  Cranelift. (`vals = []` by `runLoop_returned_tys_entry`.) The chain: `term_step_abi`
   (the return's use values hold `vals ++ sv`, `sv` the frame's `sretRet f` values, `AllHold`),
   `sim_run_abi`/`driver_correct_abi` (`RunOkAbi Q`: `sv` satisfies any `Q` that holds of
   `sretRet f` in every reachable state; `term_step`, `sim_run`, `driver_correct` are the
