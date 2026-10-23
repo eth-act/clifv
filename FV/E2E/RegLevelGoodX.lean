@@ -609,7 +609,8 @@ theorem realizes_move {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b : Nat} {src dst
     refine ⟨move_agree hst.store hvs hLs hmo.store, hw', herr, by rw [hprog, hst.prog], hsp',
       align_of_sp (by rw [hsp', hst.sp]) hst.align, fun hframe => ?_,
       code_frameKeep hR hmo.mem hst.code,
-      fun a ha => (hmo.mem a (RL.G_not_slot hR ha)).trans (hst.gkeep a ha)⟩
+      fun a ha => (hmo.mem a (RL.G_not_slot hR ha)).trans (hst.gkeep a ha),
+      fun hf => (xreg29_sw hst.world hw').trans (hst.fp hf)⟩
     rw [← hst.fplr hframe]
     apply read_mem_bytes_congr
     intro k hk

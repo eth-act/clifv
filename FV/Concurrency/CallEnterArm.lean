@@ -42,7 +42,7 @@ structure LFn.Static (F : LFn) : Prop where
 /-- `StRel` does not depend on the activation's hooks. -/
 theorem _root_.Backend.Proof.StRel.hooks {R : RL} (H : ArmHooks) {s : ArmState} {m : Loc → CV}
     {w : ArmState} (h : StRel R s m w) : StRel { R with H := H } s m w :=
-  ⟨h.store, h.world, h.err, h.prog, h.sp, h.align, h.fplr, h.code, h.gkeep⟩
+  ⟨h.store, h.world, h.err, h.prog, h.sp, h.align, h.fplr, h.code, h.gkeep, h.fp⟩
 
 /-- **`Q` does not depend on the activation's hooks** (e.g. a function's activation on the linked
 machine and on a per-function machine). -/

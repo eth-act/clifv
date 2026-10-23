@@ -69,10 +69,10 @@ theorem stRel_patch {R : RL} (hR : R.Wf) {s w : ArmState} {m : Loc → CV} (h : 
     {E : List Ev} (hE : ∀ e ∈ E, Avoids R.F e.n e.addr) : StRel R (patch E s) m (patch E w) := by
   have hK : FrameKeep R.FK s (patch E s) :=
     ⟨by simp [patch, spOf, r_setMem], fun a ha => by
-      simp only [patch, setMem_mem]; exact applyR_avoid hE _ (RL.FK_F ha)⟩
+      simp only [patch, setMem_mem]; exact applyR_avoid hE _ (RL.FK_F ha), by simp [patch, r_setMem]⟩
   refine ⟨fun l hl hL => ?_, sameWorld_patch h.world E, by rw [patch, r_setMem]; exact h.err,
     by rw [patch, setMem_program]; exact h.prog, by have := h.sp; simp only [spOf, patch, r_setMem] at this ⊢; exact this,
-    ?_, fun hframe => ?_, ?_, fun a ha => ?_⟩
+    ?_, fun hframe => ?_, ?_, fun a ha => ?_, fun hf => ?_⟩
   · rw [h.store l hl hL]
     cases l with
     | reg r => simp [locVal, patch, regVal_setMem]
@@ -80,10 +80,11 @@ theorem stRel_patch {R : RL} (hR : R.Wf) {s w : ArmState} {m : Loc → CV} (h : 
     | save r => exact (locVal_frame_keep (R.frameOkK hR) h.sp hK hL (fun r e => by cases e)).symm
   · simpa [Arm.CheckSPAlignment, Arm.read_gpr, patch, r_setMem] using h.align
   · rw [← h.fplr hframe]
-    exact read_mem_bytes_congr _ _ fun k hk => hK.2 _ (fplr_inF hR hframe k hk)
-  · exact code_keep hR.prog0 h.code fun a ha => hK.2 a (.inl (.inr (.inr ha)))
+    exact read_mem_bytes_congr _ _ fun k hk => hK.2.1 _ (fplr_inF hR hframe k hk)
+  · exact code_keep hR.prog0 h.code fun a ha => hK.2.1 a (.inl (.inr (.inr ha)))
   · show (patch E s).mem a = R.s0.mem a
-    rw [hK.2 a (.inr ha)]; exact h.gkeep a ha
+    rw [hK.2.1 a (.inr ha)]; exact h.gkeep a ha
+  · exact hK.2.2.trans (h.fp hf)
 
 /-- **`Q` survives patching both sides** with events avoiding `R.F`. -/
 theorem q_patch {R : RL} (hR : R.Wf) {s : ArmState} {b : Nat} {its : List RItem} {m : Loc → CV}
@@ -183,8 +184,8 @@ theorem realizes_op_lines {R : RL} (hR : R.Wf) {s : ArmState} {b k : Nat} {alloc
     have herr' : Arm.r .ERR s' = .None := by
       rw [hW.1 .ERR (by simp [Masked]), hW'.1]
     refine ⟨fun l hl hL => ?_, hW, herr', ?_, hsp', align_of_sp (by rw [hsp', hst.sp]) hst.align,
-      fun hframe => ?_, code_keep hR.prog0 hst.code fun a ha => hK.2 a (.inl (.inr (.inr ha))),
-      fun a ha => (hK.2 a (.inr ha)).trans (hst.gkeep a ha)⟩
+      fun hframe => ?_, code_keep hR.prog0 hst.code fun a ha => hK.2.1 a (.inl (.inr (.inr ha))),
+      fun a ha => (hK.2.1 a (.inr ha)).trans (hst.gkeep a ha), fun hf => hK.2.2.trans (hst.fp hf)⟩
     · cases l with
       | reg r => exact hr2 r (hl r rfl)
       | stack k' c =>
@@ -195,6 +196,6 @@ theorem realizes_op_lines {R : RL} (hR : R.Wf) {s : ArmState} {b k : Nat} {alloc
           locVal_frame_keep hfr hst.sp hK hL (fun r h => by cases h)]
     · rw [hW.2.2, hW'.2, ← hst.world.2.2, hst.prog]
     · rw [← hst.fplr hframe]
-      exact read_mem_bytes_congr _ _ (fun k hk => hK.2 _ (fplr_inF hR hframe k hk))
+      exact read_mem_bytes_congr _ _ (fun k hk => hK.2.1 _ (fplr_inF hR hframe k hk))
 
 end Concurrency.ArmAllocThread

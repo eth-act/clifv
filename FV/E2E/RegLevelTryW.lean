@@ -231,8 +231,8 @@ theorem realizes_tryCallW {R : RL} (hR : R.Wf) (hC : CalleeOkG R.F R.K R.G R.s0 
       (((ops.zip regs).toList.filter (·.1.isDef)).map (fun p => regVal s' p.2))).filter
         (·.1.1.isLate))) w2 := by
     refine ⟨fun l hl hL => ?_, hW, herr', hprog', hsp', align_of_sp (by rw [hsp', hst.sp]) hst.align,
-      fun hframe => ?_, code_keep hR.prog0 hst.code fun a ha => hK.2 a (.inl (.inr (.inr ha))),
-      fun a ha => (hK.2 a (.inr ha)).trans (hst.gkeep a ha)⟩
+      fun hframe => ?_, code_keep hR.prog0 hst.code fun a ha => hK.2.1 a (.inl (.inr (.inr ha))),
+      fun a ha => (hK.2.1 a (.inr ha)).trans (hst.gkeep a ha), fun hf => hK.2.2.trans (hst.fp hf)⟩
     · cases l with
       | reg r => exact hr2 r (hl r rfl)
       | stack k' c =>
@@ -242,7 +242,7 @@ theorem realizes_tryCallW {R : RL} (hR : R.Wf) (hC : CalleeOkG R.F R.K R.G R.s0 
         rw [hl2 _ (fun r h => by cases h), hst.store _ hl hL,
           locVal_frame_keep hfr hst.sp hK hL (fun r h => by cases h)]
     · rw [← hst.fplr hframe]
-      exact read_mem_bytes_congr _ _ (fun k hk => hK.2 _ (fplr_inF hR hframe k hk))
+      exact read_mem_bytes_congr _ _ (fun k hk => hK.2.1 _ (fplr_inF hR hframe k hk))
   exact q_entry hR hst0 hvs hitems (by rw [hjl, hcont]) (Arm.r_of_w_same ..) (hstr.pc _)
 
 end Backend.Proof
