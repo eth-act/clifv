@@ -12,6 +12,7 @@ import FV.Backend.Proof.StockScalarCmpDomain
 import FV.Backend.Proof.StockScalarHighMulDomain
 import FV.Backend.Proof.StockScalarDivDomain
 import FV.Backend.Proof.StockScalarMixedDivDomain
+import FV.Backend.Proof.StockScalarReturnedDivDomain
 
 namespace Backend.Stock.Scalar
 open Backend.Proof Backend.Proof.Driver
@@ -193,6 +194,59 @@ theorem singleDivEligible_sound {b : Clif.Block} (checked : singleDivEligible b 
     exact ⟨⟨[z],.div op ty x y⟩,op,ty,x,y,z,body,rfl,rfl,ret⟩
   next => cases checked
 
+/-- Match syntax supplies the original division and its unique result value. -/
+theorem returnedDivAt_sound {stm : Clif.Stmt} {z : Nat} (checked : returnedDivAt stm z = true) :
+    ∃ (op : Clif.DivOp) (ty : Clif.Ty) (x y : Nat),
+      stm.inst = .div op ty x y ∧ stm.results = [z] := by
+  unfold returnedDivAt at checked
+  split at checked
+  next z' op ty x y results inst =>
+    simp only [Bool.and_eq_true] at checked
+    have equal : z' = z := beq_iff_eq.mp checked.1
+    exact ⟨op,ty,x,y,inst,by simpa only [equal] using results⟩
+  next => cases checked
+
+/-- Recursive source classification derives both scalar sides internally. -/
+theorem returnedDivBodyEligible_sound {body : List Clif.Stmt} {z : Nat}
+    (checked : returnedDivBodyEligible body z = true) :
+    ∃ (front back : List Clif.Stmt) (stm : Clif.Stmt) (op : Clif.DivOp) (ty : Clif.Ty) (x y : Nat),
+      body = front ++ stm :: back ∧
+      (∀ item ∈ front,Proof.HighMulBody.Family item.inst) ∧
+      (∀ item ∈ back,Proof.HighMulBody.Family item.inst) ∧
+      stm.inst = .div op ty x y ∧ stm.results = [z] := by
+  induction body with
+  | nil => cases checked
+  | cons item rest ih =>
+    simp only [returnedDivBodyEligible,Bool.or_eq_true,Bool.and_eq_true] at checked
+    rcases checked with ⟨here,suffix⟩ | ⟨scalar,tail⟩
+    · obtain ⟨op,ty,x,y,division,results⟩ := returnedDivAt_sound here
+      refine ⟨[],rest,item,op,ty,x,y,rfl,by simp,?_,division,results⟩
+      intro next member
+      exact highmulBodyEligible_sound (List.all_eq_true.mp suffix next member)
+    · obtain ⟨front,back,stm,op,ty,x,y,shape,before,after,division,results⟩ := ih tail
+      refine ⟨item :: front,back,stm,op,ty,x,y,?_,?_,after,division,results⟩
+      · simpa only [List.cons_append] using congrArg (List.cons item) shape
+      · intro next member
+        rcases List.mem_cons.mp member with rfl | member
+        · exact highmulBodyEligible_sound scalar
+        · exact before next member
+
+/-- Complete original-source layout for the new internal classifier. -/
+theorem returnedDivEligible_sound {b : Clif.Block} (checked : returnedDivEligible b = true) :
+    ∃ (front back : List Clif.Stmt) (stm : Clif.Stmt) (op : Clif.DivOp) (ty : Clif.Ty) (x y z : Nat),
+      b.body = front ++ stm :: back ∧
+      (∀ item ∈ front,Proof.HighMulBody.Family item.inst) ∧
+      (∀ item ∈ back,Proof.HighMulBody.Family item.inst) ∧
+      stm.inst = .div op ty x y ∧ stm.results = [z] ∧ b.term = .ret [z] := by
+  unfold returnedDivEligible at checked
+  split at checked
+  next z ret =>
+    obtain ⟨front,back,stm,op,ty,x,y,shape,before,after,division,results⟩ :=
+      returnedDivBodyEligible_sound checked
+    exact ⟨front,back,stm,op,ty,x,y,z,shape,before,after,division,results,ret⟩
+  next => cases checked
+
+
 theorem sourceOk_sound {f : Clif.Function} (checked : sourceOk f = true) : Domain f := by
   simp only [sourceOk,Bool.and_eq_true] at checked
   obtain ⟨⟨⟨eligible,scope⟩,dominated⟩,abi⟩ := checked
@@ -215,7 +269,7 @@ theorem sourceOk_sound {f : Clif.Function} (checked : sourceOk f = true) : Domai
       obtain ⟨p,member,sret⟩ := List.any_eq_true.mp any
       simpa [(normal_abi returns) p member] using sret
     simp only [Bool.or_eq_true] at body
-    rcases body with (old | divided) | mixed
+    rcases body with ((old | divided) | mixed) | positioned
     · have families : ∀ stm ∈ b.body, Stock.Proof.HighMulBody.Family stm.inst := by
         intro stm member
         have supported := List.all_eq_true.mp old stm member
@@ -227,6 +281,10 @@ theorem sourceOk_sound {f : Clif.Function} (checked : sourceOk f = true) : Domai
     · obtain ⟨front,stm,op,ty,x,y,z,shape,families,division,results,ret'⟩ := mixedDivEligible_sound mixed
       exact domain_of_mixed_div (lowerScope_of scope) (dominated_of dominated) abi blocks
         shape families division results ret' ordinary
+    · obtain ⟨front,back,stm,op,ty,x,y,z,shape,before,after,division,results,ret'⟩ :=
+        returnedDivEligible_sound positioned
+      exact domain_of_returned_div (lowerScope_of scope) (dominated_of dominated) abi blocks
+        shape before after division results ret' ordinary
   next => cases eligible
 
 

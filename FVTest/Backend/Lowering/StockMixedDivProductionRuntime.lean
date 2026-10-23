@@ -4,7 +4,7 @@ import FV.Backend.LinearScan
 import FV.E2E.StockHighMulFixtures
 import FV.E2E.StockDivFixtures
 import FV.E2E.StockMixedDivFixtures
-import FVTest.Backend.Lowering.StockDivProductionInput
+import FVTest.Backend.Lowering.StockMixedDivProductionInput
 import FV.Clif.Print
 
 set_option autoImplicit false
@@ -13,11 +13,6 @@ open _root_.Backend
 
 private def require (b : Bool) (message : String) : IO Unit :=
   unless b do throw (IO.userError message)
-
-def input (config : Stock.D0.Configuration) : String :=
-  String.join (E2E.StockDivNIWitness.operations.flatMap fun op =>
-    [false,true].map fun safe => (E2E.StockMixedDivNIWitness.function config op safe).print ++ "\n") ++
-  FVTest.StockDivProductionRuntime.input config
 
 /-- Export the actual Lean-encoded object and original inputs for native
 execution tests. Normal runtime checks retain their existing behavior. -/
