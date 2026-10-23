@@ -270,7 +270,8 @@ theorem instData_fcmp_inv {f : Clif.Function} {cl : Clif.Inst} {fs : List V}
   rcases args with _ | ⟨x, _ | ⟨y, _ | ⟨z, rest⟩⟩⟩
   · simp only [instData, throw, throwThe, MonadExceptOf.throw, reduceCtorEq] at h
   · cases op <;>
-      simp only [instData, fUnaryOpcode, throw, throwThe, MonadExceptOf.throw, reduceCtorEq] at h
+      simp only [instData, fUnaryOpcode, fCvtOpcode, throw, throwThe, MonadExceptOf.throw,
+        reduceCtorEq] at h
     all_goals
       first
         | (split at h

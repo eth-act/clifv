@@ -1037,7 +1037,7 @@ typed per-step contracts and the widened scope are the remaining S11e5 slices.
   the same function (`fpuRoundOut`, `round_holds`). The generic-size rules
   (`lower.isle:564/575/586/597`, priority -1) stay unproven and unfired. Closure roots
   182→190 (`StockScopePartition`, after the S11f-cvt conversions' 166→182), excluded 335→327;
-  with the two `fcmp` roots PARTITION_COUNTS.
+  with the two `fcmp` roots 192, excluded 325.
 
 **Non-vacuity.** `FVTest/Backend/FloatArithCtxT.lean`: `ctxInvT_float_arith` (`ctxOkT_sound`,
 `native_decide`, witness only) for a function with all eleven operations, `lower` fires the
