@@ -122,6 +122,50 @@ def EndT (env : Clif.Env) (p : Clif.Program) (_P : List Lab) (d : TState × (Nat
 theorem EndT.app {A B : List Lab} {d : TState × (Nat → Prop)} (h : EndT env p B d) :
     EndT env p (A ++ B) d := h
 
+/-! ## End-dirty sets on the partition -/
+
+theorem maskAfter_sub : ∀ {U : Nat → Prop} {tr : List (List (Ev SKind BVal))} {a : Nat},
+    maskAfter U tr a → U a
+  | _, [], _, h => h
+  | U, evs :: tr, _, h => (maskAfter_sub (U := fun b => U b ∧ ¬ writes evs b) (tr := tr) h).1
+
+theorem maskAfter_of : ∀ {U : Nat → Prop} {tr : List (List (Ev SKind BVal))} {a : Nat},
+    U a → (∀ evs ∈ tr, ¬ writes evs a) → maskAfter U tr a
+  | _, [], _, h, _ => h
+  | U, evs :: tr, _, h, hw =>
+    maskAfter_of (U := fun b => U b ∧ ¬ writes evs b) (tr := tr)
+      ⟨h, hw evs (List.mem_cons_self ..)⟩ fun e he => hw e (List.mem_cons_of_mem _ he)
+
+theorem evAt_of_mem {α : Type} {tr : List (List α)} {evs : List α} (h : evs ∈ tr) {x : α}
+    (hx : x ∈ evs) : ∃ q, evAt tr q = some x := by
+  obtain ⟨i, hi, rfl⟩ := List.getElem_of_mem h
+  obtain ⟨j, hj, rfl⟩ := List.getElem_of_mem hx
+  exact ⟨(i, j), by simp [evAt, List.getElem?_eq_getElem hi, List.getElem?_eq_getElem hj]⟩
+
+theorem evAt_of_prefix {α : Type} {A B : List (List α)} (h : A <+: B) {q : Nat × Nat} {x : α}
+    (hx : evAt A q = some x) : evAt B q = some x := by
+  obtain ⟨C, rfl⟩ := h
+  rw [evAt_append_lt _ _ (evAt_lt hx)]; exact hx
+
+/-- **The end-dirty set of a segment on the partition** lies in its private set, its end mask and
+the addresses starting no location: a masked location start no source write starts at is
+written by none (writes covering a location start start there). -/
+theorem dirtyEnd_sub (hdisj : PartDisj Loc) {tr : List (List (Ev SKind BVal))}
+    (ho : ∀ q x, evAt tr q = some x → x.dir ≠ .F → Loc x.loc x.n) {D P U : Nat → Prop}
+    (hD : ∀ a, D a → P a ∨ U a ∨ ¬ ∃ n, Loc a n) {a : Nat} (h : DirtyEnd D P tr a) :
+    P a ∨ maskAfter U tr a ∨ ¬ ∃ n, Loc a n := by
+  rcases h with h | ⟨hd, hw⟩
+  · exact .inl h
+  rcases hD a hd with h | h | h
+  · exact .inl h
+  · by_cases hl : ∃ n, Loc a n
+    · obtain ⟨n, hl⟩ := hl
+      refine .inr (.inl (maskAfter_of h fun evs he ⟨e, hee, hW, hle, hlt⟩ => hw ?_))
+      obtain ⟨q, hq⟩ := evAt_of_mem he hee
+      exact ⟨q, e, hq, hW, hdisj a n e.loc e.n hl (ho q e hq (by rw [hW]; decide)) hle hlt⟩
+    · exact .inr (.inr hl)
+  · exact .inr (.inr h)
+
 /-! ## A chain segment on the thread -/
 
 /-- **A chain segment of an activation below its callers is a realized prefix** (module doc):
@@ -143,8 +187,8 @@ theorem seg_end {Bnd : Nat → Prop} {R : Backend.Proof.RL} (hb : ∀ a, PrivA R
     (hend : k = ls.length ∨ IselThread.Stop env p t ∨ ∃ s', t = .run s' ∧ Pz s') :
     ∃ k' d', RealT env p Bnd ls k' (encT U (.run (pushC ext s)), D) d' ∧
       (k' = ls.length ∨ EndT env p (ls.take k') d' ∨
-        (k' = k ∧ ∃ s' M, Pz s' ∧ t = .run s' ∧
-          d' = (encT M (.run (pushC ext s')), fun a => D a ∨ PrivA R a) ∧
+        (k' = k ∧ ∃ s' M DE, Pz s' ∧ t = .run s' ∧ d' = (encT M (.run (pushC ext s')), DE) ∧
+          (∀ a, M a → U a) ∧ (∀ a, DE a → PrivA R a ∨ M a ∨ ¬ ∃ n, Loc a n) ∧
           RReach env p c0 (.run (pushC ext s')))) := by
   obtain ⟨hacc, hReachEnd⟩ := seg_parts hP hR hrun
   have hu : Uniform trS := uniform_of_parts hdisj fun q x hx hF => (hacc q x hx).1 hF
@@ -152,23 +196,174 @@ theorem seg_end {Bnd : Nat → Prop} {R : Backend.Proof.RL} (hb : ∀ a, PrivA R
     fun q x hx hRd => (hacc q x hx).2 hRd
   have hns : ∀ q x, evAt trS q = some x → x.dir = .R → ¬ ¬ ∃ n, Loc x.loc n :=
     fun q x hx hRd hn => hn ⟨x.n, (hacc q x hx).1 (by rw [hRd]; decide)⟩
-  rcases realizedT_lift (Bnd := Bnd) hr hk ext hrun hx href hD hu hpos hns hb with
-    ⟨trS', s1, -, hRT, hs1, hret⟩ | ⟨k', -, trS', j, evs, -, -, sj, t'', hRT, hst, hm⟩
+  rcases realizedT_liftW (Bnd := Bnd) hr hk ext hrun hx href hD hu hpos hns hb with
+    ⟨trS', s1, hp, hRT, hs1, hret⟩ | ⟨k', -, trS', j, evs, -, -, sj, t'', hRT, hst, hm⟩
   · rcases hend with h | h | ⟨s', rfl, hz⟩
-    · exact ⟨k, (encT (maskAfter U trS') (.run (pushC ext s1)), fun a => D a ∨ PrivA R a), hRT,
+    · exact ⟨k, (encT (maskAfter U trS') (.run (pushC ext s1)), DirtyEnd D (PrivA R) trS'), hRT,
         .inl h⟩
-    · refine ⟨k, (encT (maskAfter U trS') (.run (pushC ext s1)), fun a => D a ∨ PrivA R a), hRT,
+    · refine ⟨k, (encT (maskAfter U trS') (.run (pushC ext s1)), DirtyEnd D (PrivA R) trS'), hRT,
         .inr (.inl (.inl ⟨ext, s1, by exact strip_encT (maskAfter U trS') (.run (pushC ext s1)),
           ?_⟩))⟩
       cases t with
       | run s' => obtain rfl := hs1 s' rfl; exact .inl h
       | ret v => exact .inr ⟨v, hret v rfl⟩
     · obtain rfl := hs1 s' rfl
-      exact ⟨k, (encT (maskAfter U trS') (.run (pushC ext s1)), fun a => D a ∨ PrivA R a), hRT,
-        .inr (.inr ⟨rfl, s1, _, hz, rfl, rfl, hReachEnd s1 rfl⟩)⟩
-  · refine ⟨k', (encT (maskAfter U (trS'.take j)) (.run sj), fun a => D a ∨ PrivA R a), hRT,
-      .inr (.inl (.inr (.inl ⟨evs, t'', cstep_withBytes.mpr hst, ?_⟩)))⟩
+      exact ⟨k, (encT (maskAfter U trS') (.run (pushC ext s1)), DirtyEnd D (PrivA R) trS'), hRT,
+        .inr (.inr ⟨rfl, s1, _, _, hz, rfl, rfl, fun _ => maskAfter_sub,
+          fun a => dirtyEnd_sub hdisj (fun q x hx => (hacc q x (evAt_of_prefix hp hx)).1) hD,
+          hReachEnd s1 rfl⟩)⟩
+  · refine ⟨k', (encT (maskAfter U (trS'.take j)) (.run sj), DirtyEnd D (PrivA R) (trS'.take j)),
+      hRT, .inr (.inl (.inr (.inl ⟨evs, t'', cstep_withBytes.mpr hst, ?_⟩)))⟩
     show ReadsMasked (maskOf (encT (maskAfter U (trS'.take j)) (.run sj))) evs
     rw [maskOf_encT]; exact hm
+
+end Concurrency.CallSegOkG
+
+namespace Concurrency.CallSegOkG
+
+open Arm ArmThread Prog ClifThread Backend Backend.Proof Backend.Proof.Driver VCodeThread
+  PrepThread AllocThread IselCheck ThreadRefine IselCall IselCallRet ArmAllocThread E2E
+  ClifCStepTerm IselThread CallRetsEnd CallRetsN CallSegAbi LinkedMachine LinkedMachine.Link
+
+/-! ## Activations -/
+
+/-- **An activation of a compiled function of the link** (module doc): the function `F` named
+`nm`, the activation's entry state `s0`, callee budget `K`, kept addresses `G` and return address
+`ra`; the CLIF function `f` and its lowering data (`DriverHypT`'s `vc ctx st0 R gn bl A`), the
+memory relation `RelW Γ f c`, the prep and allocation facts' data, the activation's slots and its
+CLIF callers `ext`. -/
+structure Act where
+  nm : String
+  F : LFn
+  s0 : ArmState
+  K : Nat
+  G : BitVec 64 → Prop
+  ra : BitVec 64
+  f : Clif.Function
+  vc : VCode
+  ctx : Ctx
+  st0 : LState
+  R : Reg → Reg
+  gn : Nat → Nat
+  bl : List BLow
+  A : Nat → Nat → List Clif.ValueId
+  Γ : E2E.Rel
+  c : BitVec 64
+  Lp : Nat → Prop
+  ss : Array (Array Nat)
+  ss' : Array (Array Nat)
+  cc : CheckCtx
+  ins : Array (Option AState)
+  a0 : AState
+  slots : List (Clif.SlotId × Nat)
+  ext : List (Clif.Frame × List Clif.ValueId)
+
+/-- The activation's `RL` in the link. -/
+abbrev Act.RL (L : Link) (g : Act) : Backend.Proof.RL := L.act g.F g.s0 g.K g.G
+
+/-- **The static facts of an activation** (module doc): the premises of the chain theorems that do
+not depend on the run. -/
+structure StatOk (L : Link) (env : Clif.Env) (p : Clif.Program) (g : Act) : Prop where
+  mem : (g.nm, g.F) ∈ L.fns
+  wf : (g.RL L).Wf
+  scope : MemScopeLSC (g.RL L)
+  abi : AbiCall g.F.fb g.F.base g.ra g.s0
+  H : DriverHypT g.f g.vc g.ctx g.st0 g.R g.gn g.bl g.A
+    (csem (g.RL L).F (g.RL L).ctx (g.RL L).X) (RelW g.Γ g.f g.c) env p
+  chk : threadCheckBlC g.f g.bl = true
+  ΓF : g.Γ.F = (g.RL L).F
+  align : g.c.toNat % 16 = 0
+  tls : TlsMemFree g.F.X
+  noCall : NoCall g.F.X
+  H3 : PrepFacts g.vc g.F.vc g.Lp g.ss g.ss'
+  checked : CheckedAt g.F.vc g.F.rf g.cc g.ins g.a0
+  ok : L.Ok
+  slot : (g.RL L).ctx.slotBase = g.Γ.slotOff
+  sym : ∀ n b, g.Γ.syms n = some b → g.F.X.sym n 0 = BitVec.ofNat 64 b
+  reg : ∀ off, ArgLoc.stack off ∉ locsOf g.f.sig
+  pinit : ∀ (ρ₀ : Nat → CV) (w₀ : ArmState), PMatch g.vc g.F.vc
+    (csem (g.RL L).F (g.RL L).ctx (g.RL L).X) (cEvs (g.RL L).F (g.RL L).ctx) g.Lp g.ss'
+    (VConf.init ρ₀ w₀) (VConf.init ρ₀ w₀)
+  minit : ∀ (m₀ : Loc → CV) (ρ₀ : Nat → CV) (w₀ : ArmState),
+    Backend.Proof.Match g.cc g.ins ckeep (fun r => m₀ (.reg r)) (MConf.init g.F.rf m₀ w₀)
+      (VConf.init ρ₀ w₀)
+
+/-- The pause of a chain segment at a call: the three relations and `Q` at the paused `call`. -/
+def CallPz (L : Link) (g : Act) (r₀ : Reg → CV) (x0 : ArmState × Mon) (P : List Lab)
+    (s' : Clif.State) : Prop :=
+  ∃ tE vV' vP' cM', PRun Policy.arm L.M (OkPriv (g.RL L)) x0 P tE ∧
+    RelQ (g.RL L) tE (.run cM') ∧ Pause (g.RL L) (.run cM') ∧ AtCallS s' ∧
+    Match g.f g.ctx g.R g.gn g.bl g.A (RelW g.Γ g.f g.c) g.slots s' vV' ∧
+    PMatch g.vc g.F.vc (csem (g.RL L).F (g.RL L).ctx (g.RL L).X) (cEvs (g.RL L).F (g.RL L).ctx)
+      g.Lp g.ss' (.run vV') (.run vP') ∧
+    MatchRun g.cc g.ins ckeep r₀ cM' vP'
+
+/-- The pause of a chain segment at a done `return`, with its contract `RetEnd`. -/
+def RetPz (L : Link) (env : Clif.Env) (p : Clif.Program) (g : Act) (r₀ : Reg → CV)
+    (x0 : ArmState × Mon) (P : List Lab) (s' : Clif.State) : Prop :=
+  ∃ tE, PRun Policy.arm L.M (OkPriv (g.RL L)) x0 P tE ∧ AtRetS s' ∧
+    RetEnd (g.RL L) g.ra env p (RelW g.Γ g.f g.c) g.slots r₀ tE.1 s'
+
+/-- **The chain property of an activation at `x0` with CLIF state `s`** (module doc): every
+precise run of the link's machine from `x0` is realized on a prefix by the activation's own CLIF
+run from `s`, up to the whole run, `Stop`, or a pause at a call or a done `return`. -/
+def ChainP (L : Link) (env : Clif.Env) (p : Clif.Program) (g : Act) (r₀ : Reg → CV)
+    (x0 : ArmState × Mon) (s : Clif.State) : Prop :=
+  ∀ ls t', PRun Policy.arm L.M (OkPriv (g.RL L)) x0 ls t' →
+    ∃ k trS t ψ, k ≤ ls.length ∧ CallCompose.XClosed (evTr (ls.take k)) ∧
+      CRun env p (.run s) trS t ∧
+      Refines Maps (PrivA (g.RL L)) (MonPair (evTr (ls.take k))) trS (conv (evTr (ls.take k))) ψ ∧
+      (k = ls.length ∨ Stop env p t ∨ ∃ s', t = .run s' ∧
+        (CallPz L g r₀ x0 (ls.take k) s' ∨ RetPz L env p g r₀ x0 (ls.take k) s'))
+
+variable {L : Link} {env : Clif.Env} {p : Clif.Program} {g : Act}
+
+/-- **The resume form** (`arm_isel_refinesCRNX`). -/
+theorem chainP_resume (hS : StatOk L env p g) {r₀ : Reg → CV} {s : Clif.State}
+    {vV vP : VState CV ArmState} {cM : MState CV ArmState} {x : ArmState} {mon : Mon}
+    (hm2 : Match g.f g.ctx g.R g.gn g.bl g.A (RelW g.Γ g.f g.c) g.slots s vV)
+    (hm3 : PMatch g.vc g.F.vc (csem (g.RL L).F (g.RL L).ctx (g.RL L).X)
+      (cEvs (g.RL L).F (g.RL L).ctx) g.Lp g.ss' (.run vV) (.run vP))
+    (hm4 : MatchRun g.cc g.ins ckeep r₀ cM vP) (hq : Q (g.RL L) x (.run cM))
+    (hA : AInv (g.RL L) (.run cM)) : ChainP L env p g r₀ (x, mon) s := fun ls t' hr => by
+  obtain ⟨k, trS, t, ψ, hk, hx, hrun, href, hend⟩ := arm_isel_refinesCRNX hS.wf hS.scope rfl
+    (agreesAt_M hS.ok hS.mem _ _ _) hS.abi hS.H hS.chk (hS.ΓF ▸ memRelOk_relW g.Γ g.f g.c)
+    (IselRefines.Witness.relW_wf hS.align) hS.tls hS.noCall hS.H3 hS.checked hm2 hm3 hm4 hq hA hr
+  refine ⟨k, trS, t, ψ, hk, hx, hrun, href, ?_⟩
+  rcases hend with h | h | ⟨tE, s', vV', vP', cM', h1, h2, h3, rfl, h4, h5, h6, h7⟩ |
+    ⟨tE, s', h1, rfl, h2, h3⟩
+  · exact .inl h
+  · exact .inr (.inl h)
+  · exact .inr (.inr ⟨s', rfl, .inl ⟨tE, vV', vP', cM', h1, h2, h3, h4, h5, h6, h7⟩⟩)
+  · exact .inr (.inr ⟨s', rfl, .inr ⟨tE, h1, h2, h3⟩⟩)
+
+/-- **The entry form** (`arm_isel_refines_abiCRNX`): from the ABI entry, the CLIF entry state
+`cs` of the activation's function. -/
+theorem chainP_entry (hS : StatOk L env p g) {cs : Clif.State} {B0 : Clif.Block}
+    (hB0 : g.f.blocks[0]? = some B0) (hcall : cs.callers = []) (hfunc : cs.frame.func = g.f)
+    (hslots : cs.frame.slots = g.slots) (hbody : cs.frame.body = B0.body)
+    (hterm : cs.frame.term = B0.term) {args : List Clif.Val}
+    (hregs : Clif.Regs.empty.setMany (B0.params.map (·.1)) args = some cs.frame.regs)
+    (hty : args.map (·.ty) = B0.params.map (·.2))
+    (hsig : args.map (·.ty) = g.f.sig.params.map (·.ty))
+    {m₀ : Loc → CV} {w₀ : Arm.ArmState} (hmr : RelW g.Γ g.f g.c g.slots cs.mem w₀)
+    (hargs : ArgsAtEntry (g.RL L).F g.f.sig args w₀)
+    (hq : Q (g.RL L) (iterN (g.RL L).step (prologueLines g.F.af.frameSize).length g.s0)
+      (MConf.init g.F.rf m₀ w₀)) (hA : AInv (g.RL L) (MConf.init g.F.rf m₀ w₀)) {mon : Mon} :
+    ChainP L env p g (fun r => m₀ (.reg r)) (g.s0, mon) cs := fun ls t' hr => by
+  obtain ⟨k, trS, t, ψ, hk, hx, hrun, href, hend⟩ := arm_isel_refines_abiCRNX hS.wf hS.scope rfl
+    (agreesAt_M hS.ok hS.mem _ _ _) hS.abi hS.H hS.chk (hS.ΓF ▸ memRelOk_relW g.Γ g.f g.c)
+    (IselRefines.Witness.relW_wf hS.align) hS.tls hS.noCall
+    (memRefines_csem _ _ _ hS.slot (fun n b h => hS.sym n b h))
+    (hS.ΓF ▸ mrStable_relW g.Γ g.f g.c)
+    hS.reg hS.H3 hS.pinit hS.checked hS.minit hB0 hcall hfunc hslots hbody hterm hregs hty
+    hsig hmr hargs hq hA hr
+  refine ⟨k, trS, t, ψ, hk, hx, hrun, href, ?_⟩
+  rcases hend with h | h | ⟨tE, s', vV', vP', cM', h1, h2, h3, rfl, h4, h5, h6, h7⟩ |
+    ⟨tE, s', h1, rfl, h2, h3⟩
+  · exact .inl h
+  · exact .inr (.inl h)
+  · exact .inr (.inr ⟨s', rfl, .inl ⟨tE, vV', vP', cM', h1, h2, h3, h4, h5, h6, h7⟩⟩)
+  · exact .inr (.inr ⟨s', rfl, .inr ⟨tE, h1, h2, h3⟩⟩)
 
 end Concurrency.CallSegOkG

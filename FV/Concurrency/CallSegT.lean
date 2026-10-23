@@ -14,13 +14,15 @@ start-dirty set. Here:
 * `ReadsMasked U evs`: a step reads a masked byte; **`readsAvoid_or_cut`**: the reads of a run
   avoid the evolving mask, or there is a first step reading a masked byte;
 * `Uniform.take`, `RefinesT.mono0` (a smaller start-dirty set), **`notClean_sub`** (a location
-  not clean at a segment's end was dirty at its start or is private);
-* **`realizedT_seg`**: a segment whose reads avoid the mask `U` and whose start-dirty set `D`
+  not clean at a segment's end was dirty at its start or is private), **`notClean_dirtyEnd`**
+  (`DirtyEnd D P trS`: private, or dirty at the start and written by no source write there);
+* **`realizedT_segW`**: a segment whose reads avoid the mask `U` and whose start-dirty set `D`
   lies in `P ∪ U ∪ NS` (`NS`: addresses at which no CLIF read of the segment starts) is a
-  `RealizedT` from `encT U` to `encT (maskAfter U trS)`, ending dirty in `D ∪ P`;
-* **`realizedT_cut`**: any segment, truncated before the first CLIF step reading a masked byte
-  (`Refines.take`, an Arm label having at most one event, `prun_len`): the whole segment, or a
-  prefix ending where the next CLIF step reads a masked byte.
+  `RealizedT` from `encT U` to `encT (maskAfter U trS)`, ending dirty in `DirtyEnd D P trS`
+  (`realizedT_seg`: in `D ∪ P`);
+* **`realizedT_cutW`**/`realizedT_cut`: any segment, truncated before the first CLIF step
+  reading a masked byte (`Refines.take`, an Arm label having at most one event, `prun_len`): the
+  whole segment, or a prefix ending where the next CLIF step reads a masked byte.
 -/
 
 namespace Concurrency.CallSegT
@@ -91,9 +93,51 @@ theorem notClean_sub {MK : K → K' → Prop} {D : Nat → Prop} {P : Nat → Pr
   refine Classical.byContradiction fun hn => ha ⟨fun hd => absurd (.inl hd) hn,
     fun q y hy hW hl hu => absurd (.inr (hl ▸ h.priv q y hy hW hu)) hn⟩
 
+/-- **Dirty at a segment's end**: private, or dirty at its start and written by no source write
+at that location. -/
+def DirtyEnd (D P : Nat → Prop) (trS : List (List (Ev K V))) (a : Nat) : Prop :=
+  P a ∨ (D a ∧ ¬ ∃ q x, evAt trS q = some x ∧ x.dir = .W ∧ x.loc = a)
+
+/-- **A location not clean at a segment's end is `DirtyEnd`.** -/
+theorem notClean_dirtyEnd {MK : K → K' → Prop} {D : Nat → Prop} {P : Nat → Prop}
+    {pairT : Nat × Nat → Nat × Nat → Prop} {trS : List (List (Ev K V))}
+    {trT : List (List (Ev K' V))} {ψ : Nat × Nat → Nat × Nat}
+    (h : RefinesT MK D (fun _ => P) pairT trS trT ψ) {a : Nat} (ha : ¬ Clean D trS trT ψ a) :
+    DirtyEnd D P trS a := by
+  classical
+  refine Classical.byContradiction fun hn => ha ⟨fun hd => ?_,
+    fun q y hy hW hl hu => absurd (.inl (hl ▸ h.priv q y hy hW hu)) hn⟩
+  exact Classical.byContradiction fun hw => hn (.inr ⟨hd, hw⟩)
+
+theorem DirtyEnd.sub {D P : Nat → Prop} {trS : List (List (Ev K V))} {a : Nat}
+    (h : DirtyEnd D P trS a) : D a ∨ P a :=
+  h.elim .inr fun h => .inl h.1
+
+/-- **A larger end-dirty set.** -/
+theorem _root_.Concurrency.CallComposeT.RealizedT.mono_out {env : Clif.Env} {p : Clif.Program}
+    {Bnd : Nat → Prop} {ls : List Lab} {k : Nat} {c c' : TState} {D D' D'' : Nat → Prop}
+    (h : RealizedT env p Bnd ls k c c' D D') (hD : ∀ a, D' a → D'' a) :
+    RealizedT env p Bnd ls k c c' D D'' := by
+  obtain ⟨hk, trS, ψ, P, hr, hx, hf, hb, hd⟩ := h
+  exact ⟨hk, trS, ψ, P, hr, hx, hf, hb, fun a ha => hD a (hd a ha)⟩
+
 /-! ## The realization of a segment -/
 
 variable {env : Clif.Env} {p : Clif.Program} {Bnd : Nat → Prop}
+
+/-- **A segment whose reads avoid the mask, ending dirty in `DirtyEnd`** (module doc). -/
+theorem realizedT_segW {ls : List Lab} {k : Nat} (hk : k ≤ ls.length) {s s1 : Clif.State}
+    {trS : List (List (Ev SKind BVal))} {ψ : Nat × Nat → Nat × Nat} {P : Nat → Prop}
+    (hrun : CRun env p (.run s) trS (.run s1)) (hx : CallCompose.XClosed (evTr (ls.take k)))
+    (href : Refines Maps P (MonPair (evTr (ls.take k))) trS (conv (evTr (ls.take k))) ψ)
+    {U D NS : Nat → Prop} (hra : ReadsAvoid U trS) (hD : ∀ a, D a → P a ∨ U a ∨ NS a)
+    (hu : Uniform trS) (hpos : ∀ q x, evAt trS q = some x → x.dir = .R → 0 < x.n)
+    (hns : ∀ q x, evAt trS q = some x → x.dir = .R → ¬ NS x.loc) (hb : ∀ l, P l → Bnd l) :
+    RealizedT env p Bnd ls k (encT U (.run s)) (encT (maskAfter U trS) (.run s1)) D
+      (DirtyEnd D P trS) := by
+  have hT := (Refines.toT_dirty href hra hu hpos hns).mono0 hD
+  exact ⟨hk, trS, ψ, fun _ => P, crunS_of_crun hrun rfl hra, hx, hT, fun _ l h => hb l h,
+    fun a ha => notClean_dirtyEnd hT ha⟩
 
 /-- **A segment whose reads avoid the mask** (module doc). -/
 theorem realizedT_seg {ls : List Lab} {k : Nat} (hk : k ≤ ls.length) {s s1 : Clif.State}
@@ -104,14 +148,13 @@ theorem realizedT_seg {ls : List Lab} {k : Nat} (hk : k ≤ ls.length) {s s1 : C
     (hu : Uniform trS) (hpos : ∀ q x, evAt trS q = some x → x.dir = .R → 0 < x.n)
     (hns : ∀ q x, evAt trS q = some x → x.dir = .R → ¬ NS x.loc) (hb : ∀ l, P l → Bnd l) :
     RealizedT env p Bnd ls k (encT U (.run s)) (encT (maskAfter U trS) (.run s1)) D
-      (fun a => D a ∨ P a) := by
-  have hT := (Refines.toT_dirty href hra hu hpos hns).mono0 hD
-  exact ⟨hk, trS, ψ, fun _ => P, crunS_of_crun hrun rfl hra, hx, hT, fun _ l h => hb l h,
-    fun a ha => notClean_sub hT ha⟩
+      (fun a => D a ∨ P a) :=
+  (realizedT_segW hk hrun hx href hra hD hu hpos hns hb).mono_out fun _ h => h.sub
 
-/-- **A segment, truncated before the first CLIF step reading a masked byte** (module doc): the
-whole segment, or a prefix whose next CLIF step reads a masked byte. -/
-theorem realizedT_cut {f : Arm.ArmState → Arm.ArmState} {ok : Arm.ArmState → Lab → Prop}
+/-- **A segment, truncated before the first CLIF step reading a masked byte, ending dirty in
+`DirtyEnd`** (module doc): the whole segment, or a prefix whose next CLIF step reads a masked
+byte. -/
+theorem realizedT_cutW {f : Arm.ArmState → Arm.ArmState} {ok : Arm.ArmState → Lab → Prop}
     {u t' : Arm.ArmState × Mon}
     {ls : List Lab} (hr : PRun Policy.arm f ok u ls t') {k : Nat} (hk : k ≤ ls.length)
     {s s1 : Clif.State} {trS : List (List (Ev SKind BVal))} {ψ : Nat × Nat → Nat × Nat}
@@ -122,13 +165,13 @@ theorem realizedT_cut {f : Arm.ArmState → Arm.ArmState} {ok : Arm.ArmState →
     (hu : Uniform trS) (hpos : ∀ q x, evAt trS q = some x → x.dir = .R → 0 < x.n)
     (hns : ∀ q x, evAt trS q = some x → x.dir = .R → ¬ NS x.loc) (hb : ∀ l, P l → Bnd l) :
     (RealizedT env p Bnd ls k (encT U (.run s)) (encT (maskAfter U trS) (.run s1)) D
-        (fun a => D a ∨ P a)) ∨
+        (DirtyEnd D P trS)) ∨
       ∃ k' ≤ k, ∃ j evs, trS[j]? = some evs ∧ ∃ sj : Clif.State, ∃ t'' : TState,
         RealizedT env p Bnd ls k' (encT U (.run s)) (encT (maskAfter U (trS.take j)) (.run sj))
-          D (fun a => D a ∨ P a) ∧
+          D (DirtyEnd D P (trS.take j)) ∧
         CStep env p (.run sj) evs t'' ∧ ReadsMasked (maskAfter U (trS.take j)) evs := by
   rcases readsAvoid_or_cut U trS with hra | ⟨j, evs, hjs, hra, hmask⟩
-  · exact .inl (realizedT_seg hk hrun (hx k (Nat.le_refl _)) href hra hD hu hpos hns hb)
+  · exact .inl (realizedT_segW hk hrun (hx k (Nat.le_refl _)) href hra hD hu hpos hns hb)
   · right
     -- the CLIF run up to step `j`, and step `j`
     have hj : j < trS.length := (List.getElem?_eq_some_iff.mp hjs).1
@@ -172,6 +215,28 @@ theorem realizedT_cut {f : Arm.ArmState → Arm.ArmState} {ok : Arm.ArmState →
       fun q x h => hpos q x (evAt_take_some h).2
     have hns' : ∀ q x, evAt (trS.take j) q = some x → x.dir = .R → ¬ NS x.loc :=
       fun q x h => hns q x (evAt_take_some h).2
-    exact realizedT_seg (by omega) h1 (hx k' hk') href' hra hD (uniform_take hu j) hpos' hns' hb
+    exact realizedT_segW (by omega) h1 (hx k' hk') href' hra hD (uniform_take hu j) hpos' hns' hb
+
+/-- **A segment, truncated before the first CLIF step reading a masked byte** (module doc): the
+whole segment, or a prefix whose next CLIF step reads a masked byte. -/
+theorem realizedT_cut {f : Arm.ArmState → Arm.ArmState} {ok : Arm.ArmState → Lab → Prop}
+    {u t' : Arm.ArmState × Mon}
+    {ls : List Lab} (hr : PRun Policy.arm f ok u ls t') {k : Nat} (hk : k ≤ ls.length)
+    {s s1 : Clif.State} {trS : List (List (Ev SKind BVal))} {ψ : Nat × Nat → Nat × Nat}
+    {P : Nat → Prop} (hrun : CRun env p (.run s) trS (.run s1))
+    (hx : ∀ k' ≤ k, CallCompose.XClosed (evTr (ls.take k')))
+    (href : Refines Maps P (MonPair (evTr (ls.take k))) trS (conv (evTr (ls.take k))) ψ)
+    {U D NS : Nat → Prop} (hD : ∀ a, D a → P a ∨ U a ∨ NS a)
+    (hu : Uniform trS) (hpos : ∀ q x, evAt trS q = some x → x.dir = .R → 0 < x.n)
+    (hns : ∀ q x, evAt trS q = some x → x.dir = .R → ¬ NS x.loc) (hb : ∀ l, P l → Bnd l) :
+    (RealizedT env p Bnd ls k (encT U (.run s)) (encT (maskAfter U trS) (.run s1)) D
+        (fun a => D a ∨ P a)) ∨
+      ∃ k' ≤ k, ∃ j evs, trS[j]? = some evs ∧ ∃ sj : Clif.State, ∃ t'' : TState,
+        RealizedT env p Bnd ls k' (encT U (.run s)) (encT (maskAfter U (trS.take j)) (.run sj))
+          D (fun a => D a ∨ P a) ∧
+        CStep env p (.run sj) evs t'' ∧ ReadsMasked (maskAfter U (trS.take j)) evs :=
+  (realizedT_cutW hr hk hrun hx href hD hu hpos hns hb).imp (fun h => h.mono_out fun _ h => h.sub)
+    fun ⟨k', hk', j, evs, hj, sj, t'', hR, hs, hm⟩ =>
+      ⟨k', hk', j, evs, hj, sj, t'', hR.mono_out fun _ h => h.sub, hs, hm⟩
 
 end Concurrency.CallSegT
