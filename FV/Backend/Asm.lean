@@ -834,13 +834,21 @@ def termOk (rep : Label → Nat → Bool) (idx : Std.HashMap Label Nat) (a : Opt
      | _, _ => false)
   | _ => keptOk
 
+/-- `repAt` on the lines `L` with enough fuel. -/
+def repOn (af : AFunc) (L : List Line) : Label → Nat → Bool :=
+  repAt af L.toArray (L.length + af.blocks.size + 1)
+
+/-- An alias `l ↦ x` whose resolution the lines `L` justify: `x`'s label line represents `l`. -/
+def aliasOk (af : AFunc) (L : List Line) (a : Label × Label) : Bool :=
+  match (blockLabelIdx L)[a.2]? with
+  | some j => repOn af L a.1 j
+  | none => false
+
 /-- The segments `ss` ending in the lines `os` laid out as `L` (`segLines ss os`, then the
 traps) are a correct simplification: entry first, every segment's final lines `termOk`. -/
 def segsOk (af : AFunc) (ss : List Seg) (os : List (List Line)) (L : List Line) : Bool :=
-  let A := L.toArray
   let idx := blockLabelIdx L
-  let fuel := L.length + af.blocks.size + 1
-  let rep := repAt af A fuel
+  let rep := repOn af L
   let rec go : List Seg → List (List Line) → Nat → Bool
     | s :: ss, o :: os, j =>
       let nxt := j + 1 + s.body.length + o.length
@@ -850,7 +858,7 @@ def segsOk (af : AFunc) (ss : List Seg) (os : List (List Line)) (L : List Line) 
   (ss.head?.map (·.idx)) == some 0 && go ss os 0
 
 /-- An emission plan: the segments in emission order, their final last-instruction lines, the
-emitter's final state (deferred traps) and the block-label aliases. -/
+emitter's final state (deferred traps) and the block-label aliases (each `aliasOk`). -/
 structure Plan where
   segs : List Seg
   outs : List (List Line)
@@ -869,7 +877,8 @@ splits into them and `segsOk` accepts it. -/
 def machPlan (af : AFunc) (allLabels : Bool) (ss : List Seg) (ps : PState) : Option Plan := do
   let (L, al) := machBuf allLabels (segLines ss (ss.map (·.term)))
   let os ← splitSegs ss L
-  if segsOk af ss os (segLines ss os ++ trapLines ps) then some ⟨ss, os, ps, al⟩ else none
+  let L' := segLines ss os ++ trapLines ps
+  if segsOk af ss os L' then some ⟨ss, os, ps, al.filter (aliasOk af L')⟩ else none
 
 /-- The emission plan of an allocated function (`k` = its index in the file): the blocks in
 `emitOrder`, `MachBuffer`'s branch simplification (`machPlan`), else the unsimplified lines. -/
@@ -877,6 +886,12 @@ def emitPlan (k : Nat) (af : AFunc) : Except String Plan := do
   let (ss, ps) ← segsOf { k, slotBase := af.slotBase } af (emitOrder af) {}
   pure <| ((machPlan af true ss ps).orElse fun _ => machPlan af false ss ps).getD
     ⟨ss, ss.map (·.term), ps, []⟩
+
+/-- The block-label aliases of the emission plan. -/
+def emitAlias (k : Nat) (af : AFunc) : List (Label × Label) :=
+  match emitPlan k af with
+  | .ok p => p.alias
+  | .error _ => []
 
 /-- The lines of an allocated function before branch relaxation. -/
 def emitPre (k : Nat) (af : AFunc) : Except String (Array Line) :=
@@ -975,15 +990,14 @@ def relaxOf (pre : List Line) : Lbl → Bool := relaxFar pre (pre.length + 1) {}
 /-- Expand an allocated function (`k` = its index in the file) into its final line list
 (`emitPre`, then branch relaxation), with byte offsets of the trap sites. -/
 def emitFunc (k : Nat) (af : AFunc) : Except String FnAsm := do
-  let p ← emitPlan k af
-  let pre := p.lines
+  let pre := (← emitPre k af).toList
   let lines := (relaxLines (relaxOf pre) pre).toArray
   let mut off := 0
   let mut traps : Array TrapSite := #[]
   for ln in lines do
     if let .ins _ (some code) := ln then traps := traps.push ⟨off, code⟩
     off := off + ln.size
-  pure { name := af.name, k, lines, size := off, traps := traps.toList, alias := p.alias }
+  pure { name := af.name, k, lines, size := off, traps := traps.toList, alias := emitAlias k af }
 
 /-! ## Assembly text (GNU/LLVM syntax) -/
 
