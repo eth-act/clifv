@@ -3,10 +3,12 @@
 given files) through Lean and check that every listed theorem depends on no axiom other than
 propext, Classical.choice and Quot.sound (docs/TO-PROVE.md §7, "Gate policy").
 
-usage: scripts/axiom-audit.py [--log-dir DIR] [FILE.lean...]
+usage: scripts/axiom-audit.py [--log-dir DIR] [--cwd PKG] [FILE.lean...]
 
 Run from the worktree root after the build (`lake build FV`): each file goes through
-`lake env lean`. A line `#print axioms X -- witness: native_decide` marks a non-vacuity witness,
+`lake env lean` in the worktree root, or in the Lake package PKG (relative to the root) with
+`--cwd PKG` (`--cwd float-spec float-spec/audit.lean`: the FloatLib equality proofs, built by
+scripts/float-spec.sh). A line `#print axioms X -- witness: native_decide` marks a non-vacuity witness,
 which may also depend on the auxiliary axioms `native_decide` adds (`X._native.native_decide.ax_…`);
 compiler theorems may not. One line per file: theorems reported / `#print axioms` commands, Lean
 errors, disallowed axioms. Exit status 0 iff every file compiles, reports every theorem, and no
@@ -25,8 +27,10 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("files", nargs="*")
     ap.add_argument("--log-dir", help="write each file's Lean output to DIR/<name>.log")
+    ap.add_argument("--cwd", default=".", help="Lake package to run `lake env lean` in")
     a = ap.parse_args()
-    files = [pathlib.Path(f) for f in a.files] or sorted((ROOT / "scripts/audit").glob("*.lean"))
+    cwd = ROOT / a.cwd
+    files = [pathlib.Path(f).resolve() for f in a.files] or sorted((ROOT / "scripts/audit").glob("*.lean"))
     if a.log_dir:
         pathlib.Path(a.log_dir).mkdir(parents=True, exist_ok=True)
     bad = 0
@@ -34,7 +38,7 @@ def main():
         text = f.read_text()
         wanted = len(re.findall(r"^#print axioms\s", text, re.M))
         witnesses = set(re.findall(r"^#print axioms\s+(\S+)\s+--\s*witness: native_decide", text, re.M))
-        r = subprocess.run(["lake", "env", "lean", str(f)], cwd=ROOT, capture_output=True, text=True)
+        r = subprocess.run(["lake", "env", "lean", str(f)], cwd=cwd, capture_output=True, text=True)
         out = r.stdout + r.stderr
         if a.log_dir:
             (pathlib.Path(a.log_dir) / f"{f.stem}.log").write_text(out)
