@@ -366,7 +366,7 @@ theorem q_init {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb R.base
       hit, rfl, itemsChecked_block hR hvb hit, hcode, hls, htr, ?_, hpc', ?_⟩
     · rw [← List.drop_drop, hdrop, List.drop_left]
     · refine ⟨fun l _ _ => rfl, ⟨fun f hf => ?_, hmemF, ?_⟩, by rw [herr', hent.err], by rw [hprog', hent.program],
-        hspB, ?_, fun _ => ?_, code_keep hR.prog0 hent.code hcode', hgk⟩
+        hspB, ?_, fun _ => ?_, code_keep hR.prog0 hent.code hcode', hgk, fun _ => hfp'⟩
       · by_cases h29 : f = .GPR 29#5
         · subst h29
           have := hbe.fp
@@ -639,6 +639,31 @@ theorem RL.top_notG {R : RL} (hR : R.Wf) : ∀ k < R.topN, ¬ R.G (R.topB + BitV
     omega
   simp only [StackBelow, hk64, hd]
   constructor <;> omega
+
+/-- **The top of the frame in a state related by `StRel`** (`fplr`): the entry x29 and x30 at
+entry sp − 16 and − 8, each saved register's low 64 bits at its slot (`clobberOff` above
+`R.topB`), as the prologue pushed them. -/
+theorem RL.top_bytes {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb R.base ra R.s0)
+    {s : Arm.ArmState} (hfplr : Arm.read_mem_bytes R.topN R.topB s = R.topImg) :
+    Arm.read_mem_bytes 8 (spv R.s0 - 16#64) s = xreg 29 R.s0 ∧
+      Arm.read_mem_bytes 8 (spv R.s0 - 16#64 + 8#64) s = xreg 30 R.s0 ∧
+      ∀ r ∈ R.af.saves, Arm.read_mem_bytes 8 (R.topB + BitVec.ofNat 64 (clobberOff R.af.saves r)) s =
+        slotVal R.s0 r := by
+  obtain ⟨-, -, -, hsv, -, -, -, -, -⟩ := RL.frame_facts hR
+  have hbytes := read_mem_bytes_bytes R.topN R.topB s R.sP hfplr
+  obtain ⟨sP, -, hsP, hP16, hPsl⟩ := RL.sP_steps hR hent
+  rw [hsP] at hbytes
+  have htopcb : R.topB + BitVec.ofNat 64 (clobberBytes R.af.saves) = spv R.s0 - 16#64 := by
+    rw [RL.topB, RL.topN, BitVec.ofNat_add]; bv_omega
+  have h16 : Arm.read_mem_bytes 16 (spv R.s0 - 16#64) s = xreg 30 R.s0 ++ xreg 29 R.s0 := by
+    rw [← htopcb, read_sub (n := 16) (o := clobberBytes R.af.saves) hbytes
+      (by simp only [RL.topN]; omega), htopcb]
+    exact hP16
+  obtain ⟨h29, h30⟩ := read16_split h16
+  refine ⟨h29, h30, fun r hr => ?_⟩
+  rw [read_sub (n := 8) (o := clobberOff R.af.saves r) hbytes
+    (by have := clobberOff_le hsv hr; simp only [RL.topN]; omega)]
+  exact hPsl r hr
 
 theorem epilogueLines_epi (saves : List Reg) (size : Nat) :
     epilogueLines saves size = epiLines saves size ++ [.ins .ret] :=
