@@ -153,7 +153,7 @@ def unusedCtx : Ctx := { sinkCtx with
   insts := #[⟨.op .unit, [0], [.int 8], some (.load .load .i8 { trapCode := none } 1 0)⟩] }
 
 def omitCtx : Ctx := { sinkCtx with
-  insts := #[⟨.op .unit, [0], [.int 8], some (.iconst .i8 0)⟩] }
+  insts := #[⟨.op .unit, [0], [.int 8], some (.iconst .i8 9)⟩] }
 
 def unusedInput : State := { sinkState with current := none }
 
