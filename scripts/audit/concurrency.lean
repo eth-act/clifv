@@ -1117,3 +1117,23 @@ import FVTest.Concurrency.LitmusFull
 #print axioms Concurrency.CallSegGeo.Witness.privA_callee_out_LE -- witness: native_decide
 #print axioms Concurrency.CallSegGeo.Witness.privA_callee_LE -- witness: native_decide
 #print axioms Concurrency.CallSegGeo.Witness.reads_valid_cas
+-- #473 (4): the call pause (callee's code, stack, kept addresses) and the resume after it
+#print axioms Concurrency.CallSegCall.CodeIn.code
+#print axioms Concurrency.CallSegCall.CodeIn.callee
+#print axioms Concurrency.CallSegCall.CodeIn.notRegion
+#print axioms Concurrency.CallSegCall.stackAvail_callee
+#print axioms Concurrency.CallSegCall.budget_call
+#print axioms Concurrency.CallSegCall.nested_callee
+#print axioms Concurrency.CallSegCall.gfree_callee
+#print axioms Concurrency.CallSegCall.call_endK
+#print axioms Concurrency.CallSegCall.ret_lt
+#print axioms Concurrency.CallSegCall.retEnd_n
+#print axioms Concurrency.CallSegCall.resume_ret
+#print axioms Concurrency.CallSegCall.Witness.codeIn_RA2 -- witness: native_decide
+#print axioms Concurrency.CallSegCall.Witness.stack_ld -- witness: native_decide
+#print axioms Concurrency.CallSegCall.Witness.nested_ld -- witness: native_decide
+#print axioms Concurrency.CallSegCall.Witness.gfree_ld -- witness: native_decide
+#print axioms Concurrency.CallSegCall.Witness.budget_two
+#print axioms Concurrency.CallSegCall.Witness.call_endK_fC -- witness: native_decide
+#print axioms Concurrency.CallSegCall.Witness.retEnd_n_ld -- witness: native_decide
+#print axioms Concurrency.CallSegCall.Witness.resume_ret_fC -- witness: native_decide
