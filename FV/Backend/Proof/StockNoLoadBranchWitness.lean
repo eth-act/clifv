@@ -62,4 +62,21 @@ theorem critical_edge_driver_witness : ∃ output,
   obtain ⟨final,records⟩ := stock_lower_no_load_sunk_eq scope formats run
   exact ⟨output,run,scope,blocks,edge,final,records⟩
 
+private def callDataFunction : Clif.Function :=
+  {name := "no_load_try_data",sig := {params := [],returns := []},
+    sigDecls := [(0,{params := [],returns := []})],blocks := []}
+private def callDataTerm : Clif.Terminator :=
+  .tryCallIndirect 0 [] {sig := 0,normal := ⟨0,[]⟩}
+private def callData : V := instDataV "TryCallIndirect"
+  [opcodeV "TryCallIndirect",.values [0],.op (.exnTable {params := [],returns := []} [])]
+
+/-- Actual successful exception-call data construction inhabits the generic
+format theorem independently of the scalar activation's source class. -/
+theorem try_call_format_witness (ctx : Ctx) :
+    tryCallData callDataFunction callDataTerm = .ok callData ∧
+    ∀ fmt fields, fmt = 16 ∨ fmt = 17 →
+      (Backend.sem ctx).unData 152 callData ≠ some (fmt,fields) := by
+  have encoded : tryCallData callDataFunction callDataTerm = .ok callData := rfl
+  exact ⟨encoded,try_call_data_no_load encoded⟩
+
 end Backend.Stock.Proof.SinkRules.BranchWitness
