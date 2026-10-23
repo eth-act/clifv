@@ -85,7 +85,7 @@ theorem lowerRulesCorrectTI_program : LowerRulesCorrectTI program := by
   simp only [closureRootIds, List.contains_cons, List.contains_nil, Bool.or_false,
     Bool.or_eq_true, beq_iff_eq] at hroot
 
-  rcases hroot with h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h
+  rcases hroot with h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h
   · rw [lower_rule_eq hr (k := 172) (r0 := rule_lower_53) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]
     apply iconst_okTI <;> assumption
   · exfalso; simp [floatMoveRootRule, h] at hfm
@@ -116,6 +116,14 @@ theorem lowerRulesCorrectTI_program : LowerRulesCorrectTI program := by
     apply iadd_imul_left_okTI <;> assumption
   · rw [lower_rule_eq hr (k := 179) (r0 := rule_lower_132) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]
     apply isub_imul_okTI <;> assumption
+  · exfalso; simp [floatArithRootRule, h] at hfa
+  · exfalso; simp [floatArithRootRule, h] at hfa
+  · exfalso; simp [floatArithRootRule, h] at hfa
+  · exfalso; simp [floatArithRootRule, h] at hfa
+  · exfalso; simp [floatArithRootRule, h] at hfa
+  · exfalso; simp [floatArithRootRule, h] at hfa
+  · exfalso; simp [floatArithRootRule, h] at hfa
+  · exfalso; simp [floatArithRootRule, h] at hfa
   · exfalso; simp [floatArithRootRule, h] at hfa
   · exfalso; simp [floatArithRootRule, h] at hfa
   · exfalso; simp [floatArithRootRule, h] at hfa

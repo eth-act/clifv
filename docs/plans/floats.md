@@ -685,12 +685,26 @@ over `InstScopeTA` (instructions in `Compile.instETA = instET ∨ fArithET`, `FV
 eleven roots on it; `instScopeTA_float_arith`, `float_arith_fcmp_nomatch`). Oracle:
 `FVTest/Backend/float_arith.clif` (NaN propagation and quietening, signalling operand first,
 default NaN, ±∞, ±0, subnormals, rounding ties) through `scripts/lean-backend-filetests.sh`.
+**Rounding (`ceil`/`floor`/`trunc`/`nearest`).** The eight pinned-size roots `rule_lower_567/570/
+578/581/589/592/600/603` (lower.isle:567-603, ids 682/683/685/686/688/689/691/692) are proven in
+`FV/Backend/Proof/IselFloatRound.lean` (`ceil32_okT … nearest64_okT`) via the `fpu_round` term
+(`inst.isle:2921`, `MInst.FpuRound`): CLIF's `FSem.unary` (`IEEE.roundInt` at `rpi`/`rmi`/`rz`/
+`rne`) and the Arm model's `FPRoundInt` with `FPCR = 0` are the same function (`fpuRoundOut`,
+`round_holds`), so each root is a statement about one function; the generic-size rules
+(`lower.isle:564/575/586/597`, priority -1) stay unproven and unfired (`fpu_round` over a dynamic
+`scalar_size ty`). Closure (with the sixteen S11f-cvt conversion roots below): 195 roots, 330
+excluded (`StockScopePartition`: 182→190 source-closure roots, 335→327 excluded).
+Witnesses: `FVTest/Backend/FloatRoundCtxT.lean` (`ctxInvT_float_round`: all eight operations in
+one function pass `ctxOkT`, the eight roots fire on it and not the generic-size ones, and not
+the deferred `fcmp` root; kernel-checked edge values ±0, ±0.5, ±1.5, `2^52-0.5` (largest f64
+half-integer, a `nearest` tie), `2^52+1`, huge `2^63` f32, ±∞, quiet NaN). Oracle:
+`FVTest/Backend/float_round.clif` through `scripts/lean-backend-filetests.sh`.
 **Deferred: `fcmp`.** `rule_lower_2176` (`fcmp` with `fp_cond_code`) is not a closure root
-(`closure.rs` `BACKEND_FLOAT_ROOTS`, `Closure.lean`: 171 roots, 354 excluded), `instData`
+(`closure.rs` `BACKEND_FLOAT_ROOTS`; `Closure.lean`: 195 roots, 330 excluded), `instData`
 rejects `fcmp`, and the `fcmp` arm of `is_nonzero_cmp_okT` stays absurd; `fpuCmp`'s `ispecFP`
-arm and `ref_fpuCmp` are in place for it. Open: `fcmp` (the `fp_cond_code` conditions), the
-conversions (`fpu_to_int_cvt{,_sat}`, `int_to_fpu`), `fma`/rounding, and threading
-`LowerRulesCorrectFT`/`InstScopeTA` into the driver and the end-to-end scope.
+arm and `ref_fpuCmp` are in place for it. Open: `fcmp` (the `fp_cond_code` conditions),
+`fma`, and threading `LowerRulesCorrectFT`/`InstScopeTA` into the driver and the end-to-end
+scope (the conversions and rounding are proven below and above).
 
 **S11e6 (#419), slice 1: `call` with `f32`/`f64` arguments and returns in the typed family.**
 `Proof/IselCtlCallF.lean`: `CallRulesCorrectTFP` (the pinned `call` family, rules 1031 `bl` and

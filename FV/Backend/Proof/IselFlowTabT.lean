@@ -224,7 +224,8 @@ def tlsTab13 : Tab :=
 /-- Chunk 14 of `tlsTab`: the internal terms of the S11f float arithmetic roots. -/
 def tlsTab14 : Tab :=
   [(368, [⟨2, true⟩, ⟨2, true⟩, ⟨2, true⟩, ⟨2, true⟩], ⟨2, true⟩),
-   (364, [⟨2, true⟩, ⟨2, true⟩, ⟨2, true⟩], ⟨2, true⟩)]
+   (364, [⟨2, true⟩, ⟨2, true⟩, ⟨2, true⟩], ⟨2, true⟩),
+   (408, [⟨2, true⟩, ⟨2, true⟩], ⟨2, true⟩)]
 
 /-- Chunk 15 of `tlsTab`: the internal terms of the S11f-cvt conversion roots (`fpu_to_int_cvt_sat`, `fpu_to_int`, `int_to_fpu`, `signed_min`/`signed_max`). -/
 def tlsTab15 : Tab :=

@@ -11,7 +11,7 @@ def excludedSourceRoots : List Rule := (program.rulesOf TId.lower).filter (fun r
 /-- Kernel evaluation of the real generated rule list gives the exact
 partition; these numbers are not whole-driver execution-proof coverage. -/
 theorem stock_source_root_partition_counts : (program.rulesOf TId.lower).length = 517 ∧
-    sourceClosureRoots.length = 182 ∧ excludedSourceRoots.length = 335 := by
+    sourceClosureRoots.length = 190 ∧ excludedSourceRoots.length = 327 := by
   rw [sourceClosureRoots,excludedSourceRoots,show TId.lower = 686 from rfl,data_program.r686]
   decide +kernel
 /-- Every actual selected ordinary source root belongs to the remaining real
@@ -25,10 +25,11 @@ theorem stock_selected_source_root_partition {f : Clif.Function} {ctx : Ctx} (ma
 scalar and floating rules, with full source-rule membership.
 The float ↔ integer conversion roots (`IselFloatCvt`, #140: `fcvt_from_{s,u}int`,
 `fcvt_to_{s,u}int_sat`, 16 rules) are part of the source-closure root set
-(the 166→182 bump). -/
+(the 166→182 bump); the eight `ceil`/`floor`/`trunc`/`nearest` roots (`IselFloatRound`,
+#35: rules 567…603) bring it to 190 (excluded 335→327). -/
 theorem stock_source_root_partition_witness : rule_lower_53 ∈ sourceClosureRoots ∧
     rule_lower_58 ∈ excludedSourceRoots ∧ (program.rulesOf TId.lower).length = 517 ∧
-    sourceClosureRoots.length = 182 ∧ excludedSourceRoots.length = 335 := by
+    sourceClosureRoots.length = 190 ∧ excludedSourceRoots.length = 327 := by
   refine ⟨?_,?_,stock_source_root_partition_counts⟩
   · rw [sourceClosureRoots,show TId.lower = 686 from rfl,data_program.r686]; decide +kernel
   · rw [excludedSourceRoots,show TId.lower = 686 from rfl,data_program.r686]; decide +kernel

@@ -232,10 +232,12 @@ def provTab14 : Tab :=
    (681, [⟨false, false, false, false, true⟩, ⟨false, false, false, false, true⟩], ⟨false, false, false, false, true⟩)]
 
 /-- Chunk 15 of `provTab`: the terms the S11f float arithmetic roots reach (`fpu_rr` 364,
-`fpu_rrr` 368; operation and size enums, plain registers), checked like the others. -/
+`fpu_rrr` 368, `fpu_round` 408; operation and size enums, plain registers), checked like the
+others. -/
 def provTab15 : Tab :=
   [(364, [⟨false, false, false, true, true⟩, ⟨false, false, false, false, true⟩, ⟨false, false, false, true, true⟩], ⟨false, false, false, false, true⟩),
-   (368, [⟨false, false, false, true, true⟩, ⟨false, false, false, false, true⟩, ⟨false, false, false, false, true⟩, ⟨false, false, false, true, true⟩], ⟨false, false, false, false, true⟩)]
+   (368, [⟨false, false, false, true, true⟩, ⟨false, false, false, false, true⟩, ⟨false, false, false, false, true⟩, ⟨false, false, false, true, true⟩], ⟨false, false, false, false, true⟩),
+   (408, [⟨false, false, false, true, true⟩, ⟨false, false, false, false, true⟩], ⟨false, false, false, false, true⟩)]
 
 /-- Chunk 16 of `provTab`: the terms the S11f-cvt conversion roots reach (`fpu_to_int_cvt_sat` 629, `signed_min`/`signed_max` 630/631, `fpu_to_int` 632, `int_to_fpu` 633). -/
 def provTab16 : Tab :=
