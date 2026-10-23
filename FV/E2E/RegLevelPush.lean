@@ -1611,3 +1611,37 @@ theorem popLines_mem {int : Bool} {rs : List Reg} {ln : Line} (h : ln ∈ popLin
     · simp at h
 
 end Backend.Proof
+
+namespace E2E
+
+theorem append_inj' {n m : Nat} {x x' : BitVec n} {y y' : BitVec m} (h : x ++ y = x' ++ y') :
+    x = x' ∧ y = y' := by
+  constructor
+  · apply BitVec.eq_of_getLsbD_eq
+    intro i hi
+    have := congrArg (fun z => z.getLsbD (i + m)) h
+    simpa [BitVec.getLsbD_append, show ¬ (i + m < m) by omega] using this
+  · apply BitVec.eq_of_getLsbD_eq
+    intro i hi
+    have := congrArg (fun z => z.getLsbD i) h
+    simpa [BitVec.getLsbD_append, hi] using this
+
+theorem read_mem_bytes_bytes : ∀ (n : Nat) (a : BitVec 64) (s t : Arm.ArmState),
+    Arm.read_mem_bytes n a s = Arm.read_mem_bytes n a t →
+    ∀ k < n, s.mem (a + BitVec.ofNat 64 k) = t.mem (a + BitVec.ofNat 64 k)
+  | 0, _, _, _, _, k, hk => absurd hk (Nat.not_lt_zero _)
+  | n + 1, a, s, t, h, k, hk => by
+    simp only [Arm.read_mem_bytes] at h
+    have h' := congrArg (BitVec.cast (by omega : (n + 1) * 8 = n * 8 + 8)) h
+    simp only [BitVec.cast_cast, BitVec.cast_eq] at h'
+    have hh := append_inj' h'
+    cases k with
+    | zero =>
+      have := hh.2
+      simpa [Arm.read_mem, Arm.read_store] using this
+    | succ j =>
+      have := read_mem_bytes_bytes n (a + 1#64) s t hh.1 j (by omega)
+      rwa [BitVec.add_assoc, show (1#64 : BitVec 64) + BitVec.ofNat 64 j = BitVec.ofNat 64 (j + 1) by
+        apply BitVec.eq_of_toNat_eq; simp; omega] at this
+
+end E2E

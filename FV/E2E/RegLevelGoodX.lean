@@ -510,6 +510,27 @@ theorem q_save {R : RL} {s : Arm.ArmState} {b : Nat} {src dst : Loc}
   simp only [upd, hne, ite_false]
   exact hst.store l hv hL
 
+/-- A callee restore (a move out of a save slot) emits no code: `Q` holds at the next item with
+the store unchanged (the epilogue's pops restore the saved registers). -/
+theorem q_restore {R : RL} {s : Arm.ArmState} {b : Nat} {src dst : Loc}
+    {its : List RItem} {m : Loc → CV} {w : Arm.ArmState} (hss : src.isSave = true)
+    (hq : Q R s (.run ⟨b, .move src dst :: its, m, w⟩)) :
+    Q R s (.run ⟨b, its, m, w⟩) := by
+  obtain ⟨j, vb, items, pre, code, ls, ps1, ps2, T, hvb, hit, hsplit, hchk, hcode, hls, htr, hdrop,
+    hpc, hst⟩ := hq
+  obtain ⟨c1, c2, hc1, hc2, rfl⟩ := itemsCode_cons hcode
+  rw [itemCode_move] at hc1
+  obtain ⟨r, rfl⟩ : ∃ r, src = .save r := by cases src <;> simp [Loc.isSave] at hss; exact ⟨_, rfl⟩
+  have hc1' : c1 = [] := by
+    cases dst <;> simp only [RAFrame.moveInsts, pure, Except.pure, Except.ok.injEq] at hc1 <;>
+      first | exact hc1.symm | exact hc1
+  subst hc1'
+  obtain ⟨ls1, ls2, psm, h1, h2, rfl⟩ := codeLinesE_append _ _ _ _ _ hls
+  simp only [codeLinesE, pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at h1
+  obtain ⟨rfl, rfl⟩ := h1
+  exact ⟨j, vb, items, pre ++ [.move (.save r) dst], c2, ls2, ps1, ps2, T, hvb, hit,
+    by rw [hsplit]; simp, itemsChecked_move_tail hchk, hc2, h2, htr, by simpa using hdrop, hpc, hst⟩
+
 /-- **A move on the machine**: from `Q` at a move item other than a callee restore, the machine
 runs the move's lines and reaches `Q` at the next item with `MStep.move`'s store. -/
 theorem realizes_move {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b : Nat} {src dst : Loc}
