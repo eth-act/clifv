@@ -168,7 +168,7 @@ theorem realizes_tryCall {R : RL} (hR : R.Wf) (hC : CalleeOkG R.F R.K R.G R.s0 (
     ∃ n c'', MStep R.vc R.sem ckeep R.rf (.run ⟨b, .op k allocs :: its, m, w⟩) c'' ∧
       Q R (iterN R.step n s) c'' ∧ ∀ i < n, R.GoodX (iterN R.step i s) := by
   have hck := (lowerRFunc_ok hR.alloc).2.2
-  have hcpc := callAt_of_q hq hvb hi tryCall_hcall
+  have hcpc := callAt_of_q hR hq hvb hi tryCall_hcall
   rcases Q.cases hq with hqs | ⟨vbf, allocsf, regsf, if_, xf, bx, hvbf, he, hits, half, hins, hasgf,
     hsuccf, itx, hitx, hqx⟩
   rotate_left
@@ -183,7 +183,7 @@ theorem realizes_tryCall {R : RL} (hR : R.Wf) (hC : CalleeOkG R.F R.K R.G R.s0 (
     rw [hins] at hi1
     simp only [List.getElem?_toArray, List.getElem?_cons_zero, Option.some.injEq] at hi1
     subst hi1
-    obtain ⟨ic, e, -⟩ := (assign_call_tryCall info regs).2 ti xf hasgf
+    obtain ⟨ic, e, -⟩ := (assign_call_tryCall info regsf).2 ti (.jump xf) hasgf
     cases e
   obtain ⟨_, vb0, _, _, code, _, _, _, _, _, hvb0, -, -, hchk0, hcode, -⟩ := id hqs
   rw [hvb] at hvb0; cases hvb0
@@ -283,14 +283,15 @@ theorem realizes_tryCall {R : RL} (hR : R.Wf) (hC : CalleeOkG R.F R.K R.G R.s0 (
   obtain ⟨rfl, rfl⟩ := hX
   have hdrop0 : R.L.drop j0 = relaxLines R.far x.2.1 ++
       R.L.drop (rix R.far (planLines R.fa.k R.af) x.2.2) := by simpa using hdrop
-  rw [show c1.getLast?.toList = [AInst.inst (.tryCall ic ti)] from by simp] at hTq
+  rw [show [AInst.inst (.tryCall ic ti)].getLast?.toList = [AInst.inst (.tryCall ic ti)] from by simp] at hTq
   have hlT := codeLinesE_single hTq
-  obtain ⟨x, hxterm, hxs, hplain, hxk⟩ : ∃ x : Insn,
-      x.1.term = [.ins x none, .ins (.b (.block ti.continuation)) none] ∧
-      (∀ s0 : Arm.ArmState, ∀ jj, R.L[jj]? = some (.ins x) → s0.program = R.fb.program R.base →
+  obtain ⟨xI, hxterm, hxs, hplain, hxk⟩ : ∃ xI : Insn,
+      x.1.term = [.ins xI none, .ins (.b (.block ti.continuation)) none] ∧
+      (∀ s0 : Arm.ArmState, ∀ jj, R.L[jj]? = some (.ins xI) → s0.program = R.fb.program R.base →
         Arm.r .PC s0 = R.pcOf jj → R.step s0 = R.H.call
           (match ic.dest with | .sym n => some n | .reg _ => none) s0) ∧
-      (Line.ins x none).plain = true ∧ ((∃ n, x = .bl n) ∨ ∃ r, x = .blr r ∧ (R.vc.DestsInt → r ≠ .xzr)) := by
+      (Line.ins xI none).plain = true ∧
+      ((∃ n, xI = .bl n) ∨ ∃ r, xI = .blr r ∧ (R.vc.DestsInt → r ≠ .xzr)) := by
     cases hd : ic.dest with
     | sym n =>
       simp only [MInst.lines, hd, pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at hlT
@@ -304,19 +305,20 @@ theorem realizes_tryCall {R : RL} (hR : R.Wf) (hC : CalleeOkG R.F R.K R.G R.s0 (
       exact step_blr (off := 0) (n := "") (rd := .xzr) (rn := .xzr) hR hj hprog hpc0
   -- the branch check's verdict on the final lines
   obtain ⟨call, b0, htermL, hcase⟩ := termOk_tryCall hterm
-  rw [htermL, hxterm] at htermL
+  rw [hxterm] at htermL
   obtain ⟨rfl, rfl⟩ := htermL
-  obtain ⟨O, hx21O, hcaseO⟩ : ∃ O, x.2.1 = .ins x none :: O ∧
+  obtain ⟨O, hx21O, hcaseO⟩ : ∃ O, x.2.1 = .ins xI none :: O ∧
       ((∃ l', O = [.ins (.b l') none] ∧
           RepLbl (planRep R.fa.k R.af) (blockLabelIdx (planLines R.fa.k R.af)) ti.continuation l') ∨
         (O = [] ∧ planRep R.fa.k R.af ti.continuation x.2.2 = true)) := by
     rcases hcase with ⟨l', hx21, hrl⟩ | ⟨hx21, hrn⟩
-    · exact ⟨[.ins (.b l') none], by rw [hx21], .inl ⟨l', rfl, hrl⟩⟩
-    · exact ⟨[], by rw [hx21], .inr ⟨rfl, hrn⟩⟩
-  obtain ⟨O, hx21O, hcaseO⟩ := hcaseO
-  have hj0 : R.L[j0]? = some (.ins x none) := by
-    apply drop_get
-    rw [hdrop0, hx21O, relaxLines_cons, relaxLine_of_none rfl]
+    · exact ⟨[.ins (.b l') none], hx21.trans rfl, .inl ⟨l', rfl, hrl⟩⟩
+    · exact ⟨[], hx21.trans rfl, .inr ⟨rfl, hrn⟩⟩
+  have hj0 : R.L[j0]? = some (.ins xI none) :=
+    drop_get (Z := relaxLines R.far O) (by
+      rw [hdrop0, hx21O, relaxLines_cons,
+        relaxLine_of_none (by rcases hxk with ⟨_, rfl⟩ | ⟨_, rfl, _⟩ <;> rfl),
+        List.singleton_append])
   -- the machine: the callee, then the branch to the successor
   have hs1 : R.step s = s' := by
     rw [hxs s j0 hj0 hst.prog hpc]
@@ -330,8 +332,9 @@ theorem realizes_tryCall {R : RL} (hR : R.Wf) (hC : CalleeOkG R.F R.K R.G R.s0 (
   have hsp' : spOf s' = R.spB := hK.1.trans hst.sp
   have hdrop1 : R.L.drop (j0 + 1) = relaxLines R.far O ++
       R.L.drop (rix R.far (planLines R.fa.k R.af) x.2.2) := by
-    rw [← List.drop_drop, ← hx21O, hdrop0, relaxLines_cons, relaxLine_of_none rfl]
-    rfl
+    rw [← List.drop_drop, hdrop0, hx21O, relaxLines_cons,
+      relaxLine_of_none (by rcases hxk with ⟨_, rfl⟩ | ⟨_, rfl, _⟩ <;> rfl)]
+    simp
   have hoo : (∃ l', O = [.ins (.b l') none] ∧
         RepLbl (planRep R.fa.k R.af) (blockLabelIdx (planLines R.fa.k R.af)) vs.label l') ∨
       (O = [] ∧ planRep R.fa.k R.af vs.label x.2.2 = true) := by
