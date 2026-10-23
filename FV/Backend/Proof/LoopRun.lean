@@ -40,6 +40,9 @@ theorem dbm_sxth : Arm.decode_bit_masks 0#1 15#6 0#6 false 32 = some (65535#32, 
 
 attribute [local csimp_rules] dbm_sxtb dbm_sxth
 
+-- Lean 4.35 unifies instance arguments at instance transparency; the `datasize` `if` left in
+-- the `|||`/`&&&` instances of `exec_bitfield` then blocks `getLsbD_or`. Restore 4.34's check.
+set_option backward.isDefEq.respectTransparency false in
 /-- `sxtb w27, w27` (`sbfm w, w, #0, #7`) as the sign extension of the low byte, checked bit by
 bit (the Arm result is the masked merge of a replicated sign bit and the rotated source). -/
 private theorem exec_sxtb (Rn Rd : BitVec 5) (st : Arm.ArmState) :
@@ -59,6 +62,7 @@ private theorem exec_sxtb (Rn Rd : BitVec 5) (st : Arm.ArmState) :
     simp only [Nat.forall_lt_succ_right, Nat.not_lt_zero, false_imp_iff, implies_true, true_and]
     simp [-BitVec.getLsbD_eq_getElem]
 
+set_option backward.isDefEq.respectTransparency false in
 /-- `sxth w27, w27` (`sbfm w, w, #0, #15`) as the sign extension of the low halfword. -/
 private theorem exec_sxth (Rn Rd : BitVec 5) (st : Arm.ArmState) :
     Arm.DPI.exec_bitfield (Arm.Bitfield_cls.mk 0#1 0#2 0b100110#6 0#1 0#6 15#6 Rn Rd) st =
