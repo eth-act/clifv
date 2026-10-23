@@ -155,4 +155,17 @@ theorem scalar_div_formats {inst : Clif.Inst}
   · exact HighMulBody.family_formats scalar
   · simp [CastComplete.MemoryFormat,instNames]
 
+/-- All actual source slots start unsunk, independently of their effect color. -/
+theorem build_ctx_sunk_false {f : Clif.Function} {ctx : Ctx}
+    {ranges : Array (Nat × Nat)} {initial : State}
+    (built : Stock.buildCtx f = .ok (ctx,ranges,initial)) (q : Nat) :
+    initial.sunk[q]! = false := by
+  obtain ⟨original,base,requests,old,_,finished⟩ := buildCtx_allocation built
+  have state := congrArg (fun p : Ctx × Array (Nat × Nat) × State => p.2.2) finished
+  dsimp only at state
+  rw [state]
+  change (Array.replicate original.insts.size false)[q]! = false
+  by_cases bound : q < original.insts.size <;>
+    simp [getElem!_def,Array.getElem?_replicate,bound]
+
 end Backend.Stock.Proof.SinkRules
