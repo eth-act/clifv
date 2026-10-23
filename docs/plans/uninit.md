@@ -279,6 +279,17 @@ that broke #556 (earlier callees' saves, spills, frame records) are then the sam
 canonical and the actual run. Non-interference over the masked registers within one call is
 kept as today.
 
+Linking worklist for that contract (`FV/E2E/LinkArm.lean`, sizes as of `dbd6c21c`): an indexed
+`canon` (`canon` overwrites nothing today: the callee's future stack comes from `w`) with the
+region from `P n`, and the indexed `Cond`/`progX`/`X` (≈45 lines); `MachEntry`/`WorldEntry`/`Thm`
+(≈60); `progCall` (≈390; its NI bridge for the newly exposed outgoing/slot regions may become a
+direct realization, since those bytes are now the actual ones); `progResult` (≈100);
+`progOsCore` (≈190) and `calleeOk`/`calleeTryOk`; `xni`/`progX_ni`; `thm_of`. On the CLIF side
+`PlaceAt` (today `init = none`), `initState_mem` (today: every initialised callee-entry byte lies
+outside the new slots) and `progCall`'s `hRel`. The local call index (VCode counter) and the
+global activation count of the CLIF oracle differ (nested callees enter several activations);
+`CrunOk` has to carry that correspondence.
+
 ## 6. Heap (separate gap, SEM2)
 
 `BaseOk.baseKeepsAllocs`/`baseNoAlloc` require base externs to allocate nothing whenever a program
