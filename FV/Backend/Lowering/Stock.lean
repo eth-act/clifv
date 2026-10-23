@@ -36,10 +36,12 @@ def termArgs : Clif.Terminator → List Nat
   | .tryCall _ args et => args ++ et.vals
   | .tryCallIndirect callee args et => callee :: args ++ et.vals
 
-/-- Loads are ordering barriers even when not mandatory. Other memory operations
-and possible traps must be lowered even when none of their outputs is demanded. -/
+/-- Instructions lowered even when none of their outputs is demanded (cranelift-codegen
+0.135.0, the pinned cg_clif's: `has_lowering_side_effect`, `inst_predicates.rs:97`, is
+`has_side_effect || op.can_load()`, so every load is lowered, `notrap` or not; #588). Other
+memory operations and possible traps must be lowered too. -/
 def mustLower : Clif.Inst → Bool
-  | .load _ _ flags _ _ => !flags.notrap
+  | .load .. => true
   | .div .. | .uaddOverflowTrap .. | .store .. | .call .. | .callIndirect ..
   | .atomicLoad .. | .atomicStore .. | .atomicRmw .. | .atomicCas ..
   | .fence | .trapz .. | .trapnz .. => true

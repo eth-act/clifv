@@ -144,11 +144,16 @@ theorem checkScan_reject_code {ctx : Ctx} {block i ti : Nat} {isBranch : Bool}
     have heq := Except.ok.inj (h.symm.trans (checkScan_sound hc))
     exact False.elim (hcode (congrArg Scan.emitted heq))
 
-/-! An unused nontrapping load may be omitted, whereas a sunk load records its
-prior sink and leaves the state untouched. These witnesses make no ISLE call. -/
+/-! An unused pure instruction (`omitCtx`: an `iconst`) may be omitted, whereas a sunk load
+records its prior sink and leaves the state untouched. These witnesses make no ISLE call. An
+unused load is not omitted (cranelift-codegen 0.135.0 lowers every load, `mustLower`, #588):
+`unusedCtx`'s `notrap` load is the mandatory case (`checkScan_reject_mandatory_witness`). -/
 
 def unusedCtx : Ctx := { sinkCtx with
   insts := #[⟨.op .unit, [0], [.int 8], some (.load .load .i8 { trapCode := none } 1 0)⟩] }
+
+def omitCtx : Ctx := { sinkCtx with
+  insts := #[⟨.op .unit, [0], [.int 8], some (.iconst .i8 0)⟩] }
 
 def unusedInput : State := { sinkState with current := none }
 
@@ -159,14 +164,14 @@ def unusedOutput : Scan :=
 def unusedStep : Step := (unusedOutput.step).getD default
 
 theorem checkScan_complete_witness :
-    scanInstruction unusedCtx 0 0 1 false unusedInput = .ok unusedOutput ∧
-    checkScan unusedCtx 0 0 1 false unusedInput unusedOutput = true :=
-  ⟨rfl, checkScan_complete (show scanInstruction unusedCtx 0 0 1 false unusedInput =
+    scanInstruction omitCtx 0 0 1 false unusedInput = .ok unusedOutput ∧
+    checkScan omitCtx 0 0 1 false unusedInput unusedOutput = true :=
+  ⟨rfl, checkScan_complete (show scanInstruction omitCtx 0 0 1 false unusedInput =
     .ok unusedOutput from rfl)⟩
 
 theorem checkScan_sound_witness :
-    checkScan unusedCtx 0 0 1 false unusedInput unusedOutput = true ∧
-    scanInstruction unusedCtx 0 0 1 false unusedInput = .ok unusedOutput :=
+    checkScan omitCtx 0 0 1 false unusedInput unusedOutput = true ∧
+    scanInstruction omitCtx 0 0 1 false unusedInput = .ok unusedOutput :=
   ⟨checkScan_complete_witness.2, checkScan_sound checkScan_complete_witness.2⟩
 
 theorem scanState_idempotent_witness :
@@ -180,8 +185,8 @@ theorem scanState_demands_witness :
   ⟨scanState_demands _ _, rfl⟩
 
 theorem scan_omitted_witness :
-    (0 : Nat) ≠ 1 ∧ unusedCtx.insts[0]!.clif.any mustLower = false ∧
-    (∀ v ∈ unusedCtx.insts[0]!.results, unusedInput.demand[v]! = 0) ∧
+    (0 : Nat) ≠ 1 ∧ omitCtx.insts[0]!.clif.any mustLower = false ∧
+    (∀ v ∈ omitCtx.insts[0]!.results, unusedInput.demand[v]! = 0) ∧
     unusedStep.before = scanState unusedInput 0 ∧ unusedStep.after = unusedStep.before ∧
     unusedStep.results = [] ∧ unusedStep.rules = [] ∧ unusedOutput.emitted = #[] ∧
     unusedOutput.state = scanState unusedInput 0 :=
@@ -195,21 +200,24 @@ theorem scan_sunk_witness :
   ⟨rfl, scan_sunk _ _ _ _ _ _ rfl⟩
 
 theorem checkScan_reject_demanded_witness :
-    checkScan unusedCtx 0 0 1 false { unusedInput with demand := #[1, 0] } unusedOutput = false :=
+    checkScan omitCtx 0 0 1 false { unusedInput with demand := #[1, 0] } unusedOutput = false :=
   checkScan_reject_demanded (show unusedOutput.step = some unusedStep from rfl)
     (show unusedStep.decision = .omitted from rfl) (v := 0)
-    (show 0 ∈ unusedCtx.insts[0]!.results from by decide) (by decide)
+    (show 0 ∈ omitCtx.insts[0]!.results from by decide) (by decide)
 
 theorem checkScan_reject_mandatory_witness :
     checkScan sinkCtx 0 0 1 false unusedInput unusedOutput = false ∧
-    checkScan unusedCtx 0 0 0 false unusedInput unusedOutput = false :=
+    checkScan unusedCtx 0 0 1 false unusedInput unusedOutput = false ∧
+    checkScan omitCtx 0 0 0 false unusedInput unusedOutput = false :=
   ⟨checkScan_reject_mandatory (show unusedOutput.step = some unusedStep from rfl)
+      (show unusedStep.decision = .omitted from rfl) (Or.inr rfl),
+    checkScan_reject_mandatory (show unusedOutput.step = some unusedStep from rfl)
       (show unusedStep.decision = .omitted from rfl) (Or.inr rfl),
     checkScan_reject_mandatory (show unusedOutput.step = some unusedStep from rfl)
       (show unusedStep.decision = .omitted from rfl) (Or.inl rfl)⟩
 
 theorem checkScan_reject_code_witness :
-    checkScan unusedCtx 0 0 1 false unusedInput
+    checkScan omitCtx 0 0 1 false unusedInput
       { unusedOutput with emitted := #[.jump 0] } = false :=
   checkScan_reject_code checkScan_complete_witness.1 (by decide)
 
