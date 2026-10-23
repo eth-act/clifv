@@ -1,5 +1,6 @@
 import FV.E2E.RegLevelSim
 import FV.Backend.Proof.RegallocMoves
+import FV.E2E.RegLevelPush
 
 /-!
 # Moves on the machine (M6)
@@ -206,6 +207,43 @@ theorem lines_noTrap {c : FnCtx} {m : MInst} {ps ps' : PState} {ls : List Line}
           | ((repeat' (split at hln)) <;> simp at hln; done)
           | (simp [throw, throwThe, MonadExceptOf.throw] at *; done))
 
+theorem spAdjLines_isIns (sub : Bool) (size : Nat) : ∀ ln ∈ spAdjLines sub size, ∃ i t, ln = .ins i t := by
+  intro ln h
+  unfold spAdjLines at h
+  split at h
+  · simp at h
+  · split at h
+    · simp only [List.mem_singleton] at h; exact ⟨_, _, h⟩
+    · rcases List.mem_append.1 h with h | h
+      · exact loadConst64_ins _ _ _ h
+      · simp only [List.mem_singleton] at h; exact ⟨_, _, h⟩
+
+/-- The prologue's lines are instructions. -/
+theorem prologueLines_isIns (saves : List Reg) (size : Nat) :
+    ∀ ln ∈ prologueLines saves size, ∃ i t, ln = .ins i t := by
+  intro ln h
+  rw [prologueLines_eq] at h
+  simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at h
+  rcases h with (rfl | rfl) | h | h | h
+  · exact ⟨_, _, rfl⟩
+  · exact ⟨_, _, rfl⟩
+  · obtain ⟨x, rfl, -⟩ := pushLines_mem h; exact ⟨_, _, rfl⟩
+  · obtain ⟨x, rfl, -⟩ := pushLines_mem h; exact ⟨_, _, rfl⟩
+  · exact spAdjLines_isIns _ _ _ h
+
+/-- The epilogue's lines are instructions. -/
+theorem epilogueLines_isIns (saves : List Reg) (size : Nat) :
+    ∀ ln ∈ epilogueLines saves size, ∃ i t, ln = .ins i t := by
+  intro ln h
+  rw [epilogueLines_eq] at h
+  simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at h
+  rcases h with (h | h | h | rfl) | rfl
+  · exact spAdjLines_isIns _ _ _ h
+  · obtain ⟨x, rfl, -⟩ := popLines_mem h; exact ⟨_, _, rfl⟩
+  · obtain ⟨x, rfl, -⟩ := popLines_mem h; exact ⟨_, _, rfl⟩
+  · exact ⟨_, _, rfl⟩
+  · exact ⟨_, _, rfl⟩
+
 theorem codeLinesE_noTrap {c : FnCtx} {af : AFunc} :
     ∀ (code : List AInst) (ps ps' : PState) (ls : List Line),
       codeLinesE c af code ps = .ok (ls, ps') → ∀ ln ∈ ls, NoTrapLbl ln
@@ -230,32 +268,15 @@ theorem codeLinesE_noTrap {c : FnCtx} {af : AFunc} :
             simp only [ainstLines, pure, Except.pure, Except.ok.injEq] at hr
             subst hr
             intro n e; subst e
-            simp only [prologueLines] at hln
             split at hln
-            · have h1 := hln
-              simp at h1
-              obtain ⟨-, h1⟩ := h1
-              split at h1
-              · simp at h1
-              · rcases List.mem_append.1 h1 with h1 | h1
-                · obtain ⟨_, _, h⟩ := loadConst64_ins _ _ _ h1; cases h
-                · simp at h1
+            · obtain ⟨_, _, h⟩ := prologueLines_isIns _ _ _ hln; cases h
             · simp at hln
           | epilogueRet =>
             simp only [ainstLines, pure, Except.pure, Except.ok.injEq] at hr
             subst hr
             intro n e; subst e
             split at hln
-            · simp only [epilogueLines, List.mem_append] at hln
-              rcases hln with h1 | h1
-              · split at h1
-                · simp at h1
-                · split at h1
-                  · simp at h1
-                  · rcases List.mem_append.1 h1 with h1 | h1
-                    · obtain ⟨_, _, h⟩ := loadConst64_ins _ _ _ h1; cases h
-                    · simp at h1
-              · simp at h1
+            · obtain ⟨_, _, h⟩ := epilogueLines_isIns _ _ _ hln; cases h
             · simp at hln
         · exact codeLinesE_noTrap as _ _ _ hr2 ln hln
 
@@ -404,11 +425,13 @@ theorem mem_blocks_flat {rf : RFunc} {b : Nat} {items : Array RItem} {it : RItem
   simp only [Array.empty_append, Array.mem_flatten, Array.map_id_fun, id]
   exact ⟨items, Array.mem_of_getElem? hb, by simpa using hi⟩
 
-/-- A move of the checked allocated code: checked, between live locations. -/
+/-- A move of the checked allocated code other than a callee save or restore: checked, between
+live locations. -/
 theorem move_facts {R : RL} {b : Nat} {vb : VBlock} {items : Array RItem} {pre its : List RItem}
     {src dst : Loc} (hit : R.rf.blocks[b]? = some items)
     (hsplit : items.toList = pre ++ .move src dst :: its)
-    (hchk : ItemsChecked R vb (.move src dst :: its)) :
+    (hchk : ItemsChecked R vb (.move src dst :: its)) (hsS : src.isSave = false)
+    (hdS : dst.isSave = false) :
     (∃ (c : CheckCtx) (wh : String), c.checkMove wh src dst = .ok ()) ∧
       Live R.rf src ∧ Live R.rf dst ∧
       (∀ a b, src = .reg (.v a) → dst = .reg (.v b) → R.rf.floatMove = true) ∧
@@ -430,7 +453,10 @@ theorem move_facts {R : RL} {b : Nat} {vb : VBlock} {items : Array RItem} {pre i
     simp only [Bool.and_eq_true] at hok
     cases l with
     | reg r => trivial
-    | save r => trivial
+    | save r =>
+      rcases hl with rfl | rfl
+      · exact absurd hsS (by simp [Loc.isSave])
+      · exact absurd hdS (by simp [Loc.isSave])
     | stack k' cl =>
       rw [hcr] at hok
       cases cl with

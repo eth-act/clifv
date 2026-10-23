@@ -25,14 +25,15 @@ namespace Backend.Proof
 open Backend E2E
 
 /-- The frame addresses of the activation entered in `s` (`lo`, `hi` = the frame's `intBase`,
-`size`): the spill, save and float-move slots `[sp_body + lo, sp_body + hi)`, the padding and
-fp/lr above the CLIF slots `[sp_body + frameSize, sp_entry)` (the explicit CLIF slots in between
-belong to the world; empty without a frame), and the code words (read as data by jump tables;
-the program never accesses them). -/
+`size`): the spill and float-move slots `[sp_body + lo, sp_body + hi)`, the clobber area the
+prologue pushes the saved registers into and fp/lr above the CLIF slots
+`[sp_body + frameSize - clobberBytes, sp_entry)` (the explicit CLIF slots in between belong to
+the world; empty without a frame), and the code words (read as data by jump tables; the
+program never accesses them). -/
 def frameF (lo hi : Nat) (af : AFunc) (s : Arm.ArmState) (a : BitVec 64) : Prop :=
   (lo ≤ (a - (spv s - BitVec.ofNat 64 (frameDrop af))).toNat ∧
     (a - (spv s - BitVec.ofNat 64 (frameDrop af))).toNat < hi) ∨
-  (af.frameSize ≤ (a - (spv s - BitVec.ofNat 64 (frameDrop af))).toNat ∧
+  (af.frameSize - clobberBytes af.saves ≤ (a - (spv s - BitVec.ofNat 64 (frameDrop af))).toNat ∧
     (a - (spv s - BitVec.ofNat 64 (frameDrop af))).toNat < frameDrop af) ∨
   CodeAddr s a
 
@@ -375,6 +376,18 @@ theorem sem_eq {i : MInst} (hc : ∀ info, i ≠ .call info) (ht : ∀ info ti, 
 /-- The machine. -/
 noncomputable def step : Arm.ArmState → Arm.ArmState := ArmStepX R.X R.H R.fa
 
+/-- The bytes the prologue writes below the entry `sp`: fp/lr and the clobber area. -/
+def topN : Nat := 16 + clobberBytes R.af.saves
+
+/-- The lowest of them: the bottom of the clobber area. -/
+def topB : BitVec 64 := spv R.s0 - BitVec.ofNat 64 R.topN
+
+/-- The state after the prologue. -/
+noncomputable def sP : Arm.ArmState := iterN R.step (prologueLines R.af.saves R.af.frameSize).length R.s0
+
+/-- What the prologue leaves in fp/lr and the clobber area. -/
+noncomputable def topImg : BitVec (R.topN * 8) := Arm.read_mem_bytes R.topN R.topB R.sP
+
 end RL
 
 /-- `pc` is the address after a call instruction (`bl`, `blr`) of the laid-out function `fa`
@@ -396,9 +409,8 @@ structure StRel (R : RL) (s : Arm.ArmState) (m : Loc → CV) (w : Arm.ArmState) 
   prog : s.program = R.fb.program R.base
   sp : spOf s = R.spB
   align : Arm.CheckSPAlignment s
-  /-- fp/lr as pushed by the prologue -/
-  fplr : R.af.frame = true →
-    Arm.read_mem_bytes 16 (spv R.s0 - 16#64) s = xreg 30 R.s0 ++ xreg 29 R.s0
+  /-- fp/lr and the clobber area as pushed by the prologue -/
+  fplr : R.af.frame = true → Arm.read_mem_bytes R.topN R.topB s = R.topImg
   /-- the code words are readable as data -/
   code : ∀ k w, R.fb.words[k]? = some w →
     Arm.read_mem_bytes 4 (R.base + BitVec.ofNat 64 (4 * k)) s = w
