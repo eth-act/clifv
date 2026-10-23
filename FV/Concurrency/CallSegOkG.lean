@@ -107,15 +107,45 @@ theorem prun_okPriv {R : Backend.Proof.RL} {Bnd : Nat → Prop} (h : ∀ a, Priv
     (hr : PRun Policy.arm f (OkB Bnd) t ls t') : PRun Policy.arm f (OkPriv R) t ls t' :=
   PRun.mono (fun _ _ => okPriv_of_okB h) hr
 
+/-! ## CLIF returns below callers -/
+
+/-- A CLIF step returning from the bottom frame: the state has no callers. -/
+theorem callers_nil_of_done {s : Clif.State} {v : List Clif.Val} {m : Clif.Mem}
+    (h : Clif.step env p s = .done v m) : s.callers = [] := by
+  rcases hc : s.callers with _ | ⟨c, cs⟩
+  · rfl
+  · exfalso
+    have e : s = pushC (c :: cs) { s with callers := [] } := by
+      cases s; simp only [pushC, List.nil_append] at hc ⊢; rw [hc]
+    rw [e, step_pushC] at h
+    cases hs : Clif.step env p { s with callers := [] } with
+    | next s2 => rw [hs] at h; cases h
+    | done v' m' =>
+      rw [hs] at h
+      simp only [push] at h
+      split at h <;> cases h
+    | trapped c' => rw [hs] at h; cases h
+    | stuck msg => rw [hs] at h; cases h
+
+/-- **A return whose results do not fit the caller's registers is stuck below the caller.** -/
+theorem step_pushC_stuck {s : Clif.State} {vals : List Clif.Val} {cm : Clif.Mem}
+    (h : Clif.step env p s = .done vals cm) {caller : Clif.Frame} {results : List Clif.ValueId}
+    {cs : List (Clif.Frame × List Clif.ValueId)} (hn : caller.regs.setMany results vals = none) :
+    ∃ msg, Clif.step env p (pushC ((caller, results) :: cs) s) = .stuck msg := by
+  rw [step_pushC, h]
+  exact ⟨"call result arity mismatch", by simp only [push, hn]⟩
+
 /-! ## The ends of a realized prefix -/
 
 /-- **The ends of a realized prefix short of the whole run** (module doc): the innermost frame
 `s` of the CLIF thread (below callers `ext`) stops (`IselThread.Stop`: no step, or an
-`atomic_cas` on read-only data) or is at an event-free return the prefix did not realize; or
-the next CLIF step reads a masked byte; or the thread returns with masked bytes. -/
+`atomic_cas` on read-only data), is at an event-free return the prefix did not realize, or the
+thread's CLIF step from it is stuck (e.g. a return whose results do not fit the caller); or the
+next CLIF step reads a masked byte; or the thread returns with masked bytes. -/
 def EndT (env : Clif.Env) (p : Clif.Program) (_P : List Lab) (d : TState × (Nat → Prop)) : Prop :=
   (∃ ext s, strip d.1 = strip (.run (pushC ext s)) ∧
-    (IselThread.Stop env p (.run s) ∨ ∃ v, CStep env p (.run s) [] (.ret v))) ∨
+    (IselThread.Stop env p (.run s) ∨ (∃ v, CStep env p (.run s) [] (.ret v)) ∨
+      ∃ msg, Clif.step env p (pushC ext s) = .stuck msg)) ∨
   (∃ evs t'', CStep env p d.1 evs t'' ∧ ReadsMasked (maskOf d.1) evs) ∨
   (∃ v, CStep env p d.1 [] (.ret v) ∧ ∃ a, maskOf d.1 a)
 
@@ -206,7 +236,7 @@ theorem seg_end {Bnd : Nat → Prop} {R : Backend.Proof.RL} (hb : ∀ a, PrivA R
           ?_⟩))⟩
       cases t with
       | run s' => obtain rfl := hs1 s' rfl; exact .inl h
-      | ret v => exact .inr ⟨v, hret v rfl⟩
+      | ret v => exact .inr (.inl ⟨v, hret v rfl⟩)
     · obtain rfl := hs1 s' rfl
       exact ⟨k, (encT (maskAfter U trS') (.run (pushC ext s1)), DirtyEnd D (PrivA R) trS'), hRT,
         .inr (.inr ⟨rfl, s1, _, _, hz, rfl, rfl, fun _ => maskAfter_sub,
