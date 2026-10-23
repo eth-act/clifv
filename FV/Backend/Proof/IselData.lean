@@ -7,7 +7,7 @@ import FV.Backend.Proof.IselAttr
 
 Regenerate: `lake env lean --run FVTest/Backend/Proof/Probe/GenData.lean closure > FV/Backend/Proof/IselData.lean`.
 
-Roots: 195 root rules (closure); 701 terms reachable from them (patterns, if-lets,
+Roots: 197 root rules (closure); 701 terms reachable from them (patterns, if-lets,
 right-hand sides, and the rules of every internal constructor they call, transitively), of
 which the internal constructors have 886 rules. `lower`/`lower_branch` are included with
 their full rule lists.

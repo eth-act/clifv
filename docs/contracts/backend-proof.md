@@ -1026,8 +1026,9 @@ typed per-step contracts and the widened scope are the remaining S11e5 slices.
   `lower_nonroot_nomatchTA` over `InstScopeTA` (instructions in `Compile.instETA`, i.e.
   `instET ∨ fArithET`; float-result opcodes `floatOpsA`, `inst_splitA`). `failsT_sound` and
   `lower_nonroot_nomatchT` keep their statements.
-* **Deferred: `fcmp`.** `rule_lower_2176` is not a closure root and `instData` rejects `fcmp`
-  (so `Compile.fArithET` excludes it); its `fp_cond_code` conditions are open.
+* **`fcmp` (S11f, #35).** `rule_lower_2176`/`rule_lower_1283` are closure roots, proven over
+  float-capable contexts (`LowerRulesCorrectFC`, `IselFloatCmp.lean`); `Compile.fArithET`
+  still excludes `fcmp` (its end-to-end scope admission is open).
 * **Rounding: `ceil`/`floor`/`trunc`/`nearest`** (`FV/Backend/Proof/IselFloatRound.lean`): the
   eight pinned-size roots `rule_lower_567/570/578/581/589/592/600/603` (ids 682/683/685/686/
   688/689/691/692, `lower.isle:567-603`) proven at `CtxInvT` (`ceil32_okT … nearest64_okT`)
@@ -1035,15 +1036,16 @@ typed per-step contracts and the widened scope are the remaining S11e5 slices.
   (`IEEE.roundInt` `rpi`/`rmi`/`rz`/`rne`) and the Arm model's `FPRoundInt` with `FPCR = 0` are
   the same function (`fpuRoundOut`, `round_holds`). The generic-size rules
   (`lower.isle:564/575/586/597`, priority -1) stay unproven and unfired. Closure roots
-  182→190 (`StockScopePartition`, after the S11f-cvt conversions' 166→182), excluded 335→327.
+  182→190 (`StockScopePartition`, after the S11f-cvt conversions' 166→182), excluded 335→327;
+  with the two `fcmp` roots PARTITION_COUNTS.
 
 **Non-vacuity.** `FVTest/Backend/FloatArithCtxT.lean`: `ctxInvT_float_arith` (`ctxOkT_sound`,
 `native_decide`, witness only) for a function with all eleven operations, `lower` fires the
-eleven roots on it, `instScopeTA_float_arith`, `float_arith_fcmp_nomatch`
-(`lower_nonroot_nomatchTA` on the `fcmp` root). Oracle: `FVTest/Backend/float_arith.clif`.
+eleven roots on it, `instScopeTA_float_arith`, `float_cmp_root_closure` (the `fcmp` root is a
+closure root and not a `floatArithRootRule`). Oracle: `FVTest/Backend/float_arith.clif`.
 `FVTest/Backend/FloatRoundCtxT.lean`: `ctxInvT_float_round` for a function with all eight
 rounding operations, the eight roots fire on it (and not the generic-size ones, nor the
-deferred `fcmp` root), and kernel-checked edge values (±0, ±0.5, ±1.5, `2^52-0.5`, `2^52+1`,
+`fcmp` root), and kernel-checked edge values (±0, ±0.5, ±1.5, `2^52-0.5`, `2^52+1`,
 ±∞, quiet NaN). Oracle: `FVTest/Backend/float_round.clif`.
 
 **Boundary.** Nothing downstream consumes `LowerRulesCorrectFT`/`InstScopeTA` yet (the driver

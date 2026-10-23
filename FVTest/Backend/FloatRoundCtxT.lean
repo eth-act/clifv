@@ -10,8 +10,8 @@ it, and the ISLE `lower` term fires each of the eight rounding roots of `floatAr
 (`lowerRulesCorrectFT_program`) on its instructions — and not the generic-size rounding rules
 (`lower.isle:564/575/586/597`, priority -1), whose `fpu_round` over a dynamic `scalar_size ty`
 is unproven. Its instructions are in the arithmetic scope `InstScopeTA` (not in `InstScopeT`),
-so `lower_nonroot_nomatchTA` excludes the roots outside the closure on them, e.g. the deferred
-`fcmp` root `rule_lower_2176`.
+so `lower_nonroot_nomatchTA` excludes the roots outside the closure on them, e.g.
+`rule_lower_58`.
 `lake build FVTest.Backend.FloatRoundCtxT`.
 -/
 
@@ -93,11 +93,11 @@ theorem instScopeTA_float_round : InstScopeTA (ctxStOfR fRound).1 := by
   rw [hc] at hm
   exact hm
 
-/-- **`lower_nonroot_nomatchTA` applies to this context**: the deferred `fcmp` root
-(`rule_lower_2176`, outside the closure) matches none of its instructions, e.g. the `ceil.f32`
-(instruction 1). -/
-theorem float_round_fcmp_nomatch (cfg m s0 env s1) :
-    (Isle.Interp.matchRule program (Backend.sem (ctxStOfR fRound).1) cfg m rule_lower_2176
+/-- **`lower_nonroot_nomatchTA` applies to this context**: a root outside the closure
+(`rule_lower_58`; the `fcmp` root `rule_lower_2176` is a closure root since S11f's `fcmp`)
+matches none of its instructions, e.g. the `ceil.f32` (instruction 1). -/
+theorem float_round_excluded_nomatch (cfg m s0 env s1) :
+    (Isle.Interp.matchRule program (Backend.sem (ctxStOfR fRound).1) cfg m rule_lower_58
       [V.inst 1]).run s0 ≠ .ok (some env, s1) := by
   obtain ⟨info, hi⟩ : ∃ info, (ctxStOfR fRound).1.insts[1]? = some info :=
     Option.isSome_iff_exists.mp (by native_decide)
@@ -107,7 +107,7 @@ theorem float_round_fcmp_nomatch (cfg m s0 env s1) :
     rw [hi] at this
     exact this
   exact lower_nonroot_nomatchTA ctxInvT_float_round instScopeTA_float_round (by native_decide) hi
-    hc (r := rule_lower_2176)
+    hc (r := rule_lower_58)
     (by rw [show TId.lower = 686 from rfl, data_program.r686]; decide +kernel) (by decide)
     cfg m s0 env s1
 
