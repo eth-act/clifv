@@ -59,6 +59,73 @@ theorem spAdjLines_tail (sub : Bool) (size : Nat) :
       · simp only [List.mem_singleton, Line.ins.injEq] at hln
         obtain ⟨rfl, -⟩ := hln; cases sub <;> rfl
 
+theorem pushLines_ins (int : Bool) (rs : List Reg) :
+    ∀ ln ∈ pushLines int rs, ∃ x, ln = .ins x none ∧ x.hooked = false ∧ ln.plain = true ∧
+      x.loads = false ∧ x.tlsTail = false := by
+  intro ln h
+  obtain ⟨x, rfl, r, r', hx⟩ := pushLines_mem h
+  rcases hx with rfl | rfl | rfl | rfl <;> exact ⟨_, rfl, rfl, rfl, rfl, rfl⟩
+
+theorem popLines_ins (int : Bool) (rs : List Reg) :
+    ∀ ln ∈ popLines int rs, ∃ x, ln = .ins x none ∧ x.hooked = false ∧ ln.plain = true ∧
+      x.tlsTail = false := by
+  intro ln h
+  obtain ⟨x, rfl, r, r', hx⟩ := popLines_mem h
+  rcases hx with rfl | rfl | rfl | rfl <;> exact ⟨_, rfl, rfl, rfl, rfl⟩
+
+theorem prologueLines_ins (saves : List Reg) (size : Nat) :
+    ∀ ln ∈ prologueLines saves size, ∃ x, ln = .ins x none ∧ x.hooked = false ∧ ln.plain = true := by
+  intro ln hln
+  rw [prologueLines_eq] at hln
+  simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hln
+  rcases hln with (rfl | rfl) | h | h | h
+  · exact ⟨_, rfl, rfl, rfl⟩
+  · exact ⟨_, rfl, rfl, rfl⟩
+  · obtain ⟨x, e, h1, h2, -⟩ := pushLines_ins _ _ _ h; exact ⟨x, e, h1, h2⟩
+  · obtain ⟨x, e, h1, h2, -⟩ := pushLines_ins _ _ _ h; exact ⟨x, e, h1, h2⟩
+  · exact spAdjLines_ins true _ _ h
+
+theorem prologueLines_noLoads (saves : List Reg) (size : Nat) :
+    ∀ i t, Line.ins i t ∈ prologueLines saves size → i.loads = false := by
+  intro i t hln
+  rw [prologueLines_eq] at hln
+  simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hln
+  rcases hln with (h | h) | h | h | h
+  · simp only [Line.ins.injEq] at h; obtain ⟨rfl, -⟩ := h; rfl
+  · simp only [Line.ins.injEq] at h; obtain ⟨rfl, -⟩ := h; rfl
+  · obtain ⟨x, e, -, -, hl, -⟩ := pushLines_ins _ _ _ h; cases e; exact hl
+  · obtain ⟨x, e, -, -, hl, -⟩ := pushLines_ins _ _ _ h; cases e; exact hl
+  · exact spAdjLines_noLoads true _ i t h
+
+theorem prologueLines_tail (saves : List Reg) (size : Nat) :
+    ∀ i t, Line.ins i t ∈ prologueLines saves size → i.tlsTail = false := by
+  intro i t hln
+  rw [prologueLines_eq] at hln
+  simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hln
+  rcases hln with (h | h) | h | h | h
+  · simp only [Line.ins.injEq] at h; obtain ⟨rfl, -⟩ := h; rfl
+  · simp only [Line.ins.injEq] at h; obtain ⟨rfl, -⟩ := h; rfl
+  · obtain ⟨x, e, -, -, -, ht⟩ := pushLines_ins _ _ _ h; cases e; exact ht
+  · obtain ⟨x, e, -, -, -, ht⟩ := pushLines_ins _ _ _ h; cases e; exact ht
+  · exact spAdjLines_tail true _ i t h
+
+/-- The epilogue's lines before the `ret`. -/
+def epiLines (saves : List Reg) (size : Nat) : List Line :=
+  spAdjLines false (size - clobberBytes saves) ++ (popLines false (savesFloat saves) ++
+    (popLines true (savesInt saves) ++ [.ins (.ldp Reg.fp Reg.lr (.spPostIndexed 16))]))
+
+theorem epiLines_ins (saves : List Reg) (size : Nat) :
+    ∀ ln ∈ epiLines saves size, ∃ x, ln = .ins x none ∧ x.hooked = false ∧ ln.plain = true ∧
+      x.tlsTail = false := by
+  intro ln hln
+  simp only [epiLines, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hln
+  rcases hln with h | h | h | rfl
+  · obtain ⟨x, e, h1, h2⟩ := spAdjLines_ins false _ _ h
+    exact ⟨x, e, h1, h2, by subst e; exact spAdjLines_tail false _ x none h⟩
+  · exact popLines_ins _ _ _ h
+  · exact popLines_ins _ _ _ h
+  · exact ⟨_, rfl, rfl, rfl, rfl⟩
+
 theorem stepsOk_interOk {env : Env} {ls : List Line} {s s' : Arm.ArmState} (h : StepsOk env ls s s')
     (herr : Arm.r .ERR s = .None) : InterOk env ls s := by
   intro k _ _ s1 h1
@@ -164,7 +231,7 @@ theorem entry_block {R : RL} (hR : R.Wf) :
       itemsCode R.fr vb items.toList = .ok code ∧ codeLinesE R.ctx R.af code ps1 = .ok (ls, ps2) ∧
       ps2.traps.toList <+: R.psF.traps.toList ∧
       R.L[0]? = some (.label (.block vb.label)) ∧
-      R.L.drop 1 = prologueLines R.af.frameSize ++ (relaxLines R.far (ftList (ls ++ nxtOf R.af 0)) ++ T) := by
+      R.L.drop 1 = prologueLines R.af.saves R.af.frameSize ++ (relaxLines R.far (ftList (ls ++ nxtOf R.af 0)) ++ T) := by
   obtain ⟨c, ins, _, hc, -⟩ := hR.check
   have h0 : 0 < R.vc.blocks.size := Nat.pos_of_ne_zero hc.nonempty
   obtain ⟨vb, hvb⟩ : ∃ vb, R.vc.blocks[0]? = some vb := ⟨_, Array.getElem?_eq_getElem h0⟩
@@ -190,7 +257,7 @@ theorem entry_block {R : RL} (hR : R.Wf) :
   refine ⟨vb, items, code, ls2, ps1, ps2, T, hvb, hit, hcode, h2, htr, hj0, ?_⟩
   show List.drop (0 + 1) R.fa.lines.toList = _
   rw [hdrop, List.append_assoc, ftR_plain_append _ _ _
-    (fun ln h => by obtain ⟨_, _, _, hp⟩ := prologueLines_ins _ ln h; exact hp) (noTrap_next h2), List.append_assoc]
+    (fun ln h => by obtain ⟨_, _, _, hp⟩ := prologueLines_ins _ _ ln h; exact hp) (noTrap_next h2), List.append_assoc]
 
 theorem sp_sub16 (x : BitVec 64) (n : Nat) :
     x - 16#64 - BitVec.ofNat 64 n = x - BitVec.ofNat 64 (n + 16) := by
@@ -206,34 +273,45 @@ theorem q_init {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb R.base
       AInv R (MConf.init R.rf (locVal R.fr (iterN R.step n R.s0)) w₀) ∧
       ∀ f, f ≠ .PC → f ≠ .GPR 29#5 → f ≠ .GPR 31#5 → f ≠ .GPR 16#5 →
         Arm.r f (iterN R.step n R.s0) = Arm.r f R.s0 := by
-  have hframe := lowerRFunc_frame hR.alloc
+  obtain ⟨hframe, hfs, -, hsv, -, hcb, -, -, hdrop0⟩ := RL.frame_facts hR
   have hst0 := hR.stack.frame
   have hsp0 := (spv R.s0).isLt
   have hs : R.af.frameSize < 2 ^ 64 := by have := hst0.1; omega
-  have hal0 : Arm.CheckSPAlignment R.s0 := (checkSP_iff _).2 hent.spAligned
   obtain ⟨vb, items, code, ls, ps1, ps2, T, hvb, hit, hcode, hls, htr, hj0, hdrop⟩ := entry_block hR
-  obtain ⟨s', hsteps, hsp', hfp', ho', hm'⟩ := prologue_ok (R.envOf 1) hs R.s0 hal0
+  obtain ⟨s', hsteps, hsp', hfp', ho', hm', -, -⟩ :=
+    prologue_ok (R.envOf 1) hs hsv (by rw [hfs]; exact hcb) R.s0 hent.spAligned
   have hpc1 : Arm.r .PC R.s0 = R.pcOf 1 := by
     rw [hent.pc]
     simp only [RL.pcOf, RL.L] at hj0 ⊢
     rw [lineOffset_succ _ _ _ hj0]
     simp [lineOffset, Line.size]
   obtain ⟨hiter, hpc', -, hgx⟩ := iterN_steps hR hdrop
-    (fun ln h => by obtain ⟨x, e, hh, -⟩ := prologueLines_ins _ ln h; exact ⟨x, e, hh⟩)
+    (fun ln h => by obtain ⟨x, e, hh, -⟩ := prologueLines_ins _ _ ln h; exact ⟨x, e, hh⟩)
     hent.program hpc1 hent.err hsteps
   obtain ⟨herr', hprog'⟩ := hsteps.err
-  refine ⟨(prologueLines R.af.frameSize).length,
-    hgx (prologueLines_tail _) (.inl (by rw [hent.pc]; exact RL.not_postCall_base hR hent.fits))
-      (linesReads_noLoads (prologueLines_noLoads _)), ?_⟩
+  refine ⟨(prologueLines R.af.saves R.af.frameSize).length,
+    hgx (prologueLines_tail _ _) (.inl (by rw [hent.pc]; exact RL.not_postCall_base hR hent.fits))
+      (linesReads_noLoads (prologueLines_noLoads _ _)), ?_⟩
+  have hsP : R.sP = s' := hiter
   rw [hiter]
-  have hdrop0 : frameDrop R.af = R.af.frameSize + 16 := by simp [frameDrop, hframe]
   have hspB : spOf s' = R.spB := by
-    rw [hsp', RL.spB, hdrop0]; exact sp_sub16 _ _
-  -- the fp/lr slot
-  have hslot : ∀ a, (∀ k < 16, a ≠ spv R.s0 - 16#64 + BitVec.ofNat 64 k) → s'.mem a = R.s0.mem a := by
-    intro a ha
-    rw [hm', Arm.Memory.write_mem_bytes_eq_mem_write_bytes]
-    exact write_bytes_outside 16 _ _ _ ha
+    rw [hsp', RL.spB, hdrop0, ← hfs]; exact sp_sub16 _ _
+  have htopB : R.topB.toNat = (spv R.s0).toNat - R.topN := by
+    simp only [RL.topB, RL.topN]
+    have := hst0.1
+    rw [BitVec.toNat_sub_of_le] <;>
+      simp only [BitVec.le_def, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show 16 + clobberBytes R.af.saves < 2 ^ 64 by omega)]
+    omega
+  have hk64 : ∀ k < R.topN, (R.topB + BitVec.ofNat 64 k).toNat = (spv R.s0).toNat - R.topN + k := by
+    intro k hk
+    simp only [RL.topN] at hk
+    rw [BitVec.toNat_add, htopB, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := k) (by omega)]
+    simp only [RL.topN]
+    have := hst0.1
+    omega
+  -- the frame top
+  have hslot : ∀ a, (∀ k < R.topN, a ≠ R.topB + BitVec.ofNat 64 k) → s'.mem a = R.s0.mem a :=
+    fun a ha => hm' a ha
   have hmemF : ∀ a, ¬ R.F a → s'.mem a = w₀.mem a := by
     intro a ha
     rw [hslot a (fun k hk e => ha (e ▸ RL.FK_F (fplr_inF hR hframe k hk))), hbe.mem a ha]
@@ -243,20 +321,21 @@ theorem q_init {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb R.base
     intro k hk e
     have h2 := hst0.2 a ha
     rw [e] at h2
-    have : spv R.s0 - 16#64 + BitVec.ofNat 64 k - (spv R.s0 - BitVec.ofNat 64 (R.af.frameSize + 16)) =
-        BitVec.ofNat 64 (R.af.frameSize + k) := by
-      apply BitVec.eq_of_toNat_eq
-      have := hst0.1
-      simp only [BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_ofNat]
-      rw [Nat.mod_eq_of_lt (a := k) (by omega), Nat.mod_eq_of_lt (a := R.af.frameSize + 16) (by omega),
-        Nat.mod_eq_of_lt (a := R.af.frameSize + k) (by omega)]
-      simp only [spv] at *
-      omega
-    rw [this, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)] at h2
+    have hk' := hk64 k hk
+    have := hst0.1
+    simp only [RL.topN] at hk hk'
+    rw [BitVec.toNat_sub, hk', BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show R.af.frameSize + 16 + R.K < 2 ^ 64 by omega)] at h2
+    have e2 : (2 ^ 64 - (R.af.frameSize + 16 + R.K) + ((spv R.s0).toNat - (16 + clobberBytes R.af.saves) + k)) % 2 ^ 64 =
+        (spv R.s0).toNat - (16 + clobberBytes R.af.saves) + k - ((spv R.s0).toNat - (R.af.frameSize + 16 + R.K)) := by
+      rw [show 2 ^ 64 - (R.af.frameSize + 16 + R.K) + ((spv R.s0).toNat - (16 + clobberBytes R.af.saves) + k) =
+        ((spv R.s0).toNat - (16 + clobberBytes R.af.saves) + k - ((spv R.s0).toNat - (R.af.frameSize + 16 + R.K))) + 2 ^ 64 by
+          simp only [spv] at *; omega, Nat.add_mod_right, Nat.mod_eq_of_lt (by simp only [spv] at *; omega)]
+    rw [e2] at h2
+    simp only [spv] at *
     omega
   have hfield : ∀ f, f ≠ .PC → f ≠ .GPR 29#5 → f ≠ .GPR 31#5 → f ≠ .GPR 16#5 →
       Arm.r f s' = Arm.r f R.s0 := ho'
-  -- the kept addresses are not the fp/lr slot
+  -- the kept addresses are not the frame top
   have hgk : ∀ a, R.G a → s'.mem a = R.s0.mem a := by
     intro a ha
     apply hslot
@@ -264,18 +343,15 @@ theorem q_init {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb R.base
     apply hR.gfree a ha
     rw [e, hdrop0]
     have := hst0.1
-    have hk64 : (spv R.s0 - 16#64 + BitVec.ofNat 64 k).toNat = (spv R.s0).toNat - 16 + k := by
-      simp only [BitVec.toNat_add, BitVec.toNat_sub, BitVec.toNat_ofNat]
-      have := (spv R.s0).isLt
-      rw [Nat.mod_eq_of_lt (a := k) (by omega)]
-      simp only [spv] at *
-      omega
-    simp only [StackBelow, hk64]
+    have hk' := hk64 k hk
+    simp only [RL.topN] at hk hk'
+    simp only [StackBelow, hk']
+    rw [hfs] at this
     constructor <;> omega
   refine ⟨?_, ?_, hfield⟩
   · have hitems : R.rf.blocks[0]! = items := by simp [getElem!_def, hit]
     simp only [MConf.init, hitems]
-    refine ⟨1 + (prologueLines R.af.frameSize).length, vb, items, [], code, ls, ps1, ps2, T, hvb,
+    refine ⟨1 + (prologueLines R.af.saves R.af.frameSize).length, vb, items, [], code, ls, ps1, ps2, T, hvb,
       hit, rfl, itemsChecked_block hR hvb hit, hcode, hls, htr, ?_, hpc', ?_⟩
     · rw [← List.drop_drop, hdrop, List.drop_left]
     · refine ⟨fun l _ _ => rfl, ⟨fun f hf => ?_, hmemF, ?_⟩, by rw [herr', hent.err], by rw [hprog', hent.program],
@@ -298,15 +374,14 @@ theorem q_init {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb R.base
         simp only [RL.spB, hdrop0]
         have := hst0.1
         have ha := hent.spAligned
-        have hm : (R.af.frameSize + 16) % 2 ^ 64 = R.af.frameSize + 16 := Nat.mod_eq_of_lt (by omega)
-        rw [BitVec.toNat_sub_of_le (by simp only [BitVec.le_def, BitVec.toNat_ofNat, hm]; omega),
+        rw [hfs] at this
+        have hm : (R.fr.total + 16) % 2 ^ 64 = R.fr.total + 16 := Nat.mod_eq_of_lt (by omega)
+        rw [BitVec.toNat_sub_of_le (by simp only [BitVec.le_def, BitVec.toNat_ofNat, hm]; simp only [spv] at *; omega),
           BitVec.toNat_ofNat, hm]
-        have : R.af.frameSize % 16 = 0 := by
-          rw [(lowerRFunc_ok hR.alloc).1.1]; exact alignTo16_mod _
+        have : R.fr.total % 16 = 0 := (RL.frame_facts hR).2.2.2.2.2.2.1
+        simp only [spv, spOf] at *
         omega
-      · rw [← Arm.read_mem_bytes_of_write_mem_bytes_same (n := 16) (addr := spv R.s0 - 16#64)
-          (v := xreg 30 R.s0 ++ xreg 29 R.s0) (s := R.s0) (by decide)]
-        exact read_mem_bytes_congr _ _ (fun k _ => by rw [hm']; rfl)
+      · simp only [RL.topImg, hsP]
   · intro _ _ r hr
     show regVal s' r = regVal w₀ r
     rw [hbe.args r hr]
