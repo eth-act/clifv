@@ -6,9 +6,9 @@ open Backend.Proof Backend.Proof.Driver
 
 /-- Identical entry stores establish the cleanup simulation without a new
 source-side invariant or per-program execution certificate. -/
-theorem rel_entry {V W : Type} {vc : VCode} {vb : VBlock}
+theorem rel_entry {V W : Type} {vc : VCode} {sem : ISem V W} {vb : VBlock}
     (hb : vc.blocks[0]? = some vb) (a : Nat → V) (w : W) :
-    Rel vc (.run ⟨0, 0, a, w⟩) (.run ⟨0, 0, a, w⟩) := by
+    Rel vc sem (.run ⟨0, 0, a, w⟩) (.run ⟨0, 0, a, w⟩) := by
   apply Rel.run hb
   · simp [cleanBlock]
   · exact fun _ _ => rfl
@@ -26,14 +26,15 @@ survive cleanup. -/
 theorem returns_clean {vc : VCode} {sem : Sem}
     (hp : ∀ i us w outs w' ctl, pureForm i = true →
       sem i us w = some (outs, w', ctl) → w' = w ∧ ctl = .next)
+    (hcmp : CmpOverwrite sem)
     (ht : ∀ vb ∈ vc.blocks.toList, ∃ t, vb.insts.back? = some t ∧ t.isTerminator = true)
     {a : Nat → CV} {w0 w : Arm.ArmState} {us : List (Reg × Reg)} {vals : List CV}
     (h : E2E.VReturns vc sem a w0 us vals w) :
     E2E.VReturns (clean vc) sem a w0 us vals w := by
   obtain ⟨b, k, a1, w1, vb, ops, outs, hstar, hb, hi, hop, hv, hs⟩ := h
   obtain ⟨vb0, hb0⟩ := entry_exists hstar hb
-  obtain ⟨c1, hstar', hr⟩ := star_sim hp ht (rel_entry hb0 a w0) hstar
-  obtain ⟨k', a', rfl, hb', hi', hu⟩ := rel_kept hr hb hi hop rfl
+  obtain ⟨c1, hstar', hr⟩ := star_sim hp hcmp ht (rel_entry hb0 a w0) hstar
+  obtain ⟨k', a', rfl, hb', hi', hu⟩ := rel_kept hr hb hi hop rfl rfl
   refine ⟨b, k', a', w1, cleanBlock vc 0 vb, ops, outs, hstar', hb', hi', hop, ?_, hs⟩
   exact hv.trans hu
 
@@ -41,6 +42,7 @@ theorem returns_clean {vc : VCode} {sem : Sem}
 theorem traps_clean {vc : VCode} {sem : Sem}
     (hp : ∀ i us w outs w' ctl, pureForm i = true →
       sem i us w = some (outs, w', ctl) → w' = w ∧ ctl = .next)
+    (hcmp : CmpOverwrite sem)
     (ht : ∀ vb ∈ vc.blocks.toList, ∃ t, vb.insts.back? = some t ∧ t.isTerminator = true)
     {a : Nat → CV} {w0 : Arm.ArmState} {code : Clif.TrapCode}
     (h : E2E.VTraps vc sem a w0 code) :
@@ -51,9 +53,14 @@ theorem traps_clean {vc : VCode} {sem : Sem}
     · rfl
     · have hn := (hp _ _ _ _ _ _ he hs).2
       cases hn
+  have hkeepc : cmpForm i = false := by
+    cases he : cmpForm i
+    · rfl
+    · have hn := (hcmp _ _ _ _ _ _ he hs).1
+      cases hn
   obtain ⟨vb0, hb0⟩ := entry_exists hstar hb
-  obtain ⟨c1, hstar', hr⟩ := star_sim hp ht (rel_entry hb0 a w0) hstar
-  obtain ⟨k', a', rfl, hb', hi', hu⟩ := rel_kept hr hb hi hop hkeep
+  obtain ⟨c1, hstar', hr⟩ := star_sim hp hcmp ht (rel_entry hb0 a w0) hstar
+  obtain ⟨k', a', rfl, hb', hi', hu⟩ := rel_kept hr hb hi hop hkeep hkeepc
   refine ⟨b, k', a', w1, cleanBlock vc 0 vb, i, ops, outs, w', hstar', hb', hi', hop, ?_, hc⟩
   rw [← hu]
   exact hs
@@ -62,9 +69,10 @@ theorem traps_clean {vc : VCode} {sem : Sem}
 theorem cleanup_correct {vc : VCode} {sem : Sem}
     (hp : ∀ i us w outs w' ctl, pureForm i = true →
       sem i us w = some (outs, w', ctl) → w' = w ∧ ctl = .next)
+    (hcmp : CmpOverwrite sem)
     (ht : ∀ vb ∈ vc.blocks.toList, ∃ t, vb.insts.back? = some t ∧ t.isTerminator = true) :
     E2E.PrepareCorrect sem vc (clean vc) := by
   intro a w
-  exact ⟨fun _ _ _ h => returns_clean hp ht h, fun _ h => traps_clean hp ht h⟩
+  exact ⟨fun _ _ _ h => returns_clean hp hcmp ht h, fun _ h => traps_clean hp hcmp ht h⟩
 
 end Backend.DeadCleanup

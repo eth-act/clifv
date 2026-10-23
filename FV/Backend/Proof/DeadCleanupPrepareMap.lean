@@ -263,15 +263,19 @@ private theorem retarget_facts {t t' : MInst} {ls : List Label}
   all_goals simp [MInst.operands, MInst.visitOperands]
 
 private theorem scan_append_term (n : Nat) (L : List Nat) (xs : List MInst) (t : MInst)
-    (ht : pureForm t = false) :
+    (ht : pureForm t = false) (hc : cmpForm t = false) :
     scan n (xs ++ [t]) L =
       let r := scan n xs (uses n t ++ L.filter fun v => !(defs t).contains v)
       (r.1 ++ [t], r.2) := by
   induction xs with
-  | nil => simp [scan, discard, ht]
+  | nil => simp [scan, discard, dropCmp, flagsDead, ht]
   | cons i xs ih =>
-    simp only [List.cons_append, scan, ih]
-    split <;> rfl
+    simp only [List.cons_append, scan, ih, dropCmp, flagsDead_append_stop _ hc ht]
+    split
+    · rename_i h; simp only [h, ↓reduceIte]
+    · rename_i h
+      simp only [Bool.not_eq_true] at h
+      simp only [h, Bool.false_eq_true, ↓reduceIte, List.cons_append]
 
 private def eraseBlock (n : Nat) (L : List Nat) (b : VBlock) : VBlock :=
   if (b.insts.back?.map MInst.isTerminator).getD false then
@@ -300,7 +304,8 @@ private theorem eraseBlock_map (n : Nat) (L : List Nat) : BlockMap (eraseBlock n
   · intro b; unfold eraseBlock; split <;> rfl
   · intro b; unfold eraseBlock; split <;> rfl
   · intro lab l
-    simp [eraseBlock, scan, discard, pureForm, MInst.isTerminator, MInst.isBranch, MInst.isRet]
+    simp [eraseBlock, scan, discard, dropCmp, flagsDead, cmpForm, pureForm, MInst.isTerminator,
+      MInst.isBranch, MInst.isRet]
   · intro b t t' ls ht hr
     obtain ⟨hterm, hterm', hnt, hnt', hops⟩ := retarget_facts hr
     have hu : uses n t' = uses n t := by simp only [uses, hops]
@@ -311,11 +316,12 @@ private theorem eraseBlock_map (n : Nat) (L : List Nat) : BlockMap (eraseBlock n
     simp only [eraseBlock, ht, Option.map_some, hterm, Option.getD_some,
       ite_true, Array.back?_push, hterm']
     simp only [Array.toList_push, Array.toList_pop, hx, List.dropLast_append_cons,
-      List.dropLast_nil, List.append_nil, scan_append_term n L xs t hnt,
-      scan_append_term n L xs t' hnt', hu, hd]
+      List.dropLast_nil, List.append_nil, scan_append_term n L xs t hnt (cmpForm_of_terminator hterm),
+      scan_append_term n L xs t' hnt' (cmpForm_of_terminator hterm'), hu, hd]
     congr 1
     apply Array.toList_inj.mp
-    simp [Array.toList_push, Array.toList_pop, scan_append_term, hnt', hu, hd]
+    simp [Array.toList_push, Array.toList_pop, scan_append_term, hnt', cmpForm_of_terminator hterm',
+      hu, hd]
 
 /-- Apply the original liveness boundary to a prepared block. -/
 def preparedCleanupBlock (original : VCode) (b : VBlock) : VBlock :=

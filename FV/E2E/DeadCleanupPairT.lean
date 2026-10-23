@@ -55,7 +55,7 @@ theorem prepareCorrect_cleanupT (hc : CompiledCleanupT f k vc vcp rf af fa fb) :
     PrepareCorrect (valueSem F ⟨fa.k, af.slotBase⟩ X) vc vcp := by
   intro a w
   obtain ⟨hr, ht⟩ := prune_correct (vc := vc)
-    (fun _ _ _ _ _ _ hp he => valueSem_pure hp he) a w
+    (fun _ _ _ _ _ _ hp he => valueSem_pure hp he) (valueSem_cmpOverwrite _ _ _) a w
   obtain ⟨pr, pt⟩ := prepareCorrect_of_check (driverSem_valueSem F ⟨fa.k, af.slotBase⟩ X)
     hc.prepOk a w
   exact ⟨fun _ _ _ he => pr _ _ _ (hr _ _ _ he), fun _ he => pt _ (ht _ he)⟩

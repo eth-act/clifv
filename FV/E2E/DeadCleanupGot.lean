@@ -12,7 +12,7 @@ theorem gotInv_step_value {s : VState CV Arm.ArmState} {c' : VConf CV Arm.ArmSta
   | @step b k ρ w vb i ops outs w' ctl _ hvb hi hops hsem hlen hnext =>
   refine ⟨VStep.step hvb hi hops ?_ hlen hnext, ?_⟩
   · simp only [valueSemV]
-    by_cases hp : Backend.DeadCleanup.pureForm i = true
+    by_cases hp : Backend.DeadCleanup.specForm i = true
     · simpa [Backend.DeadCleanup.valueSem, hp, vuses] using hsem
     simp only [hp, Bool.false_eq_true, ite_false]
     have hsem0 : csem F ctx X i (vuses ops ρ) w = some (outs, w', ctl) := by
@@ -60,7 +60,7 @@ theorem gotInv_step_value {s : VState CV Arm.ArmState} {c' : VConf CV Arm.ArmSta
           cases hops
           rfl
         subst ho
-        simp only [Backend.DeadCleanup.valueSem, Backend.DeadCleanup.pureForm, ite_false, csem, Option.some.injEq, Prod.mk.injEq] at hsem
+        simp only [Backend.DeadCleanup.valueSem, Backend.DeadCleanup.specForm, Backend.DeadCleanup.pureForm, Backend.DeadCleanup.cmpForm, Bool.false_or, ite_false, csem, Option.some.injEq, Prod.mk.injEq] at hsem
         obtain ⟨rfl, rfl, -⟩ := hsem
         simp [writeV, upd, Operand.isDef, Operand.isEarly, Operand.isLate]
       · have hne : ∀ (L : List (Operand × CV)), (∀ p ∈ L, p.1 ∈ ops.toList ∧ p.1.isDef = true) →
@@ -105,7 +105,7 @@ theorem vReturns_gotV_value {ρ₀ : Nat → CV} {w₀ : Arm.ArmState} {us : Lis
   obtain ⟨b, k, ρ, w₁, vb, ops, outs, hs, hvb, hk, hops, hvals, hsem⟩ := h
   obtain ⟨hs', -⟩ := gotInv_star_value (gotInv_entry vc X ρ₀ w₀) hs
   exact ⟨b, k, ρ, w₁, vb, ops, outs, hs', hvb, hk, hops, hvals, by
-    simp only [valueSemV, Backend.DeadCleanup.pureForm, ite_false]
+    simp only [valueSemV, Backend.DeadCleanup.specForm, Backend.DeadCleanup.pureForm, Backend.DeadCleanup.cmpForm, Bool.false_or, ite_false]
     rw [csemV_eq fun info h => by rcases h with h | ⟨_, h⟩ <;> cases h]; exact hsem⟩
 
 /-- **A trapping VCode run of `csem` is one of `valueSemV (GotV vc)`.** -/
@@ -114,10 +114,12 @@ theorem vTraps_gotV_value {ρ₀ : Nat → CV} {w₀ : Arm.ArmState} {c : Clif.T
   obtain ⟨b, k, ρ, w, vb, i, ops, outs, w', hs, hvb, hi, hops, hsem, htc⟩ := h
   obtain ⟨hs', -⟩ := gotInv_star_value (gotInv_entry vc X ρ₀ w₀) hs
   refine ⟨b, k, ρ, w, vb, i, ops, outs, w', hs', hvb, hi, hops, ?_, htc⟩
-  have hp : Backend.DeadCleanup.pureForm i = false := by
-    cases he : Backend.DeadCleanup.pureForm i
+  have hp : Backend.DeadCleanup.specForm i = false := by
+    cases he : Backend.DeadCleanup.specForm i
     · rfl
-    · have hn := (Backend.DeadCleanup.valueSem_pure he hsem).2
+    · have hs : mspec ctx.slotBase i (vuses ops ρ) w = some (outs, w', .halt) := by
+        simpa [Backend.DeadCleanup.valueSem, he, vuses] using hsem
+      have hn := Backend.DeadCleanup.mspec_spec_next he hs
       cases hn
   have hsem0 : csem F ctx X i (vuses ops ρ) w = some (outs, w', .halt) := by
     simpa [Backend.DeadCleanup.valueSem, hp, vuses] using hsem

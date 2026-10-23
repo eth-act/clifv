@@ -397,7 +397,8 @@ theorem backend_correct_world_cleanup_trapstop {p : Clif.Program} {f : Clif.Func
     (xCallsIndOk_trapEnv (c := tc) hXI) (xRaiseOk_trapEnv hXT) (xRaiseIndOk_trapEnv hXT) hexcl
     hsym hslot (fun _ => 0) hcs hrel hargs htrX fuel
   have hP := prepareCorrectU_cleanup (driverSem_valueSemU F ⟨fa.k, af.slotBase⟩ X (xrT XT))
-    (fun _ _ _ _ _ _ hp he => valueSemU_pure hp he) hc.prepOk (xrT XT)
+    (fun _ _ _ _ _ _ hp he => valueSemU_pure hp he) (valueSemU_cmpOverwrite _ _ _ _) hc.prepOk
+    (xrT XT)
   intro H G base ra s he
   obtain ⟨hR1, hR2⟩ := regLevel_trapStop_world hc.check hc.alloc hc.emit hc.layout hcov hnt XT he
     (fun _ => 0)

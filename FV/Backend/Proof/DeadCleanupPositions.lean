@@ -2,18 +2,18 @@ import FV.Backend.Proof.DeadCleanupStructure
 
 namespace Backend.DeadCleanup
 
-/-- The scan keeps a non-pure first instruction first. -/
+/-- The scan keeps a non-pure, non-compare first instruction first. -/
 theorem scan_head (n : Nat) (i : MInst) (ms : List MInst) (live : List Nat)
-    (hp : pureForm i = false) :
+    (hp : pureForm i = false) (hc : cmpForm i = false) :
     (scan n (i :: ms) live).1 = i :: (scan n ms live).1 := by
-  simp [scan, discard, hp]
+  simp [scan, discard, dropCmp, hp, hc]
 
 /-- An exceptional instruction confined to position zero cannot move away
 from position zero when all other instructions satisfy a positional-free fact. -/
 theorem scan_positions (n : Nat) (ms : List MInst) (live : List Nat)
     (P Q : MInst → Prop)
     (h : ∀ k i, ms[k]? = some i → P i ∨ (k = 0 ∧ Q i))
-    (hQ : ∀ i, Q i → pureForm i = false) :
+    (hQ : ∀ i, Q i → pureForm i = false) (hQc : ∀ i, Q i → cmpForm i = false) :
     ∀ k i, (scan n ms live).1[k]? = some i → P i ∨ (k = 0 ∧ Q i) := by
   cases ms with
   | nil => simp [scan]
@@ -35,7 +35,7 @@ theorem scan_positions (n : Nat) (ms : List MInst) (live : List Nat)
         cases k with
         | zero => cases hi; exact .inl ha
         | succ k => exact .inl (hkept i (List.mem_of_getElem? hi))
-    · rw [scan_head n a tail live (hQ a hqa)]
+    · rw [scan_head n a tail live (hQ a hqa) (hQc a hqa)]
       intro k i hi
       cases k with
       | zero => cases hi; exact .inr ⟨rfl, hqa⟩

@@ -221,7 +221,7 @@ theorem gotPair_haltTry (vc : VCode) (X : ExtSem) (gv : Nat → String → Prop)
     GotPair vc X (haltTry XR (valueSemVU gv F ctx X XR)) (haltTry XR (valueSemVU gv F ctx X XR)) where
   agree _ _ _ _ _ _ _ _ _ _ _ := rfl
   got _ _ _ _ _ _ _ h := by
-    simp only [haltTry, valueSemVU, pureForm, Bool.false_eq_true, ite_false, csemVU, csemU, csem,
+    simp only [haltTry, valueSemVU, specForm, pureForm, cmpForm, Bool.false_or, Bool.false_eq_true, ite_false, csemVU, csemU, csem,
       Option.some.injEq, Prod.mk.injEq] at h
     exact h.1.symm
 
@@ -445,7 +445,8 @@ theorem backend_correct_world_cleanup_trapstopT {p : Clif.Program} {f : Clif.Fun
     hty.symm hcs.sig hrel hargs htr hrun
   -- `prune` + `prepare`
   have hP := prepareCorrectU_cleanup (driverSem_valueSemU F fctx X (xrT XT))
-    (fun _ _ _ _ _ _ hp he => valueSemU_pure hp he) hc.prepOk (xrT XT)
+    (fun _ _ _ _ _ _ hp he => valueSemU_pure hp he) (valueSemU_cmpOverwrite _ _ _ _) hc.prepOk
+    (xrT XT)
   intro H G base ra s he
   obtain ⟨hR1, hR2, hR3⟩ := regLevel_trapStop_worldT hc.check hc.alloc hc.emit hc.layout hcov XT
     he (fun _ => 0)
@@ -458,7 +459,8 @@ theorem backend_correct_world_cleanup_trapstopT {p : Clif.Program} {f : Clif.Fun
     exact ⟨n, ht, hsp, hprog, .inr hct⟩
   · obtain ⟨n, ht, hsp, hprog, hct⟩ := hR3 (vTryRaise_gotV_gen (gotPair_valueU _ _ _)
       (tryRaise_cleanup (driverSem_valueSemU F fctx X (xrT XT))
-        (fun _ _ _ _ _ _ hp' h' => valueSemU_pure hp' h') hc.prepOk (xrT XT) h))
+        (fun _ _ _ _ _ _ hp' h' => valueSemU_pure hp' h') (valueSemU_cmpOverwrite _ _ _ _)
+        hc.prepOk (xrT XT) h))
     exact ⟨n, ht, hsp, hprog, .inr hct⟩
 
 end E2E

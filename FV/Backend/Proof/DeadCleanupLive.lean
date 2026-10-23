@@ -22,6 +22,74 @@ theorem discard_pure {m : MInst} {live : List Nat} (h : discard m live = true) :
   simp only [discard, Bool.and_eq_true] at h
   exact h.1.1.1.1
 
+/-- The original world `w` and the cleaned world `wb` while dropped compares' flags are
+pending: every compare, and every flag-free producer, steps alike from both (the compare
+overwrites the difference, the producer neither reads nor changes it). -/
+def FlagsPend {V W : Type} (sem : ISem V W) (w wb : W) : Prop :=
+  (∀ K us r, cmpForm K = true → sem K us w = some r → sem K us wb = some r) ∧
+  (∀ j us outs ctl, flagFree j = true → sem j us w = some (outs, w, ctl) →
+    sem j us wb = some (outs, wb, ctl))
+
+theorem FlagsPend.refl {V W : Type} (sem : ISem V W) (w : W) : FlagsPend sem w w :=
+  ⟨fun _ _ _ _ h => h, fun _ _ _ _ _ h => h⟩
+
+theorem FlagsPend.trans {V W : Type} {sem : ISem V W} {w1 w2 w3 : W}
+    (h1 : FlagsPend sem w1 w2) (h2 : FlagsPend sem w2 w3) : FlagsPend sem w1 w3 :=
+  ⟨fun K us r hK h => h2.1 K us r hK (h1.1 K us r hK h),
+    fun j us outs ctl hj h => h2.2 j us outs ctl hj (h1.2 j us outs ctl hj h)⟩
+
+/-- A compare continues, and from its world every compare and every flag-free producer steps
+as from the world before it: it writes only the flags, which the next compare overwrites and
+no flag-free producer reads. -/
+def CmpOverwrite {V W : Type} (sem : ISem V W) : Prop :=
+  ∀ i us w outs w' ctl, cmpForm i = true → sem i us w = some (outs, w', ctl) →
+    ctl = .next ∧ FlagsPend sem w' w
+
+theorem dropCmp_cmp {m : MInst} {kept : List MInst} (h : dropCmp m kept = true) :
+    cmpForm m = true := by
+  simp only [dropCmp, Bool.and_eq_true] at h
+  exact h.1.1
+
+theorem dropCmp_defs {m : MInst} {kept : List MInst} (h : dropCmp m kept = true) :
+    defs m = [] := by
+  simp only [dropCmp, Bool.and_eq_true, List.isEmpty_iff] at h
+  exact h.1.2
+
+/-- The retained suffix after a dropped compare has dead flags. -/
+theorem dropCmp_dead {m : MInst} {kept : List MInst} (h : dropCmp m kept = true) :
+    flagsDead kept = true := by
+  simp only [dropCmp, Bool.and_eq_true] at h
+  exact h.2
+
+theorem flagsDead_cons {k : MInst} {ks : List MInst} (h : flagsDead (k :: ks) = true) :
+    cmpForm k = true ∨ (cmpForm k = false ∧ flagFree k = true ∧ flagsDead ks = true) := by
+  simp only [flagsDead, Bool.or_eq_true, Bool.and_eq_true] at h
+  cases hc : cmpForm k
+  · rcases h with h | h
+    · rw [hc] at h; cases h
+    · exact .inr ⟨rfl, h⟩
+  · exact .inl rfl
+
+/-- Appending an instruction that neither compares nor is flag-free (e.g. a terminator) does
+not change whether the flags are dead. -/
+theorem flagsDead_append_stop (ks : List MInst) {t : MInst} (hc : cmpForm t = false)
+    (hp : pureForm t = false) : flagsDead (ks ++ [t]) = flagsDead ks := by
+  have hf : flagFree t = false := by
+    cases h : flagFree t
+    · rfl
+    · rw [pureForm_of_flagFree h] at hp; cases hp
+  induction ks with
+  | nil => simp [flagsDead, hc, hf]
+  | cons k ks ih => simp [flagsDead, ih]
+
+/-- A dropped compare writes no register. -/
+theorem dropCmp_noDef {m : MInst} {kept : List MInst} (h : dropCmp m kept = true)
+    {ops : Array Operand} (hop : m.operands = .ok ops) :
+    ops.toList.filter Operand.isDef = [] := by
+  have hd := dropCmp_defs h
+  simp only [defs, hop, List.map_eq_nil_iff] at hd
+  simpa [Operand.isDef] using hd
+
 theorem retained_uses {V : Type} {nregs : Nat} {m : MInst} {live : List Nat}
     {a b : Nat → V} (h : Agree (uses nregs m ++ live.filter (fun n => !(defs m).contains n)) a b)
     {ops : Array Operand} (hop : m.operands = .ok ops) :

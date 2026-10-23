@@ -84,11 +84,14 @@ theorem scan_availability (nregs : Nat) (ms : List MInst) (exit : List Nat)
   | nil => exact ⟨trivial, ha⟩
   | cons i ms ih =>
     obtain ⟨hread, hrest⟩ := hr
-    by_cases hd : discard i (scan nregs ms exit).2 = true
+    by_cases hd : (discard i (scan nregs ms exit).2 || dropCmp i (scan nregs ms exit).1) = true
     · simp only [scan, hd, ↓reduceIte] at ha ⊢
       have hstep : Agree (scan nregs ms exit).2 (availInst i A) B := by
         intro n hn
-        exact (discard_availInst_agree hd A n hn).trans (ha n hn)
+        refine Eq.trans ?_ (ha n hn)
+        rcases Bool.or_eq_true_iff.mp hd with hd | hd
+        · exact discard_availInst_agree hd A n hn
+        · exact availInst_frame i A n (by rw [dropCmp_defs hd]; simp)
       simpa only [List.foldl_cons] using ih (availInst i A) B hstep hrest
     · simp only [scan, hd, ↓reduceIte] at ha ⊢
       obtain ⟨hnew, hout⟩ := ih (availInst i A) (availInst i B)
