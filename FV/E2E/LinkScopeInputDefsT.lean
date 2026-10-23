@@ -47,12 +47,12 @@ def ctlInstsB (vc : VCode) : Bool :=
 
 /-- **The run-time decider of the typed input scope**: `lowerFunction` succeeds, its output meets
 `Spill.ctlSpillB`, and `prepare`'s output (`prepare` does not fail on the typed scope:
-`Prep.prepare_okT`) meets `emitCondsB`, `formsCoveredB default` and `ctlInstsB` (`Spill.killFreeB`
-is a theorem on the typed scope: `LinkCheck.killFreeB_of_scopeT`). -/
+`Prep.prepare_okT`) meets `emitCondsB`, `formsCoveredB default`, `Spill.killFreeB` and
+`ctlInstsB`. -/
 def lowerOutTB (g : Clif.Function) : Bool :=
   match lowerFunction g with
   | .ok vc => Spill.ctlSpillB vc && match prepare vc with
-    | .ok vcp => emitCondsB vcp && formsCoveredB default vcp && ctlInstsB vcp
+    | .ok vcp => emitCondsB vcp && formsCoveredB default vcp && Spill.killFreeB vcp && ctlInstsB vcp
     | .error _ => true
   | .error _ => false
 
