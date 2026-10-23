@@ -923,3 +923,8 @@ import FVTest.Concurrency.LitmusFull
 #print axioms Concurrency.ArmAllocThread.regVal_calleeSaved_congr
 #print axioms Concurrency.ArmAllocThread.entry_premises
 #print axioms Concurrency.CallSeg.WitnessC.entry_premises_L -- witness: native_decide
+#print axioms Concurrency.ArmAllocThread.gkeep_of_q
+#print axioms Concurrency.ArmAllocThread.retC_of_retEnd
+#print axioms Concurrency.ArmAllocThread.resume_premises_of_retC
+#print axioms Concurrency.CallRetResume.Witness.retC_RX -- witness: native_decide
+#print axioms Concurrency.CallRetResume.Witness.resume_premises_RX -- witness: native_decide
