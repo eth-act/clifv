@@ -196,7 +196,7 @@ theorem refines_nilS {K : Type} {MK : K → AKind → Prop} {Priv : Nat → Prop
       rw [hx] at hy
       simp only [Option.map_some, Option.some.injEq] at hy
       subst hy
-      exact hW p x hx hd
+      exact (hW p x hx hd).1
   len j hj := by rw [hS _ (List.getElem_mem hj)]; simp
   pair j hj h2 := by rw [hS _ (List.getElem_mem hj)] at h2; cases h2
   pair_inv p _ hp := by rw [evAt_nilS hS] at hp; cases hp
@@ -214,6 +214,15 @@ theorem mem_of_evAt {α : Type} {tr : List (List α)} {p : Nat × Nat} {y : α}
   | some x =>
     rw [hp] at h
     exact ⟨x, List.mem_of_getElem? hp, List.mem_of_getElem? h⟩
+
+/-- **Private writes of labels without `relXW`.** -/
+theorem privW_labs {Priv : Nat → Prop} {L : List Lab}
+    (h : ∀ p y, evAt (evTr L) p = some y → y.k.dir = .W → Priv y.addr.toNat)
+    (hk : ∀ l ∈ L, ∀ e ∈ l.evs, e.k ≠ .relXW) : PrivW Priv (evTr L) := fun p y hy hd => by
+  refine ⟨h p y hy hd, ?_⟩
+  obtain ⟨x, hx, hyx⟩ := mem_of_evAt hy
+  obtain ⟨l, hl, rfl⟩ := List.mem_map.mp hx
+  exact hk l hl y hyx
 
 /-- A step at an error has only barrier events. -/
 theorem stepEvs_err {s : ArmState} (h : read_err s ≠ .None) : ∀ e ∈ stepEvs s, e.k = .dmb := by

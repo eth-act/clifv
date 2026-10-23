@@ -41,7 +41,8 @@ theorem prun_prologueG {RA : RL} (hR : RA.Wf) {g : ArmState → ArmState} (hg : 
       hg _ (CallSeg.linesAt_program hR hlat i (by omega)) (hnr i (by omega))⟩
   refine ⟨h1, ?_, ?_⟩
   · rw [hev]
-    exact privW_segEvs fun i hi e he => ((hpe i (by omega)).1 e he).1
+    exact privW_segEvs (fun i hi e he => ((hpe i (by omega)).1 e he).1)
+      fun i hi => stepEvs_noRelXW (hpe i (by omega)).2
   · intro p y hy
     rw [hev] at hy
     obtain ⟨j, k⟩ := p

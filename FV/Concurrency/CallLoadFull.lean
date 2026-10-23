@@ -329,8 +329,8 @@ theorem realized_privSeg {R : RL} {env : Clif.Env} {p : Clif.Program} {L : List 
     CallCompose.Realized env p (PrivA R) L L.length c c' := by
   refine ⟨Nat.le_refl _, trS, id, hrun, ?_, ?_⟩
   · rw [List.take_length]; exact xClosed_labs hk
-  · rw [List.take_length, hev]
-    exact refines_nilS hS fun p y hy hd => privW_segEvs hpv p y hy hd
+  · rw [List.take_length]
+    exact refines_nilS hS (privW_labs (fun p y hy _ => by rw [hev] at hy; exact privA_segEvs hpv hy) hk)
 
 /-- **The `ldar`'s step realizes the CLIF load**: its one `acqR` event, read as the load's
 bytes. -/
@@ -555,7 +555,7 @@ theorem realized_privStep {R : RL} {env : Clif.Env} {p : Clif.Program} {l : Lab}
     exact refines_nilS (by simp) fun q y hy _ => by
       obtain ⟨x, hx, hyx⟩ := mem_of_evAt hy
       simp only [List.mem_singleton] at hx; subst hx
-      exact privA_addr.2 (hpv y hyx)
+      exact ⟨privA_addr.2 (hpv y hyx), hk y hyx⟩
 
 /-- **The callee's contract with its return** (module doc): every precise run of the linked
 machine from the callee's ABI entry (after the caller's `bl` from `s`) realizes, through the

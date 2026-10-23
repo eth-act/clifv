@@ -103,7 +103,8 @@ theorem ret_end (hL : L.Ok) {nB : String} (hB : (nB, FB) ∈ L.fns)
   · obtain ⟨h1, hev, hk⟩ := prun_privF hr fun i hi =>
       ⟨(hpath i (by omega)).1.1, (hpath i (by omega)).1.2, hag i (by omega)⟩
     refine ⟨h1, hev, ?_, fun l hl => (hk l hl).2⟩
-    rw [hev]; exact privW_segEvs fun i hi => (hpath i (by omega)).1.1
+    rw [hev]; exact privW_segEvs (fun i hi => (hpath i (by omega)).1.1)
+      fun i hi => stepEvs_noRelXW (hpath i (by omega)).1.2
   · -- the epilogue before the `ret`, then the `ret`
     obtain ⟨v1, hv1, hrest⟩ := CallCompose.take_prun hr (n - 1)
     have hl1 : (ls.take (n - 1)).length = n - 1 := by simp; omega
@@ -146,13 +147,14 @@ theorem ret_end (hL : L.Ok) {nB : String} (hB : (nB, FB) ∈ L.fns)
         intro q y hy hW
         rcases Nat.lt_or_ge q.1 (segEvs (RB).step (n - 1) x).length with hq | hq
         · rw [evAt_append_lt _ _ hq] at hy
-          exact privW_segEvs (fun i hi => (hpath i (by omega)).1.1) q y hy hW
+          exact privW_segEvs (fun i hi => (hpath i (by omega)).1.1)
+            (fun i hi => stepEvs_noRelXW (hpath i (by omega)).1.2) q y hy hW
         · rw [evAt_append_ge _ _ hq] at hy
           obtain ⟨e, he, hye⟩ := mem_of_evAt hy
           simp only [evTr, List.map_cons, List.map_nil, List.mem_singleton] at he
           subst he
           rw [hlev] at hye
-          exact privA_addr.2 (hz.1.1 y hye)
+          exact ⟨privA_addr.2 (hz.1.1 y hye), hlk y (by rw [hlev]; exact hye)⟩
       · rw [htake]
         intro l' hl'
         rcases List.mem_append.mp hl' with hl' | hl'
