@@ -55,4 +55,34 @@ theorem arm_abiCRN_fC {env : Clif.Env} (henv : env.extern "ld" = none) {c : BitV
     (memRefines_csem RC.F RC.ctx _ rfl (fun _ _ h => by cases h)) (mrStable_relW ΓC fC c) fC_reg
     H3 (hm3 _ _) hat hm4 hB0 hcall hfunc hslots hbody hterm hregs hty hsig hmr hargs hq hA hr
 
+/-- **The caller's realized prefix from its ABI entry is exclusive-closed**
+(`arm_isel_refines_abiCRNX` on the same compiled caller and machine). -/
+theorem arm_abiCRNX_fC {env : Clif.Env} (henv : env.extern "ld" = none) {c : BitVec 64}
+    (hc : c.toNat % 16 = 0) :
+    ∃ (ctx : Ctx) (st0 : LState) (R : Reg → Reg) (gn : Nat → Nat) (bl : List BLow)
+      (A : Nat → Nat → List Clif.ValueId),
+      DriverHypT fC vcC ctx st0 R gn bl A (csem RC.F RC.ctx RC.X) (RelW ΓC fC c) env pCL ∧
+      ∀ (slots : List (Clif.SlotId × Nat)) (cs : Clif.State) (B0 : Clif.Block)
+        (args : List Clif.Val) (mon : Mon) (ls : List Lab) (t' : ArmState × Mon),
+        fC.blocks[0]? = some B0 → cs.callers = [] → cs.frame.func = fC →
+        cs.frame.slots = slots → cs.frame.body = B0.body → cs.frame.term = B0.term →
+        Clif.Regs.empty.setMany (B0.params.map (·.1)) args = some cs.frame.regs →
+        args.map (·.ty) = B0.params.map (·.2) → args.map (·.ty) = fC.sig.params.map (·.ty) →
+        RelW ΓC fC c slots cs.mem w₀C → ArgsAtEntry RC.F fC.sig args w₀C →
+        PRun Policy.arm MC2 (OkPriv RC) (RC.s0, mon) ls t' →
+        ∃ k trS t, k ≤ ls.length ∧ CallCompose.XClosed (evTr (ls.take k)) ∧
+          CRun env pCL (.run cs) trS t := by
+  obtain ⟨ctx, st0, R, gn, bl, A, H, hchk⟩ := driverC henv c
+  obtain ⟨L, ss, ss', H3, hm3⟩ := CallLayers.prep_init (vc := vcC) (vcp := RC.vc)
+    CallResumeL.Witness.prepC
+  obtain ⟨cc, ins, a0, hat, hm4⟩ := CallLayers.alloc_init (vc := RC.vc) (rf := RC.rf) allocC ckeep
+  obtain ⟨-, hq, hA⟩ := q_init_lines wfRC abiRC bodyRC
+  refine ⟨ctx, st0, R, gn, bl, A, H, fun slots cs B0 args mon ls t' hB0 hcall hfunc
+    hslots hbody hterm hregs hty hsig hmr hargs hr => ?_⟩
+  obtain ⟨k, trS, t, -, hk, hx, hrun, -⟩ := arm_isel_refines_abiCRNX wfRC scopeRC rfl agreesAt_MC2
+    abiRC H hchk (memRelOk_relW ΓC fC c) (relW_wf hc) VCodeThread.Witness.X0_tls (fun _ _ _ => rfl)
+    (memRefines_csem RC.F RC.ctx _ rfl (fun _ _ h => by cases h)) (mrStable_relW ΓC fC c) fC_reg
+    H3 (hm3 _ _) hat hm4 hB0 hcall hfunc hslots hbody hterm hregs hty hsig hmr hargs hq hA hr
+  exact ⟨k, trS, t, hk, hx, hrun⟩
+
 end Concurrency.CallSegAbi.Witness
