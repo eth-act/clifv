@@ -866,7 +866,31 @@ they are; the per-thread layers are new files.
         are outside the innermost activation's `RL.F`: the CLIF events, which avoid the innermost
         `RL.F`, avoid every live frame). Witness (`FrameDisjWitness.lean`): the compiled
         `atomic_load` nested in its caller with a `0x100`-byte callee budget (`nested_LC`,
-        `wfRLy`, `chain_LC`, `frames_LC`, `slots_LC`).
+        `wfRLy`, `chain_LC`, `frames_LC`, `slots_LC`). **`CStepI` (done, `ClifThreadI.lean`)**:
+        `TStateI` (a `TState` and its mask `U`), `slotByte` (the bytes of the running and
+        suspended frames' slots), `mix U B` (`B` with the masked bytes `none`), `CStepI` (`CStep`
+        run on `mix U B`; the bytes after it are `mix U'` of the shared bytes with the write events
+        applied; `U'` keeps only unwritten masked bytes or adds slot bytes of the new state),
+        `CRunI`, `MaskOk` (masked bytes `none` in the own memory). **`cstepI_empty`**: with empty
+        masks `CStepI` is `CStep`; **`cstepI_of_cstep`**: every `CStep` whose reads avoid the mask
+        (`agrees_mix`, `applyEvs_mix`); `enterSlots_bytes`, `enterFunc_bytes` (`enterFunc` on any
+        bytes: the placed slot bytes `slotZ` cleared, the rest kept), `slotZ_frameSlot`,
+        **`cstepI_call`** (the call of a program function adds `slotZ` to the mask);
+        **`cstepI_own`**/`cstepI_own_stuck` (single-thread correspondence: from a `MaskOk` state a
+        `CStepI` reading the own memory is `Clif.step` of the state, to a `MaskOk` state; where
+        `Clif.step` is stuck there is no `CStepI`). Witness (`ClifThreadIWitness.lean`): a call
+        into `%g` with an 8-byte slot placed at `0x6F20` (`cstepI_callW`, `maskW`, `ownW`),
+        `not_cstepW` (no `CStep` enters `%g`), `emptyW'` (with the bump allocator the old `CStep`).
+        **Oracle check (2026-10-23)**: the 44 runtests files with stack slots through `Clif.run`
+        (whose single-thread behaviour `CStepI` is, `cstepI_own`) and the Cranelift interpreter
+        (`scripts/clif-filetests.sh`): 1148 agree, 7 disagree (the known i128 out-of-bounds
+        `stack_store` with an instruction offset, in the baseline), **0 runs stuck on an
+        uninitialised read**. cg_clif output (static must-initialised scan of the `bin-check`
+        dumps, `stack_addr` + `load`/`store`, escaping slots exempt): potential loads of
+        uninitialised slot bytes in fv-demo 288 (2,680 functions), survey 92 (1,702), deps 2,938
+        (34,180), mostly enum/`Option` partial initialisation (the tag stored, the payload word
+        loaded and returned or copied; e.g. fv-demo `bin-check/400b40aa77e2/fns/184.clif`: `store 2`
+        to `ss0[0,4)`, `load.i32 ss0+4` returned) — `Clif.run`, and so `CStepI`, is stuck there.
   * **the prologue, from the ABI entry (done, `ArmAllocEntry.lean`)**: `stp_fplr_evs` (the
     prologue's `stp x29, x30, [sp, #-16]!`: one plain write at `sp - 16`, no exclusive);
     `q_init_lines` (`RegLevelFrame.q_init` with the prologue's lines, `LinesAt`, and its step
