@@ -1,7 +1,7 @@
 # SEM1: reads of uninitialised stack bytes (#537)
 
-Status: design (2026-10-23, agent UninitSem). The decision in §5 is open. A design-B prototype
-and its checks are in §8.
+Status: decided (2026-10-23): design A, route (i) of §5.1, in progress (agent UninitZ). The
+design-B prototype and its checks in §8 remain a test tool only (`clif-filetest --zero-slots`).
 
 ## 1. The gap
 
@@ -148,16 +148,56 @@ Cranelift's interpreter, whose stack is zero-filled.
   stock Cranelift. With `Z` that is every function with explicit slots; with `Z'` it is about
   3 % (75 of 2,680 fv-demo functions).
 
-## 5. Decision needed
+## 5. Decision (2026-10-23)
 
-- A: precise to native Cranelift code generation, but a weeks-long prophecy/count proof through
-  the linking and executable inductions, including @codygunton's files.
-- B: precise and small (a pass, a few instance theorems, a CLIF-level simulation), but it changes
-  the generated code. With `Z` it costs stock agreement on all slotted functions. With `Z'` it
-  costs about 3 % of agreement plus a must-init soundness proof.
+**A.** User rule: the generated code stays byte-for-byte what stock Cranelift emits, and
+Cranelift does not zero slots. So B (`Z`/`Z'`) is out. Its prototype stays a test tool
+(`clif-filetest --zero-slots`) and is never used by `lean-link`/`cargo fv`.
 
-Recommendation: **B with `Z` first**. It closes the gap for every measured run soonest. `Z'`
-then recovers stock agreement. A stays possible later, e.g. for an unmodified-code mode.
+**Finding ([#556](https://github.com/eth-act/clifv/issues/556)): §3's plan is not enough.** The
+linking evaluates a program call by the *canonical* run (`LinkSys.progX` from `canon g uses w`,
+built from the VCode world). It transfers the result to the actual machine by non-interference
+over the masked fields and `F` (`CalleeOkG.os`, `XNI`, the `NeedNI` clause of `LinkSys.Thm`).
+Under A a callee's result depends on stale bytes in its caller's dead stack (in `F`). Those
+bytes include earlier callees' saves of `x19`–`x28`, their spills and frame records. These are
+regalloc-chosen values outside the world, which differ between the canonical and the actual run.
+Example: `h1` saves the actual `x19`, then `h2` reads it through a half-written slot. So "one
+VCode outcome that every machine entry realises" and `CalleeOkG.os` are false for stale-reading
+runs, whatever the entry count.
+
+### 5.1 Two code-preserving routes
+
+- **(i) Prophecy-indexed calls.** Slot bytes come from the oracle (`Place.init`, §3). The
+  per-function theorem gets a call semantics indexed by the activation's call count. Its results
+  are those of the activation's actual run, a prophecy fixed by the machine entry state. This
+  replaces the world-only `ExtSem` at the calls: a new `CalleeOkG` variant, required only along
+  the actual run, threaded through the VCode → reg-level (regalloc) → Arm simulation. The linking
+  is then stated per actual activation, without canonical runs or NI. The entry count of §3 comes
+  on top. Per-function semantics outside calls: unchanged. An activation's own slot bytes are in
+  its entry memory, which `backend_correct_final` already leaves free.
+- **(ii) Nondeterministic/poison reads.** An uninitialised byte reads as any value, and the theorem
+  says the compiled run matches *some* source run. A run that reads no uninitialised byte is
+  pinned down exactly as today, but a stale read is no longer pinned to the bytes the machine
+  reads. It does *not* avoid the canonical-run/NI problem. The source run the machine matches
+  must pick, at every stale read, the value the actual run reads. That choice is again a prophecy
+  of the actual run, aligned with the calls, and the VCode-level callee semantics becomes
+  relational: the same backend-deep change as (i). In addition, the nondeterminism sits in every
+  `load` (`Mem.load`/`readBits`), so every load lemma of the instruction-selection proofs
+  (`IselMem*`, `IselAtomic*`, `LegalMem`, …) and `Clif.Rust.memcmp` would change. (i) touches
+  only `enterSlots`.
+
+**Chosen: (i).** It needs strictly less work than (ii) and gives the more precise statement: the
+exact bytes, not any bytes. It is implemented in small PRs, leaf first:
+1. semantics: `Clif.SlotInit`, `Place.init` (default `none` = today's semantics, so every
+   existing statement keeps its meaning), with a native check that the values the source reads
+   are the stale bytes the native run reads;
+2. per-function layer: the oracle entry states under `backend_correct_final`, then the
+   prophecy-indexed callee contract through the reg-level simulation;
+3. linking (`LinkArm`, `CrunOk`) per actual activation, with the entry count;
+4. executable (`act_core`/`act_sim` variants beside @codygunton's, #140 note),
+   `compileExe_correct_init{,_peak}`, `Front.bundle_correct_raw_init{,_peak}`.
+
+The gap stays open until step 4 lands. That is months of work, not weeks.
 
 ## 6. Heap (separate gap, SEM2)
 
