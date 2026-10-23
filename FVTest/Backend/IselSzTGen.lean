@@ -200,8 +200,9 @@ def entryEnvs (e : TermId × List AT × Nat) : Nat :=
     acc + ((aRuleEnvs program covTabT aext actor apre aOracle e.2.1 r).getD []).length +
       (aPatArgs program aext e.2.1 r.args (List.replicate r.vars.length .top)).length) 0
 
-/-- Sub-chunk size: one entry per declaration in a chunk with a heavy entry, else 8. -/
-def subChunk (es : CTab) : Nat := if es.any (fun e => entryEnvs e > 1000) then 1 else 8
+/-- Sub-chunk size: one entry per declaration (8 entries of fewer than 50 environments each took
+8.1 GB in one `decide`: the environment count does not predict the kernel's cost). -/
+def subChunk (_es : CTab) : Nat := 1
 
 
 /-- Rule/family pairs whose single kernel check is too large (rule 2267 on family 8 has 256
