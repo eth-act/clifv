@@ -22,6 +22,38 @@ theorem discard_pure {m : MInst} {live : List Nat} (h : discard m live = true) :
   simp only [discard, Bool.and_eq_true] at h
   exact h.1.1.1.1
 
+/-- A compare continues, and the next compare's step from its world is a step from the world
+before it: the next compare overwrites everything the first one wrote (its flags). -/
+def CmpOverwrite {V W : Type} (sem : ISem V W) : Prop :=
+  ∀ i us w outs w' ctl, cmpForm i = true → sem i us w = some (outs, w', ctl) →
+    ctl = .next ∧ ∀ k us' r, cmpForm k = true → sem k us' w' = some r → sem k us' w = some r
+
+theorem dropCmp_cmp {m : MInst} {kept : List MInst} (h : dropCmp m kept = true) :
+    cmpForm m = true := by
+  simp only [dropCmp, Bool.and_eq_true] at h
+  exact h.1.1
+
+theorem dropCmp_defs {m : MInst} {kept : List MInst} (h : dropCmp m kept = true) :
+    defs m = [] := by
+  simp only [dropCmp, Bool.and_eq_true, List.isEmpty_iff] at h
+  exact h.1.2
+
+/-- The instruction retained after a dropped compare is itself a compare. -/
+theorem dropCmp_head {m : MInst} {kept : List MInst} (h : dropCmp m kept = true) :
+    ∃ k rest, kept = k :: rest ∧ cmpForm k = true := by
+  simp only [dropCmp, Bool.and_eq_true] at h
+  cases kept with
+  | nil => simp at h
+  | cons k rest => exact ⟨k, rest, rfl, by simpa using h.2⟩
+
+/-- A dropped compare writes no register. -/
+theorem dropCmp_noDef {m : MInst} {kept : List MInst} (h : dropCmp m kept = true)
+    {ops : Array Operand} (hop : m.operands = .ok ops) :
+    ops.toList.filter Operand.isDef = [] := by
+  have hd := dropCmp_defs h
+  simp only [defs, hop, List.map_eq_nil_iff] at hd
+  simpa [Operand.isDef] using hd
+
 theorem retained_uses {V : Type} {nregs : Nat} {m : MInst} {live : List Nat}
     {a b : Nat → V} (h : Agree (uses nregs m ++ live.filter (fun n => !(defs m).contains n)) a b)
     {ops : Array Operand} (hop : m.operands = .ok ops) :

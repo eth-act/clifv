@@ -2,10 +2,11 @@ import FV.Backend.Proof.DeadCleanupLive
 
 namespace Backend.DeadCleanup
 
-/-- An ordered deletion that keeps every instruction outside the whitelist. -/
+/-- An ordered deletion that keeps every instruction outside the whitelist and every
+non-compare: dropped instructions are pure producers or compares. -/
 inductive PureSublist : List MInst → List MInst → Prop
   | nil : PureSublist [] []
-  | drop {xs ys : List MInst} {i : MInst} : pureForm i = true →
+  | drop {xs ys : List MInst} {i : MInst} : (pureForm i = true ∨ cmpForm i = true) →
       PureSublist xs ys → PureSublist xs (i :: ys)
   | keep {xs ys : List MInst} {i : MInst} :
       PureSublist xs ys → PureSublist (i :: xs) (i :: ys)
@@ -22,23 +23,28 @@ theorem PureSublist.sublist {xs ys : List MInst} (h : PureSublist xs ys) : xs.Su
   | keep _ ih => exact .cons_cons _ ih
 
 theorem PureSublist.head_nonpure {xs ys : List MInst} (h : PureSublist xs ys)
-    {i : MInst} (hi : ys[0]? = some i) (hn : pureForm i = false) : xs[0]? = some i := by
+    {i : MInst} (hi : ys[0]? = some i) (hn : pureForm i = false) (hc : cmpForm i = false) :
+    xs[0]? = some i := by
   induction h with
   | nil => simp at hi
   | drop hp h ih =>
     simp only [List.getElem?_cons_zero, Option.some.injEq] at hi
     subst i
-    rw [hn] at hp
-    cases hp
+    rw [hn, hc] at hp
+    simp at hp
   | keep h ih =>
     simpa only [List.getElem?_cons_zero] using hi
 
 theorem PureSublist.findSome {α : Type} {xs ys : List MInst} (h : PureSublist xs ys)
-    (f : MInst → Option α) (hf : ∀ i, pureForm i = true → f i = none) :
+    (f : MInst → Option α) (hf : ∀ i, pureForm i = true → f i = none)
+    (hfc : ∀ i, cmpForm i = true → f i = none) :
     xs.findSome? f = ys.findSome? f := by
   induction h with
   | nil => rfl
-  | drop hp h ih => simp [List.findSome?_cons, hf _ hp, ih]
+  | drop hp h ih =>
+    rcases hp with hp | hp
+    · simp [List.findSome?_cons, hf _ hp, ih]
+    · simp [List.findSome?_cons, hfc _ hp, ih]
   | keep h ih => simp only [List.findSome?_cons, ih]
 
 theorem scan_pureSublist (n : Nat) (ms : List MInst) (L : List Nat) :
@@ -49,17 +55,19 @@ theorem scan_pureSublist (n : Nat) (ms : List MInst) (L : List Nat) :
     simp only [scan]
     split
     · rename_i hd
-      exact .drop (discard_pure hd) ih
+      rcases Bool.or_eq_true_iff.mp hd with hd | hd
+      · exact .drop (.inl (discard_pure hd)) ih
+      · exact .drop (.inr (dropCmp_cmp hd)) ih
     · exact .keep ih
 
 theorem PureSublist.nonpure_mem {xs ys : List MInst} (h : PureSublist xs ys)
-    {i : MInst} (hi : i ∈ ys) (hp : pureForm i = false) : i ∈ xs := by
+    {i : MInst} (hi : i ∈ ys) (hp : pureForm i = false) (hc : cmpForm i = false) : i ∈ xs := by
   induction h with
   | nil => cases hi
   | @drop xs ys j hj h ih =>
     rcases List.mem_cons.mp hi with rfl | hi
-    · rw [hp] at hj
-      cases hj
+    · rw [hp, hc] at hj
+      simp at hj
     · exact ih hi
   | @keep xs ys j h ih =>
     rcases List.mem_cons.mp hi with rfl | hi
@@ -86,6 +94,6 @@ theorem PureSublist.prefix {xs ys : List MInst} (h : PureSublist xs ys)
       exact ⟨j :: pre, post, by simp [he], .keep hp⟩
 
 example : PureSublist [liveBic, liveReturn] [deadMvn, liveBic, liveReturn] :=
-  .drop rfl (.keep (.keep .nil))
+  .drop (.inl rfl) (.keep (.keep .nil))
 
 end Backend.DeadCleanup

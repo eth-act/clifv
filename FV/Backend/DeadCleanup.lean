@@ -54,12 +54,30 @@ def discard (m : MInst) (live : List Nat) : Bool :=
   pureForm m && m.clobbers.isEmpty && m.defs.all Reg.isVirtual &&
     !(defs m).isEmpty && (defs m).all (fun n => !live.contains n)
 
+/-- Cranelift's compares (`cmp`/`cmn`/`tst`: `subs`/`adds`/`ands` into `xzr`) in the forms
+`ispec` specifies: they write all four NZCV flags from their register uses only, read no
+flags and define no register. -/
+@[simp] def cmpForm : MInst → Bool
+  | .aluRRR .subS _ .xzr (.vreg ..) _ => true
+  | .aluRRImm12 .subS _ .xzr (.vreg ..) _ => true
+  | .aluRRImm12 .addS _ .xzr (.vreg ..) _ => true
+  | .aluRRRExtend .subS _ .xzr (.vreg ..) (.vreg ..) _ => true
+  | .aluRRImmLogic .andS _ .xzr (.vreg ..) _ => true
+  | _ => false
+
+/-- A compare whose flags the next retained instruction, itself a compare, overwrites before
+anything reads them: what is left of an `icmp` whose user (`brif`, `select`) compares again
+once its dead `cset` is gone (#552). Cranelift never lowers that `icmp`: no lowered
+instruction uses its result (`machinst/lower.rs`, `lower_clif_block`). -/
+@[simp] def dropCmp (m : MInst) (kept : List MInst) : Bool :=
+  cmpForm m && (defs m).isEmpty && (kept.head?.map cmpForm).getD false
+
 /-- Scan backwards; removing a dead producer does not make its inputs live. -/
 def scan (nregs : Nat) : List MInst → List Nat → List MInst × List Nat
   | [], live => ([], live)
   | m :: ms, exit =>
     let (kept, live) := scan nregs ms exit
-    if discard m live then (kept, live)
+    if discard m live || dropCmp m kept then (kept, live)
     else (m :: kept, uses nregs m ++ live.filter (fun n => !(defs m).contains n))
 
 def blockUses (nregs : Nat) (b : VBlock) : List Nat :=

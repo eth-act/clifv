@@ -24,23 +24,33 @@ private theorem SameEnd_succ {V W : Type} {live : List Nat} {a b : SeqEnd V W}
     (h : SameEnd live a b) : SameEnd live a.succ b.succ := by
   cases a <;> cases b <;> exact h
 
-/-- Removing dead pure producers preserves successful block runs. This generic
-lemma requires exact world purity; concrete register bookkeeping is handled by
-an adapter when this is composed with the machine-code theorem. -/
-theorem scan_run {V W : Type} (sem : ISem V W)
+private theorem dropCmp_vdefUpd {V : Type} {m : MInst} {kept : List MInst}
+    (h : dropCmp m kept = true) {ops : Array Operand} (hop : m.operands = .ok ops)
+    (outs : List V) (ρ : Nat → V) : vdefUpd ops outs ρ = ρ := by
+  simp only [vdefUpd, dropCmp_noDef h hop, List.zip_nil_left, List.filter_nil]
+  rfl
+
+/-- `scan_run` from a cleaned world that may differ from the original one while a dropped
+compare's flags wait to be overwritten by the next retained compare. -/
+private theorem scan_run_pend {V W : Type} (sem : ISem V W)
     (hp : ∀ i us w outs w' ctl, pureForm i = true →
       sem i us w = some (outs, w', ctl) → w' = w ∧ ctl = .next)
+    (hcmp : CmpOverwrite sem)
     (nregs : Nat) (ms : List MInst) (exit : List Nat)
-    (hg : GotoAtEnd sem ms) {a b : Nat → V} {w : W} {result : SeqEnd V W}
+    (hg : GotoAtEnd sem ms) {a b : Nat → V} {w wb : W} {result : SeqEnd V W}
     (ha : Agree (scan nregs ms exit).2 a b)
+    (hw : wb = w ∨ ((∃ K rest, (scan nregs ms exit).1 = K :: rest ∧ cmpForm K = true) ∧
+      ∀ K us r, cmpForm K = true → sem K us w = some r → sem K us wb = some r))
     (hr : seqRun sem ms a w = some result) :
-    ∃ result', seqRun sem (scan nregs ms exit).1 b w = some result' ∧
+    ∃ result', seqRun sem (scan nregs ms exit).1 b wb = some result' ∧
       SameEnd exit result result' := by
-  induction ms generalizing a b w result with
+  induction ms generalizing a b w wb result with
   | nil =>
     simp only [seqRun, Option.some.injEq] at hr
     subst result
-    exact ⟨.fall b w, rfl, rfl, ha⟩
+    rcases hw with rfl | ⟨⟨K, rest, hK, -⟩, -⟩
+    · exact ⟨.fall b wb, rfl, rfl, ha⟩
+    · simp [scan] at hK
   | cons i ms ih =>
     have hgt : GotoAtEnd sem ms := by
       intro pre m post us w outs w' j hm hs
@@ -58,53 +68,111 @@ theorem scan_run {V W : Type} (sem : ISem V W)
         · by_cases hd : discard i (scan nregs ms exit).2 = true
           · have hworld := hp i _ _ _ _ _ (discard_pure hd) hs
             obtain ⟨rfl, rfl⟩ := hworld
-            simp only [scan, hd, ↓reduceIte] at ha ⊢
+            simp only [scan, hd, Bool.true_or, ↓reduceIte] at ha hw ⊢
             have hau : Agree (scan nregs ms exit).2 (vdefUpd ops outs a) b := by
               intro n hn
               exact (discard_updates_agree hd hop a outs n hn).symm.trans (ha n hn)
             simp only [seqRun, hop, hs, hl, ↓reduceIte, Option.map_eq_some_iff] at hr
             obtain ⟨r, hrun, rfl⟩ := hr
-            obtain ⟨r', hrun', he⟩ := ih hgt hau hrun
+            obtain ⟨r', hrun', he⟩ := ih hgt hau hw hrun
             exact ⟨r', hrun', by cases r <;> cases r' <;> exact he⟩
           · have hd' : discard i (scan nregs ms exit).2 = false := by
               cases h : discard i (scan nregs ms exit).2 <;> simp_all
-            simp only [scan, hd', Bool.false_eq_true, ↓reduceIte] at ha ⊢
-            have hu : vuses ops a = vuses ops b := retained_uses ha hop
-            have hau : Agree (scan nregs ms exit).2
-                (vdefUpd ops outs a) (vdefUpd ops outs b) :=
-              retained_updates_agree hop ha outs hl
-            have hsb : sem i (vuses ops b) w = some (outs, w', ctl) := by rw [← hu]; exact hs
-            cases ctl with
-            | next =>
+            by_cases hdc : dropCmp i (scan nregs ms exit).1 = true
+            · obtain ⟨hc, hov⟩ := hcmp _ _ _ _ _ _ (dropCmp_cmp hdc) hs
+              subst hc
+              simp only [scan, hd', hdc, Bool.false_or, ↓reduceIte] at ha hw ⊢
+              have hau : Agree (scan nregs ms exit).2 (vdefUpd ops outs a) b := by
+                rw [dropCmp_vdefUpd hdc hop]
+                exact ha
               simp only [seqRun, hop, hs, hl, ↓reduceIte, Option.map_eq_some_iff] at hr
               obtain ⟨r, hrun, rfl⟩ := hr
-              obtain ⟨r', hrun', he⟩ := ih hgt hau hrun
-              refine ⟨r'.succ, ?_, SameEnd_succ he⟩
-              simp [seqRun, hop, hsb, hl, hrun']
-            | goto j =>
-              have hm : ms = [] := hg [] i ms _ _ _ _ j rfl hs
-              subst ms
-              simp only [seqRun, hop, hs, hl, ↓reduceIte, Option.some.injEq] at hr
-              subst result
-              refine ⟨.stop 0 i ops b w outs w' (.goto j), ?_,
-                rfl, rfl, rfl, rfl, rfl, rfl, hu, ?_⟩
-              · simp [seqRun, hop, hsb, hl]
-              · intro _ _; exact hau
-            | ret =>
-              simp only [seqRun, hop, hs, hl, ↓reduceIte, Option.some.injEq] at hr
-              subst result
-              refine ⟨.stop 0 i ops b w outs w' .ret, ?_,
-                rfl, rfl, rfl, rfl, rfl, rfl, hu, ?_⟩
-              · simp [seqRun, hop, hsb, hl]
-              · intro j hj; cases hj
-            | halt =>
-              simp only [seqRun, hop, hs, hl, ↓reduceIte, Option.some.injEq] at hr
-              subst result
-              refine ⟨.stop 0 i ops b w outs w' .halt, ?_,
-                rfl, rfl, rfl, rfl, rfl, rfl, hu, ?_⟩
-              · simp [seqRun, hop, hsb, hl]
-              · intro j hj; cases hj
+              have hw' : wb = w' ∨ ((∃ K rest, (scan nregs ms exit).1 = K :: rest ∧
+                  cmpForm K = true) ∧
+                  ∀ K us r, cmpForm K = true → sem K us w' = some r → sem K us wb = some r) := by
+                refine .inr ⟨dropCmp_head hdc, ?_⟩
+                intro K us r hK h
+                have h1 := hov K us r hK h
+                rcases hw with rfl | ⟨-, h0⟩
+                · exact h1
+                · exact h0 K us r hK h1
+              obtain ⟨r', hrun', he⟩ := ih hgt hau hw' hrun
+              exact ⟨r', hrun', by cases r <;> cases r' <;> exact he⟩
+            · have hdc' : dropCmp i (scan nregs ms exit).1 = false := by
+                cases h : dropCmp i (scan nregs ms exit).1 <;> simp_all
+              simp only [scan, hd', hdc', Bool.false_or, Bool.false_eq_true, ↓reduceIte]
+                at ha hw ⊢
+              have hu : vuses ops a = vuses ops b := retained_uses ha hop
+              have hau : Agree (scan nregs ms exit).2
+                  (vdefUpd ops outs a) (vdefUpd ops outs b) :=
+                retained_updates_agree hop ha outs hl
+              -- the retained instruction runs from the cleaned world to the same result
+              have hsw : sem i (vuses ops a) wb = some (outs, w', ctl) := by
+                rcases hw with rfl | ⟨⟨K, rest, hK, hKc⟩, hov⟩
+                · exact hs
+                · have hiK : i = K := (List.cons.inj hK).1
+                  subst hiK
+                  exact hov _ _ _ hKc hs
+              have hsb : sem i (vuses ops b) wb = some (outs, w', ctl) := by
+                rw [← hu]; exact hsw
+              -- a stopping instruction is not a compare, so the worlds agree there
+              have hstop : ctl ≠ .next → wb = w := by
+                intro hn
+                rcases hw with h | ⟨⟨K, rest, hK, hKc⟩, -⟩
+                · exact h
+                · have hiK : i = K := (List.cons.inj hK).1
+                  subst hiK
+                  exact absurd (hcmp _ _ _ _ _ _ hKc hs).1 hn
+              cases ctl with
+              | next =>
+                simp only [seqRun, hop, hs, hl, ↓reduceIte, Option.map_eq_some_iff] at hr
+                obtain ⟨r, hrun, rfl⟩ := hr
+                obtain ⟨r', hrun', he⟩ := ih hgt hau (.inl rfl) hrun
+                refine ⟨r'.succ, ?_, SameEnd_succ he⟩
+                simp [seqRun, hop, hsb, hl, hrun']
+              | goto j =>
+                obtain rfl := hstop (by intro h; cases h)
+                have hm : ms = [] := hg [] i ms _ _ _ _ j rfl hs
+                subst ms
+                simp only [seqRun, hop, hs, hl, ↓reduceIte, Option.some.injEq] at hr
+                subst result
+                refine ⟨.stop 0 i ops b wb outs w' (.goto j), ?_,
+                  rfl, rfl, rfl, rfl, rfl, rfl, hu, ?_⟩
+                · simp [seqRun, hop, hsb, hl]
+                · intro _ _; exact hau
+              | ret =>
+                obtain rfl := hstop (by intro h; cases h)
+                simp only [seqRun, hop, hs, hl, ↓reduceIte, Option.some.injEq] at hr
+                subst result
+                refine ⟨.stop 0 i ops b wb outs w' .ret, ?_,
+                  rfl, rfl, rfl, rfl, rfl, rfl, hu, ?_⟩
+                · simp [seqRun, hop, hsb, hl]
+                · intro j hj; cases hj
+              | halt =>
+                obtain rfl := hstop (by intro h; cases h)
+                simp only [seqRun, hop, hs, hl, ↓reduceIte, Option.some.injEq] at hr
+                subst result
+                refine ⟨.stop 0 i ops b wb outs w' .halt, ?_,
+                  rfl, rfl, rfl, rfl, rfl, rfl, hu, ?_⟩
+                · simp [seqRun, hop, hsb, hl]
+                · intro j hj; cases hj
         · simp [seqRun, hop, hs, hl] at hr
+
+/-- Removing dead pure producers, and compares whose flags the next retained compare
+overwrites, preserves successful block runs. This generic lemma requires exact world
+purity; concrete register bookkeeping is handled by an adapter when this is composed with
+the machine-code theorem. -/
+theorem scan_run {V W : Type} (sem : ISem V W)
+    (hp : ∀ i us w outs w' ctl, pureForm i = true →
+      sem i us w = some (outs, w', ctl) → w' = w ∧ ctl = .next)
+    (hcmp : CmpOverwrite sem)
+    (nregs : Nat) (ms : List MInst) (exit : List Nat)
+    (hg : GotoAtEnd sem ms) {a b : Nat → V} {w : W} {result : SeqEnd V W}
+    (ha : Agree (scan nregs ms exit).2 a b)
+    (hr : seqRun sem ms a w = some result) :
+    ∃ result', seqRun sem (scan nregs ms exit).1 b w = some result' ∧
+      SameEnd exit result result' :=
+  scan_run_pend sem hp hcmp nregs ms exit hg ha (.inl rfl) hr
 
 /-! Non-vacuity: execute a real dead producer, a live producer and an ABI
 return. Both runs have the same return inputs and world. -/
@@ -128,7 +196,7 @@ example (w : Arm.ArmState) : ∃ r r',
       (fun _ => 0#128) w = some r := ⟨_, rfl⟩
   obtain ⟨r, hr⟩ := hr
   obtain ⟨r', hr', he⟩ := scan_run (mspec 0)
-    (fun _ _ _ _ _ _ hp hs => mspec_pure hp hs) 4
+    (fun _ _ _ _ _ _ hp hs => mspec_pure hp hs) (mspec_cmpOverwrite 0) 4
     [deadMvn, liveBic, liveReturn] [] hg (fun _ _ => rfl) hr
   exact ⟨r, r', hr, hr', he⟩
 
