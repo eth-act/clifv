@@ -1035,3 +1035,9 @@ import FVTest.Concurrency.LitmusFull
 #print axioms Concurrency.LinkedMachine.Witness.name_extF -- witness: native_decide
 #print axioms Concurrency.LinkedMachine.Witness.driverA_fC -- witness: native_decide
 #print axioms Concurrency.LinkedMachine.Witness.call_end_fC -- witness: native_decide
+#print axioms Concurrency.LinkedMachine.Link.stuck_outside
+#print axioms Concurrency.LinkedMachine.Link.retEnd_privP
+#print axioms Concurrency.LinkedMachine.Link.ret_end
+#print axioms Concurrency.LinkedMachine.Witness.ra_out -- witness: native_decide
+#print axioms Concurrency.LinkedMachine.Witness.ra_in -- witness: native_decide
+#print axioms Concurrency.LinkedMachine.Witness.ret_end_ld -- witness: native_decide
