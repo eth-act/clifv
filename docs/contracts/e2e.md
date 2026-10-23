@@ -4650,6 +4650,22 @@ theorem bundle_correct_raw_peak_contract …    -- N = frameDrop (art _ g).af + 
 * `#print axioms` (`scripts/audit/entry-contract.lean`): `[propext, Classical.choice,
   Quot.sound]`.
 
+## Known gap: reads of uninitialised stack bytes (SEM1, [#537](https://github.com/eth-act/clifv/issues/537))
+
+In `Clif.run` a stack slot's bytes start uninitialised (`none`: `Mem.allocAt`/`alloc` through
+`bumpSlots`/`placeSlots` in `enterFunc`), and a `load` of such a byte (likewise `memcmp` in
+`Clif.Rust`) is `stuck`. Cranelift has no such undefined behaviour: the load returns whatever
+bytes are there, and cg_clif's output relies on this, e.g. for a partially initialised `Option`/enum
+or the copy of a partially written `sret` slot. `ArmRefines`/`ExecRefines` make no claim for a
+`stuck` outcome, and `Front.bundle_correct_*` cover only `returned`/`trapped`. So a run that reads an
+uninitialised stack byte, in the entered function or in any callee, **currently gets no guarantee**
+from `E2E.backend_correct_final`, `Link.DeadCleanup.compileExe_correct*` or
+`Front.bundle_correct_*`. Measured (2026-10-23, shadow-stack qemu plugin, a lower bound):
+9 of 21 fv-demo and 46 of 53 survey test runs (`cargo fv test --lean-link --verified`) perform at
+least one such read. Planned fix (`docs/plans/uninit.md`): slot bytes start with values from an
+oracle, which the theorems instantiate with the Arm memory at activation entry. New theorem variants
+will sit beside the existing ones.
+
 ## Remaining (precise)
 
 M4 (`LowerRulesCorrect` and the terminator statements) and M6 (`RegLevelCorrect`, `DriverSem`,
