@@ -15,7 +15,16 @@ given the bytes encoding the mask (`encB`, `encT`):
   step between the states encoding `U` and `U` without the written bytes;
 * `ReadsAvoid U tr` (every step's reads avoid the mask before it), `maskAfter U tr`;
   **`crunS_of_crun`**: a `CRun` ending in a running state whose reads avoid the evolving mask is a
-  `CRunS` run between the encoded states.
+  `CRunS` run between the encoded states;
+* `stop_encT`: `IselThread.Stop` does not see the encoded mask, so a `CStepS` realization ends
+  where the `CStep` one does;
+* `cstepS_ret_of_cstep`, **`cstepS_ret_iff`**: a bottom-frame return is a `CStepS` step exactly
+  when the mask is empty (the returned state carries none), so the top-level contract ends
+  before a return with masked bytes;
+* `Refines.toTD`, `fresh0_of_mask`, **`Refines.toT_dirty`**, `uniform_of_parts`,
+  **`Refines.toT_parts`**: the start-dirty set of a segment is its private set, its mask and the
+  addresses that start no location of a thread-wide location partition (`PartDisj`, `OnParts`:
+  no mixed-size accesses, the T2i restriction).
 -/
 
 namespace Concurrency.CallComposeT
@@ -117,6 +126,63 @@ theorem crunS_of_crun {env : Clif.Env} {p : Clif.Program} :
       | run s1 =>
         exact .cons (cstepS_of_cstep hs ha) (crunS_of_crun hr e hrest)
 
+/-- **Where a realized prefix stops does not depend on the encoded mask**: `IselThread.Stop`
+(no `CStep`, or an `atomic_cas` on read-only data) sees neither the state's own bytes. The
+`CStepS` realization ends where the `CStep` one does (`Stop` of the CLIF thread state). -/
+theorem stop_encT {env : Clif.Env} {p : Clif.Program} (U : Nat → Prop) (t : TState) :
+    IselThread.Stop env p (encT U t) ↔ IselThread.Stop env p t := by
+  cases t with
+  | ret v => exact Iff.rfl
+  | run s =>
+    unfold IselThread.Stop IselThread.CasRO ClifCStepTerm.Done
+    simp only [encT, cstep_withBytes]
+    constructor
+    · rintro (h | ⟨s', stm, rest, ty, fl, pp, ex, x, a, n, e, h1, h2, h3, h4⟩)
+      · exact .inl h
+      · cases e
+        exact .inr ⟨s, stm, rest, ty, fl, pp, ex, x, a, n, rfl, h1, h2, h3, h4⟩
+    · rintro (h | ⟨s', stm, rest, ty, fl, pp, ex, x, a, n, e, h1, h2, h3, h4⟩)
+      · exact .inl h
+      · cases e
+        exact .inr ⟨withBytes s (encB U), stm, rest, ty, fl, pp, ex, x, a, n, rfl, h1, h2, h3, h4⟩
+
+/-! ## Returns of the bottom frame -/
+
+/-- **A `CStep` return whose reads avoid the mask and whose writes cover it is a `CStepS` step**
+(the returned state carries the empty mask). -/
+theorem cstepS_ret_of_cstep {env : Clif.Env} {p : Clif.Program} {s : Clif.State}
+    {evs : List (Ev SKind BVal)} {v : List Clif.Val} (h : CStep env p (.run s) evs (.ret v))
+    {U : Nat → Prop} (hr : ∀ e ∈ evs, e.dir = .R → ∀ k < e.n, ¬ U (e.loc + k))
+    (hU : ∀ a, U a → writes evs a) : CStepS env p (encT U (.run s)) evs (.ret v) := by
+  unfold CStepS
+  rw [maskOf_encT]
+  have h1 := cstepI_of_cstep (cstep_withBytes.mpr h : CStep env p (.run (withBytes s (encB U)))
+    evs (.ret v)) hr
+  have e : (fun a => U a ∧ ¬ writes evs a) = maskOf (.ret v) := by
+    funext a; simp only [maskOf, eq_iff_iff, iff_false]; exact fun ⟨hu, hw⟩ => hw (hU a hu)
+  rw [e] at h1
+  exact cstepI_strip h1 rfl fun a ha => ha
+
+/-- **An event-free return keeping the bytes is a `CStepS` step exactly from the empty mask**:
+the returned state carries no mask, so a bottom frame cannot return with masked bytes (the
+top-level contract ends before such a return). -/
+theorem cstepS_ret_iff {env : Clif.Env} {p : Clif.Program} {s : Clif.State}
+    {v : List Clif.Val} (hc : CStep env p (.run s) [] (.ret v))
+    (h : ∀ B, res (Clif.step env p (withBytes s B)) = some (.ret v, B)) (U : Nat → Prop) : CStepS env p (encT U (.run s)) [] (.ret v) ↔ ∀ a, ¬ U a := by
+  constructor
+  · intro hS a hu
+    obtain ⟨-, -, -, hf⟩ := hS
+    obtain ⟨t'', h1, -⟩ := hf (fun _ => some 0) trivial
+    rw [maskOf_encT] at h1
+    simp only [encT, withBytes] at h1
+    have h2 := h (mix U fun _ => some 0)
+    simp only [withBytes] at h2
+    rw [h2] at h1
+    have h3 := congrFun (Option.some.inj h1 |> congrArg Prod.snd) a
+    simp [mix, hu, maskOf, applyEvs] at h3
+  · intro hU
+    exact cstepS_ret_of_cstep hc (fun _ h => nomatch h) fun a ha => absurd ha (hU a)
+
 /-! ## The refinement of a segment with a start-dirty set -/
 
 /-- **A `Refines` with private set `P` is a `RefinesT` from a start-dirty set `D`** whose source
@@ -185,5 +251,54 @@ theorem fresh0_of_mask {ψ : Nat × Nat → Nat × Nat} :
                 · exact .inr ⟨by simp only; omega, h2⟩))
           (j, i) x hx' hR ⟨hU, hw⟩
         exact ⟨(q.1 + 1, q.2), x', by simpa [evAt] using hq, hW, hl, hlt⟩
+
+end Concurrency.CallComposeT
+
+namespace Concurrency.CallComposeT
+
+open Prog ClifThread ClifThreadI ThreadRefine
+
+/-- **The start-dirty set of a segment** (#473 (4), `SegOkG`): a segment refined with private set
+`P`, whose reads avoid the evolving mask from `U`, with uniform accesses (no mixed-size access to
+a location within the trace; the thread-wide location partition gives it) and nonempty reads, is
+a `RefinesT` from the start-dirty set `P ∪ U ∪ NS` for any set `NS` of addresses at which no
+source read starts (addresses that start no location of the partition). -/
+theorem Refines.toT_dirty {MK : SKind → AKind → Prop} {P U NS : Nat → Prop}
+    {pairT : Nat × Nat → Nat × Nat → Prop} {trS : List (List (Ev SKind BVal))}
+    {trT : List (List (Ev AKind BVal))} {ψ : Nat × Nat → Nat × Nat}
+    (h : ThreadRefine.Refines MK P pairT trS trT ψ) (hra : ReadsAvoid U trS) (hu : Uniform trS)
+    (hpos : ∀ p x, evAt trS p = some x → 0 < x.n)
+    (hns : ∀ p x, evAt trS p = some x → x.dir = .R → ¬ NS x.loc) :
+    PrivCohT.RefinesT MK (fun a => P a ∨ U a ∨ NS a) (fun _ => P) pairT trS trT ψ :=
+  Refines.toTD h fun p x hx hR hD => by
+    rcases hD with hP | hU | hN
+    · exact absurd hP (h.shared p x hx (by rw [hR]; decide))
+    · exact fresh0_of_mask hra hu hpos h.mono p x hx hR hU
+    · exact absurd hN (hns p x hx hR)
+
+/-- **A location partition**: overlapping locations start at the same address. -/
+def PartDisj (Loc : Nat → Nat → Prop) : Prop :=
+  ∀ a n b m, Loc a n → Loc b m → b ≤ a → a < b + m → b = a
+
+/-- **Every read and write of the trace accesses a location of the partition.** -/
+def OnParts (Loc : Nat → Nat → Prop) (trS : List (List (Ev SKind BVal))) : Prop :=
+  ∀ p x, evAt trS p = some x → x.dir ≠ .F → Loc x.loc x.n
+
+/-- **Accesses on a location partition are uniform** (thread-wide form of `Uniform`). -/
+theorem uniform_of_parts {Loc : Nat → Nat → Prop} {trS : List (List (Ev SKind BVal))}
+    (hd : PartDisj Loc) (ho : OnParts Loc trS) : Uniform trS :=
+  fun p x q y hx hy hR hW hle hlt =>
+    hd _ _ _ _ (ho p x hx (by rw [hR]; decide)) (ho q y hy (by rw [hW]; decide)) hle hlt
+
+/-- **The start-dirty set on a location partition**: `Refines.toT_dirty` with the addresses that
+start no location of the partition. -/
+theorem Refines.toT_parts {MK : SKind → AKind → Prop} {P U : Nat → Prop} {Loc : Nat → Nat → Prop}
+    {pairT : Nat × Nat → Nat × Nat → Prop} {trS : List (List (Ev SKind BVal))}
+    {trT : List (List (Ev AKind BVal))} {ψ : Nat × Nat → Nat × Nat}
+    (h : ThreadRefine.Refines MK P pairT trS trT ψ) (hra : ReadsAvoid U trS)
+    (hd : PartDisj Loc) (ho : OnParts Loc trS) (hpos : ∀ p x, evAt trS p = some x → 0 < x.n) :
+    PrivCohT.RefinesT MK (fun a => P a ∨ U a ∨ ¬ ∃ n, Loc a n) (fun _ => P) pairT trS trT ψ :=
+  Refines.toT_dirty h hra (uniform_of_parts hd ho) hpos fun p x hx hR hn =>
+    hn ⟨x.n, ho p x hx (by rw [hR]; decide)⟩
 
 end Concurrency.CallComposeT

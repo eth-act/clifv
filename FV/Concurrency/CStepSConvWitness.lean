@@ -1,5 +1,6 @@
 import FV.Concurrency.CStepSConv
 import FV.Concurrency.CallLoadWitness
+import FV.Concurrency.ProgramWitness
 
 /-!
 # Witnesses for `CStepSConv` (#473)
@@ -52,5 +53,36 @@ theorem toTD_nil :
     PrivCohT.RefinesT (K := SKind) (V := BVal) (MK := Maps) (fun _ => True) (fun _ => fun _ => False)
       (MonPair []) [] (conv []) id :=
   Refines.toTD CallCompose.refines_nil (fun _ x hx => by rw [evAt_nil] at hx; cases hx)
+
+/-- The bottom frame `sR` returns as a `CStepS` step from the empty mask, and not from the mask
+`{0}`. -/
+theorem ret_sR : CStepS ProgWitness.env0 ProgWitness.p0 (encT (fun _ => False) (.run ProgWitness.sR))
+      [] (.ret []) ∧
+    ¬ CStepS ProgWitness.env0 ProgWitness.p0 (encT (fun a => a = 0) (.run ProgWitness.sR)) []
+      (.ret []) := by
+  have hc : CStep ProgWitness.env0 ProgWitness.p0 (.run ProgWitness.sR) [] (.ret []) :=
+    ⟨⟨by simp [evShape, ProgWitness.sR], fun e he => absurd he List.not_mem_nil⟩,
+      ⟨fun _ => none, trivial⟩, fun B _ => ⟨.ret [], ProgWitness.step_sR B, rfl⟩⟩
+  exact ⟨(cstepS_ret_iff hc ProgWitness.step_sR _).2 fun _ h => h,
+    fun h => (cstepS_ret_iff hc ProgWitness.step_sR _).1 h 0 rfl⟩
+
+/-- Byte locations form a partition, and `trWR` accesses them: its accesses are uniform. -/
+theorem uniform_WR : Uniform trWR :=
+  uniform_of_parts (Loc := fun _ n => n = 1) (fun a n b m _ hm h1 h2 => by omega)
+    (fun p x hx _ => by
+      obtain ⟨_ | _ | _, _ | _⟩ := p <;> simp [evAt, trWR] at hx <;> subst hx <;> rfl)
+
+/-- The empty refinement from the start-dirty set of the 8-byte partition. -/
+theorem toT_parts_nil :
+    PrivCohT.RefinesT (K := SKind) (V := BVal) (MK := Maps)
+      (fun a => False ∨ (a = 0) ∨ ¬ ∃ n, (fun a n => n = 8 ∧ a % 8 = 0) a n)
+      (fun _ => fun _ => False) (MonPair []) [] (conv []) id :=
+  Refines.toT_parts CallCompose.refines_nil (by simp [ReadsAvoid])
+    (fun a n b m ha hb h1 h2 => by omega) (fun _ x hx => by rw [evAt_nil] at hx; cases hx)
+    (fun _ x hx => by rw [evAt_nil] at hx; cases hx)
+
+/-- A returned state stops, whatever mask it is encoded with. -/
+theorem stop_ret : IselThread.Stop ProgWitness.env0 ProgWitness.p0 (encT (fun a => a = 0) (.ret [])) :=
+  (stop_encT _ _).2 (.inl fun ⟨_, _, h⟩ => h)
 
 end Concurrency.CallSeg.WitnessC
