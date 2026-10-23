@@ -18,11 +18,29 @@ theorem valueSem_pure {F : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem}
   simp only [valueSem, specForm_of_pure hp, ↓reduceIte] at h
   exact mspec_pure hp h
 
+/-- `csem` runs a `jump` alike from every world. -/
+theorem csem_jumpPlain (F : BitVec 64 → Prop) (ctx : FnCtx) (X : ExtSem) :
+    JumpPlain (csem F ctx X) := by
+  intro l us w outs w' ctl h
+  simp only [csem, Option.some.injEq, Prod.mk.injEq] at h
+  obtain ⟨rfl, rfl, rfl⟩ := h
+  exact ⟨rfl, ⟨0, rfl⟩, fun _ => rfl⟩
+
+/-- A semantics that is `csem` on `jump`s runs them alike from every world. -/
+theorem jumpPlain_of_csem {sem : Sem} {F : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem}
+    (h : ∀ l, sem (.jump l) = csem F ctx X (.jump l)) : JumpPlain sem := by
+  intro l us w outs w' ctl hs
+  rw [h l] at hs
+  obtain ⟨hw, hj, hall⟩ := csem_jumpPlain F ctx X l us w outs w' ctl hs
+  exact ⟨hw, hj, fun w0 => by rw [h l]; exact hall w0⟩
+
 /-- The value semantics lets the next compare overwrite a compare's flags. -/
 theorem valueSem_cmpOverwrite (F : BitVec 64 → Prop) (ctx : FnCtx) (X : ExtSem) :
     CmpOverwrite (valueSem F ctx X) :=
-  cmpOverwrite_of_mspec (sb := ctx.slotBase) fun i hs => by
-    funext us w; simp only [valueSem, hs, ↓reduceIte]
+  cmpOverwrite_of_mspec (sb := ctx.slotBase)
+    (fun i hs => by funext us w; simp only [valueSem, hs, ↓reduceIte])
+    (jumpPlain_of_csem (F := F) (ctx := ctx) (X := X) fun l => by
+      funext us w; simp [valueSem, specForm, pureForm, cmpForm])
 
 /-- Every specified pure producer or compare can be realized by the existing semantics,
 with the same definition values and control and a related concrete world. -/

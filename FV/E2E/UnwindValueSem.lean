@@ -102,8 +102,10 @@ theorem valueSemU_pure {i : MInst} {us outs : List CV} {w w' : Arm.ArmState} {ct
 /-- The value semantics with unwinding lets the next compare overwrite a compare's flags. -/
 theorem valueSemU_cmpOverwrite (F : BitVec 64 → Prop) (ctx : FnCtx) (X : ExtSem) (XR : XRaise) :
     CmpOverwrite (valueSemU F ctx X XR) :=
-  cmpOverwrite_of_mspec (sb := ctx.slotBase) fun i hs => by
-    funext us w; simp only [valueSemU, hs, ↓reduceIte]
+  cmpOverwrite_of_mspec (sb := ctx.slotBase)
+    (fun i hs => by funext us w; simp only [valueSemU, hs, ↓reduceIte])
+    (jumpPlain_of_csem (F := F) (ctx := ctx) (X := X) fun l => by
+      funext us w; simp [valueSemU, csemU, specForm, pureForm, cmpForm])
 
 /-- With the callees' exclusivity, a `csem` step is a `csemU` step. -/
 theorem csemU_of_csem
@@ -269,8 +271,10 @@ theorem valueSemVU_not_pure {i : MInst} (hp : specForm i = false) :
 compare's flags. -/
 theorem valueSemVU_cmpOverwrite (gv : Nat → String → Prop) (F : BitVec 64 → Prop) (ctx : FnCtx)
     (X : ExtSem) (XR : XRaise) : CmpOverwrite (valueSemVU gv F ctx X XR) :=
-  cmpOverwrite_of_mspec (sb := ctx.slotBase) fun i hs => by
-    funext us w; simp only [valueSemVU, hs, ↓reduceIte]
+  cmpOverwrite_of_mspec (sb := ctx.slotBase)
+    (fun i hs => by funext us w; simp only [valueSemVU, hs, ↓reduceIte])
+    (jumpPlain_of_csem (F := F) (ctx := ctx) (X := X) fun l => by
+      funext us w; simp [valueSemVU, csemVU, csemU, specForm, pureForm, cmpForm])
 
 /-- **Where no callee raises, `valueSemVU` is `valueSemV`.** -/
 theorem valueSemVU_noRaise {i : MInst} {us : List CV} {w : Arm.ArmState}

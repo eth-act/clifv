@@ -28,8 +28,10 @@ theorem valueSemG_cmpOverwrite (F : BitVec 64 → Prop) (ctx : FnCtx) (X : ExtSe
     (sigs : List Clif.Signature) (sp0 : BitVec 64)
     (Pc : String → Clif.Signature → List Clif.Val → Clif.Mem → Prop) :
     CmpOverwrite (valueSemG F ctx X Rd syms exts sigs sp0 Pc) :=
-  cmpOverwrite_of_mspec (sb := ctx.slotBase) fun i hs => by
-    funext us w; simp only [valueSemG, hs, ↓reduceIte]
+  cmpOverwrite_of_mspec (sb := ctx.slotBase)
+    (fun i hs => by funext us w; simp only [valueSemG, hs, ↓reduceIte])
+    (jumpPlain_of_csem (F := F) (ctx := ctx) (X := X) fun l => by
+      funext us w; simp [valueSemG, csemG, GuardR, GuardC, specForm, pureForm, cmpForm])
 
 theorem valueSemG_sub {i : MInst} {us : List CV} {w : Arm.ArmState} {r : List CV × Arm.ArmState × Ctl}
     (h : valueSemG F ctx X Rd syms exts sigs sp0 Pc i us w = some r) :

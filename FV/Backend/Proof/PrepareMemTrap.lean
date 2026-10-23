@@ -34,6 +34,10 @@ theorem cmpForm_of_loopTrap {i : MInst} {t : Clif.TrapCode × Nat} (h : loopTrap
     DeadCleanup.cmpForm i = false := by
   cases i <;> simp_all [loopTrap?, DeadCleanup.cmpForm]
 
+theorem isJump_of_loopTrap {i : MInst} {t : Clif.TrapCode × Nat} (h : loopTrap? i = some t) :
+    DeadCleanup.isJump i = false := by
+  cases i <;> simp_all [loopTrap?]
+
 theorem loopTrap?_setTargets {i i' : MInst} {ls : List Label} (h : i.setTargets ls = some i') :
     loopTrap? i' = loopTrap? i := by
   unfold MInst.setTargets at h
@@ -63,7 +67,7 @@ theorem memTraps_clean {vc : VCode} {sem : Sem}
   obtain ⟨vb0, hb0⟩ := entry_block hstar hb
   obtain ⟨c1, hstar', hr⟩ := DeadCleanup.star_sim hp hcmp ht (DeadCleanup.rel_entry hb0 a w0) hstar
   obtain ⟨k', a', rfl, hb', hi', hus⟩ := DeadCleanup.rel_kept hr hb hi hop (pureForm_of_loopTrap hlt)
-    (cmpForm_of_loopTrap hlt)
+    (cmpForm_of_loopTrap hlt) (isJump_of_loopTrap hlt)
   exact ⟨b, k', a', w1, DeadCleanup.cleanBlock vc 0 vb, i, ops, u, us, n, hstar', hb', hi', hop,
     hus ▸ hu, hlt, hA⟩
 

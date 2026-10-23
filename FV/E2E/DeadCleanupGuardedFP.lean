@@ -65,8 +65,10 @@ theorem valueSemGF_cmpOverwrite (F : BitVec 64 → Prop) (ctx : FnCtx) (X : ExtS
     (sigs : List Clif.Signature) (sp0 : BitVec 64)
     (Pc : String → Clif.Signature → List Clif.Val → Clif.Mem → Prop) :
     CmpOverwrite (valueSemGF F ctx X Rd syms exts sigs sp0 Pc) :=
-  cmpOverwrite_of_mspec (sb := ctx.slotBase) fun i hs => by
-    funext us w; simp only [valueSemGF, hs, ↓reduceIte]
+  cmpOverwrite_of_mspec (sb := ctx.slotBase)
+    (fun i hs => by funext us w; simp only [valueSemGF, hs, ↓reduceIte])
+    (jumpPlain_of_csem (F := F) (ctx := ctx) (X := X) fun l => by
+      funext us w; simp [valueSemGF, csemGF, csemG, GuardR, GuardC, specForm, pureForm, cmpForm])
 
 theorem memRefinesR_valueSemGF {sb : Nat} (hsb : ctx.slotBase = sb)
     (hsym : ∀ n b, syms n = some b → X.sym n 0 = BitVec.ofNat 64 b) :

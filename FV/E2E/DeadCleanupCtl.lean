@@ -13,7 +13,8 @@ private theorem clean_ctl {vc : VCode}
   intro b vb k i hb hi
   rw [clean_blocks_map, Array.getElem?_map] at hb
   obtain ⟨old, hb0, rfl⟩ := Option.map_eq_some_iff.mp hb
-  have h := scan_positions vc.classes.size old.insts.toList (exitLive vc 0 old)
+  have h := scan_positions vc.classes.size (exitDead vc old.label) old.insts.toList
+    (exitLive vc 0 old)
     CtlNA (fun i => b = 0 ∧ ArgsOk i)
     (fun j i hj => by
       rcases hv b old j i hb0 (by simpa using hj) with h | ⟨h0, hj, ha⟩
@@ -39,7 +40,8 @@ private theorem clean_entry {vc : VCode}
         have ha : a = .args ds := by simpa [← Array.getElem?_toList, he] using hi
         exact ⟨tail, by rw [ha]⟩
     obtain ⟨tail, he⟩ := hfirst
-    simp [cleanBlock, he, scan_head vc.classes.size (.args ds) tail (exitLive vc 0 vb) rfl rfl]
+    simp [cleanBlock, he, scan_head vc.classes.size (exitDead vc vb.label) (.args ds) tail
+      (exitLive vc 0 vb) rfl rfl]
 
 /-- The old control-layout conditions hold after cleanup and preparation. -/
 theorem ctlInsts_cleanup_pipeline {p : Clif.Program} {f : Clif.Function} {vc vcp : VCode}

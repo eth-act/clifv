@@ -38,7 +38,7 @@ theorem unwinds_clean {vc : VCode} {sem : Sem}
     | refl => exact ⟨vb, hb⟩
     | step h _ => cases h with | step he _ _ _ _ _ => exact ⟨_, he⟩
   obtain ⟨c1, hstar', hr⟩ := star_sim hp hcmp ht (rel_entry hb0 ρ₀ w₀) hstar
-  obtain ⟨k', ρ', rfl, hb', hi', hu⟩ := rel_kept hr hb hi hop rfl rfl
+  obtain ⟨k', ρ', rfl, hb', hi', hu⟩ := rel_kept hr hb hi hop rfl rfl rfl
   exact ⟨b, k', ρ', w1, cleanBlock vc 0 vb, info, ops, outs, hstar', hb', hi', hop,
     by rw [← hu]; exact hraise, by rw [← hu]; exact hs, hlen⟩
 
