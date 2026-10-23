@@ -987,6 +987,29 @@ they are; the per-thread layers are new files.
           activation's `(cm, n)` pair is carried, so the per-alloc form composes without a
           per-range case split. Witness `CallValidWitness.lean` (`allocW`, `retW`: a callee
           with a placed slot).
+        - *Segment pieces on the thread (done, AtomicsCalls15)*: **`CallSegLift.realizedT_lift`**
+          (a chain segment `CRun` from the activation's own state, lifted below its callers by
+          `crun_pushC`, `Refines.prefixNil`, cut before a masked read by `realizedT_cut`);
+          **`CallStepT`**: `cstepS_of_cstepI`, `realizedT_nil`, **`realizedT_call`** (the `bl`
+          label realizing the CLIF call at `pushC ext s`, the callee's placed slots added to the
+          mask), **`realizedT_priv`** (private Arm labels, no `relXW`, realizing event-free CLIF
+          steps), `cstepS_ret_lift`; **`CallRetT.realizedT_ret`** (a callee's `RetEnd` pause on
+          the linked machine: no CLIF step before the `ret`, the CLIF return into the caller from
+          it on, `RetC` after it). Witnesses `CallSegLiftWitness`, `CallStepTWitness`,
+          `CallRetTWitness`.
+        - *Left for `SegOkG` (next)*: per activation `g = (n, F, s0, K, G, ra, ext, …)` of a link
+          whose functions are all compiled (a bundle of each function's static facts: the
+          `driverHypT_ofA` checks, `PrepFacts`, `CheckedAt`, `MemScopeLSC`, `LFn.Static`),
+          `ok` = `OkPriv` of the thread's bound (implies each `OkPriv (L.act …)` by `PRun.mono`);
+          `Inv` entry form = `arm_isel_refines_abiCRNX`'s premises at `pushC ext cs` with the
+          mask/dirty invariants (dirty ⊆ `PrivA ∪ U ∪ NS`, `AllocInvD` for every open
+          activation), resume form = `arm_isel_refinesCRNX`'s premises (from `resume_allA`);
+          the four ends: whole run / `Stop` / masked read → `E`; call pause → `call_end` +
+          `realizedT_call` (`Ent` of the callee, `KB = KA - frameDrop`) with the resume
+          obligation `Ret → Inv` via `resume_allA` (premise `hB`: the callee's `RelW`, item (1),
+          #567; `hval` from `valid_of_allocInvD`); return pause → `realizedT_ret` (`Ret`). Then
+          `link_composeT`, the top-level theorem (end: `Stop`, masked read, masked return),
+          `realizes_call_full`/rmw witness re-derived, TO-PROVE T2 rows.
         (iv) the thread-wide private set (every activation's `PrivA` and the CLIF events' avoidance
         of it; with CLIF stack slots in callees the private sets of different activations overlap
         other activations' slots); then `SegOk`, `link_compose_ext`, and `realizes_call_full`/the
