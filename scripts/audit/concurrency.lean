@@ -985,3 +985,10 @@ import FVTest.Concurrency.LitmusFull
 #print axioms Concurrency.CallResumeChecks.callDefsRetB_iff
 #print axioms Concurrency.CallResumeChecks.habi_regs
 #print axioms Concurrency.CallResumeAll.Witness.defs_fC -- witness: native_decide
+#print axioms Concurrency.CallResumeAll.resume_allP
+#print axioms Concurrency.CallArity.callArityBl_of_C
+#print axioms Concurrency.CallArity.callArity_of
+#print axioms Concurrency.CallArity.returns_le_sigRets
+#print axioms Concurrency.CallArity.match_atCallA
+#print axioms Concurrency.CallArity.resume_allA
+#print axioms Concurrency.CallResumeAll.Witness.arity_fC -- witness: native_decide

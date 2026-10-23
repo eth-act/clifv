@@ -915,8 +915,13 @@ they are; the per-thread layers are new files.
         `RelW` and `ArgsAtEntry` from the call's fixed uses (layers 2–4 at the `bl`).
         **`resume_all`'s static premises as checks (done, `CallResumeChecks.lean`, witness
         `defs_fC`)**: `callDefsVirtB_iff` (`hvdef`), `callDefsRetB_iff` + `habi_regs` (the register
-        part of `habi`), both sound and complete. The arity part (`defs.length = sigRets`) stays a
-        premise: it ties the VCode call's symbol to the CLIF extern (ISLE lowering of `call`).
+        part of `habi`), both sound and complete. **The arity part as a check (done,
+        `CallArity.lean`, witness `CallArityWitness.arity_fC`)**: `callArityB`/`callArityBl`/
+        `callArityC` (per statement on the driver's lowering: a `call fn _` whose code is one `call`
+        defines `(sigRets ext.sig).length` registers, `ext = f.extern? fn`), `match_atCallA`
+        (`match_atCall` with the arity), `resume_allP` (`resume_all` with `habi` only at the paused
+        instruction; `resume_all` its corollary), **`resume_allA`** (`resume_all` with `habi`
+        replaced by `CallDefsRet` + `callArityBl`; `rvals.length ≤ defs` by `returns_le_sigRets`).
         (iv) the thread-wide private set (every activation's `PrivA` and the CLIF events' avoidance
         of it; with CLIF stack slots in callees the private sets of different activations overlap
         other activations' slots); then `SegOk`, `link_compose_ext`, and `realizes_call_full`/the
