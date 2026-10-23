@@ -726,6 +726,12 @@ integer payload vregs; `fTryMix`: returns in v0 and x0, x0's payload aliased to 
 `LowerTryOkP.toC`), `tryRulesCorrectTFP_program`; `tryRegsOfC_defs`: the call's defs are
 `outDefsC b (ps ++ fr) (cs ++ ints)`, consecutive fresh vregs. Open: plugging the typed `try_call`
 family into the chain (with `lowTerm` on `exnTableOpndC`), `try_call_indirect` (slice 3).
+Measured (`cargo fv test --lean-link --build-std`, examples/fv-demo, 2026-10-23,
+`scripts/float-fallbacks.py --before` the std-t3b report): of std's 39 fallbacks "try_call with
+f32/f64 parameters or returns" 37 now compile (unverified, so cg_clif's code is kept under
+`--lean-link`), 1 is a `try_call_indirect` (slice 3), 1 stops at an `f64const` needing the
+literal pool (`emit_u64_le_const` unmodelled, #565). The runtests `float_try.clif` are
+byte-identical to stock Cranelift (`lean-backend-encode-check.sh`: 6/6).
 
 ## 4. Known hazards
 
