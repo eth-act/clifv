@@ -205,3 +205,5 @@ import FV.Concurrency.ClifThreadI
 import FV.Concurrency.ClifThreadIWitness
 import FV.Concurrency.PrivCohT
 import FV.Concurrency.PrivCohTWitness
+import FV.Concurrency.CallComposeT
+import FV.Concurrency.CallComposeTWitness

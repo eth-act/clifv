@@ -909,6 +909,20 @@ they are; the per-thread layers are new files.
         `docs/decisions/arm-model.md`. Witnesses (`PrivCohTWitness.lean`): `refinesT_reuse` (a spill
         at 100, then a CLIF store and load of a slot at 100), `not_refines_reuse` (no fixed private
         set realizes it), `ret_threadsT` (`realizes_of_threads_privT` on `ProgWitness`).
+        **Composition (done, `CallComposeT.lean`)**: `RefinesC.app`, **`RefinesT.app`** (private sets
+        concatenate, `catP`; the locations not `Clean` at the end of the first segment are dirty at
+        the start of the second), `clean_app`; `maskOf`, `CStepS` (`CStepI` with the mask in the
+        thread state's bytes), `CRunS`; `RealizedT env p Bnd ls k c c' D D'` (private sets within
+        the thread's bound `Bnd`, dirty sets at start/end), `RealizedT.zero`/`trans`;
+        `FunRealG`/`SegOkG`/**`link_composeG`** (the linking induction for any realization with
+        `zero`/`le`/`trans`), **`link_composeT`**, **`realizes_linkedT`** (program level, premise
+        `StackDisjoint` for the bounds and start-dirty sets). Witnesses `CallComposeTWitness.lean`
+        (`realizedT_trans0`, `funRealT_ext`, `linkedT_ret`). **Next**: `SegOkG` for compiled
+        activations (a `Refines` segment of `CStep` runs → `RealizedT` of `CStepS` runs, truncated
+        before a read of a masked byte; invariant: dirty ⊆ mask ∪ `RL.F` of the running activation),
+        then AtomicsCalls7's steps 1–3 (`RetEnd` → (2c), the two `rets` ends, (2b) entry with
+        `cstepI_call`), the linked machine, `realizes_call_full`/rmw witness on `link_composeT`, a
+        `CStepS` version of `program_correct` (multi-threaded `Clif.run` with masks).
   * **the prologue, from the ABI entry (done, `ArmAllocEntry.lean`)**: `stp_fplr_evs` (the
     prologue's `stp x29, x30, [sp, #-16]!`: one plain write at `sp - 16`, no exclusive);
     `q_init_lines` (`RegLevelFrame.q_init` with the prologue's lines, `LinesAt`, and its step
