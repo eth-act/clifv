@@ -900,6 +900,13 @@ they are; the per-thread layers are new files.
         entry: the callee's CLIF state (`enterFunc` under `pushC`, `cstepI_call`), its memory
         relation and `ArgsAtEntry` — waiting for the slot-oracle semantics (SEM1 design A,
         UninitZ), which changes `enterSlots`.
+        **`CStep` runs as `CStepS` runs (done, `CStepSConv.lean`, witnesses
+        `CStepSConvWitness.lean`)**: `cstepS_of_cstep`, `crunS_of_crun` (reads avoiding the
+        evolving mask), `stop_encT` (the CStepS realization stops where the CStep one does),
+        `cstepS_ret_iff` (a bottom-frame return is a `CStepS` step exactly from the empty mask:
+        the top-level contract ends before a return with masked bytes), the start-dirty set
+        `Refines.toT_dirty`/`Refines.toT_parts` (private set ∪ mask ∪ addresses that start no
+        location of a thread-wide partition `PartDisj`/`OnParts`, the T2i restriction).
         (iv) the thread-wide private set (every activation's `PrivA` and the CLIF events' avoidance
         of it; with CLIF stack slots in callees the private sets of different activations overlap
         other activations' slots); then `SegOk`, `link_compose_ext`, and `realizes_call_full`/the

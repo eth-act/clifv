@@ -957,3 +957,23 @@ import FVTest.Concurrency.LitmusFull
 #print axioms Concurrency.LinkedMachine.Witness.static_ld -- witness: native_decide
 #print axioms Concurrency.LinkedMachine.Witness.step_call_C -- witness: native_decide
 #print axioms Concurrency.LinkedMachine.Witness.enter_call_L -- witness: native_decide
+#print axioms Concurrency.CallComposeT.cstep_strip
+#print axioms Concurrency.CallComposeT.cstepI_strip
+#print axioms Concurrency.CallComposeT.cstepS_of_cstep
+#print axioms Concurrency.CallComposeT.crunS_of_crun
+#print axioms Concurrency.CallComposeT.cstepS_ret_of_cstep
+#print axioms Concurrency.CallComposeT.cstepS_ret_iff
+#print axioms Concurrency.CallComposeT.Refines.toTD
+#print axioms Concurrency.CallComposeT.stop_encT
+#print axioms Concurrency.CallComposeT.Refines.toT_dirty
+#print axioms Concurrency.CallComposeT.uniform_of_parts
+#print axioms Concurrency.CallComposeT.Refines.toT_parts
+#print axioms Concurrency.CallComposeT.fresh0_of_mask
+#print axioms Concurrency.CallSeg.WitnessC.cstepS_C -- witness: native_decide
+#print axioms Concurrency.CallSeg.WitnessC.crunS_C -- witness: native_decide
+#print axioms Concurrency.CallSeg.WitnessC.fresh0_WR
+#print axioms Concurrency.CallSeg.WitnessC.toTD_nil
+#print axioms Concurrency.CallSeg.WitnessC.ret_sR
+#print axioms Concurrency.CallSeg.WitnessC.uniform_WR
+#print axioms Concurrency.CallSeg.WitnessC.toT_parts_nil
+#print axioms Concurrency.CallSeg.WitnessC.stop_ret
