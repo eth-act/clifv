@@ -200,4 +200,15 @@ theorem no_load_lower {ctx : Ctx} (noLoads : NoLoadData ctx)
   rw [term_guard]
   decide +kernel
 
+/-- Branch-root evaluation obeys the same exhaustive helper invariant. -/
+theorem no_load_branch {ctx : Ctx} (noLoads : NoLoadData ctx)
+    {vs : List V} {st next : State} {out : Option V} {trace : List RuleId}
+    (run : Stock.runTerm ctx "lower_branch" vs st = .ok (out,next,trace)) : next.sunk = st.sunk := by
+  apply named_frame noLoads (name := "lower_branch") ?_ run
+  intro term lookup
+  rw [program_termByName_lower_branch] at lookup
+  cases lookup
+  rw [term_guard]
+  decide +kernel
+
 end Backend.Stock.Proof.SinkRules
