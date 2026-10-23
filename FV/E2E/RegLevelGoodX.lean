@@ -388,31 +388,48 @@ theorem RL.goodX_execLines {R : RL} (hR : R.Wf) {ls : List Line} {j : Nat} {s s'
     ∀ i < ls.length, R.GoodX (iterN R.step i s) :=
   RL.goodX_execLinesG hR hat hhook htail hprog hpc herr (.inr hsp) hinter hrun hrd
 
-theorem prologueLines_tailFree (n : Nat) : ∀ ln ∈ prologueLines n, ln.tailFree = true := by
+theorem spAdjLines_tailFree (sub : Bool) (size : Nat) : ∀ ln ∈ spAdjLines sub size, ln.tailFree = true := by
   intro ln h
-  simp only [prologueLines, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at h
-  rcases h with (rfl | rfl) | h
-  · rfl
-  · rfl
+  unfold spAdjLines at h
+  split at h
+  · simp at h
   · split at h
-    · simp at h
-    · split at h
+    · simp at h; subst h; rfl
+    · rcases List.mem_append.1 h with h | h
+      · exact loadConst64_tailFree _ _ _ h
       · simp at h; subst h; rfl
-      · rcases List.mem_append.1 h with h | h
-        · exact loadConst64_tailFree _ _ _ h
-        · simp at h; subst h; rfl
 
-theorem epilogueLines_tailFree (n : Nat) : ∀ ln ∈ epilogueLines n, ln.tailFree = true := by
+theorem pushLines_tailFree (int : Bool) (rs : List Reg) : ∀ ln ∈ pushLines int rs, ln.tailFree = true := by
   intro ln h
-  simp only [epilogueLines, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at h
-  rcases h with h | (rfl | rfl)
-  · split at h
-    · simp at h
-    · split at h
-      · simp at h; subst h; rfl
-      · rcases List.mem_append.1 h with h | h
-        · exact loadConst64_tailFree _ _ _ h
-        · simp at h; subst h; rfl
+  obtain ⟨x, rfl, r, r', hx⟩ := pushLines_mem h
+  rcases hx with rfl | rfl | rfl | rfl <;> rfl
+
+theorem popLines_tailFree (int : Bool) (rs : List Reg) : ∀ ln ∈ popLines int rs, ln.tailFree = true := by
+  intro ln h
+  obtain ⟨x, rfl, r, r', hx⟩ := popLines_mem h
+  rcases hx with rfl | rfl | rfl | rfl <;> rfl
+
+theorem prologueLines_tailFree (saves : List Reg) (n : Nat) :
+    ∀ ln ∈ prologueLines saves n, ln.tailFree = true := by
+  intro ln h
+  rw [prologueLines_eq] at h
+  simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at h
+  rcases h with (rfl | rfl) | h | h | h
+  · rfl
+  · rfl
+  · exact pushLines_tailFree _ _ _ h
+  · exact pushLines_tailFree _ _ _ h
+  · exact spAdjLines_tailFree _ _ _ h
+
+theorem epilogueLines_tailFree (saves : List Reg) (n : Nat) :
+    ∀ ln ∈ epilogueLines saves n, ln.tailFree = true := by
+  intro ln h
+  rw [epilogueLines_eq] at h
+  simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at h
+  rcases h with (h | h | h | rfl) | rfl
+  · exact spAdjLines_tailFree _ _ _ h
+  · exact popLines_tailFree _ _ _ h
+  · exact popLines_tailFree _ _ _ h
   · rfl
   · rfl
 
@@ -445,13 +462,13 @@ theorem codeLinesE_noTlsTail {c : FnCtx} {af : AFunc} :
             simp only [ainstLines, pure, Except.pure, Except.ok.injEq] at hr
             subst hr
             split at hln
-            · simpa [Line.tailFree] using prologueLines_tailFree _ _ hln
+            · simpa [Line.tailFree] using prologueLines_tailFree _ _ _ hln
             · simp at hln
           | epilogueRet =>
             simp only [ainstLines, pure, Except.pure, Except.ok.injEq] at hr
             subst hr
             split at hln
-            · simpa [Line.tailFree] using epilogueLines_tailFree _ _ hln
+            · simpa [Line.tailFree] using epilogueLines_tailFree _ _ _ hln
             · simp at hln; rw [hln.1]; rfl
         · exact codeLinesE_noTlsTail as _ _ _ (fun n rd tmp h => hno n rd tmp (by simp [h])) hr2
             i t hln
@@ -468,16 +485,43 @@ theorem OneLine.not_tls {ctx : FnCtx} {i : MInst} (h : OneLine ctx i) :
   · simp [throw, throwThe, MonadExceptOf.throw] at this
   · simp [pure, Except.pure] at this
 
-/-- **A move on the machine**: from `Q` at a move item, the machine runs the move's lines and
-reaches `Q` at the next item with `MStep.move`'s store. -/
-theorem realizes_move {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b : Nat} {src dst : Loc}
-    {its : List RItem} {m : Loc → CV} {w : Arm.ArmState}
+/-- A callee save (a move into a save slot) emits no code: `Q` holds at the next item, the save
+slots not being live. -/
+theorem q_save {R : RL} {s : Arm.ArmState} {b : Nat} {src dst : Loc}
+    {its : List RItem} {m : Loc → CV} {w : Arm.ArmState} (hds : dst.isSave = true)
     (hq : Q R s (.run ⟨b, .move src dst :: its, m, w⟩)) :
-    ∃ n, Q R (iterN R.step n s) (.run ⟨b, its, upd m dst (m src), w⟩) ∧
-      ∀ i < n, R.GoodX (iterN R.step i s) := by
+    Q R s (.run ⟨b, its, upd m dst (m src), w⟩) := by
   obtain ⟨j, vb, items, pre, code, ls, ps1, ps2, T, hvb, hit, hsplit, hchk, hcode, hls, htr, hdrop,
     hpc, hst⟩ := hq
-  obtain ⟨⟨c, wh, hcm⟩, hLs, hLd, hT, hchk'⟩ := move_facts hit hsplit hchk
+  obtain ⟨c1, c2, hc1, hc2, rfl⟩ := itemsCode_cons hcode
+  rw [itemCode_move] at hc1
+  obtain ⟨r, rfl⟩ : ∃ r, dst = .save r := by cases dst <;> simp [Loc.isSave] at hds; exact ⟨_, rfl⟩
+  have hc1' : c1 = [] := by
+    simp only [RAFrame.moveInsts, pure, Except.pure, Except.ok.injEq] at hc1
+    cases src <;> exact hc1.symm
+  subst hc1'
+  obtain ⟨ls1, ls2, psm, h1, h2, rfl⟩ := codeLinesE_append _ _ _ _ _ hls
+  simp only [codeLinesE, pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at h1
+  obtain ⟨rfl, rfl⟩ := h1
+  refine ⟨j, vb, items, pre ++ [.move src (.save r)], c2, ls2, ps1, ps2, T, hvb, hit,
+    by rw [hsplit]; simp, itemsChecked_move_tail hchk, hc2, h2, htr, by simpa using hdrop, hpc,
+    ⟨fun l hv hL => ?_, hst.world, hst.err, hst.prog, hst.sp, hst.align, hst.fplr, hst.code, hst.gkeep⟩⟩
+  have hne : l ≠ .save r := by rintro rfl; exact hL
+  simp only [upd, hne, ite_false]
+  exact hst.store l hv hL
+
+/-- **A move on the machine**: from `Q` at a move item other than a callee restore, the machine
+runs the move's lines and reaches `Q` at the next item with `MStep.move`'s store. -/
+theorem realizes_move {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b : Nat} {src dst : Loc}
+    {its : List RItem} {m : Loc → CV} {w : Arm.ArmState}
+    (hq : Q R s (.run ⟨b, .move src dst :: its, m, w⟩)) (hns : src.isSave = false) :
+    ∃ n, Q R (iterN R.step n s) (.run ⟨b, its, upd m dst (m src), w⟩) ∧
+      ∀ i < n, R.GoodX (iterN R.step i s) := by
+  by_cases hds : dst.isSave = true
+  · exact ⟨0, q_save hds hq, fun _ h => absurd h (Nat.not_lt_zero _)⟩
+  obtain ⟨j, vb, items, pre, code, ls, ps1, ps2, T, hvb, hit, hsplit, hchk, hcode, hls, htr, hdrop,
+    hpc, hst⟩ := hq
+  obtain ⟨⟨c, wh, hcm⟩, hLs, hLd, hT, hchk'⟩ := move_facts hit hsplit hchk hns (by simpa using hds)
   obtain ⟨c1, c2, hc1, hc2, rfl⟩ := itemsCode_cons hcode
   rw [itemCode_move] at hc1
   obtain ⟨ls1, ls2, psm, h1, h2, rfl⟩ := codeLinesE_append _ _ _ _ _ hls

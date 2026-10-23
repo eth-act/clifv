@@ -425,6 +425,17 @@ theorem mem_blocks_flat {rf : RFunc} {b : Nat} {items : Array RItem} {it : RItem
   simp only [Array.empty_append, Array.mem_flatten, Array.map_id_fun, id]
   exact ⟨items, Array.mem_of_getElem? hb, by simpa using hi⟩
 
+/-- The checker accepts what follows a move it accepts. -/
+theorem itemsChecked_move_tail {R : RL} {vb : VBlock} {src dst : Loc} {its : List RItem}
+    (hchk : ItemsChecked R vb (.move src dst :: its)) : ItemsChecked R vb its := by
+  obtain ⟨c, k, a, out, hcr, hcv, hrun⟩ := hchk
+  simp only [CheckCtx.runItems, bind, Except.bind] at hrun
+  obtain ⟨-, hrun⟩ := Except.seq_ok hrun
+  simp only [CheckCtx.stepMove, bind, Except.bind] at hrun
+  split at hrun
+  · cases hrun
+  exact ⟨c, k, _, out, hcr, hcv, hrun⟩
+
 /-- A move of the checked allocated code other than a callee save or restore: checked, between
 live locations. -/
 theorem move_facts {R : RL} {b : Nat} {vb : VBlock} {items : Array RItem} {pre its : List RItem}
@@ -494,30 +505,52 @@ theorem itemCode_move (fr : RAFrame) (vb : VBlock) (src dst : Loc) :
   generalize fr.moveInsts src dst = x
   cases x <;> simp
 
-/-- The fp/lr slot lies above the frame's slot area. -/
-theorem fplr_outside {R : RL} (hR : R.Wf) (hframe : R.af.frame = true) :
-    ∀ k < 16, ∀ o, o < R.fr.size → spv R.s0 - 16#64 + BitVec.ofNat 64 k ≠ R.spB + BitVec.ofNat 64 o := by
+theorem saveShapeOk_saves {vc : VCode} {rf : RFunc} (h : saveShapeOk vc rf = true) :
+    SavesOk rf.saved := by
+  simp only [saveShapeOk, Bool.and_eq_true, beq_iff_eq] at h
+  have e := h.1
+  have hnd : calleeSaved.Nodup := by decide
+  refine ⟨fun r hr => ?_, ?_⟩
+  · rw [e] at hr; exact (List.mem_filter.1 hr).1
+  · rw [e]; exact hnd.filter _
+
+/-- The frame facts of an activation: it has a frame of `fr.total` bytes, pushes the
+allocation's saved registers into its clobber area `[total - clobberBytes, total)` above the
+CLIF slots, and fits below the entry `sp`. -/
+theorem RL.frame_facts {R : RL} (hR : R.Wf) :
+    R.af.frame = true ∧ R.af.frameSize = R.fr.total ∧ R.af.saves = R.rf.saved ∧
+      SavesOk R.af.saves ∧ R.fr.size + R.vc.slotBytes ≤ R.fr.total - clobberBytes R.af.saves ∧
+      clobberBytes R.af.saves ≤ R.fr.total ∧ R.fr.total % 16 = 0 ∧
+      R.fr.total + 16 ≤ (spv R.s0).toNat ∧ frameDrop R.af = R.fr.total + 16 := by
   obtain ⟨⟨hfs, -⟩, -⟩ := lowerRFunc_ok hR.alloc
-  have hlt' : (spv R.s0).toNat < 18446744073709551616 := (spv R.s0).isLt
-  have hle : R.fr.size ≤ R.fr.total := compute_size_le_total R.vc R.rf
+  have hframe := lowerRFunc_frame hR.alloc
+  obtain ⟨hsh, hsv⟩ := lowerRFunc_saves hR.alloc
+  have h1 := compute_saveBase R.vc R.rf
   have hst := hR.stack.frame.1
-  have hst' : R.fr.total + 16 ≤ (spv R.s0).toNat := by rw [hfs] at hst; exact hst
-  have hd : frameDrop R.af = R.fr.total + 16 := by
-    simp only [frameDrop, hframe, ite_true, hfs, RL.fr]
+  rw [hfs] at hst
+  refine ⟨hframe, hfs, hsv, hsv ▸ saveShapeOk_saves hsh, ?_, ?_, ?_, hst, ?_⟩
+  · rw [hsv]; exact h1.1
+  · rw [hsv]; simp only [RL.fr]; omega
+  · have := h1.2.2; have := clobberBytes_mod R.rf.saved; simp only [RL.fr]; omega
+  · simp only [frameDrop, hframe, ite_true, hfs, RL.fr]
+
+/-- The fp/lr slot and the clobber area lie above the frame's slot area. -/
+theorem fplr_outside {R : RL} (hR : R.Wf) (hframe : R.af.frame = true) :
+    ∀ k < R.topN, ∀ o, o < R.fr.size → R.topB + BitVec.ofNat 64 k ≠ R.spB + BitVec.ofNat 64 o := by
+  obtain ⟨-, -, -, -, hsz, hcb, -, hst', hd⟩ := RL.frame_facts hR
+  have hlt' : (spv R.s0).toNat < 18446744073709551616 := (spv R.s0).isLt
   intro k hk o ho e
   have := congrArg BitVec.toNat e
-  simp only [RL.spB, hd] at this
+  simp only [RL.spB, RL.topB, RL.topN, hd] at this hk
   have hm : (R.fr.total + 16) % 2 ^ 64 = R.fr.total + 16 := Nat.mod_eq_of_lt (by omega)
-  rw [hfs] at hst
-  simp only [RL.fr] at *
+  have hm' : (16 + clobberBytes R.af.saves) % 2 ^ 64 = 16 + clobberBytes R.af.saves := Nat.mod_eq_of_lt (by omega)
   rw [BitVec.toNat_add, BitVec.toNat_add, BitVec.toNat_sub_of_le, BitVec.toNat_sub_of_le] at this
-  · simp only [BitVec.toNat_ofNat, hm] at this
+  · simp only [BitVec.toNat_ofNat, hm, hm'] at this
     rw [Nat.mod_eq_of_lt (a := k) (by omega), Nat.mod_eq_of_lt (a := o) (by omega)] at this
-    have h1 := (spv R.s0).isLt
     rw [Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)] at this
     omega
   · simp only [BitVec.le_def, BitVec.toNat_ofNat, hm]; omega
-  · simp only [BitVec.le_def, BitVec.toNat_ofNat]; omega
+  · simp only [BitVec.le_def, BitVec.toNat_ofNat, hm']; omega
 
 /-- The code lies outside the frame's slot area. -/
 theorem code_outside {R : RL} (hR : R.Wf) {a : BitVec 64} (ha : CodeAddr R.s0 a) :
