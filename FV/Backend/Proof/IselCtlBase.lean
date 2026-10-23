@@ -68,26 +68,31 @@ def single? : List Reg → Option Reg
   | [r] => some r
   | _ => none
 
-/-- `gen_return`: at most 8 values, each in the next return register of its class
-(`retRegsC` of the classes of the returned registers, `regsClasses`). -/
+/-- `gen_return`: at most 8 values, each in the next return register of its class, the
+appended struct pointer of an `sret` function (`sretRet`) in x8 (`retRegsK` of the classes of
+the returned registers, `regsClasses`). -/
 theorem ctor_gen_return_iff (st : LState) (rss : List (List Reg)) (v : V) (st' : LState) :
     externCtor ctx T.gen_return [.regsVec rss] st = .ok (v, st') ↔
-      ∃ ps rs, rss.length ≤ 8 ∧ retRegsC (regsClasses rss) 0 0 = some ps ∧
+      ∃ ps rs, rss.length ≤ 8 ∧
+        retRegsK (rss.length - (sretRet ctx.func).length) (regsClasses rss) = some ps ∧
         rss.mapM single? = some rs ∧ v = .op .unit ∧ st' = st.emit (.rets (rs.zip ps)) := by
   have : externCtor ctx T.gen_return [.regsVec rss] st =
       if rss.length ≤ 8 then
-        match retRegsC (regsClasses rss) 0 0, rss.mapM single? with
+        match retRegsK (rss.length - (sretRet ctx.func).length) (regsClasses rss),
+            rss.mapM single? with
         | some ps, some rs => .ok (.op .unit, st.emit (.rets (rs.zip ps)))
         | _, _ => .unmodeled "gen_return: multi-register values"
       else .unmodeled "gen_return: more than 8 return values" := by
     show (if rss.length ≤ 8 then
-      (match retRegsC (regsClasses rss) 0 0, rss.mapM (fun | [r] => some r | _ => none) with
+      (match retRegsK (rss.length - (sretRet ctx.func).length) (regsClasses rss),
+          rss.mapM (fun | [r] => some r | _ => none) with
         | some ps, some rs => _ | _, _ => _) else _) = _
     rfl
   rw [this]
   by_cases h8 : rss.length ≤ 8
   · rw [if_pos h8]
-    cases retRegsC (regsClasses rss) 0 0 <;> cases rss.mapM single? <;> simp [eq_comm, h8]
+    cases retRegsK (rss.length - (sretRet ctx.func).length) (regsClasses rss) <;>
+      cases rss.mapM single? <;> simp [eq_comm, h8]
   · rw [if_neg h8]
     simp [h8]
 

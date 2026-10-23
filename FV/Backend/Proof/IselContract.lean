@@ -74,6 +74,65 @@ theorem PrefixHold.append {vals : List Clif.Val} {xs : List CV} (h : PrefixHold 
   have hlt : j < xs.length := Nat.lt_of_lt_of_le (List.getElem?_eq_some_iff.mp hj).1 h.1
   rwa [List.getElem?_append_left hlt] at hx
 
+/-- An `ordinary` signature (no struct pointer among its ABI returns) returns its declared
+values only: `lowerFunction` appends nothing to its `return`s (`sretRet`). -/
+theorem sretRet_eq_nil {f : Clif.Function}
+    (ord : (sigRets f.sig).any (·.purpose == .sret) = false) : sretRet f = [] := by
+  unfold sretRet
+  have : sigRets f.sig = f.sig.returns := by
+    unfold sigRets at ord ⊢
+    split
+    · rename_i p hp
+      split
+      · rename_i he
+        rw [hp] at ord
+        simp [he, List.find?_some hp] at ord
+      · rfl
+    · rfl
+  simp [this]
+
+/-- **The return registers of a return of `f`** with the CLIF values `vals` and the ABI return
+values pinned by `us` (`Rets`): for a function whose ABI returns include the struct pointer of
+an `sret` signature (`sigRets`), the CLIF values in x0, x1, … and the ABI returns after them
+(the struct pointer, `sretRet`) in **x8** (`retX`; Cranelift returns it there on aarch64,
+`isa/aarch64/abi.rs:255-270` in cranelift-codegen 0.135.0); for every other function every
+ABI return in x0, x1, … as before. -/
+def RetPins (f : Clif.Function) (vals : List Clif.Val) (us : List (Reg × Reg)) : Prop :=
+  us.map (·.2) = (List.range us.length).map
+    (retX (if (sigRets f.sig).any (·.purpose == .sret) then vals.length else us.length))
+
+/-- An ordinary function's returns are pinned to x0, x1, … (the former statement). -/
+theorem RetPins.ordinary {f : Clif.Function} {vals : List Clif.Val} {us : List (Reg × Reg)}
+    (h : RetPins f vals us) (ord : (sigRets f.sig).any (·.purpose == .sret) = false) :
+    us.map (·.2) = (List.range us.length).map Reg.x := by
+  unfold RetPins at h
+  simp only [ord, Bool.false_eq_true, ↓reduceIte] at h
+  rwa [map_retX_of_le (Nat.le_refl _)] at h
+
+theorem RetPins.of_ordinary {f : Clif.Function} {vals : List Clif.Val} {us : List (Reg × Reg)}
+    (h : us.map (·.2) = (List.range us.length).map Reg.x)
+    (ord : (sigRets f.sig).any (·.purpose == .sret) = false) : RetPins f vals us := by
+  unfold RetPins
+  simp only [ord, Bool.false_eq_true, ↓reduceIte]
+  rwa [map_retX_of_le (Nat.le_refl _)]
+
+/-- The register of the `j`-th ABI return. -/
+theorem RetPins.getElem {f : Clif.Function} {vals : List Clif.Val} {us : List (Reg × Reg)}
+    (h : RetPins f vals us) {j : Nat} (hju : j < us.length) :
+    (us[j]'hju).2 = retX (if (sigRets f.sig).any (·.purpose == .sret) then vals.length
+      else us.length) j := by
+  have := congrArg (fun l => l[j]?) h
+  simp only [List.getElem?_map, List.getElem?_range hju, List.getElem?_eq_getElem hju,
+    Option.map_some] at this
+  exact Option.some.inj this
+
+/-- **A CLIF return value is in x`j`.** -/
+theorem RetPins.x {f : Clif.Function} {vals : List Clif.Val} {us : List (Reg × Reg)}
+    (h : RetPins f vals us) {j : Nat} (hjv : j < vals.length) (hju : j < us.length) :
+    (us[j]'hju).2 = Reg.x j := by
+  rw [h.getElem hju]
+  split <;> exact retX_lt ‹_›
+
 /-- Relation between the CLIF memory (with the activation's slot bases) and a VCode world of
 type `W` (the driver is generic in the world: agent/link-widen, stage 2, runs it on pairs of
 worlds). -/
@@ -759,7 +818,9 @@ def branchIdx (fr : Clif.Frame) : Clif.Terminator → Clif.Res Nat
       .ok (if v.toNat < tbl.length then v.toNat + 1 else 0)
   | _ => .stuck "not a branch"
 
-/-- **`lower` on `return`/`trap`, `lower_branch` on a branch** (terminator `t`). -/
+/-- **`lower` on `return`/`trap`, `lower_branch` on a branch** (terminator `t`). A `return` pins
+its values to x0, x1, … and the struct pointer an `sret` function appends (`sretRet`) to x8
+(`retX`). -/
 structure LowerTermOk {W : Type} (isem : ISem CV W) (MR : MemRelTW W) (ctx : Ctx)
     (t : Clif.Terminator)
     (targets : List Label) (st st' : LState) (ms : List MInst) : Prop where
@@ -771,7 +832,8 @@ structure LowerTermOk {W : Type} (isem : ISem CV W) (MR : MemRelTW W) (ctx : Ctx
     | .ret xs => ∀ vals, fr.getMany xs = .ok vals → UsesOk st fr ms ∧
         ∃ k us ops ρ₁ w₁ outs w₂,
           seqRun isem ms ρ w = some (.stop k (.rets us) ops ρ₁ w₁ outs w₂ .ret) ∧
-          us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = vals.length ∧
+          us.map (·.2) = (List.range us.length).map
+            (retX (vals.length - (sretRet ctx.func).length)) ∧ us.length = vals.length ∧
           AllHold vals (vuses ops ρ₁) ∧ MR fr.slots cm w₂
     | .trap c => UsesOk st fr ms ∧ ∃ k i ops ρ₁ w₁ outs w₂,
         seqRun isem ms ρ w = some (.stop k i ops ρ₁ w₁ outs w₂ .halt) ∧ trapCode? i = some c
@@ -1411,7 +1473,8 @@ theorem instData_callIndirect_int {f : Clif.Function} {sig : Nat} {c : Nat} {arg
 
 /-- In an integer context (`CtxInv`: result types `i8..i64`) a `call`'s callee returns
 integers, so its ABI returns (`sigRets`) are all of class `int` (the typed `gen_call_output`
-allocates integer vregs and `gen_call_rets` puts them in x0..). -/
+allocates integer vregs and `gen_call_rets` puts them in x0.., an `sret` callee's struct
+pointer in x8, `retRegsK`). -/
 theorem CtxInv.call_retClasses {f : Clif.Function} {ctx : Ctx} (hctx : CtxInv f ctx) {ii : Nat}
     {info : IInfo} {fn : Clif.FnRef} {args : List Nat} (hi : ctx.insts[ii]? = some info)
     (hcl : info.clif = some (.call fn args)) {e : Clif.ExtFunc} (he : f.extern? fn = some e) :

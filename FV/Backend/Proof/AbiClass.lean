@@ -465,6 +465,125 @@ theorem retRegsC_vreg_int (xs : List Nat) :
   apply List.eq_replicate_iff.mpr
   simp [Reg.homeCls]
 
+/-! ### The struct pointer of an `sret` signature in x8 (`retX`, `retRegsK`, `sigRetRegs`) -/
+
+theorem retX_lt {k j : Nat} (h : j < k) : retX k j = .x j := by simp [retX, h]
+
+theorem retX_ge {k j : Nat} (h : k ≤ j) : retX k j = .x 8 := by
+  simp [retX, Nat.not_lt.mpr h]
+
+/-- With at least `n` declared returns, the first `n` ABI returns are in x0..x(n-1). -/
+theorem map_retX_of_le {k n : Nat} (h : n ≤ k) :
+    (List.range n).map (retX k) = (List.range n).map Reg.x :=
+  List.map_congr_left fun _ hj => retX_lt (Nat.lt_of_lt_of_le (List.mem_range.mp hj) h)
+
+/-- `n ≤ 8` integer values, the first `k` declared: x0.. for those, x8 after them. -/
+theorem retRegsK_int (k n : Nat) (h : n ≤ 8) :
+    retRegsK k (List.replicate n .int) = some ((List.range n).map (retX k)) := by
+  unfold retRegsK
+  rw [List.take_replicate, retRegsC_int, retRegs, if_pos (by omega)]
+  simp only [Option.map_some, Option.some.injEq, List.length_replicate]
+  apply List.ext_getElem (by simp; omega)
+  intro j h1 h2
+  simp only [List.getElem_map, List.getElem_range]
+  by_cases hj : j < min k n
+  · rw [List.getElem_append_left (by simpa using hj)]
+    simp [retX_lt (show j < k by omega)]
+  · rw [List.getElem_append_right (by simp; omega)]
+    simp [retX_ge (show k ≤ j by simp at h2; omega)]
+
+/-- With every value declared, `retRegsK` is `retRegsC`. -/
+theorem retRegsK_of_le {k : Nat} {cs : List RegClass} (h : cs.length ≤ k) :
+    retRegsK k cs = retRegsC cs 0 0 := by
+  unfold retRegsK
+  rw [List.take_of_length_le h, Nat.sub_eq_zero_of_le h]
+  cases retRegsC cs 0 0 <;> simp
+
+theorem sigRetRegs_eq {s : Clif.Signature} {ps : List Reg} (h : sigRetRegs s = some ps) :
+    (sigRets s).length ≤ 8 ∧ ps = (List.range (sigRets s).length).map (retX s.returns.length) := by
+  unfold sigRetRegs at h
+  split at h
+  · exact ⟨‹_›, (Option.some.inj h).symm⟩
+  · cases h
+
+theorem sigRetRegs_some {s : Clif.Signature} (h : (sigRets s).length ≤ 8) :
+    sigRetRegs s = some ((List.range (sigRets s).length).map (retX s.returns.length)) := by
+  simp [sigRetRegs, h]
+
+/-! ### The defs of a call (`gen_call_rets`) and of a `try_call` (`gen_try_call_rets`)
+
+The ABI returns of `sig` (`sigRets`, `n` of them) are in `sigRetRegs sig`: x0.. for the `k`
+declared ones, x8 for the struct pointer of an `sret` signature (`k = 0`, `n = 1`). A
+`try_call` also defines the payload registers x0 and x1 that are not return registers, with the
+next vregs: `tryD sig = n - k` (0, or 1 for an `sret` callee) is the def index of payload x0. -/
+
+/-- The def index of a `try_call`'s payload x0: 0, or 1 after an `sret` callee's struct pointer. -/
+def tryD (sig : Clif.Signature) : Nat := (sigRets sig).length - sig.returns.length
+
+/-- The register of the `j`-th def of a call (`j < n`: the `j`-th ABI return) or of a
+`try_call` (then the payloads x0, x1 that are not return registers). -/
+def tryReg (sig : Clif.Signature) (j : Nat) : Reg :=
+  if j < (sigRets sig).length then retX sig.returns.length j else .x (j - tryD sig)
+
+/-- The number of defs of a `try_call` of `sig`: `max n 2`, 3 for an `sret` callee. -/
+def tryCnt (sig : Clif.Signature) : Nat := max (sigRets sig).length (tryD sig + 2)
+
+/-- `sigRets` is the declared returns, or (an `sret` signature without returns) one value. -/
+theorem sigRets_cases' (s : Clif.Signature) :
+    sigRets s = s.returns ∨ (s.returns = [] ∧ (sigRets s).length = 1) := by
+  unfold sigRets
+  cases s.params.find? (·.purpose == .sret) with
+  | none => exact .inl rfl
+  | some p =>
+    cases hr : s.returns with
+    | nil => exact .inr ⟨rfl, rfl⟩
+    | cons a l => exact .inl rfl
+
+/-- The ABI return registers through `tryReg`. -/
+theorem map_tryReg (sig : Clif.Signature) :
+    (List.range (sigRets sig).length).map (tryReg sig) =
+      (List.range (sigRets sig).length).map (retX sig.returns.length) :=
+  List.map_congr_left fun _ hj => by simp [tryReg, List.mem_range.mp hj]
+
+/-- For a signature whose ABI returns are its declared returns, `tryReg` is `x j`. -/
+theorem tryReg_ord {sig : Clif.Signature} (h : sigRets sig = sig.returns) (j : Nat) :
+    tryReg sig j = .x j := by
+  unfold tryReg tryD
+  rw [h]
+  split
+  · exact retX_lt ‹_›
+  · simp
+
+theorem tryD_ord {sig : Clif.Signature} (h : sigRets sig = sig.returns) : tryD sig = 0 := by
+  simp [tryD, h]
+
+theorem tryCnt_ord {sig : Clif.Signature} (h : sigRets sig = sig.returns) :
+    tryCnt sig = max (sigRets sig).length 2 := by
+  simp [tryCnt, tryD_ord h]
+
+theorem tryD_sret {sig : Clif.Signature} (h0 : sig.returns = []) (h1 : (sigRets sig).length = 1) :
+    tryD sig = 1 := by simp [tryD, h0, h1]
+
+theorem tryCnt_sret {sig : Clif.Signature} (h0 : sig.returns = []) (h1 : (sigRets sig).length = 1) :
+    tryCnt sig = 3 := by simp [tryCnt, tryD_sret h0 h1, h1]
+
+/-- The defs of an `sret` callee's `try_call`: x8 (the struct pointer), x0, x1. -/
+theorem tryReg_sret {sig : Clif.Signature} (h0 : sig.returns = []) (h1 : (sigRets sig).length = 1) :
+    (List.range (tryCnt sig)).map (tryReg sig) = [.x 8, .x 0, .x 1] := by
+  rw [tryCnt_sret h0 h1]
+  simp [List.range_succ, tryReg, h0, h1, tryD_sret h0 h1, retX]
+
+theorem sigRetRegs_tryReg {s : Clif.Signature} {ps : List Reg} (h : sigRetRegs s = some ps) :
+    (sigRets s).length ≤ 8 ∧ ps = (List.range (sigRets s).length).map (tryReg s) := by
+  obtain ⟨h8, rfl⟩ := sigRetRegs_eq h
+  exact ⟨h8, (map_tryReg s).symm⟩
+
+/-- `gen_call_rets` on `n ≤ 8` integer outputs of `sig`: the registers `tryReg sig j`. -/
+theorem retRegsK_tryReg (sig : Clif.Signature) (h8 : (sigRets sig).length ≤ 8) :
+    retRegsK sig.returns.length (List.replicate (sigRets sig).length .int) =
+      some ((List.range (sigRets sig).length).map (tryReg sig)) := by
+  rw [retRegsK_int _ _ h8, map_tryReg]
+
 /-! ## Witnesses -/
 
 /-- `(f64, i64, f32) → (f64, i64, f32)`. -/
@@ -497,6 +616,11 @@ theorem sigArgLocs_sigSret :
     sigArgLocs sigSret = .ok ([.reg (.x 8), .reg (.v 0), .reg (.x 0)], 0) := rfl
 
 theorem abiRetRegs_sigSret : abiRetRegs sigSret = some [.x 0] := rfl
+
+/-- The struct pointer `sigSret` returns is in x8: `gen_return` and `gen_call_rets` place it
+there (`retRegsK` with no declared return), as `try_call` does (`sigRetRegs`). -/
+theorem retRegsK_sigSret : retRegsK sigSret.returns.length [.int] = some [.x 8] ∧
+    sigRetRegs sigSret = some [.x 8] := ⟨rfl, rfl⟩
 
 /-- Nine `f32` returns do not fit v0..v7. -/
 theorem abiRetRegs_nineFloats :

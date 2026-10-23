@@ -150,7 +150,7 @@ theorem ret_retShape {p : Program} (hp : Data p) : LowerRetShapeOk p rule_lower_
     subst hs
     have hrs' := mapM_valueReg hctx hrs
     subst hrs'
-    obtain ⟨-, rfl⟩ := retRegs_eq hps
+    obtain ⟨-, rfl⟩ := hps
     refine ⟨[.rets _], by simp [LState.emit]; rfl, fun m hm us hus => ?_⟩
     simp only [List.mem_singleton] at hm
     subst hm; cases hus
