@@ -58,19 +58,21 @@ end thread
 /-- **`SegOkG` for every activation of a link of compiled functions** (WIP). -/
 theorem segOkG {L : Link} {env : Clif.Env} {p : Clif.Program} {Bnd : Nat → Prop} {c0 : TState}
     {Loc : Nat → Nat → Prop} (hP : PartsOk env p c0 Loc) (hdisj : PartDisj Loc)
-    {syms : String → Option Nat}
+    {syms : String → Option Nat} {Dcap : Nat}
     (hlink : ∀ n f, p.func? n = some f → ∃ F, (n, F) ∈ L.fns ∧ FnOk L env p syms n F f)
     (g : Act) :
     SegOkG (RealT env p Bnd) L.M (OkB Bnd) (Ent L env p Bnd c0 Loc) (Ret L env p c0 Loc)
-      (EndT env p) (Inv L env p Bnd c0 Loc g) g := by
+      (EndT env p Dcap) (Inv L env p Bnd c0 Loc g) g := by
   intro u c x d hI ls t' hr
   obtain ⟨s, U, hd1, hLv, hch⟩ := hI
   obtain ⟨d1, D⟩ := d
   simp only at hd1
   subst hd1
   obtain ⟨k, trS, t, ψ, hk, hx, hrun, href, hend⟩ := hch ls t' (prun_okPriv hLv.bnd hr)
-  obtain ⟨k', d', hR, hE⟩ := seg_end (Bnd := Bnd) hLv.bnd hP hdisj hr hk g.ext hLv.reach hrun hx
-    href hLv.dirty (Pz := fun s' => CallPz L g (g.r0 L) x (ls.take k) s' ∨
+  obtain ⟨k', d', hR, hE⟩ := seg_end (Bnd := Bnd) (Dcap := Dcap) hLv.bnd hP hdisj hr hk g.ext
+    hLv.reach hrun hx href (N := fun _ => False)
+    (fun a h => (hLv.dirty a h).imp_right (Or.imp_right .inl)) (fun _ _ _ _ h => h)
+    (Pz := fun s' => CallPz L g (g.r0 L) x (ls.take k) s' ∨
       RetPz L env p g (g.r0 L) x (ls.take k) s')
     (hend.imp_right (Or.imp_right fun ⟨s', h1, h2⟩ => ⟨s', h1, h2⟩))
   rcases hE with h | h | ⟨rfl, s', M, DE, hz, rfl, rfl, hMU, hDE, hreach'⟩
@@ -99,7 +101,7 @@ theorem segOkG {L : Link} {env : Clif.Env} {p : Clif.Program} {Bnd : Nat → Pro
         by exact strip_encT M (.run (pushC g.ext s')), .inr (.inr (.inl ⟨msg, hstep⟩))⟩))⟩
     | trapped c' =>
       exact ⟨k', _, hR, .inr (.inl (.inl ⟨g.ext, s',
-        by exact strip_encT M (.run (pushC g.ext s')), .inr (.inr (.inr ⟨c', hstep⟩))⟩))⟩
+        by exact strip_encT M (.run (pushC g.ext s')), .inr (.inr (.inr (.inl ⟨c', hstep⟩)))⟩))⟩
     | done v m =>
       exfalso
       rw [Clif.step_call env p _ rest' stm.results fn args (by simpa [pushC] using hb')] at hstep
@@ -128,7 +130,8 @@ theorem segOkG {L : Link} {env : Clif.Env} {p : Clif.Program} {Bnd : Nat → Pro
     have hcall' : s'.callers = [] := by
       obtain ⟨-, -, -, -, -, -, -, -, -, -, vals, cm, -, -, -, -, -, hdone, -⟩ := hret
       exact callers_nil_of_done hdone
-    obtain ⟨k2, d2, hR2, hE2⟩ := ret_seg (Bnd := Bnd) hLv.stat hLv.bnd hcA hrA hra hext hret hat
+    obtain ⟨k2, d2, hR2, hE2⟩ := ret_seg (Bnd := Bnd) hLv.stat.ok hLv.stat.mem hLv.stat.wf
+      hLv.stat.abi hLv.bnd hcA hrA hra hext hret hat
       hcall' M DE (prun_okPriv hLv.bnd hrest)
     have hR12 : RealT env p Bnd ls (k' + k2) _ d2 := RealizedT.trans hR hR2
     rcases hE2 with h2 | ⟨vals, cm, hdone, hn, rfl, rfl⟩ | ⟨vals, cm, regs, v, hdone, hreg, hRC, hv, hv1, rfl⟩
@@ -143,10 +146,11 @@ theorem segOkG {L : Link} {env : Clif.Env} {p : Clif.Program} {Bnd : Nat → Pro
         k2, vals, cm, regs, M, hret, hat, hcall', hRC, hv1, hdone, hreg, rfl, fun a h => ?_, ?_⟩⟩))⟩
       · rw [List.take_add]; exact hv0.append hv'
       · rcases h with h | h
-        · rcases hDE a h with h | h | h
+        · rcases hDE a h with h | h | h | h
           · exact .inl h
           · exact .inr (.inl h)
           · exact .inr (.inr h)
+          · exact h.elim
         · exact .inl h
       · exact hRe.stepS (by rw [hext]; exact CallRetT.cstepS_ret_pop hcall' hat hdone hreg M)
 

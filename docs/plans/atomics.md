@@ -1016,6 +1016,22 @@ they are; the per-thread layers are new files.
           the placed slots), which can hold stale bytes of earlier sibling callees; closing it
           needs that no CLIF read of a segment starts in a live frame's padding
           (`cstep_reads_valid` + `AllocInvD` + #567's slot placement).
+        - *The call pause and the resume (done, AtomicsCalls17, `CallSegCall.lean`)*:
+          **`CodeIn L R`** (every linked function `R`'s own or its words in `R.G` and in memory at
+          `R`'s entry; `CodeIn.code` via `gkeep`/`StRel.code`, `CodeIn.callee` for `G = R.FK`),
+          **`stackAvail_callee`** (budget `KB` with `frameSize + 16 + KB ≤ K`),
+          **`budget_call`** (budget `(Dcap - d) * M` at depth `d`), `nested_callee`,
+          **`gfree_callee`** (`Nested.region_not_FK`), **`call_endK`** (`call_end` with
+          `hcode`/`hstB`/`hgB` discharged, the callee's `CodeIn` and nesting returned),
+          `retEnd_n` (a `RetEnd` at any step count reaching `ra` without error), **`resume_ret`**
+          (`resume_allA` with `hB`/`hmemB`/`hus`/`hpreB`/`hy`/`hprog` from the callee's `RetEnd`,
+          `hval` from `AllocInvD` via `valid_of_allocInvD`; new static premise `hdr`: the
+          callee's `rets` registers are `CallDefsRet` of the caller). Witness
+          `CallSegCallWitness` (the caller in `link2` with budget `0x100`, `atomic_load` entered
+          with `0x10`; the resume after `atomic_load`).
+        - *Waiting on #567*: the callee's `Ent` (its entry `RelW`, and `AllocInvD` of the open
+          activations: the start of the callee's run), the frame-padding gap above, then the
+          call case of `segOkG` (scratch) and the assembly below.
         - *Left for `SegOkG` (next)*: per activation `g = (n, F, s0, K, G, ra, ext, …)` of a link
           whose functions are all compiled (a bundle of each function's static facts: the
           `driverHypT_ofA` checks, `PrepFacts`, `CheckedAt`, `MemScopeLSC`, `LFn.Static`),
