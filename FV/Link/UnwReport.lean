@@ -1,6 +1,7 @@
 import FV.Link.ExeUCompile
 import FV.Link.UnwSavedIn
 import FV.Link.UnwCheckIn
+import FV.Backend.Proof.IselOutBoundDefs
 
 /-!
 # Measuring the unwinding conditions (S10g, #404; report only)
@@ -9,9 +10,10 @@ import FV.Link.UnwCheckIn
 unwinding check `unwFnsB` decides (`unwCheck`, `callSites`, `unwindRows`, `padsNonzeroB`,
 `lastCallsOk`, `savedCheck`), the input conditions of `tryInfoOk_of_input` (`tryTablesB`) and
 `unwCheck_complete` (`tryRetsB`), the frame conditions of `savedCheck_pipe_out`/
-`unwindRows_complete_frame_out` (`outgoing ≤ 32560`: the outgoing argument area, which gives
-`saveFrameB` by `saveFrameB_always`; `leadOkB`: no other callee-saved store right after the
-saves), and the
+`unwindRows_complete_frame_out` (`outBoundB`: the call signatures' stack arguments are at most
+32560 bytes, which bounds the outgoing argument area (`Link.EhCheck.Complete.vcp_outgoing_le`)
+and gives `saveFrameB` by `saveFrameB_always`; `leadOkB`: no other callee-saved store right
+after the saves), and the
 functions whose `.eh_frame` entry `ehOkR` rejects (`fnEhFail`). Nothing here is a premise or a
 decision of the compiler; it measures how often the conditions of the totality argument fail on
 real code.
@@ -33,7 +35,7 @@ def unwConds : List (String × (Clif.Function → Art → Bool)) :=
    ("savedCheck", fun _ a => Backend.savedCheck a.vcp a.rf),
    ("tryTablesB", fun g _ => Link.EhCheck.Complete.tryTablesB g),
    ("tryRetsB", fun g _ => Link.EhCheck.Complete.tryRetsB g),
-   ("outgoing≤32560", fun _ a => decide (a.vcp.outgoing ≤ 32560)),
+   ("outBoundB", fun g _ => Backend.Proof.OutBound.outBoundB g),
    ("leadOkB", fun _ a => Link.EhCheck.Complete.leadOkB a.rf a.af)]
 
 /-- The functions whose `.eh_frame` entry `ehOkR` rejects (`none`: the program-level part of
