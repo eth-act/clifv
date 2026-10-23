@@ -456,12 +456,30 @@ def rpo (succs : Array (Array Nat)) : Array Nat := Id.run do
         stack := rest
   return post.reverse
 
+/-- The first occurrence of each index of `l`, in order, after `out`; `seen` marks the
+indices already taken. -/
+def firstOcc (seen : Array Bool) : List Nat → Array Nat → Array Nat
+  | [], out => out
+  | j :: js, out =>
+    if seen[j]! then firstOcc seen js out else firstOcc (seen.set! j true) js (out.push j)
+
+/-- Cranelift's lowered block order (`BlockLoweringOrder::new`, blockorder.rs:204-233): the
+reverse postorder of the original blocks (indices `< n`), each followed by its split edge
+blocks (indices `≥ n`) in successor order. `rpo succs` already lists the original blocks in
+that order (an edge block passes the search on to its single successor); each original block
+is followed by its edge-block successors, and every index is kept at its first occurrence (an
+edge block's only predecessor is its source, which comes first in `rpo succs`). -/
+def prepOrder (n : Nat) (succs : Array (Array Nat)) : Array Nat :=
+  firstOcc (Array.replicate succs.size false)
+    ((rpo succs).toList.flatMap fun i =>
+      if i < n then i :: (succs[i]!.toList.filter (n ≤ ·)) else [i]) #[]
+
 /-- Prepare VCode for regalloc2: drop unreachable blocks; split critical edges (an edge from a
 block with several successor edges to a block with several predecessor edges) by an edge
-block `jump target`; order the blocks in reverse postorder (Cranelift's
-`BlockLoweringOrder` lowers in an RPO, and regalloc2's loop-depth estimate and checker assume
-predecessors mostly come first). The entry block must not be a branch target (Cranelift's
-verifier forbids it) and has no parameters. -/
+block `jump target`; order the blocks as Cranelift's `BlockLoweringOrder` does (`prepOrder`:
+reverse postorder, each block's edge blocks right after it; regalloc2's loop-depth estimate
+and checker assume predecessors mostly come first). The entry block must not be a branch
+target (Cranelift's verifier forbids it) and has no parameters. -/
 def prepare (vc : VCode) : Except String VCode := do
   let (succs, _) ← vc.cfg
   let live := reachable succs
@@ -490,6 +508,6 @@ def prepare (vc : VCode) : Except String VCode := do
     blocks := blocks.push { b with insts := b.insts.pop.push t' }
   let vc := { vc with blocks := blocks ++ edges }
   let (succs, _) ← vc.cfg
-  pure { vc with blocks := (rpo succs).map fun i => vc.blocks[i]! }
+  pure { vc with blocks := (prepOrder blocks.size succs).map fun i => vc.blocks[i]! }
 
 end Backend

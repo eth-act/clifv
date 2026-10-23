@@ -431,8 +431,8 @@ theorem prep_entry_args {vc vcp : VCode} (hp : prepare vc = .ok vcp) (hd : Prep.
     rw [hback] at hi0
     cases hi0
     cases hterm
-  have h0 : 0 < (rpo ss2).size := (Array.getElem?_eq_some_iff.mp hR0).1
-  have e0 : (rpo ss2)[0] = 0 := (Array.getElem?_eq_some_iff.mp hR0).2
+  have h0 : 0 < (prepOrder B.size ss2).size := (Array.getElem?_eq_some_iff.mp hR0).1
+  have e0 : (prepOrder B.size ss2)[0] = 0 := (Array.getElem?_eq_some_iff.mp hR0).2
   obtain ⟨hj, e⟩ := Prep.v3_get hR h0
   have hB0 : 0 < B.size := by rw [hS.size]; exact h10
   have hV0 : (Prep.keep vc.blocks (reachable ss0))[0] = vb0 := by

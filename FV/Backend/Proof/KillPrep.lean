@@ -213,7 +213,7 @@ theorem prepare_facts_ns {vc vcp : VCode} (h : prepare vc = .ok vcp) :
       SInv (keep vc.blocks (reachable ss0)) (next0Of (keep vc.blocks (reachable ss0)))
         (keep vc.blocks (reachable ss0)).size (next, B, E) ∧
       ({ vc with blocks := B ++ E } : VCode).cfg = .ok (ss2, ps2) ∧
-      vcp = { vc with blocks := (rpo ss2).map fun i => (B ++ E)[i]! } ∧
+      vcp = { vc with blocks := (prepOrder B.size ss2).map fun i => (B ++ E)[i]! } ∧
       NoSplit (keep vc.blocks (reachable ss0)) B ss1 ps1 := by
   unfold prepare at h
   simp only [bind, Except.bind] at h
@@ -385,7 +385,7 @@ theorem killFreeB_prepare {vc vcp : VCode} (hv : LowOk vc) (hk : killFreeB vc = 
   obtain ⟨-, -, -, -, -, -, -, -, -, hRre⟩ := Prep.facts_basic hd cs0 cs2 hS
   have hs0 : ss0.size ≠ 0 := by rw [cs0.size]; have := hv.nonempty; omega
   -- every instruction of the output: an edge block's `jump`, or one of `vc` up to retargeting
-  have hI : ∀ vb' ∈ ((rpo ss2).map fun i => (B ++ E)[i]!).toList, ∀ i' ∈ vb'.insts.toList,
+  have hI : ∀ vb' ∈ ((prepOrder B.size ss2).map fun i => (B ++ E)[i]!).toList, ∀ i' ∈ vb'.insts.toList,
       (unstored i' = [] ∧ useVregs i' = []) ∨ ∃ vb ∈ vc.blocks.toList, ∃ i ∈ vb.insts.toList,
         unstored i' = unstored i ∧ useVregs i' = useVregs i := by
     intro vb' hvb' i' hi'
@@ -396,7 +396,7 @@ theorem killFreeB_prepare {vc vcp : VCode} (hv : LowOk vc) (hk : killFreeB vc = 
         .inr (by rw [(Prep.setTargets_targets hset).1]; exact hset)
       exact .inr ⟨vb, hvb, i, hi, unstored_same hsame, useVregs_same hsame⟩
     · exact .inl ⟨rfl, rfl⟩
-  have hK : ∀ v, v ∈ killedOf { vc with blocks := (rpo ss2).map fun i => (B ++ E)[i]! } →
+  have hK : ∀ v, v ∈ killedOf { vc with blocks := (prepOrder B.size ss2).map fun i => (B ++ E)[i]! } →
       v ∈ killedOf vc := by
     intro v hv'
     simp only [killedOf, List.mem_flatMap] at hv' ⊢
@@ -429,12 +429,12 @@ theorem killFreeB_prepare {vc vcp : VCode} (hv : LowOk vc) (hk : killFreeB vc = 
     · rfl
     rename_i vb hvb
     refine List.all_eq_true.mpr fun a ha => ?_
-    cases hka : (killedOf { vc with blocks := (rpo ss2).map fun i => (B ++ E)[i]! }).contains
+    cases hka : (killedOf { vc with blocks := (prepOrder B.size ss2).map fun i => (B ++ E)[i]! }).contains
       a.homeNum
     · rfl
     simp only [Bool.not_true, Bool.false_or, Bool.and_eq_true, List.all_eq_true]
     have hkill : a.homeNum ∈ killedOf vc := hK _ (by simpa using hka)
-    change ((rpo ss2).map fun i => (B ++ E)[i]!)[b]? = some vb at hvb
+    change ((prepOrder B.size ss2).map fun i => (B ++ E)[i]!)[b]? = some vb at hvb
     obtain ⟨k, hk, hkB, -, rfl⟩ := (cls3 hv cs0 cs1 cs2 hS hvb).resolve_right
       fun ⟨_, _, he, _⟩ => by rw [(e_blk hS he).2.2.1] at ha; cases ha
     -- the block is a block `b0` of `vc`, not retargeted (it has branch arguments)
@@ -536,7 +536,7 @@ theorem killFreeB_prepare {vc vcp : VCode} (hv : LowOk vc) (hk : killFreeB vc = 
       · exact setTargets_tryCall h
     -- in the output: the block `q` of `kp` is the only predecessor of `b`, successor number `j`
     obtain ⟨q, hq, hRq, -⟩ := Prep.lab3 hR hn2 hRn (hRre kp hr2)
-    have hq3 : ((rpo ss2).map fun i => (B ++ E)[i]!)[q]? = some B[kp] := by
+    have hq3 : ((prepOrder B.size ss2).map fun i => (B ++ E)[i]!)[q]? = some B[kp] := by
       obtain ⟨hi, e⟩ := Prep.v3_get hR hq
       rw [e]; congr 1; simp only [hRq]; exact Array.getElem_append_left hkpB
     obtain ⟨t3, ts3, ht3, -, hts3, -, hl3⟩ := cs3.blk q _ hq3
@@ -544,7 +544,7 @@ theorem killFreeB_prepare {vc vcp : VCode} (hv : LowOk vc) (hk : killFreeB vc = 
     cases ht3
     obtain ⟨u, hu, hlabu⟩ := hl3 j b0 htj'
     have hub : u = b := by
-      have hb3 : b < ((rpo ss2).map fun i => (B ++ E)[i]!).size :=
+      have hb3 : b < ((prepOrder B.size ss2).map fun i => (B ++ E)[i]!).size :=
         (Array.getElem?_eq_some_iff.mp hvb).1
       have := Prep.lab_of (Prep.lbls3 hR hn2 hRn) hb3 (l := b0) (by
         rw [Option.some.inj ((Array.getElem?_eq_getElem hb3).symm.trans hvb),
@@ -557,7 +557,7 @@ theorem killFreeB_prepare {vc vcp : VCode} (hv : LowOk vc) (hk : killFreeB vc = 
     obtain ⟨-, huj3⟩ := preds_single hc3 hts3 hu hps3
     have hidx : ts3.toList.idxOf? u = some j :=
       idxOf?_of_unique (by simpa using hu) (fun j' h => huj3 j' (by simpa using h))
-    rw [entryStored_of (vc := { vc with blocks := (rpo ss2).map fun i => (B ++ E)[i]! })
+    rw [entryStored_of (vc := { vc with blocks := (prepOrder B.size ss2).map fun i => (B ++ E)[i]! })
       hps3 hq3 hts3 hidx, termEdgeDefs_same (vb := vp) ht ht' hsame j]
     simpa using hmem
 
