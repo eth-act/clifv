@@ -203,7 +203,7 @@ theorem backend_correct_m4_cleanup_ex_abi {p : Clif.Program} {f : Clif.Function}
     hM6 hRef (fun s' => driverSem_valueSem (F s') (ctx s') (X s'))
     (fun s' => callsRefine_valueSem (hX s'))
     (fun s' => indCallsRefine_valueSem (hXI s') (hsym s') (fun _ _ _ h => h.1.symbols)) hmem
-    (fun _ _ _ _ _ _ _ hp he => valueSem_pure hp he) (fun _ => valueSem_cmpOverwrite ..) houtB
+    (fun _ _ _ _ _ _ _ hp he => valueSem_pure hp he) (fun _ => valueSem_cmpOverwrite _ _ _) houtB
     hent hres hbe hargs hargF hcs hrel htr fuel
 
 /-- `backend_correct_final_cleanup_ex` with the ABI return values (`sretStableB f`). -/

@@ -212,7 +212,7 @@ theorem backend_correct_m4_cleanup_exU {p : Clif.Program} {f : Clif.Function} {k
     hM6 (fun _ => refines_valueSemU _ _ _ _) (fun _ => driverSem_valueSemU _ _ _ _)
     (fun s' => callsRefine_valueSemU (hX s') (hexcl s'))
     (fun s' => indCallsRefine_valueSemU (hXI s') (hsym s') (fun _ _ _ h => h.1.symbols) (hexcl s'))
-    hmem (fun _ _ _ _ _ _ _ hp he => valueSemU_pure hp he) (fun _ => valueSemU_cmpOverwrite ..)
+    hmem (fun _ _ _ _ _ _ _ hp he => valueSemU_pure hp he) (fun _ => valueSemU_cmpOverwrite _ _ _ _)
     (fun _ => raiseSem_valueSemU _ _ _ _) hXR hXRi hsym houtB
     hent hres hbe hargs hargF hcs hrel htr fuel
 

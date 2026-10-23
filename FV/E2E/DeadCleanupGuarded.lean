@@ -113,7 +113,7 @@ theorem valueSemG_lockstep2 {Z : BitVec 64 → Prop} (hFZ : ∀ a, F a → Z a) 
       have e := hs'.symm.trans (hall w')
       simp only [Option.some.injEq, Prod.mk.injEq] at e
       obtain ⟨rfl, rfl, rfl⟩ := e
-      exact ⟨rfl, rfl, hw.write_pstate' p⟩
+      exact ⟨rfl, rfl, SameWorld.write_pstate' hw p⟩
   · simp only [valueSemG, hsf, Bool.false_eq_true, ite_false] at h h'
     exact csemG_lockstep2 hFZ hw hX hT h h'
 

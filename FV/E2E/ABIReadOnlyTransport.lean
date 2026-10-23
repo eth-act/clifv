@@ -20,7 +20,7 @@ theorem checked_instruction {sig : Clif.Signature} {vc : VCode}
 private theorem pure_sem {F : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem} {i : MInst}
     (pure : pureForm i = true) (us : List CV) (w : Arm.ArmState) :
     sem F ctx X i us w = mspec ctx.slotBase i us w := by
-  cases i <;> simp only [sem,valueSem,pure,↓reduceIte]
+  cases i <;> simp only [sem,valueSem,specForm_of_pure pure,↓reduceIte]
 
 /-- Every checked instruction leaves the abstract world unchanged. -/
 theorem step_world {sig : Clif.Signature} {b k : Nat} {i : MInst}

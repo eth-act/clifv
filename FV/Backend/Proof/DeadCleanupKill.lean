@@ -17,7 +17,25 @@ theorem pure_unstored {i : MInst} (hp : pureForm i = true) : unstored i = [] := 
     intro n hn
     simp [hn]
 
-/-- Deleting pure instructions preserves the killed-register list exactly. -/
+/-- A compare (which the pass drops when its flags are dead) has no unstored definition. -/
+theorem cmp_unstored {i : MInst} (hc : cmpForm i = true) : unstored i = [] := by
+  have ht : i.isTerminator = false := by
+    cases h : i.isTerminator
+    · rfl
+    · rw [cmpForm_of_terminator h] at hc; cases hc
+  have hk : i.keptDefs = none := by
+    unfold cmpForm at hc
+    split at hc <;> first | rfl | cases hc
+  unfold unstored
+  cases ho : i.operands with
+  | error e => rfl
+  | ok ops =>
+    simp only [ho, storedDefs, ht, Bool.false_eq_true, ite_false, hk]
+    apply List.filter_eq_nil_iff.mpr
+    intro n hn
+    simp [hn]
+
+/-- Deleting pure instructions and dead compares preserves the killed-register list exactly. -/
 theorem scan_unstored (nregs : Nat) (ms : List MInst) (live : List Nat) :
     (scan nregs ms live).1.flatMap unstored = ms.flatMap unstored := by
   induction ms with
@@ -26,7 +44,11 @@ theorem scan_unstored (nregs : Nat) (ms : List MInst) (live : List Nat) :
     simp only [scan]
     split
     · rename_i hd
-      rw [List.flatMap_cons, pure_unstored (discard_pure hd), List.nil_append]
+      have hu : unstored i = [] := by
+        rcases Bool.or_eq_true_iff.mp hd with hd | hd
+        · exact pure_unstored (discard_pure hd)
+        · exact cmp_unstored (dropCmp_cmp hd)
+      rw [List.flatMap_cons, hu, List.nil_append]
       exact ih
     · simpa using congrArg (unstored i ++ ·) ih
 

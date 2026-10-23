@@ -260,7 +260,7 @@ theorem backend_correct_m4_cleanup_exT {p : Clif.Program} {f : Clif.Function} {k
     (fun s' => callsRefine_valueSem (hX s'))
     (fun s' => indCallsRefine_valueSem (hXI s') (hsym s') (fun _ _ _ h => h.1.symbols)) hmem
     (fun s' => memRefinesFP_valueSem _ (F s') (ctx s') (X s') (hslotB s'))
-    (fun _ _ _ _ _ _ _ hp he => valueSem_pure hp he) (fun _ => valueSem_cmpOverwrite ..) houtB
+    (fun _ _ _ _ _ _ _ hp he => valueSem_pure hp he) (fun _ => valueSem_cmpOverwrite _ _ _) houtB
     hent hres hbe hargs hargF hcs hrel htr fuel
 
 /-- **The typed final theorem of the dead-cleanup route** (`backend_correct_final_cleanup_ex`
@@ -374,7 +374,7 @@ theorem backend_correct_final_cleanup_ofT {p : Clif.Program} {f : Clif.Function}
     (fun s' => indCallsRefine_valueSem (hXI s') hsym (fun _ _ _ h => h.1.symbols))
     (fun _ => memRefines_valueSem _ _ X hslot hsym)
     (fun _ => memRefinesFP_valueSem _ _ _ X hslot)
-    (fun _ _ _ _ _ _ _ hp he => valueSem_pure hp he) (fun _ => valueSem_cmpOverwrite ..)
+    (fun _ _ _ _ _ _ _ hp he => valueSem_pure hp he) (fun _ => valueSem_cmpOverwrite _ _ _)
     (outgoing_le_intBaseCleanupAT hcA)
     hent hres hbe hargs (stackArgsAvoid_frameW_of_alloc hcA.alloc hres hent hargs) hcs hrel htr fuel
 

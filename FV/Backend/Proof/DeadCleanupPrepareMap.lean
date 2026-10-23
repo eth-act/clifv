@@ -271,7 +271,11 @@ private theorem scan_append_term (n : Nat) (L : List Nat) (xs : List MInst) (t :
   | nil => simp [scan, discard, dropCmp, flagsDead, ht]
   | cons i xs ih =>
     simp only [List.cons_append, scan, ih, dropCmp, flagsDead_append_stop _ hc ht]
-    split <;> rfl
+    split
+    · rename_i h; simp only [h, ↓reduceIte]
+    · rename_i h
+      simp only [Bool.not_eq_true] at h
+      simp only [h, Bool.false_eq_true, ↓reduceIte, List.cons_append]
 
 private def eraseBlock (n : Nat) (L : List Nat) (b : VBlock) : VBlock :=
   if (b.insts.back?.map MInst.isTerminator).getD false then
