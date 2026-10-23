@@ -74,6 +74,10 @@ macro_rules
     have e1' := ne31_of' hn1.1
     have l0 := le30_of hn0.1
     have l1 := le30_of hn1.1
+    have g0 := ne29_of hn0.1
+    have g1 := ne29_of hn1.1
+    have g0' := ne29_of' hn0.1
+    have g1' := ne29_of' hn1.1
     simp only [canonRegs, canonReg, canonBase, List.size_toArray, List.length_cons,
       List.length_nil, List.range_succ, List.range_zero, List.nil_append, List.cons_append,
       List.map_cons, List.map_nil, List.getElem?_toArray, List.getElem?_cons_zero,
@@ -101,12 +105,13 @@ macro_rules
     all_goals (
       refine ⟨_, rfl, ?_, ?_, ?_, ?_⟩
       · sw_tac_c
-      · refine ⟨?_, fun a ha => ?_⟩
+      · refine ⟨?_, fun a ha => ?_, ?_⟩
         · simp (config := {decide := true}) [csimp_rules, *]
         · first
             | (simp [csimp_rules, Arm.ArmState.mem_w_eq_mem, *]; done)
             | (simp only [Arm.ArmState.mem_w_eq_mem]
                exact mem_write_mem_bytes_ne _ _ _ _ _ (fun k hk e => hacc k hk (e ▸ ha)))
+        · simp (config := {decide := true}) [csimp_rules, *]
       · first
           | (simp (config := {decide := true}) [csimp_rules, *]; done)
           | (simp (config := {decide := true}) [csimp_rules, *]
@@ -158,9 +163,10 @@ theorem corr_fence (F : BitVec 64 → Prop) (ctx : FnCtx) (env : Env) :
   all_goals (try simp (config := {decide := true}) [csimp_rules] at herr)
   refine ⟨_, rfl, ?_, ?_, ?_, ?_⟩
   · sw_tac
-  · refine ⟨?_, fun a _ => ?_⟩
+  · refine ⟨?_, fun a _ => ?_, ?_⟩
     · simp (config := {decide := true}) [csimp_rules, *]
     · simp [csimp_rules, Arm.ArmState.mem_w_eq_mem, *]
+    · simp [csimp_rules, Arm.r_of_w_different]
   · simp [defVals]
   · intro r hr _
     rcases allocatable_cases hr with ⟨k, rfl, hk⟩|⟨k, rfl, hk⟩ <;>
