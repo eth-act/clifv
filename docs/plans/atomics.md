@@ -907,6 +907,16 @@ they are; the per-thread layers are new files.
         the top-level contract ends before a return with masked bytes), the start-dirty set
         `Refines.toT_dirty`/`Refines.toT_parts` (private set ∪ mask ∪ addresses that start no
         location of a thread-wide partition `PartDisj`/`OnParts`, the T2i restriction).
+        **CLIF side of the callee entry (done, `CallEnterClif.lean`, witness `enter_C`)**:
+        `step_call_entry`/`cstepI_call_entry` — a direct call's step is `pushC` of the caller's
+        frame over the callee's own entry state with exactly the CLIF facts of
+        `arm_isel_refines_entryCRN` (slots/memory from `enterSlots`, entry block, registers from
+        the call's argument values), adding the placed slot bytes to the mask. Open: the callee's
+        `RelW` and `ArgsAtEntry` from the call's fixed uses (layers 2–4 at the `bl`).
+        **`resume_all`'s static premises as checks (done, `CallResumeChecks.lean`, witness
+        `defs_fC`)**: `callDefsVirtB_iff` (`hvdef`), `callDefsRetB_iff` + `habi_regs` (the register
+        part of `habi`), both sound and complete. The arity part (`defs.length = sigRets`) stays a
+        premise: it ties the VCode call's symbol to the CLIF extern (ISLE lowering of `call`).
         (iv) the thread-wide private set (every activation's `PrivA` and the CLIF events' avoidance
         of it; with CLIF stack slots in callees the private sets of different activations overlap
         other activations' slots); then `SegOk`, `link_compose_ext`, and `realizes_call_full`/the
