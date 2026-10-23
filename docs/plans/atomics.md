@@ -891,6 +891,24 @@ they are; the per-thread layers are new files.
         (34,180), mostly enum/`Option` partial initialisation (the tag stored, the payload word
         loaded and returned or copied; e.g. fv-demo `bin-check/400b40aa77e2/fns/184.clif`: `store 2`
         to `ss0[0,4)`, `load.i32 ss0+4` returned) — `Clif.run`, and so `CStepI`, is stuck there.
+        **`RefinesT` (done, `PrivCohT.lean`)**: `RefinesC` (the order- and pair-preserving part of
+        `Refines`), `Unmatched`, `RefinesT MK Priv0 PrivAt` (`shared`: a source event avoids the
+        private set at its image's position; `priv`: an unmatched Arm write is in the private set
+        at its position; `fresh0`/`fresh`: a source read of a location private at the start, or
+        written by an earlier unmatched Arm write, follows a source write there after that write),
+        `Refines.toT` (constant private sets), `realizes_of_threads_fn` (`realizes_of_threads` with
+        the runs as functions and the source property as a premise), **`src_of_refinesT`** (every
+        Arm `rf` source of a source read is a CLIF initial write or an image: another thread's
+        unmatched write by `StackDisjoint`, an own one or a private initial write by freshness and
+        SC per location), **`realizes_of_threads_privT`**, **`privCoh_of_stackDisjoint`** (reads of
+        a thread's stack read its own `po`-latest write: the run condition's justification).
+        **Trusted program premise `StackDisjoint PA (PrivU Priv0 PrivAt)`**: no thread's events
+        other than fences touch another thread's private locations at any time (the union over time
+        of its private sets: its stack) — like the earlier "no thread writes another thread's
+        private set" (above), now for the union over time; documented in
+        `docs/decisions/arm-model.md`. Witnesses (`PrivCohTWitness.lean`): `refinesT_reuse` (a spill
+        at 100, then a CLIF store and load of a slot at 100), `not_refines_reuse` (no fixed private
+        set realizes it), `ret_threadsT` (`realizes_of_threads_privT` on `ProgWitness`).
   * **the prologue, from the ABI entry (done, `ArmAllocEntry.lean`)**: `stp_fplr_evs` (the
     prologue's `stp x29, x30, [sp, #-16]!`: one plain write at `sp - 16`, no exclusive);
     `q_init_lines` (`RegLevelFrame.q_init` with the prologue's lines, `LinesAt`, and its step
