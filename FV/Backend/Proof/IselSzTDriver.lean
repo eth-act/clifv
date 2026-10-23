@@ -6,6 +6,7 @@ import FV.Backend.Proof.IselSzBrTableG
 import FV.Backend.Proof.IselSzDriver
 import FV.Backend.Proof.IselCovTDriver
 import FV.Backend.Proof.IselCovTFamCover
+import FV.Backend.Proof.LogicImmComplete
 
 /-!
 # The size of the ISLE lowering's output over float-capable contexts (typed V6c): the driver's
@@ -72,8 +73,9 @@ namespace Backend.Proof.CovT
 
 open Backend Backend.Proof Backend.Proof.Flow Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 open Backend.Proof.Cov (Clean CovSince LogicImmComplete HandW SubRun BrIdx emW wtA tgA szInstW
-  covSince_refl handW_callT handW_tryT handW_brTable_wtG handW_brTable_tgG clean_termCtx
-  clean_tryCtx tryCallData_ne_brTable)
+  logicImmComplete
+  handW_callT handW_tryT handW_brTable_wtG handW_brTable_tgG clean_termCtx
+  clean_tryCtx)
 
 set_option maxRecDepth 20000
 
@@ -119,11 +121,14 @@ theorem brIdx_fam {F : Fam} (hF : F ∈ famTab) {a x b : V}
 theorem valIn_single {x : Nat} (h : ValIn ctx x eCTys) : ∃ t ∈ eCTys, ValIn ctx x [t] := by
   cases hty : ctx.valueType? x with
   | some t =>
-    refine ⟨t, h.1 t hty, fun u hu => ?_, fun hn => by rw [hty] at hn; cases hn⟩
+    refine ⟨t, h.1 t hty, ?_⟩
+    unfold ValIn
+    refine ⟨fun u hu => ?_, fun hn => by rw [hty] at hn; cases hn⟩
     rw [hty] at hu; cases hu; exact List.mem_singleton_self _
   | none =>
-    refine ⟨.int 64, by decide, fun u hu => by rw [hty] at hu; cases hu, fun _ => ⟨.int 64, ?_, rfl⟩⟩
-    exact List.mem_singleton_self _
+    refine ⟨.int 64, by simp [eCTys], ?_⟩
+    unfold ValIn
+    exact ⟨fun u hu => (by rw [hty] at hu; cases hu), fun _ => ⟨.int 64, List.mem_singleton_self _, rfl⟩⟩
 
 /-- `aApply` of an internal term does not depend on the result type. -/
 theorem aApply_internal_eqT {t : TermId} {term : Term} {flags : TermFlags} {ex : Option Extractor}
@@ -551,7 +556,7 @@ theorem iselSzT {f : Clif.Function} (hdom : dominatedB f = true) (hs : LowerScop
   intro ctx ranges st0 hb
   have hctx : CtxT f ctx :=
     ⟨ctxInvT_of hs hb, (ctxSpec_of hb).instScopeT hs.subsetT, functionET_externs hs.subsetT⟩
-  have hcl : Cov.Clean ctx := clean_of_build hb
+  have hcl : Cov.Clean ctx := Cov.clean_of_build hb
   have hfam := CovT.famCover_of hs hdom hst hsel hb
   exact ⟨fun ii info inst s out s' tr hi hc h => CovT.stmt_szT hctx hcl hfam hi hc h,
     fun B hB ti data targets s out s' tr _ hph hty hd hlen h =>
