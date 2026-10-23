@@ -322,3 +322,10 @@ alone is not broader production activation or full140completion.
 ## Returned division at arbitrary scalar body positions
 
 Implementation `b1990ec02ff083882720dcc436d638c0db5f2b04` passes the current author gates; [terminal evidence](../research/stock-returned-div-production-activation.md) records the actual results and remote backup. The arbitrary-position class extends the default shared consumers while keeping old selectors, theorem variants and original inputs. Full #140 remains open; next derive genuine sink exclusion for unused/consumed division and continue every original effect/control/whole-driver/completeness obligation.
+
+Actual generated-program no-load sink exclusion passes normal/trust/witness
+checks at `bc53c102` on main `66f34776`; [evidence](../research/stock-no-load-sink.md).
+All four sinking matches are excluded and complete helper execution retains
+the sunk array regardless of result demand. This closes an interpreter dependency,
+not production activation. Continue source-derived contexts and full driver
+retention before unused/consumed/multiple-division activation; full #140 remains.

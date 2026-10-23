@@ -1,5 +1,5 @@
 {
-  "updated_utc": "2026-10-23T05:10:44.988008+00:00",
+  "updated_utc": "2026-10-23T06:26:29.775747+00:00",
   "goal": 140,
   "complete": false,
   "inventory_warning": "Historical517root inventory is a source map, not current reachability/execution coverage. Reconcile generated source hashes and current typed scope before using partition counts.",
@@ -8613,5 +8613,13 @@
       "obligation": "Final full batch validation and settings-matched complete Stock comparison",
       "state": "open"
     }
-  ]
+  ],
+  "sink_exclusion_checkpoint": {
+    "validated_head": "bc53c102d2bc03e2006daa8f76d8e92331075391",
+    "receipt": "docs/research/stock-no-load-sink.md",
+    "actual_helper_no_load_frame": true,
+    "source_driver_composition_complete": false,
+    "unused_division_production_active": false,
+    "evidence_backup": "3aee0321674d2c88b56437cde27d543f4cb5f0f7"
+  }
 }
