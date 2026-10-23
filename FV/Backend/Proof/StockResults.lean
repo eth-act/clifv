@@ -14,6 +14,8 @@ namespace Backend.Stock.Proof
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 
 set_option maxRecDepth 4096
+-- Lean 4.35's `whnf` needs more heartbeats for the concrete `rfl`/`decide` runs below.
+set_option maxHeartbeats 2000000
 
 theorem setAlias_virtual (st : State) (n d : Nat) (c : RegClass) :
     st.setAlias (.vreg n c) (.vreg d c) =

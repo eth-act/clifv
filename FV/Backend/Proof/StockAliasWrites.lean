@@ -8,6 +8,8 @@ namespace Backend.Stock.Proof
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 attribute [local irreducible] Isle.Aarch64.program
 set_option maxRecDepth 4096
+-- Lean 4.35's `whnf` needs more heartbeats for the concrete `rfl`/`decide` runs below.
+set_option maxHeartbeats 2000000
 
 /-- Current source mappings are disjoint from all current exception registers. -/
 def AllocationDisjoint (a : Allocation) : Prop :=

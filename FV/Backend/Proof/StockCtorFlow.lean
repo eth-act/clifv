@@ -3,6 +3,8 @@ import FV.Backend.Proof.StockDFG
 
 namespace Backend.Stock.Proof
 open Backend.Proof Backend.Proof.Flow Isle Isle.Interp Isle.Aarch64
+-- Lean 4.35's `whnf` needs more heartbeats for the concrete `rfl`/`decide` runs below.
+set_option maxHeartbeats 2000000
 
 /-- Register origins read by the mapped source-provenance model. -/
 def RegOrigin (ctx : Ctx) (t : Term) (args : List V) (before after : State)
