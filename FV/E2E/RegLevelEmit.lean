@@ -230,8 +230,8 @@ theorem ftList_snoc_label (l : Lbl) : ∀ X : List Line, ∃ Z, ftList (X ++ [.l
 
 /-- The lines of one `AInst` (`emitFunc`'s inner loop body). -/
 def ainstLines (c : FnCtx) (af : AFunc) : AInst → PState → Except String (List Line × PState)
-  | .prologue, ps => pure (if af.frame then prologueLines af.frameSize else [], ps)
-  | .epilogueRet, ps => pure (if af.frame then epilogueLines af.frameSize else [.ins .ret], ps)
+  | .prologue, ps => pure (if af.frame then prologueLines af.saves af.frameSize else [], ps)
+  | .epilogueRet, ps => pure (if af.frame then epilogueLines af.saves af.frameSize else [.ins .ret], ps)
   | .inst m, ps => m.lines c ps
 
 /-- The lines of a block's code. -/
@@ -464,6 +464,8 @@ theorem lowerRFunc_ok {vc : VCode} {rf : RFunc} {af : AFunc} (h : lowerRFunc vc 
   · simp [throw, throwThe, MonadExceptOf.throw] at h
   rename_i harg
   split at h
+  · simp [throw, throwThe, MonadExceptOf.throw] at h
+  split at h
   · cases h
   · rename_i blocks hb
     simp only [pure, Except.pure, Except.ok.injEq] at h
@@ -517,9 +519,28 @@ theorem lowerRFunc_frame {vc : VCode} {rf : RFunc} {af : AFunc} (h : lowerRFunc 
   split at h
   · simp [throw, throwThe, MonadExceptOf.throw] at h
   split at h
+  · simp [throw, throwThe, MonadExceptOf.throw] at h
+  split at h
   · cases h
   · simp only [pure, Except.pure, Except.ok.injEq] at h
     subst h; rfl
+
+/-- `lowerRFunc` checked the callee-save shape (`saveShapeOk`), and the function's prologue
+pushes (its epilogue pops) the allocation's saved registers. -/
+theorem lowerRFunc_saves {vc : VCode} {rf : RFunc} {af : AFunc} (h : lowerRFunc vc rf = .ok af) :
+    saveShapeOk vc rf = true ∧ af.saves = rf.saved := by
+  unfold lowerRFunc at h
+  simp only [bind, Except.bind] at h
+  split at h
+  · simp [throw, throwThe, MonadExceptOf.throw] at h
+  split at h
+  · simp [throw, throwThe, MonadExceptOf.throw] at h
+  rename_i hsh
+  split at h
+  · cases h
+  · simp only [pure, Except.pure, Except.ok.injEq] at h
+    subst h
+    exact ⟨by simpa using hsh, rfl⟩
 
 /-! ## Block decomposition -/
 
