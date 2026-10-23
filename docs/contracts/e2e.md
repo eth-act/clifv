@@ -520,8 +520,28 @@ the `retN`/value arguments).
   (no further callee-save store right after the saves; an allocator answer storing a
   callee-saved register into a spill slot there passes `checkAlloc` but gives wrong rows, so
   `savedCheckAF` rightly rejects it). Witness `Witness.savedCheck_applies`/`unwindRows_frame_applies`.
-  Open: `unwCheck`, `lastCallsOk` (needs an input condition: a callee called by a `try_call` and
-  by a call of the last block), `ehOkR` on lean-ld's output, the totality theorem.
+  **What is left, collected** (`FV/Link/UnwFnIn.lean`): `unwCondB g a` = the input condition
+  `tryTablesB`, the frame conditions `saveFrameB`/`leadOkB`, code below 4 GiB, and the two checks
+  without a completeness proof yet, `unwCheck` and `lastCallsOk`; `fnUnwB_of_pipe` (a function
+  of `fnScopeB` whose cleanup pipeline succeeded, any allocator answer, passes `fnUnwB`) and
+  `unwFnsB_of_conds` (on an `InScopeIn` input, `unwCondsB` of the compiled functions gives
+  `unwFnsB`). **Totality with unwinding on `lean-ld`'s inputs** (`FV/Link/ExeULdIn.lean`):
+  `Link.DeadCleanup.compileExeU_total_ldIn` — `compileExe_total_ldIn`'s premises plus `unwCondsB`:
+  `lean-ld` links, `compileExe` succeeds, and `compileExeU` succeeds once the written executable
+  passes `ehOkR`; witness `ULdInWitness.compileExeU_total_ldIn_witness`.
+  **Measured** (report only: `lake exe lean-link` prints `unwinding conditions:` per executable,
+  `Link.DeadCleanup.unwReport`; debug, panic=unwind, `--lean-link --verified`, lean-ld): fv-demo
+  2 executables (461 and 903 functions, 83/173 with `try_call`), survey 18 executables (3,179
+  functions, 498 with `try_call`), fv-demo `--build-std` (28,554 functions, 3,596 with
+  `try_call`) and deps' `deps_demo` (17,091 functions, 2,588 with `try_call`): `saveFrameB` 0,
+  `leadOkB` 0, `tryTablesB` 0, `unwCheck` 0, `ehOkR` 0, `lastCallsOk` 3 in deps (3 `regex`
+  functions; 5 before #484) and 1 in std (measured before #484). `saveFrameB` is a real
+  run-time limit of the current frame layout (save slots after the spill area): a function with
+  a > 32 KiB spill area stores its callee-saves through x16 without CFI rows, and a panic
+  unwinding through it does not restore them (repro on #479; stock cg_clif saves them under the
+  frame record and is not affected). Frame change tracked in #479.
+  Open: completeness of `unwCheck` and `lastCallsOk` (needs an input condition: a callee called
+  by a `try_call` and by a call of the last block), `ehOkR` on lean-ld's output.
 * **The executable-bytes machine with unwinding (S10g, #404)** (`FV/E2E/DeadCleanupExecUnwind.lean`):
   `E2E.DeadCleanupExecBytes.stepU I B Ub file` is `DeadCleanupExecBytes.step` (the processor on
   the file's words; calls of code outside the program and TLS by the base hooks; a call of a
