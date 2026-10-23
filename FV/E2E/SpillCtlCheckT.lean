@@ -33,8 +33,8 @@ theorem ctlNA_shapeT {R : Reg → Reg} {gn : Nat → Nat} (hg : VRenaming R gn) 
       List.all_eq_true, Function.comp_def]
     intro q hq
     rcases hr q hq with ⟨hc, k', hk, he⟩ | ⟨hc, k', hk, he⟩
-    · simp [hc, hg.vreg, retPairOk, Reg.isVregInt]
-    · simp [hc, he, hg.vreg, retPairOk, Reg.isVregInt, Reg.isVregFloat, Reg.isFpArgReg, hk]
+    · simp [hc, he, hg.vreg, argPairOk, Reg.isVregInt, Reg.isArgReg] <;> omega
+    · simp [hc, he, hg.vreg, argPairOk, Reg.isVregInt, Reg.isVregFloat, Reg.isFpArgReg, hk]
 
 /-- Block `b` of `vcBlocksOfT`: the raw block `b`, or an edge block (then `0 < b`). -/
 theorem vcBlocksOfT_get {f : Clif.Function} {ctx : Ctx} {bl : List BLow} {b : Nat} {vb : VBlock}
