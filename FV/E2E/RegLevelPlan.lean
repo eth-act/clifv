@@ -215,7 +215,7 @@ branch retargeted to a label representing `s1`, then `b` to one representing `s2
 branch, retargeted (`s2` next) or inverted (`s1` next); or nothing (both next). -/
 def CondOut (rep : Label → Nat → Bool) (idx : Std.HashMap Label Nat) (s1 s2 : Label) (ci : Insn)
     (o : List Line) (nxt : Nat) : Prop :=
-  (∃ c t' e', o = [.ins c none, .ins (.b e') none] ∧ c.condTarget? = some t' ∧
+  (∃ c t' e', o = [.ins c none, .ins (.b e') none] ∧ (Line.ins c none).target? = some t' ∧
       c = ci.setTarget t' ∧ RepLbl rep idx s1 t' ∧ RepLbl rep idx s2 e') ∨
   (∃ c t', o = [.ins c none] ∧ c.condTarget? = some t' ∧
       ((c = ci.setTarget t' ∧ RepLbl rep idx s1 t' ∧ rep s2 nxt = true) ∨
@@ -280,11 +280,12 @@ theorem termOk_tryCall {rep : Label → Nat → Bool} {idx : Std.HashMap Label N
     exact ⟨call, b0, rfl, .inr ⟨rfl, h2⟩⟩
   · cases h
 
-/-- A final line for line `x` of the last instruction: `x` itself, or `x` retargeted to a block
-label representing `x`'s block target. -/
+/-- A final line for line `x` of the last instruction: `x` itself if it has no block target,
+else `x` retargeted to a block label representing `x`'s block target. -/
 def LineOut (rep : Label → Nat → Bool) (idx : Std.HashMap Label Nat) (x y : Line) : Prop :=
-  y = x ∨ ∃ l l', x.target? = some (.block l) ∧ y.target? = some l' ∧ y = x.relabel (fun _ => l') ∧
-    RepLbl rep idx l l'
+  (y = x ∧ ∀ l, x.target? ≠ some (.block l)) ∨
+    ∃ l l', x.target? = some (.block l) ∧ y.target? = some l' ∧ y = x.relabel (fun _ => l') ∧
+      RepLbl rep idx l l'
 
 theorem keptOk_spec {rep : Label → Nat → Bool} {idx : Std.HashMap Label Nat} {t o : List Line}
     (h : keptOk rep idx t o = true) :
@@ -299,15 +300,16 @@ theorem keptOk_spec {rep : Label → Nat → Bool} {idx : Std.HashMap Label Nat}
     exact ⟨i, by rw [List.getElem?_zip_eq_some]; exact ⟨hx, hy⟩⟩
   have := ha _ hm
   unfold lineOk at this
-  simp only [Bool.or_eq_true, beq_iff_eq] at this
-  rcases this with e | h2
-  · exact .inl e.symm
-  · right
-    split at h2
-    · rename_i l l' h1 h3
-      simp only [Bool.and_eq_true, beq_iff_eq] at h2
-      exact ⟨l, l', h1, h3, h2.1, repLbl_of h2.2⟩
-    · cases h2
+  split at this
+  · rename_i l hxt
+    split at this
+    · rename_i l' hyt
+      simp only [Bool.and_eq_true, beq_iff_eq] at this
+      exact .inr ⟨l, l', hxt, hyt, this.1, repLbl_of this.2⟩
+    · cases this
+  · rename_i hxt
+    simp only [beq_iff_eq] at this
+    exact .inl ⟨this.symm, fun l e => hxt l e⟩
 
 /-- **Any other last instruction**: its lines, each kept or retargeted (`LineOut`). -/
 theorem termOk_kept {rep : Label → Nat → Bool} {idx : Std.HashMap Label Nat} {a : Option AInst}
@@ -447,5 +449,209 @@ theorem segChecked_of {k : Nat} {af : AFunc} {p : Plan} (hp : emitPlan k af = .o
   · unfold planRep
     rw [hpl, hpo]
     exact hc
+
+/-! ## The unsimplified lines pass the branch check (`segsOk_raw`)
+
+`emitPlan` falls back to the segments' own lines when `MachBuffer`'s simplification is not
+accepted; `segsOk_raw` shows the check accepts that fallback whenever each segment's last
+instruction has its unsimplified lines (`RawTerm`) and every block target among them is a
+segment's label: so `emitPlan` fails only if `segsOf` does. -/
+
+/-- The unsimplified lines `t` of a block's last instruction `a` (`MInst.lines`). -/
+def RawTerm : Option AInst → List Line → Prop
+  | some (.inst (.jump x)), t => t = [.ins (.b (.block x)) none]
+  | some (.inst (.condBr tl el k)), t =>
+    t = [.ins (k.insn (.block tl)) none, .ins (.b (.block el)) none]
+  | some (.inst (.testBitAndBranch k tl el rn bit)), t =>
+    t = [.ins (.tbz (k == .nz) rn bit (.block tl)) none, .ins (.b (.block el)) none]
+  | some (.inst (.tryCall _ ti)), t => ∃ call, t = [.ins call none, .ins (.b (.block ti.continuation)) none]
+  | _, _ => True
+
+theorem Line.relabel_self {x : Line} {t : Lbl} (h : x.target? = some t) :
+    x.relabel (fun _ => t) = x := by
+  cases x with
+  | ins i tc =>
+    simp only [Line.relabel, h]
+    cases i <;> simp_all [Line.target?, Insn.setTarget]
+  | word a b => simp_all [Line.target?, Line.relabel]
+  | label l => simp [Line.target?] at h
+
+theorem lineOk_self {rep : Label → Nat → Bool} {idx : Std.HashMap Label Nat} {x : Line}
+    (h : ∀ l, x.target? = some (.block l) → repLbl rep idx l (.block l) = true) :
+    lineOk rep idx x x = true := by
+  unfold lineOk
+  split
+  · rename_i l hxt
+    rw [hxt]
+    simp only [Bool.and_eq_true, beq_iff_eq]
+    exact ⟨(Line.relabel_self hxt).symm, h l hxt⟩
+  · simp
+
+theorem keptOk_self {rep : Label → Nat → Bool} {idx : Std.HashMap Label Nat} :
+    ∀ {t : List Line}, (∀ ln ∈ t, ∀ l, ln.target? = some (.block l) →
+      repLbl rep idx l (.block l) = true) → keptOk rep idx t t = true
+  | [], _ => by simp [keptOk]
+  | x :: t, h => by
+    have ih := keptOk_self (rep := rep) (idx := idx) (t := t)
+      (fun ln hl => h ln (List.mem_cons_of_mem _ hl))
+    simp only [keptOk, Bool.and_eq_true, beq_iff_eq, List.zip_cons_cons, List.all_cons,
+      List.length_cons] at ih ⊢
+    exact ⟨trivial, lineOk_self (h x List.mem_cons_self), ih.2⟩
+
+/-- `termOk` accepts a last instruction's unsimplified lines, kept as they are. -/
+theorem termOk_raw {rep : Label → Nat → Bool} {idx : Std.HashMap Label Nat} {a : Option AInst}
+    {t : List Line} {nxt : Nat} (hraw : RawTerm a t)
+    (hrep : ∀ ln ∈ t, ∀ l, ln.target? = some (.block l) → repLbl rep idx l (.block l) = true) :
+    termOk rep idx a t t nxt = true := by
+  unfold termOk
+  split
+  · rename_i x
+    simp only [RawTerm] at hraw
+    subst hraw
+    exact hrep _ List.mem_cons_self x rfl
+  · rename_i tl el k
+    simp only [RawTerm] at hraw
+    subst hraw
+    have h1 : (Line.ins (k.insn (.block tl)) none).target? = some (.block tl) := by
+      cases k <;> rfl
+    have hs : Insn.setTarget (.block tl) (k.insn (.block tl)) = k.insn (.block tl) := by
+      cases k <;> rfl
+    have hA := hrep _ List.mem_cons_self tl h1
+    have hB := hrep (.ins (.b (.block el)) none) (by simp) el rfl
+    simp [condOk, h1, hs, hA, hB]
+  · rename_i k tl el rn bit
+    simp only [RawTerm] at hraw
+    subst hraw
+    have h1 : (Line.ins (.tbz (k == .nz) rn bit (.block tl)) none).target? = some (.block tl) := rfl
+    have hs : Insn.setTarget (.block tl) (.tbz (k == .nz) rn bit (.block tl)) =
+        .tbz (k == .nz) rn bit (.block tl) := rfl
+    have hA := hrep _ List.mem_cons_self tl h1
+    have hB := hrep (.ins (.b (.block el)) none) (by simp) el rfl
+    simp [condOk, h1, hs, hA, hB]
+  · rename_i ti
+    simp only [RawTerm] at hraw
+    obtain ⟨call, rfl⟩ := hraw
+    have hB := hrep (.ins (.b (.block ti.continuation)) none) (by simp) ti.continuation rfl
+    simp [hB]
+  · exact keptOk_self hrep
+
+theorem blockLabelIdx_go_some : ∀ (L : List Line) (n : Nat) (l : Label),
+    Line.label (.block l) ∈ L → ∃ j,
+      ((L.zipIdx n).foldr (fun (x : Line × Nat) (m : Std.HashMap Label Nat) => match x.1 with
+        | .label (.block l) => m.insert l x.2
+        | _ => m) {})[l]? = some j
+  | [], n, l, h => by simp at h
+  | ln :: L, n, l, h => by
+    simp only [List.zipIdx_cons, List.foldr_cons]
+    split
+    · rename_i _ l'
+      rw [Std.HashMap.getElem?_insert]
+      split
+      · exact ⟨_, rfl⟩
+      · rename_i hne
+        rcases List.mem_cons.1 h with e | hm
+        · simp only [Line.label.injEq, Lbl.block.injEq] at e
+          subst e
+          simp at hne
+        · exact blockLabelIdx_go_some L (n + 1) l hm
+    · rename_i hn
+      rcases List.mem_cons.1 h with e | hm
+      · exact (hn l e.symm).elim
+      · exact blockLabelIdx_go_some L (n + 1) l hm
+
+theorem blockLabelIdx_some {L : List Line} {l : Label} (h : Line.label (.block l) ∈ L) :
+    ∃ j, (blockLabelIdx L)[l]? = some j :=
+  blockLabelIdx_go_some L 0 l h
+
+/-- A block label's own line represents it, unless it forwards and is not `own`. -/
+theorem repLbl_self {af : AFunc} {own : Label → Bool} {L : List Line} {l : Label}
+    (hm : Line.label (.block l) ∈ L) (hown : (af.fwd? l).isSome = true → own l = true) :
+    repLbl (repOn af own L) (blockLabelIdx L) l (.block l) = true := by
+  obtain ⟨j, hj⟩ := blockLabelIdx_some hm
+  have hL : L.toArray[j]? = some (.label (.block l)) := by
+    simpa using blockLabelIdx_get hj
+  simp only [repLbl, hj, repOn]
+  unfold repAt
+  rw [hL]
+  cases hf : af.fwd? l <;> simp_all
+
+theorem trustFwd_all {af : AFunc} {L : List Line} {idx : Std.HashMap Label Nat}
+    {ts : List (Seg × List Line × Nat)} : ∀ (n : Nat) (S : List Label),
+    (∀ l ∈ S, ts.any (fun x => x.1.label == l &&
+      segTermOk af (repOn af (S.contains ·) L) idx x) = true) → trustFwd af L idx ts n S = S
+  | 0, _, _ => rfl
+  | n + 1, S, h => by
+    simp only [trustFwd]
+    rw [List.filter_eq_self.2 h]
+    simp
+
+theorem segLines_label_mem : ∀ {ss : List Seg} {os : List (List Line)} {s : Seg},
+    os.length = ss.length → s ∈ ss → Line.label (.block s.label) ∈ segLines ss os
+  | [], _, _, _, h => by simp at h
+  | _ :: _, [], _, h, _ => by simp at h
+  | s0 :: ss, o :: os, s, hl, h => by
+    simp only [segLines]
+    rcases List.mem_cons.1 h with rfl | h
+    · exact List.mem_cons_self
+    · exact List.mem_cons_of_mem _ (List.mem_append_right _
+        (segLines_label_mem (by simpa using hl) h))
+
+/-- **The unsimplified lines pass `segsOk`** (the fallback of `emitPlan`): entry first, every
+last instruction with its unsimplified lines (`RawTerm`), every block target among them a
+segment's label. -/
+theorem segsOk_raw {af : AFunc} {ss : List Seg} {ps : PState}
+    (h0 : ss.head?.map (·.idx) = some 0)
+    (hraw : ∀ s ∈ ss, RawTerm (af.blocks[s.idx]?.bind (·.2.back?)) s.term)
+    (hlab : ∀ s ∈ ss, ∀ ln ∈ s.term, ∀ l, ln.target? = some (.block l) → ∃ s' ∈ ss, s'.label = l) :
+    segsOk af ss (ss.map (·.term)) (segLines ss (ss.map (·.term)) ++ trapLines ps) = true := by
+  have hlen : (ss.map (·.term)).length = ss.length := by simp
+  have hmem : ∀ s ∈ ss, Line.label (.block s.label) ∈
+      segLines ss (ss.map (·.term)) ++ trapLines ps := fun s hs =>
+    List.mem_append_left _ (segLines_label_mem hlen hs)
+  have hx : ∀ x ∈ segNxts ss (ss.map (·.term)) 0, x.1 ∈ ss ∧ x.2.1 = x.1.term := by
+    intro x hxm
+    obtain ⟨i, h1, h2⟩ := segNxts_mem hxm
+    rw [List.getElem?_map, h1] at h2
+    simp only [Option.map_some, Option.some.injEq] at h2
+    exact ⟨List.mem_of_getElem? h1, h2.symm⟩
+  have hok : ∀ own : Label → Bool,
+      (∀ s ∈ ss, (af.fwd? s.label).isSome = true → own s.label = true) →
+      ∀ x ∈ segNxts ss (ss.map (·.term)) 0, segTermOk af
+        (repOn af own (segLines ss (ss.map (·.term)) ++ trapLines ps))
+        (blockLabelIdx (segLines ss (ss.map (·.term)) ++ trapLines ps)) x = true := by
+    intro own hown x hxm
+    obtain ⟨hs, ho⟩ := hx x hxm
+    unfold segTermOk
+    rw [ho]
+    refine termOk_raw (hraw _ hs) fun ln hln l ht => ?_
+    obtain ⟨s', hs', rfl⟩ := hlab _ hs ln hln l ht
+    exact repLbl_self (hmem s' hs') (hown s' hs')
+  -- every forwarding segment stays trusted
+  have hfw : ∀ s ∈ ss, (af.fwd? s.label).isSome = true →
+      (((segNxts ss (ss.map (·.term)) 0).filter fun x => (af.fwd? x.1.label).isSome).map
+        (·.1.label)).contains s.label = true := by
+    intro s hs hf
+    obtain ⟨i, hi⟩ := List.getElem?_of_mem hs
+    have ho : (ss.map (·.term))[i]? = some s.term := by simp [hi]
+    obtain ⟨A, -, hm⟩ := segNxts_get (n := 0) hi ho
+    simp only [List.contains_iff_mem, List.mem_map, List.mem_filter]
+    exact ⟨_, ⟨hm, hf⟩, rfl⟩
+  have hS : segsTrust af ss (ss.map (·.term)) (segLines ss (ss.map (·.term)) ++ trapLines ps) =
+      ((segNxts ss (ss.map (·.term)) 0).filter fun x => (af.fwd? x.1.label).isSome).map
+        (·.1.label) := by
+    unfold segsTrust
+    apply trustFwd_all
+    intro l hl
+    obtain ⟨x, hxf, rfl⟩ := List.mem_map.1 hl
+    have hxm := (List.mem_filter.1 hxf).1
+    rw [List.any_eq_true]
+    exact ⟨x, hxm, by
+      simp only [beq_self_eq_true, Bool.true_and]
+      exact hok _ (fun s hs hf => hfw s hs hf) x hxm⟩
+  unfold segsOk
+  simp only [Bool.and_eq_true, beq_iff_eq, List.all_eq_true, Bool.or_eq_true]
+  refine ⟨⟨hlen.symm, h0⟩, fun x hxm => .inr ?_⟩
+  rw [hS]
+  exact hok _ (fun s hs hf => hfw s hs hf) x hxm
 
 end Backend

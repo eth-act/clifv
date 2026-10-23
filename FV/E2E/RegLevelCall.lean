@@ -197,7 +197,7 @@ theorem termOk_call_head {rep : Label → Nat → Bool} {idx : Std.HashMap Label
     have h0t : 0 < t.length := (List.getElem?_eq_some_iff.1 ht0).1
     have h0o : 0 < o.length := by rw [hlen]; omega
     obtain ⟨y, hy⟩ : ∃ y, o[0]? = some y := ⟨o[0], List.getElem?_eq_getElem h0o⟩
-    rcases hLine 0 (.ins xI none) y ht0 hy with e | ⟨l, l', h1, -, -, -⟩
+    rcases hLine 0 (.ins xI none) y ht0 hy with ⟨e, -⟩ | ⟨l, l', h1, -, -, -⟩
     · rw [hy, e]
     · rw [hno] at h1; cases h1
   · -- `i'` is a `try_call`: the call line is kept

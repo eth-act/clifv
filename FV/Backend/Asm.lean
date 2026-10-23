@@ -801,25 +801,29 @@ def repLbl (rep : Label → Nat → Bool) (idx : Std.HashMap Label Nat) (s : Lab
     | none => false
   | _ => false
 
-/-- Final line `y` for line `x`: `x` itself, or `x` with its block target resolved to another
-block label representing the old one. -/
+/-- Final line `y` for line `x`: a line without block target is kept (`x` itself); one with a
+block target becomes `x` with its target resolved to a block label representing the old one
+(possibly the same label: then that label's line must still represent the block, which fails for
+an untrusted forwarding block whose `b` `MachBuffer` may have removed). -/
 def lineOk (rep : Label → Nat → Bool) (idx : Std.HashMap Label Nat) (x y : Line) : Bool :=
-  x == y || match x.target?, y.target? with
-    | some (.block l), some l' => y == x.relabel (fun _ => l') && repLbl rep idx l l'
-    | _, _ => false
+  match x.target? with
+  | some (.block l) => match y.target? with
+    | some l' => y == x.relabel (fun _ => l') && repLbl rep idx l l'
+    | none => false
+  | _ => x == y
 
 /-- Final lines `o` for the lines `t`, line by line (`lineOk`). -/
 def keptOk (rep : Label → Nat → Bool) (idx : Std.HashMap Label Nat) (t o : List Line) : Bool :=
   o.length == t.length && (t.zip o).all fun (x, y) => lineOk rep idx x y
 
 /-- Final lines `o` of a conditional branch `ci` to `s1`, else to `s2` (followed by `b s2`):
-both kept (retargeted), one branch retargeted (`s2` next) or inverted (`s1` next), or none
-(both next, line `nxt`). -/
+both kept (retargeted; any condition), one branch retargeted (`s2` next) or inverted (`s1`
+next), or none (both next, line `nxt`). -/
 def condOk (rep : Label → Nat → Bool) (idx : Std.HashMap Label Nat) (s1 s2 : Label) (ci : Insn)
     (o : List Line) (nxt : Nat) : Bool :=
   match o with
   | [.ins c none, .ins (.b e') none] =>
-    (match c.condTarget? with
+    (match (Line.ins c none).target? with
      | some t' => decide (c = ci.setTarget t') && repLbl rep idx s1 t'
      | none => false) && repLbl rep idx s2 e'
   | [.ins c none] =>
