@@ -62,6 +62,9 @@ structure AFunc where
   `fp`): `prologue` emits nothing and `epilogueRet` only `ret`, as Cranelift does when
   `preserve_frame_pointers` is off. -/
   frame : Bool := true
+  /-- Per block (as `blocks`): Cranelift's effective coldness (`is_effectively_cold`,
+  `VCode.coldOf`); the emitter places the cold blocks after all others (`emitOrder`). -/
+  cold : Array Bool := #[]
   deriving Inhabited
 
 /-- Frame layout: slot offset (from `sp`) of every vreg, and the frame size. -/

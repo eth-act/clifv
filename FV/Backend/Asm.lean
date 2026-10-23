@@ -204,7 +204,7 @@ inductive Line where
   | ins (i : Insn) (trap : Option Clif.TrapCode := none)
   | word (target base : Lbl)
   | label (l : Lbl)
-  deriving Repr, Inhabited
+  deriving Repr, Inhabited, DecidableEq
 
 def Line.size : Line → Nat
   | .ins .. | .word .. => 4
@@ -530,6 +530,9 @@ structure FnAsm where
   lines : Array Line
   size : Nat
   traps : List TrapSite
+  /-- The block labels `MachBuffer` aliased, with the block label each resolves to (the
+  landing pads of the LSDA resolve through them, as `resolve_label_offset`). -/
+  alias : List (Label × Label) := []
   deriving Inhabited
 
 /-- The target of a conditional branch. -/
@@ -545,53 +548,339 @@ def Insn.invertTo (target : Lbl) : Insn → Insn
   | .tbz nz r bit _ => .tbz (!nz) r bit target
   | i => i
 
-/-- Branches to the next block fall through (as Cranelift's `MachBuffer` does): `b L` right
-before `L:` is dropped, and `b.c T; b E; T:` becomes `b.!c E; T:`. -/
-def fallthrough (lines : Array Line) : Array Line := Id.run do
-  let mut out : Array Line := #[]
-  let mut i := 0
-  for _ in [0:lines.size] do
-    if i ≥ lines.size then break
-    match lines[i]!, lines[i + 1]?, lines[i + 2]? with
-    | .ins c none, some (.ins (.b e) none), some (.label l) =>
-      if c.condTarget? == some l then
-        out := out.push (.ins (c.invertTo e) none)
-        i := i + 2
-        continue
-    | _, _, _ => pure ()
-    match lines[i]!, lines[i + 1]? with
-    | .ins (.b x) none, some (.label l) =>
-      if x == l then
-        i := i + 1
-        continue
-    | _, _ => pure ()
-    out := out.push lines[i]!
-    i := i + 1
-  return out
+/-! ## Emission order and branch simplification (Cranelift's `MachBuffer`)
 
-/-- The lines of an allocated function (`k` = its index in the file) before branch relaxation:
-the blocks' lines after `fallthrough`, then the deferred traps. -/
-def emitPre (k : Nat) (af : AFunc) : Except String (Array Line) := do
-  let c : FnCtx := { k, slotBase := af.slotBase }
-  let mut ps : PState := {}
-  let mut lines : Array Line := #[]
-  for (l, code) in af.blocks do
-    lines := lines.push (.label (.block l))
-    for i in code do
-      match i with
-      | .prologue => if af.frame then lines := lines ++ (prologueLines af.frameSize).toArray
-      | .epilogueRet =>
-        lines := lines ++ (if af.frame then (epilogueLines af.frameSize).toArray else #[.ins .ret])
-      | .inst m =>
-        let (ls, ps') ← m.lines c ps
-        ps := ps'
-        lines := lines ++ ls.toArray
-  lines := fallthrough lines
-  -- deferred traps (Cranelift emits them after the body)
-  for (l, code) in ps.traps do
-    lines := lines.push (.label l)
-    lines := lines.push (.ins (.udf 0xc11f) (some code))
-  pure lines
+Cranelift emits a function's blocks in lowering order with the cold ones moved after all others
+(`machinst/vcode.rs:759-770`; `AFunc.cold`, `emitOrder`). Its `MachBuffer` simplifies the
+branches at the tail of the buffer whenever a label is bound (`machinst/buffer.rs:726-748`) and
+once after the last block (`vcode.rs:1130-1132`), `optimize_branches` (`buffer.rs:999-1271`),
+on the branches registered with `add_uncond_branch`/`add_cond_branch` (`aarch64/inst/emit.rs`
+`Jump`, `CondBr`, `TestBitAndBranch`, and the `Jump` after a call with `try_call_info`; not
+`TrapIf`, `JTSequence`'s `b.hs` or the LL/SC loops' branches), repeating until none applies:
+
+1. a branch whose target resolves to the current offset is removed (`buffer.rs:1057`);
+2. the labels bound at the start of a last `b X` become aliases of `X` unless `X` resolves
+   there (`buffer.rs:1170-1196`): references to them resolve to `X`'s offset;
+3. a `b` right after another `b`, with no label at it, is removed (`buffer.rs:1207-1214`);
+4. a `b E` right after a conditional branch to the current offset is removed and the
+   conditional branch inverted to `E` (`buffer.rs:1222-1257`);
+
+with no change once more than `LABEL_LIST_THRESHOLD` = 100 labels are at a branch
+(`buffer.rs:1041`). Label references resolve through the aliases at the end
+(`resolve_label_offset`, `buffer.rs:766`); deferred traps follow the body, emitted after
+`latest_branches` is cleared (`buffer.rs:1378`).
+
+`machBuf` emulates this on the line list (aliased labels keep their zero-size line but are
+no labels of the tail any more). The emitter keeps the result only if it splits into the
+blocks' segments (label, unchanged body, simplified last instruction) that `segsOk` accepts;
+otherwise the same with only block labels aliased (`machBuf`'s `allLabels := false`), otherwise
+the unsimplified lines. -/
+
+/-- The lines of one `AInst`. -/
+def ainstLines (c : FnCtx) (af : AFunc) : AInst → PState → Except String (List Line × PState)
+  | .prologue, ps => pure (if af.frame then prologueLines af.frameSize else [], ps)
+  | .epilogueRet, ps => pure (if af.frame then epilogueLines af.frameSize else [.ins .ret], ps)
+  | .inst m, ps => m.lines c ps
+
+/-- The lines of a block's code. -/
+def codeLinesE (c : FnCtx) (af : AFunc) : List AInst → PState → Except String (List Line × PState)
+  | [], ps => pure ([], ps)
+  | a :: as, ps => do
+    let (l1, ps1) ← ainstLines c af a ps
+    let (l2, ps2) ← codeLinesE c af as ps1
+    pure (l1 ++ l2, ps2)
+
+/-- Cranelift's emission order (`vcode.rs:759-770`): the blocks (with their indices) in
+lowering order, the cold ones (`AFunc.cold`) after all others; the entry block stays first. -/
+def emitOrder (af : AFunc) : List ((Label × Array AInst) × Nat) :=
+  let cold (x : (Label × Array AInst) × Nat) : Bool := x.2 != 0 && af.cold[x.2]?.getD false
+  af.blocks.toList.zipIdx.filter (!cold ·) ++ af.blocks.toList.zipIdx.filter cold
+
+/-- A block in emission order before branch simplification: its index and label, the lines of
+its code but the last instruction (`body`) and the last instruction's lines (`term`). -/
+structure Seg where
+  idx : Nat
+  label : Label
+  body : List Line
+  term : List Line
+  deriving Inhabited
+
+/-- The segments of the blocks `bs`, emitted from state `ps`. -/
+def segsOf (c : FnCtx) (af : AFunc) :
+    List ((Label × Array AInst) × Nat) → PState → Except String (List Seg × PState)
+  | [], ps => pure ([], ps)
+  | ((l, code), i) :: bs, ps => do
+    let (body, ps1) ← codeLinesE c af code.toList.dropLast ps
+    let (term, ps2) ← codeLinesE c af code.toList.getLast?.toList ps1
+    let (ss, ps3) ← segsOf c af bs ps2
+    pure (⟨i, l, body, term⟩ :: ss, ps3)
+
+/-- The lines of the segments `ss`, block `s` ending in the lines `o` (paired in order). -/
+def segLines : List Seg → List (List Line) → List Line
+  | s :: ss, o :: os => .label (.block s.label) :: (s.body ++ o) ++ segLines ss os
+  | _, _ => []
+
+/-- The label of a line. -/
+def Line.label? : Line → Option Lbl
+  | .label l => some l
+  | _ => none
+
+/-- Replace a branch's target. -/
+def Insn.setTarget (t : Lbl) : Insn → Insn
+  | .b _ => .b t
+  | .bcond c _ => .bcond c t
+  | .cbz nz w r _ => .cbz nz w r t
+  | .tbz nz r bit _ => .tbz nz r bit t
+  | i => i
+
+/-- The label a line refers to as a branch target or jump-table entry (not `adr`/literal
+loads, whose labels are never bound at a branch). -/
+def Line.target? : Line → Option Lbl
+  | .ins (.b t) _ | .ins (.bcond _ t) _ | .ins (.cbz _ _ _ t) _ | .ins (.tbz _ _ _ t) _ => some t
+  | .word t _ => some t
+  | _ => none
+
+/-- Resolve the line's target through `f`. -/
+def Line.relabel (f : Lbl → Lbl) : Line → Line
+  | .ins i tc => match Line.target? (.ins i tc) with
+    | some t => .ins (i.setTarget (f t)) tc
+    | none => .ins i tc
+  | .word t b => .word (f t) b
+  | l => l
+
+/-- A branch `add_uncond_branch` registers: `b` to a block label (`Jump`, and the jumps of
+`CondBr`, `TestBitAndBranch` and of a call with `try_call_info`). -/
+def Line.ubr? : Line → Option Lbl
+  | .ins (.b (.block l)) none => some (.block l)
+  | _ => none
+
+/-- A branch `add_cond_branch` registers: a conditional branch to a block label (`CondBr`,
+`TestBitAndBranch`; `JTSequence`'s `b.hs` is always followed by code). -/
+def Line.cbr? : Line → Option Lbl
+  | .ins c none => match c.condTarget? with
+    | some (.block l) => some (.block l)
+    | _ => none
+  | _ => none
+
+/-- `MachBuffer`'s state over the line list: the lines so far and the label aliases. -/
+structure MBuf where
+  out : Array Line := #[]
+  alias : Std.HashMap Lbl Lbl := {}
+  deriving Inhabited
+
+/-- Resolve a label through the aliases (`resolve_label_offset`; aliases are acyclic). -/
+def MBuf.res (m : MBuf) (l : Lbl) : Lbl := Id.run do
+  let mut l := l
+  for _ in [0:m.alias.size + 1] do
+    match m.alias[l]? with
+    | some l' => l := l'
+    | none => break
+  return l
+
+/-- Is line `ln` a bound label (a label line whose label is no alias)? -/
+def MBuf.bound (m : MBuf) (ln : Line) : Option Lbl :=
+  match ln with
+  | .label l => if m.alias.contains l then none else some l
+  | _ => none
+
+/-- The index of the last line before `n` that is not a label line. -/
+def lastCode (out : Array Line) : Nat → Option Nat
+  | 0 => none
+  | n + 1 => match out[n]? with
+    | some (.label _) => lastCode out n
+    | some _ => some n
+    | none => none
+
+/-- The bound labels among the lines `out[i, j)`. -/
+def MBuf.boundIn (m : MBuf) (i j : Nat) : List Lbl :=
+  (m.out.extract i j).toList.filterMap m.bound
+
+/-- One round of `optimize_branches` (`buffer.rs:1016-1262`); `none`: no rule applies.
+`allLabels`: alias every label at a `b`, else only block labels. -/
+def MBuf.step (allLabels : Bool) (m : MBuf) : Option MBuf := do
+  let k ← lastCode m.out m.out.size
+  let ln := m.out[k]!
+  let t ← (ln.ubr?).orElse fun _ => ln.cbr?
+  let tail := m.boundIn (k + 1) m.out.size
+  let p := lastCode m.out k
+  let atBr := m.boundIn ((p.map (· + 1)).getD 0) k
+  if atBr.length > 100 then none
+  let rt := m.res t
+  if tail.contains rt then return { m with out := m.out.eraseIdx! k }
+  if ln.ubr?.isSome then
+    if atBr.contains rt then none
+    let als := if allLabels then atBr else atBr.filter (· matches .block _)
+    if !als.isEmpty then
+      return { m with alias := als.foldl (fun a l => a.insert l t) m.alias }
+    if !atBr.isEmpty then none
+    let p ← p
+    if m.out[p]!.ubr?.isSome then return { m with out := m.out.eraseIdx! k }
+    let ct ← m.out[p]!.cbr?
+    if !tail.contains (m.res ct) then none
+    match m.out[p]! with
+    | .ins c tc => return { m with out := (m.out.eraseIdx! k).set! p (.ins (c.invertTo t) tc) }
+    | _ => none
+  none
+
+/-- `optimize_branches`: the rounds until none applies (each removes a line or aliases a
+label). -/
+def MBuf.optimize (allLabels : Bool) (m : MBuf) : MBuf := Id.run do
+  let mut m := m
+  for _ in [0:m.out.size + m.out.size + 1] do
+    match m.step allLabels with
+    | some m' => m := m'
+    | none => break
+  return m
+
+/-- `MachBuffer` on the lines `ls` (optimizing at every label and at the end), then the
+references resolved; the block-label aliases. -/
+def machBuf (allLabels : Bool) (ls : List Line) : List Line × List (Label × Label) :=
+  let m := ls.foldl (fun m ln =>
+    let m := { m with out := m.out.push ln }
+    if ln matches .label _ then m.optimize allLabels else m) ({} : MBuf)
+  let m := m.optimize allLabels
+  (m.out.toList.map (Line.relabel m.res),
+    m.alias.toList.filterMap fun
+      | (.block l, _) => match m.res (.block l) with
+        | .block x => some (l, x)
+        | _ => none
+      | _ => none)
+
+/-- Split simplified lines into the segments' final last-instruction lines: each segment's
+label line, its unchanged body, then the lines up to the next block label line. -/
+def splitSegs : List Seg → List Line → Option (List (List Line))
+  | [], [] => some []
+  | [], _ :: _ => none
+  | s :: ss, .label (.block l) :: rest =>
+    if l != s.label then none
+    else if rest.take s.body.length != s.body then none
+    else
+      let r := rest.drop s.body.length
+      let o := r.takeWhile (fun ln => !(ln matches .label (.block _)))
+      (splitSegs ss (r.drop o.length)).map (o :: ·)
+  | _ :: _, _ => none
+
+/-- The block label `s` forwards to: a block other than the entry whose code is a single
+`jump` (its label resolves to the jump's target). -/
+def AFunc.fwd? (af : AFunc) (s : Label) : Option Label :=
+  match af.blocks.toList.zipIdx.find? (·.1.1 == s) with
+  | some ((_, code), i) => if i == 0 then none else match code.toList with
+    | [.inst (.jump x)] => some x
+    | _ => none
+  | none => none
+
+/-- The first line defining each block label of `L`. -/
+def blockLabelIdx (L : List Line) : Std.HashMap Label Nat :=
+  L.zipIdx.foldr (fun (ln, j) m => match ln with
+    | .label (.block l) => m.insert l j
+    | _ => m) {}
+
+/-- Line `j` of `L` represents block `s` (`fuel` bounds the search): the label lines from `j`
+on include `s`'s own, or `s` forwards to a block line `j` represents. -/
+def repAt (af : AFunc) (L : Array Line) : Nat → Label → Nat → Bool
+  | 0, _, _ => false
+  | fuel + 1, s, j =>
+    (match L[j]? with
+     | some (.label (.block l)) => l == s || repAt af L fuel s (j + 1)
+     | some (.label _) => repAt af L fuel s (j + 1)
+     | _ => false) ||
+    (match af.fwd? s with
+     | some x => repAt af L fuel x j
+     | none => false)
+
+/-- The checks of `segsOk` for one segment: the final lines `o` of the block's last
+instruction `a` (lines `t`) reach the successors `a` names; `rep s j`: line `j` represents
+block `s`, `nxt`: the line after `o`. A branch to a block label `l'` reaches `s` if `l'`'s line
+represents `s`; a removed branch falls through to `nxt`. -/
+def termOk (rep : Label → Nat → Bool) (idx : Std.HashMap Label Nat) (a : Option AInst)
+    (t o : List Line) (nxt : Nat) : Bool :=
+  let repL (s : Label) (l' : Lbl) : Bool := match l' with
+    | .block l => match idx[l]? with
+      | some j => rep s j
+      | none => false
+    | _ => false
+  -- a line kept but for a target resolved to another block label representing the old one
+  let lineOk (x y : Line) : Bool :=
+    x == y || match x.target?, y.target? with
+      | some (.block l), some l' => y == x.relabel (fun _ => l') && repL l l'
+      | _, _ => false
+  let keptOk : Bool := o.length == t.length && (t.zip o).all fun (x, y) => lineOk x y
+  let condOk (s1 s2 : Label) (ci : Insn) : Bool :=
+    match o with
+    | [.ins c none, .ins (.b e') none] =>
+      (match c.condTarget? with
+       | some t' => c == ci.setTarget t' && repL s1 t'
+       | none => false) && repL s2 e'
+    | [.ins c none] =>
+      (match c.condTarget? with
+       | some t' => (c == ci.setTarget t' && repL s1 t' && rep s2 nxt) ||
+           (c == ci.invertTo t' && repL s2 t' && rep s1 nxt)
+       | none => false)
+    | [] => rep s1 nxt && rep s2 nxt
+    | _ => false
+  match a with
+  | some (.inst (.jump x)) =>
+    (match o with
+     | [.ins (.b l') none] => repL x l'
+     | [] => rep x nxt
+     | _ => false)
+  | some (.inst (.condBr tl el k)) => condOk tl el (k.insn (.block tl))
+  | some (.inst (.testBitAndBranch k tl el rn bit)) =>
+    condOk tl el (.tbz (k == .nz) rn bit (.block tl))
+  | some (.inst (.tryCall _ ti)) =>
+    (match t, o with
+     | [call, _], [call', .ins (.b l') none] => call == call' && repL ti.continuation l'
+     | [call, _], [call'] => call == call' && rep ti.continuation nxt
+     | _, _ => false)
+  | _ => keptOk
+
+/-- The segments `ss` ending in the lines `os` laid out as `L` (`segLines ss os`, then the
+traps) are a correct simplification: entry first, every segment's final lines `termOk`. -/
+def segsOk (af : AFunc) (ss : List Seg) (os : List (List Line)) (L : List Line) : Bool :=
+  let A := L.toArray
+  let idx := blockLabelIdx L
+  let fuel := L.length + af.blocks.size + 1
+  let rep := repAt af A fuel
+  let rec go : List Seg → List (List Line) → Nat → Bool
+    | s :: ss, o :: os, j =>
+      let nxt := j + 1 + s.body.length + o.length
+      termOk rep idx (af.blocks[s.idx]?.bind (·.2.back?)) s.term o nxt && go ss os nxt
+    | [], [], _ => true
+    | _, _, _ => false
+  (ss.head?.map (·.idx)) == some 0 && go ss os 0
+
+/-- An emission plan: the segments in emission order, their final last-instruction lines, the
+emitter's final state (deferred traps) and the block-label aliases. -/
+structure Plan where
+  segs : List Seg
+  outs : List (List Line)
+  ps : PState
+  alias : List (Label × Label)
+
+/-- The deferred traps' lines (Cranelift emits them after the body). -/
+def trapLines (ps : PState) : List Line :=
+  ps.traps.toList.flatMap fun p => [.label p.1, .ins (.udf 0xc11f) (some p.2)]
+
+/-- The lines of a plan before branch relaxation. -/
+def Plan.lines (p : Plan) : List Line := segLines p.segs p.outs ++ trapLines p.ps
+
+/-- The `MachBuffer` simplification of the segments `ss` (`allLabels` as in `machBuf`), if it
+splits into them and `segsOk` accepts it. -/
+def machPlan (af : AFunc) (allLabels : Bool) (ss : List Seg) (ps : PState) : Option Plan := do
+  let (L, al) := machBuf allLabels (segLines ss (ss.map (·.term)))
+  let os ← splitSegs ss L
+  if segsOk af ss os (segLines ss os ++ trapLines ps) then some ⟨ss, os, ps, al⟩ else none
+
+/-- The emission plan of an allocated function (`k` = its index in the file): the blocks in
+`emitOrder`, `MachBuffer`'s branch simplification (`machPlan`), else the unsimplified lines. -/
+def emitPlan (k : Nat) (af : AFunc) : Except String Plan := do
+  let (ss, ps) ← segsOf { k, slotBase := af.slotBase } af (emitOrder af) {}
+  pure <| ((machPlan af true ss ps).orElse fun _ => machPlan af false ss ps).getD
+    ⟨ss, ss.map (·.term), ps, []⟩
+
+/-- The lines of an allocated function before branch relaxation. -/
+def emitPre (k : Nat) (af : AFunc) : Except String (Array Line) :=
+  (·.lines.toArray) <$> emitPlan k af
 
 /-! ## Branch relaxation
 
@@ -686,14 +975,15 @@ def relaxOf (pre : List Line) : Lbl → Bool := relaxFar pre (pre.length + 1) {}
 /-- Expand an allocated function (`k` = its index in the file) into its final line list
 (`emitPre`, then branch relaxation), with byte offsets of the trap sites. -/
 def emitFunc (k : Nat) (af : AFunc) : Except String FnAsm := do
-  let pre := (← emitPre k af).toList
+  let p ← emitPlan k af
+  let pre := p.lines
   let lines := (relaxLines (relaxOf pre) pre).toArray
   let mut off := 0
   let mut traps : Array TrapSite := #[]
   for ln in lines do
     if let .ins _ (some code) := ln then traps := traps.push ⟨off, code⟩
     off := off + ln.size
-  pure { name := af.name, k, lines, size := off, traps := traps.toList }
+  pure { name := af.name, k, lines, size := off, traps := traps.toList, alias := p.alias }
 
 /-! ## Assembly text (GNU/LLVM syntax) -/
 
