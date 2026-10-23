@@ -74,11 +74,23 @@ theorem step_addLo12 {R : RL} (hR : R.Wf) {s : Arm.ArmState} {j : Nat} {t : Opti
     R.step s = Arm.w .PC (Arm.r .PC s + 4) s := by
   simp only [RL.step, ArmStepX, insnAt_pc hR hj hprog hpc]
 
+/-- A block entered through forwarding blocks (`QE`) is related (`StRel`: no machine step is
+taken on the way). -/
+theorem QE.stRel {R : RL} {s : Arm.ArmState} {m : Loc → CV} {w : Arm.ArmState} {b : Nat}
+    (h : QE R s m w b) : StRel R s m w := by
+  induction h with
+  | std _ hq =>
+    obtain ⟨_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, hst, -, -⟩ := hq
+    exact hst
+  | fwd _ _ _ _ _ _ _ _ _ _ _ ih => exact ih
+
 /-- `Q` at a run state gives the store/world relation. -/
 theorem q_stRel {R : RL} {s : Arm.ArmState} {b : Nat} {its : List RItem} {m : Loc → CV}
     {w : Arm.ArmState} (hq : Q R s (.run ⟨b, its, m, w⟩)) : StRel R s m w := by
-  obtain ⟨_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, hst⟩ := hq
-  exact hst
+  rcases hq with hs | ⟨_, _, rfl, hqe⟩
+  · obtain ⟨_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, hst, -, -⟩ := hs
+    exact hst
+  · exact hqe.stRel
 
 /-- The pc of line `j + 1` after an instruction line `j`. -/
 theorem pcOf_succ {R : RL} {j : Nat} {i : Insn} {t : Option Clif.TrapCode}
@@ -168,21 +180,43 @@ theorem CalleeOk.g {F : BitVec 64 → Prop} {K : Nat} {X : ExtSem} {H : ArmHooks
     (Pc : BitVec 64 → MInst → Prop) (gv : Nat → String → Prop) : CalleeOkG F K G s0 Pc X H S gv :=
   ⟨fun ctx info hs => ((h.os ctx info hs).g G s0 Pc).v gv, h.pc, h.ext⟩
 
-theorem ftStep_call {x : Insn} (hx : (∃ n, x = .bl n) ∨ (∃ r, x = .blr r)) (n1 n2 : Option Line) :
-    ftStep (.ins x none) n1 n2 = ([.ins x none], 1) := by
-  have hc : x.condTarget? = none := by rcases hx with ⟨_, rfl⟩ | ⟨_, rfl⟩ <;> rfl
-  have hb : ∀ y, x ≠ .b y := by rcases hx with ⟨_, rfl⟩ | ⟨_, rfl⟩ <;> intro y h <;> cases h
-  unfold ftStep
-  split
-  · rename_i h
-    simp only [Line.ins.injEq] at h
-    exact absurd h.1 (hb _)
-  · split
-    · rename_i heq _
-      simp only [Line.ins.injEq] at heq
-      obtain ⟨rfl, -⟩ := heq
-      simp [hc]
-    · rfl
+/-- `termOk` keeps the first line of the last instruction's lines when it has no target (the
+call line of a call item). -/
+theorem termOk_call_head {rep : Label → Nat → Bool} {idx : Std.HashMap Label Nat} {i' : MInst}
+    {xI : Insn} {ls t o : List Line} {nxt : Nat}
+    (hxi : i'.callInsn? = some xI) (ht0 : t[0]? = some (.ins xI none))
+    (hno : Line.target? (.ins xI none) = none)
+    (h : termOk rep idx (some (.inst i')) t o nxt = true) :
+    o[0]? = some (.ins xI none) := by
+  unfold MInst.callInsn? at hxi
+  split at hxi
+  · -- `i'` is a plain call: `termOk`'s catch-all keeps the lines
+    rename_i info
+    simp only [termOk] at h
+    obtain ⟨hlen, hLine⟩ := keptOk_spec h
+    have h0t : 0 < t.length := (List.getElem?_eq_some_iff.1 ht0).1
+    have h0o : 0 < o.length := by rw [hlen]; omega
+    obtain ⟨y, hy⟩ : ∃ y, o[0]? = some y := ⟨o[0], List.getElem?_eq_getElem h0o⟩
+    rcases hLine 0 (.ins xI none) y ht0 hy with e | ⟨l, l', h1, -, -, -⟩
+    · rw [hy, e]
+    · rw [hno] at h1; cases h1
+  · -- `i'` is a `try_call`: the call line is kept
+    rename_i info ti
+    simp only [termOk] at h
+    split at h
+    · rename_i call t1 call' l'
+      simp only [Bool.and_eq_true, beq_iff_eq] at h
+      obtain ⟨rfl, -⟩ := h
+      have hcall0 : call = .ins xI none := by simpa using ht0
+      simp [hcall0]
+    · rename_i call t1 call'
+      simp only [Bool.and_eq_true, beq_iff_eq] at h
+      obtain ⟨rfl, -⟩ := h
+      have hcall0 : call = .ins xI none := by simpa using ht0
+      simp [hcall0]
+    · simp at h
+  · -- `i'` is neither: `callInsn?` is `none`
+    exact absurd hxi (by simp)
 
 theorem regs_of_map : ∀ {a b : List Reg}, a.map Loc.reg = b.map Loc.reg → a = b
   | [], [], _ => rfl
@@ -198,8 +232,10 @@ theorem regsArr_of_map {a b : Array Reg} (h : a.map Loc.reg = b.map Loc.reg) : a
   exact Array.toList_inj.mp (regs_of_map h')
 
 /-- The pc of a `Q` state at a call item (`call` or `try_call`) is the call instruction of the
-item's allocated form (`CallAt`). -/
-theorem callAt_of_q {R : RL} {s : Arm.ArmState} {b k : Nat} {allocs : Array Loc}
+item's allocated form (`CallAt`). (`R.Wf` is new: the new `Q`'s `dropLast`/`getLast?` coupling
+makes the remaining items' code's emptiness matter, which the checker's block correspondence
+rules out unless the item is the block's last.) -/
+theorem callAt_of_q {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {allocs : Array Loc}
     {its : List RItem} {m : Loc → CV} {w : Arm.ArmState}
     (hq : Q R s (.run ⟨b, .op k allocs :: its, m, w⟩)) {vb : VBlock} {i : MInst}
     (hvb : R.vc.blocks[b]? = some vb) (hi : vb.insts[k]? = some i)
@@ -209,27 +245,89 @@ theorem callAt_of_q {R : RL} {s : Arm.ArmState} {b k : Nat} {allocs : Array Loc}
     ∀ regs i', allocs = regs.map Loc.reg → i.assign regs = .ok i' →
       CallAt R.fa R.base (Arm.r .PC s) i' := by
   intro regs0 i0 hal0 hasg0
-  obtain ⟨j0, items, pre, regs, i', c1, c2, ls1, ls2, ps1, psm, ps2, T, cc, wh, ops, hal, -, -, hasg,
-    hc1', -, -, -, -, h1, -, -, hdrop, hpc, -⟩ := q_op hq hvb hi
-  rw [hal] at hal0
+  rcases Q.cases hq with hqs | ⟨vbf, allocsf, regsf, if_, xf, bx, hvbf, he, hits, half, hins,
+    hasgf, hsuccf, itx, hitx, hqx⟩
+  rotate_left
+  · -- a forwarding block: its `jump` is no call instruction
+    rw [hvb] at hvbf
+    cases hvbf
+    simp only [RItem.op.injEq] at he
+    obtain ⟨rfl, rfl⟩ := he
+    subst hits
+    have hi1 := hi
+    rw [hins] at hi1
+    simp only [List.getElem?_toArray, List.getElem?_cons_zero, Option.some.injEq] at hi1
+    subst hi1
+    obtain ⟨hna, hnr, x, ls, hl, hxc, hxi⟩ := hcall regsf (.jump xf) hasgf
+    simp [MInst.callInsn?] at hxi
+  obtain ⟨j0, vb0, items, pre, code, X, ps1, psm, ps2, x, hvb0, hit, hsplit, hchk, hcode, hX, hT,
+    htr, hdrop, hpc, hst, hx, hsc⟩ := id hqs
+  rw [hvb] at hvb0; cases hvb0
+  obtain ⟨c1, c2, hc1, hc2, rfl⟩ := itemsCode_cons hcode
+  obtain ⟨regs, i1, i', rfl, hi0, hasg, hc1'⟩ := itemCode_op hc1
+  rw [hi] at hi0; cases hi0
   obtain rfl := regsArr_of_map hal0
   rw [hasg] at hasg0
   injection hasg0 with e
   subst e
-  obtain ⟨hna, hnr, x, ls, hl, hx, hxi⟩ := hcall regs i' hasg
+  obtain ⟨hna, hnr, xI, ls, hl, hxc, hxi⟩ := hcall regs i' hasg
   rcases hc1' with ⟨rfl, -, -⟩ | ⟨ds, rfl, -⟩ | ⟨us, rfl, -⟩
-  · have h1' := codeLinesE_single h1
+  rotate_left
+  · exact absurd rfl (hna ds)
+  · exact absurd rfl (hnr us)
+  cases its with
+  | nil =>
+    -- the item is the block's last: its lines are the segment's term lines
+    obtain ⟨j1, vb1, it1, pre1, c1', X', psA, psm1, ps2', y, hvb1, hit1, hsplit1, hchk1, hc1d,
+      hX1, hT1, htr1, hdrop1, hpc1, hst1, hterm⟩ := qs_term hR hqs
+    rw [hvb] at hvb1
+    cases hvb1
+    rw [hc1] at hc1d
+    cases hc1d
+    simp only [List.dropLast_singleton, codeLinesE, bind, Except.bind, pure, Except.pure,
+      Except.ok.injEq, Prod.mk.injEq] at hX1
+    obtain ⟨rfl, rfl⟩ := hX1
+    rw [show [AInst.inst i'].getLast?.toList = [AInst.inst i'] from by simp] at hT1
+    have hT1' := codeLinesE_single hT1
+    rw [hl psA] at hT1'
+    simp only [Except.ok.injEq, Prod.mk.injEq] at hT1'
+    obtain ⟨he, -⟩ := hT1'
+    rw [← he] at hterm
+    have h0 : (.ins xI none :: ls)[0]? = some (.ins xI none) := by simp
+    have hno : Line.target? (.ins xI none) = none := by
+      rcases hxc with ⟨_, rfl⟩ | ⟨_, rfl⟩ <;> simp [Line.target?]
+    have hterm' := termOk_call_head (ls := ls) hxi h0 hno hterm
+    have hdrop1' : R.L.drop j1 = relaxLines R.far y.2.1 ++
+        R.L.drop (rix R.far (planLines R.fa.k R.af) y.2.2) := by simpa using hdrop1
+    cases hy21 : y.2.1 with
+    | nil => rw [hy21] at hterm'; simp at hterm'
+    | cons a as =>
+      rw [hy21] at hterm'
+      simp only [List.getElem?_cons_zero, Option.some.injEq] at hterm'
+      obtain rfl : a = .ins xI none := hterm'
+      rw [hy21, relaxLines_cons,
+        relaxLine_of_none (by rcases hxc with ⟨_, rfl⟩ | ⟨_, rfl⟩ <;> rfl),
+        List.singleton_append, List.cons_append] at hdrop1'
+      have hj : R.L[j1]? = some (.ins xI none) := drop_get hdrop1'
+      exact ⟨j1, xI, none, hj, hxi, hpc1⟩
+  | cons it its' =>
+    have hne : it :: its' ≠ [] := by simp
+    obtain ⟨c, ins, _, hc, -⟩ := hR.check
+    obtain ⟨preds, hcfg⟩ := hc.cfg
+    obtain ⟨c0, k0, a0, out0, -, -, hrun⟩ := hchk
+    obtain ⟨-, hke, i2, ops2b, a2, hi2b, hops2b, hstep2, hrunA⟩ := runItems_op hrun
+    have hc2ne : c2 ≠ [] := itemsCode_ne_nil hcfg hvb hrunA hne hc2
+    rw [List.dropLast_append_of_ne_nil hc2ne] at hX
+    obtain ⟨ls1, X', psm', h1, h2, rfl⟩ := codeLinesE_append _ _ _ _ _ hX
+    have h1' := codeLinesE_single h1
     rw [hl ps1] at h1'
     simp only [Except.ok.injEq, Prod.mk.injEq] at h1'
     obtain ⟨rfl, -⟩ := h1'
-    rw [List.cons_append, ftList_cons, ftStep_call hx] at hdrop
-    simp only [List.drop_one, List.tail_cons, List.singleton_append, List.cons_append] at hdrop
-    rw [relaxLines_cons, relaxLine_of_none (by rcases hx with ⟨_, rfl⟩ | ⟨_, rfl⟩ <;> rfl),
+    rw [List.cons_append, List.cons_append, relaxLines_cons,
+      relaxLine_of_none (by rcases hxc with ⟨_, rfl⟩ | ⟨_, rfl⟩ <;> rfl),
       List.singleton_append, List.cons_append] at hdrop
-    have hj : R.L[j0]? = some (.ins x none) := drop_get (Z := []) (by rw [hdrop]; rfl)
-    exact ⟨j0, x, none, hj, hxi, hpc⟩
-  · exact absurd rfl (hna ds)
-  · exact absurd rfl (hnr us)
+    have hj : R.L[j0]? = some (.ins xI none) := drop_get hdrop
+    exact ⟨j0, xI, none, hj, hxi, hpc⟩
 
 /-- The lines of an allocated `call`: one `bl`/`blr`. -/
 theorem call_hcall {ctx : FnCtx} {info : CallInfo} :
@@ -366,8 +464,8 @@ theorem realizes_call {R : RL} (hR : R.Wf)
     exact hC.ext _ _ _ _ _ hx herr
   -- the callee contract's premise at the call state
   have hpre : R.CallPre s := by
-    obtain ⟨-, -, -, regs, i', -, -, -, -, -, -, -, -, cc, wh, ops', hal, -, -, hasg, -, hops', hstat,
-      -, -, -, -, -, -, -, hst⟩ := q_op hq hvb hi
+    obtain ⟨-, -, -, regs, i', -, -, -, -, -, -, -, -, -, cc, wh, ops', hal, -, -, hasg, -, hops',
+      hstat, -, -, -, -, -, -, -, -, hst, -, -⟩ := q_op hR hq hvb hi hk
     rw [hops] at hops'; cases hops'
     have hm : ∀ r, r.allocatable = true → m (.reg r) = regVal s r := fun r hr =>
       hst.store (.reg r) (fun r' e => by cases e; exact hr) trivial
@@ -375,11 +473,11 @@ theorem realizes_call {R : RL} (hR : R.Wf)
     rw [hal, useVals_of_store hstat hm] at hsemU
     exact ⟨R.ctx, .call info, .next, ⟨info, ⟨b, vb, k, hvb, .inl hi⟩, .inl rfl⟩, by rw [hst.sp]; exact RL.K_le hR,
       fun a ha => by rw [hst.sp] at ha; exact RL.below_F ha, hst.gkeep, cc, wh, ops, regs, i', w,
-      outs, w', hops, hstat, hasg, callAt_of_q hq hvb hi call_hcall regs i' hal hasg, hst.world,
+      outs, w', hops, hstat, hasg, callAt_of_q hR hq hvb hi call_hcall regs i' hal hasg, hst.world,
       hst.align, hst.err, hsemU⟩
   refine realizes_op_coreX hR hq hvb hi hops hsz hsem hlen hk (exec := fun _ => callExec R.H)
     (fun _ => RL.callAtG hR (hC.os R.ctx info ⟨b, vb, k, hvb, .inl hi⟩) (q_stRel hq).sp
-      (q_stRel hq).gkeep fun i' ⟨regs, hal, hasg⟩ => callAt_of_q hq hvb hi call_hcall regs i' hal hasg)
+      (q_stRel hq).gkeep fun i' ⟨regs, hal, hasg⟩ => callAt_of_q hR hq hvb hi call_hcall regs i' hal hasg)
     hpre (fun regs i' hasg _ _ hcs => ?_) hW'
   obtain ⟨info', rfl⟩ := assign_call_form hasg
   have hgen : ∀ x, (∀ ps, (MInst.call info').lines R.ctx ps = .ok ([.ins x], ps)) →
