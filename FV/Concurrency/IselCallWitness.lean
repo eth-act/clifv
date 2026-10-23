@@ -1,4 +1,4 @@
-import FV.Concurrency.IselCall
+import FV.Concurrency.IselResume
 import FV.Concurrency.RealizeWitness
 import FV.Concurrency.IselRefinesWitness
 import FV.Concurrency.CallLoadData
@@ -6,13 +6,13 @@ import FV.Concurrency.CallLoadData
 /-!
 # Witness: layer 2 pausing at calls (#473, (2a))
 
-* `driverHypT_of`: `DriverHypT` and the check admitting calls for a checked function whose
-  externs are not the environment's (its calls are calls of program functions);
 * the caller `CallSeg.WitnessC.fC` (`v1 = call fn0(v0); return v1`, `fn0 = colocated %ld`) as
   the driver lowers it: `threadCheck` rejects it (`checksFC`), `threadCheckC` accepts it, and
   **`isel_pause_fC`**: every premise of `IselCall.isel_pauseC` holds for it in the program
   `pCL` (the caller and the compiled `atomic_load`) but the CLIF entry state, its relation to the
-  entry world, the arguments and the run; `atCall_csC`: its CLIF entry state is at the call.
+  entry world, the arguments and the run; `atCall_csC`: its CLIF entry state is at the call;
+* **`isel_resume_fC`**: every premise of `IselResume.isel_resumeC` but the match at the call and
+  the callee's return holds for it.
 
 Checks by `native_decide` (witness only).
 -/
@@ -21,70 +21,7 @@ namespace Concurrency.IselCall.Witness
 
 open Arm ArmThread ClifThread Backend Backend.Proof Backend.Proof.Driver VCodeThread PrepThread
   IselThread ThreadRefine E2E ClifCStepTerm RealizeCompiled.Witness IselRefines.Witness
-  CallSeg.WitnessC
-
-/-- A program without functions. -/
-def pNil : Clif.Program := { funcs := [] }
-
-/-- A checked function is in the subset of the program without functions. -/
-theorem inSubset_nil {f : Clif.Function} (hv : verifiable f = true) : InSubset pNil f := by
-  simp only [verifiable, abiSigs, indSigsOk, Bool.and_eq_true, List.all_eq_true,
-    decide_eq_true_eq, and_assoc] at hv
-  obtain ⟨hE, hf, hext', hind⟩ := hv
-  exact ⟨hE, fun _ _ _ _ _ _ _ _ _ => rfl, fun _ _ _ _ _ _ _ _ => rfl, ⟨hf, hext'⟩, hind⟩
-
-/-- **`DriverHypT` and the check admitting calls for a checked function** (module doc;
-`RealizeCompiled.Witness.driverHyp_of`'s construction). -/
-theorem driverHypT_of {f : Clif.Function} {vc : VCode} {Γ : E2E.Rel} {fctx : FnCtx} {X : ExtSem}
-    {c : BitVec 64} {env : Clif.Env} {p : Clif.Program}
-    (hlow : lowerCheck f vc = true) (hthr : IselCheck.threadCheckC f = true)
-    (hext : ∀ e ∈ f.externs, env.extern e.2.name = none) (hind : indSigs f = [])
-    (hv : verifiable f = true) (hnt : f.blocks.all (fun B => !B.term.isTry) = true)
-    (hcfg : ∃ ss ps, vc.cfg = .ok (ss, ps)) (hout0 : vc.outgoing = 0)
-    (hslot : fctx.slotBase = Γ.slotOff)
-    (hsym : ∀ n b, Γ.syms n = some b → X.sym n 0 = BitVec.ofNat 64 b) :
-    ∃ ctx st0 R gn bl A, DriverHypT f vc ctx st0 R gn bl A (csem Γ.F fctx X) (RelW Γ f c) env p ∧
-      IselCheck.threadCheckBlC f bl = true := by
-  obtain ⟨ctx, st0, R, gn, bl, A, hshape, hcert, hbr, hbl⟩ :=
-    IselCheck.obligations_of_threadCheckC hlow hthr
-  have hsub := inSubset_nil hv
-  have hX : XCallsOk env (f.externs.map (·.2)) (RelW Γ f c) X := by
-    intro ext hmem g _ _ _ _ _ _ _ _ _ hg
-    obtain ⟨e, he, rfl⟩ := List.mem_map.mp hmem
-    rw [hext e he] at hg; cases hg
-  have hXI : XCallsIndOk env (indSigs f) (RelW Γ f c) X := by
-    rw [hind]; intro s h; cases h
-  have hRef : Refines Γ.F (csem Γ.F fctx X) := refines_csem Γ.F fctx X
-  have hmem : MemRefines Γ.F Γ.slotOff Γ.syms (csem Γ.F fctx X) :=
-    memRefines_csem Γ.F fctx X hslot hsym
-  have hcalls := callsRefine_csem (F := Γ.F) (ctx := fctx) hX
-  have hicalls := indCallsRefine_csem (F := Γ.F) (ctx := fctx) hXI hsym
-    (fun _ _ _ h => h.1.1.symbols)
-  have houtB : vc.outgoing ≤ Γ.out := by rw [hout0]; exact Nat.zero_le _
-  refine ⟨ctx, st0, R, gn, bl, A, {
-    shape := hshape
-    cert := hcert
-    dsem := (driverSem_csem Γ.F fctx X).toDriverSemG
-    insts := instCalls_of_rules lowerRulesCorrect_program excludedUnmatchable callRulesCorrect
-      indRulesCorrect memRulesCorrect_program hRef (mrStable_relW Γ f c) hcalls hicalls hmem
-      (outArgsOk_relW Γ f c) (callsStack_mono (callsStack_of_check hlow) houtB)
-      (memRelOk_relW Γ f c)
-    terms := termCalls_of_rules lowerTermRulesCorrect termUnmatchable branchRulesCorrect
-      branchExcludedUnmatchable hRef (mrStable_relW Γ f c)
-    indSig := indSig_of_subset hsub
-    subE := hsub.subsetE
-    entryLocs := entryOk_of_check hlow
-    brIdx := hbr
-    noTail := noTail_of_subset hsub
-    tries := ⟨_, tryCalls_of_rules tryRulesCorrect tryUnmatchable hRef (mrStable_relW Γ f c) hmem
-      (outArgsOk_relW Γ f c) hcalls, tryStack_mono (tryStack_of_check hlow) houtB⟩
-    tryExt := fun B hB fn args et ht => by
-      have := List.all_eq_true.mp hnt B hB
-      rw [ht] at this; cases this
-    tryInd := tryIndCalls_of_rules tryIndRulesCorrect tryIndUnmatchable hRef
-      (mrStable_relW Γ f c) hicalls
-    tryIndSig := tryIndSig_of_subset hsub
-    cfg := hcfg }, hbl⟩
+  CallSeg.WitnessC IselResume
 
 /-! ## The caller of `atomic_load` -/
 
@@ -93,7 +30,8 @@ theorem checksFC : lowerCheck fC vcC = true ∧ IselCheck.threadCheckC fC = true
     (indSigs fC).isEmpty = true ∧ verifiable fC = true ∧
     fC.blocks.all (fun B => !B.term.isTry) = true ∧
     IselThread.Witness.isOkB vcC.cfg = true ∧ vcC.outgoing = 0 ∧
-    (locsOf fC.sig).all (fun l => match l with | .stack _ => false | _ => true) = true := by
+    (locsOf fC.sig).all (fun l => match l with | .stack _ => false | _ => true) = true ∧
+    fC.externs = [(0, extF)] := by
   native_decide
 
 theorem cfgFC : ∃ ss ps, vcC.cfg = .ok (ss, ps) := by
@@ -105,7 +43,7 @@ theorem cfgFC : ∃ ss ps, vcC.cfg = .ok (ss, ps) := by
 
 theorem fC_reg : ∀ off, ArgLoc.stack off ∉ locsOf fC.sig := by
   intro off hm
-  have := List.all_eq_true.mp checksFC.2.2.2.2.2.2.2.2.2 _ hm
+  have := List.all_eq_true.mp checksFC.2.2.2.2.2.2.2.2.2.1 _ hm
   simp at this
 
 /-- The caller's CLIF entry state is at its call. -/
@@ -136,7 +74,7 @@ theorem isel_pause_fC {Γ : E2E.Rel} {fctx : FnCtx} {c : BitVec 64} {env : Clif.
               Stop env pCL t) ∧ ∀ v, t = .ret v → n = tr.length) ∨
             n = tr.length ∧ ∃ s' vs', t = .run s' ∧ AtCallS s' ∧ cT = .run vs' ∧
               Match fC ctx R gn bl A (RelW Γ fC c) slots s' vs') := by
-  obtain ⟨hlow, hthr, -, hnames, hind, hv, hnt, -, hout0, -⟩ := checksFC
+  obtain ⟨hlow, hthr, -, hnames, hind, hv, hnt, -, hout0, -, -⟩ := checksFC
   have hext : ∀ e ∈ fC.externs, env.extern e.2.name = none := by
     intro e he
     have : e.2.name ∈ fC.externs.map (·.2.name) := List.mem_map_of_mem he
@@ -150,5 +88,43 @@ theorem isel_pause_fC {Γ : E2E.Rel} {fctx : FnCtx} {c : BitVec 64} {env : Clif.
   exact isel_pauseC H hchk (memRelOk_relW Γ fC c) (relW_wf hc) VCodeThread.Witness.X0_tls
     (fun _ _ _ => rfl) (memRefines_csem Γ.F fctx _ hslot hsym) (mrStable_relW Γ fC c) fC_reg hB0
     hcall hfunc hslots hbody hterm hregs hty hsig hmr hargs hr
+
+/-- **Layer 2 resuming after the caller's call** (module doc): every premise of
+`IselResume.isel_resumeC` but the match at the call and the callee's return. -/
+theorem isel_resume_fC {Γ : E2E.Rel} {fctx : FnCtx} {X : ExtSem} {c : BitVec 64}
+    (hslot : fctx.slotBase = Γ.slotOff)
+    (hsym : ∀ n b, Γ.syms n = some b → X.sym n 0 = BitVec.ofNat 64 b) :
+    ∃ ctx R gn bl A, ∀ (slots : List (Clif.SlotId × Nat)) (s : Clif.State) (b k : Nat)
+      (ρ : Nat → CV) (w : ArmState) (stm : Clif.Stmt) (rest : List Clif.Stmt) (fn : Clif.FnRef)
+      (args : List Clif.ValueId) (ext : Clif.ExtFunc) (vals rvals : List Clif.Val)
+      (cm' : Clif.Mem) (regs' : Clif.Regs) (outs : List CV) (y : ArmState),
+      Match fC ctx R gn bl A (RelW Γ fC c) slots s ⟨b, k, ρ, w⟩ →
+      s.frame.body = stm :: rest → stm.inst = .call fn args → s.frame.func.extern? fn = some ext →
+      s.frame.getMany args = .ok vals → vals.map (·.ty) = Clif.AbiParam.tys ext.sig.params →
+      rvals.map (·.ty) = Clif.AbiParam.tys ext.sig.returns →
+      s.frame.regs.setMany stm.results rvals = some regs' →
+      outs.length = (sigRets ext.sig).length → PrefixHold rvals outs → RelW Γ fC c slots cm' y →
+      ∃ ρ', VStep vcC (csem Γ.F fctx (xcallX X outs y)) (.run ⟨b, k, ρ, w⟩)
+          (.run ⟨b, k + 1, ρ', y⟩) ∧
+        Match fC ctx R gn bl A (RelW Γ fC c) slots
+          { s with frame := { s.frame with regs := regs', body := rest }, mem := cm' }
+          ⟨b, k + 1, ρ', y⟩ := by
+  obtain ⟨hlow, hthr, -, -, hind, hv, hnt, -, hout0, -, hexts⟩ := checksFC
+  obtain ⟨ctx, st0, R, gn, bl, A, hshape, hcert, hbr, hchk⟩ :=
+    IselCheck.obligations_of_threadCheckC hlow hthr
+  refine ⟨ctx, R, gn, bl, A, fun slots s b k ρ w stm rest fn args ext vals rvals cm' regs'
+    outs y hm hbody hc hext hvals htys hrty hregs hlen hpre hmr => ?_⟩
+  have hfunc : s.frame.func = fC := hm.2.1
+  have hextF : ext = extF := by
+    rw [hfunc, Clif.Function.extern?, hexts] at hext
+    simp only [List.lookup] at hext
+    split at hext
+    · exact (Option.some.inj hext).symm
+    · cases hext
+  refine isel_resumeC hshape hcert hbr hchk hlow (List.isEmpty_iff.mp hind) hv hnt cfgFC hout0
+    hslot hsym hm hbody hc hext ?_ hvals htys hrty hregs hlen hpre hmr
+  intro e he _
+  rw [hexts, List.mem_singleton] at he
+  rw [he, hextF]
 
 end Concurrency.IselCall.Witness

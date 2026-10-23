@@ -766,18 +766,57 @@ they are; the per-thread layers are new files.
       * **(2b) the callee's entry from the pause**: `CompiledE` of the callee from the caller's
         `Match` at the call (the CLIF state after `stepCall`'s push, `ClifLift.pushC`) and layer
         4b's `Q` at the `call` item (the fixed-use operands put the arguments in x0…, `ArgsAtEntry`).
-      * **(2c) the resume**: from the callee's return (pc after the `bl`, `sp`, `R.F` memory,
-        program — `resumeQ` — and in addition the callee-saved registers and the result registers
-        with `PrefixHold rvals outs` for the CLIF results; for a compiled callee from its layer 4b
-        at its epilogue, for an external one part of its `Ret`), rebuild layer 4a's `Match` by
-        `alloc_back` on the `call` step under an `ExtSem` returning exactly those outputs and that
-        world (`op_sound` takes arbitrary outputs), layer 3's by `prep_back`, and layer 2's
-        `LowerSim.Match` after `ClifCStepTerm.cstep_ret_pop` by `IselCtlCallRules.results_call`
-        (the other live vregs are untouched by the VCode `call`).
+      * **(2c) the resume — done per layer (`IselResume.lean`, `CallResumeQ.lean`,
+        `CallResumeLayers.lean`; witnesses `IselCallWitness.isel_resume_fC`,
+        `CallResumeWitness.resume_RC`)**. The relations after the return are rebuilt by one step
+        of the `call` under the external semantics returning the callee's outputs and the caller's
+        state after the return as the world (`IselResume.xcallX`; a VCode/allocated step, no
+        thread footprint). Layer 2 (**`isel_resumeC`**): the driver's statement step in the
+        **extern view** — the callee as an extern of the environment returning exactly the CLIF
+        return values and memory (`envX`), the program without functions (`pNil`), the memory
+        relation pinned to the caller's slots (`pinSl`), `DriverHypT` for any environment from the
+        lowering's obligations (`driverHypT_mk`, `driverHypT_of`) — gives `Match` after the CLIF
+        return from `PrefixHold rvals outs` and the memory relation at the caller's slots after
+        the return. Layers 3–4b (**`resume_layers`**): `mstep_call` (the allocated `call` steps
+        from `Q` at the `call` item when the callee preserved the caller's live locations outside
+        the call's clobbers and the low halves of the clobbered callee-saved registers, `ckeep`;
+        the outputs the def locations' values), `alloc_call_vstep` (`op_sound`, the checker's
+        `Match` after it), `pmatch_call`/`prep_vstep_next` (`prepare`'s block correspondence),
+        **`resumeQW`** (`resumeQ` for any store holding the state's live locations and any world
+        agreeing outside `R.F`, the caller's frame/code/kept addresses `R.FK` kept). Remaining for
+        (3): the callee contract that supplies these premises — for a compiled callee, from its
+        layer 4a `Match` at its `rets` (callee-saved registers, `RegallocSound.Match`'s `.ret`
+        case) and the epilogue (`RegLevelFrame.ret_machine`, `CallResume.rets_privP`), the result
+        registers (the call's fixed defs), `MemAgree` of its final CLIF memory with the Arm memory
+        (for the memory relation at the caller's slots); for an external callee, part of its
+        `Ret`.
       * **(3)** `SegOk` for a compiled function in `MemScopeLSC` on the machine of
         `arm_alloc_refines_lsCL`: its segments are the runs between its entry, its calls' resumes
         and its `rets`, each by layers 2–4b from the relation of (2a)/(2c); `link_compose_ext`
-        then gives `FunReal` for every activation, `realizes_linked` the program level.
+        then gives `FunReal` for every activation, `realizes_linked` the program level. **Done so
+        far**: layers 2–4a from related configurations (`CallLayers.isel_alloc_refinesC`: the
+        relations `Driver.Match`, `PMatch`, the checker's `MatchRun` at a segment's start; a run
+        of the allocated code is realized entirely with a step at its end, or up to where the CLIF
+        thread stops, or — with `NoCall` — entirely, ending at a call statement related by all
+        three relations to the run's last configuration; `prep_run`/`alloc_run` keep the
+        relations, `PrepThread.prepFacts_of_check` gives `prepare`'s); witness
+        `CallResumeWitness.isel_alloc_fC`. **Still open**, in order: (i) layer 4b in it
+        (`arm_alloc_refines_lsCL` from `Q ∧ AInv` at the segment's start, then
+        `isel_alloc_refinesC` on its allocated run and `Refines.take` as in
+        `ThreadCompose.arm_isel_refinesE'`; the `Done` end excluded as in
+        `ThreadProgress.arm_isel_refines_fullR`); the entry's relations (`MConf.init`,
+        `VConf.init` as `AllocThread.alloc_thinP`/`IselCall.isel_refines_entryC` build them);
+        (ii) the end at a `rets` item: the epilogue and `ret` (`CallResume.rets_privP`,
+        `RegLevelFrame.ret_machine`) and the CLIF return pop (`ClifCStepTerm.cstep_ret_pop`), giving
+        the callee contract `Ret` of (2c) (callee-saved registers from the checker's `.ret` `Match`,
+        the result registers, `MemAgree`); (iii) (2b) the callee's entry from the relations at the
+        pause (`enterFunc`'s CLIF state under `ClifLift.pushC`, the arguments in x0… from the call's
+        fixed uses, the callee's `RL` from the caller's state at the `bl`, its memory relation);
+        (iv) the thread-wide private set (every activation's `PrivA` and the CLIF events' avoidance
+        of it; with CLIF stack slots in callees the private sets of different activations overlap
+        other activations' slots, so the first scope is functions without stack slots) and a
+        linked machine dispatching on the program of the return address; then `SegOk`,
+        `link_compose_ext`, and `realizes_call_full`/the rmw-callee witness as instances.
   * **the prologue, from the ABI entry (done, `ArmAllocEntry.lean`)**: `stp_fplr_evs` (the
     prologue's `stp x29, x30, [sp, #-16]!`: one plain write at `sp - 16`, no exclusive);
     `q_init_lines` (`RegLevelFrame.q_init` with the prologue's lines, `LinesAt`, and its step
