@@ -1,5 +1,6 @@
 import FV.Backend
 import FV.Backend.Lowering.Stock
+import FV.Backend.RegallocPerEdgeDriver
 
 /-!
 # regalloc2's input as Cranelift builds it (#551, #586, #587)
@@ -139,9 +140,11 @@ def irUsed (f : Clif.Function) : Std.HashSet Nat := Id.run do
 
 /-- regalloc2's input for a prepared `vcp` and how to read its answer back. Per instruction of
 `vcp` (in block order): `dropInst` (not in `code`) and `dropOps` (operand indices not in
-`code`'s instruction; all fixed-register defs). -/
+`code`'s instruction; all fixed-register defs). `edges`: the branch arguments of `code` per
+block and successor (`vcodeJsonAt`; `none`: each block's `branchArgs`, `vcodeJson`). -/
 structure Shape where
   code : VCode
+  edges : Option (Array (Array (Array Reg))) := none
   dropInst : Array Bool
   dropOps : Array (List Nat)
   /-- what was done (`FV_RA_DIAG`) -/
@@ -219,10 +222,27 @@ def vregsOf (vc : VCode) : Std.HashSet Nat :=
       | .ok ops => ops.foldl (fun s o => s.insert o.vreg) s
       | .error _ => s) s
 
+/-- The CLIF predecessor edges of every block of `f` (`block_in_count` of
+`BlockLoweringOrder::new`: every successor edge of every block, duplicates and unreachable
+predecessors included). -/
+def indegrees (f : Clif.Function) : Array Nat := Id.run do
+  let mut n := Array.replicate f.blocks.length 0
+  for b in f.blocks do
+    for (id, _) in Stock.destinations b.term do
+      if let some i := f.blocks.findIdx? (·.id == id) then n := n.modify i (· + 1)
+  pure n
+
 /-- `vcp` without the `args` pairs of parameters without IR use (`ir`) or use in `vcp`, without
-an empty `args`, and without the x0 defs `sdefs` of calls to `sret` callees; renamed by `m`. -/
-def reshape (vcp : VCode) (ir sdefs : Std.HashSet Nat) (m : Std.HashMap Nat Nat) (next : Nat) :
-    Shape := Id.run do
+an empty `args`, without the x0 defs `sdefs` of calls to `sret` callees, and without the edge
+blocks Cranelift does not make; renamed by `m`. `lowerFunction` reaches every successor of a
+`try_call`, and every successor with block arguments of a `brif`/`br_table`, through an edge
+block of its own (labels `nb` on, `nb` the number of CLIF blocks: one `jump` with the
+arguments). Cranelift's `BlockLoweringOrder::new` makes an edge block only for a successor
+with several CLIF predecessor edges (`indeg`, unreachable predecessors and duplicate edges
+included; `machinst/blockorder.rs:204-225`); otherwise the branch passes the arguments to the
+successor itself (regalloc2's per-successor branch arguments, `vcodeJsonAt`). -/
+def reshape (vcp : VCode) (ir sdefs : Std.HashSet Nat) (m : Std.HashMap Nat Nat) (next : Nat)
+    (nb : Nat) (indeg : Array Nat) : Shape := Id.run do
   let used := usedVregs vcp
   let mut dropInst : Array Bool := #[]
   let mut dropOps : Array (List Nat) := #[]
@@ -261,9 +281,60 @@ def reshape (vcp : VCode) (ir sdefs : Std.HashSet Nat) (m : Std.HashMap Nat Nat)
       dropOps := dropOps.push (if i'.isNone then [] else ds)
       if let some j := i' then insts := insts.push j
     blocks := blocks.push { b with insts }
+  -- edge blocks: those of `lowerFunction` with one predecessor, to a block with one CLIF
+  -- predecessor edge
+  let preds := match vcp.cfg with | .ok (_, p) => p | .error _ => #[]
+  let idx : Std.HashMap Label Nat := blocks.zipIdx.foldl (fun h (b, i) => h.insert b.label i) {}
+  let starts := (vcp.blocks.foldl (fun (acc, s) b => (acc.push s, s + b.insts.size)) (#[], 0)).1
+  let direct (l : Label) : Option (Nat × Label × Array Reg) := do
+    let j ← idx[l]?
+    let E ← blocks[j]?
+    if l < nb || !E.params.isEmpty || (preds[j]?.map (·.size)) != some 1 then none
+    match E.insts.toList with
+    | [.jump t] => if t < nb && indeg[t]? == some 1 then some (j, t, E.branchArgs) else none
+    | _ => none
+  let mut gone : Std.HashSet Nat := {}
+  let mut code : Array VBlock := #[]
+  let mut edges : Array (Array (Array Reg)) := #[]
+  for b in blocks do
+    let t := b.insts.back?.getD (.udf (.user 0))
+    let ts := t.targets
+    if ts.length < 2 && !(t matches .tryCall ..) then
+      code := code.push b
+      edges := edges.push (if ts.isEmpty then #[] else #[b.branchArgs])
+      continue
+    let mut ls : Array Label := #[]
+    let mut row : Array (Array Reg) := #[]
+    for l in ts do
+      match direct l with
+      | some (j, tl, args) =>
+        gone := gone.insert j
+        ls := ls.push tl
+        row := row.push args
+      | none =>
+        ls := ls.push l
+        row := row.push #[]
+    match t.setTargets ls.toList with
+    | some t' =>
+      code := code.push { b with insts := b.insts.pop.push t' }
+      edges := edges.push row
+    | none => return .same vcp "setTargets"
+  let mut code' : Array VBlock := #[]
+  let mut edges' : Array (Array (Array Reg)) := #[]
+  for ((b, row), j) in (code.zip edges).zipIdx do
+    if gone.contains j then
+      for k in [0:b.insts.size] do
+        if let some s := starts[j]? then dropInst := dropInst.set! (s + k) true
+    else
+      code' := code'.push b
+      edges' := edges'.push row
   let dropped := dropInst.foldl (fun n d => if d then n + 1 else n) 0
-  pure { code := rename m next { vcp with blocks }, dropInst, dropOps,
-         why := s!"cranelift (args pairs -{nArgs}, insts -{dropped}, sret call defs -{nSret})" }
+  let R : Reg → Reg := fun
+    | .vreg n c => .vreg (m.getD n n) c
+    | r => r
+  pure { code := rename m next { vcp with blocks := code' },
+         edges := some (edges'.map (·.map (·.map R))), dropInst, dropOps,
+         why := s!"cranelift (args pairs -{nArgs}, insts -{dropped}, sret call defs -{nSret}, edge blocks -{gone.size})" }
 
 /-- regalloc2's input for the prepared `vcp` of `f` (`deadCleanup`: the allocator's input was
 pruned), in Cranelift's form when `vcp` is `lowerFunction f`'s code. -/
@@ -286,7 +357,7 @@ def shape (f : Option Clif.Function) (deadCleanup : Bool) (vcp : VCode) : Shape 
         | .error e => .same vcp s!"numbering: {e}"
         | .ok ((m, next), sdefs) =>
           if !(vregsOf vcp).toList.all m.contains then .same vcp "numbering: unmapped vreg"
-          else reshape vcp (irUsed f) sdefs m next
+          else reshape vcp (irUsed f) sdefs m next f.blocks.length (indegrees f)
 
 /-- `runLeanRegalloc` on the prepared `vcs`, giving `lean-regalloc` the code `sh.code` of each
 (`shapes`, one per function); the answers are read back (`Shape.readBack`) and rebuilt against
@@ -297,7 +368,7 @@ def runLeanRegallocVia (bin : String) (env : MachineEnv) (shapes : Array Shape)
   if shapes.size != vcs.size then return .error "lean-regalloc: shape count differs"
   let mut funcs : Array String := #[]
   for (vc, sh) in vcs.zip shapes do
-    match vcodeJson sh.code with
+    match (match sh.edges with | some e => vcodeJsonAt sh.code e | none => vcodeJson sh.code) with
     | .ok j => funcs := funcs.push j
     | .error e => return .error s!"%{vc.name}: {e}"
   let input := s!"\{\"env\":{envJson env},\"functions\":[" ++ ",".intercalate funcs.toList ++ "]}\n"
