@@ -26,62 +26,6 @@ theorem linesOk_of_oneLine {ctx : FnCtx} {i : MInst} (h : OneLine ctx i) : Lines
   · simp only [List.mem_singleton] at hln; rw [hln]; exact hp
   · simp at hk; omega
 
-def locReg : Loc → Except String Reg
-  | Loc.reg r => pure r
-  | l => throw (toString "operand in " ++ toString (repr l))
-
-theorem mapM_locReg : ∀ (L : List Loc) (R : List Reg), L.mapM locReg = .ok R → L = R.map .reg
-  | [], R, h => by
-    simp only [List.mapM_nil, pure, Except.pure, Except.ok.injEq] at h; subst h; rfl
-  | l :: L, R, h => by
-    rw [List.mapM_cons] at h
-    simp only [bind, Except.bind] at h
-    split at h
-    · cases h
-    rename_i r hr
-    split at h
-    · cases h
-    rename_i rs hrs
-    simp only [pure, Except.pure, Except.ok.injEq] at h
-    subst h
-    rw [mapM_locReg L rs hrs]
-    cases l <;> simp [locReg, pure, Except.pure, throw, throwThe, MonadExceptOf.throw] at hr
-    subst hr; rfl
-
-theorem arr_mapM_locReg {allocs : Array Loc} {regs : Array Reg}
-    (h : allocs.mapM locReg = .ok regs) : allocs = regs.map .reg := by
-  have e := Array.toList_mapM (xs := allocs) (f := locReg)
-  rw [h] at e
-  simp only [Functor.map, Except.map] at e
-  apply Array.toList_inj.1
-  rw [Array.toList_map]
-  exact mapM_locReg _ _ e.symm
-
-theorem itemCode_op {fr : RAFrame} {vb : VBlock} {k : Nat} {allocs : Array Loc} {c1 : List AInst}
-    (h : itemCode fr vb (.op k allocs) = .ok c1) :
-    ∃ regs i i', allocs = regs.map Loc.reg ∧ vb.insts[k]? = some i ∧ i.assign regs = .ok i' ∧
-      ((c1 = [AInst.inst i'] ∧ (∀ ds, i' ≠ .args ds) ∧ (∀ us, i' ≠ .rets us)) ∨ (∃ ds, i' = .args ds ∧ c1 = []) ∨
-        (∃ us, i' = .rets us ∧ c1 = [AInst.epilogueRet])) := by
-  unfold itemCode itemStep at h
-  dsimp only at h
-  simp only [bind, Except.bind, Functor.map, Except.map] at h
-  split at h
-  · cases h
-  rename_i arr harr
-  simp only [Except.ok.injEq] at h
-  subst h
-  split at harr
-  · cases harr
-  rename_i regs hregs
-  split at harr
-  · rename_i i hi
-    split at harr
-    · cases harr
-    rename_i i' hi'
-    refine ⟨regs, i, i', arr_mapM_locReg (by exact hregs), hi, hi', ?_⟩
-    cases i' <;> simp only [pure, Except.pure, Except.ok.injEq] at harr <;> subst harr <;> simp
-  · simp [throw, throwThe, MonadExceptOf.throw] at harr
-
 
 /-- A frame location is kept by a step that keeps the frame (`FrameKeep`). -/
 theorem locVal_frame_keep {fr : RAFrame} {D : Loc → Prop} {T : Prop} {sp0 : BitVec 64}
