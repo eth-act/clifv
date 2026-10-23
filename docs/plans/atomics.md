@@ -887,7 +887,19 @@ they are; the per-thread layers are new files.
         (the current function's step; at its `ret` the program of the function containing the
         return address); under `Link.Ok` (laid out, disjoint code ranges): `agreesAt_M`,
         `M_eq_step`, `M_bl`, `M_ret`, `M_ret_prog`, `M_ret_x30`; witness `link2` (the two
-        witness functions; `M_blC`, `M_retL`, `agreesAtC`, `agreesAtL`).
+        witness functions; `M_blC`, `M_retL`, `agreesAtC`, `agreesAtL`). **The callee's entry
+        on the linked machine, Arm level (done, `CallEnterArm.lean`, witness
+        `CallEnterArmWitness.lean`)**: `Q.hooks`/`StRel.hooks` (the relation does not depend on
+        the hooks), `LFn.Static` (the static part of `RL.Wf`), `Link.act_wf`,
+        **`Link.step_call`** (at a direct `call` item the machine steps the `bl` into the
+        callee, event-free, plain), **`Link.enter_call`** (the callee's activation at the entered
+        state is `Wf`, its entry an `AbiCall` returning after the `bl`, it agrees with the
+        caller's state but in the pc and `x30` and has its memory, `Q`/`AInv` after its
+        prologue: the start of `arm_isel_refines_entryCRN`); witnesses `step_call_C`,
+        `enter_call_L` (the caller's `bl` at `sBF` on `link2`). Open on the CLIF side of the
+        entry: the callee's CLIF state (`enterFunc` under `pushC`, `cstepI_call`), its memory
+        relation and `ArgsAtEntry` — waiting for the slot-oracle semantics (SEM1 design A,
+        UninitZ), which changes `enterSlots`.
         (iv) the thread-wide private set (every activation's `PrivA` and the CLIF events' avoidance
         of it; with CLIF stack slots in callees the private sets of different activations overlap
         other activations' slots); then `SegOk`, `link_compose_ext`, and `realizes_call_full`/the

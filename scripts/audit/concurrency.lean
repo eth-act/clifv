@@ -949,3 +949,11 @@ import FVTest.Concurrency.LitmusFull
 #print axioms Concurrency.CallResumeAll.atCall_of_pause
 #print axioms Concurrency.CallResumeAll.resume_all
 #print axioms Concurrency.CallResumeAll.Witness.resume_all_fC -- witness: native_decide
+#print axioms Backend.Proof.StRel.hooks
+#print axioms Backend.Proof.Q.hooks
+#print axioms Concurrency.LinkedMachine.Link.act_wf
+#print axioms Concurrency.LinkedMachine.Link.step_call
+#print axioms Concurrency.LinkedMachine.Link.enter_call
+#print axioms Concurrency.LinkedMachine.Witness.static_ld -- witness: native_decide
+#print axioms Concurrency.LinkedMachine.Witness.step_call_C -- witness: native_decide
+#print axioms Concurrency.LinkedMachine.Witness.enter_call_L -- witness: native_decide
