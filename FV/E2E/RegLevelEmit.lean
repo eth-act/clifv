@@ -358,12 +358,10 @@ theorem machPlan_spec {af : AFunc} {a : Bool} {ss : List Seg} {ps : PState} {p :
   · cases h
 
 /-- **The emission plan**: the segments of the blocks in `emitOrder`, one final line list each,
-either accepted by `segsOk` or the segments' own last-instruction lines (no aliases); every
-alias is justified (`aliasOk`). -/
+accepted by `segsOk`; every alias is justified (`aliasOk`). -/
 theorem emitPlan_spec {k : Nat} {af : AFunc} {p : Plan} (h : emitPlan k af = .ok p) :
     segsOf ⟨k, af.slotBase⟩ af (emitOrder af) {} = .ok (p.segs, p.ps) ∧
-      p.outs.length = p.segs.length ∧
-      (segsOk af p.segs p.outs p.lines = true ∨ (p.outs = p.segs.map (·.term) ∧ p.alias = [])) ∧
+      p.outs.length = p.segs.length ∧ segsOk af p.segs p.outs p.lines = true ∧
       ∀ x ∈ p.alias, aliasOk af p.lines x = true := by
   unfold emitPlan at h
   simp only [bind, Except.bind] at h
@@ -371,22 +369,23 @@ theorem emitPlan_spec {k : Nat} {af : AFunc} {p : Plan} (h : emitPlan k af = .ok
   · cases h
   rename_i r hr
   obtain ⟨ss, ps⟩ := r
-  simp only [pure, Except.pure, Except.ok.injEq] at h
-  subst h
-  cases h1 : machPlan af true ss ps with
-  | some p1 =>
-    obtain ⟨e1, e2, e3, e4, e5⟩ := machPlan_spec h1
-    simp only [h1, Option.orElse, Option.getD]
-    exact ⟨by rw [e1, e2]; exact hr, by rw [e1]; exact e3, .inl (by rw [← e1] at e4; exact e4), e5⟩
-  | none =>
-    cases h2 : machPlan af false ss ps with
-    | some p2 =>
-      obtain ⟨e1, e2, e3, e4, e5⟩ := machPlan_spec h2
-      simp only [h1, h2, Option.orElse, Option.getD]
-      exact ⟨by rw [e1, e2]; exact hr, by rw [e1]; exact e3, .inl (by rw [← e1] at e4; exact e4), e5⟩
-    | none =>
-      simp only [h1, h2, Option.orElse, Option.getD]
-      exact ⟨hr, by simp, .inr ⟨trivial, trivial⟩, fun x hx => by simp at hx⟩
+  dsimp only at h
+  split at h
+  · rename_i p1 h1
+    simp only [pure, Except.pure, Except.ok.injEq] at h
+    subst h
+    have h1' : machPlan af true ss ps = some p1 ∨ machPlan af false ss ps = some p1 := by
+      cases e : machPlan af true ss ps with
+      | some q => rw [e] at h1; simp only [Option.orElse] at h1; exact .inl h1
+      | none => rw [e] at h1; simp only [Option.orElse] at h1; exact .inr h1
+    obtain ⟨e1, e2, e3, e4, e5⟩ := h1'.elim machPlan_spec machPlan_spec
+    exact ⟨by rw [e1, e2]; exact hr, by rw [e1]; exact e3, by rw [e1]; exact e4, e5⟩
+  · split at h
+    · rename_i hok
+      simp only [pure, Except.pure, Except.ok.injEq] at h
+      subst h
+      exact ⟨hr, by simp, hok, fun x hx => by simp at hx⟩
+    · cases h
 
 /-- Segment `i` in `segLines`: its label line, its body and final lines, then the next
 segments. -/

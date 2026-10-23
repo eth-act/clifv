@@ -861,20 +861,31 @@ def segTermOk (af : AFunc) (rep : Label → Nat → Bool) (idx : Std.HashMap Lab
     (x : Seg × List Line × Nat) : Bool :=
   termOk rep idx (af.blocks[x.1.idx]?.bind (·.2.back?)) x.1.term x.2.1 x.2.2
 
+/-- The forwarding blocks whose own label represents them (`repAt`'s `own`), from the
+candidates `S`: the segments of `S` that pass `termOk` when `S` is trusted, repeated until no
+candidate fails (at most `n` rounds; the result is checked by `segsOk` anyway). -/
+def trustFwd (af : AFunc) (L : List Line) (idx : Std.HashMap Label Nat)
+    (ts : List (Seg × List Line × Nat)) : Nat → List Label → List Label
+  | 0, S => S
+  | n + 1, S =>
+    let S' := S.filter fun l =>
+      ts.any fun x => x.1.label == l && segTermOk af (repOn af (S.contains ·) L) idx x
+    if S'.length == S.length then S else trustFwd af L idx ts n S'
+
 /-- The segments `ss` ending in the lines `os` laid out as `L` (`segLines ss os`, then the
-traps) are a correct simplification: entry first, the final lines of every segment `termOk`
-but a forwarding block's. A forwarding block is represented by its target, and by its own
-label only if its segment is `termOk` with forwarding blocks represented by their targets
-only (`fok`); so its lines never run as that block otherwise. -/
+traps) are a correct simplification: entry first, and the final lines of every segment
+`termOk` but those of the forwarding blocks not trusted. A forwarding block (`fwd?`) is
+represented by its target, and by its own label only if trusted (`trustFwd`: its segment is
+checked too); so the lines of an untrusted one never run as that block (`MachBuffer` aliases
+its label and may remove its `b` as dead code, `buffer.rs:1170-1214`). -/
 def segsOk (af : AFunc) (ss : List Seg) (os : List (List Line)) (L : List Line) : Bool :=
   let idx := blockLabelIdx L
   let ts := segNxts ss os 0
-  let rep0 := repOn af (fun _ => false) L
-  let fok : Std.HashSet Label := ts.foldl (fun m x =>
-    if (af.fwd? x.1.label).isSome && segTermOk af rep0 idx x then m.insert x.1.label else m) {}
-  let rep := repOn af fok.contains L
+  let fw := (ts.filter fun x => (af.fwd? x.1.label).isSome).map (·.1.label)
+  let S := trustFwd af L idx ts (fw.length + 1) fw
+  let rep := repOn af (S.contains ·) L
   ss.length == os.length && (ss.head?.map (·.idx)) == some 0 &&
-    ts.all fun x => (af.fwd? x.1.label).isSome || segTermOk af rep idx x
+    ts.all fun x => ((af.fwd? x.1.label).isSome && !S.contains x.1.label) || segTermOk af rep idx x
 
 /-- An emission plan: the segments in emission order, their final last-instruction lines, the
 emitter's final state (deferred traps) and the block-label aliases (each `aliasOk`). -/
@@ -900,11 +911,16 @@ def machPlan (af : AFunc) (allLabels : Bool) (ss : List Seg) (ps : PState) : Opt
   if segsOk af ss os L' then some ⟨ss, os, ps, al.filter (aliasOk af L')⟩ else none
 
 /-- The emission plan of an allocated function (`k` = its index in the file): the blocks in
-`emitOrder`, `MachBuffer`'s branch simplification (`machPlan`), else the unsimplified lines. -/
+`emitOrder`, `MachBuffer`'s branch simplification (`machPlan`), else the unsimplified lines
+(which `segsOk` accepts whenever every branch target is a block, `segsOk_raw`). -/
 def emitPlan (k : Nat) (af : AFunc) : Except String Plan := do
   let (ss, ps) ← segsOf { k, slotBase := af.slotBase } af (emitOrder af) {}
-  pure <| ((machPlan af true ss ps).orElse fun _ => machPlan af false ss ps).getD
-    ⟨ss, ss.map (·.term), ps, []⟩
+  match (machPlan af true ss ps).orElse fun _ => machPlan af false ss ps with
+  | some p => pure p
+  | none =>
+    let os := ss.map (·.term)
+    if segsOk af ss os (segLines ss os ++ trapLines ps) then pure ⟨ss, os, ps, []⟩
+    else throw "the blocks' branches fail the emission check (segsOk)"
 
 /-- The block-label aliases of the emission plan. -/
 def emitAlias (k : Nat) (af : AFunc) : List (Label × Label) :=
