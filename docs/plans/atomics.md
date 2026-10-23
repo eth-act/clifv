@@ -838,8 +838,19 @@ they are; the per-thread layers are new files.
         and the callee's `MemRel` at its `rets`, given the memory after the return has only
         allocations live at the call), **`realized_rets`** (the epilogue up to the `ret` as a
         private segment on any machine `AgreesAt` the activation); witnesses `defsC1_q`, `locsC1`,
-        `prefixHold_RX`, `relW_id`, `rets_RC`. Still open here: the two `rets` ends `arm_isel_refinesCR` leaves unresolved
-        (layer 4b at `Done`/`AtCall` while layer 2 is at a done `return`) excluded;
+        `prefixHold_RX`, `relW_id`, `rets_RC`. **The two `rets` ends excluded (done,
+        `CallRetsN.lean`, witness `CallRetsNWitness.arm_entryCRN_fC`)**: layer 2 with the VCode
+        end off `rets` (`IselStep.VAtRets`, `vstep_of_starNR`: a `rets` steps to a return, from
+        which no running configuration is reached; `IselThread.SimResRN`/`SegResRN`,
+        `pure_segRTN`, `term_segRTN`, `IselMemSeg.mem_completeRN`, `IselMemMain.mem_segRTN`,
+        `IselCallRet.SimResPN`, **`isel_refinesCRN`**, `isel_refines_entryCRN`; the old
+        statements are corollaries), through layers 3/4a (`isel_alloc_refinesCRGN`, with
+        `pmatch_rets`); layer 4b stopping at its first pause (`ItemSim.avoid`,
+        `arm_alloc_refines_lsCLA`: its run never steps a `rets` item, `srun_avoid_ret`); at a done
+        `return` the allocated configuration steps (`vstep_or_ret_of_retFrom`, `doneRet_mstep`),
+        which `Done` and `AtCall` (`NoCall`) exclude: **`arm_isel_refinesCRN`**/
+        **`arm_isel_refines_entryCRN`** end entirely, where the CLIF thread stops, at a call
+        with the three relations, or at a done `return` with `RetEnd`;
         (iii) (2b) the callee's entry from the relations at the
         pause (`enterFunc`'s CLIF state under `ClifLift.pushC`, the arguments in x0… from the call's
         fixed uses, the callee's `RL` from the caller's state at the `bl`, its memory relation);

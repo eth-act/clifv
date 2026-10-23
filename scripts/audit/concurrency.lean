@@ -903,3 +903,19 @@ import FVTest.Concurrency.LitmusFull
 #print axioms Concurrency.CallRetResume.Witness.prefixHold_RX -- witness: native_decide
 #print axioms Concurrency.CallRetResume.Witness.rets_RC -- witness: native_decide
 #print axioms Concurrency.CallRetResume.Witness.relW_id
+#print axioms Concurrency.IselStep.vstep_of_starNR
+#print axioms Concurrency.IselStep.vstep_of_vtrunR
+#print axioms Concurrency.IselThread.pure_segRTN
+#print axioms Concurrency.IselThread.term_segRTN
+#print axioms Concurrency.IselMemSeg.mem_completeRN
+#print axioms Concurrency.IselMemMain.mem_segRTN
+#print axioms Concurrency.IselCallRet.isel_refinesCRN
+#print axioms Concurrency.IselCallRet.isel_refines_entryCRN
+#print axioms Concurrency.CallRetsN.arm_alloc_refines_lsCLA
+#print axioms Concurrency.CallRetsN.doneRet_mstep
+#print axioms Concurrency.CallRetsN.isel_alloc_refinesCRGN
+#print axioms Concurrency.CallRetsN.arm_isel_refinesG2N
+#print axioms Concurrency.CallRetsN.arm_isel_refinesCRGN
+#print axioms Concurrency.CallRetsN.arm_isel_refinesCRN
+#print axioms Concurrency.CallRetsN.arm_isel_refines_entryCRN
+#print axioms Concurrency.CallRetsN.Witness.arm_entryCRN_fC -- witness: native_decide
