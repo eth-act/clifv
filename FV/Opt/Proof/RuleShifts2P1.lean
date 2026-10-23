@@ -43,6 +43,9 @@ theorem ok_rule_shifts_306 {p : Isle.Program} (hd : Data p) : RuleOk p rule_shif
 theorem ok_rule_shifts_314 {p : Isle.Program} (hd : Data p) : RuleOk p rule_shifts_314 := by
   first | rule_auto rule_shifts_314 | rule_auto_b rule_shifts_314 | rule_auto_i rule_shifts_314 | rule_auto_z rule_shifts_314
 
+-- Lean 4.35: the bit search of this rule needs a larger budget than on 4.34.
+set_option kbv.budgetScale 4 in
+set_option maxHeartbeats 16000000 in
 /-- `shifts.isle:319`. -/
 theorem ok_rule_shifts_319 {p : Isle.Program} (hd : Data p) : RuleOk p rule_shifts_319 := by
   first | rule_auto rule_shifts_319 | rule_auto_b rule_shifts_319 | rule_auto_i rule_shifts_319 | rule_auto_z rule_shifts_319
