@@ -125,7 +125,7 @@ private def checkCase (out : System.FilePath) (count : Nat) (cleanup fallback : 
         let dump := bundle / (name ++ ".clif")
         let answer := bundle / (name ++ ".ra.json")
         IO.FS.writeFile dump ("; symbol " ++ name ++ "\n" ++
-          ((sourceText s!"u0:{i}" (configFor i) retainedMixed i).replace "function %" "function ") ++
+          ((sourceText s!"u0:{i}" (configFor i) layout retainedMixed i).replace "function %" "function ") ++
           s!"; clifv-extnames 1\n; decl u0:{i} func export " ++
           (Lean.toJson name).compress ++ "\n; end clifv-extnames\n")
         IO.FS.writeFile answer ((Lean.Json.mkObj [

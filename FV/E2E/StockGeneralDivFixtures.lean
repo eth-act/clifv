@@ -29,8 +29,8 @@ def returned : Layout → Nat
 Divisions may have unused results, feed scalar consumers, or occur repeatedly. -/
 def function (config : Configuration) (op : Clif.DivOp) (safe : Bool) (layout : Layout) : Clif.Function :=
   let old := StockReturnedDivNIWitness.function config op safe
-  {old with name := "general_" ++ layoutName layout ++ "_" ++ old.name,
-    blocks := old.blocks.map fun b => {b with body := body config op safe layout,term := .ret [returned layout]}}
+  {old with name := "general_" ++ layoutName layout ++ "_" ++ old.name,blocks := old.blocks.map fun b =>
+    {b with body := body config op safe layout,term := .ret [returned layout]}}
 
 def frame (config : Configuration) (op : Clif.DivOp) (safe : Bool) (layout : Layout)
     (input : Nat → BitVec (valueType config).width) (slot : Nat) : Clif.Frame := {
