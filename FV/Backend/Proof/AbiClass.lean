@@ -477,6 +477,19 @@ theorem map_retX_of_le {k n : Nat} (h : n ≤ k) :
     (List.range n).map (retX k) = (List.range n).map Reg.x :=
   List.map_congr_left fun _ hj => retX_lt (Nat.lt_of_lt_of_le (List.mem_range.mp hj) h)
 
+/-- With `k ≤ n` return positions, `retX k` places the first `k` in x0.. and the rest in x8. -/
+theorem map_retX_ge {k n : Nat} (h : k ≤ n) :
+    (List.range n).map (retX k) =
+      (List.range k).map Reg.x ++ List.replicate (n - k) (Reg.x 8) := by
+  apply List.ext_getElem (by simp; omega)
+  intro j hjn _
+  simp only [List.length_map, List.length_range] at hjn
+  rw [List.getElem_map, List.getElem_range]
+  by_cases hj : j < k
+  · simp [retX, hj, List.getElem_append, List.getElem_map, List.getElem_range]
+  · have hjk : j - k < n - k := by omega
+    simp [retX, hj, List.getElem_append, List.getElem_replicate, hjk]
+
 /-- `n ≤ 8` integer values, the first `k` declared: x0.. for those, x8 after them. -/
 theorem retRegsK_int (k n : Nat) (h : n ≤ 8) :
     retRegsK k (List.replicate n .int) = some ((List.range n).map (retX k)) := by

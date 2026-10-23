@@ -1219,8 +1219,7 @@ theorem term_step_tryT (H : DriverHypT f vc ctx st0 R gn bl A sem MR env p)
         exact hh
       | ret ii =>
         have hii : ii < T.sig.returns.length := hargsOk _ htam
-        have hiN : ii < (sigRets T.sig).length :=
-          Nat.lt_of_lt_of_le hii (returns_le_sigRets _)
+        have hiN : ii < T.sig.returns.length := hii
         have hvi : regs' (f.freshValue + ii) = some rvals[ii] :=
           setMany_nodup hset (List.Pairwise.map _ (fun a b h e => h (Nat.add_left_cancel e)) List.nodup_range) ii _ _
             (by simp [List.getElem?_map, hii]) (List.getElem?_eq_getElem (by omega))
@@ -1253,7 +1252,7 @@ theorem term_step_tryT (H : DriverHypT f vc ctx st0 R gn bl A sem MR env p)
     | val v => exact ⟨_, H.shape.ren.vreg _ _⟩
     | ret ii =>
       have hii : ii < T.sig.returns.length := hargsOk _ ha
-      have hiN : ii < (sigRets T.sig).length := Nat.lt_of_lt_of_le hii (returns_le_sigRets _)
+      have hiN : ii < T.sig.returns.length := hii
       have hg : gn (L.tst.nextVreg + ii) = L.tst.nextVreg + ii := H.shape.temps _ (by omega)
       exact ⟨.int, by simp [normArgRegT, tryArgNum, hregsEq, hiN, H.shape.ren.vreg, hg]⟩
     | exn _ => exact absurd (hargsOk _ ha) id

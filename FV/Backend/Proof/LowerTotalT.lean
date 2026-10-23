@@ -480,7 +480,7 @@ structure TryOkT (f : Clif.Function) (ctx : Ctx) (et : Clif.ExnTable) (sig : Cli
   i128 : (sig.returns.any fun x => x.ty == Clif.Ty.i128) = false
   items : items.length = et.handlers.length
   dests : ∀ k td, et.dests[k]? = some td →
-    TryDestOkT f ctx et.handlers.length (sigRets sig).length (payloadRegs sig.callConv).length k td
+    TryDestOkT f ctx et.handlers.length sig.returns.length (payloadRegs sig.callConv).length k td
 
 /-- What the driver needs of a `try_call`'s exception table, from `tryInB`, the values'
 registers and `LowerScopeT.tryRet` (typed). -/
