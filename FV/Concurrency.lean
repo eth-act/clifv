@@ -203,3 +203,5 @@ import FV.Concurrency.FrameDisj
 import FV.Concurrency.FrameDisjWitness
 import FV.Concurrency.ClifThreadI
 import FV.Concurrency.ClifThreadIWitness
+import FV.Concurrency.PrivCohT
+import FV.Concurrency.PrivCohTWitness
