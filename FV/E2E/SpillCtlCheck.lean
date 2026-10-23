@@ -46,7 +46,13 @@ theorem ctlNA_shape {R : Reg → Reg} {gn : Nat → Nat} (hg : VRenaming R gn) {
   case trapIf kd c hk =>
     rcases kd with ⟨r, s⟩ | ⟨r, s⟩ | c <;> (try obtain ⟨n, rfl⟩ := hk) <;>
       simp [MInst.mapRegs, CondBrKind.mapRegs, ctlInstOk, hg.vreg, Reg.isVregInt]
-  all_goals simp [MInst.mapRegs, ctlInstOk, retPairs, retPairOk, hg.vreg, Reg.isVregInt]
+  case rets ns hk _ =>
+    simp only [MInst.mapRegs, ctlInstOk, retPairs, List.map_map, List.all_map, List.all_eq_true,
+      Function.comp_def]
+    intro q hq
+    obtain ⟨k', hk', he⟩ := hk q hq
+    simp [argPairOk, hg.vreg, Reg.isVregInt, he, Reg.isArgReg] <;> omega
+  all_goals simp [MInst.mapRegs, ctlInstOk, hg.vreg, Reg.isVregInt]
 
 /-- The `tryCall` replacing a `try_call` rule's last call. -/
 theorem ctlNA_tryCall (R : Reg → Reg) (c : CallInfo) {info : TryInfo} (h : info.clobberAll = false) :
