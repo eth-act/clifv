@@ -204,29 +204,31 @@ def subChunk (es : CTab) : Nat := if es.any (fun e => entryEnvs e > 1000) then 1
 
 /-- Rule/family pairs whose single kernel check is too large (rule 2267 on family 8 has 256
 environments, `IselCovTGen.heavy`): checked chunk-wise (`IselSzTChunk.cRuleLe_of_chunks`). -/
-def heavy : List (String × Nat) := [("rule_lower_2267", 8)]
-def envChunk : Nat := 16
+def heavy : List (String × Nat × Nat) :=
+  [("rule_lower_2267", 8, 16), ("rule_lower_1222", 2, 8), ("rule_lower_1224", 2, 8),
+   ("rule_lower_1226", 2, 8), ("rule_lower_1228", 2, 8)]
 
 /-- The parameters of a chunked check: the if-lets' and the right-hand sides' maximum costs and
 the chunk counts. -/
 structure HeavyP where
   a : Nat
   b : Nat
+  k : Nat
   nA : Nat
   nB : Nat
 
-def heavyP (aw : TermId → List AT → Option Nat) (ctab : CTab) (i : Nat) (r : Rule) : HeavyP :=
+def heavyP (aw : TermId → List AT → Option Nat) (ctab : CTab) (i k : Nat) (r : Rule) : HeavyP :=
   let pats := aPatArgs program aext [.inst [i]] r.args (List.replicate r.vars.length .top)
   let a := pats.foldl (fun m e => max m ((cIfLets program covTabT aw ctab aext actor apre aOracle r.iflets e).getD 0)) 0
   let envs := (aRuleEnvs program covTabT aext actor apre aOracle [.inst [i]] r).getD []
   let b := envs.foldl (fun m e => max m ((cExpr program covTabT aw ctab actor apre aOracle r.rhs e).getD 0)) 0
-  ⟨a, b, (pats.length + envChunk - 1) / envChunk, (envs.length + envChunk - 1) / envChunk⟩
+  ⟨a, b, k, (pats.length + k - 1) / k, (envs.length + k - 1) / k⟩
 
 /-- The chunked check of heavy rule `r` on family `i` for one of the two analyses. -/
 def heavyThm (kind : String) (r : String) (i : Nat) (hp : HeavyP) : String := Id.run do
   let (aw, tab, bound, okName) :=
     if kind == "sz" then ("actorW", "szCTabT", "szStmtK", "szStmtOkT") else ("actorT", "tgCTabT", "tgStmtK", "tgStmtOkT")
-  let k := envChunk
+  let k := hp.k
   let pats := s!"(aPatArgs program aext [.inst [{i}]] {r}.args (List.replicate {r}.vars.length .top))"
   let envs := s!"(aRuleEnvs program covTabT aext actor apre aOracle [.inst [{i}]] {r})"
   let pre := s!"{okName}_{r}_f{i}"
@@ -346,8 +348,8 @@ def main (args : List String) : IO UInt32 := do
   IO.println s!"lower rules {ln.length} branch rules {bn.length}"
   if ln.length != stmtRules.length || bn.length != branchRules.length then
     IO.eprintln "rule name lists do not match the program"; return 1
-  let heavyN := heavy.filterMap fun (name, i) => ((ln.zip stmtRules).find? (·.1 == name)).map
-    fun (_, r) => (name, i, heavyP actorW sz i r, heavyP actorT tg i r)
+  let heavyN := heavy.filterMap fun (name, i, k) => ((ln.zip stmtRules).find? (·.1 == name)).map
+    fun (_, r) => (name, i, heavyP actorW sz i k r, heavyP actorT tg i k r)
   for (n, i, hs, ht) in heavyN do
     IO.println s!"heavy {n} f{i}: sz a={hs.a} b={hs.b} nA={hs.nA} nB={hs.nB}; tg a={ht.a} b={ht.b} nA={ht.nA} nB={ht.nB}"
   for (name, content) in renderAll sz tg ln bn heavyN do
