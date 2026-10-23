@@ -1,0 +1,11 @@
+[package]
+name = "bigframe-unwind"
+version = "0.1.0"
+edition = "2021"
+publish = false
+description = "cargo fv regression test for #479: a panic unwinding through a Lean-compiled function whose frame is larger than 32 KiB must restore the caller's callee-saved registers"
+
+[dependencies]
+
+# Not part of any enclosing workspace.
+[workspace]
