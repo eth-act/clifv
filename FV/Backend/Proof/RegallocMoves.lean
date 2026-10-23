@@ -6,11 +6,12 @@ import FV.Backend.Proof.RegallocSlotsFar
 `lower_move`: for a move the checker accepts (`checkMove`) between live locations, the code
 `RAFrame.moveInsts` produces runs (`ExecAll`) and changes the location store exactly as
 `MStep.move` does (`upd m dst (m src)`), keeping the world, `sp` and its alignment. Cases:
-int register moves (`mov`), int spills/reloads and save/restore of x registers (8-byte slots),
-float spills/reloads and save/restore of v registers (16-byte slots), float register moves
+int register moves (`mov`), int spills/reloads (8-byte slots), float spills/reloads (16-byte
+slots), float register moves
 through `fmoveTmp` (a store and a load). A slot access at 32 KiB or more runs from the state
 after the address sequence (`RegallocSlotsFar`), which differs from the move's start only in
-the pc and x16 (`MoveOk.pcx`).
+the pc and x16 (`MoveOk.pcx`). Saves and restores (`.save` locations) are not live: the
+prologue and epilogue push and pop the saved registers.
 -/
 
 namespace Backend.Proof
@@ -285,11 +286,12 @@ theorem slotBytes_int {l : Loc} (hl : ∀ r, l ≠ .reg r) (h : l.cls? = some .i
   | stack k c => simp only [Loc.cls?, Option.some.injEq] at h; subst h; rfl
   | save r => cases r <;> simp_all [Loc.cls?, Reg.realClass?, slotBytes]
 
-theorem slotBytes_float {l : Loc} (hl : ∀ r, l ≠ .reg r) (h : l.cls? = some .float) : slotBytes l = 16 := by
+theorem slotBytes_float {l : Loc} (hl : ∀ r, l ≠ .reg r) (hs : ∀ r, l ≠ .save r)
+    (h : l.cls? = some .float) : slotBytes l = 16 := by
   cases l with
   | reg r => exact absurd rfl (hl r)
   | stack k c => simp only [Loc.cls?, Option.some.injEq] at h; subst h; rfl
-  | save r => cases r <;> simp_all [Loc.cls?, Reg.realClass?, slotBytes]
+  | save r => exact absurd rfl (hs r)
 
 theorem reg_int {r : Reg} (h : r.realClass? = some .int) : ∃ n, r = .x n := by
   cases r <;> simp_all [Reg.realClass?]
@@ -387,7 +389,8 @@ theorem lower_move {vc : VCode} {rf : RFunc} {sp0 : BitVec 64} {F : BitVec 64 �
         rcases List.mem_append.1 hi with hi | hi
         · exact moveInst_slotStoreAt (by omega) (fun _ => hal) hi
         · exact moveInst_slotLoadAt (by omega) (fun _ => hal) hi
-    | stack k cl | save r =>
+    | save r => exact absurd hLd id
+    | stack k cl =>
       all_goals
         simp only [RAFrame.moveInsts, bind, Except.bind] at hmi
         split at hmi
@@ -407,13 +410,14 @@ theorem lower_move {vc : VCode} {rf : RFunc} {sp0 : BitVec 64} {F : BitVec 64 �
             hx, hm⟩
         | float =>
           obtain ⟨a', rfl⟩ := reg_float hac
-          have hsb := slotBytes_float (fun _ h => by cases h) hdcls
+          have hsb := slotBytes_float (fun _ h => by cases h) (fun _ h => by cases h) hdcls
           obtain ⟨s', hx, hm⟩ := move_store_float hfr ctx haa hLd hoff hsb hw hsp halign
           have hal := live_align hLd hoff
           rw [hsb] at hal
           exact ⟨slotStoreAt .float (.v a') o, s', by simp [Reg.realClass?],
             fun i hi => moveInst_slotStoreAt (by omega) (fun _ => hal.1) hi, hx, hm⟩
-  | stack k cl | save r =>
+  | save r => exact absurd hLs id
+  | stack k cl =>
     all_goals
       cases dst with
       | stack _ _ | save _ => simp [Loc.isReg] at hreg
@@ -437,7 +441,7 @@ theorem lower_move {vc : VCode} {rf : RFunc} {sp0 : BitVec 64} {F : BitVec 64 �
             hx, hm⟩
         | float =>
           obtain ⟨b', rfl⟩ := reg_float hbc
-          have hsb := slotBytes_float (fun _ h => by cases h) hcls
+          have hsb := slotBytes_float (fun _ h => by cases h) (fun _ h => by cases h) hcls
           obtain ⟨s', hx, hm⟩ := move_load_float ctx hba hLs hoff hsb hw hsp halign
           have hal := live_align hLs hoff
           rw [hsb] at hal
