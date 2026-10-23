@@ -65,9 +65,9 @@ theorem mspec_flagFree_pstate {sb : Nat} {i : MInst} {us : List CV} (hf : flagFr
     mspec sb i us (Arm.write_pstate p w) =
       (mspec sb i us w).map (fun r => (r.1, Arm.write_pstate p r.2.1, r.2.2)) := by
   unfold mspec
-  split <;> try { simp_all [flagFree, pureNoFlags, pureAlu, spOf_write_pstate] }
+  split <;> try { simp_all [flagFree, pureForm, pureAlu, spOf_write_pstate] }
   unfold ispec
-  split <;> simp_all [flagFree, pureNoFlags, pureAlu, Option.map_map, Function.comp_def]
+  split <;> simp_all [flagFree, pureForm, pureAlu, Option.map_map, Function.comp_def]
   all_goals (try split) <;> (try rfl) <;> simp_all [Option.map_map, Function.comp_def]
 
 /-- A flag-free producer steps alike from a world whose flags a compare wrote. -/
