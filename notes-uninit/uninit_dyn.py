@@ -14,7 +14,7 @@ QEMU = os.environ.get("UNINIT_QEMU", "/tmp/uninitsem_qemu/qemu-10.2.1/build/qemu
 PLUGIN = os.environ.get("UNINIT_PLUGIN", "/tmp/uninitsem_qemu/uninit_plugin.so")
 HOOKS = ["malloc", "calloc", "realloc", "aligned_alloc", "memalign", "posix_memalign", "free",
          "memcpy", "memmove", "memcmp", "bcmp"]
-CATS = ["stack_uninit", "stack_uninit_cp", "heap_fresh", "heap_uninit", "memcmp_uninit"]
+CATS = ["stack_uninit", "stack_uninit_outer", "stack_uninit_cp", "heap_fresh", "heap_uninit", "memcmp_uninit"]
 
 
 def lean_funcs(exe, path, spath):

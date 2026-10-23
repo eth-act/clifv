@@ -1,0 +1,14 @@
+fv-demo: test runs 21; runs with an uninitialised stack read 9; with one in a program callee of the current outside call (stuck today) 9
+   stack_uninit: runs 9, events 135, functions 34
+   stack_uninit_outer: runs 0, events 0, functions 0
+   stack_uninit_cp: runs 1, events 6, functions 2
+   heap_fresh: runs 5, events 138, functions 39
+   heap_uninit: runs 0, events 0, functions 0
+   memcmp_uninit: runs 0, events 0, functions 0
+survey: test runs 53; runs with an uninitialised stack read 46; with one in a program callee of the current outside call (stuck today) 46
+   stack_uninit: runs 46, events 3039, functions 149
+   stack_uninit_outer: runs 0, events 0, functions 0
+   stack_uninit_cp: runs 0, events 0, functions 0
+   heap_fresh: runs 44, events 71564, functions 141
+   heap_uninit: runs 0, events 0, functions 0
+   memcmp_uninit: runs 0, events 0, functions 0

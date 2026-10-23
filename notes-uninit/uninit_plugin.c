@@ -32,9 +32,9 @@
 
 QEMU_PLUGIN_EXPORT int qemu_plugin_version = QEMU_PLUGIN_VERSION;
 
-enum { C_STACK, C_STACK_CP, C_HEAP_FRESH, C_HEAP_UNINIT, C_MEMCMP, NCAT };
+enum { C_STACK, C_STACK_CP, C_HEAP_FRESH, C_HEAP_UNINIT, C_MEMCMP, C_STACK_OUTER, NCAT };
 static const char *catname[NCAT] = { "stack_uninit", "stack_uninit_cp", "heap_fresh",
-                                     "heap_uninit", "memcmp_uninit" };
+                                     "heap_uninit", "memcmp_uninit", "stack_uninit_outer" };
 enum { H_MALLOC, H_CALLOC, H_REALLOC, H_ALIGNED, H_MEMALIGN, H_POSIX, H_FREE, H_MEMCPY,
        H_MEMMOVE, H_MEMCMP, H_BCMP, NHOOK };
 static const char *hookname[NHOOK] = { "malloc", "calloc", "realloc", "aligned_alloc",
@@ -44,7 +44,7 @@ static uint64_t hookaddr[NHOOK];
 typedef struct { uint64_t start, end; char *name; uint64_t calls; } Fn;
 static Fn *fns; static size_t nfns;
 
-typedef struct { uint64_t s0; uint32_t epoch; uint32_t fn; } Act;
+typedef struct { uint64_t s0; uint32_t epoch; uint32_t fn; int outer; } Act;
 typedef struct {
     int kind; uint64_t lr, sp, a0, a1, a2; int from_lean;
     uint8_t *status; size_t nstatus; /* memcpy src / realloc old block init status */
@@ -65,7 +65,7 @@ typedef struct { uint64_t pc; uint64_t count; int fn, cat; } Hit;
 static GHashTable *hits;      /* (pc<<3|cat) -> Hit* */
 static GHashTable *shadow;    /* page -> uint32_t[4096] */
 static uint32_t gepoch = 2;   /* stamp 0: never written, 1: copied uninitialised */
-static uint64_t nstat[6];
+static uint64_t nstat[8];
 static uint64_t nloads, ncat[NCAT], nalloc, nmemcpy_lean;
 static GMutex lock;
 static char *outpath;
@@ -135,9 +135,11 @@ static void pop_dead_lt(Vcpu *v, uint64_t sp) { while (v->n && v->a[v->n - 1].s0
  * 2: stack uninit, 3: stack copied-uninit, 4: heap block fresh in this run (any access),
  * 5: heap uninit (older block). */
 static int status(Vcpu *v, uint64_t a, uint64_t sp) {
+    long io = -1; /* the innermost activation entered from outside code: the current CLIF run's entry */
+    for (long k = (long)v->n - 1; k >= 0; k--) if (v->a[k].outer) { io = k; break; }
     Blk *b = blk_of(a);
     if (b) {
-        if (v->n && b->epoch > v->outer_epoch) return 4;
+        if (io >= 0 && b->epoch > v->a[io].epoch) return 4;
         uint32_t s = stamp(a);
         return s >= b->epoch ? 1 : 5;
     }
@@ -146,7 +148,7 @@ static int status(Vcpu *v, uint64_t a, uint64_t sp) {
         if (v->a[k].s0 > a) {
             if (v->a[k].s0 - a > BELOW) return 0;
             uint32_t s = stamp(a);
-            return s >= v->a[k].epoch ? 1 : (s == 1 ? 3 : 2);
+            return s >= v->a[k].epoch ? 1 : (s == 1 ? 3 : (k <= io ? 6 : 2));
         }
     return 0;
 }
@@ -164,14 +166,14 @@ static void hit(uint64_t pc, int cat) {
 
 static void on_entry(unsigned int vi, void *udata) {
     uint32_t fi = (uint32_t)(uintptr_t)udata;
-    uint64_t sp = reg(vi, 31);
+    uint64_t sp = reg(vi, 31), lr = reg(vi, 30);
+    int outer = find_fn(lr - 4) < 0;
     g_mutex_lock(&lock);
     Vcpu *v = &vcpus[vi];
     pop_dead(v, sp);
     if (v->n == v->cap) { v->cap = v->cap ? 2 * v->cap : 64; v->a = realloc(v->a, v->cap * sizeof(Act)); }
     uint32_t e = ++gepoch;
-    if (v->n == 0) v->outer_epoch = e;
-    v->a[v->n++] = (Act){ sp, e, fi };
+    v->a[v->n++] = (Act){ sp, e, fi, outer || v->n == 0 };
     fns[fi].calls++;
     for (uint64_t p = (sp - BELOW) / PAGE; p <= (sp + ABOVE) / PAGE; p++) page_of(p * PAGE, 1);
     g_mutex_unlock(&lock);
@@ -198,12 +200,13 @@ static void on_lean_access(unsigned int vi, qemu_plugin_meminfo_t info, uint64_t
         int s = status(v, va + i, sp);
         nstat[s]++;
         if (s == 4) { worst = 4; break; }
-        if (!st && s > worst) worst = s;
+        if (!st && s > 1 && (worst == 1 || s == 2)) worst = s;
     }
     if (worst == 4) hit(pc, C_HEAP_FRESH);
     else if (worst == 2) hit(pc, C_STACK);
     else if (worst == 3) hit(pc, C_STACK_CP);
     else if (worst == 5) hit(pc, C_HEAP_UNINIT);
+    else if (worst == 6) hit(pc, C_STACK_OUTER);
     g_mutex_unlock(&lock);
 }
 
