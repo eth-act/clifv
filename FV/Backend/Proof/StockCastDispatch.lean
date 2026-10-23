@@ -11,9 +11,9 @@ set_option maxRecDepth 20000
 set_option maxHeartbeats 4000000
 attribute [local irreducible] Isle.Aarch64.program Stock.runTerm
 
-/-- Current source closure includes the base casts and four look-through roots;
-none is silently omitted from the class dispatcher. -/
-theorem opcode_inventory : sourceOpcodeIds 141 = [810,811,815,808] ∧
+/-- Current source closure includes the base casts and five look-through roots (S11f added
+`uextend (fcmp …)`, rule 812); none is silently omitted from the class dispatcher. -/
+theorem opcode_inventory : sourceOpcodeIds 141 = [810,811,812,815,808] ∧
     sourceOpcodeIds 142 = [824,819] ∧ sourceOpcodeIds 131 = [946] := by
   unfold sourceOpcodeIds
   rw [show TId.lower = 686 from rfl,data_program.r686]
@@ -140,6 +140,13 @@ private theorem reduce_data {f : Clif.Function} {ctx : Ctx} (inv : MappedCtxInv 
   exact Except.ok.inj ((inv.data i info _ source clif).symm.trans shape)
 end Data
 
+/-- The `uextend (fcmp …)` look-through root (S11f) never fires on a subset-E source: `fcmp`
+is a float instruction, outside `Compile.instE`. -/
+private theorem floatCompare_not_E {cl : Clif.Inst} (h : Compile.instE cl = true) :
+    (instNames cl).1 ≠ "FloatCompare" := by
+  intro hn
+  cases cl <;> first | (simp [Compile.instE] at h; done) | (simp [instNames] at hn)
+
 /-- Actual class syntax excludes the effectful/comparison look-through roots;
 original matched sources select the base cast internally. Old broader selected
 variants remain available for subsequent family expansion. -/
@@ -164,7 +171,7 @@ theorem stock_lower_cast_selected_rule_of_formats {f : Clif.Function} {result : 
     change selected.rule.id ∈ sourceOpcodeIds 141 at ids
     rw [opcode_inventory.1] at ids
     simp only [List.mem_cons,List.not_mem_nil,or_false] at ids
-    rcases ids with atomic | comparison | load | base
+    rcases ids with atomic | comparison | fcompare | load | base
     · have chosen : selected.rule = rule_lower_1272 := eq_of_mem_of_id lower_ids_nodup selected.rule_mem
         (by rw [show TId.lower = 686 from rfl,data_program.r686]; decide +kernel) atomic
       have matched := selected.matchedRun
@@ -179,6 +186,13 @@ theorem stock_lower_cast_selected_rule_of_formats {f : Clif.Function} {result : 
       exact (excludes_format data_program inv "IntCompare"
         (fun j info cl found original => (safe j info cl found original).2.2)
         .direct rfl rfl data_program.t2461 term_2461_kind (by decide +kernel) source data matched).elim
+    · have chosen : selected.rule = rule_lower_1283 := eq_of_mem_of_id lower_ids_nodup selected.rule_mem
+        (by rw [show TId.lower = 686 from rfl,data_program.r686]; decide +kernel) fcompare
+      have matched := selected.matchedRun
+      rw [chosen] at matched
+      exact (excludes_format data_program inv "FloatCompare"
+        (fun j info cl found original => floatCompare_not_E (inv.instE j info cl found original))
+        .direct rfl rfl data_program.t2458 term_2458_kind (by decide +kernel) source data matched).elim
     · have chosen : selected.rule = rule_lower_1300 := eq_of_mem_of_id lower_ids_nodup selected.rule_mem
         (by rw [show TId.lower = 686 from rfl,data_program.r686]; decide +kernel) load
       have matched := selected.matchedRun
@@ -231,7 +245,7 @@ theorem stock_lower_cast_selected_rule_of_memory_formats {f : Clif.Function} {re
     change selected.rule.id ∈ sourceOpcodeIds 141 at ids
     rw [opcode_inventory.1] at ids
     simp only [List.mem_cons,List.not_mem_nil,or_false] at ids
-    rcases ids with atomic | comparison | load | base
+    rcases ids with atomic | comparison | fcompare | load | base
     · have chosen : selected.rule = rule_lower_1272 := eq_of_mem_of_id lower_ids_nodup selected.rule_mem
         (by rw [show TId.lower = 686 from rfl,data_program.r686]; decide +kernel) atomic
       have matched := selected.matchedRun
@@ -241,6 +255,13 @@ theorem stock_lower_cast_selected_rule_of_memory_formats {f : Clif.Function} {re
         (.typed 3 (.term 15 2 [.bind 14 1 (.wildcard 14)])) rfl rfl data_program.t2464 term_2464_kind (by decide +kernel) source data matched).elim
     · exact Or.inr ⟨rfl,eq_of_mem_of_id lower_ids_nodup selected.rule_mem
         (by rw [show TId.lower = 686 from rfl,data_program.r686]; decide +kernel) comparison⟩
+    · have chosen : selected.rule = rule_lower_1283 := eq_of_mem_of_id lower_ids_nodup selected.rule_mem
+        (by rw [show TId.lower = 686 from rfl,data_program.r686]; decide +kernel) fcompare
+      have matched := selected.matchedRun
+      rw [chosen] at matched
+      exact (excludes_format data_program inv "FloatCompare"
+        (fun j info cl found original => floatCompare_not_E (inv.instE j info cl found original))
+        .direct rfl rfl data_program.t2458 term_2458_kind (by decide +kernel) source data matched).elim
     · have chosen : selected.rule = rule_lower_1300 := eq_of_mem_of_id lower_ids_nodup selected.rule_mem
         (by rw [show TId.lower = 686 from rfl,data_program.r686]; decide +kernel) load
       have matched := selected.matchedRun
