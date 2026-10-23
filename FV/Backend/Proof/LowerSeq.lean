@@ -181,12 +181,12 @@ theorem seqRun_fall_starP {b : Nat} {vb : VBlock} (hvb : vc.blocks[b]? = some vb
 
 /-- A straight-line run of a segment that falls through is a sequence of `VStep`s, if the
 block continues after the segment. -/
-theorem seqRun_fall_star {b : Nat} {vb : VBlock} (hvb : vc.blocks[b]? = some vb)
-    {ms : List MInst} {k0 : Nat} {ρ : Nat → V} {w : W} {ρ' : Nat → V} {w' : W}
-    (hseg : SegAt vb k0 ms) (hlt : k0 + ms.length < vb.insts.size)
-    (h : seqRun sem ms ρ w = some (.fall ρ' w')) :
+theorem seqRun_fall_star {b : Nat} {vb : VBlock} (hvb : vc.blocks[b]? = some vb) :
+    ∀ {ms : List MInst} {k0 : Nat} {ρ : Nat → V} {w : W} {ρ' : Nat → V} {w' : W},
+    SegAt vb k0 ms → k0 + ms.length < vb.insts.size →
+    seqRun sem ms ρ w = some (.fall ρ' w') →
     Star (VStep vc sem) (.run ⟨b, k0, ρ, w⟩) (.run ⟨b, k0 + ms.length, ρ', w'⟩) :=
-  (seqRun_fall_starP hvb hseg hlt h).star
+  fun hseg hlt h => (seqRun_fall_starP hvb hseg hlt h).star
 
 /-- A straight-line run of a segment that stops at instruction `k`: the `VStep`s up to it, each
 from an instruction of the segment, and the facts `VStep` needs to execute it. -/
@@ -220,16 +220,17 @@ theorem seqRun_stop_starP {b : Nat} {vb : VBlock} (hvb : vc.blocks[b]? = some vb
 
 /-- A straight-line run of a segment that stops at instruction `k`: the `VStep`s up to it, and
 the facts `VStep` needs to execute it. -/
-theorem seqRun_stop_star {b : Nat} {vb : VBlock} (hvb : vc.blocks[b]? = some vb)
-    {ms : List MInst} {k0 : Nat} {ρ : Nat → V} {w : W} {k : Nat} {i : MInst}
-    {ops : Array Operand} {ρ₁ : Nat → V} {w₁ : W} {outs : List V} {w₂ : W} {ctl : Ctl}
-    (hseg : SegAt vb k0 ms) (h : seqRun sem ms ρ w = some (.stop k i ops ρ₁ w₁ outs w₂ ctl)) :
+theorem seqRun_stop_star {b : Nat} {vb : VBlock} (hvb : vc.blocks[b]? = some vb) :
+    ∀ {ms : List MInst} {k0 : Nat} {ρ : Nat → V} {w : W} {k : Nat} {i : MInst}
+      {ops : Array Operand} {ρ₁ : Nat → V} {w₁ : W} {outs : List V} {w₂ : W} {ctl : Ctl},
+    SegAt vb k0 ms → seqRun sem ms ρ w = some (.stop k i ops ρ₁ w₁ outs w₂ ctl) →
     Star (VStep vc sem) (.run ⟨b, k0, ρ, w⟩) (.run ⟨b, k0 + k, ρ₁, w₁⟩) ∧ k < ms.length ∧
       vb.insts[k0 + k]? = some i ∧ i.operands = .ok ops ∧
       sem i (vuses ops ρ₁) w₁ = some (outs, w₂, ctl) ∧
       outs.length = (ops.toList.filter Operand.isDef).length ∧ ctl ≠ .next :=
-  let ⟨h1, h2⟩ := seqRun_stop_starP hvb hseg h
-  ⟨h1.star, h2⟩
+  fun hseg h =>
+    let ⟨h1, h2⟩ := seqRun_stop_starP hvb hseg h
+    ⟨h1.star, h2⟩
 
 /-- A run that stops in a prefix stops there in the whole list. -/
 theorem seqRun_stop_append {ms ns : List MInst} {ρ : Nat → V} {w : W} {k : Nat} {i : MInst}
