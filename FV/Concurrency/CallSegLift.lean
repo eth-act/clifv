@@ -75,11 +75,12 @@ theorem realizedT_lift {f : Arm.ArmState → Arm.ArmState} {ok : Arm.ArmState �
     {U D NS : Nat → Prop} (hD : ∀ a, D a → P a ∨ U a ∨ NS a)
     (hu : Uniform trS) (hpos : ∀ q x, evAt trS q = some x → 0 < x.n)
     (hns : ∀ q x, evAt trS q = some x → x.dir = .R → ¬ NS x.loc) (hb : ∀ l, P l → Bnd l) :
-    (∃ (trS' : List (List (Ev SKind BVal))) (s1 : Clif.State),
+    (∃ (trS' : List (List (Ev SKind BVal))) (s1 : Clif.State), trS' <+: trS ∧
         RealizedT env p Bnd ls k (encT U (.run (pushC ext s)))
           (encT (maskAfter U trS') (.run (pushC ext s1))) D (fun a => D a ∨ P a) ∧
         (∀ s', t = .run s' → s1 = s') ∧ (∀ v, t = .ret v → CStep env p (.run s1) [] (.ret v))) ∨
       ∃ k' ≤ k, ∃ (trS' : List (List (Ev SKind BVal))) (j : Nat) (evs : List (Ev SKind BVal)),
+        trS' <+: trS ∧
         trS'[j]? = some evs ∧ ∃ sj : Clif.State, ∃ t'' : TState,
         RealizedT env p Bnd ls k' (encT U (.run (pushC ext s)))
           (encT (maskAfter U (trS'.take j)) (.run sj)) D (fun a => D a ∨ P a) ∧
@@ -110,8 +111,8 @@ theorem realizedT_lift {f : Arm.ArmState → Arm.ArmState} {ok : Arm.ArmState �
   have hxk : ∀ k' ≤ k, CallCompose.XClosed (evTr (ls.take k')) := fun k' h' => by
     rw [CallRetsN.evTr_take_take h']; exact CallRetsN.xClosed_take hx k'
   rcases realizedT_cut (Bnd := Bnd) hr hk hrun' hxk href' hD hu' hpos' hns' hb with h | h
-  · exact .inl ⟨trS', s1, h, hend⟩
+  · exact .inl ⟨trS', s1, hp, h, hend⟩
   · obtain ⟨k', hk', j, evs, hj, sj, t'', hR, hst, hm⟩ := h
-    exact .inr ⟨k', hk', trS', j, evs, hj, sj, t'', hR, hst, hm⟩
+    exact .inr ⟨k', hk', trS', j, evs, hp, hj, sj, t'', hR, hst, hm⟩
 
 end Concurrency.CallSegLift
