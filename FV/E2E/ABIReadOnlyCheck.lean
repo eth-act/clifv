@@ -16,7 +16,7 @@ theorem instruction_cases {sig : Clif.Signature} {b k : Nat} {i : MInst}
     (∃ pairs, i = .rets pairs) := by
   unfold Backend.ABIReadOnly.instruction at checked
   split at checked
-  · exact .inl (by assumption)
+  · exact .inl (pureForm_of_pureNoFlags (by assumption))
   · rename_i hp
     clear hp
     right

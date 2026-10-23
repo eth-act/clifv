@@ -16,11 +16,11 @@ def stackRead (sig : Clif.Signature) (off : Int) (bytes : Nat) : Bool :=
     | .stack slot => off == 16 + (slot : Int) && decide (bytes ≤ row.2.ty.bytes)
     | .reg _ => false
 
-/-- Pure producers that do not read the flags (`cset` is excluded: its value depends on the
+/-- Pure producers that do not read the flags (`pureNoFlags`: a `cset`'s value depends on the
 entry flags), entry argument copies, declared stack-argument loads and return. Entry copies
 may occur only at block zero/PC zero. -/
 def instruction (sig : Clif.Signature) (block pc : Nat) (i : MInst) : Bool :=
-  if DeadCleanup.pureForm i && !(i matches .cset ..) then true
+  if DeadCleanup.pureNoFlags i then true
   else match i with
   | .args pairs => block == 0 && pc == 0 && pairs.all (fun p => registerRead sig p.2)
   | .load op (.vreg _ .int) (.fpOffset off) _ =>

@@ -10,16 +10,30 @@ def pureAlu : ALUOp → Bool
   | .add | .sub | .orr | .orrNot | .and | .andNot | .eor | .eorNot => true
   | _ => false
 
-/-- The explicit whitelist excludes flag writers, memory accesses, calls, traps and control.
-`cset` reads the flags but writes only its def: a dead `cset` is not lowered by Cranelift
-(`machinst/lower.rs`: an instruction none of whose results is used is skipped), e.g. the
-boolean of an `icmp` that the `brif` rule re-compares (#552). -/
+/-- The producers that neither read nor write the flags: no flag access, memory access,
+call, trap or control. -/
+def pureNoFlags : MInst → Bool
+  | .mov .. | .movWide .. | .loadAddr .. => true
+  | .aluRRR op .. | .aluRRImm12 op .. | .aluRRImmLogic op ..
+  | .aluRRImmShift op .. | .aluRRRShift op .. | .aluRRRExtend op .. => pureAlu op
+  | .aluRRRR .mAdd .. | .aluRRRR .mSub .. => true
+  | _ => false
+
+/-- The explicit whitelist excludes flag writers, memory accesses, calls, traps and control:
+`pureNoFlags` and `cset`, which reads the flags but writes only its def. Cranelift does not
+lower an instruction none of whose results is used (`machinst/lower.rs`), e.g. the boolean of
+an `icmp` that the `brif` rule re-compares (#552). -/
 def pureForm : MInst → Bool
   | .mov .. | .movWide .. | .loadAddr .. | .cset .. => true
   | .aluRRR op .. | .aluRRImm12 op .. | .aluRRImmLogic op ..
   | .aluRRImmShift op .. | .aluRRRShift op .. | .aluRRRExtend op .. => pureAlu op
   | .aluRRRR .mAdd .. | .aluRRRR .mSub .. => true
   | _ => false
+
+theorem pureForm_of_pureNoFlags {i : MInst} (h : pureNoFlags i = true) : pureForm i = true := by
+  cases i with
+  | aluRRRR op sz rd rn rm ra => cases op <;> simp_all [pureNoFlags, pureForm]
+  | _ => simp_all [pureNoFlags, pureForm]
 
 def regNums (rs : List Reg) : List Nat :=
   rs.filterMap fun r => match r with | .vreg n _ => some n | _ => none
