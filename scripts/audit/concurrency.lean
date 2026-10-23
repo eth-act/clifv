@@ -1015,3 +1015,6 @@ import FVTest.Concurrency.LitmusFull
 #print axioms Concurrency.CallArgsEntry.callee_argsAtEntry
 #print axioms Concurrency.CallArgsEntry.callee_argsAtEntry_sig
 #print axioms Concurrency.CallArgsEntry.Witness.useRegs_fC -- witness: native_decide
+#print axioms Concurrency.CallSegAbi.prun_prologueG
+#print axioms Concurrency.CallSegAbi.arm_isel_refines_abiCRN
+#print axioms Concurrency.CallSegAbi.Witness.arm_abiCRN_fC -- witness: native_decide
