@@ -745,15 +745,24 @@ they are; the per-thread layers are new files.
       program functions; the single-threaded call proof (`LowerSim.stmt_step` via
       `CallsRefine`/`XCallsOk`, `IselCtlCallRules.call_sym_lowerInstOk`) covers external calls run
       as one CLIF step. The pieces, in order:
-      * **(2a) the pause at layer 2**: a check admitting call statements to program functions
-        whose code is exactly the `call` (register arguments only, direct `bl`: no
-        `stackArgumentStores`, no GOT load), run with an `ExtSem` whose `call` has no step (so the
-        VCode/allocated runs stop at the call) and a result type of the layer-2 induction that, when
-        the whole VCode trace is realized and the VCode is at a statement boundary, returns the
-        `Match` there (`SimRes` gives no relation at its end; every segment lemma
-        `pure_seg…`/`mem_seg…`/`term_seg…` needs that variant). Layers 3/4a already return their
-        relation at the end (`PrepThread.prep_run`, `AllocThread.alloc_run`); the composition
-        (`isel_alloc_refinesR`, `arm_isel_refinesE'`) must export all three.
+      * **(2a) the pause at layer 2 — done (`IselDriverT.lean`, `IselCall.lean`, witness
+        `IselCallWitness.lean`)**: `DriverHypT` (`DriverHyp` without `ext`; `DriverHyp.toT`) and
+        `IselCheck.threadCheckBlC`/`threadCheckC` (`threadCheckBl` admitting `callOkB` statements:
+        a `call` whose code is exactly one direct `call` — a `bl`, register arguments only, no
+        `stackArgumentStores`, no GOT load — its results needing no extra moves;
+        `threadCheckBlC_of`); the layer-2 lemmas restated on them (`stmt_matchNT`, `term_matchNT`,
+        `term_retNT`, `mem_vregT`, `mem_segRT`, `pure_segRT`, `term_segRT`, `entry_matchNT`,
+        `enter_matchT`; the old statements are their corollaries); `SimResC`/`SegResC` (a third
+        end: the realized prefix stops at a call statement, `AtCallS`, related by `Match` to a
+        VCode configuration from which the rest of the trace runs), `simResC_of_seg`, `seg_resC`
+        (a call pauses at once), **`isel_refinesC`** (from a `Match`) and
+        **`isel_refines_entryC`** (from the entry); with an `ExtSem` without `call` step
+        (`NoCall`) the VCode stops at a matched call (`match_atCall`, `vtrun_atCall`), so
+        **`isel_pauseC`**: the trace is realized as before, or entirely with the CLIF state at a
+        call related by `Match` to its last configuration. Witness: `driverHypT_of`,
+        `isel_pause_fC` (the caller of `atomic_load`, which `threadCheck` rejects). Layers 3/4a
+        return their relation at the end (`PrepThread.prep_run`, `AllocThread.alloc_run`); the
+        composition with them is part of (3).
       * **(2b) the callee's entry from the pause**: `CompiledE` of the callee from the caller's
         `Match` at the call (the CLIF state after `stepCall`'s push, `ClifLift.pushC`) and layer
         4b's `Q` at the `call` item (the fixed-use operands put the arguments in x0…, `ArgsAtEntry`).

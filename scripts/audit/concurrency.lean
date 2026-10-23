@@ -827,3 +827,32 @@ import FVTest.Concurrency.LitmusFull
 #print axioms Concurrency.ArmAllocThread.arm_alloc_refines_lsCL
 #print axioms Concurrency.CallSeg.WitnessC.agreesAt_MC2 -- witness: native_decide
 #print axioms Concurrency.CallSeg.WitnessC.caller_lsCL -- witness: native_decide
+-- layer 2 pausing at calls (#473, 2a)
+#print axioms Backend.Proof.Driver.DriverHyp.toT
+#print axioms Concurrency.enter_matchT
+#print axioms Concurrency.enter_match_brT
+#print axioms Concurrency.IselCheck.threadCheckBlC_of
+#print axioms Concurrency.IselCheck.obligations_of_threadCheckC
+#print axioms Concurrency.IselCheck.stmtOk_ofC
+#print axioms Concurrency.IselCheck.callOk_ofC
+#print axioms Concurrency.IselCheck.termOk_ofC
+#print axioms Concurrency.IselStep.stmt_matchNT
+#print axioms Concurrency.IselStep.stmt_matchN
+#print axioms Concurrency.IselStep.term_matchNT
+#print axioms Concurrency.IselStep.term_retNT
+#print axioms Concurrency.IselMemLower.mem_vregT
+#print axioms Concurrency.IselMemMain.mem_segRT
+#print axioms Concurrency.IselMemMain.mem_segR
+#print axioms Concurrency.IselThread.pure_segRT
+#print axioms Concurrency.IselThread.term_segRT
+#print axioms Concurrency.IselEntry.entry_matchNT
+#print axioms Concurrency.IselCall.simResC_of_seg
+#print axioms Concurrency.IselCall.seg_resC
+#print axioms Concurrency.IselCall.isel_refinesC
+#print axioms Concurrency.IselCall.isel_refines_entryC
+#print axioms Concurrency.IselCall.match_atCall
+#print axioms Concurrency.IselCall.vtrun_atCall
+#print axioms Concurrency.IselCall.isel_pauseC
+#print axioms Concurrency.IselCall.Witness.driverHypT_of
+#print axioms Concurrency.IselCall.Witness.atCall_csC -- witness: native_decide
+#print axioms Concurrency.IselCall.Witness.isel_pause_fC -- witness: native_decide
