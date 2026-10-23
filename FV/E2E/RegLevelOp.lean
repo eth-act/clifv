@@ -103,29 +103,24 @@ theorem locVal_frame_keep {fr : RAFrame} {D : Loc → Prop} {T : Prop} {sp0 : Bi
     · rw [if_pos h, if_pos h, hr 8 (by omega)]
     · rw [if_neg (by omega), if_neg (by omega), hr 16 (by omega)]
 
-/-- The fp/lr slot lies in the frame addresses. -/
+/-- The fp/lr slot and the clobber area lie in the frame addresses. -/
 theorem fplr_inF {R : RL} (hR : R.Wf) (hframe : R.af.frame = true) :
-    ∀ k < 16, R.FK (spv R.s0 - 16#64 + BitVec.ofNat 64 k) := by
-  obtain ⟨⟨hfs, -⟩, -⟩ := lowerRFunc_ok hR.alloc
-  have hst := hR.stack.frame.1
-  have hd : frameDrop R.af = R.fr.total + 16 := by
-    simp only [frameDrop, hframe, ite_true, hfs, RL.fr]
+    ∀ k < R.topN, R.FK (R.topB + BitVec.ofNat 64 k) := by
+  obtain ⟨-, hfs, -, -, -, hcb, -, hst, hd⟩ := RL.frame_facts hR
   intro k hk
   refine .inl ?_
-  simp only [frameF, hd]
-  rw [hfs] at hst
-  simp only [RL.fr] at *
-  have hm : (R.fr.total + 16) % 2 ^ 64 = R.fr.total + 16 := Nat.mod_eq_of_lt (by simp [RL.fr]; omega)
-  have e : (spv R.s0 - 16#64 + BitVec.ofNat 64 k -
-      (spv R.s0 - BitVec.ofNat 64 ((RAFrame.compute R.vc R.rf).total + 16))).toNat =
-      (RAFrame.compute R.vc R.rf).total + k := by
-    have : spv R.s0 - 16#64 + BitVec.ofNat 64 k - (spv R.s0 - BitVec.ofNat 64 ((RAFrame.compute R.vc R.rf).total + 16))
-        = BitVec.ofNat 64 ((RAFrame.compute R.vc R.rf).total + k) := by
+  simp only [frameF, hd, RL.topB, RL.topN] at hk ⊢
+  have hm : (R.fr.total + 16) % 2 ^ 64 = R.fr.total + 16 := Nat.mod_eq_of_lt (by omega)
+  have e : (spv R.s0 - BitVec.ofNat 64 (16 + clobberBytes R.af.saves) + BitVec.ofNat 64 k -
+      (spv R.s0 - BitVec.ofNat 64 (R.fr.total + 16))).toNat =
+      R.fr.total - clobberBytes R.af.saves + k := by
+    have : spv R.s0 - BitVec.ofNat 64 (16 + clobberBytes R.af.saves) + BitVec.ofNat 64 k -
+        (spv R.s0 - BitVec.ofNat 64 (R.fr.total + 16)) =
+        BitVec.ofNat 64 (R.fr.total - clobberBytes R.af.saves + k) := by
       apply BitVec.eq_of_toNat_eq
       have := (spv R.s0).isLt
       simp only [BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_ofNat]
-      simp only [RL.fr] at hm
-      rw [hm, Nat.mod_eq_of_lt (a := k) (by omega)]
+      rw [hm, Nat.mod_eq_of_lt (a := k) (by omega), Nat.mod_eq_of_lt (a := 16 + clobberBytes R.af.saves) (by omega)]
       omega
     rw [this, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
   rw [e, hfs]
