@@ -1056,3 +1056,10 @@ import FVTest.Concurrency.LitmusFull
 #print axioms Concurrency.CallRetsN.arm_isel_refines_entryCRNX
 #print axioms Concurrency.CallSegAbi.arm_isel_refines_abiCRNX
 #print axioms Concurrency.CallSegAbi.Witness.arm_abiCRNX_fC -- witness: native_decide
+-- #473 (3): the valid memory across a callee's run
+#print axioms Concurrency.CallValid.allocInvD_self
+#print axioms Concurrency.CallValid.allocInvD_step
+#print axioms Concurrency.CallValid.allocInvD_run
+#print axioms Concurrency.CallValid.valid_of_allocInvD
+#print axioms Concurrency.CallValid.Witness.allocW -- witness: native_decide
+#print axioms Concurrency.CallValid.Witness.retW -- witness: native_decide

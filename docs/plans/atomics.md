@@ -977,6 +977,16 @@ they are; the per-thread layers are new files.
           `arm_isel_refinesG2NX`/`CRGNX`/**`CRNX`**/**`entryCRNX`**, **`arm_isel_refines_abiCRNX`**
           (the old names are corollaries); witness `arm_abiCRNX_fC`. The epilogue/`ret` and the
           `bl` have no `relXW` (`ret_end`, `step_bl`).
+        - *Valid memory across a callee (done, `CallValid.lean`)*: `resume_allA`'s `hval` (every
+          range valid after the callee's return was valid at the call). The callee's run is the
+          thread's CLIF run from the caller's call at depth `n` back to depth `n`:
+          `AllocInvD cm n` (every allocation within `cm`'s valid ranges or a slot of a frame above
+          depth `n`, `slotBasesAbove`), `allocInvD_self`, **`allocInvD_step`**/`allocInvD_run`
+          (`Clif.step_next_cases` of `LinkFree` programs, externs keeping allocations),
+          **`valid_of_allocInvD`** (back at depth `n`). In the linking induction every open
+          activation's `(cm, n)` pair is carried, so the per-alloc form composes without a
+          per-range case split. Witness `CallValidWitness.lean` (`allocW`, `retW`: a callee
+          with a placed slot).
         (iv) the thread-wide private set (every activation's `PrivA` and the CLIF events' avoidance
         of it; with CLIF stack slots in callees the private sets of different activations overlap
         other activations' slots); then `SegOk`, `link_compose_ext`, and `realizes_call_full`/the
