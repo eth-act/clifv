@@ -142,28 +142,27 @@ theorem payFoldC (ps : List Reg) (rets : Array Reg) :
     simp only [List.foldl_cons]
     cases hi : ps.idxOf? p with
     | some i =>
-      have hc : ps.contains p = true := by
-        have := List.idxOf?_eq_none_iff.not.mpr (by rw [hi]; simp)
-        simpa using this
+      have hmem : p ∈ ps := by
+        by_contra hn
+        rw [List.idxOf?_eq_none_iff.mpr hn] at hi
+        cases hi
       obtain ⟨pays, h1, h2, h3⟩ := payFoldC ps rets pr (acc.push rets[i]!) s
       refine ⟨rets[i]! :: pays, by rw [h1]; simp, ?_, ?_⟩
-      · rw [List.zip_cons_cons, List.filter_cons_of_neg (by simp [hc]), h2,
-          List.filter_cons_of_neg (by simp [hc])]
-      · rw [h3, List.filter_cons_of_neg (by simp [hc])]
+      · rw [List.zip_cons_cons, List.filter_cons_of_neg (by simp [hmem]), h2,
+          List.filter_cons_of_neg (by simp [hmem])]
+      · rw [h3, List.filter_cons_of_neg (by simp [hmem])]
     | none =>
-      have hc : ps.contains p = false := by
-        have := List.idxOf?_eq_none_iff.mp hi
-        simpa using this
+      have hnm : p ∉ ps := List.idxOf?_eq_none_iff.mp hi
       obtain ⟨pays, h1, h2, h3⟩ := payFoldC ps rets pr (acc.push (s.fresh .int).1) (s.fresh .int).2
       refine ⟨(s.fresh .int).1 :: pays, by rw [h1]; simp, ?_, ?_⟩
-      · rw [List.zip_cons_cons, List.filter_cons_of_pos (by simp [hc]), h2,
-          List.filter_cons_of_pos (by simp [hc])]
+      · rw [List.zip_cons_cons, List.filter_cons_of_pos (by simp [hnm]), h2,
+          List.filter_cons_of_pos (by simp [hnm])]
         simp only [callDefsC, outDefsC, LState.fresh, List.length_cons, List.replicate_succ,
           List.zipIdx_cons, List.zip_cons_cons, List.map_cons, Nat.add_zero]
         congr 1
         rw [List.zipIdx_succ]
         simp [List.zip_map_right, List.map_map, Function.comp_def, Nat.add_assoc, Nat.add_comm 1]
-      · rw [h3, List.filter_cons_of_pos (by simp [hc])]
+      · rw [h3, List.filter_cons_of_pos (by simp [hnm])]
         simp [LState.fresh]
         omega
 
@@ -187,6 +186,16 @@ theorem retFoldC : ∀ (L : List Clif.AbiParam) (acc : Array Reg) (s : LState),
       rw [List.zipIdx_succ]
       simp [List.map_map, Function.comp_def, Nat.add_assoc, Nat.add_comm 1]
     · rw [h2]; simp [LState.fresh]; omega
+
+/-- `outDefsC` of concatenated registers and classes. -/
+theorem outDefsC_append (b : Nat) {ps fr : List Reg} {cs ds : List RegClass}
+    (h : ps.length = cs.length) :
+    outDefsC b (ps ++ fr) (cs ++ ds) = outDefsC b ps cs ++ outDefsC (b + cs.length) fr ds := by
+  simp only [outDefsC, List.zipIdx_append, List.zip_append (by simp [h]), List.map_append,
+    Nat.zero_add]
+  congr 1
+  rw [List.zipIdx_eq_map_add (l := ds)]
+  simp [List.zip_map_right, List.map_map, Function.comp_def, Nat.add_assoc]
 
 /-- **The return and payload vregs of a typed `try_call`** (`tryRegsOfC`): the returns' vregs are
 fresh from `b = st.nextVreg`, of the returns' classes; the defs `gen_try_call_rets` makes of them
@@ -219,15 +228,16 @@ theorem tryRegsOfC_defs {sig : Clif.Signature} {st st1 : LState} {trs : List Reg
     obtain ⟨pl, p1, p2, p3⟩ := payFoldC ps R.1 (payloadRegs sig.callConv) #[] R.2
     have hps : ps.length = ((sigRets sig).map retClass).length := retRegsC_lengthC _ _ _ hr
     simp only [Array.toList_empty, List.nil_append] at r1 p1
-    refine ⟨ps, rfl, by rw [← hrets, r1], ?_, ?_⟩
-    · rw [← hpays, p1, p2, ← hrets, r1, r2, callDefsC_outDefsC, outDefsC, outDefsC, callDefsC,
-        callDefsC, List.zipIdx_append, List.zip_append (by simp [hps])]
-      simp only [List.map_append, List.map_map, Function.comp_def]
-      congr 1
-      · rw [List.zip_map_right]; simp [Function.comp_def]
-      · rw [List.zipIdx_eq_map_add]
-        simp [List.zip_map_right, List.map_map, Function.comp_def, Nat.add_assoc]
-    · rw [← hst, p3, r2]
+    -- the folds of `tryRegsOfC` are the lemmas' (their `match`es are different matchers)
+    have hpl : pays = pl := by rw [← hpays]; exact p1
+    have hst' : st1.nextVreg = R.2.nextVreg +
+        ((payloadRegs sig.callConv).filter fun p => !ps.contains p).length := by
+      rw [← hst]; exact p3
+    have hrl : rets = ((sigRets sig).map retClass).zipIdx.map
+        (fun q => Reg.vreg (st.nextVreg + q.2) q.1) := by rw [← hrets, r1]
+    refine ⟨ps, rfl, hrl, ?_, by rw [hst', r2]⟩
+    rw [hpl, p2, hrl, r2, callDefsC_outDefsC, outDefsC_append _ hps, List.length_map]
+    simp [callDefsC]
 
 /-- The typed defs' vregs are consecutive from `b`. -/
 theorem outDefsC_app_vregs (b : Nat) {ps fp : List Reg} {cs : List RegClass}
