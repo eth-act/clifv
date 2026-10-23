@@ -2,9 +2,11 @@ import FV.Backend.Proof.IselSzDriver
 import FV.Backend.Proof.IselSzDefsT
 import FV.Backend.Proof.IselSzExtT
 import FV.Backend.Proof.IselSzSoundT
+import FV.Backend.Proof.IselCovModelT
 import FV.Backend.Proof.IselCovSoundT
 import FV.Backend.Proof.IselExclT
 import FV.Backend.Proof.IselCtlUnmatchTI
+import FV.Backend.Proof.LowerLoopCtxT
 import FV.Compile.SubsetT
 
 /-!
@@ -19,10 +21,6 @@ float-capable context (`CtxInvT`, the scope `Compile.instET` with the opcode spl
 
 namespace Backend.Proof.Driver
 
-open Backend Backend.Proof Backend.Proof.Flow Backend.Proof.Cov Isle Isle.Interp Isle.Aarch64
-
-namespace Backend.Proof.Driver
-
 open Backend Backend.Proof Backend.Proof.Flow Backend.Proof.Cov Backend.Proof.Spill Isle Isle.Interp
   Isle.Aarch64
 
@@ -30,38 +28,6 @@ open Backend Backend.Proof Backend.Proof.Flow Backend.Proof.Cov Backend.Proof.Sp
 open Backend.Proof.Cov Backend.Compile
 
 /-! ## The typed context of a terminator -/
-
-/-- `CtxInvT` of the terminator context. -/
-theorem ctxInvT_termCtx {f : Clif.Function} {ctx : Ctx} (h : CtxInvT f ctx) {ti : Nat}
-    (hph : ctx.insts[ti]? = some ⟨.op .unit, [], [], none⟩) (data : V) :
-    CtxInvT f (termCtx ctx ti data) := by
-  have hne : ∀ x d, ctx.defInst? x = some d → d ≠ ti := by
-    intro x d hd e
-    subst e
-    obtain ⟨info, hi, hx⟩ := h.defInst x d hd
-    rw [hph] at hi; cases hi; cases hx
-  refine ⟨h.func, fun ii info inst hi hc => ?_, fun ii info inst hi hc => ?_,
-    fun ii info inst hi hc => ?_, h.valueReg, h.typedReg, fun x d hd => ?_,
-    fun x d info hd hi => ?_, h.slotOff, fun ii info hi t ht => ?_,
-    fun x t ht => h.valTyM x t ht, fun ii info inst x hi hc hx => ?_,
-    fun ii info inst hi hc x hx => ?_⟩
-  · by_cases e : ii = ti
-    · subst e; rw [termCtx_insts_self hph] at hi; cases hi; cases hc
-    · rw [termCtx_insts_ne e] at hi; exact h.data ii info inst hi hc
-  · by_cases e : ii = ti
-    · subst e; rw [termCtx_insts_self hph] at hi; cases hi; cases hc
-    · rw [termCtx_insts_ne e] at hi; exact h.resTys ii info inst hi hc
-  · by_cases e : ii = ti
-    · subst e; rw [termCtx_insts_self hph] at hi; cases hi; intro t ht; cases ht
-    · rw [termCtx_insts_ne e] at hi; exact h.resTysM ii info hi t ht
-  · rw [termCtx_insts_ne (hne x d hd)]; exact h.defInst x d hd
-  · rw [termCtx_insts_ne (hne x d hd)] at hi; exact h.defClif x d info hd hi
-  · by_cases e : ii = ti
-    · subst e; rw [termCtx_insts_self hph] at hi; cases hi; cases hc
-    · rw [termCtx_insts_ne e] at hi; exact h.addr64 ii info inst x hi hc hx
-  · by_cases e : ii = ti
-    · subst e; rw [termCtx_insts_self hph] at hi; cases hi; cases hc
-    · rw [termCtx_insts_ne e] at hi; exact h.intOps ii info inst hi hc x hx
 
 /-- `InstScopeT` of the terminator context. -/
 theorem instScopeT_termCtx {f : Clif.Function} {ctx : Ctx} (h : InstScopeT ctx) {ti : Nat}
@@ -83,33 +49,6 @@ theorem instSplit_termCtx {S : Clif.Inst → Bool} {f : Clif.Function} {ctx : Ct
   · rw [termCtx_insts_ne e] at hi; exact h hi hc hd
 
 variable {f : Clif.Function} {ctx : Ctx}
-
-/-! ## Tools -/
-
-theorem cRuleLe_mono {p : Program} {tab : Cov.Tab} {aw : TermId → List AW → Option Nat} {ctab : CTab}
-    {aext : TermId → AW → List AW} {actor : TermId → List AW → AW} {apre : TermId → List AW → Bool}
-    {aOracle : TermId → List AW → Option AW} {ins : List AW} {c c' : Nat} {r : Rule}
-    (h : cRuleLe p tab aw ctab aext actor apre aOracle ins c r = true) (hc : c ≤ c') :
-    cRuleLe p tab aw ctab aext actor apre aOracle ins c' r = true := by
-  unfold cRuleLe at h ⊢
-  cases hr : cRule p tab aw ctab aext actor apre aOracle ins r with
-  | none => rw [hr] at h; cases h
-  | some c0 =>
-    rw [hr] at h
-    exact decide_eq_true (Nat.le_trans (of_decide_eq_true h) hc)
-
-theorem handW_mono {p : Program} {vs : List V} {rl : Rule} {W : LState → Nat} {c c' : Nat}
-    (h : HandW p ctx vs rl W c) (hc : c ≤ c') : HandW p ctx vs rl W c' :=
-  fun cfg hco m n s tr env s1 r s2 tr2 hm hn h1 h2 =>
-    Nat.le_trans (h cfg hco m n s tr env s1 r s2 tr2 hm hn h1 h2) (Nat.add_le_add_left hc _)
-
-/-- V3's value soundness at every fuel, the coverage model at `s0`. -/
-theorem cov_sa (hctx : CtxInvT f ctx) (hsp : InstSplit Compile.instET f ctx opsT floatOps)
-    (hsc : InstScopeT ctx) (hx : f.externs.all (Compile.sigE ·.2.sig) = true) (hcl : Cov.Clean ctx) (s0 : LState) {cfg : Config}
-    (hc : cfg.checkOverlap = false) : ∀ n, SoundAtT (covModelT logicImmComplete hctx hsp hsc hx hcl s0) cfg covTabT n :=
-  soundAtT (hctx := hctx) (hsp := hsp) (md := covModelT logicImmComplete hctx hsp hsc hx hcl s0) (cfg := cfg) (tab := covTabT)
-    hc covTab_ok
-
 /-- A sub-run of an internal term the cost table bounds at `as` (`SubW`), from `costAt`. -/
 theorem subW_of_costT (hctx : CtxInvT f ctx) (hsp : InstSplit Compile.instET f ctx opsT floatOps)
     (hsc : InstScopeT ctx) (hx : f.externs.all (Compile.sigE ·.2.sig) = true) (hcl : Cov.Clean ctx) {aw : TermId → List AW → Option Nat}
@@ -118,16 +57,9 @@ theorem subW_of_costT (hctx : CtxInvT f ctx) (hsp : InstSplit Compile.instET f c
     {c : Nat} (hca : ∀ ty, cApply program covTabT aw ctab apre aOracle ty t as = some c) :
     SubW program f ctx t as W c := by
   intro cfg hc n ty vs s tr r s' tr' hvs h
-  exact (costAt (md := covModelT logicImmComplete hctx hsp hsc hx hcl s) hc (cov_sa hctx hcl s hc) hext
+  exact (costAt (md := covModelT logicImmComplete hctx hsp hsc hx hcl s) hc (cov_sa hctx hsp hsc hx hcl s hc) hext
     (fun cfg' hc' => hor cfg' hc') hct n).apply ty t as c vs s tr r s' tr' (hca ty) hvs
     (covSince_refl s) h
-
-/-- `cApply` does not depend on the result type. -/
-theorem cApply_ty (aw : TermId → List AW → Option Nat) (ctab : CTab) (ty : TypeId) (t : TermId)
-    (as : List AW) :
-    cApply program covTabT aw ctab apre aOracle ty t as = cApply program covTabT aw ctab apre aOracle 0 t as :=
-  rfl
-
 set_option maxRecDepth 100000 in
 set_option maxHeartbeats 4000000 in
 theorem cApply_556_wt0T : cApply program covTabT actorW szCTabT apre aOracle 0 556 [.c0] = some 107 := by
@@ -149,44 +81,6 @@ set_option maxHeartbeats 4000000 in
 theorem cApply_553_tg0T :
     cApply program covTabT actorT tgCTabT apre aOracle 0 553 [.ty [.int 64], .data 122 1 [], .c0] =
       some 0 := by decide +kernel
-
-/-! ## `br_table`'s rule on other terminators -/
-
-theorem rule1140_fmt : ruleFmt rule_lower_3277 = some 2451 := by decide
-
-/-- **Rule 1140 (`br_table`) never matches an instruction whose data is not a `BranchTable`.** -/
-theorem br1140_unmatch {ti : Nat} {data : V} (hi : ctx.insts[ti]? = some ⟨data, [], [], none⟩)
-    (hfmt : ∀ fs, data ≠ .data 152 4 fs) {rl : Rule} (hrl : rl ∈ program.rulesOf TId.lower_branch)
-    (hid : rl.id = 1140) {targets : List Label} :
-    ∀ (cfg : Config) m s0 env s1,
-      (matchRule program (sem ctx) cfg m rl [.inst ti, .labels targets]).run s0 ≠ .ok (some env, s1) := by
-  intro cfg m s0 env s1 h
-  have hmem : rule_lower_3277 ∈ program.rulesOf TId.lower_branch := by
-    rw [show TId.lower_branch = 687 from rfl, program_rulesOf_687]; simp
-  obtain rfl := eq_of_mem_of_id lower_branch_ids_nodup hrl hmem hid
-  obtain ⟨info, fs, hinfo, hdat⟩ := ruleFmt_match (vs := [.labels targets]) data_program
-    fmtKinds_program rule1140_fmt (by omega) (by omega) h
-  rw [hi] at hinfo
-  cases hinfo
-  exact hfmt fs hdat
-
-/-- A `try_call`'s data is not a `BranchTable`. -/
-theorem tryCallData_ne_brTable {t : Clif.Terminator} {data : V} (hd : tryCallData f t = .ok data) :
-    ∀ fs, data ≠ .data 152 4 fs := by
-  intro fs he
-  cases t with
-  | tryCall fn args et =>
-    obtain ⟨sig, items, ext, he', hx, hs⟩ := tryCallData_spec hd
-    rw [tryCallData_eq he' hx hs] at hd
-    cases hd
-    cases he
-  | tryCallIndirect callee args et =>
-    obtain ⟨sig, items, he'⟩ := tryCallIndData_spec hd
-    rw [tryCallIndData_eq he'] at hd
-    cases hd
-    cases he
-  | _ => simp [tryCallData, throw, throwThe, MonadExceptOf.throw] at hd
-
 /-! ## The driver's calls -/
 
 set_option maxRecDepth 100000 in
@@ -225,13 +119,13 @@ theorem stmt_szT (hctx : CtxInvT f ctx) (hsp : InstSplit Compile.instET f ctx op
     · exact .inr (lower_nonroot_nomatchT hctx hsc hx hi hc hrl hcr {})
     · exact .inl hle
   refine ⟨?_, ?_⟩
-  · exact cost_root_handT (md := covModelT logicImmComplete hctx hsp hsc hx hcl s) rfl (cov_sa hctx hcl s rfl)
+  · exact cost_root_handT (md := covModelT logicImmComplete hctx hsp hsc hx hcl s) rfl (cov_sa hctx hsp hsc hx hcl s rfl)
       extWT_wt oracleWT_wt szCTab_ok
       (Hand := fun rl => rl ∈ program.rulesOf TId.lower ∧ (rl.id = 1031 ∨ rl.id = 1032 ∨ rl.id = 1033))
       (fun rl ⟨hrl, hid⟩ => handW_callT hctx hi hc hrl hid)
       data_program.t686 term_686_kind hrulesW (holds_instT hctx hi hc) (covSince_refl s) (n := 999999)
       lower_len happ
-  · exact cost_rootT (md := covModelT logicImmComplete hctx hsp hsc hx hcl s) rfl (cov_sa hctx hcl s rfl)
+  · exact cost_rootT (md := covModelT logicImmComplete hctx hsp hsc hx hcl s) rfl (cov_sa hctx hsp hsc hx hcl s rfl)
       extWT_tg oracleWT_tg tgCTab_ok data_program.t686 term_686_kind hrulesT (holds_instT hctx hi hc)
       (covSince_refl s) happ
 
@@ -258,7 +152,7 @@ theorem branch_szT (hctx : CtxInvT f ctx) (hsp : InstSplit Compile.instET f ctx 
   obtain ⟨t, tr', ht, happ⟩ := runTerm_apply h
   rw [program_termByName_lower_branch] at ht
   cases ht
-  have hins : Holds2T S iOps fOps f ctx [AW.c0, AW.c0] [.inst ti, .labels targets] :=
+  have hins : Holds2T Compile.instET opsT floatOps f ctx [AW.c0, AW.c0] [.inst ti, .labels targets] :=
     ⟨γT_c0_inst ti, γT_c0_labels targets, trivial⟩
   have hrulesW : ∀ rl ∈ program.rulesOf T.lower_branch.id,
       cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [.c0, .c0] cW rl = true ∨
@@ -294,14 +188,14 @@ theorem branch_szT (hctx : CtxInvT f ctx) (hsp : InstSplit Compile.instET f ctx 
       · exact .inr (.inr hB)
     · exact .inl (cRuleLe_mono hle hcT)
   refine ⟨?_, ?_⟩
-  · exact cost_root_handT (md := covModelT logicImmComplete hctx hsp hsc hx hcl s) rfl (cov_sa hctx hcl s rfl)
+  · exact cost_root_handT (md := covModelT logicImmComplete hctx hsp hsc hx hcl s) rfl (cov_sa hctx hsp hsc hx hcl s rfl)
       extWT_wt oracleWT_wt szCTab_ok (Hand := fun rl => Try rl ∨ Br rl)
       (fun rl hrl => by
         rcases hrl with hT | hB
         · exact hTryW rl hT
         · exact hBrW rl hB)
       data_program.t687 term_687_kind hrulesW hins (covSince_refl s) (n := 999999) lower_branch_len happ
-  · exact cost_root_handT (md := covModelT logicImmComplete hctx hsp hsc hx hcl s) rfl (cov_sa hctx hcl s rfl)
+  · exact cost_root_handT (md := covModelT logicImmComplete hctx hsp hsc hx hcl s) rfl (cov_sa hctx hsp hsc hx hcl s rfl)
       extWT_tg oracleWT_tg tgCTab_ok (Hand := Br) hBrT
       data_program.t687 term_687_kind hrulesT hins (covSince_refl s) (n := 999999) lower_branch_len happ
 
@@ -398,10 +292,10 @@ theorem retTrap_szT {c : Ctx} (hctx' : CtxInv f c) (hcl' : Cov.Clean c) {ti : Na
       simp only [termRootRule] at hroot
       simp only [hroot, Bool.not_true, Bool.false_or] at hf
       exact .inl hf
-  exact ⟨cost_rootT (md := covModelT logicImmComplete hctx' hsp' hsc' hx hcl' s) rfl (cov_sa hctx' hcl' s rfl)
+  exact ⟨cost_rootT (md := covModelT logicImmComplete hctx' hsp' hsc' hx hcl' s) rfl (cov_sa hctx' hsp' hsc' hx hcl' s rfl)
       extWT_wt oracleWT_wt szCTab_ok data_program.t686 term_686_kind hrulesW ⟨γT_c0_inst ti, trivial⟩
       (covSince_refl s) happ,
-    cost_rootT (md := covModelT logicImmComplete hctx' hsp' hsc' hx hcl' s) rfl (cov_sa hctx' hcl' s rfl)
+    cost_rootT (md := covModelT logicImmComplete hctx' hsp' hsc' hx hcl' s) rfl (cov_sa hctx' hsp' hsc' hx hcl' s rfl)
       extWT_tg oracleWT_tg tgCTab_ok data_program.t686 term_686_kind hrulesT ⟨γT_c0_inst ti, trivial⟩
       (covSince_refl s) happ⟩
 
@@ -453,13 +347,17 @@ theorem tryCall_szT (hctx : CtxInvT f ctx) (hsp : InstSplit Compile.instET f ctx
     (h : tryCallF ctx ti data trs targets s = .ok (out, s', tr)) :
     wtA s'.emitted ≤ wtA s.emitted + termSzB t ∧ tgA s'.emitted ≤ tgA s.emitted + termTgB t := by
   have h' := ctxInvT_termCtx hctx hph data
-  have hctx' : CtxInv f (tryCtx ctx ti data trs) := { h' with }
+  have hctx' : CtxInv f (tryCtx ctx ti data trs) := { h'.toCtxInv with }
+  have hctx'T : CtxInvT f (tryCtx ctx ti data trs) := h'
+  have hsc' : InstScopeT (tryCtx ctx ti data trs) := instScopeT_termCtx hsc hph data
+  have hsp' : InstSplit Compile.instET f (tryCtx ctx ti data trs) opsT floatOps :=
+    instSplit_termCtx hsp hph data
   have hi : (tryCtx ctx ti data trs).insts[ti]? = some ⟨data, [], [], none⟩ :=
     termCtx_insts_self hph data
   have hK : szTermK ≤ termSzB t := by unfold termSzB szCallB szTermK szBrK; split <;> omega
   have hKT : tgTermK ≤ termTgB t := by
     rcases het with ⟨_, _, rfl⟩ | ⟨_, _, rfl⟩ <;> simp [termTgB]
-  exact branch_szT hctx' (clean_tryCtx hcl hd ti trs) hK hKT
+  exact branch_szT hctx'T hsp' hsc' hx (clean_tryCtx hcl hd ti trs) hK hKT
     (Try := fun rl => rl ∈ program.rulesOf TId.lower_branch ∧ (rl.id = 1034 ∨ rl.id = 1035 ∨ rl.id = 1036))
     (Br := fun _ => False)
     (fun rl hrl hid => .inr ⟨hrl, hid⟩)
@@ -471,13 +369,17 @@ theorem tryCall_szT (hctx : CtxInvT f ctx) (hsp : InstSplit Compile.instET f ctx
 /-! ## `IselSzT` -/
 
 /-- **The ISLE runs of the driver are bounded** for every in-scope function. -/
-theorem iselSz (hs : LowerScope f) : IselSzT f := by
+theorem iselSzT (hs : LowerScopeT f) : IselSz f := by
   intro ctx ranges st0 hb
-  have hctx : CtxInvT f ctx := ctxOk_sound (ctxOk_complete hs hb)
+  have hctx : CtxInvT f ctx := ctxInvT_of hs hb
   have hcl : Cov.Clean ctx := clean_of_build hb
-  exact ⟨fun ii info inst s out s' tr hi hc h => stmt_szT hctx hcl hi hc h,
-    fun ti t data targets s out s' tr _ hph hty hd hlen h => termCall_szT hctx hcl hph hty hd hlen h,
+  have hsc : InstScopeT ctx := (ctxSpec_of hb).instScopeT hs.subsetT
+  have hx : f.externs.all (Compile.sigE ·.2.sig) = true := functionET_externs hs.subsetT
+  have hsp : InstSplit Compile.instET f ctx opsT floatOps := inst_split hctx hsc hx
+  exact ⟨fun ii info inst s out s' tr hi hc h => stmt_szT hctx hsp hsc hx hcl hi hc h,
+    fun ti t data targets s out s' tr _ hph hty hd hlen h =>
+      termCall_szT hctx hsp hsc hx hcl hph hty hd hlen h,
     fun ti t et data sig items lo st1 trs targets s out s' tr _ hph het hd he htr h =>
-      tryCall_szT hctx hcl hph het hd he htr h⟩
+      tryCall_szT hctx hsp hsc hx hcl hph het hd he htr h⟩
 
 end Backend.Proof.Driver
