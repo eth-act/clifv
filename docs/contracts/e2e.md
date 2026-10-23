@@ -154,8 +154,13 @@ The proof covers them as follows.
   `(i64 sret, i64)` storing its argument through the pointer, compiled by the real pipeline,
   all contract premises discharged by the `NonVacuity` callees). The dead-cleanup variant has
   its `_abi` copies (`FV/E2E/SretReturnCleanup.lean`: `backend_correct_final_cleanup_abi`,
-  `backend_correct_final_cleanup_sret`, witness `SretReturnCleanup.sw_returns_sret_cleanup`).
-  The other variants (the typed `…T`, `_unwind`, the linked and executable theorems) keep the
+  `backend_correct_final_cleanup_sret`, witness `SretReturnCleanup.sw_returns_sret_cleanup`),
+  and so has the typed chain (`FV/E2E/SretReturnT.lean`: `ArmRefinesTAbi`, each value of
+  `vals ++ sretArg f args` in the return register of its class in the combined list;
+  `backend_correct_finalT_abi`, `backend_correct_finalT_sret` for an integer `sret` parameter;
+  driver `term_stepT_abi`/`sim_runT_abi`/`driver_correctT_abi`, `term_stepT`/`sim_runT`/
+  `driver_correctT` the corollaries; witness `SretReturnWitness.sw_returns_sretT`).
+  The other variants (`_unwind`, the linked and executable theorems) keep the
   CLIF-values conclusion: in a linked program the callers are Lean-compiled and never read x0
   after an `sret` call.
 * **Calls**: `gen_call_args` puts argument `i` at `(locsOf sig)[i]`: a register (with at most 8
