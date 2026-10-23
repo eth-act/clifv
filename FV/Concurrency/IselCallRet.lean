@@ -137,6 +137,61 @@ theorem isel_refinesCR (H : DriverHypT f vc ctx st0 R gn bl A (csem F fc X) MR e
   obtain ⟨ψ, href⟩ := refines_of_corr hcorr hrun.length_le
   exact ⟨n, trS, t, ψ, hn, hrun, href, hend⟩
 
+/-- **Layer 2 from the function's entry, pausing at calls and returns** (module doc; as
+`IselCall.isel_refines_entryC`). -/
+theorem isel_refines_entryCR (H : DriverHypT f vc ctx st0 R gn bl A (csem F fc X) MR env p)
+    (hchk : threadCheckBlC f bl = true) (hMR : MemRelOk F sb syms f MR)
+    (hMRw : ∀ sl cm w, MR sl cm w → Arm.r .ERR w = .None ∧ Arm.CheckSPAlignment w)
+    (hX : TlsMemFree X) (hMem : MemRefines F sb syms (csem F fc X)) (hMRs : MRStable F MR)
+    (hreg : ∀ off, ArgLoc.stack off ∉ locsOf f.sig)
+    {cs : Clif.State} {B0 : Clif.Block} (hB0 : f.blocks[0]? = some B0)
+    (hcall : cs.callers = []) (hfunc : cs.frame.func = f) (hslots : cs.frame.slots = slots)
+    (hbody : cs.frame.body = B0.body) (hterm : cs.frame.term = B0.term) {args : List Clif.Val}
+    (hregs : Clif.Regs.empty.setMany (B0.params.map (·.1)) args = some cs.frame.regs)
+    (hty : args.map (·.ty) = B0.params.map (·.2))
+    (hsig : args.map (·.ty) = f.sig.params.map (·.ty))
+    {ρ₀ : Nat → CV} {w₀ : Arm.ArmState} (hmr : MR slots cs.mem w₀)
+    (hargs : ArgsAtEntry F f.sig args w₀) {tr : List (List Ev)} {cT : VConf CV ArmState}
+    (hr : VTRun vc (csem F fc X) (cEvs F fc) (.run ⟨0, 0, ρ₀, w₀⟩) tr cT) :
+    ∃ n trS t ψ, n ≤ tr.length ∧ CRun env p (.run cs) trS t ∧
+      Refines Maps (fun _ => False) (StepPair (conv (tr.take n))) trS (conv (tr.take n)) ψ ∧
+      ((((n = tr.length ∧ ∃ c', VStep vc (csem F fc X) cT c') ∨ Stop env p t) ∧
+          ∀ v, t = .ret v → n = tr.length) ∨
+        ∃ s' vs', t = .run s' ∧ AtCR s' ∧ Match f ctx R gn bl A MR slots s' vs' ∧
+          VTRun vc (csem F fc X) (cEvs F fc) (.run vs') (tr.drop n) cT) := by
+  obtain ⟨vb, ps, ρ₁, ρ₂, w₂, hvb, hvb0, hstep, hseq, hm⟩ :=
+    IselEntry.entry_matchNT H (driverSem_csem F fc X) hMem hMRs hB0 hcall hfunc hslots hbody
+      hterm hregs hty hsig hmr hargs
+  rw [IselEntry.entryLoads_nil hreg] at hseq hm
+  simp only [seqRun, Option.some.injEq, SeqEnd.fall.injEq] at hseq
+  obtain ⟨rfl, rfl⟩ := hseq
+  have hsim : SimResP env p vc (csem F fc X) (cEvs F fc) AtCR (Match f ctx R gn bl A MR slots) cs
+      tr cT := by
+    cases hr with
+    | nil => exact ⟨0, [], .run cs, Nat.le_refl _, .nil, .nil, .inl ⟨.inl ⟨rfl, _, hstep⟩,
+        fun _ h => by cases h⟩⟩
+    | @cons _ c' _ evs tr' hs hr' =>
+      obtain ⟨vb', i, ops, hb', hi, -, hev, -, hst⟩ := IselMemMain.vtstep_evs hs
+      rw [hvb] at hb'; cases hb'
+      rw [hvb0] at hi; cases hi
+      have he : evs = [] := hev.trans (VCodeEvents.cEvs_nil rfl _ _)
+      subst he
+      have e := vstep_det hst hstep
+      subst e
+      obtain ⟨n, trS, t, hn, hrun, hcorr, hend⟩ :=
+        simResP_of_seg (seg_resCR H hchk hMR hMRw hX) cs _ tr' cT hm hr'
+      refine ⟨n + 1, trS, t, by simp; omega, hrun, ?_, ?_⟩
+      · simpa [conv] using hcorr.tgt
+      · rcases hend with ⟨hend, hret⟩ | ⟨s', vs', ht, hat, hm', hr2⟩
+        · refine .inl ⟨?_, fun v hv => by simp [hret v hv]⟩
+          rcases hend with ⟨h, hv⟩ | h
+          · exact .inl ⟨by simp [h], hv⟩
+          · exact .inr h
+        · exact .inr ⟨s', vs', ht, hat, hm', by simpa using hr2⟩
+  obtain ⟨n, trS, t, hn, hrun, hcorr, hend⟩ := hsim
+  obtain ⟨ψ, href⟩ := refines_of_corr hcorr hrun.length_le
+  exact ⟨n, trS, t, ψ, hn, hrun, href, hend⟩
+
 end
 
 end Concurrency.IselCallRet

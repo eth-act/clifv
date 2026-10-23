@@ -180,22 +180,22 @@ theorem srcStep_of_mstepC {R : RL} (hcov : CoveredCodeC R) (hgv : R.gv = fun _ _
     · rw [hp]
       exact .op hvb hi hops hsz hsem hlen hho hclob hnext
 
-/-- **All layers from a segment's start, layers 2–4a given** (`arm_isel_refinesC`,
-`arm_isel_refines_entryC`): layer 4b (`arm_alloc_refines_lsCL`) from `Q ∧ AInv` at the allocated
-configuration `cM`, composed with any realization `hL` of the allocated code's runs from `cM` by
-CLIF runs from `s` (as `isel_alloc_refinesC` gives), pausing at a call statement related by
-`Rel` to the allocated configuration. -/
-theorem arm_isel_refinesG {RA : RL} (hR : RA.Wf) (hsc : MemScopeLSC RA)
+/-- **All layers from a segment's start, layers 2–4a given, the pause relation on the allocated
+configuration** (`arm_isel_refinesG`; `CallRets` pauses at returns too): layer 4b
+(`arm_alloc_refines_lsCL`) from `Q ∧ AInv` at the allocated configuration `cM`, composed with any
+realization `hL` of the allocated code's runs from `cM` by CLIF runs from `s`, which may pause
+with the whole run realized at a CLIF state related by `Rel` to the run's last configuration. -/
+theorem arm_isel_refinesG2 {RA : RL} (hR : RA.Wf) (hsc : MemScopeLSC RA)
     (hgv : RA.gv = fun _ _ => False) {g : ArmState → ArmState} (hg : AgreesAt RA g)
     {env : Clif.Env} {p : Clif.Program} (hX : TlsMemFree RA.X) (hX0 : NoCall RA.X)
-    {s : Clif.State} {cM : MState CV ArmState} {Rel : Clif.State → MState CV ArmState → Prop}
+    {s : Clif.State} {cM : MState CV ArmState} {Rel : Clif.State → MConf CV ArmState → Prop}
     (hL : ∀ {trM : List (List Ev)} {cE : MConf CV ArmState},
       MTRun RA.vc RA.rf (csem RA.F RA.ctx RA.X) ckeep (cEvs RA.F RA.ctx) (.run cM) trM cE →
       ∃ m trS t ψ, m ≤ trM.length ∧ CRun env p (.run s) trS t ∧
         Refines Maps (fun _ => False) (StepPair (conv (trM.take m))) trS (conv (trM.take m)) ψ ∧
         ((((m = trM.length ∧ ∃ cM', MStep RA.vc (csem RA.F RA.ctx RA.X) ckeep RA.rf cE cM') ∨
             Stop env p t) ∧ ∀ v, t = .ret v → m = trM.length) ∨
-          (m = trM.length ∧ ∃ s' cM', t = .run s' ∧ AtCallS s' ∧ cE = .run cM' ∧ Rel s' cM')))
+          (m = trM.length ∧ ∃ s', t = .run s' ∧ Rel s' cE)))
     {x : ArmState} {mon : Mon} (hq : Q RA x (.run cM)) (hA : AInv RA (.run cM))
     {ls : List Lab} {t' : ArmState × Mon} (hr : PRun Policy.arm g (OkPriv RA) (x, mon) ls t') :
     ∃ k trS t ψ, k ≤ ls.length ∧ CRun env p (.run s) trS t ∧
@@ -203,9 +203,8 @@ theorem arm_isel_refinesG {RA : RL} (hR : RA.Wf) (hsc : MemScopeLSC RA)
       (k = ls.length ∨ Stop env p t ∨
         (∃ tE cE, PRun Policy.arm g (OkPriv RA) (x, mon) (ls.take k) tE ∧ RelQ RA tE cE ∧
           AtRets RA cE) ∨
-        (∃ tE s' cM', PRun Policy.arm g (OkPriv RA) (x, mon) (ls.take k) tE ∧
-          RelQ RA tE (.run cM') ∧ Pause RA (.run cM') ∧ t = .run s' ∧ AtCallS s' ∧
-          Rel s' cM')) := by
+        (∃ tE s' cE, PRun Policy.arm g (OkPriv RA) (x, mon) (ls.take k) tE ∧
+          RelQ RA tE cE ∧ Pause RA cE ∧ t = .run s' ∧ Rel s' cE)) := by
   have hsem : RA.sem = csem RA.F RA.ctx RA.X := by
     show csemV RA.gv RA.F RA.ctx RA.X = _
     rw [hgv, csemV_none]
@@ -241,7 +240,7 @@ theorem arm_isel_refinesG {RA : RL} (hR : RA.Wf) (hsc : MemScopeLSC RA)
     obtain ⟨hb1, -⟩ := evAt_isSome (show (evAt (conv (evTr (ls.take k))) (b.1, b.2)).isSome from hb)
     have := hb1; simp [conv, evTr] at this; omega
   refine ⟨k, trS, t, _, by omega, hrun, RealizeCompiled.Refines.pairT_congr href2 hpair, ?_⟩
-  rcases hendm with ⟨⟨h, cM', hmst⟩ | h, -⟩ | ⟨hfm, s', cM', ht, hat, rfl, hrel⟩
+  rcases hendm with ⟨⟨h, cM', hmst⟩ | h, -⟩ | ⟨hfm, s', ht, hrel⟩
   · have hk' := hkfull (by simp [conv, h])
     rw [hlenA] at hk'
     rcases hend with h' | ⟨tE, hpre, hrq, hD | hcall | hrets⟩
@@ -268,7 +267,44 @@ theorem arm_isel_refinesG {RA : RL} (hR : RA.Wf) (hsc : MemScopeLSC RA)
     rw [hlenA] at hk'
     rcases hend with h' | ⟨tE, hpre, hrq, hP⟩
     · exact .inl (hk'.trans h')
-    · exact .inr (.inr (.inr ⟨tE, s', cM', hPA hnA hk' hpre, hrq, hP, ht, hat, hrel⟩))
+    · exact .inr (.inr (.inr ⟨tE, s', cE, hPA hnA hk' hpre, hrq, hP, ht, hrel⟩))
+
+/-- **All layers from a segment's start, layers 2–4a given** (`arm_isel_refinesC`,
+`arm_isel_refines_entryC`): `arm_isel_refinesG2` pausing at a call statement related by `Rel`
+to the allocated configuration. -/
+theorem arm_isel_refinesG {RA : RL} (hR : RA.Wf) (hsc : MemScopeLSC RA)
+    (hgv : RA.gv = fun _ _ => False) {g : ArmState → ArmState} (hg : AgreesAt RA g)
+    {env : Clif.Env} {p : Clif.Program} (hX : TlsMemFree RA.X) (hX0 : NoCall RA.X)
+    {s : Clif.State} {cM : MState CV ArmState} {Rel : Clif.State → MState CV ArmState → Prop}
+    (hL : ∀ {trM : List (List Ev)} {cE : MConf CV ArmState},
+      MTRun RA.vc RA.rf (csem RA.F RA.ctx RA.X) ckeep (cEvs RA.F RA.ctx) (.run cM) trM cE →
+      ∃ m trS t ψ, m ≤ trM.length ∧ CRun env p (.run s) trS t ∧
+        Refines Maps (fun _ => False) (StepPair (conv (trM.take m))) trS (conv (trM.take m)) ψ ∧
+        ((((m = trM.length ∧ ∃ cM', MStep RA.vc (csem RA.F RA.ctx RA.X) ckeep RA.rf cE cM') ∨
+            Stop env p t) ∧ ∀ v, t = .ret v → m = trM.length) ∨
+          (m = trM.length ∧ ∃ s' cM', t = .run s' ∧ AtCallS s' ∧ cE = .run cM' ∧ Rel s' cM')))
+    {x : ArmState} {mon : Mon} (hq : Q RA x (.run cM)) (hA : AInv RA (.run cM))
+    {ls : List Lab} {t' : ArmState × Mon} (hr : PRun Policy.arm g (OkPriv RA) (x, mon) ls t') :
+    ∃ k trS t ψ, k ≤ ls.length ∧ CRun env p (.run s) trS t ∧
+      Refines Maps (PrivA RA) (MonPair (evTr (ls.take k))) trS (conv (evTr (ls.take k))) ψ ∧
+      (k = ls.length ∨ Stop env p t ∨
+        (∃ tE cE, PRun Policy.arm g (OkPriv RA) (x, mon) (ls.take k) tE ∧ RelQ RA tE cE ∧
+          AtRets RA cE) ∨
+        (∃ tE s' cM', PRun Policy.arm g (OkPriv RA) (x, mon) (ls.take k) tE ∧
+          RelQ RA tE (.run cM') ∧ Pause RA (.run cM') ∧ t = .run s' ∧ AtCallS s' ∧
+          Rel s' cM')) := by
+  obtain ⟨k, trS, t, ψ, hk, hrun, href, hend⟩ := arm_isel_refinesG2 hR hsc hgv hg hX hX0
+    (Rel := fun s' cE => ∃ cM', AtCallS s' ∧ cE = .run cM' ∧ Rel s' cM')
+    (fun hM => by
+      obtain ⟨m, trS, t, ψ, hm, hrun, href, hendm⟩ := hL hM
+      exact ⟨m, trS, t, ψ, hm, hrun, href, hendm.imp_right fun ⟨h1, s', cM', h2, h3, h4, h5⟩ =>
+        ⟨h1, s', h2, cM', h3, h4, h5⟩⟩) hq hA hr
+  refine ⟨k, trS, t, ψ, hk, hrun, href, ?_⟩
+  rcases hend with h | h | h | ⟨tE, s', cE, h1, h2, h3, h4, cM', h5, rfl, h6⟩
+  · exact .inl h
+  · exact .inr (.inl h)
+  · exact .inr (.inr (.inl h))
+  · exact .inr (.inr (.inr ⟨tE, s', cM', h1, h2, h3, h4, h5, h6⟩))
 
 /-- **All layers from related configurations, pausing at calls** (module doc). -/
 theorem arm_isel_refinesC {RA : RL} (hR : RA.Wf) (hsc : MemScopeLSC RA)

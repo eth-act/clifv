@@ -81,20 +81,26 @@ theorem thin_append_nil {α : Type} :
 
 variable {sb : Nat} {syms : String → Option Nat}
 
-/-- **Layers 2, 3 and 4a from related configurations, pausing at calls and at done
-`return`s** (`CallLayers.isel_alloc_refinesC` with `IselCallRet.isel_refinesCR` and `ret_pause`):
-at a `return`, the realized prefix is the whole run, the CLIF state at the `return` matched by
-layer 2 to a VCode configuration from which an event-free run reaches the configuration related
-by layers 3/4a to the allocated run's last one, and from which the VCode returns its values. -/
-theorem isel_alloc_refinesCR (H : DriverHypT f vc ctx st0 R gn bl A (csem F fc X) MR env p)
-    (hchk : threadCheckBlC f bl = true) (hMR : MemRelOk F sb syms f MR)
-    (hMRw : ∀ sl cm w, MR sl cm w → Arm.r .ERR w = .None ∧ Arm.CheckSPAlignment w)
-    (hX : TlsMemFree X) (hX0 : NoCall X)
+/-- **Layers 2, 3 and 4a, layer 2's realization given, pausing at calls and at done
+`return`s** (`CallLayers.isel_alloc_refinesC` with any realization `hL2` of the VCode runs from
+`vV` pausing as `IselCallRet.isel_refinesCR`, and `ret_pause`): at a `return`, the realized
+prefix is the whole run, the CLIF state at the `return` matched by layer 2 to a VCode
+configuration from which an event-free run reaches the configuration related by layers 3/4a to
+the allocated run's last one, and from which the VCode returns its values. -/
+theorem isel_alloc_refinesCRG (H : DriverHypT f vc ctx st0 R gn bl A (csem F fc X) MR env p)
+    (hchk : threadCheckBlC f bl = true) (hX0 : NoCall X)
     {vcp : VCode} {L : Nat → Prop} {ss ss' : Array (Array Nat)} (H3 : PrepFacts vc vcp L ss ss')
     {rf : RFunc} {c : CheckCtx} {ins : Array (Option AState)} {a0 : AState}
     (hc : CheckedAt vcp rf c ins a0) {keep : Reg → CV → CV} {r₀ : Reg → CV}
     {s : Clif.State} {vV vP : VState CV ArmState} {cM : MState CV ArmState}
-    (hm2 : Match f ctx R gn bl A MR slots s vV)
+    (hL2 : ∀ {tr : List (List Ev)} {cT : VConf CV ArmState},
+      VTRun vc (csem F fc X) (cEvs F fc) (.run vV) tr cT →
+      ∃ n trS t ψ, n ≤ tr.length ∧ CRun env p (.run s) trS t ∧
+        Refines Maps (fun _ => False) (StepPair (conv (tr.take n))) trS (conv (tr.take n)) ψ ∧
+        ((((n = tr.length ∧ ∃ c', VStep vc (csem F fc X) cT c') ∨ Stop env p t) ∧
+            ∀ v, t = .ret v → n = tr.length) ∨
+          ∃ s' vs', t = .run s' ∧ AtCR s' ∧ Match f ctx R gn bl A MR slots s' vs' ∧
+            VTRun vc (csem F fc X) (cEvs F fc) (.run vs') (tr.drop n) cT))
     (hm3 : PMatch vc vcp (csem F fc X) (cEvs F fc) L ss' (.run vV) (.run vP))
     (hm4 : MatchRun c ins keep r₀ cM vP)
     {trM : List (List Ev)} {cE : MConf CV ArmState}
@@ -120,7 +126,7 @@ theorem isel_alloc_refinesCR (H : DriverHypT f vc ctx st0 R gn bl A (csem F fc X
   obtain ⟨trP, vPE, hrP, hmE, hthP⟩ := AllocThread.alloc_run (r₀ := r₀) hc hr (v := .run vP) hm4
   obtain ⟨trV, vVE, hrV, hpE, hthV⟩ := prep_run H3 hds (fun _ _ _ h => cEvs_setTargets F fc h)
     (fun _ _ _ _ _ _ h => csem_goto h) hrP hm3
-  obtain ⟨n, trS, t, ψ, hn, hrun, href, hend⟩ := isel_refinesCR H hchk hMR hMRw hX hm2 hrV
+  obtain ⟨n, trS, t, ψ, hn, hrun, href, hend⟩ := hL2 hrV
   have hth := Thin.trans hthV hthP
   have hlenV := vtrun_len (cEvs_len F fc) hrV
   -- the realization of the first `n` VCode steps, carried to a prefix of the allocated run
@@ -185,6 +191,88 @@ theorem isel_alloc_refinesCR (H : DriverHypT f vc ctx st0 R gn bl A (csem F fc X
       obtain ⟨ψ', href3⟩ := hcarry htk'
       refine ⟨trM.length, trS, t, ψ', Nat.le_refl _, hrun, href3, .inr (.inr ⟨rfl, ?_⟩)⟩
       exact ⟨s', _, _, vVE, vPE, vals, cm, ht, hat, hm', hr', hnil, hpE, hmE, hs, hret⟩
+
+/-- **Layers 2, 3 and 4a from related configurations, pausing at calls and at done `return`s**
+(`isel_alloc_refinesCRG` with `IselCallRet.isel_refinesCR`). -/
+theorem isel_alloc_refinesCR (H : DriverHypT f vc ctx st0 R gn bl A (csem F fc X) MR env p)
+    (hchk : threadCheckBlC f bl = true) (hMR : MemRelOk F sb syms f MR)
+    (hMRw : ∀ sl cm w, MR sl cm w → Arm.r .ERR w = .None ∧ Arm.CheckSPAlignment w)
+    (hX : TlsMemFree X) (hX0 : NoCall X)
+    {vcp : VCode} {L : Nat → Prop} {ss ss' : Array (Array Nat)} (H3 : PrepFacts vc vcp L ss ss')
+    {rf : RFunc} {c : CheckCtx} {ins : Array (Option AState)} {a0 : AState}
+    (hc : CheckedAt vcp rf c ins a0) {keep : Reg → CV → CV} {r₀ : Reg → CV}
+    {s : Clif.State} {vV vP : VState CV ArmState} {cM : MState CV ArmState}
+    (hm2 : Match f ctx R gn bl A MR slots s vV)
+    (hm3 : PMatch vc vcp (csem F fc X) (cEvs F fc) L ss' (.run vV) (.run vP))
+    (hm4 : MatchRun c ins keep r₀ cM vP)
+    {trM : List (List Ev)} {cE : MConf CV ArmState}
+    (hr : MTRun vcp rf (csem F fc X) keep (cEvs F fc) (.run cM) trM cE) :
+    ∃ m trS t ψ, m ≤ trM.length ∧ CRun env p (.run s) trS t ∧
+      Refines Maps (fun _ => False) (StepPair (conv (trM.take m))) trS (conv (trM.take m)) ψ ∧
+      ((((m = trM.length ∧ ∃ cM', MStep vcp (csem F fc X) keep rf cE cM') ∨ Stop env p t) ∧
+          ∀ v, t = .ret v → m = trM.length) ∨
+        (m = trM.length ∧ ∃ s' vV' vP' cM', t = .run s' ∧ AtCallS s' ∧ cE = .run cM' ∧
+          Match f ctx R gn bl A MR slots s' vV' ∧
+          PMatch vc vcp (csem F fc X) (cEvs F fc) L ss' (.run vV') (.run vP') ∧
+          MatchRun c ins keep r₀ cM' vP') ∨
+        (m = trM.length ∧ ∃ s' vR trR vV' vP' vals cm, t = .run s' ∧ AtRetS s' ∧
+          Match f ctx R gn bl A MR slots s' vR ∧
+          VTRun vc (csem F fc X) (cEvs F fc) (.run vR) trR vV' ∧ (∀ e ∈ trR, e = []) ∧
+          PMatch vc vcp (csem F fc X) (cEvs F fc) L ss' vV' vP' ∧
+          Backend.Proof.Match c ins keep r₀ cE vP' ∧ Clif.step env p s' = .done vals cm ∧
+          ∃ us outs w', VRetFrom vc (csem F fc X) vR us outs w' ∧
+            us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
+            PrefixHold vals outs ∧ MR slots s'.mem w' ∧
+            cm = (s'.mem.free (slots.map (·.2))).leave)) :=
+  isel_alloc_refinesCRG H hchk hX0 H3 hc (fun hrV => isel_refinesCR H hchk hMR hMRw hX hm2 hrV)
+    hm3 hm4 hr
+
+
+/-- **Layers 2, 3 and 4a from the function's entry, pausing at calls and at done `return`s**
+(`isel_alloc_refinesCRG` with `IselCallRet.isel_refines_entryCR`; the relations of layers 3/4a
+at the entry configurations by `CallLayers.prep_init`/`alloc_init`). -/
+theorem isel_alloc_refines_entryCR (H : DriverHypT f vc ctx st0 R gn bl A (csem F fc X) MR env p)
+    (hchk : threadCheckBlC f bl = true) (hMR : MemRelOk F sb syms f MR)
+    (hMRw : ∀ sl cm w, MR sl cm w → Arm.r .ERR w = .None ∧ Arm.CheckSPAlignment w)
+    (hX : TlsMemFree X) (hX0 : NoCall X) (hMem : MemRefines F sb syms (csem F fc X))
+    (hMRs : MRStable F MR) (hreg : ∀ off, ArgLoc.stack off ∉ locsOf f.sig)
+    {cs : Clif.State} {B0 : Clif.Block} (hB0 : f.blocks[0]? = some B0)
+    (hcall : cs.callers = []) (hfunc : cs.frame.func = f) (hslots : cs.frame.slots = slots)
+    (hbody : cs.frame.body = B0.body) (hterm : cs.frame.term = B0.term) {args : List Clif.Val}
+    (hregs : Clif.Regs.empty.setMany (B0.params.map (·.1)) args = some cs.frame.regs)
+    (hty : args.map (·.ty) = B0.params.map (·.2))
+    (hsig : args.map (·.ty) = f.sig.params.map (·.ty))
+    {ρ₀ : Nat → CV} {w₀ : Arm.ArmState} (hmr : MR slots cs.mem w₀)
+    (hargs : ArgsAtEntry F f.sig args w₀)
+    {vcp : VCode} {L : Nat → Prop} {ss ss' : Array (Array Nat)} (H3 : PrepFacts vc vcp L ss ss')
+    {rf : RFunc} {c : CheckCtx} {ins : Array (Option AState)} {a0 : AState}
+    (hc : CheckedAt vcp rf c ins a0) {keep : Reg → CV → CV} {r₀ : Reg → CV}
+    {cM : MState CV ArmState}
+    (hm3 : PMatch vc vcp (csem F fc X) (cEvs F fc) L ss' (VConf.init ρ₀ w₀) (VConf.init ρ₀ w₀))
+    (hm4 : MatchRun c ins keep r₀ cM ⟨0, 0, ρ₀, w₀⟩)
+    {trM : List (List Ev)} {cE : MConf CV ArmState}
+    (hr : MTRun vcp rf (csem F fc X) keep (cEvs F fc) (.run cM) trM cE) :
+    ∃ m trS t ψ, m ≤ trM.length ∧ CRun env p (.run cs) trS t ∧
+      Refines Maps (fun _ => False) (StepPair (conv (trM.take m))) trS (conv (trM.take m)) ψ ∧
+      ((((m = trM.length ∧ ∃ cM', MStep vcp (csem F fc X) keep rf cE cM') ∨ Stop env p t) ∧
+          ∀ v, t = .ret v → m = trM.length) ∨
+        (m = trM.length ∧ ∃ s' vV' vP' cM', t = .run s' ∧ AtCallS s' ∧ cE = .run cM' ∧
+          Match f ctx R gn bl A MR slots s' vV' ∧
+          PMatch vc vcp (csem F fc X) (cEvs F fc) L ss' (.run vV') (.run vP') ∧
+          MatchRun c ins keep r₀ cM' vP') ∨
+        (m = trM.length ∧ ∃ s' vR trR vV' vP' vals cm, t = .run s' ∧ AtRetS s' ∧
+          Match f ctx R gn bl A MR slots s' vR ∧
+          VTRun vc (csem F fc X) (cEvs F fc) (.run vR) trR vV' ∧ (∀ e ∈ trR, e = []) ∧
+          PMatch vc vcp (csem F fc X) (cEvs F fc) L ss' vV' vP' ∧
+          Backend.Proof.Match c ins keep r₀ cE vP' ∧ Clif.step env p s' = .done vals cm ∧
+          ∃ us outs w', VRetFrom vc (csem F fc X) vR us outs w' ∧
+            us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
+            PrefixHold vals outs ∧ MR slots s'.mem w' ∧
+            cm = (s'.mem.free (slots.map (·.2))).leave)) :=
+  isel_alloc_refinesCRG H hchk hX0 H3 hc (vV := ⟨0, 0, ρ₀, w₀⟩) (fun hrV =>
+    isel_refines_entryCR H hchk hMR hMRw hX hMem hMRs hreg hB0 hcall hfunc hslots hbody hterm
+      hregs hty hsig hmr hargs hrV) hm3 hm4 hr
+
 
 end
 
