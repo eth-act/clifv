@@ -4,7 +4,7 @@ import FV.Backend.LinearScan
 import FV.E2E.StockHighMulFixtures
 import FV.E2E.StockDivFixtures
 import FV.E2E.StockMixedDivFixtures
-import FVTest.Backend.Lowering.StockDivProductionRuntime
+import FVTest.Backend.Lowering.StockDivProductionInput
 import FV.Clif.Print
 
 set_option autoImplicit false
@@ -157,4 +157,4 @@ def check : IO Unit := do
 
 end FVTest.StockMixedDivProductionRuntime
 
-def main : IO Unit := FVTest.StockDivProductionRuntime.check
+def main : IO Unit := FVTest.StockMixedDivProductionRuntime.check
