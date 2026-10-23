@@ -136,7 +136,8 @@ theorem backend_correct_final_cleanup_trapcallT {p : Clif.Program} {f : Clif.Fun
   · obtain ⟨n, hn⟩ := hR2 obj w' (hPrep.2 _ _ _ _ h)
     exact ⟨n, .inr hn⟩
   · obtain ⟨n, hn⟩ := hR3 (tryRaise_cleanup (driverSem_valueSemU Γ.F fctx X (xrT XT))
-      (fun _ _ _ _ _ _ hp' h' => valueSemU_pure hp' h') hc.prepOk (xrT XT) h)
+      (fun _ _ _ _ _ _ hp' h' => valueSemU_pure hp' h') (valueSemU_cmpOverwrite _ _ _ _)
+      hc.prepOk (xrT XT) h)
     exact ⟨n, .inr hn⟩
 
 end E2E

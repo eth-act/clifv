@@ -16,13 +16,13 @@ composed per statement (`lowerInstOk_pairF_value`); `instCalls_pair_value` is an
 namespace E2E
 open Backend Backend.Proof Backend.Proof.Driver Backend.DeadCleanup
 
-/-- The guarded value semantics with the float accesses: pure producers by their
+/-- The guarded value semantics with the float accesses: pure producers and compares by their
 specification, every other form by `csemGF`. -/
 noncomputable def valueSemGF (F : BitVec 64 → Prop) (ctx : FnCtx) (X : ExtSem)
     (Rd : BitVec 64 → Prop) (syms : String → Option Nat) (exts : List Clif.ExtFunc)
     (sigs : List Clif.Signature) (sp0 : BitVec 64)
     (Pc : String → Clif.Signature → List Clif.Val → Clif.Mem → Prop) : Sem :=
-  fun i us w => if pureForm i then mspec ctx.slotBase i us w
+  fun i us w => if specForm i then mspec ctx.slotBase i us w
     else csemGF F ctx X Rd syms exts sigs sp0 Pc i us w
 
 section
@@ -36,7 +36,7 @@ theorem valueSemGF_sub {i : MInst} {us : List CV} {w : Arm.ArmState}
     {r : List CV × Arm.ArmState × Ctl}
     (h : valueSemGF F ctx X Rd syms exts sigs sp0 Pc i us w = some r) :
     valueSem F ctx X i us w = some r := by
-  by_cases hp : pureForm i = true
+  by_cases hp : specForm i = true
   · simpa [valueSemGF, valueSem, hp] using h
   · simp only [valueSemGF, hp, Bool.false_eq_true, ite_false] at h
     simpa [valueSem, hp] using csemGF_sub h
@@ -46,7 +46,7 @@ theorem valueSemG_valueSemGF {i : MInst} {us : List CV} {w : Arm.ArmState}
     {r : List CV × Arm.ArmState × Ctl}
     (h : valueSemG F ctx X Rd syms exts sigs sp0 Pc i us w = some r) :
     valueSemGF F ctx X Rd syms exts sigs sp0 Pc i us w = some r := by
-  by_cases hp : pureForm i = true
+  by_cases hp : specForm i = true
   · simpa [valueSemGF, valueSemG, hp] using h
   · simp only [valueSemG, hp, Bool.false_eq_true, ite_false] at h
     simp only [valueSemGF, hp, Bool.false_eq_true, ite_false]
@@ -57,6 +57,16 @@ theorem refines_valueSemGF : Refines F (valueSemGF F ctx X Rd syms exts sigs sp0
   obtain ⟨w₁, h1, h2⟩ := refines_valueSemG (F := F) (ctx := ctx) (X := X) (Rd := Rd)
     (syms := syms) (exts := exts) (sigs := sigs) (sp0 := sp0) (Pc := Pc) i us w outs w' h
   exact ⟨w₁, valueSemG_valueSemGF h1, h2⟩
+
+/-- The guarded value semantics with the float accesses lets the next compare overwrite a
+compare's flags. -/
+theorem valueSemGF_cmpOverwrite (F : BitVec 64 → Prop) (ctx : FnCtx) (X : ExtSem)
+    (Rd : BitVec 64 → Prop) (syms : String → Option Nat) (exts : List Clif.ExtFunc)
+    (sigs : List Clif.Signature) (sp0 : BitVec 64)
+    (Pc : String → Clif.Signature → List Clif.Val → Clif.Mem → Prop) :
+    CmpOverwrite (valueSemGF F ctx X Rd syms exts sigs sp0 Pc) :=
+  cmpOverwrite_of_mspec (sb := ctx.slotBase) fun i hs => by
+    funext us w; simp only [valueSemGF, hs, ↓reduceIte]
 
 theorem memRefinesR_valueSemGF {sb : Nat} (hsb : ctx.slotBase = sb)
     (hsym : ∀ n b, syms n = some b → X.sym n 0 = BitVec.ofNat 64 b) :
@@ -101,7 +111,7 @@ theorem valueSemGF_lockstep2 {Z : BitVec 64 → Prop} (hFZ : ∀ a, F a → Z a)
     (h : valueSemGF F ctx X (fun b => ¬ Z b) syms exts sigs sp0 Pc i us w = some (o, w₁, c))
     (h' : valueSemGF F ctx X (fun b => ¬ Z b) syms exts sigs sp0 Pc i us w' = some (o', w₁', c')) :
     o = o' ∧ c = c' ∧ SameWorld Z w₁ w₁' := by
-  by_cases hp : pureForm i = true
+  by_cases hp : specForm i = true
   · have e : ∀ x, valueSemGF F ctx X (fun b => ¬ Z b) syms exts sigs sp0 Pc i us x =
         valueSemG F ctx X (fun b => ¬ Z b) syms exts sigs sp0 Pc i us x := fun x => by
       simp [valueSemGF, valueSemG, hp]

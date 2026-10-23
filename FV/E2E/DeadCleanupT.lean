@@ -73,9 +73,10 @@ theorem cfg_of_prepare_prune {vc vcp : VCode} (h : prepare (Backend.DeadCleanup.
 theorem prepareCorrect_prune {sem : Sem} {vc vcp : VCode} (hds : DriverSem sem)
     (hPure : ∀ i us w outs w' ctl, pureForm i = true →
       sem i us w = some (outs, w', ctl) → w' = w ∧ ctl = .next)
+    (hCmp : CmpOverwrite sem)
     (h : prepCheck (Backend.DeadCleanup.prune vc) vcp = true) : PrepareCorrect sem vc vcp :=
   fun a w => by
-    obtain ⟨hr, ht⟩ := prune_correct (vc := vc) hPure a w
+    obtain ⟨hr, ht⟩ := prune_correct (vc := vc) hPure hCmp a w
     obtain ⟨pr, pt⟩ := prepareCorrect_of_check hds h a w
     exact ⟨fun _ _ _ h => pr _ _ _ (hr _ _ _ h), fun _ h => pt _ (ht _ h)⟩
 
@@ -99,6 +100,7 @@ theorem backend_correct_of_rules_cleanup_exT {p : Clif.Program} {f : Clif.Functi
     (hFP : ∀ s, MemRefinesFP (fun _ => True) (F s) slotOff (sem s))
     (hPure : ∀ s i us w outs w' ctl, pureForm i = true →
       sem s i us w = some (outs, w', ctl) → w' = w ∧ ctl = .next)
+    (hCmp : ∀ s, CmpOverwrite (sem s))
     (houtB : vc.outgoing ≤ out)
     {base ra : BitVec 64} {s w₀ : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State}
     (hent : AbiEntry fb base ra s) (hres : StackAvail K af s) (hbe : BodyEntry af s w₀)
@@ -112,7 +114,7 @@ theorem backend_correct_of_rules_cleanup_exT {p : Clif.Program} {f : Clif.Functi
       lowerRulesCorrectTI_program hrulesF hrulesA nonEUnmatchableT_program hT.callsT hT.indT
       memRulesCorrectRTI_program hmemF hT.term hT.termUn hT.branch hT.branchEx hT.tryT
       hT.tryUn hT.tryIndT hT.tryIndUn hRef hds hcalls hicalls hmem hFP houtB)
-    (fun s' => prepareCorrect_prune (hds s') (hPure s') hc.prepOk)
+    (fun s' => prepareCorrect_prune (hds s') (hPure s') (hCmp s') hc.prepOk)
     hM6 hent hres hbe
     (argsAtEntry_bodyT (lowerRFunc_frame hc.alloc) (entryRegsT_of_check hc.lowerOk) hbe hargs hargF)
     hcs hrel htr fuel
@@ -138,6 +140,7 @@ theorem backend_correct_of_rules_cleanup_ex_ofT {p : Clif.Program} {f : Clif.Fun
     (hFP : ∀ s, MemRefinesFP (fun _ => True) (F s) slotOff (sem s))
     (hPure : ∀ s i us w outs w' ctl, pureForm i = true →
       sem s i us w = some (outs, w', ctl) → w' = w ∧ ctl = .next)
+    (hCmp : ∀ s, CmpOverwrite (sem s))
     (houtB : vc.outgoing ≤ out)
     {base ra : BitVec 64} {s w₀ : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State}
     (hent : AbiEntry fb base ra s) (hres : StackAvail K af s) (hbe : BodyEntry af s w₀)
@@ -151,7 +154,7 @@ theorem backend_correct_of_rules_cleanup_ex_ofT {p : Clif.Program} {f : Clif.Fun
       lowerRulesCorrectTI_program hrulesF hrulesA nonEUnmatchableT_program hT.callsT hT.indT
       memRulesCorrectRTI_program hmemF hT.term hT.termUn hT.branch hT.branchEx hT.tryT
       hT.tryUn hT.tryIndT hT.tryIndUn hRef hds hcalls hicalls hmem hFP houtB)
-    (fun s' => prepareCorrect_prune (hds s') (hPure s') hc.prepOk)
+    (fun s' => prepareCorrect_prune (hds s') (hPure s') (hCmp s') hc.prepOk)
     hM6 hent hres hbe
     (argsAtEntry_bodyT (lowerRFunc_frame hc.alloc) (entryRegsT_of_check hc.lowerOk) hbe hargs hargF)
     hcs hrel htr fuel
@@ -162,9 +165,9 @@ theorem memRefinesFP_valueSem (Rd F : BitVec 64 → Prop) (ctx : FnCtx) (X : Ext
   obtain ⟨h1, h2⟩ := memRefinesFP_csem Rd F ctx X hsb
   refine ⟨fun sz d am fl us w a hsz ha hav hrd => ?_, fun sz d am fl v us w a hsz ha hav => ?_⟩
   · obtain ⟨w', e, hw⟩ := h1 sz d am fl us w a hsz ha hav hrd
-    exact ⟨w', by simp only [valueSem, pureForm]; exact e, hw⟩
+    exact ⟨w', by simp only [valueSem, specForm, pureForm, cmpForm, Bool.false_or]; exact e, hw⟩
   · obtain ⟨w', e, hw⟩ := h2 sz d am fl v us w a hsz ha hav
-    exact ⟨w', by simp only [valueSem, pureForm]; exact e, hw⟩
+    exact ⟨w', by simp only [valueSem, specForm, pureForm, cmpForm, Bool.false_or]; exact e, hw⟩
 
 theorem hasTry_of_hasTryCallCleanupAT {f : Clif.Function} {k : Nat} {vc vcp : VCode} {rf : RFunc}
     {af : AFunc} {fa : FnAsm} {fb : FnBin} (hc : CompiledCleanupAT f k vc vcp rf af fa fb)
@@ -257,7 +260,7 @@ theorem backend_correct_m4_cleanup_exT {p : Clif.Program} {f : Clif.Function} {k
     (fun s' => callsRefine_valueSem (hX s'))
     (fun s' => indCallsRefine_valueSem (hXI s') (hsym s') (fun _ _ _ h => h.1.symbols)) hmem
     (fun s' => memRefinesFP_valueSem _ (F s') (ctx s') (X s') (hslotB s'))
-    (fun _ _ _ _ _ _ _ hp he => valueSem_pure hp he) houtB
+    (fun _ _ _ _ _ _ _ hp he => valueSem_pure hp he) (fun _ => valueSem_cmpOverwrite ..) houtB
     hent hres hbe hargs hargF hcs hrel htr fuel
 
 /-- **The typed final theorem of the dead-cleanup route** (`backend_correct_final_cleanup_ex`
@@ -371,7 +374,7 @@ theorem backend_correct_final_cleanup_ofT {p : Clif.Program} {f : Clif.Function}
     (fun s' => indCallsRefine_valueSem (hXI s') hsym (fun _ _ _ h => h.1.symbols))
     (fun _ => memRefines_valueSem _ _ X hslot hsym)
     (fun _ => memRefinesFP_valueSem _ _ _ X hslot)
-    (fun _ _ _ _ _ _ _ hp he => valueSem_pure hp he)
+    (fun _ _ _ _ _ _ _ hp he => valueSem_pure hp he) (fun _ => valueSem_cmpOverwrite ..)
     (outgoing_le_intBaseCleanupAT hcA)
     hent hres hbe hargs (stackArgsAvoid_frameW_of_alloc hcA.alloc hres hent hargs) hcs hrel htr fuel
 

@@ -5,10 +5,11 @@ namespace Backend.Proof
 open Backend Backend.DeadCleanup
 
 /-- Only proof bookkeeping changes: pure producers leave the abstract world
-unchanged, while calls and other effects keep the existing activation semantics. -/
+unchanged, compares write only its flags (both by `mspec`, `specForm`), while calls and other
+effects keep the existing activation semantics. -/
 noncomputable def valueSemV (gv : Nat → String → Prop) (F : BitVec 64 → Prop)
     (ctx : FnCtx) (X : ExtSem) : Sem :=
-  fun i us w => if pureForm i then mspec ctx.slotBase i us w else csemV gv F ctx X i us w
+  fun i us w => if specForm i then mspec ctx.slotBase i us w else csemV gv F ctx X i us w
 
 noncomputable def RL.valueSem (R : RL) : Sem := valueSemV R.gv R.F R.ctx R.X
 
@@ -16,6 +17,12 @@ private theorem valueSemV_bot (F : BitVec 64 → Prop) (ctx : FnCtx) (X : ExtSem
     valueSemV (fun _ _ => False) F ctx X = valueSem F ctx X := by
   funext i us w
   simp [valueSemV, valueSem, csemV_bot]
+
+/-- The register-level value semantics lets the next compare overwrite a compare's flags. -/
+theorem valueSemV_cmpOverwrite (gv : Nat → String → Prop) (F : BitVec 64 → Prop)
+    (ctx : FnCtx) (X : ExtSem) : CmpOverwrite (valueSemV gv F ctx X) :=
+  cmpOverwrite_of_mspec (sb := ctx.slotBase) fun i hs => by
+    funext us w; simp only [valueSemV, hs, ↓reduceIte]
 
 private theorem q_world_change {R : RL} {s : Arm.ArmState} {b : Nat} {its : List RItem}
     {m : Loc → CV} {w w' : Arm.ArmState} (hq : Q R s (.run ⟨b, its, m, w⟩))
@@ -73,19 +80,19 @@ theorem realizes_value_all {R : RL} (hR : R.Wf)
     cases hstep with
     | move => exact ⟨n, _, MStep.move, hq', ht⟩
   | @op b k allocs its m w vb i ops outs outs' w' ctl m2 c' hb hi hop hsz hs hl hho hcl hn =>
-    by_cases hp : pureForm i = true
+    by_cases hp : specForm i = true
     · have hspec : mspec R.ctx.slotBase i
           (((ops.zip allocs).toList.filter (·.1.isUse)).map (m ·.2)) w = some (outs, w', ctl) := by
         simpa [RL.valueSem, valueSemV, RL.sem, hp] using hs
-      obtain ⟨hw, hc⟩ := mspec_pure hp hspec
-      subst w' ctl
-      obtain ⟨wc, hconcrete, hworld⟩ := pure_mspec_csem (F := R.F) (X := R.X) hp hspec
+      have hc := mspec_spec_next hp hspec
+      subst ctl
+      obtain ⟨wc, hconcrete, hworld⟩ := spec_mspec_csem (F := R.F) (X := R.X) hp hspec
       have hsem : R.sem i
           (((ops.zip allocs).toList.filter (·.1.isUse)).map (m ·.2)) w = some (outs, wc, .next) := by
         rw [R.sem_eq]
         · exact hconcrete
-        · intro info he; subst i; simp [pureForm] at hp
-        · intro info ti he; subst i; simp [pureForm] at hp
+        · intro info he; subst i; simp [specForm, pureForm, cmpForm] at hp
+        · intro info ti he; subst i; simp [specForm, pureForm, cmpForm] at hp
       cases hn with
       | next hk =>
         have hold : MStep R.vc R.sem ckeep R.rf
@@ -105,7 +112,7 @@ theorem realizes_value_all {R : RL} (hR : R.Wf)
             have hnew : MStep R.vc R.valueSem ckeep R.rf
                 (.run ⟨b, .op k allocs :: its, m, w⟩)
                 (.run ⟨b, its, writeM m3
-                  ((((ops.zip allocs).toList.filter (·.1.isDef)).zip os').filter (·.1.1.isLate)), w⟩) :=
+                  ((((ops.zip allocs).toList.filter (·.1.isDef)).zip os').filter (·.1.1.isLate)), w'⟩) :=
               MStep.op hb hi hop hsz hs hl hho' hcl' (MNext.next hk')
             exact ⟨n, _, hnew, ⟨q_world_change hq' hworld, aInv_step_sem hR hq hA hnew⟩, ht⟩
     · have hold : MStep R.vc R.sem ckeep R.rf

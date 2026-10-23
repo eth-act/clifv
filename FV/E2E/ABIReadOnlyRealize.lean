@@ -16,12 +16,12 @@ theorem step_control {sig : Clif.Signature} {b k : Nat} {i : MInst}
   · have hs : mspec ctx.slotBase i us w = some (outs,w',ctl) := by
       cases i <;> simpa only [sem,valueSem,pure,↓reduceIte] using executed
     exact .inl (mspec_pure pure hs).2
-  · simp [sem,valueSem,pureForm,csem] at executed
+  · simp [sem,valueSem,specForm, pureForm, cmpForm, Bool.false_or,csem] at executed
     exact .inl executed.2.2.symm
   · simp only [sem,mspec,hop,ite_false,Option.map_eq_some_iff,Prod.mk.injEq] at executed
     obtain ⟨a,_,_,_,control⟩ := executed
     exact .inl control.symm
-  · simp [sem,valueSem,pureForm,csem] at executed
+  · simp [sem,valueSem,specForm, pureForm, cmpForm, Bool.false_or,csem] at executed
     exact .inr executed.2.2.symm
 
 /-- Realize one unchanged-world step by the shipped value semantics. The only
@@ -71,7 +71,7 @@ theorem step_realize {sig : Clif.Signature} {args : List Clif.Val}
       simpa only [source.1,source.2,data] using run
     | cons a us => simp [sem,mspec,hop,amodeAddr] at executed
   · refine ⟨t,?_,worlds⟩
-    simp [sem,valueSem,pureForm,csem] at executed ⊢
+    simp [sem,valueSem,specForm, pureForm, cmpForm, Bool.false_or,csem] at executed ⊢
     exact executed
 
 /-- The original read-only configuration has its initial world; the realized

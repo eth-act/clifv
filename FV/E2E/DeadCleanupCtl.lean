@@ -20,6 +20,7 @@ private theorem clean_ctl {vc : VCode}
       · exact .inl h
       · exact .inr ⟨hj, h0, ha⟩)
     (fun i h => by obtain ⟨_, ds, rfl, _⟩ := h; rfl)
+    (fun i h => by obtain ⟨_, ds, rfl, _⟩ := h; rfl)
     k i (by simpa [cleanBlock] using hi)
   rcases h with h | ⟨hk, hb, ha⟩
   · exact .inl h
@@ -38,7 +39,7 @@ private theorem clean_entry {vc : VCode}
         have ha : a = .args ds := by simpa [← Array.getElem?_toList, he] using hi
         exact ⟨tail, by rw [ha]⟩
     obtain ⟨tail, he⟩ := hfirst
-    simp [cleanBlock, he, scan_head vc.classes.size (.args ds) tail (exitLive vc 0 vb) rfl]
+    simp [cleanBlock, he, scan_head vc.classes.size (.args ds) tail (exitLive vc 0 vb) rfl rfl]
 
 /-- The old control-layout conditions hold after cleanup and preparation. -/
 theorem ctlInsts_cleanup_pipeline {p : Clif.Program} {f : Clif.Function} {vc vcp : VCode}

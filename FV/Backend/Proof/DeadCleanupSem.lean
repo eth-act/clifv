@@ -92,6 +92,58 @@ theorem mspec_cmpOverwrite (sb : Nat) : CmpOverwrite (mspec sb) := by
   obtain ⟨-, q, hw2, hall⟩ := mspec_cmp hk hr
   rw [hall w, hw2, write_pstate_twice]
 
+/-- The forms the cleanup's value semantics runs by their specification `mspec`: the pure
+producers (unchanged world) and, since the cleanup drops compares whose flags are dead (#552),
+the compares (flags only). -/
+def specForm (i : MInst) : Bool := pureForm i || cmpForm i
+
+theorem specForm_of_pure {i : MInst} (h : pureForm i = true) : specForm i = true := by
+  simp [specForm, h]
+
+theorem specForm_of_cmp {i : MInst} (h : cmpForm i = true) : specForm i = true := by
+  simp [specForm, h]
+
+theorem specForm_cases {i : MInst} (h : specForm i = true) :
+    pureForm i = true ∨ cmpForm i = true := by
+  simpa [specForm] using h
+
+theorem pureForm_of_not_spec {i : MInst} (h : specForm i = false) : pureForm i = false := by
+  simp only [specForm, Bool.or_eq_false_iff] at h
+  exact h.1
+
+theorem cmpForm_of_not_spec {i : MInst} (h : specForm i = false) : cmpForm i = false := by
+  simp only [specForm, Bool.or_eq_false_iff] at h
+  exact h.2
+
+/-- A specification form's step continues. -/
+theorem mspec_spec_next {sb : Nat} {i : MInst} {us outs : List CV} {w w' : Arm.ArmState}
+    {ctl : Ctl} (hs : specForm i = true) (h : mspec sb i us w = some (outs, w', ctl)) :
+    ctl = .next := by
+  rcases specForm_cases hs with hp | hc
+  · exact (mspec_pure hp h).2
+  · exact (mspec_cmp hc h).1
+
+/-- A semantics that runs the specification forms by `mspec` lets the next compare overwrite
+a compare's flags: the premise of the cleanup's compare removal. -/
+theorem cmpOverwrite_of_mspec {sem : Sem} {sb : Nat}
+    (h : ∀ i, specForm i = true → sem i = mspec sb i) : CmpOverwrite sem := by
+  intro i us w outs w' ctl hc hs
+  rw [h i (specForm_of_cmp hc)] at hs
+  obtain ⟨hctl, hov⟩ := mspec_cmpOverwrite sb i us w outs w' ctl hc hs
+  refine ⟨hctl, fun K us' r hK hr => ?_, fun j us' o c hj hr => ?_⟩
+  · rw [h K (specForm_of_cmp hK)] at hr ⊢
+    exact hov.1 K us' r hK hr
+  · have hjs := specForm_of_pure (pureForm_of_flagFree hj)
+    rw [h j hjs] at hr ⊢
+    exact hov.2 j us' o c hj hr
+
+/-- Compares are not branches (a specification form has no targets). -/
+theorem specForm_targets {i : MInst} (h : specForm i = true) : i.targets = [] := by
+  rcases specForm_cases h with hp | hc
+  · exact pureForm_targets hp
+  · unfold cmpForm at hc
+    split at hc <;> first | rfl | cases hc
+
 example (w : Arm.ArmState) : ∃ outs,
     mspec 0 deadMvn [0#128] w = some (outs, w, .next) := by
   exact ⟨[ofX (~~~(0#64))], rfl⟩

@@ -30,6 +30,10 @@ theorem pureForm_of_loopTrap {i : MInst} {t : Clif.TrapCode × Nat} (h : loopTra
     DeadCleanup.pureForm i = false := by
   cases i <;> simp_all [loopTrap?, DeadCleanup.pureForm]
 
+theorem cmpForm_of_loopTrap {i : MInst} {t : Clif.TrapCode × Nat} (h : loopTrap? i = some t) :
+    DeadCleanup.cmpForm i = false := by
+  cases i <;> simp_all [loopTrap?, DeadCleanup.cmpForm]
+
 theorem loopTrap?_setTargets {i i' : MInst} {ls : List Label} (h : i.setTargets ls = some i') :
     loopTrap? i' = loopTrap? i := by
   unfold MInst.setTargets at h
@@ -51,13 +55,15 @@ theorem entry_block {V W : Type} {vc : VCode} {sem : ISem V W}
 theorem memTraps_clean {vc : VCode} {sem : Sem}
     (hp : ∀ i us w outs w' ctl, DeadCleanup.pureForm i = true →
       sem i us w = some (outs, w', ctl) → w' = w ∧ ctl = .next)
+    (hcmp : DeadCleanup.CmpOverwrite sem)
     (ht : ∀ vb ∈ vc.blocks.toList, ∃ t, vb.insts.back? = some t ∧ t.isTerminator = true)
     {a : Nat → CV} {w0 : Arm.ArmState} {c : Clif.TrapCode} {A : BitVec 64 → Nat → Prop}
     (h : VMemTraps vc sem a w0 c A) : VMemTraps (DeadCleanup.clean vc) sem a w0 c A := by
   obtain ⟨b, k, a1, w1, vb, i, ops, u, us, n, hstar, hb, hi, hop, hu, hlt, hA⟩ := h
   obtain ⟨vb0, hb0⟩ := entry_block hstar hb
-  obtain ⟨c1, hstar', hr⟩ := DeadCleanup.star_sim hp ht (DeadCleanup.rel_entry hb0 a w0) hstar
+  obtain ⟨c1, hstar', hr⟩ := DeadCleanup.star_sim hp hcmp ht (DeadCleanup.rel_entry hb0 a w0) hstar
   obtain ⟨k', a', rfl, hb', hi', hus⟩ := DeadCleanup.rel_kept hr hb hi hop (pureForm_of_loopTrap hlt)
+    (cmpForm_of_loopTrap hlt)
   exact ⟨b, k', a', w1, DeadCleanup.cleanBlock vc 0 vb, i, ops, u, us, n, hstar', hb', hi', hop,
     hus ▸ hu, hlt, hA⟩
 
@@ -65,12 +71,13 @@ theorem memTraps_clean {vc : VCode} {sem : Sem}
 theorem memTraps_prune {vc : VCode} {sem : Sem}
     (hp : ∀ i us w outs w' ctl, DeadCleanup.pureForm i = true →
       sem i us w = some (outs, w', ctl) → w' = w ∧ ctl = .next)
+    (hcmp : DeadCleanup.CmpOverwrite sem)
     {a : Nat → CV} {w0 : Arm.ArmState} {c : Clif.TrapCode} {A : BitVec 64 → Nat → Prop}
     (h : VMemTraps vc sem a w0 c A) : VMemTraps (DeadCleanup.prune vc) sem a w0 c A := by
   unfold DeadCleanup.prune
   cases hc : vc.cfg with
   | error e => exact h
-  | ok p => exact memTraps_clean hp (DeadCleanup.terminated_of_cfg hc) h
+  | ok p => exact memTraps_clean hp hcmp (DeadCleanup.terminated_of_cfg hc) h
 
 /-- **`prepare` keeps a memory trap**, from its validator (as `prep_sound` for the traps). -/
 theorem memTraps_prep {vc vcp : VCode} {sem : Sem} (hds : DriverSem sem)
