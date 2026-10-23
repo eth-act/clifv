@@ -1028,6 +1028,11 @@ import FVTest.Concurrency.LitmusFull
 #print axioms Concurrency.CallSegT.Witness.avoid_written
 #print axioms Concurrency.CallSegT.Witness.cut_unwritten
 #print axioms Concurrency.CallSegT.Witness.seg_nil
+#print axioms Concurrency.CallSegT.notClean_dirtyEnd
+#print axioms Concurrency.CallSegT.DirtyEnd.sub
+#print axioms Concurrency.CallComposeT.RealizedT.mono_out
+#print axioms Concurrency.CallSegT.realizedT_segW
+#print axioms Concurrency.CallSegT.realizedT_cutW
 #print axioms Concurrency.IselCheck.obligations_of_checksA
 #print axioms Concurrency.IselResume.driverHypT_ofA
 #print axioms Concurrency.LinkedMachine.Link.call_end
@@ -1082,3 +1087,33 @@ import FVTest.Concurrency.LitmusFull
 #print axioms Concurrency.CallRetT.cstepS_ret_pop
 #print axioms Concurrency.CallRetT.realizedT_ret
 #print axioms Concurrency.CallRetT.Witness.ret_T_ld -- witness: native_decide
+-- #473 (4): SegOkG pieces (segment ends, return pause, activations, call-segment geometry)
+#print axioms Concurrency.CallSegLift.realizedT_liftW
+#print axioms Concurrency.CallSegOkG.RReach.crun
+#print axioms Concurrency.CallSegOkG.seg_parts
+#print axioms Concurrency.CallSegOkG.okPriv_of_okB
+#print axioms Concurrency.CallSegOkG.callers_nil_of_done
+#print axioms Concurrency.CallSegOkG.step_pushC_stuck
+#print axioms Concurrency.CallSegOkG.dirtyEnd_sub
+#print axioms Concurrency.CallSegOkG.seg_end
+#print axioms Concurrency.CallSegOkG.chainP_resume
+#print axioms Concurrency.CallSegOkG.chainP_entry
+#print axioms Concurrency.CallSegOkG.ret_seg
+#print axioms Concurrency.CallSegOkG.call_next
+#print axioms Concurrency.CallSegGeo.Nested.privA_sub
+#print axioms Concurrency.CallSegGeo.Nested.privA_callee_out
+#print axioms Concurrency.CallSegGeo.Nested.privA_callee
+#print axioms Concurrency.CallSegGeo.cstep_reads_valid
+#print axioms Concurrency.CallSegOkG.Witness.partsOk_trap
+#print axioms Concurrency.CallSegOkG.Witness.seg_end_trap
+#print axioms Concurrency.CallSegOkG.Witness.segW_nil
+#print axioms Concurrency.CallSegOkG.Witness.liftW_nil
+#print axioms Concurrency.CallSegOkG.Witness.call_next_C -- witness: native_decide
+#print axioms Concurrency.CallSegOkG.Witness.statOk_C -- witness: native_decide
+#print axioms Concurrency.CallSegOkG.Witness.chainP_entry_C -- witness: native_decide
+#print axioms Concurrency.CallSegOkG.Witness.chainP_resume_C -- witness: native_decide
+#print axioms Concurrency.CallSegOkG.Witness.ret_seg_ld -- witness: native_decide
+#print axioms Concurrency.CallSegGeo.Witness.privA_sub_LC -- witness: native_decide
+#print axioms Concurrency.CallSegGeo.Witness.privA_callee_out_LE -- witness: native_decide
+#print axioms Concurrency.CallSegGeo.Witness.privA_callee_LE -- witness: native_decide
+#print axioms Concurrency.CallSegGeo.Witness.reads_valid_cas

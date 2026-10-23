@@ -220,7 +220,7 @@ nonempty reads, every source read at a location masked at the start follows a so
 that location, in any order-preserving map `ψ`. -/
 theorem fresh0_of_mask {ψ : Nat × Nat → Nat × Nat} :
     ∀ {trS : List (List (Ev SKind BVal))} {U : Nat → Prop}, ReadsAvoid U trS → Uniform trS →
-      (∀ p x, evAt trS p = some x → 0 < x.n) →
+      (∀ p x, evAt trS p = some x → x.dir = .R → 0 < x.n) →
       (∀ p q, (evAt trS p).isSome → (evAt trS q).isSome → Lt p q → Lt (ψ p) (ψ q)) →
       ∀ p x, evAt trS p = some x → x.dir = .R → U x.loc →
         ∃ q x', evAt trS q = some x' ∧ x'.dir = .W ∧ x'.loc = x.loc ∧ Lt (ψ q) (ψ p)
@@ -231,7 +231,7 @@ theorem fresh0_of_mask {ψ : Nat × Nat → Nat × Nat} :
       have hxm : x ∈ evs := by
         simp only [evAt, List.getElem?_cons_zero, Option.bind_some] at hx
         exact List.mem_of_getElem? hx
-      exact absurd (by simpa using hU) (ha x hxm hR 0 (hpos _ x hx))
+      exact absurd (by simpa using hU) (ha x hxm hR 0 (hpos _ x hx hR))
     | succ j =>
       by_cases hw : writes evs x.loc
       · obtain ⟨e, he, heW, hle, hlt⟩ := hw
@@ -267,7 +267,7 @@ theorem Refines.toT_dirty {MK : SKind → AKind → Prop} {P U NS : Nat → Prop
     {pairT : Nat × Nat → Nat × Nat → Prop} {trS : List (List (Ev SKind BVal))}
     {trT : List (List (Ev AKind BVal))} {ψ : Nat × Nat → Nat × Nat}
     (h : ThreadRefine.Refines MK P pairT trS trT ψ) (hra : ReadsAvoid U trS) (hu : Uniform trS)
-    (hpos : ∀ p x, evAt trS p = some x → 0 < x.n)
+    (hpos : ∀ p x, evAt trS p = some x → x.dir = .R → 0 < x.n)
     (hns : ∀ p x, evAt trS p = some x → x.dir = .R → ¬ NS x.loc) :
     PrivCohT.RefinesT MK (fun a => P a ∨ U a ∨ NS a) (fun _ => P) pairT trS trT ψ :=
   Refines.toTD h fun p x hx hR hD => by
@@ -296,7 +296,8 @@ theorem Refines.toT_parts {MK : SKind → AKind → Prop} {P U : Nat → Prop} {
     {pairT : Nat × Nat → Nat × Nat → Prop} {trS : List (List (Ev SKind BVal))}
     {trT : List (List (Ev AKind BVal))} {ψ : Nat × Nat → Nat × Nat}
     (h : ThreadRefine.Refines MK P pairT trS trT ψ) (hra : ReadsAvoid U trS)
-    (hd : PartDisj Loc) (ho : OnParts Loc trS) (hpos : ∀ p x, evAt trS p = some x → 0 < x.n) :
+    (hd : PartDisj Loc) (ho : OnParts Loc trS)
+    (hpos : ∀ p x, evAt trS p = some x → x.dir = .R → 0 < x.n) :
     PrivCohT.RefinesT MK (fun a => P a ∨ U a ∨ ¬ ∃ n, Loc a n) (fun _ => P) pairT trS trT ψ :=
   Refines.toT_dirty h hra (uniform_of_parts hd ho) hpos fun p x hx hR hn =>
     hn ⟨x.n, ho p x hx (by rw [hR]; decide)⟩

@@ -997,6 +997,25 @@ they are; the per-thread layers are new files.
           the linked machine: no CLIF step before the `ret`, the CLIF return into the caller from
           it on, `RetC` after it). Witnesses `CallSegLiftWitness`, `CallStepTWitness`,
           `CallRetTWitness`.
+        - *`SegOkG` pieces (done, AtomicsCalls16/17, `CallSegOkG.lean`, `CallSegGeo.lean`)*:
+          `RReach`/**`PartsOk`** (reachable CLIF states, their accesses on a location partition:
+          a new premise of the general theorem), `OkB` (the thread's run condition), `EndT`
+          (whole run, `Stop`, event-free return, stuck, trap, call at depth ≥ `Dcap`, masked read,
+          masked return), **`seg_end`** (a chain segment lifted below its callers is a `RealT`
+          prefix ending in `EndT` or at its pause, the end-dirty set by `DirtyEnd`), `Act`,
+          `StatOk`, `FnOk`, `ChainP` with **`chainP_entry`**/**`chainP_resume`**, **`ret_seg`**
+          (a callee's return pause, `realizedT_ret` below its caller), `call_next`;
+          `Nested.privA_sub`, `Nested.privA_callee(_out)` (private sets of nested activations),
+          `cstep_reads_valid` (CLIF events at valid memory). Sharper end-dirty sets:
+          `DirtyEnd`, `realizedT_segW`/`cutW`/`liftW` (old names corollaries). Witnesses
+          `CallSegOkGWitness` (from a trap state, the caller's call), `CallSegOkGActWitness` (the
+          caller's `StatOk` in `link2`, its chain property from the ABI entry and resumed; the
+          callee's return pause), `CallSegGeoWitness` (`atomic_load` nested in its caller). The
+          call case is WIP in `FV/Concurrency/Scratch/CallSegOkG.lean.wip` (not a module).
+          **New gap**: a callee's start-dirty set must cover its frame padding (slot area outside
+          the placed slots), which can hold stale bytes of earlier sibling callees; closing it
+          needs that no CLIF read of a segment starts in a live frame's padding
+          (`cstep_reads_valid` + `AllocInvD` + #567's slot placement).
         - *Left for `SegOkG` (next)*: per activation `g = (n, F, s0, K, G, ra, ext, …)` of a link
           whose functions are all compiled (a bundle of each function's static facts: the
           `driverHypT_ofA` checks, `PrepFacts`, `CheckedAt`, `MemScopeLSC`, `LFn.Static`),
