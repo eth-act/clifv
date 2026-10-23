@@ -17,6 +17,9 @@ instruction. `X k s` is the 64-bit contents of `x k`.
 namespace Backend.Proof
 
 open Arm Backend
+-- Lean 4.35 unifies instance arguments at instance transparency; the `datasize` `if`s left in
+-- the bit-operation instances of unfolded Arm instructions then block rewriting. Restore 4.34's check.
+set_option backward.isDefEq.respectTransparency false
 
 /-- Environment for straight-line code (no instruction here reads a label or the PC). -/
 def isemEnv0 : Env := ⟨0, fun _ => none⟩

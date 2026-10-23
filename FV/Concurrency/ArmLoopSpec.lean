@@ -13,6 +13,9 @@ namespace Concurrency.ArmLoop
 
 open Arm ArmFoot ArmThread ArmInstFoot Backend Backend.Proof VCodeThread VCodeEvents Code VCodeAddr
   IselMemAux
+-- Lean 4.35 unifies instance arguments at instance transparency; the `datasize` `if`s left in
+-- the bit-operation instances of unfolded Arm instructions then block rewriting. Restore 4.34's check.
+set_option backward.isDefEq.respectTransparency false
 
 attribute [local csimp_rules] wmb_cast Arm.LDST.exec_reg_exclusive Insn.armFields.exclFields
   CTy.bits Arm.r_of_write_mem_bytes Arm.ldst_read Arm.read_mem_bytes_of_w
