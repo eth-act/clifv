@@ -491,6 +491,19 @@ parameters) is in `InScopePT`, passes `OutOkT`/`OutOkTCleanup` and links with bo
 both typed theorems apply; `viaT_baseline` on the integer executable witness. Audit
 `scripts/audit/floats-typed.lean`.
 
+**Public scope, backend (per function).** `lean-backend` (and so `cargo fv`) reports a
+function outside subset E verified when it is in the typed scope `Backend.verifiableT`
+(`Compile.functionET` with `storeTypedB`, `abiSigs`, `indSigsOk`; `unverifiedReason?`) and its
+lowering passes the typed validator (`Backend.lowerCheckFor`: `lowerCheckT` outside subset E);
+the theorems are `backend_correct_finalT`/`backend_correct_final_cleanupT` with
+`E2E.typedRules_program` (`FV/E2E/VerifiableT.lean`: `InSubsetT.of_verifiableT`,
+`verifiable_or_verifiableT_of_unverifiedReason`, `lowerChecked_spec`; witness
+`FVTest/E2E/FloatVerifiedW.lean`). Next: the executable compiler's gate for plain `lean-link`
+(`Link.DeadCleanup.compileExeT`: `InScopePT` + `OutOkTCleanup` with
+`Link.DeadCleanup.compileExe_correctT`). Decision (parent, 2026-10-22): `lean-link --verified`
+stays integer-only — its claim reaches the Rust source through front-end theorems
+(`Front.bundle_correct_raw*`) that exist only for integers; only plain `--lean-link` widens.
+
 **Slice 8, totality half (typed input scope, FloatsTotT).** `E2E/LinkScopeInputDefsT.lean`:
 `fnScopeInTB` keeps every conjunct of `fnScopeInB` over the typed scope (`functionET`,
 `lowerScopeTB`) with `fnScopeTB`'s input checks `storeTypedB`/`tryArgClassOk`; a function outside

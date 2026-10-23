@@ -9,6 +9,7 @@ import FV.Backend.Asm
 import FV.Backend.Encode
 import FV.Backend.Obj
 import FV.Backend.Proof.DriverCheck
+import FV.Backend.Proof.DriverCheckTy
 import FV.Backend.DeadCleanup
 import FV.Compile.Subset
 import Std.Data.HashSet
@@ -64,13 +65,19 @@ def Allocator.ofName? (n : String) : IO (Option Allocator) := do
   | "regalloc2-small" => pure (some (.regalloc2 (← defaultRegallocBin) smallEnv))
   | _ => pure none
 
-/-- The proved D0 Stock dispatcher with legacy fallback, then (if `verify`) M7's lowering validator (`lowerCheck`, whose acceptance
-the end-to-end theorem assumes, `docs/contracts/e2e.md`); a rejection is a compile error.
-Functions outside the theorem (`unverifiedReason?`) are not validated (they are reported as
+/-- The lowering validator of `f`'s theorem: M7's `lowerCheck` on subset E (`E2E.InSubset`), the
+typed `lowerCheckT` outside it (`E2E.InSubsetT`, S11e5 Stage C; `lowerCheckT_of_lowerCheck`). -/
+def lowerCheckFor (f : Clif.Function) (vc : VCode) : Bool :=
+  if Compile.functionE f then Proof.Driver.lowerCheck f vc else Proof.Driver.lowerCheckT f vc
+
+/-- The proved D0 Stock dispatcher with legacy fallback, then (if `verify`) the lowering validator
+(`lowerCheckFor`: `lowerCheck`, or `lowerCheckT` outside subset E, whose acceptance the
+end-to-end theorems assume, `docs/contracts/e2e.md`); a rejection is a compile error.
+Functions outside the theorems (`unverifiedReason?`) are not validated (they are reported as
 unverified instead). -/
 def lowerChecked (f : Clif.Function) (verify : Bool) : Except String VCode := do
   let vc ← Stock.D0.defaultLower f
-  if verify && !Proof.Driver.lowerCheck f vc then
+  if verify && !lowerCheckFor f vc then
     throw "lowering rejected by the M7 lowering validator (lowerCheck)"
   pure vc
 
@@ -107,14 +114,14 @@ def overBudget? (f : Clif.Function) : Option String :=
 labels); also returns the ISLE rules that fired. -/
 def compileFunction (k : Nat) (f : Clif.Function) (deadCleanup : Bool := true) :
     Except String (FnAsm × Array Isle.RuleId) := do
-  let vc ← lowerForAllocation f (verifiable f) deadCleanup
+  let vc ← lowerForAllocation f (verifiable f || verifiableT f) deadCleanup
   let af ← allocate vc
   pure (← emitFunc k af, vc.rulesFired)
 
 /-- Compile one function with the given allocator. -/
 def compileFunctionWith (a : Allocator) (k : Nat) (f : Clif.Function) (deadCleanup : Bool := true) :
     IO (Except String (FnAsm × Array Isle.RuleId)) := do
-  match lowerForAllocation f (verifiable f) deadCleanup with
+  match lowerForAllocation f (verifiable f || verifiableT f) deadCleanup with
   | .error e => pure (.error e)
   | .ok vc =>
     let rs ← a.run #[vc]
@@ -154,8 +161,11 @@ def callees (f : Clif.Function) : List String :=
 def hasTryCall (f : Clif.Function) : Bool :=
   f.blocks.any (·.term.isTry)
 
-/-- Why a compiled function is outside the per-activation theorem (`E2E.InSubset`): outside
-clif-subset-v2 E, stack-passed arguments of an indirect call, or unsupported signatures.
+/-- Why a compiled function is outside the per-activation theorems (`E2E.InSubset`, and outside
+subset E the typed `E2E.InSubsetT` of S11e5 Stage C: float data movement, float parameters and
+returns, `backend_correct_finalT`/`backend_correct_final_cleanupT` with `E2E.typedRules_program`):
+outside clif-subset-v2 E and its typed scope (`Compile.functionET` with `Compile.storeTypedB`),
+stack-passed arguments of an indirect call, or unsupported signatures.
 The activation runs in a program without functions; every callee, including the function
 itself, is supplied by the environment's call contract. The linking theorem discharges
 contracts for compiled callees by induction on call depth.
@@ -163,7 +173,8 @@ Stack-passed parameters and direct-call arguments are covered. `try_call` and
 `try_call_indirect` are covered for normal returns; unwinding remains trusted. Atomics use
 the single-threaded Arm model, and TLS uses the trusted resolver contract. -/
 def unverifiedReason? (f : Clif.Function) : Option String :=
-  if !Compile.functionE f then some "outside clif-subset-v2 E"
+  if !(Compile.functionE f || (Compile.functionET f && Compile.storeTypedB f)) then
+    some "outside clif-subset-v2 E"
   else if !abiSigs f then some "special-purpose parameter other than one sret pointer (outside backend_correct)"
   else if !indSigsOk f then
     some "indirect call with stack-passed arguments or a special-purpose parameter (outside backend_correct)"
