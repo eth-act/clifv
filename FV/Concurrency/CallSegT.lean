@@ -101,7 +101,7 @@ theorem realizedT_seg {ls : List Lab} {k : Nat} (hk : k ≤ ls.length) {s s1 : C
     (hrun : CRun env p (.run s) trS (.run s1)) (hx : CallCompose.XClosed (evTr (ls.take k)))
     (href : Refines Maps P (MonPair (evTr (ls.take k))) trS (conv (evTr (ls.take k))) ψ)
     {U D NS : Nat → Prop} (hra : ReadsAvoid U trS) (hD : ∀ a, D a → P a ∨ U a ∨ NS a)
-    (hu : Uniform trS) (hpos : ∀ q x, evAt trS q = some x → 0 < x.n)
+    (hu : Uniform trS) (hpos : ∀ q x, evAt trS q = some x → x.dir = .R → 0 < x.n)
     (hns : ∀ q x, evAt trS q = some x → x.dir = .R → ¬ NS x.loc) (hb : ∀ l, P l → Bnd l) :
     RealizedT env p Bnd ls k (encT U (.run s)) (encT (maskAfter U trS) (.run s1)) D
       (fun a => D a ∨ P a) := by
@@ -119,7 +119,7 @@ theorem realizedT_cut {f : Arm.ArmState → Arm.ArmState} {ok : Arm.ArmState →
     (hx : ∀ k' ≤ k, CallCompose.XClosed (evTr (ls.take k')))
     (href : Refines Maps P (MonPair (evTr (ls.take k))) trS (conv (evTr (ls.take k))) ψ)
     {U D NS : Nat → Prop} (hD : ∀ a, D a → P a ∨ U a ∨ NS a)
-    (hu : Uniform trS) (hpos : ∀ q x, evAt trS q = some x → 0 < x.n)
+    (hu : Uniform trS) (hpos : ∀ q x, evAt trS q = some x → x.dir = .R → 0 < x.n)
     (hns : ∀ q x, evAt trS q = some x → x.dir = .R → ¬ NS x.loc) (hb : ∀ l, P l → Bnd l) :
     (RealizedT env p Bnd ls k (encT U (.run s)) (encT (maskAfter U trS) (.run s1)) D
         (fun a => D a ∨ P a)) ∨
@@ -168,7 +168,7 @@ theorem realizedT_cut {f : Arm.ArmState → Arm.ArmState} {ok : Arm.ArmState →
       have := hb1; simp [conv, evTr] at this; omega
     have href' := Refines.pairT_congr hAk hpair
     refine ⟨k', hk', j, evs, hjs, sj, t'', ?_, hstep, hmask⟩
-    have hpos' : ∀ q x, evAt (trS.take j) q = some x → 0 < x.n :=
+    have hpos' : ∀ q x, evAt (trS.take j) q = some x → x.dir = .R → 0 < x.n :=
       fun q x h => hpos q x (evAt_take_some h).2
     have hns' : ∀ q x, evAt (trS.take j) q = some x → x.dir = .R → ¬ NS x.loc :=
       fun q x h => hns q x (evAt_take_some h).2

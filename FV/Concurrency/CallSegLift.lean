@@ -73,7 +73,7 @@ theorem realizedT_lift {f : Arm.ArmState → Arm.ArmState} {ok : Arm.ArmState �
     (hx : CallCompose.XClosed (evTr (ls.take k)))
     (href : Refines Maps P (MonPair (evTr (ls.take k))) trS (conv (evTr (ls.take k))) ψ)
     {U D NS : Nat → Prop} (hD : ∀ a, D a → P a ∨ U a ∨ NS a)
-    (hu : Uniform trS) (hpos : ∀ q x, evAt trS q = some x → 0 < x.n)
+    (hu : Uniform trS) (hpos : ∀ q x, evAt trS q = some x → x.dir = .R → 0 < x.n)
     (hns : ∀ q x, evAt trS q = some x → x.dir = .R → ¬ NS x.loc) (hb : ∀ l, P l → Bnd l) :
     (∃ (trS' : List (List (Ev SKind BVal))) (s1 : Clif.State), trS' <+: trS ∧
         RealizedT env p Bnd ls k (encT U (.run (pushC ext s)))
@@ -104,7 +104,7 @@ theorem realizedT_lift {f : Arm.ArmState → Arm.ArmState} {ok : Arm.ArmState �
   have href' := Refines.prefixNil href hp hd
   have hu' : Uniform trS' := fun q x r y hq hr' =>
     hu q x r y (by rw [← evAt_prefix_nil hp hd]; exact hq) (by rw [← evAt_prefix_nil hp hd]; exact hr')
-  have hpos' : ∀ q x, evAt trS' q = some x → 0 < x.n := fun q x h =>
+  have hpos' : ∀ q x, evAt trS' q = some x → x.dir = .R → 0 < x.n := fun q x h =>
     hpos q x (by rw [← evAt_prefix_nil hp hd]; exact h)
   have hns' : ∀ q x, evAt trS' q = some x → x.dir = .R → ¬ NS x.loc := fun q x h =>
     hns q x (by rw [← evAt_prefix_nil hp hd]; exact h)
