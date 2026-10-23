@@ -883,3 +883,11 @@ import FVTest.Concurrency.LitmusFull
 #print axioms Concurrency.CallLayers.coveredCodeC_of_lsC
 #print axioms Concurrency.CallLayers.srcStep_of_mstepC
 #print axioms Concurrency.CallLayers.arm_isel_refinesC
+#print axioms Concurrency.CallRetResume.mstep_callR
+#print axioms Concurrency.CallRetResume.resume_layersR
+#print axioms Concurrency.CallRetResume.frame_congr
+#print axioms Concurrency.CallRetResume.hpresR_of_callee
+#print axioms Concurrency.CallRetResume.hkeep_of_callee
+#print axioms Concurrency.CallRetResume.resume_premises_of_retEnd
+#print axioms Concurrency.CallRetResume.Witness.resume_RX -- witness: native_decide
+#print axioms Concurrency.CallRetResume.Witness.not_hpres_yX -- witness: native_decide

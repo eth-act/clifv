@@ -207,3 +207,5 @@ import FV.Concurrency.PrivCohT
 import FV.Concurrency.PrivCohTWitness
 import FV.Concurrency.CallComposeT
 import FV.Concurrency.CallComposeTWitness
+import FV.Concurrency.CallRetResume
+import FV.Concurrency.CallRetResumeWitness
