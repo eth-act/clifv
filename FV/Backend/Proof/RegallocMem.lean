@@ -1122,6 +1122,18 @@ theorem ldPost_facts (s : Arm.ArmState) (P : BitVec 64) {a : Nat} (ha : a < 29 �
       cases o <;> simp [ldPost, regVal, x16w, Arm.r_of_w_different, e1, e2]
     · cases o <;> simp [ldPost, regVal, x16w, Arm.r_of_w_different]
 
+theorem x16w_x29 (o : Option (BitVec 64)) (s : Arm.ArmState) :
+    Arm.r (.GPR 29#5) (x16w o s) = Arm.r (.GPR 29#5) s := by
+  cases o <;> simp [x16w, Arm.r_of_w_different]
+
+theorem ldPost_x29 (s : Arm.ArmState) (P : BitVec 64) {a : Nat} (ha : a < 29)
+    (V : BitVec 64) (o : Option (BitVec 64)) :
+    Arm.r (.GPR 29#5) (ldPost s P a V o) = Arm.r (.GPR 29#5) s := by
+  have h29 : BitVec.ofNat 5 a ≠ 29#5 := by
+    intro e; have := congrArg BitVec.toNat e; simp at this; omega
+  simp only [ldPost]
+  rw [Arm.r_of_w_different (by simp), Arm.r_of_w_different (by simp [Ne.symm h29]), x16w_x29]
+
 /-- The allocated/canonical correspondence of one load (the part of `Corr` independent of the
 operand list). -/
 theorem load_core {F : BitVec 64 → Prop} (ctx : FnCtx) (env : Env) (op : LoadOp) (hop : op ≠ .fpuLoad128)
@@ -1151,7 +1163,7 @@ theorem load_core {F : BitVec 64 → Prop} (ctx : FnCtx) (env : Env) (op : LoadO
     (by omega) (ldX op (mC.addr ctx op.bytes t) t) oC
   refine ⟨ldPost s (Arm.r .PC s + BitVec.ofNat 64 (4 * ls.length)) n0 (ldX op (m.addr ctx op.bytes s) s) o,
     by simp only [execMInst, hl]; exact hS.exec, ldPost_sw hwt ⟨hn0.1, hn0.2.2.2⟩ (by omega) _ _ _ _,
-    ⟨f1, fun a _ => by rw [f2]⟩, ?_, f4⟩
+    ⟨f1, fun a _ => by rw [f2], ldPost_x29 _ _ hn0.1 _ _⟩, ?_, f4⟩
   have g3' := g3.trans (congrArg (BitVec.setWidth 128) hld)
   rw [f3]; exact g3'.symm
 
