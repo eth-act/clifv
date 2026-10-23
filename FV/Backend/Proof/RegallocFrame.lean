@@ -25,10 +25,10 @@ of `RAFrame.compute`: `RegallocLayout.frameOk_compute`.
 namespace Backend.Proof
 open Backend
 
-/-- Slot size of a frame location (int spill / x save: 8 bytes; float: 16). -/
+/-- Slot size of a frame location (int spill / save: 8 bytes; float spill: 16). -/
 def slotBytes : Loc → Nat
   | .stack _ .int => 8
-  | .save (.x _) => 8
+  | .save _ => 8
   | _ => 16
 
 /-- The value of location `l` in Arm state `s` for frame `fr`: registers by `regVal`, frame
@@ -43,10 +43,13 @@ def locVal (fr : RAFrame) (s : Arm.ArmState) : Loc → CV
 
 /-- The frame locations the allocated code can use: int spill slots below `spillSlots`, float
 spill slots below `spillSlots` when the code uses float slots at all (otherwise the float area
-is empty), every save slot (`offset` fails for registers without one). -/
+is empty). The save slots are not among them: the prologue pushes the saved registers into the
+clobber area and the epilogue pops them (`prologueLines`); the register-level relation tracks
+that area separately (`StRel.fplr`). -/
 def Live (rf : RFunc) : Loc → Prop
   | .stack k .int => k < rf.spillSlots
   | .stack k .float => k < rf.spillSlots ∧ rf.floatStack = true
+  | .save _ => False
   | _ => True
 
 /-- The frame layout facts the lowering relies on, for the live locations `D`, stack pointer
