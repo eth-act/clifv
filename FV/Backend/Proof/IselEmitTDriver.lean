@@ -245,7 +245,7 @@ theorem iselEmitT {f : Clif.Function} (hdom : dominatedB f = true) (hs : LowerSc
     (hw : extendsWidenB f = true) (hbw : bitcastWidthB f = true) : IselEmitT f := by
   intro ctx ranges st0 hb
   have hctx : CtxInvT f ctx := ctxInvT_of hs hb
-  have hcl : Cov.Clean ctx := clean_of_build hb
+  have hcl : Cov.Clean ctx := Cov.clean_of_build hb
   have hfam := CovT.famCover_of hs hdom hst hsel hb
   have hW := extendsWiden_of hw hb
   have hB := bitcastsSameWidth_of hbw hb

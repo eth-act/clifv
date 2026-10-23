@@ -318,10 +318,13 @@ def groups {α : Type} (n : Nat) (l : List α) : List (List α) :=
 def chunksPerMod : Nat := 2
 def rulesPerMod : Nat := 10
 
-/-- Rule/family pairs whose single kernel check exceeds the memory budget (rule 2267 on family
-8 has 256 environments): checked in `envChunk`-sized environment chunks. -/
-def heavy : List (String × Nat) := [("rule_lower_2267", 8)]
-def envChunk : Nat := 32
+/-- Rule/family pairs whose single kernel check exceeds the memory budget, with the environments
+per chunk: rule 2267 on family 8 (256 environments, 32 per chunk), the vector-lane `select`/
+`bitselect`-like rules 1222-1228 on family 2 (64 environments; 16 of them take 8 GB in one
+`decide`, so 8 per chunk). -/
+def heavy : List (String × Nat × Nat) :=
+  [("rule_lower_2267", 8, 32), ("rule_lower_1222", 2, 8), ("rule_lower_1224", 2, 8),
+   ("rule_lower_1226", 2, 8), ("rule_lower_1228", 2, 8)]
 
 /-- The helpers of the chunked checks (emitted once per module that has a heavy rule). -/
 def heavyDefs : String := "private theorem all_of_chunks {α : Type} (g : α → Bool) (L : List α) (k n : Nat)
@@ -366,10 +369,9 @@ private theorem aRule_of_chunks {ins : List AT} {out : AT} {r : Rule} (k n : Nat
 
 "
 
-/-- The chunked check of heavy rule `r` on family `i` with `nc` environment chunks. -/
-def heavyThm (r : String) (i nc : Nat) : String := Id.run do
+/-- The chunked check of heavy rule `r` on family `i` with `nc` environment chunks of `k`. -/
+def heavyThm (r : String) (i k nc : Nat) : String := Id.run do
   let envs := s!"(aRuleEnvs program emitTabT aextET actorET apreET aOracle [.inst [{i}]] {r})"
-  let k := envChunk
   let mut s := s!"theorem emitStmtOkT_{r}_f{i}_s : {envs}.isSome = true := by decide +kernel\n\n"
   s := s ++ s!"theorem emitStmtOkT_{r}_f{i}_n : ({envs}.getD []).length ≤ {nc} * {k} := by decide +kernel\n\n"
   for c in List.range nc do
@@ -381,7 +383,8 @@ def heavyThm (r : String) (i nc : Nat) : String := Id.run do
   s := s ++ s!"    | _ + {nc}, hc => exact absurd hc (by omega)\n  · have := List.all_eq_true.1 emitStmtOkT_{r}_rest i hi\n    simpa [hi'] using this\n\n"
   s
 
-def renderAll (tab : Tab) (lowerNames branchNames : List String) (heavyN : List (String × Nat × Nat)) :
+def renderAll (tab : Tab) (lowerNames branchNames : List String)
+    (heavyN : List (String × Nat × Nat × Nat)) :
     List (String × String) := Id.run do
   let n := (tab.length + chunk - 1) / chunk
   let mut files : List (String × String) := []
@@ -415,7 +418,7 @@ The leaf-wise kernel checks are in `IselEmitTTabC*` (entries), `IselEmitTTabS*` 
     if rs.any (fun r => heavyN.any (·.1 == r)) then c := c ++ heavyDefs
     for r in rs do
       match heavyN.find? (·.1 == r) with
-      | some (_, i, nc) => c := c ++ heavyThm r i nc
+      | some (_, i, k, nc) => c := c ++ heavyThm r i k nc
       | none => c := c ++ s!"theorem emitStmtOkT_{r} : emitStmtOkT {r} = true := by decide +kernel\n\n"
     files := files ++ [(s!"IselEmitTTabS{gi}.lean", c ++ "end Backend.Proof.CovT\n")]
   -- branch rules and terminators
@@ -502,10 +505,10 @@ def main (args : List String) : IO UInt32 := do
   IO.println s!"lower rules {ln.length} branch rules {bn.length}"
   if ln.length != (program.rulesOf TId.lower).length || bn.length != branchRules.length then
     IO.eprintln "rule name lists do not match the program"; return 1
-  let heavyN := heavy.filterMap fun (name, i) => ((ln.zip (program.rulesOf TId.lower)).find? (·.1 == name)).map
+  let heavyN := heavy.filterMap fun (name, i, k) => ((ln.zip (program.rulesOf TId.lower)).find? (·.1 == name)).map
     fun (_, r) =>
       let ne := ((aRuleEnvs program tab aextET actorET apreET aOracle [.inst [i]] r).getD []).length
-      (name, i, (ne + envChunk - 1) / envChunk)
+      (name, i, k, (ne + k - 1) / k)
   IO.println s!"heavy {heavyN}"
   for (name, content) in renderAll tab ln bn heavyN do
     IO.FS.writeFile (path ++ "/" ++ name) content

@@ -17,19 +17,271 @@ namespace Backend.Proof.CovT
 
 open Backend Backend.Proof Isle Isle.Aarch64
 
+private theorem all_of_chunks {α : Type} (g : α → Bool) (L : List α) (k n : Nat)
+    (hn : L.length ≤ n * k) (h : ∀ c < n, ((L.drop (c * k)).take k).all g = true) :
+    L.all g = true := by
+  rw [List.all_eq_true]
+  intro x hx
+  obtain ⟨j, hj, rfl⟩ := List.getElem_of_mem hx
+  have hk : 0 < k := by
+    rcases Nat.eq_zero_or_pos k with h0 | h0
+    · rw [h0, Nat.mul_zero] at hn; omega
+    · exact h0
+  have hc : j / k < n := Nat.div_lt_of_lt_mul (by rw [Nat.mul_comm]; omega)
+  have hjk := Nat.div_add_mod' j k
+  have hm := Nat.mod_lt j hk
+  have hl : j % k < ((L.drop (j / k * k)).take k).length := by
+    simp only [List.length_take, List.length_drop]; omega
+  have := List.all_eq_true.1 (h _ hc) _ (List.getElem_mem hl)
+  simp only [List.getElem_take, List.getElem_drop] at this
+  simp only [hjk] at this
+  exact this
+
+/-- The rule test of one environment (`aRule`'s body). -/
+private def envOkT (out : AT) (r : Rule) (env : List AT) : Bool :=
+  match aExpr program emitTabT actorET apreET aOracle r.rhs env with
+  | some a => AT.le a out
+  | none => false
+
+/-- `aRule` from chunk-wise checks of its environments. -/
+private theorem aRule_of_chunks {ins : List AT} {out : AT} {r : Rule} (k n : Nat)
+    (hs : (aRuleEnvs program emitTabT aextET actorET apreET aOracle ins r).isSome = true)
+    (hn : ((aRuleEnvs program emitTabT aextET actorET apreET aOracle ins r).getD []).length ≤ n * k)
+    (h : ∀ c < n, ((((aRuleEnvs program emitTabT aextET actorET apreET aOracle ins r).getD []).drop
+      (c * k)).take k).all (envOkT out r) = true) :
+    aRule program emitTabT aextET actorET apreET aOracle ins out r = true := by
+  unfold aRule
+  cases he : aRuleEnvs program emitTabT aextET actorET apreET aOracle ins r with
+  | none => rw [he] at hs; cases hs
+  | some envs =>
+    rw [he] at hn h
+    exact all_of_chunks _ envs k n hn h
+
 theorem emitStmtOkT_rule_lower_810 : emitStmtOkT rule_lower_810 = true := by decide +kernel
 
 theorem emitStmtOkT_rule_lower_861 : emitStmtOkT rule_lower_861 = true := by decide +kernel
 
 theorem emitStmtOkT_rule_lower_1163 : emitStmtOkT rule_lower_1163 = true := by decide +kernel
 
-theorem emitStmtOkT_rule_lower_1222 : emitStmtOkT rule_lower_1222 = true := by decide +kernel
+theorem emitStmtOkT_rule_lower_1222_f2_s : (aRuleEnvs program emitTabT aextET actorET apreET aOracle [.inst [2]] rule_lower_1222).isSome = true := by decide +kernel
 
-theorem emitStmtOkT_rule_lower_1224 : emitStmtOkT rule_lower_1224 = true := by decide +kernel
+theorem emitStmtOkT_rule_lower_1222_f2_n : ((aRuleEnvs program emitTabT aextET actorET apreET aOracle [.inst [2]] rule_lower_1222).getD []).length ≤ 8 * 8 := by decide +kernel
 
-theorem emitStmtOkT_rule_lower_1226 : emitStmtOkT rule_lower_1226 = true := by decide +kernel
+theorem emitStmtOkT_rule_lower_1222_f2_c0 : ((((aRuleEnvs program emitTabT aextET actorET apreET aOracle [.inst [2]] rule_lower_1222).getD []).drop (0 * 8)).take 8).all
+    (envOkT (AT.top) rule_lower_1222) = true := by decide +kernel
 
-theorem emitStmtOkT_rule_lower_1228 : emitStmtOkT rule_lower_1228 = true := by decide +kernel
+theorem emitStmtOkT_rule_lower_1222_f2_c1 : ((((aRuleEnvs program emitTabT aextET actorET apreET aOracle [.inst [2]] rule_lower_1222).getD []).drop (1 * 8)).take 8).all
+    (envOkT (AT.top) rule_lower_1222) = true := by decide +kernel
+
+theorem emitStmtOkT_rule_lower_1222_f2_c2 : ((((aRuleEnvs program emitTabT aextET actorET apreET aOracle [.inst [2]] rule_lower_1222).getD []).drop (2 * 8)).take 8).all
+    (envOkT (AT.top) rule_lower_1222) = true := by decide +kernel
+
+theorem emitStmtOkT_rule_lower_1222_f2_c3 : ((((aRuleEnvs program emitTabT aextET actorET apreET aOracle [.inst [2]] rule_lower_1222).getD []).drop (3 * 8)).take 8).all
+    (envOkT (AT.top) rule_lower_1222) = true := by decide +kernel
+
+theorem emitStmtOkT_rule_lower_1222_f2_c4 : ((((aRuleEnvs program emitTabT aextET actorET apreET aOracle [.inst [2]] rule_lower_1222).getD []).drop (4 * 8)).take 8).all
+    (envOkT (AT.top) rule_lower_1222) = true := by decide +kernel
+
+theorem emitStmtOkT_rule_lower_1222_f2_c5 : ((((aRuleEnvs program emitTabT aextET actorET apreET aOracle [.inst [2]] rule_lower_1222).getD []).drop (5 * 8)).take 8).all
+    (envOkT (AT.top) rule_lower_1222) = true := by decide +kernel
+
+theorem emitStmtOkT_rule_lower_1222_f2_c6 : ((((aRuleEnvs program emitTabT aextET actorET apreET aOracle [.inst [2]] rule_lower_1222).getD []).drop (6 * 8)).take 8).all
+    (envOkT (AT.top) rule_lower_1222) = true := by decide +kernel
+
+theorem emitStmtOkT_rule_lower_1222_f2_c7 : ((((aRuleEnvs program emitTabT aextET actorET apreET aOracle [.inst [2]] rule_lower_1222).getD []).drop (7 * 8)).take 8).all
+    (envOkT (AT.top) rule_lower_1222) = true := by decide +kernel
+
+theorem emitStmtOkT_rule_lower_1222_rest : (List.range famTab.length).all (fun i => i == 2 ||
+    aRule program emitTabT aextET actorET apreET aOracle [.inst [i]] AT.top rule_lower_1222) = true := by
+  decide +kernel
+
+theorem emitStmtOkT_rule_lower_1222 : emitStmtOkT rule_lower_1222 = true := by
+  unfold emitStmtOkT
+  rw [Bool.or_eq_true]
+  refine .inr ?_
+  rw [List.all_eq_true]
+  intro i hi
+  by_cases hi' : i = 2
+  · subst hi'
+    refine aRule_of_chunks 8 8 emitStmtOkT_rule_lower_1222_f2_s emitStmtOkT_rule_lower_1222_f2_n ?_
+    intro c hc
+    match c, hc with
+    | 0, _ => exact emitStmtOkT_rule_lower_1222_f2_c0
+    | 1, _ => exact emitStmtOkT_rule_lower_1222_f2_c1
+    | 2, _ => exact emitStmtOkT_rule_lower_1222_f2_c2
+    | 3, _ => exact emitStmtOkT_rule_lower_1222_f2_c3
+    | 4, _ => exact emitStmtOkT_rule_lower_1222_f2_c4
+    | 5, _ => exact emitStmtOkT_rule_lower_1222_f2_c5
+    | 6, _ => exact emitStmtOkT_rule_lower_1222_f2_c6
+    | 7, _ => exact emitStmtOkT_rule_lower_1222_f2_c7
+    | _ + 8, hc => exact absurd hc (by omega)
+  · have := List.all_eq_true.1 emitStmtOkT_rule_lower_1222_rest i hi
+    simpa [hi'] using this
+
+theorem emitStmtOkT_rule_lower_1224_f2_s : (aRuleEnvs program emitTabT aextET actorET apreET aOracle [.inst [2]] rule_lower_1224).isSome = true := by decide +kernel
+
+theorem emitStmtOkT_rule_lower_1224_f2_n : ((aRuleEnvs program emitTabT aextET actorET apreET aOracle [.inst [2]] rule_lower_1224).getD []).length ≤ 8 * 8 := by decide +kernel
+
+theorem emitStmtOkT_rule_lower_1224_f2_c0 : ((((aRuleEnvs program emitTabT aextET actorET apreET aOracle [.inst [2]] rule_lower_1224).getD []).drop (0 * 8)).take 8).all
+    (envOkT (AT.top) rule_lower_1224) = true := by decide +kernel
+
+theorem emitStmtOkT_rule_lower_1224_f2_c1 : ((((aRuleEnvs program emitTabT aextET actorET apreET aOracle [.inst [2]] rule_lower_1224).getD []).drop (1 * 8)).take 8).all
+    (envOkT (AT.top) rule_lower_1224) = true := by decide +kernel
+
+theorem emitStmtOkT_rule_lower_1224_f2_c2 : ((((aRuleEnvs program emitTabT aextET actorET apreET aOracle [.inst [2]] rule_lower_1224).getD []).drop (2 * 8)).take 8).all
+    (envOkT (AT.top) rule_lower_1224) = true := by decide +kernel
+
+theorem emitStmtOkT_rule_lower_1224_f2_c3 : ((((aRuleEnvs program emitTabT aextET actorET apreET aOracle [.inst [2]] rule_lower_1224).getD []).drop (3 * 8)).take 8).all
+    (envOkT (AT.top) rule_lower_1224) = true := by decide +kernel
+
+theorem emitStmtOkT_rule_lower_1224_f2_c4 : ((((aRuleEnvs program emitTabT aextET actorET apreET aOracle [.inst [2]] rule_lower_1224).getD []).drop (4 * 8)).take 8).all
+    (envOkT (AT.top) rule_lower_1224) = true := by decide +kernel
+
+theorem emitStmtOkT_rule_lower_1224_f2_c5 : ((((aRuleEnvs program emitTabT aextET actorET apreET aOracle [.inst [2]] rule_lower_1224).getD []).drop (5 * 8)).take 8).all
+    (envOkT (AT.top) rule_lower_1224) = true := by decide +kernel
+
+theorem emitStmtOkT_rule_lower_1224_f2_c6 : ((((aRuleEnvs program emitTabT aextET actorET apreET aOracle [.inst [2]] rule_lower_1224).getD []).drop (6 * 8)).take 8).all
+    (envOkT (AT.top) rule_lower_1224) = true := by decide +kernel
+
+theorem emitStmtOkT_rule_lower_1224_f2_c7 : ((((aRuleEnvs program emitTabT aextET actorET apreET aOracle [.inst [2]] rule_lower_1224).getD []).drop (7 * 8)).take 8).all
+    (envOkT (AT.top) rule_lower_1224) = true := by decide +kernel
+
+theorem emitStmtOkT_rule_lower_1224_rest : (List.range famTab.length).all (fun i => i == 2 ||
+    aRule program emitTabT aextET actorET apreET aOracle [.inst [i]] AT.top rule_lower_1224) = true := by
+  decide +kernel
+
+theorem emitStmtOkT_rule_lower_1224 : emitStmtOkT rule_lower_1224 = true := by
+  unfold emitStmtOkT
+  rw [Bool.or_eq_true]
+  refine .inr ?_
+  rw [List.all_eq_true]
+  intro i hi
+  by_cases hi' : i = 2
+  · subst hi'
+    refine aRule_of_chunks 8 8 emitStmtOkT_rule_lower_1224_f2_s emitStmtOkT_rule_lower_1224_f2_n ?_
+    intro c hc
+    match c, hc with
+    | 0, _ => exact emitStmtOkT_rule_lower_1224_f2_c0
+    | 1, _ => exact emitStmtOkT_rule_lower_1224_f2_c1
+    | 2, _ => exact emitStmtOkT_rule_lower_1224_f2_c2
+    | 3, _ => exact emitStmtOkT_rule_lower_1224_f2_c3
+    | 4, _ => exact emitStmtOkT_rule_lower_1224_f2_c4
+    | 5, _ => exact emitStmtOkT_rule_lower_1224_f2_c5
+    | 6, _ => exact emitStmtOkT_rule_lower_1224_f2_c6
+    | 7, _ => exact emitStmtOkT_rule_lower_1224_f2_c7
+    | _ + 8, hc => exact absurd hc (by omega)
+  · have := List.all_eq_true.1 emitStmtOkT_rule_lower_1224_rest i hi
+    simpa [hi'] using this
+
+theorem emitStmtOkT_rule_lower_1226_f2_s : (aRuleEnvs program emitTabT aextET actorET apreET aOracle [.inst [2]] rule_lower_1226).isSome = true := by decide +kernel
+
+theorem emitStmtOkT_rule_lower_1226_f2_n : ((aRuleEnvs program emitTabT aextET actorET apreET aOracle [.inst [2]] rule_lower_1226).getD []).length ≤ 8 * 8 := by decide +kernel
+
+theorem emitStmtOkT_rule_lower_1226_f2_c0 : ((((aRuleEnvs program emitTabT aextET actorET apreET aOracle [.inst [2]] rule_lower_1226).getD []).drop (0 * 8)).take 8).all
+    (envOkT (AT.top) rule_lower_1226) = true := by decide +kernel
+
+theorem emitStmtOkT_rule_lower_1226_f2_c1 : ((((aRuleEnvs program emitTabT aextET actorET apreET aOracle [.inst [2]] rule_lower_1226).getD []).drop (1 * 8)).take 8).all
+    (envOkT (AT.top) rule_lower_1226) = true := by decide +kernel
+
+theorem emitStmtOkT_rule_lower_1226_f2_c2 : ((((aRuleEnvs program emitTabT aextET actorET apreET aOracle [.inst [2]] rule_lower_1226).getD []).drop (2 * 8)).take 8).all
+    (envOkT (AT.top) rule_lower_1226) = true := by decide +kernel
+
+theorem emitStmtOkT_rule_lower_1226_f2_c3 : ((((aRuleEnvs program emitTabT aextET actorET apreET aOracle [.inst [2]] rule_lower_1226).getD []).drop (3 * 8)).take 8).all
+    (envOkT (AT.top) rule_lower_1226) = true := by decide +kernel
+
+theorem emitStmtOkT_rule_lower_1226_f2_c4 : ((((aRuleEnvs program emitTabT aextET actorET apreET aOracle [.inst [2]] rule_lower_1226).getD []).drop (4 * 8)).take 8).all
+    (envOkT (AT.top) rule_lower_1226) = true := by decide +kernel
+
+theorem emitStmtOkT_rule_lower_1226_f2_c5 : ((((aRuleEnvs program emitTabT aextET actorET apreET aOracle [.inst [2]] rule_lower_1226).getD []).drop (5 * 8)).take 8).all
+    (envOkT (AT.top) rule_lower_1226) = true := by decide +kernel
+
+theorem emitStmtOkT_rule_lower_1226_f2_c6 : ((((aRuleEnvs program emitTabT aextET actorET apreET aOracle [.inst [2]] rule_lower_1226).getD []).drop (6 * 8)).take 8).all
+    (envOkT (AT.top) rule_lower_1226) = true := by decide +kernel
+
+theorem emitStmtOkT_rule_lower_1226_f2_c7 : ((((aRuleEnvs program emitTabT aextET actorET apreET aOracle [.inst [2]] rule_lower_1226).getD []).drop (7 * 8)).take 8).all
+    (envOkT (AT.top) rule_lower_1226) = true := by decide +kernel
+
+theorem emitStmtOkT_rule_lower_1226_rest : (List.range famTab.length).all (fun i => i == 2 ||
+    aRule program emitTabT aextET actorET apreET aOracle [.inst [i]] AT.top rule_lower_1226) = true := by
+  decide +kernel
+
+theorem emitStmtOkT_rule_lower_1226 : emitStmtOkT rule_lower_1226 = true := by
+  unfold emitStmtOkT
+  rw [Bool.or_eq_true]
+  refine .inr ?_
+  rw [List.all_eq_true]
+  intro i hi
+  by_cases hi' : i = 2
+  · subst hi'
+    refine aRule_of_chunks 8 8 emitStmtOkT_rule_lower_1226_f2_s emitStmtOkT_rule_lower_1226_f2_n ?_
+    intro c hc
+    match c, hc with
+    | 0, _ => exact emitStmtOkT_rule_lower_1226_f2_c0
+    | 1, _ => exact emitStmtOkT_rule_lower_1226_f2_c1
+    | 2, _ => exact emitStmtOkT_rule_lower_1226_f2_c2
+    | 3, _ => exact emitStmtOkT_rule_lower_1226_f2_c3
+    | 4, _ => exact emitStmtOkT_rule_lower_1226_f2_c4
+    | 5, _ => exact emitStmtOkT_rule_lower_1226_f2_c5
+    | 6, _ => exact emitStmtOkT_rule_lower_1226_f2_c6
+    | 7, _ => exact emitStmtOkT_rule_lower_1226_f2_c7
+    | _ + 8, hc => exact absurd hc (by omega)
+  · have := List.all_eq_true.1 emitStmtOkT_rule_lower_1226_rest i hi
+    simpa [hi'] using this
+
+theorem emitStmtOkT_rule_lower_1228_f2_s : (aRuleEnvs program emitTabT aextET actorET apreET aOracle [.inst [2]] rule_lower_1228).isSome = true := by decide +kernel
+
+theorem emitStmtOkT_rule_lower_1228_f2_n : ((aRuleEnvs program emitTabT aextET actorET apreET aOracle [.inst [2]] rule_lower_1228).getD []).length ≤ 8 * 8 := by decide +kernel
+
+theorem emitStmtOkT_rule_lower_1228_f2_c0 : ((((aRuleEnvs program emitTabT aextET actorET apreET aOracle [.inst [2]] rule_lower_1228).getD []).drop (0 * 8)).take 8).all
+    (envOkT (AT.top) rule_lower_1228) = true := by decide +kernel
+
+theorem emitStmtOkT_rule_lower_1228_f2_c1 : ((((aRuleEnvs program emitTabT aextET actorET apreET aOracle [.inst [2]] rule_lower_1228).getD []).drop (1 * 8)).take 8).all
+    (envOkT (AT.top) rule_lower_1228) = true := by decide +kernel
+
+theorem emitStmtOkT_rule_lower_1228_f2_c2 : ((((aRuleEnvs program emitTabT aextET actorET apreET aOracle [.inst [2]] rule_lower_1228).getD []).drop (2 * 8)).take 8).all
+    (envOkT (AT.top) rule_lower_1228) = true := by decide +kernel
+
+theorem emitStmtOkT_rule_lower_1228_f2_c3 : ((((aRuleEnvs program emitTabT aextET actorET apreET aOracle [.inst [2]] rule_lower_1228).getD []).drop (3 * 8)).take 8).all
+    (envOkT (AT.top) rule_lower_1228) = true := by decide +kernel
+
+theorem emitStmtOkT_rule_lower_1228_f2_c4 : ((((aRuleEnvs program emitTabT aextET actorET apreET aOracle [.inst [2]] rule_lower_1228).getD []).drop (4 * 8)).take 8).all
+    (envOkT (AT.top) rule_lower_1228) = true := by decide +kernel
+
+theorem emitStmtOkT_rule_lower_1228_f2_c5 : ((((aRuleEnvs program emitTabT aextET actorET apreET aOracle [.inst [2]] rule_lower_1228).getD []).drop (5 * 8)).take 8).all
+    (envOkT (AT.top) rule_lower_1228) = true := by decide +kernel
+
+theorem emitStmtOkT_rule_lower_1228_f2_c6 : ((((aRuleEnvs program emitTabT aextET actorET apreET aOracle [.inst [2]] rule_lower_1228).getD []).drop (6 * 8)).take 8).all
+    (envOkT (AT.top) rule_lower_1228) = true := by decide +kernel
+
+theorem emitStmtOkT_rule_lower_1228_f2_c7 : ((((aRuleEnvs program emitTabT aextET actorET apreET aOracle [.inst [2]] rule_lower_1228).getD []).drop (7 * 8)).take 8).all
+    (envOkT (AT.top) rule_lower_1228) = true := by decide +kernel
+
+theorem emitStmtOkT_rule_lower_1228_rest : (List.range famTab.length).all (fun i => i == 2 ||
+    aRule program emitTabT aextET actorET apreET aOracle [.inst [i]] AT.top rule_lower_1228) = true := by
+  decide +kernel
+
+theorem emitStmtOkT_rule_lower_1228 : emitStmtOkT rule_lower_1228 = true := by
+  unfold emitStmtOkT
+  rw [Bool.or_eq_true]
+  refine .inr ?_
+  rw [List.all_eq_true]
+  intro i hi
+  by_cases hi' : i = 2
+  · subst hi'
+    refine aRule_of_chunks 8 8 emitStmtOkT_rule_lower_1228_f2_s emitStmtOkT_rule_lower_1228_f2_n ?_
+    intro c hc
+    match c, hc with
+    | 0, _ => exact emitStmtOkT_rule_lower_1228_f2_c0
+    | 1, _ => exact emitStmtOkT_rule_lower_1228_f2_c1
+    | 2, _ => exact emitStmtOkT_rule_lower_1228_f2_c2
+    | 3, _ => exact emitStmtOkT_rule_lower_1228_f2_c3
+    | 4, _ => exact emitStmtOkT_rule_lower_1228_f2_c4
+    | 5, _ => exact emitStmtOkT_rule_lower_1228_f2_c5
+    | 6, _ => exact emitStmtOkT_rule_lower_1228_f2_c6
+    | 7, _ => exact emitStmtOkT_rule_lower_1228_f2_c7
+    | _ + 8, hc => exact absurd hc (by omega)
+  · have := List.all_eq_true.1 emitStmtOkT_rule_lower_1228_rest i hi
+    simpa [hi'] using this
 
 theorem emitStmtOkT_rule_lower_1406 : emitStmtOkT rule_lower_1406 = true := by decide +kernel
 
