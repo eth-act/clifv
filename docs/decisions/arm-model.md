@@ -92,6 +92,16 @@ explicit per-thread contract (`ProgE2E.Realizes`, event-level refinement of comp
 `backend_correct_final` does not imply; the assumption above stays trusted for
 `backend_correct_final` until that contract is discharged (T2h, #311).
 
+**Trusted cross-thread premise: disjoint stacks (T2, #473).** Besides the race freedom of the
+CLIF program, the discharge of the per-thread contract assumes that no thread's memory events
+(other than fences) touch another thread's private locations: its frames, spill slots and saved
+registers — for threads whose calls reuse the stack, the union over the whole run of its private
+sets (`PrivCohT.StackDisjoint PA (PrivU Priv0 PrivAt)`, a premise of
+`PrivCohT.realizes_of_threads_privT`; earlier, with one private set per thread, the premises of
+`PrivCoh.realizes_of_threads_priv`/`CallCompose.realizes_linked`). It is a property of the program
+and its runtime (every thread has its own stack, which nobody else accesses), not derivable from
+the per-thread refinements (`docs/plans/atomics.md` §3e, "Explicit program-level premise").
+
 ## Thread-local storage: trusted TLSDESC hook (agent/stack-tls-proof, 2026-10-01)
 
 `E2E.backend_correct_final` covers `tls_value` (`elf_gd`, cg_clif's setting). Its code is
