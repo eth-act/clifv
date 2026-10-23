@@ -4662,9 +4662,15 @@ uninitialised stack byte, in the entered function or in any callee, **currently 
 from `E2E.backend_correct_final`, `Link.DeadCleanup.compileExe_correct*` or
 `Front.bundle_correct_*`. Measured (2026-10-23, shadow-stack qemu plugin, a lower bound):
 9 of 21 fv-demo and 46 of 53 survey test runs (`cargo fv test --lean-link --verified`) perform at
-least one such read. Planned fix (`docs/plans/uninit.md`): slot bytes start with values from an
-oracle, which the theorems instantiate with the Arm memory at activation entry. New theorem variants
-will sit beside the existing ones.
+least one such read. Planned fix (`docs/plans/uninit.md` §5, route (i)): slot bytes start with
+values from an oracle (`Clif.Place.init`), which the theorems instantiate with the Arm memory at
+activation entry. The generated code stays stock Cranelift's. **The gap stays open for a while**
+([#556](https://github.com/eth-act/clifv/issues/556)). The linking's canonical callee runs and
+non-interference (`CalleeOkG.os`, `LinkSys.Thm`) cannot carry stale reads, because those bytes
+include regalloc-chosen values outside the world (earlier callees' register saves and spills). The
+per-function theorem first needs a call semantics indexed by the actual run, threaded through the
+reg-level simulation; new theorem variants will sit beside the existing ones. The heap-side gap
+(allocating externs) is separate: [#547](https://github.com/eth-act/clifv/issues/547) (SEM2).
 
 ## Remaining (precise)
 
