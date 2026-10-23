@@ -66,7 +66,7 @@ private def prepareRepr (vc : VCode) : Except String VCode := do
   let (_, blocks, edges) ← splitRun vc succs preds
   let vc := { vc with blocks := blocks ++ edges }
   let (succs, _) ← vc.cfg
-  pure { vc with blocks := (rpo succs).map fun i => vc.blocks[i]! }
+  pure { vc with blocks := (prepOrder blocks.size succs).map fun i => vc.blocks[i]! }
 
 private theorem prepare_repr (vc : VCode) : prepare vc = prepareRepr vc := by
   simp only [prepare, prepareRepr, splitRun, bind_assoc]

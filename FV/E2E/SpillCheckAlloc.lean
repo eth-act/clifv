@@ -46,14 +46,14 @@ theorem prepare_reach {vc vcp : VCode} (hp : prepare vc = .ok vcp) (hd : Prep.Pr
   obtain ⟨ss0, ps0, ss1, ps1, ss2, ps2, next, B, E, hc0, hc1, hS, hc2, rfl⟩ := Prep.prepare_facts hp
   have cs0 := Prep.cfg_spec hc0
   have cs2 := Prep.cfg_spec hc2
-  have cs3 : Prep.CfgSpec ((rpo ss2).map fun i => (B ++ E)[i]!) succs := Prep.cfg_spec hc
+  have cs3 : Prep.CfgSpec ((prepOrder B.size ss2).map fun i => (B ++ E)[i]!) succs := Prep.cfg_spec hc
   obtain ⟨-, -, -, -, hn2, hR, hRn, hR0, -, hRre⟩ := Prep.facts_basic hd cs0 cs2 hS
   have key : ∀ i, Prep.Reach ss2 i →
-      ∃ q, ∃ hq : q < (rpo ss2).size, (rpo ss2)[q] = i ∧ Prep.Reach succs q := by
+      ∃ q, ∃ hq : q < (prepOrder B.size ss2).size, (prepOrder B.size ss2)[q] = i ∧ Prep.Reach succs q := by
     intro i hi
     induction hi with
     | entry =>
-      have h0 : 0 < (rpo ss2).size := (Array.getElem?_eq_some_iff.mp hR0).1
+      have h0 : 0 < (prepOrder B.size ss2).size := (Array.getElem?_eq_some_iff.mp hR0).1
       exact ⟨0, h0, Option.some.inj ((Array.getElem?_eq_getElem h0).symm.trans hR0), .entry⟩
     | @step i s hri hs ih =>
       obtain ⟨q, hq, hqi, hrq⟩ := ih
@@ -62,15 +62,16 @@ theorem prepare_reach {vc vcp : VCode} (hp : prepare vc = .ok vcp) (hd : Prep.Pr
       obtain ⟨hs2, hls⟩ := Prep.lab_some hlab
       obtain ⟨q', hq', hq's, hlab3⟩ := Prep.lab3 hR hn2 hRn (hRre s (.step hri hs))
       rw [getElem!_pos (B ++ E) s hs2, hls] at hlab3
-      have hq3 : q < ((rpo ss2).map fun i => (B ++ E)[i]!).size := by simpa using hq
+      have hq3 : q < ((prepOrder B.size ss2).map fun i => (B ++ E)[i]!).size := by simpa using hq
       obtain ⟨_, e3⟩ := Prep.v3_get hR hq
-      have hV3 : ((rpo ss2).map fun i => (B ++ E)[i]!)[q] = (B ++ E)[(rpo ss2)[q]] :=
+      have hV3 : ((prepOrder B.size ss2).map fun i => (B ++ E)[i]!)[q] = (B ++ E)[(prepOrder B.size ss2)[q]] :=
         Option.some.inj ((Array.getElem?_eq_getElem hq3).symm.trans e3)
       exact ⟨q', hq', hq's, .step hrq (Prep.succ_mem cs3 hq3 (t := t) (by rw [hV3]; exact ht) hl hlab3)⟩
   intro q hq
-  have hq' : q < (rpo ss2).size := by simpa using hq
-  obtain ⟨q', hq'', e, hr⟩ := key _ (Spill.rpo_reach (Array.getElem_mem_toList hq'))
-  have : q' = q := Spill.nodup_idx hRn (l := (rpo ss2).toList)
+  have hq' : q < (prepOrder B.size ss2).size := by simpa using hq
+  obtain ⟨q', hq'', e, hr⟩ := key _
+    (Prep.prepOrder_reach (fun _ h => Spill.rpo_reach h) (Array.getElem_mem_toList hq'))
+  have : q' = q := Spill.nodup_idx hRn (l := (prepOrder B.size ss2).toList)
     (by rw [Array.getElem?_toList, Array.getElem?_eq_getElem hq'', e])
     (by rw [Array.getElem?_toList, Array.getElem?_eq_getElem hq'])
   subst this
