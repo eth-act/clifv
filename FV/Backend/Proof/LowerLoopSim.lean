@@ -87,7 +87,8 @@ theorem zip_snoc {α β : Type} {l : List α} {m : List β} {x : β} {a : α} (h
 /-! ## One block -/
 
 theorem bodyPart_ok {f : Clif.Function} {ctx : Ctx} {ranges : Array (Nat × Nat)} {st0 : LState}
-    (sp : CtxSpec f ctx ranges st0) (hE : CtxE ctx) {k : Nat} {B : Clif.Block} (hB : f.blocks[k]? = some B)
+    (sp : CtxSpec f ctx ranges st0) (hE : CtxE ctx) (hx : f.externs.all (Compile.sigE ·.2.sig) = true)
+    {k : Nat} {B : Clif.Block} (hB : f.blocks[k]? = some B)
     {d : DState} {code : Array MInst} {d' : DState} (he : d.st.emitted = #[])
     (h : bodyPart f ctx B k (blockStart f k) (blockStart f k + B.body.length + 1) d code = .ok (.yield d')) :
     ∃ s data, SInv ctx (blockStart f k) B.body d code B.body.length s ∧ DataOk f B.term data ∧
@@ -106,12 +107,12 @@ theorem bodyPart_ok {f : Clif.Function} {ctx : Ctx} {ranges : Array (Nat × Nat)
     split at h
     · cases h
     rename_i data hd
-    exact ⟨data, hS, by simp only [DataOk, ht]; rw [← ht]; exact hd, h⟩
+    exact ⟨data, hS, by simp only [DataOk, ht]; rw [← ht]; exact tryCallData_of_C hx hd, h⟩
   · rename_i c args et ht
     split at h
     · cases h
     rename_i data hd
-    exact ⟨data, hS, by simp only [DataOk, ht]; rw [← ht]; exact hd, h⟩
+    exact ⟨data, hS, by simp only [DataOk, ht]; rw [← ht]; exact tryCallData_of_C hx hd, h⟩
   · rename_i hn1 hn2
     split at h
     · cases h
@@ -184,7 +185,8 @@ theorem bsl_take (Bs : List Clif.Block) (k : Nat) (hk : k ≤ Bs.length) :
   simp only [bsl, List.length_take, Nat.min_eq_left hk, List.take_take, Nat.min_self]
 
 theorem blockStep {f : Clif.Function} {ctx : Ctx} {ranges : Array (Nat × Nat)} {st0 : LState}
-    (sp : CtxSpec f ctx ranges st0) (hE : CtxE ctx) {paramBytes : List Nat}
+    (sp : CtxSpec f ctx ranges st0) (hE : CtxE ctx) (hx : f.externs.all (Compile.sigE ·.2.sig) = true)
+    {paramBytes : List Nat}
     (hpb : sigParamBytes f.sig = .ok paramBytes)
     {k : Nat} {B : Clif.Block} (hB : f.blocks[k]? = some B) {d d' : DState} {blk : List BLow}
     (hI : LI f ctx st0 k d blk) (h : blockBody f ctx ranges paramBytes (B, k) d = .ok (.yield d')) :
@@ -223,7 +225,7 @@ theorem blockStep {f : Clif.Function} {ctx : Ctx} {ranges : Array (Nat × Nat)} 
       refine ⟨#[], ?_, h, fun h' => absurd h' hk0'⟩
       obtain ⟨k', rfl⟩ := Nat.exists_eq_succ_of_ne_zero hk0'
       simp [pre]
-  obtain ⟨s, data, hS, hdata, hT⟩ := bodyPart_ok sp hE hB hI.em hbp
+  obtain ⟨s, data, hS, hdata, hT⟩ := bodyPart_ok sp hE hx hB hI.em hbp
   obtain ⟨sls, hl, hbl, hed, hnl, hal, hcode, hem, hres⟩ := hS
   rw [List.take_length] at hl hal hcode hres
   have hsls := lowStmts_len hl
@@ -528,7 +530,9 @@ theorem loop_run {f : Clif.Function} {vc : VCode} (hE : Compile.functionE f = tr
       rw [hB] at hx
       simp only [Option.map_some, Option.some.injEq, Nat.zero_add] at hx
       subst hx
-      obtain ⟨L, hL⟩ := blockStep sp (sp.ctxE hE) hpb hB hI hs
+      have hx : f.externs.all (Compile.sigE ·.2.sig) = true := by
+        simp only [Compile.functionE, Bool.and_eq_true] at hE; exact hE.1.2
+      obtain ⟨L, hL⟩ := blockStep sp (sp.ctxE hE) hx hpb hB hI hs
       exact ⟨_, hL⟩
   · intro x b b' hb'
     have := blockBody_yield hb'

@@ -234,8 +234,8 @@ theorem edgeBlocksT_shape {f : Clif.Function} {ctx : Ctx} {B : Clif.Block} {L : 
 /-- **`lowerFunction`'s VCode meets `ClassesOkM`** (typed scope, `ResClassOk`). -/
 theorem classesOkM_lowerT {f : Clif.Function} {vc : VCode} (hs : LowerScopeT f)
     (hrc : ResClassOk f) (h : lowerFunction f = .ok vc) : ClassesOkM vc := by
-  obtain ⟨ctx, ranges, st0, bl, hb, hl, hvb, -, hlf⟩ := lowerFunction_runT h
-  obtain ⟨ctx', ranges', st0', pb, d, blk, hb', -, hI, hvc⟩ := loop_runT h
+  obtain ⟨ctx, ranges, st0, bl, hb, hl, hvb, -, hlf⟩ := lowerFunction_runT hs.externsE h
+  obtain ⟨ctx', ranges', st0', pb, d, blk, hb', -, hI, hvc⟩ := loop_runT hs.externsE h
   rw [hb] at hb'
   simp only [Except.ok.injEq, Prod.mk.injEq] at hb'
   obtain ⟨rfl, rfl, rfl⟩ := hb'

@@ -215,7 +215,7 @@ end lowT
 (`prepIn_of_lower` over the typed scope). -/
 theorem prepIn_of_lowerT {f : Clif.Function} {vc : VCode} (hd : Dominated f) (hs : LowerScopeT f)
     (h : lowerFunction f = .ok vc) : PrepIn vc := by
-  obtain ⟨ctx, st0, bl, RR, H⟩ := lowT_of h
+  obtain ⟨ctx, st0, bl, RR, H⟩ := lowT_of hs.externsE h
   have hbt : ∀ B ∈ f.blocks, BrIdxTyped ctx B.term := by
     obtain ⟨ctx', st0', R', gn', bl', A', hshape, -, hbt'⟩ :=
       loweringT_of_check (lowerCheckT_complete hd hs h)

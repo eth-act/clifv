@@ -258,14 +258,14 @@ stack-passed `f64`/`f32`: in `functionET`/`LowerScopeT`, accepted by `lowerCheck
 
 **S11e5 Stage C, slice 3 (typed loop simulation, typed `Low`, edge classes).** `buildCtx` gives
 every value `vregOf ctx x` (`CtxSpec.regEqT`), so the loop simulation over the typed model needs
-no premise: `loop_runT`, `lowerFunction_runT` (`Proof/LowerLoop{Run,Sim,}T.lean`: the VCode is
+no premise (since S11e6 slice 2b: integer extern signatures, see there): `loop_runT`, `lowerFunction_runT` (`Proof/LowerLoop{Run,Sim,}T.lean`: the VCode is
 `vcBlocksOfT f ctx bl`, typed raw blocks `rawBlockT` and edge blocks `edgeBlocksT`, with
 `LoopFactsT`), and the integer `lowerFunction_run` follows on integer contexts
 (`lowerFunction_run_of_runT`, `vcBlocksOfT_int`, `LoopFactsT.toInt`). `shapeOkT_complete` /
 `lowerShapeT_of_lower` (`Proof/LowerShapeOkT.lean`) give `LowerShapeT` on SSA `LowerScopeT` input
 with well-founded aliases, given that the terminator rules emit code (`TermEmitsT`; on integer
 contexts `termEmitsT_of_ctxInv` from `term_emits`, so `shapeOkT_complete_int` has the integer
-premises only). `Spill.LowT`/`lowT_of` (`Proof/SpillEdgesLowT.lean`, no premise) carry the label,
+premises only). `Spill.LowT`/`lowT_of` (`Proof/SpillEdgesLowT.lean`, no premise; since S11e6 slice 2b integer extern signatures) carry the label,
 position, target and edge facts (`LowT.edge_facts`: arguments are vregs of any class);
 `Low.toT`/`LowT.toLow` on integer contexts. `Compile.functionET` now also checks edge classes
 (`edgeClassOk`: branch arguments, a `try_call`'s value arguments and returned values have the
@@ -699,6 +699,39 @@ integer-argument family over `CtxT` is an instance. Witnesses `FVTest/Backend/Fl
 typed `LowerTryOk`), `call_indirect`/`try_call_indirect` (`sigIntB`), and plugging the families
 into the typed chain (`CtxInvT`'s `intArgs` without the `call` arguments, extern signatures
 `sigET` in the typed scope with an argument-class check).
+
+**S11e6 (#419), slice 2: typed `try_call`.** The lowering (2a, #540; 2b): `gen_try_call_rets`
+puts each return in the register of its class (`retRegsC`: x0.. / v0..; `retRegsC_int` on integer
+signatures), and `lowerFunction` (and its model `LowerLoopCode.bodyPart`/`tryTerm`) lowers a
+direct `try_call` with the typed operand, data and vregs (`exnTableOpndC`, `tryCallDataC`,
+`tryRegsOfC`: one fresh vreg per return of the return's class, the payload registers x0, x1 that
+are not return registers fresh integer vregs), so a callee with `f32`/`f64` parameters or returns
+no longer makes the function fall back ("try_call with f32/f64 parameters or returns"): such a
+function is outside the theorems' scope (the typed scope `functionET` keeps extern signatures
+integer) and compiles unverified; `try_call_indirect` keeps `sigIntB` (slice 3). The validator's
+model `DriverCheck.lowTerm` keeps the integer operand (`lowerCheck`/`lowerCheckT` reject a float
+`try_call`), so the typed loop statements take the externs' integer signatures (`Compile.sigE`,
+part of `functionE` and `functionET`): `loop_runT`, `lowerFunction_runT`, `Spill.lowT_of`
+(statements changed: without the premise they became false, `lowerFunction` now succeeding where
+`lowBlocks` does not); their users get it from `LowerScopeT.externsE`; `bodyPart_ok`/`blockStep`
+derive the integer data from the typed one by `tryCallData_of_C`. Witnesses
+`FVTest/Backend/FloatTryLower.lean` (`fTryF`:
+`%g(f64, i64) -> f64`, the `tryCall` uses v0, x0 and defines v0 into a float vreg and x0, x1 into
+integer payload vregs; `fTryMix`: returns in v0 and x0, x0's payload aliased to the second return;
+`runT_fTryI`, `lowT_fTryI`) and the runtests `FVTest/Backend/float_try.clif` (float returns, an
+`f32`/`i64` pair, a ninth `f64` argument on the stack, against Cranelift). The rules
+(`Proof/IselCtlTryF.lean`): `TryRulesCorrectTFP` (rules 1034 `bl`, 1035 GOT + `blr` over
+`CallCtxT`, every extern signature, the typed facts as premises) with the typed contract
+`LowerTryOkPC` (`LowerTryOkP` with return and payload vregs of either class;
+`LowerTryOkP.toC`), `tryRulesCorrectTFP_program`; `tryRegsOfC_defs`: the call's defs are
+`outDefsC b (ps ++ fr) (cs ++ ints)`, consecutive fresh vregs. Open: plugging the typed `try_call`
+family into the chain (with `lowTerm` on `exnTableOpndC`), `try_call_indirect` (slice 3).
+Measured (`cargo fv test --lean-link --build-std`, examples/fv-demo, 2026-10-23,
+`scripts/float-fallbacks.py --before` the std-t3b report): of std's 39 fallbacks "try_call with
+f32/f64 parameters or returns" 37 now compile (unverified, so cg_clif's code is kept under
+`--lean-link`), 1 is a `try_call_indirect` (slice 3), 1 stops at an `f64const` needing the
+literal pool (`emit_u64_le_const` unmodelled, #565). The runtests `float_try.clif` are
+byte-identical to stock Cranelift (`lean-backend-encode-check.sh`: 6/6).
 
 ## 4. Known hazards
 

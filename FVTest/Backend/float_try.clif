@@ -1,0 +1,72 @@
+test run
+target aarch64
+
+; S11e6 slice 2b (#419): direct `try_call`s of callees with `f32`/`f64` parameters or returns
+; (`exnTableOpndC`/`tryCallDataC`/`tryRegsOfC`). Before the slice `lowerFunction` rejected them
+; ("try_call with f32/f64 parameters or returns"). The callees return normally.
+; `scripts/lean-backend-filetests.sh FVTest/Backend/float_try.clif`.
+
+function %scale(f64, i64) -> f64 {
+block0(v0: f64, v1: i64):
+    v2 = fadd v0, v0
+    return v2
+}
+
+function %try_scale(f64, i64) -> f64 {
+    sig0 = (f64, i64) -> f64
+    fn0 = %scale(f64, i64) -> f64
+
+block0(v0: f64, v1: i64):
+    try_call fn0(v0, v1), sig0, block1(ret0), [ tag1: block2(exn0) ]
+
+block1(v2: f64):
+    return v2
+
+block2(v3: i64):
+    return v0
+}
+; run: %try_scale(0x1.8p1, 2) == 0x1.8p2
+; run: %try_scale(-0x1.0p0, 3) == -0x1.0p1
+
+function %pair(f32, i64) -> f32, i64 {
+block0(v0: f32, v1: i64):
+    v3 = iconst.i64 1
+    v2 = iadd v1, v3
+    return v0, v2
+}
+
+function %try_pair(f32, i64) -> i64, f32 {
+    sig0 = (f32, i64) -> f32, i64
+    fn0 = %pair(f32, i64) -> f32, i64
+
+block0(v0: f32, v1: i64):
+    try_call fn0(v0, v1), sig0, block1(ret1, ret0), [ tag1: block2(exn0) ]
+
+block1(v2: i64, v3: f32):
+    return v2, v3
+
+block2(v6: i64):
+    return v6, v0
+}
+; run: %try_pair(0x1.4p2, 10) == [11, 0x1.4p2]
+
+function %stk(f64, f64, f64, f64, f64, f64, f64, f64, f64) -> f64 {
+block0(v0: f64, v1: f64, v2: f64, v3: f64, v4: f64, v5: f64, v6: f64, v7: f64, v8: f64):
+    v9 = fsub v8, v0
+    return v9
+}
+
+function %try_stk(f64, f64) -> f64 {
+    sig0 = (f64, f64, f64, f64, f64, f64, f64, f64, f64) -> f64
+    fn0 = %stk(f64, f64, f64, f64, f64, f64, f64, f64, f64) -> f64
+
+block0(v0: f64, v1: f64):
+    try_call fn0(v0, v0, v0, v0, v0, v0, v0, v0, v1), sig0, block1(ret0), [ tag1: block2(exn0) ]
+
+block1(v2: f64):
+    return v2
+
+block2(v3: i64):
+    return v0
+}
+; run: %try_stk(0x1.0p0, 0x1.0p3) == 0x1.cp2

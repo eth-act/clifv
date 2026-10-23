@@ -5,8 +5,8 @@ import FV.Backend.Proof.LowerShapeOkT
 # The CFG facts of `lowerFunction`'s VCode, typed (S11e5 Stage C, slice 3)
 
 `LowT`: `Low` over the typed loop simulation (typed raw blocks `rawBlockT`, typed edge blocks
-`edgeBlocksT`, typed loop facts `LoopFactsT`). `lowT_of` needs no premise on `f`
-(`low_of` takes `Compile.functionE`). The label, block-position and target facts carry over
+`edgeBlocksT`, typed loop facts `LoopFactsT`). `lowT_of` takes the externs' integer signatures
+(`lowerFunction_runT`; `low_of` takes `Compile.functionE`). The label, block-position and target facts carry over
 (`LowT.labs`, `cases`, `raw_at`, `edge_at`, `edge_disj`, `raw_tgt`) and so does the last
 instruction of a block (`LowT.raw_back`, by the typed terminator shapes of
 `IselTermFactsTy`); an edge block's arguments are vregs of any class (`LowT.edge_facts`, where
@@ -29,10 +29,11 @@ structure LowT (f : Clif.Function) (vc : VCode) (ctx : Ctx) (st0 : LState) (bl :
   lf : LoopFactsT f ctx bl
   len : bl.length = f.blocks.length
 
-/-- **The typed lowering run**, on every input. -/
-theorem lowT_of {f : Clif.Function} {vc : VCode} (h : lowerFunction f = .ok vc) :
+/-- **The typed lowering run**, for a function whose externs have integer signatures. -/
+theorem lowT_of {f : Clif.Function} {vc : VCode} (hx : f.externs.all (Compile.sigE ·.2.sig) = true)
+    (h : lowerFunction f = .ok vc) :
     ∃ ctx st0 bl RR, LowT f vc ctx st0 bl RR := by
-  obtain ⟨ctx, ranges, st0, bl, hb, hl, hvb, -, hlf⟩ := lowerFunction_runT h
+  obtain ⟨ctx, ranges, st0, bl, hb, hl, hvb, -, hlf⟩ := lowerFunction_runT hx h
   rw [lowBlocks_eq] at hl
   cases hr : lowB f (stmtCall ctx) (termCallF ctx) (tryCallF ctx) 0 f.blocks st0 f.blocks.length with
   | none => rw [hr] at hl; cases hl

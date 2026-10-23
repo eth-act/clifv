@@ -426,8 +426,12 @@ theorem tryTerm_ok {f : Clif.Function} {ctx : Ctx} (hP : TryProg f ctx) {b : Cli
     (hT : TryOk f ctx et sig items) (hpar : ∀ q ∈ b.params, ∃ r, ctx.valueReg? q.1 = some r) :
     ∃ d', tryTerm f ctx b bi ti code d (termCtx ctx ti data) et = .ok (.yield d') := by
   obtain ⟨rets, pays, st', hreg, hrl, hpl⟩ := tryRegsOf_ok hT.rets d.st
+  have hregC : tryRegsOfC sig d.st = some ((rets, pays), st') := by
+    rw [tryRegsOfC_eq (sigRets_classes_int (sigIntB_iff.mp (exnTableOpnd_int hT.opnd)).2)]
+    exact hreg
   unfold tryTerm
-  simp only [bind, Except.bind, hT.opnd, hreg, hT.i128, Bool.false_eq_true, ite_false]
+  simp only [bind, Except.bind, exnTableOpndC_of hT.opnd, hregC, hT.i128, Bool.false_eq_true,
+    ite_false]
   obtain ⟨s, hs, hsz⟩ := forIn_ok (tryBody f ctx rets.toArray pays.toArray et.handlers.length)
     (fun j (s : DState × Array Label) => s.2.size = j) et.dests.zipIdx 0 ({ d with st := st' }, #[])
     rfl (fun x hx j s hj => by
@@ -549,12 +553,12 @@ theorem bodyPart_ok' {f : Clif.Function} {ctx : Ctx} {ranges : Array (Nat × Nat
   · rename_i fn args et heq
     have hd' : tryCallData f B.term = .ok data := by
       unfold DataOk at hd; rw [heq] at hd ⊢; exact hd
-    simp only [hd']
+    simp only [tryCallDataC_of hd']
     exact termPart_ok' hP hBm hti (by rwa [heq] at hd ⊢) hsret hdests htry hpar
   · rename_i c args et heq
     have hd' : tryCallData f B.term = .ok data := by
       unfold DataOk at hd; rw [heq] at hd ⊢; exact hd
-    simp only [hd']
+    simp only [tryCallDataC_of hd']
     exact termPart_ok' hP hBm hti (by rwa [heq] at hd ⊢) hsret hdests htry hpar
   · rename_i h2 h3
     have hd' : termData (abiTerm f B.term) = .ok data := by

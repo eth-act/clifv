@@ -47,11 +47,11 @@ theorem runT_mv : ∃ ctx ranges st0 bl, buildCtx fMv = .ok (ctx, ranges, st0) �
       some bl ∧
     (vcOf fMv).blocks = vcBlocksOfT fMv ctx bl ∧ (vcOf fMv).outgoing = outOf st0 bl ∧
     LoopFactsT fMv ctx bl :=
-  lowerFunction_runT lowerFunction_mv
+  lowerFunction_runT (by native_decide) lowerFunction_mv
 
 /-- **Slice 3 witness**: the typed lowering run (`LowT`) of a float-movement function. -/
 theorem lowT_mv : ∃ ctx st0 bl RR, Spill.LowT fMv (vcOf fMv) ctx st0 bl RR :=
-  Spill.lowT_of lowerFunction_mv
+  Spill.lowT_of (by native_decide) lowerFunction_mv
 
 /-- **Slice 3 witness**: `fMv`'s float `brif` argument `v8` has its target parameter's class. -/
 theorem edgeClass_mv : ∃ ctx ranges st0, buildCtx fMv = .ok (ctx, ranges, st0) ∧
@@ -84,7 +84,7 @@ theorem shapeOkT_fI : ∃ ctx ranges st0 bl, buildCtx fI = .ok (ctx, ranges, st0
     shapeOkT fI (vcOf fI) ctx st0 (gnAt (gnTable st0.nextVreg (aliasOf fI bl))) bl = true := by
   have hd := dominated_of (by native_decide : dominatedB fI = true)
   have hs := lowerScope_of (by native_decide : lowerScopeB fI = true)
-  obtain ⟨ctx, ranges, st0, bl, hb, hl, -, -, -⟩ := lowerFunction_runT lowerFunction_fI
+  obtain ⟨ctx, ranges, st0, bl, hb, hl, -, -, -⟩ := lowerFunction_runT (by native_decide) lowerFunction_fI
   obtain ⟨hu, -, hwf⟩ := alias_facts hd hs hb hl
   exact ⟨ctx, ranges, st0, bl, hb, hl, shapeOkT_complete lowerFunction_fI hs.toT hd.ssa hb
     (termEmitsT_of_ctxInv (ctxOk_sound (ctxOk_complete hs hb))) hl hu hwf⟩
@@ -93,7 +93,7 @@ theorem shapeOkT_fI : ∃ ctx ranges st0 bl, buildCtx fI = .ok (ctx, ranges, st0
 theorem lowerShapeT_fI : ∃ ctx st0 R gn bl, LowerShapeT fI (vcOf fI) ctx st0 R gn bl := by
   have hd := dominated_of (by native_decide : dominatedB fI = true)
   have hs := lowerScope_of (by native_decide : lowerScopeB fI = true)
-  obtain ⟨ctx, ranges, st0, bl, hb, hl, -, -, -⟩ := lowerFunction_runT lowerFunction_fI
+  obtain ⟨ctx, ranges, st0, bl, hb, hl, -, -, -⟩ := lowerFunction_runT (by native_decide) lowerFunction_fI
   obtain ⟨hu, -, hwf⟩ := alias_facts hd hs hb hl
   exact ⟨ctx, st0, _, _, bl, lowerShapeT_of_lower lowerFunction_fI hs.toT hd.ssa hb
     (termEmitsT_of_ctxInv (ctxOk_sound (ctxOk_complete hs hb))) hl hu hwf⟩
@@ -107,7 +107,7 @@ theorem run_fI : ∃ ctx ranges st0 bl, buildCtx fI = .ok (ctx, ranges, st0) ∧
 
 /-- **Slice 3 witness**: a typed run of an integer function is the integer `Low`. -/
 theorem low_fI : ∃ ctx st0 bl RR, Spill.Low fI (vcOf fI) ctx st0 bl RR := by
-  obtain ⟨ctx, st0, bl, RR, H⟩ := Spill.lowT_of lowerFunction_fI
+  obtain ⟨ctx, st0, bl, RR, H⟩ := Spill.lowT_of (by native_decide) lowerFunction_fI
   obtain ⟨ranges, hb⟩ := H.hb
   exact ⟨ctx, st0, bl, RR, H.toLow ((ctxSpec_of hb).ctxE (by native_decide))⟩
 

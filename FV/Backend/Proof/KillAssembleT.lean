@@ -677,7 +677,7 @@ theorem killFreeB_lowerT (hK : KillRunsHypT) (hX : TryDefsExactT) {f : Clif.Func
     (hd : Dominated f) (hs : LowerScopeT f) (ha : AbiSigsOk f) (har : ArityOk f)
     (htc : Compile.tryArgClassOk f = true)
     (hl : lowerFunction f = .ok vc) : killFreeB vc = true := by
-  obtain ⟨ctx, ranges, st0, bl, hb, hlb, hvb, -, hlf⟩ := lowerFunction_runT hl
+  obtain ⟨ctx, ranges, st0, bl, hb, hlb, hvb, -, hlf⟩ := lowerFunction_runT hs.externsE hl
   have H : LowT f vc ctx st0 bl (asmR f bl) := by
     have hlb' := hlb
     rw [lowBlocks_eq] at hlb'
