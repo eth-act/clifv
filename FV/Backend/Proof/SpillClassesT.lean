@@ -69,7 +69,7 @@ theorem stmt_clsT {f : Clif.Function} {ctx : Ctx} (hctx : CtxInvT f ctx) (hsc : 
       simp only [h587, bne_self_eq_false, Bool.false_or, Bool.and_eq_true, beq_iff_eq] at hop
       have hn := pinned_namesT hctx hi hc hop.1 kind_nullAry kind_nop (by decide) hm
       rw [variantNames_Nop] at hn
-      have hnop := instNames_nop (Option.some.inj hn).symm
+      have hnop := Driver.instNames_nop (Option.some.inj hn).symm
       subst hnop
       obtain ⟨tys, hty, -, hlen⟩ := hctx.resTys ii info .nop hi hc
       simp [Clif.Inst.resultTypes] at hty
