@@ -160,9 +160,20 @@ The proof covers them as follows.
   `backend_correct_finalT_abi`, `backend_correct_finalT_sret` for an integer `sret` parameter;
   driver `term_stepT_abi`/`sim_runT_abi`/`driver_correctT_abi`, `term_stepT`/`sim_runT`/
   `driver_correctT` the corollaries; witness `SretReturnWitness.sw_returns_sretT`).
-  The other variants (`_unwind`, the linked and executable theorems) keep the
-  CLIF-values conclusion: in a linked program the callers are Lean-compiled and never read x0
-  after an `sret` call.
+  The executable theorem has its copy too: `Link.DeadCleanup.compileExe_correct_abi`
+  (`FV/Link/DeadCleanupExeAbi.lean`; premise `sretStableB f` for the outside-called `f`,
+  conclusion `ExecRefinesAbi … (sretArg f args)`), through `FV/E2E/SretReturnLink.lean`
+  (`backend_correct_program_{core,budget,stack}_abi`, `binary_correct{,_of_checks}_abi`,
+  `binary_correct_exec_{staticN,of_reads,of_insn,proven}_abi`) and `FV/E2E/SretReturnWorld.lean`
+  (`backend_correct_world{,_cleanup,_pipeline}_abi`). Only the outside activation's return is
+  strengthened: its return branch applies `backend_correct_world_pipeline_abi` to `f` with the
+  callee contracts of the unchanged linked induction (`LinkSys.thm` at depth `M - 1`), so a
+  compiled callee's contract still claims only its CLIF results (a Lean-compiled caller never
+  reads x0 after an `sret` call). `sret_reach` holds for the per-activation run on `P.bare`
+  (no program functions, every call an extern). Witness: `Link.DeadCleanup.SretWitness
+  .exec_returns_sret` (`function %s(i64 sret)` compiled by `compileExeU`, x0 = the pointer).
+  The other variants (`_unwind`, `backend_correct_legal*`, `_opt*`) keep the CLIF-values
+  conclusion.
 * **Calls**: `gen_call_args` puts argument `i` at `(locsOf sig)[i]`: a register (with at most 8
   parameters `x (abiArgIdx …)[i]`, `sigArgLocs_regs`) or a store to `[sp + off]` of the outgoing
   area (`argStores_run`); `gen_call_output` allocates one def per
