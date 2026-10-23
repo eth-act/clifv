@@ -34,7 +34,7 @@ spill fallback, V4), `FV/Backend/Regalloc.lean`
 
 ```mermaid
 flowchart LR
-  A["Isel: VCode<br/>(vregs, block params,<br/>branch args)"] --> B["prepare<br/>(drop unreachable,<br/>split critical edges, RPO)"]
+  A["Isel: VCode<br/>(vregs, block params,<br/>branch args)"] --> B["prepare<br/>(drop unreachable,<br/>split critical edges,<br/>Cranelift block order)"]
   B --> C["vcodeJson + aarch64Env"]
   C -- "JSON (file)" --> D["lean-regalloc<br/>(regalloc2, UNTRUSTED)"]
   D -- "allocs, edits,<br/>num_spillslots" --> E["buildRFunc<br/>(+ callee-saved saves/restores)"]
@@ -72,6 +72,10 @@ its result registers (`gen_call_info`). Terminators: `is_ret` = `Rets` or a bloc
 branch arguments are regalloc2 block params / branch args (Cranelift's shape: one argument
 list per block, the same for every successor; conditional branches with arguments get edge
 blocks from `Isel`, so a branch with ≥2 successors carries no arguments after `prepare`).
+`prepare` orders the blocks as Cranelift's `BlockLoweringOrder` (`blockorder.rs:204-233`):
+the reverse postorder of the original blocks, each followed right away by the edge blocks that
+split its critical edges, in successor order (`prepOrder`; `Prep.prepOrder_spec` gives
+`rpo_spec`'s facts for it, witness `Prep.prepOrder_witness`).
 
 ### MachineEnv (`aarch64Env` = `create_reg_env(enable_pinned_reg = false)`)
 
