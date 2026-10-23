@@ -9,8 +9,8 @@ variable {V W : Type}
 
 /-- The unconsumed cleaned suffix agrees on the registers its original suffix
 can still read. Removed producers are matched by zero steps. After a dropped compare
-(`pend`) the worlds may differ until the next retained instruction, a compare, overwrites
-the difference. -/
+(`pend`) the worlds may differ (`FlagsPend`) while the retained suffix runs flag-free
+producers, until a retained compare overwrites the difference. -/
 inductive Rel (vc : VCode) (sem : ISem V W) : VConf V W → VConf V W → Prop
   | run {b k k' a c w vb} (hb : vc.blocks[b]? = some vb)
       (hsuffix : (cleanBlock vc 0 vb).insts.toList.drop k' =
@@ -21,9 +21,8 @@ inductive Rel (vc : VCode) (sem : ISem V W) : VConf V W → VConf V W → Prop
       (hsuffix : (cleanBlock vc 0 vb).insts.toList.drop k' =
         (scan vc.classes.size (vb.insts.toList.drop k) (exitLive vc 0 vb)).1)
       (ha : Agree (scan vc.classes.size (vb.insts.toList.drop k) (exitLive vc 0 vb)).2 a c)
-      (hhead : ∃ K rest, (cleanBlock vc 0 vb).insts.toList.drop k' = K :: rest ∧
-        cmpForm K = true)
-      (hov : ∀ K us r, cmpForm K = true → sem K us w = some r → sem K us w' = some r) :
+      (hdead : flagsDead ((cleanBlock vc 0 vb).insts.toList.drop k') = true)
+      (hov : FlagsPend sem w w') :
       Rel vc sem (.run ⟨b, k, a, w⟩) (.run ⟨b, k', c, w'⟩)
   | ret (vals : List V) (w : W) : Rel vc sem (.ret vals w) (.ret vals w)
   | halt (w : W) : Rel vc sem (.halt w) (.halt w)
@@ -56,12 +55,11 @@ private theorem rel_run_cases {vc : VCode} {sem : ISem V W} {b k : Nat} {a : Nat
       (cleanBlock vc 0 vb).insts.toList.drop k' =
         (scan vc.classes.size (vb.insts.toList.drop k) (exitLive vc 0 vb)).1 ∧
       Agree (scan vc.classes.size (vb.insts.toList.drop k) (exitLive vc 0 vb)).2 a c ∧
-      (wc = w ∨ ((∃ K rest, (cleanBlock vc 0 vb).insts.toList.drop k' = K :: rest ∧
-        cmpForm K = true) ∧
-        ∀ K us r, cmpForm K = true → sem K us w = some r → sem K us wc = some r)) := by
+      (wc = w ∨ (flagsDead ((cleanBlock vc 0 vb).insts.toList.drop k') = true ∧
+        FlagsPend sem w wc)) := by
   cases hr with
   | run hb hsuffix ha => exact ⟨_, _, _, _, rfl, hb, hsuffix, ha, .inl rfl⟩
-  | pend hb hsuffix ha hhead hov => exact ⟨_, _, _, _, rfl, hb, hsuffix, ha, .inr ⟨hhead, hov⟩⟩
+  | pend hb hsuffix ha hdead hov => exact ⟨_, _, _, _, rfl, hb, hsuffix, ha, .inr ⟨hdead, hov⟩⟩
 
 /-- Rebuild the relation from the shared data. -/
 private theorem rel_of_cases {vc : VCode} {sem : ISem V W} {b k k' a c w wc vb}
@@ -69,13 +67,12 @@ private theorem rel_of_cases {vc : VCode} {sem : ISem V W} {b k k' a c w wc vb}
     (hsuffix : (cleanBlock vc 0 vb).insts.toList.drop k' =
       (scan vc.classes.size (vb.insts.toList.drop k) (exitLive vc 0 vb)).1)
     (ha : Agree (scan vc.classes.size (vb.insts.toList.drop k) (exitLive vc 0 vb)).2 a c)
-    (hw : wc = w ∨ ((∃ K rest, (cleanBlock vc 0 vb).insts.toList.drop k' = K :: rest ∧
-        cmpForm K = true) ∧
-        ∀ K us r, cmpForm K = true → sem K us w = some r → sem K us wc = some r)) :
+    (hw : wc = w ∨ (flagsDead ((cleanBlock vc 0 vb).insts.toList.drop k') = true ∧
+        FlagsPend sem w wc)) :
     Rel vc sem (.run ⟨b, k, a, w⟩) (.run ⟨b, k', c, wc⟩) := by
-  rcases hw with rfl | ⟨hhead, hov⟩
+  rcases hw with rfl | ⟨hdead, hov⟩
   · exact .run hb hsuffix ha
-  · exact .pend hb hsuffix ha hhead hov
+  · exact .pend hb hsuffix ha hdead hov
 
 private theorem writeV_nil (ρ : Nat → V) : writeV ρ [] = ρ := rfl
 
@@ -114,7 +111,7 @@ theorem step_sim {vc : VCode} {sem : ISem V W}
     · have hd0 : discard i live = false := by
         cases he : discard i live <;> simp_all
       by_cases hdc : dropCmp i kept = true
-      · -- a dropped compare: the worlds now differ until the next retained compare
+      · -- a dropped compare: the worlds now differ until a retained compare
         obtain ⟨hc, hov⟩ := hcmp _ _ _ _ _ _ (dropCmp_cmp hdc) hs
         subst ctl
         have hnd := dropCmp_noDef hdc hop
@@ -124,14 +121,10 @@ theorem step_sim {vc : VCode} {sem : ISem V W}
           simp only [hdrop, scan, hd0, hdc, Bool.false_or, ↓reduceIte] at ha hsuffix
           refine ⟨.run ⟨b, k', c, wc⟩, .refl _, ?_⟩
           simp only [hnd, List.zip_nil_left, List.filter_nil, writeV_nil]
-          refine .pend hb hsuffix ha ?_ ?_
-          · obtain ⟨K, rest, he, hK⟩ := dropCmp_head hdc
-            exact ⟨K, rest, hsuffix.trans he, hK⟩
-          · intro K us r hK hr
-            have h1 := hov K us r hK hr
-            rcases hw with rfl | ⟨-, hov0⟩
-            · exact h1
-            · exact hov0 K us r hK h1
+          refine .pend hb hsuffix ha (by rw [hsuffix]; exact dropCmp_dead hdc) ?_
+          rcases hw with rfl | ⟨-, hov0⟩
+          · exact hov
+          · exact hov.trans hov0
       · have hdc0 : dropCmp i kept = false := by
           cases he : dropCmp i kept <;> simp_all
         dsimp only [live, kept, tail] at hd0 hdc0
@@ -145,15 +138,22 @@ theorem step_sim {vc : VCode} {sem : ISem V W}
           have he := congrArg (List.drop 1) hsuffix
           simpa [List.drop_drop, Nat.add_comm] using he
         have hu : vuses ops a = vuses ops c := retained_uses ha hop
-        have hsw : sem i (vuses ops a) wc = some (outs, w', ctl) := by
-          rcases hw with rfl | ⟨⟨K, rest, hK, hKc⟩, hov⟩
-          · exact hs
-          · have hiK : i = K := by
-              rw [hsuffix] at hK
-              exact (List.cons.inj hK).1
-            subst hiK
-            exact hov _ _ _ hKc hs
-        have hsc : sem i (vuses ops c) wc = some (outs, w', ctl) := by rw [← hu]; exact hsw
+        -- the cleaned step: the same values; with pending flags, a retained compare reaches
+        -- the original world, a flag-free producer keeps both worlds
+        obtain ⟨wc', hsc, hw'⟩ : ∃ wc', sem i (vuses ops c) wc = some (outs, wc', ctl) ∧
+            (wc' = w' ∨ (ctl = .next ∧
+              flagsDead ((cleanBlock vc 0 vb).insts.toList.drop (k' + 1)) = true ∧
+              FlagsPend sem w' wc')) := by
+          rw [← hu]
+          rcases hw with rfl | ⟨hdead, hov⟩
+          · exact ⟨w', hs, .inl rfl⟩
+          · rw [hsuffix] at hdead
+            rcases flagsDead_cons hdead with hK | ⟨-, hff, hdead'⟩
+            · exact ⟨w', hov.1 i _ _ hK hs, .inl rfl⟩
+            · obtain ⟨rfl, rfl⟩ := hp _ _ _ _ _ _ (pureForm_of_flagFree hff) hs
+              exact ⟨wc, hov.2 i _ outs .next hff hs, .inr ⟨rfl, by rw [htail]; exact hdead', hov⟩⟩
+        have hstop : ctl ≠ .next → wc' = w' := fun hn =>
+          hw'.resolve_right (fun h => hn h.1)
         have hau : Agree live (vdefUpd ops outs a) (vdefUpd ops outs c) :=
           retained_updates_agree hop ha outs hl
         have hclean := clean_block hb
@@ -167,10 +167,11 @@ theorem step_sim {vc : VCode} {sem : ISem V W}
             have hnil : (cleanBlock vc 0 vb).insts.toList.drop (k' + 1) = [] :=
               List.drop_eq_nil_of_le (by simpa using hh)
             exact hne (htail.symm.trans hnil)
-          refine ⟨.run ⟨b, k' + 1, vdefUpd ops outs c, w'⟩,
+          refine ⟨.run ⟨b, k' + 1, vdefUpd ops outs c, wc'⟩,
             .step (VStep.step hclean hhead hop hsc hl (VNext.next hkl)) (.refl _),
-            .run hb htail hau⟩
+            rel_of_cases hb htail hau (hw'.imp_right fun h => h.2)⟩
         | @goto j s a' hk hsucc hedge =>
+          have e := hstop (by intro h; cases h); subst wc'
           have hempty : tail = [] := List.drop_eq_nil_of_le (by simp only [Array.length_toList]; omega)
           have hau' : Agree (exitLive vc 0 vb) (vdefUpd ops outs a) (vdefUpd ops outs c) := by
             simpa [live, hempty, scan] using hau
@@ -194,11 +195,13 @@ theorem step_sim {vc : VCode} {sem : ISem V W}
           · simp [cleanBlock]
           · exact scan_entry_agree (Array.mem_toList_iff.mpr (Array.mem_of_getElem? hsb)) hag
         | ret he =>
+          have e := hstop (by intro h; cases h); subst wc'
           refine ⟨.ret (vuses ops c) w',
             .step (VStep.step hclean hhead hop hsc hl (VNext.ret he)) (.refl _), ?_⟩
           rw [← hu]
           exact .ret _ _
         | halt =>
+          have e := hstop (by intro h; cases h); subst wc'
           exact ⟨.halt w', .step (VStep.step hclean hhead hop hsc hl VNext.halt) (.refl _), .halt _⟩
 
 /-- Whole finite runs preserve the simulation relation, including loop edges. -/
@@ -237,13 +240,12 @@ theorem rel_kept {vc : VCode} {sem : ISem V W} {b k : Nat} {a : Nat → V} {w : 
   simp only [hdrop, scan, discard, hp, dropCmp, hc, Bool.false_and, Bool.false_or,
     Bool.false_eq_true, ↓reduceIte] at ha hsuffix
   have hwc : wc = w := by
-    rcases hw with h | ⟨⟨K, rest, hK, hKc⟩, -⟩
+    rcases hw with h | ⟨hdead, -⟩
     · exact h
-    · rw [hsuffix] at hK
-      have hiK : i = K := (List.cons.inj hK).1
-      subst hiK
-      rw [hc] at hKc
-      cases hKc
+    · rw [hsuffix] at hdead
+      rcases flagsDead_cons hdead with hK | ⟨-, hff, -⟩
+      · rw [hc] at hK; cases hK
+      · rw [pureForm_of_flagFree hff] at hp; cases hp
   subst hwc
   have hhead : (cleanBlock vc 0 vb).insts[k']? = some i := by
     have he := congrArg (·[0]?) hsuffix

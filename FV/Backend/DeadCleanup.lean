@@ -20,11 +20,12 @@ def pureNoFlags : MInst → Bool
   | _ => false
 
 /-- The explicit whitelist excludes flag writers, memory accesses, calls, traps and control:
-`pureNoFlags` and `cset`, which reads the flags but writes only its def. Cranelift does not
-lower an instruction none of whose results is used (`machinst/lower.rs`), e.g. the boolean of
-an `icmp` that the `brif` rule re-compares (#552). -/
+`pureNoFlags`, the integer extensions (`uxtb`/`sxth`/…), and `cset`, which reads the flags
+but writes only its def. Cranelift does not lower an instruction none of whose results is
+used (`machinst/lower.rs`), e.g. the boolean of an `icmp` that the `brif` rule re-compares,
+with the operand extension of that compare (#552). -/
 def pureForm : MInst → Bool
-  | .mov .. | .movWide .. | .loadAddr .. | .cset .. => true
+  | .mov .. | .movWide .. | .loadAddr .. | .extend .. | .cset .. => true
   | .aluRRR op .. | .aluRRImm12 op .. | .aluRRImmLogic op ..
   | .aluRRImmShift op .. | .aluRRRShift op .. | .aluRRRExtend op .. => pureAlu op
   | .aluRRRR .mAdd .. | .aluRRRR .mSub .. => true
@@ -34,6 +35,17 @@ theorem pureForm_of_pureNoFlags {i : MInst} (h : pureNoFlags i = true) : pureFor
   cases i with
   | aluRRRR op sz rd rn rm ra => cases op <;> simp_all [pureNoFlags, pureForm]
   | _ => simp_all [pureNoFlags, pureForm]
+
+/-- The producers that neither read nor write the flags (`pureNoFlags` and the extensions):
+what may sit between a dropped compare and the compare that overwrites its flags. -/
+def flagFree (m : MInst) : Bool :=
+  pureNoFlags m || (match m with | .extend .. => true | _ => false)
+
+theorem pureForm_of_flagFree {i : MInst} (h : flagFree i = true) : pureForm i = true := by
+  simp only [flagFree, Bool.or_eq_true] at h
+  rcases h with h | h
+  · exact pureForm_of_pureNoFlags h
+  · cases i <;> simp_all [pureForm]
 
 def regNums (rs : List Reg) : List Nat :=
   rs.filterMap fun r => match r with | .vreg n _ => some n | _ => none
@@ -57,7 +69,7 @@ def discard (m : MInst) (live : List Nat) : Bool :=
 /-- Cranelift's compares (`cmp`/`cmn`/`tst`: `subs`/`adds`/`ands` into `xzr`) in the forms
 `ispec` specifies: they write all four NZCV flags from their register uses only, read no
 flags and define no register. -/
-@[simp] def cmpForm : MInst → Bool
+def cmpForm : MInst → Bool
   | .aluRRR .subS _ .xzr (.vreg ..) _ => true
   | .aluRRImm12 .subS _ .xzr (.vreg ..) _ => true
   | .aluRRImm12 .addS _ .xzr (.vreg ..) _ => true
@@ -65,12 +77,18 @@ flags and define no register. -/
   | .aluRRImmLogic .andS _ .xzr (.vreg ..) _ => true
   | _ => false
 
-/-- A compare whose flags the next retained instruction, itself a compare, overwrites before
-anything reads them: what is left of an `icmp` whose user (`brif`, `select`) compares again
-once its dead `cset` is gone (#552). Cranelift never lowers that `icmp`: no lowered
-instruction uses its result (`machinst/lower.rs`, `lower_clif_block`). -/
+/-- The flags are dead at the head of a retained suffix: a compare overwrites them after
+flag-free producers only, before anything reads them. -/
+@[simp] def flagsDead : List MInst → Bool
+  | [] => false
+  | k :: ks => cmpForm k || (flagFree k && flagsDead ks)
+
+/-- A compare whose flags are dead: what is left of an `icmp` whose user (`brif`, `select`)
+compares again once its dead `cset` is gone (#552). Cranelift never lowers that `icmp`: no
+lowered instruction uses its result (`machinst/lower.rs`, `lower_clif_block`), and its
+users' rules look through it to its operands (`isa/aarch64/lower.isle`). -/
 @[simp] def dropCmp (m : MInst) (kept : List MInst) : Bool :=
-  cmpForm m && (defs m).isEmpty && (kept.head?.map cmpForm).getD false
+  cmpForm m && (defs m).isEmpty && flagsDead kept
 
 /-- Scan backwards; removing a dead producer does not make its inputs live. -/
 def scan (nregs : Nat) : List MInst → List Nat → List MInst × List Nat

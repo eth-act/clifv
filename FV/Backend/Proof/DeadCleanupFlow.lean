@@ -44,6 +44,13 @@ theorem pureForm_notTerminator {m : MInst} (hp : pureForm m = true) :
     m.isTerminator = false := by
   cases m <;> simp [pureForm, MInst.isTerminator, MInst.isBranch, MInst.isRet] at *
 
+/-- Compares cannot be block terminators. -/
+theorem cmpForm_of_terminator {m : MInst} (h : m.isTerminator = true) : cmpForm m = false := by
+  cases hc : cmpForm m
+  · rfl
+  · unfold cmpForm at hc
+    split at hc <;> simp_all [MInst.isTerminator, MInst.isBranch, MInst.isRet]
+
 /-- A successful CFG's final terminator survives cleanup. -/
 theorem cleanBlock_back (vc : VCode) (idx : Nat) (b : VBlock) {t : MInst}
     (ht : b.insts.back? = some t) (hterm : t.isTerminator = true) :

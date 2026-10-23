@@ -25,9 +25,26 @@ example : (scan 4 [cmp01, deadCset, cmp01, liveCset, retCset] []).1 =
 example : (scan 4 [cmp01, cmp0, liveCset, retCset] []).1 = [cmp0, liveCset, retCset] := by
   decide
 
-/-- A compare whose flags a `cset` reads is kept. -/
+/-- A compare whose flags a `cset` reads is kept; so is one whose flags reach the block end. -/
 example : (scan 4 [cmp01, liveCset, cmp0, retCset] []).1 =
-    [cmp01, liveCset, retCset] := by decide
+    [cmp01, liveCset, cmp0, retCset] := by decide
+
+private def movA : MInst := .mov .size64 (.vreg 6 .int) (.vreg 1 .int)
+private def ret2 : MInst := .rets [(.vreg 3 .int, .x 0), (.vreg 6 .int, .x 1)]
+private def ext4 : MInst := .extend (.vreg 4 .int) (.vreg 0 .int) false 8 32
+private def cmpE4 : MInst := .aluRRImm12 .subS .size32 .xzr (.vreg 4 .int) ⟨45, false⟩
+private def ext5 : MInst := .extend (.vreg 5 .int) (.vreg 0 .int) false 8 32
+private def cmpE5 : MInst := .aluRRImm12 .subS .size32 .xzr (.vreg 5 .int) ⟨45, false⟩
+
+/-- A live flag-free producer between the compares (`cmp; mov; cmp; csel`): the first
+compare goes, the producer stays. -/
+example : (scan 7 [cmp01, movA, cmp0, liveCset, ret2] []).1 = [movA, cmp0, liveCset, ret2] := by
+  decide
+
+/-- The `icmp` of an `i8` (`uxtb; cmp`) whose user compares again (`uxtb; cmp; b.eq`): the first
+compare goes, and with it its extension, as in Cranelift's single `uxtb; cmp`. -/
+example : (scan 7 [ext4, cmpE4, ext5, cmpE5, liveCset, retCset] []).1 =
+    [ext5, cmpE5, liveCset, retCset] := by decide
 
 example : ∃ vc : VCode, vc.blocks.size = 1 ∧
     (clean vc).blocks[0]!.insts.toList = [cmp01, liveCset, retCset] := by

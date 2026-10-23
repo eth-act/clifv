@@ -43,7 +43,8 @@ example (w : Arm.ArmState) :
       VStep.step rfl rfl (show liveBic.operands = .ok bicOps from rfl)
         rfl rfl (VNext.next (by decide))
     exact .step h1 (.step h2 (.refl _))
-  exact ⟨h, returns_clean (fun _ _ _ _ _ _ hp hs => mspec_pure hp hs) witnessTerminated h⟩
+  exact ⟨h, returns_clean (fun _ _ _ _ _ _ hp hs => mspec_pure hp hs) (mspec_cmpOverwrite 0)
+    witnessTerminated h⟩
 
 /-- Non-vacuity for trap preservation: a real `udf` is retained and remains
 observable after its dead pure prefix is removed. -/
@@ -64,6 +65,7 @@ example (w : Arm.ArmState) : ∃ vc : VCode,
       rfl, rfl, rfl, rfl, rfl⟩
     exact .step (VStep.step rfl rfl (show deadMvn.operands = .ok mvnOps from rfl)
       rfl rfl (VNext.next (by decide))) (.refl _)
-  exact ⟨vc, h, traps_clean (fun _ _ _ _ _ _ hp hs => mspec_pure hp hs) ht h⟩
+  exact ⟨vc, h, traps_clean (fun _ _ _ _ _ _ hp hs => mspec_pure hp hs) (mspec_cmpOverwrite 0)
+    ht h⟩
 
 end Backend.DeadCleanup

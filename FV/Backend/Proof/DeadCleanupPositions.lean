@@ -6,7 +6,7 @@ namespace Backend.DeadCleanup
 theorem scan_head (n : Nat) (i : MInst) (ms : List MInst) (live : List Nat)
     (hp : pureForm i = false) (hc : cmpForm i = false) :
     (scan n (i :: ms) live).1 = i :: (scan n ms live).1 := by
-  simp [scan, discard, hp, hc]
+  simp [scan, discard, dropCmp, hp, hc]
 
 /-- An exceptional instruction confined to position zero cannot move away
 from position zero when all other instructions satisfy a positional-free fact. -/
