@@ -39,7 +39,7 @@ theorem driverHypT_relW_of {sem : Sem} (hsub : InSubsetT p f) (hT : TypedRules)
     (hbr : ∀ B ∈ f.blocks, BrIdxTyped ctx B.term) :
     DriverHypT f vc ctx st0 R gn bl A sem (RelW ⟨F, syms, slotOff, out⟩ f c) env p := by
   let Γ : Rel := ⟨F, syms, slotOff, out⟩
-  have hctxT : CtxT f ctx := ⟨hshape.ctxInvT, hshape.scope, functionET_externs hsub.subsetET⟩
+  have hctxT : CtxT f ctx := CtxT.ofExterns hshape.ctxInvT hshape.scope (functionET_externs hsub.subsetET)
   have hstT : StoresTyped ctx := storesTyped_of_buildCtx hsub.storeTyped hshape.hctx.choose_spec
   exact {
     shape := hshape
