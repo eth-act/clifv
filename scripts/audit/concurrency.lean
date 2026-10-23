@@ -1018,3 +1018,13 @@ import FVTest.Concurrency.LitmusFull
 #print axioms Concurrency.CallSegAbi.prun_prologueG
 #print axioms Concurrency.CallSegAbi.arm_isel_refines_abiCRN
 #print axioms Concurrency.CallSegAbi.Witness.arm_abiCRN_fC -- witness: native_decide
+#print axioms Concurrency.CallSegT.crun_split
+#print axioms Concurrency.CallSegT.readsAvoid_or_cut
+#print axioms Concurrency.CallSegT.uniform_take
+#print axioms Concurrency.PrivCohT.RefinesT.mono0
+#print axioms Concurrency.CallSegT.notClean_sub
+#print axioms Concurrency.CallSegT.realizedT_seg
+#print axioms Concurrency.CallSegT.realizedT_cut
+#print axioms Concurrency.CallSegT.Witness.avoid_written
+#print axioms Concurrency.CallSegT.Witness.cut_unwritten
+#print axioms Concurrency.CallSegT.Witness.seg_nil
