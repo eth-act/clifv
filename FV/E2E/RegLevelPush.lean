@@ -1,6 +1,9 @@
 import FV.Backend.Proof.RegallocSlots
 import FV.Backend.Proof.RegallocMem
 import FV.Backend.Proof.IselCtlTerm
+import FV.Backend.Proof.RegallocMemAddr
+import FV.E2E.ExecReads
+import FV.E2E.Statement
 
 /-!
 # The callee-save pushes and pops on the machine (#549, #479)
@@ -13,9 +16,181 @@ low 64 bits at `sp_new + 8 i`; `popLines_ok`: the pops read them back (the upper
 `v` register cleared) and raise `sp` by `pushBytes`.
 -/
 
-open Backend
+open Backend E2E
 
 namespace Backend.Proof
+
+/-! ## Exec lemmas -/
+
+theorem add_neg16 (x : BitVec 64) : x + 18446744073709551600#64 = x - 16#64 := by bv_omega
+
+theorem imm12_bv {i : Imm12} (hi : i.bits < 4096) :
+    (if i.shift12 = false then 0#52 ++ BitVec.ofNat 12 i.bits
+      else (0#52 ++ BitVec.ofNat 12 i.bits) <<< 12) = BitVec.ofNat 64 i.value := by
+  apply BitVec.eq_of_toNat_eq
+  have e : (0#52 ++ BitVec.ofNat 12 i.bits).toNat = i.bits := by
+    rw [BitVec.toNat_append]; simp; omega
+  cases h : i.shift12 <;> simp [Imm12.value, h, BitVec.toNat_shiftLeft, Nat.shiftLeft_eq, e] <;> omega
+
+theorem extend_uxtx0 (x : BitVec 64) :
+    Arm.extend_reg x (Arm.decode_reg_extend ExtendOp.uxtx.bits) 0 = x := by
+  have e : Arm.decode_reg_extend ExtendOp.uxtx.bits = .UXTX := rfl
+  rw [e]
+  apply BitVec.eq_of_toNat_eq
+  simp [Arm.extend_reg, Arm.ExtendType.unsigned_len]
+  exact x.isLt
+
+theorem exec_stp_fplr (env : Env) (s : Arm.ArmState) (hal : Arm.CheckSPAlignment s) :
+    ∃ a, (Insn.stp Reg.fp Reg.lr (.spPreIndexed (-16))).toArmInst env = .ok a ∧
+      Arm.exec_inst a s = Arm.w .PC (Arm.r .PC s + 4#64)
+        (Arm.w (.GPR 31#5) (spOf s - 16#64)
+          (Arm.write_mem_bytes 16 (spOf s - 16#64) (xreg 30 s ++ xreg 29 s) s)) := by
+  refine ⟨_, by simp [csimp_rules, Reg.fp, Reg.lr, pure, Except.pure]; rfl, ?_⟩
+  have hal' := spAligned hal
+  simp [csimp_rules, Arm.LDST.exec_reg_pair_pre_indexed, Arm.LDST.exec_reg_pair_common,
+    Arm.LDST.reg_pair_operation, Arm.LDST.reg_pair_constrain_unpredictable, Arm.ldst_read,
+    Arm.CheckSPAlignment, hal', xreg, Arm.BitVec.lsb, add_neg16]
+
+theorem exec_ldp_fplr (env : Env) (s : Arm.ArmState) (hal : Arm.CheckSPAlignment s) :
+    ∃ a, (Insn.ldp Reg.fp Reg.lr (.spPostIndexed 16)).toArmInst env = .ok a ∧
+      Arm.exec_inst a s = Arm.w .PC (Arm.r .PC s + 4#64)
+        (Arm.w (.GPR 31#5) (spOf s + 16#64)
+          (Arm.w (.GPR 30#5) ((Arm.read_mem_bytes 16 (spOf s) s).extractLsb' 64 64)
+            (Arm.w (.GPR 29#5) ((Arm.read_mem_bytes 16 (spOf s) s).extractLsb' 0 64) s))) := by
+  refine ⟨_, by simp [csimp_rules, Reg.fp, Reg.lr, pure, Except.pure]; rfl, ?_⟩
+  have hal' := spAligned hal
+  simp [csimp_rules, Arm.LDST.exec_reg_pair_post_indexed, Arm.LDST.exec_reg_pair_common,
+    Arm.LDST.reg_pair_operation, Arm.LDST.reg_pair_constrain_unpredictable, Arm.ldst_write,
+    Arm.CheckSPAlignment, hal', Arm.BitVec.lsb]
+
+theorem exec_mov_fp_sp (env : Env) (s : Arm.ArmState) :
+    ∃ a, (Insn.mov true Reg.fp .sp).toArmInst env = .ok a ∧
+      Arm.exec_inst a s = Arm.w (.GPR 29#5) (spOf s) (Arm.w .PC (Arm.r .PC s + 4#64) s) := by
+  refine ⟨_, by simp [csimp_rules, Reg.fp, pure, Except.pure]; rfl, ?_⟩
+  simp [csimp_rules, Arm.fst_AddWithCarry_eq_add]
+
+theorem exec_sub_sp_imm (env : Env) (i : Imm12) (hi : i.bits < 4096) (s : Arm.ArmState) :
+    ∃ a, (Insn.aluImm12 .sub true .sp .sp i).toArmInst env = .ok a ∧
+      Arm.exec_inst a s = Arm.w (.GPR 31#5) (spOf s - BitVec.ofNat 64 i.value)
+        (Arm.w .PC (Arm.r .PC s + 4#64) s) := by
+  refine ⟨_, by simp [csimp_rules, hi, pure, Except.pure]; rfl, ?_⟩
+  simp [csimp_rules, Arm.fst_AddWithCarry_eq_sub_neg, imm12_bv hi]
+
+theorem exec_add_sp_imm (env : Env) (i : Imm12) (hi : i.bits < 4096) (s : Arm.ArmState) :
+    ∃ a, (Insn.aluImm12 .add true .sp .sp i).toArmInst env = .ok a ∧
+      Arm.exec_inst a s = Arm.w (.GPR 31#5) (spOf s + BitVec.ofNat 64 i.value)
+        (Arm.w .PC (Arm.r .PC s + 4#64) s) := by
+  refine ⟨_, by simp [csimp_rules, hi, pure, Except.pure]; rfl, ?_⟩
+  simp [csimp_rules, Arm.fst_AddWithCarry_eq_add, imm12_bv hi]
+
+theorem exec_sub_sp_x16uxtx (env : Env) (s : Arm.ArmState) :
+    ∃ a, (Insn.aluRRRExtend .sub true .sp .sp (.x 16) .uxtx).toArmInst env = .ok a ∧
+      Arm.exec_inst a s = Arm.w (.GPR 31#5) (spOf s - xreg 16 s)
+        (Arm.w .PC (Arm.r .PC s + 4#64) s) := by
+  refine ⟨_, by simp [csimp_rules, pure, Except.pure]; rfl, ?_⟩
+  simp [csimp_rules, Arm.fst_AddWithCarry_eq_sub_neg, extend_uxtx0, xreg]
+
+theorem exec_add_sp_x16uxtx (env : Env) (s : Arm.ArmState) :
+    ∃ a, (Insn.aluRRRExtend .add true .sp .sp (.x 16) .uxtx).toArmInst env = .ok a ∧
+      Arm.exec_inst a s = Arm.w (.GPR 31#5) (spOf s + xreg 16 s)
+        (Arm.w .PC (Arm.r .PC s + 4#64) s) := by
+  refine ⟨_, by simp [csimp_rules, pure, Except.pure]; rfl, ?_⟩
+  simp [csimp_rules, Arm.fst_AddWithCarry_eq_add, extend_uxtx0, xreg]
+
+theorem exec_ret (env : Env) (s : Arm.ArmState) :
+    ∃ a, Insn.ret.toArmInst env = .ok a ∧ Arm.exec_inst a s = Arm.w .PC (xreg 30 s) s := by
+  refine ⟨_, by simp [csimp_rules, pure, Except.pure]; rfl, ?_⟩
+  simp [csimp_rules, Arm.BR.exec_uncond_branch_reg, xreg]
+
+/-! ## Runs of the prologue and the epilogue -/
+
+theorem checkSP_iff (s : Arm.ArmState) : Arm.CheckSPAlignment s ↔ (spOf s).toNat % 16 = 0 := by
+  simp only [Arm.CheckSPAlignment, Arm.read_gpr, Arm.Aligned, spOf, BitVec.setWidth_eq]
+  constructor
+  · intro h
+    have := congrArg BitVec.toNat h
+    simpa [BitVec.extractLsb'_toNat] using this
+  · intro h
+    apply BitVec.eq_of_toNat_eq
+    simpa [BitVec.extractLsb'_toNat] using h
+
+theorem frame_imm12 {v : Nat} {i : Imm12} (h : Imm12.ofNat? v = some i) (hv : v < 2 ^ 64) :
+    i.value = v ∧ i.bits < 4096 := by
+  unfold Imm12.ofNat? mask64 at h
+  rw [Nat.mod_eq_of_lt hv] at h
+  simp only at h
+  split at h
+  · cases h; exact ⟨rfl, by assumption⟩
+  · split at h
+    · cases h
+      rename_i h1
+      simp only [Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq] at h1
+      simp only [Imm12.value, ite_true]
+      omega
+    · cases h
+
+theorem steps_one {env : Env} {i : Insn} {t : Option Clif.TrapCode} {s : Arm.ArmState}
+    {ai : Arm.ArmInst} (ha : i.toArmInst env = .ok ai)
+    (hpc : Arm.r .PC (Arm.exec_inst ai s) = Arm.r .PC s + 4#64)
+    (he : Arm.r .ERR (Arm.exec_inst ai s) = Arm.r .ERR s)
+    (hp : (Arm.exec_inst ai s).program = s.program) :
+    StepsOk env [.ins i t] s (Arm.exec_inst ai s) :=
+  steps_cons ha hpc he hp rfl
+
+/-- The `sp` adjustment runs: `sp ± size`, only the pc, `sp` and `x16` change. -/
+theorem spAdj_ok (env : Env) (sub : Bool) {size : Nat} (hs : size < 2 ^ 64) (s : Arm.ArmState) :
+    ∃ s', StepsOk env (spAdjLines sub size) s s' ∧
+      spOf s' = (if sub then spOf s - BitVec.ofNat 64 size else spOf s + BitVec.ofNat 64 size) ∧
+      (∀ f, f ≠ .PC → f ≠ .GPR 31#5 → f ≠ .GPR 16#5 → Arm.r f s' = Arm.r f s) ∧
+      s'.mem = s.mem := by
+  unfold spAdjLines
+  by_cases h0 : size = 0
+  · subst h0
+    refine ⟨s, rfl, by cases sub <;> simp, fun _ _ _ _ => rfl, rfl⟩
+  simp only [show (size == 0) = false by simpa using h0, Bool.false_eq_true, ite_false]
+  cases hi : Imm12.ofNat? size with
+  | some i =>
+    obtain ⟨hv, hb⟩ := frame_imm12 hi hs
+    cases sub
+    · obtain ⟨a, ha, he⟩ := exec_add_sp_imm env i hb s
+      refine ⟨_, steps_one ha ?_ ?_ ?_, ?_, fun f h1 h2 _ => ?_, ?_⟩ <;>
+        simp [spOf, Arm.r_of_w_same, Arm.r_of_w_different, Arm.w_program,
+          Arm.ArmState.mem_w_eq_mem, *]
+    · obtain ⟨a, ha, he⟩ := exec_sub_sp_imm env i hb s
+      refine ⟨_, steps_one ha ?_ ?_ ?_, ?_, fun f h1 h2 _ => ?_, ?_⟩ <;>
+        simp [spOf, Arm.r_of_w_same, Arm.r_of_w_different, Arm.w_program,
+          Arm.ArmState.mem_w_eq_mem, *]
+  | none =>
+    have hL := steps_loadConst64 env (n := 16) (by omega) size s
+    generalize hs1 : pcx s 16 (Arm.r .PC s + BitVec.ofNat 64 (4 * (loadConst64 (.x 16) size).length))
+      (BitVec.ofNat 64 size) = s1 at hL
+    have hf1 := pcx_facts s 16 (Arm.r .PC s + BitVec.ofNat 64 (4 * (loadConst64 (.x 16) size).length))
+      (BitVec.ofNat 64 size)
+    rw [hs1] at hf1
+    have hsp1 : spOf s1 = spOf s := by
+      rw [← hs1]; simp [pcx, spOf, Arm.r_of_w_different]
+    have ho1 : ∀ f, f ≠ .PC → f ≠ .GPR 16#5 → Arm.r f s1 = Arm.r f s := by
+      intro f h1 h2; rw [← hs1]; simp [pcx, Arm.r_of_w_different, h1, h2]
+    have hm1 : s1.mem = s.mem := by rw [← hs1]; simp [pcx, Arm.ArmState.mem_w_eq_mem]
+    have hx16 : xreg 16 s1 = BitVec.ofNat 64 size := hf1.2.2.2
+    cases sub
+    · obtain ⟨a, ha, he⟩ := exec_add_sp_x16uxtx { env with pc := env.pc + 4 * (loadConst64 (.x 16) size).length } s1
+      refine ⟨_, StepsOk.append hL (steps_one ha ?_ ?_ ?_), ?_, fun f h1 h2 h3 => ?_, ?_⟩
+      · simp [he, Arm.r_of_w_same, Arm.r_of_w_different]
+      · simp [he, Arm.r_of_w_different]
+      · simp [he, Arm.w_program]
+      · simp [he, spOf, Arm.r_of_w_same, hx16]; simpa [spOf] using congrArg (· + BitVec.ofNat 64 size) hsp1
+      · simp [he, Arm.r_of_w_different, h1, h2, ho1 f h1 h3]
+      · simp [he, Arm.ArmState.mem_w_eq_mem, hm1]
+    · obtain ⟨a, ha, he⟩ := exec_sub_sp_x16uxtx { env with pc := env.pc + 4 * (loadConst64 (.x 16) size).length } s1
+      refine ⟨_, StepsOk.append hL (steps_one ha ?_ ?_ ?_), ?_, fun f h1 h2 h3 => ?_, ?_⟩
+      · simp [he, Arm.r_of_w_same, Arm.r_of_w_different]
+      · simp [he, Arm.r_of_w_different]
+      · simp [he, Arm.w_program]
+      · simp [he, spOf, Arm.r_of_w_same, hx16]; simpa [spOf] using congrArg (· - BitVec.ofNat 64 size) hsp1
+      · simp [he, Arm.r_of_w_different, h1, h2, ho1 f h1 h3]
+      · simp [he, Arm.ArmState.mem_w_eq_mem, hm1]
+
 
 theorem add_neg16p (x : BitVec 64) : x + 18446744073709551600#64 = x - 16#64 := by bv_omega
 
@@ -877,5 +1052,370 @@ theorem popLines_ok (env : Env) (int : Bool) (rs : List Reg) (s : Arm.ArmState) 
         by_cases h : r = r0
         · exact .inr (fun e => hodd ⟨h, e⟩)
         · exact .inl (fun e => h (Option.some.inj e).symm)
+
+/-! ## The reads of the pops -/
+
+theorem memReads_pop1 {env : Env} {int : Bool} {r : Reg} (hr : PushReg int r) {a : Arm.ArmInst}
+    (h : (if int then Insn.load .uload64 r (.spPostIndexed 16)
+        else Insn.fpuLoad .size64 r (.spPostIndexed 16)).toArmInst env = .ok a) (s : Arm.ArmState) :
+    E2E.ExecBytes.MemReads a s = [(spOf s, 8)] := by
+  cases r with
+  | x n =>
+    obtain ⟨rfl, hn⟩ := hr
+    simp [Insn.toArmInst, Insn.armFields, Arm.ArmInst.norm, LoadOp.fields, ldstFields,
+      Reg.encZR, show n ≤ 30 by omega, sField] at h
+    subst h
+    simp (config := {decide := true}) [E2E.ExecBytes.MemReads, E2E.ExecFrame.RegImm.reads, E2E.ExecFrame.RegImm.ofPost,
+      E2E.ExecFrame.RegImm.memop, E2E.ExecFrame.RegImm.addr, E2E.ExecFrame.RegImm.scale, Arm.BitVec.lsb, spOf, Arm.read_gpr]
+  | v n =>
+    obtain ⟨rfl, hn⟩ := hr
+    simp [Insn.toArmInst, Insn.armFields, Arm.ArmInst.norm, ldstFields, Insn.armFields.fpLdstSize,
+      Reg.encV, show n ≤ 31 by omega, sField] at h
+    subst h
+    simp (config := {decide := true}) [E2E.ExecBytes.MemReads, E2E.ExecFrame.RegImm.reads, E2E.ExecFrame.RegImm.ofPost,
+      E2E.ExecFrame.RegImm.memop, E2E.ExecFrame.RegImm.addr, E2E.ExecFrame.RegImm.scale, Arm.BitVec.lsb, spOf, Arm.read_gpr]
+  | _ => exact hr.elim
+
+theorem memReads_pop2 {env : Env} {int : Bool} {a b : Reg} (ha : PushReg int a) (hb : PushReg int b)
+    {i : Arm.ArmInst}
+    (h : (if int then Insn.ldp a b (.spPostIndexed 16)
+        else Insn.fpuLoadP .size64 a b (.spPostIndexed 16)).toArmInst env = .ok i) (s : Arm.ArmState) :
+    E2E.ExecBytes.MemReads i s = [(spOf s, 16)] := by
+  cases a with
+  | x n =>
+    cases b with
+    | x m =>
+      obtain ⟨rfl, hn⟩ := ha
+      have hm := hb.2
+      simp [Insn.toArmInst, Insn.armFields, Arm.ArmInst.norm,
+        Reg.encZR, show n ≤ 30 by omega, show m ≤ 30 by omega, sField] at h
+      subst h
+      simp (config := {decide := true}) [E2E.ExecBytes.MemReads, E2E.ExecFrame.RegPair.reads, E2E.ExecFrame.RegPair.mk,
+        E2E.ExecFrame.RegPair.addr, E2E.ExecFrame.RegPair.scale, Arm.BitVec.lsb, spOf, Arm.read_gpr]
+    | v m => obtain ⟨rfl, -⟩ := ha; exact absurd hb.1 (by simp)
+    | _ => exact hb.elim
+  | v n =>
+    cases b with
+    | x m => obtain ⟨rfl, -⟩ := ha; exact absurd hb.1 (by simp)
+    | v m =>
+      obtain ⟨rfl, hn⟩ := ha
+      have hm := hb.2
+      simp [Insn.toArmInst, Insn.armFields, Arm.ArmInst.norm, Insn.armFields.fpOpc,
+        ScalarSize.bytes, Reg.encV, show n ≤ 31 by omega, show m ≤ 31 by omega, sField] at h
+      subst h
+      simp (config := {decide := true}) [E2E.ExecBytes.MemReads, E2E.ExecFrame.RegPair.reads, E2E.ExecFrame.RegPair.mk,
+        E2E.ExecFrame.RegPair.addr, E2E.ExecFrame.RegPair.scale, Arm.BitVec.lsb, spOf, Arm.read_gpr]
+    | _ => exact hb.elim
+  | _ => exact ha.elim
+
+theorem linesReads_app {env : Env} {A B : List Line} {s : Arm.ArmState} {P : BitVec 64 → Prop}
+    (hA : LinesReads env A s P)
+    (hB : ∀ s1, execLines env A s = some s1 → LinesReads { env with pc := env.pc + 4 * A.length } B s1 P) :
+    LinesReads env (A ++ B) s P := by
+  intro k x t hk s1 hs1 env' a ha p hp i hi
+  rcases Nat.lt_or_ge k A.length with hlt | hge
+  · rw [List.getElem?_append_left hlt] at hk
+    rw [List.take_append_of_le_length (by omega)] at hs1
+    exact hA k x t hk s1 hs1 env' a ha p hp i hi
+  · rw [List.getElem?_append_right hge] at hk
+    rw [List.take_append, List.take_of_length_le hge, execLines_append] at hs1
+    cases h1 : execLines env A s with
+    | none => rw [h1] at hs1; cases hs1
+    | some sA =>
+      rw [h1] at hs1
+      exact hB sA h1 _ x t hk s1 hs1 env' a ha p hp i hi
+
+theorem execLines_steps {env : Env} {ls : List Line} {s s' s1 : Arm.ArmState} (h : StepsOk env ls s s')
+    (h1 : execLines env ls s = some s1) : s1 = s' := by
+  rw [h.exec] at h1; exact (Option.some.inj h1).symm
+
+/-- The pair pops read `[sp, sp + 16 len)`. -/
+theorem popPairs_reads (env : Env) (int : Bool) {P : BitVec 64 → Prop} : ∀ (ps : List (Reg × Reg))
+    (s : Arm.ArmState), (∀ p ∈ ps, PushReg int p.1 ∧ PushReg int p.2 ∧ p.1 ≠ p.2) →
+    (spOf s).toNat % 16 = 0 →
+    (∀ k < 16 * ps.length, P (spOf s + BitVec.ofNat 64 k)) →
+    LinesReads env (ps.map (popLine2 int)) s P
+  | [], _, _, _, _ => fun k _ _ hk => by simp at hk
+  | p :: ps, s, hps, hal, hP => by
+    have hp := hps p (by simp)
+    obtain ⟨i, hi, f1, -, -, f4, -⟩ := exec_pop2 env hp.1 hp.2.1 hp.2.2 s (checkSP_of hal)
+    have hl : (popLine2 int p :: ps.map (popLine2 int)) = [popLine2 int p] ++ ps.map (popLine2 int) := rfl
+    simp only [List.map_cons]
+    rw [hl]
+    refine linesReads_app (linesReads_cons (fun _ _ h => by simp at h) fun env' a ha q hq k hk => ?_)
+      fun s1 hs1 => ?_
+    · rw [memReads_pop2 hp.1 hp.2.1 ha] at hq
+      simp only [List.mem_singleton] at hq; subst hq
+      exact hP k (by simp only [List.length_cons] at *; omega)
+    · have e : s1 = Arm.exec_inst i s := by
+        simp only [popLine2, execLines, hi, f1, ite_true] at hs1; exact (Option.some.inj hs1).symm
+      subst e
+      refine popPairs_reads _ int ps _ (fun q hq => hps q (List.mem_cons_of_mem _ hq))
+        (by rw [f4]; simpa using aligned_add (B := spOf s) hal 1) (fun k hk => ?_)
+      rw [f4, show (16#64) = BitVec.ofNat 64 16 from rfl, add_ofNat_add]
+      exact hP _ (by simp only [List.length_cons]; omega)
+
+/-- The pops of one register class read `[sp, sp + pushBytes)`. -/
+theorem popLines_reads (env : Env) (int : Bool) (rs : List Reg) (s : Arm.ArmState)
+    (hrs : ∀ r ∈ rs, PushReg int r) (hnd : rs.Nodup) (hal : (spOf s).toNat % 16 = 0)
+    {P : BitVec 64 → Prop} (hP : ∀ k < pushBytes rs.length, P (spOf s + BitVec.ofNat 64 k)) :
+    LinesReads env (popLines int rs) s P := by
+  have hpb := pushBytes_eq rs
+  have hfl := pairsOf_flat rs
+  obtain ⟨hmP, hmO⟩ := pairsOf_mem rs
+  have hpv : ∀ p ∈ (pairsOf rs).1, PushReg int p.1 ∧ PushReg int p.2 :=
+    fun p hp => ⟨hrs _ (hmP p hp).1, hrs _ (hmP p hp).2⟩
+  have hndP : ((pairsOf rs).1.flatMap fun p => [p.1, p.2]).Nodup := by
+    rw [← hfl] at hnd; exact (List.nodup_append.1 hnd).1
+  obtain ⟨s1, h1, h2, -⟩ := popPairs_ok env int _ s (spOf s) hpv hndP hal rfl
+  rw [popLines_eq]
+  refine linesReads_app (popPairs_reads env int _ s (fun p hp => ⟨(hpv p hp).1, (hpv p hp).2,
+    pairsOf_ne rs hnd p hp⟩) hal (fun k hk => hP k (by split at hpb <;> omega))) fun s2 hs2 => ?_
+  obtain rfl := execLines_steps h1 hs2
+  rcases ho : (pairsOf rs).2 with _ | r0
+  · intro k _ _ hk; simp at hk
+  · refine linesReads_cons (fun _ _ h => by simp at h) fun env' a ha q hq k hk => ?_
+    rw [memReads_pop1 (hrs _ (hmO r0 ho)) ha] at hq
+    simp only [List.mem_singleton] at hq; subst hq
+    simp only [ho, Option.isSome_some, ite_true] at hpb
+    rw [h2, add_ofNat_add]
+    exact hP _ (by simp at hk; omega)
+
+/-! ## The saves of a frame -/
+
+theorem RegClass.beq_eq_true' (a b : RegClass) : instBEqRegClass.beq a b = true ↔ a = b := by
+  cases a <;> cases b <;> decide
+
+theorem Reg.beq_eq_true' (a b : Reg) : (a == b) = true ↔ a = b := by
+  cases a <;> cases b <;> simp [BEq.beq, instBEqReg.beq, RegClass.beq_eq_true']
+
+/-- `Reg`'s derived `BEq` is lawful (`clobberOff` uses `List.idxOf`). -/
+instance : LawfulBEq Reg where
+  eq_of_beq h := (Reg.beq_eq_true' _ _).1 h
+  rfl := (Reg.beq_eq_true' _ _).2 rfl
+
+theorem getElem?_idxOf' {l : List Reg} {r : Reg} (h : r ∈ l) : l[l.idxOf r]? = some r := by
+  have hl := List.idxOf_lt_length_of_mem h
+  rw [List.getElem?_eq_getElem hl, List.getElem_idxOf hl]
+
+/-- The saves of a frame: callee-saved registers, each once (`saveShapeOk`). -/
+def SavesOk (saves : List Reg) : Prop := (∀ r ∈ saves, r ∈ calleeSaved) ∧ saves.Nodup
+
+theorem calleeSaved_cases {r : Reg} (h : r ∈ calleeSaved) :
+    (∃ n, r = .x n ∧ 19 ≤ n ∧ n < 29) ∨ (∃ n, r = .v n ∧ 8 ≤ n ∧ n < 16) := by
+  simp only [calleeSaved, List.mem_append, List.mem_map, List.mem_range] at h
+  rcases h with ⟨i, hi, rfl⟩ | ⟨i, hi, rfl⟩
+  · exact .inl ⟨19 + i, rfl, by omega, by omega⟩
+  · exact .inr ⟨8 + i, rfl, by omega, by omega⟩
+
+theorem SavesOk.int {saves : List Reg} (h : SavesOk saves) : ∀ r ∈ savesInt saves, PushReg true r := by
+  intro r hr
+  simp only [savesInt, List.mem_filter] at hr
+  rcases calleeSaved_cases (h.1 r hr.1) with ⟨n, rfl, -, hn⟩ | ⟨n, rfl, -⟩
+  · exact ⟨rfl, hn⟩
+  · simp at hr
+
+theorem SavesOk.float {saves : List Reg} (h : SavesOk saves) : ∀ r ∈ savesFloat saves, PushReg false r := by
+  intro r hr
+  simp only [savesFloat, List.mem_filter] at hr
+  rcases calleeSaved_cases (h.1 r hr.1) with ⟨n, rfl, -⟩ | ⟨n, rfl, -, hn⟩
+  · simp at hr
+  · exact ⟨rfl, by omega⟩
+
+theorem SavesOk.length {saves : List Reg} (h : SavesOk saves) : saves.length ≤ 18 :=
+  Nat.le_trans (h.2.length_le_of_subset h.1) (by decide)
+
+theorem SavesOk.intLen {saves : List Reg} (h : SavesOk saves) : (savesInt saves).length ≤ 18 :=
+  Nat.le_trans (List.length_filter_le _ _) h.length
+
+theorem SavesOk.floatLen {saves : List Reg} (h : SavesOk saves) : (savesFloat saves).length ≤ 18 :=
+  Nat.le_trans (List.length_filter_le _ _) h.length
+
+theorem pushBytes_mod (n : Nat) : pushBytes n % 16 = 0 := by unfold pushBytes; omega
+
+theorem clobberBytes_mod (saves : List Reg) : clobberBytes saves % 16 = 0 := by
+  unfold clobberBytes; have := pushBytes_mod (savesInt saves).length
+  have := pushBytes_mod (savesFloat saves).length; omega
+
+theorem SavesOk.clobber_le {saves : List Reg} (h : SavesOk saves) : clobberBytes saves ≤ 1000 := by
+  have := h.intLen; have := h.floatLen; unfold clobberBytes pushBytes; omega
+
+/-- A saved register is an int or a float save, at its index. -/
+theorem saves_mem {saves : List Reg} (hsv : SavesOk saves) {r : Reg} (h : r ∈ saves) :
+    (∃ n, r = .x n ∧ (savesInt saves)[(savesInt saves).idxOf r]? = some r ∧
+      clobberOff saves r = pushBytes (savesFloat saves).length + 8 * (savesInt saves).idxOf r) ∨
+    (∃ n, r = .v n ∧ (savesFloat saves)[(savesFloat saves).idxOf r]? = some r ∧
+      clobberOff saves r = 8 * (savesFloat saves).idxOf r) := by
+  rcases calleeSaved_cases (hsv.1 r h) with ⟨n, rfl, -⟩ | ⟨n, rfl, -⟩
+  · have hm : Reg.x n ∈ savesInt saves := List.mem_filter.2 ⟨h, rfl⟩
+    exact .inl ⟨n, rfl, getElem?_idxOf' hm, rfl⟩
+  · have hm : Reg.v n ∈ savesFloat saves := List.mem_filter.2 ⟨h, rfl⟩
+    exact .inr ⟨n, rfl, getElem?_idxOf' hm, rfl⟩
+
+/-! ## The prologue and the epilogue -/
+
+theorem prologueLines_eq (saves : List Reg) (size : Nat) :
+    prologueLines saves size = [.ins (.stp Reg.fp Reg.lr (.spPreIndexed (-16))), .ins (.mov true Reg.fp .sp)] ++
+      (pushLines true (savesInt saves) ++ (pushLines false (savesFloat saves) ++
+        spAdjLines true (size - clobberBytes saves))) := by
+  simp only [prologueLines, List.append_assoc]
+
+theorem epilogueLines_eq (saves : List Reg) (size : Nat) :
+    epilogueLines saves size = (spAdjLines false (size - clobberBytes saves) ++
+      (popLines false (savesFloat saves) ++ (popLines true (savesInt saves) ++
+        [.ins (.ldp Reg.fp Reg.lr (.spPostIndexed 16))]))) ++ [.ins .ret] := by
+  simp only [epilogueLines, List.append_assoc, List.cons_append, List.nil_append]
+
+theorem aligned_sub {x : BitVec 64} (hx : x.toNat % 16 = 0) {n : Nat} (hn : n % 16 = 0) (hn' : n < 2 ^ 64) :
+    (x - BitVec.ofNat 64 n).toNat % 16 = 0 := by
+  have h16 : (16 : Nat) ∣ 2 ^ 64 := ⟨2 ^ 60, rfl⟩
+  rw [BitVec.toNat_sub, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hn', Nat.mod_mod_of_dvd _ h16]
+  have := x.isLt
+  omega
+
+theorem frame_sp_eq (X C D : BitVec 64) :
+    X - (BitVec.ofNat 64 16 + C) - D = X - 16#64 - (C + D) := by bv_omega
+
+/-- **The prologue runs** (Cranelift's frame setup and clobber saves): fp/lr pushed at
+`sp - 16`, `x29 = sp - 16`, the saved registers pushed below, `sp` lowered by `16 + size`;
+only the pc, `x29`, `sp` and `x16` change, memory only in `[sp - 16 - clobberBytes, sp)`, where
+the fp/lr slot holds the entry x30:x29 and each saved register's slot (`clobberOff`) its low
+64 bits. -/
+theorem prologue_ok (env : Env) {saves : List Reg} {size : Nat} (hs : size < 2 ^ 64)
+    (hsv : SavesOk saves) (hcb : clobberBytes saves ≤ size) (s : Arm.ArmState)
+    (hal : (spOf s).toNat % 16 = 0) :
+    ∃ s', StepsOk env (prologueLines saves size) s s' ∧
+      spOf s' = spOf s - 16#64 - BitVec.ofNat 64 size ∧ xreg 29 s' = spOf s - 16#64 ∧
+      (∀ f, f ≠ .PC → f ≠ .GPR 29#5 → f ≠ .GPR 31#5 → f ≠ .GPR 16#5 → Arm.r f s' = Arm.r f s) ∧
+      (∀ a, (∀ k < 16 + clobberBytes saves,
+        a ≠ spOf s - BitVec.ofNat 64 (16 + clobberBytes saves) + BitVec.ofNat 64 k) → s'.mem a = s.mem a) ∧
+      Arm.read_mem_bytes 16 (spOf s - 16#64) s' = xreg 30 s ++ xreg 29 s ∧
+      (∀ r ∈ saves, Arm.read_mem_bytes 8 (spOf s - BitVec.ofNat 64 (16 + clobberBytes saves) +
+        BitVec.ofNat 64 (clobberOff saves r)) s' = slotVal s r) := by
+  have hcbm := clobberBytes_mod saves
+  have hcbl := hsv.clobber_le
+  have hpIm := pushBytes_mod (savesInt saves).length
+  have hpFm := pushBytes_mod (savesFloat saves).length
+  have hcbe : clobberBytes saves = pushBytes (savesInt saves).length + pushBytes (savesFloat saves).length := rfl
+  have hpIl : pushBytes (savesInt saves).length ≤ 1000 := by omega
+  have hpFl : pushBytes (savesFloat saves).length ≤ 1000 := by omega
+  -- the bases
+  generalize hBF : spOf s - BitVec.ofNat 64 (16 + clobberBytes saves) = BF
+  have hBFa : BF.toNat % 16 = 0 := by rw [← hBF]; exact aligned_sub hal (by omega) (by omega)
+  have hBIa : (BF + BitVec.ofNat 64 (pushBytes (savesFloat saves).length)).toNat % 16 = 0 := by
+    rw [show pushBytes (savesFloat saves).length = 16 * (pushBytes (savesFloat saves).length / 16) by omega]
+    exact aligned_add hBFa _
+  have hT16 : spOf s - 16#64 = BF + BitVec.ofNat 64 (pushBytes (savesFloat saves).length) +
+      BitVec.ofNat 64 (pushBytes (savesInt saves).length) := by
+    rw [← hBF, hcbe, show 16 + (pushBytes (savesInt saves).length + pushBytes (savesFloat saves).length) =
+      16 + pushBytes (savesInt saves).length + pushBytes (savesFloat saves).length by omega,
+      BitVec.ofNat_add, BitVec.ofNat_add]
+    bv_omega
+  -- fp/lr and `mov x29, sp`
+  have hal0 : Arm.CheckSPAlignment s := checkSP_of hal
+  obtain ⟨a1, ha1, he1⟩ := exec_stp_fplr env s hal0
+  obtain ⟨a2, ha2, he2⟩ := exec_mov_fp_sp { env with pc := env.pc + 4 } (Arm.exec_inst a1 s)
+  generalize hs1 : Arm.exec_inst a1 s = s1 at he2 ha2
+  generalize hs2 : Arm.exec_inst a2 s1 = s2
+  have hsp1 : spOf s1 = spOf s - 16#64 := by
+    rw [← hs1, he1]; simp [spOf, Arm.r_of_w_same, Arm.r_of_w_different]
+  have ho1 : ∀ f, f ≠ .PC → f ≠ .GPR 31#5 → Arm.r f s1 = Arm.r f s := by
+    intro f h1 h2; rw [← hs1, he1]; simp [Arm.r_of_w_different, h1, h2, Arm.r_of_write_mem_bytes]
+  have hsp2 : spOf s2 = spOf s - 16#64 := by
+    rw [← hs2, he2]; simp only [spOf] at hsp1 ⊢; simp [Arm.r_of_w_different, hsp1]
+  have ho2 : ∀ f, f ≠ .PC → f ≠ .GPR 29#5 → Arm.r f s2 = Arm.r f s1 := by
+    intro f h1 h2; rw [← hs2, he2]; simp [Arm.r_of_w_different, h1, h2]
+  have hx29 : xreg 29 s2 = spOf s - 16#64 := by
+    rw [← hs2, he2]; simp [xreg, Arm.r_of_w_same, hsp1]
+  have hm2 : s2.mem = (Arm.write_mem_bytes 16 (spOf s - 16#64) (xreg 30 s ++ xreg 29 s) s).mem := by
+    rw [← hs2, he2, ← hs1, he1]; simp [Arm.ArmState.mem_w_eq_mem]
+  -- the pushes
+  obtain ⟨s3, h3, hsp3, ho3, he3, hp3, hm3, hv3⟩ := pushLines_ok { env with pc := env.pc + 4 + 4 } true
+    (savesInt saves) s2 (BF + BitVec.ofNat 64 (pushBytes (savesFloat saves).length)) hsv.int
+    (by have := hsv.intLen; omega) hBIa (by rw [hsp2, hT16])
+  obtain ⟨s4, h4, hsp4, ho4, he4, hp4, hm4, hv4⟩ := pushLines_ok
+    { env with pc := env.pc + 4 + 4 + 4 * (pushLines true (savesInt saves)).length } false
+    (savesFloat saves) s3 BF hsv.float (by have := hsv.floatLen; omega) hBFa hsp3
+  obtain ⟨s5, h5, hsp5, ho5, hm5⟩ := spAdj_ok
+    { env with pc := env.pc + 4 + 4 + 4 * (pushLines true (savesInt saves)).length +
+      4 * (pushLines false (savesFloat saves)).length } true (size := size - clobberBytes saves) (by omega) s4
+  obtain ⟨he5, hp5⟩ := h5.err
+  simp only [ite_true] at hsp5
+  have hpb : ∀ n, n ≤ pushBytes n := fun n => by unfold pushBytes; omega
+  -- the memory of `s5` against `s2` below fp/lr, and against `s` outside the frame top
+  have hm52 : ∀ a, (∀ k < clobberBytes saves, a ≠ BF + BitVec.ofNat 64 k) → s5.mem a = s2.mem a := by
+    intro a ha
+    rw [hm5, hm4 a (fun k hk => ha k (by omega)), hm3 a (fun k hk e => ha
+      (pushBytes (savesFloat saves).length + k) (by omega) (by rw [e, add_ofNat_add]))]
+  have hm5I : ∀ k, k < pushBytes (savesInt saves).length → ∀ a,
+      a = BF + BitVec.ofNat 64 (pushBytes (savesFloat saves).length + k) → s5.mem a = s3.mem a := by
+    intro k hk a ha
+    rw [hm5, hm4 a (fun k' hk' e => add_ofNat_ne (by omega) (by omega) (by omega) (ha.symm.trans e))]
+  refine ⟨s5, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · rw [prologueLines_eq, List.cons_append, List.cons_append, List.nil_append]
+    refine steps_cons ha1 (by rw [he1]; simp [Arm.r_of_w_same])
+      (by rw [he1]; simp [Arm.r_of_w_different, Arm.r_of_write_mem_bytes])
+      (by rw [he1]; simp [Arm.w_program, Arm.write_mem_bytes_program]) ?_
+    rw [hs1]
+    refine steps_cons ha2 (by rw [he2]; simp [Arm.r_of_w_same, Arm.r_of_w_different])
+      (by rw [he2]; simp [Arm.r_of_w_different]) (by rw [he2]; simp [Arm.w_program]) ?_
+    rw [hs2]
+    exact StepsOk.append h3 (StepsOk.append h4 h5)
+  · rw [hsp5, hsp4, ← hBF]
+    obtain ⟨d, rfl⟩ : ∃ d, size = clobberBytes saves + d := ⟨size - clobberBytes saves, by omega⟩
+    rw [Nat.add_sub_cancel_left, BitVec.ofNat_add, BitVec.ofNat_add]
+    exact frame_sp_eq _ _ _
+  · rw [show xreg 29 s5 = xreg 29 s2 by
+      simp only [xreg]
+      rw [ho5 _ (by simp) (by decide) (by decide), ho4 _ (by simp) (by decide), ho3 _ (by simp) (by decide)]]
+    exact hx29
+  · intro f g1 g2 g3 g4
+    rw [ho5 f g1 g3 g4, ho4 f g1 g3, ho3 f g1 g3, ho2 f g1 g2, ho1 f g1 g3]
+  · intro a ha
+    rw [hm52 a (fun k hk e => ha k (by omega) (by rw [← hBF] at e ⊢; exact e)), hm2,
+      Arm.Memory.write_mem_bytes_eq_mem_write_bytes]
+    simp only
+    refine write_bytes_outside 16 _ _ _ (fun k hk e => ha (clobberBytes saves + k) (by omega) ?_)
+    rw [e, hT16, add_ofNat_add, add_ofNat_add, ← hBF]
+    congr 2; unfold clobberBytes; omega
+  · rw [hT16]
+    apply read_of_agree (t := s) (by decide)
+    intro k hk
+    rw [hm52 _ (fun k' hk' e => add_ofNat_ne (by omega) (by omega) (by omega)
+      ((show BF + BitVec.ofNat 64 (pushBytes (savesFloat saves).length) +
+          BitVec.ofNat 64 (pushBytes (savesInt saves).length) + BitVec.ofNat 64 k =
+          BF + BitVec.ofNat 64 (clobberBytes saves + k) by
+        rw [add_ofNat_add, add_ofNat_add]; congr 2; unfold clobberBytes; omega).symm.trans e)), hm2, ← hT16]
+  · intro r hr
+    have hreg : ∀ n, n < 29 → Arm.r (.GPR (rnum n)) s2 = Arm.r (.GPR (rnum n)) s := fun n hn => by
+      have h31 : Arm.StateField.GPR (rnum n) ≠ .GPR 31#5 := fun e => rnum_ne31 hn (Arm.StateField.GPR.inj e)
+      have h29 : Arm.StateField.GPR (rnum n) ≠ .GPR 29#5 := fun e => by
+        have := congrArg BitVec.toNat (Arm.StateField.GPR.inj e)
+        rw [rnum_toNat (by omega)] at this; simp at this; omega
+      rw [ho2 _ (by simp) h29, ho1 _ (by simp) h31]
+    rcases saves_mem hsv hr with ⟨n, rfl, hi, ho⟩ | ⟨n, rfl, hi, ho⟩
+    · have hn : n < 29 := (hsv.int _ (List.mem_of_getElem? hi)).2
+      have hil : (savesInt saves).idxOf (.x n) < (savesInt saves).length := (List.getElem?_eq_some_iff.1 hi).1
+      have hv := hv3 _ _ hi
+      rw [ho, ← add_ofNat_add]
+      have e1 : Arm.read_mem_bytes 8 (BF + BitVec.ofNat 64 (pushBytes (savesFloat saves).length) +
+          BitVec.ofNat 64 (8 * (savesInt saves).idxOf (.x n))) s5 =
+          Arm.read_mem_bytes 8 (BF + BitVec.ofNat 64 (pushBytes (savesFloat saves).length) +
+          BitVec.ofNat 64 (8 * (savesInt saves).idxOf (.x n))) s3 :=
+        read_mem_bytes_congr 8 _ (fun k hk => hm5I (8 * (savesInt saves).idxOf (.x n) + k)
+          (by have : 8 * (savesInt saves).length ≤ pushBytes (savesInt saves).length := by
+                unfold pushBytes; omega
+              omega) _
+          (by rw [add_ofNat_add, add_ofNat_add]))
+      rw [e1, hv]
+      simp only [slotVal]
+      exact hreg n hn
+    · have hv := hv4 _ _ hi
+      rw [ho]
+      rw [show Arm.read_mem_bytes 8 (BF + BitVec.ofNat 64 (8 * (savesFloat saves).idxOf (.v n))) s5 =
+          Arm.read_mem_bytes 8 (BF + BitVec.ofNat 64 (8 * (savesFloat saves).idxOf (.v n))) s4 from
+        read_of_mem_eq hm5 _ _, hv]
+      simp only [slotVal]
+      rw [ho3 _ (by simp) (by simp), ho2 _ (by simp) (by simp), ho1 _ (by simp) (by simp)]
 
 end Backend.Proof
