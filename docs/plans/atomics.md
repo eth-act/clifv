@@ -815,7 +815,8 @@ they are; the per-thread layers are new files.
         composed in **`CallRetsEnd.arm_isel_refinesCR`**/**`arm_isel_refines_entryCR`** with the
         return contract `RetEnd` at a `rets` pause (witness `CallRetsWitness.arm_entryCR_fC`).
         **Still open**, in order: (ii') the CLIF return pop in the linked thread
-        (`ClifCStepTerm.cstep_ret_pop` under `ClifLift.pushC`), turning `RetEnd` into (2c)'s
+        (`ClifCStepTerm.cstep_ret_pop` under `ClifLift.pushC`; done: `CallRets.ret_pop`, #531),
+        turning `RetEnd` into (2c)'s
         premises (`resume_layers`: `hpres` from callee-saved and the frame's memory, `hkeep`;
         `isel_resumeC`: `PrefixHold` and the memory relation at the caller's slots); the epilogue's
         Arm steps realized as a private segment (`CallLoadFull.realized_privSeg` with
@@ -836,6 +837,36 @@ they are; the per-thread layers are new files.
         `explicit_slot`s (mostly 8/16/1 bytes). So that scope covers essentially no function
         that itself uses atomics. The thread-wide private set therefore has to cover activations
         with stack slots: each activation's slots lie in its own Arm frame, below the caller's.
+        **Design (decided 2026-10-23, scope "callees without slots" rejected).** Two gaps of the
+        multi-threaded specification block activations with slots: (A) `Refines`/`Realized`/
+        `link_compose`/`realizes_linked` use one private set per thread for the whole run, but
+        with stack reuse an address that is one callee's spill slot (an unmatched write: private)
+        is a later callee's CLIF slot (a CLIF event: shared); an uninitialised read of that slot
+        would read the stale spill, which the restricted CLIF execution cannot justify. (B) With
+        the slot oracle (`Mem.place`, so that CLIF slot addresses are the Arm frame addresses),
+        `enterFunc`'s `Mem.allocAt` sets the slot bytes to `none`, but `ClifThread.CStep` requires
+        an event-free step to leave every byte memory unchanged, so `CStep` has no step into a
+        callee with a slot. The fix, every piece beside the old definitions (whose theorems stay):
+        `CStepI` (the thread state carries a ghost own-initialisation mask: the slot allocation
+        clears it instead of touching the shared bytes, a CLIF store sets it, a load of an unset
+        byte is stuck as in `Clif.run`; correspondence lemma with `Clif.run`, oracle check on the
+        slot corpus); `RefinesT` (a position-dependent private set `PrivAt` and a freshness
+        clause: after an unmatched own write at `a`, a CLIF read at `a` follows a matched own
+        write at `a`) with `PrivCoh.realizes_of_threads_privT`; the thread-wide `PrivAt` is the
+        union of the frames of the activations live at that position; `link_composeT`. The
+        cross-thread premise becomes: other threads avoid the union over time of a thread's
+        private sets (its stack) — a trusted program premise. **Frame disjointness (done,
+        `FrameDisj.lean`)**: `Region` (an activation's frame and callee budget), `Frame`,
+        `slotArea` (the CLIF slots `[spB + size, spB + frameSize)`, in the `Frame` and outside
+        `frameF`'s stack part: `slotArea_frame`, `slotArea_not_frameF`), `frameF_frame`,
+        `Nested A B` (the callee's region inside the caller's dead stack, `B.G = A.FK`),
+        **`Nested.gfree`** (the callee's `RL.Wf.gfree` from the caller's), `Chain` (the live
+        activations, innermost first), **`Chain.region_dead`**, **`Chain.frame_disj`** (distinct
+        live frames are disjoint) and **`Chain.slot_not_F`** (every live activation's CLIF slots
+        are outside the innermost activation's `RL.F`: the CLIF events, which avoid the innermost
+        `RL.F`, avoid every live frame). Witness (`FrameDisjWitness.lean`): the compiled
+        `atomic_load` nested in its caller with a `0x100`-byte callee budget (`nested_LC`,
+        `wfRLy`, `chain_LC`, `frames_LC`, `slots_LC`).
   * **the prologue, from the ABI entry (done, `ArmAllocEntry.lean`)**: `stp_fplr_evs` (the
     prologue's `stp x29, x30, [sp, #-16]!`: one plain write at `sp - 16`, no exclusive);
     `q_init_lines` (`RegLevelFrame.q_init` with the prologue's lines, `LinesAt`, and its step
