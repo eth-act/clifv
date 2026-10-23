@@ -142,8 +142,8 @@ theorem payFoldC (ps : List Reg) (rets : Array Reg) :
     simp only [List.foldl_cons]
     cases hi : ps.idxOf? p with
     | some i =>
-      have hmem : p ∈ ps := by
-        by_contra hn
+      dsimp only
+      have hmem : p ∈ ps := Classical.byContradiction fun hn => by
         rw [List.idxOf?_eq_none_iff.mpr hn] at hi
         cases hi
       obtain ⟨pays, h1, h2, h3⟩ := payFoldC ps rets pr (acc.push rets[i]!) s
@@ -152,6 +152,7 @@ theorem payFoldC (ps : List Reg) (rets : Array Reg) :
           List.filter_cons_of_neg (by simp [hmem])]
       · rw [h3, List.filter_cons_of_neg (by simp [hmem])]
     | none =>
+      dsimp only
       have hnm : p ∉ ps := List.idxOf?_eq_none_iff.mp hi
       obtain ⟨pays, h1, h2, h3⟩ := payFoldC ps rets pr (acc.push (s.fresh .int).1) (s.fresh .int).2
       refine ⟨(s.fresh .int).1 :: pays, by rw [h1]; simp, ?_, ?_⟩
@@ -191,8 +192,8 @@ theorem retFoldC : ∀ (L : List Clif.AbiParam) (acc : Array Reg) (s : LState),
 theorem outDefsC_append (b : Nat) {ps fr : List Reg} {cs ds : List RegClass}
     (h : ps.length = cs.length) :
     outDefsC b (ps ++ fr) (cs ++ ds) = outDefsC b ps cs ++ outDefsC (b + cs.length) fr ds := by
-  simp only [outDefsC, List.zipIdx_append, List.zip_append (by simp [h]), List.map_append,
-    Nat.zero_add]
+  simp only [outDefsC, List.zipIdx_append, List.map_append, Nat.zero_add]
+  rw [List.zip_append (by simp [h] : ps.length = cs.zipIdx.length), List.map_append]
   congr 1
   rw [List.zipIdx_eq_map_add (l := ds)]
   simp [List.zip_map_right, List.map_map, Function.comp_def, Nat.add_assoc]
@@ -281,6 +282,7 @@ theorem retsHeld_tryC {b : Nat} {ps fp : List Reg} {cs : List RegClass} (hps : p
     have hcj : (cs ++ List.replicate fp.length .int)[j]? = some c := by
       rw [List.getElem?_append_left hjN]; exact hc
     simp [callDefOpsC, outDefsC, List.getElem?_zip_eq_some, List.getElem?_zipIdx, hpj, hcj]
+    exact ⟨_, _, _, ⟨rfl, rfl, rfl⟩, rfl, rfl, rfl⟩
   rw [writeV_nodup_ctl _ ρ j _ x hnd hget]
   obtain ⟨hlen, hall⟩ := hro
   exact hall j v x hv hx
@@ -350,7 +352,7 @@ theorem tryRetsC_get {ctx : Ctx} {cs : List RegClass} {b : Nat}
   obtain ⟨⟨c, k⟩, hck, rfl⟩ := hr
   simp only [Option.map_eq_some_iff, Prod.mk.injEq] at hck
   obtain ⟨c', hc', rfl, rfl⟩ := hck
-  exact ⟨c, hc', by simp⟩
+  exact ⟨_, hc', by simp⟩
 
 /-- The defs of the call are the context's return/payload vregs (`gen_try_call_rets` of
 `tryRegsOfC`'s vregs). -/
@@ -660,7 +662,7 @@ theorem try_got_ruleOkTF {p : Program} (hp : Data p) (hpT : TryData p) {Rd F : B
   have hfn : ctx.func.extern? fn = some ext := by rw [hctx.func]; exact hext
   have hcol : ext.colocated = false := try_got_not_colocated hp hpT hi hfirst hfn
   clear hfirst
-  obtain ⟨ps0, hps0, htr1, hD, -⟩ := tryRegsOfC_defs htr
+  obtain ⟨ps0, hps0, htr1, hD, hst1⟩ := tryRegsOfC_defs htr
   cases hp
   obtain ⟨t300, t302, t2297, t2474⟩ := hpT
   ctl_inv [*, rule_lower_2551, ext_func_ref_data_iff, ctor_abi_sig_iff, ctor_try_call_info_iff,
