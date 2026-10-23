@@ -482,4 +482,400 @@ theorem pushPairs_ok (env : Env) (int : Bool) : ∀ (ps : List (Reg × Reg)) (s 
           exact add_ofNat_ne (by omega) (by omega) (by omega) e
         exact ⟨key 0 (by omega) _ (by simpa using v1), key 8 (by omega) _ v2⟩
 
+/-- **The pushes of one register class**: from `sp = B + pushBytes`, register `rs[i]`'s low 64
+bits land at `B + 8 i`; only `[B, B + pushBytes)` is written. -/
+theorem pushLines_ok (env : Env) (int : Bool) (rs : List Reg) (s : Arm.ArmState) (B : BitVec 64)
+    (hrs : ∀ r ∈ rs, PushReg int r) (hlen : rs.length ≤ 64) (hB : B.toNat % 16 = 0)
+    (hsp : spOf s = B + BitVec.ofNat 64 (pushBytes rs.length)) :
+    ∃ s', StepsOk env (pushLines int rs) s s' ∧ spOf s' = B ∧
+      (∀ f, f ≠ .PC → f ≠ .GPR 31#5 → Arm.r f s' = Arm.r f s) ∧
+      Arm.r .ERR s' = Arm.r .ERR s ∧ s'.program = s.program ∧
+      (∀ a, (∀ k < pushBytes rs.length, a ≠ B + BitVec.ofNat 64 k) → s'.mem a = s.mem a) ∧
+      (∀ i r, rs[i]? = some r → Arm.read_mem_bytes 8 (B + BitVec.ofNat 64 (8 * i)) s' = slotVal s r) := by
+  have hl := pairsOf_len rs
+  have hpb := pushBytes_eq rs
+  obtain ⟨hmP, hmO⟩ := pairsOf_mem rs
+  have hpv : ∀ p ∈ (pairsOf rs).1, PushReg int p.1 ∧ PushReg int p.2 :=
+    fun p hp => ⟨hrs _ (hmP p hp).1, hrs _ (hmP p hp).2⟩
+  have hPl : 16 * (pairsOf rs).1.length < 2 ^ 64 := by split at hl <;> omega
+  -- the slot of `rs[i]` in the pairs
+  have hslot : ∀ (t : Arm.ArmState) i r, rs[i]? = some r →
+      (∀ j a b, (pairsOf rs).1[j]? = some (a, b) →
+        Arm.read_mem_bytes 8 (B + BitVec.ofNat 64 (16 * j)) t = slotVal s a ∧
+        Arm.read_mem_bytes 8 (B + BitVec.ofNat 64 (16 * j + 8)) t = slotVal s b) →
+      ((pairsOf rs).2 = some r → i = 2 * (pairsOf rs).1.length →
+        Arm.read_mem_bytes 8 (B + BitVec.ofNat 64 (8 * i)) t = slotVal s r) →
+      Arm.read_mem_bytes 8 (B + BitVec.ofNat 64 (8 * i)) t = slotVal s r := by
+    intro t i r hi hP hO
+    rcases pairsOf_get rs i r hi with ⟨a, b, h1, h2⟩ | ⟨h1, h2⟩
+    · obtain ⟨v1, v2⟩ := hP _ a b h1
+      by_cases h0 : i % 2 = 0
+      · rw [if_pos h0] at h2; subst h2
+        rw [show 8 * i = 16 * (i / 2) by omega]; exact v1
+      · rw [if_neg h0] at h2; subst h2
+        rw [show 8 * i = 16 * (i / 2) + 8 by omega]; exact v2
+    · exact hO h1 h2
+  rw [pushLines_eq]
+  rcases ho : (pairsOf rs).2 with _ | r0
+  · simp only [ho, Option.isSome_none, Bool.false_eq_true, ite_false, Nat.add_zero] at hpb
+    rw [hpb] at hsp
+    obtain ⟨s', h1, h2, h3, h4, h5, h6, h7⟩ := pushPairs_ok env int _ s B hpv hPl hB hsp
+    refine ⟨s', by simpa using h1, h2, h3, h4, h5, fun a ha => h6 a (fun k hk => ha k (by omega)),
+      fun i r hi => hslot s' i r hi h7 (fun h => by rw [ho] at h; cases h)⟩
+  · simp only [ho, Option.isSome_some, ite_true] at hpb
+    rw [hpb] at hsp
+    have hr0 : PushReg int r0 := hrs _ (hmO r0 ho)
+    have hal : Arm.CheckSPAlignment s := checkSP_of (by
+      rw [hsp, show 16 * (pairsOf rs).1.length + 16 = 16 * ((pairsOf rs).1.length + 1) by omega]
+      exact aligned_add hB _)
+    obtain ⟨i0, hi0, he0⟩ := exec_push1 env hr0 s hal
+    obtain ⟨f1, f2, f3, f4, f5⟩ := pushSt_facts s 8 (slotVal s r0)
+    have hsp1 : spOf (Arm.exec_inst i0 s) = B + BitVec.ofNat 64 (16 * (pairsOf rs).1.length) := by
+      rw [he0, f4, hsp, show 16 * (pairsOf rs).1.length + 16 = 16 * ((pairsOf rs).1.length + 1) by omega]
+      exact add16_sub _ _
+    obtain ⟨s', h1, h2, h3, h4, h5, h6, h7⟩ := pushPairs_ok _ int _ _ B hpv hPl hB hsp1
+    have hT : spOf s - 16#64 = B + BitVec.ofNat 64 (16 * (pairsOf rs).1.length) := by
+      rw [← hsp1, he0, f4]
+    refine ⟨s', steps_cons hi0 (by rw [he0]; exact f1) (by rw [he0]; exact f2) (by rw [he0]; exact f3) h1,
+      h2, fun f g1 g2 => by rw [h3 f g1 g2, he0, f5 f g1 g2], by rw [h4, he0, f2],
+      by rw [h5, he0, f3], fun a ha => ?_, fun i r hi => hslot s' i r hi
+        (fun j a b hj => by
+          obtain ⟨v1, v2⟩ := h7 j a b hj
+          rw [he0] at v1 v2
+          exact ⟨v1.trans (slotVal_congr f5 (hpv _ (List.mem_of_getElem? hj)).1),
+            v2.trans (slotVal_congr f5 (hpv _ (List.mem_of_getElem? hj)).2)⟩)
+        (fun h hi2 => ?_)⟩
+    · rw [h6 a (fun k hk => ha k (by omega)), he0]
+      exact pushSt_mem_outside hT (by omega) (fun k hk e => ha (16 * (pairsOf rs).1.length + k)
+        (by omega) (by rw [e, add_ofNat_add]))
+    · rw [ho] at h; cases h
+      rw [hi2, show 8 * (2 * (pairsOf rs).1.length) = 16 * (pairsOf rs).1.length by omega]
+      apply read_of_agree (t := s) (by decide)
+      intro k hk
+      rw [h6 _ (fun k' hk' e => add_ofNat_ne (by omega) (by omega) (by omega)
+        ((add_ofNat_add _ _ _).symm.trans e)), he0, pushSt_mem, hT]
+
+/-! ## The pops -/
+
+/-- A 16-byte read is the 8 bytes above over the 8 bytes below. -/
+theorem read16_eq (a : BitVec 64) (s : Arm.ArmState) :
+    Arm.read_mem_bytes 16 a s = Arm.read_mem_bytes 8 (a + 8#64) s ++ Arm.read_mem_bytes 8 a s := by
+  have h : Arm.read_mem_bytes 16 a s = (Arm.read_mem_bytes 16 a s).extractLsb' 64 64 ++
+      (Arm.read_mem_bytes 16 a s).extractLsb' 0 64 := by
+    apply BitVec.eq_of_getLsbD_eq; intro i hi
+    simp only [BitVec.getLsbD_append, BitVec.getLsbD_extractLsb']
+    by_cases h : i < 64
+    · simp [h]
+    · simp only [h, ite_false]
+      rw [show 64 + (i - 64) = i by omega, show decide (i - 64 < 64) = true by
+        simp only [decide_eq_true_eq]; omega, Bool.true_and]
+  obtain ⟨h1, h2⟩ := read16_split h
+  rw [h, h1, h2]
+
+theorem read16_lo (a : BitVec 64) (s : Arm.ArmState) :
+    (Arm.read_mem_bytes 16 a s).extractLsb' 0 64 = Arm.read_mem_bytes 8 a s := by
+  rw [read16_eq, BitVec.extractLsb'_append_eq_right]
+
+theorem read16_hi (a : BitVec 64) (s : Arm.ArmState) :
+    (Arm.read_mem_bytes 16 a s).extractLsb' 64 64 = Arm.read_mem_bytes 8 (a + 8#64) s := by
+  rw [read16_eq, BitVec.extractLsb'_append_eq_left]
+
+/-- The value a pop leaves in register `r` from the 8 bytes `v` (a `v` register gets them
+zero-extended). -/
+def PopVal (t : Arm.ArmState) : Reg → BitVec 64 → Prop
+  | .x n, v => Arm.r (.GPR (rnum n)) t = v
+  | .v n, v => Arm.r (.SFP (rnum n)) t = v.setWidth 128
+  | _, _ => True
+
+/-- `PopVal` survives writes of other fields. -/
+theorem popVal_congr {t t' : Arm.ArmState} {r : Reg} {v : BitVec 64}
+    (h : ∀ f, r.field = some f → Arm.r f t' = Arm.r f t) (hv : PopVal t r v) : PopVal t' r v := by
+  cases r <;> simp only [PopVal, Reg.field] at h hv ⊢ <;> first | trivial | rw [h _ rfl]; exact hv
+
+/-- The pop of one register (`ldr`/`ldr d`). -/
+theorem exec_pop1 (env : Env) {int : Bool} {r : Reg} (hr : PushReg int r) (s : Arm.ArmState)
+    (hal : Arm.CheckSPAlignment s) :
+    ∃ a, (if int then Insn.load .uload64 r (.spPostIndexed 16)
+        else Insn.fpuLoad .size64 r (.spPostIndexed 16)).toArmInst env = .ok a ∧
+      Arm.r .PC (Arm.exec_inst a s) = Arm.r .PC s + 4#64 ∧
+      Arm.r .ERR (Arm.exec_inst a s) = Arm.r .ERR s ∧ (Arm.exec_inst a s).program = s.program ∧
+      spOf (Arm.exec_inst a s) = spOf s + 16#64 ∧ (Arm.exec_inst a s).mem = s.mem ∧
+      PopVal (Arm.exec_inst a s) r (Arm.read_mem_bytes 8 (spOf s) s) ∧
+      ∀ f, f ≠ .PC → f ≠ .GPR 31#5 → r.field ≠ some f → Arm.r f (Arm.exec_inst a s) = Arm.r f s := by
+  cases r with
+  | x n =>
+    obtain ⟨rfl, hn⟩ := hr
+    obtain ⟨a, ha, he⟩ := exec_pop_x env hn s hal
+    refine ⟨a, ha, ?_⟩
+    rw [he]
+    have h31 : Arm.StateField.GPR (rnum n) ≠ .GPR 31#5 := fun e => rnum_ne31 hn (Arm.StateField.GPR.inj e)
+    refine ⟨?_, ?_, ?_, ?_, ?_, ?_, fun f g1 g2 g3 => ?_⟩
+    rotate_left 6
+    · simp only [Reg.field, ne_eq, Option.some.injEq] at g3
+      simp only [popXSt]
+      rw [Arm.r_of_w_different g1, Arm.r_of_w_different g2, Arm.r_of_w_different (Ne.symm g3)]
+    all_goals simp [popXSt, spOf, Arm.r_of_w_same, Arm.r_of_w_different, Arm.w_program,
+        Arm.ArmState.mem_w_eq_mem, PopVal, h31]
+  | v n =>
+    obtain ⟨rfl, hn⟩ := hr
+    obtain ⟨a, ha, he⟩ := exec_pop_d env hn s hal
+    refine ⟨a, ha, ?_⟩
+    rw [he]
+    refine ⟨?_, ?_, ?_, ?_, ?_, ?_, fun f g1 g2 g3 => ?_⟩
+    rotate_left 6
+    · simp only [Reg.field, ne_eq, Option.some.injEq] at g3
+      simp only [popDSt]
+      rw [Arm.r_of_w_different g1, Arm.r_of_w_different g2, Arm.r_of_w_different (Ne.symm g3)]
+    all_goals simp [popDSt, spOf, Arm.r_of_w_same, Arm.r_of_w_different, Arm.w_program,
+        Arm.ArmState.mem_w_eq_mem, PopVal]
+  | _ => exact hr.elim
+
+/-- The pop of a pair (`ldp`/`ldp d`). -/
+theorem exec_pop2 (env : Env) {int : Bool} {a b : Reg} (ha : PushReg int a) (hb : PushReg int b)
+    (hab : a ≠ b) (s : Arm.ArmState) (hal : Arm.CheckSPAlignment s) :
+    ∃ i, (if int then Insn.ldp a b (.spPostIndexed 16)
+        else Insn.fpuLoadP .size64 a b (.spPostIndexed 16)).toArmInst env = .ok i ∧
+      Arm.r .PC (Arm.exec_inst i s) = Arm.r .PC s + 4#64 ∧
+      Arm.r .ERR (Arm.exec_inst i s) = Arm.r .ERR s ∧ (Arm.exec_inst i s).program = s.program ∧
+      spOf (Arm.exec_inst i s) = spOf s + 16#64 ∧ (Arm.exec_inst i s).mem = s.mem ∧
+      PopVal (Arm.exec_inst i s) a (Arm.read_mem_bytes 8 (spOf s) s) ∧
+      PopVal (Arm.exec_inst i s) b (Arm.read_mem_bytes 8 (spOf s + 8#64) s) ∧
+      ∀ f, f ≠ .PC → f ≠ .GPR 31#5 → a.field ≠ some f → b.field ≠ some f →
+        Arm.r f (Arm.exec_inst i s) = Arm.r f s := by
+  cases a with
+  | x n =>
+    cases b with
+    | x m =>
+      obtain ⟨rfl, hn⟩ := ha
+      have hnm : n ≠ m := fun e => hab (by rw [e])
+      obtain ⟨i, hi, he⟩ := exec_pop_xx env hn hb.2 hnm s hal
+      refine ⟨i, hi, ?_⟩
+      rw [he]
+      have h31 : Arm.StateField.GPR (rnum n) ≠ .GPR 31#5 := fun e => rnum_ne31 hn (Arm.StateField.GPR.inj e)
+      have h31' : Arm.StateField.GPR (rnum m) ≠ .GPR 31#5 := fun e => rnum_ne31 hb.2 (Arm.StateField.GPR.inj e)
+      have hnm' : Arm.StateField.GPR (rnum n) ≠ .GPR (rnum m) := fun e =>
+        hnm (by have := congrArg BitVec.toNat (Arm.StateField.GPR.inj e)
+                rwa [rnum_toNat (by omega), rnum_toNat (by have := hb.2; omega)] at this)
+      refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, fun f g1 g2 g3 g4 => ?_⟩
+      rotate_left 7
+      · simp only [Reg.field, ne_eq, Option.some.injEq] at g3 g4
+        simp only [popXXSt]
+        rw [Arm.r_of_w_different g1, Arm.r_of_w_different g2, Arm.r_of_w_different (Ne.symm g4),
+          Arm.r_of_w_different (Ne.symm g3)]
+      all_goals simp [popXXSt, spOf, Arm.r_of_w_same, Arm.r_of_w_different, Arm.w_program,
+          Arm.ArmState.mem_w_eq_mem, PopVal, h31, h31', hnm', Ne.symm hnm', read16_lo, read16_hi]
+    | v m => obtain ⟨rfl, -⟩ := ha; exact absurd hb.1 (by simp)
+    | _ => exact hb.elim
+  | v n =>
+    cases b with
+    | x m => obtain ⟨rfl, -⟩ := ha; exact absurd hb.1 (by simp)
+    | v m =>
+      obtain ⟨rfl, hn⟩ := ha
+      have hnm : n ≠ m := fun e => hab (by rw [e])
+      obtain ⟨i, hi, he⟩ := exec_pop_dd env hn hb.2 hnm s hal
+      refine ⟨i, hi, ?_⟩
+      rw [he]
+      have hnm' : Arm.StateField.SFP (rnum n) ≠ .SFP (rnum m) := fun e =>
+        hnm (by have := congrArg BitVec.toNat (Arm.StateField.SFP.inj e)
+                rwa [rnum_toNat hn, rnum_toNat hb.2] at this)
+      refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, fun f g1 g2 g3 g4 => ?_⟩
+      rotate_left 7
+      · simp only [Reg.field, ne_eq, Option.some.injEq] at g3 g4
+        simp only [popDDSt]
+        rw [Arm.r_of_w_different g1, Arm.r_of_w_different g2, Arm.r_of_w_different (Ne.symm g4),
+          Arm.r_of_w_different (Ne.symm g3)]
+      all_goals simp [popDDSt, spOf, Arm.r_of_w_same, Arm.r_of_w_different, Arm.w_program,
+          Arm.ArmState.mem_w_eq_mem, PopVal, hnm', Ne.symm hnm', read16_lo, read16_hi]
+    | _ => exact hb.elim
+  | _ => exact ha.elim
+
+theorem pairsOf_flat : ∀ rs : List Reg,
+    ((pairsOf rs).1.flatMap fun p => [p.1, p.2]) ++ (pairsOf rs).2.toList = rs
+  | [] => rfl
+  | [_] => rfl
+  | a :: b :: rs => by
+    rw [pairsOf_cons2]; simp only [List.flatMap_cons, List.cons_append, List.nil_append]
+    rw [pairsOf_flat rs]
+
+theorem field_inj {int : Bool} {r r' : Reg} (hr : PushReg int r) (hr' : PushReg int r') {f : Arm.StateField}
+    (h : r.field = some f) (h' : r'.field = some f) : r = r' := by
+  cases r with
+  | x n =>
+    cases r' with
+    | x m =>
+      simp only [Reg.field, Option.some.injEq] at h h'
+      have := congrArg BitVec.toNat (Arm.StateField.GPR.inj (h.trans h'.symm))
+      rw [rnum_toNat (by have := hr.2; omega), rnum_toNat (by have := hr'.2; omega)] at this
+      rw [this]
+    | v m => simp only [Reg.field, Option.some.injEq] at h h'; subst h; cases h'
+    | _ => exact hr'.elim
+  | v n =>
+    cases r' with
+    | x m => simp only [Reg.field, Option.some.injEq] at h h'; subst h; cases h'
+    | v m =>
+      simp only [Reg.field, Option.some.injEq] at h h'
+      have := congrArg BitVec.toNat (Arm.StateField.SFP.inj (h.trans h'.symm))
+      rw [rnum_toNat hr.2, rnum_toNat hr'.2] at this
+      rw [this]
+    | _ => exact hr'.elim
+  | _ => exact hr.elim
+
+theorem field_ne_pc_sp {int : Bool} {r : Reg} (hr : PushReg int r) {f : Arm.StateField}
+    (h : r.field = some f) : f ≠ .PC ∧ f ≠ .GPR 31#5 := by
+  cases r <;> simp only [Reg.field, Option.some.injEq, PushReg] at h hr <;> subst h
+  · exact ⟨by simp, fun e => rnum_ne31 hr.2 (Arm.StateField.GPR.inj e)⟩
+  · exact ⟨by simp, by simp⟩
+  all_goals exact hr.elim
+
+/-- The line of one pair pop. -/
+def popLine2 (int : Bool) (p : Reg × Reg) : Line :=
+  .ins (if int then .ldp p.1 p.2 (.spPostIndexed 16) else .fpuLoadP .size64 p.1 p.2 (.spPostIndexed 16))
+
+theorem popLines_eq (int : Bool) (rs : List Reg) :
+    popLines int rs = (pairsOf rs).1.map (popLine2 int) ++ (match (pairsOf rs).2 with
+      | some r => [.ins (if int then .load .uload64 r (.spPostIndexed 16)
+          else .fpuLoad .size64 r (.spPostIndexed 16))]
+      | none => []) := rfl
+
+theorem read_of_mem_eq {s t : Arm.ArmState} (h : s.mem = t.mem) (n : Nat) (a : BitVec 64) :
+    Arm.read_mem_bytes n a s = Arm.read_mem_bytes n a t :=
+  read_mem_bytes_congr n a (fun k _ => by rw [h])
+
+/-- **The pair pops** run from the lowest pair up: pair `j` is read from `B + 16 j`. -/
+theorem popPairs_ok (env : Env) (int : Bool) : ∀ (ps : List (Reg × Reg)) (s : Arm.ArmState)
+    (B : BitVec 64), (∀ p ∈ ps, PushReg int p.1 ∧ PushReg int p.2) →
+    (ps.flatMap fun p => [p.1, p.2]).Nodup → B.toNat % 16 = 0 → spOf s = B →
+    ∃ s', StepsOk env (ps.map (popLine2 int)) s s' ∧ spOf s' = B + BitVec.ofNat 64 (16 * ps.length) ∧
+      s'.mem = s.mem ∧ Arm.r .ERR s' = Arm.r .ERR s ∧ s'.program = s.program ∧
+      (∀ f, f ≠ .PC → f ≠ .GPR 31#5 → (∀ p ∈ ps, p.1.field ≠ some f ∧ p.2.field ≠ some f) →
+        Arm.r f s' = Arm.r f s) ∧
+      (∀ j a b, ps[j]? = some (a, b) →
+        PopVal s' a (Arm.read_mem_bytes 8 (B + BitVec.ofNat 64 (16 * j)) s) ∧
+        PopVal s' b (Arm.read_mem_bytes 8 (B + BitVec.ofNat 64 (16 * j + 8)) s))
+  | [], s, B, _, _, _, hsp => ⟨s, rfl, by simpa using hsp, rfl, rfl, rfl, fun _ _ _ _ => rfl, by simp⟩
+  | p :: ps, s, B, hps, hnd, hB, hsp => by
+    simp only [List.flatMap_cons, List.cons_append, List.nil_append, List.nodup_cons, List.mem_cons,
+      List.mem_append, not_or] at hnd
+    obtain ⟨⟨hne, hn1⟩, hn2, hnd⟩ := hnd
+    have hp := hps p (by simp)
+    obtain ⟨i, hi, f1, f2, f3, f4, f5, v1, v2, fo⟩ :=
+      exec_pop2 env hp.1 hp.2 hne s (checkSP_of (by rw [hsp]; exact hB))
+    obtain ⟨s', h1, h2, h3, h4, h5, h6, h7⟩ := popPairs_ok
+      { env with pc := env.pc + 4 } int ps (Arm.exec_inst i s) (B + 16#64)
+      (fun q hq => hps q (List.mem_cons_of_mem _ hq)) hnd (by simpa using aligned_add hB 1)
+      (by rw [f4, hsp])
+    have hnotin : ∀ r, (r = p.1 ∨ r = p.2) → ∀ f, r.field = some f →
+        ∀ q ∈ ps, q.1.field ≠ some f ∧ q.2.field ≠ some f := by
+      intro r hr f hf q hq
+      have hq' := hps q (List.mem_cons_of_mem _ hq)
+      have hm1 : q.1 ∈ ps.flatMap fun p => [p.1, p.2] := List.mem_flatMap.2 ⟨q, hq, by simp⟩
+      have hm2 : q.2 ∈ ps.flatMap fun p => [p.1, p.2] := List.mem_flatMap.2 ⟨q, hq, by simp⟩
+      rcases hr with rfl | rfl
+      · refine ⟨fun e => hn1 ((field_inj hq'.1 hp.1 e hf) ▸ hm1),
+          fun e => hn1 ((field_inj hq'.2 hp.1 e hf) ▸ hm2)⟩
+      · refine ⟨fun e => hn2 ((field_inj hq'.1 hp.2 e hf) ▸ hm1),
+          fun e => hn2 ((field_inj hq'.2 hp.2 e hf) ▸ hm2)⟩
+    refine ⟨s', steps_cons hi f1 f2 f3 h1, ?_, by rw [h3, f5], by rw [h4, f2], by rw [h5, f3],
+      fun f g1 g2 g3 => ?_, fun j a b hj => ?_⟩
+    · rw [h2, show (16#64) = BitVec.ofNat 64 16 from rfl, add_ofNat_add]
+      simp only [List.length_cons]; congr 2; omega
+    · rw [h6 f g1 g2 (fun q hq => g3 q (List.mem_cons_of_mem _ hq))]
+      exact fo f g1 g2 (g3 p (by simp)).1 (g3 p (by simp)).2
+    · rcases j with _ | j
+      · simp only [List.getElem?_cons_zero, Option.some.injEq] at hj
+        subst hj
+        refine ⟨popVal_congr (fun f hf => ?_) (by rw [hsp] at v1; simpa using v1),
+          popVal_congr (fun f hf => ?_) (by rw [hsp] at v2; simpa using v2)⟩
+        · obtain ⟨g1, g2⟩ := field_ne_pc_sp hp.1 hf
+          exact h6 f g1 g2 (hnotin _ (.inl rfl) f hf)
+        · obtain ⟨g1, g2⟩ := field_ne_pc_sp hp.2 hf
+          exact h6 f g1 g2 (hnotin _ (.inr rfl) f hf)
+      · simp only [List.getElem?_cons_succ] at hj
+        obtain ⟨w1, w2⟩ := h7 j a b hj
+        rw [read_of_mem_eq f5] at w1 w2
+        have e1 : B + 16#64 + BitVec.ofNat 64 (16 * j) = B + BitVec.ofNat 64 (16 * (j + 1)) := by
+          rw [show (16#64) = BitVec.ofNat 64 16 from rfl, add_ofNat_add]; congr 2; omega
+        have e2 : B + 16#64 + BitVec.ofNat 64 (16 * j + 8) = B + BitVec.ofNat 64 (16 * (j + 1) + 8) := by
+          rw [show (16#64) = BitVec.ofNat 64 16 from rfl, add_ofNat_add]; congr 2; omega
+        rw [e1] at w1; rw [e2] at w2
+        exact ⟨w1, w2⟩
+
+/-- **The pops of one register class**: from `sp = B`, register `rs[i]` gets the 8 bytes at
+`B + 8 i`; `sp` rises by `pushBytes`, memory is unchanged, and only the registers of `rs`
+(besides the pc and `sp`) change. -/
+theorem popLines_ok (env : Env) (int : Bool) (rs : List Reg) (s : Arm.ArmState) (B : BitVec 64)
+    (hrs : ∀ r ∈ rs, PushReg int r) (hnd : rs.Nodup) (hB : B.toNat % 16 = 0) (hsp : spOf s = B) :
+    ∃ s', StepsOk env (popLines int rs) s s' ∧ spOf s' = B + BitVec.ofNat 64 (pushBytes rs.length) ∧
+      s'.mem = s.mem ∧ Arm.r .ERR s' = Arm.r .ERR s ∧ s'.program = s.program ∧
+      (∀ f, f ≠ .PC → f ≠ .GPR 31#5 → (∀ r ∈ rs, r.field ≠ some f) → Arm.r f s' = Arm.r f s) ∧
+      (∀ i r, rs[i]? = some r → PopVal s' r (Arm.read_mem_bytes 8 (B + BitVec.ofNat 64 (8 * i)) s)) := by
+  have hl := pairsOf_len rs
+  have hpb := pushBytes_eq rs
+  have hfl := pairsOf_flat rs
+  obtain ⟨hmP, hmO⟩ := pairsOf_mem rs
+  have hpv : ∀ p ∈ (pairsOf rs).1, PushReg int p.1 ∧ PushReg int p.2 :=
+    fun p hp => ⟨hrs _ (hmP p hp).1, hrs _ (hmP p hp).2⟩
+  have hndP : ((pairsOf rs).1.flatMap fun p => [p.1, p.2]).Nodup := by
+    rw [← hfl] at hnd; exact (List.nodup_append.1 hnd).1
+  obtain ⟨s1, h1, h2, h3, h4, h5, h6, h7⟩ := popPairs_ok env int _ s B hpv hndP hB hsp
+  have hmemP : ∀ p ∈ (pairsOf rs).1, p.1 ∈ rs ∧ p.2 ∈ rs := hmP
+  -- the pairs' values
+  have hpair : ∀ (t : Arm.ArmState), (∀ f, f ≠ .PC → f ≠ .GPR 31#5 →
+        (∀ r, (pairsOf rs).2 = some r → r.field ≠ some f) → Arm.r f t = Arm.r f s1) →
+      ∀ i r, rs[i]? = some r → (pairsOf rs).2 ≠ some r ∨ i ≠ 2 * (pairsOf rs).1.length →
+        PopVal t r (Arm.read_mem_bytes 8 (B + BitVec.ofNat 64 (8 * i)) s) := by
+    intro t ht i r hi hno
+    rcases pairsOf_get rs i r hi with ⟨a, b, g1, g2⟩ | ⟨g1, g2⟩
+    · obtain ⟨w1, w2⟩ := h7 _ a b g1
+      have hab := hpv _ (List.mem_of_getElem? g1)
+      have hnotodd : ∀ x, (x = a ∨ x = b) → ∀ f, x.field = some f → ∀ r', (pairsOf rs).2 = some r' →
+          r'.field ≠ some f := by
+        intro x hx f hf r' ho e
+        have hx' : PushReg int x := by rcases hx with rfl | rfl; exact hab.1; exact hab.2
+        have := field_inj (hrs _ (hmO r' ho)) hx' e hf
+        subst this
+        rw [← hfl] at hnd
+        have hmx : r' ∈ (pairsOf rs).1.flatMap fun p => [p.1, p.2] :=
+          List.mem_flatMap.2 ⟨(a, b), List.mem_of_getElem? g1, by rcases hx with rfl | rfl <;> simp⟩
+        exact (List.nodup_append.1 hnd).2.2 _ hmx _ (by simp [ho]) rfl
+      by_cases h0 : i % 2 = 0
+      · rw [if_pos h0] at g2; subst g2
+        rw [show 8 * i = 16 * (i / 2) by omega]
+        exact popVal_congr (fun f hf => by
+          obtain ⟨c1, c2⟩ := field_ne_pc_sp hab.1 hf
+          exact ht f c1 c2 (hnotodd _ (.inl rfl) f hf)) w1
+      · rw [if_neg h0] at g2; subst g2
+        rw [show 8 * i = 16 * (i / 2) + 8 by omega]
+        exact popVal_congr (fun f hf => by
+          obtain ⟨c1, c2⟩ := field_ne_pc_sp hab.2 hf
+          exact ht f c1 c2 (hnotodd _ (.inr rfl) f hf)) w2
+    · rcases hno with h | h
+      · exact absurd g1 h
+      · exact absurd g2 h
+  rw [popLines_eq]
+  rcases ho : (pairsOf rs).2 with _ | r0
+  · simp only [ho, Option.isSome_none, Bool.false_eq_true, ite_false, Nat.add_zero] at hpb
+    refine ⟨s1, by simpa using h1, by rw [h2, hpb], h3, h4, h5, fun f g1 g2 g3 => ?_,
+      fun i r hi => hpair s1 (fun _ _ _ _ => rfl) i r hi (.inl (by rw [ho]; simp))⟩
+    exact h6 f g1 g2 (fun p hp => ⟨g3 _ (hmP p hp).1, g3 _ (hmP p hp).2⟩)
+  · simp only [ho, Option.isSome_some, ite_true] at hpb
+    have hr0 : PushReg int r0 := hrs _ (hmO r0 ho)
+    have hal1 : Arm.CheckSPAlignment s1 := checkSP_of (by rw [h2]; exact aligned_add hB _)
+    obtain ⟨i0, hi0, f1, f2, f3, f4, f5, v0, fo⟩ :=
+      exec_pop1 { env with pc := env.pc + 4 * ((pairsOf rs).1.map (popLine2 int)).length } hr0 s1 hal1
+    refine ⟨Arm.exec_inst i0 s1, StepsOk.append h1 (steps_cons hi0 f1 f2 f3 rfl), ?_, by rw [f5, h3],
+      by rw [f2, h4], by rw [f3, h5], fun f g1 g2 g3 => ?_, fun i r hi => ?_⟩
+    · rw [f4, h2, hpb, show (16#64) = BitVec.ofNat 64 16 from rfl, BitVec.add_assoc, ← BitVec.ofNat_add]
+    · rw [fo f g1 g2 (g3 r0 (hmO r0 ho)), h6 f g1 g2 (fun p hp => ⟨g3 _ (hmP p hp).1, g3 _ (hmP p hp).2⟩)]
+    · by_cases hodd : r = r0 ∧ i = 2 * (pairsOf rs).1.length
+      · obtain ⟨rfl, rfl⟩ := hodd
+        rw [h2, read_of_mem_eq h3] at v0
+        rw [show 8 * (2 * (pairsOf rs).1.length) = 16 * (pairsOf rs).1.length by omega]
+        exact v0
+      · refine hpair _ (fun f g1 g2 g3 => fo f g1 g2 (g3 r0 ho)) i r hi ?_
+        rw [ho]
+        by_cases h : r = r0
+        · exact .inr (fun e => hodd ⟨h, e⟩)
+        · exact .inl (fun e => h (Option.some.inj e).symm)
+
 end Backend.Proof
