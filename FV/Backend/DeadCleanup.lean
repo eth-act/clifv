@@ -10,9 +10,12 @@ def pureAlu : ALUOp → Bool
   | .add | .sub | .orr | .orrNot | .and | .andNot | .eor | .eorNot => true
   | _ => false
 
-/-- The explicit whitelist excludes flags, memory accesses, calls, traps and control. -/
+/-- The explicit whitelist excludes flag writers, memory accesses, calls, traps and control.
+`cset` reads the flags but writes only its def: a dead `cset` is not lowered by Cranelift
+(`machinst/lower.rs`: an instruction none of whose results is used is skipped), e.g. the
+boolean of an `icmp` that the `brif` rule re-compares (#552). -/
 def pureForm : MInst → Bool
-  | .mov .. | .movWide .. | .loadAddr .. => true
+  | .mov .. | .movWide .. | .loadAddr .. | .cset .. => true
   | .aluRRR op .. | .aluRRImm12 op .. | .aluRRImmLogic op ..
   | .aluRRImmShift op .. | .aluRRRShift op .. | .aluRRRExtend op .. => pureAlu op
   | .aluRRRR .mAdd .. | .aluRRRR .mSub .. => true
