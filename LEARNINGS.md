@@ -12,12 +12,23 @@ None of these weaken what is proven: every compiler theorem still prints only `p
 ### Scan Lists, not Arrays, in kernel-evaluated code
 - **Problem:** `Array` combinators (`find?`, `foldl`, …) are well-founded recursive. The kernel evaluates them very slowly. Every Stock module that runs `Stock.lower` under `decide +kernel` looked up `"lower"` in the 2,483-term ISLE program with `Array.find?`.
 - **Trick:** define the lookup as a `List` scan and add an `@[csimp]` theorem that swaps the `Array` version back in for compiled code, so runtime is unchanged.
-- **Effect:** a 700-element scan went from 4.3 GB / 17–30 s to 0.48 GB / 0.25 s; `program.termByName? "lower"` from 4.65 GB / 17 s to 0.79 GB / 2.6 s (BuildDiet, `FV/Isle/Syntax.lean`; branch `agent/build-diet`, being merged).
+- **Effect:** a 700-element scan went from 4.3 GB / 17–30 s to 0.48 GB / 0.25 s; `program.termByName? "lower"` from 4.65 GB / 17 s to 0.79 GB / 2.6 s (BuildDiet, `FV/Isle/Syntax.lean`; branch `agent/build-diet-syntax`, not merged: `Syntax` is in the `FV.Opt.Proof` cone, so it rebuilds every rule module, e.g. `RuleShifts3P2` ~7,700 s / 8 GB cold; its Opt impact must be measured first).
+
+- **Same for `Array.map`/`mapIdx`:** the regalloc checker's `AState` (an `Array` of ~140 location sets) used `Array.map`, `mapIdx` and an indexed `List.range` scan; the kernel runs `Array.mapM`'s index loop with one `List.get` walk and one `List.concat` per element (quadratic). Microbenchmark, 20 `remove`s over a 300-location state in `decide +kernel`: 7.96 GB / 27 s with `Array.map`, 0.56 GB / <1 s with `⟨a.toList.map f⟩`. `FV/Backend/RegallocCheck.lean` now specifies `remove`/`meet`/`parCopy`/`le`/`forgetDefs`/`forgetOps` by `List` recursion, `@[csimp]` keeps the `Array` code, `*_eq` give proofs the old forms (BuildDiet). Scheduler build, main gate `bdb71827` → this branch (peak: maxrss → cgroup peak): `PerEdgeSpillEntryFixture` 388 s / 14.7 GB → 86 s / 8.9 GB, `StockPerEdgeAllocatorWitness` 123 s / 11.7 GB → 65 s / 7.7 GB, `StockPerEdgeCriticalAllocatorWitness` 109 s / 14.2 GB → 120 s / 9.1 GB; with the single certificate below, `PerEdgeSpillCycleFixture` 1,708 s / 17.8 GB → 73 s / 9.3 GB. The machine-wide largest peak dropped from 17.8 GB to 11.9 GB (`StockSourceSinkTable`).
 
 ### Prefer structural recursion to well-founded recursion
 - **Problem:** the kernel cannot reduce well-founded definitions efficiently (or at all, in practice). `fitsCl`/`fitsTy` in `DefGenDom` used well-founded recursion, and every `decide +kernel` check over them failed.
 - **Trick:** rewrite them with structural recursion (fuel or the list itself), with the same equations.
 - **Effect:** the failing `DefGen` certificates now pass (T6).
+
+### Evaluate a concrete pipeline once per certificate
+- **Problem:** `PerEdgeSpillCycleFixture` checked seven facts about one `Stock.lower`/`prepareAt`/`allocResultAt`/`lowerRFunc` run with seven separate `decide +kernel` theorems; each re-ran the whole pipeline (`Stock.lower` alone 8 GB / 21 s, with allocation 18 GB / 58 s).
+- **Trick:** one `decide +kernel` over the conjunction (the evm.fast-dev "remove repeated work" idea; kernel-opaque `boxedValue` caches would be the next step if one evaluation were still too much).
+- **Effect:** 18.2 GB / 748 s → 18.1 GB / 66 s, same statement (BuildDiet, before the `AState` change; with it, 9.3 GB / 73 s). Splitting certificates lowers the peak only when the parts do not share the expensive evaluation.
+
+### `subst_vars` rescans (measured, not merged)
+- **Problem:** `Lean.Meta.substVars` substitutes one variable per scan and restarts; each scan `whnf`s both sides of every equation. In the isel inversion proofs (`isel_inv`, `ctl_inv`, `isel_destruct; subst_vars`) the contexts hold many equations between big interpreter terms, so `subst_vars` was ~95% of the time (`IselCtlTry`: 1,420 s in one call).
+- **Tried:** override `subst_vars` (`macro_rules`) by a pass that substitutes only equations whose sides are syntactically variables, then one stock `substVars` (branch `agent/build-diet-fastsubst`, `FV/Backend/Proof/FastSubst.lean`). Without the stock pass: `IselCtlTry` 1,798 → 101 s, `KillTryDefs` 1,802 → 70 s, … but `IselCmpIcmp` breaks (it needs `(a, b).1 = x`). With it, the gain is gone: `IselCtlTry` standalone, same session, 838 s (stock) vs 812 s, both 2.0 GB. Next: let the syntactic pass look through `whnfR` (projections of constructors) and drop the stock pass; that needs a full rebuild to show which proofs need default-transparency `whnf`.
 
 ### Avoid `rfl`-based simp steps on big concrete terms
 - **Problem:** `StockCmpWithFlags` elaborated in 1.9 GB, but the kernel needed 23 GB to re-check one `simp` step of `isel_eval`: monad-law lemmas proved by `rfl`, applied to a large concrete state.
