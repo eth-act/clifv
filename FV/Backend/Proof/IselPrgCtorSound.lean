@@ -357,7 +357,7 @@ theorem actor_none_sound (hP : PInv f ctx) (id : TermId) (as : List PA) (hp : ty
     simp only [γ] at hw1
     obtain ⟨_, rfl, s, rfl, hs, hn⟩ := hw1
     red_safe externCtor
-    obtain ⟨rss, hr, hl, h1⟩ := CS.foldOut retClass (sigRets s) #[] st
+    obtain ⟨rss, hr, hl, h1⟩ := CS.foldOut retClass s.returns #[] st
     refine CS.fin_ok ⟨_, rfl, ?_, ?_⟩ <;> rw [hr]
     · simpa using h1
     · rcases hn with rfl | rfl
@@ -368,7 +368,7 @@ theorem actor_none_sound (hP : PInv f ctx) (id : TermId) (as : List PA) (hp : ty
     simp only [γ] at hw1
     obtain ⟨_, rfl, s, rfl, hs, -⟩ := hw1
     red_safe externCtor
-    obtain ⟨rss, hr, hl, h1⟩ := CS.foldOut retClass (sigRets s) #[] st
+    obtain ⟨rss, hr, hl, h1⟩ := CS.foldOut retClass s.returns #[] st
     refine CS.fin_ok ⟨_, rfl, ?_, .inl rfl⟩
     rw [hr]
     simpa using h1
