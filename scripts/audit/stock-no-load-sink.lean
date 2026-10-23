@@ -6,6 +6,8 @@ import FV.Backend.Proof.StockNoLoadSink
 import FV.Backend.Proof.StockNoLoadSinkWitness
 import FV.Backend.Proof.StockSinkRuleRhsWitness
 
+set_option pp.privateNames true
+
 #print axioms Isle.Interp.RuleFrame.CtorFreeAt.mono
 #print axioms Isle.Interp.RuleFrame.ctorFreeAt_inductive
 #print axioms Backend.Stock.Proof.SinkRules.stock_term_ids_checked
