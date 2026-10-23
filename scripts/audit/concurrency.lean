@@ -919,3 +919,7 @@ import FVTest.Concurrency.LitmusFull
 #print axioms Concurrency.CallRetsN.arm_isel_refinesCRN
 #print axioms Concurrency.CallRetsN.arm_isel_refines_entryCRN
 #print axioms Concurrency.CallRetsN.Witness.arm_entryCRN_fC -- witness: native_decide
+#print axioms Concurrency.ArmAllocThread.prologue_fields
+#print axioms Concurrency.ArmAllocThread.regVal_calleeSaved_congr
+#print axioms Concurrency.ArmAllocThread.entry_premises
+#print axioms Concurrency.CallSeg.WitnessC.entry_premises_L -- witness: native_decide
