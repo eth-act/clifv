@@ -141,7 +141,7 @@ theorem tryRegsOfC_bounds {sig : Clif.Signature} {st st1 : LState} {trs : List R
     generalize hR : (sigRets sig).foldl (fun (x : Array Reg × LState) q =>
       ((x.1.push (x.2.fresh (retClass q)).1), (x.2.fresh (retClass q)).2)) (#[], st) = R at r1 r2 hrets hpays hst
     have hps : ps.length = ((sigRets sig).map retClass).length := retRegsC_lengthC _ _ _ hr
-    simp only [Array.toList_empty, List.nil_append] at r1
+    simp only [List.nil_append] at r1
     have hRb : ∀ r ∈ R.1.toList, ∃ n c, r = .vreg n c ∧ st.nextVreg ≤ n ∧ n < R.2.nextVreg := by
       intro r hr'
       rw [r1] at hr'
@@ -152,7 +152,7 @@ theorem tryRegsOfC_bounds {sig : Clif.Signature} {st st1 : LState} {trs : List R
     have hsz : ps.length ≤ R.1.size := by
       have := congrArg List.length r1
       simp only [Array.length_toList, List.length_map, List.length_zipIdx] at this
-      rw [hps, List.length_map, this]
+      rw [hps, List.length_map, this]; exact Nat.le_refl _
     obtain ⟨hmono, hpb⟩ := payBoundC ps R.1 st.nextVreg R.2.nextVreg (by rw [r2]; omega) hsz hRb
       (payloadRegs sig.callConv) #[] R.2 (Nat.le_refl _) (by simp)
     intro r hr'
@@ -172,7 +172,7 @@ theorem tryRegsOfC_rets {sig : Clif.Signature} {st st1 : LState} {trs : List Reg
     ∃ c, trs.1[i]? = some (.vreg (st.nextVreg + i) c) := by
   obtain ⟨ps, -, h1, -, -⟩ := tryRegsOfC_defs h
   rw [h1]
-  exact ⟨retClass (sigRets sig)[i], by simp [List.getElem?_zipIdx, hi]⟩
+  exact ⟨retClass (sigRets sig)[i], by simp [hi]⟩
 
 /-- The rules of `lower_branch` other than the `try_call` roots never match a typed `try_call`
 (data `tryCallDataC`), in any context. -/

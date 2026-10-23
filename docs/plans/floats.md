@@ -724,14 +724,41 @@ integer payload vregs; `fTryMix`: returns in v0 and x0, x0's payload aliased to 
 `CallCtxT`, every extern signature, the typed facts as premises) with the typed contract
 `LowerTryOkPC` (`LowerTryOkP` with return and payload vregs of either class;
 `LowerTryOkP.toC`), `tryRulesCorrectTFP_program`; `tryRegsOfC_defs`: the call's defs are
-`outDefsC b (ps ++ fr) (cs ++ ints)`, consecutive fresh vregs. Open: plugging the typed `try_call`
-family into the chain (with `lowTerm` on `exnTableOpndC`), `try_call_indirect` (slice 3).
-Measured (`cargo fv test --lean-link --build-std`, examples/fv-demo, 2026-10-23,
+`outDefsC b (ps ++ fr) (cs ++ ints)`, consecutive fresh vregs.
+
+**S11e6 slice 2c: the typed `try_call` in the typed chain (per-function theorem).** The context
+premise of every typed family, `CtxT`, now asks only the callees of the `call` statements for
+integer signatures (`CtxT.calls : CallsE f ctx`, `IselExclT.lean`; before: `f.externs.all sigE`,
+which the proofs used only for `call` results): every family over `CtxT` is strictly stronger;
+`CtxT.ofExterns`/`callsE_of_externs` build it from integer externs, the exclusion lemmas have
+`_calls` variants (`inst_split_calls`, `lower_nonroot_nomatchT_calls`, …; the old names are
+corollaries). Beside the integer recording: `DriverCheckC.lean` (`lowTermC`, `lowBlocksC` with
+`lowerFunction`'s typed helpers, the validator `lowerCheckTC`), `DriverCheckTyC.lean`
+(`lowTermC_spec`, `LowerShapeTC`, `loweringTC_of_check`), the scope `Compile.functionETC`
+(`Compile/SubsetTC.lean`: externs in `sigET`, `call` callees in `sigE` (`callsE`), a direct
+`try_call`'s arguments not integer positions; `functionETC_of_functionET`),
+`LowerContractTC.lean` (`LowerTryOkC`, `TryUnmatchableTC`/`tryUnmatchableTC_program`,
+`TryCallsTC`, `tryCallsTC_of_rules` from `tryRulesCorrectTFP_program`, `tryRegsOfC_bounds`,
+`tryRegsOfC_rets`), `LowerSimTC.lean` (`DriverHypTC`, `term_step_tryTC`, `driver_correctTC`)
+and `E2E/FinalTC.lean` (`InSubsetTC`, `CompiledTC`, `backend_correct_final_exTC`,
+`backend_correct_finalTC`, no rule-family premise). The backend validates a function outside
+`functionET` with `lowerCheckTC` (`lowerCheckFor`) and reports it verified when it is in
+`verifiableTC` (`unverifiedReason?`; `E2E/VerifiableT.lean`: `verdict_of_unverifiedReason`,
+`InSubsetTC.of_verifiableTC`, `lowerChecked_specTC`; `lowerChecked_spec` and
+`verifiable_or_verifiableT_of_unverifiedReason` take the premise `functionE ∨ functionET`, since
+for the new functions their old conclusions are false). Witness `FVTest/E2E/FloatTryFinalTC.lean`
+(`fTryF`: `InSubsetTC`, `CompiledTC`, `FormsCovered`, the verdict, `backend_correct_finalTC_fTryF`).
+Open: the link chain (`Link.compileExe_correct*`, `InScopeIn`, the two-world/pinned drivers
+`PairDriverT`/`DeadCleanupPairT`/`LinkWorldT`/`LinkArmT`, totality `lowerCheckTC_complete`),
+`try_call_indirect` (slice 3); slice 1's `call` plug-in can now use the weakened `CtxT`.
+After 2b alone (`cargo fv test --lean-link --build-std`, examples/fv-demo, 2026-10-23,
 `scripts/float-fallbacks.py --before` the std-t3b report): of std's 39 fallbacks "try_call with
-f32/f64 parameters or returns" 37 now compile (unverified, so cg_clif's code is kept under
-`--lean-link`), 1 is a `try_call_indirect` (slice 3), 1 stops at an `f64const` needing the
-literal pool (`emit_u64_le_const` unmodelled, #565). The runtests `float_try.clif` are
-byte-identical to stock Cranelift (`lean-backend-encode-check.sh`: 6/6).
+f32/f64 parameters or returns" 37 compiled unverified. With 2c (`--verified`): 35 verified, 2
+unverified (float arithmetic), 1 `try_call_indirect` (slice 3), 1 `f64const` needing the literal
+pool (`emit_u64_le_const` unmodelled, #565); fv-demo 32220 → 32287 verified (67 fallback →
+verified); the lean-link region leaves them out per executable (82/83 functions, before 17/18)
+until the link chain is typed. `float_try.clif` is byte-identical to stock Cranelift
+(`lean-backend-encode-check.sh`: 6/6).
 
 ## 4. Known hazards
 

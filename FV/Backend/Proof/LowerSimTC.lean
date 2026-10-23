@@ -891,6 +891,7 @@ theorem term_step_tryTC (H : DriverHypTC f vc ctx st0 R gn bl A sem MR env p)
   have hbargs' : vb.branchArgs = #[] := by
     rw [hbargs]; rcases hBT with ⟨_, _, h⟩ | ⟨_, _, h⟩ <;> rw [h]
   have hbnd := tryRegsOfC_bounds hregs
+  have hst1 : L.tst.nextVreg ≤ T.st1.nextVreg := (tryRegsOfC_mono hregs).1
   obtain ⟨pre, ci', hms, hpre, hcd⟩ := hok.shape
   have hmono : T.st1.nextVreg ≤ L.tst'.nextVreg := hok.mono
   have hfix : tryFix T.info L.tst'.emitted.toList = pre ++ [.tryCall ci' T.info] := by
