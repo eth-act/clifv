@@ -1063,3 +1063,9 @@ import FVTest.Concurrency.LitmusFull
 #print axioms Concurrency.CallValid.valid_of_allocInvD
 #print axioms Concurrency.CallValid.Witness.allocW -- witness: native_decide
 #print axioms Concurrency.CallValid.Witness.retW -- witness: native_decide
+-- #473 (4): an activation's segment lifted below its callers
+#print axioms Concurrency.CallSegLift.evAt_prefix_nil
+#print axioms Concurrency.CallSegLift.Refines.prefixNil
+#print axioms Concurrency.CallSegLift.realizedT_lift
+#print axioms Concurrency.CallSegLift.Witness.prefix_nil
+#print axioms Concurrency.CallSegLift.Witness.lift_nil
