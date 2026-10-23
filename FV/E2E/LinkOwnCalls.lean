@@ -93,15 +93,15 @@ theorem prep_src {vc vcp : VCode} (hp : prepare vc = .ok vcp) (hd : Prep.PrepDom
   have cs0 := Prep.cfg_spec hc0
   have cs2 : Prep.CfgSpec (B ++ E) ss2 := Prep.cfg_spec hc2
   obtain ⟨h10, hk0, -, hn1, -, hR, hRn, hR0, -, -⟩ := Prep.facts_basic hd cs0 cs2 hS
-  have hqR : q < (rpo ss2).size := by
+  have hqR : q < (prepOrder B.size ss2).size := by
     have := (Array.getElem?_eq_some_iff.mp hvb).1; simpa using this
   obtain ⟨hj, e⟩ := Prep.v3_get hR hqR
   rw [e] at hvb
   cases hvb
-  by_cases hjB : (rpo ss2)[q] < B.size
+  by_cases hjB : (prepOrder B.size ss2)[q] < B.size
   · left
     rw [Array.getElem_append_left hjB] at hi ⊢
-    have hj1 : (rpo ss2)[q] < (Prep.keep vc.blocks (reachable ss0)).size := by
+    have hj1 : (prepOrder B.size ss2)[q] < (Prep.keep vc.blocks (reachable ss0)).size := by
       rw [← hS.size]; exact hjB
     obtain ⟨b, hb, eb, -⟩ := Prep.keep_src hj1
     rcases hS.rw _ hj1 hjB with h | ⟨t, t', ls, h1, -, h3, h4, -⟩
@@ -123,7 +123,7 @@ theorem prep_src {vc vcp : VCode} (hp : prepare vc = .ok vcp) (hd : Prep.PrepDom
           rw [ite_eq_right (by omega), Array.getElem?_pop, ite_eq_left (by omega)]
         · cases hi
   · right
-    have he : (rpo ss2)[q] - B.size < E.size := by simp at hj; omega
+    have he : (prepOrder B.size ss2)[q] - B.size < E.size := by simp at hj; omega
     obtain ⟨l, hl⟩ := hS.edges _ he
     rw [Array.getElem_append_right (by omega), hl] at hi
     have hm := Array.mem_of_getElem? hi

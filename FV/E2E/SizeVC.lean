@@ -626,7 +626,7 @@ def PW (V1 : Array VBlock) (X k : Nat) (st : Nat × Array VBlock × Array VBlock
 theorem prepare_w {vc vcp : VCode} (h : prepare vc = .ok vcp) :
     ∃ (ss2 ps2 : Array (Array Nat)) (B E : Array VBlock),
       ({ vc with blocks := B ++ E } : VCode).cfg = .ok (ss2, ps2) ∧
-      vcp = { vc with blocks := (rpo ss2).map fun i => (B ++ E)[i]! } ∧
+      vcp = { vc with blocks := (prepOrder B.size ss2).map fun i => (B ++ E)[i]! } ∧
       (∀ M, sumW M B + sumW M E ≤ (vc.blocks.toList.map (gW M)).sum) ∧
       ∀ b ∈ B.toList ++ E.toList, ∀ m ∈ b.insts.toList, regCount m ≤ maxRC vc := by
   unfold prepare at h
@@ -748,6 +748,21 @@ theorem rpo_facts {vc : VCode} {V : Array VBlock} {ss ps : Array (Array Nat)}
   · obtain ⟨h1, h2, -⟩ := Proof.Prep.rpo_spec (Proof.Prep.succsIn_of cs) h0
     exact ⟨fun i hi => cs.size ▸ h1 i hi, h2⟩
 
+/-- `prepOrder` of a CFG of `V`: indices of `V`, each once. -/
+theorem prepOrder_facts {vc : VCode} {V : Array VBlock} {ss ps : Array (Array Nat)} (n : Nat)
+    (hc : ({ vc with blocks := V } : VCode).cfg = .ok (ss, ps)) :
+    (∀ i ∈ (prepOrder n ss).toList, i < V.size) ∧ (prepOrder n ss).toList.Nodup := by
+  have cs := Proof.Prep.cfg_spec hc
+  by_cases h0 : ss.size = 0
+  · have e : prepOrder n ss = #[] := by
+      unfold prepOrder
+      rw [show rpo ss = #[] by unfold rpo; simp [h0]]
+      rfl
+    rw [e]
+    simp
+  · obtain ⟨h1, h2, -⟩ := Proof.Prep.prepOrder_spec (n := n) (Proof.Prep.succsIn_of cs) h0
+    exact ⟨fun i hi => cs.size ▸ h1 i hi, h2⟩
+
 theorem sum_range_getElem! (A : Array VBlock) (f : VBlock → Nat) :
     ((List.range A.size).map fun i => f A[i]!).sum = (A.toList.map f).sum := by
   congr 1
@@ -761,10 +776,10 @@ theorem sum_range_getElem! (A : Array VBlock) (f : VBlock → Nat) :
 one retargeted (same `regCount`), or an edge block's `jump`. -/
 theorem maxRC_prepare {vc vcp : VCode} (hp : prepare vc = .ok vcp) : maxRC vcp ≤ maxRC vc := by
   obtain ⟨ss2, ps2, B, E, hc2, rfl, -, hRC⟩ := prepare_w hp
-  obtain ⟨hR, -⟩ := rpo_facts hc2
+  obtain ⟨hR, -⟩ := prepOrder_facts B.size hc2
   rw [maxRC_le_iff]
   refine ⟨five_le_maxRC vc, fun vb hvb i hi => ?_⟩
-  have hvb' : vb ∈ ((rpo ss2).map fun i => (B ++ E)[i]!).toList := hvb
+  have hvb' : vb ∈ ((prepOrder B.size ss2).map fun i => (B ++ E)[i]!).toList := hvb
   rw [Array.mem_toList_iff, Array.mem_map] at hvb'
   obtain ⟨j, hj, rfl⟩ := hvb'
   have hj2 : j < (B ++ E).size := hR j (by simpa using hj)
@@ -776,9 +791,9 @@ target of the input. -/
 theorem vcW_prepare {vc vcp : VCode} (hp : prepare vc = .ok vcp) (M : Nat) :
     vcW M vcp ≤ vcW M vc + jumpBW M * vcTg vc := by
   obtain ⟨ss2, ps2, B, E, hc2, rfl, hW, -⟩ := prepare_w hp
-  obtain ⟨hR, hN⟩ := rpo_facts hc2
-  have e1 : vcW M { vc with blocks := (rpo ss2).map fun i => (B ++ E)[i]! } =
-      ((rpo ss2).toList.map fun i => vbW M (B ++ E)[i]!).sum := by
+  obtain ⟨hR, hN⟩ := prepOrder_facts B.size hc2
+  have e1 : vcW M { vc with blocks := (prepOrder B.size ss2).map fun i => (B ++ E)[i]! } =
+      ((prepOrder B.size ss2).toList.map fun i => vbW M (B ++ E)[i]!).sum := by
     simp only [vcW, Array.toList_map, List.map_map, Function.comp_def]
   have e2 : (vc.blocks.toList.map (gW M)).sum = vcW M vc + jumpBW M * vcTg vc := by
     have e : vc.blocks.toList.map (gW M) =
