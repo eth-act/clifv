@@ -26,7 +26,7 @@ private theorem lookup_id {t : TermId} {term : Term}
   rw [List.getElem?_range (Array.getElem_of_getElem? found).1] at checked
   exact Option.some.inj checked
 
-private theorem guard_eq (t : TermId) : termCtorFree program blocked t = (t != 236) := by
+theorem term_guard (t : TermId) : termCtorFree program blocked t = (t != 236) := by
   cases found : program.term? t with
   | none =>
     have different : t ≠ 236 := by
@@ -70,7 +70,7 @@ theorem rule_cases {t : TermId} {rule : Rule} (member : rule ∈ program.rulesOf
       exact List.mem_flatten.mpr ⟨rules,
         Array.mem_toList_iff.mpr (Array.mem_of_getElem? lookup),by simpa [lookup] using member⟩
   have checked := (List.all_eq_true.mp table_checked) rule present
-  have guards : termCtorFree program blocked = (fun t => t != 236) := funext guard_eq
+  have guards : termCtorFree program blocked = (fun t => t != 236) := funext term_guard
   simp only [safeRule, Bool.and_eq_true, Bool.or_eq_true, decide_eq_true_eq] at checked
   refine ⟨?_, ?_⟩
   · simpa only [ifletsCtorFree, exprCtorFree, guards] using checked.1

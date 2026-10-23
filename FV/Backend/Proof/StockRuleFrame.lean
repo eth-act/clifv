@@ -66,6 +66,22 @@ structure CtorFreeAt (n : Nat) : Prop where
   select : ∀ term rs vs s tr r s' tr', (∀ rl ∈ rs, ifletsCtorFree p blocked rl.iflets = true) → (selectRule p sem cfg n term rs vs).run (s, tr) =
     .ok (r, (s', tr')) → R s s'
 
+
+/-- Transport a complete interpreter frame along a state-relation implication. -/
+theorem CtorFreeAt.mono {p : Program} {sem : Sem V σ} {cfg : Config}
+    {blocked : Term → Bool} {R Q : σ → σ → Prop} {n : Nat}
+    (frame : CtorFreeAt p sem cfg blocked R n)
+    (implies : ∀ a b, R a b → Q a b) : CtorFreeAt p sem cfg blocked Q n where
+  expr := fun e env s tr r next trn free run => implies s next (frame.expr e env s tr r next trn free run)
+  args := fun es env s tr r next trn free run => implies s next (frame.args es env s tr r next trn free run)
+  binds := fun bs env s tr r next trn free run => implies s next (frame.binds bs env s tr r next trn free run)
+  apply := fun ty t vs s tr r next trn free run => implies s next (frame.apply ty t vs s tr r next trn free run)
+  mrule := fun rule vs s tr r next trn free run => implies s next (frame.mrule rule vs s tr r next trn free run)
+  iflets := fun ils env s tr r next trn free run => implies s next (frame.iflets ils env s tr r next trn free run)
+  tryr := fun rule vs s tr r next trn free run => implies s next (frame.tryr rule vs s tr r next trn free run)
+  also := fun rules vs s tr r next trn run => implies s next (frame.also rules vs s tr r next trn run)
+  select := fun term rules vs s tr r next trn free run => implies s next (frame.select term rules vs s tr r next trn free run)
+
 variable {p sem cfg blocked R}
 
 theorem ctorFreeAt_inductive (hrefl : ∀ s, R s s) (htrans : ∀ a b c, R a b → R b c → R a c)
