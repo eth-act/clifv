@@ -123,9 +123,20 @@ def returnedDivEligible (b : Clif.Block) : Bool :=
   | _ => false
 
 
+/-- Division syntax is classified independently of its use or return position. -/
+def divisionBodyEligible (stm : Clif.Stmt) : Bool :=
+  match stm.inst with
+  | .div _ ty _ _ => ty == .i32 || ty == .i64
+  | _ => false
+
+/-- Any number and ordering of proved scalar operations and divisions. -/
+def generalDivBodyEligible (stm : Clif.Stmt) : Bool :=
+  highmulBodyEligible stm || divisionBodyEligible stm
+
+
 def eligible (f : Clif.Function) : Bool :=
   match f.blocks with
-  | [b] => (b.body.all highmulBodyEligible || singleDivEligible b || mixedDivEligible b || returnedDivEligible b) &&
+  | [b] => (b.body.all highmulBodyEligible || singleDivEligible b || mixedDivEligible b || returnedDivEligible b || b.body.all generalDivBodyEligible) &&
       (match b.term with | .ret _ => true | _ => false) &&
       f.sig.params.all abiEligible && f.sig.returns.all abiEligible
   | _ => false
