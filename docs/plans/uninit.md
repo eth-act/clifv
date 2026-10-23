@@ -199,6 +199,45 @@ exact bytes, not any bytes. It is implemented in small PRs, leaf first:
 
 The gap stays open until step 4 lands. That is months of work, not weeks.
 
+### 5.2 Step 1 (semantics), as built
+
+- `Clif.SlotInit` (`bytes : Nat → Nat → BitVec 8`, `next`) and `Place.init : Option SlotInit :=
+  none` (`FV/Clif/Mem.lean`). `Clif.enterSlots` places a covered function's slots as before, then
+  `Clif.initSlots`: with `init = some ini` and slots, the activation is the `ini.next + 1`-th one
+  with slots; its slot bytes become `ini.bytes (ini.next + 1) a` (`Mem.fillAt`) and the oracle
+  advances (`Place.advance`). Slotless activations and `init = none` are unchanged. So a
+  self-`return_call` of a slotless function still gives back its memory (`selfTail_mem`).
+- Every existing statement keeps its meaning. `LinkSys.PlaceAt`, `PlaceInv`, `PlacedInv`,
+  `bounded_placed` and the `LinkArmUClif` place lemmas pin `init = none` (`⟨sps, frames, none⟩`).
+  Changed internal lemmas:
+  - `enterSlots_place`, `enterSlots_sps` and `enterFunc_sps` now say what happens to `init`;
+  - `linkEnvR_keepsPlace` and `linkEnvRX_keepsPlace` now conclude `EnvKeepsPlace0` /
+    `XEnvKeepsPlace0`: a callee run advances `init`, so it is kept only without the oracle;
+  - `initState_place`, `ClifThreadI.enterSlots_bytes`, `enterFunc_bytes` and `cstepI_call` take
+    `init = none`.
+- Native check: `clif-native --stale-seed n` fills the stack below the harness's `sp` with
+  `(n + 37·(a mod 16)) mod 256`, and `clif-filetest --stale-seed n` runs `Clif.run` with the same
+  oracle (slots at `Backend.slotLayout` offsets below a 16-aligned `sp`).
+
+### 5.3 Step 2 design: a call counter in the VCode world
+
+The VCode semantics is generic in its world type (`VState V W`, `ISem V W`), and `csem` fixes
+`W = Arm.ArmState`. Plan:
+- `W := Arm.ArmState × Nat`, the second component counting the activation's calls.
+- `ExtSemI.call : Nat → …`: call `i` gets the actual run's `i`-th callee result.
+- `csemI`: `csem` on the first component, a call bumping the counter.
+- CLIF ↔ VCode relation `RelW cm w.1 ∧ (counter of cm's slot-byte oracle) = base + entries of
+  the first w.2 calls`. Unlike a ghost inside `Arm.ArmState`, this relation is stable under
+  `SameWorld` (`MRStable`), because `SameWorld` acts on `w.1` only.
+- The call contract (`CalleeOkG`/`CallSoundCtlG`) is required only at the states of the
+  activation's own machine run, from its entry `s0`. There the prophecy `ExtSemI` is the
+  machine's result by definition.
+
+Non-call instructions lift from `csem` to `csemI` unchanged (`csemI i uses (w, n) = (csem i uses
+w).map (·, n)`), so the `Refines`/`MemRefines` obligations transfer generically. The reg-level
+simulation (`regLevelCorrect_world`) has to be redone with the counter in `StRel` and the
+run-restricted contract.
+
 ## 6. Heap (separate gap, SEM2)
 
 `BaseOk.baseKeepsAllocs`/`baseNoAlloc` require base externs to allocate nothing whenever a program
