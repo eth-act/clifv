@@ -8,6 +8,8 @@ noninterference facts are internal driver invariants, not source restrictions. -
 namespace Backend.Stock.Proof
 
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+-- Lean 4.35's `whnf` needs more heartbeats for the concrete `rfl`/`decide` runs below.
+set_option maxHeartbeats 2000000
 
 set_option maxRecDepth 4096
 attribute [local irreducible] Isle.Aarch64.program

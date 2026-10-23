@@ -8,6 +8,8 @@ and selector proofs; final aliases still come from the whole-driver invariant. -
 namespace Backend.Stock.Proof
 
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+-- Lean 4.35's `whnf` needs more heartbeats for the concrete `rfl`/`decide` runs below.
+set_option maxHeartbeats 2000000
 
 set_option maxRecDepth 4096
 

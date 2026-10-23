@@ -12,6 +12,8 @@ requires its deferred-effect invariant. -/
 namespace Backend.Stock.Proof
 
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+-- Lean 4.35's `whnf` needs more heartbeats for the concrete `rfl`/`decide` runs below.
+set_option maxHeartbeats 2000000
 
 /-- Source steps indexed by the original context, in execution order. -/
 inductive SourceSteps {S : Type} (step : Nat → S → S → Prop) : List Nat → S → S → Prop where
