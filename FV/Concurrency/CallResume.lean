@@ -196,21 +196,11 @@ theorem linesAt_pc {R : RL} (hR : R.Wf) {j : Nat} {ls1 : List Line} {s s' : ArmS
     (h : LinesAt R j ls1 s s') : ∀ i ≤ ls1.length, Arm.r .PC (iterN R.step i s) = R.pcOf (j + i) :=
   iterN_execLines_pc hR.layout hR.lm hR.fit ls1 j s s' h.at_ h.hook h.prog h.pc h.err h.inter h.run
 
-/-- `ls` has no `ret` line. -/
-def NoRet (ls : List Line) : Prop := ∀ x t, Line.ins x t ∈ ls → x ≠ .ret
-
-/-- **A state at an instruction line other than `ret`.** -/
-def AtNonRet (R : RL) (u : ArmState) : Prop :=
-  ∃ j x t, R.fa.lines.toList[j]? = some (.ins x t) ∧ x ≠ .ret ∧ Arm.r .PC u = R.pcOf j
-
 /-- **Through straight-line lines without `ret`, every state before the last line's step is at a
 line other than `ret`.** -/
 theorem linesAt_nonRet {R : RL} (hR : R.Wf) {j : Nat} {ls1 : List Line} {s s' : ArmState}
-    (h : LinesAt R j ls1 s s') (hnr : NoRet ls1) : ∀ i < ls1.length, AtNonRet R (iterN R.step i s) := by
-  intro i hi
-  obtain ⟨x, t, -, hli, -, -, -, -⟩ := step_execLines (X := R.X) (H := R.H) hR.layout hR.lm hR.fit
-    h.at_ h.hook h.prog h.pc h.err h.inter h.run i hi
-  exact ⟨j + i, x, t, h.at_ i _ hli, hnr x t (List.mem_of_getElem? hli), linesAt_pc hR h i (by omega)⟩
+    (h : LinesAt R j ls1 s s') (hnr : NoRet ls1) : ∀ i < ls1.length, AtNonRet R (iterN R.step i s) :=
+  nonRet_execLines hR h.at_ h.hook h.prog h.pc h.err h.inter h.run hnr
 
 /-- **Through a list of moves whose lines have no `ret`** (`moves_privA`): every state of the
 run before its end is at a line other than `ret`. -/

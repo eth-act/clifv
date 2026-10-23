@@ -810,3 +810,20 @@ import FVTest.Concurrency.LitmusFull
 #print axioms Concurrency.CallSeg.WitnessCR.cstepC -- witness: native_decide
 #print axioms Concurrency.CallSeg.WitnessCR.funReal_call -- witness: native_decide
 #print axioms Concurrency.CallSeg.WitnessCR.realizes_call -- witness: native_decide
+-- layer 4b on a linked machine: the pc invariant of the item lemmas (#473)
+#print axioms Concurrency.ArmAllocThread.noRet_lines
+#print axioms Concurrency.ArmAllocThread.nonRet_execLines
+#print axioms Concurrency.ArmAllocThread.noev_opR
+#print axioms Concurrency.ArmAllocThread.fence_opR
+#print axioms Concurrency.ArmAllocThread.oneEv_opR
+#print axioms Concurrency.ArmAllocThread.rmw_opR
+#print axioms Concurrency.ArmAllocThread.cas_opR
+#print axioms Concurrency.ArmAllocThread.goto_opR
+#print axioms Concurrency.ArmAllocThread.move_opR
+#print axioms Concurrency.ArmAllocThread.ItemSimN.transfer
+#print axioms Concurrency.ArmAllocThread.step_atNonRet
+#print axioms Concurrency.ArmAllocThread.itemSim_lsCN
+#print axioms Concurrency.ArmAllocThread.itemSim_lsCL
+#print axioms Concurrency.ArmAllocThread.arm_alloc_refines_lsCL
+#print axioms Concurrency.CallSeg.WitnessC.agreesAt_MC2 -- witness: native_decide
+#print axioms Concurrency.CallSeg.WitnessC.caller_lsCL -- witness: native_decide

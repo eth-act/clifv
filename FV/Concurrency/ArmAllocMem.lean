@@ -40,6 +40,139 @@ abbrev OpOut (R : RL) (t : ArmState × Mon) (c : MConf CV ArmState) (ls : List L
       (fun c => c.measure) t c ls ∨
     (∃ evs c' φ, SrcStep R c evs c' ∧ Img (PrivA R) evs (evTr ls) φ) ∨ PrivW (PrivA R) (evTr ls)
 
+/-! ## The pc at a line other than `ret` (#473: linked machines)
+
+A linked machine switches programs at a callee's `ret` line; it agrees with `R.step` at every
+other line. The item lemmas' `…R` versions record that a run ending inside an item ends at a line
+other than `ret` (`OpOutN`), so that layer 4b holds for such machines
+(`ArmAllocLinked.itemSim_transfer`). -/
+
+/-- `ls` has no `ret` line. -/
+def NoRet (ls : List Line) : Prop := ∀ x t, Line.ins x t ∈ ls → x ≠ .ret
+
+/-- **A state at an instruction line other than `ret`**, not hooked (the machine runs its
+instruction there: a linked machine agrees with `R.step`, and the program is kept). -/
+def AtNonRet (R : RL) (u : ArmState) : Prop :=
+  ∃ j x t, R.fa.lines.toList[j]? = some (.ins x t) ∧ x ≠ .ret ∧ x.hooked = false ∧
+    Arm.r .PC u = R.pcOf j
+
+theorem noRet_loadConst64 (rd : Reg) (v : Nat) : NoRet (loadConst64 rd v) := by
+  intro x t h
+  simp only [loadConst64, List.mem_cons, List.mem_filterMap, List.mem_range] at h
+  rcases h with h | ⟨j, -, h⟩
+  · cases h; intro h; cases h
+  · split at h <;> cases h; intro h; cases h
+
+theorem memFinalize_pre {c : FnCtx} {m : AMode} {n : Nat} {pre : List Line} {m' : AMode}
+    (h : memFinalize c m n = .ok (pre, m')) : pre = [] ∨ ∃ v, pre = loadConst64 (.x 16) v := by
+  unfold memFinalize at h
+  split at h <;> simp only [pure, Except.pure, Except.ok.injEq, reduceCtorEq] at h <;>
+    (try split at h) <;> (try split at h) <;>
+    first
+    | exact .inl (Prod.mk.inj h).1.symm
+    | exact .inr ⟨_, (Prod.mk.inj h).1.symm⟩
+
+theorem noRet_memFinalize {c : FnCtx} {m : AMode} {n : Nat} {pre : List Line} {m' : AMode}
+    (h : memFinalize c m n = .ok (pre, m')) : NoRet pre := by
+  rcases memFinalize_pre h with rfl | ⟨v, rfl⟩
+  · intro x t h; cases h
+  · exact noRet_loadConst64 _ _
+
+theorem throw_ne_ok {α : Type} (e : String) (v : α) : (throw e : Except String α) ≠ .ok v :=
+  fun h => nomatch h
+
+theorem rmwLoopCmp_ne_ret (op : AtomicRmwLoopOp) (b : Nat) : rmwLoopCmp op b ≠ .ret := by
+  unfold rmwLoopCmp; split <;> simp
+
+theorem rmwLoopSext_ne_ret {b : Nat} {a : Insn} (h : a ∈ rmwLoopSext b) : a ≠ .ret := by
+  unfold rmwLoopSext at h; split at h <;> simp at h <;> (subst h; simp)
+
+/-- **No allocated instruction's lines contain a `ret`** (only the epilogue does). -/
+theorem noRet_lines {c : FnCtx} {m : MInst} {ps ps' : Backend.PState} {ls : List Line}
+    (h : m.lines c ps = .ok (ls, ps')) : NoRet ls := by
+  intro x t hx hr
+  subst hr
+  cases m <;> simp only [MInst.lines, pure, Except.pure, bind, Except.bind] at h
+  all_goals (repeat' split at h)
+  all_goals (first | cases h | skip)
+  all_goals (try (simp only [Except.ok.injEq, Prod.mk.injEq] at h; obtain ⟨rfl, -⟩ := h))
+  all_goals (try simp [rmwLoopLines, rmwLoopBody, casLoopLines, casLoopHead, MInst.lines.addOff] at hx)
+  all_goals (try (obtain hx | hx := (hx : _ ∨ _)))
+  all_goals (first | exact noRet_memFinalize ‹memFinalize _ _ _ = _› _ _ hx rfl | skip)
+  all_goals (try (cases ‹CondBrKind› <;> simp [CondBrKind.insn] at hx))
+  all_goals (try (cases ‹AtomicRmwLoopOp› <;> simp [rmwLoopMid] at hx))
+  all_goals (try (obtain ⟨h1, -⟩ := hx; unfold casLoopCmp at h1; split at h1 <;> cases h1))
+  all_goals (try (split at hx <;> simp at hx))
+  all_goals (try (split at hx <;> (try split at hx) <;> simp at hx))
+  all_goals (try (obtain ⟨a, ha | ha | ha, rfl, -⟩ := hx))
+  all_goals (try exact absurd ‹throw _ = Except.ok _› (throw_ne_ok _ _))
+  all_goals first
+    | exact rmwLoopSext_ne_ret ‹_› rfl
+    | exact rmwLoopCmp_ne_ret _ _ ‹Insn.ret = _›.symm
+    | exact rmwLoopCmp_ne_ret _ _ ‹_ = Insn.ret›
+    | exact rmwLoopCmp_ne_ret _ _ hx.1
+    | cases ‹Insn.ret = Insn.csel _ _ _ _›
+
+/-- **Through straight-line lines without `ret`, every state before the last line's step is at a
+line other than `ret`** (`step_execLines`'s premises). -/
+theorem nonRet_execLines {R : RL} (hR : R.Wf) {ls1 : List Line} {j : Nat} {s s' : ArmState}
+    (hat : ∀ k ln, ls1[k]? = some ln → R.fa.lines.toList[j + k]? = some ln)
+    (hhook : ∀ i t, Line.ins i t ∈ ls1 → i.hooked = false)
+    (hprog : s.program = R.fb.program R.base)
+    (hpc : Arm.r .PC s = R.base + BitVec.ofNat 64 (lineOffset R.fa.lines.toList j))
+    (herr : Arm.r .ERR s = .None)
+    (hinter : InterOk ⟨lineOffset R.fa.lines.toList j, (R.lm[·]?)⟩ ls1 s)
+    (hrun : execLines ⟨lineOffset R.fa.lines.toList j, (R.lm[·]?)⟩ ls1 s = some s')
+    (hnr : NoRet ls1) : ∀ i < ls1.length, AtNonRet R (iterN R.step i s) := by
+  intro i hi
+  obtain ⟨x, t, -, hli, -, -, -, -⟩ := step_execLines (X := R.X) (H := R.H) hR.layout hR.lm hR.fit
+    hat hhook hprog hpc herr hinter hrun i hi
+  exact ⟨j + i, x, t, hat i _ hli, hnr x t (List.mem_of_getElem? hli),
+    hhook x t (List.mem_of_getElem? hli),
+    iterN_execLines_pc hR.layout hR.lm hR.fit ls1 j s s' hat hhook hprog hpc herr hinter hrun i
+      (by omega)⟩
+
+/-- **The lines of a code of `inst` items contain no `ret`** (`noRet_lines` at every item). -/
+theorem noRet_codeLinesE {c : FnCtx} {af : AFunc} {code : List AInst} {ps ps' : Backend.PState}
+    {ls : List Line} (hinst : ∀ a ∈ code, ∃ m, a = .inst m)
+    (h : codeLinesE c af code ps = .ok (ls, ps')) : NoRet ls := by
+  induction code generalizing ps ls ps' with
+  | nil =>
+    simp only [codeLinesE, pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at h
+    obtain ⟨rfl, rfl⟩ := h
+    intro x t hx; cases hx
+  | cons a as ih =>
+    obtain ⟨m, rfl⟩ := hinst a (by simp)
+    simp only [ainstLines, codeLinesE, bind, Except.bind] at h
+    split at h
+    · simp at h
+    · rename_i v hl1
+      split at h
+      · simp at h
+      · rename_i v' hl2
+        simp only [pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at h
+        obtain ⟨rfl, rfl⟩ := h
+        intro x t hx
+        rcases List.mem_append.1 hx with hx | hx
+        · exact noRet_lines hl1 x t hx
+        · exact ih (fun b hb => hinst b (List.mem_cons_of_mem _ hb)) hl2 x t hx
+
+/-- **The conclusion of `ItemSim` at one configuration, runs ending inside the item at a line
+other than `ret`** (`OpOut`/`OpOutG`/`OpOutR` for the steps' predicate `ok` and the measure `μ`;
+`t'` the run's last state). -/
+abbrev OpOutN (R : RL) (ok : ArmState → Lab → Prop) (μ : MConf CV ArmState → Nat)
+    (t : ArmState × Mon) (c : MConf CV ArmState) (ls : List Lab) (t' : ArmState × Mon) : Prop :=
+  Done R c ∨ ItemSimOut Policy.arm R.step ok (SrcStep R) (RelQ R) (PrivA R) μ t c ls ∨
+    ((∃ evs c' φ, SrcStep R c evs c' ∧ Img (PrivA R) evs (evTr ls) φ) ∧ AtNonRet R t'.1) ∨
+    (PrivW (PrivA R) (evTr ls) ∧ AtNonRet R t'.1)
+
+theorem OpOutN.out {R : RL} {ok : ArmState → Lab → Prop} {μ : MConf CV ArmState → Nat}
+    {t : ArmState × Mon} {c : MConf CV ArmState} {ls : List Lab} {t' : ArmState × Mon}
+    (h : OpOutN R ok μ t c ls t') :
+    Done R c ∨ ItemSimOut Policy.arm R.step ok (SrcStep R) (RelQ R) (PrivA R) μ t c ls ∨
+      (∃ evs c' φ, SrcStep R c evs c' ∧ Img (PrivA R) evs (evTr ls) φ) ∨ PrivW (PrivA R) (evTr ls) :=
+  h.imp_right (Or.imp_right (Or.imp And.left And.left))
+
 /-- The item configuration `op k allocs` at the head of block `b`. -/
 abbrev OpC (b k : Nat) (allocs : Array Loc) (its : List RItem) (m : Loc → CV) (w : ArmState) :
     MConf CV ArmState := .run ⟨b, .op k allocs :: its, m, w⟩
@@ -101,15 +234,16 @@ def NoEvForm (ctx : FnCtx) (i : MInst) : Prop :=
   (i.isCtl = false ∧ FormOk ctx i = true ∧ akinds i = []) ∨ (∃ ds, i = .args ds) ∨
     (∃ us, i = .rets us) ∨ (∃ c, i = .udf c)
 
-/-- **The per-item obligation at an event-free item** (`itemSim_noev`). -/
-theorem noev_op {R : RL} (hR : R.Wf) {s : ArmState} {mon : Mon} {b k : Nat} {allocs : Array Loc}
+/-- **The per-item obligation at an event-free item** (`itemSim_noev`), a run ending inside the
+item at a line other than `ret`. -/
+theorem noev_opR {R : RL} (hR : R.Wf) {s : ArmState} {mon : Mon} {b k : Nat} {allocs : Array Loc}
     {its' : List RItem} {m : Loc → CV} {w : ArmState} {evs0 : List Ev} {c0 : MConf CV ArmState}
     (hq : Q R s (OpC b k allocs its' m w)) (hA : AInv R (OpC b k allocs its' m w))
     (hs0 : SrcStep R (OpC b k allocs its' m w) evs0 c0)
     (hform : ∀ vb i, R.vc.blocks[b]? = some vb → vb.insts[k]? = some i → NoEvForm R.ctx i)
     {ls : List Lab} {t' : ArmState × Mon}
     (hr : PRun Policy.arm R.step (fun _ _ => True) (s, mon) ls t') :
-    OpOut R (s, mon) (OpC b k allocs its' m w) ls := by
+    OpOutN R (fun _ _ => True) (fun c => c.measure) (s, mon) (OpC b k allocs its' m w) ls t' := by
   cases hs0 with
   | @op _ _ _ _ _ _ vb i ops _ _ hvb hi hops hevs hfoot hst =>
   have hsc' := hform vb i hvb hi
@@ -202,19 +336,33 @@ theorem noev_op {R : RL} (hR : R.Wf) {s : ArmState} {mon : Mon} {b k : Nat} {all
     refine .inr (.inl ⟨ls1.length, [], _, (s1, mon1), fun _ => (0, 0), hN,
       .inr (hlt _ (Nat.le_of_eq measure_run)), .op hvb hi hops hevs hfoot (by rw [patch_nil]; exact hm''),
       r1, ⟨hq'', aInv_step hR hq hA hm''⟩, img_nil hev1 _⟩)
-  · obtain ⟨-, hev, -⟩ := prun_nil hr fun i hi => hnom i (by omega)
-    exact .inr (.inr (.inr (privW_of_nil hev)))
+  · obtain ⟨hs', hev, -⟩ := prun_nil hr fun i hi => hnom i (by omega)
+    refine .inr (.inr (.inr ⟨privW_of_nil hev, ?_⟩))
+    rw [hs']
+    exact nonRet_execLines hR hat hhook hst.prog hpc hst.err hint hrun (noRet_lines (hl1 {})) _
+      (by omega)
+
+/-- **The per-item obligation at an event-free item** (`itemSim_noev`). -/
+theorem noev_op {R : RL} (hR : R.Wf) {s : ArmState} {mon : Mon} {b k : Nat} {allocs : Array Loc}
+    {its' : List RItem} {m : Loc → CV} {w : ArmState} {evs0 : List Ev} {c0 : MConf CV ArmState}
+    (hq : Q R s (OpC b k allocs its' m w)) (hA : AInv R (OpC b k allocs its' m w))
+    (hs0 : SrcStep R (OpC b k allocs its' m w) evs0 c0)
+    (hform : ∀ vb i, R.vc.blocks[b]? = some vb → vb.insts[k]? = some i → NoEvForm R.ctx i)
+    {ls : List Lab} {t' : ArmState × Mon}
+    (hr : PRun Policy.arm R.step (fun _ _ => True) (s, mon) ls t') :
+    OpOut R (s, mon) (OpC b k allocs its' m w) ls :=
+  (noev_opR hR hq hA hs0 hform hr).out
 
 /-- **The per-item obligation at a `dmb ish`** (`fence`): the Arm's one step has the barrier event,
-the source step's. -/
-theorem fence_op {R : RL} (hR : R.Wf) {s : ArmState} {mon : Mon} {b k : Nat} {allocs : Array Loc}
+the source step's; a run ending before it is at its line. -/
+theorem fence_opR {R : RL} (hR : R.Wf) {s : ArmState} {mon : Mon} {b k : Nat} {allocs : Array Loc}
     {its' : List RItem} {m : Loc → CV} {w : ArmState} {evs0 : List Ev} {c0 : MConf CV ArmState}
     (hq : Q R s (OpC b k allocs its' m w)) (hA : AInv R (OpC b k allocs its' m w))
     (hs0 : SrcStep R (OpC b k allocs its' m w) evs0 c0)
     (hform : ∀ vb i, R.vc.blocks[b]? = some vb → vb.insts[k]? = some i → i = .fence)
     {ls : List Lab} {t' : ArmState × Mon}
     (hr : PRun Policy.arm R.step (fun _ _ => True) (s, mon) ls t') :
-    OpOut R (s, mon) (OpC b k allocs its' m w) ls := by
+    OpOutN R (fun _ _ => True) (fun c => c.measure) (s, mon) (OpC b k allocs its' m w) ls t' := by
   cases hs0 with
   | @op _ _ _ _ _ _ vb i ops _ _ hvb hi hops hevs hfoot hst =>
   obtain rfl := hform vb i hvb hi
@@ -252,7 +400,11 @@ theorem fence_op {R : RL} (hR : R.Wf) {s : ArmState} {mon : Mon} {b k : Nat} {al
   have hit : iterN R.step 1 s = s' :=
     iterN_execLines hR.layout hR.lm hR.fit _ j s s' hat hhook hstr.prog hpc hstr.err hint hrun
   cases ls with
-  | nil => exact .inr (.inr (.inr fun p y hy => by rw [evAt_evTr_nil (by simp)] at hy; cases hy))
+  | nil =>
+    cases hr
+    refine .inr (.inr (.inr ⟨fun p y hy => (by rw [evAt_evTr_nil (by simp)] at hy; cases hy), ?_⟩))
+    exact nonRet_execLines hR hat hhook hstr.prog hpc hstr.err hint hrun
+      (fun x t h => by simp at h; obtain ⟨rfl, -⟩ := h; intro h; cases h) 0 (by simp)
   | cons l ls'' =>
   cases hr with
   | @cons _ t1 _ _ _ hs hp _ hr' =>
@@ -290,6 +442,18 @@ theorem fence_op {R : RL} (hR : R.Wf) {s : ArmState} {mon : Mon} {b k : Nat} {al
       subst hy; exact absurd hW (by decide)
     · simp [evAt] at hy
   · simp at he; subst he; simp [dmbEv]
+
+/-- **The per-item obligation at a `dmb ish`** (`fence`): the Arm's one step has the barrier event,
+the source step's. -/
+theorem fence_op {R : RL} (hR : R.Wf) {s : ArmState} {mon : Mon} {b k : Nat} {allocs : Array Loc}
+    {its' : List RItem} {m : Loc → CV} {w : ArmState} {evs0 : List Ev} {c0 : MConf CV ArmState}
+    (hq : Q R s (OpC b k allocs its' m w)) (hA : AInv R (OpC b k allocs its' m w))
+    (hs0 : SrcStep R (OpC b k allocs its' m w) evs0 c0)
+    (hform : ∀ vb i, R.vc.blocks[b]? = some vb → vb.insts[k]? = some i → i = .fence)
+    {ls : List Lab} {t' : ArmState × Mon}
+    (hr : PRun Policy.arm R.step (fun _ _ => True) (s, mon) ls t') :
+    OpOut R (s, mon) (OpC b k allocs its' m w) ls :=
+  (fence_opR hR hq hA hs0 hform hr).out
 
 /-! ## Exclusive and acquire/release instructions -/
 
@@ -490,15 +654,16 @@ theorem lines_one_eq {ctx : FnCtx} {i' : MInst} {ls : List Line} {x : Insn} {t :
 /-- **The per-item obligation at a straight-line form with one Arm instruction** (`OneEvForm`):
 the Arm's one step reads (writes) what the canonical run reads (writes), on every memory, so the
 source steps with the Arm's read bytes (**receptiveness**: the step's condition does not depend on
-the memory, `straightSem_one`), and `Q` holds after both patched with them (`q_patch`). -/
-theorem oneEv_op {R : RL} (hR : R.Wf) {s : ArmState} {mon : Mon} {b k : Nat} {allocs : Array Loc}
+the memory, `straightSem_one`), and `Q` holds after both patched with them (`q_patch`); a run
+ending inside the item (with no Arm step) is at a line other than `ret`. -/
+theorem oneEv_opR {R : RL} (hR : R.Wf) {s : ArmState} {mon : Mon} {b k : Nat} {allocs : Array Loc}
     {its' : List RItem} {m : Loc → CV} {w : ArmState} {evs0 : List Ev} {c0 : MConf CV ArmState}
     (hq : Q R s (OpC b k allocs its' m w)) (hA : AInv R (OpC b k allocs its' m w))
     (hs0 : SrcStep R (OpC b k allocs its' m w) evs0 c0)
     (hform : ∀ vb i, R.vc.blocks[b]? = some vb → vb.insts[k]? = some i → OneEvForm R.F R.ctx i)
     {ls : List Lab} {t' : ArmState × Mon}
     (hr : PRun Policy.arm R.step (fun _ _ => True) (s, mon) ls t') :
-    OpOut R (s, mon) (OpC b k allocs its' m w) ls := by
+    OpOutN R (fun _ _ => True) (fun c => c.measure) (s, mon) (OpC b k allocs its' m w) ls t' := by
   cases hs0 with
   | @op _ _ _ _ _ _ vb i ops _ _ hvb hi hops hevs hfoot hst =>
   have hf := hform vb i hvb hi
@@ -555,7 +720,13 @@ theorem oneEv_op {R : RL} (hR : R.Wf) {s : ArmState} {mon : Mon} {b k : Nat} {al
   obtain ⟨hnostx, hevk⟩ := hf.arm ops regs' i' x t _ a hops hsz hasg (hxl {}) ha
   -- the Arm run
   cases ls with
-  | nil => exact .inr (.inr (.inr fun p y hy => by rw [evAt_evTr_nil (by simp)] at hy; cases hy))
+  | nil =>
+    cases hr
+    have hpcs : Arm.r .PC s = R.pcOf j := by rw [patch, r_setMem] at hpc; exact hpc
+    refine .inr (.inr (.inr ⟨fun p y hy => ?_, ?_⟩))
+    · rw [evAt_evTr_nil (by simp)] at hy
+      cases hy
+    · exact ⟨j, x, t, hj, noRet_lines (hl1 {}) x t (by simp), hhk, hpcs⟩
   | cons l ls'' =>
   cases hr with
   | @cons _ t1 _ _ _ hs hp _ hr' =>
@@ -644,6 +815,20 @@ theorem oneEv_op {R : RL} (hR : R.Wf) {s : ArmState} {mon : Mon} {b k : Nat} {al
     have := hav1 e he 0 hn0
     simpa [PrivA] using this
   · exact (hevk _ e (hl ▸ he)).1
+
+/-- **The per-item obligation at a straight-line form with one Arm instruction** (`OneEvForm`):
+the Arm's one step reads (writes) what the canonical run reads (writes), on every memory, so the
+source steps with the Arm's read bytes (**receptiveness**: the step's condition does not depend on
+the memory, `straightSem_one`), and `Q` holds after both patched with them (`q_patch`). -/
+theorem oneEv_op {R : RL} (hR : R.Wf) {s : ArmState} {mon : Mon} {b k : Nat} {allocs : Array Loc}
+    {its' : List RItem} {m : Loc → CV} {w : ArmState} {evs0 : List Ev} {c0 : MConf CV ArmState}
+    (hq : Q R s (OpC b k allocs its' m w)) (hA : AInv R (OpC b k allocs its' m w))
+    (hs0 : SrcStep R (OpC b k allocs its' m w) evs0 c0)
+    (hform : ∀ vb i, R.vc.blocks[b]? = some vb → vb.insts[k]? = some i → OneEvForm R.F R.ctx i)
+    {ls : List Lab} {t' : ArmState × Mon}
+    (hr : PRun Policy.arm R.step (fun _ _ => True) (s, mon) ls t') :
+    OpOut R (s, mon) (OpC b k allocs its' m w) ls :=
+  (oneEv_opR hR hq hA hs0 hform hr).out
 
 /-! ## `ldar` and `stlr` -/
 

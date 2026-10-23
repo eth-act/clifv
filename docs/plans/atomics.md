@@ -711,12 +711,20 @@ they are; the per-thread layers are new files.
       exclusive keeps the open monitor, so the callee is entered with the monitor `none` that
       `funReal_calleeX` needs (`noLdxC` from the caller's words); `WitnessCR.funReal_call`,
       `WitnessCR.realizes_call`.
+    * **Layer 4b on a linked machine (done, `ArmAllocLinked.lean`)**: the item lemmas' `…R`
+      versions (`noev_opR`, `fence_opR`, `oneEv_opR`, `rmw_opR`, `cas_opR`, `goto_opR`,
+      `move_opR`; the old statements are their corollaries) record that a run ending inside an
+      item ends at an unhooked instruction line other than `ret` (`AtNonRet`; `OpOutN`;
+      `noRet_lines`: no allocated instruction's lines contain a `ret`, only the epilogue's do;
+      `nonRet_execLines`); `ItemSimN` (`ItemSim` with that condition), `prun_splitN`,
+      **`ItemSimN.transfer`** (`ItemSimN` for `f` gives `ItemSim` for every machine agreeing
+      with `f` at those states), `AgreesAt R g` (`g` is `R.step` at `R`'s lines other than `ret`
+      on `R`'s program), `itemSim_lsCN`, `itemSim_lsCL` and **`arm_alloc_refines_lsCL`**:
+      `arm_alloc_refines_lsC` for every such machine. Witness (`ArmAllocLinkedWitness.lean`):
+      `agreesAt_MC2`, `caller_lsCL` (the linked machine `MC2` of the caller of `atomic_load`).
     * **Open: the generic call theorem** (every compiled function whose callees are compiled
       program functions or `ExtEvContract` externals realizes its whole run). Needed: (1) layer
-      4b's pc invariant on a linked machine — every state of an item's run before its end is at
-      an instruction line other than `ret` (so a linked machine that switches programs at `ret`
-      lines, like `MC2`, agrees with `R.step` there), per item (`noev_op`, `fence_op`, `oneEv_op`,
-      `rmw_op`, `cas_op`, `goto_op`, `move_op`); (2) layer 2's return coverage — **done at layer 2**
+      4b's pc invariant on a linked machine — **done** (above); (2) layer 2's return coverage — **done at layer 2**
       (`IselStep.term_retN`: a return's code runs to the VCode return without memory instructions;
       `SimResR`/`SegResR` record that a CLIF thread that returned realizes the whole VCode trace,
       through `pure_segR`, `mem_completeR`, `mem_segR`, `term_segR`, `simResR_of_seg`, `seg_resR`,

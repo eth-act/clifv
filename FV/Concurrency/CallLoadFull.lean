@@ -442,7 +442,7 @@ theorem mc2_callee (hS : StRel RC s m w₀C) {x : ArmState} (hx : x.program = pL
     (hn : AtNonRet (RLx s) x) (M : Memory) : MC2 (setMem M x) = (RLx s).step (setMem M x) := by
   have hnr : ¬ IsRetL (setMem M x) := by
     rintro ⟨j, t, hj, hpc⟩
-    obtain ⟨j', x', t', hj', hx', hpc'⟩ := hn
+    obtain ⟨j', x', t', hj', hx', -, hpc'⟩ := hn
     rw [ArmFoot.r_setMem] at hpc
     have := RL.pcOf_inj (R := RLx s) (wfX hS) hj hj' (hpc.symm.trans hpc')
     subst this
@@ -596,7 +596,7 @@ theorem funReal_ld (env : Clif.Env) (hS : StRel RC s m w₀C) (hx0 : regVal s (.
   -- the `ldar`
   obtain ⟨jl, hjl, hpcl, hstrl⟩ := q_head hqa rfl head_ldarL
   have hnra : AtNonRet (RLx s) (iterN (RLx s).step n0 (RLx s).s0) :=
-    ⟨jl, .ldar 64 (.x 1) (.x 0), some .heapOob, hjl, (fun h => by cases h), hpcl⟩
+    ⟨jl, .ldar 64 (.x 1) (.x 0), some .heapOob, hjl, (fun h => by cases h), rfl, hpcl⟩
   cases hrest with
   | @cons _ ta _ _ _ hsa hpa hoa hr2 =>
   have hsaR := tstep_transfer (fun M => mc2_callee hS hstrl.prog hnra M) hsa
