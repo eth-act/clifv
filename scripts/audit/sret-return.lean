@@ -2,6 +2,8 @@ import FV.E2E.SretReturnWitness
 import FV.E2E.SretReturnCleanup
 import FV.E2E.SretReturnWitnessT
 import FV.Link.DeadCleanupExeAbiWitness
+import FV.E2E.SretReturnOptWitness
+import FV.E2E.SretReturnLegalWitness
 
 #print axioms Backend.Proof.Driver.term_step_abi
 #print axioms Backend.Proof.Driver.sim_run_abi
@@ -67,3 +69,14 @@ import FV.Link.DeadCleanupExeAbiWitness
 #print axioms Link.DeadCleanup.compileExe_correct_abi
 #print axioms Link.DeadCleanup.compileExe_correct
 #print axioms Link.DeadCleanup.SretWitness.exec_returns_sret -- witness: native_decide
+#print axioms E2E.backend_correct_opt_abi
+#print axioms E2E.backend_correct_opt_proven_abi
+#print axioms E2E.SretReturnWitness.compiled_opt_exists -- witness: native_decide
+#print axioms E2E.SretReturnWitness.sw_opt_abi -- witness: native_decide
+#print axioms E2E.ArmRefinesLegalAbi.armRefinesLegal
+#print axioms E2E.backend_correct_legal_env_wide_abi
+#print axioms E2E.backend_correct_legal_env_abi
+#print axioms E2E.backend_correct_legal_wide_abi
+#print axioms E2E.backend_correct_legal_abi
+#print axioms E2E.SretReturnWitness.compiled_legal_exists -- witness: native_decide
+#print axioms E2E.SretReturnWitness.swl_legal_abi -- witness: native_decide
