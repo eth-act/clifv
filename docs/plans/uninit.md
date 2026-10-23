@@ -252,6 +252,33 @@ w).map (·, n)`), so the `Refines`/`MemRefines` obligations transfer generically
 simulation (`regLevelCorrect_world`) has to be redone with the counter in `StRel` and the
 run-restricted contract.
 
+### 5.4 Step 2, as built so far (leaf PRs)
+
+- #568 `FV/Backend/Proof/VCodeSemI.lean`: `ExtSemI` (`call : Nat → …`), `ExtSemI.at`/`.const`,
+  `MInst.isCallI`, `csemI`; `csem_call_congr` (only calls read `ExtSem.call`); world-map
+  simulation lemmas for VCode and allocated-code runs (`VStep_mapW`/`_liftW`,
+  `MStep_mapW`/`_liftW`, `vstar_*`, `mstar_*`); `vstar_csemI_const{,_lift}` (one `ExtSem` for
+  every call: today's runs).
+- #570 `VCodeSemISeq.lean`: `seqRun_csemI_noCall`, `LowerInstOk.csemI` (call-free lowerings).
+- #573 `VCodeSemICall.lean`: `callsI`, `SeqEnd.liftI`, `seqRun_csemI_le1`,
+  `LowerInstOk.csemI_le1` (at most one call: a CLIF call's lowering; the counter invariant
+  advances by the calls).
+- #575 `VCodeSemIDriver.lean`: `DriverSemG.csemI`, `LowerTermOk.csemI`; witness
+  `driverSemG_csemI`. With these the generic `Driver.DriverHyp` fields `dsem`, `insts` and
+  `terms` hold for the counted world once the per-index `csem` ones do.
+
+**Refined call contract (next).** `X.call n` should be the *canonical* callee run from the
+VCode world `w` with the callee's stack region (the addresses `StackBelow K (sp w)`, inside the
+caller's `F`) overwritten by the prophecy `P n`: the actual machine memory there at the
+activation's `n`-th call. This is a function of `(uses, w)`, so the CLIF-level contract
+(`XCallsOk` at index `n`, for every related `(cm, w)`) comes from the callee's own theorem with
+the slot-byte oracle built from `P n`. The machine-level contract (`CallSoundCtlG`) gets one more
+premise beside its `G`-keep one: the state's region below `sp` holds `P n` (`n` from the VCode
+counter via `StRel`). On the actual run it holds by the definition of `P n`, and the stale bytes
+that broke #556 (earlier callees' saves, spills, frame records) are then the same in the
+canonical and the actual run. Non-interference over the masked registers within one call is
+kept as today.
+
 ## 6. Heap (separate gap, SEM2)
 
 `BaseOk.baseKeepsAllocs`/`baseNoAlloc` require base externs to allocate nothing whenever a program
