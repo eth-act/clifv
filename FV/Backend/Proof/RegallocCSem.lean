@@ -505,6 +505,9 @@ def FormOk (_ctx : FnCtx) : MInst → Bool
   | .fpuRRR _ _ (.vreg _ .float) (.vreg _ .float) (.vreg _ .float) => true
   | .fpuRR _ _ (.vreg _ .float) (.vreg _ .float) => true
   | .fpuCmp _ (.vreg _ .float) (.vreg _ .float) => true
+  -- S11f-cvt: float ↔ integer conversions (`fcvtzs`/`fcvtzu`, `scvtf`/`ucvtf`)
+  | .fpuToInt _ (.vreg _ .int) (.vreg _ .float) => true
+  | .intToFpu _ (.vreg _ .float) (.vreg _ .int) => true
   | _ => false
 
 /-- The number of use operands. -/

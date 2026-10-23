@@ -94,6 +94,7 @@ for the others, `fcmp` included). -/
 def fFmt : Clif.FOp → String
   | .fadd | .fsub | .fmul | .fdiv | .fmin | .fmax => "Binary"
   | .sqrt | .fneg | .fabs | .fpromote | .fdemote => "Unary"
+  | .fcvtFromUint | .fcvtFromSint | .fcvtToUintSat | .fcvtToSintSat => "Unary"
   | _ => ""
 
 /-- S11f: the opcode name of a float operation `instData` builds (`""` for the others). -/
@@ -101,6 +102,8 @@ def fOpc : Clif.FOp → String
   | .fadd => "Fadd" | .fsub => "Fsub" | .fmul => "Fmul" | .fdiv => "Fdiv"
   | .fmin => "Fmin" | .fmax => "Fmax" | .sqrt => "Sqrt" | .fneg => "Fneg" | .fabs => "Fabs"
   | .fpromote => "Fpromote" | .fdemote => "Fdemote"
+  | .fcvtFromUint => "FcvtFromUint" | .fcvtFromSint => "FcvtFromSint"
+  | .fcvtToUintSat => "FcvtToUintSat" | .fcvtToSintSat => "FcvtToSintSat"
   | _ => ""
 
 theorem fFmt_mem (op : Clif.FOp) : fFmt op ∈ ["Binary", "Unary", ""] := by
@@ -108,7 +111,8 @@ theorem fFmt_mem (op : Clif.FOp) : fFmt op ∈ ["Binary", "Unary", ""] := by
 
 theorem fOpc_mem (op : Clif.FOp) :
     fOpc op ∈ ["Fadd", "Fsub", "Fmul", "Fdiv", "Fmin", "Fmax", "Sqrt", "Fneg", "Fabs",
-      "Fpromote", "Fdemote", ""] := by
+      "Fpromote", "Fdemote", "FcvtFromUint", "FcvtFromSint", "FcvtToUintSat", "FcvtToSintSat",
+      ""] := by
   cases op <;> simp [fOpc]
 
 /-! A float operation has none of the other instructions' names (`simp` closes the float case
@@ -124,12 +128,14 @@ of an inversion by `instNames` with these, the side condition by evaluation). -/
 
 @[simp] theorem fOpc_eq_false {op : Clif.FOp} {s : String}
     (h : s ∉ ["Fadd", "Fsub", "Fmul", "Fdiv", "Fmin", "Fmax", "Sqrt", "Fneg", "Fabs",
-      "Fpromote", "Fdemote", ""]) : fOpc op = s ↔ False :=
+      "Fpromote", "Fdemote", "FcvtFromUint", "FcvtFromSint", "FcvtToUintSat", "FcvtToSintSat",
+      ""]) : fOpc op = s ↔ False :=
   ⟨fun e => h (e ▸ fOpc_mem op), False.elim⟩
 
 @[simp] theorem eq_fOpc_false {op : Clif.FOp} {s : String}
     (h : s ∉ ["Fadd", "Fsub", "Fmul", "Fdiv", "Fmin", "Fmax", "Sqrt", "Fneg", "Fabs",
-      "Fpromote", "Fdemote", ""]) : s = fOpc op ↔ False :=
+      "Fpromote", "Fdemote", "FcvtFromUint", "FcvtFromSint", "FcvtToUintSat", "FcvtToSintSat",
+      ""]) : s = fOpc op ↔ False :=
   ⟨fun e => h (e ▸ fOpc_mem op), False.elim⟩
 
 /-- The `InstructionData` format and opcode *names* `instData` uses for an instruction. An
@@ -207,6 +213,10 @@ theorem fUnaryOpcode_names {op : Clif.FOp} {n : String} (h : fUnaryOpcode op = s
     (ty : Clif.Ty) (args : List Clif.ValueId) : instNames (.float op ty args) = ("Unary", n) := by
   cases op <;> simp [fUnaryOpcode] at h <;> subst h <;> rfl
 
+theorem fCvtOpcode_names {op : Clif.FOp} {n : String} (h : fCvtOpcode op = some n)
+    (ty : Clif.Ty) (args : List Clif.ValueId) : instNames (.float op ty args) = ("Unary", n) := by
+  cases op <;> simp [fCvtOpcode] at h <;> subst h <;> rfl
+
 set_option maxRecDepth 20000 in
 /-- `instData` builds the data of its format and opcode names, or it is a float constant's
 (`f32const`/`f64const`: format 33/34, opcode 59/60). -/
@@ -231,7 +241,8 @@ theorem instData_names {f : Clif.Function} {c : Clif.Inst} {d : V} (h : instData
          first
            | exact ⟨_, rfl⟩
            | (rw [fBinaryOpcode_names ‹fBinaryOpcode _ = some _›]; exact ⟨_, rfl⟩)
-           | (rw [fUnaryOpcode_names ‹fUnaryOpcode _ = some _›]; exact ⟨_, rfl⟩))
+           | (rw [fUnaryOpcode_names ‹fUnaryOpcode _ = some _›]; exact ⟨_, rfl⟩)
+           | (rw [fCvtOpcode_names ‹fCvtOpcode _ = some _›]; exact ⟨_, rfl⟩))
   all_goals refine .inl ?_
   all_goals simp only [instData] at h
   all_goals (repeat' split at h)

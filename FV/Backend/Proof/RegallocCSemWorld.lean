@@ -28,6 +28,7 @@ theorem ispecFP_world {i : MInst} {uses : List CV} {w : Arm.ArmState} {outs : Li
   all_goals first
     | (obtain ⟨_, -, -, rfl, -⟩ := h; exact ⟨rfl, rfl⟩)
     | (obtain ⟨_, -, -, rfl, -⟩ := h; exact write_pstate_err _ _)
+    | (obtain ⟨-, rfl, -⟩ := h; exact ⟨rfl, rfl⟩)
 
 set_option maxHeartbeats 4000000 in
 theorem ispec_world {i : MInst} {uses : List CV} {w : Arm.ArmState} {outs : List CV}

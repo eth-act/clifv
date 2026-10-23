@@ -106,8 +106,8 @@ theorem instData_fbin_inv {f : Clif.Function} {cl : Clif.Inst} {ko : Nat} {fs : 
       rfl
   cases op' <;> simp [fBinaryOpcode] at hop <;> subst hop <;>
     rcases args with _ | ⟨x, _ | ⟨y, _ | ⟨z, rest⟩⟩⟩ <;>
-    simp only [instData, fBinaryOpcode, fUnaryOpcode, throw, throwThe, MonadExceptOf.throw,
-      reduceCtorEq] at h
+    simp only [instData, fBinaryOpcode, fUnaryOpcode, fCvtOpcode, fCvtTyOk, throw, throwThe,
+      MonadExceptOf.throw, reduceCtorEq] at h
   all_goals
     split at h
     · rename_i hok
@@ -134,8 +134,8 @@ theorem instData_fun_inv {f : Clif.Function} {cl : Clif.Inst} {ko : Nat} {fs : L
       rfl
   cases op' <;> simp [fUnaryOpcode] at hop <;> subst hop <;>
     rcases args with _ | ⟨x, _ | ⟨y, _ | ⟨z, rest⟩⟩⟩ <;>
-    simp only [instData, fBinaryOpcode, fUnaryOpcode, throw, throwThe, MonadExceptOf.throw,
-      reduceCtorEq] at h
+    simp only [instData, fBinaryOpcode, fUnaryOpcode, fCvtOpcode, fCvtTyOk, throw, throwThe,
+      MonadExceptOf.throw, reduceCtorEq] at h
   all_goals
     split at h
     · rename_i hok

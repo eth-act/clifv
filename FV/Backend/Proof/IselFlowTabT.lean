@@ -22,7 +22,7 @@ def tlsTab0 : Tab :=
    (250, [⟨2, true⟩, ⟨0, true⟩, ⟨2, true⟩, ⟨0, true⟩], ⟨2, true⟩),
    (251, [⟨2, true⟩, ⟨2, true⟩], ⟨2, true⟩),
    (254, [⟨2, true⟩, ⟨2, true⟩], ⟨2, true⟩),
-   (255, [⟨2, true⟩, ⟨0, true⟩], ⟨2, true⟩),
+   (255, [⟨2, true⟩, ⟨2, true⟩], ⟨2, true⟩),
    (256, [⟨2, true⟩, ⟨2, true⟩], ⟨2, true⟩),
    (294, [⟨2, true⟩], ⟨0, true⟩),
    (305, [⟨2, true⟩], ⟨0, true⟩)]
@@ -226,8 +226,16 @@ def tlsTab14 : Tab :=
   [(368, [⟨2, true⟩, ⟨2, true⟩, ⟨2, true⟩, ⟨2, true⟩], ⟨2, true⟩),
    (364, [⟨2, true⟩, ⟨2, true⟩, ⟨2, true⟩], ⟨2, true⟩)]
 
+/-- Chunk 15 of `tlsTab`: the internal terms of the S11f-cvt conversion roots (`fpu_to_int_cvt_sat`, `fpu_to_int`, `int_to_fpu`, `signed_min`/`signed_max`). -/
+def tlsTab15 : Tab :=
+  [(629, [⟨2, true⟩, ⟨2, true⟩, ⟨2, true⟩, ⟨2, true⟩], ⟨2, true⟩),
+   (632, [⟨2, true⟩, ⟨2, true⟩], ⟨2, true⟩),
+   (633, [⟨2, true⟩, ⟨2, true⟩], ⟨2, true⟩),
+   (630, [⟨2, true⟩], ⟨2, true⟩),
+   (631, [⟨2, true⟩], ⟨2, true⟩)]
+
 /-- The summary table. -/
-def tlsTab : Tab := tlsTab0 ++ tlsTab1 ++ tlsTab2 ++ tlsTab3 ++ tlsTab4 ++ tlsTab5 ++ tlsTab6 ++ tlsTab7 ++ tlsTab8 ++ tlsTab9 ++ tlsTab10 ++ tlsTab11 ++ tlsTab12 ++ tlsTab13 ++ tlsTab14
+def tlsTab : Tab := tlsTab0 ++ tlsTab1 ++ tlsTab2 ++ tlsTab3 ++ tlsTab4 ++ tlsTab5 ++ tlsTab6 ++ tlsTab7 ++ tlsTab8 ++ tlsTab9 ++ tlsTab10 ++ tlsTab11 ++ tlsTab12 ++ tlsTab13 ++ tlsTab14 ++ tlsTab15
 
 set_option maxRecDepth 100000 in
 theorem tlsTab0_ok :
@@ -319,11 +327,17 @@ theorem tlsTab14_ok :
       true := by
   decide +kernel
 
+set_option maxRecDepth 100000 in
+theorem tlsTab15_ok :
+    tlsTab15.all (fun e => (program.rulesOf e.1).all (aRule program tlsTab true e.2.1 e.2.2)) =
+      true := by
+  decide +kernel
+
 /-- Every rule of every term of `tlsTab` checks. -/
 theorem tlsTab_ok : chkTab program tlsTab true = true := by
   unfold chkTab
-  show (tlsTab0 ++ tlsTab1 ++ tlsTab2 ++ tlsTab3 ++ tlsTab4 ++ tlsTab5 ++ tlsTab6 ++ tlsTab7 ++ tlsTab8 ++ tlsTab9 ++ tlsTab10 ++ tlsTab11 ++ tlsTab12 ++ tlsTab13 ++ tlsTab14).all
+  show (tlsTab0 ++ tlsTab1 ++ tlsTab2 ++ tlsTab3 ++ tlsTab4 ++ tlsTab5 ++ tlsTab6 ++ tlsTab7 ++ tlsTab8 ++ tlsTab9 ++ tlsTab10 ++ tlsTab11 ++ tlsTab12 ++ tlsTab13 ++ tlsTab14 ++ tlsTab15).all
     (fun e => (program.rulesOf e.1).all (aRule program tlsTab true e.2.1 e.2.2)) = true
-  simp only [List.all_append, tlsTab0_ok, tlsTab1_ok, tlsTab2_ok, tlsTab3_ok, tlsTab4_ok, tlsTab5_ok, tlsTab6_ok, tlsTab7_ok, tlsTab8_ok, tlsTab9_ok, tlsTab10_ok, tlsTab11_ok, tlsTab12_ok, tlsTab13_ok, tlsTab14_ok, Bool.and_self]
+  simp only [List.all_append, tlsTab0_ok, tlsTab1_ok, tlsTab2_ok, tlsTab3_ok, tlsTab4_ok, tlsTab5_ok, tlsTab6_ok, tlsTab7_ok, tlsTab8_ok, tlsTab9_ok, tlsTab10_ok, tlsTab11_ok, tlsTab12_ok, tlsTab13_ok, tlsTab14_ok, tlsTab15_ok, Bool.and_self]
 
 end Backend.Proof.Flow
