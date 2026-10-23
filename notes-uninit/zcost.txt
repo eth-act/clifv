@@ -1,0 +1,2 @@
+fv-demo: Lean activations 14052, extra zero stores (Z) 13155 = 0.94/activation; Lean loads 30404; ratio extra stores/Lean loads 0.433; activations of fns without CLIF found 0
+survey: Lean activations 1267573, extra zero stores (Z) 2155239 = 1.70/activation; Lean loads 5538955; ratio extra stores/Lean loads 0.389; activations of fns without CLIF found 0
