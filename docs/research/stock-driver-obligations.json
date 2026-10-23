@@ -1,5 +1,5 @@
 {
-  "updated_utc": "2026-10-23T01:20:47.232793+00:00",
+  "updated_utc": "2026-10-23T05:10:44.988008+00:00",
   "goal": 140,
   "complete": false,
   "inventory_warning": "Historical517root inventory is a source map, not current reachability/execution coverage. Reconcile generated source hashes and current typed scope before using partition counts.",
@@ -38,6 +38,14 @@
       "receipt": "docs/research/stock-mixed-div-production-activation.md",
       "backup": "9140614f41c53d809cec9d9e10072441ee654d98",
       "full_goal_complete": false
+    },
+    "returned_division_arbitrary_scalar_positions": {
+      "validated_code_head": "b1990ec02ff083882720dcc436d638c0db5f2b04",
+      "evidence_commit": "07b9f9384e4209467922f6fe80afae2edc0e45e0",
+      "receipt": "docs/research/stock-returned-div-production-activation.md",
+      "state": "default production activation; current author gates passed",
+      "full_140_complete": false,
+      "main_reconciliation": "docs/research/stock-returned-div-main-reconciliation.json"
     }
   },
   "roots": [
