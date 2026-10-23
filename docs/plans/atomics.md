@@ -817,8 +817,18 @@ they are; the per-thread layers are new files.
         **Still open**, in order: (ii') the CLIF return pop in the linked thread
         (`ClifCStepTerm.cstep_ret_pop` under `ClifLift.pushC`; done: `CallRets.ret_pop`, #531),
         turning `RetEnd` into (2c)'s
-        premises (`resume_layers`: `hpres` from callee-saved and the frame's memory, `hkeep`;
-        `isel_resumeC`: `PrefixHold` and the memory relation at the caller's slots); the epilogue's
+        premises — layers 3–4b **done** (`CallRetResume.lean`, witness `CallRetResumeWitness.lean`):
+        `resume_layers`' `hpres` asks the state after the return to keep every non-clobbered live
+        location, including the call's result registers (`info.defs` are not clobbers), so it
+        fails for a callee with results (`not_hpres_yX`); `mstep_callR`/**`resume_layersR`** ask it
+        only off the late def locations; `frame_congr`, **`hpresR_of_callee`**, `hkeep_of_callee`
+        derive it from callee-saved registers up to `ckeep`, `sp` and the `RA.FK` memory (premise
+        `hdef`: each def register is a late def operand's location, `checkStatic`'s fixed check);
+        **`resume_premises_of_retEnd`**: all of them from the callee's `RetEnd`, given the callee's
+        entry values = the caller's at the `bl` (`hr₀`), its entry `sp`, the return address and
+        the callee's run keeping `RA.FK` (premises supplied by (2b)/(iv)); witness `resume_RX` (a
+        callee returning `42` in `x0`). Still open here: `hdef` from the call's operands,
+        `isel_resumeC`'s `PrefixHold` and the memory relation at the caller's slots; the epilogue's
         Arm steps realized as a private segment (`CallLoadFull.realized_privSeg` with
         `CallResume.rets_privP`); the two `rets` ends `arm_isel_refinesCR` leaves unresolved
         (layer 4b at `Done`/`AtCall` while layer 2 is at a done `return`) excluded;
