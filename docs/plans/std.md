@@ -185,7 +185,8 @@ With `--build-std --lean-link --verified` (T3e, after T3b/T3d; `examples/compare
 
 Wall time: survey 3 h 39 min (13153 s, `FV_JOBS=4`), deps 1 h 41 min (6058 s, `FV_JOBS=2`, cargo
 cached from a run killed by systemd-oomd); both under memory pressure from other jobs. With the
-default `FV_JOBS` (all cores) both were killed by `memcap` at 24G.
+default `FV_JOBS` (all cores) both were killed by `memcap` at 24G: with `--build-std`, lower
+`FV_JOBS` to 2–4.
 
 ### 2.4 Outside contracts that become proven
 
