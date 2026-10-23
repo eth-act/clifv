@@ -774,6 +774,11 @@ theorem unwindRows_frame {af : AFunc} {fa : FnAsm} {rows : List (Nat × Cfi)}
   simp only [hp, Bool.false_eq_true, ite_false] at h
   generalize hsv : List.takeWhile (fun x => x.calleeSave?.isSome) (List.drop 1 code.toList) = saves
     at h
+  by_cases hfar : farSave (List.dropWhile (fun x => x.calleeSave?.isSome) code.toList.tail) = true
+  · simp [List.drop_one, hfar, bind, Except.bind, throw, throwThe, MonadExceptOf.throw] at h
+  have hfar' : farSave (List.dropWhile (fun x => x.calleeSave?.isSome) (List.drop 1 code.toList)) =
+      false := by simpa [List.drop_one] using hfar
+  simp only [hfar', Bool.false_eq_true, ite_false] at h
   generalize hpro : prologueLines af.frameSize = pro at h
   cases hs : saveRows { k := fa.k, slotBase := af.slotBase } af.frameSize (4 * pro.length)
     saves with

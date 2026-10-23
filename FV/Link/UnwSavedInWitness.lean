@@ -47,4 +47,16 @@ theorem unwindRows_frame_applies : ∃ rows, unwindRows af fa = .ok rows :=
     frame_facts.2.2.2.2.1 frame_facts.2.2.1 frame_facts.2.2.2.1 compiled.2.1 compiled.2.2
     frame_facts.2.2.2.2.2
 
+
+/-- `tc`'s outgoing area is below 32560 bytes. -/
+theorem out_small : vcp.outgoing ≤ 32560 := by native_decide
+
+/-- **`saveFrameB_always` applies** to `tc` (non-vacuity of its premise). -/
+theorem saveFrameB_always_applies : saveFrameB vcp rf = true := saveFrameB_always vcp rf out_small
+
+/-- **`unwindRows_complete_frame_out` applies** to `tc` (no `saveFrameB` premise). -/
+theorem unwindRows_frame_out_applies : ∃ rows, unwindRows af fa = .ok rows :=
+  unwindRows_complete_frame_out savedCheckRF_applies compiled.1 (Spill.spillAlloc_size vcp)
+    frame_facts.2.2.2.2.1 out_small frame_facts.2.2.2.1 compiled.2.1 compiled.2.2
+    frame_facts.2.2.2.2.2
 end Link.EhCheck.Complete.Witness

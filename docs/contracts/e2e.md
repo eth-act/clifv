@@ -575,7 +575,9 @@ the `retN`/value arguments).
   `savedCheckRF_pipe` for every allocator answer the pipeline lowers; the frame part
   `savedCheckAF_of`/`savedCheck_of`/`savedCheck_pipe` and `saveOk_of`/`unwindRows_complete_frame`
   under two decidable conditions on the artifact that are necessary for the current compiler:
-  **`saveFrameB`** (save slots below 32 KiB; `large_frame` stores through x16) and **`leadOkB`**
+  **`saveFrameB`** (save slots below 32 KiB; since #479 a theorem, `saveFrameB_always`, for an
+  outgoing area below 32560 bytes: the save slots come first in the frame; variants
+  `savedCheck_pipe_out`, `unwindRows_complete_frame_out`) and **`leadOkB`**
   (no further callee-save store right after the saves; an allocator answer storing a
   callee-saved register into a spill slot there passes `checkAlloc` but gives wrong rows, so
   `savedCheckAF` rightly rejects it). Witness `Witness.savedCheck_applies`/`unwindRows_frame_applies`.

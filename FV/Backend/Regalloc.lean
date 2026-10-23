@@ -26,7 +26,8 @@ Cranelift 0.136.1's options):
 Frame (grows down; `sp` is 16-byte aligned everywhere; all offsets are from `sp`). The
 allocator's slots sit right above the outgoing area, below the explicit CLIF slots, so their
 offsets stay small however large the CLIF slots are (slots at 32 KiB or more are addressed
-through x16, `slotStoreAt`):
+through x16, `slotStoreAt`). The callee-save slots come first, so they stay below 32 KiB
+however many values are spilled (#479: a save stored through x16 has no unwind row):
 
 ```
 fp + 16 + off     incoming stack arguments
@@ -34,9 +35,9 @@ fp + 8, fp        saved lr, fp                                  <- x29
                   padding to 16                                 (total = frameSize)
 sp + size         explicit CLIF stack slots (slotBase)
 sp + fmoveTmp     16-byte temporary for float register moves (if any)
-sp + saveBase     callee-save slots: float registers (16 bytes each), then int (8 bytes)
 sp + floatBase    float spill slots, 16 bytes each (if any float value is spilled)
-sp + intBase      int spill slots, 8 bytes each
+sp + spillBase    int spill slots, 8 bytes each
+sp + intBase      callee-save slots: float registers (16 bytes each), then int (8 bytes)
 sp                outgoing stack arguments                       <- sp
 ```
 -/
@@ -203,7 +204,10 @@ def buildRFunc (vc : VCode) (o : RAOut) : Except String RFunc := do
 /-! ## Frame and lowering to `AFunc` -/
 
 structure RAFrame where
+  /-- Base of the allocator's area (`alignTo outgoing 16`): the save slots start here. -/
   intBase : Nat
+  /-- Int spill slots, 8 bytes each (above the save slots). -/
+  spillBase : Nat
   floatBase : Nat
   saveOff : List (Reg × Nat)
   fmoveTmp : Nat
@@ -223,24 +227,34 @@ def RFunc.floatMove (rf : RFunc) : Bool :=
     | .move (.reg (.v _)) (.reg (.v _)) => true
     | _ => false
 
+/-- The callee-saved registers of class `c` with a save slot: those of `calleeSaved` that
+`rf.saved` lists, in `calleeSaved`'s order (each once, so the save area is at most
+8 × 16 + 10 × 8 bytes whatever `rf.saved` is). -/
+def RFunc.savedOf (rf : RFunc) (c : RegClass) : List Reg :=
+  calleeSaved.filter fun r => r.realClass? == some c && rf.saved.any fun s => decide (s = r)
+
+/-- The frame. The save slots come first, right above the outgoing area (Cranelift's
+`gen_clobber_save` also keeps the callee-saves apart from the spill area, directly under the
+frame record), so their offsets are bounded by the outgoing area and the save area whatever
+the number of spill slots (`saveFrameB_always`: below 32 KiB, one `str` each, with an unwind
+row each; #479). -/
 def RAFrame.compute (vc : VCode) (rf : RFunc) : RAFrame :=
   let floatStack := rf.floatStack
   let floatMove := rf.floatMove
   let intBase := alignTo vc.outgoing 16
-  let floatBase := alignTo (intBase + 8 * rf.spillSlots) 16
-  let saveBase := floatBase + (if floatStack then 16 * rf.spillSlots else 0)
-  let floats := rf.saved.filter (·.realClass? == some .float)
-  let ints := rf.saved.filter (·.realClass? == some .int)
-  let (fo, e) := floats.foldl (fun (acc, o) r => (acc ++ [(r, o)], o + 16)) ([], saveBase)
-  let (io, e) := ints.foldl (fun (acc, o) r => (acc ++ [(r, o)], o + 8)) ([], e)
+  let (fo, e) := (rf.savedOf .float).foldl (fun (acc, o) r => (acc ++ [(r, o)], o + 16)) ([], intBase)
+  let (io, e) := (rf.savedOf .int).foldl (fun (acc, o) r => (acc ++ [(r, o)], o + 8)) ([], e)
+  let spillBase := alignTo e 16
+  let floatBase := alignTo (spillBase + 8 * rf.spillSlots) 16
+  let e := floatBase + (if floatStack then 16 * rf.spillSlots else 0)
   let tmp := alignTo e 16
   let e := if floatMove then tmp + 16 else e
   let size := alignTo e 16
-  { intBase, floatBase, saveOff := fo ++ io, fmoveTmp := tmp, size,
+  { intBase, spillBase, floatBase, saveOff := fo ++ io, fmoveTmp := tmp, size,
     total := alignTo (size + vc.slotBytes) 16 }
 
 def RAFrame.offset (fr : RAFrame) : Loc → Except String Nat
-  | .stack s .int => pure (fr.intBase + 8 * s)
+  | .stack s .int => pure (fr.spillBase + 8 * s)
   | .stack s .float => pure (fr.floatBase + 16 * s)
   | .save r => match fr.saveOff.lookup r with
     | some o => pure o

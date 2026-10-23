@@ -326,10 +326,11 @@ theorem saveOff_spill (vc : VCode) {r : Reg} (hr : r ∈ calleeSaved) :
     ∃ o, (RAFrame.compute vc (spillAlloc vc)).saveOff.lookup r = some o := by
   apply lookup_some_of_mem
   have hsv : (spillAlloc vc).saved = calleeSaved := rfl
-  simp only [RAFrame.compute, hsv, List.map_append, fold_keys, List.map_nil, List.nil_append]
+  simp only [RAFrame.compute, RFunc.savedOf, hsv, List.map_append, fold_keys, List.map_nil,
+    List.nil_append]
   rcases calleeSaved_cls r hr with h | h
-  · exact List.mem_append_left _ (List.mem_filter.mpr ⟨hr, by simp [h]⟩)
-  · exact List.mem_append_right _ (List.mem_filter.mpr ⟨hr, by simp [h]⟩)
+  · exact List.mem_append_left _ (List.mem_filter.mpr ⟨hr, by simp [h, hr]⟩)
+  · exact List.mem_append_right _ (List.mem_filter.mpr ⟨hr, by simp [h, hr]⟩)
 
 theorem offset_ok (vc : VCode) {l : Loc} (hl : SlotOk l) (hr : ∀ r, l ≠ .reg r) :
     ∃ o, (RAFrame.compute vc (spillAlloc vc)).offset l = .ok o := by

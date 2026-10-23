@@ -18,11 +18,14 @@ is one of the per-function unwinding checks (`unwFnsB`). Here:
   lowers (`allocResult vcp (readyAnswer vcp (raAnswer vcp o))`) passes it, for every allocator
   answer `o`.
 * **the frame part `savedCheckAF`** (`savedCheckAF_of`): the save moves of block 0 become one
-  `str` each at their save slots when the slots are below 32 KiB (`saveFrameB`; the
-  `large_frame` corpus test is the counterexample above), and the code after them does not
+  `str` each at their save slots when the slots are below 32 KiB (`saveFrameB`). Since #479 the
+  save slots come first in the frame, so `saveFrameB_always` proves it for every allocation of a
+  function whose outgoing argument area is below 32560 bytes (`savedCheck_pipe_out`,
+  `unwindRows_complete_frame_out` take that bound instead). The code after the saves must not
   start with another callee-save store (`leadOkB`: an allocator answer may store a callee-saved
   register into a spill slot right after the saves, which `checkAlloc` accepts and which
-  `savedCheckAF` rightly rejects).
+  `savedCheckAF` rightly rejects; a store through x16 counts too, `farSave`, on which
+  `unwindRows` fails).
 -/
 
 namespace Link.EhCheck.Complete
@@ -679,18 +682,38 @@ theorem leadSaves_split : ∀ l : List RItem,
         List.dropWhile, Option.isSome_some]
       exact congrArg _ (leadSaves_split l)
 
-/-- **The save slots are below 32 KiB**: every save move becomes one `str` at `[sp, #off]`. -/
+/-- **The save slots are below 32 KiB**: every save move becomes one `str` at `[sp, #off]`.
+Since #479 a theorem whenever the outgoing area is below 32560 bytes (`saveFrameB_always`). -/
 def saveFrameB (vc : VCode) (rf : RFunc) : Bool :=
   rf.saveRegs.all fun r => match (RAFrame.compute vc rf).saveOff.lookup r with
     | some o => decide (o < 32768)
     | none => true
 
 /-- **The code of block 0 after the prologue and the saves' stores does not start with
-another callee-save store.** -/
+another callee-save store**: neither one at `[sp, #off]` (`calleeSave?`) nor one through x16
+(`farSave`). -/
 def leadOkB (rf : RFunc) (af : AFunc) : Bool :=
   match af.blocks[0]? with
-  | some (_, code) => ((code.toList.drop (1 + rf.saveRegs.length)).head?.bind AInst.calleeSave?).isNone
+  | some (_, code) => ((code.toList.drop (1 + rf.saveRegs.length)).head?.bind AInst.calleeSave?).isNone &&
+      !farSave (code.toList.drop (1 + rf.saveRegs.length))
   | none => true
+
+/-- **`saveFrameB` holds for every allocation** of a function whose outgoing argument area is
+below 32560 bytes (#479): the save slots come first in the frame (`RAFrame.compute`), right
+above the outgoing area, so they end by `intBase + 208` whatever the number of spill slots. -/
+theorem saveFrameB_always (vc : VCode) (rf : RFunc) (hout : vc.outgoing ≤ 32560) :
+    saveFrameB vc rf = true := by
+  unfold saveFrameB
+  refine List.all_eq_true.2 fun r _ => ?_
+  split
+  · rename_i o h
+    have h1 := save_lt h
+    have h2 : (RAFrame.compute vc rf).intBase = alignTo vc.outgoing 16 := rfl
+    rw [h2] at h1
+    unfold alignTo at h1
+    simp only [decide_eq_true_eq]
+    omega
+  · rfl
 
 /-- The save moves' code: one `str` per saved register at its save slot. -/
 theorem saves_code {fr : RAFrame} {vb : VBlock} :
@@ -770,17 +793,19 @@ theorem saves_code' {fr : RAFrame} {vb : VBlock} {fs : Nat} (rs : List Reg) {cod
 /-- **Block 0's leading callee-save stores** (`savesOf`, what `unwindRows` and `savedCheckAF`
 read) on an allocation passing `savedCheckRF`, with save slots below 32 KiB (`saveFrameB`) and
 no further callee-save store right after the saves' (`leadOkB`): the saves' stores, at the
-saved registers' slots, with their rows. -/
-theorem frame_saves {vc : VCode} {rf : RFunc} {af : AFunc} (hRF : savedCheckRF vc rf = true)
+saved registers' slots, with their rows; and the code after them does not start with a
+callee-saved register's store through x16 (`farSave`). -/
+theorem frame_saves_far {vc : VCode} {rf : RFunc} {af : AFunc} (hRF : savedCheckRF vc rf = true)
     (halloc : lowerRFunc vc rf = .ok af) (hsz : rf.blocks.size = vc.blocks.size)
     (hne : vc.blocks.size ≠ 0) (hframe : saveFrameB vc rf = true)
     (hlead : leadOkB rf af = true) :
-    ∃ code, af.blocks[0]?.map (·.2) = some (AInst.prologue :: code).toArray ∧
+    (∃ code, af.blocks[0]?.map (·.2) = some (AInst.prologue :: code).toArray ∧
       (code.takeWhile (·.calleeSave?.isSome)).mapM (UnwindTables.saveRow af.frameSize) =
         saveRowsOf (RAFrame.compute vc rf) af.frameSize rf.saveRegs ∧
       ∀ a ∈ code.takeWhile (·.calleeSave?.isSome), ∃ (r : Reg) (o : Nat),
         a.calleeSave? = some (r, (o : Int)) ∧
-        (RAFrame.compute vc rf).saveOff.lookup r = some o := by
+        (RAFrame.compute vc rf).saveOff.lookup r = some o) ∧
+    farSave (afterSavesOf af) = false := by
   obtain ⟨⟨-, -, -, hbl⟩, -⟩ := lowerRFunc_ok halloc
   have hcs := savedCheckRF_cs hRF
   obtain ⟨vb, hvb⟩ : ∃ vb, vc.blocks[0]? = some vb := ⟨_, Array.getElem?_eq_getElem (by omega)⟩
@@ -804,22 +829,50 @@ theorem frame_saves {vc : VCode} {rf : RFunc} {af : AFunc} (hRF : savedCheckRF v
     intro a ha
     obtain ⟨r, o, h1, -⟩ := hallS a ha
     simp [h1]
+  unfold leadOkB at hlead
+  rw [haf0] at hlead
+  simp only [List.toList_toArray, List.singleton_append] at hlead
+  rw [show 1 + rf.saveRegs.length = (AInst.prologue :: cS).length by simp [hlenS]; omega,
+    ← List.cons_append, List.drop_left] at hlead
+  simp only [Bool.and_eq_true, Bool.not_eq_true'] at hlead
+  obtain ⟨hlead, hlf⟩ := hlead
   have hR0 : cR.takeWhile (·.calleeSave?.isSome) = [] := by
-    unfold leadOkB at hlead
-    rw [haf0] at hlead
-    simp only [List.toList_toArray, List.singleton_append] at hlead
-    rw [show 1 + rf.saveRegs.length = (AInst.prologue :: cS).length by simp [hlenS]; omega,
-      ← List.cons_append, List.drop_left] at hlead
     cases cR with
     | nil => rfl
     | cons a cR =>
       simp only [List.head?_cons, Option.bind_some, Option.isNone_iff_eq_none] at hlead
       simp [hlead]
+  have hRd : cR.dropWhile (·.calleeSave?.isSome) = cR := by
+    cases cR with
+    | nil => rfl
+    | cons a cR =>
+      simp only [List.head?_cons, Option.bind_some, Option.isNone_iff_eq_none] at hlead
+      simp [List.dropWhile_cons, hlead]
   have htw : (cS ++ cR).takeWhile (·.calleeSave?.isSome) = cS := by
     rw [List.takeWhile_append_of_pos hallS', hR0, List.append_nil]
-  refine ⟨cS ++ cR, by rw [haf0]; rfl, by rw [htw]; exact hrowS, fun a ha => ?_⟩
-  rw [htw] at ha
-  exact hallS a ha
+  have hdw : (cS ++ cR).dropWhile (·.calleeSave?.isSome) = cR := by
+    rw [List.dropWhile_append_of_pos hallS', hRd]
+  refine ⟨⟨cS ++ cR, by rw [haf0]; rfl, by rw [htw]; exact hrowS, fun a ha => ?_⟩, ?_⟩
+  · rw [htw] at ha
+    exact hallS a ha
+  · unfold afterSavesOf
+    rw [haf0]
+    simp only [List.toList_toArray, List.drop_one, List.singleton_append, List.tail_cons]
+    rw [hdw]
+    exact hlf
+
+/-- **Block 0's leading callee-save stores** (`frame_saves_far` without the `farSave` part). -/
+theorem frame_saves {vc : VCode} {rf : RFunc} {af : AFunc} (hRF : savedCheckRF vc rf = true)
+    (halloc : lowerRFunc vc rf = .ok af) (hsz : rf.blocks.size = vc.blocks.size)
+    (hne : vc.blocks.size ≠ 0) (hframe : saveFrameB vc rf = true)
+    (hlead : leadOkB rf af = true) :
+    ∃ code, af.blocks[0]?.map (·.2) = some (AInst.prologue :: code).toArray ∧
+      (code.takeWhile (·.calleeSave?.isSome)).mapM (UnwindTables.saveRow af.frameSize) =
+        saveRowsOf (RAFrame.compute vc rf) af.frameSize rf.saveRegs ∧
+      ∀ a ∈ code.takeWhile (·.calleeSave?.isSome), ∃ (r : Reg) (o : Nat),
+        a.calleeSave? = some (r, (o : Int)) ∧
+        (RAFrame.compute vc rf).saveOff.lookup r = some o :=
+  (frame_saves_far hRF halloc hsz hne hframe hlead).1
 
 /-- **`savedCheckAF` from the frame conditions** (`frame_saves`). -/
 theorem savedCheckAF_of {vc : VCode} {rf : RFunc} {af : AFunc} (hRF : savedCheckRF vc rf = true)
@@ -906,7 +959,28 @@ theorem unwindRows_complete_frame {vc : VCode} {rf : RFunc} {af : AFunc} {k : Na
   obtain ⟨vb, hvb⟩ : ∃ vb, vc.blocks[0]? = some vb := ⟨_, Array.getElem?_eq_getElem (by omega)⟩
   obtain ⟨items0, hit⟩ : ∃ items0, rf.blocks[0]? = some items0 :=
     ⟨_, Array.getElem?_eq_getElem (by omega)⟩
-  exact unwindRows_complete halloc hemit hlay hcode hvb hit
-    (saveOk_of hRF halloc hsz hne hframe hlead)
+  exact unwindRows_complete_nofar halloc hemit hlay hcode hvb hit
+    (saveOk_of hRF halloc hsz hne hframe hlead) (frame_saves_far hRF halloc hsz hne hframe hlead).2
+
+/-! ## Without `saveFrameB` (#479): an outgoing area below 32560 bytes suffices -/
+
+/-- `savedCheck_pipe` with the input-side bound on the outgoing area (`saveFrameB_always`)
+instead of the output condition `saveFrameB`. -/
+theorem savedCheck_pipe_out {vcp : VCode} {o : Lean.Json} {af : AFunc} {ss ps : Array (Array Nat)}
+    (hcfg : vcp.cfg = .ok (ss, ps)) (hne : vcp.blocks.size ≠ 0)
+    (halloc : lowerRFunc vcp (allocResult vcp (readyAnswer vcp (LinkCheck.raAnswer vcp o))) = .ok af)
+    (hout : vcp.outgoing ≤ 32560)
+    (hlead : leadOkB (allocResult vcp (readyAnswer vcp (LinkCheck.raAnswer vcp o))) af = true) :
+    savedCheck vcp (allocResult vcp (readyAnswer vcp (LinkCheck.raAnswer vcp o))) = true :=
+  savedCheck_pipe hcfg hne halloc (saveFrameB_always _ _ hout) hlead
+
+/-- `unwindRows_complete_frame` with the bound on the outgoing area instead of `saveFrameB`. -/
+theorem unwindRows_complete_frame_out {vc : VCode} {rf : RFunc} {af : AFunc} {k : Nat}
+    {fa : FnAsm} {fb : FnBin} (hRF : savedCheckRF vc rf = true) (halloc : lowerRFunc vc rf = .ok af)
+    (hsz : rf.blocks.size = vc.blocks.size) (hne : vc.blocks.size ≠ 0)
+    (hout : vc.outgoing ≤ 32560) (hlead : leadOkB rf af = true)
+    (hemit : emitFunc k af = .ok fa) (hlay : fa.layout = .ok fb)
+    (hcode : 4 * fb.words.size < 2 ^ 32) : ∃ rows, unwindRows af fa = .ok rows :=
+  unwindRows_complete_frame hRF halloc hsz hne (saveFrameB_always _ _ hout) hlead hemit hlay hcode
 
 end Link.EhCheck.Complete

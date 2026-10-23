@@ -872,8 +872,9 @@ theorem saveOff_le {vc : VCode} {rf : RFunc} {af : AFunc} (halloc : lowerRFunc v
         alignTo ((RAFrame.compute vc rf).size + vc.slotBytes) 16 := rfl
     rw [(lowerRFunc_ok halloc).1.1, e]
     exact Nat.le_trans (Nat.le_add_right _ _) (le_alignTo16 _)
-  obtain ⟨-, h2, h3, -⟩ := compute_facts vc rf
-  rcases save_entry h with ⟨i, hi, -, rfl, -⟩ | ⟨i, hi, -, rfl, -⟩ <;> omega
+  obtain ⟨⟨h0, h1⟩, h2, h3, -⟩ := compute_facts vc rf
+  by_cases hfs : rf.floatStack = true <;> simp only [hfs, if_true, if_false, Bool.false_eq_true] at h2 <;>
+    rcases save_entry h with ⟨i, hi, -, rfl, -⟩ | ⟨i, hi, -, rfl, -⟩ <;> omega
 
 /-- **The save slots that unwinding a raising call's frame reads lie in the activation's frame**
 (`StackBelow (frameDrop af) (spv s0)`, below the entry `sp`): at the raising call state `u`, for
