@@ -16,7 +16,9 @@ import argparse, pathlib, re, subprocess, sys
 
 STANDARD = {"propext", "Classical.choice", "Quot.sound"}
 ROOT = pathlib.Path(__file__).resolve().parent.parent
-NATIVE = re.compile(r"[\w.'«»]+\._native\.native_decide\.ax_\w+")
+# A trailing `✝` appears when the auxiliary native_decide axiom belongs to an inaccessible
+# helper (e.g. a witness constant inside a namespace), as in `…observed_true._native.native_decide.ax_1✝`.
+NATIVE = re.compile(r"[\w.'«»]+\._native\.native_decide\.ax_\w+✝?")
 
 
 def main():
