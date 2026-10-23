@@ -5,6 +5,7 @@ import FV.Opt.LegalExn
 import FVTest.Opt.Common
 import FVTest.Backend.StockConfig
 import FVTest.Backend.AllocChoice
+import FVTest.Backend.OracleOrder
 import FV.Backend.Proof.LowerSimUCheck
 import FV.E2E.RegLevelFrameSaved
 import FV.E2E.RegLevelUTry
@@ -93,10 +94,24 @@ allocation `rf` with `lowerRFunc vcp rf = .ok af` (`lowerAllocReady_eq`, `lowerA
 `af`; `none` without an `RFunc` (the stack allocator) or when `prepare` failed. -/
 abbrev AllocRecord := Option (VCode × RFunc × AFunc)
 
+/-- Which allocation `lowerAllocReady vcp ra` lowers, and why (`FV_RA_DIAG`). -/
+def allocVerdict (vcp : VCode) (ra : Except String RFunc) : String :=
+  match ra with
+  | .error e => s!"no answer: {e}"
+  | .ok rf =>
+    match checkAlloc vcp rf with
+    | .error e => s!"checkAlloc: {e}"
+    | .ok _ =>
+      match lowerRFunc vcp rf with
+      | .error e => s!"lowerRFunc: {e}"
+      | .ok af => if emitReady af then "regalloc2" else "not emitReady"
+
 /-- `Allocator.run`, also returning each function's `AllocRecord` (the objects the unwinding
 theorems name). The `regalloc2` case is `allocateRegalloc2` with the allocation it lowers
-(`allocResult vcp (readyAnswer vcp ra)`) kept. -/
-def allocRecording (a : Allocator) (vcs : Array VCode) :
+(`allocResult vcp (readyAnswer vcp ra)`) kept; `lean-regalloc` is given `oracle vcp`
+(`OracleOrder.oracleCode`: Cranelift's vreg numbering, #551), its answer rebuilt against `vcp`. -/
+def allocRecording (a : Allocator) (vcs : Array VCode) (oracle : VCode → VCode := id)
+    (why : VCode → String := fun _ => "") :
     IO (Array (Except String AFunc) × Array AllocRecord) := do
   match a with
   | .stack => pure (vcs.map allocate, vcs.map fun _ => none)
@@ -111,12 +126,15 @@ def allocRecording (a : Allocator) (vcs : Array VCode) :
     let ok := prepared.filterMap (·.toOption)
     let rs : Array (Except String RFunc) ← do
       try
-        match ← runLeanRegalloc bin env ok with
+        match ← OracleOrder.runLeanRegallocVia bin env oracle ok with
         | .error e => pure (ok.map fun _ => .error e)
         | .ok rs => pure (rs.map (·.bind RAResult.oracle))
       catch e => pure (ok.map fun _ => .error (toString e))
     let mut out : Array (Except String AFunc) := #[]
     let mut recs : Array AllocRecord := #[]
+    let mut ans : Array String := #[]
+    let diagOn := (← IO.getEnv "FV_RA_DIAG").isSome
+    let mut diag : Array String := #[]
     let mut j := 0
     for p in prepared do
       match p with
@@ -128,16 +146,31 @@ def allocRecording (a : Allocator) (vcs : Array VCode) :
         let af := lowerAllocReady vcp ra
         out := out.push af
         recs := recs.push (af.toOption.map (vcp, allocResult vcp (readyAnswer vcp ra), ·))
+        ans := ans.push <| match ra with
+          | .ok rf =>
+            if raAnswerRoundTrip vcp rf then raAnswerJson vcp rf
+            else raFailJson vcp.name "the answer does not rebuild the allocation"
+          | .error e => raFailJson vcp.name e
+        if diagOn then diag := diag.push s!"{vcp.name}\t{why vcp}\t{allocVerdict vcp ra}"
         j := j + 1
+    -- `cargo fv --keep-temps`: regalloc2's answers, for `cargo fv link-proof` and `lean-link`
+    -- (which rebuild the allocations from them, as for the Lean allocator's)
+    if let some p ← IO.getEnv "FV_RA_OUT" then
+      IO.FS.writeFile p ("{\"functions\":[" ++ ",".intercalate ans.toList ++ "]}\n")
+    -- debugging aid (#551): per function, the code regalloc2 was given and the path taken
+    if let some p ← IO.getEnv "FV_RA_DIAG" then
+      let h ← IO.FS.Handle.mk p .append
+      for l in diag do h.putStrLn l
     pure (out, recs)
 
 /-- `allocRunOfName? n` with the `AllocRecord`s: the Lean allocator (`n = "lean"`:
 `allocateLeanAnswers`, writing the answers to `$FV_RA_OUT` when set) records its allocation as
 the `regalloc2` case does (`allocResult vcp (readyAnswer vcp ra)` with `ra = leanAlloc vcp`);
 other names run `allocRecording a`. -/
-def allocRecordingNamed (n : String) (a : Allocator) (vcs : Array VCode) :
+def allocRecordingNamed (n : String) (a : Allocator) (vcs : Array VCode)
+    (oracle : VCode → VCode := id) (why : VCode → String := fun _ => "") :
     IO (Array (Except String AFunc) × Array AllocRecord) := do
-  if n != "lean" then return ← allocRecording a vcs
+  if n != "lean" then return ← allocRecording a vcs oracle why
   let (afs, ans) := allocateLeanAnswers vcs
   if let some p ← IO.getEnv "FV_RA_OUT" then
     IO.FS.writeFile p ("{\"functions\":[" ++ ",".intercalate ans.toList ++ "]}\n")
@@ -187,7 +220,7 @@ def run (input output : String) (o : Opts) : IO UInt32 := do
     match checked with
     | .error e => IO.eprintln s!"lean-backend: unsupported stock configuration: {e}"; return 3
     | .ok c => stock := some c
-  let ra := o.regalloc.getD (if o.stockConfig.isSome then "regalloc2" else "lean")
+  let ra := o.regalloc.getD "regalloc2"
   let some runAlloc ← allocRunOfName? ra
     | do IO.eprintln s!"lean-backend: unknown allocator {ra}"; return 2
   -- the stock configuration requires regalloc2 (checked above)
@@ -212,7 +245,13 @@ def run (input output : String) (o : Opts) : IO UInt32 := do
   let fa ← match stock with
     | none => compileFileScalarNIWhen (!o.opt.isSome &&
         !(pf.funcs.any fun p => p.func.toOption.any fun f => f.blocks.any (·.term.isTry))) (fun vcs => do
-        let (afs, recs) ← allocRecordingNamed ra alloc vcs
+        -- regalloc2 sees the code in Cranelift's vreg numbering where the Stock driver's
+        -- code is the same up to renaming (`OracleOrder.oracleCode`, #551)
+        let byName (n : String) : Option Clif.Function :=
+          (pf.funcs.find? (·.name == n)).bind (·.func.toOption)
+        let oracle := fun (vcp : VCode) => OracleOrder.oracleCode (byName vcp.name) o.deadCleanup vcp
+        let why := fun (vcp : VCode) => (OracleOrder.oracleCodeWhy (byName vcp.name) o.deadCleanup vcp).2
+        let (afs, recs) ← allocRecordingNamed ra alloc vcs oracle why
         records.set ((vcs.map (·.name)).zip recs)
         pure afs) pf (unv128 ++ unvTry) o.deadCleanup
     | some c => (compileFileWith (StockConfig.allocate c clif rejected alloc) pf
