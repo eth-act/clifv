@@ -149,6 +149,21 @@ def fTyOk : Clif.FOp → Clif.Ty → Bool
   | .fdemote, ty => ty == .f32
   | _, ty => ty.isFloat
 
+/-- S11f: the ISLE `FloatCC` variant name of an `fcmp` condition. -/
+def floatccName : Clif.FloatCC → String
+  | .eq => "Equal" | .ne => "NotEqual" | .lt => "LessThan" | .le => "LessThanOrEqual"
+  | .gt => "GreaterThan" | .ge => "GreaterThanOrEqual" | .ord => "Ordered"
+  | .uno => "Unordered" | .one => "OrderedNotEqual" | .ueq => "UnorderedOrEqual"
+  | .ult => "UnorderedOrLessThan" | .ule => "UnorderedOrLessThanOrEqual"
+  | .ugt => "UnorderedOrGreaterThan" | .uge => "UnorderedOrGreaterThanOrEqual"
+
+/-- S11f: the `fcmp` conditions `instData` accepts: those `emit_fcmp` tests with one Arm
+condition (`fp_cond_code`). `one`/`ueq` give a `CondResult.Or` (two conditions), outside the
+proven condition shapes (`Proof.CondShape`). -/
+def fccOk : Clif.FloatCC → Bool
+  | .one | .ueq => false
+  | _ => true
+
 /-- The `Imm64` of `iconst.ty imm`: the reader masks it to the type's width
 (`InstructionData::mask_immediates`), so it is the zero-extended value as an `i64`. -/
 def imm64OfIconst (ty : Clif.Ty) (imm : BitVec ty.width) : Int :=
@@ -192,7 +207,7 @@ instruction is outside E). The float data movement of S11e4 (`valTyOk`): `f32con
 `load`/`store` of a whole `f32`/`f64`, `select` of floats and `bitcast` (`LoadNoOffset` with
 its `MemFlags`, as `InstructionData::LoadNoOffset`). The float arithmetic of S11f whose roots
 are proven (`fBinaryOpcode`, `fUnaryOpcode`): `Binary`/`Unary` with the opcode, as Cranelift's
-`InstructionData`; `fcmp` stays outside (its `fp_cond_code` conditions are not proven). -/
+`InstructionData`; `fcmp` of `f32`/`f64` at a condition of `fccOk` (`FloatCompare`). -/
 def instData (f : Clif.Function) : Clif.Inst → Except String V
   | .iconst ty imm =>
     if eTy ty then pure (instDataV "UnaryImm" [opcodeV "Iconst", .int (imm64OfIconst ty imm)])
@@ -312,7 +327,14 @@ def instData (f : Clif.Function) : Clif.Inst → Except String V
       | some n =>
         if fTyOk op ty then pure (instDataV "Binary" [opcodeV n, .values [x, y]])
         else throw s!"{n}.{ty.name}"
-      | none => throw s!"`{op.name}` with two operands is not in the lowering"
+      | none =>
+        match op with
+        | .fcmp cc =>
+          if ty.isFloat && fccOk cc then
+            pure (instDataV "FloatCompare"
+              [opcodeV "Fcmp", .values [x, y], mkVariant TyId.FloatCC (floatccName cc)])
+          else throw s!"fcmp.{ty.name} {cc.name}"
+        | _ => throw s!"`{op.name}` with two operands is not in the lowering"
     | [x] =>
       match fUnaryOpcode op with
       | some n =>

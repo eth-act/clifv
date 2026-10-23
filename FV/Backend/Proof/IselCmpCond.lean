@@ -312,7 +312,8 @@ theorem opcode_absurd {f : Clif.Function} {ctx : Ctx} (hctx : CtxInv f ctx) {x j
 
 /-- The opcode names of the float operations `instData` builds (S11f, `fOpc`). -/
 def fOpNames : List String :=
-  ["Fadd", "Fsub", "Fmul", "Fdiv", "Fmin", "Fmax", "Sqrt", "Fneg", "Fabs", "Fpromote", "Fdemote"]
+  ["Fadd", "Fsub", "Fmul", "Fdiv", "Fmin", "Fmax", "Sqrt", "Fneg", "Fabs", "Fpromote", "Fdemote",
+   "Fcmp"]
 
 /-- The opcode names `instData` gives (format-generic instructions): E's, `Bitcast` and the
 float operations'. -/

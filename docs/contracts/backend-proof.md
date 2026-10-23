@@ -1026,13 +1026,14 @@ typed per-step contracts and the widened scope are the remaining S11e5 slices.
   `lower_nonroot_nomatchTA` over `InstScopeTA` (instructions in `Compile.instETA`, i.e.
   `instET ∨ fArithET`; float-result opcodes `floatOpsA`, `inst_splitA`). `failsT_sound` and
   `lower_nonroot_nomatchT` keep their statements.
-* **Deferred: `fcmp`.** `rule_lower_2176` is not a closure root and `instData` rejects `fcmp`
-  (so `Compile.fArithET` excludes it); its `fp_cond_code` conditions are open.
+* **`fcmp` (S11f, #35).** `rule_lower_2176`/`rule_lower_1283` are closure roots, proven over
+  float-capable contexts (`LowerRulesCorrectFC`, `IselFloatCmp.lean`); `Compile.fArithET`
+  still excludes `fcmp` (its end-to-end scope admission is open).
 
 **Non-vacuity.** `FVTest/Backend/FloatArithCtxT.lean`: `ctxInvT_float_arith` (`ctxOkT_sound`,
 `native_decide`, witness only) for a function with all eleven operations, `lower` fires the
-eleven roots on it, `instScopeTA_float_arith`, `float_arith_fcmp_nomatch`
-(`lower_nonroot_nomatchTA` on the `fcmp` root). Oracle: `FVTest/Backend/float_arith.clif`.
+eleven roots on it, `instScopeTA_float_arith`, `float_cmp_root_closure` (the `fcmp` root is a
+closure root and not a `floatArithRootRule`). Oracle: `FVTest/Backend/float_arith.clif`.
 
 **Boundary.** Nothing downstream consumes `LowerRulesCorrectFT`/`InstScopeTA` yet (the driver
 and the end-to-end scope keep `InstScopeT`).
