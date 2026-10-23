@@ -10,6 +10,8 @@ import FV.E2E.VerifiableT
 import FVTest.E2E.FloatVerifiedW
 import FVTest.Link.FloatCompileExeT
 import FV.Link.DeadCleanupCompileT
+import FV.E2E.FinalTC
+import FV.Backend.Proof.IselCtlTryF
 
 -- S11e5 Stage C (#35): the typed scope (float data movement, float parameters and returns)
 #print axioms E2E.typedRules_program
@@ -52,3 +54,12 @@ import FV.Link.DeadCleanupCompileT
 #print axioms Link.DeadCleanup.compileExeT_total_reach_input
 #print axioms Link.DeadCleanup.compileExeT_eq
 #print axioms E2E.FloatCompileExeTWitness.correct_spec -- witness: native_decide
+
+-- S11e6 slice 2c (#419): direct `try_call` with f32/f64 signatures, per-function typed chain
+#print axioms E2E.backend_correct_finalTC
+#print axioms E2E.backend_correct_final_exTC
+#print axioms E2E.verdict_of_unverifiedReason
+#print axioms E2E.lowerChecked_specTC
+#print axioms Backend.Proof.tryUnmatchableTC_program
+#print axioms Backend.Proof.Driver.tryCallsTC_of_rules
+#print axioms Backend.Proof.tryRulesCorrectTFP_program
