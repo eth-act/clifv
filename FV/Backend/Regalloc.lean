@@ -26,15 +26,17 @@ Cranelift 0.136.1's options):
 Frame (grows down; `sp` is 16-byte aligned everywhere; all offsets are from `sp`). The
 allocator's slots sit right above the outgoing area, below the explicit CLIF slots, so their
 offsets stay small however large the CLIF slots are (slots at 32 KiB or more are addressed
-through x16, `slotStoreAt`):
+through x16, `slotStoreAt`). The callee-saved registers are pushed by the prologue right below
+fp/lr, as Cranelift does (`prologueLines`, `gen_clobber_save`): their save moves (`.save`
+locations) emit no code.
 
 ```
 fp + 16 + off     incoming stack arguments
 fp + 8, fp        saved lr, fp                                  <- x29
-                  padding to 16                                 (total = frameSize)
-sp + size         explicit CLIF stack slots (slotBase)
+sp + saveBase     clobber area: float registers (8 bytes each), then int registers (8 bytes
+                  each), each class padded to 16 (`clobberOff`)    (total = frameSize)
+sp + size         explicit CLIF stack slots (slotBase), padded to 16
 sp + fmoveTmp     16-byte temporary for float register moves (if any)
-sp + saveBase     callee-save slots: float registers (16 bytes each), then int (8 bytes)
 sp + floatBase    float spill slots, 16 bytes each (if any float value is spilled)
 sp + intBase      int spill slots, 8 bytes each
 sp                outgoing stack arguments                       <- sp
@@ -228,16 +230,13 @@ def RAFrame.compute (vc : VCode) (rf : RFunc) : RAFrame :=
   let floatMove := rf.floatMove
   let intBase := alignTo vc.outgoing 16
   let floatBase := alignTo (intBase + 8 * rf.spillSlots) 16
-  let saveBase := floatBase + (if floatStack then 16 * rf.spillSlots else 0)
-  let floats := rf.saved.filter (·.realClass? == some .float)
-  let ints := rf.saved.filter (·.realClass? == some .int)
-  let (fo, e) := floats.foldl (fun (acc, o) r => (acc ++ [(r, o)], o + 16)) ([], saveBase)
-  let (io, e) := ints.foldl (fun (acc, o) r => (acc ++ [(r, o)], o + 8)) ([], e)
+  let e := floatBase + (if floatStack then 16 * rf.spillSlots else 0)
   let tmp := alignTo e 16
   let e := if floatMove then tmp + 16 else e
   let size := alignTo e 16
-  { intBase, floatBase, saveOff := fo ++ io, fmoveTmp := tmp, size,
-    total := alignTo (size + vc.slotBytes) 16 }
+  let saveBase := alignTo (size + vc.slotBytes) 16
+  { intBase, floatBase, saveOff := rf.saved.map fun r => (r, saveBase + clobberOff rf.saved r),
+    fmoveTmp := tmp, size, total := saveBase + clobberBytes rf.saved }
 
 def RAFrame.offset (fr : RAFrame) : Loc → Except String Nat
   | .stack s .int => pure (fr.intBase + 8 * s)
@@ -274,9 +273,11 @@ def slotLoadAt (cls : RegClass) (r : Reg) (off : Nat) : List MInst :=
     | .int => .load .uload64 r (.unsignedOffset (.x 16) 0) trustedFlags
     | .float => .load .fpuLoad128 r (.unsignedOffset (.x 16) 0) trustedFlags]
 
-/-- Machine code of a move. -/
+/-- Machine code of a move. The callee-save moves (to and from `.save` locations) emit none:
+the prologue pushes the saved registers and the epilogue pops them (`prologueLines`). -/
 def RAFrame.moveInsts (fr : RAFrame) (src dst : Loc) : Except String (List AInst) := do
   match src, dst with
+  | _, .save _ | .save _, _ => pure []
   | .reg a, .reg b => match a.realClass? with
     | some .int => pure [.inst (.mov .size64 b a)]
     | _ => pure ((slotStoreAt .float a fr.fmoveTmp ++ slotLoadAt .float b fr.fmoveTmp).map .inst)
@@ -407,6 +408,67 @@ theorem ctlCheck_of_int {vc : VCode} {rf : RFunc} (h : ctlCheckInt vc rf = true)
   obtain ⟨⟨h1, h2⟩, h3⟩ := h
   refine ⟨⟨fun x hx y hy => ctlInstOk_of_int (h1 x hx y hy), h2⟩, h3⟩
 
+/-- `r` → `.save r` (a callee save of `buildRFunc`/the allocators). -/
+def RItem.isSave : RItem → Bool
+  | .move (.reg r) (.save r') => r == r'
+  | _ => false
+
+/-- `.save r` → `r` (a callee restore). -/
+def RItem.isRestore : RItem → Bool
+  | .move (.save r') (.reg r) => r == r'
+  | _ => false
+
+/-- The register a restore restores. -/
+def RItem.restoreReg : RItem → Option Reg
+  | .move (.save r) _ => some r
+  | _ => none
+
+def Loc.isSave : Loc → Bool
+  | .save _ => true
+  | _ => false
+
+/-- A move that touches no save slot and none of the registers `done`. -/
+def RItem.avoids (done : List Reg) : RItem → Bool
+  | .move a b => !a.isSave && !b.isSave && !done.any (fun r => a == .reg r || b == .reg r)
+  | _ => false
+
+/-- The moves before a `Rets`, in order, `done` the registers restored so far: restores of the
+saved registers in order, other moves that touch no save slot and no register restored before
+them. At the end every saved register is restored. -/
+def retTailOk (saved : List Reg) : List Reg → List RItem → Bool
+  | done, [] => done == saved
+  | done, it :: rest =>
+    match it.restoreReg, it.isRestore with
+    | some r, true => saved[done.length]? == some r && retTailOk saved (done ++ [r]) rest
+    | _, _ => it.avoids done && retTailOk saved done rest
+
+/-- No save or restore among moves. -/
+def RItem.noSave : RItem → Bool
+  | .move a b => !a.isSave && !b.isSave
+  | _ => true
+
+/-- The items of a block (after block 0's saves): every run of moves before a `Rets` is a return
+tail (`retTailOk`), every other one has no save or restore. -/
+def saveSegsOk (vb : VBlock) (saved : List Reg) : List RItem → List RItem → Bool
+  | pend, [] => pend.all RItem.noSave
+  | pend, .move a b :: rest => saveSegsOk vb saved (pend ++ [.move a b]) rest
+  | pend, .op k a :: rest =>
+    (if vb.insts[k]? matches some (.rets _) then retTailOk saved [] pend else pend.all RItem.noSave) &&
+    saveSegsOk vb saved [] rest
+
+/-- **Callee saves in Cranelift's shape** (the prologue pushes them, the epilogue pops them):
+`saved` is a sublist of `calleeSaved` in its order; block 0 starts with the saves of exactly
+`saved` (then no more saves); every `Rets` is preceded by the restores of exactly `saved`
+among moves that avoid them; no other move touches a save slot. -/
+def saveShapeOk (vc : VCode) (rf : RFunc) : Bool :=
+  rf.saved == calleeSaved.filter rf.saved.contains &&
+  (vc.blocks.toList.zip rf.blocks.toList).zipIdx.all fun ((vb, items), b) =>
+    let items := items.toList
+    if b == 0 then
+      items.take rf.saved.length == rf.saved.map (fun r => .move (.reg r) (.save r)) &&
+      saveSegsOk vb rf.saved [] (items.drop rf.saved.length)
+    else saveSegsOk vb rf.saved [] items
+
 /-- Lower a checked allocated function to `AFunc`. -/
 def lowerRFunc (vc : VCode) (rf : RFunc) : Except String AFunc := do
   let fr := RAFrame.compute vc rf
@@ -414,6 +476,7 @@ def lowerRFunc (vc : VCode) (rf : RFunc) : Except String AFunc := do
   -- (`slotStoreAt`/`slotLoadAt`; proof: `RegallocSlotsFar`), so the frame has no size limit. The
   -- CLIF slots above them are addressed by `stack_addr` arithmetic.
   if !ctlCheck vc rf then throw "control-form check (ctlCheck) failed"
+  if !saveShapeOk vc rf then throw "callee-save shape check (saveShapeOk) failed"
   let blocks ← (vc.blocks.zip rf.blocks).mapIdxM fun bi (vb, items) => do
     let mut code : Array AInst := if bi == 0 then #[.prologue] else #[]
     for it in items do
@@ -431,7 +494,8 @@ def lowerRFunc (vc : VCode) (rf : RFunc) : Except String AFunc := do
   -- leaf functions with an empty frame: the return address is then restored from the stack,
   -- so the register-level proof needs no per-instruction fact that the body keeps x30
   -- (`docs/contracts/regalloc-proof.md`, M6Ctl2).
-  pure { name := vc.name, frameSize := fr.total, blocks, slotBase := fr.size, frame := true }
+  pure { name := vc.name, frameSize := fr.total, blocks, slotBase := fr.size, frame := true,
+         saves := rf.saved }
 
 /-- The allocation the backend lowers: regalloc2's (`ra`) if `checkAlloc` accepts it and
 `lowerRFunc` lowers it, else the spill allocation, which `lowerRFunc` lowers for every in-scope
