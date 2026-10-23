@@ -866,7 +866,63 @@ they are; the per-thread layers are new files.
         are outside the innermost activation's `RL.F`: the CLIF events, which avoid the innermost
         `RL.F`, avoid every live frame). Witness (`FrameDisjWitness.lean`): the compiled
         `atomic_load` nested in its caller with a `0x100`-byte callee budget (`nested_LC`,
-        `wfRLy`, `chain_LC`, `frames_LC`, `slots_LC`).
+        `wfRLy`, `chain_LC`, `frames_LC`, `slots_LC`). **`CStepI` (done, `ClifThreadI.lean`)**:
+        `TStateI` (a `TState` and its mask `U`), `slotByte` (the bytes of the running and
+        suspended frames' slots), `mix U B` (`B` with the masked bytes `none`), `CStepI` (`CStep`
+        run on `mix U B`; the bytes after it are `mix U'` of the shared bytes with the write events
+        applied; `U'` keeps only unwritten masked bytes or adds slot bytes of the new state),
+        `CRunI`, `MaskOk` (masked bytes `none` in the own memory). **`cstepI_empty`**: with empty
+        masks `CStepI` is `CStep`; **`cstepI_of_cstep`**: every `CStep` whose reads avoid the mask
+        (`agrees_mix`, `applyEvs_mix`); `enterSlots_bytes`, `enterFunc_bytes` (`enterFunc` on any
+        bytes: the placed slot bytes `slotZ` cleared, the rest kept), `slotZ_frameSlot`,
+        **`cstepI_call`** (the call of a program function adds `slotZ` to the mask);
+        **`cstepI_own`**/`cstepI_own_stuck` (single-thread correspondence: from a `MaskOk` state a
+        `CStepI` reading the own memory is `Clif.step` of the state, to a `MaskOk` state; where
+        `Clif.step` is stuck there is no `CStepI`). Witness (`ClifThreadIWitness.lean`): a call
+        into `%g` with an 8-byte slot placed at `0x6F20` (`cstepI_callW`, `maskW`, `ownW`),
+        `not_cstepW` (no `CStep` enters `%g`), `emptyW'` (with the bump allocator the old `CStep`).
+        **Oracle check (2026-10-23)**: the 44 runtests files with stack slots through `Clif.run`
+        (whose single-thread behaviour `CStepI` is, `cstepI_own`) and the Cranelift interpreter
+        (`scripts/clif-filetests.sh`): 1148 agree, 7 disagree (the known i128 out-of-bounds
+        `stack_store` with an instruction offset, in the baseline), **0 runs stuck on an
+        uninitialised read**. cg_clif output (static must-initialised scan of the `bin-check`
+        dumps, `stack_addr` + `load`/`store`, escaping slots exempt): potential loads of
+        uninitialised slot bytes in fv-demo 288 (2,680 functions), survey 92 (1,702), deps 2,938
+        (34,180), mostly enum/`Option` partial initialisation (the tag stored, the payload word
+        loaded and returned or copied; e.g. fv-demo `bin-check/400b40aa77e2/fns/184.clif`: `store 2`
+        to `ss0[0,4)`, `load.i32 ss0+4` returned) — `Clif.run`, and so `CStepI`, is stuck there.
+        **`RefinesT` (done, `PrivCohT.lean`)**: `RefinesC` (the order- and pair-preserving part of
+        `Refines`), `Unmatched`, `RefinesT MK Priv0 PrivAt` (`shared`: a source event avoids the
+        private set at its image's position; `priv`: an unmatched Arm write is in the private set
+        at its position; `fresh0`/`fresh`: a source read of a location private at the start, or
+        written by an earlier unmatched Arm write, follows a source write there after that write),
+        `Refines.toT` (constant private sets), `realizes_of_threads_fn` (`realizes_of_threads` with
+        the runs as functions and the source property as a premise), **`src_of_refinesT`** (every
+        Arm `rf` source of a source read is a CLIF initial write or an image: another thread's
+        unmatched write by `StackDisjoint`, an own one or a private initial write by freshness and
+        SC per location), **`realizes_of_threads_privT`**, **`privCoh_of_stackDisjoint`** (reads of
+        a thread's stack read its own `po`-latest write: the run condition's justification).
+        **Trusted program premise `StackDisjoint PA (PrivU Priv0 PrivAt)`**: no thread's events
+        other than fences touch another thread's private locations at any time (the union over time
+        of its private sets: its stack) — like the earlier "no thread writes another thread's
+        private set" (above), now for the union over time; documented in
+        `docs/decisions/arm-model.md`. Witnesses (`PrivCohTWitness.lean`): `refinesT_reuse` (a spill
+        at 100, then a CLIF store and load of a slot at 100), `not_refines_reuse` (no fixed private
+        set realizes it), `ret_threadsT` (`realizes_of_threads_privT` on `ProgWitness`).
+        **Composition (done, `CallComposeT.lean`)**: `RefinesC.app`, **`RefinesT.app`** (private sets
+        concatenate, `catP`; the locations not `Clean` at the end of the first segment are dirty at
+        the start of the second), `clean_app`; `maskOf`, `CStepS` (`CStepI` with the mask in the
+        thread state's bytes), `CRunS`; `RealizedT env p Bnd ls k c c' D D'` (private sets within
+        the thread's bound `Bnd`, dirty sets at start/end), `RealizedT.zero`/`trans`;
+        `FunRealG`/`SegOkG`/**`link_composeG`** (the linking induction for any realization with
+        `zero`/`le`/`trans`), **`link_composeT`**, **`realizes_linkedT`** (program level, premise
+        `StackDisjoint` for the bounds and start-dirty sets). Witnesses `CallComposeTWitness.lean`
+        (`realizedT_trans0`, `funRealT_ext`, `linkedT_ret`). **Next**: `SegOkG` for compiled
+        activations (a `Refines` segment of `CStep` runs → `RealizedT` of `CStepS` runs, truncated
+        before a read of a masked byte; invariant: dirty ⊆ mask ∪ `RL.F` of the running activation),
+        then AtomicsCalls7's steps 1–3 (`RetEnd` → (2c), the two `rets` ends, (2b) entry with
+        `cstepI_call`), the linked machine, `realizes_call_full`/rmw witness on `link_composeT`, a
+        `CStepS` version of `program_correct` (multi-threaded `Clif.run` with masks).
   * **the prologue, from the ABI entry (done, `ArmAllocEntry.lean`)**: `stp_fplr_evs` (the
     prologue's `stp x29, x30, [sp, #-16]!`: one plain write at `sp - 16`, no exclusive);
     `q_init_lines` (`RegLevelFrame.q_init` with the prologue's lines, `LinesAt`, and its step
