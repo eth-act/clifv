@@ -791,51 +791,66 @@ def repAt (af : AFunc) (own : Label → Bool) (L : Array Line) : Nat → Label �
      | some x => repAt af own L fuel x j
      | none => false)
 
+/-- A branch to `l'` reaches block `s`: `l'` is a block label whose line (`idx`) represents `s`
+(`rep`). -/
+def repLbl (rep : Label → Nat → Bool) (idx : Std.HashMap Label Nat) (s : Label) (l' : Lbl) :
+    Bool :=
+  match l' with
+  | .block l => match idx[l]? with
+    | some j => rep s j
+    | none => false
+  | _ => false
+
+/-- Final line `y` for line `x`: `x` itself, or `x` with its block target resolved to another
+block label representing the old one. -/
+def lineOk (rep : Label → Nat → Bool) (idx : Std.HashMap Label Nat) (x y : Line) : Bool :=
+  x == y || match x.target?, y.target? with
+    | some (.block l), some l' => y == x.relabel (fun _ => l') && repLbl rep idx l l'
+    | _, _ => false
+
+/-- Final lines `o` for the lines `t`, line by line (`lineOk`). -/
+def keptOk (rep : Label → Nat → Bool) (idx : Std.HashMap Label Nat) (t o : List Line) : Bool :=
+  o.length == t.length && (t.zip o).all fun (x, y) => lineOk rep idx x y
+
+/-- Final lines `o` of a conditional branch `ci` to `s1`, else to `s2` (followed by `b s2`):
+both kept (retargeted), one branch retargeted (`s2` next) or inverted (`s1` next), or none
+(both next, line `nxt`). -/
+def condOk (rep : Label → Nat → Bool) (idx : Std.HashMap Label Nat) (s1 s2 : Label) (ci : Insn)
+    (o : List Line) (nxt : Nat) : Bool :=
+  match o with
+  | [.ins c none, .ins (.b e') none] =>
+    (match c.condTarget? with
+     | some t' => decide (c = ci.setTarget t') && repLbl rep idx s1 t'
+     | none => false) && repLbl rep idx s2 e'
+  | [.ins c none] =>
+    (match c.condTarget? with
+     | some t' => (decide (c = ci.setTarget t') && repLbl rep idx s1 t' && rep s2 nxt) ||
+         (decide (c = ci.invertTo t') && repLbl rep idx s2 t' && rep s1 nxt)
+     | none => false)
+  | [] => rep s1 nxt && rep s2 nxt
+  | _ => false
+
 /-- The checks of `segsOk` for one segment: the final lines `o` of the block's last
 instruction `a` (lines `t`) reach the successors `a` names; `rep s j`: line `j` represents
 block `s`, `nxt`: the line after `o`. A branch to a block label `l'` reaches `s` if `l'`'s line
 represents `s`; a removed branch falls through to `nxt`. -/
 def termOk (rep : Label → Nat → Bool) (idx : Std.HashMap Label Nat) (a : Option AInst)
     (t o : List Line) (nxt : Nat) : Bool :=
-  let repL (s : Label) (l' : Lbl) : Bool := match l' with
-    | .block l => match idx[l]? with
-      | some j => rep s j
-      | none => false
-    | _ => false
-  -- a line kept but for a target resolved to another block label representing the old one
-  let lineOk (x y : Line) : Bool :=
-    x == y || match x.target?, y.target? with
-      | some (.block l), some l' => y == x.relabel (fun _ => l') && repL l l'
-      | _, _ => false
-  let keptOk : Bool := o.length == t.length && (t.zip o).all fun (x, y) => lineOk x y
-  let condOk (s1 s2 : Label) (ci : Insn) : Bool :=
-    match o with
-    | [.ins c none, .ins (.b e') none] =>
-      (match c.condTarget? with
-       | some t' => c == ci.setTarget t' && repL s1 t'
-       | none => false) && repL s2 e'
-    | [.ins c none] =>
-      (match c.condTarget? with
-       | some t' => (c == ci.setTarget t' && repL s1 t' && rep s2 nxt) ||
-           (c == ci.invertTo t' && repL s2 t' && rep s1 nxt)
-       | none => false)
-    | [] => rep s1 nxt && rep s2 nxt
-    | _ => false
   match a with
   | some (.inst (.jump x)) =>
     (match o with
-     | [.ins (.b l') none] => repL x l'
+     | [.ins (.b l') none] => repLbl rep idx x l'
      | [] => rep x nxt
      | _ => false)
-  | some (.inst (.condBr tl el k)) => condOk tl el (k.insn (.block tl))
+  | some (.inst (.condBr tl el k)) => condOk rep idx tl el (k.insn (.block tl)) o nxt
   | some (.inst (.testBitAndBranch k tl el rn bit)) =>
-    condOk tl el (.tbz (k == .nz) rn bit (.block tl))
+    condOk rep idx tl el (.tbz (k == .nz) rn bit (.block tl)) o nxt
   | some (.inst (.tryCall _ ti)) =>
     (match t, o with
-     | [call, _], [call', .ins (.b l') none] => call == call' && repL ti.continuation l'
+     | [call, _], [call', .ins (.b l') none] => call == call' && repLbl rep idx ti.continuation l'
      | [call, _], [call'] => call == call' && rep ti.continuation nxt
      | _, _ => false)
-  | _ => keptOk
+  | _ => keptOk rep idx t o
 
 /-- `repAt` on the lines `L` with enough fuel. -/
 def repOn (af : AFunc) (own : Label → Bool) (L : List Line) : Label → Nat → Bool :=
@@ -872,20 +887,25 @@ def trustFwd (af : AFunc) (L : List Line) (idx : Std.HashMap Label Nat)
       ts.any fun x => x.1.label == l && segTermOk af (repOn af (S.contains ·) L) idx x
     if S'.length == S.length then S else trustFwd af L idx ts n S'
 
+/-- The trusted forwarding blocks of the segments `ss` ending in `os` laid out as `L`
+(`trustFwd` from all forwarding segments). -/
+def segsTrust (af : AFunc) (ss : List Seg) (os : List (List Line)) (L : List Line) : List Label :=
+  let ts := segNxts ss os 0
+  let fw := (ts.filter fun x => (af.fwd? x.1.label).isSome).map (·.1.label)
+  trustFwd af L (blockLabelIdx L) ts (fw.length + 1) fw
+
 /-- The segments `ss` ending in the lines `os` laid out as `L` (`segLines ss os`, then the
 traps) are a correct simplification: entry first, and the final lines of every segment
 `termOk` but those of the forwarding blocks not trusted. A forwarding block (`fwd?`) is
-represented by its target, and by its own label only if trusted (`trustFwd`: its segment is
+represented by its target, and by its own label only if trusted (`segsTrust`: its segment is
 checked too); so the lines of an untrusted one never run as that block (`MachBuffer` aliases
 its label and may remove its `b` as dead code, `buffer.rs:1170-1214`). -/
 def segsOk (af : AFunc) (ss : List Seg) (os : List (List Line)) (L : List Line) : Bool :=
-  let idx := blockLabelIdx L
-  let ts := segNxts ss os 0
-  let fw := (ts.filter fun x => (af.fwd? x.1.label).isSome).map (·.1.label)
-  let S := trustFwd af L idx ts (fw.length + 1) fw
+  let S := segsTrust af ss os L
   let rep := repOn af (S.contains ·) L
   ss.length == os.length && (ss.head?.map (·.idx)) == some 0 &&
-    ts.all fun x => ((af.fwd? x.1.label).isSome && !S.contains x.1.label) || segTermOk af rep idx x
+    (segNxts ss os 0).all fun x =>
+      ((af.fwd? x.1.label).isSome && !S.contains x.1.label) || segTermOk af rep (blockLabelIdx L) x
 
 /-- An emission plan: the segments in emission order, their final last-instruction lines, the
 emitter's final state (deferred traps) and the block-label aliases (each `aliasOk`). -/
