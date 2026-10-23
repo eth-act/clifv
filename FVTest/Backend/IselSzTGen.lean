@@ -181,11 +181,13 @@ def renderTab (nm : String) (tab : CTab) : String := Id.run do
 
 /-- The check of chunk `k` of table `nm` (`len` entries), in sub-chunks of `sk` entries, one
 kernel `decide` (and one declaration) each, assembled by `all_of_chunks`. -/
-def chunkThm (nm ok : String) (k len sk : Nat) : String := Id.run do
+def chunkThm (nm ok : String) (k len sk : Nat) (alt : Nat → Option String := fun _ => none) :
+    String := Id.run do
   let n := (len + sk - 1) / sk
   let mut s := s!"theorem {nm}{k}_len : ({nm}{k}).length ≤ {n} * {sk} := by decide +kernel\n\n"
   for c in List.range n do
-    s := s ++ s!"theorem {nm}{k}_p{c} : ((({nm}{k}).drop ({c} * {sk})).take {sk}).all {ok} = true := by\n  decide +kernel\n\n"
+    s := s ++ (alt c).getD
+      s!"theorem {nm}{k}_p{c} : ((({nm}{k}).drop ({c} * {sk})).take {sk}).all {ok} = true := by\n  decide +kernel\n\n"
   s := s ++ s!"theorem {nm}{k}_ok : ({nm}{k}).all {ok} = true :=\n  all_of_chunks _ _ {sk} {n} {nm}{k}_len fun c hc => match c, hc with\n"
   for c in List.range n do
     s := s ++ s!"    | {c}, _ => {nm}{k}_p{c}\n"
@@ -217,12 +219,16 @@ structure HeavyP where
   nA : Nat
   nB : Nat
 
-def heavyP (aw : TermId → List AT → Option Nat) (ctab : CTab) (i k : Nat) (r : Rule) : HeavyP :=
-  let pats := aPatArgs program aext [.inst [i]] r.args (List.replicate r.vars.length .top)
+def heavyPI (aw : TermId → List AT → Option Nat) (ctab : CTab) (ins : List AT) (k : Nat) (r : Rule) :
+    HeavyP :=
+  let pats := aPatArgs program aext ins r.args (List.replicate r.vars.length .top)
   let a := pats.foldl (fun m e => max m ((cIfLets program covTabT aw ctab aext actor apre aOracle r.iflets e).getD 0)) 0
-  let envs := (aRuleEnvs program covTabT aext actor apre aOracle [.inst [i]] r).getD []
+  let envs := (aRuleEnvs program covTabT aext actor apre aOracle ins r).getD []
   let b := envs.foldl (fun m e => max m ((cExpr program covTabT aw ctab actor apre aOracle r.rhs e).getD 0)) 0
   ⟨a, b, k, (pats.length + k - 1) / k, (envs.length + k - 1) / k⟩
+
+def heavyP (aw : TermId → List AT → Option Nat) (ctab : CTab) (i k : Nat) (r : Rule) : HeavyP :=
+  heavyPI aw ctab [.inst [i]] k r
 
 /-- The chunked check of heavy rule `r` on family `i` for one of the two analyses. -/
 def heavyThm (kind : String) (r : String) (i : Nat) (hp : HeavyP) : String := Id.run do
@@ -250,7 +256,62 @@ def heavyThm (kind : String) (r : String) (i : Nat) (hp : HeavyP) : String := Id
   s := s ++ s!"      | _ + {hp.nB}, hc => exact absurd hc (by omega)\n  · have := List.all_eq_true.1 {okName}_{r}_rest i hi\n    simpa [hi'] using this\n\n"
   s
 
-def renderAll (sz tg : CTab) (lowerNames branchNames : List String)
+/-- Environments per kernel `decide` and per module in the chunked check of a heavy entry (term
+575's entries go through about 4040 environments each; one `decide` per entry ran out of memory
+at 9.2 GB). -/
+def entryK : Nat := 128
+def entryModEnvs : Nat := 1024
+
+/-- The chunked check of heavy entry `e` (sub-chunk `c` of chunk `k` of table `nm`, `ok` its
+entry test): every rule of the entry, each by one `decide` or, if it has more than `entryK`
+environments, by `cRuleLe_of_chunks` from checks of `entryK` environments. Returns the
+declarations for separate modules (each about `entryModEnvs` environments) and the assembly
+(rule-level `cRuleLe_of_chunks` proofs and the sub-chunk theorem) for the chunk's module. -/
+def heavyEntry (nm ok aw : String) (awF : TermId → List AT → Option Nat) (ctab : CTab) (k c : Nat)
+    (e : TermId × List AT × Nat) (names : List String) : List String × String := Id.run do
+  let pre := s!"{nm}{k}_p{c}"
+  let ins := s!"[{", ".intercalate (e.2.1.map awLit)}]"
+  let call := s!"cRuleLe program covTabT {aw} {nm} aext actor apre aOracle {ins} {e.2.2}"
+  let mut mods : List String := []
+  let mut cur := ""
+  let mut curN := 0
+  let mut asm := ""
+  let mut push : List (Nat × String) := []
+  for ((r, rn), j) in ((program.rulesOf e.1).zip names).zipIdx do
+    let pats := aPatArgs program aext e.2.1 r.args (List.replicate r.vars.length .top)
+    let envs := (aRuleEnvs program covTabT aext actor apre aOracle e.2.1 r).getD []
+    let rp := s!"{pre}_r{j}"
+    if pats.length + envs.length ≤ entryK then
+      push := push ++ [(pats.length + envs.length,
+        s!"theorem {rp} : {call} {rn} = true := by decide +kernel\n\n")]
+    else
+      let hp := heavyPI awF ctab e.2.1 entryK r
+      let patsS := s!"(aPatArgs program aext {ins} {rn}.args (List.replicate {rn}.vars.length .top))"
+      let envsS := s!"(aRuleEnvs program covTabT aext actor apre aOracle {ins} {rn})"
+      push := push ++ [(1, s!"theorem {rp}_nA : {patsS}.length ≤ {hp.nA} * {entryK} := by decide +kernel\n\n")]
+      for i in List.range hp.nA do
+        push := push ++ [(entryK, s!"theorem {rp}_A{i} : (({patsS}.drop ({i} * {entryK})).take {entryK}).all\n    (ifOk program covTabT {aw} {nm} aext actor apre aOracle {rn} {hp.a}) = true := by decide +kernel\n\n")]
+      push := push ++ [(1, s!"theorem {rp}_s : {envsS}.isSome = true := by decide +kernel\n\n"),
+        (1, s!"theorem {rp}_nB : ({envsS}.getD []).length ≤ {hp.nB} * {entryK} := by decide +kernel\n\n")]
+      for i in List.range hp.nB do
+        push := push ++ [(entryK, s!"theorem {rp}_B{i} : ((({envsS}.getD []).drop ({i} * {entryK})).take {entryK}).all\n    (envOk program covTabT {aw} {nm} actor apre aOracle {rn} {hp.b}) = true := by decide +kernel\n\n")]
+      asm := asm ++ s!"theorem {rp} : {call} {rn} = true := by\n  refine cRuleLe_of_chunks {hp.a} {hp.b} {entryK} {hp.nA} {entryK} {hp.nB} (by decide) {rp}_nA ?_ {rp}_s {rp}_nB ?_\n  · intro c hc\n    match c, hc with\n"
+      for i in List.range hp.nA do
+        asm := asm ++ s!"    | {i}, _ => exact {rp}_A{i}\n"
+      asm := asm ++ s!"    | _ + {hp.nA}, hc => exact absurd hc (by omega)\n  · intro c hc\n    match c, hc with\n"
+      for i in List.range hp.nB do
+        asm := asm ++ s!"    | {i}, _ => exact {rp}_B{i}\n"
+      asm := asm ++ s!"    | _ + {hp.nB}, hc => exact absurd hc (by omega)\n\n"
+  for (n, s) in push do
+    if curN + n > entryModEnvs && curN > 0 then
+      mods := mods ++ [cur]; cur := ""; curN := 0
+    cur := cur ++ s; curN := curN + n
+  if curN > 0 then mods := mods ++ [cur]
+  let thms := ", ".intercalate ((List.range names.length).map (s!"{pre}_r{·}"))
+  asm := asm ++ s!"theorem {pre} : ((({nm}{k}).drop ({c} * 1)).take 1).all {ok} = true := by\n  rw [show (({nm}{k}).drop ({c} * 1)).take 1 = [{entryLit e}] from rfl]\n  simp only [List.all_cons, List.all_nil, Bool.and_true]\n  show (program.rulesOf {e.1}).all ({call}) = true\n  rw [program_rulesOf_{e.1}]\n  simp only [List.all_cons, List.all_nil, Bool.and_true, {thms}, Bool.and_self]\n\n"
+  (mods, asm)
+
+def renderAll (src : String) (sz tg : CTab) (lowerNames branchNames : List String)
     (heavyN : List (String × Nat × HeavyP × HeavyP)) : List (String × String) := Id.run do
   let nS := (sz.length + chunk - 1) / chunk
   let nT := (tg.length + chunk - 1) / chunk
@@ -269,11 +330,26 @@ weight (`actorW`) and the branch targets (`actorT`) they emit. The leaf-wise ker
     ((List.range nT).map fun k => let es := (tg.drop (k * chunk)).take chunk
       ("tgCTabT", "tgEntryOkT", k, es.length, subChunk es))
   let cgs := groups chunksPerMod jobs
+  let mut hi := 0
   for (js, gi) in cgs.zipIdx do
-    let mut c := preamble s!"cost table entries, group {gi}" "Every rule of every entry of these chunks is within the entry's bound." "import FV.Backend.Proof.IselSzTTabData\nimport FV.Backend.Proof.IselSzTChunk\n"
+    let mut body := ""
+    let mut imps := "import FV.Backend.Proof.IselSzTTabData\nimport FV.Backend.Proof.IselSzTChunk\n"
     for (nm, ok, k, len, sk) in js do
-      c := c ++ chunkThm nm ok k len sk
-    files := files ++ [(s!"IselSzTTabC{gi}.lean", c ++ "end Backend.Proof.CovT\n")]
+      let (tab, aw, awF) := if nm == "szCTabT" then (sz, "actorW", actorW) else (tg, "actorT", actorT)
+      let es := (tab.drop (k * chunk)).take chunk
+      let mut alts : List (Nat × String) := []
+      if sk == 1 then
+        for (e, c) in es.zipIdx do
+          if entryEnvs e > 1000 then
+            let (mods, asm) := heavyEntry nm ok aw awF tab k c e (ruleNames src e.1)
+            for m in mods do
+              files := files ++ [(s!"IselSzTTabH{hi}.lean", preamble s!"cost table entries, heavy entry part {hi}" s!"Chunk checks of the rules of entry {c} of chunk {k} of `{nm}` (assembled in `IselSzTTabC{gi}`)." "import FV.Backend.Proof.IselSzTTabData\nimport FV.Backend.Proof.IselSzTChunk\n" ++ m ++ "end Backend.Proof.CovT\n")]
+              imps := imps ++ s!"import FV.Backend.Proof.IselSzTTabH{hi}\n"
+              hi := hi + 1
+            alts := alts ++ [(c, asm)]
+      body := body ++ chunkThm nm ok k len sk (fun c => (alts.find? (·.1 == c)).map (·.2))
+    let c := preamble s!"cost table entries, group {gi}" "Every rule of every entry of these chunks is within the entry's bound." imps
+    files := files ++ [(s!"IselSzTTabC{gi}.lean", c ++ body ++ "end Backend.Proof.CovT\n")]
   let sgs := groups rulesPerMod lowerNames
   for (rs, gi) in sgs.zipIdx do
     let isHeavy := rs.any (fun r => heavyN.any (·.1 == r))
@@ -352,6 +428,6 @@ def main (args : List String) : IO UInt32 := do
     fun (_, r) => (name, i, heavyP actorW sz i k r, heavyP actorT tg i k r)
   for (n, i, hs, ht) in heavyN do
     IO.println s!"heavy {n} f{i}: sz a={hs.a} b={hs.b} nA={hs.nA} nB={hs.nB}; tg a={ht.a} b={ht.b} nA={ht.nA} nB={ht.nB}"
-  for (name, content) in renderAll sz tg ln bn heavyN do
+  for (name, content) in renderAll src sz tg ln bn heavyN do
     IO.FS.writeFile (path ++ "/" ++ name) content
   return 0
