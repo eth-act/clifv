@@ -1,0 +1,15 @@
+{
+  "utc": "20261023T051834Z",
+  "merge": "66f34776471b5052312cccd6a19eee0d4a3524cc",
+  "complete_author_backup": "07b9f9384e4209467922f6fe80afae2edc0e45e0",
+  "protected_existing_evidence_files_verified": 27952,
+  "additional_source_metadata_files": 13731,
+  "additional_files_archived": 4581,
+  "supplement_sha256": "37088b4b5d064a8109319744291e46f75f54c1a80ced0e99777f87aacbb2f63e",
+  "supplement_bytes": 2122408,
+  "cleanup_targets": [
+    "/home/lee/clifv/.worktrees/stock-mixed-div-20261022/examples/fv-demo/target",
+    "/home/lee/clifv/.worktrees/stock-mixed-div-20261022/examples/survey/target"
+  ],
+  "state": "verified_ready_to_backup_before_cleanup"
+}

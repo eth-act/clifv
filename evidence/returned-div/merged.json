@@ -1,0 +1,14 @@
+{
+  "head": "e4f2a5b64f1ec27f1ed0294b5f61a3519c79511b",
+  "validated_head": "b1990ec02ff083882720dcc436d638c0db5f2b04",
+  "main": "e6dc1acb147d8a5877c84e8360e44b839c6e7909",
+  "tree": "7ef2169ff03320499ce7f0a8a51aa016ac6780e0",
+  "documentation_only_delta_since_key_replay": [
+    "docs/research/stock-driver-obligations.json",
+    "docs/research/stock-returned-div-main-reconciliation.json",
+    "docs/research/stock-returned-div-production-activation.md"
+  ],
+  "merge_commit": "66f34776471b5052312cccd6a19eee0d4a3524cc",
+  "merged_tree_exact": true,
+  "utc": "2026-10-23T05:14:28.254082+00:00"
+}
