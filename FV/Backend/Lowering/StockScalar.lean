@@ -94,9 +94,18 @@ def singleDivEligible (b : Clif.Block) : Bool :=
   | [⟨[z],.div _ ty _ _⟩],.ret [z'] => z == z' && (ty == .i32 || ty == .i64)
   | _,_ => false
 
+/-- Previously proved scalar syntax before one final returned division.
+The old single-division and pure-body classifiers remain unchanged. -/
+def mixedDivEligible (b : Clif.Block) : Bool :=
+  match b.body.reverse,b.term with
+  | ⟨[z],.div _ ty _ _⟩ :: front,.ret [z'] =>
+      z == z' && (ty == .i32 || ty == .i64) && front.all highmulBodyEligible
+  | _,_ => false
+
+
 def eligible (f : Clif.Function) : Bool :=
   match f.blocks with
-  | [b] => (b.body.all highmulBodyEligible || singleDivEligible b) &&
+  | [b] => (b.body.all highmulBodyEligible || singleDivEligible b || mixedDivEligible b) &&
       (match b.term with | .ret _ => true | _ => false) &&
       f.sig.params.all abiEligible && f.sig.returns.all abiEligible
   | _ => false

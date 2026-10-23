@@ -27,7 +27,39 @@ def signed(value, bits):
     return value if value < 1 << (bits - 1) else value - (1 << bits)
 
 
-def run_commands(bits, kind="mixed"):
+def run_commands(bits, kind="mixed", vectors=None):
+    if kind == "mixeddiv":
+        cases = run_commands(bits, "div")
+        low, high = -(1 << (bits - 1)), (1 << (bits - 1)) - 1
+        # Keep every old case; add live-prefix outcomes, zero divisors, signed
+        # boundaries, and the original constant-2 source cases for safe roots.
+        vectors = [
+            [0,5,2,11,22,33,44,55,7], [1,5,2,11,22,33,44,55,7],
+            [-1,-1,1,11,22,33,44,55,1], [0,low,1,11,22,33,44,55,-1],
+            [1,high,-1,11,22,33,44,55,1], [2,0,high,11,22,33,44,55,low],
+            [1,low,low,11,22,33,44,55,low], [1,1,0,11,22,33,44,55,7],
+            [0,0,0,0,0,0,0,0,0], [1,7,-2,11,22,33,44,55,0],
+            [1,-7,2,11,22,33,44,55,-2],
+        ]
+        values = [(args,value) for name,args,value in run_commands(bits,"highmul",vectors)
+                  if name == "stock_highmul_ni"]
+        assert len(values) == len(vectors)
+        mask = (1 << bits) - 1
+        for safe in (False,True):
+            for op in ("sdiv","udiv","srem","urem"):
+                for args,a in values:
+                    b = 2 if safe else args[8]
+                    if b == 0:
+                        result = "int_divz"
+                    elif op == "sdiv" and a == low and b == -1:
+                        result = "int_ovf"
+                    else:
+                        x,y = (a & mask,b & mask) if op[0] == "u" else (a,b)
+                        q = abs(x) // abs(y)
+                        if (x < 0) != (y < 0):q = -q
+                        result = signed(q if op.endswith("div") else x-q*y,bits)
+                    cases.append(("stock_mixed_div_"+op+("_two" if safe else ""),args,result))
+        return cases
     if kind == "div":
         cases = run_commands(bits, "highmul")
         low, high = -(1 << (bits - 1)), (1 << (bits - 1)) - 1
@@ -50,17 +82,18 @@ def run_commands(bits, kind="mixed"):
                 cases.append(("stock_div_"+op,args,value))
         return cases
     low, high = -(1 << (bits - 1)), (1 << (bits - 1)) - 1
-    vectors = [
-        [0, 5, 2, 11, 22, 33, 44, 55, 7],
-        [1, 5, 2, 11, 22, 33, 44, 55, 7],
-        [-1, -1, 1, 11, 22, 33, 44, 55, 1],
-        [0, low, 1, 11, 22, 33, 44, 55, -1],
-        [1, high, -1, 11, 22, 33, 44, 55, 1],
-        [2, 0, high, 11, 22, 33, 44, 55, low],
-        [1, low, low, 11, 22, 33, 44, 55, low],
-    ]
-    if kind in ("bit", "popcount", "minmax", "cmp", "highmul"):
-        vectors.append([1, 1, 0, 11, 22, 33, 44, 55, 7])  # observable CTZ(0)
+    if vectors is None:
+        vectors = [
+            [0, 5, 2, 11, 22, 33, 44, 55, 7],
+            [1, 5, 2, 11, 22, 33, 44, 55, 7],
+            [-1, -1, 1, 11, 22, 33, 44, 55, 1],
+            [0, low, 1, 11, 22, 33, 44, 55, -1],
+            [1, high, -1, 11, 22, 33, 44, 55, 1],
+            [2, 0, high, 11, 22, 33, 44, 55, low],
+            [1, low, low, 11, 22, 33, 44, 55, low],
+        ]
+        if kind in ("bit", "popcount", "minmax", "cmp", "highmul"):
+            vectors.append([1, 1, 0, 11, 22, 33, 44, 55, 7])  # observable CTZ(0)
     cases = []
     for args in vectors:
         selected = args[1] + args[8] if args[0] else args[1]
@@ -208,7 +241,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("artifacts", type=Path)
     parser.add_argument("--native-bin", type=Path, default=Path("rust/target/release/clif-native"))
-    parser.add_argument("--class", dest="kind", choices=["mixed", "logical", "scalar", "not", "mul", "shift", "cast", "bit", "popcount", "minmax", "cmp", "highmul", "div"], default="mixed")
+    parser.add_argument("--class", dest="kind", choices=["mixed", "logical", "scalar", "not", "mul", "shift", "cast", "bit", "popcount", "minmax", "cmp", "highmul", "div", "mixeddiv"], default="mixed")
     options = parser.parse_args()
     root = options.artifacts.resolve()
     native = options.native_bin.resolve()
@@ -240,7 +273,7 @@ def main():
         names = {f["name"] for f in json.loads(table.read_text())["functions"]}
         wanted = {"stock_mixed_ni", "retained_arithmetic", "retained_scalar",
                   "retained_prologue", "retained_d0", "retained_legacy"}
-        if options.kind in ("highmul", "div"):
+        if options.kind in ("highmul", "div", "mixeddiv"):
             wanted = (wanted - {"stock_mixed_ni"}) | {"stock_highmul_ni", "retained_cmp", "retained_minmax", "retained_popcount", "retained_bit", "retained_cast", "retained_shift", "retained_mul", "retained_not", "retained_constant", "retained_logical", "retained_mixed"}
         elif options.kind == "cmp":
             wanted = (wanted - {"stock_mixed_ni"}) | {"stock_cmp_ni", "retained_minmax", "retained_popcount", "retained_bit", "retained_cast", "retained_shift", "retained_mul", "retained_not", "retained_constant", "retained_logical", "retained_mixed"}
@@ -262,8 +295,10 @@ def main():
             wanted = (wanted - {"stock_mixed_ni"}) | {"stock_scalar_ni", "retained_logical", "retained_mixed"}
         elif options.kind == "logical":
             wanted = (wanted - {"stock_mixed_ni"}) | {"stock_logical_ni", "retained_mixed"}
-        if options.kind == "div":
+        if options.kind in ("div", "mixeddiv"):
             wanted |= {"stock_div_"+op for op in ("sdiv", "udiv", "srem", "urem")}
+        if options.kind == "mixeddiv":
+            wanted |= {"stock_mixed_div_"+op+suffix for op in ("sdiv","udiv","srem","urem") for suffix in ("","_two")}
         assert names == wanted, names
         cases = run_commands(int(width), options.kind)
         attached = set()

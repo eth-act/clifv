@@ -1,5 +1,5 @@
 {
-  "updated_utc": "2026-10-22T22:08:32.068652+00:00",
+  "updated_utc": "2026-10-23T01:20:47.232793+00:00",
   "goal": 140,
   "complete": false,
   "inventory_warning": "Historical517root inventory is a source map, not current reachability/execution coverage. Reconcile generated source hashes and current typed scope before using partition counts.",
@@ -21,15 +21,23 @@
       "i32/i64 popcount through shared scalar consumers",
       "i32/i64 signed and unsigned min/max through shared scalar consumers",
       "i32/i64 integer comparisons and actual cast-of-icmp811 through shared scalar consumers",
-      "i32/i64 signed/unsigned high multiplication through shared scalar consumers (389, d522474c)"
+      "i32/i64 signed/unsigned high multiplication through shared scalar consumers (389, d522474c)",
+      "singleton returned i32/i64 division/remainder with original traps (512,6a80a595)",
+      "scalar prefixes followed by returned i32/i64 division/remainder, source return+trap Domain and default consumers (521)"
     ],
-    "pending": "Squash-merge validated singleton division packet; stable outcome import boundary; mixed scalar prefixes with a returned final division; arbitrary-position colored/sunk instructions; complete original widths/ABIs and every remaining original140 control/memory/effect/call/source/block/whole-driver simulation/completeness/consumer obligation.",
+    "pending": "Independent exact-body outcome/value import boundary513; arbitrary-position/undemanded/sunk division and other colored effects; complete original widths/ABIs/control/memory/calls/exceptions; source/block/whole-driver simulation and Stock-only/downstream completeness.",
     "validated_pending_merge": {
       "class": "Single returned i32/i64 division/remainder, all four operations, arbitrary original values including real zero/overflow traps",
       "validated_code_head": "b1ef0c67f455eecb643883a414904016bab65d8f",
       "current_author_gates": "passed;25 primary/27 ownership; see division activation receipt",
       "backup": "a2c9d0d83f32cc089b438ba4977926ec85c88dfe",
       "full_140_complete": false
+    },
+    "mixed_div_current_evidence": {
+      "source_head": "1239f8bcda9fac6ba6e421ab6cfb210ac3ce6677",
+      "receipt": "docs/research/stock-mixed-div-production-activation.md",
+      "backup": "9140614f41c53d809cec9d9e10072441ee654d98",
+      "full_goal_complete": false
     }
   },
   "roots": [

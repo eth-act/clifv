@@ -146,12 +146,15 @@ operations and real zero/overflow traps; original arbitrary operands/slots and
 old pure theorem variants remain. Source bridges retain8/16/32/64; production
 activation covers32/64 across six ABIs, both cleanup modes and both real allocators.
 
-Continue immediately with mixed scalar prefixes followed by a returned division.
-The universal return-and-trap domain and seven split proof modules compile, with
-all21 printed roots standard-only. Complete96 pipeline/source-observation
-witnesses, runtime29functions, linked/native/generated-consumer updates are saved
-but not yet production-validated/activated. Constant-divisor fixtures must observe
-790/791 rather than counting saved lemmas as executed coverage.
+The complete mixed scalar-prefix/final-returned division class now passes author
+gates on1239f8bc, directly based on mainef499aca and independent of performance513.
+[Terminal evidence](../research/stock-mixed-div-production-activation.md) records
+actual source heads, full return-and-trap domain,96complete pipeline/source
+witnesses,6192native comparisons, both32checkconsumer cohorts, exact previous
+axiom/header/identity/stage parity and retained artifacts. Safe signed-divisor
+root IDs790/791 are observed. All prior theorem variants and inputs remain.
+Full140 continues immediately with arbitrary-position/undemanded/sunk division
+and every original remaining obligation; no stop at this class.
 
 A concrete build boundary can be delivered alongside the next implementation:
 extract unchanged VCode outcomes, their prefix lemmas, ArgsAtEntry and Reach into
@@ -286,22 +289,23 @@ Roughly 8 substantive PRs/day is pacing, never a quota or reason to fragment.
 Record implementation/porting/validation/operational-repair time. No routine
 confirmation; keep working until every original #140 obligation is complete.
 
-## Division compatibility gate and next mixed-body delivery
+## Current delivery boundary and next mixed-body work
 
-The complete singleton returned division/remainder class is implemented and
-validated on the source heads in [its receipt](../research/stock-div-production-activation.md).
-Current main advanced from b9415cfb to f7074115 while the session was inactive,
-including allocator and linker contracts. The conflict-free reconciliation is
-pushed at6a205546; fresh required dependency/runtime/consumer gates are pending.
-The original receipt and source are backed remotely atf3e6f6bc. No current-main
-pass or merge is claimed before those checks finish.
+Singleton returned division/remainder shipped in #512, squash6a80a595. Complete
+scalar-prefix/final-returned division passes the actual author gates on1239f8bc,
+directly based on current mainef499aca, for #521. Its terminal receipt links
+complete remote evidence9140614f. Both classes use the shared default consumers;
+old variants, arbitrary original values and actual traps remain.
 
-Next deliver arbitrary proved scalar prefixes followed by a returned final
-division. Derive that division’s actual record retention from the unchanged
-return-demand proof, and pure prefix unsunkness from pointwise quiet source
-colors beside the colored division. Compose real original trapped prefixes
-with the selected scan chunks; preserve memory/world changes in the generic
-prefix proof. This complete class can ship without first solving arbitrary
-position division-sinking, which remains an explicit subsequent obligation.
+Independent exact-body outcome/value import refactoring #513 remains under its
+own affected witness validation, with source5aae55c3 preserved. It does not block
+production implementation delivery. Static import-graph improvements are not a
+measured wall-clock speedup or a completed correctness gate.
+
+Continue with arbitrary-position/undemanded/sunk division and colored source
+instructions, reusing actual record/result bindings and the new generic scan
+return/trap composition. Derive retention and deferred-effect obligations from
+original SSA and actual selection, rather than adding accepted-input premises.
 All original #140 effects, calls, control, widths/ABIs, block/whole-driver
 simulation and universal Stock-only/downstream completeness remain active.
+Fallback and successful Stock.lower do not establish Stock completeness.
