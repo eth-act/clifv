@@ -329,8 +329,9 @@ theorem ScansSpec.fall_refines_witness :
     11 13 example_source_steps exampleRF Arm.ArmState.default (by rfl)
   exact ⟨example_spec, example_source_steps, rfl, scan_alias_facts.2.1, ρ', w', hr, hrel⟩
 
-/-! A real omitted nontrapping load executes in the source while the demanded
-pointer is retained and the selected machine code stays empty. -/
+/-! A real omitted `iconst` executes in the source while the demanded pointer is retained
+and the selected machine code stays empty. (Until #588 this was an unused `notrap` load, which
+the stock driver now lowers, as cranelift-codegen 0.135.0 does.) -/
 
 private def loadInput : State := { unusedInput with demand := #[0, 1] }
 private def loadOutput : Scan :=
@@ -338,11 +339,11 @@ private def loadOutput : Scan :=
   ⟨before, some ⟨0, 0, .omitted, before, before, [], [], #[]⟩, #[]⟩
 private def loadStep : Step := loadOutput.step.getD default
 
-private theorem load_scan : scanInstruction unusedCtx 0 0 1 false loadInput = .ok loadOutput := rfl
+private theorem load_scan : scanInstruction omitCtx 0 0 1 false loadInput = .ok loadOutput := rfl
 
 private def loadFrame : Clif.Frame := {
-  func := unusedCtx.func, regs := fun x => if x = 1 then some (.ofInt .i64 100) else none,
-  slots := [], body := [⟨[0], .load .load .i8 { trapCode := none } 1 0⟩], term := .ret [1] }
+  func := omitCtx.func, regs := fun x => if x = 1 then some (.ofInt .i64 100) else none,
+  slots := [], body := [⟨[0], .iconst .i8 9⟩], term := .ret [1] }
 
 private def loadMem : Clif.Mem := {
   allocs := [⟨100, 1, false⟩], bytes := fun x => if x = 100 then some 9 else none }
@@ -352,12 +353,12 @@ private def loadedFrame : Clif.Frame :=
 private def loadRF (n : Nat) : CV := if n = 193 then 100 else 0
 
 private def loadRel (st : State) (s : Clif.Frame × Clif.Mem) (ρ : Nat → CV) (_ : Unit) : Prop :=
-  s.2 = loadMem ∧ ValuesHeld (Demanded st) unusedCtx s.1 (fun k => ρ (aliasNum #[] k))
+  s.2 = loadMem ∧ ValuesHeld (Demanded st) omitCtx s.1 (fun k => ρ (aliasNum #[] k))
 
 private theorem load_source :
-    SourceInstResult Clif.Env.empty { funcs := [] } unusedCtx 0
+    SourceInstResult Clif.Env.empty { funcs := [] } omitCtx 0
       (loadFrame, loadMem) (loadedFrame, loadMem) :=
-  ⟨unusedCtx.insts[0]!, .load .load .i8 { trapCode := none } 1 0, [.ofInt .i8 9],
+  ⟨omitCtx.insts[0]!, .iconst .i8 9, [.ofInt .i8 9],
     loadedFrame.regs, [], rfl, rfl, rfl, rfl, rfl, rfl⟩
 
 private theorem load_start_held : loadRel loadOutput.state (loadFrame, loadMem) loadRF () := by
@@ -371,14 +372,14 @@ private theorem load_start_held : loadRel loadOutput.state (loadFrame, loadMem) 
   · simp [loadFrame, he] at hv
 
 private theorem load_local {sem : ISem CV Unit} :
-    ScanFallRefines (SourceInstResult Clif.Env.empty { funcs := [] } unusedCtx)
+    ScanFallRefines (SourceInstResult Clif.Env.empty { funcs := [] } omitCtx)
       sem #[] loadRel ⟨0, loadInput, loadOutput⟩ :=
   stock_omitted_fall_refines (MR := fun cm _ => cm = loadMem) (step := loadStep)
     load_scan rfl rfl
 
 theorem stock_omitted_fall_refines_witness :
-    scanInstruction unusedCtx 0 0 1 false loadInput = .ok loadOutput ∧
-      SourceInstResult Clif.Env.empty { funcs := [] } unusedCtx 0
+    scanInstruction omitCtx 0 0 1 false loadInput = .ok loadOutput ∧
+      SourceInstResult Clif.Env.empty { funcs := [] } omitCtx 0
         (loadFrame, loadMem) (loadedFrame, loadMem) ∧
       loadedFrame.regs 0 = some (.ofInt .i8 9) ∧
       ∃ ρ', seqRun (fun (_ : MInst) (_ : List CV) (w : Unit) => some ([], w, .next))
@@ -397,23 +398,23 @@ theorem stock_omitted_fall_refines_witness :
 private def loadBlock : BlockScan :=
   ⟨loadOutput.state, [⟨0, loadInput, loadOutput⟩], #[]⟩
 
-private theorem load_block_scan : scanBlock unusedCtx 0 1 false [0] loadInput = .ok loadBlock := by
+private theorem load_block_scan : scanBlock omitCtx 0 1 false [0] loadInput = .ok loadBlock := by
   unfold scanBlock
   rw [runScans_ref]
   simp only [runScansRef, load_scan, bind, Except.bind, pure, Except.pure]
   rfl
 
 theorem stock_scanBlock_fall_refines_witness :
-    scanBlock unusedCtx 0 1 false [0] loadInput = .ok loadBlock ∧
-      SourceSteps (SourceInstResult Clif.Env.empty { funcs := [] } unusedCtx) [0]
+    scanBlock omitCtx 0 1 false [0] loadInput = .ok loadBlock ∧
+      SourceSteps (SourceInstResult Clif.Env.empty { funcs := [] } omitCtx) [0]
         (loadFrame, loadMem) (loadedFrame, loadMem) ∧
       ∃ ρ', seqRun (fun (_ : MInst) (_ : List CV) (w : Unit) => some ([], w, .next))
           loadBlock.code.toList loadRF () = some (.fall ρ' ()) ∧
         loadRel loadInput (loadedFrame, loadMem) ρ' () := by
-  have hsource : SourceSteps (SourceInstResult Clif.Env.empty { funcs := [] } unusedCtx)
+  have hsource : SourceSteps (SourceInstResult Clif.Env.empty { funcs := [] } omitCtx)
       [0] (loadFrame, loadMem) (loadedFrame, loadMem) := .cons load_source (.nil _)
   have hlocal : ∀ r ∈ loadBlock.records,
-      ScanFallRefines (SourceInstResult Clif.Env.empty { funcs := [] } unusedCtx)
+      ScanFallRefines (SourceInstResult Clif.Env.empty { funcs := [] } omitCtx)
         (fun _ _ w => some ([], w, .next)) #[] loadRel r := by
     intro r hr
     change r ∈ [⟨0, loadInput, loadOutput⟩] at hr
@@ -425,7 +426,7 @@ theorem stock_scanBlock_fall_refines_witness :
   exact ⟨load_block_scan, hsource, ρ', hr, hrel⟩
 
 theorem stock_omitted_source_step_witness :
-    SourceInstResult Clif.Env.empty { funcs := [] } unusedCtx 0
+    SourceInstResult Clif.Env.empty { funcs := [] } omitCtx 0
       (loadFrame, loadMem) (loadedFrame, loadMem) ∧
       Clif.step Clif.Env.empty { funcs := [] }
         { frame := loadFrame, callers := [], mem := loadMem } =
@@ -436,13 +437,13 @@ theorem stock_omitted_source_step_witness :
     rfl, rfl, rfl⟩
 
 theorem stock_omittedBlock_fall_refines_witness :
-    scanBlock unusedCtx 0 1 false [0] loadInput = .ok loadBlock ∧
-      SourceSteps (SourceInstResult Clif.Env.empty { funcs := [] } unusedCtx) [0]
+    scanBlock omitCtx 0 1 false [0] loadInput = .ok loadBlock ∧
+      SourceSteps (SourceInstResult Clif.Env.empty { funcs := [] } omitCtx) [0]
         (loadFrame, loadMem) (loadedFrame, loadMem) ∧
       ∃ ρ', seqRun (fun (_ : MInst) (_ : List CV) (w : Unit) => some ([], w, .next))
           loadBlock.code.toList loadRF () = some (.fall ρ' ()) ∧
         loadRel loadInput (loadedFrame, loadMem) ρ' () := by
-  have hsource : SourceSteps (SourceInstResult Clif.Env.empty { funcs := [] } unusedCtx)
+  have hsource : SourceSteps (SourceInstResult Clif.Env.empty { funcs := [] } omitCtx)
       [0] (loadFrame, loadMem) (loadedFrame, loadMem) := .cons load_source (.nil _)
   have homitted : ∀ r ∈ loadBlock.records, ∃ step, r.output.step = some step ∧
       step.decision = .omitted := by
