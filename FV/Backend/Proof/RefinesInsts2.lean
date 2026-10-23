@@ -25,6 +25,9 @@ import FV.Backend.Proof.EncodeLayout
 namespace Backend.Proof
 
 open Backend
+-- Lean 4.35 unifies instance arguments at instance transparency; the `datasize` `if`s left in
+-- the bit-operation instances of unfolded Arm instructions then block rewriting. Restore 4.34's check.
+set_option backward.isDefEq.respectTransparency false
 
 /-! ## Vector forms -/
 
