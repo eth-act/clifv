@@ -761,11 +761,11 @@ def splitSegs : List Seg → List Line → Option (List (List Line))
   | _ :: _, _ => none
 
 /-- The block label `s` forwards to: a block other than the entry whose code is a single
-`jump` (its label resolves to the jump's target). -/
+`jump` to another block (its label resolves to the jump's target). -/
 def AFunc.fwd? (af : AFunc) (s : Label) : Option Label :=
   match af.blocks.toList.zipIdx.find? (·.1.1 == s) with
   | some ((_, code), i) => if i == 0 then none else match code.toList with
-    | [.inst (.jump x)] => some x
+    | [.inst (.jump x)] => if x == s then none else some x
     | _ => none
   | none => none
 
@@ -776,16 +776,19 @@ def blockLabelIdx (L : List Line) : Std.HashMap Label Nat :=
     | _ => m) {}
 
 /-- Line `j` of `L` represents block `s` (`fuel` bounds the search): the label lines from `j`
-on include `s`'s own, or `s` forwards to a block line `j` represents. -/
-def repAt (af : AFunc) (L : Array Line) : Nat → Label → Nat → Bool
+on include `s`'s own, or `s` forwards to a block line `j` represents (`fwd?`). A forwarding
+block's own label counts only if `own s` (its segment was checked): `MachBuffer` aliases the
+label to the target and may drop the block's `b` as dead code (`buffer.rs:1170-1214`). -/
+def repAt (af : AFunc) (own : Label → Bool) (L : Array Line) : Nat → Label → Nat → Bool
   | 0, _, _ => false
   | fuel + 1, s, j =>
-    (match L[j]? with
-     | some (.label (.block l)) => l == s || repAt af L fuel s (j + 1)
-     | some (.label _) => repAt af L fuel s (j + 1)
-     | _ => false) ||
+    ((af.fwd? s).isNone || own s) &&
+      (match L[j]? with
+       | some (.label (.block l)) => l == s || repAt af own L fuel s (j + 1)
+       | some (.label _) => repAt af own L fuel s (j + 1)
+       | _ => false) ||
     (match af.fwd? s with
-     | some x => repAt af L fuel x j
+     | some x => repAt af own L fuel x j
      | none => false)
 
 /-- The checks of `segsOk` for one segment: the final lines `o` of the block's last
@@ -835,27 +838,43 @@ def termOk (rep : Label → Nat → Bool) (idx : Std.HashMap Label Nat) (a : Opt
   | _ => keptOk
 
 /-- `repAt` on the lines `L` with enough fuel. -/
-def repOn (af : AFunc) (L : List Line) : Label → Nat → Bool :=
-  repAt af L.toArray (L.length + af.blocks.size + 1)
+def repOn (af : AFunc) (own : Label → Bool) (L : List Line) : Label → Nat → Bool :=
+  repAt af own L.toArray (L.length + af.blocks.size + 1)
 
-/-- An alias `l ↦ x` whose resolution the lines `L` justify: `x`'s label line represents `l`. -/
+/-- An alias `l ↦ x` whose resolution the lines `L` justify: `x`'s label line represents `l`
+(forwarding blocks through their targets only). -/
 def aliasOk (af : AFunc) (L : List Line) (a : Label × Label) : Bool :=
   match (blockLabelIdx L)[a.2]? with
-  | some j => repOn af L a.1 j
+  | some j => repOn af (fun _ => false) L a.1 j
   | none => false
 
+/-- Each segment of `ss` with its final lines (`os`) and the index of the line after them in
+`segLines ss os` (the segment starting at line `j`). -/
+def segNxts : List Seg → List (List Line) → Nat → List (Seg × List Line × Nat)
+  | s :: ss, o :: os, j =>
+    let nxt := j + 1 + s.body.length + o.length
+    (s, o, nxt) :: segNxts ss os nxt
+  | _, _, _ => []
+
+/-- `termOk` of a segment (`segNxts`). -/
+def segTermOk (af : AFunc) (rep : Label → Nat → Bool) (idx : Std.HashMap Label Nat)
+    (x : Seg × List Line × Nat) : Bool :=
+  termOk rep idx (af.blocks[x.1.idx]?.bind (·.2.back?)) x.1.term x.2.1 x.2.2
+
 /-- The segments `ss` ending in the lines `os` laid out as `L` (`segLines ss os`, then the
-traps) are a correct simplification: entry first, every segment's final lines `termOk`. -/
+traps) are a correct simplification: entry first, the final lines of every segment `termOk`
+but a forwarding block's. A forwarding block is represented by its target, and by its own
+label only if its segment is `termOk` with forwarding blocks represented by their targets
+only (`fok`); so its lines never run as that block otherwise. -/
 def segsOk (af : AFunc) (ss : List Seg) (os : List (List Line)) (L : List Line) : Bool :=
   let idx := blockLabelIdx L
-  let rep := repOn af L
-  let rec go : List Seg → List (List Line) → Nat → Bool
-    | s :: ss, o :: os, j =>
-      let nxt := j + 1 + s.body.length + o.length
-      termOk rep idx (af.blocks[s.idx]?.bind (·.2.back?)) s.term o nxt && go ss os nxt
-    | [], [], _ => true
-    | _, _, _ => false
-  (ss.head?.map (·.idx)) == some 0 && go ss os 0
+  let ts := segNxts ss os 0
+  let rep0 := repOn af (fun _ => false) L
+  let fok : Std.HashSet Label := ts.foldl (fun m x =>
+    if (af.fwd? x.1.label).isSome && segTermOk af rep0 idx x then m.insert x.1.label else m) {}
+  let rep := repOn af fok.contains L
+  ss.length == os.length && (ss.head?.map (·.idx)) == some 0 &&
+    ts.all fun x => (af.fwd? x.1.label).isSome || segTermOk af rep idx x
 
 /-- An emission plan: the segments in emission order, their final last-instruction lines, the
 emitter's final state (deferred traps) and the block-label aliases (each `aliasOk`). -/
