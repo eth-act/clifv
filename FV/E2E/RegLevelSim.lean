@@ -163,7 +163,7 @@ theorem OperandsSoundCtlAtI.mono {F FK FK' : BitVec 64 → Prop} {P P' : MInst �
   intro c wh ops regs i' w outs w' hops hst hasg hp hw hal herr hsem
   obtain ⟨s', hex, hW, hK, hd, ho, hc⟩ := h c wh ops regs i' w outs w' hops hst hasg (hP i' hp) hw hal
     herr hsem
-  exact ⟨s', hex, hW, ⟨hK.1, fun a ha => hK.2 a (hFK a ha)⟩, hd, ho, hc⟩
+  exact ⟨s', hex, hW, ⟨hK.1, fun a ha => hK.2.1 a (hFK a ha), hK.2.2⟩, hd, ho, hc⟩
 
 /-- `CallSoundCtl` at the states whose memory at `G` is `s0`'s: the callee may assume that the
 addresses `G` the calling activation keeps (`RL.G`: e.g. its callers' frames and the program's
@@ -419,6 +419,12 @@ structure StRel (R : RL) (s : Arm.ArmState) (m : Loc → CV) (w : Arm.ArmState) 
   /-- the frame pointer as the prologue set it: x29 = entry sp − 16 (Cranelift's unwind rows
   define the CFA from x29; the body never writes x29, the callees keep it) -/
   fp : R.af.frame = true → xreg 29 s = spv R.s0 - 16#64
+
+/-- x29 is part of the world: two states with the same world agree on it. -/
+theorem xreg29_sw {F : BitVec 64 → Prop} {s s' w : Arm.ArmState} (h : SameWorld F s w)
+    (h' : SameWorld F s' w) : xreg 29 s' = xreg 29 s := by
+  show Arm.r (.GPR 29#5) s' = Arm.r (.GPR 29#5) s
+  rw [h'.1 _ (by simp [Masked]), ← h.1 _ (by simp [Masked])]
 
 /-- The checker accepts the remaining items of block `vb` (from VCode index `k`). -/
 def ItemsChecked (R : RL) (vb : VBlock) (its : List RItem) : Prop :=

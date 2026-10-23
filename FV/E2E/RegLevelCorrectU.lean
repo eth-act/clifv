@@ -429,7 +429,7 @@ theorem regLevelCorrect_coreU {R : RLU} (hR : R.Wf) {ra : BitVec 64}
         omega
       -- the frame invariant at `t`: the store of `t` and `SavedInv`
       have hFK' : FrameKeep R.FK u t :=
-        ⟨hFK.1, fun a ha => hFK.2 a ⟨RL.FK_F ha, by rw [hst.sp]; exact RL.FK_not_below hR ha⟩⟩
+        ⟨hFK.1, fun a ha => hFK.2.1 a ⟨RL.FK_F ha, by rw [hst.sp]; exact RL.FK_not_below hR ha⟩, hFK.2.2⟩
       have hst' : StRel R.toRL t (fun l => match l with | .reg r => regVal t r | l => m l) w' :=
         stRel_after hR hst (fun r _ => rfl)
           (fun l hl => by cases l with | reg r => exact absurd rfl (hl r) | _ => rfl)

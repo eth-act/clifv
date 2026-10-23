@@ -102,12 +102,14 @@ theorem regVal_x01_x1 (t : Arm.ArmState) (obj : BitVec 64) :
 theorem frameKeep_x01 {F : BitVec 64 → Prop} {s t : Arm.ArmState} {obj : BitVec 64}
     (h : FrameKeep F s t) :
     FrameKeep F s (Arm.w (.GPR 1#5) 0 (Arm.w (.GPR 0#5) obj t)) := by
-  refine ⟨?_, fun a ha => ?_⟩
+  refine ⟨?_, fun a ha => ?_, ?_⟩
   · simp only [spOf]
     rw [Arm.r_of_w_different (by decide), Arm.r_of_w_different (by decide)]
     exact h.1
   · rw [Arm.mem_w_of_mem_eq rfl, Arm.mem_w_of_mem_eq rfl]
-    exact h.2 a ha
+    exact h.2.1 a ha
+  · rw [Arm.r_of_w_different (by decide), Arm.r_of_w_different (by decide)]
+    exact h.2.2
 
 theorem sameWorld_x01 {F : BitVec 64 → Prop} {t w : Arm.ArmState} {obj : BitVec 64}
     (h : SameWorld F t w) :
@@ -265,7 +267,8 @@ theorem realizes_tryCall_raiseUF {R : RLU} (hR : R.Wf) {semU : Sem}
     rcases hl with rfl | rfl <;> exact hlj.symm
   -- the machine after the install: the payload registers
   have hFK' : FrameKeep R.FK s (Arm.w (.GPR 1#5) 0 (Arm.w (.GPR 0#5) obj t)) :=
-    frameKeep_x01 ⟨hFK.1, fun a ha => hFK.2 a ⟨RL.FK_F ha, by rw [hst.sp]; exact RL.FK_not_below hR ha⟩⟩
+    frameKeep_x01 ⟨hFK.1, fun a ha => hFK.2.1 a ⟨RL.FK_F ha, by rw [hst.sp]; exact RL.FK_not_below hR ha⟩,
+      hFK.2.2⟩
   have hlenD : (payloadOuts (.call info) obj).length =
       ((ops.zip regs).toList.filter (·.1.isDef)).length := by
     rw [hlen, pairs_regs, List.filter_map, List.length_map]; rfl
@@ -338,8 +341,8 @@ theorem realizes_tryCall_raiseUF {R : RLU} (hR : R.Wf) {semU : Sem}
         (payloadOuts (.call info) obj)).filter (·.1.1.isLate))) w' := by
     refine ⟨fun l hl hL => ?_, sameWorld_x01 hW, err_x01 herrt, hprog', hsp',
       align_of_sp (by rw [hsp', hst.sp]) hst.align,
-      fun hframe => ?_, code_keep hR.prog0 hst.code fun a ha => hFK'.2 a (.inl (.inr (.inr ha))),
-      fun a ha => (hFK'.2 a (.inr ha)).trans (hst.gkeep a ha)⟩
+      fun hframe => ?_, code_keep hR.prog0 hst.code fun a ha => hFK'.2.1 a (.inl (.inr (.inr ha))),
+      fun a ha => (hFK'.2.1 a (.inr ha)).trans (hst.gkeep a ha), fun hf => hFK'.2.2.trans (hst.fp hf)⟩
     · cases l with
       | reg r => exact hr3 r (hl r rfl)
       | stack k' c =>

@@ -186,8 +186,8 @@ theorem stRel_after {R : RL} (hR : R.Wf) {s s' : Arm.ArmState} {m m' : Loc → C
   have hfr := R.frameOkK hR
   refine ⟨fun l hl hL => ?_, hw, herr, by rw [hprog]; exact hst.prog, hK.1.trans hst.sp,
     align_of_sp hK.1 hst.align, fun hframe => ?_,
-    code_keep hR.prog0 hst.code fun a ha => hK.2 a (.inl (.inr (.inr ha))),
-    fun a ha => (hK.2 a (.inr ha)).trans (hst.gkeep a ha)⟩
+    code_keep hR.prog0 hst.code fun a ha => hK.2.1 a (.inl (.inr (.inr ha))),
+    fun a ha => (hK.2.1 a (.inr ha)).trans (hst.gkeep a ha), fun hf => hK.2.2.trans (hst.fp hf)⟩
   · cases l with
     | reg r => rw [hreg r (hl r rfl)]; rfl
     | stack k c =>
@@ -197,7 +197,7 @@ theorem stRel_after {R : RL} (hR : R.Wf) {s s' : Arm.ArmState} {m m' : Loc → C
       rw [hoth _ (fun r h => by cases h), hst.store _ hl hL,
         locVal_frame_keep hfr hst.sp hK hL (fun r h => by cases h)]
   · rw [← hst.fplr hframe]
-    exact read_mem_bytes_congr _ _ (fun k hk => hK.2 _ (fplr_inF hR hframe k hk))
+    exact read_mem_bytes_congr _ _ (fun k hk => hK.2.1 _ (fplr_inF hR hframe k hk))
 
 /-! ## `csem` of the loops, taken apart -/
 

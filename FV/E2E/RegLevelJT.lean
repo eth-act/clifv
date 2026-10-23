@@ -399,7 +399,7 @@ theorem stRel_regs {R : RL} {s s' : Arm.ArmState} {m : Loc → CV} {w : Arm.ArmS
   have hrd : ∀ n a, Arm.read_mem_bytes n a s' = Arm.read_mem_bytes n a s := fun n a =>
     read_mem_bytes_congr n a (fun k _ => by rw [hmem])
   refine ⟨fun l hl hL => ?_, ⟨fun f hfm => ?_, fun a ha' => ?_, ?_⟩, ?_, ?_, ?_,
-    align_of_sp hsp hst.align, fun hfr => ?_, fun k wd hk => ?_, fun a ha => ?_⟩
+    align_of_sp hsp hst.align, fun hfr => ?_, fun k wd hk => ?_, fun a ha => ?_, fun hfr => ?_⟩
   · cases l with
     | reg r =>
       by_cases e2 : r = .x nb
@@ -437,6 +437,11 @@ theorem stRel_regs {R : RL} {s s' : Arm.ArmState} {m : Loc → CV} {w : Arm.ArmS
   · rw [hrd]; exact hst.fplr hfr
   · rw [hrd]; exact hst.code k wd hk
   · rw [hmem]; exact hst.gkeep a ha
+  · show Arm.r (.GPR (BitVec.ofNat 5 29)) s' = _
+    rw [hf _ (by simp) (fun e => by injection e with e; exact rnum_ne (by omega) (by omega)
+      (show na ≠ 29 by omega) e.symm) (fun e => by injection e with e; exact rnum_ne (by omega)
+      (by omega) (show nb ≠ 29 by omega) e.symm)]
+    exact hst.fp hfr
 
 /-! ## The `Realizes` case -/
 
