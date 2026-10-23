@@ -141,17 +141,21 @@ theorem step_pushC_stuck {s : Clif.State} {vals : List Clif.Val} {cm : Clif.Mem}
 `s` of the CLIF thread (below callers `ext`) stops (`IselThread.Stop`: no step, or an
 `atomic_cas` on read-only data), is at an event-free return the prefix did not realize, or the
 thread's CLIF step from it is stuck or traps (e.g. a return whose results do not fit the
-caller); or the next CLIF step reads a masked byte; or the thread returns with masked bytes. -/
-def EndT (env : Clif.Env) (p : Clif.Program) (_P : List Lab) (d : TState × (Nat → Prop)) : Prop :=
+caller), or it is at a call at CLIF call depth `Dcap` or more (the thread's stack budget covers
+`Dcap` nested activations); or the next CLIF step reads a masked byte; or the thread returns
+with masked bytes. -/
+def EndT (env : Clif.Env) (p : Clif.Program) (Dcap : Nat) (_P : List Lab)
+    (d : TState × (Nat → Prop)) : Prop :=
   (∃ ext s, strip d.1 = strip (.run (pushC ext s)) ∧
     (IselThread.Stop env p (.run s) ∨ (∃ v, CStep env p (.run s) [] (.ret v)) ∨
       (∃ msg, Clif.step env p (pushC ext s) = .stuck msg) ∨
-      ∃ c, Clif.step env p (pushC ext s) = .trapped c)) ∨
+      (∃ c, Clif.step env p (pushC ext s) = .trapped c) ∨
+      (IselCall.AtCallS s ∧ Dcap ≤ ext.length))) ∨
   (∃ evs t'', CStep env p d.1 evs t'' ∧ ReadsMasked (maskOf d.1) evs) ∨
   (∃ v, CStep env p d.1 [] (.ret v) ∧ ∃ a, maskOf d.1 a)
 
-theorem EndT.app {A B : List Lab} {d : TState × (Nat → Prop)} (h : EndT env p B d) :
-    EndT env p (A ++ B) d := h
+theorem EndT.app {Dcap : Nat} {A B : List Lab} {d : TState × (Nat → Prop)}
+    (h : EndT env p Dcap B d) : EndT env p Dcap (A ++ B) d := h
 
 /-! ## End-dirty sets on the partition -/
 
@@ -179,12 +183,12 @@ theorem evAt_of_prefix {α : Type} {A B : List (List α)} (h : A <+: B) {q : Nat
   rw [evAt_append_lt _ _ (evAt_lt hx)]; exact hx
 
 /-- **The end-dirty set of a segment on the partition** lies in its private set, its end mask and
-the addresses starting no location: a masked location start no source write starts at is
-written by none (writes covering a location start start there). -/
+the addresses starting no location or in `N`: a masked location start no source write starts at
+is written by none (writes covering a location start start there). -/
 theorem dirtyEnd_sub (hdisj : PartDisj Loc) {tr : List (List (Ev SKind BVal))}
-    (ho : ∀ q x, evAt tr q = some x → x.dir ≠ .F → Loc x.loc x.n) {D P U : Nat → Prop}
-    (hD : ∀ a, D a → P a ∨ U a ∨ ¬ ∃ n, Loc a n) {a : Nat} (h : DirtyEnd D P tr a) :
-    P a ∨ maskAfter U tr a ∨ ¬ ∃ n, Loc a n := by
+    (ho : ∀ q x, evAt tr q = some x → x.dir ≠ .F → Loc x.loc x.n) {D P U N : Nat → Prop}
+    (hD : ∀ a, D a → P a ∨ U a ∨ (¬ ∃ n, Loc a n) ∨ N a) {a : Nat} (h : DirtyEnd D P tr a) :
+    P a ∨ maskAfter U tr a ∨ (¬ ∃ n, Loc a n) ∨ N a := by
   rcases h with h | ⟨hd, hw⟩
   · exact .inl h
   rcases hD a hd with h | h | h
@@ -194,7 +198,7 @@ theorem dirtyEnd_sub (hdisj : PartDisj Loc) {tr : List (List (Ev SKind BVal))}
       refine .inr (.inl (maskAfter_of h fun evs he ⟨e, hee, hW, hle, hlt⟩ => hw ?_))
       obtain ⟨q, hq⟩ := evAt_of_mem he hee
       exact ⟨q, e, hq, hW, hdisj a n e.loc e.n hl (ho q e hq (by rw [hW]; decide)) hle hlt⟩
-    · exact .inr (.inr hl)
+    · exact .inr (.inr (.inl hl))
   · exact .inr (.inr h)
 
 /-! ## A chain segment on the thread -/
@@ -202,9 +206,10 @@ theorem dirtyEnd_sub (hdisj : PartDisj Loc) {tr : List (List (Ev SKind BVal))}
 /-- **A chain segment of an activation below its callers is a realized prefix** (module doc):
 the activation `R`'s own CLIF run from `s` refining a prefix of a precise run with private set
 `PrivA R`, started below `ext` at a reachable state with mask `U` and a start-dirty set within
-`PrivA R`, the mask and the addresses starting no location, ending as the chain theorems end
-(whole run, `Stop`, or a pause `Pz`). -/
+`PrivA R`, the mask, the addresses starting no location and a set `N` no read of the run starts
+at, ending as the chain theorems end (whole run, `Stop`, or a pause `Pz`). -/
 theorem seg_end {Bnd : Nat → Prop} {R : Backend.Proof.RL} (hb : ∀ a, PrivA R a → Bnd a)
+    {Dcap : Nat}
     {c0 : TState} (hP : PartsOk env p c0 Loc) (hdisj : PartDisj Loc)
     {f : ArmState → ArmState} {ok : ArmState → Lab → Prop} {u t' : ArmState × Mon}
     {ls : List Lab} (hr : PRun Policy.arm f ok u ls t') {k : Nat} (hk : k ≤ ls.length)
@@ -213,20 +218,22 @@ theorem seg_end {Bnd : Nat → Prop} {R : Backend.Proof.RL} (hb : ∀ a, PrivA R
     {ψ : Nat × Nat → Nat × Nat} (hrun : CRun env p (.run s) trS t)
     (hx : CallCompose.XClosed (evTr (ls.take k)))
     (href : Refines Maps (PrivA R) (MonPair (evTr (ls.take k))) trS (conv (evTr (ls.take k))) ψ)
-    {U D : Nat → Prop} (hD : ∀ a, D a → PrivA R a ∨ U a ∨ ¬ ∃ n, Loc a n)
+    {U D N : Nat → Prop} (hD : ∀ a, D a → PrivA R a ∨ U a ∨ (¬ ∃ n, Loc a n) ∨ N a)
+    (hN : ∀ q x, evAt trS q = some x → x.dir = .R → ¬ N x.loc)
     {Pz : Clif.State → Prop}
     (hend : k = ls.length ∨ IselThread.Stop env p t ∨ ∃ s', t = .run s' ∧ Pz s') :
     ∃ k' d', RealT env p Bnd ls k' (encT U (.run (pushC ext s)), D) d' ∧
-      (k' = ls.length ∨ EndT env p (ls.take k') d' ∨
+      (k' = ls.length ∨ EndT env p Dcap (ls.take k') d' ∨
         (k' = k ∧ ∃ s' M DE, Pz s' ∧ t = .run s' ∧ d' = (encT M (.run (pushC ext s')), DE) ∧
-          (∀ a, M a → U a) ∧ (∀ a, DE a → PrivA R a ∨ M a ∨ ¬ ∃ n, Loc a n) ∧
+          (∀ a, M a → U a) ∧ (∀ a, DE a → PrivA R a ∨ M a ∨ (¬ ∃ n, Loc a n) ∨ N a) ∧
           RReach env p c0 (.run (pushC ext s')))) := by
   obtain ⟨hacc, hReachEnd⟩ := seg_parts hP hR hrun
   have hu : Uniform trS := uniform_of_parts hdisj fun q x hx hF => (hacc q x hx).1 hF
   have hpos : ∀ q x, evAt trS q = some x → x.dir = .R → 0 < x.n :=
     fun q x hx hRd => (hacc q x hx).2 hRd
-  have hns : ∀ q x, evAt trS q = some x → x.dir = .R → ¬ ¬ ∃ n, Loc x.loc n :=
-    fun q x hx hRd hn => hn ⟨x.n, (hacc q x hx).1 (by rw [hRd]; decide)⟩
+  have hns : ∀ q x, evAt trS q = some x → x.dir = .R → ¬ ((¬ ∃ n, Loc x.loc n) ∨ N x.loc) :=
+    fun q x hx hRd hn => hn.elim (fun hn => hn ⟨x.n, (hacc q x hx).1 (by rw [hRd]; decide)⟩)
+      (hN q x hx hRd)
   rcases realizedT_liftW (Bnd := Bnd) hr hk ext hrun hx href hD hu hpos hns hb with
     ⟨trS', s1, hp, hRT, hs1, hret⟩ | ⟨k', -, trS', j, evs, -, -, sj, t'', hRT, hst, hm⟩
   · rcases hend with h | h | ⟨s', rfl, hz⟩

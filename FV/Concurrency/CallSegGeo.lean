@@ -291,13 +291,15 @@ theorem eval_atomicCas {fr : Clif.Frame} {c : Clif.Mem} {ty : Clif.Ty}
       ∀ y, ¬ (Clif.effAddr pv 0 ≤ y ∧ y < Clif.effAddr pv 0 + ty.bytes) →
         m.bytes y = c.bytes y := by
   simp only [Clif.evalInst, Clif.Frame.get, bind_ok] at h
-  obtain ⟨pv, hpv, ev, -, xv, -, u, -, old, hl, mem', hst, hp⟩ := h
-  obtain ⟨-, rfl⟩ := pure_ok' hp
+  obtain ⟨pv, hpv, ev, -, xv, -, u, -, old, hl, hcas⟩ := h
   refine ⟨pv, ofOption_ok hpv, (load_mem hl).1, (load_mem hl).2, ?_⟩
-  split at hst
-  · exact (store_mem hst).2
-  · simp only [Clif.Res.pure_eq, Clif.Res.ok.injEq] at hst
-    subst hst
+  split at hcas
+  · rw [bind_ok] at hcas
+    obtain ⟨mem', hst, hp⟩ := hcas
+    obtain ⟨-, rfl⟩ := pure_ok' hp
+    exact (store_mem hst).2
+  · simp only [Clif.Res.pure_eq, Clif.Res.ok_bind, Clif.Res.ok.injEq, Prod.mk.injEq] at hcas
+    obtain ⟨-, rfl⟩ := hcas
     exact fun _ _ => rfl
 
 /-! ### The step -/
@@ -333,6 +335,55 @@ theorem storeSize_pos (op : Clif.StoreOp) (ty : Clif.Ty) : 0 < op.size ty := by
 theorem bytes_pos (ty : Clif.Ty) : 0 < ty.bytes := by
   cases ty <;> decide
 
+/-! ### Pinning the events of the shapes -/
+
+theorem valid_r {e1 : Ev SKind BVal} {n a : Nat} (hn : 0 < n) (hn1 : e1.n = n) {B0 : Bytes}
+    (hB0 : Agrees bytesI B0 [e1])
+    (hR : ∀ B, Agrees bytesI B [e1] → ∀ j < n, (B (a + j)).isSome)
+    {V : Nat → Nat → Bool} (hv : V a n = true) : ∀ e ∈ [e1], e.dir ≠ .F → V e.loc e.n = true := by
+  have hl : e1.loc = a := read_pin hn (fun e he _ j hj => by
+    simp only [List.mem_singleton] at he; subst he; exact ⟨by omega, by omega⟩) hB0 hR
+  intro e he _
+  simp only [List.mem_singleton] at he; subst he
+  rw [hl, hn1]; exact hv
+
+theorem valid_w {e1 : Ev SKind BVal} {n a : Nat} (hn : 0 < n) (hn1 : e1.n = n)
+    (hd1 : e1.dir = .W) {B0 : Bytes} (hB0 : Agrees bytesI B0 [e1])
+    (hW : ∀ B, Agrees bytesI B [e1] → ∀ y, ¬ (a ≤ y ∧ y < a + n) → applyEvs bytesI B [e1] y = B y)
+    {V : Nat → Nat → Bool} (hv : V a n = true) : ∀ e ∈ [e1], e.dir ≠ .F → V e.loc e.n = true := by
+  have hl : e1.loc = a := write_pin (v := e1.val) hn (fun e he hr => by
+      simp only [List.mem_singleton] at he; subst he; rw [hd1] at hr; cases hr) hB0
+    fun B hB y h1 h2 hy => by
+      rw [← hW B hB y hy]; exact applyEvs_last [] e1 B hd1 y h1 (by omega)
+  intro e he _
+  simp only [List.mem_singleton] at he; subst he
+  rw [hl, hn1]; exact hv
+
+theorem valid_rw {e1 e2 : Ev SKind BVal} {n a : Nat} (hn : 0 < n) (hn1 : e1.n = n)
+    (hn2 : e2.n = n) (hd2 : e2.dir = .W) {B0 : Bytes} (hB0 : Agrees bytesI B0 [e1, e2])
+    (hR : ∀ B, Agrees bytesI B [e1, e2] → ∀ j < n, (B (a + j)).isSome)
+    (hW : ∀ B, Agrees bytesI B [e1, e2] → ∀ y, ¬ (a ≤ y ∧ y < a + n) →
+      applyEvs bytesI B [e1, e2] y = B y)
+    {V : Nat → Nat → Bool} (hv : V a n = true) :
+    ∀ e ∈ [e1, e2], e.dir ≠ .F → V e.loc e.n = true := by
+  have hreads : ∀ e ∈ [e1, e2], e.dir = .R → e = e1 := by
+    intro e he hr
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at he
+    rcases he with rfl | rfl
+    · rfl
+    · rw [hd2] at hr; cases hr
+  have hl1 : e1.loc = a := read_pin hn (fun e he hr j hj => by
+    rw [hreads e he hr] at hj ⊢; exact ⟨by omega, by omega⟩) hB0 hR
+  have hl2 : e2.loc = a := write_pin (v := e2.val) hn (fun e he hr j hj => by
+      rw [hreads e he hr] at hj ⊢; exact ⟨by omega, by omega⟩) hB0
+    fun B hB y h1 h2 hy => by
+      rw [← hW B hB y hy]; exact applyEvs_last [e1] e2 B hd2 y h1 (by omega)
+  intro e he _
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at he
+  rcases he with rfl | rfl
+  · rw [hl1, hn1]; exact hv
+  · rw [hl2, hn2]; exact hv
+
 /-- **Every memory event of a CLIF thread step is at memory valid in the step's state**: the
 footprint of the step pins its read and write events to the statement's access, which the
 statement checks (`Clif.Mem.checkAccess`) before touching memory. -/
@@ -354,17 +405,100 @@ theorem cstep_reads_valid {env : Clif.Env} {p : Clif.Program} {s : Clif.State}
       obtain ⟨t'', h1, -⟩ := hf B hB
       exact step_ok hb hc hci h1
     cases hi : stm.inst <;> simp only [evShape, hb, hi] at hsh <;> rw [hi] at hE
-    all_goals first
-      | (obtain rfl : evs = [] := by simpa using hsh
-         intro e he; simp at he)
-      | skip
+    case load op ty fl pp off =>
+      have hE := hE (fun _ _ h => nomatch h) (fun _ _ _ h => nomatch h)
+      rcases evs with _ | ⟨e1, _ | ⟨e2, evs⟩⟩ <;> simp at hsh
+      obtain ⟨-, hn1⟩ := hsh
+      obtain ⟨_, _, h0, -⟩ := hE B0 hB0
+      obtain ⟨pv, hpv, hv, -⟩ := eval_load h0
+      refine valid_r (V := s.mem.valid) (loadSize_pos op ty) hn1 hB0 (fun B hB => ?_) hv
+      obtain ⟨_, _, h1, -⟩ := hE B hB
+      obtain ⟨pv', hpv', -, hi'⟩ := eval_load h1
+      rw [hpv] at hpv'; cases hpv'; exact hi'
+    case atomicLoad ty fl pp =>
+      have hE := hE (fun _ _ h => nomatch h) (fun _ _ _ h => nomatch h)
+      rcases evs with _ | ⟨e1, _ | ⟨e2, evs⟩⟩ <;> simp at hsh
+      obtain ⟨-, hn1⟩ := hsh
+      obtain ⟨_, _, h0, -⟩ := hE B0 hB0
+      obtain ⟨pv, hpv, hv, -⟩ := eval_atomicLoad h0
+      refine valid_r (V := s.mem.valid) (bytes_pos ty) hn1 hB0 (fun B hB => ?_) hv
+      obtain ⟨_, _, h1, -⟩ := hE B hB
+      obtain ⟨pv', hpv', -, hi'⟩ := eval_atomicLoad h1
+      rw [hpv] at hpv'; cases hpv'; exact hi'
+    case store op ty fl x pp off =>
+      have hE := hE (fun _ _ h => nomatch h) (fun _ _ _ h => nomatch h)
+      rcases evs with _ | ⟨e1, _ | ⟨e2, evs⟩⟩ <;> simp at hsh
+      obtain ⟨hk1, hn1⟩ := hsh
+      have hd1 : e1.dir = .W := by rw [(hd e1 (by simp)).1, hk1]; rfl
+      obtain ⟨_, _, h0, -⟩ := hE B0 hB0
+      obtain ⟨pv, hpv, hv, -⟩ := eval_store h0
+      refine valid_w (V := s.mem.valid) (storeSize_pos op ty) hn1 hd1 hB0
+        (fun B hB y hy => ?_) hv
+      obtain ⟨_, _, h1, heq⟩ := hE B hB
+      obtain ⟨pv', hpv', -, hout⟩ := eval_store h1
+      rw [hpv] at hpv'; cases hpv'
+      rw [heq]; exact hout y hy
+    case atomicStore ty fl x pp =>
+      have hE := hE (fun _ _ h => nomatch h) (fun _ _ _ h => nomatch h)
+      rcases evs with _ | ⟨e1, _ | ⟨e2, evs⟩⟩ <;> simp at hsh
+      obtain ⟨hk1, hn1⟩ := hsh
+      have hd1 : e1.dir = .W := by rw [(hd e1 (by simp)).1, hk1]; rfl
+      obtain ⟨_, _, h0, -⟩ := hE B0 hB0
+      obtain ⟨pv, hpv, hv, -⟩ := eval_atomicStore h0
+      refine valid_w (V := s.mem.valid) (bytes_pos ty) hn1 hd1 hB0
+        (fun B hB y hy => ?_) hv
+      obtain ⟨_, _, h1, heq⟩ := hE B hB
+      obtain ⟨pv', hpv', -, hout⟩ := eval_atomicStore h1
+      rw [hpv] at hpv'; cases hpv'
+      rw [heq]; exact hout y hy
+    case atomicRmw op ty fl pp x =>
+      have hE := hE (fun _ _ h => nomatch h) (fun _ _ _ h => nomatch h)
+      rcases evs with _ | ⟨e1, _ | ⟨e2, _ | ⟨e3, evs⟩⟩⟩ <;> simp at hsh
+      obtain ⟨⟨-, hn1⟩, hk2, hn2⟩ := hsh
+      have hd2 : e2.dir = .W := by rw [(hd e2 (by simp)).1, hk2]; rfl
+      obtain ⟨_, _, h0, -⟩ := hE B0 hB0
+      obtain ⟨pv, hpv, hv, -, -⟩ := eval_atomicRmw h0
+      refine valid_rw (V := s.mem.valid) (bytes_pos ty) hn1 hn2 hd2 hB0
+        (fun B hB => ?_) (fun B hB y hy => ?_) hv
+      · obtain ⟨_, _, h1, -⟩ := hE B hB
+        obtain ⟨pv', hpv', -, hi', -⟩ := eval_atomicRmw h1
+        rw [hpv] at hpv'; cases hpv'; exact hi'
+      · obtain ⟨_, _, h1, heq⟩ := hE B hB
+        obtain ⟨pv', hpv', -, -, hout⟩ := eval_atomicRmw h1
+        rw [hpv] at hpv'; cases hpv'
+        rw [heq]; exact hout y hy
+    case atomicCas ty fl pp ex x =>
+      have hE := hE (fun _ _ h => nomatch h) (fun _ _ _ h => nomatch h)
+      rcases evs with _ | ⟨e1, _ | ⟨e2, _ | ⟨e3, evs⟩⟩⟩ <;> simp at hsh
+      · obtain ⟨-, hn1⟩ := hsh
+        obtain ⟨_, _, h0, -⟩ := hE B0 hB0
+        obtain ⟨pv, hpv, hv, -, -⟩ := eval_atomicCas h0
+        refine valid_r (V := s.mem.valid) (bytes_pos ty) hn1 hB0 (fun B hB => ?_) hv
+        obtain ⟨_, _, h1, -⟩ := hE B hB
+        obtain ⟨pv', hpv', -, hi', -⟩ := eval_atomicCas h1
+        rw [hpv] at hpv'; cases hpv'; exact hi'
+      · obtain ⟨⟨-, hn1⟩, hk2, hn2⟩ := hsh
+        have hd2 : e2.dir = .W := by rw [(hd e2 (by simp)).1, hk2]; rfl
+        obtain ⟨_, _, h0, -⟩ := hE B0 hB0
+        obtain ⟨pv, hpv, hv, -, -⟩ := eval_atomicCas h0
+        refine valid_rw (V := s.mem.valid) (bytes_pos ty) hn1 hn2 hd2 hB0
+          (fun B hB => ?_) (fun B hB y hy => ?_) hv
+        · obtain ⟨_, _, h1, -⟩ := hE B hB
+          obtain ⟨pv', hpv', -, hi', -⟩ := eval_atomicCas h1
+          rw [hpv] at hpv'; cases hpv'; exact hi'
+        · obtain ⟨_, _, h1, heq⟩ := hE B hB
+          obtain ⟨pv', hpv', -, -, hout⟩ := eval_atomicCas h1
+          rw [hpv] at hpv'; cases hpv'
+          rw [heq]; exact hout y hy
     case fence =>
       rcases evs with _ | ⟨e1, _ | ⟨e2, evs⟩⟩ <;> simp at hsh
       intro e he hne
       simp only [List.mem_singleton] at he
       subst he
       exact absurd (by rw [(hd e (by simp)).1, hsh.1]; rfl) hne
-    all_goals sorry
+    all_goals
+      obtain rfl : evs = [] := by simpa using hsh
+      intro e he; simp at he
 
 end cstep
 
