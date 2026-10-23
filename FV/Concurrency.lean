@@ -245,3 +245,5 @@ import FV.Concurrency.CallEntryLink
 import FV.Concurrency.CallEntryLinkWitness
 import FV.Concurrency.CallRetLink
 import FV.Concurrency.CallRetLinkWitness
+import FV.Concurrency.CallValid
+import FV.Concurrency.CallValidWitness
