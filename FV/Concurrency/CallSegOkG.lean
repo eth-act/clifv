@@ -224,6 +224,7 @@ namespace Concurrency.CallSegOkG
 open Arm ArmThread Prog ClifThread Backend Backend.Proof Backend.Proof.Driver VCodeThread
   PrepThread AllocThread IselCheck ThreadRefine IselCall IselCallRet ArmAllocThread E2E
   ClifCStepTerm IselThread CallRetsEnd CallRetsN CallSegAbi LinkedMachine LinkedMachine.Link
+  CallComposeT
 
 /-! ## Activations -/
 
@@ -257,9 +258,17 @@ structure Act where
   a0 : AState
   slots : List (Clif.SlotId × Nat)
   ext : List (Clif.Frame × List Clif.ValueId)
+  /-- the caller's compiled function (the return address is in its code) -/
+  caller : LFn
+  /-- the open activations' CLIF memories at their calls and depths (`CallValid.AllocInvD`) -/
+  opens : List (Clif.Mem × Nat)
 
 /-- The activation's `RL` in the link. -/
 abbrev Act.RL (L : Link) (g : Act) : Backend.Proof.RL := L.act g.F g.s0 g.K g.G
+
+/-- The activation's callee-saved registers at its body entry (after the prologue). -/
+noncomputable def Act.r0 (L : Link) (g : Act) : Reg → CV := fun r =>
+  locVal (g.RL L).fr (iterN (g.RL L).step (prologueLines g.F.af.frameSize).length g.s0) (.reg r)
 
 /-- **The static facts of an activation** (module doc): the premises of the chain theorems that do
 not depend on the run. -/
@@ -365,5 +374,50 @@ theorem chainP_entry (hS : StatOk L env p g) {cs : Clif.State} {B0 : Clif.Block}
   · exact .inr (.inl h)
   · exact .inr (.inr ⟨s', rfl, .inl ⟨tE, vV', vP', cM', h1, h2, h3, h4, h5, h6, h7⟩⟩)
   · exact .inr (.inr ⟨s', rfl, .inr ⟨tE, h1, h2, h3⟩⟩)
+
+/-! ## The return pause -/
+
+/-- **A callee's return pause on the thread** (`CallRetT.realizedT_ret`): from the pause at its
+done `return` (below its caller's frame), the epilogue and `ret` realize the CLIF return into the
+caller: the whole run, the caller's result registers not fitting (no label realized), or the
+return realized, ending at the caller's resumed frame on the caller's program. -/
+theorem ret_seg {Bnd : Nat → Prop} (hS : StatOk L env p g) (hb : ∀ a, PrivA (g.RL L) a → Bnd a)
+    {cnm : String} (hcA : (cnm, g.caller) ∈ L.fns) (hrA : g.caller.InRange g.ra)
+    (hra : ∀ k < g.F.fb.words.size, g.ra ≠ g.F.base + BitVec.ofNat 64 (4 * k))
+    {caller : Clif.Frame} {results : List Clif.ValueId} {cs : List (Clif.Frame × List Clif.ValueId)}
+    (hext : g.ext = (caller, results) :: cs) {x : ArmState} {sR : Clif.State}
+    (hret : RetEnd (g.RL L) g.ra env p (RelW g.Γ g.f g.c) g.slots (g.r0 L) x sR)
+    (hat : AtRetS sR) (hcall : sR.callers = []) (U D : Nat → Prop) {mon : Mon} {ls : List Lab}
+    {t' : ArmState × Mon} (hr : PRun Policy.arm L.M (OkPriv (g.RL L)) (x, mon) ls t') :
+    ∃ k d', RealT env p Bnd ls k (encT U (.run (ClifLift.pushC g.ext sR)), D) d' ∧
+      (k = ls.length ∨
+        (∃ vals cm, Clif.step env p sR = .done vals cm ∧ caller.regs.setMany results vals = none ∧
+          k = 0 ∧ d' = (encT U (.run (ClifLift.pushC g.ext sR)), D)) ∨
+        ∃ vals cm regs v, Clif.step env p sR = .done vals cm ∧
+          caller.regs.setMany results vals = some regs ∧
+          RetC (g.RL L) g.ra (g.r0 L) (iterN (g.RL L).step k x) ∧
+          PRun Policy.arm L.M (OkPriv (g.RL L)) (x, mon) (ls.take k) v ∧
+          v.1 = set_program (iterN (g.RL L).step k x) (g.caller.fb.program g.caller.base) ∧
+          d' = (encT U (.run ⟨{ caller with regs := regs }, cs, cm⟩),
+            fun a => D a ∨ PrivA (g.RL L) a)) := by
+  obtain ⟨n, vals, cm, -, hdone, hRC, -, hall⟩ :=
+    CallRetT.realizedT_ret (Bnd := Bnd) hS.ok hS.mem hS.wf hS.abi hra hcA hrA hret hat hcall hb
+  cases hreg : caller.regs.setMany results vals with
+  | none =>
+    exact ⟨0, (encT U (.run (ClifLift.pushC g.ext sR)), D), RealizedT.zero _ _ _,
+      .inr (.inl ⟨vals, cm, hdone, hreg, rfl, rfl⟩)⟩
+  | some regs =>
+    obtain ⟨h1, h2⟩ := hall (cs := cs) hreg U D hr
+    by_cases hlt : ls.length < n
+    · refine ⟨ls.length, (encT U (.run (ClifLift.pushC g.ext sR)),
+        fun a => D a ∨ PrivA (g.RL L) a), ?_, .inl rfl⟩
+      show RealizedT env p Bnd ls ls.length _ _ _ _
+      rw [hext]; exact h1 hlt
+    · obtain ⟨v, hv, hv1, hRT⟩ := h2 (by omega)
+      refine ⟨n, (encT U (.run ⟨{ caller with regs := regs }, cs, cm⟩),
+        fun a => D a ∨ PrivA (g.RL L) a), ?_,
+        .inr (.inr ⟨vals, cm, regs, v, hdone, hreg, hRC, hv, hv1, rfl⟩)⟩
+      show RealizedT env p Bnd ls n _ _ _ _
+      rw [hext]; exact hRT
 
 end Concurrency.CallSegOkG
