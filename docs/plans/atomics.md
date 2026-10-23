@@ -940,6 +940,37 @@ they are; the per-thread layers are new files.
         vals` of the callee's body-entry world `bodyOf FB.af (Link.enter FB x)`, any `F`;
         `regVal_bodyOf_enter`), `callee_argsAtEntry_sig` (callee signature `ext.sig`). Left: the
         callee's `RelW` (after #567).
+        **From the ABI entry (done, `CallSegAbi.lean`, witness `arm_abiCRN_fC`)**:
+        `prun_prologueG` (the prologue on a machine agreeing with the activation),
+        **`arm_isel_refines_abiCRN`** (`arm_isel_refines_entryCRN` from `RA.s0`, the prologue's
+        private writes composed by `Refines.app`): a callee's first segment.
+        **Step (4) design (AtomicsCalls14, 2026-10-23)**, decided without changing code:
+        - *Activations*: `G` = the activation's data (`LFn`, `s0`, `K`, `G`, `ra`, the CLIF caller
+          frames `ext`), `Ext` empty (every callee compiled); `Inv` is the entry form (the
+          premises of `arm_isel_refines_abiCRN`) or the resume form (those of
+          `arm_isel_refinesCRN`, from `resume_allA`); `DriverHypT` of every activation from the
+          function's static checks (`driverHypT_of`, any `Γ`, `c`).
+        - *Run condition*: one `ok` for the thread, `OkPriv` of the thread's bound (its stack and
+          code), which implies every activation's `OkPriv` (`PRun.mono`, `PrivA ⊆ Bnd`).
+        - *Callee budget*: exact nesting, `KB = KA - frameDrop FB.af` (a proof parameter, no code
+          change), so the caller's dead stack is the callee's `Region`.
+        - *Dirty sets*: at a segment start `D ⊆ PrivA RA ∪ U ∪ NS`, at its end `¬ Clean`
+          (`⊆ D ∪ PrivA RA`); across a call `PrivA RA ⊆ PrivA RB ∪ slotArea RB`, the callee's
+          slot bytes in the mask (`cstepI_call`), its padding in `NS` as addresses no CLIF read
+          of the segment starts at (CLIF-valid memory avoids the caller's dead stack,
+          `MemRel.valid`); across a return `PrivA RB ∪ U ⊆ PrivA RA ∪ U`.
+        - *Masks*: the realized prefix stops before the first CLIF step reading a masked byte
+          (`Refines.take`, labels of at most one event, `prun_len`); a callee's return keeps its
+          unwritten slot bytes masked (`CStepI` allows old masked bytes), the bottom frame's
+          return needs the empty mask (`cstepS_ret_iff`). The top-level end condition: the
+          whole run, `Stop`, the next CLIF step reads a masked byte, or a return with masked
+          bytes.
+        - *Exclusive-closed segments*: the monitor survives calls (`monAfter`; a failed CAS
+          leaves it armed), so `xClosed_mon` from the open monitor does not give each segment's
+          `XClosed`. Instead: an Arm `relXW` outside `PrivA` is matched (`Refines.priv`) to a
+          CLIF atomic write whose read partner is in the same CLIF step, so its image `acqXR` is
+          earlier in the same segment (`Refines.mono`); left to show: compiled code's `relXW`
+          events avoid `PrivA` (the `stlxr` address is the CLIF address in x25, `ArmAllocLoop`).
         (iv) the thread-wide private set (every activation's `PrivA` and the CLIF events' avoidance
         of it; with CLIF stack slots in callees the private sets of different activations overlap
         other activations' slots); then `SegOk`, `link_compose_ext`, and `realizes_call_full`/the
