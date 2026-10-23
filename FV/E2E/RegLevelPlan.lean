@@ -327,4 +327,125 @@ theorem termOk_kept {rep : Label → Nat → Bool} {idx : Std.HashMap Label Nat}
   · exact (ht _ _ rfl).elim
   · exact keptOk_spec h
 
+/-! ## A block's segment in the emission plan -/
+
+theorem segNxts_fst : ∀ (ss : List Seg) (os : List (List Line)) (n : Nat),
+    os.length = ss.length → (segNxts ss os n).map (·.1) = ss
+  | [], [], _, _ => rfl
+  | [], _ :: _, _, h => by simp at h
+  | _ :: _, [], _, h => by simp at h
+  | s :: ss, o :: os, n, h => by
+    simp only [segNxts, List.map_cons]
+    rw [segNxts_fst ss os _ (by simpa using h)]
+
+theorem nodup_map_inj {α β : Type} {f : α → β} : ∀ {l : List α}, (l.map f).Nodup →
+    ∀ {x y : α}, x ∈ l → y ∈ l → f x = f y → x = y
+  | [], _, _, _, hx, _, _ => by simp at hx
+  | a :: l, h, x, y, hx, hy, he => by
+    simp only [List.map_cons, List.nodup_cons, List.mem_map, not_exists, not_and] at h
+    simp only [List.mem_cons] at hx hy
+    rcases hx with rfl | hx <;> rcases hy with rfl | hy
+    · rfl
+    · exact absurd he.symm (h.1 y hy)
+    · exact absurd he (h.1 x hx)
+    · exact nodup_map_inj h.2 hx hy he
+
+/-- Block `b`'s segment in the emission plan of `emitFunc k af`, with its final lines and the
+line after them (`segNxts`). -/
+def segX (k : Nat) (af : AFunc) (b : Nat) : Option (Seg × List Line × Nat) :=
+  match emitPlan k af with
+  | .ok p => (segNxts p.segs p.outs 0).find? (·.1.idx == b)
+  | .error _ => none
+
+/-- The lines of the emission plan (before relaxation). -/
+def planLines (k : Nat) (af : AFunc) : List Line :=
+  match emitPlan k af with
+  | .ok p => p.lines
+  | .error _ => []
+
+/-- The trusted forwarding blocks of the emission plan (`segsTrust`). -/
+def planOwn (k : Nat) (af : AFunc) : Label → Bool :=
+  match emitPlan k af with
+  | .ok p => fun l => (segsTrust af p.segs p.outs p.lines).contains l
+  | .error _ => fun _ => false
+
+/-- The representation of blocks by the plan's lines (`repOn` with the trusted blocks). -/
+def planRep (k : Nat) (af : AFunc) : Label → Nat → Bool := repOn af (planOwn k af) (planLines k af)
+
+/-- Block `b`'s segment passes `termOk` (with the plan's trusted forwarding blocks). -/
+def SegChecked (k : Nat) (af : AFunc) (b : Nat) : Prop :=
+  ∃ x, segX k af b = some x ∧
+    segTermOk af (planRep k af) (blockLabelIdx (planLines k af)) x = true
+
+theorem segX_mem {k : Nat} {af : AFunc} {p : Plan} (hp : emitPlan k af = .ok p) {b : Nat}
+    {x : Seg × List Line × Nat} (h : segX k af b = some x) :
+    x ∈ segNxts p.segs p.outs 0 ∧ x.1.idx = b := by
+  unfold segX at h
+  rw [hp] at h
+  simp only at h
+  have := List.find?_some h
+  exact ⟨List.mem_of_find?_eq_some h, by simpa using this⟩
+
+/-- **Segment `i` of the plan** is block `s.idx`'s (`segX`), with the line after it. -/
+theorem segX_get {k : Nat} {af : AFunc} {p : Plan} (hp : emitPlan k af = .ok p) {i : Nat}
+    {s : Seg} {o : List Line} (hs : p.segs[i]? = some s) (ho : p.outs[i]? = some o) :
+    ∃ A, p.lines = A ++ .label (.block s.label) :: (s.body ++ o) ++
+        (segLines (p.segs.drop (i + 1)) (p.outs.drop (i + 1)) ++ trapLines p.ps) ∧
+      segX k af s.idx = some (s, o, A.length + 1 + s.body.length + o.length) := by
+  obtain ⟨hseg, hlen, -⟩ := emitPlan_spec hp
+  obtain ⟨hl, -, hss⟩ := segsOf_spec hseg
+  have hidx : p.segs.map (·.idx) = (emitOrder af).map (·.2) := by
+    apply List.ext_getElem?
+    intro n
+    simp only [List.getElem?_map]
+    cases hn : p.segs[n]? with
+    | none =>
+      have : (emitOrder af).length ≤ n := by
+        rw [← hl]; exact List.getElem?_eq_none_iff.mp hn
+      simp [List.getElem?_eq_none_iff.mpr this]
+    | some s' =>
+      obtain ⟨code, -, -, -, hb, -⟩ := hss n s' hn
+      simp [hb]
+  have hnd : ((segNxts p.segs p.outs 0).map (·.1.idx)).Nodup := by
+    have e : (segNxts p.segs p.outs 0).map (·.1.idx) = p.segs.map (·.idx) := by
+      conv => rhs; rw [← segNxts_fst p.segs p.outs 0 hlen]
+      rw [List.map_map]; rfl
+    rw [e, hidx]; exact emitOrder_nodup af
+  obtain ⟨A, hA, hm⟩ := segNxts_get (n := 0) hs ho
+  refine ⟨A, by rw [Plan.lines, hA]; simp, ?_⟩
+  unfold segX
+  rw [hp]
+  simp only
+  cases hf : (segNxts p.segs p.outs 0).find? (·.1.idx == s.idx) with
+  | none =>
+    have := List.find?_eq_none.mp hf _ hm
+    simp at this
+  | some y =>
+    have hy := List.mem_of_find?_eq_some hf
+    have hyi : y.1.idx = s.idx := by simpa using List.find?_some hf
+    have := nodup_map_inj hnd hy hm hyi
+    rw [this]
+    simp
+
+/-- **Segment `x` of block `b` was checked** unless `b` forwards and is not trusted. -/
+theorem segChecked_of {k : Nat} {af : AFunc} {p : Plan} (hp : emitPlan k af = .ok p) {b : Nat}
+    {x : Seg × List Line × Nat} (h : segX k af b = some x)
+    (hown : (af.fwd? x.1.label).isNone = true ∨ planOwn k af x.1.label = true) :
+    SegChecked k af b := by
+  obtain ⟨-, -, hok, -⟩ := emitPlan_spec hp
+  obtain ⟨-, -, hall⟩ := segsOk_spec hok
+  obtain ⟨hm, -⟩ := segX_mem hp h
+  refine ⟨x, h, ?_⟩
+  have hpl : planLines k af = p.lines := by simp [planLines, hp]
+  have hpo : planOwn k af = fun l => (segsTrust af p.segs p.outs p.lines).contains l := by
+    simp [planOwn, hp]
+  rcases hall x hm with ⟨hf, hn⟩ | hc
+  · exfalso
+    rcases hown with h1 | h1
+    · simp_all
+    · rw [hpo] at h1; simp_all
+  · unfold planRep
+    rw [hpl, hpo]
+    exact hc
+
 end Backend
