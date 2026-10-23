@@ -510,6 +510,21 @@ the `retN`/value arguments).
   handlers' labels are CFG successors (`cfg_spec`) and none is the entry block (`EdgesOk.entry`,
   `preds_empty`). Corollaries `callSites_complete_input`, `padsNonzero_complete_input`; witness
   `Witness.tryInfoOk_applies`/`input_applies` (`FV/Link/UnwTryInWitness.lean`, on `tc`).
+  **`unwCheck` from the input** (`FV/Link/UnwCheckIn.lean`): `unwCheck_complete` — on input in
+  `Dominated`/`LowerScope` with `tryTablesB` and **`tryRetsB f`** (every `try_call` signature has
+  at most two ABI returns, so the call defines x0 and x1 only, as `tryUOk` requires; decidable on
+  the CLIF function), `unwCheck f vc` holds for `lowerFunction f = .ok vc`. Parts: a call
+  statement's code contains a call (`Backend.Proof.stmtCall_hasCall`, `UnwCallStmt.lean`: the
+  rules of `lower` whose root format is `Call`/`CallIndirect` are the `call` rules 1031–1033 and
+  the `return_call` rules 1038–1040, which never match a call; one kernel decision
+  `lower_callHas_fmts`); a `try_call` rule emits call-free code then one call with the
+  `try_call` defs (`Backend.Proof.UnwShape.tryEmS_run`, `UnwTryShape.lean`, the inversions of
+  `KillTryDefs` with the code kept), so the call is last, its operands compute, its defs are late
+  with distinct vregs and fixed to x0/x1, and an `exnN` argument is the def in `xN`; the first
+  handler's label holds `lowerFunction`'s edge block (`edgeBlocks`, found at its label by
+  `LowerShape.labels`); the edge into the handler's block satisfies `Cert`'s edge conditions
+  (`Driver.edgeOk_succ`: `certBlock_ok`'s edge argument for every successor, not only the normal
+  edge). Witness `Witness.unwCheck_applies` (`FV/Link/UnwCheckInWitness.lean`, on `tc`).
   **`savedCheck` and `SaveOk`** (`FV/Link/UnwSavedIn.lean`): the allocation part by construction —
   `savedCheckRF_spill` (spill allocation), `savedCheckRF_build` (regalloc2's answer as `buildRFunc`
   reads it: the saved registers are every callee-saved register its locations mention), so
