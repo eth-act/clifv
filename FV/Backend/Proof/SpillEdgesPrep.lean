@@ -402,13 +402,14 @@ theorem cls3 {q : Nat} {vb : VBlock} (hq : ((prepOrder B.size ss2).map fun i => 
   have hvb := (Option.some.inj hq).symm
   have hRq : (prepOrder B.size ss2)[q]? = some (prepOrder B.size ss2)[q] := Array.getElem?_eq_getElem hqR
   by_cases hk : (prepOrder B.size ss2)[q] < (V1).size
-  · have hkB : (prepOrder B.size ss2)[q] < B.size := by rw [hS.size]; exact hk
+  · have hkB : (prepOrder B.size ss2)[q] < B.size := lt_of_lt_of_eq hk hS.size.symm
     refine .inl ⟨_, hk, hkB, hRq, by rw [hvb]; exact Array.getElem_append_left hkB⟩
   · right
     refine ⟨(prepOrder B.size ss2)[q] - (V1).size, by rw [hRq]; congr 1; omega, ?_, ?_⟩
     · rw [← Prep.v2_E hS, show (V1).size + ((prepOrder B.size ss2)[q] - (V1).size) = (prepOrder B.size ss2)[q] by omega,
         Array.getElem?_eq_getElem hi, hvb]
-    · exact good hv cs0 cs1 cs2 hS (Prep.prepOrder_reach (fun _ h => rpo_reach h) (by simp))
+    · exact good hv cs0 cs1 cs2 hS (Prep.prepOrder_reach (n := B.size) (fun _ h => rpo_reach h)
+          (by simp))
         (by omega)
 
 theorem succ3 {V : Array VBlock} {ss : Array (Array Nat)} (cs : Prep.CfgSpec V ss) {q j s : Nat}
