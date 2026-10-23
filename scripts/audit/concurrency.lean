@@ -1078,3 +1078,7 @@ import FVTest.Concurrency.LitmusFull
 #print axioms Concurrency.CallStepT.Witness.call_W -- witness: native_decide
 #print axioms Concurrency.CallStepT.Witness.priv_W
 #print axioms Concurrency.CallStepT.Witness.ret_W
+-- #473 (4): the callee's return end as a RealizedT
+#print axioms Concurrency.CallRetT.cstepS_ret_pop
+#print axioms Concurrency.CallRetT.realizedT_ret
+#print axioms Concurrency.CallRetT.Witness.ret_T_ld -- witness: native_decide
