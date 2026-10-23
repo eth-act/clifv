@@ -144,7 +144,7 @@ theorem stmt_out {f : Clif.Function} {ctx : Ctx} (hctx : CtxInv f ctx) {Bd : Nat
         (evalExpr program (sem ctx) {} k rl.rhs env).run (s1, tr1) = .ok (r, (s2, tr2)) →
         M.Is s2 ∧ M.Rs s s2 ∧ ∀ v, r = some v → True := by
     intro rl _ ⟨hrl, hx⟩ k m s tr env s1 tr1 r s2 tr2 hk hmk hkm _ _ hm he
-    have hlen := lower_len
+    have hlen := E2E.LinkCheck.lower_len
     have hm1 : 1000 ≤ m := by omega
     have hk1 : 1000 ≤ k := by omega
     refine ⟨trivial, ?_, fun _ _ => trivial⟩
@@ -264,7 +264,7 @@ theorem try_out {f : Clif.Function} {ctx : Ctx} (hctx : CtxInv f ctx) {Bd : Nat}
   have hnd : ((program.rulesOf TId.lower_branch).map Rule.id).Nodup := by
     rw [show TId.lower_branch = 687 from rfl, data_program.r687]
     decide +kernel
-  have hlen := lower_branch_len
+  have hlen := E2E.LinkCheck.lower_branch_len
   unfold tryCallF at h
   obtain ⟨t', tr', ht, happ⟩ := runTerm_apply h
   rw [program_termByName_lower_branch] at ht

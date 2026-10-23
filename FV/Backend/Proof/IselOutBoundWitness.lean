@@ -46,9 +46,9 @@ theorem outgoing_le_applies : vc.outgoing ≤ 16 ∧ vc.outgoing = 16 := by
   obtain ⟨⟨⟨hs, hob⟩, hl⟩, -⟩ := h
   split at hl
   · rename_i v hv
-    have hvc : vc = v := by simp [vc, hv]
+    have hvc : vc = v := by rw [vc, hv]; rfl
     rw [hvc]
-    exact ⟨lowerFunction_outgoing_le (lowerScope_of hs) hob hv, hl⟩
+    exact ⟨lowerFunction_outgoing_le (lowerScope_of hs) hob hv, by simpa using hl⟩
   · cases hl
 
 end Backend.Proof.OutBound.Witness

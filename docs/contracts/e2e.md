@@ -559,6 +559,24 @@ the `retN`/value arguments).
   frame record and is not affected). Frame change tracked in #479.
   Open: completeness of `unwCheck` and `lastCallsOk` (needs an input condition: a callee called
   by a `try_call` and by a call of the last block), `ehOkR` on lean-ld's output.
+  **The outgoing bound from the input** (`FV/Backend/Proof/IselOutBound*.lean`,
+  `FV/Link/UnwOutIn.lean`): the input condition **`outBoundB g`** (`outBoundLe 32560`: every
+  `call`/`call_indirect` statement and every `try_call`/`try_call_indirect` terminator passes at
+  most 32560 bytes on the stack, `stackBytes` of the callee's, the `call_indirect`'s or the
+  exception table's signature) bounds the outgoing area:
+  `Backend.Proof.OutBound.lowerFunction_outgoing_le` (`LowerScope f → outBoundLe Bd f = true →
+  lowerFunction f = .ok vc → vc.outgoing ≤ Bd`), carried through `prune`/`prepare` by
+  `Link.EhCheck.Complete.vcp_outgoing_le`. Parts: only `gen_call_info`/`gen_call_ind_info` change
+  the outgoing area (`externCtor_out`, by the `externCtor_split` automation); neither is in the
+  certified term set `callTab` (one kernel decision each), so runs of every rule but 1031–1036
+  keep it (`UModel` `outModel`), and the `call`/`try_call` rules set it to
+  `max outgoing (stackBytes sig)` exactly (`call_bl_outEq`, `call_got_outEq`, `call_ind_outEq`,
+  `try_bl_outEq`, `try_got_outEq`, `try_ind_outEq`); `lowBlocks_bnd` carries the bound through the
+  recorded lowering. `unwCondIn2B` is `unwCondInB` with `outBoundB g` in place of the decided
+  `a.vcp.outgoing ≤ 32560` (`unwCondInB_of_in2`, `unwCondsInB_of_in2`,
+  `Link.DeadCleanup.compileExeU_total_ldCond2`); witnesses
+  `OutBound.Witness.outgoing_le_applies` (ten `i64` arguments: the bound 16 is reached) and
+  `ULdCond2Witness.compileExeU_total_ldCond2_witness`. `lake exe lean-link` reports `outBoundB`.
 * **The executable-bytes machine with unwinding (S10g, #404)** (`FV/E2E/DeadCleanupExecUnwind.lean`):
   `E2E.DeadCleanupExecBytes.stepU I B Ub file` is `DeadCleanupExecBytes.step` (the processor on
   the file's words; calls of code outside the program and TLS by the base hooks; a call of a
