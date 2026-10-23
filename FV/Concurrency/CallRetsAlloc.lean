@@ -1,5 +1,6 @@
 import FV.E2E.RegLevelCorrect
 import FV.Concurrency.CallResumeLayers
+import FV.E2E.PairDriver
 
 /-!
 # The return of an allocated activation on the machine (#473, (1))
@@ -90,5 +91,97 @@ theorem rets_alloc {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb R.
         exact hks r hr
       · rw [← huses] at hx
         exact hvalsM _ (operands_retsC ns) j v p x hj hx
+/-! ## The VCode return at the `rets` (layers 2/3) -/
+
+section
+open PrepThread Backend.Proof.Driver
+
+/-- An event-free VCode thread run is a VCode run. -/
+theorem star_of_vtrun_nil {vc : VCode} {sem : ISem CV ArmState}
+    {ev : MInst → List CV → ArmState → List Ev} {c c' : VConf CV ArmState}
+    {tr : List (List Ev)} (h : VTRun vc sem ev c tr c') (hnil : ∀ e ∈ tr, e = []) :
+    Star (VStep vc sem) c c' := by
+  induction h with
+  | nil => exact .refl _
+  | @cons c1 c2 c3 evs tr hs _ ih =>
+    have he : evs = [] := hnil evs List.mem_cons_self
+    subst he
+    cases hs with
+    | mk _ _ _ _ _ hst =>
+      exact .step hst (ih fun e he => hnil e (List.mem_cons_of_mem _ he))
+
+/-- **At a `rets` of the prepared code, `prepare`'s relation is the block correspondence to a
+`rets` of the original.** -/
+theorem pmatch_rets {vc vcp : VCode} {L : Nat → Prop} {ss ss' : Array (Array Nat)}
+    (H : PrepFacts vc vcp L ss ss') {sem : ISem CV ArmState} (hds : DriverSemG sem)
+    {ev : MInst → List CV → ArmState → List Ev}
+    {src : VConf CV ArmState} {b' k : Nat} {ρ : Nat → CV} {w : ArmState} {vb' : VBlock}
+    {us : List (Reg × Reg)} (hm : PMatch vc vcp sem ev L ss' src (.run ⟨b', k, ρ, w⟩))
+    (hvb' : vcp.blocks[b']? = some vb') (hi : vb'.insts[k]? = some (.rets us)) :
+    ∃ b vb, src = .run ⟨b, k, ρ, w⟩ ∧ vc.blocks[b]? = some vb ∧ vb.insts[k]? = some (.rets us) := by
+  cases hm with
+  | @blk b _ _ _ _ hLb hσ =>
+    obtain ⟨vb, vb1, hvb, hvb1, -, -, hsz, hins, -⟩ := (H.kept b b' hLb hσ).blocks
+    rw [hvb'] at hvb1; cases hvb1
+    have hklt : k < vb.insts.size := by rw [← hsz]; exact (Array.getElem?_eq_some_iff.mp hi).1
+    obtain ⟨i, hi0⟩ : ∃ i, vb.insts[k]? = some i := ⟨_, Array.getElem?_eq_getElem hklt⟩
+    obtain ⟨i'', hi'', hsame⟩ := hins k i hi0
+    rw [hi] at hi''; cases hi''
+    obtain ⟨-, -, hr⟩ := sameInst_facts' hds hsame
+    exact ⟨b, vb, rfl, hvb, by rw [hi0, hr us rfl]⟩
+  | pend _ _ _ _ _ _ _ _ _ _ _ _ heb hebi =>
+    rw [heb] at hvb'; cases hvb'
+    rw [hebi] at hi; cases hi
+
+/-- **The VCode's returned values are the prepared `rets`' uses** (module doc): an event-free
+VCode run from `vR` to a configuration related by `prepare` to a `rets` of the prepared code,
+and a VCode return from `vR`, return that `rets`' uses (at its `ρ`) and world. -/
+theorem ret_link {vc vcp : VCode} {L : Nat → Prop} {ss ss' : Array (Array Nat)}
+    (H : PrepFacts vc vcp L ss ss') {F : BitVec 64 → Prop} {fc : FnCtx} {X : ExtSem}
+    {vR : VState CV ArmState} {trR : List (List Ev)} {vV : VConf CV ArmState}
+    (hr : VTRun vc (csem F fc X) (cEvs F fc) (.run vR) trR vV) (hnil : ∀ e ∈ trR, e = [])
+    {b' k : Nat} {ρ : Nat → CV} {w : ArmState} {vb' : VBlock} {us : List (Reg × Reg)}
+    (hm : PMatch vc vcp (csem F fc X) (cEvs F fc) L ss' vV (.run ⟨b', k, ρ, w⟩))
+    (hvb' : vcp.blocks[b']? = some vb') (hi : vb'.insts[k]? = some (.rets us))
+    {us0 : List (Reg × Reg)} {outs : List CV} {w' : ArmState}
+    (hret : Driver.VRetFrom vc (csem F fc X) vR us0 outs w') :
+    ∃ ops, (MInst.rets us).operands = .ok ops ∧ us0 = us ∧ outs = vuses ops ρ ∧ w' = w := by
+  have hds := (driverSem_csem F fc X).toDriverSemG
+  obtain ⟨b, vb, rfl, hvb, hi0⟩ := pmatch_rets H hds hm hvb' hi
+  obtain ⟨b1, k1, ρ1, w1, vb1, ops1, outs1, hstar, hvb1, hi1, hops1, hvals, hsem1⟩ := hret
+  have hstar2 := star_of_vtrun_nil hr hnil
+  -- a running state at a `rets` steps to a return, so a run from it reaches no running state
+  have hstop : ∀ {b2 k2 : Nat} {ρ2 : Nat → CV} {w2 : ArmState} {vb2 : VBlock}
+      {us2 : List (Reg × Reg)} {T : VState CV ArmState}, vc.blocks[b2]? = some vb2 →
+      vb2.insts[k2]? = some (.rets us2) →
+      Star (VStep vc (csem F fc X)) (.run ⟨b2, k2, ρ2, w2⟩) (.run T) → T = ⟨b2, k2, ρ2, w2⟩ := by
+    intro b2 k2 ρ2 w2 vb2 us2 T hvb2 hi2 h
+    cases h with
+    | refl => rfl
+    | step h1 h2 =>
+      cases h1 with
+      | step hvb3 hi3 _ hsem3 _ hn3 =>
+        rw [hvb2] at hvb3; cases hvb3
+        rw [hi2] at hi3; cases hi3
+        simp only [csem, Option.some.injEq, Prod.mk.injEq] at hsem3
+        obtain ⟨rfl, rfl, rfl⟩ := hsem3
+        cases hn3 with
+        | ret =>
+          cases h2 with
+          | step h _ => cases h
+  have heq : (⟨b1, k1, ρ1, w1⟩ : VState CV ArmState) = ⟨b, k, ρ, w⟩ := by
+    rcases star_det (r := VStep vc (csem F fc X)) (fun _ _ _ h1 h2 => IselStep.vstep_det h1 h2) hstar hstar2 with h | h
+    · exact (hstop hvb1 hi1 h).symm
+    · exact hstop hvb hi0 h
+  simp only [VState.mk.injEq] at heq
+  obtain ⟨rfl, rfl, rfl, rfl⟩ := heq
+  rw [hvb] at hvb1; cases hvb1
+  rw [hi0] at hi1; cases hi1
+  simp only [csem, Option.some.injEq, Prod.mk.injEq] at hsem1
+  obtain ⟨-, rfl, -⟩ := hsem1
+  exact ⟨ops1, hops1, rfl, hvals, rfl⟩
+
+end
+
 
 end Concurrency.CallRetsAlloc
