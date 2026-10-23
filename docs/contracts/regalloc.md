@@ -262,12 +262,20 @@ hands to regalloc2 (`CraneliftInput.shape`):
   empty `args` are left out;
 * **calls to an `sret` callee** (#587): `gen_call_output` allocates vregs for the CLIF returns
   only and `gen_call_rets` skips the `StructReturn` return (`machinst/abi.rs:1991`), so the
-  call has no def and clobbers x0; `lowerFunction`'s x0 def of a fresh, unused vreg is left out.
+  call has no def and clobbers x0; `lowerFunction`'s x0 def of a fresh, unused vreg is left out;
+* **edge blocks**: `lowerFunction` reaches every successor of a `try_call`, and every successor
+  with block arguments of a `brif`/`br_table`, through an edge block of its own (a `jump` with
+  the arguments). Cranelift's `BlockLoweringOrder::new` makes an edge block only for a successor
+  with several CLIF predecessor edges (`machinst/blockorder.rs:204-225`); otherwise the branch
+  passes the arguments to the successor directly (regalloc2's per-successor branch arguments).
+  Such edge blocks are left out and the branch retargeted (`vcodeJsonAt`); a `jump` left out
+  has no operands, and the parallel copy at the edge is the same one `checkAlloc` checks.
 
 Nothing new is trusted and no theorem changes: the left-out operands are fixed-register defs of
-vregs without uses and an empty `args` does nothing, so the answer is read back against the
-prepared VCode (`Shape.readBack`: the left-out operands get their fixed registers, edit
-positions are shifted over the left-out instructions), rebuilt (`buildRFunc vcp`) and checked by
+vregs without uses, an empty `args` and a left-out edge block's `jump` have no operands, so the
+answer is read back against the prepared VCode (`Shape.readBack`: the left-out operands get
+their fixed registers, edit positions are shifted over the left-out instructions), rebuilt
+(`buildRFunc vcp`) and checked by
 `checkAlloc` as before. Code from another lowering route (the Stock scalar routes) is given
 unchanged. This replaces the earlier `OracleOrder` workaround (the Stock driver's code whenever
 it was the same up to renaming). `FV_RA_DIAG=<file>` appends one line per function: what was
@@ -275,11 +283,11 @@ given to regalloc2 and which allocation was lowered.
 
 Measured (`scripts/stock-crate-parity.py`, debug, byte-identical functions vs cg_clif):
 fv-demo 303 (Lean allocator) → 338 (regalloc2 on the legacy numbering) → 491 (`OracleOrder`)
-→ 571 of 1372 (allocation the only remaining cause: 321 → 134 → 54); survey
-a_arith/d_loops_iters/f_crypto/g_u128 293 → 531 → 627 of 1562 (159 → 63). Every regalloc2
-answer is accepted (0 spill fallbacks). Of the 54 fv-demo functions where the allocation is the
-only remaining cause, 33 return an `sret` pointer in x0 (`mov x0, x8`, #587) and 21 have a
-`try_call` whose successors the legacy lowering reaches through edge blocks.
+→ 571 (this numbering, `args`, `sret` call defs) → 592 of 1372 (edge blocks; allocation the only
+remaining cause: 321 → 134 → 54 → 33); survey a_arith/d_loops_iters/f_crypto/g_u128
+293 → 531 → 627 → 645 of 1562 (159 → 63 → 45). Every regalloc2 answer is accepted (0 spill
+fallbacks). Every function left where the allocation is the only cause returns an `sret`
+pointer in x0 (`mov x0, x8` before `ret`, #587).
 
 ## The Lean allocator (`leanAlloc`, V4b, `--regalloc lean`)
 
