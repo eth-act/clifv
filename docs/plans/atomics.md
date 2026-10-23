@@ -931,9 +931,15 @@ they are; the per-thread layers are new files.
         driver's call step under a *guarded* external semantics (`xcallG`/`ArgG`: its `call`
         steps only when `ArgsAt` holds, which `XCallsOk` grants; `isel_resumeG`, `argG_of_vstep`),
         with probe results of the right types (`callResLenB`: results as many as the extern's
-        returns). Left for the callee's `ArgsAtEntry`: the call's use registers are `locsOf
-        ext.sig`'s registers in order (a check like `callArityB`), the callee's signature is
-        `ext.sig`, and the callee's `RelW`.
+        returns). **The callee's `ArgsAtEntry` (done, `CallArgsEntry.lean`, witness `useRegs_fC`)**:
+        the check `callUseRegsB`/`callUseRegsC` (a direct call's use registers are `locsOf
+        ext.sig`'s registers in order, `allRegs?`, all argument registers), `match_atCallU`,
+        `argsHold_of_uses`, **`callee_args`** (at the paused call every argument in its register
+        of the machine state, no stack arguments: `isel_argsAt` through `pmatch_call_fwd`/
+        `atCall_of_pause` with `call_uses_q`), **`callee_argsAtEntry`** (`ArgsAtEntry F ext.sig
+        vals` of the callee's body-entry world `bodyOf FB.af (Link.enter FB x)`, any `F`;
+        `regVal_bodyOf_enter`), `callee_argsAtEntry_sig` (callee signature `ext.sig`). Left: the
+        callee's `RelW` (after #567).
         (iv) the thread-wide private set (every activation's `PrivA` and the CLIF events' avoidance
         of it; with CLIF stack slots in callees the private sets of different activations overlap
         other activations' slots); then `SegOk`, `link_compose_ext`, and `realizes_call_full`/the
