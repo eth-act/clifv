@@ -43,8 +43,8 @@ theorem realizes_callW {R : RL} (hR : R.Wf)
     exact hC.ext _ _ _ _ _ hx herr
   -- the callee contract's premise at the call state
   have hpre : R.CallPre s := by
-    obtain ⟨-, -, -, regs, i', -, -, -, -, -, -, -, -, cc, wh, ops', hal, -, -, hasg, -, hops', hstat,
-      -, -, -, -, -, -, -, hst⟩ := q_op hq hvb hi
+    obtain ⟨-, -, -, regs, i', -, -, -, -, -, -, -, -, -, cc, wh, ops', hal, -, -, hasg, -, hops',
+      hstat, -, -, -, -, -, -, -, -, hst, -, -⟩ := q_op hR hq hvb hi hk
     rw [hops] at hops'; cases hops'
     have hm : ∀ r, r.allocatable = true → m (.reg r) = regVal s r := fun r hr =>
       hst.store (.reg r) (fun r' e => by cases e; exact hr) trivial
@@ -52,11 +52,11 @@ theorem realizes_callW {R : RL} (hR : R.Wf)
     rw [hal, useVals_of_store hstat hm] at hsemU
     exact ⟨R.ctx, .call info, .next, ⟨info, ⟨b, vb, k, hvb, .inl hi⟩, .inl rfl⟩, by rw [hst.sp]; exact RL.K_le hR,
       fun a ha => by rw [hst.sp] at ha; exact RL.below_F ha, hst.gkeep, cc, wh, ops, regs, i', w,
-      outs, w', hops, hstat, hasg, callAt_of_q hq hvb hi call_hcall regs i' hal hasg, hst.world,
+      outs, w', hops, hstat, hasg, callAt_of_q hR hq hvb hi call_hcall regs i' hal hasg, hst.world,
       hst.align, hst.err, hsemU⟩
   refine realizes_op_coreXW hR hq hvb hi hops hsz hsem hlen hk (exec := fun _ => callExec R.H)
     (fun _ => RL.callAtG hR (hC.os R.ctx info ⟨b, vb, k, hvb, .inl hi⟩) (q_stRel hq).sp
-      (q_stRel hq).gkeep fun i' ⟨regs, hal, hasg⟩ => callAt_of_q hq hvb hi call_hcall regs i' hal hasg)
+      (q_stRel hq).gkeep fun i' ⟨regs, hal, hasg⟩ => callAt_of_q hR hq hvb hi call_hcall regs i' hal hasg)
     hpre (fun regs i' hasg _ _ hcs => ?_) hW'
   obtain ⟨info', rfl⟩ := assign_call_form hasg
   have hgen : ∀ x, (∀ ps, (MInst.call info').lines R.ctx ps = .ok ([.ins x], ps)) →
