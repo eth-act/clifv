@@ -122,12 +122,14 @@ theorem RL.goodXW_execLines {R : RL} (hR : R.Wf) {ls : List Line} {j : Nat} {s s
 frame's slot area, which `G` avoids. -/
 theorem realizes_moveW {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b : Nat} {src dst : Loc}
     {its : List RItem} {m : Loc → CV} {w : Arm.ArmState}
-    (hq : Q R s (.run ⟨b, .move src dst :: its, m, w⟩)) :
+    (hq : Q R s (.run ⟨b, .move src dst :: its, m, w⟩)) (hns : src.isSave = false) :
     ∃ n, Q R (iterN R.step n s) (.run ⟨b, its, upd m dst (m src), w⟩) ∧
       ∀ i < n, R.GoodXW (iterN R.step i s) := by
+  by_cases hds : dst.isSave = true
+  · exact ⟨0, q_save hds hq, fun _ h => absurd h (Nat.not_lt_zero _)⟩
   obtain ⟨j, vb, items, pre, code, ls, ps1, ps2, T, hvb, hit, hsplit, hchk, hcode, hls, htr, hdrop,
     hpc, hst⟩ := hq
-  obtain ⟨⟨c, wh, hcm⟩, hLs, hLd, hT, hchk'⟩ := move_facts hit hsplit hchk
+  obtain ⟨⟨c, wh, hcm⟩, hLs, hLd, hT, hchk'⟩ := move_facts hit hsplit hchk hns (by simpa using hds)
   obtain ⟨c1, c2, hc1, hc2, rfl⟩ := itemsCode_cons hcode
   rw [itemCode_move] at hc1
   obtain ⟨ls1, ls2, psm, h1, h2, rfl⟩ := codeLinesE_append _ _ _ _ _ hls

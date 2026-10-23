@@ -197,21 +197,25 @@ theorem moveInsts_writes {vc : VCode} {rf : RFunc} (ctx : FnCtx) {c : CheckCtx} 
     | stack k cl | save r =>
       all_goals
         simp only [RAFrame.moveInsts, bind, Except.bind] at hmi
-        split at hmi
-        · cases hmi
-        rename_i o hoff
-        simp only [pure, Except.pure, Except.ok.injEq] at hmi
-        subst hmi
-        simp only [hac, Option.getD_some]
-        refine ⟨_, rfl, ?_⟩
-        have hal := live_align hLd hoff
-        cases cls with
-        | int =>
-          rw [slotBytes_int (fun _ h => by cases h) hdcls] at hal
-          exact slotStoreAt_area ctx .int _ nofun hal.2 s
-        | float =>
-          rw [slotBytes_float (fun _ h => by cases h) hdcls] at hal
-          exact slotStoreAt_area ctx .float _ (fun _ => hal.1) hal.2 s
+        first
+        | split at hmi
+          · cases hmi
+          rename_i o hoff
+          simp only [pure, Except.pure, Except.ok.injEq] at hmi
+          subst hmi
+          simp only [hac, Option.getD_some]
+          refine ⟨_, rfl, ?_⟩
+          have hal := live_align hLd hoff
+          cases cls with
+          | int =>
+            rw [slotBytes_int (fun _ h => by cases h) hdcls] at hal
+            exact slotStoreAt_area ctx .int _ nofun hal.2 s
+          | float =>
+            rw [slotBytes_float (fun _ h => by cases h) (fun _ h => by cases h) hdcls] at hal
+            exact slotStoreAt_area ctx .float _ (fun _ => hal.1) hal.2 s
+        | simp only [pure, Except.pure, Except.ok.injEq] at hmi
+          cases hmi
+          exact ⟨[], rfl, instsWrites_noStores (fun i hi => by cases hi)⟩
   | stack k cl | save r =>
     all_goals
       cases dst with
@@ -219,11 +223,15 @@ theorem moveInsts_writes {vc : VCode} {rf : RFunc} (ctx : FnCtx) {c : CheckCtx} 
       | reg b =>
         obtain ⟨hbc, hba⟩ := locOk_reg hd
         simp only [RAFrame.moveInsts, bind, Except.bind] at hmi
-        split at hmi
-        · cases hmi
-        rename_i o hoff
-        simp only [pure, Except.pure, Except.ok.injEq] at hmi
-        subst hmi
-        exact ⟨_, rfl, instsWrites_slotLoadAt ctx _ _ _ s _⟩
+        first
+        | split at hmi
+          · cases hmi
+          rename_i o hoff
+          simp only [pure, Except.pure, Except.ok.injEq] at hmi
+          subst hmi
+          exact ⟨_, rfl, instsWrites_slotLoadAt ctx _ _ _ s _⟩
+        | simp only [pure, Except.pure, Except.ok.injEq] at hmi
+          cases hmi
+          exact ⟨[], rfl, instsWrites_noStores (fun i hi => by cases hi)⟩
 
 end Backend.Proof
