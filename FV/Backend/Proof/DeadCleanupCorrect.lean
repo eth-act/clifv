@@ -34,7 +34,7 @@ theorem returns_clean {vc : VCode} {sem : Sem}
   obtain ⟨b, k, a1, w1, vb, ops, outs, hstar, hb, hi, hop, hv, hs⟩ := h
   obtain ⟨vb0, hb0⟩ := entry_exists hstar hb
   obtain ⟨c1, hstar', hr⟩ := star_sim hp hcmp ht (rel_entry hb0 a w0) hstar
-  obtain ⟨k', a', rfl, hb', hi', hu⟩ := rel_kept hr hb hi hop rfl rfl
+  obtain ⟨k', a', rfl, hb', hi', hu⟩ := rel_kept hr hb hi hop rfl rfl rfl
   refine ⟨b, k', a', w1, cleanBlock vc 0 vb, ops, outs, hstar', hb', hi', hop, ?_, hs⟩
   exact hv.trans hu
 
@@ -56,11 +56,17 @@ theorem traps_clean {vc : VCode} {sem : Sem}
   have hkeepc : cmpForm i = false := by
     cases he : cmpForm i
     · rfl
-    · have hn := (hcmp _ _ _ _ _ _ he hs).1
+    · have hn := (hcmp.1 _ _ _ _ _ _ he hs).1
       cases hn
+  have hkeepj : isJump i = false := by
+    cases he : isJump i
+    · rfl
+    · obtain ⟨l, rfl⟩ : ∃ l, i = .jump l := by cases i <;> simp at he; exact ⟨_, rfl⟩
+      obtain ⟨-, j, hj⟩ := hcmp.2 _ _ _ _ _ _ hs
+      cases hj
   obtain ⟨vb0, hb0⟩ := entry_exists hstar hb
   obtain ⟨c1, hstar', hr⟩ := star_sim hp hcmp ht (rel_entry hb0 a w0) hstar
-  obtain ⟨k', a', rfl, hb', hi', hu⟩ := rel_kept hr hb hi hop hkeep hkeepc
+  obtain ⟨k', a', rfl, hb', hi', hu⟩ := rel_kept hr hb hi hop hkeep hkeepc hkeepj
   refine ⟨b, k', a', w1, cleanBlock vc 0 vb, i, ops, outs, w', hstar', hb', hi', hop, ?_, hc⟩
   rw [← hu]
   exact hs

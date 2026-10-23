@@ -21,8 +21,10 @@ private theorem valueSemV_bot (F : BitVec 64 → Prop) (ctx : FnCtx) (X : ExtSem
 /-- The register-level value semantics lets the next compare overwrite a compare's flags. -/
 theorem valueSemV_cmpOverwrite (gv : Nat → String → Prop) (F : BitVec 64 → Prop)
     (ctx : FnCtx) (X : ExtSem) : CmpOverwrite (valueSemV gv F ctx X) :=
-  cmpOverwrite_of_mspec (sb := ctx.slotBase) fun i hs => by
-    funext us w; simp only [valueSemV, hs, ↓reduceIte]
+  cmpOverwrite_of_mspec (sb := ctx.slotBase)
+    (fun i hs => by funext us w; simp only [valueSemV, hs, ↓reduceIte])
+    (jumpPlain_of_csem (F := F) (ctx := ctx) (X := X) fun l => by
+      funext us w; simp [valueSemV, csemV, specForm, pureForm, cmpForm])
 
 private theorem q_world_change {R : RL} {s : Arm.ArmState} {b : Nat} {its : List RItem}
     {m : Loc → CV} {w w' : Arm.ArmState} (hq : Q R s (.run ⟨b, its, m, w⟩))

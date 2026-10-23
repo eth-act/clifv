@@ -82,15 +82,35 @@ theorem mspec_flagFree {sb : Nat} {i : MInst} {us outs : List CV} {p : Arm.PStat
   obtain ⟨rfl, -, rfl⟩ := he
   exact hr
 
+/-- A `jump` steps alike from every world: it keeps the world and branches. -/
+def JumpPlain {V W : Type} (sem : ISem V W) : Prop :=
+  ∀ l us w outs w' ctl, sem (.jump l) us w = some (outs, w', ctl) →
+    w' = w ∧ (∃ j, ctl = .goto j) ∧ ∀ w0, sem (.jump l) us w0 = some (outs, w0, ctl)
+
+theorem mspec_jumpPlain (sb : Nat) : JumpPlain (mspec sb) := by
+  intro l us w outs w' ctl h
+  cases us with
+  | nil =>
+    simp [mspec, ispec] at h
+    obtain ⟨rfl, rfl, rfl⟩ := h
+    exact ⟨rfl, ⟨0, rfl⟩, fun _ => by simp [mspec, ispec]⟩
+  | cons u us => simp [mspec, ispec] at h
+
 /-- Under the specification, the next compare overwrites a compare's flags, and flag-free
-producers ignore them. -/
+producers and `jump`s ignore them. -/
 theorem mspec_cmpOverwrite (sb : Nat) : CmpOverwrite (mspec sb) := by
-  intro i us w outs w' ctl hc h
-  obtain ⟨hctl, p, rfl, -⟩ := mspec_cmp hc h
-  refine ⟨hctl, fun k us' r hk hr => ?_, fun j us' o c hj hr => mspec_flagFree hj hr⟩
-  obtain ⟨o, w2, c⟩ := r
-  obtain ⟨-, q, hw2, hall⟩ := mspec_cmp hk hr
-  rw [hall w, hw2, write_pstate_twice]
+  refine ⟨fun i us w outs w' ctl hc h => ?_, fun l us w outs w' ctl h => ?_⟩
+  · obtain ⟨hctl, p, rfl, -⟩ := mspec_cmp hc h
+    refine ⟨hctl, fun k us' r hk hr => ?_, fun j us' o c hj hr => ?_⟩
+    · obtain ⟨o, w2, c⟩ := r
+      obtain ⟨-, q, hw2, hall⟩ := mspec_cmp hk hr
+      rw [hall w, hw2, write_pstate_twice]
+    · rcases Bool.or_eq_true_iff.mp hj with hj | hj
+      · exact mspec_flagFree hj hr
+      · obtain ⟨l, rfl⟩ : ∃ l, j = .jump l := by cases j <;> simp at hj; exact ⟨_, rfl⟩
+        exact ((mspec_jumpPlain sb) _ _ _ _ _ _ hr).2.2 w
+  · obtain ⟨hw, hj, -⟩ := mspec_jumpPlain sb _ _ _ _ _ _ h
+    exact ⟨hw, hj⟩
 
 /-- The forms the cleanup's value semantics runs by their specification `mspec`: the pure
 producers (unchanged world) and, since the cleanup drops compares whose flags are dead (#552),
@@ -123,19 +143,26 @@ theorem mspec_spec_next {sb : Nat} {i : MInst} {us outs : List CV} {w w' : Arm.A
   · exact (mspec_pure hp h).2
   · exact (mspec_cmp hc h).1
 
-/-- A semantics that runs the specification forms by `mspec` lets the next compare overwrite
-a compare's flags: the premise of the cleanup's compare removal. -/
+/-- A semantics that runs the specification forms by `mspec`, and `jump`s alike from every
+world, lets the next compare overwrite a compare's flags: the premise of the cleanup's compare
+removal. -/
 theorem cmpOverwrite_of_mspec {sem : Sem} {sb : Nat}
-    (h : ∀ i, specForm i = true → sem i = mspec sb i) : CmpOverwrite sem := by
-  intro i us w outs w' ctl hc hs
-  rw [h i (specForm_of_cmp hc)] at hs
-  obtain ⟨hctl, hov⟩ := mspec_cmpOverwrite sb i us w outs w' ctl hc hs
-  refine ⟨hctl, fun K us' r hK hr => ?_, fun j us' o c hj hr => ?_⟩
-  · rw [h K (specForm_of_cmp hK)] at hr ⊢
-    exact hov.1 K us' r hK hr
-  · have hjs := specForm_of_pure (pureForm_of_flagFree hj)
-    rw [h j hjs] at hr ⊢
-    exact hov.2 j us' o c hj hr
+    (h : ∀ i, specForm i = true → sem i = mspec sb i) (hjp : JumpPlain sem) :
+    CmpOverwrite sem := by
+  refine ⟨fun i us w outs w' ctl hc hs => ?_, fun l us w outs w' ctl hs => ?_⟩
+  · rw [h i (specForm_of_cmp hc)] at hs
+    obtain ⟨hctl, hov⟩ := (mspec_cmpOverwrite sb).1 i us w outs w' ctl hc hs
+    refine ⟨hctl, fun K us' r hK hr => ?_, fun j us' o c hj hr => ?_⟩
+    · rw [h K (specForm_of_cmp hK)] at hr ⊢
+      exact hov.1 K us' r hK hr
+    · rcases Bool.or_eq_true_iff.mp hj with hf | hjm
+      · have hjs := specForm_of_pure (pureForm_of_flagFree hf)
+        rw [h j hjs] at hr ⊢
+        exact hov.2 j us' o c hj hr
+      · obtain ⟨l, rfl⟩ : ∃ l, j = .jump l := by cases j <;> simp at hjm; exact ⟨_, rfl⟩
+        exact (hjp _ _ _ _ _ _ hr).2.2 w
+  · obtain ⟨hw, hj, -⟩ := hjp _ _ _ _ _ _ hs
+    exact ⟨hw, hj⟩
 
 /-- Compares are not branches (a specification form has no targets). -/
 theorem specForm_targets {i : MInst} (h : specForm i = true) : i.targets = [] := by
