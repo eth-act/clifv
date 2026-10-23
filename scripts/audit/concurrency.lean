@@ -1069,3 +1069,12 @@ import FVTest.Concurrency.LitmusFull
 #print axioms Concurrency.CallSegLift.realizedT_lift
 #print axioms Concurrency.CallSegLift.Witness.prefix_nil
 #print axioms Concurrency.CallSegLift.Witness.lift_nil
+-- #473 (4): the event-free steps between segments
+#print axioms Concurrency.CallStepT.cstepS_of_cstepI
+#print axioms Concurrency.CallStepT.realizedT_nil
+#print axioms Concurrency.CallStepT.realizedT_call
+#print axioms Concurrency.CallStepT.realizedT_priv
+#print axioms Concurrency.CallStepT.cstepS_ret_lift
+#print axioms Concurrency.CallStepT.Witness.call_W -- witness: native_decide
+#print axioms Concurrency.CallStepT.Witness.priv_W
+#print axioms Concurrency.CallStepT.Witness.ret_W
