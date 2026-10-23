@@ -209,15 +209,29 @@ The gap stays open until step 4 lands. That is months of work, not weeks.
   self-`return_call` of a slotless function still gives back its memory (`selfTail_mem`).
 - Every existing statement keeps its meaning. `LinkSys.PlaceAt`, `PlaceInv`, `PlacedInv`,
   `bounded_placed` and the `LinkArmUClif` place lemmas pin `init = none` (`⟨sps, frames, none⟩`).
-  Changed internal lemmas:
-  - `enterSlots_place`, `enterSlots_sps` and `enterFunc_sps` now say what happens to `init`;
-  - `linkEnvR_keepsPlace` and `linkEnvRX_keepsPlace` now conclude `EnvKeepsPlace0` /
-    `XEnvKeepsPlace0`: a callee run advances `init`, so it is kept only without the oracle;
-  - `initState_place`, `ClifThreadI.enterSlots_bytes`, `enterFunc_bytes` and `cstepI_call` take
-    `init = none`.
+  Internal lemmas, conclusions kept:
+  - `enterSlots_place`, `enterSlots_sps`, `enterFunc_sps`, `initState_place`,
+    `ClifThreadI.enterSlots_bytes`, `enterFunc_bytes`, `cstepI_call` and
+    `CallEnterClif.cstepI_call_entry` take an `init = none` premise; the general forms (which say
+    what happens to `init`) are `enterSlots_place_init`, `enterSlots_sps_init`,
+    `enterFunc_sps_init`.
+  - `linkEnvR_keepsPlace`, `linkEnvN_keepsPlace`, `linkEnvRX_keepsPlace` and
+    `LinkSys.envRX_keepsPlace` concluded `EnvKeepsPlace`/`XEnvKeepsPlace` of the linked
+    environment. That is false with the oracle for every premise on the memory (the memory is
+    quantified inside the conclusion, and a program callee with slots advances `init`), so those
+    names are retired; the forms on memories without the oracle are `linkEnvR_keepsPlace0`,
+    `linkEnvN_keepsPlace0`, `linkEnvRX_keepsPlace0`, `LinkSys.envRX_keepsPlace0`
+    (`EnvKeepsPlace0`/`XEnvKeepsPlace0`). All their callers pass `init = none`.
 - Native check: `clif-native --stale-seed n` fills the stack below the harness's `sp` with
   `(n + 37·(a mod 16)) mod 256`, and `clif-filetest --stale-seed n` runs `Clif.run` with the same
-  oracle (slots at `Backend.slotLayout` offsets below a 16-aligned `sp`).
+  oracle (slots at `Backend.slotLayout` offsets below a 16-aligned `sp`). On the prototype's 310
+  leaf functions × 5 runs = 1,550 runs per seed (seeds 90 and 195): 1,070 agree, 288 are native
+  `SIGSEGV`s on wild pointer arguments (`Clif.run` stuck, oracle-error), and 192 disagree, all
+  `Clif.run` `stuck` on an out-of-bounds slot access (a load wider than its slot, e.g. `load.i64`
+  of a 5-byte `ss0`, 40 functions; natively it reads the neighbouring bytes): no guarantee is
+  claimed there. 934 runs give different native results under the two seeds (stale reads); 742
+  of them are in functions without a disagreement, and `Clif.run` reproduces every one of them
+  under both seeds.
 
 ### 5.3 Step 2 design: a call counter in the VCode world
 

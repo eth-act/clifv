@@ -1355,7 +1355,7 @@ existing statement.
       bump allocator).
    3. *Slotted callees* (`FV/E2E/LinkPlace.lean`, `LinkArm.lean`): a callee's whole-program run
       gives back the oracle and creates no allocation outside its arguments' and its slots'
-      (`runLoop_place`, `runLoop_allocs`, `linkEnvN_keepsPlace`), so the caller's relation holds
+      (`runLoop_place`, `runLoop_allocs`, `linkEnvN_keepsPlace0`), so the caller's relation holds
       after the call; `initState_mem` places the callee's slots in its slot region (`slotFits`),
       so its entry memory is related to its body-entry world with its own `F`. The activation's
       environment `envOf M g c` returns from a declared function of `P` only from a memory whose
