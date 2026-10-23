@@ -35,13 +35,15 @@ theorem pipeCleanupT_okT {g : Clif.Function} (h : fnScopeInTB g = true) (k : Nat
     obtain ⟨hl, -⟩ := pipeCleanupT_spec ha
     exact ⟨a, ha, lowerCheckT_complete_int (dominated_of hd) (lowerScope_of hs) hl, hpc,
       allocChecked_of_checkAlloc hca, hcov⟩
-  · obtain ⟨-, -, htc, -, -, -, -, -, -, -, hd, hs, har, -, -, -, -, -, hor⟩ := fnScopeInT_parts h
+  · obtain ⟨-, -, htc, habi, hext, hind, -, -, -, -, hd, hs, har, -, -, -, -, -, hor⟩ :=
+      fnScopeInT_parts h
     obtain ⟨hrc, hout⟩ := hor.resolve_left hE
     obtain ⟨vc, hl, hcs, hpost⟩ := lowerOutTB_spec hout
     have hD := dominated_of hd
     have hS := lowerScopeT_of hs
     obtain ⟨vcp, hp⟩ := Prep.prepare_okT hD hS hl
-    obtain ⟨hem, hfc, hk, hci⟩ := hpost vcp hp
+    obtain ⟨hem, hfc, hci⟩ := hpost vcp hp
+    have hk := killFreeB_of_scopeT hd hs habi hext hind har htc hl hp
     have hcov := (formsCoveredB_iff _ _).mp hfc
     have hp' := prune_prepare_ok hp
     obtain ⟨hacc, af, ha, fa, fb, he, hla⟩ := backend_total_emit_cleanupT hD hS (arityOk_of har)
