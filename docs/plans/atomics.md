@@ -793,7 +793,30 @@ they are; the per-thread layers are new files.
       * **(3)** `SegOk` for a compiled function in `MemScopeLSC` on the machine of
         `arm_alloc_refines_lsCL`: its segments are the runs between its entry, its calls' resumes
         and its `rets`, each by layers 2–4b from the relation of (2a)/(2c); `link_compose_ext`
-        then gives `FunReal` for every activation, `realizes_linked` the program level.
+        then gives `FunReal` for every activation, `realizes_linked` the program level. **Done so
+        far**: layers 2–4a from related configurations (`CallLayers.isel_alloc_refinesC`: the
+        relations `Driver.Match`, `PMatch`, the checker's `MatchRun` at a segment's start; a run
+        of the allocated code is realized entirely with a step at its end, or up to where the CLIF
+        thread stops, or — with `NoCall` — entirely, ending at a call statement related by all
+        three relations to the run's last configuration; `prep_run`/`alloc_run` keep the
+        relations, `PrepThread.prepFacts_of_check` gives `prepare`'s); witness
+        `CallResumeWitness.isel_alloc_fC`. **Still open**, in order: (i) layer 4b in it
+        (`arm_alloc_refines_lsCL` from `Q ∧ AInv` at the segment's start, then
+        `isel_alloc_refinesC` on its allocated run and `Refines.take` as in
+        `ThreadCompose.arm_isel_refinesE'`; the `Done` end excluded as in
+        `ThreadProgress.arm_isel_refines_fullR`); the entry's relations (`MConf.init`,
+        `VConf.init` as `AllocThread.alloc_thinP`/`IselCall.isel_refines_entryC` build them);
+        (ii) the end at a `rets` item: the epilogue and `ret` (`CallResume.rets_privP`,
+        `RegLevelFrame.ret_machine`) and the CLIF return pop (`ClifCStepTerm.cstep_ret_pop`), giving
+        the callee contract `Ret` of (2c) (callee-saved registers from the checker's `.ret` `Match`,
+        the result registers, `MemAgree`); (iii) (2b) the callee's entry from the relations at the
+        pause (`enterFunc`'s CLIF state under `ClifLift.pushC`, the arguments in x0… from the call's
+        fixed uses, the callee's `RL` from the caller's state at the `bl`, its memory relation);
+        (iv) the thread-wide private set (every activation's `PrivA` and the CLIF events' avoidance
+        of it; with CLIF stack slots in callees the private sets of different activations overlap
+        other activations' slots, so the first scope is functions without stack slots) and a
+        linked machine dispatching on the program of the return address; then `SegOk`,
+        `link_compose_ext`, and `realizes_call_full`/the rmw-callee witness as instances.
   * **the prologue, from the ABI entry (done, `ArmAllocEntry.lean`)**: `stp_fplr_evs` (the
     prologue's `stp x29, x30, [sp, #-16]!`: one plain write at `sp - 16`, no exclusive);
     `q_init_lines` (`RegLevelFrame.q_init` with the prologue's lines, `LinesAt`, and its step

@@ -874,3 +874,9 @@ import FVTest.Concurrency.LitmusFull
 #print axioms Concurrency.CallResumeL.prep_vstep_next
 #print axioms Concurrency.CallResumeL.resume_layers
 #print axioms Concurrency.CallResumeL.Witness.resume_RC -- witness: native_decide
+-- layers 2-4a from related configurations, pausing at calls (#473, 3)
+#print axioms Concurrency.PrepThread.prepFacts_of_check
+#print axioms Concurrency.PrepThread.prep_thinP
+#print axioms Concurrency.CallLayers.isel_alloc_refinesC
+#print axioms Concurrency.CallResumeL.Witness.prepC -- witness: native_decide
+#print axioms Concurrency.CallResumeL.Witness.isel_alloc_fC -- witness: native_decide
