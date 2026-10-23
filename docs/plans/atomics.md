@@ -965,12 +965,18 @@ they are; the per-thread layers are new files.
           return needs the empty mask (`cstepS_ret_iff`). The top-level end condition: the
           whole run, `Stop`, the next CLIF step reads a masked byte, or a return with masked
           bytes.
-        - *Exclusive-closed segments*: the monitor survives calls (`monAfter`; a failed CAS
-          leaves it armed), so `xClosed_mon` from the open monitor does not give each segment's
-          `XClosed`. Instead: an Arm `relXW` outside `PrivA` is matched (`Refines.priv`) to a
-          CLIF atomic write whose read partner is in the same CLIF step, so its image `acqXR` is
-          earlier in the same segment (`Refines.mono`); left to show: compiled code's `relXW`
-          events avoid `PrivA` (the `stlxr` address is the CLIF address in x25, `ArmAllocLoop`).
+        - *Exclusive-closed segments (done, AtomicsCalls15)*: the monitor survives calls
+          (`monAfter`; a failed CAS leaves it armed), so `xClosed_mon` from the open monitor does
+          not give each segment's `XClosed`. The Refines-level argument above has a gap (a lone
+          CLIF `scW` may map to `relXW` under `Maps`), so it is done at layer 4b instead: a
+          private Arm write is never a `relXW` (`PrivW`, `Img.priv`, `RefA.priv` now say
+          `Priv addr ∧ k ≠ relXW`; straight-line code by `stepEvs_noRelXW` from `NoStx`), so
+          every `relXW` of a `RefA` target is the image of a source `relXW`, the second event of
+          an atomic update whose `acqXR` maps before it (**`RefA.xClosed`**). Carried up:
+          `refines_of_itemSimQX`, `arm_alloc_refines_lsCLAX`, `xClosed_take`,
+          `arm_isel_refinesG2NX`/`CRGNX`/**`CRNX`**/**`entryCRNX`**, **`arm_isel_refines_abiCRNX`**
+          (the old names are corollaries); witness `arm_abiCRNX_fC`. The epilogue/`ret` and the
+          `bl` have no `relXW` (`ret_end`, `step_bl`).
         (iv) the thread-wide private set (every activation's `PrivA` and the CLIF events' avoidance
         of it; with CLIF stack slots in callees the private sets of different activations overlap
         other activations' slots); then `SegOk`, `link_compose_ext`, and `realizes_call_full`/the

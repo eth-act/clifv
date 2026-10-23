@@ -1041,3 +1041,18 @@ import FVTest.Concurrency.LitmusFull
 #print axioms Concurrency.LinkedMachine.Witness.ra_out -- witness: native_decide
 #print axioms Concurrency.LinkedMachine.Witness.ra_in -- witness: native_decide
 #print axioms Concurrency.LinkedMachine.Witness.ret_end_ld -- witness: native_decide
+-- #473 (2): exclusive-closed segments (private writes are no relXW)
+#print axioms Concurrency.ArmAllocThread.RefA.xClosed
+#print axioms Concurrency.ArmAllocThread.refines_of_itemSimQX
+#print axioms Concurrency.ArmAllocThread.stepEvs_noRelXW
+#print axioms Concurrency.ArmAllocThread.privA_segEvs
+#print axioms Concurrency.ArmAllocThread.privW_segEvs
+#print axioms Concurrency.CallSeg.privW_labs
+#print axioms Concurrency.CallRetsN.xClosed_take
+#print axioms Concurrency.CallRetsN.arm_alloc_refines_lsCLAX
+#print axioms Concurrency.CallRetsN.arm_isel_refinesG2NX
+#print axioms Concurrency.CallRetsN.arm_isel_refinesCRGNX
+#print axioms Concurrency.CallRetsN.arm_isel_refinesCRNX
+#print axioms Concurrency.CallRetsN.arm_isel_refines_entryCRNX
+#print axioms Concurrency.CallSegAbi.arm_isel_refines_abiCRNX
+#print axioms Concurrency.CallSegAbi.Witness.arm_abiCRNX_fC -- witness: native_decide

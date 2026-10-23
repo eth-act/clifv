@@ -38,8 +38,9 @@ theorem realized_privSegS {R : RL} {Priv : Nat → Prop} (hsub : ∀ a, PrivA R 
     CallCompose.Realized env p Priv L L.length c c' := by
   refine ⟨Nat.le_refl _, trS, id, hrun, ?_, ?_⟩
   · rw [List.take_length]; exact WitnessC.xClosed_labs hk
-  · rw [List.take_length, hev]
-    exact refines_nilS hS fun q y hy hd => hsub _ (privW_segEvs hpv q y hy hd)
+  · rw [List.take_length]
+    exact refines_nilS hS
+      (privW_labs (fun q y hy _ => by rw [hev] at hy; exact hsub _ (privA_segEvs hpv hy)) hk)
 
 end Concurrency.CallSeg
 
@@ -223,7 +224,8 @@ theorem funReal_callFull (env : Clif.Env) :
         rw [hMC] at ht1
         subst ht1
         have hW : PrivW (PrivA RLF) (segEvs RC.step n0F RC.s0) := fun p y hy hd =>
-          hsub _ (privW_segEvs (fun i hi => (hpath i hi).1.1) p y hy hd)
+          (fun h => ⟨hsub _ h.1, h.2⟩) (privW_segEvs (fun i hi => (hpath i hi).1.1)
+            (fun i hi => stepEvs_noRelXW (hpath i hi).1.2) p y hy hd)
         have htake : ls.take (n0F + 1) = ls.take n0F ++ [⟨[], false⟩] := by
           rw [List.take_add, hdrop]; rfl
         have hev1 : evTr (ls.take (n0F + 1)) = segEvs RC.step n0F RC.s0 ++ [[]] := by

@@ -98,6 +98,38 @@ theorem arm_alloc_refines_lsCLA {R : RL} (hR : R.Wf) (hsc : MemScopeLSC R)
   exact ⟨n, trS, cE, ψ, hn, mtrun_of_srun (SRun.mono' (fun _ _ _ h => h.2) hs), href,
     srun_avoid_ret hs, hend⟩
 
+/-- **An exclusive-closed trace's prefixes are exclusive-closed.** -/
+theorem xClosed_take {A : List (List Ev)} (h : CallCompose.XClosed A) (m : Nat) :
+    CallCompose.XClosed (A.take m) := by
+  intro b y hy hk
+  obtain ⟨hb, hy'⟩ := evAt_take_some hy
+  obtain ⟨a, x, hx, hxk, hab⟩ := h b y hy' hk
+  refine ⟨a, x, ?_, hxk, hab⟩
+  rw [evAt_take_of_lt (by simp only [Lt] at hab; omega)]
+  exact hx
+
+theorem evTr_take_take {ls : List Lab} {k n : Nat} (h : k ≤ n) :
+    evTr (ls.take k) = (evTr (ls.take n)).take k := by
+  simp only [evTr, ← List.map_take, List.take_take, Nat.min_eq_left h]
+
+/-- **`arm_alloc_refines_lsCLA` with the realized prefix exclusive-closed**
+(`refines_of_itemSimQX`). -/
+theorem arm_alloc_refines_lsCLAX {R : RL} (hR : R.Wf) (hsc : MemScopeLSC R)
+    {g : ArmState → ArmState} (hg : AgreesAt R g)
+    {s : ArmState} {mon : Mon} {c : MConf CV ArmState} (hq : Q R s c) (hA : AInv R c)
+    {ls : List Lab} {t' : ArmState × Mon} (hr : PRun Policy.arm g (OkPriv R) (s, mon) ls t') :
+    ∃ n trS cE ψ, n ≤ ls.length ∧ MTRun R.vc R.rf R.sem ckeep (cEvs R.F R.ctx) c trS cE ∧
+      ThreadRefine.Refines (· = ·) (PrivA R) (MonPair (evTr (ls.take n))) (PrepThread.conv trS)
+        (PrepThread.conv (evTr (ls.take n))) ψ ∧
+      ((∀ v m w, c ≠ .ret v m w) → ∀ v m w, cE ≠ .ret v m w) ∧
+      (n = ls.length ∨ ∃ tE, PRun Policy.arm g (OkPriv R) (s, mon) (ls.take n) tE ∧
+        RelQ R tE cE ∧ Pause R cE) ∧ CallCompose.XClosed (evTr (ls.take n)) := by
+  obtain ⟨n, trS, cE, ψ, hn, hs, href, hend, hx⟩ :=
+    refines_of_itemSimQX (ItemSim.avoid (itemSim_lsCL hR hsc hg)) hr
+      (show RelQ R (s, mon) c from ⟨hq, hA⟩)
+  exact ⟨n, trS, cE, ψ, hn, mtrun_of_srun (SRun.mono' (fun _ _ _ h => h.2) hs), href,
+    srun_avoid_ret hs, hend, hx⟩
+
 /-! ## The VCode tail of a done `return` -/
 
 theorem rets_noDefs {us : List (Reg × Reg)} {ops : Array Operand}
@@ -395,10 +427,9 @@ theorem sem_eq {RA : RL} (hgv : RA.gv = fun _ _ => False) : RA.sem = csem RA.F R
   show csemV RA.gv RA.F RA.ctx RA.X = _
   rw [hgv, csemV_none]
 
-/-- **`CallLayers.arm_isel_refinesG2` with layers 2–4a's end off `rets`** (module doc): no end
-at a `rets` item without the pause relation; at a pause, the allocated configuration has not
-returned. -/
-theorem arm_isel_refinesG2N {RA : RL} (hR : RA.Wf) (hsc : MemScopeLSC RA)
+/-- **`arm_isel_refinesG2N` with the realized prefix exclusive-closed**
+(`arm_alloc_refines_lsCLAX`, `xClosed_take`). -/
+theorem arm_isel_refinesG2NX {RA : RL} (hR : RA.Wf) (hsc : MemScopeLSC RA)
     (hgv : RA.gv = fun _ _ => False) {g : ArmState → ArmState} (hg : AgreesAt RA g)
     {env : Clif.Env} {p : Clif.Program} (hX : TlsMemFree RA.X) (hX0 : NoCall RA.X)
     {s : Clif.State} {cM : MState CV ArmState} {Rel : Clif.State → MConf CV ArmState → Prop}
@@ -411,15 +442,15 @@ theorem arm_isel_refinesG2N {RA : RL} (hR : RA.Wf) (hsc : MemScopeLSC RA)
           (m = trM.length ∧ ∃ s', t = .run s' ∧ Rel s' cE)))
     {x : ArmState} {mon : Mon} (hq : Q RA x (.run cM)) (hA : AInv RA (.run cM))
     {ls : List Lab} {t' : ArmState × Mon} (hr : PRun Policy.arm g (OkPriv RA) (x, mon) ls t') :
-    ∃ k trS t ψ, k ≤ ls.length ∧ CRun env p (.run s) trS t ∧
+    ∃ k trS t ψ, k ≤ ls.length ∧ CallCompose.XClosed (evTr (ls.take k)) ∧ CRun env p (.run s) trS t ∧
       Refines Maps (PrivA RA) (MonPair (evTr (ls.take k))) trS (conv (evTr (ls.take k))) ψ ∧
       (k = ls.length ∨ Stop env p t ∨
         (∃ tE s' cE, PRun Policy.arm g (OkPriv RA) (x, mon) (ls.take k) tE ∧
           RelQ RA tE cE ∧ Pause RA cE ∧ (∀ v m w, cE ≠ .ret v m w) ∧ t = .run s' ∧
           Rel s' cE)) := by
   have hsem := sem_eq hgv
-  obtain ⟨nA, trM, cE, ψA, hnA, hM, hAr, hnret, hend⟩ :=
-    arm_alloc_refines_lsCLA hR hsc hg hq hA hr
+  obtain ⟨nA, trM, cE, ψA, hnA, hM, hAr, hnret, hend, hxA⟩ :=
+    arm_alloc_refines_lsCLAX hR hsc hg hq hA hr
   have hnret' := hnret (fun v m w h => by cases h)
   rw [hsem] at hM
   obtain ⟨m, trS, t, ψ, hm, hrun, href, hendm⟩ := hL hM
@@ -451,7 +482,8 @@ theorem arm_isel_refinesG2N {RA : RL} (hR : RA.Wf) (hsc : MemScopeLSC RA)
     refine RealizeCompiled.monPair_take (by omega : k ≤ nA) ?_
     obtain ⟨hb1, -⟩ := evAt_isSome (show (evAt (conv (evTr (ls.take k))) (b.1, b.2)).isSome from hb)
     have := hb1; simp [conv, evTr] at this; omega
-  refine ⟨k, trS, t, _, by omega, hrun, RealizeCompiled.Refines.pairT_congr href2 hpair, ?_⟩
+  refine ⟨k, trS, t, _, by omega, by rw [evTr_take_take (by omega : k ≤ nA)]; exact xClosed_take hxA k,
+    hrun, RealizeCompiled.Refines.pairT_congr href2 hpair, ?_⟩
   rcases hendm with ⟨⟨h, ⟨cM', hmst⟩, hnrA⟩ | h, -⟩ | ⟨hfm, s', ht, hrel⟩
   · have hk' := hkfull (by simp [conv, h])
     rw [hlenA] at hk'
@@ -480,6 +512,147 @@ theorem arm_isel_refinesG2N {RA : RL} (hR : RA.Wf) (hsc : MemScopeLSC RA)
     rcases hend with h' | ⟨tE, hpre, hrq, hP⟩
     · exact .inl (hk'.trans h')
     · exact .inr (.inr ⟨tE, s', cE, hPA hnA hk' hpre, hrq, hP, hnret', ht, hrel⟩)
+
+/-- **`CallLayers.arm_isel_refinesG2` with layers 2–4a's end off `rets`** (module doc): no end
+at a `rets` item without the pause relation; at a pause, the allocated configuration has not
+returned. -/
+theorem arm_isel_refinesG2N {RA : RL} (hR : RA.Wf) (hsc : MemScopeLSC RA)
+    (hgv : RA.gv = fun _ _ => False) {g : ArmState → ArmState} (hg : AgreesAt RA g)
+    {env : Clif.Env} {p : Clif.Program} (hX : TlsMemFree RA.X) (hX0 : NoCall RA.X)
+    {s : Clif.State} {cM : MState CV ArmState} {Rel : Clif.State → MConf CV ArmState → Prop}
+    (hL : ∀ {trM : List (List Ev)} {cE : MConf CV ArmState},
+      MTRun RA.vc RA.rf (csem RA.F RA.ctx RA.X) ckeep (cEvs RA.F RA.ctx) (.run cM) trM cE →
+      ∃ m trS t ψ, m ≤ trM.length ∧ CRun env p (.run s) trS t ∧
+        Refines Maps (fun _ => False) (StepPair (conv (trM.take m))) trS (conv (trM.take m)) ψ ∧
+        ((((m = trM.length ∧ (∃ cM', MStep RA.vc (csem RA.F RA.ctx RA.X) ckeep RA.rf cE cM') ∧
+            ¬ AtRets RA cE) ∨ Stop env p t) ∧ ∀ v, t = .ret v → m = trM.length) ∨
+          (m = trM.length ∧ ∃ s', t = .run s' ∧ Rel s' cE)))
+    {x : ArmState} {mon : Mon} (hq : Q RA x (.run cM)) (hA : AInv RA (.run cM))
+    {ls : List Lab} {t' : ArmState × Mon} (hr : PRun Policy.arm g (OkPriv RA) (x, mon) ls t') :
+    ∃ k trS t ψ, k ≤ ls.length ∧ CRun env p (.run s) trS t ∧
+      Refines Maps (PrivA RA) (MonPair (evTr (ls.take k))) trS (conv (evTr (ls.take k))) ψ ∧
+      (k = ls.length ∨ Stop env p t ∨
+        (∃ tE s' cE, PRun Policy.arm g (OkPriv RA) (x, mon) (ls.take k) tE ∧
+          RelQ RA tE cE ∧ Pause RA cE ∧ (∀ v m w, cE ≠ .ret v m w) ∧ t = .run s' ∧
+          Rel s' cE)) := by
+  obtain ⟨k, trS, t, ψ, hk, -, h⟩ := arm_isel_refinesG2NX hR hsc hgv hg hX hX0 hL hq hA hr
+  exact ⟨k, trS, t, ψ, hk, h⟩
+
+/-- **`arm_isel_refinesCRGN` with the realized prefix exclusive-closed**
+(`arm_isel_refinesG2NX`). -/
+theorem arm_isel_refinesCRGNX {RA : RL} (hR : RA.Wf) (hsc : MemScopeLSC RA)
+    (hgv : RA.gv = fun _ _ => False) {g : ArmState → ArmState} (hg : AgreesAt RA g)
+    {ra : BitVec 64} (hent : AbiCall RA.fb RA.base ra RA.s0)
+    {f : Clif.Function} {vc : VCode} {ctx : Ctx} {R : Reg → Reg}
+    {gn : Nat → Nat} {bl : List BLow} {A : Nat → Nat → List Clif.ValueId} {MR : MemRelT}
+    {env : Clif.Env} {p : Clif.Program} {slots : List (Clif.SlotId × Nat)}
+    (hX : TlsMemFree RA.X) (hX0 : NoCall RA.X)
+    {L : Nat → Prop} {ss ss' : Array (Array Nat)} (H3 : PrepFacts vc RA.vc L ss ss')
+    {cc : CheckCtx} {ins : Array (Option AState)} {a0 : AState}
+    (hc : CheckedAt RA.vc RA.rf cc ins a0) {r₀ : Reg → CV}
+    {s : Clif.State} {cM : MState CV ArmState} {x : ArmState}
+    {mon : Mon}
+    (hLA : ∀ {trM : List (List Ev)} {cE : MConf CV ArmState},
+      MTRun RA.vc RA.rf (csem RA.F RA.ctx RA.X) ckeep (cEvs RA.F RA.ctx) (.run cM) trM cE →
+      ∃ m trS t ψ, m ≤ trM.length ∧ CRun env p (.run s) trS t ∧
+        Refines Maps (fun _ => False) (StepPair (conv (trM.take m))) trS (conv (trM.take m)) ψ ∧
+        ((((m = trM.length ∧ (∃ cM', MStep RA.vc (csem RA.F RA.ctx RA.X) ckeep RA.rf cE cM') ∧
+            ¬ AtRets RA cE) ∨ Stop env p t) ∧
+            ∀ v, t = .ret v → m = trM.length) ∨
+          (m = trM.length ∧ ∃ s' vV' vP' cM', t = .run s' ∧ AtCallS s' ∧ cE = .run cM' ∧
+            Match f ctx R gn bl A MR slots s' vV' ∧
+            PMatch vc RA.vc (csem RA.F RA.ctx RA.X) (cEvs RA.F RA.ctx) L ss' (.run vV') (.run vP') ∧
+            MatchRun cc ins ckeep r₀ cM' vP') ∨
+          (m = trM.length ∧ ∃ s' vR trR vV' vP' vals cm, t = .run s' ∧ AtRetS s' ∧
+            Match f ctx R gn bl A MR slots s' vR ∧
+            VTRun vc (csem RA.F RA.ctx RA.X) (cEvs RA.F RA.ctx) (.run vR) trR vV' ∧
+            (∀ e ∈ trR, e = []) ∧
+            PMatch vc RA.vc (csem RA.F RA.ctx RA.X) (cEvs RA.F RA.ctx) L ss' vV' vP' ∧
+            Backend.Proof.Match cc ins ckeep r₀ cE vP' ∧ Clif.step env p s' = .done vals cm ∧
+            ∃ us outs w', VRetFrom vc (csem RA.F RA.ctx RA.X) vR us outs w' ∧
+              us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
+              PrefixHold vals outs ∧ MR slots s'.mem w' ∧
+              cm = (s'.mem.free (slots.map (·.2))).leave)))
+    (hq : Q RA x (.run cM)) (hA : AInv RA (.run cM))
+    {ls : List Lab} {t' : ArmState × Mon} (hr : PRun Policy.arm g (OkPriv RA) (x, mon) ls t') :
+    ∃ k trS t ψ, k ≤ ls.length ∧ CallCompose.XClosed (evTr (ls.take k)) ∧ CRun env p (.run s) trS t ∧
+      Refines Maps (PrivA RA) (MonPair (evTr (ls.take k))) trS (conv (evTr (ls.take k))) ψ ∧
+      (k = ls.length ∨ Stop env p t ∨
+        (∃ tE s' vV' vP' cM', PRun Policy.arm g (OkPriv RA) (x, mon) (ls.take k) tE ∧
+          RelQ RA tE (.run cM') ∧ Pause RA (.run cM') ∧ t = .run s' ∧ AtCallS s' ∧
+          Match f ctx R gn bl A MR slots s' vV' ∧
+          PMatch vc RA.vc (csem RA.F RA.ctx RA.X) (cEvs RA.F RA.ctx) L ss' (.run vV') (.run vP') ∧
+          MatchRun cc ins ckeep r₀ cM' vP') ∨
+        (∃ tE s', PRun Policy.arm g (OkPriv RA) (x, mon) (ls.take k) tE ∧ t = .run s' ∧
+          AtRetS s' ∧ RetEnd RA ra env p MR slots r₀ tE.1 s')) := by
+  have hsem := sem_eq hgv
+  let RelR : Clif.State → MConf CV ArmState → Prop := fun s' cE =>
+    (∃ cM' vV' vP', AtCallS s' ∧ cE = .run cM' ∧ Match f ctx R gn bl A MR slots s' vV' ∧
+      PMatch vc RA.vc (csem RA.F RA.ctx RA.X) (cEvs RA.F RA.ctx) L ss' (.run vV') (.run vP') ∧
+      MatchRun cc ins ckeep r₀ cM' vP') ∨
+    (AtRetS s' ∧ ∃ vR trR vV' vP' vals cm, Match f ctx R gn bl A MR slots s' vR ∧
+      VTRun vc (csem RA.F RA.ctx RA.X) (cEvs RA.F RA.ctx) (.run vR) trR vV' ∧
+      (∀ e ∈ trR, e = []) ∧
+      PMatch vc RA.vc (csem RA.F RA.ctx RA.X) (cEvs RA.F RA.ctx) L ss' vV' vP' ∧
+      Backend.Proof.Match cc ins ckeep r₀ cE vP' ∧ Clif.step env p s' = .done vals cm ∧
+      ∃ us outs w', VRetFrom vc (csem RA.F RA.ctx RA.X) vR us outs w' ∧
+        PrefixHold vals outs ∧ MR slots s'.mem w' ∧
+        cm = (s'.mem.free (slots.map (·.2))).leave)
+  obtain ⟨k, trS, t, ψ, hk, hxk, hrun, href, hend⟩ := arm_isel_refinesG2NX hR hsc hgv hg hX
+    hX0 (Rel := RelR) (fun hM => by
+      obtain ⟨m, trS, t, ψ, hm, hrun, href, hendm⟩ := hLA hM
+      refine ⟨m, trS, t, ψ, hm, hrun, href, ?_⟩
+      rcases hendm with h | ⟨h1, s', vV', vP', cM', ht, hat, hcE, h5, h6, h7⟩ |
+        ⟨h1, s', vR, trR, vV', vP', vals, cm, ht, hat, h5, h6, h7, h8, h9, h10, us, outs, w', h11,
+          -, -, h12, h13, h14⟩
+      · exact .inl h
+      · exact .inr ⟨h1, s', ht, .inl ⟨cM', vV', vP', hat, hcE, h5, h6, h7⟩⟩
+      · exact .inr ⟨h1, s', ht, .inr ⟨hat, vR, trR, vV', vP', vals, cm, h5, h6, h7, h8, h9, h10,
+          us, outs, w', h11, h12, h13, h14⟩⟩) hq hA hr
+  refine ⟨k, trS, t, ψ, hk, hxk, hrun, href, ?_⟩
+  rcases hend with h | h | ⟨tE, s', cE, hpre, hrq, hP, hnret, ht, hrel⟩
+  · exact .inl h
+  · exact .inr (.inl h)
+  rcases hrel with ⟨cM', vV', vP', hat, rfl, h5, h6, h7⟩ |
+    ⟨hat, vR, trR, vV', vP', vals, cm, h5, h6, h7, h8, h9, h10, us0, outs, w', h11, h12, h13, h14⟩
+  · exact .inr (.inr (.inl ⟨tE, s', vV', vP', cM', hpre, hrq, hP, ht, hat, h5, h6, h7⟩))
+  refine .inr (.inr (.inr ⟨tE, s', hpre, ht, hat, ?_⟩))
+  obtain ⟨cM', hmst⟩ := doneRet_mstep H3 hc h6 h7 h8 h9 h11 hnret
+  rcases hP with hD | hcall | ⟨b, kk, allocs, its, m, w, vb, us, rfl, hvb, hi⟩
+  · exfalso
+    rw [← hsem] at hmst
+    rcases hD with ⟨vals, m', w', rfl⟩ | ⟨w', rfl⟩ | hD
+    · cases hmst
+    · cases hmst
+    · obtain ⟨evs, c'', hs⟩ := srcStep_of_mstepC (coveredCodeC_of_lsC hsc) hgv hX hX0 hrq.1 hmst
+      exact hD evs c'' hs
+  · exfalso
+    obtain ⟨b, k0, allocs, its, mm, ww, vb, info, rfl, hvb, hi⟩ := hcall
+    cases hmst with
+    | op hvb1 hi1 _ _ hsem1 =>
+      rw [hvb] at hvb1; cases hvb1
+      rw [hi] at hi1; cases hi1
+      simp only [csem] at hsem1
+      rw [hX0] at hsem1
+      cases hsem1
+  -- the prepared code's configuration is at the `rets`
+  cases vP' with
+  | ret => exact h9.elim
+  | halt => exact h9.elim
+  | run vs =>
+    obtain ⟨b', k', ρ, w''⟩ := vs
+    have h9' := h9
+    obtain ⟨hb, hw, vb', a, out, hvb', hrunI, -, -⟩ := h9'
+    simp only at hb hw hvb' hrunI
+    subst hb hw
+    obtain ⟨-, hk', -⟩ := runItems_op hrunI
+    subst hk'
+    obtain ⟨ops, hops, rfl, rfl, rfl⟩ := ret_link H3 h6 h7 h8 hvb hi h11
+    obtain ⟨n, ops2, hops2, hgood, hpc, herr, hsp, hmem, hprog, hcs, hres⟩ :=
+      rets_alloc hR hent hc hrq.1 h9 hvb hi
+    rw [hops] at hops2; cases hops2
+    exact ⟨b, kk, allocs, its, m, _, vb, _, ops, ρ, vals, cm, n, hrq.1, hvb, hi, hops, h10, h12,
+      h13, h14, hgood, hpc, herr, hsp, hmem, hprog, hcs, hres⟩
 
 /-- **All layers from a segment's start, layers 2–4a given with the end off `rets`, pausing at
 calls and at returns with their contract** (module doc; `CallRetsEnd.arm_isel_refinesCRG`
@@ -529,74 +702,8 @@ theorem arm_isel_refinesCRGN {RA : RL} (hR : RA.Wf) (hsc : MemScopeLSC RA)
           MatchRun cc ins ckeep r₀ cM' vP') ∨
         (∃ tE s', PRun Policy.arm g (OkPriv RA) (x, mon) (ls.take k) tE ∧ t = .run s' ∧
           AtRetS s' ∧ RetEnd RA ra env p MR slots r₀ tE.1 s')) := by
-  have hsem := sem_eq hgv
-  let RelR : Clif.State → MConf CV ArmState → Prop := fun s' cE =>
-    (∃ cM' vV' vP', AtCallS s' ∧ cE = .run cM' ∧ Match f ctx R gn bl A MR slots s' vV' ∧
-      PMatch vc RA.vc (csem RA.F RA.ctx RA.X) (cEvs RA.F RA.ctx) L ss' (.run vV') (.run vP') ∧
-      MatchRun cc ins ckeep r₀ cM' vP') ∨
-    (AtRetS s' ∧ ∃ vR trR vV' vP' vals cm, Match f ctx R gn bl A MR slots s' vR ∧
-      VTRun vc (csem RA.F RA.ctx RA.X) (cEvs RA.F RA.ctx) (.run vR) trR vV' ∧
-      (∀ e ∈ trR, e = []) ∧
-      PMatch vc RA.vc (csem RA.F RA.ctx RA.X) (cEvs RA.F RA.ctx) L ss' vV' vP' ∧
-      Backend.Proof.Match cc ins ckeep r₀ cE vP' ∧ Clif.step env p s' = .done vals cm ∧
-      ∃ us outs w', VRetFrom vc (csem RA.F RA.ctx RA.X) vR us outs w' ∧
-        PrefixHold vals outs ∧ MR slots s'.mem w' ∧
-        cm = (s'.mem.free (slots.map (·.2))).leave)
-  obtain ⟨k, trS, t, ψ, hk, hrun, href, hend⟩ := arm_isel_refinesG2N hR hsc hgv hg hX
-    hX0 (Rel := RelR) (fun hM => by
-      obtain ⟨m, trS, t, ψ, hm, hrun, href, hendm⟩ := hLA hM
-      refine ⟨m, trS, t, ψ, hm, hrun, href, ?_⟩
-      rcases hendm with h | ⟨h1, s', vV', vP', cM', ht, hat, hcE, h5, h6, h7⟩ |
-        ⟨h1, s', vR, trR, vV', vP', vals, cm, ht, hat, h5, h6, h7, h8, h9, h10, us, outs, w', h11,
-          -, -, h12, h13, h14⟩
-      · exact .inl h
-      · exact .inr ⟨h1, s', ht, .inl ⟨cM', vV', vP', hat, hcE, h5, h6, h7⟩⟩
-      · exact .inr ⟨h1, s', ht, .inr ⟨hat, vR, trR, vV', vP', vals, cm, h5, h6, h7, h8, h9, h10,
-          us, outs, w', h11, h12, h13, h14⟩⟩) hq hA hr
-  refine ⟨k, trS, t, ψ, hk, hrun, href, ?_⟩
-  rcases hend with h | h | ⟨tE, s', cE, hpre, hrq, hP, hnret, ht, hrel⟩
-  · exact .inl h
-  · exact .inr (.inl h)
-  rcases hrel with ⟨cM', vV', vP', hat, rfl, h5, h6, h7⟩ |
-    ⟨hat, vR, trR, vV', vP', vals, cm, h5, h6, h7, h8, h9, h10, us0, outs, w', h11, h12, h13, h14⟩
-  · exact .inr (.inr (.inl ⟨tE, s', vV', vP', cM', hpre, hrq, hP, ht, hat, h5, h6, h7⟩))
-  refine .inr (.inr (.inr ⟨tE, s', hpre, ht, hat, ?_⟩))
-  obtain ⟨cM', hmst⟩ := doneRet_mstep H3 hc h6 h7 h8 h9 h11 hnret
-  rcases hP with hD | hcall | ⟨b, kk, allocs, its, m, w, vb, us, rfl, hvb, hi⟩
-  · exfalso
-    rw [← hsem] at hmst
-    rcases hD with ⟨vals, m', w', rfl⟩ | ⟨w', rfl⟩ | hD
-    · cases hmst
-    · cases hmst
-    · obtain ⟨evs, c'', hs⟩ := srcStep_of_mstepC (coveredCodeC_of_lsC hsc) hgv hX hX0 hrq.1 hmst
-      exact hD evs c'' hs
-  · exfalso
-    obtain ⟨b, k0, allocs, its, mm, ww, vb, info, rfl, hvb, hi⟩ := hcall
-    cases hmst with
-    | op hvb1 hi1 _ _ hsem1 =>
-      rw [hvb] at hvb1; cases hvb1
-      rw [hi] at hi1; cases hi1
-      simp only [csem] at hsem1
-      rw [hX0] at hsem1
-      cases hsem1
-  -- the prepared code's configuration is at the `rets`
-  cases vP' with
-  | ret => exact h9.elim
-  | halt => exact h9.elim
-  | run vs =>
-    obtain ⟨b', k', ρ, w''⟩ := vs
-    have h9' := h9
-    obtain ⟨hb, hw, vb', a, out, hvb', hrunI, -, -⟩ := h9'
-    simp only at hb hw hvb' hrunI
-    subst hb hw
-    obtain ⟨-, hk', -⟩ := runItems_op hrunI
-    subst hk'
-    obtain ⟨ops, hops, rfl, rfl, rfl⟩ := ret_link H3 h6 h7 h8 hvb hi h11
-    obtain ⟨n, ops2, hops2, hgood, hpc, herr, hsp, hmem, hprog, hcs, hres⟩ :=
-      rets_alloc hR hent hc hrq.1 h9 hvb hi
-    rw [hops] at hops2; cases hops2
-    exact ⟨b, kk, allocs, its, m, _, vb, _, ops, ρ, vals, cm, n, hrq.1, hvb, hi, hops, h10, h12,
-      h13, h14, hgood, hpc, herr, hsp, hmem, hprog, hcs, hres⟩
+  obtain ⟨k, trS, t, ψ, hk, -, h⟩ := arm_isel_refinesCRGNX hR hsc hgv hg hent hX hX0 H3 hc hLA hq hA hr
+  exact ⟨k, trS, t, ψ, hk, h⟩
 
 /-- **All layers from related configurations, pausing at calls and at returns with their
 contract, every end resolved** (module doc). -/
@@ -678,6 +785,90 @@ theorem arm_isel_refines_entryCRN {RA : RL} (hR : RA.Wf) (hsc : MemScopeLSC RA)
         (∃ tE s', PRun Policy.arm g (OkPriv RA) (x, mon) (ls.take k) tE ∧ t = .run s' ∧
           AtRetS s' ∧ RetEnd RA ra env p MR slots (fun r => m₀ (.reg r)) tE.1 s')) :=
   arm_isel_refinesCRGN hR hsc hgv hg hent hX hX0 H3 hc (s := cs)
+    (cM := ⟨0, RA.rf.blocks[0]!.toList, m₀, w₀⟩)
+    (fun hM => isel_alloc_refines_entryCRN (ρ₀ := fun _ => 0) H hchk hMR hMRw hX hX0 hMem hMRs
+      hreg hB0 hcall hfunc hslots hbody hterm hregs hty hsig hmr hargs H3 hc (hm3 _ _)
+      (hm4 m₀ (fun _ => 0) w₀) hM) hq hA hr
+
+/-- **`arm_isel_refinesCRN` with the realized prefix exclusive-closed** (`arm_isel_refinesCRGNX`;
+#473 step (4): a segment's `XClosed` for `CallComposeT.RealizedT`). -/
+theorem arm_isel_refinesCRNX {RA : RL} (hR : RA.Wf) (hsc : MemScopeLSC RA)
+    (hgv : RA.gv = fun _ _ => False) {g : ArmState → ArmState} (hg : AgreesAt RA g)
+    {ra : BitVec 64} (hent : AbiCall RA.fb RA.base ra RA.s0)
+    {f : Clif.Function} {vc : VCode} {ctx : Ctx} {st0 : LState} {R : Reg → Reg}
+    {gn : Nat → Nat} {bl : List BLow} {A : Nat → Nat → List Clif.ValueId} {MR : MemRelT}
+    {env : Clif.Env} {p : Clif.Program} {slots : List (Clif.SlotId × Nat)} {sb : Nat}
+    {syms : String → Option Nat}
+    (H : DriverHypT f vc ctx st0 R gn bl A (csem RA.F RA.ctx RA.X) MR env p)
+    (hchk : threadCheckBlC f bl = true) (hMR : MemRelOk RA.F sb syms f MR)
+    (hMRw : ∀ sl cm w, MR sl cm w → Arm.r .ERR w = .None ∧ Arm.CheckSPAlignment w)
+    (hX : TlsMemFree RA.X) (hX0 : NoCall RA.X)
+    {L : Nat → Prop} {ss ss' : Array (Array Nat)} (H3 : PrepFacts vc RA.vc L ss ss')
+    {cc : CheckCtx} {ins : Array (Option AState)} {a0 : AState}
+    (hc : CheckedAt RA.vc RA.rf cc ins a0) {r₀ : Reg → CV}
+    {s : Clif.State} {vV vP : VState CV ArmState} {cM : MState CV ArmState} {x : ArmState}
+    {mon : Mon}
+    (hm2 : Match f ctx R gn bl A MR slots s vV)
+    (hm3 : PMatch vc RA.vc (csem RA.F RA.ctx RA.X) (cEvs RA.F RA.ctx) L ss' (.run vV) (.run vP))
+    (hm4 : MatchRun cc ins ckeep r₀ cM vP) (hq : Q RA x (.run cM)) (hA : AInv RA (.run cM))
+    {ls : List Lab} {t' : ArmState × Mon} (hr : PRun Policy.arm g (OkPriv RA) (x, mon) ls t') :
+    ∃ k trS t ψ, k ≤ ls.length ∧ CallCompose.XClosed (evTr (ls.take k)) ∧ CRun env p (.run s) trS t ∧
+      Refines Maps (PrivA RA) (MonPair (evTr (ls.take k))) trS (conv (evTr (ls.take k))) ψ ∧
+      (k = ls.length ∨ Stop env p t ∨
+        (∃ tE s' vV' vP' cM', PRun Policy.arm g (OkPriv RA) (x, mon) (ls.take k) tE ∧
+          RelQ RA tE (.run cM') ∧ Pause RA (.run cM') ∧ t = .run s' ∧ AtCallS s' ∧
+          Match f ctx R gn bl A MR slots s' vV' ∧
+          PMatch vc RA.vc (csem RA.F RA.ctx RA.X) (cEvs RA.F RA.ctx) L ss' (.run vV') (.run vP') ∧
+          MatchRun cc ins ckeep r₀ cM' vP') ∨
+        (∃ tE s', PRun Policy.arm g (OkPriv RA) (x, mon) (ls.take k) tE ∧ t = .run s' ∧
+          AtRetS s' ∧ RetEnd RA ra env p MR slots r₀ tE.1 s')) :=
+  arm_isel_refinesCRGNX hR hsc hgv hg hent hX hX0 H3 hc
+    (fun hM => isel_alloc_refinesCRN H hchk hMR hMRw hX hX0 H3 hc hm2 hm3 hm4 hM) hq hA hr
+
+/-- **`arm_isel_refines_entryCRN` with the realized prefix exclusive-closed**
+(`arm_isel_refinesCRGNX`). -/
+theorem arm_isel_refines_entryCRNX {RA : RL} (hR : RA.Wf) (hsc : MemScopeLSC RA)
+    (hgv : RA.gv = fun _ _ => False) {g : ArmState → ArmState} (hg : AgreesAt RA g)
+    {ra : BitVec 64} (hent : AbiCall RA.fb RA.base ra RA.s0)
+    {f : Clif.Function} {vc : VCode} {ctx : Ctx} {st0 : LState} {R : Reg → Reg}
+    {gn : Nat → Nat} {bl : List BLow} {A : Nat → Nat → List Clif.ValueId} {MR : MemRelT}
+    {env : Clif.Env} {p : Clif.Program} {slots : List (Clif.SlotId × Nat)} {sb : Nat}
+    {syms : String → Option Nat}
+    (H : DriverHypT f vc ctx st0 R gn bl A (csem RA.F RA.ctx RA.X) MR env p)
+    (hchk : threadCheckBlC f bl = true) (hMR : MemRelOk RA.F sb syms f MR)
+    (hMRw : ∀ sl cm w, MR sl cm w → Arm.r .ERR w = .None ∧ Arm.CheckSPAlignment w)
+    (hX : TlsMemFree RA.X) (hX0 : NoCall RA.X)
+    (hMem : MemRefines RA.F sb syms (csem RA.F RA.ctx RA.X)) (hMRs : MRStable RA.F MR)
+    (hreg : ∀ off, ArgLoc.stack off ∉ locsOf f.sig)
+    {L : Nat → Prop} {ss ss' : Array (Array Nat)} (H3 : PrepFacts vc RA.vc L ss ss')
+    (hm3 : ∀ (ρ₀ : Nat → CV) (w₀ : ArmState), PMatch vc RA.vc (csem RA.F RA.ctx RA.X)
+      (cEvs RA.F RA.ctx) L ss' (VConf.init ρ₀ w₀) (VConf.init ρ₀ w₀))
+    {cc : CheckCtx} {ins : Array (Option AState)} {a0 : AState}
+    (hc : CheckedAt RA.vc RA.rf cc ins a0)
+    (hm4 : ∀ (m₀ : Loc → CV) (ρ₀ : Nat → CV) (w₀ : ArmState),
+      Backend.Proof.Match cc ins ckeep (fun r => m₀ (.reg r)) (MConf.init RA.rf m₀ w₀)
+        (VConf.init ρ₀ w₀))
+    {cs : Clif.State} {B0 : Clif.Block} (hB0 : f.blocks[0]? = some B0)
+    (hcall : cs.callers = []) (hfunc : cs.frame.func = f) (hslots : cs.frame.slots = slots)
+    (hbody : cs.frame.body = B0.body) (hterm : cs.frame.term = B0.term) {args : List Clif.Val}
+    (hregs : Clif.Regs.empty.setMany (B0.params.map (·.1)) args = some cs.frame.regs)
+    (hty : args.map (·.ty) = B0.params.map (·.2))
+    (hsig : args.map (·.ty) = f.sig.params.map (·.ty))
+    {m₀ : Loc → CV} {w₀ : Arm.ArmState} (hmr : MR slots cs.mem w₀)
+    (hargs : ArgsAtEntry RA.F f.sig args w₀) {x : ArmState} {mon : Mon}
+    (hq : Q RA x (MConf.init RA.rf m₀ w₀)) (hA : AInv RA (MConf.init RA.rf m₀ w₀))
+    {ls : List Lab} {t' : ArmState × Mon} (hr : PRun Policy.arm g (OkPriv RA) (x, mon) ls t') :
+    ∃ k trS t ψ, k ≤ ls.length ∧ CallCompose.XClosed (evTr (ls.take k)) ∧ CRun env p (.run cs) trS t ∧
+      Refines Maps (PrivA RA) (MonPair (evTr (ls.take k))) trS (conv (evTr (ls.take k))) ψ ∧
+      (k = ls.length ∨ Stop env p t ∨
+        (∃ tE s' vV' vP' cM', PRun Policy.arm g (OkPriv RA) (x, mon) (ls.take k) tE ∧
+          RelQ RA tE (.run cM') ∧ Pause RA (.run cM') ∧ t = .run s' ∧ AtCallS s' ∧
+          Match f ctx R gn bl A MR slots s' vV' ∧
+          PMatch vc RA.vc (csem RA.F RA.ctx RA.X) (cEvs RA.F RA.ctx) L ss' (.run vV') (.run vP') ∧
+          MatchRun cc ins ckeep (fun r => m₀ (.reg r)) cM' vP') ∨
+        (∃ tE s', PRun Policy.arm g (OkPriv RA) (x, mon) (ls.take k) tE ∧ t = .run s' ∧
+          AtRetS s' ∧ RetEnd RA ra env p MR slots (fun r => m₀ (.reg r)) tE.1 s')) :=
+  arm_isel_refinesCRGNX hR hsc hgv hg hent hX hX0 H3 hc (s := cs)
     (cM := ⟨0, RA.rf.blocks[0]!.toList, m₀, w₀⟩)
     (fun hM => isel_alloc_refines_entryCRN (ρ₀ := fun _ => 0) H hchk hMR hMRw hX hX0 hMem hMRs
       hreg hB0 hcall hfunc hslots hbody hterm hregs hty hsig hmr hargs H3 hc (hm3 _ _)

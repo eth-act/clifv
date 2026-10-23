@@ -114,12 +114,17 @@ theorem img_privW {Priv : Nat → Prop} {tr : List (List Ev)} (h : PrivW Priv tr
   shape := .inl ⟨Nat.zero_le _, fun e he => absurd he List.not_mem_nil⟩
   pair h2 := by simp at h2
 
-/-- The events of a segment of single-core steps accessing only private locations are private
-writes. -/
-theorem privW_segEvs {R : RL} {n : Nat} {s : ArmState}
-    (h : ∀ i < n, ∀ e ∈ stepEvs (iterN R.step i s), R.F e.addr) :
-    PrivW (PrivA R) (segEvs R.step n s) := by
-  intro p y hy _
+/-- A step that is no store exclusive has no `relXW` event (`kindsOk_stepEvs`). -/
+theorem stepEvs_noRelXW {s : ArmState} (hx : NoStx s) : ∀ e ∈ stepEvs s, e.k ≠ .relXW := by
+  intro e he hke
+  have := (kindsOk_stepEvs s).1 e he
+  rw [hke] at this
+  cases hc : cls s <;> rw [hc] at this <;> simp [Cls.kind, AKind.dir] at this
+  exact hx _ _ _ hc
+
+/-- An event of a segment is an event of one of its steps. -/
+theorem evAt_segEvs_mem {R : RL} {n : Nat} {s : ArmState} {p : Nat × Nat} {y : Ev}
+    (hy : evAt (segEvs R.step n s) p = some y) : ∃ i < n, y ∈ stepEvs (iterN R.step i s) := by
   obtain ⟨j, k⟩ := p
   simp only [evAt] at hy
   cases hj : (segEvs R.step n s)[j]? with
@@ -128,7 +133,24 @@ theorem privW_segEvs {R : RL} {n : Nat} {s : ArmState}
     rw [hj] at hy
     simp only [Option.bind_some] at hy
     obtain ⟨i, hi, rfl⟩ := mem_segEvs (List.mem_of_getElem? hj)
-    exact privA_addr.2 (h i hi y (List.mem_of_getElem? hy))
+    exact ⟨i, hi, List.mem_of_getElem? hy⟩
+
+/-- The events of a segment of single-core steps accessing only private locations are at
+private addresses. -/
+theorem privA_segEvs {R : RL} {n : Nat} {s : ArmState}
+    (h : ∀ i < n, ∀ e ∈ stepEvs (iterN R.step i s), R.F e.addr) {p : Nat × Nat} {y : Ev}
+    (hy : evAt (segEvs R.step n s) p = some y) : PrivA R y.addr.toNat := by
+  obtain ⟨i, hi, hm⟩ := evAt_segEvs_mem hy
+  exact privA_addr.2 (h i hi y hm)
+
+/-- The events of a segment of single-core steps accessing only private locations, none a
+`relXW`, are private writes. -/
+theorem privW_segEvs {R : RL} {n : Nat} {s : ArmState}
+    (h : ∀ i < n, ∀ e ∈ stepEvs (iterN R.step i s), R.F e.addr)
+    (hx : ∀ i < n, ∀ e ∈ stepEvs (iterN R.step i s), e.k ≠ .relXW) :
+    PrivW (PrivA R) (segEvs R.step n s) := fun p y hy _ => by
+  obtain ⟨i, hi, hm⟩ := evAt_segEvs_mem hy
+  exact ⟨privA_addr.2 (h i hi y hm), hx i hi y hm⟩
 
 /-! ## The per-item obligation at a move -/
 
@@ -321,10 +343,12 @@ theorem move_opR {R : RL} (hR : R.Wf) {s : ArmState} {mon : Mon} {b : Nat}
     refine .inl ⟨ls1'.length, [], _, (s1, mon1), fun _ => (0, 0), hN,
       .inr (by simp [measure_run]), .move, r1, ⟨hq', hA'⟩, ?_⟩
     rw [hev1]
-    exact img_privW (privW_segEvs fun i hi => (hpriv i hi).1) _
+    exact img_privW (privW_segEvs (fun i hi => (hpriv i hi).1)
+      fun i hi => stepEvs_noRelXW (hpriv i hi).2) _
   · obtain ⟨hs', hev1⟩ := prun_priv hr fun i hi => hpriv i (by omega)
     rw [hev1]
-    refine .inr ⟨privW_segEvs fun i hi => (hpriv i (by omega)).1, ?_⟩
+    refine .inr ⟨privW_segEvs (fun i hi => (hpriv i (by omega)).1)
+      fun i hi => stepEvs_noRelXW (hpriv i (by omega)).2, ?_⟩
     rw [hs']
     exact nonRet_execLines hR hlat.at_ hlat.hook hlat.prog hlat.pc hlat.err hlat.inter hlat.run hnr _
       (by omega)
