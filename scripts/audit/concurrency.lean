@@ -977,3 +977,6 @@ import FVTest.Concurrency.LitmusFull
 #print axioms Concurrency.CallSeg.WitnessC.uniform_WR
 #print axioms Concurrency.CallSeg.WitnessC.toT_parts_nil
 #print axioms Concurrency.CallSeg.WitnessC.stop_ret
+#print axioms Concurrency.CallEnterClif.step_call_entry
+#print axioms Concurrency.CallEnterClif.cstepI_call_entry
+#print axioms Concurrency.CallSeg.WitnessC.enter_C -- witness: native_decide
