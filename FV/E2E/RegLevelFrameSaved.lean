@@ -97,9 +97,10 @@ def savedCheckAF (vc : VCode) (rf : RFunc) (af : AFunc) : Bool :=
 /-- **The check of the frame invariant** on an allocation (`savedCheckRF`, and `savedCheckAF`
 on its lowering). It holds for the allocations the backend lowers (regalloc2's via
 `allocResult`, and the spill allocation) of `corpus/clif`, `corpus/clif/extrt` and
-`corpus/clif-regress`, except `large_frame`: a save slot at 32 KiB or more is stored through
-x16 (`slotStoreAt`), which is no `calleeSave?` store, so `unwindRows` describes only the saves
-before it (`savedCheckAF` fails). -/
+`corpus/clif-regress`. A save slot at 32 KiB or more would be stored through x16
+(`slotStoreAt`), which is no `calleeSave?` store; since #479 the save slots come first in the
+frame (`RAFrame.compute`), so this needs an outgoing area of nearly 32 KiB
+(`Link.EhCheck.Complete.saveFrameB_always`). -/
 def savedCheck (vc : VCode) (rf : RFunc) : Bool :=
   savedCheckRF vc rf &&
     match lowerRFunc vc rf with
