@@ -1,4 +1,5 @@
 import FV.Backend.Proof.IselSzTTabData
+import FV.Backend.Proof.IselSzTChunk
 
 /-!
 # The size of the ISLE lowering's output over float-capable contexts (typed V6c): cost table entries, group 8
@@ -10,21 +11,111 @@ Every rule of every entry of these chunks is within the entry's bound.
 -/
 
 set_option maxRecDepth 100000
-set_option maxHeartbeats 4000000
+set_option maxHeartbeats 0
 set_option Elab.async false
 
 namespace Backend.Proof.CovT
 
 open Backend Backend.Proof Backend.Proof.Driver Isle Isle.Aarch64
 
-theorem szCTabT16_ok : (szCTabT16).all szEntryOkT = true := by
-  simp only [szCTabT16, List.all_cons, List.all_nil, Bool.and_eq_true, and_true]
-  repeat' apply And.intro
-  all_goals decide +kernel
+theorem szCTabT16_len : (szCTabT16).length ≤ 11 * 8 := by decide +kernel
 
-theorem szCTabT17_ok : (szCTabT17).all szEntryOkT = true := by
-  simp only [szCTabT17, List.all_cons, List.all_nil, Bool.and_eq_true, and_true]
-  repeat' apply And.intro
-  all_goals decide +kernel
+theorem szCTabT16_p0 : (((szCTabT16).drop (0 * 8)).take 8).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT16_p1 : (((szCTabT16).drop (1 * 8)).take 8).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT16_p2 : (((szCTabT16).drop (2 * 8)).take 8).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT16_p3 : (((szCTabT16).drop (3 * 8)).take 8).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT16_p4 : (((szCTabT16).drop (4 * 8)).take 8).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT16_p5 : (((szCTabT16).drop (5 * 8)).take 8).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT16_p6 : (((szCTabT16).drop (6 * 8)).take 8).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT16_p7 : (((szCTabT16).drop (7 * 8)).take 8).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT16_p8 : (((szCTabT16).drop (8 * 8)).take 8).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT16_p9 : (((szCTabT16).drop (9 * 8)).take 8).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT16_p10 : (((szCTabT16).drop (10 * 8)).take 8).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT16_ok : (szCTabT16).all szEntryOkT = true :=
+  all_of_chunks _ _ 8 11 szCTabT16_len fun c hc => match c, hc with
+    | 0, _ => szCTabT16_p0
+    | 1, _ => szCTabT16_p1
+    | 2, _ => szCTabT16_p2
+    | 3, _ => szCTabT16_p3
+    | 4, _ => szCTabT16_p4
+    | 5, _ => szCTabT16_p5
+    | 6, _ => szCTabT16_p6
+    | 7, _ => szCTabT16_p7
+    | 8, _ => szCTabT16_p8
+    | 9, _ => szCTabT16_p9
+    | 10, _ => szCTabT16_p10
+    | _ + 11, hc => absurd hc (by omega)
+
+theorem szCTabT17_len : (szCTabT17).length ≤ 11 * 8 := by decide +kernel
+
+theorem szCTabT17_p0 : (((szCTabT17).drop (0 * 8)).take 8).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT17_p1 : (((szCTabT17).drop (1 * 8)).take 8).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT17_p2 : (((szCTabT17).drop (2 * 8)).take 8).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT17_p3 : (((szCTabT17).drop (3 * 8)).take 8).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT17_p4 : (((szCTabT17).drop (4 * 8)).take 8).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT17_p5 : (((szCTabT17).drop (5 * 8)).take 8).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT17_p6 : (((szCTabT17).drop (6 * 8)).take 8).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT17_p7 : (((szCTabT17).drop (7 * 8)).take 8).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT17_p8 : (((szCTabT17).drop (8 * 8)).take 8).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT17_p9 : (((szCTabT17).drop (9 * 8)).take 8).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT17_p10 : (((szCTabT17).drop (10 * 8)).take 8).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT17_ok : (szCTabT17).all szEntryOkT = true :=
+  all_of_chunks _ _ 8 11 szCTabT17_len fun c hc => match c, hc with
+    | 0, _ => szCTabT17_p0
+    | 1, _ => szCTabT17_p1
+    | 2, _ => szCTabT17_p2
+    | 3, _ => szCTabT17_p3
+    | 4, _ => szCTabT17_p4
+    | 5, _ => szCTabT17_p5
+    | 6, _ => szCTabT17_p6
+    | 7, _ => szCTabT17_p7
+    | 8, _ => szCTabT17_p8
+    | 9, _ => szCTabT17_p9
+    | 10, _ => szCTabT17_p10
+    | _ + 11, hc => absurd hc (by omega)
 
 end Backend.Proof.CovT

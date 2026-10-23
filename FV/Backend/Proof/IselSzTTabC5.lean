@@ -1,4 +1,5 @@
 import FV.Backend.Proof.IselSzTTabData
+import FV.Backend.Proof.IselSzTChunk
 
 /-!
 # The size of the ISLE lowering's output over float-capable contexts (typed V6c): cost table entries, group 5
@@ -10,21 +11,727 @@ Every rule of every entry of these chunks is within the entry's bound.
 -/
 
 set_option maxRecDepth 100000
-set_option maxHeartbeats 4000000
+set_option maxHeartbeats 0
 set_option Elab.async false
 
 namespace Backend.Proof.CovT
 
 open Backend Backend.Proof Backend.Proof.Driver Isle Isle.Aarch64
 
-theorem szCTabT10_ok : (szCTabT10).all szEntryOkT = true := by
-  simp only [szCTabT10, List.all_cons, List.all_nil, Bool.and_eq_true, and_true]
-  repeat' apply And.intro
-  all_goals decide +kernel
+theorem szCTabT10_len : (szCTabT10).length ≤ 88 * 1 := by decide +kernel
 
-theorem szCTabT11_ok : (szCTabT11).all szEntryOkT = true := by
-  simp only [szCTabT11, List.all_cons, List.all_nil, Bool.and_eq_true, and_true]
-  repeat' apply And.intro
-  all_goals decide +kernel
+theorem szCTabT10_p0 : (((szCTabT10).drop (0 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT10_p1 : (((szCTabT10).drop (1 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT10_p2 : (((szCTabT10).drop (2 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT10_p3 : (((szCTabT10).drop (3 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT10_p4 : (((szCTabT10).drop (4 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT10_p5 : (((szCTabT10).drop (5 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT10_p6 : (((szCTabT10).drop (6 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT10_p7 : (((szCTabT10).drop (7 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT10_p8 : (((szCTabT10).drop (8 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT10_p9 : (((szCTabT10).drop (9 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT10_p10 : (((szCTabT10).drop (10 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT10_p11 : (((szCTabT10).drop (11 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT10_p12 : (((szCTabT10).drop (12 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT10_p13 : (((szCTabT10).drop (13 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT10_p14 : (((szCTabT10).drop (14 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT10_p15 : (((szCTabT10).drop (15 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT10_p16 : (((szCTabT10).drop (16 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT10_p17 : (((szCTabT10).drop (17 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT10_p18 : (((szCTabT10).drop (18 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT10_p19 : (((szCTabT10).drop (19 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT10_p20 : (((szCTabT10).drop (20 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT10_p21 : (((szCTabT10).drop (21 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT10_p22 : (((szCTabT10).drop (22 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT10_p23 : (((szCTabT10).drop (23 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT10_p24 : (((szCTabT10).drop (24 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT10_p25 : (((szCTabT10).drop (25 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT10_p26 : (((szCTabT10).drop (26 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT10_p27 : (((szCTabT10).drop (27 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT10_p28 : (((szCTabT10).drop (28 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT10_p29 : (((szCTabT10).drop (29 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT10_p30 : (((szCTabT10).drop (30 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT10_p31 : (((szCTabT10).drop (31 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT10_p32 : (((szCTabT10).drop (32 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT10_p33 : (((szCTabT10).drop (33 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT10_p34 : (((szCTabT10).drop (34 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT10_p35 : (((szCTabT10).drop (35 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT10_p36 : (((szCTabT10).drop (36 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT10_p37 : (((szCTabT10).drop (37 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT10_p38 : (((szCTabT10).drop (38 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT10_p39 : (((szCTabT10).drop (39 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT10_p40 : (((szCTabT10).drop (40 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT10_p41 : (((szCTabT10).drop (41 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT10_p42 : (((szCTabT10).drop (42 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT10_p43 : (((szCTabT10).drop (43 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT10_p44 : (((szCTabT10).drop (44 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT10_p45 : (((szCTabT10).drop (45 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT10_p46 : (((szCTabT10).drop (46 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT10_p47 : (((szCTabT10).drop (47 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT10_p48 : (((szCTabT10).drop (48 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT10_p49 : (((szCTabT10).drop (49 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT10_p50 : (((szCTabT10).drop (50 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT10_p51 : (((szCTabT10).drop (51 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT10_p52 : (((szCTabT10).drop (52 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT10_p53 : (((szCTabT10).drop (53 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT10_p54 : (((szCTabT10).drop (54 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT10_p55 : (((szCTabT10).drop (55 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT10_p56 : (((szCTabT10).drop (56 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT10_p57 : (((szCTabT10).drop (57 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT10_p58 : (((szCTabT10).drop (58 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT10_p59 : (((szCTabT10).drop (59 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT10_p60 : (((szCTabT10).drop (60 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT10_p61 : (((szCTabT10).drop (61 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT10_p62 : (((szCTabT10).drop (62 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT10_p63 : (((szCTabT10).drop (63 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT10_p64 : (((szCTabT10).drop (64 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT10_p65 : (((szCTabT10).drop (65 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT10_p66 : (((szCTabT10).drop (66 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT10_p67 : (((szCTabT10).drop (67 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT10_p68 : (((szCTabT10).drop (68 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT10_p69 : (((szCTabT10).drop (69 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT10_p70 : (((szCTabT10).drop (70 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT10_p71 : (((szCTabT10).drop (71 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT10_p72 : (((szCTabT10).drop (72 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT10_p73 : (((szCTabT10).drop (73 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT10_p74 : (((szCTabT10).drop (74 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT10_p75 : (((szCTabT10).drop (75 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT10_p76 : (((szCTabT10).drop (76 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT10_p77 : (((szCTabT10).drop (77 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT10_p78 : (((szCTabT10).drop (78 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT10_p79 : (((szCTabT10).drop (79 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT10_p80 : (((szCTabT10).drop (80 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT10_p81 : (((szCTabT10).drop (81 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT10_p82 : (((szCTabT10).drop (82 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT10_p83 : (((szCTabT10).drop (83 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT10_p84 : (((szCTabT10).drop (84 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT10_p85 : (((szCTabT10).drop (85 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT10_p86 : (((szCTabT10).drop (86 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT10_p87 : (((szCTabT10).drop (87 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT10_ok : (szCTabT10).all szEntryOkT = true :=
+  all_of_chunks _ _ 1 88 szCTabT10_len fun c hc => match c, hc with
+    | 0, _ => szCTabT10_p0
+    | 1, _ => szCTabT10_p1
+    | 2, _ => szCTabT10_p2
+    | 3, _ => szCTabT10_p3
+    | 4, _ => szCTabT10_p4
+    | 5, _ => szCTabT10_p5
+    | 6, _ => szCTabT10_p6
+    | 7, _ => szCTabT10_p7
+    | 8, _ => szCTabT10_p8
+    | 9, _ => szCTabT10_p9
+    | 10, _ => szCTabT10_p10
+    | 11, _ => szCTabT10_p11
+    | 12, _ => szCTabT10_p12
+    | 13, _ => szCTabT10_p13
+    | 14, _ => szCTabT10_p14
+    | 15, _ => szCTabT10_p15
+    | 16, _ => szCTabT10_p16
+    | 17, _ => szCTabT10_p17
+    | 18, _ => szCTabT10_p18
+    | 19, _ => szCTabT10_p19
+    | 20, _ => szCTabT10_p20
+    | 21, _ => szCTabT10_p21
+    | 22, _ => szCTabT10_p22
+    | 23, _ => szCTabT10_p23
+    | 24, _ => szCTabT10_p24
+    | 25, _ => szCTabT10_p25
+    | 26, _ => szCTabT10_p26
+    | 27, _ => szCTabT10_p27
+    | 28, _ => szCTabT10_p28
+    | 29, _ => szCTabT10_p29
+    | 30, _ => szCTabT10_p30
+    | 31, _ => szCTabT10_p31
+    | 32, _ => szCTabT10_p32
+    | 33, _ => szCTabT10_p33
+    | 34, _ => szCTabT10_p34
+    | 35, _ => szCTabT10_p35
+    | 36, _ => szCTabT10_p36
+    | 37, _ => szCTabT10_p37
+    | 38, _ => szCTabT10_p38
+    | 39, _ => szCTabT10_p39
+    | 40, _ => szCTabT10_p40
+    | 41, _ => szCTabT10_p41
+    | 42, _ => szCTabT10_p42
+    | 43, _ => szCTabT10_p43
+    | 44, _ => szCTabT10_p44
+    | 45, _ => szCTabT10_p45
+    | 46, _ => szCTabT10_p46
+    | 47, _ => szCTabT10_p47
+    | 48, _ => szCTabT10_p48
+    | 49, _ => szCTabT10_p49
+    | 50, _ => szCTabT10_p50
+    | 51, _ => szCTabT10_p51
+    | 52, _ => szCTabT10_p52
+    | 53, _ => szCTabT10_p53
+    | 54, _ => szCTabT10_p54
+    | 55, _ => szCTabT10_p55
+    | 56, _ => szCTabT10_p56
+    | 57, _ => szCTabT10_p57
+    | 58, _ => szCTabT10_p58
+    | 59, _ => szCTabT10_p59
+    | 60, _ => szCTabT10_p60
+    | 61, _ => szCTabT10_p61
+    | 62, _ => szCTabT10_p62
+    | 63, _ => szCTabT10_p63
+    | 64, _ => szCTabT10_p64
+    | 65, _ => szCTabT10_p65
+    | 66, _ => szCTabT10_p66
+    | 67, _ => szCTabT10_p67
+    | 68, _ => szCTabT10_p68
+    | 69, _ => szCTabT10_p69
+    | 70, _ => szCTabT10_p70
+    | 71, _ => szCTabT10_p71
+    | 72, _ => szCTabT10_p72
+    | 73, _ => szCTabT10_p73
+    | 74, _ => szCTabT10_p74
+    | 75, _ => szCTabT10_p75
+    | 76, _ => szCTabT10_p76
+    | 77, _ => szCTabT10_p77
+    | 78, _ => szCTabT10_p78
+    | 79, _ => szCTabT10_p79
+    | 80, _ => szCTabT10_p80
+    | 81, _ => szCTabT10_p81
+    | 82, _ => szCTabT10_p82
+    | 83, _ => szCTabT10_p83
+    | 84, _ => szCTabT10_p84
+    | 85, _ => szCTabT10_p85
+    | 86, _ => szCTabT10_p86
+    | 87, _ => szCTabT10_p87
+    | _ + 88, hc => absurd hc (by omega)
+
+theorem szCTabT11_len : (szCTabT11).length ≤ 88 * 1 := by decide +kernel
+
+theorem szCTabT11_p0 : (((szCTabT11).drop (0 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT11_p1 : (((szCTabT11).drop (1 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT11_p2 : (((szCTabT11).drop (2 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT11_p3 : (((szCTabT11).drop (3 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT11_p4 : (((szCTabT11).drop (4 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT11_p5 : (((szCTabT11).drop (5 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT11_p6 : (((szCTabT11).drop (6 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT11_p7 : (((szCTabT11).drop (7 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT11_p8 : (((szCTabT11).drop (8 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT11_p9 : (((szCTabT11).drop (9 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT11_p10 : (((szCTabT11).drop (10 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT11_p11 : (((szCTabT11).drop (11 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT11_p12 : (((szCTabT11).drop (12 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT11_p13 : (((szCTabT11).drop (13 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT11_p14 : (((szCTabT11).drop (14 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT11_p15 : (((szCTabT11).drop (15 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT11_p16 : (((szCTabT11).drop (16 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT11_p17 : (((szCTabT11).drop (17 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT11_p18 : (((szCTabT11).drop (18 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT11_p19 : (((szCTabT11).drop (19 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT11_p20 : (((szCTabT11).drop (20 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT11_p21 : (((szCTabT11).drop (21 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT11_p22 : (((szCTabT11).drop (22 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT11_p23 : (((szCTabT11).drop (23 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT11_p24 : (((szCTabT11).drop (24 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT11_p25 : (((szCTabT11).drop (25 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT11_p26 : (((szCTabT11).drop (26 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT11_p27 : (((szCTabT11).drop (27 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT11_p28 : (((szCTabT11).drop (28 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT11_p29 : (((szCTabT11).drop (29 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT11_p30 : (((szCTabT11).drop (30 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT11_p31 : (((szCTabT11).drop (31 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT11_p32 : (((szCTabT11).drop (32 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT11_p33 : (((szCTabT11).drop (33 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT11_p34 : (((szCTabT11).drop (34 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT11_p35 : (((szCTabT11).drop (35 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT11_p36 : (((szCTabT11).drop (36 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT11_p37 : (((szCTabT11).drop (37 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT11_p38 : (((szCTabT11).drop (38 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT11_p39 : (((szCTabT11).drop (39 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT11_p40 : (((szCTabT11).drop (40 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT11_p41 : (((szCTabT11).drop (41 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT11_p42 : (((szCTabT11).drop (42 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT11_p43 : (((szCTabT11).drop (43 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT11_p44 : (((szCTabT11).drop (44 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT11_p45 : (((szCTabT11).drop (45 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT11_p46 : (((szCTabT11).drop (46 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT11_p47 : (((szCTabT11).drop (47 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT11_p48 : (((szCTabT11).drop (48 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT11_p49 : (((szCTabT11).drop (49 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT11_p50 : (((szCTabT11).drop (50 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT11_p51 : (((szCTabT11).drop (51 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT11_p52 : (((szCTabT11).drop (52 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT11_p53 : (((szCTabT11).drop (53 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT11_p54 : (((szCTabT11).drop (54 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT11_p55 : (((szCTabT11).drop (55 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT11_p56 : (((szCTabT11).drop (56 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT11_p57 : (((szCTabT11).drop (57 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT11_p58 : (((szCTabT11).drop (58 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT11_p59 : (((szCTabT11).drop (59 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT11_p60 : (((szCTabT11).drop (60 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT11_p61 : (((szCTabT11).drop (61 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT11_p62 : (((szCTabT11).drop (62 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT11_p63 : (((szCTabT11).drop (63 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT11_p64 : (((szCTabT11).drop (64 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT11_p65 : (((szCTabT11).drop (65 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT11_p66 : (((szCTabT11).drop (66 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT11_p67 : (((szCTabT11).drop (67 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT11_p68 : (((szCTabT11).drop (68 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT11_p69 : (((szCTabT11).drop (69 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT11_p70 : (((szCTabT11).drop (70 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT11_p71 : (((szCTabT11).drop (71 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT11_p72 : (((szCTabT11).drop (72 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT11_p73 : (((szCTabT11).drop (73 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT11_p74 : (((szCTabT11).drop (74 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT11_p75 : (((szCTabT11).drop (75 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT11_p76 : (((szCTabT11).drop (76 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT11_p77 : (((szCTabT11).drop (77 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT11_p78 : (((szCTabT11).drop (78 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT11_p79 : (((szCTabT11).drop (79 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT11_p80 : (((szCTabT11).drop (80 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT11_p81 : (((szCTabT11).drop (81 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT11_p82 : (((szCTabT11).drop (82 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT11_p83 : (((szCTabT11).drop (83 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT11_p84 : (((szCTabT11).drop (84 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT11_p85 : (((szCTabT11).drop (85 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT11_p86 : (((szCTabT11).drop (86 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT11_p87 : (((szCTabT11).drop (87 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT11_ok : (szCTabT11).all szEntryOkT = true :=
+  all_of_chunks _ _ 1 88 szCTabT11_len fun c hc => match c, hc with
+    | 0, _ => szCTabT11_p0
+    | 1, _ => szCTabT11_p1
+    | 2, _ => szCTabT11_p2
+    | 3, _ => szCTabT11_p3
+    | 4, _ => szCTabT11_p4
+    | 5, _ => szCTabT11_p5
+    | 6, _ => szCTabT11_p6
+    | 7, _ => szCTabT11_p7
+    | 8, _ => szCTabT11_p8
+    | 9, _ => szCTabT11_p9
+    | 10, _ => szCTabT11_p10
+    | 11, _ => szCTabT11_p11
+    | 12, _ => szCTabT11_p12
+    | 13, _ => szCTabT11_p13
+    | 14, _ => szCTabT11_p14
+    | 15, _ => szCTabT11_p15
+    | 16, _ => szCTabT11_p16
+    | 17, _ => szCTabT11_p17
+    | 18, _ => szCTabT11_p18
+    | 19, _ => szCTabT11_p19
+    | 20, _ => szCTabT11_p20
+    | 21, _ => szCTabT11_p21
+    | 22, _ => szCTabT11_p22
+    | 23, _ => szCTabT11_p23
+    | 24, _ => szCTabT11_p24
+    | 25, _ => szCTabT11_p25
+    | 26, _ => szCTabT11_p26
+    | 27, _ => szCTabT11_p27
+    | 28, _ => szCTabT11_p28
+    | 29, _ => szCTabT11_p29
+    | 30, _ => szCTabT11_p30
+    | 31, _ => szCTabT11_p31
+    | 32, _ => szCTabT11_p32
+    | 33, _ => szCTabT11_p33
+    | 34, _ => szCTabT11_p34
+    | 35, _ => szCTabT11_p35
+    | 36, _ => szCTabT11_p36
+    | 37, _ => szCTabT11_p37
+    | 38, _ => szCTabT11_p38
+    | 39, _ => szCTabT11_p39
+    | 40, _ => szCTabT11_p40
+    | 41, _ => szCTabT11_p41
+    | 42, _ => szCTabT11_p42
+    | 43, _ => szCTabT11_p43
+    | 44, _ => szCTabT11_p44
+    | 45, _ => szCTabT11_p45
+    | 46, _ => szCTabT11_p46
+    | 47, _ => szCTabT11_p47
+    | 48, _ => szCTabT11_p48
+    | 49, _ => szCTabT11_p49
+    | 50, _ => szCTabT11_p50
+    | 51, _ => szCTabT11_p51
+    | 52, _ => szCTabT11_p52
+    | 53, _ => szCTabT11_p53
+    | 54, _ => szCTabT11_p54
+    | 55, _ => szCTabT11_p55
+    | 56, _ => szCTabT11_p56
+    | 57, _ => szCTabT11_p57
+    | 58, _ => szCTabT11_p58
+    | 59, _ => szCTabT11_p59
+    | 60, _ => szCTabT11_p60
+    | 61, _ => szCTabT11_p61
+    | 62, _ => szCTabT11_p62
+    | 63, _ => szCTabT11_p63
+    | 64, _ => szCTabT11_p64
+    | 65, _ => szCTabT11_p65
+    | 66, _ => szCTabT11_p66
+    | 67, _ => szCTabT11_p67
+    | 68, _ => szCTabT11_p68
+    | 69, _ => szCTabT11_p69
+    | 70, _ => szCTabT11_p70
+    | 71, _ => szCTabT11_p71
+    | 72, _ => szCTabT11_p72
+    | 73, _ => szCTabT11_p73
+    | 74, _ => szCTabT11_p74
+    | 75, _ => szCTabT11_p75
+    | 76, _ => szCTabT11_p76
+    | 77, _ => szCTabT11_p77
+    | 78, _ => szCTabT11_p78
+    | 79, _ => szCTabT11_p79
+    | 80, _ => szCTabT11_p80
+    | 81, _ => szCTabT11_p81
+    | 82, _ => szCTabT11_p82
+    | 83, _ => szCTabT11_p83
+    | 84, _ => szCTabT11_p84
+    | 85, _ => szCTabT11_p85
+    | 86, _ => szCTabT11_p86
+    | 87, _ => szCTabT11_p87
+    | _ + 88, hc => absurd hc (by omega)
 
 end Backend.Proof.CovT

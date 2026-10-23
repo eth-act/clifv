@@ -570,6 +570,26 @@ selectTypedB`, `InScopeInT2`, `fnScopeInFailsT2` (`fnScopeInTB`/`InScopeInT` unc
 `FVTest/E2E/FloatScopeT2.lean` (`fEntry`, `fSel`: each fails exactly one run-time check and the
 new typing check). `resClassOkB` never failed.
 
+**Slice 8, `emitCondsB` on the typed scope (FloatSzEmit2).** `emitCondsB` of `prepare`'s output is
+proven from the input on `fnScopeInTB2` plus one new input check, so `lowerOutTB`'s `emitCondsB`
+conjunct can be dropped once `bitcastWidthB` joins the scope: `E2E.emitConds_lowerT` (on `prepare
+vc`), `E2E.emitConds_cleanup_lowerT` (on `prepare (prune vc)`), `LinkCheck.emitCondsB_of_T2`,
+`emitCondsB_cleanup_of_T2` (`E2E/EmitCondsT.lean`; premises `Dominated`, `LowerScopeT`,
+`storeTypedB`, `selectTypedB`, `extendsWidenB`, `bitcastWidthB`, `sizeOkB`). The size bound: the
+V6c cost analysis on the typed V3 interpreter (`IselSzT{Defs,Sound,Ext}`, `CovT`), generated cost
+tables over `covTabT` (`IselSzTGen` → `IselSzTTab*`, rule 2267 on family 8 chunked by
+`IselSzTChunk`), the hand-checked call and `try_call` rules over `CtxT` (`IselSzCallT`: stack
+stores `argStoreC` of either class weigh 105) and `br_table` with its sub-runs from the typed
+tables (`IselSzBrTableG`), the driver `Driver.iselSzT : IselSzT f` (`IselSz` for `f`'s own
+terminators, which `termFam_of` needs), `size_lowerT` over `vcBlocksOfT` and
+`spillSizeOkB_of_sizeOkBT` (`E2E/SizeLowerT.lean`). The other three: the emission analysis on the
+same interpreter (`IselEmitT*`, `IselEmitTGen`), `Driver.iselEmitT : IselEmitT f`,
+`emitParts_lowerT` (`E2E/EmitCondsLowerT.lean`). New input condition `bitcastWidthB`
+(`IselEmitTDefs`: every `bitcast` between types of one width, the CLIF verifier's rule): without
+it `bitcast.f32` of an `i8` lowers to an unencodable `movToFpu .. size8` (rule 1083) and the
+statement is false. Witnesses `FVTest/E2E/EmitCondsTWitness.lean`,
+`FVTest/E2E/EmitCondsLowerTWitness.lean` (`fW`).
+
 **S11e5a (typed direct calls, on top of S11e4).** The lowering of a `call` is typed as
 Cranelift's: `gen_call_output` allocates one fresh vreg per ABI return of the return's class
 (`machinst/lower.rs:630`, `retClass`), `gen_call_args` places arguments by `sigArgLocs`

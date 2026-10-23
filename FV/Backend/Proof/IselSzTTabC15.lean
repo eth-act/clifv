@@ -1,4 +1,5 @@
 import FV.Backend.Proof.IselSzTTabData
+import FV.Backend.Proof.IselSzTChunk
 
 /-!
 # The size of the ISLE lowering's output over float-capable contexts (typed V6c): cost table entries, group 15
@@ -10,21 +11,111 @@ Every rule of every entry of these chunks is within the entry's bound.
 -/
 
 set_option maxRecDepth 100000
-set_option maxHeartbeats 4000000
+set_option maxHeartbeats 0
 set_option Elab.async false
 
 namespace Backend.Proof.CovT
 
 open Backend Backend.Proof Backend.Proof.Driver Isle Isle.Aarch64
 
-theorem tgCTabT4_ok : (tgCTabT4).all tgEntryOkT = true := by
-  simp only [tgCTabT4, List.all_cons, List.all_nil, Bool.and_eq_true, and_true]
-  repeat' apply And.intro
-  all_goals decide +kernel
+theorem tgCTabT4_len : (tgCTabT4).length ≤ 11 * 8 := by decide +kernel
 
-theorem tgCTabT5_ok : (tgCTabT5).all tgEntryOkT = true := by
-  simp only [tgCTabT5, List.all_cons, List.all_nil, Bool.and_eq_true, and_true]
-  repeat' apply And.intro
-  all_goals decide +kernel
+theorem tgCTabT4_p0 : (((tgCTabT4).drop (0 * 8)).take 8).all tgEntryOkT = true := by
+  decide +kernel
+
+theorem tgCTabT4_p1 : (((tgCTabT4).drop (1 * 8)).take 8).all tgEntryOkT = true := by
+  decide +kernel
+
+theorem tgCTabT4_p2 : (((tgCTabT4).drop (2 * 8)).take 8).all tgEntryOkT = true := by
+  decide +kernel
+
+theorem tgCTabT4_p3 : (((tgCTabT4).drop (3 * 8)).take 8).all tgEntryOkT = true := by
+  decide +kernel
+
+theorem tgCTabT4_p4 : (((tgCTabT4).drop (4 * 8)).take 8).all tgEntryOkT = true := by
+  decide +kernel
+
+theorem tgCTabT4_p5 : (((tgCTabT4).drop (5 * 8)).take 8).all tgEntryOkT = true := by
+  decide +kernel
+
+theorem tgCTabT4_p6 : (((tgCTabT4).drop (6 * 8)).take 8).all tgEntryOkT = true := by
+  decide +kernel
+
+theorem tgCTabT4_p7 : (((tgCTabT4).drop (7 * 8)).take 8).all tgEntryOkT = true := by
+  decide +kernel
+
+theorem tgCTabT4_p8 : (((tgCTabT4).drop (8 * 8)).take 8).all tgEntryOkT = true := by
+  decide +kernel
+
+theorem tgCTabT4_p9 : (((tgCTabT4).drop (9 * 8)).take 8).all tgEntryOkT = true := by
+  decide +kernel
+
+theorem tgCTabT4_p10 : (((tgCTabT4).drop (10 * 8)).take 8).all tgEntryOkT = true := by
+  decide +kernel
+
+theorem tgCTabT4_ok : (tgCTabT4).all tgEntryOkT = true :=
+  all_of_chunks _ _ 8 11 tgCTabT4_len fun c hc => match c, hc with
+    | 0, _ => tgCTabT4_p0
+    | 1, _ => tgCTabT4_p1
+    | 2, _ => tgCTabT4_p2
+    | 3, _ => tgCTabT4_p3
+    | 4, _ => tgCTabT4_p4
+    | 5, _ => tgCTabT4_p5
+    | 6, _ => tgCTabT4_p6
+    | 7, _ => tgCTabT4_p7
+    | 8, _ => tgCTabT4_p8
+    | 9, _ => tgCTabT4_p9
+    | 10, _ => tgCTabT4_p10
+    | _ + 11, hc => absurd hc (by omega)
+
+theorem tgCTabT5_len : (tgCTabT5).length ≤ 11 * 8 := by decide +kernel
+
+theorem tgCTabT5_p0 : (((tgCTabT5).drop (0 * 8)).take 8).all tgEntryOkT = true := by
+  decide +kernel
+
+theorem tgCTabT5_p1 : (((tgCTabT5).drop (1 * 8)).take 8).all tgEntryOkT = true := by
+  decide +kernel
+
+theorem tgCTabT5_p2 : (((tgCTabT5).drop (2 * 8)).take 8).all tgEntryOkT = true := by
+  decide +kernel
+
+theorem tgCTabT5_p3 : (((tgCTabT5).drop (3 * 8)).take 8).all tgEntryOkT = true := by
+  decide +kernel
+
+theorem tgCTabT5_p4 : (((tgCTabT5).drop (4 * 8)).take 8).all tgEntryOkT = true := by
+  decide +kernel
+
+theorem tgCTabT5_p5 : (((tgCTabT5).drop (5 * 8)).take 8).all tgEntryOkT = true := by
+  decide +kernel
+
+theorem tgCTabT5_p6 : (((tgCTabT5).drop (6 * 8)).take 8).all tgEntryOkT = true := by
+  decide +kernel
+
+theorem tgCTabT5_p7 : (((tgCTabT5).drop (7 * 8)).take 8).all tgEntryOkT = true := by
+  decide +kernel
+
+theorem tgCTabT5_p8 : (((tgCTabT5).drop (8 * 8)).take 8).all tgEntryOkT = true := by
+  decide +kernel
+
+theorem tgCTabT5_p9 : (((tgCTabT5).drop (9 * 8)).take 8).all tgEntryOkT = true := by
+  decide +kernel
+
+theorem tgCTabT5_p10 : (((tgCTabT5).drop (10 * 8)).take 8).all tgEntryOkT = true := by
+  decide +kernel
+
+theorem tgCTabT5_ok : (tgCTabT5).all tgEntryOkT = true :=
+  all_of_chunks _ _ 8 11 tgCTabT5_len fun c hc => match c, hc with
+    | 0, _ => tgCTabT5_p0
+    | 1, _ => tgCTabT5_p1
+    | 2, _ => tgCTabT5_p2
+    | 3, _ => tgCTabT5_p3
+    | 4, _ => tgCTabT5_p4
+    | 5, _ => tgCTabT5_p5
+    | 6, _ => tgCTabT5_p6
+    | 7, _ => tgCTabT5_p7
+    | 8, _ => tgCTabT5_p8
+    | 9, _ => tgCTabT5_p9
+    | 10, _ => tgCTabT5_p10
+    | _ + 11, hc => absurd hc (by omega)
 
 end Backend.Proof.CovT

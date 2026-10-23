@@ -14,7 +14,7 @@ weight (`actorW`) and the branch targets (`actorT`) they emit. The leaf-wise ker
 -/
 
 set_option maxRecDepth 100000
-set_option maxHeartbeats 4000000
+set_option maxHeartbeats 0
 set_option Elab.async false
 
 namespace Backend.Proof.CovT
