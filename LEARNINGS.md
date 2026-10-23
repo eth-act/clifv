@@ -105,6 +105,11 @@ None of these weaken what is proven: every compiler theorem still prints only `p
 ### Merge first, verify on main
 - When main moves faster than a full rebuild, a branch that passed its full checks on a recent main and rebases cleanly needs only a targeted build; a continuous main gate runs the full list afterwards and failures are fixed forward. A wrong merge can make main fail to build; it cannot make a false theorem pass, because the kernel checks every proof.
 
+### Batch ready branches into one gate run (merge train)
+- **Problem:** every PR author ran a full `FV FVTest` scheduler build plus the run-time gates, and the main gate repeated it per merged commit; with ~12 agents merging, the heavy lock serialised these runs (one main-gate run on `8b127ab0`, after a mid-level change: 277 min).
+- **Trick:** authors build only their changed modules and importers; MergeTrain merges every ready branch onto origin/main locally, runs `scripts/main-gate.sh run` once on that train, then squash-merges the PRs in order (stacked PRs rebased onto the previous squash) and checks that main's tree equals the train's. Real conflicts (shared registries such as `closure.rs`/`Closure.lean`/rcases arms) are dropped from the batch and composed separately.
+- **Effect (2026-10-23):** batch 1: 17 PRs in one gate run, 170 min wall (scheduler 3306/3306, 1100 built, 161 min, mostly `LowerSimT` dependents; the tail of exes, crate-proofs, 66 audit files and run-time gates: 9 min). Batch 2: 3 PRs in one run, 16 min (68 built, 10 min; tail 5 min). Gated separately, the `LowerSimT` rebuild is paid once either way, but every other PR needs its own run on the heavy lock: batch 2's 16 min (a warm run with a small change) is the measured lower bound per run, so ≈16 × 16 min ≈ 4.3 h saved for batch 1 and ≈ 2 × 16 min ≈ 0.5 h for batch 2 (estimate from these measured runs).
+
 ## Compiled checkers (`lean-link`, `link-check`)
 
 ### Hash maps behind a lookup parameter, not `List.lookup`/`P.func?` per element
