@@ -827,10 +827,18 @@ they are; the per-thread layers are new files.
         **`resume_premises_of_retEnd`**: all of them from the callee's `RetEnd`, given the callee's
         entry values = the caller's at the `bl` (`hr₀`), its entry `sp`, the return address and
         the callee's run keeping `RA.FK` (premises supplied by (2b)/(iv)); witness `resume_RX` (a
-        callee returning `42` in `x0`). Still open here: `hdef` from the call's operands,
-        `isel_resumeC`'s `PrefixHold` and the memory relation at the caller's slots; the epilogue's
-        Arm steps realized as a private segment (`CallLoadFull.realized_privSeg` with
-        `CallResume.rets_privP`); the two `rets` ends `arm_isel_refinesCR` leaves unresolved
+        callee returning `42` in `x0`). **Done since (`CallRetPremises.lean`, witness
+        `CallRetPremisesWitness.lean`)**: `defOps_eq`/`defPairs_locs` (a call with virtual def
+        registers has one fixed late def operand per def, in order; past `checkStatic` its def
+        locations are the def registers), **`hdef_of_static`**/**`hdef_of_q`** (`hdef` from the
+        static check / from `Q` at the `call` item), **`prefixHold_outs`** (`isel_resumeC`'s
+        `PrefixHold` from `RetEnd`'s returned values and `rets` uses, given the ABI agreement of
+        the callee's `rets` registers with the caller's def registers), **`relW_after_callee`**
+        (the memory relation at the caller's slots after the return from the caller's at the call
+        and the callee's `MemRel` at its `rets`, given the memory after the return has only
+        allocations live at the call), **`realized_rets`** (the epilogue up to the `ret` as a
+        private segment on any machine `AgreesAt` the activation); witnesses `defsC1_q`, `locsC1`,
+        `prefixHold_RX`, `relW_id`, `rets_RC`. Still open here: the two `rets` ends `arm_isel_refinesCR` leaves unresolved
         (layer 4b at `Done`/`AtCall` while layer 2 is at a done `return`) excluded;
         (iii) (2b) the callee's entry from the relations at the
         pause (`enterFunc`'s CLIF state under `ClifLift.pushC`, the arguments in x0… from the call's
