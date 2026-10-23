@@ -1845,7 +1845,7 @@ def Thm (κ : Nat → Clif.Function → Nat) (M : Nat) : Prop :=
     (rvals : List Clif.Val) (cm' : Clif.Mem), L.WorldEntry κ M g F vals cs w₀ →
     Clif.runLoop (L.envR M g) L.P.bare fuel cs = .returned rvals cm' →
     ∃ (us : List (Reg × Reg)) (outs : List CV) (wf : Arm.ArmState),
-      us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
+      RetPins rvals us ∧ us.length = outs.length ∧
       PrefixHold rvals outs ∧ MemRel F L.syms cm' wf ∧ (L.A g).vc.RetsSite us ∧
       (∀ G ra s, L.MachEntry κ M g F G ra s w₀ →
         ∃ n, ActRet ra F G us outs wf s (runX (L.mach M g) n s) ∧
@@ -2157,7 +2157,7 @@ theorem progCall (hL : L.Ok) [hR : L.CrunOk] {M : Nat} (hM : 0 < M) (ih : L.Thm 
     (hinit : Clif.initState L.P n vals cm = .ok cs)
     (hrun : L.crun M cs = .returned rvals cm') :
     ∃ (us : List (Reg × Reg)) (outs : List CV) (wf : Arm.ArmState),
-      us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
+      RetPins rvals us ∧ us.length = outs.length ∧
       PrefixHold rvals outs ∧ MemRel F L.syms cm' wf ∧ (L.A h).vc.RetsSite us ∧
       (∀ t, L.CallerOk F h uses w t → ∃ k,
         L.pcall M h t =

@@ -817,7 +817,7 @@ theorem term_step_abi (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
         Match f ctx R gn bl A MR slots s' vs') ∧
     (∀ vals cm, Clif.step env p s = .done vals cm →
       ∃ us outs w' sv, VRetFrom vc sem ⟨b, k, ρ, w⟩ us outs w' ∧
-        us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
+        RetPins vals us ∧ us.length = outs.length ∧
         s.frame.getMany (sretRet f) = .ok sv ∧ AllHold (vals ++ sv) outs ∧
         MR slots s.mem w' ∧ cm = (s.mem.free (slots.map (·.2))).leave) ∧
     (∀ c, Clif.step env p s = .trapped c → VTrapFrom vc sem ⟨b, k, ρ, w⟩ c) := by
@@ -1050,8 +1050,11 @@ theorem term_step_abi (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
     refine ⟨_, vuses ops ρ₁, w₂, vs, ⟨b, _, ρ₁', w₁, vb, ops.map (rnOp gn), outs, hstar, hvb, hi, hops,
       hvu.symm, by rw [← hvu]; exact hsem⟩, ?_, ?_, hvsS, hall,
       by simpa [fr', restrict, hslots] using hmr, by rw [hcm, hslots]⟩
-    · simp only [List.map_map, List.length_map]
-      exact hus
+    · have hvl : vs.length = (sretRet ctx.func).length := by
+        rw [H.shape.ctxInv.func]; exact (getMany_ok hvs0).1
+      unfold RetPins
+      simp only [List.map_map, List.length_map]
+      rw [hus, List.length_append, hvl, Nat.add_sub_cancel]
     · simp only [List.length_map]; rw [hlen]; exact hall.1
   | trap c =>
     rw [hT] at hrun' hstep
@@ -1095,7 +1098,7 @@ theorem term_step (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
         Match f ctx R gn bl A MR slots s' vs') ∧
     (∀ vals cm, Clif.step env p s = .done vals cm →
       ∃ us outs w', VRetFrom vc sem ⟨b, k, ρ, w⟩ us outs w' ∧
-        us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
+        RetPins vals us ∧ us.length = outs.length ∧
         PrefixHold vals outs ∧ MR slots s.mem w' ∧ cm = (s.mem.free (slots.map (·.2))).leave) ∧
     (∀ c, Clif.step env p s = .trapped c → VTrapFrom vc sem ⟨b, k, ρ, w⟩ c) := by
   obtain ⟨T1, T2, T3⟩ := term_step_abi H hm hbody hnt
@@ -2369,7 +2372,7 @@ variable {f : Clif.Function} {vc : VCode} {ctx : Ctx} {st0 : LState} {R : Reg �
 def RunOk (vc : VCode) (sem : ISem CV W) (MR : MemRelTW W) (slots : List (Clif.SlotId × Nat))
     (vs : VState CV W) : Clif.Outcome → Prop
   | .returned vals cm => ∃ us outs w cm0, VRetFrom vc sem vs us outs w ∧
-      us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
+      RetPins vals us ∧ us.length = outs.length ∧
       PrefixHold vals outs ∧ MR slots cm0 w ∧ cm = (cm0.free (slots.map (·.2))).leave
   | .trapped c => VTrapFrom vc sem vs c
   | .stuck _ | .outOfFuel => True
@@ -2389,7 +2392,7 @@ values at the `return`, which satisfy `Q`), all the use values held (`AllHold`).
 def RunOkAbi (vc : VCode) (sem : ISem CV W) (MR : MemRelTW W) (slots : List (Clif.SlotId × Nat))
     (Q : List Clif.Val → Prop) (vs : VState CV W) : Clif.Outcome → Prop
   | .returned vals cm => ∃ us outs w cm0 sv, VRetFrom vc sem vs us outs w ∧
-      us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
+      RetPins vals us ∧ us.length = outs.length ∧
       Q sv ∧ AllHold (vals ++ sv) outs ∧ MR slots cm0 w ∧ cm = (cm0.free (slots.map (·.2))).leave
   | .trapped c => VTrapFrom vc sem vs c
   | .stuck _ | .outOfFuel => True

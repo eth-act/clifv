@@ -30,7 +30,7 @@ theorem term_step_abiT (H : DriverHypT f vc ctx st0 R gn bl A sem MR env p)
         Match f ctx R gn bl A MR slots s' vs') ∧
     (∀ vals cm, Clif.step env p s = .done vals cm →
       ∃ us outs w' sv, VRetFrom vc sem ⟨b, k, ρ, w⟩ us outs w' ∧
-        us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
+        RetPins vals us ∧ us.length = outs.length ∧
         s.frame.getMany (sretRet f) = .ok sv ∧ AllHold (vals ++ sv) outs ∧
         MR slots s.mem w' ∧ cm = (s.mem.free (slots.map (·.2))).leave) ∧
     (∀ c, Clif.step env p s = .trapped c → VTrapFrom vc sem ⟨b, k, ρ, w⟩ c) := by
@@ -308,7 +308,7 @@ theorem term_stepRT (H : DriverHypT f vc ctx st0 R gn bl A sem MR env p)
         Match f ctx R gn bl A MR slots s' vs') ∧
     (∀ vals cm, Clif.step env p s = .done vals cm →
       ∃ us outs w', VRetFrom vc sem ⟨b, k, ρ, w⟩ us outs w' ∧
-        us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
+        RetPins vals us ∧ us.length = outs.length ∧
         PrefixHold vals outs ∧ MR slots s.mem w' ∧ cm = (s.mem.free (slots.map (·.2))).leave) ∧
     (∀ c, Clif.step env p s = .trapped c → VTrapFrom vc sem ⟨b, k, ρ, w⟩ c) := by
   obtain ⟨T1, T2, T3⟩ := term_step_abiT H hm hbody hnt

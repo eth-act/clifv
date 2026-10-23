@@ -91,47 +91,42 @@ theorem sretRet_eq_nil {f : Clif.Function}
     · rfl
   simp [this]
 
-/-- **The return registers of a return of `f`** with the CLIF values `vals` and the ABI return
-values pinned by `us` (`Rets`): for a function whose ABI returns include the struct pointer of
-an `sret` signature (`sigRets`), the CLIF values in x0, x1, … and the ABI returns after them
-(the struct pointer, `sretRet`) in **x8** (`retX`; Cranelift returns it there on aarch64,
-`isa/aarch64/abi.rs:255-270` in cranelift-codegen 0.135.0); for every other function every
-ABI return in x0, x1, … as before. -/
-def RetPins (f : Clif.Function) (vals : List Clif.Val) (us : List (Reg × Reg)) : Prop :=
-  us.map (·.2) = (List.range us.length).map
-    (retX (if (sigRets f.sig).any (·.purpose == .sret) then vals.length else us.length))
+/-- **The return registers of a return** with the CLIF values `vals` and the ABI return values
+pinned by `us` (`Rets`): the CLIF values in x0, x1, …, and the ABI returns after them (the struct
+pointer of an `sret` function, `sretRet`) in **x8** (`retX`; Cranelift returns it there on
+aarch64: `isa/aarch64/abi.rs:255-270`, `machinst/abi.rs:902`, `Lower::gen_return` in
+cranelift-codegen 0.135.0). A function without `sret` parameter returns its CLIF values only,
+all in x0, x1, … (`RetPins.ordinary`). -/
+def RetPins (vals : List Clif.Val) (us : List (Reg × Reg)) : Prop :=
+  us.map (·.2) = (List.range us.length).map (retX vals.length)
 
-/-- An ordinary function's returns are pinned to x0, x1, … (the former statement). -/
-theorem RetPins.ordinary {f : Clif.Function} {vals : List Clif.Val} {us : List (Reg × Reg)}
-    (h : RetPins f vals us) (ord : (sigRets f.sig).any (·.purpose == .sret) = false) :
-    us.map (·.2) = (List.range us.length).map Reg.x := by
-  unfold RetPins at h
-  simp only [ord, Bool.false_eq_true, ↓reduceIte] at h
-  rwa [map_retX_of_le (Nat.le_refl _)] at h
+/-- With no ABI return after the CLIF values, the returns are pinned to x0, x1, …. -/
+theorem RetPins.ordinary {vals : List Clif.Val} {us : List (Reg × Reg)} (h : RetPins vals us)
+    (hl : us.length ≤ vals.length) : us.map (·.2) = (List.range us.length).map Reg.x := by
+  rwa [RetPins, map_retX_of_le hl] at h
 
-theorem RetPins.of_ordinary {f : Clif.Function} {vals : List Clif.Val} {us : List (Reg × Reg)}
-    (h : us.map (·.2) = (List.range us.length).map Reg.x)
-    (ord : (sigRets f.sig).any (·.purpose == .sret) = false) : RetPins f vals us := by
-  unfold RetPins
-  simp only [ord, Bool.false_eq_true, ↓reduceIte]
-  rwa [map_retX_of_le (Nat.le_refl _)]
+theorem RetPins.of_ordinary {vals : List Clif.Val} {us : List (Reg × Reg)}
+    (h : us.map (·.2) = (List.range us.length).map Reg.x) (hl : us.length ≤ vals.length) :
+    RetPins vals us := by
+  rwa [RetPins, map_retX_of_le hl]
 
 /-- The register of the `j`-th ABI return. -/
-theorem RetPins.getElem {f : Clif.Function} {vals : List Clif.Val} {us : List (Reg × Reg)}
-    (h : RetPins f vals us) {j : Nat} (hju : j < us.length) :
-    (us[j]'hju).2 = retX (if (sigRets f.sig).any (·.purpose == .sret) then vals.length
-      else us.length) j := by
+theorem RetPins.getElem {vals : List Clif.Val} {us : List (Reg × Reg)} (h : RetPins vals us)
+    {j : Nat} (hju : j < us.length) : (us[j]'hju).2 = retX vals.length j := by
   have := congrArg (fun l => l[j]?) h
   simp only [List.getElem?_map, List.getElem?_range hju, List.getElem?_eq_getElem hju,
     Option.map_some] at this
   exact Option.some.inj this
 
 /-- **A CLIF return value is in x`j`.** -/
-theorem RetPins.x {f : Clif.Function} {vals : List Clif.Val} {us : List (Reg × Reg)}
-    (h : RetPins f vals us) {j : Nat} (hjv : j < vals.length) (hju : j < us.length) :
-    (us[j]'hju).2 = Reg.x j := by
-  rw [h.getElem hju]
-  split <;> exact retX_lt ‹_›
+theorem RetPins.x {vals : List Clif.Val} {us : List (Reg × Reg)} (h : RetPins vals us) {j : Nat}
+    (hjv : j < vals.length) (hju : j < us.length) : (us[j]'hju).2 = Reg.x j := by
+  rw [h.getElem hju, retX_lt hjv]
+
+/-- `RetPins` depends on the CLIF values only through their number. -/
+theorem RetPins.congr {vals vals' : List Clif.Val} {us : List (Reg × Reg)} (h : RetPins vals us)
+    (hl : vals.length = vals'.length) : RetPins vals' us := by
+  rwa [RetPins, ← hl]
 
 /-- Relation between the CLIF memory (with the activation's slot bases) and a VCode world of
 type `W` (the driver is generic in the world: agent/link-widen, stage 2, runs it on pairs of

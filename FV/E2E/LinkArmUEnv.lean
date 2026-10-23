@@ -375,7 +375,7 @@ def ThmU (κ : Nat → Clif.Function → Nat) (M : Nat) : Prop :=
     (∀ (rvals : List Clif.Val) (cm' : Clif.Mem),
       Clif.runLoopX (L.envRX M g) L.P.bare fuel cs.toX = .returned rvals cm' →
       ∃ (us : List (Reg × Reg)) (outs : List CV) (wf : Arm.ArmState),
-        us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
+        RetPins rvals us ∧ us.length = outs.length ∧
         PrefixHold rvals outs ∧ MemRel F L.syms cm' wf ∧ (L.A g).vc.RetsSite us ∧
         (∀ G ra s, L.MachEntry κ M g F G ra s w₀ →
           ∃ n, ActRet ra F G us outs wf s (runX (L.machU M g) n s) ∧
@@ -427,7 +427,7 @@ def ThmUQ (Q : Nat → Clif.Function → Arm.ArmState → Prop) (κ : Nat → Cl
     (∀ (rvals : List Clif.Val) (cm' : Clif.Mem),
       Clif.runLoopX (L.envRX M g) L.P.bare fuel cs.toX = .returned rvals cm' →
       ∃ (us : List (Reg × Reg)) (outs : List CV) (wf : Arm.ArmState),
-        us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
+        RetPins rvals us ∧ us.length = outs.length ∧
         PrefixHold rvals outs ∧ MemRel F L.syms cm' wf ∧ (L.A g).vc.RetsSite us ∧
         (∀ G ra s, L.MachEntry κ M g F G ra s w₀ →
           ∃ n, ActRet ra F G us outs wf s (runX (L.machU M g) n s) ∧
