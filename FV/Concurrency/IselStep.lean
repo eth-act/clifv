@@ -238,6 +238,72 @@ theorem vstep_of_vtrun {vc : VCode} {sem : ISem CV ArmState}
   rw [confMem_self, e0] at h1
   exact vstep_of_starN h1 hE hle
 
+/-! ## Stopping before the end of a forward run: not at a `rets` (#473) -/
+
+/-- The VCode configuration is at a `rets` instruction. -/
+def VAtRets {V W : Type} (vc : VCode) (c : VConf V W) : Prop :=
+  ∃ b k ρ w vb us, c = .run ⟨b, k, ρ, w⟩ ∧ vc.blocks[b]? = some vb ∧
+    vb.insts[k]? = some (.rets us)
+
+/-- A semantics whose `rets` returns. -/
+def RetsRet {V W : Type} (sem : ISem V W) : Prop :=
+  ∀ us u w r, sem (.rets us) u w = some r → r.2.2 = .ret
+
+/-- A configuration at a `rets` steps to a return. -/
+theorem vstep_rets_ret {V W : Type} {vc : VCode} {sem : ISem V W} (hret : RetsRet sem)
+    {c c' : VConf V W} (hat : VAtRets vc c) (hs : VStep vc sem c c') : ∃ v w, c' = .ret v w := by
+  obtain ⟨b, k, ρ, w, vb, us, rfl, hvb, hi⟩ := hat
+  cases hs with
+  | step hvb' hi' hops hsem hlen hnext =>
+    rw [hvb] at hvb'; cases hvb'
+    rw [hi] at hi'; cases hi'
+    have hc := hret _ _ _ _ hsem
+    simp only at hc
+    subst hc
+    cases hnext with
+    | ret _ => exact ⟨_, _, rfl⟩
+
+/-- No counted run leads from a return to a running configuration. -/
+theorem starN_ret_run {V W : Type} {vc : VCode} {sem : ISem V W} {n : Nat} {v : List V} {w : W}
+    {s : VState V W} (h : StarN (VStep vc sem) n (.ret v w) (.run s)) : False := by
+  cases h with
+  | step _ h' _ => cases h'
+
+/-- **`vstep_of_starN` towards a running configuration, not at a `rets`**: where the shorter run
+stops before the end, its configuration steps and is not at a `rets` (a `rets` steps to a
+return, from which no running configuration is reached). -/
+theorem vstep_of_starNR {V W : Type} {vc : VCode} {sem : ISem V W} (hret : RetsRet sem)
+    {n L : Nat} {c0 cT : VConf V W} {sE : VState V W} (hT : StarN (VStep vc sem) n c0 cT)
+    (hE : StarN (VStep vc sem) L c0 (.run sE)) (hle : n ≤ L) :
+    ((∃ c', VStep vc sem cT c') ∧ ¬ VAtRets vc cT) ∨ (n = L ∧ cT = .run sE) := by
+  obtain ⟨mid, hA, hB⟩ := StarNP.split n (L - n) (by rw [Nat.add_sub_cancel' hle]; exact hE)
+  have e := vstepN_det hT hA
+  subst e
+  generalize hd : L - n = d at hB
+  cases hB with
+  | refl => exact .inr ⟨by omega, rfl⟩
+  | step _ h hrest =>
+    refine .inl ⟨⟨_, h⟩, fun hat => ?_⟩
+    obtain ⟨v, w, rfl⟩ := vstep_rets_ret hret hat h
+    exact starN_ret_run hrest
+
+/-- **`vstep_of_vtrun` towards a running configuration, not at a `rets`.** -/
+theorem vstep_of_vtrunR {vc : VCode} {sem : ISem CV ArmState} (hret : RetsRet sem)
+    {ev : MInst → List CV → ArmState → List Ev} {L : Nat} {c0 cT : VConf CV ArmState}
+    {sE : VState CV ArmState} {tr : List (List Ev)} (hr : VTRun vc sem ev c0 tr cT)
+    (he : ∀ e ∈ tr, e = []) (hE : StarN (VStep vc sem) L c0 (.run sE)) (hle : tr.length ≤ L) :
+    ((∃ c', VStep vc sem cT c') ∧ ¬ VAtRets vc cT) ∨ (tr.length = L ∧ cT = .run sE) := by
+  obtain ⟨h1, h2⟩ := vtrun_nil_starN hr he (confW c0).mem
+  have e0 : confMem (confW c0).mem cT = cT := by rw [← h2]; exact confMem_self cT
+  rw [confMem_self, e0] at h1
+  exact vstep_of_starNR hret h1 hE hle
+
+theorem retsRet_csem (F : BitVec 64 → Prop) (fc : FnCtx) (X : ExtSem) : RetsRet (csem F fc X) := by
+  intro us u w r h
+  simp only [csem, Option.some.injEq] at h
+  subst h
+  rfl
+
 /-- A segment that stops at instruction `k`: `k` counted steps to it, within the segment
 (`seqRun_stop_star`). -/
 theorem seqRun_stop_starN {V W : Type} {vc : VCode} {sem : ISem V W} {b : Nat} {vb : VBlock}
