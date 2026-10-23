@@ -152,9 +152,15 @@ list scans repeated per element, not in the compiler. Fixed, statements unchange
 `lean-link --dead-cleanup --verified` on the lib test's region (28550 functions, 25868 data
 objects): **2 h 26 min → 11 min 55 s** (715 s, max RSS 2.3 GB; run while two `link-check`s used
 other cores). Without `--lean-link` (the default merge mode) and with `--no-binary-check`,
-`--build-std` costs minutes (survey below: 6 min). `link-check` (the per-executable binary
-check, `okB` with `--prune`) still scans per function (`List.lookup` in `LinkInput.addrOf`,
-`indToB` per `blr` site × `P`, `raCallB` per call × table): next part of T3d.
+`--build-std` costs minutes (survey below: 6 min). `link-check --dead-cleanup --prune` (the
+per-executable binary check, `okB`) on the same region: hash maps (`LinkCheckFast`,
+`BinCheckFast`), one task per function for the pipelines, the routing recovery and the static
+checks (`Link.parMap`), and the symbol map of the stack bound built once (`budMapFast`; inside the
+edge lambda it was rebuilt per candidate edge of every indirect caller): did not finish in 67 min
+before (killed) → **5 min 19 s** (static checks 52 s, `okB` 166 s, binary checks 5 s, code map
+20 s, stack bound 65 s; max RSS 1.2 GB; okB/binary/code map ok, 0 dropped). Output on the fv-demo
+and survey non-std bundles (22 executables, with and without `--dead-cleanup --prune`) equals
+main's up to the timing lines.
 
 ### 2.3 Survey
 
@@ -265,8 +271,8 @@ dumped by T3b, see §4), std's float fallbacks (S11), and the per-executable exc
 * **T3c (done)**: `--verified` with `--build-std`: per-executable exclusion of the functions
   failing a per-function condition (§2.1). Widening `indB`/`callScopeB` (stack arguments in
   indirect calls; with S5) would shrink the exclusions.
-* **T3d**: `lean-link` scaling to ~30k functions: done (hash maps, §2.2: 2 h 26 min → 12 min);
-  `link-check` (the binary check) still to do.
+* **T3d (done)**: `lean-link` and `link-check` scaling to ~30k functions (hash maps, §2.2:
+  `lean-link` 2 h 26 min → 12 min, `link-check` >67 min → 5 min 19 s).
 * **T3e**: release-profile and survey/examples/deps measurements with `--build-std` in the
   per-PR gate list once T3c/T3d make it affordable.
 * Floats in std: S11 (Floats11).
