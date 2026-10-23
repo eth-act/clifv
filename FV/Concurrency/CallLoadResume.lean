@@ -1,4 +1,5 @@
 import FV.Concurrency.CallLoadFull
+import FV.Concurrency.CallResumeQ
 
 /-!
 # The compiled caller's whole run through the compiled `atomic_load` (T2j follow-up, #473)
@@ -25,53 +26,6 @@ namespace Concurrency.CallSeg
 
 open Arm ArmFoot ArmThread Prog ClifThread ProgE2E Backend Backend.Proof VCodeThread PrepThread
   AllocThread ThreadRefine ArmAllocThread E2E ArmInstFoot CallThread
-
-/-- **`Q` at the item after a call, when the callee returned** (module doc): from `Q` at the call
-item and a state `y` at the address after the call's `bl`/`blr`, without error, with the call's
-`sp`, its program, and the activation's addresses (`R.F`: its frame, its code, the kept addresses)
-as at the call; the store is the one `y` holds, the world `y`. -/
-theorem resumeQ {R : RL} (hR : R.Wf) {s y : ArmState} {b k : Nat} {allocs : Array Loc}
-    {its : List RItem} {m : Loc → CV} {w : ArmState}
-    (hq : Q R s (.run ⟨b, .op k allocs :: its, m, w⟩)) {vb : VBlock} {info : CallInfo}
-    (hvb : R.vc.blocks[b]? = some vb) (hi : vb.insts[k]? = some (.call info))
-    (hpc : Arm.r .PC y = Arm.r .PC s + 4#64) (herr : Arm.r .ERR y = .None)
-    (hsp : spOf y = spOf s) (hmem : ∀ a, R.F a → y.mem a = s.mem a)
-    (hprog : y.program = s.program) :
-    Q R y (.run ⟨b, its, locVal R.fr y, y⟩) := by
-  obtain ⟨j0, items, pre, regs, i', c1, c2, ls1, ls2, ps1, psm, ps2, T, cc, wh, ops, -, hit, hsplit,
-    hasg, hc1', -, -, hchk', hc2, h1, h2, htr, hdrop, hpc0, hst⟩ := q_op hq hvb hi
-  obtain ⟨ic, rfl⟩ := assign_call_form hasg
-  obtain rfl : c1 = [.inst (.call ic)] := by
-    rcases hc1' with ⟨h, -, -⟩ | ⟨_, h, -⟩ | ⟨_, h, -⟩
-    · exact h
-    · cases h
-    · cases h
-  obtain ⟨x, hl, hx⟩ : ∃ x, (∀ ps, (MInst.call ic).lines R.ctx ps = .ok ([.ins x none], ps)) ∧
-      ((∃ n, x = .bl n) ∨ (∃ r, x = .blr r)) := by
-    cases hd : ic.dest with
-    | sym n => exact ⟨.bl n, fun ps => by simp [MInst.lines, hd, pure, Except.pure], .inl ⟨n, rfl⟩⟩
-    | reg r => exact ⟨.blr r, fun ps => by simp [MInst.lines, hd, pure, Except.pure], .inr ⟨r, rfl⟩⟩
-  have h1' := codeLinesE_single h1
-  rw [hl ps1] at h1'
-  simp only [Except.ok.injEq, Prod.mk.injEq] at h1'
-  obtain ⟨rfl, -⟩ := h1'
-  have hft : ftList ([Line.ins x none] ++ (ls2 ++ nxtOf R.af b)) =
-      [Line.ins x none] ++ ftList (ls2 ++ nxtOf R.af b) := by
-    rw [List.singleton_append, ftList_cons, ftStep_call hx]; rfl
-  have hrl : relaxLines R.far [Line.ins x none] = [Line.ins x none] := by
-    rw [relaxLines_cons, relaxLine_of_none (by rcases hx with ⟨_, rfl⟩ | ⟨_, rfl⟩ <;> rfl)]; rfl
-  have hj : R.L[j0]? = some (.ins x none) := by
-    have hd := hdrop
-    rw [hft, relaxLines_append, hrl] at hd
-    exact drop_get (Z := []) (by rw [hd]; rfl)
-  refine q_next hvb hit hsplit hchk' hc2 h2 htr hdrop hft ?_ ?_
-  · rw [hrl, List.length_singleton, pcOf_succ hj, hpc, hpc0]; rfl
-  · refine ⟨fun l _ _ => rfl, SameWorld.refl _ _, herr, hprog.trans hst.prog, hsp.trans hst.sp,
-      align_of_sp hsp hst.align, fun hframe => ?_, ?_, fun a ha => ?_⟩
-    · rw [← hst.fplr hframe]
-      exact read_mem_bytes_congr _ _ fun k hk => hmem _ (RL.FK_F (fplr_inF hR hframe k hk))
-    · exact code_keep hR.prog0 hst.code fun a ha => hmem a (RL.FK_F (.inl (.inr (.inr ha))))
-    · rw [hmem a (RL.FK_F (.inr ha))]; exact hst.gkeep a ha
 
 /-- **A private segment of the single-core path of `R` realizes event-free CLIF steps** for a
 larger private set (`realized_privSeg` with `PrivA R ⊆ Priv`). -/
