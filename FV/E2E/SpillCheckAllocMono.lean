@@ -64,7 +64,8 @@ theorem sub_filter {x y : AState} (h : Sub x y) (p : Sym → Bool) :
 
 theorem sub_define {x y : AState} (h : Sub x y) (l : Loc) (s : Sym) :
     Sub (x.define l s) (y.define l s) :=
-  sub_put (sub_filter h _) l fun _ hs => hs
+  by rw [AState.define, AState.remove_eq, AState.define, AState.remove_eq]
+     exact sub_put (sub_filter h _) l fun _ hs => hs
 
 theorem sub_defineAll : ∀ (ds : List (Operand × Loc)) {x y : AState}, Sub x y →
     Sub (defineAll x ds) (defineAll y ds)
@@ -89,7 +90,7 @@ theorem sub_transferOp {x y : AState} (h : Sub x y) (i : MInst) (P : List (Opera
   unfold transferOp
   split
   · exact h1
-  · exact sub_filter h1 _
+  · simp only [forgetDefs_eq]; exact sub_filter h1 _
 
 theorem sub_parCopy {x y : AState} (h : Sub x y) (ps xs : List Nat) :
     Sub (x.parCopy ps xs) (y.parCopy ps xs) := by
@@ -231,7 +232,7 @@ theorem sub_edgeForget {b s : Nat} {x y : AState} (h : Sub x y) :
     Sub (c.edgeForget b s x) (c.edgeForget b s y) := by
   obtain ⟨os, hos⟩ := edgeForget_eq c b s
   rw [hos, hos]
-  exact sub_filter h _
+  rw [forgetOps_eq, forgetOps_eq]; exact sub_filter h _
 
 theorem edgeCopy_mono {b s : Nat} {x x' y : AState} (h : c.edgeCopy b s x = .ok x')
     (hs : Sub x y) : ∃ y', c.edgeCopy b s y = .ok y' ∧ Sub x' y' := by
@@ -313,8 +314,9 @@ theorem good_filter {K N : Nat} {a : AState} (h : Good K N a) (p : Sym → Bool)
 
 theorem good_define {K N : Nat} {a : AState} (h : Good K N a) (l : Loc) {s : Sym}
     (hs : SymIn K s) : Good K N (a.define l s) :=
-  good_put (good_filter h _) l ⟨List.pairwise_singleton _ s, fun t ht => by
-    rw [List.mem_singleton.mp ht]; exact hs⟩
+  by rw [AState.define, AState.remove_eq]
+     exact good_put (good_filter h _) l ⟨List.pairwise_singleton _ s, fun t ht => by
+       rw [List.mem_singleton.mp ht]; exact hs⟩
 
 theorem good_defineAll {K N : Nat} : ∀ (ds : List (Operand × Loc)) {a : AState}, Good K N a →
     (∀ d ∈ ds, d.1.vreg < K) → Good K N (defineAll a ds)
@@ -339,7 +341,7 @@ theorem good_transferOp {K N : Nat} {a : AState} (h : Good K N a) (i : MInst)
   unfold transferOp
   split
   · exact h1
-  · exact good_filter h1 _
+  · simp only [forgetDefs_eq]; exact good_filter h1 _
 
 /-- A `filterMap` over `ps.zip xs` producing only `.vreg p` from a pair `(p, x)` produces
 distinct parameters. -/
@@ -455,7 +457,7 @@ theorem edge_good {K N : Nat} {b s : Nat} {y y' : AState} (h : c.edge b s y = .o
     (hK : ∀ sb, c.vc.blocks[s]? = some sb → ParamsBelow K sb) (hg : Good K N y) :
     Good K N y' := by
   obtain ⟨os, hos⟩ := edgeForget_eq c b s
-  have hg1 : Good K N (c.edgeForget b s y) := by rw [hos]; exact good_filter hg _
+  have hg1 : Good K N (c.edgeForget b s y) := by rw [hos, forgetOps_eq]; exact good_filter hg _
   unfold CheckCtx.edge CheckCtx.edgeCopy at h
   generalize c.edgeForget b s y = z at h hg1
   split at h
