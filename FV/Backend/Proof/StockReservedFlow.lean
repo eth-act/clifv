@@ -8,6 +8,8 @@ namespace Backend.Stock.Proof.ReservedFlow
 attribute [local irreducible] Isle.Aarch64.program
 set_option maxRecDepth 4096
 open Backend.Proof Backend.Proof.Driver Backend.Proof.Flow Isle Isle.Interp Isle.Aarch64
+-- Lean 4.35's `whnf` needs more heartbeats for the concrete `rfl`/`decide` runs below.
+set_option maxHeartbeats 2000000
 
 section FlowM
 variable (ctx : Ctx) (ii lo : Nat)
