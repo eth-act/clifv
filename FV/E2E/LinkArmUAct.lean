@@ -39,9 +39,9 @@ theorem envX_keepsAllocs (hU : L.OkU) (hA : L.NeedSlots ∨
 
 /-- **The activation's environment keeps the oracle** without the slot-byte oracle (the linked
 environment's externs: the base's, and the callee runs, whole-program runs with unwinding). -/
-theorem envRX_keepsPlace (hL : L.Ok) (hU : L.OkU) [hR : L.CrunOkX] (hN : L.NeedSlots) (M : Nat)
+theorem envRX_keepsPlace0 (hL : L.Ok) (hU : L.OkU) [hR : L.CrunOkX] (hN : L.NeedSlots) (M : Nat)
     (g : Clif.Function) : Clif.XEnvKeepsPlace0 (L.envRX M g) := by
-  have hk := Clif.linkEnvRX_keepsPlace (P := L.P) (env := L.envX) (R := L.crunX M)
+  have hk := Clif.linkEnvRX_keepsPlace0 (P := L.P) (env := L.envX) (R := L.crunX M)
     (fun s o h hc => hR.runs M s o h (by
       rcases hc with ⟨v, m, rfl⟩ | ⟨e, m, rfl⟩
       · exact .inl ⟨v, m, rfl⟩
@@ -74,7 +74,7 @@ theorem actInvX_step (hL : L.Ok) (hU : L.OkU) [L.CrunOkX] {M : Nat} {g : Clif.Fu
       obtain ⟨n, G, vals, hG, hu⟩ := Clif.raiseAt_extern hr
       refine ⟨sps, ?_⟩
       show mem.place = _
-      rw [(L.envRX_keepsPlace hL hU hN M g n G hG vals xs.s.mem
+      rw [(L.envRX_keepsPlace0 hL hU hN M g n G hG vals xs.s.mem
         (fun pl h => by rw [hp] at h; cases h; rfl)).2 e mem hu, hp]
     · rw [hc] at h; simp [Clif.unwindFrom] at h
   · cases hst : Clif.step (L.envRX M g).toEnv L.P.bare xs.s with
@@ -91,7 +91,7 @@ theorem actInvX_step (hL : L.Ok) (hU : L.OkU) [L.CrunOkX] {M : Nat} {g : Clif.Fu
       · show s1.mem.place = _
         rw [hpl', hp]
       · show s1.mem.place = _
-        rw [(L.envRX_keepsPlace hL hU hN M g).toEnv n G hG vals xs.s.mem rv s1.mem
+        rw [(L.envRX_keepsPlace0 hL hU hN M g).toEnv n G hG vals xs.s.mem rv s1.mem
           (fun pl h => by rw [hp] at h; cases h; rfl) hr, hp]
       · rw [hc1] at hcc; cases hcc
       · rw [hc] at hcc; cases hcc

@@ -10,7 +10,8 @@ pointers off the slot-placement oracle (`unwindFrom`), as a return does.
 * `XEnvKeepsPlace`/`XEnvKeepsAllocs`: externs that keep the oracle / create no allocation, also
   when they unwind.
 * `runLoopX_place`, `runLoopX_placeNone`: a returning or unwinding whole-program run gives back
-  the oracle of its entry; `linkEnvRX_keepsPlace`: so the linked environment keeps the oracle.
+  the oracle of its entry; `linkEnvRX_keepsPlace0`: so the linked environment keeps the oracle
+  (on memories without the slot-byte oracle).
 * `runLoopX_allocs`: a returning or unwinding whole-program run creates no allocation.
 * `trapsExplicitX_of_returned`/`_of_unwound`: a returning or unwinding run of a program without
   functions satisfies the run premises `TrapsExplicitX`.
@@ -44,7 +45,7 @@ theorem XEnvKeepsPlace.toEnv {env : XEnv} (h : XEnvKeepsPlace env) :
   exact (h n g0 hg0 vals m).1 rvals m' (toOutcome_returned hr)
 
 /-- `XEnvKeepsPlace` on the memories without the slot-byte oracle (`Place.init = none`): what a
-linked environment keeps (`linkEnvRX_keepsPlace`), whose program callees advance the slot-byte
+linked environment keeps (`linkEnvRX_keepsPlace0`), whose program callees advance the slot-byte
 oracle. -/
 def XEnvKeepsPlace0 (env : XEnv) : Prop :=
   ∀ n g, env.extern n = some g → ∀ vals m, (∀ pl, m.place = some pl → pl.init = none) →
@@ -341,12 +342,12 @@ theorem initState_placeNone {P : Program} {n : String} {vals : List Val} {m : Me
   simp only [initState, Res.bind_eq_ok, Res.ofOption_eq_ok, Res.pure_eq_ok] at hi
   obtain ⟨g, -, ⟨fr, mem'⟩, he, rfl⟩ := hi
   obtain ⟨_, _, _, _, _, _, hal, -⟩ := Opt.enterFunc_ok he
-  have := (enterSlots_place g m).1 hm
+  have := (enterSlots_place_init g m).1 hm
   rwa [hal] at this
 
 /-- **The linked environment with unwinding keeps the oracle** without the slot-byte oracle (the
 program's functions' runs give it back, also when they unwind) when the base externs keep it. -/
-theorem linkEnvRX_keepsPlace {P : Program} {env : XEnv} {R : State → XOutcome}
+theorem linkEnvRX_keepsPlace0 {P : Program} {env : XEnv} {R : State → XOutcome}
     (hR : ∀ s o, R s = o → ((∃ vals mem, o = .returned vals mem) ∨ ∃ e mem, o = .unwound e mem) →
       ∃ N, runLoopX env P N s.toX = o)
     (hP : ∀ g ∈ P.funcs, LinkFree g) (hk : XEnvKeepsPlace env) :

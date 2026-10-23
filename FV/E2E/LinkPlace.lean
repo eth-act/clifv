@@ -68,9 +68,10 @@ theorem placeSlots_facts (sp : BitVec 64) (off : SlotId → Nat) :
       · exact .inl hx'
     · exact .inr hx'
 
-/-- Entering a function pushes a stack pointer on the slot-placement oracle (an activation with
-slots advances its slot-byte oracle `Place.init`, which an absent oracle or no slots keep). -/
-theorem enterSlots_place (f : Function) (mem : Mem) :
+/-- Entering a function pushes a stack pointer on the slot-placement oracle, also under the
+slot-byte oracle `Place.init` (an activation with slots advances it, which an absent oracle or no
+slots keep). -/
+theorem enterSlots_place_init (f : Function) (mem : Mem) :
     (mem.place = none → (enterSlots f mem).2.place = none) ∧
     ∀ pl, mem.place = some pl → ∃ sp ini, (enterSlots f mem).2.place =
       some { pl with sps := sp :: pl.sps, init := ini } ∧
@@ -102,12 +103,15 @@ theorem enterSlots_place (f : Function) (mem : Mem) :
             · cases hc
             · simp [hc] at hs
 
-/-- Entering a function pushes a stack pointer on the slot-placement oracle without the
-slot-byte oracle. -/
-theorem enterSlots_place_none (f : Function) {mem : Mem} {pl : Place} (h : mem.place = some pl)
-    (hi : pl.init = none) : ∃ sp, (enterSlots f mem).2.place = some { pl with sps := sp :: pl.sps } := by
-  obtain ⟨sp, ini, hsp, hini⟩ := (enterSlots_place f mem).2 pl h
-  exact ⟨sp, by rw [hsp, hini (.inl hi)]⟩
+/-- Entering a function pushes a stack pointer on the slot-placement oracle (without the
+slot-byte oracle `Place.init`). -/
+theorem enterSlots_place (f : Function) (mem : Mem)
+    (hi : ∀ pl, mem.place = some pl → pl.init = none) :
+    (mem.place = none → (enterSlots f mem).2.place = none) ∧
+    ∀ pl, mem.place = some pl → ∃ sp, (enterSlots f mem).2.place = some { pl with sps := sp :: pl.sps } := by
+  refine ⟨(enterSlots_place_init f mem).1, fun pl h => ?_⟩
+  obtain ⟨sp, ini, hsp, hini⟩ := (enterSlots_place_init f mem).2 pl h
+  exact ⟨sp, by rw [hsp, hini (.inl (hi pl h))]⟩
 
 /-- The allocations after entering a function: the former ones and its slots. -/
 theorem enterSlots_allocs (f : Function) (mem : Mem) :
@@ -336,7 +340,7 @@ theorem placeInv_step {P : Program} (hP : ∀ g ∈ P.funcs, LinkFree g) {env : 
     · exact ⟨l, by rw [hpl, hl], by rw [hc, hlen]⟩
     · exact ⟨l, by rw [hk n g hg vals s.mem rv s1.mem hr, hl], by rw [hc, hlen]⟩
     · obtain ⟨_, _, _, _, _, _, hal, -⟩ := Opt.enterFunc_ok he
-      obtain ⟨sp, hsp⟩ := enterSlots_place_none g hl rfl
+      obtain ⟨sp, hsp⟩ := (enterSlots_place g s.mem (fun pl h => by rw [hl] at h; cases h; rfl)).2 _ hl
       rw [hal] at hsp
       exact ⟨sp :: l, hsp, by rw [hc]; simp [hlen]⟩
     · rw [hc] at hlen
@@ -392,7 +396,7 @@ theorem placeNone_step {P : Program} (hP : ∀ g ∈ P.funcs, LinkFree g) {env :
     · rw [hpl, hp]
     · rw [hk n g hg vals s.mem rv s1.mem hr, hp]
     · obtain ⟨_, _, _, _, _, _, hal, -⟩ := Opt.enterFunc_ok he
-      have := (enterSlots_place g s.mem).1 hp
+      have := (enterSlots_place_init g s.mem).1 hp
       rwa [hal] at this
     · rw [hm]; simp only [Mem.leave, Mem.free, hp]
   · obtain ⟨-, hm⟩ := step_done_mem hP hI h
@@ -425,14 +429,14 @@ theorem initState_place {P : Program} {n : String} {vals : List Val} {cm : Mem} 
   simp only [initState, Res.bind_eq_ok, Res.ofOption_eq_ok, Res.pure_eq_ok] at hi
   obtain ⟨g, -, ⟨fr, mem'⟩, he, rfl⟩ := hi
   obtain ⟨_, _, _, _, _, _, hal, -⟩ := Opt.enterFunc_ok he
-  obtain ⟨sp, hsp⟩ := enterSlots_place_none g hp hi0
+  obtain ⟨sp, hsp⟩ := (enterSlots_place g cm (fun pl' h => by rw [hp] at h; cases h; exact hi0)).2 _ hp
   rw [hal] at hsp
   obtain ⟨sps, frm, i⟩ := pl
   cases hi0
   exact ⟨[sp], hsp, rfl⟩
 
 /-- The externs keep the slot-placement oracle on the memories without the slot-byte oracle
-(`Place.init = none`): what a linked environment keeps (`linkEnvR_keepsPlace`), whose program
+(`Place.init = none`): what a linked environment keeps (`linkEnvR_keepsPlace0`), whose program
 callees advance the slot-byte oracle. -/
 def EnvKeepsPlace0 (env : Env) : Prop :=
   ∀ n g, env.extern n = some g → ∀ vals m rvals m', (∀ pl, m.place = some pl → pl.init = none) →
@@ -440,7 +444,7 @@ def EnvKeepsPlace0 (env : Env) : Prop :=
 
 /-- **The linked environment keeps the oracle** without the slot-byte oracle (the program's
 functions' runs give it back) when the base externs keep it. -/
-theorem linkEnvR_keepsPlace {P : Program} {base : Env} {R : State → Outcome}
+theorem linkEnvR_keepsPlace0 {P : Program} {base : Env} {R : State → Outcome}
     (hR : RunsOf base P R) (hP : ∀ g ∈ P.funcs, LinkFree g)
     (hk : EnvKeepsPlace base) : EnvKeepsPlace0 (linkEnvR P base R) := by
   intro n gsem hg vals m rvals m' hm0 hr
@@ -477,7 +481,7 @@ theorem linkEnvR_keepsPlace {P : Program} {base : Env} {R : State → Outcome}
             simp only [Res.ok_bind, Res.pure_eq, Res.ok.injEq] at hi
             subst hi
             obtain ⟨_, _, _, _, _, _, hal, -⟩ := Opt.enterFunc_ok he
-            have := (enterSlots_place g m).1 hmp
+            have := (enterSlots_place_init g m).1 hmp
             rwa [hal] at this
           | trap => rw [he] at hi; cases hi
           | stuck => rw [he] at hi; cases hi
@@ -491,9 +495,9 @@ theorem linkEnvR_keepsPlace {P : Program} {base : Env} {R : State → Outcome}
     | trap c => rw [hi] at hr; cases hr
     | stuck msg => rw [hi] at hr; cases hr
 
-theorem linkEnvN_keepsPlace {P : Program} {base : Env} {M : Nat} (hP : ∀ g ∈ P.funcs, LinkFree g)
+theorem linkEnvN_keepsPlace0 {P : Program} {base : Env} {M : Nat} (hP : ∀ g ∈ P.funcs, LinkFree g)
     (hk : EnvKeepsPlace base) : EnvKeepsPlace0 (linkEnvN P base M) :=
-  linkEnvR_keepsPlace (runsOf_runLoop base P M) hP hk
+  linkEnvR_keepsPlace0 (runsOf_runLoop base P M) hP hk
 
 /-! ## The allocations on returning runs -/
 

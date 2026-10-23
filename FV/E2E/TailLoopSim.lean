@@ -252,13 +252,14 @@ def names (s : State) : List String := s.frame.func.name :: s.callers.map (·.1.
 entering its function pushed (vacuous without the oracle). -/
 def SpsOk (s : State) : Prop := ∀ pl, s.mem.place = some pl → Chain pl.frame (names s) pl.sps
 
-theorem enterSlots_sps (f : Function) (mem : Mem) :
+/-- `enterSlots_sps` also under the slot-byte oracle `Place.init` (which it may advance). -/
+theorem enterSlots_sps_init (f : Function) (mem : Mem) :
     (mem.place = none → (enterSlots f mem).2.place = none) ∧
     ∀ pl, mem.place = some pl → ∃ ini,
-      (enterSlots f mem).2.place = some { pl with sps := spOf pl.frame f.name pl.sps :: pl.sps,
-        init := ini } := by
-  refine ⟨(enterSlots_place f mem).1, fun pl h => ?_⟩
-  obtain ⟨sp, ini, hsp, -⟩ := (enterSlots_place f mem).2 pl h
+      (enterSlots f mem).2.place =
+        some { pl with sps := spOf pl.frame f.name pl.sps :: pl.sps, init := ini } := by
+  refine ⟨(enterSlots_place_init f mem).1, fun pl h => ?_⟩
+  obtain ⟨sp, ini, hsp, -⟩ := (enterSlots_place_init f mem).2 pl h
   refine ⟨ini, ?_⟩
   rw [hsp]
   cases hf : pl.frame f.name with
@@ -281,20 +282,46 @@ theorem enterSlots_sps (f : Function) (mem : Mem) :
       | none => exact ⟨_, rfl⟩
       | some i =>
         by_cases hs : f.slots.isEmpty
-        · exact ⟨_, by simp only [initPlace, hs, if_true]⟩
-        · exact ⟨_, by simp only [initPlace, hs, Option.map_some, Place.advance]; rfl⟩
+        · exact ⟨some i, by simp only [initPlace, hs, if_true]⟩
+        · exact ⟨some i.succ, by simp only [initPlace, hs, Option.map_some, Place.advance]; rfl⟩
     obtain ⟨ini', e2⟩ := e2
     rw [hsp] at e2
     simp only [Option.some.injEq, Place.mk.injEq] at e2
     simp only [spOf, hf, e2.1]
 
-theorem enterFunc_sps {f : Function} {vals : List Val} {mem mem1 : Mem} {fr1 : Frame}
+theorem enterSlots_sps (f : Function) (mem : Mem)
+    (hi : ∀ pl, mem.place = some pl → pl.init = none) :
+    (mem.place = none → (enterSlots f mem).2.place = none) ∧
+    ∀ pl, mem.place = some pl →
+      (enterSlots f mem).2.place = some { pl with sps := spOf pl.frame f.name pl.sps :: pl.sps } := by
+  refine ⟨(enterSlots_sps_init f mem).1, fun pl h => ?_⟩
+  obtain ⟨ini, e⟩ := (enterSlots_sps_init f mem).2 pl h
+  obtain ⟨sp, ini', hsp, hini⟩ := (enterSlots_place_init f mem).2 pl h
+  have hx : ini = pl.init := by
+    rw [hsp] at e
+    have := congrArg (fun o => o.map Place.init) e
+    simp only [Option.map_some, Option.some.injEq] at this
+    rw [← this]; exact hini (.inl (hi pl h))
+  rw [e, hx]
+
+/-- `enterFunc_sps` also under the slot-byte oracle `Place.init` (which it may advance). -/
+theorem enterFunc_sps_init {f : Function} {vals : List Val} {mem mem1 : Mem} {fr1 : Frame}
     (h : enterFunc f vals mem = .ok (fr1, mem1)) :
     (mem.place = none → mem1.place = none) ∧
     ∀ pl, mem.place = some pl → ∃ ini,
       mem1.place = some { pl with sps := spOf pl.frame f.name pl.sps :: pl.sps, init := ini } := by
   obtain ⟨_, _, _, _, _, _, he, _⟩ := Opt.enterFunc_ok h
-  have := enterSlots_sps f mem
+  have := enterSlots_sps_init f mem
+  rw [he] at this
+  exact this
+
+theorem enterFunc_sps {f : Function} {vals : List Val} {mem mem1 : Mem} {fr1 : Frame}
+    (h : enterFunc f vals mem = .ok (fr1, mem1)) (hi : ∀ pl, mem.place = some pl → pl.init = none) :
+    (mem.place = none → mem1.place = none) ∧
+    ∀ pl, mem.place = some pl →
+      mem1.place = some { pl with sps := spOf pl.frame f.name pl.sps :: pl.sps } := by
+  obtain ⟨_, _, _, _, _, _, he, _⟩ := Opt.enterFunc_ok h
+  have := enterSlots_sps f mem hi
   rw [he] at this
   exact this
 
@@ -514,9 +541,9 @@ theorem sps_enter {c : Function} {vals : List Val} {mem mem1 : Mem} {fr1 : Frame
     ∀ pl, mem1.place = some pl → Chain pl.frame (c.name :: ns) pl.sps := by
   intro pl1 h1
   cases hm : mem.place with
-  | none => rw [(enterFunc_sps he).1 hm] at h1; cases h1
+  | none => rw [(enterFunc_sps_init he).1 hm] at h1; cases h1
   | some pl =>
-    obtain ⟨ini, e⟩ := (enterFunc_sps he).2 pl hm
+    obtain ⟨ini, e⟩ := (enterFunc_sps_init he).2 pl hm
     rw [e] at h1; cases h1; exact ⟨rfl, hc pl hm⟩
 
 theorem sps_leave {mem : Mem} {bs : List Nat} {n : String} {ns : List String}

@@ -3868,7 +3868,7 @@ theorem actInv_step (hL : L.Ok) [hR : L.CrunOk] {M : Nat} {g : Clif.Function} (h
   rcases Clif.step_next_cases hPf hI hs with ⟨-, -, ⟨hpl', -⟩ | ⟨n, G, vals, rv, hG, hr⟩⟩ |
     ⟨cc, hcc, -⟩ | ⟨cc, hcc, -⟩
   · rw [hpl', hp]
-  · rw [Clif.linkEnvR_keepsPlace (hR.runs M) hL.free (hL.baseKeepsPlace hN) n G hG vals s.mem rv
+  · rw [Clif.linkEnvR_keepsPlace0 (hR.runs M) hL.free (hL.baseKeepsPlace hN) n G hG vals s.mem rv
       s1.mem (fun pl h => by rw [hp] at h; cases h; rfl) hr, hp]
   · rw [hc1] at hcc; cases hcc
   · rw [hc] at hcc; cases hcc
