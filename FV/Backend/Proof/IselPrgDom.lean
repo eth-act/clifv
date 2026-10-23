@@ -25,7 +25,8 @@ helper or a constructor never meets a value it does not handle.
 * `idata`: the `InstructionData` of an E instruction of the function;
 * `op k n`: an operand of kind `k` (`OpOk`: e.g. a stack slot the frame has, a function
   reference to a declared callee with a supported signature, `n` its ABI returns; for the
-  exception table of a `try_call` in its lowering context (`exnTry`), `n` its item count);
+  exception table of a `try_call` in its lowering context (`exnTry`), `n` its item count; the
+  float immediates `fpModImm`/`movModImm` of the typed scope's float constants);
 * `any`: no information; `bot`: no value.
 -/
 
@@ -40,7 +41,7 @@ inductive OK where
   | imm12 | immLogic | immShift | uimm5 | uimm6 | simm9 | uimm12Scaled | shiftAmt | mwc | nzcv
   | memFlags | trapCode | stackSlot | funcRef | funcRefTry | globalValue | tlsGlobalValue | sig | sigTry
   | extName | callArgs | callRets | callInfo | extended | jumpTable | tryCallNone | exnTable
-  | exnTry | tryCallInfo | unit
+  | exnTry | tryCallInfo | unit | fpModImm | movModImm
   deriving DecidableEq, Repr, Inhabited, BEq, Hashable
 
 /-- Abstract ISLE values (meaning: `γ`). -/
@@ -123,6 +124,8 @@ def OpOk : OK → Option Nat → Opnd → Prop
   | .exnTry, n, o => ∃ s items, o = .exnTable s items ∧ SigOk s ∧
       ctx.tryRegs.1.length = (sigRets s).length ∧ (n = none ∨ n = some items.length)
   | .tryCallInfo, _, o => ∃ x, o = .tryCallInfo x
+  | .fpModImm, _, o => ∃ i, o = .fpModImm i
+  | .movModImm, _, o => ∃ i, o = .movModImm i
   | .unit, _, o => o = .unit
 
 mutual
