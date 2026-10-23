@@ -556,6 +556,38 @@ theorem Q.qs_op {R : RL} {s : Arm.ArmState} {b k : Nat} {allocs : Array Loc} {it
     rw [ht] at this
     cases this
 
+/-- `Q` at an `op` of an instruction before the block's last is `Qs`. -/
+theorem Q.qs_lt {R : RL} {s : Arm.ArmState} {b k : Nat} {allocs : Array Loc} {its : List RItem}
+    {m : Loc → CV} {w : Arm.ArmState} (h : Q R s (.run ⟨b, .op k allocs :: its, m, w⟩))
+    {vb : VBlock} (hvb : R.vc.blocks[b]? = some vb) (hk : k + 1 < vb.insts.size) :
+    Qs R s b (.op k allocs :: its) m w := by
+  rcases Q.cases h with h | ⟨vb', _, _, i', _, _, hvb', he, -, -, hins, -⟩
+  · exact h
+  · rw [hvb] at hvb'
+    cases hvb'
+    simp only [RItem.op.injEq] at he
+    obtain ⟨rfl, -⟩ := he
+    rw [hins] at hk
+    simp at hk
+
+/-- Checked items after an `op` of an instruction before the block's last are not empty. -/
+theorem ItemsChecked.tail_ne {R : RL} {vb : VBlock} {k : Nat} {allocs : Array Loc}
+    {its : List RItem} (h : ItemsChecked R vb (.op k allocs :: its)) (hk : k + 1 < vb.insts.size) :
+    its ≠ [] := by
+  obtain ⟨c, k0, a, out, -, -, hrun⟩ := h
+  obtain ⟨-, rfl, _, _, _, _, _, _, h'⟩ := runItems_op hrun
+  rintro rfl
+  have := (runItems_nil h').1
+  omega
+
+/-- Under `Q`, the remaining items are a suffix of the block's items. -/
+theorem Q.split {R : RL} {s : Arm.ArmState} {b : Nat} {its : List RItem} {m : Loc → CV}
+    {w : Arm.ArmState} (h : Q R s (.run ⟨b, its, m, w⟩)) :
+    ∃ items pre, R.rf.blocks[b]? = some items ∧ items.toList = pre ++ its := by
+  rcases h with ⟨_, _, items, pre, _, _, _, _, _, _, -, hit, hsplit, -⟩ | ⟨items, hit, rfl, -⟩
+  · exact ⟨items, pre, hit, hsplit⟩
+  · exact ⟨items, [], hit, rfl⟩
+
 end Backend.Proof
 
 namespace Backend.Proof

@@ -142,7 +142,7 @@ theorem aInv_step {R : RL} (hR : R.Wf) {s : Arm.ArmState} {c c' : MConf CV Arm.A
   | @move b src dst its m w =>
     intro hb hop
     subst hb
-    obtain ⟨j, vb, items, pre, -, -, -, -, -, -, hit, hsplit, -⟩ := hq
+    obtain ⟨items, pre, hit, hsplit⟩ := hq.split
     obtain ⟨hmv, hrd⟩ := ctlCheck_before hck hit hsplit hop
     have hA' := hA rfl (by obtain ⟨a, ha⟩ := hop; exact ⟨a, List.mem_cons_of_mem _ ha⟩)
     intro r hr
@@ -155,7 +155,7 @@ theorem aInv_step {R : RL} (hR : R.Wf) {s : Arm.ArmState} {c c' : MConf CV Arm.A
     | next =>
       intro hb hop
       subst hb
-      obtain ⟨j, vb0, items, pre, -, -, -, -, -, -, hit, hsplit, -⟩ := hq
+      obtain ⟨items, pre, hit, hsplit⟩ := hq.split
       have := (ctlCheck_before hck hit hsplit hop).1
       simp [RItem.isMove] at this
     | goto _ hs _ =>
@@ -271,9 +271,6 @@ theorem realizes_args {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {alloc
   obtain ⟨rfl, rfl, hds⟩ := ctlCheck_args hck hvb hi
   obtain ⟨ns, rfl, hns⟩ := argPairsC_of (fun p hp => (hds p hp).1)
   have hops := operands_argsC ns
-  obtain ⟨j, vb0, items, pre, code, ls, ps1, ps2, T, hvb0, hit, hsplit, hchk, hcode, hls, htr, hdrop,
-    hpc, hst⟩ := hq
-  rw [hvb] at hvb0; cases hvb0
   have hAO := hA rfl ⟨allocs, by simp⟩
   cases h with
   | @op b k allocs its m w vb' i ops outs outs' w' ctl m2 c' hvb' hi' hops' hsz hsem hlen hho hcl hn =>
@@ -286,6 +283,9 @@ theorem realizes_args {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {alloc
   obtain ⟨rfl, rfl, rfl⟩ := hsem'
   cases hn with
   | next hk =>
+  obtain ⟨j, vb0, items, pre, code, X, ps1, psm, ps2, x, hvb0, hit, hsplit, hchk, hcode, hX, hT,
+    htr, hdrop, hpc, hst, hx, hsc⟩ := Q.qs_lt hq hvb hk
+  rw [hvb] at hvb0; cases hvb0
   obtain ⟨c1, c2, hc1, hc2, rfl⟩ := itemsCode_cons hcode
   obtain ⟨regs, i0, i', rfl, hi0, hasg, hc1'⟩ := itemCode_op hc1
   rw [hi] at hi0; cases hi0
@@ -338,7 +338,8 @@ theorem realizes_args {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {alloc
       exact hAO q.2.2 ⟨vb, argPairsC ns, hvb, hi, .vreg q.1 q.2.1, by
         simp only [argPairsC, List.mem_map]; exact ⟨q, hq, rfl⟩⟩
   rw [hself]
-  exact ⟨j, vb, items, pre ++ [.op 0 (regs.map Loc.reg)], c2, ls, ps1, ps2, T, hvb, hit,
-    by rw [hsplit]; simp, hchk', hc2, by simpa [codeLinesE] using hls, htr, hdrop, hpc, hst⟩
+  exact .inl ⟨j, vb, items, pre ++ [.op 0 (regs.map Loc.reg)], c2, X, ps1, psm, ps2, x, hvb, hit,
+    by rw [hsplit]; simp, hchk', hc2, by simpa using hX, by simpa using hT, htr, hdrop, hpc, hst,
+    hx, hsc⟩
 
 end Backend.Proof

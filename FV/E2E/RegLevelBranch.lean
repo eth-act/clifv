@@ -296,8 +296,11 @@ theorem qs_entry {R : RL} (hR : R.Wf) {t : Nat} {vb : VBlock} {items : Array RIt
   have hPL : planLines R.fa.k R.af = p.lines := by simp [planLines, hp]
   have hRL : R.L = relaxLines R.far p.lines := hL
   -- the block's label line
+  have e : p.lines = (A ++ [Line.label (.block sg.label)] ++ (sg.body ++ o)) ++
+      (segLines (p.segs.drop (i + 1)) (p.outs.drop (i + 1)) ++ trapLines p.ps) := by
+    rw [hA]; simp
   have hlbl : p.lines[A.length]? = some (.label (.block vb.label)) := by
-    rw [hA, ← hlab]; exact getElem?_mid _ _ _
+    rw [hA, ← hlab, List.append_assoc, List.cons_append]; exact getElem?_mid _ _ _
   have r1 := relax_label (F := R.far) hlbl
   rw [← hRL] at r1
   have hj : jl = rix R.far p.lines A.length := labelOffsets_uniq hR.lm hjl r1.1
@@ -306,9 +309,13 @@ theorem qs_entry {R : RL} (hR : R.Wf) {t : Nat} {vb : VBlock} {items : Array RIt
     (sg, o, A.length + 1 + sg.body.length + o.length), hvb, hit, rfl,
     itemsChecked_block hR hvb hit, hcode, e1, e2, by rw [← hps]; exact hpre, ?_, ?_, hst, hX,
     segChecked_of hp hX (by rw [hlab]; exact ho)⟩
-  · rw [hPL, hRL, relax_drop, relax_drop, ← relaxLines_append, hA]
-    congr 1
-    simp [List.drop_append]
+  · have d1 : p.lines.drop (A.length + 1) = (sg.body ++ o) ++
+        (segLines (p.segs.drop (i + 1)) (p.outs.drop (i + 1)) ++ trapLines p.ps) := by
+      rw [e, List.append_assoc]; exact List.drop_left' (by simp)
+    have d2 : p.lines.drop (A.length + 1 + sg.body.length + o.length) =
+        segLines (p.segs.drop (i + 1)) (p.outs.drop (i + 1)) ++ trapLines p.ps := by
+      rw [e]; exact List.drop_left' (by simp; omega)
+    rw [hPL, hRL, relax_drop, relax_drop, d1, d2, relaxLines_append]
   · rw [hpc, r1.2]
     simp only [RL.pcOf]
     rw [lineOffset_succ _ _ _ r1.1]

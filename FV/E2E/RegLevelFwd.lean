@@ -138,11 +138,11 @@ theorem plan_seg_label_inj {k : Nat} {af : AFunc} {fa : FnAsm} (h : emitFunc k a
     have e2 : p.lines[P1 + 1 + (s1.body ++ o1).length + A'.length]? =
         some (.label (.block s1.label)) := by
       rw [hlines, he, ← hP1]
-      rw [List.getElem?_append_right (by simp; omega)]
+      rw [List.getElem?_append_right (by simp <;> omega)]
       simp only [List.length_append, List.length_cons]
       rw [show A.length + 1 + (s1.body.length + o1.length) + A'.length - A.length =
         (s1.body.length + o1.length + A'.length) + 1 by omega, List.getElem?_cons_succ]
-      rw [List.getElem?_append_right (by simp; omega)]
+      rw [List.getElem?_append_right (by simp <;> omega)]
       simp only [List.length_append]
       rw [show s1.body.length + o1.length + A'.length - (s1.body.length + o1.length) = A'.length
         by omega]
@@ -201,14 +201,18 @@ theorem fwd?_spec {af : AFunc} {s x : Label} (h : af.fwd? s = some x) :
     simp only [beq_iff_eq] at hp
     subst hp
     rw [List.mem_zipIdx_iff_getElem?] at hm
+    have hi : (i == 0) = false := by
+      cases e : (i == 0)
+      · rfl
+      · simp [e] at h
+    simp only [hi, Bool.false_eq_true, ite_false] at h
     split at h
-    · cases h
-    · rename_i hi
+    · rename_i y hc
       split at h
-      · rename_i y hc
-        split at h
-        · cases h
-        · cases h
+      · cases h
+      · cases h
+        exact ⟨i, code, by simpa using hm, by simpa using hi, hc⟩
+    · cases h
   · cases h
 
 /-- A move's code is not empty and branches nowhere. -/
@@ -259,7 +263,8 @@ theorem moveInsts_shape {fr : RAFrame} {src dst : Loc} {l : List AInst}
 /-- An item's code in a block without `Args`: not empty; a `jump` comes only from an `op` whose
 instruction branches to the same block. -/
 theorem itemCode_jump {fr : RAFrame} {vb : VBlock} {it : RItem} {c : List AInst}
-    (hna : ∀ k ds, vb.insts[k]? ≠ some (.args ds)) (h : itemCode fr vb it = .ok c) :
+    (hna : ∀ (k : Nat) (ds : List (Reg × Reg)), vb.insts[k]? ≠ some (MInst.args ds))
+    (h : itemCode fr vb it = .ok c) :
     c ≠ [] ∧ ∀ x, AInst.inst (.jump x) ∈ c → ∃ k allocs regs i, it = .op k allocs ∧
       allocs = regs.map Loc.reg ∧ vb.insts[k]? = some i ∧ i.assign regs = .ok (.jump x) ∧
       i.targets = [x] ∧ c = [.inst (.jump x)] := by
@@ -288,7 +293,8 @@ theorem itemCode_jump {fr : RAFrame} {vb : VBlock} {it : RItem} {c : List AInst}
       exact absurd hi (hna k ds')
     · exact ⟨by simp, fun x hx => by simp at hx⟩
 
-theorem itemsCode_nil_of {fr : RAFrame} {vb : VBlock} (hna : ∀ k ds, vb.insts[k]? ≠ some (.args ds)) :
+theorem itemsCode_nil_of {fr : RAFrame} {vb : VBlock}
+    (hna : ∀ (k : Nat) (ds : List (Reg × Reg)), vb.insts[k]? ≠ some (MInst.args ds)) :
     ∀ {its : List RItem}, itemsCode fr vb its = .ok [] → its = []
   | [], _ => rfl
   | it :: its, h => by
@@ -299,7 +305,8 @@ theorem itemsCode_nil_of {fr : RAFrame} {vb : VBlock} (hna : ∀ k ds, vb.insts[
 /-- **The items of a block whose code is one `jump`** (a block without `Args`): one `op` of its
 last instruction, which branches to the jump's target. -/
 theorem items_jump {fr : RAFrame} {vb : VBlock} {cc : CheckCtx} {out : AState} {x : Label}
-    (hna : ∀ k ds, vb.insts[k]? ≠ some (.args ds)) {its : List RItem} {n : Nat} {a : AState}
+    (hna : ∀ (k : Nat) (ds : List (Reg × Reg)), vb.insts[k]? ≠ some (MInst.args ds))
+    {its : List RItem} {n : Nat} {a : AState}
     (hrun : cc.runItems vb n its a = .ok out) (hc : itemsCode fr vb its = .ok [.inst (.jump x)]) :
     ∃ allocs regs i, its = [.op n allocs] ∧ allocs = regs.map Loc.reg ∧ vb.insts[n]? = some i ∧
       i.assign regs = .ok (.jump x) ∧ i.targets = [x] ∧ vb.insts.size = n + 1 := by
@@ -309,44 +316,16 @@ theorem items_jump {fr : RAFrame} {vb : VBlock} {cc : CheckCtx} {out : AState} {
     obtain ⟨c1, c2, h1, h2, he⟩ := itemsCode_cons hc
     obtain ⟨hne, hj⟩ := itemCode_jump hna h1
     obtain ⟨rfl, rfl⟩ : c1 = [.inst (.jump x)] ∧ c2 = [] := by
-      cases c1 with
-      | nil => exact absurd rfl hne
-      | cons a c1 =>
-        simp only [List.cons_append, List.cons.injEq, List.append_eq_nil_iff] at he
-        obtain ⟨rfl, rfl, rfl⟩ := he
-        exact ⟨rfl, rfl⟩
+      obtain ⟨a0, c1', rfl⟩ := List.exists_cons_of_ne_nil hne
+      simp only [List.cons_append, List.cons.injEq] at he
+      obtain ⟨rfl, he⟩ := he
+      obtain ⟨rfl, rfl⟩ := List.append_eq_nil_iff.mp he.symm
+      exact ⟨rfl, rfl⟩
     obtain ⟨k, allocs, regs, i, rfl, hal, hi, hasg, htg, -⟩ := hj x (by simp)
     obtain rfl := itemsCode_nil_of hna h2
     have hk : k = n ∧ vb.insts.size = n + 1 := by
-      simp only [CheckCtx.runItems, ensure, bind, Except.bind] at hrun
-      split at hrun
-      · rename_i hn
-        split at hn
-        · rename_i hne'
-          split at hrun
-          · rename_i hk
-            split at hk
-            · rename_i hk'
-              split at hrun
-              · cases hrun
-              · rw [hi] at hrun
-                simp only at hrun
-                split at hrun
-                · cases hrun
-                · split at hrun
-                  · cases hrun
-                  · split at hrun
-                    · rename_i hz
-                      split at hz
-                      · rename_i hz'
-                        simp only [beq_iff_eq, bne_iff_ne, ne_eq] at hk' hz'
-                        exact ⟨hk', by omega⟩
-                      · cases hz
-                    · cases hrun
-            · cases hk
-          · cases hrun
-        · cases hn
-      · cases hrun
+      obtain ⟨-, hkn, _, _, _, _, _, _, h'⟩ := runItems_op hrun
+      exact ⟨hkn, (runItems_nil h').1.symm⟩
     obtain ⟨rfl, hsz⟩ := hk
     exact ⟨allocs, regs, i, rfl, hal, hi, hasg, htg, hsz⟩
 
@@ -454,9 +433,11 @@ theorem RL.fwd_block {R : RL} (hR : R.Wf) {s x : Label} (h : R.af.fwd? s = some 
   obtain ⟨hl, rfl⟩ := ha
   simp only [List.toList_toArray] at hcode
   subst hcode
-  have hna : ∀ k ds, vb.insts[k]? ≠ some (.args ds) := fun k ds e =>
+  have hna : ∀ (k : Nat) (ds : List (Reg × Reg)), vb.insts[k]? ≠ some (MInst.args ds) := fun k ds e =>
     hb0 (ctlCheck_args hck hvb e).1
-  have hrunOf : ∀ t vt, R.vc.blocks[t]? = some vt → ∃ its a out, R.rf.blocks[t]? = some its ∧
+  have hrunOf : ∀ (t : Nat) (vt : VBlock), R.vc.blocks[t]? = some vt →
+      ∃ (its : Array RItem) (a out : AState),
+      R.rf.blocks[t]? = some its ∧
       cc.runItems vt 0 its.toList a = .ok out := by
     intro t vt hvt
     obtain ⟨a, out, -, hrb, -⟩ :=
