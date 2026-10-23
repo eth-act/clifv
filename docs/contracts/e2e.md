@@ -1239,7 +1239,9 @@ oracle `Clif.Mem.place` (`none`: the bump allocator; `some`: a callee's slots at
 frame's addresses below the caller's `sp`). `hpl` picks, for the reference CLIF run, the
 placement the compiled code uses — one legitimate CLIF behaviour among those the source allows —
 so that a callee's slot accesses and the caller's view of its dead stack refer to the same
-bytes. It is vacuous without program callees with slots (`NeedSlots`).
+bytes. It is vacuous without program callees with slots (`NeedSlots`). `PlaceAt` pins the
+slot-byte oracle `Place.init` (SEM1) to `none`: callee slots start uninitialised in every
+existing statement.
 
 **Widening** (agent/link-widen):
 
