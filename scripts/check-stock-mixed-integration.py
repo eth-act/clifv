@@ -67,10 +67,10 @@ def proof_order(directory, prefix="Mixed"):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", required=True, type=Path)
-    parser.add_argument("--class", dest="kind", choices=["mixed", "logical", "scalar", "not", "mul", "shift", "cast", "bit", "popcount", "minmax", "cmp", "highmul", "div", "mixeddiv"], default="mixed")
+    parser.add_argument("--class", dest="kind", choices=["mixed", "logical", "scalar", "not", "mul", "shift", "cast", "bit", "popcount", "minmax", "cmp", "highmul", "div", "mixeddiv", "returneddiv"], default="mixed")
     parser.add_argument("--fixture-mode", choices=["native", "interpreted"], default="interpreted")
     options = parser.parse_args()
-    prefix = {"scalar": "ScalarProduction", "not": "NotProduction", "mul": "MulProduction", "shift": "ShiftProduction", "cast": "CastProduction", "bit": "BitProduction", "popcount": "PopcountProduction", "minmax": "MinMaxProduction", "cmp": "CmpProduction", "highmul": "HighMulProduction", "div": "DivProduction", "mixeddiv": "MixedDivProduction"}.get(options.kind, options.kind.capitalize())
+    prefix = {"scalar": "ScalarProduction", "not": "NotProduction", "mul": "MulProduction", "shift": "ShiftProduction", "cast": "CastProduction", "bit": "BitProduction", "popcount": "PopcountProduction", "minmax": "MinMaxProduction", "cmp": "CmpProduction", "highmul": "HighMulProduction", "div": "DivProduction", "mixeddiv": "MixedDivProduction", "returneddiv": "ReturnedDivProduction"}.get(options.kind, options.kind.capitalize())
     view = Path(__file__).resolve().parents[1]
     output = options.output.resolve()
     if output == view or view in output.parents:
@@ -84,7 +84,7 @@ def main():
                for p in (view / folder).rglob("*.lean")}
     script_hash = sha(Path(__file__).resolve())
     records = {}
-    native_names = {"popcount": "stock-popcount", "minmax": "stock-minmax", "cmp": "stock-cmp", "highmul": "stock-highmul", "div": "stock-div", "mixeddiv": "stock-mixed-div"}
+    native_names = {"popcount": "stock-popcount", "minmax": "stock-minmax", "cmp": "stock-cmp", "highmul": "stock-highmul", "div": "stock-div", "mixeddiv": "stock-mixed-div", "returneddiv": "stock-returned-div"}
     native_fixtures = options.fixture_mode == "native" and options.kind in native_names
     if options.fixture_mode == "native" and not native_fixtures:
         parser.error("No registered native fixture targets for this class")
