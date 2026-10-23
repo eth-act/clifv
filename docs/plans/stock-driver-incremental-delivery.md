@@ -329,3 +329,12 @@ All four sinking matches are excluded and complete helper execution retains
 the sunk array regardless of result demand. This closes an interpreter dependency,
 not production activation. Continue source-derived contexts and full driver
 retention before unused/consumed/multiple-division activation; full #140 remains.
+
+The arbitrary scalar/division source prerequisite passes fresh current-main author
+gates. [Source/driver receipt](../research/stock-general-div-source.md) records
+source-derived complete unsunkness independent of demand, actual result binding,
+guarded body/entry return and trap composition, and complete critical-edge/source
+witnesses. Old consumers and theorem variants stay. Next immediately activate
+unused/consumed/multiple divisions through the existing shared production route;
+then continue every original #140 obligation. This prerequisite is not production
+activation or whole-goal completion.
