@@ -44,9 +44,9 @@ namespace Backend
 /-- An instruction after allocation. `inst` holds only real registers. -/
 inductive AInst where
   | inst (m : MInst)
-  /-- `stp x29, x30, [sp, #-16]!; mov x29, sp; sub sp, sp, #frameSize` -/
+  /-- `stp x29, x30, [sp, #-16]!; mov x29, sp`, the pushes of `AFunc.saves`, `sub sp` -/
   | prologue
-  /-- `mov sp, x29; ldp x29, x30, [sp], #16; ret` -/
+  /-- `add sp`, the pops of `AFunc.saves`, `ldp x29, x30, [sp], #16; ret` -/
   | epilogueRet
   deriving Repr, Inhabited, BEq
 
@@ -62,7 +62,30 @@ structure AFunc where
   `fp`): `prologue` emits nothing and `epilogueRet` only `ret`, as Cranelift does when
   `preserve_frame_pointers` is off. -/
   frame : Bool := true
+  /-- The callee-saved registers the prologue pushes and the epilogue pops (`prologueLines`),
+  in `calleeSaved` order; their slots form the top `clobberBytes saves` bytes of the frame. -/
+  saves : List Reg := []
   deriving Inhabited
+
+/-- The int registers of a save list (x19–x28). -/
+def savesInt (saves : List Reg) : List Reg := saves.filter fun | .x _ => true | _ => false
+
+/-- The float registers of a save list (v8–v15). -/
+def savesFloat (saves : List Reg) : List Reg := saves.filter fun | .v _ => true | _ => false
+
+/-- Bytes of `n` registers pushed 8 bytes each in 16-byte steps (`compute_clobber_size`). -/
+def pushBytes (n : Nat) : Nat := 8 * (n + n % 2)
+
+/-- The size of the clobber area (`compute_clobber_size`). -/
+def clobberBytes (saves : List Reg) : Nat :=
+  pushBytes (savesInt saves).length + pushBytes (savesFloat saves).length
+
+/-- Offset of the save slot of `r` from the bottom of the clobber area (floats first, then
+ints; 8 bytes each). -/
+def clobberOff (saves : List Reg) (r : Reg) : Nat :=
+  match r with
+  | .x _ => pushBytes (savesFloat saves).length + 8 * (savesInt saves).idxOf r
+  | _ => 8 * (savesFloat saves).idxOf r
 
 /-- Frame layout: slot offset (from `sp`) of every vreg, and the frame size. -/
 structure Frame where

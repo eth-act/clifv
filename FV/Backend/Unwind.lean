@@ -12,33 +12,29 @@ construction against the unwinder's model (`FV/Unw/Dwarf.lean`):
 trips). Using them in the per-function and linking theorems is S10d–S10f
 (`docs/plans/unwinding.md`).
 
-The rows follow what Cranelift emits for aarch64 SystemV (`isa/aarch64/abi.rs`
+The rows are what Cranelift emits for aarch64 SystemV (`isa/aarch64/abi.rs`
 `gen_prologue_frame_setup` / `gen_clobber_save` and `isa/unwind/systemv.rs`
-`create_unwind_info_from_insts`), for the backend's own frame (`FV/Backend/Regalloc.lean`),
-except that from the end of the prologue on the CFA is defined from sp:
+`create_unwind_info_from_insts`), for the backend's frame (`FV/Backend/Regalloc.lean`,
+`prologueLines` in `FV/Backend/Asm.lean`):
 
 | after | rows | Cranelift's `UnwindInst` |
 | --- | --- | --- |
 | `stp x29, x30, [sp, #-16]!` | `def_cfa_offset 16`, x29 at CFA-16, x30 at CFA-8 | `PushFrameRegs` |
 | `mov x29, sp` | `def_cfa_register x29` (CFA = x29+16) | `DefineNewFrame` |
-| the prologue's `sub sp` | `def_cfa_register sp`, `def_cfa_offset frameSize+16` | — |
-| each callee-save store `str r, [sp, #o]` | r at CFA + o - 16 - frameSize | `SaveReg` |
+| each push `str r`/`stp r, r2` (`[sp, #-16]!`) | r (and r2) at CFA - 16 - `clobberBytes` + its `clobberOff` | `SaveReg` |
 
-Cranelift keeps the CFA x29-based; the body keeps sp at `entry sp - 16 - frameSize` (it
-never moves sp), so the sp-based rule describes the same CFA, and the proof that unwinding a
-frame restores the caller's state needs only the body's sp, not an invariant on x29
-(`FV/Backend/Proof/UnwindTables.lean` `unwindRows_frame`).
+The CFA stays x29-based; the `sub sp` of the fixed frame has no row (Cranelift's `StackAlloc`
+gives one only without a frame pointer). The body keeps x29 = CFA - 16 (x29 is not allocatable
+and every callee preserves it).
 
 The CIE's initial rule is CFA = sp+0 (return address in x30), so a function without a frame
 (`AFunc.frame = false`) has an FDE without rows. The epilogue has no rows, as in Cranelift:
 unwinding starts only at call sites (Rust panics are synchronous), and no call follows the
-restores. The callee-saved registers are saved in block 0 before any other instruction
-(`buildRFunc`, `ctlCheck`), so their rows cover every call. For v8–v15 the frame saves all
-128 bits (`str q`); the unwinder restores the callee-saved low 64 bits (d8–d15, DWARF 72–79)
-from the slot's first 8 bytes.
+pops. For v8–v15 the prologue saves the callee-saved low 64 bits (`str d`/`stp d`, d8–d15 =
+DWARF 72–79), as Cranelift does.
 
-`unwindRows` reads the saves from `AFunc`'s block 0 and checks that the function's final code
-starts with exactly the prologue and those stores (so the byte offsets are the code's).
+`unwindRows` reads the saves from `AFunc.saves` and checks that the function's final code
+starts with exactly the prologue (so the byte offsets are the code's).
 -/
 
 namespace Backend
@@ -61,61 +57,41 @@ def Reg.dwarf? : Reg → Option Nat
   | .v n => some (64 + n)
   | _ => none
 
-/-- A callee-save store of block 0: `(register, sp offset)`. -/
-def AInst.calleeSave? : AInst → Option (Reg × Int)
-  | .inst (.store op r (.spOffset off) _) =>
-    if (op == .store64 || op == .fpuStore128) && calleeSaved.contains r then some (r, off) else none
-  | _ => none
-
 /-- The instruction of a line (none for labels and jump-table words). -/
 def Line.insn? : Line → Option Insn
   | .ins i _ => some i
   | _ => none
 
-/-- The rows of the callee-save stores `saves` of block 0, emitted from byte offset `off`:
-the stores' lines and, after each, the row saving its register at CFA + `o - 16 - frameSize`. -/
-def saveRows (c : FnCtx) (frameSize : Nat) : Nat → List AInst →
-    Except String (List Line × List (Nat × Cfi))
-  | _, [] => pure ([], [])
-  | off, s :: rest => do
-    let some (r, o) := s.calleeSave? | throw "unwind: not a save"
-    let .inst m := s | throw "unwind: not a save"
-    let (ls, _) ← m.lines c {}
-    let off := off + 4 * ls.length
-    let some dr := r.dwarf? | throw "unwind: register without a DWARF number"
-    let cfaOff : Int := o - 16 - frameSize
-    if cfaOff ≥ 0 || cfaOff % 8 != 0 then throw s!"unwind: save slot at CFA{cfaOff}"
-    let (ls', rows) ← saveRows c frameSize off rest
-    pure (ls ++ ls', (off, .offset dr cfaOff) :: rows)
+/-- The registers of each push of `pushLines int rs`, in code order. -/
+def pushGroups (rs : List Reg) : List (List Reg) :=
+  let (ps, o) := pairsOf rs
+  o.toList.map (fun r => [r]) ++ ps.reverse.map fun (a, b) => [a, b]
+
+/-- The rows of the pushes of `saves` (`SaveReg`), the first push at byte offset `start`: after
+each push, a row per register it saves, at CFA - 16 - `clobberBytes saves` + `clobberOff`. -/
+def pushRows (saves : List Reg) (start : Nat) : List (Nat × Cfi) :=
+  ((pushGroups (savesInt saves) ++ pushGroups (savesFloat saves)).zipIdx).flatMap fun (g, i) =>
+    g.filterMap fun r => r.dwarf?.map fun dr =>
+      (start + 4 * (i + 1), Cfi.offset dr ((clobberOff saves r : Int) - clobberBytes saves - 16))
 
 /-- The rows of the prologue `stp x29, x30, [sp, #-16]!; mov x29, sp`. -/
 def prologueRows : List (Nat × Cfi) :=
   [(4, .defCfaOffset 16), (4, .offset 29 (-16)), (4, .offset 30 (-8)), (8, .defCfaRegister 29)]
-
-/-- The rows at the end of the prologue (byte offset `at_`, after its `sub sp`): CFA = sp +
-`frameSize` + 16. -/
-def frameRows (frameSize at_ : Nat) : List (Nat × Cfi) :=
-  [(at_, .defCfaRegister 31), (at_, .defCfaOffset (frameSize + 16))]
 
 /-- Unwind rows `(code offset, instruction)` of an allocated function `af` whose final code
 is `fa`, in code order. -/
 def unwindRows (af : AFunc) (fa : FnAsm) : Except String (List (Nat × Cfi)) := do
   if !af.frame then return []
   let some (_, code) := af.blocks[0]? | throw "unwind: no entry block"
-  let code := code.toList
-  if code.head? != some .prologue then throw "unwind: the entry block does not start with the prologue"
-  let saves := (code.drop 1).takeWhile (·.calleeSave?.isSome)
-  let pro := prologueLines af.frameSize
-  let c : FnCtx := { k := fa.k, slotBase := af.slotBase }
-  let (sl, srows) ← saveRows c af.frameSize (4 * pro.length) saves
-  let expect := pro ++ sl
-  if 4 * expect.length ≥ 2 ^ 32 then throw "unwind: the prologue exceeds the FDE's 32-bit range"
-  -- the final code starts with the entry label, then exactly these instructions
-  let got := (fa.lines.toList.drop 1).take expect.length
+  if code.toList.head? != some .prologue then throw "unwind: the entry block does not start with the prologue"
+  let pro := prologueLines af.saves af.frameSize
+  if 4 * pro.length ≥ 2 ^ 32 then throw "unwind: the prologue exceeds the FDE's 32-bit range"
+  -- the final code starts with the entry label, then exactly the prologue
+  let got := (fa.lines.toList.drop 1).take pro.length
   unless (match fa.lines[0]? with | some (Line.label _) => true | _ => false) &&
-      decide (got.map Line.insn? = expect.map Line.insn?) && got.all (·.insn?.isSome) do
-    throw "unwind: the code does not start with the prologue and the callee-save stores"
-  return prologueRows ++ frameRows af.frameSize (4 * pro.length) ++ srows
+      decide (got.map Line.insn? = pro.map Line.insn?) && got.all (·.insn?.isSome) do
+    throw "unwind: the code does not start with the prologue"
+  return prologueRows ++ pushRows af.saves 8
 
 /-- Unsigned LEB128. -/
 def uleb (n : Nat) : ByteArray :=
