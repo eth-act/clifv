@@ -316,14 +316,23 @@ theorem ctor_gen_call_output_typed (st : LState) (s : Clif.Signature) (v : V) (s
   rw [this, foldl_freshC]
   simp [eq_comm]
 
-/-- `gen_call_output` of a signature whose declared returns are integers: fresh integer
-vregs. -/
+/-- Integer ABI returns (`sigRets`) make integer declared returns. -/
+theorem returnsInt_of_sigRets {s : Clif.Signature}
+    (h : (sigRets s).map retClass = List.replicate (sigRets s).length .int) :
+    s.returns.map retClass = List.replicate s.returns.length .int := by
+  rcases sigRets_cases s with h' | ⟨h', -⟩
+  · rwa [h'] at h
+  · simp [h']
+
+/-- `gen_call_output` of a signature whose ABI returns are integers: fresh integer vregs, one
+per declared return. -/
 theorem ctor_gen_call_output_iff (st : LState) (s : Clif.Signature)
-    (hr : s.returns.map retClass = List.replicate s.returns.length .int) (v : V)
+    (hr : (sigRets s).map retClass = List.replicate (sigRets s).length .int) (v : V)
     (st' : LState) :
     externCtor ctx T.gen_call_output [.op (.sig s)] st = .ok (v, st') ↔
       v = .regsVec (outRegs st s.returns.length) ∧ st' = freshN st s.returns.length := by
-  rw [ctor_gen_call_output_typed, hr, outRegsC_replicate, freshC_replicate]
+  rw [ctor_gen_call_output_typed, returnsInt_of_sigRets hr, outRegsC_replicate,
+    freshC_replicate]
 
 /-- The register pairs of `gen_call_args` for register locations. -/
 theorem zip_regLocs : ∀ (locs : List ArgLoc) (rs : List Reg) (bytes : List Nat),

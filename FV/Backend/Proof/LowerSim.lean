@@ -1051,9 +1051,9 @@ theorem term_step_abi (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
       hvu.symm, by rw [← hvu]; exact hsem⟩, ?_, ?_, hvsS, hall,
       by simpa [fr', restrict, hslots] using hmr, by rw [hcm, hslots]⟩
     · have hvl : vs.length = (sretRet ctx.func).length := by
-        rw [H.shape.ctxInv.func]; exact (getMany_ok hvs0).1
+        rw [H.shape.ctxInv.func]; exact (getMany_spec hvs0).1.symm
       unfold RetPins
-      simp only [List.map_map, List.length_map]
+      simp only [List.map_map, List.length_map, Function.comp_def]
       rw [hus, List.length_append, hvl, Nat.add_sub_cancel]
     · simp only [List.length_map]; rw [hlen]; exact hall.1
   | trap c =>
@@ -1610,8 +1610,6 @@ theorem term_step_try (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
         exact hh
       | ret ii =>
         have hii : ii < T.sig.returns.length := hargsOk _ htam
-        have hiN : ii < (sigRets T.sig).length :=
-          Nat.lt_of_lt_of_le hii (returns_le_sigRets _)
         have hvi : regs' (f.freshValue + ii) = some rvals[ii] :=
           setMany_nodup hset (List.Pairwise.map _ (fun a b h e => h (Nat.add_left_cancel e)) List.nodup_range) ii _ _
             (by simp [List.getElem?_map, hii]) (List.getElem?_eq_getElem (by omega))
@@ -1621,7 +1619,7 @@ theorem term_step_try (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
         have hr : (tryCtx ctx (L.start + B.body.length) L.data T.regs).tryRegs.1[ii]? =
             some (.vreg (L.tst.nextVreg + ii) .int) := by
           show T.regs.1[ii]? = _
-          rw [hregsEq]; simp [hiN]
+          rw [hregsEq]; simp [hii]
         obtain ⟨n, hn, hvh⟩ := hrets ii _ _ hr (List.getElem?_eq_getElem (by omega))
         cases hn
         have hDi : D (L.tst.nextVreg + ii) := ⟨by omega, by omega⟩
@@ -1647,9 +1645,8 @@ theorem term_step_try (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
     | val v => simp [normArgReg, tryArgNum, H.shape.ren.vreg]
     | ret ii =>
       have hii : ii < T.sig.returns.length := hargsOk _ ha
-      have hiN : ii < (sigRets T.sig).length := Nat.lt_of_lt_of_le hii (returns_le_sigRets _)
       have hg : gn (L.tst.nextVreg + ii) = L.tst.nextVreg + ii := H.shape.temps _ (by omega)
-      simp [normArgReg, tryArgNum, hregsEq, hiN, H.shape.ren.vreg, hg]
+      simp [normArgReg, tryArgNum, hregsEq, hii, H.shape.ren.vreg, hg]
     | exn _ => exact absurd (hargsOk _ ha) id
   have henv2 := edgeEnv_eq (V := CV) heb hvbt (xs := xs) (ps := TB.params.map (·.1)) hebba'
     (by rw [hpt]; simp [List.map_map, Function.comp_def]) (by simp only [List.length_map]; omega)

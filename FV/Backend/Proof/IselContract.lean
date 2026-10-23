@@ -1592,8 +1592,9 @@ the memory relation sees), and a call of the extern `ext ∈ exts` (`bl name`, o
 non-colocated declaration, which the lowering calls through the GOT — `blr` of a
 register holding `sym name`, whose value is then the first use) whose arguments are where the
 ABI puts them (`ArgsAt`: the register-passed ones held by the argument values, low bits; the
-others in the outgoing stack area of the world) and with one def per ABI return (`sigRets`: an
-`sret` signature without returns also returns its struct pointer) returns one value per def, the
+others in the outgoing stack area of the world) and with one def per declared return (an `sret`
+callee's struct pointer, its extra ABI return `sigRets`, has no def: Cranelift's `gen_call_rets`
+skips it) returns one value per def, the
 first ones the extern's results (`PrefixHold`), and a world related to the extern's memory. The
 same holds of a `tryCall` (the call of a `try_call`, with the exception payload registers among
 its defs after the returns), which then continues at its normal-return successor (successor
@@ -1609,7 +1610,7 @@ def CallsRefine (F : BitVec 64 → Prop) (env : Clif.Env) (exts : List Clif.ExtF
       env.extern ext.name = some g →
       (dest = .sym ext.name ∧ uses = args ∨
         ∃ r, dest = .reg r ∧ ext.colocated = false ∧ uses = ofX (sym ext.name) :: args) →
-      ds.length = (sigRets ext.sig).length →
+      ds.length = ext.sig.returns.length →
       ArgsAt ext.sig vals args w → MR sl cm w →
       g vals cm = .returned rvals cm' → rvals.length = ext.sig.returns.length →
       ∃ outs w', isem (.call ⟨dest, us, ds⟩) uses w = some (outs, w', .next) ∧
@@ -1620,7 +1621,7 @@ def CallsRefine (F : BitVec 64 → Prop) (env : Clif.Env) (exts : List Clif.ExtF
       env.extern ext.name = some g →
       (dest = .sym ext.name ∧ uses = args ∨
         ∃ r, dest = .reg r ∧ ext.colocated = false ∧ uses = ofX (sym ext.name) :: args) →
-      (sigRets ext.sig).length ≤ ds.length → ti.rets ≤ (sigRets ext.sig).length →
+      ext.sig.returns.length ≤ ds.length → ti.rets ≤ ext.sig.returns.length →
       ArgsAt ext.sig vals args w → MR sl cm w →
       g vals cm = .returned rvals cm' → rvals.length = ext.sig.returns.length →
       ∃ outs w', isem (.tryCall ⟨dest, us, ds⟩ ti) uses w = some (outs, w', .goto ti.handlers.length) ∧
@@ -1710,7 +1711,7 @@ signatures `sigs`: a `blr` whose target register holds (low 64 bits) the link-ti
 of an extern `n` (`cm.symbols n = some a`) whose signature, if the environment knows it
 (`env.sigOf`), the call site's matches, with at most 8 argument values (`AllHold`) of the
 call site's parameter types (as `Clif.callExternAt` checks both) and one
-def per ABI return of the call site's signature (`sigRets`), returns one value per def, the
+def per declared return of the call site's signature (`s.returns`), returns one value per def, the
 first ones the extern's results (`PrefixHold`), and a world related to the extern's memory;
 the same of the `tryCall` of a `try_call_indirect`, which continues at its normal-return
 successor (`ti.handlers.length`). -/
@@ -1721,7 +1722,7 @@ def IndCallsRefine (env : Clif.Env) (sigs : List Clif.Signature) (MR : MemRelT) 
       (vals rvals : List Clif.Val) (cm' : Clif.Mem),
     env.extern n = some g → (∀ s, env.sigOf n = some s → sig.abiMatch s = true) →
     cm.symbols n = some a → lo64 u = BitVec.ofNat 64 a →
-    ds.length = (sigRets sig).length → vals.length ≤ 8 → AllHold vals args → MR sl cm w →
+    ds.length = sig.returns.length → vals.length ≤ 8 → AllHold vals args → MR sl cm w →
     g vals cm = .returned rvals cm' → rvals.length = sig.returns.length →
     vals.map (·.ty) = Clif.AbiParam.tys sig.params →
     ∃ outs w', isem (.call ⟨.reg r, us, ds⟩) (u :: args) w = some (outs, w', .next) ∧
@@ -1731,7 +1732,7 @@ def IndCallsRefine (env : Clif.Env) (sigs : List Clif.Signature) (MR : MemRelT) 
       (args : List CV) (vals rvals : List Clif.Val) (cm' : Clif.Mem),
     env.extern n = some g → (∀ s, env.sigOf n = some s → sig.abiMatch s = true) →
     cm.symbols n = some a → lo64 u = BitVec.ofNat 64 a →
-    (sigRets sig).length ≤ ds.length → ti.rets ≤ (sigRets sig).length → vals.length ≤ 8 →
+    sig.returns.length ≤ ds.length → ti.rets ≤ sig.returns.length → vals.length ≤ 8 →
     AllHold vals args → MR sl cm w →
     g vals cm = .returned rvals cm' → rvals.length = sig.returns.length →
     vals.map (·.ty) = Clif.AbiParam.tys sig.params →
