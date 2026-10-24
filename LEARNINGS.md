@@ -45,6 +45,7 @@ None of these weaken what is proven: every compiler theorem still prints only `p
 - **Trick:** prove the leaf from `envOkT` checks of 32-environment chunks (`(envs.drop (c*32)).take 32`) plus `isSome`/length certificates, glued by a small `all_of_chunks` lemma; find such leaves by `decide +kernel`-probing each rule and family separately under a memory cap. The generator (`IselCovTGen.heavy`) emits this for the listed rule/family pairs.
 - **Effect:** `IselCovTTabS30` builds in 119 s at 4.5 GB (was: killed at 22 GB).
 - **The chunk size is per leaf, not per table:** the typed emission table (`IselEmitTGen.heavy`, rule/family/chunk triples) reuses 32 for rule 2267, but its vector-lane rules 1222-1228 on family 2 (64 environments) cost 8 GB per 16 environments under the emission check; with 8 per chunk `IselEmitTTabS5` builds in 509 s at 5.1 GB (was: killed at 22 GB). Probe a leaf's chunk before picking the size.
+- **Cost tables: chunk entries too, and one entry per `decide`:** the typed cost tables (`IselSzTGen`) ran out of memory in 4 of 26 entry modules (C18 killed at 9.2 GB). Term 575's 24 entries go through ~4040 abstract environments each: each such entry is now proven rule by rule via `cRuleLe_of_chunks` from `decide`s of 128 environments, packed ~1024 environments per module (`IselSzTTabH*`, 240 modules, ≤4.4 GB, mostly 2.3 GB). Separately, 8 cheap entries (<50 environments each) per `decide` still took 8.1 GB / 282 s in one declaration: the environment count does not predict the kernel's cost, so every entry gets its own `decide` (C modules 7.7 GB → ≤1.8 GB).
 
 ### `assumption` at reducible transparency
 - **Problem:** after `ArmState` gained a field, `stlxr_congr` in `LoopRun.lean` ran out of heartbeats even at 8M: `assumption` was unfolding the state structure.
@@ -71,6 +72,12 @@ None of these weaken what is proven: every compiler theorem still prints only `p
 
 ### Don't depend on private library internals
 - A proof that reached into the private internals of `Array.qsort` would break on a toolchain update. Sorting `cfg.loops.attach` instead carries the membership fact through the sort, with the same output (#318).
+
+### Keep Mathlib out of the main import graph
+- **Problem:** making `FV/Float` import FloatLib (which needs Mathlib) put 1,778 Mathlib modules upstream of 2,624 of 2,812 FV modules.
+- **Numbers:** +1.4 GB peak memory per module (median of 222), +3–4 s import each; under load LegalArith 94 → 134 s, LegalShift 83 → 161 s; 8 breakages in the first 360 modules (`alias` is a keyword, Mathlib simp lemmas give "no goals"/unsolved goals), none on the same modules with the bare toolchain bump.
+- **Trick:** a leaf Lake package (`float-spec/`) holds the Mathlib-dependent equality proofs; nothing imports it. Cost there: Mathlib cache ~1 GB download / 7.5 GB disk once, FloatLib ~2.5 min, FVFloatSpec ~1.5 min at ~2.6 GB per process (FloatBridge).
+- **Don't bump the whole repo for one leaf's dependency:** FloatLib needs Lean v4.35.0. The repo-wide 4.34.1 → 4.35.0 bump reached only ~650 of 3,546 modules after 6 restarts, each stopped by new breakages (heartbeat limits on concrete `rfl`/`decide`, instance-transparency unification blocking `exec_bitfield` rewrites, a `kbv` budget), and would rebuild every branch and the shared cache (branch `agent/floatlib-lean435-only`, parked). Instead `float-spec/` has its own `lean-toolchain` (v4.35.0) and compiles the 5 core-only FV/Float modules from `../FV` into its own `.lake` (a `lean_lib` with `srcDir = ".."`, not `require fv from ".."`: a path dependency would build into the root's `.lake` and the shared cache). They compiled unchanged on 4.35.0 in under 1 s each; `float-spec/defs-hash.lean` checks both toolchains elaborate identical definitions (FloatBridge3).
 
 ## Build infrastructure
 

@@ -139,7 +139,8 @@ def fBinaryOpcode : Clif.FOp → Option String
 (`InstructionData::Unary`). -/
 def fUnaryOpcode : Clif.FOp → Option String
   | .sqrt => "Sqrt" | .fneg => "Fneg" | .fabs => "Fabs" | .fpromote => "Fpromote"
-  | .fdemote => "Fdemote"
+  | .fdemote => "Fdemote" | .ceil => "Ceil" | .floor => "Floor" | .trunc => "Trunc"
+  | .nearest => "Nearest"
   | _ => none
 
 /-- S11f: the controlling types at which `instData` accepts a float operation: `fpromote.f64`,
@@ -147,6 +148,21 @@ def fUnaryOpcode : Clif.FOp → Option String
 def fTyOk : Clif.FOp → Clif.Ty → Bool
   | .fpromote, ty => ty == .f64
   | .fdemote, ty => ty == .f32
+  | _, ty => ty.isFloat
+
+/-- S11f-cvt: the `Opcode` of a float/integer conversion whose `lower` root is in the closure
+(`InstructionData::Unary`; an integer operand or an integer result, so kept apart from
+`fUnaryOpcode`'s float → float operations). -/
+def fCvtOpcode : Clif.FOp → Option String
+  | .fcvtFromUint => "FcvtFromUint" | .fcvtFromSint => "FcvtFromSint"
+  | .fcvtToUintSat => "FcvtToUintSat" | .fcvtToSintSat => "FcvtToSintSat"
+  | _ => none
+
+/-- S11f-cvt: the controlling types at which `instData` accepts a conversion: `fcvt_from_*` at
+`f32`/`f64`, the saturating `fcvt_to_*_sat` at `i32`/`i64` (their `i8`/`i16` clamp is not
+proven). -/
+def fCvtTyOk : Clif.FOp → Clif.Ty → Bool
+  | .fcvtToUintSat, ty | .fcvtToSintSat, ty => ty == .i32 || ty == .i64
   | _, ty => ty.isFloat
 
 /-- The `Imm64` of `iconst.ty imm`: the reader masks it to the type's width
@@ -192,7 +208,8 @@ instruction is outside E). The float data movement of S11e4 (`valTyOk`): `f32con
 `load`/`store` of a whole `f32`/`f64`, `select` of floats and `bitcast` (`LoadNoOffset` with
 its `MemFlags`, as `InstructionData::LoadNoOffset`). The float arithmetic of S11f whose roots
 are proven (`fBinaryOpcode`, `fUnaryOpcode`): `Binary`/`Unary` with the opcode, as Cranelift's
-`InstructionData`; `fcmp` stays outside (its `fp_cond_code` conditions are not proven). -/
+`InstructionData`; `fcmp` stays outside (its `fp_cond_code` conditions are not proven). The
+conversions of S11f-cvt (`fCvtOpcode`, at `fCvtTyOk`): `Unary` with the opcode. -/
 def instData (f : Clif.Function) : Clif.Inst → Except String V
   | .iconst ty imm =>
     if eTy ty then pure (instDataV "UnaryImm" [opcodeV "Iconst", .int (imm64OfIconst ty imm)])
@@ -318,7 +335,12 @@ def instData (f : Clif.Function) : Clif.Inst → Except String V
       | some n =>
         if fTyOk op ty then pure (instDataV "Unary" [opcodeV n, .value x])
         else throw s!"{n}.{ty.name}"
-      | none => throw s!"`{op.name}` with one operand is not in the lowering"
+      | none =>
+        match fCvtOpcode op with
+        | some n =>
+          if fCvtTyOk op ty then pure (instDataV "Unary" [opcodeV n, .value x])
+          else throw s!"{n}.{ty.name}"
+        | none => throw s!"`{op.name}` with one operand is not in the lowering"
     | _ => throw s!"`{op.name}` is not in the lowering"
   | i => throw s!"`{instText i}` is not in E"
 

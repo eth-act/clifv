@@ -76,6 +76,8 @@ run_gate() { # LOGDIR CLIF; cwd: the worktree root
   r=$?; echo "crate-proofs rc=$r: $(tail -n 1 "$L/crate.log")"; [ $r = 0 ] || fail=1
   "${M12[@]}" python3 scripts/axiom-audit.py --log-dir "$L/audit" > "$L/axiom-audit.log" 2>&1; r=$?
   grep -E '^(ok|FAIL)|axiom audit' "$L/axiom-audit.log"; echo "axiom-audit rc=$r"; [ $r = 0 ] || fail=1
+  "${M12[@]}" scripts/float-spec.sh > "$L/float-spec.log" 2>&1; r=$?
+  grep -E '^(ok|FAIL)|axiom audit|build failed' "$L/float-spec.log"; echo "float-spec rc=$r"; [ $r = 0 ] || fail=1
   "${MC[@]}" lake exe lean-e2e-check > "$L/e2e.log" 2>&1; r=$?
   echo "lean-e2e-check rc=$r: $(grep -E 'accepted|rejected' "$L/e2e.log" | tail -n 3 | tr '\n' ' ')"; [ $r = 0 ] || fail=1
   "${MC[@]}" scripts/lean-backend-encode-check.sh > "$L/encoding.log" 2>&1; r=$?

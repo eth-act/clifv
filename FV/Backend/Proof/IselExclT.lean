@@ -93,7 +93,8 @@ def floatOps : List Nat :=
 def arithOps : List Nat :=
   [VIdx.Opcode.Fadd, VIdx.Opcode.Fsub, VIdx.Opcode.Fmul, VIdx.Opcode.Fdiv, VIdx.Opcode.Fmin,
    VIdx.Opcode.Fmax, VIdx.Opcode.Sqrt, VIdx.Opcode.Fneg, VIdx.Opcode.Fabs, VIdx.Opcode.Fpromote,
-   VIdx.Opcode.Fdemote]
+   VIdx.Opcode.Fdemote, VIdx.Opcode.Ceil, VIdx.Opcode.Floor, VIdx.Opcode.Trunc,
+   VIdx.Opcode.Nearest]
 
 /-- The float-result opcodes with the float arithmetic (`InstScopeTA`). -/
 def floatOpsA : List Nat := floatOps ++ arithOps
@@ -804,7 +805,8 @@ theorem InstScopeT.toA {ctx : Ctx} (h : InstScopeT ctx) : InstScopeTA ctx :=
 def aNamePairs : List (String × String) :=
   [("Binary", "Fadd"), ("Binary", "Fsub"), ("Binary", "Fmul"), ("Binary", "Fdiv"),
    ("Binary", "Fmin"), ("Binary", "Fmax"), ("Unary", "Sqrt"), ("Unary", "Fneg"),
-   ("Unary", "Fabs"), ("Unary", "Fpromote"), ("Unary", "Fdemote")]
+   ("Unary", "Fabs"), ("Unary", "Fpromote"), ("Unary", "Fdemote"), ("Unary", "Ceil"),
+   ("Unary", "Floor"), ("Unary", "Trunc"), ("Unary", "Nearest")]
 
 set_option maxRecDepth 20000 in
 theorem aNamePairs_float : aNamePairs.all (fun pr =>

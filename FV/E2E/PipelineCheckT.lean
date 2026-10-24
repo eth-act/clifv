@@ -11,11 +11,11 @@ The declarations of `FV.E2E.PipelineCheck` that depend on the integer link contr
 namespace E2E.LinkCheck
 open Backend Backend.Proof Backend.Proof.Driver
 
-def staticChksWithT (stage : VCode → VCode) (I : LinkInput) (g : Clif.Function) (r : Except String Art) : List (String × Bool) :=
+def staticChksWithT (stage : Clif.Function → VCode → VCode) (I : LinkInput) (g : Clif.Function) (r : Except String Art) : List (String × Bool) :=
   let a := getOk r
   [("compiled: pipeline", r.toBool),
    ("compiled: lowerCheckT", lowerCheckT g a.vc),
-   ("compiled: prepCheck", prepCheck (stage a.vc) a.vcp),
+   ("compiled: prepCheck", prepCheck (stage g a.vc) a.vcp),
    ("compiled: checkAlloc", (checkAlloc a.vcp a.rf).toBool),
    ("covered", formsCoveredB ⟨a.fa.k, a.af.slotBase⟩ a.vcp),
    ("sretRets", allInsts a.vc (retsB g)),
@@ -32,20 +32,20 @@ def staticChksWithT (stage : VCode → VCode) (I : LinkInput) (g : Clif.Function
    ("sret: subset E, lowerCheck", !(g.sig.params.any (·.purpose == .sret)) ||
      (Compile.functionE g && lowerCheck g a.vc))]
 
-def chksWithT (stage : VCode → VCode) (I : LinkInput) (P : Clif.Program)
+def chksWithT (stage : Clif.Function → VCode → VCode) (I : LinkInput) (P : Clif.Program)
     (T : List (Clif.Function × Art)) (g : Clif.Function) (r : Except String Art) :
     List (String × Bool) := staticChksWithT stage I g r ++ linkChks I P T g r ++ [("calleeInt", calleeIntChk I P g)]
 
-def okRWithT (stage : VCode → VCode) (I : LinkInput) (R : Res) : Bool :=
+def okRWithT (stage : Clif.Function → VCode → VCode) (I : LinkInput) (R : Res) : Bool :=
   (globalChks I (progOf R) (tabOf R)).all (·.2) &&
     R.all fun e => (chksWithT stage I (progOf R) (tabOf R) e.1 e.2).all (·.2)
 
-structure FactsWithT (stage : VCode → VCode) (I : LinkInput) (R : Res) (g : Clif.Function) (a : Art) : Prop where
-  pipe : lowerFunction g = .ok a.vc ∧ prepare (stage a.vc) = .ok a.vcp ∧ lowerRFunc a.vcp a.rf = .ok a.af ∧
+structure FactsWithT (stage : Clif.Function → VCode → VCode) (I : LinkInput) (R : Res) (g : Clif.Function) (a : Art) : Prop where
+  pipe : lowerFunction g = .ok a.vc ∧ prepare (stage g a.vc) = .ok a.vcp ∧ lowerRFunc a.vcp a.rf = .ok a.af ∧
     emitFunc a.k a.af = .ok a.fa ∧ a.fa.layout = .ok a.fb ∧
     a.base = BitVec.ofNat 64 (I.baseOf g.name)
   lowerOk : lowerCheckT g a.vc = true
-  prepOk : prepCheck (stage a.vc) a.vcp = true
+  prepOk : prepCheck (stage g a.vc) a.vcp = true
   check : checkAlloc a.vcp a.rf = .ok ()
   covered : FormsCovered ⟨a.fa.k, a.af.slotBase⟩
     a.vcp
@@ -75,17 +75,17 @@ structure FactsWithT (stage : VCode → VCode) (I : LinkInput) (R : Res) (g : Cl
   indOk : indSigsOk g = true
   ind : indB (progOf R) (fun n => I.syms.lookup n) g = true
 
-theorem okRWith_globalT (stage : VCode → VCode) {I : LinkInput} {R : Res} (h : okRWithT stage I R = true) :
+theorem okRWith_globalT (stage : Clif.Function → VCode → VCode) {I : LinkInput} {R : Res} (h : okRWithT stage I R = true) :
     ∀ c ∈ globalChks I (progOf R) (tabOf R), c.2 = true := by
   simp only [okRWithT, chksWithT, Bool.and_eq_true, List.all_eq_true] at h
   exact h.1
 
-theorem okRWith_namesT (stage : VCode → VCode) {I : LinkInput} {R : Res} (h : okRWithT stage I R = true) :
+theorem okRWith_namesT (stage : Clif.Function → VCode → VCode) {I : LinkInput} {R : Res} (h : okRWithT stage I R = true) :
     ((progOf R).funcs.map (·.name)).Nodup := by
   have := okRWith_globalT stage h _ (by simp [globalChks]; exact Or.inl rfl)
   simpa using this
 
-theorem factsRWithT (stage : VCode → VCode) {I : LinkInput} {R : Res} (hR : ResOkWith stage I R)
+theorem factsRWithT (stage : Clif.Function → VCode → VCode) {I : LinkInput} {R : Res} (hR : ResOkWith stage I R)
     (h : okRWithT stage I R = true) {g : Clif.Function}
     (hg : g ∈ (progOf R).funcs) : FactsWithT stage I R g (artOf R g) := by
   have hn := okRWith_namesT stage h
@@ -125,7 +125,7 @@ theorem factsRWithT (stage : VCode → VCode) {I : LinkInput} {R : Res} (hR : Re
     · rw [hc] at h; cases h
     · exact h p hp
 
-theorem indFactsRWithT (stage : VCode → VCode) {I : LinkInput} {R : Res} (hR : ResOkWith stage I R) (h : okRWithT stage I R = true) {g : Clif.Function}
+theorem indFactsRWithT (stage : Clif.Function → VCode → VCode) {I : LinkInput} {R : Res} (hR : ResOkWith stage I R) (h : okRWithT stage I R = true) {g : Clif.Function}
     (hg : g ∈ (progOf R).funcs) (hnf : ¬ Clif.IndFree g) :
     ∀ h ∈ (progOf R).funcs, mayB (fun n => I.syms.lookup n) g h.name = true →
       ((∃ sig ∈ indSigs g, LinkSys.IndSigMatch sig h) ∨
@@ -153,8 +153,8 @@ theorem indFactsRWithT (stage : VCode → VCode) {I : LinkInput} {R : Res} (hR :
   revert hb8
   cases hb : sigParamBytes h'.sig <;> simp
 
-theorem okRWith_soundT (stage : VCode → VCode) {I : LinkInput} {R : Res}
-    (hstage : stage = id ∨ stage = DeadCleanup.prune) (hR : ResOkWith stage I R)
+theorem okRWith_soundT (stage : Clif.Function → VCode → VCode) {I : LinkInput} {R : Res}
+    (hstage : stage = (fun _ => id) ∨ stage = (fun _ => DeadCleanup.prune)) (hR : ResOkWith stage I R)
     (hI : okRWithT stage I R = true) {B : BaseEnv}
     {F : BitVec 64 → Prop} (hB : BaseOk (ofRes I R B F)) (hF : ∀ a, (ofRes I R B F).Img a → F a) :
     (ofRes I R B F).OkT := by

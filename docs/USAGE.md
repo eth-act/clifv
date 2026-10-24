@@ -1021,6 +1021,14 @@ unknown execution metadata remain gaps; this does not claim full CI equivalence.
 See [STOCK-COMPILER-COMPARISON.md](STOCK-COMPILER-COMPARISON.md) for prerequisites,
 the precise contract, retained artifacts, progress tracking and baseline results.
 
+On a real crate, `scripts/stock-crate-parity.py` compares the Lean backend's code with the
+code stock Cranelift (cg_clif) generated for the same functions: after
+`cargo fv test --keep-temps`, `python3 scripts/stock-crate-parity.py [--json OUT] [--diffs DIR]
+target/fv/<mode>/tmp` compares, per codegen unit and function, `lean.o` with cg_clif's
+`cgclif.o` (exact bytes and relocations) and attributes the differing instructions to causes
+(frame, slot layout, register allocation, dead `cset`, branch layout, instruction selection;
+a heuristic on `llvm-mc` disassembly). Results and the cause issues: #557.
+
 ## Fast proof-edit loop for agents (`turbo-lean check`, optional)
 
 To iterate on one theorem in a heavy proof module without rebuilding the module (KillTab
