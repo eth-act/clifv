@@ -75,7 +75,7 @@ theorem segNxts_mem : ∀ {ss : List Seg} {os : List (List Line)} {n : Nat}
 /-! ## Block label lines -/
 
 theorem blockLabelIdx_go : ∀ (L : List Line) (n : Nat) (l : Label) (j : Nat),
-    ((L.zipIdx n).foldr (fun (x : Line × Nat) (m : Std.HashMap Label Nat) => match x.1 with
+    ((L.zipIdx n).foldr (fun (x : Line × Nat) (m : LabelIdx) => match x.1 with
       | .label (.block l) => m.insert l x.2
       | _ => m) {})[l]? = some j → n ≤ j ∧ L[j - n]? = some (.label (.block l))
   | [], n, l, j, h => by simp at h
@@ -83,10 +83,10 @@ theorem blockLabelIdx_go : ∀ (L : List Line) (n : Nat) (l : Label) (j : Nat),
     simp only [List.zipIdx_cons, List.foldr_cons] at h
     split at h
     · rename_i _ l'
-      rw [Std.HashMap.getElem?_insert] at h
+      rw [Std.TreeMap.getElem?_insert] at h
       split at h
       · rename_i hl
-        simp only [beq_iff_eq] at hl
+        simp only [Nat.compare_eq_eq] at hl
         subst hl
         cases h
         simp
@@ -185,10 +185,10 @@ theorem RepL.relax {af : AFunc} {own : Label → Bool} {L : List Line} (F : Lbl 
 /-! ## What `termOk` accepts -/
 
 /-- A branch target `l'` reaches block `s`: a block label whose line (`idx`) represents `s`. -/
-def RepLbl (rep : Label → Nat → Bool) (idx : Std.HashMap Label Nat) (s : Label) (l' : Lbl) : Prop :=
+def RepLbl (rep : Label → Nat → Bool) (idx : LabelIdx) (s : Label) (l' : Lbl) : Prop :=
   ∃ l j, l' = .block l ∧ idx[l]? = some j ∧ rep s j = true
 
-theorem repLbl_of {rep : Label → Nat → Bool} {idx : Std.HashMap Label Nat} {s : Label} {l' : Lbl}
+theorem repLbl_of {rep : Label → Nat → Bool} {idx : LabelIdx} {s : Label} {l' : Lbl}
     (h : repLbl rep idx s l' = true) : RepLbl rep idx s l' := by
   unfold repLbl at h
   split at h
@@ -201,7 +201,7 @@ theorem repLbl_of {rep : Label → Nat → Bool} {idx : Std.HashMap Label Nat} {
 
 /-- **A `jump x`'s final lines**: `b l'` to a label representing `x`, or nothing when the next
 line represents `x`. -/
-theorem termOk_jump {rep : Label → Nat → Bool} {idx : Std.HashMap Label Nat} {x : Label}
+theorem termOk_jump {rep : Label → Nat → Bool} {idx : LabelIdx} {x : Label}
     {t o : List Line} {nxt : Nat} (h : termOk rep idx (some (.inst (.jump x))) t o nxt = true) :
     (∃ l', o = [.ins (.b l') none] ∧ RepLbl rep idx x l') ∨ (o = [] ∧ rep x nxt = true) := by
   simp only [termOk] at h
@@ -213,7 +213,7 @@ theorem termOk_jump {rep : Label → Nat → Bool} {idx : Std.HashMap Label Nat}
 /-- **A conditional branch's final lines** (`ci` the branch to `s1`, else to `s2`): the
 branch retargeted to a label representing `s1`, then `b` to one representing `s2`; or one
 branch, retargeted (`s2` next) or inverted (`s1` next); or nothing (both next). -/
-def CondOut (rep : Label → Nat → Bool) (idx : Std.HashMap Label Nat) (s1 s2 : Label) (ci : Insn)
+def CondOut (rep : Label → Nat → Bool) (idx : LabelIdx) (s1 s2 : Label) (ci : Insn)
     (o : List Line) (nxt : Nat) : Prop :=
   (∃ c t' e', o = [.ins c none, .ins (.b e') none] ∧ (Line.ins c none).target? = some t' ∧
       c = ci.setTarget t' ∧ RepLbl rep idx s1 t' ∧ RepLbl rep idx s2 e') ∨
@@ -222,7 +222,7 @@ def CondOut (rep : Label → Nat → Bool) (idx : Std.HashMap Label Nat) (s1 s2 
        (c = ci.invertTo t' ∧ RepLbl rep idx s2 t' ∧ rep s1 nxt = true))) ∨
   (o = [] ∧ rep s1 nxt = true ∧ rep s2 nxt = true)
 
-theorem condOk_spec {rep : Label → Nat → Bool} {idx : Std.HashMap Label Nat} {s1 s2 : Label}
+theorem condOk_spec {rep : Label → Nat → Bool} {idx : LabelIdx} {s1 s2 : Label}
     {ci : Insn} {o : List Line} {nxt : Nat} (h : condOk rep idx s1 s2 ci o nxt = true) :
     CondOut rep idx s1 s2 ci o nxt := by
   unfold condOk at h
@@ -248,13 +248,13 @@ theorem condOk_spec {rep : Label → Nat → Bool} {idx : Std.HashMap Label Nat}
     exact .inr (.inr ⟨rfl, h.1, h.2⟩)
   · cases h
 
-theorem termOk_condBr {rep : Label → Nat → Bool} {idx : Std.HashMap Label Nat} {tl el : Label}
+theorem termOk_condBr {rep : Label → Nat → Bool} {idx : LabelIdx} {tl el : Label}
     {k : CondBrKind} {t o : List Line} {nxt : Nat}
     (h : termOk rep idx (some (.inst (.condBr tl el k))) t o nxt = true) :
     CondOut rep idx tl el (k.insn (.block tl)) o nxt :=
   condOk_spec h
 
-theorem termOk_tbz {rep : Label → Nat → Bool} {idx : Std.HashMap Label Nat} {tl el : Label}
+theorem termOk_tbz {rep : Label → Nat → Bool} {idx : LabelIdx} {tl el : Label}
     {k : TestBitAndBranchKind} {rn : Reg} {bit : Nat} {t o : List Line} {nxt : Nat}
     (h : termOk rep idx (some (.inst (.testBitAndBranch k tl el rn bit))) t o nxt = true) :
     CondOut rep idx tl el (.tbz (k == .nz) rn bit (.block tl)) o nxt :=
@@ -262,7 +262,7 @@ theorem termOk_tbz {rep : Label → Nat → Bool} {idx : Std.HashMap Label Nat} 
 
 /-- **A `try_call`'s final lines**: the call, then `b` to a label representing the
 continuation, or the call alone when the next line represents it. -/
-theorem termOk_tryCall {rep : Label → Nat → Bool} {idx : Std.HashMap Label Nat} {info : CallInfo}
+theorem termOk_tryCall {rep : Label → Nat → Bool} {idx : LabelIdx} {info : CallInfo}
     {ti : TryInfo} {t o : List Line} {nxt : Nat}
     (h : termOk rep idx (some (.inst (.tryCall info ti))) t o nxt = true) :
     ∃ call b0, t = [call, b0] ∧
@@ -282,12 +282,12 @@ theorem termOk_tryCall {rep : Label → Nat → Bool} {idx : Std.HashMap Label N
 
 /-- A final line for line `x` of the last instruction: `x` itself if it has no block target,
 else `x` retargeted to a block label representing `x`'s block target. -/
-def LineOut (rep : Label → Nat → Bool) (idx : Std.HashMap Label Nat) (x y : Line) : Prop :=
+def LineOut (rep : Label → Nat → Bool) (idx : LabelIdx) (x y : Line) : Prop :=
   (y = x ∧ ∀ l, x.target? ≠ some (.block l)) ∨
     ∃ l l', x.target? = some (.block l) ∧ y.target? = some l' ∧ y = x.relabel (fun _ => l') ∧
       RepLbl rep idx l l'
 
-theorem keptOk_spec {rep : Label → Nat → Bool} {idx : Std.HashMap Label Nat} {t o : List Line}
+theorem keptOk_spec {rep : Label → Nat → Bool} {idx : LabelIdx} {t o : List Line}
     (h : keptOk rep idx t o = true) :
     o.length = t.length ∧ ∀ (i : Nat) (x y : Line), t[i]? = some x → o[i]? = some y →
       LineOut rep idx x y := by
@@ -312,7 +312,7 @@ theorem keptOk_spec {rep : Label → Nat → Bool} {idx : Std.HashMap Label Nat}
     exact .inl ⟨this.symm, fun l e => hxt l e⟩
 
 /-- **Any other last instruction**: its lines, each kept or retargeted (`LineOut`). -/
-theorem termOk_kept {rep : Label → Nat → Bool} {idx : Std.HashMap Label Nat} {a : Option AInst}
+theorem termOk_kept {rep : Label → Nat → Bool} {idx : LabelIdx} {a : Option AInst}
     {t o : List Line} {nxt : Nat}
     (hj : ∀ x, a ≠ some (.inst (.jump x)))
     (hc : ∀ tl el k, a ≠ some (.inst (.condBr tl el k)))
@@ -476,7 +476,7 @@ theorem Line.relabel_self {x : Line} {t : Lbl} (h : x.target? = some t) :
   | word a b => simp_all [Line.target?, Line.relabel]
   | label l => simp [Line.target?] at h
 
-theorem lineOk_self {rep : Label → Nat → Bool} {idx : Std.HashMap Label Nat} {x : Line}
+theorem lineOk_self {rep : Label → Nat → Bool} {idx : LabelIdx} {x : Line}
     (h : ∀ l, x.target? = some (.block l) → repLbl rep idx l (.block l) = true) :
     lineOk rep idx x x = true := by
   unfold lineOk
@@ -487,7 +487,7 @@ theorem lineOk_self {rep : Label → Nat → Bool} {idx : Std.HashMap Label Nat}
     exact ⟨(Line.relabel_self hxt).symm, h l hxt⟩
   · simp
 
-theorem keptOk_self {rep : Label → Nat → Bool} {idx : Std.HashMap Label Nat} :
+theorem keptOk_self {rep : Label → Nat → Bool} {idx : LabelIdx} :
     ∀ {t : List Line}, (∀ ln ∈ t, ∀ l, ln.target? = some (.block l) →
       repLbl rep idx l (.block l) = true) → keptOk rep idx t t = true
   | [], _ => by simp [keptOk]
@@ -499,7 +499,7 @@ theorem keptOk_self {rep : Label → Nat → Bool} {idx : Std.HashMap Label Nat}
     exact ⟨trivial, lineOk_self (h x List.mem_cons_self), ih.2⟩
 
 /-- `termOk` accepts a last instruction's unsimplified lines, kept as they are. -/
-theorem termOk_raw {rep : Label → Nat → Bool} {idx : Std.HashMap Label Nat} {a : Option AInst}
+theorem termOk_raw {rep : Label → Nat → Bool} {idx : LabelIdx} {a : Option AInst}
     {t : List Line} {nxt : Nat} (hraw : RawTerm a t)
     (hrep : ∀ ln ∈ t, ∀ l, ln.target? = some (.block l) → repLbl rep idx l (.block l) = true) :
     termOk rep idx a t t nxt = true := by
@@ -537,7 +537,7 @@ theorem termOk_raw {rep : Label → Nat → Bool} {idx : Std.HashMap Label Nat} 
 
 theorem blockLabelIdx_go_some : ∀ (L : List Line) (n : Nat) (l : Label),
     Line.label (.block l) ∈ L → ∃ j,
-      ((L.zipIdx n).foldr (fun (x : Line × Nat) (m : Std.HashMap Label Nat) => match x.1 with
+      ((L.zipIdx n).foldr (fun (x : Line × Nat) (m : LabelIdx) => match x.1 with
         | .label (.block l) => m.insert l x.2
         | _ => m) {})[l]? = some j
   | [], n, l, h => by simp at h
@@ -545,14 +545,14 @@ theorem blockLabelIdx_go_some : ∀ (L : List Line) (n : Nat) (l : Label),
     simp only [List.zipIdx_cons, List.foldr_cons]
     split
     · rename_i _ l'
-      rw [Std.HashMap.getElem?_insert]
+      rw [Std.TreeMap.getElem?_insert]
       split
       · exact ⟨_, rfl⟩
       · rename_i hne
         rcases List.mem_cons.1 h with e | hm
         · simp only [Line.label.injEq, Lbl.block.injEq] at e
           subst e
-          simp at hne
+          simp [Nat.compare_eq_eq] at hne
         · exact blockLabelIdx_go_some L (n + 1) l hm
     · rename_i hn
       rcases List.mem_cons.1 h with e | hm
@@ -575,7 +575,7 @@ theorem repLbl_self {af : AFunc} {own : Label → Bool} {L : List Line} {l : Lab
   rw [hL]
   cases hf : af.fwd? l <;> simp_all
 
-theorem trustFwd_all {af : AFunc} {L : List Line} {idx : Std.HashMap Label Nat}
+theorem trustFwd_all {af : AFunc} {L : List Line} {idx : LabelIdx}
     {ts : List (Seg × List Line × Nat)} : ∀ (n : Nat) (S : List Label),
     (∀ l ∈ S, ts.any (fun x => x.1.label == l &&
       segTermOk af (repOn af (S.contains ·) L) idx x) = true) → trustFwd af L idx ts n S = S

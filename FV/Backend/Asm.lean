@@ -1,6 +1,7 @@
 import FV.Backend.StackAlloc
 import Std.Data.HashMap
 import Std.Data.HashSet
+import Std.Data.TreeMap
 
 /-!
 # Final instruction list and assembly text
@@ -41,17 +42,7 @@ inductive Lbl where
   a relaxed branch (`relaxLine`); never defined by a label line. -/
   | skip
   -- `BEq` is the lawful one from `DecidableEq` (the layout proof uses `Std.HashMap` lemmas)
-  deriving DecidableEq, Repr, Inhabited
-
-/-- A hash the kernel evaluates (the derived one goes through the opaque `mixHash`, so the
-emission's `Std.HashMap Lbl _` lookups would block `decide +kernel` witnesses of emitted code). -/
-instance : Hashable Lbl where
-  hash
-    | .block l => UInt64.ofNat (5 * l)
-    | .trap n => UInt64.ofNat (5 * n + 1)
-    | .jt n => UInt64.ofNat (5 * n + 2)
-    | .loop n => UInt64.ofNat (5 * n + 3)
-    | .skip => 4
+  deriving DecidableEq, Repr, Inhabited, Hashable, Ord
 
 /-- Assembly name of a label of function `k` (its index in the file). -/
 def Lbl.name (k : Nat) : Lbl → String
@@ -672,10 +663,11 @@ def Line.cbr? : Line → Option Lbl
     | _ => none
   | _ => none
 
-/-- `MachBuffer`'s state over the line list: the lines so far and the label aliases. -/
+/-- `MachBuffer`'s state over the line list: the lines so far and the label aliases (a tree
+map, which the kernel evaluates: `decide +kernel` witnesses run `machBuf`). -/
 structure MBuf where
   out : Array Line := #[]
-  alias : Std.HashMap Lbl Lbl := {}
+  alias : Std.TreeMap Lbl Lbl := {}
   deriving Inhabited
 
 /-- Resolve a label through the aliases (`resolve_label_offset`; aliases are acyclic). -/
@@ -705,6 +697,10 @@ def lastCode (out : Array Line) : Nat → Option Nat
 def MBuf.boundIn (m : MBuf) (i j : Nat) : List Lbl :=
   (m.out.extract i j).toList.filterMap m.bound
 
+/-- The lines without line `k` (`List.eraseIdx`: structural, so `decide +kernel` witnesses of
+emitted code evaluate it, unlike `Array.eraseIdx`'s well-founded loop). -/
+def MBuf.erase (m : MBuf) (k : Nat) : Array Line := (m.out.toList.eraseIdx k).toArray
+
 /-- One round of `optimize_branches` (`buffer.rs:1016-1262`); `none`: no rule applies.
 `allLabels`: alias every label at a `b`, else only block labels. -/
 def MBuf.step (allLabels : Bool) (m : MBuf) : Option MBuf := do
@@ -716,7 +712,7 @@ def MBuf.step (allLabels : Bool) (m : MBuf) : Option MBuf := do
   let atBr := m.boundIn ((p.map (· + 1)).getD 0) k
   if atBr.length > 100 then none
   let rt := m.res t
-  if tail.contains rt then return { m with out := m.out.eraseIdx! k }
+  if tail.contains rt then return { m with out := m.erase k }
   if ln.ubr?.isSome then
     if atBr.contains rt then none
     let als := if allLabels then atBr else atBr.filter (· matches .block _)
@@ -724,11 +720,11 @@ def MBuf.step (allLabels : Bool) (m : MBuf) : Option MBuf := do
       return { m with alias := als.foldl (fun a l => a.insert l t) m.alias }
     if !atBr.isEmpty then none
     let p ← p
-    if m.out[p]!.ubr?.isSome then return { m with out := m.out.eraseIdx! k }
+    if m.out[p]!.ubr?.isSome then return { m with out := m.erase k }
     let ct ← m.out[p]!.cbr?
     if !tail.contains (m.res ct) then none
     match m.out[p]! with
-    | .ins c tc => return { m with out := (m.out.eraseIdx! k).set! p (.ins (c.invertTo t) tc) }
+    | .ins c tc => return { m with out := (m.erase k).set! p (.ins (c.invertTo t) tc) }
     | _ => none
   none
 
@@ -779,8 +775,13 @@ def AFunc.fwd? (af : AFunc) (s : Label) : Option Label :=
     | _ => none
   | none => none
 
+/-- A block label's line index (a tree map: the kernel evaluates it, so `decide +kernel`
+witnesses of emitted code go through the branch check; `Std.HashMap`'s `USize` indexing does
+not reduce). -/
+abbrev LabelIdx := Std.TreeMap Label Nat
+
 /-- The first line defining each block label of `L`. -/
-def blockLabelIdx (L : List Line) : Std.HashMap Label Nat :=
+def blockLabelIdx (L : List Line) : LabelIdx :=
   L.zipIdx.foldr (fun (ln, j) m => match ln with
     | .label (.block l) => m.insert l j
     | _ => m) {}
@@ -803,7 +804,7 @@ def repAt (af : AFunc) (own : Label → Bool) (L : Array Line) : Nat → Label �
 
 /-- A branch to `l'` reaches block `s`: `l'` is a block label whose line (`idx`) represents `s`
 (`rep`). -/
-def repLbl (rep : Label → Nat → Bool) (idx : Std.HashMap Label Nat) (s : Label) (l' : Lbl) :
+def repLbl (rep : Label → Nat → Bool) (idx : LabelIdx) (s : Label) (l' : Lbl) :
     Bool :=
   match l' with
   | .block l => match idx[l]? with
@@ -815,7 +816,7 @@ def repLbl (rep : Label → Nat → Bool) (idx : Std.HashMap Label Nat) (s : Lab
 block target becomes `x` with its target resolved to a block label representing the old one
 (possibly the same label: then that label's line must still represent the block, which fails for
 an untrusted forwarding block whose `b` `MachBuffer` may have removed). -/
-def lineOk (rep : Label → Nat → Bool) (idx : Std.HashMap Label Nat) (x y : Line) : Bool :=
+def lineOk (rep : Label → Nat → Bool) (idx : LabelIdx) (x y : Line) : Bool :=
   match x.target? with
   | some (.block l) => match y.target? with
     | some l' => y == x.relabel (fun _ => l') && repLbl rep idx l l'
@@ -823,13 +824,13 @@ def lineOk (rep : Label → Nat → Bool) (idx : Std.HashMap Label Nat) (x y : L
   | _ => x == y
 
 /-- Final lines `o` for the lines `t`, line by line (`lineOk`). -/
-def keptOk (rep : Label → Nat → Bool) (idx : Std.HashMap Label Nat) (t o : List Line) : Bool :=
+def keptOk (rep : Label → Nat → Bool) (idx : LabelIdx) (t o : List Line) : Bool :=
   o.length == t.length && (t.zip o).all fun (x, y) => lineOk rep idx x y
 
 /-- Final lines `o` of a conditional branch `ci` to `s1`, else to `s2` (followed by `b s2`):
 both kept (retargeted; any condition), one branch retargeted (`s2` next) or inverted (`s1`
 next), or none (both next, line `nxt`). -/
-def condOk (rep : Label → Nat → Bool) (idx : Std.HashMap Label Nat) (s1 s2 : Label) (ci : Insn)
+def condOk (rep : Label → Nat → Bool) (idx : LabelIdx) (s1 s2 : Label) (ci : Insn)
     (o : List Line) (nxt : Nat) : Bool :=
   match o with
   | [.ins c none, .ins (.b e') none] =>
@@ -848,7 +849,7 @@ def condOk (rep : Label → Nat → Bool) (idx : Std.HashMap Label Nat) (s1 s2 :
 instruction `a` (lines `t`) reach the successors `a` names; `rep s j`: line `j` represents
 block `s`, `nxt`: the line after `o`. A branch to a block label `l'` reaches `s` if `l'`'s line
 represents `s`; a removed branch falls through to `nxt`. -/
-def termOk (rep : Label → Nat → Bool) (idx : Std.HashMap Label Nat) (a : Option AInst)
+def termOk (rep : Label → Nat → Bool) (idx : LabelIdx) (a : Option AInst)
     (t o : List Line) (nxt : Nat) : Bool :=
   match a with
   | some (.inst (.jump x)) =>
@@ -886,14 +887,14 @@ def segNxts : List Seg → List (List Line) → Nat → List (Seg × List Line �
   | _, _, _ => []
 
 /-- `termOk` of a segment (`segNxts`). -/
-def segTermOk (af : AFunc) (rep : Label → Nat → Bool) (idx : Std.HashMap Label Nat)
+def segTermOk (af : AFunc) (rep : Label → Nat → Bool) (idx : LabelIdx)
     (x : Seg × List Line × Nat) : Bool :=
   termOk rep idx (af.blocks[x.1.idx]?.bind (·.2.back?)) x.1.term x.2.1 x.2.2
 
 /-- The forwarding blocks whose own label represents them (`repAt`'s `own`), from the
 candidates `S`: the segments of `S` that pass `termOk` when `S` is trusted, repeated until no
 candidate fails (at most `n` rounds; the result is checked by `segsOk` anyway). -/
-def trustFwd (af : AFunc) (L : List Line) (idx : Std.HashMap Label Nat)
+def trustFwd (af : AFunc) (L : List Line) (idx : LabelIdx)
     (ts : List (Seg × List Line × Nat)) : Nat → List Label → List Label
   | 0, S => S
   | n + 1, S =>

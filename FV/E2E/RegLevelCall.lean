@@ -182,7 +182,7 @@ theorem CalleeOk.g {F : BitVec 64 → Prop} {K : Nat} {X : ExtSem} {H : ArmHooks
 
 /-- `termOk` keeps the first line of the last instruction's lines when it has no target (the
 call line of a call item). -/
-theorem termOk_call_head {rep : Label → Nat → Bool} {idx : Std.HashMap Label Nat} {i' : MInst}
+theorem termOk_call_head {rep : Label → Nat → Bool} {idx : LabelIdx} {i' : MInst}
     {xI : Insn} {ls t o : List Line} {nxt : Nat}
     (hxi : i'.callInsn? = some xI) (ht0 : t[0]? = some (.ins xI none))
     (hno : Line.target? (.ins xI none) = none)
