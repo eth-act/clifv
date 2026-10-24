@@ -10,9 +10,13 @@ The replacement-driver work in PR #135 remains paused.
 `Backend.DeadCleanup.prune` leaves a CFG-invalid input unchanged. For a valid
 CFG, it scans each instruction array backwards and removes an instruction only
 when it has a whitelisted pure form, no clobbers, only virtual definitions, at
-least one definition, and no live definition. The whitelist includes integer
+least one definition, and no live definition. The whitelist (`pureForm`) includes integer
 moves/constants/address computations, non-flag-setting arithmetic and logical
-operations, and multiply-add/subtract. Other forms remain in place.
+operations, multiply-add/subtract, and `cset` (it reads the flags but writes only its
+definition; #552: the boolean of an `icmp` that the `brif`/`select` rule re-compares, which
+Cranelift does not lower because no lowered instruction uses it, `machinst/lower.rs`
+`lower_clif_block`). Other forms remain in place. `ABIReadOnly.instruction` keeps its
+previous producer list (`pureNoFlags`, the whitelist without `cset`).
 
 The liveness boundary includes every block's reads and outgoing edge arguments,
 including the current block's reads. This deliberately conservative choice covers
