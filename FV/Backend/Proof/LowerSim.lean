@@ -2212,7 +2212,7 @@ the same CLIF entry, with the same register arguments (in the parameter register
 stack-argument bytes (`x29` the same), the entry code (`Args`, then the loads) reaches the first
 statement in both with the same vreg file; each world agrees with its entry world outside the
 allocatable registers (`SameWorld F`). -/
-theorem entry_step2 (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p) (hds : DriverSem sem)
+theorem entry_step2P (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p) (hds : DriverSem sem)
     {F : BitVec 64 → Prop} {sb : Nat} {syms : String → Option Nat}
     (hMem : MemRefines F sb syms sem) (hMR : MRStable F MR)
     {cs : Clif.State} {B0 : Clif.Block} (hB0 : f.blocks[0]? = some B0)
@@ -2228,9 +2228,9 @@ theorem entry_step2 (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p) (hds : D
     (hstk : ∀ off v, (ArgLoc.stack off, v) ∈ (locsOf f.sig).zip args → ∀ k < v.ty.bytes,
       w₀'.mem (Arm.r (.GPR 29#5) w₀ + BitVec.ofInt 64 (16 + (off : Int)) + BitVec.ofNat 64 k) =
         w₀.mem (Arm.r (.GPR 29#5) w₀ + BitVec.ofInt 64 (16 + (off : Int)) + BitVec.ofNat 64 k)) :
-    ∃ k ρ₁ w₁ w₁', Star (VStep vc sem) (.run ⟨0, 0, ρ₀, w₀⟩) (.run ⟨0, k, ρ₁, w₁⟩) ∧
+    ∃ k ρ₁ w₁ w₁', StarP (VStep vc sem) (AtSeg 0 0 k) (.run ⟨0, 0, ρ₀, w₀⟩) (.run ⟨0, k, ρ₁, w₁⟩) ∧
       Match f ctx R gn bl A MR slots cs ⟨0, k, ρ₁, w₁⟩ ∧ SameWorld F w₁ w₀ ∧
-      Star (VStep vc sem) (.run ⟨0, 0, ρ₀, w₀'⟩) (.run ⟨0, k, ρ₁, w₁'⟩) ∧
+      StarP (VStep vc sem) (AtSeg 0 0 k) (.run ⟨0, 0, ρ₀, w₀'⟩) (.run ⟨0, k, ρ₁, w₁'⟩) ∧
       Match f ctx R gn bl A MR slots cs ⟨0, k, ρ₁, w₁'⟩ ∧ SameWorld F w₁' w₀' := by
   obtain ⟨L, hL⟩ := H.blow hB0
   obtain ⟨vb, hvb, -, -, -, -, -, -, hcode, htne, -⟩ := H.shape.blk 0 B0 L hB0 hL
@@ -2405,8 +2405,8 @@ theorem entry_step2 (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p) (hds : D
     simpa using this
   have hlt : 1 + (E.filterMap (entryLoadOf R)).length < vb.insts.size := by
     rw [hpre] at hsz; simp at hsz; omega
-  have hstar := seqRun_fall_star hvb hseg1 hlt hrun
-  have hstar' := seqRun_fall_star hvb hseg1 hlt hrun'
+  have hstar := seqRun_fall_starP hvb hseg1 hlt hrun
+  have hstar' := seqRun_fall_starP hvb hseg1 hlt hrun'
   -- the vreg file holds the parameters, the DFG facts
   have hheld : Held gn (A 0 0) ρ₂ cs.frame := by
     intro x hx
@@ -2462,11 +2462,42 @@ theorem entry_step2 (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p) (hds : D
       obtain ⟨q, hq, rfl, hqt⟩ := setMany_param_ty hregs hnd hty (hA x hx0).1 hv
       rw [H.cert.paramTy B0 hB0mem q hq] at ht
       rw [hqt]; exact Option.some.inj ht
-  refine ⟨1 + (E.filterMap (entryLoadOf R)).length, ρ₂, w₂, w₂', .step hstep hstar,
+  have hmono : ∀ c, AtSeg (V := CV) (W := Arm.ArmState) 0 1 (E.filterMap (entryLoadOf R)).length c →
+      AtSeg 0 0 (1 + (E.filterMap (entryLoadOf R)).length) c := by
+    rintro c ⟨i, hi, ρ', w', rfl⟩
+    exact ⟨i + 1, by omega, ρ', w', by rw [Nat.zero_add, Nat.add_comm]⟩
+  refine ⟨1 + (E.filterMap (entryLoadOf R)).length, ρ₂, w₂, w₂',
+    .step (AtSeg.zero _ _ _ (by omega) _ _) hstep (hstar.mono hmono),
     ⟨hcall, hfunc, hslots, hmr₂, B0, 0, hB0, hterm, Nat.zero_le _, by simp [hbody],
-      by simp [pos, hpre]; omega, hheld, hdfg⟩, hsw2, .step hstep' hstar',
+      by simp [pos, hpre]; omega, hheld, hdfg⟩, hsw2,
+    .step (AtSeg.zero _ _ _ (by omega) _ _) hstep' (hstar'.mono hmono),
     ⟨hcall, hfunc, hslots, hmr₂', B0, 0, hB0, hterm, Nat.zero_le _, by simp [hbody],
       by simp [pos, hpre]; omega, hheld, hdfg⟩, hsw2'⟩
+
+/-- **Entry on two worlds** (`entry_step2P` as plain runs). -/
+theorem entry_step2 (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p) (hds : DriverSem sem)
+    {F : BitVec 64 → Prop} {sb : Nat} {syms : String → Option Nat}
+    (hMem : MemRefines F sb syms sem) (hMR : MRStable F MR)
+    {cs : Clif.State} {B0 : Clif.Block} (hB0 : f.blocks[0]? = some B0)
+    (hcall : cs.callers = []) (hfunc : cs.frame.func = f) (hslots : cs.frame.slots = slots)
+    (hbody : cs.frame.body = B0.body) (hterm : cs.frame.term = B0.term) {args : List Clif.Val}
+    (hregs : Clif.Regs.empty.setMany (B0.params.map (·.1)) args = some cs.frame.regs)
+    (hty : args.map (·.ty) = B0.params.map (·.2))
+    (hsig : args.map (·.ty) = f.sig.params.map (·.ty))
+    {ρ₀ : Nat → CV} {w₀ w₀' : Arm.ArmState} (hmr : MR slots cs.mem w₀)
+    (hmr' : MR slots cs.mem w₀') (hargs : ArgsAtEntry F f.sig args w₀)
+    (hreg : ∀ r v, (ArgLoc.reg r, v) ∈ (locsOf f.sig).zip args → regVal w₀' r = regVal w₀ r)
+    (h29 : Arm.r (.GPR 29#5) w₀' = Arm.r (.GPR 29#5) w₀)
+    (hstk : ∀ off v, (ArgLoc.stack off, v) ∈ (locsOf f.sig).zip args → ∀ k < v.ty.bytes,
+      w₀'.mem (Arm.r (.GPR 29#5) w₀ + BitVec.ofInt 64 (16 + (off : Int)) + BitVec.ofNat 64 k) =
+        w₀.mem (Arm.r (.GPR 29#5) w₀ + BitVec.ofInt 64 (16 + (off : Int)) + BitVec.ofNat 64 k)) :
+    ∃ k ρ₁ w₁ w₁', Star (VStep vc sem) (.run ⟨0, 0, ρ₀, w₀⟩) (.run ⟨0, k, ρ₁, w₁⟩) ∧
+      Match f ctx R gn bl A MR slots cs ⟨0, k, ρ₁, w₁⟩ ∧ SameWorld F w₁ w₀ ∧
+      Star (VStep vc sem) (.run ⟨0, 0, ρ₀, w₀'⟩) (.run ⟨0, k, ρ₁, w₁'⟩) ∧
+      Match f ctx R gn bl A MR slots cs ⟨0, k, ρ₁, w₁'⟩ ∧ SameWorld F w₁' w₀' :=
+  let ⟨k, ρ₁, w₁, w₁', h1, h2, h3, h4, h5, h6⟩ := entry_step2P H hds hMem hMR hB0 hcall hfunc
+    hslots hbody hterm hregs hty hsig (ρ₀ := ρ₀) hmr hmr' hargs hreg h29 hstk
+  ⟨k, ρ₁, w₁, w₁', h1.star, h2, h3, h4.star, h5, h6⟩
 
 end
 
