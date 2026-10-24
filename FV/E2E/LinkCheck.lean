@@ -104,9 +104,9 @@ def LinkInput.symAddr (I : LinkInput) (n : String) (off : Int) : BitVec 64 :=
 
 /-- The pipeline on `f` (index `k` in its file, regalloc output `o`) loaded at `base`. -/
 def pipeWithLowering (lower : Clif.Function → Except String VCode)
-    (stage : VCode → VCode) (f : Clif.Function) (k : Nat) (base : BitVec 64) (o : Lean.Json) : Except String Art := do
+    (stage : Clif.Function → VCode → VCode) (f : Clif.Function) (k : Nat) (base : BitVec 64) (o : Lean.Json) : Except String Art := do
   let vc ← lower f
-  let vcp ← prepare (stage vc)
+  let vcp ← prepare (stage f vc)
   let o ← parseRAOut o
   let rf ← buildRFunc vcp o
   let af ← lowerRFunc vcp rf
@@ -115,13 +115,14 @@ def pipeWithLowering (lower : Clif.Function → Except String VCode)
   pure ⟨k, vc, vcp, rf, af, fa, fb, base⟩
 
 def pipe (f : Clif.Function) (k : Nat) (base : BitVec 64) (o : Lean.Json) : Except String Art :=
-  pipeWithLowering Backend.Stock.D0.defaultLower id f k base o
+  pipeWithLowering Backend.Stock.D0.defaultLower (fun _ => id) f k base o
 
 theorem pipe_spec {f : Clif.Function} {k : Nat} {base : BitVec 64} {o : Lean.Json} {a : Art}
     (h : pipe f k base o = .ok a) :
     lowerFunction f = .ok a.vc ∧ prepare a.vc = .ok a.vcp ∧ lowerRFunc a.vcp a.rf = .ok a.af ∧
       emitFunc a.k a.af = .ok a.fa ∧ a.fa.layout = .ok a.fb ∧ a.k = k ∧ a.base = base := by
-  unfold pipe pipeWithLowering id at h
+  unfold pipe pipeWithLowering at h
+  simp only [id] at h
   rw [Backend.Stock.D0.defaultLower_eq_legacy] at h
   rcases h1 : lowerFunction f with _ | vc <;> simp only [h1, bind, Except.bind] at h
   · cases h
@@ -151,9 +152,9 @@ loaded at `base`: `lowerFunction`, `prepare`, `lowerAllocReady` (regalloc2's all
 accepted and emittable, else the spill allocation), `emitFunc`, `layout`. The artifact's
 allocation is the one lowered, `allocResult vcp (readyAnswer vcp ra)` (`lowerAllocReady_eq`). -/
 def pipeTWithLowering (lower : Clif.Function → Except String VCode)
-    (stage : VCode → VCode) (f : Clif.Function) (k : Nat) (base : BitVec 64) (o : Lean.Json) : Except String Art := do
+    (stage : Clif.Function → VCode → VCode) (f : Clif.Function) (k : Nat) (base : BitVec 64) (o : Lean.Json) : Except String Art := do
   let vc ← lower f
-  let vcp ← prepare (stage vc)
+  let vcp ← prepare (stage f vc)
   let ra := raAnswer vcp o
   let af ← lowerAllocReady vcp ra
   let fa ← emitFunc k af
@@ -161,7 +162,7 @@ def pipeTWithLowering (lower : Clif.Function → Except String VCode)
   pure ⟨k, vc, vcp, allocResult vcp (readyAnswer vcp ra), af, fa, fb, base⟩
 
 def pipeT (f : Clif.Function) (k : Nat) (base : BitVec 64) (o : Lean.Json) : Except String Art :=
-  pipeTWithLowering Backend.Stock.D0.defaultLower id f k base o
+  pipeTWithLowering Backend.Stock.D0.defaultLower (fun _ => id) f k base o
 
 theorem pipeT_spec {f : Clif.Function} {k : Nat} {base : BitVec 64} {o : Lean.Json} {a : Art}
     (h : pipeT f k base o = .ok a) :
@@ -169,7 +170,8 @@ theorem pipeT_spec {f : Clif.Function} {k : Nat} {base : BitVec 64} {o : Lean.Js
       a.rf = allocResult a.vcp (readyAnswer a.vcp (raAnswer a.vcp o)) ∧
       lowerRFunc a.vcp a.rf = .ok a.af ∧ emitFunc a.k a.af = .ok a.fa ∧ a.fa.layout = .ok a.fb ∧
       a.k = k ∧ a.base = base := by
-  unfold pipeT pipeTWithLowering id at h
+  unfold pipeT pipeTWithLowering at h
+  simp only [id] at h
   rw [Backend.Stock.D0.defaultLower_eq_legacy] at h
   rcases h1 : lowerFunction f with _ | vc <;> simp only [h1, bind, Except.bind] at h
   · cases h

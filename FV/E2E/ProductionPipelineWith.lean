@@ -30,7 +30,7 @@ theorem LinkInput.pipeProductionWith_spec {I : LinkInput} {lower : ProductionLow
     {cleanup : Bool} {fi : FnInput} {a : Art}
     (h : I.pipeProductionWith lower cleanup fi = .ok a) :
     (lower fi.func = .ok a.vc ∨ Stock.D0.defaultLower fi.func = .ok a.vc) ∧
-    prepare (productionStage cleanup a.vc) = .ok a.vcp ∧
+    prepare (productionStage cleanup fi.func a.vc) = .ok a.vcp ∧
     lowerRFunc a.vcp a.rf = .ok a.af ∧ emitFunc a.k a.af = .ok a.fa ∧
     a.fa.layout = .ok a.fb ∧ a.k = fi.k ∧
     a.base = BitVec.ofNat 64 (I.baseOf fi.func.name) := by
