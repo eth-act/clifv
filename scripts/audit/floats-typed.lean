@@ -108,7 +108,7 @@ import FVTest.E2E.FloatArithFinalTCF
 #print axioms Backend.Proof.lower_nonroot_nomatchTF_calls
 #print axioms Backend.Proof.lowerInstOk_of_rulesTF
 #print axioms Backend.Proof.instCallsTF_of_rules
-#print axioms Backend.Proof.instCallsT_of_rules
+#print axioms Backend.Proof.Driver.instCallsT_of_rules
 #print axioms Backend.Proof.Driver.loweringTCF_of_check
 #print axioms Backend.Proof.Driver.lowerCheckTCF_of_lowerCheckTC
 #print axioms Backend.Proof.Driver.instScopeT_of_lowerCheckTC
