@@ -87,9 +87,12 @@ example : (∃ n, (Reg.vreg 5 .float, Reg.v 1).1 = .vreg n .int ∧ (Reg.vreg 5 
 example : (∃ n c, (Reg.vreg 5 .float, Reg.v 1).1 = .vreg n c) ∧ (Reg.vreg 5 .float, Reg.v 1).2.isArgReg = true :=
   argPairOk_facts (by decide)
 example : (∃ n, (Reg.vreg 2 .float, Reg.v 0).1 = .vreg n .int) ∨
-    (∃ n m, (Reg.vreg 2 .float, Reg.v 0).1 = .vreg n .float ∧ (Reg.vreg 2 .float, Reg.v 0).2 = .v m ∧ m < 8) :=
-  retPairOk_cls (by decide)
-example : ∃ n c, (Reg.vreg 2 .float, Reg.v 0).1 = .vreg n c := retPairOk_vreg (by decide)
+    (∃ n m, (Reg.vreg 2 .float, Reg.v 0).1 = .vreg n .float ∧ (Reg.vreg 2 .float, Reg.v 0).2 = .v m ∧ m < 8) := by
+  rcases argPairOk_cls (p := (Reg.vreg 2 .float, Reg.v 0)) (by decide) with ⟨n, h, -⟩ | h
+  · exact .inl ⟨n, h⟩
+  · exact .inr h
+example : ∃ n c, (Reg.vreg 2 .float, Reg.v 0).1 = .vreg n c :=
+  (argPairOk_facts (p := (Reg.vreg 2 .float, Reg.v 0)) (by decide)).1
 
 theorem lowerFunction_ok_fCtl : (lowerFunction fCtl).toBool = true := by native_decide
 
