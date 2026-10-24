@@ -289,7 +289,7 @@ theorem realizes_rmwLoopW {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {a
   · simp only [Arm.r_of_w_same]
     congr 1
     simp [rmwLoopLines]; omega
-  · refine stRel_after hR hst ?_ ?_ (SameWorld.w_left (by simp [Masked]) hsw1) ?_ ?_ ⟨?_, fun a ha => ?_⟩
+  · refine stRel_after hR hst ?_ ?_ (SameWorld.w_left (by simp [Masked]) hsw1) ?_ ?_ ⟨?_, ?_, ?_⟩
     · refine store_regs hst [27, 24, 28] (by simp) ?_ ?_ hfr2
       · intro n hn
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hn
@@ -304,8 +304,11 @@ theorem realizes_rmwLoopW {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {a
     · simp only [Arm.w_program]; exact hprog1
     · simp only [spOf]; exact hfr2 _ (by simp) (by simp [rnum]) (by simp)
     · simp only [Arm.ArmState.mem_w_eq_mem, hmem1]
-      refine mem_write_mem_bytes_ne _ _ _ _ _ (fun k hk e => hav k hk ?_)
-      rw [← e]; exact RL.FK_F ha
+      intro a ha
+      refine mem_write_mem_bytes_ne ty.bytes _ _ _ a fun k hk e => ?_
+      rw [e] at ha
+      exact hav k hk (RL.FK_F ha)
+    · exact hfr2 _ (by simp) (by simp [rnum]) (by simp)
 
 /-! ## `atomic_cas` -/
 
@@ -498,7 +501,7 @@ theorem realizes_casLoopW {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {a
       c2, ls2, _, ps2, T, hvb, hit, by rw [hsplit]; simp, hchk', hc2, hl2, htr, ?_, hpcF, ?_⟩
     · rw [← List.drop_drop, hdrop']
       exact List.drop_left' (by simp [casLoopLines, casLoopHead])
-    · refine stRel_after hR hst ?_ ?_ hswF ?_ hprogF ⟨?_, fun a ha => hmemF a (RL.FK_F ha)⟩
+    · refine stRel_after hR hst ?_ ?_ hswF ?_ hprogF ⟨?_, fun a ha => hmemF a (RL.FK_F ha), ?_⟩
       · refine store_regs hst [27, 24] (by simp) ?_ ?_ hfrF
         · intro n hn
           simp only [List.mem_cons, List.not_mem_nil, or_false] at hn
@@ -510,6 +513,7 @@ theorem realizes_casLoopW {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {a
         simp [writeM, upd, Operand.isDef, Operand.isLate, hl]
       · rw [hfrF .ERR (by simp) (by simp) (by simp)]; exact hst.err
       · simp only [spOf]; exact hfrF _ (by simp) (by simp [rnum]) (by simp)
+      · exact hfrF _ (by simp) (by simp [rnum]) (by simp)
   have hfr1' : ∀ f, f ≠ .PC → (∀ n ∈ [27, 24], f ≠ .GPR (rnum n)) → (∀ g, f ≠ .FLAG g) →
       Arm.r f s1 = Arm.r f s := by
     intro f h1 h2 h3
