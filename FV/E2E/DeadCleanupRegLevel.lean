@@ -74,7 +74,7 @@ theorem regLevelCorrect_world_atX_value {vcp : VCode} {rf : RFunc} {af : AFunc} 
   refine ⟨locVal R.fr (iterN R.step n0 s), fun us vals w hret => ?_, fun c htr => ?_⟩
   · -- a return
     obtain ⟨b, k, ρ, w₁, vb, ops, outs, hstar, hvb, hi, hops, hvals, hsem⟩ := hret
-    obtain ⟨n1, c1, ⟨hq1, hA1⟩, hr1, ht1⟩ := forward hSim hRz hstar hinit ⟨hq0, hA0⟩
+    obtain ⟨n1, c1, hq1, hr1, ht1⟩ := forward hSim hRz hstar hinit (.inl ⟨hq0, hA0⟩)
     obtain ⟨ns, rfl⟩ := ctlCheck_rets hck hvb hi
     rw [operands_retsC] at hops
     cases hops
@@ -85,8 +85,8 @@ theorem regLevelCorrect_world_atX_value {vcp : VCode} {rf : RFunc} {af : AFunc} 
       rw [hvals]
       refine VStep.step hvb hi (operands_retsC ns) (by rw [hvals] at hsem; exact hsem) ?_ (VNext.ret rfl)
       rw [List.toList_toArray, filter_isDef_retOpsC]; rfl
-    obtain ⟨n2, c', c'', ⟨hq2, -⟩, hr2, hms, hr3, ht2⟩ :=
-      forward_last hSim hRz h1 _ c1 _ (Nat.le_refl _) hr1 ⟨hq1, hA1⟩
+    obtain ⟨n2, c', c'', hq2, hr2, hms, hr3, ht2⟩ :=
+      forward_last hSim hRz h1 _ c1 _ (Nat.le_refl _) hr1 hq1
     have hfin : ∀ n3, E2E.runX (ArmStepX X H fa) (n0 + n1 + n2 + n3) s =
         iterN R.step n3 (iterN R.step n2 (iterN R.step n1 (iterN R.step n0 s))) := by
       intro n3; rw [runX_eq]; simp only [iterN_add]; rfl
@@ -109,8 +109,9 @@ theorem regLevelCorrect_world_atX_value {vcp : VCode} {rf : RFunc} {af : AFunc} 
         cases hn with
         | ret _ =>
         rw [rets_store hlen2 rfl hho hcl] at hks
-        have hst := q_stRel hq2
-        obtain ⟨n3, ht3, hpc, herr, hsp, hx29, hregs, hmem, hfld, hprogF, hvalsM⟩ :=
+        obtain ⟨mt, hq2'⟩ := qa_q hq2
+        have hst := q_stRel hq2'
+        obtain ⟨n3, ht3, hpc, herr, hsp, hx29, hregs, hsaved, hmem, hfld, hprogF, hvalsM⟩ :=
           ret_machine hR hent hq2 hvb hi
         -- every state of the run before the return is `GoodX`
         have htr : ∀ i < n0 + n1 + n2 + n3, R.GoodX (E2E.runX (ArmStepX X H fa) i s) := by
@@ -119,8 +120,6 @@ theorem regLevelCorrect_world_atX_value {vcp : VCode} {rf : RFunc} {af : AFunc} 
           exact trace_add ht0 (trace_add ht1 (trace_add ht2 ht3)) i (by omega)
         have hm0 : ∀ r, locVal R.fr (iterN R.step n0 s) (.reg r) = regVal (iterN R.step n0 s) r :=
           fun _ => rfl
-        have hms : ∀ r, r.allocatable = true → _ = regVal _ r := fun r hr =>
-          hst.store (.reg r) (fun r' e => by cases e; exact hr) trivial
         refine ⟨n0 + n1 + n2 + n3, ⟨⟨?_, ?_, ?_, ?_, ?_⟩, ?_, ?_, ?_, ?_, ?_, fun i hi0 hi hpcall => ?_⟩,
           fun i hi => (htr i hi).act⟩
         rotate_right
@@ -135,24 +134,26 @@ theorem regLevelCorrect_world_atX_value {vcp : VCode} {rf : RFunc} {af : AFunc} 
           by_cases h29 : a = 10
           · subst h29; exact hx29
           obtain ⟨hcs, hal⟩ := calleeSaved_x (n := 19 + a) (by omega) (by omega)
+          by_cases hsv : Reg.x (19 + a) ∈ R.af.saves
+          · exact hsaved _ hsv
           have k1 := hks _ hcs
           simp only [ckeep, hm0] at k1
-          rw [hms _ hal] at k1
           have hne : ∀ q, q < 32 → q ≠ 19 + a →
               Arm.StateField.GPR (rnum (19 + a)) ≠ .GPR (BitVec.ofNat 5 q) :=
             fun q h1 h2 e => rnum_ne (a := 19 + a) (b := q) (by omega) h1 (Ne.symm h2)
               (Arm.StateField.GPR.inj e)
-          have k2 := hregs _ hal
+          have k2 := hregs _ hal hsv
           simp only [regVal] at k1 k2
           rw [hf0 _ (by simp) (hne 29 (by omega) (by omega)) (hne 31 (by omega) (by omega))
             (hne 16 (by omega) (by omega))] at k1
           exact setWidth128_inj (k2.trans k1)
         · intro n h8 h16
           obtain ⟨hcs, hal⟩ := calleeSaved_v h8 h16
+          by_cases hsv : Reg.v n ∈ R.af.saves
+          · exact hsaved _ hsv
           have k1 := hks _ hcs
           simp only [ckeep, hm0] at k1
-          rw [hms _ hal] at k1
-          have k2 := hregs _ hal
+          have k2 := hregs _ hal hsv
           simp only [regVal] at k1 k2
           rw [hf0 _ (by simp) (by simp) (by simp) (by simp)] at k1
           show (Arm.r (.SFP (rnum n)) _).setWidth 64 = (Arm.r (.SFP (rnum n)) s).setWidth 64
@@ -176,7 +177,7 @@ theorem regLevelCorrect_world_atX_value {vcp : VCode} {rf : RFunc} {af : AFunc} 
           exact hent.program.symm
   · -- a trap
     obtain ⟨b, k, ρ, w, vb, i, ops, outs, w', hstar, hvb, hi, hops, hsem, htc⟩ := htr
-    obtain ⟨n1, c1, ⟨hq1, hA1⟩, hr1, ht1⟩ := forward hSim hRz hstar hinit ⟨hq0, hA0⟩
+    obtain ⟨n1, c1, hq1, hr1, ht1⟩ := forward hSim hRz hstar hinit (.inl ⟨hq0, hA0⟩)
     obtain ⟨hnil, hform⟩ := csem_halt (csemV_sub (valueSemV_halt hsem))
     subst hnil
     have hdefs : ops.toList.filter Operand.isDef = [] := by
@@ -185,8 +186,8 @@ theorem regLevelCorrect_world_atX_value {vcp : VCode} {rf : RFunc} {af : AFunc} 
       · exact trapIf_nodefs hops
     have h1 : VStep R.vc R.valueSem (.run ⟨b, k, ρ, w⟩) (.halt w') :=
       VStep.step hvb hi hops hsem (by rw [hdefs]; rfl) VNext.halt
-    obtain ⟨n2, c', c'', ⟨hq2, -⟩, hr2, hms, hr3, ht2⟩ :=
-      forward_last hSim hRz h1 _ c1 _ (Nat.le_refl _) hr1 ⟨hq1, hA1⟩
+    obtain ⟨n2, c', c'', hq2, hr2, hms, hr3, ht2⟩ :=
+      forward_last hSim hRz h1 _ c1 _ (Nat.le_refl _) hr1 hq1
     have hfin : ∀ n3, E2E.runX (ArmStepX X H fa) (n0 + n1 + n2 + n3) s =
         iterN R.step n3 (iterN R.step n2 (iterN R.step n1 (iterN R.step n0 s))) := by
       intro n3; rw [runX_eq]; simp only [iterN_add]; rfl
@@ -201,6 +202,10 @@ theorem regLevelCorrect_world_atX_value {vcp : VCode} {rf : RFunc} {af : AFunc} 
         subst hb' hk' hw'
         rw [hvb] at hvb'; cases hvb'
         rw [hi] at hi'; cases hi'
+        have hnr : ∀ us, i ≠ .rets us := by
+          intro us h
+          rcases hform with ⟨cd, rfl⟩ | ⟨kk, cd, rfl, -⟩ <;> cases h
+        have hq2 := (qa_op hq2 hvb hi hnr).1
         rcases hform with ⟨cd, rfl⟩ | ⟨kk, cd, rfl, -⟩
         · simp only [trapCode?, Option.some.injEq] at htc
           subst htc
