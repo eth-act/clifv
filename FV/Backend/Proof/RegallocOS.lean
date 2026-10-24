@@ -218,5 +218,9 @@ theorem os_fpuToInt (op : FpuToIntOp) (d n : Nat) :
 theorem os_intToFpu (op : IntToFpuOp) (d n : Nat) :
     OperandsSound F (execMInst ctx env) (csem F ctx X) (.intToFpu op (.vreg d .float) (.vreg n .int)) :=
   os_of_corr rfl _ (by assign_tac) (by fo_tac) rfl rfl (corr_intToFpu F ctx env op d n)
+theorem os_fpuRound (op : FpuRoundMode) (d n : Nat) :
+    OperandsSound F (execMInst ctx env) (csem F ctx X)
+      (.fpuRound op (.vreg d .float) (.vreg n .float)) :=
+  os_of_corr rfl _ (by assign_tac) (by fo_tac) rfl rfl (corr_fpuRound F ctx env op d n)
 
 end Backend.Proof

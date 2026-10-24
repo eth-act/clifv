@@ -139,7 +139,8 @@ def fBinaryOpcode : Clif.FOp → Option String
 (`InstructionData::Unary`). -/
 def fUnaryOpcode : Clif.FOp → Option String
   | .sqrt => "Sqrt" | .fneg => "Fneg" | .fabs => "Fabs" | .fpromote => "Fpromote"
-  | .fdemote => "Fdemote"
+  | .fdemote => "Fdemote" | .ceil => "Ceil" | .floor => "Floor" | .trunc => "Trunc"
+  | .nearest => "Nearest"
   | _ => none
 
 /-- S11f: the controlling types at which `instData` accepts a float operation: `fpromote.f64`,
