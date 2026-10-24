@@ -57,6 +57,47 @@ Arm instructions map to these with the operand order of the ASL (`FMADD d = a + 
 `mulAdd a n m`; `FMSUB`/`FNMADD`/`FNMSUB` negate operands with `neg` first). CLIF operations
 use `rm = .rne` (`docs/plans/floats.md` §2).
 
+## Trust: FloatLib as the spec of record
+
+FV/Float stays core-only (the Arm ARM transcription above, kernel-reducible). The leaf package
+`float-spec/` (library `FVFloatSpec`, built and audited by `scripts/float-spec.sh`, part of the
+main gate) proves it equal to [FloatLib](https://github.com/lean-dojo/FloatLib) (@1f5771b)'s IEEE 754 model: 84 theorems,
+for every input and every FPCR rounding mode, generic over formats with `E ≥ 2`, `F ≥ 1` with
+b32/b64 corollaries; `#print axioms` (`float-spec/audit.lean`) shows only `propext`,
+`Classical.choice`, `Quot.sound`.
+
+Extra assumption (two toolchains): FloatLib and Mathlib need Lean v4.35.0, the compiler is built
+with v4.34.1. `float-spec/` therefore has its own `lean-toolchain` (v4.35.0) and compiles the
+FV/Float cone (`FV.Float`, `FV.Float.{Basic,Round,Arith,Convert}`, core only) from the same
+sources into its own `.lake`; the theorems above are about that v4.35.0 elaboration, the
+compiler theorems about the v4.34.1 one. We assume the two elaborations define the same
+functions. `scripts/float-spec.sh` checks it: `float-spec/defs-hash.lean` prints every constant
+of the cone (kind, universe parameters, type, and the value of every definition, as a
+structural dump of the kernel term without binder names) under both toolchains, and the script
+fails unless the two outputs are byte-identical (theorem proofs are not compared; their
+statements are). One exception: the enum helpers `T.noConfusion`/`T.noConfusionType` (only
+used to prove constructors distinct) are built from core's `noConfusionEnum`, whose signature
+changed in v4.35.0, so only their types are compared, and the check fails if any other compared
+constant mentions them. With
+identical kernel terms the remaining trust is in each toolchain's kernel, as for any proof.
+
+- Exactly FloatLib's operation, NaNs included: `add_eq`, `mul_eq`, `div_eq`, `sqrt_eq`,
+  `max_eq`, `min_eq`, `compare_eq`, `neg_eq`, `abs_eq`.
+- FloatLib's operation plus an Arm NaN wrapper (`FPProcessNaNs`, `FPCR.DN = 0`), with
+  `*_of_not_nan` corollaries for exact equality on non-NaN operands: `sub_eq` (FloatLib flips the
+  sign of the second operand's NaN), `mulAdd_eq` (Arm's NaN operand order and the qNaN addend
+  with `0·∞` rule), `convert_eq` (payloads differ by design; `convert_isNaN`).
+- Conversions and rounding: `roundInt_eq` (FloatLib `roundToIntegral`, needs `F ≤ bias`),
+  `fromFixed_eq`, `toFixed_eq` (FloatLib integer rounding, Arm `SatQ` saturation),
+  `truncInt?_eq`, `roundToInt_eq`, `round_eq` (`FPRound` = `roundDyadicWithRounding`),
+  `round_sticky`.
+
+Exceptions (Arm-pseudocode-only, not tied to FloatLib): the ties-away mode `rna` (`FRINTA`,
+`FCVTA*`; FloatLib has no ties-away operation); `convert` between formats with equal exponent
+width (unused). FloatLib proves real-valued correctness only for round-to-nearest-even (in
+directed modes the bridge still holds, against FloatLib's executable operations;
+`roundToIntegral` has full theorems in every mode).
+
 ## Validation
 
 - **Kernel witnesses** `FVTest/Float/Witness.lean` (`decide +kernel`): `1+2 = 3` (b32, b64),

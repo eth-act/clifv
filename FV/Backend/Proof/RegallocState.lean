@@ -64,9 +64,13 @@ theorem AState.mem_get_map {a : AState} {f : List Sym → List Sym} {l : Loc} {s
   rw [Array.getD_eq_getD_getElem?, Array.getElem?_map] at hs
   cases h' : a[i]? <;> simp_all
 
+theorem AState.mem_get_mapSets {a : AState} {f : List Sym → List Sym} {l : Loc} {s : Sym}
+    (h : s ∈ AState.get (a.mapSets f) l) : s ∈ f (AState.get a l) :=
+  AState.mem_get_map (by rwa [AState.mapSets_eq] at h)
+
 theorem AState.mem_get_remove {a : AState} {t s : Sym} {l : Loc}
     (h : s ∈ AState.get (a.remove t) l) : s ∈ AState.get a l ∧ s ≠ t := by
-  have := AState.mem_get_map h
+  have := AState.mem_get_mapSets h
   simpa using this
 
 theorem AState.mem_get_define {a : AState} {l l' : Loc} {t s : Sym}
@@ -80,7 +84,7 @@ theorem AState.mem_get_define {a : AState} {l l' : Loc} {t s : Sym}
 theorem AState.mem_get_meet {a b : AState} {l : Loc} {s : Sym} (h : s ∈ AState.get (a.meet b) l) :
     s ∈ AState.get a l ∧ s ∈ AState.get b l := by
   obtain ⟨i, hi, hs⟩ := AState.mem_get h
-  unfold AState.meet at hs
+  rw [AState.meet_eq] at hs
   rw [Array.getD_eq_getD_getElem?, Array.getElem?_mapIdx] at hs
   cases h' : a[i]? with
   | none => simp [h'] at hs
@@ -93,7 +97,7 @@ theorem AState.mem_get_meet {a b : AState} {l : Loc} {s : Sym} (h : s ∈ AState
 theorem AState.mem_get_le {a b : AState} {l : Loc} {s : Sym} (hle : a.le b = true)
     (h : s ∈ AState.get a l) : s ∈ AState.get b l := by
   obtain ⟨i, hi, hs⟩ := AState.mem_get h
-  unfold AState.le at hle
+  rw [AState.le_eq] at hle
   have hlt : i < a.size := by
     rw [Array.getD_eq_getD_getElem?] at hs
     apply Classical.byContradiction
@@ -108,7 +112,7 @@ theorem AState.mem_get_parCopy {a : AState} {ps xs : List Nat} {l : Loc} {s : Sy
     (h : s ∈ AState.get (a.parCopy ps xs) l) :
     (s ∈ AState.get a l ∧ s ∉ ps.map Sym.vreg) ∨
       (∃ p x, (p, x) ∈ ps.zip xs ∧ s = .vreg p ∧ Sym.vreg x ∈ AState.get a l) := by
-  have h := AState.mem_get_map h
+  have h := AState.mem_get_mapSets h
   simp only [List.mem_append, List.mem_filter, List.mem_filterMap] at h
   rcases h with ⟨hs, hn⟩ | ⟨⟨⟨p, x⟩, hpx, hsome⟩, _⟩
   · left; exact ⟨hs, by simpa using hn⟩

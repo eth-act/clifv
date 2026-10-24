@@ -55,11 +55,13 @@ theorem ispecFP_lockstep {Z : BitVec 64 → Prop} {i : MInst} {us : List CV} {w 
     ∃ w₁', ispecFP i us w' = some (o, w₁', c) ∧ SameWorld Z w₁ w₁' := by
   unfold ispecFP at h ⊢
   split at h
-  all_goals simp only [Option.map_eq_some_iff, Prod.mk.injEq, reduceCtorEq] at h
-  all_goals obtain ⟨r, hr, rfl, rfl, rfl⟩ := h
+  all_goals simp only [Option.map_eq_some_iff, Option.some.injEq, Prod.mk.injEq, reduceCtorEq] at h
   all_goals first
-    | (refine ⟨_, ?_, hw⟩; simp only [hr, Option.map_some])
-    | (refine ⟨_, ?_, SameWorld.write_pstate' hw _⟩; simp only [hr, Option.map_some])
+    | (obtain ⟨r, hr, rfl, rfl, rfl⟩ := h
+       first
+         | (refine ⟨_, ?_, hw⟩; simp only [hr, Option.map_some])
+         | (refine ⟨_, ?_, SameWorld.write_pstate' hw _⟩; simp only [hr, Option.map_some]))
+    | (obtain ⟨rfl, rfl, rfl⟩ := h; exact ⟨_, rfl, hw⟩)
 
 set_option maxHeartbeats 4000000 in
 /-- `ispec` reads the world only through the flags and returns it or rewrites its flags. -/

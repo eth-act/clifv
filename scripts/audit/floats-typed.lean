@@ -1,3 +1,6 @@
+import FV.Link.DeadCleanupCompileT3
+import FVTest.E2E.FloatScopeT3
+import FVTest.Link.FloatCompileExeT3
 import FV.Link.ExeT
 import FV.Link.DeadCleanupExeT
 import FV.E2E.LinkScopeInputT
@@ -97,3 +100,26 @@ import FV.Link.DeadCleanupCompileTFast
 #print axioms E2E.LinkCheck.outChksTWith_eq
 #print axioms E2E.LinkCheck.outOkTRFast_eq
 #print axioms Link.DeadCleanup.outOkTFast_eq
+
+-- the decider-free typed scope fnScopeInTB3 / compileExeT3 (Floats15)
+#print axioms E2E.LinkCheck.lowerOutTB_of_T3
+#print axioms E2E.LinkCheck.resClassOkB_of_T3
+#print axioms E2E.LinkCheck.fnScopeInTB2_of_T3
+#print axioms E2E.LinkCheck.inScopeInT_of_T3
+#print axioms E2E.LinkCheck.ctlSpillB_of_T3
+#print axioms E2E.LinkCheck.ctlInstsB_of_T3
+#print axioms E2E.LinkCheck.formsCoveredB_of_T3
+#print axioms E2E.LinkCheck.emitCondsB_of_T3
+#print axioms E2E.LinkCheck.lowerFunction_ok_T3
+#print axioms E2E.LinkCheck.pipeT_okT3
+#print axioms E2E.LinkCheck.pipeCleanupT_okT3
+#print axioms E2E.LinkCheck.resultsCleanupT_ok_inT3
+#print axioms E2E.LinkCheck.inScopePT_of_inT
+#print axioms E2E.LinkCheck.inScopePT_of_inT3
+#print axioms Link.DeadCleanup.compileExeT3_correct
+#print axioms Link.DeadCleanup.compileExeT3_total_reach_input
+#print axioms Link.DeadCleanup.compileExeT3_eq
+#print axioms FloatScopeT3.checks_w -- witness: native_decide
+#print axioms FloatScopeT3.pipeCleanupT_okT3_w -- witness: native_decide
+#print axioms FloatScopeT3.inScopePT_w -- witness: native_decide
+#print axioms E2E.FloatCompileExeT3Witness.correct_spec -- witness: native_decide

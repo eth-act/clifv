@@ -72,7 +72,8 @@ theorem variantNames_Fdemote : (variantNames 151)[144]? = some "Fdemote" := rfl
 
 /-- The opcode names of the float operations `instData` builds (`fOpc`). -/
 def fArithNames : List String :=
-  ["Fadd", "Fsub", "Fmul", "Fdiv", "Fmin", "Fmax", "Sqrt", "Fneg", "Fabs", "Fpromote", "Fdemote"]
+  ["Fadd", "Fsub", "Fmul", "Fdiv", "Fmin", "Fmax", "Sqrt", "Fneg", "Fabs", "Fpromote", "Fdemote",
+    "Ceil", "Floor", "Trunc", "Nearest"]
 
 /-- An instruction whose opcode name is a float operation's is that float operation. -/
 theorem instNames_float {c : Clif.Inst} {s : String} (hs : s ∈ fArithNames)
@@ -106,8 +107,8 @@ theorem instData_fbin_inv {f : Clif.Function} {cl : Clif.Inst} {ko : Nat} {fs : 
       rfl
   cases op' <;> simp [fBinaryOpcode] at hop <;> subst hop <;>
     rcases args with _ | ⟨x, _ | ⟨y, _ | ⟨z, rest⟩⟩⟩ <;>
-    simp only [instData, fBinaryOpcode, fUnaryOpcode, throw, throwThe, MonadExceptOf.throw,
-      reduceCtorEq] at h
+    simp only [instData, fBinaryOpcode, fUnaryOpcode, fCvtOpcode, fCvtTyOk, throw, throwThe,
+      MonadExceptOf.throw, reduceCtorEq] at h
   all_goals
     split at h
     · rename_i hok
@@ -134,8 +135,8 @@ theorem instData_fun_inv {f : Clif.Function} {cl : Clif.Inst} {ko : Nat} {fs : L
       rfl
   cases op' <;> simp [fUnaryOpcode] at hop <;> subst hop <;>
     rcases args with _ | ⟨x, _ | ⟨y, _ | ⟨z, rest⟩⟩⟩ <;>
-    simp only [instData, fBinaryOpcode, fUnaryOpcode, throw, throwThe, MonadExceptOf.throw,
-      reduceCtorEq] at h
+    simp only [instData, fBinaryOpcode, fUnaryOpcode, fCvtOpcode, fCvtTyOk, throw, throwThe,
+      MonadExceptOf.throw, reduceCtorEq] at h
   all_goals
     split at h
     · rename_i hok

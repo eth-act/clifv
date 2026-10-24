@@ -1,7 +1,7 @@
 import FV.Backend.Lowering.StockScalarNI
 import FV.Link.Compile
 import FV.Link.DeadCleanupCompile
-import FV.Link.DeadCleanupCompileT
+import FV.Link.DeadCleanupCompileT3
 import FV.Link.TailCompile
 import FV.Link.OptCompile
 import FV.Link.Placed
@@ -53,9 +53,11 @@ compiler's `compileExe_correct` (entries without a reachable call cycle) and
 (pre-`i128`-legalisation) program. No per-crate proof needed.
 
 Outside the compiler's input conditions, without `--verified`, the cleanup compiler (no `--opt`,
-no self tail calls) tries the typed scope (S11): `Link.DeadCleanup.compileExeT` (`InScopePT`, then
-`leanLink`, then the output checks `OutOkTCleanup`; coverage `compileExeT_correct`, returned
-values by class). Otherwise the tool links with the bare Lean linker (`leanLink`, no
+no self tail calls) tries the typed scope (S11): first `Link.DeadCleanup.compileExeT3` (the
+decided input conditions `InScopeInT3`, no run-time decider; then `leanLink` and the output checks
+`OutOkTCleanup`; coverage `compileExeT3_correct`), else `Link.DeadCleanup.compileExeT` (`InScopePT`,
+then `leanLink`, then `OutOkTCleanup`; coverage `compileExeT_correct`); returned values by class.
+Otherwise the tool links with the bare Lean linker (`leanLink`, no
 compiler theorem; reported as such). **`--verified`** fails closed: an input outside `SrcScopeB`, outside
 the per-function input conditions decided on the CLIF alone (`fnScopeInB`, V7) or outside
 `InScopeP` is an error and the executable is not written, so every executable it writes is
@@ -489,16 +491,25 @@ def main (args0 : List String) : IO UInt32 := do
       printExclusions exe S SC typedOk
       return 1
     -- the typed scope (S11, #35; under `--verified` taken above when every function meets
-    -- `fnScopeInTB`): `compileExeT SC file0 = .ok file` on `InScopePT`
-    -- with the output checks `OutOkTCleanup`
+    -- `fnScopeInTB`): first `compileExeT3 SC file0 = .ok file` on the decided input conditions
+    -- `InScopeInT3` (no run-time decider), else `compileExeT` on `InScopePT`; both with the
+    -- output checks `OutOkTCleanup`
     if deadCleanup && !opt && !tailOn then
-      match Link.DeadCleanup.compileExeT SC file0 with
+      match Link.DeadCleanup.compileExeT3 SC file0 with
       | .ok file =>
         IO.FS.writeBinFile exe file
-        IO.println s!"lean-link: {exe}: {summary} written by Link.DeadCleanup.compileExeT (Link.DeadCleanup.compileExeT_correct)"
-        IO.println s!"lean-link: {exe}: coverage: Link.DeadCleanup.compileExeT_correct (typed scope InScopePT, OutOkTCleanup; returned values by class)"
+        IO.println s!"lean-link: {exe}: {summary} written by Link.DeadCleanup.compileExeT3 (Link.DeadCleanup.compileExeT3_correct)"
+        IO.println s!"lean-link: {exe}: coverage: Link.DeadCleanup.compileExeT3_correct (typed scope InScopeInT3, OutOkTCleanup; returned values by class)"
         return 0
-      | .error e => IO.eprintln s!"lean-link: {exe}: typed scope: {e}"
+      | .error e3 =>
+        IO.eprintln s!"lean-link: {exe}: decider-free typed scope: {e3}"
+        match Link.DeadCleanup.compileExeT SC file0 with
+        | .ok file =>
+          IO.FS.writeBinFile exe file
+          IO.println s!"lean-link: {exe}: {summary} written by Link.DeadCleanup.compileExeT (Link.DeadCleanup.compileExeT_correct)"
+          IO.println s!"lean-link: {exe}: coverage: Link.DeadCleanup.compileExeT_correct (typed scope InScopePT, OutOkTCleanup; returned values by class)"
+          return 0
+        | .error e => IO.eprintln s!"lean-link: {exe}: typed scope: {e}"
     match link SC file0 with
     | .error e => do IO.eprintln s!"lean-link: {exe}: {e}"; return 1
     | .ok file =>

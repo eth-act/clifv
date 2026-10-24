@@ -1,15 +1,16 @@
 import FV.Link.ExeUCompile
 import FV.Link.UnwSavedIn
-import FV.Link.UnwTryIn
+import FV.Link.UnwCheckIn
 
 /-!
 # Measuring the unwinding conditions (S10g, #404; report only)
 
 `lake exe lean-link` prints, per executable, how many compiled functions fail each per-function
 unwinding check `unwFnsB` decides (`unwCheck`, `callSites`, `unwindRows`, `padsNonzeroB`,
-`lastCallsOk`, `savedCheck`), the input condition of `tryInfoOk_of_input` (`tryTablesB`), the
-two frame conditions of `savedCheck_pipe`/`unwindRows_complete_frame` (`saveFrameB`: the save
-slots below 32 KiB; `leadOkB`: no other callee-saved store right after the saves), and the
+`lastCallsOk`, `savedCheck`), the input conditions of `tryInfoOk_of_input` (`tryTablesB`) and
+`unwCheck_complete` (`tryRetsB`), the two frame conditions of
+`savedCheck_pipe`/`unwindRows_complete_frame` (`saveFrameB`: the save slots below 32 KiB;
+`leadOkB`: no other callee-saved store right after the saves), and the
 functions whose `.eh_frame` entry `ehOkR` rejects (`fnEhFail`). Nothing here is a premise or a
 decision of the compiler; it measures how often the conditions of the totality argument fail on
 real code.
@@ -30,6 +31,7 @@ def unwConds : List (String × (Clif.Function → Art → Bool)) :=
    ("lastCallsOk", fun _ a => Backend.Proof.lastCallsOk a.af a.fa),
    ("savedCheck", fun _ a => Backend.savedCheck a.vcp a.rf),
    ("tryTablesB", fun g _ => Link.EhCheck.Complete.tryTablesB g),
+   ("tryRetsB", fun g _ => Link.EhCheck.Complete.tryRetsB g),
    ("saveFrameB", fun _ a => Link.EhCheck.Complete.saveFrameB a.vcp a.rf),
    ("leadOkB", fun _ a => Link.EhCheck.Complete.leadOkB a.rf a.af)]
 

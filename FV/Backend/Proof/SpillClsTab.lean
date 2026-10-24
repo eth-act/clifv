@@ -106,6 +106,11 @@ theorem clsTab_flowTab14_ok :
   decide +kernel
 
 set_option maxRecDepth 100000 in
+theorem clsTab_flowTab15_ok :
+    flowTab15.all (fun e => (program.rulesOf e.1).all (aRuleC program clsTab false e.2.1 e.2.2)) = true := by
+  decide +kernel
+
+set_option maxRecDepth 100000 in
 theorem clsTab_clsTabX_ok :
     clsTabX.all (fun e => (program.rulesOf e.1).all (aRuleC program clsTab false e.2.1 e.2.2)) = true := by
   decide +kernel
@@ -113,9 +118,9 @@ theorem clsTab_clsTabX_ok :
 /-- Every rule of every term of `clsTab` checks. -/
 theorem clsTab_ok : chkTabC program clsTab false = true := by
   unfold chkTabC
-  show (flowTab0 ++ flowTab1 ++ flowTab2 ++ flowTab3 ++ flowTab4 ++ flowTab5 ++ flowTab6 ++ flowTab7 ++ flowTab8 ++ flowTab9 ++ flowTab10 ++ flowTab11 ++ flowTab12 ++ flowTab13 ++ flowTab14 ++ clsTabX).all
+  show (flowTab0 ++ flowTab1 ++ flowTab2 ++ flowTab3 ++ flowTab4 ++ flowTab5 ++ flowTab6 ++ flowTab7 ++ flowTab8 ++ flowTab9 ++ flowTab10 ++ flowTab11 ++ flowTab12 ++ flowTab13 ++ flowTab14 ++ flowTab15 ++ clsTabX).all
     (fun e => (program.rulesOf e.1).all (aRuleC program clsTab false e.2.1 e.2.2)) = true
-  simp only [List.all_append, clsTab_flowTab0_ok, clsTab_flowTab1_ok, clsTab_flowTab2_ok, clsTab_flowTab3_ok, clsTab_flowTab4_ok, clsTab_flowTab5_ok, clsTab_flowTab6_ok, clsTab_flowTab7_ok, clsTab_flowTab8_ok, clsTab_flowTab9_ok, clsTab_flowTab10_ok, clsTab_flowTab11_ok, clsTab_flowTab12_ok, clsTab_flowTab13_ok, clsTab_flowTab14_ok, clsTab_clsTabX_ok, Bool.and_self]
+  simp only [List.all_append, clsTab_flowTab0_ok, clsTab_flowTab1_ok, clsTab_flowTab2_ok, clsTab_flowTab3_ok, clsTab_flowTab4_ok, clsTab_flowTab5_ok, clsTab_flowTab6_ok, clsTab_flowTab7_ok, clsTab_flowTab8_ok, clsTab_flowTab9_ok, clsTab_flowTab10_ok, clsTab_flowTab11_ok, clsTab_flowTab12_ok, clsTab_flowTab13_ok, clsTab_flowTab14_ok, clsTab_flowTab15_ok, clsTab_clsTabX_ok, Bool.and_self]
 
 /-- The statement root check: outside the closure, or checking from the root instruction
 (level 1), and (but `nop`'s rule 587) to a result of level `≤ 1`. -/

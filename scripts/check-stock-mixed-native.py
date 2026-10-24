@@ -28,6 +28,12 @@ def signed(value, bits):
 
 
 def run_commands(bits, kind="mixed", vectors=None):
+    if kind == "returneddiv":
+        cases = run_commands(bits, "mixeddiv")
+        later = [("returned_"+name,args,value) for name,args,value in cases
+                 if name.startswith("stock_mixed_div_")]
+        assert len(later) == 88
+        return cases + later
     if kind == "mixeddiv":
         cases = run_commands(bits, "div")
         low, high = -(1 << (bits - 1)), (1 << (bits - 1)) - 1
@@ -241,7 +247,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("artifacts", type=Path)
     parser.add_argument("--native-bin", type=Path, default=Path("rust/target/release/clif-native"))
-    parser.add_argument("--class", dest="kind", choices=["mixed", "logical", "scalar", "not", "mul", "shift", "cast", "bit", "popcount", "minmax", "cmp", "highmul", "div", "mixeddiv"], default="mixed")
+    parser.add_argument("--class", dest="kind", choices=["mixed", "logical", "scalar", "not", "mul", "shift", "cast", "bit", "popcount", "minmax", "cmp", "highmul", "div", "mixeddiv", "returneddiv"], default="mixed")
     options = parser.parse_args()
     root = options.artifacts.resolve()
     native = options.native_bin.resolve()
@@ -273,7 +279,7 @@ def main():
         names = {f["name"] for f in json.loads(table.read_text())["functions"]}
         wanted = {"stock_mixed_ni", "retained_arithmetic", "retained_scalar",
                   "retained_prologue", "retained_d0", "retained_legacy"}
-        if options.kind in ("highmul", "div", "mixeddiv"):
+        if options.kind in ("highmul", "div", "mixeddiv", "returneddiv"):
             wanted = (wanted - {"stock_mixed_ni"}) | {"stock_highmul_ni", "retained_cmp", "retained_minmax", "retained_popcount", "retained_bit", "retained_cast", "retained_shift", "retained_mul", "retained_not", "retained_constant", "retained_logical", "retained_mixed"}
         elif options.kind == "cmp":
             wanted = (wanted - {"stock_mixed_ni"}) | {"stock_cmp_ni", "retained_minmax", "retained_popcount", "retained_bit", "retained_cast", "retained_shift", "retained_mul", "retained_not", "retained_constant", "retained_logical", "retained_mixed"}
@@ -295,10 +301,12 @@ def main():
             wanted = (wanted - {"stock_mixed_ni"}) | {"stock_scalar_ni", "retained_logical", "retained_mixed"}
         elif options.kind == "logical":
             wanted = (wanted - {"stock_mixed_ni"}) | {"stock_logical_ni", "retained_mixed"}
-        if options.kind in ("div", "mixeddiv"):
+        if options.kind in ("div", "mixeddiv", "returneddiv"):
             wanted |= {"stock_div_"+op for op in ("sdiv", "udiv", "srem", "urem")}
-        if options.kind == "mixeddiv":
+        if options.kind in ("mixeddiv", "returneddiv"):
             wanted |= {"stock_mixed_div_"+op+suffix for op in ("sdiv","udiv","srem","urem") for suffix in ("","_two")}
+        if options.kind == "returneddiv":
+            wanted |= {"returned_stock_mixed_div_"+op+suffix for op in ("sdiv","udiv","srem","urem") for suffix in ("","_two")}
         assert names == wanted, names
         cases = run_commands(int(width), options.kind)
         attached = set()
