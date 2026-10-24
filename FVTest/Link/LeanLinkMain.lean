@@ -188,18 +188,24 @@ def exclusions (S SC : LinkSpec) (typed : Bool) (extra : List String := []) :
 /-- On a typed input (`--verified`) whose `compileExeT` fails: the functions failing the typed
 per-function conditions of `InScopePT` (`fnScopeTB`), and those whose compiled code fails the
 output checks `outChksT` (`OutOkTCleanup`; only when `InScopePT` holds), with the failing
-conditions. -/
+conditions; in `compileExeT`'s std-sized forms (`inScopePTPar`, `outChksTWith`: hash maps, the
+pipeline once in parallel). -/
 def typedFails (SC : LinkSpec) : List (String × List String) :=
-  let I := SC.inputCleanup
-  let fs := (I.prog.funcs.zip (parMap fnScopeTB I.prog.funcs)).filterMap fun (g, b) =>
+  let I0 := SC.input0
+  let fs := (I0.prog.funcs.zip (parMap fnScopeTB I0.prog.funcs)).filterMap fun (g, b) =>
     if b then none else some (g.name, ["fnScopeTB"])
-  if !fs.isEmpty || !InScopePT I then fs
+  if !fs.isEmpty || !inScopePTPar I0 then fs
   else
-    let R := I.resultsCleanupT
-    let P := progOf R
-    R.filterMap fun e => match (outChksT I P e.1 e.2).filter (!·.2) with
-      | [] => none
-      | cs => some (e.1.name, cs.map (·.1))
+    let Rs := Link.DeadCleanup.parResultsCleanupT I0
+    let I := I0.withDepth Rs
+    let P := progOf Rs
+    let m := funcMap P
+    let sy := assocMap I.syms
+    let cs := calleeSet P
+    let anyInd := P.funcs.any (!indFreeB ·)
+    let rs := parMap (fun e => (e.1.name, ((outChksTWith (fun n => m[n]?) (fun n => sy[n]?)
+      (fun n => cs.contains n) anyInd P e.1 e.2).filter (!·.2)).map (·.1))) Rs
+    rs.filter (!·.2.isEmpty)
 
 /-- Print `exclusions` (the line `cargo fv` reads). -/
 def printExclusions (exe : String) (S SC : LinkSpec) (typed : Bool) (extra : List String := []) :
@@ -354,7 +360,7 @@ def main (args0 : List String) : IO UInt32 := do
       | [] => none
       | fs => some (g.name, fs)
     let badT := if typedOk && !bad.isEmpty then
-        P.funcs.filterMap fun g => match fnScopeInFailsT g with
+        (P.funcs.zip (parMap fnScopeInFailsT P.funcs)).filterMap fun (g, fs) => match fs with
           | [] => none
           | fs => some (g.name, fs)
       else bad
