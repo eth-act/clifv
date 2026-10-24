@@ -23,6 +23,11 @@ def sha(path):
 
 
 def expected_roots(prefix="Mixed"):
+    if prefix == "GeneralDivProduction":
+        return set().union(*(expected_roots(prefix + layout) - {
+            f"Stock{prefix}{layout}2Retained{mode}FallbackGlobal"
+            for mode in ("Plain", "Cleanup") if layout != "unused"
+        } for layout in ("unused", "consumed", "multiple")))
     roots = set()
     for mode in ("Plain", "Cleanup"):
         for policy in ("Strict", "Fallback"):
@@ -67,10 +72,10 @@ def proof_order(directory, prefix="Mixed"):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", required=True, type=Path)
-    parser.add_argument("--class", dest="kind", choices=["mixed", "logical", "scalar", "not", "mul", "shift", "cast", "bit", "popcount", "minmax", "cmp", "highmul", "div", "mixeddiv", "returneddiv"], default="mixed")
+    parser.add_argument("--class", dest="kind", choices=["mixed", "logical", "scalar", "not", "mul", "shift", "cast", "bit", "popcount", "minmax", "cmp", "highmul", "div", "mixeddiv", "returneddiv", "generaldiv"], default="mixed")
     parser.add_argument("--fixture-mode", choices=["native", "interpreted"], default="interpreted")
     options = parser.parse_args()
-    prefix = {"scalar": "ScalarProduction", "not": "NotProduction", "mul": "MulProduction", "shift": "ShiftProduction", "cast": "CastProduction", "bit": "BitProduction", "popcount": "PopcountProduction", "minmax": "MinMaxProduction", "cmp": "CmpProduction", "highmul": "HighMulProduction", "div": "DivProduction", "mixeddiv": "MixedDivProduction", "returneddiv": "ReturnedDivProduction"}.get(options.kind, options.kind.capitalize())
+    prefix = {"scalar": "ScalarProduction", "not": "NotProduction", "mul": "MulProduction", "shift": "ShiftProduction", "cast": "CastProduction", "bit": "BitProduction", "popcount": "PopcountProduction", "minmax": "MinMaxProduction", "cmp": "CmpProduction", "highmul": "HighMulProduction", "div": "DivProduction", "mixeddiv": "MixedDivProduction", "returneddiv": "ReturnedDivProduction", "generaldiv": "GeneralDivProduction"}.get(options.kind, options.kind.capitalize())
     view = Path(__file__).resolve().parents[1]
     output = options.output.resolve()
     if output == view or view in output.parents:
@@ -84,7 +89,7 @@ def main():
                for p in (view / folder).rglob("*.lean")}
     script_hash = sha(Path(__file__).resolve())
     records = {}
-    native_names = {"popcount": "stock-popcount", "minmax": "stock-minmax", "cmp": "stock-cmp", "highmul": "stock-highmul", "div": "stock-div", "mixeddiv": "stock-mixed-div", "returneddiv": "stock-returned-div"}
+    native_names = {"popcount": "stock-popcount", "minmax": "stock-minmax", "cmp": "stock-cmp", "highmul": "stock-highmul", "div": "stock-div", "mixeddiv": "stock-mixed-div", "returneddiv": "stock-returned-div", "generaldiv": "stock-general-div"}
     native_fixtures = options.fixture_mode == "native" and options.kind in native_names
     if options.fixture_mode == "native" and not native_fixtures:
         parser.error("No registered native fixture targets for this class")
@@ -158,10 +163,12 @@ def main():
         # Keep every Crates module under one import root; Lean chooses the first
         # matching package directory and does not search another partial root.
         cli_hashes = {}
+        layouts = ("unused", "consumed", "multiple") if options.kind == "generaldiv" else ("",)
         for mode, flags in (("Plain", ["--no-dead-cleanup"]), ("Cleanup", [])):
-            bundle = generated / f"Stock{prefix}2{mode}FallbackGlobal-bundle"
-            retained = generated / f"Stock{prefix}2Retained{mode}FallbackGlobal-bundle"
-            for label, source in (("current", bundle), ("retained", retained)):
+            cases = [("current" + layout, generated / f"Stock{prefix}{layout}2{mode}FallbackGlobal-bundle")
+                     for layout in layouts]
+            retained = generated / f"Stock{prefix}{layouts[0]}2Retained{mode}FallbackGlobal-bundle"
+            for label, source in [*cases, ("retained", retained)]:
                 proof = generated / "Crates" / f"{prefix}CLI{label}{mode}.lean"
                 proof.parent.mkdir(exist_ok=True)
                 run(f"link-check-{label}-{mode}", ["lake", "env", str(view / ".lake/build/bin/link-check"),
@@ -178,10 +185,13 @@ def main():
                     env.pop("LEAN_PATH", None)
                 else:
                     env["LEAN_PATH"] = original_leanpath
-            linked = run("verified-link-" + mode, ["lake", "env", str(view / ".lake/build/bin/lean-link"),
-                str(bundle), "--verified", *flags])
-            assert "written by Link.SemanticCompilerWith.compile" in linked
-            assert "attempt_correct_source_peak" in linked
+            for layout in layouts:
+                bundle = generated / f"Stock{prefix}{layout}2{mode}FallbackGlobal-bundle"
+                label = "verified-link-" + (layout + "-" if layout else "") + mode
+                linked = run(label, ["lake", "env", str(view / ".lake/build/bin/lean-link"),
+                    str(bundle), "--verified", *flags])
+                assert "written by Link.SemanticCompilerWith.compile" in linked
+                assert "attempt_correct_source_peak" in linked
         audit = output / "GeneratedAxioms.lean"
         audit.write_text("\n".join("import " + module for module in audit_imports) + r'''
 open Lean Elab Command

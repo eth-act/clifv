@@ -13,6 +13,7 @@ import FV.Backend.Proof.StockScalarHighMulDomain
 import FV.Backend.Proof.StockScalarDivDomain
 import FV.Backend.Proof.StockScalarMixedDivDomain
 import FV.Backend.Proof.StockScalarReturnedDivDomain
+import FV.Backend.Proof.StockScalarGeneralDivDomain
 
 namespace Backend.Stock.Scalar
 open Backend.Proof Backend.Proof.Driver
@@ -247,6 +248,25 @@ theorem returnedDivEligible_sound {b : Clif.Block} (checked : returnedDivEligibl
   next => cases checked
 
 
+/-- The original division operands and operation come directly from syntax. -/
+theorem divisionBodyEligible_sound {stm : Clif.Stmt}
+    (checked : divisionBodyEligible stm = true) :
+    ∃ op ty x y, stm.inst = .div op ty x y := by
+  unfold divisionBodyEligible at checked
+  split at checked
+  next op ty x y shape => exact ⟨op,ty,x,y,shape⟩
+  next => cases checked
+
+/-- The shared source domain receives a universal statement family. -/
+theorem generalDivBodyEligible_sound {stm : Clif.Stmt}
+    (checked : generalDivBodyEligible stm = true) :
+    Proof.HighMulBody.Family stm.inst ∨ ∃ op ty x y,stm.inst = .div op ty x y := by
+  simp only [generalDivBodyEligible,Bool.or_eq_true] at checked
+  rcases checked with scalar | division
+  · exact Or.inl (highmulBodyEligible_sound scalar)
+  · exact Or.inr (divisionBodyEligible_sound division)
+
+
 theorem sourceOk_sound {f : Clif.Function} (checked : sourceOk f = true) : Domain f := by
   simp only [sourceOk,Bool.and_eq_true] at checked
   obtain ⟨⟨⟨eligible,scope⟩,dominated⟩,abi⟩ := checked
@@ -269,7 +289,7 @@ theorem sourceOk_sound {f : Clif.Function} (checked : sourceOk f = true) : Domai
       obtain ⟨p,member,sret⟩ := List.any_eq_true.mp any
       simpa [(normal_abi returns) p member] using sret
     simp only [Bool.or_eq_true] at body
-    rcases body with ((old | divided) | mixed) | positioned
+    rcases body with (((old | divided) | mixed) | positioned) | general
     · have families : ∀ stm ∈ b.body, Stock.Proof.HighMulBody.Family stm.inst := by
         intro stm member
         have supported := List.all_eq_true.mp old stm member
@@ -285,6 +305,8 @@ theorem sourceOk_sound {f : Clif.Function} (checked : sourceOk f = true) : Domai
         returnedDivEligible_sound positioned
       exact domain_of_returned_div (lowerScope_of scope) (dominated_of dominated) abi blocks
         shape before after division results ret' ordinary
+    · exact domain_of_scalar_div (lowerScope_of scope) (dominated_of dominated) abi blocks
+        (fun stm member => generalDivBodyEligible_sound (List.all_eq_true.mp general stm member)) ret ordinary
   next => cases eligible
 
 

@@ -1,5 +1,5 @@
 {
-  "updated_utc": "2026-10-23T14:47:50.735985+00:00",
+  "updated_utc": "2026-10-24T19:41:23.645019+00:00",
   "goal": 140,
   "complete": false,
   "inventory_warning": "Historical517root inventory is a source map, not current reachability/execution coverage. Reconcile generated source hashes and current typed scope before using partition counts.",
@@ -23,16 +23,11 @@
       "i32/i64 integer comparisons and actual cast-of-icmp811 through shared scalar consumers",
       "i32/i64 signed/unsigned high multiplication through shared scalar consumers (389, d522474c)",
       "singleton returned i32/i64 division/remainder with original traps (512,6a80a595)",
-      "scalar prefixes followed by returned i32/i64 division/remainder, source return+trap Domain and default consumers (521)"
+      "scalar prefixes followed by returned i32/i64 division/remainder, source return+trap Domain and default consumers (521)",
+      "returned i32/i64 division/remainder at arbitrary scalar positions (525)",
+      "unused/consumed/multiple i32/i64 division/remainder at arbitrary scalar positions (611)"
     ],
-    "pending": "Unused/consumed/multiple-division production activation; complete original widths/ABIs/control/memory/calls/exceptions; source/block/whole-driver simulation and Stock-only/downstream completeness. Optional exact-body import boundary #513 remains preserved separately.",
-    "validated_pending_merge": {
-      "class": "Single returned i32/i64 division/remainder, all four operations, arbitrary original values including real zero/overflow traps",
-      "validated_code_head": "b1ef0c67f455eecb643883a414904016bab65d8f",
-      "current_author_gates": "passed;25 primary/27 ownership; see division activation receipt",
-      "backup": "a2c9d0d83f32cc089b438ba4977926ec85c88dfe",
-      "full_140_complete": false
-    },
+    "pending": "Complete original widths/ABIs and remaining pure-family cases; control/successor arguments/critical edges/loops; memory/addressing/atomics/traps/deferred effects; calls/sret/exceptions/unwind; source/scan/block/node/whole-driver simulation; Stock-only and downstream completeness; optimizer/cleanup and all consumers. Legacy fallback is not Stock completeness.",
     "mixed_div_current_evidence": {
       "source_head": "1239f8bcda9fac6ba6e421ab6cfb210ac3ce6677",
       "receipt": "docs/research/stock-mixed-div-production-activation.md",
@@ -46,6 +41,23 @@
       "state": "default production activation; current author gates passed",
       "full_140_complete": false,
       "main_reconciliation": "docs/research/stock-returned-div-main-reconciliation.json"
+    },
+    "historical_single_division_validation": {
+      "class": "Single returned i32/i64 division/remainder, all four operations, arbitrary original values including real zero/overflow traps",
+      "validated_code_head": "b1ef0c67f455eecb643883a414904016bab65d8f",
+      "current_author_gates": "passed;25 primary/27 ownership; see division activation receipt",
+      "backup": "a2c9d0d83f32cc089b438ba4977926ec85c88dfe",
+      "full_140_complete": false
+    },
+    "general_division_production": {
+      "pull_request": 611,
+      "validated_code_head": "cd57ac630b3846a7b7832140b7e5f195452857fc",
+      "base": "1510186e56b81e8cbb36027746414a411c8e1f37",
+      "state": "default production activation; current author gates passed",
+      "scope": "i32/i64 unused, consumed and multiple divisions/remainders at arbitrary scalar body positions, original return/trap domain",
+      "receipt": "docs/research/stock-general-div-production-activation.md",
+      "evidence_commit": "69182545e98f69505bd1fee79c99bb3f579a5818",
+      "full_140_complete": false
     }
   },
   "roots": [

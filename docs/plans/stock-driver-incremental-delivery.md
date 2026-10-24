@@ -156,6 +156,17 @@ root IDs790/791 are observed. All prior theorem variants and inputs remain.
 Full140 continues immediately with arbitrary-position/undemanded/sunk division
 and every original remaining obligation; no stop at this class.
 
+Arbitrary-position unused, consumed and multiple i32/i64 divisions/remainders
+pass all current author gates through the shared default consumers in #611.
+[Terminal evidence](../research/stock-general-div-production-activation.md)
+records validated code `cd57ac63` on main `1510186e`, all 3,947 normal keys,
+19 audits/577 public roots, 33 ownership partitions, exact old axiom/header and
+identity/stage parity, actual native execution, current and retained CLI/link/
+generated proofs, all six full gates and both verified examples. Terminal evidence
+is backed at `69182545`. The original nine arguments, source slot, arbitrary
+operands and zero/overflow traps remain. This completes this production class;
+full original #140 and general register agreement remain unfinished.
+
 A concrete build boundary can be delivered alongside the next implementation:
 extract unchanged VCode outcomes, their prefix lemmas, ArgsAtEntry and Reach into
 a stable interface; retain names/definitions and LowerSim re-exports. Isolated
@@ -164,8 +175,8 @@ are still required. Coordinate the shared-file boundary on140. This avoids
 rebuilding generated interpreter proofs after unrelated simulation additions.
 Do not stop at either this first trapping class or a performance-only packet.
 
-Next: mixed scalar prefixes and returned final division; broader colored/sunk
-instructions; complete original widths/ABIs; every unchanged original #140 control/
+Next: complete original widths/ABIs and remaining pure-family cases; broader
+colored/sunk instructions; every unchanged original #140 control/
 memory/trap/effect/call/source/block/whole-driver/completeness/consumer obligation.
 Never exclude original accepted compare/cast syntax to simplify composition.
 Universal successful lowering and downstream completeness remain. Fallback is
