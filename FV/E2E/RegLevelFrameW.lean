@@ -76,16 +76,16 @@ theorem q_initW {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb R.bas
   obtain ⟨herr', hprog'⟩ := hsteps.err
   -- the prologue's writes: the frame top, which `G` avoids
   have hwrP : LinesWrites (R.envOf 1) (prologueLines R.af.saves R.af.frameSize) R.s0 (fun a => ¬ R.G a) := by
-    refine prologue_writes _ hs hsv (by rw [hfs]; exact hcb) R.s0 hent.spAligned ?_
+    refine prologue_writes _ hsv R.s0 hent.spAligned ?_
     intro k hk
     show ¬ R.G (spv R.s0 - BitVec.ofNat 64 (16 + clobberBytes R.af.saves) + BitVec.ofNat 64 k)
     have hkN : k < R.topN := by simp only [RL.topN]; exact hk
     rw [show (spv R.s0 - BitVec.ofNat 64 (16 + clobberBytes R.af.saves) + BitVec.ofNat 64 k)
       = R.topB + BitVec.ofNat 64 k from by simp only [RL.topB, RL.topN]]
-    exact fun hG => hR.gfree _ hG (RL.top_notG hR k hkN)
+    exact RL.top_notG hR k hkN
   refine ⟨(prologueLines R.af.saves R.af.frameSize).length,
-    hgx (prologueLines_tail R.af.saves) (.inl (by rw [hent.pc]; exact RL.not_postCall_base hR hent.fits))
-      (linesReads_noLoads (prologueLines_noLoads R.af.saves)) hwrP, ?_⟩
+    hgx (prologueLines_tail _ _) (.inl (by rw [hent.pc]; exact RL.not_postCall_base hR hent.fits))
+      (linesReads_noLoads (prologueLines_noLoads _ _)) hwrP, ?_⟩
   have hsP : R.sP = s' := hiter
   rw [hiter]
   have hspB : spOf s' = R.spB := by
@@ -161,7 +161,7 @@ theorem q_initW {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb R.bas
       hit, rfl, itemsChecked_block hR hvb hit, hcode, hls, htr, ?_, hpc', ?_⟩
     · rw [← List.drop_drop, hdrop, List.drop_left]
     · refine ⟨fun l _ _ => rfl, ⟨fun f hf => ?_, hmemF, ?_⟩, by rw [herr', hent.err], by rw [hprog', hent.program],
-        hspB, ?_, fun _ => ?_, code_keep hR.prog0 hent.code hcode', hgk⟩
+        hspB, ?_, fun _ => ?_, code_keep hR.prog0 hent.code hcode', hgk, fun _ => hfp'⟩
       · by_cases h29 : f = .GPR 29#5
         · subst h29
           have := hbe.fp
@@ -289,52 +289,28 @@ theorem ret_machineW {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb 
     omega
   obtain ⟨s1, hsteps, hsp1, hx29, hx30, ho1, hm1, hpop⟩ :=
     epilogue_ok (R.envOf j0) hs hsv hcb' s hal
-  -- the reads: the `ldp` reads the fp/lr slot, which is not kept
-  have hrdE : LinesReads (R.envOf j0) (epiLines R.af.saves R.af.frameSize) s R.ReadOk := by
-    refine linesReads_append_last (spAdjLines_noLoads false _) fun s1' hs1' env' a ha p hp k hk => ?_
-    obtain ⟨s2, h2, hsp2, -, -⟩ := spAdj_ok (R.envOf j0) false hs s
-    rw [h2.exec] at hs1'
-    cases hs1'
-    rw [memReads_ldp_fplr ha] at hp
-    simp only [List.mem_singleton] at hp
-    subst hp
-    simp only [Bool.false_eq_true, ite_false] at hsp2
-    simp only at hk ⊢
-    rw [hsp2, hslot]
-    refine .inl fun hG => hR.gfree _ hG ?_
-    rw [hdrop0]
-    have := hst0.1
-    have hk64 : (spv R.s0 - 16#64 + BitVec.ofNat 64 k).toNat = (spv R.s0).toNat - 16 + k := by
-      simp only [BitVec.toNat_add, BitVec.toNat_sub, BitVec.toNat_ofNat]
-      have := (spv R.s0).isLt
-      rw [Nat.mod_eq_of_lt (a := k) (by omega)]
-      simp only [spv] at *
-      omega
-    simp only [StackBelow, hk64]
-    constructor <;> omega
+  -- the reads: the clobber area and fp/lr, no kept address
+  have hrdE : LinesReads (R.envOf j0) (epiLines R.af.saves R.af.frameSize) s R.ReadOk :=
+    epilogue_reads (R.envOf j0) hs hsv hcb' s hal fun k hk => by
+      rw [hB]; exact .inl (RL.top_notG hR k (by simp only [RL.topN]; omega))
   obtain ⟨hiter, hpc1, hgood, hgx⟩ := iterN_stepsW hR hdrop'
-    (fun ln h => by
-      rcases List.mem_append.1 h with h | h
-      · obtain ⟨x, e, hh, -⟩ := spAdjLines_ins false _ ln h; exact ⟨x, e, hh⟩
-      · simp only [List.mem_singleton] at h; exact ⟨_, h, rfl⟩)
+    (fun ln h => by obtain ⟨x, e, hh, -, -⟩ := epiLines_ins _ _ ln h; exact ⟨x, e, hh⟩)
     hst.prog hpc hst.err hsteps
   obtain ⟨herr1, hprog1⟩ := hsteps.err
   -- the epilogue's writes: no stores
   have hwrE : LinesWrites (R.envOf j0) (epiLines R.af.saves R.af.frameSize) s (fun a => ¬ R.G a) :=
     linesWrites_noStores (fun x t hx => by
-      rcases List.mem_append.1 hx with h | h
-      · simp only [spAdjLines, List.mem_append] at h
-        split at h
-        · cases h
-        · split at h
-          · rcases List.mem_cons.1 h with hEq | h'
-            · injection hEq with hEq1 hEq2 <;> subst hEq1 <;> subst hEq2 <;> rfl
-            · cases h'
-          · rcases List.mem_append.1 h with h | h
-            · exact loadConst64_noStores _ _ x t h
-            · rcases List.mem_cons.1 h with hEq | h'
-              · injection hEq with hEq1 hEq2 <;> subst hEq1 <;> subst hEq2 <;> rfl
-              · cases h'
+      simp only [epiLines, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hx
+      rcases hx with h | h | h | h
+      · exact spAdjLines_noStores false _ x t h
+      · obtain ⟨y, e, r, r', hy⟩ := popLines_mem h
+        simp only [Line.ins.injEq] at e
+        obtain ⟨rfl, rfl⟩ := e
+        rcases hy with rfl | rfl | rfl | rfl <;> rfl
+      · obtain ⟨y, e, r, r', hy⟩ := popLines_mem h
+        simp only [Line.ins.injEq] at e
+        obtain ⟨rfl, rfl⟩ := e
+        rcases hy with rfl | rfl | rfl | rfl <;> rfl
       · simp only [List.mem_singleton, Line.ins.injEq] at h
         obtain ⟨rfl, -⟩ := h; rfl)
   -- the `ret`
@@ -347,29 +323,45 @@ theorem ret_machineW {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb 
   rw [ha] at ha'; cases ha'
   have hfin : iterN R.step ((epiLines R.af.saves R.af.frameSize).length + 1) s = Arm.w .PC (xreg 30 s1) s1 := by
     rw [iterN_one_succ, hiter]; exact hstep.trans he'
-  have hfplr := hst.fplr hframe
-  rw [← hslot] at hfplr
-  have hregs : ∀ r, r.allocatable = true → regVal (Arm.w .PC (xreg 30 s1) s1) r = regVal s r := by
+  -- the top of the frame as the prologue left it
+  have hbytes := read_mem_bytes_bytes R.topN R.topB s R.sP (hst.fplr hframe)
+  obtain ⟨sP, -, hsP, hP16, hPsl⟩ := RL.sP_steps hR hent
+  rw [hsP] at hbytes
+  have hfplr : Arm.read_mem_bytes 16 (spOf s + BitVec.ofNat 64 R.af.frameSize) s =
+      xreg 30 R.s0 ++ xreg 29 R.s0 := by
+    rw [hslot, ← htopcb, read_sub (n := 16) (o := clobberBytes R.af.saves) hbytes
+      (by simp only [RL.topN]; omega), htopcb]
+    exact hP16
+  have hpopS : ∀ r ∈ R.af.saves, slotVal s1 r = slotVal R.s0 r := by
     intro r hr
+    have hv := hpop r hr
+    rw [hB, read_sub (n := 8) (o := clobberOff R.af.saves r) hbytes
+      (by have := clobberOff_le hsv hr; simp only [RL.topN]; omega), hPsl r hr] at hv
+    refine slotVal_of_popVal ?_ hv
+    rcases calleeSaved_cases (hsv.1 r hr) with ⟨n, rfl, -⟩ | ⟨n, rfl, -⟩
+    · exact .inl ⟨n, rfl⟩
+    · exact .inr ⟨n, rfl⟩
+  have hregs : ∀ r, r.allocatable = true → r ∉ R.af.saves →
+      regVal (Arm.w .PC (xreg 30 s1) s1) r = regVal s r := by
+    intro r hr hns
     rw [regVal_w (by rcases allocatable_cases hr with ⟨n, rfl, _⟩ | ⟨n, rfl, _⟩ <;> simp [Reg.field])]
+    have hfs' : ∀ f, r.field = some f → ∀ r' ∈ R.af.saves, r'.field ≠ some f :=
+      fun f hf r' hr' => field_ne_of_ne hr (hsv.1 r' hr') (fun e => hns (e ▸ hr')) f hf
     rcases allocatable_cases hr with ⟨n, rfl, hn⟩ | ⟨n, rfl, hn⟩
     · have hne : ∀ q, q < 32 → q ≠ n → Arm.StateField.GPR (rnum n) ≠ .GPR (BitVec.ofNat 5 q) :=
         fun q h1 h2 e => rnum_ne (a := n) (b := q) (by omega) h1 (Ne.symm h2) (Arm.StateField.GPR.inj e)
       simp only [regVal]
       rw [ho1 _ (by simp) (hne 29 (by omega) (by omega)) (hne 30 (by omega) (by omega))
-        (hne 31 (by omega) (by omega)) (hne 16 (by omega) (by omega))]
+        (hne 31 (by omega) (by omega)) (hne 16 (by omega) (by omega)) (hfs' _ rfl)]
     · simp only [regVal]
-      rw [ho1 _ (by simp) (by simp) (by simp) (by simp) (by simp)]
+      rw [ho1 _ (by simp) (by simp) (by simp) (by simp) (by simp) (hfs' _ rfl)]
   refine ⟨(epiLines R.af.saves R.af.frameSize).length + 1,
     fun i hi => ?_, ?_⟩
   · rcases Nat.lt_or_ge i (epiLines R.af.saves R.af.frameSize).length with hi1 | hi1
     · refine hgx (fun x t h => ?_) (RL.good_of_sp hst.sp) hrdE hwrE i hi1
-      rcases List.mem_append.1 h with h | h
-      · exact spAdjLines_tail false _ x t h
-      · simp only [List.mem_singleton, Line.ins.injEq] at h
-        obtain ⟨rfl, -⟩ := h; rfl
-    · obtain rfl : i = (spAdjLines false R.af.frameSize ++
-          [Line.ins (.ldp Reg.fp Reg.lr (.spPostIndexed 16)) none]).length := by omega
+      obtain ⟨_, e, -, -, ht⟩ := epiLines_ins _ _ _ h
+      cases e; exact ht
+    · obtain rfl : i = (epiLines R.af.saves R.af.frameSize).length := by omega
       rw [hiter]
       refine ⟨RL.goodX_ofIns hR hj hpc1 rfl rfl ?_ (by rw [herr1, hst.err]) (by rw [hprog1, hst.prog])
         (by
@@ -379,8 +371,9 @@ theorem ret_machineW {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb 
         (RL.readsAt_noLoad hR hj hpc1 rfl),
         RL.writesAt_noStore hR hj hpc1 rfl⟩
       rw [← hiter]
-      exact hgood _ (by simp) (Nat.le_refl _)
-  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;> rw [hfin]
+      exact hgood _ (by simp only [epiLines, List.length_append, List.length_cons, List.length_nil]; omega)
+        (Nat.le_refl _)
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;> rw [hfin]
   · rw [Arm.r_of_w_same, hx30, hfplr, BitVec.extractLsb'_append_eq_left, hent.lr]
   · rw [Arm.r_of_w_different (by simp), herr1, hst.err]
   · simp only [spv]
@@ -393,15 +386,23 @@ theorem ret_machineW {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb 
     simp only [xreg] at this
     rw [this, hfplr, BitVec.extractLsb'_append_eq_right]
     rfl
-  · exact hregs
+  · intro r hr hns
+    rw [hregs r hr hns, hmD (.reg r) (fun r' hr' e => hns (by cases e; exact hDs _ hr')),
+      hst.store (.reg r) (fun r' e => by cases e; exact hr) trivial]
+    rfl
+  · intro r hr
+    rw [slotVal_w_pc]; exact hpopS r hr
   · rw [Arm.ArmState.mem_w_eq_mem, hm1]
   · intro f hf h29 h31
     have hpc : f ≠ .PC := by rintro rfl; exact hf trivial
     rw [Arm.r_of_w_different hpc]
     exact ho1 f hpc h29 (by rintro rfl; exact hf (by simp [Masked])) h31
       (by rintro rfl; exact hf (by simp [Masked]))
+      (fun r' hr' e => hf (masked_of_calleeSaved (hsv.1 r' hr') e))
   · rw [Arm.w_program, hprog1]
   · intro ops' hops' j v p x hj hx
+    have hpS : p ∉ R.af.saves := fun hp =>
+      ctlCheck_rets_regs hck hvb hi _ (List.mem_of_getElem? hj) (hsv.1 p hp)
     obtain ⟨ns, rfl⟩ := ctlCheck_rets hck hvb hi
     rw [operands_retsC] at hops' hops
     cases hops'
@@ -413,7 +414,8 @@ theorem ret_machineW {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb 
       rw [hq2] at this
       simp only [CheckCtx.locOk, Bool.and_eq_true] at this
       exact this.2
-    rw [hregs p hal, hst.store (.reg p) (fun r e => by cases e; exact hal) trivial]
+    rw [hregs p hal hpS, hmD (.reg p) (fun r' hr' e => hpS (by cases e; exact hDs _ hr')),
+      hst.store (.reg p) (fun r e => by cases e; exact hal) trivial]
     rfl
 
 
