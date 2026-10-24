@@ -167,6 +167,29 @@ is backed at `69182545`. The original nine arguments, source slot, arbitrary
 operands and zero/overflow traps remain. This completes this production class;
 full original #140 and general register agreement remain unfinished.
 
+Original i8/i16 scalar production coverage now extends the same default shared
+consumers. [Narrow activation evidence](../research/stock-narrow-production-activation.md)
+records validated `a1b29bf7`: 474 complete positive pipeline configurations,
+8,532 native executions, actual ordinary compiler CLI bytes, current/retained
+consumer cohorts, 38 ownership partitions, all six full gates and both verified
+examples. Old selectors/theorem variants, exact old axioms, input conditions,
+accepted identities and successful stages remain. The original i8 byte-swap
+scope rejection stays explicit. No new class uses a separate compiler stack.
+
+Production applicability remains important: the ordinary CLI retains its
+no-opt/no-TryCall input-file guard. `cargo-fv` compiles each function in its own
+file, so a try-call function does not disable unrelated pure Rust functions.
+The allocator default remains Lean. Fresh real-example agreement remains
+887/4,543 symbol comparisons; these class gates are not general register
+agreement or Stock-only completeness. Track these separately from proof counts.
+
+Next close remaining original pure bmask/nop composition and reachable helpers,
+then continue the fixed CFG/arguments/loops, memory/effects, calls/unwind,
+whole-driver/completeness and optimizer/consumer obligations below. Reuse existing
+mainline bmask helper proofs and Stock source/record/scan composition; keep the
+legacy fallback while proving the complete original input domain. Do not stop at
+this class or remove production guards without their corresponding proofs.
+
 A concrete build boundary can be delivered alongside the next implementation:
 extract unchanged VCode outcomes, their prefix lemmas, ArgsAtEntry and Reach into
 a stable interface; retain names/definitions and LowerSim re-exports. Isolated
