@@ -18,10 +18,11 @@
 #               clif-subset-v1 E (or i128, floats, vectors) are reported as unsupported
 #   -v: per-file lines for every file, and every non-passing run
 #   --asm: assemble the Lean backend's assembly with llvm-mc instead of using its object
-#   --regalloc: register allocator of the Lean backend (default lean: the Lean allocator,
-#               validated by the Lean checker, with the spill allocator as fallback; regalloc2 =
-#               the external regalloc2 oracle, validated the same way; `spill` = the fallback for
-#               every function; `stack` = the stack-slot baseline), docs/contracts/regalloc.md
+#   --regalloc: register allocator of the Lean backend (default regalloc2, lean-backend's
+#               default: the external regalloc2 oracle, as Cranelift, validated by the Lean
+#               checker, with the spill allocator as fallback; lean = the Lean allocator,
+#               validated the same way; `spill` = the fallback for every function; `stack` =
+#               the stack-slot baseline), docs/contracts/regalloc.md
 #   --opt [--opt-* ...]: run the Lean mid-end (Opt.optimize) before the Lean backend
 #               (lean-backend --opt, docs/contracts/midend.md); Cranelift-native is unchanged
 #
@@ -38,7 +39,7 @@ LLVM_MC=${LLVM_MC:-/usr/lib/llvm-18/bin/llvm-mc}
 
 VERBOSE=0
 ASM=0
-RA=lean
+RA=regalloc2
 OPTARGS=()
 SETS=()
 FILES=()
