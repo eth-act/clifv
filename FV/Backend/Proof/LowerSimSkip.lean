@@ -79,7 +79,7 @@ theorem deletes_of_check {vc : VCode} {mask : Nat → List Bool} (h : deleteChec
     · cases hcfg
   · have h3 := (hb b vb hvb).1.2 (i, true)
       (mem_zip_of (by rw [Array.getElem?_toList]; exact hi) hm)
-    simp only [Bool.not_true, Bool.false_or, List.all_eq_true, Bool.not_eq_true'] at h3
+    simp only [↓reduceIte, List.all_eq_true, Bool.not_eq_true'] at h3
     intro hd
     have h5 : (deadDefs vc mask).contains u = true := List.contains_iff_mem.mpr hd
     rw [h3 u (by rw [useNums_eq]; exact hu)] at h5
@@ -90,6 +90,16 @@ theorem deletes_of_check {vc : VCode} {mask : Nat → List Bool} (h : deleteChec
     intro hd
     have : (deadDefs vc mask).contains n = true := List.contains_iff_mem.mpr hd
     rw [this] at h4; cases h4
+
+/-- **A deleted instruction is `skipDel`.** -/
+theorem skipDel_of_check {vc : VCode} {mask : Nat → List Bool} (h : deleteCheck vc mask = true)
+    {b k : Nat} {vb : VBlock} {i : MInst} (hvb : vc.blocks[b]? = some vb)
+    (hi : vb.insts[k]? = some i) (hm : (mask b)[k]? = some false) : skipDel i = true := by
+  unfold deleteCheck at h
+  simp only [Bool.and_eq_true, List.all_eq_true] at h
+  have h3 := (h.1 (vb, b) (mem_zipIdx_of (by rw [Array.getElem?_toList]; exact hvb))).1.2 (i, false)
+    (mem_zip_of (by rw [Array.getElem?_toList]; exact hi) hm)
+  simpa using h3
 
 /-! ## The mask of the skipped statements -/
 
