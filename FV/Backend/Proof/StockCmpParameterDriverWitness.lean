@@ -1,6 +1,6 @@
 import FV.Backend.Proof.StockCmpParameterDriverRuns
 import FV.Backend.Proof.StockCmpParameterSourceValues
-import FV.Backend.Proof.LowerSim
+import FV.Backend.Proof.LowerValueRelations
 
 namespace Backend.Stock.Proof.ScalarCmp.ParameterDriverWitness
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

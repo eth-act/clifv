@@ -1,6 +1,6 @@
 import FV.Backend.Proof.StockCmpPredecessor64K4097DriverRuns
 import FV.Backend.Proof.StockCmpPredecessorUnsignedTransfer
-import FV.Backend.Proof.LowerSim
+import FV.Backend.Proof.LowerValueRelations
 
 namespace Backend.Stock.Proof.ScalarCmp.Predecessor64K4097UnsignedAllValuesWitness
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
