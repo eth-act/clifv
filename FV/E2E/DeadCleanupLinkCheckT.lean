@@ -28,13 +28,13 @@ def okBCleanupTFast (I : LinkInput) : Bool :=
   let sy := assocMap I.syms
   (globalChksWith (LinkCtx.of I P T) I P T).all (·.2) &&
     (Link.parMap (fun e => (staticChksWithT DeadCleanup.prune I e.1 e.2 ++
-        linkChksWith (LinkCtx.of I P T) P e.1 e.2 ++
+        linkChksWithT (LinkCtx.of I P T) P e.1 e.2 ++
         [("calleeInt", !calleeWithB (fun n => cs.contains n) anyInd (fun n => sy[n]?) e.1 ||
           e.1.sig.returns.all (·.ty.isInt))]).all (·.2)) I.resultsCleanup).all id
 
 theorem okBCleanupTFast_eq (I : LinkInput) : okBCleanupTFast I = okBCleanupT I := by
   simp only [okBCleanupTFast, okBCleanupT, okRWithT, chksWithT, assocMap_fun, globalChksWith_of,
-    linkChksWith_of, calleeIntChk, calleeWithB_eq, Link.parMap_eq, List.all_map,
+    linkChksWithT_of, calleeIntChk, calleeWithB_eq, Link.parMap_eq, List.all_map,
     Function.comp_def, id]
 
 theorem okBCleanup_globalT {I : LinkInput} (h : okBCleanupT I = true)

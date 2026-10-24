@@ -1,5 +1,6 @@
 import FV.E2E.LinkGood
 import FV.E2E.LinkArmT
+import FV.E2E.LinkSiteTC
 
 /-! # Typed copies of `FV.E2E.LinkGood` (S11e5 Stage C, slice 8)
 
@@ -8,7 +9,7 @@ The declarations of `FV.E2E.LinkGood` that depend on the integer link contract
 (suffix `T`; `LinkSys.Ok.*` as `LinkSys.OkT.*`). -/
 
 namespace E2E
-open Backend Backend.Proof Backend.Proof.Driver
+open Backend Backend.Proof Backend.Proof.Driver E2E.LinkCheck
 namespace LinkSys
 variable (L : LinkSys)
 variable {κ : Nat → Clif.Function → Nat}
@@ -438,46 +439,86 @@ theorem blrTo_of_preT (hL : L.OkT) {M : Nat} {g : Clif.Function}
     rw [hins] at hx0; cases hx0
   | reg r =>
     have hreg : ∀ n, info.dest ≠ .sym n := fun n => by rw [hd]; simp
-    obtain ⟨tv, Lu, Ld, rfl, hregs⟩ := hL.blrRegs g hg info hsite hreg
-    rw [operands_call_reg] at hopsC
-    cases hopsC
-    obtain ⟨hsz', hloc, -, -⟩ := checkStatic_facts hst'
-    obtain ⟨r0, hregs0⟩ := callRegs_eq_reg (regs := regs) (by simpa using hsz')
-      (fun p hp r hr => (hloc p hp).2 r hr)
-    obtain ⟨n0, rfl, hn0, -⟩ : ∃ n, r0 = .x n ∧ n < 29 ∧ n ≠ 16 := by
-      have hmem : (tgtOp tv, Loc.reg r0) ∈
-          (((tgtOp tv :: (retOps Lu ++ callDefOps Ld)).toArray).zip (regs.map Loc.reg)).toList := by
-        simp [Array.toList_zip, Array.toList_map, hregs0]
-      obtain ⟨n, hn, h29, h16, -⟩ := locOk_int (hloc _ hmem).1
-      exact ⟨n, hn, h29, h16⟩
-    obtain ⟨r1, us', ds', hr1, hic⟩ := assign_call_reg hasgC
-    have h0 : regs[0]? = some (.x n0) := by
-      rw [← Array.getElem?_toList, hregs0]; rfl
-    rw [h0] at hr1
-    cases hr1
-    cases hic
-    simp only [MInst.callInsn?, Option.some.injEq] at hx'
-    subst hx'
-    have htgt : blrTarget u = some (lo64 (regVal u (.x n0))) := by
-      rw [lo64_regVal_x]
-      exact blrTarget_of hc.layout hlm hj hn0 hpc
-        (fun k wd hk => hL.imgCode g hg u (fun a ha => (hGk a (he.imgG a ha)).trans (he.imgS a ha)) k wd hk)
-    have hs : symCallee L.Xb L.P (lo64 (regVal u (.x n0))) = some h := by
-      rw [htgt] at hb; exact hb
-    have hx2 : (L.X κ M g F).call none (regVal u (.x n0) :: Lu.map (fun q => regVal u q.2)) w =
-        some (o, w2) := by
-      rw [← call_useVals_reg hregs0]; exact hx
-    rw [L.X_ind hs] at hx2
-    split at hx2
-    · rename_i hdecl
-      have hgot : ∀ n, GotV (L.A g).vcp tv n → n = h.name := by
-        intro n hn
-        have e := hguard tv n _ rfl hn (operands_call_reg tv Lu Ld) (by simp [tgtOp, Operand.isUse])
-        rw [call_useVals_reg hregs0] at e
-        simp only [List.head?_cons, Option.map_some, Option.some.injEq] at e
-        exact L.got_targetT hL hs e
-      exact ⟨_, tv, hsite, rfl, hdecl.1, hgot⟩
-    · cases hx2
+    rcases hL.blrRegs g hg info hsite hreg with ⟨tv, Lu, Ld, rfl, hregs⟩ | ⟨tv, Lc, Dc, rfl, hno⟩
+    · rw [operands_call_reg] at hopsC
+      cases hopsC
+      obtain ⟨hsz', hloc, -, -⟩ := checkStatic_facts hst'
+      obtain ⟨r0, hregs0⟩ := callRegs_eq_reg (regs := regs) (by simpa using hsz')
+        (fun p hp r hr => (hloc p hp).2 r hr)
+      obtain ⟨n0, rfl, hn0, -⟩ : ∃ n, r0 = .x n ∧ n < 29 ∧ n ≠ 16 := by
+        have hmem : (tgtOp tv, Loc.reg r0) ∈
+            (((tgtOp tv :: (retOps Lu ++ callDefOps Ld)).toArray).zip (regs.map Loc.reg)).toList := by
+          simp [Array.toList_zip, Array.toList_map, hregs0]
+        obtain ⟨n, hn, h29, h16, -⟩ := locOk_int (hloc _ hmem).1
+        exact ⟨n, hn, h29, h16⟩
+      obtain ⟨r1, us', ds', hr1, hic⟩ := assign_call_reg hasgC
+      have h0 : regs[0]? = some (.x n0) := by
+        rw [← Array.getElem?_toList, hregs0]; rfl
+      rw [h0] at hr1
+      cases hr1
+      cases hic
+      simp only [MInst.callInsn?, Option.some.injEq] at hx'
+      subst hx'
+      have htgt : blrTarget u = some (lo64 (regVal u (.x n0))) := by
+        rw [lo64_regVal_x]
+        exact blrTarget_of hc.layout hlm hj hn0 hpc
+          (fun k wd hk => hL.imgCode g hg u (fun a ha => (hGk a (he.imgG a ha)).trans (he.imgS a ha)) k wd hk)
+      have hs : symCallee L.Xb L.P (lo64 (regVal u (.x n0))) = some h := by
+        rw [htgt] at hb; exact hb
+      have hx2 : (L.X κ M g F).call none (regVal u (.x n0) :: Lu.map (fun q => regVal u q.2)) w =
+          some (o, w2) := by
+        rw [← call_useVals_reg hregs0]; exact hx
+      rw [L.X_ind hs] at hx2
+      split at hx2
+      · rename_i hdecl
+        have hgot : ∀ n, GotV (L.A g).vcp tv n → n = h.name := by
+          intro n hn
+          have e := hguard tv n _ rfl hn (operands_call_reg tv Lu Ld) (by simp [tgtOp, Operand.isUse])
+          rw [call_useVals_reg hregs0] at e
+          simp only [List.head?_cons, Option.map_some, Option.some.injEq] at e
+          exact L.got_targetT hL hs e
+        exact ⟨_, tv, hsite, rfl, hdecl.1, hgot⟩
+      · cases hx2
+    · rw [operands_call_regC] at hopsC
+      cases hopsC
+      obtain ⟨hsz', hloc, -, -⟩ := checkStatic_facts hst'
+      obtain ⟨r0, hregs0⟩ := callRegs_eq_regC (regs := regs) (by simpa using hsz')
+        (fun p hp r hr => (hloc p hp).2 r hr)
+      obtain ⟨n0, rfl, hn0, -⟩ : ∃ n, r0 = .x n ∧ n < 29 ∧ n ≠ 16 := by
+        have hmem : (tgtOp tv, Loc.reg r0) ∈
+            (((tgtOp tv :: (retOpsC Lc ++ callDefOpsC Dc)).toArray).zip (regs.map Loc.reg)).toList := by
+          simp [Array.toList_zip, Array.toList_map, hregs0]
+        obtain ⟨n, hn, h29, h16, -⟩ := locOk_int (hloc _ hmem).1
+        exact ⟨n, hn, h29, h16⟩
+      obtain ⟨r1, us', ds', hr1, hic⟩ := assign_call_reg hasgC
+      have h0 : regs[0]? = some (.x n0) := by
+        rw [← Array.getElem?_toList, hregs0]; rfl
+      rw [h0] at hr1
+      cases hr1
+      cases hic
+      simp only [MInst.callInsn?, Option.some.injEq] at hx'
+      subst hx'
+      have htgt : blrTarget u = some (lo64 (regVal u (.x n0))) := by
+        rw [lo64_regVal_x]
+        exact blrTarget_of hc.layout hlm hj hn0 hpc
+          (fun k wd hk => hL.imgCode g hg u (fun a ha => (hGk a (he.imgG a ha)).trans (he.imgS a ha)) k wd hk)
+      have hs : symCallee L.Xb L.P (lo64 (regVal u (.x n0))) = some h := by
+        rw [htgt] at hb; exact hb
+      have hx2 : (L.X κ M g F).call none (regVal u (.x n0) :: Lc.map (fun q => regVal u q.2.2)) w =
+          some (o, w2) := by
+        rw [← call_useVals_regC hregs0]; exact hx
+      rw [L.X_ind hs] at hx2
+      split at hx2
+      · rename_i hdecl
+        have hh : h ∈ L.P.funcs := List.mem_of_find?_eq_some hs
+        have hgot : ∀ n, GotV (L.A g).vcp tv n → n = h.name := by
+          intro n hn
+          have e := hguard tv n _ rfl hn (operands_call_regC tv Lc Dc) (by simp [tgtOp, Operand.isUse])
+          rw [call_useVals_regC hregs0] at e
+          simp only [List.head?_cons, Option.map_some, Option.some.injEq] at e
+          exact L.got_targetT hL hs e
+        exact absurd ⟨hdecl.1, hgot⟩ (hno h hh)
+      · cases hx2
 
 /-- **The crux: the callee's states at a call state.** At a state `u` of the activation of `g`
 at depth `M` where the callee contract's premise holds (`RL.CallPre`, which `RL.GoodX.call` gives
@@ -557,51 +598,93 @@ theorem callGoodT (hL : L.OkT) [L.CrunOk] {M : Nat} (ihG : 0 < M → L.ThmG κ (
       (hL.raCall g hg _ h hps _ hcp) hsw hx2
   | reg r =>
     have hreg : ∀ n, info.dest ≠ .sym n := fun n => by rw [hd]; simp
-    obtain ⟨tv, Lu, Ld, rfl, hregs⟩ := hL.blrRegs g hg info hsite hreg
-    rw [operands_call_reg] at hopsC
-    cases hopsC
-    obtain ⟨hsz', hloc, -, -⟩ := checkStatic_facts hst'
-    obtain ⟨r0, hregs0⟩ := callRegs_eq_reg (regs := regs) (by simpa using hsz')
-      (fun p hp r hr => (hloc p hp).2 r hr)
-    obtain ⟨n0, rfl, hn0, -⟩ : ∃ n, r0 = .x n ∧ n < 29 ∧ n ≠ 16 := by
-      have hmem : (tgtOp tv, Loc.reg r0) ∈
-          (((tgtOp tv :: (retOps Lu ++ callDefOps Ld)).toArray).zip (regs.map Loc.reg)).toList := by
-        simp [Array.toList_zip, Array.toList_map, hregs0]
-      obtain ⟨n, hn, h29, h16, -⟩ := locOk_int (hloc _ hmem).1
-      exact ⟨n, hn, h29, h16⟩
-    obtain ⟨r1, us', ds', hr1, hic⟩ := assign_call_reg hasgC
-    have h0 : regs[0]? = some (.x n0) := by
-      rw [← Array.getElem?_toList, hregs0]; rfl
-    rw [h0] at hr1
-    cases hr1
-    cases hic
-    simp only [MInst.callInsn?, Option.some.injEq] at hx'
-    subst hx'
-    have htgt : blrTarget u = some (lo64 (regVal u (.x n0))) := by
-      rw [lo64_regVal_x]
-      exact blrTarget_of hc.layout hlm hj hn0 hpc
-        (fun k wd hk => hL.imgCode g hg u (fun a ha => (hGk a (he.imgG a ha)).trans (he.imgS a ha)) k wd hk)
-    have hs : symCallee L.Xb L.P (lo64 (regVal u (.x n0))) = some h := by
-      rcases hcall with ⟨n', hn', -⟩ | ⟨-, hb⟩
-      · rw [hins] at hn'; cases hn'
-      · rw [htgt] at hb; exact hb
-    have hx2 : (L.X κ M g F).call none (regVal u (.x n0) :: Lu.map (fun q => regVal u q.2)) w =
-        some (o, w2) := by
-      rw [← call_useVals_reg hregs0]; exact hx
-    rw [L.X_ind hs] at hx2
-    split at hx2
-    · rename_i hdecl
-      have hh : h ∈ L.P.funcs := List.mem_of_find?_eq_some hs
-      have hgot : ∀ n, GotV (L.A g).vcp tv n → n = h.name := by
-        intro n hn
-        have e := hguard tv n _ rfl hn (operands_call_reg tv Lu Ld) (by simp [tgtOp, Operand.isUse])
-        rw [call_useVals_reg hregs0] at e
-        simp only [List.head?_cons, Option.map_some, Option.some.injEq] at e
-        exact L.got_targetT hL hs e
-      obtain ⟨hLu, -⟩ := hregs h hh ⟨hdecl.1, hgot⟩ (by rw [← hdecl.2, List.length_map])
-      exact L.progGoodCoreT hL ihG hg hh (.inr (.inr ⟨hh, hdecl.1.1⟩)) he.imgF he.imgG he.imgS hLu
-        hGk (hL.raBlr g hg _ hsite hreg h hh hdecl.1.1 _ hcp) hsw hx2
-    · cases hx2
+    rcases hL.blrRegs g hg info hsite hreg with ⟨tv, Lu, Ld, rfl, hregs⟩ | ⟨tv, Lc, Dc, rfl, hno⟩
+    · rw [operands_call_reg] at hopsC
+      cases hopsC
+      obtain ⟨hsz', hloc, -, -⟩ := checkStatic_facts hst'
+      obtain ⟨r0, hregs0⟩ := callRegs_eq_reg (regs := regs) (by simpa using hsz')
+        (fun p hp r hr => (hloc p hp).2 r hr)
+      obtain ⟨n0, rfl, hn0, -⟩ : ∃ n, r0 = .x n ∧ n < 29 ∧ n ≠ 16 := by
+        have hmem : (tgtOp tv, Loc.reg r0) ∈
+            (((tgtOp tv :: (retOps Lu ++ callDefOps Ld)).toArray).zip (regs.map Loc.reg)).toList := by
+          simp [Array.toList_zip, Array.toList_map, hregs0]
+        obtain ⟨n, hn, h29, h16, -⟩ := locOk_int (hloc _ hmem).1
+        exact ⟨n, hn, h29, h16⟩
+      obtain ⟨r1, us', ds', hr1, hic⟩ := assign_call_reg hasgC
+      have h0 : regs[0]? = some (.x n0) := by
+        rw [← Array.getElem?_toList, hregs0]; rfl
+      rw [h0] at hr1
+      cases hr1
+      cases hic
+      simp only [MInst.callInsn?, Option.some.injEq] at hx'
+      subst hx'
+      have htgt : blrTarget u = some (lo64 (regVal u (.x n0))) := by
+        rw [lo64_regVal_x]
+        exact blrTarget_of hc.layout hlm hj hn0 hpc
+          (fun k wd hk => hL.imgCode g hg u (fun a ha => (hGk a (he.imgG a ha)).trans (he.imgS a ha)) k wd hk)
+      have hs : symCallee L.Xb L.P (lo64 (regVal u (.x n0))) = some h := by
+        rcases hcall with ⟨n', hn', -⟩ | ⟨-, hb⟩
+        · rw [hins] at hn'; cases hn'
+        · rw [htgt] at hb; exact hb
+      have hx2 : (L.X κ M g F).call none (regVal u (.x n0) :: Lu.map (fun q => regVal u q.2)) w =
+          some (o, w2) := by
+        rw [← call_useVals_reg hregs0]; exact hx
+      rw [L.X_ind hs] at hx2
+      split at hx2
+      · rename_i hdecl
+        have hh : h ∈ L.P.funcs := List.mem_of_find?_eq_some hs
+        have hgot : ∀ n, GotV (L.A g).vcp tv n → n = h.name := by
+          intro n hn
+          have e := hguard tv n _ rfl hn (operands_call_reg tv Lu Ld) (by simp [tgtOp, Operand.isUse])
+          rw [call_useVals_reg hregs0] at e
+          simp only [List.head?_cons, Option.map_some, Option.some.injEq] at e
+          exact L.got_targetT hL hs e
+        obtain ⟨hLu, -⟩ := hregs h hh ⟨hdecl.1, hgot⟩ (by rw [← hdecl.2, List.length_map])
+        exact L.progGoodCoreT hL ihG hg hh (.inr (.inr ⟨hh, hdecl.1.1⟩)) he.imgF he.imgG he.imgS hLu
+          hGk (hL.raBlr g hg _ hsite hreg h hh hdecl.1.1 _ hcp) hsw hx2
+      · cases hx2
+    · rw [operands_call_regC] at hopsC
+      cases hopsC
+      obtain ⟨hsz', hloc, -, -⟩ := checkStatic_facts hst'
+      obtain ⟨r0, hregs0⟩ := callRegs_eq_regC (regs := regs) (by simpa using hsz')
+        (fun p hp r hr => (hloc p hp).2 r hr)
+      obtain ⟨n0, rfl, hn0, -⟩ : ∃ n, r0 = .x n ∧ n < 29 ∧ n ≠ 16 := by
+        have hmem : (tgtOp tv, Loc.reg r0) ∈
+            (((tgtOp tv :: (retOpsC Lc ++ callDefOpsC Dc)).toArray).zip (regs.map Loc.reg)).toList := by
+          simp [Array.toList_zip, Array.toList_map, hregs0]
+        obtain ⟨n, hn, h29, h16, -⟩ := locOk_int (hloc _ hmem).1
+        exact ⟨n, hn, h29, h16⟩
+      obtain ⟨r1, us', ds', hr1, hic⟩ := assign_call_reg hasgC
+      have h0 : regs[0]? = some (.x n0) := by
+        rw [← Array.getElem?_toList, hregs0]; rfl
+      rw [h0] at hr1
+      cases hr1
+      cases hic
+      simp only [MInst.callInsn?, Option.some.injEq] at hx'
+      subst hx'
+      have htgt : blrTarget u = some (lo64 (regVal u (.x n0))) := by
+        rw [lo64_regVal_x]
+        exact blrTarget_of hc.layout hlm hj hn0 hpc
+          (fun k wd hk => hL.imgCode g hg u (fun a ha => (hGk a (he.imgG a ha)).trans (he.imgS a ha)) k wd hk)
+      have hs : symCallee L.Xb L.P (lo64 (regVal u (.x n0))) = some h := by
+        rcases hcall with ⟨n', hn', -⟩ | ⟨-, hb⟩
+        · rw [hins] at hn'; cases hn'
+        · rw [htgt] at hb; exact hb
+      have hx2 : (L.X κ M g F).call none (regVal u (.x n0) :: Lc.map (fun q => regVal u q.2.2)) w =
+          some (o, w2) := by
+        rw [← call_useVals_regC hregs0]; exact hx
+      rw [L.X_ind hs] at hx2
+      split at hx2
+      · rename_i hdecl
+        have hh : h ∈ L.P.funcs := List.mem_of_find?_eq_some hs
+        have hgot : ∀ n, GotV (L.A g).vcp tv n → n = h.name := by
+          intro n hn
+          have e := hguard tv n _ rfl hn (operands_call_regC tv Lc Dc) (by simp [tgtOp, Operand.isUse])
+          rw [call_useVals_regC hregs0] at e
+          simp only [List.head?_cons, Option.map_some, Option.some.injEq] at e
+          exact L.got_targetT hL hs e
+        exact absurd ⟨hdecl.1, hgot⟩ (hno h hh)
+      · cases hx2
 
 /-- **The states of the activation of `g` at depth `M` entered in `s`** from its trace (the
 register-level `GoodX` of every state before `n`), when every state before its return whose step

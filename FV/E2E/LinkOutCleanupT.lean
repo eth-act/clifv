@@ -78,7 +78,7 @@ theorem chksWithT_resultsCleanupT {I : LinkInput} (hin : InScopePT I = true)
   obtain ⟨hdecl, hindB, -, -⟩ := hpg _ hgP
   rw [List.all_eq_true]
   intro c hc'
-  simp only [chksWithT, staticChksWithT, linkChks, List.cons_append, List.nil_append,
+  simp only [chksWithT, staticChksWithT, linkChksT, List.cons_append, List.nil_append,
     List.mem_cons, List.not_mem_nil, or_false, List.append_assoc, progOf_resultsCleanupT, hpr,
     hga] at hc'
   rcases hc' with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
@@ -106,7 +106,7 @@ theorem chksWithT_resultsCleanupT {I : LinkInput} (hin : InScopePT I = true)
   · exact hout
   · simp only [Bool.or_eq_true]
     exact .inr hfr
-  · exact hsite
+  · exact allInsts_siteOk_le hsite
   · exact hdecl
   · exact hra
   · exact hindB
