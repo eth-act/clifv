@@ -3,9 +3,9 @@ import FV.E2E.LinkCheckFast
 /-!
 # `calleeB` with the declared names given (S11e6, #419)
 
-`calleeWithB`/`calleeWithB_eq` (the same names as `FV/Link/DeadCleanupCompileTFast.lean` on
-branch `agent/float-calls-link`, so the later rebase conflicts trivially): the program's callees
-condition with the declared names (`calleeSet`) and "some function has an indirect call" given.
+The program's callees condition `calleeB` with the declared names (`calleeSet`) and "some
+function has an indirect call" given (`calleeWithB_eq`); used by `compileExeT`'s std-sized checks
+(`FV/Link/DeadCleanupCompileTFast.lean`, `okBCleanupTFast`) and `link-check`.
 -/
 
 namespace E2E.LinkCheck

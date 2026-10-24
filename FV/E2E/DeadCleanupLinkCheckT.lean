@@ -18,24 +18,27 @@ open Backend Backend.Proof Backend.Proof.Driver
 def okBCleanupT (I : LinkInput) : Bool := okRWithT DeadCleanup.prune I I.resultsCleanup
 
 /-- **`okBCleanupT` at the size of std**: the same checks with the hash-map context
-(`LinkCtx.of`), the program's declared names (`calleeSet`/`calleeWithB`) and the per-function
-checks evaluated in parallel tasks (`Link.parMap`); the pipeline runs once. -/
+(`LinkCtx.of`, built once), the program's declared names (`calleeSet`/`calleeWithB`), the
+pipeline run once in parallel tasks (`I.resultsCleanup`, `Link.parMap_eq`) and the per-function
+checks evaluated in parallel tasks. -/
 def okBCleanupTFast (I : LinkInput) : Bool :=
-  let P := progOf I.resultsCleanup
-  let T := tabOf I.resultsCleanup
+  let R : Res := Link.parMap (fun fi => (fi.func, I.pipeCleanupOf fi)) I.funcs
+  let P := progOf R
+  let T := tabOf R
+  let C := LinkCtx.of I P T
   let cs := calleeSet P
   let anyInd := P.funcs.any (!indFreeB ·)
   let sy := assocMap I.syms
-  (globalChksWith (LinkCtx.of I P T) I P T).all (·.2) &&
+  (globalChksWith C I P T).all (·.2) &&
     (Link.parMap (fun e => (staticChksWithT DeadCleanup.prune I e.1 e.2 ++
-        linkChksWithT (LinkCtx.of I P T) P e.1 e.2 ++
+        linkChksWithT C P e.1 e.2 ++
         [("calleeInt", !calleeWithB (fun n => cs.contains n) anyInd (fun n => sy[n]?) e.1 ||
-          e.1.sig.returns.all (·.ty.isInt))]).all (·.2)) I.resultsCleanup).all id
+          e.1.sig.returns.all (·.ty.isInt))]).all (·.2)) R).all id
 
 theorem okBCleanupTFast_eq (I : LinkInput) : okBCleanupTFast I = okBCleanupT I := by
   simp only [okBCleanupTFast, okBCleanupT, okRWithT, chksWithT, assocMap_fun, globalChksWith_of,
     linkChksWithT_of, calleeIntChk, calleeWithB_eq, Link.parMap_eq, List.all_map,
-    Function.comp_def, id]
+    Function.comp_def, id, LinkInput.resultsCleanup]
 
 theorem okBCleanup_globalT {I : LinkInput} (h : okBCleanupT I = true)
     (c : String × Bool) (hc : c ∈ globalChks I (progOf I.resultsCleanup) (tabOf I.resultsCleanup)) :
