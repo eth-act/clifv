@@ -5,9 +5,10 @@ import FV.Link.Ld.Spec
 import FVTest.E2E.SemanticLinkProofWith
 import FV.Backend.Lowering.StockScalarNI
 import FV.E2E.StockArithmeticNIWitness
-import FV.E2E.StockGeneralDivWitness
+import FV.E2E.StockGeneralDivFixtures
 import FV.Backend.LinearScan
 import FV.Clif.Print
+import FVTest.Backend.Lowering.StockNarrowProductionRuntime
 
 /-! Actual Stock callback → actual byte writer → ordinary emitted Lean proofs.
 A fixed integration witness; it does not activate a production class. -/
@@ -49,12 +50,19 @@ private def plan (s : LinkSpec) : Link.Ld.Plan :=
     syms := s.addrs.toArray.map fun (n, value) =>
       {name := symName n, value, info := 18, shndx := 0xfff1} }
 
-private def checkCase (out : System.FilePath) (count : Nat) (cleanup fallback : Bool) (layout : StockGeneralDivNIWitness.Layout) (mixed : Bool := false) (retainedMixed : Bool := false) : IO Unit := do
+private def checkCase (out : System.FilePath) (count : Nat) (cleanup fallback : Bool) (layout : StockGeneralDivNIWitness.Layout) (mixed : Bool := false) (retainedMixed : Bool := false) (narrow : Bool := false) : IO Unit := do
   let actualLower := if retainedMixed then Stock.Logical.lowerValidated else Stock.Scalar.lowerValidated
   let lowerName := if retainedMixed then "Backend.Stock.Logical.lowerValidated" else "Backend.Stock.Scalar.lowerValidated"
   let names := (List.range count).map fun i => s!"actual_stock_general_div_{i}"
+  let narrowSource := fun (name : String) (i : Nat) =>
+    let original := (FVTest.StockNarrowProductionRuntime.functions (configFor i))[i % 79]!.1
+    ({original with name}).print
+  let fixtureSource := fun name i =>
+    if narrow && !retainedMixed then narrowSource name i
+    else sourceText name (configFor i) layout retainedMixed i
   let clif := String.join (names.zipIdx.map fun (n,i) =>
-    if !mixed || i == 0 then
+    if narrow && !retainedMixed then fixtureSource n i
+    else if !mixed || i == 0 then
       if count == 33 && i > 0 then (Stock.D0.source n (configFor i) []).print
       else sourceText n (configFor i) layout retainedMixed i
     else if i == 1 then ({E2E.StockArithmeticNIWitness.function .systemVI64 with name := n}).print
@@ -92,7 +100,11 @@ private def checkCase (out : System.FilePath) (count : Nat) (cleanup fallback : 
     throw (IO.userError "actual callback program checks failed")
   for e in results do
     let a ← get e.2
-    if count == 33 && e.1.name != names[0]! then
+    if narrow && !retainedMixed then
+      let raw ← get (Stock.lower e.1)
+      require (Stock.Scalar.sourceOk e.1 && Stock.Scalar.check e.1 raw.code &&
+        decide (a.vc = raw.code)) "narrow linked consumer fell back from actual Stock"
+    else if count == 33 && e.1.name != names[0]! then
       let previous ← get (Stock.Arithmetic.lowerValidated e.1)
       require (decide (a.vc = previous) && Backend.Proof.Driver.lowerCheck e.1 a.vc)
         "small multi-entry fixture changed its existing validated route"
@@ -112,7 +124,7 @@ private def checkCase (out : System.FilePath) (count : Nat) (cleanup fallback : 
   let stack := SemanticStackBound.stackB ci
   require stack.isSome "fixed program has no stack bound"
   for perEntry in (if count > 32 then [false,true] else [false]) do
-    let label := s!"StockGeneralDivProduction{StockGeneralDivNIWitness.layoutName layout}{count}{if retainedMixed then "Retained" else ""}{if mixed then "Mixed" else ""}{if cleanup then "Cleanup" else "Plain"}{if fallback then "Fallback" else "Strict"}{if perEntry then "Entries" else "Global"}"
+    let label := s!"Stock{if narrow then "NarrowProduction" else "GeneralDivProduction" ++ StockGeneralDivNIWitness.layoutName layout}{count}{if retainedMixed then "Retained" else ""}{if mixed then "Mixed" else ""}{if cleanup then "Cleanup" else "Plain"}{if fallback then "Fallback" else "Strict"}{if perEntry then "Entries" else "Global"}"
     let executable := out / (label ++ ".elf")
     IO.FS.writeBinFile executable file
     if count == 2 && fallback && !mixed then
@@ -125,7 +137,7 @@ private def checkCase (out : System.FilePath) (count : Nat) (cleanup fallback : 
         let dump := bundle / (name ++ ".clif")
         let answer := bundle / (name ++ ".ra.json")
         IO.FS.writeFile dump ("; symbol " ++ name ++ "\n" ++
-          ((sourceText s!"u0:{i}" (configFor i) layout retainedMixed i).replace "function %" "function ") ++
+          ((fixtureSource s!"u0:{i}" i).replace "function %" "function ") ++
           s!"; clifv-extnames 1\n; decl u0:{i} func export " ++
           (Lean.toJson name).compress ++ "\n; end clifv-extnames\n")
         IO.FS.writeFile answer ((Lean.Json.mkObj [
@@ -161,7 +173,17 @@ def check (out : System.FilePath) : IO Unit := do
     checkCase out 6 true true layout true
   checkCase out 2 false true .unused false true
   checkCase out 2 true true .unused false true
+def checkNarrow (out : System.FilePath) : IO Unit := do
+  IO.FS.createDirAll (out / "Crates")
+  for cleanup in [false,true] do
+    for fallback in [false,true] do
+      checkCase out 79 cleanup fallback .unused false false true
+    checkCase out 2 cleanup true .unused false false true
+    checkCase out 2 cleanup true .unused false true true
+
 end FVTest.StockGeneralDivProductionLinkedFixture
 
 def main (args : List String) : IO Unit :=
-  FVTest.StockGeneralDivProductionLinkedFixture.check (args.headD "/tmp/stock-mixed-linked-fixture")
+  if args.head? == some "--narrow" then
+    FVTest.StockGeneralDivProductionLinkedFixture.checkNarrow (System.FilePath.mk (args[1]?.getD "/tmp/stock-narrow-linked-fixture"))
+  else FVTest.StockGeneralDivProductionLinkedFixture.check (args.headD "/tmp/stock-mixed-linked-fixture")
