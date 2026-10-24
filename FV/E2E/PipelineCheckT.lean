@@ -1,6 +1,7 @@
 import FV.E2E.PipelineCheck
 import FV.E2E.LinkCheckT
 import FV.E2E.LinkArmT
+import FV.E2E.LinkSiteTC
 
 /-! # Typed copies of `FV.E2E.PipelineCheck` (S11e5 Stage C, slice 8)
 
@@ -35,7 +36,7 @@ def staticChksWithT (stage : VCode → VCode) (I : LinkInput) (g : Clif.Function
 
 def chksWithT (stage : VCode → VCode) (I : LinkInput) (P : Clif.Program)
     (T : List (Clif.Function × Art)) (g : Clif.Function) (r : Except String Art) :
-    List (String × Bool) := staticChksWithT stage I g r ++ linkChks I P T g r ++ [("calleeInt", calleeIntChk I P g)]
+    List (String × Bool) := staticChksWithT stage I g r ++ linkChksT I P T g r ++ [("calleeInt", calleeIntChk I P g)]
 
 def okRWithT (stage : VCode → VCode) (I : LinkInput) (R : Res) : Bool :=
   (globalChks I (progOf R) (tabOf R)).all (·.2) &&
@@ -60,7 +61,7 @@ structure FactsWithT (stage : VCode → VCode) (I : LinkInput) (R : Res) (g : Cl
   callee : calleeB (progOf R) (fun n => I.syms.lookup n) g = true → (g.slots = [] →
     (RAFrame.compute a.vcp a.rf).size =
       a.af.frameSize) ∧ slotFitsB g a = true
-  sites : allInsts a.vcp (siteB (siteOk (progOf R) g
+  sites : allInsts a.vcp (siteB (siteOkTC (progOf R) g
     (indToB (fun n => I.syms.lookup n) g) a.vcp)) = true
   declSig : ∀ e ∈ g.externs.map (·.2), ∀ h, (progOf R).func? e.name = some h → e.sig = h.sig
   entry : entryB g a.vcp = true
@@ -96,7 +97,7 @@ theorem factsRWithT (stage : VCode → VCode) {I : LinkInput} {R : Res} (hR : Re
     simp only [okRWithT, chksWithT, Bool.and_eq_true, List.all_eq_true] at h
     exact h.2 e he
   rw [hart]
-  simp only [chksWithT, staticChksWithT, linkChks, List.cons_append, List.nil_append, List.mem_cons,
+  simp only [chksWithT, staticChksWithT, linkChksT, List.cons_append, List.nil_append, List.mem_cons,
     List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq, List.append_assoc] at hall
   obtain ⟨h1, h2, h3, h4, h5, h7, h9, h10, h11, h15, h16, h18, h19, h20, h22, h23, hsr, h8,
     h12, h13, h14, h17, h24, hci⟩ := hall
@@ -182,7 +183,7 @@ theorem okRWith_soundT (stage : VCode → VCode) {I : LinkInput} {R : Res}
     intro g hg info h ⟨hs, n, hd, hf⟩
     have hf' : (progOf R).func? n = some h := hf
     obtain ⟨⟨e, he, hen⟩, Lu, Ld, heq, h1, h2⟩ :=
-      siteOk_sound (site_sound (fa hg).sites hs) hd hf'
+      siteOkTC_sound (site_sound (fa hg).sites hs) hd hf'
     obtain ⟨hh, hname⟩ := Clif.Program.func?_some hf'
     refine ⟨hh, ?_, n, Lu, Ld, heq, h1, h2⟩
     simp only [calleeB, Bool.or_eq_true, List.any_eq_true, beq_iff_eq]
@@ -273,9 +274,12 @@ theorem okRWith_soundT (stage : VCode → VCode) {I : LinkInput} {R : Res}
       slotFits := fun g hg h hh => slotFitsB_sound (hcal g hg h hh).2
       callRegs := fun g hg info h hs => (site g hg info h hs).2.2
       blrRegs := fun g hg info hs hreg => by
-        obtain ⟨t, Lu, Ld, heq, hall⟩ := blrOk_sound (siteOk_reg (site_sound (fa hg).sites hs) hreg)
-        exact ⟨t, Lu, Ld, heq, fun h hh hb hl =>
-          hall h hh (indToB_of hb.1) (fun n hn => (hb.2 n (gotOf_sound hn)).symm) hl⟩
+        obtain hbl := siteOkTC_reg (site_sound (fa hg).sites hs) hreg
+        rcases blrOkTC_sound hbl with ⟨t, Lu, Ld, heq, hall⟩ | ⟨t, Lc, Dc, hshape, hno⟩
+        · exact .inl ⟨t, Lu, Ld, heq, fun h hh hb hl =>
+            hall h hh (indToB_of hb.1) (fun n hn => (hb.2 n (gotOf_sound hn)).symm) hl⟩
+        · exact .inr ⟨t, Lc, Dc, hshape, fun h hh hb => absurd hh (fun hc => hno h hh (indToB_of hb.1)
+            (fun n hn => (hb.2 n (gotOf_sound hn)).symm))⟩
       raBlr := fun g hg info hs hreg h hh hmay pc hpc => by
         by_cases hhg : h.name = g.name
         · rw [Clif.name_inj hn hh hg hhg]
