@@ -504,6 +504,20 @@ the theorems are `backend_correct_finalT`/`backend_correct_final_cleanupT` with
 stays integer-only — its claim reaches the Rust source through front-end theorems
 (`Front.bundle_correct_raw*`) that exist only for integers; only plain `--lean-link` widens.
 
+**The decider-free typed scope (Floats15).** `E2E/LinkScopeInputDefsT3.lean`: `fnScopeInTB3`
+is `fnScopeInTB2`'s decided input checks (no `resClassOkB`, no `lowerOutTB`) plus
+`Driver.bitcastWidthB`; `InScopeInT3`, `fnScopeInFailsT3`. `E2E/LinkScopeInputT3.lean`:
+`lowerOutTB_of_T3` (`Prg.lowerFunction_ok_inputT`, `ctlSpillB`/`ctlInstsB` by the typed control
+shapes, `emitConds_lowerT`, `formsCoveredB_completeT`, `killFreeB_of_scopeT`), `resClassOkB_of_T3`,
+so `fnScopeInTB2_of_T3`/`fnScopeInTB_of_T3`/`inScopeInT_of_T3`; the checks restated
+(`ctlSpillB_of_T3`, `ctlInstsB_of_T3`, `formsCoveredB_of_T3`, `emitCondsB_of_T3`,
+`lowerFunction_ok_T3`), totality `pipeT_okT3`, `pipeCleanupT_okT3`, `resultsCleanupT_ok_inT3`, and
+`inScopePT_of_inT`/`inScopePT_of_inT3`. `Link/DeadCleanupCompileT3.lean`: `compileExeT3`
+(`compileExeT` with `InScopeInT3` for `InScopePT`; `compileExeT3_correct`, `_eq`,
+`_total_reach_input`); plain `lean-link` tries it before `compileExeT`. Witnesses
+`FVTest/E2E/FloatScopeT3.lean`, `FVTest/Link/FloatCompileExeT3.lean`. `fnScopeInTB`,
+`fnScopeInTB2`, `compileExeT` and their theorems are unchanged.
+
 **Slice 8, totality half (typed input scope, FloatsTotT).** `E2E/LinkScopeInputDefsT.lean`:
 `fnScopeInTB` keeps every conjunct of `fnScopeInB` over the typed scope (`functionET`,
 `lowerScopeTB`) with `fnScopeTB`'s input checks `storeTypedB`/`tryArgClassOk`; a function outside
