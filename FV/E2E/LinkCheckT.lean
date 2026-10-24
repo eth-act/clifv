@@ -258,8 +258,8 @@ theorem okR_soundT {I : LinkInput} {R : Res} (hR : ResOk I R) (hI : okRT I R = t
   refine
     { names := hn
       free := fun g hg => (fa hg).free
-      subset := hsubT
-      compiled := fun g hg => .legacy (hpipe g hg).1
+      subset := fun g hg => (hsubT g hg).toTC
+      compiled := fun g hg => .inl ⟨hsubT g hg, .legacy (hpipe g hg).1⟩
       sretE := fun g hg hs => by
         obtain ⟨hE, hlc⟩ := (fa hg).sretE hs
         obtain ⟨hl, hpr, ha, he, hla, -⟩ := (fa hg).pipe

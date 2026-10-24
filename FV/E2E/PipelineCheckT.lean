@@ -228,8 +228,8 @@ theorem okRWith_soundT (stage : VCode → VCode) {I : LinkInput} {R : Res}
   refine
     { names := hn
       free := fun g hg => (fa hg).free
-      subset := hsubT
-      compiled := fun g hg => (hpipe g hg).1
+      subset := fun g hg => (hsubT g hg).toTC
+      compiled := fun g hg => .inl ⟨hsubT g hg, (hpipe g hg).1⟩
       sretE := fun g hg hs => by
         obtain ⟨hE, hlc⟩ := (fa hg).sretE hs
         obtain ⟨hl, hpr, ha, he, hla, -⟩ := (fa hg).pipe

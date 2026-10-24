@@ -1,5 +1,6 @@
 import FV.E2E.LinkArm
 import FV.E2E.CompiledEitherT
+import FV.E2E.CompiledAnyT
 import FV.E2E.TypedRulesProg
 import FV.E2E.LinkWorldT
 
@@ -101,9 +102,9 @@ structure OkT : Prop where
   /-- distinct names, no `return_call` -/
   names : (L.P.funcs.map (·.name)).Nodup
   free : ∀ g ∈ L.P.funcs, Clif.LinkFree g
-  subset : ∀ g ∈ L.P.funcs, InSubsetT L.P.bare g
-  compiled : ∀ g ∈ L.P.funcs, CompiledEitherT g (L.A g).k (L.A g).vc (L.A g).vcp (L.A g).rf
-    (L.A g).af (L.A g).fa (L.A g).fb
+  subset : ∀ g ∈ L.P.funcs, InSubsetTC L.P.bare g
+  compiled : ∀ g ∈ L.P.funcs, CompiledAnyT L.P.bare g (L.A g).k (L.A g).vc (L.A g).vcp
+    (L.A g).rf (L.A g).af (L.A g).fa (L.A g).fb
   /-- an `sret` function is in subset E, with the integer artifact contract -/
   sretE : ∀ g ∈ L.P.funcs, g.sig.params.any (·.purpose == .sret) = true →
     InSubset L.P.bare g ∧ CompiledEither g (L.A g).k (L.A g).vc (L.A g).vcp (L.A g).rf
@@ -1805,11 +1806,11 @@ theorem thm_ofT (hL : L.OkT) [L.CrunOk] (hκ : L.Budget κ) {M : Nat} (ih : 0 < 
         (L.hooks M) (L.A g).base ra s w₀' := fun G ra s w₀' hME =>
     ⟨hME.abi, hME.stack, hME.gfree, hME.hF, L.calleeOkT hL hκ ih hg hME,
       fun _ => L.calleeTryOkT hL hκ ih hg hME,
-      fun ht => L.tlsOk_hooks (hL.baseTls g hg (hasTls_of_vcode_pipelineT hc ht) F (κ M g)), hME.body⟩
+      fun ht => L.tlsOk_hooks (hL.baseTls g hg (hasTls_of_vcode_pipelineAnyT hc ht) F (κ M g)), hME.body⟩
   have hX := L.xCallsOkT hL hκ ih hg hWE.img hWE.room hWE.dead hWE.align
   have hXI := L.xCallsIndOkT hL hκ ih hg hWE.img hWE.room hWE.dead hWE.align
   -- the typed world theorem (with the proven control families)
-  have hT := backend_correct_world_ni_pipelineT (hL.subset g hg) hc typedRules_program
+  have hT := backend_correct_world_ni_pipelineAnyT (hL.subset g hg) hc typedRules_program
     (X := L.X κ M g F) (syms := L.syms)
     (env := L.envOf M g (spv w₀)) (K := κ M g) (F := F) (c := spv w₀) (hL.covered g hg)
     hX hXI (fun n b hn => hL.symOk n b hn) rfl hWE.clif hWE.rel hWE.args
@@ -1917,7 +1918,7 @@ theorem backend_correct_program_coreT (L : LinkSys) (hL : L.OkT) [L.CrunOk]
   have hWE : L.WorldEntry κ M f L.F args cs w₀ := by
     refine ⟨hcs, ⟨hrel, rfl, ?_⟩, ?_, ?_, ?_, ?_, hL.imgF, hpl⟩
     · rw [hbe.other .ERR (by simp [Masked]) (by simp) (by simp)]; exact hent.err
-    · refine argsAtEntry_bodyT hfr (entryRegsT_of_check hc.lowerOk) hbe hargs
+    · refine argsAtEntry_bodyT hfr hc.entryRegs hbe hargs
         fun off v hm k hk hk' => ?_
       rw [hF] at hk'
       rcases hk' with hw | hi
@@ -1956,7 +1957,7 @@ theorem backend_correct_program_coreT (L : LinkSys) (hL : L.OkT) [L.CrunOk]
     have hJ : L.ActInv f (spv w₀) cs := ⟨hIf, hcs.callers, hpl⟩
     have hm' : Clif.runLoop (L.envOf M f (spv w₀)) L.P.bare m cs = .trapped c := by
       rw [L.runLoop_envOfT hL hf m cs hJ]; exact hm
-    have h := backend_correct_world_pipelineT (hL.subset f hf) hc typedRules_program
+    have h := backend_correct_world_pipelineAnyT (hL.subset f hf) hc typedRules_program
       (X := L.X κ M f L.F) (syms := L.syms)
       (env := L.envOf M f (spv w₀)) (K := κ M f) (F := L.F) (c := spv w₀) (hL.covered f hf)
       (L.xCallsOkT hL hκ ih hf hL.imgF hWE.room hWE.dead hWE.align)
@@ -1966,7 +1967,7 @@ theorem backend_correct_program_coreT (L : LinkSys) (hL : L.OkT) [L.CrunOk]
     exact h.2 c hm' (L.hooks M) L.Img (L.A f).base ra s ⟨hME.abi, hME.stack, hME.gfree, hME.hF,
       L.calleeOkT hL hκ ih hf hME,
       fun _ => L.calleeTryOkT hL hκ ih hf hME,
-      fun ht => L.tlsOk_hooks (hL.baseTls f hf (hasTls_of_vcode_pipelineT hc ht) L.F (κ M f)), hME.body⟩
+      fun ht => L.tlsOk_hooks (hL.baseTls f hf (hasTls_of_vcode_pipelineAnyT hc ht) L.F (κ M f)), hME.body⟩
 
 /-- **`backend_correct_program` with a per-function stack budget** `κ` (`LinkSys.Budget`): the
 stack premises and the world's exterior `L.F` use `κ M f` (the callees' stack of the entry
