@@ -84,7 +84,7 @@ theorem chksWithT_resultsCleanupT {I : LinkInput} (hin : InScopePT I = true)
   rcases hc' with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
     rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
   · rfl
-  · exact hlc
+  · simp [hE, hlc]
   · exact hpc
   · exact hca
   · exact hcov
@@ -96,7 +96,7 @@ theorem chksWithT_resultsCleanupT {I : LinkInput} (hin : InScopePT I = true)
   · exact decide_eq_true hfit
   · exact decide_eq_true hdep
   · exact hfree
-  · simp [hE, hst]
+  · exact hst
   · simpa [Bool.and_eq_true, List.all_eq_true] using habi
   · exact hind
   · simp only [Bool.or_eq_true, Bool.not_eq_true', Bool.and_eq_true] at hsr ⊢
