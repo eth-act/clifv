@@ -206,16 +206,17 @@ theorem rets_mstep {R : RL} {b k : Nat} {a : Array Loc} {its : List RItem} {m : 
     cases hn with
     | ret _ => exact ⟨_, _, _, rfl⟩
 
-/-- **The machine realises the allocated code** under `QA` (`Q ∧ AInv`, or a return tail whose
-restores emit no code): every item case. -/
-theorem realizes_all {R : RL} (hR : R.Wf) (hC : CalleeOkG R.F R.K R.G R.s0 (CallAt R.fa R.base) R.X R.H R.vc.CallSite R.gv)
+/-- **One step of the allocated code from `Q ∧ AInv`** that is not a restore move: the machine
+realises it and reaches `Q ∧ AInv` (`realizes_all`'s non-restore case). -/
+theorem realizes_step {R : RL} (hR : R.Wf) (hC : CalleeOkG R.F R.K R.G R.s0 (CallAt R.fa R.base) R.X R.H R.vc.CallSite R.gv)
     (hT : R.vc.hasTryCall = true → CalleeTryOkG R.F R.K R.G R.s0 (CallAt R.fa R.base) R.X R.H R.vc.TrySite R.gv)
     (hTls : R.vc.hasTls = true → TlsOk R.F R.K R.X R.H)
     (hcov : FormsCovered R.ctx R.vc) :
-    Realizes R.vc R.rf R.sem ckeep R.step (QA R) R.GoodX := by
-  refine realizesQA hR (fun s c c' hq hA h hns => ?_)
-    (fun s b src dst its m w hq hs => realizes_move hR hq hs)
-    (fun b k a its m w c' vb us hvb hi h => rets_mstep hvb hi h)
+    ∀ s c c', Q R s c → AInv R c → MStep R.vc R.sem ckeep R.rf c c' →
+      (∀ b src dst its m w, c = .run ⟨b, .move src dst :: its, m, w⟩ → src.isSave = false) →
+      ∃ n c'', MStep R.vc R.sem ckeep R.rf c c'' ∧ (Q R (iterN R.step n s) c'' ∧ AInv R c'') ∧
+        ∀ i < n, R.GoodX (iterN R.step i s) := by
+  intro s c c' hq hA h hns
   have fin : ∀ n c'', MStep R.vc R.sem ckeep R.rf c c'' → Q R (iterN R.step n s) c'' →
       (∀ i < n, R.GoodX (iterN R.step i s)) →
       ∃ n c'', MStep R.vc R.sem ckeep R.rf c c'' ∧ (Q R (iterN R.step n s) c'' ∧ AInv R c'') ∧
@@ -337,6 +338,17 @@ theorem realizes_all {R : RL} (hR : R.Wf) (hC : CalleeOkG R.F R.K R.G R.s0 (Call
           obtain ⟨n, c'', hm, hq', ht⟩ := realizes_tls hR (hTls (hasTls_of_mem hvb hi)) hq hvb hi
             hops hsz hsem hlen hk
           exact fin n c'' hm hq' ht
+
+/-- **The machine realises the allocated code** under `QA` (`Q ∧ AInv`, or a return tail whose
+restores emit no code): every item case. -/
+theorem realizes_all {R : RL} (hR : R.Wf) (hC : CalleeOkG R.F R.K R.G R.s0 (CallAt R.fa R.base) R.X R.H R.vc.CallSite R.gv)
+    (hT : R.vc.hasTryCall = true → CalleeTryOkG R.F R.K R.G R.s0 (CallAt R.fa R.base) R.X R.H R.vc.TrySite R.gv)
+    (hTls : R.vc.hasTls = true → TlsOk R.F R.K R.X R.H)
+    (hcov : FormsCovered R.ctx R.vc) :
+    Realizes R.vc R.rf R.sem ckeep R.step (QA R) R.GoodX :=
+  realizesQA hR (realizes_step hR hC hT hTls hcov)
+    (fun _ _ _ _ _ _ _ hq hs => realizes_move hR hq hs)
+    (fun _ _ _ _ _ _ _ _ _ hvb hi h => rets_mstep hvb hi h)
 
 /-! ## The register-level theorem -/
 
