@@ -183,6 +183,15 @@ The allocator default remains Lean. Fresh real-example agreement remains
 887/4,543 symbol comparisons; these class gates are not general register
 agreement or Stock-only completeness. Track these separately from proof counts.
 
+The bmask source/record dependency packet now proves actual helper execution,
+source-derived selection, full result binding, final-alias machine semantics and
+guarded original-source transfer. All sixteen independent original width pairs
+inhabit the helper/RHS and machine contracts; a complete sparse-ID source/record
+witness covers i64 input with i8 output. Full normal FV/FVTest is 3,966/3,966;
+34 public roots pass normal and bundled MCP axiom review, with only standard
+axioms. This is not production activation or a register-agreement improvement.
+See [the checkpoint and remaining integration](../research/stock-bmask-source-checkpoint.md).
+
 Next close remaining original pure bmask/nop composition and reachable helpers,
 then continue the fixed CFG/arguments/loops, memory/effects, calls/unwind,
 whole-driver/completeness and optimizer/consumer obligations below. Reuse existing
