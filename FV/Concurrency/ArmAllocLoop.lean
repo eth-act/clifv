@@ -1040,7 +1040,7 @@ theorem rmw_opR {R : RL} (hR : R.Wf) {ok : ArmState → Lab → Prop} {s : ArmSt
       congr 1
       simp [rmwLoopLines, rmwLoopBody]
       omega
-    · refine stRel_after hR hst ?_ ?_ hsw ?_ ?_ ⟨?_, fun a ha => ?_⟩
+    · refine stRel_after hR hst ?_ ?_ hsw ?_ ?_ ⟨?_, fun a ha => ?_, ?_⟩
       · refine store_regs hst [27, 24, 28] (by simp) ?_ ?_ hfr2
         · intro n hn
           simp only [List.mem_cons, List.not_mem_nil, or_false] at hn
@@ -1059,6 +1059,7 @@ theorem rmw_opR {R : RL} (hR : R.Wf) {ok : ArmState → Lab → Prop} {s : ArmSt
           fun q hq e => hav q hq (by rw [e]; exact hF')
         rw [← hxF, ArmState.mem_w_eq_mem, hmemt, write_mem_bytes_eq, setMem_mem, h25y,
           writeM_apply_out _ _ _ _ _ hout, hy1.patch_mem, writeM_apply_out _ _ _ _ _ hout]
+      · exact hfr2 _ (by simp) (by simp [rnum]) (by simp)
   have hEav : ∀ x ∈ [(⟨.acqXR, Arm.r (.GPR 25#5) s, ty.bytes, v⟩ : Ev),
       ⟨.relXW, Arm.r (.GPR 25#5) s, ty.bytes,
         rmwNew ty op (patch [⟨.acqXR, Arm.r (.GPR 25#5) s, ty.bytes, v⟩] y1)⟩],
@@ -1766,7 +1767,7 @@ theorem cas_opR {R : RL} (hR : R.Wf) {ok : ArmState → Lab → Prop} {s : ArmSt
         c2, ls2, _, ps2, T, hvb, hit, by rw [hsplit]; simp, hchk', hc2, hl2, htr, ?_, hpcF, ?_⟩
       · rw [← List.drop_drop, hdrop']
         exact List.drop_left' (by simp [casLoopLines, casLoopHead])
-      · refine stRel_after hR hst ?_ ?_ hswF ?_ hprogF ⟨?_, fun a ha => hmemF a (RL.FK_F ha)⟩
+      · refine stRel_after hR hst ?_ ?_ hswF ?_ hprogF ⟨?_, fun a ha => hmemF a (RL.FK_F ha), ?_⟩
         · refine store_regs hst [27, 24] (by simp) ?_ ?_ hfrF
           · intro n hn
             simp only [List.mem_cons, List.not_mem_nil, or_false] at hn
@@ -1778,6 +1779,7 @@ theorem cas_opR {R : RL} (hR : R.Wf) {ok : ArmState → Lab → Prop} {s : ArmSt
           simp [Backend.Proof.writeM, upd, Operand.isDef, Operand.isLate, hl]
         · rw [hfrF .ERR (by simp) (by simp) (by simp)]; exact hst.err
         · simp only [spOf]; exact hfrF _ (by simp) (by simp [rnum]) (by simp)
+        · exact hfrF _ (by simp) (by simp [rnum]) (by simp)
     exact ⟨c'', hm, hQ, aInv_step hR (q_patch hR hq hEav) (aInv_patch hA _) (by rw [hEW]; exact hm)⟩
   -- the machine's fields after the head, against the allocated code's after its head
   have hnm : ∀ f, ¬ Masked f → f ≠ .PC ∧ (∀ n ∈ [27, 24], f ≠ .GPR (rnum n)) ∧
