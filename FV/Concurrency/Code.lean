@@ -205,25 +205,63 @@ theorem lines_kinds (c : FnCtx) (m : MInst) (ps : PState) {ls : List Line} {ps' 
             List.filterMap_map, lineKind, insnKind_condBr]
            simp [insnKind, akinds, Function.comp, lineKind]))
 
-/-- The frame setup stores fp/lr (`stp`): one plain write. -/
-theorem kinds_prologueLines (n : Nat) : kinds (prologueLines n) = [.plainW] := by
-  unfold prologueLines
-  rw [kinds_append]
-  split
-  · rfl
-  · split
-    · rfl
-    · simp only [kinds_append, kinds_loadConst64]; rfl
+theorem kinds_const {k : AKind} : ∀ {ls : List Line}, (∀ l ∈ ls, lineKind l = some k) →
+    kinds ls = List.replicate ls.length k
+  | [], _ => rfl
+  | l :: ls, h => by
+    simp only [kinds, List.filterMap_cons, h l List.mem_cons_self, List.length_cons,
+      List.replicate_succ]
+    exact congrArg _ (kinds_const fun l' hl' => h l' (List.mem_cons_of_mem _ hl'))
 
-/-- The frame teardown loads fp/lr (`ldp`): one plain read. -/
-theorem kinds_epilogueLines (n : Nat) : kinds (epilogueLines n) = [.plainR] := by
-  unfold epilogueLines
-  rw [kinds_append]
+theorem kinds_spAdjLines (sub : Bool) (n : Nat) : kinds (spAdjLines sub n) = [] := by
+  unfold spAdjLines
   split
   · rfl
   · split
-    · rfl
-    · simp only [kinds_append, kinds_loadConst64]; rfl
+    · cases sub <;> rfl
+    · simp only [kinds_append, kinds_loadConst64]; cases sub <;> rfl
+
+/-- Each push is one plain write. -/
+theorem kinds_pushLines (int : Bool) (rs : List Reg) :
+    kinds (pushLines int rs) = List.replicate (pushLines int rs).length .plainW := by
+  apply kinds_const
+  intro l hl
+  simp only [pushLines, List.mem_append, List.mem_map] at hl
+  rcases hl with hl | ⟨⟨a, b⟩, -, rfl⟩
+  · split at hl
+    · simp only [List.mem_singleton] at hl; subst hl; cases int <;> rfl
+    · simp at hl
+  · cases int <;> rfl
+
+/-- Each pop is one plain read. -/
+theorem kinds_popLines (int : Bool) (rs : List Reg) :
+    kinds (popLines int rs) = List.replicate (popLines int rs).length .plainR := by
+  apply kinds_const
+  intro l hl
+  simp only [popLines, List.mem_append, List.mem_map] at hl
+  rcases hl with ⟨⟨a, b⟩, -, rfl⟩ | hl
+  · cases int <;> rfl
+  · split at hl
+    · simp only [List.mem_singleton] at hl; subst hl; cases int <;> rfl
+    · simp at hl
+
+/-- The frame setup stores fp/lr (`stp`), then pushes the saved registers: plain writes only. -/
+theorem kinds_prologueLines (saves : List Reg) (n : Nat) :
+    kinds (prologueLines saves n) = .plainW :: List.replicate
+      ((pushLines true (savesInt saves)).length + (pushLines false (savesFloat saves)).length)
+      .plainW := by
+  simp only [prologueLines, kinds_append, kinds_spAdjLines, kinds_pushLines, List.append_nil,
+    List.replicate_add]
+  rfl
+
+/-- The frame teardown pops the saved registers, then loads fp/lr (`ldp`): plain reads only. -/
+theorem kinds_epilogueLines (saves : List Reg) (n : Nat) :
+    kinds (epilogueLines saves n) = List.replicate
+      ((popLines false (savesFloat saves)).length + (popLines true (savesInt saves)).length + 1)
+      .plainR := by
+  simp only [epilogueLines, kinds_append, kinds_spAdjLines, kinds_popLines, List.nil_append,
+    List.replicate_add]
+  rfl
 
 theorem relaxable_some {ln : Line} {c : Insn} {t : Lbl} (h : ln.relaxable? = some (c, t)) :
     ln = .ins c none ∧ insnKind c = none ∧ ∀ l, insnKind (c.invertTo l) = none := by

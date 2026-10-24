@@ -252,31 +252,57 @@ theorem lines_pcOk {c : FnCtx} {m : MInst} {ps ps' : PState} {ls : List Line}
 
 /-! ## Prologue, epilogue, blocks, traps -/
 
-theorem prologueLines_noSecond (size : Nat) : ∀ ln ∈ prologueLines size, lnSecond ln = false := by
+theorem spAdjLines_noSecond (sub : Bool) (size : Nat) :
+    ∀ ln ∈ spAdjLines sub size, lnSecond ln = false := by
+  intro ln hln
+  unfold spAdjLines at hln
+  split at hln
+  · simp at hln
+  · split at hln
+    · simp at hln; subst hln; cases sub <;> rfl
+    · rcases List.mem_append.1 hln with h1 | h1
+      · exact loadConst64_noSecond _ _ _ h1
+      · simp at h1; subst h1; cases sub <;> rfl
+
+theorem pushLines_noSecond (int : Bool) (rs : List Reg) :
+    ∀ ln ∈ pushLines int rs, lnSecond ln = false := by
+  intro ln hln
+  simp only [pushLines, List.mem_append, List.mem_map] at hln
+  rcases hln with hln | ⟨⟨a, b⟩, -, rfl⟩
+  · split at hln
+    · simp only [List.mem_singleton] at hln; subst hln; cases int <;> rfl
+    · simp at hln
+  · cases int <;> rfl
+
+theorem popLines_noSecond (int : Bool) (rs : List Reg) :
+    ∀ ln ∈ popLines int rs, lnSecond ln = false := by
+  intro ln hln
+  simp only [popLines, List.mem_append, List.mem_map] at hln
+  rcases hln with ⟨⟨a, b⟩, -, rfl⟩ | hln
+  · cases int <;> rfl
+  · split at hln
+    · simp only [List.mem_singleton] at hln; subst hln; cases int <;> rfl
+    · simp at hln
+
+theorem prologueLines_noSecond (saves : List Reg) (size : Nat) :
+    ∀ ln ∈ prologueLines saves size, lnSecond ln = false := by
   intro ln hln
   simp only [prologueLines, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hln
-  rcases hln with (rfl | rfl) | hln
+  rcases hln with (((rfl | rfl) | hln) | hln) | hln
   · rfl
   · rfl
-  · split at hln
-    · simp at hln
-    · split at hln
-      · simp at hln; subst hln; rfl
-      · rcases List.mem_append.1 hln with h1 | h1
-        · exact loadConst64_noSecond _ _ _ h1
-        · simp at h1; subst h1; rfl
+  · exact pushLines_noSecond _ _ _ hln
+  · exact pushLines_noSecond _ _ _ hln
+  · exact spAdjLines_noSecond _ _ _ hln
 
-theorem epilogueLines_noSecond (size : Nat) : ∀ ln ∈ epilogueLines size, lnSecond ln = false := by
+theorem epilogueLines_noSecond (saves : List Reg) (size : Nat) :
+    ∀ ln ∈ epilogueLines saves size, lnSecond ln = false := by
   intro ln hln
   simp only [epilogueLines, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hln
-  rcases hln with hln | (rfl | rfl)
-  · split at hln
-    · simp at hln
-    · split at hln
-      · simp at hln; subst hln; rfl
-      · rcases List.mem_append.1 hln with h1 | h1
-        · exact loadConst64_noSecond _ _ _ h1
-        · simp at h1; subst h1; rfl
+  rcases hln with ((hln | hln) | hln) | (rfl | rfl)
+  · exact spAdjLines_noSecond _ _ _ hln
+  · exact popLines_noSecond _ _ _ hln
+  · exact popLines_noSecond _ _ _ hln
   · rfl
   · rfl
 
@@ -288,13 +314,13 @@ theorem ainstLines_pcOk {c : FnCtx} {af : AFunc} {a : AInst} {ps ps' : PState} {
     simp only [ainstLines, pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at h
     obtain ⟨rfl, -⟩ := h
     split
-    · exact pcOk_of_noSecond _ (prologueLines_noSecond _)
+    · exact pcOk_of_noSecond _ (prologueLines_noSecond _ _)
     · rfl
   | epilogueRet =>
     simp only [ainstLines, pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at h
     obtain ⟨rfl, -⟩ := h
     split
-    · exact pcOk_of_noSecond _ (epilogueLines_noSecond _)
+    · exact pcOk_of_noSecond _ (epilogueLines_noSecond _ _)
     · rfl
 
 theorem codeLinesE_pcOk {c : FnCtx} {af : AFunc} :
