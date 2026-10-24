@@ -4187,9 +4187,19 @@ outside (`functionET` has no arithmetic). The Stock routes are integer-only (the
 requires `i32`/`i64` signatures and bodies): on a typed function they produce `lowerFunction`'s
 code, accepted only by `lowerCheck` (which implies `lowerCheckT`, `lowerCheckT_of_lowerCheck`) or,
 as the last retry, by `lowerChecked`'s `lowerCheckT`.
-`lean-link --verified` stays integer-only (decision 2026-10-22): its claim reaches the Rust
-source through front-end theorems (`Front.bundle_correct_raw*`) that exist only for integers;
-the typed scope widens plain `lean-link` only.
+`lean-link --verified` was integer-only (decision 2026-10-22) because its claim reaches the Rust
+source through front-end theorems (`Front.bundle_correct_raw*`) that existed only for integers.
+Since S11e6 (#419) the typed versions exist and `--verified` widens to the typed input scope
+(cleanup compiler, no `--opt`, no self tail calls): an input whose functions all meet
+`fnScopeInTB` (`InScopeInT`) but not all `fnScopeInB` is compiled by
+`Link.DeadCleanup.compileExeT`, covered by `compileExeT_correct{,_peak}`,
+`compileExeT_correct_source{,_peak}` (`FV/Link/DeadCleanupExePeakT.lean`,
+`FV/Link/DeadCleanupExeSourceT.lean`) and `Front.bundle_correct_{source,raw}{,_peak}T`
+(`FV/Front/ExeT.lean`), returned values by class (`ExecRefinesT`); totality stays proven on
+`InScopeIn` only, and the exceptional edges (`compileExeU`) are integer-only. The functions failing
+`fnScopeInTB`, `fnScopeTB` or the typed output checks `outChksT` are left out of the region
+(`lean-link`'s `exclude:` line). Witnesses: `FVTest/Link/FloatCompileExeT{Peak,Source}.lean`,
+`crate-proofs/Crates/FrontendBundleWitnessT.lean`.
 
 ## Contract changes taken (byte-identical)
 

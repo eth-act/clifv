@@ -14,6 +14,9 @@ import FV.E2E.FinalTC
 import FV.Backend.Proof.IselCtlTryF
 import FV.Link.DeadCleanupExePeakT
 import FVTest.Link.FloatCompileExeTPeak
+import FV.Link.DeadCleanupExeSourceT
+import FV.Front.ExeT
+import FVTest.Link.FloatCompileExeTSource
 
 -- S11e5 Stage C (#35): the typed scope (float data movement, float parameters and returns)
 #print axioms E2E.typedRules_program
@@ -72,3 +75,17 @@ import FVTest.Link.FloatCompileExeTPeak
 #print axioms Link.DeadCleanup.compileExeT_correct_peak
 #print axioms E2E.FloatCompileExeTPeakWitness.correct_peakT_spec -- witness: native_decide
 #print axioms E2E.FloatCompileExeTPeakWitness.correct_peakT_specC -- witness: native_decide
+
+-- S11e6 (#419): typed source and frontend theorems (`lean-link --verified` on a typed input)
+#print axioms Link.DeadCleanup.compileExe_correct_sourceT
+#print axioms Link.DeadCleanup.compileExe_correct_source_peakT
+#print axioms Link.DeadCleanup.compileExeT_correct_source
+#print axioms Link.DeadCleanup.compileExeT_correct_source_peak
+#print axioms Front.bundle_correct_sourceT
+#print axioms Front.bundle_correct_source_peakT
+#print axioms Front.bundle_correct_rawT
+#print axioms Front.bundle_correct_raw_peakT
+#print axioms E2E.FloatCompileExeTSourceWitness.source_spec -- witness: native_decide
+#print axioms E2E.FloatCompileExeTSourceWitness.source_peak_spec -- witness: native_decide
+#print axioms E2E.FloatCompileExeTSourceWitness.sourceT_specC -- witness: native_decide
+#print axioms E2E.FloatCompileExeTSourceWitness.source_peakT_specC -- witness: native_decide
