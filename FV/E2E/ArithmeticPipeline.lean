@@ -11,19 +11,20 @@ verdict gains the proved actual-Stock alternative. Link/layout checks remain
 in the existing linker check list. -/
 def staticChksSemantic (cleanup : Bool) (I : LinkInput) (g : Clif.Function)
     (r : Except String Art) : List (String × Bool) :=
-  let old := staticChksWith (Stock.Arithmetic.stage cleanup) I g r
+  let old := staticChksWith (fun _ => Stock.Arithmetic.stage cleanup) I g r
   old.take 1 ++ [("compiled: lowerCheck",Stock.Arithmetic.check g (getOk r).vc)] ++ old.drop 2
 
 /-- A complete arithmetic attempt is accepted only after the original static
 checks with semantic lowering validation. A failure retries the shipped scalar
 pipeline, preserving original source, allocator and cleanup settings. -/
 def LinkInput.pipeArithmetic (I : LinkInput) (cleanup : Bool) (fi : FnInput) : Except String Art :=
-  match I.pipeOfWithLowering Stock.Arithmetic.lowerCandidate (Stock.Arithmetic.stage cleanup) fi with
+  match I.pipeOfWithLowering Stock.Arithmetic.lowerCandidate (fun _ => Stock.Arithmetic.stage cleanup) fi with
   | .ok a =>
     if (staticChksSemantic cleanup I fi.func (.ok a)).all (·.2) then .ok a
     else I.pipeProductionWith Stock.ScalarAdd.lower cleanup fi
   | .error _ => I.pipeProductionWith Stock.ScalarAdd.lower cleanup fi
 
+set_option maxHeartbeats 1000000 in
 /-- All stages of the artifact returned by either complete attempt are actual
 pipeline results. The arithmetic candidate never supplies allocation evidence. -/
 theorem LinkInput.pipeArithmetic_prepared {I : LinkInput} {cleanup : Bool} {fi : FnInput} {a : Art}
@@ -65,7 +66,7 @@ theorem LinkInput.pipeArithmetic_compiled {I : LinkInput} {cleanup : Bool} {fi :
 remaining checks and stage labels. -/
 theorem staticChksSemantic_of_legacy {cleanup : Bool} {I : LinkInput} {g : Clif.Function}
     {r : Except String Art}
-    (h : (staticChksWith (Stock.Arithmetic.stage cleanup) I g r).all (·.2) = true) :
+    (h : (staticChksWith (fun _ => Stock.Arithmetic.stage cleanup) I g r).all (·.2) = true) :
     (staticChksSemantic cleanup I g r).all (·.2) = true := by
   simp only [staticChksWith,List.all_cons,List.all_nil,Bool.and_true,Bool.and_eq_true] at h
   simp only [staticChksSemantic,staticChksWith,List.take_succ_cons,List.take_zero,List.drop_succ_cons,

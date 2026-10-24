@@ -11,22 +11,22 @@ open Backend E2E.LinkCheck Elf
 
 /-- Actual total-pipeline output with the original source/oracle indices/base. -/
 def artInWithLowering (I : LinkInput) (lower : Clif.Function → Except String VCode)
-    (stage : VCode → VCode) (fi : FnInput) : Art :=
+    (stage : Clif.Function → VCode → VCode) (fi : FnInput) : Art :=
   getOk (pipeTWithLowering lower stage fi.func fi.k
     (BitVec.ofNat 64 (I.baseOf fi.func.name)) (raJ fi.ra fi.j))
 
 def codeBWithLowering (I : LinkInput) (lower : Clif.Function → Except String VCode)
-    (stage : VCode → VCode) (ex : Excerpt) (fs : List FnInput) : Bool :=
+    (stage : Clif.Function → VCode → VCode) (ex : Excerpt) (fs : List FnInput) : Bool :=
   match phdrs (exRd ex) with
   | some phs => fs.all fun fi => artB I (exRd ex) phs (artInWithLowering I lower stage fi)
   | none => false
 
 def ArtsOkWithLowering (I : LinkInput) (lower : Clif.Function → Except String VCode)
-    (stage : VCode → VCode) (file : ByteArray) (fs : List FnInput) : Prop :=
+    (stage : Clif.Function → VCode → VCode) (file : ByteArray) (fs : List FnInput) : Prop :=
   ∀ fi ∈ fs, ArtOk I file (artInWithLowering I lower stage fi)
 
 theorem artsOkWithLowering_append {I : LinkInput}
-    {lower : Clif.Function → Except String VCode} {stage : VCode → VCode}
+    {lower : Clif.Function → Except String VCode} {stage : Clif.Function → VCode → VCode}
     {file : ByteArray} {l₁ l₂ : List FnInput}
     (h₁ : ArtsOkWithLowering I lower stage file l₁)
     (h₂ : ArtsOkWithLowering I lower stage file l₂) :
@@ -37,7 +37,7 @@ theorem artsOkWithLowering_append {I : LinkInput}
   · exact h₂ fi h
 
 theorem codeBWithLowering_sound {I : LinkInput}
-    {lower : Clif.Function → Except String VCode} {stage : VCode → VCode}
+    {lower : Clif.Function → Except String VCode} {stage : Clif.Function → VCode → VCode}
     {ex : Excerpt} {fs : List FnInput}
     (h : codeBWithLowering I lower stage ex fs = true) {file : ByteArray}
     (hA : Agrees file ex) : ArtsOkWithLowering I lower stage file fs := by
@@ -60,7 +60,7 @@ theorem BinOk.toWithResults {I : LinkInput} {D : List Clif.DataObject} {file : B
   ⟨h.static, h.code, h.data, h.syms⟩
 
 theorem binOkWithResults_ofLowering {I : LinkInput}
-    {lower : Clif.Function → Except String VCode} {stage : VCode → VCode}
+    {lower : Clif.Function → Except String VCode} {stage : Clif.Function → VCode → VCode}
     {D : List Clif.DataObject} {file : ByteArray} (hs : Static file)
     (hc : ArtsOkWithLowering I lower stage file I.funcs)
     (hd : ∀ o ∈ D, DataOk I file o) (hy : SymsOk I file) :
@@ -109,7 +109,7 @@ theorem img_bytesWithResults {I : LinkInput} {R : Res} {D : List Clif.DataObject
 
 
 theorem img_bytesWithLowering {I : LinkInput}
-    {lower : Clif.Function → Except String VCode} {stage : VCode → VCode}
+    {lower : Clif.Function → Except String VCode} {stage : Clif.Function → VCode → VCode}
     {D : List Clif.DataObject} {file : ByteArray}
     (hB : BinOkWithResults I (I.resultsTWithLowering lower stage) D file)
     (hI : okRWith stage I (I.resultsTWithLowering lower stage) = true)

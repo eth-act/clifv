@@ -44,7 +44,7 @@ private def checkCase (out : System.FilePath) (count : Nat) (cleanup fallback : 
   let mut answers : Array Lean.Json := #[Lean.Json.null]
   for fi in funcs do
     let raw ← get (actualLower fi.func)
-    let prep ← get (prepare (stage cleanup raw))
+    let prep ← get (prepare (stage cleanup fi.func raw))
     let answer ← get (oracle prep)
     require (checkAlloc prep (← get (buildRFunc prep (← get (parseRAOut answer))))).isOk
       "fixed oracle rejected actual prepared Stock code"
