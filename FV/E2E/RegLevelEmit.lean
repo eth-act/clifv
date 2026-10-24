@@ -341,7 +341,8 @@ theorem segsOk_length {af : AFunc} {ss : List Seg} {os : List (List Line)} {L : 
 theorem machPlan_spec {af : AFunc} {a : Bool} {ss : List Seg} {ps : PState} {p : Plan}
     (h : machPlan af a ss ps = some p) :
     p.segs = ss ∧ p.ps = ps ∧ p.outs.length = ss.length ∧ segsOk af ss p.outs p.lines = true ∧
-      ∀ x ∈ p.alias, aliasOk af p.lines x = true := by
+      (∀ x ∈ p.alias, aliasOk af p.lines x = true) ∧
+      padsOk af ((segsTrust af ss p.outs p.lines).contains ·) p.lines p.alias = true := by
   unfold machPlan at h
   simp only [bind, Option.bind] at h
   split at h
@@ -350,9 +351,10 @@ theorem machPlan_spec {af : AFunc} {a : Bool} {ss : List Seg} {ps : PState} {p :
   dsimp only at h
   split at h
   · rename_i hok
+    simp only [Bool.and_eq_true] at hok
     simp only [Option.some.injEq] at h
     subst h
-    refine ⟨rfl, rfl, segsOk_length hok, hok, fun x hx => ?_⟩
+    refine ⟨rfl, rfl, segsOk_length hok.1, hok.1, fun x hx => ?_, hok.2⟩
     simp only [List.mem_filter] at hx
     exact hx.2
   · cases h
@@ -378,13 +380,44 @@ theorem emitPlan_spec {k : Nat} {af : AFunc} {p : Plan} (h : emitPlan k af = .ok
       cases e : machPlan af true ss ps with
       | some q => rw [e] at h1; simp only [Option.orElse] at h1; exact .inl h1
       | none => rw [e] at h1; simp only [Option.orElse] at h1; exact .inr h1
-    obtain ⟨e1, e2, e3, e4, e5⟩ := h1'.elim machPlan_spec machPlan_spec
+    obtain ⟨e1, e2, e3, e4, e5, -⟩ := h1'.elim machPlan_spec machPlan_spec
     exact ⟨by rw [e1, e2]; exact hr, by rw [e1]; exact e3, by rw [e1]; exact e4, e5⟩
   · split at h
     · rename_i hok
+      simp only [Bool.and_eq_true] at hok
       simp only [pure, Except.pure, Except.ok.injEq] at h
       subst h
-      exact ⟨hr, by simp, hok, fun x hx => by simp at hx⟩
+      exact ⟨hr, by simp, hok.1, fun x hx => by simp at hx⟩
+    · cases h
+
+/-- **The emission plan's landing pads** (`padsOk`): the line the call-site table names for
+each `try_call` handler represents the handler's block. -/
+theorem emitPlan_pads {k : Nat} {af : AFunc} {p : Plan} (h : emitPlan k af = .ok p) :
+    padsOk af ((segsTrust af p.segs p.outs p.lines).contains ·) p.lines p.alias = true := by
+  unfold emitPlan at h
+  simp only [bind, Except.bind] at h
+  split at h
+  · cases h
+  rename_i r hr
+  obtain ⟨ss, ps⟩ := r
+  dsimp only at h
+  split at h
+  · rename_i p1 h1
+    simp only [pure, Except.pure, Except.ok.injEq] at h
+    subst h
+    have h1' : machPlan af true ss ps = some p1 ∨ machPlan af false ss ps = some p1 := by
+      cases e : machPlan af true ss ps with
+      | some q => rw [e] at h1; simp only [Option.orElse] at h1; exact .inl h1
+      | none => rw [e] at h1; simp only [Option.orElse] at h1; exact .inr h1
+    obtain ⟨e1, -, -, -, -, e6⟩ := h1'.elim machPlan_spec machPlan_spec
+    rw [e1]
+    exact e6
+  · split at h
+    · rename_i hok
+      simp only [Bool.and_eq_true] at hok
+      simp only [pure, Except.pure, Except.ok.injEq] at h
+      subst h
+      exact hok.2
     · cases h
 
 /-- Segment `i` in `segLines`: its label line, its body and final lines, then the next

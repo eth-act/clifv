@@ -636,12 +636,14 @@ theorem segLines_label_mem : ∀ {ss : List Seg} {os : List (List Line)} {s : Se
 
 /-- **The unsimplified lines pass `segsOk`** (the fallback of `emitPlan`): entry first, every
 last instruction with its unsimplified lines (`RawTerm`), every block target among them a
-segment's label. -/
-theorem segsOk_raw {af : AFunc} {ss : List Seg} {ps : PState}
+segment's label; and every forwarding segment is trusted. -/
+theorem segsOk_raw' {af : AFunc} {ss : List Seg} {ps : PState}
     (h0 : ss.head?.map (·.idx) = some 0)
     (hraw : ∀ s ∈ ss, RawTerm (af.blocks[s.idx]?.bind (·.2.back?)) s.term)
     (hlab : ∀ s ∈ ss, ∀ ln ∈ s.term, ∀ l, ln.target? = some (.block l) → ∃ s' ∈ ss, s'.label = l) :
-    segsOk af ss (ss.map (·.term)) (segLines ss (ss.map (·.term)) ++ trapLines ps) = true := by
+    segsOk af ss (ss.map (·.term)) (segLines ss (ss.map (·.term)) ++ trapLines ps) = true ∧
+      ∀ s ∈ ss, (af.fwd? s.label).isSome = true → (segsTrust af ss (ss.map (·.term))
+        (segLines ss (ss.map (·.term)) ++ trapLines ps)).contains s.label = true := by
   have hlen : (ss.map (·.term)).length = ss.length := by simp
   have hmem : ∀ s ∈ ss, Line.label (.block s.label) ∈
       segLines ss (ss.map (·.term)) ++ trapLines ps := fun s hs =>
@@ -686,10 +688,49 @@ theorem segsOk_raw {af : AFunc} {ss : List Seg} {ps : PState}
     exact ⟨x, hxm, by
       simp only [beq_self_eq_true, Bool.true_and]
       exact hok _ (fun s hs hf => hfw s hs hf) x hxm⟩
+  refine ⟨?_, fun s hs hf => by rw [hS]; exact hfw s hs hf⟩
   unfold segsOk
   simp only [Bool.and_eq_true, beq_iff_eq, List.all_eq_true, Bool.or_eq_true]
   refine ⟨⟨hlen.symm, h0⟩, fun x hxm => .inr ?_⟩
   rw [hS]
   exact hok _ (fun s hs hf => hfw s hs hf) x hxm
+
+theorem segsOk_raw {af : AFunc} {ss : List Seg} {ps : PState}
+    (h0 : ss.head?.map (·.idx) = some 0)
+    (hraw : ∀ s ∈ ss, RawTerm (af.blocks[s.idx]?.bind (·.2.back?)) s.term)
+    (hlab : ∀ s ∈ ss, ∀ ln ∈ s.term, ∀ l, ln.target? = some (.block l) → ∃ s' ∈ ss, s'.label = l) :
+    segsOk af ss (ss.map (·.term)) (segLines ss (ss.map (·.term)) ++ trapLines ps) = true :=
+  (segsOk_raw' h0 hraw hlab).1
+
+/-- **The unsimplified lines pass `padsOk`** (no aliases): every `try_call` handler is a
+segment's label, whose own line represents it. -/
+theorem padsOk_raw {af : AFunc} {ss : List Seg} {ps : PState}
+    (h0 : ss.head?.map (·.idx) = some 0)
+    (hraw : ∀ s ∈ ss, RawTerm (af.blocks[s.idx]?.bind (·.2.back?)) s.term)
+    (hlab : ∀ s ∈ ss, ∀ ln ∈ s.term, ∀ l, ln.target? = some (.block l) → ∃ s' ∈ ss, s'.label = l)
+    (hpad : ∀ b ∈ af.blocks.toList, ∀ a ∈ b.2.toList, ∀ info ti, a = .inst (.tryCall info ti) →
+      ∀ h ∈ ti.handlers, ∃ s ∈ ss, s.label = h.label) :
+    padsOk af ((segsTrust af ss (ss.map (·.term))
+      (segLines ss (ss.map (·.term)) ++ trapLines ps)).contains ·)
+      (segLines ss (ss.map (·.term)) ++ trapLines ps) [] = true := by
+  have htr := (segsOk_raw' (ps := ps) h0 hraw hlab).2
+  unfold padsOk
+  simp only [List.all_eq_true]
+  intro b hb a ha
+  split
+  · rename_i info ti
+    simp only [List.all_eq_true]
+    intro h hh
+    obtain ⟨s, hs, hl⟩ := hpad b hb _ ha info ti rfl h hh
+    have hm : Line.label (.block h.label) ∈ segLines ss (ss.map (·.term)) ++ trapLines ps := by
+      rw [← hl]
+      exact List.mem_append_left _ (segLines_label_mem (by simp) hs)
+    have := repLbl_self (af := af)
+      (own := ((segsTrust af ss (ss.map (·.term))
+        (segLines ss (ss.map (·.term)) ++ trapLines ps)).contains ·)) hm
+      (fun hf => by rw [← hl] at hf ⊢; exact htr s hs hf)
+    simp only [List.lookup, Option.getD_none]
+    simpa only [repLbl] using this
+  · rfl
 
 end Backend

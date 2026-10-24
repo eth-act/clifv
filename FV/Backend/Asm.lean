@@ -937,25 +937,44 @@ def trapLines (ps : PState) : List Line :=
 /-- The lines of a plan before branch relaxation. -/
 def Plan.lines (p : Plan) : List Line := segLines p.segs p.outs ++ trapLines p.ps
 
+/-- The landing pads of the `try_call`s laid out as `L` with the block-label aliases `al` reach
+their handler blocks: the line the call-site table names for a handler label `h` (its alias'
+target's label line, else `h`'s own, as `callSites` resolves it) represents `h` (`repOn` with the
+trusted forwarding blocks `own`): an untrusted forwarding block's own lines never run as it. -/
+def padsOk (af : AFunc) (own : Label → Bool) (L : List Line) (al : List (Label × Label)) : Bool :=
+  let idx := blockLabelIdx L
+  af.blocks.toList.all fun (_, code) => code.toList.all fun
+    | .inst (.tryCall _ ti) => ti.handlers.all fun h =>
+      match idx[(al.lookup h.label).getD h.label]? with
+      | some j => repOn af own L h.label j
+      | none => false
+    | _ => true
+
 /-- The `MachBuffer` simplification of the segments `ss` (`allLabels` as in `machBuf`), if it
-splits into them and `segsOk` accepts it. -/
+splits into them and `segsOk` and `padsOk` accept it. -/
 def machPlan (af : AFunc) (allLabels : Bool) (ss : List Seg) (ps : PState) : Option Plan := do
   let (L, al) := machBuf allLabels (segLines ss (ss.map (·.term)))
   let os ← splitSegs ss L
   let L' := segLines ss os ++ trapLines ps
-  if segsOk af ss os L' then some ⟨ss, os, ps, al.filter (aliasOk af L')⟩ else none
+  let al' := al.filter (aliasOk af L')
+  if segsOk af ss os L' && padsOk af ((segsTrust af ss os L').contains ·) L' al' then
+    some ⟨ss, os, ps, al'⟩
+  else none
 
 /-- The emission plan of an allocated function (`k` = its index in the file): the blocks in
 `emitOrder`, `MachBuffer`'s branch simplification (`machPlan`), else the unsimplified lines
-(which `segsOk` accepts whenever every branch target is a block, `segsOk_raw`). -/
+(which `segsOk` accepts whenever every branch target is a block, `segsOk_raw`, and `padsOk`
+whenever every handler is a block, `padsOk_raw`). -/
 def emitPlan (k : Nat) (af : AFunc) : Except String Plan := do
   let (ss, ps) ← segsOf { k, slotBase := af.slotBase } af (emitOrder af) {}
   match (machPlan af true ss ps).orElse fun _ => machPlan af false ss ps with
   | some p => pure p
   | none =>
     let os := ss.map (·.term)
-    if segsOk af ss os (segLines ss os ++ trapLines ps) then pure ⟨ss, os, ps, []⟩
-    else throw "the blocks' branches fail the emission check (segsOk)"
+    let L := segLines ss os ++ trapLines ps
+    if segsOk af ss os L && padsOk af ((segsTrust af ss os L).contains ·) L [] then
+      pure ⟨ss, os, ps, []⟩
+    else throw "the blocks' branches fail the emission check (segsOk/padsOk)"
 
 /-- The block-label aliases of the emission plan. -/
 def emitAlias (k : Nat) (af : AFunc) : List (Label × Label) :=
