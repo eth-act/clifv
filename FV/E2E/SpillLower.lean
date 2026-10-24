@@ -740,15 +740,17 @@ theorem saveSegs_body (vc : VCode) (succs : Array (Array Nat)) (bi : Nat) (vb : 
           (M ++ L) ++ (RItem.op k (spillLocs ops i.clobbers) :: (S ++ xs.flatMap (bodyItem vc succs bi vb))) := by
         simp
       rw [e, saveSegsOk_moves vb calleeSaved _ C _ hMv]
-      have hnr : ((some i : Option MInst) matches some (.rets _)) = false := by
-        cases i <;> simp_all
-      simp only [saveSegsOk, hk, hnr, Bool.false_eq_true, ite_false, Bool.and_eq_true, List.all_eq_true]
-      refine ⟨fun x hx => ?_, ?_⟩
-      · rcases List.mem_append.mp hx with hx | hx
-        · exact (hC x hx).noSave
-        · rcases List.mem_append.mp hx with hx | hx
-          · exact (hM x hx).noSave
-          · exact (hL x hx).noSave
+      simp only [saveSegsOk, hk, Bool.and_eq_true]
+      refine ⟨?_, ?_⟩
+      · split
+        · rename_i hm; exfalso; revert hm; cases i <;> simp_all
+        · simp only [List.all_eq_true]
+          intro x hx
+          rcases List.mem_append.mp hx with hx | hx
+          · exact (hC x hx).noSave
+          · rcases List.mem_append.mp hx with hx | hx
+            · exact (hM x hx).noSave
+            · exact (hL x hx).noSave
       · rw [saveSegsOk_moves vb calleeSaved S [] _ (fun x hx => (hS x hx).isMove)]
         simpa using hrest
 
