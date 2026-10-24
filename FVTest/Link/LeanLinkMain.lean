@@ -9,6 +9,7 @@ import FV.E2E.SrcScopeDefs
 import FV.Front.Read
 import FV.E2E.LinkScopeInputDefs
 import FV.E2E.LinkScopeInputDefsT
+import FV.E2E.LinkScopeInputDefsTC
 import FV.Link.Ld.Spec
 import FV.Link.ReachCheck
 import FV.Link.Ld.SpecTotal
@@ -64,9 +65,14 @@ conditions with `fnScopeInB`), on which the compiler is proven total
 (`Link.DeadCleanup.compileExe_total_reach_input`, `Link.compileExe_total_reach`, given the
 layout, reach and `file0` conditions). **Typed `--verified`** (S11e6, #419; the cleanup compiler
 without `--opt` and self tail calls): an input whose functions all meet the typed per-function
-conditions `fnScopeInTB` (`InScopeInT`'s; float data movement, float parameters and returns) but
-not all `fnScopeInB` is compiled by `Link.DeadCleanup.compileExeT` (the typed branch: `InScopePT`,
-`leanLink`, `OutOkTCleanup`), and the written executable is covered by the typed theorems
+conditions `fnScopeInTB` (`InScopeInT`'s; float data movement, float parameters and returns)
+— or, for functions with direct `try_call`s taking `f32`/`f64` parameters or returning
+`f32`/`f64`, the typed-try_call conditions `fnScopeInTCB` (the structural conjuncts of
+`fnScopeInTB` with `Compile.functionETC` and the decided output check `lowersTCB`:
+`lowerCheckTC` on `lowerFunction`'s output; a function passes under either list) — but not all
+`fnScopeInB` is compiled by `Link.DeadCleanup.compileExeT` (the typed branches: on `InScopePT`
+`InScopePT`/`leanLink`/`OutOkTCleanup`, else the third branch `leanLink`/`okBCleanupT`), and the
+written executable is covered by the typed theorems
 `compileExeT_correct`, `compileExeT_correct_peak`, `compileExeT_correct_source`,
 `compileExeT_correct_source_peak` (returned values by class) and, through the frontend,
 `Front.bundle_correct_rawT{,_peak}`; totality is proven on `InScopeIn` only. On such an error it
@@ -160,8 +166,10 @@ def srcFails (F : String → Option Clif.Function) (g : Clif.Function) : List St
 
 /-- **`--verified`: the functions to leave out of the region** (T3c): those failing a
 per-function condition of the source domain (`srcFails`), of the input conditions decided on the
-CLIF alone (`fnScopeInB`; with `typed`, the typed `fnScopeInTB`, which holds of every function
-meeting `fnScopeInB`, `fnScopeInTB_of_fnScopeInB`) or of the program-level conditions
+CLIF alone (`fnScopeInB`; with `typed`, the typed `fnScopeInTB` — a function passes if it meets
+`fnScopeInTB` or the typed-try_call `fnScopeInTCB`, the causes reported are `fnScopeInFailsT`'s
+— which holds of every function meeting `fnScopeInB`, `fnScopeInTB_of_fnScopeInB`) or of the
+program-level conditions
 (`scopeFails`), and `extra` (on a typed input, the functions failing `fnScopeTB` or the output
 checks: `typedFails`), when the program-wide conditions hold (`helperFreeB`, distinct names,
 `addrSlotsInputB`); `none` otherwise. `cargo fv` links the executable again with their cg_clif
@@ -177,7 +185,11 @@ def exclusions (S SC : LinkSpec) (typed : Bool) (extra : List String := []) :
   let syms := fun n => sy[n]?
   let fm := funcMap P
   let fmS := funcMap srcP
-  let fnFails := if typed then fnScopeInFailsT else fnScopeInFails
+  -- `typed`: a function passes if it meets the typed conditions `fnScopeInTB` or the
+  -- typed-try_call ones `fnScopeInTCB`; the reported causes are the T list's
+  let fnFails := if typed then
+      fun g => if fnScopeInFailsT g = [] || fnScopeInFailsTC g = [] then [] else fnScopeInFailsT g
+    else fnScopeInFails
   if !helperFreeB srcP || !Link.nodupB (P.funcs.map (·.name)) || !addrSlotsInputB P syms then none
   else
     let src := srcP.funcs.filter fun g => !(srcFails (fun n => fmS[n]?) g).isEmpty
@@ -187,14 +199,28 @@ def exclusions (S SC : LinkSpec) (typed : Bool) (extra : List String := []) :
 
 /-- On a typed input (`--verified`) whose `compileExeT` fails: the functions failing the typed
 per-function conditions of `InScopePT` (`fnScopeTB`), and those whose compiled code fails the
-output checks `outChksT` (`OutOkTCleanup`; only when `InScopePT` holds), with the failing
-conditions; in `compileExeT`'s std-sized forms (`inScopePTPar`, `outChksTWith`: hash maps, the
-pipeline once in parallel). -/
-def typedFails (SC : LinkSpec) : List (String × List String) :=
+output checks (`OutOkTCleanup`; only when `InScopePT` holds), or, on the third branch (`tc`: the
+typed-try_call scope, outside `InScopePT`), the per-function checks of `okBCleanupT` on
+`resultsCleanup` (`chksWithT`, with the widened call-site checks `linkChksT`), with the failing
+conditions; in `compileExeT`'s std-sized forms (`inScopePTPar`, `outChksTWith`,
+`linkChksWithT`: hash maps, the pipeline once in parallel). -/
+def typedFails (SC : LinkSpec) (tc : Bool) : List (String × List String) :=
   let I0 := SC.input0
-  let fs := (I0.prog.funcs.zip (parMap fnScopeTB I0.prog.funcs)).filterMap fun (g, b) =>
+  let fs := if tc then [] else (I0.prog.funcs.zip (parMap fnScopeTB I0.prog.funcs)).filterMap fun (g, b) =>
     if b then none else some (g.name, ["fnScopeTB"])
-  if !fs.isEmpty || !inScopePTPar I0 then fs
+  if !fs.isEmpty || (!tc && !inScopePTPar I0) then fs
+  else if tc then
+    -- `okBCleanupTFast`'s per-function checks
+    let I := SC.inputCleanup
+    let R : Res := parMap (fun fi => (fi.func, I.pipeCleanupOf fi)) I.funcs
+    let P := progOf R
+    let T := tabOf R
+    let C := LinkCtx.of I P T
+    let rs := parMap (fun e => (e.1.name, ((staticChksWithT Backend.DeadCleanup.prune I e.1 e.2 ++
+      linkChksWithT C P e.1 e.2 ++
+      [("calleeInt", !calleeWithB (fun n => C.callees.contains n) C.anyInd C.S e.1 ||
+        e.1.sig.returns.all (·.ty.isInt))]).filter (!·.2)).map (·.1))) R
+    rs.filter (!·.2.isEmpty)
   else
     let Rs := Link.DeadCleanup.parResultsCleanupT I0
     let I := I0.withDepth Rs
@@ -360,15 +386,18 @@ def main (args0 : List String) : IO UInt32 := do
       | [] => none
       | fs => some (g.name, fs)
     let badT := if typedOk && !bad.isEmpty then
-        (P.funcs.zip (parMap fnScopeInFailsT P.funcs)).filterMap fun (g, fs) => match fs with
+        (P.funcs.zip (parMap (fun g => match fnScopeInFailsT g with
+            | [] => []
+            | fs => if fnScopeInFailsTC g = [] then [] else fs) P.funcs)).filterMap fun (g, fs) =>
+          match fs with
           | [] => none
           | fs => some (g.name, fs)
       else bad
     if !bad.isEmpty && typedOk && badT.isEmpty then
       typedV := true
-      IO.println s!"lean-link: {exe}: --verified: typed scope (InScopeInT): {bad.length} function(s) outside fnScopeInB meet fnScopeInTB {(bad.take 3).map (·.1)}"
+      IO.println s!"lean-link: {exe}: --verified: typed scope (InScopeInT): {bad.length} function(s) outside fnScopeInB meet fnScopeInTB/fnScopeInTCB {(bad.take 3).map (·.1)}"
     else if !badT.isEmpty then
-      let scopeN := if typedOk then "fnScopeInTB" else "fnScopeInB"
+      let scopeN := if typedOk then "fnScopeInTB/fnScopeInTCB" else "fnScopeInB"
       let causes := (badT.flatMap (·.2)).eraseDups.map fun c => s!"{c} {(badT.filter (·.2.contains c)).length}"
       IO.eprintln s!"lean-link: {exe}: --verified: outside the input conditions (InScopeIn{if typedOk then "T" else ""}): {badT.length} function(s) failing {scopeN} (by cause: {causes}) {(badT.take 3).map (·.1)}; not written"
       for (n, fs) in badT do
@@ -392,10 +421,11 @@ def main (args0 : List String) : IO UInt32 := do
       IO.println s!"lean-link: {exe}: unwinding conditions: {Link.DeadCleanup.unwReport SC file}"
       return 0
     | .error e =>
-      if e != Link.DeadCleanup.outOkTMsg && e != Link.DeadCleanup.outOfScopeTMsg then
+      if e != Link.DeadCleanup.outOkTMsg && e != Link.DeadCleanup.outOfScopeTMsg &&
+          e != Link.DeadCleanup.outOkTCMsg then
         IO.eprintln s!"lean-link: {exe}: {e}"
         return 1
-      let bad := typedFails SC
+      let bad := typedFails SC (e == Link.DeadCleanup.outOkTCMsg)
       let causes := (bad.flatMap (·.2)).eraseDups.map fun c => s!"{c} {(bad.filter (·.2.contains c)).length}"
       IO.eprintln s!"lean-link: {exe}: --verified: typed scope: {e}: {bad.length} function(s) failing (by cause: {causes}) {(bad.take 3).map (·.1)}; not written"
       for (n, fs) in bad do

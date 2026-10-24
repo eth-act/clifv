@@ -1,5 +1,7 @@
 import FV.E2E.LinkArm
 import FV.E2E.CompiledEitherT
+import FV.E2E.CompiledAnyT
+import FV.E2E.LinkSiteTC
 import FV.E2E.TypedRulesProg
 import FV.E2E.LinkWorldT
 
@@ -22,7 +24,7 @@ contract, for the typed contract `LinkSys.OkT` (names with suffix `T`; `LinkSys.
   `backend_correct_program*T` with the class-aware conclusion `ArmRefinesT`. -/
 
 namespace E2E
-open Backend Backend.Proof Backend.Proof.Driver
+open Backend Backend.Proof Backend.Proof.Driver E2E.LinkCheck
 
 /-- `hasTls_of_vcode_pipeline` for `CompiledEitherT`. -/
 theorem hasTls_of_vcode_pipelineT {f : Clif.Function} {k : Nat} {vc vcp : VCode}
@@ -101,9 +103,9 @@ structure OkT : Prop where
   /-- distinct names, no `return_call` -/
   names : (L.P.funcs.map (·.name)).Nodup
   free : ∀ g ∈ L.P.funcs, Clif.LinkFree g
-  subset : ∀ g ∈ L.P.funcs, InSubsetT L.P.bare g
-  compiled : ∀ g ∈ L.P.funcs, CompiledEitherT g (L.A g).k (L.A g).vc (L.A g).vcp (L.A g).rf
-    (L.A g).af (L.A g).fa (L.A g).fb
+  subset : ∀ g ∈ L.P.funcs, InSubsetTC L.P.bare g
+  compiled : ∀ g ∈ L.P.funcs, CompiledAnyT L.P.bare g (L.A g).k (L.A g).vc (L.A g).vcp
+    (L.A g).rf (L.A g).af (L.A g).fa (L.A g).fb
   /-- an `sret` function is in subset E, with the integer artifact contract -/
   sretE : ∀ g ∈ L.P.funcs, g.sig.params.any (·.purpose == .sret) = true →
     InSubset L.P.bare g ∧ CompiledEither g (L.A g).k (L.A g).vc (L.A g).vcp (L.A g).rf
@@ -149,11 +151,13 @@ structure OkT : Prop where
   from x0.. (a site with fewer defs than that function's results constrains nothing more; checked
   per site; vacuous without `blr` sites) -/
   blrRegs : ∀ g ∈ L.P.funcs, ∀ info, (L.A g).vcp.CallSite info → (∀ n, info.dest ≠ .sym n) →
-    ∃ t Lu Ld, info = ⟨.reg (.vreg t .int), retPairs Lu, callDefs Ld⟩ ∧
+    (∃ t Lu Ld, info = ⟨.reg (.vreg t .int), retPairs Lu, callDefs Ld⟩ ∧
       ∀ h ∈ L.P.funcs, L.BlrTo g t h → (regLocs h.sig).length = Lu.length →
         Lu.map (·.2) = regLocs h.sig ∧
         (Ld.map (·.1)).take (sigRets h.sig).length =
-          (List.range (min (sigRets h.sig).length Ld.length)).map Reg.x
+          (List.range (min (sigRets h.sig).length Ld.length)).map Reg.x) ∨
+    (∃ t Lc Dc, info = ⟨.reg (.vreg t .int), argPairsC Lc, callDefsC Dc⟩ ∧
+      ∀ h ∈ L.P.funcs, ¬ L.BlrTo g t h)
   /-- layout: the return address of a `blr` is not in the code of a function of `P` it may call
   (`MayCall`), or is after a call instruction of that function's code, not at its entry
   (`RaOk`: functions sharing one copy of code) -/
@@ -1018,81 +1022,145 @@ theorem progOsRegT (hL : L.OkT) [L.CrunOk] (hκ : L.Budget κ) {M : Nat} (ih : 0
     (ctx : FnCtx) :
     CallSoundCtlG F (κ M g) G s0 (CallAt (L.A g).fa (L.A g).base) (callExec (L.hooks M))
       (csemV (GotV (L.A g).vcp) F ctx (L.X κ M g F)) (.call info) .next := by
-  obtain ⟨tv, Lu, Ld, rfl, hregs⟩ := hL.blrRegs g hg info hsite hreg
-  intro t hK hD hG c wh ops regs i' w outs w' hops hst hasg hP hsw hal herr hsem
-  have hguard := csemV_guard hsem
-  replace hsem := csemV_sub hsem
-  have hops0 := hops
-  rw [operands_call_reg] at hops
-  cases hops
-  obtain ⟨hsz', hloc, -, -⟩ := checkStatic_facts hst
-  obtain ⟨r0, hregs0⟩ := callRegs_eq_reg (regs := regs) (by simpa using hsz')
-    (fun p hp r hr => (hloc p hp).2 r hr)
-  -- the target register: an allocatable X register
-  obtain ⟨n0, rfl, hn0, -⟩ : ∃ n, r0 = .x n ∧ n < 29 ∧ n ≠ 16 := by
-    have hmem : (tgtOp tv, Loc.reg r0) ∈
-        (((tgtOp tv :: (retOps Lu ++ callDefOps Ld)).toArray).zip (regs.map Loc.reg)).toList := by
-      simp [Array.toList_zip, Array.toList_map, hregs0]
-    obtain ⟨n, hn, h29, h16, -⟩ := locOk_int (hloc _ hmem).1
-    exact ⟨n, hn, h29, h16⟩
-  have hsem0 := hsem
-  rw [call_useVals_reg hregs0] at hsem
-  -- the allocated call: `blr x n0`
-  obtain ⟨r1, us', ds', hr1, rfl⟩ := assign_call_reg hasg
-  have h0 : regs[0]? = some (.x n0) := by
-    rw [← Array.getElem?_toList, hregs0]; rfl
-  rw [h0] at hr1
-  cases hr1
-  -- the target the machine reads
-  have hc := hL.compiled g hg
-  obtain ⟨lm, hlm⟩ := FnAsm.layout_labelOffsets hc.layout
-  have htgt : blrTarget t = some (lo64 (regVal t (.x n0))) := by
-    obtain ⟨j, x, tt, hj, hx, hpc⟩ := hP
-    simp only [MInst.callInsn?, Option.some.injEq] at hx
-    subst hx
-    rw [lo64_regVal_x]
-    exact blrTarget_of hc.layout hlm hj hn0 hpc
-      (fun k wd hk => hL.imgCode g hg t (fun a ha => (hG a (himgG a ha)).trans (himgS a ha)) k wd hk)
-  -- the external semantics' call
-  have hx : (L.X κ M g F).call none (regVal t (.x n0) :: Lu.map (fun q => regVal t q.2)) w =
-      some (outs, w') := by
-    simp only [csem, Option.map_eq_some_iff, Prod.mk.injEq] at hsem
-    obtain ⟨⟨o, w2⟩, hx, rfl, rfl, -⟩ := hsem
-    exact hx
-  cases hs : symCallee L.Xb L.P (lo64 (regVal t (.x n0))) with
-  | none =>
-    -- no function of `P` at the target: the base's contract
-    have hb : (blrTarget t).bind (symCallee L.Xb L.P) = none := by rw [htgt]; exact hs
-    rw [L.X_none hs] at hx
-    have hsem' : csem F ctx L.Xb (.call ⟨.reg (.vreg tv .int), retPairs Lu, callDefs Ld⟩)
-        (useVals (tgtOp tv :: (retOps Lu ++ callDefOps Ld)).toArray regs t) w =
-        some (outs, w', .next) := by
-      rw [call_useVals_reg hregs0]; simp [csem, hx]
-    obtain ⟨s', hex, rest⟩ := hL.baseOs g hg _ hsite (.inl rfl) F (κ M g) G s0
-      (CallAt (L.A g).fa (L.A g).base) ctx t hK hD hG c wh _ regs _ w outs w' hops0 hst hasg hP hsw
-      hal herr hsem'
-    refine ⟨s', ?_, rest⟩
-    simp only [callExec] at hex ⊢
-    rw [L.hooks_base (.inl rfl) t (fun _ => hb)]
-    exact hex
-  | some h =>
-    rw [L.X_ind hs] at hx
-    split at hx
-    · rename_i hdecl
-      have hh : h ∈ L.P.funcs := List.mem_of_find?_eq_some hs
-      have hgot : ∀ n, GotV (L.A g).vcp tv n → n = h.name := by
-        intro n hn
-        have e := hguard tv n _ rfl hn (operands_call_reg tv Lu Ld) (by simp [tgtOp, Operand.isUse])
-        rw [call_useVals_reg hregs0] at e
-        simp only [List.head?_cons, Option.map_some, Option.some.injEq] at e
-        exact L.got_targetT hL hs e
-      obtain ⟨hLu, hLd⟩ := hregs h hh ⟨hdecl.1, hgot⟩ (by rw [← hdecl.2, List.length_map])
-      have hb : (blrTarget t).bind (symCallee L.Xb L.P) = some h := by rw [htgt]; exact hs
-      exact ⟨L.pcall M h t, by simp only [callExec, hal, ↓reduceIte, L.hooks_none hb],
-        L.progOsCoreT hL hκ ih hg hh (.inr (.inr ⟨hh, hdecl.1.1⟩)) himgF himgG himgS hLu hLd rfl
-          (call_defs_reg hregs0) hK hG
-          (hL.raBlr g hg _ hsite hreg h hh hdecl.1.1 _ hP.callPc) hsw hx⟩
-    · cases hx
+  rcases hL.blrRegs g hg info hsite hreg with ⟨tv, Lu, Ld, rfl, hregs⟩ |
+    ⟨tv, Lc, Dc, rfl, hno⟩
+  · intro t hK hD hG c wh ops regs i' w outs w' hops hst hasg hP hsw hal herr hsem
+    have hguard := csemV_guard hsem
+    replace hsem := csemV_sub hsem
+    have hops0 := hops
+    rw [operands_call_reg] at hops
+    cases hops
+    obtain ⟨hsz', hloc, -, -⟩ := checkStatic_facts hst
+    obtain ⟨r0, hregs0⟩ := callRegs_eq_reg (regs := regs) (by simpa using hsz')
+      (fun p hp r hr => (hloc p hp).2 r hr)
+    -- the target register: an allocatable X register
+    obtain ⟨n0, rfl, hn0, -⟩ : ∃ n, r0 = .x n ∧ n < 29 ∧ n ≠ 16 := by
+      have hmem : (tgtOp tv, Loc.reg r0) ∈
+          (((tgtOp tv :: (retOps Lu ++ callDefOps Ld)).toArray).zip (regs.map Loc.reg)).toList := by
+        simp [Array.toList_zip, Array.toList_map, hregs0]
+      obtain ⟨n, hn, h29, h16, -⟩ := locOk_int (hloc _ hmem).1
+      exact ⟨n, hn, h29, h16⟩
+    have hsem0 := hsem
+    rw [call_useVals_reg hregs0] at hsem
+    -- the allocated call: `blr x n0`
+    obtain ⟨r1, us', ds', hr1, rfl⟩ := assign_call_reg hasg
+    have h0 : regs[0]? = some (.x n0) := by
+      rw [← Array.getElem?_toList, hregs0]; rfl
+    rw [h0] at hr1
+    cases hr1
+    -- the target the machine reads
+    have hc := hL.compiled g hg
+    obtain ⟨lm, hlm⟩ := FnAsm.layout_labelOffsets hc.layout
+    have htgt : blrTarget t = some (lo64 (regVal t (.x n0))) := by
+      obtain ⟨j, x, tt, hj, hx, hpc⟩ := hP
+      simp only [MInst.callInsn?, Option.some.injEq] at hx
+      subst hx
+      rw [lo64_regVal_x]
+      exact blrTarget_of hc.layout hlm hj hn0 hpc
+        (fun k wd hk => hL.imgCode g hg t (fun a ha => (hG a (himgG a ha)).trans (himgS a ha)) k wd hk)
+    -- the external semantics' call
+    have hx : (L.X κ M g F).call none (regVal t (.x n0) :: Lu.map (fun q => regVal t q.2)) w =
+        some (outs, w') := by
+      simp only [csem, Option.map_eq_some_iff, Prod.mk.injEq] at hsem
+      obtain ⟨⟨o, w2⟩, hx, rfl, rfl, -⟩ := hsem
+      exact hx
+    cases hs : symCallee L.Xb L.P (lo64 (regVal t (.x n0))) with
+    | none =>
+      -- no function of `P` at the target: the base's contract
+      have hb : (blrTarget t).bind (symCallee L.Xb L.P) = none := by rw [htgt]; exact hs
+      rw [L.X_none hs] at hx
+      have hsem' : csem F ctx L.Xb (.call ⟨.reg (.vreg tv .int), retPairs Lu, callDefs Ld⟩)
+          (useVals (tgtOp tv :: (retOps Lu ++ callDefOps Ld)).toArray regs t) w =
+          some (outs, w', .next) := by
+        rw [call_useVals_reg hregs0]; simp [csem, hx]
+      obtain ⟨s', hex, rest⟩ := hL.baseOs g hg _ hsite (.inl rfl) F (κ M g) G s0
+        (CallAt (L.A g).fa (L.A g).base) ctx t hK hD hG c wh _ regs _ w outs w' hops0 hst hasg hP hsw
+        hal herr hsem'
+      refine ⟨s', ?_, rest⟩
+      simp only [callExec] at hex ⊢
+      rw [L.hooks_base (.inl rfl) t (fun _ => hb)]
+      exact hex
+    | some h =>
+      rw [L.X_ind hs] at hx
+      split at hx
+      · rename_i hdecl
+        have hh : h ∈ L.P.funcs := List.mem_of_find?_eq_some hs
+        have hgot : ∀ n, GotV (L.A g).vcp tv n → n = h.name := by
+          intro n hn
+          have e := hguard tv n _ rfl hn (operands_call_reg tv Lu Ld) (by simp [tgtOp, Operand.isUse])
+          rw [call_useVals_reg hregs0] at e
+          simp only [List.head?_cons, Option.map_some, Option.some.injEq] at e
+          exact L.got_targetT hL hs e
+        obtain ⟨hLu, hLd⟩ := hregs h hh ⟨hdecl.1, hgot⟩ (by rw [← hdecl.2, List.length_map])
+        have hb : (blrTarget t).bind (symCallee L.Xb L.P) = some h := by rw [htgt]; exact hs
+        exact ⟨L.pcall M h t, by simp only [callExec, hal, ↓reduceIte, L.hooks_none hb],
+          L.progOsCoreT hL hκ ih hg hh (.inr (.inr ⟨hh, hdecl.1.1⟩)) himgF himgG himgS hLu hLd rfl
+            (call_defs_reg hregs0) hK hG
+            (hL.raBlr g hg _ hsite hreg h hh hdecl.1.1 _ hP.callPc) hsw hx⟩
+      · cases hx
+  · intro t hK hD hG c wh ops regs i' w outs w' hops hst hasg hP hsw hal herr hsem
+    have hguard := csemV_guard hsem
+    replace hsem := csemV_sub hsem
+    have hops0 := hops
+    rw [operands_call_regC] at hops
+    cases hops
+    obtain ⟨hsz', hloc, -, -⟩ := checkStatic_facts hst
+    obtain ⟨r0, hregs0⟩ := callRegs_eq_regC (regs := regs) (by simpa using hsz')
+      (fun p hp r hr => (hloc p hp).2 r hr)
+    obtain ⟨n0, rfl, hn0, -⟩ : ∃ n, r0 = .x n ∧ n < 29 ∧ n ≠ 16 := by
+      have hmem : (tgtOp tv, Loc.reg r0) ∈
+          (((tgtOp tv :: (retOpsC Lc ++ callDefOpsC Dc)).toArray).zip (regs.map Loc.reg)).toList := by
+        simp [Array.toList_zip, Array.toList_map, hregs0]
+      obtain ⟨n, hn, h29, h16, -⟩ := locOk_int (hloc _ hmem).1
+      exact ⟨n, hn, h29, h16⟩
+    rw [call_useVals_regC hregs0] at hsem
+    obtain ⟨r1, us', ds', hr1, rfl⟩ := assign_call_reg hasg
+    have h0 : regs[0]? = some (.x n0) := by
+      rw [← Array.getElem?_toList, hregs0]; rfl
+    rw [h0] at hr1
+    cases hr1
+    have hc := hL.compiled g hg
+    obtain ⟨lm, hlm⟩ := FnAsm.layout_labelOffsets hc.layout
+    have htgt : blrTarget t = some (lo64 (regVal t (.x n0))) := by
+      obtain ⟨j, x, tt, hj, hx, hpc⟩ := hP
+      simp only [MInst.callInsn?, Option.some.injEq] at hx
+      subst hx
+      rw [lo64_regVal_x]
+      exact blrTarget_of hc.layout hlm hj hn0 hpc
+        (fun k wd hk => hL.imgCode g hg t (fun a ha => (hG a (himgG a ha)).trans (himgS a ha)) k wd hk)
+    have hx : (L.X κ M g F).call none (regVal t (.x n0) :: Lc.map (fun q => regVal t q.2.2)) w =
+        some (outs, w') := by
+      simp only [csem, Option.map_eq_some_iff, Prod.mk.injEq] at hsem
+      obtain ⟨⟨o, w2⟩, hx, rfl, rfl, -⟩ := hsem
+      exact hx
+    cases hs : symCallee L.Xb L.P (lo64 (regVal t (.x n0))) with
+    | none =>
+      have hb : (blrTarget t).bind (symCallee L.Xb L.P) = none := by rw [htgt]; exact hs
+      rw [L.X_none hs] at hx
+      have hsem' : csem F ctx L.Xb (.call ⟨.reg (.vreg tv .int), argPairsC Lc, callDefsC Dc⟩)
+          (useVals (tgtOp tv :: (retOpsC Lc ++ callDefOpsC Dc)).toArray regs t) w =
+          some (outs, w', .next) := by
+        rw [call_useVals_regC hregs0]; simp [csem, hx]
+      obtain ⟨s', hex, rest⟩ := hL.baseOs g hg _ hsite (.inl rfl) F (κ M g) G s0
+        (CallAt (L.A g).fa (L.A g).base) ctx t hK hD hG c wh _ regs _ w outs w' hops0 hst hasg hP hsw
+        hal herr hsem'
+      refine ⟨s', ?_, rest⟩
+      simp only [callExec] at hex ⊢
+      rw [L.hooks_base (.inl rfl) t (fun _ => hb)]
+      exact hex
+    | some h =>
+      rw [L.X_ind hs] at hx
+      split at hx
+      · rename_i hdecl
+        have hh : h ∈ L.P.funcs := List.mem_of_find?_eq_some hs
+        have hgot : ∀ n, GotV (L.A g).vcp tv n → n = h.name := by
+          intro n hn
+          have e := hguard tv n _ rfl hn (operands_call_regC tv Lc Dc) (by simp [tgtOp, Operand.isUse])
+          rw [call_useVals_regC hregs0] at e
+          simp only [List.head?_cons, Option.map_some, Option.some.injEq] at e
+          exact L.got_targetT hL hs e
+        exact absurd ⟨hdecl.1, hgot⟩ (hno h hh)
+      · cases hx
 end LinkSys
 namespace LinkSys
 variable (L : LinkSys)
@@ -1182,59 +1250,131 @@ theorem calleeTryOkT (hL : L.OkT) [L.CrunOk] (hκ : L.Budget κ) {M : Nat} (ih :
       exact hL.baseTry g hg F ctx _ ti ⟨hsite, hb⟩ c wh ops regs _ t w outs w' s' hops hst hasg
         hsw hal herr hsem' hex'
   | reg r =>
-    obtain ⟨tv, Lu, Ld, hinfo, -⟩ :=
-      hL.blrRegs g hg info hsite.callSite (fun n => by rw [hd]; simp)
-    subst hinfo
-    intro c wh ops regs i' t w outs w' s' hK hD hG hops hst hasg hP hsw hal herr hsem hex
-    have hcl := trySite_clobberAll (hL.compiled g hg).alloc hsite
-    have hopsC : (MInst.call ⟨.reg (.vreg tv .int), retPairs Lu, callDefs Ld⟩).operands = .ok ops := by
-      rw [← operands_tryCall_call _ ti]; exact hops
-    have hops1 := hopsC
-    rw [operands_call_reg] at hops1
-    cases hops1
-    obtain ⟨hsz', hloc, -, -⟩ := checkStatic_facts hst
-    obtain ⟨r0, hregs0⟩ := callRegs_eq_reg (regs := regs)
-      (by have := hsz'; simp only [Array.size_map] at this ⊢; simpa using this)
-      (fun p hp r hr => (hloc p hp).2 r hr)
-    obtain ⟨n0, rfl, hn0, -⟩ : ∃ n, r0 = .x n ∧ n < 29 ∧ n ≠ 16 := by
-      have hmem : (tgtOp tv, Loc.reg r0) ∈
-          (((tgtOp tv :: (retOps Lu ++ callDefOps Ld)).toArray).zip (regs.map Loc.reg)).toList := by
-        simp [Array.toList_zip, Array.toList_map, hregs0]
-      obtain ⟨n, hn, h29, h16, -⟩ := locOk_int (hloc _ hmem).1
-      exact ⟨n, hn, h29, h16⟩
-    obtain ⟨ic, rfl, hasg'⟩ := (assign_call_tryCall _ regs).2 ti i' hasg
-    obtain ⟨r1, us', ds', hr1, hic⟩ := assign_call_reg hasg'
-    cases hic
-    have h0 : regs[0]? = some (.x n0) := by
-      rw [← Array.getElem?_toList, hregs0]; rfl
-    rw [h0] at hr1
-    cases hr1
-    have hc := hL.compiled g hg
-    obtain ⟨lm, hlm⟩ := FnAsm.layout_labelOffsets hc.layout
-    have htgt : blrTarget t = some (lo64 (regVal t (.x n0))) := by
-      obtain ⟨j, x, tt, hj, hx, hpc⟩ := hP
-      simp only [MInst.callInsn?, Option.some.injEq] at hx
-      subst hx
-      rw [lo64_regVal_x]
-      exact blrTarget_of hc.layout hlm hj hn0 hpc
-        (fun k wd hk => hL.imgCode g hg t (fun a ha => (hG a (he.imgG a ha)).trans (he.imgS a ha)) k wd hk)
-    have huv := call_useVals_reg (tv := tv) (s := t) hregs0
-    cases hs : symCallee L.Xb L.P (lo64 (regVal t (.x n0))) with
-    | none =>
-      have hb : (blrTarget t).bind (symCallee L.Xb L.P) = none := by rw [htgt]; exact hs
-      have hsem' : csem F ctx L.Xb (.tryCall ⟨.reg (.vreg tv .int), retPairs Lu, callDefs Ld⟩ ti)
-          (useVals (tgtOp tv :: (retOps Lu ++ callDefOps Ld)).toArray regs t) w =
-          some (outs, w', .goto ti.handlers.length) := by
-        rw [← csemV_sub hsem, huv]; simp [csem, L.X_none hs]
-      have hex' : callExec L.Hb (.tryCall ⟨.reg (.x n0), us', ds'⟩ ti) t = some s' := by
-        simp only [callExec] at hex ⊢
-        rw [← L.hooks_base (M := M) (.inl rfl) t (fun _ => hb)]
-        exact hex
-      exact hL.baseTry g hg F ctx _ ti ⟨hsite, .inl rfl⟩ c wh _ regs _ t w outs w' s' hops hst
-        hasg hsw hal herr hsem' hex'
-    | some h =>
-      exact calleeTry_at ((L.calleeOkT hL hκ ih hg he).os ctx _ hsite.callSite)
-        (fun _ _ h => callAt_tryCall_call h) hcl hK hD hG hops hst hasg hP hsw hal herr hsem hex
+    rcases hL.blrRegs g hg info hsite.callSite (fun n => by rw [hd]; simp) with
+      ⟨tv, Lu, Ld, hinfo, -⟩ | ⟨tv, Lc, Dc, hinfo, hno⟩
+    · subst hinfo
+      intro c wh ops regs i' t w outs w' s' hK hD hG hops hst hasg hP hsw hal herr hsem hex
+      have hcl := trySite_clobberAll (hL.compiled g hg).alloc hsite
+      have hopsC : (MInst.call ⟨.reg (.vreg tv .int), retPairs Lu, callDefs Ld⟩).operands = .ok ops := by
+        rw [← operands_tryCall_call _ ti]; exact hops
+      have hops1 := hopsC
+      rw [operands_call_reg] at hops1
+      cases hops1
+      obtain ⟨hsz', hloc, -, -⟩ := checkStatic_facts hst
+      obtain ⟨r0, hregs0⟩ := callRegs_eq_reg (regs := regs)
+        (by have := hsz'; simp only [Array.size_map] at this ⊢; simpa using this)
+        (fun p hp r hr => (hloc p hp).2 r hr)
+      obtain ⟨n0, rfl, hn0, -⟩ : ∃ n, r0 = .x n ∧ n < 29 ∧ n ≠ 16 := by
+        have hmem : (tgtOp tv, Loc.reg r0) ∈
+            (((tgtOp tv :: (retOps Lu ++ callDefOps Ld)).toArray).zip (regs.map Loc.reg)).toList := by
+          simp [Array.toList_zip, Array.toList_map, hregs0]
+        obtain ⟨n, hn, h29, h16, -⟩ := locOk_int (hloc _ hmem).1
+        exact ⟨n, hn, h29, h16⟩
+      obtain ⟨ic, rfl, hasg'⟩ := (assign_call_tryCall _ regs).2 ti i' hasg
+      obtain ⟨r1, us', ds', hr1, hic⟩ := assign_call_reg hasg'
+      cases hic
+      have h0 : regs[0]? = some (.x n0) := by
+        rw [← Array.getElem?_toList, hregs0]; rfl
+      rw [h0] at hr1
+      cases hr1
+      have hc := hL.compiled g hg
+      obtain ⟨lm, hlm⟩ := FnAsm.layout_labelOffsets hc.layout
+      have htgt : blrTarget t = some (lo64 (regVal t (.x n0))) := by
+        obtain ⟨j, x, tt, hj, hx, hpc⟩ := hP
+        simp only [MInst.callInsn?, Option.some.injEq] at hx
+        subst hx
+        rw [lo64_regVal_x]
+        exact blrTarget_of hc.layout hlm hj hn0 hpc
+          (fun k wd hk => hL.imgCode g hg t (fun a ha => (hG a (he.imgG a ha)).trans (he.imgS a ha)) k wd hk)
+      have huv := call_useVals_reg (tv := tv) (s := t) hregs0
+      cases hs : symCallee L.Xb L.P (lo64 (regVal t (.x n0))) with
+      | none =>
+        have hb : (blrTarget t).bind (symCallee L.Xb L.P) = none := by rw [htgt]; exact hs
+        have hsem' : csem F ctx L.Xb (.tryCall ⟨.reg (.vreg tv .int), retPairs Lu, callDefs Ld⟩ ti)
+            (useVals (tgtOp tv :: (retOps Lu ++ callDefOps Ld)).toArray regs t) w =
+            some (outs, w', .goto ti.handlers.length) := by
+          rw [← csemV_sub hsem, huv]; simp [csem, L.X_none hs]
+        have hex' : callExec L.Hb (.tryCall ⟨.reg (.x n0), us', ds'⟩ ti) t = some s' := by
+          simp only [callExec] at hex ⊢
+          rw [← L.hooks_base (M := M) (.inl rfl) t (fun _ => hb)]
+          exact hex
+        exact hL.baseTry g hg F ctx _ ti ⟨hsite, .inl rfl⟩ c wh _ regs _ t w outs w' s' hops hst
+          hasg hsw hal herr hsem' hex'
+      | some h =>
+        exact calleeTry_at ((L.calleeOkT hL hκ ih hg he).os ctx _ hsite.callSite)
+          (fun _ _ h => callAt_tryCall_call h) hcl hK hD hG hops hst hasg hP hsw hal herr hsem hex
+    · subst hinfo
+      intro c wh ops regs i' t w outs w' s' hK hD hG hops hst hasg hP hsw hal herr hsem hex
+      have hguard := csemV_guard_try hsem
+      have hcl := trySite_clobberAll (hL.compiled g hg).alloc hsite
+      have hopsC : (MInst.call ⟨.reg (.vreg tv .int), argPairsC Lc, callDefsC Dc⟩).operands = .ok ops := by
+        rw [← operands_tryCall_call _ ti]; exact hops
+      have hops1 := hopsC
+      rw [operands_call_regC] at hops1
+      cases hops1
+      obtain ⟨hsz', hloc, -, -⟩ := checkStatic_facts hst
+      obtain ⟨r0, hregs0⟩ := callRegs_eq_regC (regs := regs)
+        (by have := hsz'; simp only [Array.size_map] at this ⊢; simpa using this)
+        (fun p hp r hr => (hloc p hp).2 r hr)
+      obtain ⟨n0, rfl, hn0, -⟩ : ∃ n, r0 = .x n ∧ n < 29 ∧ n ≠ 16 := by
+        have hmem : (tgtOp tv, Loc.reg r0) ∈
+            (((tgtOp tv :: (retOpsC Lc ++ callDefOpsC Dc)).toArray).zip (regs.map Loc.reg)).toList := by
+          simp [Array.toList_zip, Array.toList_map, hregs0]
+        obtain ⟨n, hn, h29, h16, -⟩ := locOk_int (hloc _ hmem).1
+        exact ⟨n, hn, h29, h16⟩
+      obtain ⟨ic, rfl, hasg'⟩ := (assign_call_tryCall _ regs).2 ti i' hasg
+      obtain ⟨r1, us', ds', hr1, hic⟩ := assign_call_reg hasg'
+      cases hic
+      have h0 : regs[0]? = some (.x n0) := by
+        rw [← Array.getElem?_toList, hregs0]; rfl
+      rw [h0] at hr1
+      cases hr1
+      have hc := hL.compiled g hg
+      obtain ⟨lm, hlm⟩ := FnAsm.layout_labelOffsets hc.layout
+      have htgt : blrTarget t = some (lo64 (regVal t (.x n0))) := by
+        obtain ⟨j, x, tt, hj, hx, hpc⟩ := hP
+        simp only [MInst.callInsn?, Option.some.injEq] at hx
+        subst hx
+        rw [lo64_regVal_x]
+        exact blrTarget_of hc.layout hlm hj hn0 hpc
+          (fun k wd hk => hL.imgCode g hg t (fun a ha => (hG a (he.imgG a ha)).trans (he.imgS a ha)) k wd hk)
+      have huv := call_useVals_regC (tv := tv) (s := t) hregs0
+      cases hs : symCallee L.Xb L.P (lo64 (regVal t (.x n0))) with
+      | none =>
+        have hb : (blrTarget t).bind (symCallee L.Xb L.P) = none := by rw [htgt]; exact hs
+        have hsem' : csem F ctx L.Xb (.tryCall ⟨.reg (.vreg tv .int), argPairsC Lc, callDefsC Dc⟩ ti)
+            (useVals (tgtOp tv :: (retOpsC Lc ++ callDefOpsC Dc)).toArray regs t) w =
+            some (outs, w', .goto ti.handlers.length) := by
+          rw [← csemV_sub hsem, huv]; simp [csem, L.X_none hs]
+        have hex' : callExec L.Hb (.tryCall ⟨.reg (.x n0), us', ds'⟩ ti) t = some s' := by
+          simp only [callExec] at hex ⊢
+          rw [← L.hooks_base (M := M) (.inl rfl) t (fun _ => hb)]
+          exact hex
+        exact hL.baseTry g hg F ctx _ ti ⟨hsite, .inl rfl⟩ c wh _ regs _ t w outs w' s' hops hst
+          hasg hsw hal herr hsem' hex'
+      | some h =>
+        have hcs : csem F ctx (L.X κ M g F)
+            (.tryCall ⟨.reg (.vreg tv .int), argPairsC Lc, callDefsC Dc⟩ ti)
+            (useVals (tgtOp tv :: (retOpsC Lc ++ callDefOpsC Dc)).toArray regs t) w =
+            some (outs, w', .goto ti.handlers.length) := csemV_sub hsem
+        rw [huv] at hcs
+        simp only [csem, Option.map_eq_some_iff, Option.bind_eq_some_iff,
+          Option.filter_eq_some_iff, Prod.mk.injEq,
+          List.mem_filter, List.mem_range] at hcs
+        trace_state
+        obtain ⟨a, ⟨hcall, -⟩, -, -, -⟩ := hcs
+        rw [L.X_ind hs] at hcall
+        split at hcall
+        · rename_i hdecl
+          have hh : h ∈ L.P.funcs := List.mem_of_find?_eq_some hs
+          have hgot : ∀ n, GotV (L.A g).vcp tv n → n = h.name := by
+            intro n hn
+            have e := hguard tv n _ rfl hn (operands_call_regC tv Lc Dc) (by simp [tgtOp, Operand.isUse])
+            rw [call_useVals_regC hregs0] at e
+            simp only [List.head?_cons, Option.map_some, Option.some.injEq] at e
+            exact L.got_targetT hL hs e
+          exact absurd ⟨hdecl.1, hgot⟩ (hno h hh)
+        · cases hcall
 
 theorem find_symT (hL : L.OkT) (n : String) :
     (∀ h, L.P.func? n = some h → L.P.funcs.find? (fun h' => L.Xb.sym h'.name 0 == L.Xb.sym n 0) = some h) ∧
@@ -1805,11 +1945,11 @@ theorem thm_ofT (hL : L.OkT) [L.CrunOk] (hκ : L.Budget κ) {M : Nat} (ih : 0 < 
         (L.hooks M) (L.A g).base ra s w₀' := fun G ra s w₀' hME =>
     ⟨hME.abi, hME.stack, hME.gfree, hME.hF, L.calleeOkT hL hκ ih hg hME,
       fun _ => L.calleeTryOkT hL hκ ih hg hME,
-      fun ht => L.tlsOk_hooks (hL.baseTls g hg (hasTls_of_vcode_pipelineT hc ht) F (κ M g)), hME.body⟩
+      fun ht => L.tlsOk_hooks (hL.baseTls g hg (hasTls_of_vcode_pipelineAnyT hc ht) F (κ M g)), hME.body⟩
   have hX := L.xCallsOkT hL hκ ih hg hWE.img hWE.room hWE.dead hWE.align
   have hXI := L.xCallsIndOkT hL hκ ih hg hWE.img hWE.room hWE.dead hWE.align
   -- the typed world theorem (with the proven control families)
-  have hT := backend_correct_world_ni_pipelineT (hL.subset g hg) hc typedRules_program
+  have hT := backend_correct_world_ni_pipelineAnyT (hL.subset g hg) hc typedRules_program
     (X := L.X κ M g F) (syms := L.syms)
     (env := L.envOf M g (spv w₀)) (K := κ M g) (F := F) (c := spv w₀) (hL.covered g hg)
     hX hXI (fun n b hn => hL.symOk n b hn) rfl hWE.clif hWE.rel hWE.args
@@ -1917,7 +2057,7 @@ theorem backend_correct_program_coreT (L : LinkSys) (hL : L.OkT) [L.CrunOk]
   have hWE : L.WorldEntry κ M f L.F args cs w₀ := by
     refine ⟨hcs, ⟨hrel, rfl, ?_⟩, ?_, ?_, ?_, ?_, hL.imgF, hpl⟩
     · rw [hbe.other .ERR (by simp [Masked]) (by simp) (by simp)]; exact hent.err
-    · refine argsAtEntry_bodyT hfr (entryRegsT_of_check hc.lowerOk) hbe hargs
+    · refine argsAtEntry_bodyT hfr hc.entryRegs hbe hargs
         fun off v hm k hk hk' => ?_
       rw [hF] at hk'
       rcases hk' with hw | hi
@@ -1956,7 +2096,7 @@ theorem backend_correct_program_coreT (L : LinkSys) (hL : L.OkT) [L.CrunOk]
     have hJ : L.ActInv f (spv w₀) cs := ⟨hIf, hcs.callers, hpl⟩
     have hm' : Clif.runLoop (L.envOf M f (spv w₀)) L.P.bare m cs = .trapped c := by
       rw [L.runLoop_envOfT hL hf m cs hJ]; exact hm
-    have h := backend_correct_world_pipelineT (hL.subset f hf) hc typedRules_program
+    have h := backend_correct_world_pipelineAnyT (hL.subset f hf) hc typedRules_program
       (X := L.X κ M f L.F) (syms := L.syms)
       (env := L.envOf M f (spv w₀)) (K := κ M f) (F := L.F) (c := spv w₀) (hL.covered f hf)
       (L.xCallsOkT hL hκ ih hf hL.imgF hWE.room hWE.dead hWE.align)
@@ -1966,7 +2106,7 @@ theorem backend_correct_program_coreT (L : LinkSys) (hL : L.OkT) [L.CrunOk]
     exact h.2 c hm' (L.hooks M) L.Img (L.A f).base ra s ⟨hME.abi, hME.stack, hME.gfree, hME.hF,
       L.calleeOkT hL hκ ih hf hME,
       fun _ => L.calleeTryOkT hL hκ ih hf hME,
-      fun ht => L.tlsOk_hooks (hL.baseTls f hf (hasTls_of_vcode_pipelineT hc ht) L.F (κ M f)), hME.body⟩
+      fun ht => L.tlsOk_hooks (hL.baseTls f hf (hasTls_of_vcode_pipelineAnyT hc ht) L.F (κ M f)), hME.body⟩
 
 /-- **`backend_correct_program` with a per-function stack budget** `κ` (`LinkSys.Budget`): the
 stack premises and the world's exterior `L.F` use `κ M f` (the callees' stack of the entry

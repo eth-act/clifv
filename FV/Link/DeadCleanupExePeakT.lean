@@ -82,9 +82,11 @@ theorem compileExeT_correct_peak {S : LinkSpec} {file0 file : ByteArray}
     ExecRefinesT (art S.inputCleanup f).fb (art S.inputCleanup f).base (xreg 30 r)
       (step S.inputCleanup B file) r (E2E.DeadCleanupBinCheck.RelocAt S.inputCleanup)
       (Clif.runLoop B.env (prog S.inputCleanup) (F + 1) cs) := by
-  rcases compileExeT_spec h with hc0 | ⟨hin, hout, hl⟩
+  rcases compileExeT_spec h with hc0 | ⟨hin, hout, hl⟩ | ⟨hI, hl⟩
   · obtain ⟨hin, hout, hl⟩ := typedPremises_of_compileExe hc0
     exact compileExe_correct_peakT hin hout hl B hB hH hf F d hX ho hr hd htr
   · exact compileExe_correct_peakT hin hout hl B hB hH hf F d hX ho hr hd htr
+  · exact binary_correct_exec_peak_provenT hI (codeMap_leanLink hl) (binOk_leanLink hl)
+      (gotOk_leanLink hl) B hB hH hf F d hX ho (outsideAvoids_leanLink hl _ _ _ _ _) hr hd htr
 
 end Link.DeadCleanup

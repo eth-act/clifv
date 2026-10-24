@@ -55,9 +55,9 @@ from `f`'s entry `cs` on `args`: a return is the executable's return of the resu
 return groups with the same memory, each in the ABI return register of its class
 (`ExecRefinesT`); a trap (of a source run without load/store traps, the target runs' traps
 explicit) is the same trap. -/
-theorem compileExe_correct_sourceT {S : LinkSpec} {file0 file : ByteArray}
-    (hin : InScopePT S.inputCleanup = true) (hout : OutOkTCleanup S.inputCleanup = true)
-    (h : leanLink S file0 = .ok file) (hsrc : SrcScopeB S.inputCleanup = true)
+theorem compileExe_correct_source_okT {S : LinkSpec} {file0 file : ByteArray}
+    (hok : okBCleanupT S.inputCleanup = true) (h : leanLink S file0 = .ok file)
+    (hsrc : SrcScopeB S.inputCleanup = true)
     (B : BaseEnv) (hB : BaseOk (sys S.inputCleanup B)) (hH : HooksSim S.inputCleanup B)
     (hlegal : (∃ f ∈ S.inputCleanup.srcProg.funcs, mentions128 f = true) →
       Opt.Legal.HelperOk B.env ∧ Opt.Legal.ExtLegal B.env ∧ Opt.Legal.EnvKeepsBounded B.env)
@@ -88,7 +88,6 @@ theorem compileExe_correct_sourceT {S : LinkSpec} {file0 file : ByteArray}
       ExecRefinesT (art S.inputCleanup (legalize f)).fb (art S.inputCleanup (legalize f)).base
         (xreg 30 r) (step S.inputCleanup B file) r
         (E2E.DeadCleanupBinCheck.RelocAt S.inputCleanup) (.trapped c)) := by
-  have hok := okBT_leanLink hin hout h
   have hL : (LinkSys.ofInputCleanup S.inputCleanup B fun _ => True).OkT :=
     okBCleanup_soundT hok (baseOk_F hB) fun _ _ => trivial
   have hpe := prog_eq_legal S
@@ -132,7 +131,9 @@ theorem compileExe_correct_sourceT {S : LinkSpec} {file0 file : ByteArray}
     | zero => exact absurd hk.symm (by simpa using hof)
     | succ K =>
       rw [← hpe] at hk
-      have := compileExe_correctT hin hout h B hB hH hf' hc K hX ho hr (htr K hk)
+      have := binary_correct_exec_provenT hok (codeMap_leanLink h) (binOk_leanLink h)
+        (gotOk_leanLink h) B hB hH hf' hc K hX ho (outsideAvoids_leanLink h _ _ _ _ _) hr
+        (htr K hk)
       rw [hk] at this
       exact this
   refine ⟨fun vals cm hrun => ?_, fun htr hnmt c hrun => ?_⟩
@@ -153,6 +154,42 @@ theorem compileExe_correct_sourceT {S : LinkSpec} {file0 file : ByteArray}
     obtain ⟨k, hk⟩ := (legalProg_refines hC hfP hE hG M).2 c hrun
     rw [hst'] at hk
     exact hexe _ ⟨k, hk⟩ (fun h => by cases h) fun K _ => htr K
+
+theorem compileExe_correct_sourceT {S : LinkSpec} {file0 file : ByteArray}
+    (hin : InScopePT S.inputCleanup = true) (hout : OutOkTCleanup S.inputCleanup = true)
+    (h : leanLink S file0 = .ok file) (hsrc : SrcScopeB S.inputCleanup = true)
+    (B : BaseEnv) (hB : BaseOk (sys S.inputCleanup B)) (hH : HooksSim S.inputCleanup B)
+    (hlegal : (∃ f ∈ S.inputCleanup.srcProg.funcs, mentions128 f = true) →
+      Opt.Legal.HelperOk B.env ∧ Opt.Legal.ExtLegal B.env ∧ Opt.Legal.EnvKeepsBounded B.env)
+    (hsig : (∃ g ∈ (prog S.inputCleanup).funcs, ¬ Clif.IndFree g) → ∀ n, B.env.sigOf n = none)
+    {n : String} {f : Clif.Function} (hf : S.inputCleanup.srcProg.func? n = some f)
+    (hc : ¬ DeadCleanupStackBound.CycleFrom
+      (DeadCleanupStackBound.Calls S.inputCleanup S.inputCleanup.resultsCleanup) (legalize f))
+    {r : Arm.ArmState} {args args' : List Clif.Val} {cs cs' : Clif.State}
+    (hX : (imageOf file).Intact r)
+    (ho : OutsideCall S.inputCleanup (BinCheck.roByte S.inputCleanup S.data) (legalize f)
+      (DeadCleanupStackBound.stackFn S.inputCleanup (legalize f)) r args' cs'.mem)
+    (hr : ClifRun S.inputCleanup B (legalize f) r args' cs')
+    (hcs : ClifEntry f args cs)
+    (hexp : Opt.Legal.ExpRel ((Opt.Legal.groups f.sig.params).getD []) args args')
+    (hsl : cs'.frame.slots = cs.frame.slots) (hmem : cs'.mem = cs.mem)
+    (hbnd : ∀ s', Opt.Legal.SReach B.env S.inputCleanup.srcProg cs s' →
+      Opt.Legal.MemBounded s'.mem)
+    (M : Nat) :
+    (∀ vals cm, Clif.runLoop B.env S.inputCleanup.srcProg M cs = .returned vals cm →
+      ∃ vals', Opt.Legal.ExpRel ((Opt.Legal.groups f.sig.returns).getD []) vals vals' ∧
+        ExecRefinesT (art S.inputCleanup (legalize f)).fb (art S.inputCleanup (legalize f)).base
+          (xreg 30 r) (step S.inputCleanup B file) r
+          (E2E.DeadCleanupBinCheck.RelocAt S.inputCleanup) (.returned vals' cm)) ∧
+    ((∀ M, TrapsExplicit (Clif.linkEnvN (prog S.inputCleanup) B.env M)
+        (prog S.inputCleanup).bare cs') →
+      Opt.Legal.NoMemTrap B.env S.inputCleanup.srcProg cs → ∀ c,
+      Clif.runLoop B.env S.inputCleanup.srcProg M cs = .trapped c →
+      ExecRefinesT (art S.inputCleanup (legalize f)).fb (art S.inputCleanup (legalize f)).base
+        (xreg 30 r) (step S.inputCleanup B file) r
+        (E2E.DeadCleanupBinCheck.RelocAt S.inputCleanup) (.trapped c)) :=
+  compileExe_correct_source_okT (okBT_leanLink hin hout h) h hsrc B hB hH hlegal hsig hf hc hX ho
+    hr hcs hexp hsl hmem hbnd M
 
 /-- **`compileExeT` refines the original source program** (`compileExe_correct_source` for the
 typed scope): for `compileExeT S file0 = .ok file` (`compileExe` on `InScopeP`, otherwise the
@@ -189,12 +226,14 @@ theorem compileExeT_correct_source {S : LinkSpec} {file0 file : ByteArray}
       ExecRefinesT (art S.inputCleanup (legalize f)).fb (art S.inputCleanup (legalize f)).base
         (xreg 30 r) (step S.inputCleanup B file) r
         (E2E.DeadCleanupBinCheck.RelocAt S.inputCleanup) (.trapped c)) := by
-  rcases compileExeT_spec h with hc0 | ⟨hin, hout, hl⟩
+  rcases compileExeT_spec h with hc0 | ⟨hin, hout, hl⟩ | ⟨hI, hl⟩
   · obtain ⟨hin, hout, hl⟩ := typedPremises_of_compileExe hc0
     exact compileExe_correct_sourceT hin hout hl hsrc B hB hH hlegal hsig hf hc hX ho hr hcs hexp
       hsl hmem hbnd M
   · exact compileExe_correct_sourceT hin hout hl hsrc B hB hH hlegal hsig hf hc hX ho hr hcs hexp
       hsl hmem hbnd M
+  · exact compileExe_correct_source_okT hI hl hsrc B hB hH hlegal hsig hf hc hX ho hr hcs hexp hsl
+      hmem hbnd M
 
 /-- A returning whole-program CLIF run of `f` of call depth at most `d` satisfies
 `TrapsExplicit` under `Clif.linkEnvD` (`E2E.Binary.trapsExplicit_of_runD` for the typed link
@@ -223,9 +262,9 @@ source run is the executable's return of the results split by `f`'s return group
 memory, each in the ABI return register of its class (`ExecRefinesT`); a trap (of a source run
 without load/store traps, the target runs' traps explicit under `Clif.linkEnvD` at every fuel) is
 the same trap. -/
-theorem compileExe_correct_source_peakT {S : LinkSpec} {file0 file : ByteArray}
-    (hin : InScopePT S.inputCleanup = true) (hout : OutOkTCleanup S.inputCleanup = true)
-    (h : leanLink S file0 = .ok file) (hsrc : SrcScopeB S.inputCleanup = true)
+theorem compileExe_correct_source_peak_okT {S : LinkSpec} {file0 file : ByteArray}
+    (hok : okBCleanupT S.inputCleanup = true) (h : leanLink S file0 = .ok file)
+    (hsrc : SrcScopeB S.inputCleanup = true)
     (B : BaseEnv) (hB : BaseOk (sys S.inputCleanup B)) (hH : HooksSim S.inputCleanup B)
     (hlegal : (∃ f ∈ S.inputCleanup.srcProg.funcs, mentions128 f = true) →
       Opt.Legal.HelperOk B.env ∧ Opt.Legal.ExtLegal B.env ∧ Opt.Legal.EnvKeepsBounded B.env)
@@ -255,7 +294,6 @@ theorem compileExe_correct_source_peakT {S : LinkSpec} {file0 file : ByteArray}
       ExecRefinesT (art S.inputCleanup (legalize f)).fb (art S.inputCleanup (legalize f)).base
         (xreg 30 r) (step S.inputCleanup B file) r
         (E2E.DeadCleanupBinCheck.RelocAt S.inputCleanup) (.trapped c)) := by
-  have hok := okBT_leanLink hin hout h
   have hL : (LinkSys.ofInputCleanup S.inputCleanup B fun _ => True).OkT :=
     okBCleanup_soundT hok (baseOk_F hB) fun _ _ => trivial
   have hpe := prog_eq_legal S
@@ -301,7 +339,9 @@ theorem compileExe_correct_source_peakT {S : LinkSpec} {file0 file : ByteArray}
     | zero => exact absurd hk.symm (by simpa using hof)
     | succ F =>
       rw [← hpe] at hk
-      have := compileExe_correct_peakT hin hout h B hB hH hf' F d hX ho hr hdT (htr F hk)
+      have := binary_correct_exec_peak_provenT hok (codeMap_leanLink h) (binOk_leanLink h)
+        (gotOk_leanLink h) B hB hH hf' F d hX ho (outsideAvoids_leanLink h _ _ _ _ _) hr hdT
+        (htr F hk)
       rw [hk] at this
       exact this
   refine ⟨fun vals cm hrun => ?_, fun htr hnmt c hrun => ?_⟩
@@ -324,6 +364,49 @@ theorem compileExe_correct_source_peakT {S : LinkSpec} {file0 file : ByteArray}
     rw [hst'] at hk hdT
     rw [← hpe] at hdT
     exact hexe _ ⟨k, hk⟩ (fun h => by cases h) hdT fun F _ => htr F
+
+/-- **The shipped executable compiler on the typed scope refines the original source program,
+recursive programs included** (`compileExe_correct_source_peak` for `InScopePT`): no call-graph
+premise; the outside caller of `legalize f`'s code provides `frameDrop + D * d` bytes of stack,
+where `d` bounds the call depth of the **source** run from `cs` (`Clif.DepthLe`). A return of the
+source run is the executable's return of the results split by `f`'s return groups with the same
+memory, each in the ABI return register of its class (`ExecRefinesT`); a trap (of a source run
+without load/store traps, the target runs' traps explicit under `Clif.linkEnvD` at every fuel) is
+the same trap. -/
+theorem compileExe_correct_source_peakT {S : LinkSpec} {file0 file : ByteArray}
+    (hin : InScopePT S.inputCleanup = true) (hout : OutOkTCleanup S.inputCleanup = true)
+    (h : leanLink S file0 = .ok file) (hsrc : SrcScopeB S.inputCleanup = true)
+    (B : BaseEnv) (hB : BaseOk (sys S.inputCleanup B)) (hH : HooksSim S.inputCleanup B)
+    (hlegal : (∃ f ∈ S.inputCleanup.srcProg.funcs, mentions128 f = true) →
+      Opt.Legal.HelperOk B.env ∧ Opt.Legal.ExtLegal B.env ∧ Opt.Legal.EnvKeepsBounded B.env)
+    (hsig : (∃ g ∈ (prog S.inputCleanup).funcs, ¬ Clif.IndFree g) → ∀ n, B.env.sigOf n = none)
+    {n : String} {f : Clif.Function} (hf : S.inputCleanup.srcProg.func? n = some f) (d : Nat)
+    {r : Arm.ArmState} {args args' : List Clif.Val} {cs cs' : Clif.State}
+    (hX : (imageOf file).Intact r)
+    (ho : OutsideCall S.inputCleanup (BinCheck.roByte S.inputCleanup S.data) (legalize f)
+      (frameDrop (art S.inputCleanup (legalize f)).af + S.inputCleanup.D * d) r args' cs'.mem)
+    (hr : ClifRun S.inputCleanup B (legalize f) r args' cs')
+    (hcs : ClifEntry f args cs)
+    (hexp : Opt.Legal.ExpRel ((Opt.Legal.groups f.sig.params).getD []) args args')
+    (hsl : cs'.frame.slots = cs.frame.slots) (hmem : cs'.mem = cs.mem)
+    (hbnd : ∀ s', Opt.Legal.SReach B.env S.inputCleanup.srcProg cs s' →
+      Opt.Legal.MemBounded s'.mem)
+    (hd : Clif.DepthLe B.env S.inputCleanup.srcProg d cs)
+    (M : Nat) :
+    (∀ vals cm, Clif.runLoop B.env S.inputCleanup.srcProg M cs = .returned vals cm →
+      ∃ vals', Opt.Legal.ExpRel ((Opt.Legal.groups f.sig.returns).getD []) vals vals' ∧
+        ExecRefinesT (art S.inputCleanup (legalize f)).fb (art S.inputCleanup (legalize f)).base
+          (xreg 30 r) (step S.inputCleanup B file) r
+          (E2E.DeadCleanupBinCheck.RelocAt S.inputCleanup) (.returned vals' cm)) ∧
+    ((∀ F, TrapsExplicit (Clif.linkEnvD (prog S.inputCleanup) B.env F d)
+        (prog S.inputCleanup).bare cs') →
+      Opt.Legal.NoMemTrap B.env S.inputCleanup.srcProg cs → ∀ c,
+      Clif.runLoop B.env S.inputCleanup.srcProg M cs = .trapped c →
+      ExecRefinesT (art S.inputCleanup (legalize f)).fb (art S.inputCleanup (legalize f)).base
+        (xreg 30 r) (step S.inputCleanup B file) r
+        (E2E.DeadCleanupBinCheck.RelocAt S.inputCleanup) (.trapped c)) :=
+  compileExe_correct_source_peak_okT (okBT_leanLink hin hout h) h hsrc B hB hH hlegal hsig hf d hX
+    ho hr hcs hexp hsl hmem hbnd hd M
 
 /-- **`compileExeT` refines the original source program, recursive programs included**
 (`compileExe_correct_source_peak` for the typed scope): for `compileExeT S file0 = .ok file`, the
@@ -359,11 +442,13 @@ theorem compileExeT_correct_source_peak {S : LinkSpec} {file0 file : ByteArray}
       ExecRefinesT (art S.inputCleanup (legalize f)).fb (art S.inputCleanup (legalize f)).base
         (xreg 30 r) (step S.inputCleanup B file) r
         (E2E.DeadCleanupBinCheck.RelocAt S.inputCleanup) (.trapped c)) := by
-  rcases compileExeT_spec h with hc0 | ⟨hin, hout, hl⟩
+  rcases compileExeT_spec h with hc0 | ⟨hin, hout, hl⟩ | ⟨hI, hl⟩
   · obtain ⟨hin, hout, hl⟩ := typedPremises_of_compileExe hc0
     exact compileExe_correct_source_peakT hin hout hl hsrc B hB hH hlegal hsig hf d hX ho hr hcs
       hexp hsl hmem hbnd hd M
   · exact compileExe_correct_source_peakT hin hout hl hsrc B hB hH hlegal hsig hf d hX ho hr hcs
       hexp hsl hmem hbnd hd M
+  · exact compileExe_correct_source_peak_okT hI hl hsrc B hB hH hlegal hsig hf d hX ho hr hcs hexp
+      hsl hmem hbnd hd M
 
 end Link.DeadCleanup
