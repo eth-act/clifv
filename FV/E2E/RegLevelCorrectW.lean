@@ -115,7 +115,7 @@ theorem realizes_allW {R : RL} (hR : R.Wf) (hC : CalleeOkG R.F R.K R.G R.s0 (Cal
         obtain ⟨rfl, rfl, rfl⟩ := hsem
         cases hn with
         | halt => exact fin 0 _ hstep trivial nil
-      case emitIsland nb => exact fin 0 c' hstep (realizes_island hq hvb hi hstep) nil
+      case emitIsland nb => exact fin 0 c' hstep (realizes_island hR hq hvb hi hstep) nil
       case jtSequence d ts ridx t1 t2 =>
         obtain ⟨n, c'', hm, hq', ht⟩ := realizes_jtW hR hq hvb hi hstep
         exact fin n c'' hm hq' ht
