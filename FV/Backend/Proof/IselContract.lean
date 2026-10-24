@@ -367,6 +367,19 @@ result zero-extended into the vector register (`write_sfp`). -/
   | .i64ToF32 => (IEEE.fromFixed .b32 64 (lo64 a) false .rne).setWidth 128
   | .u64ToF64 => (IEEE.fromFixed .b64 64 (lo64 a) true .rne).setWidth 128
   | .i64ToF64 => (IEEE.fromFixed .b64 64 (lo64 a) false .rne).setWidth 128
+/-- S11f: `fpuRound op` (`frintm/frintp/frintz/frintn`) on a 128-bit register value (the Arm
+model's `exec_fp_data_processing_one_source`, `FPRoundInt` with `FPCR = 0`): the operand's low 32
+or 64 bits rounded to an integral value in the same format, zero-extended into the register. -/
+@[simp] def fpuRoundOut (op : FpuRoundMode) (a : CV) : Option CV :=
+  match op with
+  | .minus32 => some ((IEEE.roundInt .b32 .rmi (a.setWidth 32)).setWidth 128)
+  | .minus64 => some ((IEEE.roundInt .b64 .rmi (a.setWidth 64)).setWidth 128)
+  | .plus32 => some ((IEEE.roundInt .b32 .rpi (a.setWidth 32)).setWidth 128)
+  | .plus64 => some ((IEEE.roundInt .b64 .rpi (a.setWidth 64)).setWidth 128)
+  | .zero32 => some ((IEEE.roundInt .b32 .rz (a.setWidth 32)).setWidth 128)
+  | .zero64 => some ((IEEE.roundInt .b64 .rz (a.setWidth 64)).setWidth 128)
+  | .nearest32 => some ((IEEE.roundInt .b32 .rne (a.setWidth 32)).setWidth 128)
+  | .nearest64 => some ((IEEE.roundInt .b64 .rne (a.setWidth 64)).setWidth 128)
 
 /-- S11f: scalar FP arithmetic and comparison (the shared IEEE core, `FPCR = 0`); a scalar FP
 result zeroes the register above it (`write_sfp`). `ispec`'s fallback: a separate match, so that
@@ -376,6 +389,7 @@ heartbeats) keeps its size. -/
   match i, uses with
   | .fpuRRR op sz rd _ _, [a, b] => (fpu2Out op sz a b).map fun r => (defOut rd r, w, .next)
   | .fpuRR op sz rd _, [a] => (fpu1Val op sz a).map fun r => (defOut rd r, w, .next)
+  | .fpuRound op rd _, [a] => (fpuRoundOut op a).map fun r => (defOut rd r, w, .next)
   | .fpuCmp sz _ _, [a, b] =>
     (fcmpOut sz a b).map fun c => ([], Arm.write_pstate (fcmpFlags c) w, .next)
   | .fpuToInt op rd _, [a] => some (defOut rd (fpuToIntVal op a), w, .next)
@@ -1381,10 +1395,13 @@ def MemRulesCorrectRT (p : Program) : Prop :=
 
 /-- The scalar float arithmetic root rules of `lower` (S11f): `fpu_rrr` of `fadd` (662), `fsub`
 (664), `fmul` (666), `fdiv` (668), `fmin` (670), `fmax` (672); `fpu_rr` of `sqrt` (674), `fneg`
-(676), `fabs` (678), `fpromote` (679), `fdemote` (680). -/
+(676), `fabs` (678), `fpromote` (679), `fdemote` (680); `fpu_round` of `ceil` (682 `f32`, 683
+`f64`), `floor` (685, 686), `trunc` (688, 689), `nearest` (691, 692). -/
 def floatArithRootRule (r : Rule) : Bool :=
   r.id == 662 || r.id == 664 || r.id == 666 || r.id == 668 || r.id == 670 || r.id == 672 ||
-    r.id == 674 || r.id == 676 || r.id == 678 || r.id == 679 || r.id == 680
+    r.id == 674 || r.id == 676 || r.id == 678 || r.id == 679 || r.id == 680 ||
+    r.id == 682 || r.id == 683 || r.id == 685 || r.id == 686 || r.id == 688 || r.id == 689 ||
+    r.id == 691 || r.id == 692
 
 /-- **S11f's target (scalar float arithmetic)**: over float-capable contexts, the scalar float
 arithmetic roots are correct (CLIF's `Inst.float` and the emitted `FpuRRR`/`FpuRR` compute the

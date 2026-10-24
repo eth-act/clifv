@@ -214,10 +214,11 @@ def flowTab13 : Tab :=
    (681, [⟨0, true⟩, ⟨0, true⟩], ⟨0, true⟩)]
 
 /-- Chunk 14 of `flowTab`: the internal terms of the S11f float arithmetic roots (`fpu_rrr`,
-`fpu_rr`). -/
+`fpu_rr`, `fpu_round`). -/
 def flowTab14 : Tab :=
   [(368, [⟨0, true⟩, ⟨0, true⟩, ⟨0, true⟩, ⟨0, true⟩], ⟨0, true⟩),
-   (364, [⟨0, true⟩, ⟨0, true⟩, ⟨0, true⟩], ⟨0, true⟩)]
+   (364, [⟨0, true⟩, ⟨0, true⟩, ⟨0, true⟩], ⟨0, true⟩),
+   (408, [⟨0, true⟩, ⟨0, true⟩], ⟨0, true⟩)]
 
 /-- Chunk 15 of `flowTab`: the internal terms of the S11f-cvt conversion roots (`fpu_to_int_cvt_sat`, `fpu_to_int`, `int_to_fpu`, `signed_min`/`signed_max`). -/
 def flowTab15 : Tab :=

@@ -93,7 +93,7 @@ theorem root_match_data {p : Program} (hp : Data p) (ctx : Ctx) {cfg : Config} {
 for the others, `fcmp` included). -/
 def fFmt : Clif.FOp → String
   | .fadd | .fsub | .fmul | .fdiv | .fmin | .fmax => "Binary"
-  | .sqrt | .fneg | .fabs | .fpromote | .fdemote => "Unary"
+  | .sqrt | .fneg | .fabs | .fpromote | .fdemote | .ceil | .floor | .trunc | .nearest => "Unary"
   | .fcvtFromUint | .fcvtFromSint | .fcvtToUintSat | .fcvtToSintSat => "Unary"
   | _ => ""
 
@@ -101,7 +101,8 @@ def fFmt : Clif.FOp → String
 def fOpc : Clif.FOp → String
   | .fadd => "Fadd" | .fsub => "Fsub" | .fmul => "Fmul" | .fdiv => "Fdiv"
   | .fmin => "Fmin" | .fmax => "Fmax" | .sqrt => "Sqrt" | .fneg => "Fneg" | .fabs => "Fabs"
-  | .fpromote => "Fpromote" | .fdemote => "Fdemote"
+  | .fpromote => "Fpromote" | .fdemote => "Fdemote" | .ceil => "Ceil" | .floor => "Floor"
+  | .trunc => "Trunc" | .nearest => "Nearest"
   | .fcvtFromUint => "FcvtFromUint" | .fcvtFromSint => "FcvtFromSint"
   | .fcvtToUintSat => "FcvtToUintSat" | .fcvtToSintSat => "FcvtToSintSat"
   | _ => ""
@@ -111,8 +112,8 @@ theorem fFmt_mem (op : Clif.FOp) : fFmt op ∈ ["Binary", "Unary", ""] := by
 
 theorem fOpc_mem (op : Clif.FOp) :
     fOpc op ∈ ["Fadd", "Fsub", "Fmul", "Fdiv", "Fmin", "Fmax", "Sqrt", "Fneg", "Fabs",
-      "Fpromote", "Fdemote", "FcvtFromUint", "FcvtFromSint", "FcvtToUintSat", "FcvtToSintSat",
-      ""] := by
+      "Fpromote", "Fdemote", "Ceil", "Floor", "Trunc", "Nearest", "FcvtFromUint", "FcvtFromSint",
+      "FcvtToUintSat", "FcvtToSintSat", ""] := by
   cases op <;> simp [fOpc]
 
 /-! A float operation has none of the other instructions' names (`simp` closes the float case
@@ -128,14 +129,14 @@ of an inversion by `instNames` with these, the side condition by evaluation). -/
 
 @[simp] theorem fOpc_eq_false {op : Clif.FOp} {s : String}
     (h : s ∉ ["Fadd", "Fsub", "Fmul", "Fdiv", "Fmin", "Fmax", "Sqrt", "Fneg", "Fabs",
-      "Fpromote", "Fdemote", "FcvtFromUint", "FcvtFromSint", "FcvtToUintSat", "FcvtToSintSat",
-      ""]) : fOpc op = s ↔ False :=
+      "Fpromote", "Fdemote", "Ceil", "Floor", "Trunc", "Nearest", "FcvtFromUint", "FcvtFromSint",
+      "FcvtToUintSat", "FcvtToSintSat", ""]) : fOpc op = s ↔ False :=
   ⟨fun e => h (e ▸ fOpc_mem op), False.elim⟩
 
 @[simp] theorem eq_fOpc_false {op : Clif.FOp} {s : String}
     (h : s ∉ ["Fadd", "Fsub", "Fmul", "Fdiv", "Fmin", "Fmax", "Sqrt", "Fneg", "Fabs",
-      "Fpromote", "Fdemote", "FcvtFromUint", "FcvtFromSint", "FcvtToUintSat", "FcvtToSintSat",
-      ""]) : s = fOpc op ↔ False :=
+      "Fpromote", "Fdemote", "Ceil", "Floor", "Trunc", "Nearest", "FcvtFromUint", "FcvtFromSint",
+      "FcvtToUintSat", "FcvtToSintSat", ""]) : s = fOpc op ↔ False :=
   ⟨fun e => h (e ▸ fOpc_mem op), False.elim⟩
 
 /-- The `InstructionData` format and opcode *names* `instData` uses for an instruction. An

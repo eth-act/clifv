@@ -77,6 +77,9 @@ pub const FLAG_OFF: &[&str] = &["use_lse"];
 /// 767/773 to `i64`) and `fcvt_to_sint_sat` (784/790, 787/793). `instData` admits the saturating
 /// conversions at `i32`/`i64` only (the `i8`/`i16` clamp of `fpu_to_int_cvt_sat` is not proven;
 /// cg_clif emits `i32` + an integer clamp for them).
+/// S11f (#35) adds the scalar rounding roots (`FV/Backend/Proof/IselFloatRound.lean`):
+/// `fpu_round` of `ceil` (567 `f32`, 570 `f64`), `floor` (578, 581), `trunc` (589, 592),
+/// `nearest` (600, 603).
 pub const BACKEND_FLOAT_ROOTS: &[&str] = &[
     "rule_lower_63",
     "rule_lower_68",
@@ -115,6 +118,14 @@ pub const BACKEND_FLOAT_ROOTS: &[&str] = &[
     "rule_lower_787",
     "rule_lower_790",
     "rule_lower_793",
+    "rule_lower_567",
+    "rule_lower_570",
+    "rule_lower_578",
+    "rule_lower_581",
+    "rule_lower_589",
+    "rule_lower_592",
+    "rule_lower_600",
+    "rule_lower_603",
 ];
 
 pub const ROOTS: &[&str] = &["lower", "lower_branch"];

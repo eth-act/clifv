@@ -94,6 +94,8 @@ theorem ispec_mapRegs (i : MInst) : ispec (i.mapRegs g) us w = ispec i us w := b
     simp only [MInst.mapRegs]; rg rd <;> us_cases <;> first | rfl | (cases op <;> rfl)
   | intToFpu op rd rn =>
     simp only [MInst.mapRegs]; rg rd <;> us_cases <;> first | rfl | (cases op <;> rfl)
+  | fpuRound op rd rn =>
+    simp only [MInst.mapRegs]; rg rd <;> us_cases <;> (try rfl) <;> cases op <;> rfl
   | _ => (try simp only [MInst.mapRegs]) <;> us_cases <;> rfl
 
 end Backend.Proof
@@ -169,6 +171,7 @@ theorem formOk_mapRegs (hg : VRenaming g gn) (ctx : FnCtx) (i : MInst) :
   | fpuCmp sz rn rm => simp only [MInst.mapRegs]; rgc rn <;> rgc rm <;> rfl
   | fpuToInt op rd rn => simp only [MInst.mapRegs]; rgc rd <;> rgc rn <;> rfl
   | intToFpu op rd rn => simp only [MInst.mapRegs]; rgc rd <;> rgc rn <;> rfl
+  | fpuRound op rd rn => simp only [MInst.mapRegs]; rgc rd <;> rgc rn <;> rfl
   | _ => (try simp only [MInst.mapRegs]) <;> rfl
 
 theorem useCount_rn (ops : Array Operand) : useCount (ops.map (rnOp gn)) = useCount ops := by

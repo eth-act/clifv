@@ -72,7 +72,8 @@ theorem variantNames_Fdemote : (variantNames 151)[144]? = some "Fdemote" := rfl
 
 /-- The opcode names of the float operations `instData` builds (`fOpc`). -/
 def fArithNames : List String :=
-  ["Fadd", "Fsub", "Fmul", "Fdiv", "Fmin", "Fmax", "Sqrt", "Fneg", "Fabs", "Fpromote", "Fdemote"]
+  ["Fadd", "Fsub", "Fmul", "Fdiv", "Fmin", "Fmax", "Sqrt", "Fneg", "Fabs", "Fpromote", "Fdemote",
+    "Ceil", "Floor", "Trunc", "Nearest"]
 
 /-- An instruction whose opcode name is a float operation's is that float operation. -/
 theorem instNames_float {c : Clif.Inst} {s : String} (hs : s ∈ fArithNames)
