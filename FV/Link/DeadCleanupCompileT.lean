@@ -1,6 +1,7 @@
 import FV.Link.DeadCleanupExeT
 import FV.Link.ExeInputReachCleanupIn
 import FV.Link.DeadCleanupCompileTFast
+import FV.E2E.DeadCleanupLinkCheckT
 
 /-! # The shipped executable compiler with the typed scope (S11, #35)
 
@@ -25,6 +26,11 @@ def outOkTMsg : String := "the typed input's compiled code fails the output chec
 /-- The error on an input outside `InScopeP` and `InScopePT`. -/
 def outOfScopeTMsg : String := "the input is outside the verified subset (InScopeP, InScopePT)"
 
+/-- The error on a typed-`try_call` input whose `leanLink` output fails the dead-cleanup
+checker. -/
+def outOkTCMsg : String :=
+  "the typed input's compiled code fails the dead-cleanup checker (okBCleanupT)"
+
 /-- **The executable compiler with the typed scope**: `compileExe` on `InScopeP`; on
 `InScopePT` the Lean linker followed by the output checks `OutOkTCleanup`. Both typed checks are
 evaluated in their std-sized forms (`inScopePTPar`, `outOkTFast`: hash maps, the pipeline once
@@ -35,7 +41,11 @@ def compileExeT (S : LinkSpec) (file0 : ByteArray) : Except String ByteArray :=
     match leanLink S file0 with
     | .ok file => if outOkTFast S then .ok file else .error outOkTMsg
     | .error e => .error e
-  else .error outOfScopeTMsg
+  else
+    match leanLink S file0 with
+    | .ok file =>
+      if okBCleanupTFast S.inputCleanup then .ok file else .error outOkTCMsg
+    | .error e => .error e
 
 /-- `InScopePT` reads the program and the CLIF image's symbols, not the depth. -/
 theorem inScopePT_input (S : LinkSpec) : InScopePT S.inputCleanup = InScopePT S.input0 := rfl
@@ -46,12 +56,19 @@ theorem compileExeT_eq {S : LinkSpec} (hin : InScopeP S.input0 = true) (file0 : 
   have hp : inScopePar S.input0 = true := by rw [inScopePar_eq]; exact hin
   simp only [compileExeT, compileExe, hp, if_true]
 
-/-- `compileExeT`'s success: `compileExe`'s, or the typed premises of `compileExe_correctT`. -/
+/-- `compileExeT`'s success: `compileExe`'s, the typed premises of `compileExe_correctT`, or the
+dead-cleanup checker's. The statement changed (S11e6, #419): `compileExeT` gained a third branch
+(for inputs outside both `InScopeP` and `InScopePT`, i.e. functions of the program with typed
+direct `try_call`s to `f32`/`f64` callees), which accepts `leanLink`'s output when the decided
+dead-cleanup checker `okBCleanupT S.inputCleanup` holds — the same linked-system contract the
+`InScopePT`/`OutOkTCleanup` route establishes (via `okT_of_inScopeCleanupT`), checked directly
+(`okBCleanupTFast`, equal to `okBCleanupT`). -/
 theorem compileExeT_spec {S : LinkSpec} {file0 file : ByteArray}
     (h : compileExeT S file0 = .ok file) :
     compileExe S file0 = .ok file ∨
       (InScopePT S.inputCleanup = true ∧ OutOkTCleanup S.inputCleanup = true ∧
-        leanLink S file0 = .ok file) := by
+        leanLink S file0 = .ok file) ∨
+      (okBCleanupT S.inputCleanup = true ∧ leanLink S file0 = .ok file) := by
   unfold compileExeT at h
   split at h
   · rename_i hs
@@ -60,7 +77,7 @@ theorem compileExeT_spec {S : LinkSpec} {file0 file : ByteArray}
     exact h
   · split at h
     · rename_i _ ht
-      right
+      right; left
       split at h
       · rename_i file' hl
         split at h
@@ -70,7 +87,16 @@ theorem compileExeT_spec {S : LinkSpec} {file0 file : ByteArray}
             (outOkTFast_eq S) ▸ ho, hl⟩
         · cases h
       · cases h
-    · cases h
+    · right; right
+      split at h
+      · rename_i file' hl
+        split at h
+        · rename_i ht
+          rw [okBCleanupTFast_eq] at ht
+          cases h
+          exact ⟨ht, hl⟩
+        · cases h
+      · cases h
 
 /-- **The executable compiler with the typed scope is correct**: for `compileExeT S file0 = .ok
 file` and an outside call of a function `f` of the program (no call cycle reachable from it), the
@@ -90,10 +116,12 @@ theorem compileExeT_correct {S : LinkSpec} {file0 file : ByteArray}
     ExecRefinesT (art S.inputCleanup f).fb (art S.inputCleanup f).base (xreg 30 r)
       (step S.inputCleanup B file) r (E2E.DeadCleanupBinCheck.RelocAt S.inputCleanup)
       (Clif.runLoop B.env (prog S.inputCleanup) (M + 1) cs) := by
-  rcases compileExeT_spec h with hc0 | ⟨hin, hout, hl⟩
+  rcases compileExeT_spec h with hc0 | ⟨hin, hout, hl⟩ | ⟨hI, hl⟩
   · obtain ⟨hin, hout, hl⟩ := typedPremises_of_compileExe hc0
     exact compileExe_correctT hin hout hl B hB hH hf hc M hX ho hr htr
   · exact compileExe_correctT hin hout hl B hB hH hf hc M hX ho hr htr
+  · exact binary_correct_exec_provenT hI (codeMap_leanLink hl) (binOk_leanLink hl)
+      (gotOk_leanLink hl) B hB hH hf hc M hX ho (outsideAvoids_leanLink hl _ _ _ _ _) hr htr
 
 /-- **`compileExeT` succeeds on `InScopeIn`** (`compileExe_total_reach_input`). -/
 theorem compileExeT_total_reach_input {S : LinkSpec} {file0 : ByteArray} {phs : List Phdr}
