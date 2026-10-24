@@ -43,8 +43,11 @@ consumer boundaries. Concurrent main changes are confined to concurrency and
 its documentation/audit, outside this packet's import closure. Kev's checker
 and combined-certificate improvements are retained.
 
-Batch cleanup removed 10,066 obsolete, unlinked reproducible cache outputs
-(22,838,918,102 bytes), only while the compiler was idle. Four necessary views
+Batch cleanup removed 10,066 unlinked reproducible cache outputs older than
+60 minutes (22,838,918,102 bytes), only while the compiler was idle. Age and
+link count did not establish cache-key obsolescence; the contribution to later
+cold rebuilding is unmeasured. Keep useful warm-cache artifacts; future cache
+cleanup must establish obsolescence rather than relying on age/link count. Four necessary views
 and one physical warm cache remain; saved source and unique evidence are intact.
 
 Full #140 remains open: activate arbitrary scalar/division bodies through shared
