@@ -65,6 +65,40 @@ theorem VRetFrom.prefix {W : Type} {vc : VCode} {sem : ISem CV W} {vs vs' : VSta
   obtain ⟨b, k, ρ, w₁, vb, ops, outs, hs, h1⟩ := h'
   exact ⟨b, k, ρ, w₁, vb, ops, outs, h.trans hs, h1⟩
 
+/-- `VTrapFrom`, executing only from configurations satisfying `P` (the halting instruction's
+included). -/
+def VTrapFromP {W : Type} (P : VConf CV W → Prop) (vc : VCode) (sem : ISem CV W)
+    (vs : VState CV W) (c : Clif.TrapCode) : Prop :=
+  ∃ b k ρ w vb i ops outs w', StarP (VStep vc sem) P (.run vs) (.run ⟨b, k, ρ, w⟩) ∧
+    P (.run ⟨b, k, ρ, w⟩) ∧ vc.blocks[b]? = some vb ∧ vb.insts[k]? = some i ∧
+    i.operands = .ok ops ∧ sem i (vuses ops ρ) w = some (outs, w', .halt) ∧ trapCode? i = some c
+
+/-- `VRetFrom`, executing only from configurations satisfying `P` (the `rets`' included). -/
+def VRetFromP {W : Type} (P : VConf CV W → Prop) (vc : VCode) (sem : ISem CV W)
+    (vs : VState CV W) (us : List (Reg × Reg)) (vals : List CV) (w : W) : Prop :=
+  ∃ b k ρ w₁ vb ops outs, StarP (VStep vc sem) P (.run vs) (.run ⟨b, k, ρ, w₁⟩) ∧
+    P (.run ⟨b, k, ρ, w₁⟩) ∧ vc.blocks[b]? = some vb ∧ vb.insts[k]? = some (.rets us) ∧
+    (MInst.rets us).operands = .ok ops ∧ vals = vuses ops ρ ∧
+    sem (.rets us) vals w₁ = some (outs, w, .ret)
+
+theorem VTrapFromP.toVTrapFrom {W : Type} {P : VConf CV W → Prop} {vc : VCode}
+    {sem : ISem CV W} {vs : VState CV W} {c : Clif.TrapCode} (h : VTrapFromP P vc sem vs c) :
+    VTrapFrom vc sem vs c := by
+  obtain ⟨b, k, ρ, w, vb, i, ops, outs, w', hs, -, h1⟩ := h
+  exact ⟨b, k, ρ, w, vb, i, ops, outs, w', hs.star, h1⟩
+
+theorem VRetFromP.toVRetFrom {W : Type} {P : VConf CV W → Prop} {vc : VCode}
+    {sem : ISem CV W} {vs : VState CV W} {us : List (Reg × Reg)} {vals : List CV} {w : W}
+    (h : VRetFromP P vc sem vs us vals w) : VRetFrom vc sem vs us vals w := by
+  obtain ⟨b, k, ρ, w₁, vb, ops, outs, hs, -, h1⟩ := h
+  exact ⟨b, k, ρ, w₁, vb, ops, outs, hs.star, h1⟩
+
+/-- Where a terminator's code runs from: block `b` from index `k0` on (its terminator segment),
+or the `jump` of an edge block. -/
+def TermZone {W : Type} (vc : VCode) (b k0 : Nat) (c : VConf CV W) : Prop :=
+  (∃ k ρ w, c = .run ⟨b, k, ρ, w⟩ ∧ k0 ≤ k) ∨
+  (∃ e ρ w vb l, c = .run ⟨e, 0, ρ, w⟩ ∧ vc.blocks[e]? = some vb ∧ vb.insts = #[.jump l])
+
 section
 variable {f : Clif.Function} {vc : VCode} {ctx : Ctx} {st0 : LState} {R : Reg → Reg}
   {gn : Nat → Nat} {bl : List BLow}
@@ -198,24 +232,31 @@ theorem DriverHyp.blow (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p) {bi :
   have hlt : bi < f.blocks.length := (List.getElem?_eq_some_iff.mp hB).1
   exact ⟨bl[bi]'(by rw [H.shape.len]; exact hlt), List.getElem?_eq_getElem _⟩
 
-/-- **Statement step.** -/
-theorem stmt_step (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
+/-- **Statement step, with the segment run** (`stmt_step`'s proof): the matched state is at
+statement `j` of block `b` (`k = pos b j`); the renamed segment of the statement runs
+(`seqRun`) to the state that matches the CLIF state after it, or, for an explicit trap, stops
+at a halting instruction with the trap code. -/
+theorem stmt_run (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
     {s : Clif.State} {b k : Nat} {ρ : Nat → CV} {w : W}
     (hm : Match f ctx R gn bl A MR slots s ⟨b, k, ρ, w⟩)
     {stm : Clif.Stmt} {rest : List Clif.Stmt} (hbody : s.frame.body = stm :: rest)
     (hind : ∀ sig callee args, stm.inst = .callIndirect sig callee args → ∀ cv,
       s.frame.get callee = .ok cv → ∀ g ∈ p.funcs, s.mem.symbols g.name ≠ some cv.toNat) :
+    ∃ B j, f.blocks[b]? = some B ∧ s.frame.body = B.body.drop j ∧ j < B.body.length ∧
+      B.body[j]? = some stm ∧ k = pos f R bl b j ∧
     (∀ s', Clif.step env p s = .next s' →
-      ∃ vs', Star (VStep vc sem) (.run ⟨b, k, ρ, w⟩) (.run vs') ∧
-        Match f ctx R gn bl A MR slots s' vs') ∧
+      ∃ ρ' w', seqRun sem (seg f R bl b j) ρ w = some (.fall ρ' w') ∧
+        Match f ctx R gn bl A MR slots s' ⟨b, pos f R bl b (j + 1), ρ', w'⟩) ∧
     (∀ c, Clif.step env p s = .trapped c → explicitTrapInst stm.inst = true →
-      VTrapFrom vc sem ⟨b, k, ρ, w⟩ c) := by
+      ∃ k' i ops ρ₁ w₁ outs w₂,
+        seqRun sem (seg f R bl b j) ρ w = some (.stop k' i ops ρ₁ w₁ outs w₂ .halt) ∧
+        trapCode? i = some c) := by
   obtain ⟨hcall, hfunc, hslots, hmem, B, j, hB, hterm, hj, hbd, hk, hheld, hcons⟩ := hm
   simp only at hk hheld hcons hB hmem
   subst hk
   obtain ⟨hjlt, hstm, hrest⟩ := drop_cons_split (hbd ▸ hbody)
   obtain ⟨L, hL⟩ := H.blow hB
-  obtain ⟨vb, hvb, hsllen, hstmts, -, -, -, -, hcode, htne, -⟩ := H.shape.blk b B L hB hL
+  obtain ⟨-, -, hsllen, hstmts, -, -, -, -, -, -, -⟩ := H.shape.blk b B L hB hL
   obtain ⟨sl, hsl⟩ : ∃ sl, L.sl[j]? = some sl :=
     ⟨L.sl[j]'(by omega), List.getElem?_eq_getElem _⟩
   obtain ⟨⟨info, hinfo, hclif, hres⟩, hemp, hst0, ⟨tr, hrun⟩, halias⟩ := hstmts j stm sl hstm hsl
@@ -261,7 +302,7 @@ theorem stmt_step (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
     · right; exact hnoclob u (restrict_regs_isSome h)
   have hren := seqRun_rename (sem := sem) (ρ₀ := ρ₀) (ρ := ρ) (w := w) H.shape.ren
     (H.dsem.rename R gn H.shape.ren) hD hdefs
-  have hcodeseg := seg_at hcode htne hjlt
+  refine ⟨B, j, hB, hbd, hjlt, hstm, rfl, ?_⟩
   constructor
   · intro s' hs
     rw [hstep] at hs
@@ -288,14 +329,8 @@ theorem stmt_step (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
             exact ⟨out, cls, he⟩
         have hseg : seg f R bl b j = sl.st'.emitted.toList.map (·.mapRegs R) := by
           rw [seg_eq hB hL hstm hsl, hextra, List.append_nil]
-        obtain ⟨hsegat, hlt⟩ := hcodeseg
-        rw [hseg] at hsegat
-        rw [pos_succ, hseg] at hlt
-        have hstar := seqRun_fall_star hvb hsegat (by simpa using hlt) hsr'
-        rw [List.length_map] at hstar
-        refine ⟨_, hstar, hcall, hfunc, hslots, by simpa [fr', restrict, hslots] using hmr,
-          B, j + 1, hB, hterm, hjlt, hrest, ?_, ?_, ?_⟩
-        · simp [pos_succ, hseg]
+        refine ⟨_, _, by rw [hseg]; exact hsr', hcall, hfunc, hslots,
+          by simpa [fr', restrict, hslots] using hmr, B, j + 1, hB, hterm, hjlt, hrest, rfl, ?_, ?_⟩
         · -- held
           intro x hx
           rcases hnext x hx with hxA | hxr
@@ -415,11 +450,33 @@ theorem stmt_step (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
       cases hs
       obtain ⟨hU, k', i, ops, ρ₁, w₁, outs, w₂, hsr, htc⟩ := hrun' hexp
       obtain ⟨ρ₁', hsr', -, -⟩ := (hren (huses_of hU) hAg).2 hsr
-      have hsegat := hcodeseg.1
-      rw [seg_eq hB hL hstm hsl, List.map_append] at hsegat
-      obtain ⟨hstar, -, hi, hops, hsem, -, -⟩ := seqRun_stop_star hvb hsegat.append_left hsr'
-      exact ⟨b, _, ρ₁', w₁, vb, _, _, outs, w₂, hstar, hvb, hi, hops, hsem,
+      exact ⟨_, _, _, ρ₁', w₁, outs, w₂, by
+        rw [seg_eq hB hL hstm hsl, List.map_append]; exact seqRun_stop_append hsr',
         by rw [trapCode?_mapRegs]; exact htc⟩
+
+/-- **Statement step.** -/
+theorem stmt_step (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
+    {s : Clif.State} {b k : Nat} {ρ : Nat → CV} {w : W}
+    (hm : Match f ctx R gn bl A MR slots s ⟨b, k, ρ, w⟩)
+    {stm : Clif.Stmt} {rest : List Clif.Stmt} (hbody : s.frame.body = stm :: rest)
+    (hind : ∀ sig callee args, stm.inst = .callIndirect sig callee args → ∀ cv,
+      s.frame.get callee = .ok cv → ∀ g ∈ p.funcs, s.mem.symbols g.name ≠ some cv.toNat) :
+    (∀ s', Clif.step env p s = .next s' →
+      ∃ vs', Star (VStep vc sem) (.run ⟨b, k, ρ, w⟩) (.run vs') ∧
+        Match f ctx R gn bl A MR slots s' vs') ∧
+    (∀ c, Clif.step env p s = .trapped c → explicitTrapInst stm.inst = true →
+      VTrapFrom vc sem ⟨b, k, ρ, w⟩ c) := by
+  obtain ⟨B, j, hB, -, hjlt, -, rfl, hnext, htrap⟩ := stmt_run H hm hbody hind
+  obtain ⟨L, hL⟩ := H.blow hB
+  obtain ⟨vb, hvb, -, -, -, -, -, -, hcode, htne, -⟩ := H.shape.blk b B L hB hL
+  obtain ⟨hsegat, hlt⟩ := seg_at hcode htne hjlt
+  refine ⟨fun s' hs => ?_, fun c hs hexp => ?_⟩
+  · obtain ⟨ρ', w', hsr, hM⟩ := hnext s' hs
+    rw [pos_succ] at hlt hM
+    exact ⟨_, seqRun_fall_star hvb hsegat hlt hsr, hM⟩
+  · obtain ⟨k', i, ops, ρ₁, w₁, outs, w₂, hsr, htc⟩ := htrap c hs hexp
+    obtain ⟨hstar, -, hi, hops, hsem, -, -⟩ := seqRun_stop_star hvb hsegat hsr
+    exact ⟨b, _, ρ₁, w₁, vb, i, ops, outs, w₂, hstar, hvb, hi, hops, hsem, htc⟩
 
 theorem abiTerm_cases (f : Clif.Function) (t : Clif.Terminator) :
     abiTerm f t = t ∨ ∃ xs, t = .ret xs ∧ abiTerm f t = .ret (xs ++ sretRet f) := by
@@ -806,21 +863,22 @@ theorem getMany_append {fr : Clif.Frame} :
       | stuck => rw [hr] at ha; cases ha
 
 /-- **Terminator step**, with the ABI return values: a `return` also returns the frame's
-`sretRet f` values (`abiTerm`), all held by the VCode return's use values. `term_step` is the
-CLIF-values-only corollary. -/
-theorem term_step_abi (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
+`sretRet f` values (`abiTerm`), all held by the VCode return's use values. Every step runs from
+the terminator's code or an edge block's `jump` (`TermZone`). `term_step_abi` forgets the zone;
+`term_step` is the CLIF-values-only corollary. -/
+theorem term_step_abiP (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
     {s : Clif.State} {b k : Nat} {ρ : Nat → CV} {w : W}
     (hm : Match f ctx R gn bl A MR slots s ⟨b, k, ρ, w⟩) (hbody : s.frame.body = [])
     (hnt : s.frame.term.isTry = false) :
     (∀ s', Clif.step env p s = .next s' →
-      ∃ vs', Star (VStep vc sem) (.run ⟨b, k, ρ, w⟩) (.run vs') ∧
+      ∃ vs', StarP (VStep vc sem) (TermZone vc b k) (.run ⟨b, k, ρ, w⟩) (.run vs') ∧
         Match f ctx R gn bl A MR slots s' vs') ∧
     (∀ vals cm, Clif.step env p s = .done vals cm →
-      ∃ us outs w' sv, VRetFrom vc sem ⟨b, k, ρ, w⟩ us outs w' ∧
+      ∃ us outs w' sv, VRetFromP (TermZone vc b k) vc sem ⟨b, k, ρ, w⟩ us outs w' ∧
         us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
         s.frame.getMany (sretRet f) = .ok sv ∧ AllHold (vals ++ sv) outs ∧
         MR slots s.mem w' ∧ cm = (s.mem.free (slots.map (·.2))).leave) ∧
-    (∀ c, Clif.step env p s = .trapped c → VTrapFrom vc sem ⟨b, k, ρ, w⟩ c) := by
+    (∀ c, Clif.step env p s = .trapped c → VTrapFromP (TermZone vc b k) vc sem ⟨b, k, ρ, w⟩ c) := by
   obtain ⟨hcall, hfunc, hslots, hmem, B, j, hB, hterm, hj, hbd, hk, hheld, hcons⟩ := hm
   simp only at hk hheld hcons hB hmem
   subst hk
@@ -829,6 +887,12 @@ theorem term_step_abi (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
     have := List.drop_eq_nil_iff.mp hbody
     omega
   subst hjn
+  have hz : ∀ {k' : Nat} {ρ' : Nat → CV} {w' : W},
+      TermZone vc b (pos f R bl b B.body.length) (.run ⟨b, pos f R bl b B.body.length + k', ρ', w'⟩) :=
+    .inl ⟨_, _, _, rfl, Nat.le_add_right _ _⟩
+  have hzs : ∀ {len : Nat} (c : VConf CV W), AtSeg b (pos f R bl b B.body.length) len c →
+      TermZone vc b (pos f R bl b B.body.length) c := by
+    rintro len c ⟨i, -, ρ', w', rfl⟩; exact hz
   obtain ⟨L, hL⟩ := H.blow hB
   obtain ⟨vb, hvb, -, -, htemp, hst0t, hnontry, -, hcode, htne, -, hbargs, hsucc⟩ :=
     H.shape.blk b B L hB hL
@@ -901,7 +965,8 @@ theorem term_step_abi (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
     fun y hy => restrict_regs_of_mem (hargsT y hy)
   -- branches
   have hnext_br : dests B.term ≠ [] → ∀ s', Clif.step env p s = .next s' →
-      ∃ vs', Star (VStep vc sem) (.run ⟨b, pos f R bl b B.body.length, ρ, w⟩) (.run vs') ∧
+      ∃ vs', StarP (VStep vc sem) (TermZone vc b (pos f R bl b B.body.length))
+        (.run ⟨b, pos f R bl b B.body.length, ρ, w⟩) (.run vs') ∧
         Match f ctx R gn bl A MR slots s' vs' := by
     intro hne s' hs
     rw [hstep] at hs
@@ -929,7 +994,8 @@ theorem term_step_abi (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
       | _ => rfl
     obtain ⟨hU, k', i, ops, ρ₁, w₁, outs, w₂, hsr, hk1, hmr⟩ := hgo j' hbi'
     obtain ⟨ρ₁', hsr', -, hA2⟩ := (hren (huses_of hU) hAg).2 hsr
-    obtain ⟨hstar, -, hi, hops, hsem, hlen, -⟩ := seqRun_stop_star hvb hsegat hsr'
+    obtain ⟨hstar, -, hi, hops, hsem, hlen, -⟩ := seqRun_stop_starP hvb hsegat hsr'
+    replace hstar := hstar.mono hzs
     obtain ⟨hmk, -⟩ := seqRun_stop_mem hsr
     have hlast : L.tst'.emitted.toList.getLast? = some i := by
       rw [List.getLast?_eq_getElem?, ← hk1, Nat.add_sub_cancel]; exact hmk
@@ -962,7 +1028,7 @@ theorem term_step_abi (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
         (by rw [hbargs]; simp [List.map_map, Function.comp_def, H.shape.ren.vreg])
         (by rw [hpt]; simp [List.map_map, Function.comp_def]) (by simp; omega)
         (vdefUpd (ops.map (rnOp gn)) outs ρ₁')
-      refine ⟨_, hstar.trans (Star.single (VStep.step hvb hi hops hsem hlen
+      refine ⟨_, hstar.trans (StarP.single hz (VStep.step hvb hi hops hsem hlen
         (VNext.goto hK (by rw [hsucc_eq, htgs]; rfl) henv))), hM⟩
     · rename_i fn0 args0 et0 hT
       rw [hT] at hBnt; cases hBnt
@@ -988,7 +1054,7 @@ theorem term_step_abi (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
         have henv := edgeEnv_eq (V := CV) hvb hvbt (xs := []) (ps := [])
           (by rw [hbargs']; rfl) (by rw [hpt, hp0]; rfl) rfl (vdefUpd (ops.map (rnOp gn)) outs ρ₁')
         rw [hargs0, hp0] at hM
-        refine ⟨_, hstar.trans (Star.single (VStep.step hvb hi hops hsem hlen
+        refine ⟨_, hstar.trans (StarP.single hz (VStep.step hvb hi hops hsem hlen
           (VNext.goto hK (by rw [hsucc_eq, List.getElem?_eq_getElem hjlt, hnil hargs0]) henv))), hM⟩
       · obtain ⟨eb, heb, hebi, hebp, hebba⟩ := hedge hargs0
         have henv1 := edgeEnv_eq (V := CV) hvb heb (xs := []) (ps := [])
@@ -1011,7 +1077,8 @@ theorem term_step_abi (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
           refine VStep.step heb (by rw [hebi]; rfl) (i := .jump tl) (ops := #[]) rfl
             (H.dsem.jump tl w₂) rfl (VNext.goto (by rw [hebi]; rfl) ?_ henv2)
           rw [succOf_eq H.shape.labels hcfg heb hebback]; rfl
-        exact ⟨_, hstar.trans (.step hstep1 (Star.single hstep2)), hM⟩
+        exact ⟨_, hstar.trans (.step hz hstep1
+          (StarP.single (.inr ⟨_, _, _, eb, tl, rfl, heb, hebi⟩) hstep2)), hM⟩
   cases hT : B.term with
   | ret xs =>
     rw [hT] at hrun' hstep hargsR hargsTA
@@ -1039,7 +1106,7 @@ theorem term_step_abi (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
       exact (getMany_congr (fun y hy => restrict_regs_of_mem (hyA y hy))).symm
     obtain ⟨hU, k', us, ops, ρ₁, w₁, outs, w₂, hsr, hus, hlen, hall, hmr⟩ := hrun' _ hg'
     obtain ⟨ρ₁', hsr', hA1, -⟩ := (hren (huses_of hU) hAg).2 hsr
-    obtain ⟨hstar, -, hi, hops, hsem, -, -⟩ := seqRun_stop_star hvb hsegat hsr'
+    obtain ⟨hstar, -, hi, hops, hsem, -, -⟩ := seqRun_stop_starP hvb hsegat hsr'
     obtain ⟨hmk, hopsU⟩ := seqRun_stop_mem hsr
     have hvu : vuses (ops.map (rnOp gn)) ρ₁' = vuses ops ρ₁ := by
       apply vuses_rename hA1
@@ -1047,7 +1114,8 @@ theorem term_step_abi (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
       apply huses_of hU _ (List.mem_of_getElem? hmk) o.vreg
       simp only [vuseNums, hopsU, List.mem_map, List.mem_filter]
       exact ⟨o, ⟨by simpa using ho, hu⟩, rfl⟩
-    refine ⟨_, vuses ops ρ₁, w₂, vs, ⟨b, _, ρ₁', w₁, vb, ops.map (rnOp gn), outs, hstar, hvb, hi, hops,
+    refine ⟨_, vuses ops ρ₁, w₂, vs, ⟨b, _, ρ₁', w₁, vb, ops.map (rnOp gn), outs, hstar.mono hzs,
+      hz, hvb, hi, hops,
       hvu.symm, by rw [← hvu]; exact hsem⟩, ?_, ?_, hvsS, hall,
       by simpa [fr', restrict, hslots] using hmr, by rw [hcm, hslots]⟩
     · simp only [List.map_map, List.length_map]
@@ -1063,8 +1131,8 @@ theorem term_step_abi (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
     subst hs
     obtain ⟨hU, k', i, ops, ρ₁, w₁, outs, w₂, hsr, htc⟩ := hrun'
     obtain ⟨ρ₁', hsr', -, -⟩ := (hren (huses_of hU) hAg).2 hsr
-    obtain ⟨hstar, -, hi, hops, hsem, -, -⟩ := seqRun_stop_star hvb hsegat hsr'
-    exact ⟨b, _, ρ₁', w₁, vb, _, _, outs, w₂, hstar, hvb, hi, hops, hsem,
+    obtain ⟨hstar, -, hi, hops, hsem, -, -⟩ := seqRun_stop_starP hvb hsegat hsr'
+    exact ⟨b, _, ρ₁', w₁, vb, _, _, outs, w₂, hstar.mono hzs, hz, hvb, hi, hops, hsem,
       by rw [trapCode?_mapRegs]; exact htc⟩
   | returnCall fn args => exact absurd hT (H.noTail B hBmem fn args)
   | tryCall _ _ _ => rw [hT] at hBnt; cases hBnt
@@ -1084,6 +1152,27 @@ theorem term_step_abi (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
     refine ⟨hnext_br hne, fun vals cm hs => ?_, fun c hs => ?_⟩
     · rw [hstep] at hs; exact absurd hs ((stepTerm_branch_ne hne).1 vals cm)
     · rw [hstep] at hs; exact absurd hs ((stepTerm_branch_ne hne).2 c)
+
+/-- **Terminator step, with the ABI return values** (`term_step_abiP` without the zone). -/
+theorem term_step_abi (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
+    {s : Clif.State} {b k : Nat} {ρ : Nat → CV} {w : W}
+    (hm : Match f ctx R gn bl A MR slots s ⟨b, k, ρ, w⟩) (hbody : s.frame.body = [])
+    (hnt : s.frame.term.isTry = false) :
+    (∀ s', Clif.step env p s = .next s' →
+      ∃ vs', Star (VStep vc sem) (.run ⟨b, k, ρ, w⟩) (.run vs') ∧
+        Match f ctx R gn bl A MR slots s' vs') ∧
+    (∀ vals cm, Clif.step env p s = .done vals cm →
+      ∃ us outs w' sv, VRetFrom vc sem ⟨b, k, ρ, w⟩ us outs w' ∧
+        us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
+        s.frame.getMany (sretRet f) = .ok sv ∧ AllHold (vals ++ sv) outs ∧
+        MR slots s.mem w' ∧ cm = (s.mem.free (slots.map (·.2))).leave) ∧
+    (∀ c, Clif.step env p s = .trapped c → VTrapFrom vc sem ⟨b, k, ρ, w⟩ c) := by
+  obtain ⟨T1, T2, T3⟩ := term_step_abiP H hm hbody hnt
+  refine ⟨fun s' hs => ?_, fun vals cm hs => ?_, fun c hs => (T3 c hs).toVTrapFrom⟩
+  · obtain ⟨vs', h1, h2⟩ := T1 s' hs
+    exact ⟨vs', h1.star, h2⟩
+  · obtain ⟨us, outs, w', sv, h1, h2⟩ := T2 vals cm hs
+    exact ⟨us, outs, w', sv, h1.toVRetFrom, h2⟩
 
 /-- **Terminator step**: returns, traps, branches (a `try_call`: `term_step_try`). -/
 theorem term_step (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
@@ -1323,8 +1412,9 @@ theorem etVals_termArgs {t : Clif.Terminator} {et : Clif.ExnTable} (h : IsTryWit
 (its results bound to fresh values, the jump to the normal return pending) and the jump are
 matched by the terminator's code, ending in the `tryCall` (which continues at the normal-return
 edge block), and the edge block's `jump` (the parallel copy of the renamed arguments). `hind`:
-an indirect callee is no function of `p`. -/
-theorem term_step_try (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
+an indirect callee is no function of `p`. Every step runs from the terminator's code or the edge
+block's `jump` (`TermZone`); `term_step_try` forgets the zone. -/
+theorem term_step_tryP (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
     {s : Clif.State} {b k : Nat} {ρ : Nat → CV} {w : W}
     (hm : Match f ctx R gn bl A MR slots s ⟨b, k, ρ, w⟩) (hbody : s.frame.body = [])
     {et : Clif.ExnTable} (hT : IsTryWith s.frame.term et)
@@ -1334,7 +1424,7 @@ theorem term_step_try (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
     ∀ s', Clif.step env p s = .next s' →
       (∀ c, Clif.step env p s' ≠ .trapped c) ∧ (∀ vals cm, Clif.step env p s' ≠ .done vals cm) ∧
       ∀ s'', Clif.step env p s' = .next s'' →
-        ∃ vs', Star (VStep vc sem) (.run ⟨b, k, ρ, w⟩) (.run vs') ∧
+        ∃ vs', StarP (VStep vc sem) (TermZone vc b k) (.run ⟨b, k, ρ, w⟩) (.run vs') ∧
           Match f ctx R gn bl A MR slots s'' vs' := by
   obtain ⟨hcall, hfunc, hslots, hmem, B, j, hB, hterm, hj, hbd, hk, hheld, hcons⟩ := hm
   simp only at hk hheld hcons hB hmem
@@ -1522,7 +1612,9 @@ theorem term_step_try (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
     show (tryFix T.info _).map _ = _
     rw [hfix]
   rw [htseg] at hsegat hsize
-  obtain ⟨hstar, -, hi, hops, hsem, hlen, -⟩ := seqRun_stop_star hvb hsegat hsr'
+  obtain ⟨hstar, -, hi, hops, hsem, hlen, -⟩ := seqRun_stop_starP hvb hsegat hsr'
+  replace hstar := hstar.mono (Q := TermZone vc b (pos f R bl b B.body.length)) (by
+    rintro c ⟨i, -, ρ', w', rfl⟩; exact .inl ⟨_, _, _, rfl, Nat.le_add_right _ _⟩)
   obtain ⟨hmk, -⟩ := seqRun_stop_mem hsr
   have hk' : k' = pre.length := by
     rw [hms] at hk1; simp only [List.length_append, List.length_singleton] at hk1; omega
@@ -1660,7 +1752,29 @@ theorem term_step_try (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
     refine VStep.step heb (by rw [hebi]; rfl) (i := .jump tl) (ops := #[]) rfl
       (H.dsem.jump tl w₂) rfl (VNext.goto (by rw [hebi]; rfl) ?_ henv2)
     rw [succOf_eq H.shape.labels hcfg heb hebback]; rfl
-  exact ⟨_, hstar.trans (.step hstep1 (Star.single hstep2)), hM⟩
+  exact ⟨_, hstar.trans (.step (.inl ⟨_, _, _, rfl, Nat.le_add_right _ _⟩) hstep1
+    (StarP.single (.inr ⟨_, _, _, eb, tl, rfl, heb, hebi⟩) hstep2)), hM⟩
+
+/-- **`try_call`/`try_call_indirect` step** (the normal return; `term_step_tryP` without the
+zone). -/
+theorem term_step_try (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
+    {s : Clif.State} {b k : Nat} {ρ : Nat → CV} {w : W}
+    (hm : Match f ctx R gn bl A MR slots s ⟨b, k, ρ, w⟩) (hbody : s.frame.body = [])
+    {et : Clif.ExnTable} (hT : IsTryWith s.frame.term et)
+    (hind : ∀ callee args, s.frame.term = .tryCallIndirect callee args et → ∀ cv,
+      s.frame.get callee = .ok cv → ∀ g ∈ p.funcs, s.mem.symbols g.name ≠ some cv.toNat) :
+    (∀ vals cm, Clif.step env p s ≠ .done vals cm) ∧
+    ∀ s', Clif.step env p s = .next s' →
+      (∀ c, Clif.step env p s' ≠ .trapped c) ∧ (∀ vals cm, Clif.step env p s' ≠ .done vals cm) ∧
+      ∀ s'', Clif.step env p s' = .next s'' →
+        ∃ vs', Star (VStep vc sem) (.run ⟨b, k, ρ, w⟩) (.run vs') ∧
+          Match f ctx R gn bl A MR slots s'' vs' := by
+  obtain ⟨T1, T2⟩ := term_step_tryP H hm hbody hT hind
+  refine ⟨T1, fun s' hs => ?_⟩
+  obtain ⟨N1, N2, N3⟩ := T2 s' hs
+  refine ⟨N1, N2, fun s'' hs' => ?_⟩
+  obtain ⟨vs', h1, h2⟩ := N3 s'' hs'
+  exact ⟨vs', h1.star, h2⟩
 
 /-! ## Entry -/
 
@@ -1870,8 +1984,10 @@ theorem mem_entryNs {E : List (((Nat × Clif.Ty) × ArgLoc) × Nat)} {q : ((Nat 
   exact List.mem_filterMap.mpr ⟨q, hq, by rw [hp]⟩
 
 /-- **Entry**: the entry block's `Args` defines the register-passed parameters from their
-argument registers, then the loads the stack-passed ones from the caller's outgoing area. -/
-theorem entry_step (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p) (hds : DriverSem sem)
+argument registers, then the loads the stack-passed ones from the caller's outgoing area. Every
+step runs from that code (the first `k` instructions of the entry block); `entry_step` forgets
+this. -/
+theorem entry_stepP (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p) (hds : DriverSem sem)
     {F : BitVec 64 → Prop} {sb : Nat} {syms : String → Option Nat}
     (hMem : MemRefines F sb syms sem) (hMR : MRStable F MR)
     {cs : Clif.State} {B0 : Clif.Block} (hB0 : f.blocks[0]? = some B0)
@@ -1882,7 +1998,7 @@ theorem entry_step (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p) (hds : Dr
     (hsig : args.map (·.ty) = f.sig.params.map (·.ty))
     {ρ₀ : Nat → CV} {w₀ : Arm.ArmState} (hmr : MR slots cs.mem w₀)
     (hargs : ArgsAtEntry F f.sig args w₀) :
-    ∃ k ρ₁ w₁, Star (VStep vc sem) (.run ⟨0, 0, ρ₀, w₀⟩) (.run ⟨0, k, ρ₁, w₁⟩) ∧
+    ∃ k ρ₁ w₁, StarP (VStep vc sem) (AtSeg 0 0 k) (.run ⟨0, 0, ρ₀, w₀⟩) (.run ⟨0, k, ρ₁, w₁⟩) ∧
       Match f ctx R gn bl A MR slots cs ⟨0, k, ρ₁, w₁⟩ := by
   obtain ⟨L, hL⟩ := H.blow hB0
   obtain ⟨vb, hvb, -, -, -, -, -, -, hcode, htne, -⟩ := H.shape.blk 0 B0 L hB0 hL
@@ -2010,8 +2126,11 @@ theorem entry_step (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p) (hds : Dr
     have := (show SegAt vb 0 (.args (argPairs ns) :: E.filterMap (entryLoadOf R)) by
       rw [← hpre]; exact hseg0).tail
     simpa using this
-  have hstar := seqRun_fall_star hvb hseg1 (by rw [hpre] at hsz; simp at hsz; omega) hseq
-  refine ⟨1 + (E.filterMap (entryLoadOf R)).length, ρ₂, w₂, .step hstep hstar, hcall, hfunc,
+  have hstar := seqRun_fall_starP hvb hseg1 (by rw [hpre] at hsz; simp at hsz; omega) hseq
+  refine ⟨1 + (E.filterMap (entryLoadOf R)).length, ρ₂, w₂,
+    .step (AtSeg.zero _ _ _ (by omega) _ _) hstep (hstar.mono (by
+      rintro c ⟨i, hi, ρ', w', rfl⟩
+      exact ⟨i + 1, by omega, ρ', w', by rw [Nat.zero_add, Nat.add_comm]⟩)), hcall, hfunc,
     hslots, hmr₂, B0, 0, hB0, hterm, Nat.zero_le _, by simp [hbody],
     by simp [pos, hpre]; omega, ?_, ?_⟩
   · intro x hx
@@ -2066,6 +2185,25 @@ theorem entry_step (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p) (hds : Dr
       obtain ⟨q, hq, rfl, hqt⟩ := setMany_param_ty hregs hnd hty (hA x hx0).1 hv
       rw [H.cert.paramTy B0 hB0mem q hq] at ht
       rw [hqt]; exact Option.some.inj ht
+
+/-- **Entry**: the entry block's `Args` defines the register-passed parameters from their
+argument registers, then the loads the stack-passed ones from the caller's outgoing area. -/
+theorem entry_step (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p) (hds : DriverSem sem)
+    {F : BitVec 64 → Prop} {sb : Nat} {syms : String → Option Nat}
+    (hMem : MemRefines F sb syms sem) (hMR : MRStable F MR)
+    {cs : Clif.State} {B0 : Clif.Block} (hB0 : f.blocks[0]? = some B0)
+    (hcall : cs.callers = []) (hfunc : cs.frame.func = f) (hslots : cs.frame.slots = slots)
+    (hbody : cs.frame.body = B0.body) (hterm : cs.frame.term = B0.term) {args : List Clif.Val}
+    (hregs : Clif.Regs.empty.setMany (B0.params.map (·.1)) args = some cs.frame.regs)
+    (hty : args.map (·.ty) = B0.params.map (·.2))
+    (hsig : args.map (·.ty) = f.sig.params.map (·.ty))
+    {ρ₀ : Nat → CV} {w₀ : Arm.ArmState} (hmr : MR slots cs.mem w₀)
+    (hargs : ArgsAtEntry F f.sig args w₀) :
+    ∃ k ρ₁ w₁, Star (VStep vc sem) (.run ⟨0, 0, ρ₀, w₀⟩) (.run ⟨0, k, ρ₁, w₁⟩) ∧
+      Match f ctx R gn bl A MR slots cs ⟨0, k, ρ₁, w₁⟩ :=
+  let ⟨k, ρ₁, w₁, h1, h2⟩ := entry_stepP H hds hMem hMR hB0 hcall hfunc hslots hbody hterm hregs
+    hty hsig hmr hargs (ρ₀ := ρ₀)
+  ⟨k, ρ₁, w₁, h1.star, h2⟩
 
 /-! ## Whole runs -/
 
