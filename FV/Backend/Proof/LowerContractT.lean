@@ -11,12 +11,17 @@ The integer M4 obligations (`LowerRulesCorrect`, `MemRulesCorrect`, `CallRulesCo
 `IselContract.lean`) quantify over the contexts of subset-E functions (`CtxInv`: every value an
 `i8..i64` in an X register). A function of the typed movement scope (`Compile.functionET`) has a
 float-capable context: `CtxInvT` (class-aware vregs, `f32`/`f64` values, integer operands in
-integer positions), `InstScopeT` (its instructions in `Compile.instET`), integer extern
-signatures. This file states the obligations over such contexts (`CtxT`), for the integer
+integer positions), `InstScopeT` (its instructions in `Compile.instET`), the callees of its
+`call` statements with integer signatures (`CallsE`). This file states the obligations over such
+contexts (`CtxT`), for the integer
 instructions of a mixed context; the float families already proven over `CtxInvT`
 (`LowerRulesCorrectT`, `MemRulesCorrectRT`, `LowerRulesCorrectFT`) are reused unchanged.
 
-* `CtxT f ctx`: `CtxInvT f ctx ∧ InstScopeT ctx ∧` integer externs (`CtxInv.toCtxT`).
+* `CtxT f ctx`: `CtxInvT f ctx ∧ InstScopeT ctx ∧ CallsE f ctx` (`CtxInv.toCtxT`; integer
+  externs give `CallsE`, `CtxT.ofExterns`). S11e6: until then the third field was
+  `f.externs.all sigE`; the proofs only use it for the `call` statements, and a `try_call`'s
+  callee may have float parameters and returns (`IselCtlTryF`), so the field is the weaker
+  `CallsE` (every family over `CtxT` is stronger).
 * Statements, on the subset-E instructions (`Compile.instE`) of a typed context:
   `LowerRuleOkTX`, `LowerRulesCorrectTI` (the integer `lower` roots: closure roots that are not
   call, indirect-call, memory, float-movement or float-arithmetic roots), `MemRuleOkRTX`,
@@ -42,17 +47,30 @@ open Backend Isle Isle.Interp Isle.Aarch64 Backend.Proof.Driver
 /-! ## Float-capable rule contexts -/
 
 /-- **The context premise of the typed obligations**: a float-capable lowering context
-(`CtxInvT`), its instructions in the typed movement scope (`InstScopeT`), and the function's
-externs with integer signatures (`Compile.functionET`: calls are integer-only). -/
+(`CtxInvT`), its instructions in the typed movement scope (`InstScopeT`), and the callees of its
+`call` statements with integer signatures (`CallsE`: the statement calls are integer-only; the
+callee of a `try_call` terminator is not constrained). -/
 structure CtxT (f : Clif.Function) (ctx : Ctx) : Prop where
   inv : CtxInvT f ctx
   scope : InstScopeT ctx
-  externs : f.externs.all (Compile.sigE ·.2.sig) = true
+  calls : CallsE f ctx
+
+/-- A typed context of a function with integer externs (`Compile.functionET`). -/
+theorem CtxT.ofExterns {f : Clif.Function} {ctx : Ctx} (hinv : CtxInvT f ctx)
+    (hsc : InstScopeT ctx) (hx : f.externs.all (Compile.sigE ·.2.sig) = true) : CtxT f ctx :=
+  ⟨hinv, hsc, callsE_of_externs hx ctx⟩
 
 /-- **Integer specialization**: a subset-E context is a typed one. -/
 theorem CtxInv.toCtxT {f : Clif.Function} {ctx : Ctx} (h : CtxInv f ctx)
     (hE : Compile.functionE f = true) : CtxT f ctx := by
-  refine ⟨h.toT, h.instScopeT, ?_⟩
+  refine CtxT.ofExterns h.toT h.instScopeT ?_
+  simp only [Compile.functionE, Bool.and_eq_true] at hE
+  exact hE.1.2
+
+/-- The externs of a subset-E function have integer signatures (the fact `CtxInv.toCtxT`'s
+`CtxT` carried before S11e6). -/
+theorem CtxInv.toCtxT_externsE {f : Clif.Function} (hE : Compile.functionE f = true) :
+    f.externs.all (Compile.sigE ·.2.sig) = true := by
   simp only [Compile.functionE, Bool.and_eq_true] at hE
   exact hE.1.2
 
@@ -598,7 +616,7 @@ theorem lowerInstOk_of_rulesT (hrules : LowerRulesCorrectTI program)
     fun hfa => hFT F isem MR env cp hR hMR r hr hfa f ctx hctx.inv ii info inst hi hc trivial
       cfg hco m n st tr env' s1 out st' tr2 hm1 hn1 hvb hfirst hmatch heval
   cases hroot : closureRoot r
-  · exact absurd hmatch (lower_nonroot_nomatchT hctx.inv hctx.scope hctx.externs hi hc hr
+  · exact absurd hmatch (lower_nonroot_nomatchT_calls hctx.inv hctx.scope hctx.calls hi hc hr
       (by rw [← closureRoot_eq]; exact hroot) cfg m (st, tr) env' s1)
   cases hE : Compile.instE inst
   · -- an instruction of the typed scope outside subset E
@@ -1101,17 +1119,21 @@ theorem ctxInvT_termCtx {f : Clif.Function} {ctx : Ctx} (h : CtxInvT f ctx) {ti 
 theorem ctxT_termCtx {f : Clif.Function} {ctx : Ctx} (h : CtxT f ctx) {ti : Nat}
     (hph : ctx.insts[ti]? = some ⟨.op .unit, [], [], none⟩) (data : V) :
     CtxT f (termCtx ctx ti data) := by
-  refine ⟨ctxInvT_termCtx h.inv hph data, fun ii info inst hi hc => ?_, h.externs⟩
-  by_cases e : ii = ti
-  · subst e; rw [termCtx_insts_self hph] at hi; cases hi; cases hc
-  · rw [termCtx_insts_ne e] at hi; exact h.scope ii info inst hi hc
+  refine ⟨ctxInvT_termCtx h.inv hph data, fun ii info inst hi hc => ?_,
+    fun ii info fn args e hi hc he => ?_⟩
+  · by_cases e : ii = ti
+    · subst e; rw [termCtx_insts_self hph] at hi; cases hi; cases hc
+    · rw [termCtx_insts_ne e] at hi; exact h.scope ii info inst hi hc
+  · by_cases e' : ii = ti
+    · subst e'; rw [termCtx_insts_self hph] at hi; cases hi; cases hc
+    · rw [termCtx_insts_ne e'] at hi; exact h.calls ii info fn args e hi hc he
 
 /-- `CtxT` does not depend on the `try_call` vregs. -/
 theorem ctxT_tryRegs {f : Clif.Function} {ctx : Ctx} (h : CtxT f ctx)
     (trs : List Reg × List Reg) : CtxT f { ctx with tryRegs := trs } :=
   ⟨⟨h.inv.func, h.inv.data, h.inv.resTys, h.inv.valueReg, h.inv.typedReg, h.inv.defInst,
     h.inv.defClif, h.inv.slotOff, h.inv.resTysM, h.inv.valTyM, h.inv.addr64, h.inv.intOps⟩,
-    h.scope, h.externs⟩
+    h.scope, h.calls⟩
 
 /-- For `return`/`trap`, `LowerTermOkT` does not depend on the targets. -/
 theorem lowerTermOkT_targets {isem : Sem} {MR : MemRelT} {ctx : Ctx} {t : Clif.Terminator}

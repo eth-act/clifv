@@ -12,12 +12,23 @@ None of these weaken what is proven: every compiler theorem still prints only `p
 ### Scan Lists, not Arrays, in kernel-evaluated code
 - **Problem:** `Array` combinators (`find?`, `foldl`, …) are well-founded recursive. The kernel evaluates them very slowly. Every Stock module that runs `Stock.lower` under `decide +kernel` looked up `"lower"` in the 2,483-term ISLE program with `Array.find?`.
 - **Trick:** define the lookup as a `List` scan and add an `@[csimp]` theorem that swaps the `Array` version back in for compiled code, so runtime is unchanged.
-- **Effect:** a 700-element scan went from 4.3 GB / 17–30 s to 0.48 GB / 0.25 s; `program.termByName? "lower"` from 4.65 GB / 17 s to 0.79 GB / 2.6 s (BuildDiet, `FV/Isle/Syntax.lean`; branch `agent/build-diet`, being merged).
+- **Effect:** a 700-element scan went from 4.3 GB / 17–30 s to 0.48 GB / 0.25 s; `program.termByName? "lower"` from 4.65 GB / 17 s to 0.79 GB / 2.6 s (BuildDiet, `FV/Isle/Syntax.lean`; branch `agent/build-diet-syntax`, not merged: `Syntax` is in the `FV.Opt.Proof` cone, so it rebuilds every rule module, e.g. `RuleShifts3P2` ~7,700 s / 8 GB cold; its Opt impact must be measured first).
+
+- **Same for `Array.map`/`mapIdx`:** the regalloc checker's `AState` (an `Array` of ~140 location sets) used `Array.map`, `mapIdx` and an indexed `List.range` scan; the kernel runs `Array.mapM`'s index loop with one `List.get` walk and one `List.concat` per element (quadratic). Microbenchmark, 20 `remove`s over a 300-location state in `decide +kernel`: 7.96 GB / 27 s with `Array.map`, 0.56 GB / <1 s with `⟨a.toList.map f⟩`. `FV/Backend/RegallocCheck.lean` now specifies `remove`/`meet`/`parCopy`/`le`/`forgetDefs`/`forgetOps` by `List` recursion, `@[csimp]` keeps the `Array` code, `*_eq` give proofs the old forms (BuildDiet). Scheduler build, main gate `bdb71827` → this branch (peak: maxrss → cgroup peak): `PerEdgeSpillEntryFixture` 388 s / 14.7 GB → 86 s / 8.9 GB, `StockPerEdgeAllocatorWitness` 123 s / 11.7 GB → 65 s / 7.7 GB, `StockPerEdgeCriticalAllocatorWitness` 109 s / 14.2 GB → 120 s / 9.1 GB; with the single certificate below, `PerEdgeSpillCycleFixture` 1,708 s / 17.8 GB → 73 s / 9.3 GB. The machine-wide largest peak dropped from 17.8 GB to 11.9 GB (`StockSourceSinkTable`).
 
 ### Prefer structural recursion to well-founded recursion
 - **Problem:** the kernel cannot reduce well-founded definitions efficiently (or at all, in practice). `fitsCl`/`fitsTy` in `DefGenDom` used well-founded recursion, and every `decide +kernel` check over them failed.
 - **Trick:** rewrite them with structural recursion (fuel or the list itself), with the same equations.
 - **Effect:** the failing `DefGen` certificates now pass (T6).
+
+### Evaluate a concrete pipeline once per certificate
+- **Problem:** `PerEdgeSpillCycleFixture` checked seven facts about one `Stock.lower`/`prepareAt`/`allocResultAt`/`lowerRFunc` run with seven separate `decide +kernel` theorems; each re-ran the whole pipeline (`Stock.lower` alone 8 GB / 21 s, with allocation 18 GB / 58 s).
+- **Trick:** one `decide +kernel` over the conjunction (the evm.fast-dev "remove repeated work" idea; kernel-opaque `boxedValue` caches would be the next step if one evaluation were still too much).
+- **Effect:** 18.2 GB / 748 s → 18.1 GB / 66 s, same statement (BuildDiet, before the `AState` change; with it, 9.3 GB / 73 s). Splitting certificates lowers the peak only when the parts do not share the expensive evaluation.
+
+### `subst_vars` rescans (measured, not merged)
+- **Problem:** `Lean.Meta.substVars` substitutes one variable per scan and restarts; each scan `whnf`s both sides of every equation. In the isel inversion proofs (`isel_inv`, `ctl_inv`, `isel_destruct; subst_vars`) the contexts hold many equations between big interpreter terms, so `subst_vars` was ~95% of the time (`IselCtlTry`: 1,420 s in one call).
+- **Tried:** override `subst_vars` (`macro_rules`) by a pass that substitutes only equations whose sides are syntactically variables, then one stock `substVars` (branch `agent/build-diet-fastsubst`, `FV/Backend/Proof/FastSubst.lean`). Without the stock pass: `IselCtlTry` 1,798 → 101 s, `KillTryDefs` 1,802 → 70 s, … but `IselCmpIcmp` breaks (it needs `(a, b).1 = x`). With it, the gain is gone: `IselCtlTry` standalone, same session, 838 s (stock) vs 812 s, both 2.0 GB. Next: let the syntactic pass look through `whnfR` (projections of constructors) and drop the stock pass; that needs a full rebuild to show which proofs need default-transparency `whnf`.
 
 ### Avoid `rfl`-based simp steps on big concrete terms
 - **Problem:** `StockCmpWithFlags` elaborated in 1.9 GB, but the kernel needed 23 GB to re-check one `simp` step of `isel_eval`: monad-law lemmas proved by `rfl`, applied to a large concrete state.
@@ -33,6 +44,8 @@ None of these weaken what is proven: every compiler theorem still prints only `p
 - **Problem:** one leaf of the typed coverage table (`stmtOkT rule_lower_2267`, a `select` rule on the integer-`select` family) has 256 pattern environments; its single `decide +kernel` was killed at 8, 16 and 22 GB, while its 30 other families take ~1 s together. Kernel memory grows with the environments checked in one `decide` (32 environments: 4.7 GB incl. 2.8 GB of imports).
 - **Trick:** prove the leaf from `envOkT` checks of 32-environment chunks (`(envs.drop (c*32)).take 32`) plus `isSome`/length certificates, glued by a small `all_of_chunks` lemma; find such leaves by `decide +kernel`-probing each rule and family separately under a memory cap. The generator (`IselCovTGen.heavy`) emits this for the listed rule/family pairs.
 - **Effect:** `IselCovTTabS30` builds in 119 s at 4.5 GB (was: killed at 22 GB).
+- **The chunk size is per leaf, not per table:** the typed emission table (`IselEmitTGen.heavy`, rule/family/chunk triples) reuses 32 for rule 2267, but its vector-lane rules 1222-1228 on family 2 (64 environments) cost 8 GB per 16 environments under the emission check; with 8 per chunk `IselEmitTTabS5` builds in 509 s at 5.1 GB (was: killed at 22 GB). Probe a leaf's chunk before picking the size.
+- **Cost tables: chunk entries too, and one entry per `decide`:** the typed cost tables (`IselSzTGen`) ran out of memory in 4 of 26 entry modules (C18 killed at 9.2 GB). Term 575's 24 entries go through ~4040 abstract environments each: each such entry is now proven rule by rule via `cRuleLe_of_chunks` from `decide`s of 128 environments, packed ~1024 environments per module (`IselSzTTabH*`, 240 modules, ≤4.4 GB, mostly 2.3 GB). Separately, 8 cheap entries (<50 environments each) per `decide` still took 8.1 GB / 282 s in one declaration: the environment count does not predict the kernel's cost, so every entry gets its own `decide` (C modules 7.7 GB → ≤1.8 GB).
 
 ### `assumption` at reducible transparency
 - **Problem:** after `ArmState` gained a field, `stlxr_congr` in `LoopRun.lean` ran out of heartbeats even at 8M: `assumption` was unfolding the state structure.
@@ -59,6 +72,12 @@ None of these weaken what is proven: every compiler theorem still prints only `p
 
 ### Don't depend on private library internals
 - A proof that reached into the private internals of `Array.qsort` would break on a toolchain update. Sorting `cfg.loops.attach` instead carries the membership fact through the sort, with the same output (#318).
+
+### Keep Mathlib out of the main import graph
+- **Problem:** making `FV/Float` import FloatLib (which needs Mathlib) put 1,778 Mathlib modules upstream of 2,624 of 2,812 FV modules.
+- **Numbers:** +1.4 GB peak memory per module (median of 222), +3–4 s import each; under load LegalArith 94 → 134 s, LegalShift 83 → 161 s; 8 breakages in the first 360 modules (`alias` is a keyword, Mathlib simp lemmas give "no goals"/unsolved goals), none on the same modules with the bare toolchain bump.
+- **Trick:** a leaf Lake package (`float-spec/`) holds the Mathlib-dependent equality proofs; nothing imports it. Cost there: Mathlib cache ~1 GB download / 7.5 GB disk once, FloatLib ~2.5 min, FVFloatSpec ~1.5 min at ~2.6 GB per process (FloatBridge).
+- **Don't bump the whole repo for one leaf's dependency:** FloatLib needs Lean v4.35.0. The repo-wide 4.34.1 → 4.35.0 bump reached only ~650 of 3,546 modules after 6 restarts, each stopped by new breakages (heartbeat limits on concrete `rfl`/`decide`, instance-transparency unification blocking `exec_bitfield` rewrites, a `kbv` budget), and would rebuild every branch and the shared cache (branch `agent/floatlib-lean435-only`, parked). Instead `float-spec/` has its own `lean-toolchain` (v4.35.0) and compiles the 5 core-only FV/Float modules from `../FV` into its own `.lake` (a `lean_lib` with `srcDir = ".."`, not `require fv from ".."`: a path dependency would build into the root's `.lake` and the shared cache). They compiled unchanged on 4.35.0 in under 1 s each; `float-spec/defs-hash.lean` checks both toolchains elaborate identical definitions (FloatBridge3).
 
 ## Build infrastructure
 
@@ -104,6 +123,11 @@ None of these weaken what is proven: every compiler theorem still prints only `p
 
 ### Merge first, verify on main
 - When main moves faster than a full rebuild, a branch that passed its full checks on a recent main and rebases cleanly needs only a targeted build; a continuous main gate runs the full list afterwards and failures are fixed forward. A wrong merge can make main fail to build; it cannot make a false theorem pass, because the kernel checks every proof.
+
+### Batch ready branches into one gate run (merge train)
+- **Problem:** every PR author ran a full `FV FVTest` scheduler build plus the run-time gates, and the main gate repeated it per merged commit; with ~12 agents merging, the heavy lock serialised these runs (one main-gate run on `8b127ab0`, after a mid-level change: 277 min).
+- **Trick:** authors build only their changed modules and importers; MergeTrain merges every ready branch onto origin/main locally, runs `scripts/main-gate.sh run` once on that train, then squash-merges the PRs in order (stacked PRs rebased onto the previous squash) and checks that main's tree equals the train's. Real conflicts (shared registries such as `closure.rs`/`Closure.lean`/rcases arms) are dropped from the batch and composed separately.
+- **Effect (2026-10-23):** batch 1: 17 PRs in one gate run, 170 min wall (scheduler 3306/3306, 1100 built, 161 min, mostly `LowerSimT` dependents; the tail of exes, crate-proofs, 66 audit files and run-time gates: 9 min). Batch 2: 3 PRs in one run, 16 min (68 built, 10 min; tail 5 min). Gated separately, the `LowerSimT` rebuild is paid once either way, but every other PR needs its own run on the heavy lock: batch 2's 16 min (a warm run with a small change) is the measured lower bound per run, so ≈16 × 16 min ≈ 4.3 h saved for batch 1 and ≈ 2 × 16 min ≈ 0.5 h for batch 2 (estimate from these measured runs).
 
 ## Compiled checkers (`lean-link`, `link-check`)
 

@@ -103,9 +103,29 @@ def mixedDivEligible (b : Clif.Block) : Bool :=
   | _,_ => false
 
 
+/-- Match the original returned division; no divisor/value guard is added. -/
+def returnedDivAt (stm : Clif.Stmt) (z : Nat) : Bool :=
+  match stm.results,stm.inst with
+  | [z'],.div _ ty _ _ => z' == z && (ty == .i32 || ty == .i64)
+  | _,_ => false
+
+/-- Previously proved scalar statements may occur on both sides of the
+returned division. The original final-position classifiers remain intact. -/
+def returnedDivBodyEligible : List Clif.Stmt → Nat → Bool
+  | [],_ => false
+  | stm :: rest,z =>
+      (returnedDivAt stm z && rest.all highmulBodyEligible) ||
+      (highmulBodyEligible stm && returnedDivBodyEligible rest z)
+
+def returnedDivEligible (b : Clif.Block) : Bool :=
+  match b.term with
+  | .ret [z] => returnedDivBodyEligible b.body z
+  | _ => false
+
+
 def eligible (f : Clif.Function) : Bool :=
   match f.blocks with
-  | [b] => (b.body.all highmulBodyEligible || singleDivEligible b || mixedDivEligible b) &&
+  | [b] => (b.body.all highmulBodyEligible || singleDivEligible b || mixedDivEligible b || returnedDivEligible b) &&
       (match b.term with | .ret _ => true | _ => false) &&
       f.sig.params.all abiEligible && f.sig.returns.all abiEligible
   | _ => false

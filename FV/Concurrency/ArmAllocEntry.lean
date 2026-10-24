@@ -254,7 +254,8 @@ theorem prun_prologue {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb
       simp only [Option.bind_some] at hy
       obtain ⟨i, hi, rfl⟩ := mem_segEvs (List.mem_of_getElem? hj)
       exact (hpe i (by omega)).1 y (List.mem_of_getElem? hy)
-  exact ⟨h1, fun p y hy _ => privA_addr.2 (hk p y hy).1, fun p y hy => (hk p y hy).2⟩
+  exact ⟨h1, fun p y hy _ => ⟨privA_addr.2 (hk p y hy).1, by rw [(hk p y hy).2]; decide⟩,
+    fun p y hy => (hk p y hy).2⟩
 
 /-- **A segment of private writes without load exclusive refines the empty source.** -/
 theorem refines_privW {K : Type} {MK : K → AKind → Prop} {Priv : Nat → Prop} {T : List (List Ev)}
@@ -272,7 +273,7 @@ theorem refines_privW {K : Type} {MK : K → AKind → Prop} {Priv : Nat → Pro
       rw [hT] at hy
       simp only [Option.map_some, Option.some.injEq] at hy
       subst hy
-      exact h p z hT (by simpa [ProgE2E.convEv] using hW)
+      exact (h p z hT (by simpa [ProgE2E.convEv] using hW)).1
   len j hj := absurd hj (Nat.not_lt_zero _)
   pair j hj := absurd hj (Nat.not_lt_zero _)
   pair_inv p _ hp := by rw [evAt_nil] at hp; cases hp

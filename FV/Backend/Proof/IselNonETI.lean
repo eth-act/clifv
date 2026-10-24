@@ -193,7 +193,7 @@ theorem nonE_split {f : Clif.Function} {ctx : Ctx} (hctx : CtxInvT f ctx) {j : N
 
 section
 variable {f : Clif.Function} {ctx : Ctx} (hctx : CtxInvT f ctx) (hsc : InstScopeT ctx)
-  (hx : f.externs.all (Compile.sigE ·.2.sig) = true) {ii : Nat} {info : IInfo} {sel : Bool}
+  (hx : CallsE f ctx) {ii : Nat} {info : IInfo} {sel : Bool}
   (hsp : (info.resTys.head?.getD .invalid ∈ (.invalid :: eCTys) ∧
         (AVT.data neIOps).HoldsS Compile.instET f ctx info.data) ∨
       (info.resTys.head?.getD .invalid ∈ fTys ∧
@@ -239,9 +239,9 @@ theorem rootNE_sound : ∀ (q : Pattern) (st : LState) (env env' : Interp.Env V)
               rw [hi] at hi'
               cases hi'
               rcases hsp with ⟨h1, h2⟩ | ⟨h1, h2⟩
-              · exact failsArgsT_sound hctx hsc hx args _ [.ty (info.resTys.head?.getD .invalid),
+              · exact failsArgsT_sound_calls hctx hsc hx args _ [.ty (info.resTys.head?.getD .invalid),
                   info.data] st env env' hf1 ⟨⟨_, h1, rfl⟩, h2, trivial⟩ hma
-              · exact failsArgsT_sound hctx hsc hx args _ [.ty (info.resTys.head?.getD .invalid),
+              · exact failsArgsT_sound_calls hctx hsc hx args _ [.ty (info.resTys.head?.getD .invalid),
                   info.data] st env env' hf2 ⟨⟨_, h1, rfl⟩, h2, trivial⟩ hma
             · exact matchPat_multi ht hk hmu hm
       | _ => rw [hk] at hf; simp at hf
@@ -334,7 +334,7 @@ theorem nonEUnmatchableT_program : NonEUnmatchableT program := by
         have hd := hctx.inv.data ii info inst hi hc
         have hsp := nonE_split hctx.inv hi hc hd (hctx.scope ii info inst hi hc) hE
           (sel := r.id == 971) (fun h => hsel (beq_iff_eq.mp h))
-        exact rootNE_sound hctx.inv hctx.scope hctx.externs hsp hi q _ _ _ hok h1
+        exact rootNE_sound hctx.inv hctx.scope hctx.calls hsp hi q _ _ _ hok h1
       · cases hok
   · exact intStore_nonE hr his hctx hi hc hE hst hmatch
 

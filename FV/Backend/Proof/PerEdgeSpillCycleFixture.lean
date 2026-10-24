@@ -69,46 +69,11 @@ private def Observed : Prop := pipeline.toOption.map (fun q => decide (
     #[Reg.vreg 195 .int,Reg.vreg 194 .int] (q.2.1.code.blocks[1]!).params ++ [RItem.op 0 #[]]).toArray) ∧
   (initial q.2.1).get (spillHomeAt (spillHomesAt q.2.1.code q.2.1.edges) 194 .int) = [.vreg 194] ∧
   (initial q.2.1).get (spillHomeAt (spillHomesAt q.2.1.code q.2.1.edges) 195 .int) = [.vreg 195])) = some true
-private theorem observed_1 : pipeline.toOption.map (fun q => decide (q.2.1.code.blocks.size = 4)) = some true := by
-  decide +kernel
-
-private theorem observed_2 : pipeline.toOption.map (fun q => decide (q.2.1.edges[3]? = some #[#[Reg.vreg 195 .int,Reg.vreg 194 .int]])) = some true := by
-  decide +kernel
-
-private theorem observed_3 : pipeline.toOption.map (fun q => decide ((q.2.1.code.blocks[1]!).params = #[Reg.vreg 194 .int,Reg.vreg 195 .int])) = some true := by
-  decide +kernel
-
-private theorem observed_4 : pipeline.toOption.map (fun q => decide ((q.2.1.code.blocks[3]!).insts.size = 1)) = some true := by
-  decide +kernel
-
-private theorem observed_5 : pipeline.toOption.map (fun q => decide (q.2.2.1.blocks[3]? = some ((spillArgMovesAt (spillHomesAt q.2.1.code q.2.1.edges) #[Reg.vreg 195 .int,Reg.vreg 194 .int] (q.2.1.code.blocks[1]!).params ++ [RItem.op 0 #[]]).toArray))) = some true := by
-  decide +kernel
-
-private theorem observed_6 : pipeline.toOption.map (fun q => decide ((initial q.2.1).get (spillHomeAt (spillHomesAt q.2.1.code q.2.1.edges) 194 .int) = [.vreg 194])) = some true := by
-  decide +kernel
-
-private theorem observed_7 : pipeline.toOption.map (fun q => decide ((initial q.2.1).get (spillHomeAt (spillHomesAt q.2.1.code q.2.1.edges) 195 .int) = [.vreg 195])) = some true := by
-  decide +kernel
-
+/-- One kernel evaluation of the pipeline for all seven observations (seven separate
+`decide +kernel` checks re-ran the whole pipeline each: 748 s → 66 s, same peak). -/
 private theorem observed : Observed := by
-  have h1 := observed_1
-  have h2 := observed_2
-  have h3 := observed_3
-  have h4 := observed_4
-  have h5 := observed_5
-  have h6 := observed_6
-  have h7 := observed_7
-  cases run : pipeline with
-  | error message =>
-    simp only [run,Except.toOption,Option.map_none] at h1
-    cases h1
-  | ok q =>
-    simp only [run,Except.toOption,Option.map_some,Option.some.injEq,decide_eq_true_eq] at h1 h2 h3 h4 h5 h6 h7
-    unfold Observed
-    simp only [run,Except.toOption,Option.map_some,Option.some.injEq,decide_eq_true_eq]
-    exact ⟨h1,h2,h3,h4,h5,h6,h7⟩
-
-
+  unfold Observed
+  decide +kernel
 
 /-- Complete executed fixture, separated from generic proof composition so its
 kernel evaluation is reused while checker invariants are developed. -/

@@ -174,8 +174,19 @@ main's up to the timing lines.
 The members have more functions with `--build-std` (probably generic instances no longer shared
 from the prebuilt rlibs [inference]); all are verified. In the merge mode the 32 outside-E float
 functions of std run Lean code unverified (under `--lean-link` they keep cg_clif's code).
-`--lean-link --verified` on the survey with `--build-std` is not affordable yet (18 executables ×
-T3d).
+
+With `--build-std --lean-link --verified` (T3e, after T3b/T3d; `examples/compare.sh`, debug,
+`FV_JOBS=4`/`2` on a loaded machine):
+
+| | members + deps (functions / verified / fallback) | std (functions / verified / fallback) | Lean in a test executable | excluded per executable (T3c) | binary check | tests |
+| --- | --- | --- | --- | --- | --- | --- |
+| survey | 4268 / 4268 / 0 | 30358 / 30129 / 229 | 27222–27838 (std 27001–27006) | 17 (each of 18) | 18 / 18 verified (`Link.DeadCleanup.compileExe_correct*`) | SAME, 53 `ok` |
+| examples/deps | 31024 / 30821 / 203 | 30358 / 30129 / 229 | 47043–56672 (std 20920–26940) | 17, 17, 17, 6 | 4 / 4 verified | SAME, 16 `ok` |
+
+Wall time: survey 3 h 39 min (13153 s, `FV_JOBS=4`), deps 1 h 41 min (6058 s, `FV_JOBS=2`, cargo
+cached from a run killed by systemd-oomd); both under memory pressure from other jobs. With the
+default `FV_JOBS` (all cores) both were killed by `memcap` at 24G: with `--build-std`, lower
+`FV_JOBS` to 2–4.
 
 ### 2.4 Outside contracts that become proven
 

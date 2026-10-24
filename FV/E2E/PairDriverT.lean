@@ -214,7 +214,7 @@ theorem vcode_niT (hsub : InSubsetT p f) (hc : CompiledT f k vc vcp rf af fa fb)
   obtain ⟨ctx, st0, R, gn, bl, A, hshape, hcert, hbr⟩ := loweringObligationsT_of_check hc.lowerOk
   let Γ : Rel := ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩
   have H := driverHypT_relW (c := c) hsub hc hT hX hXI hsym hslot hshape hcert hbr
-  have hctxT : CtxT f ctx := ⟨hshape.ctxInvT, hshape.scope, functionET_externs hsub.subsetET⟩
+  have hctxT : CtxT f ctx := CtxT.ofExterns hshape.ctxInvT hshape.scope (functionET_externs hsub.subsetET)
   have hstT : StoresTyped ctx := storesTyped_of_buildCtx hsub.storeTyped hshape.hctx.choose_spec
   have hmem : MemRefines F slotOff syms (csem F ⟨fa.k, af.slotBase⟩ X) :=
     memRefines_csem _ _ X hslot hsym

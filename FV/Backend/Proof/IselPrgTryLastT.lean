@@ -260,7 +260,7 @@ theorem tryCall_lastT {f : Clif.Function} {ctx : Ctx} (hP : PInvT f ctx) {ti : N
   have hctx' : CtxInvT f (tryCtx ctx ti data trs) := { ctxInvT_termCtx hP.ctxInv hi data with }
   have hP' := pinv_tryCtxT hP hi data trs
   have hcT : CtxT f (tryCtx ctx ti data trs) :=
-    ⟨hctx', fun ii info inst hii hc => hP'.instET _ (hP'.clifOf ii info inst hii hc), hP.externsE⟩
+    CtxT.ofExterns hctx' (fun ii info inst hii hc => hP'.instET _ (hP'.clifOf ii info inst hii hc)) hP.externsE
   have hi' : (tryCtx ctx ti data trs).insts[ti]? = some ⟨data, [], [], none⟩ :=
     termCtx_insts_self hi data
   have hti : ∀ x ∈ Compile.termIntOperands t, IntPos (tryCtx ctx ti data trs) x := by

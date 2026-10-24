@@ -159,6 +159,19 @@ theorem refines_of_itemSimQ (hsim : ItemSim P f ok S Rel Term μ Priv) {ls : Lis
     refA_runQ hsim ls.length (μ c) ls t t' c (Nat.le_refl _) (Nat.le_refl _) hr hR
   exact ⟨n, trS, cE, ψ, hn, hs, href.refines, hend⟩
 
+/-- **`refines_of_itemSimQ` with the realized prefix exclusive-closed** (`RefA.xClosed`: every
+`relXW` of the prefix follows an `acqXR` of it). -/
+theorem refines_of_itemSimQX (hsim : ItemSim P f ok S Rel Term μ Priv) {ls : List Lab}
+    {t t' : ArmState × Mon} {c : C} (hr : PRun P f ok t ls t') (hR : Rel t c) :
+    ∃ n trS cE ψ, n ≤ ls.length ∧ SRun S c trS cE ∧
+      ThreadRefine.Refines (· = ·) Priv (MonPair (evTr (ls.take n))) (conv trS) (conv (evTr (ls.take n))) ψ ∧
+      (n = ls.length ∨ ∃ tE, PRun P f ok t (ls.take n) tE ∧ Rel tE cE ∧ Term cE) ∧
+      ∀ b y, ThreadRefine.evAt (evTr (ls.take n)) b = some y → y.k = .relXW →
+        ∃ a x, ThreadRefine.evAt (evTr (ls.take n)) a = some x ∧ x.k = .acqXR ∧ ThreadRefine.Lt a b := by
+  obtain ⟨n, trS, cE, ψ, hn, hs, href, hend⟩ :=
+    refA_runQ hsim ls.length (μ c) ls t t' c (Nat.le_refl _) (Nat.le_refl _) hr hR
+  exact ⟨n, trS, cE, ψ, hn, hs, href.refines, hend, href.xClosed⟩
+
 end run
 
 /-! ## Pausing at calls and returns -/

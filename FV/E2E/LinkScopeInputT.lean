@@ -67,11 +67,11 @@ theorem ctlInsts_of_ctlInstsB {vc : VCode} (h : ctlInstsB vc = true) : CtlInsts 
     · cases h2
 
 /-- `lowerOutTB`: `lowerFunction` succeeds, its output meets `ctlSpillB`, and every output of
-`prepare` on it meets `emitCondsB`, `formsCoveredB default` and `ctlInstsB`. -/
+`prepare` on it meets `emitCondsB`, `formsCoveredB default`, `killFreeB` and `ctlInstsB`. -/
 theorem lowerOutTB_spec {g : Clif.Function} (h : lowerOutTB g = true) :
     ∃ vc, lowerFunction g = .ok vc ∧ Spill.ctlSpillB vc = true ∧
       ∀ vcp, prepare vc = .ok vcp → emitCondsB vcp = true ∧ formsCoveredB default vcp = true ∧
-        ctlInstsB vcp = true := by
+        Spill.killFreeB vcp = true ∧ ctlInstsB vcp = true := by
   unfold lowerOutTB at h
   split at h
   · rename_i vc hl
@@ -79,7 +79,7 @@ theorem lowerOutTB_spec {g : Clif.Function} (h : lowerOutTB g = true) :
     obtain ⟨hc, h⟩ := h
     refine ⟨vc, hl, hc, fun vcp hp => ?_⟩
     simp only [hp, Bool.and_eq_true] at h
-    exact ⟨h.1.1, h.1.2, h.2⟩
+    exact ⟨h.1.1.1, h.1.1.2, h.1.2, h.2⟩
   · cases h
 
 /-- **Integer inclusion**: every function of the integer input scope is in the typed one. -/
@@ -124,7 +124,7 @@ theorem fnScopeTB_of_inT {g : Clif.Function} (h : fnScopeInTB g = true)
   obtain ⟨hrc, hout⟩ := hor.resolve_left (by rw [hE]; decide)
   obtain ⟨vc, hl, hcs, hpost⟩ := lowerOutTB_spec hout
   obtain ⟨vcp, hp⟩ := Prep.prepare_okT (dominated_of h10) (lowerScopeT_of h11) hl
-  obtain ⟨hem, hfc, -⟩ := hpost vcp hp
+  obtain ⟨hem, hfc, -, -⟩ := hpost vcp hp
   have hk := killFreeB_of_scopeT h10 h11 h4a h4b h5 h12 h3 hl hp
   have hsz : spillSizeOkB vcp = true := by
     simp only [emitCondsB, Bool.and_eq_true] at hem
@@ -158,7 +158,7 @@ theorem pipeT_okT {g : Clif.Function} (h : fnScopeInTB g = true) (k : Nat) (base
     have hD := dominated_of hd
     have hS := lowerScopeT_of hs
     obtain ⟨vcp, hp⟩ := Prep.prepare_okT hD hS hl
-    obtain ⟨hem, hfc, hci⟩ := hpost vcp hp
+    obtain ⟨hem, hfc, -, hci⟩ := hpost vcp hp
     have hk := killFreeB_of_scopeT hd hs habi hext hind har htc hl hp
     have hcov := (formsCoveredB_iff _ _).mp hfc
     obtain ⟨hacc, af, ha, fa, fb, he, hla⟩ := backend_total_emitT hD hS (arityOk_of har) htc

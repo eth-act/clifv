@@ -1,0 +1,25 @@
+# `FVFloatSpec`: FV/Float proved equal to FloatLib's IEEE 754 binary model
+# (docs/contracts/float.md, "Trust"). A separate package with its own toolchain (lean-toolchain:
+# v4.35.0, FloatLib's and Mathlib's pin) so that clifv itself (`FV`, `FVTest`, crate-proofs) stays
+# on its own toolchain and never loads FloatLib or Mathlib. Build: scripts/float-spec.sh.
+name = "fvFloatSpec"
+defaultTargets = ["FVFloatSpec"]
+
+# FloatLib pins Lean v4.35.0 and Mathlib v4.35.0.
+[[require]]
+name = "floatlib"
+git = "https://github.com/lean-dojo/FloatLib.git"
+rev = "1f5771b3e36a98f17fcac2c6d76aaa024b36aa37"
+
+# The FV/Float cone (FV.Float, FV.Float.{Basic,Round,Arith,Convert}: core only) compiled from the
+# root package's sources with this package's toolchain into float-spec/.lake. Not
+# `require fv from ".."`: a path dependency builds into ../.lake, i.e. the root package's
+# 4.34.1 build and the shared Lake cache. scripts/float-spec.sh checks that both toolchains
+# elaborate the same definitions (float-spec/defs-hash.lean).
+[[lean_lib]]
+name = "FVFloat"
+srcDir = ".."
+globs = ["FV.Float", "FV.Float.+"]
+
+[[lean_lib]]
+name = "FVFloatSpec"
