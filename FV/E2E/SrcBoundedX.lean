@@ -262,18 +262,18 @@ theorem placedInv_step {P : Program} (hP : ∀ g ∈ P.funcs, LinkFree g) {env :
     have hdle : d ≤ sp.toNat := by omega
     have hsub := toNat_sub_of_le hdle
     have hes : enterSlots h t0.mem = h.slots.foldl (placeStep (sp - BitVec.ofNat 64 d) off)
-        ([], { t0.mem with place := some ⟨(sp - BitVec.ofNat 64 d) :: (sp :: l' ++ sps), fr⟩ }) := by
+        ([], { t0.mem with place := some ⟨(sp - BitVec.ofNat 64 d) :: (sp :: l' ++ sps), fr, none⟩ }) := by
       simp only [enterSlots, hpl0, hfd, List.cons_append, List.headD]
       rfl
     rw [hes] at hal
     obtain ⟨-, hm2⟩ := Prod.mk.inj hal
     obtain ⟨-, -, h3, -⟩ := placeSlots_spec (sp - BitVec.ofNat 64 d) off h.slots
-      ([], { t0.mem with place := some ⟨(sp - BitVec.ofNat 64 d) :: (sp :: l' ++ sps), fr⟩ })
+      ([], { t0.mem with place := some ⟨(sp - BitVec.ofNat 64 d) :: (sp :: l' ++ sps), fr, none⟩ })
     have h5 : (h.slots.foldl (placeStep (sp - BitVec.ofNat 64 d) off)
-        ([], { t0.mem with place := some ⟨(sp - BitVec.ofNat 64 d) :: (sp :: l' ++ sps), fr⟩ })).2.place =
-        some ⟨(sp - BitVec.ofNat 64 d) :: (sp :: l' ++ sps), fr⟩ :=
+        ([], { t0.mem with place := some ⟨(sp - BitVec.ofNat 64 d) :: (sp :: l' ++ sps), fr, none⟩ })).2.place =
+        some ⟨(sp - BitVec.ofNat 64 d) :: (sp :: l' ++ sps), fr, none⟩ :=
       (placeSlots_facts (sp - BitVec.ofNat 64 d) off h.slots
-        ([], { t0.mem with place := some ⟨(sp - BitVec.ofNat 64 d) :: (sp :: l' ++ sps), fr⟩ })).1
+        ([], { t0.mem with place := some ⟨(sp - BitVec.ofNat 64 d) :: (sp :: l' ++ sps), fr, none⟩ })).1
     rw [hm2] at h3 h5
     refine ⟨hI1, fun a n hv => ?_, hh ▸ hqh, ?_, (sp - BitVec.ofNat 64 d) :: sp :: l', ?_, ?_⟩
     · simp only [Mem.valid, List.any_eq_true] at hv
@@ -332,7 +332,7 @@ theorem placedInvX_step {P : Program} (hP : ∀ g ∈ P.funcs, LinkFree g) {env 
   · rename_i e mem hra
     obtain ⟨n, g, vals, hg, hu⟩ := raiseAt_extern hra
     have hmb : MemBounded mem := hkU n g hg vals _ e mem hu hm
-    have hmp : mem.place = some ⟨l ++ sps, fr⟩ := by rw [hkpU n g hg vals _ e mem hu, hpl0]
+    have hmp : mem.place = some ⟨l ++ sps, fr, none⟩ := by rw [hkpU n g hg vals _ e mem hu, hpl0]
     rcases raiseIn_next hs with ⟨fr', rfl, hf'⟩ | hs'
     · refine ⟨hI1, hmb, by rw [hf']; exact hq, hqc, l, hmp, ?_⟩
       simpa [funcs, hf'] using hsp
@@ -377,7 +377,7 @@ theorem srcBoundedX_placed {P : Program} (hP : ∀ g ∈ P.funcs, LinkFree g) {e
     (β : Nat → Function → Nat) (Q : Function → Prop)
     (fr : String → Option (Nat × (SlotId → Nat))) {xs : XState} (hI : XInv P xs)
     (hM : MemBounded xs.s.mem) (hcs : xs.s.callers = []) {c : BitVec 64} {sps : List (BitVec 64)}
-    (hpl : xs.s.mem.place = some ⟨c :: sps, fr⟩) (hc : β 0 xs.s.frame.func ≤ c.toNat)
+    (hpl : xs.s.mem.place = some ⟨c :: sps, fr, none⟩) (hc : β 0 xs.s.frame.func ≤ c.toNat)
     (hQ : Q xs.s.frame.func)
     (hent : ∀ t xs1, ReachesX env P xs t → XInv P t → Q t.s.frame.func →
       stepX env P t = .next xs1 → xs1.s.callers.length = t.s.callers.length + 1 →

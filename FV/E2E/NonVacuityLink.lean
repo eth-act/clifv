@@ -1236,7 +1236,7 @@ read-only allocation, the link-time symbols, the slot-placement oracle at `f`'s 
 (`sp0 - 64`) with the program's frames. -/
 def mem0 : Clif.Mem :=
   { allocs := [{ base := slotAddr, size := 8 }, { base := vtAddr, size := 16, readonly := true }],
-    symbols := symsW, place := some ⟨[sp0 - 64], framesW⟩ }
+    symbols := symsW, place := some ⟨[sp0 - 64], framesW, none⟩ }
 
 /-- The vtable written at `vt` by the image loader (`Clif.Image.writeItems`: the relocation
 resolved through the link-time symbol of `m`). -/

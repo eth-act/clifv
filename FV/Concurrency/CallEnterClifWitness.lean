@@ -27,5 +27,6 @@ theorem enter_C (env : Clif.Env) :
       Clif.Regs.empty.setMany (B0.params.map (·.1)) vals = some cs.frame.regs ∧
       vals.map (·.ty) = B0.params.map (·.2) ∧ vals.map (·.ty) = RealizeCompiled.WitnessL.fL.sig.params.map (·.ty) :=
   cstepI_call_entry (rest := []) clifC.1 extC_some clifC.2.1 (stepC env csC.mem.bytes) _
+    (fun pl h => by cases h)
 
 end Concurrency.CallSeg.WitnessC

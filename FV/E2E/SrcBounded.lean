@@ -184,7 +184,7 @@ theorem enterSlots_noSlots {g : Function} (hs : g.slots = []) (mem : Mem) :
   split
   · exact ⟨mem.place, rfl⟩
   · split
-    · exact ⟨_, rfl⟩
+    · rw [initSlots_nil]; exact ⟨_, rfl⟩
     · exact ⟨_, rfl⟩
 
 theorem free_valid {m : Mem} {bases : List Nat} {a n : Nat} (h : (m.free bases).valid a n = true) :
@@ -250,7 +250,7 @@ def funcs (s : State) : List Function := s.frame.func :: s.callers.map (·.1.fun
 def PlacedInv (P : Program) (β : Nat → Function → Nat) (Q : Function → Prop)
     (fr : String → Option (Nat × (SlotId → Nat))) (sps : List (BitVec 64)) (t : State) : Prop :=
   LInv P t ∧ MemBounded t.mem ∧ Q t.frame.func ∧ (∀ c ∈ t.callers, Q c.1.func) ∧
-    ∃ l, t.mem.place = some ⟨l ++ sps, fr⟩ ∧ SpOk β l (funcs t)
+    ∃ l, t.mem.place = some ⟨l ++ sps, fr, none⟩ ∧ SpOk β l (funcs t)
 
 theorem toNat_sub_of_le {c : BitVec 64} {d : Nat} (h : d ≤ c.toNat) :
     (c - BitVec.ofNat 64 d).toNat = c.toNat - d := by
@@ -270,7 +270,7 @@ theorem bounded_placed {P : Program} (hP : ∀ g ∈ P.funcs, LinkFree g) {env :
     (β : Nat → Function → Nat) (Q : Function → Prop)
     (fr : String → Option (Nat × (SlotId → Nat))) {s : State} (hI : LInv P s)
     (hM : MemBounded s.mem) (hcs : s.callers = []) {c : BitVec 64} {sps : List (BitVec 64)}
-    (hpl : s.mem.place = some ⟨c :: sps, fr⟩) (hc : β 0 s.frame.func ≤ c.toNat)
+    (hpl : s.mem.place = some ⟨c :: sps, fr, none⟩) (hc : β 0 s.frame.func ≤ c.toNat)
     (hQ : Q s.frame.func)
     (hent : ∀ t t1, SReach env P s t → LInv P t → Q t.frame.func → step env P t = .next t1 →
       t1.callers.length = t.callers.length + 1 → EnterVia P t.frame.func t1.frame.func t.mem →
@@ -318,18 +318,18 @@ theorem bounded_placed {P : Program} (hP : ∀ g ∈ P.funcs, LinkFree g) {env :
         have hsub := toNat_sub_of_le hdle
         -- the slots placed below `sp`
         have hes : enterSlots h t0.mem = h.slots.foldl (placeStep (sp - BitVec.ofNat 64 d) off)
-            ([], { t0.mem with place := some ⟨(sp - BitVec.ofNat 64 d) :: (sp :: l' ++ sps), fr⟩ }) := by
+            ([], { t0.mem with place := some ⟨(sp - BitVec.ofNat 64 d) :: (sp :: l' ++ sps), fr, none⟩ }) := by
           simp only [enterSlots, hpl0, hfd, List.cons_append, List.headD]
           rfl
         rw [hes] at hal
         obtain ⟨-, hm2⟩ := Prod.mk.inj hal
         obtain ⟨-, -, h3, -⟩ := placeSlots_spec (sp - BitVec.ofNat 64 d) off h.slots
-          ([], { t0.mem with place := some ⟨(sp - BitVec.ofNat 64 d) :: (sp :: l' ++ sps), fr⟩ })
+          ([], { t0.mem with place := some ⟨(sp - BitVec.ofNat 64 d) :: (sp :: l' ++ sps), fr, none⟩ })
         have h5 : (h.slots.foldl (placeStep (sp - BitVec.ofNat 64 d) off)
-            ([], { t0.mem with place := some ⟨(sp - BitVec.ofNat 64 d) :: (sp :: l' ++ sps), fr⟩ })).2.place =
-            some ⟨(sp - BitVec.ofNat 64 d) :: (sp :: l' ++ sps), fr⟩ :=
+            ([], { t0.mem with place := some ⟨(sp - BitVec.ofNat 64 d) :: (sp :: l' ++ sps), fr, none⟩ })).2.place =
+            some ⟨(sp - BitVec.ofNat 64 d) :: (sp :: l' ++ sps), fr, none⟩ :=
           (placeSlots_facts (sp - BitVec.ofNat 64 d) off h.slots
-            ([], { t0.mem with place := some ⟨(sp - BitVec.ofNat 64 d) :: (sp :: l' ++ sps), fr⟩ })).1
+            ([], { t0.mem with place := some ⟨(sp - BitVec.ofNat 64 d) :: (sp :: l' ++ sps), fr, none⟩ })).1
         rw [hm2] at h3 h5
         refine ⟨hI1, fun a n hv => ?_, hh ▸ hqh, ?_, (sp - BitVec.ofNat 64 d) :: sp :: l', ?_, ?_⟩
         · simp only [Mem.valid, List.any_eq_true] at hv

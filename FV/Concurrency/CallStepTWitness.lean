@@ -33,7 +33,7 @@ theorem call_W (l : Lab) (L : List Lab) (hl : l.evs = []) (U D : Nat → Prop) :
     | _ => rw [h] at hs; cases hs
   obtain ⟨s1, hs1⟩ := hs'
   obtain ⟨vals, B0, cs, -, -, hR, hcs, hf, -⟩ := realizedT_call (Bnd := fun _ => True) hl []
-    (s := csW memW) (by exact hb) he hc hs1 U D
+    (s := csW memW) (by exact hb) he hc hs1 U D (fun pl h => by cases h; rfl)
   refine ⟨vals, B0, cs, ?_, hcs, hf⟩
   have e : (csW memW).callers = [] := rfl
   rw [pushC_nil, e, List.nil_append] at hR
