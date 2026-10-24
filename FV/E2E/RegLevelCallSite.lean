@@ -239,21 +239,28 @@ theorem lines_callKeys {c : FnCtx} {m : MInst} {ps ps' : PState} {ls : List Line
         obtain ⟨h1, -⟩ := h <;> subst h1 <;> simp [callKeys, Line.callKey, aKey, hd]
     | _ => simp [aCall] at hm
 
-theorem epilogueLines_noCall (size : Nat) : ∀ l ∈ epilogueLines size, l.isCall = false := by
+theorem popLines_noCall (int : Bool) (rs : List Reg) : ∀ l ∈ popLines int rs, l.isCall = false := by
   intro l hl
-  unfold epilogueLines at hl
-  rw [List.mem_append] at hl
-  rcases hl with hl | hl
-  · split at hl
-    · simp at hl
-    · split at hl
-      · simp only [List.mem_singleton] at hl; subst hl; rfl
-      · rw [List.mem_append] at hl
-        rcases hl with hl | hl
-        · exact loadConst64_noCall _ _ l hl
-        · simp only [List.mem_singleton] at hl; subst hl; rfl
-  · simp only [List.mem_cons, List.mem_nil_iff, or_false] at hl
-    rcases hl with rfl | rfl <;> rfl
+  unfold popLines at hl
+  generalize pairsOf rs = po at hl
+  obtain ⟨ps, o⟩ := po
+  simp only [List.mem_append, List.mem_map] at hl
+  rcases hl with ⟨p, -, rfl⟩ | hl
+  · cases int <;> rfl
+  · cases o with
+    | none => simp at hl
+    | some r => simp only [List.mem_singleton] at hl; subst hl; cases int <;> rfl
+
+theorem epilogueLines_noCall (saves : List Reg) (size : Nat) :
+    ∀ l ∈ epilogueLines saves size, l.isCall = false := by
+  intro l hl
+  simp only [epilogueLines, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hl
+  rcases hl with ((hl | hl) | hl) | (rfl | rfl)
+  · exact spAdjLines_noCall false _ l hl
+  · exact popLines_noCall _ _ l hl
+  · exact popLines_noCall _ _ l hl
+  · rfl
+  · rfl
 
 theorem ainstLines_callKeys {c : FnCtx} {af : AFunc} {a : AInst} {ps ps' : PState} {ls : List Line}
     (h : ainstLines c af a ps = .ok (ls, ps')) : callKeys ls = (aKey a).toList := by
@@ -263,13 +270,13 @@ theorem ainstLines_callKeys {c : FnCtx} {af : AFunc} {a : AInst} {ps ps' : PStat
     simp only [ainstLines, pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at h
     obtain ⟨rfl, -⟩ := h
     split
-    · exact callKeys_nil (prologueLines_noCall _)
+    · exact callKeys_nil (prologueLines_noCall _ _)
     · rfl
   | epilogueRet =>
     simp only [ainstLines, pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at h
     obtain ⟨rfl, -⟩ := h
     split
-    · exact callKeys_nil (epilogueLines_noCall _)
+    · exact callKeys_nil (epilogueLines_noCall _ _)
     · rfl
 
 theorem codeLinesE_callKeys {c : FnCtx} {af : AFunc} :

@@ -558,26 +558,26 @@ agrees off raising calls and which raises (`.halt`) at a raising `call`, and the
 theorem realizes_allUP {R : RLU} (hR : R.Wf) {sem₀ semU : Sem} {P : Arm.ArmState → Prop}
     (hP : ∀ u, R.GoodX u → P u)
     (hU : CalleeUnwOkG R.F R.K R.G R.s0 (CallAt R.fa R.base) R.X R.XR R.U R.vc.CallSite R.gv)
-    (hreal : Realizes R.vc R.rf sem₀ ckeep R.step (fun s c => Q R.toRL s c ∧ AInv R.toRL c) R.GoodX)
+    (hreal : Realizes R.vc R.rf sem₀ ckeep R.step (QA R.toRL) R.GoodX)
     (hagree : ∀ i uses w, NoRaise R.XR i uses w → semU i uses w = sem₀ i uses w)
     (hcall : ∀ info uses w r obj w', semU (.call info) uses w = some r →
       R.XR.raise (callDest info) uses w = some (obj, w') → r.2.2 = .halt)
     (htry : RealizesTryRaiseP R semU P) :
-    Realizes R.vc R.rf semU ckeep R.stepU (fun s c => Q R.toRL s c ∧ AInv R.toRL c) P := by
-  intro s c c' ⟨hq, hA⟩ hm
+    Realizes R.vc R.rf semU ckeep R.stepU (QA R.toRL) P := by
+  intro s c c' hqa hm
   -- a step without a raising callee: the old realisation, on the same run
   have old : MStep R.vc sem₀ ckeep R.rf c c' →
       (∀ b k allocs its m w vb i ops, c = .run ⟨b, .op k allocs :: its, m, w⟩ →
         R.vc.blocks[b]? = some vb → vb.insts[k]? = some i → i.operands = .ok ops →
         NoRaise R.XR i (((ops.zip allocs).toList.filter (·.1.isUse)).map (m ·.2)) w) →
       ∃ n c'', MStep R.vc semU ckeep R.rf c c'' ∧
-        (Q R.toRL (iterN R.stepU n s) c'' ∧ AInv R.toRL c'') ∧ ∀ i < n, P (iterN R.stepU i s) := by
+        QA R.toRL (iterN R.stepU n s) c'' ∧ ∀ i < n, P (iterN R.stepU i s) := by
     intro hm0 hnr
-    obtain ⟨n, c'', hm'', ⟨hq'', hA''⟩, ht⟩ := hreal s c c' ⟨hq, hA⟩ hm0
+    obtain ⟨n, c'', hm'', hqa'', ht⟩ := hreal s c c' hqa hm0
     have hit := RLU.iterN_stepU hR hU n s ht
     refine ⟨n, c'', mstep_congr hm'' fun b k allocs its m w vb i ops hc hvb hi hops =>
-      (hagree _ _ _ (hnr b k allocs its m w vb i ops hc hvb hi hops)).symm, ⟨by rw [hit]; exact hq'',
-      hA''⟩, fun i hi => ?_⟩
+      (hagree _ _ _ (hnr b k allocs its m w vb i ops hc hvb hi hops)).symm, by rw [hit]; exact hqa'',
+      fun i hi => ?_⟩
     rw [RLU.iterN_stepU hR hU i s fun i' hi' => ht i' (by omega)]
     exact hP _ (ht i hi)
   cases hm with
@@ -603,28 +603,29 @@ theorem realizes_allUP {R : RLU} (hR : R.Wf) {sem₀ semU : Sem} {P : Arm.ArmSta
       simp only [NoRaise, Classical.not_forall] at hr
       obtain ⟨info, hik, hraise⟩ := hr
       obtain ⟨⟨obj, w2⟩, hraise⟩ := Option.ne_none_iff_exists'.mp hraise
+      have hqA := qa_op hqa hvb hi (by rcases hik with rfl | ⟨ti, rfl⟩ <;> intro us h <;> cases h)
       rcases hik with rfl | ⟨ti, rfl⟩
       · -- a raising `call`: the activation ends (nothing to realise)
         have hc := hcall info _ w (outs, w', ctl) obj w2 hsem hraise
         simp only at hc
         subst hc
         cases hn with
-        | halt => exact ⟨0, _, hstep, ⟨trivial, trivial⟩, fun _ h => absurd h (Nat.not_lt_zero _)⟩
-      · obtain ⟨n, c'', hm'', hq'', ht⟩ := htry s b k allocs its m w vb info ti ops c' obj w2 hq hA
-          hvb hi hops hraise hstep
-        exact ⟨n, c'', hm'', ⟨hq'', aInv_stepS hR hq hA hm''⟩, ht⟩
+        | halt => exact ⟨0, _, hstep, .inl ⟨trivial, trivial⟩, fun _ h => absurd h (Nat.not_lt_zero _)⟩
+      · obtain ⟨n, c'', hm'', hq'', ht⟩ := htry s b k allocs its m w vb info ti ops c' obj w2 hqA.1
+          hqA.2 hvb hi hops hraise hstep
+        exact ⟨n, c'', hm'', .inl ⟨hq'', aInv_stepS hR hqA.1 hqA.2 hm''⟩, ht⟩
 
 /-- **`Realizes` with unwinding**, from any `Realizes` of a semantics `sem₀` with which `semU`
 agrees off raising calls and which raises (`.halt`) at a raising `call`; the trace predicate
 `GoodXU` (the old trace's `GoodX` states and the raising-call states). -/
 theorem realizes_allU {R : RLU} (hR : R.Wf) {sem₀ semU : Sem}
     (hU : CalleeUnwOkG R.F R.K R.G R.s0 (CallAt R.fa R.base) R.X R.XR R.U R.vc.CallSite R.gv)
-    (hreal : Realizes R.vc R.rf sem₀ ckeep R.step (fun s c => Q R.toRL s c ∧ AInv R.toRL c) R.GoodX)
+    (hreal : Realizes R.vc R.rf sem₀ ckeep R.step (QA R.toRL) R.GoodX)
     (hagree : ∀ i uses w, NoRaise R.XR i uses w → semU i uses w = sem₀ i uses w)
     (hcall : ∀ info uses w r obj w', semU (.call info) uses w = some r →
       R.XR.raise (callDest info) uses w = some (obj, w') → r.2.2 = .halt)
     (htry : RealizesTryRaise R semU) :
-    Realizes R.vc R.rf semU ckeep R.stepU (fun s c => Q R.toRL s c ∧ AInv R.toRL c) R.GoodXU :=
+    Realizes R.vc R.rf semU ckeep R.stepU (QA R.toRL) R.GoodXU :=
   realizes_allUP hR (fun _ h => .inl h) hU hreal hagree hcall htry
 
 end Backend.Proof
