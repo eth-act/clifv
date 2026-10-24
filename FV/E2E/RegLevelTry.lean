@@ -227,14 +227,14 @@ theorem realizes_tryCall {R : RL} (hR : R.Wf) (hC : CalleeOkG R.F R.K R.G R.s0 (
   have hcpcT := hcpc regs i' rfl hasg
   obtain ⟨ic, rfl, hasg'⟩ := (assign_call_tryCall info regs).2 ti i' hasg
   have hsemC : csemV R.gv R.F R.ctx R.X (.call info) (useVals ops regs s) w =
-      some (xo, w2, .next) := by
+      some (xo.take info.defs.length, w2, .next) := by
     have hg := csemV_guard_try hsemU
     simp only [csemV, hg, ↓reduceIte]
     simp [csem, hx]
   obtain ⟨s', hex, hW, hK, -, hoth, hkeep⟩ :=
     RL.callAtG hR (hC.os R.ctx info ⟨b, vb, k, hvb, .inr ⟨ti, hi⟩⟩) hst.sp hst.gkeep
       (P := (· = .call ic)) (fun _ e => e ▸ callAt_tryCall_call hcpcT) cc wh ops regs (.call ic)
-      w xo w2 (by rw [← operands_tryCall_call info ti]; exact hops)
+      w (xo.take info.defs.length) w2 (by rw [← operands_tryCall_call info ti]; exact hops)
       (by rw [← clobbers_tryCall hcl]; exact hstat) hasg' rfl hst.world hst.align hst.err hsemC
   have hexT : callExec R.H (.tryCall ic ti) s = some s' := by
     simp only [callExec] at hex ⊢; exact hex
@@ -416,12 +416,13 @@ theorem calleeTry_at {F : BitVec 64 → Prop} {K : Nat} {G : BitVec 64 → Prop}
   simp only [decide_eq_true_eq] at hr
   simp only [Prod.mk.injEq] at he
   obtain ⟨rfl, rfl, -⟩ := he
-  have hsemC : csemV gv F ctx X (.call info) (useVals ops regs s) w = some (xo, w2, .next) := by
+  have hsemC : csemV gv F ctx X (.call info) (useVals ops regs s) w =
+      some (xo.take info.defs.length, w2, .next) := by
     have hg := csemV_guard_try hsem
     simp only [csemV, hg, ↓reduceIte]
     simp [csem, hx]
   obtain ⟨s1, hex1, -, -, hd, -, -⟩ := hos s hK hD hG c wh ops regs (.call ic) w
-    xo w2 (by rw [← operands_tryCall_call info ti]; exact hops)
+    (xo.take info.defs.length) w2 (by rw [← operands_tryCall_call info ti]; exact hops)
     (by rw [← clobbers_tryCall hcl]; exact hst) hasg' (hPc _ _ hP) hsw hal herr hsemC
   have hs1 : s1 = s' := by
     simp only [callExec, hal, ↓reduceIte, Option.some.injEq] at hex hex1
@@ -434,8 +435,16 @@ theorem calleeTry_at {F : BitVec 64 → Prop} {K : Nat} {G : BitVec 64 → Prop}
   split at hj
   · rename_i hjn
     rw [defRegs, List.getElem?_zip_eq_some] at hj
-    rw [List.getElem?_append_left (by omega)] at hj
-    exact List.mem_of_getElem? (by rw [defRegs, List.getElem?_zip_eq_some]; exact hj)
+    obtain ⟨h1, h2⟩ := hj
+    refine List.mem_of_getElem? (i := j) ?_
+    rw [defRegs, List.getElem?_zip_eq_some]
+    refine ⟨h1, ?_⟩
+    rw [List.getElem?_take] at h2 ⊢
+    split at h2
+    · rename_i hjd
+      rw [List.getElem?_append_left (by omega)] at h2
+      rw [if_pos hjd]; exact h2
+    · cases h2
   · cases hj
 
 /-- **`CalleeTryOkG` from the plain call's contract**: at `try_call` sites where the callee
