@@ -173,6 +173,7 @@ theorem pcOk_relaxLines (f : Lbl → Bool) : ∀ (L : List Line) (b : Bool),
     | .ins c (some tc), h => exact keep rfl
     | .label l, h => exact keep rfl
     | .word x y, h => exact keep rfl
+    | .data w, h => exact keep rfl
     | .ins c none, h =>
       rcases relaxLine_cases f c with hr | ⟨t, ht, hr⟩
       · exact keep hr

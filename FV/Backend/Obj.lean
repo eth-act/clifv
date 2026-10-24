@@ -97,7 +97,8 @@ def mappingSyms (placed : List (Nat × FnAsm)) : List ElfSym := Id.run do
     let mut off := 0
     for ln in f.lines do
       let d? : Option Bool := match ln with
-        | .ins .. => some false | .word .. => some true | .label _ => none
+        | .ins .. => some false | .word .. => some true | .data .. => some true
+        | .label _ => none
       if let some d := d? then
         if inData != some d then
           out := out.push { name := if d then "$d" else "$x", bind := 0, type := 0, shndx := 1,

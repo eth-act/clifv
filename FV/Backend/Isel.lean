@@ -71,6 +71,10 @@ structure LState where
   emitted : Array MInst := #[]
   /-- Size of the outgoing stack-argument area (`accumulate_outgoing_args_size`). -/
   outgoing : Nat := 0
+  /-- The constant-pool entries defined so far, in definition order (the pool of the
+  `constant_f64`/`constant_f128` literal loads; `emit_u64_le_const` deduplicates by value,
+  machinst/isle.rs:441, #565). -/
+  consts : List Nat := []
   deriving Inhabited
 
 def LState.fresh (st : LState) (cls : RegClass) : Reg × LState :=
@@ -1126,6 +1130,14 @@ def externCtor (ctx : Ctx) (t : Term) (args : List V) (st : LState) : ExtResult 
     let n := 2 ^ 64 - 1 - u64 n
     let n := if ty.bits < 64 then n % 2 ^ ty.bits else n
     optOk ((MoveWideConst.ofNat? n).map (.op ∘ .moveWideConst))
+  -- `emit_u64_le_const` (machinst/isle.rs:441): the id of the constant pool's little-endian
+  -- `u64` entry of `value`, deduplicated by value (`VCodeConstants::define_u64_le_constant`),
+  -- #565. The pool itself is emitted after the function body (`emitFunc`).
+  | TId.emit_u64_le_const, [.int n] =>
+    let v := u64 n
+    match st.consts.idxOf? v with
+    | some i => ok (.op (.vcodeConst i))
+    | none => .ok (.op (.vcodeConst st.consts.length), { st with consts := st.consts ++ [v] })
   | TId.imm_logic_from_u64, [.ty ty, .int n] =>
     if ty == .int 32 || ty == .int 64 then
       optOk ((ImmLogic.ofNat? (u64 n) (.ofBits ty.bits)).map (.op ∘ .immLogic))
@@ -1274,6 +1286,9 @@ structure VCode where
   outgoing : Nat
   /-- Rules fired, in firing order (Cranelift `trace-log` order). -/
   rulesFired : Array RuleId
+  /-- The function's constant pool, in definition order (`VCodeConstants`; the literal-pool
+  loads' 8-byte little-endian entries, emitted after the function body, #565). -/
+  constants : Array Nat := #[]
   deriving Inhabited
 
 /-- Does the VCode contain a `tryCall` (the call of a `try_call`)? -/
@@ -1547,6 +1562,7 @@ def lowerFunction (f : Clif.Function) : Except String VCode := do
               branchArgs := vb.branchArgs.map (resolve fuel) }
   let (_, slotBytes) := slotLayout f.slots
   pure { name := f.name, blocks := (d.blocks ++ d.edges).map fixBlock, classes := d.st.classes,
-         slotBytes, outgoing := d.st.outgoing, rulesFired := d.rules }
+         slotBytes, outgoing := d.st.outgoing, rulesFired := d.rules,
+         constants := d.st.consts.toArray }
 
 end Backend

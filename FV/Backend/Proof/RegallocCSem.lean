@@ -350,6 +350,9 @@ def _root_.Backend.AMode.addr (ctx : FnCtx) (m : AMode) (bytes : Nat) (s : Arm.A
   | .spOffset off => spOf s + BitVec.ofInt 64 off
   | .fpOffset off => regX s (.x 29) + BitVec.ofInt 64 off
   | .slotOffset off => spOf s + BitVec.ofInt 64 (off + ctx.slotBase)
+  -- a constant-pool entry is not addressed through a register: the loads that use it are the
+  -- `LDR` (literal) expansions (`AInst.fpuLoadLit`), which never run `AMode.addr` (#565)
+  | .const _ => 0
   | .unscaled rn off => regX s rn + BitVec.ofInt 64 off
   | .unsignedOffset rn off => regX s rn + BitVec.ofNat 64 off
   | .regReg rn rm => regX s rn + regX s rm

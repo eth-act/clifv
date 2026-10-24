@@ -35,6 +35,9 @@ inductive Lbl where
   | block (l : Label)
   | trap (n : Nat)
   | jt (n : Nat)
+  /-- The label of a constant-pool entry (`VCodeConstant` `n`; the literal pool at the end of
+  the function, #565). -/
+  | const (n : Nat)
   /-- An emit-time label of an atomic LL/SC loop expansion (not a block label). -/
   | loop (n : Nat)
   /-- The instruction after the next one (`pc + 8`): the target of the inverted short branch of
@@ -48,6 +51,7 @@ def Lbl.name (k : Nat) : Lbl → String
   | .block l => s!".L{k}_b{l}"
   | .trap n => s!".L{k}_t{n}"
   | .jt n => s!".L{k}_jt{n}"
+  | .const n => s!".L{k}_c{n}"
   | .loop n => s!".L{k}_a{n}"
   | .skip => ".+8"
 
@@ -203,11 +207,13 @@ jump-table word `target - base` (4 bytes of data), or a label (0 bytes). -/
 inductive Line where
   | ins (i : Insn) (trap : Option Clif.TrapCode := none)
   | word (target base : Lbl)
+  /-- A raw 32-bit data word: the constant pool's padding and entries (#565). -/
+  | data (w : Nat)
   | label (l : Lbl)
   deriving Repr, Inhabited
 
 def Line.size : Line → Nat
-  | .ins .. | .word .. => 4
+  | .ins .. | .word .. | .data .. => 4
   | .label _ => 0
 
 /-! ## Expansion of allocated instructions (`emit.rs`) -/
@@ -467,6 +473,9 @@ def MInst.lines (c : FnCtx) (m : MInst) (ps : PState) : Except String (List Line
              .ins (.mrsTpidrEl0 tmp), .ins (.aluRRR .add true (.x 0) (.x 0) tmp)], ps)
   -- `emit.rs` `FpuLoad32/64`, `FpuStore32/64` (`mem_finalize` as for the integer accesses),
   -- `FpuCSel32/64`, `FpuMoveFPImm` (`enc_bits` of the immediate)
+  -- `AMode::Const` is the LDR (literal, SIMD&FP) of a constant-pool entry (no `mem_finalize`:
+  -- stock `emit.rs` `FpuLoad32/64` with `AMode::Const` emits `ldr (literal)` directly), #565
+  | .fpuLoad s rd (.const cst) _fl => one (.fpuLoadLit s rd (.const cst))
   | .fpuLoad s rd mem fl =>
     let (pre, mem) ← memFinalize c mem s.bytes
     pure (pre ++ [.ins (.fpuLoad s rd mem) fl.trapCode], ps)
@@ -684,7 +693,9 @@ def relaxFar (pre : List Line) : Nat → Std.HashSet Lbl → Lbl → Bool
 def relaxOf (pre : List Line) : Lbl → Bool := relaxFar pre (pre.length + 1) {}
 
 /-- Expand an allocated function (`k` = its index in the file) into its final line list
-(`emitPre`, then branch relaxation), with byte offsets of the trap sites. -/
+(`emitPre`, then branch relaxation), with byte offsets of the trap sites. (The constant pool
+of the literal-pool loads, #565, is not emitted yet: a function whose lowering defines pool
+entries fails emission here and falls back, as it did when the lowering was unmodeled.) -/
 def emitFunc (k : Nat) (af : AFunc) : Except String FnAsm := do
   let pre := (← emitPre k af).toList
   let lines := (relaxLines (relaxOf pre) pre).toArray
@@ -972,6 +983,7 @@ def FnAsm.text (f : FnAsm) : String := Id.run do
         out := out.push s!"  .ifne . - {n} - {off}\n  .error \"trap offset mismatch\"\n  .endif"
       out := out.push s!"  {i.asm f.k}"
     | .word t b => out := out.push s!"  .word {t.name f.k} - {b.name f.k}"
+    | .data w => out := out.push s!"  .word {hex w}"
     | .label l => out := out.push s!"{l.name f.k}:"
     off := off + ln.size
   out := out ++ #[s!"  .ifne . - {n} - {off}\n  .error \"function size mismatch\"\n  .endif",

@@ -296,6 +296,7 @@ theorem foldl_trapStep : ∀ (L : List Line) (s : Nat × Array TrapSite),
     | ins i t =>
       cases t <;> simp [trapStep, Nat.add_assoc]
     | word => simp [trapStep, Nat.add_assoc]
+    | data => simp [trapStep, Nat.add_assoc]
     | label => simp [trapStep, Nat.add_assoc]
 
 theorem emitFunc_unfold {k : Nat} {af : AFunc} {fa : FnAsm} (he : emitFunc k af = .ok fa) :
@@ -311,6 +312,7 @@ theorem emitFunc_unfold {k : Nat} {af : AFunc} {fa : FnAsm} (he : emitFunc k af 
       cases ln with
       | ins i t => cases t <;> rfl
       | word => rfl
+      | data => rfl
       | label => rfl)] at he
     obtain ⟨h1, h2⟩ := foldl_trapStep (relaxLines (relaxOf pre.toList) pre.toList) (0, #[])
     simp only [pure, Except.pure, Except.ok.injEq] at he
@@ -347,12 +349,14 @@ theorem codeTraps_trapsFrom : ∀ (L : List Line) (n : Nat),
       cases ln with
       | ins i t => cases t <;> rfl
       | word => rfl
+      | data => rfl
       | label => simp [Line.isLabel] at h
     · simp only [ite_true, trapsFrom]
       rw [codeTraps_trapsFrom L n, Line.size_of_isLabel h, Nat.add_zero]
       cases ln with
       | ins => simp [Line.isLabel] at h
       | word => simp [Line.isLabel] at h
+      | data => simp [Line.isLabel] at h
       | label => rfl
 
 /-- `emitFunc`'s trap table is the trap sites of its code lines (what `FnAsm.layout` checks). -/
@@ -371,6 +375,7 @@ def Line.labelsUsed : Line → List Lbl
     | some (t, _, _) => if t = .skip then [] else [t]
     | none => []
   | .word t b => [t, b]
+  | .data _ => []
   | .label _ => []
 
 /-- The PC-relative lines relaxation does not handle (atomic-loop / jump-table-local labels,
@@ -460,6 +465,7 @@ theorem emitFunc_layout_total {k : Nat} {af : AFunc} {fa : FnAsm} (he : emitFunc
     have hpc4 := lineOffset_mod4 fa.lines.toList j
     cases ln with
     | label => simp [Line.isLabel] at hl
+    | data w => exact ⟨BitVec.ofNat 32 w, rfl⟩
     | word t b =>
       obtain ⟨ot, hot, hot1, _⟩ := hlbl t (hdef _ hmem t (by simp [Line.labelsUsed]))
       obtain ⟨ob, hob, hob1, _⟩ := hlbl b (hdef _ hmem b (by simp [Line.labelsUsed]))
@@ -538,6 +544,7 @@ theorem relaxLine_size_le (f : Lbl → Bool) (ln : Line) :
       cases ln with
       | ins => rfl
       | word => rfl
+      | data => rfl
       | label => simp [Line.relaxable?] at h
     split <;>
       simp only [List.map_cons, List.map_nil, List.sum_cons, List.sum_nil, this] <;> simp [Line.size]

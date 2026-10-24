@@ -62,6 +62,9 @@ structure AFunc where
   `fp`): `prologue` emits nothing and `epilogueRet` only `ret`, as Cranelift does when
   `preserve_frame_pointers` is off. -/
   frame : Bool := true
+  /-- The function's constant pool (the values of the literal-pool loads, in first-use order;
+  emitted after the body, #565). -/
+  constants : Array Nat := #[]
   deriving Inhabited
 
 /-- Frame layout: slot offset (from `sp`) of every vreg, and the frame size. -/
