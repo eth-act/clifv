@@ -1,3 +1,5 @@
+import FV.Backend.Proof.LowerSimUCheckTC
+import FVTest.Backend.UnwCheckTCWitness
 import FV.Link.ExeT
 import FV.Link.DeadCleanupExeT
 import FV.E2E.LinkScopeInputT
@@ -63,3 +65,12 @@ import FV.Backend.Proof.IselCtlTryF
 #print axioms Backend.Proof.tryUnmatchableTC_program
 #print axioms Backend.Proof.Driver.tryCallsTC_of_rules
 #print axioms Backend.Proof.tryRulesCorrectTFP_program
+
+-- S11e6 #585: the typed-try_call exceptional-edge validator
+#print axioms Backend.Proof.Driver.loweringUTC_of_check
+#print axioms Backend.Proof.Driver.unwShape_of_okTC
+#print axioms Backend.Proof.Driver.tryExnBTC_sound
+#print axioms Backend.Proof.Driver.exnArgRegC_int
+#print axioms UnwCheckTCWitness.unwCheckTC_true -- witness: native_decide
+#print axioms UnwCheckTCWitness.lowerCheckUTC_true -- witness: native_decide
+#print axioms UnwCheckTCWitness.unwCheck_false -- witness: native_decide

@@ -6,6 +6,8 @@ import FVTest.Opt.Common
 import FVTest.Backend.StockConfig
 import FVTest.Backend.AllocChoice
 import FV.Backend.Proof.LowerSimUCheck
+import FV.Backend.Proof.LowerSimUCheckTC
+import FV.Compile.SubsetTC
 import FV.E2E.RegLevelFrameSaved
 import FV.E2E.RegLevelUTry
 
@@ -149,7 +151,9 @@ def allocRecordingNamed (n : String) (a : Allocator) (vcs : Array VCode) :
 /-- The first check of the unwinding theorem (`E2E.backend_correct_final_cleanup_unwind`, or
 `E2E.backend_correct_final_unwind` without dead cleanup) that fails for a compiled function `f`
 with a `try_call`, on the objects the theorem names: the lowering `vc` of `f` (`unwCheck`, the
-exceptional-edge half of `lowerCheckU`; `lowerCheck` ran during compilation), the prepared
+exceptional-edge half of `lowerCheckU`; for a function with typed `try_call`s
+(`Compile.functionETC`) `unwCheckTC`, the class-aware validator over `lowerCheckTC`'s recording;
+`lowerCheck` ran during compilation), the prepared
 VCode and the allocation (`savedCheck vcp rf`), the allocated function and its final code
 (`lastCallsOk af fa`, `padsNonzeroB af fa`). `callSites`/`unwindRows` succeed for every compiled
 function (compilation fails otherwise). -/
@@ -158,7 +162,8 @@ def unwindCheckFailure? (f : Clif.Function) (rec : AllocRecord) (fa? : Option Fn
   match lowerFunction f with
   | .error _ => some "lowerFunction"
   | .ok vc =>
-    if !Proof.Driver.unwCheck f vc then some "unwCheck"
+    if !(Proof.Driver.unwCheck f vc || (Compile.functionETC f && Proof.Driver.unwCheckTC f vc)) then
+      some "unwCheck"
     else match rec, fa? with
       | some (vcp, rf, af), some fa =>
         if !savedCheck vcp rf then some "savedCheck"
