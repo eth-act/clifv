@@ -1,5 +1,5 @@
 {
-  "updated_utc": "2026-10-24T19:41:23.645019+00:00",
+  "updated_utc": "2026-10-24T22:38:30.005411+00:00",
   "goal": 140,
   "complete": false,
   "inventory_warning": "Historical517root inventory is a source map, not current reachability/execution coverage. Reconcile generated source hashes and current typed scope before using partition counts.",
@@ -25,9 +25,10 @@
       "singleton returned i32/i64 division/remainder with original traps (512,6a80a595)",
       "scalar prefixes followed by returned i32/i64 division/remainder, source return+trap Domain and default consumers (521)",
       "returned i32/i64 division/remainder at arbitrary scalar positions (525)",
-      "unused/consumed/multiple i32/i64 division/remainder at arbitrary scalar positions (611)"
+      "unused/consumed/multiple i32/i64 division/remainder at arbitrary scalar positions (611)",
+      "i8/i16 scalar classes through the same default production consumers; 474 positive complete pipeline configurations"
     ],
-    "pending": "Complete original widths/ABIs and remaining pure-family cases; control/successor arguments/critical edges/loops; memory/addressing/atomics/traps/deferred effects; calls/sret/exceptions/unwind; source/scan/block/node/whole-driver simulation; Stock-only and downstream completeness; optimizer/cleanup and all consumers. Legacy fallback is not Stock completeness.",
+    "pending": "Remaining pure bmask/nop composition and reachable helpers; original ABI conditions; control/successor arguments/critical edges/loops; memory/addressing/atomics/traps/deferred effects; calls/sret/exceptions/unwind; source/scan/block/node/whole-driver simulation; Stock-only and downstream completeness; optimizer/cleanup and all consumers. Existing no-opt/no-TryCall CLI eligibility and default Lean allocator remain. Legacy fallback is not Stock completeness.",
     "mixed_div_current_evidence": {
       "source_head": "1239f8bcda9fac6ba6e421ab6cfb210ac3ce6677",
       "receipt": "docs/research/stock-mixed-div-production-activation.md",
@@ -58,6 +59,31 @@
       "receipt": "docs/research/stock-general-div-production-activation.md",
       "evidence_commit": "69182545e98f69505bd1fee79c99bb3f579a5818",
       "full_140_complete": false
+    },
+    "narrow_scalar_production": {
+      "validated_code_head": "a1b29bf7ccf976094511285296c0ba3e2201e60b",
+      "base": "439ca61b415274d16b549fe494eff96c9cdc8615",
+      "state": "default production activation; all current author gates passed",
+      "receipt": "docs/research/stock-narrow-production-activation.md",
+      "positive_functions": 237,
+      "positive_pipeline_cleanup_configurations": 474,
+      "original_scope_exclusions": 3,
+      "native_objects": 12,
+      "native_executions": 8532,
+      "ordinary_compiler_cli_objects": 12,
+      "ownership_partitions": 38,
+      "old_production_axiom_sets_exact": 497,
+      "old_sink_axiom_sets_exact": 13,
+      "original_identities_and_stages_preserved": true,
+      "full_140_complete": false,
+      "unconditional_stock_only_completeness": false
+    },
+    "current_real_crate_agreement": {
+      "validated_code_head": "a1b29bf7ccf976094511285296c0ba3e2201e60b",
+      "default_allocator": "lean",
+      "symbol_comparisons": 4543,
+      "equal_symbol_comparisons": 887,
+      "limits": "Symbol comparisons, not unique source-function coverage or goal-completion percentage; unchanged from parent."
     }
   },
   "roots": [
