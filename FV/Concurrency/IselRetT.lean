@@ -263,8 +263,13 @@ theorem term_step_abiT (H : DriverHypT f vc ctx st0 R gn bl A sem MR env p)
     refine ⟨_, vuses ops ρ₁, w₂, vs, ⟨b, _, ρ₁', w₁, vb, ops.map (rnOp gn), outs, hstar, hvb, hi, hops,
       hvu.symm, by rw [← hvu]; exact hsem⟩, ?_, ?_, hvsS, hall,
       by simpa [fr', restrict, hslots] using hmr, by rw [hcm, hslots]⟩
-    · simp only [List.map_map, List.length_map]
-      exact hus
+    · have hvl : vs.length = (sretRet ctx.func).length := by
+        rw [H.shape.ctxInv.func]; exact (getMany_spec hvs0).1.symm
+      have hvl' : (sretRet (termCtx ctx (L.start + B.body.length) L.data).func).length =
+          (sretRet ctx.func).length := by simp [termCtx]
+      unfold RetPins
+      simp only [List.map_map, List.length_map, Function.comp_def]
+      rw [hus, List.length_append, hvl, hvl', Nat.add_sub_cancel]
     · simp only [List.length_map]; rw [hlen]; exact hall.1
   | trap c =>
     rw [hT] at hrun' hstep
