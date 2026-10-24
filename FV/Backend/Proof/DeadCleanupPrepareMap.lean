@@ -239,6 +239,7 @@ private theorem prepare_map {T : VBlock → VBlock} (hT : BlockMap T) (vc : VCod
               simp only [mapBlocks, Array.map_append, Array.map_map]
               congr 2
               congr 1
+              case e_as => rw [Array.size_map]
               funext i
               rw [← Array.map_append]
               simp only [Function.comp_def, getElem!_def, Array.getElem?_map]
