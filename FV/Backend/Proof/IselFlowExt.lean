@@ -632,6 +632,28 @@ theorem ctorOk_tryRets {ctx : Ctx} {id : TermId} {args : List V} {st : LState} {
     · exact .inr (.inr (.inr (.inl (payloadRegs_phys cc _ hz.1))))
     · exact .inr (.inr (.inr (.inr (.inr (.inr hz.2)))))
 
+/-- `ctorOk_tryRets` for the class-aware return registers (`retRegsC`, S11e6). -/
+theorem ctorOk_tryRetsC {ctx : Ctx} {id : TermId} {args : List V} {st : LState}
+    {cs : List RegClass} {ps : List Reg} (hps : retRegsC cs 0 0 = some ps)
+    (cc : Option Clif.CallConv) (f : Reg × Reg → Bool) :
+    CtorOk ctx id args st
+      (.op (.callRets (ps.zip ctx.tryRegs.1 ++ List.filter f ((payloadRegs cc).zip ctx.tryRegs.2))))
+      st := by
+  refine ⟨Nat.le_refl _, Nat.le_refl _, ⟨[], by simp, by simp⟩, fun r hr => ?_,
+    by simp [V.valsIn, opVals], by simp [V.instsIn], by simp [V.tlsIn]⟩
+  simp only [V.regsIn, opRegs, pairRegs, List.mem_flatMap, List.mem_append, List.mem_filter,
+    List.mem_cons, List.mem_nil_iff, or_false] at hr
+  obtain ⟨⟨a, b⟩, hq, hr⟩ := hr
+  rcases hq with hq | ⟨hq, -⟩
+  · have hz := List.of_mem_zip hq
+    rcases hr with rfl | rfl
+    · exact .inr (.inr (.inr (.inl (retRegsC_phys hps _ hz.1))))
+    · exact .inr (.inr (.inr (.inr (.inr (.inl hz.2)))))
+  · have hz := List.of_mem_zip hq
+    rcases hr with rfl | rfl
+    · exact .inr (.inr (.inr (.inl (payloadRegs_phys cc _ hz.1))))
+    · exact .inr (.inr (.inr (.inr (.inr (.inr hz.2)))))
+
 /-- Close `CtorOk` of a constructor that keeps the state. -/
 macro "ctor_same" : tactic => `(tactic| (refine ctorOk_same ?_ ?_ ?_ ?_ <;> simp_all (config := { decide := true }) [V.regsIn, opRegs, pairRegs, V.valsIn, opVals, V.instsIn, V.tlsIn] <;> done))
 
@@ -706,6 +728,7 @@ theorem externCtor_ok (ctx : Ctx) (t : Term) (args : List V) (st : LState) :
          simp [V.regsIn, opRegs]; exact ⟨l, hl, hrl⟩)
       | exact ctorOk_putRegsVec ‹_›
       | exact ctorOk_tryRets ‹_› _ _
+      | exact ctorOk_tryRetsC ‹_› _ _
 
 
 /-! ## Extern extractors -/

@@ -71,6 +71,23 @@ macro "cres" : tactic =>
 
 end CS
 
+/-- `retRegsC` places every value: one register per class entry. -/
+theorem retRegsC_len : ∀ {cs : List RegClass} {nx nv : Nat} {ps : List Reg},
+    retRegsC cs nx nv = some ps → ps.length = cs.length
+  | [], _, _, ps, h => by simp only [retRegsC, Option.some.injEq] at h; subst h; rfl
+  | .int :: cs, nx, nv, ps, h => by
+    simp only [retRegsC] at h
+    split at h
+    · obtain ⟨qs, hq, rfl⟩ := Option.map_eq_some_iff.mp h
+      simp [retRegsC_len hq]
+    · cases h
+  | .float :: cs, nx, nv, ps, h => by
+    simp only [retRegsC] at h
+    split at h
+    · obtain ⟨qs, hq, rfl⟩ := Option.map_eq_some_iff.mp h
+      simp [retRegsC_len hq]
+    · cases h
+
 set_option maxHeartbeats 4000000 in
 /-- Every alternative of `actor`'s dispatch past the type predicates is sound. -/
 theorem actor_none_sound (hP : PInv f ctx) (id : TermId) (as : List PA) (hp : tyPred id = none) :
@@ -465,11 +482,13 @@ theorem actor_none_sound (hP : PInv f ctx) (id : TermId) (as : List PA) (hp : ty
     simp only [γ] at hw1
     obtain ⟨_, rfl, s, rfl, hs, hlen⟩ := hw1
     red_safe externCtor
-    rw [CS.retRegs_some hs.2]
+    obtain ⟨ps, hps⟩ := retRegsC_some ((sigRets s).map retClass) 0 0 (by simpa using hs.2)
+      (by simpa using hs.2)
+    rw [hps]
     dsimp only
     split
     · rename_i hne
-      simp [hlen] at hne
+      simp [retRegsC_len hps, hlen] at hne
     · exact CS.fin_ok ⟨_, rfl, _, rfl⟩
   -- gen_call_info (signature)
   · intro n1 n2 n3 n4 x1 x2; cintro; gl6; cok

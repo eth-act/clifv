@@ -57,12 +57,14 @@ theorem kd_blT {p : Program} (hp : Data p) (hpT : TryData p) {f : Clif.Function}
   have hfn : c.func.extern? fn = some ext := by rw [hctx.func]; exact hext
   cases hp
   obtain ⟨t300, t302, t2297, t2474⟩ := hpT
+  have hsI := exnTableOpnd_int he
+  try have hsE : sigIntB ext.sig = true := by first | (rw [hsig]; exact hsI) | exact hsI
   ctl_inv [*, rule_lower_2542, ext_func_ref_data_iff, ctor_abi_sig_iff, ctor_try_call_info_iff,
-    ctor_gen_try_call_rets_iff] at hmatch heval
+    ctor_gen_try_call_rets_iff hsI] at hmatch heval
   simp only [hi, hfn, Option.some.injEq] at *
   isel_destruct; subst_vars
   repeat (isel_inv_simp [ext_func_ref_data_iff, ctor_abi_sig_iff, ctor_try_call_info_iff,
-    ctor_gen_try_call_rets_iff, ext_value_list_slice_iff, ctor_put_in_regs_vec_iff] at * <;>
+    ctor_gen_try_call_rets_iff hsI, ext_value_list_slice_iff, ctor_put_in_regs_vec_iff] at * <;>
     isel_destruct <;> subst_vars)
   have hx' := ‹c.func.extern? fn = some _›
   rw [hctx.func, hext] at hx'
@@ -74,6 +76,8 @@ theorem kd_blT {p : Program} (hp : Data p) (hpT : TryData p) {f : Clif.Function}
   simp only [ctor_gen_call_args_gen _ _ _ hb hl, mapM_single_map, Option.some.injEq,
     exists_eq_left'] at *
   isel_destruct; subst_vars
+  try (simp only [ctor_gen_try_call_rets_iff hsE] at *; isel_destruct; subst_vars)
+  try (simp only [ctor_gen_try_call_rets_iff hsI] at *; isel_destruct; subst_vars)
   simp only [ctor_gen_call_info_gen _ _ _ _ _ _ _ hl, Nat.reduceEqDiff, Nat.reduceLT,
     ite_true, ite_false, Option.some.injEq] at *
   isel_destruct; subst_vars
@@ -140,12 +144,14 @@ theorem kd_gotT {p : Program} (hp : Data p) (hpT : TryData p) {f : Clif.Function
   have hfn : c.func.extern? fn = some ext := by rw [hctx.func]; exact hext
   cases hp
   obtain ⟨t300, t302, t2297, t2474⟩ := hpT
+  have hsI := exnTableOpnd_int he
+  try have hsE : sigIntB ext.sig = true := by first | (rw [hsig]; exact hsI) | exact hsI
   ctl_inv [*, rule_lower_2551, ext_func_ref_data_iff, ctor_abi_sig_iff, ctor_try_call_info_iff,
-    ctor_gen_try_call_rets_iff, ctor_box_external_name_iff] at hmatch heval
+    ctor_gen_try_call_rets_iff hsI, ctor_box_external_name_iff] at hmatch heval
   simp only [hi, hfn, Option.some.injEq] at *
   isel_destruct; subst_vars
   repeat (isel_inv_simp [ext_func_ref_data_iff, ctor_abi_sig_iff, ctor_try_call_info_iff,
-    ctor_gen_try_call_rets_iff, ext_value_list_slice_iff, ctor_put_in_regs_vec_iff,
+    ctor_gen_try_call_rets_iff hsI, ext_value_list_slice_iff, ctor_put_in_regs_vec_iff,
     ctor_box_external_name_iff] at * <;> isel_destruct <;> subst_vars)
   have hx' := ‹c.func.extern? fn = some _›
   rw [hctx.func, hext] at hx'
@@ -159,6 +165,8 @@ theorem kd_gotT {p : Program} (hp : Data p) (hpT : TryData p) {f : Clif.Function
   isel_destruct; subst_vars
   have h570 := ‹ApplyInternal _ _ _ _ 27 570 _ _ _ _›
   obtain ⟨rfl, hs0⟩ := kL _ (by omega) _ _ _ _ _ h570
+  try (simp only [ctor_gen_try_call_rets_iff hsE] at *; isel_destruct; subst_vars)
+  try (simp only [ctor_gen_try_call_rets_iff hsI] at *; isel_destruct; subst_vars)
   simp only [ctor_gen_call_ind_info_gen _ _ _ _ _ _ hl, Nat.reduceEqDiff, Nat.reduceLT,
     ite_true, ite_false, Option.some.injEq] at *
   isel_destruct; subst_vars
@@ -228,12 +236,14 @@ theorem kd_indT {p : Program} (hp : Data p) (hpT : TryData p) (hpI : IndData p)
   obtain ⟨t300, t302, t2297, t2474⟩ := hpT
   obtain ⟨t196, t2293, t2454⟩ := hpI
   obtain ⟨t266, t2298, t2475⟩ := hpJ
+  have hsI := exnTableOpnd_int he
+  try have hsE : sigIntB ext.sig = true := by first | (rw [hsig]; exact hsI) | exact hsI
   ctl_inv [*, rule_lower_2561, ext_value_slice_unwrap_iff, ext_exception_sig_iff, ctor_abi_sig_iff,
-    ctor_try_call_info_iff, ctor_gen_try_call_rets_iff, ctor_put_in_reg_iff] at hmatch heval
+    ctor_try_call_info_iff, ctor_gen_try_call_rets_iff hsI, ctor_put_in_reg_iff] at hmatch heval
   simp only [hi, Option.some.injEq] at *
   isel_destruct; subst_vars
   repeat (isel_inv_simp [ext_value_slice_unwrap_iff, ext_exception_sig_iff, ctor_abi_sig_iff,
-    ctor_try_call_info_iff, ctor_gen_try_call_rets_iff, ext_value_list_slice_iff,
+    ctor_try_call_info_iff, ctor_gen_try_call_rets_iff hsI, ext_value_list_slice_iff,
     ctor_put_in_regs_vec_iff, ctor_put_in_reg_iff] at * <;> isel_destruct <;> subst_vars)
   obtain ⟨bytes, hb⟩ := ctor_gen_call_args_bytes ‹externCtor c T.gen_call_args _ _ = _›
   obtain ⟨locs, S, hl⟩ := ctor_gen_call_args_locs ‹externCtor c T.gen_call_args _ _ = _›
@@ -244,6 +254,8 @@ theorem kd_indT {p : Program} (hp : Data p) (hpT : TryData p) (hpI : IndData p)
   simp only [ctor_gen_call_args_gen _ _ _ hb hl, mapM_single_map, Option.some.injEq,
     exists_eq_left'] at *
   isel_destruct; subst_vars
+  try (simp only [ctor_gen_try_call_rets_iff hsE] at *; isel_destruct; subst_vars)
+  try (simp only [ctor_gen_try_call_rets_iff hsI] at *; isel_destruct; subst_vars)
   simp only [ctor_gen_call_ind_info_gen _ _ _ _ _ _ hl, Nat.reduceEqDiff, Nat.reduceLT,
     ite_true, ite_false, Option.some.injEq] at *
   isel_destruct; subst_vars
@@ -279,7 +291,7 @@ theorem tryDefsExactT : TryDefsExactT := by
   intro f ctx ranges st0 _ hs _ hb ti t et data sig items lo trs st1 targets out s' tr _ hph het hBt
     hd he _ htr h
   have hcT : CtxT f ctx :=
-    ⟨ctxInvT_of hs hb, (ctxSpec_of hb).instScopeT hs.subsetT, functionET_externs hs.subsetT⟩
+    CtxT.ofExterns (ctxInvT_of hs hb) ((ctxSpec_of hb).instScopeT hs.subsetT) (functionET_externs hs.subsetT)
   have hctxT' := ctxT_tryRegs (ctxT_termCtx hcT hph data) trs
   have hctx' : CtxInvT f (tryCtx ctx ti data trs) := hctxT'.inv
   have hip : TermIntPos ctx t := by

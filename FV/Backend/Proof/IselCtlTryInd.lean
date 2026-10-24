@@ -140,12 +140,13 @@ theorem try_ind_ruleOk {p : Program} (hp : Data p) (hpT : TryData p) (hpI : IndD
   obtain ⟨t300, t302, t2297, t2474⟩ := hpT
   obtain ⟨t196, t2293, t2454⟩ := hpI
   obtain ⟨t266, t2298, t2475⟩ := hpJ
+  have hsI := exnTableOpnd_int he
   ctl_inv [*, rule_lower_2561, ext_value_slice_unwrap_iff, ext_exception_sig_iff, ctor_abi_sig_iff,
-    ctor_try_call_info_iff, ctor_gen_try_call_rets_iff, ctor_put_in_reg_iff] at hmatch heval
+    ctor_try_call_info_iff, ctor_gen_try_call_rets_iff hsI, ctor_put_in_reg_iff] at hmatch heval
   simp only [hi, Option.some.injEq] at *
   isel_destruct; subst_vars
   repeat (isel_inv_simp [ext_value_slice_unwrap_iff, ext_exception_sig_iff, ctor_abi_sig_iff,
-    ctor_try_call_info_iff, ctor_gen_try_call_rets_iff, ext_value_list_slice_iff,
+    ctor_try_call_info_iff, ctor_gen_try_call_rets_iff hsI, ext_value_list_slice_iff,
     ctor_put_in_regs_vec_iff, ctor_put_in_reg_iff] at * <;> isel_destruct <;> subst_vars)
   have hti' := ‹tryInfoOf sig items targets = some _›
   rw [hinfo] at hti'

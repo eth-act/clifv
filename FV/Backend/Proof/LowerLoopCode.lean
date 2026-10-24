@@ -162,8 +162,8 @@ def finishBlock (ctx : Ctx) (b : Clif.Block) (bi ti : Nat) (code : Array MInst)
 /-- A `try_call` terminator: return/payload vregs, edge blocks, then `finishBlock`. -/
 def tryTerm (f : Clif.Function) (ctx : Ctx) (b : Clif.Block) (bi ti : Nat) (code : Array MInst)
     (d : DState) (ctx' : Ctx) (et : Clif.ExnTable) : Except String (ForInStep DState) := do
-  let (sig, items) ← exnTableOpnd f et
-  match tryRegsOf sig d.st with
+  let (sig, items) ← exnTableOpndC f et
+  match tryRegsOfC sig d.st with
   | some ((retsL, paysL), st) =>
     if (sig.returns.any fun x => x.ty == Clif.Ty.i128) = true then throw "try_call returning i128"
     else
@@ -204,10 +204,10 @@ def bodyPart (f : Clif.Function) (ctx : Ctx) (b : Clif.Block) (bi start stop : N
   let s ← forIn [start:stop - 1] (d, code) (stmtBody ctx)
   match b.term with
   | .tryCall .. => do
-    let data ← tryCallData f b.term
+    let data ← tryCallDataC f b.term
     termPart f ctx b bi stop s.2 s.1 data
   | .tryCallIndirect .. => do
-    let data ← tryCallData f b.term
+    let data ← tryCallDataC f b.term
     termPart f ctx b bi stop s.2 s.1 data
   | _ => do
     let data ← termData (abiTerm f b.term)

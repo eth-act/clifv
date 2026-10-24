@@ -588,6 +588,28 @@ theorem ctorK_tryRets {ctx : Ctx} {id : TermId} {args : List V} {st : LState} {k
     · exact absurd hr.symm (payloadRegs_phys cc _ hz.1 n c)
     · exact .inr (.inr (.inl (hr ▸ hz.2)))
 
+/-- `gen_try_call_rets` (class-aware return registers `retRegsC`, S11e6): the `try_call`'s registers in call defs, physical registers. -/
+theorem ctorK_tryRetsC {ctx : Ctx} {id : TermId} {args : List V} {st : LState} {cs : List RegClass}
+    {ps : List Reg} (hps : retRegsC cs 0 0 = some ps) (cc : Option Clif.CallConv)
+    (f : Reg × Reg → Bool) :
+    CtorK ctx id args st
+      (.op (.callRets (ps.zip ctx.tryRegs.1 ++ List.filter f ((payloadRegs cc).zip ctx.tryRegs.2))))
+      st := by
+  refine ⟨Nat.le_refl _, ⟨[], by simp, by simp⟩, fun _ => rfl,
+    fun n c h => by simp [V.regsK, opRegsK] at h, fun n c hr => ?_⟩
+  simp only [V.regsD, opRegsD, pairRegs, List.mem_flatMap, List.mem_append, List.mem_filter,
+    List.mem_cons, List.mem_nil_iff, or_false] at hr
+  obtain ⟨⟨a, b⟩, hq, hr⟩ := hr
+  rcases hq with hq | ⟨hq, -⟩
+  · have hz := List.of_mem_zip hq
+    rcases hr with hr | hr
+    · exact absurd hr.symm (retRegsC_phys hps _ hz.1 n c)
+    · exact .inr (.inl (hr ▸ hz.2))
+  · have hz := List.of_mem_zip hq
+    rcases hr with hr | hr
+    · exact absurd hr.symm (payloadRegs_phys cc _ hz.1 n c)
+    · exact .inr (.inr (.inl (hr ▸ hz.2)))
+
 /-- `CtorK` of every successful result of a constructor call. -/
 def CtorKP (ctx : Ctx) (st : LState) (id : TermId) (args : List V) (r : ExtResult (V × LState)) :
     Prop :=
@@ -626,6 +648,7 @@ theorem externCtor_k (ctx : Ctx) (t : Term) (args : List V) (st : LState) :
       | exact ctorK_lc (loadConstantFull_k _ _ _ _ _)
       | exact ctorK_callOutput _ _ (fun _ _ => ⟨_, rfl⟩)
       | exact ctorK_tryRets ‹_› _ _
+      | exact ctorK_tryRetsC ‹_› _ _
       | (refine ctorK_same (fun _ => rfl) ?_ (by simp [V.regsD])
          intro n c hn
          simp only [V.regsK, List.mem_singleton] at hn

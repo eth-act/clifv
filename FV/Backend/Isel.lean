@@ -663,6 +663,49 @@ def tryRegsOf (sig : Clif.Signature) (st : LState) : Option ((List Reg × List R
         (acc.push r, st')
   pure ((rets.toList, pays.toList), st)
 
+/-- **The `ExceptionTable` operand of a typed `try_call`** (S11e6): `exnTableOpnd` without the
+integer restriction `sigIntB` (the callee's parameters and returns may be `f32`/`f64`). -/
+def exnTableOpndC (f : Clif.Function) (et : Clif.ExnTable) :
+    Except String (Clif.Signature × List (Option Nat)) := do
+  let some sig := f.sigDecls.lookup et.sig | throw s!"try_call of undeclared sig{et.sig}"
+  if !(sig.callConv.isNone || sig.callConv == some .systemV) then
+    throw s!"try_call with calling convention {repr sig.callConv}"
+  let items ← et.items.mapM fun
+    | .tag n _ => pure (some n)
+    | .default _ => pure none
+    | .context _ => throw "exception table context items are not supported"
+  pure (sig, items)
+
+/-- **The `InstructionData` of a typed `try_call`** (S11e6): a direct `try_call`'s callee may
+take and return `f32`/`f64` (`exnTableOpndC`); a `try_call_indirect` is `tryCallData`'s
+(integer signatures, `sigIntB`). -/
+def tryCallDataC (f : Clif.Function) : Clif.Terminator → Except String V
+  | .tryCall fn args et => do
+    let (sig, items) ← exnTableOpndC f et
+    let some ext := f.extern? fn | throw s!"unknown fn{fn}"
+    if ext.sig != sig then throw s!"try_call: sig{et.sig} is not the signature of fn{fn}"
+    pure (instDataV "TryCall"
+      [opcodeV "TryCall", .values args, .op (.funcRef fn), .op (.exnTable sig items)])
+  | t => tryCallData f t
+
+/-- **The vregs of a typed `try_call`** (S11e6; `lower.rs` `try_call_rets`/`try_call_payloads`):
+one fresh vreg per ABI return of the return's class (`retClass`, `vregs.alloc(ty)`), in the
+return registers of their classes (`retRegsC`: x0.. / v0.., at most 8 of each), then per payload
+register (`payloadRegs`: x0, x1) the vreg of the return in that register, else a fresh integer
+one. On integer signatures it is `tryRegsOf`. -/
+def tryRegsOfC (sig : Clif.Signature) (st : LState) : Option ((List Reg × List Reg) × LState) := do
+  let ps ← retRegsC ((sigRets sig).map retClass) 0 0
+  let (rets, st) := (sigRets sig).foldl (init := ((#[] : Array Reg), st)) fun (acc, st) q =>
+    let (r, st') := st.fresh (retClass q)
+    (acc.push r, st')
+  let (pays, st) := (payloadRegs sig.callConv).foldl (init := ((#[] : Array Reg), st))
+    fun (acc, st) p => match ps.idxOf? p with
+      | some i => (acc.push rets[i]!, st)
+      | none =>
+        let (r, st') := st.fresh .int
+        (acc.push r, st')
+  pure ((rets.toList, pays.toList), st)
+
 /-- The branch argument of the edge block of a `try_call`'s normal return (`rets`: the return
 value vregs): a value's register, or a return value's vreg; renamed by `R` (the alias
 resolution). An exception payload never occurs on the normal edge (`lowerFunction` rejects
@@ -1106,10 +1149,11 @@ def externCtor (ctx : Ctx) (t : Term) (args : List V) (st : LState) : ExtResult 
   -- `gen_try_call_rets` (`Lower::gen_try_call_rets` → `gen_call_rets` with payloads): the
   -- return vregs in the return registers, then each payload register that is not also a
   -- return register (a payload in a return register shares the return's vreg, as
-  -- `set_vreg_alias` makes it there)
+  -- `set_vreg_alias` makes it there); the return registers of the returns' classes
+  -- (`retRegsC`, typed `try_call`, S11e6: x0.. / v0..)
   | TId.gen_try_call_rets, [.op (.sig s)] =>
     let (rets, pays) := ctx.tryRegs
-    match retRegs (sigRets s).length with
+    match retRegsC ((sigRets s).map retClass) 0 0 with
     | some ps =>
       if ps.length != rets.length then .unmodeled "gen_try_call_rets: return count"
       else
@@ -1467,7 +1511,7 @@ def lowerFunction (f : Clif.Function) : Except String VCode := do
     -- the terminator to.
     let sretParam := sretRet f
     let data ← match b.term with
-      | .tryCall .. | .tryCallIndirect .. => tryCallData f b.term
+      | .tryCall .. | .tryCallIndirect .. => tryCallDataC f b.term
       | _ => termData (abiTerm f b.term)
     if b.term matches .ret .. && sretParam.isEmpty && (sigRets f.sig != f.sig.returns) then
       throw "sret parameter is not an entry-block parameter"
@@ -1492,8 +1536,8 @@ def lowerFunction (f : Clif.Function) : Except String VCode := do
       -- the normal return) holding the `jump` with the successor's arguments: every
       -- successor of the call has a single predecessor, as regalloc2 requires of a branch
       -- with operands, and the handler edge blocks are the landing pads
-      let (sig, items) ← exnTableOpnd f et
-      let some ((retsL, paysL), st) := tryRegsOf sig d.st
+      let (sig, items) ← exnTableOpndC f et
+      let some ((retsL, paysL), st) := tryRegsOfC sig d.st
         | throw "try_call: more than 8 return values"
       if sig.returns.any (·.ty == .i128) then throw "try_call returning i128"
       let rets := retsL.toArray

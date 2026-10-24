@@ -160,7 +160,7 @@ theorem notTls_stackArgLoad (r : Reg) (b : Nat) (am : AMode) :
 typed scope `LowerScopeT` (floats included), `lowerCheckT` accepts `lowerFunction`'s output. -/
 theorem lowerCheckT_complete {f : Clif.Function} {vc : VCode} (hd : Dominated f)
     (hs : LowerScopeT f) (h : lowerFunction f = .ok vc) : lowerCheckT f vc = true := by
-  obtain ⟨ctx, ranges, st0, bl, hb, hl, hvb, hout, hlf⟩ := lowerFunction_runT h
+  obtain ⟨ctx, ranges, st0, bl, hb, hl, hvb, hout, hlf⟩ := lowerFunction_runT hs.externsE h
   obtain ⟨hu, -, hwf⟩ := alias_factsT hd hs hb hl
   have hctx : CtxInvT f ctx := ctxInvT_of hs hb
   have hin : InstScopeT ctx := (ctxSpec_of hb).instScopeT hs.subsetT
