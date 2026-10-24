@@ -7,6 +7,7 @@ import FV.Backend.Proof.IselShpDriver
 import FV.Backend.Proof.IselCovTDriver
 import FV.Backend.Proof.IselCovTFamCover
 import FV.Backend.Proof.LowerShapeOkT
+import FV.Backend.Proof.IselShpTRet
 
 /-!
 # Control shapes of the typed ISLE lowering: the driver's calls, `IselCtlHypT`
@@ -16,8 +17,9 @@ table `shpTabT` (`IselShpTTab`), and the driver's three ISLE calls emit only con
 the typed shapes: a statement's `lower` on its instruction family (`stmt_shpT`), a terminator's
 `lower`/`lower_branch` on its family (`termCall_shpT`), a `try_call`'s `lower_branch`
 (`tryCall_shpT`). The root rules the interpreter does not check are the hand-checked ones
-(`handOkT_call`, `handOkT_try`, `handOkT_brTable`); `try_call` rules never match a non-`try`
-terminator (`branchExcludedUnmatchableT_program`). **`iselCtlHypT : IselCtlHypT`.**
+(`handOkT_call`, `handOkT_try`, `handOkT_brTable`, and the `return` rule `handOkT_ret`, whose
+`rets` pins an `sret` function's struct pointer to x8: #587); `try_call` rules never match a
+non-`try` terminator (`branchExcludedUnmatchableT_program`). **`iselCtlHypT : IselCtlHypT`.**
 -/
 
 namespace Backend.Proof.CovT
@@ -284,11 +286,13 @@ theorem branch_shpT (hctx : CtxT f ctx) (hcl : Clean ctx) (hfam : FamCover ctx) 
     lower_branch_len happ).1
 
 set_option maxRecDepth 100000 in
-/-- **A terminator's lowering emits control forms of their typed shapes.** -/
+/-- **A terminator's lowering emits control forms of their typed shapes**, when an `sret`
+function's struct pointer has an integer vreg (`hsr`). -/
 theorem termCall_shpT (hctx : CtxT f ctx) (hcl : Clean ctx) (hfam : FamCover ctx) {ti : Nat}
     (hph : ctx.insts[ti]? = some ⟨.op .unit, [], [], none⟩) {t : Clif.Terminator}
     (hty : t.isTry = false) (hip : TermIntPos ctx t) {data : V} (hd : termData (abiTerm f t) = .ok data)
     (htf : ∃ (i : Nat) (F : Fam), famTab[i]? = some F ∧ FamOk ctx F ⟨data, [], [], none⟩)
+    (hsr : ∀ y ∈ sretRet f, valClassOf ctx y = .int)
     {targets : List Label} {s : LState} {out : Option V} {s' : LState} {tr : List Isle.RuleId}
     (hN : ctx.valDef.size ≤ s.nextVreg)
     (h : termCallF ctx ti data t targets s = .ok (out, s', tr)) : CtlSinceT ctx.valDef.size s s' := by
@@ -354,20 +358,37 @@ theorem termCall_shpT (hctx : CtxT f ctx) (hcl : Clean ctx) (hfam : FamCover ctx
     cases ht
     have hrules : ∀ rl ∈ program.rulesOf T.lower.id,
         aRule program shpTabT aext actor apreST aOracleST [AT.c0] AT.top rl = true ∨
-          ∀ m s0 env s1, (matchRule program (sem (termCtx ctx ti data)) {} m rl [.inst ti]).run s0 ≠
-            .ok (some env, s1) := by
+          (∀ m s0 env s1, (matchRule program (sem (termCtx ctx ti data)) {} m rl [.inst ti]).run s0 ≠
+            .ok (some env, s1)) ∨ (rl ∈ program.rulesOf TId.lower ∧ rl.id = 1037) := by
       intro rl hrl
       cases hroot : termRootRule rl with
-      | false => exact .inr (lower_term_nomatch hrt hd hslot hrl hroot)
+      | false => exact .inr (.inl (lower_term_nomatch hrt hd hslot hrl hroot))
       | true =>
-        have hf := List.all_eq_true.mp shpTermT_ok rl hrl
-        simp only [termRootRule] at hroot
-        simp only [hroot, Bool.not_true, Bool.false_or] at hf
-        exact .inl hf
-    exact ((shp_soundT hctx'.inv hcl' hfam' ctx.valDef.size s rfl 1000000).root T.lower.ret
-      T.lower.id T.lower _ _ [AT.c0] AT.top [.inst ti] s #[] out s' tr' data_program.t686
-      term_686_kind (fun rl hrl => (hrules rl hrl).imp_right id)
-      ⟨⟨fun r hr => by simp [V.regsIn] at hr, fun _ => rfl⟩, trivial⟩ (ShpIsT.refl hN) happ).1.1
+        by_cases hid : rl.id = 1037
+        · exact .inr (.inr ⟨hrl, hid⟩)
+        · have hf := List.all_eq_true.mp shpTermT_ok rl hrl
+          simp only [termRootRule, Bool.or_eq_true, beq_iff_eq, hid, or_false] at hroot
+          simp only [hroot, beq_self_eq_true, Bool.not_true, Bool.false_or] at hf
+          exact .inl hf
+    have hfunc : (termCtx ctx ti data).func = f := hctx'.inv.func
+    have hxs : ∀ xs, abiTerm f t = .ret xs → ∃ vs, xs = vs ++ sretRet (termCtx ctx ti data).func := by
+      intro xs he
+      rw [hfunc]
+      cases t with
+      | ret vs =>
+        simp only [abiTerm, Clif.Terminator.ret.injEq] at he
+        exact ⟨vs, he.symm⟩
+      | _ => simp [abiTerm] at he
+    have hsr' : ∀ y ∈ sretRet (termCtx ctx ti data).func, valClassOf (termCtx ctx ti data) y = .int := by
+      rw [hfunc]; exact hsr
+    exact (root_handT (md := shpModelT logicImmComplete hctx'.inv hcl' hfam' ctx.valDef.size s) rfl
+      (shp_soundT hctx'.inv hcl' hfam' _ s rfl)
+      (Hand := fun rl => rl ∈ program.rulesOf TId.lower ∧ rl.id = 1037)
+      (fun rl ⟨hrl, hid⟩ => hand_modelT (handOkT_ret totality hctx'.inv hrt hd hslot hxs hsr' hrl
+        hid _) s)
+      data_program.t686 term_686_kind hrules
+      ⟨⟨fun r hr => by simp [V.regsIn] at hr, fun _ => rfl⟩, trivial⟩ (ShpIsT.refl hN) (n := 999999)
+      lower_len happ).1
   cases t with
   | ret vs => exact hlower rfl h
   | trap c => exact hlower rfl h
@@ -430,10 +451,11 @@ theorem tryCall_shpT (hctx : CtxT f ctx) (hcl : Clean ctx) (hfam : FamCover ctx)
 
 /-! ## The typed ISLE inversion -/
 
-/-- **`IselCtlHypT`**: on the typed scope, every ISLE run of the driver emits only control
-forms of the typed shapes `CtlShapeT`, with defs above every value's vreg. -/
+/-- **`IselCtlHypT`**: on the typed scope, with an integer-classed `sret` struct pointer, every
+ISLE run of the driver emits only control forms of the typed shapes `CtlShapeT`, with defs
+above every value's vreg. -/
 theorem iselCtlHypT : IselCtlHypT := by
-  intro f ctx ranges st0 hdom hs hst hsel ha hb
+  intro f ctx ranges st0 hdom hs hst hsel ha hb hsr
   have hctx : CtxT f ctx := ⟨ctxInvT_of hs hb, (buildCtx_typed hs hb).2.2, externsE_of hs.subsetT⟩
   have hcl : Clean ctx := Cov.clean_of_build hb
   have hfam := famCover_of hs hdom hst hsel hb
@@ -448,7 +470,7 @@ theorem iselCtlHypT : IselCtlHypT := by
     exact stmt_shpT hctx hcl hfam ha hi hc hmem hN h
   · obtain ⟨B, hBm, rfl⟩ := hB
     exact termCall_shpT hctx hcl hfam hph hty (termIntPos_of hs hb hBm) hd
-      (termFam_of hs hdom hb hBm (.inl hd)) hN h
+      (termFam_of hs hdom hb hBm (.inl hd)) hsr hN h
   · obtain ⟨B, hBm, hBt⟩ := hB
     subst hBt
     exact tryCall_shpT hctx hcl hfam ha hph het ⟨B, hBm, rfl⟩ hd

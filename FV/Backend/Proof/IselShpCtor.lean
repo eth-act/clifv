@@ -11,7 +11,8 @@ import FV.Backend.Proof.LogicImmComplete
 * `ctorS_sound`: an extern constructor call with the precondition `apreS` returns a value
   `actor` describes (V3's `ctor_sound`) and keeps the state invariant `ShpIs`: the instructions
   it emits are not control forms, except `emit`'s (`ctlA_sound`) and `gen_return`'s `Rets` of
-  int vregs in x0..x7 (`externCtor_shp`).
+  int vregs in x0..x7, an `sret` function's struct pointer in x8 (`retRegsK`, #587;
+  `externCtor_shp`).
 -/
 
 namespace Backend.Proof.Cov
@@ -187,12 +188,25 @@ theorem callArgs_nc (st : LState)
     split <;> exact ncSince_emit ha rfl
 
 /-- An instruction an extern constructor may emit: not a control form, `emit`'s instruction, or
-`gen_return`'s `Rets` of argument registers in the return registers of their classes. -/
+`gen_return`'s `Rets` of argument registers in the return registers of their classes, at most 8
+values of which all but at most the last (an `sret` function's struct pointer, in x8) are
+declared returns (`retRegsK k` with `rss.length ≤ k + 1`). -/
 def EmitS (id : TermId) (args : List V) (m : MInst) : Prop :=
   m.isCtl = false ∨ (id = TId.emit ∧ ∃ i, args = [i] ∧ MInst.ofV i = some m) ∨
-    (id = TId.gen_return ∧ ∃ (rss : List (List Reg)) (ps rs : List Reg), args = [.regsVec rss] ∧
-      retRegsC (regsClasses rss) 0 0 = some ps ∧
-      rss.mapM (fun | [r] => some r | _ => none) = some rs ∧ m = .rets (rs.zip ps))
+    (id = TId.gen_return ∧ ∃ (rss : List (List Reg)) (k : Nat) (ps rs : List Reg),
+      args = [.regsVec rss] ∧ retRegsK k (regsClasses rss) = some ps ∧ rss.length ≤ 8 ∧
+      rss.length ≤ k + 1 ∧ rss.mapM (fun | [r] => some r | _ => none) = some rs ∧
+      m = .rets (rs.zip ps))
+
+/-- An `sret` function returns at most one struct pointer. -/
+theorem sretRet_length_le (f : Clif.Function) : (sretRet f).length ≤ 1 := by
+  unfold sretRet
+  split
+  · split
+    · rename_i b0 i _ _
+      cases b0.params[i]? <;> simp
+    · simp
+  · simp
 
 /-- The emitted instructions of every successful result meet `EmitS`. -/
 def ShpP (st : LState) (id : TermId) (args : List V) (r : ExtResult (V × LState)) : Prop :=
@@ -226,7 +240,10 @@ theorem externCtor_shp (ctx : Ctx) (t : Term) (args : List V) (st : LState) :
     all_goals first
       | (refine ⟨[], ?_, fun _ h => by cases h⟩; simp [LState.fresh]; done)
       | (apply emit_one; exact .inr (.inl ⟨rfl, _, rfl, ‹_›⟩))
-      | (apply emit_one; exact .inr (.inr ⟨rfl, _, _, _, rfl, ‹_›, ‹_›, rfl⟩))
+      | (apply emit_one
+         exact .inr (.inr ⟨rfl, _, _, _, _, rfl, ‹_›,
+           by have := sretRet_length_le ctx.func; omega,
+           by have := sretRet_length_le ctx.func; omega, ‹_›, rfl⟩))
       | exact emitS_of_nc (callArgs_nc st _ _ (fun _ _ => rfl))
       | exact emitS_of_nc (loadConstantFull_nc _ _ _ _ st)
       | exact ⟨[], (callOutput_fold st _ _ (fun _ _ => ⟨_, rfl⟩)).1.trans (by simp), by simp⟩
@@ -242,16 +259,24 @@ theorem zip_retPairs : ∀ (rs ps : List Reg), (∀ r ∈ rs, ∃ n, r = .vreg n
     obtain ⟨ns, h1, h2⟩ := zip_retPairs rs ps fun r' hr' => h r' (List.mem_cons_of_mem _ hr')
     exact ⟨(n, p) :: ns, by simp [retPairs, ← h1], h2.cons_cons p⟩
 
-/-- `gen_return`'s `Rets` of int vregs has its control shape. -/
-theorem rets_shape (N : Nat) {k : Nat} {rs ps : List Reg} (hk : retRegs k = some ps)
-    (hrs : ∀ r ∈ rs, ∃ n, r = .vreg n .int) : CtlShape N (.rets (rs.zip ps)) := by
-  obtain ⟨h8, rfl⟩ := retRegs_eq hk
+/-- `gen_return`'s `Rets` of int vregs, the first `k` in x0.., the rest (at most one, at most 8
+in all) in x8 (`retRegsK_int`), has its control shape. -/
+theorem rets_shape (N : Nat) {k : Nat} {rs : List Reg} (h8 : rs.length ≤ 8)
+    (hk : rs.length ≤ k + 1) (hrs : ∀ r ∈ rs, ∃ n, r = .vreg n .int) :
+    CtlShape N (.rets (rs.zip ((List.range rs.length).map (retX k)))) := by
   obtain ⟨ns, h1, h2⟩ := zip_retPairs rs _ hrs
   rw [← h1]
   refine .rets ns (fun q hq => ?_) ?_
   · obtain ⟨j, hj, hjq⟩ := List.mem_map.mp (h2.subset (List.mem_map_of_mem hq))
-    exact ⟨j, by simp at hj; omega, hjq.symm⟩
-  · exact h2.nodup (List.Pairwise.map Reg.x (fun _ _ hab h => hab (by cases h; rfl)) List.nodup_range)
+    simp only [List.mem_range] at hj
+    refine ⟨if j < k then j else 8, by split <;> omega, ?_⟩
+    rw [← hjq]; rfl
+  · refine h2.nodup ?_
+    rw [List.Nodup, List.pairwise_map]
+    refine List.Pairwise.imp_of_mem (fun {a b} ha hb hab => ?_) List.nodup_range
+    simp only [List.mem_range] at ha hb
+    simp only [retX, ne_eq, Reg.x.injEq]
+    split <;> split <;> omega
 
 /-! ## Constructors -/
 
@@ -263,7 +288,7 @@ theorem apre_of_apreS {id : TermId} {as : List AW} (h : apreS id as = true) : ap
 theorem emitS_shape {N : Nat} {id : TermId} {as : List AW} {vs : List V}
     (hvs : Holds2 f ctx as vs) (hpre : apreS id as = true) {m : MInst} (h : EmitS id vs m)
     (hc : m.isCtl = true) : CtlShape N m := by
-  rcases h with h | ⟨rfl, i, rfl, hi⟩ | ⟨rfl, rss, ps, rs, rfl, hps, hss, rfl⟩
+  rcases h with h | ⟨rfl, i, rfl, hi⟩ | ⟨rfl, rss, k, ps, rs, rfl, hps, h8, hk, hss, rfl⟩
   · rw [h] at hc; cases hc
   · obtain ⟨a, rfl, ha⟩ := holds2_one hvs
     simp only [apreS, beq_self_eq_true, ite_true, Bool.and_eq_true] at hpre
@@ -275,8 +300,16 @@ theorem emitS_shape {N : Nat} {id : TermId} {as : List AW} {vs : List V}
     have hint : ∀ r ∈ rs, ∃ n, r = .vreg n .int := fun r hr => by
       obtain ⟨l, hl, hrl⟩ := single_mem hss r hr
       exact kind_one ((deep_sound a _ ha).1 r (List.mem_flatten.mpr ⟨l, hl, hrl⟩)) hpre.2
-    rw [retRegsC_single_int hss (fun r hr => by obtain ⟨n, rfl⟩ := hint r hr; rfl)] at hps
-    exact rets_shape N hps hint
+    have hcl : regsClasses rss = List.replicate rs.length .int := by
+      rw [single_eq_map hss, regsClasses_single]
+      exact List.eq_replicate_iff.mpr ⟨by simp, fun c hc => by
+        obtain ⟨r, hr, rfl⟩ := List.mem_map.mp hc
+        obtain ⟨n, rfl⟩ := hint r hr
+        rfl⟩
+    have hlen : rss.length = rs.length := by rw [single_eq_map hss]; simp
+    rw [hcl, retRegsK_int k rs.length (by omega)] at hps
+    cases hps
+    exact rets_shape N (by omega) (by omega) hint
 
 /-- **Constructors** (V4): `actor` describes the result, the state invariant is kept. -/
 theorem ctorS_sound {f : Clif.Function} {ctx : Ctx} (hctx : CtxInv f ctx) (N : Nat) (s0 : LState)

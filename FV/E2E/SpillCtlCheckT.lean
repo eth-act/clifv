@@ -73,6 +73,7 @@ theorem vc_ctlT (hI : IselCtlHypT) {f : Clif.Function} {vc : VCode}
   have hne := (prepDomain_ofT hd hs hl).nonempty
   obtain ⟨ctx, ranges, st0, bl, hb, hlb, hvb, -, -⟩ := lowerFunction_runT hl
   obtain ⟨hS, hT, hY⟩ := hI f ctx ranges st0 hdom hs hst hsel ha hb
+    (sretRet_valClass_int hd hec ha.1.1 hb)
   have hcf := ctxFacts_of hb
   obtain ⟨-, hstart⟩ := lowBlocks_start hlb
   obtain ⟨-, hspec⟩ := lowBlocks_spec hlb
