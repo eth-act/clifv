@@ -463,7 +463,8 @@ theorem dwarfVal_slotVal {r : Reg} {d : Nat} (hc : r ∈ calleeSaved) (hd : r.dw
   · simp only [Reg.dwarf?, Option.some.injEq] at hd
     subst hd
     simp only [Unw.dwarfVal, show ¬ 64 + n < 32 by omega, ite_false, show 64 ≤ 64 + n by omega,
-      show 64 + n < 96 by omega, and_self, ite_true, Nat.add_sub_cancel_left, slotVal, rnum]
+      show 64 + n < 96 by omega, and_self, ite_true, slotVal, rnum]
+    rw [show 64 + n - 64 = n by omega]
 
 /-- Every save move of a return tail is excluded: no item of a valid tail stores into a save
 slot. -/
@@ -500,7 +501,7 @@ theorem saveSegsOk_noSaveDst {vb : VBlock} {saved : List Reg} :
     rcases List.mem_append.1 hm with hm | hm
     · split at h1
       · exact retTailOk_noSaveDst h1 a r hm
-      · simp only [List.all_eq_true] at h1
+      · simp only [Bool.false_eq_true, ite_false, List.all_eq_true] at h1
         have := h1 _ hm
         simp [RItem.noSave, Loc.isSave] at this
     · rcases List.mem_cons.1 hm with e | hm
