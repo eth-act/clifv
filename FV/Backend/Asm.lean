@@ -41,7 +41,17 @@ inductive Lbl where
   a relaxed branch (`relaxLine`); never defined by a label line. -/
   | skip
   -- `BEq` is the lawful one from `DecidableEq` (the layout proof uses `Std.HashMap` lemmas)
-  deriving DecidableEq, Repr, Inhabited, Hashable
+  deriving DecidableEq, Repr, Inhabited
+
+/-- A hash the kernel evaluates (the derived one goes through the opaque `mixHash`, so the
+emission's `Std.HashMap Lbl _` lookups would block `decide +kernel` witnesses of emitted code). -/
+instance : Hashable Lbl where
+  hash
+    | .block l => UInt64.ofNat (5 * l)
+    | .trap n => UInt64.ofNat (5 * n + 1)
+    | .jt n => UInt64.ofNat (5 * n + 2)
+    | .loop n => UInt64.ofNat (5 * n + 3)
+    | .skip => 4
 
 /-- Assembly name of a label of function `k` (its index in the file). -/
 def Lbl.name (k : Nat) : Lbl → String
