@@ -184,7 +184,8 @@ private theorem clean_emitT {vc : VCode}
   refine ⟨fun i hi => (h old hb).1 i (cleanBlock_inst_mem vc 0 old i hi), ?_⟩
   intro i hi
   apply (h old hb).2 i
-  exact (dropLast_sublist_of (scan_sublist vc.classes.size old.insts.toList (exitLive vc 0 old))).subset
+  exact (dropLast_sublist_of (scan_sublist vc.classes.size (exitDead vc old.label)
+    old.insts.toList (exitLive vc 0 old))).subset
     (by simpa [cleanBlock] using hi)
 
 private theorem prune_emitT {vc : VCode}

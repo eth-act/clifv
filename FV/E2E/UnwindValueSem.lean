@@ -6,8 +6,8 @@ import FV.E2E.DeadCleanupRealizes
 # The dead-cleanup value semantics with unwinding (S10e, #232)
 
 The shipped labels rest on the dead-cleanup chain (`E2E.backend_correct_final_cleanup`), whose
-VCode semantics is the value semantics `valueSem` (pure producers by `mspec`, everything else,
-calls included, by `csem`) and, at the register level, `valueSemV` (`csemV` in place of
+VCode semantics is the value semantics `valueSem` (pure producers and compares by `mspec`,
+everything else, calls included, by `csem`) and, at the register level, `valueSemV` (`csemV` in place of
 `csem`). Their counterparts with unwinding, additive:
 
 * `valueSemU F ctx X XR`: `valueSem` with `csemU` in place of `csem` — so at `call`/`tryCall`
@@ -32,17 +32,17 @@ open Backend Backend.Proof Backend.Proof.Driver
 
 /-! ## The value semantics with unwinding -/
 
-/-- **The value semantics with unwinding**: pure producers by `mspec`, everything else by
-`csemU`. -/
+/-- **The value semantics with unwinding**: pure producers and compares by `mspec`, everything
+else by `csemU`. -/
 noncomputable def valueSemU (F : BitVec 64 → Prop) (ctx : FnCtx) (X : ExtSem) (XR : XRaise) :
     Sem :=
-  fun i us w => if pureForm i then mspec ctx.slotBase i us w else csemU F ctx X XR i us w
+  fun i us w => if specForm i then mspec ctx.slotBase i us w else csemU F ctx X XR i us w
 
 section
 variable {F : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem} {XR : XRaise}
 
-/-- Off the pure producers `valueSemU` is `csemU`. -/
-theorem valueSemU_not_pure {i : MInst} (hp : pureForm i = false) :
+/-- Off the pure producers and compares `valueSemU` is `csemU`. -/
+theorem valueSemU_not_pure {i : MInst} (hp : specForm i = false) :
     valueSemU F ctx X XR i = csemU F ctx X XR i := by
   funext us w
   simp only [valueSemU, hp, Bool.false_eq_true, ↓reduceIte]
@@ -96,8 +96,16 @@ theorem valueSemU_try_raise {info : CallInfo} {ti : TryInfo} {uses : List CV} {w
 theorem valueSemU_pure {i : MInst} {us outs : List CV} {w w' : Arm.ArmState} {ctl : Ctl}
     (hp : pureForm i = true) (h : valueSemU F ctx X XR i us w = some (outs, w', ctl)) :
     w' = w ∧ ctl = .next := by
-  simp only [valueSemU, hp, ↓reduceIte] at h
+  simp only [valueSemU, specForm_of_pure hp, ↓reduceIte] at h
   exact mspec_pure hp h
+
+/-- The value semantics with unwinding lets the next compare overwrite a compare's flags. -/
+theorem valueSemU_cmpOverwrite (F : BitVec 64 → Prop) (ctx : FnCtx) (X : ExtSem) (XR : XRaise) :
+    CmpOverwrite (valueSemU F ctx X XR) :=
+  cmpOverwrite_of_mspec (sb := ctx.slotBase)
+    (fun i hs => by funext us w; simp only [valueSemU, hs, ↓reduceIte])
+    (jumpPlain_of_csem (F := F) (ctx := ctx) (X := X) fun l => by
+      funext us w; simp [valueSemU, csemU, specForm, pureForm, cmpForm])
 
 /-- With the callees' exclusivity, a `csem` step is a `csemU` step. -/
 theorem csemU_of_csem
@@ -124,41 +132,29 @@ end
 
 /-! ## The facts of the cleanup chain -/
 
-private theorem pureForm_mapRegsU (g : Reg → Reg) (i : MInst) :
-    pureForm (i.mapRegs g) = pureForm i := by
-  cases i <;> simp [MInst.mapRegs, pureForm]
-  case aluRRRR op size rd rn rm ra => cases op <;> rfl
-
-private theorem pureForm_setTargetsU {i i' : MInst} {ls : List Label}
-    (h : i.setTargets ls = some i') : pureForm i' = pureForm i := by
-  unfold MInst.setTargets at h
-  split at h <;> simp_all [pureForm]
-  all_goals first | (cases h; rfl) | (rcases h with ⟨_, rfl⟩; rfl)
-
 /-- **`DriverSem` for `valueSemU`.** -/
 theorem driverSem_valueSemU (F : BitVec 64 → Prop) (ctx : FnCtx) (X : ExtSem) (XR : XRaise) :
     DriverSem (valueSemU F ctx X XR) := by
   have hd := driverSem_csemU F ctx X XR
   refine ⟨⟨?_, ?_, ?_⟩, ?_⟩
-  · intro l w; simpa [valueSemU, pureForm] using hd.jump l w
+  · intro l w; simpa [valueSemU, specForm, pureForm, cmpForm] using hd.jump l w
   · intro g gn hg i
     funext us w
-    simp only [valueSemU, pureForm_mapRegsU]
-    by_cases hp : pureForm i = true
+    simp only [valueSemU, specForm_mapRegs hg]
+    by_cases hp : specForm i = true
     · simp only [hp]
       exact mspec_mapRegs hg _ _ _ _
     · simp only [hp]
       exact congrFun (congrFun (hd.rename g gn hg i) us) w
   · intro i ls i' h
-    have he := pureForm_setTargetsU h
+    have he := specForm_setTargets h
     funext us w
     simp only [valueSemU, he]
-    by_cases hp : pureForm i = true
-    · have hn := pureForm_targets hp
-      cases i <;> simp [pureForm, MInst.setTargets] at hp h
+    by_cases hp : specForm i = true
+    · cases i <;> simp [MInst.setTargets] at h <;> simp [specForm, pureForm, cmpForm] at hp
     · simp only [hp]
       exact congrFun (congrFun (hd.retarget i ls i' h) us) w
-  · intro ds w; simpa [valueSemU, pureForm] using hd.args ds w
+  · intro ds w; simpa [valueSemU, specForm, pureForm, cmpForm] using hd.args ds w
 
 /-- **The instruction specification is preserved** (`ispec` has no calls). -/
 theorem refines_valueSemU (F : BitVec 64 → Prop) (ctx : FnCtx) (X : ExtSem) (XR : XRaise) :
@@ -246,10 +242,11 @@ open Backend Backend.DeadCleanup E2E
 
 /-! ## The register-level value semantics with unwinding -/
 
-/-- **`valueSemV` with unwinding**: pure producers by `mspec`, everything else by `csemVU`. -/
+/-- **`valueSemV` with unwinding**: pure producers and compares by `mspec`, everything else by
+`csemVU`. -/
 noncomputable def valueSemVU (gv : Nat → String → Prop) (F : BitVec 64 → Prop) (ctx : FnCtx)
     (X : ExtSem) (XR : XRaise) : Sem :=
-  fun i us w => if pureForm i then mspec ctx.slotBase i us w else csemVU gv F ctx X XR i us w
+  fun i us w => if specForm i then mspec ctx.slotBase i us w else csemVU gv F ctx X XR i us w
 
 /-- The value semantics of the activation with unwinding. -/
 noncomputable def RLU.valueSemU (R : RLU) : Sem := valueSemVU R.gv R.F R.ctx R.X R.XR
@@ -264,11 +261,20 @@ theorem valueSemVU_bot (F : BitVec 64 → Prop) (ctx : FnCtx) (X : ExtSem) (XR :
   funext i us w
   simp only [valueSemVU, valueSemU, csemVU_bot]
 
-/-- Off the pure producers `valueSemVU` is `csemVU`. -/
-theorem valueSemVU_not_pure {i : MInst} (hp : pureForm i = false) :
+/-- Off the pure producers and compares `valueSemVU` is `csemVU`. -/
+theorem valueSemVU_not_pure {i : MInst} (hp : specForm i = false) :
     valueSemVU gv F ctx X XR i = csemVU gv F ctx X XR i := by
   funext us w
   simp only [valueSemVU, hp, Bool.false_eq_true, ↓reduceIte]
+
+/-- The register-level value semantics with unwinding lets the next compare overwrite a
+compare's flags. -/
+theorem valueSemVU_cmpOverwrite (gv : Nat → String → Prop) (F : BitVec 64 → Prop) (ctx : FnCtx)
+    (X : ExtSem) (XR : XRaise) : CmpOverwrite (valueSemVU gv F ctx X XR) :=
+  cmpOverwrite_of_mspec (sb := ctx.slotBase)
+    (fun i hs => by funext us w; simp only [valueSemVU, hs, ↓reduceIte])
+    (jumpPlain_of_csem (F := F) (ctx := ctx) (X := X) fun l => by
+      funext us w; simp [valueSemVU, csemVU, csemU, specForm, pureForm, cmpForm])
 
 /-- **Where no callee raises, `valueSemVU` is `valueSemV`.** -/
 theorem valueSemVU_noRaise {i : MInst} {us : List CV} {w : Arm.ArmState}
@@ -324,7 +330,8 @@ theorem gotSem_valueSemVU (gv : Nat → String → Prop) (F : BitVec 64 → Prop
 theorem valueSemVU_rets (us : List (Reg × Reg)) :
     valueSemVU gv F ctx X XR (.rets us) = csem F ctx X (.rets us) := by
   funext uses w
-  simp only [valueSemVU, pureForm, Bool.false_eq_true, ↓reduceIte, csemVU, csemU]
+  rw [valueSemVU_not_pure rfl]
+  simp only [csemVU, csemU]
 
 /-- A trap instruction's `.halt` under `valueSemVU` is one of `csem`. -/
 theorem valueSemVU_halt_trap {i : MInst} {uses : List CV} {w : Arm.ArmState} {outs : List CV}
@@ -332,7 +339,7 @@ theorem valueSemVU_halt_trap {i : MInst} {uses : List CV} {w : Arm.ArmState} {ou
     (h : valueSemVU gv F ctx X XR i uses w = some (outs, w', .halt)) :
     csem F ctx X i uses w = some (outs, w', .halt) := by
   cases i <;> simp only [trapCode?, ne_eq, not_true_eq_false] at ht <;>
-    simpa only [valueSemVU, pureForm, Bool.false_eq_true, ↓reduceIte, csemVU, csemU] using h
+    rw [valueSemVU_not_pure rfl] at h <;> simpa only [csemVU, csemU] using h
 
 end
 

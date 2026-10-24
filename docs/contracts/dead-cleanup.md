@@ -10,9 +10,30 @@ The replacement-driver work in PR #135 remains paused.
 `Backend.DeadCleanup.prune` leaves a CFG-invalid input unchanged. For a valid
 CFG, it scans each instruction array backwards and removes an instruction only
 when it has a whitelisted pure form, no clobbers, only virtual definitions, at
-least one definition, and no live definition. The whitelist includes integer
+least one definition, and no live definition. The whitelist (`pureForm`) includes integer
 moves/constants/address computations, non-flag-setting arithmetic and logical
-operations, and multiply-add/subtract. Other forms remain in place.
+operations, multiply-add/subtract, the integer extensions (`uxtb`/`sxth`/…), and `cset` (it
+reads the flags but writes only its definition; #552: the boolean of an `icmp` that the
+`brif`/`select` rule re-compares, which Cranelift does not lower because no lowered instruction
+uses it, `machinst/lower.rs` `lower_clif_block`). Other forms remain in place.
+`ABIReadOnly.instruction` keeps its previous producer list (`pureNoFlags`, the whitelist
+without the extensions and `cset`).
+
+The scan also removes a compare (`cmp`/`cmn`/`tst` into `xzr`, `cmpForm`, no definition) whose
+flags are dead (`flagsDead`): the retained instructions after it reach another compare through
+flag-free producers only (`flagFree`: `pureNoFlags` and the extensions). This is the rest of the
+`icmp` above, and with it its operand extension (#552 part 2). Its proof relates the two runs
+with differing worlds while dropped compares' flags are pending (`Rel.pend`, `FlagsPend`), under
+the premise `CmpOverwrite sem`: a compare writes only what the next compare overwrites and
+flag-free producers neither read nor change. The value semantics (`valueSem`, `valueSemV`,
+`valueSemU`, `valueSemVU`, `valueSemG`, `valueSemGF`) run compares, like pure producers, by
+their specification (`specForm`, `mspec`); `*_cmpOverwrite` prove the premise for each, and
+`spec_mspec_csem` realizes a compare's specification step by the concrete semantics.
+Statements of the generic layers (`prune_correct`, `cleanup_correct`, `memTraps_prune`,
+`unwinds_prune`, `tryRaise_prune`, the `*_cleanup_ex*` layer theorems taking `hPure`) gained
+this premise (`hcmp`/`hCmp`); the positional lemmas (`rel_kept`, `head_nonpure`,
+`nonpure_mem`, `scan_head`, `scan_positions`) gained `cmpForm i = false`: the pass removes more,
+so the old statements are false.
 
 The liveness boundary includes every block's reads and outgoing edge arguments,
 including the current block's reads. This deliberately conservative choice covers

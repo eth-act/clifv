@@ -4,11 +4,11 @@ import FV.E2E.DeadCleanupContracts
 namespace E2E
 open Backend Backend.Proof Backend.DeadCleanup
 
-/-- The existing read/call guards, with pure producers using value semantics. -/
+/-- The existing read/call guards, with pure producers and compares using value semantics. -/
 noncomputable def valueSemG (F : BitVec 64 → Prop) (ctx : FnCtx) (X : ExtSem) (Rd : BitVec 64 → Prop)
     (syms : String → Option Nat) (exts : List Clif.ExtFunc) (sigs : List Clif.Signature) (sp0 : BitVec 64)
     (Pc : String → Clif.Signature → List Clif.Val → Clif.Mem → Prop) : Sem :=
-  fun i us w => if pureForm i then mspec ctx.slotBase i us w
+  fun i us w => if specForm i then mspec ctx.slotBase i us w
     else csemG F ctx X Rd syms exts sigs sp0 Pc i us w
 
 variable {F : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem} {Rd : BitVec 64 → Prop}
@@ -16,23 +16,34 @@ variable {F : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem} {Rd : BitVec 64 →
   {sp0 : BitVec 64}
   {Pc : String → Clif.Signature → List Clif.Val → Clif.Mem → Prop}
 
-private theorem pure_guarded {i : MInst} (hp : pureForm i = true) (us : List CV) (w : Arm.ArmState) :
+private theorem spec_guarded {i : MInst} (hp : specForm i = true) (us : List CV) (w : Arm.ArmState) :
     csemG F ctx X Rd syms exts sigs sp0 Pc i us w = csem F ctx X i us w := by
   apply csemG_of
-  · cases i <;> simp_all [GuardR, pureForm]
-  · cases i <;> simp_all [GuardC, pureForm]
+  · cases i <;> simp_all [GuardR, specForm, pureForm, cmpForm]
+  · cases i <;> simp_all [GuardC, specForm, pureForm, cmpForm]
+
+/-- The guarded value semantics lets the next compare overwrite a compare's flags. -/
+theorem valueSemG_cmpOverwrite (F : BitVec 64 → Prop) (ctx : FnCtx) (X : ExtSem)
+    (Rd : BitVec 64 → Prop) (syms : String → Option Nat) (exts : List Clif.ExtFunc)
+    (sigs : List Clif.Signature) (sp0 : BitVec 64)
+    (Pc : String → Clif.Signature → List Clif.Val → Clif.Mem → Prop) :
+    CmpOverwrite (valueSemG F ctx X Rd syms exts sigs sp0 Pc) :=
+  cmpOverwrite_of_mspec (sb := ctx.slotBase)
+    (fun i hs => by funext us w; simp only [valueSemG, hs, ↓reduceIte])
+    (jumpPlain_of_csem (F := F) (ctx := ctx) (X := X) fun l => by
+      funext us w; simp [valueSemG, csemG, GuardR, GuardC, specForm, pureForm, cmpForm])
 
 theorem valueSemG_sub {i : MInst} {us : List CV} {w : Arm.ArmState} {r : List CV × Arm.ArmState × Ctl}
     (h : valueSemG F ctx X Rd syms exts sigs sp0 Pc i us w = some r) :
     valueSem F ctx X i us w = some r := by
-  by_cases hp : pureForm i = true
+  by_cases hp : specForm i = true
   · simpa [valueSemG, valueSem, hp] using h
   · simp only [valueSemG, hp, Bool.false_eq_true, ite_false] at h
     simpa [valueSem, hp] using (csemG_sub h).2.2
 
 theorem refines_valueSemG : Refines F (valueSemG F ctx X Rd syms exts sigs sp0 Pc) := by
   intro i us w outs w' ctl h
-  by_cases hp : pureForm i = true
+  by_cases hp : specForm i = true
   · exact ⟨w', by simp [valueSemG, hp, mspec_of_ispec h], SameWorld.refl F w'⟩
   · simpa [valueSemG, hp] using (refines_csemG (F := F) (ctx := ctx) (X := X)
       (Rd := Rd) (syms := syms) (exts := exts) (sigs := sigs) (sp0 := sp0) (Pc := Pc)) i us w outs w' h
@@ -44,23 +55,23 @@ theorem memRefinesR_valueSemG {sb : Nat} (hsb : ctx.slotBase = sb)
     memRefinesR_csemG (F := F) (ctx := ctx) (X := X) (Rd := Rd) (exts := exts)
       (sigs := sigs) (sp0 := sp0) (Pc := Pc) hsb hsym
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
-  · simpa [valueSemG, pureForm] using h1
-  · simpa [valueSemG, pureForm] using h2
+  · simpa [valueSemG, specForm, pureForm, cmpForm] using h1
+  · simpa [valueSemG, specForm, pureForm, cmpForm] using h2
   · intro d off w
     subst sb
     exact ⟨w, rfl, SameWorld.refl F w⟩
-  · simpa [valueSemG, pureForm] using h4
-  · simpa [valueSemG, pureForm] using h5
-  · simpa [valueSemG, pureForm] using h6
-  · simpa [valueSemG, pureForm] using h7
-  · simpa [valueSemG, pureForm] using h8
-  · simpa [valueSemG, pureForm] using h9
+  · simpa [valueSemG, specForm, pureForm, cmpForm] using h4
+  · simpa [valueSemG, specForm, pureForm, cmpForm] using h5
+  · simpa [valueSemG, specForm, pureForm, cmpForm] using h6
+  · simpa [valueSemG, specForm, pureForm, cmpForm] using h7
+  · simpa [valueSemG, specForm, pureForm, cmpForm] using h8
+  · simpa [valueSemG, specForm, pureForm, cmpForm] using h9
 
 theorem callsRefineP_valueSemG {env : Clif.Env} {exts : List Clif.ExtFunc} {MR : MemRelT}
     (hX : XCallsOk env exts MR X) (hMRm : ∀ sl cm w, MR sl cm w → MemRel F syms cm w)
     (hMRc : ∀ sl cm w, MR sl cm w → spv w = sp0) :
     CallsRefineP Pc F env exts MR (valueSemG F ctx X Rd syms exts sigs sp0 Pc) := by
-  simpa [CallsRefineP, valueSemG, pureForm] using
+  simpa [CallsRefineP, valueSemG, specForm, pureForm, cmpForm] using
     (callsRefineP_csemG (F := F) (ctx := ctx) (X := X) (Rd := Rd)
       (syms := syms) (exts := exts) (sigs := sigs) (sp0 := sp0) (Pc := Pc) hX hMRm hMRc)
 
@@ -70,7 +81,7 @@ theorem indCallsRefineP_valueSemG {env : Clif.Env} {sigs : List Clif.Signature} 
     (hMRm : ∀ sl cm w, MR sl cm w → MemRel F syms cm w)
     (hMRc : ∀ sl cm w, MR sl cm w → spv w = sp0) :
     IndCallsRefineP Pc env sigs MR (valueSemG F ctx X Rd syms exts sigs sp0 Pc) := by
-  simpa [IndCallsRefineP, valueSemG, pureForm] using
+  simpa [IndCallsRefineP, valueSemG, specForm, pureForm, cmpForm] using
     (indCallsRefineP_csemG (F := F) (ctx := ctx) (X := X) (Rd := Rd)
       (syms := syms) (exts := exts) (sigs := sigs) (sp0 := sp0) (Pc := Pc) hX hsym hMRm hMRc)
 theorem valueSemG_lockstep2 {Z : BitVec 64 → Prop} (hFZ : ∀ a, F a → Z a) {i : MInst} {us : List CV}
@@ -83,22 +94,29 @@ theorem valueSemG_lockstep2 {Z : BitVec 64 → Prop} (hFZ : ∀ a, F a → Z a) 
     (h : valueSemG F ctx X (fun b => ¬ Z b) syms exts sigs sp0 Pc i us w = some (o, w₁, c))
     (h' : valueSemG F ctx X (fun b => ¬ Z b) syms exts sigs sp0 Pc i us w' = some (o', w₁', c')) :
     o = o' ∧ c = c' ∧ SameWorld Z w₁ w₁' := by
-  by_cases hp : pureForm i = true
+  by_cases hsf : specForm i = true
   · have hs : mspec ctx.slotBase i us w = some (o, w₁, c) := by
-      simpa [valueSemG, hp] using h
+      simpa [valueSemG, hsf] using h
     have hs' : mspec ctx.slotBase i us w' = some (o', w₁', c') := by
-      simpa [valueSemG, hp] using h'
-    obtain ⟨hew, hec⟩ := mspec_pure hp hs
-    obtain ⟨hew', hec'⟩ := mspec_pure hp hs'
-    subst w₁; subst c; subst w₁'; subst c'
-    obtain ⟨wc, hc, _⟩ := pure_mspec_csem (F := F) (X := X) hp hs
-    obtain ⟨wc', hc', _⟩ := pure_mspec_csem (F := F) (X := X) hp hs'
-    have hg : csemG F ctx X (fun b => ¬ Z b) syms exts sigs sp0 Pc i us w =
-        some (o, wc, .next) := (pure_guarded hp us w).trans hc
-    have hg' : csemG F ctx X (fun b => ¬ Z b) syms exts sigs sp0 Pc i us w' =
-        some (o', wc', .next) := (pure_guarded hp us w').trans hc'
-    exact ⟨(csemG_lockstep2 hFZ hw hX hT hg hg').1, rfl, hw⟩
-  · simp only [valueSemG, hp, Bool.false_eq_true, ite_false] at h h'
+      simpa [valueSemG, hsf] using h'
+    rcases specForm_cases hsf with hp | hcm
+    · obtain ⟨hew, hec⟩ := mspec_pure hp hs
+      obtain ⟨hew', hec'⟩ := mspec_pure hp hs'
+      subst w₁; subst c; subst w₁'; subst c'
+      obtain ⟨wc, hc, _⟩ := pure_mspec_csem (F := F) (X := X) hp hs
+      obtain ⟨wc', hc', _⟩ := pure_mspec_csem (F := F) (X := X) hp hs'
+      have hg : csemG F ctx X (fun b => ¬ Z b) syms exts sigs sp0 Pc i us w =
+          some (o, wc, .next) := (spec_guarded hsf us w).trans hc
+      have hg' : csemG F ctx X (fun b => ¬ Z b) syms exts sigs sp0 Pc i us w' =
+          some (o', wc', .next) := (spec_guarded hsf us w').trans hc'
+      exact ⟨(csemG_lockstep2 hFZ hw hX hT hg hg').1, rfl, hw⟩
+    · -- a compare: the same flags from both worlds (it reads only its uses)
+      obtain ⟨-, p, rfl, hall⟩ := mspec_cmp hcm hs
+      have e := hs'.symm.trans (hall w')
+      simp only [Option.some.injEq, Prod.mk.injEq] at e
+      obtain ⟨rfl, rfl, rfl⟩ := e
+      exact ⟨rfl, rfl, SameWorld.write_pstate' hw p⟩
+  · simp only [valueSemG, hsf, Bool.false_eq_true, ite_false] at h h'
     exact csemG_lockstep2 hFZ hw hX hT h h'
 
 end E2E

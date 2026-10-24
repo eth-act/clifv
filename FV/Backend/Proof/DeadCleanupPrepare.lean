@@ -20,15 +20,18 @@ theorem prune_cfg (vc : VCode) : (prune vc).cfg = vc.cfg := by
   | error e => exact h
   | ok p => exact (clean_cfg vc (terminated_of_cfg h)).trans h
 
-/-- The guarded pass preserves observable executions on every input. -/
+/-- The guarded pass preserves observable executions on every input. Since #552 the pass
+also drops compares whose flags are dead, so the semantics must let a compare's flags be
+overwritten (`CmpOverwrite`). -/
 theorem prune_correct {vc : VCode} {sem : Sem}
     (hp : ∀ i us w outs w' ctl, pureForm i = true →
-      sem i us w = some (outs, w', ctl) → w' = w ∧ ctl = .next) :
+      sem i us w = some (outs, w', ctl) → w' = w ∧ ctl = .next)
+    (hcmp : CmpOverwrite sem) :
     E2E.PrepareCorrect sem vc (prune vc) := by
   unfold prune
   cases h : vc.cfg with
   | error e => exact fun _ _ => ⟨fun _ _ _ h => h, fun _ h => h⟩
-  | ok p => exact cleanup_correct hp (terminated_of_cfg h)
+  | ok p => exact cleanup_correct hp hcmp (terminated_of_cfg h)
 
 /-- Cleaning a terminated block preserves the full preparation domain. -/
 theorem clean_prepDomain {vc : VCode} {ss ps : Array (Array Nat)}
