@@ -16,7 +16,11 @@ classes), the scope is `Compile.functionETC` (a direct `try_call`'s callee may t
   `entry_stepTC`, `entry_step2TC`, `sim_runTC_abi`, `sim_runTC`, `driver_correctTC_abi`,
   `driver_correctTC` (the relations `MatchT`, `RunOkT`, `RunOkTAbi` are `LowerSimT`'s).
 
-`DriverHypT` and its theorems are unchanged.
+`DriverHypT` and its theorems are unchanged. S11f: `DriverHypTC.subETC` is
+`Compile.functionETCF f` (the scope with the proven float operations; it was `functionETC`,
+which gives it, `Compile.functionETCF_of_functionETC`); the simulation only uses it for the
+terminators' integer-position operands (`termIntPos_of_functionETCF`), so every theorem over
+`DriverHypTC` is stronger and also covers the float operations (`E2E/FinalTCF.lean`).
 -/
 
 namespace Backend.Proof.Driver
@@ -42,8 +46,9 @@ structure DriverHypTC (f : Clif.Function) (vc : VCode) (ctx : Ctx) (st0 : LState
   /-- the signature of an indirect call is among `f`'s indirect-call signatures, with register
   arguments (`E2E.InSubset.indSigs`) -/
   indSig : ∀ B ∈ f.blocks, ∀ st ∈ B.body, IndSigOk f (indSigs f) st.inst
-  /-- `f` is in the typed movement scope with typed `try_call`s (`E2E.InSubsetTC.subsetETC`) -/
-  subETC : Compile.functionETC f = true
+  /-- `f` is in the typed scope with typed `try_call`s and the proven float operations
+  (`E2E.InSubsetTC.subsetETC` through `Compile.functionETCF_of_functionETC`) -/
+  subETC : Compile.functionETCF f = true
   /-- `br_table` indices have at most 32 bits (`lowerCheck`'s `brIdxOk`) -/
   brIdx : ∀ B ∈ f.blocks, BrIdxTyped ctx B.term
   /-- no tail calls (`return_call` is outside clif-subset-v2 E) -/
@@ -72,11 +77,11 @@ variable {f : Clif.Function} {vc : VCode} {ctx : Ctx} {st0 : LState} {R : Reg �
   {slots : List (Clif.SlotId × Nat)}
 
 /-- The integer-position operands of `f`'s terminators other than its direct `try_call`s
-(`termIntPos_of_functionETC`). -/
+(`termIntPos_of_functionETCF`). -/
 theorem DriverHypTC.termIntPos (H : DriverHypTC f vc ctx st0 R gn bl A sem MR env p)
     {B : Clif.Block} (hB : B ∈ f.blocks) (hnt : ∀ fn args et, B.term ≠ .tryCall fn args et) :
     TermIntPos ctx B.term :=
-  termIntPos_of_functionETC H.subETC H.shape.hctx.choose_spec hB hnt
+  termIntPos_of_functionETCF H.subETC H.shape.hctx.choose_spec hB hnt
 
 theorem DriverHypTC.blow (H : DriverHypTC f vc ctx st0 R gn bl A sem MR env p) {bi : Nat}
     {B : Clif.Block} (hB : f.blocks[bi]? = some B) : ∃ L, bl[bi]? = some L := by

@@ -15,6 +15,8 @@ import FVTest.Link.FloatCompileExeT
 import FV.Link.DeadCleanupCompileT
 import FV.E2E.FinalTC
 import FV.Backend.Proof.IselCtlTryF
+import FV.E2E.FinalTCF
+import FVTest.E2E.FloatArithFinalTCF
 
 -- S11e5 Stage C (#35): the typed scope (float data movement, float parameters and returns)
 #print axioms E2E.typedRules_program
@@ -89,3 +91,27 @@ import FV.Backend.Proof.IselCtlTryF
 #print axioms Backend.Proof.tryUnmatchableTC_program
 #print axioms Backend.Proof.Driver.tryCallsTC_of_rules
 #print axioms Backend.Proof.tryRulesCorrectTFP_program
+
+-- S11f (#35): float arithmetic, rounding and conversions in the per-function typed chain
+#print axioms E2E.backend_correct_finalTCF
+#print axioms E2E.backend_correct_final_exTCF
+#print axioms E2E.backend_correct_m4_exTCF
+#print axioms E2E.iselSimTCF_of_rules
+#print axioms E2E.verdict_of_unverifiedReasonF
+#print axioms E2E.lowerChecked_specTCF
+#print axioms E2E.InSubsetTCF.of_verifiableTCF
+#print axioms E2E.CompiledTC.toTCF
+#print axioms Backend.Proof.nonEUnmatchableTF_program
+#print axioms Backend.Proof.nonEUnmatchableT_program
+#print axioms Backend.Proof.lowerRulesCorrectCvtT_program
+#print axioms Backend.Proof.exclOkTF_program
+#print axioms Backend.Proof.lower_nonroot_nomatchTF_calls
+#print axioms Backend.Proof.lowerInstOk_of_rulesTF
+#print axioms Backend.Proof.instCallsTF_of_rules
+#print axioms Backend.Proof.instCallsT_of_rules
+#print axioms Backend.Proof.Driver.loweringTCF_of_check
+#print axioms Backend.Proof.Driver.lowerCheckTCF_of_lowerCheckTC
+#print axioms Backend.Proof.Driver.instScopeT_of_lowerCheckTC
+#print axioms Compile.functionETCF_of_functionETC
+#print axioms FloatArithFinalTCF.verdict_f -- witness: native_decide
+#print axioms FloatArithFinalTCF.backend_correct_finalTCF_fOps -- witness: native_decide

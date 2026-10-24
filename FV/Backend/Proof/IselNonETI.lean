@@ -308,7 +308,8 @@ theorem intStore_nonE {r : Rule} (hr : r ∈ program.rulesOf TId.lower) (hs : in
     subst ht
     have hf : ty.isFloat = true := by
       revert hT hE; cases ty <;> cases op <;>
-        simp [Compile.instET, Compile.instE, Compile.tyE, Clif.Ty.isFloat]
+        simp [Compile.instETF, Compile.instETA, Compile.fArithET, Compile.fCvtET, Compile.instET,
+          Compile.instE, Compile.tyE, Clif.Ty.isFloat]
     have := hst _ _ _ _ _ _ rfl hf _ hvt
     simp [fTys] at this
 
@@ -316,7 +317,7 @@ theorem intStore_nonE {r : Rule} (hr : r ∈ program.rulesOf TId.lower) (hs : in
 
 /-- **The integer roots never match the non-E instructions of a typed context.** -/
 theorem nonEUnmatchableT_program : NonEUnmatchableT program := by
-  intro r hr hroot hfm hmm hfa f ctx hctx ii info inst hi hc hE hsel hst cfg m st tr env' s1 _
+  intro r hr hroot hfm hmm hfa f ctx hctx hsc ii info inst hi hc hE hsel hst cfg m st tr env' s1 _
     hmatch
   have hok := List.all_eq_true.mp nonEOk_program r hr
   rw [closureRoot_eq] at hroot
@@ -332,9 +333,9 @@ theorem nonEUnmatchableT_program : NonEUnmatchableT program := by
         rw [hargs] at ha
         obtain ⟨e1, h1, -⟩ := matchArgs_cons_inv ha
         have hd := hctx.inv.data ii info inst hi hc
-        have hsp := nonE_split hctx.inv hi hc hd (hctx.scope ii info inst hi hc) hE
+        have hsp := nonE_split hctx.inv hi hc hd (hsc ii info inst hi hc) hE
           (sel := r.id == 971) (fun h => hsel (beq_iff_eq.mp h))
-        exact rootNE_sound hctx.inv hctx.scope hctx.calls hsp hi q _ _ _ hok h1
+        exact rootNE_sound hctx.inv hsc hctx.calls hsp hi q _ _ _ hok h1
       · cases hok
   · exact intStore_nonE hr his hctx hi hc hE hst hmatch
 
