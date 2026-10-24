@@ -20,23 +20,25 @@ open Backend Backend.Proof Isle Isle.Aarch64
 private theorem all_of_chunks {α : Type} (g : α → Bool) (L : List α) (k n : Nat)
     (hn : L.length ≤ n * k) (h : ∀ c < n, ((L.drop (c * k)).take k).all g = true) :
     L.all g = true := by
-  rw [List.all_eq_true]
-  intro x hx
-  obtain ⟨j, hj, rfl⟩ := List.getElem_of_mem hx
-  have hk : 0 < k := by
-    rcases Nat.eq_zero_or_pos k with h0 | h0
-    · rw [h0, Nat.mul_zero] at hn; omega
-    · exact h0
-  have hc : j / k < n := Nat.div_lt_of_lt_mul (by rw [Nat.mul_comm]; omega)
-  have hjk := Nat.div_add_mod' j k
-  have hm := Nat.mod_lt j hk
-  have hl : j % k < ((L.drop (j / k * k)).take k).length := by
-    simp only [List.length_take, List.length_drop]; omega
-  have := List.all_eq_true.1 (h _ hc) _ (List.getElem_mem hl)
-  simp only [List.getElem_take, List.getElem_drop] at this
-  simp only [hjk] at this
-  exact this
-
+  induction n generalizing L with
+  | zero =>
+    have empty : L = [] := List.length_eq_zero_iff.mp (Nat.eq_zero_of_le_zero (by simpa using hn))
+    simp only [empty, List.all_nil]
+  | succ n ih =>
+    have first : (L.take k).all g = true := by
+      simpa only [Nat.zero_mul, List.drop_zero] using h 0 (Nat.zero_lt_succ n)
+    have bound : (L.drop k).length ≤ n * k := by
+      rw [List.length_drop]
+      apply Nat.sub_le_iff_le_add.mpr
+      simpa only [Nat.succ_mul] using hn
+    have tail : (L.drop k).all g = true := by
+      apply ih (L.drop k) bound
+      intro c hc
+      simpa only [List.drop_drop, Nat.succ_mul, Nat.add_comm] using h (c+1) (Nat.succ_lt_succ hc)
+    have both : ((L.take k) ++ L.drop k).all g = true := by
+      simp only [List.all_append, Bool.and_eq_true]
+      exact ⟨first,tail⟩
+    simpa only [List.take_append_drop] using both
 /-- The rule test of one environment (`aRule`'s body). -/
 private def envOkT (out : AT) (r : Rule) (env : List AT) : Bool :=
   match aExpr program shpTabT actor apreST aOracleST r.rhs env with
@@ -124,7 +126,7 @@ theorem shpStmtOkT_rule_lower_2267 : shpStmtOkT rule_lower_2267 = true := by
     | 5, _ => exact shpStmtOkT_rule_lower_2267_f8_c5
     | 6, _ => exact shpStmtOkT_rule_lower_2267_f8_c6
     | 7, _ => exact shpStmtOkT_rule_lower_2267_f8_c7
-    | _ + 8, hc => exact absurd hc (by omega)
+    | c + 8, hc => exact absurd hc (Nat.not_lt_of_ge (Nat.le_add_left 8 c))
   · have := List.all_eq_true.1 shpStmtOkT_rule_lower_2267_rest i hi
     simpa [hi'] using this
 
