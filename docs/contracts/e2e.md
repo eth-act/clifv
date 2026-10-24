@@ -603,8 +603,31 @@ the `retN`/value arguments).
   a > 32 KiB spill area stores its callee-saves through x16 without CFI rows, and a panic
   unwinding through it does not restore them (repro on #479; stock cg_clif saves them under the
   frame record and is not affected). Frame change tracked in #479.
-  Open: completeness of `unwCheck` and `lastCallsOk` (needs an input condition: a callee called
-  by a `try_call` and by a call of the last block), `ehOkR` on lean-ld's output.
+  **Without `unwCheck`** (`FV/Link/UnwCondIn.lean`): `unwCondInB g a` =
+  `tryTablesB`, `tryRetsB`, `lastCallsOk`, `saveFrameB`, `leadOkB`, code below 4 GiB;
+  `Link.EhCheck.Complete.unwCondB_of_in` (by `unwCheck_complete`),
+  `unwCondsB_of_in` (`InScopeIn` lift), `Link.DeadCleanup.compileExeU_total_ldCond`; witness
+  `ULdCondWitness.compileExeU_total_ldCond_witness`. Measured (debug, panic=unwind,
+  `--lean-link --verified`): deps without std, 4 executables (15,200–19,845 functions,
+  2,321–2,988 with `try_call`), every condition 0 (`lastCallsOk` 3 → 0 by #515); fv-demo 0.
+  Open: completeness of `lastCallsOk` (#518) and `ehOkR` on lean-ld's output (#519); `saveFrameB`
+  and `leadOkB` stay measured conditions (the stock Cranelift frame, #549, is planned to make the
+  saves' rows unconditional).
+  **The outgoing bound from the input** (`FV/Backend/Proof/IselOutBound*.lean`,
+  `FV/Link/UnwOutIn.lean`): the input condition **`outBoundB g`** (`outBoundLe 32560`: every
+  `call`/`call_indirect` statement and every `try_call`/`try_call_indirect` terminator passes at
+  most 32560 bytes on the stack, `stackBytes` of the callee's, the `call_indirect`'s or the
+  exception table's signature) bounds the outgoing area:
+  `Backend.Proof.OutBound.lowerFunction_outgoing_le` (`LowerScope f → outBoundLe Bd f = true →
+  lowerFunction f = .ok vc → vc.outgoing ≤ Bd`), carried through `prune`/`prepare` by
+  `Link.EhCheck.Complete.vcp_outgoing_le`. Parts: only `gen_call_info`/`gen_call_ind_info` change
+  the outgoing area (`externCtor_out`, by the `externCtor_split` automation); neither is in the
+  certified term set `callTab` (one kernel decision each), so runs of every rule but 1031–1036
+  keep it (`UModel` `outModel`), and the `call`/`try_call` rules set it to
+  `max outgoing (stackBytes sig)` exactly (`call_bl_outEq`, `call_got_outEq`, `call_ind_outEq`,
+  `try_bl_outEq`, `try_got_outEq`, `try_ind_outEq`); `lowBlocks_bnd` carries the bound through the
+  recorded lowering. Witness `OutBound.Witness.outgoing_le_applies` (ten `i64` arguments: the
+  bound 16 is reached).
 * **The executable-bytes machine with unwinding (S10g, #404)** (`FV/E2E/DeadCleanupExecUnwind.lean`):
   `E2E.DeadCleanupExecBytes.stepU I B Ub file` is `DeadCleanupExecBytes.step` (the processor on
   the file's words; calls of code outside the program and TLS by the base hooks; a call of a
@@ -4653,6 +4676,28 @@ theorem bundle_correct_raw_peak_contract …    -- N = frameDrop (art _ g).af + 
   `15, 5` in x0, x1.
 * `#print axioms` (`scripts/audit/entry-contract.lean`): `[propext, Classical.choice,
   Quot.sound]`.
+
+## Known gap: reads of uninitialised stack bytes (SEM1, [#537](https://github.com/eth-act/clifv/issues/537))
+
+In `Clif.run` a stack slot's bytes start uninitialised (`none`: `Mem.allocAt`/`alloc` through
+`bumpSlots`/`placeSlots` in `enterFunc`), and a `load` of such a byte (likewise `memcmp` in
+`Clif.Rust`) is `stuck`. Cranelift has no such undefined behaviour: the load returns whatever
+bytes are there, and cg_clif's output relies on this, e.g. for a partially initialised `Option`/enum
+or the copy of a partially written `sret` slot. `ArmRefines`/`ExecRefines` make no claim for a
+`stuck` outcome, and `Front.bundle_correct_*` cover only `returned`/`trapped`. So a run that reads an
+uninitialised stack byte, in the entered function or in any callee, **currently gets no guarantee**
+from `E2E.backend_correct_final`, `Link.DeadCleanup.compileExe_correct*` or
+`Front.bundle_correct_*`. Measured (2026-10-23, shadow-stack qemu plugin, a lower bound):
+9 of 21 fv-demo and 46 of 53 survey test runs (`cargo fv test --lean-link --verified`) perform at
+least one such read. Planned fix (`docs/plans/uninit.md` §5, route (i)): slot bytes start with
+values from an oracle (`Clif.Place.init`), which the theorems instantiate with the Arm memory at
+activation entry. The generated code stays stock Cranelift's. **The gap stays open for a while**
+([#556](https://github.com/eth-act/clifv/issues/556)). The linking's canonical callee runs and
+non-interference (`CalleeOkG.os`, `LinkSys.Thm`) cannot carry stale reads, because those bytes
+include regalloc-chosen values outside the world (earlier callees' register saves and spills). The
+per-function theorem first needs a call semantics indexed by the actual run, threaded through the
+reg-level simulation; new theorem variants will sit beside the existing ones. The heap-side gap
+(allocating externs) is separate: [#547](https://github.com/eth-act/clifv/issues/547) (SEM2).
 
 ## Remaining (precise)
 

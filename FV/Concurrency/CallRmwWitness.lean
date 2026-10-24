@@ -731,7 +731,8 @@ theorem funReal_call (env : Clif.Env) :
     have hldx : ∀ i < n0C, ∀ a rn sz, cls (iterN RC.step i RC.s0) ≠ .ldx a rn sz :=
       fun i hi a rn sz => noLdxC _ ((hpath i hi).2) a rn sz
     have hW : PrivW (PrivA RLB) (segEvs RC.step n0C RC.s0) := fun p y hy hd =>
-      hsub _ (privW_segEvs (fun i hi => (hpath i hi).1.1) p y hy hd)
+      (fun h => ⟨hsub _ h.1, h.2⟩) (privW_segEvs (fun i hi => (hpath i hi).1.1)
+        (fun i hi => stepEvs_noRelXW (hpath i hi).1.2) p y hy hd)
     by_cases hlen : ls.length ≤ n0C
     · obtain ⟨-, hev, hk⟩ := prun_privF (hmono hr) fun i hi =>
         ⟨(hpath i (by omega)).1.1, (hpath i (by omega)).1.2, hagree i (by omega)⟩
@@ -739,7 +740,8 @@ theorem funReal_call (env : Clif.Env) :
       · rw [List.take_length]; exact WitnessC.xClosed_labs fun l hl => (hk l hl).2
       · rw [List.take_length, hev]
         exact refines_nilS (fun x hx => absurd hx List.not_mem_nil) fun p y hy hd =>
-          hsub _ (privW_segEvs (fun i hi => (hpath i (by omega)).1.1) p y hy hd)
+          (fun h => ⟨hsub _ h.1, h.2⟩) (privW_segEvs (fun i hi => (hpath i (by omega)).1.1)
+            (fun i hi => stepEvs_noRelXW (hpath i (by omega)).1.2) p y hy hd)
     · -- the path to the `bl`, then the `bl` step
       obtain ⟨v, hv, hrest⟩ := CallCompose.take_prun hr n0C
       have hlt : (ls.take n0C).length = n0C := by simp; omega

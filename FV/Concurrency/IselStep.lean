@@ -1,6 +1,7 @@
 import FV.Concurrency.SegRun
 import FV.Backend.Proof.LowerSim
 import FV.Concurrency.SegShape
+import FV.Concurrency.IselDriverT
 
 /-!
 # Counted runs and the statement step with its endpoint (T2h, #311, layer 2e)
@@ -19,6 +20,9 @@ segment's end more than once. So this file counts steps:
   segment runs (`seqRun`) to the configuration after it, `seg.length` steps on, which matches the
   CLIF state after the statement. The proof is `stmt_step`'s (`FV/Backend/Proof/LowerSim.lean`),
   restated with the endpoint (that file's statement stays as it is).
+* `stmt_matchNT`, `term_matchNT`, `term_retNT` (#473): the same on `DriverHypT` (no extern-only
+  calls; `stmt_matchNT` assumes it of its own statement); the `DriverHyp` versions are their
+  corollaries.
 -/
 
 namespace Concurrency.IselStep
@@ -234,6 +238,72 @@ theorem vstep_of_vtrun {vc : VCode} {sem : ISem CV ArmState}
   rw [confMem_self, e0] at h1
   exact vstep_of_starN h1 hE hle
 
+/-! ## Stopping before the end of a forward run: not at a `rets` (#473) -/
+
+/-- The VCode configuration is at a `rets` instruction. -/
+def VAtRets {V W : Type} (vc : VCode) (c : VConf V W) : Prop :=
+  ∃ b k ρ w vb us, c = .run ⟨b, k, ρ, w⟩ ∧ vc.blocks[b]? = some vb ∧
+    vb.insts[k]? = some (.rets us)
+
+/-- A semantics whose `rets` returns. -/
+def RetsRet {V W : Type} (sem : ISem V W) : Prop :=
+  ∀ us u w r, sem (.rets us) u w = some r → r.2.2 = .ret
+
+/-- A configuration at a `rets` steps to a return. -/
+theorem vstep_rets_ret {V W : Type} {vc : VCode} {sem : ISem V W} (hret : RetsRet sem)
+    {c c' : VConf V W} (hat : VAtRets vc c) (hs : VStep vc sem c c') : ∃ v w, c' = .ret v w := by
+  obtain ⟨b, k, ρ, w, vb, us, rfl, hvb, hi⟩ := hat
+  cases hs with
+  | step hvb' hi' hops hsem hlen hnext =>
+    rw [hvb] at hvb'; cases hvb'
+    rw [hi] at hi'; cases hi'
+    have hc := hret _ _ _ _ hsem
+    simp only at hc
+    subst hc
+    cases hnext with
+    | ret _ => exact ⟨_, _, rfl⟩
+
+/-- No counted run leads from a return to a running configuration. -/
+theorem starN_ret_run {V W : Type} {vc : VCode} {sem : ISem V W} {n : Nat} {v : List V} {w : W}
+    {s : VState V W} (h : StarN (VStep vc sem) n (.ret v w) (.run s)) : False := by
+  cases h with
+  | step _ h' _ => cases h'
+
+/-- **`vstep_of_starN` towards a running configuration, not at a `rets`**: where the shorter run
+stops before the end, its configuration steps and is not at a `rets` (a `rets` steps to a
+return, from which no running configuration is reached). -/
+theorem vstep_of_starNR {V W : Type} {vc : VCode} {sem : ISem V W} (hret : RetsRet sem)
+    {n L : Nat} {c0 cT : VConf V W} {sE : VState V W} (hT : StarN (VStep vc sem) n c0 cT)
+    (hE : StarN (VStep vc sem) L c0 (.run sE)) (hle : n ≤ L) :
+    ((∃ c', VStep vc sem cT c') ∧ ¬ VAtRets vc cT) ∨ (n = L ∧ cT = .run sE) := by
+  obtain ⟨mid, hA, hB⟩ := StarNP.split n (L - n) (by rw [Nat.add_sub_cancel' hle]; exact hE)
+  have e := vstepN_det hT hA
+  subst e
+  generalize hd : L - n = d at hB
+  cases hB with
+  | refl => exact .inr ⟨by omega, rfl⟩
+  | step _ h hrest =>
+    refine .inl ⟨⟨_, h⟩, fun hat => ?_⟩
+    obtain ⟨v, w, rfl⟩ := vstep_rets_ret hret hat h
+    exact starN_ret_run hrest
+
+/-- **`vstep_of_vtrun` towards a running configuration, not at a `rets`.** -/
+theorem vstep_of_vtrunR {vc : VCode} {sem : ISem CV ArmState} (hret : RetsRet sem)
+    {ev : MInst → List CV → ArmState → List Ev} {L : Nat} {c0 cT : VConf CV ArmState}
+    {sE : VState CV ArmState} {tr : List (List Ev)} (hr : VTRun vc sem ev c0 tr cT)
+    (he : ∀ e ∈ tr, e = []) (hE : StarN (VStep vc sem) L c0 (.run sE)) (hle : tr.length ≤ L) :
+    ((∃ c', VStep vc sem cT c') ∧ ¬ VAtRets vc cT) ∨ (tr.length = L ∧ cT = .run sE) := by
+  obtain ⟨h1, h2⟩ := vtrun_nil_starN hr he (confW c0).mem
+  have e0 : confMem (confW c0).mem cT = cT := by rw [← h2]; exact confMem_self cT
+  rw [confMem_self, e0] at h1
+  exact vstep_of_starNR hret h1 hE hle
+
+theorem retsRet_csem (F : BitVec 64 → Prop) (fc : FnCtx) (X : ExtSem) : RetsRet (csem F fc X) := by
+  intro us u w r h
+  simp only [csem, Option.some.injEq] at h
+  subst h
+  rfl
+
 /-- A segment that stops at instruction `k`: `k` counted steps to it, within the segment
 (`seqRun_stop_star`). -/
 theorem seqRun_stop_starN {V W : Type} {vc : VCode} {sem : ISem V W} {b : Nat} {vb : VBlock}
@@ -273,15 +343,30 @@ variable {f : Clif.Function} {vc : VCode} {ctx : Ctx} {st0 : LState} {R : Reg �
   {sem : ISem CV W} {MR : MemRelTW W} {env : Clif.Env} {p : Clif.Program}
   {slots : List (Clif.SlotId × Nat)}
 
+/-- A statement of a matched state calls an extern (`DriverHyp.ext`). -/
+theorem ext_of_match (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
+    {s : Clif.State} {vs : VState CV W} (hm : Match f ctx R gn bl A MR slots s vs)
+    {stm : Clif.Stmt} {rest : List Clif.Stmt} (hbody : s.frame.body = stm :: rest) :
+    ∀ fn args, stm.inst = .call fn args → ∀ e, s.frame.func.extern? fn = some e →
+      p.func? e.name = none := by
+  obtain ⟨-, hfunc, -, -, B, j, hB, -, -, hbd, -⟩ := hm
+  intro fn args hi e he
+  have hs : stm ∈ B.body.drop j := by rw [← hbd, hbody]; exact List.mem_cons_self
+  exact H.ext B (List.mem_of_getElem? hB) stm (List.mem_of_mem_drop hs) fn args hi e
+    (by rw [← hfunc]; exact he)
+
 /-- **The statement step with its endpoint** (`LowerSim.stmt_step`, `next` case): the segment of
 statement `j` of block `b`, renamed, runs from the matched configuration to its end
-(`seg.length` steps), which matches the CLIF state after the statement. -/
-theorem stmt_matchN (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
+(`seg.length` steps), which matches the CLIF state after the statement (on `DriverHypT`, the
+statement calling an extern if it is a call). -/
+theorem stmt_matchNT (H : DriverHypT f vc ctx st0 R gn bl A sem MR env p)
     {s : Clif.State} {b k : Nat} {ρ : Nat → CV} {w : W}
     (hm : Match f ctx R gn bl A MR slots s ⟨b, k, ρ, w⟩)
     {stm : Clif.Stmt} {rest : List Clif.Stmt} (hbody : s.frame.body = stm :: rest)
     (hind : ∀ sig callee args, stm.inst = .callIndirect sig callee args → ∀ cv,
       s.frame.get callee = .ok cv → ∀ g ∈ p.funcs, s.mem.symbols g.name ≠ some cv.toNat)
+    (hext : ∀ fn args, stm.inst = .call fn args → ∀ e, s.frame.func.extern? fn = some e →
+      p.func? e.name = none)
     {s' : Clif.State} (hs : Clif.step env p s = .next s') :
     ∃ (B : Clif.Block) (j : Nat) (ρ' : Nat → CV) (w' : W), f.blocks[b]? = some B ∧
       B.body[j]? = some stm ∧ s.frame.body = B.body.drop j ∧ k = pos f R bl b j ∧
@@ -321,9 +406,7 @@ theorem stmt_matchN (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
     instOutcome_congr (fr := s.frame) (fr' := fr') rfl rfl env p s.mem stm.inst
       fun x hx => restrict_regs_of_mem (hargs x hx)
   rw [hio] at hrun'
-  have hstep := step_stmt env p s stm rest hbody
-    (fun fn args hi e he => H.ext B hBmem stm hstmmem fn args hi e (by rw [← hfunc]; exact he))
-    hind
+  have hstep := step_stmt env p s stm rest hbody hext hind
   let D : Nat → Prop := fun n => sl.st.nextVreg ≤ n ∧ n < sl.st'.nextVreg
   have hD : ∀ d, D d → gn d = d := fun d hd => H.shape.temps d (by simp only [D] at hd; omega)
   have hdefs : ∀ m ∈ sl.st'.emitted.toList, ∀ d ∈ vdefs m, D d := hok.defs
@@ -484,10 +567,26 @@ theorem stmt_matchN (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
             exact lookup_zip_nodup hnodup (setMany_length hset) m x _ hxm hvm
     · cases hs
 
+/-- **The statement step with its endpoint** (`stmt_matchNT` on `DriverHyp`). -/
+theorem stmt_matchN (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
+    {s : Clif.State} {b k : Nat} {ρ : Nat → CV} {w : W}
+    (hm : Match f ctx R gn bl A MR slots s ⟨b, k, ρ, w⟩)
+    {stm : Clif.Stmt} {rest : List Clif.Stmt} (hbody : s.frame.body = stm :: rest)
+    (hind : ∀ sig callee args, stm.inst = .callIndirect sig callee args → ∀ cv,
+      s.frame.get callee = .ok cv → ∀ g ∈ p.funcs, s.mem.symbols g.name ≠ some cv.toNat)
+    {s' : Clif.State} (hs : Clif.step env p s = .next s') :
+    ∃ (B : Clif.Block) (j : Nat) (ρ' : Nat → CV) (w' : W), f.blocks[b]? = some B ∧
+      B.body[j]? = some stm ∧ s.frame.body = B.body.drop j ∧ k = pos f R bl b j ∧
+      StarNP (VStep vc sem) (InSeg b k (seg f R bl b j).length) (seg f R bl b j).length
+        (.run ⟨b, k, ρ, w⟩) (.run ⟨b, k + (seg f R bl b j).length, ρ', w'⟩) ∧
+      seqRun sem (seg f R bl b j) ρ w = some (.fall ρ' w') ∧
+      Match f ctx R gn bl A MR slots s' ⟨b, k + (seg f R bl b j).length, ρ', w'⟩ :=
+  stmt_matchNT H.toT hm hbody hind (ext_of_match H hm hbody) hs
+
 /-- **The terminator step with its endpoint** (`LowerSim.term_step`, branches): the terminator's
 code (and an edge block's `jump`) runs from the matched configuration to the successor's first
 statement in a counted number of steps, matching the CLIF state after the branch. -/
-theorem term_matchN (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
+theorem term_matchNT (H : DriverHypT f vc ctx st0 R gn bl A sem MR env p)
     {s : Clif.State} {b k : Nat} {ρ : Nat → CV} {w : W}
     (hm : Match f ctx R gn bl A MR slots s ⟨b, k, ρ, w⟩) (hbody : s.frame.body = [])
     (hnt : s.frame.term.isTry = false)
@@ -650,7 +749,7 @@ theorem term_matchN (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
       | zero => simp [dests] at hbc; exact ⟨rfl, hbc.symm⟩
       | succ n => simp [dests] at hbc
     obtain ⟨rfl, rfl⟩ := hj0
-    obtain ⟨TB, hTB, hlenA, hne0, hM⟩ := enter_match_br H hB hcall hfunc hslots hheld hcons hbcmem
+    obtain ⟨TB, hTB, hlenA, hne0, hM⟩ := enter_match_brT H hB hcall hfunc hslots hheld hcons hbcmem
       htl hent hρ₂ hmr'
     obtain ⟨Lt, hLt⟩ := H.blow hTB
     obtain ⟨vbt, hvbt, -, -, -, -, -, -, -, -, hpt, -, -⟩ := H.shape.blk tl TB Lt hTB hLt
@@ -674,7 +773,7 @@ theorem term_matchN (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
     have hjlt : j' < L.targets.length := by
       rw [hlt]; exact (List.getElem?_eq_some_iff.mp hbc).1
     obtain ⟨tl, htl, hnil, hedge⟩ := hall j' bc L.targets[j'] hbc (List.getElem?_eq_getElem hjlt)
-    obtain ⟨TB, hTB, hlenA, hne0, hM⟩ := enter_match_br H hB hcall hfunc hslots hheld hcons hbcmem
+    obtain ⟨TB, hTB, hlenA, hne0, hM⟩ := enter_match_brT H hB hcall hfunc hslots hheld hcons hbcmem
       htl hent hρ₂ hmr'
     obtain ⟨Lt, hLt⟩ := H.blow hTB
     obtain ⟨vbt, hvbt, -, -, -, -, -, -, -, -, hpt, -, -⟩ := H.shape.blk tl TB Lt hTB hLt
@@ -716,10 +815,22 @@ theorem term_matchN (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
         rw [hebi] at hins; cases hins
         rfl) hstep2 (.refl _))), by omega, hM⟩
 
+/-- **The terminator step with its endpoint** (`term_matchNT` on `DriverHyp`). -/
+theorem term_matchN (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
+    {s : Clif.State} {b k : Nat} {ρ : Nat → CV} {w : W}
+    (hm : Match f ctx R gn bl A MR slots s ⟨b, k, ρ, w⟩) (hbody : s.frame.body = [])
+    (hnt : s.frame.term.isTry = false)
+    (htk : ∀ L, bl[b]? = some L → ∀ i ∈ L.tst'.emitted.toList, Code.akinds i = [])
+    {s' : Clif.State} (hs : Clif.step env p s = .next s') :
+    ∃ (n : Nat) (vs' : VState CV W),
+      StarNP (VStep vc sem) (NoMemAt vc) n (.run ⟨b, k, ρ, w⟩) (.run vs') ∧ 0 < n ∧
+      Match f ctx R gn bl A MR slots s' vs' :=
+  term_matchNT H.toT hm hbody hnt htk hs
+
 /-- **The return's code runs to the return** (T2j follow-up, `term_matchN`'s `ret` case): from the
 matched configuration of a block whose terminator returns, the terminator's code (no memory
 instruction) runs to the VCode's return configuration. -/
-theorem term_retN (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
+theorem term_retNT (H : DriverHypT f vc ctx st0 R gn bl A sem MR env p)
     {s : Clif.State} {b k : Nat} {ρ : Nat → CV} {w : W}
     (hm : Match f ctx R gn bl A MR slots s ⟨b, k, ρ, w⟩) (hbody : s.frame.body = [])
     (hnt : s.frame.term.isTry = false)
@@ -838,6 +949,17 @@ theorem term_retN (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
   | returnCall fn args => exact absurd hT (H.noTail B (List.mem_of_getElem? hB) fn args)
   | tryCall _ _ _ => rw [hT] at hBnt; cases hBnt
   | tryCallIndirect _ _ _ => rw [hT] at hBnt; cases hBnt
+
+/-- **The return's code runs to the return** (`term_retNT` on `DriverHyp`). -/
+theorem term_retN (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
+    {s : Clif.State} {b k : Nat} {ρ : Nat → CV} {w : W}
+    (hm : Match f ctx R gn bl A MR slots s ⟨b, k, ρ, w⟩) (hbody : s.frame.body = [])
+    (hnt : s.frame.term.isTry = false)
+    (htk : ∀ L, bl[b]? = some L → ∀ i ∈ L.tst'.emitted.toList, Code.akinds i = [])
+    {vals : List Clif.Val} {cm : Clif.Mem} (hs : Clif.step env p s = .done vals cm) :
+    ∃ (n : Nat) (us : List CV) (w' : W),
+      StarNP (VStep vc sem) (NoMemAt vc) n (.run ⟨b, k, ρ, w⟩) (.ret us w') :=
+  term_retNT H.toT hm hbody hnt htk hs
 
 end
 

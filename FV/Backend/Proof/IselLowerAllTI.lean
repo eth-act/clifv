@@ -47,6 +47,13 @@ the values whose registers they use are in integer positions (`CtxInvT.valueRegI
 namespace Backend.Proof
 open Backend Isle Isle.Interp Isle.Aarch64
 set_option maxRecDepth 100000
+/-- A root proven over every instruction of a float-capable context (`LowerRuleOkT`) is proven
+over its subset-E instructions (`LowerRuleOkTX P`). -/
+theorem LowerRuleOkT.toTX {P : Clif.Inst → Prop} {isem : Sem} {MR : MemRelT} {env : Clif.Env}
+    {cp : Clif.Program} {p : Program} {r : Rule} (h : LowerRuleOkT isem MR env cp p r) :
+    LowerRuleOkTX P isem MR env cp p r :=
+  fun f ctx hc ii info inst hi hic _ => h f ctx hc.inv ii info inst hi hic trivial
+
 /-- A rule of `lower` whose root format is `Trap`/`MultiAry` never matches an E instruction. -/
 theorem lowerRuleOk_of_fmtTI {isem : Sem} {MR : MemRelT} {env : Clif.Env}
     {cp : Clif.Program} {r : Rule} {fT : Nat} (hq : ruleFmt r = some fT)
@@ -78,7 +85,7 @@ theorem lowerRulesCorrectTI_program : LowerRulesCorrectTI program := by
   simp only [closureRootIds, List.contains_cons, List.contains_nil, Bool.or_false,
     Bool.or_eq_true, beq_iff_eq] at hroot
 
-  rcases hroot with h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h
+  rcases hroot with h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h
   · rw [lower_rule_eq hr (k := 172) (r0 := rule_lower_53) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]
     apply iconst_okTI <;> assumption
   · exfalso; simp [floatMoveRootRule, h] at hfm
@@ -120,6 +127,46 @@ theorem lowerRulesCorrectTI_program : LowerRulesCorrectTI program := by
   · exfalso; simp [floatArithRootRule, h] at hfa
   · exfalso; simp [floatArithRootRule, h] at hfa
   · exfalso; simp [floatArithRootRule, h] at hfa
+  · exfalso; simp [floatArithRootRule, h] at hfa
+  · exfalso; simp [floatArithRootRule, h] at hfa
+  · exfalso; simp [floatArithRootRule, h] at hfa
+  · exfalso; simp [floatArithRootRule, h] at hfa
+  · exfalso; simp [floatArithRootRule, h] at hfa
+  · exfalso; simp [floatArithRootRule, h] at hfa
+  · exfalso; simp [floatArithRootRule, h] at hfa
+  · exfalso; simp [floatArithRootRule, h] at hfa
+  · rw [lower_rule_eq hr (k := 220) (r0 := rule_lower_724) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]
+    exact (fcvt_from_uint_f32_le32_okT hp MR env cp hR hMR).toTX
+  · rw [lower_rule_eq hr (k := 221) (r0 := rule_lower_727) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]
+    exact (fcvt_from_uint_f64_le32_okT hp MR env cp hR hMR).toTX
+  · rw [lower_rule_eq hr (k := 112) (r0 := rule_lower_730) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]
+    exact (fcvt_from_uint_f32_i64_okT hp MR env cp hR hMR).toTX
+  · rw [lower_rule_eq hr (k := 113) (r0 := rule_lower_733) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]
+    exact (fcvt_from_uint_f64_i64_okT hp MR env cp hR hMR).toTX
+  · rw [lower_rule_eq hr (k := 222) (r0 := rule_lower_744) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]
+    exact (fcvt_from_sint_f32_le32_okT hp MR env cp hR hMR).toTX
+  · rw [lower_rule_eq hr (k := 223) (r0 := rule_lower_747) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]
+    exact (fcvt_from_sint_f64_le32_okT hp MR env cp hR hMR).toTX
+  · rw [lower_rule_eq hr (k := 114) (r0 := rule_lower_750) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]
+    exact (fcvt_from_sint_f32_i64_okT hp MR env cp hR hMR).toTX
+  · rw [lower_rule_eq hr (k := 115) (r0 := rule_lower_753) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]
+    exact (fcvt_from_sint_f64_i64_okT hp MR env cp hR hMR).toTX
+  · rw [lower_rule_eq hr (k := 224) (r0 := rule_lower_764) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]
+    exact (fcvt_to_uint_sat_i32_f32_okT hp MR env cp hR hMR).toTX
+  · rw [lower_rule_eq hr (k := 116) (r0 := rule_lower_767) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]
+    exact (fcvt_to_uint_sat_i64_f32_okT hp MR env cp hR hMR).toTX
+  · rw [lower_rule_eq hr (k := 225) (r0 := rule_lower_770) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]
+    exact (fcvt_to_uint_sat_i32_f64_okT hp MR env cp hR hMR).toTX
+  · rw [lower_rule_eq hr (k := 117) (r0 := rule_lower_773) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]
+    exact (fcvt_to_uint_sat_i64_f64_okT hp MR env cp hR hMR).toTX
+  · rw [lower_rule_eq hr (k := 226) (r0 := rule_lower_784) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]
+    exact (fcvt_to_sint_sat_i32_f32_okT hp MR env cp hR hMR).toTX
+  · rw [lower_rule_eq hr (k := 118) (r0 := rule_lower_787) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]
+    exact (fcvt_to_sint_sat_i64_f32_okT hp MR env cp hR hMR).toTX
+  · rw [lower_rule_eq hr (k := 227) (r0 := rule_lower_790) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]
+    exact (fcvt_to_sint_sat_i32_f64_okT hp MR env cp hR hMR).toTX
+  · rw [lower_rule_eq hr (k := 119) (r0 := rule_lower_793) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]
+    exact (fcvt_to_sint_sat_i64_f64_okT hp MR env cp hR hMR).toTX
   · rw [lower_rule_eq hr (k := 499) (r0 := rule_lower_801) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]
     apply isub_base_case_okTI <;> assumption
   · rw [lower_rule_eq hr (k := 228) (r0 := rule_lower_805) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]
