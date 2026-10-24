@@ -51,22 +51,6 @@ theorem padsOk_of {af : AFunc} {l0 : Label} (h : padsOkB af l0 = true) : PadsOk 
     bne_iff_ne, ne_eq] at h1
   exact ⟨h1.1, h1.2⟩
 
-/-- The saves' `SaveOk`, decided. -/
-def savesOkB (af : AFunc) : Bool :=
-  (savesOf af).all fun a => match a.calleeSave? with
-    | some (_, o) => decide (o - 16 - af.frameSize < 0) && decide ((o - 16 - af.frameSize) % 8 = 0)
-    | none => false
-
-theorem savesOk_of {af : AFunc} (h : savesOkB af = true) : ∀ a ∈ savesOf af, SaveOk af.frameSize a := by
-  intro a ha
-  have h1 := List.all_eq_true.1 h a ha
-  cases hc : a.calleeSave? with
-  | none => rw [hc] at h1; cases h1
-  | some p =>
-    rw [hc] at h1
-    simp only [Bool.and_eq_true, decide_eq_true_eq] at h1
-    exact ⟨p.1, p.2, hc, h1.1, h1.2⟩
-
 /-- The entry blocks of the prepared code and of the allocation. -/
 def vb0 : VBlock := vcp.blocks[0]!
 def items0 : Array RItem := rf.blocks[0]!
@@ -74,21 +58,19 @@ def items0 : Array RItem := rf.blocks[0]!
 /-- The receipt of the premises. -/
 def premises : Bool :=
   (vcp.blocks[0]? == some vb0) && (rf.blocks[0]? == some items0) && handlersOkB af &&
-    padsOkB af vb0.label && savesOkB af && decide (4 * fb.words.size < 2 ^ 32) &&
-    !(savesOf af).isEmpty
+    padsOkB af vb0.label && decide (4 * fb.words.size < 2 ^ 32) && !af.saves.isEmpty
 
 set_option maxRecDepth 100000 in
 theorem premises_true : premises = true := by native_decide
 
 theorem premises_facts :
     vcp.blocks[0]? = some vb0 ∧ rf.blocks[0]? = some items0 ∧ HandlersOk af ∧
-      PadsOk af vb0.label ∧ (∀ a ∈ savesOf af, SaveOk af.frameSize a) ∧
-      4 * fb.words.size < 2 ^ 32 ∧ savesOf af ≠ [] := by
+      PadsOk af vb0.label ∧ 4 * fb.words.size < 2 ^ 32 ∧ af.saves ≠ [] := by
   have h := premises_true
   simp only [premises, Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq, Bool.not_eq_true',
     List.isEmpty_eq_false_iff] at h
-  obtain ⟨⟨⟨⟨⟨⟨h1, h2⟩, h3⟩, h4⟩, h5⟩, h6⟩, h7⟩ := h
-  exact ⟨h1, h2, handlersOk_of h3, padsOk_of h4, savesOk_of h5, h6, h7⟩
+  obtain ⟨⟨⟨⟨⟨h1, h2⟩, h3⟩, h4⟩, h6⟩, h7⟩ := h
+  exact ⟨h1, h2, handlersOk_of h3, padsOk_of h4, h6, h7⟩
 
 theorem compiled : lowerRFunc vcp rf = .ok af ∧ emitFunc 0 af = .ok fa ∧ fa.layout = .ok fb := by
   obtain ⟨-, -, -, ⟨-, -, -, -, -, hal, hem, hla⟩, -⟩ := facts
@@ -103,11 +85,11 @@ theorem padsNonzero_applies : padsNonzeroB af fa = true :=
   padsNonzero_complete compiled.1 compiled.2.1 compiled.2.2 premises_facts.1 premises_facts.2.1
     premises_facts.2.2.2.1
 
-/-- **`unwindRows_complete` applies** to `tc` (whose entry block saves callee-saved registers:
-`savesOf af ≠ []`). -/
-theorem unwindRows_applies : ∃ rows, unwindRows af fa = .ok rows :=
-  unwindRows_complete compiled.1 compiled.2.1 compiled.2.2 premises_facts.2.2.2.2.2.1
-    premises_facts.1 premises_facts.2.1 premises_facts.2.2.2.2.1
+/-- **`unwindRows_complete` applies** to `tc` (whose prologue pushes callee-saved registers:
+`af.saves ≠ []`). -/
+theorem unwindRows_applies : unwindRows af fa = .ok (prologueRows ++ pushRows af.saves 8) :=
+  unwindRows_complete compiled.1 compiled.2.1 compiled.2.2 premises_facts.2.2.2.2.1
+    premises_facts.1 premises_facts.2.1
 
 /-- The prepared code's `try_call` premise and the allocation's block count, decided. -/
 def premisesV : Bool := tryInfoOkB vcp && (rf.blocks.size == vcp.blocks.size)
