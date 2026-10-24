@@ -33,10 +33,18 @@ function. -/
 def LsdaAt (R : RLU) : Prop :=
   ∃ sites, CallSitesOk R.af R.fa sites ∧ R.T.lsda = some (sites.map (·.entry))
 
-/-- Every `try_call` landing pad of the emitted call-site table is at a non-zero offset. -/
+/-- The labels `callSites` resolves landing pads with: the block-label aliases of the final code
+(`fa.alias`, at the offset of the label each resolves to), then the labels of the final code. -/
+def siteLabs (fa : FnAsm) : List (Label × Nat) :=
+  fa.alias.filterMap (fun l =>
+    ((scanLines fa.lines.toList 0 [] []).1.lookup l.2).map fun x => (l.1, x)) ++
+  (scanLines fa.lines.toList 0 [] []).1
+
+/-- Every `try_call` landing pad of the emitted call-site table is at a non-zero offset. (Since
+#553 the entries are looked up in the alias-extended labels `siteLabs`, as `callSites` does.) -/
 def PadsNonzero (af : AFunc) (fa : FnAsm) : Prop :=
   ∀ ti ret e, (some ti, ret) ∈ af.calls.zip (scanLines fa.lines.toList 0 [] []).2 →
-    entryFor (scanLines fa.lines.toList 0 [] []).1 (some ti, ret) = some e → e.pad ≠ 0
+    entryFor (siteLabs fa) (some ti, ret) = some e → e.pad ≠ 0
 
 /-- **The call-site bridge** at the call items of the activation: the pc is at the call line,
 whose return offset `callSites` pairs with this call (`none` for a `call`, `some ti` for a
@@ -150,6 +158,219 @@ theorem pad_label {R : RL} (hR : R.Wf) {ti : TryInfo} {ret : Nat} {e : Unw.CallS
       rw [← he]
   exact (labelOffsets_spec hR.lm _ _).mp (scanLines_labelOffsets hR.lm hlk)
 
+theorem _root_.Backend.RepL.mono {af : AFunc} {own own' : Label → Bool} {LL : List Line} {s : Label} {j : Nat}
+    (hown : ∀ l, own l = true → own' l = true) (h : RepL af own LL s j) : RepL af own' LL s j := by
+  induction h with
+  | here ho hj => exact .here (ho.imp id (hown _)) hj
+  | skip ho hj _ ih => exact .skip (ho.imp id (hown _)) hj ih
+  | fwd hf _ ih => exact .fwd hf ih
+
+/-- A line representing a block is a label line. -/
+theorem _root_.Backend.RepL.label {af : AFunc} {own : Label → Bool} {LL : List Line} {s : Label} {j : Nat}
+    (h : RepL af own LL s j) : ∃ l', LL[j]? = some (.label l') := by
+  induction h with
+  | here _ hj => exact ⟨_, hj⟩
+  | skip _ hj _ _ => exact ⟨_, hj⟩
+  | fwd _ _ ih => exact ih
+
+theorem mem_of_lookup {α β : Type} [BEq α] [LawfulBEq α] {a : α} {b : β} :
+    ∀ {l : List (α × β)}, l.lookup a = some b → (a, b) ∈ l
+  | [], h => by simp [List.lookup] at h
+  | (k, v) :: l, h => by
+    simp only [List.lookup] at h
+    split at h
+    · rename_i he
+      simp only [beq_iff_eq] at he
+      subst he
+      cases h
+      exact List.mem_cons_self
+    · exact List.mem_cons_of_mem _ (mem_of_lookup h)
+
+/-- The final code's block-label aliases are the emission plan's. -/
+theorem emitFunc_alias {k : Nat} {af : AFunc} {fa : FnAsm} (h : emitFunc k af = .ok fa) :
+    fa.alias = emitAlias k af := by
+  unfold emitFunc at h
+  cases hp : emitPre k af with
+  | error e => rw [hp] at h; cases h
+  | ok pre =>
+    rw [hp] at h
+    simp only [bind, Except.bind, pure, Except.pure] at h
+    split at h
+    · cases h
+    · simp only [Except.ok.injEq] at h
+      subst h
+      rfl
+
+theorem lookup_append {α β : Type} [BEq α] (a : α) :
+    ∀ (A B : List (α × β)), (A ++ B).lookup a = (A.lookup a).or (B.lookup a)
+  | [], _ => by simp [List.lookup]
+  | (k, v) :: A, B => by
+    simp only [List.cons_append, List.lookup]
+    split <;> simp [lookup_append a A B]
+
+/-- A label line of `L` is found by `scanLines`. -/
+theorem scanLines_lookup_some (x : Label) :
+    ∀ (L : List Line) (off : Nat) (labs : List (Label × Nat)) (rets : List Nat),
+      (Line.label (.block x) ∈ L ∨ (labs.lookup x).isSome) →
+      ((scanLines L off labs rets).1.lookup x).isSome
+  | [], _, labs, _, h => by simpa [scanLines] using h
+  | ln :: L, off, labs, rets, h => by
+    simp only [scanLines]
+    apply scanLines_lookup_some x L
+    rcases h with h | h
+    · rcases List.mem_cons.1 h with rfl | h
+      · right; simp [labsAfter, List.lookup]
+      · left; exact h
+    · right
+      unfold labsAfter
+      split
+      · simp only [List.lookup]; split <;> simp_all
+      · exact h
+
+/-- The alias entries `siteLabs` adds for label `l`: an alias `l ↦ x` of the final code whose
+target `x` has a label offset. -/
+theorem lookup_aliasLabs {labs : List (Label × Nat)} {l : Label} {off : Nat} :
+    ∀ (al : List (Label × Label)),
+      (al.filterMap (fun a => (labs.lookup a.2).map fun x => (a.1, x))).lookup l = some off →
+      ∃ x, (l, x) ∈ al ∧ labs.lookup x = some off
+  | [], h => by simp [List.lookup] at h
+  | (l1, x1) :: al, h => by
+    simp only [List.filterMap_cons] at h
+    cases hx : labs.lookup x1 with
+    | none =>
+      simp only [hx, Option.map_none] at h
+      obtain ⟨x, hm, hl⟩ := lookup_aliasLabs al h
+      exact ⟨x, List.mem_cons_of_mem _ hm, hl⟩
+    | some v =>
+      simp only [hx, Option.map_some, List.lookup] at h
+      split at h
+      · rename_i he
+        simp only [beq_iff_eq] at he
+        subst he
+        cases h
+        exact ⟨x1, List.mem_cons_self, hx⟩
+      · obtain ⟨x, hm, hl⟩ := lookup_aliasLabs al h
+        exact ⟨x, List.mem_cons_of_mem _ hm, hl⟩
+
+theorem lookup_aliasLabs_isSome {labs : List (Label × Nat)} {l x : Label}
+    (hx : (labs.lookup x).isSome) :
+    ∀ (al : List (Label × Label)), (l, x) ∈ al →
+      ((al.filterMap (fun a => (labs.lookup a.2).map fun y => (a.1, y))).lookup l).isSome
+  | [], h => by simp at h
+  | (l1, x1) :: al, h => by
+    simp only [List.filterMap_cons]
+    cases hx1 : labs.lookup x1 with
+    | none =>
+      rcases List.mem_cons.1 h with e | hm
+      · simp only [Prod.mk.injEq] at e
+        obtain ⟨rfl, rfl⟩ := e
+        rw [hx1] at hx; cases hx
+      · simpa [hx1] using lookup_aliasLabs_isSome hx al hm
+    | some v =>
+      simp only [Option.map_some, List.lookup]
+      split
+      · rfl
+      · rcases List.mem_cons.1 h with e | hm
+        · simp only [Prod.mk.injEq] at e
+          obtain ⟨rfl, rfl⟩ := e
+          rename_i hne
+          simp at hne
+        · exact lookup_aliasLabs_isSome hx al hm
+
+/-- **The landing pad the call-site table gives a `try_call`'s first handler represents the
+handler's block** (#553): the pad is the offset of a line that represents block `l` (`RepL`),
+through `MachBuffer`'s label aliases (`aliasOk`) or the block's own label (`padsOk`). -/
+theorem pad_rep {R : RL} (hR : R.Wf) {ti : TryInfo} {ret : Nat} {e : Unw.CallSiteEntry}
+    {h : TryHandler} {hs : List TryHandler} (hti : ti.handlers = h :: hs) {l : Label}
+    (hl : h = .tag 0 l ∨ h = .tag 1 l) {info : CallInfo} {lb : Label} {code : Array AInst}
+    (hb : (lb, code) ∈ R.af.blocks.toList) (hc : AInst.inst (.tryCall info ti) ∈ code.toList)
+    (he : entryFor (siteLabs R.fa) (some ti, ret) = some e) :
+    ∃ jl, RepL R.af (planOwn R.fa.k R.af) R.L l jl ∧ lineOffset R.L jl = e.pad := by
+  have hlk : (siteLabs R.fa).lookup l = some e.pad := by
+    simp only [entryFor, handlersOf, hti, handlerEntry?] at he
+    rcases hl with rfl | rfl <;> simp only [TryHandler.label] at he <;>
+      cases hk : (siteLabs R.fa).lookup l <;> simp [hk] at he <;>
+      rw [← he]
+  obtain ⟨p, hp, -, -⟩ := emitFunc_ok hR.emit
+  have hPL : planLines R.fa.k R.af = p.lines := by simp [planLines, hp]
+  have hRL : R.L = relaxLines R.far p.lines := by rw [RL.L_plan hR, hPL]
+  have hown : planOwn R.fa.k R.af = fun l => (segsTrust R.af p.segs p.outs p.lines).contains l := by
+    simp [planOwn, hp]
+  have hal : R.fa.alias = p.alias := by
+    have := emitFunc_alias hR.emit
+    rw [this, emitAlias, hp]
+  obtain ⟨-, -, -, hali⟩ := emitPlan_spec hp
+  -- a block label line `j` of the plan's lines whose offset `scanLines` finds is the pad
+  have hoff : ∀ x j off, p.lines[j]? = some (.label (.block x)) →
+      (scanLines R.fa.lines.toList 0 [] []).1.lookup x = some off →
+      R.L[rix R.far p.lines j]? = some (.label (.block x)) ∧ lineOffset R.L (rix R.far p.lines j) = off := by
+    intro x j off hj hx
+    have hj' : R.L[rix R.far p.lines j]? = some (.label (.block x)) := by
+      rw [hRL]; exact (relax_label hj).1
+    obtain ⟨j', hj'', ho⟩ := (labelOffsets_spec hR.lm _ _).mp (scanLines_labelOffsets hR.lm hx)
+    have := RL.label_unique hR hj'' hj'
+    subst this
+    exact ⟨hj', ho⟩
+  -- an alias `l ↦ x`: `x`'s label line represents `l`
+  have halias : ∀ x, (l, x) ∈ R.fa.alias → ∃ j, p.lines[j]? = some (.label (.block x)) ∧
+      RepL R.af (planOwn R.fa.k R.af) R.L l (rix R.far p.lines j) := by
+    intro x hx
+    rw [hal] at hx
+    have := hali _ hx
+    unfold aliasOk at this
+    split at this
+    · rename_i j hj
+      refine ⟨j, by simpa using blockLabelIdx_get hj, ?_⟩
+      rw [hRL]
+      exact RepL.relax _ (RepL.mono (fun _ h => by cases h) (repOn_repL this))
+    · cases this
+  unfold siteLabs at hlk
+  rw [lookup_append] at hlk
+  cases hA : (R.fa.alias.filterMap (fun a =>
+      ((scanLines R.fa.lines.toList 0 [] []).1.lookup a.2).map fun x => (a.1, x))).lookup l with
+  | some off =>
+    rw [hA] at hlk
+    simp only [Option.some_or, Option.some.injEq] at hlk
+    subst hlk
+    obtain ⟨x, hxm, hxo⟩ := lookup_aliasLabs _ hA
+    obtain ⟨j, hj, hrep⟩ := halias x hxm
+    exact ⟨_, hrep, (hoff x j _ hj hxo).2⟩
+  | none =>
+    rw [hA] at hlk
+    simp only [Option.none_or] at hlk
+    -- `padsOk`: the line the table names for `l` represents it
+    have hpads := emitPlan_pads hp
+    unfold padsOk at hpads
+    simp only [List.all_eq_true] at hpads
+    have hh := hpads _ hb _ hc
+    simp only [List.all_eq_true] at hh
+    have hh0 := hh h (by rw [hti]; exact List.mem_cons_self)
+    have hlab : h.label = l := by rcases hl with rfl | rfl <;> rfl
+    rw [hlab] at hh0
+    cases hlo : p.alias.lookup l with
+    | some x =>
+      -- an alias of `l` whose target has a label line: `siteLabs` would have found it
+      exfalso
+      have hxm : (l, x) ∈ R.fa.alias := by
+        rw [hal]
+        exact mem_of_lookup hlo
+      obtain ⟨j, hj, -⟩ := halias x hxm
+      have hx := scanLines_lookup_some x R.fa.lines.toList 0 [] []
+        (.inl (List.mem_of_getElem? (show R.L[rix R.far p.lines j]? = _ from by
+          rw [hRL]; exact (relax_label hj).1)))
+      have := lookup_aliasLabs_isSome hx _ hxm
+      rw [hA] at this
+      cases this
+    | none =>
+      simp only [hlo, Option.getD_none] at hh0
+      split at hh0
+      · rename_i j hj
+        have hj' : p.lines[j]? = some (.label (.block l)) := by simpa using blockLabelIdx_get hj
+        refine ⟨_, ?_, (hoff l j _ hj' hlk).2⟩
+        rw [hRL, hown]
+        exact RepL.relax _ (repOn_repL hh0)
+      · cases hh0
+
 /-- **A raising `try_call` on the machine, with the raising-call state's step facts**: the callee
 raises, the personality installs the first handler's landing pad, and the machine is at the
 landing-pad edge block with the payload in the call's defs, the raising-call state `RaiseXF`
@@ -161,10 +382,47 @@ theorem realizes_tryCall_raiseUF {R : RLU} (hR : R.Wf) {semU : Sem}
     (hT : LsdaAt R) (hpad : PadsNonzero R.af R.fa) (hsite : SiteAt R.toRL) :
     RealizesTryRaiseP R semU R.GoodXUF := by
   intro s b k allocs its m w vb info ti ops c' obj w2 hq _hA hvb hi hops hraise hm
-  obtain ⟨j0, items, pre, regs, i', c1, c2, ls1, ls2, ps1, psm, ps2, T, cc, wh, ops', hal, hit,
-    hsplit, hasg, hc1', hops', hstat, hchk', hcode2, h1, h2, htr, hdrop, hpc, hst⟩ := q_op hq hvb hi
-  rw [hops] at hops'; cases hops'
-  subst hal
+  have hck := (lowerRFunc_ok hR.alloc).2.2
+  have hcpc := callAt_of_q hR hq hvb hi tryCall_hcall
+  rcases Q.cases hq with hqs | ⟨vbf, allocsf, regsf, if_, xf, bx, hvbf, he, hits, half, hins, hasgf,
+    hsuccf, itx, hitx, hqx⟩
+  rotate_left
+  · -- a forwarding block: its `jump` takes no machine step, but a `try_call`'s allocated form
+    -- is no `jump`
+    rw [hvb] at hvbf
+    cases hvbf
+    simp only [RItem.op.injEq] at he
+    obtain ⟨rfl, rfl⟩ := he
+    subst hits
+    have hi1 := hi
+    rw [hins] at hi1
+    simp only [List.getElem?_toArray, List.getElem?_cons_zero, Option.some.injEq] at hi1
+    subst hi1
+    obtain ⟨ic, e, -⟩ := (assign_call_tryCall info regsf).2 ti (.jump xf) hasgf
+    cases e
+  cases hm with
+  | @op _ _ _ _ _ _ vb' i2 ops2 outs outs' w' ctl m2 _ hvb' hi' hops2 hsz hsem hlen hho hcl hn =>
+  rw [hvb] at hvb'; cases hvb'
+  rw [hi] at hi'; cases hi'
+  rw [hops] at hops2; cases hops2
+  -- a raising `try_call`'s control outcome is a jump to its first handler (`TryRaiseSem`), so
+  -- its item is the block's last
+  have hctl := (hsemT _ _ _ _ _ _ _ hsem hraise).2
+  simp only [Prod.mk.injEq] at hctl
+  obtain ⟨-, -, rfl⟩ := hctl
+  cases hn with
+  | @goto j0h st items' hk1 hsucc hitems =>
+  obtain ⟨_, vb0, _, _, code, _, _, _, _, _, hvb0, -, -, hchk0, hcode, -⟩ := id hqs
+  rw [hvb] at hvb0; cases hvb0
+  obtain rfl : its = [] := hchk0.tail_nil hk1
+  obtain ⟨j0, vb0, items, pre, c1, X, ps1, psm, ps2, x, hvb0, hit, hsplit, hchk, hc1, hX, hTq, htr,
+    hdrop, hpc, hst, hterm⟩ := qs_term hR hqs
+  rw [hvb] at hvb0; cases hvb0
+  obtain ⟨regs, i0, i', rfl, hi0, hasg, hc1'⟩ := itemCode_op hc1
+  rw [hi] at hi0; cases hi0
+  obtain ⟨cc, wh, i2, ops2, hi2, hops2, hstat, -⟩ := op_checked hchk
+  rw [hi] at hi2; cases hi2
+  rw [hops] at hops2; cases hops2
   have hm' : ∀ r, r.allocatable = true → m (.reg r) = regVal s r := fun r hr =>
     hst.store (.reg r) (fun r' e => by cases e; exact hr) trivial
   have huses := useVals_of_store hstat hm'
@@ -173,17 +431,12 @@ theorem realizes_tryCall_raiseUF {R : RLU} (hR : R.Wf) {semU : Sem}
     rw [← operands_tryCall_call info ti]; exact hops
   have hsz0 := (checkStatic_facts hstat).1
   simp only [Array.size_map] at hsz0
-  cases hm with
-  | @op _ _ _ _ _ _ vb' i2 ops2 outs outs' w' ctl m2 _ hvb' hi' hops2 hsz hsem hlen hho hcl hn =>
-  rw [hvb] at hvb'; cases hvb'
-  rw [hi] at hi'; cases hi'
-  rw [hops] at hops2; cases hops2
   have hsem0 := hsem
   rw [huses] at hsem0
   have hgg := (hgot _ _ _ _).2 ti hsem0
   obtain ⟨hok, heq⟩ := hsemT _ _ _ _ _ _ _ hsem0 hraise
   simp only [Prod.mk.injEq] at heq
-  obtain ⟨rfl, rfl, rfl⟩ := heq
+  obtain ⟨rfl, rfl, -⟩ := heq
   simp only [tryUOk, Bool.and_eq_true, Bool.not_eq_true'] at hok
   obtain ⟨⟨⟨⟨hfirst, -⟩, hdefs01⟩, hp0⟩, hp1⟩ := hok
   -- the first handler
@@ -197,14 +450,14 @@ theorem realizes_tryCall_raiseUF {R : RLU} (hR : R.Wf) {semU : Sem}
       rcases h with ⟨_ | _ | n, l⟩ | l <;> simp_all [firstHandlerOk]
   -- the raising callee (the contract)
   have hsite0 : R.vc.CallSite info := ⟨b, vb, k, hvb, .inr ⟨ti, hi⟩⟩
-  have hcpc := callAt_of_q hq hvb hi tryCall_hcall regs i' rfl hasg
   have hraiseU := hU.os info (.tryCall info ti) hsite0 (.inr ⟨ti, rfl⟩) s
     (by rw [hst.sp]; exact RL.K_le hR) (fun a ha => by rw [hst.sp] at ha; exact RL.below_F ha)
-    hst.gkeep cc wh ops regs i' w hops hstat hasg hcpc hst.world hst.align hst.err hgg
+    hst.gkeep cc wh ops regs i' w hops hstat hasg (hcpc regs i' rfl hasg) hst.world hst.align
+    hst.err hgg
   obtain ⟨t, hUr, hW, hFK, herrt, hprogt, hoth, hkeep⟩ := hraiseU obj _ hraise
   obtain ⟨hstep1, hRX, hdesc, hxzr⟩ := RLU.stepU_q_raiseF hR hq hvb hi (.inr ⟨ti, rfl⟩) hUr
   -- the personality: the first handler's landing pad
-  obtain ⟨j, x', hj, hpcj, -, hmem⟩ := hsite s b k _ its m w vb _ info (some ti) hq hvb hi
+  obtain ⟨j, x', hj, hpcj, -, hmem⟩ := hsite s b k _ [] m w vb _ info (some ti) hq hvb hi
     (.inr ⟨ti, rfl, rfl⟩)
   obtain ⟨sites, hcs, hlsda⟩ := hT
   obtain ⟨e, he, hpers⟩ := Unw.personality_callSite hcs hmem
@@ -240,14 +493,31 @@ theorem realizes_tryCall_raiseUF {R : RLU} (hR : R.Wf) {semU : Sem}
     apply Unw.unwindAt_install
     rw [hlsda, hoff]
     exact hpers
-  -- the landing pad's label line
-  obtain ⟨jl, hjl, hjlo⟩ := pad_label hR hfirstEq hl he
+  -- the landing pad's line, which represents the first handler's block (`pad_rep`)
+  obtain ⟨icT, hiT, -⟩ := (assign_call_tryCall info regs).2 ti i' hasg
+  have hmemT : ∃ lb code, (lb, code) ∈ R.af.blocks.toList ∧
+      AInst.inst (.tryCall icT ti) ∈ code.toList := by
+    obtain ⟨-, -, -, hblk⟩ := (lowerRFunc_ok hR.alloc).1
+    obtain ⟨codeAll, hcodeAll, hab⟩ := hblk b vb items hvb hit
+    rw [hsplit] at hcodeAll
+    obtain ⟨cpre, crest, -, hcrest, rfl⟩ := itemsCode_append hcodeAll
+    obtain ⟨c1a, c2a, hc1a, -, rfl⟩ := itemsCode_cons hcrest
+    rw [show RAFrame.compute R.vc R.rf = R.fr from rfl, hc1] at hc1a
+    cases hc1a
+    have hc1eq : c1 = [AInst.inst i'] := by
+      rcases hc1' with ⟨h, -, -⟩ | ⟨ds, h1, -⟩ | ⟨us, h1, -⟩
+      · exact h
+      · rw [hiT] at h1; cases h1
+      · rw [hiT] at h1; cases h1
+    refine ⟨vb.label, _, List.mem_of_getElem? (by rw [Array.getElem?_toList]; exact hab), ?_⟩
+    rw [hc1eq, hiT]; simp
+  obtain ⟨lbT, codeT, hbT, hcT⟩ := hmemT
+  obtain ⟨jl, hrep, hjlo⟩ := pad_rep hR hfirstEq hl hbT hcT he
+  obtain ⟨l', hjl⟩ := hrep.label
   -- the successor: the first handler's block
   have hnone : havocFrom (MInst.tryCall info ti) (.goto 0) = none := by
     simp [havocFrom, MInst.keptDefs, MInst.isBranch, MInst.normalDead, hfirstEq]
   obtain rfl := hho.2.1 hnone
-  cases hn with
-  | @goto _ st items' hk1 hsucc hitems =>
   obtain ⟨c, ins, _, hc, -⟩ := hR.check
   obtain ⟨preds, hcfg⟩ := hc.cfg
   obtain ⟨t0, ts, hback, hss, hlab⟩ := cfg_block hcfg hvb
@@ -354,7 +624,7 @@ theorem realizes_tryCall_raiseUF {R : RLU} (hR : R.Wf) {semU : Sem}
     (MNext.goto hk1 hsucc hitems), ?_, fun i hi => ?_⟩
   · simp only [iterN]
     rw [hstepU]
-    refine q_entry hR hst0 hvs hitems (jl := jl) (by rw [hvl]; exact hjl) ?_ (hstr.pc _)
+    refine q_entry hR hst0 hvs hitems (jl := jl) (by rw [hvl]; exact hrep) ?_ (hstr.pc _)
     rw [Arm.r_of_w_same, hpb]
     simp only [RL.pcOf, hjlo]
   · obtain rfl : i = 0 := by omega
@@ -381,7 +651,8 @@ theorem realizes_tryCall_raiseUF {R : RLU} (hR : R.Wf) {semU : Sem}
     exact .inr ⟨hRX, hnext, hexit, htsp, fun x hx => ⟨hxzr x hx, hst.code⟩,
       ⟨.tryCall info ti, info, hsite0, .inr ⟨ti, rfl⟩, by rw [hst.sp]; exact RL.K_le hR,
         fun a ha => by rw [hst.sp] at ha; exact RL.below_F ha, hst.gkeep, cc, wh, ops, regs, i', w,
-        obj, _, hops, hstat, hasg, hcpc, hst.world, hst.align, hst.err, hgg, hraise⟩⟩
+        obj, _, hops, hstat, hasg, hcpc regs i' rfl hasg, hst.world, hst.align, hst.err, hgg,
+        hraise⟩⟩
 
 /-- **A raising `try_call` on the machine**: the callee raises, the personality installs the
 first handler's landing pad, and the machine is at the landing-pad edge block with the payload in
@@ -404,10 +675,10 @@ theorem siteAt_of_check {R : RL} (hR : R.Wf) (h : lastCallsOk R.af R.fa = true) 
   | some p => exact q_callSite hR hq hvb hi hc (by rw [hb]; rfl)
 
 /-- The check that the landing pads of the emitted call-site table are at non-zero offsets
-(decidable, on `af` and its final code `fa`). -/
+(decidable, on `af` and its final code `fa`; entries looked up as `callSites` does, `siteLabs`). -/
 def padsNonzeroB (af : AFunc) (fa : FnAsm) : Bool :=
   let r := scanLines fa.lines.toList 0 [] []
-  (af.calls.zip r.2).all fun p => match p.1, entryFor r.1 p with
+  (af.calls.zip r.2).all fun p => match p.1, entryFor (siteLabs fa) p with
     | some _, some e => e.pad != 0
     | _, _ => true
 
