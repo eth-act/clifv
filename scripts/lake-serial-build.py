@@ -228,6 +228,27 @@ def source_keys(root, mods, imports, want):
     return keys
 
 
+def archive_failed_attempt(out, module, source, unit, cap, rc, seconds):
+    """Preserve the failed files before start() can truncate them for a retry."""
+    import json
+    attempt = out / "failed-attempts" / f"{unit}-{time.time_ns()}"
+    attempt.mkdir(parents=True)
+    artifacts = {}
+    for suffix in ("log", "mem", "time"):
+        path = out / f"{module}.{suffix}"
+        if path.is_file():
+            data = path.read_bytes()
+            (attempt / path.name).write_bytes(data)
+            artifacts[path.name] = hashlib.sha256(data).hexdigest()
+    (attempt / "attempt.json").write_text(json.dumps({
+        "module": module, "unit": unit, "cap_bytes": cap,
+        "returncode": rc, "seconds": seconds,
+        "module_source_sha256": hashlib.sha256(source.read_bytes()).hexdigest(),
+        "artifacts": artifacts,
+    }, indent=2) + "\n")
+    return attempt
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("targets", nargs="+")
@@ -666,6 +687,8 @@ def main():
                 own = (st["oom"] > 0 if st and "oom" in st
                        else not (oomd or (m in polled and polled[m] < 0.9 * c)))
                 why = ""
+                if rc != 0:
+                    archive_failed_attempt(out, m, mods[m], unit, c, rc, dt)
                 if rc == 0:
                     status[m] = "ok"
                     if did_build:

@@ -272,7 +272,7 @@ def rulesPerMod : Nat := 10
 
 /-- Rule/family pairs whose single kernel check exceeds the memory budget: checked in
 `envChunk`-sized environment chunks. -/
-def heavy : List (String × Nat) := []
+def heavy : List (String × Nat) := [("rule_lower_2267", 8)]
 def envChunk : Nat := 32
 
 /-- The helpers of the chunked checks (emitted once per module that has a heavy rule). -/
@@ -327,7 +327,7 @@ def heavyThm (r : String) (i nc : Nat) : String := Id.run do
   for c in List.range nc do
     s := s ++ s!"theorem shpStmtOkT_{r}_f{i}_c{c} : ((({envs}.getD []).drop ({c} * {k})).take {k}).all\n    (envOkT (AT.top) {r}) = true := by decide +kernel\n\n"
   s := s ++ s!"theorem shpStmtOkT_{r}_rest : (List.range famTab.length).all (fun i => i == {i} ||\n    aRule program shpTabT aext actor apreST aOracleST [.inst [i]] AT.top {r}) = true := by\n  decide +kernel\n\n"
-  s := s ++ s!"theorem shpStmtOkT_{r} : shpStmtOkT {r} = true := by\n  unfold shpStmtOkT\n  rw [List.all_eq_true]\n  intro i hi\n  by_cases hi' : i = {i}\n  · subst hi'\n    refine aRule_of_chunks {k} {nc} shpStmtOkT_{r}_f{i}_s shpStmtOkT_{r}_f{i}_n ?_\n    intro c hc\n    match c, hc with\n"
+  s := s ++ s!"theorem shpStmtOkT_{r} : shpStmtOkT {r} = true := by\n  unfold shpStmtOkT\n  simp only [Bool.or_eq_true]\n  right\n  rw [List.all_eq_true]\n  intro i hi\n  by_cases hi' : i = {i}\n  · subst hi'\n    refine aRule_of_chunks {k} {nc} shpStmtOkT_{r}_f{i}_s shpStmtOkT_{r}_f{i}_n ?_\n    intro c hc\n    match c, hc with\n"
   for c in List.range nc do
     s := s ++ s!"    | {c}, _ => exact shpStmtOkT_{r}_f{i}_c{c}\n"
   s := s ++ s!"    | _ + {nc}, hc => exact absurd hc (by omega)\n  · have := List.all_eq_true.1 shpStmtOkT_{r}_rest i hi\n    simpa [hi'] using this\n\n"

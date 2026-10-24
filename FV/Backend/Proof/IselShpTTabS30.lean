@@ -17,6 +17,46 @@ namespace Backend.Proof.CovT
 
 open Backend Backend.Proof Isle Isle.Aarch64
 
+private theorem all_of_chunks {α : Type} (g : α → Bool) (L : List α) (k n : Nat)
+    (hn : L.length ≤ n * k) (h : ∀ c < n, ((L.drop (c * k)).take k).all g = true) :
+    L.all g = true := by
+  rw [List.all_eq_true]
+  intro x hx
+  obtain ⟨j, hj, rfl⟩ := List.getElem_of_mem hx
+  have hk : 0 < k := by
+    rcases Nat.eq_zero_or_pos k with h0 | h0
+    · rw [h0, Nat.mul_zero] at hn; omega
+    · exact h0
+  have hc : j / k < n := Nat.div_lt_of_lt_mul (by rw [Nat.mul_comm]; omega)
+  have hjk := Nat.div_add_mod' j k
+  have hm := Nat.mod_lt j hk
+  have hl : j % k < ((L.drop (j / k * k)).take k).length := by
+    simp only [List.length_take, List.length_drop]; omega
+  have := List.all_eq_true.1 (h _ hc) _ (List.getElem_mem hl)
+  simp only [List.getElem_take, List.getElem_drop] at this
+  simp only [hjk] at this
+  exact this
+
+/-- The rule test of one environment (`aRule`'s body). -/
+private def envOkT (out : AT) (r : Rule) (env : List AT) : Bool :=
+  match aExpr program shpTabT actor apreST aOracleST r.rhs env with
+  | some a => AT.le a out
+  | none => false
+
+/-- `aRule` from chunk-wise checks of its environments. -/
+private theorem aRule_of_chunks {ins : List AT} {out : AT} {r : Rule} (k n : Nat)
+    (hs : (aRuleEnvs program shpTabT aext actor apreST aOracleST ins r).isSome = true)
+    (hn : ((aRuleEnvs program shpTabT aext actor apreST aOracleST ins r).getD []).length ≤ n * k)
+    (h : ∀ c < n, ((((aRuleEnvs program shpTabT aext actor apreST aOracleST ins r).getD []).drop
+      (c * k)).take k).all (envOkT out r) = true) :
+    aRule program shpTabT aext actor apreST aOracleST ins out r = true := by
+  unfold aRule
+  cases he : aRuleEnvs program shpTabT aext actor apreST aOracleST ins r with
+  | none => rw [he] at hs; cases hs
+  | some envs =>
+    rw [he] at hn h
+    exact all_of_chunks _ envs k n hn h
+
 theorem shpStmtOkT_rule_lower_2108 : shpStmtOkT rule_lower_2108 = true := by decide +kernel
 
 theorem shpStmtOkT_rule_lower_2113 : shpStmtOkT rule_lower_2113 = true := by decide +kernel
@@ -33,7 +73,60 @@ theorem shpStmtOkT_rule_lower_2242 : shpStmtOkT rule_lower_2242 = true := by dec
 
 theorem shpStmtOkT_rule_lower_2262 : shpStmtOkT rule_lower_2262 = true := by decide +kernel
 
-theorem shpStmtOkT_rule_lower_2267 : shpStmtOkT rule_lower_2267 = true := by decide +kernel
+theorem shpStmtOkT_rule_lower_2267_f8_s : (aRuleEnvs program shpTabT aext actor apreST aOracleST [.inst [8]] rule_lower_2267).isSome = true := by decide +kernel
+
+theorem shpStmtOkT_rule_lower_2267_f8_n : ((aRuleEnvs program shpTabT aext actor apreST aOracleST [.inst [8]] rule_lower_2267).getD []).length ≤ 8 * 32 := by decide +kernel
+
+theorem shpStmtOkT_rule_lower_2267_f8_c0 : ((((aRuleEnvs program shpTabT aext actor apreST aOracleST [.inst [8]] rule_lower_2267).getD []).drop (0 * 32)).take 32).all
+    (envOkT (AT.top) rule_lower_2267) = true := by decide +kernel
+
+theorem shpStmtOkT_rule_lower_2267_f8_c1 : ((((aRuleEnvs program shpTabT aext actor apreST aOracleST [.inst [8]] rule_lower_2267).getD []).drop (1 * 32)).take 32).all
+    (envOkT (AT.top) rule_lower_2267) = true := by decide +kernel
+
+theorem shpStmtOkT_rule_lower_2267_f8_c2 : ((((aRuleEnvs program shpTabT aext actor apreST aOracleST [.inst [8]] rule_lower_2267).getD []).drop (2 * 32)).take 32).all
+    (envOkT (AT.top) rule_lower_2267) = true := by decide +kernel
+
+theorem shpStmtOkT_rule_lower_2267_f8_c3 : ((((aRuleEnvs program shpTabT aext actor apreST aOracleST [.inst [8]] rule_lower_2267).getD []).drop (3 * 32)).take 32).all
+    (envOkT (AT.top) rule_lower_2267) = true := by decide +kernel
+
+theorem shpStmtOkT_rule_lower_2267_f8_c4 : ((((aRuleEnvs program shpTabT aext actor apreST aOracleST [.inst [8]] rule_lower_2267).getD []).drop (4 * 32)).take 32).all
+    (envOkT (AT.top) rule_lower_2267) = true := by decide +kernel
+
+theorem shpStmtOkT_rule_lower_2267_f8_c5 : ((((aRuleEnvs program shpTabT aext actor apreST aOracleST [.inst [8]] rule_lower_2267).getD []).drop (5 * 32)).take 32).all
+    (envOkT (AT.top) rule_lower_2267) = true := by decide +kernel
+
+theorem shpStmtOkT_rule_lower_2267_f8_c6 : ((((aRuleEnvs program shpTabT aext actor apreST aOracleST [.inst [8]] rule_lower_2267).getD []).drop (6 * 32)).take 32).all
+    (envOkT (AT.top) rule_lower_2267) = true := by decide +kernel
+
+theorem shpStmtOkT_rule_lower_2267_f8_c7 : ((((aRuleEnvs program shpTabT aext actor apreST aOracleST [.inst [8]] rule_lower_2267).getD []).drop (7 * 32)).take 32).all
+    (envOkT (AT.top) rule_lower_2267) = true := by decide +kernel
+
+theorem shpStmtOkT_rule_lower_2267_rest : (List.range famTab.length).all (fun i => i == 8 ||
+    aRule program shpTabT aext actor apreST aOracleST [.inst [i]] AT.top rule_lower_2267) = true := by
+  decide +kernel
+
+theorem shpStmtOkT_rule_lower_2267 : shpStmtOkT rule_lower_2267 = true := by
+  unfold shpStmtOkT
+  simp only [Bool.or_eq_true]
+  right
+  rw [List.all_eq_true]
+  intro i hi
+  by_cases hi' : i = 8
+  · subst hi'
+    refine aRule_of_chunks 32 8 shpStmtOkT_rule_lower_2267_f8_s shpStmtOkT_rule_lower_2267_f8_n ?_
+    intro c hc
+    match c, hc with
+    | 0, _ => exact shpStmtOkT_rule_lower_2267_f8_c0
+    | 1, _ => exact shpStmtOkT_rule_lower_2267_f8_c1
+    | 2, _ => exact shpStmtOkT_rule_lower_2267_f8_c2
+    | 3, _ => exact shpStmtOkT_rule_lower_2267_f8_c3
+    | 4, _ => exact shpStmtOkT_rule_lower_2267_f8_c4
+    | 5, _ => exact shpStmtOkT_rule_lower_2267_f8_c5
+    | 6, _ => exact shpStmtOkT_rule_lower_2267_f8_c6
+    | 7, _ => exact shpStmtOkT_rule_lower_2267_f8_c7
+    | _ + 8, hc => exact absurd hc (by omega)
+  · have := List.all_eq_true.1 shpStmtOkT_rule_lower_2267_rest i hi
+    simpa [hi'] using this
 
 theorem shpStmtOkT_rule_lower_2280 : shpStmtOkT rule_lower_2280 = true := by decide +kernel
 
