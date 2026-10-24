@@ -250,8 +250,8 @@ theorem kinds_prologueLines (saves : List Reg) (n : Nat) :
     kinds (prologueLines saves n) = .plainW :: List.replicate
       ((pushLines true (savesInt saves)).length + (pushLines false (savesFloat saves)).length)
       .plainW := by
-  simp only [prologueLines, kinds_append, kinds_spAdjLines, kinds_pushLines, List.append_nil,
-    List.replicate_add]
+  rw [← List.replicate_append_replicate]
+  simp only [prologueLines, kinds_append, kinds_spAdjLines, kinds_pushLines, List.append_nil]
   rfl
 
 /-- The frame teardown pops the saved registers, then loads fp/lr (`ldp`): plain reads only. -/
@@ -259,8 +259,8 @@ theorem kinds_epilogueLines (saves : List Reg) (n : Nat) :
     kinds (epilogueLines saves n) = List.replicate
       ((popLines false (savesFloat saves)).length + (popLines true (savesInt saves)).length + 1)
       .plainR := by
-  simp only [epilogueLines, kinds_append, kinds_spAdjLines, kinds_popLines, List.nil_append,
-    List.replicate_add]
+  rw [List.replicate_succ', ← List.replicate_append_replicate]
+  simp only [epilogueLines, kinds_append, kinds_spAdjLines, kinds_popLines, List.nil_append]
   rfl
 
 theorem relaxable_some {ln : Line} {c : Insn} {t : Lbl} (h : ln.relaxable? = some (c, t)) :

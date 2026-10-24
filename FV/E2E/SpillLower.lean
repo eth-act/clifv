@@ -690,6 +690,7 @@ theorem saveSegs_body (vc : VCode) (succs : Array (Array Nat)) (bi : Nat) (vb : 
               RItem.move l (spillHome (spillHomes vc) o.vreg o.cls))) := by
       unfold bodyItem spillInst
       simp only [hops, List.append_assoc]
+      rfl
     generalize (if k + 1 == vb.insts.size && !vb.branchArgs.isEmpty then
       argMovesOf vc succs bi vb else []) = M at hM hbody
     generalize ((ops.zip (spillLocs ops i.clobbers)).toList.filter (·.1.kind == .use)).map
@@ -744,7 +745,7 @@ theorem saveSegs_body (vc : VCode) (succs : Array (Array Nat)) (bi : Nat) (vb : 
       refine ⟨?_, ?_⟩
       · split
         · rename_i hm; exfalso; revert hm; cases i <;> simp_all
-        · simp only [List.all_eq_true]
+        · simp only [Bool.false_eq_true, ite_false, List.all_eq_true]
           intro x hx
           rcases List.mem_append.mp hx with hx | hx
           · exact (hC x hx).noSave
