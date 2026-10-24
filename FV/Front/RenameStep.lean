@@ -231,6 +231,31 @@ theorem placeSlots_ren (σ : Ren) (slots : List (SlotId × StackSlot)) (sp : Bit
     intro ⟨a, m⟩
     exact ih (a ++ [(sl.1, sp.toNat + off sl.1)], m.allocAt (sp.toNat + off sl.1) sl.2.size)
 
+theorem fillSlots_ren (σ : Ren) (slots : List (SlotId × StackSlot)) (sp : BitVec 64)
+    (off : SlotId → Nat) (b : Nat → BitVec 8) :
+    ∀ m : Mem, fillSlots slots sp off b (m.ren σ) = (fillSlots slots sp off b m).ren σ := by
+  unfold fillSlots
+  induction slots with
+  | nil => intro; rfl
+  | cons s ss ih =>
+    intro m
+    simp only [List.foldl_cons]
+    exact ih (m.fillAt (sp.toNat + off s.1) s.2.size b)
+
+theorem initSlots_ren (σ : Ren) (slots : List (SlotId × StackSlot)) (sp : BitVec 64)
+    (off : SlotId → Nat) (ini : Option SlotInit) (r : List (SlotId × Nat) × Mem) :
+    initSlots slots sp off ini (r.1, r.2.ren σ) =
+      ((initSlots slots sp off ini r).1, (initSlots slots sp off ini r).2.ren σ) := by
+  obtain ⟨l, ⟨al, by0, nx, sy, pl⟩⟩ := r
+  cases ini with
+  | none => rfl
+  | some ini =>
+    by_cases hs : slots.isEmpty
+    · simp only [initSlots, hs, if_true]
+    · simp only [initSlots, hs, Bool.false_eq_true, if_false, Prod.mk.injEq, true_and]
+      rw [← fillSlots_ren]
+      cases pl <;> rfl
+
 theorem enterSlots_ren (σ : Ren) (f : Function) (m : Mem) :
     enterSlots (f.rename σ.fwd) (m.ren σ) = ((enterSlots f m).1, (enterSlots f m).2.ren σ) := by
   unfold enterSlots
@@ -242,7 +267,10 @@ theorem enterSlots_ren (σ : Ren) (f : Function) (m : Mem) :
     simp only [h, Function.rename_name, σ.bwd_fwd, Function.rename_slots]
     cases pl.frame f.name with
     | none => exact bumpSlots_ren σ f.slots { m with place := some { pl with sps := _ } }
-    | some p => exact placeSlots_ren σ f.slots _ p.2 { m with place := some { pl with sps := _ } }
+    | some p =>
+      exact (congrArg (initSlots f.slots _ p.2 pl.init)
+        (placeSlots_ren σ f.slots _ p.2 { m with place := some { pl with sps := _ } })).trans
+        (initSlots_ren σ f.slots _ p.2 pl.init _)
 
 theorem enterFunc_ren (σ : Ren) (f : Function) (args : List Val) (m : Mem) :
     (enterFunc (f.rename σ.fwd) args (m.ren σ)).erase =

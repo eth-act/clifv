@@ -10,7 +10,8 @@ pointers off the slot-placement oracle (`unwindFrom`), as a return does.
 * `XEnvKeepsPlace`/`XEnvKeepsAllocs`: externs that keep the oracle / create no allocation, also
   when they unwind.
 * `runLoopX_place`, `runLoopX_placeNone`: a returning or unwinding whole-program run gives back
-  the oracle of its entry; `linkEnvRX_keepsPlace`: so the linked environment keeps the oracle.
+  the oracle of its entry; `linkEnvRX_keepsPlace0`: so the linked environment keeps the oracle
+  (on memories without the slot-byte oracle).
 * `runLoopX_allocs`: a returning or unwinding whole-program run creates no allocation.
 * `trapsExplicitX_of_returned`/`_of_unwound`: a returning or unwinding run of a program without
   functions satisfies the run premises `TrapsExplicitX`.
@@ -42,6 +43,21 @@ theorem XEnvKeepsPlace.toEnv {env : XEnv} (h : XEnvKeepsPlace env) :
   simp only [XEnv.toEnv, Option.map_eq_some_iff] at hg
   obtain ⟨g0, hg0, rfl⟩ := hg
   exact (h n g0 hg0 vals m).1 rvals m' (toOutcome_returned hr)
+
+/-- `XEnvKeepsPlace` on the memories without the slot-byte oracle (`Place.init = none`): what a
+linked environment keeps (`linkEnvRX_keepsPlace0`), whose program callees advance the slot-byte
+oracle. -/
+def XEnvKeepsPlace0 (env : XEnv) : Prop :=
+  ∀ n g, env.extern n = some g → ∀ vals m, (∀ pl, m.place = some pl → pl.init = none) →
+    (∀ rvals m', g vals m = .returned rvals m' → m'.place = m.place) ∧
+    (∀ e m', g vals m = .unwound e m' → m'.place = m.place)
+
+theorem XEnvKeepsPlace0.toEnv {env : XEnv} (h : XEnvKeepsPlace0 env) :
+    EnvKeepsPlace0 env.toEnv := by
+  intro n g hg vals m rvals m' hm0 hr
+  simp only [XEnv.toEnv, Option.map_eq_some_iff] at hg
+  obtain ⟨g0, hg0, rfl⟩ := hg
+  exact (h n g0 hg0 vals m hm0).1 rvals m' (toOutcome_returned hr)
 
 theorem XEnvKeepsAllocs.toEnv {env : XEnv} (h : XEnvKeepsAllocs env) :
     EnvKeepsAllocs env.toEnv := by
@@ -82,10 +98,10 @@ theorem leave_free_placeNone {mem : Mem} {bs : List Nat} (h : mem.place = none) 
 theorem unwindFrom_place (e : Exn) {sps : List (BitVec 64)}
     {fr : String → Option (Nat × (SlotId → Nat))} :
     ∀ (f : Frame) (cs : List (Frame × List ValueId)) (ts : List (Option ExnTable)) (mem : Mem)
-      (l : List (BitVec 64)), mem.place = some ⟨l ++ sps, fr⟩ → l.length = cs.length + 1 →
+      (l : List (BitVec 64)), mem.place = some ⟨l ++ sps, fr, none⟩ → l.length = cs.length + 1 →
       (∀ xs', unwindFrom e f cs ts mem = .next xs' →
-        ∃ l', xs'.s.mem.place = some ⟨l' ++ sps, fr⟩ ∧ l'.length = xs'.s.callers.length + 1) ∧
-      (∀ e' m', unwindFrom e f cs ts mem = .unwound e' m' → m'.place = some ⟨sps, fr⟩)
+        ∃ l', xs'.s.mem.place = some ⟨l' ++ sps, fr, none⟩ ∧ l'.length = xs'.s.callers.length + 1) ∧
+      (∀ e' m', unwindFrom e f cs ts mem = .unwound e' m' → m'.place = some ⟨sps, fr, none⟩)
   | f, [], _, mem, l, hp, hl => by
     refine ⟨fun xs' h => by simp [unwindFrom] at h, fun e' m' h => ?_⟩
     simp only [unwindFrom, XStepResult.unwound.injEq] at h
@@ -98,7 +114,7 @@ theorem unwindFrom_place (e : Exn) {sps : List (BitVec 64)}
       | nil => rfl
       | cons => simp at hl
   | f, (c, rs) :: cs, t :: ts, mem, l, hp, hl => by
-    have hp1 : ((mem.free (f.slots.map (·.2))).leave).place = some ⟨l.tail ++ sps, fr⟩ := by
+    have hp1 : ((mem.free (f.slots.map (·.2))).leave).place = some ⟨l.tail ++ sps, fr, none⟩ := by
       rw [leave_free_place hp]
       cases l with
       | nil => simp at hl
@@ -199,14 +215,14 @@ theorem placeInvX_step {P : Program} (hP : ∀ g ∈ P.funcs, LinkFree g) {env :
     {fr : String → Option (Nat × (SlotId → Nat))} {xs : XState} (hI : XInv P xs)
     (hp : PlaceInv sps fr xs.s) :
     (∀ xs', stepX env P xs = .next xs' → PlaceInv sps fr xs'.s) ∧
-    (∀ v m, stepX env P xs = .done v m → m.place = some ⟨sps, fr⟩) ∧
-    (∀ e m, stepX env P xs = .unwound e m → m.place = some ⟨sps, fr⟩) := by
+    (∀ v m, stepX env P xs = .done v m → m.place = some ⟨sps, fr, none⟩) ∧
+    (∀ e m, stepX env P xs = .unwound e m → m.place = some ⟨sps, fr, none⟩) := by
   obtain ⟨l, hl, hlen⟩ := hp
   unfold stepX
   split
   · rename_i e mem hr
     obtain ⟨n, g, vals, hg, hu⟩ := raiseAt_extern hr
-    have hm : mem.place = some ⟨l ++ sps, fr⟩ := by rw [(hk n g hg vals _).2 e mem hu, hl]
+    have hm : mem.place = some ⟨l ++ sps, fr, none⟩ := by rw [(hk n g hg vals _).2 e mem hu, hl]
     have hU := unwindFrom_place e xs.s.frame xs.s.callers xs.tries mem l hm hlen
     refine ⟨fun xs' h => ?_, fun v m h => absurd h raiseIn_ne_done,
       fun e' m' h => hU.2 e' m' (raiseIn_unwound h)⟩
@@ -270,8 +286,8 @@ theorem runLoopX_place {P : Program} (hP : ∀ g ∈ P.funcs, LinkFree g) {env :
     (hk : XEnvKeepsPlace env) {sps : List (BitVec 64)}
     {fr : String → Option (Nat × (SlotId → Nat))} :
     ∀ (N : Nat) (xs : XState), XInv P xs → PlaceInv sps fr xs.s →
-      (∀ vals mem, runLoopX env P N xs = .returned vals mem → mem.place = some ⟨sps, fr⟩) ∧
-      (∀ e mem, runLoopX env P N xs = .unwound e mem → mem.place = some ⟨sps, fr⟩)
+      (∀ vals mem, runLoopX env P N xs = .returned vals mem → mem.place = some ⟨sps, fr, none⟩) ∧
+      (∀ e mem, runLoopX env P N xs = .unwound e mem → mem.place = some ⟨sps, fr, none⟩)
   | 0, _, _, _ => ⟨fun _ _ h => by simp [runLoopX] at h, fun _ _ h => by simp [runLoopX] at h⟩
   | N + 1, xs, hI, hp => by
     have hs := placeInvX_step hP hk hI hp
@@ -326,17 +342,17 @@ theorem initState_placeNone {P : Program} {n : String} {vals : List Val} {m : Me
   simp only [initState, Res.bind_eq_ok, Res.ofOption_eq_ok, Res.pure_eq_ok] at hi
   obtain ⟨g, -, ⟨fr, mem'⟩, he, rfl⟩ := hi
   obtain ⟨_, _, _, _, _, _, hal, -⟩ := Opt.enterFunc_ok he
-  have := (enterSlots_place g m).1 hm
+  have := (enterSlots_place_init g m).1 hm
   rwa [hal] at this
 
-/-- **The linked environment with unwinding keeps the oracle** (the program's functions' runs give
-it back, also when they unwind) when the base externs do. -/
-theorem linkEnvRX_keepsPlace {P : Program} {env : XEnv} {R : State → XOutcome}
+/-- **The linked environment with unwinding keeps the oracle** without the slot-byte oracle (the
+program's functions' runs give it back, also when they unwind) when the base externs keep it. -/
+theorem linkEnvRX_keepsPlace0 {P : Program} {env : XEnv} {R : State → XOutcome}
     (hR : ∀ s o, R s = o → ((∃ vals mem, o = .returned vals mem) ∨ ∃ e mem, o = .unwound e mem) →
       ∃ N, runLoopX env P N s.toX = o)
     (hP : ∀ g ∈ P.funcs, LinkFree g) (hk : XEnvKeepsPlace env) :
-    XEnvKeepsPlace (linkEnvRX P env R) := by
-  intro n gsem hg vals m
+    XEnvKeepsPlace0 (linkEnvRX P env R) := by
+  intro n gsem hg vals m hm0
   cases hpf : P.func? n with
   | none => rw [linkEnvRX_none hpf] at hg; exact hk n gsem hg vals m
   | some g =>
@@ -356,7 +372,10 @@ theorem linkEnvRX_keepsPlace {P : Program} {env : XEnv} {R : State → XOutcome}
           have := runLoopX_placeNone hP hk N s.toX hI (initState_placeNone hi hmp)
           exact ⟨fun v mem h => this.1 v mem (h ▸ hN), fun e mem h => this.2 e mem (h ▸ hN)⟩
         | some pl =>
-          have := runLoopX_place hP hk N s.toX hI (initState_place hi hmp)
+          obtain ⟨sps, frm, i⟩ := pl
+          have hi0 : i = none := hm0 _ hmp
+          subst hi0
+          have := runLoopX_place hP hk N s.toX hI (initState_place hi hmp rfl)
           exact ⟨fun v mem h => this.1 v mem (h ▸ hN), fun e mem h => this.2 e mem (h ▸ hN)⟩
       refine ⟨fun rvals m' h => ?_, fun e m' h => ?_⟩
       · simp only [hi] at h
