@@ -12,6 +12,8 @@ import FVTest.Link.FloatCompileExeT
 import FV.Link.DeadCleanupCompileT
 import FV.E2E.FinalTC
 import FV.Backend.Proof.IselCtlTryF
+import FV.Link.DeadCleanupExePeakT
+import FVTest.Link.FloatCompileExeTPeak
 
 -- S11e5 Stage C (#35): the typed scope (float data movement, float parameters and returns)
 #print axioms E2E.typedRules_program
@@ -63,3 +65,10 @@ import FV.Backend.Proof.IselCtlTryF
 #print axioms Backend.Proof.tryUnmatchableTC_program
 #print axioms Backend.Proof.Driver.tryCallsTC_of_rules
 #print axioms Backend.Proof.tryRulesCorrectTFP_program
+
+-- S11e6 (#419): typed cleanup peak theorems
+#print axioms E2E.DeadCleanupExecBytes.binary_correct_exec_peak_provenT
+#print axioms Link.DeadCleanup.compileExe_correct_peakT
+#print axioms Link.DeadCleanup.compileExeT_correct_peak
+#print axioms E2E.FloatCompileExeTPeakWitness.correct_peakT_spec -- witness: native_decide
+#print axioms E2E.FloatCompileExeTPeakWitness.correct_peakT_specC -- witness: native_decide
