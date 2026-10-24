@@ -366,7 +366,7 @@ theorem ctxT_of_functionETC {f : Clif.Function} (hT : Compile.functionETC f = tr
     {ctx : Ctx} {ranges : Array (Nat × Nat)} {st0 : LState}
     (hb : buildCtx f = .ok (ctx, ranges, st0)) (hinv : CtxInvT f ctx) (hsc : InstScopeT ctx) :
     CtxT f ctx :=
-  ⟨hinv, hsc, callsE_of_functionETC hT hb⟩
+  ⟨hinv, hsc.toTF, callsE_of_functionETC hT hb⟩
 
 /-- The integer-position operands of a `functionETC` function's terminators other than the
 direct `try_call`s. -/
