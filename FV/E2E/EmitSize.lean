@@ -228,16 +228,18 @@ theorem visit_retsB {m : Type → Type} [Monad m] [LawfulMonad m] (f : OpSpec �
     cases dest <;> simp [MInst.visitOperands, retsB]
   all_goals simp [MInst.visitOperands, retsB]
 
+theorem visit_run_retsB {f : OpSpec → Reg → StateT Nat (Except String) Reg} {i i' : MInst} {k k' : Nat}
+    (h : (MInst.visitOperands f i).run k = .ok (i', k')) : retsB i' = retsB i := by
+  have := congrArg (fun x => StateT.run x k) (visit_retsB f i)
+  simp only [StateT.run_map, h] at this
+  simpa [Functor.map, Except.map] using this
+
 /-- `MInst.assign` keeps a `Rets` a `Rets` (and anything else not one). -/
 theorem assign_rets {i : MInst} {regs : Array Reg} {us : List (Reg × Reg)}
     (h : i.assign regs = .ok (.rets us)) : ∃ us', i = .rets us' := by
   unfold MInst.assign at h
   obtain ⟨⟨i', k⟩, h1, h2⟩ := exceptBind_ok h
-  have hv : retsB i' = retsB i := by
-    have := congrArg (fun x => StateT.run x k)
-      (visit_retsB (m := StateT Nat (Except String)) _ i)
-    simp only [StateT.run_map, h1] at this
-    simpa [Functor.map, Except.map] using this
+  have hv := visit_run_retsB h1
   simp only at h2
   split at h2
   · simp [throw, throwThe, MonadExceptOf.throw, bind, Except.bind] at h2
@@ -337,7 +339,7 @@ theorem itemsCode_words {fr : RAFrame} {vb : VBlock} {saved : List Reg} :
         have hc0 : c1 = [] := by
           unfold itemCode itemStep at h1
           cases b <;> simp [RAFrame.moveInsts, bind, Except.bind, pure, Except.pure, Functor.map,
-            Except.map] at h1 <;> exact h1.symm
+            Except.map] at h1 <;> first | exact h1 | exact h1.symm
         have h1' : cntR [RItem.move (.save r) b] = 1 := by simp [cntR, hr]
         have hmw : itemWords vb (.move (.save r) b) = 10 := by
           simp [itemWords, moveWords]
@@ -354,12 +356,17 @@ theorem itemsCode_words {fr : RAFrame} {vb : VBlock} {saved : List Reg} :
       simp only [cntR, List.filter_nil, List.length_nil, Nat.mul_zero, Nat.add_zero] at ih
       have hpay : (if (vb.insts[k]? matches some (.rets _)) then saved.length else 0) ≤
           10 * cntR pend := by
-        split
-        · rename_i hk
-          simp only [hk, ite_true] at hs
+        by_cases hk : (vb.insts[k]? matches some (.rets _)) = true
+        · rw [if_pos hk]
+          obtain ⟨us, hus⟩ : ∃ us, vb.insts[k]? = some (.rets us) := by
+            revert hk
+            cases vb.insts[k]? with
+            | none => simp
+            | some i => cases i <;> simp
+          simp only [hus, ite_true] at hs
           have := retTailOk_len saved [] pend hs.1
-          simp at this; omega
-        · exact Nat.zero_le _
+          simp only [List.length_nil, Nat.zero_add] at this; omega
+        · rw [if_neg hk]; exact Nat.zero_le _
       simp only [List.map_append, List.sum_append, List.map_cons, List.sum_cons] at hc1 ⊢
       omega
 
@@ -428,8 +435,9 @@ theorem lowerRFunc_words {vc : VCode} {rf : RFunc} {af : AFunc} (h : lowerRFunc 
       have hw := itemsCode_words hseg (itemsCode_saves _ _ hc)
       have hW : (items.toList.map (itemWords vb)).sum =
           10 * rf.saved.length + ((items.toList.drop rf.saved.length).map (itemWords vb)).sum := by
-        conv_lhs => rw [← hsplit]
-        rw [List.map_append, List.sum_append, saves_words]
+        have := congrArg (fun l => (l.map (itemWords vb)).sum) hsplit
+        simp only [List.map_append, List.sum_append, saves_words] at this
+        omega
       simp only [cntR, List.filter_nil, List.length_nil, Nat.mul_zero, Nat.add_zero] at hw
       simp only [ite_true, List.toList_toArray, List.map_append, List.sum_append, List.map_cons,
         List.map_nil, List.sum_cons, List.sum_nil, aInstWords, hW]
@@ -486,7 +494,9 @@ theorem pairsOf_count : ∀ rs : List Reg,
   | [_] => by simp [pairsOf]
   | a :: b :: rs => by
     have := pairsOf_count rs
-    simp only [pairsOf, List.length_cons] at this ⊢
+    rcases h : pairsOf rs with ⟨ps, o⟩
+    rw [h] at this
+    simp only [pairsOf, h, List.length_cons] at this ⊢
     omega
 
 theorem pushLines_length (int : Bool) (rs : List Reg) : (pushLines int rs).length ≤ rs.length := by
@@ -502,9 +512,11 @@ theorem popLines_length (int : Bool) (rs : List Reg) : (popLines int rs).length 
 theorem spAdjLines_length (sub : Bool) (size : Nat) : (spAdjLines sub size).length ≤ 5 := by
   have := loadConst64_length (.x 16) size
   unfold spAdjLines
-  repeat' split
-  all_goals simp
-  omega
+  split
+  · simp
+  · split
+    · simp
+    · simp only [List.length_append, List.length_singleton]; omega
 
 theorem saves_split : ∀ saves : List Reg,
     (savesInt saves).length + (savesFloat saves).length ≤ saves.length
