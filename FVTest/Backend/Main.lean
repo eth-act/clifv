@@ -6,6 +6,8 @@ import FVTest.Opt.Common
 import FVTest.Backend.StockConfig
 import FVTest.Backend.AllocChoice
 import FV.Backend.Proof.LowerSimUCheck
+import FV.Backend.Proof.LowerSimUCheckTC
+import FV.Compile.SubsetTC
 import FV.E2E.RegLevelFrameSaved
 import FV.E2E.RegLevelUTry
 
@@ -152,13 +154,17 @@ with a `try_call`, on the objects the theorem names: the lowering `vc` of `f` (`
 exceptional-edge half of `lowerCheckU`; `lowerCheck` ran during compilation), the prepared
 VCode and the allocation (`savedCheck vcp rf`), the allocated function and its final code
 (`lastCallsOk af fa`, `padsNonzeroB af fa`). `callSites`/`unwindRows` succeed for every compiled
-function (compilation fails otherwise). -/
-def unwindCheckFailure? (f : Clif.Function) (rec : AllocRecord) (fa? : Option FnAsm) :
-    Option String :=
+function (compilation fails otherwise). With `tc` (a function with typed `try_call`s,
+`Compile.functionETC`; #585): the same checks with the class-aware validator `unwCheckTC` over
+`lowerCheckTC`'s recording (`loweringUTC_of_check`) in place of `unwCheck`; no unwinding theorem
+covers typed `try_call`s yet. -/
+def unwindCheckFailure? (f : Clif.Function) (rec : AllocRecord) (fa? : Option FnAsm)
+    (tc : Bool := false) : Option String :=
   match lowerFunction f with
   | .error _ => some "lowerFunction"
   | .ok vc =>
-    if !Proof.Driver.unwCheck f vc then some "unwCheck"
+    if tc && !(Compile.functionETC f && Proof.Driver.unwCheckTC f vc) then some "unwCheckTC"
+    else if !tc && !Proof.Driver.unwCheck f vc then some "unwCheck"
     else match rec, fa? with
       | some (vcp, rf, af), some fa =>
         if !savedCheck vcp rf then some "savedCheck"
@@ -324,7 +330,13 @@ def run (input output : String) (o : Opts) : IO UInt32 := do
         | none =>
           IO.eprintln s!"lean-backend: {input}: %{p.name}: compiled, verified (try_call: unwinding by {thm}; the unwinder/personality model and the decoding of the emitted tables trusted)"
         | some why =>
-          IO.eprintln s!"lean-backend: {input}: %{p.name}: compiled, verified for normal returns (try_call: unwinding, landing pads and the LSDA trusted; {why})"
+          let rec? := (recs.find? (·.1 == p.name)).bind (·.2)
+          let fa? := fa.funcs.find? (·.name == p.name)
+          if why == "unwinding check failed: unwCheck" && Compile.functionETC f &&
+              (unwindCheckFailure? f rec? fa? (tc := true)).isNone then
+            IO.eprintln s!"lean-backend: {input}: %{p.name}: compiled, verified for normal returns (try_call with float values: unwinding, landing pads and the LSDA trusted; the exceptional-edge conditions hold on the typed lowering (unwCheckTC, loweringUTC_of_check), no unwinding theorem covers typed try_calls yet)"
+          else
+            IO.eprintln s!"lean-backend: {input}: %{p.name}: compiled, verified for normal returns (try_call: unwinding, landing pads and the LSDA trusted; {why})"
   return 0
 
 def main (args : List String) : IO UInt32 := do
