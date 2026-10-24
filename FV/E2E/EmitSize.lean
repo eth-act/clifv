@@ -388,7 +388,7 @@ theorem itemsCode_saves {fr : RAFrame} {vb : VBlock} : ∀ (rs : List Reg) (L : 
     subst hc0
     simpa using itemsCode_saves rs L h2
 
-theorem saves_words (vb : VBlock) (rs : List Reg) :
+theorem saveItems_words (vb : VBlock) (rs : List Reg) :
     ((rs.map (fun r => RItem.move (.reg r) (.save r))).map (itemWords vb)).sum = 10 * rs.length := by
   induction rs with
   | nil => rfl
@@ -436,7 +436,7 @@ theorem lowerRFunc_words {vc : VCode} {rf : RFunc} {af : AFunc} (h : lowerRFunc 
       have hW : (items.toList.map (itemWords vb)).sum =
           10 * rf.saved.length + ((items.toList.drop rf.saved.length).map (itemWords vb)).sum := by
         have := congrArg (fun l => (l.map (itemWords vb)).sum) hsplit
-        simp only [List.map_append, List.sum_append, saves_words] at this
+        simp only [List.map_append, List.sum_append, saveItems_words] at this
         omega
       simp only [cntR, List.filter_nil, List.length_nil, Nat.mul_zero, Nat.add_zero] at hw
       simp only [ite_true, List.toList_toArray, List.map_append, List.sum_append, List.map_cons,
