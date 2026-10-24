@@ -18,7 +18,7 @@
 #   (every file of Cranelift's runtests/; functions outside E are not compiled) and --random
 #   (`lean-backend-encode-test random`: every Insn form with N random operand sets
 #   (default 200, seed S default 0x5eed = 24301), one function per form; it also runs the
-#   decode check on them); --regalloc: the allocator (default lean, the Lean allocator)
+#   decode check on them); --regalloc: the allocator (default regalloc2, lean-backend's default)
 # Output: one line per differing function (every function with -v), then totals.
 # Exit status 0 iff every compiled function is identical and no file fails.
 set -euo pipefail
@@ -29,7 +29,7 @@ RUNTESTS=third_party/wasmtime/cranelift/filetests/filetests/runtests
 LLVM_MC=${LLVM_MC:-/usr/lib/llvm-18/bin/llvm-mc}
 
 VERBOSE=0
-RA=lean
+RA=regalloc2
 FILES=()
 SETS=()
 N=200
