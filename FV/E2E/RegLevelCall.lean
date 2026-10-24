@@ -468,11 +468,15 @@ theorem os_oneDef {F : BitVec 64 → Prop} {sem : ISem CV Arm.ArmState}
   refine ⟨_, hex (.x n0) s, ?_, ?_, ?_, ?_, ?_⟩
   · rw [henc]; exact hW
   · rw [henc]
-    refine ⟨?_, fun a _ => ?_⟩
+    refine ⟨?_, fun a _ => ?_, ?_⟩
     · simp only [spOf]
       rw [Arm.r_of_w_different (by simp; exact fun e => rnum_ne31 hn0 e.symm),
         Arm.r_of_w_different (by simp)]
     · simp [Arm.ArmState.mem_w_eq_mem]
+    · rw [Arm.r_of_w_different (by
+          simp only [ne_eq, Arm.StateField.GPR.injEq]
+          exact fun e => rnum_ne (a := 29) (b := n0) (by omega) (by omega) (by omega) e),
+        Arm.r_of_w_different (by simp)]
   · intro p hp
     simp only [defRegs] at hp
     have : p = ((⟨d, .int, .def, .late, .reg⟩, .x n0), ofX v) := by

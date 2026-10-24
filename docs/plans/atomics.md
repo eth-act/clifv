@@ -1276,6 +1276,17 @@ stops, with calls through `CallCompose.realizes_linked`; the witnesses above sho
 the whole run: `thread_compiledLSX_full`). Remaining scope widening tracked separately: mixed-size
 accesses (T2i, #317).
 
+**Frame shapes after #479 (Cranelift's frame, for whoever resumes atomics after #567).** The
+register-level layer now follows Cranelift's prologue/epilogue: `prologueLines saves size` is
+`stp x29, x30, [sp, #-16]!; mov x29, sp`, then the callee-save pushes (int pairs, then float
+pairs), then `sub sp`; the epilogue mirrors it and ends `ldp x29, x30, [sp], #16; ret`. What the
+`FV/Concurrency` layers see: `q_init_lines` is stated over `prologueLines saves size`;
+`StRel` has a new field `fp : R.af.frame = true → xreg 29 s = spv R.s0 - 16` (x29 is part of the
+world, so a move keeps it: `xreg29_sw`); `FrameKeep F s s'` has a third conjunct
+`Arm.r (.GPR 29#5) s' = Arm.r (.GPR 29#5) s` (`corr_tac`/`atom_tail` prove it); `ret_machine`
+takes `QA` (`Q ∧ AInv` or a return tail `RetTail`) and additionally concludes that each saved
+register holds its entry value. `ArmAllocItem`/`ArmAllocMove`/`CallEnterArm` were updated for these.
+
 ## 4. Testing (the oracle)
 
 qemu is not weak-memory faithful (TCG on an x86 host is close to TSO), so it cannot show that a
