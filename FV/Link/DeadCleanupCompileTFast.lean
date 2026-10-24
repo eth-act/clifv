@@ -1,5 +1,6 @@
 import FV.Link.DeadCleanupImage
 import FV.E2E.LinkScopeFast
+import FV.E2E.LinkCheckFast
 import FV.E2E.LinkOutCleanupT
 
 /-! # The typed scope's checks at the size of std (S11e6, #419)
@@ -14,7 +15,8 @@ once, compile the functions once in parallel tasks and check them in parallel, a
 the definitions:
 
 * `inScopePTPar_eq : inScopePTPar I = InScopePT I`;
-* `calleeSet_contains`, `calleeWithB_eq`: the callers' declared names as a hash set (`calleeB`);
+* `calleeWithB_eq`: the callers' declared names as a hash set (`calleeB`; `calleeSet` of
+  `FV/E2E/LinkCheckFast.lean`);
 * `outChksTWith_eq`: `outChksT` with the program's functions, the symbols and the callee set
   given;
 * `outOkTFast_eq : outOkTFast S = OutOkTCleanup S.inputCleanup`.
@@ -35,22 +37,6 @@ def inScopePTPar (I : LinkInput) : Bool :=
 theorem inScopePTPar_eq (I : LinkInput) : inScopePTPar I = InScopePT I := by
   simp only [inScopePTPar, assocMap_fun, progScopeFastB_eq, InScopePT, Link.parMap_eq,
     List.all_map, Function.comp_def, id]
-
-/-- The names the functions of `P` declare, as a hash set (`calleeSet_contains`). -/
-def calleeSet (P : Clif.Program) : Std.HashSet String :=
-  P.funcs.foldl (fun s g' => g'.externs.foldl (fun s e => s.insert e.2.name) s) {}
-
-theorem foldl_funcs_contains (fs : List Clif.Function) (s : Std.HashSet String) (n : String) :
-    (fs.foldl (fun s g' => g'.externs.foldl (fun s e => s.insert e.2.name) s) s).contains n =
-      (s.contains n || fs.any fun g' => g'.externs.any fun e => e.2.name == n) := by
-  induction fs generalizing s with
-  | nil => simp
-  | cons g fs ih =>
-    rw [List.foldl_cons, ih, foldl_insert_name_contains, List.any_cons, Bool.or_assoc]
-
-theorem calleeSet_contains (P : Clif.Program) (n : String) :
-    (calleeSet P).contains n = P.funcs.any fun g' => g'.externs.any fun e => e.2.name == n := by
-  simp [calleeSet, foldl_funcs_contains]
 
 /-- `calleeB P S g` with the declared names (`cs`) and "some function of `P` has an indirect
 call" (`anyInd`) given. -/
