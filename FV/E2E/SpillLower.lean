@@ -69,9 +69,10 @@ theorem array_mapIdxM_ne_error {α β ε : Type} {f : Nat → α → Except ε �
   obtain ⟨bs, hbs⟩ := array_mapIdxM_ok_of h
   rw [hbs]; intro c; cases c
 
-/-- **`lowerRFunc` succeeds** when `ctlCheck` accepts and every item has code (the converse of
-`lowerRFunc_ok`). -/
+/-- **`lowerRFunc` succeeds** when `ctlCheck` and `saveShapeOk` accept and every item has code
+(the converse of `lowerRFunc_ok`). -/
 theorem lowerRFunc_of {vc : VCode} {rf : RFunc} (hck : ctlCheck vc rf = true)
+    (hss : saveShapeOk vc rf = true)
     (hit : ∀ (b : Nat) (vb : VBlock) (items : Array RItem), vc.blocks[b]? = some vb →
       rf.blocks[b]? = some items →
       ∀ it ∈ items.toList, ∃ c, itemCode (RAFrame.compute vc rf) vb it = .ok c) :
@@ -84,6 +85,7 @@ theorem lowerRFunc_of {vc : VCode} {rf : RFunc} (hck : ctlCheck vc rf = true)
   simp only [bind, Except.bind] at hl
   -- `ctlCheck`
   rw [ite_eq_right (by simp [hck])] at hl
+  rw [ite_eq_right (by simp [hss])] at hl
   split at hl
   · rename_i e hm
     refine array_mapIdxM_ne_error (fun bi x hx => ?_) hm
@@ -326,10 +328,8 @@ theorem saveOff_spill (vc : VCode) {r : Reg} (hr : r ∈ calleeSaved) :
     ∃ o, (RAFrame.compute vc (spillAlloc vc)).saveOff.lookup r = some o := by
   apply lookup_some_of_mem
   have hsv : (spillAlloc vc).saved = calleeSaved := rfl
-  simp only [RAFrame.compute, hsv, List.map_append, fold_keys, List.map_nil, List.nil_append]
-  rcases calleeSaved_cls r hr with h | h
-  · exact List.mem_append_left _ (List.mem_filter.mpr ⟨hr, by simp [h]⟩)
-  · exact List.mem_append_right _ (List.mem_filter.mpr ⟨hr, by simp [h]⟩)
+  simp only [RAFrame.compute, hsv, List.map_map]
+  simpa [Function.comp_def] using hr
 
 theorem offset_ok (vc : VCode) {l : Loc} (hl : SlotOk l) (hr : ∀ r, l ≠ .reg r) :
     ∃ o, (RAFrame.compute vc (spillAlloc vc)).offset l = .ok o := by
@@ -541,6 +541,266 @@ theorem ctlCheck_spill {vc : VCode} {ss ps : Array (Array Nat)} (hcfg : vc.cfg =
     obtain ⟨b, hb⟩ := Array.getElem?_of_mem hsb
     exact preds_empty hcfg hp0 hb (by simpa using hs)
 
+/-! ## The callee-save shape of the spill allocation (`saveShapeOk`) -/
+
+/-- A move that touches no save slot and none of the registers `rs`. -/
+def PlainMv (rs : List Reg) (it : RItem) : Prop :=
+  ∃ a b, it = .move a b ∧ a.isSave = false ∧ b.isSave = false ∧ ∀ r ∈ rs, a ≠ .reg r ∧ b ≠ .reg r
+
+theorem PlainMv.isMove {rs : List Reg} {it : RItem} (h : PlainMv rs it) : it.isMove = true := by
+  obtain ⟨a, b, rfl, -⟩ := h; rfl
+
+theorem PlainMv.noSave {rs : List Reg} {it : RItem} (h : PlainMv rs it) : it.noSave = true := by
+  obtain ⟨a, b, rfl, ha, hb, -⟩ := h; simp [RItem.noSave, ha, hb]
+
+theorem PlainMv.restoreReg {rs : List Reg} {it : RItem} (h : PlainMv rs it) : it.restoreReg = none := by
+  obtain ⟨a, b, rfl, ha, -⟩ := h; cases a <;> simp_all [RItem.restoreReg, Loc.isSave]
+
+theorem saveSegsOk_moves (vb : VBlock) (saved : List Reg) : ∀ (xs pend ys : List RItem),
+    (∀ x ∈ xs, x.isMove = true) →
+    saveSegsOk vb saved pend (xs ++ ys) = saveSegsOk vb saved (pend ++ xs) ys
+  | [], pend, ys, _ => by simp
+  | x :: xs, pend, ys, h => by
+    obtain ⟨a, b, rfl⟩ : ∃ a b, x = .move a b := by
+      have := h x (List.mem_cons_self ..); cases x <;> simp_all [RItem.isMove]
+    simp only [List.cons_append, saveSegsOk]
+    rw [saveSegsOk_moves vb saved xs _ ys (fun y hy => h y (List.mem_cons_of_mem _ hy))]
+    simp
+
+theorem retTailOk_plain (saved : List Reg) : ∀ (P L : List RItem), (∀ x ∈ P, PlainMv [] x) →
+    retTailOk saved [] (P ++ L) = retTailOk saved [] L
+  | [], L, _ => rfl
+  | x :: P, L, h => by
+    have hx := h x (List.mem_cons_self ..)
+    have hr := hx.restoreReg
+    obtain ⟨a, b, rfl, ha, hb, -⟩ := hx
+    simp only [List.cons_append, retTailOk, hr]
+    simp [RItem.avoids, ha, hb, retTailOk_plain saved P L (fun y hy => h y (List.mem_cons_of_mem _ hy))]
+
+theorem retTailOk_tail (saved : List Reg) : ∀ L : List RItem, (∀ x ∈ L, PlainMv saved x) →
+    retTailOk saved saved L = true
+  | [], _ => by simp [retTailOk]
+  | x :: L, h => by
+    have hx := h x (List.mem_cons_self ..)
+    have hr := hx.restoreReg
+    obtain ⟨a, b, rfl, ha, hb, hab⟩ := hx
+    have ih := retTailOk_tail saved L (fun y hy => h y (List.mem_cons_of_mem _ hy))
+    simp only [retTailOk, hr, RItem.avoids, ha, hb, ih, Bool.not_false, Bool.true_and, Bool.and_true]
+    simp only [Bool.not_eq_true', List.any_eq_false]
+    intro r hr'
+    simp [(hab r hr').1, (hab r hr').2]
+
+theorem retTailOk_restores (saved : List Reg) (L : List RItem) (hL : ∀ x ∈ L, PlainMv saved x) :
+    ∀ (done rs : List Reg), done ++ rs = saved →
+    retTailOk saved done (rs.map (fun r => RItem.move (.save r) (.reg r)) ++ L) = true
+  | done, [], h => by
+    simp only [List.append_nil] at h; subst h
+    simpa using retTailOk_tail done L hL
+  | done, r :: rs, h => by
+    have hget : saved[done.length]? = some r := by rw [← h]; simp
+    simp only [List.map_cons, List.cons_append, retTailOk, RItem.restoreReg, RItem.isRestore,
+      beq_self_eq_true, hget, Bool.true_and]
+    exact retTailOk_restores saved L hL (done ++ [r]) rs (by rw [← h]; simp)
+
+/-- The location `spillLocs` gives a fixed operand is its register. -/
+theorem pair_fixed {ops : Array Operand} {clob : List Reg} {o : Operand} {l : Loc} {p : Reg}
+    (h : (o, l) ∈ (ops.zip (spillLocs ops clob)).toList) (hc : o.con = .fixed p) : l = .reg p := by
+  obtain ⟨j, hj⟩ := List.mem_iff_getElem?.mp h
+  rw [Array.getElem?_toList, Array.getElem?_zip_eq_some] at hj
+  obtain ⟨h1, h2⟩ := hj
+  rw [← Array.getElem?_toList] at h1
+  rw [spillLocs_get, h1] at h2
+  simp only [Option.map_some, Option.some.injEq] at h2
+  subst h2
+  unfold locOf
+  rw [hc]
+  simp [baseLoc, hc]
+
+theorem rets_or (i : MInst) : (∃ us, i = .rets us) ∨
+    ((match i with | .rets _ => spillRestores | _ => []) = [] ∧ ∀ us, i ≠ .rets us) := by
+  cases i <;> simp
+
+/-- The items of one instruction of the spill allocation: save-free moves, the restores before
+a `Rets` (whose loads avoid the callee-saved registers), the instruction, save-free moves. -/
+theorem saveSegs_body (vc : VCode) (succs : Array (Array Nat)) (bi : Nat) (vb : VBlock)
+    (hinst : ∀ (k : Nat) (i : MInst), vb.insts[k]? = some i → SpillInstOk i) :
+    ∀ (xs : List (MInst × Nat)) (C : List RItem), (∀ x ∈ xs, vb.insts[x.2]? = some x.1) →
+      (∀ c ∈ C, PlainMv [] c) →
+      saveSegsOk vb calleeSaved C (xs.flatMap (bodyItem vc succs bi vb)) = true
+  | [], C, _, hC => by
+    simp only [List.flatMap_nil, saveSegsOk, List.all_eq_true]
+    exact fun c hc => (hC c hc).noSave
+  | (i, k) :: xs, C, hxs, hC => by
+    have hk : vb.insts[k]? = some i := hxs (i, k) (List.mem_cons_self ..)
+    obtain ⟨ops, hops, -, hrets⟩ := hinst k i hk
+    -- the argument copies
+    have hM : ∀ x ∈ (if k + 1 == vb.insts.size && !vb.branchArgs.isEmpty then
+        argMovesOf vc succs bi vb else []), PlainMv [] x := by
+      intro x hx
+      split at hx
+      · obtain ⟨tb, htb⟩ := argMovesOf_sub hx
+        unfold spillArgMoves at htb
+        simp only [List.mem_append, List.mem_flatMap, List.mem_cons, List.not_mem_nil, or_false] at htb
+        rcases htb with ⟨_, _, rfl | rfl⟩ | ⟨_, _, rfl | rfl⟩ <;>
+          exact ⟨_, _, rfl, by simp [spillHome, Loc.isSave], by simp [spillHome, Loc.isSave], by simp⟩
+      · cases hx
+    -- the loads and the stores
+    have hpair : ∀ x ∈ (ops.zip (spillLocs ops i.clobbers)).toList, ∃ r, x.2 = .reg r :=
+      fun x hx => mem_pairs_reg hx
+    have hL : ∀ x ∈ ((ops.zip (spillLocs ops i.clobbers)).toList.filter (·.1.kind == .use)).map
+        (fun (o, l) => RItem.move (spillHome (spillHomes vc) o.vreg o.cls) l), PlainMv [] x := by
+      intro x hx
+      simp only [List.mem_map] at hx
+      obtain ⟨⟨o, l⟩, hol, rfl⟩ := hx
+      obtain ⟨r, hr⟩ := hpair _ (List.mem_filter.mp hol).1
+      simp only at hr; subst hr
+      exact ⟨_, _, rfl, by simp [spillHome, Loc.isSave], by simp [Loc.isSave], by simp⟩
+    have hS : ∀ x ∈ (if i.isTerminator then [] else
+        (keptPairs i (ops.zip (spillLocs ops i.clobbers)).toList).map fun (o, l) =>
+          RItem.move l (spillHome (spillHomes vc) o.vreg o.cls)), PlainMv [] x := by
+      intro x hx
+      split at hx
+      · cases hx
+      · simp only [List.mem_map] at hx
+        obtain ⟨⟨o, l⟩, hol, rfl⟩ := hx
+        obtain ⟨r, hr⟩ := hpair _ (keptPairs_sub hol)
+        simp only at hr; subst hr
+        exact ⟨_, _, rfl, by simp [Loc.isSave], by simp [spillHome, Loc.isSave], by simp⟩
+    have hLr : (∃ us, i = .rets us) → ∀ x ∈ ((ops.zip (spillLocs ops i.clobbers)).toList.filter
+        (·.1.kind == .use)).map (fun (o, l) => RItem.move (spillHome (spillHomes vc) o.vreg o.cls) l),
+        PlainMv calleeSaved x := by
+      rintro ⟨us, hus⟩ x hx
+      simp only [List.mem_map] at hx
+      obtain ⟨⟨o, l⟩, hol, rfl⟩ := hx
+      have hz := (List.mem_filter.mp hol).1
+      have ho : o ∈ ops.toList := by
+        rw [Array.toList_zip] at hz; exact (List.of_mem_zip hz).1
+      obtain ⟨p, hc, hp⟩ := hrets us hus o ho
+      obtain rfl := pair_fixed hz hc
+      exact ⟨_, _, rfl, by simp [spillHome, Loc.isSave], by simp [Loc.isSave], fun r hr =>
+        ⟨by simp [spillHome], fun e => hp (by injection e with e; rw [e]; exact hr)⟩⟩
+    have hbody : bodyItem vc succs bi vb (i, k) =
+        (if k + 1 == vb.insts.size && !vb.branchArgs.isEmpty then argMovesOf vc succs bi vb else []) ++
+        ((match i with | .rets _ => spillRestores | _ => []) ++
+          ((ops.zip (spillLocs ops i.clobbers)).toList.filter (·.1.kind == .use)).map
+            (fun (o, l) => RItem.move (spillHome (spillHomes vc) o.vreg o.cls) l) ++
+          [RItem.op k (spillLocs ops i.clobbers)] ++
+          (if i.isTerminator then [] else
+            (keptPairs i (ops.zip (spillLocs ops i.clobbers)).toList).map fun (o, l) =>
+              RItem.move l (spillHome (spillHomes vc) o.vreg o.cls))) := by
+      unfold bodyItem spillInst
+      simp only [hops, List.append_assoc]
+    generalize (if k + 1 == vb.insts.size && !vb.branchArgs.isEmpty then
+      argMovesOf vc succs bi vb else []) = M at hM hbody
+    generalize ((ops.zip (spillLocs ops i.clobbers)).toList.filter (·.1.kind == .use)).map
+      (fun (o, l) => RItem.move (spillHome (spillHomes vc) o.vreg o.cls) l) = L at hL hLr hbody
+    generalize (if i.isTerminator then [] else
+      (keptPairs i (ops.zip (spillLocs ops i.clobbers)).toList).map fun (o, l) =>
+        RItem.move l (spillHome (spillHomes vc) o.vreg o.cls)) = S at hS hbody
+    have hrest := saveSegs_body vc succs bi vb hinst xs S
+      (fun x hx => hxs x (List.mem_cons_of_mem _ hx)) hS
+    rw [List.flatMap_cons, hbody]
+    rcases rets_or i with ⟨us, rfl⟩ | ⟨hR, hne⟩
+    · -- a `Rets`: save-free moves, the restores, then loads into return registers
+      have hL' := hLr ⟨us, rfl⟩
+      have hRm : ∀ x ∈ spillRestores, x.isMove = true := by
+        intro x hx; simp only [spillRestores, List.mem_map] at hx; obtain ⟨_, _, rfl⟩ := hx; rfl
+      have hMv : ∀ x ∈ M ++ (spillRestores ++ L), x.isMove = true := by
+        intro x hx
+        rcases List.mem_append.mp hx with hx | hx
+        · exact (hM x hx).isMove
+        · rcases List.mem_append.mp hx with hx | hx
+          · exact hRm x hx
+          · exact (hL x hx).isMove
+      have e : M ++ (spillRestores ++ L ++ [RItem.op k (spillLocs ops (MInst.rets us).clobbers)] ++ S) ++
+          xs.flatMap (bodyItem vc succs bi vb) =
+          (M ++ (spillRestores ++ L)) ++ (RItem.op k (spillLocs ops (MInst.rets us).clobbers) ::
+            (S ++ xs.flatMap (bodyItem vc succs bi vb))) := by
+        simp
+      simp only at hbody ⊢
+      rw [e, saveSegsOk_moves vb calleeSaved _ C _ hMv]
+      simp only [saveSegsOk, hk, Bool.and_eq_true]
+      refine ⟨?_, ?_⟩
+      · simp only [ite_true]
+        rw [← List.append_assoc, retTailOk_plain _ _ _ (fun x hx => by
+          rcases List.mem_append.mp hx with hx | hx
+          · exact hC x hx
+          · exact hM x hx)]
+        exact retTailOk_restores calleeSaved L hL' [] calleeSaved rfl
+      · rw [saveSegsOk_moves vb calleeSaved S [] _ (fun x hx => (hS x hx).isMove)]
+        simpa using hrest
+    · rw [hR]
+      have hMv : ∀ x ∈ M ++ L, x.isMove = true := by
+        intro x hx
+        rcases List.mem_append.mp hx with hx | hx
+        · exact (hM x hx).isMove
+        · exact (hL x hx).isMove
+      have e : M ++ ([] ++ L ++ [RItem.op k (spillLocs ops i.clobbers)] ++ S) ++
+          xs.flatMap (bodyItem vc succs bi vb) =
+          (M ++ L) ++ (RItem.op k (spillLocs ops i.clobbers) :: (S ++ xs.flatMap (bodyItem vc succs bi vb))) := by
+        simp
+      rw [e, saveSegsOk_moves vb calleeSaved _ C _ hMv]
+      have hnr : ((some i : Option MInst) matches some (.rets _)) = false := by
+        cases i <;> simp_all
+      simp only [saveSegsOk, hk, hnr, Bool.false_eq_true, ite_false, Bool.and_eq_true, List.all_eq_true]
+      refine ⟨fun x hx => ?_, ?_⟩
+      · rcases List.mem_append.mp hx with hx | hx
+        · exact (hC x hx).noSave
+        · rcases List.mem_append.mp hx with hx | hx
+          · exact (hM x hx).noSave
+          · exact (hL x hx).noSave
+      · rw [saveSegsOk_moves vb calleeSaved S [] _ (fun x hx => (hS x hx).isMove)]
+        simpa using hrest
+
+theorem plain_entryStores {vc : VCode} {succs preds : Array (Array Nat)} {s : Nat} {it : RItem}
+    (hit : it ∈ spillEntryStores (spillHomes vc) vc succs preds s) : PlainMv [] it := by
+  rw [Spill.spillEntryStores_eq (vc := vc) (succs := succs) (preds := preds) s] at hit
+  simp only [List.map_map, List.mem_map] at hit
+  obtain ⟨x, hx, rfl⟩ := hit
+  obtain ⟨_, _, _, _, -, -, -, -, hx'⟩ := Spill.entryPairs_spec (vc := vc) (succs := succs) (preds := preds) hx
+  obtain ⟨r, hr⟩ := termEdgeDefs_reg hx'
+  exact ⟨_, _, rfl, by simp [hr, Loc.isSave], by simp [spillHome, Loc.isSave], by simp⟩
+
+/-- **The spill allocation has Cranelift's callee-save shape** (`saveShapeOk`): block 0 starts
+with the saves of every callee-saved register, every `Rets` is preceded by their restores (its
+loads go into return registers, `SpillInstOk`), no other item touches a save slot. -/
+theorem saveShapeOk_spill {vc : VCode} {ss ps : Array (Array Nat)} (hcfg : vc.cfg = .ok (ss, ps))
+    (hloc : SpillLocalOk vc) : saveShapeOk vc (spillAlloc vc) = true := by
+  unfold saveShapeOk
+  simp only [Bool.and_eq_true, List.all_eq_true]
+  refine ⟨by rw [show (spillAlloc vc).saved = calleeSaved from rfl]; decide, ?_⟩
+  rintro ⟨⟨vb, items⟩, b⟩ hx
+  have hm := List.mem_zipIdx_iff_getElem?.mp hx
+  rw [List.getElem?_zip_eq_some] at hm
+  obtain ⟨hvb, hit⟩ := hm
+  simp only [Array.getElem?_toList] at hvb hit
+  rw [Spill.spillAlloc_block hcfg hvb] at hit
+  obtain rfl := Option.some.inj hit
+  have hinst : ∀ k i, vb.insts[k]? = some i → SpillInstOk i := fun k i hi => hloc.1 b vb k i hvb hi
+  have hxs : ∀ x ∈ vb.insts.toList.zipIdx, vb.insts[x.2]? = some x.1 := fun x hx => by
+    have := List.mem_zipIdx_iff_getElem?.mp hx; simpa using this
+  have hE := fun it (h : it ∈ spillEntryStores (spillHomes vc) vc ss ps b) => plain_entryStores h
+  have hsv : (spillAlloc vc).saved = calleeSaved := rfl
+  simp only [hsv, List.toList_toArray]
+  have hbody := saveSegs_body vc ss b vb hinst vb.insts.toList.zipIdx
+    (spillEntryStores (spillHomes vc) vc ss ps b) hxs hE
+  have hEm : ∀ x ∈ spillEntryStores (spillHomes vc) vc ss ps b, x.isMove = true :=
+    fun x hx => (hE x hx).isMove
+  split
+  · rename_i hb
+    simp only [beq_iff_eq] at hb
+    subst hb
+    have hlen : spillSaves.length = calleeSaved.length := by simp [spillSaves]
+    simp only [ite_true, List.append_assoc, Bool.and_eq_true, beq_iff_eq]
+    refine ⟨by rw [← hlen, List.take_left]; rfl, ?_⟩
+    rw [← hlen, List.drop_left, saveSegsOk_moves _ _ _ _ _ hEm]
+    simpa using hbody
+  · rename_i hb
+    simp only [beq_iff_eq] at hb
+    simp only [hb, ite_false, List.nil_append]
+    rw [saveSegsOk_moves _ _ _ _ _ hEm]
+    simpa using hbody
+
 /-! ## The assembly -/
 
 /-- **`lowerRFunc` lowers the spill allocation** of a VCode with a CFG that meets the local
@@ -551,7 +811,7 @@ theorem lowerRFunc_spill_of {vc : VCode} {ss ps : Array (Array Nat)} (hcfg : vc.
       vb.insts[k]? = some i → ctlInstOk b k i = true)
     (h0 : ∃ vb0 ds, vc.blocks[0]? = some vb0 ∧ vb0.insts[0]? = some (.args ds) ∧ 1 < vb0.insts.size) :
     ∃ af, lowerRFunc vc (spillAlloc vc) = .ok af :=
-  lowerRFunc_of (ctlCheck_spill hcfg hloc hins h0) fun b vb _ hvb hit it hm =>
+  lowerRFunc_of (ctlCheck_spill hcfg hloc hins h0) (saveShapeOk_spill hcfg hloc) fun b vb _ hvb hit it hm =>
     itemCode_spill vc (itemOk_spillAlloc hcfg hvb hit it hm) fun k i hi =>
       let ⟨ops, hops, _⟩ := hloc.1 b vb k i hvb hi
       ⟨ops, hops⟩

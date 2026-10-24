@@ -437,10 +437,12 @@ theorem stRel_regs {R : RL} {s s' : Arm.ArmState} {m : Loc → CV} {w : Arm.ArmS
   · rw [hrd]; exact hst.fplr hfr
   · rw [hrd]; exact hst.code k wd hk
   · rw [hmem]; exact hst.gkeep a ha
-  · show Arm.r (.GPR (BitVec.ofNat 5 29)) s' = _
-    rw [hf _ (by simp) (fun e => by injection e with e; exact rnum_ne (by omega) (by omega)
-      (show na ≠ 29 by omega) e.symm) (fun e => by injection e with e; exact rnum_ne (by omega)
-      (by omega) (show nb ≠ 29 by omega) e.symm)]
+  · have h29a : Arm.StateField.GPR (BitVec.ofNat 5 29) ≠ .GPR (rnum na) := by
+      intro e; injection e with e; exact rnum_ne (a := 29) (b := na) (by omega) (by omega) (by omega) e
+    have h29b : Arm.StateField.GPR (BitVec.ofNat 5 29) ≠ .GPR (rnum nb) := by
+      intro e; injection e with e; exact rnum_ne (a := 29) (b := nb) (by omega) (by omega) (by omega) e
+    show Arm.r (.GPR (BitVec.ofNat 5 29)) s' = _
+    rw [hf _ (by simp) h29a h29b]
     exact hst.fp hfr
 
 /-! ## The `Realizes` case -/

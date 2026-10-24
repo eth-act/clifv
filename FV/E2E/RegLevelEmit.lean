@@ -542,6 +542,24 @@ theorem lowerRFunc_saves {vc : VCode} {rf : RFunc} {af : AFunc} (h : lowerRFunc 
     subst h
     exact ⟨by simpa using hsh, rfl⟩
 
+theorem saveShapeOk_block {vc : VCode} {rf : RFunc} (h : saveShapeOk vc rf = true) {b : Nat}
+    {vb : VBlock} {items : Array RItem} (hvb : vc.blocks[b]? = some vb)
+    (hit : rf.blocks[b]? = some items) :
+    (b = 0 → items.toList.take rf.saved.length = rf.saved.map (fun r => .move (.reg r) (.save r)) ∧
+      saveSegsOk vb rf.saved [] (items.toList.drop rf.saved.length) = true) ∧
+    (b ≠ 0 → saveSegsOk vb rf.saved [] items.toList = true) := by
+  simp only [saveShapeOk, Bool.and_eq_true, List.all_eq_true] at h
+  have h1 := h.2 ((vb, items), b) (List.mem_zipIdx_iff_getElem?.mpr (by
+    rw [List.getElem?_zip_eq_some]
+    exact ⟨by simpa using hvb, by simpa using hit⟩))
+  by_cases hb : b = 0
+  · subst hb
+    simp only [beq_self_eq_true, ite_true, Bool.and_eq_true, beq_iff_eq] at h1
+    exact ⟨fun _ => h1, fun h => absurd rfl h⟩
+  · have hb' : (b == 0) = false := by simpa using hb
+    simp only [hb', Bool.false_eq_true, ite_false] at h1
+    exact ⟨fun h => absurd h hb, fun _ => h1⟩
+
 /-! ## Block decomposition -/
 
 theorem lines_traps {c : FnCtx} {m : MInst} {ps ps' : PState} {ls : List Line}
