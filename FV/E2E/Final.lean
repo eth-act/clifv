@@ -180,7 +180,8 @@ theorem stackArgsAvoid_frameWA {f : Clif.Function} {k : Nat} {vc vcp : VCode} {r
   have hD : frameDrop af = af.frameSize + 16 := by simp [frameDrop, hframe]
   have hsz : (RAFrame.compute vcp rf).size ≤ af.frameSize := by
     rw [hfs]; simp only [RAFrame.compute]
-    exact Nat.le_trans (Nat.le_add_right _ _) (le_alignTo _ 16 (by decide))
+    exact Nat.le_trans (Nat.le_trans (Nat.le_add_right _ _) (le_alignTo _ 16 (by decide)))
+      (Nat.le_add_right _ _)
   have hsp := hres.1
   have hfit := h.fits
   have hx : (spv s + BitVec.ofNat 64 off + BitVec.ofNat 64 j -

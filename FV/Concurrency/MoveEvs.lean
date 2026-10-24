@@ -422,40 +422,40 @@ theorem moveInsts_evs {vc : VCode} {rf : RFunc} {sp0 : BitVec 64} {F : BitVec 64
         refine (slotLoadAt_evs ctx (cls := .float) ⟨b', rfl, hb⟩ (fun _ => hal)
           (align_of_spOf hsp1 halign)).mono fun x h => htF x ?_
         rw [h, hsp1]
-    | stack k cl | save r =>
-      all_goals
-        simp only [RAFrame.moveInsts, bind, Except.bind] at hmi
-        split at hmi
-        · cases hmi
-        rename_i o hoff
-        simp only [pure, Except.pure, Except.ok.injEq] at hmi
-        subst hmi
-        simp only [hac, Option.getD_some]
-        refine ⟨_, rfl, (slotStoreAt_evs ctx (clsReg_of hac haa) (fun e => ?_) halign).mono
-          (hF _ o hLd hoff)⟩
-        subst e
-        have hal := live_align hLd hoff
-        rw [slotBytes_float (fun _ h => by cases h) hdcls] at hal
-        exact hal.1
-  | stack k cl | save r =>
-    all_goals
-      cases dst with
-      | stack _ _ | save _ => simp [Loc.isReg] at hreg
-      | reg b =>
-        obtain ⟨hbc, hba⟩ := locOk_reg hd
-        simp only [RAFrame.moveInsts, bind, Except.bind] at hmi
-        split at hmi
-        · cases hmi
-        rename_i o hoff
-        simp only [pure, Except.pure, Except.ok.injEq] at hmi
-        subst hmi
-        simp only [hbc, Option.getD_some]
-        refine ⟨_, rfl, (slotLoadAt_evs ctx (clsReg_of hbc hba) (fun e => ?_) halign).mono
-          (hF _ o hLs hoff)⟩
-        subst e
-        have hal := live_align hLs hoff
-        rw [slotBytes_float (fun _ h => by cases h) hcls] at hal
-        exact hal.1
+    | save r => exact hLd.elim
+    | stack k cl =>
+      simp only [RAFrame.moveInsts, bind, Except.bind] at hmi
+      split at hmi
+      · cases hmi
+      rename_i o hoff
+      simp only [pure, Except.pure, Except.ok.injEq] at hmi
+      subst hmi
+      simp only [hac, Option.getD_some]
+      refine ⟨_, rfl, (slotStoreAt_evs ctx (clsReg_of hac haa) (fun e => ?_) halign).mono
+        (hF _ o hLd hoff)⟩
+      subst e
+      have hal := live_align hLd hoff
+      rw [slotBytes_float (fun _ h => by cases h) (fun _ h => by cases h) hdcls] at hal
+      exact hal.1
+  | save r => exact hLs.elim
+  | stack k cl =>
+    cases dst with
+    | stack _ _ | save _ => simp [Loc.isReg] at hreg
+    | reg b =>
+      obtain ⟨hbc, hba⟩ := locOk_reg hd
+      simp only [RAFrame.moveInsts, bind, Except.bind] at hmi
+      split at hmi
+      · cases hmi
+      rename_i o hoff
+      simp only [pure, Except.pure, Except.ok.injEq] at hmi
+      subst hmi
+      simp only [hbc, Option.getD_some]
+      refine ⟨_, rfl, (slotLoadAt_evs ctx (clsReg_of hbc hba) (fun e => ?_) halign).mono
+        (hF _ o hLs hoff)⟩
+      subst e
+      have hal := live_align hLs hoff
+      rw [slotBytes_float (fun _ h => by cases h) (fun _ h => by cases h) hcls] at hal
+      exact hal.1
 
 /-- **Every Arm memory event of a checked move's lines is in the frame** `F`. -/
 theorem moveLines_evs {vc : VCode} {rf : RFunc} {sp0 : BitVec 64} {F : BitVec 64 → Prop}
@@ -609,25 +609,36 @@ theorem moveInsts_shape {fr : RAFrame} {src dst : Loc} {code : List AInst}
         rcases List.mem_append.1 hi with hi | hi
         · exact mvShape_slotStoreAt hi
         · exact mvShape_slotLoadAt hi
-    | stack _ _ | save _ =>
-      all_goals
-        simp only [RAFrame.moveInsts, bind, Except.bind] at h
-        split at h
-        · cases h
-        simp only [pure, Except.pure, Except.ok.injEq] at h
-        subst h
-        exact ⟨_, rfl, fun i hi => mvShape_slotStoreAt hi⟩
-  | stack _ _ | save _ =>
-    all_goals
-      cases dst with
-      | reg b =>
-        simp only [RAFrame.moveInsts, bind, Except.bind] at h
-        split at h
-        · cases h
-        simp only [pure, Except.pure, Except.ok.injEq] at h
-        subst h
-        exact ⟨_, rfl, fun i hi => mvShape_slotLoadAt hi⟩
-      | stack _ _ | save _ => cases h
+    | save _ =>
+      simp only [RAFrame.moveInsts, pure, Except.pure, Except.ok.injEq] at h
+      subst h
+      exact ⟨[], rfl, by simp⟩
+    | stack _ _ =>
+      simp only [RAFrame.moveInsts, bind, Except.bind] at h
+      split at h
+      · cases h
+      simp only [pure, Except.pure, Except.ok.injEq] at h
+      subst h
+      exact ⟨_, rfl, fun i hi => mvShape_slotStoreAt hi⟩
+  | save _ =>
+    cases dst <;>
+    · simp only [RAFrame.moveInsts, pure, Except.pure, Except.ok.injEq] at h
+      subst h
+      exact ⟨[], rfl, by simp⟩
+  | stack _ _ =>
+    cases dst with
+    | reg b =>
+      simp only [RAFrame.moveInsts, bind, Except.bind] at h
+      split at h
+      · cases h
+      simp only [pure, Except.pure, Except.ok.injEq] at h
+      subst h
+      exact ⟨_, rfl, fun i hi => mvShape_slotLoadAt hi⟩
+    | save _ =>
+      simp only [RAFrame.moveInsts, pure, Except.pure, Except.ok.injEq] at h
+      subst h
+      exact ⟨[], rfl, by simp⟩
+    | stack _ _ => cases h
 
 theorem kinds_mem_none {ls : List Line} (h : Concurrency.Code.kinds ls = []) {x : Insn}
     {t : Option Clif.TrapCode} (hx : Line.ins x t ∈ ls) : Concurrency.Code.insnKind x = none :=
