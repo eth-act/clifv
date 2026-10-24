@@ -70,15 +70,15 @@ and they run under `qemu-aarch64-static`.
    ```
    FV_MEMCAP=16G scripts/memcap.sh lake build lean-backend clif-decode
    cd rust && FV_MEMCAP=16G ../scripts/memcap.sh cargo build --release \
-       -p cargo-fv -p clif-data-export
+       -p cargo-fv -p clif-data-export -p lean-regalloc
    export PATH=$PWD/target/release:$PATH      # cargo-fv and fv-rustc
    ```
-   `cargo-fv` finds `lean-backend`, `clif-decode` and `clif-data-export`
+   `cargo-fv` finds `lean-backend`, `clif-decode`, `clif-data-export` and `lean-regalloc`
    through the checkout it was built from (`FV_ROOT` overrides this). Register allocation is
-   done in Lean (`lean-backend`'s default allocator, docs/contracts/regalloc.md); the external
-   regalloc2 oracle `lean-regalloc` is no longer needed (`lean-backend --regalloc regalloc2`
-   and the stock comparison still use it). `cargo install --path rust/crates/cargo-fv` also works: it installs both
-   binaries, and they still use that checkout.
+   regalloc2's, as in Cranelift (`lean-backend`'s default allocator, the untrusted
+   `lean-regalloc`; every allocation is validated by the Lean checker, docs/contracts/regalloc.md;
+   without `lean-regalloc` every function gets the spill allocation). `cargo install --path
+   rust/crates/cargo-fv` also works: it installs both binaries, and they still use that checkout.
 5. cg_clif with this repository's patch, built once from the nightly's own sources (network
    access, the `rustc-dev` and `rust-src` components, about 40 s per variant):
    FV_MEMCAP=16G scripts/memcap.sh scripts/build-cg-clif.sh
