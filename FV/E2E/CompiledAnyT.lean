@@ -56,6 +56,16 @@ theorem layout (h : CompiledAnyT p f k vc vcp rf af fa fb) : fa.layout = .ok fb 
   · exact h.layout
   · exact h.layout
 
+/-- The entry registers of the artifact's signature (`entryRegsT_of_check` /
+`entryRegsTC_of_check`). -/
+theorem entryRegs (h : CompiledAnyT p f k vc vcp rf af fa fb) :
+    ∀ l ∈ locsOf f.sig, ∀ r, l = .reg r → (∃ n, r = .x n ∧ n ≤ 8) ∨ (∃ n, r = .v n ∧ n ≤ 7) := by
+  rcases h with ⟨-, h⟩ | h
+  · exact entryRegsT_of_check h.lowerOk
+  · cases h with
+    | legacy h => exact entryRegsTC_of_check h.lowerOk
+    | cleanup h => exact entryRegsTC_of_check h.lowerOk
+
 end CompiledAnyT
 
 /-- `hasTls_of_vcodeCleanupAT` for `CompiledCleanupATC` (the typed-`try_call` cleanup
