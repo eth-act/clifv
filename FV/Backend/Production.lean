@@ -17,7 +17,7 @@ def lowerCheckedProduction (f : Clif.Function) (verify : Bool) : Except String V
   | .error _ => lowerChecked f verify
 
 def lowerForAllocationProduction (f : Clif.Function) (verify cleanup : Bool) : Except String VCode :=
-  (lowerCheckedProduction f verify).map fun vc => if cleanup then DeadCleanup.prune vc else vc
+  (lowerCheckedProduction f verify).map fun vc => if cleanup then cleanupStage f vc else vc
 
 def hasStockPrologue (pf : Clif.ParsedFile) : Bool :=
   pf.funcs.any fun p => match p.func with

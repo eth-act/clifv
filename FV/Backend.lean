@@ -10,7 +10,7 @@ import FV.Backend.Encode
 import FV.Backend.Obj
 import FV.Backend.Proof.DriverCheck
 import FV.Backend.Proof.DriverCheckTy
-import FV.Backend.DeadCleanup
+import FV.Backend.CleanupStage
 import FV.Compile.Subset
 import Std.Data.HashSet
 
@@ -82,9 +82,11 @@ def lowerChecked (f : Clif.Function) (verify : Bool) : Except String VCode := do
   pure vc
 
 /-- Validate the unchanged lowering output, then select the VCode supplied to
-every allocator. Cleanup preserves classes and rule history. -/
+every allocator: with cleanup, the production cleanup stage (`cleanupStage`: Cranelift's skip
+of unused instructions, then the dead-producer cleanup). Cleanup preserves classes and rule
+history. -/
 def lowerForAllocation (f : Clif.Function) (verify deadCleanup : Bool) : Except String VCode :=
-  (lowerChecked f verify).map fun vc => if deadCleanup then DeadCleanup.prune vc else vc
+  (lowerChecked f verify).map fun vc => if deadCleanup then cleanupStage f vc else vc
 
 /-- The lowering validator's size measure: instructions (statements and terminators) × values.
 `lowerCheck` re-runs the lowering recording every statement's states (their vreg class arrays

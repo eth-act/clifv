@@ -110,7 +110,7 @@ def stockSnapshot (f : Clif.Function) : Except String Json := do
 def snapshot (f : Clif.Function) (stockSchedule : Bool) (deadCleanup : Bool := true) : Except String Json := do
   let (ctx, ranges, initial) ← buildCtx f
   let selected ← lowerFunction f
-  let allocationSelected := if deadCleanup then DeadCleanup.prune selected else selected
+  let allocationSelected := if deadCleanup then cleanupStage f selected else selected
   let prepared ← prepare allocationSelected
   let replay ← replayJson f ctx initial
   let allocator ← match Json.parse (← vcodeJson prepared) with
