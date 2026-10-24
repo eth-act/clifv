@@ -2752,6 +2752,22 @@ names (`exSyms`, `symCert`), and proves `hdr_bin`, `data_bin`, `syms_bin` by `na
 state no file name: `link-check` cut the excerpts from the executable named in the header
 comment.
 
+**Typed checker** (S11e6, #615). A typed `--verified` executable (`lean-link`'s
+`Link.DeadCleanup.compileExeT`) holds functions with float parameters, returns or data movement,
+which the integer validators (`staticChksSemanticNI`) reject. With `--dead-cleanup`, when some
+functions fail them, `link-check` evaluates the typed validators (`staticChksWithT
+DeadCleanup.prune`, those of `okBCleanupT`, which accepts integer functions too) on those
+functions' cleanup results (`pipeCleanupOf`); if any passes, the whole program is checked with
+the typed checker on `I.resultsCleanup` (`chksWithT`: the typed validators, `linkChks`,
+`calleeInt`) and the same binary checks, and it prints `checker: typed (okBCleanupT)`; the
+theorem is `E2E.DeadCleanupExecBytes.binary_correct_exec_provenT`
+(`binary_correct_exec_peak_provenT` for functions whose calls reach a call cycle), which `cargo
+fv`'s verdict names. The integer results are dropped before the typed ones are computed. `--lean`
+generates integer crate proofs only. fv-demo, `cargo fv test --lean-link --verified --build-std`
+then `link-check --dead-cleanup --prune` on the two test executables' `bin-check` directories:
+both pass (27,936 and 28,584 functions, `binary: ok`; 30 each fail the integer validators and pass
+the typed ones), where the integer checker alone failed both (`cargo fv`: 0 of 2 verified).
+
 **Results** (the ten crates of `crate-proofs/`, rebuilt: survey `cargo fv test --keep-temps`,
 `fv-demo` `cargo fv build --keep-temps`; all pass, no difference):
 
