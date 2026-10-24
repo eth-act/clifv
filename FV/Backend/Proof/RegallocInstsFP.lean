@@ -154,4 +154,22 @@ theorem corr_fpuCmp (F : BitVec 64 → Prop) (ctx : FnCtx) (env : Env) (sz : Sca
       (fun r => .fpuCmp sz (r.getD 0 .xzr) (r.getD 1 .xzr)) := by
   cases sz <;> corr_tac
 
+/-! ### S11f-cvt: float ↔ integer conversions -/
+
+attribute [csimp_rules] Arm.DPSFP.exec_fp_int_cvt Arm.DPSFP.FPDecodeRounding
+
+set_option maxHeartbeats 4000000 in
+theorem corr_fpuToInt (F : BitVec 64 → Prop) (ctx : FnCtx) (env : Env) (op : FpuToIntOp)
+    (d n : Nat) :
+    Corr F ctx env #[⟨d, .int, .def, .late, .reg⟩, ⟨n, .float, .use, .early, .reg⟩]
+      (fun r => .fpuToInt op (r.getD 0 .xzr) (r.getD 1 .xzr)) := by
+  cases op <;> corr_tac
+
+set_option maxHeartbeats 4000000 in
+theorem corr_intToFpu (F : BitVec 64 → Prop) (ctx : FnCtx) (env : Env) (op : IntToFpuOp)
+    (d n : Nat) :
+    Corr F ctx env #[⟨d, .float, .def, .late, .reg⟩, ⟨n, .int, .use, .early, .reg⟩]
+      (fun r => .intToFpu op (r.getD 0 .xzr) (r.getD 1 .xzr)) := by
+  cases op <;> corr_tac
+
 end Backend.Proof

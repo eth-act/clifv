@@ -211,4 +211,12 @@ theorem os_fpuCmp (sz : ScalarSize) (n m : Nat) :
     OperandsSound F (execMInst ctx env) (csem F ctx X) (.fpuCmp sz (.vreg n .float) (.vreg m .float)) :=
   os_of_corr rfl _ (by assign_tac) (by fo_tac) rfl rfl (corr_fpuCmp F ctx env sz n m)
 
+theorem os_fpuToInt (op : FpuToIntOp) (d n : Nat) :
+    OperandsSound F (execMInst ctx env) (csem F ctx X) (.fpuToInt op (.vreg d .int) (.vreg n .float)) :=
+  os_of_corr rfl _ (by assign_tac) (by fo_tac) rfl rfl (corr_fpuToInt F ctx env op d n)
+
+theorem os_intToFpu (op : IntToFpuOp) (d n : Nat) :
+    OperandsSound F (execMInst ctx env) (csem F ctx X) (.intToFpu op (.vreg d .float) (.vreg n .int)) :=
+  os_of_corr rfl _ (by assign_tac) (by fo_tac) rfl rfl (corr_intToFpu F ctx env op d n)
+
 end Backend.Proof

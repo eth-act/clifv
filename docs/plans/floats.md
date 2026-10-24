@@ -712,6 +712,29 @@ typed `LowerTryOk`), `call_indirect`/`try_call_indirect` (`sigIntB`), and pluggi
 into the typed chain (`CtxInvT`'s `intArgs` without the `call` arguments, extern signatures
 `sigET` in the typed scope with an argument-class check).
 
+**S11f-cvt (#410): the float ↔ integer conversion roots at `CtxInvT`.** Sixteen `lower` roots
+(`closure.rs` `BACKEND_FLOAT_ROOTS`, `lower.isle:724-794`) proven in
+`FV/Backend/Proof/IselFloatCvt.lean` and dispatched through `.toOk` in
+`IselLowerAll.lowerRulesCorrect_program`: `fcvt_from_{u,s}int` to `f32`/`f64` from
+`i8`/`i16`/`i32` (`put_in_reg_{z,s}ext32`, then `int_to_fpu` = `ucvtf`/`scvtf` from `w`;
+`lowerInstOk_cvtSmall` over `ExtOut.semT`) and from `i64` (`int_to_fpu` from `x`), and
+`fcvt_to_{u,s}int_sat` to `i32`/`i64` from `f32`/`f64` (`fpu_to_int_cvt_sat`, whose `$I32`/`$I64`
+rules delegate to `fpu_to_int` = `fcvtzu`/`fcvtzs`; `fpuToIntSat_ok`). `int_to_fpu` allocates its
+destination with `temp_writable_reg $I8X16` (a float vreg), `fpu_to_int` with `$I64`.
+`instData` admits the conversions through `fCvtOpcode`/`fCvtTyOk` (the saturating ones only at
+`i32`/`i64`: cg_clif lowers `i8`/`i16` results to the `i32` conversion and an integer clamp, so
+the `fits_in_16` clamping rules of `fpu_to_int_cvt_sat` never fire). Both sides are the shared
+IEEE core: `FSem.toIntSat` / `IEEE.toFixed … .rz` (NaN ↦ 0, saturating) and `FSem.fromInt` /
+`IEEE.fromFixed … .rne` (`fromFixed_setWidth`/`fromFixed_signExtend`: the 32-bit extension
+keeps the value). Witnesses: `FVTest/Backend/FloatCvtCtxT.lean` (`ctxInvT_float_cvt`, `lower`
+fires the sixteen roots, `float_cvt_root_applies`; boundary values NaN, ±∞, beyond the range,
+-0.0 and a rounding tie per conversion, CLIF and `fpuToIntVal`/`intToFpuVal` agreeing). Oracle:
+`FVTest/Backend/float_cvt.clif`. **Not proven, by design: trapping `fcvt_to_{u,s}int`**
+(`fpu_to_int_cvt`: NaN → `BAD_CONVERSION_TO_INTEGER`, bounds → `INTEGER_OVERFLOW`); cg_clif's
+`cast.rs` never emits them (Rust `as` saturates), so their roots stay outside the closure.
+Open: admitting the conversions in the end-to-end scope (`Compile.fArithET`/`InstScopeTA` and
+the exclusion checker), which is what turns the deps fallbacks into verified functions.
+
 ## 4. Known hazards
 
 - Proofs that derive a type from its width (`ty_i64_of_width`, width injectivity in
