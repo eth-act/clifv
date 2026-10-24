@@ -172,6 +172,44 @@ theorem relax_label {F : Lbl → Bool} {L : List Line} {j : Nat} {l : Lbl}
     rw [List.take_add_one, h, relaxLines_append]
     simp [relaxLines]
 
+/-- Relaxing a line never yields the empty list. -/
+theorem relaxLine_ne_nil {F : Lbl → Bool} (ln : Line) : relaxLine F ln ≠ [] := by
+  unfold relaxLine
+  cases h : ln.relaxable? with
+  | none => simp
+  | some c => by_cases hf : F c.2 <;> simp [hf]
+
+/-- Relaxing a nonempty list of lines never yields the empty list. -/
+theorem relaxLines_ne_nil {F : Lbl → Bool} : ∀ {ls : List Line}, ls ≠ [] → relaxLines F ls ≠ [] := by
+  intro ls hls
+  cases ls with
+  | nil => exact absurd rfl hls
+  | cons a t =>
+    simp only [relaxLines, List.flatMap_cons]
+    cases hc : relaxLine F a with
+    | nil => exact absurd hc (relaxLine_ne_nil a)
+    | cons c t' => simp
+
+/-- Relaxing yields the empty list only for the empty list of lines. -/
+theorem relaxLines_eq_nil {F : Lbl → Bool} {ls : List Line} (h : relaxLines F ls = []) :
+    ls = [] := by
+  cases ls with
+  | nil => rfl
+  | cons a t => exact absurd h (relaxLines_ne_nil (by simp))
+
+/-- Taking a prefix within the lines yields the empty list only at index 0. -/
+theorem take_eq_nil_of_le {L : List Line} {j : Nat} (hj : j ≤ L.length)
+    (h : L.take j = []) : j = 0 := by
+  cases j with
+  | zero => rfl
+  | succ j' =>
+    exfalso
+    have hlen : (L.take (j' + 1)).length = j' + 1 := by
+      rw [List.length_take]
+      exact Nat.min_eq_left (by omega)
+    rw [h] at hlen
+    simp at hlen
+
 /-- `RepL` on the relaxed lines. -/
 theorem RepL.relax {af : AFunc} {own : Label → Bool} {L : List Line} (F : Lbl → Bool)
     {s : Label} {j : Nat} (h : RepL af own L s j) : RepL af own (relaxLines F L) s (rix F L j) := by
