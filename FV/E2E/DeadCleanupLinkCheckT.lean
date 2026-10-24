@@ -12,19 +12,19 @@ The declarations of `FV.E2E.DeadCleanupLinkCheck` that depend on the integer lin
 namespace E2E.LinkCheck
 open Backend Backend.Proof Backend.Proof.Driver
 
-def okBCleanupT (I : LinkInput) : Bool := okRWithT (fun _ => DeadCleanup.prune) I I.resultsCleanup
+def okBCleanupT (I : LinkInput) : Bool := okRWithT cleanupStage I I.resultsCleanup
 
 theorem okBCleanup_globalT {I : LinkInput} (h : okBCleanupT I = true)
     (c : String × Bool) (hc : c ∈ globalChks I (progOf I.resultsCleanup) (tabOf I.resultsCleanup)) :
-    c.2 = true := okRWith_globalT (fun _ => DeadCleanup.prune) h c hc
+    c.2 = true := okRWith_globalT cleanupStage h c hc
 
 theorem okBCleanup_namesT {I : LinkInput} (h : okBCleanupT I = true) :
-    ((progOf I.resultsCleanup).funcs.map (·.name)).Nodup := okRWith_namesT (fun _ => DeadCleanup.prune) h
+    ((progOf I.resultsCleanup).funcs.map (·.name)).Nodup := okRWith_namesT cleanupStage h
 
 theorem factsCleanupT {I : LinkInput} (h : okBCleanupT I = true) {g : Clif.Function}
     (hg : g ∈ (progOf I.resultsCleanup).funcs) :
-    FactsWithT (fun _ => DeadCleanup.prune) I I.resultsCleanup g (artOf I.resultsCleanup g) :=
-  factsRWithT (fun _ => DeadCleanup.prune) (resultsCleanup_ok I) h hg
+    FactsWithT cleanupStage I I.resultsCleanup g (artOf I.resultsCleanup g) :=
+  factsRWithT cleanupStage (resultsCleanup_ok I) h hg
 
 /-- The cleanup checker proves the same linked system contract, with no additional
 base-environment, ABI, source or observable-state premise. -/
@@ -32,5 +32,5 @@ theorem okBCleanup_soundT {I : LinkInput} (hI : okBCleanupT I = true) {B : BaseE
     {F : BitVec 64 → Prop} (hB : BaseOk (LinkSys.ofInputCleanup I B F))
     (hF : ∀ a, (LinkSys.ofInputCleanup I B F).Img a → F a) :
     (LinkSys.ofInputCleanup I B F).OkT :=
-  okRWith_soundT (fun _ => DeadCleanup.prune) (.inr rfl) (resultsCleanup_ok I) hI hB hF
+  okRWith_soundT cleanupStage (.inr rfl) (resultsCleanup_ok I) hI hB hF
 end E2E.LinkCheck

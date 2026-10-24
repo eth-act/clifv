@@ -12,11 +12,11 @@ theorem pipeT_legacy (f : Clif.Function) (k : Nat) (base : BitVec 64) (o : Lean.
   simp only [pipeT, pipeTWithLowering, Backend.Stock.D0.defaultLower_eq_legacy]
 
 theorem pipeCleanup_legacy (f : Clif.Function) (k : Nat) (base : BitVec 64) (o : Lean.Json) :
-    pipeWithLowering lowerFunction (fun _ => DeadCleanup.prune) f k base o = pipeCleanup f k base o := by
+    pipeWithLowering lowerFunction cleanupStage f k base o = pipeCleanup f k base o := by
   simp only [pipeCleanup, pipeWithLowering, Backend.Stock.D0.defaultLower_eq_legacy]
 
 theorem pipeCleanupT_legacy (f : Clif.Function) (k : Nat) (base : BitVec 64) (o : Lean.Json) :
-    pipeTWithLowering lowerFunction (fun _ => DeadCleanup.prune) f k base o = pipeCleanupT f k base o := by
+    pipeTWithLowering lowerFunction cleanupStage f k base o = pipeCleanupT f k base o := by
   simp only [pipeCleanupT, pipeTWithLowering, Backend.Stock.D0.defaultLower_eq_legacy]
 
 /-- Pointwise equality preserves successes, errors and all artifact fields, for
@@ -43,8 +43,8 @@ both allocation modes. This witnesses compatibility, not pipeline totality. -/
 theorem legacy_consumer_witness (k : Nat) (base : BitVec 64) (o : Lean.Json) :
     pipeWithLowering lowerFunction (fun _ => id) source k base o = pipe source k base o ∧
     pipeTWithLowering lowerFunction (fun _ => id) source k base o = pipeT source k base o ∧
-    pipeWithLowering lowerFunction (fun _ => DeadCleanup.prune) source k base o = pipeCleanup source k base o ∧
-    pipeTWithLowering lowerFunction (fun _ => DeadCleanup.prune) source k base o = pipeCleanupT source k base o ∧
+    pipeWithLowering lowerFunction cleanupStage source k base o = pipeCleanup source k base o ∧
+    pipeTWithLowering lowerFunction cleanupStage source k base o = pipeCleanupT source k base o ∧
     (∀ f, lowerFunction f = lowerFunction f) := by
   exact ⟨pipe_legacy .., pipeT_legacy .., pipeCleanup_legacy .., pipeCleanupT_legacy .., fun _ => rfl⟩
 
