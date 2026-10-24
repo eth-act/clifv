@@ -1,0 +1,174 @@
+test run
+target aarch64
+
+; The S11f scalar float comparison root (`fcmp`, lower.isle:2176, and `uextend (fcmp)`,
+; lower.isle:1283) behind integer signatures (bit patterns in, the `i8` condition out, either
+; returned directly or zero-extended to `i32`): all twelve conditions on NaN, infinities,
+; signed zeros and equal/unequal pairs.
+;
+; f32 bit patterns: 0x7fc00000 qNaN, 0x7f800000 +inf, 0xff800000 -inf, 0x00000000 +0,
+; 0x80000000 -0, 0x3f800000 1.0, 0x40000000 2.0.
+
+function %fcmp32_eq(i32, i32) -> i8 {
+block0(v0: i32, v1: i32):
+    v2 = bitcast.f32 v0
+    v3 = bitcast.f32 v1
+    v4 = fcmp eq v2, v3
+    return v4
+}
+; run: %fcmp32_eq(0x3f800000, 0x3f800000) == 1
+; run: %fcmp32_eq(0x7fc00000, 0x3f800000) == 0
+; run: %fcmp32_eq(0x00000000, 0x80000000) == 1
+
+function %fcmp32_ne(i32, i32) -> i32 {
+block0(v0: i32, v1: i32):
+    v2 = bitcast.f32 v0
+    v3 = bitcast.f32 v1
+    v4 = fcmp ne v2, v3
+    v5 = uextend.i32 v4
+    return v5
+}
+; run: %fcmp32_ne(0x3f800000, 0x40000000) == 1
+; run: %fcmp32_ne(0x7fc00000, 0x7fc00000) == 1
+; run: %fcmp32_ne(0x3f800000, 0x3f800000) == 0
+
+function %fcmp32_lt(i32, i32) -> i8 {
+block0(v0: i32, v1: i32):
+    v2 = bitcast.f32 v0
+    v3 = bitcast.f32 v1
+    v4 = fcmp lt v2, v3
+    return v4
+}
+; run: %fcmp32_lt(0x3f800000, 0x40000000) == 1
+; run: %fcmp32_lt(0x40000000, 0x3f800000) == 0
+; run: %fcmp32_lt(0x7fc00000, 0x3f800000) == 0
+; run: %fcmp32_lt(0xff800000, 0x7f800000) == 1
+
+function %fcmp32_le(i32, i32) -> i32 {
+block0(v0: i32, v1: i32):
+    v2 = bitcast.f32 v0
+    v3 = bitcast.f32 v1
+    v4 = fcmp le v2, v3
+    v5 = uextend.i32 v4
+    return v5
+}
+; run: %fcmp32_le(0x3f800000, 0x3f800000) == 1
+; run: %fcmp32_le(0x40000000, 0x3f800000) == 0
+; run: %fcmp32_le(0x7fc00000, 0x3f800000) == 0
+
+function %fcmp32_gt(i32, i32) -> i8 {
+block0(v0: i32, v1: i32):
+    v2 = bitcast.f32 v0
+    v3 = bitcast.f32 v1
+    v4 = fcmp gt v2, v3
+    return v4
+}
+; run: %fcmp32_gt(0x40000000, 0x3f800000) == 1
+; run: %fcmp32_gt(0x3f800000, 0x40000000) == 0
+; run: %fcmp32_gt(0x7fc00000, 0x3f800000) == 0
+; run: %fcmp32_gt(0xff800000, 0x7f800000) == 0
+
+function %fcmp32_ge(i32, i32) -> i32 {
+block0(v0: i32, v1: i32):
+    v2 = bitcast.f32 v0
+    v3 = bitcast.f32 v1
+    v4 = fcmp ge v2, v3
+    v5 = uextend.i32 v4
+    return v5
+}
+; run: %fcmp32_ge(0x3f800000, 0x3f800000) == 1
+; run: %fcmp32_ge(0x3f800000, 0x40000000) == 0
+; run: %fcmp32_ge(0x7fc00000, 0x3f800000) == 0
+
+function %fcmp32_ord(i32, i32) -> i8 {
+block0(v0: i32, v1: i32):
+    v2 = bitcast.f32 v0
+    v3 = bitcast.f32 v1
+    v4 = fcmp ord v2, v3
+    return v4
+}
+; run: %fcmp32_ord(0x3f800000, 0x40000000) == 1
+; run: %fcmp32_ord(0x7fc00000, 0x3f800000) == 0
+; run: %fcmp32_ord(0x7f800000, 0xff800000) == 1
+
+function %fcmp32_uno(i32, i32) -> i32 {
+block0(v0: i32, v1: i32):
+    v2 = bitcast.f32 v0
+    v3 = bitcast.f32 v1
+    v4 = fcmp uno v2, v3
+    v5 = uextend.i32 v4
+    return v5
+}
+; run: %fcmp32_uno(0x7fc00000, 0x3f800000) == 1
+; run: %fcmp32_uno(0x7fc00000, 0x7fc00000) == 1
+; run: %fcmp32_uno(0x3f800000, 0x40000000) == 0
+
+function %fcmp32_ugt(i32, i32) -> i8 {
+block0(v0: i32, v1: i32):
+    v2 = bitcast.f32 v0
+    v3 = bitcast.f32 v1
+    v4 = fcmp ugt v2, v3
+    return v4
+}
+; run: %fcmp32_ugt(0x40000000, 0x3f800000) == 1
+; run: %fcmp32_ugt(0x7fc00000, 0x3f800000) == 1
+; run: %fcmp32_ugt(0x3f800000, 0x40000000) == 0
+
+function %fcmp32_uge(i32, i32) -> i32 {
+block0(v0: i32, v1: i32):
+    v2 = bitcast.f32 v0
+    v3 = bitcast.f32 v1
+    v4 = fcmp uge v2, v3
+    v5 = uextend.i32 v4
+    return v5
+}
+; run: %fcmp32_uge(0x3f800000, 0x3f800000) == 1
+; run: %fcmp32_uge(0x7fc00000, 0x3f800000) == 1
+; run: %fcmp32_uge(0x3f800000, 0x40000000) == 0
+
+function %fcmp32_ult(i32, i32) -> i8 {
+block0(v0: i32, v1: i32):
+    v2 = bitcast.f32 v0
+    v3 = bitcast.f32 v1
+    v4 = fcmp ult v2, v3
+    return v4
+}
+; run: %fcmp32_ult(0x3f800000, 0x40000000) == 1
+; run: %fcmp32_ult(0x7fc00000, 0x7f800000) == 1
+; run: %fcmp32_ult(0x40000000, 0x3f800000) == 0
+
+function %fcmp32_ule(i32, i32) -> i32 {
+block0(v0: i32, v1: i32):
+    v2 = bitcast.f32 v0
+    v3 = bitcast.f32 v1
+    v4 = fcmp ule v2, v3
+    v5 = uextend.i32 v4
+    return v5
+}
+; run: %fcmp32_ule(0x3f800000, 0x3f800000) == 1
+; run: %fcmp32_ule(0x7fc00000, 0x7fc00000) == 1
+; run: %fcmp32_ule(0x40000000, 0x3f800000) == 0
+
+; f64 bit patterns: 0x7ff8000000000000 qNaN, 0x3ff0000000000000 1.0, 0x4000000000000000 2.0.
+
+function %fcmp64_eq(i64, i64) -> i8 {
+block0(v0: i64, v1: i64):
+    v2 = bitcast.f64 v0
+    v3 = bitcast.f64 v1
+    v4 = fcmp eq v2, v3
+    return v4
+}
+; run: %fcmp64_eq(0x3ff0000000000000, 0x3ff0000000000000) == 1
+; run: %fcmp64_eq(0x7ff8000000000000, 0x3ff0000000000000) == 0
+
+function %fcmp64_ult(i64, i64) -> i32 {
+block0(v0: i64, v1: i64):
+    v2 = bitcast.f64 v0
+    v3 = bitcast.f64 v1
+    v4 = fcmp ult v2, v3
+    v5 = uextend.i32 v4
+    return v5
+}
+; run: %fcmp64_ult(0x3ff0000000000000, 0x4000000000000000) == 1
+; run: %fcmp64_ult(0x7ff8000000000000, 0x7ff8000000000000) == 1
+; run: %fcmp64_ult(0x4000000000000000, 0x3ff0000000000000) == 0
