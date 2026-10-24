@@ -156,20 +156,76 @@ theorem call_defs_regC {tv : Nat} {L : List (Nat × RegClass × Reg)}
 
 /-! ## The widened call-site checks -/
 
-/-- **`blrOk` with typed `try_call`s**: `blrOk`, or a `blr` through the GOT that enters no
-function of `P` (`may` admits none with the GOT symbol's name) — a typed `try_call`'s callee is
-external, so the base's contract covers the site. -/
+/-- The vreg index and class of a virtual register (`0`/`.int` for real registers). -/
+def regVN : Reg → Nat
+  | .vreg n _ => n
+  | _ => 0
+
+def regVC : Reg → RegClass
+  | .vreg _ c => c
+  | _ => .int
+
+theorem argPairsC_of_virtual {us : List (Reg × Reg)}
+    (hv : (us.all fun u => u.1.isVirtual = true) = true) :
+    argPairsC (us.map fun u => (regVN u.1, regVC u.1, u.2)) = us := by
+  induction us with
+  | nil => rfl
+  | cons u us ih =>
+    obtain ⟨u1, u2⟩ := u
+    have hv' := List.all_eq_true.mp hv
+    have hv1 : u1.isVirtual = true := by simpa using hv' (u1, u2) (List.mem_cons_self ..)
+    have hv2 : (us.all fun v => v.1.isVirtual = true) = true :=
+      List.all_eq_true.mpr fun x hx => hv' x (List.mem_cons_of_mem _ hx)
+    cases hu : u1 with
+    | vreg n c =>
+      simp only [argPairsC, List.map_cons]
+      rw [show List.map (fun q => (Reg.vreg q.1 q.2.1, q.2.2))
+            (us.map fun v => (regVN v.1, regVC v.1, v.2)) =
+          argPairsC (us.map fun v => (regVN v.1, regVC v.1, v.2)) from rfl, ih hv2]
+      simp [regVN, regVC]
+    | _ => simp [Reg.isVirtual, hu] at hv1
+
+theorem callDefsC_of_virtual {ds : List (Reg × Reg)}
+    (hv : (ds.all fun d => d.2.isVirtual = true) = true) :
+    callDefsC (ds.map fun d => (d.1, regVN d.2, regVC d.2)) = ds := by
+  induction ds with
+  | nil => rfl
+  | cons d ds ih =>
+    obtain ⟨d1, d2⟩ := d
+    have hv' := List.all_eq_true.mp hv
+    have hv1 : d2.isVirtual = true := by simpa using hv' (d1, d2) (List.mem_cons_self ..)
+    have hv2 : (ds.all fun v => v.2.isVirtual = true) = true :=
+      List.all_eq_true.mpr fun x hx => hv' x (List.mem_cons_of_mem _ hx)
+    cases hd : d2 with
+    | vreg n c =>
+      simp only [callDefsC, List.map_cons]
+      rw [show List.map (fun q => (q.1, Reg.vreg q.2.1 q.2.2))
+            (ds.map fun v => (v.1, regVN v.2, regVC v.2)) =
+          callDefsC (ds.map fun v => (v.1, regVN v.2, regVC v.2)) from rfl, ih hv2]
+      simp [regVN, regVC]
+    | _ => simp [Reg.isVirtual, hd] at hv1
+
+/-- **`blrOk` with typed `try_call`s**: `blrOk`, or a `blr` through the GOT whose uses' and defs'
+targets are virtual registers and which enters no function of `P` (`may` admits none with the
+GOT symbol's name) — a typed `try_call`'s callee is external (`InSubsetTC.tryExterns`), so the
+base's contract covers the site. -/
 def blrOkTC (P : Clif.Program) (may : Clif.Function → Bool) (got : Nat → Option String)
     (info : CallInfo) : Bool :=
   blrOk P may got info ||
     match info.dest with
     | .reg (.vreg t .int) =>
-      P.funcs.all fun h => !may h ||
-        (match got t with | some n => h.name != n | none => false)
+      match info.uses.all fun u => u.1.isVirtual = true with
+      | true =>
+        match info.defs.all fun d => d.2.isVirtual = true with
+        | true =>
+          P.funcs.all fun h => !may h ||
+            (match got t with | some n => h.name != n | none => false)
+        | false => false
+      | false => false
     | _ => false
 
-/-- **Soundness of the widened `blr` check**: `blrOk`'s conclusion, or the `blr` enters no
-function of `P`. -/
+/-- **Soundness of the widened `blr` check**: `blrOk`'s conclusion, or the `blr`'s uses and defs
+are virtual-register shaped and it enters no function of `P`. -/
 theorem blrOkTC_sound {P : Clif.Program} {may : Clif.Function → Bool} {got : Nat → Option String}
     {info : CallInfo} (h : blrOkTC P may got info = true) :
     (∃ t Lu Ld, info = ⟨.reg (.vreg t .int), retPairs Lu, callDefs Ld⟩ ∧
@@ -178,42 +234,41 @@ theorem blrOkTC_sound {P : Clif.Program} {may : Clif.Function → Bool} {got : N
         Lu.map (·.2) = regLocs h.sig ∧
         (Ld.map (·.1)).take (sigRets h.sig).length =
           (List.range (min (sigRets h.sig).length Ld.length)).map Reg.x) ∨
-    (∃ t, info.dest = .reg (.vreg t .int) ∧
+    (∃ t L D, info = ⟨.reg (.vreg t .int), argPairsC L, callDefsC D⟩ ∧
       ∀ h ∈ P.funcs, may h = true → (∀ n, got t = some n → h.name = n) → False) := by
   unfold blrOkTC at h
-  cases hb : blrOk P may got info with
-  | true =>
-    rcases blrOk_sound hb with ⟨t, Lu, Ld, heq, hall⟩
+  rw [Bool.or_eq_true] at h
+  rcases h with h | h
+  · rcases blrOk_sound h with ⟨t, Lu, Ld, heq, hall⟩
     exact .inl ⟨t, Lu, Ld, heq, hall⟩
-  | false =>
-    rw [hb, Bool.false_or] at h
-    rcases hd : info.dest with ⟨n⟩ | ⟨r⟩
-    · rw [hd] at h; simp at h
-    · rcases hr : r with ⟨t, c⟩ | ⟨n⟩ | _ | _ | ⟨n⟩
-      · rcases c with _ | _
-        · refine .inr ⟨t, rfl, fun hh hmem hm hgot => ?_⟩
-          rw [hd, hr] at h
-          have hall : P.funcs.all
-              (fun hh => !may hh ||
-                match got t with | some n => hh.name != n | none => false) = true := h
-          have h1 := List.all_eq_true.mp hall hh hmem
-          simp only [Bool.or_eq_true, Bool.not_eq_true'] at h1
-          cases hg : got t
-          · rw [hg] at h1
-            simp only [Bool.false_or, reduceCtorEq] at h1
-            rcases h1 with h2 | h2
-            · rw [h2] at hm; simp at hm
-            · exact h2.elim
-          · rw [hg] at h1
-            simp only [Bool.or_eq_true, decide_eq_true_eq, bne_iff_ne, ne_eq] at h1
-            rcases h1 with h2 | h2
-            · rw [h2] at hm; exact Bool.noConfusion hm
-            · exact absurd (hgot _ hg) h2
-        · rw [hd, hr] at h; simp at h
-      · rw [hd, hr] at h; simp at h
-      · rw [hd, hr] at h; simp at h
-      · rw [hd, hr] at h; simp at h
-      · rw [hd, hr] at h; simp at h
+  · split at h
+    · next t heq =>
+      split at h
+      · next hu =>
+        split at h
+        · next hd =>
+          cases info with
+          | mk d0 u0 df0 =>
+            refine .inr ⟨t, u0.map fun u => (regVN u.1, regVC u.1, u.2),
+              df0.map fun d => (d.1, regVN d.2, regVC d.2), ?_, fun hfc hmem hm hgot => ?_⟩
+            · have heq' : d0 = CallDest.reg (Reg.vreg t RegClass.int) := heq
+              rw [heq', argPairsC_of_virtual hu, callDefsC_of_virtual hd]
+            · have h1 := List.all_eq_true.mp h hfc hmem
+              simp only [Bool.or_eq_true, Bool.not_eq_true'] at h1
+              cases hg : got t
+              · rw [hg] at h1
+                simp only [Bool.false_or, reduceCtorEq] at h1
+                rcases h1 with h2 | h2
+                · rw [h2] at hm; exact Bool.noConfusion hm
+                · exact h2.elim
+              · rw [hg] at h1
+                simp only [Bool.or_eq_true, decide_eq_true_eq, bne_iff_ne, ne_eq] at h1
+                rcases h1 with h2 | h2
+                · rw [h2] at hm; exact Bool.noConfusion hm
+                · exact absurd (hgot _ hg) h2
+        · exact absurd h (by decide)
+      · exact absurd h (by decide)
+    · exact absurd h (by decide)
 
 /-- `siteOk` with the widened `blr` check. -/
 def siteOkTC (P : Clif.Program) (g : Clif.Function) (may : Clif.Function → Bool) (vc : VCode)
@@ -221,8 +276,14 @@ def siteOkTC (P : Clif.Program) (g : Clif.Function) (may : Clif.Function → Boo
   siteOk P g may vc info ||
     match info.dest with
     | .reg (.vreg t .int) =>
-      P.funcs.all fun h => !may h ||
-        (match gotOf vc t with | some n => h.name != n | none => false)
+      match info.uses.all fun u => u.1.isVirtual = true with
+      | true =>
+        match info.defs.all fun d => d.2.isVirtual = true with
+        | true =>
+          P.funcs.all fun h => !may h ||
+            (match gotOf vc t with | some n => h.name != n | none => false)
+        | false => false
+      | false => false
     | _ => false
 
 theorem blrOkTC_of_blrOk {P : Clif.Program} {may : Clif.Function → Bool}
@@ -289,17 +350,17 @@ theorem siteOkTC_sound {P : Clif.Program} {g : Clif.Function} {may : Clif.Functi
 theorem siteOkTC_eq_blrOkTC {P : Clif.Program} {g : Clif.Function} {may : Clif.Function → Bool}
     {vc : VCode} {info : CallInfo} {r : Reg} (hd : info.dest = .reg r) :
     siteOkTC P g may vc info = blrOkTC P may (gotOf vc) info := by
-  simp [siteOkTC, blrOkTC, siteOk, hd]
+  unfold siteOkTC blrOkTC siteOk
+  rw [hd]
 
 /-- **The `blr` fact of the widened check**: at a `.reg` destination, `blrOkTC` holds. -/
 theorem siteOkTC_reg {P : Clif.Program} {g : Clif.Function} {may : Clif.Function → Bool}
-    {vc : VCode} {info : CallInfo} (h : allInsts vc (siteB (siteOkTC P g may vc)) = true)
-    (hs : vc.CallSite info) (hreg : ∀ n, info.dest ≠ .sym n) :
+    {vc : VCode} {info : CallInfo} (h : siteOkTC P g may vc info = true)
+    (hreg : ∀ n, info.dest ≠ .sym n) :
     blrOkTC P may (gotOf vc) info = true := by
-  have h1 := site_sound h hs
   cases hd : info.dest with
   | sym n => exact absurd hd (hreg n)
-  | reg r => rw [siteOkTC_eq_blrOkTC hd] at h1; exact h1
+  | reg r => rw [siteOkTC_eq_blrOkTC hd] at h; exact h
 
 /-! ## The widened per-function link checks -/
 
@@ -326,8 +387,14 @@ def siteWithOkTC (F : String → Option Clif.Function) (P : Clif.Program) (g : C
   siteWithOk F P g may vc info ||
     match info.dest with
     | .reg (.vreg t .int) =>
-      P.funcs.all fun h => !may h ||
-        (match gotOf vc t with | some n => h.name != n | none => false)
+      match info.uses.all fun u => u.1.isVirtual = true with
+      | true =>
+        match info.defs.all fun d => d.2.isVirtual = true with
+        | true =>
+          P.funcs.all fun h => !may h ||
+            (match gotOf vc t with | some n => h.name != n | none => false)
+        | false => false
+      | false => false
     | _ => false
 
 theorem siteWithOkTC_func? (P : Clif.Program) (g : Clif.Function) (may : Clif.Function → Bool)
