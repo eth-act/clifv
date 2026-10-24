@@ -19,14 +19,17 @@ namespace Backend.Proof
 
 open Backend E2E
 
-/-- **The machine realises the allocated code with the writes** (`realizes_all` with
-`RL.GoodXW`). -/
-theorem realizes_allW {R : RL} (hR : R.Wf) (hC : CalleeOkG R.F R.K R.G R.s0 (CallAt R.fa R.base) R.X R.H R.vc.CallSite R.gv)
+/-- **One step of the allocated code from `Q ∧ AInv`** that is not a restore move, with the
+writes (`realizes_step` with `RL.GoodXW`). -/
+theorem realizes_stepW {R : RL} (hR : R.Wf) (hC : CalleeOkG R.F R.K R.G R.s0 (CallAt R.fa R.base) R.X R.H R.vc.CallSite R.gv)
     (hT : R.vc.hasTryCall = true → CalleeTryOkG R.F R.K R.G R.s0 (CallAt R.fa R.base) R.X R.H R.vc.TrySite R.gv)
     (hTls : R.vc.hasTls = true → TlsOk R.F R.K R.X R.H)
     (hcov : FormsCovered R.ctx R.vc) :
-    Realizes R.vc R.rf R.sem ckeep R.step (fun s c => Q R s c ∧ AInv R c) R.GoodXW := by
-  intro s c c' ⟨hq, hA⟩ h
+    ∀ s c c', Q R s c → AInv R c → MStep R.vc R.sem ckeep R.rf c c' →
+      (∀ b src dst its m w, c = .run ⟨b, .move src dst :: its, m, w⟩ → src.isSave = false) →
+      ∃ n c'', MStep R.vc R.sem ckeep R.rf c c'' ∧ (Q R (iterN R.step n s) c'' ∧ AInv R c'') ∧
+        ∀ i < n, R.GoodXW (iterN R.step i s) := by
+  intro s c c' hq hA h hns
   have fin : ∀ n c'', MStep R.vc R.sem ckeep R.rf c c'' → Q R (iterN R.step n s) c'' →
       (∀ i < n, R.GoodXW (iterN R.step i s)) →
       ∃ n c'', MStep R.vc R.sem ckeep R.rf c c'' ∧ (Q R (iterN R.step n s) c'' ∧ AInv R c'') ∧
@@ -36,7 +39,7 @@ theorem realizes_allW {R : RL} (hR : R.Wf) (hC : CalleeOkG R.F R.K R.G R.s0 (Cal
   have hck := (lowerRFunc_ok hR.alloc).2.2
   cases h with
   | move =>
-    obtain ⟨n, hn, ht⟩ := realizes_moveW hR hq
+    obtain ⟨n, hn, ht⟩ := realizes_moveW hR hq (hns _ _ _ _ _ _ rfl)
     exact fin n _ MStep.move hn ht
   | @op b k allocs its m w vb i ops outs outs' w' ctl m2 c' hvb hi hops hsz hsem hlen hho hcl hn =>
     have hstep : MStep R.vc R.sem ckeep R.rf (.run ⟨b, .op k allocs :: its, m, w⟩) c' :=
@@ -149,5 +152,16 @@ theorem realizes_allW {R : RL} (hR : R.Wf) (hC : CalleeOkG R.F R.K R.G R.s0 (Cal
           obtain ⟨n, c'', hm, hq', ht⟩ := realizes_tlsW hR (hTls (hasTls_of_mem hvb hi)) hq hvb hi
             hops hsz hsem hlen hk
           exact fin n c'' hm hq' ht
+
+/-- **The machine realises the allocated code with the writes** (`realizes_all` with
+`RL.GoodXW`), under `QA`. -/
+theorem realizes_allW {R : RL} (hR : R.Wf) (hC : CalleeOkG R.F R.K R.G R.s0 (CallAt R.fa R.base) R.X R.H R.vc.CallSite R.gv)
+    (hT : R.vc.hasTryCall = true → CalleeTryOkG R.F R.K R.G R.s0 (CallAt R.fa R.base) R.X R.H R.vc.TrySite R.gv)
+    (hTls : R.vc.hasTls = true → TlsOk R.F R.K R.X R.H)
+    (hcov : FormsCovered R.ctx R.vc) :
+    Realizes R.vc R.rf R.sem ckeep R.step (QA R) R.GoodXW :=
+  realizesQA hR (realizes_stepW hR hC hT hTls hcov)
+    (fun _ _ _ _ _ _ _ hq hs => realizes_moveW hR hq hs)
+    (fun _ _ _ _ _ _ _ _ _ hvb hi h => rets_mstep hvb hi h)
 
 end Backend.Proof
