@@ -1,2 +1,0 @@
-import FV.Backend.Proof.StockAddSubExtensionWitness
-#print axioms Backend.Stock.Proof.ScalarAddSub.ExtensionWitness.stock_lower_addsub_extension_source_witness

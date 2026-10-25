@@ -1,4 +1,0 @@
-# scripts/clif-filetests.sh baseline (docs/TO-PROVE.md §7): pass fail disagree of its last
-# `TOTAL files N: pass …` line; the gate holds when pass >= and fail, disagree <= these. A PR that
-# changes CLIF semantics updates it (recorded on 778b97a5, S11b #264).
-11714 8 13
