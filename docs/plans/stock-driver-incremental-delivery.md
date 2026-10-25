@@ -183,21 +183,16 @@ The allocator default remains Lean. Fresh real-example agreement remains
 887/4,543 symbol comparisons; these class gates are not general register
 agreement or Stock-only completeness. Track these separately from proof counts.
 
-The bmask source/record dependency packet now proves actual helper execution,
-source-derived selection, full result binding, final-alias machine semantics and
-guarded original-source transfer. All sixteen independent original width pairs
-inhabit the helper/RHS and machine contracts; a complete sparse-ID source/record
-witness covers i64 input with i8 output. Full normal FV/FVTest is 3,966/3,966;
-34 public roots pass normal and bundled MCP axiom review, with only standard
-axioms. This is not production activation or a register-agreement improvement.
-See [the checkpoint and remaining integration](../research/stock-bmask-source-checkpoint.md).
-
-Next close remaining original pure bmask/nop composition and reachable helpers,
-then continue the fixed CFG/arguments/loops, memory/effects, calls/unwind,
-whole-driver/completeness and optimizer/consumer obligations below. Reuse existing
-mainline bmask helper proofs and Stock source/record/scan composition; keep the
-legacy fallback while proving the complete original input domain. Do not stop at
-this class or remove production guards without their corresponding proofs.
+Bmask/nop production activation landed in #624 (`ab1abdfc`) through the same
+shared scalar/division compiler/checker/linker/generated-proof consumers.
+[Activation evidence](../research/stock-mask-production-activation.md) records
+all sixteen independent source/result width pairs, actual native and ordinary
+CLI behavior, retained artifacts and full original identity/stage/axiom parity.
+This is a completed production class; general CFG and register agreement remain
+unfinished. Continue original control/successor arguments/critical edges/loops,
+memory/effects and calls/unwind through the fixed obligations below. Keep legacy
+fallback until the complete original input domain and downstream consumers are
+proved. Do not remove production guards without the corresponding proofs.
 
 A concrete build boundary can be delivered alongside the next implementation:
 extract unchanged VCode outcomes, their prefix lemmas, ArgsAtEntry and Reach into
@@ -214,12 +209,14 @@ Never exclude original accepted compare/cast syntax to simplify composition.
 Universal successful lowering and downstream completeness remain. Fallback is
 not Stock completeness; full original #140 remains unfinished.
 
-The next CFG packet now derives quiet records and shared family/body execution
-for arbitrary original blocks, with actual executable return and later-block
-trap witnesses. See [the body checkpoint](../research/stock-cfg-body-checkpoint.md).
-This removes the single-block proof restriction; production CFG activation and
-whole-driver closure remain pending. Continue with successor-entry/branch
-composition and the existing per-edge preparation/consumer stack.
+The CFG dependency packet derives quiet records and shared family/body execution
+for arbitrary original blocks, executable return/later-trap witnesses, and
+source consistency through actual successor binding. [Validated evidence](../research/stock-cfg-body-checkpoint.md)
+records3,984normal keys,79audit files and626exact prior axiom sets. All existing
+Lean sources/import keys remain intact; additions use isolated modules.
+Production CFG activation remains pending. Continue machine branch execution,
+actual guarded successor demand/value/world transfer and the existing per-edge
+preparation/consumer stack, then critical edges/loops and all original obligations.
 
 ## Maintained validation runner (landed #358)
 
