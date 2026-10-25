@@ -1,61 +1,89 @@
-# Two-block source class and consumer compatibility
+# Two-block Stock production
 
-Based on main `efe8b677`, this batch proves complete instruction-zero return
-and trap simulation for a direct two-block class. Entry constants/nops forward
-their new results; previously held entry parameters remain available to the
-successor. The successor return block supports the existing scalar/division/mask
-families, including narrow integers and actual division traps. Coverage of
-inherited and newly defined successor values follows from original availability
-and source structure, rather than a machine-value certificate.
+Implementation `5f35e773` extends main `efe8b677` with the first general direct
+CFG production class. The default compiler, checker, verified linker and emitted
+proof consumers select the actual Stock result for a two-block function whose
+entry contains constants/nops and jumps to a scalar/division/mask return block.
+New entry results are forwarded as successor arguments; inherited entry values
+remain available. The class includes narrow integer widths and nine-argument
+ABI inputs with a stack-passed argument and placed stack slots.
 
-The ABI prelude is executed on the same canonical entry core used by body/jump
-composition. The source theorems take the existing general `SourceEntry`
-contract, retaining placed-slot consumers as well as executable `enterFunc`
-fixtures. They retain return ABI pins, implicit return semantics, memory
-deallocation, source fuel and actual trap codes. Old theorem variants remain.
+The proof executes the ABI prelude on the same canonical core as the source
+body, branch, selected successor copies and return. It uses the original general
+`SourceEntry` contract, including placed slots. Computed source availability and
+assembly derive inherited/new-value coverage and the correspondence between
+per-edge copies and legacy single-successor semantics. Nonempty copies are
+supported. Source return and genuine division-trap contracts retain their
+original fuel, ABI pins, memory deallocation and trap codes.
 
-For this direct single-successor class, actual collection and assembly prove
-that every selected per-edge vector equals its legacy branch-argument field.
-`EdgeLegacyCompatible` transports the full observation to existing VCode
-semantics and `Scalar.Domain`. Nonempty successor copies are supported. This
-does not flatten general multi-successor vectors or assume equality between
-independently chosen compiler cores.
+The additive CFG ABI-read model permits goto, derives absence of entry
+predecessors from the actual code, and requires reference-world equality only
+at true function entry. Paired physical return correctness follows through the
+existing prepared/allocated/encoded pipeline. The old ABI-read models, theorem
+variants and input conditions remain. No runtime check is accepted as a new
+public source premise.
 
-The new `Stock.TwoBlock.eligible`, `sourceOk` and `check` predicates derive that
-domain from ordinary source/scope/dominance/ABI checks and replay the actual
-Stock result. Existing selectors, compiler/checker/linker defaults and consumers
-are unchanged; this predicate is not activated in production yet.
+The new route retries the previous complete Scalar pipeline with the original
+source, allocator and settings on candidate failure. Retained artifact indices
+0–4 keep their meanings; the CFG route is appended. Actual byte reconstruction
+records explicit index0 where the old default differs from the new default.
+Optimizer and tail-call routes remain available.
 
-## Evidence
+A real mixed-program gate found that the verified CLI's global try-call guard
+bypassed the new provider. On the same captured fv-demo images, the CFG provider
+passed, while the prior Scalar provider required a differently sized region and
+failed placement/region checks. The CLI now permits the checked CFG route when
+a new-class function is present alongside retained try-call functions. Programs
+without the new class retain their prior exception selection. The existing
+`SemanticCompilerWith.attempt_correct_source` and peak theorem justify the
+actual checked mixed result. No exception model or theorem premise changed.
 
-- Full FV/FVTest: 4031/4031, all current input keys checked.
-- New audit: 20/20 roots; all 17 general roots use standard axioms only.
-  The combined branch audit is 38/38 roots across three files.
-- Real entered-source 7+9=16 return and zero-divisor trap witnesses execute from
-  instruction zero. The zero-divisor fixture's compiler execution is kernel
-  checked (23 seconds, 7.0 GiB cgroup peak under an 8 GiB cap).
-- Fixed witness facts remain labelled: the old inherited fixture's dominance,
-  its newly replayed original-input checker verdict, and the new trap fixture's
-  original-input dominance. No general theorem uses a finite/native fact and
-  no new emitted-code-shape native fact is introduced.
-- Two bundled transitive MCP witness reviews report no source warnings.
-  Logs and source hashes are retained under `/tmp/stock-cfg-entry-*`, including
-  failed drafts and the distinct successful runs. All 3995 baseline FV/FVTest
-  Lean files remain unchanged; no runtime/identity/stage gain is claimed.
+## Validation
 
-## Next production gate
+- Full FV/FVTest: 4041/4041. Final implementation replay rebuilt only the two
+  edited IO leaves; the earlier complete replay checked all current keys.
+- All89 axiom audit files pass: 3637 reports,3486 distinct roots. All3425
+  previous required axiom sets are exact. Six compatible declaration-owner
+  partitions cover every changed/new Lean module, including executable leaves.
+  General declarations use only standard axioms; fixed witnesses admit only
+  the three precise input-check/dominance facts recorded in the audit receipt.
+- All16 old theorem headers in eight changed existing Lean modules are exact;
+  the other3987 baseline Lean files are byte-identical. Two bundled transitive
+  MCP reviews are clear; their proof sources are unchanged by later IO fixes.
+- Integration:34 checks,14 generated roots, both allocators/cleanup modes,
+  strict/fallback and retained routes, ordinary CLI proof reconstruction,
+  verified linking and generated-proof axioms. Added mixed CFG/retained-try
+  cases preserve the previous12 fixture roots.
+- Native execution:24 objects,2880 Lean byte executions against360 Cranelift
+  reference executions, zero disagreements. All96 final exported object,
+  source, table and case files are byte-identical to the executed inputs.
+- Runtime: corpus114/114, extra22/22, runtests5755 passes and zero failures or
+  disagreements. The7 existing non-runnable runtest cases remain reported
+  separately. Encoder:1398 identical functions,zero differences.
+- Both E2E cleanup modes:1159 accepted,zero rejected. All1150 original and1159
+  prior identities preserve their exact ordered stages.
+- Verified fv-demo:21 matching tests,two verified executables. Verified survey:
+  53 matching tests,18 verified executables. Actual crate-proofs default build
+  passes:93 crate modules,649 recorded build/check steps.
+- Fresh actual-crate comparison:4543 paired symbols,900 exact. A separate same-input current-main replay compares all4543 captured
+  functions/settings:887→900 exact,13 gains,zero losses. Rebuilt baseline
+  objects use the actual decoded compiler inputs, original order, gap words and
+  symbol renaming. The historical report alone was not used to claim a gain.
 
-The existing ABI-read models admit next/return/halt control, and reject jumps.
-The single-successor compatibility bridge alone therefore does not establish
-paired physical execution or activate compiler/checker/linker/generated-proof
-routes. Add a CFG ABI-read model and prove control-flow transport/realization,
-including the actual entry-only argument-read invariant. Preserve the old
-models/checks and theorem variants. Do not simply accept `.jump` in a checker
-whose model still excludes `.goto`.
+Successful and failed attempts have separate receipts under
+`/tmp/stock-cfg-production-*`. Terminal JSON records source hashes, binary
+hashes, input equivalence, exact axiom/header preservation, comparison identities
+and the remote recovery evidence. No emitted-code-shape native fact is added:
+`StockCfgReadFixture` checks its actual compiler execution in the kernel.
 
-Then connect this class through existing validated production consumers,
-default selection with legacy fallback, encoded/native and identity/stage
-gates, and a substantive production PR. Continue more function classes and
-every original #140 control/critical-edge/loop/effect/call/whole-driver/
-completeness obligation afterward. This batch does not finish #140 or justify
-claiming production CFG activation.
+## Remaining original goal
+
+This is an incremental production expansion, not completion of #140. Internal
+candidate rejection and legacy fallback preserve acceptance; they do not prove
+Stock-only success or downstream completeness. Remaining work includes broader
+entry bodies and block graphs, conditional/table/critical edges and loops,
+uncovered rule/helper families, omitted/sunk effects, memory, calls and
+exceptions, original-domain whole-driver simulation, and Stock-only lowering,
+preparation/allocation/checking/physical/encoding/production completeness.
+Retire rollout fallback only where those proofs justify it. Preserve old
+variants, axioms, accepted identities and successful stages throughout.

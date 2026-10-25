@@ -7,6 +7,35 @@ is unchanged: actual Stock source semantics, simulation/completeness, production
 compiler/checker/linker/generated proofs, original inputs/theorem variants/exact
 required axioms/accepted identities/successful stages.
 
+## Current delivery: direct CFG production
+
+The first general direct two-block Stock class is implemented on current main
+`efe8b677`; validated implementation `5f35e773` enables the actual default
+compiler/checker/verified-link/generated-proof route with complete prior-route
+fallback. Entry constants/nops and nonempty successor copies compose with the
+scalar/division/mask return block, original ABI entry, placed slots and source
+return/trap semantics. A CFG ABI-read model proves true-entry-only read
+transport and paired physical return realization. Mixed programs with retained
+try-call functions use the checked provider when the new class is present;
+old optimizer/tail and other exception routes remain.
+
+[Terminal evidence](../research/stock-two-block-source.md):4041 normal modules,
+89 axiom audits/3486 roots with all3425 prior sets exact, six ownership
+partitions,34 native/CLI/link/generated-proof checks,2880 native executions,
+runtime/encoder, both original identity/stage cohorts and verified examples.
+The same-input full crate comparison improves887→900/4543 exact symbols,
+13 gains and zero losses. This is neither unique-function coverage nor a goal
+completion percentage.
+
+Land this substantive activation after the documented gates; then extend the
+shared source/CFG composition to broader entry bodies and block graphs,
+conditional/table/critical edges and loops. Continue effects, memory, calls,
+exceptions, uncovered rule/helper execution and original-domain whole-driver
+simulation. Internal fallback preserves acceptance but does not establish
+Stock-only selection or downstream completeness; these remain explicit full
+#140 obligations. Do not make another wholesale prerequisite queue or stop at
+this first CFG class.
+
 ## Starting point and next deliveries
 
 Arithmetic shipped in #356 (95b87108); complete add/sub/select activation shipped
