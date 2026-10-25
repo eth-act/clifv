@@ -42,6 +42,8 @@ def expected_roots(prefix="Mixed"):
         roots.add(f"Stock{prefix}2{mode}FallbackGlobal")
         roots.add(f"Stock{prefix}6Mixed{mode}FallbackGlobal")
         roots.add(f"Stock{prefix}2Retained{mode}FallbackGlobal")
+        if prefix == "CfgProduction":
+            roots.add(f"Stock{prefix}7Mixed{mode}FallbackGlobal")
     roots.update((f"Stock{prefix}33CleanupFallbackGlobal", f"Stock{prefix}33CleanupFallbackEntries"))
     return roots
 

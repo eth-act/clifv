@@ -80,10 +80,16 @@ private def checkCase (out : System.FilePath) (count : Nat) (cleanup fallback : 
     else if i == 3 then (Stock.D0.source n .fastI32 []).print
     else if i == 4 then
       FVTest.StockScalarFixture.legacySource n
+    else if cfg && i == 6 then
+      "function %" ++ n ++ "(i64, i64, i64, i64, i64, i64, i64, i64, i64) -> i64 system_v {\n    sig0 = (i64, i64, i64, i64, i64, i64, i64, i64, i64) -> i64 system_v\n    fn0 = colocated %" ++ names[0]! ++
+      "(i64, i64, i64, i64, i64, i64, i64, i64, i64) -> i64 system_v\nblock0(v0: i64, v1: i64, v2: i64, v3: i64, v4: i64, v5: i64, v6: i64, v7: i64, v8: i64):\n    try_call fn0(v0, v1, v2, v3, v4, v5, v6, v7, v8), sig0, block1(ret0), []\nblock1(v9: i64):\n    v10 = iconst.i64 1\n    v11 = iadd v9, v10\n    return v11\n}\n"
     else
       "function %" ++ n ++ "(i64, i64, i64, i64, i64, i64, i64, i64, i64) -> i64 system_v {\n    fn0 = colocated %" ++ names[0]! ++
       "(i64, i64, i64, i64, i64, i64, i64, i64, i64) -> i64 system_v\nblock0(v0: i64, v1: i64, v2: i64, v3: i64, v4: i64, v5: i64, v6: i64, v7: i64, v8: i64):\n    v9 = call fn0(v0, v1, v2, v3, v4, v5, v6, v7, v8)\n    v10 = iconst.i64 1\n    v11 = iadd v9, v10\n    return v11\n}\n")
   let mut funcs : List FnInput := names.zipIdx.map fun (_, k) => {clif, ra := "null", k, j := k+1}
+  if cfg && mixed && count == 7 then
+    require (funcs.any fun fi => fi.func.blocks.any (fun b => b.term.isTry))
+      "mixed CFG regression lost its retained try-call function"
   let mut answers : Array Lean.Json := #[Lean.Json.null]
   for fi in funcs do
     let raw ← get (actualLower fi.func)
@@ -220,6 +226,7 @@ def checkCfg (out : System.FilePath) : IO Unit := do
     checkCase out 2 cleanup true .unused false false false false true
     checkCase out 2 cleanup true .unused false true false false true
     checkCase out 6 cleanup true .unused true false false false true
+    checkCase out 7 cleanup true .unused true false false false true
   checkCase out 33 true true .unused false false false false true
 
 end FVTest.StockGeneralDivProductionLinkedFixture

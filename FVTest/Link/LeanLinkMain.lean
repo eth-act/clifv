@@ -325,10 +325,13 @@ def main (args0 : List String) : IO UInt32 := do
         IO.eprintln s!"lean-link:   {n}: {fs}"
       printExclusions exe S SC
       return 1
-  -- Keep optimizer and exceptional-edge theorem variants on their retained route
-  -- until their production adapters are complete.
+  -- The checked semantic provider handles a CFG function alongside retained
+  -- try-call functions. Recompiling that mixed program only through the old
+  -- provider can require a different region size from the emitted objects.
+  -- Other exception, optimizer and tail-call variants retain their routes.
+  let hasCfg := SC0.funcs.any (fun fi => Backend.Stock.TwoBlock.eligible fi.func)
   let stockEnabled := !opt && !tailOn && SC0.funcs.any (fun fi => Backend.Stock.TwoBlock.eligible fi.func || Backend.Stock.Scalar.activationEligible fi.func || Backend.Stock.Logical.activationEligible fi.func || Backend.Stock.Mixed.activationEligible fi.func || Backend.Stock.Arithmetic.eligible fi.func || Backend.Stock.ScalarAdd.activationEligible fi.func) &&
-    !(SC0.funcs.any fun fi => fi.func.blocks.any fun b => b.term.isTry)
+    (hasCfg || !(SC0.funcs.any fun fi => fi.func.blocks.any fun b => b.term.isTry))
   let routes := [Backend.Stock.TwoBlock.lowerValidated,Backend.Stock.Scalar.lowerValidated,Backend.Stock.Logical.lowerValidated,Backend.Stock.Mixed.lowerValidated,
     Backend.Stock.Arithmetic.lowerValidated]
   let compiled := if stockEnabled then SemanticCompilerWith.compileWithRoutes routes SC0 file0 deadCleanup
