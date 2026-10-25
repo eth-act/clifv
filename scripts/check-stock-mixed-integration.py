@@ -79,10 +79,10 @@ def proof_order(directory, prefix="Mixed"):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", required=True, type=Path)
-    parser.add_argument("--class", dest="kind", choices=["mixed", "logical", "scalar", "not", "mul", "shift", "cast", "bit", "popcount", "minmax", "cmp", "highmul", "div", "mixeddiv", "returneddiv", "generaldiv", "narrow", "mask"], default="mixed")
+    parser.add_argument("--class", dest="kind", choices=["mixed", "logical", "scalar", "not", "mul", "shift", "cast", "bit", "popcount", "minmax", "cmp", "highmul", "div", "mixeddiv", "returneddiv", "generaldiv", "narrow", "mask", "cfg"], default="mixed")
     parser.add_argument("--fixture-mode", choices=["native", "interpreted"], default="interpreted")
     options = parser.parse_args()
-    prefix = {"scalar": "ScalarProduction", "not": "NotProduction", "mul": "MulProduction", "shift": "ShiftProduction", "cast": "CastProduction", "bit": "BitProduction", "popcount": "PopcountProduction", "minmax": "MinMaxProduction", "cmp": "CmpProduction", "highmul": "HighMulProduction", "div": "DivProduction", "mixeddiv": "MixedDivProduction", "returneddiv": "ReturnedDivProduction", "generaldiv": "GeneralDivProduction", "narrow": "NarrowProduction", "mask": "MaskProduction"}.get(options.kind, options.kind.capitalize())
+    prefix = {"scalar": "ScalarProduction", "not": "NotProduction", "mul": "MulProduction", "shift": "ShiftProduction", "cast": "CastProduction", "bit": "BitProduction", "popcount": "PopcountProduction", "minmax": "MinMaxProduction", "cmp": "CmpProduction", "highmul": "HighMulProduction", "div": "DivProduction", "mixeddiv": "MixedDivProduction", "returneddiv": "ReturnedDivProduction", "generaldiv": "GeneralDivProduction", "narrow": "NarrowProduction", "mask": "MaskProduction", "cfg": "CfgProduction"}.get(options.kind, options.kind.capitalize())
     view = Path(__file__).resolve().parents[1]
     output = options.output.resolve()
     if output == view or view in output.parents:
@@ -90,17 +90,19 @@ def main():
     output.mkdir(parents=True, exist_ok=False)
     env = dict(os.environ, OMP_NUM_THREADS="2", OMP_THREAD_LIMIT="2", LEAN_NUM_THREADS="2")
     env.setdefault("FV_MEMCAP", "8G")
+    if options.kind == "cfg":
+        env["STOCK_CFG_NATIVE_OUT"] = str(output / "native-objects")
     memcap = str(view / "scripts/memcap.sh")
     head = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=view, text=True).strip()
     sources = {str(p.relative_to(view)): sha(p) for folder in ("FV", "FVTest")
                for p in (view / folder).rglob("*.lean")}
     script_hash = sha(Path(__file__).resolve())
     records = {}
-    native_names = {"popcount": "stock-popcount", "minmax": "stock-minmax", "cmp": "stock-cmp", "highmul": "stock-highmul", "div": "stock-div", "mixeddiv": "stock-mixed-div", "returneddiv": "stock-returned-div", "generaldiv": "stock-general-div", "narrow": "stock-general-div", "mask": "stock-general-div"}
+    native_names = {"popcount": "stock-popcount", "minmax": "stock-minmax", "cmp": "stock-cmp", "highmul": "stock-highmul", "div": "stock-div", "mixeddiv": "stock-mixed-div", "returneddiv": "stock-returned-div", "generaldiv": "stock-general-div", "narrow": "stock-general-div", "mask": "stock-general-div", "cfg": "stock-general-div"}
     native_fixtures = options.fixture_mode == "native" and options.kind in native_names
     if options.fixture_mode == "native" and not native_fixtures:
         parser.error("No registered native fixture targets for this class")
-    module_prefix = "GeneralDivProduction" if options.kind in ("narrow", "mask") else prefix
+    module_prefix = "GeneralDivProduction" if options.kind in ("narrow", "mask", "cfg") else prefix
     fixture_targets = ([native_names[options.kind]+"-runtime",native_names[options.kind]+"-linked"]
                        if native_fixtures else [])
     fixture_binaries = {str(view / ".lake/build/bin" / name): sha(view / ".lake/build/bin" / name)
@@ -143,7 +145,7 @@ def main():
             "lean-backend", "lean-link", "link-check", *fixture_targets])
         runtime_argv = ([str(view / ".lake/build/bin" / fixture_targets[0])] if native_fixtures else
                         ["lake", "env", "lean", "--run",f"FVTest/Backend/Lowering/Stock{module_prefix}Runtime.lean"])
-        if options.kind in ("narrow", "mask"):
+        if options.kind in ("narrow", "mask", "cfg"):
             runtime_argv.append("--"+options.kind)
         runtime = run("runtime", runtime_argv)
         assert runtime.count(f"Stock {options.kind} lean ") == (3 if options.kind in ("narrow", "mask") else 6)
@@ -152,7 +154,7 @@ def main():
         generated = output / "linked"
         linked_argv = ([str(view / ".lake/build/bin" / fixture_targets[1]),str(generated)] if native_fixtures else
                        ["lake", "env", "lean", "--run",f"FVTest/Backend/Lowering/Stock{module_prefix}Linked.lean",str(generated)])
-        if options.kind in ("narrow", "mask"):
+        if options.kind in ("narrow", "mask", "cfg"):
             linked_argv.insert(-1, "--"+options.kind)
         run("linked-fixture", linked_argv)
         artifact_hashes = {str(p.relative_to(generated)): sha(p)
@@ -186,8 +188,8 @@ def main():
                 run(f"link-check-{label}-{mode}", ["lake", "env", str(view / ".lake/build/bin/link-check"),
                     str(source), "--lean", str(proof), "--module", proof.stem, *flags])
                 if label == "retained" and mode == "Plain":
-                    selected = re.search(r"Backend\.Stock\.Scalar\.lowerWithRoutes \[(.*?)\]", proof.read_text(), re.S)
-                    assert selected and re.search(r",\s*[1-4]\)", selected.group(1)), "non-default retained reconstruction route was not exercised"
+                    selected = re.search(r"Backend\.Stock\.(?:Scalar|TwoBlock)\.lowerWithRoutes \[(.*?)\]", proof.read_text(), re.S)
+                    assert selected and re.search(r",\s*" + ("0" if options.kind == "cfg" else "[1-4]") + r"\)", selected.group(1)), "explicit retained reconstruction route was not exercised"
                 env["LEAN_PATH"] = str(generated) + ":" + leanpath
                 run(f"cli-proof-{label}-{mode}", ["lean", "--root=" + str(generated),
                     "-o", str(proof.with_suffix(".olean")), str(proof)])

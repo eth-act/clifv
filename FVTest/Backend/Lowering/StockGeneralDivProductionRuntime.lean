@@ -1,3 +1,4 @@
+import FVTest.Backend.Lowering.StockTwoBlockProductionRuntime
 import FVTest.Backend.Lowering.StockScalarTestSupport
 import FV.Backend.ScalarNIProduction
 import FV.Backend.LinearScan
@@ -165,9 +166,11 @@ def check : IO Unit := do
 end FVTest.StockGeneralDivProductionRuntime
 
 def main (args : List String) : IO Unit :=
-  if args == ["--mask"] then
+  if args == ["--cfg"] then
+    FVTest.StockTwoBlockProductionRuntime.check FVTest.StockGeneralDivProductionRuntime.checkedRegalloc2
+  else if args == ["--mask"] then
     FVTest.StockMaskProductionRuntime.check FVTest.StockGeneralDivProductionRuntime.checkedRegalloc2
   else if args == ["--narrow"] then
     FVTest.StockNarrowProductionRuntime.check FVTest.StockGeneralDivProductionRuntime.checkedRegalloc2
   else if args.isEmpty then FVTest.StockGeneralDivProductionRuntime.check
-  else throw (IO.userError "usage: stock-general-div-runtime [--narrow|--mask]")
+  else throw (IO.userError "usage: stock-general-div-runtime [--narrow|--mask|--cfg]")
