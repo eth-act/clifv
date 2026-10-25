@@ -437,3 +437,18 @@ internal dynamic simulation obligation, never an additional accepted-program
 certificate. Continue complete guarded successors, synthetic critical edges,
 conditional/table branches/loops, production activation and every original140
 obligation; parameter binding alone does not establish those results.
+
+## Inherited-value body/jump carry (2026-10-25 UTC)
+
+Implementation `4c955f39` carries arbitrary already-held block-entry values
+without a demand premise through actual source steps, selected constant writes,
+complete constant/omitted/nop bodies and their actual jump. A genuine two-block
+7+9=16 execution witnesses the entire next-scan guard after real source binding,
+per-edge copies and inherited/DFG/memory transfer. [Evidence and limits](../research/stock-inherited-carry-checkpoint.md).
+
+Next reuse existing scalar/division record write bounds/frame results to extend
+carry; derive whole-edge demand/order coverage for new definitions and backedges
+internally. Continue arbitrary guarded successors, critical edges/loops, actual
+ABI/return and prepared/physical consumers toward substantive production CFG
+activation, then every original140obligation. Production CFG is still inactive;
+this witness does not replace the arbitrary-function theorem or physical entry.

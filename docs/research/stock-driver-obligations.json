@@ -152,6 +152,20 @@
       "new_finite_facts": 0,
       "production_cfg_active": false,
       "next": "Inherited nonparameter carry invariant derived internally, full guarded per-edge successor transfer, critical edges/loops and all original140 obligations"
+    },
+    "cfg_inherited_carry": {
+      "state": "all current per-PR author gates passed; production CFG activation pending",
+      "implementation": "4c955f392cfb59a28f509117d634af052317fb88",
+      "receipt": "docs/research/stock-inherited-carry-checkpoint.md",
+      "normal_modules": 4000,
+      "all_audit_files": 84,
+      "prior_axiom_sets_exact": 3409,
+      "old_sources_byte_exact": 3985,
+      "general_roots": 6,
+      "witnesses": 3,
+      "finite_facts": "one fixed original-input dominance native witness; kernel compiler/scope; no native code-shape fact",
+      "production_cfg_active": false,
+      "next": "Extend carry across existing families; arbitrary guarded edges and order/demand coverage, critical edges/loops; actual ABI/return/prepared/physical production CFG activation; every original140obligation"
     }
   },
   "roots": [
