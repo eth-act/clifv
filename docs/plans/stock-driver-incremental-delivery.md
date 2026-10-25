@@ -452,3 +452,19 @@ internally. Continue arbitrary guarded successors, critical edges/loops, actual
 ABI/return and prepared/physical consumers toward substantive production CFG
 activation, then every original140obligation. Production CFG is still inactive;
 this witness does not replace the arbitrary-function theorem or physical entry.
+
+## Division/mixed-body carry and next production boundary (2026-10-25 UTC)
+
+Implementation `e91b7103` reuses the existing division source execution/frame
+for all old signed/unsigned/narrow/remainder cases, retains zero/overflow traps,
+and composes complete constant/division/nop bodies under carry, including unused
+and multiple divisions. Three real entry/normal/trap/body witnesses add no finite
+facts or native axioms. [Evidence](../research/stock-division-carry-checkpoint.md).
+
+Next prioritize actual return-block/core composition and a substantive two-block
+CFG production class through actual ABI/return and prepared/physical consumers,
+using the now-proved prefixes/jumps/per-edge copies/carry. Do not turn every
+remaining carry family into a wholesale activation gate. Continue successive
+function classes, broader scalar carry, whole-edge demand/order coverage,
+critical edges/loops and every original140obligation after that first activation.
+Production CFG remains inactive until its current proof/consumer gates pass.
