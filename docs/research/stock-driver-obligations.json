@@ -105,7 +105,7 @@
       "validated_source_head": "c7e249b175e35fad058bba5a9299cff40d246c7f",
       "base": "ab1abdfcde8fac5c5721ae2851cef08ab77c768e",
       "receipt": "docs/research/stock-cfg-body-checkpoint.md",
-      "state": "author gates passed; arbitrary-block body contracts and original source-successor DFG transfer",
+      "state": "landed prerequisite; production CFG activation still pending",
       "normal_module_keys": 3984,
       "existing_module_keys_restored": 3976,
       "audit_files": 79,
@@ -117,7 +117,9 @@
       "finite_witnesses": 7,
       "production_cfg_active": false,
       "full_140_complete": false,
-      "next": "Machine branch execution, guarded successor demand/value/world transfer, per-edge production consumers, critical edges/loops; every remaining original obligation retained."
+      "next": "Machine branch execution, guarded successor demand/value/world transfer, per-edge production consumers, critical edges/loops; every remaining original obligation retained.",
+      "pull_request": 625,
+      "merge_commit": "70220733ea37c3f4cba6ed8a4f95c119db8f12c8"
     }
   },
   "roots": [
