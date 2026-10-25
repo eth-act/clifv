@@ -406,3 +406,18 @@ nonempty successor-specific tables; retain those vectors through proved
 adapters. Then finish every original memory/effect/call/unwind, whole-driver and
 Stock-only/downstream completeness obligation above. Preserve saved work and
 remove the completed batch's unneeded clean worktree after archiving evidence.
+
+## Canonical original-block machine jump composition (2026-10-25 UTC)
+
+Implementation `22d1627f` derives one actual original core with its retained scan,
+prepared terminator, ABI widths, assembly and returned resolved block. Its
+source-driven return/trap contract executes the actual complete body and jump,
+retaining source continuation fuel. A genuine entered-source two-block returning
+witness supplies the guarded input without a machine-execution premise.
+[Evidence and limits](../research/stock-cfg-jump-checkpoint.md).
+
+This closes the body/jump dependency after #625; production CFG activation is
+still pending. Next derive demanded outgoing and inherited successor values,
+compose source DFG and actual per-edge copies into the guarded successor relation,
+then critical edges/loops and every remaining original #140 obligation. Do not
+replace the whole driver goal with this proof packet.

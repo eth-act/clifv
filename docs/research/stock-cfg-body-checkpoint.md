@@ -1,5 +1,7 @@
 # Original-block source and machine body composition
 
+Landed in [#625](https://github.com/eth-act/clifv/pull/625), squash `70220733`.
+
 Validated source: `c7e249b175e35fad058bba5a9299cff40d246c7f`, based on main `ab1abdfc` (#624).
 This packet is a CFG production prerequisite. It does not activate general
 branches, loops, effects or calls, and does not complete original #140.
