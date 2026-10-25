@@ -28,26 +28,34 @@ private def argStep (ctx : Ctx) (rets pays : List Reg) (index nh : Nat)
 private theorem val_loop {ctx : Ctx} {rets pays : List Reg} {index nh : Nat} {xs : List Nat}
     {st next : State} {before after : Array Reg}
     (run : forIn (xs.map Clif.TryArg.val) (st,before) (argStep ctx rets pays index nh) = .ok (next,after)) :
-    next = xs.foldl State.mark st := by
+    ∃ rs,xs.mapM ctx.valueReg? = some rs ∧ next = xs.foldl State.mark st ∧
+      after = before ++ rs.toArray := by
   induction xs generalizing st before with
   | nil =>
     simp only [List.map_nil,List.forIn_nil,pure,Except.pure] at run
     cases run
-    rfl
+    exact ⟨[],rfl,rfl,by simp⟩
   | cons x xs ih =>
     simp only [List.map_cons,List.forIn_cons,argStep] at run
     cases lookup : ctx.valueReg? x with
     | none => simp only [lookup,bind,Except.bind] at run; cases run
     | some r =>
       simp only [lookup,bind,Except.bind,pure,Except.pure] at run
-      simpa only [List.foldl_cons] using ih run
+      obtain ⟨rs,mapped,state,code⟩ := ih run
+      refine ⟨r :: rs,?_,?_,?_⟩
+      · simp only [List.mapM_cons,lookup,mapped]
+        rfl
+      · simpa only [List.foldl_cons] using state
+      · rw [code]
+        apply Array.toList_inj.mp
+        simp [Array.toList_push,List.append_assoc]
 
 
 private theorem selected_arguments {ctx : Ctx} {f : Clif.Function} (func : ctx.func = f)
     {bi : Nat} {b : Clif.Block} (block : f.blocks[bi]? = some b)
     {bc : Clif.BlockCall} {index : Nat} (selected : (destinations b.term)[index]? = some (bc.block,bc.args.map Clif.TryArg.val)) {input next : State} {args : Array Reg}
     (run : branchArgs ctx input bi index = .ok (args,next)) :
-    next = bc.args.foldl State.mark input := by
+    next = bc.args.foldl State.mark input ∧ bc.args.mapM ctx.valueReg? = some args.toList := by
   have source : ctx.func.blocks[bi]! = b := by simp only [func,getElem!_def,block,Option.getD_some]
   unfold branchArgs at run
   rw [source] at run
@@ -72,7 +80,8 @@ private theorem selected_arguments {ctx : Ctx} {f : Clif.Function} (func : ctx.f
         obtain ⟨state,registers⟩ := pair
         simp only [loop,bind,Except.bind,pure,Except.pure] at run
         cases run
-        exact val_loop loop
+        obtain ⟨rs,mapped,state,code⟩ := val_loop loop
+        exact ⟨state,by simpa only [code,Array.empty_append,List.toList_toArray] using mapped⟩
   · cases run
 
 
@@ -91,6 +100,16 @@ theorem stock_branchArgs_selected_marks {ctx : Ctx} {f : Clif.Function}
     (selected : (dests b.term)[index]? = some bc) {input next : State} {args : Array Reg}
     (call : branchArgs ctx input bi index = .ok (args,next)) :
     next = bc.args.foldl State.mark input := by
-  exact selected_arguments func block (selected_destination selected) call
+  exact (selected_arguments func block (selected_destination selected) call).1
+
+/-- The same actual outgoing call derives its source register map, needed to
+prove demand bounds without a certificate from the accepted program. -/
+theorem stock_branchArgs_selected_mapping {ctx : Ctx} {f : Clif.Function}
+    (func : ctx.func = f) {bi index : Nat} {b : Clif.Block}
+    (block : f.blocks[bi]? = some b) {bc : Clif.BlockCall}
+    (selected : (dests b.term)[index]? = some bc) {input next : State} {args : Array Reg}
+    (call : branchArgs ctx input bi index = .ok (args,next)) :
+    bc.args.mapM ctx.valueReg? = some args.toList := by
+  exact (selected_arguments func block (selected_destination selected) call).2
 
 end Backend.Stock.Proof
