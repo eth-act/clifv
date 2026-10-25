@@ -468,3 +468,20 @@ remaining carry family into a wholesale activation gate. Continue successive
 function classes, broader scalar carry, whole-edge demand/order coverage,
 critical edges/loops and every original140obligation after that first activation.
 Production CFG remains inactive until its current proof/consumer gates pass.
+
+## Complete first CFG source class (2026-10-25 UTC)
+
+The direct two-block class now has general instruction-zero return/trap
+simulation, actual same-core ABI entry, internally derived successor coverage,
+complete return/zero-divisor witnesses and an executable source/artifact check.
+Actual single-successor vector equality transports it to the existing
+`Scalar.Domain`, including nonempty parameter copies. Full4031/4031 and20new
+audited roots pass. [Evidence and exact limits](../research/stock-two-block-source.md).
+
+Next close the concrete consumer boundary: existing ABI-read models exclude
+`.goto`, so add a proved CFG variant with entry-only argument-read/control-flow
+transport and realization. Keep old checks/models intact. Then wire and validate
+actual compiler/checker/linker/generated-proof default production with legacy
+fallback and land a substantive activation. Do not merge proof fragments as a
+substitute or wait for every remaining function family. Continue successive
+classes and every original #140 obligation after this first CFG activation.
