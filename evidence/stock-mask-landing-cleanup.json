@@ -1,0 +1,1046 @@
+{
+  "state": "landed_and_cleanup_verified_full_goal_active",
+  "utc": "2026-10-25T02:11:25.471914+00:00",
+  "current_head": "a9922080fda05f1263d4e169999a0eb1cb3c7e33",
+  "evidence_commit": "2695b3ca8ceb4dada65ab8dc4c678627031c30be",
+  "receipts": {
+    "stock-mask-merge-receipt.json": {
+      "state": "squash_merged_exact_validated_publication_tree",
+      "utc": "2026-10-25T01:43:03.014401+00:00",
+      "pr": 624,
+      "url": "https://github.com/eth-act/clifv/pull/624",
+      "merge_commit": "ab1abdfcde8fac5c5721ae2851cef08ab77c768e",
+      "merged_at": "2026-10-25T01:38:03Z",
+      "validated_publication": "4c24e381dde0ed3a249c8c9a9129f3adc7ffa1e4",
+      "validated_implementation": "0aecff7cbeb8e0dc295855bf27d77c4ffdfffdfa",
+      "tree": "6eba504b8a2f6fcc10ff0d21ece2d3bb0312a518",
+      "full_140_complete": false
+    },
+    "stock-mask-completion-cleanup.json": {
+      "state": "completed_clean_worktree_removed_after_evidence_preservation",
+      "utc": "2026-10-25T02:06:49.347901+00:00",
+      "removed_worktree": "/home/lee/clifv/.worktrees/stock-mixed-div-20261022",
+      "reclaimed_filesystem_bytes": 5520056320,
+      "old_idle_MCP_project_processes_retired": [
+        {
+          "pid": 3263994,
+          "start": "243591046",
+          "cwd": "/home/lee/clifv/.worktrees/stock-mixed-div-20261022",
+          "command": "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lake serve -- -Dserver.reportDelayMs=0 "
+        },
+        {
+          "pid": 3263999,
+          "start": "243591050",
+          "cwd": "/home/lee/clifv/.worktrees/stock-mixed-div-20261022",
+          "command": "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean --server -Dserver.reportDelayMs=0 "
+        },
+        {
+          "pid": 16887,
+          "start": "257630974",
+          "cwd": "/home/lee/clifv/.worktrees/stock-mixed-div-20261022",
+          "command": "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean --worker -Dserver.reportDelayMs=0 file:///home/lee/clifv/.worktrees/stock-mixed-div-20261022/FV/Backend/Proof/StockScalarCheck.lean "
+        },
+        {
+          "pid": 205609,
+          "start": "258593890",
+          "cwd": "/home/lee/clifv/.worktrees/stock-mixed-div-20261022",
+          "command": "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean --worker -Dserver.reportDelayMs=0 file:///home/lee/clifv/.worktrees/stock-mixed-div-20261022/_mcp_serial_0.lean "
+        },
+        {
+          "pid": 462247,
+          "start": "245561021",
+          "cwd": "/home/lee/clifv/.worktrees/stock-mixed-div-20261022",
+          "command": "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean --worker -Dserver.reportDelayMs=0 file:///home/lee/clifv/.worktrees/stock-mixed-div-20261022/FV/Backend/Proof/StockScalarGeneralDivDomain.lean "
+        },
+        {
+          "pid": 3264007,
+          "start": "243591088",
+          "cwd": "/home/lee/clifv/.worktrees/stock-mixed-div-20261022",
+          "command": "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean --worker -Dserver.reportDelayMs=0 file:///home/lee/clifv/.worktrees/stock-mixed-div-20261022/FV/Backend/Proof/StockNoLoadSink.lean "
+        }
+      ],
+      "shared_target_links_removed_only": {
+        "rust/target": "/home/lee/clifv/.worktrees/driver-proof-resume/rust/target",
+        "tools/prejit-export/target": "/home/lee/clifv/.worktrees/driver-proof-resume/rust/target"
+      },
+      "all_branches_and_dirty_recovery_views_preserved": true,
+      "source_and_result_evidence_remote_commit": "2695b3ca8ceb4dada65ab8dc4c678627031c30be",
+      "all_unique_example_inputs_proofs_objects_programs_and_locks_remotely_archived": true,
+      "tested_tool_local_archive_sha256": "1f7b5fe9f4e7c5b75abefd54885bc3badc24e31a73002c6782e520677ecbfa89",
+      "sole_warm_cache_retained": "/home/lee/clifv/.worktrees/driver-proof-resume/.lake/artifact-cache",
+      "active_worktree": "/home/lee/clifv/.worktrees/stock-cfg-source-20261025"
+    },
+    "stock-mask-final-artifact-cleanup.json": {
+      "utc": "2026-10-25T02:10:38.712968+00:00",
+      "obsolete_archives_removed_after_exact_remote_blob_verification": [
+        {
+          "archive": "/tmp/stock-mask-progress-evidence-20261025T003157Z/progress.tar.gz",
+          "bytes": 5052658,
+          "remote_commit": "4fb200731abb06f435bd2b7dfb0a7d989b68f320",
+          "sha256": "2fb5beff4f5de7415e2138d27785cb58ab571e6bc81d1bc392dea6492e894042"
+        },
+        {
+          "archive": "/tmp/stock-mask-progress-evidence-20261025T004812Z/progress.tar.gz",
+          "bytes": 26245308,
+          "remote_commit": "5bc356e25a4df4469320784e0bd2ad71476408ae",
+          "sha256": "70f5c5e0c01bcf700dd2f49b5643d8f7bead295d6ef10b823971cd45212213b1"
+        },
+        {
+          "archive": "/tmp/stock-mask-progress-evidence-20261025T013019Z/progress.tar.gz",
+          "bytes": 32211734,
+          "remote_commit": "dc34a26a9e01b481fa2515d6ec454917a8f8ff6a",
+          "sha256": "bea4de2841541e7440207896903fcfe6ddf8ea658ee8d820663761ab9d9d8364"
+        },
+        {
+          "archive": "/tmp/stock-mask-progress-evidence-20261025T015407Z/progress.tar.gz",
+          "bytes": 32695947,
+          "remote_commit": "134960f5825a7f900477b97cb002f855c3d59377",
+          "sha256": "09ec0b1c5e13dcf1a08ffdb94a743bb806a42021a1a71424f79df20d4f73423a"
+        }
+      ],
+      "generated_proof_cache_files_removed": 170,
+      "generated_proof_cache_bytes": 38379992,
+      "total_bytes_reclaimed": 134585639,
+      "compiled_artifact_manifest": [
+        {
+          "path": "/tmp/stock-mask-integration-current/mask/linked/Crates/MaskProductionCLIretainedCleanup.olean",
+          "bytes": 187976,
+          "sha256": "55334002fe9de562f7b85ce7c4172509cacc0268bd22c184d51658ef32899790"
+        },
+        {
+          "path": "/tmp/stock-mask-integration-current/mask/linked/Crates/MaskProductionCLIcurrentCleanup.olean",
+          "bytes": 155848,
+          "sha256": "4120daa68adffeae70043e4a45229c638df353a9ab7e20fc33af18d9522c0c2c"
+        },
+        {
+          "path": "/tmp/stock-mask-integration-current/mask/linked/Crates/MaskProductionCLIretainedPlain.olean",
+          "bytes": 189352,
+          "sha256": "61764c0a8510ceb8e94a046f6942d28557f43a16d4cf18914417d14dee9cd482"
+        },
+        {
+          "path": "/tmp/stock-mask-integration-current/mask/linked/Crates/MaskProductionCLIcurrentPlain.olean",
+          "bytes": 155912,
+          "sha256": "308120c06b628e20caec3402c9469a12ed3bc1fb0d4378dacb069e9d180458d1"
+        },
+        {
+          "path": "/tmp/stock-mask-integration-current/mask/linked/Crates/StockMaskProduction36PlainStrictGlobal.olean",
+          "bytes": 222224,
+          "sha256": "8fe7ba7c3696209f6fc0c1ea059b25d954f5127ceec083be77af77228ce03fd2"
+        },
+        {
+          "path": "/tmp/stock-mask-integration-current/mask/linked/Crates/StockMaskProduction36PlainStrictEntries.olean",
+          "bytes": 290632,
+          "sha256": "93a9924fa49d0f14c204145dce4463439470b3f8b7dfc56b6e06515457372d70"
+        },
+        {
+          "path": "/tmp/stock-mask-integration-current/mask/linked/Crates/StockMaskProduction36PlainFallbackGlobal.olean",
+          "bytes": 222240,
+          "sha256": "36bac55a7c39d69e44974958985260e2a100b372e9429d0ab88a401f0815832a"
+        },
+        {
+          "path": "/tmp/stock-mask-integration-current/mask/linked/Crates/StockMaskProduction36PlainFallbackEntries.olean",
+          "bytes": 290648,
+          "sha256": "3ae729bc33725d8f294521ec4fa1d6cc8a9cdbb12ff342ad1ae68bdbd4115e45"
+        },
+        {
+          "path": "/tmp/stock-mask-integration-current/mask/linked/Crates/StockMaskProduction36CleanupStrictGlobal.olean",
+          "bytes": 222192,
+          "sha256": "fbdb903e0213c05f3007f52a4d255f01a48d0e130947ac255fd7e2e59d7c17bc"
+        },
+        {
+          "path": "/tmp/stock-mask-integration-current/mask/linked/Crates/StockMaskProduction36CleanupStrictEntries.olean",
+          "bytes": 290624,
+          "sha256": "c8c3c9ec0f01b51bf4eee381bd82c8dbc55bd44a94b3ac7268f7c5d6a65cf2c5"
+        },
+        {
+          "path": "/tmp/stock-mask-integration-current/mask/linked/Crates/StockMaskProduction36CleanupFallbackGlobal.olean",
+          "bytes": 222216,
+          "sha256": "42edde11b54a25f2f2a614593d60beb3e8d12a14d80d6233b9a85d0d72281fb2"
+        },
+        {
+          "path": "/tmp/stock-mask-integration-current/mask/linked/Crates/StockMaskProduction36CleanupFallbackEntries.olean",
+          "bytes": 290600,
+          "sha256": "9d6f3b9d7863b43ee3f1ec8e3f5baca93da77e47cd77391d18c157eb054433dc"
+        },
+        {
+          "path": "/tmp/stock-mask-integration-current/mask/linked/Crates/StockMaskProduction2RetainedPlainFallbackGlobal.olean",
+          "bytes": 167768,
+          "sha256": "c6f87bd805281660d4d8845b9848c2f3a5c5f542ee38ed61f8c35a8a3aee0730"
+        },
+        {
+          "path": "/tmp/stock-mask-integration-current/mask/linked/Crates/StockMaskProduction2RetainedCleanupFallbackGlobal.olean",
+          "bytes": 166352,
+          "sha256": "d1fab4d1e76874c087f8c53223d8a5dcfc9f81e1887e508d7d2601c59558aef9"
+        },
+        {
+          "path": "/tmp/stock-mask-integration-current/mask/linked/Crates/StockMaskProduction2PlainFallbackGlobal.olean",
+          "bytes": 138928,
+          "sha256": "5718f83ef97a0534d805a7866d5a3cefc99e30c8dc0bfb7efbf6bee703fb6f4f"
+        },
+        {
+          "path": "/tmp/stock-mask-integration-current/mask/linked/Crates/StockMaskProduction2CleanupFallbackGlobal.olean",
+          "bytes": 138784,
+          "sha256": "7ac6ef976ef0515491e835b09bd0bb73d0f86bd70e0d4c459269baec5a5cf86b"
+        },
+        {
+          "path": "/tmp/stock-mask-integration-current/mask/linked/Crates/StockMaskProduction36CleanupFallbackEntries/Slice1.olean",
+          "bytes": 31472,
+          "sha256": "b246852b923ce07743a133369cdc3bca71bf924343d3b1a01bba11866ae4c07a"
+        },
+        {
+          "path": "/tmp/stock-mask-integration-current/mask/linked/Crates/StockMaskProduction36CleanupFallbackEntries/Slice0.olean",
+          "bytes": 31472,
+          "sha256": "dc3bfdcd9368edbf34f643659bcfa06c5bdb1c8b3e6944a5498d4987d2af57e5"
+        },
+        {
+          "path": "/tmp/stock-mask-integration-current/mask/linked/Crates/StockMaskProduction36CleanupFallbackEntries/Input.olean",
+          "bytes": 492232,
+          "sha256": "cc9d59a61fce2dee195d44de564cc02fed4e53409b930964f4ae012f9d91fb79"
+        },
+        {
+          "path": "/tmp/stock-mask-integration-current/mask/linked/Crates/StockMaskProduction36CleanupFallbackGlobal/Slice1.olean",
+          "bytes": 31472,
+          "sha256": "e948954bc5e01881d43b5e04e5bd2e5fa0b953d48a021c7c7fa56b2347065f55"
+        },
+        {
+          "path": "/tmp/stock-mask-integration-current/mask/linked/Crates/StockMaskProduction36CleanupFallbackGlobal/Slice0.olean",
+          "bytes": 31472,
+          "sha256": "d2d4343eb40f543e91fccb0222556ec2d1ac2e3a9ec64b9156cf2e39bafa53bd"
+        },
+        {
+          "path": "/tmp/stock-mask-integration-current/mask/linked/Crates/StockMaskProduction36CleanupFallbackGlobal/Input.olean",
+          "bytes": 492232,
+          "sha256": "43cecd6dafb7e8516a306354fb91746cae2fbafd79b119db0b3388b898a3ded6"
+        },
+        {
+          "path": "/tmp/stock-mask-integration-current/mask/linked/Crates/StockMaskProduction36CleanupStrictEntries/Slice1.olean",
+          "bytes": 31464,
+          "sha256": "1eee7367e548094a23afdd6b4e1f4d24e6a2377ab6a3bbc51157ded3307f9204"
+        },
+        {
+          "path": "/tmp/stock-mask-integration-current/mask/linked/Crates/StockMaskProduction36CleanupStrictEntries/Slice0.olean",
+          "bytes": 31464,
+          "sha256": "3fc7c4ea32234535af8f83308638ab1bcd91c8c37ee03f46f97b7d3a29b39a9c"
+        },
+        {
+          "path": "/tmp/stock-mask-integration-current/mask/linked/Crates/StockMaskProduction36CleanupStrictEntries/Input.olean",
+          "bytes": 492392,
+          "sha256": "5c7d9ca43b7fc05d6efa1e490c5df84f36197e1258784ff44fe670af8ca25ae6"
+        },
+        {
+          "path": "/tmp/stock-mask-integration-current/mask/linked/Crates/StockMaskProduction36CleanupStrictGlobal/Slice1.olean",
+          "bytes": 31464,
+          "sha256": "b88bfdfecb3760daebb32c7d4a9a87c2c08aa1cc3dec8d7168bffdba67f3c98a"
+        },
+        {
+          "path": "/tmp/stock-mask-integration-current/mask/linked/Crates/StockMaskProduction36CleanupStrictGlobal/Slice0.olean",
+          "bytes": 31464,
+          "sha256": "9292e9aff6bc8ac3b40cc4b5e184fe9ab637fce856b7c3179d54431b6e8d1374"
+        },
+        {
+          "path": "/tmp/stock-mask-integration-current/mask/linked/Crates/StockMaskProduction36CleanupStrictGlobal/Input.olean",
+          "bytes": 492384,
+          "sha256": "4feb5d959b56abdc1cc0b09501913ca3d557cb09886df9f61405c4e54fdc445b"
+        },
+        {
+          "path": "/tmp/stock-mask-integration-current/mask/linked/Crates/StockMaskProduction36PlainFallbackEntries/Slice1.olean",
+          "bytes": 31744,
+          "sha256": "1683749573e0f53e37dab336858c9035ab0f5143fb0555481ec62a7e9ca21b1e"
+        },
+        {
+          "path": "/tmp/stock-mask-integration-current/mask/linked/Crates/StockMaskProduction36PlainFallbackEntries/Slice0.olean",
+          "bytes": 31744,
+          "sha256": "f8a2c5a8c8b2c2fef12192b60511d881b67c1e108ad2728fe7ff36ebab9cbb8e"
+        },
+        {
+          "path": "/tmp/stock-mask-integration-current/mask/linked/Crates/StockMaskProduction36PlainFallbackEntries/Input.olean",
+          "bytes": 492888,
+          "sha256": "65af805927036f872b9d94089ca3945e77366263052a9d85bebf78886474220c"
+        },
+        {
+          "path": "/tmp/stock-mask-integration-current/mask/linked/Crates/StockMaskProduction36PlainFallbackGlobal/Slice1.olean",
+          "bytes": 31744,
+          "sha256": "5b75369cfd5d651364b6891bd6f5cdb4c7737c8255a4a34c8914ed36d64ec2ca"
+        },
+        {
+          "path": "/tmp/stock-mask-integration-current/mask/linked/Crates/StockMaskProduction36PlainFallbackGlobal/Slice0.olean",
+          "bytes": 31744,
+          "sha256": "3f0bd0fa6a934452fec74c9bf26bc4ef8bdaa2146e007728324e7e47515978c6"
+        },
+        {
+          "path": "/tmp/stock-mask-integration-current/mask/linked/Crates/StockMaskProduction36PlainFallbackGlobal/Input.olean",
+          "bytes": 492880,
+          "sha256": "1e134ac5132e6ba6cd4c8f02dbc5c59d21388a58fb204b3ed935410647cfe687"
+        },
+        {
+          "path": "/tmp/stock-mask-integration-current/mask/linked/Crates/StockMaskProduction36PlainStrictEntries/Slice1.olean",
+          "bytes": 31736,
+          "sha256": "d2f5192f93bd8ec961fae3c12edabf8a11d8738e79f4f4f8cbed371921ebe98f"
+        },
+        {
+          "path": "/tmp/stock-mask-integration-current/mask/linked/Crates/StockMaskProduction36PlainStrictEntries/Slice0.olean",
+          "bytes": 31736,
+          "sha256": "a2f1268811b749c88fe041541a022922f545d28ce8d11a2f00f4c85fc8ce2304"
+        },
+        {
+          "path": "/tmp/stock-mask-integration-current/mask/linked/Crates/StockMaskProduction36PlainStrictEntries/Input.olean",
+          "bytes": 492712,
+          "sha256": "2acec1eafa95d273fb7d42c588211a5bc86dab09524c9aea7f88c55be31ebfb3"
+        },
+        {
+          "path": "/tmp/stock-mask-integration-current/mask/linked/Crates/StockMaskProduction36PlainStrictGlobal/Slice1.olean",
+          "bytes": 31736,
+          "sha256": "e7a963513313657e41426095a064cb65737a96ea083f00bb845fa178e47d414e"
+        },
+        {
+          "path": "/tmp/stock-mask-integration-current/mask/linked/Crates/StockMaskProduction36PlainStrictGlobal/Slice0.olean",
+          "bytes": 31736,
+          "sha256": "85f47cfb7ae6797876cb30480ac112b4ffccb5b405daec3329e4470a23e00c0a"
+        },
+        {
+          "path": "/tmp/stock-mask-integration-current/mask/linked/Crates/StockMaskProduction36PlainStrictGlobal/Input.olean",
+          "bytes": 492712,
+          "sha256": "1ebffaa27febbe838c450958c3deeb66300eb36ddc93eee35e37b38c6196884a"
+        },
+        {
+          "path": "/tmp/stock-mask-integration-current/narrow/linked/Crates/NarrowProductionCLIretainedCleanup.olean",
+          "bytes": 187952,
+          "sha256": "35fd45f3893688981201a6524b04444e8b20596a88c297d817762f081baccdcf"
+        },
+        {
+          "path": "/tmp/stock-mask-integration-current/narrow/linked/Crates/NarrowProductionCLIcurrentCleanup.olean",
+          "bytes": 155400,
+          "sha256": "acef16d4fc290882a666a4962b0a5ffb2cac838be210f1770cb5ef1d6e52dc2e"
+        },
+        {
+          "path": "/tmp/stock-mask-integration-current/narrow/linked/Crates/NarrowProductionCLIretainedPlain.olean",
+          "bytes": 189344,
+          "sha256": "343f124bd81411baa51249f58ee8bd7667cfe73fbe8d7c12eaed381ff2c9973d"
+        },
+        {
+          "path": "/tmp/stock-mask-integration-current/narrow/linked/Crates/NarrowProductionCLIcurrentPlain.olean",
+          "bytes": 155432,
+          "sha256": "f6c5d736958da8c7e3f34f0c07bdc9c6eebed7a5b42a185fefca32366d2f9222"
+        },
+        {
+          "path": "/tmp/stock-mask-integration-current/narrow/linked/Crates/StockNarrowProduction79PlainStrictGlobal.olean",
+          "bytes": 395680,
+          "sha256": "11b02830c266382cc6b999dd9e602d0be2ea258dafba5b2a0e3285d3ed631772"
+        },
+        {
+          "path": "/tmp/stock-mask-integration-current/narrow/linked/Crates/StockNarrowProduction79PlainStrictEntries.olean",
+          "bytes": 518584,
+          "sha256": "7566932a8bcecfb83e0eed05a744dbba6f6df85d4d95b8d2c3a10a7d63ebe52e"
+        },
+        {
+          "path": "/tmp/stock-mask-integration-current/narrow/linked/Crates/StockNarrowProduction79PlainFallbackGlobal.olean",
+          "bytes": 395656,
+          "sha256": "e2a052e14173d176f943c8502a89df688fc7c33efda1eae868f5eda8115b7849"
+        },
+        {
+          "path": "/tmp/stock-mask-integration-current/narrow/linked/Crates/StockNarrowProduction79PlainFallbackEntries.olean",
+          "bytes": 518560,
+          "sha256": "53da1aa4e1c0e63f2267309426b735c572cb8a8745879ba453db9df31ecd2ae5"
+        },
+        {
+          "path": "/tmp/stock-mask-integration-current/narrow/linked/Crates/StockNarrowProduction79CleanupStrictGlobal.olean",
+          "bytes": 395608,
+          "sha256": "f1bf1d0f43cb370ef4b32e79f60eebf8c0ba8b22be2d312f34e866dc22fb891f"
+        },
+        {
+          "path": "/tmp/stock-mask-integration-current/narrow/linked/Crates/StockNarrowProduction79CleanupStrictEntries.olean",
+          "bytes": 518512,
+          "sha256": "7b34ff1303adbb54dcb7daec43249464ca4a09154f14aca879278666517162d0"
+        },
+        {
+          "path": "/tmp/stock-mask-integration-current/narrow/linked/Crates/StockNarrowProduction79CleanupFallbackGlobal.olean",
+          "bytes": 395608,
+          "sha256": "865aadab50e33eaf246f500dfdb989334f266372217796305b825a48b8d237a1"
+        },
+        {
+          "path": "/tmp/stock-mask-integration-current/narrow/linked/Crates/StockNarrowProduction79CleanupFallbackEntries.olean",
+          "bytes": 518536,
+          "sha256": "b98e90c23e2e4c5259fbb9001209d0710027905f094c726f3098029d2fa735c0"
+        },
+        {
+          "path": "/tmp/stock-mask-integration-current/narrow/linked/Crates/StockNarrowProduction2RetainedPlainFallbackGlobal.olean",
+          "bytes": 167784,
+          "sha256": "78165c12f3525ac1d0f1221223ff17845ed9b2bcd106ce9f23b337329c015142"
+        },
+        {
+          "path": "/tmp/stock-mask-integration-current/narrow/linked/Crates/StockNarrowProduction2RetainedCleanupFallbackGlobal.olean",
+          "bytes": 166328,
+          "sha256": "65cae8740745cfb5299af8f31a65dc120e00a4021b7717d785d09ceea5a5c207"
+        },
+        {
+          "path": "/tmp/stock-mask-integration-current/narrow/linked/Crates/StockNarrowProduction2PlainFallbackGlobal.olean",
+          "bytes": 138456,
+          "sha256": "17d833d57fdfad243412e161a269d74c19601e37e47df3e4b71b413623b05850"
+        },
+        {
+          "path": "/tmp/stock-mask-integration-current/narrow/linked/Crates/StockNarrowProduction2CleanupFallbackGlobal.olean",
+          "bytes": 138344,
+          "sha256": "856bed62712df68ab3f6d55db1d614b57ed7e4955daefa76bd5ec68bd615e504"
+        },
+        {
+          "path": "/tmp/stock-mask-integration-current/narrow/linked/Crates/StockNarrowProduction79CleanupFallbackEntries/Slice2.olean",
+          "bytes": 15224,
+          "sha256": "babeb7f95a7927c16e50e6fb7931076eee8c82e277aadda24313231d44eb1117"
+        },
+        {
+          "path": "/tmp/stock-mask-integration-current/narrow/linked/Crates/StockNarrowProduction79CleanupFallbackEntries/Slice1.olean",
+          "bytes": 38816,
+          "sha256": "3724cd96038323262d19eb1b9508842ee93906d687a15fd13a7427e528c4f0cb"
+        },
+        {
+          "path": "/tmp/stock-mask-integration-current/narrow/linked/Crates/StockNarrowProduction79CleanupFallbackEntries/Slice0.olean",
+          "bytes": 38816,
+          "sha256": "052ee8767d2f360c2bee43a6d5d3f8afeee6eedcb820d86a7762af598d7b6c10"
+        },
+        {
+          "path": "/tmp/stock-mask-integration-current/narrow/linked/Crates/StockNarrowProduction79CleanupFallbackEntries/Input.olean",
+          "bytes": 1006784,
+          "sha256": "3ec2acde57b61768fe9b4a4965ea482447b1b19bc0e44b39e2d150f93b5b201c"
+        },
+        {
+          "path": "/tmp/stock-mask-integration-current/narrow/linked/Crates/StockNarrowProduction79CleanupFallbackGlobal/Slice2.olean",
+          "bytes": 15224,
+          "sha256": "e9b6efb45c29bbb1a5c3158e08bf66b4a76c34d778f8d23591678f6446c420ea"
+        },
+        {
+          "path": "/tmp/stock-mask-integration-current/narrow/linked/Crates/StockNarrowProduction79CleanupFallbackGlobal/Slice1.olean",
+          "bytes": 38816,
+          "sha256": "0e8f4a2545c0de818fe2ad5bce85c24b5385fdfbd114361ad7a03ff9ef06a44c"
+        },
+        {
+          "path": "/tmp/stock-mask-integration-current/narrow/linked/Crates/StockNarrowProduction79CleanupFallbackGlobal/Slice0.olean",
+          "bytes": 38816,
+          "sha256": "37e4821271849f00550a263fb09be707a4e09d39750986dc1710df60592ae36e"
+        },
+        {
+          "path": "/tmp/stock-mask-integration-current/narrow/linked/Crates/StockNarrowProduction79CleanupFallbackGlobal/Input.olean",
+          "bytes": 1006784,
+          "sha256": "1b7fe69f5df513d5fce0fece53508a327a04e6962fb6212129fdf6cb824d2526"
+        },
+        {
+          "path": "/tmp/stock-mask-integration-current/narrow/linked/Crates/StockNarrowProduction79CleanupStrictEntries/Slice2.olean",
+          "bytes": 15224,
+          "sha256": "3152eb87cba80780c09b4a7e62793aff4ef39683f4281160d3028dc68a994cf5"
+        },
+        {
+          "path": "/tmp/stock-mask-integration-current/narrow/linked/Crates/StockNarrowProduction79CleanupStrictEntries/Slice1.olean",
+          "bytes": 38816,
+          "sha256": "be5ea47c48b31f27e2e2249d81717bf48f5edfa902cd1a1d78a662e5e3648506"
+        },
+        {
+          "path": "/tmp/stock-mask-integration-current/narrow/linked/Crates/StockNarrowProduction79CleanupStrictEntries/Slice0.olean",
+          "bytes": 38816,
+          "sha256": "d82f72671b13546ee12643a59908e600030b3627244d980fbdb73295b7039d55"
+        },
+        {
+          "path": "/tmp/stock-mask-integration-current/narrow/linked/Crates/StockNarrowProduction79CleanupStrictEntries/Input.olean",
+          "bytes": 1006944,
+          "sha256": "d7fb1b1a5ecc1912875fc2ff7e88568375ce81446118e8767e1b05f6e332759a"
+        },
+        {
+          "path": "/tmp/stock-mask-integration-current/narrow/linked/Crates/StockNarrowProduction79CleanupStrictGlobal/Slice2.olean",
+          "bytes": 15224,
+          "sha256": "48fb8d3aefb66aca6bc3f3cc25df738edc3e4d0dfad7b4133058698f42c89770"
+        },
+        {
+          "path": "/tmp/stock-mask-integration-current/narrow/linked/Crates/StockNarrowProduction79CleanupStrictGlobal/Slice1.olean",
+          "bytes": 38816,
+          "sha256": "e78625de8567d4be528e30334ed060fe54e28b5d8a8f88f79de09e627c0fd704"
+        },
+        {
+          "path": "/tmp/stock-mask-integration-current/narrow/linked/Crates/StockNarrowProduction79CleanupStrictGlobal/Slice0.olean",
+          "bytes": 38816,
+          "sha256": "4c0c0f9b2e6e8cb90f76e64fa534b5bf85ef4b734512052174e13db58c99919b"
+        },
+        {
+          "path": "/tmp/stock-mask-integration-current/narrow/linked/Crates/StockNarrowProduction79CleanupStrictGlobal/Input.olean",
+          "bytes": 1006944,
+          "sha256": "5208b24657e810fafc1ef510090c50ec3b30290888dd5424bb4cd099d0db4fc8"
+        },
+        {
+          "path": "/tmp/stock-mask-integration-current/narrow/linked/Crates/StockNarrowProduction79PlainFallbackEntries/Slice2.olean",
+          "bytes": 15376,
+          "sha256": "3a541452923fd4969746338b7ba16867e59dff51586a4d25932228893b336315"
+        },
+        {
+          "path": "/tmp/stock-mask-integration-current/narrow/linked/Crates/StockNarrowProduction79PlainFallbackEntries/Slice1.olean",
+          "bytes": 38984,
+          "sha256": "eb9e27f4ef8f43d65484ddc37a28caa4f271cff53a149592268ac30ef6765725"
+        },
+        {
+          "path": "/tmp/stock-mask-integration-current/narrow/linked/Crates/StockNarrowProduction79PlainFallbackEntries/Slice0.olean",
+          "bytes": 38984,
+          "sha256": "1d2d104fe23bea1376076648a08e243ac3573e238041e6cbec340aff33f83982"
+        },
+        {
+          "path": "/tmp/stock-mask-integration-current/narrow/linked/Crates/StockNarrowProduction79PlainFallbackEntries/Input.olean",
+          "bytes": 1007008,
+          "sha256": "436eb6f4d84bcbd6d67928767dd28d0d5a7e58db21598de0b989cdfaafe2d60a"
+        },
+        {
+          "path": "/tmp/stock-mask-integration-current/narrow/linked/Crates/StockNarrowProduction79PlainFallbackGlobal/Slice2.olean",
+          "bytes": 15376,
+          "sha256": "28cd2d39e9c4454d7bc323c1a3917971ebae7ddadb3341b0368602f991791e30"
+        },
+        {
+          "path": "/tmp/stock-mask-integration-current/narrow/linked/Crates/StockNarrowProduction79PlainFallbackGlobal/Slice1.olean",
+          "bytes": 38984,
+          "sha256": "73c07459607a9ded1f037a31cbd5f9131258571ab5ee0b87f4ab50378735df8d"
+        },
+        {
+          "path": "/tmp/stock-mask-integration-current/narrow/linked/Crates/StockNarrowProduction79PlainFallbackGlobal/Slice0.olean",
+          "bytes": 38984,
+          "sha256": "fd868192e76b44f08402550e66eccfa40136da490d31483ad8e47d7373e0ac2e"
+        },
+        {
+          "path": "/tmp/stock-mask-integration-current/narrow/linked/Crates/StockNarrowProduction79PlainFallbackGlobal/Input.olean",
+          "bytes": 1007008,
+          "sha256": "bd239f6a6739d3e303ad5237b48345eba610286f15a7b9a12b2791205b0b29c1"
+        },
+        {
+          "path": "/tmp/stock-mask-integration-current/narrow/linked/Crates/StockNarrowProduction79PlainStrictEntries/Slice2.olean",
+          "bytes": 15368,
+          "sha256": "316c7a86be33708de7d86b6107ea796e0ff213fbf70f65558569dbdff6ab3b39"
+        },
+        {
+          "path": "/tmp/stock-mask-integration-current/narrow/linked/Crates/StockNarrowProduction79PlainStrictEntries/Slice1.olean",
+          "bytes": 38976,
+          "sha256": "e1f82573bb3a48345e7b6c9589cc0aeb6a2f27b6c4b71b3b352a707654734bd3"
+        },
+        {
+          "path": "/tmp/stock-mask-integration-current/narrow/linked/Crates/StockNarrowProduction79PlainStrictEntries/Slice0.olean",
+          "bytes": 38976,
+          "sha256": "4879b3982b83cff5e9c325f6e3bfd06aa87bfacf813c6469cd96857139ea41f2"
+        },
+        {
+          "path": "/tmp/stock-mask-integration-current/narrow/linked/Crates/StockNarrowProduction79PlainStrictEntries/Input.olean",
+          "bytes": 1006848,
+          "sha256": "61ef2a5fbaa1a53d6f14fc6246e7ad214e252c1eb6be32602fb06bf6d598efee"
+        },
+        {
+          "path": "/tmp/stock-mask-integration-current/narrow/linked/Crates/StockNarrowProduction79PlainStrictGlobal/Slice2.olean",
+          "bytes": 15368,
+          "sha256": "6b39464e785906a47af2cffdd8e12548f03ed2ab52f89191d29b901d9368e3e3"
+        },
+        {
+          "path": "/tmp/stock-mask-integration-current/narrow/linked/Crates/StockNarrowProduction79PlainStrictGlobal/Slice1.olean",
+          "bytes": 38976,
+          "sha256": "1b4c803c30a8c807a0acbb787fe197f133454157b60466809ae3f95d1172f072"
+        },
+        {
+          "path": "/tmp/stock-mask-integration-current/narrow/linked/Crates/StockNarrowProduction79PlainStrictGlobal/Slice0.olean",
+          "bytes": 38976,
+          "sha256": "05e2090a7e166e44ff9e03fd0b0193bc024484f9a9a41736369fe3859b9fc4bf"
+        },
+        {
+          "path": "/tmp/stock-mask-integration-current/narrow/linked/Crates/StockNarrowProduction79PlainStrictGlobal/Input.olean",
+          "bytes": 1006840,
+          "sha256": "cd69ee505d077999e2c4e0f6c00288ef304fab2061d2ec051d84b307726cb35b"
+        },
+        {
+          "path": "/tmp/stock-mask-retained-integration-current/returneddiv/linked/Crates/ReturnedDivProductionCLIretainedCleanup.olean",
+          "bytes": 188016,
+          "sha256": "ef87f116bd1be81a39775d2511ab3cd90927363e9fe8b9e378d8047709d0e968"
+        },
+        {
+          "path": "/tmp/stock-mask-retained-integration-current/returneddiv/linked/Crates/ReturnedDivProductionCLIcurrentCleanup.olean",
+          "bytes": 182160,
+          "sha256": "60edcbdff7d2019be0931a820d28b8a5d73fd8d141adb74787b41ab556d5b368"
+        },
+        {
+          "path": "/tmp/stock-mask-retained-integration-current/returneddiv/linked/Crates/ReturnedDivProductionCLIretainedPlain.olean",
+          "bytes": 189384,
+          "sha256": "4fe61e932fc8bc46a15e2e76039cc56151c9658eb8a026c7ed14cabd29732b50"
+        },
+        {
+          "path": "/tmp/stock-mask-retained-integration-current/returneddiv/linked/Crates/ReturnedDivProductionCLIcurrentPlain.olean",
+          "bytes": 182248,
+          "sha256": "4ca542df707c5a762e324ae959b0154356610d115d0555e6078f87b5a868e0d9"
+        },
+        {
+          "path": "/tmp/stock-mask-retained-integration-current/returneddiv/linked/Crates/StockReturnedDivProduction6PlainStrictGlobal.olean",
+          "bytes": 277136,
+          "sha256": "2741e0730302561bc8f0b8a3d9ed6c4f1cc4e51da344a7534c46fd399218f07a"
+        },
+        {
+          "path": "/tmp/stock-mask-retained-integration-current/returneddiv/linked/Crates/StockReturnedDivProduction6PlainFallbackGlobal.olean",
+          "bytes": 277184,
+          "sha256": "001aa55de8f8b561006990329af39d5761fac7c2858e2888ce6f6cccf4796e99"
+        },
+        {
+          "path": "/tmp/stock-mask-retained-integration-current/returneddiv/linked/Crates/StockReturnedDivProduction6MixedPlainFallbackGlobal.olean",
+          "bytes": 212568,
+          "sha256": "f0492de273fedf596205ef05d19034939fc497220aba76b4ac6ae182d0f9f2f8"
+        },
+        {
+          "path": "/tmp/stock-mask-retained-integration-current/returneddiv/linked/Crates/StockReturnedDivProduction6MixedCleanupFallbackGlobal.olean",
+          "bytes": 212464,
+          "sha256": "8e323c5e9ab76245ba898160d2304d05e0ce70a607004fe5b2ef0ff6d00b7ac8"
+        },
+        {
+          "path": "/tmp/stock-mask-retained-integration-current/returneddiv/linked/Crates/StockReturnedDivProduction6CleanupStrictGlobal.olean",
+          "bytes": 277072,
+          "sha256": "4bf12a3bf1753899eaf3f9dd8bc045a8c6e81afee773ab0becf5517004feb9ab"
+        },
+        {
+          "path": "/tmp/stock-mask-retained-integration-current/returneddiv/linked/Crates/StockReturnedDivProduction6CleanupFallbackGlobal.olean",
+          "bytes": 277056,
+          "sha256": "95ad16c3b43cd87cefebf3b536f4f8a6accf2b9eda1ae55dd0e440e1db3f7689"
+        },
+        {
+          "path": "/tmp/stock-mask-retained-integration-current/returneddiv/linked/Crates/StockReturnedDivProduction33CleanupFallbackGlobal.olean",
+          "bytes": 210768,
+          "sha256": "9d6edb17f161c3210478b92f3278dbd35d809f451d224be01c11a50dea8b10f6"
+        },
+        {
+          "path": "/tmp/stock-mask-retained-integration-current/returneddiv/linked/Crates/StockReturnedDivProduction33CleanupFallbackEntries.olean",
+          "bytes": 276528,
+          "sha256": "59768bff8e70ac5a5527f15add08c612b6252819ddbb5aa3f201b49d9df551d4"
+        },
+        {
+          "path": "/tmp/stock-mask-retained-integration-current/returneddiv/linked/Crates/StockReturnedDivProduction2RetainedPlainFallbackGlobal.olean",
+          "bytes": 167800,
+          "sha256": "634466116a629c41637368c1606daa811bec0476ba20029ab7e8faf6774cade9"
+        },
+        {
+          "path": "/tmp/stock-mask-retained-integration-current/returneddiv/linked/Crates/StockReturnedDivProduction2RetainedCleanupFallbackGlobal.olean",
+          "bytes": 166368,
+          "sha256": "834d86fbd2f4623a017c71f645d3f2fa3269312b5f74772e4356041823232a14"
+        },
+        {
+          "path": "/tmp/stock-mask-retained-integration-current/returneddiv/linked/Crates/StockReturnedDivProduction2PlainFallbackGlobal.olean",
+          "bytes": 165232,
+          "sha256": "29e57f70ebc3d0e56bfc2e37e02d27441522372f02aab1a37d136ec44552a827"
+        },
+        {
+          "path": "/tmp/stock-mask-retained-integration-current/returneddiv/linked/Crates/StockReturnedDivProduction2CleanupFallbackGlobal.olean",
+          "bytes": 165104,
+          "sha256": "3cd31b60058b9ccf7d0bda79ed7ab68971e1b22137e2657952c1b845ffe15ee8"
+        },
+        {
+          "path": "/tmp/stock-mask-retained-integration-current/returneddiv/linked/Crates/StockReturnedDivProduction33CleanupFallbackEntries/Slice1.olean",
+          "bytes": 30368,
+          "sha256": "40ae48ba8e9b51564a5a58d062259b545688deaefcf22f1d0d1c17e54ee7c3fe"
+        },
+        {
+          "path": "/tmp/stock-mask-retained-integration-current/returneddiv/linked/Crates/StockReturnedDivProduction33CleanupFallbackEntries/Slice0.olean",
+          "bytes": 30368,
+          "sha256": "02ca5d8627d0211f145c8be5c94f79012903ba92ee581ca50ea7fba49bb2ab15"
+        },
+        {
+          "path": "/tmp/stock-mask-retained-integration-current/returneddiv/linked/Crates/StockReturnedDivProduction33CleanupFallbackEntries/Input.olean",
+          "bytes": 455896,
+          "sha256": "51207fc6b7ad68e0d0725d11f2ee7c76b8f725d95a85459cf8d004721e5646db"
+        },
+        {
+          "path": "/tmp/stock-mask-retained-integration-current/returneddiv/linked/Crates/StockReturnedDivProduction33CleanupFallbackGlobal/Slice1.olean",
+          "bytes": 30360,
+          "sha256": "94772160970e8ddffb04e3cca27da1300857683bd0a393ff9f2a03895fdffda8"
+        },
+        {
+          "path": "/tmp/stock-mask-retained-integration-current/returneddiv/linked/Crates/StockReturnedDivProduction33CleanupFallbackGlobal/Slice0.olean",
+          "bytes": 30360,
+          "sha256": "51d2827d064661ec511422e1e166a33dbb8966a343fe70d0c68431b17c1bc8ca"
+        },
+        {
+          "path": "/tmp/stock-mask-retained-integration-current/returneddiv/linked/Crates/StockReturnedDivProduction33CleanupFallbackGlobal/Input.olean",
+          "bytes": 455896,
+          "sha256": "c880667ea82dc5ec79d0e603786bc2dc89b1f10c3c9102b8fe943bce4cc8e63f"
+        },
+        {
+          "path": "/tmp/stock-mask-wide-integration-current/generaldiv-layouts/linked/Crates/GeneralDivProductionCLIretainedCleanup.olean",
+          "bytes": 188000,
+          "sha256": "71e244ecfd430c4feb1f61512c75e3c57d49c82e7d36406e97fe0f3aaa4320c0"
+        },
+        {
+          "path": "/tmp/stock-mask-wide-integration-current/generaldiv-layouts/linked/Crates/GeneralDivProductionCLIcurrentmultipleCleanup.olean",
+          "bytes": 182456,
+          "sha256": "cdef9401ea3b21e939582bef2b2118dadd02ad9ef1f13242114b5e6b603a5f63"
+        },
+        {
+          "path": "/tmp/stock-mask-wide-integration-current/generaldiv-layouts/linked/Crates/GeneralDivProductionCLIcurrentconsumedCleanup.olean",
+          "bytes": 182256,
+          "sha256": "f7b175300f658554a74859ffdf36f9b4a58ad7217cb1b990b39050863d5a2aa2"
+        },
+        {
+          "path": "/tmp/stock-mask-wide-integration-current/generaldiv-layouts/linked/Crates/GeneralDivProductionCLIcurrentunusedCleanup.olean",
+          "bytes": 182152,
+          "sha256": "2e0c18f09dc41630a7185158a840c8bf52f66be830a15bddf12f13d501c76ef3"
+        },
+        {
+          "path": "/tmp/stock-mask-wide-integration-current/generaldiv-layouts/linked/Crates/GeneralDivProductionCLIretainedPlain.olean",
+          "bytes": 189392,
+          "sha256": "833da0e54ab4eb1c2ea9d2de469564bc500934b7d1c061b7de7c939515238e28"
+        },
+        {
+          "path": "/tmp/stock-mask-wide-integration-current/generaldiv-layouts/linked/Crates/GeneralDivProductionCLIcurrentmultiplePlain.olean",
+          "bytes": 182536,
+          "sha256": "609972141dedb2e9c15f39b696ea2f9cfca98f6be1b9c7e74b476c274b65bde1"
+        },
+        {
+          "path": "/tmp/stock-mask-wide-integration-current/generaldiv-layouts/linked/Crates/GeneralDivProductionCLIcurrentconsumedPlain.olean",
+          "bytes": 182312,
+          "sha256": "a03a4ab234b3c7396767be49895fa3f246f71810c293a24b70706af28a47e17c"
+        },
+        {
+          "path": "/tmp/stock-mask-wide-integration-current/generaldiv-layouts/linked/Crates/GeneralDivProductionCLIcurrentunusedPlain.olean",
+          "bytes": 182240,
+          "sha256": "b19b30f501460abb5ee9bce28160383dd22f790cd40632cb2dbec470ba32399e"
+        },
+        {
+          "path": "/tmp/stock-mask-wide-integration-current/generaldiv-layouts/linked/Crates/StockGeneralDivProductionunused6PlainStrictGlobal.olean",
+          "bytes": 277072,
+          "sha256": "3bec8418306d7bb64711d76a8b099c37a8fd889edbb3bd34f4d311c524639996"
+        },
+        {
+          "path": "/tmp/stock-mask-wide-integration-current/generaldiv-layouts/linked/Crates/StockGeneralDivProductionunused6PlainFallbackGlobal.olean",
+          "bytes": 277096,
+          "sha256": "43b0365883c5df4f9343ee93ab7e73eba2a47d84bfbf64fcf06f75620ae69f39"
+        },
+        {
+          "path": "/tmp/stock-mask-wide-integration-current/generaldiv-layouts/linked/Crates/StockGeneralDivProductionunused6MixedPlainFallbackGlobal.olean",
+          "bytes": 212512,
+          "sha256": "b2ddd4834e71d005d95b5bab19cd2b666434b7be4c2f97a9a659e139c5a2e0a4"
+        },
+        {
+          "path": "/tmp/stock-mask-wide-integration-current/generaldiv-layouts/linked/Crates/StockGeneralDivProductionunused6MixedCleanupFallbackGlobal.olean",
+          "bytes": 212408,
+          "sha256": "b9e6ce1d5e1cf77c6601142e9687da544ee43ecd219d47e36d1d492bff4fac83"
+        },
+        {
+          "path": "/tmp/stock-mask-wide-integration-current/generaldiv-layouts/linked/Crates/StockGeneralDivProductionunused6CleanupStrictGlobal.olean",
+          "bytes": 276952,
+          "sha256": "0cddbeb76f0c4d0b447e0e0922acfa53e36ff80464de39e270887ce6f28de25d"
+        },
+        {
+          "path": "/tmp/stock-mask-wide-integration-current/generaldiv-layouts/linked/Crates/StockGeneralDivProductionunused6CleanupFallbackGlobal.olean",
+          "bytes": 276928,
+          "sha256": "0f55d68f9f73689fc777eb36ba18bbae9a817d47f42ee8a14ac73c7a1114786c"
+        },
+        {
+          "path": "/tmp/stock-mask-wide-integration-current/generaldiv-layouts/linked/Crates/StockGeneralDivProductionunused33CleanupFallbackGlobal.olean",
+          "bytes": 210696,
+          "sha256": "7b29d8da93124dcb8a104e9e898a83dbf1114d3fe2885312c45d6f4a7161663f"
+        },
+        {
+          "path": "/tmp/stock-mask-wide-integration-current/generaldiv-layouts/linked/Crates/StockGeneralDivProductionunused33CleanupFallbackEntries.olean",
+          "bytes": 276456,
+          "sha256": "11ccb66df9cac07c62e2d68a6dd1998fdbc7bba80617f6f51d108d4da0cf257c"
+        },
+        {
+          "path": "/tmp/stock-mask-wide-integration-current/generaldiv-layouts/linked/Crates/StockGeneralDivProductionunused2RetainedPlainFallbackGlobal.olean",
+          "bytes": 167816,
+          "sha256": "1a1f7ea15e77ab5169e512c9dad8a1547d33398fc0725cc3c356a1d9cecaa665"
+        },
+        {
+          "path": "/tmp/stock-mask-wide-integration-current/generaldiv-layouts/linked/Crates/StockGeneralDivProductionunused2RetainedCleanupFallbackGlobal.olean",
+          "bytes": 166360,
+          "sha256": "03fef522d71f927e185e1f249814ab99344e5fa917aec38d481cf1ad827766a4"
+        },
+        {
+          "path": "/tmp/stock-mask-wide-integration-current/generaldiv-layouts/linked/Crates/StockGeneralDivProductionunused2PlainFallbackGlobal.olean",
+          "bytes": 165200,
+          "sha256": "c3631beab6edb555704aa35f5bf7efb9a23e94cff9c7932d4af229fcbe7513b1"
+        },
+        {
+          "path": "/tmp/stock-mask-wide-integration-current/generaldiv-layouts/linked/Crates/StockGeneralDivProductionunused2CleanupFallbackGlobal.olean",
+          "bytes": 165112,
+          "sha256": "1c0ed52f045c274a29f45ae40a0d68bd971a9862ebdef384379d1bd5c5977d1a"
+        },
+        {
+          "path": "/tmp/stock-mask-wide-integration-current/generaldiv-layouts/linked/Crates/StockGeneralDivProductionmultiple6PlainStrictGlobal.olean",
+          "bytes": 277976,
+          "sha256": "181cd8e3a37d529e6808eb23e7e155d7f667a5fc594df9a065ab36e063fd7684"
+        },
+        {
+          "path": "/tmp/stock-mask-wide-integration-current/generaldiv-layouts/linked/Crates/StockGeneralDivProductionmultiple6PlainFallbackGlobal.olean",
+          "bytes": 278000,
+          "sha256": "fed0d0c7658e52364ad321b9d64519e0ebe6a201222aa58e8b2b2ce9f4a6720c"
+        },
+        {
+          "path": "/tmp/stock-mask-wide-integration-current/generaldiv-layouts/linked/Crates/StockGeneralDivProductionmultiple6MixedPlainFallbackGlobal.olean",
+          "bytes": 212704,
+          "sha256": "9868b02daabfda409e9e5447c898c148959bccda69228d9c0735d79165452566"
+        },
+        {
+          "path": "/tmp/stock-mask-wide-integration-current/generaldiv-layouts/linked/Crates/StockGeneralDivProductionmultiple6MixedCleanupFallbackGlobal.olean",
+          "bytes": 212576,
+          "sha256": "0d9214be4b235e0af4586266b2ec2158076c69d995778af9d3796d8dcc07d45c"
+        },
+        {
+          "path": "/tmp/stock-mask-wide-integration-current/generaldiv-layouts/linked/Crates/StockGeneralDivProductionmultiple6CleanupStrictGlobal.olean",
+          "bytes": 277848,
+          "sha256": "9779893fe72979ac457d44c3ccb046e158fdc84312b341bf8b69a7b69bae5a36"
+        },
+        {
+          "path": "/tmp/stock-mask-wide-integration-current/generaldiv-layouts/linked/Crates/StockGeneralDivProductionmultiple6CleanupFallbackGlobal.olean",
+          "bytes": 277832,
+          "sha256": "13f55a9e293b81ac81cb7c58e2b910a6b1b1e7342024ae889aec4b1fc256748f"
+        },
+        {
+          "path": "/tmp/stock-mask-wide-integration-current/generaldiv-layouts/linked/Crates/StockGeneralDivProductionmultiple33CleanupFallbackGlobal.olean",
+          "bytes": 210704,
+          "sha256": "c1eace289eaa8868361429921ee464fd496fa1c72964e28a418b38e8e7151d06"
+        },
+        {
+          "path": "/tmp/stock-mask-wide-integration-current/generaldiv-layouts/linked/Crates/StockGeneralDivProductionmultiple33CleanupFallbackEntries.olean",
+          "bytes": 276464,
+          "sha256": "1a4525eef281cc89d1542bc92dc5dfb7284fa653d2d09b0ae3f3f94d6580d8bc"
+        },
+        {
+          "path": "/tmp/stock-mask-wide-integration-current/generaldiv-layouts/linked/Crates/StockGeneralDivProductionmultiple2PlainFallbackGlobal.olean",
+          "bytes": 165536,
+          "sha256": "8b00f4dccf6bf2ebdc66790c7edd3b56a38acc73b3fdab58850f7422fb77c363"
+        },
+        {
+          "path": "/tmp/stock-mask-wide-integration-current/generaldiv-layouts/linked/Crates/StockGeneralDivProductionmultiple2CleanupFallbackGlobal.olean",
+          "bytes": 165408,
+          "sha256": "386a86332ab30da44f19cbb79f7f7d7031e1ccfb450907ff0a9332e60db3e1ca"
+        },
+        {
+          "path": "/tmp/stock-mask-wide-integration-current/generaldiv-layouts/linked/Crates/StockGeneralDivProductionconsumed6PlainStrictGlobal.olean",
+          "bytes": 277376,
+          "sha256": "7fbff3b9aea0f91b8973a06698f3661fe6788a750e2b8fbfa16196e411fbf749"
+        },
+        {
+          "path": "/tmp/stock-mask-wide-integration-current/generaldiv-layouts/linked/Crates/StockGeneralDivProductionconsumed6PlainFallbackGlobal.olean",
+          "bytes": 277424,
+          "sha256": "433b0927874ee363e028e425dc9e68863a33f387c9b24f374ec074f1b850a81b"
+        },
+        {
+          "path": "/tmp/stock-mask-wide-integration-current/generaldiv-layouts/linked/Crates/StockGeneralDivProductionconsumed6MixedPlainFallbackGlobal.olean",
+          "bytes": 212576,
+          "sha256": "79fff39a27c6f68d4bd41efbb9ae9aa58443f0f6716d240d956b617deb68b483"
+        },
+        {
+          "path": "/tmp/stock-mask-wide-integration-current/generaldiv-layouts/linked/Crates/StockGeneralDivProductionconsumed6MixedCleanupFallbackGlobal.olean",
+          "bytes": 212472,
+          "sha256": "a110caf4f61d1a45558293b3ef8824551ea8d608d06e73948377dead670f321a"
+        },
+        {
+          "path": "/tmp/stock-mask-wide-integration-current/generaldiv-layouts/linked/Crates/StockGeneralDivProductionconsumed6CleanupStrictGlobal.olean",
+          "bytes": 277312,
+          "sha256": "96a8d18bbdeaafe6ef863fa72193f14f29a4e9d40d009db811e3917a7903e17e"
+        },
+        {
+          "path": "/tmp/stock-mask-wide-integration-current/generaldiv-layouts/linked/Crates/StockGeneralDivProductionconsumed6CleanupFallbackGlobal.olean",
+          "bytes": 277320,
+          "sha256": "ecca059d419f0d7a1155da4c58d9c48128bb3dac04915c5c0cae52a28d7950e9"
+        },
+        {
+          "path": "/tmp/stock-mask-wide-integration-current/generaldiv-layouts/linked/Crates/StockGeneralDivProductionconsumed33CleanupFallbackGlobal.olean",
+          "bytes": 210704,
+          "sha256": "03571b76658ad6f11238641d05263ec76a7a623e5ee63cceb31d1284ee49d151"
+        },
+        {
+          "path": "/tmp/stock-mask-wide-integration-current/generaldiv-layouts/linked/Crates/StockGeneralDivProductionconsumed33CleanupFallbackEntries.olean",
+          "bytes": 276440,
+          "sha256": "037f4e17ac45c56f236d5679bc264bce96d554c287fcbc3b6dffdcfb76805115"
+        },
+        {
+          "path": "/tmp/stock-mask-wide-integration-current/generaldiv-layouts/linked/Crates/StockGeneralDivProductionconsumed2PlainFallbackGlobal.olean",
+          "bytes": 165304,
+          "sha256": "b3fb1e64677dbba9e014c40a7829f914cd62faaff7b4ab8ab83df34a1b22e1b3"
+        },
+        {
+          "path": "/tmp/stock-mask-wide-integration-current/generaldiv-layouts/linked/Crates/StockGeneralDivProductionconsumed2CleanupFallbackGlobal.olean",
+          "bytes": 165200,
+          "sha256": "180c6d2480af085db10eb6840530ef67352b312bd2a5678cd79bf29467e3b036"
+        },
+        {
+          "path": "/tmp/stock-mask-wide-integration-current/generaldiv-layouts/linked/Crates/StockGeneralDivProductionmultiple33CleanupFallbackEntries/Slice1.olean",
+          "bytes": 30376,
+          "sha256": "43ae6064d22979ba866455092d435e518f879b46c9f723ca90272f6bf84be065"
+        },
+        {
+          "path": "/tmp/stock-mask-wide-integration-current/generaldiv-layouts/linked/Crates/StockGeneralDivProductionmultiple33CleanupFallbackEntries/Slice0.olean",
+          "bytes": 30376,
+          "sha256": "c4b63befa54e16d3986367ea1baa6570267556d90995a0524f5e940afad05e05"
+        },
+        {
+          "path": "/tmp/stock-mask-wide-integration-current/generaldiv-layouts/linked/Crates/StockGeneralDivProductionmultiple33CleanupFallbackEntries/Input.olean",
+          "bytes": 455952,
+          "sha256": "c6d638639772f32bb845b43bd37ef307aff5fa90b644264fb02e2ce1809f8434"
+        },
+        {
+          "path": "/tmp/stock-mask-wide-integration-current/generaldiv-layouts/linked/Crates/StockGeneralDivProductionmultiple33CleanupFallbackGlobal/Slice1.olean",
+          "bytes": 30376,
+          "sha256": "6be71d2abc6e3ac8864b40f4d6b77d175d0d12cb8befc4249fbd1e2a3e659ffd"
+        },
+        {
+          "path": "/tmp/stock-mask-wide-integration-current/generaldiv-layouts/linked/Crates/StockGeneralDivProductionmultiple33CleanupFallbackGlobal/Slice0.olean",
+          "bytes": 30376,
+          "sha256": "0c9e66d585df016132d35962ae18b52d910fb20c7fd6a99966d90132658e0f40"
+        },
+        {
+          "path": "/tmp/stock-mask-wide-integration-current/generaldiv-layouts/linked/Crates/StockGeneralDivProductionmultiple33CleanupFallbackGlobal/Input.olean",
+          "bytes": 455944,
+          "sha256": "a14232c1161bf09187d519de2c7d0ce2ec870c5cd1272afdd44f5186a695a85d"
+        },
+        {
+          "path": "/tmp/stock-mask-wide-integration-current/generaldiv-layouts/linked/Crates/StockGeneralDivProductionconsumed33CleanupFallbackEntries/Slice1.olean",
+          "bytes": 30328,
+          "sha256": "c923fc42fc6bc3404d7a8545b09c22e09cb919e4de70f5251bbcf55dd2bd15c4"
+        },
+        {
+          "path": "/tmp/stock-mask-wide-integration-current/generaldiv-layouts/linked/Crates/StockGeneralDivProductionconsumed33CleanupFallbackEntries/Slice0.olean",
+          "bytes": 30328,
+          "sha256": "70ff5f9c1a3d027ad6a1f7e5a5ec5d181e50240791441e4ddaf2f3b76d0eccfb"
+        },
+        {
+          "path": "/tmp/stock-mask-wide-integration-current/generaldiv-layouts/linked/Crates/StockGeneralDivProductionconsumed33CleanupFallbackEntries/Input.olean",
+          "bytes": 455824,
+          "sha256": "a2f04201d0ccfed315bffdf9303986cc26cd9bdb9824e7402d2fa5d190b9fdbd"
+        },
+        {
+          "path": "/tmp/stock-mask-wide-integration-current/generaldiv-layouts/linked/Crates/StockGeneralDivProductionconsumed33CleanupFallbackGlobal/Slice1.olean",
+          "bytes": 30328,
+          "sha256": "239b4c477e592ca8cfe0fa2ad31b9d9845ce2af9ed0b21e25bb93908d412ccde"
+        },
+        {
+          "path": "/tmp/stock-mask-wide-integration-current/generaldiv-layouts/linked/Crates/StockGeneralDivProductionconsumed33CleanupFallbackGlobal/Slice0.olean",
+          "bytes": 30328,
+          "sha256": "5e95015a0a51133d5dc3707daddf5b1c53ae0c3ab3f5da8703dbb0cff0ff2eda"
+        },
+        {
+          "path": "/tmp/stock-mask-wide-integration-current/generaldiv-layouts/linked/Crates/StockGeneralDivProductionconsumed33CleanupFallbackGlobal/Input.olean",
+          "bytes": 455816,
+          "sha256": "eab8cb117c350320597c3a025c6d46a6a66c09057188537e34886359931e93cd"
+        },
+        {
+          "path": "/tmp/stock-mask-wide-integration-current/generaldiv-layouts/linked/Crates/StockGeneralDivProductionunused33CleanupFallbackEntries/Slice1.olean",
+          "bytes": 30304,
+          "sha256": "a54783ee4ffabf50f20e798430e5433e104cca71d0f0e8676744896a2fdea9b5"
+        },
+        {
+          "path": "/tmp/stock-mask-wide-integration-current/generaldiv-layouts/linked/Crates/StockGeneralDivProductionunused33CleanupFallbackEntries/Slice0.olean",
+          "bytes": 30304,
+          "sha256": "e9eb6b42c79a08046db9b2d21aab125b9ba88e015c4071cb1fc4f75ca6690f00"
+        },
+        {
+          "path": "/tmp/stock-mask-wide-integration-current/generaldiv-layouts/linked/Crates/StockGeneralDivProductionunused33CleanupFallbackEntries/Input.olean",
+          "bytes": 455760,
+          "sha256": "ab912427eb23e4a97d4d4eeb1047b275ef4ac8b047e2860b9ca84fd629c9fb95"
+        },
+        {
+          "path": "/tmp/stock-mask-wide-integration-current/generaldiv-layouts/linked/Crates/StockGeneralDivProductionunused33CleanupFallbackGlobal/Slice1.olean",
+          "bytes": 30304,
+          "sha256": "54f4e52f8009a0de72ed857d28b413c86079ac9006ebfb46ccb8ea441ada5e46"
+        },
+        {
+          "path": "/tmp/stock-mask-wide-integration-current/generaldiv-layouts/linked/Crates/StockGeneralDivProductionunused33CleanupFallbackGlobal/Slice0.olean",
+          "bytes": 30304,
+          "sha256": "cfa8cb887cc3f4e5e8c7abacba7fc57883c1cdb6ca0120943aeb719a6ec0c2d9"
+        },
+        {
+          "path": "/tmp/stock-mask-wide-integration-current/generaldiv-layouts/linked/Crates/StockGeneralDivProductionunused33CleanupFallbackGlobal/Input.olean",
+          "bytes": 455760,
+          "sha256": "b4dfe48b2a915baa8bc35670cc51137222c395dbc8f5e63f8bb1e25edbab55d0"
+        },
+        {
+          "path": "/tmp/stock-mask-retention-current/retained/Crates/RetainedFlatMultiplyCleanup.olean",
+          "bytes": 201616,
+          "sha256": "1caf3f0ff9f388d611bcc76858587224dac71ab9458db1a08c2638bbf2c464db"
+        },
+        {
+          "path": "/tmp/stock-mask-retention-current/retained/Crates/RetainedFlatMultiplyPlain.olean",
+          "bytes": 201736,
+          "sha256": "acc69e29523fd04dc41fcc2adb860ac6ad4464a5856f94957f3ecdbc4a8eaee8"
+        }
+      ],
+      "all_unique_proof_sources_logs_inputs_programs_and_latest_archive_retained": true
+    },
+    "stock-cfg-source-component.json": {
+      "state": "normal_component_passed_not_full_CFG_activation",
+      "source_base": "0aecff7cbeb8e0dc295855bf27d77c4ffdfffdfa",
+      "utc": "2026-10-25T01:28:19.696601+00:00",
+      "new_generic_roots": {
+        "Backend.Stock.Proof.QuietSourceColors.sourceMetadata_zero_of_separate": [
+          "Quot.sound",
+          "propext"
+        ],
+        "Backend.Stock.Proof.QuietSourceColors.buildCtx_quiet_block": [
+          "Classical.choice",
+          "Quot.sound",
+          "propext"
+        ],
+        "Backend.Stock.Proof.QuietSourceColors.stock_lower_quiet_block_unsunk": [
+          "Classical.choice",
+          "Quot.sound",
+          "propext"
+        ],
+        "Backend.Stock.Proof.QuietSourceColors.actual_quiet_source_record_at_block": [
+          "Classical.choice",
+          "Quot.sound",
+          "propext"
+        ]
+      },
+      "all5_old_axiom_sets_exact": true,
+      "old_roots": {
+        "Backend.Stock.Proof.QuietSourceColors.sourceMetadata_quiet_single_block": [
+          "Quot.sound",
+          "propext"
+        ],
+        "Backend.Stock.Proof.QuietSourceColors.buildCtx_quiet_single_block": [
+          "Classical.choice",
+          "Quot.sound",
+          "propext"
+        ],
+        "Backend.Stock.Proof.QuietSourceColors.stock_lower_quiet_single_block_unsunk": [
+          "Classical.choice",
+          "Quot.sound",
+          "propext"
+        ],
+        "Backend.Stock.Proof.QuietSourceColors.actual_quiet_source_record": [
+          "Classical.choice",
+          "Quot.sound",
+          "propext"
+        ],
+        "Backend.Stock.Proof.QuietSourceColors.highmul_source_record_fall_refines": [
+          "Classical.choice",
+          "Quot.sound",
+          "propext"
+        ]
+      },
+      "witness_axioms": [
+        "Backend.Stock.Proof.QuietBlockWitness.checked._native.native_decide.ax_1\u271d",
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "sources": {
+        "FV/Backend/Proof/StockQuietSourceRecords.lean": "e62c508335a654107ad6c4636e9b18a187d5f846558350fa34d50adfaff37f75",
+        "FV/Backend/Proof/StockQuietBlockWitness.lean": "530b41d89ed235ce52a38dee5cfeb55b0598efe84f1ca83c0a3f0613d3db00c4",
+        "scripts/audit/stock-cfg-source.lean": "2d65f72dab81cddda99b7ef679abea9596ff4c39a5e83219d81b52b842fd4d37"
+      },
+      "baseline_log": "/tmp/stock-cfg-baseline-quiet-audits/stock-cfg-old-quiet-audit.log",
+      "baseline_sha256": "78591f3fc67f8f586eb726f7dda6d7745addda8d5d867dc69c7e2ba9539fa8f0",
+      "current_log": "/tmp/stock-cfg-current-quiet-audits/stock-cfg-source.log",
+      "current_sha256": "e7af059927e2d7ca6b2301260627d88b6dc6a8bf85b448d96ef639a17f3752eb",
+      "witness_peak_bytes": 8321949696,
+      "failed4G_attempt_preserved": true,
+      "full_140_complete": false,
+      "single_bundled_mcp_witness_review": {
+        "state": "passed",
+        "transitive_axioms_match_normal_exactly": true,
+        "raw_result_sha256": "4fa12ac4233041f8b8e86c6579e6c5e5239d47c69df9948d93f53bc2c3beb10a"
+      }
+    },
+    "stock-cfg-main-reconciliation.json": {
+      "state": "fresh_main_rebased_pushed_and_normal_replayed",
+      "utc": "2026-10-25T01:47:38.401150+00:00",
+      "head": "a9922080fda05f1263d4e169999a0eb1cb3c7e33",
+      "main": "ab1abdfcde8fac5c5721ae2851cef08ab77c768e",
+      "original_head": "02ad329d18df8488fb973beac2f08a0c53ae8e4f",
+      "all3_component_sources_byte_exact": true,
+      "normal_log": "/tmp/stock-cfg-main-replay.log",
+      "full_140_complete": false
+    }
+  },
+  "full_140_complete": false
+}
