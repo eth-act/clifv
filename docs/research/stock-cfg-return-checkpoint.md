@@ -23,3 +23,25 @@ for that expansion. Continue broader function classes and every original #140
 effect, control, whole-driver and completeness obligation afterward. Existing
 input conditions, theorem variants, axioms, identities and successful stages
 remain required.
+
+The second implementation checkpoint connects the first emitted core's actual
+jump, the computed Stock CFG row, the selected per-edge parallel copy and the
+successor ABI return into one continuous `VStepAt` observation. The witness
+starts at the actual first-core offset after its ABI prelude. `RunOkABIAt`
+retains the existing return pins, value relation and memory-deallocation
+contract; no flattening of successor vectors or substitution of legacy edge
+semantics occurs. `PerEdgeSeq` supplies normal, stopping and selected-branch
+segment composition. The old single-vector semantics remains untouched.
+
+Next derive actual ABI prelude execution on that same canonical entry core,
+generalize the witness to the first executable two-block class (including
+source traps), and pass the complete entry observation through existing checked
+preparation/allocation/physical compiler, checker, linker and generated-proof
+consumers before enabling the class. Then continue every original #140
+obligation. The new two-block witness alone is not a whole-function class
+theorem, physical entry execution or production activation.
+
+Second checkpoint validation: full FV/FVTest4017/4017,18/18 audit roots,
+16 general roots standard-only and both witnesses reuse only the old dominance
+fact. The second bundled transitive witness MCP review has no source warnings.
+No compiler definition, input filter, old theorem or production consumer changed.
