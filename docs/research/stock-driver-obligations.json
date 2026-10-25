@@ -1,5 +1,5 @@
 {
-  "updated_utc": "2026-10-24T22:38:30.005411+00:00",
+  "updated_utc": "2026-10-25T01:33:34.616350+00:00",
   "goal": 140,
   "complete": false,
   "inventory_warning": "Historical517root inventory is a source map, not current reachability/execution coverage. Reconcile generated source hashes and current typed scope before using partition counts.",
@@ -26,9 +26,10 @@
       "scalar prefixes followed by returned i32/i64 division/remainder, source return+trap Domain and default consumers (521)",
       "returned i32/i64 division/remainder at arbitrary scalar positions (525)",
       "unused/consumed/multiple i32/i64 division/remainder at arbitrary scalar positions (611)",
-      "i8/i16 scalar classes through the same default production consumers; 474 positive complete pipeline configurations"
+      "i8/i16 scalar classes through the same default production consumers; 474 positive complete pipeline configurations",
+      "bmask/nop with independent i8/i16/i32/i64 source/result widths, mixed scalar/division bodies, through shared production consumers (this change)"
     ],
-    "pending": "Remaining pure bmask/nop composition and reachable helpers; original ABI conditions; control/successor arguments/critical edges/loops; memory/addressing/atomics/traps/deferred effects; calls/sret/exceptions/unwind; source/scan/block/node/whole-driver simulation; Stock-only and downstream completeness; optimizer/cleanup and all consumers. Existing no-opt/no-TryCall CLI eligibility and default Lean allocator remain. Legacy fallback is not Stock completeness.",
+    "pending": "Remaining original pure/ABI/reachable-helper conditions; original ABI conditions; control/successor arguments/critical edges/loops; memory/addressing/atomics/traps/deferred effects; calls/sret/exceptions/unwind; source/scan/block/node/whole-driver simulation; Stock-only and downstream completeness; optimizer/cleanup and all consumers. Existing no-opt/no-TryCall CLI eligibility and default Lean allocator remain. Legacy fallback is not Stock completeness.",
     "mixed_div_current_evidence": {
       "source_head": "1239f8bcda9fac6ba6e421ab6cfb210ac3ce6677",
       "receipt": "docs/research/stock-mixed-div-production-activation.md",
@@ -79,11 +80,26 @@
       "unconditional_stock_only_completeness": false
     },
     "current_real_crate_agreement": {
-      "validated_code_head": "a1b29bf7ccf976094511285296c0ba3e2201e60b",
+      "validated_code_head": "0aecff7cbeb8e0dc295855bf27d77c4ffdfffdfa",
       "default_allocator": "lean",
       "symbol_comparisons": 4543,
       "equal_symbol_comparisons": 887,
-      "limits": "Symbol comparisons, not unique source-function coverage or goal-completion percentage; unchanged from parent."
+      "limits": "Paired symbol comparisons, not unique source-function coverage or goal completion;0gained/0lost/0changed rows from parent."
+    },
+    "mask_scalar_production": {
+      "validated_code_head": "0aecff7cbeb8e0dc295855bf27d77c4ffdfffdfa",
+      "base": "a946fbc4fa10abe50bf551a0c1842c169f472400",
+      "state": "production activation in this change; all24 implementation readiness requirements passed; publication replay separate",
+      "receipt": "docs/research/stock-mask-production-activation.md",
+      "positive_pipeline_cleanup_configurations": 216,
+      "native_objects": 12,
+      "native_executions": 3888,
+      "cranelift_reference_executions": 972,
+      "ordinary_compiler_cli_objects": 12,
+      "ownership_partitions": 70,
+      "evidence_commit": "dc34a26a9e01b481fa2515d6ec454917a8f8ff6a",
+      "full_140_complete": false,
+      "unconditional_stock_only_completeness": false
     }
   },
   "roots": [
@@ -182,8 +198,8 @@
       "id": 587,
       "source": "FV/Isle/Generated/Rules01.lean",
       "primary_opcode": "Nop",
-      "saved_guarded_bridge": null,
-      "status": "requires current-source proof/composition review",
+      "saved_guarded_bridge": "FV/Backend/Proof/StockZeroResultScan.lean",
+      "status": "Actual ordinary unsunk zero-result source nop omitted and composed into shared production; emitted Nop rule execution is not claimed.",
       "scope_status_historical": "closure: actual selection requires membership; execution proof remains",
       "required": [
         "current scope exclusion OR actual matching/request/execution proof",
@@ -5381,8 +5397,8 @@
       "id": 936,
       "source": "FV/Isle/Generated/Rules03.lean",
       "primary_opcode": "Bmask",
-      "saved_guarded_bridge": null,
-      "status": "requires current-source proof/composition review",
+      "saved_guarded_bridge": "FV/Backend/Proof/StockBmaskSourceValues.lean",
+      "status": "Actual selection/helper/RHS/retained binding/final-alias values/guarded source/scan/body/ABI and shared production complete for the enabled four-width single-block class; full goal remains open.",
       "scope_status_historical": "closure: actual selection requires membership; execution proof remains",
       "required": [
         "current scope exclusion OR actual matching/request/execution proof",

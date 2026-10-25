@@ -111,4 +111,3 @@ theorem actual_entry_trap_refines_frame {f : Clif.Function} {result : Result}
   exact ⟨term,body,split,trapping⟩
 
 end Backend.Stock.Proof.MaskBody
-
