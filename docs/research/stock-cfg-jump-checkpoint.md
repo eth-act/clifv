@@ -1,5 +1,9 @@
 # Actual original-block body and jump composition
 
+Landed in [#626](https://github.com/eth-act/clifv/pull/626), squash
+`f1ce87ea0a722d7159993e87d60cce210e52fceb`. The landed tree exactly matches
+validated publication `1bd6806c` (tree `3b1ed6c4`).
+
 This closes the machine body/jump dependency following #625. It does not enable
 production CFG lowering or complete register agreement / #140.
 
