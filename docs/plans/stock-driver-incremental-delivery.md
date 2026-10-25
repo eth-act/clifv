@@ -421,3 +421,19 @@ still pending. Next derive demanded outgoing and inherited successor values,
 compose source DFG and actual per-edge copies into the guarded successor relation,
 then critical edges/loops and every remaining original #140 obligation. Do not
 replace the whole driver goal with this proof packet.
+
+## Actual outgoing values and successor parameter binding (2026-10-25 UTC)
+
+Implementation `49bf11e9` derives actual outgoing argument marks, mapping and
+bounds through the same compiled block, obtains argument values from its actual
+post-body guard, and executes the real per-successor copies to every target
+parameter. The real entered-source two-block witness executes body/jump and
+source successor binding before those copies. [Evidence and limits](../research/stock-successor-parameters-checkpoint.md).
+
+Next establish the inherited nonparameter value invariant, including backedges
+whose successor demands arise later during reverse compilation, using the saved
+source availability and available-value fresh-write frame results. This is an
+internal dynamic simulation obligation, never an additional accepted-program
+certificate. Continue complete guarded successors, synthetic critical edges,
+conditional/table branches/loops, production activation and every original140
+obligation; parameter binding alone does not establish those results.
