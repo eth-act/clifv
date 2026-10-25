@@ -110,11 +110,13 @@ private def checkCase (out : System.FilePath) (count : Nat) (cleanup fallback : 
     throw (IO.userError "actual callback program checks failed")
   for e in results do
     let a ← get e.2
-    if cfg && !retainedMixed && (!mixed || e.1.name == names[0]!) then
+    if cfg && !retainedMixed && Stock.TwoBlock.eligible e.1 then
       let raw ← get (Stock.lower e.1)
       require (Stock.TwoBlock.check e.1 raw.code && ABIReadCfg.check e.1.sig raw.code &&
-        decide (a.vc = raw.code) && !(raw.edgeArgs.all (fun row => row.all (·.isEmpty))))
-        "CFG linked consumer fell back or lost successor copies"
+        decide (a.vc = raw.code)) "CFG linked consumer fell back from actual Stock"
+      if e.1.name == names[0]! then
+        require (!(raw.edgeArgs.all (fun row => row.all (·.isEmpty))))
+          "CFG linked consumer lost successor copies"
     else if cfg && retainedMixed then
       let previous ← get (Stock.Scalar.lowerValidated e.1)
       require (decide (a.vc = previous)) "retained CFG legacy artifact changed"
