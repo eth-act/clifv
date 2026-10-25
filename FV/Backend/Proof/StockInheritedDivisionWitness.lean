@@ -247,8 +247,12 @@ theorem executable_division_body_carry_witness (X : ExtSem) :
     rw [indices]
     exact .here (by simpa only [← current] using failed)
   have stable : MRStable (fun _ => False) (fun _ _ _ => True) := by intro _ _ _ _ _ _; trivial
-  have bodyRefines := Inherited.constant_division_body_carry_refines input.run input.scope input.dominated input.events
-    input.split family (carry_available input) (refines_csem (fun _ => False) ⟨0,0⟩ X)
+  have formats : ∀ b ∈ function.blocks,∀ stm ∈ b.body,CastComplete.MemoryFormat stm.inst := by
+    intro block member stm present
+    rcases family block member stm present with ⟨ty,imm,shape⟩ | ⟨op,ty,x,y,shape⟩ | shape
+    all_goals simp [CastComplete.MemoryFormat,shape,instNames]
+  have bodyRefines := Inherited.constant_division_body_carry_refines_local input.run input.scope input.dominated input.events
+    input.split formats (family _ (List.mem_of_getElem? input.split.block)) (carry_available input) (refines_csem (fun _ => False) ⟨0,0⟩ X)
     (driverSem_csem (fun _ => False) ⟨0,0⟩ X) stable (env := Clif.Env.empty) (cp := {funcs := []})
   obtain ⟨ρ,w,executed,post⟩ := bodyRefines.1 _ _ steps _ _
     (by simpa only [shape.1] using entry_carry input 3 Arm.ArmState.default)
