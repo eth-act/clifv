@@ -214,6 +214,13 @@ Never exclude original accepted compare/cast syntax to simplify composition.
 Universal successful lowering and downstream completeness remain. Fallback is
 not Stock completeness; full original #140 remains unfinished.
 
+The next CFG packet now derives quiet records and shared family/body execution
+for arbitrary original blocks, with actual executable return and later-block
+trap witnesses. See [the body checkpoint](../research/stock-cfg-body-checkpoint.md).
+This removes the single-block proof restriction; production CFG activation and
+whole-driver closure remain pending. Continue with successor-entry/branch
+composition and the existing per-edge preparation/consumer stack.
+
 ## Maintained validation runner (landed #358)
 
 Use scripts/stock-delivery-gates.py with plan/run/resume/report commands around
