@@ -1,5 +1,5 @@
 {
-  "updated_utc": "2026-10-25T01:33:34.616350+00:00",
+  "updated_utc": "2026-10-25T03:14:50.664351+00:00",
   "goal": 140,
   "complete": false,
   "inventory_warning": "Historical517root inventory is a source map, not current reachability/execution coverage. Reconcile generated source hashes and current typed scope before using partition counts.",
@@ -27,7 +27,7 @@
       "returned i32/i64 division/remainder at arbitrary scalar positions (525)",
       "unused/consumed/multiple i32/i64 division/remainder at arbitrary scalar positions (611)",
       "i8/i16 scalar classes through the same default production consumers; 474 positive complete pipeline configurations",
-      "bmask/nop with independent i8/i16/i32/i64 source/result widths, mixed scalar/division bodies, through shared production consumers (this change)"
+      "bmask/nop with independent i8/i16/i32/i64 source/result widths, mixed scalar/division bodies, through shared production consumers (#624, ab1abdfc)"
     ],
     "pending": "Remaining original pure/ABI/reachable-helper conditions; original ABI conditions; control/successor arguments/critical edges/loops; memory/addressing/atomics/traps/deferred effects; calls/sret/exceptions/unwind; source/scan/block/node/whole-driver simulation; Stock-only and downstream completeness; optimizer/cleanup and all consumers. Existing no-opt/no-TryCall CLI eligibility and default Lean allocator remain. Legacy fallback is not Stock completeness.",
     "mixed_div_current_evidence": {
@@ -100,6 +100,24 @@
       "evidence_commit": "dc34a26a9e01b481fa2515d6ec454917a8f8ff6a",
       "full_140_complete": false,
       "unconditional_stock_only_completeness": false
+    },
+    "cfg_source_body_prerequisite": {
+      "validated_source_head": "c7e249b175e35fad058bba5a9299cff40d246c7f",
+      "base": "ab1abdfcde8fac5c5721ae2851cef08ab77c768e",
+      "receipt": "docs/research/stock-cfg-body-checkpoint.md",
+      "state": "author gates passed; arbitrary-block body contracts and original source-successor DFG transfer",
+      "normal_module_keys": 3984,
+      "existing_module_keys_restored": 3976,
+      "audit_files": 79,
+      "audit_reports": 3540,
+      "distinct_audited_roots": 3389,
+      "exact_prior_axiom_sets": 626,
+      "existing_lean_sources_byte_exact": 3967,
+      "new_general_roots_standard_only": 14,
+      "finite_witnesses": 7,
+      "production_cfg_active": false,
+      "full_140_complete": false,
+      "next": "Machine branch execution, guarded successor demand/value/world transfer, per-edge production consumers, critical edges/loops; every remaining original obligation retained."
     }
   },
   "roots": [
