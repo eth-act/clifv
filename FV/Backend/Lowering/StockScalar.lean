@@ -172,7 +172,25 @@ def narrowEligible (f : Clif.Function) : Bool :=
       f.sig.params.all narrowAbiEligible && f.sig.returns.all narrowAbiEligible
   | _ => false
 
-def productionEligible (f : Clif.Function) : Bool := eligible f || narrowEligible f
+/-- The remaining local pure cases compose with every earlier scalar/division class. -/
+def maskBodyEligible (stm : Clif.Stmt) : Bool :=
+  match stm.inst with
+  | .bmask ty _ => ty == .i8 || ty == .i16 || ty == .i32 || ty == .i64
+  | .nop => true
+  | _ => false
+
+def maskMixedBodyEligible (stm : Clif.Stmt) : Bool :=
+  narrowMixedBodyEligible stm || maskBodyEligible stm
+
+def maskEligible (f : Clif.Function) : Bool :=
+  match f.blocks with
+  | [b] => b.body.all maskMixedBodyEligible &&
+      (match b.term with | .ret _ => true | _ => false) &&
+      f.sig.params.all narrowAbiEligible && f.sig.returns.all narrowAbiEligible
+  | _ => false
+
+def productionEligible (f : Clif.Function) : Bool :=
+  (eligible f || narrowEligible f) || maskEligible f
 
 /-- Previously shipped selectors remain fixed; narrow syntax adds a route. -/
 def activationEligible (f : Clif.Function) : Bool := productionEligible f && !Logical.eligible f

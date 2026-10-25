@@ -183,6 +183,15 @@ The allocator default remains Lean. Fresh real-example agreement remains
 887/4,543 symbol comparisons; these class gates are not general register
 agreement or Stock-only completeness. Track these separately from proof counts.
 
+The bmask source/record dependency packet now proves actual helper execution,
+source-derived selection, full result binding, final-alias machine semantics and
+guarded original-source transfer. All sixteen independent original width pairs
+inhabit the helper/RHS and machine contracts; a complete sparse-ID source/record
+witness covers i64 input with i8 output. Full normal FV/FVTest is 3,966/3,966;
+34 public roots pass normal and bundled MCP axiom review, with only standard
+axioms. This is not production activation or a register-agreement improvement.
+See [the checkpoint and remaining integration](../research/stock-bmask-source-checkpoint.md).
+
 Next close remaining original pure bmask/nop composition and reachable helpers,
 then continue the fixed CFG/arguments/loops, memory/effects, calls/unwind,
 whole-driver/completeness and optimizer/consumer obligations below. Reuse existing
@@ -372,3 +381,24 @@ witnesses. Old consumers and theorem variants stay. Next immediately activate
 unused/consumed/multiple divisions through the existing shared production route;
 then continue every original #140 obligation. This prerequisite is not production
 activation or whole-goal completion.
+
+## Bmask/nop production delivery (2026-10-25 UTC)
+
+Implementation `0aecff7c` passes all24 current readiness requirements and enables
+bmask/nop with independent four-width source/result types through the existing
+scalar/division compiler, checker, linker and generated-proof consumers.
+[Activation evidence](../research/stock-mask-production-activation.md) records
+3,976/3,976 normal modules,12nativeobjects/3,888byteexecutions,70ownership
+partitions,exact old axioms/headers/identities/stages and verified examples.
+Fresh paired real-crate agreement remains887/4,543symbol comparisons with no
+gains or losses; no full-goal or corpus-improvement claim. Publication replay
+keeps the implementation receipts on their actual source head.
+
+Continue original ABI/reachable-helper obligations and the full CFG closure:
+quiet original-block metadata/records, arbitrary scalar bodies, entry/branch
+semantics, successor-specific arguments/critical edges/block parameters/loops,
+and the existing per-edge preparation/consumers. Current scalar adapters reject
+nonempty successor-specific tables; retain those vectors through proved
+adapters. Then finish every original memory/effect/call/unwind, whole-driver and
+Stock-only/downstream completeness obligation above. Preserve saved work and
+remove the completed batch's unneeded clean worktree after archiving evidence.

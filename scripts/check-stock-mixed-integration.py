@@ -23,8 +23,9 @@ def sha(path):
 
 
 def expected_roots(prefix="Mixed"):
-    if prefix == "NarrowProduction":
-        return {f"Stock{prefix}79{mode}{policy}{scope}"
+    if prefix in ("NarrowProduction", "MaskProduction"):
+        count = 79 if prefix == "NarrowProduction" else 36
+        return {f"Stock{prefix}{count}{mode}{policy}{scope}"
                 for mode in ("Plain", "Cleanup") for policy in ("Strict", "Fallback")
                 for scope in ("Global", "Entries")} | {
                     f"Stock{prefix}2{retained}{mode}FallbackGlobal"
@@ -78,10 +79,10 @@ def proof_order(directory, prefix="Mixed"):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", required=True, type=Path)
-    parser.add_argument("--class", dest="kind", choices=["mixed", "logical", "scalar", "not", "mul", "shift", "cast", "bit", "popcount", "minmax", "cmp", "highmul", "div", "mixeddiv", "returneddiv", "generaldiv", "narrow"], default="mixed")
+    parser.add_argument("--class", dest="kind", choices=["mixed", "logical", "scalar", "not", "mul", "shift", "cast", "bit", "popcount", "minmax", "cmp", "highmul", "div", "mixeddiv", "returneddiv", "generaldiv", "narrow", "mask"], default="mixed")
     parser.add_argument("--fixture-mode", choices=["native", "interpreted"], default="interpreted")
     options = parser.parse_args()
-    prefix = {"scalar": "ScalarProduction", "not": "NotProduction", "mul": "MulProduction", "shift": "ShiftProduction", "cast": "CastProduction", "bit": "BitProduction", "popcount": "PopcountProduction", "minmax": "MinMaxProduction", "cmp": "CmpProduction", "highmul": "HighMulProduction", "div": "DivProduction", "mixeddiv": "MixedDivProduction", "returneddiv": "ReturnedDivProduction", "generaldiv": "GeneralDivProduction", "narrow": "NarrowProduction"}.get(options.kind, options.kind.capitalize())
+    prefix = {"scalar": "ScalarProduction", "not": "NotProduction", "mul": "MulProduction", "shift": "ShiftProduction", "cast": "CastProduction", "bit": "BitProduction", "popcount": "PopcountProduction", "minmax": "MinMaxProduction", "cmp": "CmpProduction", "highmul": "HighMulProduction", "div": "DivProduction", "mixeddiv": "MixedDivProduction", "returneddiv": "ReturnedDivProduction", "generaldiv": "GeneralDivProduction", "narrow": "NarrowProduction", "mask": "MaskProduction"}.get(options.kind, options.kind.capitalize())
     view = Path(__file__).resolve().parents[1]
     output = options.output.resolve()
     if output == view or view in output.parents:
@@ -95,11 +96,11 @@ def main():
                for p in (view / folder).rglob("*.lean")}
     script_hash = sha(Path(__file__).resolve())
     records = {}
-    native_names = {"popcount": "stock-popcount", "minmax": "stock-minmax", "cmp": "stock-cmp", "highmul": "stock-highmul", "div": "stock-div", "mixeddiv": "stock-mixed-div", "returneddiv": "stock-returned-div", "generaldiv": "stock-general-div", "narrow": "stock-general-div"}
+    native_names = {"popcount": "stock-popcount", "minmax": "stock-minmax", "cmp": "stock-cmp", "highmul": "stock-highmul", "div": "stock-div", "mixeddiv": "stock-mixed-div", "returneddiv": "stock-returned-div", "generaldiv": "stock-general-div", "narrow": "stock-general-div", "mask": "stock-general-div"}
     native_fixtures = options.fixture_mode == "native" and options.kind in native_names
     if options.fixture_mode == "native" and not native_fixtures:
         parser.error("No registered native fixture targets for this class")
-    module_prefix = "GeneralDivProduction" if options.kind == "narrow" else prefix
+    module_prefix = "GeneralDivProduction" if options.kind in ("narrow", "mask") else prefix
     fixture_targets = ([native_names[options.kind]+"-runtime",native_names[options.kind]+"-linked"]
                        if native_fixtures else [])
     fixture_binaries = {str(view / ".lake/build/bin" / name): sha(view / ".lake/build/bin" / name)
@@ -142,17 +143,17 @@ def main():
             "lean-backend", "lean-link", "link-check", *fixture_targets])
         runtime_argv = ([str(view / ".lake/build/bin" / fixture_targets[0])] if native_fixtures else
                         ["lake", "env", "lean", "--run",f"FVTest/Backend/Lowering/Stock{module_prefix}Runtime.lean"])
-        if options.kind == "narrow":
-            runtime_argv.append("--narrow")
+        if options.kind in ("narrow", "mask"):
+            runtime_argv.append("--"+options.kind)
         runtime = run("runtime", runtime_argv)
-        assert runtime.count(f"Stock {options.kind} lean ") == (3 if options.kind == "narrow" else 6)
-        assert runtime.count(f"Stock {options.kind} regalloc2 ") == (3 if options.kind == "narrow" else 6)
+        assert runtime.count(f"Stock {options.kind} lean ") == (3 if options.kind in ("narrow", "mask") else 6)
+        assert runtime.count(f"Stock {options.kind} regalloc2 ") == (3 if options.kind in ("narrow", "mask") else 6)
         assert f"Stock {options.kind} missing-binary negative control passed" in runtime
         generated = output / "linked"
         linked_argv = ([str(view / ".lake/build/bin" / fixture_targets[1]),str(generated)] if native_fixtures else
                        ["lake", "env", "lean", "--run",f"FVTest/Backend/Lowering/Stock{module_prefix}Linked.lean",str(generated)])
-        if options.kind == "narrow":
-            linked_argv.insert(-1, "--narrow")
+        if options.kind in ("narrow", "mask"):
+            linked_argv.insert(-1, "--"+options.kind)
         run("linked-fixture", linked_argv)
         artifact_hashes = {str(p.relative_to(generated)): sha(p)
                            for p in generated.rglob("*") if p.is_file()}
@@ -233,7 +234,7 @@ run_cmd do
                cli_sources=cli_hashes, generated_axiom_audit_sha256=sha(audit),
                linked_artifacts=artifact_hashes,
                regalloc_binary_sha256=sha(view / "rust/target/release/lean-regalloc"),
-               runtime_cases=12 if options.kind == "narrow" else 24, strict_missing_oracle_negative_control=True,
+               runtime_cases=12 if options.kind in ("narrow", "mask") else 24, strict_missing_oracle_negative_control=True,
                limits="Integration evidence only; full corpus, native execution, trust/MCP and identity/stage gates remain required.")
     except BaseException as error:
         report("failed", error=repr(error))
