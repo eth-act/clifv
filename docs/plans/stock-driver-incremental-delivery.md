@@ -7,6 +7,35 @@ is unchanged: actual Stock source semantics, simulation/completeness, production
 compiler/checker/linker/generated proofs, original inputs/theorem variants/exact
 required axioms/accepted identities/successful stages.
 
+## Current delivery: direct CFG production
+
+The first general direct two-block Stock class is implemented on current main
+`efe8b677`; validated implementation `5f35e773` enables the actual default
+compiler/checker/verified-link/generated-proof route with complete prior-route
+fallback. Entry constants/nops and nonempty successor copies compose with the
+scalar/division/mask return block, original ABI entry, placed slots and source
+return/trap semantics. A CFG ABI-read model proves true-entry-only read
+transport and paired physical return realization. Mixed programs with retained
+try-call functions use the checked provider when the new class is present;
+old optimizer/tail and other exception routes remain.
+
+[Terminal evidence](../research/stock-two-block-source.md):4041 normal modules,
+89 axiom audits/3486 roots with all3425 prior sets exact, six ownership
+partitions,34 native/CLI/link/generated-proof checks,2880 native executions,
+runtime/encoder, both original identity/stage cohorts and verified examples.
+The same-input full crate comparison improves887→900/4543 exact symbols,
+13 gains and zero losses. This is neither unique-function coverage nor a goal
+completion percentage.
+
+Land this substantive activation after the documented gates; then extend the
+shared source/CFG composition to broader entry bodies and block graphs,
+conditional/table/critical edges and loops. Continue effects, memory, calls,
+exceptions, uncovered rule/helper execution and original-domain whole-driver
+simulation. Internal fallback preserves acceptance but does not establish
+Stock-only selection or downstream completeness; these remain explicit full
+#140 obligations. Do not make another wholesale prerequisite queue or stop at
+this first CFG class.
+
 ## Starting point and next deliveries
 
 Arithmetic shipped in #356 (95b87108); complete add/sub/select activation shipped
@@ -468,3 +497,20 @@ remaining carry family into a wholesale activation gate. Continue successive
 function classes, broader scalar carry, whole-edge demand/order coverage,
 critical edges/loops and every original140obligation after that first activation.
 Production CFG remains inactive until its current proof/consumer gates pass.
+
+## Complete first CFG source class (2026-10-25 UTC)
+
+The direct two-block class now has general instruction-zero return/trap
+simulation, actual same-core ABI entry, internally derived successor coverage,
+complete return/zero-divisor witnesses and an executable source/artifact check.
+Actual single-successor vector equality transports it to the existing
+`Scalar.Domain`, including nonempty parameter copies. Full4031/4031 and20new
+audited roots pass. [Evidence and exact limits](../research/stock-two-block-source.md).
+
+Next close the concrete consumer boundary: existing ABI-read models exclude
+`.goto`, so add a proved CFG variant with entry-only argument-read/control-flow
+transport and realization. Keep old checks/models intact. Then wire and validate
+actual compiler/checker/linker/generated-proof default production with legacy
+fallback and land a substantive activation. Do not merge proof fragments as a
+substitute or wait for every remaining function family. Continue successive
+classes and every original #140 obligation after this first CFG activation.

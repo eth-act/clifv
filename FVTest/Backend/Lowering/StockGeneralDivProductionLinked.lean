@@ -1,3 +1,5 @@
+import FVTest.Backend.Lowering.StockTwoBlockProductionRuntime
+import FV.Backend.Lowering.StockTwoBlockNI
 import FVTest.Backend.Lowering.StockScalarTestSupport
 import FV.E2E.SemanticChecksWith
 import FV.Link.ProductionImageWith
@@ -51,9 +53,9 @@ private def plan (s : LinkSpec) : Link.Ld.Plan :=
     syms := s.addrs.toArray.map fun (n, value) =>
       {name := symName n, value, info := 18, shndx := 0xfff1} }
 
-private def checkCase (out : System.FilePath) (count : Nat) (cleanup fallback : Bool) (layout : StockGeneralDivNIWitness.Layout) (mixed : Bool := false) (retainedMixed : Bool := false) (narrow : Bool := false) (mask : Bool := false) : IO Unit := do
-  let actualLower := if retainedMixed then Stock.Logical.lowerValidated else Stock.Scalar.lowerValidated
-  let lowerName := if retainedMixed then "Backend.Stock.Logical.lowerValidated" else "Backend.Stock.Scalar.lowerValidated"
+private def checkCase (out : System.FilePath) (count : Nat) (cleanup fallback : Bool) (layout : StockGeneralDivNIWitness.Layout) (mixed : Bool := false) (retainedMixed : Bool := false) (narrow : Bool := false) (mask : Bool := false) (cfg : Bool := false) : IO Unit := do
+  let actualLower := if retainedMixed then (if cfg then Stock.Scalar.lowerValidated else Stock.Logical.lowerValidated) else if cfg then Stock.TwoBlock.lowerValidated else Stock.Scalar.lowerValidated
+  let lowerName := if retainedMixed then (if cfg then "Backend.Stock.Scalar.lowerValidated" else "Backend.Stock.Logical.lowerValidated") else if cfg then "Backend.Stock.TwoBlock.lowerValidated" else "Backend.Stock.Scalar.lowerValidated"
   let names := (List.range count).map fun i => s!"actual_stock_general_div_{i}"
   let narrowSource := fun (name : String) (i : Nat) =>
     let original := (FVTest.StockNarrowProductionRuntime.functions (configFor i))[i % 79]!.1
@@ -62,11 +64,14 @@ private def checkCase (out : System.FilePath) (count : Nat) (cleanup fallback : 
     let original := (FVTest.StockMaskProductionRuntime.functions (configFor i))[i % 36]!.1
     ({original with name}).print
   let fixtureSource := fun name i =>
-    if mask && !retainedMixed then maskSource name i
+    if cfg then
+      let original := (FVTest.StockTwoBlockProductionRuntime.functions (configFor i))[if mixed && i == 0 then 9 else i % 12]!.1
+      ({original with name}).print
+    else if mask && !retainedMixed then maskSource name i
     else if narrow && !retainedMixed then narrowSource name i
     else sourceText name (configFor i) layout retainedMixed i
   let clif := String.join (names.zipIdx.map fun (n,i) =>
-    if (narrow || mask) && !retainedMixed then fixtureSource n i
+    if cfg && (!mixed || i == 0) || (narrow || mask) && !retainedMixed then fixtureSource n i
     else if !mixed || i == 0 then
       if count == 33 && i > 0 then (Stock.D0.source n (configFor i) []).print
       else sourceText n (configFor i) layout retainedMixed i
@@ -75,10 +80,16 @@ private def checkCase (out : System.FilePath) (count : Nat) (cleanup fallback : 
     else if i == 3 then (Stock.D0.source n .fastI32 []).print
     else if i == 4 then
       FVTest.StockScalarFixture.legacySource n
+    else if cfg && i == 6 then
+      "function %" ++ n ++ "(i64, i64, i64, i64, i64, i64, i64, i64, i64) -> i64 system_v {\n    sig0 = (i64, i64, i64, i64, i64, i64, i64, i64, i64) -> i64 system_v\n    fn0 = colocated %" ++ names[0]! ++
+      "(i64, i64, i64, i64, i64, i64, i64, i64, i64) -> i64 system_v\nblock0(v0: i64, v1: i64, v2: i64, v3: i64, v4: i64, v5: i64, v6: i64, v7: i64, v8: i64):\n    try_call fn0(v0, v1, v2, v3, v4, v5, v6, v7, v8), sig0, block1(ret0), []\nblock1(v9: i64):\n    v10 = iconst.i64 1\n    v11 = iadd v9, v10\n    return v11\n}\n"
     else
       "function %" ++ n ++ "(i64, i64, i64, i64, i64, i64, i64, i64, i64) -> i64 system_v {\n    fn0 = colocated %" ++ names[0]! ++
       "(i64, i64, i64, i64, i64, i64, i64, i64, i64) -> i64 system_v\nblock0(v0: i64, v1: i64, v2: i64, v3: i64, v4: i64, v5: i64, v6: i64, v7: i64, v8: i64):\n    v9 = call fn0(v0, v1, v2, v3, v4, v5, v6, v7, v8)\n    v10 = iconst.i64 1\n    v11 = iadd v9, v10\n    return v11\n}\n")
   let mut funcs : List FnInput := names.zipIdx.map fun (_, k) => {clif, ra := "null", k, j := k+1}
+  if cfg && mixed && count == 7 then
+    require (funcs.any fun fi => fi.func.blocks.any (fun b => b.term.isTry))
+      "mixed CFG regression lost its retained try-call function"
   let mut answers : Array Lean.Json := #[Lean.Json.null]
   for fi in funcs do
     let raw ← get (actualLower fi.func)
@@ -105,17 +116,30 @@ private def checkCase (out : System.FilePath) (count : Nat) (cleanup fallback : 
     throw (IO.userError "actual callback program checks failed")
   for e in results do
     let a ← get e.2
-    if narrow && !retainedMixed then
+    if cfg && !retainedMixed && Stock.TwoBlock.eligible e.1 then
+      let raw ← get (Stock.lower e.1)
+      require (Stock.TwoBlock.check e.1 raw.code && ABIReadCfg.check e.1.sig raw.code &&
+        decide (a.vc = raw.code)) "CFG linked consumer fell back from actual Stock"
+      if e.1.name == names[0]! then
+        require (!(raw.edgeArgs.all (fun row => row.all (·.isEmpty))))
+          "CFG linked consumer lost successor copies"
+    else if cfg && retainedMixed then
+      let previous ← get (Stock.Scalar.lowerValidated e.1)
+      require (decide (a.vc = previous)) "retained CFG legacy artifact changed"
+    else if narrow && !retainedMixed then
       let raw ← get (Stock.lower e.1)
       require (Stock.Scalar.sourceOk e.1 && Stock.Scalar.check e.1 raw.code &&
         decide (a.vc = raw.code)) "narrow linked consumer fell back from actual Stock"
-    else if count == 33 && e.1.name != names[0]! then
+    else if !cfg && count == 33 && e.1.name != names[0]! then
       let previous ← get (Stock.Arithmetic.lowerValidated e.1)
       require (decide (a.vc = previous) && Backend.Proof.Driver.lowerCheck e.1 a.vc)
         "small multi-entry fixture changed its existing validated route"
     else if retainedMixed || mixed && e.1.name != names[0]! then
-      let previous ← get (Stock.Mixed.lowerValidated e.1)
-      require (decide (a.vc = previous)) "a retained class changed its actual code or history"
+      -- CFG activation extends the previous complete Scalar route. Older
+      -- fixture classes retain their historical Mixed baseline.
+      let previous ← get ((if cfg then Stock.Scalar.lowerValidated else Stock.Mixed.lowerValidated) e.1)
+      require (decide (a.vc = previous))
+        s!"retained class {e.1.name} changed its actual code or history"
     let selected ← get (actualLower e.1)
     require (a.vc.rulesFired == selected.rulesFired) "fixture changed selected lowering history"
   let ex : Excerpt := [(0, file)]
@@ -129,7 +153,7 @@ private def checkCase (out : System.FilePath) (count : Nat) (cleanup fallback : 
   let stack := SemanticStackBound.stackB ci
   require stack.isSome "fixed program has no stack bound"
   for perEntry in (if count > 32 then [false,true] else [false]) do
-    let label := s!"Stock{if mask then "MaskProduction" else if narrow then "NarrowProduction" else "GeneralDivProduction" ++ StockGeneralDivNIWitness.layoutName layout}{count}{if retainedMixed then "Retained" else ""}{if mixed then "Mixed" else ""}{if cleanup then "Cleanup" else "Plain"}{if fallback then "Fallback" else "Strict"}{if perEntry then "Entries" else "Global"}"
+    let label := s!"Stock{if cfg then "CfgProduction" else if mask then "MaskProduction" else if narrow then "NarrowProduction" else "GeneralDivProduction" ++ StockGeneralDivNIWitness.layoutName layout}{count}{if retainedMixed then "Retained" else ""}{if mixed then "Mixed" else ""}{if cleanup then "Cleanup" else "Plain"}{if fallback then "Fallback" else "Strict"}{if perEntry then "Entries" else "Global"}"
     let executable := out / (label ++ ".elf")
     IO.FS.writeBinFile executable file
     if count == 2 && fallback && !mixed then
@@ -162,7 +186,7 @@ private def checkCase (out : System.FilePath) (count : Nat) (cleanup fallback : 
     let proof := out / "Crates" / (label ++ ".lean")
     for (path, text) in FVTest.E2E.SemanticLinkProofWith.leanFilesSemanticWith lowerName input names names
         proof.toString label executable.toString cleanup true
-        (if perEntry then none else stack) (if perEntry then names else []) bg (lowerImport := "FV.Backend.Lowering.StockScalarNI") do
+        (if perEntry then none else stack) (if perEntry then names else []) bg (lowerImport := if cfg then "FV.Backend.Lowering.StockTwoBlockNI" else "FV.Backend.Lowering.StockScalarNI") do
       if let some parent := (System.FilePath.mk path).parent then IO.FS.createDirAll parent
       IO.FS.writeFile path text
     IO.println s!"ACTUAL_STOCK_LINK {label}: program/checker/ELF/history/stack/proof emission passed"
@@ -194,10 +218,23 @@ def checkMask (out : System.FilePath) : IO Unit := do
     checkCase out 2 cleanup true .unused false false false true
     checkCase out 2 cleanup true .unused false true false true
 
+def checkCfg (out : System.FilePath) : IO Unit := do
+  IO.FS.createDirAll (out / "Crates")
+  for cleanup in [false,true] do
+    for fallback in [false,true] do
+      checkCase out 6 cleanup fallback .unused false false false false true
+    checkCase out 2 cleanup true .unused false false false false true
+    checkCase out 2 cleanup true .unused false true false false true
+    checkCase out 6 cleanup true .unused true false false false true
+    checkCase out 7 cleanup true .unused true false false false true
+  checkCase out 33 true true .unused false false false false true
+
 end FVTest.StockGeneralDivProductionLinkedFixture
 
 def main (args : List String) : IO Unit :=
-  if args.head? == some "--mask" then
+  if args.head? == some "--cfg" then
+    FVTest.StockGeneralDivProductionLinkedFixture.checkCfg (System.FilePath.mk (args[1]?.getD "/tmp/stock-cfg-linked-fixture"))
+  else if args.head? == some "--mask" then
     FVTest.StockGeneralDivProductionLinkedFixture.checkMask (System.FilePath.mk (args[1]?.getD "/tmp/stock-mask-linked-fixture"))
   else if args.head? == some "--narrow" then
     FVTest.StockGeneralDivProductionLinkedFixture.checkNarrow (System.FilePath.mk (args[1]?.getD "/tmp/stock-narrow-linked-fixture"))
