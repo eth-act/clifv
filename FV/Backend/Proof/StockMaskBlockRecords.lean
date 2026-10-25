@@ -1,3 +1,4 @@
+import FV.Backend.Proof.StockQuietBlockSourceRecords
 import FV.Backend.Proof.StockMaskBodyRecords
 
 namespace Backend.Stock.Proof.MaskBody
