@@ -9,6 +9,7 @@ import FV.E2E.StockGeneralDivFixtures
 import FV.Backend.LinearScan
 import FV.Clif.Print
 import FVTest.Backend.Lowering.StockNarrowProductionRuntime
+import FVTest.Backend.Lowering.StockMaskProductionRuntime
 
 /-! Actual Stock callback → actual byte writer → ordinary emitted Lean proofs.
 A fixed integration witness; it does not activate a production class. -/
@@ -50,18 +51,22 @@ private def plan (s : LinkSpec) : Link.Ld.Plan :=
     syms := s.addrs.toArray.map fun (n, value) =>
       {name := symName n, value, info := 18, shndx := 0xfff1} }
 
-private def checkCase (out : System.FilePath) (count : Nat) (cleanup fallback : Bool) (layout : StockGeneralDivNIWitness.Layout) (mixed : Bool := false) (retainedMixed : Bool := false) (narrow : Bool := false) : IO Unit := do
+private def checkCase (out : System.FilePath) (count : Nat) (cleanup fallback : Bool) (layout : StockGeneralDivNIWitness.Layout) (mixed : Bool := false) (retainedMixed : Bool := false) (narrow : Bool := false) (mask : Bool := false) : IO Unit := do
   let actualLower := if retainedMixed then Stock.Logical.lowerValidated else Stock.Scalar.lowerValidated
   let lowerName := if retainedMixed then "Backend.Stock.Logical.lowerValidated" else "Backend.Stock.Scalar.lowerValidated"
   let names := (List.range count).map fun i => s!"actual_stock_general_div_{i}"
   let narrowSource := fun (name : String) (i : Nat) =>
     let original := (FVTest.StockNarrowProductionRuntime.functions (configFor i))[i % 79]!.1
     ({original with name}).print
+  let maskSource := fun (name : String) (i : Nat) =>
+    let original := (FVTest.StockMaskProductionRuntime.functions (configFor i))[i % 36]!.1
+    ({original with name}).print
   let fixtureSource := fun name i =>
-    if narrow && !retainedMixed then narrowSource name i
+    if mask && !retainedMixed then maskSource name i
+    else if narrow && !retainedMixed then narrowSource name i
     else sourceText name (configFor i) layout retainedMixed i
   let clif := String.join (names.zipIdx.map fun (n,i) =>
-    if narrow && !retainedMixed then fixtureSource n i
+    if (narrow || mask) && !retainedMixed then fixtureSource n i
     else if !mixed || i == 0 then
       if count == 33 && i > 0 then (Stock.D0.source n (configFor i) []).print
       else sourceText n (configFor i) layout retainedMixed i
@@ -124,7 +129,7 @@ private def checkCase (out : System.FilePath) (count : Nat) (cleanup fallback : 
   let stack := SemanticStackBound.stackB ci
   require stack.isSome "fixed program has no stack bound"
   for perEntry in (if count > 32 then [false,true] else [false]) do
-    let label := s!"Stock{if narrow then "NarrowProduction" else "GeneralDivProduction" ++ StockGeneralDivNIWitness.layoutName layout}{count}{if retainedMixed then "Retained" else ""}{if mixed then "Mixed" else ""}{if cleanup then "Cleanup" else "Plain"}{if fallback then "Fallback" else "Strict"}{if perEntry then "Entries" else "Global"}"
+    let label := s!"Stock{if mask then "MaskProduction" else if narrow then "NarrowProduction" else "GeneralDivProduction" ++ StockGeneralDivNIWitness.layoutName layout}{count}{if retainedMixed then "Retained" else ""}{if mixed then "Mixed" else ""}{if cleanup then "Cleanup" else "Plain"}{if fallback then "Fallback" else "Strict"}{if perEntry then "Entries" else "Global"}"
     let executable := out / (label ++ ".elf")
     IO.FS.writeBinFile executable file
     if count == 2 && fallback && !mixed then
@@ -181,9 +186,19 @@ def checkNarrow (out : System.FilePath) : IO Unit := do
     checkCase out 2 cleanup true .unused false false true
     checkCase out 2 cleanup true .unused false true true
 
+def checkMask (out : System.FilePath) : IO Unit := do
+  IO.FS.createDirAll (out / "Crates")
+  for cleanup in [false,true] do
+    for fallback in [false,true] do
+      checkCase out 36 cleanup fallback .unused false false false true
+    checkCase out 2 cleanup true .unused false false false true
+    checkCase out 2 cleanup true .unused false true false true
+
 end FVTest.StockGeneralDivProductionLinkedFixture
 
 def main (args : List String) : IO Unit :=
-  if args.head? == some "--narrow" then
+  if args.head? == some "--mask" then
+    FVTest.StockGeneralDivProductionLinkedFixture.checkMask (System.FilePath.mk (args[1]?.getD "/tmp/stock-mask-linked-fixture"))
+  else if args.head? == some "--narrow" then
     FVTest.StockGeneralDivProductionLinkedFixture.checkNarrow (System.FilePath.mk (args[1]?.getD "/tmp/stock-narrow-linked-fixture"))
   else FVTest.StockGeneralDivProductionLinkedFixture.check (args.headD "/tmp/stock-mixed-linked-fixture")

@@ -8,6 +8,7 @@ import FV.E2E.StockGeneralDivFixtures
 import FVTest.Backend.Lowering.StockMixedDivProductionInput
 import FV.Clif.Print
 import FVTest.Backend.Lowering.StockNarrowProductionRuntime
+import FVTest.Backend.Lowering.StockMaskProductionRuntime
 
 set_option autoImplicit false
 namespace FVTest.StockGeneralDivProductionRuntime
@@ -164,7 +165,9 @@ def check : IO Unit := do
 end FVTest.StockGeneralDivProductionRuntime
 
 def main (args : List String) : IO Unit :=
-  if args == ["--narrow"] then
+  if args == ["--mask"] then
+    FVTest.StockMaskProductionRuntime.check FVTest.StockGeneralDivProductionRuntime.checkedRegalloc2
+  else if args == ["--narrow"] then
     FVTest.StockNarrowProductionRuntime.check FVTest.StockGeneralDivProductionRuntime.checkedRegalloc2
   else if args.isEmpty then FVTest.StockGeneralDivProductionRuntime.check
-  else throw (IO.userError "usage: stock-general-div-runtime [--narrow]")
+  else throw (IO.userError "usage: stock-general-div-runtime [--narrow|--mask]")

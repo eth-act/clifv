@@ -14,6 +14,7 @@ import FV.Backend.Proof.StockScalarDivDomain
 import FV.Backend.Proof.StockScalarMixedDivDomain
 import FV.Backend.Proof.StockScalarReturnedDivDomain
 import FV.Backend.Proof.StockScalarGeneralDivDomain
+import FV.Backend.Proof.StockScalarMaskDomain
 
 namespace Backend.Stock.Scalar
 open Backend.Proof Backend.Proof.Driver
@@ -395,11 +396,50 @@ theorem domain_of_narrowEligible {f : Clif.Function} (eligible : narrowEligible 
       (fun stm member => narrowMixedBodyEligible_sound (List.all_eq_true.mp body stm member)) ret ordinary
   next => cases eligible
 
+/-- Source classification for bmask and nop retains the independent input type;
+actual matching and the original scope derive that type inside the body proof. -/
+theorem maskMixedBodyEligible_sound {stm : Clif.Stmt} (checked : maskMixedBodyEligible stm = true) :
+    Proof.MaskBody.Family stm.inst := by
+  simp only [maskMixedBodyEligible,Bool.or_eq_true] at checked
+  rcases checked with old | extra
+  · exact Or.inl (narrowMixedBodyEligible_sound old)
+  · cases inst : stm.inst <;> simp only [maskBodyEligible,inst] at extra
+    all_goals try contradiction
+    case bmask ty x => exact Or.inr (Or.inl ⟨ty,x,rfl⟩)
+    case nop => exact Or.inr (Or.inr rfl)
+
+theorem domain_of_maskEligible {f : Clif.Function} (eligible : maskEligible f = true)
+    (scope : lowerScopeB f = true) (dominated : dominatedB f = true)
+    (abi : sigAbiOk f.sig = true) : Domain f := by
+  unfold maskEligible at eligible
+  split at eligible
+  next b blocks =>
+    simp only [Bool.and_eq_true] at eligible
+    obtain ⟨⟨⟨body,terminal⟩,params⟩,returns⟩ := eligible
+    have sourceShape : ∃ xs,b.term = .ret xs := by
+      cases term : b.term <;> simp_all
+    obtain ⟨xs,ret⟩ := sourceShape
+    have noSret : f.sig.params.find? (·.purpose == .sret) = none := by
+      apply List.find?_eq_none.mpr
+      intro p member
+      simp [(normal_narrow_abi params) p member]
+    have ordinary : (sigRets f.sig).any (·.purpose == .sret) = false := by
+      rw [sigRets,noSret]
+      apply Bool.eq_false_iff.mpr
+      intro any
+      obtain ⟨p,member,sret⟩ := List.any_eq_true.mp any
+      simpa [(normal_narrow_abi returns) p member] using sret
+    exact domain_of_mask (lowerScope_of scope) (dominated_of dominated) abi blocks
+      (fun stm member => maskMixedBodyEligible_sound (List.all_eq_true.mp body stm member)) ret ordinary
+  next => cases eligible
+
 theorem sourceOk_sound {f : Clif.Function} (checked : sourceOk f = true) : Domain f := by
   simp only [sourceOk,productionEligible,Bool.and_eq_true,Bool.or_eq_true] at checked
   obtain ⟨⟨⟨eligible,scope⟩,dominated⟩,abi⟩ := checked
-  exact eligible.elim (fun old => domain_of_eligible old scope dominated abi)
-    (fun narrow => domain_of_narrowEligible narrow scope dominated abi)
+  exact eligible.elim
+    (fun prior => prior.elim (fun old => domain_of_eligible old scope dominated abi)
+      (fun narrow => domain_of_narrowEligible narrow scope dominated abi))
+    (fun mask => domain_of_maskEligible mask scope dominated abi)
 
 
 theorem check_sound {f : Clif.Function} {vc : VCode} (checked : check f vc = true) :
