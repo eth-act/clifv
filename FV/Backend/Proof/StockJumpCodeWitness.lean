@@ -1,3 +1,4 @@
+import FV.Backend.Proof.StockOriginalBlockOrigin
 import FV.Backend.Proof.StockJumpCode
 import FV.Backend.Proof.StockQuietBlockWitness
 import FV.Backend.Proof.StockOrdinaryCfg
@@ -79,5 +80,34 @@ theorem actual_branch_body_code_witness : ∃ result event term body,
   have branch := core_jump_branch (bc := ⟨10,[1,6]⟩) rfl coreRun
   have actual := Control.stock_branch_scan_body_code split branch
   exact ⟨result,core.scan,term,body,run,scope,events,zero,split,branch,actual⟩
+
+/-- Source split and returned code come from the same actual original node,
+including canonical ABI widths and source terminator preparation. -/
+theorem actual_original_scan_assembly_witness :
+    ∃ result ranges params input data core block preludeCode term body,
+      Stock.lower function = .ok result ∧ LowerScope function ∧
+      Stock.buildCtx function = .ok (result.ctx,ranges,result.initial) ∧
+      sigParamBytes function.sig = .ok params ∧
+      lowerBlockCore result.ctx result.order function function.blocks[0]! 0 ranges[0]!.1 ranges[0]!.2
+        data result.order.successors[0]! input = .ok core ∧
+      assembleOriginalBlock result.ctx function function.blocks[0]! 0 0 result.order.successors[0]!
+        core.outgoing params core.state.uses core.code = .ok block ∧
+      Coverage.blockData function function.blocks[0]!.term = .ok data ∧
+      core.scan ∈ result.blockScans.toList ∧ core.scan.block = 0 ∧
+      SourceBodySplit function core.scan function.blocks[0]! term body ∧
+      block.insts = preludeCode ++ core.code ∧
+      result.code.blocks[0]? = some {block with
+        insts := block.insts.map (·.mapRegs (Backend.lowerFunction.resolve result.final.alias (result.final.alias.size+1)))
+        params := block.params.map (Backend.lowerFunction.resolve result.final.alias (result.final.alias.size+1))
+        branchArgs := block.branchArgs.map (Backend.lowerFunction.resolve result.final.alias (result.final.alias.size+1))} := by
+  obtain ⟨result,oldEvent,oldRecord,run,scope,rest⟩ := QuietBlockWitness.actual_block_record_witness
+  have tag := stock_blockOrder_entry (stock_lower_order run) scope.nonempty
+  obtain ⟨ranges,params,input,data,core,block,preludeCode,coreRun,assembled,build,sizes,prepared,
+    events,atEntry,suffix,placed⟩ := stock_lower_original_block_scan_assembly run tag
+  obtain ⟨b,term,body,split⟩ := stock_lower_body_scan_split run scope events
+  have same : b = function.blocks[0]! := Option.some.inj (split.block.symm.trans (by rw [atEntry]; rfl))
+  subst b
+  exact ⟨result,ranges,params,input,data,core,block,preludeCode,term,body,run,scope,build,sizes,
+    coreRun,assembled,prepared,events,atEntry,split,suffix,placed⟩
 
 end Backend.Stock.Proof.ControlWitness

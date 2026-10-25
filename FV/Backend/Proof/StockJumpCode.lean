@@ -105,4 +105,31 @@ theorem stock_branch_scan_body_code {f : Clif.Function} {event : BlockScanEvent}
         split <;> rfl
   exact ⟨by rw [split.code,emptyAndDemand.1,Array.append_empty],emptyAndDemand.2⟩
 
+private theorem jump_seq {W : Type} {isem : ISem CV W} (driver : DriverSemG isem)
+    (label : Nat) (ρ : Nat → CV) (w : W) :
+    seqRun isem [.jump label] ρ w = some (.stop 0 (.jump label) #[] ρ w [] w (.goto 0)) := by
+  simp only [seqRun,
+    show (MInst.jump label).operands = .ok #[] from rfl,
+    show vuses (#[] : Array Operand) ρ = [] from rfl,driver.jump]
+  rfl
+
+theorem stock_jump_core_seq {ctx : Ctx} {order : Order} {f : Clif.Function}
+    {b : Clif.Block} {bi start stop : Nat} {fields : List V} {targets : Array Nat}
+    {input : State} {output : LoweredBlockCore} {bc : Clif.BlockCall}
+    (term : b.term = .jump bc) (bound : stop-1 < ctx.insts.size)
+    (run : lowerBlockCore ctx order f b bi start stop (.data 152 15 fields) targets input = .ok output)
+    {W : Type} {isem : ISem CV W} (driver : DriverSemG isem)
+    (resolve : Reg → Reg) {ρ ρ' : Nat → CV} {w w' : W}
+    (bodyRun : seqRun isem (output.scan.output.code.map (·.mapRegs resolve)).toList ρ w = some (.fall ρ' w')) :
+    ∃ label,targets.toList = [label] ∧
+      seqRun isem (output.code.map (·.mapRegs resolve)).toList ρ w =
+        some (.stop output.scan.output.code.size (.jump label) #[] ρ' w' [] w' (.goto 0)) := by
+  obtain ⟨label,labels,branch,code⟩ := stock_jump_core_code term bound run
+  have mapped : (#[MInst.jump label].map (·.mapRegs resolve)) = #[MInst.jump label] := by
+    simp only [Array.map_singleton,MInst.mapRegs]
+  have combined := seqRun_append_fall_stop isem bodyRun (jump_seq driver label ρ' w')
+  refine ⟨label,labels,?_⟩
+  rw [code,Array.map_append,mapped,Array.toList_append]
+  simpa only [Nat.zero_add,Array.length_toList,Array.size_map] using combined
+
 end Backend.Stock.Proof.Control
