@@ -1,3 +1,0 @@
-# The example builds from the local registry cache (no network).
-[net]
-offline = true
