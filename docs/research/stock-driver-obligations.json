@@ -139,6 +139,19 @@
       "prior_axiom_sets_exact": 3389,
       "pull_request": 626,
       "merge": "f1ce87ea0a722d7159993e87d60cce210e52fceb"
+    },
+    "cfg_jump_parameters": {
+      "state": "all current per-PR author gates passed; production CFG activation pending",
+      "implementation": "49bf11e9bfded1666736081f73981ae59e45bdc2",
+      "receipt": "docs/research/stock-successor-parameters-checkpoint.md",
+      "normal_modules": 3994,
+      "all_audit_files": 83,
+      "prior_axiom_sets_exact": 3399,
+      "general_roots": 7,
+      "actual_witnesses": 3,
+      "new_finite_facts": 0,
+      "production_cfg_active": false,
+      "next": "Inherited nonparameter carry invariant derived internally, full guarded per-edge successor transfer, critical edges/loops and all original140 obligations"
     }
   },
   "roots": [
