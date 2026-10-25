@@ -127,8 +127,11 @@ private def checkCase (out : System.FilePath) (count : Nat) (cleanup fallback : 
       require (decide (a.vc = previous) && Backend.Proof.Driver.lowerCheck e.1 a.vc)
         "small multi-entry fixture changed its existing validated route"
     else if retainedMixed || mixed && e.1.name != names[0]! then
-      let previous ← get (Stock.Mixed.lowerValidated e.1)
-      require (decide (a.vc = previous)) "a retained class changed its actual code or history"
+      -- CFG activation extends the previous complete Scalar route. Older
+      -- fixture classes retain their historical Mixed baseline.
+      let previous ← get ((if cfg then Stock.Scalar.lowerValidated else Stock.Mixed.lowerValidated) e.1)
+      require (decide (a.vc = previous))
+        s!"retained class {e.1.name} changed its actual code or history"
     let selected ← get (actualLower e.1)
     require (a.vc.rulesFired == selected.rulesFired) "fixture changed selected lowering history"
   let ex : Excerpt := [(0, file)]
