@@ -1,5 +1,13 @@
 # General CFG composition checkpoint
 
+The arbitrary-length forward scalar CFG implementation and all production
+consumers are complete in PR #634. [Terminal author evidence](stock-forward-cfg-production.md)
+records the exact validated source, all gates, measured agreement and remote
+recovery archive. This supersedes the pending-gate statements below. Full #140
+remains open; conditional/table/critical correct-choice simulations, loops,
+effects/calls and original-domain completeness are not claimed by this packet.
+
+
 PR #633 (`ac302a8a`) activates three-block scalar chains in all production
 consumers. This checkpoint extends the internal composition machinery; it does
 not activate another production class or complete #140.

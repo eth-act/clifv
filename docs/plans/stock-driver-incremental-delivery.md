@@ -7,65 +7,52 @@ is unchanged: actual Stock source semantics, simulation/completeness, production
 compiler/checker/linker/generated proofs, original inputs/theorem variants/exact
 required axioms/accepted identities/successful stages.
 
-## Active candidate: arbitrary-length forward scalar CFGs
+## Current delivery: arbitrary-length forward scalar CFGs
 
-The same source view now proves ranked source/RPO/node order, whole-traversal
-demand transport, arbitrary-length jump/return and first-trap composition, ABI
-entry and legacy consumer compatibility. The ForwardCfg executable source check
-derives the unchanged Scalar.Domain without a fixed block bound. Default
-compiler/checker/linker/generated routes are wired with appended route8 and full
-previous-route fallback. Complete four-block witnesses and2,422consumer module
-checks pass. [Current checkpoint](../research/stock-general-cfg-progress.md)
-distinguishes these results from pending full author gates and a future merge.
+PR #633 (`ac302a8a`) activated three-block chains. The next substantive packet,
+PR #634, removes that fixed bound and the older two-block forwarding restriction.
+[Terminal author evidence](../research/stock-forward-cfg-production.md) records
+4,093 normal keys, 94 audit files/3,592 roots/all 3,544 old axiom sets exact,
+78 new and 78/70/34/34 retained integration checks, 24,000 native executions,
+and runtime/encoder/identity/stage/example/actual-crate/paired-output gates.
+All 2,474 prior backend proof files and three shared theorem headers are exact.
 
-Finish current native/CLI/generated fixtures over four to eight blocks and all
-full gates, reconcile main, push and squash-merge the substantive packet. Then
-continue conditional/table/critical source simulations, loops and the full
-remaining original obligations below. No first-class or proof-fragment stop.
+Default compiler/checker/verified-linker/generated consumers append route 8 and
+retain complete previous-route fallback on original inputs/settings. Source-
+ranked actual RPO/traversal, demand transport, return/first traps and ABI entry
+derive the existing Scalar.Domain for arbitrary-length forward jump/return CFGs.
+No accepted-input certificate or all-values-materialized premise is added.
 
-## Current delivery: three-block scalar CFGs
+The same 4,543-symbol paired comparison remains 900→900 exact with no losses and
+four changed instances. Ten newly eligible captured instances are all two-block;
+the provider selects actual Stock for 273 instances after CLI legalization.
+The same ten cases with existing regalloc2 remain 0→0 exact. The changes remove
+duplicate cmp/cset in wrapping add/sub, with carry selection still different.
+These are bounded measurements, not completion percentages or allocator changes.
 
-The complete scalar-entry packet landed in #632 (`00576bd9`), after #630/#631.
-The next substantive implementation, `1a30db77`, enables the actual default
-compiler/checker/linker/generated-proof route for three-block scalar chains,
-including empty-argument jumps, nops and unforwarded inherited source values.
-[Terminal author evidence](../research/stock-linear-cfg-production.md) records
-4073 normal keys,92 audits/3544 roots/all3518 prior sets exact,78 new and70/34/34
-retained integration checks,24000 native executions and all runtime/encoder/
-identity/stage/example/actual-crate gates. All2456 old backend proof files and
-three shared consumer theorem signatures are exact. Routes0–6 remain;7 is appended.
+Continue actual ordinary conditional, bit-test/table and critical correct-choice
+source simulations; then inherited loop values, memory/addressing/atomics,
+calls/exceptions, uncovered reachable families and original-domain whole-driver
+simulation/Stock-only/downstream completeness. Saved next code already derives
+actual brif calls and source-condition provenance, and proves a witnessed
+boolean-companion-to-branch semantic replacement using Std3. Connect these to
+the actual emission/body/alias/CFG/ABI consumers; do not rebuild existing scalar
+condition or per-edge prepare/spill/copy proofs. Preserve first traps and source
+fuel/definedness, original inputs, old variants, axioms, identities and stages.
 
-The actual reverse traversal proves adjacent scan coupling and successor demand
-coverage. Source values transfer only when the successor demands them, avoiding
-unmaterialized dead/sunk values. Full scalar body/jump/return/first-trap contracts
-compose under the original input/ABI conditions. The same Scalar.Domain and CFG
-consumer boundary is reused with complete previous-route fallback.
+A same-input source inventory finds 1,695 brif instances but only four with
+current scalar bodies, original checks and source-forward control. Control
+composition remains required; effects/memory/calls are essential for broader
+coverage. Backedges require original SSA/dominance and carried-value invariants
+beyond forward demand order. No first-class/proof-fragment stop or wholesale
+prerequisite queue. Improve the shared-checker validation boundary when it fits
+a substantive batch, retaining all old gates and exact axiom sets.
 
-The measured default-allocator agreement is900→900/4543 exact,zero gains/losses
-and ten changed function bytes. All127 eligible normalized captured instances
-before CLI i128 legalization select real Stock code. With the same existing
-regalloc2 setting, the ten changed inputs improve0→8 exact; this is a bounded
-diagnostic, not default/full-corpus agreement. Keep allocation policy and source
-lowering progress distinct when choosing the next implementation; do not claim
-this completes the register-agreement goal.
-
-Continue now with general source-chain/acyclic CFG composition, reusing the
-actual traversal, demanded source transfer and generic jump continuations.
-Then close conditional/table/critical edges, loops, memory/addressing/atomics,
-calls/exceptions, uncovered helpers and original-domain whole-driver simulation,
-Stock-only and downstream completeness. Existing per-edge preparation and
-spill/copy/instruction proofs already exist: reuse them; coordinate concrete
-shared consumer/interface overlaps through #140. Preserve original input
-conditions, old variants, exact required axioms, accepted identities and stages.
-No input proof certificates or another wholesale prerequisite queue.
-
-General backedges require carried inherited values beyond forward traversal
-order; start from existing CarryRel preservation and original SSA/dominance.
-Retain durable evidence and clean completed outputs after each batch. A shared
-checker import currently invalidates large old fixed checks; improve that
-validation boundary when it fits the next implementation without dropping gates
-or delaying actual source/production work. Full original #140 and the obligation
-ledger remain open. Fallback is acceptance preservation, not completeness.
+Keep #44 and concrete #140 interface coordination current. Reconcile each batch
+with main, push backups and squash-merge promptly after author gates. Keep one
+warm cache and bounded builds; archive unique evidence before deleting completed
+outputs, and preserve all dirty/unpublished source. Full original #140 remains
+open; fallback is acceptance preservation, not completeness.
 
 ## Starting point and next deliveries
 
