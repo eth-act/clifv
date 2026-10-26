@@ -1,4 +1,5 @@
 import FV.Backend.Lowering.StockTwoBlock
+import FV.Backend.Lowering.StockLinearCfg
 import FV.Backend.Lowering.StockTwoBlockEntry
 import FV.Backend.ABIReadCfg
 import FV.Backend.StockArithmeticCheck
@@ -22,6 +23,7 @@ def check (f : Clif.Function) (vc : VCode) : Bool :=
       (Stock.Logical.check f vc && ABIReadFlags.check f.sig vc) ||
       (Stock.Scalar.check f vc && (ABIReadScalar.check f.sig vc || ABIReadDiv.check f.sig vc)) ||
       (Stock.TwoBlock.check f vc && ABIReadCfg.check f.sig vc) ||
-      (Stock.TwoBlock.Entry.check f vc && ABIReadCfg.check f.sig vc))
+      (Stock.TwoBlock.Entry.check f vc && ABIReadCfg.check f.sig vc) ||
+      (Stock.LinearCfg.check f vc && ABIReadCfg.check f.sig vc))
 
 end Backend.SemanticNI

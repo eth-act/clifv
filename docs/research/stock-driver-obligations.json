@@ -1,5 +1,5 @@
 {
-  "updated_utc": "2026-10-26T11:56:34.915339+00:00",
+  "updated_utc": "2026-10-26T18:40:44.506982+00:00",
   "goal": 140,
   "complete": false,
   "inventory_warning": "Historical517root inventory is a source map, not current reachability/execution coverage. Reconcile generated source hashes and current typed scope before using partition counts.",
@@ -29,7 +29,8 @@
       "i8/i16 scalar classes through the same default production consumers; 474 positive complete pipeline configurations",
       "bmask/nop with independent i8/i16/i32/i64 source/result widths, mixed scalar/division bodies, through shared production consumers (#624, ab1abdfc)",
       "direct two-block Stock CFG default consumers with quiet entry/nonempty copies (#630,ce83af2c)",
-      "dividing entry blocks with actual first/later traps through the same default CFG consumers (#631,b94d6cd4)"
+      "dividing entry blocks with actual first/later traps through the same default CFG consumers (#631,b94d6cd4)",
+      "complete scalar entry bodies through the same CFG route (#632,00576bd9)"
     ],
     "pending": "Remaining original pure/ABI/reachable-helper conditions; original ABI conditions; control/successor arguments/critical edges/loops; memory/addressing/atomics/traps/deferred effects; calls/sret/exceptions/unwind; source/scan/block/node/whole-driver simulation; Stock-only and downstream completeness; optimizer/cleanup and all consumers. Existing no-opt/no-TryCall CLI eligibility and default Lean allocator remain. Legacy fallback is not Stock completeness.",
     "mixed_div_current_evidence": {
@@ -82,11 +83,16 @@
       "unconditional_stock_only_completeness": false
     },
     "current_real_crate_agreement": {
-      "validated_code_head": "0aecff7cbeb8e0dc295855bf27d77c4ffdfffdfa",
+      "validated_code_head": "1a30db775fd41a3509633667b7d6d7d7524eae1d",
       "default_allocator": "lean",
       "symbol_comparisons": 4543,
-      "equal_symbol_comparisons": 887,
-      "limits": "Paired symbol comparisons, not unique source-function coverage or goal completion;0gained/0lost/0changed rows from parent."
+      "equal_symbol_comparisons": 900,
+      "paired_parent": "00576bd9e3cd8f9bd46d14aeb750012d88d1aa97",
+      "gains": 0,
+      "losses": 0,
+      "changed_function_bytes": 10,
+      "actual_cargo_candidate_and_reference_bytes_bound": 4543,
+      "limits": "Paired symbol comparisons, not unique source-function coverage or full-goal completion. Separate regalloc2 diagnostic is0\u21928 among ten changed instances only."
     },
     "mask_scalar_production": {
       "validated_code_head": "0aecff7cbeb8e0dc295855bf27d77c4ffdfffdfa",
@@ -187,7 +193,7 @@
     },
     "scalar_cfg_entry_author_candidate": {
       "source_head": "b0f103011d30fed0eeadf030bac17db500f85261",
-      "state": "all author gates passed; substantive production publication pending",
+      "state": "landed on main in #632",
       "receipt": "docs/research/stock-scalar-entry-production.md",
       "full_goal_complete": false,
       "same_input_exact_symbols": {
@@ -197,7 +203,44 @@
         "gains": 0,
         "losses": 0
       },
-      "next": "general source CFG composition reusing complete scalar carry/jump contracts; raw captured scalar-family instances with >=3blocks:139; not a coverage percentage"
+      "next": "general source CFG composition reusing complete scalar carry/jump contracts; raw captured scalar-family instances with >=3blocks:139; not a coverage percentage",
+      "pull_request": 632,
+      "merge_commit": "00576bd9e3cd8f9bd46d14aeb750012d88d1aa97"
+    },
+    "linear_cfg_production": {
+      "source_head": "1a30db775fd41a3509633667b7d6d7d7524eae1d",
+      "base": "00576bd9e3cd8f9bd46d14aeb750012d88d1aa97",
+      "state": "all author gates passed; default production activation in this change",
+      "receipt": "docs/research/stock-linear-cfg-production.md",
+      "terminal_evidence": "c855548a02de199d2dd588c03f0d1c9d9ecd3346",
+      "normal_keys": 4073,
+      "all_audits": 92,
+      "all_roots": 3544,
+      "old_axiom_sets_exact": 3518,
+      "integration_checks": {
+        "new_integration": 78,
+        "parent_scalar_entry": 70,
+        "parent_entry": 34,
+        "parent_cfg": 34
+      },
+      "native_executions": 24000,
+      "reference_executions": 3000,
+      "normalized_captured_instances_before_cli_legalization": 127,
+      "default_allocator_matches": {
+        "parent": 900,
+        "candidate": 900,
+        "gains": 0,
+        "losses": 0,
+        "changed_function_bytes": 10
+      },
+      "regalloc2_ten_changed_input_diagnostic": {
+        "parent_exact": 0,
+        "candidate_exact": 8,
+        "limits": "Same ten changed functions with identical regalloc2 settings/oracle; not whole-corpus agreement and not a default allocator change."
+      },
+      "full_140_complete": false,
+      "unconditional_stock_only_completeness": false,
+      "next": "general source CFG composition and inherited backedge values; remaining control/effects/calls and full original-domain simulation/completeness; reuse existing per-edge prepare/spill proofs"
     }
   },
   "roots": [

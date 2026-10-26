@@ -166,7 +166,9 @@ def check : IO Unit := do
 end FVTest.StockGeneralDivProductionRuntime
 
 def main (args : List String) : IO Unit :=
-  if args == ["--cfgscalarentry"] then
+  if args == ["--cfglinear"] then
+    FVTest.StockTwoBlockProductionRuntime.checkLinear FVTest.StockGeneralDivProductionRuntime.checkedRegalloc2
+  else if args == ["--cfgscalarentry"] then
     FVTest.StockTwoBlockProductionRuntime.checkScalarEntry FVTest.StockGeneralDivProductionRuntime.checkedRegalloc2
   else if args == ["--cfgentry"] then
     FVTest.StockTwoBlockProductionRuntime.checkEntry FVTest.StockGeneralDivProductionRuntime.checkedRegalloc2
