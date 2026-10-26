@@ -38,13 +38,13 @@ def expected_roots(prefix="Mixed"):
     roots = set()
     for mode in ("Plain", "Cleanup"):
         for policy in ("Strict", "Fallback"):
-            roots.add(f"Stock{prefix}{96 if prefix == 'CfgScalarEntryProduction' else 16 if prefix == 'CfgEntryProduction' else 6}{mode}{policy}Global")
-            if prefix == "CfgScalarEntryProduction":
-                roots.add(f"Stock{prefix}96{mode}{policy}Entries")
+            roots.add(f"Stock{prefix}{100 if prefix == 'CfgLinearProduction' else 96 if prefix == 'CfgScalarEntryProduction' else 16 if prefix == 'CfgEntryProduction' else 6}{mode}{policy}Global")
+            if prefix in ("CfgScalarEntryProduction", "CfgLinearProduction"):
+                roots.add(f"Stock{prefix}{100 if prefix == 'CfgLinearProduction' else 96}{mode}{policy}Entries")
         roots.add(f"Stock{prefix}2{mode}FallbackGlobal")
         roots.add(f"Stock{prefix}6Mixed{mode}FallbackGlobal")
         roots.add(f"Stock{prefix}2Retained{mode}FallbackGlobal")
-        if prefix in ("CfgProduction", "CfgEntryProduction", "CfgScalarEntryProduction"):
+        if prefix in ("CfgProduction", "CfgEntryProduction", "CfgScalarEntryProduction", "CfgLinearProduction"):
             roots.add(f"Stock{prefix}7Mixed{mode}FallbackGlobal")
     roots.update((f"Stock{prefix}33CleanupFallbackGlobal", f"Stock{prefix}33CleanupFallbackEntries"))
     return roots
