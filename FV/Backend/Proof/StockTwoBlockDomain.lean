@@ -50,4 +50,27 @@ theorem domain_of_two_block {f : Clif.Function}
   · exact Or.inl constant
   · exact Or.inr (Or.inr nop)
 
+
+/-- Broader scalar-entry variant; original interfaces remain available. -/
+theorem domain_of_two_block_scalar_entry {f : Clif.Function}
+    (scope : LowerScope f) (dominated : Dominated f) (abi : sigAbiOk f.sig = true)
+    (ordinary : (sigRets f.sig).any (·.purpose == .sret) = false)
+    {entry target : Clif.Block} {bc : Clif.BlockCall} {xs : List Nat}
+    (blocks : f.blocks = [entry,target]) (jump : entry.term = .jump bc) (ret : target.term = .ret xs)
+    (destination : bc.block = target.id) (different : entry.id ≠ target.id)
+    (family : ∀ b ∈ f.blocks,∀ stm ∈ b.body,MaskBody.Family stm.inst)
+    (entryFamily : ∀ stm ∈ entry.body,MaskBody.Family stm.inst)
+    (forwarded : ∀ stm ∈ entry.body,∀ x ∈ stm.results,x ∈ bc.args) : Domain f := by
+  refine ⟨scope,dominated,abi,ordinary,?_,?_⟩
+  · intro result run args cm fr entered env cp fuel vals mem returned F isem refines driver
+      sb syms memorySem MR stable w memory arguments
+    obtain ⟨ρ,source⟩ := TwoBlock.entry_scalar_return_frame run scope dominated abi blocks jump ret destination
+      different family entryFamily forwarded entered returned refines driver memorySem stable memory arguments
+    exact ⟨ρ,source.legacyCompatible (TwoBlock.legacy_compatible run scope blocks jump ret destination different)⟩
+  · intro result run args cm fr entered env cp fuel code trapped F isem refines driver
+      sb syms memorySem MR stable w memory arguments
+    obtain ⟨ρ,source⟩ := TwoBlock.entry_scalar_trap_frame run scope dominated abi blocks jump ret destination
+      different family entryFamily forwarded entered trapped refines driver memorySem stable memory arguments
+    exact ⟨ρ,source.legacyCompatible (TwoBlock.legacy_compatible run scope blocks jump ret destination different)⟩
+
 end Backend.Stock.Scalar

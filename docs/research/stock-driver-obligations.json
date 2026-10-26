@@ -1,5 +1,5 @@
 {
-  "updated_utc": "2026-10-25T03:14:50.664351+00:00",
+  "updated_utc": "2026-10-26T11:56:34.915339+00:00",
   "goal": 140,
   "complete": false,
   "inventory_warning": "Historical517root inventory is a source map, not current reachability/execution coverage. Reconcile generated source hashes and current typed scope before using partition counts.",
@@ -27,7 +27,9 @@
       "returned i32/i64 division/remainder at arbitrary scalar positions (525)",
       "unused/consumed/multiple i32/i64 division/remainder at arbitrary scalar positions (611)",
       "i8/i16 scalar classes through the same default production consumers; 474 positive complete pipeline configurations",
-      "bmask/nop with independent i8/i16/i32/i64 source/result widths, mixed scalar/division bodies, through shared production consumers (#624, ab1abdfc)"
+      "bmask/nop with independent i8/i16/i32/i64 source/result widths, mixed scalar/division bodies, through shared production consumers (#624, ab1abdfc)",
+      "direct two-block Stock CFG default consumers with quiet entry/nonempty copies (#630,ce83af2c)",
+      "dividing entry blocks with actual first/later traps through the same default CFG consumers (#631,b94d6cd4)"
     ],
     "pending": "Remaining original pure/ABI/reachable-helper conditions; original ABI conditions; control/successor arguments/critical edges/loops; memory/addressing/atomics/traps/deferred effects; calls/sret/exceptions/unwind; source/scan/block/node/whole-driver simulation; Stock-only and downstream completeness; optimizer/cleanup and all consumers. Existing no-opt/no-TryCall CLI eligibility and default Lean allocator remain. Legacy fallback is not Stock completeness.",
     "mixed_div_current_evidence": {
@@ -182,6 +184,20 @@
       "new_finite_facts": 0,
       "production_cfg_active": false,
       "next": "Actual return-block/core composition, substantive two-block CFG production activation through actual ABI/return/prepared/physical consumers, then successive classes and all original140obligations"
+    },
+    "scalar_cfg_entry_author_candidate": {
+      "source_head": "b0f103011d30fed0eeadf030bac17db500f85261",
+      "state": "all author gates passed; substantive production publication pending",
+      "receipt": "docs/research/stock-scalar-entry-production.md",
+      "full_goal_complete": false,
+      "same_input_exact_symbols": {
+        "total": 4543,
+        "parent": 900,
+        "candidate": 900,
+        "gains": 0,
+        "losses": 0
+      },
+      "next": "general source CFG composition reusing complete scalar carry/jump contracts; raw captured scalar-family instances with >=3blocks:139; not a coverage percentage"
     }
   },
   "roots": [
