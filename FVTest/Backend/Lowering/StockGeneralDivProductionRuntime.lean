@@ -166,11 +166,13 @@ def check : IO Unit := do
 end FVTest.StockGeneralDivProductionRuntime
 
 def main (args : List String) : IO Unit :=
-  if args == ["--cfg"] then
+  if args == ["--cfgentry"] then
+    FVTest.StockTwoBlockProductionRuntime.checkEntry FVTest.StockGeneralDivProductionRuntime.checkedRegalloc2
+  else if args == ["--cfg"] then
     FVTest.StockTwoBlockProductionRuntime.check FVTest.StockGeneralDivProductionRuntime.checkedRegalloc2
   else if args == ["--mask"] then
     FVTest.StockMaskProductionRuntime.check FVTest.StockGeneralDivProductionRuntime.checkedRegalloc2
   else if args == ["--narrow"] then
     FVTest.StockNarrowProductionRuntime.check FVTest.StockGeneralDivProductionRuntime.checkedRegalloc2
   else if args.isEmpty then FVTest.StockGeneralDivProductionRuntime.check
-  else throw (IO.userError "usage: stock-general-div-runtime [--narrow|--mask|--cfg]")
+  else throw (IO.userError "usage: stock-general-div-runtime [--narrow|--mask|--cfg|--cfgentry]")
