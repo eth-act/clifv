@@ -1,5 +1,5 @@
 {
-  "updated_utc": "2026-10-26T18:40:44.506982+00:00",
+  "updated_utc": "2026-10-26T22:22:33.474491+00:00",
   "goal": 140,
   "complete": false,
   "inventory_warning": "Historical517root inventory is a source map, not current reachability/execution coverage. Reconcile generated source hashes and current typed scope before using partition counts.",
@@ -83,16 +83,16 @@
       "unconditional_stock_only_completeness": false
     },
     "current_real_crate_agreement": {
-      "validated_code_head": "1a30db775fd41a3509633667b7d6d7d7524eae1d",
+      "validated_code_head": "1620b2c4beeb2bc36ee50e79fb40b3b3eb2f320d",
       "default_allocator": "lean",
       "symbol_comparisons": 4543,
       "equal_symbol_comparisons": 900,
-      "paired_parent": "00576bd9e3cd8f9bd46d14aeb750012d88d1aa97",
+      "paired_parent": "ac302a8a712d1fc01141e7d974820ac6f740c03c",
       "gains": 0,
       "losses": 0,
-      "changed_function_bytes": 10,
+      "changed_function_bytes": 4,
       "actual_cargo_candidate_and_reference_bytes_bound": 4543,
-      "limits": "Paired symbol comparisons, not unique source-function coverage or full-goal completion. Separate regalloc2 diagnostic is0\u21928 among ten changed instances only."
+      "limits": "Captured instances, not unique-source coverage. Same ten newly eligible instances with existing regalloc2: 0\u21920; no default allocator change/full-corpus regalloc2 claim."
     },
     "mask_scalar_production": {
       "validated_code_head": "0aecff7cbeb8e0dc295855bf27d77c4ffdfffdfa",
@@ -241,6 +241,27 @@
       "full_140_complete": false,
       "unconditional_stock_only_completeness": false,
       "next": "general source CFG composition and inherited backedge values; remaining control/effects/calls and full original-domain simulation/completeness; reuse existing per-edge prepare/spill proofs"
+    },
+    "forward_cfg_production": {
+      "source_head": "1620b2c4beeb2bc36ee50e79fb40b3b3eb2f320d",
+      "base": "ac302a8a712d1fc01141e7d974820ac6f740c03c",
+      "state": "all author gates passed; default activation in this change",
+      "pull_request": 634,
+      "receipt": "docs/research/stock-forward-cfg-production.md",
+      "terminal_evidence": "95a286c086b9fd3f17215e6a171ece0bd0313867",
+      "integration_checks": {
+        "new_integration": 78,
+        "parent_linear": 78,
+        "parent_scalar_entry": 70,
+        "parent_entry": 34,
+        "parent_cfg": 34
+      },
+      "normal_keys": 4093,
+      "audit_files": 94,
+      "audit_roots": 3592,
+      "prior_axiom_sets_exact": 3544,
+      "full_140_complete": false,
+      "unconditional_stock_only_completeness": false
     }
   },
   "roots": [
@@ -8820,5 +8841,16 @@
     "source_driver_validated_head": "66cff515c6a2dfc9efb82335be0711998f881e86",
     "source_driver_receipt": "docs/research/stock-general-div-source.md",
     "source_driver_evidence": "39e8973aa776b761ec6c62b772cc5d57cae0454e"
+  },
+  "active_candidate": {
+    "name": "arbitrary-length forward scalar CFGs",
+    "state": "all author gates passed; default activation in PR #634",
+    "branch": "agent/stock-general-cfg-20261026",
+    "implementation": "ForwardCfg source-check-derived existing Scalar.Domain, general jump/return/first-trap and ABI entry, appended route8 with prior complete pipeline fallback",
+    "limits": "Jump/return source graphs with strictly advancing source-index jumps; conditional/table/critical simulations, loops, effects/calls and whole-domain completeness remain open",
+    "evidence": "docs/research/stock-forward-cfg-production.md",
+    "source_head": "1620b2c4beeb2bc36ee50e79fb40b3b3eb2f320d",
+    "pull_request": 634,
+    "terminal_remote_evidence": "95a286c086b9fd3f17215e6a171ece0bd0313867"
   }
 }
