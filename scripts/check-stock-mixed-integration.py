@@ -39,6 +39,8 @@ def expected_roots(prefix="Mixed"):
     for mode in ("Plain", "Cleanup"):
         for policy in ("Strict", "Fallback"):
             roots.add(f"Stock{prefix}{96 if prefix == 'CfgScalarEntryProduction' else 16 if prefix == 'CfgEntryProduction' else 6}{mode}{policy}Global")
+            if prefix == "CfgScalarEntryProduction":
+                roots.add(f"Stock{prefix}96{mode}{policy}Entries")
         roots.add(f"Stock{prefix}2{mode}FallbackGlobal")
         roots.add(f"Stock{prefix}6Mixed{mode}FallbackGlobal")
         roots.add(f"Stock{prefix}2Retained{mode}FallbackGlobal")
