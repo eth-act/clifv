@@ -37,15 +37,15 @@ theorem domain_of_eligible {f : Clif.Function} (checked : eligible f = true)
       next xs ret =>
         simp only [Bool.and_eq_true,bne_iff_ne,beq_iff_eq] at checked
         obtain ⟨⟨⟨⟨⟨⟨destination,different⟩,entryBody⟩,targetBody⟩,forwarded⟩,params⟩,returns⟩ := checked
-        have entryFamily := fun stm member => entry_family (List.all_eq_true.mp entryBody stm member)
+        have entryFamily := fun stm member => Scalar.maskMixedBodyEligible_sound
+          (show Scalar.maskMixedBodyEligible stm = true from List.all_eq_true.mp entryBody stm member)
         have family : ∀ b ∈ f.blocks,∀ stm ∈ b.body,MaskBody.Family stm.inst := by
           intro b member stm present
           rw [blocks] at member
           simp only [List.mem_cons,List.not_mem_nil,or_false] at member
           rcases member with rfl | rfl
           · have checked := List.all_eq_true.mp entryBody stm present
-            simp only [entryEligible,Bool.and_eq_true] at checked
-            exact Scalar.maskMixedBodyEligible_sound checked.1
+            exact Scalar.maskMixedBodyEligible_sound checked
           · exact Scalar.maskMixedBodyEligible_sound (List.all_eq_true.mp targetBody stm present)
         have noSret : f.sig.params.find? (·.purpose == .sret) = none := by
           apply List.find?_eq_none.mpr
@@ -57,7 +57,7 @@ theorem domain_of_eligible {f : Clif.Function} (checked : eligible f = true)
           intro any
           obtain ⟨p,member,sret⟩ := List.any_eq_true.mp any
           simpa [(normal_abi returns) p member] using sret
-        exact Scalar.domain_of_two_block_entry scope dominated abi ordinary blocks jump ret destination different
+        exact Scalar.domain_of_two_block_scalar_entry scope dominated abi ordinary blocks jump ret destination different
           family entryFamily (by
             intro stm member x defined
             exact List.contains_iff_mem.mp (List.all_eq_true.mp (List.all_eq_true.mp forwarded stm member) x defined))

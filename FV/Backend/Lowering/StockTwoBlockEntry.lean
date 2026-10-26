@@ -8,6 +8,9 @@ def entryEligible (stm : Clif.Stmt) : Bool :=
   Scalar.maskMixedBodyEligible stm &&
     match stm.inst with | .iconst .. | .div .. | .nop => true | _ => false
 
+/-- Broader scalar entry selector; the original dividing-entry selector remains. -/
+def scalarEntryEligible (stm : Clif.Stmt) : Bool := Scalar.maskMixedBodyEligible stm
+
 /-- CFG source class with normal or trapping entry divisions. Original source checks and fallback
 remain separate; successor arguments may be nonempty. -/
 def eligible (f : Clif.Function) : Bool :=
@@ -18,7 +21,7 @@ def eligible (f : Clif.Function) : Bool :=
       match target.term with
       | .ret _ =>
         bc.block == target.id && entry.id != target.id &&
-        entry.body.all entryEligible && target.body.all Scalar.maskMixedBodyEligible &&
+        entry.body.all scalarEntryEligible && target.body.all Scalar.maskMixedBodyEligible &&
         entry.body.all (fun stm => stm.results.all bc.args.contains) &&
         f.sig.params.all Scalar.narrowAbiEligible && f.sig.returns.all Scalar.narrowAbiEligible
       | _ => false

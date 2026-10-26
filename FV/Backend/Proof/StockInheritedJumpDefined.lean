@@ -1,3 +1,4 @@
+import FV.Backend.Proof.StockInheritedScalar
 import FV.Backend.Proof.StockArithmeticTerminalDefined
 import FV.Backend.Proof.StockInheritedBody
 import FV.Backend.Proof.StockInheritedMixedDivision
@@ -189,6 +190,46 @@ theorem division_jump_carry_returns_defined {f : Clif.Function} {result : Result
       exact True.intro
   exact local_jump_carry_returns_defined run scope dominated refines driver stable spec jump localFamily available
     (constant_division_body_carry_refines_local run scope dominated spec.events spec.split formats family
+      available refines driver stable).1 remaining atTerm returned held defined
+
+
+/-- Broader scalar-entry variant; original interfaces remain available. -/
+theorem scalar_jump_carry_returns_defined {f : Clif.Function} {result : Result}
+    (run : Stock.lower f = .ok result) (scope : LowerScope f) (dominated : Dominated f)
+    {b : Clif.Block} {label bi : Nat} {bc : Clif.BlockCall}
+    {F : BitVec 64 → Prop} {isem : Backend.Proof.Sem} (refines : Refines F isem)
+    (driver : DriverSem isem) {MR : MemRelT} (stable : MRStable F MR)
+    {env : Clif.Env} {cp : Clif.Program}
+    (spec : Control.JumpBodySpec f result b label bi bc isem MR env cp)
+    (jump : b.term = .jump bc)
+    (formats : ∀ block ∈ f.blocks,∀ stm ∈ block.body,CastComplete.MemoryFormat stm.inst)
+    (family : ∀ stm ∈ b.body,MaskBody.Family stm.inst)
+    {needed : Nat → Prop}
+    (available : ∀ x,needed x → x ∈ availOf f (availIn f result.ctx) spec.core.scan.block 0)
+    {fuel : Nat} {s : Clif.State} {vals : List Clif.Val} {cm : Clif.Mem}
+    (remaining : s.frame.body = b.body) (atTerm : s.frame.term = b.term)
+    (returned : Clif.runLoop env cp fuel s = .returned vals cm) {ρ : Nat → CV} {w : Arm.ArmState}
+    (held : CarryRel f result spec.core.scan.ctx spec.core.scan.block MR needed spec.core.scan.output.state
+      (0,s.frame,s.mem) ρ w)
+    (defined : SourceDefinedAt f result.ctx spec.core.scan.block 0 s.frame) :
+    ∃ t left ρ' w',left+b.body.length = fuel ∧ Clif.runLoop env cp left t = .returned vals cm ∧
+      t.frame.body = [] ∧ LocalBody.SourceFrameEq s t ∧
+      (∀ x,needed x → t.frame.regs x = s.frame.regs x) ∧ t.frame.term = .jump bc ∧
+      seqRun isem (spec.core.code.toList.map (·.mapRegs
+        (Backend.lowerFunction.resolve result.final.alias (result.final.alias.size+1)))) ρ w =
+          some (.stop spec.body.code.size (.jump spec.target) #[] ρ' w' [] w' (.goto 0)) ∧
+      CarryRel f result spec.core.scan.ctx spec.core.scan.block MR needed spec.term.output.state
+        (b.body.length,t.frame,t.mem) ρ' w' ∧
+      SourceDefinedAt f result.ctx spec.core.scan.block b.body.length t.frame := by
+  have localFamily : ∀ stm ∈ b.body,LocalBody.LocalInst stm.inst := by
+    intro stm member
+    rcases family stm member with (scalar | ⟨op,ty,x,y,shape⟩) | ⟨ty,x,shape⟩ | shape
+    · exact LocalBody.LocalInst.of_pure (HighMulBody.family_pure scalar)
+    · rw [shape]; exact True.intro
+    · rw [shape]; exact True.intro
+    · rw [shape]; exact True.intro
+  exact local_jump_carry_returns_defined run scope dominated refines driver stable spec jump localFamily available
+    (scalar_body_carry_refines run scope dominated spec.events spec.split formats family
       available refines driver stable).1 remaining atTerm returned held defined
 
 end Backend.Stock.Proof.Inherited

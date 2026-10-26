@@ -160,4 +160,61 @@ theorem division_jump_carry_traps_or_continues_defined {f : Clif.Function} {resu
       available (by simpa only [Nat.add_zero,Nat.sub_zero] using steps) frame atTerm bodyRun defined
     exact ⟨t,left,ρ',w',by simpa using total,continued,empty,frame,sourceFrame,atJump,executed,post,tDefined⟩
 
+
+/-- Broader scalar-entry variant; original interfaces remain available. -/
+theorem scalar_jump_carry_traps_or_continues_defined {f : Clif.Function} {result : Result}
+    (run : Stock.lower f = .ok result) (scope : LowerScope f) (dominated : Dominated f)
+    {b : Clif.Block} {label bi : Nat} {bc : Clif.BlockCall}
+    {F : BitVec 64 → Prop} {isem : Backend.Proof.Sem} (refines : Refines F isem)
+    (driver : DriverSem isem) {MR : MemRelT} (stable : MRStable F MR)
+    {env : Clif.Env} {cp : Clif.Program}
+    (spec : Control.JumpBodySpec f result b label bi bc isem MR env cp)
+    (jump : b.term = .jump bc)
+    (formats : ∀ block ∈ f.blocks,∀ stm ∈ block.body,CastComplete.MemoryFormat stm.inst)
+    (family : ∀ stm ∈ b.body,MaskBody.Family stm.inst)
+    {needed : Nat → Prop}
+    (available : ∀ x,needed x → x ∈ availOf f (availIn f result.ctx) spec.core.scan.block 0)
+    {fuel : Nat} {s : Clif.State} {code : Clif.TrapCode}
+    (remaining : s.frame.body = b.body) (atTerm : s.frame.term = b.term)
+    (trapped : Clif.runLoop env cp fuel s = .trapped code) {ρ : Nat → CV} {w : Arm.ArmState}
+    (held : CarryRel f result spec.core.scan.ctx spec.core.scan.block MR needed spec.core.scan.output.state
+      (0,s.frame,s.mem) ρ w)
+    (defined : SourceDefinedAt f result.ctx spec.core.scan.block 0 s.frame) :
+    TrapRun isem (spec.core.code.toList.map (·.mapRegs
+      (Backend.lowerFunction.resolve result.final.alias (result.final.alias.size+1)))) ρ w code ∨
+    ∃ t left ρ' w',left+b.body.length = fuel ∧ Clif.runLoop env cp left t = .trapped code ∧
+      t.frame.body = [] ∧ LocalBody.SourceFrameEq s t ∧
+      (∀ x,needed x → t.frame.regs x = s.frame.regs x) ∧ t.frame.term = .jump bc ∧
+      seqRun isem (spec.core.code.toList.map (·.mapRegs
+        (Backend.lowerFunction.resolve result.final.alias (result.final.alias.size+1)))) ρ w =
+          some (.stop spec.body.code.size (.jump spec.target) #[] ρ' w' [] w' (.goto 0)) ∧
+      CarryRel f result spec.core.scan.ctx spec.core.scan.block MR needed spec.term.output.state
+        (b.body.length,t.frame,t.mem) ρ' w' ∧
+      SourceDefinedAt f result.ctx spec.core.scan.block b.body.length t.frame := by
+  have localFamily : ∀ stm ∈ b.body,LocalBody.LocalInst stm.inst := by
+    intro stm member
+    rcases family stm member with (scalar | ⟨op,ty,x,y,shape⟩) | ⟨ty,x,shape⟩ | shape
+    · exact LocalBody.LocalInst.of_pure (HighMulBody.family_pure scalar)
+    · rw [shape]; exact True.intro
+    · rw [shape]; exact True.intro
+    · rw [shape]; exact True.intro
+  have bodies := scalar_body_carry_refines run scope dominated spec.events spec.split
+    formats family available refines driver stable (env := env) (cp := cp)
+  rcases LocalBody.actual_local_source_trap_or_continue run spec.events spec.split
+    localFamily (j := 0) (by omega) (by simpa using remaining) trapped with
+    failed | ⟨t,left,total,continued,empty,steps,frame⟩
+  · left
+    have failedRun := bodies.2 (0,s.frame,s.mem) code
+      (by simpa only [Nat.add_zero,Nat.sub_zero,List.range'_eq_map_range,sourceBodyIndices,List.reverse_reverse] using failed)
+      ρ w (by simpa only [spec.split.state] using held)
+    rw [spec.bodyCode,Array.toList_append,List.map_append]
+    exact failedRun.append
+  · right
+    obtain ⟨ρ',w',bodyRun,post⟩ := bodies.1 (0,s.frame,s.mem) (b.body.length,t.frame,t.mem)
+      (by simpa only [Nat.add_zero,Nat.sub_zero,List.range'_eq_map_range,sourceBodyIndices,List.reverse_reverse] using steps)
+      ρ w (by simpa only [spec.split.state] using held)
+    obtain ⟨sourceFrame,atJump,executed,tDefined⟩ := jump_continuation_defined run scope dominated driver spec jump
+      available (by simpa only [Nat.add_zero,Nat.sub_zero] using steps) frame atTerm bodyRun defined
+    exact ⟨t,left,ρ',w',by simpa using total,continued,empty,frame,sourceFrame,atJump,executed,post,tDefined⟩
+
 end Backend.Stock.Proof.Inherited
