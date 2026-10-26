@@ -75,7 +75,24 @@ private def checkConfiguration (entry scalarEntry : Bool) (label : String)
   let legacy ← match excluded.funcs.head?.bind (·.func.toOption) with
     | some f => pure f
     | none => throw (IO.userError "legacy control did not parse")
-  require (!eligible legacy) "nonquiet entry escaped the new class"
+  -- Keep the former multiplying-entry negative control as positive coverage:
+  -- it is deliberately part of the broader scalar class now.
+  if entry then
+    require (eligible legacy) "existing multiplying entry missed the broader scalar class"
+    let raw ← match Stock.lower legacy with
+      | .ok result => pure result.code
+      | .error message => throw (IO.userError message)
+    let selected ← match lower legacy with
+      | .ok vc => pure vc
+      | .error message => throw (IO.userError message)
+    require (decide (selected = raw)) "multiplying entry did not select actual Stock code"
+  -- Three source blocks remain outside the proved two-block class and exercise
+  -- the same complete previous-route fallback without changing the old input.
+  let legacy := if entry then {legacy with blocks := [
+    {legacy.blocks[0]! with term := .jump ⟨2,[2]⟩},
+    {id := 2,params := [(4,.i64)],body := [],term := .jump ⟨1,[4]⟩},
+    legacy.blocks[1]!]} else legacy
+  require (!eligible legacy) "out-of-class control escaped the source selector"
   let old ← match previousLower legacy with
     | .ok vc => pure vc
     | .error message => throw (IO.userError message)
