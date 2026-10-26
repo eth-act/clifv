@@ -1,30 +1,36 @@
 {
-  "utc": "2026-10-26T16:50:09.211988+00:00",
-  "source_publication": "4974d655866b185d8f4e0a1ec65de48feaed9d74",
-  "merged_main": "00576bd9e3cd8f9bd46d14aeb750012d88d1aa97",
-  "archive_bytes": 111722573,
-  "archive_sha256": "01aa0ea8db295e22f460e15bd954ab35ca49403694298efd63ac7f13611ca7cd",
+  "utc": "2026-10-26T17:38:28.521376+00:00",
+  "source_publication": "1a30db775fd41a3509633667b7d6d7d7524eae1d",
+  "origin_main_seen": "00576bd9e3cd8f9bd46d14aeb750012d88d1aa97",
+  "archive_bytes": 160701293,
+  "archive_sha256": "a35bf151fde5c0d8a5883a48a6640a85ae1040619b8799bfecb93502d971d59f",
   "parts": [
     {
       "name": "postmerge-archive.tar.gz.part000",
       "bytes": 41943040,
-      "sha256": "1bc80f0c45fd37590603914bdde692f1dfba3306237615e557a33c66dd52bea5",
-      "blob": "8b5f55f75d809dfe0fc71e44b0d7bdf62a050867"
+      "sha256": "866557ef79193c3f5af310e6ea316a39dbc01cffd918e9b6a97eafd62bfa0f4b",
+      "blob": "e10a5c8229def61f3875c81f68ef9227668adeb8"
     },
     {
       "name": "postmerge-archive.tar.gz.part001",
       "bytes": 41943040,
-      "sha256": "bf4b96bf11c19ec7a049d7180a85cd8fcefd8395b0f29037cefb1392c74c9f61",
-      "blob": "301ae65bc65ee888212b628fba9812e7da59a075"
+      "sha256": "c9b975e99b054507442e364781fd4318c95a4921344020cddbe7172c52d15962",
+      "blob": "54ed4d3df9f4d35e57d56e6cfd42c96927cacc17"
     },
     {
       "name": "postmerge-archive.tar.gz.part002",
-      "bytes": 27836493,
-      "sha256": "90b18405fe3c8e243569f0d86b75fd92d1e4c2c0c128f27c36e1b5116f56ca71",
-      "blob": "edd466791620ce11bf27ac26de360d1ff7b7ca2d"
+      "bytes": 41943040,
+      "sha256": "1fea6dd1528f981b63e78ce08a3583383c6d66d773c570379ca7c912f03bfe10",
+      "blob": "d4e81146604c137d0fff184a4b083dc7086ad365"
+    },
+    {
+      "name": "postmerge-archive.tar.gz.part003",
+      "bytes": 34872173,
+      "sha256": "f0ee8460a45cc0f378779cea036435060aa3fa8e0f0ef52fc60bdb7ae6491f6c",
+      "blob": "2cc5e8835a473e8df34a0a2a82fd848a1b648ab5"
     }
   ],
   "restore": "Concatenate postmerge-archive.tar.gz.part000,part001,... in numeric order; verify archive_sha256, then extract gzip tar.",
-  "prior_terminal_single_file_commit": "da1b73f42b69c9ea71a7098b0ab76fb9381c1fef",
-  "state": "postmerge evidence: complete terminal author gates, actual baseline binary, all13809 captured inputs and cleanup receipts; full140 remains open"
+  "prior_terminal_single_file_commit": "ae9d0f56f737154617fe74d018e72483ec55e12e",
+  "state": "Source, validation and recovery snapshot; inspect included receipts for exact completed/pending gates. Full140 remains open"
 }
