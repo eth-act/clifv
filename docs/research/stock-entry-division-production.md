@@ -49,7 +49,7 @@ Terminal author gates on implementation `158ffc0ddf88459d411033bfc37f6577ab10227
   1,159 parent identities retain their ordered successful stages.
 - Verified examples: fv-demo 21 matching tests/two verified ELFs;
   survey 53 matching tests/18 verified ELFs.
-- Actual crate-proofs package: 93 modules, 649 successful recorded steps.
+- Actual crate-proofs package: 93 modules, 96 successful recorded commands.
 - Fresh real-crate comparison: 4,543 symbols, 900 exact. Paired against
   `ce83af2c`, using the same captured inputs and settings: 900→900 exact,
   zero gains and zero losses. The prior class's 13 gains are retained.
