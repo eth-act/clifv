@@ -1,3 +1,4 @@
+import FV.Backend.Proof.StockOriginalConditionPrefix
 import FV.Backend.Proof.StockConditionalSourceValues
 import FV.Backend.Proof.StockConditionalTargetsWitness
 
@@ -156,5 +157,16 @@ theorem nonzero_source_companion_witness (word : BitVec Clif.Ty.i64.width) :
     (dfg word) (getter word) typed (by decide) (by decide) emitter companion
     refines_ispec (by simp [before]) extent (held word _)
   exact ⟨raw,middle,trace,producer,condition,booleanTrace,emitter,companion,execution⟩
+
+
+/-- The complete original conditional source also inhabits the derived real
+prefix bound, for every input word, without an alias-inequality premise. -/
+theorem original_prefix_witness (word : BitVec Clif.Ty.i64.width) :
+    ∃ raw middle trace code,
+      ApplyInternal program (Stock.sem ctx) {} 1000 123 650 [.value 7]
+        (before,#[]) raw (middle,trace) ∧ Frag before.base middle.base code := by
+  obtain ⟨raw,middle,trace,emitter⟩ := actual observed650
+  obtain ⟨code,fragment⟩ := original_prefix inv (dfg word) (getter word) (reads_typed word) (by decide) emitter
+  exact ⟨raw,middle,trace,code,emitter,fragment⟩
 
 end Backend.Stock.Proof.ConditionalValues.SourceWitness

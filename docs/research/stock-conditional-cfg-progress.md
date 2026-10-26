@@ -65,15 +65,36 @@ alias0→1 witnesses, including a companion destination equal to the real operan
 All23new audit roots are standard-only; two MCP packet reviews (generic original
 source theorem and complete source witness) report Std3 and no warnings.
 
-Next exact internal obligation: preserve every source-available register after
-removing the companion's final cset. The current generic frame excludes its
-extra destination, but that number can coincide with an available body result's
-final alias because branch emission precedes body allocation. Do not turn its
-inequality into an accepted-input condition. Derive the real condition prefix's
-fresh-definition upper bound from actual651/652 execution (wide/nonzero prefix
-is empty; narrow cases use their actual extension scratch), then use seqRun_frame
-to recover that register too. Reuse existing nonzero observed states and narrow/
-wide comparison selection/observed-state proofs. Keep current weaker theorem
-variants and add the stronger internally discharged source/core variant. Then
-compose the actual selected branch/body/chosen-edge/CFG/ABI consumers and run all
-current full author gates before the next substantive production PR.
+The producer-bound checkpoint closes the internal prefix/frame obligation:
+actual original651/652/650 executions derive a Frag covering exactly their real
+fresh definitions. All nonzero widths, mirrored zero tests/inversion, narrow
+comparison extensions, wide register/immediate/predecessor comparisons and DFG
+comparison look-through reuse existing observed-state/value proofs. Old source
+and theorem variants remain; no new accepted-input inequality is added.
+
+`StockResolvedDefs` makes the existing private renaming argument reusable and
+proves the resolved fresh interval and its complete frame. A real extension
+witness reads nonidentity alias0→2, writes fresh1 and preserves2, exactly the
+otherwise problematic companion endpoint. `StockSequenceFrame` adds stopped-run
+framing and its nonempty-prefix/jump witness. All686targeted keys and40audit
+roots pass; all roots use only standard axioms. Production remains #634.
+
+The first placement appended the producer lemmas to three existing shape
+modules and triggered unchanged fixtures to rebuild. Those three files have
+been restored byte-for-byte. The added prefix results now live in separate
+modules, reusing their existing private inversion/observation arguments. The
+relocated build restored677of683keys and built only the new modules, without
+repeating the unchanged expensive fixtures. The unpublished pre-relocation
+source is preserved under /tmp/stock-conditional-cfg-prefix-relocation-before.
+This is a dependency-boundary improvement, not a dropped validation gate.
+
+Next compose the established original source truth and complete actual emitted
+branch fragment into one source-branch execution result. Use the actual real
+fresh interval and stopped-run frame to preserve all available values, including
+the removed companion's number; do not assume it differs from source aliases.
+Then derive the retained core/guarded source-body/first-trap and chosen-edge
+contracts, source-ranked CFG/ABI simulation and every production consumer, with
+complete witnesses and full author gates before a substantive activation PR.
+Continue bit-test/table/critical routes, loops, memory/addressing/atomics,
+calls/exceptions, uncovered families and original-domain whole-driver/Stock-only/
+downstream completeness. The original #140 remains open.

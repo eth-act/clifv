@@ -1,3 +1,6 @@
+import FV.Backend.Proof.StockConditionPrefixWitness
+import FV.Backend.Proof.StockResolvedDefsWitness
+import FV.Backend.Proof.StockSequenceFrame
 import FV.Backend.Proof.StockConditionalSourceValuesWitness
 import FV.Backend.Proof.StockConditionalResolvedWitness
 import FV.Backend.Proof.StockConditionalCallsWitness
@@ -27,3 +30,21 @@ import FV.Backend.Proof.StockConditionalEmissionWitness
 #print axioms Backend.Stock.Proof.ConditionalValues.zero_branch_resolved
 #print axioms Backend.Stock.Proof.ConditionalValues.ResolvedWitness.flag_resolved_witness
 #print axioms Backend.Stock.Proof.ConditionalValues.ResolvedWitness.zero_resolved_witness
+
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_select_nonzero_prefix
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_select_nonzero_prefix_witness
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_select_zero_rhs_prefix
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_select_zero_prefix_witness
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_select_wide_comparison_prefix
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_select_narrow_comparison_prefix
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_select_comparison_prefix_witness
+#print axioms Backend.Stock.Proof.ConditionalValues.comparison_prefix
+#print axioms Backend.Stock.Proof.ConditionalValues.original_prefix
+#print axioms Backend.Stock.Proof.ConditionalValues.SourceWitness.original_prefix_witness
+#print axioms Backend.Stock.Proof.Resolved.renamed_defs
+#print axioms Backend.Stock.Proof.Resolved.fragment_defs
+#print axioms Backend.Stock.Proof.Resolved.fragment_frame
+#print axioms Backend.Stock.Proof.Resolved.renamed_defs_witness
+#print axioms Backend.Stock.Proof.Resolved.fragment_endpoint_witness
+#print axioms Backend.Stock.Proof.Sequence.stop_frame
+#print axioms Backend.Stock.Proof.Sequence.stop_frame_witness
