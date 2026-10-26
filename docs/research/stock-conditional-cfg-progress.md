@@ -54,3 +54,26 @@ Remote #634 terminal evidence is `95a286c0`, with postmerge/baseline evidence
 saved views are preserved. One warm cache, bounded builds, no new agents or
 worktrees. Completed #634 cleanup reclaimed 669,644,996 bytes after remote
 archive and individual content-hash verification; about 577 GiB remains free.
+
+The next source/alias checkpoint also proves original650 source truth for every
+supported scalar condition, including comparison look-through and zero extension,
+by constructing the715 proof companion internally. Existing8/16/32/64 source
+proofs are reused; no source comparison result must be materialized. Actual
+conditional-source witnesses cover arbitrary64-bit inputs. Final-resolver branch
+replacement is proved for both flag and direct-zero forms, with nonidentity
+alias0→1 witnesses, including a companion destination equal to the real operand.
+All23new audit roots are standard-only; two MCP packet reviews (generic original
+source theorem and complete source witness) report Std3 and no warnings.
+
+Next exact internal obligation: preserve every source-available register after
+removing the companion's final cset. The current generic frame excludes its
+extra destination, but that number can coincide with an available body result's
+final alias because branch emission precedes body allocation. Do not turn its
+inequality into an accepted-input condition. Derive the real condition prefix's
+fresh-definition upper bound from actual651/652 execution (wide/nonzero prefix
+is empty; narrow cases use their actual extension scratch), then use seqRun_frame
+to recover that register too. Reuse existing nonzero observed states and narrow/
+wide comparison selection/observed-state proofs. Keep current weaker theorem
+variants and add the stronger internally discharged source/core variant. Then
+compose the actual selected branch/body/chosen-edge/CFG/ABI consumers and run all
+current full author gates before the next substantive production PR.
