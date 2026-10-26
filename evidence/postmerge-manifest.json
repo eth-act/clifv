@@ -1,0 +1,30 @@
+{
+  "utc": "2026-10-26T16:50:09.211988+00:00",
+  "source_publication": "4974d655866b185d8f4e0a1ec65de48feaed9d74",
+  "merged_main": "00576bd9e3cd8f9bd46d14aeb750012d88d1aa97",
+  "archive_bytes": 111722573,
+  "archive_sha256": "01aa0ea8db295e22f460e15bd954ab35ca49403694298efd63ac7f13611ca7cd",
+  "parts": [
+    {
+      "name": "postmerge-archive.tar.gz.part000",
+      "bytes": 41943040,
+      "sha256": "1bc80f0c45fd37590603914bdde692f1dfba3306237615e557a33c66dd52bea5",
+      "blob": "8b5f55f75d809dfe0fc71e44b0d7bdf62a050867"
+    },
+    {
+      "name": "postmerge-archive.tar.gz.part001",
+      "bytes": 41943040,
+      "sha256": "bf4b96bf11c19ec7a049d7180a85cd8fcefd8395b0f29037cefb1392c74c9f61",
+      "blob": "301ae65bc65ee888212b628fba9812e7da59a075"
+    },
+    {
+      "name": "postmerge-archive.tar.gz.part002",
+      "bytes": 27836493,
+      "sha256": "90b18405fe3c8e243569f0d86b75fd92d1e4c2c0c128f27c36e1b5116f56ca71",
+      "blob": "edd466791620ce11bf27ac26de360d1ff7b7ca2d"
+    }
+  ],
+  "restore": "Concatenate postmerge-archive.tar.gz.part000,part001,... in numeric order; verify archive_sha256, then extract gzip tar.",
+  "prior_terminal_single_file_commit": "da1b73f42b69c9ea71a7098b0ab76fb9381c1fef",
+  "state": "postmerge evidence: complete terminal author gates, actual baseline binary, all13809 captured inputs and cleanup receipts; full140 remains open"
+}
