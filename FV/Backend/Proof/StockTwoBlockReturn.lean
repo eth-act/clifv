@@ -9,18 +9,16 @@ set_option autoImplicit false
 set_option Elab.async false
 set_option maxRecDepth 20000
 
-/-- Complete instruction-zero return simulation for a two-block source class.
-The entry constants/nops may retain inherited parameters; all its new results
-are forwarded. The return block uses the entire existing scalar/division/mask
-family. Every register, source, graph and machine placement fact is derived
-from the original execution and actual compiler result. -/
-theorem entry_return_frame {f : Clif.Function} {result : Result}
+/-- Instruction-zero return simulation with an actual dividing entry body,
+followed by the broader existing scalar/division/mask successor. -/
+theorem entry_division_return_frame {f : Clif.Function} {result : Result}
     (run : Stock.lower f = .ok result) (scope : LowerScope f) (dominated : Dominated f)
     (abi : sigAbiOk f.sig = true) {entry target : Clif.Block} {bc : Clif.BlockCall} {xs : List Nat}
     (blocks : f.blocks = [entry,target]) (jump : entry.term = .jump bc) (ret : target.term = .ret xs)
     (destination : bc.block = target.id) (different : entry.id ≠ target.id)
     (family : ∀ b ∈ f.blocks,∀ stm ∈ b.body,MaskBody.Family stm.inst)
-    (quiet : ∀ stm ∈ entry.body,(∃ ty imm,stm.inst = .iconst ty imm) ∨ stm.inst = .nop)
+    (entryFamily : ∀ stm ∈ entry.body,(∃ ty imm,stm.inst = .iconst ty imm) ∨
+      (∃ op ty x y,stm.inst = .div op ty x y) ∨ stm.inst = .nop)
     (forwarded : ∀ stm ∈ entry.body,∀ x ∈ stm.results,x ∈ bc.args)
     {env : Clif.Env} {cp : Clif.Program} {args : List Clif.Val} {cm : Clif.Mem} {fr : Clif.Frame}
     (entered : SourceEntry f args fr)
@@ -60,9 +58,12 @@ theorem entry_return_frame {f : Clif.Function} {result : Result}
       parameter (List.mem_flatMap.mpr ⟨stm,List.mem_of_getElem? statement,defined⟩)
   obtain ⟨ρentry,wentry,entryPath,guarded,allValues,sameWorld⟩ := Control.jump_entry_prelude run scope dominated
     spec sourceEntry driver memorySem stable memory arguments
+  have formats : ∀ block ∈ f.blocks,∀ stm ∈ block.body,CastComplete.MemoryFormat stm.inst := by
+    intro block member stm present
+    exact MaskBody.family_formats (family block member stm present)
   obtain ⟨t,left,ρ,w,total,continued,empty,frame,sourceFrame,atJump,executed,post,tDefined⟩ :=
-    Inherited.constant_jump_carry_returns_defined run scope dominated refines driver stable
-      spec jump quiet available remaining atTerm returned
+    Inherited.division_jump_carry_returns_defined run scope dominated refines driver stable
+      spec jump formats entryFamily available remaining atTerm returned
       ⟨guarded,allValues.mono (fun _ _ => True.intro)⟩
       (by simpa only [spec.atBlock] using Control.source_defined_entry_frame dominated result.ctx entered)
   have targetValue : spec.target = 1 := by
@@ -138,5 +139,34 @@ theorem entry_return_frame {f : Clif.Function} {result : Result}
       (by simpa only [vdefUpd,writeV,List.foldl_nil,Array.toList_empty,List.filter_nil,List.zip_nil_left] using copied)
     have whole := RunOkABIAt.prefix entryPath (RunOkABIAt.prefix path finished)
     exact ⟨entrySeed spec.core.scan.ctx fr,by simpa only [frame.2.2.1] using whole⟩
+
+/-- Complete instruction-zero return simulation for a two-block source class.
+The entry constants/nops may retain inherited parameters; all its new results
+are forwarded. The return block uses the entire existing scalar/division/mask
+family. Every register, source, graph and machine placement fact is derived
+from the original execution and actual compiler result. -/
+theorem entry_return_frame {f : Clif.Function} {result : Result}
+    (run : Stock.lower f = .ok result) (scope : LowerScope f) (dominated : Dominated f)
+    (abi : sigAbiOk f.sig = true) {entry target : Clif.Block} {bc : Clif.BlockCall} {xs : List Nat}
+    (blocks : f.blocks = [entry,target]) (jump : entry.term = .jump bc) (ret : target.term = .ret xs)
+    (destination : bc.block = target.id) (different : entry.id ≠ target.id)
+    (family : ∀ b ∈ f.blocks,∀ stm ∈ b.body,MaskBody.Family stm.inst)
+    (quiet : ∀ stm ∈ entry.body,(∃ ty imm,stm.inst = .iconst ty imm) ∨ stm.inst = .nop)
+    (forwarded : ∀ stm ∈ entry.body,∀ x ∈ stm.results,x ∈ bc.args)
+    {env : Clif.Env} {cp : Clif.Program} {args : List Clif.Val} {cm : Clif.Mem} {fr : Clif.Frame}
+    (entered : SourceEntry f args fr)
+    {fuel : Nat} {vals : List Clif.Val} {outMem : Clif.Mem}
+    (returned : Clif.runLoop env cp fuel ⟨fr,[],cm⟩ = .returned vals outMem)
+    {F : BitVec 64 → Prop} {isem : Backend.Proof.Sem} (refines : Refines F isem)
+    (driver : DriverSem isem) {sb : Nat} {syms : String → Option Nat}
+    (memorySem : MemRefines F sb syms isem) {MR : MemRelT} (stable : MRStable F MR)
+    {w0 : Arm.ArmState} (memory : MR fr.slots cm w0) (arguments : ArgsAtEntry F f.sig args w0) :
+    ∃ ρ0,RunOkABIAt f result.code result.edgeArgs isem MR fr.slots ⟨0,0,ρ0,w0⟩ (.returned vals outMem) := by
+  apply entry_division_return_frame run scope dominated abi blocks jump ret destination different family
+    ?_ forwarded entered returned refines driver memorySem stable memory arguments
+  intro stm member
+  rcases quiet stm member with constant | nop
+  · exact Or.inl constant
+  · exact Or.inr (Or.inr nop)
 
 end Backend.Stock.Proof.TwoBlock
