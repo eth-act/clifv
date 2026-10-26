@@ -7,34 +7,32 @@ is unchanged: actual Stock source semantics, simulation/completeness, production
 compiler/checker/linker/generated proofs, original inputs/theorem variants/exact
 required axioms/accepted identities/successful stages.
 
-## Current delivery: direct CFG production
+## Current delivery: dividing CFG entry blocks
 
-The first general direct two-block Stock class is implemented on current main
-`efe8b677`; validated implementation `5f35e773` enables the actual default
-compiler/checker/verified-link/generated-proof route with complete prior-route
-fallback. Entry constants/nops and nonempty successor copies compose with the
-scalar/division/mask return block, original ABI entry, placed slots and source
-return/trap semantics. A CFG ABI-read model proves true-entry-only read
-transport and paired physical return realization. Mixed programs with retained
-try-call functions use the checked provider when the new class is present;
-old optimizer/tail and other exception routes remain.
+The first direct two-block class landed in #630 (`ce83af2c`), including actual
+compiler/checker/linker/generated-proof activation with complete old-route
+fallback. [Its evidence](../research/stock-two-block-source.md) records 13 gains,
+zero losses and 900/4543 exact symbol comparisons.
 
-[Terminal evidence](../research/stock-two-block-source.md):4041 normal modules,
-89 axiom audits/3486 roots with all3425 prior sets exact, six ownership
-partitions,34 native/CLI/link/generated-proof checks,2880 native executions,
-runtime/encoder, both original identity/stage cohorts and verified examples.
-The same-input full crate comparison improves887→900/4543 exact symbols,
-13 gains and zero losses. This is neither unique-function coverage nor a goal
-completion percentage.
+The next substantive production batch, validated implementation `158ffc0d`,
+adds constant/division/remainder/nop entry bodies, first-entry and later-successor
+traps, inherited values and nonempty successor copies. It reuses the same
+Scalar.Domain and paired physical CFG consumer. Route 6 is appended, keeping
+old artifact route indices 0–5 and complete transactional fallback.
+[Terminal evidence](../research/stock-entry-division-production.md): 4048 normal
+modules, 90 audit files/3499 reported roots with all 3486 old sets exact, six
+ownership partitions, 34 new and 34 retained integration checks, 3840 native
+executions, current runtime/encoder/E2E/examples and actual crate-proofs package.
+Same-input comparison against #630 remains 900/4543 exact, zero gains/losses.
+This is source/trap capability progress, not a new exact-match gain.
 
-Land this substantive activation after the documented gates; then extend the
-shared source/CFG composition to broader entry bodies and block graphs,
-conditional/table/critical edges and loops. Continue effects, memory, calls,
-exceptions, uncovered rule/helper execution and original-domain whole-driver
-simulation. Internal fallback preserves acceptance but does not establish
-Stock-only selection or downstream completeness; these remain explicit full
-#140 obligations. Do not make another wholesale prerequisite queue or stop at
-this first CFG class.
+Land after these author gates, then extend shared CFG composition to broader
+scalar entry bodies and block graphs, conditional/table/critical edges and
+loops. Continue effects, memory, calls, exceptions, uncovered rule/helper
+execution and original-domain whole-driver simulation/completeness. Fallback
+preserves acceptance but does not prove Stock-only success or downstream
+completeness. The original #140 scope and obligation ledger remain active;
+do not stop at this production class or rebuild a wholesale prerequisite queue.
 
 ## Starting point and next deliveries
 
