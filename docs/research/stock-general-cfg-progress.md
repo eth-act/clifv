@@ -23,11 +23,22 @@ witness report the same sets and no source warnings. Actual witnesses include a
 nonempty middle-block traversal and a four-node run with synthetic critical
 edges. Existing proof modules and consumer interfaces remain unchanged.
 
-Next: derive source-CFG ordering and compose arbitrary chain/acyclic scalar
-return and first-trap simulation; reuse existing jump continuations and per-edge
+The next checkpoint derives topological order from a strict original source
+rank through the actual fuel-bounded DFS, including unreachable nodes and shared
+joins. Source-table edges and row sizes are connected to original terminators.
+The resulting original-node labels retain source-edge order through critical
+node insertion, and directly instantiate the generic demand transfer. Plain
+source jumps are proved to select original targets directly, even with other
+blocks' critical nodes. An actual conditional compilation crosses both a
+middle block and a synthetic node with nonempty arguments; its witness is
+kernel-only. All 1,064 combined targeted keys and all 12 additional forward
+audit roots pass, using only the standard three axioms. The earlier 22-root
+audit remains separate.
+
+Next: compose arbitrary chain/acyclic scalar return and first-trap simulation; reuse existing jump continuations and per-edge
 preparation/copy proofs. Then activate the larger class in every consumer and
-run the full per-PR gates. Strict label order is currently an internal transfer
-premise, not a derived theorem for arbitrary CFGs. Backedges need SSA/dominance
+run the full per-PR gates. Strict label order is now derived for source-ranked acyclic edges; arbitrary
+cyclic CFGs are not covered. Backedges need SSA/dominance
 and carried-value reasoning beyond this forward-demand result. General branches,
 loops, effects/calls and original-domain simulation/completeness remain open.
 
