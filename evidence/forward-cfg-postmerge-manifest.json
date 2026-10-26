@@ -1,0 +1,33 @@
+{
+  "utc": "2026-10-26T22:26:14.428425+00:00",
+  "merge_commit": "d6218f299c97d82d560e74ec0a75813a05f5b558",
+  "publication_head": "7c561c929436fcb2b44f8587861ea8b3b948ac5c",
+  "validated_code_head": "1620b2c4beeb2bc36ee50e79fb40b3b3eb2f320d",
+  "evidence_commit": "8faa461b5bca38000fddf44aa0be6600debb3462",
+  "branch": "agent/stock-cfg-body-progress-20261025T025359Z",
+  "prior_terminal_evidence": "95a286c086b9fd3f17215e6a171ece0bd0313867",
+  "parts": [
+    {
+      "path": "evidence/forward-cfg-postmerge.part000",
+      "bytes": 33554432,
+      "sha256": "60f29b5064078766c4fcfa6eb3cb2d4fb08c6983f7ec41e7c6f75e1bd5f1ac66"
+    },
+    {
+      "path": "evidence/forward-cfg-postmerge.part001",
+      "bytes": 17730183,
+      "sha256": "283010e4fe671e7d5fff05997b0b498772d84bc5f005b74a13bc3a64d7bd1ef2"
+    }
+  ],
+  "bytes": 51284615,
+  "sha256": "a8531c8df09b676819ac41c5a0f86d7c71f3cca8fa55aed59aa6df8dada5a925",
+  "preserved_prior_evidence_tree": true,
+  "next_baseline": {
+    "merge": "d6218f299c97d82d560e74ec0a75813a05f5b558",
+    "validated_source": "1620b2c4beeb2bc36ee50e79fb40b3b3eb2f320d",
+    "publication": "7c561c929436fcb2b44f8587861ea8b3b948ac5c",
+    "binary_sha256": "6046930eab7151504eff5087f77d57299634d01e35d8df09f3a60cef7a359c5a",
+    "purpose": "sole exact #634 parent executable for the next same-input production comparison",
+    "full_140_complete": false
+  },
+  "full_140_complete": false
+}

@@ -1,0 +1,248 @@
+{
+  "utc": "2026-10-26T22:24:44.145940+00:00",
+  "source_head": "1620b2c4beeb2bc36ee50e79fb40b3b3eb2f320d",
+  "terminal_remote_evidence": "95a286c086b9fd3f17215e6a171ece0bd0313867",
+  "archive_sha256_verified": "0e65715b1b9f970b4630d346155740f327327bd6f8f6465364d7b8f8ac85e0ad",
+  "remote_commit_parts_content_verified": true,
+  "every_removed_file_hash_verified": true,
+  "removed": [
+    {
+      "path": "/tmp/stock-general-cfg-baseline",
+      "files": 2,
+      "bytes": 150031547
+    },
+    {
+      "path": "/tmp/stock-forward-cfg-integration-v1/linked",
+      "files": 178,
+      "bytes": 84225867
+    },
+    {
+      "path": "/tmp/stock-forward-cfg-integration-v1/native-objects",
+      "files": 218,
+      "bytes": 29631376
+    },
+    {
+      "path": "/tmp/stock-forward-cfg-parent-linear-integration-v1/linked",
+      "files": 178,
+      "bytes": 72779025
+    },
+    {
+      "path": "/tmp/stock-forward-cfg-parent-linear-integration-v1/native-objects",
+      "files": 96,
+      "bytes": 2967832
+    },
+    {
+      "path": "/tmp/stock-forward-cfg-parent-scalar-entry-integration-v1/linked",
+      "files": 162,
+      "bytes": 64714971
+    },
+    {
+      "path": "/tmp/stock-forward-cfg-parent-scalar-entry-integration-v1/native-objects",
+      "files": 96,
+      "bytes": 2921112
+    },
+    {
+      "path": "/tmp/stock-forward-cfg-parent-entry-integration-v1/linked",
+      "files": 86,
+      "bytes": 7771541
+    },
+    {
+      "path": "/tmp/stock-forward-cfg-parent-entry-integration-v1/native-objects",
+      "files": 96,
+      "bytes": 525784
+    },
+    {
+      "path": "/tmp/stock-forward-cfg-parent-integration-v1/linked",
+      "files": 86,
+      "bytes": 6485127
+    },
+    {
+      "path": "/tmp/stock-forward-cfg-parent-integration-v1/native-objects",
+      "files": 96,
+      "bytes": 373080
+    },
+    {
+      "path": "/tmp/stock-forward-cfg-paired-main-v1/1e02e46160a0",
+      "files": 1049,
+      "bytes": 2071756
+    },
+    {
+      "path": "/tmp/stock-forward-cfg-paired-main-v1/20382ef3e242",
+      "files": 339,
+      "bytes": 550686
+    },
+    {
+      "path": "/tmp/stock-forward-cfg-paired-main-v1/29204d9a8e90",
+      "files": 224,
+      "bytes": 323591
+    },
+    {
+      "path": "/tmp/stock-forward-cfg-paired-main-v1/2a8f3e1d4cad",
+      "files": 894,
+      "bytes": 1681923
+    },
+    {
+      "path": "/tmp/stock-forward-cfg-paired-main-v1/321acbeccc07",
+      "files": 834,
+      "bytes": 1693546
+    },
+    {
+      "path": "/tmp/stock-forward-cfg-paired-main-v1/3f9e62bc81f2",
+      "files": 49,
+      "bytes": 58878
+    },
+    {
+      "path": "/tmp/stock-forward-cfg-paired-main-v1/464e7101696b",
+      "files": 634,
+      "bytes": 1043595
+    },
+    {
+      "path": "/tmp/stock-forward-cfg-paired-main-v1/53fbdd46567f",
+      "files": 144,
+      "bytes": 199181
+    },
+    {
+      "path": "/tmp/stock-forward-cfg-paired-main-v1/58dd65aabbf5",
+      "files": 2184,
+      "bytes": 4904533
+    },
+    {
+      "path": "/tmp/stock-forward-cfg-paired-main-v1/602013334f89",
+      "files": 199,
+      "bytes": 322968
+    },
+    {
+      "path": "/tmp/stock-forward-cfg-paired-main-v1/64eccc08e437",
+      "files": 1434,
+      "bytes": 3063780
+    },
+    {
+      "path": "/tmp/stock-forward-cfg-paired-main-v1/6bce15f25e47",
+      "files": 254,
+      "bytes": 490352
+    },
+    {
+      "path": "/tmp/stock-forward-cfg-paired-main-v1/72d2bd290ac8",
+      "files": 144,
+      "bytes": 226222
+    },
+    {
+      "path": "/tmp/stock-forward-cfg-paired-main-v1/92232d6c7552",
+      "files": 104,
+      "bytes": 172208
+    },
+    {
+      "path": "/tmp/stock-forward-cfg-paired-main-v1/94d1a6f0b7ba",
+      "files": 279,
+      "bytes": 435629
+    },
+    {
+      "path": "/tmp/stock-forward-cfg-paired-main-v1/961b7cf1a712",
+      "files": 2274,
+      "bytes": 3888361
+    },
+    {
+      "path": "/tmp/stock-forward-cfg-paired-main-v1/99066f219d73",
+      "files": 949,
+      "bytes": 1817936
+    },
+    {
+      "path": "/tmp/stock-forward-cfg-paired-main-v1/9e5aefb4b833",
+      "files": 1519,
+      "bytes": 3056982
+    },
+    {
+      "path": "/tmp/stock-forward-cfg-paired-main-v1/a19e5c2e7fdc",
+      "files": 1239,
+      "bytes": 2607419
+    },
+    {
+      "path": "/tmp/stock-forward-cfg-paired-main-v1/a7951b6c8b43",
+      "files": 184,
+      "bytes": 254725
+    },
+    {
+      "path": "/tmp/stock-forward-cfg-paired-main-v1/a7ecf10ad114",
+      "files": 594,
+      "bytes": 969777
+    },
+    {
+      "path": "/tmp/stock-forward-cfg-paired-main-v1/ad6898e9ebd3",
+      "files": 209,
+      "bytes": 521464
+    },
+    {
+      "path": "/tmp/stock-forward-cfg-paired-main-v1/b7cf11f52344",
+      "files": 229,
+      "bytes": 534000
+    },
+    {
+      "path": "/tmp/stock-forward-cfg-paired-main-v1/cd606b30c544",
+      "files": 4524,
+      "bytes": 8139895
+    },
+    {
+      "path": "/tmp/stock-forward-cfg-paired-main-v1/d026607f0214",
+      "files": 254,
+      "bytes": 367586
+    },
+    {
+      "path": "/tmp/stock-forward-cfg-paired-main-v1/df0885fe4983",
+      "files": 339,
+      "bytes": 484559
+    },
+    {
+      "path": "/tmp/stock-forward-cfg-paired-main-v1/e8b8f56c7070",
+      "files": 304,
+      "bytes": 500754
+    },
+    {
+      "path": "/tmp/stock-forward-cfg-paired-main-v1/ebf2bfeafd29",
+      "files": 249,
+      "bytes": 391232
+    },
+    {
+      "path": "/tmp/stock-forward-cfg-paired-main-v1/ec2b49151267",
+      "files": 299,
+      "bytes": 429405
+    },
+    {
+      "path": "/tmp/stock-forward-cfg-paired-main-v1/ef793c6807ad",
+      "files": 1054,
+      "bytes": 2171083
+    }
+  ],
+  "bytes_reclaimed": 669644996,
+  "free_GiB": 577.52,
+  "preserved": "All dirty/unpublished source, required source views, current example outputs, one warm cache, small receipts/logs, saved next code and sole baseline executable",
+  "removed_duplicate_local_archive_parts": [
+    {
+      "path": "/tmp/stock-forward-cfg-terminal.part000",
+      "bytes": 33554432
+    },
+    {
+      "path": "/tmp/stock-forward-cfg-terminal.part001",
+      "bytes": 33554432
+    },
+    {
+      "path": "/tmp/stock-forward-cfg-terminal.part002",
+      "bytes": 33554432
+    },
+    {
+      "path": "/tmp/stock-forward-cfg-terminal.part003",
+      "bytes": 33554432
+    },
+    {
+      "path": "/tmp/stock-forward-cfg-terminal.part004",
+      "bytes": 18341365
+    },
+    {
+      "path": "/tmp/stock-forward-cfg-postmerge.part000",
+      "bytes": 33554432
+    },
+    {
+      "path": "/tmp/stock-forward-cfg-postmerge.part001",
+      "bytes": 17730183
+    }
+  ]
+}
