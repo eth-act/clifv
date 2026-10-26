@@ -7,44 +7,49 @@ is unchanged: actual Stock source semantics, simulation/completeness, production
 compiler/checker/linker/generated proofs, original inputs/theorem variants/exact
 required axioms/accepted identities/successful stages.
 
-## Current delivery: complete scalar CFG entry bodies
+## Current delivery: three-block scalar CFGs
 
-The first direct two-block class landed in #630 (`ce83af2c`), followed by
-actual dividing-entry activation in #631 (`b94d6cd4`). All compiler/checker/
-linker/generated-proof consumers use the Stock route with complete prior-route
-fallback. The former added13 exact matches; the latter retained900/4543 exact.
+The complete scalar-entry packet landed in #632 (`00576bd9`), after #630/#631.
+The next substantive implementation, `1a30db77`, enables the actual default
+compiler/checker/linker/generated-proof route for three-block scalar chains,
+including empty-argument jumps, nops and unforwarded inherited source values.
+[Terminal author evidence](../research/stock-linear-cfg-production.md) records
+4073 normal keys,92 audits/3544 roots/all3518 prior sets exact,78 new and70/34/34
+retained integration checks,24000 native executions and all runtime/encoder/
+identity/stage/example/actual-crate gates. All2456 old backend proof files and
+three shared consumer theorem signatures are exact. Routes0–6 remain;7 is appended.
 
-The next substantive batch, implementation `b0a84c6b` plus fixture-only fixes
-through `b0f10301`, extends the existing CFG entry adapter to the complete
-proved scalar/division/mask body family. Source carry, first/later traps,
-original continuation/fuel, inherited values and nonempty copies are proved;
-route6 and old route indices0–5 remain. [Terminal author evidence](../research/stock-scalar-entry-production.md):
-4051 normal keys,91 audits/3518 roots/all3499 old axiom sets and31 old public
-headers exact,six ownership partitions,70 new+34+34 retained integration checks,
-23040 native executions/2880 reference executions, original runtime/encoder/
-identity/stages/examples,actual93-module crate package. Same4543 captured inputs
-versus mainb94 remain900→900 exact,zero gains/losses and no changed function bytes.
+The actual reverse traversal proves adjacent scan coupling and successor demand
+coverage. Source values transfer only when the successor demands them, avoiding
+unmaterialized dead/sunk values. Full scalar body/jump/return/first-trap contracts
+compose under the original input/ABI conditions. The same Scalar.Domain and CFG
+consumer boundary is reused with complete previous-route fallback.
 
-Land this complete packet after these author gates. Then target general CFG
-composition using the now-complete scalar body/jump contracts, rather than
-another operation-specific entry-class ladder. Raw-input diagnosis finds128
-old/new two-block eligible instances,267 scalar-family instances and139 with
-three or more blocks (raw scope, not post-normalization coverage). Reuse existing
-source edge/DFG/definedness/per-edge values and actual return contracts; retain
-needed successor values without demanding unmaterialized dead/sunk values.
-Prefer a bounded general single-successor fuel induction if it stays local;
-otherwise land the smallest actual three-block production class that covers
-these inputs, then generalize. Derive order, segment and legacy-edge
-compatibility facts internally. Do not add accepted-program proof certificates
-or rebuild a wholesale prerequisite queue.
+The measured default-allocator agreement is900→900/4543 exact,zero gains/losses
+and ten changed function bytes. All127 eligible normalized captured instances
+before CLI i128 legalization select real Stock code. With the same existing
+regalloc2 setting, the ten changed inputs improve0→8 exact; this is a bounded
+diagnostic, not default/full-corpus agreement. Keep allocation policy and source
+lowering progress distinct when choosing the next implementation; do not claim
+this completes the register-agreement goal.
 
-Continue conditional/table/critical edges, loops, effects/memory, calls,
-exceptions, uncovered helpers and original-domain whole-driver simulation and
-Stock-only/downstream completeness. Genuine per-edge production consumers need
-coordination when changing shared interfaces; single-successor work can continue
-independently. Fallback preserves acceptance but does not prove completeness.
-The original #140 scope and obligation ledger remain open; do not stop at this
-production class.
+Continue now with general source-chain/acyclic CFG composition, reusing the
+actual traversal, demanded source transfer and generic jump continuations.
+Then close conditional/table/critical edges, loops, memory/addressing/atomics,
+calls/exceptions, uncovered helpers and original-domain whole-driver simulation,
+Stock-only and downstream completeness. Existing per-edge preparation and
+spill/copy/instruction proofs already exist: reuse them; coordinate concrete
+shared consumer/interface overlaps through #140. Preserve original input
+conditions, old variants, exact required axioms, accepted identities and stages.
+No input proof certificates or another wholesale prerequisite queue.
+
+General backedges require carried inherited values beyond forward traversal
+order; start from existing CarryRel preservation and original SSA/dominance.
+Retain durable evidence and clean completed outputs after each batch. A shared
+checker import currently invalidates large old fixed checks; improve that
+validation boundary when it fits the next implementation without dropping gates
+or delaying actual source/production work. Full original #140 and the obligation
+ledger remain open. Fallback is acceptance preservation, not completeness.
 
 ## Starting point and next deliveries
 
