@@ -7,6 +7,22 @@ is unchanged: actual Stock source semantics, simulation/completeness, production
 compiler/checker/linker/generated proofs, original inputs/theorem variants/exact
 required axioms/accepted identities/successful stages.
 
+## Active candidate: arbitrary-length forward scalar CFGs
+
+The same source view now proves ranked source/RPO/node order, whole-traversal
+demand transport, arbitrary-length jump/return and first-trap composition, ABI
+entry and legacy consumer compatibility. The ForwardCfg executable source check
+derives the unchanged Scalar.Domain without a fixed block bound. Default
+compiler/checker/linker/generated routes are wired with appended route8 and full
+previous-route fallback. Complete four-block witnesses and2,422consumer module
+checks pass. [Current checkpoint](../research/stock-general-cfg-progress.md)
+distinguishes these results from pending full author gates and a future merge.
+
+Finish current native/CLI/generated fixtures over four to eight blocks and all
+full gates, reconcile main, push and squash-merge the substantive packet. Then
+continue conditional/table/critical source simulations, loops and the full
+remaining original obligations below. No first-class or proof-fragment stop.
+
 ## Current delivery: three-block scalar CFGs
 
 The complete scalar-entry packet landed in #632 (`00576bd9`), after #630/#631.

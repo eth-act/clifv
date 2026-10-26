@@ -1,9 +1,10 @@
 import FVTest.Backend.Lowering.StockScalarTestSupport
-import FV.Backend.LinearCfgNIProduction
+import FV.Backend.ForwardCfgNIProduction
 import FV.Backend.LinearScan
 import FV.E2E.StockCfgFixtures
 import FV.E2E.StockEntryCfgFixtures
 import FV.E2E.StockLinearCfgFixtures
+import FV.E2E.StockForwardCfgFixtures
 import FV.Clif.Print
 
 set_option autoImplicit false
@@ -27,8 +28,11 @@ def scalarEntryFunctions (config : Stock.D0.Configuration) : List (Clif.Function
 def linearFunctions (config : Stock.D0.Configuration) : List (Clif.Function × Clif.Ty) :=
   E2E.StockLinearCfgNIWitness.functions config
 
-private def functionsFor (entry scalarEntry linear : Bool) (config : Stock.D0.Configuration) :=
-  if linear then linearFunctions config else if scalarEntry then scalarEntryFunctions config else if entry then entryFunctions config else functions config
+def forwardFunctions (config : Stock.D0.Configuration) : List (Clif.Function × Clif.Ty) :=
+  E2E.StockForwardCfgNIWitness.functions config
+
+private def functionsFor (entry scalarEntry linear forward : Bool) (config : Stock.D0.Configuration) :=
+  if forward then forwardFunctions config else if linear then linearFunctions config else if scalarEntry then scalarEntryFunctions config else if entry then entryFunctions config else functions config
 
 def input (config : Stock.D0.Configuration) : String :=
   String.join ((functions config).map fun (f,_) => f.print ++ "\n")
@@ -41,9 +45,9 @@ private def nativeInput (ty : Clif.Ty) (sample : Nat) : Nat → BitVec ty.width 
     let boundaries : List Nat := [0,1,2^(ty.width-1)-1,2^(ty.width-1),2^ty.width-1,256,ty.width,ty.width+1]
     BitVec.ofNat ty.width boundaries[(i+sample) % 8]!
 
-private def executionCases (entry scalarEntry linear : Bool) (config : Stock.D0.Configuration) : IO Lean.Json := do
+private def executionCases (entry scalarEntry linear forward : Bool) (config : Stock.D0.Configuration) : IO Lean.Json := do
   let mut rows := #[]
-  for (f,ty) in functionsFor entry scalarEntry linear config do
+  for (f,ty) in functionsFor entry scalarEntry linear forward config do
     for sample in List.range 10 do
       let values := nativeInput ty sample
       let args := (List.range 9).map fun i => (values i).toInt
@@ -57,22 +61,22 @@ private def executionCases (entry scalarEntry linear : Bool) (config : Stock.D0.
       rows := rows.push (Lean.Json.arr #[Lean.toJson f.name,Lean.toJson args,expected])
   pure (Lean.Json.arr rows)
 
-private def checkConfiguration (entry scalarEntry linear : Bool) (label : String)
+private def checkConfiguration (entry scalarEntry linear forward : Bool) (label : String)
     (allocateBatch : Array VCode → IO (Array (Except String AFunc)))
     (config : Stock.D0.Configuration) : IO Unit := do
   let count := if linear then 100 else if scalarEntry then 96 else if entry then 16 else 12
-  let lower := if linear then Stock.LinearCfg.lowerValidated else if entry then Stock.TwoBlock.Entry.lowerValidated else Stock.TwoBlock.lowerValidated
-  let previousLower := if linear then Stock.TwoBlock.Entry.lowerValidated else if entry then Stock.TwoBlock.lowerValidated else Stock.Scalar.lowerValidated
-  let eligible := if linear then Stock.LinearCfg.eligible else if entry then Stock.TwoBlock.Entry.eligible else Stock.TwoBlock.eligible
-  let sourceOk := if linear then Stock.LinearCfg.sourceOk else if entry then Stock.TwoBlock.Entry.sourceOk else Stock.TwoBlock.sourceOk
-  let classCheck := if linear then Stock.LinearCfg.check else if entry then Stock.TwoBlock.Entry.check else Stock.TwoBlock.check
+  let lower := if forward then Stock.ForwardCfg.lowerValidated else if linear then Stock.LinearCfg.lowerValidated else if entry then Stock.TwoBlock.Entry.lowerValidated else Stock.TwoBlock.lowerValidated
+  let previousLower := if forward then Stock.LinearCfg.lowerValidated else if linear then Stock.TwoBlock.Entry.lowerValidated else if entry then Stock.TwoBlock.lowerValidated else Stock.Scalar.lowerValidated
+  let eligible := if forward then Stock.ForwardCfg.eligible else if linear then Stock.LinearCfg.eligible else if entry then Stock.TwoBlock.Entry.eligible else Stock.TwoBlock.eligible
+  let sourceOk := if forward then Stock.ForwardCfg.sourceOk else if linear then Stock.LinearCfg.sourceOk else if entry then Stock.TwoBlock.Entry.sourceOk else Stock.TwoBlock.sourceOk
+  let classCheck := if forward then Stock.ForwardCfg.check else if linear then Stock.LinearCfg.check else if entry then Stock.TwoBlock.Entry.check else Stock.TwoBlock.check
   let compile : Bool → (Array VCode → IO (Array (Except String AFunc))) →
       Clif.ParsedFile → List (String × String) → Bool → IO FileAsm :=
-    if linear then @compileFileLinearCfgNIWhen IO _ else if entry then @compileFileTwoBlockEntryNIWhen IO _ else @compileFileTwoBlockNIWhen IO _
+    if forward then @compileFileForwardCfgNIWhen IO _ else if linear then @compileFileLinearCfgNIWhen IO _ else if entry then @compileFileTwoBlockEntryNIWhen IO _ else @compileFileTwoBlockNIWhen IO _
   let previousCompile : Bool → (Array VCode → IO (Array (Except String AFunc))) →
       Clif.ParsedFile → List (String × String) → Bool → IO FileAsm :=
-    if linear then @compileFileTwoBlockEntryNIWhen IO _ else if entry then @compileFileTwoBlockNIWhen IO _ else @compileFileScalarNIWhen IO _
-  let source := String.join ((functionsFor entry scalarEntry linear config).map fun (f,_) => f.print ++ "\n")
+    if forward then @compileFileLinearCfgNIWhen IO _ else if linear then @compileFileTwoBlockEntryNIWhen IO _ else if entry then @compileFileTwoBlockNIWhen IO _ else @compileFileScalarNIWhen IO _
+  let source := String.join ((functionsFor entry scalarEntry linear forward config).map fun (f,_) => f.print ++ "\n")
   let pf := Clif.parseFile source
   require (pf.funcs.length == count) "cfg fixture parse/count failed"
   let excluded := Clif.parseFile (FVTest.StockScalarFixture.legacySource "retained_legacy_cfg")
@@ -99,6 +103,7 @@ private def checkConfiguration (entry scalarEntry linear : Bool) (label : String
   let legacy := if linear then {legacy with blocks := [
     legacy.blocks[0]!,{legacy.blocks[1]! with term := .jump ⟨3,[4]⟩},
     {id := 3,params := [(5,.i64)],body := [],term := .jump ⟨1,[5]⟩},legacy.blocks[2]!]} else legacy
+  let legacy := if forward then {legacy with blocks := [legacy.blocks[0]!,legacy.blocks[2]!,legacy.blocks[1]!,legacy.blocks[3]!]} else legacy
   require (!eligible legacy) "out-of-class control escaped the source selector"
   let old ← match previousLower legacy with
     | .ok vc => pure vc
@@ -126,7 +131,7 @@ private def checkConfiguration (entry scalarEntry linear : Bool) (label : String
     require (sourceOk f && classCheck f selected &&
       SemanticNI.check f selected && decide (selected = observed))
       s!"cfg fixture fell back from actual Stock: {f.name}"
-  let cases ← executionCases entry scalarEntry linear config
+  let cases ← executionCases entry scalarEntry linear forward config
   for cleanup in [false,true] do
     let seen ← IO.mkRef (0 : Nat)
     let production ← compile true (fun vcs => do
@@ -169,15 +174,15 @@ private def checkConfiguration (entry scalarEntry linear : Bool) (label : String
     require ((← calls.get) == 2 && retried.text == previous.text && retried.rules == previous.rules &&
       retried.unsupported == previous.unsupported && retried.unverified == previous.unverified &&
       retried.unvalidated == previous.unvalidated) "complete CFG retry changed previous output/history/stages"
-  IO.println s!"Stock {if linear then "cfglinear" else if scalarEntry then "cfgscalarentry" else if entry then "cfgentry" else "cfg"} {label} {repr config}: {count} actual Stock functions, both cleanup modes passed"
+  IO.println s!"Stock {if forward then "cfgforward" else if linear then "cfglinear" else if scalarEntry then "cfgscalarentry" else if entry then "cfgentry" else "cfg"} {label} {repr config}: {count} actual Stock functions, both cleanup modes passed"
 
 /-- Reuse the existing real-oracle/read-back checker and its negative control. -/
-private def checkClass (entry scalarEntry linear : Bool) (checkedRegalloc2 : String → Array VCode → IO (Array (Except String AFunc))) : IO Unit := do
+private def checkClass (entry scalarEntry linear forward : Bool) (checkedRegalloc2 : String → Array VCode → IO (Array (Except String AFunc))) : IO Unit := do
   for config in Stock.D0.configurations do
-    checkConfiguration entry scalarEntry linear "lean" (fun vcs => pure (allocateLean vcs)) config
-    checkConfiguration entry scalarEntry linear "regalloc2" (checkedRegalloc2 "rust/target/release/lean-regalloc") config
-  let lower := if linear then Stock.LinearCfg.lowerValidated else if entry then Stock.TwoBlock.Entry.lowerValidated else Stock.TwoBlock.lowerValidated
-  let sample ← match lower (functionsFor entry scalarEntry linear .systemVI32)[0]!.1 with
+    checkConfiguration entry scalarEntry linear forward "lean" (fun vcs => pure (allocateLean vcs)) config
+    checkConfiguration entry scalarEntry linear forward "regalloc2" (checkedRegalloc2 "rust/target/release/lean-regalloc") config
+  let lower := if forward then Stock.ForwardCfg.lowerValidated else if linear then Stock.LinearCfg.lowerValidated else if entry then Stock.TwoBlock.Entry.lowerValidated else Stock.TwoBlock.lowerValidated
+  let sample ← match lower (functionsFor entry scalarEntry linear forward .systemVI32)[0]!.1 with
     | .ok vc => pure vc
     | .error message => throw (IO.userError message)
   let missingRejected ← try
@@ -185,18 +190,21 @@ private def checkClass (entry scalarEntry linear : Bool) (checkedRegalloc2 : Str
     pure false
   catch _ => pure true
   require missingRejected "missing regalloc2 binary silently passed the CFG oracle test"
-  IO.println s!"Stock {if linear then "cfglinear" else if scalarEntry then "cfgscalarentry" else if entry then "cfgentry" else "cfg"} missing-binary negative control passed"
+  IO.println s!"Stock {if forward then "cfgforward" else if linear then "cfglinear" else if scalarEntry then "cfgscalarentry" else if entry then "cfgentry" else "cfg"} missing-binary negative control passed"
 
 def check (checkedRegalloc2 : String → Array VCode → IO (Array (Except String AFunc))) : IO Unit :=
-  checkClass false false false checkedRegalloc2
+  checkClass false false false false checkedRegalloc2
 
 def checkEntry (checkedRegalloc2 : String → Array VCode → IO (Array (Except String AFunc))) : IO Unit :=
-  checkClass true false false checkedRegalloc2
+  checkClass true false false false checkedRegalloc2
 
 def checkScalarEntry (checkedRegalloc2 : String → Array VCode → IO (Array (Except String AFunc))) : IO Unit :=
-  checkClass true true false checkedRegalloc2
+  checkClass true true false false checkedRegalloc2
 
 def checkLinear (checkedRegalloc2 : String → Array VCode → IO (Array (Except String AFunc))) : IO Unit :=
-  checkClass true true true checkedRegalloc2
+  checkClass true true true false checkedRegalloc2
+
+def checkForward (checkedRegalloc2 : String → Array VCode → IO (Array (Except String AFunc))) : IO Unit :=
+  checkClass true true true true checkedRegalloc2
 
 end FVTest.StockTwoBlockProductionRuntime

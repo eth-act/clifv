@@ -47,3 +47,23 @@ Source ownership: `agent/stock-general-cfg-20261026`, existing
 additional worktrees. Source checkpoints are pushed for recovery; no proof-only
 PR is intended. Keep the exact PR #633 parent executable and captured inputs for
 the next production comparison. Preserve unpublished sources and prior evidence.
+
+The implementation candidate now composes arbitrary-length nonentry return and
+first-trap simulations, ABI entry setup, and legacy edge-argument compatibility.
+`StockForwardCheck.check_sound` derives the unchanged Scalar.Domain from a finite
+source predicate: jumping entry, scalar bodies, ordinary supported ABI, and
+jump destinations strictly advancing the source block index. No fixed block
+count, result-forwarding condition or input proof certificate is added. Old
+classes and theorem variants remain. Complete four-block rotate-return and
+division-first-trap witnesses build; kernel compilation is used, with only two
+labelled fixed-input source-check native facts. MCP confirms the generic check
+uses Std3 and the witness uses precisely those facts, with no source warnings.
+
+Default compiler/checker/linker/generated-proof routing is wired to ForwardCfg,
+appending artifact route8 and retaining route0–7 and transactional fallback to
+the complete previous LinearCfg pipeline. The 2,422 consumer module checks pass.
+The maintained runtime/link fixtures add 100 cases over four to eight blocks,
+six ABI configurations, both allocators and cleanup modes. Full normal, audit,
+native, identity/stage, example, actual crate and paired-byte gates remain
+pending; this candidate has not been merged. Original #140 remains open beyond
+this source class.

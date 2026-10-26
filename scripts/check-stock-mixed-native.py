@@ -270,7 +270,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("artifacts", type=Path)
     parser.add_argument("--native-bin", type=Path, default=Path("rust/target/release/clif-native"))
-    parser.add_argument("--class", dest="kind", choices=["mixed", "logical", "scalar", "not", "mul", "shift", "cast", "bit", "popcount", "minmax", "cmp", "highmul", "div", "mixeddiv", "returneddiv", "generaldiv", "narrow", "mask", "cfg", "cfgentry", "cfgscalarentry", "cfglinear"], default="mixed")
+    parser.add_argument("--class", dest="kind", choices=["mixed", "logical", "scalar", "not", "mul", "shift", "cast", "bit", "popcount", "minmax", "cmp", "highmul", "div", "mixeddiv", "returneddiv", "generaldiv", "narrow", "mask", "cfg", "cfgentry", "cfgscalarentry", "cfglinear", "cfgforward"], default="mixed")
     options = parser.parse_args()
     root = options.artifacts.resolve()
     native = options.native_bin.resolve()
@@ -336,12 +336,12 @@ def main():
             wanted |= {"general_"+layout+"_returned_stock_mixed_div_"+op+suffix
                        for layout in ("unused","consumed","multiple")
                        for op in ("sdiv","udiv","srem","urem") for suffix in ("","_two")}
-        if options.kind in ("narrow", "mask", "cfg", "cfgentry", "cfgscalarentry", "cfglinear"):
-            count = 79 if options.kind == "narrow" else 36 if options.kind == "mask" else 100 if options.kind == "cfglinear" else 96 if options.kind == "cfgscalarentry" else 16 if options.kind == "cfgentry" else 12
+        if options.kind in ("narrow", "mask", "cfg", "cfgentry", "cfgscalarentry", "cfglinear", "cfgforward"):
+            count = 79 if options.kind == "narrow" else 36 if options.kind == "mask" else 100 if options.kind in ("cfglinear", "cfgforward") else 96 if options.kind == "cfgscalarentry" else 16 if options.kind == "cfgentry" else 12
             wanted = {f"stock_{options.kind}_{i}" for i in range(count)}
             case_path = obj.with_suffix(".cases.json")
             cases = json.loads(case_path.read_text())
-            assert len(cases) == count*(10 if options.kind in ("cfg", "cfgentry", "cfgscalarentry", "cfglinear") else 9), (case_path, len(cases))
+            assert len(cases) == count*(10 if options.kind in ("cfg", "cfgentry", "cfgscalarentry", "cfglinear", "cfgforward") else 9), (case_path, len(cases))
             for name, args, value in cases:
                 assert name in wanted and len(args) == 9, (name, args)
                 assert all(type(arg) is int for arg in args), args
@@ -398,7 +398,7 @@ def main():
                     assert row["actual"].get("returned") == row["expected"]["values"], row
             streams[engine] = rows
         assert [r["actual"] for r in streams["lean"]] == [r["actual"] for r in streams["cranelift"]]
-        records.append({**({"source_outcome_cases_sha256": sha(case_path)} if options.kind in ("narrow", "mask", "cfg", "cfgentry", "cfgscalarentry", "cfglinear") else {}), "allocator": allocator, "configuration": config, "cleanup": cleanup,
+        records.append({**({"source_outcome_cases_sha256": sha(case_path)} if options.kind in ("narrow", "mask", "cfg", "cfgentry", "cfgscalarentry", "cfglinear", "cfgforward") else {}), "allocator": allocator, "configuration": config, "cleanup": cleanup,
                         "runs": len(cases), "cranelift_reference_reused": reference_reused, "object_sha256": sha(obj),
                         "table_sha256": sha(table), "original_source_sha256": sha(original),
                         "executed_source_sha256": sha(source),

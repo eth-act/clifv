@@ -1,5 +1,5 @@
 {
-  "updated_utc": "2026-10-26T18:40:44.506982+00:00",
+  "updated_utc": "2026-10-26T20:26:30.407667+00:00",
   "goal": 140,
   "complete": false,
   "inventory_warning": "Historical517root inventory is a source map, not current reachability/execution coverage. Reconcile generated source hashes and current typed scope before using partition counts.",
@@ -8820,5 +8820,13 @@
     "source_driver_validated_head": "66cff515c6a2dfc9efb82335be0711998f881e86",
     "source_driver_receipt": "docs/research/stock-general-div-source.md",
     "source_driver_evidence": "39e8973aa776b761ec6c62b772cc5d57cae0454e"
+  },
+  "active_candidate": {
+    "name": "arbitrary-length forward scalar CFGs",
+    "state": "source/consumer modules build; full author gates pending; not merged",
+    "branch": "agent/stock-general-cfg-20261026",
+    "implementation": "ForwardCfg source-check-derived existing Scalar.Domain, general jump/return/first-trap and ABI entry, appended route8 with prior complete pipeline fallback",
+    "limits": "Jump/return source graphs with strictly advancing source-index jumps; conditional/table/critical simulations, loops, effects/calls and whole-domain completeness remain open",
+    "evidence": "docs/research/stock-general-cfg-progress.md"
   }
 }
