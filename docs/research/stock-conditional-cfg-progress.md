@@ -1,0 +1,56 @@
+# Conditional source composition checkpoint
+
+Main #634 (`d6218f29`) activates arbitrary-length forward scalar jump/return
+CFGs. Full original #140 remains open. This next implementation reuses the same
+source view and existing condition/per-edge proofs; no production activation or
+whole-branch source simulation is claimed at this checkpoint.
+
+`StockConditionalCalls` derives the actual ordinary-brif 650/722/242 call chain,
+all intermediate states/traces/fuel, exact labels and original condition
+provenance from the actual prepared terminator slot. Complete original-scope,
+dominated driver witnesses inhabit selection and source provenance.
+
+`StockConditionalValues` reuses proved boolean companion executions to execute
+the actual flag or zero/nonzero branch, removing the ghost cset and, for direct
+zero branches, its ghost comparison. Arbitrary-word/flag witnesses cover both
+operand sizes, both test polarities and both branch outcomes. Actual execution
+preserves the required source-register frame and memory/program world relation.
+The descriptor bridge derives the decoded form and unchanged compiler base.
+
+The existing certified branch helper closure now also exposes its actual242
+emitter projection; it is reused rather than copied. `StockConditionalEmission`
+derives the entire appended zero/nonzero/flag branch fragment from actual
+builder and emitter runs, including its flag producer and arbitrary existing
+prefix. A complete source driver inhabits this result. The new shared
+`StockSequence` lemma factors sequence inversion for the two semantic cases.
+
+Validation: all 675 targeted module keys pass. All 15 new audit roots in
+`scripts/audit/stock-conditional-source.lean` use only standard axioms. No new
+native fact, accepted-program proof certificate, scope restriction, changed
+allocator or CLIF semantic definition is introduced. Full author gates remain
+required before a substantive production PR; they are not claimed by these
+focused checks.
+
+Continue final-resolver transport and original650 condition/source execution,
+including comparison look-through without requiring materialized comparison
+results. Connect actual emitted branch code, source body/first-trap execution,
+chosen successor demand/arguments, ranked CFG return/trap induction, ABI entry
+and all production consumers. Cover bit-test/table/critical routes and loops,
+then memory/addressing/atomics/calls/exceptions, uncovered families and full
+original-domain whole-driver/Stock-only/downstream completeness. Existing
+per-edge prepare/spill/copy proofs are already available and must be reused.
+
+The paired corpus planning diagnostic finds 1,695 brif instances but only four
+with current scalar bodies, original checks and source-forward control. Thus
+conditional scalar composition is required, while memory/calls remain important
+coverage obligations. This diagnostic proves no activation or byte-match gain.
+
+Source branch: `agent/stock-conditional-cfg-20261026`, based on merged #634;
+worktree `.worktrees/stock-cfg-source-20261025`. The exact parent executable is
+preserved at `/tmp/stock-conditional-cfg-baseline/lean-backend` (SHA256
+`6046930eab7151504eff5087f77d57299634d01e35d8df09f3a60cef7a359c5a`).
+Remote #634 terminal evidence is `95a286c0`, with postmerge/baseline evidence
+`8faa461b` and manifests `f784ec04` on the existing evidence branch. All dirty
+saved views are preserved. One warm cache, bounded builds, no new agents or
+worktrees. Completed #634 cleanup reclaimed 669,644,996 bytes after remote
+archive and individual content-hash verification; about 577 GiB remains free.
