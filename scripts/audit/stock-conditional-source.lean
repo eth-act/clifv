@@ -1,3 +1,4 @@
+import FV.Backend.Proof.StockConditionalCoreOriginWitness
 import FV.Backend.Proof.StockConditionPrefixWitness
 import FV.Backend.Proof.StockResolvedDefsWitness
 import FV.Backend.Proof.StockSequenceFrame
@@ -52,3 +53,7 @@ import FV.Backend.Proof.StockConditionalEmissionWitness
 #print axioms Backend.Stock.Proof.ConditionalValues.original_source_branch_values
 #print axioms Backend.Stock.Proof.ConditionalCalls.source_calls_fixture_witness
 #print axioms Backend.Stock.Proof.ConditionalValues.SourceWitness.named_source_branch_witness
+
+#print axioms Backend.Stock.Proof.ConditionalValues.conditional_core_origin
+#print axioms Backend.Stock.Proof.ConditionalValues.conditional_core_origin_witness
+#print axioms Backend.Stock.Proof.ConditionalCalls.Calls.source_values

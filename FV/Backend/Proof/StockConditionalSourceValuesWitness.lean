@@ -1,5 +1,5 @@
 import FV.Backend.Proof.LowerLoopRun
-import FV.Backend.Proof.StockConditionalBranchValues
+import FV.Backend.Proof.StockConditionalCallValues
 import FV.Backend.Proof.StockConditionalCallsWitness
 import FV.Backend.Proof.StockOriginalConditionPrefix
 import FV.Backend.Proof.StockConditionalSourceValues
@@ -203,24 +203,19 @@ theorem named_source_branch_witness (word : BitVec Clif.Ty.i64.width) :
   have same := Except.ok.inj (created.symm.trans build)
   have context : result.ctx = built.1 := congrArg Prod.fst same
   have initial : result.initial = before := congrArg (fun p => p.2.2) same
-  rcases calls with ⟨sourceValue,sourceData,yes,no,labels,middle,constructed,raw,descriptor,
-    conditionFuel,constructFuel,emitFuel,conditionTrace,constructTrace,final,
-    enoughCondition,enoughConstruct,enoughEmit,conditionRun,constructRun,emitRun⟩
-  change sourceValue = .value 7 at source
-  rw [source] at conditionRun
+  have packet : ConditionalCalls.Calls ctx 0 [2,1] before out next := by
+    change ConditionalCalls.Calls (Driver.termCtx result.ctx 0
+      (.data 152 5 [.data 151 1 [],.value 7,.blockCalls [0,1]])) 0 [2,1] result.initial out next at calls
+    rw [context,initial] at calls
+    exact calls
+  have slot : ctx.insts[0]? = some ⟨.data 152 5 [.data 151 1 [],.value 7,.blockCalls [0,1]],[],[],none⟩ :=
+    rfl
+  have original := packet.source_of_slot (c := 7) (yes := ⟨1,[7]⟩) (no := ⟨2,[7]⟩) slot (by rw [termData_brif])
+  obtain ⟨yes,no,code,labels,fragment,execution⟩ := packet.source_values inv original (dfg word)
+    (getter word) (reads_typed word) refines_ispec (aliases := #[]) (ρ := registers word)
+    (by simp) extent (held word next) (separated word)
   simp only [List.cons.injEq,and_true] at labels
   obtain ⟨rfl,rfl⟩ := labels
-  rw [context,initial] at conditionRun
-  rw [context] at constructRun emitRun
-  have conditional : ApplyInternal program (Stock.sem ctx) {} conditionFuel 123 650 [.value 7]
-      (before,#[]) raw (middle,conditionTrace) := conditionRun
-  have construct : ApplyInternal program (Stock.sem ctx) {} constructFuel 46 722
-      [raw,.label 2,.label 1] (middle,conditionTrace) descriptor (constructed,constructTrace) := constructRun
-  have emit : ApplyInternal program (Stock.sem ctx) {} emitFuel 13 242
-      [descriptor] (constructed,constructTrace) out (next,final) := emitRun
-  obtain ⟨code,fragment,execution⟩ := original_source_branch_values inv (dfg word) (getter word)
-    (reads_typed word) enoughCondition enoughConstruct enoughEmit conditional construct emit
-    refines_ispec (aliases := #[]) (ρ := registers word) (by simp) extent (held word middle) (separated word)
   refine ⟨result,out,next,trace,code,run,scope,dominated,named,?_,?_⟩
   · simpa only [initial] using fragment
   · intro world

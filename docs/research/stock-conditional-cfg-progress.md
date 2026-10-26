@@ -111,3 +111,15 @@ reviews report Std3/no warnings. These are focused proof checks; full production
 per-PR gates and consumer activation remain pending. Next extract actual retained
 conditional core/emission origins and compose source body/first-trap execution
 and chosen-successor demand/arguments before ranked CFG/ABI/consumer activation.
+
+The retained-core checkpoint proves `conditional_core_origin`: successful real
+conditional lowering supplies the exact named call, first-match selection,
+retained branch state/buffer, branch-scan flag and body/terminator concatenation.
+The witness comes from the complete original three-block driver at its real
+entry and actual retained scan. `Calls.source_values` now derives intermediate
+condition demand from the branch output demand using existing interpreter
+monotonicity. The complete named source-branch witness uses this interface and
+retains its old theorem statement. All692targeted module keys and46audit roots
+pass, Std3 only. This closes compiler origin and intermediate-demand bookkeeping;
+source body/chosen-edge/CFG/ABI/consumer composition remains. No new production
+PR or full-gate claim is made at this checkpoint.
