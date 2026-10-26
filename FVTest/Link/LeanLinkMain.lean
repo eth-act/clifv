@@ -1,4 +1,4 @@
-import FV.Backend.Lowering.StockTwoBlockEntryNI
+import FV.Backend.Lowering.StockLinearCfgNI
 import FV.Link.Compile
 import FV.Link.DeadCleanupCompile
 import FV.Link.DeadCleanupCompileT3
@@ -329,10 +329,10 @@ def main (args0 : List String) : IO UInt32 := do
   -- try-call functions. Recompiling that mixed program only through the old
   -- provider can require a different region size from the emitted objects.
   -- Other exception, optimizer and tail-call variants retain their routes.
-  let hasCfg := SC0.funcs.any (fun fi => Backend.Stock.TwoBlock.Entry.eligible fi.func)
-  let stockEnabled := !opt && !tailOn && SC0.funcs.any (fun fi => Backend.Stock.TwoBlock.Entry.eligible fi.func || Backend.Stock.Scalar.activationEligible fi.func || Backend.Stock.Logical.activationEligible fi.func || Backend.Stock.Mixed.activationEligible fi.func || Backend.Stock.Arithmetic.eligible fi.func || Backend.Stock.ScalarAdd.activationEligible fi.func) &&
+  let hasCfg := SC0.funcs.any (fun fi => (Backend.Stock.LinearCfg.eligible fi.func || Backend.Stock.TwoBlock.Entry.eligible fi.func))
+  let stockEnabled := !opt && !tailOn && SC0.funcs.any (fun fi => (Backend.Stock.LinearCfg.eligible fi.func || Backend.Stock.TwoBlock.Entry.eligible fi.func) || Backend.Stock.Scalar.activationEligible fi.func || Backend.Stock.Logical.activationEligible fi.func || Backend.Stock.Mixed.activationEligible fi.func || Backend.Stock.Arithmetic.eligible fi.func || Backend.Stock.ScalarAdd.activationEligible fi.func) &&
     (hasCfg || !(SC0.funcs.any fun fi => fi.func.blocks.any fun b => b.term.isTry))
-  let routes := [Backend.Stock.TwoBlock.Entry.lowerValidated,Backend.Stock.TwoBlock.lowerValidated,Backend.Stock.Scalar.lowerValidated,Backend.Stock.Logical.lowerValidated,Backend.Stock.Mixed.lowerValidated,
+  let routes := [Backend.Stock.LinearCfg.lowerValidated,Backend.Stock.TwoBlock.Entry.lowerValidated,Backend.Stock.TwoBlock.lowerValidated,Backend.Stock.Scalar.lowerValidated,Backend.Stock.Logical.lowerValidated,Backend.Stock.Mixed.lowerValidated,
     Backend.Stock.Arithmetic.lowerValidated]
   let compiled := if stockEnabled then SemanticCompilerWith.compileWithRoutes routes SC0 file0 deadCleanup
     else (compile SC file0).map fun file => (⟨file,none⟩ : SemanticCompilerWith.RoutedOutput)
