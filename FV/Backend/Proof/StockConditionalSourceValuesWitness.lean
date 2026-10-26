@@ -1,3 +1,6 @@
+import FV.Backend.Proof.LowerLoopRun
+import FV.Backend.Proof.StockConditionalBranchValues
+import FV.Backend.Proof.StockConditionalCallsWitness
 import FV.Backend.Proof.StockOriginalConditionPrefix
 import FV.Backend.Proof.StockConditionalSourceValues
 import FV.Backend.Proof.StockConditionalTargetsWitness
@@ -168,5 +171,60 @@ theorem original_prefix_witness (word : BitVec Clif.Ty.i64.width) :
   obtain ⟨raw,middle,trace,emitter⟩ := actual observed650
   obtain ⟨code,fragment⟩ := original_prefix inv (dfg word) (getter word) (reads_typed word) (by decide) emitter
   exact ⟨raw,middle,trace,code,emitter,fragment⟩
+
+private theorem lower_build {f : Clif.Function} {result : Result} (run : Stock.lower f = .ok result) :
+    ∃ ranges,Stock.buildCtx f = .ok (result.ctx,ranges,result.initial) := by
+  unfold Stock.lower at run
+  dsimp only at run
+  repeat' first
+    | (solve | cases run)
+    | simp only [bind,Except.bind,pure,Except.pure] at run
+    | split at run
+  cases run
+  exact ⟨_,by assumption⟩
+
+
+/-- The actual named branch of a complete original source driver inhabits the
+composed source truth, emitted code and real register-frame theorem for every
+64-bit input. Its condition, descriptor and emitter runs come from selection. -/
+theorem named_source_branch_witness (word : BitVec Clif.Ty.i64.width) :
+    ∃ (result : Result) (out : V) (next : State) (trace : List RuleId) (code : List MInst),
+      Stock.lower function = .ok result ∧ LowerScope function ∧ Dominated function ∧
+      Stock.runTerm (Driver.termCtx result.ctx 0
+        (.data 152 5 [.data 151 1 [],.value 7,.blockCalls [0,1]])) "lower_branch"
+        [.inst 0,.labels [2,1]] result.initial = .ok (some out,next,trace) ∧
+      Frag result.initial.base next.base code ∧
+      ∀ world,BranchExecution (fun _ => True) ispec 2 1 code (word != 0)
+        result.initial.base next.base (registers word) world := by
+  obtain ⟨result,out,next,trace,run,scope,dominated,named,calls,source⟩ :=
+    ConditionalCalls.source_calls_fixture_witness
+  change Stock.lower function = .ok result at run
+  obtain ⟨ranges,created⟩ := lower_build run
+  have same := Except.ok.inj (created.symm.trans build)
+  have context : result.ctx = built.1 := congrArg Prod.fst same
+  have initial : result.initial = before := congrArg (fun p => p.2.2) same
+  rcases calls with ⟨sourceValue,sourceData,yes,no,labels,middle,constructed,raw,descriptor,
+    conditionFuel,constructFuel,emitFuel,conditionTrace,constructTrace,final,
+    enoughCondition,enoughConstruct,enoughEmit,conditionRun,constructRun,emitRun⟩
+  change sourceValue = .value 7 at source
+  rw [source] at conditionRun
+  simp only [List.cons.injEq,and_true] at labels
+  obtain ⟨rfl,rfl⟩ := labels
+  rw [context,initial] at conditionRun
+  rw [context] at constructRun emitRun
+  have conditional : ApplyInternal program (Stock.sem ctx) {} conditionFuel 123 650 [.value 7]
+      (before,#[]) raw (middle,conditionTrace) := conditionRun
+  have construct : ApplyInternal program (Stock.sem ctx) {} constructFuel 46 722
+      [raw,.label 2,.label 1] (middle,conditionTrace) descriptor (constructed,constructTrace) := constructRun
+  have emit : ApplyInternal program (Stock.sem ctx) {} emitFuel 13 242
+      [descriptor] (constructed,constructTrace) out (next,final) := emitRun
+  obtain ⟨code,fragment,execution⟩ := original_source_branch_values inv (dfg word) (getter word)
+    (reads_typed word) enoughCondition enoughConstruct enoughEmit conditional construct emit
+    refines_ispec (aliases := #[]) (ρ := registers word) (by simp) extent (held word middle) (separated word)
+  refine ⟨result,out,next,trace,code,run,scope,dominated,named,?_,?_⟩
+  · simpa only [initial] using fragment
+  · intro world
+    simpa only [initial,show Backend.lowerFunction.resolve (#[] : Array (Option Nat)) ((#[] : Array (Option Nat)).size + 1) = id by
+      funext r; cases r <;> rfl,Backend.Proof.Driver.mapRegs_id,List.map_id'] using execution world
 
 end Backend.Stock.Proof.ConditionalValues.SourceWitness

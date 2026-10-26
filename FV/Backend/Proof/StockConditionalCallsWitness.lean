@@ -21,11 +21,18 @@ theorem calls_witness : ∃ (f : Clif.Function) (ctx : Ctx) (result : Result)
 private def originalBrifData : V :=
   .data 152 5 [.data 151 1 [],.value 7,.blockCalls [0,1]]
 
+/-- The fixed complete source of the retained conditional selection witness. -/
+def sourceFunction : Clif.Function := {
+  name := "stock_per_successor_migration"
+  sig := {params := [⟨.i64,.none,.normal⟩],returns := [⟨.i64,.none,.normal⟩],callConv := some .systemV}
+  blocks := [{id := 0,params := [(7,.i64)],term := .brif 7 ⟨1,[7]⟩ ⟨2,[7]⟩},
+    {id := 1,params := [(31,.i64)],term := .ret [31]}, {id := 2,params := [(47,.i64)],term := .ret [47]}] }
+
 /-- The same complete actual driver derives condition value7 from its real
 prepared terminator, inhabiting source_of_slot rather than assuming provenance. -/
-theorem source_calls_witness : ∃ (f : Clif.Function) (result : Result)
+theorem source_calls_fixture_witness : ∃ (result : Result)
     (out : V) (next : State) (trace : List RuleId),
-    Stock.lower f = .ok result ∧ LowerScope f ∧ Dominated f ∧
+    Stock.lower sourceFunction = .ok result ∧ LowerScope sourceFunction ∧ Dominated sourceFunction ∧
     Stock.runTerm (Driver.termCtx result.ctx 0 originalBrifData) "lower_branch"
       [.inst 0,.labels [2,1]] result.initial = .ok (some out,next,trace) ∧
     ∃ calls : Calls (Driver.termCtx result.ctx 0 originalBrifData) 0 [2,1] result.initial out next,
@@ -42,6 +49,19 @@ theorem source_calls_witness : ∃ (f : Clif.Function) (result : Result)
     simp [ctx,Driver.termCtx,Array.set!_eq_setIfInBounds,
       Array.getElem?_setIfInBounds_self_of_lt originalBound]
   have source := calls.source_of_slot (c := 7) (yes := ⟨1,[7]⟩) (no := ⟨2,[7]⟩) slot rfl
-  exact ⟨_,result,out,next,trace,run,scope,dominated,actual,calls,source⟩
+  exact ⟨result,out,next,trace,run,scope,dominated,actual,calls,source⟩
+
+
+/-- The same complete actual driver derives condition value7 from its real
+prepared terminator, inhabiting source_of_slot rather than assuming provenance. -/
+theorem source_calls_witness : ∃ (f : Clif.Function) (result : Result)
+    (out : V) (next : State) (trace : List RuleId),
+    Stock.lower f = .ok result ∧ LowerScope f ∧ Dominated f ∧
+    Stock.runTerm (Driver.termCtx result.ctx 0 originalBrifData) "lower_branch"
+      [.inst 0,.labels [2,1]] result.initial = .ok (some out,next,trace) ∧
+    ∃ calls : Calls (Driver.termCtx result.ctx 0 originalBrifData) 0 [2,1] result.initial out next,
+      calls.source = .value 7 := by
+  obtain ⟨result,out,next,trace,run,scope,dominated,actual,calls,source⟩ := source_calls_fixture_witness
+  exact ⟨sourceFunction,result,out,next,trace,run,scope,dominated,actual,calls,source⟩
 
 end Backend.Stock.Proof.ConditionalCalls

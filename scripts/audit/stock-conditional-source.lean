@@ -48,3 +48,7 @@ import FV.Backend.Proof.StockConditionalEmissionWitness
 #print axioms Backend.Stock.Proof.Resolved.fragment_endpoint_witness
 #print axioms Backend.Stock.Proof.Sequence.stop_frame
 #print axioms Backend.Stock.Proof.Sequence.stop_frame_witness
+
+#print axioms Backend.Stock.Proof.ConditionalValues.original_source_branch_values
+#print axioms Backend.Stock.Proof.ConditionalCalls.source_calls_fixture_witness
+#print axioms Backend.Stock.Proof.ConditionalValues.SourceWitness.named_source_branch_witness

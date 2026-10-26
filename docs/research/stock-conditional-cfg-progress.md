@@ -98,3 +98,16 @@ complete witnesses and full author gates before a substantive activation PR.
 Continue bit-test/table/critical routes, loops, memory/addressing/atomics,
 calls/exceptions, uncovered families and original-domain whole-driver/Stock-only/
 downstream completeness. The original #140 remains open.
+
+The composed branch checkpoint now proves `original_source_branch_values`:
+actual650/722/242 calls derive the full real emitted fragment, correct original
+true/false successor, world relation and every register outside the real fresh
+interval. No assumption excludes an available value at the removed ghost cset
+number. The proof derives the actual prefix and uses stopped-sequence framing.
+`named_source_branch_witness` inhabits the complete theorem from an actual named
+branch of the original-scope/dominated three-block driver, for every64-bit word.
+All684targeted keys and43audit roots pass, standard axioms only; two bundled MCP
+reviews report Std3/no warnings. These are focused proof checks; full production
+per-PR gates and consumer activation remain pending. Next extract actual retained
+conditional core/emission origins and compose source body/first-trap execution
+and chosen-successor demand/arguments before ranked CFG/ABI/consumer activation.
