@@ -1,36 +1,30 @@
 {
-  "utc": "2026-10-26T17:38:28.521376+00:00",
+  "utc": "2026-10-26T18:38:26.027389+00:00",
   "source_publication": "1a30db775fd41a3509633667b7d6d7d7524eae1d",
   "origin_main_seen": "00576bd9e3cd8f9bd46d14aeb750012d88d1aa97",
-  "archive_bytes": 160701293,
-  "archive_sha256": "a35bf151fde5c0d8a5883a48a6640a85ae1040619b8799bfecb93502d971d59f",
+  "archive_bytes": 122887040,
+  "archive_sha256": "c1e393458b7bb3a1a3a5b05db1bdb1f6435713694a3bfb9fe5636fe2d91801cd",
   "parts": [
     {
       "name": "postmerge-archive.tar.gz.part000",
       "bytes": 41943040,
-      "sha256": "866557ef79193c3f5af310e6ea316a39dbc01cffd918e9b6a97eafd62bfa0f4b",
-      "blob": "e10a5c8229def61f3875c81f68ef9227668adeb8"
+      "sha256": "b101ce703f8cd23a3a76fe57057f9532850777a5fa9b0cdd9f7cd4f2ad1f0400",
+      "blob": "449226f58831c51c1f81ca926c5b3a83ec066def"
     },
     {
       "name": "postmerge-archive.tar.gz.part001",
       "bytes": 41943040,
-      "sha256": "c9b975e99b054507442e364781fd4318c95a4921344020cddbe7172c52d15962",
-      "blob": "54ed4d3df9f4d35e57d56e6cfd42c96927cacc17"
+      "sha256": "263fa09352b93876ac2eda50cf2c89f4c029278cac83c8b342a92f2bccd40229",
+      "blob": "509cd1f8ada2411d877824a3acd60f135a87f266"
     },
     {
       "name": "postmerge-archive.tar.gz.part002",
-      "bytes": 41943040,
-      "sha256": "1fea6dd1528f981b63e78ce08a3583383c6d66d773c570379ca7c912f03bfe10",
-      "blob": "d4e81146604c137d0fff184a4b083dc7086ad365"
-    },
-    {
-      "name": "postmerge-archive.tar.gz.part003",
-      "bytes": 34872173,
-      "sha256": "f0ee8460a45cc0f378779cea036435060aa3fa8e0f0ef52fc60bdb7ae6491f6c",
-      "blob": "2cc5e8835a473e8df34a0a2a82fd848a1b648ab5"
+      "bytes": 39000960,
+      "sha256": "04ae4d961839c91ac26de13e608336b9e977548e685ced73db22c30047dcbe0b",
+      "blob": "42adbfb54af43c37548cdc0906caad31c3ed66d1"
     }
   ],
   "restore": "Concatenate postmerge-archive.tar.gz.part000,part001,... in numeric order; verify archive_sha256, then extract gzip tar.",
-  "prior_terminal_single_file_commit": "ae9d0f56f737154617fe74d018e72483ec55e12e",
+  "prior_terminal_single_file_commit": "298e49a68cbeebca7e251cabbb136405aa1fadb9",
   "state": "Source, validation and recovery snapshot; inspect included receipts for exact completed/pending gates. Full140 remains open"
 }
