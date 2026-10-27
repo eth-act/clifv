@@ -235,8 +235,9 @@ variable {f : Clif.Function} {vc : VCode} {ctx : Ctx} {st0 : LState} {R : Reg �
   {F : BitVec 64 → Prop} {fc : FnCtx} {X : ExtSem} {MR : MemRelT} {env : Clif.Env}
   {p : Clif.Program} {slots : List (Clif.SlotId × Nat)} {sb : Nat} {syms : String → Option Nat}
 
-/-- **The memory instruction of a matched statement, on the thread's code** (module doc). -/
-theorem mem_vreg (H : DriverHyp f vc ctx st0 R gn bl A (csem F fc X) MR env p)
+/-- **The memory instruction of a matched statement, on the thread's code** (module doc; on
+`DriverHypT`). -/
+theorem mem_vregT (H : DriverHypT f vc ctx st0 R gn bl A (csem F fc X) MR env p)
     (hMR : MemRelOk F sb syms f MR) (hX : TlsMemFree X)
     {s : Clif.State} {b : Nat} {ρ : Nat → CV} {w : ArmState}
     (hfunc : s.frame.func = f) (hslots : s.frame.slots = slots) (hmem : MR slots s.mem w)
@@ -376,6 +377,40 @@ theorem mem_vreg (H : DriverHyp f vc ctx st0 R gn bl A (csem F fc X) MR env p)
   · rw [hvu]; exact hcs
   · rw [hvu]; exact hwf
   · rw [hvu]; exact hcasx
+
+/-- **The memory instruction of a matched statement, on the thread's code** (`mem_vregT` on
+`DriverHyp`). -/
+theorem mem_vreg (H : DriverHyp f vc ctx st0 R gn bl A (csem F fc X) MR env p)
+    (hMR : MemRelOk F sb syms f MR) (hX : TlsMemFree X)
+    {s : Clif.State} {b : Nat} {ρ : Nat → CV} {w : ArmState}
+    (hfunc : s.frame.func = f) (hslots : s.frame.slots = slots) (hmem : MR slots s.mem w)
+    {B : Clif.Block} {j : Nat} (hB : f.blocks[b]? = some B) {stm : Clif.Stmt}
+    (hstm : B.body[j]? = some stm) (hheld : Held gn (A b j) ρ s.frame)
+    (hcons : DFGCons ctx (restrict s.frame (A b j)))
+    (he : Arm.r .ERR w = .None) (hal : Arm.CheckSPAlignment w)
+    {L : BLow} {sl : SLow} (hL : bl[b]? = some L) (hsl : L.sl[j]? = some sl)
+    {pre0 : List MInst} {mi0 : MInst} {post0 : List MInst}
+    (hms : sl.st'.emitted.toList = pre0 ++ mi0 :: post0)
+    (hpre0 : ∀ y ∈ pre0, akinds y = []) (hpost0 : ∀ y ∈ post0, akinds y = [])
+    (hcov : ∀ i ∈ pre0 ++ mi0 :: post0, SegFoot.Covered fc i)
+    (hres : isStore stm.inst = false → stm.results ≠ [])
+    (hcas : casOkB stm.inst (pre0 ++ mi0 :: post0) = true)
+    {vs : List Clif.Val} {cm' : Clif.Mem}
+    (h : instOutcome env p s.frame s.mem stm.inst = .ok (vs, cm'))
+    {a n : Nat} (hacc : access s.frame stm.inst = some (a, n))
+    (hro : isCas stm.inst = true → s.mem.readonlyAt a n = false)
+    (hn : SegShape.memBytes mi0 = some n) (hn0 : 0 < n) :
+    ∃ ρb wb ops, seqRun (csem F fc X) (pre0.map (·.mapRegs R)) ρ w = some (.fall ρb wb) ∧
+      (mi0.mapRegs R).operands = .ok ops ∧
+      cEvs F fc mi0 (vuses ops ρb) wb ≠ [] ∧
+      AtA (BitVec.ofNat 64 a) n (cEvs F fc mi0 (vuses ops ρb) wb) ∧
+      (∃ r, csem F fc X mi0 (vuses ops ρb) wb = some r) ∧
+      (mi0.isCtl = false → csemWF fc mi0 (vuses ops ρb) = true) ∧
+      Arm.r .ERR wb = .None ∧ Arm.CheckSPAlignment wb ∧ extraOf stm.results sl.rss = [] ∧
+      (∀ ty fl pp ex x, stm.inst = .atomicCas ty fl pp ex x → ∀ ev, s.frame.getAs ex ty = .ok ev →
+        ∃ ua uex ux, vuses ops ρb = [ua, uex, ux] ∧ VHolds ⟨ty, ev⟩ uex) :=
+  mem_vregT H.toT hMR hX hfunc hslots hmem hB hstm hheld hcons he hal hL hsl hms hpre0 hpost0
+    hcov hres hcas h hacc hro hn hn0
 
 end
 

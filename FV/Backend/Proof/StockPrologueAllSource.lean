@@ -22,7 +22,7 @@ private theorem slots_empty (name : String) (c : Configuration) (runs : List Cli
     dsimp only
     cases h' : pl.frame (source name c runs).name with
     | none => rfl
-    | some pair => rcases pair with ⟨d, off⟩; rfl
+    | some pair => rcases pair with ⟨d, off⟩; exact (Clif.initSlots_fst _ _ _ _ _).trans rfl
 
 /-- Genuine source entry for every input word, name, run metadata and memory,
 including the actual placement-oracle stack update. -/

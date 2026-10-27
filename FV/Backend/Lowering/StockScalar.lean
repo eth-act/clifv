@@ -103,15 +103,97 @@ def mixedDivEligible (b : Clif.Block) : Bool :=
   | _,_ => false
 
 
+/-- Match the original returned division; no divisor/value guard is added. -/
+def returnedDivAt (stm : Clif.Stmt) (z : Nat) : Bool :=
+  match stm.results,stm.inst with
+  | [z'],.div _ ty _ _ => z' == z && (ty == .i32 || ty == .i64)
+  | _,_ => false
+
+/-- Previously proved scalar statements may occur on both sides of the
+returned division. The original final-position classifiers remain intact. -/
+def returnedDivBodyEligible : List Clif.Stmt → Nat → Bool
+  | [],_ => false
+  | stm :: rest,z =>
+      (returnedDivAt stm z && rest.all highmulBodyEligible) ||
+      (highmulBodyEligible stm && returnedDivBodyEligible rest z)
+
+def returnedDivEligible (b : Clif.Block) : Bool :=
+  match b.term with
+  | .ret [z] => returnedDivBodyEligible b.body z
+  | _ => false
+
+
+/-- Division syntax is classified independently of its use or return position. -/
+def divisionBodyEligible (stm : Clif.Stmt) : Bool :=
+  match stm.inst with
+  | .div _ ty _ _ => ty == .i32 || ty == .i64
+  | _ => false
+
+/-- Any number and ordering of proved scalar operations and divisions. -/
+def generalDivBodyEligible (stm : Clif.Stmt) : Bool :=
+  highmulBodyEligible stm || divisionBodyEligible stm
+
+
 def eligible (f : Clif.Function) : Bool :=
   match f.blocks with
-  | [b] => (b.body.all highmulBodyEligible || singleDivEligible b || mixedDivEligible b) &&
+  | [b] => (b.body.all highmulBodyEligible || singleDivEligible b || mixedDivEligible b || returnedDivEligible b || b.body.all generalDivBodyEligible) &&
       (match b.term with | .ret _ => true | _ => false) &&
       f.sig.params.all abiEligible && f.sig.returns.all abiEligible
   | _ => false
 
-/-- Previously shipped classes keep their exact selectors and route ordering. -/
-def activationEligible (f : Clif.Function) : Bool := eligible f && !Logical.eligible f
+/-- Original narrow integer operations share the existing scalar source family.
+The previously shipped per-family selectors above remain unchanged. -/
+def narrowBodyEligible (stm : Clif.Stmt) : Bool :=
+  match stm.inst with
+  | .iconst ty _ | .select ty _ _ _ | .icmp _ ty _ _
+  | .extend _ ty _ | .ireduce ty _ | .div _ ty _ _ => ty == .i8 || ty == .i16
+  | .unary op ty _ =>
+      (op == .bnot || op == .ineg || op == .clz || op == .ctz ||
+       op == .bitrev || op == .bswap || op == .popcnt) && (ty == .i8 || ty == .i16)
+  | .binary op ty _ _ =>
+      (op == .iadd || op == .isub || op == .band || op == .bor || op == .bxor ||
+       op == .imul || op == .ishl || op == .ushr || op == .sshr ||
+       op == .rotl || op == .rotr || op == .smin || op == .smax ||
+       op == .umin || op == .umax || op == .smulhi || op == .umulhi) &&
+      (ty == .i8 || ty == .i16)
+  | _ => false
+
+def narrowMixedBodyEligible (stm : Clif.Stmt) : Bool :=
+  generalDivBodyEligible stm || narrowBodyEligible stm
+
+def narrowAbiEligible (param : Clif.AbiParam) : Bool :=
+  param.purpose == .normal &&
+    (param.ty == .i8 || param.ty == .i16 || param.ty == .i32 || param.ty == .i64)
+
+def narrowEligible (f : Clif.Function) : Bool :=
+  match f.blocks with
+  | [b] => b.body.all narrowMixedBodyEligible &&
+      (match b.term with | .ret _ => true | _ => false) &&
+      f.sig.params.all narrowAbiEligible && f.sig.returns.all narrowAbiEligible
+  | _ => false
+
+/-- The remaining local pure cases compose with every earlier scalar/division class. -/
+def maskBodyEligible (stm : Clif.Stmt) : Bool :=
+  match stm.inst with
+  | .bmask ty _ => ty == .i8 || ty == .i16 || ty == .i32 || ty == .i64
+  | .nop => true
+  | _ => false
+
+def maskMixedBodyEligible (stm : Clif.Stmt) : Bool :=
+  narrowMixedBodyEligible stm || maskBodyEligible stm
+
+def maskEligible (f : Clif.Function) : Bool :=
+  match f.blocks with
+  | [b] => b.body.all maskMixedBodyEligible &&
+      (match b.term with | .ret _ => true | _ => false) &&
+      f.sig.params.all narrowAbiEligible && f.sig.returns.all narrowAbiEligible
+  | _ => false
+
+def productionEligible (f : Clif.Function) : Bool :=
+  (eligible f || narrowEligible f) || maskEligible f
+
+/-- Previously shipped selectors remain fixed; narrow syntax adds a route. -/
+def activationEligible (f : Clif.Function) : Bool := productionEligible f && !Logical.eligible f
 
 def lowerCandidate (f : Clif.Function) : Except String VCode :=
   if !activationEligible f then Logical.lowerCandidate f

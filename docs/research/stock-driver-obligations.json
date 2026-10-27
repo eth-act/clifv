@@ -1,5 +1,5 @@
 {
-  "updated_utc": "2026-10-23T01:20:47.232793+00:00",
+  "updated_utc": "2026-10-27T15:03:39.432381+00:00",
   "goal": 140,
   "complete": false,
   "inventory_warning": "Historical517root inventory is a source map, not current reachability/execution coverage. Reconcile generated source hashes and current typed scope before using partition counts.",
@@ -23,21 +23,269 @@
       "i32/i64 integer comparisons and actual cast-of-icmp811 through shared scalar consumers",
       "i32/i64 signed/unsigned high multiplication through shared scalar consumers (389, d522474c)",
       "singleton returned i32/i64 division/remainder with original traps (512,6a80a595)",
-      "scalar prefixes followed by returned i32/i64 division/remainder, source return+trap Domain and default consumers (521)"
+      "scalar prefixes followed by returned i32/i64 division/remainder, source return+trap Domain and default consumers (521)",
+      "returned i32/i64 division/remainder at arbitrary scalar positions (525)",
+      "unused/consumed/multiple i32/i64 division/remainder at arbitrary scalar positions (611)",
+      "i8/i16 scalar classes through the same default production consumers; 474 positive complete pipeline configurations",
+      "bmask/nop with independent i8/i16/i32/i64 source/result widths, mixed scalar/division bodies, through shared production consumers (#624, ab1abdfc)",
+      "direct two-block Stock CFG default consumers with quiet entry/nonempty copies (#630,ce83af2c)",
+      "dividing entry blocks with actual first/later traps through the same default CFG consumers (#631,b94d6cd4)",
+      "complete scalar entry bodies through the same CFG route (#632,00576bd9)",
+      "three-block scalar jump chains through default CFG consumers (#633, ac302a8a)",
+      "arbitrary-length source-forward scalar jump/return CFGs through default consumers (#634, d6218f29)"
     ],
-    "pending": "Independent exact-body outcome/value import boundary513; arbitrary-position/undemanded/sunk division and other colored effects; complete original widths/ABIs/control/memory/calls/exceptions; source/block/whole-driver simulation and Stock-only/downstream completeness.",
-    "validated_pending_merge": {
+    "pending": "Remaining original pure/ABI/reachable-helper conditions; original ABI conditions; control/successor arguments/critical edges/loops; memory/addressing/atomics/traps/deferred effects; calls/sret/exceptions/unwind; source/scan/block/node/whole-driver simulation; Stock-only and downstream completeness; optimizer/cleanup and all consumers. Existing no-opt/no-TryCall CLI eligibility and default Lean allocator remain. Legacy fallback is not Stock completeness.",
+    "mixed_div_current_evidence": {
+      "source_head": "1239f8bcda9fac6ba6e421ab6cfb210ac3ce6677",
+      "receipt": "docs/research/stock-mixed-div-production-activation.md",
+      "backup": "9140614f41c53d809cec9d9e10072441ee654d98",
+      "full_goal_complete": false
+    },
+    "returned_division_arbitrary_scalar_positions": {
+      "validated_code_head": "b1990ec02ff083882720dcc436d638c0db5f2b04",
+      "evidence_commit": "07b9f9384e4209467922f6fe80afae2edc0e45e0",
+      "receipt": "docs/research/stock-returned-div-production-activation.md",
+      "state": "default production activation; current author gates passed",
+      "full_140_complete": false,
+      "main_reconciliation": "docs/research/stock-returned-div-main-reconciliation.json"
+    },
+    "historical_single_division_validation": {
       "class": "Single returned i32/i64 division/remainder, all four operations, arbitrary original values including real zero/overflow traps",
       "validated_code_head": "b1ef0c67f455eecb643883a414904016bab65d8f",
       "current_author_gates": "passed;25 primary/27 ownership; see division activation receipt",
       "backup": "a2c9d0d83f32cc089b438ba4977926ec85c88dfe",
       "full_140_complete": false
     },
-    "mixed_div_current_evidence": {
-      "source_head": "1239f8bcda9fac6ba6e421ab6cfb210ac3ce6677",
-      "receipt": "docs/research/stock-mixed-div-production-activation.md",
-      "backup": "9140614f41c53d809cec9d9e10072441ee654d98",
-      "full_goal_complete": false
+    "general_division_production": {
+      "pull_request": 611,
+      "validated_code_head": "cd57ac630b3846a7b7832140b7e5f195452857fc",
+      "base": "1510186e56b81e8cbb36027746414a411c8e1f37",
+      "state": "default production activation; current author gates passed",
+      "scope": "i32/i64 unused, consumed and multiple divisions/remainders at arbitrary scalar body positions, original return/trap domain",
+      "receipt": "docs/research/stock-general-div-production-activation.md",
+      "evidence_commit": "69182545e98f69505bd1fee79c99bb3f579a5818",
+      "full_140_complete": false
+    },
+    "narrow_scalar_production": {
+      "validated_code_head": "a1b29bf7ccf976094511285296c0ba3e2201e60b",
+      "base": "439ca61b415274d16b549fe494eff96c9cdc8615",
+      "state": "default production activation; all current author gates passed",
+      "receipt": "docs/research/stock-narrow-production-activation.md",
+      "positive_functions": 237,
+      "positive_pipeline_cleanup_configurations": 474,
+      "original_scope_exclusions": 3,
+      "native_objects": 12,
+      "native_executions": 8532,
+      "ordinary_compiler_cli_objects": 12,
+      "ownership_partitions": 38,
+      "old_production_axiom_sets_exact": 497,
+      "old_sink_axiom_sets_exact": 13,
+      "original_identities_and_stages_preserved": true,
+      "full_140_complete": false,
+      "unconditional_stock_only_completeness": false
+    },
+    "current_real_crate_agreement": {
+      "validated_code_head": "1620b2c4beeb2bc36ee50e79fb40b3b3eb2f320d",
+      "default_allocator": "lean",
+      "symbol_comparisons": 4543,
+      "equal_symbol_comparisons": 900,
+      "paired_parent": "ac302a8a712d1fc01141e7d974820ac6f740c03c",
+      "gains": 0,
+      "losses": 0,
+      "changed_function_bytes": 4,
+      "actual_cargo_candidate_and_reference_bytes_bound": 4543,
+      "limits": "Captured instances, not unique-source coverage. Same ten newly eligible instances with existing regalloc2: 0\u21920; no default allocator change/full-corpus regalloc2 claim."
+    },
+    "mask_scalar_production": {
+      "validated_code_head": "0aecff7cbeb8e0dc295855bf27d77c4ffdfffdfa",
+      "base": "a946fbc4fa10abe50bf551a0c1842c169f472400",
+      "state": "production activation in this change; all24 implementation readiness requirements passed; publication replay separate",
+      "receipt": "docs/research/stock-mask-production-activation.md",
+      "positive_pipeline_cleanup_configurations": 216,
+      "native_objects": 12,
+      "native_executions": 3888,
+      "cranelift_reference_executions": 972,
+      "ordinary_compiler_cli_objects": 12,
+      "ownership_partitions": 70,
+      "evidence_commit": "dc34a26a9e01b481fa2515d6ec454917a8f8ff6a",
+      "full_140_complete": false,
+      "unconditional_stock_only_completeness": false
+    },
+    "cfg_source_body_prerequisite": {
+      "validated_source_head": "c7e249b175e35fad058bba5a9299cff40d246c7f",
+      "base": "ab1abdfcde8fac5c5721ae2851cef08ab77c768e",
+      "receipt": "docs/research/stock-cfg-body-checkpoint.md",
+      "state": "landed prerequisite; production CFG activation still pending",
+      "normal_module_keys": 3984,
+      "existing_module_keys_restored": 3976,
+      "audit_files": 79,
+      "audit_reports": 3540,
+      "distinct_audited_roots": 3389,
+      "exact_prior_axiom_sets": 626,
+      "existing_lean_sources_byte_exact": 3967,
+      "new_general_roots_standard_only": 14,
+      "finite_witnesses": 7,
+      "production_cfg_active": false,
+      "full_140_complete": false,
+      "next": "Machine branch execution, guarded successor demand/value/world transfer, per-edge production consumers, critical edges/loops; every remaining original obligation retained.",
+      "pull_request": 625,
+      "merge_commit": "70220733ea37c3f4cba6ed8a4f95c119db8f12c8"
+    },
+    "cfg_jump_composition": {
+      "state": "landed proof dependency; production CFG activation pending",
+      "receipt": "docs/research/stock-cfg-jump-checkpoint.md",
+      "production_cfg_active": false,
+      "general_roots": [
+        "stock_lower_original_block_scan_assembly",
+        "Control.stock_jump_core_seq",
+        "Control.stock_lower_jump_body_spec"
+      ],
+      "witnesses": [
+        "ControlWitness.actual_original_scan_assembly_witness",
+        "ControlWitness.executable_jump_return_witness"
+      ],
+      "new_finite_witness_facts": 0,
+      "next": "Actual guarded predecessor-to-successor demand/value/world transfer with per-edge metadata; critical edges/loops; remaining original140 obligations",
+      "prior_axiom_sets_exact": 3389,
+      "pull_request": 626,
+      "merge": "f1ce87ea0a722d7159993e87d60cce210e52fceb"
+    },
+    "cfg_jump_parameters": {
+      "state": "all current per-PR author gates passed; production CFG activation pending",
+      "implementation": "49bf11e9bfded1666736081f73981ae59e45bdc2",
+      "receipt": "docs/research/stock-successor-parameters-checkpoint.md",
+      "normal_modules": 3994,
+      "all_audit_files": 83,
+      "prior_axiom_sets_exact": 3399,
+      "general_roots": 7,
+      "actual_witnesses": 3,
+      "new_finite_facts": 0,
+      "production_cfg_active": false,
+      "next": "Inherited nonparameter carry invariant derived internally, full guarded per-edge successor transfer, critical edges/loops and all original140 obligations"
+    },
+    "cfg_inherited_carry": {
+      "state": "landed proof dependency; production CFG activation pending",
+      "implementation": "4c955f392cfb59a28f509117d634af052317fb88",
+      "receipt": "docs/research/stock-inherited-carry-checkpoint.md",
+      "normal_modules": 4000,
+      "all_audit_files": 84,
+      "prior_axiom_sets_exact": 3409,
+      "old_sources_byte_exact": 3985,
+      "general_roots": 6,
+      "witnesses": 3,
+      "finite_facts": "one fixed original-input dominance native witness; kernel compiler/scope; no native code-shape fact",
+      "production_cfg_active": false,
+      "next": "Extend carry across existing families; arbitrary guarded edges and order/demand coverage, critical edges/loops; actual ABI/return/prepared/physical production CFG activation; every original140obligation",
+      "pull_request": 628,
+      "merge": "21b0ebb2c7ad179c01bddecce0617e84f8df2918"
+    },
+    "cfg_division_carry": {
+      "state": "current per-PR author gates passed; production CFG activation pending",
+      "implementation": "e91b71030a58641d335fea0bde7d6991b304c6cd",
+      "receipt": "docs/research/stock-division-carry-checkpoint.md",
+      "normal_modules": 4004,
+      "all_audits": 85,
+      "old_axiom_sets_exact": 3418,
+      "old_sources_byte_exact": 3991,
+      "general_roots": 4,
+      "witnesses": 3,
+      "new_finite_facts": 0,
+      "production_cfg_active": false,
+      "next": "Actual return-block/core composition, substantive two-block CFG production activation through actual ABI/return/prepared/physical consumers, then successive classes and all original140obligations"
+    },
+    "scalar_cfg_entry_author_candidate": {
+      "source_head": "b0f103011d30fed0eeadf030bac17db500f85261",
+      "state": "landed on main in #632",
+      "receipt": "docs/research/stock-scalar-entry-production.md",
+      "full_goal_complete": false,
+      "same_input_exact_symbols": {
+        "total": 4543,
+        "parent": 900,
+        "candidate": 900,
+        "gains": 0,
+        "losses": 0
+      },
+      "next": "general source CFG composition reusing complete scalar carry/jump contracts; raw captured scalar-family instances with >=3blocks:139; not a coverage percentage",
+      "pull_request": 632,
+      "merge_commit": "00576bd9e3cd8f9bd46d14aeb750012d88d1aa97"
+    },
+    "linear_cfg_production": {
+      "source_head": "1a30db775fd41a3509633667b7d6d7d7524eae1d",
+      "base": "00576bd9e3cd8f9bd46d14aeb750012d88d1aa97",
+      "state": "all author gates passed; default production activation in this change",
+      "receipt": "docs/research/stock-linear-cfg-production.md",
+      "terminal_evidence": "c855548a02de199d2dd588c03f0d1c9d9ecd3346",
+      "normal_keys": 4073,
+      "all_audits": 92,
+      "all_roots": 3544,
+      "old_axiom_sets_exact": 3518,
+      "integration_checks": {
+        "new_integration": 78,
+        "parent_scalar_entry": 70,
+        "parent_entry": 34,
+        "parent_cfg": 34
+      },
+      "native_executions": 24000,
+      "reference_executions": 3000,
+      "normalized_captured_instances_before_cli_legalization": 127,
+      "default_allocator_matches": {
+        "parent": 900,
+        "candidate": 900,
+        "gains": 0,
+        "losses": 0,
+        "changed_function_bytes": 10
+      },
+      "regalloc2_ten_changed_input_diagnostic": {
+        "parent_exact": 0,
+        "candidate_exact": 8,
+        "limits": "Same ten changed functions with identical regalloc2 settings/oracle; not whole-corpus agreement and not a default allocator change."
+      },
+      "full_140_complete": false,
+      "unconditional_stock_only_completeness": false,
+      "next": "general source CFG composition and inherited backedge values; remaining control/effects/calls and full original-domain simulation/completeness; reuse existing per-edge prepare/spill proofs"
+    },
+    "forward_cfg_production": {
+      "source_head": "1620b2c4beeb2bc36ee50e79fb40b3b3eb2f320d",
+      "base": "ac302a8a712d1fc01141e7d974820ac6f740c03c",
+      "state": "all author gates passed; default activation in this change",
+      "pull_request": 634,
+      "receipt": "docs/research/stock-forward-cfg-production.md",
+      "terminal_evidence": "95a286c086b9fd3f17215e6a171ece0bd0313867",
+      "integration_checks": {
+        "new_integration": 78,
+        "parent_linear": 78,
+        "parent_scalar_entry": 70,
+        "parent_entry": 34,
+        "parent_cfg": 34
+      },
+      "normal_keys": 4093,
+      "audit_files": 94,
+      "audit_roots": 3592,
+      "prior_axiom_sets_exact": 3544,
+      "full_140_complete": false,
+      "unconditional_stock_only_completeness": false
+    },
+    "conditional_forward_cfg": {
+      "name": "wide entry-parameter conditional with arbitrary ranked scalar tails",
+      "state": "all current author gates passed; default activation in PR636",
+      "branch": "agent/stock-conditional-forward-20261027",
+      "implementation": "Wide entry-parameter conditional with arbitrary ranked scalar jump/return tails, inherited values, nonempty jump copies, joins and first/later traps; actual Stock records/copies/ABI entry derive unchanged Scalar.Domain. Default compiler/checker/verified linker/generated-proof consumers append route10; routes0\u20139 and complete previous conditional pipeline fallback preserved on original source/settings.",
+      "limits": "No agreement gain or full140 completion. Computed/narrow conditions, per-edge/table/loops/effects/calls, remaining families and original-domain whole-driver/Stock-only/downstream completeness remain open. Next scratch source/domain work stays separate from frozen implementation.",
+      "evidence": "docs/research/stock-conditional-forward-cfg-production.md",
+      "source_head": "7170a146609c5d1094e8c0bb4d67f738c8f5abd2",
+      "pull_request": 636,
+      "terminal_remote_evidence": "cd2a1b74f38bff0987c753b571b9ceefe25478a2"
+    },
+    "parameter_cfg": {
+      "name": "ranked CFGs with nonentry original parameter conditions",
+      "state": "all current author gates passed; default activation in PR637",
+      "branch": "agent/stock-parameter-cfg-20261027",
+      "implementation": "Ranked quiet scalar CFGs with original wide parameter conditions at any source block, inherited parameters, nonempty ordinary jump copies, joins and returns/first traps; original source/retained records/ABI entry derive unchanged Scalar.Domain. Conditional successor vectors remain empty. Default compiler/checker/verified-linker/generated consumers append route11, preserving0\u201310 and the complete previous ConditionalForwardCfg pipeline on original source and settings.",
+      "limits": "Full original140 remains open: broader conditions and nonempty conditional copies, tables/loops, memory/addressing/atomics, calls/exceptions, uncovered families and original-domain whole-driver/Stock-only/downstream completeness. Fallback preserves acceptance and is not completeness.",
+      "evidence": "docs/research/stock-parameter-cfg-production.md",
+      "source_head": "9f27ad6c3b13f3fd378693389e82e9cdaf616b65",
+      "pull_request": 637,
+      "terminal_remote_evidence": "d99110950647017bb46f0c8a751d81ad1587a4e5"
     }
   },
   "roots": [
@@ -136,8 +384,8 @@
       "id": 587,
       "source": "FV/Isle/Generated/Rules01.lean",
       "primary_opcode": "Nop",
-      "saved_guarded_bridge": null,
-      "status": "requires current-source proof/composition review",
+      "saved_guarded_bridge": "FV/Backend/Proof/StockZeroResultScan.lean",
+      "status": "Actual ordinary unsunk zero-result source nop omitted and composed into shared production; emitted Nop rule execution is not claimed.",
       "scope_status_historical": "closure: actual selection requires membership; execution proof remains",
       "required": [
         "current scope exclusion OR actual matching/request/execution proof",
@@ -5335,8 +5583,8 @@
       "id": 936,
       "source": "FV/Isle/Generated/Rules03.lean",
       "primary_opcode": "Bmask",
-      "saved_guarded_bridge": null,
-      "status": "requires current-source proof/composition review",
+      "saved_guarded_bridge": "FV/Backend/Proof/StockBmaskSourceValues.lean",
+      "status": "Actual selection/helper/RHS/retained binding/final-alias values/guarded source/scan/body/ABI and shared production complete for the enabled four-width single-block class; full goal remains open.",
       "scope_status_historical": "closure: actual selection requires membership; execution proof remains",
       "required": [
         "current scope exclusion OR actual matching/request/execution proof",
@@ -8605,5 +8853,28 @@
       "obligation": "Final full batch validation and settings-matched complete Stock comparison",
       "state": "open"
     }
-  ]
+  ],
+  "sink_exclusion_checkpoint": {
+    "validated_head": "bc53c102d2bc03e2006daa8f76d8e92331075391",
+    "receipt": "docs/research/stock-no-load-sink.md",
+    "actual_helper_no_load_frame": true,
+    "source_driver_composition_complete": true,
+    "unused_division_production_active": false,
+    "evidence_backup": "3aee0321674d2c88b56437cde27d543f4cb5f0f7",
+    "source_class": "Existing scalar families and arbitrary division bodies; no-load source contexts",
+    "source_driver_validated_head": "66cff515c6a2dfc9efb82335be0711998f881e86",
+    "source_driver_receipt": "docs/research/stock-general-div-source.md",
+    "source_driver_evidence": "39e8973aa776b761ec6c62b772cc5d57cae0454e"
+  },
+  "active_candidate": {
+    "name": "ranked CFGs with nonentry original parameter conditions",
+    "state": "all current author gates passed; default activation in PR637",
+    "branch": "agent/stock-parameter-cfg-20261027",
+    "implementation": "Ranked quiet scalar CFGs with original wide parameter conditions at any source block, inherited parameters, nonempty ordinary jump copies, joins and returns/first traps; original source/retained records/ABI entry derive unchanged Scalar.Domain. Conditional successor vectors remain empty. Default compiler/checker/verified-linker/generated consumers append route11, preserving0\u201310 and the complete previous ConditionalForwardCfg pipeline on original source and settings.",
+    "limits": "Full original140 remains open: broader conditions and nonempty conditional copies, tables/loops, memory/addressing/atomics, calls/exceptions, uncovered families and original-domain whole-driver/Stock-only/downstream completeness. Fallback preserves acceptance and is not completeness.",
+    "evidence": "docs/research/stock-parameter-cfg-production.md",
+    "source_head": "9f27ad6c3b13f3fd378693389e82e9cdaf616b65",
+    "pull_request": 637,
+    "terminal_remote_evidence": "d99110950647017bb46f0c8a751d81ad1587a4e5"
+  }
 }

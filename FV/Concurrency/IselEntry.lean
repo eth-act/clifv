@@ -23,8 +23,8 @@ variable {f : Clif.Function} {vc : VCode} {ctx : Ctx} {st0 : LState} {R : Reg �
   {gn : Nat → Nat} {bl : List BLow} {A : Nat → Nat → List Clif.ValueId} {sem : Sem}
   {MR : MemRelT} {env : Clif.Env} {p : Clif.Program} {slots : List (Clif.SlotId × Nat)}
 
-/-- **The entry with its code exposed** (module doc). -/
-theorem entry_matchN (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p) (hds : DriverSem sem)
+/-- **The entry with its code exposed** (module doc; on `DriverHypT`). -/
+theorem entry_matchNT (H : DriverHypT f vc ctx st0 R gn bl A sem MR env p) (hds : DriverSem sem)
     {F : BitVec 64 → Prop} {sb : Nat} {syms : String → Option Nat}
     (hMem : MemRefines F sb syms sem) (hMR : MRStable F MR)
     {cs : Clif.State} {B0 : Clif.Block} (hB0 : f.blocks[0]? = some B0)
@@ -219,6 +219,24 @@ theorem entry_matchN (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p) (hds : 
       obtain ⟨q, hq, rfl, hqt⟩ := setMany_param_ty hregs hnd hty (hA x hx0).1 hv
       rw [H.cert.paramTy B0 hB0mem q hq] at ht
       rw [hqt]; exact Option.some.inj ht
+
+/-- **The entry with its code exposed** (`entry_matchNT` on `DriverHyp`). -/
+theorem entry_matchN (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p) (hds : DriverSem sem)
+    {F : BitVec 64 → Prop} {sb : Nat} {syms : String → Option Nat}
+    (hMem : MemRefines F sb syms sem) (hMR : MRStable F MR)
+    {cs : Clif.State} {B0 : Clif.Block} (hB0 : f.blocks[0]? = some B0)
+    (hcall : cs.callers = []) (hfunc : cs.frame.func = f) (hslots : cs.frame.slots = slots)
+    (hbody : cs.frame.body = B0.body) (hterm : cs.frame.term = B0.term) {args : List Clif.Val}
+    (hregs : Clif.Regs.empty.setMany (B0.params.map (·.1)) args = some cs.frame.regs)
+    (hty : args.map (·.ty) = B0.params.map (·.2))
+    (hsig : args.map (·.ty) = f.sig.params.map (·.ty))
+    {ρ₀ : Nat → CV} {w₀ : Arm.ArmState} (hmr : MR slots cs.mem w₀)
+    (hargs : ArgsAtEntry F f.sig args w₀) :
+    ∃ vb ps ρ₁ ρ₂ w₂, vc.blocks[0]? = some vb ∧ vb.insts[0]? = some (.args ps) ∧
+      VStep vc sem (.run ⟨0, 0, ρ₀, w₀⟩) (.run ⟨0, 1, ρ₁, w₀⟩) ∧
+      seqRun sem (entryLoads f R B0) ρ₁ w₀ = some (.fall ρ₂ w₂) ∧
+      Match f ctx R gn bl A MR slots cs ⟨0, 1 + (entryLoads f R B0).length, ρ₂, w₂⟩ :=
+  entry_matchNT H.toT hds hMem hMR hB0 hcall hfunc hslots hbody hterm hregs hty hsig hmr hargs
 
 /-- No stack-passed parameter, no entry load. -/
 theorem entryLoads_nil {B : Clif.Block} (hreg : ∀ off, ArgLoc.stack off ∉ locsOf f.sig) :

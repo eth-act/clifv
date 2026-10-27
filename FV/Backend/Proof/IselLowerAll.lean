@@ -1,6 +1,9 @@
 import FV.Backend.Proof.IselFloatConst
 import FV.Backend.Proof.IselFloatArith
+import FV.Backend.Proof.IselFloatCvt
+import FV.Backend.Proof.IselFloatRound
 import FV.Backend.Proof.IselFloatSelect
+import FV.Backend.Proof.IselFloatCmp
 import FV.Backend.Proof.IselFamAluBIconst
 import FV.Backend.Proof.IselFamAluBMisc
 import FV.Backend.Proof.IselFamilyALU
@@ -122,7 +125,7 @@ theorem lowerRulesCorrect_program : LowerRulesCorrect program := by
   simp only [closureRootIds, List.contains_cons, List.contains_nil, Bool.or_false,
     Bool.or_eq_true, beq_iff_eq] at hroot
 
-  rcases hroot with h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h
+  rcases hroot with h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h
   · rw [lower_rule_eq hr (k := 172) (r0 := rule_lower_53) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]
     apply iconst_ok <;> assumption
   · rw [lower_rule_eq hr (k := 174) (r0 := rule_lower_63) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]
@@ -177,6 +180,54 @@ theorem lowerRulesCorrect_program : LowerRulesCorrect program := by
     exact (fpromote_okT hp MR env cp hR hMR).toOk
   · rw [lower_rule_eq hr (k := 206) (r0 := rule_lower_559) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]
     exact (fdemote_okT hp MR env cp hR hMR).toOk
+  · rw [lower_rule_eq hr (k := 207) (r0 := rule_lower_567) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]
+    exact (ceil32_okT hp MR env cp hR hMR).toOk
+  · rw [lower_rule_eq hr (k := 208) (r0 := rule_lower_570) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]
+    exact (ceil64_okT hp MR env cp hR hMR).toOk
+  · rw [lower_rule_eq hr (k := 209) (r0 := rule_lower_578) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]
+    exact (floor32_okT hp MR env cp hR hMR).toOk
+  · rw [lower_rule_eq hr (k := 210) (r0 := rule_lower_581) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]
+    exact (floor64_okT hp MR env cp hR hMR).toOk
+  · rw [lower_rule_eq hr (k := 211) (r0 := rule_lower_589) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]
+    exact (trunc32_okT hp MR env cp hR hMR).toOk
+  · rw [lower_rule_eq hr (k := 212) (r0 := rule_lower_592) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]
+    exact (trunc64_okT hp MR env cp hR hMR).toOk
+  · rw [lower_rule_eq hr (k := 213) (r0 := rule_lower_600) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]
+    exact (nearest32_okT hp MR env cp hR hMR).toOk
+  · rw [lower_rule_eq hr (k := 214) (r0 := rule_lower_603) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]
+    exact (nearest64_okT hp MR env cp hR hMR).toOk
+  · rw [lower_rule_eq hr (k := 220) (r0 := rule_lower_724) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]
+    exact (fcvt_from_uint_f32_le32_okT hp MR env cp hR hMR).toOk
+  · rw [lower_rule_eq hr (k := 221) (r0 := rule_lower_727) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]
+    exact (fcvt_from_uint_f64_le32_okT hp MR env cp hR hMR).toOk
+  · rw [lower_rule_eq hr (k := 112) (r0 := rule_lower_730) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]
+    exact (fcvt_from_uint_f32_i64_okT hp MR env cp hR hMR).toOk
+  · rw [lower_rule_eq hr (k := 113) (r0 := rule_lower_733) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]
+    exact (fcvt_from_uint_f64_i64_okT hp MR env cp hR hMR).toOk
+  · rw [lower_rule_eq hr (k := 222) (r0 := rule_lower_744) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]
+    exact (fcvt_from_sint_f32_le32_okT hp MR env cp hR hMR).toOk
+  · rw [lower_rule_eq hr (k := 223) (r0 := rule_lower_747) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]
+    exact (fcvt_from_sint_f64_le32_okT hp MR env cp hR hMR).toOk
+  · rw [lower_rule_eq hr (k := 114) (r0 := rule_lower_750) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]
+    exact (fcvt_from_sint_f32_i64_okT hp MR env cp hR hMR).toOk
+  · rw [lower_rule_eq hr (k := 115) (r0 := rule_lower_753) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]
+    exact (fcvt_from_sint_f64_i64_okT hp MR env cp hR hMR).toOk
+  · rw [lower_rule_eq hr (k := 224) (r0 := rule_lower_764) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]
+    exact (fcvt_to_uint_sat_i32_f32_okT hp MR env cp hR hMR).toOk
+  · rw [lower_rule_eq hr (k := 116) (r0 := rule_lower_767) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]
+    exact (fcvt_to_uint_sat_i64_f32_okT hp MR env cp hR hMR).toOk
+  · rw [lower_rule_eq hr (k := 225) (r0 := rule_lower_770) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]
+    exact (fcvt_to_uint_sat_i32_f64_okT hp MR env cp hR hMR).toOk
+  · rw [lower_rule_eq hr (k := 117) (r0 := rule_lower_773) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]
+    exact (fcvt_to_uint_sat_i64_f64_okT hp MR env cp hR hMR).toOk
+  · rw [lower_rule_eq hr (k := 226) (r0 := rule_lower_784) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]
+    exact (fcvt_to_sint_sat_i32_f32_okT hp MR env cp hR hMR).toOk
+  · rw [lower_rule_eq hr (k := 118) (r0 := rule_lower_787) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]
+    exact (fcvt_to_sint_sat_i64_f32_okT hp MR env cp hR hMR).toOk
+  · rw [lower_rule_eq hr (k := 227) (r0 := rule_lower_790) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]
+    exact (fcvt_to_sint_sat_i32_f64_okT hp MR env cp hR hMR).toOk
+  · rw [lower_rule_eq hr (k := 119) (r0 := rule_lower_793) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]
+    exact (fcvt_to_sint_sat_i64_f64_okT hp MR env cp hR hMR).toOk
   · rw [lower_rule_eq hr (k := 499) (r0 := rule_lower_801) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]
     apply isub_base_case_ok <;> assumption
   · rw [lower_rule_eq hr (k := 228) (r0 := rule_lower_805) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]
@@ -240,6 +291,8 @@ theorem lowerRulesCorrect_program : LowerRulesCorrect program := by
   · exfalso; simp [memRootRule, h] at hmem
   · rw [lower_rule_eq hr (k := 132) (r0 := rule_lower_1281) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]
     apply uextend_icmp_ruleOk <;> assumption
+  · rw [lower_rule_eq hr (k := 133) (r0 := rule_lower_1283) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]
+    exact (uextend_fcmp_okT hp MR env cp hR hMR).toOk
   · exfalso; simp [memRootRule, h] at hmem
   · rw [lower_rule_eq hr (k := 500) (r0 := rule_lower_1315) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]
     apply sextend_ok <;> assumption
@@ -348,6 +401,8 @@ theorem lowerRulesCorrect_program : LowerRulesCorrect program := by
     apply popcnt_64_ok <;> assumption
   · rw [lower_rule_eq hr (k := 302) (r0 := rule_lower_2146) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]
     apply ireduce_ok <;> assumption
+  · rw [lower_rule_eq hr (k := 303) (r0 := rule_lower_2176) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]
+    exact (fcmp_okT hp MR env cp hR hMR).toOk
   · rw [lower_rule_eq hr (k := 470) (r0 := rule_lower_2215) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]
     apply icmp_ruleOk <;> assumption
   · rw [lower_rule_eq hr (k := 305) (r0 := rule_lower_2237) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]
@@ -448,13 +503,14 @@ theorem lowerRulesCorrectT_program : LowerRulesCorrectT program := by
 theorem lower_floatArithRoot_filter : (program.rulesOf TId.lower).filter floatArithRootRule =
     [rule_lower_485, rule_lower_493, rule_lower_501, rule_lower_509, rule_lower_517,
       rule_lower_525, rule_lower_533, rule_lower_541, rule_lower_549, rule_lower_554,
-      rule_lower_559] := by
+      rule_lower_559, rule_lower_567, rule_lower_570, rule_lower_578, rule_lower_581,
+      rule_lower_589, rule_lower_592, rule_lower_600, rule_lower_603] := by
   rw [program_rulesOf_686]
   rfl
 
 /-- **S11f's target (scalar float arithmetic)**: over float-capable contexts (`CtxInvT`), the
-`fadd`/`fsub`/`fmul`/`fdiv`/`fmin`/`fmax`/`sqrt`/`fneg`/`fabs`/`fpromote`/`fdemote` roots are
-correct. -/
+`fadd`/`fsub`/`fmul`/`fdiv`/`fmin`/`fmax`/`sqrt`/`fneg`/`fabs`/`fpromote`/`fdemote` and
+`ceil`/`floor`/`trunc`/`nearest` roots are correct. -/
 theorem lowerRulesCorrectFT_program : LowerRulesCorrectFT program := by
   intro F isem MR env cp hR hMR r hr hfa
   have hp := data_program
@@ -462,7 +518,8 @@ theorem lowerRulesCorrectFT_program : LowerRulesCorrectFT program := by
     List.mem_filter.2 ⟨hr, hfa⟩
   rw [lower_floatArithRoot_filter] at hsub
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hsub
-  rcases hsub with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+  rcases hsub with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
+    rfl | rfl | rfl | rfl | rfl | rfl
   · exact fadd_okT hp MR env cp hR hMR
   · exact fsub_okT hp MR env cp hR hMR
   · exact fmul_okT hp MR env cp hR hMR
@@ -474,5 +531,13 @@ theorem lowerRulesCorrectFT_program : LowerRulesCorrectFT program := by
   · exact fabs_okT hp MR env cp hR hMR
   · exact fpromote_okT hp MR env cp hR hMR
   · exact fdemote_okT hp MR env cp hR hMR
+  · exact ceil32_okT hp MR env cp hR hMR
+  · exact ceil64_okT hp MR env cp hR hMR
+  · exact floor32_okT hp MR env cp hR hMR
+  · exact floor64_okT hp MR env cp hR hMR
+  · exact trunc32_okT hp MR env cp hR hMR
+  · exact trunc64_okT hp MR env cp hR hMR
+  · exact nearest32_okT hp MR env cp hR hMR
+  · exact nearest64_okT hp MR env cp hR hMR
 
 end Backend.Proof

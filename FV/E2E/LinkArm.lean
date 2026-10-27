@@ -607,7 +607,7 @@ def frames (n : String) : Option (Nat × (Clif.SlotId → Nat)) :=
 /-- The CLIF memory's slot-placement oracle has the running activation's stack pointer `c` and
 the program's frames. -/
 def PlaceAt (cm : Clif.Mem) (c : BitVec 64) : Prop :=
-  ∃ sps, cm.place = some ⟨c :: sps, L.frames⟩
+  ∃ sps, cm.place = some ⟨c :: sps, L.frames, none⟩
 
 /-- When the external semantics at depth `M` defines a call of `g` from world `w`: the callee's
 stack (its frame and its callees' budget) fits below `sp` outside the world and the code, no
@@ -923,7 +923,7 @@ theorem enterSlots_nil {g : Function} (hs : g.slots = []) (mem : Mem) :
   split
   · exact ⟨mem.place, rfl⟩
   · split
-    · exact ⟨_, rfl⟩
+    · rw [initSlots_nil]; exact ⟨_, rfl⟩
     · exact ⟨_, rfl⟩
 
 /-- Entering a function without stack slots changes only the slot-placement oracle. -/
@@ -2117,7 +2117,7 @@ theorem initState_mem {h : Clif.Function} {n : String} (hpf : L.P.func? n = some
       let off : Clif.SlotId → Nat :=
         fun id => (L.A h).af.slotBase + ((slotLayout h.slots).1.lookup id).getD 0
       let acc : List (Clif.SlotId × Nat) × Clif.Mem :=
-        ([], { cm with place := some ⟨sp :: c :: sps, L.frames⟩ })
+        ([], { cm with place := some ⟨sp :: c :: sps, L.frames, none⟩ })
       have hfr : L.frames h.name = some (frameDrop (L.A h).af, off) := by simp [frames, hpf, off]
       have e : Clif.enterSlots h cm = h.slots.foldl (Clif.placeStep sp off) acc := by
         simp only [Clif.enterSlots, hcp, hfr, List.headD]
@@ -3868,8 +3868,8 @@ theorem actInv_step (hL : L.Ok) [hR : L.CrunOk] {M : Nat} {g : Clif.Function} (h
   rcases Clif.step_next_cases hPf hI hs with ⟨-, -, ⟨hpl', -⟩ | ⟨n, G, vals, rv, hG, hr⟩⟩ |
     ⟨cc, hcc, -⟩ | ⟨cc, hcc, -⟩
   · rw [hpl', hp]
-  · rw [Clif.linkEnvR_keepsPlace (hR.runs M) hL.free (hL.baseKeepsPlace hN) n G hG vals s.mem rv
-      s1.mem hr, hp]
+  · rw [Clif.linkEnvR_keepsPlace0 (hR.runs M) hL.free (hL.baseKeepsPlace hN) n G hG vals s.mem rv
+      s1.mem (fun pl h => by rw [hp] at h; cases h; rfl) hr, hp]
   · rw [hc1] at hcc; cases hcc
   · rw [hc] at hcc; cases hcc
 

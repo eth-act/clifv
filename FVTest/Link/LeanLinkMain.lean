@@ -1,7 +1,7 @@
-import FV.Backend.Lowering.StockScalarNI
+import FV.Backend.Lowering.StockParameterCfgNI
 import FV.Link.Compile
 import FV.Link.DeadCleanupCompile
-import FV.Link.DeadCleanupCompileT
+import FV.Link.DeadCleanupCompileT3
 import FV.Link.TailCompile
 import FV.Link.OptCompile
 import FV.Link.Placed
@@ -52,9 +52,11 @@ compiler's `compileExe_correct` (entries without a reachable call cycle) and
 (pre-`i128`-legalisation) program. No per-crate proof needed.
 
 Outside the compiler's input conditions, without `--verified`, the cleanup compiler (no `--opt`,
-no self tail calls) tries the typed scope (S11): `Link.DeadCleanup.compileExeT` (`InScopePT`, then
-`leanLink`, then the output checks `OutOkTCleanup`; coverage `compileExeT_correct`, returned
-values by class). Otherwise the tool links with the bare Lean linker (`leanLink`, no
+no self tail calls) tries the typed scope (S11): first `Link.DeadCleanup.compileExeT3` (the
+decided input conditions `InScopeInT3`, no run-time decider; then `leanLink` and the output checks
+`OutOkTCleanup`; coverage `compileExeT3_correct`), else `Link.DeadCleanup.compileExeT` (`InScopePT`,
+then `leanLink`, then `OutOkTCleanup`; coverage `compileExeT_correct`); returned values by class.
+Otherwise the tool links with the bare Lean linker (`leanLink`, no
 compiler theorem; reported as such). **`--verified`** (integer-only) fails closed: an input outside `SrcScopeB`, outside
 the per-function input conditions decided on the CLIF alone (`fnScopeInB`, V7) or outside
 `InScopeP` is an error and the executable is not written, so every executable it writes is
@@ -323,11 +325,14 @@ def main (args0 : List String) : IO UInt32 := do
         IO.eprintln s!"lean-link:   {n}: {fs}"
       printExclusions exe S SC
       return 1
-  -- Keep optimizer and exceptional-edge theorem variants on their retained route
-  -- until their production adapters are complete.
-  let stockEnabled := !opt && !tailOn && SC0.funcs.any (fun fi => Backend.Stock.Scalar.activationEligible fi.func || Backend.Stock.Logical.activationEligible fi.func || Backend.Stock.Mixed.activationEligible fi.func || Backend.Stock.Arithmetic.eligible fi.func || Backend.Stock.ScalarAdd.activationEligible fi.func) &&
-    !(SC0.funcs.any fun fi => fi.func.blocks.any fun b => b.term.isTry)
-  let routes := [Backend.Stock.Scalar.lowerValidated,Backend.Stock.Logical.lowerValidated,Backend.Stock.Mixed.lowerValidated,
+  -- The checked semantic provider handles a CFG function alongside retained
+  -- try-call functions. Recompiling that mixed program only through the old
+  -- provider can require a different region size from the emitted objects.
+  -- Other exception, optimizer and tail-call variants retain their routes.
+  let hasCfg := SC0.funcs.any (fun fi => (((Backend.Stock.ParameterCfg.eligible fi.func || Backend.Stock.ConditionalForwardCfg.eligible fi.func) || Backend.Stock.ConditionalCfg.eligible fi.func) || Backend.Stock.ForwardCfg.eligible fi.func || Backend.Stock.LinearCfg.eligible fi.func || Backend.Stock.TwoBlock.Entry.eligible fi.func))
+  let stockEnabled := !opt && !tailOn && SC0.funcs.any (fun fi => (((Backend.Stock.ParameterCfg.eligible fi.func || Backend.Stock.ConditionalForwardCfg.eligible fi.func) || Backend.Stock.ConditionalCfg.eligible fi.func) || Backend.Stock.ForwardCfg.eligible fi.func || Backend.Stock.LinearCfg.eligible fi.func || Backend.Stock.TwoBlock.Entry.eligible fi.func) || Backend.Stock.Scalar.activationEligible fi.func || Backend.Stock.Logical.activationEligible fi.func || Backend.Stock.Mixed.activationEligible fi.func || Backend.Stock.Arithmetic.eligible fi.func || Backend.Stock.ScalarAdd.activationEligible fi.func) &&
+    (hasCfg || !(SC0.funcs.any fun fi => fi.func.blocks.any fun b => b.term.isTry))
+  let routes := [Backend.Stock.ParameterCfg.lowerValidated,Backend.Stock.ConditionalForwardCfg.lowerValidated,Backend.Stock.ConditionalCfg.lowerValidated,Backend.Stock.ForwardCfg.lowerValidated,Backend.Stock.LinearCfg.lowerValidated,Backend.Stock.TwoBlock.Entry.lowerValidated,Backend.Stock.TwoBlock.lowerValidated,Backend.Stock.Scalar.lowerValidated,Backend.Stock.Logical.lowerValidated,Backend.Stock.Mixed.lowerValidated,
     Backend.Stock.Arithmetic.lowerValidated]
   let compiled := if stockEnabled then SemanticCompilerWith.compileWithRoutes routes SC0 file0 deadCleanup
     else (compile SC file0).map fun file => (⟨file,none⟩ : SemanticCompilerWith.RoutedOutput)
@@ -416,16 +421,25 @@ def main (args0 : List String) : IO UInt32 := do
       printExclusions exe S SC
       return 1
     -- the typed scope (S11, #35; not under `--verified`, whose claim reaches the Rust source
-    -- through the integer front-end theorems): `compileExeT SC file0 = .ok file` on `InScopePT`
-    -- with the output checks `OutOkTCleanup`
+    -- through the integer front-end theorems): first `compileExeT3 SC file0 = .ok file` on the
+    -- decided input conditions `InScopeInT3` (no run-time decider), else `compileExeT` on
+    -- `InScopePT`; both with the output checks `OutOkTCleanup`
     if deadCleanup && !opt && !tailOn then
-      match Link.DeadCleanup.compileExeT SC file0 with
+      match Link.DeadCleanup.compileExeT3 SC file0 with
       | .ok file =>
         IO.FS.writeBinFile exe file
-        IO.println s!"lean-link: {exe}: {summary} written by Link.DeadCleanup.compileExeT (Link.DeadCleanup.compileExeT_correct)"
-        IO.println s!"lean-link: {exe}: coverage: Link.DeadCleanup.compileExeT_correct (typed scope InScopePT, OutOkTCleanup; returned values by class)"
+        IO.println s!"lean-link: {exe}: {summary} written by Link.DeadCleanup.compileExeT3 (Link.DeadCleanup.compileExeT3_correct)"
+        IO.println s!"lean-link: {exe}: coverage: Link.DeadCleanup.compileExeT3_correct (typed scope InScopeInT3, OutOkTCleanup; returned values by class)"
         return 0
-      | .error e => IO.eprintln s!"lean-link: {exe}: typed scope: {e}"
+      | .error e3 =>
+        IO.eprintln s!"lean-link: {exe}: decider-free typed scope: {e3}"
+        match Link.DeadCleanup.compileExeT SC file0 with
+        | .ok file =>
+          IO.FS.writeBinFile exe file
+          IO.println s!"lean-link: {exe}: {summary} written by Link.DeadCleanup.compileExeT (Link.DeadCleanup.compileExeT_correct)"
+          IO.println s!"lean-link: {exe}: coverage: Link.DeadCleanup.compileExeT_correct (typed scope InScopePT, OutOkTCleanup; returned values by class)"
+          return 0
+        | .error e => IO.eprintln s!"lean-link: {exe}: typed scope: {e}"
     match link SC file0 with
     | .error e => do IO.eprintln s!"lean-link: {exe}: {e}"; return 1
     | .ok file =>

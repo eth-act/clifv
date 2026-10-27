@@ -1,0 +1,163 @@
+{
+  "head": "1a30db775fd41a3509633667b7d6d7d7524eae1d",
+  "base": "00576bd9e3cd8f9bd46d14aeb750012d88d1aa97",
+  "tree": "621069faed455a99e6b10e22b92f68f00f745c4a",
+  "utc": "2026-10-26T18:38:15.755817+00:00",
+  "state": "all_author_gates_passed",
+  "normal_module_keys": 4073,
+  "normal_rebuilt": 76,
+  "all_audit_files": 92,
+  "audited_roots": 3544,
+  "all_previous_axiom_sets_exact": 3518,
+  "retained_ownership_partitions": 6,
+  "new_general_standard_only_roots": 20,
+  "new_fixed_witness_roots": 6,
+  "old_backend_proof_files_byte_exact": 2456,
+  "old_compiled_semantic_headers_exact": 3,
+  "integration_checks": {
+    "new_integration": 78,
+    "parent_scalar_entry": 70,
+    "parent_entry": 34,
+    "parent_cfg": 34
+  },
+  "new_generated_roots": 18,
+  "new_cli_reconstruction_roots": 4,
+  "native_actual_objects": 24,
+  "native_lean_byte_executions": 24000,
+  "cranelift_reference_executions": 3000,
+  "native_failures": 0,
+  "native_disagreements": 0,
+  "runtime_passes": 5755,
+  "encoder_identical": 1398,
+  "encoder_differ": 0,
+  "e2e_identities_stages": {
+    "e2e": {
+      "counts": {
+        "original": 1150,
+        "parent": 1159,
+        "current": 1159
+      },
+      "original_and_parent_ordered_stages_exact": true
+    },
+    "legacy-e2e": {
+      "counts": {
+        "original": 1150,
+        "parent": 1159,
+        "current": 1159
+      },
+      "original_and_parent_ordered_stages_exact": true
+    }
+  },
+  "verified_examples": {
+    "fv-demo": {
+      "tests": 21,
+      "verified_ELFs": 2
+    },
+    "survey": {
+      "tests": 53,
+      "verified_ELFs": 18
+    }
+  },
+  "actual_crate_modules": 93,
+  "actual_crate_recorded_commands": 96,
+  "paired_symbols": 4543,
+  "default_lean_matches": {
+    "parent": 900,
+    "candidate": 900,
+    "gains": 0,
+    "losses": 0,
+    "changed_function_bytes": 10
+  },
+  "diagnostic_existing_regalloc2_ten_changed_functions": {
+    "parent_exact": 0,
+    "candidate_exact": 8,
+    "limits": "Same ten changed functions with identical regalloc2 settings/oracle; not whole-corpus agreement and not a default allocator change."
+  },
+  "normalized_source_diagnostic_before_CLI_i128_legalization": {
+    "captured_function_instances": 4543,
+    "three_block_eligible": 127,
+    "source_and_lowering_and_boundary_pass": 127,
+    "actual_stock_selected": 127,
+    "limits": "Captured instances, not unique-source coverage; additional CLI-legalized i128 cases are outside this pre-legalization count."
+  },
+  "receipts": {
+    "normal": {
+      "path": "/tmp/stock-linear-cfg-normal-v2.json",
+      "sha256": "6060a2735fc08dd61d7a7f136f4bbab52ea3c10b122143778cf9f1140b14343f"
+    },
+    "trust": {
+      "path": "/tmp/stock-linear-cfg-trust-v2/receipt.json",
+      "sha256": "89a14f79ce333d50562b8fbc322bb46bf90d059ac3e6638cc85aac59a10e3269"
+    },
+    "old_axiom_parity": {
+      "path": "/tmp/stock-linear-cfg-trust-v2/exact-parity.json",
+      "sha256": "dbd84eb2ff2a881082c1cf33ea8a06c7e45ddd9c16f95fc8d8ae911be5dd525e"
+    },
+    "native": {
+      "path": "/tmp/stock-linear-cfg-native-v2/receipt.json",
+      "sha256": "37602515e23832f1012553f600f0edbb31c0fdc1cd5f8ba1947ab25e9e1675fa"
+    },
+    "post_native": {
+      "path": "/tmp/stock-linear-cfg-post-native-v2/receipt.json",
+      "sha256": "b663b07d254d7b70e43ab111faaa462d4925d0c9c58dad22d696902d7e447cb4"
+    },
+    "paired": {
+      "path": "/tmp/stock-linear-cfg-paired-main-v1/summary.json",
+      "sha256": "5f100367b12f2e94883b95cadae704494974c22b6a727e59f65f5e3f928ec4ee"
+    },
+    "paired_actual_binding": {
+      "path": "/tmp/stock-linear-cfg-paired-main-v1/post-native-reuse-receipt.json",
+      "sha256": "d94c9724a75ebefd5c25be3253eea4ea2233f7b054017237f25309174b337bdf"
+    },
+    "old_sources_headers": {
+      "path": "/tmp/stock-linear-cfg-old-source-header-parity.json",
+      "sha256": "f97e849a5e48bd70d5547dab9a7b03985fa1c94f62442afeb50c175ca42ff7ef"
+    },
+    "identity_stages": {
+      "path": "/tmp/stock-linear-cfg-native-v2/identity-stage-parity.json",
+      "sha256": "ba172ba00bbadaf54c6629b45f40c52a7673500343928840c34bc02ac7b167c8"
+    },
+    "crate_package": {
+      "path": "/tmp/stock-linear-cfg-post-native-v2/crate-proofs/receipt.json",
+      "sha256": "4a134d69e828a3584ee37cc4acffe349aed8fad75e33261ef292abc8fe7e3dd4"
+    },
+    "new_integration": {
+      "path": "/tmp/stock-linear-cfg-integration-v2/receipt.json",
+      "sha256": "da9693bf4221097e8d11b322226b8b3c58e06977c7c1861fb72b2d9042a9e014"
+    },
+    "parent_scalar_entry": {
+      "path": "/tmp/stock-linear-cfg-parent-scalar-entry-integration-v2/receipt.json",
+      "sha256": "7bfcb2c5913837d156ce01bb91e9cc42fef18f7f1e31f359a7d7902203c88725"
+    },
+    "parent_entry": {
+      "path": "/tmp/stock-linear-cfg-parent-entry-integration-v2/receipt.json",
+      "sha256": "264fb633475439b6be7317d6048fc0df207c47d1775be28704ca76c5b4fbbf58"
+    },
+    "parent_cfg": {
+      "path": "/tmp/stock-linear-cfg-parent-integration-v2/receipt.json",
+      "sha256": "16576e4ad6a1dd89f38077dde5ad20355ce4a64929c161a2b7e3070376ab333d"
+    },
+    "candidate_regalloc2_diagnostic": {
+      "path": "/tmp/stock-linear-cfg-regalloc-diagnostic/receipt.json",
+      "sha256": "607384f77b9ab28bc6d9221b22784c79960c0fe3cd92ff228d049c0fc4e0453a"
+    },
+    "parent_regalloc2_diagnostic": {
+      "path": "/tmp/stock-linear-cfg-parent-regalloc-diagnostic/receipt.json",
+      "sha256": "87a807ce9a7b3aeb58e5d1eb5999114154013223d248c7e3d349555131a15faa"
+    }
+  },
+  "full_140_complete": false,
+  "next": "General source CFG composition, loops, effects/calls and original-domain simulation/Stock-only/downstream completeness; reuse existing per-edge prepare/spill proofs.",
+  "terminal_remote_evidence": {
+    "source_head": "1a30db775fd41a3509633667b7d6d7d7524eae1d",
+    "source_branch": "agent/stock-linear-cfg-20261026",
+    "evidence_commit": "c855548a02de199d2dd588c03f0d1c9d9ecd3346",
+    "branch": "agent/stock-cfg-body-progress-20261025T025359Z",
+    "archive_git_path": "evidence/postmerge-manifest.json",
+    "archive_sha256": "c1e393458b7bb3a1a3a5b05db1bdb1f6435713694a3bfb9fe5636fe2d91801cd",
+    "bytes": 122887040,
+    "parts": 3,
+    "prior_terminal_commit": "298e49a68cbeebca7e251cabbb136405aa1fadb9",
+    "state": "Source, validation and recovery snapshot; inspect included receipts for exact completed/pending gates. Full140 remains open"
+  }
+}

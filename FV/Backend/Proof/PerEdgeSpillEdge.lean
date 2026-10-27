@@ -80,7 +80,7 @@ theorem edgeAt_of_metadata {c : CheckCtx} {vc : VCode} {edges : Array (Array (Ar
   constructor
   · exact copy_formula code source targetBlock atRow atArgs arity argShape params _
   · rfl
-  · unfold AState.parCopy
+  · rw [AState.parCopy_eq]
     rw [Array.size_map]
     exact forget_size _ _ _ _
   · intro i ar p arAt pAt l held

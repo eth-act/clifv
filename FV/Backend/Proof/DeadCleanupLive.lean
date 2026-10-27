@@ -22,6 +22,98 @@ theorem discard_pure {m : MInst} {live : List Nat} (h : discard m live = true) :
   simp only [discard, Bool.and_eq_true] at h
   exact h.1.1.1.1
 
+/-- The original world `w` and the cleaned world `wb` while dropped compares' flags are
+pending: every compare, and every flag-free producer and `jump`, steps alike from both (the
+compare overwrites the difference, the others neither read nor change it). -/
+def FlagsPend {V W : Type} (sem : ISem V W) (w wb : W) : Prop :=
+  (∀ K us r, cmpForm K = true → sem K us w = some r → sem K us wb = some r) ∧
+  (∀ j us outs ctl, (flagFree j || isJump j) = true → sem j us w = some (outs, w, ctl) →
+    sem j us wb = some (outs, wb, ctl))
+
+theorem FlagsPend.refl {V W : Type} (sem : ISem V W) (w : W) : FlagsPend sem w w :=
+  ⟨fun _ _ _ _ h => h, fun _ _ _ _ _ h => h⟩
+
+theorem FlagsPend.trans {V W : Type} {sem : ISem V W} {w1 w2 w3 : W}
+    (h1 : FlagsPend sem w1 w2) (h2 : FlagsPend sem w2 w3) : FlagsPend sem w1 w3 :=
+  ⟨fun K us r hK h => h2.1 K us r hK (h1.1 K us r hK h),
+    fun j us outs ctl hj h => h2.2 j us outs ctl hj (h1.2 j us outs ctl hj h)⟩
+
+/-- A compare continues, and from its world every compare, flag-free producer and `jump` steps
+as from the world before it: it writes only the flags, which the next compare overwrites and
+nothing in between reads. A `jump` keeps the world and branches. -/
+def CmpOverwrite {V W : Type} (sem : ISem V W) : Prop :=
+  (∀ i us w outs w' ctl, cmpForm i = true → sem i us w = some (outs, w', ctl) →
+    ctl = .next ∧ FlagsPend sem w' w) ∧
+  (∀ l us w outs w' ctl, sem (.jump l) us w = some (outs, w', ctl) →
+    w' = w ∧ ∃ j, ctl = .goto j)
+
+theorem dropCmp_cmp {e : Bool} {m : MInst} {kept : List MInst} (h : dropCmp e m kept = true) :
+    cmpForm m = true := by
+  simp only [dropCmp, Bool.and_eq_true] at h
+  exact h.1.1
+
+theorem dropCmp_defs {e : Bool} {m : MInst} {kept : List MInst} (h : dropCmp e m kept = true) :
+    defs m = [] := by
+  simp only [dropCmp, Bool.and_eq_true, List.isEmpty_iff] at h
+  exact h.1.2
+
+/-- The retained suffix after a dropped compare has dead flags. -/
+theorem dropCmp_dead {e : Bool} {m : MInst} {kept : List MInst} (h : dropCmp e m kept = true) :
+    flagsDead e kept = true := by
+  simp only [dropCmp, Bool.and_eq_true] at h
+  exact h.2
+
+theorem flagsDead_cons {e : Bool} {k : MInst} {ks : List MInst}
+    (h : flagsDead e (k :: ks) = true) :
+    cmpForm k = true ∨ (cmpForm k = false ∧ flagFree k = true ∧ flagsDead e ks = true) ∨
+      (cmpForm k = false ∧ flagFree k = false ∧ isJump k = true ∧ e = true) := by
+  simp only [flagsDead, Bool.or_eq_true, Bool.and_eq_true] at h
+  cases hc : cmpForm k
+  · cases hf : flagFree k
+    · rcases h with (h | h) | h
+      · rw [hc] at h; cases h
+      · rw [hf] at h; exact absurd h.1 (by simp)
+      · exact .inr (.inr ⟨rfl, rfl, h.1, h.2⟩)
+    · rcases h with (h | h) | h
+      · rw [hc] at h; cases h
+      · exact .inr (.inl ⟨rfl, rfl, h.2⟩)
+      · cases k <;> simp_all [flagFree, pureForm]
+  · exact .inl rfl
+
+/-- A dropped compare writes no register. -/
+theorem dropCmp_noDef {e : Bool} {m : MInst} {kept : List MInst} (h : dropCmp e m kept = true)
+    {ops : Array Operand} (hop : m.operands = .ok ops) :
+    ops.toList.filter Operand.isDef = [] := by
+  have hd := dropCmp_defs h
+  simp only [defs, hop, List.map_eq_nil_iff] at hd
+  simpa [Operand.isDef] using hd
+
+/-- Compares are not pure producers. -/
+theorem pureForm_of_cmp {m : MInst} (h : cmpForm m = true) : pureForm m = false := by
+  unfold cmpForm at h
+  split at h <;> first | rfl | cases h
+
+/-- Flags dead at the head of a block's own code (no `jump` needed) stay dead at the head of
+its cleaned code, whatever the block's exit flag. -/
+theorem flagsDead_scan (nregs : Nat) (e : Bool) :
+    ∀ (ms : List MInst) (live : List Nat), flagsDead false ms = true →
+      flagsDead e (scan nregs e ms live).1 = true
+  | [], _, h => by simp at h
+  | m :: ms, live, h => by
+    have ih := flagsDead_scan nregs e ms live
+    simp only [scan]
+    rcases flagsDead_cons h with hc | ⟨-, hf, hd⟩ | ⟨-, -, -, hfalse⟩
+    · split
+      · rename_i hdrop
+        rcases Bool.or_eq_true_iff.mp hdrop with hd | hd
+        · have hp := discard_pure hd; rw [pureForm_of_cmp hc] at hp; cases hp
+        · exact dropCmp_dead hd
+      · simp [flagsDead, hc]
+    · split
+      · exact ih hd
+      · simp [flagsDead, hf, ih hd]
+    · cases hfalse
+
 theorem retained_uses {V : Type} {nregs : Nat} {m : MInst} {live : List Nat}
     {a b : Nat → V} (h : Agree (uses nregs m ++ live.filter (fun n => !(defs m).contains n)) a b)
     {ops : Array Operand} (hop : m.operands = .ok ops) :

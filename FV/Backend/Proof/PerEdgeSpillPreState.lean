@@ -86,7 +86,7 @@ private theorem forgetOps_le {a b : AState} {ops : List Operand} (le : a.le b = 
     (forgetOps a ops).le (forgetOps b ops) = true := by
   apply le_of_mem
   intro l s held
-  unfold forgetOps at held ⊢
+  rw [forgetOps_eq] at held ⊢
   rw [get_map _ _ (by simp)] at held ⊢
   exact List.mem_filter.mpr ⟨AState.mem_get_le le (List.mem_filter.mp held).1,(List.mem_filter.mp held).2⟩
 private theorem forget_le (c : CheckCtx) (source target : Nat) {a b : AState} (le : a.le b = true) :

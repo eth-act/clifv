@@ -1,0 +1,156 @@
+test run
+target aarch64
+
+; The S11f scalar float rounding roots (`ceil floor trunc nearest`, lower.isle:567-603, via
+; `fpu_round`/`frintp/frintm/frintz/frintn`) behind integer signatures (bit patterns in, bit
+; patterns out via `bitcast`): signed zeros (round to integral preserves the sign of zero),
+; half-integer ties (including the largest f64 half-integer 2^52 - 0.5, a tie for `nearest`
+; resolved to even), integral and huge values unchanged, infinities, and quiet NaNs.
+
+function %ceil32(i32) -> i32 {
+block0(v0: i32):
+    v1 = bitcast.f32 v0
+    v2 = ceil v1
+    v3 = bitcast.i32 v2
+    return v3
+}
+; run: %ceil32(0x00000000) == 0x00000000
+; run: %ceil32(0x80000000) == 0x80000000
+; run: %ceil32(0x3f000000) == 0x3f800000
+; run: %ceil32(0xbf000000) == 0x80000000
+; run: %ceil32(0x3fc00000) == 0x40000000
+; run: %ceil32(0xbfc00000) == 0xbf800000
+; run: %ceil32(0x7f800000) == 0x7f800000
+; run: %ceil32(0xff800000) == 0xff800000
+; run: %ceil32(0x7fc00000) == 0x7fc00000
+; run: %ceil32(0x5f000000) == 0x5f000000
+
+function %floor32(i32) -> i32 {
+block0(v0: i32):
+    v1 = bitcast.f32 v0
+    v2 = floor v1
+    v3 = bitcast.i32 v2
+    return v3
+}
+; run: %floor32(0x00000000) == 0x00000000
+; run: %floor32(0x80000000) == 0x80000000
+; run: %floor32(0x3f000000) == 0x00000000
+; run: %floor32(0xbf000000) == 0xbf800000
+; run: %floor32(0x3fc00000) == 0x3f800000
+; run: %floor32(0xbfc00000) == 0xc0000000
+; run: %floor32(0x7f800000) == 0x7f800000
+; run: %floor32(0xff800000) == 0xff800000
+; run: %floor32(0x7fc00000) == 0x7fc00000
+; run: %floor32(0x5f000000) == 0x5f000000
+
+function %trunc32(i32) -> i32 {
+block0(v0: i32):
+    v1 = bitcast.f32 v0
+    v2 = trunc v1
+    v3 = bitcast.i32 v2
+    return v3
+}
+; run: %trunc32(0x00000000) == 0x00000000
+; run: %trunc32(0x80000000) == 0x80000000
+; run: %trunc32(0x3f000000) == 0x00000000
+; run: %trunc32(0xbf000000) == 0x80000000
+; run: %trunc32(0x3fc00000) == 0x3f800000
+; run: %trunc32(0xbfc00000) == 0xbf800000
+; run: %trunc32(0x7f800000) == 0x7f800000
+; run: %trunc32(0xff800000) == 0xff800000
+; run: %trunc32(0x7fc00000) == 0x7fc00000
+; run: %trunc32(0x5f000000) == 0x5f000000
+
+function %nearest32(i32) -> i32 {
+block0(v0: i32):
+    v1 = bitcast.f32 v0
+    v2 = nearest v1
+    v3 = bitcast.i32 v2
+    return v3
+}
+; run: %nearest32(0x00000000) == 0x00000000
+; run: %nearest32(0x80000000) == 0x80000000
+; run: %nearest32(0x3f000000) == 0x00000000
+; run: %nearest32(0xbf000000) == 0x80000000
+; run: %nearest32(0x3fc00000) == 0x40000000
+; run: %nearest32(0xbfc00000) == 0xc0000000
+; run: %nearest32(0x7f800000) == 0x7f800000
+; run: %nearest32(0xff800000) == 0xff800000
+; run: %nearest32(0x7fc00000) == 0x7fc00000
+; run: %nearest32(0x5f000000) == 0x5f000000
+
+function %ceil64(i64) -> i64 {
+block0(v0: i64):
+    v1 = bitcast.f64 v0
+    v2 = ceil v1
+    v3 = bitcast.i64 v2
+    return v3
+}
+; run: %ceil64(0x0000000000000000) == 0x0000000000000000
+; run: %ceil64(0x8000000000000000) == 0x8000000000000000
+; run: %ceil64(0x3fe0000000000000) == 0x3ff0000000000000
+; run: %ceil64(0xbfe0000000000000) == 0x8000000000000000
+; run: %ceil64(0x3ff8000000000000) == 0x4000000000000000
+; run: %ceil64(0xbff8000000000000) == 0xbff0000000000000
+; run: %ceil64(0x7ff0000000000000) == 0x7ff0000000000000
+; run: %ceil64(0xfff0000000000000) == 0xfff0000000000000
+; run: %ceil64(0x7ff8000000000000) == 0x7ff8000000000000
+; run: %ceil64(0x432fffffffffffff) == 0x4330000000000000
+; run: %ceil64(0x4330000000000001) == 0x4330000000000001
+
+function %floor64(i64) -> i64 {
+block0(v0: i64):
+    v1 = bitcast.f64 v0
+    v2 = floor v1
+    v3 = bitcast.i64 v2
+    return v3
+}
+; run: %floor64(0x0000000000000000) == 0x0000000000000000
+; run: %floor64(0x8000000000000000) == 0x8000000000000000
+; run: %floor64(0x3fe0000000000000) == 0x0000000000000000
+; run: %floor64(0xbfe0000000000000) == 0xbff0000000000000
+; run: %floor64(0x3ff8000000000000) == 0x3ff0000000000000
+; run: %floor64(0xbff8000000000000) == 0xc000000000000000
+; run: %floor64(0x7ff0000000000000) == 0x7ff0000000000000
+; run: %floor64(0xfff0000000000000) == 0xfff0000000000000
+; run: %floor64(0x7ff8000000000000) == 0x7ff8000000000000
+; run: %floor64(0x432fffffffffffff) == 0x432ffffffffffffe
+; run: %floor64(0x4330000000000001) == 0x4330000000000001
+
+function %trunc64(i64) -> i64 {
+block0(v0: i64):
+    v1 = bitcast.f64 v0
+    v2 = trunc v1
+    v3 = bitcast.i64 v2
+    return v3
+}
+; run: %trunc64(0x0000000000000000) == 0x0000000000000000
+; run: %trunc64(0x8000000000000000) == 0x8000000000000000
+; run: %trunc64(0x3fe0000000000000) == 0x0000000000000000
+; run: %trunc64(0xbfe0000000000000) == 0x8000000000000000
+; run: %trunc64(0x3ff8000000000000) == 0x3ff0000000000000
+; run: %trunc64(0xbff8000000000000) == 0xbff0000000000000
+; run: %trunc64(0x7ff0000000000000) == 0x7ff0000000000000
+; run: %trunc64(0xfff0000000000000) == 0xfff0000000000000
+; run: %trunc64(0x7ff8000000000000) == 0x7ff8000000000000
+; run: %trunc64(0x432fffffffffffff) == 0x432ffffffffffffe
+; run: %trunc64(0x4330000000000001) == 0x4330000000000001
+
+function %nearest64(i64) -> i64 {
+block0(v0: i64):
+    v1 = bitcast.f64 v0
+    v2 = nearest v1
+    v3 = bitcast.i64 v2
+    return v3
+}
+; run: %nearest64(0x0000000000000000) == 0x0000000000000000
+; run: %nearest64(0x8000000000000000) == 0x8000000000000000
+; run: %nearest64(0x3fe0000000000000) == 0x0000000000000000
+; run: %nearest64(0xbfe0000000000000) == 0x8000000000000000
+; run: %nearest64(0x3ff8000000000000) == 0x4000000000000000
+; run: %nearest64(0xbff8000000000000) == 0xc000000000000000
+; run: %nearest64(0x7ff0000000000000) == 0x7ff0000000000000
+; run: %nearest64(0xfff0000000000000) == 0xfff0000000000000
+; run: %nearest64(0x7ff8000000000000) == 0x7ff8000000000000
+; run: %nearest64(0x432fffffffffffff) == 0x4330000000000000
+; run: %nearest64(0x4330000000000001) == 0x4330000000000001

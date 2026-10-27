@@ -43,7 +43,8 @@ theorem size_put (a : AState) (l : Loc) (s : List Sym) : (a.put l s).size = a.si
 
 theorem get_remove (a : AState) (s : Sym) (l : Loc) :
     (a.remove s).get l = (a.get l).filter (· != s) := by
-  unfold AState.get AState.remove
+  rw [AState.remove_eq]
+  unfold AState.get
   split
   · simp [Array.getD_eq_getD_getElem?]; cases a[‹Nat›]? <;> rfl
   · rfl
@@ -251,7 +252,8 @@ theorem size_clobberAll : ∀ (b : AState) (clob : List Reg), (clobberAll b clob
 theorem forgetDefs_get (a : AState) (ps : List (Operand × Loc)) (l : Loc) :
     (forgetDefs a ps).get l =
       (a.get l).filter fun s => !(ps.any fun p => p.1.kind == .def && s == .vreg p.1.vreg) := by
-  unfold AState.get forgetDefs
+  rw [forgetDefs_eq]
+  unfold AState.get
   split
   · simp [Array.getD_eq_getD_getElem?]; cases a[‹Nat›]? <;> rfl
   · rfl

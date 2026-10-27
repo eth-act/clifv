@@ -223,19 +223,22 @@ variable {f : Clif.Function} {vc : VCode} {ctx : Ctx} {st0 : LState} {R : Reg �
   {F : BitVec 64 → Prop} {fc : FnCtx} {X : ExtSem} {MR : MemRelT} {env : Clif.Env}
   {p : Clif.Program} {slots : List (Clif.SlotId × Nat)} {sb : Nat} {syms : String → Option Nat}
 
-/-- **The segment of a memory statement** (module doc), with progress and the return covered (`SegResR`): where the
-thread's run ends inside the segment, the forward run of the segment on the thread's own bytes
-(`stmt_matchN` on the CLIF state holding them, `mr_own`) has a step there. -/
-theorem mem_segR (H : DriverHyp f vc ctx st0 R gn bl A (csem F fc X) MR env p)
-    (hchk : threadCheckBl f bl = true) (hMR : MemRelOk F sb syms f MR)
+/-- **The segment of a memory statement** (module doc), with progress, the return covered and the
+VCode end off `rets` (`SegResRN`): where the thread's run ends inside the segment, the forward run
+of the segment on the thread's own bytes (`stmt_matchN` on the CLIF state holding them,
+`mr_own`) has a step there. On `DriverHypT` and the check admitting calls (#473), the statement
+not a call. -/
+theorem mem_segRTN (H : DriverHypT f vc ctx st0 R gn bl A (csem F fc X) MR env p)
+    (hchk : threadCheckBlC f bl = true) (hMR : MemRelOk F sb syms f MR)
     (hMRw : ∀ sl cm w, MR sl cm w → Arm.r .ERR w = .None ∧ Arm.CheckSPAlignment w)
     (hX : TlsMemFree X)
     {s : Clif.State} {b k : Nat} {ρ : Nat → CV} {w : ArmState}
     (hm : Match f ctx R gn bl A MR slots s ⟨b, k, ρ, w⟩)
     {stm : Clif.Stmt} {rest : List Clif.Stmt} (hbody : s.frame.body = stm :: rest)
-    (hnp : pureInst stm.inst = false) {tr : List (List Ev)} {cT : VConf CV ArmState}
+    (hnp : pureInst stm.inst = false) (hncall : ∀ fn args, stm.inst ≠ .call fn args)
+    {tr : List (List Ev)} {cT : VConf CV ArmState}
     (hr : VTRun vc (csem F fc X) (cEvs F fc) (.run ⟨b, k, ρ, w⟩) tr cT) :
-    SegResR env p vc (csem F fc X) (cEvs F fc) (Match f ctx R gn bl A MR slots) s tr cT := by
+    SegResRN env p vc (csem F fc X) (cEvs F fc) (Match f ctx R gn bl A MR slots) s tr cT := by
   -- the statement, its lowering and its code
   obtain ⟨hcall, hfunc, hslots, hmr, B, j, hB, hterm, hj, hbd, hk, hheld, hcons⟩ := id hm
   simp only at hk hheld hcons hB hmr
@@ -244,7 +247,7 @@ theorem mem_segR (H : DriverHyp f vc ctx st0 R gn bl A (csem F fc X) MR env p)
   obtain ⟨vb, hvb, hsllen, hstmts, -, -, -, -, hcode, htne, -⟩ := H.shape.blk b B L hB hL
   obtain ⟨sl, hsl⟩ : ∃ sl, L.sl[j]? = some sl :=
     ⟨L.sl[j]'(by omega), List.getElem?_eq_getElem _⟩
-  have hchkS := stmtOk_of hchk hB hstm hL hsl
+  have hchkS := stmtOk_ofC hchk hB hstm hL hsl hncall
   have hthr : threadInstB stm.inst = true := by
     simp only [stmtOkB, Bool.and_eq_true] at hchkS; exact hchkS.1.1.1
   obtain ⟨ks, nE, hexp⟩ : ∃ ks nE, SegShape.expect stm.inst = some (ks, nE) := by
@@ -348,7 +351,7 @@ theorem mem_segR (H : DriverHyp f vc ctx st0 R gn bl A (csem F fc X) MR env p)
         (by rw [hfe]; rfl) (by rw [hv0])
       have hs' : Clif.step env p s = .next s' := hs
       obtain ⟨B', j', ρL, wL, hB', hstm', hbd', -, hstar, -, -⟩ :=
-        stmt_matchN H hm hbody (hind s) hs'
+        stmt_matchNT H hm hbody (hind s) (hext s) hs'
       rw [hB] at hB'; cases hB'
       have hjj : j' = j := by
         have e1 := congrArg List.length (hbd.symm.trans hbd')
@@ -391,8 +394,8 @@ theorem mem_segR (H : DriverHyp f vc ctx st0 R gn bl A (csem F fc X) MR env p)
     obtain ⟨-, hl1⟩ := outcome_shape hthr hnp hfe h1o
     obtain ⟨s1, hs1, -⟩ := step_next_of hbody hnc hnci hs0 h0 h1o (by rw [hl1, hlen0])
     obtain ⟨B', j', ρL, wL, hB', hstm', hbd', -, hstar, -, -⟩ :=
-      stmt_matchN H (match_mem (s2 := { s with mem := (s.mem.writeBits false a nE
-        (readM nE (BitVec.ofNat 64 a) w.mem)) }) hm rfl rfl hmr1) hbody (hind _) hs1
+      stmt_matchNT H (match_mem (s2 := { s with mem := (s.mem.writeBits false a nE
+        (readM nE (BitVec.ofNat 64 a) w.mem)) }) hm rfl rfl hmr1) hbody (hind _) (hext _) hs1
     rw [hB] at hB'; cases hB'
     have hjj : j' = j := by
       have e1 := congrArg List.length (hbd.symm.trans hbd')
@@ -405,18 +408,22 @@ theorem mem_segR (H : DriverHyp f vc ctx st0 R gn bl A (csem F fc X) MR env p)
     ⟨ρm, wm, pre, rest1, htr, hpl, hpe, h1, h2, hwm⟩ | ⟨hl, hpe⟩
   rotate_left
   · rcases hpro with ⟨cL, hstar1⟩ | hro
-    · rcases vstep_of_vtrun hr hpe hstar1 (by omega) with hv | ⟨he, -⟩
+    · rcases vstep_of_vtrunR (retsRet_csem F fc X) hr hpe hstar1 (by omega) with
+        ⟨hv, hnr⟩ | ⟨he, -⟩
       · exact .inl ⟨tr.length, [], .run s, Nat.le_refl _, .nil,
-          (by rw [List.take_length]; exact corr_nil_tgts hpe), .inl ⟨rfl, hv⟩, fun _ h => by cases h⟩
+          (by rw [List.take_length]; exact corr_nil_tgts hpe), .inl ⟨rfl, hv, hnr⟩,
+          fun _ h => by cases h⟩
       · omega
     · exact .inl ⟨0, [], .run s, Nat.zero_le _, .nil, .nil, .inr (.inr hro), fun _ h => by cases h⟩
   cases h2 with
   | nil =>
     subst htr
     rcases hpro with ⟨cL, hstar1⟩ | hro
-    · rcases vstep_of_vtrun h1 hpe hstar1 (by omega) with hv | ⟨he, -⟩
+    · rcases vstep_of_vtrunR (retsRet_csem F fc X) h1 hpe hstar1 (by omega) with
+        ⟨hv, hnr⟩ | ⟨he, -⟩
       · exact .inl ⟨_, [], .run s, Nat.le_refl _, .nil,
-          (by rw [List.take_length, List.append_nil]; exact corr_nil_tgts hpe), .inl ⟨rfl, hv⟩, fun _ h => by cases h⟩
+          (by rw [List.take_length, List.append_nil]; exact corr_nil_tgts hpe),
+          .inl ⟨rfl, hv, hnr⟩, fun _ h => by cases h⟩
       · omega
     · exact .inl ⟨0, [], .run s, Nat.zero_le _, .nil, .nil, .inr (.inr hro), fun _ h => by cases h⟩
   | @cons _ c'' _ evs rest2 hstep h3 =>
@@ -440,7 +447,7 @@ theorem mem_segR (H : DriverHyp f vc ctx st0 R gn bl A (csem F fc X) MR env p)
     obtain ⟨ρ'', w'', hc'', -⟩ := vtstep_next hvb hmidx (.inl rfl) hstep
     subst hc''
     obtain ⟨B', j', ρL, wL, hB', hstm', hbd', hk', hstar, -, hM⟩ :=
-      stmt_matchN H hm hbody (hind s) hs'
+      stmt_matchNT H hm hbody (hind s) (hext s) hs'
     rw [hB] at hB'; cases hB'
     have hjj : j' = j := by
       have e1 := congrArg List.length (hbd.symm.trans hbd')
@@ -448,7 +455,7 @@ theorem mem_segR (H : DriverHyp f vc ctx st0 R gn bl A (csem F fc X) MR env p)
       simp at e1; omega
     subst hjj
     have hpc : patchC [dmbEv] (.run ⟨b, k, ρ, w⟩) = .run ⟨b, k, ρ, w⟩ := rfl
-    refine mem_completeR hvb hmL hlt hpost hpl hpe h1 hstep h3 (by rw [hpc]; exact hstar.toN) hM
+    refine mem_completeRN hvb hmL hlt hpost hpl hpe h1 hstep h3 (by rw [hpc]; exact hstar.toN) hM
       (ClifCStep.cstep_fence hbody hfe hs') (by simp) (pw_one ?_)
     simp [EvRel, Maps, ProgE2E.convEv, dmbEv, AKind.dir, ProgE2E.bytesOf]
   ---------------------------------------------------------------- the access
@@ -497,7 +504,7 @@ theorem mem_segR (H : DriverHyp f vc ctx st0 R gn bl A (csem F fc X) MR env p)
   have hro1 : isCas stm.inst = true → cm1.readonlyAt a nE = false := fun hc =>
     (IselClif.readonlyAt_allocs rfl a nE).trans (hro hc)
   obtain ⟨ρb, wb, ops, hsrb, hops, hne, hAt, ⟨rc, hcs⟩, hwf, hem, halm, hextra, hcasx⟩ :=
-    mem_vreg (s := { s with mem := cm1 }) H hMR hX hfunc hslots hmr1 hB hstm hheld hcons
+    mem_vregT (s := { s with mem := cm1 }) H hMR hX hfunc hslots hmr1 hB hstm hheld hcons
       (hMRw _ _ _ hmr1).1 (hMRw _ _ _ hmr1).2 hL hsl hms hpre0 hpost0
       (fun i hi => covered_of_instOkB (hall' i hi)) hres (hms ▸ hcas) h1o hacc hro1 hn hn0
   have eops : ops' = ops := by rw [hops] at hops'; exact (Except.ok.inj hops').symm
@@ -551,7 +558,7 @@ theorem mem_segR (H : DriverHyp f vc ctx st0 R gn bl A (csem F fc X) MR env p)
   obtain ⟨hal2, hl2⟩ := outcome_shape hthr hnp hfe h2o
   obtain ⟨s', hs2, hs'm⟩ := step_next_of hbody hnc hnci hs0 h0 h2o (by rw [hl2, hlen0])
   obtain ⟨B', j', ρL, wL, hB', hstm', hbd', hk', hstar, hsr, hM⟩ :=
-    stmt_matchN H hm2 hbody (hind _) hs2
+    stmt_matchNT H hm2 hbody (hind _) (hext _) hs2
   rw [hB] at hB'; cases hB'
   have hjj : j' = j := by
     have e1 := congrArg List.length (hbd.symm.trans hbd')
@@ -629,7 +636,7 @@ theorem mem_segR (H : DriverHyp f vc ctx st0 R gn bl A (csem F fc X) MR env p)
     rw [ea, en] at hc2
     have hR : e.k.dir = .R := by rw [hek]; rfl
     obtain ⟨hA, hn'⟩ := hEA e (by simp)
-    exact mem_completeR hvb hmL hlt hpost hpl hpe h1 hstep h3 hstar.toN hM hc2 (by simp)
+    exact mem_completeRN hvb hmL hlt hpost hpl hpe h1 hstep h3 hstar.toN hM hc2 (by simp)
       (pw_one (evrel_read (by rw [hek]; rfl) hR (sagrees_head hag0 hR) hA hn' ha s.mem))
   case atomicLoad ty fl pp =>
     obtain ⟨-, pv, hpv, hae⟩ := access_some_ite (hi ▸ hacc)
@@ -642,7 +649,7 @@ theorem mem_segR (H : DriverHyp f vc ctx st0 R gn bl A (csem F fc X) MR env p)
     rw [ea, en] at hc2
     have hR : e.k.dir = .R := by rw [hek]; rfl
     obtain ⟨hA, hn'⟩ := hEA e (by simp)
-    exact mem_completeR hvb hmL hlt hpost hpl hpe h1 hstep h3 hstar.toN hM hc2 (by simp)
+    exact mem_completeRN hvb hmL hlt hpost hpl hpe h1 hstep h3 hstar.toN hM hc2 (by simp)
       (pw_one (evrel_read (by rw [hek]; exact .inl rfl) hR (sagrees_head hag0 hR) hA hn' ha s.mem))
   case store op ty fl x pp off =>
     obtain ⟨pv, hpv, hae⟩ := access_some (hi ▸ hacc)
@@ -662,7 +669,7 @@ theorem mem_segR (H : DriverHyp f vc ctx st0 R gn bl A (csem F fc X) MR env p)
     have hW : e.k.dir = .W := by rw [hek]; rfl
     obtain ⟨hA, hn'⟩ := hEA e (by simp)
     have hval := write_val hMR hmrL hvL hg hA hn' (hmemW [] e rfl hW)
-    exact mem_completeR hvb hmL hlt hpost hpl hpe h1 hstep h3 hstar.toN hM hc2 (by simp)
+    exact mem_completeRN hvb hmL hlt hpost hpl hpe h1 hstep h3 hstar.toN hM hc2 (by simp)
       (pw_one (evrel_write (by rw [hek]; rfl) hW hA hn' ha hval))
   case atomicStore ty fl x pp =>
     obtain ⟨pv, hpv, hae⟩ := access_some (hi ▸ hacc)
@@ -682,7 +689,7 @@ theorem mem_segR (H : DriverHyp f vc ctx st0 R gn bl A (csem F fc X) MR env p)
     have hW : e.k.dir = .W := by rw [hek]; rfl
     obtain ⟨hA, hn'⟩ := hEA e (by simp)
     have hval := write_val hMR hmrL hvL hg hA hn' (hmemW [] e rfl hW)
-    exact mem_completeR hvb hmL hlt hpost hpl hpe h1 hstep h3 hstar.toN hM hc2 (by simp)
+    exact mem_completeRN hvb hmL hlt hpost hpl hpe h1 hstep h3 hstar.toN hM hc2 (by simp)
       (pw_one (evrel_write (by rw [hek]; exact .inl rfl) hW hA hn' ha hval))
   case atomicRmw op ty fl pp x =>
     obtain ⟨-, pv, hpv, hae⟩ := access_some_ite (hi ▸ hacc)
@@ -711,7 +718,7 @@ theorem mem_segR (H : DriverHyp f vc ctx st0 R gn bl A (csem F fc X) MR env p)
     obtain ⟨hA, hn'⟩ := hEA r0 (by simp)
     obtain ⟨hAw, hnw⟩ := hEA wr (by simp)
     have hval := write_val hMR hmrL hvL hg hAw hnw (hmemW [r0] wr rfl hW)
-    exact mem_completeR hvb hmL hlt hpost hpl hpe h1 hstep h3 hstar.toN hM hc2 (by simp)
+    exact mem_completeRN hvb hmL hlt hpost hpl hpe h1 hstep h3 hstar.toN hM hc2 (by simp)
       (pw_two (evrel_read (by rw [hrk]; exact .inr rfl) hR (sagrees_head hag0 hR) hA hn' ha s.mem)
         (evrel_write (by rw [hwk]; exact .inr rfl) hW hAw hnw ha hval))
   case atomicCas ty fl pp ex x =>
@@ -767,7 +774,7 @@ theorem mem_segR (H : DriverHyp f vc ctx st0 R gn bl A (csem F fc X) MR env p)
       rw [ea, en] at hc2
       have hR : r0.k.dir = .R := by rw [hrk]; rfl
       obtain ⟨hA, hn'⟩ := hEA r0 (by simp)
-      exact mem_completeR hvb hmL hlt hpost hpl hpe h1 hstep h3 hstar.toN hM hc2 (by simp)
+      exact mem_completeRN hvb hmL hlt hpost hpl hpe h1 hstep h3 hstar.toN hM hc2 (by simp)
         (pw_one (evrel_read (by rw [hrk]; exact .inr rfl) hR (sagrees_head hag0 hR) hA hn' ha
           s.mem))
     · -- the comparison succeeds: the read and the write
@@ -792,10 +799,48 @@ theorem mem_segR (H : DriverHyp f vc ctx st0 R gn bl A (csem F fc X) MR env p)
       obtain ⟨hA, hn'⟩ := hEA r0 (by simp)
       obtain ⟨hAw, hnw⟩ := hEA wr (by simp)
       have hval := write_val hMR hmrL hvL hg hAw hnw (hmemW [r0] wr rfl hW)
-      exact mem_completeR hvb hmL hlt hpost hpl hpe h1 hstep h3 hstar.toN hM hc2 (by simp)
+      exact mem_completeRN hvb hmL hlt hpost hpl hpe h1 hstep h3 hstar.toN hM hc2 (by simp)
         (pw_two (evrel_read (by rw [hrk]; exact .inr rfl) hR (sagrees_head hag0 hR) hA hn' ha
           s.mem) (evrel_write (by rw [hwk]; exact .inr rfl) hW hAw hnw ha hval))
   case fence => exact absurd trivial hfe
+
+/-- **The segment of a memory statement** (module doc), with progress and the return covered
+(`SegResR`; `mem_segRTN`). -/
+theorem mem_segRT (H : DriverHypT f vc ctx st0 R gn bl A (csem F fc X) MR env p)
+    (hchk : threadCheckBlC f bl = true) (hMR : MemRelOk F sb syms f MR)
+    (hMRw : ∀ sl cm w, MR sl cm w → Arm.r .ERR w = .None ∧ Arm.CheckSPAlignment w)
+    (hX : TlsMemFree X)
+    {s : Clif.State} {b k : Nat} {ρ : Nat → CV} {w : ArmState}
+    (hm : Match f ctx R gn bl A MR slots s ⟨b, k, ρ, w⟩)
+    {stm : Clif.Stmt} {rest : List Clif.Stmt} (hbody : s.frame.body = stm :: rest)
+    (hnp : pureInst stm.inst = false) (hncall : ∀ fn args, stm.inst ≠ .call fn args)
+    {tr : List (List Ev)} {cT : VConf CV ArmState}
+    (hr : VTRun vc (csem F fc X) (cEvs F fc) (.run ⟨b, k, ρ, w⟩) tr cT) :
+    SegResR env p vc (csem F fc X) (cEvs F fc) (Match f ctx R gn bl A MR slots) s tr cT :=
+  (mem_segRTN H hchk hMR hMRw hX hm hbody hnp hncall hr).toR
+
+/-- **The segment of a memory statement** (module doc), with progress and the return covered
+(`mem_segRT` on `DriverHyp` and `threadCheckBl`). -/
+theorem mem_segR (H : DriverHyp f vc ctx st0 R gn bl A (csem F fc X) MR env p)
+    (hchk : threadCheckBl f bl = true) (hMR : MemRelOk F sb syms f MR)
+    (hMRw : ∀ sl cm w, MR sl cm w → Arm.r .ERR w = .None ∧ Arm.CheckSPAlignment w)
+    (hX : TlsMemFree X)
+    {s : Clif.State} {b k : Nat} {ρ : Nat → CV} {w : ArmState}
+    (hm : Match f ctx R gn bl A MR slots s ⟨b, k, ρ, w⟩)
+    {stm : Clif.Stmt} {rest : List Clif.Stmt} (hbody : s.frame.body = stm :: rest)
+    (hnp : pureInst stm.inst = false) {tr : List (List Ev)} {cT : VConf CV ArmState}
+    (hr : VTRun vc (csem F fc X) (cEvs F fc) (.run ⟨b, k, ρ, w⟩) tr cT) :
+    SegResR env p vc (csem F fc X) (cEvs F fc) (Match f ctx R gn bl A MR slots) s tr cT := by
+  refine mem_segRT H.toT (threadCheckBlC_of hchk) hMR hMRw hX hm hbody hnp ?_ hr
+  intro fn args h
+  obtain ⟨-, -, -, -, B, j, hB, -, -, hbd, -⟩ := hm
+  obtain ⟨hjlt, hstm, -⟩ := drop_cons_split (hbd ▸ hbody)
+  obtain ⟨L, hL⟩ := H.blow hB
+  obtain ⟨-, -, hsllen, -⟩ := H.shape.blk _ B L hB hL
+  obtain ⟨sl, hsl⟩ : ∃ sl, L.sl[j]? = some sl :=
+    ⟨L.sl[j]'(by omega), List.getElem?_eq_getElem _⟩
+  have := stmtOk_of hchk hB hstm hL hsl
+  simp [stmtOkB, threadInstB, h, pureInst] at this
 
 /-- **The segment of a memory statement** (module doc), with progress (`SegResP`): where the
 thread's run ends inside the segment, the forward run of the segment on the thread's own bytes

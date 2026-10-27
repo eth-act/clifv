@@ -28,6 +28,7 @@ open Backend Backend.Proof Backend.Proof.Driver E2E
 theorem unwinds_clean {vc : VCode} {sem : Sem}
     (hp : ∀ i us w outs w' ctl, pureForm i = true →
       sem i us w = some (outs, w', ctl) → w' = w ∧ ctl = .next)
+    (hcmp : CmpOverwrite sem)
     (ht : ∀ vb ∈ vc.blocks.toList, ∃ t, vb.insts.back? = some t ∧ t.isTerminator = true)
     {XR : XRaise} {ρ₀ : Nat → CV} {w₀ : Arm.ArmState} {obj : BitVec 64} {w : Arm.ArmState}
     (h : VUnwinds vc sem XR ρ₀ w₀ obj w) : VUnwinds (clean vc) sem XR ρ₀ w₀ obj w := by
@@ -36,8 +37,8 @@ theorem unwinds_clean {vc : VCode} {sem : Sem}
     cases hstar with
     | refl => exact ⟨vb, hb⟩
     | step h _ => cases h with | step he _ _ _ _ _ => exact ⟨_, he⟩
-  obtain ⟨c1, hstar', hr⟩ := star_sim hp ht (rel_entry hb0 ρ₀ w₀) hstar
-  obtain ⟨k', ρ', rfl, hb', hi', hu⟩ := rel_kept hr hb hi hop rfl
+  obtain ⟨c1, hstar', hr⟩ := star_sim hp hcmp ht (rel_entry hb0 ρ₀ w₀) hstar
+  obtain ⟨k', ρ', rfl, hb', hi', hu⟩ := rel_kept hr hb hi hop rfl rfl rfl
   exact ⟨b, k', ρ', w1, cleanBlock vc 0 vb, info, ops, outs, hstar', hb', hi', hop,
     by rw [← hu]; exact hraise, by rw [← hu]; exact hs, hlen⟩
 
@@ -45,20 +46,22 @@ theorem unwinds_clean {vc : VCode} {sem : Sem}
 theorem unwinds_prune {vc : VCode} {sem : Sem}
     (hp : ∀ i us w outs w' ctl, pureForm i = true →
       sem i us w = some (outs, w', ctl) → w' = w ∧ ctl = .next)
+    (hcmp : CmpOverwrite sem)
     {XR : XRaise} {ρ₀ : Nat → CV} {w₀ : Arm.ArmState} {obj : BitVec 64} {w : Arm.ArmState}
     (h : VUnwinds vc sem XR ρ₀ w₀ obj w) : VUnwinds (prune vc) sem XR ρ₀ w₀ obj w := by
   unfold prune
   cases hc : vc.cfg with
   | error e => exact h
-  | ok p => exact unwinds_clean hp (terminated_of_cfg hc) h
+  | ok p => exact unwinds_clean hp hcmp (terminated_of_cfg hc) h
 
 /-- **`prune` preserves returns, traps and exceptional ends** (`prune_correct` with
 unwinding). -/
 theorem pruneCorrectU {vc : VCode} {sem : Sem}
     (hp : ∀ i us w outs w' ctl, pureForm i = true →
-      sem i us w = some (outs, w', ctl) → w' = w ∧ ctl = .next) (XR : XRaise) :
+      sem i us w = some (outs, w', ctl) → w' = w ∧ ctl = .next)
+    (hcmp : CmpOverwrite sem) (XR : XRaise) :
     PrepareCorrectU sem XR vc (prune vc) :=
-  ⟨prune_correct hp, fun _ _ _ _ h => unwinds_prune hp h⟩
+  ⟨prune_correct hp hcmp, fun _ _ _ _ h => unwinds_prune hp hcmp h⟩
 
 end Backend.DeadCleanup
 
@@ -77,12 +80,13 @@ theorem prepareCorrectU_trans {sem : Sem} {XR : XRaise} {vc vcm vcp : VCode}
 
 /-- **The cleanup pipeline's VCode → prepared VCode layer with unwinding**: `prune`, then
 `prepare` (validated by `prepCheck`), for a semantics with `DriverSem` whose pure producers keep
-the world and continue. -/
+the world and continue and whose compares' flags the next compare overwrites. -/
 theorem prepareCorrectU_cleanup {sem : Sem} {vc vcp : VCode} (hds : DriverSem sem)
     (hp : ∀ i us w outs w' ctl, pureForm i = true →
       sem i us w = some (outs, w', ctl) → w' = w ∧ ctl = .next)
+    (hcmp : CmpOverwrite sem)
     (h : prepCheck (prune vc) vcp = true) (XR : XRaise) : PrepareCorrectU sem XR vc vcp :=
-  prepareCorrectU_trans (pruneCorrectU hp XR) (prepareCorrectU_of_check hds h XR)
+  prepareCorrectU_trans (pruneCorrectU hp hcmp XR) (prepareCorrectU_of_check hds h XR)
 
 /-- `prepareCorrectU_cleanup` for the value semantics with unwinding. -/
 theorem prepareCorrectU_cleanup_value {f : Clif.Function} {k : Nat} {vc vcp : VCode} {rf : RFunc}
@@ -90,7 +94,7 @@ theorem prepareCorrectU_cleanup_value {f : Clif.Function} {k : Nat} {vc vcp : VC
     (F : BitVec 64 → Prop) (ctx : FnCtx) (X : ExtSem) (XR : XRaise) :
     PrepareCorrectU (valueSemU F ctx X XR) XR vc vcp :=
   prepareCorrectU_cleanup (driverSem_valueSemU F ctx X XR)
-    (fun _ _ _ _ _ _ hp h => valueSemU_pure hp h) hc.prepOk XR
+    (fun _ _ _ _ _ _ hp h => valueSemU_pure hp h) (valueSemU_cmpOverwrite F ctx X XR) hc.prepOk XR
 
 /-- **The composition with unwinding over the cleanup pipeline**: the CLIF → VCode layer of the
 lowering output `vc` (`IselSimU`), the cleanup and `prepare` (`prepareCorrectU_cleanup`), and the
@@ -107,6 +111,7 @@ theorem backend_correct_cleanup_layersU_ex {p : Clif.Program} {f : Clif.Function
     (hds : ∀ s, DriverSem (sem s))
     (hPure : ∀ s i us w outs w' ctl, pureForm i = true →
       sem s i us w = some (outs, w', ctl) → w' = w ∧ ctl = .next)
+    (hCmp : ∀ s, CmpOverwrite (sem s))
     (hReg : RegLevelCorrectUEx sem XR F K astep vcp af fb)
     {base ra : BitVec 64} {s w₀ : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State}
     (hent : AbiEntry fb base ra s) (hres : StackAvail K af s) (hbe : BodyEntry af s w₀)
@@ -116,7 +121,7 @@ theorem backend_correct_cleanup_layersU_ex {p : Clif.Program} {f : Clif.Function
     (htr : TrapsExplicitX env p cs) (fuel : Nat) :
     ArmRefinesU fb base ra astep s (Clif.runLoopX env p fuel cs.toX) :=
   backend_correct_of_layersU_ex hIsel
-    (fun s' => prepareCorrectU_cleanup (hds s') (hPure s') hc.prepOk XR) hReg hent hres hbe
+    (fun s' => prepareCorrectU_cleanup (hds s') (hPure s') (hCmp s') hc.prepOk XR) hReg hent hres hbe
     (argsAtEntry_body (lowerRFunc_frame hc.alloc) (entryRegs_of_check hc.lowerOk) hbe hargs hargF)
     hcs hrel htr fuel
 
@@ -153,6 +158,7 @@ example (F : BitVec 64 → Prop) (X : ExtSem) (w : Arm.ArmState) :
         (VNext.next (by decide))
     exact ⟨0, 1, rho1, w, _, info, _, _, .step h1 (.refl _), rfl, rfl, rfl, rfl,
       valueSemU_call_raise rfl, rfl⟩
-  exact ⟨h, unwinds_prune (fun _ _ _ _ _ _ hp hs => valueSemU_pure hp hs) h, by decide +kernel⟩
+  exact ⟨h, unwinds_prune (fun _ _ _ _ _ _ hp hs => valueSemU_pure hp hs)
+    (valueSemU_cmpOverwrite F ⟨0, 0⟩ X XR) h, by decide +kernel⟩
 
 end Backend.DeadCleanup.UnwindWitness
