@@ -180,3 +180,7 @@ root = "FVTest.Backend.Lowering.StockGeneralDivProductionRuntime"
 [[lean_exe]]
 name = "stock-general-div-linked"
 root = "FVTest.Backend.Lowering.StockGeneralDivProductionLinked"
+
+[[lean_exe]]
+name = "stock-memory-linked"
+root = "FVTest.Backend.Lowering.StockMemoryProductionLinked"
