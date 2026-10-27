@@ -115,6 +115,79 @@ theorem match_atCallA {f : Clif.Function} {vc : VCode} {ctx : Ctx} {st0 : LState
     exact ⟨vb, n, _, _, hvb, h0, by rw [List.length_map, har1]⟩
   · cases hms
 
+/-- **`resume_allX` with `habi` from checks** (module doc): the def registers by
+`CallDefsRet` for the callee's return registers, the arity by `callArityBl`; the return's ABI
+facts of `resume_allX`. -/
+theorem resume_allAX {RA : RL} (hRA : RA.Wf) (hgv : RA.gv = fun _ _ => False)
+    (hX0 : NoCall RA.X) {f : Clif.Function} {vc : VCode} {ctx : Ctx} {st0 : LState}
+    {R : Reg → Reg} {gn : Nat → Nat} {bl : List BLow} {A : Nat → Nat → List Clif.ValueId}
+    {Γ : E2E.Rel} {c : BitVec 64} {env : Clif.Env} {p : Clif.Program}
+    {slots : List (Clif.SlotId × Nat)}
+    (H : DriverHypT f vc ctx st0 R gn bl A (csem RA.F RA.ctx RA.X) (RelW Γ f c) env p)
+    (hchk : threadCheckBlC f bl = true) (har : callArityBl f bl = true)
+    (hlow : lowerCheck f vc = true) (hind : indSigs f = [])
+    (hv : verifiable f = true) (hnt : f.blocks.all (fun B => !B.term.isTry) = true)
+    (hout0 : vc.outgoing = 0) (hΓF : Γ.F = RA.F) (hslot : RA.ctx.slotBase = Γ.slotOff)
+    (hsym : ∀ n b, Γ.syms n = some b → RA.X.sym n 0 = BitVec.ofNat 64 b)
+    {L : Nat → Prop} {ss ss' : Array (Array Nat)} (H3 : PrepFacts vc RA.vc L ss ss')
+    {cc : CheckCtx} {ins : Array (Option AState)} {a0 : AState}
+    (hc : CheckedAt RA.vc RA.rf cc ins a0) {r₀ : Reg → CV}
+    (hvdef : CallDefsVirt RA.vc)
+    {x : ArmState} {s' : Clif.State} {vV' vP' : VState CV ArmState} {cM' : MState CV ArmState}
+    (hq : Q RA x (.run cM')) (hA : AInv RA (.run cM')) (hP : Pause RA (.run cM'))
+    (hat : AtCallS s') (hm2 : Match f ctx R gn bl A (RelW Γ f c) slots s' vV')
+    (hm3 : PMatch vc RA.vc (csem RA.F RA.ctx RA.X) (cEvs RA.F RA.ctx) L ss' (.run vV') (.run vP'))
+    (hm4 : MatchRun cc ins ckeep r₀ cM' vP') {y : ArmState}
+    (hpc : Arm.r .PC y = Arm.r .PC x + 4#64) (herr : Arm.r .ERR y = .None)
+    (hsp : spOf y = spOf x) (hmem : ∀ a, RA.FK a → y.mem a = x.mem a)
+    (hcs : ∀ r ∈ calleeSaved, ckeep r (regVal y r) = ckeep r (regVal x r))
+    (hprog : y.program = x.program)
+    {usB : List (Reg × Reg)} {ysB : List CV} {rvals : List Clif.Val}
+    (hus : ∀ (j : Nat) (v q : Reg) (u : CV), usB[j]? = some (v, q) → ysB[j]? = some u →
+      regVal y q = u)
+    (hpreB : PrefixHold rvals ysB) (hdr : CallDefsRet RA.vc (usB.map (·.2)))
+    {FB : BitVec 64 → Prop} {cmB : Clif.Mem} {wB : ArmState} {bases : List Nat}
+    (hB : MemRel FB Γ.syms cmB wB)
+    (hval : ∀ a n, ((cmB.free bases).leave).valid a n = true → s'.mem.valid a n = true)
+    (hmemB : ∀ a, ¬ FB a → y.mem a = wB.mem a)
+    {stm : Clif.Stmt} {rest : List Clif.Stmt} (hbody : s'.frame.body = stm :: rest)
+    {fn : Clif.FnRef} {args : List Clif.ValueId} (hcl : stm.inst = .call fn args)
+    {ext : Clif.ExtFunc} (hext : s'.frame.func.extern? fn = some ext)
+    (huniq : ∀ e ∈ f.externs, e.2.name = ext.name → e.2 = ext)
+    {vals : List Clif.Val} (hvals : s'.frame.getMany args = .ok vals)
+    (htys : vals.map (·.ty) = Clif.AbiParam.tys ext.sig.params)
+    (hrty : rvals.map (·.ty) = Clif.AbiParam.tys ext.sig.returns)
+    {regs' : Clif.Regs} (hregs : s'.frame.regs.setMany stm.results rvals = some regs') :
+    ∃ vV'' vP'' cM'',
+      Match f ctx R gn bl A (RelW Γ f c) slots { s' with
+          frame := { s'.frame with regs := regs', body := rest }, mem := (cmB.free bases).leave }
+        vV'' ∧
+      PMatch vc RA.vc (csem RA.F RA.ctx RA.X) (cEvs RA.F RA.ctx) L ss' (.run vV'') (.run vP'') ∧
+      MatchRun cc ins ckeep r₀ cM'' vP'' ∧ Q RA y (.run cM'') ∧ AInv RA (.run cM'') := by
+  have hextf : f.extern? fn = some ext := by rw [← hm2.2.1]; exact hext
+  have hrl : rvals.length = ext.sig.returns.length := by
+    have := congrArg List.length hrty
+    simpa [Clif.AbiParam.tys] using this
+  have habi : ∀ (vb : VBlock) (info : CallInfo),
+      RA.vc.blocks[vP'.b]? = some vb → vb.insts[vP'.k]? = some (.call info) →
+      (∀ (j : Nat) (d : Reg × Reg), info.defs[j]? = some d → ∃ v, usB[j]? = some (v, d.1)) ∧
+      rvals.length ≤ info.defs.length ∧ info.defs.length = (sigRets ext.sig).length := by
+    intro vb info hvb hi
+    obtain ⟨b0, k0, ρ0, w0⟩ := vV'
+    obtain ⟨vb0, n, us, ds, hvb0, hi0, hlen⟩ :=
+      match_atCallA H hchk har hm2 hbody hcl hextf
+    obtain ⟨b', vb', e, hvb', hi', -, -⟩ := pmatch_call_fwd H3 hX0 hm3 hvb0 hi0
+    cases e
+    simp only at hvb hi
+    rw [hvb'] at hvb; cases hvb
+    rw [hi'] at hi; cases hi
+    refine ⟨habi_regs hdr hvb' hi', ?_, hlen⟩
+    rw [hrl, hlen]
+    exact returns_le_sigRets _
+  exact resume_allX hRA hgv hX0 H hchk hlow hind hv hnt hout0 hΓF hslot hsym H3 hc hvdef hq
+    hA hP hat hm2 hm3 hm4 hpc herr hsp hmem hcs hprog hus hpreB hB hval hmemB hbody hcl hext
+    huniq hvals htys hrty hregs habi
+
 /-- **`resume_all` with `habi` from checks** (module doc): the def registers by
 `CallDefsRet` for the callee's `rets` registers, the arity by `callArityBl`. -/
 theorem resume_allA {RA RB : RL} (hRA : RA.Wf) (hRB : RB.Wf) (hgv : RA.gv = fun _ _ => False)
@@ -167,28 +240,12 @@ theorem resume_allA {RA RB : RL} (hRA : RA.Wf) (hRB : RB.Wf) (hgv : RA.gv = fun 
         vV'' ∧
       PMatch vc RA.vc (csem RA.F RA.ctx RA.X) (cEvs RA.F RA.ctx) L ss' (.run vV'') (.run vP'') ∧
       MatchRun cc ins ckeep r₀ cM'' vP'' ∧ Q RA y (.run cM'') ∧ AInv RA (.run cM'') := by
-  have hextf : f.extern? fn = some ext := by rw [← hm2.2.1]; exact hext
-  have hrl : rvals.length = ext.sig.returns.length := by
-    have := congrArg List.length hrty
-    simpa [Clif.AbiParam.tys] using this
-  have habi : ∀ (vb : VBlock) (info : CallInfo),
-      RA.vc.blocks[vP'.b]? = some vb → vb.insts[vP'.k]? = some (.call info) →
-      (∀ (j : Nat) (d : Reg × Reg), info.defs[j]? = some d → ∃ v, usB[j]? = some (v, d.1)) ∧
-      rvals.length ≤ info.defs.length ∧ info.defs.length = (sigRets ext.sig).length := by
-    intro vb info hvb hi
-    obtain ⟨b0, k0, ρ0, w0⟩ := vV'
-    obtain ⟨vb0, n, us, ds, hvb0, hi0, hlen⟩ :=
-      match_atCallA H hchk har hm2 hbody hcl hextf
-    obtain ⟨b', vb', e, hvb', hi', -, -⟩ := pmatch_call_fwd H3 hX0 hm3 hvb0 hi0
-    cases e
-    simp only at hvb hi
-    rw [hvb'] at hvb; cases hvb
-    rw [hi'] at hi; cases hi
-    refine ⟨habi_regs hdr hvb' hi', ?_, hlen⟩
-    rw [hrl, hlen]
-    exact returns_le_sigRets _
-  exact resume_allP hRA hRB hgv hX0 H hchk hlow hind hv hnt hout0 hΓF hslot hsym H3 hc hvdef hq
-    hA hP hat hm2 hm3 hm4 hent hy hfx hlr hm0 hG hr₀B hprog hus hpreB hB hval hmemB hbody hcl hext
-    huniq hvals htys hrty hregs habi
+  obtain ⟨hpc, herr, hsp, hmem, hcs⟩ := hy
+  obtain ⟨he, hsp0, hra⟩ := ArmAllocThread.entry_premises hRB hent hfx hlr
+  exact resume_allAX hRA hgv hX0 H hchk har hlow hind hv hnt hout0 hΓF hslot hsym H3 hc hvdef hq
+    hA hP hat hm2 hm3 hm4 (hpc.trans hra) herr (hsp.trans hsp0)
+    (fun a ha => (hmem a (hG a ha)).trans (hm0 a ha))
+    (fun r hr => (hcs r hr).trans ((hr₀B r hr).trans (he r hr))) hprog hus hpreB hdr hB hval
+    hmemB hbody hcl hext huniq hvals htys hrty hregs
 
 end Concurrency.CallArity
