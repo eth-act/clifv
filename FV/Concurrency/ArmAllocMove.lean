@@ -201,16 +201,32 @@ theorem LinesAt.seg {R : RL} (hR : R.Wf) {j : Nat} {ls1 : List Line} {s s' : Arm
 
 /-- **A move's lines from `Q`** (`Backend.Proof.realizes_move`'s proof): the lines of its code
 run from `s` (`LinesAt`), `Q` at the next item after them, every event of their single-core
-steps private, no store exclusive. -/
+steps private, no store exclusive. A callee save (into a save slot) has no lines (`q_save`).
+Not for a callee restore (`hns`): it emits no code either, but the register it restores keeps
+the body's value until the epilogue's pops, so `Q` with the updated store fails after it (the
+return tails are `RetTail`, `RelQ`). -/
 theorem move_lines {R : RL} (hR : R.Wf) {s : ArmState} {b : Nat} {src dst : Loc}
-    {its : List RItem} {m : Loc → CV} {w : ArmState} (hq : Q R s (MvC b src dst its m w)) :
+    {its : List RItem} {m : Loc → CV} {w : ArmState} (hq : Q R s (MvC b src dst its m w))
+    (hns : src.isSave = false) :
     ∃ j ls1 s' code, R.fr.moveInsts src dst = .ok code ∧
       (∀ ps, codeLinesE R.ctx R.af code ps = .ok (ls1, ps)) ∧ LinesAt R j ls1 s s' ∧
       Q R s' (.run ⟨b, its, upd m dst (m src), w⟩) ∧
       ∀ i < ls1.length, (∀ e ∈ stepEvs (iterN R.step i s), R.F e.addr) ∧ NoStx (iterN R.step i s) := by
+  by_cases hds : dst.isSave = true
+  · have hq' := q_save hds hq
+    obtain ⟨j, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, hpc, hst⟩ := hq
+    have hmi : R.fr.moveInsts src dst = .ok [] := by
+      obtain ⟨r, rfl⟩ : ∃ r, dst = .save r := by
+        cases dst <;> simp [Loc.isSave] at hds; exact ⟨_, rfl⟩
+      simp only [RAFrame.moveInsts, pure, Except.pure]
+    exact ⟨j, [], s, [], hmi, fun ps => rfl,
+      ⟨fun k ln h => by simp at h, fun x t h => by simp at h, hst.prog, by rw [hpc]; rfl, hst.err,
+        fun k _ h => absurd h (Nat.not_lt_zero _), rfl⟩,
+      hq', fun i hi => absurd hi (Nat.not_lt_zero _)⟩
   obtain ⟨j, vb, items, pre, code, ls0, ps1, ps2, T, hvb, hit, hsplit, hchk, hcode, hls, htr, hdrop,
     hpc, hst⟩ := hq
-  obtain ⟨⟨c, wh, hcm⟩, hLs, hLd, hT, hchk'⟩ := move_facts hit hsplit hchk
+  obtain ⟨⟨c, wh, hcm⟩, hLs, hLd, hT, hchk'⟩ :=
+    move_facts hit hsplit hchk hns (by simpa using hds)
   obtain ⟨c1, c2, hc1, hc2, rfl⟩ := itemsCode_cons hcode
   rw [itemCode_move] at hc1
   obtain ⟨ls1, ls2, psm, h1, h2, rfl⟩ := codeLinesE_append _ _ _ _ _ hls
@@ -278,11 +294,16 @@ theorem move_lines {R : RL} (hR : R.Wf) {s : ArmState} {b : Nat} {src dst : Loc}
         have := fplr_outside hR hframe k hk o ho
         rwa [show R.spB = spOf s by rw [hst.sp]] at this ⊢)
 
-/-- Every item of a move's code is an `inst` (`moveInsts` emits machine instructions only). -/
+/-- Every item of a move's code is an `inst` (`moveInsts` emits machine instructions only; none
+for a callee save or restore). -/
 theorem moveInsts_inst {fr : RAFrame} {src dst : Loc} {code : List AInst}
     (h : fr.moveInsts src dst = .ok code) (a : AInst) (ha : a ∈ code) : ∃ m, a = .inst m := by
   unfold RAFrame.moveInsts at h
   split at h
+  · simp only [pure, Except.pure, Except.ok.injEq] at h
+    subst h; simp at ha
+  · simp only [pure, Except.pure, Except.ok.injEq] at h
+    subst h; simp at ha
   · rename_i s d
     split at h
     · simp only [pure, Except.pure, Except.ok.injEq] at h
@@ -316,20 +337,30 @@ theorem moveInsts_inst {fr : RAFrame} {src dst : Loc} {code : List AInst}
       exact ⟨x, rfl⟩
   · simp at h
 
-/-- **The per-item obligation at a move** (module doc): the Arm runs the move's lines (the
-single-core run, `Q` after it, `realizes_move`'s proof), all of whose events are private
-(`MoveCodeOk`), the source step has no event, and a run ending inside the move (with no Arm step
-through all its lines) is at a line other than `ret`. -/
-theorem move_opR {R : RL} (hR : R.Wf) {s : ArmState} {mon : Mon} {b : Nat}
-    {src dst : Loc} {its : List RItem} {m : Loc → CV} {w : ArmState}
-    (hq : Q R s (MvC b src dst its m w)) (hA : AInv R (MvC b src dst its m w))
+/-- A move without code (a callee save or restore): no Arm step, the source step has no event. -/
+theorem move_zero {R : RL} {s : ArmState} {mon : Mon} {b : Nat} {src dst : Loc}
+    {its : List RItem} {m : Loc → CV} {w : ArmState} {ls : List Lab}
+    (hrel : RelQ R (s, mon) (.run ⟨b, its, upd m dst (m src), w⟩)) :
+    ItemSimOut Policy.arm R.step (OkPriv R) (SrcStep R) (RelQ R) (PrivA R) (fun c => c.measure)
+      (s, mon) (MvC b src dst its m w) ls :=
+  ⟨0, [], _, (s, mon), fun _ => (0, 0), Nat.zero_le _, .inr (by simp [measure_run]), .move,
+    by rw [List.take_zero]; exact .nil, hrel, img_nil (by simp) _⟩
+
+/-- **A move other than a callee restore, run from `Q` with the machine's store `mt`**: the Arm
+runs the move's lines (`move_lines`), all of whose events are private, and a run ending inside
+the move is at a line other than `ret`; `hrel` relates `Q` after the lines to the source
+configuration after the move (whose store `m` may differ from `mt` in a return tail). -/
+theorem move_runQ {R : RL} (hR : R.Wf) {s : ArmState} {mon : Mon} {b : Nat}
+    {src dst : Loc} {its : List RItem} {mt m : Loc → CV} {w : ArmState}
+    (hq : Q R s (MvC b src dst its mt w)) (hns : src.isSave = false)
+    (hrel : ∀ t1 : ArmState × Mon, Q R t1.1 (.run ⟨b, its, upd mt dst (mt src), w⟩) →
+      RelQ R t1 (.run ⟨b, its, upd m dst (m src), w⟩))
     {ls : List Lab} {t' : ArmState × Mon}
     (hr : PRun Policy.arm R.step (OkPriv R) (s, mon) ls t') :
     ItemSimOut Policy.arm R.step (OkPriv R) (SrcStep R) (RelQ R) (PrivA R) (fun c => c.measure)
         (s, mon) (MvC b src dst its m w) ls ∨ (PrivW (PrivA R) (evTr ls) ∧ AtNonRet R t'.1) := by
-  obtain ⟨j, ls1', s', code, hcode, hcl, hlat, hq', hpriv⟩ := move_lines hR hq
+  obtain ⟨j, ls1', s', code, hcode, hcl, hlat, hq', hpriv⟩ := move_lines hR hq hns
   have hiter := hlat.iter hR
-  have hA' : AInv R (.run ⟨b, its, upd m dst (m src), w⟩) := aInv_step hR hq hA .move
   have hnr : NoRet ls1' :=
     noRet_codeLinesE (fun a ha => moveInsts_inst hcode a ha) (hcl ⟨0, 0, #[]⟩)
   by_cases hN : ls1'.length ≤ ls.length
@@ -342,7 +373,7 @@ theorem move_opR {R : RL} (hR : R.Wf) {s : ArmState} {mon : Mon} {b : Nat}
     rw [hiter] at hs1
     subst hs1
     refine .inl ⟨ls1'.length, [], _, (s1, mon1), fun _ => (0, 0), hN,
-      .inr (by simp [measure_run]), .move, r1, ⟨hq', hA'⟩, ?_⟩
+      .inr (by simp [measure_run]), .move, r1, hrel _ hq', ?_⟩
     rw [hev1]
     exact img_privW (privW_segEvs (fun i hi => (hpriv i hi).1)
       fun i hi => stepEvs_noRelXW (hpriv i hi).2) _
@@ -354,21 +385,82 @@ theorem move_opR {R : RL} (hR : R.Wf) {s : ArmState} {mon : Mon} {b : Nat}
     exact nonRet_execLines hR hlat.at_ hlat.hook hlat.prog hlat.pc hlat.err hlat.inter hlat.run hnr _
       (by omega)
 
+/-- **The per-item obligation at a move** (module doc): the Arm runs the move's lines (the
+single-core run, `Q` after it, `realizes_move`'s proof), all of whose events are private
+(`MoveCodeOk`), the source step has no event, and a run ending inside the move (with no Arm step
+through all its lines) is at a line other than `ret`. A callee restore runs no line: it starts
+or continues a return tail (`RetTail`, as `realizesQA`); the other moves of a return tail run
+their lines from the machine's store. -/
+theorem move_opR {R : RL} (hR : R.Wf) {s : ArmState} {mon : Mon} {b : Nat}
+    {src dst : Loc} {its : List RItem} {m : Loc → CV} {w : ArmState}
+    (hqa : RelQ R (s, mon) (MvC b src dst its m w))
+    {ls : List Lab} {t' : ArmState × Mon}
+    (hr : PRun Policy.arm R.step (OkPriv R) (s, mon) ls t') :
+    ItemSimOut Policy.arm R.step (OkPriv R) (SrcStep R) (RelQ R) (PrivA R) (fun c => c.measure)
+        (s, mon) (MvC b src dst its m w) ls ∨ (PrivW (PrivA R) (evTr ls) ∧ AtNonRet R t'.1) := by
+  rcases hqa with ⟨hq, hA⟩ | hrt
+  · cases hsS : src.isSave
+    · exact move_runQ hR hq hsS (fun t1 hq' => RelQ.of hq' (aInv_step hR hq hA .move)) hr
+    · -- a callee restore: it starts a return tail
+      obtain ⟨r, rfl⟩ : ∃ r, src = .save r := by
+        cases src <;> simp [Loc.isSave] at hsS; exact ⟨_, rfl⟩
+      obtain ⟨rfl, D, htl⟩ := restore_tail hR hq
+      refine .inl (move_zero (.inr ?_))
+      simp only [RetTail]
+      refine ⟨m, D ++ [r], q_restore rfl hq, fun l hl => ?_, htl⟩
+      simp only [upd, hl r (by simp), ite_false]
+  · simp only [MvC, RetTail] at hrt
+    obtain ⟨mt, D, hq, hmD, vb, pend, k, a, rest, us, hvb, he, hk, htl⟩ := hrt
+    rcases pend with _ | ⟨it, pend⟩
+    · simp at he
+    unfold retTailOk at htl
+    split at htl
+    · -- a restore: no line, the tail goes on with `r` restored
+      rename_i r hr1 hr2
+      simp only [Bool.and_eq_true] at htl
+      obtain rfl := RItem.eq_restore hr1 hr2
+      simp only [List.cons_append, List.cons.injEq, RItem.move.injEq] at he
+      obtain ⟨⟨rfl, rfl⟩, rfl⟩ := he
+      refine .inl (move_zero (.inr ?_))
+      simp only [RetTail]
+      refine ⟨mt, D ++ [r], q_restore rfl hq, fun l hl => ?_, vb, pend, k, a, rest, us, hvb, rfl,
+        hk, htl.2⟩
+      simp only [upd, hl r (by simp), ite_false]
+      exact hmD l (fun r' hr' => hl r' (List.mem_append_left _ hr'))
+    · -- another move: its lines from the machine's store
+      simp only [Bool.and_eq_true] at htl
+      obtain ⟨hav, htl⟩ := htl
+      simp only [List.cons_append, List.cons.injEq] at he
+      obtain ⟨rfl, rfl⟩ := he
+      simp only [RItem.avoids, Bool.and_eq_true, Bool.not_eq_true', List.any_eq_false,
+        Bool.or_eq_true, beq_iff_eq, not_or] at hav
+      obtain ⟨⟨hx, -⟩, hD⟩ := hav
+      refine move_runQ hR hq hx (fun t1 hq' => .inr ?_) hr
+      simp only [RetTail]
+      refine ⟨upd mt dst (mt src), D, hq', fun l hl => ?_, vb, pend, k, a, rest, us, hvb, rfl, hk,
+        htl⟩
+      by_cases hly : l = dst
+      · simp only [upd, hly, ite_true]
+        exact hmD src (fun r hr e => (hD r hr).1 e)
+      · simp only [upd, hly, ite_false]
+        exact hmD l hl
+
 /-- **The per-item obligation at a move** (module doc). -/
 theorem move_op {R : RL} (hR : R.Wf) {s : ArmState} {mon : Mon} {b : Nat}
     {src dst : Loc} {its : List RItem} {m : Loc → CV} {w : ArmState}
-    (hq : Q R s (MvC b src dst its m w)) (hA : AInv R (MvC b src dst its m w))
+    (hqa : RelQ R (s, mon) (MvC b src dst its m w))
     {ls : List Lab} {t' : ArmState × Mon}
     (hr : PRun Policy.arm R.step (OkPriv R) (s, mon) ls t') :
     ItemSimOut Policy.arm R.step (OkPriv R) (SrcStep R) (RelQ R) (PrivA R) (fun c => c.measure)
         (s, mon) (MvC b src dst its m w) ls ∨ PrivW (PrivA R) (evTr ls) :=
-  (move_opR hR hq hA hr).imp_right And.left
+  (move_opR hR hqa hr).imp_right And.left
 
 /-! ## The run level -/
 
 /-- **`ItemSim` from the instruction items, with moves**: under `OkPriv`, the per-item obligation
 holds when it holds at every instruction item with a source step (for runs under any condition,
-in particular `fun _ _ => True` as `ArmAllocMem`'s items give it). -/
+in particular `fun _ _ => True` as `ArmAllocMem`'s items give it), from `Q ∧ AInv` (the `rets`
+of a return tail returns without events, `RelQ.op'`). -/
 theorem itemSim_of_op_ok {R : RL} (hR : R.Wf)
     (hop : ∀ s mon b k allocs its m w evs0 c0, Q R s (OpC b k allocs its m w) →
       AInv R (OpC b k allocs its m w) → SrcStep R (OpC b k allocs its m w) evs0 c0 →
@@ -376,7 +468,7 @@ theorem itemSim_of_op_ok {R : RL} (hR : R.Wf)
         OpOut R (s, mon) (OpC b k allocs its m w) ls) :
     ItemSim Policy.arm R.step (OkPriv R) (SrcStep R) (RelQ R) (Done R)
       (fun c => c.measure) (PrivA R) := by
-  rintro ⟨s, mon⟩ c ⟨hq, hA⟩ ls t' hr
+  rintro ⟨s, mon⟩ c hqa ls t' hr
   match c with
   | .ret vals m w => exact .inl (.inl ⟨vals, m, w, rfl⟩)
   | .halt w => exact .inl (.inr (.inl ⟨w, rfl⟩))
@@ -386,11 +478,13 @@ theorem itemSim_of_op_ok {R : RL} (hR : R.Wf)
   obtain ⟨evs0, c0, hs0⟩ := hS
   cases hs0 with
   | @move _ src dst its' =>
-    rcases move_op hR hq hA hr with h | h
+    rcases move_op hR hqa hr with h | h
     · exact .inr (.inl h)
     · exact .inr (.inr (.inr h))
   | @op _ k allocs its' _ _ vb i ops _ _ hvb hi hops hevs hfoot hst =>
     have hr' := PRun.mono (fun _ _ _ => trivial) hr
+    rcases RelQ.op' hqa (.op hvb hi hops hevs hfoot hst) with ⟨hq, hA⟩ | ⟨rfl, vals, m', w', rfl⟩
+    case inr => exact .inr (.inl (itemSimOut_ret (.op hvb hi hops hevs hfoot hst)))
     rcases hop s mon b k allocs its' m w _ _ hq hA (.op hvb hi hops hevs hfoot hst) ls t' hr' with
       h | ⟨n, evs, c', t1, φ, hn, hpos, hs, hr1, hR1, hi'⟩ | h | h
     · exact .inl h
@@ -429,7 +523,7 @@ theorem arm_alloc_refines_mv {R : RL} (hR : R.Wf) (hsc : MemScope R)
       Refines (· = ·) (PrivA R) (MonPair (evTr (ls.take n))) (PrepThread.conv trS)
         (PrepThread.conv (evTr (ls.take n))) ψ ∧ (n = ls.length ∨ Done R cE) := by
   obtain ⟨n, trS, cE, ψ, hn, hs, href, hend⟩ :=
-    refines_of_itemSim (itemSim_mv hR hsc) hr ⟨hq, hA⟩
+    refines_of_itemSim (itemSim_mv hR hsc) hr (RelQ.of hq hA)
   exact ⟨n, trS, cE, ψ, hn, mtrun_of_srun hs, href, hend⟩
 
 end Concurrency.ArmAllocThread
