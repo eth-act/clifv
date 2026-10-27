@@ -198,6 +198,10 @@ structure RLU.RaiseXF (R : RLU) (u : Arm.ArmState) : Prop extends RLU.RaiseX R u
   /-- the unwinder restores the call's state with the body's `sp` -/
   tsp : ∀ x d obj t, R.AtLine u x → ((∃ n, x = .bl n ∧ d = some n) ∨ (∃ r, x = .blr r ∧ d = none)) →
     R.U.raise d u = some (obj, t) → spOf t = R.spB
+  /-- the unwinder restores the call's frame pointer: x29 = the entry `sp` − 16 (Cranelift's
+  frame: the call-site row's CFA is x29 + 16) -/
+  tfp : ∀ x d obj t, R.AtLine u x → ((∃ n, x = .bl n ∧ d = some n) ∨ (∃ r, x = .blr r ∧ d = none)) →
+    R.U.raise d u = some (obj, t) → xreg 29 t = spv R.s0 - 16#64
   /-- a `blr`: not through `xzr` (calls through int vregs), the code words readable as data -/
   blr : ∀ x, R.AtLine u (.blr x) → (R.vc.DestsInt → x ≠ .xzr) ∧ ∀ k w, R.fb.words[k]? = some w →
     Arm.read_mem_bytes 4 (R.base + BitVec.ofNat 64 (4 * k)) u = w
