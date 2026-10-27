@@ -758,12 +758,12 @@ def symOf (n : String) : BitVec 64 := (symTab.lookup n).getD 0
 /-- The slots of `g` fit in its compiled slot region (`LinkSys.Ok.slotFits`). -/
 def slotFitsB (g : Clif.Function) (a : Art) : Bool :=
   g.slots.all fun p => match (slotLayout g.slots).1.lookup p.1 with
-    | some off => decide (a.af.slotBase + off + p.2.size ≤ a.af.frameSize)
+    | some off => decide (a.af.slotBase + off + p.2.size ≤ a.af.frameSize - clobberBytes a.af.saves)
     | none => false
 
 theorem slotFitsB_sound {g : Clif.Function} {a : Art} (h : slotFitsB g a = true) :
     ∀ p ∈ g.slots, ∃ off, (slotLayout g.slots).1.lookup p.1 = some off ∧
-      a.af.slotBase + off + p.2.size ≤ a.af.frameSize := by
+      a.af.slotBase + off + p.2.size ≤ a.af.frameSize - clobberBytes a.af.saves := by
   intro p hp
   have := List.all_eq_true.mp h p hp
   revert this
@@ -781,7 +781,7 @@ def chks (g : Clif.Function) : List Bool :=
     g.externs.all (fun e => !(P.func? e.2.name).isSome || outFitsB e.2.sig fr.intBase),
     decide (regLocs g.sig).Nodup, (regLocs g.sig).all (·.isArgReg),
     g.sig.params.all (fun p => decide (p.ty.width ≤ 64)),
-    !calleeB g || ((!g.slots.isEmpty || fr.size == a.af.frameSize) && slotFitsB g a),
+    !calleeB g || ((!g.slots.isEmpty || fr.size == a.af.frameSize - clobberBytes a.af.saves) && slotFitsB g a),
     allInsts a.vcp (siteB (siteOk P g (indToB g) a.vcp)),
     g.externs.all (fun e => match P.func? e.2.name with
       | some h => decide (e.2.sig = h.sig)
@@ -871,7 +871,7 @@ structure Facts (g : Clif.Function) : Prop where
   argReg : ∀ r ∈ regLocs g.sig, r.isArgReg = true
   width : ∀ p ∈ g.sig.params, p.ty.width ≤ 64
   callee : calleeB g = true → (g.slots = [] →
-    (RAFrame.compute (A g).vcp (A g).rf).size = (A g).af.frameSize) ∧ slotFitsB g (A g) = true
+    (RAFrame.compute (A g).vcp (A g).rf).size = (A g).af.frameSize - clobberBytes (A g).af.saves) ∧ slotFitsB g (A g) = true
   sites : allInsts (A g).vcp (siteB (siteOk P g (indToB g) (A g).vcp)) = true
   externs : ∀ e ∈ g.externs.map (·.2), ∀ h, P.func? e.name = some h → e.sig = h.sig
   entry : entryB g (A g).vcp = true
@@ -1595,7 +1595,7 @@ def slotChainB : Bool :=
   callsB (A fF).vcp "t" && callsB (A fF).vcp "u" && callsB (A fU).vcp "k" &&
   decide (P.func? "t" = some fT) && decide (P.func? "u" = some fU) &&
   !fT.slots.isEmpty && decide ((RAFrame.compute (A fU).vcp (A fU).rf).intBase ≠ 0) &&
-  decide ((RAFrame.compute (A fT).vcp (A fT).rf).size ≠ (A fT).af.frameSize)
+  decide ((RAFrame.compute (A fT).vcp (A fT).rf).size ≠ (A fT).af.frameSize - clobberBytes (A fT).af.saves)
 
 theorem slotChainB_true : slotChainB = true := by native_decide
 
