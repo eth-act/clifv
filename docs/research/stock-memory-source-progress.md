@@ -251,3 +251,23 @@ Next pair the existing actual ABI-return contract under the original MRP/RelW
 world relations and reuse it with complete paired bodies. Then compose ABI
 entry and the production compiler/checker/linker/generated-proof consumers,
 extend beyond this first class, and continue all original140 obligations.
+
+
+## Paired ABI return and complete placed block
+
+The additive `StockMemoryPairedReturn` consumer executes the actual retained
+return record under paired guarded semantics and preserves the original MRP
+memory/world relation. `StockMemoryPairedReturnAt` composes ordinary source
+execution, the complete paired body, actual placement and ABI return. The
+nonzero-heap witness executes a real original load/return block in distinct
+worlds and returns the loaded i32 value through the ABI.
+
+Maintained gates in `/tmp/stock-memory-paired-return-normal-gates-v1` pass4239
+normal modules,5014 tool jobs and84 standard-only memory roots. All81 preceding
+memory-root axiom sets and all earlier public witness headers compare exactly
+(`/tmp/stock-memory-paired-return-parity-v1.json`). The full98-file audit remains
+the preceding381e checkpoint. This is a pushed implementation checkpoint;
+paired instruction-zero entry, production activation and the full140 goal
+remain open. The separate register-only paired entry draft is excluded from
+this validation claim. Next finish that entry composition and connect the
+actual production value-semantics and machine consumers.

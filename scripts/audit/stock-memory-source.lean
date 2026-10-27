@@ -96,3 +96,7 @@ import FV.E2E.StockMemoryReadWitness
 #print axioms Backend.Stock.Memory.stock_single_load_return_spec
 #print axioms E2E.StockMemory.stock_single_load_return_paired_body
 #print axioms E2E.StockMemoryReadWitness.complete_paired_body_witness
+
+#print axioms E2E.StockMemory.stock_lower_return_record_paired_runOk
+#print axioms E2E.StockMemory.actual_ordinary_paired_return_refines_at
+#print axioms E2E.StockMemoryReadWitness.complete_paired_return_block_witness
