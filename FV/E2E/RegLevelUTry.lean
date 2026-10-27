@@ -381,7 +381,15 @@ theorem realizes_tryCall_raiseUF {R : RLU} (hR : R.Wf) {semU : Sem}
       rw [hUr] at hr'
       cases hr'
       exact hFK.1.trans hst.sp
-    exact .inr ⟨hRX, hnext, hexit, htsp, fun x hx => ⟨hxzr x hx, hst.code⟩,
+    have htfp : ∀ x d obj' t', R.AtLine s x →
+        ((∃ n, x = .bl n ∧ d = some n) ∨ (∃ r, x = .blr r ∧ d = none)) →
+        R.U.raise d s = some (obj', t') → xreg 29 t' = spv R.s0 - 16#64 := by
+      intro x d obj' t' hx hd hr'
+      obtain rfl := hdesc x d hx hd
+      rw [hUr] at hr'
+      cases hr'
+      exact hFK.2.2.trans (hst.fp (lowerRFunc_frame hR.alloc))
+    exact .inr ⟨hRX, hnext, hexit, htsp, htfp, fun x hx => ⟨hxzr x hx, hst.code⟩,
       ⟨.tryCall info ti, info, hsite0, .inr ⟨ti, rfl⟩, by rw [hst.sp]; exact RL.K_le hR,
         fun a ha => by rw [hst.sp] at ha; exact RL.below_F ha, hst.gkeep, cc, wh, ops, regs, i', w,
         obj, _, hops, hstat, hasg, hcpc, hst.world, hst.align, hst.err, hgg, hraise⟩⟩

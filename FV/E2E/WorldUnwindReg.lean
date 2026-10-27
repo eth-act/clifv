@@ -44,7 +44,7 @@ theorem regLevelCorrect_worldUT {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : Fn
     (hgot : GotSem gv X semU)
     (hRz : ∀ lm psF (R : RLU),
       R = ⟨⟨vcp, rf, af, fa, fb, lm, base, s, X, H, psF, K, G, gv⟩, XR, U, T⟩ → R.Wf →
-      Realizes R.vc R.rf semU ckeep R.stepU (fun s c => Q R.toRL s c ∧ AInv R.toRL c) R.GoodXU)
+      Realizes R.vc R.rf semU ckeep R.stepU (QA R.toRL) R.GoodXU)
     (hrets : ∀ us uses w, semU (.rets us) uses w =
       csem (frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af G s)
         ⟨fa.k, af.slotBase⟩ X (.rets us) uses w)
@@ -105,7 +105,7 @@ theorem regLevelCorrect_worldUTG {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : F
     (hgot : GotSem gv X semU)
     (hRz : ∀ lm psF (R : RLU),
       R = ⟨⟨vcp, rf, af, fa, fb, lm, base, s, X, H, psF, K, G, gv⟩, XR, U, T⟩ → R.Wf →
-      Realizes R.vc R.rf semU ckeep R.stepU (fun s c => Q R.toRL s c ∧ AInv R.toRL c) R.GoodXUF)
+      Realizes R.vc R.rf semU ckeep R.stepU (QA R.toRL) R.GoodXUF)
     (hrets : ∀ us uses w, semU (.rets us) uses w =
       csem (frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af G s)
         ⟨fa.k, af.slotBase⟩ X (.rets us) uses w)
@@ -186,7 +186,7 @@ theorem realizes_valueU_world {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAs
       R = ⟨⟨vcp, rf, af, fa, fb, lm, base, s, X, H, psF, K, G, gv⟩, XR, U, T⟩ → R.Wf →
       Realizes R.vc R.rf (valueSemVU gv (frameWG K (RAFrame.compute vcp rf).intBase
         (RAFrame.compute vcp rf).size af G s) ⟨fa.k, af.slotBase⟩ X XR) ckeep R.stepU
-        (fun s c => Q R.toRL s c ∧ AInv R.toRL c) R.GoodXU := by
+        (QA R.toRL) R.GoodXU := by
   intro lm psF R hReq hR
   subst hReq
   exact realizes_value_allU hR hC hCT hTls hcov hU
@@ -215,7 +215,7 @@ theorem realizes_csemU_world {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAsm
       R = ⟨⟨vcp, rf, af, fa, fb, lm, base, s, X, H, psF, K, G, gv⟩, XR, U, T⟩ → R.Wf →
       Realizes R.vc R.rf (csemVU gv (frameWG K (RAFrame.compute vcp rf).intBase
         (RAFrame.compute vcp rf).size af G s) ⟨fa.k, af.slotBase⟩ X XR) ckeep R.stepU
-        (fun s c => Q R.toRL s c ∧ AInv R.toRL c) R.GoodXU := by
+        (QA R.toRL) R.GoodXU := by
   intro lm psF R hReq hR
   subst hReq
   exact realizes_allU hR hU (realizes_all hR hC hCT hTls hcov) (fun _ _ _ h => csemVU_noRaise h)
@@ -244,7 +244,7 @@ theorem realizes_valueU_worldF {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnA
       R = ⟨⟨vcp, rf, af, fa, fb, lm, base, s, X, H, psF, K, G, gv⟩, XR, U, T⟩ → R.Wf →
       Realizes R.vc R.rf (valueSemVU gv (frameWG K (RAFrame.compute vcp rf).intBase
         (RAFrame.compute vcp rf).size af G s) ⟨fa.k, af.slotBase⟩ X XR) ckeep R.stepU
-        (fun s c => Q R.toRL s c ∧ AInv R.toRL c) R.GoodXUF := by
+        (QA R.toRL) R.GoodXUF := by
   intro lm psF R hReq hR
   subst hReq
   exact realizes_value_allUF hR hC hCT hTls hcov hU
@@ -272,7 +272,7 @@ theorem realizes_csemU_worldF {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAs
       R = ⟨⟨vcp, rf, af, fa, fb, lm, base, s, X, H, psF, K, G, gv⟩, XR, U, T⟩ → R.Wf →
       Realizes R.vc R.rf (csemVU gv (frameWG K (RAFrame.compute vcp rf).intBase
         (RAFrame.compute vcp rf).size af G s) ⟨fa.k, af.slotBase⟩ X XR) ckeep R.stepU
-        (fun s c => Q R.toRL s c ∧ AInv R.toRL c) R.GoodXUF := by
+        (QA R.toRL) R.GoodXUF := by
   intro lm psF R hReq hR
   subst hReq
   exact realizes_allUP hR (fun _ h => .inl h) hU (realizes_all hR hC hCT hTls hcov)

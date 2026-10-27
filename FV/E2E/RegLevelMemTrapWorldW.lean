@@ -79,7 +79,7 @@ theorem regLevel_memtrap_world_valueW {vcp : VCode} {rf : RFunc} {af : AFunc} {f
         (ρsel (locVal R.fr (iterN R.step n0 s))) w₀ (hsel _)
     have hRz := hRz0
     obtain ⟨b, k, ρ, w, vb, i, ops, outs, w', hstar, hvb, hi, hops, hsem, htc⟩ := htr
-    obtain ⟨n1, c1, ⟨hq1, hA1⟩, hr1, ht1⟩ := forward hSim hRz hstar hinit ⟨hq0, hA0⟩
+    obtain ⟨n1, c1, hq1, hr1, ht1⟩ := forward hSim hRz hstar hinit (.inl ⟨hq0, hA0⟩)
     obtain ⟨hnil, hform⟩ := csem_halt (csemV_sub (valueSemV_halt' hsem))
     subst hnil
     have hdefs : ops.toList.filter Operand.isDef = [] := by
@@ -88,8 +88,8 @@ theorem regLevel_memtrap_world_valueW {vcp : VCode} {rf : RFunc} {af : AFunc} {f
       · exact trapIf_nodefs hops
     have h1 : VStep R.vc R.valueSem (.run ⟨b, k, ρ, w⟩) (.halt w') :=
       VStep.step hvb hi hops hsem (by rw [hdefs]; rfl) VNext.halt
-    obtain ⟨n2, c', c'', ⟨hq2, -⟩, hr2, hms, hr3, ht2⟩ :=
-      forward_last hSim hRz h1 _ c1 _ (Nat.le_refl _) hr1 ⟨hq1, hA1⟩
+    obtain ⟨n2, c', c'', hq2, hr2, hms, hr3, ht2⟩ :=
+      forward_last hSim hRz h1 _ c1 _ (Nat.le_refl _) hr1 hq1
     cases c'' with
     | run s' => obtain ⟨_, e⟩ := hSim.run hr3; cases e
     | ret vs m' w'' => cases hSim.ret hr3
@@ -101,6 +101,10 @@ theorem regLevel_memtrap_world_valueW {vcp : VCode} {rf : RFunc} {af : AFunc} {f
         subst hb' hk' hw'
         rw [hvb] at hvb'; cases hvb'
         rw [hi] at hi'; cases hi'
+        have hnr : ∀ us, i ≠ .rets us := by
+          intro us h
+          rcases hform with ⟨cd, rfl⟩ | ⟨kk, cd, rfl, -⟩ <;> cases h
+        have hq2 := (qa_op hq2 hvb hi hnr).1
         rcases hform with ⟨cd, rfl⟩ | ⟨kk, cd, rfl, -⟩
         · simp only [trapCode?, Option.some.injEq] at htc
           subst htc
@@ -126,12 +130,12 @@ theorem regLevel_memtrap_world_valueW {vcp : VCode} {rf : RFunc} {af : AFunc} {f
       (keep := ckeep) hcheck (locVal R.fr (iterN R.step n0 s))
       (ρsel (locVal R.fr (iterN R.step n0 s))) w₀ (hsel _)
     have hRz : Realizes R.vc R.rf (haltLoop c A R.valueSem) ckeep R.step
-        (fun s c => Q R s c ∧ AInv R c) R.GoodXW := realizes_haltLoopW hRz0
-    obtain ⟨n1, c1, ⟨hq1, hA1⟩, hr1, ht1⟩ := forward hSim hRz hstar hinit ⟨hq0, hA0⟩
+        (QA R) R.GoodXW := realizes_haltLoopW hRz0
+    obtain ⟨n1, c1, hq1, hr1, ht1⟩ := forward hSim hRz hstar hinit (.inl ⟨hq0, hA0⟩)
     have h1 : VStep R.vc (haltLoop c A R.valueSem) (.run ⟨b, k, ρ, w⟩) (.halt w) :=
       VStep.step hvb hi hops (haltLoop_of hh w) (haltOuts_length hops) VNext.halt
-    obtain ⟨n2, c', c'', ⟨hq2, -⟩, hr2, hms, hr3, ht2⟩ :=
-      forward_last hSim hRz h1 _ c1 _ (Nat.le_refl _) hr1 ⟨hq1, hA1⟩
+    obtain ⟨n2, c', c'', hq2, hr2, hms, hr3, ht2⟩ :=
+      forward_last hSim hRz h1 _ c1 _ (Nat.le_refl _) hr1 hq1
     cases hms with
     | move => obtain ⟨_, e⟩ := hSim.run hr3; cases e
     | @op b' k' allocs its m w2 vb' i2 ops2 outs2 outs2' w2' ctl m2 c3 hvb' hi' hops' hsz hsem2
@@ -145,6 +149,7 @@ theorem regLevel_memtrap_world_valueW {vcp : VCode} {rf : RFunc} {af : AFunc} {f
       have hU0 := matchRun_uses hcheck hr2 (MStep.op hvb hi hops hsz hsem2 hlen2 hho hcl hn) hvb hi
         hops
       obtain ⟨nb, u, us, hlt, hu, hAu⟩ := hh
+      have hq2 := (qa_op hq2 hvb hi (fun _ h => by subst h; simp [loopTrap?] at hlt)).1
       obtain ⟨j, bits, hj, hbits, hnb, hpc, herr, huse⟩ := loop_ldaxr hR hq2 hvb hi hlt
       obtain ⟨us', hus'⟩ := huse ops hops
       have hu0 : u = regVal (iterN R.step n2 (iterN R.step n1 (iterN R.step n0 s))) (.x 25) := by
