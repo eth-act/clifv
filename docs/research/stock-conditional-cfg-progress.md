@@ -286,3 +286,24 @@ Next compose whole-body return/trap and successor continuations through ABI,
 activate the smallest compatible conditional class across existing consumers,
 then broaden ranked CFG/conditions/per-edge coverage and every remaining140
 obligation. Avoid a separate PR for each proof fragment.
+
+Whole-body conditional return composition now reaches an ABI-correct successor
+continuation through actual copies and synthetic jumps. Empty outgoing vectors
+identify the first legacy-compatible class, leaving general per-edge argument
+composition open. The successor contract is an induction hypothesis over actual
+retained scans, rather than a new accepted-program certificate.
+
+The existing jump entry proof is factored through shared `EntryCoreSpec` and
+`original_entry_prelude`. Conditional entries reuse the same ABI/source-parameter,
+alias, memory and value derivations; actual wide-parameter emission derives the
+required nonempty core. Both old jump/source-definedness theorem headers and
+axiom sets were checked exact against the old standalone source proof. A complete
+original source with nonempty scalar successor bodies now executes from actual
+instruction-zero ABI entry through the branch, selected copies and ABI return.
+All1174targeted keys and90audit roots (88 packet roots plus2preserved old roots)
+pass, Std3 only. Two packet MCP reviews report Std3/no warnings. The kernel-only
+executable fixture builds in a stable leaf; its source dominance is manual and
+standard-only. No conditional production activation/full author gates claimed.
+Next: trapped-run/ABI counterpart, source-class/domain check, shared production
+consumers and full per-PR gates; then broaden CFG/per-edge/condition coverage and
+all remaining original140 obligations.
