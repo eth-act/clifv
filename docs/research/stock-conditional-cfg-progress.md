@@ -307,3 +307,42 @@ standard-only. No conditional production activation/full author gates claimed.
 Next: trapped-run/ABI counterpart, source-class/domain check, shared production
 consumers and full per-PR gates; then broaden CFG/per-edge/condition coverage and
 all remaining original140 obligations.
+
+The compatible conditional source class now derives `Scalar.Domain` universally,
+including original source execution, instruction-zero ABI entry, whole scalar
+bodies, source-selected direct/synthetic copies, ABI return and first traps.
+The legacy edge-copy agreement is proved from actual original/synthetic metadata;
+no consumer certificate or stronger accepted-program premise is introduced.
+Original entry parameter membership/SSA derives real built-context parameter
+status and32/64-bit width. Actual nonentry return cores supply both continuation
+contracts through shared adapters, removing duplicate witness derivations.
+
+`Stock.ConditionalCfg.eligible` is the first compatible source selector: a wide
+entry-parameter branch, empty outgoing vectors/nonentry parameters and scalar
+return leaves. Its source facts, universal domain and source/artifact checker
+soundness build. It is not wired into default production yet. Complete original
+returning and reachable-divide-by-zero sources inhabit the selector, actual
+compiler, original source checks, checker and universal contract. Their separate
+csem witnesses execute actual instruction-zero entry, branch/copies and return or
+trap. This first class does not close general branching/condition/per-edge scope.
+
+All1190targeted keys pass. The108-root audit has106standard-only roots, including
+all universal correctness/compatibility/checker roots. Exactly two fixed-example
+roots depend additionally on the two explicitly inventoried native input-check
+axioms, as permitted by TO-PROVE§7 for fixed proofs. Kernel/cbv evaluation of
+those original executable input checks exceeded reduction limits; their native
+checks contain no emitted-code or universal semantic claim. Actual compilation
+fixtures remain kernel-proved; manual source dominance remains standard-only.
+All90previous trust sets and both prior public return-witness headers are exact.
+Three bundled MCP reviews (trap composition, universal domain, complete ABI trap
+witness) report Std3/no warnings. Four completed idle workers released; all saved
+source/evidence and one warm cache preserved, with562GiB free.
+
+Next immediately wire the class into the shared default compiler, semantic
+checker, verified linker and generated-proof reconstruction. Append route9,
+retain routes0–8 and complete prior pipeline fallback, and complete all current
+per-PR author gates/paired byte evidence before a substantive squash PR. Then
+continue ranked/other conditional classes, nonempty per-edge consumers, other
+condition/table/bit-test families, loops/effects/calls and every remaining140
+simulation/completeness obligation. No full author gates or conditional production
+activation is claimed by this proof checkpoint.

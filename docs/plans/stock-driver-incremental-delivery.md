@@ -55,6 +55,24 @@ warm cache and bounded builds; archive unique evidence before deleting completed
 outputs, and preserve all dirty/unpublished source. Full original #140 remains
 open; fallback is acceptance preservation, not completeness.
 
+## Conditional source domain checkpoint (2026-10-27 UTC)
+
+The next implementation branch now proves the first legacy-compatible wide
+entry-parameter conditional class through actual selected direct/synthetic copies,
+scalar return leaves, instruction-zero ABI entry, returns and first traps. The
+source selector derives the unchanged Scalar.Domain and checker soundness;
+legacy edge-copy compatibility is proved internally. Complete original returning
+and reachable-divide-by-zero witnesses compile and execute. See
+[conditional progress](../research/stock-conditional-cfg-progress.md) for exact
+1190-key/108-root validation and the two fixed-example native input-check axioms.
+Production remains merged#634 until the next activation packet passes its gates.
+Immediate next work: shared default compiler/checker/linker/generated-proof
+activation, appended route9 with0–8 retained and complete previous pipeline
+fallback, full author gates and paired current-input evidence. Do not defer that
+activation for general conditions or make a separate PR for each proof fragment.
+Broader control/per-edge/loops/effects/calls/full-domain obligations remain open;
+this first conditional class does not replace them.
+
 ## Starting point and next deliveries
 
 Arithmetic shipped in #356 (95b87108); complete add/sub/select activation shipped

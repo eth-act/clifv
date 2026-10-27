@@ -1,3 +1,6 @@
+import FV.Backend.Proof.StockConditionalDomainWitness
+import FV.Backend.Proof.StockConditionalTrapAtWitness
+import FV.Backend.Proof.StockConditionalClassWitness
 import FV.Backend.Proof.StockConditionalReturnAtWitness
 import FV.Backend.Proof.StockJumpEntryPrelude
 import FV.Backend.Proof.StockConditionalRouteWitness
@@ -117,3 +120,23 @@ import FV.Backend.Proof.StockConditionalEmissionWitness
 #print axioms Backend.Stock.Proof.ConditionalValues.ReturnAtWitness.returning_empty_parameter_entry_witness
 #print axioms Backend.Stock.Proof.Control.jump_entry_prelude
 #print axioms Backend.Stock.Proof.Control.source_defined_entry_frame
+
+#print axioms Backend.Stock.Proof.ConditionalValues.ConditionalBodySpec.trapping_empty_parameter_at
+#print axioms Backend.Stock.Proof.ConditionalValues.EmptyTrapFixture.lower_success
+#print axioms Backend.Stock.Proof.ConditionalValues.EmptyTrapFixture.driver_witness
+#print axioms Backend.Stock.Proof.ConditionalValues.TrapAtWitness.trapping_empty_parameter_at_witness
+#print axioms Backend.Stock.Proof.ConditionalValues.TrapAtWitness.trapping_empty_parameter_entry_witness
+#print axioms Backend.Stock.Proof.ConditionalValues.SuccessorReturn.of_return_block
+#print axioms Backend.Stock.Proof.ConditionalValues.SuccessorTrap.of_return_block
+#print axioms Backend.Stock.Proof.ConditionalValues.compatible_conditional_sources_witness
+#print axioms Backend.Stock.ConditionalCfg.eligible_shape
+#print axioms Backend.Stock.ConditionalCfg.Shape.condition_metadata
+
+#print axioms Backend.Stock.ConditionalCfg.Shape.legacy_compatible
+#print axioms Backend.Stock.Proof.ConditionalValues.compatible_conditional_code_witness
+#print axioms Backend.Stock.ConditionalCfg.domain_of_shape
+#print axioms Backend.Stock.ConditionalCfg.domain_of_eligible
+#print axioms Backend.Stock.ConditionalCfg.sourceOk_sound
+#print axioms Backend.Stock.ConditionalCfg.check_sound
+#print axioms Backend.Stock.Proof.ConditionalValues.conditional_source_checks_witness
+#print axioms Backend.Stock.Proof.ConditionalValues.checked_conditional_driver_witness

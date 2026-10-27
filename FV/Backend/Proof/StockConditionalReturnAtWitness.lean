@@ -1,3 +1,4 @@
+import FV.Backend.Proof.StockConditionalLeaf
 import FV.Backend.Proof.StockConditionalEntryPrelude
 import FV.Backend.Proof.StockConditionalReturnAt
 import FV.Backend.Proof.StockConditionalEmptyFixture
@@ -29,26 +30,9 @@ private theorem terminal_successor {result : Result}
       (fun _ _ _ => True) Clif.Env.empty {funcs := []} [⟨.i64,1⟩] Clif.Mem.empty) := by
   have abi : sigAbiOk function.sig = true := rfl
   have stable : MRStable (fun _ => False) (fun _ _ _ => True) := by intro _ _ _ _ _ _; trivial
-  obtain ⟨spec⟩ := CfgReturn.stock_lower_return_block_spec run scope dominated abi family tag source ret
+  exact SuccessorReturn.of_return_block run scope dominated abi family
     (refines_csem (fun _ => False) ⟨0,0⟩ X) (driverSem_csem (fun _ => False) ⟨0,0⟩ X)
-    stable Clif.Env.empty {funcs := []}
-  refine ⟨{
-    index := tl
-    targetLabel := targetLabel
-    block := b
-    event := spec.core.scan
-    lookup := lookup
-    found := found
-    tag := tag
-    member := spec.events
-    atBlock := spec.atBlock
-    forward := forward
-    returns := ?_ }⟩
-  intro fuel s ρ w func callers remaining atTerm defined returned held
-  have finished := CfgReturnAt.return_block_returns_at run scope dominated abi family ret
-    (refines_csem (fun _ => False) ⟨0,0⟩ X) (driverSem_csem (fun _ => False) ⟨0,0⟩ X)
-    stable spec func callers remaining atTerm (by simpa only [spec.atBlock] using defined) returned held
-  simpa only [spec.noPrelude nonentry] using finished
+    stable lookup found source tag ret nonentry forward
 
 /-- A complete original conditional source with scalar successor bodies
 inhabits whole-core, actual selected copies and ABI-return composition. -/
