@@ -7,3 +7,7 @@ Preflight (dirty implementation based on91c809f7, not final frozen-source gates)
 Evidence: /tmp/stock-conditional-forward-cfg-core-gates-v3, focused-inventory-v1.json, runtime-preflight-v1/receipt.json and native-preflight-v1.log (common /tmp/stock-conditional-forward-cfg- prefix). Historical failed proper-module builds remain retained.
 
 Next: freeze/push this source checkpoint, run current normal/trust/header/old-axiom parity, full linked/generated integration and retained classes, runtime/encoder/identity-stage/examples/actual-crate and paired actual-output binding. Publish terminal evidence, squash only after current author gates. No final validation or agreement improvement claimed. Full original #140 remains open: broader conditions/per-edge/loops/effects/calls and whole-driver/completeness.
+
+## Terminal author validation
+
+All current author gates pass on7170a146. PR #636 publishes default route10 with complete prior fallback; [terminal evidence](stock-conditional-forward-cfg-production.md) records the full validation, exact old axioms/headers, actual native execution and same-input900→900comparison. No full140 completion or agreement gain. Continue the separately preserved general parameter-conditional graph source/domain work, then broader conditions/per-edge/loops/effects/calls/full-domain obligations.
