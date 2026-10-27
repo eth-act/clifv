@@ -382,3 +382,12 @@ only for the new conditional cohort; all earlier checks remain. Production code
 is unchanged. Freeze the corrected test revision for the final native/full gates;
 retain the first failed run and expensive unchanged proof-cache results as
 historical evidence, without treating the failed activation run as passed.
+
+On the corrected native revision, all12runtime ABI/allocator rows and both
+cleanup/fallback modes pass. Linked validation exposed an older-cohort assumption
+that the first source has nonempty successor copies. The compatible conditional
+class requires empty vectors, so its check now explicitly requires emptiness;
+all previous cohorts retain the nonempty check. New mixed/retained cases also
+compare with the actual previous ForwardCfg provider. Production and proof
+sources are unchanged. Keep the failed linked run and repeat the affected linked
+and generated-proof gate on the final test revision.

@@ -128,10 +128,11 @@ private def checkCase (out : System.FilePath) (count : Nat) (cleanup fallback : 
       require ((if conditional then Stock.ConditionalCfg.check e.1 raw.code else if forward then Stock.ForwardCfg.check e.1 raw.code else if linear then Stock.LinearCfg.check e.1 raw.code else if cfgentry then Stock.TwoBlock.Entry.check e.1 raw.code else Stock.TwoBlock.check e.1 raw.code) && ABIReadCfg.check e.1.sig raw.code &&
         decide (a.vc = raw.code)) "CFG linked consumer fell back from actual Stock"
       if e.1.name == names[0]! then
-        require (!(raw.edgeArgs.all (fun row => row.all (·.isEmpty))))
-          "CFG linked consumer lost successor copies"
+        let empty := raw.edgeArgs.all (fun row => row.all (·.isEmpty))
+        require (if conditional then empty else !empty)
+          "CFG linked consumer changed its class-specific successor-copy shape"
     else if cfg && retainedMixed then
-      let previous ← get ((if forward then Stock.LinearCfg.lowerValidated else if linear then Stock.TwoBlock.Entry.lowerValidated else if cfgentry then Stock.TwoBlock.lowerValidated else Stock.Scalar.lowerValidated) e.1)
+      let previous ← get ((if conditional then Stock.ForwardCfg.lowerValidated else if forward then Stock.LinearCfg.lowerValidated else if linear then Stock.TwoBlock.Entry.lowerValidated else if cfgentry then Stock.TwoBlock.lowerValidated else Stock.Scalar.lowerValidated) e.1)
       require (decide (a.vc = previous)) "retained CFG legacy artifact changed"
     else if narrow && !retainedMixed then
       let raw ← get (Stock.lower e.1)
@@ -144,7 +145,7 @@ private def checkCase (out : System.FilePath) (count : Nat) (cleanup fallback : 
     else if retainedMixed || mixed && e.1.name != names[0]! then
       -- CFG activation extends the previous complete Scalar route. Older
       -- fixture classes retain their historical Mixed baseline.
-      let previous ← get ((if forward then Stock.LinearCfg.lowerValidated else if linear then Stock.TwoBlock.Entry.lowerValidated else if cfgentry then Stock.TwoBlock.lowerValidated else if cfg then Stock.Scalar.lowerValidated else Stock.Mixed.lowerValidated) e.1)
+      let previous ← get ((if conditional then Stock.ForwardCfg.lowerValidated else if forward then Stock.LinearCfg.lowerValidated else if linear then Stock.TwoBlock.Entry.lowerValidated else if cfgentry then Stock.TwoBlock.lowerValidated else if cfg then Stock.Scalar.lowerValidated else Stock.Mixed.lowerValidated) e.1)
       require (decide (a.vc = previous))
         s!"retained class {e.1.name} changed its actual code or history"
     let selected ← get (actualLower e.1)
