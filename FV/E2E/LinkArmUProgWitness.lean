@@ -106,7 +106,7 @@ structure UFacts (g : Clif.Function) (a : Art) : Prop where
   last : lastCallsOk a.af a.fa = true
   saved : savedCheck a.vcp a.rf = true
   ib : (RAFrame.compute a.vcp a.rf).intBase = 0
-  sz : (RAFrame.compute a.vcp a.rf).size = a.af.frameSize
+  sz : (RAFrame.compute a.vcp a.rf).size = a.af.frameSize - clobberBytes a.af.saves
 
 theorem ok_of_toBool {ε α : Type} {x : Except ε α} (h : x.toBool = true) : ∃ a, x = .ok a := by
   cases x with

@@ -26,7 +26,7 @@ structure SemanticPreparedFacts (stage : Clif.Function → VCode → VCode) (I :
   width : ∀ p ∈ g.sig.params, p.ty.width ≤ 64
   callee : calleeB (progOf R) (fun n => I.syms.lookup n) g = true → (g.slots = [] →
     (RAFrame.compute a.vcp a.rf).size =
-      a.af.frameSize) ∧ slotFitsB g a = true
+      a.af.frameSize - clobberBytes a.af.saves) ∧ slotFitsB g a = true
   sites : allInsts a.vcp (siteB (siteOk (progOf R) g
     (indToB (fun n => I.syms.lookup n) g) a.vcp)) = true
   declSig : ∀ e ∈ g.externs.map (·.2), ∀ h, (progOf R).func? e.name = some h → e.sig = h.sig
@@ -127,7 +127,7 @@ theorem semanticPreparedResults_sound (stage : Clif.Function → VCode → VCode
     exact .inl ⟨g, hg, e, he, by rw [hen, hname]⟩
   have hcal : ∀ g ∈ (progOf R).funcs, ∀ h, (ofRes I R B F).Callee g h →
       (h.slots = [] → (RAFrame.compute (artOf R h).vcp (artOf R h).rf).size =
-        (artOf R h).af.frameSize) ∧ slotFitsB h (artOf R h) = true := by
+        (artOf R h).af.frameSize - clobberBytes (artOf R h).af.saves) ∧ slotFitsB h (artOf R h) = true := by
     intro g hg h hh
     have hc : calleeB (progOf R) (fun n => I.syms.lookup n) h = true ∧
         h ∈ (progOf R).funcs := by

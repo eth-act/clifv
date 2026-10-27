@@ -555,7 +555,7 @@ theorem progCallTG (hL : L.Ok) [hR : L.CrunOk] {D : Nat → Clif.Function → Cl
   obtain ⟨hsl', hsym', hal', hby', hpl'⟩ := L.initState_mem hpf hinit hcase
   have hsz_le := size_le_frameSize hc.alloc
   have hfits : ∀ p ∈ h.slots, ∃ off, (slotLayout h.slots).1.lookup p.1 = some off ∧
-      (L.A h).af.slotBase + off + p.2.size ≤ (L.A h).af.frameSize := by
+      (L.A h).af.slotBase + off + p.2.size ≤ (L.A h).af.frameSize - clobberBytes (L.A h).af.saves := by
     obtain ⟨g, hg, hcg⟩ := hcal
     exact hL.slotFits g hg h hcg
   have hce : ClifEntry h vals cs := clifEntry_initState hpf hinit
@@ -579,7 +579,7 @@ theorem progCallTG (hL : L.Ok) [hR : L.CrunOk] {D : Nat → Clif.Function → Cl
   let spb := spv w - BitVec.ofNat 64 (frameDrop (L.A h).af)
   let sz := (RAFrame.compute (L.A h).vcp (L.A h).rf).size
   let Fh : BitVec 64 → Prop := fun a =>
-    F a ∧ ¬ OutAt ib spb a ∧ ¬ SlotAt sz (L.A h).af.frameSize spb a
+    F a ∧ ¬ OutAt ib spb a ∧ ¬ SlotAt sz ((L.A h).af.frameSize - clobberBytes (L.A h).af.saves) spb a
   have hib_le : ib ≤ sz := intBase_le_size _ _
   have hspb : spb.toNat = (spv w).toNat - frameDrop (L.A h).af := hB
   have hlt := (spv w).isLt
@@ -589,12 +589,12 @@ theorem progCallTG (hL : L.Ok) [hR : L.CrunOk] {D : Nat → Clif.Function → Cl
     rw [hspb] at h1 h2
     exact ⟨by omega, by omega⟩
   have hout_F : ∀ a, OutAt ib spb a → F a ∧ ¬ L.Img a := fun a ha => hdead a (hout_reg a ha)
-  have hslot_reg : ∀ a, SlotAt sz (L.A h).af.frameSize spb a →
+  have hslot_reg : ∀ a, SlotAt sz ((L.A h).af.frameSize - clobberBytes (L.A h).af.saves) spb a →
       StackBelow (frameDrop (L.A h).af + κ (M - 1) h) (spv w) a := by
     intro a ⟨h1, h2⟩
     rw [hspb] at h1 h2
     exact ⟨by omega, by omega⟩
-  have hslot_F : ∀ a, SlotAt sz (L.A h).af.frameSize spb a → F a ∧ ¬ L.Img a :=
+  have hslot_F : ∀ a, SlotAt sz ((L.A h).af.frameSize - clobberBytes (L.A h).af.saves) spb a → F a ∧ ¬ L.Img a :=
     fun a ha => hdead a (hslot_reg a ha)
   have hspb_add : ∀ j < ib, OutAt ib spb (spb + BitVec.ofNat 64 j) := by
     intro j hj
@@ -722,7 +722,7 @@ theorem progCallTG (hL : L.Ok) [hR : L.CrunOk] {D : Nat → Clif.Function → Cl
       (L.A h).af G (enterAt (L.A h) t) = Fh := by
     funext a
     apply propext
-    rw [frameWG_out hfr (by rw [hspt, ← hdrop]; exact hroom) hib_le hsz_le, ← hdrop, hspt]
+    rw [frameWG_out hfr (by rw [hspt, ← hdrop]; exact hroom) hib_le (size_le_frameBody hc.alloc), ← hdrop, hspt]
     constructor
     · rintro (⟨hb, hno, hns⟩ | hc | hg)
       · exact ⟨(hdead a hb).1, hno, hns⟩
