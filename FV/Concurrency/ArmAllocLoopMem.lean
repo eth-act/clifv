@@ -66,7 +66,7 @@ theorem arm_alloc_refines_loop {R : RL} (hR : R.Wf) (hsc : MemScopeL R)
       Refines (· = ·) (PrivA R) (MonPair (evTr (ls.take n))) (PrepThread.conv trS)
         (PrepThread.conv (evTr (ls.take n))) ψ ∧ (n = ls.length ∨ Done R cE) := by
   obtain ⟨n, trS, cE, ψ, hn, hs, href, hend⟩ :=
-    refines_of_itemSim (itemSim_loop hR hsc) hr ⟨hq, hA⟩
+    refines_of_itemSim (itemSim_loop hR hsc) hr (RelQ.of hq hA)
   exact ⟨n, trS, cE, ψ, hn, mtrun_of_srun hs, href, hend⟩
 
 end Concurrency.ArmAllocThread

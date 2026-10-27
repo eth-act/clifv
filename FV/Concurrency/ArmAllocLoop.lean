@@ -1103,7 +1103,7 @@ theorem rmw_opR {R : RL} (hR : R.Wf) {ok : ArmState → Lab → Prop} {s : ArmSt
     rw [hstep, hstepc] at hr2
     refine .inr (.inl ⟨_, _, c'', (xF, mon2), fun j => if j = 0 then ((evTr (ls.take q)).length, 0) else
       ((evTr (ls.take q)).length + ((rmwLoopMid op ty.bits).length + 1), 0), h2, .inl (by omega), hsrc,
-      hr2, ⟨hQ, hAI⟩, ?_⟩)
+      hr2, .inl ⟨hQ, hAI⟩, ?_⟩)
     rw [hs2, List.append_assoc]
     exact img_pair hpos hF.pre rfl rfl hsh (T := [[]]) (by simp)
   · have hls : ls.take (q + ((rmwLoopMid op ty.bits).length + 1) + 1) = ls :=
@@ -1886,7 +1886,7 @@ theorem cas_opR {R : RL} (hR : R.Wf) {ok : ArmState → Lab → Prop} {s : ArmSt
     rw [hz, hstepb] at hr1
     simp only [hex, ite_true, hzF] at hr1
     refine .inr (.inl ⟨q + 3, _, c'', (zF, mon1), fun _ => ((evTr (ls.take q)).length, 0), hF.le,
-      .inl (by omega), hsrc, hr1, ⟨hQ, hAI⟩, ?_⟩)
+      .inl (by omega), hsrc, hr1, .inl ⟨hQ, hAI⟩, ?_⟩)
     rw [hF.seg]
     exact img_one (by omega) hF.pre rfl (by simp) hsh1
   -- equal values: the `stlxr` succeeds, then the `cbnz` falls through
@@ -2012,7 +2012,7 @@ theorem cas_opR {R : RL} (hR : R.Wf) {ok : ArmState → Lab → Prop} {s : ArmSt
   · obtain ⟨hs2, mon2, hr2⟩ := hseg2 h2
     rw [hstep3, hstepc] at hr2
     refine .inr (.inl ⟨_, _, c'', (xF, mon2), fun j => if j = 0 then ((evTr (ls.take q)).length, 0) else
-      ((evTr (ls.take q)).length + 3, 0), h2, .inl (by omega), hsrc, hr2, ⟨hQ, hAI⟩, ?_⟩)
+      ((evTr (ls.take q)).length + 3, 0), h2, .inl (by omega), hsrc, hr2, .inl ⟨hQ, hAI⟩, ?_⟩)
     rw [hs2, List.append_assoc]
     exact img_pair (by omega) hF.pre rfl rfl hsh (T := [[]]) (by simp)
   · have hls : ls.take (q + 3 + 1) = ls := List.take_of_length_le (by omega)

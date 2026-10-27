@@ -351,6 +351,13 @@ def μR (R : RL) : MConf CV ArmState → Nat
   | .run s => (R.rf.blocks.size - s.b) * itemBound R + s.its.length
   | _ => 0
 
+/-- A return is below every item. -/
+theorem μR_ret_lt {R : RL} {vals : List CV} {m : Loc → CV} {w : ArmState} {b : Nat} {it : RItem}
+    {its : List RItem} {m' : Loc → CV} {w' : ArmState} :
+    μR R (.ret vals m w) < μR R (.run ⟨b, it :: its, m', w'⟩) := by
+  simp only [μR, List.length_cons]
+  exact Nat.lt_of_lt_of_le (Nat.succ_pos _) (Nat.le_add_left _ _)
+
 theorem le_sum_of_mem' : ∀ {l : List Nat} {x : Nat}, x ∈ l → x ≤ l.sum
   | _ :: _, _, .head _ => by simp
   | _ :: _, _, .tail _ h => by have := le_sum_of_mem' h; simp; omega
@@ -650,7 +657,7 @@ theorem goto_opR {R : RL} (hR : R.Wf) {ok : ArmState → Lab → Prop} {s : ArmS
     rw [hlen1] at hs1
     simp only at hs1
     subst hs1
-    refine .inr (.inl ⟨n, [], c0, _, fun _ => (0, 0), hN, ?_, hs0, r1, ⟨hq', hA'⟩, img_nil hev1 _⟩)
+    refine .inr (.inl ⟨n, [], c0, _, fun _ => (0, 0), hN, ?_, hs0, r1, .inl ⟨hq', hA'⟩, img_nil hev1 _⟩)
     rcases Nat.eq_zero_or_pos n with h0 | h0
     · exact .inr (hμ h0)
     · exact .inl h0
@@ -748,7 +755,7 @@ theorem memScopeB_of_memScopeL {R : RL} (h : MemScopeL R) : MemScopeB R :=
 /-- **The per-item obligation of the scope with branches, with moves**, for the measure `μR`. -/
 theorem itemSim_br {R : RL} (hR : R.Wf) (hsc : MemScopeB R) :
     ItemSim Policy.arm R.step (OkPriv R) (SrcStep R) (RelQ R) (Done R) (μR R) (PrivA R) := by
-  rintro ⟨s, mon⟩ c ⟨hq, hA⟩ ls t' hr
+  rintro ⟨s, mon⟩ c hqa ls t' hr
   match c with
   | .ret vals m w => exact .inl (.inl ⟨vals, m, w, rfl⟩)
   | .halt w => exact .inl (.inr (.inl ⟨w, rfl⟩))
@@ -760,11 +767,13 @@ theorem itemSim_br {R : RL} (hR : R.Wf) (hsc : MemScopeB R) :
   | @move _ src dst its' =>
     have hng : ∀ evs c', SrcStep R (MvC b src dst its' m w) evs c' → SameB (MvC b src dst its' m w) c' :=
       fun evs c' h => sameB_step h fun _ _ _ e => by cases e
-    rcases move_op hR hq hA hr with h | h
+    rcases move_op hR hqa hr with h | h
     · exact .inr (.inl (isOut_μR hng h))
     · exact .inr (.inr (.inr h))
   | @op _ k allocs its' _ _ vb i ops _ _ hvb hi hops hevs hfoot hst =>
     have hs : SrcStep R (OpC b k allocs its' m w) _ _ := .op hvb hi hops hevs hfoot hst
+    rcases RelQ.op' hqa hs with ⟨hq, hA⟩ | ⟨rfl, vals, m', w', rfl⟩
+    case inr => exact .inr (.inl (itemSimOut_retμ hs μR_ret_lt))
     have uniq : ∀ vb' i', R.vc.blocks[b]? = some vb' → vb'.insts[k]? = some i' → i' = i :=
       fun vb' i' h1 h2 => by rw [hvb] at h1; cases h1; rw [hi] at h2; cases h2; rfl
     rcases hsc b vb k i hvb hi with hl | hbr
@@ -802,7 +811,7 @@ theorem arm_alloc_refines_br {R : RL} (hR : R.Wf) (hsc : MemScopeB R)
       Refines (· = ·) (PrivA R) (MonPair (evTr (ls.take n))) (PrepThread.conv trS)
         (PrepThread.conv (evTr (ls.take n))) ψ ∧ (n = ls.length ∨ Done R cE) := by
   obtain ⟨n, trS, cE, ψ, hn, hs, href, hend⟩ :=
-    refines_of_itemSim (itemSim_br hR hsc) hr ⟨hq, hA⟩
+    refines_of_itemSim (itemSim_br hR hsc) hr (RelQ.of hq hA)
   exact ⟨n, trS, cE, ψ, hn, mtrun_of_srun hs, href, hend⟩
 
 end Concurrency.ArmAllocThread

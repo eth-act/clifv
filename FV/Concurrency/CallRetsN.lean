@@ -94,7 +94,7 @@ theorem arm_alloc_refines_lsCLA {R : RL} (hR : R.Wf) (hsc : MemScopeLSC R)
         RelQ R tE cE ∧ Pause R cE) := by
   obtain ⟨n, trS, cE, ψ, hn, hs, href, hend⟩ :=
     refines_of_itemSimQ (ItemSim.avoid (itemSim_lsCL hR hsc hg)) hr
-      (show RelQ R (s, mon) c from ⟨hq, hA⟩)
+      (RelQ.of (t := (s, mon)) hq hA)
   exact ⟨n, trS, cE, ψ, hn, mtrun_of_srun (SRun.mono' (fun _ _ _ h => h.2) hs), href,
     srun_avoid_ret hs, hend⟩
 
@@ -126,7 +126,7 @@ theorem arm_alloc_refines_lsCLAX {R : RL} (hR : R.Wf) (hsc : MemScopeLSC R)
         RelQ R tE cE ∧ Pause R cE) ∧ CallCompose.XClosed (evTr (ls.take n)) := by
   obtain ⟨n, trS, cE, ψ, hn, hs, href, hend, hx⟩ :=
     refines_of_itemSimQX (ItemSim.avoid (itemSim_lsCL hR hsc hg)) hr
-      (show RelQ R (s, mon) c from ⟨hq, hA⟩)
+      (RelQ.of (t := (s, mon)) hq hA)
   exact ⟨n, trS, cE, ψ, hn, mtrun_of_srun (SRun.mono' (fun _ _ _ h => h.2) hs), href,
     srun_avoid_ret hs, hend, hx⟩
 

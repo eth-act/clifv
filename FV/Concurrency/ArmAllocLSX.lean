@@ -340,7 +340,7 @@ theorem oneEvPre_op {R : RL} (hR : R.Wf) {s : ArmState} {mon : Mon} {b k : Nat}
     fun k => (pre.length, k), by simp only [List.length_append, List.length_cons]; omega,
     .inl (Nat.succ_pos _), .op hvb hi hops hfix hfoot1 hm2,
     by rw [htake]; exact PRun.append r1 (PRun.cons hs hp trivial .nil),
-    ⟨by show Q R (R.step (patch l.evs y)) _; rw [hend]; exact hq2,
+    .inl ⟨by show Q R (R.step (patch l.evs y)) _; rw [hend]; exact hq2,
       aInv_step hR hq1 (aInv_patch hA _) hm2⟩, ?_⟩)
   have htr : evTr ((A ++ l :: B).take (pre.length + 1)) = evTr A ++ [l.evs] := by
     rw [htake, evTr_append]; rfl
@@ -843,7 +843,7 @@ theorem memScopeLSX_of_memScopeLS {R : RL} (h : MemScopeLS R) : MemScopeLSX R :=
 /-- **The per-item obligation of the scope with every plain load/store, with moves**, for `μR`. -/
 theorem itemSim_lsx {R : RL} (hR : R.Wf) (hsc : MemScopeLSX R) :
     ItemSim Policy.arm R.step (OkPriv R) (SrcStep R) (RelQ R) (Done R) (μR R) (PrivA R) := by
-  rintro ⟨s, mon⟩ c ⟨hq, hA⟩ ls t' hr
+  rintro ⟨s, mon⟩ c hqa ls t' hr
   match c with
   | .ret vals m w => exact .inl (.inl ⟨vals, m, w, rfl⟩)
   | .halt w => exact .inl (.inr (.inl ⟨w, rfl⟩))
@@ -855,11 +855,13 @@ theorem itemSim_lsx {R : RL} (hR : R.Wf) (hsc : MemScopeLSX R) :
   | @move _ src dst its' =>
     have hng : ∀ evs c', SrcStep R (MvC b src dst its' m w) evs c' → SameB (MvC b src dst its' m w) c' :=
       fun evs c' h => sameB_step h fun _ _ _ e => by cases e
-    rcases move_op hR hq hA hr with h | h
+    rcases move_op hR hqa hr with h | h
     · exact .inr (.inl (isOut_μR hng h))
     · exact .inr (.inr (.inr h))
   | @op _ k allocs its' _ _ vb i ops _ _ hvb hi hops hevs hfoot hst =>
     have hs : SrcStep R (OpC b k allocs its' m w) _ _ := .op hvb hi hops hevs hfoot hst
+    rcases RelQ.op' hqa hs with ⟨hq, hA⟩ | ⟨rfl, vals, m', w', rfl⟩
+    case inr => exact .inr (.inl (itemSimOut_retμ hs μR_ret_lt))
     have uniq : ∀ vb' i', R.vc.blocks[b]? = some vb' → vb'.insts[k]? = some i' → i' = i :=
       fun vb' i' h1 h2 => by rw [hvb] at h1; cases h1; rw [hi] at h2; cases h2; rfl
     have hng : ¬ GotoForm i → ∀ evs c', SrcStep R (OpC b k allocs its' m w) evs c' →
@@ -903,7 +905,7 @@ theorem arm_alloc_refines_lsx {R : RL} (hR : R.Wf) (hsc : MemScopeLSX R)
       Refines (· = ·) (PrivA R) (MonPair (evTr (ls.take n))) (PrepThread.conv trS)
         (PrepThread.conv (evTr (ls.take n))) ψ ∧ (n = ls.length ∨ Done R cE) := by
   obtain ⟨n, trS, cE, ψ, hn, hs, href, hend⟩ :=
-    refines_of_itemSim (itemSim_lsx hR hsc) hr ⟨hq, hA⟩
+    refines_of_itemSim (itemSim_lsx hR hsc) hr (RelQ.of hq hA)
   exact ⟨n, trS, cE, ψ, hn, mtrun_of_srun hs, href, hend⟩
 
 end Concurrency.ArmAllocThread

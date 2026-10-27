@@ -172,6 +172,14 @@ theorem RelQ.op {R : RL} {t : ArmState × Mon} {b k : Nat} {allocs : Array Loc} 
   · exact h
   · exact absurd rfl (hnr vals m' w')
 
+/-- A step returning without events: no Arm step (for a measure `μ` lower at the return). -/
+theorem itemSimOut_retμ {R : RL} {ok : ArmState → Lab → Prop} {μ : MConf CV ArmState → Nat}
+    {t : ArmState × Mon} {c : MConf CV ArmState} {vals : List CV} {m' : Loc → CV} {w' : ArmState}
+    {ls : List Lab} (hs : SrcStep R c [] (.ret vals m' w')) (hμ : μ (.ret vals m' w') < μ c) :
+    ItemSimOut Policy.arm R.step ok (SrcStep R) (RelQ R) (PrivA R) μ t c ls :=
+  ⟨0, [], _, t, fun _ => (0, 0), Nat.zero_le _, .inr hμ, hs,
+    by rw [List.take_zero]; exact .nil, relQ_ret, img_nil (by simp) _⟩
+
 /-- A step returning without events: no Arm step. -/
 theorem itemSimOut_ret {R : RL} {ok : ArmState → Lab → Prop} {t : ArmState × Mon} {b : Nat}
     {it : RItem} {its : List RItem} {m : Loc → CV} {w : ArmState} {vals : List CV}
@@ -179,8 +187,7 @@ theorem itemSimOut_ret {R : RL} {ok : ArmState → Lab → Prop} {t : ArmState �
     (hs : SrcStep R (.run ⟨b, it :: its, m, w⟩) [] (.ret vals m' w')) :
     ItemSimOut Policy.arm R.step ok (SrcStep R) (RelQ R) (PrivA R) (fun c => c.measure) t
       (.run ⟨b, it :: its, m, w⟩) ls :=
-  ⟨0, [], _, t, fun _ => (0, 0), Nat.zero_le _, .inr (by simp [MConf.measure]), hs,
-    by rw [List.take_zero]; exact .nil, relQ_ret, img_nil (by simp) _⟩
+  itemSimOut_retμ hs (by simp [MConf.measure])
 
 /-- **The per-item obligation of the event-free items** (module doc). -/
 theorem itemSim_noev {R : RL} (hR : R.Wf) (hsc : NoEvScope R) (hnm : NoMoves R) :
