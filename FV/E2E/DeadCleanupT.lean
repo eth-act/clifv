@@ -193,6 +193,7 @@ theorem outgoing_le_intBaseCleanupAT {f : Clif.Function} {k : Nat} {vc vcp : VCo
   rw [outgoing_of_prepCheck hc.prepOk, prune_outgoing]
   exact le_alignTo _ 16 (by decide)
 
+set_option maxHeartbeats 1000000 in
 /-- The stack-passed arguments avoid the addresses outside the world, from the allocation's
 frame alone (`stackArgsAvoid_frameWA`'s argument). -/
 theorem stackArgsAvoid_frameW_of_alloc {f : Clif.Function} {vcp : VCode} {rf : RFunc}
@@ -208,8 +209,12 @@ theorem stackArgsAvoid_frameW_of_alloc {f : Clif.Function} {vcp : VCode} {rf : R
   have hfs := (lowerRFunc_ok halloc).1.1
   have hD : frameDrop af = af.frameSize + 16 := by simp [frameDrop, hframe]
   have hsz : (RAFrame.compute vcp rf).size ≤ af.frameSize := by
-    rw [hfs]; simp only [RAFrame.compute]
-    exact Nat.le_trans (Nat.le_add_right _ _) (le_alignTo _ 16 (by decide))
+    have e : (RAFrame.compute vcp rf).total =
+        alignTo ((RAFrame.compute vcp rf).size + vcp.slotBytes) 16 +
+          clobberBytes rf.saved := rfl
+    rw [hfs, e]
+    exact Nat.le_trans (Nat.le_trans (Nat.le_add_right _ _) (le_alignTo16 _))
+      (Nat.le_add_right _ _)
   have hsp := hres.1
   have hfit := h.fits
   have hx : (spv s + BitVec.ofNat 64 off + BitVec.ofNat 64 j -

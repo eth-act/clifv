@@ -1,3 +1,4 @@
+import FV.Backend.Proof.FrameLines
 import FV.E2E.EmitPreOk
 import FV.Backend.Proof.RelaxLayout
 import FV.E2E.EmitCondsDefs
@@ -665,35 +666,31 @@ theorem nearOkB_ins {i : Insn} {tr : Option Clif.TrapCode} (h : i.pcRelSpec? = n
   have := (plain_line (tr := tr) h).2.2
   cases i <;> simp_all [Line.nearOkB, Line.bOk, Insn.pcRelSpec?]
 
-theorem prologue_nearOkB (n : Nat) : ∀ ln ∈ prologueLines n, ln.nearOkB = true := by
+theorem prologue_nearOkB (saves : List Reg) (size : Nat) :
+    ∀ ln ∈ prologueLines saves size, ln.nearOkB = true := by
   intro ln hl
-  unfold prologueLines at hl
-  simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hl
-  rcases hl with (rfl | rfl) | hl
+  simp only [prologueLines, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hl
+  rcases hl with (((rfl | rfl) | hl) | hl) | hl
   · exact nearOkB_ins rfl
   · exact nearOkB_ins rfl
-  · split at hl
-    · simp at hl
-    · split at hl
-      · simp at hl; subst hl; exact nearOkB_ins rfl
-      · simp only [List.mem_append, List.mem_singleton] at hl
-        rcases hl with hl | rfl
-        · exact loadConst64_nearOkB _ _ ln hl
-        · exact nearOkB_ins rfl
+  · obtain ⟨i, rfl, a, b, rfl | rfl⟩ := mem_pushLines hl <;> exact nearOkB_ins rfl
+  · obtain ⟨i, rfl, a, b, rfl | rfl⟩ := mem_pushLines hl <;> exact nearOkB_ins rfl
+  · rcases mem_spAdjLines hl with ⟨i, -, rfl⟩ | hl | rfl
+    · exact nearOkB_ins rfl
+    · exact loadConst64_nearOkB _ _ ln hl
+    · exact nearOkB_ins rfl
 
-theorem epilogue_nearOkB (n : Nat) : ∀ ln ∈ epilogueLines n, ln.nearOkB = true := by
+theorem epilogue_nearOkB (saves : List Reg) (size : Nat) :
+    ∀ ln ∈ epilogueLines saves size, ln.nearOkB = true := by
   intro ln hl
-  unfold epilogueLines at hl
-  simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hl
-  rcases hl with hl | (rfl | rfl)
-  · split at hl
-    · simp at hl
-    · split at hl
-      · simp at hl; subst hl; exact nearOkB_ins rfl
-      · simp only [List.mem_append, List.mem_singleton] at hl
-        rcases hl with hl | rfl
-        · exact loadConst64_nearOkB _ _ ln hl
-        · exact nearOkB_ins rfl
+  simp only [epilogueLines, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hl
+  rcases hl with ((hl | hl) | hl) | rfl | rfl
+  · rcases mem_spAdjLines hl with ⟨i, -, rfl⟩ | hl | rfl
+    · exact nearOkB_ins rfl
+    · exact loadConst64_nearOkB _ _ ln hl
+    · exact nearOkB_ins rfl
+  · obtain ⟨i, rfl, a, b, rfl | rfl⟩ := mem_popLines hl <;> exact nearOkB_ins rfl
+  · obtain ⟨i, rfl, a, b, rfl | rfl⟩ := mem_popLines hl <;> exact nearOkB_ins rfl
   · exact nearOkB_ins rfl
   · exact nearOkB_ins rfl
 
@@ -728,13 +725,13 @@ theorem codeLinesE_good {c : FnCtx} {af : AFunc} :
             simp only [ainstLines, pure, Except.pure, Except.ok.injEq] at h1
             subst h1
             split
-            · exact good_of_nearOkB (prologue_nearOkB _)
+            · exact good_of_nearOkB (prologue_nearOkB _ _)
             · exact ⟨.nil, by simp⟩
           | epilogueRet =>
             simp only [ainstLines, pure, Except.pure, Except.ok.injEq] at h1
             subst h1
             split
-            · exact good_of_nearOkB (epilogue_nearOkB _)
+            · exact good_of_nearOkB (epilogue_nearOkB _ _)
             · exact good_of_nearOkB (by simp [Line.nearOkB, Line.nearTgt, Line.bOk, Insn.pcRelSpec?])
         exact ⟨g1.1.append g2, by
           intro ln hl
@@ -848,6 +845,8 @@ theorem moveInsts_noAlways {fr : RAFrame} {src dst : Loc} {l : List AInst}
   unfold RAFrame.moveInsts at h
   simp only [bind, Except.bind, pure, Except.pure] at h
   split at h
+  · cases h; cases hm
+  · cases h; cases hm
   · split at h
     · cases h
       simp only [List.mem_singleton, AInst.inst.injEq] at hm

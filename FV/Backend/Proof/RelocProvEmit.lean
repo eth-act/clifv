@@ -1,3 +1,4 @@
+import FV.Backend.Proof.FrameLines
 import FV.Backend.Proof.RelocProvDefs
 import FV.E2E.EmitPreOk
 import FV.E2E.PairLines
@@ -149,6 +150,8 @@ theorem moveInsts_refsOk {f : Clif.Function} {fr : RAFrame} {src dst : Loc} {l :
   unfold RAFrame.moveInsts at h
   simp only [bind, Except.bind, pure, Except.pure] at h
   split at h
+  · cases h; cases hm
+  · cases h; cases hm
   · split at h
     · cases h
       simp only [List.mem_singleton, AInst.inst.injEq] at hm
@@ -359,33 +362,33 @@ theorem lines_ok {f : Clif.Function} {c : FnCtx} {m : MInst} {ps ps' : PState} {
 
 /-! ## Emission -/
 
-theorem prologueLines_free (size : Nat) : ∀ ln ∈ prologueLines size, refFreeL ln = true := by
-  intro ln hln
-  simp only [prologueLines, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hln
-  rcases hln with (rfl | rfl) | hln
-  · rfl
-  · rfl
-  · split at hln
-    · simp at hln
-    · split at hln
-      · simp at hln; subst hln; rfl
-      · rcases List.mem_append.1 hln with h1 | h1
-        · exact loadConst64_free _ _ _ h1
-        · simp at h1; subst h1; rfl
+theorem prologueLines_free (saves : List Reg) (size : Nat) :
+    ∀ ln ∈ prologueLines saves size, refFreeL ln = true := by
+  intro ln hl
+  simp only [prologueLines, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hl
+  rcases hl with (((rfl | rfl) | hl) | hl) | hl
+  · exact rfl
+  · exact rfl
+  · obtain ⟨i, rfl, a, b, rfl | rfl⟩ := mem_pushLines hl <;> exact rfl
+  · obtain ⟨i, rfl, a, b, rfl | rfl⟩ := mem_pushLines hl <;> exact rfl
+  · rcases mem_spAdjLines hl with ⟨i, -, rfl⟩ | hl | rfl
+    · exact rfl
+    · exact loadConst64_free _ _ _ hl
+    · exact rfl
 
-theorem epilogueLines_free (size : Nat) : ∀ ln ∈ epilogueLines size, refFreeL ln = true := by
-  intro ln hln
-  simp only [epilogueLines, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hln
-  rcases hln with hln | (rfl | rfl)
-  · split at hln
-    · simp at hln
-    · split at hln
-      · simp at hln; subst hln; rfl
-      · rcases List.mem_append.1 hln with h1 | h1
-        · exact loadConst64_free _ _ _ h1
-        · simp at h1; subst h1; rfl
-  · rfl
-  · rfl
+theorem epilogueLines_free (saves : List Reg) (size : Nat) :
+    ∀ ln ∈ epilogueLines saves size, refFreeL ln = true := by
+  intro ln hl
+  simp only [epilogueLines, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hl
+  rcases hl with ((hl | hl) | hl) | rfl | rfl
+  · rcases mem_spAdjLines hl with ⟨i, -, rfl⟩ | hl | rfl
+    · exact rfl
+    · exact loadConst64_free _ _ _ hl
+    · exact rfl
+  · obtain ⟨i, rfl, a, b, rfl | rfl⟩ := mem_popLines hl <;> exact rfl
+  · obtain ⟨i, rfl, a, b, rfl | rfl⟩ := mem_popLines hl <;> exact rfl
+  · exact rfl
+  · exact rfl
 
 /-- `f`'s allocated code: every instruction has its references in `f`. -/
 def CodeOk (f : Clif.Function) (code : List AInst) : Prop := ∀ m, AInst.inst m ∈ code → RefsOk f m
@@ -399,13 +402,13 @@ theorem ainstLines_ok {f : Clif.Function} {c : FnCtx} {af : AFunc} {a : AInst} {
     simp only [ainstLines, pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at h
     obtain ⟨rfl, -⟩ := h
     split
-    · exact lnOk_of_all_free (prologueLines_free _)
+    · exact lnOk_of_all_free (prologueLines_free _ _)
     · simp
   | epilogueRet =>
     simp only [ainstLines, pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at h
     obtain ⟨rfl, -⟩ := h
     split
-    · exact lnOk_of_all_free (epilogueLines_free _)
+    · exact lnOk_of_all_free (epilogueLines_free _ _)
     · intro ln hln; simp only [List.mem_singleton] at hln; subst hln; exact trivial
 
 theorem codeLinesE_ok {f : Clif.Function} {c : FnCtx} {af : AFunc} :
