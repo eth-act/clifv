@@ -128,10 +128,10 @@ theorem progC_ne : RC.fb.program RC.base ≠ pL := fun h => progC_min (by rw [h]
 
 theorem x0C : regVal RC.s0 (.x 0) = 0 := by native_decide
 
-theorem spC : E2E.spv RC.s0 = 0x7000#64 ∧ frameDrop RC.af = 240 ∧
-    frameDrop (act vcpL rfL).af = 240 ∧ (act vcpL rfL).fb.words.size ≤ 0x4000 ∧
-    RC.fb.words.size ≤ 0x4000 ∧ RC.fr.size ≤ 240 ∧ (act vcpL rfL).fr.size ≤ 240 ∧
-    RC.af.frameSize = 224 ∧ (act vcpL rfL).af.frameSize = 224 := by
+theorem spC : E2E.spv RC.s0 = 0x7000#64 ∧ frameDrop RC.af = 176 ∧
+    frameDrop (act vcpL rfL).af = 176 ∧ (act vcpL rfL).fb.words.size ≤ 0x4000 ∧
+    RC.fb.words.size ≤ 0x4000 ∧ RC.fr.size ≤ 176 ∧ (act vcpL rfL).fr.size ≤ 176 ∧
+    RC.af.frameSize = 160 ∧ (act vcpL rfL).af.frameSize = 160 := by
   native_decide
 
 theorem scopeLB :
