@@ -11,8 +11,11 @@ in the environment without externs.
 
 * `wf_RA5`, `codeIn_RA5`, `f5_ge`: the activation is well formed, keeps the linked code, and its
   addresses outside the world are at or above `0x6D10`;
-* `Fam`, **`reach_inv`**: the CLIF states reachable from `csO` (up to their bytes) are the caller at
-  its call, `atomic_load` at its entry, `atomic_load` returning, the caller returning, or returned;
+* `CallShape`, `FamG`, `reach_invG`, `depthG`, `partsOkG`: the generic reachability argument for a
+  caller at a call of a one-statement callee (shared with `WitnessRmw`);
+* `Fam`, **`reach_inv`** (`shape_O`): the CLIF states reachable from `csO` (up to their bytes) are
+  the caller at its call, `atomic_load` at its entry, `atomic_load` returning, the caller
+  returning, or returned;
   **`partsOk_O`** (the one access is `atomic_load`'s 8 bytes at `0`, `LocO`), **`depth_O`**;
 * **`ent_O`**: the activation's `Ent` (`Live`, and `ChainP` by `chainP_entry`);
 * **`realizes_call_fullT`**: `realizes_linked_calls_2` with every premise discharged but the run.
@@ -167,44 +170,23 @@ theorem linv_O : Clif.LInv pCL csO :=
 theorem func_f : pCL.func? "f" = some fC := by
   simp [Clif.Program.func?, pCL, name_fC]
 
-/-! ## The reachable CLIF states -/
+/-! ## The reachable CLIF states, generically
+
+A caller state `c0` whose block is one `call` of a program function entered at a frame `eF` that
+runs one statement and returns (`CallShape`): the states reachable from `c0` (up to their bytes)
+are the caller at its call, the callee at its entry, the callee returning, the caller returning
+(`FamG`, `reach_invG`), with at most one caller (`depthG`) and, if the callee's statement
+accesses 8 bytes of `memL`, every access on `LocO` (`partsOkG`). `csO` here and
+`WitnessRmw.csO` are instances. -/
 
 /-- The allocations of `memL`. -/
 def AllocsIn (m : Clif.Mem) : Prop := ∀ x ∈ m.allocs, x ∈ memL.allocs
 
-/-- **The CLIF states reachable from `csO`**, up to their bytes (module doc). -/
-def Fam (s : Clif.State) : Prop :=
-  (s.frame = csC.frame ∧ s.callers = [] ∧ AllocsIn s.mem) ∨
-  (s.frame = csL.frame ∧ s.callers = extC ∧ AllocsIn s.mem) ∨
-  (∃ r, s.frame = { csL.frame with regs := r, body := [] } ∧ s.callers = extC) ∨
-  (∃ r, s.frame = { csC.frame with regs := r, body := [] } ∧ s.callers = [])
+/-- The one location: the 8 bytes at `0` (`atomic_load`'s access). -/
+def LocO : Nat → Nat → Prop := fun a n => a = 0 ∧ n = 8
 
-/-- The reachable thread states. -/
-def RInv : TState → Prop
-  | .run s => Fam s
-  | .ret _ => True
-
-theorem fam_congr {s s' : Clif.State}
-    (h : withBytes s (fun _ => none) = withBytes s' (fun _ => none)) (hs : Fam s) : Fam s' := by
-  have e1 : s.frame = s'.frame := congrArg (·.frame) h
-  have e2 : s.callers = s'.callers := congrArg (·.callers) h
-  have e3 : s.mem.allocs = s'.mem.allocs := congrArg (·.mem.allocs) h
-  unfold Fam AllocsIn at hs ⊢
-  rw [← e1, ← e2, ← e3]
-  exact hs
-
-theorem rinv_strip {t t' : TState} (h : strip t = strip t') (ht : RInv t) : RInv t' := by
-  cases t with
-  | ret v =>
-    cases t' with
-    | ret => trivial
-    | run => cases h
-  | run s =>
-    cases t' with
-    | ret => trivial
-    | run s' =>
-      simp only [strip, TState.run.injEq] at h
-      exact fam_congr h ht
+theorem partDisj_O : PartDisj LocO := fun a n b m ha hb _ _ => by
+  simp only [LocO] at ha hb; omega
 
 theorem enterSlots_nil {f : Clif.Function} (hf : f.slots = []) (m : Clif.Mem) :
     (Clif.enterSlots f m).1 = [] ∧ (Clif.enterSlots f m).2.allocs = m.allocs := by
@@ -249,40 +231,114 @@ theorem stepTerm_ret_next {env : Clif.Env} {p : Clif.Program} {s : Clif.State}
   | trap c => intro h; cases h
   | stuck m => intro h; cases h
 
-/-- **A step from a reachable state to a running state stays reachable** (module doc). -/
-theorem next_fam (env : Clif.Env) {s : Clif.State} (hs : Fam s) (B : Bytes) {s' : Clif.State}
-    (hst : Clif.step env pCL (withBytes s B) = .next s') : Fam s' := by
+theorem evShape_congr {s s' : Clif.State} (h : s.frame.body = s'.frame.body) :
+    evShape s = evShape s' := by
+  unfold evShape; rw [h]
+
+theorem evShape_nil {s : Clif.State} (h : s.frame.body = []) : evShape s = [[]] := by
+  unfold evShape; rw [h]
+
+/-- **A caller state at a call of a one-statement callee** in `p`: `c0` (no caller, allocations
+of `memL`) calls, with its block's one statement, a function of `p` without slots, entered at
+`eF` below the suspended caller `ext`; `eF`'s block is one statement other than a call, and both
+blocks return. -/
+structure CallShape (p : Clif.Program) (c0 : Clif.State) (eF : Clif.Frame)
+    (ext : List (Clif.Frame × List Clif.ValueId)) : Prop where
+  init : c0.callers = [] ∧ AllocsIn c0.mem
+  call : ∃ (rs : List Clif.ValueId) (fn : Clif.FnRef) (args : List Clif.ValueId)
+      (ex : Clif.ExtFunc) (vals : List Clif.Val) (b : Clif.Block) (regs : Clif.Regs),
+    c0.frame.body = [{ results := rs, inst := .call fn args }] ∧
+    ext = [({ c0.frame with body := [] }, rs)] ∧
+    (do
+      let ext ← Clif.Res.ofOption s!"unknown function reference fn{fn}" (c0.frame.func.extern? fn)
+      let vals ← c0.frame.getMany args
+      Clif.checkTys s!"arguments of call to %{ext.name}" vals (Clif.AbiParam.tys ext.sig.params)
+      pure (ext, vals) : Clif.Res (Clif.ExtFunc × List Clif.Val)) = .ok (ex, vals) ∧
+    p.func? ex.name = some eF.func ∧
+    (Clif.AbiParam.tys eF.func.sig.params == Clif.AbiParam.tys ex.sig.params &&
+      Clif.AbiParam.tys eF.func.sig.returns == Clif.AbiParam.tys ex.sig.returns) = true ∧
+    eF.func.entry? = some b ∧ vals.map (·.ty) = Clif.AbiParam.tys eF.func.sig.params ∧
+    vals.map (·.ty) = b.params.map (·.2) ∧
+    Clif.Regs.empty.setMany (b.params.map (·.1)) vals = some regs ∧ eF.func.slots = [] ∧
+    eF = ⟨eF.func, regs, [], b.body, b.term⟩
+  body : ∃ st : Clif.Stmt, eF.body = [st] ∧ (∀ fn args, st.inst ≠ .call fn args) ∧
+    ∀ sig callee args, st.inst ≠ .callIndirect sig callee args
+  retE : ∃ xs, eF.term = .ret xs
+  retC : ∃ ys, c0.frame.term = .ret ys
+
+/-- **The CLIF states reachable from a `CallShape`'s caller** (at `cF`), up to their bytes. -/
+def FamG (cF eF : Clif.Frame) (ext : List (Clif.Frame × List Clif.ValueId)) (s : Clif.State) :
+    Prop :=
+  (s.frame = cF ∧ s.callers = [] ∧ AllocsIn s.mem) ∨
+  (s.frame = eF ∧ s.callers = ext ∧ AllocsIn s.mem) ∨
+  (∃ r, s.frame = { eF with regs := r, body := [] } ∧ s.callers = ext) ∨
+  (∃ r, s.frame = { cF with regs := r, body := [] } ∧ s.callers = [])
+
+/-- The thread states running in `F` or returned. -/
+def RInvG (F : Clif.State → Prop) : TState → Prop
+  | .run s => F s
+  | .ret _ => True
+
+theorem famG_congr {cF eF : Clif.Frame} {ext : List (Clif.Frame × List Clif.ValueId)}
+    {s s' : Clif.State} (h : withBytes s (fun _ => none) = withBytes s' (fun _ => none))
+    (hs : FamG cF eF ext s) : FamG cF eF ext s' := by
+  have e1 : s.frame = s'.frame := congrArg (·.frame) h
+  have e2 : s.callers = s'.callers := congrArg (·.callers) h
+  have e3 : s.mem.allocs = s'.mem.allocs := congrArg (·.mem.allocs) h
+  unfold FamG AllocsIn at hs ⊢
+  rw [← e1, ← e2, ← e3]
+  exact hs
+
+theorem rinvG_strip {F : Clif.State → Prop}
+    (hF : ∀ s s', withBytes s (fun _ => none) = withBytes s' (fun _ => none) → F s → F s')
+    {t t' : TState} (h : strip t = strip t') (ht : RInvG F t) : RInvG F t' :=
+  match t, t', h, ht with
+  | _, .ret _, _, _ => trivial
+  | .ret _, .run _, h, _ => by cases h
+  | .run s, .run s', h, ht => hF s s' (TState.run.inj h) ht
+
+section
+variable {p : Clif.Program} {c0 : Clif.State} {eF : Clif.Frame}
+  {ext : List (Clif.Frame × List Clif.ValueId)}
+
+/-- **A step from a reachable state to a running state stays reachable.** -/
+theorem next_famG (H : CallShape p c0 eF ext) (env : Clif.Env) {s : Clif.State}
+    (hs : FamG c0.frame eF ext s) (B : Bytes) {s' : Clif.State}
+    (hst : Clif.step env p (withBytes s B) = .next s') : FamG c0.frame eF ext s' := by
+  obtain ⟨rs, fn, args, ex, vals, b, regsE, hb, hext, hpre, hfn, hsig, hent, h1, h2, hr, hsl,
+    heF⟩ := H.call
+  obtain ⟨st, heb, hnc, hni⟩ := H.body
+  obtain ⟨xs, hxs⟩ := H.retE
+  obtain ⟨ys, hys⟩ := H.retC
   rcases hs with ⟨hf, hc, ha⟩ | ⟨hf, hc, ha⟩ | ⟨r, hf, hc⟩ | ⟨r, hf, hc⟩
-  · -- the caller's call enters `atomic_load`
-    obtain ⟨hb, hfn, hsig, hent, h1, h2, hsl⟩ := clifC
-    have hbody : (withBytes s B).frame.body = [{ results := [1], inst := .call 0 [0] }] := by
+  · -- the caller's call enters the callee
+    have hbody : (withBytes s B).frame.body = [{ results := rs, inst := .call fn args }] := by
       show s.frame.body = _; rw [hf]; exact hb
-    rw [Clif.step_call env pCL _ [] [1] 0 [0] hbody] at hst
+    rw [Clif.step_call env p _ [] rs fn args hbody] at hst
     unfold Clif.stepCall at hst
-    simp only [show (withBytes s B).frame = csC.frame from hf] at hst
-    rw [preC] at hst
+    simp only [show (withBytes s B).frame = c0.frame from hf] at hst
+    rw [hpre] at hst
     simp only [Clif.StepResult.ofRes_ok, hfn, hsig, ite_true] at hst
-    rw [enterFunc_of' hent h1 h2 regsL_eq] at hst
+    rw [enterFunc_of' hent h1 h2 hr] at hst
     simp only [Clif.StepResult.ofRes_ok, Clif.StepResult.next.injEq] at hst
     subst hst
     obtain ⟨e1, e2⟩ := enterSlots_nil hsl (withBytes s B).mem
     refine .inr (.inl ⟨?_, ?_, ?_⟩)
-    · show (⟨fL, regsL, (Clif.enterSlots fL (withBytes s B).mem).1, B0L.body, B0L.term⟩ :
-        Clif.Frame) = csL.frame
-      rw [e1]; rfl
-    · show _ :: s.callers = extC
-      rw [hc]; rfl
+    · show (⟨eF.func, regsE, (Clif.enterSlots eF.func (withBytes s B).mem).1, b.body, b.term⟩ :
+        Clif.Frame) = eF
+      rw [e1]; exact heF.symm
+    · show _ :: s.callers = ext
+      rw [hc, hext]
     · intro x hx
       exact ha x (e2 ▸ hx)
-  · -- `atomic_load`'s load
-    have hbody : (withBytes s B).frame.body = [{ results := [1], inst := .atomicLoad .i64 {} 0 }] := by
-      show s.frame.body = _; rw [hf]; exact checksO.2.2.2.2.2.1
-    rw [Clif.step_inst env pCL _ _ [] hbody (fun _ _ h => by cases h) (fun _ _ _ h => by cases h)]
-      at hst
+  · -- the callee's statement
+    have hbody : (withBytes s B).frame.body = [st] := by
+      show s.frame.body = _; rw [hf]; exact heb
+    rw [Clif.step_inst env p _ _ [] hbody hnc hni] at hst
     unfold Clif.StepResult.ofRes at hst
     split at hst
     · rename_i a _
-      obtain ⟨vals, mem⟩ := a
+      obtain ⟨vs, m⟩ := a
       simp only [Clif.continueWith] at hst
       split at hst
       · rename_i regs _
@@ -291,97 +347,87 @@ theorem next_fam (env : Clif.Env) {s : Clif.State} (hs : Fam s) (B : Bytes) {s' 
       · cases hst
     · cases hst
     · cases hst
-  · -- `atomic_load` returns into the caller
-    have hb : (withBytes s B).frame.body = [] := by show s.frame.body = []; rw [hf]
-    rw [Clif.step_term env pCL _ hb] at hst
-    have ht : (withBytes s B).frame.term = .ret [1] := by
-      show s.frame.term = _; rw [hf]; exact checksO.2.2.2.2.2.2.1
+  · -- the callee returns into the caller
+    have hb' : (withBytes s B).frame.body = [] := by show s.frame.body = []; rw [hf]
+    rw [Clif.step_term env p _ hb'] at hst
+    have ht : (withBytes s B).frame.term = .ret xs := by
+      show s.frame.term = _; rw [hf]; exact hxs
     rw [ht] at hst
-    obtain ⟨regs, h1, h2⟩ := stepTerm_ret_next (s := withBytes s B)
-      (c := { csC.frame with body := [] }) (rs := [1]) (cs := []) hc hst
-    exact .inr (.inr (.inr ⟨regs, h1, h2⟩))
+    obtain ⟨regs, e1, e2⟩ := stepTerm_ret_next (s := withBytes s B)
+      (c := { c0.frame with body := [] }) (rs := rs) (cs := []) (hc.trans hext) hst
+    exact .inr (.inr (.inr ⟨regs, e1, e2⟩))
   · -- the caller returns: no next state
-    have hb : (withBytes s B).frame.body = [] := by show s.frame.body = []; rw [hf]
-    rw [Clif.step_term env pCL _ hb] at hst
-    have ht : (withBytes s B).frame.term = .ret [1] := by
-      show s.frame.term = _; rw [hf]; exact checksO.2.2.2.2.2.2.2.1
+    have hb' : (withBytes s B).frame.body = [] := by show s.frame.body = []; rw [hf]
+    rw [Clif.step_term env p _ hb'] at hst
+    have ht : (withBytes s B).frame.term = .ret ys := by
+      show s.frame.term = _; rw [hf]; exact hys
     rw [ht] at hst
-    exact absurd hst ((stepTerm_ret (env := env) (p := pCL) (s := withBytes s B) (xs := [1]) hc).1 s')
+    exact absurd hst ((stepTerm_ret (env := env) (p := p) (s := withBytes s B) (xs := ys) hc).1 s')
 
 /-- **A step from a reachable state stays reachable.** -/
-theorem step_fam (env : Clif.Env) {s : Clif.State} (hs : Fam s) (B : Bytes) {t'' : TState}
-    {B' : Bytes} (h : res (Clif.step env pCL (withBytes s B)) = some (t'', B')) : RInv t'' := by
+theorem step_famG (H : CallShape p c0 eF ext) (env : Clif.Env) {s : Clif.State}
+    (hs : FamG c0.frame eF ext s) (B : Bytes) {t'' : TState} {B' : Bytes}
+    (h : res (Clif.step env p (withBytes s B)) = some (t'', B')) :
+    RInvG (FamG c0.frame eF ext) t'' := by
   rcases res_some h with ⟨s', hst, rfl⟩ | ⟨v, rfl⟩
-  · exact next_fam env hs B hst
+  · exact next_famG H env hs B hst
   · trivial
 
-/-- **The thread states reachable from `csO`** (module doc). -/
-theorem reach_inv {env : Clif.Env} {t : TState} (h : RReach env pCL (.run csO) t) : RInv t := by
+/-- **The thread states reachable from a `CallShape`'s caller.** -/
+theorem reach_invG (H : CallShape p c0 eF ext) {env : Clif.Env} {t : TState}
+    (h : RReach env p (.run c0) t) : RInvG (FamG c0.frame eF ext) t := by
   induction h with
-  | base => exact Or.inl ⟨rfl, rfl, fun _ hx => hx⟩
+  | base => exact Or.inl ⟨rfl, H.init⟩
   | @step t evs t' _ hs ih =>
     cases t with
     | ret v => exact False.elim hs
     | run s =>
       obtain ⟨-, ⟨B, hB⟩, hf⟩ := hs
       obtain ⟨t'', h1, h2⟩ := hf B hB
-      exact rinv_strip h2 (step_fam env ih B h1)
+      exact rinvG_strip (fun _ _ => famG_congr) h2 (step_famG H env ih B h1)
   | @stepS t evs t' _ hs ih =>
     cases t with
     | ret v => exact False.elim hs
     | run s =>
       obtain ⟨-, ⟨B, hB⟩, -, hf⟩ := hs
       obtain ⟨t'', h1, h2⟩ := hf B hB
-      exact rinv_strip h2 (step_fam env ih _ h1)
-  | strip _ he ih => exact rinv_strip he ih
+      exact rinvG_strip (fun _ _ => famG_congr) h2 (step_famG H env ih _ h1)
+  | strip _ he ih => exact rinvG_strip (fun _ _ => famG_congr) he ih
 
-/-- **At most one caller** below every reachable state. -/
-theorem depth_O {env : Clif.Env} :
-    ∀ S, RReach env pCL (.run csO) (.run S) → S.callers.length < 2 := by
+/-- **At most one caller** below every state reachable from a `CallShape`'s caller. -/
+theorem depthG (H : CallShape p c0 eF ext) {env : Clif.Env} :
+    ∀ S, RReach env p (.run c0) (.run S) → S.callers.length < 2 := by
   intro S h
-  have hI : Fam S := reach_inv h
-  rcases hI with ⟨-, hc, -⟩ | ⟨-, hc, -⟩ | ⟨_, -, hc⟩ | ⟨_, -, hc⟩ <;> rw [hc] <;> simp [extC]
+  have hI : FamG c0.frame eF ext S := reach_invG H h
+  obtain ⟨_, _, _, _, _, _, _, -, hext, -⟩ := H.call
+  subst hext
+  rcases hI with ⟨-, hc, -⟩ | ⟨-, hc, -⟩ | ⟨_, -, hc⟩ | ⟨_, -, hc⟩ <;> simp [hc]
 
-/-- The one access: `atomic_load`'s 8 bytes at `0`. -/
-def LocO : Nat → Nat → Prop := fun a n => a = 0 ∧ n = 8
-
-theorem partDisj_O : PartDisj LocO := fun a n b m ha hb _ _ => by
-  simp only [LocO] at ha hb; omega
-
-theorem evShape_congr {s s' : Clif.State} (h : s.frame.body = s'.frame.body) :
-    evShape s = evShape s' := by
-  unfold evShape; rw [h]
-
-theorem evShape_csC : evShape csC = [[]] := by
-  unfold evShape; rw [show csC.frame.body = B0C.body from rfl, clifC.1]
-
-theorem evShape_nil {s : Clif.State} (h : s.frame.body = []) : evShape s = [[]] := by
-  unfold evShape; rw [h]
-
-/-- **The accesses from the reachable states lie on `LocO`** (module doc). -/
-theorem partsOk_O {env : Clif.Env} : PartsOk env pCL (.run csO) LocO := by
+/-- **The accesses from the states reachable from a `CallShape`'s caller lie on `LocO`**, if
+the callee's statement (`evShape eS = [l]`, `eS` at `eF`) accesses 8 bytes. -/
+theorem partsOkG (H : CallShape p c0 eF ext) {env : Clif.Env} {eS : Clif.State}
+    {l : List (SKind × Nat)} (heS : eS.frame = eF) (hsh : evShape eS = [l])
+    (hl : ∀ x ∈ l, x.2 = 8 ∧ x.1.dir ≠ .F) : PartsOk env p (.run c0) LocO := by
   intro t evs t' hR hs e he
   cases t with
   | ret v => exact False.elim hs
   | run s =>
-  have hI : Fam s := reach_inv hR
+  have hI : FamG c0.frame eF ext s := reach_invG H hR
   have hv0 := CallSegGeo.cstep_reads_valid hs
-  obtain ⟨⟨hsh, hd⟩, -, -⟩ := hs
+  obtain ⟨⟨hsh', hd⟩, -, -⟩ := hs
   have hnil : evShape s = [[]] → False := fun h => by
-    rw [h, List.mem_singleton, List.map_eq_nil_iff] at hsh
-    subst hsh; cases he
+    rw [h, List.mem_singleton, List.map_eq_nil_iff] at hsh'
+    subst hsh'; cases he
+  obtain ⟨_, _, _, _, _, _, _, hb, -⟩ := H.call
   rcases hI with ⟨hf, -, -⟩ | ⟨hf, -, ha⟩ | ⟨r, hf, -⟩ | ⟨r, hf, -⟩
-  · exact (hnil ((evShape_congr (by rw [hf])).trans evShape_csC)).elim
-  · rw [(evShape_congr (s' := csL) (by rw [hf])).trans shapeL1, List.mem_singleton] at hsh
-    have hkn : (e.k, e.n) = (.scR, 8) := by
-      have := List.mem_map_of_mem (f := fun e : Ev SKind BVal => (e.k, e.n)) he
-      rw [hsh, List.mem_singleton] at this
-      exact this
-    simp only [Prod.mk.injEq] at hkn
-    obtain ⟨hk, hn⟩ := hkn
-    have hdir : e.dir = .R := by rw [(hd e he).1, hk]; rfl
+  · exact (hnil (by unfold evShape; rw [hf, hb])).elim
+  · rw [(evShape_congr (s' := eS) (by rw [hf, heS])).trans hsh, List.mem_singleton] at hsh'
+    have hm := List.mem_map_of_mem (f := fun e : Ev SKind BVal => (e.k, e.n)) he
+    rw [hsh'] at hm
+    have hn : e.n = 8 := (hl _ hm).1
+    have hdir : e.dir ≠ .F := by rw [(hd e he).1]; exact (hl _ hm).2
     refine ⟨fun _ => ⟨?_, hn⟩, fun _ => by omega⟩
-    have hv := hv0 e he (by rw [hdir]; decide)
+    have hv := hv0 e he hdir
     simp only [Clif.Mem.valid, List.any_eq_true] at hv
     obtain ⟨y, hy, hcy⟩ := hv
     have hy' := ha y hy
@@ -391,6 +437,56 @@ theorem partsOk_O {env : Clif.Env} : PartsOk env pCL (.run csO) LocO := by
     omega
   · exact (hnil (evShape_nil (by rw [hf]))).elim
   · exact (hnil (evShape_nil (by rw [hf]))).elim
+
+end
+
+/-! ## The reachable CLIF states of `csO` -/
+
+/-- `csO` calls `atomic_load`: a load, then both return. -/
+theorem shape_O : CallShape pCL csO csL.frame extC := by
+  obtain ⟨hb, hfn, hsig, hent, h1, h2, hsl⟩ := clifC
+  exact ⟨⟨rfl, fun _ hx => hx⟩, ⟨[1], 0, [0], extF, argsL, B0L, regsL, hb, rfl, preC, hfn, hsig,
+    hent, h1, h2, regsL_eq, hsl, rfl⟩, ⟨_, checksO.2.2.2.2.2.1, (fun _ _ h => by cases h),
+    (fun _ _ _ h => by cases h)⟩, ⟨_, checksO.2.2.2.2.2.2.1⟩, ⟨_, checksO.2.2.2.2.2.2.2.1⟩⟩
+
+/-- **The CLIF states reachable from `csO`**, up to their bytes (module doc). -/
+def Fam (s : Clif.State) : Prop := FamG csC.frame csL.frame extC s
+
+/-- The reachable thread states. -/
+def RInv : TState → Prop := RInvG Fam
+
+theorem fam_congr {s s' : Clif.State}
+    (h : withBytes s (fun _ => none) = withBytes s' (fun _ => none)) (hs : Fam s) : Fam s' :=
+  famG_congr h hs
+
+theorem rinv_strip {t t' : TState} (h : strip t = strip t') (ht : RInv t) : RInv t' :=
+  rinvG_strip (fun _ _ => fam_congr) h ht
+
+/-- **A step from a reachable state to a running state stays reachable** (module doc). -/
+theorem next_fam (env : Clif.Env) {s : Clif.State} (hs : Fam s) (B : Bytes) {s' : Clif.State}
+    (hst : Clif.step env pCL (withBytes s B) = .next s') : Fam s' :=
+  next_famG shape_O env hs B hst
+
+/-- **A step from a reachable state stays reachable.** -/
+theorem step_fam (env : Clif.Env) {s : Clif.State} (hs : Fam s) (B : Bytes) {t'' : TState}
+    {B' : Bytes} (h : res (Clif.step env pCL (withBytes s B)) = some (t'', B')) : RInv t'' :=
+  step_famG shape_O env hs B h
+
+/-- **The thread states reachable from `csO`** (module doc). -/
+theorem reach_inv {env : Clif.Env} {t : TState} (h : RReach env pCL (.run csO) t) : RInv t :=
+  reach_invG shape_O h
+
+/-- **At most one caller** below every reachable state. -/
+theorem depth_O {env : Clif.Env} :
+    ∀ S, RReach env pCL (.run csO) (.run S) → S.callers.length < 2 :=
+  depthG shape_O
+
+theorem evShape_csC : evShape csC = [[]] := by
+  unfold evShape; rw [show csC.frame.body = B0C.body from rfl, clifC.1]
+
+/-- **The accesses from the reachable states lie on `LocO`** (module doc). -/
+theorem partsOk_O {env : Clif.Env} : PartsOk env pCL (.run csO) LocO :=
+  partsOkG shape_O (eS := csL) rfl shapeL1 (by decide)
 
 /-! ## The environment and the activation's entry -/
 

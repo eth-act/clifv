@@ -13,7 +13,8 @@ compiled caller of `CallRmwData` (`fC`, `v2 = call fn0(v0, v1)`) and the compile
   static premises of the link (as `CallSegOkGT.Witness` for `link2`);
 * `RAc`: the caller's root activation with a callee budget of `0x240` bytes (two frames of `MxR`);
   `csO`: its CLIF entry state with the slot-placement oracle at its body `sp`;
-* `Fam`, **`reach_inv`**: the CLIF states reachable from `csO` (up to their bytes);
+* `Fam`, **`reach_inv`**: the CLIF states reachable from `csO` (up to their bytes), an instance
+  (`shape_O`) of `WitnessFull.CallShape`;
   **`partsOk_O`** (the `atomic_rmw`'s read and write: the 8 bytes at `0`, `LocO`), `depth_O`;
 * **`ent_O`**: the activation's `Ent`;
 * **`realizes_call_rmwT`**: `realizes_linked_calls` with one thread, every premise discharged
@@ -551,139 +552,50 @@ theorem linv_O : Clif.LInv pCR csO :=
 theorem func_f : pCR.func? "f" = some fC := by
   simp [Clif.Program.func?, pCR, name_fC]
 
-/-! ## The reachable CLIF states -/
+/-! ## The reachable CLIF states (`WitnessFull.CallShape`) -/
 
 /-- The allocations of `memL`. -/
 def AllocsIn (m : Clif.Mem) : Prop := ∀ x ∈ m.allocs, x ∈ memL.allocs
 
+/-- `csO` calls `atomic_rmw`: a read-modify-write, then both return. -/
+theorem shape_O : WitnessFull.CallShape pCR csO csR.frame extC := by
+  obtain ⟨hb, hfn, hsig, hent, h1, h2, hsl⟩ := clifC
+  exact ⟨⟨rfl, fun _ hx => hx⟩, ⟨[2], 0, [0, 1], extF, argsR, B0R, regsR, hb, rfl, preC, hfn,
+    hsig, hent, h1, h2, regsR_eq, hsl, rfl⟩, ⟨_, checksO.2.2.2.2.2.1, (fun _ _ h => by cases h),
+    (fun _ _ _ h => by cases h)⟩, ⟨_, checksO.2.2.2.2.2.2.1⟩, ⟨_, checksO.2.2.2.2.2.2.2.1⟩⟩
+
 /-- **The CLIF states reachable from `csO`**, up to their bytes: the caller at its call,
 `atomic_rmw` at its entry, `atomic_rmw` returning, the caller returning. -/
-def Fam (s : Clif.State) : Prop :=
-  (s.frame = csC.frame ∧ s.callers = [] ∧ AllocsIn s.mem) ∨
-  (s.frame = csR.frame ∧ s.callers = extC ∧ AllocsIn s.mem) ∨
-  (∃ r, s.frame = { csR.frame with regs := r, body := [] } ∧ s.callers = extC) ∨
-  (∃ r, s.frame = { csC.frame with regs := r, body := [] } ∧ s.callers = [])
+def Fam (s : Clif.State) : Prop := WitnessFull.FamG csC.frame csR.frame extC s
 
 /-- The reachable thread states. -/
-def RInv : TState → Prop
-  | .run s => Fam s
-  | .ret _ => True
+def RInv : TState → Prop := WitnessFull.RInvG Fam
 
 theorem fam_congr {s s' : Clif.State}
-    (h : withBytes s (fun _ => none) = withBytes s' (fun _ => none)) (hs : Fam s) : Fam s' := by
-  have e1 : s.frame = s'.frame := congrArg (·.frame) h
-  have e2 : s.callers = s'.callers := congrArg (·.callers) h
-  have e3 : s.mem.allocs = s'.mem.allocs := congrArg (·.mem.allocs) h
-  unfold Fam AllocsIn at hs ⊢
-  rw [← e1, ← e2, ← e3]
-  exact hs
+    (h : withBytes s (fun _ => none) = withBytes s' (fun _ => none)) (hs : Fam s) : Fam s' :=
+  WitnessFull.famG_congr h hs
 
-theorem rinv_strip {t t' : TState} (h : strip t = strip t') (ht : RInv t) : RInv t' := by
-  cases t with
-  | ret v =>
-    cases t' with
-    | ret => trivial
-    | run => cases h
-  | run s =>
-    cases t' with
-    | ret => trivial
-    | run s' =>
-      simp only [strip, TState.run.injEq] at h
-      exact fam_congr h ht
+theorem rinv_strip {t t' : TState} (h : strip t = strip t') (ht : RInv t) : RInv t' :=
+  WitnessFull.rinvG_strip (fun _ _ => fam_congr) h ht
 
 /-- **A step from a reachable state to a running state stays reachable.** -/
 theorem next_fam (env : Clif.Env) {s : Clif.State} (hs : Fam s) (B : Bytes) {s' : Clif.State}
-    (hst : Clif.step env pCR (withBytes s B) = .next s') : Fam s' := by
-  rcases hs with ⟨hf, hc, ha⟩ | ⟨hf, hc, ha⟩ | ⟨r, hf, hc⟩ | ⟨r, hf, hc⟩
-  · -- the caller's call enters `atomic_rmw`
-    obtain ⟨hb, hfn, hsig, hent, h1, h2, hsl⟩ := clifC
-    have hbody : (withBytes s B).frame.body = [{ results := [2], inst := .call 0 [0, 1] }] := by
-      show s.frame.body = _; rw [hf]; exact hb
-    rw [Clif.step_call env pCR _ [] [2] 0 [0, 1] hbody] at hst
-    unfold Clif.stepCall at hst
-    simp only [show (withBytes s B).frame = csC.frame from hf] at hst
-    rw [preC] at hst
-    simp only [Clif.StepResult.ofRes_ok, hfn, hsig, ite_true] at hst
-    rw [CallSeg.WitnessC.enterFunc_of' hent h1 h2 regsR_eq] at hst
-    simp only [Clif.StepResult.ofRes_ok, Clif.StepResult.next.injEq] at hst
-    subst hst
-    obtain ⟨e1, e2⟩ := WitnessFull.enterSlots_nil hsl (withBytes s B).mem
-    refine .inr (.inl ⟨?_, ?_, ?_⟩)
-    · show (⟨fR, regsR, (Clif.enterSlots fR (withBytes s B).mem).1, B0R.body, B0R.term⟩ :
-        Clif.Frame) = csR.frame
-      rw [e1]; rfl
-    · show _ :: s.callers = extC
-      rw [hc]; rfl
-    · intro x hx
-      exact ha x (e2 ▸ hx)
-  · -- `atomic_rmw`'s read-modify-write
-    have hbody : (withBytes s B).frame.body =
-        [{ results := [2], inst := .atomicRmw .add .i64 {} 0 1 }] := by
-      show s.frame.body = _; rw [hf]; exact checksO.2.2.2.2.2.1
-    rw [Clif.step_inst env pCR _ _ [] hbody (fun _ _ h => by cases h) (fun _ _ _ h => by cases h)]
-      at hst
-    unfold Clif.StepResult.ofRes at hst
-    split at hst
-    · rename_i a _
-      obtain ⟨vals, mem⟩ := a
-      simp only [Clif.continueWith] at hst
-      split at hst
-      · rename_i regs _
-        cases hst
-        exact .inr (.inr (.inl ⟨regs, by show { s.frame with regs, body := [] } = _; rw [hf], hc⟩))
-      · cases hst
-    · cases hst
-    · cases hst
-  · -- `atomic_rmw` returns into the caller
-    have hb : (withBytes s B).frame.body = [] := by show s.frame.body = []; rw [hf]
-    rw [Clif.step_term env pCR _ hb] at hst
-    have ht : (withBytes s B).frame.term = .ret [2] := by
-      show s.frame.term = _; rw [hf]; exact checksO.2.2.2.2.2.2.1
-    rw [ht] at hst
-    obtain ⟨regs, h1, h2⟩ := WitnessFull.stepTerm_ret_next (s := withBytes s B)
-      (c := { csC.frame with body := [] }) (rs := [2]) (cs := []) hc hst
-    exact .inr (.inr (.inr ⟨regs, h1, h2⟩))
-  · -- the caller returns: no next state
-    have hb : (withBytes s B).frame.body = [] := by show s.frame.body = []; rw [hf]
-    rw [Clif.step_term env pCR _ hb] at hst
-    have ht : (withBytes s B).frame.term = .ret [2] := by
-      show s.frame.term = _; rw [hf]; exact checksO.2.2.2.2.2.2.2.1
-    rw [ht] at hst
-    exact absurd hst ((stepTerm_ret (env := env) (p := pCR) (s := withBytes s B) (xs := [2]) hc).1 s')
+    (hst : Clif.step env pCR (withBytes s B) = .next s') : Fam s' :=
+  WitnessFull.next_famG shape_O env hs B hst
 
 /-- **A step from a reachable state stays reachable.** -/
 theorem step_fam (env : Clif.Env) {s : Clif.State} (hs : Fam s) (B : Bytes) {t'' : TState}
-    {B' : Bytes} (h : res (Clif.step env pCR (withBytes s B)) = some (t'', B')) : RInv t'' := by
-  rcases WitnessFull.res_some h with ⟨s', hst, rfl⟩ | ⟨v, rfl⟩
-  · exact next_fam env hs B hst
-  · trivial
+    {B' : Bytes} (h : res (Clif.step env pCR (withBytes s B)) = some (t'', B')) : RInv t'' :=
+  WitnessFull.step_famG shape_O env hs B h
 
 /-- **The thread states reachable from `csO`.** -/
-theorem reach_inv {env : Clif.Env} {t : TState} (h : RReach env pCR (.run csO) t) : RInv t := by
-  induction h with
-  | base => exact Or.inl ⟨rfl, rfl, fun _ hx => hx⟩
-  | @step t evs t' _ hs ih =>
-    cases t with
-    | ret v => exact False.elim hs
-    | run s =>
-      obtain ⟨-, ⟨B, hB⟩, hf⟩ := hs
-      obtain ⟨t'', h1, h2⟩ := hf B hB
-      exact rinv_strip h2 (step_fam env ih B h1)
-  | @stepS t evs t' _ hs ih =>
-    cases t with
-    | ret v => exact False.elim hs
-    | run s =>
-      obtain ⟨-, ⟨B, hB⟩, -, hf⟩ := hs
-      obtain ⟨t'', h1, h2⟩ := hf B hB
-      exact rinv_strip h2 (step_fam env ih _ h1)
-  | strip _ he ih => exact rinv_strip he ih
+theorem reach_inv {env : Clif.Env} {t : TState} (h : RReach env pCR (.run csO) t) : RInv t :=
+  WitnessFull.reach_invG shape_O h
 
 /-- **At most one caller** below every reachable state. -/
 theorem depth_O {env : Clif.Env} :
-    ∀ S, RReach env pCR (.run csO) (.run S) → S.callers.length < 2 := by
-  intro S h
-  have hI : Fam S := reach_inv h
-  rcases hI with ⟨-, hc, -⟩ | ⟨-, hc, -⟩ | ⟨_, -, hc⟩ | ⟨_, -, hc⟩ <;> rw [hc] <;> simp [extC]
+    ∀ S, RReach env pCR (.run csO) (.run S) → S.callers.length < 2 :=
+  WitnessFull.depthG shape_O
 
 /-- The accesses: `atomic_rmw`'s read and write of the 8 bytes at `0`. -/
 def LocO : Nat → Nat → Prop := fun a n => a = 0 ∧ n = 8
@@ -695,40 +607,8 @@ theorem evShape_csC : evShape csC = [[]] := by
   unfold evShape; rw [show csC.frame.body = B0C.body from rfl, clifC.1]
 
 /-- **The accesses from the reachable states lie on `LocO`.** -/
-theorem partsOk_O {env : Clif.Env} : PartsOk env pCR (.run csO) LocO := by
-  intro t evs t' hR hs e he
-  cases t with
-  | ret v => exact False.elim hs
-  | run s =>
-  have hI : Fam s := reach_inv hR
-  have hv0 := CallSegGeo.cstep_reads_valid hs
-  obtain ⟨⟨hsh, hd⟩, -, -⟩ := hs
-  have hnil : evShape s = [[]] → False := fun h => by
-    rw [h, List.mem_singleton, List.map_eq_nil_iff] at hsh
-    subst hsh; cases he
-  rcases hI with ⟨hf, -, -⟩ | ⟨hf, -, ha⟩ | ⟨r, hf, -⟩ | ⟨r, hf, -⟩
-  · exact (hnil ((WitnessFull.evShape_congr (by rw [hf])).trans evShape_csC)).elim
-  · rw [(WitnessFull.evShape_congr (s' := csR) (by rw [hf])).trans shapeR1,
-      List.mem_singleton] at hsh
-    have hkn : (e.k, e.n) = (.scR, 8) ∨ (e.k, e.n) = (.scW, 8) := by
-      have := List.mem_map_of_mem (f := fun e : Ev SKind BVal => (e.k, e.n)) he
-      rw [hsh] at this
-      simpa using this
-    have hn : e.n = 8 := by rcases hkn with h | h <;> simp only [Prod.mk.injEq] at h <;> exact h.2
-    have hdir : e.dir ≠ .F := by
-      rw [(hd e he).1]
-      rcases hkn with h | h <;> simp only [Prod.mk.injEq] at h <;> rw [h.1] <;> decide
-    refine ⟨fun _ => ⟨?_, hn⟩, fun _ => by omega⟩
-    have hv := hv0 e he hdir
-    simp only [Clif.Mem.valid, List.any_eq_true] at hv
-    obtain ⟨y, hy, hcy⟩ := hv
-    have hy' := ha y hy
-    simp only [memL, List.mem_singleton] at hy'
-    subst hy'
-    simp only [Clif.Alloc.contains, Bool.and_eq_true, decide_eq_true_eq] at hcy
-    omega
-  · exact (hnil (WitnessFull.evShape_nil (by rw [hf]))).elim
-  · exact (hnil (WitnessFull.evShape_nil (by rw [hf]))).elim
+theorem partsOk_O {env : Clif.Env} : PartsOk env pCR (.run csO) LocO :=
+  WitnessFull.partsOkG shape_O (eS := csR) rfl shapeR1 (by decide)
 
 /-! ## The activation's entry and the thread -/
 
