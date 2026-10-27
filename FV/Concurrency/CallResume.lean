@@ -10,15 +10,16 @@ code, with the pc of every state (a linked machine dispatching on where a step g
 up to its return:
 
 * `linesAt_pc`, `moves_privP`: through straight-line lines and through moves (`moves_privA`), the
-  pc of every state is at a line (`R.pcOf`);
+  pc of every state is at a line (`R.pcOf`); `moves_privQA`: the same from `QA`, callee restores
+  included (they run no line and continue a return tail, `RetTail`);
 * `srcStep_of_mstep_eq`: a step of the allocated code at a related configuration is a thread step
   to the same configuration;
 * `oneEv_op1`: **one step at a straight-line form with one Arm instruction** (`OneEvForm`, as
   `oneEv_op`): the Arm's step and the source step reading its bytes, related states after both;
 * `rets_privP`: **the return** from a `rets` item: Cranelift's epilogue and the `ret`, each
   step's events private (the pops and the `ldp` read the clobber area and fp/lr,
-  `FrameEvs.epilogue_evsIn`), at a line; the return address reached with `sp` as at entry, the
-  memory and program kept;
+  `FrameEvs.epilogue_evsIn`), at a line; the return address reached with `sp` and x29 as at
+  entry, the memory and program kept;
 * `cstep_ret_pushC`: the CLIF return of the bottom frame below suspended callers resumes the first
   of them.
 -/
