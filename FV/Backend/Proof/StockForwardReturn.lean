@@ -14,6 +14,11 @@ apart from the separately stated ranking and scalar-body conditions. -/
 def JumpReturnBlocks (f : Clif.Function) : Prop :=
   ∀ b ∈ f.blocks,(∃ bc,b.term = .jump bc) ∨ (∃ xs,b.term = .ret xs)
 
+/-- Restrict only continuations; the entry may be conditional. -/
+def NonentryJumpReturnBlocks (f : Clif.Function) : Prop :=
+  ∀ bi b,f.blocks[bi]? = some b → bi ≠ 0 →
+    (∃ bc,b.term = .jump bc) ∨ (∃ xs,b.term = .ret xs)
+
 /-- Instruction-zero return simulation at an actual retained nonentry scan. -/
 def ReturnsAt (f : Clif.Function) (result : Result) (label bi : Nat) (b : Clif.Block)
     (event : BlockScanEvent) (isem : Backend.Proof.Sem) (MR : MemRelT)
@@ -65,9 +70,9 @@ theorem jump_nonentry_prelude {f : Clif.Function} {result : Result} {b : Clif.Bl
 /-- Compose arbitrary many ranked scalar jump blocks and a return from their
 actual retained scans. The induction follows the real node labels; neither a
 fixed block count nor a source result-forwarding restriction is required. -/
-theorem nonentry_returns {f : Clif.Function} {result : Result} {rank : Nat → Nat}
+theorem nonentry_returns_of_termsAt {f : Clif.Function} {result : Result} {rank : Nat → Nat}
     (run : Stock.lower f = .ok result) (scope : LowerScope f) (dominated : Dominated f)
-    (abi : sigAbiOk f.sig = true) (ranked : Ranked f rank) (terms : JumpReturnBlocks f)
+    (abi : sigAbiOk f.sig = true) (ranked : Ranked f rank) (terms : NonentryJumpReturnBlocks f)
     (family : ∀ b ∈ f.blocks,∀ stm ∈ b.body,MaskBody.Family stm.inst)
     {F : BitVec 64 → Prop} {isem : Backend.Proof.Sem} (refines : Refines F isem)
     (driver : DriverSem isem) {MR : MemRelT} (stable : MRStable F MR)
@@ -86,7 +91,7 @@ theorem nonentry_returns {f : Clif.Function} {result : Result} {rank : Nat → N
     induction n using Nat.strongRecOn with
     | ind n ih =>
       intro label bi b count tag block nonentry
-      rcases terms b (List.mem_of_getElem? block) with ⟨bc,jump⟩ | ⟨xs,ret⟩
+      rcases terms bi b block nonentry with ⟨bc,jump⟩ | ⟨xs,ret⟩
       · obtain ⟨spec⟩ := Control.stock_lower_jump_body_spec run scope dominated family tag block jump refines driver stable env cp
         obtain ⟨tl,targetLabel,targetIndex,targetNonentry,successors,targetTag⟩ :=
           CriticalOwners.jump_successor run scope tag block jump
@@ -127,5 +132,21 @@ theorem nonentry_returns {f : Clif.Function} {result : Result} {rank : Nat → N
           func callers remaining atTerm (by simpa only [spec.atBlock] using defined) returned held
         simpa only [spec.noPrelude nonentry] using finished
   exact composed _ label bi b rfl tag block nonentry
+
+/-- The original all-block variant is preserved. -/
+theorem nonentry_returns {f : Clif.Function} {result : Result} {rank : Nat → Nat}
+    (run : Stock.lower f = .ok result) (scope : LowerScope f) (dominated : Dominated f)
+    (abi : sigAbiOk f.sig = true) (ranked : Ranked f rank) (terms : JumpReturnBlocks f)
+    (family : ∀ b ∈ f.blocks,∀ stm ∈ b.body,MaskBody.Family stm.inst)
+    {F : BitVec 64 → Prop} {isem : Backend.Proof.Sem} (refines : Refines F isem)
+    (driver : DriverSem isem) {MR : MemRelT} (stable : MRStable F MR)
+    (env : Clif.Env) (cp : Clif.Program) {label bi : Nat} {b : Clif.Block}
+    (tag : result.order.nodes[label]? = some (.original bi))
+    (block : f.blocks[bi]? = some b) (nonentry : bi ≠ 0) :
+    ∃ event,event ∈ result.blockScans.toList ∧ event.block = bi ∧
+      ReturnsAt f result label bi b event isem MR env cp := by
+  exact nonentry_returns_of_termsAt run scope dominated abi ranked
+    (fun bi b found _ => terms b (List.mem_of_getElem? found)) family
+    refines driver stable env cp tag block nonentry
 
 end Backend.Stock.Proof.ForwardSource

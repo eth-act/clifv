@@ -1,5 +1,5 @@
 {
-  "updated_utc": "2026-10-27T05:58:46.688402+00:00",
+  "updated_utc": "2026-10-27T11:48:39.702650+00:00",
   "goal": 140,
   "complete": false,
   "inventory_warning": "Historical517root inventory is a source map, not current reachability/execution coverage. Reconcile generated source hashes and current typed scope before using partition counts.",
@@ -264,6 +264,17 @@
       "prior_axiom_sets_exact": 3544,
       "full_140_complete": false,
       "unconditional_stock_only_completeness": false
+    },
+    "conditional_forward_cfg": {
+      "name": "wide entry-parameter conditional with arbitrary ranked scalar tails",
+      "state": "all current author gates passed; default activation in PR636",
+      "branch": "agent/stock-conditional-forward-20261027",
+      "implementation": "Wide entry-parameter conditional with arbitrary ranked scalar jump/return tails, inherited values, nonempty jump copies, joins and first/later traps; actual Stock records/copies/ABI entry derive unchanged Scalar.Domain. Default compiler/checker/verified linker/generated-proof consumers append route10; routes0\u20139 and complete previous conditional pipeline fallback preserved on original source/settings.",
+      "limits": "No agreement gain or full140 completion. Computed/narrow conditions, per-edge/table/loops/effects/calls, remaining families and original-domain whole-driver/Stock-only/downstream completeness remain open. Next scratch source/domain work stays separate from frozen implementation.",
+      "evidence": "docs/research/stock-conditional-forward-cfg-production.md",
+      "source_head": "7170a146609c5d1094e8c0bb4d67f738c8f5abd2",
+      "pull_request": 636,
+      "terminal_remote_evidence": "cd2a1b74f38bff0987c753b571b9ceefe25478a2"
     }
   },
   "roots": [
@@ -8845,14 +8856,14 @@
     "source_driver_evidence": "39e8973aa776b761ec6c62b772cc5d57cae0454e"
   },
   "active_candidate": {
-    "name": "compatible wide conditional scalar return-leaf CFGs",
-    "state": "all author gates passed; default activation in PR #635",
-    "branch": "agent/stock-conditional-cfg-20261026",
-    "implementation": "Original source choice/returns/first traps, actual direct/synthetic copies and ABI entry derive unchanged Scalar.Domain; appended route9 retains0\u20138 and complete prior ForwardCfg pipeline fallback",
-    "limits": "Wide entry-parameter branches and scalar return leaves. Ranked/more general condition/control/per-edge/loops/effects/calls/original-domain simulation and completeness remain open. No byte agreement gain.",
-    "evidence": "docs/research/stock-conditional-cfg-production.md",
-    "source_head": "31a1befea3ed925a3fc1378a0d889fe726f087a8",
-    "pull_request": 635,
-    "terminal_remote_evidence": "34cef2dc4beaa2497220617a5ffa39d644e840c3"
+    "name": "wide entry-parameter conditional with arbitrary ranked scalar tails",
+    "state": "all current author gates passed; default activation in PR636",
+    "branch": "agent/stock-conditional-forward-20261027",
+    "implementation": "Wide entry-parameter conditional with arbitrary ranked scalar jump/return tails, inherited values, nonempty jump copies, joins and first/later traps; actual Stock records/copies/ABI entry derive unchanged Scalar.Domain. Default compiler/checker/verified linker/generated-proof consumers append route10; routes0\u20139 and complete previous conditional pipeline fallback preserved on original source/settings.",
+    "limits": "No agreement gain or full140 completion. Computed/narrow conditions, per-edge/table/loops/effects/calls, remaining families and original-domain whole-driver/Stock-only/downstream completeness remain open. Next scratch source/domain work stays separate from frozen implementation.",
+    "evidence": "docs/research/stock-conditional-forward-cfg-production.md",
+    "source_head": "7170a146609c5d1094e8c0bb4d67f738c8f5abd2",
+    "pull_request": 636,
+    "terminal_remote_evidence": "cd2a1b74f38bff0987c753b571b9ceefe25478a2"
   }
 }

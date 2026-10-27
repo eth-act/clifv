@@ -553,3 +553,11 @@ actual compiler/checker/linker/generated-proof default production with legacy
 fallback and land a substantive activation. Do not merge proof fragments as a
 substitute or wait for every remaining function family. Continue successive
 classes and every original #140 obligation after this first CFG activation.
+
+## Active ranked conditional tails checkpoint
+
+#635 is merged at91c809f7. The next substantive route10 implementation and complete source/domain/ABI witnesses are implemented; see [progress](../research/stock-conditional-forward-cfg-progress.md). Freeze and finish current author gates, preserving all prior fallback behavior and exact old theorem/axiom/input/identity-stage contracts, then squash and continue the remaining original #140 obligations.
+
+## Ranked conditional tails author gates complete
+
+PR #636 implements the route10 conditional entry/ranked-tail class on7170a146, with all current author gates passed; [terminal receipt](../research/stock-conditional-forward-cfg-production.md). Publish and squash under current author policy; retain the complete prior conditional pipeline and all original inputs/variants/axioms/identities/stages. The paired actual-output metric is900→900/4543, with no gains/losses/changedbytes. General ranked parameter-conditional return/first-trap/source-domain/ABI drafts are preserved outside this frozen packet. Continue those and computed/narrow conditions, per-edge/table/loops/effects/calls and original full140 obligations; no first-class/proof-fragment stop.
