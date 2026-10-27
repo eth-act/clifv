@@ -6,6 +6,8 @@ import FV.Backend.Proof.StockMemoryReturnWitness
 import FV.Backend.Proof.StockMemoryEntryWitness
 import FV.Backend.Proof.StockMemoryDispatchWitness
 import FV.Backend.Proof.StockMemorySingleWitness
+import FV.Backend.Proof.StockMemoryReadWitness
+import FV.E2E.StockMemoryReadWitness
 
 #print axioms Backend.Stock.Memory.domain_of_scalar
 #print axioms Backend.Stock.Memory.existing_source_witness
@@ -75,3 +77,11 @@ import FV.Backend.Proof.StockMemorySingleWitness
 #print axioms Backend.Stock.Memory.SingleFixture.lowered
 #print axioms Backend.Stock.Memory.SingleFixture.domain
 #print axioms Backend.Stock.Memory.SingleFixture.complete_load_function_witness
+
+#print axioms Backend.Stock.Memory.initialized_load_value_eq
+#print axioms Backend.Stock.Memory.load_source_result_pair
+#print axioms Backend.Stock.Memory.load_source_result_pairR
+#print axioms Backend.Stock.Memory.stock_lower_load_paired_record
+#print axioms Backend.Stock.Memory.LoadFixture.paired_load_read_witness
+#print axioms E2E.StockMemoryReadWitness.guarded_paired_load_witness
+#print axioms E2E.StockMemoryReadWitness.guarded_actual_record_pair_witness
