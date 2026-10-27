@@ -352,7 +352,7 @@ theorem realizes_tryCall_raiseUF {R : RLU} (hR : R.Wf) {semU : Sem}
         rw [hl3 _ (fun r h => by cases h), hst.store _ hl hL,
           locVal_frame_keep hfr hst.sp hFK' hL (fun r h => by cases h)]
     · rw [← hst.fplr hframe]
-      exact read_mem_bytes_congr _ _ (fun k hk => hFK'.2 _ (fplr_inF hR hframe k hk))
+      exact read_mem_bytes_congr _ _ (fun k hk => hFK'.2.1 _ (fplr_inF hR hframe k hk))
   refine ⟨1, _, MStep.op hvb hi hops hsz hsem hlen (HavocOuts.refl _ _ _) hc3
     (MNext.goto hk1 hsucc hitems), ?_, fun i hi => ?_⟩
   · simp only [iterN]
@@ -426,7 +426,7 @@ theorem padsNonzero_of_check {af : AFunc} {fa : FnAsm} (h : padsNonzeroB af fa =
 namespace UTryWitness
 
 open Backend.Proof.UnwindTables.Witness in
-/-- S10c's witness function (a `try_call` whose catch handler's landing pad is at offset 32)
+/-- S10c's witness function (a `try_call` whose catch handler's landing pad is at offset 28)
 passes both checks: its call-site bridge (`siteAt_of_check`) and its landing pads
 (`padsNonzero_of_check`) are discharged. -/
 theorem checks : padsNonzeroB af fa = true ∧ lastCallsOk af fa = true := by decide +kernel
@@ -436,11 +436,11 @@ theorem pads : PadsNonzero af fa := padsNonzero_of_check checks.1
 
 open Backend.Proof.UnwindTables.Witness in
 /-- The check is not vacuous there: the function's one call is a `try_call` whose entry has
-landing pad 32. -/
+landing pad 28 (32 before #479: Cranelift's frame scheme moves the code 4 bytes earlier). -/
 theorem entry :
-    af.calls.zip (scanLines fa.lines.toList 0 [] []).2 = [(some ⟨1, [.tag 1 2], false, 0⟩, 20)] ∧
-      entryFor (scanLines fa.lines.toList 0 [] []).1 (some ⟨1, [.tag 1 2], false, 0⟩, 20) =
-        some ⟨19, 1, 32, 1⟩ := by
+    af.calls.zip (scanLines fa.lines.toList 0 [] []).2 = [(some ⟨1, [.tag 1 2], false, 0⟩, 16)] ∧
+      entryFor (scanLines fa.lines.toList 0 [] []).1 (some ⟨1, [.tag 1 2], false, 0⟩, 16) =
+        some ⟨15, 1, 28, 1⟩ := by
   decide +kernel
 
 end UTryWitness
