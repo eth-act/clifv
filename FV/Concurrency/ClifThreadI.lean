@@ -290,6 +290,7 @@ theorem enterSlots_bytes (f : Clif.Function) (m : Clif.Mem) (B : Bytes)
       have hi0 : pl.init = none := hi pl rfl
       simp only [Clif.enterSlots, hf, hi0, Clif.initSlots_none, setB_place, setB_allocs, setB_bytes,
         setB_next, setB_symbols]
+      rw [hi0] at this
       exact this
 
 theorem placeSlots_fst (sp : BitVec 64) (off : Clif.SlotId → Nat) (m : Clif.Mem)
@@ -325,7 +326,7 @@ theorem slotZ_frameSlot {f : Clif.Function} {m : Clif.Mem} {a : Nat} (hz : slotZ
       obtain ⟨x, hx, h1, h2⟩ := hz
       refine ⟨x, hx, _, ?_, h1, h2⟩
       simp only [Clif.enterSlots, hf]
-      rw [placeSlots_fst]
+      rw [Clif.initSlots_fst, placeSlots_fst]
       exact List.mem_map.mpr ⟨x, hx, rfl⟩
 
 theorem Res.bind_eq_ok {α β : Type} {x : Clif.Res α} {k : α → Clif.Res β} {v : β}
