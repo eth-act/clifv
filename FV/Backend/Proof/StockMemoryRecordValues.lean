@@ -51,7 +51,7 @@ private theorem scan_frontier (st : State) (i : Nat) :
 /-- Actual retained load-root receipts determine emitted code, its fresh result,
 the allocation endpoint and installed final alias. No code/binding certificate
 is supplied separately. -/
-theorem stock_lower_parameter_load_record {f : Clif.Function} {result : Result}
+theorem stock_lower_parameter_load_record_full {f : Clif.Function} {result : Result}
     (run : Stock.lower f = .ok result) (scope : LowerScope f) (dominated : Dominated f)
     {event : BlockScanEvent} {record : ScanRecord}
     (events : event ∈ result.blockScans.toList) (records : record ∈ event.output.records)
@@ -72,7 +72,8 @@ theorem stock_lower_parameter_load_record {f : Clif.Function} {result : Result}
     record.output.emitted = #[.load .uload32 (.vreg record.input.base.nextVreg .int)
       (.unsignedOffset (.vreg nreg .int) 0) flags] ∧
     record.output.state.base.nextVreg = record.input.base.nextVreg + 1 ∧
-    aliasNum result.final.alias a = record.input.base.nextVreg := by
+    aliasNum result.final.alias a = record.input.base.nextVreg ∧
+    record.output.state.demand = (record.input.mark x).demand := by
   obtain ⟨computed,actual⟩ := stock_parameter_load_rhs data_program event.ctx (cfg := {}) rfl parameter pointer flags
     (scanState record.input record.inst) #[] n
   have equal := Except.ok.inj (evalRun.symm.trans actual)
@@ -104,13 +105,44 @@ theorem stock_lower_parameter_load_record {f : Clif.Function} {result : Result}
   have stepEq := Option.some.inj stepRecorded.symm
   have outputs : step.results = [[.vreg record.input.base.nextVreg .int]] := by rw [stepEq]
   refine ⟨outputs,?_,?_,(stock_lower_record_fresh_result run scope dominated.ssa events records source clif
-    results mapped recorded emitted outputs (Nat.le_refl _)).2⟩
+    results mapped recorded emitted outputs (Nat.le_refl _)).2,?_⟩
   · rw [actualScan,nextEq]
     change ((scanState record.input record.inst).base.fresh .int).2.emitted.push _ = _
     simp [LState.fresh,scan_empty,scan_frontier]
   · rw [actualScan,nextEq]
     change ((scanState record.input record.inst).base.fresh .int).2.nextVreg = _
     simp only [LState.fresh,scan_frontier]
+
+  · rw [actualScan,nextEq]
+    change ((scanState record.input record.inst).mark x).demand = (record.input.mark x).demand
+    simp only [State.mark,scanState_demands]
+
+/-- Preserve the original retained-load result and binding interface. -/
+theorem stock_lower_parameter_load_record {f : Clif.Function} {result : Result}
+    (run : Stock.lower f = .ok result) (scope : LowerScope f) (dominated : Dominated f)
+    {event : BlockScanEvent} {record : ScanRecord}
+    (events : event ∈ result.blockScans.toList) (records : record ∈ event.output.records)
+    {info : IInfo} {z a x nreg n : Nat} {flags : Clif.MemFlags}
+    (source : event.ctx.insts[record.inst]? = some info)
+    (clif : info.clif = some (.load .load .i32 flags x 0)) (results : info.results = [z])
+    (mapped : event.ctx.valueReg? z = some (.vreg a .int))
+    (parameter : event.ctx.defInst? x = none)
+    (pointer : event.ctx.valueReg? x = some (.vreg nreg .int))
+    {step : Step} (recorded : record.output.step = some step) (emitted : step.decision = .emitted)
+    {next : State} {out : V} {evalTrace : Array RuleId} {trace : List RuleId}
+    (evalRun : (evalExpr program (Stock.sem event.ctx) {} (n+120) rule_lower_2610.rhs
+      (env3 (.value x) (.op (.memFlags flags)) (.int 0))).run
+        (scanState record.input record.inst,#[]) = .ok (some out,next,evalTrace))
+    (rootRun : Stock.runTerm event.ctx "lower" [.inst record.inst] (scanState record.input record.inst) =
+      .ok (some out,next,trace)) :
+    step.results = [[.vreg record.input.base.nextVreg .int]] ∧
+    record.output.emitted = #[.load .uload32 (.vreg record.input.base.nextVreg .int)
+      (.unsignedOffset (.vreg nreg .int) 0) flags] ∧
+    record.output.state.base.nextVreg = record.input.base.nextVreg + 1 ∧
+    aliasNum result.final.alias a = record.input.base.nextVreg := by
+  obtain ⟨outputs,code,upper,alias,_⟩ := stock_lower_parameter_load_record_full run scope dominated events records
+    source clif results mapped parameter pointer recorded emitted evalRun rootRun
+  exact ⟨outputs,code,upper,alias⟩
 
 /-- A retained parameter-load record executes on the original source memory and
 transfers the source-available demanded set. Code, fresh definitions, binding,
