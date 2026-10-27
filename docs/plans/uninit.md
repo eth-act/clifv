@@ -298,7 +298,7 @@ run-restricted contract.
   must equal the VCode `csemI` counter, a proof obligation of the counted simulation (every
   `bl`/`blr` executed by an activation is a `call`/`try_call`'s `callInsn?`). Witnesses
   `LinkArmProphThmWitness.lean`.
-- step 2i `FV/E2E/RegLevelCorrectI.lean` (on #648): `ISem.counted sem` (step at counter `n` is
+- #651 (step 2i) `FV/E2E/RegLevelCorrectI.lean` (on #648): `ISem.counted sem` (step at counter `n` is
   `sem n`'s, the counter bumped by the calls; `csemI_eq_counted`), `csemVI` (`csemV` with
   `X.at n`; `csemVI_sub`), `MStep.counted_proj`/`_lift`, `Realizes.counted` (the machine
   realises the counted semantics under `Q` of the first components when it realises each `sem n`),
@@ -310,9 +310,21 @@ run-restricted contract.
   (`1` for `call`/`try_call`, `0` otherwise): the existing `realizes_*` lemmas expose only the
   per-state `RL.GoodX`, which says every `bl`/`blr` state has *some* call's `CallPre`, not that it
   is the current item's; so every `realizes_*` case needs a variant with a per-segment fact (the
-  states are at the item's own lines, as the `*W.lean` variants did for `WritesAt`), plus the
-  static fact that only `call`/`try_call` emit `bl`/`blr` (`MInst.lines`, `FV/Backend/Asm.lean`).
-  Witnesses `RegLevelCorrectIWitness.lean`.
+  states are at the item's own lines, as the `*W.lean` variants did for `WritesAt`). The static
+  fact that only `call`/`try_call` emit `bl`/`blr` exists already (`lines_noCall`,
+  `lines_callKeys`, `L_callKeys` in `FV/E2E/RegLevelCallSite.lean`, S10e). Witnesses
+  `RegLevelCorrectIWitness.lean`.
+- step 2j `FV/E2E/RegLevelCountI.lean` (on #651): the obligation and its lift. `countIn C step s n`
+  (the `C` states among the first `n`; `callsBefore_eq_countIn`: the prophecy index is `countIn`
+  of the call states), `stepC C step` (the machine paired with that count, `iterN_stepC`),
+  `opCalls vc c` (`1` when `c`'s next item is a call), `MStep.counted_ctr` (a counted step adds
+  `opCalls`); `RealizesC … C`: `Realizes` whose every segment passes `opCalls vc c` states of
+  `C`; `RealizesC.counted`: from `RealizesC` at every index, `stepC C step` realises the counted
+  semantics under `Q` of the first components **and counter = count**. Next: `RealizesC` for
+  `realizes_all` with `C` the call states (`CallPc fa base` at the pc), i.e. the per-segment
+  variants above, then `regLevelCorrect_world_atI` on `stepC` with the contract of index `n` only
+  at the states whose count is `n` (`CallSoundCtlG` with that premise beside its `G`-keep one).
+  Witnesses `RegLevelCountIWitness.lean`.
 
 **Refined call contract (next).** `X.call n` should be the *canonical* callee run from the
 VCode world `w` with the callee's stack region (the addresses `StackBelow K (sp w)`, inside the
