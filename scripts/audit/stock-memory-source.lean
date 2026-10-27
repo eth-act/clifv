@@ -85,3 +85,9 @@ import FV.E2E.StockMemoryReadWitness
 #print axioms Backend.Stock.Memory.LoadFixture.paired_load_read_witness
 #print axioms E2E.StockMemoryReadWitness.guarded_paired_load_witness
 #print axioms E2E.StockMemoryReadWitness.guarded_actual_record_pair_witness
+
+#print axioms E2E.StockMemory.stock_lower_load_paired_source_step
+#print axioms E2E.StockMemory.stock_lower_load_scan_pair
+#print axioms E2E.StockMemory.stock_lower_load_paired_scan
+#print axioms E2E.StockMemoryReadWitness.guarded_actual_source_scan_pair_witness
+#print axioms E2E.StockMemoryReadWitness.pairsem_scan_interface_witness
