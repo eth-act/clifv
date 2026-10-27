@@ -78,13 +78,13 @@ theorem chksWithT_resultsCleanupT {I : LinkInput} (hin : InScopePT I = true)
   obtain ⟨hdecl, hindB, -, -⟩ := hpg _ hgP
   rw [List.all_eq_true]
   intro c hc'
-  simp only [chksWithT, staticChksWithT, linkChks, List.cons_append, List.nil_append,
+  simp only [chksWithT, staticChksWithT, linkChksT, List.cons_append, List.nil_append,
     List.mem_cons, List.not_mem_nil, or_false, List.append_assoc, progOf_resultsCleanupT, hpr,
     hga] at hc'
   rcases hc' with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
     rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
   · rfl
-  · exact hlc
+  · simp [hE, hlc]
   · exact hpc
   · exact hca
   · exact hcov
@@ -96,7 +96,7 @@ theorem chksWithT_resultsCleanupT {I : LinkInput} (hin : InScopePT I = true)
   · exact decide_eq_true hfit
   · exact decide_eq_true hdep
   · exact hfree
-  · simp [hE, hst]
+  · exact hst
   · simpa [Bool.and_eq_true, List.all_eq_true] using habi
   · exact hind
   · simp only [Bool.or_eq_true, Bool.not_eq_true', Bool.and_eq_true] at hsr ⊢
@@ -106,7 +106,7 @@ theorem chksWithT_resultsCleanupT {I : LinkInput} (hin : InScopePT I = true)
   · exact hout
   · simp only [Bool.or_eq_true]
     exact .inr hfr
-  · exact hsite
+  · exact allInsts_siteOk_le hsite
   · exact hdecl
   · exact hra
   · exact hindB
