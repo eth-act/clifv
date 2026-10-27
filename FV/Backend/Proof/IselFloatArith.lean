@@ -15,8 +15,8 @@ the Arm model's `exec_fp_data_processing_{one,two}_source`) are the same `IEEE` 
 * `fpu_rr` (`FpuRR`): `sqrt` 674 (533), `fneg` 676 (541), `fabs` 678 (549) at the result's scalar
   size, `fpromote` 679 (554, `fcvt dd, sn`), `fdemote` 680 (559, `fcvt sd, dn`).
 
-`fcmp` is outside: `instData` rejects it (its `fp_cond_code` conditions are not proven), so its
-root `rule_lower_2176` is excluded and `is_nonzero_cmp`'s `fcmp` arm stays absurd.
+`fcmp` is outside this module: its `instData` arm and root `rule_lower_2176` are S11f's
+(`IselFloatCmpEmit`); the theorems here keep the `hop : ∀ cc, op ≠ .fcmp cc` premise.
 -/
 
 namespace Backend.Proof

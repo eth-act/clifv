@@ -20,7 +20,8 @@ Commands:
 ```
 lake build FV.Clif FVTest.Clif.SpecCrossread FVTest.Clif.StepExamples
 scripts/clif-filetests.sh            # all runtests, both engines, printer check; -v for details
-lake build clif-filetest && .lake/build/bin/clif-filetest [-v] [--oracle-dir D | --oracle F.json] [--print-dir D] FILE.clif...
+lake build clif-filetest && .lake/build/bin/clif-filetest [-v] [--oracle-dir D | --oracle F.json] [--print-dir D] [--stale-seed N] FILE.clif...
+# SEM1 native check: clif-native FILE.clif --stale-seed N > F.json; clif-filetest --stale-seed N --oracle F.json FILE.clif
 cargo build --release --manifest-path rust/Cargo.toml -p clif-oracle
 rust/target/release/clif-oracle interp FILE.clif    # JSON lines, schema below
 rust/target/release/clif-oracle check FILE.clif     # reader + verifier, exit status
@@ -133,7 +134,13 @@ Memory invariants:
   with the flags' trap code (default `heap_oob`), or is `stuck` if the access is `notrap`;
 - a valid access with `aligned` at a misaligned address is `stuck`; atomics must be
   naturally aligned (`stuck` otherwise);
-- bytes start uninitialised (`none`); reading one is `stuck`;
+- bytes start uninitialised (`none`); reading one is `stuck`. Exception (SEM1,
+  `docs/plans/uninit.md` §5): with the slot-byte oracle `Place.init = some ini` of the
+  slot-placement oracle, the `k`-th placed activation with stack slots (`Clif.initSlots`,
+  counting from `ini.next + 1`) starts with the oracle's bytes `ini.bytes k a` in its slots
+  (`Mem.fillAt`); `init = none` (the default, and every existing statement through
+  `LinkSys.PlaceAt`/`PlaceInv`) is the semantics above. Checked natively:
+  `clif-native --stale-seed n` vs `clif-filetest --stale-seed n`;
 - `alloc` is a bump allocator (alignment `max align 16`, 16-byte gap after every
   allocation); addresses are never reused, freed allocations make later accesses through
   stale pointers invalid;

@@ -64,6 +64,7 @@ theorem backend_correct_cleanup_ex_abi {p : Clif.Program} {f : Clif.Function} {k
     -- the outgoing stack-argument area of the relation holds every call's stack arguments
     (hPure : ∀ s i us w outs w' ctl, pureForm i = true →
       sem s i us w = some (outs, w', ctl) → w' = w ∧ ctl = .next)
+    (hCmp : ∀ s, CmpOverwrite (sem s))
     (houtB : vc.outgoing ≤ out)
     -- the run
     {base ra : BitVec 64} {s w₀ : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State}
@@ -76,7 +77,7 @@ theorem backend_correct_cleanup_ex_abi {p : Clif.Program} {f : Clif.Function} {k
   obtain ⟨ctx, st0, R, gn, bl, A, hshape, hcert, hbr⟩ := loweringObligations_of_check hc.lowerOk
   refine backend_correct_of_layers_ex_abi (fun s' => iselSimAbi_of_driver (ctx := ctx) (st0 := st0)
     (R := R) (gn := gn) (bl := bl) (A := A) ?_ (hds s') (hmem s') hS) (fun s' a w => by
-      obtain ⟨hr, ht⟩ := prune_correct (vc := vc) (hPure s') a w
+      obtain ⟨hr, ht⟩ := prune_correct (vc := vc) (hPure s') (hCmp s') a w
       obtain ⟨pr, pt⟩ := prepareCorrect_of_check (hds s') hc.prepOk a w
       exact ⟨fun _ _ _ h => pr _ _ _ (hr _ _ _ h), fun _ h => pt _ (ht _ h)⟩)
     hM6 hent hres hbe
@@ -144,6 +145,7 @@ theorem backend_correct_of_rules_cleanup_ex_abi {p : Clif.Program} {f : Clif.Fun
     -- the outgoing stack-argument area of the relation holds every call's stack arguments
     (hPure : ∀ s i us w outs w' ctl, pureForm i = true →
       sem s i us w = some (outs, w', ctl) → w' = w ∧ ctl = .next)
+    (hCmp : ∀ s, CmpOverwrite (sem s))
     (houtB : vc.outgoing ≤ out)
     -- the run
     {base ra : BitVec 64} {s w₀ : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State}
@@ -161,7 +163,7 @@ theorem backend_correct_of_rules_cleanup_ex_abi {p : Clif.Program} {f : Clif.Fun
       (outArgsOk_holds ⟨F s', syms, slotOff, out⟩ f) (hcalls s'))
     (fun s' => tryIndCalls_of_rules htryIndRules htryIndUn (hRef s')
       (mrStable_holds ⟨F s', syms, slotOff, out⟩ f) (hicalls s'))
-    hM6 hRef hds hcalls hicalls hmem hPure houtB hent hres hbe hargs hargF hcs hrel htr fuel
+    hM6 hRef hds hcalls hicalls hmem hPure hCmp houtB hent hres hbe hargs hargF hcs hrel htr fuel
 
 /-- `backend_correct_m4_cleanup_ex` with the ABI return values (`sretStableB f`). -/
 theorem backend_correct_m4_cleanup_ex_abi {p : Clif.Program} {f : Clif.Function} {k : Nat}
@@ -201,7 +203,7 @@ theorem backend_correct_m4_cleanup_ex_abi {p : Clif.Program} {f : Clif.Function}
     hM6 hRef (fun s' => driverSem_valueSem (F s') (ctx s') (X s'))
     (fun s' => callsRefine_valueSem (hX s'))
     (fun s' => indCallsRefine_valueSem (hXI s') (hsym s') (fun _ _ _ h => h.1.symbols)) hmem
-    (fun _ _ _ _ _ _ _ hp he => valueSem_pure hp he) houtB
+    (fun _ _ _ _ _ _ _ hp he => valueSem_pure hp he) (fun _ => valueSem_cmpOverwrite _ _ _) houtB
     hent hres hbe hargs hargF hcs hrel htr fuel
 
 /-- `backend_correct_final_cleanup_ex` with the ABI return values (`sretStableB f`). -/

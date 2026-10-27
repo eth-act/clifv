@@ -93,7 +93,7 @@ theorem preparedCleanup_ctlInsts {vc vcp : VCode} (h : CtlInsts vcp) :
       exact hok
   · have hhead : (preparedCleanupBlock vc vb0).insts.toList[0]? = some (.args ds) :=
       (preparedCleanupBlock_pureSublist vc vb0).head_nonpure
-        (by rw [Array.getElem?_toList]; exact ha) rfl
+        (by rw [Array.getElem?_toList]; exact ha) rfl rfl
     rw [Array.getElem?_toList] at hhead
     refine ⟨preparedCleanupBlock vc vb0, ds, ?_, hhead, ?_⟩
     · rw [preparedCleanup_blocks, Array.getElem?_map, h0]; rfl

@@ -189,7 +189,7 @@ private theorem old_not_special {sig : Clif.Signature} {b k : Nat} {i : MInst}
     (checked : Backend.ABIReadOnly.instruction sig b k i = true) : special i = false := by
   cases i with
   | aluRRR op sz rd rn rm =>
-    cases op <;> simp_all [special,Backend.ABIReadOnly.instruction,pureForm,pureAlu]
+    cases op <;> simp_all [special,Backend.ABIReadOnly.instruction,pureNoFlags,pureForm,pureAlu]
   | csel rd rn rm c => cases checked
   | _ => rfl
 

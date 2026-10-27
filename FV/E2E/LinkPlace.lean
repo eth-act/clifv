@@ -68,21 +68,50 @@ theorem placeSlots_facts (sp : BitVec 64) (off : SlotId → Nat) :
       · exact .inl hx'
     · exact .inr hx'
 
-/-- Entering a function pushes a stack pointer on the slot-placement oracle. -/
-theorem enterSlots_place (f : Function) (mem : Mem) :
+/-- Entering a function pushes a stack pointer on the slot-placement oracle, also under the
+slot-byte oracle `Place.init` (an activation with slots advances it, which an absent oracle or no
+slots keep). -/
+theorem enterSlots_place_init (f : Function) (mem : Mem) :
     (mem.place = none → (enterSlots f mem).2.place = none) ∧
-    ∀ pl, mem.place = some pl → ∃ sp, (enterSlots f mem).2.place = some { pl with sps := sp :: pl.sps } := by
+    ∀ pl, mem.place = some pl → ∃ sp ini, (enterSlots f mem).2.place =
+      some { pl with sps := sp :: pl.sps, init := ini } ∧
+      (pl.init = none ∨ f.slots = [] → ini = pl.init) := by
   refine ⟨fun h => ?_, fun pl h => ?_⟩
   · simp only [enterSlots, h]
     exact (bumpSlots_facts f.slots ([], mem)).1.trans h
   · cases hf : pl.frame f.name with
     | none =>
       simp only [enterSlots, h, hf]
-      exact ⟨_, (bumpSlots_facts f.slots _).1⟩
+      exact ⟨_, pl.init, (bumpSlots_facts f.slots _).1, fun _ => rfl⟩
     | some p =>
       obtain ⟨d, off⟩ := p
-      simp only [enterSlots, h, hf]
-      exact ⟨_, (placeSlots_facts _ _ f.slots _).1⟩
+      have e : ∀ m0 : Mem,
+          (placeSlots f.slots (pl.sps.headD 0 - BitVec.ofNat 64 d) off m0).2.place = m0.place :=
+        fun m0 => (placeSlots_facts _ _ f.slots ([], m0)).1
+      simp only [enterSlots, h, hf, initSlots_place, e]
+      obtain ⟨sps, frm, i⟩ := pl
+      cases i with
+      | none => exact ⟨_, none, rfl, fun _ => rfl⟩
+      | some i =>
+        by_cases hs : f.slots.isEmpty
+        · refine ⟨sps.headD 0 - BitVec.ofNat 64 d, some i, ?_, fun _ => rfl⟩
+          simp only [initPlace, hs, if_true]
+        · refine ⟨sps.headD 0 - BitVec.ofNat 64 d, some i.succ, ?_, fun hc => ?_⟩
+          · simp only [initPlace, hs, Option.map_some, Place.advance]
+            rfl
+          · rcases hc with hc | hc
+            · cases hc
+            · simp [hc] at hs
+
+/-- Entering a function pushes a stack pointer on the slot-placement oracle (without the
+slot-byte oracle `Place.init`). -/
+theorem enterSlots_place (f : Function) (mem : Mem)
+    (hi : ∀ pl, mem.place = some pl → pl.init = none) :
+    (mem.place = none → (enterSlots f mem).2.place = none) ∧
+    ∀ pl, mem.place = some pl → ∃ sp, (enterSlots f mem).2.place = some { pl with sps := sp :: pl.sps } := by
+  refine ⟨(enterSlots_place_init f mem).1, fun pl h => ?_⟩
+  obtain ⟨sp, ini, hsp, hini⟩ := (enterSlots_place_init f mem).2 pl h
+  exact ⟨sp, by rw [hsp, hini (.inl (hi pl h))]⟩
 
 /-- The allocations after entering a function: the former ones and its slots. -/
 theorem enterSlots_allocs (f : Function) (mem : Mem) :
@@ -98,7 +127,7 @@ theorem enterSlots_allocs (f : Function) (mem : Mem) :
       exact (bumpSlots_facts f.slots _).2.2
     | some p =>
       obtain ⟨d, off⟩ := p
-      simp only [enterSlots, h, hf]
+      simp only [enterSlots, h, hf, initSlots_allocs, initSlots_fst]
       exact (placeSlots_facts _ _ f.slots _).2.2
 
 /-- One step of `placeSlots`. -/
@@ -294,16 +323,16 @@ def EnvKeepsPlace (env : Env) : Prop :=
     m'.place = m.place
 
 /-- The oracle of a state of a run from an activation entered with stack pointers `sps`: one
-stack pointer per frame on top of them. -/
+stack pointer per frame on top of them (no slot-byte oracle). -/
 def PlaceInv (sps : List (BitVec 64)) (fr : String → Option (Nat × (SlotId → Nat))) (s : State) :
     Prop :=
-  ∃ l, s.mem.place = some ⟨l ++ sps, fr⟩ ∧ l.length = s.callers.length + 1
+  ∃ l, s.mem.place = some ⟨l ++ sps, fr, none⟩ ∧ l.length = s.callers.length + 1
 
 theorem placeInv_step {P : Program} (hP : ∀ g ∈ P.funcs, LinkFree g) {env : Env}
     (hk : EnvKeepsPlace env) {sps : List (BitVec 64)} {fr : String → Option (Nat × (SlotId → Nat))}
     {s : State} (hI : LInv P s) (hp : PlaceInv sps fr s) :
     (∀ s1, step env P s = .next s1 → PlaceInv sps fr s1) ∧
-    (∀ v m, step env P s = .done v m → m.place = some ⟨sps, fr⟩) := by
+    (∀ v m, step env P s = .done v m → m.place = some ⟨sps, fr, none⟩) := by
   obtain ⟨l, hl, hlen⟩ := hp
   refine ⟨fun s1 h => ?_, fun v m h => ?_⟩
   · rcases step_next_cases hP hI h with ⟨hc, -, ⟨hpl, -⟩ | ⟨n, g, vals, rv, hg, hr⟩⟩ |
@@ -311,7 +340,7 @@ theorem placeInv_step {P : Program} (hP : ∀ g ∈ P.funcs, LinkFree g) {env : 
     · exact ⟨l, by rw [hpl, hl], by rw [hc, hlen]⟩
     · exact ⟨l, by rw [hk n g hg vals s.mem rv s1.mem hr, hl], by rw [hc, hlen]⟩
     · obtain ⟨_, _, _, _, _, _, hal, -⟩ := Opt.enterFunc_ok he
-      obtain ⟨sp, hsp⟩ := (enterSlots_place g s.mem).2 _ hl
+      obtain ⟨sp, hsp⟩ := (enterSlots_place g s.mem (fun pl h => by rw [hl] at h; cases h; rfl)).2 _ hl
       rw [hal] at hsp
       exact ⟨sp :: l, hsp, by rw [hc]; simp [hlen]⟩
     · rw [hc] at hlen
@@ -340,7 +369,7 @@ the oracle). -/
 theorem runLoop_place {P : Program} (hP : ∀ g ∈ P.funcs, LinkFree g) {env : Env}
     (hk : EnvKeepsPlace env) {sps : List (BitVec 64)} {fr : String → Option (Nat × (SlotId → Nat))} :
     ∀ (N : Nat) (s : State) (vals : List Val) (mem : Mem), LInv P s → PlaceInv sps fr s →
-      runLoop env P N s = .returned vals mem → mem.place = some ⟨sps, fr⟩
+      runLoop env P N s = .returned vals mem → mem.place = some ⟨sps, fr, none⟩
   | 0, _, _, _, _, _, h => by simp at h
   | N + 1, s, vals, mem, hI, hp, h => by
     rw [runLoop_succ'] at h
@@ -367,7 +396,7 @@ theorem placeNone_step {P : Program} (hP : ∀ g ∈ P.funcs, LinkFree g) {env :
     · rw [hpl, hp]
     · rw [hk n g hg vals s.mem rv s1.mem hr, hp]
     · obtain ⟨_, _, _, _, _, _, hal, -⟩ := Opt.enterFunc_ok he
-      have := (enterSlots_place g s.mem).1 hp
+      have := (enterSlots_place_init g s.mem).1 hp
       rwa [hal] at this
     · rw [hm]; simp only [Mem.leave, Mem.free, hp]
   · obtain ⟨-, hm⟩ := step_done_mem hP hI h
@@ -395,21 +424,30 @@ theorem runLoop_placeNone {P : Program} (hP : ∀ g ∈ P.funcs, LinkFree g) {en
 
 /-- The entry state of an activation pushes one stack pointer on the oracle. -/
 theorem initState_place {P : Program} {n : String} {vals : List Val} {cm : Mem} {cs : State}
-    (hi : initState P n vals cm = .ok cs) {pl : Place} (hp : cm.place = some pl) :
-    PlaceInv pl.sps pl.frame cs := by
+    (hi : initState P n vals cm = .ok cs) {pl : Place} (hp : cm.place = some pl)
+    (hi0 : pl.init = none) : PlaceInv pl.sps pl.frame cs := by
   simp only [initState, Res.bind_eq_ok, Res.ofOption_eq_ok, Res.pure_eq_ok] at hi
   obtain ⟨g, -, ⟨fr, mem'⟩, he, rfl⟩ := hi
   obtain ⟨_, _, _, _, _, _, hal, -⟩ := Opt.enterFunc_ok he
-  obtain ⟨sp, hsp⟩ := (enterSlots_place g cm).2 _ hp
+  obtain ⟨sp, hsp⟩ := (enterSlots_place g cm (fun pl' h => by rw [hp] at h; cases h; exact hi0)).2 _ hp
   rw [hal] at hsp
+  obtain ⟨sps, frm, i⟩ := pl
+  cases hi0
   exact ⟨[sp], hsp, rfl⟩
 
-/-- **The linked environment keeps the oracle** (the program's functions' runs give it back)
-when the base externs do. -/
-theorem linkEnvR_keepsPlace {P : Program} {base : Env} {R : State → Outcome}
+/-- The externs keep the slot-placement oracle on the memories without the slot-byte oracle
+(`Place.init = none`): what a linked environment keeps (`linkEnvR_keepsPlace0`), whose program
+callees advance the slot-byte oracle. -/
+def EnvKeepsPlace0 (env : Env) : Prop :=
+  ∀ n g, env.extern n = some g → ∀ vals m rvals m', (∀ pl, m.place = some pl → pl.init = none) →
+    g vals m = .returned rvals m' → m'.place = m.place
+
+/-- **The linked environment keeps the oracle** without the slot-byte oracle (the program's
+functions' runs give it back) when the base externs keep it. -/
+theorem linkEnvR_keepsPlace0 {P : Program} {base : Env} {R : State → Outcome}
     (hR : RunsOf base P R) (hP : ∀ g ∈ P.funcs, LinkFree g)
-    (hk : EnvKeepsPlace base) : EnvKeepsPlace (linkEnvR P base R) := by
-  intro n gsem hg vals m rvals m' hr
+    (hk : EnvKeepsPlace base) : EnvKeepsPlace0 (linkEnvR P base R) := by
+  intro n gsem hg vals m rvals m' hm0 hr
   cases hpf : P.func? n with
   | none => rw [linkEnvR_none hpf] at hg; exact hk n gsem hg vals m rvals m' hr
   | some g =>
@@ -443,19 +481,23 @@ theorem linkEnvR_keepsPlace {P : Program} {base : Env} {R : State → Outcome}
             simp only [Res.ok_bind, Res.pure_eq, Res.ok.injEq] at hi
             subst hi
             obtain ⟨_, _, _, _, _, _, hal, -⟩ := Opt.enterFunc_ok he
-            have := (enterSlots_place g m).1 hmp
+            have := (enterSlots_place_init g m).1 hmp
             rwa [hal] at this
           | trap => rw [he] at hi; cases hi
           | stuck => rw [he] at hi; cases hi
         exact runLoop_placeNone hP hk M s rvals m' hI h0 hr
       | some pl =>
-        exact runLoop_place hP hk M s rvals m' hI (initState_place hi hmp) hr
+        have hi0 := hm0 pl hmp
+        rw [runLoop_place hP hk M s rvals m' hI (initState_place hi hmp hi0) hr]
+        obtain ⟨sps, frm, i⟩ := pl
+        cases hi0
+        rfl
     | trap c => rw [hi] at hr; cases hr
     | stuck msg => rw [hi] at hr; cases hr
 
-theorem linkEnvN_keepsPlace {P : Program} {base : Env} {M : Nat} (hP : ∀ g ∈ P.funcs, LinkFree g)
-    (hk : EnvKeepsPlace base) : EnvKeepsPlace (linkEnvN P base M) :=
-  linkEnvR_keepsPlace (runsOf_runLoop base P M) hP hk
+theorem linkEnvN_keepsPlace0 {P : Program} {base : Env} {M : Nat} (hP : ∀ g ∈ P.funcs, LinkFree g)
+    (hk : EnvKeepsPlace base) : EnvKeepsPlace0 (linkEnvN P base M) :=
+  linkEnvR_keepsPlace0 (runsOf_runLoop base P M) hP hk
 
 /-! ## The allocations on returning runs -/
 

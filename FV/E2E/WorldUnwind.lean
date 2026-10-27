@@ -186,7 +186,7 @@ theorem backend_correct_world_cleanupU {p : Clif.Program} {f : Clif.Function} {k
   have hI := iselSimU_relW_cleanup hsub hc hlU hX hXI hXR hXRi hexcl hsym hslot (fun _ => 0) hcs
     hrel hargs htr fuel
   have hP := prepareCorrectU_cleanup (driverSem_valueSemU F ⟨fa.k, af.slotBase⟩ X XR)
-    (fun _ _ _ _ _ _ hp he => valueSemU_pure hp he) hc.prepOk XR
+    (fun _ _ _ _ _ _ hp he => valueSemU_pure hp he) (valueSemU_cmpOverwrite _ _ _ _) hc.prepOk XR
   have hM6 : ∀ (H : ArmHooks) (U : Unw.UnwHooks) (G : BitVec 64 → Prop) (base ra : BitVec 64)
       (s : Arm.ArmState), ActEntryU vcp rf af fa fb K F G X H XR U base ra s w₀ → _ :=
     fun H U G base ra s he => by
@@ -277,7 +277,7 @@ theorem backend_correct_world_cleanupUG {p : Clif.Program} {f : Clif.Function} {
   have hI := iselSimU_relW_cleanup hsub hc hlU hX hXI hXR hXRi hexcl hsym hslot (fun _ => 0) hcs
     hrel hargs htr fuel
   have hP := prepareCorrectU_cleanup (driverSem_valueSemU F ⟨fa.k, af.slotBase⟩ X XR)
-    (fun _ _ _ _ _ _ hp he => valueSemU_pure hp he) hc.prepOk XR
+    (fun _ _ _ _ _ _ hp he => valueSemU_pure hp he) (valueSemU_cmpOverwrite _ _ _ _) hc.prepOk XR
   have hM6 : ∀ (H : ArmHooks) (U : Unw.UnwHooks) (G : BitVec 64 → Prop) (base ra : BitVec 64)
       (s : Arm.ArmState), ActEntryU vcp rf af fa fb K F G X H XR U base ra s w₀ → _ :=
     fun H U G base ra s he => by

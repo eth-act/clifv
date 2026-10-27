@@ -13,6 +13,10 @@ private theorem gotQuery_pure (t : Nat) (i : MInst) (hp : pureForm i = true) :
     gotQuery t i = none := by
   cases i <;> simp_all [gotQuery, pureForm]
 
+private theorem gotQuery_cmp (t : Nat) (i : MInst) (hc : cmpForm i = true) :
+    gotQuery t i = none := by
+  cases i <;> simp_all [gotQuery, cmpForm]
+
 private theorem findSome_blocks (T : VBlock → VBlock) (f : MInst → Option String)
     (h : ∀ b, (T b).insts.toList.findSome? f = b.insts.toList.findSome? f)
     (bs : List VBlock) :
@@ -30,11 +34,11 @@ theorem preparedCleanup_gotSym (vc vcp : VCode) (t : Nat) :
   simp only [Array.toList_map, List.flatMap_map]
   exact findSome_blocks (preparedCleanupBlock vc) (gotQuery t)
     (fun b => (preparedCleanupBlock_pureSublist vc b).findSome (gotQuery t)
-      (gotQuery_pure t)) vcp.blocks.toList
+      (gotQuery_pure t) (gotQuery_cmp t)) vcp.blocks.toList
 
 private theorem gotBefore_sublist {xs ys : List MInst} (h : PureSublist xs ys)
     {k : Nat} {i : MInst} (hi : xs[k]? = some i) {load : MInst}
-    (hp : pureForm load = false)
+    (hp : pureForm load = false) (hc : cmpForm load = false)
     (hold : ∀ j : Nat, ys[j]? = some i → ∃ l < j, ys[l]? = some load) :
     ∃ l < k, xs[l]? = some load := by
   obtain ⟨pre, post, he, hpre⟩ := h.prefix hi
@@ -43,7 +47,7 @@ private theorem gotBefore_sublist {xs ys : List MInst} (h : PureSublist xs ys)
   have hload : load ∈ pre := by
     rw [he, List.getElem?_append_left hl] at hlo
     exact List.mem_of_getElem? hlo
-  have hkept := hpre.nonpure_mem hload hp
+  have hkept := hpre.nonpure_mem hload hp hc
   obtain ⟨l', hl'⟩ := List.mem_iff_getElem?.mp hkept
   have hlt := (List.getElem?_eq_some_iff.mp hl').1
   simp only [List.length_take] at hlt
@@ -78,7 +82,7 @@ theorem preparedCleanup_gotB (vc vcp : VCode) (t : Nat) (n : String)
         (hold : ∀ j : Nat, raw.insts[j]? = some i → gotBefore t n raw j = true) :
         gotBefore t n (preparedCleanupBlock vc raw) k = true := by
       have h := gotBefore_sublist hrel (by simpa using hi)
-        (show pureForm (.loadExtNameGot (.vreg t .int) n) = false from rfl) (by
+        (show pureForm (.loadExtNameGot (.vreg t .int) n) = false from rfl) rfl (by
           intro j hj
           have hbefore := hold j (by simpa using hj)
           simpa only [gotBefore, List.any_eq_true, List.mem_range, decide_eq_true_eq,

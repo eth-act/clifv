@@ -72,6 +72,9 @@ theorem backend_correct_cleanup_ex {p : Clif.Program} {f : Clif.Function} {k : N
     -- the outgoing stack-argument area of the relation holds every call's stack arguments
     (hPure : ∀ s i us w outs w' ctl, pureForm i = true →
       sem s i us w = some (outs, w', ctl) → w' = w ∧ ctl = .next)
+    -- a compare's flags are overwritten by the next compare (the cleanup drops compares whose
+    -- flags are dead, #552)
+    (hCmp : ∀ s, CmpOverwrite (sem s))
     (houtB : vc.outgoing ≤ out)
     -- the run
     {base ra : BitVec 64} {s w₀ : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State}
@@ -84,7 +87,7 @@ theorem backend_correct_cleanup_ex {p : Clif.Program} {f : Clif.Function} {k : N
   obtain ⟨ctx, st0, R, gn, bl, A, hshape, hcert, hbr⟩ := loweringObligations_of_check hc.lowerOk
   refine backend_correct_of_layers_ex (fun s' => iselSim_of_driver (ctx := ctx) (st0 := st0) (R := R)
     (gn := gn) (bl := bl) (A := A) ?_ (hds s') (hmem s')) (fun s' a w => by
-      obtain ⟨hr, ht⟩ := prune_correct (vc := vc) (hPure s') a w
+      obtain ⟨hr, ht⟩ := prune_correct (vc := vc) (hPure s') (hCmp s') a w
       obtain ⟨pr, pt⟩ := prepareCorrect_of_check (hds s') hc.prepOk a w
       exact ⟨fun _ _ _ h => pr _ _ _ (hr _ _ _ h), fun _ h => pt _ (ht _ h)⟩)
     hM6 hent hres hbe
@@ -151,6 +154,7 @@ theorem backend_correct_of_rules_cleanup_ex {p : Clif.Program} {f : Clif.Functio
     -- the outgoing stack-argument area of the relation holds every call's stack arguments
     (hPure : ∀ s i us w outs w' ctl, pureForm i = true →
       sem s i us w = some (outs, w', ctl) → w' = w ∧ ctl = .next)
+    (hCmp : ∀ s, CmpOverwrite (sem s))
     (houtB : vc.outgoing ≤ out)
     -- the run
     {base ra : BitVec 64} {s w₀ : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State}
@@ -168,7 +172,7 @@ theorem backend_correct_of_rules_cleanup_ex {p : Clif.Program} {f : Clif.Functio
       (outArgsOk_holds ⟨F s', syms, slotOff, out⟩ f) (hcalls s'))
     (fun s' => tryIndCalls_of_rules htryIndRules htryIndUn (hRef s')
       (mrStable_holds ⟨F s', syms, slotOff, out⟩ f) (hicalls s'))
-    hM6 hRef hds hcalls hicalls hmem hPure houtB hent hres hbe hargs hargF hcs hrel htr fuel
+    hM6 hRef hds hcalls hicalls hmem hPure hCmp houtB hent hres hbe hargs hargF hcs hrel htr fuel
 
 
 end E2E

@@ -78,7 +78,7 @@ def sb : BitVec 64 := sp0 - BitVec.ofNat 64 (frameDrop (artOf J.results f).af)
 /-- The caller's CLIF memory: no live allocation, the CLIF image's symbols, the slot-placement
 oracle at the entry's body `sp`. -/
 def cm : Clif.Mem :=
-  { symbols := fun n => J.syms.lookup n, place := some ⟨[sb], (sys J closedBase).frames⟩ }
+  { symbols := fun n => J.syms.lookup n, place := some ⟨[sb], (sys J closedBase).frames, none⟩ }
 
 /-- The entry registers: the entry block's parameters bound to the split arguments. -/
 def regs : Clif.Regs := (Clif.Regs.empty.setMany (bF.params.map (·.1)) args').getD default

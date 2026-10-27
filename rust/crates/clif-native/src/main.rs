@@ -1,6 +1,7 @@
 //! `clif-native`: runs the `; run:`/`; print:` commands of a .clif file natively.
 //!
 //! usage: clif-native <file.clif> [--link <obj-or-archive>]... [--keep <dir>] [--timeout <secs>]
+//!        [--stale-seed <n>]
 //!
 //! Every function of the file is compiled for `aarch64-unknown-linux-gnu` with the
 //! verification-friendly settings of `clif2obj` (same code path). For each function invoked by
@@ -14,6 +15,11 @@
 //! Output: one JSON record per run command on stdout, in the clif-oracle schema
 //! (`docs/contracts/clif.md`); traps map the faulting PC through Cranelift's trap table to
 //! `{"trapped": "<code>"}`. Details and limitations: `docs/contracts/drivers.md`.
+//!
+//! `--stale-seed n` (SEM1, `docs/plans/uninit.md`): before each run command the harness fills
+//! the 64 KiB of stack below its `sp` with the byte `(n + 37 * (a mod 16)) mod 256` at address
+//! `a`, so a stack-slot byte the function under test reads before writing has that value
+//! (`clif-filetest --stale-seed n` runs `Clif.run` with the same slot-byte oracle).
 
 mod diff;
 
@@ -46,7 +52,7 @@ const TRAMP_PREFIX: &str = "__clifnative_tramp_";
 const STACK_BYTES: u64 = 1 << 30;
 
 const USAGE: &str = "usage: clif-native <file.clif> [--link <obj-or-archive>]... [--keep <dir>] [--timeout <secs>] \
-     [--functions-obj <obj> --functions-table <json>]";
+     [--functions-obj <obj> --functions-table <json>] [--stale-seed <n>]";
 
 struct Tools {
     clang: String,
@@ -88,12 +94,14 @@ struct Config {
     /// (e.g. from the Lean backend) and its function/trap table; only the trampolines are
     /// compiled by Cranelift.
     functions: Option<(PathBuf, PathBuf)>,
+    /// `--stale-seed`: the seed of the stack fill before each run command (harness `argv[2]`).
+    stale: Option<u8>,
 }
 
 fn parse_args() -> Result<Config> {
     let mut args = std::env::args().skip(1);
     let (mut file, mut links, mut keep, mut timeout) = (None, Vec::new(), None, Duration::from_secs(20));
-    let (mut fobj, mut ftable) = (None, None);
+    let (mut fobj, mut ftable, mut stale) = (None, None, None);
     while let Some(a) = args.next() {
         let mut value = || args.next().ok_or_else(|| anyhow!("{a} needs a value\n{USAGE}"));
         match a.as_str() {
@@ -102,6 +110,7 @@ fn parse_args() -> Result<Config> {
             "--timeout" => timeout = Duration::from_secs_f64(value()?.parse().context("--timeout")?),
             "--functions-obj" => fobj = Some(PathBuf::from(value()?)),
             "--functions-table" => ftable = Some(PathBuf::from(value()?)),
+            "--stale-seed" => stale = Some(value()?.parse::<u8>().context("--stale-seed")?),
             s if s.starts_with("--") => bail!("unknown option {s}\n{USAGE}"),
             _ if file.is_none() => file = Some(a),
             _ => bail!("{USAGE}"),
@@ -119,6 +128,7 @@ fn parse_args() -> Result<Config> {
         timeout,
         tools: Tools::from_env(),
         functions,
+        stale,
     })
 }
 
@@ -521,11 +531,12 @@ fn signal_name(signo: u32) -> String {
 
 /// One process run of the executable from run `start`: stdout, and how it ended.
 fn spawn_once(cfg: &Config, exe: &Path, start: usize) -> Result<(Vec<u8>, Result<ExitStatus, String>, String)> {
-    let mut child = Command::new(&cfg.tools.qemu)
-        .arg("-s")
-        .arg(STACK_BYTES.to_string())
-        .arg(exe)
-        .arg(start.to_string())
+    let mut cmd = Command::new(&cfg.tools.qemu);
+    cmd.arg("-s").arg(STACK_BYTES.to_string()).arg(exe).arg(start.to_string());
+    if let Some(seed) = cfg.stale {
+        cmd.arg(seed.to_string());
+    }
+    let mut child = cmd
         .stdin(Stdio::null())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())

@@ -5,6 +5,7 @@ import FV.Opt.LegalExn
 import FVTest.Opt.Common
 import FVTest.Backend.StockConfig
 import FVTest.Backend.AllocChoice
+import FVTest.Backend.CraneliftInput
 import FV.Backend.Proof.LowerSimUCheck
 import FV.E2E.RegLevelFrameSaved
 import FV.E2E.RegLevelUTry
@@ -13,13 +14,15 @@ import FV.E2E.RegLevelUTry
 `lake exe lean-backend <in.clif> <out.o|out.s> [--traps <out.json>] [--rules <out.txt>]
 [--dump <dir>] [--regalloc lean|regalloc2|spill|stack|regalloc2-small] [--personality <sym>]
 [--opt [--opt-* options]]`: compile every function of a `.clif` file with the
-Lean backend (`FV/Backend.lean`). Register allocation: `lean` (default; the Lean allocator
-`leanAlloc`, `FV/Backend/LinearScan.lean`, every allocation validated by the Lean checker
-`checkAlloc` with the spill allocation as fallback, `docs/contracts/regalloc.md`; with
-`$FV_RA_OUT` set, its answers are written there, `FVTest/Backend/AllocChoice.lean`),
-`regalloc2` (the external `lean-regalloc` oracle, `$LEAN_REGALLOC` or
-`rust/target/release/lean-regalloc`, validated the same way; the default under
-`--stock-config`), `spill` (the fallback for every function), `stack` (the
+Lean backend (`FV/Backend.lean`). Register allocation: `regalloc2` (default, as Cranelift: the
+external `lean-regalloc` oracle, `$LEAN_REGALLOC` or `rust/target/release/lean-regalloc`, given
+the code in the form Cranelift's lowering hands to regalloc2 (vreg numbering, `args`, calls to
+`sret` callees: `FVTest/Backend/CraneliftInput.lean`); every allocation validated by the Lean checker `checkAlloc`
+with the spill allocation as fallback, `docs/contracts/regalloc.md`; with `$FV_RA_OUT` set, the
+answers are written there; with `$FV_RA_DIAG` set, one line per function is appended there: the
+code regalloc2 was given and the allocation lowered), `lean` (the Lean allocator `leanAlloc`,
+`FV/Backend/LinearScan.lean`, validated the same way, `FVTest/Backend/AllocChoice.lean`),
+`spill` (the fallback for every function), `stack` (the
 stack-slot baseline), or `regalloc2-small` (regalloc2 with the 10-register stress environment
 `smallEnv`, for testing spill code). If the output path ends in `.o`, write an ELF relocatable object encoded
 by the Lean encoder (`FV/Backend/{Encode,Obj}.lean`, no assembler); otherwise write assembly
@@ -80,7 +83,7 @@ structure Opts where
   traps : Option String := none
   rules : Option String := none
   dump : Option String := none
-  /-- `--regalloc`; default `lean` (`regalloc2` under `--stock-config`). -/
+  /-- `--regalloc`; default `regalloc2`. -/
   regalloc : Option String := none
   opt : Option Opt.Config := none
   personality : Option String := none
@@ -93,10 +96,25 @@ allocation `rf` with `lowerRFunc vcp rf = .ok af` (`lowerAllocReady_eq`, `lowerA
 `af`; `none` without an `RFunc` (the stack allocator) or when `prepare` failed. -/
 abbrev AllocRecord := Option (VCode × RFunc × AFunc)
 
+/-- Which allocation `lowerAllocReady vcp ra` lowers, and why (`FV_RA_DIAG`). -/
+def allocVerdict (vcp : VCode) (ra : Except String RFunc) : String :=
+  match ra with
+  | .error e => s!"no answer: {e}"
+  | .ok rf =>
+    match checkAlloc vcp rf with
+    | .error e => s!"checkAlloc: {e}"
+    | .ok _ =>
+      match lowerRFunc vcp rf with
+      | .error e => s!"lowerRFunc: {e}"
+      | .ok af => if emitReady af then "regalloc2" else "not emitReady"
+
 /-- `Allocator.run`, also returning each function's `AllocRecord` (the objects the unwinding
 theorems name). The `regalloc2` case is `allocateRegalloc2` with the allocation it lowers
-(`allocResult vcp (readyAnswer vcp ra)`) kept. -/
-def allocRecording (a : Allocator) (vcs : Array VCode) :
+(`allocResult vcp (readyAnswer vcp ra)`) kept; `lean-regalloc` is given `(shapeOf vcp).code`
+(`CraneliftInput.shape`: regalloc2's input as Cranelift builds it, #551), its answer read back
+and rebuilt against `vcp`. -/
+def allocRecording (a : Allocator) (vcs : Array VCode)
+    (shapeOf : VCode → CraneliftInput.Shape := fun vcp => .same vcp "") :
     IO (Array (Except String AFunc) × Array AllocRecord) := do
   match a with
   | .stack => pure (vcs.map allocate, vcs.map fun _ => none)
@@ -109,14 +127,18 @@ def allocRecording (a : Allocator) (vcs : Array VCode) :
   | .regalloc2 bin env =>
     let prepared := vcs.map prepareChecked
     let ok := prepared.filterMap (·.toOption)
+    let shapes := ok.map shapeOf
     let rs : Array (Except String RFunc) ← do
       try
-        match ← runLeanRegalloc bin env ok with
+        match ← CraneliftInput.runLeanRegallocVia bin env shapes ok with
         | .error e => pure (ok.map fun _ => .error e)
         | .ok rs => pure (rs.map (·.bind RAResult.oracle))
       catch e => pure (ok.map fun _ => .error (toString e))
     let mut out : Array (Except String AFunc) := #[]
     let mut recs : Array AllocRecord := #[]
+    let mut ans : Array String := #[]
+    let diagOn := (← IO.getEnv "FV_RA_DIAG").isSome
+    let mut diag : Array String := #[]
     let mut j := 0
     for p in prepared do
       match p with
@@ -128,16 +150,32 @@ def allocRecording (a : Allocator) (vcs : Array VCode) :
         let af := lowerAllocReady vcp ra
         out := out.push af
         recs := recs.push (af.toOption.map (vcp, allocResult vcp (readyAnswer vcp ra), ·))
+        ans := ans.push <| match ra with
+          | .ok rf =>
+            if raAnswerRoundTrip vcp rf then raAnswerJson vcp rf
+            else raFailJson vcp.name "the answer does not rebuild the allocation"
+          | .error e => raFailJson vcp.name e
+        if diagOn then
+          diag := diag.push s!"{vcp.name}\t{(shapes[j]?.map (·.why)).getD ""}\t{allocVerdict vcp ra}"
         j := j + 1
+    -- `cargo fv --keep-temps`: regalloc2's answers, for `cargo fv link-proof` and `lean-link`
+    -- (which rebuild the allocations from them, as for the Lean allocator's)
+    if let some p ← IO.getEnv "FV_RA_OUT" then
+      IO.FS.writeFile p ("{\"functions\":[" ++ ",".intercalate ans.toList ++ "]}\n")
+    -- debugging aid (#551): per function, the code regalloc2 was given and the path taken
+    if let some p ← IO.getEnv "FV_RA_DIAG" then
+      let h ← IO.FS.Handle.mk p .append
+      for l in diag do h.putStrLn l
     pure (out, recs)
 
 /-- `allocRunOfName? n` with the `AllocRecord`s: the Lean allocator (`n = "lean"`:
 `allocateLeanAnswers`, writing the answers to `$FV_RA_OUT` when set) records its allocation as
 the `regalloc2` case does (`allocResult vcp (readyAnswer vcp ra)` with `ra = leanAlloc vcp`);
 other names run `allocRecording a`. -/
-def allocRecordingNamed (n : String) (a : Allocator) (vcs : Array VCode) :
+def allocRecordingNamed (n : String) (a : Allocator) (vcs : Array VCode)
+    (shapeOf : VCode → CraneliftInput.Shape := fun vcp => .same vcp "") :
     IO (Array (Except String AFunc) × Array AllocRecord) := do
-  if n != "lean" then return ← allocRecording a vcs
+  if n != "lean" then return ← allocRecording a vcs shapeOf
   let (afs, ans) := allocateLeanAnswers vcs
   if let some p ← IO.getEnv "FV_RA_OUT" then
     IO.FS.writeFile p ("{\"functions\":[" ++ ",".intercalate ans.toList ++ "]}\n")
@@ -187,7 +225,7 @@ def run (input output : String) (o : Opts) : IO UInt32 := do
     match checked with
     | .error e => IO.eprintln s!"lean-backend: unsupported stock configuration: {e}"; return 3
     | .ok c => stock := some c
-  let ra := o.regalloc.getD (if o.stockConfig.isSome then "regalloc2" else "lean")
+  let ra := o.regalloc.getD "regalloc2"
   let some runAlloc ← allocRunOfName? ra
     | do IO.eprintln s!"lean-backend: unknown allocator {ra}"; return 2
   -- the stock configuration requires regalloc2 (checked above)
@@ -212,7 +250,11 @@ def run (input output : String) (o : Opts) : IO UInt32 := do
   let fa ← match stock with
     | none => compileFileParameterCfgNIWhen (!o.opt.isSome &&
         !(pf.funcs.any fun p => p.func.toOption.any fun f => f.blocks.any (·.term.isTry))) (fun vcs => do
-        let (afs, recs) ← allocRecordingNamed ra alloc vcs
+        -- regalloc2 sees the code as Cranelift's lowering gives it (`CraneliftInput.shape`, #551)
+        let byName (n : String) : Option Clif.Function :=
+          (pf.funcs.find? (·.name == n)).bind (·.func.toOption)
+        let shapeOf := fun (vcp : VCode) => CraneliftInput.shape (byName vcp.name) o.deadCleanup vcp
+        let (afs, recs) ← allocRecordingNamed ra alloc vcs shapeOf
         records.set ((vcs.map (·.name)).zip recs)
         pure afs) pf (unv128 ++ unvTry) o.deadCleanup
     | some c => (compileFileWith (StockConfig.allocate c clif rejected alloc) pf

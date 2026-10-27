@@ -436,7 +436,7 @@ theorem enterSlots_ids (f : Function) (mem : Mem) :
   split
   · exact allocSlots_ids f.slots mem
   · split
-    · exact placeSlots_ids _ _ _ _
+    · simp only [initSlots_fst, initSlots_symbols]; exact placeSlots_ids _ _ _ _
     · exact allocSlots_ids f.slots _
 
 theorem enterFunc_ok {f : Function} {vals : List Val} {mem : Mem} {fr : Frame} {mem' : Mem}

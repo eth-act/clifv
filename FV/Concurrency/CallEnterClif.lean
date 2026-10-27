@@ -88,7 +88,8 @@ theorem cstepI_call_entry {env : Clif.Env} {p : Clif.Program} {s s' : Clif.State
     {results : List Clif.ValueId} {fn : Clif.FnRef} {args : List Clif.ValueId}
     {rest : List Clif.Stmt} (hb : s.frame.body = { results, inst := .call fn args } :: rest)
     {ext : Clif.ExtFunc} {callee : Clif.Function} (he : s.frame.func.extern? fn = some ext)
-    (hc : p.func? ext.name = some callee) (hs : Clif.step env p s = .next s') (U : Nat → Prop) :
+    (hc : p.func? ext.name = some callee) (hs : Clif.step env p s = .next s') (U : Nat → Prop)
+    (hi : ∀ pl, s.mem.place = some pl → pl.init = none) :
     ∃ vals B0 cs, s.frame.getMany args = .ok vals ∧ callee.blocks[0]? = some B0 ∧
       CStepI env p (.run s, U) []
         (.run (ClifLift.pushC (({ s.frame with body := rest }, results) :: s.callers) cs),
@@ -100,6 +101,6 @@ theorem cstepI_call_entry {env : Clif.Env} {p : Clif.Program} {s s' : Clif.State
       Clif.Regs.empty.setMany (B0.params.map (·.1)) vals = some cs.frame.regs ∧
       vals.map (·.ty) = B0.params.map (·.2) ∧ vals.map (·.ty) = callee.sig.params.map (·.ty) := by
   obtain ⟨vals, B0, cs, h1, h2, e, h3⟩ := step_call_entry hb he hc hs
-  exact ⟨vals, B0, cs, h1, h2, e ▸ cstepI_call hb he hc hs U, h3⟩
+  exact ⟨vals, B0, cs, h1, h2, e ▸ cstepI_call hb he hc hs U hi, h3⟩
 
 end Concurrency.CallEnterClif

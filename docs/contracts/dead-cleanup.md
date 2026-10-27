@@ -10,9 +10,30 @@ The replacement-driver work in PR #135 remains paused.
 `Backend.DeadCleanup.prune` leaves a CFG-invalid input unchanged. For a valid
 CFG, it scans each instruction array backwards and removes an instruction only
 when it has a whitelisted pure form, no clobbers, only virtual definitions, at
-least one definition, and no live definition. The whitelist includes integer
+least one definition, and no live definition. The whitelist (`pureForm`) includes integer
 moves/constants/address computations, non-flag-setting arithmetic and logical
-operations, and multiply-add/subtract. Other forms remain in place.
+operations, multiply-add/subtract, the integer extensions (`uxtb`/`sxth`/…), and `cset` (it
+reads the flags but writes only its definition; #552: the boolean of an `icmp` that the
+`brif`/`select` rule re-compares, which Cranelift does not lower because no lowered instruction
+uses it, `machinst/lower.rs` `lower_clif_block`). Other forms remain in place.
+`ABIReadOnly.instruction` keeps its previous producer list (`pureNoFlags`, the whitelist
+without the extensions and `cset`).
+
+The scan also removes a compare (`cmp`/`cmn`/`tst` into `xzr`, `cmpForm`, no definition) whose
+flags are dead (`flagsDead`): the retained instructions after it reach another compare through
+flag-free producers only (`flagFree`: `pureNoFlags` and the extensions). This is the rest of the
+`icmp` above, and with it its operand extension (#552 part 2). Its proof relates the two runs
+with differing worlds while dropped compares' flags are pending (`Rel.pend`, `FlagsPend`), under
+the premise `CmpOverwrite sem`: a compare writes only what the next compare overwrites and
+flag-free producers neither read nor change. The value semantics (`valueSem`, `valueSemV`,
+`valueSemU`, `valueSemVU`, `valueSemG`, `valueSemGF`) run compares, like pure producers, by
+their specification (`specForm`, `mspec`); `*_cmpOverwrite` prove the premise for each, and
+`spec_mspec_csem` realizes a compare's specification step by the concrete semantics.
+Statements of the generic layers (`prune_correct`, `cleanup_correct`, `memTraps_prune`,
+`unwinds_prune`, `tryRaise_prune`, the `*_cleanup_ex*` layer theorems taking `hPure`) gained
+this premise (`hcmp`/`hCmp`); the positional lemmas (`rel_kept`, `head_nonpure`,
+`nonpure_mem`, `scan_head`, `scan_positions`) gained `cmpForm i = false`: the pass removes more,
+so the old statements are false.
 
 The liveness boundary includes every block's reads and outgoing edge arguments,
 including the current block's reads. This deliberately conservative choice covers
@@ -26,6 +47,43 @@ edge copies. The concrete realizer adapters compose it with the existing backend
 simulation. Preparation commutes with cleanup; the transports preserve baseline
 definite assignment, entry emptiness, spill-size bounds, frame/entry checks,
 GOT/call knowledge, allocation acceptance, control lowering and emission.
+
+## Cranelift's skip of unused statements (`skipDead`, #552)
+
+Cranelift does not lower an instruction without lowering side effects none of
+whose results the code lowered after it reads (`machinst/lower.rs`
+`lower_clif_block`, `is_any_inst_result_needed`). This is how it omits, for
+example, the `cmp; cset` of an `icmp` that a `brif`/`select` rule recomputes,
+or an `ishl` that a `bor` rule folds into a shifted operand. The cleanup rules
+for dead `cset`s, compares, shifts and jumps (#597, #605, #607, #608) imitate
+this afterwards on machine instructions. `Backend.Proof.Driver.skipDead f vc`
+(`FV/Backend/SkipDead.lean`) is the mechanism itself:
+
+* It deletes from `lowerFunction f`'s VCode the segments of `skippable`
+  statements (pure, non-trapping) whose written vregs no kept code reads. A
+  backward fixpoint, Cranelift's demand, decides which statements these are.
+* The result is accepted only if `deleteCheck` holds: no kept instruction or
+  branch argument reads a vreg a deleted instruction writes, every block keeps
+  its last instruction, and the CFG is unchanged.
+
+The proof (`FV/Backend/Proof/LowerSimSkip.lean`, `driver_correct_skipDead`) is at
+the CLIF level and uses no flag reasoning:
+
+* The kept code's relation `MatchK` is the driver's `Match` of a corresponding
+  configuration of the full code. The correspondence (`CorrC`) means the same
+  block and world, the kept index of the position, and register files equal
+  outside the deleted instructions' definitions.
+* Kept statements, terminators and the entry run only kept instructions
+  (`stmt_run`, `term_step_abiP`, `term_step_tryP`, `entry_stepP`), so their runs
+  carry over to the kept code (`starP_deletes`, `FV/Backend/Proof/VCodeDelete.lean`).
+* A deleted statement is pure: the kept code takes no step, and its world stays
+  the kept run's.
+
+Status: proved (standard axioms, `scripts/audit/skip-dead.lean`). It is not yet
+in the pipeline. The next step replaces `prune vc` by
+`prune (skipDead f vc)` for subset-E functions in the cleanup chain, and then
+removes the subsumed cleanup rules. On the `icmp`/`brif` witness
+(`skipWitness`), `cmp; cset; cmp; b.eq` becomes stock's `cmp; b.eq`.
 
 ## Consumers and proof scope
 

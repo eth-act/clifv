@@ -45,7 +45,7 @@ def fW : Clif.Function := (pW.funcs.drop 1).headD default
 def B0W : Clif.Block := fW.blocks.headD default
 
 /-- The slot oracle: `%g`'s frame drop `0xF0`, its slot at offset `0x10`. -/
-def placeW : Clif.Place := ⟨[0x7000#64], fun n => if n = "g" then some (0xF0, fun _ => 0x10) else none⟩
+def placeW : Clif.Place := ⟨[0x7000#64], fun n => if n = "g" then some (0xF0, fun _ => 0x10) else none, none⟩
 
 /-- The caller's memory: nothing allocated, the slot oracle. -/
 def memW : Clif.Mem := { place := some placeW }
@@ -89,7 +89,7 @@ theorem cstepI_callW :
     CStepI envW pW (.run (csW memW), fun _ => False) []
       (.run (sW memW), fun a => False ∨ slotZ gW memW a) := by
   obtain ⟨hb, he, hc, -, -, hn, -⟩ := factsW
-  exact cstepI_call (s := csW memW) hb he hc (stepW memW hn) _
+  exact cstepI_call (s := csW memW) hb he hc (stepW memW hn) _ (fun pl h => by cases h; rfl)
 
 /-- The mask after the call contains the slot's 8 bytes at `0x7000 - 0xF0 + 0x10`. -/
 theorem maskW : ∀ k < 8, slotZ gW memW (0x6F20 + k) := by
@@ -130,6 +130,7 @@ with the empty masks. -/
 theorem emptyW : CStepI envW pW (.run (csW memB), fun _ => False) [] (.run (sW memB), fun _ => False) := by
   obtain ⟨hb, he, hc, -, -, -, hn⟩ := factsW
   have h := cstepI_call (s := csW memB) hb he hc (stepW memB hn) (fun _ => False)
+    (fun pl h => by cases h)
   have e : (fun a => False ∨ slotZ gW (csW memB).mem a) = fun _ => False := by
     funext a; simp [slotZ, csW, memB]
   rw [e] at h

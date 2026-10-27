@@ -146,8 +146,14 @@ the trap is still `udf #49439` (0xc11f). With `--colocated-externs` the call is
 
 ```
 clif-native <file.clif> [--link <obj-or-archive>]... [--keep <dir>] [--timeout <secs>]
-            [--functions-obj <obj> --functions-table <json>]
+            [--functions-obj <obj> --functions-table <json>] [--stale-seed <n>]
 ```
+
+`--stale-seed n` (SEM1, `docs/plans/uninit.md` §5): before each run command the harness fills
+the 64 KiB below its `sp` with the byte `(n + 37 * (a mod 16)) mod 256` at address `a`, so a
+stack-slot byte that a leaf function under test reads before writing has that value;
+`clif-filetest --stale-seed n` runs `Clif.run` with the same slot-byte oracle (`Place.init`),
+and its `--oracle` comparison with these records is the native check of that semantics.
 
 Prints one JSON record per `; run`/`; print` comment on stdout, in exactly the clif-oracle
 schema and order (`docs/contracts/clif.md`; the code is shared through `clif-runlines`):

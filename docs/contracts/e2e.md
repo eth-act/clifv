@@ -1266,7 +1266,9 @@ oracle `Clif.Mem.place` (`none`: the bump allocator; `some`: a callee's slots at
 frame's addresses below the caller's `sp`). `hpl` picks, for the reference CLIF run, the
 placement the compiled code uses — one legitimate CLIF behaviour among those the source allows —
 so that a callee's slot accesses and the caller's view of its dead stack refer to the same
-bytes. It is vacuous without program callees with slots (`NeedSlots`).
+bytes. It is vacuous without program callees with slots (`NeedSlots`). `PlaceAt` pins the
+slot-byte oracle `Place.init` (SEM1) to `none`: callee slots start uninitialised in every
+existing statement.
 
 **Widening** (agent/link-widen):
 
@@ -1380,7 +1382,7 @@ bytes. It is vacuous without program callees with slots (`NeedSlots`).
       bump allocator).
    3. *Slotted callees* (`FV/E2E/LinkPlace.lean`, `LinkArm.lean`): a callee's whole-program run
       gives back the oracle and creates no allocation outside its arguments' and its slots'
-      (`runLoop_place`, `runLoop_allocs`, `linkEnvN_keepsPlace`), so the caller's relation holds
+      (`runLoop_place`, `runLoop_allocs`, `linkEnvN_keepsPlace0`), so the caller's relation holds
       after the call; `initState_mem` places the callee's slots in its slot region (`slotFits`),
       so its entry memory is related to its body-entry world with its own `F`. The activation's
       environment `envOf M g c` returns from a declared function of `P` only from a memory whose
