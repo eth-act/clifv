@@ -93,7 +93,7 @@ theorem noTls {sig : Clif.Signature} {code : VCode}
   obtain ⟨b,hb⟩ := List.mem_iff_getElem?.mp (Array.mem_toList_iff.mpr member)
   obtain ⟨k,hi⟩ := List.mem_iff_getElem?.mp (Array.mem_toList_iff.mpr member')
   have supported := ABIReadOnly.checked_instruction checked (by simpa using hb) (by simpa using hi)
-  cases i <;> simp_all [Backend.ABIReadOnly.instruction,Backend.DeadCleanup.pureForm]
+  cases i <;> simp_all [Backend.ABIReadOnly.instruction,Backend.DeadCleanup.pureNoFlags,Backend.DeadCleanup.pureForm]
 
 theorem noTlsFlags {sig : Clif.Signature} {code : VCode}
     (checked : Backend.ABIReadFlags.check sig code = true) : code.hasTls = false := by
@@ -105,7 +105,7 @@ theorem noTlsFlags {sig : Clif.Signature} {code : VCode}
   obtain ⟨b,hb⟩ := List.mem_iff_getElem?.mp (Array.mem_toList_iff.mpr member)
   obtain ⟨k,hi⟩ := List.mem_iff_getElem?.mp (Array.mem_toList_iff.mpr member')
   have supported := MixedFlagBoundary.checked_instruction checked (by simpa using hb) (by simpa using hi)
-  cases i <;> simp_all [Backend.ABIReadOnly.instruction,Backend.DeadCleanup.pureForm,Backend.ABIReadFlags.extra]
+  cases i <;> simp_all [Backend.ABIReadOnly.instruction,Backend.DeadCleanup.pureNoFlags,Backend.DeadCleanup.pureForm,Backend.ABIReadFlags.extra]
 
 /-- Scalar producers add no TLS read; the retained ABI checks keep their exclusions. -/
 theorem noTlsScalar {sig : Clif.Signature} {code : VCode}
@@ -120,7 +120,7 @@ theorem noTlsScalar {sig : Clif.Signature} {code : VCode}
   have supported := ScalarBoundary.checked_instruction checked (by simpa using hb) (by simpa using hi)
   cases i <;> simp_all [Backend.ABIReadScalar.instruction,Backend.ABIReadScalar.constant,Backend.ABIReadScalar.shift,Backend.ABIReadScalar.extension,Backend.ABIReadScalar.bitProducer,Backend.ABIReadScalar.popcountProducer,Backend.ABIReadScalar.comparisonProducer,Backend.ABIReadScalar.booleanProducer,Backend.ABIReadScalar.highmulProducer,Backend.ABIReadScalar.extendedComparisonProducer,Backend.ABIReadScalar.maskProducer,
     Backend.ABIReadFlags.instruction,Backend.ABIReadOnly.instruction,
-    Backend.DeadCleanup.pureForm,Backend.ABIReadFlags.extra]
+    Backend.DeadCleanup.pureNoFlags,Backend.DeadCleanup.pureForm,Backend.ABIReadFlags.extra]
 /-- Scalar producers add no TLS read; the retained ABI checks keep their exclusions. -/
 theorem noTlsDiv {sig : Clif.Signature} {code : VCode}
     (checked : Backend.ABIReadDiv.check sig code = true) : code.hasTls = false := by
@@ -148,7 +148,7 @@ theorem noTlsCfg {sig : Clif.Signature} {code : VCode}
   have supported := CfgBoundary.checked_instruction checked (by simpa using hb) (by simpa using hi)
   cases i <;> simp_all [Backend.ABIReadCfg.instruction,Backend.ABIReadCfg.additional,Backend.ABIReadDiv.instruction,Backend.ABIReadDiv.additional,Backend.ABIReadScalar.instruction,Backend.ABIReadScalar.constant,Backend.ABIReadScalar.shift,Backend.ABIReadScalar.extension,Backend.ABIReadScalar.bitProducer,Backend.ABIReadScalar.popcountProducer,Backend.ABIReadScalar.comparisonProducer,Backend.ABIReadScalar.booleanProducer,Backend.ABIReadScalar.highmulProducer,Backend.ABIReadScalar.extendedComparisonProducer,Backend.ABIReadScalar.maskProducer,
     Backend.ABIReadFlags.instruction,Backend.ABIReadOnly.instruction,
-    Backend.DeadCleanup.pureForm,Backend.ABIReadFlags.extra]
+    Backend.DeadCleanup.pureNoFlags,Backend.DeadCleanup.pureForm,Backend.ABIReadFlags.extra]
 
 end CompiledSemanticNI
 
