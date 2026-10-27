@@ -1,0 +1,9 @@
+# Ranked parameter-condition CFG production packet
+
+Base: merged #636, 07989b8fd7a1de9efb296f4c5933da2087232ec7. The next implementation permits wide original parameter conditions at any source block, arbitrary forward-ranked quiet scalar jump/return/conditional graphs, inherited conditions and nonempty single-successor copies. Conditional successor argument vectors remain empty. Original Scope/Dominated/ABI checks derive the unchanged Scalar.Domain; no machine simulation certificate is added to original inputs. All old definitions and theorem variants are retained.
+
+Proper source/checker core: 16 new Lean modules, maintained core runner v5 passes 1180/1180 keys. Focused audit v3 passes 26/26 public roots, standard axioms only. Evidence lives under /tmp/stock-parameter-cfg-core-gates-v5 and /tmp/stock-parameter-cfg-focused-audit-v3; the original 89-standard-only scratch proof/witness source is remotely preserved at 25ff5614 on agent/stock-cfg-body-progress-20261025T025359Z.
+
+Historical unsuccessful attempts remain: namespace imports in core v1/v2, an Option equality in v4, audit v1 missing toolchain PATH and v2 two nonexistent audit names. Corrected v5/v3 results above alone count as passing. No failed attempt is relabelled.
+
+Next: complete original-source/kernel Stock/selector/ABI return-and-trap witnesses, provider and default production consumers (append route11, preserve0–10 and complete previous ConditionalForwardCfg pipeline), actual-byte and full current/retained author gates. This core checkpoint is a remote backup, not a proof-fragment PR or production activation claim. Full #140 remains open, including broader condition/per-edge/table/loops/effects/calls, source/block/whole-driver simulation and original-domain completeness. Historical agreement remains900/4543; no improvement claimed.
