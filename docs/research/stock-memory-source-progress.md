@@ -86,3 +86,30 @@ Next adapt this transfer to the existing restricted-DFG guarded scan invariant,
 derive pointer demand from actual marking and emission/unsunk classification
 from the original source class, and compose whole bodies/blocks/ABI entry and
 return. Then resolve memory read/NI transport and activate complete consumers.
+
+## Existing guarded scan interface
+
+The source-step adapter now uses the existing restricted-DFG invariant. Actual
+marking and original dominance derive pointer demand/availability. It executes
+the restricted source load, transports the result back to the original frame,
+and retains source memory/slots without requiring every source value to be
+materialized. The previous full-DFG and explicit-receipt theorem variants stay.
+`StockMemoryScanRefines` discharges the existing `ScanFallRefines` interface,
+including post-source DFG and the complete demanded-value/memory guard. An
+inhabited indexed source/guard witness executes this interface on the live heap.
+
+Current full gates in `/tmp/stock-memory-guarded-normal-gates-v1` pass:
+4213 normal modules,5014 tool jobs,98 audit files and37 standard-only memory
+roots. All prior audited axiom sets compare exactly; all32 earlier memory public
+theorem headers and all2581 backend proof files from merged #637 are unchanged.
+These remain proof checkpoints inside the next substantive production packet.
+
+Next use the existing call-free `Clif.step_inst` semantics for source body
+execution, preserving original fuel, frames, memory and later continuations.
+The older `LocalBody.LocalInst` predicate excludes loads, so its current body
+execution/entry wrappers cannot simply be instantiated with memory syntax.
+Keep those variants and reuse their composition through an additive ordinary
+source variant; do not strengthen the original input conditions or duplicate
+machine/bit proofs. Actual source-family emission/sinking classification,
+whole-body/block/entry/return composition and semantic read/NI transport remain
+before production activation and its complete affected gates.

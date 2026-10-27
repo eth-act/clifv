@@ -47,4 +47,33 @@ theorem stock_lower_load_selected_values {f : Clif.Function} {result : Result}
     source clif results statementResults mapped parameter pointer recorded emitted
     (n := 999879) evalRun rootRun stable memorySem memoryOk memory dfg operands held little evaluated
 
+/-- Actual load selection marks its pointer; whole-run extent and original
+dominance derive both halves of the demanded/source-available operand guard. -/
+theorem stock_lower_load_operand_coverage {f : Clif.Function} {result : Result}
+    (run : Stock.lower f = .ok result) (scope : LowerScope f) (dominated : Dominated f)
+    {event : BlockScanEvent} {record : ScanRecord}
+    (events : event ∈ result.blockScans.toList) (records : record ∈ event.output.records)
+    {bi j : Nat} {b : Clif.Block} {stm : Clif.Stmt}
+    (block : f.blocks[bi]? = some b) (statement : b.body[j]? = some stm)
+    (current : record.inst = blockStart f bi+j)
+    {info : IInfo} {z a x nreg : Nat} {flags : Clif.MemFlags}
+    (source : event.ctx.insts[record.inst]? = some info)
+    (clif : info.clif = some (.load .load .i32 flags x 0)) (results : info.results = [z])
+    (mapped : event.ctx.valueReg? z = some (.vreg a .int))
+    (parameter : event.ctx.defInst? x = none) (pointer : event.ctx.valueReg? x = some (.vreg nreg .int))
+    {step : Step} (recorded : record.output.step = some step) (emitted : step.decision = .emitted)
+    (selectedId : step.rules.getLast? = some rule_lower_2610.id) :
+    Demanded record.output.state x ∧ x ∈ availOf f (availIn f result.ctx) bi j := by
+  obtain ⟨little,out,next,trace,rhsTrace,rootRun,evalRun⟩ := stock_lower_load_selected_receipts
+    run scope events records source clif recorded emitted selectedId
+  obtain ⟨outputs,code,upper,alias,demands⟩ := stock_lower_parameter_load_record_full run scope dominated
+    events records source clif results mapped parameter pointer recorded emitted (n := 999879) evalRun rootRun
+  have bound := (Extent.lower_mapped_demand_bounds run scope events records pointer).1
+  have marked : Demanded (record.input.mark x) x :=
+    (demanded_mark_iff record.input x x bound).mpr (Or.inl rfl)
+  refine ⟨?_,stock_lower_record_args_available run scope dominated events block statement current source clif x (by simp [Driver.instArgs])⟩
+  change record.output.state.demand[x]! ≠ 0
+  rw [demands]
+  exact marked
+
 end Backend.Stock.Memory
