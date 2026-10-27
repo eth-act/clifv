@@ -71,7 +71,7 @@ theorem vc_ctlT (hI : IselCtlHypT) {f : Clif.Function} {vc : VCode}
     ∃ vb0 ds, vc.blocks[0]? = some vb0 ∧ vb0.insts[0]? = some (.args ds) := by
   have hd := dominated_of hdom
   have hne := (prepDomain_ofT hd hs hl).nonempty
-  obtain ⟨ctx, ranges, st0, bl, hb, hlb, hvb, -, -⟩ := lowerFunction_runT hl
+  obtain ⟨ctx, ranges, st0, bl, hb, hlb, hvb, -, -⟩ := lowerFunction_runT hs.externsE hl
   obtain ⟨hS, hT, hY⟩ := hI f ctx ranges st0 hdom hs hst hsel ha hb
   have hcf := ctxFacts_of hb
   obtain ⟨-, hstart⟩ := lowBlocks_start hlb

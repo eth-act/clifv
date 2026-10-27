@@ -89,10 +89,23 @@ theorem wt_callGot_ofC {st s0 sG s s' : LState} {cls : Nat → RegClass} {locs :
 
 /-! ## The `call` rules of `lower` -/
 
+/-- The integer `call` callees of a typed context (`CallsE`, the `CtxT.calls` field since #609)
+return integers (`call_retClassesT` for one call). -/
+theorem call_retClassesCallsE {f : Clif.Function} {ctx : Ctx} (hx : CallsE f ctx) {ii : Nat}
+    {info : IInfo} {fn : Clif.FnRef} {args : List Nat} {e : Clif.ExtFunc}
+    (hi : ctx.insts[ii]? = some info) (hcl : info.clif = some (.call fn args))
+    (he : f.extern? fn = some e) :
+    (sigRets e.sig).map retClass = List.replicate (sigRets e.sig).length .int := by
+  have h := hx ii info fn args e hi hcl he
+  apply sigRets_classes_int
+  simp only [Compile.sigE, Compile.tyE, Bool.and_eq_true, List.all_eq_true] at h
+  exact List.all_eq_true.mpr fun p hp => (h.2 p hp).1
+
 set_option maxHeartbeats 5000000 in
-theorem wrun_2508T {p : Program} (hp : Data p) {f : Clif.Function} {ctx : Ctx}
+/-- `wrun_2508T` over the typed context's integer `call` callees (`CallsE`). -/
+theorem wrun_2508TC {p : Program} (hp : Data p) {f : Clif.Function} {ctx : Ctx}
     (hctx : CtxInvT f ctx)
-    (hx : f.externs.all (Compile.sigE ·.2.sig) = true) {ii : Nat} {info : IInfo} {inst : Clif.Inst}
+    (hx : CallsE f ctx) {ii : Nat} {info : IInfo} {inst : Clif.Inst}
     (hi : ctx.insts[ii]? = some info) (hcl : info.clif = some inst) {cfg : Config}
     (hc : cfg.checkOverlap = false) {m n : Nat} {st : LState} {tr : Array RuleId}
     {env' : Isle.Interp.Env V} {s1 : LState × Array RuleId} {out : V} {st' : LState}
@@ -119,7 +132,7 @@ theorem wrun_2508T {p : Program} (hp : Data p) {f : Clif.Function} {ctx : Ctx}
   simp only [List.cons.injEq, and_true] at hfs
   obtain ⟨rfl, rfl⟩ := hfs
   have hfn : ctx.func.extern? fn = some ext := by rw [hctx.func]; exact hext
-  have hrc := call_retClassesT hx hext
+  have hrc := call_retClassesCallsE hx hi hcl hext
   simp only [ext_value_list_slice_iff, ext_func_ref_data_iff, hfn] at *
   isel_destruct; subst_vars
   simp only [List.cons.injEq, Option.some.injEq, and_true] at *
@@ -160,10 +173,25 @@ theorem wrun_2508T {p : Program} (hp : Data p) {f : Clif.Function} {ctx : Ctx}
   exact wt_call_ofC (by simp only [callDefs, List.length_map, outDefs_length]; simpa using hr8)
     (by rw [hs1]; simp [freshN_emitted]) hs2
 
-set_option maxHeartbeats 5000000 in
-theorem wrun_2518T {p : Program} (hp : Data p) {f : Clif.Function} {ctx : Ctx}
+theorem wrun_2508T {p : Program} (hp : Data p) {f : Clif.Function} {ctx : Ctx}
     (hctx : CtxInvT f ctx)
     (hx : f.externs.all (Compile.sigE ·.2.sig) = true) {ii : Nat} {info : IInfo} {inst : Clif.Inst}
+    (hi : ctx.insts[ii]? = some info) (hcl : info.clif = some inst) {cfg : Config}
+    (hc : cfg.checkOverlap = false) {m n : Nat} {st : LState} {tr : Array RuleId}
+    {env' : Isle.Interp.Env V} {s1 : LState × Array RuleId} {out : V} {st' : LState}
+    {tr' : Array RuleId} (hm : 1000 ≤ m) (hn : 1000 ≤ n)
+    (hmatch : (matchRule p (sem ctx) cfg m rule_lower_2508 [.inst ii]).run (st, tr) =
+      .ok (some env', s1))
+    (heval : (evalExpr p (sem ctx) cfg n rule_lower_2508.rhs env').run s1 =
+      .ok (some out, (st', tr'))) :
+    wtA st'.emitted ≤ wtA st.emitted + stmtSzB inst :=
+  wrun_2508TC hp hctx (callsE_of_externs hx ctx) hi hcl hc hm hn hmatch heval
+
+set_option maxHeartbeats 5000000 in
+/-- `wrun_2518T` over the typed context's integer `call` callees (`CallsE`). -/
+theorem wrun_2518TC {p : Program} (hp : Data p) {f : Clif.Function} {ctx : Ctx}
+    (hctx : CtxInvT f ctx)
+    (hx : CallsE f ctx) {ii : Nat} {info : IInfo} {inst : Clif.Inst}
     (hi : ctx.insts[ii]? = some info) (hcl : info.clif = some inst) {cfg : Config}
     (hc : cfg.checkOverlap = false) {m n : Nat} {st : LState} {tr : Array RuleId}
     {env' : Isle.Interp.Env V} {s1 : LState × Array RuleId} {out : V} {st' : LState}
@@ -192,7 +220,7 @@ theorem wrun_2518T {p : Program} (hp : Data p) {f : Clif.Function} {ctx : Ctx}
   simp only [List.cons.injEq, and_true] at hfs
   obtain ⟨rfl, rfl⟩ := hfs
   have hfn : ctx.func.extern? fn = some ext := by rw [hctx.func]; exact hext
-  have hrc := call_retClassesT hx hext
+  have hrc := call_retClassesCallsE hx hi hcl hext
   simp only [ext_value_list_slice_iff, ext_func_ref_data_iff, hfn] at *
   isel_destruct; subst_vars
   simp only [List.cons.injEq, Option.some.injEq, and_true] at *
@@ -234,10 +262,25 @@ theorem wrun_2518T {p : Program} (hp : Data p) {f : Clif.Function} {ctx : Ctx}
   exact wt_callGot_ofC (by simp only [callDefs, List.length_map, outDefs_length]; simpa using hr8)
     (by simp [LState.fresh, freshN_emitted]) hs0 (by rw [hs1]) hs2
 
-set_option maxHeartbeats 5000000 in
-theorem wrun_2529T {p : Program} (hp : Data p) (hpI : IndData p) {f : Clif.Function} {ctx : Ctx}
+theorem wrun_2518T {p : Program} (hp : Data p) {f : Clif.Function} {ctx : Ctx}
     (hctx : CtxInvT f ctx)
     (hx : f.externs.all (Compile.sigE ·.2.sig) = true) {ii : Nat} {info : IInfo} {inst : Clif.Inst}
+    (hi : ctx.insts[ii]? = some info) (hcl : info.clif = some inst) {cfg : Config}
+    (hc : cfg.checkOverlap = false) {m n : Nat} {st : LState} {tr : Array RuleId}
+    {env' : Isle.Interp.Env V} {s1 : LState × Array RuleId} {out : V} {st' : LState}
+    {tr' : Array RuleId} (hm : 1000 ≤ m) (hn : 1000 ≤ n)
+    (hmatch : (matchRule p (sem ctx) cfg m rule_lower_2518 [.inst ii]).run (st, tr) =
+      .ok (some env', s1))
+    (heval : (evalExpr p (sem ctx) cfg n rule_lower_2518.rhs env').run s1 =
+      .ok (some out, (st', tr'))) :
+    wtA st'.emitted ≤ wtA st.emitted + stmtSzB inst :=
+  wrun_2518TC hp hctx (callsE_of_externs hx ctx) hi hcl hc hm hn hmatch heval
+
+set_option maxHeartbeats 5000000 in
+/-- `wrun_2529T` without the externs premise (`call_indirect`'s signature is integer by
+`instData_callIndirect_int`). -/
+theorem wrun_2529TC {p : Program} (hp : Data p) (hpI : IndData p) {f : Clif.Function} {ctx : Ctx}
+    (hctx : CtxInvT f ctx) {ii : Nat} {info : IInfo} {inst : Clif.Inst}
     (hi : ctx.insts[ii]? = some info) (hcl : info.clif = some inst) {cfg : Config}
     (hc : cfg.checkOverlap = false) {m n : Nat} {st : LState} {tr : Array RuleId}
     {env' : Isle.Interp.Env V} {s1 : LState × Array RuleId} {out : V} {st' : LState}
@@ -308,6 +351,20 @@ theorem wrun_2529T {p : Program} (hp : Data p) (hpI : IndData p) {f : Clif.Funct
   exact wt_call_ofC (by simp only [callDefs, List.length_map, outDefs_length]; simpa using hr8)
     (by rw [hs1]; simp [freshN_emitted]) hs2
 
+theorem wrun_2529T {p : Program} (hp : Data p) (hpI : IndData p) {f : Clif.Function} {ctx : Ctx}
+    (hctx : CtxInvT f ctx)
+    (_hx : f.externs.all (Compile.sigE ·.2.sig) = true) {ii : Nat} {info : IInfo} {inst : Clif.Inst}
+    (hi : ctx.insts[ii]? = some info) (hcl : info.clif = some inst) {cfg : Config}
+    (hc : cfg.checkOverlap = false) {m n : Nat} {st : LState} {tr : Array RuleId}
+    {env' : Isle.Interp.Env V} {s1 : LState × Array RuleId} {out : V} {st' : LState}
+    {tr' : Array RuleId} (hm : 1000 ≤ m) (hn : 1000 ≤ n)
+    (hmatch : (matchRule p (sem ctx) cfg m rule_lower_2529 [.inst ii]).run (st, tr) =
+      .ok (some env', s1))
+    (heval : (evalExpr p (sem ctx) cfg n rule_lower_2529.rhs env').run s1 =
+      .ok (some out, (st', tr'))) :
+    wtA st'.emitted ≤ wtA st.emitted + stmtSzB inst :=
+  wrun_2529TC hp hpI hctx hi hcl hc hm hn hmatch heval
+
 /-- **The weight of the `call` rules of `lower`** over a typed context (rules 1031, 1032, 1033):
 at most `szCallB` of the call's arguments (`stmtSzB`). -/
 theorem handW_callT {f : Clif.Function} {ctx : Ctx} (hctx : CtxT f ctx) {ii : Nat}
@@ -318,13 +375,13 @@ theorem handW_callT {f : Clif.Function} {ctx : Ctx} (hctx : CtxT f ctx) {ii : Na
   rcases hid with h | h | h
   · obtain rfl := eq_of_mem_of_id lower_ids_nodup hrl mem_lower_2508 (by rw [h]; rfl)
     exact handW_of_run total_2508 fun _ hco _ _ _ _ _ _ _ _ _ hm hn =>
-      wrun_2508T data_program hctx.inv hctx.externs hi hc hco hm hn
+      wrun_2508TC data_program hctx.inv hctx.calls hi hc hco hm hn
   · obtain rfl := eq_of_mem_of_id lower_ids_nodup hrl mem_lower_2518 (by rw [h]; rfl)
     exact handW_of_run total_2518 fun _ hco _ _ _ _ _ _ _ _ _ hm hn =>
-      wrun_2518T data_program hctx.inv hctx.externs hi hc hco hm hn
+      wrun_2518TC data_program hctx.inv hctx.calls hi hc hco hm hn
   · obtain rfl := eq_of_mem_of_id lower_ids_nodup hrl mem_lower_2529 (by rw [h]; rfl)
     exact handW_of_run total_2529 fun _ hco _ _ _ _ _ _ _ _ _ hm hn =>
-      wrun_2529T data_program indData_program hctx.inv hctx.externs hi hc hco hm hn
+      wrun_2529TC data_program indData_program hctx.inv hi hc hco hm hn
 
 /-! ## The `try_call` rules of `lower_branch` -/
 
@@ -359,12 +416,14 @@ theorem wtry_blT {p : Program} (hp : Data p) (hpT : TryData p) {f : Clif.Functio
   have hfn : c.func.extern? fn = some ext := by rw [hctx.func]; exact hext
   cases hp
   obtain ⟨t300, t302, t2297, t2474⟩ := hpT
+  have hsI := exnTableOpnd_int he
+  try have hsE : sigIntB ext.sig = true := by first | (rw [hsig]; exact hsI) | exact hsI
   ctl_inv [*, rule_lower_2542, ext_func_ref_data_iff, ctor_abi_sig_iff, ctor_try_call_info_iff,
-    ctor_gen_try_call_rets_iff] at hmatch heval
+    ctor_gen_try_call_rets_iff hsI] at hmatch heval
   simp only [hi, hfn, Option.some.injEq] at *
   isel_destruct; subst_vars
   repeat (isel_inv_simp [ext_func_ref_data_iff, ctor_abi_sig_iff, ctor_try_call_info_iff,
-    ctor_gen_try_call_rets_iff, ext_value_list_slice_iff, ctor_put_in_regs_vec_iff] at * <;>
+    ctor_gen_try_call_rets_iff hsI, ext_value_list_slice_iff, ctor_put_in_regs_vec_iff] at * <;>
     isel_destruct <;> subst_vars)
   have hx' := ‹c.func.extern? fn = some _›
   rw [hctx.func, hext] at hx'
@@ -376,6 +435,8 @@ theorem wtry_blT {p : Program} (hp : Data p) (hpT : TryData p) {f : Clif.Functio
   simp only [ctor_gen_call_args_genC _ _ _ (fun x => valClassOf c x) hb hl, mapM_single_map, Option.some.injEq,
     exists_eq_left'] at *
   isel_destruct; subst_vars
+  try (simp only [ctor_gen_try_call_rets_iff hsE] at *; isel_destruct; subst_vars)
+  try (simp only [ctor_gen_try_call_rets_iff hsI] at *; isel_destruct; subst_vars)
   simp only [ctor_gen_call_info_gen _ _ _ _ _ _ _ hl, Nat.reduceEqDiff, Nat.reduceLT,
     ite_true, ite_false, Option.some.injEq] at *
   isel_destruct; subst_vars
@@ -429,12 +490,14 @@ theorem wtry_gotT {p : Program} (hp : Data p) (hpT : TryData p) {f : Clif.Functi
   have hfn : c.func.extern? fn = some ext := by rw [hctx.func]; exact hext
   cases hp
   obtain ⟨t300, t302, t2297, t2474⟩ := hpT
+  have hsI := exnTableOpnd_int he
+  try have hsE : sigIntB ext.sig = true := by first | (rw [hsig]; exact hsI) | exact hsI
   ctl_inv [*, rule_lower_2551, ext_func_ref_data_iff, ctor_abi_sig_iff, ctor_try_call_info_iff,
-    ctor_gen_try_call_rets_iff, ctor_box_external_name_iff] at hmatch heval
+    ctor_gen_try_call_rets_iff hsI, ctor_box_external_name_iff] at hmatch heval
   simp only [hi, hfn, Option.some.injEq] at *
   isel_destruct; subst_vars
   repeat (isel_inv_simp [ext_func_ref_data_iff, ctor_abi_sig_iff, ctor_try_call_info_iff,
-    ctor_gen_try_call_rets_iff, ext_value_list_slice_iff, ctor_put_in_regs_vec_iff,
+    ctor_gen_try_call_rets_iff hsI, ext_value_list_slice_iff, ctor_put_in_regs_vec_iff,
     ctor_box_external_name_iff] at * <;> isel_destruct <;> subst_vars)
   have hx' := ‹c.func.extern? fn = some _›
   rw [hctx.func, hext] at hx'
@@ -448,6 +511,8 @@ theorem wtry_gotT {p : Program} (hp : Data p) (hpT : TryData p) {f : Clif.Functi
   isel_destruct; subst_vars
   have h570 := ‹ApplyInternal _ _ _ _ 27 570 _ _ _ _›
   obtain ⟨rfl, hs0⟩ := kL _ (by omega) _ _ _ _ _ h570
+  try (simp only [ctor_gen_try_call_rets_iff hsE] at *; isel_destruct; subst_vars)
+  try (simp only [ctor_gen_try_call_rets_iff hsI] at *; isel_destruct; subst_vars)
   simp only [ctor_gen_call_ind_info_gen _ _ _ _ _ _ hl, Nat.reduceEqDiff, Nat.reduceLT,
     ite_true, ite_false, Option.some.injEq] at *
   isel_destruct; subst_vars
@@ -499,12 +564,13 @@ theorem wtry_indT {p : Program} (hp : Data p) (hpT : TryData p) (hpI : IndData p
   obtain ⟨t300, t302, t2297, t2474⟩ := hpT
   obtain ⟨t196, t2293, t2454⟩ := hpI
   obtain ⟨t266, t2298, t2475⟩ := hpJ
+  have hsI := exnTableOpnd_int he
   ctl_inv [*, rule_lower_2561, ext_value_slice_unwrap_iff, ext_exception_sig_iff, ctor_abi_sig_iff,
-    ctor_try_call_info_iff, ctor_gen_try_call_rets_iff, ctor_put_in_reg_iff] at hmatch heval
+    ctor_try_call_info_iff, ctor_gen_try_call_rets_iff hsI, ctor_put_in_reg_iff] at hmatch heval
   simp only [hi, Option.some.injEq] at *
   isel_destruct; subst_vars
   repeat (isel_inv_simp [ext_value_slice_unwrap_iff, ext_exception_sig_iff, ctor_abi_sig_iff,
-    ctor_try_call_info_iff, ctor_gen_try_call_rets_iff, ext_value_list_slice_iff,
+    ctor_try_call_info_iff, ctor_gen_try_call_rets_iff hsI, ext_value_list_slice_iff,
     ctor_put_in_regs_vec_iff, ctor_put_in_reg_iff] at * <;> isel_destruct <;> subst_vars)
   obtain ⟨bytes, hb⟩ := ctor_gen_call_args_bytes ‹externCtor c T.gen_call_args _ _ = _›
   obtain ⟨locs, S, hl⟩ := ctor_gen_call_args_locs ‹externCtor c T.gen_call_args _ _ = _›
@@ -515,6 +581,7 @@ theorem wtry_indT {p : Program} (hp : Data p) (hpT : TryData p) (hpI : IndData p
   simp only [ctor_gen_call_args_genC _ _ _ (fun x => valClassOf c x) hb hl, mapM_single_map, Option.some.injEq,
     exists_eq_left'] at *
   isel_destruct; subst_vars
+  try (simp only [ctor_gen_try_call_rets_iff hsI] at *; isel_destruct; subst_vars)
   simp only [ctor_gen_call_ind_info_gen _ _ _ _ _ _ hl, Nat.reduceEqDiff, Nat.reduceLT,
     ite_true, ite_false, Option.some.injEq] at *
   isel_destruct; subst_vars
