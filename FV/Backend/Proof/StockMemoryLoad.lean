@@ -59,6 +59,58 @@ theorem load_source_result
   rw [signed]
   exact load_holds size bits' width bounded positive op.signed
 
+/-- The memory bridge lifts to the actual one-instruction virtual-machine run
+for every integer-vreg addressing mode, preserving all registers except its def. -/
+theorem load_source_seqRun
+    {F : BitVec 64 → Prop} {sb : Nat} {syms : String → Option Nat}
+    {isem : Sem} {MR : MemRelT} {f : Clif.Function}
+    (stable : MRStable F MR) (memorySem : MemRefines F sb syms isem)
+    (memoryOk : MemRelOk F sb syms f MR)
+    {fr : Clif.Frame} {ρ : Nat → CV} {cm cm' : Clif.Mem} {w : Arm.ArmState}
+    (memory : MR fr.slots cm w)
+    {op : Clif.LoadOp} {ty : Clif.Ty} {fl : Clif.MemFlags} {p : Nat} {off : Int}
+    {vals : List Clif.Val} {aop : Backend.LoadOp} {d : Nat} {am : AMode}
+    (vregs : AmVregs am)
+    (scalar : aop ≠ .fpuLoad128) (size : aop.bytes = op.size ty)
+    (signed : loadSigned aop = op.signed) (width : ty.width ≤ 64)
+    (little : fl.endianness ≠ some .big)
+    (address : ∀ pv, fr.regs p = some pv →
+      amodeAddr sb am aop.bytes (amUses am ρ) w =
+        some (BitVec.ofNat 64 (Clif.effAddr pv off)))
+    (source : Clif.evalInst fr cm (.load op ty fl p off) = .ok (vals,cm')) :
+    ∃ ρ' w', seqRun isem [.load aop (.vreg d .int) am fl] ρ w = some (.fall ρ' w') ∧
+      SameWorld F w' w ∧ MR fr.slots cm' w' ∧
+      (∀ v ∈ vals, VHolds v (ρ' d)) ∧ (∀ k, k ≠ d → ρ' k = ρ k) := by
+  obtain ⟨w',out,run,same,memory',values⟩ := load_source_result stable memorySem memoryOk memory
+    (d := d) scalar size signed width little address source
+  obtain ⟨ops,opsEq,uses,defs,update⟩ := (load_ops aop d vregs fl).ops
+  rw [← uses ρ] at run
+  have executed := seqRun_isem_one opsEq run (by rw [defs]; rfl)
+  rw [update] at executed
+  exact ⟨upd ρ d out,w',executed,same,memory',
+    fun v member => by rw [upd_same]; exact values v member,
+    fun k different => by simp only [upd,different,ite_false]⟩
+
+/-- Scaled unsigned byte offsets, including the zero offset selected by actual
+root1043, also need only the mapped pointer's source-available value. -/
+theorem mapped_unsigned_address
+    {ctx : Ctx} {fr : Clif.Frame} {ρ : Nat → CV} {p n sb bytes off : Nat}
+    {w : Arm.ArmState}
+    (held : Proof.ValueHeld ctx fr ρ p)
+    (mapped : ctx.valueReg? p = some (.vreg n .int))
+    (dfg : DFGCons ctx fr) (pointer : ctx.valueType? p = some (.int 64))
+    (range : off % bytes = 0 ∧ off ≤ 4095 * bytes) :
+    ∀ pv, fr.regs p = some pv →
+      amodeAddr sb (.unsignedOffset (.vreg n .int) off) bytes [ρ n] w =
+        some (BitVec.ofNat 64 (Clif.effAddr pv (off : Int))) := by
+  intro pv source
+  obtain ⟨m,hm,value⟩ := held pv source
+  have equal : m = n := by simpa using hm.symm.trans mapped
+  subst m
+  simp only [amodeAddr,ite_eq_left range]
+  rw [lo64_of_holds value (pv_i64 dfg pointer source)]
+  rw [← BitVec.ofInt_natCast,← BitVec.ofInt_natCast,← BitVec.ofInt_add,effAddr_ofInt]
+
 /-- The selected unscaled address uses only the demanded mapped pointer; no
 assumption that every source value has already been materialized is needed. -/
 theorem mapped_unscaled_address
