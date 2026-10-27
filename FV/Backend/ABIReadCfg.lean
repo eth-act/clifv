@@ -3,9 +3,16 @@ import FV.Backend.ABIReadDiv
 namespace Backend.ABIReadCfg
 set_option autoImplicit false
 
-/-- Existing scalar/division/ABI reads plus unconditional CFG jumps. -/
+/-- Branches read their virtual condition, with no additional ABI/world read. -/
+def additional : MInst → Bool
+  | .jump _
+  | .condBr _ _ (.zero (.vreg _ .int) _)
+  | .condBr _ _ (.notZero (.vreg _ .int) _) => true
+  | _ => false
+
+/-- Existing scalar/division/ABI reads and proved CFG branch forms. -/
 def instruction (sig : Clif.Signature) (b k : Nat) (i : MInst) : Bool :=
-  ABIReadDiv.instruction sig b k i || match i with | .jump _ => true | _ => false
+  ABIReadDiv.instruction sig b k i || additional i
 
 /-- A successful computed CFG excludes re-entry into the argument-read site. -/
 def noEntryEdges (vc : VCode) : Bool :=

@@ -1,5 +1,5 @@
 {
-  "updated_utc": "2026-10-26T22:22:33.474491+00:00",
+  "updated_utc": "2026-10-27T05:58:46.688402+00:00",
   "goal": 140,
   "complete": false,
   "inventory_warning": "Historical517root inventory is a source map, not current reachability/execution coverage. Reconcile generated source hashes and current typed scope before using partition counts.",
@@ -30,7 +30,9 @@
       "bmask/nop with independent i8/i16/i32/i64 source/result widths, mixed scalar/division bodies, through shared production consumers (#624, ab1abdfc)",
       "direct two-block Stock CFG default consumers with quiet entry/nonempty copies (#630,ce83af2c)",
       "dividing entry blocks with actual first/later traps through the same default CFG consumers (#631,b94d6cd4)",
-      "complete scalar entry bodies through the same CFG route (#632,00576bd9)"
+      "complete scalar entry bodies through the same CFG route (#632,00576bd9)",
+      "three-block scalar jump chains through default CFG consumers (#633, ac302a8a)",
+      "arbitrary-length source-forward scalar jump/return CFGs through default consumers (#634, d6218f29)"
     ],
     "pending": "Remaining original pure/ABI/reachable-helper conditions; original ABI conditions; control/successor arguments/critical edges/loops; memory/addressing/atomics/traps/deferred effects; calls/sret/exceptions/unwind; source/scan/block/node/whole-driver simulation; Stock-only and downstream completeness; optimizer/cleanup and all consumers. Existing no-opt/no-TryCall CLI eligibility and default Lean allocator remain. Legacy fallback is not Stock completeness.",
     "mixed_div_current_evidence": {
@@ -8843,14 +8845,14 @@
     "source_driver_evidence": "39e8973aa776b761ec6c62b772cc5d57cae0454e"
   },
   "active_candidate": {
-    "name": "arbitrary-length forward scalar CFGs",
-    "state": "all author gates passed; default activation in PR #634",
-    "branch": "agent/stock-general-cfg-20261026",
-    "implementation": "ForwardCfg source-check-derived existing Scalar.Domain, general jump/return/first-trap and ABI entry, appended route8 with prior complete pipeline fallback",
-    "limits": "Jump/return source graphs with strictly advancing source-index jumps; conditional/table/critical simulations, loops, effects/calls and whole-domain completeness remain open",
-    "evidence": "docs/research/stock-forward-cfg-production.md",
-    "source_head": "1620b2c4beeb2bc36ee50e79fb40b3b3eb2f320d",
-    "pull_request": 634,
-    "terminal_remote_evidence": "95a286c086b9fd3f17215e6a171ece0bd0313867"
+    "name": "compatible wide conditional scalar return-leaf CFGs",
+    "state": "all author gates passed; default activation in PR #635",
+    "branch": "agent/stock-conditional-cfg-20261026",
+    "implementation": "Original source choice/returns/first traps, actual direct/synthetic copies and ABI entry derive unchanged Scalar.Domain; appended route9 retains0\u20138 and complete prior ForwardCfg pipeline fallback",
+    "limits": "Wide entry-parameter branches and scalar return leaves. Ranked/more general condition/control/per-edge/loops/effects/calls/original-domain simulation and completeness remain open. No byte agreement gain.",
+    "evidence": "docs/research/stock-conditional-cfg-production.md",
+    "source_head": "31a1befea3ed925a3fc1378a0d889fe726f087a8",
+    "pull_request": 635,
+    "terminal_remote_evidence": "34cef2dc4beaa2497220617a5ffa39d644e840c3"
   }
 }

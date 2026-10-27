@@ -7,10 +7,11 @@ is unchanged: actual Stock source semantics, simulation/completeness, production
 compiler/checker/linker/generated proofs, original inputs/theorem variants/exact
 required axioms/accepted identities/successful stages.
 
-## Current delivery: arbitrary-length forward scalar CFGs
+## Current delivery: forward CFGs and conditional scalar leaves
 
-PR #633 (`ac302a8a`) activated three-block chains. The next substantive packet,
-PR #634, removes that fixed bound and the older two-block forwarding restriction.
+PR #633 (`ac302a8a`) activated three-block chains. PR #634
+(`d6218f29`, merged2026-10-26T22:23:16Z) removes that fixed bound and the older
+two-block forwarding restriction.
 [Terminal author evidence](../research/stock-forward-cfg-production.md) records
 4,093 normal keys, 94 audit files/3,592 roots/all 3,544 old axiom sets exact,
 78 new and 78/70/34/34 retained integration checks, 24,000 native executions,
@@ -53,6 +54,26 @@ with main, push backups and squash-merge promptly after author gates. Keep one
 warm cache and bounded builds; archive unique evidence before deleting completed
 outputs, and preserve all dirty/unpublished source. Full original #140 remains
 open; fallback is acceptance preservation, not completeness.
+
+## Conditional source domain checkpoint (2026-10-27 UTC)
+
+The next implementation branch now proves the first legacy-compatible wide
+entry-parameter conditional class through actual selected direct/synthetic copies,
+scalar return leaves, instruction-zero ABI entry, returns and first traps. The
+source selector derives the unchanged Scalar.Domain and checker soundness;
+legacy edge-copy compatibility is proved internally. Complete original returning
+and reachable-divide-by-zero witnesses compile and execute. See
+[conditional progress](../research/stock-conditional-cfg-progress.md) for exact
+1190-key/108-root validation and the two fixed-example native input-check axioms.
+PR #635 activates this class in the shared default compiler/checker/linker and
+generated-proof consumers, appending route9 with0–8 retained and complete prior
+ForwardCfg pipeline fallback. All author gates pass on31a1befe; see
+[terminal evidence](../research/stock-conditional-cfg-production.md). Same-input
+agreement remains900→900/4543, with no losses or changed bytes. Continue the
+prepared ranked conditional tail class, general conditions/per-edge/loops and
+effects/calls/full-domain obligations. No proof-fragment or first-class stop.
+Broader control/per-edge/loops/effects/calls/full-domain obligations remain open;
+this first conditional class does not replace them.
 
 ## Starting point and next deliveries
 

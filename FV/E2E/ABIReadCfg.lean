@@ -21,9 +21,27 @@ theorem memory (F : BitVec 64 → Prop) (ctx : FnCtx) (X : ExtSem)
     (symbols : ∀ n b,syms n = some b → X.sym n 0 = BitVec.ofNat 64 b) :
     MemRefines F sb syms (sem F ctx X) := DivBoundary.memory F ctx X base symbols
 
-private theorem jump_sem (F : BitVec 64 → Prop) (ctx : FnCtx) (X : ExtSem)
-    (label : Nat) (us : List CV) (w : Arm.ArmState) :
-    sem F ctx X (.jump label) us w = some ([],w,.goto 0) := by rfl
+private def branchControl (i : MInst) (us : List CV) : Ctl :=
+  match i with
+  | .condBr _ _ kind => .goto (if kind.holds us Arm.ArmState.default then 0 else 1)
+  | _ => .goto 0
+
+private theorem branch_sem (F : BitVec 64 → Prop) (ctx : FnCtx) (X : ExtSem)
+    {i : MInst} (checked : Backend.ABIReadCfg.additional i = true) (us : List CV) (w : Arm.ArmState) :
+    sem F ctx X i us w = some ([],w,branchControl i us) ∧
+      valueSem F ctx X i us w = some ([],w,branchControl i us) := by
+  cases i <;> try cases checked
+  case jump label => exact ⟨rfl,rfl⟩
+  case condBr taken notTaken kind =>
+    cases kind <;> try cases checked
+    all_goals rename_i r size
+    all_goals cases r <;> try cases checked
+    all_goals rename_i key cls
+    all_goals cases cls <;> try cases checked
+    all_goals
+      cases us with
+      | nil => exact ⟨rfl,rfl⟩
+      | cons a rest => cases rest <;> exact ⟨rfl,rfl⟩
 
 private theorem reindex_nonentry {sig : Clif.Signature} {b k : Nat} {i : MInst}
     (nonentry : ¬ (b = 0 ∧ k = 0))
@@ -49,8 +67,8 @@ theorem checked_step_frame {sig : Clif.Signature} {b k : Nat} {i : MInst}
   simp only [Backend.ABIReadCfg.instruction,Bool.or_eq_true] at checked
   rcases checked with old | jumped
   · exact (DivBoundary.checked_step_frame old run).1
-  · cases i <;> try cases jumped
-    simp only [jump_sem,Option.some.injEq,Prod.mk.injEq] at run
+  · rw [(branch_sem F ctx X jumped us w).1] at run
+    simp only [Option.some.injEq,Prod.mk.injEq] at run
     obtain ⟨rfl,rfl,rfl⟩ := run
     exact FlagFrame.refl _
 
@@ -74,10 +92,10 @@ theorem checked_step_transport {sig : Clif.Signature} {args : List Clif.Val}
   simp only [Backend.ABIReadCfg.instruction,Bool.or_eq_true] at checked
   rcases checked with old | jumped
   · exact DivBoundary.checked_step_transport types old current other worlds registers stack run
-  · cases i <;> try cases jumped
-    simp only [jump_sem,Option.some.injEq,Prod.mk.injEq] at run
+  · rw [(branch_sem F ctx X jumped us w).1] at run
+    simp only [Option.some.injEq,Prod.mk.injEq] at run
     obtain ⟨rfl,rfl,rfl⟩ := run
-    exact ⟨w',jump_sem _ _ _ _ _ _,worlds⟩
+    exact ⟨w',(branch_sem F ctx X jumped us w').1,worlds⟩
 
 namespace Realize
 theorem step_realize {sig : Clif.Signature} {args : List Clif.Val}
@@ -97,10 +115,10 @@ theorem step_realize {sig : Clif.Signature} {args : List Clif.Val}
         (fun _ => entry initialPosition.1 initialPosition.2) executed
     · exact DivBoundary.Realize.step_realize types (reindex_nonentry initialPosition old)
         frame arguments worlds (by omega) executed
-  · cases i <;> try cases jumped
-    simp only [jump_sem,Option.some.injEq,Prod.mk.injEq] at executed
+  · rw [(branch_sem F ctx X jumped us w).1] at executed
+    simp only [Option.some.injEq,Prod.mk.injEq] at executed
     obtain ⟨rfl,rfl,rfl⟩ := executed
-    exact ⟨t,rfl,worlds⟩
+    exact ⟨t,(branch_sem F ctx X jumped us t).2,worlds⟩
 
 end Realize
 

@@ -1,0 +1,297 @@
+{
+  "state": "all_author_gates_passed",
+  "utc": "2026-10-27T05:56:46.897678+00:00",
+  "validated_code": "31a1befea3ed925a3fc1378a0d889fe726f087a8",
+  "base": "d6218f299c97d82d560e74ec0a75813a05f5b558",
+  "pr": 635,
+  "full_140_complete": false,
+  "production_class": "Wide entry-parameter conditional branches with scalar return leaves, original source returns/first traps, direct/synthetic selected copies and instruction-zero ABI entry",
+  "integration": "Default compiler/checker/verified-linker/generated-proof consumers append route9; preserve0\u20138 and complete prior ForwardCfg pipeline fallback on unchanged original inputs/settings",
+  "source_guards": "Internal source class; original public scope/dominance/ABI conditions and theorem variants preserved; no selected-rule/result certificate supplied by input",
+  "normal_modules": 4161,
+  "tools_jobs": 4958,
+  "trust": {
+    "audit_files": 95,
+    "current_roots": 3698,
+    "old_roots_exact": 3592,
+    "owned_partitions": 6,
+    "focused_roots": 113,
+    "focused_standard_only": 111,
+    "fixed_input_witness_roots": 2,
+    "fixed_original_input_native_facts": 2,
+    "universal_roots_standard_only": true,
+    "preserved_headers": {
+      "FV/E2E/ABIReadCfg.lean:checked_step_frame": "0c4fcbf0765bd2fcc81efb600ac08c0cc9aab0a51dd29fb72590d700cc6e3526",
+      "FV/E2E/ABIReadCfg.lean:checked_step_transport": "4eef65eb4eea8c120b3a598a44cbae458ef8f267ace8a803a9234b7e2be2eaca",
+      "FV/E2E/ABIReadCfg.lean:Realize.step_realize": "b8b5db04749c3e4a6cd87985ea3d611acc0be9ec3bd0bab4902375e7c7a36d88",
+      "FV/E2E/SemanticNIBoundary.lean:noTlsCfg": "921728bbe92813d0dfe53123ea3291dac844f8078ca0085eab41d3e5ec15ebbe",
+      "FV/E2E/CompiledSemanticNI.lean:of_checks": "b18be0e8cb123ee4b269f4847834182f60a8b7cc9bcd394e30f02f7bf95a9c23"
+    }
+  },
+  "cohorts": {
+    "integration-v5": {
+      "commands": 78,
+      "generated_roots": 18,
+      "generated_modules": 64,
+      "receipt_sha256": "09070dfe12b9e4cfd37f2a732878f218d1e675b97345ae79ce51c1f0efb26aef"
+    },
+    "parent-forward-integration-v5": {
+      "commands": 78,
+      "generated_roots": 18,
+      "generated_modules": 64,
+      "receipt_sha256": "6f93f5d280ad0676a454379022a7e9622cca0c65b0531ce97847823c6e824309"
+    },
+    "parent-linear-integration-v5": {
+      "commands": 78,
+      "generated_roots": 18,
+      "generated_modules": 64,
+      "receipt_sha256": "640a7afb791637472f213b8be046c7be8e679dd6e122007b85e3b00b589a7f7b"
+    },
+    "parent-scalar-entry-integration-v5": {
+      "commands": 70,
+      "generated_roots": 18,
+      "generated_modules": 56,
+      "receipt_sha256": "2ee2985614753dcd681f3e8cc6d15d7b2787dfafd118baaa9b9f0c954e6f4276"
+    },
+    "parent-entry-integration-v5": {
+      "commands": 34,
+      "generated_roots": 14,
+      "generated_modules": 20,
+      "receipt_sha256": "45fc06ca36d2851a20a59429b5fd14b71750906d785d68a13aadf6003dc13ee6"
+    },
+    "parent-integration-v5": {
+      "commands": 34,
+      "generated_roots": 14,
+      "generated_modules": 20,
+      "receipt_sha256": "f7b6f8aa5ad1bf3055e7cf1adb267896404126dddc882c289481303721f30aa3"
+    }
+  },
+  "native": {
+    "lean_encoded_objects": 24,
+    "lean_byte_executions": 24000,
+    "cranelift_reference_executions": 3000,
+    "failures": 0,
+    "disagreements": 0
+  },
+  "runtime": {
+    "pass": 5755,
+    "fail": 0,
+    "error": 0,
+    "known_not_runnable_unchanged": 7
+  },
+  "encoder": {
+    "identical": 1398,
+    "different": 0
+  },
+  "identity_stage_parity": {
+    "e2e": {
+      "counts": {
+        "original": 1150,
+        "parent": 1159,
+        "current": 1159
+      },
+      "original_and_parent_ordered_stages_exact": true
+    },
+    "legacy-e2e": {
+      "counts": {
+        "original": 1150,
+        "parent": 1159,
+        "current": 1159
+      },
+      "original_and_parent_ordered_stages_exact": true
+    }
+  },
+  "examples": {
+    "tests": [
+      21,
+      53
+    ],
+    "verified_executables": 20
+  },
+  "crate_proofs": {
+    "modules": 93,
+    "commands": 96
+  },
+  "paired": {
+    "head": "31a1befea3ed925a3fc1378a0d889fe726f087a8",
+    "baseline": "d6218f299c97d82d560e74ec0a75813a05f5b558",
+    "state": "passed",
+    "symbol_comparisons": 4543,
+    "baseline_exact": 900,
+    "candidate_exact": 900,
+    "gained": [],
+    "lost": [],
+    "changed_function_bytes": 0,
+    "same_captured_inputs_and_settings": true,
+    "limits": "Paired byte/relocation comparisons, not unique function coverage or full goal completion. Post-native actual example report agreement remains required."
+  },
+  "actual_artifact_binding": {
+    "head": "31a1befea3ed925a3fc1378a0d889fe726f087a8",
+    "state": "passed",
+    "paired_summary_sha256": "1f11dbfbd7cea5ebc4db09ac8bdfb39493dbf7ff186ba2576dd10e1c6e87d63a",
+    "actual_real_crate_report_sha256": "b0336ca90c3236c5c0e15e3cded6280a906a450695e7a251651afaaf4aebff32",
+    "actual_normalized_sources_exact": 4543,
+    "all4543actual_example_rows_agree": true,
+    "actual_candidate_function_bytes_and_relocations_exact": 4543,
+    "actual_cranelift_reference_function_bytes_and_relocations_exact": 4543,
+    "reuse": "exact frozen source, executable hashes, immutable snapshot and actual examples verified; no duplicate compilation"
+  },
+  "full_relocation_target_binding": {
+    "head": "31a1befea3ed925a3fc1378a0d889fe726f087a8",
+    "state": "passed",
+    "functions": 4543,
+    "actual_candidate_and_reference_bytes_and_full_relocation_targets_exact": true,
+    "errors": [],
+    "metric_scope": "The historical900/4543 cross-compiler metric compares instruction bytes and relocation offsets/types/addends. This additional same-compiler actual/captured binding includes full relocation target names."
+  },
+  "reporting_repair": {
+    "head": "31a1befea3ed925a3fc1378a0d889fe726f087a8",
+    "state": "passed",
+    "original_manifest_receipt": "/tmp/stock-conditional-cfg-full-gates-v5/receipt.json",
+    "original_manifest_receipt_sha256": "eef2fe53a271433fe905006a3bc6fda3211ae1bf72c511b0ff0db84787923e30",
+    "original_other_gates_current_pass": true,
+    "reporting_failure": "Identity report basename collided with its gate-record basename; successful command preserved; original output overwritten by record",
+    "identity_repair_receipt": "/tmp/stock-conditional-cfg-identity-repair-gates-v5/receipt.json",
+    "identity_repair_receipt_sha256": "4efed63649aa217fb2431ddf694109657c419cc4f791478a4843b8129b228d7a",
+    "all_original_commands_preserved_no_failed_gate_counted": true
+  },
+  "ci": "cancelled; not claimed passed; current author-gate merge policy followed",
+  "evidence": {
+    "utc": "2026-10-27T05:49:07.415003+00:00",
+    "head": "31a1befea3ed925a3fc1378a0d889fe726f087a8",
+    "base": "d6218f299c97d82d560e74ec0a75813a05f5b558",
+    "pr": 635,
+    "branch": "agent/stock-cfg-body-progress-20261025T025359Z",
+    "archive_bytes": 167335282,
+    "archive_sha256": "3e400dd638646c0e5d0bc08760f65ce17b025b85fb5fcf081e689520a611801f",
+    "parts": [
+      {
+        "path": "evidence/conditional-cfg-terminal.part000",
+        "bytes": 33554432,
+        "sha256": "4bc36043210aa21090ce9574a902fc64af68e60ef200e0f17956274af1e5a205"
+      },
+      {
+        "path": "evidence/conditional-cfg-terminal.part001",
+        "bytes": 33554432,
+        "sha256": "4ffea894d941ea71a06a69fccb8992f7d08f9f1254d66a365184b86e401d5efd"
+      },
+      {
+        "path": "evidence/conditional-cfg-terminal.part002",
+        "bytes": 33554432,
+        "sha256": "08793fbe2e9bffaba840a2cc95878769acde763c2117f64d096e373643e6d262"
+      },
+      {
+        "path": "evidence/conditional-cfg-terminal.part003",
+        "bytes": 33554432,
+        "sha256": "71a5fee8629c309740f3fef415de143b46af9a10b608fc5689fa5a91f9be1d38"
+      },
+      {
+        "path": "evidence/conditional-cfg-terminal.part004",
+        "bytes": 33117554,
+        "sha256": "2b1a955d73ab5f18a6a3d21f04cffa73a2e28252f6c268bfddd393a09dd47fb3"
+      }
+    ],
+    "state": "all author gates passed; full140 remains open; identity reporting collision repaired by a separate maintained gate; cancelled CI not claimed passed",
+    "prior_evidence_tree_preserved": true,
+    "evidence_commit": "34cef2dc4beaa2497220617a5ffa39d644e840c3",
+    "manifest_git_path": "evidence/conditional-cfg-terminal-manifest.json",
+    "files": 71091
+  },
+  "archive_verification": {
+    "utc": "2026-10-27T05:52:34.753660+00:00",
+    "state": "passed",
+    "files": 71091,
+    "every_archived_file_matches_manifest": true,
+    "remote_commit": "34cef2dc4beaa2497220617a5ffa39d644e840c3",
+    "all_remote_part_git_blobs_and_sha256_verified": true
+  },
+  "source_file_sha256": {
+    "FV/Backend/ABIReadCfg.lean": "86ccfb6f9abd7edfdaf11c2c75b11b4265c4bb445a0b4417dd4a06e40f45a3e4",
+    "FV/Backend/ConditionalCfgNIProduction.lean": "c09b28001f87187664c769be971b755413a834e5b169888229feb81432b0c7e1",
+    "FV/Backend/Lowering/StockConditionalCfg.lean": "9bff314d74a2a9313eb6df36d903dd696395227eed41fda0956228628a7c8b80",
+    "FV/Backend/Lowering/StockConditionalCfgNI.lean": "a4a51f7424ed61a3aaa790091cf3d551162d873ed1252d40cbc1939800194ac2",
+    "FV/Backend/Proof/StockBranchHelperProjection.lean": "c4a022eab18c3146d9b318901fddb9e9cac731c3de33580dddc3656510c64e04",
+    "FV/Backend/Proof/StockComparisonPrefixNarrow.lean": "92dcb68325f6528940478333d627176560c3d7219de3add293aef3dcc4cb98eb",
+    "FV/Backend/Proof/StockComparisonPrefixWide.lean": "fb9460eb0728d6c8c5d836b6eae6480910c678c083302b66c1e60f927f2929e7",
+    "FV/Backend/Proof/StockConditionPrefix.lean": "96c9cc8b9737d01024aa2edcc4fbe4b85247aa4879881eda4b0d81a151af2179",
+    "FV/Backend/Proof/StockConditionPrefixWitness.lean": "e198620b84059091985ff1c2191668b44a4487c6adf5097b4b7634d8d1983455",
+    "FV/Backend/Proof/StockConditionalBodyCalls.lean": "9357e61e1ff685cfd563b80f61d3a3bba0db6fe648a7a82b64dd504956d47df2",
+    "FV/Backend/Proof/StockConditionalBodyRefines.lean": "f52acee4ddaa67e251457d70695ba01177574c6c57ce4758d920494534e5fa61",
+    "FV/Backend/Proof/StockConditionalBodyWitness.lean": "78af48dc57d9c64bcfb371c5b7290b5983e09edf0f1e28a9103deaec0900aade",
+    "FV/Backend/Proof/StockConditionalBranchValues.lean": "4f42ac9afd255d352e6eded74d519701ad189a8971d4e72d09c2a69adda69514",
+    "FV/Backend/Proof/StockConditionalCallValues.lean": "7c04b9f3423f9ecd0d2431b3f64da7109fb972b880118e90ebdbda12d2fdc058",
+    "FV/Backend/Proof/StockConditionalCalls.lean": "9c3a904c9db8bb68905a0b682475f7db76c34cdda95cdf8ae2dbe5bd7dcde938",
+    "FV/Backend/Proof/StockConditionalCallsWitness.lean": "fdab86f8217126e50e665c4a7aea0adfe96f3dcde4b2c80e2eb0785d1b325735",
+    "FV/Backend/Proof/StockConditionalCheck.lean": "ae86f2d41fa309c1cd37bbdd6bfaa2f42de8b3a6f6f7462f2237949e706ac9ae",
+    "FV/Backend/Proof/StockConditionalClass.lean": "3eceaf73bfd72adb655490e3b908d1c62e2d9d7ba255d9e2d36077dfe5f82714",
+    "FV/Backend/Proof/StockConditionalClassWitness.lean": "47cf3cf9219ef6ce96dd10ecde17c922d28e61bd6443698570fac4010e8cb76e",
+    "FV/Backend/Proof/StockConditionalCompatibility.lean": "61dd6e5a8cfcf5f32d750c78883d5d8657df99773aac5542b8bb8711874a347b",
+    "FV/Backend/Proof/StockConditionalCoreDemand.lean": "28e2e2148bcf2cbc071a93b9c48710b90f2e38b1dbd7f165a235707d4cf81ea5",
+    "FV/Backend/Proof/StockConditionalCoreOrigin.lean": "5cba8d08319e36bb422f89af3481b985bf5cb8f1cbb1ff57097ea758235bdea2",
+    "FV/Backend/Proof/StockConditionalCoreOriginWitness.lean": "c908a97a7de5d091204dedce8a2b1ee925b33abdff5e15df191acbef2273824f",
+    "FV/Backend/Proof/StockConditionalDemandWitness.lean": "74c06cfcbf142889964f11a05213e362bc98b7bd570d1d9bbdecf80d94a59ab1",
+    "FV/Backend/Proof/StockConditionalDomain.lean": "ccfe562f493037088a57e38e2a4d812d29e2c5911e841f8de2656dae5f75f21c",
+    "FV/Backend/Proof/StockConditionalDomainWitness.lean": "3b41236ed4e2f1a4b7a7a984906aa7d0e0ae766ed38e6bba5313e6ae3a879668",
+    "FV/Backend/Proof/StockConditionalEmission.lean": "c8f8ef19b3c36edd0cfd8b82dcb72f7cfb3c8dccd3683aef778036d26d5b5b90",
+    "FV/Backend/Proof/StockConditionalEmissionWitness.lean": "2e6fb8d09d1658160a390874633a9266c7d143d4fd113ec019d86741aa4dbd40",
+    "FV/Backend/Proof/StockConditionalEmptyFixture.lean": "c248e6bbd91df24876165e76f053eccfc89cabcdb4771ad3e98ccac8f7f2a67a",
+    "FV/Backend/Proof/StockConditionalEmptyTrapFixture.lean": "29e74a87a9dde21fcb170b6660dcb6a4679542e7feb312ab97b25a0c07b3de6c",
+    "FV/Backend/Proof/StockConditionalEmptyTrapSource.lean": "55691d2fdc836ec36f24be52d192115780d950dc5bd87204ebd5a633bfbef920",
+    "FV/Backend/Proof/StockConditionalEntryPrelude.lean": "cb720ee789cb0a68fe79a87eae5330a382fa01ba543403629fc1dc2950549b9c",
+    "FV/Backend/Proof/StockConditionalGuardedLast.lean": "b168d05d971fbec95636ea3deaed03eabedba4e988d879e84ed85872b8de1699",
+    "FV/Backend/Proof/StockConditionalGuardedValues.lean": "ceb96c83522a5bcce61316d620b417b43fd775d67c4e530d0dee020b6a65f2c4",
+    "FV/Backend/Proof/StockConditionalGuardedWitness.lean": "2204bcfb82f93d18b6d6a5e4e1d3c86c6d38e9580a49e3f0eaac2fec9becbfa9",
+    "FV/Backend/Proof/StockConditionalLeaf.lean": "484390f136de4c90be1019a8cafe9acba4171af1ae64a7bb88c64c24c9d5700c",
+    "FV/Backend/Proof/StockConditionalNoDefs.lean": "996109436c12cebf162f0a3f6c2678197a0955edd4770565af2b53cc37c541ee",
+    "FV/Backend/Proof/StockConditionalOutgoingWitness.lean": "316d2a386bcb39dc61fec1bc3e7b84867bef113dc465b9fcd78b8e795da291ce",
+    "FV/Backend/Proof/StockConditionalParameterSelection.lean": "933c26813c3dc21ae264c5842451afde1f08bc3f4f6c3e8d15e558120032e99a",
+    "FV/Backend/Proof/StockConditionalResolved.lean": "a490075f2e43dd51c347a6cc68bc3f73e1f31f5b40db9968bf6b6874bf85d678",
+    "FV/Backend/Proof/StockConditionalResolvedWitness.lean": "6a6808a0c7dd1267c8342cb3d51f3c2d4185ead694da773396fa72e8a88f2cb5",
+    "FV/Backend/Proof/StockConditionalReturnAt.lean": "d81ad73c4e9190f3185bb72ff18939e4ee1bcab90485d0f2e0ead2f1262a4270",
+    "FV/Backend/Proof/StockConditionalReturnAtWitness.lean": "30ca599db6690760ebc57e8f8ff981d15a3bff4a4909405e9228271141f92011",
+    "FV/Backend/Proof/StockConditionalRouteWitness.lean": "e7dfa33da8b3f3fc6a7e1287daf1ba72bd5c935be2f01bdc8bd926ee869e1140",
+    "FV/Backend/Proof/StockConditionalSourceChecks.lean": "d3f9c19c7d247da8731e1bfbcdfdbe7befc2e610fb77057cf20dde0b6f283adc",
+    "FV/Backend/Proof/StockConditionalSourceReturn.lean": "1eeae6346cfe8e498b9f9327b01791b7be4673faa350c2777e35e62e1fb3b362",
+    "FV/Backend/Proof/StockConditionalSourceReturnWitness.lean": "48502b42bdc5fc9dd9b57782daa65b6566b0cdfe136ca8f030d54f991bd93edf",
+    "FV/Backend/Proof/StockConditionalSourceTrap.lean": "990001760595cd928a51a4e1febc5e6c4a0dcb38401cf4ead5612edd4e2a9d6a",
+    "FV/Backend/Proof/StockConditionalSourceTrapWitness.lean": "aaa5f8c4d01f048a7ede3d546c2a43b7c0e526622e6309f78f45ccc312b47eb0",
+    "FV/Backend/Proof/StockConditionalSourceValues.lean": "c9899e11cd4c1853aae66c1f4f29266a778430eeb1bfc420394095cc293d3af9",
+    "FV/Backend/Proof/StockConditionalSourceValuesWitness.lean": "9cedaec91ff7839e4b90ef7b329daa6987b2324f92df7eea7d5af6d3c70dc966",
+    "FV/Backend/Proof/StockConditionalSuccessor.lean": "e554b4aa9063f394237505aa19c0a901acbb5355238f87c4213f6427cabedfe4",
+    "FV/Backend/Proof/StockConditionalSuccessorWitness.lean": "f8fd4a3e405479a9a6869385f7a908d524591372dcb372b34206f25c37d080a0",
+    "FV/Backend/Proof/StockConditionalTrapAt.lean": "3c6e829a0210e50951e043aa58242109685b5ebc9bdd7b33fb33b3e90fe95dd7",
+    "FV/Backend/Proof/StockConditionalTrapAtWitness.lean": "f01e9447d35ce311ca0461dda349cee942306fac3106c2ad2d53d9113232787d",
+    "FV/Backend/Proof/StockConditionalTrapFixture.lean": "18fe21bbb14827d87c050fa572158501d741335f8dd5f3f724e11ba350462e8c",
+    "FV/Backend/Proof/StockConditionalValues.lean": "b4afc1d702924b4764664db32ec7ac795331a37195e137d1c7a4af2e9da1ffcd",
+    "FV/Backend/Proof/StockConditionalValuesWitness.lean": "4fb8d76b853fce3953c17e8cd16719fa913dddc538b6d74248febd04782e37bf",
+    "FV/Backend/Proof/StockConditionalWideAllocation.lean": "1d0a28e17a3322014cbe57aa63b519f71d73762ea4016743da5ad5294560cf65",
+    "FV/Backend/Proof/StockJumpEntryPrelude.lean": "217c988c7c15cabd731b82f3e23a3747f74b868eed891c38cfbb7a588380f74f",
+    "FV/Backend/Proof/StockOriginalConditionPrefix.lean": "cc50dc4b229783a897015245a3559f0ce06f11ea7c2df26e1484c1943cbedfe3",
+    "FV/Backend/Proof/StockOriginalEntryPrelude.lean": "e642b720de927c9dc05f2dae9025924bb448e2f83d0616112f0db563052a203c",
+    "FV/Backend/Proof/StockOutgoingFrame.lean": "efc107c71869efdf9a9411ec2312fb705c475846ffdd32e59e7cf9d5c903fa06",
+    "FV/Backend/Proof/StockResolvedDefs.lean": "b8166047af601c74721b394f12fbc2119cde4e720b7da7ca87bbc590e3133b60",
+    "FV/Backend/Proof/StockResolvedDefsWitness.lean": "2cea5283ad7e922faf2dde4c4ce72304be2312b7feb9ae2a81b9f25d028c8ee7",
+    "FV/Backend/Proof/StockSelectedRouteExecution.lean": "665abf85c4707cceb406b096160b2f7a0f3a00530b7f60218af65096ce281e12",
+    "FV/Backend/Proof/StockSequence.lean": "c5801fa186e694b0e37d123e5f69acff7e0cd30cd52b30acc68bd3181f7aa421",
+    "FV/Backend/Proof/StockSequenceFrame.lean": "c1884b0002a3ce7765e95d3d8e64d767f3eb80d6377fb4bb8d8c1aacc3178279",
+    "FV/Backend/Proof/StockTermAvailability.lean": "83503beca16eaf22781d8dbd60237a62ce586094971de01f7fb0dd56f14a72be",
+    "FV/Backend/Proof/StockZeroConditionPrefix.lean": "528c29f1810eb08d84d2c1a7631eb63e923d53b01fe96868a9b39f7ede4a1fd7",
+    "FV/Backend/SemanticNICheck.lean": "6e0902583fd13dbf00ac3b1e41f9d5431de5c791b89b81d23063b91db496c3f7",
+    "FV/E2E/ABIReadCfg.lean": "3ff00ae04d56b9a54e406f778a520b9cf5b0912ee968ed7f0ffafcb28956e19d",
+    "FV/E2E/CompiledSemanticNI.lean": "c81707debed66c4a70e35bf19aab662d9acd0dd5a850451109c857dfaf7212a5",
+    "FV/E2E/SemanticNIBoundary.lean": "4665e36ea199d3eaa467db155d249ab575905c9ed561c8848441018cc6c8f714",
+    "FV/E2E/StockConditionalCfgFixtures.lean": "435fd997653d5bae5146cad0847fe918561915d3ed294b0ed5d72c8a2f8de40b",
+    "FVTest/Backend/Lowering/StockGeneralDivProductionLinked.lean": "ec2157c4d3648cc9cb339440b3d93ab6e17b021e7fabc538a5dc32f1a9cdd446",
+    "FVTest/Backend/Lowering/StockGeneralDivProductionRuntime.lean": "5b996ceabb59c5a0844fb01406e2fb22eef44a35f3128574dc36a1ac5245905a",
+    "FVTest/Backend/Lowering/StockTwoBlockProductionRuntime.lean": "5c0a4e89450d5a32c803a96efe92995331f8fbcfe9e64512798ae8f4313ffe57",
+    "FVTest/Backend/Main.lean": "2c06f20dbd84bc01f65542ada5f8dd3903c89cf206a2d6f8c2f1ea3c7fd77e72",
+    "FVTest/E2E/LinkCheckMain.lean": "8612c0d574bcee3ba0ebed622ae8199dad9f22d1460d5d0e86dcccc1177f2137",
+    "FVTest/Link/LeanLinkMain.lean": "7778e4d77f06316c46a0e064fc1bca776b2707cad5e8340d2cbdc7b365fd8963",
+    "docs/plans/stock-driver-incremental-delivery.md": "5119ee9a185a75dd89432c2462d20cb8e5b80673ec7101a665e5b1b4167ea61c",
+    "docs/research/stock-conditional-cfg-progress.md": "7bacb8accd9ccfc9af5ea8376adb4ef020a1c2175acec1390bc4fb48d210ea86",
+    "scripts/audit/stock-conditional-source.lean": "ce63452ab65ea4ceaef18d0b61e50836baa674dadac998bb39e485bb33aea16a",
+    "scripts/check-stock-mixed-integration.py": "e6cea2205f6b411306a154f6cb45dc31a26996fb208b4729669aae63219a787f",
+    "scripts/check-stock-mixed-native.py": "08774ae5de4c2a275a78a25c868f6ae2cec884f25e4405e55db4ff59f7be994e"
+  },
+  "limits": "No measured byte agreement gain. Cross-compiler metric compares bytes and relocation offsets/types/addends; actual/captured same-compiler binding also checks target names. Fallback preserves acceptance, not Stock completeness. Broader conditions/CFGs/loops/effects/calls and original-domain simulation/completeness remain."
+}
