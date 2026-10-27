@@ -5,16 +5,17 @@ import FV.Backend.Proof.IselExclTF
 # The typed statement dispatcher with the proven float operations (S11f, #35)
 
 `LowerContractT.lean`'s statement dispatcher for contexts whose instructions may also be the
-S11f float arithmetic, rounding and conversions (`CtxT`, whose scope is `InstScopeTF`): the first
-matching root of `lower` is a non-closure root (never matches, `lower_nonroot_nomatchTF_calls`),
-a float-movement, float-memory, float-arithmetic (`LowerRulesCorrectFT`) or conversion root
-(`LowerRulesCorrectCvtT`), the float arm of `select`, or on a subset-E instruction an integer
-root; on another instruction no other closure root matches (`NonEUnmatchableTF`).
+S11f float arithmetic, rounding, conversions and scalar comparisons (`CtxT`, whose scope is
+`InstScopeTF`): the first matching root of `lower` is a non-closure root (never matches,
+`lower_nonroot_nomatchTF_calls`), a float-movement, float-memory, float-arithmetic
+(`LowerRulesCorrectFT`), conversion (`LowerRulesCorrectCvtT`) or `fcmp` root
+(`LowerRulesCorrectFC`, `IselFloatCmp`), the float arm of `select`, or on a subset-E instruction
+an integer root; on another instruction no other closure root matches (`NonEUnmatchableTF`).
 
 * `floatCvtRootRule` (the sixteen S11f-cvt roots of `lower`, `lower.isle:724-794`),
   `LowerRulesCorrectCvtT` (they are correct over float-capable contexts);
-* `NonEUnmatchableTF`: `NonEUnmatchableT` over `InstScopeTF` with the conversion roots among the
-  float roots;
+* `NonEUnmatchableTF`: `NonEUnmatchableT` over `InstScopeTF` with the conversion and `fcmp`
+  roots among the float roots;
 * `lowerInstOk_of_rulesTF`, `lowerInstOk_runTermTF`, `instCallsTF_of_rules`.
 
 `lowerInstOk_of_rulesT`, `lowerInstOk_runTermT`, `instCallsT_of_rules` and `NonEUnmatchableT`
@@ -43,13 +44,14 @@ def LowerRulesCorrectCvtT (p : Program) : Prop :=
 
 /-- **The closure roots of `lower` other than the float ones never match a non-E instruction
 of a typed context with the proven float operations** (`NonEUnmatchableT` over `CtxT`'s scope
-`InstScopeTF`, the conversion roots among the float roots): on an instruction of the scope
-outside subset E (the float movement, arithmetic, rounding, conversions), the first matching
-closure root is a float-movement, float-memory, float-arithmetic or conversion root, or the
-`select` root 971 on a float `select`. -/
+`InstScopeTF`, the conversion and `fcmp` roots among the float roots): on an instruction of the
+scope outside subset E (the float movement, arithmetic, rounding, conversions, comparisons), the
+first matching closure root is a float-movement, float-memory, float-arithmetic, conversion or
+`fcmp` root, or the `select` root 971 on a float `select`. -/
 def NonEUnmatchableTF (p : Program) : Prop :=
   ∀ r ∈ p.rulesOf TId.lower, closureRoot r = true → floatMoveRootRule r = false →
     floatMemRootRule r = false → floatArithRootRule r = false → floatCvtRootRule r = false →
+    floatCmpRootRule r = false →
   ∀ (f : Clif.Function) (ctx : Ctx), CtxT f ctx →
   ∀ (ii : Nat) (info : IInfo) (inst : Clif.Inst), ctx.insts[ii]? = some info →
     info.clif = some inst → Compile.instE inst = false → (r.id = 971 → ¬ FloatSelect inst) →
@@ -62,11 +64,11 @@ def NonEUnmatchableTF (p : Program) : Prop :=
 
 set_option maxRecDepth 20000 in
 /-- **The typed statement dispatcher with the proven float operations**
-(`lowerInstOk_of_rulesT` over `CtxT` alone, with the conversion roots and
+(`lowerInstOk_of_rulesT` over `CtxT` alone, with the conversion and `fcmp` roots and
 `NonEUnmatchableTF`). -/
 theorem lowerInstOk_of_rulesTF (hrules : LowerRulesCorrectTI program)
     (hT : LowerRulesCorrectT program) (hFT : LowerRulesCorrectFT program)
-    (hCvt : LowerRulesCorrectCvtT program)
+    (hCvt : LowerRulesCorrectCvtT program) (hFC : LowerRulesCorrectFC program)
     (hnE : NonEUnmatchableTF program) (hcalls : CallRulesCorrectT program)
     (hind : IndRulesCorrectT program) (hmem : MemRulesCorrectRTI program)
     (hmemF : MemRulesCorrectRT program)
@@ -125,6 +127,10 @@ theorem lowerInstOk_of_rulesTF (hrules : LowerRulesCorrectTI program)
   have hcv : floatCvtRootRule r = true → ∃ ms rss, st'.emitted = st.emitted ++ ms.toArray ∧
       out = .regsVec rss ∧ LowerInstOk isem MR env cp ctx inst info.results st rss st' ms :=
     fun hfc => hCvt F isem MR env cp hR hMR r hr hfc f ctx hctx.inv ii info inst hi hc trivial
+    cfg hco m n st tr env' s1 out st' tr2 hm1 hn1 hvb hfirst hmatch heval
+  have hfc' : floatCmpRootRule r = true → ∃ ms rss, st'.emitted = st.emitted ++ ms.toArray ∧
+      out = .regsVec rss ∧ LowerInstOk isem MR env cp ctx inst info.results st rss st' ms :=
+    fun hfcmp => hFC F isem MR env cp hR hMR r hr hfcmp f ctx hctx.inv ii info inst hi hc trivial
       cfg hco m n st tr env' s1 out st' tr2 hm1 hn1 hvb hfirst hmatch heval
   cases hroot : closureRoot r
   · exact absurd hmatch (lower_nonroot_nomatchTF_calls hctx.inv hctx.scope hctx.calls hi hc hr
@@ -135,11 +141,13 @@ theorem lowerInstOk_of_rulesTF (hrules : LowerRulesCorrectTI program)
     · cases hfmem : floatMemRootRule r
       · cases hfa : floatArithRootRule r
         · cases hfc : floatCvtRootRule r
-          · by_cases hsel : r.id = 971 ∧ FloatSelect inst
-            · exact (hT F isem MR env cp hR hMR).2 r hr hsel.1 f ctx hctx.inv ii info inst hi hc
-                hsel.2 cfg hco m n st tr env' s1 out st' tr2 hm1 hn1 hvb hfirst hmatch heval
-            · exact absurd hmatch (hnE r hr hroot hfm hfmem hfa hfc f ctx hctx ii info inst hi hc
-                hE (fun h1 h2 => hsel ⟨h1, h2⟩) hst cfg m st tr env' s1 hfirst)
+          · cases hfcmp : floatCmpRootRule r
+            · by_cases hsel : r.id = 971 ∧ FloatSelect inst
+              · exact (hT F isem MR env cp hR hMR).2 r hr hsel.1 f ctx hctx.inv ii info inst hi hc
+                  hsel.2 cfg hco m n st tr env' s1 out st' tr2 hm1 hn1 hvb hfirst hmatch heval
+              · exact absurd hmatch (hnE r hr hroot hfm hfmem hfa hfc hfcmp f ctx hctx ii info inst
+                  hi hc hE (fun h1 h2 => hsel ⟨h1, h2⟩) hst cfg m st tr env' s1 hfirst)
+            · exact hfc' hfcmp
           · exact hcv hfc
         · exact har hfa
       · exact hmF hfmem
@@ -171,7 +179,7 @@ set_option maxRecDepth 20000 in
 /-- `lowerInstOk_of_rulesTF` for the backend's own call (`runTerm ctx "lower" [.inst ii]`). -/
 theorem lowerInstOk_runTermTF (hrules : LowerRulesCorrectTI program)
     (hT : LowerRulesCorrectT program) (hFT : LowerRulesCorrectFT program)
-    (hCvt : LowerRulesCorrectCvtT program)
+    (hCvt : LowerRulesCorrectCvtT program) (hFC : LowerRulesCorrectFC program)
     (hnE : NonEUnmatchableTF program) (hcalls : CallRulesCorrectT program)
     (hind : IndRulesCorrectT program) (hmem : MemRulesCorrectRTI program)
     (hmemF : MemRulesCorrectRT program)
@@ -206,8 +214,9 @@ theorem lowerInstOk_runTermTF (hrules : LowerRulesCorrectTI program)
     subst h2
     have hlen : (program.rulesOf TId.lower).length ≤ 1000 := by
       rw [show TId.lower = 686 from rfl, data_program.r686]; decide
-    obtain ⟨ms, rss, h1, h2, h3⟩ := lowerInstOk_of_rulesTF hrules hT hFT hCvt hnE hcalls hind hmem
-      hmemF hR hMR hcr hicr hMem hFP hctx hout hnorm hMRo hi hc hsig hst hstk rfl (by omega) hvb ha
+    obtain ⟨ms, rss, h1, h2, h3⟩ := lowerInstOk_of_rulesTF hrules hT hFT hCvt hFC hnE hcalls hind
+      hmem hmemF hR hMR hcr hicr hMem hFP hctx hout hnorm hMRo hi hc hsig hst hstk rfl (by omega)
+      hvb ha
     exact ⟨ms, rss, by simpa using h1, h2, h3⟩
 
 /-- **From the typed rule families with the proven float operations to the driver's `lower`
@@ -215,6 +224,7 @@ calls** (`instCallsT_of_rules` over `CtxT` alone). -/
 theorem instCallsTF_of_rules (hrules : LowerRulesCorrectTI Isle.Aarch64.program)
     (hT : LowerRulesCorrectT Isle.Aarch64.program) (hFT : LowerRulesCorrectFT Isle.Aarch64.program)
     (hCvt : LowerRulesCorrectCvtT Isle.Aarch64.program)
+    (hFC : LowerRulesCorrectFC Isle.Aarch64.program)
     (hnE : NonEUnmatchableTF Isle.Aarch64.program) (hcalls : CallRulesCorrectT Isle.Aarch64.program)
     (hind : IndRulesCorrectT Isle.Aarch64.program) (hmem : MemRulesCorrectRTI Isle.Aarch64.program)
     (hmemF : MemRulesCorrectRT Isle.Aarch64.program)
@@ -228,9 +238,9 @@ theorem instCallsTF_of_rules (hrules : LowerRulesCorrectTI Isle.Aarch64.program)
     InstCallsT f ctx sem MR env p := by
   intro ii info inst st rss st' tr hmem' hi hc hsig hemp hvb hrun
   obtain ⟨B, hB, stm, hstm, rfl⟩ := hmem'
-  obtain ⟨ms, rss', hem, hov, hok⟩ := lowerInstOk_runTermTF hrules hT hFT hCvt hnE hcalls hind hmem
-    hmemF (env := env) (cp := p) hR hMR hcr hicr hMem hFP hctx hout (externsIn_self f) hMRo hi hc
-    hsig (hst ii info _ hi hc)
+  obtain ⟨ms, rss', hem, hov, hok⟩ := lowerInstOk_runTermTF hrules hT hFT hCvt hFC hnE hcalls hind
+    hmem hmemF (env := env) (cp := p) hR hMR hcr hicr hMem hFP hctx hout (externsIn_self f) hMRo hi
+    hc hsig (hst ii info _ hi hc)
     (fun fn args e hc he => hstk B hB stm hstm fn args e hc he) hvb hrun
   cases hov
   rw [hemp, Array.empty_append] at hem

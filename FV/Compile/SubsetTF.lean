@@ -6,11 +6,13 @@ import FV.Compile.SubsetTC
 `Compile.functionETCF f`: the scope with typed direct `try_call`s (`functionETC`) whose
 statements may also be the S11f float operations whose `lower` roots are proven over float-capable
 contexts: the arithmetic and rounding of `fArithET` (`fadd`/`fsub`/`fmul`/`fdiv`/`fmin`/`fmax`,
-`sqrt`/`fneg`/`fabs`/`fpromote`/`fdemote`, `ceil`/`floor`/`trunc`/`nearest`) and the conversions
+`sqrt`/`fneg`/`fabs`/`fpromote`/`fdemote`, `ceil`/`floor`/`trunc`/`nearest`), the conversions
 of `fCvtET` (`fcvt_from_{u,s}int` to `f32`/`f64`, the saturating `fcvt_to_{u,s}int_sat` to
-`i32`/`i64`; `Backend.fCvtOpcode`/`Backend.fCvtTyOk`, the types `instData` admits). The trapping
-`fcvt_to_{u,s}int` stay outside (cg_clif never emits them), and so does `fcmp`. The operand of an
-`fcvt_from_*` is an integer position (`intOperandsF`).
+`i32`/`i64`; `Backend.fCvtOpcode`/`Backend.fCvtTyOk`, the types `instData` admits) and the scalar
+comparisons of `fCmpET` (`fcmp` of two `f32`/`f64` operands with an `i8` result, at the
+conditions `Backend.fccOk` that `instData` admits: not `one`/`ueq`). The trapping
+`fcvt_to_{u,s}int` stay outside (cg_clif never emits them). The operand of an `fcvt_from_*` is an
+integer position (`intOperandsF`); the operands of an `fcmp` are float positions.
 
 `functionETC`, `functionET` and their theorems are unchanged; `functionETCF_of_functionETC`:
 every function of the scope with typed `try_call`s is in this one.
@@ -26,9 +28,17 @@ def fCvtET : Inst → Bool
   | .float op ty [_] => (Backend.fCvtOpcode op).isSome && Backend.fCvtTyOk op ty
   | _ => false
 
+/-- The S11f scalar comparisons whose `lower` root is proven (`rule_lower_2176`,
+`Backend.Proof.IselFloatCmp`): `fcmp` of two operands at `f32`/`f64` (the operands' type; the
+result is an `i8`), at a condition of `Backend.fccOk` (the conditions `instData` admits). -/
+def fCmpET : Inst → Bool
+  | .float (.fcmp cc) ty [_, _] => ty.isFloat && Backend.fccOk cc
+  | _ => false
+
 /-- **The instructions of the typed scope with the proven float operations**: `instET`, the
-arithmetic and rounding (`fArithET`) and the conversions (`fCvtET`). -/
-def instETF (i : Inst) : Bool := instETA i || fCvtET i
+arithmetic and rounding (`fArithET`), the conversions (`fCvtET`) and the scalar comparisons
+(`fCmpET`). -/
+def instETF (i : Inst) : Bool := instETA i || fCvtET i || fCmpET i
 
 theorem instETF_of_instETA {i : Inst} (h : instETA i = true) : instETF i = true := by
   simp [instETF, h]

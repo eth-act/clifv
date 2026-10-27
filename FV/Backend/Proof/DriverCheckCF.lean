@@ -6,7 +6,8 @@ import FV.Backend.Proof.InstScopeTF
 
 `lowerCheckTCF`: `lowerCheckTC` (`DriverCheckC.lean`) whose supported-instruction check is
 `instScopeOkF` (`Compile.instETF`: the typed movement scope, the S11f float arithmetic and
-rounding, the saturating and `from` conversions) in place of `instScopeOk` (`shapeOkTF`).
+rounding, the saturating and `from` conversions, the scalar `fcmp`) in place of `instScopeOk`
+(`shapeOkTF`).
 Executable only: the compiler runs it outside `Compile.functionETC` (`Backend.lowerCheckFor`);
 its soundness is `DriverCheckTCF.lean`'s.
 -/
