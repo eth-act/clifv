@@ -1,4 +1,4 @@
-import FV.Backend.Proof.StockParameterCheck
+import FV.Backend.Proof.StockParameterCheckedWitness
 
 #print axioms Backend.Stock.ParameterCfg.source_eligible_facts
 #print axioms Backend.Stock.ParameterCfg.domain_of_source_eligible
@@ -26,3 +26,35 @@ import FV.Backend.Proof.StockParameterCheck
 #print axioms Backend.Stock.Proof.ParameterCfg.parameter_metadata
 #print axioms Backend.Stock.Proof.ParameterCfg.parameter_terms_nonentry
 #print axioms Backend.Stock.Proof.ParameterCfg.nonentry_parameter_traps
+
+#print axioms Backend.Stock.Proof.ParameterCfg.Fixture.snapshot_success
+#print axioms Backend.Stock.Proof.ParameterCfg.Fixture.lowered
+#print axioms Backend.Stock.Proof.ParameterCfg.Fixture.Trap.snapshot_success
+#print axioms Backend.Stock.Proof.ParameterCfg.Fixture.Trap.lowered
+#print axioms Backend.Stock.Proof.ParameterCfg.Fixture.dominated
+#print axioms Backend.Stock.Proof.ParameterCfg.Fixture.scope
+#print axioms Backend.Stock.Proof.ParameterCfg.Fixture.source_cases
+#print axioms Backend.Stock.Proof.ParameterCfg.Fixture.family
+#print axioms Backend.Stock.Proof.ParameterCfg.Fixture.selector_witness
+#print axioms Backend.Stock.Proof.ParameterCfg.Fixture.ranked
+#print axioms Backend.Stock.Proof.ParameterCfg.Fixture.all_parameter_terms
+#print axioms Backend.Stock.Proof.ParameterCfg.Fixture.nonentry_terms
+#print axioms Backend.Stock.Proof.ParameterCfg.Fixture.original_domain_witness
+#print axioms Backend.Stock.Proof.ParameterCfg.Fixture.Trap.source_cases
+#print axioms Backend.Stock.Proof.ParameterCfg.Fixture.Trap.dominated
+#print axioms Backend.Stock.Proof.ParameterCfg.Fixture.Trap.scope
+#print axioms Backend.Stock.Proof.ParameterCfg.Fixture.Trap.selector_witness
+#print axioms Backend.Stock.Proof.ParameterCfg.Fixture.Trap.ranked
+#print axioms Backend.Stock.Proof.ParameterCfg.Fixture.Trap.all_parameter_terms
+#print axioms Backend.Stock.Proof.ParameterCfg.Fixture.Trap.nonentry_terms
+#print axioms Backend.Stock.Proof.ParameterCfg.Fixture.Trap.family
+#print axioms Backend.Stock.Proof.ParameterCfg.Fixture.Trap.original_domain_witness
+#print axioms Backend.Stock.Proof.ParameterCfg.Fixture.nonentry_condition_metadata
+#print axioms Backend.Stock.Proof.ParameterCfg.Fixture.nonentry_prelude_witness
+#print axioms Backend.Stock.Proof.ParameterCfg.Fixture.selected_ranked_target_witness
+#print axioms Backend.Stock.Proof.ParameterCfg.Fixture.actual_return_continuation_witness
+#print axioms Backend.Stock.Proof.ParameterCfg.Fixture.Trap.actual_trap_continuation_witness
+#print axioms Backend.Stock.Proof.ParameterCfg.Fixture.parameter_cfg_machine_return_witness
+#print axioms Backend.Stock.Proof.ParameterCfg.Fixture.Trap.parameter_cfg_machine_trap_witness
+#print axioms Backend.Stock.Proof.ParameterCfg.Fixture.checked_returning_witness -- witness: native_decide
+#print axioms Backend.Stock.Proof.ParameterCfg.Fixture.checked_trapping_witness -- witness: native_decide
