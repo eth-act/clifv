@@ -20,9 +20,9 @@ def TrapsAt (f : Clif.Function) (result : Result) (label bi : Nat) (b : Clif.Blo
 
 /-- First traps compose through arbitrarily many ranked scalar jump blocks;
 a body trap is preserved before any later successor executes. -/
-theorem nonentry_traps {f : Clif.Function} {result : Result} {rank : Nat → Nat}
+theorem nonentry_traps_of_termsAt {f : Clif.Function} {result : Result} {rank : Nat → Nat}
     (run : Stock.lower f = .ok result) (scope : LowerScope f) (dominated : Dominated f)
-    (abi : sigAbiOk f.sig = true) (ranked : Ranked f rank) (terms : JumpReturnBlocks f)
+    (abi : sigAbiOk f.sig = true) (ranked : Ranked f rank) (terms : NonentryJumpReturnBlocks f)
     (family : ∀ b ∈ f.blocks,∀ stm ∈ b.body,MaskBody.Family stm.inst)
     {F : BitVec 64 → Prop} {isem : Backend.Proof.Sem} (refines : Refines F isem)
     (driver : DriverSem isem) {MR : MemRelT} (stable : MRStable F MR)
@@ -41,7 +41,7 @@ theorem nonentry_traps {f : Clif.Function} {result : Result} {rank : Nat → Nat
     induction n using Nat.strongRecOn with
     | ind n ih =>
       intro label bi b count tag block nonentry
-      rcases terms b (List.mem_of_getElem? block) with ⟨bc,jump⟩ | ⟨xs,ret⟩
+      rcases terms bi b block nonentry with ⟨bc,jump⟩ | ⟨xs,ret⟩
       · obtain ⟨spec⟩ := Control.stock_lower_jump_body_spec run scope dominated family tag block jump refines driver stable env cp
         obtain ⟨tl,targetLabel,targetIndex,targetNonentry,successors,targetTag⟩ :=
           CriticalOwners.jump_successor run scope tag block jump
@@ -82,5 +82,21 @@ theorem nonentry_traps {f : Clif.Function} {result : Result} {rank : Nat → Nat
           callers remaining atTerm returned held
         simpa only [spec.noPrelude nonentry] using finished
   exact composed _ label bi b rfl tag block nonentry
+
+/-- The original all-block variant is preserved. -/
+theorem nonentry_traps {f : Clif.Function} {result : Result} {rank : Nat → Nat}
+    (run : Stock.lower f = .ok result) (scope : LowerScope f) (dominated : Dominated f)
+    (abi : sigAbiOk f.sig = true) (ranked : Ranked f rank) (terms : JumpReturnBlocks f)
+    (family : ∀ b ∈ f.blocks,∀ stm ∈ b.body,MaskBody.Family stm.inst)
+    {F : BitVec 64 → Prop} {isem : Backend.Proof.Sem} (refines : Refines F isem)
+    (driver : DriverSem isem) {MR : MemRelT} (stable : MRStable F MR)
+    (env : Clif.Env) (cp : Clif.Program) {label bi : Nat} {b : Clif.Block}
+    (tag : result.order.nodes[label]? = some (.original bi))
+    (block : f.blocks[bi]? = some b) (nonentry : bi ≠ 0) :
+    ∃ event,event ∈ result.blockScans.toList ∧ event.block = bi ∧
+      TrapsAt f result label bi b event isem MR env cp := by
+  exact nonentry_traps_of_termsAt run scope dominated abi ranked
+    (fun bi b found _ => terms b (List.mem_of_getElem? found)) family
+    refines driver stable env cp tag block nonentry
 
 end Backend.Stock.Proof.ForwardSource
