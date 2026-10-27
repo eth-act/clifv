@@ -60,11 +60,11 @@ theorem stackRC : StackAvail 0 (act vcpC rfC).af RC.s0 := by
   have hs := spC
   refine ⟨?_, fun a ha => ?_⟩
   · rw [spv_RC]; show (act vcpC rfC).af.frameSize + 16 + 0 ≤ _
-    have : (act vcpC rfC).af.frameSize = 240 := hs.2.2.2.2.2.2.2.1
+    have : (act vcpC rfC).af.frameSize = 176 := hs.2.2.2.2.2.2.2.1
     simp only [BitVec.toNat_ofNat]; omega
   · obtain ⟨j, hj, hd⟩ := codeAddr_words program_RC ha
     rw [spv_RC]
-    have : (act vcpC rfC).af.frameSize = 240 := hs.2.2.2.2.2.2.2.1
+    have : (act vcpC rfC).af.frameSize = 176 := hs.2.2.2.2.2.2.2.1
     show (act vcpC rfC).af.frameSize + 16 + 0 ≤ _
     rw [this]
     have hj' : j < 0x4000 := by have := hs.2.2.2.2.1; omega
@@ -382,7 +382,7 @@ theorem regVal_enterR1 (s : ArmState) : regVal (enterR s) (.x 1) = regVal s (.x 
 section bl
 variable {s : ArmState} {m : Loc → CV}
 
-theorem spv_enterR (hS : StRel RC s m w₀C) : E2E.spv (enterR s) = 0x6F00#64 := by
+theorem spv_enterR (hS : StRel RC s m w₀C) : E2E.spv (enterR s) = 0x6F40#64 := by
   unfold E2E.spv
   rw [r_enterR (by simp) (by simp)]
   have := hS.sp
@@ -392,9 +392,9 @@ theorem spv_enterR (hS : StRel RC s m w₀C) : E2E.spv (enterR s) = 0x6F00#64 :=
   rw [spv_RC, spC.2.1]; rfl
 
 /-- The caller's frame, code and the callee's code are above the caller's body `sp`. -/
-theorem rcF_ge {a : BitVec 64} (h : RC.F a) : 0x6F00 ≤ a.toNat := by
+theorem rcF_ge {a : BitVec 64} (h : RC.F a) : 0x6F40 ≤ a.toNat := by
   have hs := spC
-  have e : E2E.spv RC.s0 - BitVec.ofNat 64 (frameDrop RC.af) = 0x6F00#64 := by
+  have e : E2E.spv RC.s0 - BitVec.ofNat 64 (frameDrop RC.af) = 0x6F40#64 := by
     rw [spv_RC, hs.2.1]; rfl
   have hK : RC.K = 0 := rfl
   have hsz := hs.2.2.2.2.2.1
@@ -415,7 +415,7 @@ theorem rcF_ge {a : BitVec 64} (h : RC.F a) : 0x6F00 ≤ a.toNat := by
 
 theorem stackX (hS : StRel RC s m w₀C) : StackAvail 0 (act vcpR rfR).af (enterR s) := by
   have hs := spC
-  have hfs : (act vcpR rfR).af.frameSize = 256 := hs.2.2.2.2.2.2.2.2
+  have hfs : (act vcpR rfR).af.frameSize = 192 := hs.2.2.2.2.2.2.2.2
   refine ⟨?_, fun a ha => ?_⟩
   · rw [spv_enterR hS, hfs]; decide
   · obtain ⟨j, hj, hd⟩ := codeAddr_words (enterR_program s) ha
@@ -500,12 +500,12 @@ theorem scopeX (s : ArmState) : MemScopeL (RLx s) := by
 
 /-- The callee's addresses are above its body `sp`. -/
 theorem xF_ge (hS : StRel RC s m w₀C) {a : BitVec 64} (h : (RLx s).F a) :
-    0x6DF0 ≤ a.toNat := by
+    0x6E70 ≤ a.toNat := by
   have hs := spC
-  have e : E2E.spv (enterR s) - BitVec.ofNat 64 (frameDrop (act vcpR rfR).af) = 0x6DF0#64 := by
+  have e : E2E.spv (enterR s) - BitVec.ofNat 64 (frameDrop (act vcpR rfR).af) = 0x6E70#64 := by
     rw [spv_enterR hS, hs.2.2.1]; rfl
-  have hsz : (act vcpR rfR).fr.size ≤ 256 := hs.2.2.2.2.2.2.1
-  have hfs : (act vcpR rfR).af.frameSize = 256 := hs.2.2.2.2.2.2.2.2
+  have hsz : (act vcpR rfR).fr.size ≤ 192 := hs.2.2.2.2.2.2.1
+  have hfs : (act vcpR rfR).af.frameSize = 192 := hs.2.2.2.2.2.2.2.2
   change frameWG 0 (act vcpR rfR).fr.intBase (act vcpR rfR).fr.size (act vcpR rfR).af RC.F
     (enterR s) a at h
   unfold frameWG frameW frameF StackBelow at h

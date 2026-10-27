@@ -47,7 +47,8 @@ theorem wf_C : (link2.act callerF sC0 0 GL).Wf :=
 theorem step_call_C : link2.M sBF = enterL sBF ∧ stepEvs sBF = [] ∧ cls sBF = .plain := by
   obtain ⟨m, its, hq⟩ := qC1
   have hq' : Q (link2.act callerF sC0 0 GL) sBF
-      (.run ⟨0, .op 1 #[.reg (.x 0), .reg (.x 0)] :: its, m, w₀C⟩) := Q.hooks link2.H hq
+      (.run ⟨0, .op 1 #[.reg (.x 0), .reg (.x 0)] :: its, m, w₀C⟩) :=
+    Q.hooks link2.H (RL.sP_hooks wfRC abiRC link2.H) hq
   exact Link.step_call ok2 (nA := "f") (nB := "ld") (FA := callerF) (FB := ldF) (by simp [link2])
     (by simp [link2]) (s0 := sC0) (K := 0) (G := GL) wf_C hq' vb0C callChecksC.1 dest_C1
 

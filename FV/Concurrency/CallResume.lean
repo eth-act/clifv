@@ -235,6 +235,105 @@ theorem moves_privP {R : RL} (hR : R.Wf) {b : Nat} {w : ArmState} :
       rw [← iterN_add, show ls1.length + (i - ls1.length) = i by omega] at this
       exact this
 
+/-- **One move other than a callee restore, from `Q`**: its lines run (`move_lines`), every state
+before their end private, on the program, at a line other than `ret`. -/
+theorem move_privQ {R : RL} (hR : R.Wf) {s : ArmState} {b : Nat} {src dst : Loc}
+    {its : List RItem} {m : Loc → CV} {w : ArmState}
+    (hq : Q R s (.run ⟨b, .move src dst :: its, m, w⟩)) (hns : src.isSave = false)
+    (hnr : ∀ code ls1, R.fr.moveInsts src dst = .ok code →
+      codeLinesE R.ctx R.af code {} = .ok (ls1, {}) → NoRet ls1) :
+    ∃ n, Q R (iterN R.step n s) (.run ⟨b, its, Backend.Proof.upd m dst (m src), w⟩) ∧
+      ∀ i < n, ((∀ e ∈ stepEvs (iterN R.step i s), R.F e.addr) ∧ NoStx (iterN R.step i s)) ∧
+        (iterN R.step i s).program = R.fb.program R.base ∧ AtNonRet R (iterN R.step i s) := by
+  obtain ⟨j, ls1, s', code, hcode, hls1, hlat, hq1, hpriv⟩ := move_lines hR hq hns
+  have hit := hlat.iter hR
+  rw [← hit] at hq1
+  have hnr1 : NoRet ls1 := hnr code ls1 hcode (hls1 {})
+  exact ⟨ls1.length, hq1, fun i hi =>
+    ⟨hpriv i hi, linesAt_program hR hlat i (by omega), linesAt_nonRet hR hlat hnr1 i hi⟩⟩
+
+/-- **One move from `QA`** (`move_opR` per state): a callee restore runs no line and starts or
+continues a return tail (`RetTail`, as `realizesQA`); every other move runs its lines
+(`move_privQ`, from the machine's store in a return tail). -/
+theorem move_privQA {R : RL} (hR : R.Wf) {s : ArmState} {b : Nat} {src dst : Loc}
+    {its : List RItem} {m : Loc → CV} {w : ArmState}
+    (hqa : QA R s (.run ⟨b, .move src dst :: its, m, w⟩))
+    (hnr : ∀ code ls1, R.fr.moveInsts src dst = .ok code →
+      codeLinesE R.ctx R.af code {} = .ok (ls1, {}) → NoRet ls1) :
+    ∃ n, QA R (iterN R.step n s) (.run ⟨b, its, Backend.Proof.upd m dst (m src), w⟩) ∧
+      ∀ i < n, ((∀ e ∈ stepEvs (iterN R.step i s), R.F e.addr) ∧ NoStx (iterN R.step i s)) ∧
+        (iterN R.step i s).program = R.fb.program R.base ∧ AtNonRet R (iterN R.step i s) := by
+  rcases hqa with ⟨hq, hA⟩ | hrt
+  · cases hsS : src.isSave
+    · obtain ⟨n, hq', hp⟩ := move_privQ hR hq hsS hnr
+      exact ⟨n, .inl ⟨hq', aInv_step hR hq hA .move⟩, hp⟩
+    · -- a callee restore: it starts a return tail
+      obtain ⟨r, rfl⟩ : ∃ r, src = .save r := by
+        cases src <;> simp [Loc.isSave] at hsS; exact ⟨_, rfl⟩
+      obtain ⟨rfl, D, htl⟩ := restore_tail hR hq
+      refine ⟨0, .inr ?_, fun _ h => absurd h (Nat.not_lt_zero _)⟩
+      simp only [RetTail]
+      refine ⟨m, D ++ [r], q_restore rfl hq, fun l hl => ?_, htl⟩
+      simp only [Backend.Proof.upd, hl r (by simp), ite_false]
+  · simp only [RetTail] at hrt
+    obtain ⟨mt, D, hq, hmD, vb, pend, k, a, rest, us, hvb, he, hk, htl⟩ := hrt
+    rcases pend with _ | ⟨it, pend⟩
+    · simp at he
+    unfold retTailOk at htl
+    split at htl
+    · -- a restore: no line, the tail goes on with `r` restored
+      rename_i r hr1 hr2
+      simp only [Bool.and_eq_true] at htl
+      obtain rfl := RItem.eq_restore hr1 hr2
+      simp only [List.cons_append, List.cons.injEq, RItem.move.injEq] at he
+      obtain ⟨⟨rfl, rfl⟩, rfl⟩ := he
+      refine ⟨0, .inr ?_, fun _ h => absurd h (Nat.not_lt_zero _)⟩
+      simp only [RetTail]
+      refine ⟨mt, D ++ [r], q_restore rfl hq, fun l hl => ?_, vb, pend, k, a, rest, us, hvb, rfl,
+        hk, htl.2⟩
+      simp only [Backend.Proof.upd, hl r (by simp), ite_false]
+      exact hmD l (fun r' hr' => hl r' (List.mem_append_left _ hr'))
+    · -- another move: its lines from the machine's store
+      simp only [Bool.and_eq_true] at htl
+      obtain ⟨hav, htl⟩ := htl
+      simp only [List.cons_append, List.cons.injEq] at he
+      obtain ⟨rfl, rfl⟩ := he
+      simp only [RItem.avoids, Bool.and_eq_true, Bool.not_eq_true', List.any_eq_false,
+        Bool.or_eq_true, beq_iff_eq, not_or] at hav
+      obtain ⟨⟨hx, -⟩, hD⟩ := hav
+      obtain ⟨n, hq', hp⟩ := move_privQ hR hq hx hnr
+      refine ⟨n, .inr ?_, hp⟩
+      simp only [RetTail]
+      refine ⟨Backend.Proof.upd mt dst (mt src), D, hq', fun l hl => ?_, vb, pend, k, a, rest, us,
+        hvb, rfl, hk, htl⟩
+      by_cases hly : l = dst
+      · simp only [Backend.Proof.upd, hly, ite_true]
+        exact hmD src (fun r hr e => (hD r hr).1 e)
+      · simp only [Backend.Proof.upd, hly, ite_false]
+        exact hmD l hl
+
+/-- **Through a list of moves from `QA`, callee restores included** (`moves_privP` for return
+tails, `move_privQA` per move). -/
+theorem moves_privQA {R : RL} (hR : R.Wf) {b : Nat} {w : ArmState} :
+    ∀ (mvs : List (Loc × Loc)) (its : List RItem) (s : ArmState) (m : Loc → CV),
+      QA R s (.run ⟨b, mvs.map (fun p => RItem.move p.1 p.2) ++ its, m, w⟩) →
+      (∀ p ∈ mvs, ∀ code ls1, R.fr.moveInsts p.1 p.2 = .ok code →
+        codeLinesE R.ctx R.af code {} = .ok (ls1, {}) → NoRet ls1) →
+      ∃ n, QA R (iterN R.step n s) (.run ⟨b, its, movesM mvs m, w⟩) ∧
+        ∀ i < n, ((∀ e ∈ stepEvs (iterN R.step i s), R.F e.addr) ∧ NoStx (iterN R.step i s)) ∧
+          (iterN R.step i s).program = R.fb.program R.base ∧ AtNonRet R (iterN R.step i s)
+  | [], its, s, m, hqa, _ => ⟨0, hqa, fun _ h => absurd h (Nat.not_lt_zero _)⟩
+  | p :: mvs, its, s, m, hqa, hnr => by
+    obtain ⟨n1, hqa1, hp1⟩ := move_privQA hR hqa (hnr p List.mem_cons_self)
+    obtain ⟨n2, hqa2, hp2⟩ := moves_privQA hR mvs its _ _ hqa1
+      (fun p' hp' => hnr p' (List.mem_cons_of_mem _ hp'))
+    refine ⟨n1 + n2, by rw [iterN_add]; exact hqa2, fun i hi => ?_⟩
+    by_cases h : i < n1
+    · exact hp1 i h
+    · have := hp2 (i - n1) (by omega)
+      rw [← iterN_add, show n1 + (i - n1) = i by omega] at this
+      exact this
+
 /-- **A step of the allocated code at a related configuration is a thread step to the same
 configuration** (`ThreadProgress.srcStep_of_mstep`). -/
 theorem srcStep_of_mstep_eq {R : RL} (hcov : ThreadProgress.CoveredCode R) (hX : TlsMemFree R.X)

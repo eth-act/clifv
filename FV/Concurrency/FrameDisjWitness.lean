@@ -23,7 +23,7 @@ def RCK : RL := { RC with K := 0x100 }
 
 theorem stackRCK : StackAvail 0x100 RCK.af RCK.s0 := by
   have hs := spC
-  have hfs : (act vcpC rfC).af.frameSize = 224 := hs.2.2.2.2.2.2.2.1
+  have hfs : (act vcpC rfC).af.frameSize = 160 := hs.2.2.2.2.2.2.2.1
   refine ⟨?_, fun a ha => ?_⟩
   · show (act vcpC rfC).af.frameSize + 16 + 0x100 ≤ (E2E.spv RC.s0).toNat
     rw [spv_RC, hfs]; decide
@@ -59,7 +59,7 @@ theorem strel_sBC : ∃ m, StRel RC sBC m w₀C := by
   obtain ⟨-, m, -, -, -, hS, -⟩ := Classical.choose_spec prefixC
   exact ⟨m, hS⟩
 
-theorem spv_RLy : E2E.spv RLy.s0 = 0x6F10#64 := by
+theorem spv_RLy : E2E.spv RLy.s0 = 0x6F50#64 := by
   obtain ⟨m, hS⟩ := strel_sBC
   exact spv_enterL hS
 
@@ -70,12 +70,12 @@ theorem stackRLy : StackAvail RLy.K RLy.af RLy.s0 := by
 theorem nested_LC : Nested RCK RLy where
   sp_le := by
     rw [spv_RLy]
-    show 0x6F10 ≤ (E2E.spv RC.s0 - BitVec.ofNat 64 (frameDrop RC.af)).toNat
+    show 0x6F50 ≤ (E2E.spv RC.s0 - BitVec.ofNat 64 (frameDrop RC.af)).toNat
     rw [spv_RC, spC.2.1]; decide
   fits := by
     rw [spv_RLy]
     show (E2E.spv RC.s0 - BitVec.ofNat 64 (frameDrop RC.af)).toNat +
-      (frameDrop (act vcpL rfL).af + 0) ≤ 0x6F10 + 0x100
+      (frameDrop (act vcpL rfL).af + 0) ≤ 0x6F50 + 0x100
     rw [spv_RC, spC.2.1, spC.2.2.1]; decide
   keep := rfl
 
