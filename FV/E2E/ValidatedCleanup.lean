@@ -230,6 +230,7 @@ theorem outgoing_le_intBaseCleanupA_validated {f : Clif.Function} {k : Nat} {vc 
   rw [outgoing_of_prepCheck hc.prepOk, prune_outgoing]
   exact le_alignTo _ 16 (by decide)
 
+set_option maxHeartbeats 1000000 in
 theorem stackArgsAvoid_frameWCleanupA_validated {f : Clif.Function} {k : Nat} {vc vcp : VCode} {rf : RFunc}
     {af : AFunc} {fa : FnAsm} {fb : FnBin} (hc : CompiledCleanupValidatedA f k vc vcp rf af fa fb) {K : Nat}
     {s : Arm.ArmState} {base ra : BitVec 64} {args : List Clif.Val} (hres : StackAvail K af s)
@@ -243,8 +244,12 @@ theorem stackArgsAvoid_frameWCleanupA_validated {f : Clif.Function} {k : Nat} {v
   have hfs := (lowerRFunc_ok hc.alloc).1.1
   have hD : frameDrop af = af.frameSize + 16 := by simp [frameDrop, hframe]
   have hsz : (RAFrame.compute vcp rf).size ≤ af.frameSize := by
-    rw [hfs]; simp only [RAFrame.compute]
-    exact Nat.le_trans (Nat.le_add_right _ _) (le_alignTo _ 16 (by decide))
+    have e : (RAFrame.compute vcp rf).total =
+        alignTo ((RAFrame.compute vcp rf).size + vcp.slotBytes) 16 +
+          clobberBytes rf.saved := rfl
+    rw [hfs, e]
+    exact Nat.le_trans (Nat.le_trans (Nat.le_add_right _ _) (le_alignTo16 _))
+      (Nat.le_add_right _ _)
   have hsp := hres.1
   have hfit := h.fits
   have hx : (spv s + BitVec.ofNat 64 off + BitVec.ofNat 64 j -

@@ -86,6 +86,7 @@ theorem outgoing_le_intBaseAT {f : Clif.Function} {k : Nat} {vc vcp : VCode} {rf
   rw [outgoing_of_prepCheck hc.prepOk]
   exact le_alignTo _ 16 (by decide)
 
+set_option maxHeartbeats 1000000 in
 /-- `stackArgsAvoid_frameWA` for `CompiledAT`. -/
 theorem stackArgsAvoid_frameWAT {f : Clif.Function} {k : Nat} {vc vcp : VCode} {rf : RFunc}
     {af : AFunc} {fa : FnAsm} {fb : FnBin} (hc : CompiledAT f k vc vcp rf af fa fb) {K : Nat}
@@ -100,8 +101,12 @@ theorem stackArgsAvoid_frameWAT {f : Clif.Function} {k : Nat} {vc vcp : VCode} {
   have hfs := (lowerRFunc_ok hc.alloc).1.1
   have hD : frameDrop af = af.frameSize + 16 := by simp [frameDrop, hframe]
   have hsz : (RAFrame.compute vcp rf).size ≤ af.frameSize := by
-    rw [hfs]; simp only [RAFrame.compute]
-    exact Nat.le_trans (Nat.le_add_right _ _) (le_alignTo _ 16 (by decide))
+    have e : (RAFrame.compute vcp rf).total =
+        alignTo ((RAFrame.compute vcp rf).size + vcp.slotBytes) 16 +
+          clobberBytes rf.saved := rfl
+    rw [hfs, e]
+    exact Nat.le_trans (Nat.le_trans (Nat.le_add_right _ _) (le_alignTo16 _))
+      (Nat.le_add_right _ _)
   have hsp := hres.1
   have hfit := h.fits
   have hx : (spv s + BitVec.ofNat 64 off + BitVec.ofNat 64 j -
