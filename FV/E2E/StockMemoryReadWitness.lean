@@ -1,4 +1,5 @@
-import FV.E2E.StockMemoryPairedScan
+import FV.E2E.StockMemoryPairedBody
+import FV.Backend.Proof.StockMemoryBodyFixture
 import FV.Backend.Proof.StockMemoryPairedRecord
 import FV.Backend.Proof.StockMemoryRecordWitness
 import FV.Backend.Proof.StockMemoryLoadWitness
@@ -107,9 +108,9 @@ private def afterFrame : Clif.Frame := {sourceFrame with regs := sourceFrame.reg
 private theorem input_scan_packet (input : RecordInput) :
     IndexedSourceInst Clif.Env.empty {funcs := []} function input.event.ctx 1 input.record.inst
       (0,sourceFrame,heap) (1,afterFrame,heap) ∧
-    ∀ w,relation.holds function sourceFrame.slots heap w →
+    ∀ (st : Backend.Stock.State) w,relation.holds function sourceFrame.slots heap w →
       GuardedScanRel function input.result input.event.ctx 1 (relation.holds function)
-        input.record.output.state (0,sourceFrame,heap) (fun _ => ofX 4096) w := by
+        st (0,sourceFrame,heap) (fun _ => ofX 4096) w := by
   have sourceStep : SourceInstResult Clif.Env.empty {funcs := []} input.event.ctx input.record.inst
       (sourceFrame,heap) (afterFrame,heap) :=
     ⟨input.info,.load .load .i32 flags 0 0,[⟨.i32,2779096485⟩],
@@ -132,17 +133,17 @@ private theorem input_scan_packet (input : RecordInput) :
   have defined : DFGCons input.event.ctx (restrict sourceFrame (availOf function (availIn function input.result.ctx) 1 0)) := by
     rw [frameEq]
     exact initial_dfg input rfl
-  have values : ValuesHeld (fun y => Demanded input.record.output.state y ∧
+  have values : ∀ st,ValuesHeld (fun y => Demanded st y ∧
       y ∈ availOf function (availIn function input.result.ctx) 1 0) input.event.ctx sourceFrame
       (fun k => (fun _ => ofX 4096) (aliasNum input.result.final.alias k)) := by
-    intro y required value lookup
+    intro st y required value lookup
     by_cases zero : y = 0
     · subst y
       have same : value = ⟨.i64,4096⟩ := Option.some.inj lookup.symm
       subst value
       exact ⟨192,input.pointer,rfl⟩
     · simp [sourceFrame,frame,Clif.Regs.set,Clif.Regs.empty,zero] at lookup
-  exact ⟨indexed,fun w memory => ⟨rfl,defined,memory,values⟩⟩
+  exact ⟨indexed,fun st w memory => ⟨rfl,defined,memory,values st⟩⟩
 
 /-- The paired indexed source scan has inhabited original frame/DFG/value/memory
 premises and retains both complete post-source guards, on the actual final code. -/
@@ -171,7 +172,7 @@ theorem guarded_actual_source_scan_pair_witness (X : ExtSem) :
       rfl (fun _ _ h => by cases h))
     (fun _ _ _ _ h => (csemG_sub h).2.2)
     _ _ indexed (fun _ => ofX 4096) world otherWorld initialized
-    (before world memory_world) (before otherWorld other_memory)
+    (before input.record.output.state world memory_world) (before input.record.output.state otherWorld other_memory)
   exact ⟨input,ρ',t,t',first,second,post,otherPost⟩
 
 private def noExternal : ExtSem := ⟨fun _ _ _ => none,fun _ _ => 0,0,fun _ _ => Arm.PState.zero⟩
@@ -191,8 +192,8 @@ theorem pairsem_scan_interface_witness :
   obtain ⟨indexed,before⟩ := input_scan_packet input
   have memory : RelW relation function 0 sourceFrame.slots heap world := ⟨memory_world,by simp [spv,Arm.r,Arm.read_base_gpr,Arm.read_store,world,Arm.ArmState.default],by simp only [Arm.r,Arm.read_base_error,world,Arm.ArmState.default]⟩
   have otherMemory : RelW relation function 0 sourceFrame.slots heap otherWorld := ⟨other_memory,by simp [spv,Arm.r,Arm.read_base_gpr,Arm.read_store,otherWorld,Arm.write_base_gpr,Arm.write_store,world,Arm.ArmState.default],by simp only [Arm.r,Arm.read_base_error,otherWorld,Arm.write_base_gpr,world,Arm.ArmState.default]⟩
-  have firstGuard := before world memory_world
-  have secondGuard := before otherWorld other_memory
+  have firstGuard := before input.record.output.state world memory_world
+  have secondGuard := before input.record.output.state otherWorld other_memory
   have first : GuardedScanRel function input.result input.event.ctx 1 (RelW relation function 0)
       input.record.output.state (0,sourceFrame,heap) (fun _ => ofX 4096) world :=
     ⟨firstGuard.1,firstGuard.2.1,memory,firstGuard.2.2.2⟩
@@ -211,5 +212,54 @@ theorem pairsem_scan_interface_witness :
     rfl (fun _ _ h => by cases h) tls _ _ indexed (fun _ => ofX 4096) (world,otherWorld)
     ⟨first,second,worlds⟩
   exact ⟨input,ρ',q,executed,post⟩
+
+private theorem paired_before (input : RecordInput) (st : Backend.Stock.State) :
+    StockMemory.PairedScanRel function input.result input.event.ctx 1 relation 0 (fun _ => True)
+      st (0,sourceFrame,heap) (fun _ => ofX 4096) (world,otherWorld) := by
+  have memory : RelW relation function 0 sourceFrame.slots heap world :=
+    ⟨memory_world,by simp [spv,Arm.r,Arm.read_base_gpr,Arm.read_store,world,Arm.ArmState.default],
+      by simp only [Arm.r,Arm.read_base_error,world,Arm.ArmState.default]⟩
+  have otherMemory : RelW relation function 0 sourceFrame.slots heap otherWorld :=
+    ⟨other_memory,by simp [spv,Arm.r,Arm.read_base_gpr,Arm.read_store,otherWorld,Arm.write_base_gpr,Arm.write_store,world,Arm.ArmState.default],
+      by simp only [Arm.r,Arm.read_base_error,otherWorld,Arm.write_base_gpr,world,Arm.ArmState.default]⟩
+  have first := (input_scan_packet input).2 st world memory_world
+  have second := (input_scan_packet input).2 st otherWorld other_memory
+  refine ⟨⟨first.1,first.2.1,memory,first.2.2.2⟩,⟨second.1,second.2.1,otherMemory,second.2.2.2⟩,?_⟩
+  simpa only [otherWorld,Arm.w] using (SameWorld.refl (Zof relation.F (fun _ => True) heap) world).w_right
+    (f := .GPR 10#5) (v := 17) (by change (10 < 29 ∧ 10 ≠ 18) ∨ 10 = 30; decide)
+
+/-- Complete actual paired body execution uses source-only body classification,
+original inherited pointer metadata and a real source step on the live heap. -/
+theorem complete_paired_body_witness :
+    ∃ (input : RecordInput) (term : Backend.Stock.ScanRecord) (body : Backend.Stock.BlockScan)
+      (ρ' : Nat → CV) (q : W2),
+      SourceBodySplit function input.event function.blocks[1]! term body ∧
+      seqRun (pairSem (csem relation.F ⟨0,0⟩ noExternal))
+        (body.code.toList.map (·.mapRegs
+          (Backend.lowerFunction.resolve input.result.final.alias (input.result.final.alias.size+1))))
+        (fun _ => ofX 4096) (world,otherWorld) = some (.fall ρ' q) ∧
+      StockMemory.PairedScanRel function input.result input.event.ctx input.event.block relation 0 (fun _ => True)
+        term.output.state (1,afterFrame,heap) ρ' q := by
+  obtain ⟨input⟩ := record_input
+  have atBlock : function.blocks[input.event.block]? = some function.blocks[1]! := by rw [input.atBlock]; rfl
+  have tls : XTls relation.F noExternal := by intro Z n w w' subset same; rfl
+  obtain ⟨term,body,split,bodyRun⟩ := StockMemory.stock_single_load_return_paired_body
+    input.run scope dominated input.events atBlock rfl rfl (pi := 0) (pb := function.blocks[0]!) rfl
+    (by decide) (Γ := relation) (c := 0) (D := fun _ => True) (fc := ⟨0,0⟩)
+    rfl (fun _ _ h => by cases h) tls (env := Clif.Env.empty) (cp := {funcs := []})
+  have indexed := (input_scan_packet input).1
+  rw [input.current] at indexed
+  have steps : SourceSteps (IndexedSourceInst Clif.Env.empty {funcs := []} function input.event.ctx input.event.block)
+      ((List.range function.blocks[1]!.body.length).map (blockStart function input.event.block+·))
+      (0,sourceFrame,heap) (1,afterFrame,heap) := by
+    rw [input.atBlock]
+    change SourceSteps _ [1] _ _
+    exact .cons indexed (.nil _)
+  have before : StockMemory.PairedScanRel function input.result input.event.ctx input.event.block relation 0 (fun _ => True)
+      input.event.output.state (0,sourceFrame,heap) (fun _ => ofX 4096) (world,otherWorld) := by
+    rw [input.atBlock]
+    exact paired_before input input.event.output.state
+  obtain ⟨ρ',q,executed,post⟩ := bodyRun _ _ steps (fun _ => ofX 4096) (world,otherWorld) before
+  exact ⟨input,term,body,ρ',q,split,executed,post⟩
 
 end E2E.StockMemoryReadWitness

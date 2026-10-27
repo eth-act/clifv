@@ -91,3 +91,8 @@ import FV.E2E.StockMemoryReadWitness
 #print axioms E2E.StockMemory.stock_lower_load_paired_scan
 #print axioms E2E.StockMemoryReadWitness.guarded_actual_source_scan_pair_witness
 #print axioms E2E.StockMemoryReadWitness.pairsem_scan_interface_witness
+
+#print axioms Backend.Stock.Memory.stock_lower_source_parameter_definition
+#print axioms Backend.Stock.Memory.stock_single_load_return_spec
+#print axioms E2E.StockMemory.stock_single_load_return_paired_body
+#print axioms E2E.StockMemoryReadWitness.complete_paired_body_witness
