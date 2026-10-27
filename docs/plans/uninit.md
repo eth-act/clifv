@@ -266,6 +266,22 @@ run-restricted contract.
 - #575 `VCodeSemIDriver.lean`: `DriverSemG.csemI`, `LowerTermOk.csemI`; witness
   `driverSemG_csemI`. With these the generic `Driver.DriverHyp` fields `dsem`, `insts` and
   `terms` hold for the counted world once the per-index `csem` ones do.
+- step 2f `FV/E2E/LinkArmProph.lean`: the first worklist item below. `LinkSys.calleeRgn κ M g w`
+  is `Cond`'s own callee region `StackBelow (frameDrop (A g).af + κ (M - 1) g) (spv w)` (the plan's
+  `StackBelow K (sp w)`, inside `F` and outside the image under `Cond`); `worldP` overlays it by
+  the prophecy `Pn` (`StaleRegion.overlay`), and `canonP`/`CondP`/`progXP` are
+  `canon`/`Cond`/`progX` of that world (`progXP_eq`, by `rfl`). `XP … P n : ExtSem` is call number
+  `n` (`progXP` with `P n`), i.e. the future `ExtSemI.at n`: `ExtSemI` cannot be imported next to
+  `LinkArm` yet, because `VCodeSemI*.lean` and `FV/E2E/Pair.lean` both declare `VConf.mapW`,
+  `SeqEnd.mapW`, `SeqEnd.mapW_succ` ([#640](https://github.com/eth-act/clifv/issues/640); fix
+  that before the next item). (a) the world's own bytes give today's contract (`worldP_self`,
+  `canonP_self`, `progXP_self`, `XP_call_self`); (b) the canonical state depends on the world's
+  registers, program and bytes outside the region, and on the prophecy inside it only
+  (`worldP_congr`, `canonP_congr`, `condP_congr`, `progXP_congr`); (c) `Cond` depends on registers
+  and the memory outside `F` only (`cond_congr`), so `CondP ↔ Cond` (`condP_iff_cond`: the
+  prophecy changes the canonical run, not the condition); `canonP_eq_overlay`,
+  `sameWorld_canonP`, `mem_canonP_in`/`_out`, `r_canonP`, `program_canonP`. Witnesses
+  `LinkArmProphWitness.lean` (on `LinkWitness.L` without an image, `sp = 0x8000`).
 
 **Refined call contract (next).** `X.call n` should be the *canonical* callee run from the
 VCode world `w` with the callee's stack region (the addresses `StackBelow K (sp w)`, inside the
