@@ -1,3 +1,5 @@
+import FV.Backend.Proof.StockConditionalParameterSelection
+import FV.Backend.Proof.StockConditionalNoDefs
 import FV.Backend.Proof.LowerLoopRun
 import FV.Backend.Proof.StockConditionalCallValues
 import FV.Backend.Proof.StockConditionalCallsWitness
@@ -286,5 +288,57 @@ theorem parameter_frontier_branch_witness (word : BitVec Clif.Ty.i64.width) :
   · simpa only [initial] using fragment
   · intro world
     simpa only [initial] using execution world
+
+/-- The complete named original source exercises a nonidentity resolver at the
+frontier and preserves every virtual register across the real wide branch. -/
+theorem parameter_wide_full_frame_witness (word : BitVec Clif.Ty.i64.width) :
+    ∃ (result : Result) (out : V) (next : State) (trace : List RuleId) (code : List MInst)
+      (aliases : Array (Option Nat)) (ρ : Nat → CV),
+      Stock.lower function = .ok result ∧ LowerScope function ∧ Dominated function ∧
+      Stock.runTerm (Driver.termCtx result.ctx 0
+        (.data 152 5 [.data 151 1 [],.value 7,.blockCalls [0,1]])) "lower_branch"
+        [.inst 0,.labels [2,1]] result.initial = .ok (some out,next,trace) ∧
+      aliasNum aliases 192 = result.initial.base.nextVreg ∧
+      Frag result.initial.base next.base code ∧
+      (∀ inst ∈ code,vdefs inst = []) ∧
+      ∀ world,∃ index inst ops regs prefixWorld endWorld,
+        seqRun ispec (code.map (·.mapRegs (Backend.lowerFunction.resolve aliases (aliases.size+1)))) ρ world =
+          some (.stop index inst ops regs prefixWorld [] endWorld (.goto (if word != 0 then 0 else 1))) ∧
+        SameWorldNF (fun _ => True) endWorld world ∧ (∀ key,regs key = ρ key) ∧
+        inst.targets = [2,1] ∧ inst.isTerminator = true := by
+  obtain ⟨result,out,next,trace,run,scope,dominated,named,calls,source⟩ :=
+    ConditionalCalls.source_calls_fixture_witness
+  change Stock.lower function = .ok result at run
+  obtain ⟨ranges,created⟩ := lower_build run
+  have same := Except.ok.inj (created.symm.trans build)
+  have context : result.ctx = built.1 := congrArg Prod.fst same
+  have initial : result.initial = before := congrArg (fun p => p.2.2) same
+  have actual := named
+  change Stock.runTerm (Driver.termCtx result.ctx 0
+    (.data 152 5 [.data 151 1 [],.value 7,.blockCalls [0,1]])) "lower_branch"
+    [.inst 0,.labels [2,1]] result.initial = .ok (some out,next,trace) at actual
+  rw [context,initial] at actual
+  have slot : ctx.insts[0]? = some ⟨.data 152 5 [.data 151 1 [],.value 7,.blockCalls [0,1]],[],[],none⟩ := rfl
+  obtain ⟨packet,original⟩ := ParameterBranch.named_calls (ctx := ctx) slot rfl actual
+  obtain ⟨yes,no,code,labels,fragment,noDefs,execution⟩ := packet.parameter_wide_source_values inv original
+    (dfg word) (getter word) (Or.inr rfl) typed rfl refines_ispec
+    (aliases := frontierAliases) (ρ := frontierRegisters word)
+    (by decide +kernel) extent (frontier_held word next)
+  simp only [List.cons.injEq,and_true] at labels
+  obtain ⟨rfl,rfl⟩ := labels
+  refine ⟨result,out,next,trace,code,frontierAliases,frontierRegisters word,
+    run,scope,dominated,named,?_,?_,noDefs,?_⟩
+  · simpa only [initial] using frontier_alias
+  · simpa only [initial] using fragment
+  · intro world
+    obtain ⟨index,inst,ops,regs,prefixWorld,endWorld,machine,nf,outside,targets,terminal⟩ := execution world
+    have frame : ∀ key,regs key = frontierRegisters word key := by
+      intro key
+      apply Sequence.stop_frame ispec machine key
+      intro selected member defined
+      obtain ⟨raw,inside,rfl⟩ := List.mem_map.mp member
+      rw [Resolved.renamed_defs,noDefs raw inside,List.map_nil] at defined
+      exact List.not_mem_nil defined
+    exact ⟨index,inst,ops,regs,prefixWorld,endWorld,machine,nf,frame,targets,terminal⟩
 
 end Backend.Stock.Proof.ConditionalValues.SourceWitness

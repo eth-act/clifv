@@ -1,8 +1,9 @@
 # Conditional source composition checkpoint
 
-Current packet: actual retained scalar conditional bodies, source return/first-
-trap continuations and branch→per-successor→scan demand transport pass1110normal
-module keys and55Std3audit roots. Original source branch choice/full real frame
+Current packet: parameter ordinary-root selection, complete wide branch source
+execution and full virtual-register frame, actual retained scalar conditional
+bodies/source return/first-trap and branch→per-successor→scan demand transport
+pass1112normal module keys and61Std3audit roots. Original source branch choice/full real frame
 and scratch-free parameter/nonzero variants have complete witnesses. Production
 remains #634; no conditional production activation or full author gate is claimed.
 The next concrete bridge is guarded available-value preservation across actual
@@ -173,3 +174,25 @@ Current main remains d6218f29 after fresh fetch. Four saved views and one warm
 cache are retained. Completed idle MCP workers were released;143obsolete unlinked
 cache artifacts reclaimed43,709,588bytes after inode/link/age rechecks, leaving
 about572GiB free. No dirty source, unique evidence or recovery backup was deleted.
+
+The wide-parameter packet derives every priority rejection and ordinary3231
+selection from the real parameter branch slot and absence of a definition.
+`ParameterBranch.named_calls` supplies the whole actual helper packet/source
+provenance without a selected-rule input. The complete named source witness now
+uses this derivation, not an externally supplied selection case.
+
+`StockConditionalNoDefs` derives the full real wide branch fragment, proves it
+defines no virtual registers, and composes it with original source truth under
+final aliases. Its arbitrary64-bit complete witness resolves the operand to the
+allocation frontier and proves every register is preserved by the actual stop.
+All1112targeted keys/61audit roots pass, standard-only; named-call and full-frame
+MCP reviews report Std3/no warnings. Old public variants remain. This is source
+proof integration; the new conditional class is not activated in production.
+
+Advance wide parameter branches first through the retained guarded block/body,
+source-chosen edges, ranked CFG/ABI and existing compatible consumers; their
+write-free code avoids making general branch-scratch analysis a wholesale
+prerequisite. Derive actual outgoing base/extent and original source context
+facts where needed. Then widen to other conditions, modern per-edge consumers,
+bit-test/table/critical paths, loops/effects/calls and full original140. No old
+accepted identity/stage or input condition is removed by the staged route.

@@ -69,3 +69,10 @@ import FV.Backend.Proof.StockConditionalEmissionWitness
 #print axioms Backend.Stock.Proof.ConditionalValues.BodyWitness.executable_conditional_body_witness
 #print axioms Backend.Stock.Proof.ConditionalValues.conditional_core_emission_demand
 #print axioms Backend.Stock.Proof.ConditionalValues.BodyWitness.conditional_core_demand_witness
+
+#print axioms Backend.Stock.Proof.ConditionalValues.nonzero_wide_no_defs
+#print axioms Backend.Stock.Proof.ConditionalCalls.Calls.parameter_wide_no_defs
+#print axioms Backend.Stock.Proof.ConditionalCalls.Calls.parameter_wide_source_values
+#print axioms Backend.Stock.Proof.ConditionalValues.SourceWitness.parameter_wide_full_frame_witness
+#print axioms Backend.Stock.Proof.ParameterBranch.parameter_selected
+#print axioms Backend.Stock.Proof.ParameterBranch.named_calls
