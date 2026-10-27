@@ -68,7 +68,8 @@ def Entered (fs : Clif.Function) (vals : List Clif.Val) (m : Clif.Mem) (s : Clif
   s.callers = [] ∧ s.frame.func = fs ∧ s.frame.slots = (Clif.enterSlots fs m).1 ∧
     s.mem = (Clif.enterSlots fs m).2 ∧ ∃ B0, fs.blocks[0]? = some B0 ∧
       s.frame.body = B0.body ∧ s.frame.term = B0.term ∧
-      Clif.Regs.empty.setMany (B0.params.map (·.1)) vals = some s.frame.regs
+      Clif.Regs.empty.setMany (B0.params.map (·.1)) vals = some s.frame.regs ∧
+      vals.map (·.ty) = B0.params.map (·.2)
 
 /-- The external's private stack: the `K` bytes below the caller's `sp` at the call `x`. -/
 def XPriv (K : Nat) (x : ArmState) (a : Nat) : Prop := StackBelow K (spv x) (BitVec.ofNat 64 a)
@@ -108,7 +109,8 @@ structure ExtEvContractT (L : Link) (env : Clif.Env) (p : Clif.Program)
       (vals : List Clif.Val) (s : Clif.State), Entered fs vals m s → ArgsInRegs fs.sig vals x →
       MemRel (fun a => Fr a ∨ StackBelow K (spv x) a) syms m x →
       (∀ a, Fr a → ¬ StackBelow K (spv x) a) → K ≤ (spv x).toNat → (spv x).toNat % 16 = 0 →
-      Arm.r .ERR x = .None → ExtChain L env p syms (xr n) K Fr F x mon s
+      Arm.r .ERR x = .None → (∃ nc Fc, (nc, Fc) ∈ L.fns ∧ x.program = Fc.fb.program Fc.base ∧
+        Fc.InRange (Arm.r .PC x + 4#64)) → ExtChain L env p syms (xr n) K Fr F x mon s
 
 /-! ## The external's activation -/
 
@@ -187,7 +189,9 @@ def XEnt (Xn : String → Prop) (h : XAct) (u : CallCompose.AT) (c : TState × (
       Entered h.fs h.vals h.m s ∧ ArgsInRegs h.fs.sig h.vals h.x ∧
       MemRel (fun a => (h.g.RL L).FK a ∨ StackBelow h.g.K (spv h.x) a) syms h.m h.x ∧
       (∀ a, (h.g.RL L).FK a → ¬ StackBelow h.g.K (spv h.x) a) ∧ h.g.K ≤ (spv h.x).toNat ∧
-      (spv h.x).toNat % 16 = 0 ∧ Arm.r .ERR h.x = .None ∧ (∀ a, h.P a → PrivA (h.g.RL L) a)
+      (spv h.x).toNat % 16 = 0 ∧ Arm.r .ERR h.x = .None ∧ (∀ a, h.P a → PrivA (h.g.RL L) a) ∧
+      ∃ nc Fc, (nc, Fc) ∈ L.fns ∧ h.x.program = Fc.fb.program Fc.base ∧
+        Fc.InRange (Arm.r .PC h.x + 4#64)
 
 /-- **An external returned** (module doc). -/
 def XRet (xr : String → List Reg) (h : XAct) (_u : CallCompose.AT) (_c : TState × (Nat → Prop))
@@ -221,7 +225,7 @@ theorem xfunReal (hP : PartsOk env p c0 Loc) (hdisj : PartDisj Loc)
     FunRealG (RealT env p Bnd) L.M (OkB Bnd) (XRet L env p c0 Loc fr syms xr h)
       (EndT env p Dcap) u c := by
   intro ls t' hr
-  obtain ⟨hu, hXn, hFm, hpf, s, U, hc1, hXL, hEn, hAr, hMR, hFK, hK, hal, herr, hPA⟩ := he
+  obtain ⟨hu, hXn, hFm, hpf, s, U, hc1, hXL, hEn, hAr, hMR, hFK, hK, hal, herr, hPA, hcl⟩ := he
   obtain ⟨u1, mon⟩ := u
   obtain ⟨c1, D⟩ := c
   simp only at hu hc1
@@ -230,7 +234,7 @@ theorem xfunReal (hP : PartsOk env p c0 Loc) (hdisj : PartDisj Loc)
     PRun.mono (fun _ _ ho e he hd hpa => ho e he hd (hXL.bnd _ hpa)) hr
   obtain ⟨k, trS, t, ψ, hk', hx, hrun, href, hend⟩ :=
     hX.chain h.n h.F h.fs hXn hFm hpf h.x mon h.g.K (h.g.RL L).FK h.m h.vals s hEn hAr hMR hFK
-      hK hal herr ls t' hr'
+      hK hal herr hcl ls t' hr'
   obtain ⟨hcall, hfunc, -⟩ := hEn
   have hlinS : Clif.LInv p s :=
     ⟨hXL.linv.1, fun c hc => absurd (hcall ▸ hc) List.not_mem_nil⟩

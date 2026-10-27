@@ -385,9 +385,11 @@ theorem segOkG_ext {L : Link} {env : Clif.Env} {p : Clif.Program} {Bnd : Nat →
           rw [hspX]; omega }
       refine ⟨k' + 1, _, RealizedT.trans hR hR1, .inr (.inr (.inr ⟨by omega, (L.M tE.1, tE.2),
         AG.x hx, ?_, ⟨hMC, hXe, hFCm, hpf, cs, _, rfl, hLX,
-          ⟨hcs1, hcs2, hcs3, hcs4, B0, hB0, hcs5, hcs6, hcs7⟩, ?_, ?_,
+          ⟨hcs1, hcs2, hcs3, hcs4, B0, hB0, hcs5, hcs6, hcs7, hcs8⟩, ?_, ?_,
           fun a hfk hsb => dead_not_FK hS.wf (by rw [← hsp]; exact hsb) hfk, hspK,
-          (checkSP_iff tE.1).mp (q_stRel hRQ.1).align, herrx, hPA⟩, ?_⟩))⟩
+          (checkSP_iff tE.1).mp (q_stRel hRQ.1).align, herrx, hPA, g.nm, g.F, hS.mem,
+          (q_stRel hRQ.1).prog, ra_in hS.wf (hL.inside _ _ hS.mem) (callPc_of_pause hS.noCall hS.H
+            hS.chk hS.H3 hS.checked hRQ.1 hPz hat hm2 hm3 hm4)⟩, ?_⟩))⟩
       · rw [List.take_add, hdrop]; exact hv0.append (.cons hs hp ho .nil)
       · show CallSegExt.ArgsInRegs callee.sig vals tE.1
         rw [hsig]
