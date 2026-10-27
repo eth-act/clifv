@@ -338,7 +338,7 @@ theorem writeV_zip_filter_congr (q : Operand → Bool) (u : Nat) :
 theorem AState.mem_get_forgetDefs {a : AState} {pairs : List (Operand × Loc)} {l : Loc} {s : Sym}
     (h : s ∈ (forgetDefs a pairs).get l) :
     s ∈ a.get l ∧ ∀ p ∈ pairs, p.1.kind = .def → s ≠ .vreg p.1.vreg := by
-  have h := AState.mem_get_map h
+  have h := AState.mem_get_mapSets h
   simp only [List.mem_filter, Bool.not_eq_true', List.any_eq_false, Bool.and_eq_true,
     beq_iff_eq, not_and] at h
   exact ⟨h.1, fun p hp hk e => h.2 p hp hk e⟩

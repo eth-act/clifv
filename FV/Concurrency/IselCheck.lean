@@ -20,7 +20,12 @@ CLIF outcome. They are checked on the driver's lowering, by translation validati
   and its code has no instruction with a memory kind;
 * **`threadCheck f`**: both, on the driver's lowering of `f` (as `lowerCheck` computes it);
   `obligations_of_threadCheck`: with `lowerCheck`, M7's lowering obligations for that lowering
-  and the check on it.
+  and the check on it;
+* calls (#473): `callOkB stm sl`: a `call` statement whose code is exactly one direct `call`
+  (a `bl`: register arguments only, no stack-argument stores, no GOT load) and whose results
+  need no extra moves; **`threadCheckBlC`**/`threadCheckC`: `threadCheckBl`/`threadCheck`
+  admitting such calls (`threadCheckBlC_of`, `obligations_of_threadCheckC`, `stmtOk_ofC`,
+  `callOk_ofC`, `termOk_ofC`).
 -/
 
 namespace Concurrency.IselCheck
@@ -131,6 +136,107 @@ theorem stmtOk_of {f : Clif.Function} {bl : List BLow} (h : threadCheckBl f bl =
 
 /-- The check on one terminator. -/
 theorem termOk_of {f : Clif.Function} {bl : List BLow} (h : threadCheckBl f bl = true)
+    {bi : Nat} {B : Clif.Block} (hB : f.blocks[bi]? = some B) {L : BLow}
+    (hL : bl[bi]? = some L) : termOkB B.term L.tst'.emitted.toList = true := by
+  have h1 := all_zip_getElem h hB hL
+  simp only [Bool.and_eq_true] at h1
+  exact h1.2
+
+/-! ## Calls (#473) -/
+
+/-- **A call statement and its code** (module doc): a `call` whose code is one direct `call`,
+its results in the call's output vregs. -/
+def callOkB (stm : Clif.Stmt) (sl : SLow) : Bool :=
+  (match stm.inst with | .call .. => true | _ => false) &&
+    (match sl.st'.emitted.toList with
+      | [.call ⟨.sym _, _, _⟩] => true
+      | _ => false) &&
+    (extraOf stm.results sl.rss).isEmpty
+
+/-- **The check admitting calls**, on the driver's lowering `bl`. -/
+def threadCheckBlC (f : Clif.Function) (bl : List BLow) : Bool :=
+  (f.blocks.zip bl).all fun (B, L) =>
+    (B.body.zip L.sl).all (fun (stm, sl) => stmtOkB stm.inst sl.st'.emitted.toList || callOkB stm sl) &&
+      termOkB B.term L.tst'.emitted.toList
+
+/-- **The per-function check admitting calls**, on the driver's lowering of `f`. -/
+def threadCheckC (f : Clif.Function) : Bool :=
+  match buildCtx f with
+  | .error _ => false
+  | .ok (ctx, _, st0) =>
+    match lowBlocks f (stmtCall ctx) (termCallF ctx) (tryCallF ctx) 0 f.blocks st0
+        f.blocks.length with
+    | none => false
+    | some bl => threadCheckBlC f bl
+
+theorem threadCheckBlC_of {f : Clif.Function} {bl : List BLow} (h : threadCheckBl f bl = true) :
+    threadCheckBlC f bl = true := by
+  unfold threadCheckBl at h
+  unfold threadCheckBlC
+  rw [List.all_eq_true] at h ⊢
+  intro x hx
+  have h1 := h x hx
+  simp only [Bool.and_eq_true, List.all_eq_true] at h1 ⊢
+  exact ⟨fun y hy => by simp [h1.1 y hy], h1.2⟩
+
+/-- **M7's lowering obligations with the check admitting calls** on the same lowering. -/
+theorem obligations_of_threadCheckC {f : Clif.Function} {vc : VCode} (h : lowerCheck f vc = true)
+    (ht : threadCheckC f = true) :
+    ∃ ctx st0 R gn bl A, LowerShape f vc ctx st0 R gn bl ∧ Cert f ctx st0 gn bl A ∧
+      (∀ B ∈ f.blocks, BrIdxTyped ctx B.term) ∧ threadCheckBlC f bl = true := by
+  unfold lowerCheck at h
+  unfold threadCheckC at ht
+  split at h
+  · cases h
+  · rename_i ctx ranges st0 hb
+    rw [hb] at ht
+    simp only at ht
+    split at h
+    · cases h
+    · rename_i bl hl
+      rw [hl] at ht
+      simp only [Bool.and_eq_true] at h
+      have hS := lowerShape_of_ok (gn := gnAt (gnTable st0.nextVreg (aliasOf f bl))) hb hl
+        (fun n hn => gnAt_temp hn) h.1.1.1.1
+      exact ⟨ctx, st0, _, _, bl, _, hS, cert_of_ok hS.len h.1.1.1.2, brIdx_of_ok h.1.1.2, ht⟩
+
+theorem stmtOkC_of {f : Clif.Function} {bl : List BLow} (h : threadCheckBlC f bl = true)
+    {bi j : Nat} {B : Clif.Block} {stm : Clif.Stmt} (hB : f.blocks[bi]? = some B)
+    (hstm : B.body[j]? = some stm) {L : BLow} (hL : bl[bi]? = some L) {sl : SLow}
+    (hsl : L.sl[j]? = some sl) :
+    (stmtOkB stm.inst sl.st'.emitted.toList || callOkB stm sl) = true := by
+  have h1 := all_zip_getElem h hB hL
+  simp only [Bool.and_eq_true] at h1
+  exact all_zip_getElem h1.1 hstm hsl
+
+/-- The check admitting calls on a statement other than a call. -/
+theorem stmtOk_ofC {f : Clif.Function} {bl : List BLow} (h : threadCheckBlC f bl = true)
+    {bi j : Nat} {B : Clif.Block} {stm : Clif.Stmt} (hB : f.blocks[bi]? = some B)
+    (hstm : B.body[j]? = some stm) {L : BLow} (hL : bl[bi]? = some L) {sl : SLow}
+    (hsl : L.sl[j]? = some sl) (hnc : ∀ fn args, stm.inst ≠ .call fn args) :
+    stmtOkB stm.inst sl.st'.emitted.toList = true := by
+  have h1 := stmtOkC_of h hB hstm hL hsl
+  have hc : callOkB stm sl = false := by
+    unfold callOkB
+    cases hi : stm.inst <;> simp
+    exact absurd hi (hnc _ _)
+  rw [hc, Bool.or_false] at h1
+  exact h1
+
+/-- The check admitting calls on a call. -/
+theorem callOk_ofC {f : Clif.Function} {bl : List BLow} (h : threadCheckBlC f bl = true)
+    {bi j : Nat} {B : Clif.Block} {stm : Clif.Stmt} (hB : f.blocks[bi]? = some B)
+    (hstm : B.body[j]? = some stm) {L : BLow} (hL : bl[bi]? = some L) {sl : SLow}
+    (hsl : L.sl[j]? = some sl) {fn : Clif.FnRef} {args : List Clif.ValueId}
+    (hc : stm.inst = .call fn args) : callOkB stm sl = true := by
+  have h1 := stmtOkC_of h hB hstm hL hsl
+  have hs : stmtOkB stm.inst sl.st'.emitted.toList = false := by
+    simp [stmtOkB, threadInstB, hc, pureInst]
+  rw [hs, Bool.false_or] at h1
+  exact h1
+
+/-- The check admitting calls on a terminator. -/
+theorem termOk_ofC {f : Clif.Function} {bl : List BLow} (h : threadCheckBlC f bl = true)
     {bi : Nat} {B : Clif.Block} (hB : f.blocks[bi]? = some B) {L : BLow}
     (hL : bl[bi]? = some L) : termOkB B.term L.tst'.emitted.toList = true := by
   have h1 := all_zip_getElem h hB hL

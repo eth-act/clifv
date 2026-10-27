@@ -489,19 +489,11 @@ theorem vtrun_len {vc : VCode} {sem : ISem CV ArmState} {ev : MInst → List CV 
 def conv (tr : List (List Ev)) : List (List (Prog.Ev AKind ClifThread.BVal)) :=
   tr.map (·.map ProgE2E.convEv)
 
-/-- **`prepare` with interference, as traces, with progress** (T2j): `prep_thin`, and when the
-original run's last configuration has a step, so has the prepared run's (`prep_fwd`). -/
-theorem prep_thinP {vc vcp : VCode} {sem : ISem CV ArmState}
-    {ev : MInst → List CV → ArmState → List Ev} (hds : DriverSemG sem)
-    (hcheck : prepCheck vc vcp = true)
-    (hev : ∀ i ls i', i.setTargets ls = some i' → ev i' = ev i)
-    (hgoto : ∀ i u w outs w2 j, sem i u w = some (outs, w2, .goto j) → ev i u w = [])
-    {ρ₀ : Nat → CV} {w₀ : ArmState}
-    {trT : List (List Ev)} {cT : VConf CV ArmState}
-    (hrun : VTRun vcp sem ev (.run ⟨0, 0, ρ₀, w₀⟩) trT cT) :
-    ∃ trS cS, VTRun vc sem ev (.run ⟨0, 0, ρ₀, w₀⟩) trS cS ∧ Thin trS trT ∧
-      (∀ vals w, cT = .ret vals w → cS = .ret vals w) ∧ (∀ w, cT = .halt w → cS = .halt w) ∧
-      (∀ cS', VStep vc sem cS cS' → ∃ cT', VStep vcp sem cT cT') := by
+/-- **`prepare`'s check gives the backward step's facts** (`PrepFacts`), block 0 live and kept
+at 0 (#473: the relations of an activation's segments). -/
+theorem prepFacts_of_check {vc vcp : VCode} (hcheck : prepCheck vc vcp = true) :
+    ∃ (L : Nat → Prop) (ss ss' : Array (Array Nat)), PrepFacts vc vcp L ss ss' ∧ L 0 ∧
+      sigmaOf vc vcp 0 = some 0 := by
   unfold prepCheck at hcheck
   split at hcheck
   · rename_i ss ps ss' ps' hcfg hcfg'
@@ -542,12 +534,28 @@ theorem prep_thinP {vc vcp : VCode} {sem : ISem CV ArmState}
       split at h0
       · rename_i vb hvb; exact (Array.getElem?_eq_some_iff.mp hvb).1
       · cases h0
-    obtain ⟨trS, cS, hrS, hmE, hth⟩ := prep_run H hds hev hgoto hrun (.blk hL0 h0)
-    refine ⟨trS, cS, hrS, hth, fun vals w h => ?_, fun w h => ?_,
-      fun cS' h => prep_fwd H hds hmE h⟩
-    · subst h; cases hmE; rfl
-    · subst h; cases hmE; rfl
+    exact ⟨L, ss, ss', H, hL0, h0⟩
   · cases hcheck
+
+/-- **`prepare` with interference, as traces, with progress** (T2j): `prep_thin`, and when the
+original run's last configuration has a step, so has the prepared run's (`prep_fwd`). -/
+theorem prep_thinP {vc vcp : VCode} {sem : ISem CV ArmState}
+    {ev : MInst → List CV → ArmState → List Ev} (hds : DriverSemG sem)
+    (hcheck : prepCheck vc vcp = true)
+    (hev : ∀ i ls i', i.setTargets ls = some i' → ev i' = ev i)
+    (hgoto : ∀ i u w outs w2 j, sem i u w = some (outs, w2, .goto j) → ev i u w = [])
+    {ρ₀ : Nat → CV} {w₀ : ArmState}
+    {trT : List (List Ev)} {cT : VConf CV ArmState}
+    (hrun : VTRun vcp sem ev (.run ⟨0, 0, ρ₀, w₀⟩) trT cT) :
+    ∃ trS cS, VTRun vc sem ev (.run ⟨0, 0, ρ₀, w₀⟩) trS cS ∧ Thin trS trT ∧
+      (∀ vals w, cT = .ret vals w → cS = .ret vals w) ∧ (∀ w, cT = .halt w → cS = .halt w) ∧
+      (∀ cS', VStep vc sem cS cS' → ∃ cT', VStep vcp sem cT cT') := by
+  obtain ⟨L, ss, ss', H, hL0, h0⟩ := prepFacts_of_check hcheck
+  obtain ⟨trS, cS, hrS, hmE, hth⟩ := prep_run H hds hev hgoto hrun (.blk hL0 h0)
+  refine ⟨trS, cS, hrS, hth, fun vals w h => ?_, fun w h => ?_,
+    fun cS' h => prep_fwd H hds hmE h⟩
+  · subst h; cases hmE; rfl
+  · subst h; cases hmE; rfl
 
 /-- **`prepare` with interference, as traces**: a run of the prepared code `vcp` from the entry,
 reading any bytes, is realized by a run of the original `vc` from the entry with the same events

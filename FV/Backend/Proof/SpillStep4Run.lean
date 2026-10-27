@@ -282,7 +282,7 @@ theorem mem_get_mkState {N : Nat} {F : Loc → List Sym} {l : Loc} {s : Sym}
 
 /-- Inclusion from membership. -/
 theorem le_of_mem {a b : AState} (h : ∀ l s, s ∈ a.get l → s ∈ b.get l) : a.le b = true := by
-  unfold AState.le
+  rw [AState.le_eq]
   rw [List.all_eq_true]
   intro i _
   rw [List.all_eq_true]
@@ -304,7 +304,7 @@ theorem get_map (a : AState) (f : List Sym → List Sym) (hf : f [] = []) (l : L
 
 theorem mem_parCopy_keep {a : AState} {ps xs : List Nat} {l : Loc} {s : Sym} (hs : s ∈ a.get l)
     (hp : ∀ p ∈ ps, s ≠ .vreg p) : s ∈ (a.parCopy ps xs).get l := by
-  unfold AState.parCopy
+  rw [AState.parCopy_eq]
   rw [get_map _ _ (by simp)]
   refine List.mem_append_left _ (List.mem_filter.mpr ⟨hs, ?_⟩)
   simp only [Bool.not_eq_true', Bool.eq_false_iff]
@@ -314,7 +314,7 @@ theorem mem_parCopy_keep {a : AState} {ps xs : List Nat} {l : Loc} {s : Sym} (hs
 
 theorem mem_parCopy_add {a : AState} {ps xs : List Nat} {l : Loc} {p y : Nat}
     (hpy : (p, y) ∈ ps.zip xs) (hy : Sym.vreg y ∈ a.get l) : Sym.vreg p ∈ (a.parCopy ps xs).get l := by
-  unfold AState.parCopy
+  rw [AState.parCopy_eq]
   rw [get_map _ _ (by simp)]
   by_cases hk : Sym.vreg p ∈ (a.get l).filter (fun s => !(ps.map Sym.vreg).contains s)
   · exact List.mem_append_left _ hk
@@ -327,7 +327,7 @@ theorem mem_parCopy_add {a : AState} {ps xs : List Nat} {l : Loc} {p y : Nat}
 
 theorem mem_forgetOps {a : AState} {os : List Operand} {l : Loc} {s : Sym} (hs : s ∈ a.get l)
     (h : ∀ o ∈ os, o.kind = .def → s ≠ .vreg o.vreg) : s ∈ (forgetOps a os).get l := by
-  unfold forgetOps
+  rw [forgetOps_eq]
   rw [get_map _ _ (by simp)]
   refine List.mem_filter.mpr ⟨hs, ?_⟩
   rw [Bool.not_eq_true', Bool.eq_false_iff]

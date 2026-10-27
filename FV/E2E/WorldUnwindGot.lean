@@ -183,7 +183,7 @@ theorem gotPair_valueU (F : BitVec 64 → Prop) (ctx : FnCtx) (XR : XRaise) :
     · rfl
     · exact csemVU_eq (gotGuard_of_inv hI hvb hi hops)
   got _ _ _ _ _ _ _ h := by
-    simp only [valueSemU, pureForm, Bool.false_eq_true, ite_false, csemU, csem,
+    simp only [valueSemU, specForm, pureForm, cmpForm, Bool.false_or, Bool.false_eq_true, ite_false, csemU, csem,
       Option.some.injEq, Prod.mk.injEq] at h
     exact h.1.symm
 

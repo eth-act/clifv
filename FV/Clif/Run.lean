@@ -424,11 +424,98 @@ def placeSlots (slots : List (SlotId × StackSlot)) (sp : BitVec 64) (off : Slot
       (acc.1 ++ [(s.1, sp.toNat + off s.1)], acc.2.allocAt (sp.toNat + off s.1) s.2.size))
     ([], mem)
 
+/-- The stack slots `slots` placed at `sp + off id` with their bytes set to `b` (`Mem.fillAt`). -/
+def fillSlots (slots : List (SlotId × StackSlot)) (sp : BitVec 64) (off : SlotId → Nat)
+    (b : Nat → BitVec 8) (mem : Mem) : Mem :=
+  slots.foldl (fun m s => m.fillAt (sp.toNat + off s.1) s.2.size b) mem
+
+/-- The oracle `p` with its slot-byte oracle advanced past one more activation (`ini`, its
+`Place.init` before it). -/
+def Place.advance (ini : SlotInit) (p : Place) : Place := { p with init := some ini.succ }
+
+/-- The placed slots `r` (`placeSlots slots sp off`) of an activation under the slot-byte oracle
+`ini` (`Place.init`, SEM1) before it: unchanged without it or without slots; otherwise one more
+activation with slots (`Place.advance`), whose slot bytes are the oracle's for it (`fillSlots`,
+`ini.bytes (ini.next + 1)`). -/
+def initSlots (slots : List (SlotId × StackSlot)) (sp : BitVec 64) (off : SlotId → Nat) :
+    Option SlotInit → List (SlotId × Nat) × Mem → List (SlotId × Nat) × Mem
+  | none, r => r
+  | some ini, r =>
+    if slots.isEmpty then r else
+    (r.1, fillSlots slots sp off (ini.bytes ini.succ.next)
+      { r.2 with place := r.2.place.map (Place.advance ini) })
+
+/-- `fillSlots` sets bytes only: every other field of the memory is kept. -/
+theorem fillSlots_eq (slots : List (SlotId × StackSlot)) (sp : BitVec 64) (off : SlotId → Nat)
+    (b : Nat → BitVec 8) : ∀ (mem : Mem),
+    ∃ bytes, fillSlots slots sp off b mem = { mem with bytes } := by
+  induction slots with
+  | nil => exact fun mem => ⟨mem.bytes, rfl⟩
+  | cons s ss ih =>
+    intro mem
+    obtain ⟨bytes, h⟩ := ih (mem.fillAt (sp.toNat + off s.1) s.2.size b)
+    exact ⟨bytes, by simp only [fillSlots, List.foldl_cons] at h ⊢; rw [h]; rfl⟩
+
+/-- The place after `initSlots`: advanced for an activation with slots under the slot-byte
+oracle, unchanged otherwise. -/
+def initPlace (slots : List (SlotId × StackSlot)) : Option SlotInit → Option Place → Option Place
+  | none, pl => pl
+  | some ini, pl => if slots.isEmpty then pl else pl.map (Place.advance ini)
+
+/-- `initSlots` keeps the slots and every field of the memory but the bytes and the place
+(`initPlace`). -/
+theorem initSlots_eq (slots : List (SlotId × StackSlot)) (sp : BitVec 64) (off : SlotId → Nat)
+    (ini : Option SlotInit) (r : List (SlotId × Nat) × Mem) :
+    ∃ bytes, initSlots slots sp off ini r =
+      (r.1, { r.2 with bytes, place := initPlace slots ini r.2.place }) := by
+  cases ini with
+  | none => exact ⟨r.2.bytes, rfl⟩
+  | some ini =>
+    by_cases hs : slots.isEmpty
+    · exact ⟨r.2.bytes, by simp only [initSlots, initPlace, hs, if_true]⟩
+    · obtain ⟨b, hb⟩ := fillSlots_eq slots sp off (ini.bytes ini.succ.next)
+        { r.2 with place := r.2.place.map (Place.advance ini) }
+      exact ⟨b, by simp only [initSlots, initPlace, hs]; rw [hb]; rfl⟩
+
+@[simp] theorem initSlots_none (slots : List (SlotId × StackSlot)) (sp : BitVec 64)
+    (off : SlotId → Nat) (r : List (SlotId × Nat) × Mem) : initSlots slots sp off none r = r := rfl
+
+@[simp] theorem initSlots_nil (sp : BitVec 64) (off : SlotId → Nat) (ini : Option SlotInit)
+    (r : List (SlotId × Nat) × Mem) : initSlots [] sp off ini r = r := by
+  cases ini <;> rfl
+
+@[simp] theorem initSlots_fst (slots : List (SlotId × StackSlot)) (sp : BitVec 64)
+    (off : SlotId → Nat) (ini : Option SlotInit) (r : List (SlotId × Nat) × Mem) :
+    (initSlots slots sp off ini r).1 = r.1 := by
+  obtain ⟨_, h⟩ := initSlots_eq slots sp off ini r; rw [h]
+
+@[simp] theorem initSlots_place (slots : List (SlotId × StackSlot)) (sp : BitVec 64)
+    (off : SlotId → Nat) (ini : Option SlotInit) (r : List (SlotId × Nat) × Mem) :
+    (initSlots slots sp off ini r).2.place = initPlace slots ini r.2.place := by
+  obtain ⟨_, h⟩ := initSlots_eq slots sp off ini r; rw [h]
+
+@[simp] theorem initSlots_allocs (slots : List (SlotId × StackSlot)) (sp : BitVec 64)
+    (off : SlotId → Nat) (ini : Option SlotInit) (r : List (SlotId × Nat) × Mem) :
+    (initSlots slots sp off ini r).2.allocs = r.2.allocs := by
+  obtain ⟨_, h⟩ := initSlots_eq slots sp off ini r; rw [h]
+
+@[simp] theorem initSlots_symbols (slots : List (SlotId × StackSlot)) (sp : BitVec 64)
+    (off : SlotId → Nat) (ini : Option SlotInit) (r : List (SlotId × Nat) × Mem) :
+    (initSlots slots sp off ini r).2.symbols = r.2.symbols := by
+  obtain ⟨_, h⟩ := initSlots_eq slots sp off ini r; rw [h]
+
+@[simp] theorem initSlots_next (slots : List (SlotId × StackSlot)) (sp : BitVec 64)
+    (off : SlotId → Nat) (ini : Option SlotInit) (r : List (SlotId × Nat) × Mem) :
+    (initSlots slots sp off ini r).2.next = r.2.next := by
+  obtain ⟨_, h⟩ := initSlots_eq slots sp off ini r; rw [h]
+
 /-- The stack slots of an activation of `f` entered with memory `mem`, and the memory after
 allocating them. With the slot-placement oracle (`Mem.place`) the activation's stack pointer is
 pushed: for a function the oracle covers (frame drop `d`, slot offsets `off`), its caller's
-minus `d`, and its slots are placed at that `sp` plus `off` (`Mem.allocAt`); otherwise the
-caller's, and the slots come from the bump allocator, as without the oracle. -/
+minus `d`, and its slots are placed at that `sp` plus `off` (`Mem.allocAt`: uninitialised, or
+for an activation with slots under the slot-byte oracle `Place.init` the oracle's bytes for it,
+the oracle advanced: `initSlots`); otherwise the caller's, and the slots come from the bump
+allocator, as without the oracle. -/
 def enterSlots (f : Function) (mem : Mem) : List (SlotId × Nat) × Mem :=
   match mem.place with
   | none => bumpSlots f.slots mem
@@ -436,12 +523,13 @@ def enterSlots (f : Function) (mem : Mem) : List (SlotId × Nat) × Mem :=
     match pl.frame f.name with
     | some (d, off) =>
       let sp := pl.sps.headD 0 - BitVec.ofNat 64 d
-      placeSlots f.slots sp off { mem with place := some { pl with sps := sp :: pl.sps } }
+      initSlots f.slots sp off pl.init
+        (placeSlots f.slots sp off { mem with place := some { pl with sps := sp :: pl.sps } })
     | none =>
       bumpSlots f.slots { mem with place := some { pl with sps := pl.sps.headD 0 :: pl.sps } }
 
 /-- Start an activation of `f` on `args`: allocate its stack slots (`enterSlots`: fresh,
-uninitialised) and enter its entry block. -/
+uninitialised, or placed ones with the slot-byte oracle's bytes) and enter its entry block. -/
 def enterFunc (f : Function) (args : List Val) (mem : Mem) : Res (Frame × Mem) := do
   checkTys s!"arguments of %{f.name}" args (AbiParam.tys f.sig.params)
   let entry ← Res.ofOption s!"%{f.name} has no blocks" f.entry?

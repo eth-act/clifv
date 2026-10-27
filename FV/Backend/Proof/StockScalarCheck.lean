@@ -12,6 +12,9 @@ import FV.Backend.Proof.StockScalarCmpDomain
 import FV.Backend.Proof.StockScalarHighMulDomain
 import FV.Backend.Proof.StockScalarDivDomain
 import FV.Backend.Proof.StockScalarMixedDivDomain
+import FV.Backend.Proof.StockScalarReturnedDivDomain
+import FV.Backend.Proof.StockScalarGeneralDivDomain
+import FV.Backend.Proof.StockScalarMaskDomain
 
 namespace Backend.Stock.Scalar
 open Backend.Proof Backend.Proof.Driver
@@ -193,9 +196,81 @@ theorem singleDivEligible_sound {b : Clif.Block} (checked : singleDivEligible b 
     exact ⟨⟨[z],.div op ty x y⟩,op,ty,x,y,z,body,rfl,rfl,ret⟩
   next => cases checked
 
-theorem sourceOk_sound {f : Clif.Function} (checked : sourceOk f = true) : Domain f := by
-  simp only [sourceOk,Bool.and_eq_true] at checked
-  obtain ⟨⟨⟨eligible,scope⟩,dominated⟩,abi⟩ := checked
+/-- Match syntax supplies the original division and its unique result value. -/
+theorem returnedDivAt_sound {stm : Clif.Stmt} {z : Nat} (checked : returnedDivAt stm z = true) :
+    ∃ (op : Clif.DivOp) (ty : Clif.Ty) (x y : Nat),
+      stm.inst = .div op ty x y ∧ stm.results = [z] := by
+  unfold returnedDivAt at checked
+  split at checked
+  next z' op ty x y results inst =>
+    simp only [Bool.and_eq_true] at checked
+    have equal : z' = z := beq_iff_eq.mp checked.1
+    exact ⟨op,ty,x,y,inst,by simpa only [equal] using results⟩
+  next => cases checked
+
+/-- Recursive source classification derives both scalar sides internally. -/
+theorem returnedDivBodyEligible_sound {body : List Clif.Stmt} {z : Nat}
+    (checked : returnedDivBodyEligible body z = true) :
+    ∃ (front back : List Clif.Stmt) (stm : Clif.Stmt) (op : Clif.DivOp) (ty : Clif.Ty) (x y : Nat),
+      body = front ++ stm :: back ∧
+      (∀ item ∈ front,Proof.HighMulBody.Family item.inst) ∧
+      (∀ item ∈ back,Proof.HighMulBody.Family item.inst) ∧
+      stm.inst = .div op ty x y ∧ stm.results = [z] := by
+  induction body with
+  | nil => cases checked
+  | cons item rest ih =>
+    simp only [returnedDivBodyEligible,Bool.or_eq_true,Bool.and_eq_true] at checked
+    rcases checked with ⟨here,suffix⟩ | ⟨scalar,tail⟩
+    · obtain ⟨op,ty,x,y,division,results⟩ := returnedDivAt_sound here
+      refine ⟨[],rest,item,op,ty,x,y,rfl,by simp,?_,division,results⟩
+      intro next member
+      exact highmulBodyEligible_sound (List.all_eq_true.mp suffix next member)
+    · obtain ⟨front,back,stm,op,ty,x,y,shape,before,after,division,results⟩ := ih tail
+      refine ⟨item :: front,back,stm,op,ty,x,y,?_,?_,after,division,results⟩
+      · simpa only [List.cons_append] using congrArg (List.cons item) shape
+      · intro next member
+        rcases List.mem_cons.mp member with rfl | member
+        · exact highmulBodyEligible_sound scalar
+        · exact before next member
+
+/-- Complete original-source layout for the new internal classifier. -/
+theorem returnedDivEligible_sound {b : Clif.Block} (checked : returnedDivEligible b = true) :
+    ∃ (front back : List Clif.Stmt) (stm : Clif.Stmt) (op : Clif.DivOp) (ty : Clif.Ty) (x y z : Nat),
+      b.body = front ++ stm :: back ∧
+      (∀ item ∈ front,Proof.HighMulBody.Family item.inst) ∧
+      (∀ item ∈ back,Proof.HighMulBody.Family item.inst) ∧
+      stm.inst = .div op ty x y ∧ stm.results = [z] ∧ b.term = .ret [z] := by
+  unfold returnedDivEligible at checked
+  split at checked
+  next z ret =>
+    obtain ⟨front,back,stm,op,ty,x,y,shape,before,after,division,results⟩ :=
+      returnedDivBodyEligible_sound checked
+    exact ⟨front,back,stm,op,ty,x,y,z,shape,before,after,division,results,ret⟩
+  next => cases checked
+
+
+/-- The original division operands and operation come directly from syntax. -/
+theorem divisionBodyEligible_sound {stm : Clif.Stmt}
+    (checked : divisionBodyEligible stm = true) :
+    ∃ op ty x y, stm.inst = .div op ty x y := by
+  unfold divisionBodyEligible at checked
+  split at checked
+  next op ty x y shape => exact ⟨op,ty,x,y,shape⟩
+  next => cases checked
+
+/-- The shared source domain receives a universal statement family. -/
+theorem generalDivBodyEligible_sound {stm : Clif.Stmt}
+    (checked : generalDivBodyEligible stm = true) :
+    Proof.HighMulBody.Family stm.inst ∨ ∃ op ty x y,stm.inst = .div op ty x y := by
+  simp only [generalDivBodyEligible,Bool.or_eq_true] at checked
+  rcases checked with scalar | division
+  · exact Or.inl (highmulBodyEligible_sound scalar)
+  · exact Or.inr (divisionBodyEligible_sound division)
+
+
+private theorem domain_of_eligible {f : Clif.Function} (eligible : eligible f = true)
+    (scope : lowerScopeB f = true) (dominated : dominatedB f = true)
+    (abi : sigAbiOk f.sig = true) : Domain f := by
   unfold Scalar.eligible at eligible
   split at eligible
   next b blocks =>
@@ -215,7 +290,7 @@ theorem sourceOk_sound {f : Clif.Function} (checked : sourceOk f = true) : Domai
       obtain ⟨p,member,sret⟩ := List.any_eq_true.mp any
       simpa [(normal_abi returns) p member] using sret
     simp only [Bool.or_eq_true] at body
-    rcases body with (old | divided) | mixed
+    rcases body with (((old | divided) | mixed) | positioned) | general
     · have families : ∀ stm ∈ b.body, Stock.Proof.HighMulBody.Family stm.inst := by
         intro stm member
         have supported := List.all_eq_true.mp old stm member
@@ -227,7 +302,144 @@ theorem sourceOk_sound {f : Clif.Function} (checked : sourceOk f = true) : Domai
     · obtain ⟨front,stm,op,ty,x,y,z,shape,families,division,results,ret'⟩ := mixedDivEligible_sound mixed
       exact domain_of_mixed_div (lowerScope_of scope) (dominated_of dominated) abi blocks
         shape families division results ret' ordinary
+    · obtain ⟨front,back,stm,op,ty,x,y,z,shape,before,after,division,results,ret'⟩ :=
+        returnedDivEligible_sound positioned
+      exact domain_of_returned_div (lowerScope_of scope) (dominated_of dominated) abi blocks
+        shape before after division results ret' ordinary
+    · exact domain_of_scalar_div (lowerScope_of scope) (dominated_of dominated) abi blocks
+        (fun stm member => generalDivBodyEligible_sound (List.all_eq_true.mp general stm member)) ret ordinary
   next => cases eligible
+
+
+/-- Narrow syntax supplies the same original-source family, with no new semantic premise. -/
+theorem narrowBodyEligible_sound {stm : Clif.Stmt} (checked : narrowBodyEligible stm = true) :
+    Proof.HighMulBody.Family stm.inst ∨ ∃ op ty x y,stm.inst = .div op ty x y := by
+  cases inst : stm.inst <;> simp only [narrowBodyEligible,inst] at checked
+  all_goals try contradiction
+  case iconst ty imm =>
+    exact Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inr ⟨ty,imm,rfl⟩))))))))))
+  case unary op ty x =>
+    cases op <;> simp [narrowBodyEligible] at checked
+    all_goals first
+        | exact Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inr ⟨ty,x,rfl⟩)))))))))
+        | exact Or.inl (Or.inl (Or.inl (Or.inl (Or.inr ⟨ty,x,rfl⟩))))
+        | exact Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inr (Or.inl ⟨.ineg,ty,x,by simp [Proof.BitBody.Unary],rfl⟩))))))
+        | exact Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inr (Or.inl ⟨.clz,ty,x,by simp [Proof.BitBody.Unary],rfl⟩))))))
+        | exact Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inr (Or.inl ⟨.ctz,ty,x,by simp [Proof.BitBody.Unary],rfl⟩))))))
+        | exact Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inr (Or.inl ⟨.bitrev,ty,x,by simp [Proof.BitBody.Unary],rfl⟩))))))
+        | exact Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inr (Or.inl ⟨.bswap,ty,x,by simp [Proof.BitBody.Unary],rfl⟩))))))
+  case binary op ty x y =>
+    cases op <;> simp [narrowBodyEligible] at checked
+    all_goals first
+        | exact Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl ⟨false,ty,x,y,rfl⟩)))))))))))
+        | exact Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl ⟨true,ty,x,y,rfl⟩)))))))))))
+        | exact Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inr (Or.inr ⟨.band,ty,x,y,rfl⟩))))))))))))
+        | exact Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inr (Or.inr ⟨.bor,ty,x,y,rfl⟩))))))))))))
+        | exact Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inr (Or.inr ⟨.bxor,ty,x,y,rfl⟩))))))))))))
+        | exact Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inr ⟨ty,x,y,rfl⟩))))))))
+        | exact Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inr ⟨.lsl,ty,x,y,rfl⟩)))))))
+        | exact Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inr ⟨.lsr,ty,x,y,rfl⟩)))))))
+        | exact Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inr ⟨.asr,ty,x,y,rfl⟩)))))))
+        | exact Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inr (Or.inr ⟨false,ty,x,y,rfl⟩))))))
+        | exact Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inr (Or.inr ⟨true,ty,x,y,rfl⟩))))))
+        | exact Or.inl (Or.inl (Or.inl (Or.inr ⟨false,false,ty,x,y,rfl⟩)))
+        | exact Or.inl (Or.inl (Or.inl (Or.inr ⟨false,true,ty,x,y,rfl⟩)))
+        | exact Or.inl (Or.inl (Or.inl (Or.inr ⟨true,false,ty,x,y,rfl⟩)))
+        | exact Or.inl (Or.inl (Or.inl (Or.inr ⟨true,true,ty,x,y,rfl⟩)))
+        | exact Or.inl (Or.inr ⟨false,ty,x,y,rfl⟩)
+        | exact Or.inl (Or.inr ⟨true,ty,x,y,rfl⟩)
+  case select ty c x y =>
+    exact Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inr (Or.inl ⟨ty,c,x,y,rfl⟩))))))))))))
+  case icmp cc ty x y =>
+    exact Or.inl (Or.inl (Or.inr ⟨cc,ty,x,y,rfl⟩))
+  case extend op ty x =>
+    exact Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inr (Or.inl ⟨op,ty,x,rfl⟩)))))))
+  case ireduce ty x =>
+    exact Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inr (Or.inr ⟨ty,x,rfl⟩)))))))
+  case div op ty x y => exact Or.inr ⟨op,ty,x,y,rfl⟩
+
+private theorem narrowMixedBodyEligible_sound {stm : Clif.Stmt}
+    (checked : narrowMixedBodyEligible stm = true) :
+    Proof.HighMulBody.Family stm.inst ∨ ∃ op ty x y,stm.inst = .div op ty x y := by
+  simp only [narrowMixedBodyEligible,Bool.or_eq_true] at checked
+  exact checked.elim generalDivBodyEligible_sound narrowBodyEligible_sound
+
+private theorem normal_narrow_abi {params : List Clif.AbiParam}
+    (all : params.all narrowAbiEligible = true) : ∀ p ∈ params,p.purpose = .normal := by
+  intro p member
+  have good := List.all_eq_true.mp all p member
+  simp only [narrowAbiEligible,Bool.and_eq_true] at good
+  exact beq_iff_eq.mp good.1
+
+theorem domain_of_narrowEligible {f : Clif.Function} (eligible : narrowEligible f = true)
+    (scope : lowerScopeB f = true) (dominated : dominatedB f = true)
+    (abi : sigAbiOk f.sig = true) : Domain f := by
+  unfold narrowEligible at eligible
+  split at eligible
+  next b blocks =>
+    simp only [Bool.and_eq_true] at eligible
+    obtain ⟨⟨⟨body,terminal⟩,params⟩,returns⟩ := eligible
+    have sourceShape : ∃ xs,b.term = .ret xs := by
+      cases term : b.term <;> simp_all
+    obtain ⟨xs,ret⟩ := sourceShape
+    have noSret : f.sig.params.find? (·.purpose == .sret) = none := by
+      apply List.find?_eq_none.mpr
+      intro p member
+      simp [(normal_narrow_abi params) p member]
+    have ordinary : (sigRets f.sig).any (·.purpose == .sret) = false := by
+      rw [sigRets,noSret]
+      apply Bool.eq_false_iff.mpr
+      intro any
+      obtain ⟨p,member,sret⟩ := List.any_eq_true.mp any
+      simpa [(normal_narrow_abi returns) p member] using sret
+    exact domain_of_scalar_div (lowerScope_of scope) (dominated_of dominated) abi blocks
+      (fun stm member => narrowMixedBodyEligible_sound (List.all_eq_true.mp body stm member)) ret ordinary
+  next => cases eligible
+
+/-- Source classification for bmask and nop retains the independent input type;
+actual matching and the original scope derive that type inside the body proof. -/
+theorem maskMixedBodyEligible_sound {stm : Clif.Stmt} (checked : maskMixedBodyEligible stm = true) :
+    Proof.MaskBody.Family stm.inst := by
+  simp only [maskMixedBodyEligible,Bool.or_eq_true] at checked
+  rcases checked with old | extra
+  · exact Or.inl (narrowMixedBodyEligible_sound old)
+  · cases inst : stm.inst <;> simp only [maskBodyEligible,inst] at extra
+    all_goals try contradiction
+    case bmask ty x => exact Or.inr (Or.inl ⟨ty,x,rfl⟩)
+    case nop => exact Or.inr (Or.inr rfl)
+
+theorem domain_of_maskEligible {f : Clif.Function} (eligible : maskEligible f = true)
+    (scope : lowerScopeB f = true) (dominated : dominatedB f = true)
+    (abi : sigAbiOk f.sig = true) : Domain f := by
+  unfold maskEligible at eligible
+  split at eligible
+  next b blocks =>
+    simp only [Bool.and_eq_true] at eligible
+    obtain ⟨⟨⟨body,terminal⟩,params⟩,returns⟩ := eligible
+    have sourceShape : ∃ xs,b.term = .ret xs := by
+      cases term : b.term <;> simp_all
+    obtain ⟨xs,ret⟩ := sourceShape
+    have noSret : f.sig.params.find? (·.purpose == .sret) = none := by
+      apply List.find?_eq_none.mpr
+      intro p member
+      simp [(normal_narrow_abi params) p member]
+    have ordinary : (sigRets f.sig).any (·.purpose == .sret) = false := by
+      rw [sigRets,noSret]
+      apply Bool.eq_false_iff.mpr
+      intro any
+      obtain ⟨p,member,sret⟩ := List.any_eq_true.mp any
+      simpa [(normal_narrow_abi returns) p member] using sret
+    exact domain_of_mask (lowerScope_of scope) (dominated_of dominated) abi blocks
+      (fun stm member => maskMixedBodyEligible_sound (List.all_eq_true.mp body stm member)) ret ordinary
+  next => cases eligible
+
+theorem sourceOk_sound {f : Clif.Function} (checked : sourceOk f = true) : Domain f := by
+  simp only [sourceOk,productionEligible,Bool.and_eq_true,Bool.or_eq_true] at checked
+  obtain ⟨⟨⟨eligible,scope⟩,dominated⟩,abi⟩ := checked
+  exact eligible.elim
+    (fun prior => prior.elim (fun old => domain_of_eligible old scope dominated abi)
+      (fun narrow => domain_of_narrowEligible narrow scope dominated abi))
+    (fun mask => domain_of_maskEligible mask scope dominated abi)
 
 
 theorem check_sound {f : Clif.Function} {vc : VCode} (checked : check f vc = true) :

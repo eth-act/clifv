@@ -4,7 +4,7 @@
  *   CLIFNATIVE_BUF_SIZE, CLIFNATIVE_NRUNS, CLIFNATIVE_NFNS,
  *   static const struct clifnative_run clifnative_runs[];  (one per runnable `; run` line)
  *   static const struct clifnative_fn  clifnative_fns[];   (every compiled function)
- * and links this file with the Cranelift object. Usage: `exe [START]`.
+ * and links this file with the Cranelift object. Usage: `exe [START [SEED]]`.
  *
  * For run lines START..NRUNS-1: copy the argument bytes into a 16-byte aligned buffer, call
  * the line's CLIF trampoline (which loads the arguments from the buffer, calls the function
@@ -16,6 +16,11 @@
  * function's start (fn = 0xffffffff: PC outside every function, `offset` = PC). The signal
  * handler then abandons the faulting computation (new PC and SP via the signal frame) and
  * continues with the next line. Exit status 0 after the last line.
+ *
+ * With SEED (`clif-native --stale-seed`, SEM1): before each run line the 64 KiB below the
+ * current `sp` are filled with the byte `(SEED + 37 * (a mod 16)) mod 256` at address `a`
+ * (`clifnative_fill_stale`), so a stack-slot byte the function under test reads before writing
+ * it has that value.
  */
 
 typedef unsigned long u64;
@@ -102,6 +107,26 @@ static u8 clifnative_obuf[8 + CLIFNATIVE_BUF_SIZE] __attribute__((aligned(16)));
 static u8 clifnative_altstack[1 << 16] __attribute__((aligned(16)));
 static volatile u32 clifnative_current;
 static u64 clifnative_resume_sp;
+static long clifnative_stale = -1;
+
+/* Fill [sp - 64 KiB, sp) of the caller's frame with the stale pattern, writing below `sp` only
+ * (inline, so no frame of its own lies between the fill and the trampoline's frame). */
+static inline __attribute__((always_inline)) void clifnative_fill_stale(void) {
+  __asm__ volatile(
+      "mov x9, sp\n\t"
+      "sub x10, x9, #0x10000\n\t"
+      "mov x12, #37\n"
+      "1:\n\t"
+      "sub x9, x9, #1\n\t"
+      "and x11, x9, #15\n\t"
+      "madd x11, x11, x12, %0\n\t"
+      "strb w11, [x9]\n\t"
+      "cmp x9, x10\n\t"
+      "b.hi 1b"
+      :
+      : "r"(clifnative_stale)
+      : "x9", "x10", "x11", "x12", "memory", "cc");
+}
 
 static void __attribute__((noreturn)) clifnative_run_from(u32 i) {
   for (; i < CLIFNATIVE_NRUNS; i++) {
@@ -109,6 +134,7 @@ static void __attribute__((noreturn)) clifnative_run_from(u32 i) {
     clifnative_current = i;
     for (u32 k = 0; k < CLIFNATIVE_BUF_SIZE; k++) clifnative_buf[k] = 0;
     for (u32 k = 0; k < r->args_len; k++) clifnative_buf[k] = r->args[k];
+    if (clifnative_stale >= 0) clifnative_fill_stale();
     r->tramp(clifnative_buf);
     u32 hdr[2] = {i, 0};
     for (u32 k = 0; k < 8; k++) clifnative_obuf[k] = ((const u8 *)hdr)[k];
@@ -153,6 +179,10 @@ void __attribute__((noreturn, used)) __clifnative_main(u64 *sp) {
   u32 start = 0;
   if (argc > 1)
     for (const char *s = argv[1]; *s >= '0' && *s <= '9'; s++) start = start * 10 + (u32)(*s - '0');
+  if (argc > 2) {
+    clifnative_stale = 0;
+    for (const char *s = argv[2]; *s >= '0' && *s <= '9'; s++) clifnative_stale = clifnative_stale * 10 + (*s - '0');
+  }
   clifnative_resume_sp = (u64)sp & ~15UL;
 
   struct clifnative_stack ss = {clifnative_altstack, 0, sizeof clifnative_altstack};

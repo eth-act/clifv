@@ -11,7 +11,7 @@ attribute [local irreducible] Isle.Aarch64.program Stock.runTerm
 
 /-- Base shift roots preserve the original source relation. Count values keep
 an arbitrary source type; execution supplies the count instead of a new premise. -/
-theorem base_source {f : Clif.Function} {result : Result}
+theorem base_source_framed {f : Clif.Function} {result : Result}
     (run : Stock.lower f = .ok result) (scope : LowerScope f) (dominated : Dominated f)
     {event : BlockScanEvent} {record : ScanRecord}
     (events : event ∈ result.blockScans.toList) (records : record ∈ event.output.records)
@@ -36,7 +36,8 @@ theorem base_source {f : Clif.Function} {result : Result}
         (Backend.lowerFunction.resolve result.final.alias (result.final.alias.size+1)))) ρ ρ' ∧ cm' = cm ∧
       ValuesHeld (fun v => Demanded record.input v ∧
         v ∈ availOf f (availIn f result.ctx) bi (j+1)) event.ctx fr'
-        (fun k => ρ' (aliasNum result.final.alias k)) := by
+        (fun k => ρ' (aliasNum result.final.alias k)) ∧
+      (∀ k,k < record.input.base.nextVreg ∨ record.output.state.base.nextVreg ≤ k → ρ' k = ρ k) := by
   have sourceProof := sourceStep
   obtain ⟨info',inst,vals,regs,rest,found,original,body,evaluated,written,updated⟩ := sourceProof
   have sameInfo := Option.some.inj (found.symm.trans source)
@@ -64,5 +65,36 @@ theorem base_source {f : Clif.Function} {result : Result}
   have computed : instOutcome env cp fr cm (.binary kind.cop ty x y) =
       .ok ([⟨ty,kind.value u amount⟩],cm') := by
     rw [← valueEq,← values]; exact evaluated
-  exact ⟨ρ',execution,unchanged,source_single_result_values source clif results sourceStep computed installed⟩
+  exact ⟨ρ',execution,unchanged,source_single_result_values source clif results sourceStep computed installed,kept⟩
+
+/-- Retained original interface. -/
+theorem base_source {f : Clif.Function} {result : Result}
+    (run : Stock.lower f = .ok result) (scope : LowerScope f) (dominated : Dominated f)
+    {event : BlockScanEvent} {record : ScanRecord}
+    (events : event ∈ result.blockScans.toList) (records : record ∈ event.output.records)
+    {bi j : Nat} {b : Clif.Block} {stm : Clif.Stmt}
+    (block : f.blocks[bi]? = some b) (statement : b.body[j]? = some stm)
+    (current : record.inst = blockStart f bi + j)
+    (kind : Kind) (wide : Bool) {info : IInfo} {x y z a : Nat} {ty : Clif.Ty}
+    (source : event.ctx.insts[record.inst]? = some info)
+    (clif : info.clif = some (.binary kind.cop ty x y))
+    (results : info.results = [z]) (statementResults : stm.results = [z])
+    (mapped : event.ctx.valueReg? z = some (.vreg a .int))
+    {step : Step} (recorded : record.output.step = some step) (emitted : step.decision = .emitted)
+    (selectedId : step.rules.getLast? = some (kind.rule wide).id)
+    {F : BitVec 64 → Prop} {isem : Backend.Proof.Sem} (refines : Refines F isem)
+    {fr : Clif.Frame} {ρ : Nat → CV}
+    (dfg : DFGCons event.ctx (restrict fr (availOf f (availIn f result.ctx) bi j)))
+    (held : ValuesHeld (fun v => Demanded record.output.state v ∧
+      v ∈ availOf f (availIn f result.ctx) bi j) event.ctx fr (fun k => ρ (aliasNum result.final.alias k)))
+    {env : Clif.Env} {cp : Clif.Program} {fr' : Clif.Frame} {cm cm' : Clif.Mem}
+    (sourceStep : SourceInstResult env cp event.ctx record.inst (fr,cm) (fr',cm')) :
+    ∃ ρ', PRun F isem (record.output.emitted.toList.map (·.mapRegs
+        (Backend.lowerFunction.resolve result.final.alias (result.final.alias.size+1)))) ρ ρ' ∧ cm' = cm ∧
+      ValuesHeld (fun v => Demanded record.input v ∧
+        v ∈ availOf f (availIn f result.ctx) bi (j+1)) event.ctx fr'
+        (fun k => ρ' (aliasNum result.final.alias k)) := by
+  obtain ⟨ρ',execution,unchanged,post,_⟩ := base_source_framed run scope dominated events records block statement current kind wide source clif results statementResults mapped recorded emitted selectedId refines dfg held sourceStep
+  exact ⟨ρ',execution,unchanged,post⟩
+
 end Backend.Stock.Proof.ShiftComplete

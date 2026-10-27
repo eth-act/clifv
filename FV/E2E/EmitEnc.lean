@@ -558,6 +558,15 @@ theorem linesEnc_fpuRR {c : FnCtx} {op : FPUOp1} {s : ScalarSize}
   simp [Insn.armFields, Insn.armFields.fpFtype, encV_v (show d ≤ 31 by omega),
     encV_v (show a ≤ 31 by omega), bind, Except.bind, pure, Except.pure] <;> decide
 
+/-- The scalar float rounding `frintm`/`frintp`/`frintz`/`frintn` (S11f). -/
+theorem linesEnc_fpuRound {c : FnCtx} {op : FpuRoundMode} {d a : Nat} (hd : d < 32)
+    (ha : a < 32) : LinesEnc c (.fpuRound op (.v d) (.v a)) := by
+  refine linesEnc_one (fun _ => rfl) ?_
+  rw [encodable_iff]
+  cases op <;>
+  simp [Insn.armFields, encV_v (show d ≤ 31 by omega), encV_v (show a ≤ 31 by omega), bind,
+    Except.bind, pure, Except.pure]
+
 /-- The scalar float compare `fcmp` (S11f). -/
 theorem linesEnc_fpuCmp {c : FnCtx} {s : ScalarSize} (hs : (s == .size32 || s == .size64) = true)
     {a b : Nat} (ha : a < 32) (hb : b < 32) : LinesEnc c (.fpuCmp s (.v a) (.v b)) := by
@@ -620,6 +629,7 @@ theorem formOk_enc {c cx : FnCtx} {i i' : MInst} {ops : Array Operand} {regs : A
     | exact linesEnc_fpuRRR himm0 (by omega) (by omega) (by omega) _
     | exact linesEnc_fpuRR himm0 (by omega) (by omega)
     | exact linesEnc_fpuCmp himm0 (by omega) (by omega)
+    | exact linesEnc_fpuRound (by omega) (by omega)
 
 
 

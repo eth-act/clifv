@@ -160,14 +160,15 @@ structure Img (Priv : Nat → Prop) (evs : List Ev) (tr : List (List Ev)) (φ : 
   ev : ∀ k (h : k < evs.length), evAt tr (φ k) = some evs[k]
   mono : ∀ k k', k < k' → k' < evs.length → Lt (φ k) (φ k')
   priv : ∀ p y, evAt tr p = some y → y.k.dir = .W → (∀ k < evs.length, φ k ≠ p) →
-    Priv y.addr.toNat
+    Priv y.addr.toNat ∧ y.k ≠ .relXW
   shared : ∀ e ∈ evs, e.k.dir ≠ .F → ¬ Priv e.addr.toNat
   shape : Shape evs
   pair : evs.length = 2 → MonPair tr (φ 0) (φ 1)
 
-/-- An Arm segment without events beyond private writes images no step's events. -/
+/-- An Arm segment without events beyond private writes images no step's events. A private write
+is never a successful store exclusive (`relXW`): those are images of atomic updates. -/
 def PrivW (Priv : Nat → Prop) (tr : List (List Ev)) : Prop :=
-  ∀ p y, evAt tr p = some y → y.k.dir = .W → Priv y.addr.toNat
+  ∀ p y, evAt tr p = some y → y.k.dir = .W → Priv y.addr.toNat ∧ y.k ≠ .relXW
 
 /-! ## Refinement of Arm-event traces -/
 
@@ -177,7 +178,7 @@ structure RefA (Priv : Nat → Prop) (trS trT : List (List Ev)) (ψ : Nat × Nat
   ev : ∀ p x, evAt trS p = some x → evAt trT (ψ p) = some x
   mono : ∀ p q, (evAt trS p).isSome → (evAt trS q).isSome → Lt p q → Lt (ψ p) (ψ q)
   priv : ∀ p y, evAt trT p = some y → y.k.dir = .W → (∀ q, (evAt trS q).isSome → ψ q ≠ p) →
-    Priv y.addr.toNat
+    Priv y.addr.toNat ∧ y.k ≠ .relXW
   shared : ∀ p x, evAt trS p = some x → x.k.dir ≠ .F → ¬ Priv x.addr.toNat
   shape : ∀ j (h : j < trS.length), Shape trS[j]
   pair : ∀ j (h : j < trS.length), trS[j].length = 2 → MonPair trT (ψ (j, 0)) (ψ (j, 1))
@@ -378,7 +379,7 @@ theorem RefA.refines {trS trT : List (List Ev)} {ψ : Nat × Nat → Nat × Nat}
   priv p y hy hW hn := by
     rw [evAt_conv] at hy
     obtain ⟨e, he, rfl⟩ := Option.map_eq_some_iff.mp hy
-    exact h.priv p e he hW fun q hq => hn q (by rw [evAt_conv, Option.isSome_map]; exact hq)
+    exact (h.priv p e he hW fun q hq => hn q (by rw [evAt_conv, Option.isSome_map]; exact hq)).1
   len j hj := by
     simp only [conv, List.getElem_map, List.length_map]
     exact (h.shape j (by simpa [conv] using hj)).len
@@ -403,6 +404,26 @@ theorem RefA.refines {trS trT : List (List Ev)} {ψ : Nat × Nat → Nat × Nat}
       exact absurd hx0k (hb _ _ hm1 hm2 (h.ev _ _ hx0)).1
     · have e1 : p.1 = q.1 := by simp only [Lt] at hlt; omega
       exact ⟨p.1, by ext <;> simp [hp0], by ext <;> simp [e1, hq1]⟩
+
+/-- **The target of a `RefA` is exclusive-closed** (`CallCompose.XClosed`): a `relXW` event is
+not private, so it is the image of a source `relXW`, the second event of an atomic update whose
+`acqXR` maps before it. -/
+theorem RefA.xClosed {trS trT : List (List Ev)} {ψ : Nat × Nat → Nat × Nat}
+    (h : RefA Priv trS trT ψ) :
+    ∀ b y, evAt trT b = some y → y.k = .relXW →
+      ∃ a x, evAt trT a = some x ∧ x.k = .acqXR ∧ Lt a b := by
+  classical
+  intro b y hy hk
+  by_cases hm : ∃ q, (evAt trS q).isSome ∧ ψ q = b
+  · obtain ⟨q, hq, rfl⟩ := hm
+    obtain ⟨xs, hxs⟩ := some_of_isSome hq
+    have e := h.ev q xs hxs
+    rw [hy] at e; cases e
+    obtain ⟨hq1, x0, hx0, hx0k⟩ := shape_relXW h.shape hxs hk
+    refine ⟨ψ (q.1, 0), x0, h.ev _ _ hx0, hx0k, h.mono _ _ (by rw [hx0]; rfl) hq ?_⟩
+    exact Or.inr ⟨rfl, show 0 < q.2 by omega⟩
+  · have hW : y.k.dir = .W := by rw [hk]; rfl
+    exact absurd hk (h.priv b y hy hW fun q hq e => hm ⟨q, hq, e⟩).2
 
 end refA
 

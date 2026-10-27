@@ -745,30 +745,404 @@ they are; the per-thread layers are new files.
       program functions; the single-threaded call proof (`LowerSim.stmt_step` via
       `CallsRefine`/`XCallsOk`, `IselCtlCallRules.call_sym_lowerInstOk`) covers external calls run
       as one CLIF step. The pieces, in order:
-      * **(2a) the pause at layer 2**: a check admitting call statements to program functions
-        whose code is exactly the `call` (register arguments only, direct `bl`: no
-        `stackArgumentStores`, no GOT load), run with an `ExtSem` whose `call` has no step (so the
-        VCode/allocated runs stop at the call) and a result type of the layer-2 induction that, when
-        the whole VCode trace is realized and the VCode is at a statement boundary, returns the
-        `Match` there (`SimRes` gives no relation at its end; every segment lemma
-        `pure_seg…`/`mem_seg…`/`term_seg…` needs that variant). Layers 3/4a already return their
-        relation at the end (`PrepThread.prep_run`, `AllocThread.alloc_run`); the composition
-        (`isel_alloc_refinesR`, `arm_isel_refinesE'`) must export all three.
+      * **(2a) the pause at layer 2 — done (`IselDriverT.lean`, `IselCall.lean`, witness
+        `IselCallWitness.lean`)**: `DriverHypT` (`DriverHyp` without `ext`; `DriverHyp.toT`) and
+        `IselCheck.threadCheckBlC`/`threadCheckC` (`threadCheckBl` admitting `callOkB` statements:
+        a `call` whose code is exactly one direct `call` — a `bl`, register arguments only, no
+        `stackArgumentStores`, no GOT load — its results needing no extra moves;
+        `threadCheckBlC_of`); the layer-2 lemmas restated on them (`stmt_matchNT`, `term_matchNT`,
+        `term_retNT`, `mem_vregT`, `mem_segRT`, `pure_segRT`, `term_segRT`, `entry_matchNT`,
+        `enter_matchT`; the old statements are their corollaries); `SimResC`/`SegResC` (a third
+        end: the realized prefix stops at a call statement, `AtCallS`, related by `Match` to a
+        VCode configuration from which the rest of the trace runs), `simResC_of_seg`, `seg_resC`
+        (a call pauses at once), **`isel_refinesC`** (from a `Match`) and
+        **`isel_refines_entryC`** (from the entry); with an `ExtSem` without `call` step
+        (`NoCall`) the VCode stops at a matched call (`match_atCall`, `vtrun_atCall`), so
+        **`isel_pauseC`**: the trace is realized as before, or entirely with the CLIF state at a
+        call related by `Match` to its last configuration. Witness: `driverHypT_of`,
+        `isel_pause_fC` (the caller of `atomic_load`, which `threadCheck` rejects). Layers 3/4a
+        return their relation at the end (`PrepThread.prep_run`, `AllocThread.alloc_run`); the
+        composition with them is part of (3).
       * **(2b) the callee's entry from the pause**: `CompiledE` of the callee from the caller's
         `Match` at the call (the CLIF state after `stepCall`'s push, `ClifLift.pushC`) and layer
         4b's `Q` at the `call` item (the fixed-use operands put the arguments in x0…, `ArgsAtEntry`).
-      * **(2c) the resume**: from the callee's return (pc after the `bl`, `sp`, `R.F` memory,
-        program — `resumeQ` — and in addition the callee-saved registers and the result registers
-        with `PrefixHold rvals outs` for the CLIF results; for a compiled callee from its layer 4b
-        at its epilogue, for an external one part of its `Ret`), rebuild layer 4a's `Match` by
-        `alloc_back` on the `call` step under an `ExtSem` returning exactly those outputs and that
-        world (`op_sound` takes arbitrary outputs), layer 3's by `prep_back`, and layer 2's
-        `LowerSim.Match` after `ClifCStepTerm.cstep_ret_pop` by `IselCtlCallRules.results_call`
-        (the other live vregs are untouched by the VCode `call`).
+      * **(2c) the resume — done per layer (`IselResume.lean`, `CallResumeQ.lean`,
+        `CallResumeLayers.lean`; witnesses `IselCallWitness.isel_resume_fC`,
+        `CallResumeWitness.resume_RC`)**. The relations after the return are rebuilt by one step
+        of the `call` under the external semantics returning the callee's outputs and the caller's
+        state after the return as the world (`IselResume.xcallX`; a VCode/allocated step, no
+        thread footprint). Layer 2 (**`isel_resumeC`**): the driver's statement step in the
+        **extern view** — the callee as an extern of the environment returning exactly the CLIF
+        return values and memory (`envX`), the program without functions (`pNil`), the memory
+        relation pinned to the caller's slots (`pinSl`), `DriverHypT` for any environment from the
+        lowering's obligations (`driverHypT_mk`, `driverHypT_of`) — gives `Match` after the CLIF
+        return from `PrefixHold rvals outs` and the memory relation at the caller's slots after
+        the return. Layers 3–4b (**`resume_layers`**): `mstep_call` (the allocated `call` steps
+        from `Q` at the `call` item when the callee preserved the caller's live locations outside
+        the call's clobbers and the low halves of the clobbered callee-saved registers, `ckeep`;
+        the outputs the def locations' values), `alloc_call_vstep` (`op_sound`, the checker's
+        `Match` after it), `pmatch_call`/`prep_vstep_next` (`prepare`'s block correspondence),
+        **`resumeQW`** (`resumeQ` for any store holding the state's live locations and any world
+        agreeing outside `R.F`, the caller's frame/code/kept addresses `R.FK` kept). Remaining for
+        (3): the callee contract that supplies these premises — for a compiled callee, from its
+        layer 4a `Match` at its `rets` (callee-saved registers, `RegallocSound.Match`'s `.ret`
+        case) and the epilogue (`RegLevelFrame.ret_machine`, `CallResume.rets_privP`), the result
+        registers (the call's fixed defs), `MemAgree` of its final CLIF memory with the Arm memory
+        (for the memory relation at the caller's slots); for an external callee, part of its
+        `Ret`.
       * **(3)** `SegOk` for a compiled function in `MemScopeLSC` on the machine of
         `arm_alloc_refines_lsCL`: its segments are the runs between its entry, its calls' resumes
         and its `rets`, each by layers 2–4b from the relation of (2a)/(2c); `link_compose_ext`
-        then gives `FunReal` for every activation, `realizes_linked` the program level.
+        then gives `FunReal` for every activation, `realizes_linked` the program level. **Done so
+        far**: layers 2–4a from related configurations (`CallLayers.isel_alloc_refinesC`: the
+        relations `Driver.Match`, `PMatch`, the checker's `MatchRun` at a segment's start; a run
+        of the allocated code is realized entirely with a step at its end, or up to where the CLIF
+        thread stops, or — with `NoCall` — entirely, ending at a call statement related by all
+        three relations to the run's last configuration; `prep_run`/`alloc_run` keep the
+        relations, `PrepThread.prepFacts_of_check` gives `prepare`'s); witness
+        `CallResumeWitness.isel_alloc_fC`. **Done since** (#529 and its follow-up): (i) layer 4b
+        composed (`CallLayers.arm_isel_refinesG2`/`G`/`C`) and the entry's relations
+        (`CallLayers.prep_init`, `alloc_init`, `isel_alloc_refines_entryC`,
+        **`arm_isel_refines_entryC`**; witness `CallEntryWitness.arm_entry_fC` on the linked
+        machine `MC2`); (ii) the `rets` end at the layers: layer 2 pauses at a `return` too
+        (`IselCallRet.isel_refinesCR`, `isel_refines_entryCR`; `IselRetT.term_stepRT` is
+        `term_step` on `DriverHypT`), `CallRets.ret_pause` (a done `return`'s VCode tail is
+        event-free and returns values holding the CLIF ones), `CallRets.isel_alloc_refinesCR(G)`,
+        `CallRetsAlloc.rets_alloc` (from `Q` and the checker's relation at a `rets` item: the
+        epilogue and `ret` reach the return address, `sp` as at entry, memory kept, the `rets`'
+        uses in their fixed registers, every callee-saved register equal up to `ckeep` to the
+        checker's entry value) and `ret_link` (those uses are the VCode's returned values),
+        composed in **`CallRetsEnd.arm_isel_refinesCR`**/**`arm_isel_refines_entryCR`** with the
+        return contract `RetEnd` at a `rets` pause (witness `CallRetsWitness.arm_entryCR_fC`).
+        **Still open**, in order: (ii') the CLIF return pop in the linked thread
+        (`ClifCStepTerm.cstep_ret_pop` under `ClifLift.pushC`; done: `CallRets.ret_pop`, #531),
+        turning `RetEnd` into (2c)'s
+        premises — layers 3–4b **done** (`CallRetResume.lean`, witness `CallRetResumeWitness.lean`):
+        `resume_layers`' `hpres` asks the state after the return to keep every non-clobbered live
+        location, including the call's result registers (`info.defs` are not clobbers), so it
+        fails for a callee with results (`not_hpres_yX`); `mstep_callR`/**`resume_layersR`** ask it
+        only off the late def locations; `frame_congr`, **`hpresR_of_callee`**, `hkeep_of_callee`
+        derive it from callee-saved registers up to `ckeep`, `sp` and the `RA.FK` memory (premise
+        `hdef`: each def register is a late def operand's location, `checkStatic`'s fixed check);
+        **`resume_premises_of_retEnd`**: all of them from the callee's `RetEnd`, given the callee's
+        entry values = the caller's at the `bl` (`hr₀`), its entry `sp`, the return address and
+        the callee's run keeping `RA.FK` (premises supplied by (2b)/(iv)); witness `resume_RX` (a
+        callee returning `42` in `x0`). **Done since (`CallRetPremises.lean`, witness
+        `CallRetPremisesWitness.lean`)**: `defOps_eq`/`defPairs_locs` (a call with virtual def
+        registers has one fixed late def operand per def, in order; past `checkStatic` its def
+        locations are the def registers), **`hdef_of_static`**/**`hdef_of_q`** (`hdef` from the
+        static check / from `Q` at the `call` item), **`prefixHold_outs`** (`isel_resumeC`'s
+        `PrefixHold` from `RetEnd`'s returned values and `rets` uses, given the ABI agreement of
+        the callee's `rets` registers with the caller's def registers), **`relW_after_callee`**
+        (the memory relation at the caller's slots after the return from the caller's at the call
+        and the callee's `MemRel` at its `rets`, given the memory after the return has only
+        allocations live at the call), **`realized_rets`** (the epilogue up to the `ret` as a
+        private segment on any machine `AgreesAt` the activation); witnesses `defsC1_q`, `locsC1`,
+        `prefixHold_RX`, `relW_id`, `rets_RC`. **The two `rets` ends excluded (done,
+        `CallRetsN.lean`, witness `CallRetsNWitness.arm_entryCRN_fC`)**: layer 2 with the VCode
+        end off `rets` (`IselStep.VAtRets`, `vstep_of_starNR`: a `rets` steps to a return, from
+        which no running configuration is reached; `IselThread.SimResRN`/`SegResRN`,
+        `pure_segRTN`, `term_segRTN`, `IselMemSeg.mem_completeRN`, `IselMemMain.mem_segRTN`,
+        `IselCallRet.SimResPN`, **`isel_refinesCRN`**, `isel_refines_entryCRN`; the old
+        statements are corollaries), through layers 3/4a (`isel_alloc_refinesCRGN`, with
+        `pmatch_rets`); layer 4b stopping at its first pause (`ItemSim.avoid`,
+        `arm_alloc_refines_lsCLA`: its run never steps a `rets` item, `srun_avoid_ret`); at a done
+        `return` the allocated configuration steps (`vstep_or_ret_of_retFrom`, `doneRet_mstep`),
+        which `Done` and `AtCall` (`NoCall`) exclude: **`arm_isel_refinesCRN`**/
+        **`arm_isel_refines_entryCRN`** end entirely, where the CLIF thread stops, at a call
+        with the three relations, or at a done `return` with `RetEnd`;
+        (iii) (2b) the callee's entry from the relations at the
+        pause (`enterFunc`'s CLIF state under `ClifLift.pushC`, the arguments in x0… from the call's
+        fixed uses, the callee's `RL` from the caller's state at the `bl`, its memory relation).
+        **Done (`CallEntryPremises.lean`, witness `CallEntryPremisesWitness.entry_premises_L`)**:
+        `prologue_fields`, `regVal_calleeSaved_congr`, **`entry_premises`** — for a callee whose ABI
+        entry state agrees with the caller's state at the call but in the pc and `x30` (the link),
+        `resume_premises_of_retEnd`'s `hr₀` (the checker entry values after the prologue),
+        `hsp0` and `hra`. **`hmr` done (`CallCalleeRet.lean`, witness
+        `CallCalleeRetWitness.lean`)**, without the planned restatement of layer 4b with a
+        private set free of the kept addresses: the register-level relation `Q` carries
+        `StRel.gkeep` (the kept addresses `RB.G` hold their entry bytes), which survives
+        interference (`stRel_patch`: the patches avoid `RB.F ⊇ RB.G`) and the activation's own
+        calls (`resumeQW`), so it holds at the `rets` pause (`gkeep_of_q`); with
+        `RB.G ⊇ RA.FK` (`Nested`) that is `hmr`. **`RetC R ra r₀ y`** (the return contract
+        relative to the activation's own entry: return address, no error, `sp`, `R.G` as at
+        entry, callee-saved registers up to `ckeep` the checker entry values),
+        **`retC_of_retEnd`**, **`resume_premises_of_retC`** (every premise of `resume_layersR`
+        but the program from `RetC` of a callee entered at the caller's call); witnesses
+        `retC_RX`, `resume_premises_RX` (the `atomic_load` callee at `sBF`, a return with `42`).
+        **The caller resumed at every layer (done, `CallResumeAll.lean`, witness
+        `CallResumeAllWitness.resume_all_fC`)**: `atCall_of_pause` (at the call end of
+        `arm_isel_refinesCRN` the allocated configuration is at the `call` item, with
+        `pmatch_call_fwd`: `prepare` keeps a `call`), **`resume_all`** (from that end and a
+        callee's `RetC`, its returned values in its `rets` registers and its `MemRel` at its
+        `rets`: `Match`/`PMatch`/`MatchRun`/`Q`/`AInv` at the item after the call, i.e.
+        `arm_isel_refinesCRN`'s premises for the caller's next segment; layer 2 by
+        `isel_resumeC`, layers 3–4b by `mstep_callR`/`alloc_call_vstep`/`prep_vstep_next`/
+        `resumeQW`, the two VCode steps equal by `vstep_det`). Static premises left to the
+        general theorem: the call's defs virtual, the callee's `rets` registers the call's def
+        registers, `#defs = #sigRets` (checks on the lowered code). **The linked machine (done,
+        `LinkedMachine.lean`, witness `LinkedMachineWitness.lean`)**: `LFn` (an activation's
+        static data), `Link` (named functions), `Link.enter`/`Link.H` (a `bl` of a linked
+        function enters it as `enterL` does), `Link.act F s0 K G` (the activation), `Link.M`
+        (the current function's step; at its `ret` the program of the function containing the
+        return address); under `Link.Ok` (laid out, disjoint code ranges): `agreesAt_M`,
+        `M_eq_step`, `M_bl`, `M_ret`, `M_ret_prog`, `M_ret_x30`; witness `link2` (the two
+        witness functions; `M_blC`, `M_retL`, `agreesAtC`, `agreesAtL`). **The callee's entry
+        on the linked machine, Arm level (done, `CallEnterArm.lean`, witness
+        `CallEnterArmWitness.lean`)**: `Q.hooks`/`StRel.hooks` (the relation does not depend on
+        the hooks), `LFn.Static` (the static part of `RL.Wf`), `Link.act_wf`,
+        **`Link.step_call`** (at a direct `call` item the machine steps the `bl` into the
+        callee, event-free, plain), **`Link.enter_call`** (the callee's activation at the entered
+        state is `Wf`, its entry an `AbiCall` returning after the `bl`, it agrees with the
+        caller's state but in the pc and `x30` and has its memory, `Q`/`AInv` after its
+        prologue: the start of `arm_isel_refines_entryCRN`); witnesses `step_call_C`,
+        `enter_call_L` (the caller's `bl` at `sBF` on `link2`). Open on the CLIF side of the
+        entry: the callee's CLIF state (`enterFunc` under `pushC`, `cstepI_call`), its memory
+        relation and `ArgsAtEntry` — waiting for the slot-oracle semantics (SEM1 design A,
+        UninitZ), which changes `enterSlots`.
+        **`CStep` runs as `CStepS` runs (done, `CStepSConv.lean`, witnesses
+        `CStepSConvWitness.lean`)**: `cstepS_of_cstep`, `crunS_of_crun` (reads avoiding the
+        evolving mask), `stop_encT` (the CStepS realization stops where the CStep one does),
+        `cstepS_ret_iff` (a bottom-frame return is a `CStepS` step exactly from the empty mask:
+        the top-level contract ends before a return with masked bytes), the start-dirty set
+        `Refines.toT_dirty`/`Refines.toT_parts` (private set ∪ mask ∪ addresses that start no
+        location of a thread-wide partition `PartDisj`/`OnParts`, the T2i restriction).
+        **CLIF side of the callee entry (done, `CallEnterClif.lean`, witness `enter_C`)**:
+        `step_call_entry`/`cstepI_call_entry` — a direct call's step is `pushC` of the caller's
+        frame over the callee's own entry state with exactly the CLIF facts of
+        `arm_isel_refines_entryCRN` (slots/memory from `enterSlots`, entry block, registers from
+        the call's argument values), adding the placed slot bytes to the mask. Open: the callee's
+        `RelW` and `ArgsAtEntry` from the call's fixed uses (layers 2–4 at the `bl`).
+        **`resume_all`'s static premises as checks (done, `CallResumeChecks.lean`, witness
+        `defs_fC`)**: `callDefsVirtB_iff` (`hvdef`), `callDefsRetB_iff` + `habi_regs` (the register
+        part of `habi`), both sound and complete. **The arity part as a check (done,
+        `CallArity.lean`, witness `CallArityWitness.arity_fC`)**: `callArityB`/`callArityBl`/
+        `callArityC` (per statement on the driver's lowering: a `call fn _` whose code is one `call`
+        defines `(sigRets ext.sig).length` registers, `ext = f.extern? fn`), `match_atCallA`
+        (`match_atCall` with the arity), `resume_allP` (`resume_all` with `habi` only at the paused
+        instruction; `resume_all` its corollary), **`resume_allA`** (`resume_all` with `habi`
+        replaced by `CallDefsRet` + `callArityBl`; `rvals.length ≤ defs` by `returns_le_sigRets`).
+        **The call's arguments at the `bl` (done, `CallArgsAt.lean`, `CallArgsL2.lean`, witnesses
+        `usesV_fC`, `useOps_iC`, `resLen_fC`)**: layers 3–4b, **`call_uses_q`** (with `Q` and the
+        checker's `MatchRun` at a direct `call` item with virtual uses, `CallUsesVirt` checked by
+        `callUsesVirtB_iff`: the `j`-th use `(v, p)` has in register `p` the `j`-th VCode use value;
+        `useOps_eq`); layer 2, **`isel_argsAt`** (at a matched call statement the VCode is at
+        `call (.sym ext.name)` whose use values satisfy `ArgsAt ext.sig vals`), read off the
+        driver's call step under a *guarded* external semantics (`xcallG`/`ArgG`: its `call`
+        steps only when `ArgsAt` holds, which `XCallsOk` grants; `isel_resumeG`, `argG_of_vstep`),
+        with probe results of the right types (`callResLenB`: results as many as the extern's
+        returns). **The callee's `ArgsAtEntry` (done, `CallArgsEntry.lean`, witness `useRegs_fC`)**:
+        the check `callUseRegsB`/`callUseRegsC` (a direct call's use registers are `locsOf
+        ext.sig`'s registers in order, `allRegs?`, all argument registers), `match_atCallU`,
+        `argsHold_of_uses`, **`callee_args`** (at the paused call every argument in its register
+        of the machine state, no stack arguments: `isel_argsAt` through `pmatch_call_fwd`/
+        `atCall_of_pause` with `call_uses_q`), **`callee_argsAtEntry`** (`ArgsAtEntry F ext.sig
+        vals` of the callee's body-entry world `bodyOf FB.af (Link.enter FB x)`, any `F`;
+        `regVal_bodyOf_enter`), `callee_argsAtEntry_sig` (callee signature `ext.sig`). Left: the
+        callee's `RelW` (after #567).
+        **From the ABI entry (done, `CallSegAbi.lean`, witness `arm_abiCRN_fC`)**:
+        `prun_prologueG` (the prologue on a machine agreeing with the activation),
+        **`arm_isel_refines_abiCRN`** (`arm_isel_refines_entryCRN` from `RA.s0`, the prologue's
+        private writes composed by `Refines.app`): a callee's first segment.
+        **Step (4) design (AtomicsCalls14, 2026-10-23)**, decided without changing code:
+        - *Activations*: `G` = the activation's data (`LFn`, `s0`, `K`, `G`, `ra`, the CLIF caller
+          frames `ext`), `Ext` empty (every callee compiled); `Inv` is the entry form (the
+          premises of `arm_isel_refines_abiCRN`) or the resume form (those of
+          `arm_isel_refinesCRN`, from `resume_allA`); `DriverHypT` of every activation from the
+          function's static checks (`driverHypT_of`, any `Γ`, `c`).
+        - *Run condition*: one `ok` for the thread, `OkPriv` of the thread's bound (its stack and
+          code), which implies every activation's `OkPriv` (`PRun.mono`, `PrivA ⊆ Bnd`).
+        - *Callee budget*: exact nesting, `KB = KA - frameDrop FB.af` (a proof parameter, no code
+          change), so the caller's dead stack is the callee's `Region`.
+        - *Dirty sets*: at a segment start `D ⊆ PrivA RA ∪ U ∪ NS`, at its end `¬ Clean`
+          (`⊆ D ∪ PrivA RA`); across a call `PrivA RA ⊆ PrivA RB ∪ slotArea RB`, the callee's
+          slot bytes in the mask (`cstepI_call`), its padding in `NS` as addresses no CLIF read
+          of the segment starts at (CLIF-valid memory avoids the caller's dead stack,
+          `MemRel.valid`); across a return `PrivA RB ∪ U ⊆ PrivA RA ∪ U`.
+        - *Masks*: the realized prefix stops before the first CLIF step reading a masked byte
+          (`Refines.take`, labels of at most one event, `prun_len`); a callee's return keeps its
+          unwritten slot bytes masked (`CStepI` allows old masked bytes), the bottom frame's
+          return needs the empty mask (`cstepS_ret_iff`). The top-level end condition: the
+          whole run, `Stop`, the next CLIF step reads a masked byte, or a return with masked
+          bytes.
+        - *Exclusive-closed segments (done, AtomicsCalls15)*: the monitor survives calls
+          (`monAfter`; a failed CAS leaves it armed), so `xClosed_mon` from the open monitor does
+          not give each segment's `XClosed`. The Refines-level argument above has a gap (a lone
+          CLIF `scW` may map to `relXW` under `Maps`), so it is done at layer 4b instead: a
+          private Arm write is never a `relXW` (`PrivW`, `Img.priv`, `RefA.priv` now say
+          `Priv addr ∧ k ≠ relXW`; straight-line code by `stepEvs_noRelXW` from `NoStx`), so
+          every `relXW` of a `RefA` target is the image of a source `relXW`, the second event of
+          an atomic update whose `acqXR` maps before it (**`RefA.xClosed`**). Carried up:
+          `refines_of_itemSimQX`, `arm_alloc_refines_lsCLAX`, `xClosed_take`,
+          `arm_isel_refinesG2NX`/`CRGNX`/**`CRNX`**/**`entryCRNX`**, **`arm_isel_refines_abiCRNX`**
+          (the old names are corollaries); witness `arm_abiCRNX_fC`. The epilogue/`ret` and the
+          `bl` have no `relXW` (`ret_end`, `step_bl`).
+        - *Valid memory across a callee (done, `CallValid.lean`)*: `resume_allA`'s `hval` (every
+          range valid after the callee's return was valid at the call). The callee's run is the
+          thread's CLIF run from the caller's call at depth `n` back to depth `n`:
+          `AllocInvD cm n` (every allocation within `cm`'s valid ranges or a slot of a frame above
+          depth `n`, `slotBasesAbove`), `allocInvD_self`, **`allocInvD_step`**/`allocInvD_run`
+          (`Clif.step_next_cases` of `LinkFree` programs, externs keeping allocations),
+          **`valid_of_allocInvD`** (back at depth `n`). In the linking induction every open
+          activation's `(cm, n)` pair is carried, so the per-alloc form composes without a
+          per-range case split. Witness `CallValidWitness.lean` (`allocW`, `retW`: a callee
+          with a placed slot).
+        - *Segment pieces on the thread (done, AtomicsCalls15)*: **`CallSegLift.realizedT_lift`**
+          (a chain segment `CRun` from the activation's own state, lifted below its callers by
+          `crun_pushC`, `Refines.prefixNil`, cut before a masked read by `realizedT_cut`);
+          **`CallStepT`**: `cstepS_of_cstepI`, `realizedT_nil`, **`realizedT_call`** (the `bl`
+          label realizing the CLIF call at `pushC ext s`, the callee's placed slots added to the
+          mask), **`realizedT_priv`** (private Arm labels, no `relXW`, realizing event-free CLIF
+          steps), `cstepS_ret_lift`; **`CallRetT.realizedT_ret`** (a callee's `RetEnd` pause on
+          the linked machine: no CLIF step before the `ret`, the CLIF return into the caller from
+          it on, `RetC` after it). Witnesses `CallSegLiftWitness`, `CallStepTWitness`,
+          `CallRetTWitness`.
+        - *`SegOkG` pieces (done, AtomicsCalls16/17, `CallSegOkG.lean`, `CallSegGeo.lean`)*:
+          `RReach`/**`PartsOk`** (reachable CLIF states, their accesses on a location partition:
+          a new premise of the general theorem), `OkB` (the thread's run condition), `EndT`
+          (whole run, `Stop`, event-free return, stuck, trap, call at depth ≥ `Dcap`, masked read,
+          masked return), **`seg_end`** (a chain segment lifted below its callers is a `RealT`
+          prefix ending in `EndT` or at its pause, the end-dirty set by `DirtyEnd`), `Act`,
+          `StatOk`, `FnOk`, `ChainP` with **`chainP_entry`**/**`chainP_resume`**, **`ret_seg`**
+          (a callee's return pause, `realizedT_ret` below its caller), `call_next`;
+          `Nested.privA_sub`, `Nested.privA_callee(_out)` (private sets of nested activations),
+          `cstep_reads_valid` (CLIF events at valid memory). Sharper end-dirty sets:
+          `DirtyEnd`, `realizedT_segW`/`cutW`/`liftW` (old names corollaries). Witnesses
+          `CallSegOkGWitness` (from a trap state, the caller's call), `CallSegOkGActWitness` (the
+          caller's `StatOk` in `link2`, its chain property from the ABI entry and resumed; the
+          callee's return pause), `CallSegGeoWitness` (`atomic_load` nested in its caller). The
+          call case is WIP in `FV/Concurrency/Scratch/CallSegOkG.lean.wip` (not a module).
+          **New gap**: a callee's start-dirty set must cover its frame padding (slot area outside
+          the placed slots), which can hold stale bytes of earlier sibling callees; closing it
+          needs that no CLIF read of a segment starts in a live frame's padding
+          (`cstep_reads_valid` + `AllocInvD` + #567's slot placement).
+        - *The call pause and the resume (done, AtomicsCalls17, `CallSegCall.lean`)*:
+          **`CodeIn L R`** (every linked function `R`'s own or its words in `R.G` and in memory at
+          `R`'s entry; `CodeIn.code` via `gkeep`/`StRel.code`, `CodeIn.callee` for `G = R.FK`),
+          **`stackAvail_callee`** (budget `KB` with `frameSize + 16 + KB ≤ K`),
+          **`budget_call`** (budget `(Dcap - d) * M` at depth `d`), `nested_callee`,
+          **`gfree_callee`** (`Nested.region_not_FK`), **`call_endK`** (`call_end` with
+          `hcode`/`hstB`/`hgB` discharged, the callee's `CodeIn` and nesting returned),
+          `retEnd_n` (a `RetEnd` at any step count reaching `ra` without error), **`resume_ret`**
+          (`resume_allA` with `hB`/`hmemB`/`hus`/`hpreB`/`hy`/`hprog` from the callee's `RetEnd`,
+          `hval` from `AllocInvD` via `valid_of_allocInvD`; new static premise `hdr`: the
+          callee's `rets` registers are `CallDefsRet` of the caller). Witness
+          `CallSegCallWitness` (the caller in `link2` with budget `0x100`, `atomic_load` entered
+          with `0x10`; the resume after `atomic_load`).
+        - *Waiting on #567*: the callee's `Ent` (its entry `RelW`, and `AllocInvD` of the open
+          activations: the start of the callee's run), the frame-padding gap above, then the
+          call case of `segOkG` (scratch) and the assembly below.
+        - *Left for `SegOkG` (next)*: per activation `g = (n, F, s0, K, G, ra, ext, …)` of a link
+          whose functions are all compiled (a bundle of each function's static facts: the
+          `driverHypT_ofA` checks, `PrepFacts`, `CheckedAt`, `MemScopeLSC`, `LFn.Static`),
+          `ok` = `OkPriv` of the thread's bound (implies each `OkPriv (L.act …)` by `PRun.mono`);
+          `Inv` entry form = `arm_isel_refines_abiCRNX`'s premises at `pushC ext cs` with the
+          mask/dirty invariants (dirty ⊆ `PrivA ∪ U ∪ NS`, `AllocInvD` for every open
+          activation), resume form = `arm_isel_refinesCRNX`'s premises (from `resume_allA`);
+          the four ends: whole run / `Stop` / masked read → `E`; call pause → `call_end` +
+          `realizedT_call` (`Ent` of the callee, `KB = KA - frameDrop`) with the resume
+          obligation `Ret → Inv` via `resume_allA` (premise `hB`: the callee's `RelW`, item (1),
+          #567; `hval` from `valid_of_allocInvD`); return pause → `realizedT_ret` (`Ret`). Then
+          `link_composeT`, the top-level theorem (end: `Stop`, masked read, masked return),
+          `realizes_call_full`/rmw witness re-derived, TO-PROVE T2 rows.
+        (iv) the thread-wide private set (every activation's `PrivA` and the CLIF events' avoidance
+        of it; with CLIF stack slots in callees the private sets of different activations overlap
+        other activations' slots); then `SegOk`, `link_compose_ext`, and `realizes_call_full`/the
+        rmw-callee witness
+        as instances. **Scope measurement (2026-10-23)** for the planned first scope "functions
+        without CLIF stack slots" (`f.slots = []`), on the retained `bin-check` CLIF dumps:
+        functions using atomics (`atomic_load/store/rmw/cas`, `fence`) without slots — fv-demo
+        0/12, survey (4 of 18 executables' dumps on disk) 0/6, deps 1/54; their direct callers
+        without slots — fv-demo 7/10, survey 4/4, deps 30/63. Every excluded function has
+        `explicit_slot`s (mostly 8/16/1 bytes). So that scope covers essentially no function
+        that itself uses atomics. The thread-wide private set therefore has to cover activations
+        with stack slots: each activation's slots lie in its own Arm frame, below the caller's.
+        **Design (decided 2026-10-23, scope "callees without slots" rejected).** Two gaps of the
+        multi-threaded specification block activations with slots: (A) `Refines`/`Realized`/
+        `link_compose`/`realizes_linked` use one private set per thread for the whole run, but
+        with stack reuse an address that is one callee's spill slot (an unmatched write: private)
+        is a later callee's CLIF slot (a CLIF event: shared); an uninitialised read of that slot
+        would read the stale spill, which the restricted CLIF execution cannot justify. (B) With
+        the slot oracle (`Mem.place`, so that CLIF slot addresses are the Arm frame addresses),
+        `enterFunc`'s `Mem.allocAt` sets the slot bytes to `none`, but `ClifThread.CStep` requires
+        an event-free step to leave every byte memory unchanged, so `CStep` has no step into a
+        callee with a slot. The fix, every piece beside the old definitions (whose theorems stay):
+        `CStepI` (the thread state carries a ghost own-initialisation mask: the slot allocation
+        clears it instead of touching the shared bytes, a CLIF store sets it, a load of an unset
+        byte is stuck as in `Clif.run`; correspondence lemma with `Clif.run`, oracle check on the
+        slot corpus); `RefinesT` (a position-dependent private set `PrivAt` and a freshness
+        clause: after an unmatched own write at `a`, a CLIF read at `a` follows a matched own
+        write at `a`) with `PrivCoh.realizes_of_threads_privT`; the thread-wide `PrivAt` is the
+        union of the frames of the activations live at that position; `link_composeT`. The
+        cross-thread premise becomes: other threads avoid the union over time of a thread's
+        private sets (its stack) — a trusted program premise. **Frame disjointness (done,
+        `FrameDisj.lean`)**: `Region` (an activation's frame and callee budget), `Frame`,
+        `slotArea` (the CLIF slots `[spB + size, spB + frameSize)`, in the `Frame` and outside
+        `frameF`'s stack part: `slotArea_frame`, `slotArea_not_frameF`), `frameF_frame`,
+        `Nested A B` (the callee's region inside the caller's dead stack, `B.G = A.FK`),
+        **`Nested.gfree`** (the callee's `RL.Wf.gfree` from the caller's), `Chain` (the live
+        activations, innermost first), **`Chain.region_dead`**, **`Chain.frame_disj`** (distinct
+        live frames are disjoint) and **`Chain.slot_not_F`** (every live activation's CLIF slots
+        are outside the innermost activation's `RL.F`: the CLIF events, which avoid the innermost
+        `RL.F`, avoid every live frame). Witness (`FrameDisjWitness.lean`): the compiled
+        `atomic_load` nested in its caller with a `0x100`-byte callee budget (`nested_LC`,
+        `wfRLy`, `chain_LC`, `frames_LC`, `slots_LC`). **`CStepI` (done, `ClifThreadI.lean`)**:
+        `TStateI` (a `TState` and its mask `U`), `slotByte` (the bytes of the running and
+        suspended frames' slots), `mix U B` (`B` with the masked bytes `none`), `CStepI` (`CStep`
+        run on `mix U B`; the bytes after it are `mix U'` of the shared bytes with the write events
+        applied; `U'` keeps only unwritten masked bytes or adds slot bytes of the new state),
+        `CRunI`, `MaskOk` (masked bytes `none` in the own memory). **`cstepI_empty`**: with empty
+        masks `CStepI` is `CStep`; **`cstepI_of_cstep`**: every `CStep` whose reads avoid the mask
+        (`agrees_mix`, `applyEvs_mix`); `enterSlots_bytes`, `enterFunc_bytes` (`enterFunc` on any
+        bytes: the placed slot bytes `slotZ` cleared, the rest kept), `slotZ_frameSlot`,
+        **`cstepI_call`** (the call of a program function adds `slotZ` to the mask);
+        **`cstepI_own`**/`cstepI_own_stuck` (single-thread correspondence: from a `MaskOk` state a
+        `CStepI` reading the own memory is `Clif.step` of the state, to a `MaskOk` state; where
+        `Clif.step` is stuck there is no `CStepI`). Witness (`ClifThreadIWitness.lean`): a call
+        into `%g` with an 8-byte slot placed at `0x6F20` (`cstepI_callW`, `maskW`, `ownW`),
+        `not_cstepW` (no `CStep` enters `%g`), `emptyW'` (with the bump allocator the old `CStep`).
+        **Oracle check (2026-10-23)**: the 44 runtests files with stack slots through `Clif.run`
+        (whose single-thread behaviour `CStepI` is, `cstepI_own`) and the Cranelift interpreter
+        (`scripts/clif-filetests.sh`): 1148 agree, 7 disagree (the known i128 out-of-bounds
+        `stack_store` with an instruction offset, in the baseline), **0 runs stuck on an
+        uninitialised read**. cg_clif output (static must-initialised scan of the `bin-check`
+        dumps, `stack_addr` + `load`/`store`, escaping slots exempt): potential loads of
+        uninitialised slot bytes in fv-demo 288 (2,680 functions), survey 92 (1,702), deps 2,938
+        (34,180), mostly enum/`Option` partial initialisation (the tag stored, the payload word
+        loaded and returned or copied; e.g. fv-demo `bin-check/400b40aa77e2/fns/184.clif`: `store 2`
+        to `ss0[0,4)`, `load.i32 ss0+4` returned) — `Clif.run`, and so `CStepI`, is stuck there.
+        **`RefinesT` (done, `PrivCohT.lean`)**: `RefinesC` (the order- and pair-preserving part of
+        `Refines`), `Unmatched`, `RefinesT MK Priv0 PrivAt` (`shared`: a source event avoids the
+        private set at its image's position; `priv`: an unmatched Arm write is in the private set
+        at its position; `fresh0`/`fresh`: a source read of a location private at the start, or
+        written by an earlier unmatched Arm write, follows a source write there after that write),
+        `Refines.toT` (constant private sets), `realizes_of_threads_fn` (`realizes_of_threads` with
+        the runs as functions and the source property as a premise), **`src_of_refinesT`** (every
+        Arm `rf` source of a source read is a CLIF initial write or an image: another thread's
+        unmatched write by `StackDisjoint`, an own one or a private initial write by freshness and
+        SC per location), **`realizes_of_threads_privT`**, **`privCoh_of_stackDisjoint`** (reads of
+        a thread's stack read its own `po`-latest write: the run condition's justification).
+        **Trusted program premise `StackDisjoint PA (PrivU Priv0 PrivAt)`**: no thread's events
+        other than fences touch another thread's private locations at any time (the union over time
+        of its private sets: its stack) — like the earlier "no thread writes another thread's
+        private set" (above), now for the union over time; documented in
+        `docs/decisions/arm-model.md`. Witnesses (`PrivCohTWitness.lean`): `refinesT_reuse` (a spill
+        at 100, then a CLIF store and load of a slot at 100), `not_refines_reuse` (no fixed private
+        set realizes it), `ret_threadsT` (`realizes_of_threads_privT` on `ProgWitness`).
+        **Composition (done, `CallComposeT.lean`)**: `RefinesC.app`, **`RefinesT.app`** (private sets
+        concatenate, `catP`; the locations not `Clean` at the end of the first segment are dirty at
+        the start of the second), `clean_app`; `maskOf`, `CStepS` (`CStepI` with the mask in the
+        thread state's bytes), `CRunS`; `RealizedT env p Bnd ls k c c' D D'` (private sets within
+        the thread's bound `Bnd`, dirty sets at start/end), `RealizedT.zero`/`trans`;
+        `FunRealG`/`SegOkG`/**`link_composeG`** (the linking induction for any realization with
+        `zero`/`le`/`trans`), **`link_composeT`**, **`realizes_linkedT`** (program level, premise
+        `StackDisjoint` for the bounds and start-dirty sets). Witnesses `CallComposeTWitness.lean`
+        (`realizedT_trans0`, `funRealT_ext`, `linkedT_ret`). **Next**: `SegOkG` for compiled
+        activations (a `Refines` segment of `CStep` runs → `RealizedT` of `CStepS` runs, truncated
+        before a read of a masked byte; invariant: dirty ⊆ mask ∪ `RL.F` of the running activation),
+        then AtomicsCalls7's steps 1–3 (`RetEnd` → (2c), the two `rets` ends, (2b) entry with
+        `cstepI_call`), the linked machine, `realizes_call_full`/rmw witness on `link_composeT`, a
+        `CStepS` version of `program_correct` (multi-threaded `Clif.run` with masks).
   * **the prologue, from the ABI entry (done, `ArmAllocEntry.lean`)**: `stp_fplr_evs` (the
     prologue's `stp x29, x30, [sp, #-16]!`: one plain write at `sp - 16`, no exclusive);
     `q_init_lines` (`RegLevelFrame.q_init` with the prologue's lines, `LinesAt`, and its step

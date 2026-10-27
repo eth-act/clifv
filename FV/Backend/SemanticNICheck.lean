@@ -1,3 +1,11 @@
+import FV.Backend.Lowering.StockParameterCfg
+import FV.Backend.Lowering.StockConditionalRankedCfg
+import FV.Backend.Lowering.StockTwoBlock
+import FV.Backend.Lowering.StockLinearCfg
+import FV.Backend.Lowering.StockConditionalCfg
+import FV.Backend.Lowering.StockForwardCfg
+import FV.Backend.Lowering.StockTwoBlockEntry
+import FV.Backend.ABIReadCfg
 import FV.Backend.StockArithmeticCheck
 import FV.Backend.ABIReadOnly
 import FV.Backend.StockMixedCheck
@@ -17,6 +25,13 @@ def check (f : Clif.Function) (vc : VCode) : Bool :=
     ((Stock.Arithmetic.check f vc && ABIReadOnly.check f.sig vc) ||
       (Stock.Mixed.check f vc && ABIReadFlags.check f.sig vc) ||
       (Stock.Logical.check f vc && ABIReadFlags.check f.sig vc) ||
-      (Stock.Scalar.check f vc && (ABIReadScalar.check f.sig vc || ABIReadDiv.check f.sig vc)))
+      (Stock.Scalar.check f vc && (ABIReadScalar.check f.sig vc || ABIReadDiv.check f.sig vc)) ||
+      (Stock.TwoBlock.check f vc && ABIReadCfg.check f.sig vc) ||
+      (Stock.TwoBlock.Entry.check f vc && ABIReadCfg.check f.sig vc) ||
+      (Stock.LinearCfg.check f vc && ABIReadCfg.check f.sig vc) ||
+      (Stock.ForwardCfg.check f vc && ABIReadCfg.check f.sig vc) ||
+      (Stock.ConditionalCfg.check f vc && ABIReadCfg.check f.sig vc) ||
+      (Stock.ConditionalCfg.rankedCheck f vc && ABIReadCfg.check f.sig vc) ||
+      (Stock.ParameterCfg.check f vc && ABIReadCfg.check f.sig vc))
 
 end Backend.SemanticNI

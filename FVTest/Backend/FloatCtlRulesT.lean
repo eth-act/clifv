@@ -62,7 +62,7 @@ theorem instScopeT_of {ctx : Ctx} (h : scopeOkB ctx = true) : InstScopeT ctx := 
 /-- A typed context from the decided checks. -/
 theorem ctxT_of {f : Clif.Function} {ctx : Ctx} (h1 : ctxOkT f ctx = true) (h2 : scopeOkB ctx = true)
     (h3 : Compile.functionET f = true) : CtxT f ctx :=
-  ⟨ctxOkT_sound h1, instScopeT_of h2, functionET_externs h3⟩
+  CtxT.ofExterns (ctxOkT_sound h1) (instScopeT_of h2) (functionET_externs h3)
 
 /-- A float-classed value rules out the integer invariant. -/
 theorem not_ctxInv_of {f : Clif.Function} {ctx : Ctx} {x : Nat}
