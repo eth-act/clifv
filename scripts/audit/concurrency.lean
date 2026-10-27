@@ -1289,3 +1289,32 @@ import FVTest.Concurrency.LitmusFull
 #print axioms Concurrency.CallSegOkGT.WitnessRmw.partsOk_O -- witness: native_decide
 #print axioms Concurrency.CallSegOkGT.WitnessRmw.ent_O -- witness: native_decide
 #print axioms Concurrency.CallSegOkGT.WitnessRmw.realizes_call_rmwT -- witness: native_decide
+#print axioms Concurrency.CallSegOkG.seg_endP
+#print axioms Concurrency.CallSegOkG.seg_end
+#print axioms Concurrency.CallResumeAll.resume_allX
+#print axioms Concurrency.CallResumeAll.resume_allP
+#print axioms Concurrency.CallArity.resume_allAX
+#print axioms Concurrency.CallArity.resume_allA
+#print axioms Concurrency.CallSegExt.memRel_mono
+#print axioms Concurrency.CallSegExt.xfunReal
+#print axioms Concurrency.CallSegOkGT.toNat_sub_ofNat
+#print axioms Concurrency.CallSegOkGT.F_of_FK
+#print axioms Concurrency.CallSegOkGT.dead_not_FK
+#print axioms Concurrency.CallSegOkGT.call_stepX
+#print axioms Concurrency.CallSegOkGT.LinkOk.toX
+#print axioms Concurrency.CallSegOkGT.segOkG_ext
+#print axioms Concurrency.CallSegOkGT.segOkG
+#print axioms Concurrency.CallSegOkGT.funRealT_link_ext
+#print axioms Concurrency.CallSegOkGT.realizes_linked_calls_ext
+#print axioms Concurrency.CallSegOkGT.WitnessExt.laidX -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.WitnessExt.okX -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.WitnessExt.ret_evs
+#print axioms Concurrency.CallSegOkGT.WitnessExt.regVal_enter_saved
+#print axioms Concurrency.CallSegOkGT.WitnessExt.enterSlots_nil'
+#print axioms Concurrency.CallSegOkGT.WitnessExt.regs_entered -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.WitnessExt.cstepX -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.WitnessExt.extX -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.WitnessExt.fnOk_CX -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.WitnessExt.linkOkX -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.WitnessExt.placeOkX -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.WitnessExt.funRealT_link_X -- witness: native_decide

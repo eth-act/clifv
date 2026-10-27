@@ -1057,6 +1057,24 @@ they are; the per-thread layers are new files.
           `LinkOk`, each thread's `Ent`; trusted: `StackDisjoint` (race freedom on the threads'
           stacks and start-dirty sets). Every callee is a program function (`StatOk.envx`), so no
           `ExtEvContract` premise is needed.
+          **External callees (#649, done)**: `CallSegExt` — an external is Arm code of the link
+          with a slot-free CLIF specification in the program; its trusted contract
+          `ExtEvContractT` (`ExtChain`: the `ChainP` shape — `Refines Maps` with private set the
+          external's stack `XPriv K x` up to its return `XRetA`: pc after the `bl`, `sp`,
+          callee-saved registers, the caller's `FK` memory, the caller's program, `MemRel` of the
+          specification's memory, the returned values in its return registers; entry premises:
+          `Entered`, `ArgsInRegs`, `MemRel`, the return address in linked code); `XAct`/`XEnt`/
+          `XRet`, **`xfunReal`** (the chain lifted by `seg_endP`, the invariants along the
+          specification's run, the CLIF return by `cstepS_ret_pop` at no label). `CallSegOkGT`:
+          `AG` (compiled or external activations), `EntX`/`RetX`/`InvX`, `LinkOkX`,
+          **`segOkG_ext`** (the call pause into an external: `call_stepX`, `XEnt`; the resume
+          from `XRet` by `CallArity.resume_allAX`, the RB-free `CallResumeAll.resume_allX`, and
+          `chainP_resume`; `segOkG` is its corollary without externals), **`funRealT_link_ext`**,
+          **`realizes_linked_calls_ext`**. Witness `CallSegOkGTExtWitness`: `linkX` (the caller
+          `fC` and an external `ld` whose code is one `ret`, specification `v1 = bor v0, v0`),
+          `extX` (the contract proven), `linkOkX`, `funRealT_link_X`. Open: the end-to-end
+          witness (`realizes_linked_calls_ext` with every premise discharged, as
+          `realizes_call_fullT`) and a caller of a compiled and an external callee.
         (iv) the thread-wide private set (every activation's `PrivA` and the CLIF events' avoidance
         of it; with CLIF stack slots in callees the private sets of different activations overlap
         other activations' slots); then `SegOk`, `link_compose_ext`, and `realizes_call_full`/the

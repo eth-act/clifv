@@ -102,6 +102,26 @@ sets (`PrivCohT.StackDisjoint PA (PrivU Priv0 PrivAt)`, a premise of
 and its runtime (every thread has its own stack, which nobody else accesses), not derivable from
 the per-thread refinements (`docs/plans/atomics.md` §3e, "Explicit program-level premise").
 
+**Trusted premise: the event contract of external callees (#649).** Code the program calls but we
+do not compile (std, the allocator, libc) is linked as Arm code of the link with a CLIF-level
+specification, a function of the CLIF program (entered by the CLIF call like any program
+function: `CStep` has no step for an environment extern that touches memory).
+`CallSegExt.ExtEvContractT` assumes of every external, at every call whose arguments are in
+their argument registers, from a CLIF memory related to the Arm memory outside the caller's
+private set `Fr` and the external's stack (the `K` bytes below the caller's `sp`, inside the
+caller's callee budget), with `Fr` outside that stack, `sp` 16-aligned, no model error and the
+return address in the caller's linked code: every precise run of the linked machine from the
+external's entry, its reads of its own stack returning its own bytes, refines (`Refines Maps`,
+private set the external's stack) its specification's own CLIF run — its Arm events are the
+specification's CLIF events, in order, outside its stack, its other writes on its stack — up to
+the whole run, a stop of the specification, or its return (`XRetA`, AAPCS64): at the address
+after the `bl`, no error, the caller's `sp`, the callee-saved registers (x19–x28, low halves of
+v8–v15) and the caller's private memory as at the call, back on the caller's program, the
+specification's CLIF memory at its `return` agreeing with the Arm memory, the returned values in
+the external's return registers. `CallSegOkGT.funRealT_link_ext`/`realizes_linked_calls_ext`
+take it as a premise; `CallSegOkGT.WitnessExt.extX` proves it for a one-`ret` external whose
+specification returns its argument (non-vacuity). Specifications without stack slots only.
+
 ## Thread-local storage: trusted TLSDESC hook (agent/stack-tls-proof, 2026-10-01)
 
 `E2E.backend_correct_final` covers `tls_value` (`elf_gd`, cg_clif's setting). Its code is
