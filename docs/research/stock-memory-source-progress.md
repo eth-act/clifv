@@ -113,3 +113,27 @@ source variant; do not strengthen the original input conditions or duplicate
 machine/bit proofs. Actual source-family emission/sinking classification,
 whole-body/block/entry/return composition and semantic read/NI transport remain
 before production activation and its complete affected gates.
+
+
+## Ordinary source execution and ABI composition
+
+Six additive modules connect actual call-free source execution to retained body
+scans and real ABI returns. The source execution theorem preserves the exact
+residual fuel, source frame fields and terminator; it permits memory changes.
+Existing pure/local variants remain byte-identical. The actual two-block fixture
+now proves execution of its placed load-and-return block on the nonzero heap.
+A separate single-block argument-return witness inhabits the new ABI entry
+wrapper from PC0 with the live heap. These witnesses are separate: complete
+PC0 control composition of the load function remains open.
+
+Maintained checkpoint gates pass in
+`/tmp/stock-memory-ordinary-normal-gates-v1`:4219 normal modules,5014 tool jobs,
+98 audit files and49 memory roots with standard axioms only. All prior audited
+axiom sets compare exactly; every previously published backend proof file is
+byte-identical. Source/runtime/compiler behavior is unchanged. These are proof
+checkpoint gates, not new production/runtime or agreement claims.
+
+Next derive actual selected load IDs from original opcode/type metadata rather
+than an explicit selected-ID premise, classify original source emission/sinking,
+compose complete memory functions, then discharge semantic memory read/NI and
+production consumers. Preserve the full original140 scope and earlier fallback.

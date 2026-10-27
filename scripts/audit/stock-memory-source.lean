@@ -1,6 +1,9 @@
 import FV.Backend.Proof.StockMemoryContractWitness
 import FV.Backend.Proof.StockMemoryLoadWitness
 import FV.Backend.Proof.StockMemoryGuardedWitness
+import FV.Backend.Proof.StockMemoryOrdinaryWitness
+import FV.Backend.Proof.StockMemoryReturnWitness
+import FV.Backend.Proof.StockMemoryEntryWitness
 
 #print axioms Backend.Stock.Memory.domain_of_scalar
 #print axioms Backend.Stock.Memory.existing_source_witness
@@ -39,3 +42,16 @@ import FV.Backend.Proof.StockMemoryGuardedWitness
 #print axioms Backend.Stock.Memory.stock_lower_load_source_step
 #print axioms Backend.Stock.Memory.stock_lower_load_scan_fall_refines
 #print axioms Backend.Stock.Memory.LoadFixture.guarded_load_scan_witness
+
+#print axioms Backend.Stock.Proof.OrdinaryBody.actual_ordinary_source_step
+#print axioms Backend.Stock.Proof.OrdinaryBody.actual_ordinary_source_execution_frame
+#print axioms Backend.Stock.Memory.LoadFixture.RecordInput.atBlock
+#print axioms Backend.Stock.Memory.LoadFixture.RecordInput.body_split
+#print axioms Backend.Stock.Memory.LoadFixture.RecordInput.body_record
+#print axioms Backend.Stock.Memory.LoadFixture.RecordInput.body_records
+#print axioms Backend.Stock.Memory.LoadFixture.ordinary_load_step_witness
+#print axioms Backend.Stock.Memory.LoadFixture.ordinary_load_body_execution_witness
+#print axioms Backend.Stock.Proof.OrdinaryBody.actual_ordinary_return_refines_at
+#print axioms Backend.Stock.Proof.OrdinaryBody.actual_ordinary_entry_return_refines_frame
+#print axioms Backend.Stock.Memory.EntryFixture.ordinary_entry_return_witness
+#print axioms Backend.Stock.Memory.LoadFixture.actual_load_return_block_witness
