@@ -19,7 +19,7 @@ open Backend Backend.Proof Backend.Proof.Driver E2E E2E.LinkCheck
 
 namespace FloatCmpFinalTCF
 
-open FloatFinalT
+open FloatFinalT Isle.Aarch64
 
 /-- Scalar `fcmp`s of `f64` and `f32` values, one under a `uextend` (`rule_lower_1283`). -/
 def fCmpT : Clif.Function := fnOfTextA

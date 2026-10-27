@@ -856,9 +856,26 @@ and `lowerChecked_specTC` take the premise that `f` is in the scopes they name. 
 `FVTest/E2E/FloatArithFinalTCF.lean` (`fOps`: `fcvt_from_sint`, `fmul`, `fadd`, `sqrt`,
 `floor`, `fpromote`, `nearest`, `fdemote`, `fcvt_to_{s,u}int_sat`; outside `functionETC`,
 rejected by `lowerCheckTC`, accepted by `lowerCheckTCF`, `backend_correct_finalTCF_fOps`,
-`verdict_f`). Generated code unchanged. Open: `fcmp` (its `brif`/`select` fusions with
-`fcmp` must be proven or excluded first), and the link-level chain (`InScopeIn`,
+`verdict_f`). Generated code unchanged. Open: the link-level chain (`InScopeIn`,
 `fnScopeInTB3`, `lowerFunction_ok_inputT`, `compileExeT3`), which keeps `functionET`.
+
+**S11f scope: scalar `fcmp` verified.** `instETF` also admits `fCmpET` (`fcmp` of two
+`f32`/`f64` operands at a condition of `fccOk`, i.e. not `one`/`ueq`; `i8` result; the operands
+are float positions, so `intOperandsF` is unchanged). The exclusion: `fcmp` has the integer-result
+opcode `cmpOps = [Fcmp]` (`opsTF`, `neIOpsF`; `instData_cmp`, `fcmp_resTy`, `fCmpET_cases`); the
+four `multi_lane` roots (`lower.isle:2152-2170`, ids 947-950) fail on the `i8` type in the checker;
+the vector root `rule_lower_2179` (id 952) matches the root pattern, so `exclOkTF` exempts it and
+`rule_lower_2179_nomatchT` refutes its `ty_vector_float in_ty` condition (the operand's type is
+scalar, `CtxInvT.valTyM`). On the non-E instructions the `fcmp` roots are exempt from `nonEOkF`
+(`floatCmpRootRule`) and dispatched to `LowerRulesCorrectFC` (`lowerRulesCorrectFC_program`,
+`IselFloatCmp`): `NonEUnmatchableTF` takes `floatCmpRootRule r = false`, and
+`lowerInstOk_of_rulesTF`/`lowerInstOk_runTermTF`/`instCallsTF_of_rules`/`iselSimTCF_of_rules`/
+`backend_correct_of_rules_exTCF` take `LowerRulesCorrectFC`. `uextend (fcmp)` (`rule_lower_1283`)
+is an E-instruction root already in `LowerRulesCorrectTI` (`uextend_fcmp_okTI`), and the `brif`/
+`select`/`trapz` fusions go through `is_nonzero_cmp_okT`'s proven `fcmp` arm. Witness:
+`FVTest/E2E/FloatCmpFinalTCF.lean` (`fCmpT`: `fcmp lt`/`fcmp ge` of `f64`, `band`, `fcmp uno` of
+`f32` under `uextend.i32`; `fcmp_excl_w`, `verdict_f`, `backend_correct_finalTCF_fCmp`).
+Generated code unchanged.
 
 **S11e6 (#419), slice 2: typed `try_call`.** The lowering (2a, #540; 2b): `gen_try_call_rets`
 puts each return in the register of its class (`retRegsC`: x0.. / v0..; `retRegsC_int` on integer

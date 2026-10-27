@@ -121,21 +121,6 @@ theorem instData_cvtFrom {f : Clif.Function} {op : Clif.FOp} {ty : Clif.Ty} {x :
     rcases hop with rfl | rfl <;> simp [instNames, fFmt, fOpc]
   · cases he
 
-/-- The result type of a non-`fcmp` float operation is its controlling type. -/
-theorem float_resTy {f : Clif.Function} {ctx : Ctx} (hctx : CtxInvT f ctx) {j : Nat}
-    {info : IInfo} {op : Clif.FOp} {ty : Clif.Ty} {args : List Nat}
-    (hop : ∀ cc, op ≠ .fcmp cc) (hi : ctx.insts[j]? = some info)
-    (hc : info.clif = some (.float op ty args)) :
-    info.resTys.head?.getD .invalid = CTy.ofClif ty := by
-  obtain ⟨tys, htys, hres, -⟩ := hctx.resTys j info _ hi hc
-  have : tys = [ty] := by
-    cases op
-    case fcmp cc => exact absurd rfl (hop cc)
-    all_goals simpa [Clif.Inst.resultTypes] using htys.symm
-  subst this
-  rw [hres]
-  rfl
-
 /-! ## The scalar comparisons -/
 
 set_option maxRecDepth 20000 in
@@ -239,6 +224,7 @@ theorem rule_lower_2179_nomatchT {f : Clif.Function} {ctx : Ctx} (hctx : CtxInvT
   simp only [mCTys, eCTys, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hm
   rcases hm with (rfl | rfl | rfl | rfl) | (rfl | rfl) <;> cases hct
 
+set_option maxRecDepth 100000 in
 /-- The root rule of `lower` with id 952 is `rule_lower_2179`. -/
 theorem lower_rule952_filter : (program.rulesOf TId.lower).filter (·.id == 952) =
     [rule_lower_2179] := by
