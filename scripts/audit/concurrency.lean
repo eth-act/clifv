@@ -1161,3 +1161,6 @@ import FVTest.Concurrency.LitmusFull
 #print axioms Concurrency.CallSegPc.ra_in
 #print axioms Concurrency.CallSegPc.ra_out
 #print axioms Concurrency.CallSegPc.ret_tys
+#print axioms Concurrency.CallSegOkGT.segOkG
+#print axioms Concurrency.CallSegOkGT.funRealT_link
+#print axioms Concurrency.CallSegOkGT.realizes_linked_calls
