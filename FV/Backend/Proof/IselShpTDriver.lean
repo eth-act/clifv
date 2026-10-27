@@ -197,8 +197,10 @@ theorem hand_modelT {ctx : Ctx} {N : Nat} {vs : List V} {rl : Rule} (h : HandOkT
 /-! ## The driver's calls -/
 
 set_option maxRecDepth 100000 in
-/-- **A statement's lowering emits control forms of their typed shapes.** -/
-theorem stmt_shpT (hctx : CtxT f ctx) (hcl : Clean ctx) (hfam : FamCover ctx) (ha : AbiSigsOk f)
+/-- **A statement's lowering emits control forms of their typed shapes.** Integer externs (`hx`):
+since #609 `CtxT` only records the integer `call` callees (`CtxT.calls`). -/
+theorem stmt_shpT (hctx : CtxT f ctx) (hx : f.externs.all (Compile.sigE ·.2.sig) = true)
+    (hcl : Clean ctx) (hfam : FamCover ctx) (ha : AbiSigsOk f)
     {ii : Nat} {info : IInfo} {inst : Clif.Inst} (hi : ctx.insts[ii]? = some info)
     (hc : info.clif = some inst) (hmem : ∃ B ∈ f.blocks, ∃ st ∈ B.body, st.inst = inst)
     {s : LState} {out : Option V} {s' : LState} {tr : List Isle.RuleId}
@@ -226,7 +228,7 @@ theorem stmt_shpT (hctx : CtxT f ctx) (hcl : Clean ctx) (hfam : FamCover ctx) (h
     (shp_soundT hctx.inv hcl hfam _ s rfl)
     (Hand := fun rl => rl ∈ program.rulesOf TId.lower ∧ (rl.id = 1031 ∨ rl.id = 1032 ∨ rl.id = 1033))
     (fun rl ⟨hrl, hid⟩ => hand_modelT (handOkT_call totality hctx ha
-      (fun fn e he => (sigE_int (List.all_eq_true.mp hctx.externs (fn, e) (lookup_some_mem he))).1)
+      (fun fn e he => (sigE_int (List.all_eq_true.mp hx (fn, e) (lookup_some_mem he))).1)
       hi hc hmem hrl hid _) s)
     data_program.t686 term_686_kind hrules hins (ShpIsT.refl hN) (n := 999999)
     lower_len happ).1
@@ -410,7 +412,7 @@ theorem tryCall_shpT (hctx : CtxT f ctx) (hcl : Clean ctx) (hfam : FamCover ctx)
     CtlSinceT ctx.valDef.size { st1 with emitted := #[] } s' := by
   have hti : ti < ctx.insts.size := (Array.getElem?_eq_some_iff.mp hph).1
   have h' := ctxT_termCtx hctx hph data
-  have hctx' : CtxT f (tryCtx ctx ti data trs) := ⟨{ h'.inv with }, h'.scope, h'.externs⟩
+  have hctx' : CtxT f (tryCtx ctx ti data trs) := ⟨{ h'.inv with }, h'.scope, h'.calls⟩
   have hst := (tryRegsOf_mono htr).1
   obtain ⟨i, F, hF, hok⟩ := htf
   exact branch_shpT hctx' (clean_tryCtx hcl hd ti trs)
@@ -434,7 +436,8 @@ theorem tryCall_shpT (hctx : CtxT f ctx) (hcl : Clean ctx) (hfam : FamCover ctx)
 forms of the typed shapes `CtlShapeT`, with defs above every value's vreg. -/
 theorem iselCtlHypT : IselCtlHypT := by
   intro f ctx ranges st0 hdom hs hst hsel ha hb
-  have hctx : CtxT f ctx := ⟨ctxInvT_of hs hb, (buildCtx_typed hs hb).2.2, externsE_of hs.subsetT⟩
+  have hx := externsE_of hs.subsetT
+  have hctx : CtxT f ctx := ⟨ctxInvT_of hs hb, (buildCtx_typed hs hb).2.2, callsE_of_externs hx ctx⟩
   have hcl : Clean ctx := Cov.clean_of_build hb
   have hfam := famCover_of hs hdom hst hsel hb
   refine ⟨fun ii info inst s out s' tr hi hc hN h => ?_,
@@ -445,7 +448,7 @@ theorem iselCtlHypT : IselCtlHypT := by
         rfl | ⟨B, hB, st, hst, rfl⟩
       · cases hc
       · exact ⟨B, hB, st, hst, Option.some.inj hc⟩
-    exact stmt_shpT hctx hcl hfam ha hi hc hmem hN h
+    exact stmt_shpT hctx hx hcl hfam ha hi hc hmem hN h
   · obtain ⟨B, hBm, rfl⟩ := hB
     exact termCall_shpT hctx hcl hfam hph hty (termIntPos_of hs hb hBm) hd
       (termFam_of hs hdom hb hBm (.inl hd)) hN h
