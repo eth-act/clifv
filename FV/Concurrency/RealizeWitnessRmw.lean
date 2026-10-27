@@ -345,7 +345,7 @@ theorem run_rmw : ∃ (n : Nat) (lsP : List Lab) (eR eW : Ev) (t' : ArmState × 
   rw [show RAR.rf = rfR from rfl, e0] at hq0 hA0
   -- the saves
   obtain ⟨ls1, t1, r1, hq1, hA1, hev1⟩ := moves_fwdA wfRR (fun K => (K == .plainW) = true)
-    savesL _ _ _ none hq0 hA0 (moves_kinds checksRunR.2.1)
+    savesL _ _ _ none hq0 hA0 (moves_kinds checksRunR.2.1) (by simp [savesL, Loc.isSave])
   -- the entry `args`
   obtain ⟨m', hst, hm0, -⟩ := args_stepR (spillR.map (fun p => RItem.move p.1 p.2) ++
     (.op 1 allocsR :: itsR)) _ w₀R
@@ -354,7 +354,7 @@ theorem run_rmw : ∃ (n : Nat) (lsP : List Lab) (eR eW : Ev) (t' : ArmState × 
   -- the spills and reloads
   obtain ⟨ls2, t2, r2, hq3, -, hev2⟩ := moves_fwdA wfRR
     (fun K => (K == .plainW || K == .plainR) = true) spillR (.op 1 allocsR :: itsR) t1.1 m' t1.2
-    hq2 hA2 (moves_kinds checksRunR.2.2.1)
+    hq2 hA2 (moves_kinds checksRunR.2.2.1) (by simp [spillR, Loc.isSave])
   -- the loop
   obtain ⟨fl, ra, ro, rd, q1, q2, hi1⟩ := instsR.2.1
   obtain ⟨j0, nl, T, hd1, hL0, hprog, hpc, herr, hstr⟩ :=

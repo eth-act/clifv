@@ -86,11 +86,11 @@ theorem prefixCQ : ∃ (n0 : Nat) (m : Loc → CV),
   have e0 := checksRunC.1
   simp only [MConf.init] at hq0 hA0
   rw [show RC.rf = rfC from rfl, e0] at hq0 hA0
-  obtain ⟨n1, hq1, hA1, hp1⟩ := moves_privA wfRC savesL _ _ _ hq0 hA0
+  obtain ⟨n1, hq1, hA1, hp1⟩ := moves_privA wfRC savesL _ _ _ hq0 hA0 (by simp [savesL, Loc.isSave])
   obtain ⟨m', hst, hm'⟩ := args_stepC (spillL.map (fun p => RItem.move p.1 p.2) ++ restC) _ w₀C
   have hq2 := realizes_args wfRC hq1 hA1 vb0C argsC0.1 hst
   have hA2 := Backend.Proof.aInv_step wfRC hq1 hA1 hst
-  obtain ⟨n2, hq3, -, hp2⟩ := moves_privA wfRC spillL restC _ m' hq2 hA2
+  obtain ⟨n2, hq3, -, hp2⟩ := moves_privA wfRC spillL restC _ m' hq2 hA2 (by simp [spillL, Loc.isSave])
   have hstr := q_stRel hq3
   rw [← iterN_add, ← iterN_add, ← Nat.add_assoc] at hq3 hstr
   rw [← iterN_add] at hp2
@@ -144,7 +144,7 @@ theorem callerPost {y : ArmState} (hy : PostA sBF y) :
       [.op 2 #[.reg (.x 0)]], locVal RC.fr y, y⟩) := by
     intro _ ⟨a, ha⟩
     simp [postMv, savesL] at ha
-  obtain ⟨n1, hq2, -, hp1⟩ := moves_privA wfRC (postMv (.x 0)) _ _ _ hq1 hA1
+  obtain ⟨n1, hq2, -, hp1⟩ := moves_privA wfRC (postMv (.x 0)) _ _ _ hq1 hA1 (by simp [postMv, Loc.isSave])
   obtain ⟨n2, hp2, -⟩ := rets_privP wfRC abiRC hq2 vb0C instC2
   refine ⟨n1 + n2, fun i hi => ?_⟩
   by_cases h : i < n1

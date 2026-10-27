@@ -96,7 +96,7 @@ theorem rets_RC {y : ArmState} (hy : PostA sBF y) :
       [.op 2 #[.reg (.x 0)]], locVal RC.fr y, y⟩) := by
     intro _ ⟨a, ha⟩
     simp [postMv, RealizeCompiled.Witness.savesL] at ha
-  obtain ⟨n1, hq2, -, -⟩ := moves_privA wfRC (postMv (.x 0)) _ _ _ hq1 hA1
+  obtain ⟨n1, hq2, -, -⟩ := moves_privA wfRC (postMv (.x 0)) _ _ _ hq1 hA1 (by simp [postMv, Loc.isSave])
   obtain ⟨n, hn0, hpc', -, -, -, -, hr⟩ :=
     realized_rets wfRC abiRC (g := RC.step) (fun _ _ _ => rfl) hq2 vb0C instC2
   exact ⟨_, n, hn0, hpc', fun hlt hp => (hr hlt hp).1⟩
