@@ -1,3 +1,4 @@
+import FV.Backend.Proof.StockConditionalSourceTrapWitness
 import FV.Backend.Proof.StockConditionalSourceReturnWitness
 import FV.Backend.Proof.StockConditionalGuardedWitness
 import FV.Backend.Proof.StockConditionalOutgoingWitness
@@ -94,3 +95,7 @@ import FV.Backend.Proof.StockConditionalEmissionWitness
 #print axioms Backend.Stock.Proof.ConditionalValues.ConditionalBodySpec.parameter_branch_values_last
 #print axioms Backend.Stock.Proof.ConditionalValues.ConditionalBodySpec.returning_parameter_core
 #print axioms Backend.Stock.Proof.ConditionalValues.ReturnWitness.returning_parameter_core_witness
+
+#print axioms Backend.Stock.Proof.ConditionalValues.ConditionalBodySpec.trapping_parameter_core
+#print axioms Backend.Stock.Proof.ConditionalValues.TrapFixture.driver_witness
+#print axioms Backend.Stock.Proof.ConditionalValues.TrapWitness.trapping_parameter_core_witness

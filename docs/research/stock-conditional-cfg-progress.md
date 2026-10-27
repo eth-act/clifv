@@ -247,3 +247,18 @@ Next complete the later-trap continuation, source-chosen direct/synthetic copies
 and successor demand/definedness, ranked CFG/ABI and compatible production
 consumers. Broader conditions/per-edge consumers and remaining original140 stay
 open; first scalar/branch class is not full-domain completeness.
+
+The trapping-core checkpoint adds the original trapped-run counterpart: either
+the actual body has its first trap, or the complete actual core takes the
+source-selected branch with the exact remaining source fuel, a still-trapping
+source continuation, last-instruction position and guarded post-frame. Its
+complete original source witness enters, selects a reachable trapping successor,
+and runs the real csem core with the actual final aliases and entry seed. The
+expensive executable compiler fixture is a stable leaf; the witness uses the
+existing manual source-dominance argument rather than an unreducible fixedpoint
+decision. All1125targeted keys and77audit roots pass, standard axioms only; two
+packet MCP reviews report Std3/no warnings. Initial failed witness builds remain
+historical evidence. No conditional production activation or full author gates
+are claimed. Next: actual selected-successor values/demand/definedness, ranked
+CFG and ABI composition, then compatible production consumers and the remaining
+original140 obligations.
