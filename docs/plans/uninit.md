@@ -339,12 +339,30 @@ those is a call line either. Variants, new files beside the originals (the `*W.l
 same hypotheses as the original:
 - non-call items, `realizes_XN` in `RegLevelXN.lean`: `R.GoodX` replaced by `R.GoodXN` in the
   conclusion (`∀ i < n, R.GoodXN (iterN R.step i s)`); zero-length segments need none.
-- `call`/`try_call`, `realizes_callN`/`realizes_tryCallN`: the original conclusion and
+- `call`/`try_call`, `realizes_callN`/`realizes_tryCallN`: the contract restricted to states `P`
+  (`CalleeOkGP P`, `CalleeTryOkGP P`: `CallSoundCtlG`'s obligation only at states with `P`;
+  `CalleeOkG.p`/`CalleeTryOkG.p` restrict the old ones) and `hP : P s` at the segment's first
+  state (the `bl`/`blr` state); conclusion: the original's and
   `∃ i0 < n, R.CallSt (iterN R.step i0 s) ∧ ∀ i < n, i ≠ i0 → R.NoCallAt (iterN R.step i s)`.
-- composition `realizes_allC` (`RegLevelCorrectC.lean`): `RealizesC … R.step (Q ∧ AInv)
-  R.GoodX R.CallSt` (`countIn` per segment `= opCalls`), via `countIn_zero_of`/`countIn_one_of`.
-Families: core (GoodX/move, Op, Args, Next, Branch, Goto, composition) and the rest (Call/
-symAddr, Try, JT, Atomic, Tls, Frame/prologue).
+- composition `realizes_allC` (`RegLevelCorrectC.lean`): `RealizesCP … R.step (Q ∧ AInv)
+  R.GoodX R.CallSt P` (`RealizesC` from the states `P`: per segment `countIn = opCalls`), via
+  `countIn_zero_of`/`countIn_one_of` (`RegLevelCountP.lean`).
+Files: core `RegLevelNoCall`, `MoveN`, `OpN` (`RunsAsN`), `GotoN` (`reach_*XN`), `NextN`
+(`args`/`island`/`rets`/`udf` are zero-length); rest `GoodXN`, `CallN` (`symAddrN`), `TryN`,
+`JTN`, `AtomicN`, `TlsN`, `FrameN` (`q_initN`, `ret_machineN`).
+
+As built: `RegLevelCountP.lean`: `RealizesCP`, `RealizesCP.countedRun` (from `RealizesCP` at
+every index `n` with precondition `P n`, where `P n` holds at the states of the run from `s0`
+with count `n`: the machine with the count `stepC` realises the counted semantics under `Q`,
+*counter = count* and *on the run*), `Realizes.ofStepC`, `OnCall Mm fa base s n u` (`u` is a
+state of the run of `Mm` from `s` with `callsBefore … = n`), `onCall_of_run`.
+`RegLevelCorrectC.lean`: `regLevelCorrect_world_atC`/`regLevelCorrect_worldC`:
+`regLevelCorrect_world_atI`/`_worldI` (same conclusion) with the contracts of index `n`
+required only at `OnCall (ArmStepX (XI.at 0) H fa) fa base s n`, i.e. at the activation's own
+run where it has made `n` calls (the prophecy index of `ProphOk`). The prologue makes no call
+(`q_initN`), so the counted VCode run's counter is the machine's call count. Witnesses
+`RegLevelCorrectCWitness.lean` (`countIn` facts, `countedRun_any`, `worldC_const`). Next: the
+refined contract below, with `P n` from `ProphOk` at the `OnCall … n` state.
 
 **Refined call contract (next).** `X.call n` should be the *canonical* callee run from the
 VCode world `w` with the callee's stack region (the addresses `StackBelow K (sp w)`, inside the
