@@ -1,3 +1,4 @@
+import FV.E2E.SemanticNIBoundary
 import FV.Backend.Proof.StockConditionalDomainWitness
 import FV.Backend.Proof.StockConditionalTrapAtWitness
 import FV.Backend.Proof.StockConditionalClassWitness
@@ -140,3 +141,9 @@ import FV.Backend.Proof.StockConditionalEmissionWitness
 #print axioms Backend.Stock.ConditionalCfg.check_sound
 #print axioms Backend.Stock.Proof.ConditionalValues.conditional_source_checks_witness
 #print axioms Backend.Stock.Proof.ConditionalValues.checked_conditional_driver_witness
+
+#print axioms E2E.CfgBoundary.checked_step_frame
+#print axioms E2E.CfgBoundary.checked_step_transport
+#print axioms E2E.CfgBoundary.Realize.step_realize
+#print axioms E2E.CompiledSemanticNI.noTlsCfg
+#print axioms E2E.CompiledSemanticNI.of_checks

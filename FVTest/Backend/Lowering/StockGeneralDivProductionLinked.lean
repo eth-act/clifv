@@ -54,11 +54,11 @@ private def plan (s : LinkSpec) : Link.Ld.Plan :=
     syms := s.addrs.toArray.map fun (n, value) =>
       {name := symName n, value, info := 18, shndx := 0xfff1} }
 
-private def checkCase (out : System.FilePath) (count : Nat) (cleanup fallback : Bool) (layout : StockGeneralDivNIWitness.Layout) (mixed : Bool := false) (retainedMixed : Bool := false) (narrow : Bool := false) (mask : Bool := false) (cfg : Bool := false) (cfgentry : Bool := false) (cfgscalarentry : Bool := false) (linear : Bool := false) (forward : Bool := false) : IO Unit := do
-  let cfgentry := cfgentry || cfgscalarentry || linear || forward
+private def checkCase (out : System.FilePath) (count : Nat) (cleanup fallback : Bool) (layout : StockGeneralDivNIWitness.Layout) (mixed : Bool := false) (retainedMixed : Bool := false) (narrow : Bool := false) (mask : Bool := false) (cfg : Bool := false) (cfgentry : Bool := false) (cfgscalarentry : Bool := false) (linear : Bool := false) (forward : Bool := false) (conditional : Bool := false) : IO Unit := do
+  let cfgentry := cfgentry || cfgscalarentry || linear || forward || conditional
   let cfg := cfg || cfgentry
-  let actualLower := if retainedMixed then (if forward then Stock.LinearCfg.lowerValidated else if linear then Stock.TwoBlock.Entry.lowerValidated else if cfgentry then Stock.TwoBlock.lowerValidated else if cfg then Stock.Scalar.lowerValidated else Stock.Logical.lowerValidated) else if forward then Stock.ForwardCfg.lowerValidated else if linear then Stock.LinearCfg.lowerValidated else if cfgentry then Stock.TwoBlock.Entry.lowerValidated else if cfg then Stock.TwoBlock.lowerValidated else Stock.Scalar.lowerValidated
-  let lowerName := if retainedMixed then (if forward then "Backend.Stock.LinearCfg.lowerValidated" else if linear then "Backend.Stock.TwoBlock.Entry.lowerValidated" else if cfgentry then "Backend.Stock.TwoBlock.lowerValidated" else if cfg then "Backend.Stock.Scalar.lowerValidated" else "Backend.Stock.Logical.lowerValidated") else if forward then "Backend.Stock.ForwardCfg.lowerValidated" else if linear then "Backend.Stock.LinearCfg.lowerValidated" else if cfgentry then "Backend.Stock.TwoBlock.Entry.lowerValidated" else if cfg then "Backend.Stock.TwoBlock.lowerValidated" else "Backend.Stock.Scalar.lowerValidated"
+  let actualLower := if retainedMixed then (if conditional then Stock.ForwardCfg.lowerValidated else if forward then Stock.LinearCfg.lowerValidated else if linear then Stock.TwoBlock.Entry.lowerValidated else if cfgentry then Stock.TwoBlock.lowerValidated else if cfg then Stock.Scalar.lowerValidated else Stock.Logical.lowerValidated) else if conditional then Stock.ConditionalCfg.lowerValidated else if forward then Stock.ForwardCfg.lowerValidated else if linear then Stock.LinearCfg.lowerValidated else if cfgentry then Stock.TwoBlock.Entry.lowerValidated else if cfg then Stock.TwoBlock.lowerValidated else Stock.Scalar.lowerValidated
+  let lowerName := if retainedMixed then (if conditional then "Backend.Stock.ForwardCfg.lowerValidated" else if forward then "Backend.Stock.LinearCfg.lowerValidated" else if linear then "Backend.Stock.TwoBlock.Entry.lowerValidated" else if cfgentry then "Backend.Stock.TwoBlock.lowerValidated" else if cfg then "Backend.Stock.Scalar.lowerValidated" else "Backend.Stock.Logical.lowerValidated") else if conditional then "Backend.Stock.ConditionalCfg.lowerValidated" else if forward then "Backend.Stock.ForwardCfg.lowerValidated" else if linear then "Backend.Stock.LinearCfg.lowerValidated" else if cfgentry then "Backend.Stock.TwoBlock.Entry.lowerValidated" else if cfg then "Backend.Stock.TwoBlock.lowerValidated" else "Backend.Stock.Scalar.lowerValidated"
   let names := (List.range count).map fun i => s!"actual_stock_general_div_{i}"
   let narrowSource := fun (name : String) (i : Nat) =>
     let original := (FVTest.StockNarrowProductionRuntime.functions (configFor i))[i % 79]!.1
@@ -68,11 +68,11 @@ private def checkCase (out : System.FilePath) (count : Nat) (cleanup fallback : 
     ({original with name}).print
   let fixtureSource := fun name i =>
     if cfg then
-      let fixtures := if forward then FVTest.StockTwoBlockProductionRuntime.forwardFunctions (configFor i) else if linear then FVTest.StockTwoBlockProductionRuntime.linearFunctions (configFor i)
+      let fixtures := if conditional then FVTest.StockTwoBlockProductionRuntime.conditionalFunctions (configFor i) else if forward then FVTest.StockTwoBlockProductionRuntime.forwardFunctions (configFor i) else if linear then FVTest.StockTwoBlockProductionRuntime.linearFunctions (configFor i)
         else if cfgscalarentry then FVTest.StockTwoBlockProductionRuntime.scalarEntryFunctions (configFor i)
         else if cfgentry then FVTest.StockTwoBlockProductionRuntime.entryFunctions (configFor i)
         else FVTest.StockTwoBlockProductionRuntime.functions (configFor i)
-      let original := fixtures[if mixed && i == 0 then (if cfgscalarentry then 76 else if cfgentry then 12 else 9) else i % (if linear then 100 else if cfgscalarentry then 96 else if cfgentry then 16 else 12)]!.1
+      let original := fixtures[if mixed && i == 0 then (if cfgscalarentry then 76 else if cfgentry then 12 else 9) else i % (if conditional then 100 else if linear then 100 else if cfgscalarentry then 96 else if cfgentry then 16 else 12)]!.1
       ({original with name}).print
     else if mask && !retainedMixed then maskSource name i
     else if narrow && !retainedMixed then narrowSource name i
@@ -123,9 +123,9 @@ private def checkCase (out : System.FilePath) (count : Nat) (cleanup fallback : 
     throw (IO.userError "actual callback program checks failed")
   for e in results do
     let a ← get e.2
-    if cfg && !retainedMixed && (if forward then Stock.ForwardCfg.eligible e.1 else if linear then Stock.LinearCfg.eligible e.1 else if cfgentry then Stock.TwoBlock.Entry.eligible e.1 else Stock.TwoBlock.eligible e.1) then
+    if cfg && !retainedMixed && (if conditional then Stock.ConditionalCfg.eligible e.1 else if forward then Stock.ForwardCfg.eligible e.1 else if linear then Stock.LinearCfg.eligible e.1 else if cfgentry then Stock.TwoBlock.Entry.eligible e.1 else Stock.TwoBlock.eligible e.1) then
       let raw ← get (Stock.lower e.1)
-      require ((if forward then Stock.ForwardCfg.check e.1 raw.code else if linear then Stock.LinearCfg.check e.1 raw.code else if cfgentry then Stock.TwoBlock.Entry.check e.1 raw.code else Stock.TwoBlock.check e.1 raw.code) && ABIReadCfg.check e.1.sig raw.code &&
+      require ((if conditional then Stock.ConditionalCfg.check e.1 raw.code else if forward then Stock.ForwardCfg.check e.1 raw.code else if linear then Stock.LinearCfg.check e.1 raw.code else if cfgentry then Stock.TwoBlock.Entry.check e.1 raw.code else Stock.TwoBlock.check e.1 raw.code) && ABIReadCfg.check e.1.sig raw.code &&
         decide (a.vc = raw.code)) "CFG linked consumer fell back from actual Stock"
       if e.1.name == names[0]! then
         require (!(raw.edgeArgs.all (fun row => row.all (·.isEmpty))))
@@ -160,7 +160,7 @@ private def checkCase (out : System.FilePath) (count : Nat) (cleanup fallback : 
   let stack := SemanticStackBound.stackB ci
   require stack.isSome "fixed program has no stack bound"
   for perEntry in (if count > 32 then [false,true] else [false]) do
-    let label := s!"Stock{if forward then "CfgForwardProduction" else if linear then "CfgLinearProduction" else if cfgscalarentry then "CfgScalarEntryProduction" else if cfgentry then "CfgEntryProduction" else if cfg then "CfgProduction" else if mask then "MaskProduction" else if narrow then "NarrowProduction" else "GeneralDivProduction" ++ StockGeneralDivNIWitness.layoutName layout}{count}{if retainedMixed then "Retained" else ""}{if mixed then "Mixed" else ""}{if cleanup then "Cleanup" else "Plain"}{if fallback then "Fallback" else "Strict"}{if perEntry then "Entries" else "Global"}"
+    let label := s!"Stock{if conditional then "CfgConditionalProduction" else if forward then "CfgForwardProduction" else if linear then "CfgLinearProduction" else if cfgscalarentry then "CfgScalarEntryProduction" else if cfgentry then "CfgEntryProduction" else if cfg then "CfgProduction" else if mask then "MaskProduction" else if narrow then "NarrowProduction" else "GeneralDivProduction" ++ StockGeneralDivNIWitness.layoutName layout}{count}{if retainedMixed then "Retained" else ""}{if mixed then "Mixed" else ""}{if cleanup then "Cleanup" else "Plain"}{if fallback then "Fallback" else "Strict"}{if perEntry then "Entries" else "Global"}"
     let executable := out / (label ++ ".elf")
     IO.FS.writeBinFile executable file
     if count == 2 && fallback && !mixed then
@@ -193,7 +193,7 @@ private def checkCase (out : System.FilePath) (count : Nat) (cleanup fallback : 
     let proof := out / "Crates" / (label ++ ".lean")
     for (path, text) in FVTest.E2E.SemanticLinkProofWith.leanFilesSemanticWith lowerName input names names
         proof.toString label executable.toString cleanup true
-        (if perEntry then none else stack) (if perEntry then names else []) bg (lowerImport := if forward then "FV.Backend.Lowering.StockForwardCfgNI" else if cfgentry then "FV.Backend.Lowering.StockLinearCfgNI" else if cfg then "FV.Backend.Lowering.StockTwoBlockNI" else "FV.Backend.Lowering.StockScalarNI") do
+        (if perEntry then none else stack) (if perEntry then names else []) bg (lowerImport := if conditional then "FV.Backend.Lowering.StockConditionalCfgNI" else if forward then "FV.Backend.Lowering.StockForwardCfgNI" else if cfgentry then "FV.Backend.Lowering.StockLinearCfgNI" else if cfg then "FV.Backend.Lowering.StockTwoBlockNI" else "FV.Backend.Lowering.StockScalarNI") do
       if let some parent := (System.FilePath.mk path).parent then IO.FS.createDirAll parent
       IO.FS.writeFile path text
     IO.println s!"ACTUAL_STOCK_LINK {label}: program/checker/ELF/history/stack/proof emission passed"
@@ -280,10 +280,22 @@ def checkCfgForward (out : System.FilePath) : IO Unit := do
     checkCase out 6 cleanup true .unused true false false false false true true true true
     checkCase out 7 cleanup true .unused true false false false false true true true true
   checkCase out 33 true true .unused false false false false false true true true true
+def checkCfgConditional (out : System.FilePath) : IO Unit := do
+  IO.FS.createDirAll (out / "Crates")
+  for cleanup in [false,true] do
+    for fallback in [false,true] do
+      checkCase out 100 cleanup fallback .unused false false false false false false false false false true
+    checkCase out 2 cleanup true .unused false false false false false false false false false true
+    checkCase out 2 cleanup true .unused false true false false false false false false false true
+    checkCase out 6 cleanup true .unused true false false false false false false false false true
+    checkCase out 7 cleanup true .unused true false false false false false false false false true
+  checkCase out 33 true true .unused false false false false false false false false false true
 end FVTest.StockGeneralDivProductionLinkedFixture
 
 def main (args : List String) : IO Unit :=
-  if args.head? == some "--cfgforward" then
+  if args.head? == some "--cfgconditional" then
+    FVTest.StockGeneralDivProductionLinkedFixture.checkCfgConditional (System.FilePath.mk (args[1]?.getD "/tmp/stock-cfgconditional-linked-fixture"))
+  else if args.head? == some "--cfgforward" then
     FVTest.StockGeneralDivProductionLinkedFixture.checkCfgForward (System.FilePath.mk (args[1]?.getD "/tmp/stock-cfgforward-linked-fixture"))
   else if args.head? == some "--cfglinear" then
     FVTest.StockGeneralDivProductionLinkedFixture.checkCfgLinear (System.FilePath.mk (args[1]?.getD "/tmp/stock-cfglinear-linked-fixture"))

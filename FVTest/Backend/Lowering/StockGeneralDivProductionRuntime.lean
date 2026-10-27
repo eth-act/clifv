@@ -166,7 +166,9 @@ def check : IO Unit := do
 end FVTest.StockGeneralDivProductionRuntime
 
 def main (args : List String) : IO Unit :=
-  if args == ["--cfgforward"] then
+  if args == ["--cfgconditional"] then
+    FVTest.StockTwoBlockProductionRuntime.checkConditional FVTest.StockGeneralDivProductionRuntime.checkedRegalloc2
+  else if args == ["--cfgforward"] then
     FVTest.StockTwoBlockProductionRuntime.checkForward FVTest.StockGeneralDivProductionRuntime.checkedRegalloc2
   else if args == ["--cfglinear"] then
     FVTest.StockTwoBlockProductionRuntime.checkLinear FVTest.StockGeneralDivProductionRuntime.checkedRegalloc2

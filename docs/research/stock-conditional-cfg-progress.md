@@ -346,3 +346,28 @@ continue ranked/other conditional classes, nonempty per-edge consumers, other
 condition/table/bit-test families, loops/effects/calls and every remaining140
 simulation/completeness obligation. No full author gates or conditional production
 activation is claimed by this proof checkpoint.
+
+The activation implementation now connects the default compiler, semantic
+checker, verified linker and generated-proof consumers. Appended route9 retains
+all0–8 and complete ForwardCfg pipeline fallback on the unchanged original input
+and settings. The existing ABIReadCfg checker initially permitted only jumps;
+its proved read boundary now also permits virtual integer zero/nonzero branches.
+World-independent branch semantics supplies frame, transport and realization;
+the no-TLS proof and semantic-check case split are updated with old public
+headers preserved. This closes the concrete unconditional-fallback boundary.
+
+The shared integration framework adds100conditional sources across the existing
+six ABI configurations, both allocators and cleanup modes. Distinct branch
+results detect reversed choice; early/late scalar operations, first/later traps,
+inherited results, stack arguments and duplicate-destination critical nodes are
+included. The framework requires actual Stock code and tests complete previous
+pipeline retry; old fixture modes and identities remain.
+
+Static checks pass:2435consumer keys,317runtime-fixture keys,1631linked-fixture
+keys and828read-boundary keys. The113-root focused audit preserves all108prior
+sets; the five preserved read/consumer headers are exact and their axioms are
+standard-only. Two bundled boundary/consumer MCP reviews report Std3/no warnings.
+Python validation scripts compile and effective nproc is2. These are preflight
+checks: full author gates, actual native/link/generated-proof execution, both
+identity/stage modes, examples/crates and frozen parent/candidate byte comparison
+are still pending. No conditional PR/merge or full-goal completion is claimed.

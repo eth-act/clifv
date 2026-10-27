@@ -146,7 +146,7 @@ theorem noTlsCfg {sig : Clif.Signature} {code : VCode}
   obtain ⟨b,hb⟩ := List.mem_iff_getElem?.mp (Array.mem_toList_iff.mpr member)
   obtain ⟨k,hi⟩ := List.mem_iff_getElem?.mp (Array.mem_toList_iff.mpr member')
   have supported := CfgBoundary.checked_instruction checked (by simpa using hb) (by simpa using hi)
-  cases i <;> simp_all [Backend.ABIReadCfg.instruction,Backend.ABIReadDiv.instruction,Backend.ABIReadDiv.additional,Backend.ABIReadScalar.instruction,Backend.ABIReadScalar.constant,Backend.ABIReadScalar.shift,Backend.ABIReadScalar.extension,Backend.ABIReadScalar.bitProducer,Backend.ABIReadScalar.popcountProducer,Backend.ABIReadScalar.comparisonProducer,Backend.ABIReadScalar.booleanProducer,Backend.ABIReadScalar.highmulProducer,Backend.ABIReadScalar.extendedComparisonProducer,Backend.ABIReadScalar.maskProducer,
+  cases i <;> simp_all [Backend.ABIReadCfg.instruction,Backend.ABIReadCfg.additional,Backend.ABIReadDiv.instruction,Backend.ABIReadDiv.additional,Backend.ABIReadScalar.instruction,Backend.ABIReadScalar.constant,Backend.ABIReadScalar.shift,Backend.ABIReadScalar.extension,Backend.ABIReadScalar.bitProducer,Backend.ABIReadScalar.popcountProducer,Backend.ABIReadScalar.comparisonProducer,Backend.ABIReadScalar.booleanProducer,Backend.ABIReadScalar.highmulProducer,Backend.ABIReadScalar.extendedComparisonProducer,Backend.ABIReadScalar.maskProducer,
     Backend.ABIReadFlags.instruction,Backend.ABIReadOnly.instruction,
     Backend.DeadCleanup.pureForm,Backend.ABIReadFlags.extra]
 
