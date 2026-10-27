@@ -198,3 +198,32 @@ single-world transfer. Then compose memory bodies with ABI entry/return, complet
 paired consumer and production activation, and extend beyond the first function
 class. This checkpoint is not whole-function NI, activation, an agreement gain,
 or completion of original140. All saved work and prior variants remain.
+
+
+## Original source postconditions at paired worlds
+
+`StockMemoryPairedSource` connects the actual guarded paired record to the
+original source step and both complete postconditions. Semantic inclusion and
+existing single-world transfer reuse the restricted-DFG, demand, frame, memory
+and result-binding proofs. An indexed wrapper retains both original scan guards.
+`StockMemoryPairedScan` supplies the existing `ScanFallRefines` interface at
+`pairSem csem`, with the original RelW relations and initialized-memory Zof
+agreement. Original relations derive read permissions; existing guarded lockstep
+builds the paired run. No new accepted-source or world certificate is supplied.
+
+An inhabited indexed source witness and a closed pairSem scan witness execute
+the actual final code on distinct worlds and the live nonzero heap. Stack pointer,
+no-error and constant TLS premises are explicitly inhabited. Maintained gates
+in `/tmp/stock-memory-paired-source-normal-gates-v1` pass4235 normal modules,
+5014 affected tool jobs and77 standard-only memory roots. All72 prior memory
+axiom sets and both previous E2E witness headers are exact; every prior backend
+proof source is unchanged. The full98-file audit belongs to the preceding381e
+checkpoint and is not relabeled as rerun. The failed first gate attempt (missing
+explicit masked-register decidability in a witness) is retained with the passing
+retry. Compiler/runtime production behavior is unchanged.
+
+Next share source-derived retained load-body data between the existing
+single-world body/domain and paired body composition. Then complete paired ABI
+entry/return and all production consumers, extend captured two-block/nop memory
+functions and continue the entire original140 scope. No function-NI, production
+activation, agreement gain or whole-goal completion is claimed at this checkpoint.
