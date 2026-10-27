@@ -132,7 +132,7 @@ theorem calleeUnwOkG_raise (F : BitVec 64 → Prop) (K : Nat) (G : BitVec 64 →
     intro info i _ _ s _ _ _ c wh ops regs i' w _ _ _ _ hsw _ herr _ obj w' h
     simp only [IselSimUWitness.XR, Option.some.injEq, Prod.mk.injEq] at h
     obtain ⟨rfl, rfl⟩ := h
-    exact ⟨s, rfl, hsw, ⟨rfl, fun _ _ => rfl⟩, herr, rfl, fun _ _ _ _ => rfl, fun _ _ _ => rfl⟩
+    exact ⟨s, rfl, hsw, ⟨rfl, fun _ _ => rfl, rfl⟩, herr, rfl, fun _ _ _ _ => rfl, fun _ _ _ => rfl⟩
   noRaise := fun _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ h => absurd rfl h
   excl := fun _ _ _ h => absurd rfl h
 

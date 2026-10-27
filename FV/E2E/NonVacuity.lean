@@ -59,11 +59,11 @@ abbrev movI : Insn := .mov true Reg.fp .sp
 /-- `ldp x29, x30, [sp], #16` -/
 abbrev ldpI : Insn := .ldp Reg.fp Reg.lr (.spPostIndexed 16)
 
-theorem prologue0 : prologueLines 0 = [.ins stpI, .ins movI] := by
-  rw [prologueLines_eq]; simp [spAdjLines]
+theorem prologue0 : prologueLines [] 0 = [.ins stpI, .ins movI] := by
+  rfl
 
-theorem epilogue0 : epilogueLines 0 = [.ins ldpI, .ins .ret] := by
-  rw [epilogueLines_eq]; simp [spAdjLines]
+theorem epilogue0 : epilogueLines [] 0 = [.ins ldpI, .ins .ret] := by
+  rfl
 
 theorem runIns_stp (s : Arm.ArmState) (hal : Arm.CheckSPAlignment s) :
     runIns stpI s = Arm.w .PC (Arm.r .PC s + 4#64)
@@ -369,7 +369,7 @@ theorem calleeOk_of_keepsBut {F : BitVec 64 → Prop} {K : Nat} {X : ExtSem} {H 
         some (H.call (match ic.dest with | .sym n => some n | .reg _ => none) s) := by
       simp only [callExec]; exact ite_eq_left_iff.mpr fun h => absurd hal h
     refine ⟨_, hex, ⟨fun f hf' => ?_, fun a ha => ?_, ?_⟩,
-      ⟨hf _ (by simp) (by simp), fun a ha => hnb a ha.2⟩, fun p hp => ?_, fun r hr _ _ => ?_,
+      ⟨hf _ (by simp) (by simp), fun a ha => hnb a ha.2, hf _ (by simp) (by simp)⟩, fun p hp => ?_, fun r hr _ _ => ?_,
       fun r _ hcs => ?_⟩
     · have h1 : f ≠ .PC := fun e => hf' (by rw [e]; simp [Masked])
       have h2 : f ≠ .GPR 30#5 := fun e => hf' (by rw [e]; simp [Masked])
