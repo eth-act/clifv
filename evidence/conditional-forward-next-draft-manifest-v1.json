@@ -1,0 +1,16 @@
+{
+  "head": "7170a146609c5d1094e8c0bb4d67f738c8f5abd2",
+  "utc": "2026-10-27T10:07:05.578094+00:00",
+  "state": "Production7170a146 frozen; normal4172/tools4976/trust96 and full regression/examples passed; current/retained integration and post gates pending. Scratch next-control metadata universalSSA/originalDominated variant and nonentry parameter witness all3rootsStd3. Historical failed opaque DFG kernel-check draft retained; no sorry in passing source.",
+  "files": {
+    "/tmp/stock-conditional-forward-cfg-next-parameter-metadata-witness-draft-v2.log": "e55e6716487caf3634eabdd4a9aa7b21e33598032f1f21ff562062bd5c033a4f",
+    "/tmp/stock-conditional-forward-cfg-next-parameter-metadata-witness-draft.log": "562f2d6edd56edfa75b994b390bb79eda30cbaef19bb9046e971a43a5a736da7",
+    "/tmp/stock-conditional-forward-cfg-next-parameter-metadata-draft.log": "e3575aa8c52c13538a0f602f91c7aa75721484304c0486ee8a7c0da694d34579",
+    "/tmp/stock-conditional-forward-cfg-next-parameter-metadata-draft.lean": "c893a7a3fbb5d50215c9ae11f7377fd6a39a4ffb6ae62571295cef5b2d4dfd0b",
+    "/tmp/stock-conditional-forward-cfg-resource-allocation-v1.json": "9ac575be44dfbf07500161b54e221b6c8a15e36c31beffab61b496a8e925f11a",
+    "/tmp/stock-conditional-forward-cfg-normal-gates-v1/receipt.json": "11a1786a0ed355ffd9bee56a3c1dc5d243f2c640988ec3fec65adfd750e9c5ec",
+    "/tmp/stock-conditional-forward-cfg-full-gates-v1/receipt.json": "e7ca676e90345283e812c90d7abf4eca51e3ff7cbd12e2a51b930f75556b00b0",
+    "/tmp/stock-conditional-forward-cfg-full-gates-v1/identity-stage-parity-report.json": "ba172ba00bbadaf54c6629b45f40c52a7673500343928840c34bc02ac7b167c8",
+    "/tmp/stock-conditional-forward-cfg-preflight-verification-v1.json": "d813d5272fbc838e427e60c77c5534a47c3a4455e7e7223ad1daa3853e549470"
+  }
+}
