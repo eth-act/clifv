@@ -57,7 +57,7 @@ theorem skipStage_specU {f : Clif.Function} {vc : VCode} (h : lowerCheckU f vc =
       unfold skipStage
       cases hE : Compile.functionE f
       · exact .inl (by simp [hE])
-      · rw [if_pos (by simp [hlc])]
+      · rw [ite_cond_eq_true _ _ (by simp [hlc])]
         unfold skipDead
         rw [hb]
         simp only
