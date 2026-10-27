@@ -40,7 +40,7 @@ describes. Then, from the repository root, build the tools and run an example:
 ```
 scripts/memcap.sh lake build lean-backend clif-decode
 scripts/memcap.sh scripts/build-cg-clif.sh
-cd rust && ../scripts/memcap.sh cargo build --release -p cargo-fv -p clif-data-export
+cd rust && ../scripts/memcap.sh cargo build --release -p cargo-fv -p clif-data-export -p lean-regalloc
 export PATH=$PWD/target/release:$PATH
 cd ../examples/fv-demo && cargo fv test
 ```
