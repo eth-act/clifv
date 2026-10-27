@@ -49,9 +49,11 @@ theorem retEnd_privP {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb 
       RetEnd R ra env p MR slots r₀ x s' := by
   have hret0 := hret
   obtain ⟨b, k, allocs, its, m, w, vb, us, ops, ρ, vals, cm, n1, hq, hvb, hi, -, -, -, -, -, hgood,
-    hpc1, herr1, hsp1, hmem1, hprog1, hcs1, -⟩ := hret
-  obtain ⟨n2, hpath, hpc2, herr2, -, hmem2, hprog2, hnr, hn0, hjret⟩ := rets_privP hR hent hq hvb hi
-  have hxp : x.program = R.fb.program R.base := (q_stRel hq).prog
+    hpc1, herr1, hsp1, hmem1, ⟨hprog1, hfp1⟩, hcs1, -⟩ := hret
+  obtain ⟨mt, hqt⟩ := qa_q hq
+  obtain ⟨n2, hpath, hpc2, herr2, -, hmem2, hprog2, -, hnr, hn0, hjret⟩ :=
+    rets_privP hR hent hqt hvb hi
+  have hxp : x.program = R.fb.program R.base := (q_stRel hqt).prog
   -- the two step counts agree
   have hn : n1 = n2 := by
     rcases Nat.lt_trichotomy n1 n2 with h | h | h
@@ -68,8 +70,8 @@ theorem retEnd_privP {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb 
       exact hs herr1
   subst hn
   exact ⟨n1, fun i hi => ⟨(hpath i hi).1, (hpath i hi).2.1, (hgood i hi).err⟩,
-    ⟨hpc1, herr1, hsp1, fun a ha => by rw [hmem1]; exact gkeep_of_q hq a ha, hcs1⟩, hmem1, hprog1,
-    hnr, hn0, hjret, hret0⟩
+    ⟨hpc1, herr1, hsp1, fun a ha => by rw [hmem1]; exact gkeep_of_q hqt a ha, hfp1, hcs1⟩, hmem1,
+    hprog1, hnr, hn0, hjret, hret0⟩
 
 variable {L : Link} {FB : LFn} {s0 : ArmState} {K : Nat} {G : BitVec 64 → Prop}
 

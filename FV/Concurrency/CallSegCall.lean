@@ -255,7 +255,9 @@ theorem ret_lt {R : RL} (hR : R.Wf) {ra : BitVec 64}
   exact hs herr
 
 /-- **A callee's `RetEnd` at every step count reaching its return address without error**
-(module doc). -/
+(module doc). The relation at the `rets` pause is `RetEnd`'s `QA` (in a return tail after the
+callee restores, which emit no code, the store differs from the machine at the restored
+registers). -/
 theorem retEnd_n {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb R.base ra R.s0)
     (hra : ∀ k < R.fb.words.size, ra ≠ R.base + BitVec.ofNat 64 (4 * k))
     {env : Clif.Env} {p : Clif.Program} {MR : MemRelT} {slots : List (Clif.SlotId × Nat)}
@@ -263,7 +265,7 @@ theorem retEnd_n {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb R.ba
     {n : Nat} (hpc : Arm.r .PC (iterN R.step n x) = ra)
     (herr : Arm.r .ERR (iterN R.step n x) = .None) :
     ∃ b k allocs its m w vb us ops ρ vals cm,
-      Q R x (.run ⟨b, .op k allocs :: its, m, w⟩) ∧ R.vc.blocks[b]? = some vb ∧
+      QA R x (.run ⟨b, .op k allocs :: its, m, w⟩) ∧ R.vc.blocks[b]? = some vb ∧
       vb.insts[k]? = some (.rets us) ∧ (MInst.rets us).operands = .ok ops ∧
       Clif.step env p s' = .done vals cm ∧ PrefixHold vals (vuses ops ρ) ∧ MR slots s'.mem w ∧
       cm = (s'.mem.free (slots.map (·.2))).leave ∧ (iterN R.step n x).mem = x.mem ∧
@@ -271,8 +273,8 @@ theorem retEnd_n {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb R.ba
         regVal (iterN R.step n x) q = y := by
   obtain ⟨n2, hpath, hRC2, -, hprog2, -, -, -, hret⟩ := retEnd_privP hR hent hra hret
   obtain ⟨b, k, allocs, its, m, w, vb, us, ops, ρ, vals, cm, n1, hq, hvb, hi, hops, hdone, hpre,
-    hMR, hcm, -, hpc1, herr1, -, hmem1, hprog1, -, hus⟩ := hret
-  have hxp : x.program = R.fb.program R.base := (q_stRel hq).prog
+    hMR, hcm, -, hpc1, herr1, -, hmem1, ⟨hprog1, -⟩, -, hus⟩ := hret
+  have hxp : x.program = R.fb.program R.base := (q_stRel (qa_q hq).choose_spec).prog
   have heq : ∀ n', Arm.r .PC (iterN R.step n' x) = ra → Arm.r .ERR (iterN R.step n' x) = .None →
       n' = n2 := fun n' hp he => by
     rcases Nat.lt_trichotomy n' n2 with h | h | h
@@ -339,16 +341,18 @@ theorem resume_ret {RA RB : RL} (hRA : RA.Wf) (hRB : RB.Wf) (hgv : RA.gv = fun _
       MatchRun cc ins ckeep r₀ cM'' vP'' ∧
       Q RA (set_program (iterN RB.step n xB) (RA.fb.program RA.base)) (.run cM'') ∧
       AInv RA (.run cM'') := by
-  obtain ⟨b, k, allocs, its, m, w, vb, us, ops, ρ, vals', cm, hqB, hvb, hi, -, hdone', hpre, hMR,
+  obtain ⟨b, k, allocs, its, m, w, vb, us, ops, ρ, vals', cm, hqaB, hvb, hi, -, hdone', hpre, hMR,
     hcm, hmem, hus⟩ := retEnd_n hRB hent hra hret hy.1 hy.2.1
+  obtain ⟨mtB, hqB⟩ := qa_q hqaB
   rw [hdone] at hdone'
   cases hdone'
   have hxp : x.program = RA.fb.program RA.base := (q_stRel hq).prog
   have hB : MemRel RB.F Γ.syms sR.mem w := hΓB ▸ hsyms ▸ hMR.1.1
   have hy' : RetC RB ra r₀B (set_program (iterN RB.step n xB) (RA.fb.program RA.base)) := by
-    obtain ⟨h1, h2, h3, h4, h5⟩ := hy
-    refine ⟨by rw [r_set_program]; exact h1, by rw [r_set_program]; exact h2, ?_, h4, ?_⟩
+    obtain ⟨h1, h2, h3, h4, h29, h5⟩ := hy
+    refine ⟨by rw [r_set_program]; exact h1, by rw [r_set_program]; exact h2, ?_, h4, ?_, ?_⟩
     · show Arm.r _ _ = _; rw [r_set_program]; exact h3
+    · show Arm.r _ _ = _; rw [r_set_program]; exact h29
     · intro r hr; rw [regVal_set_program]; exact h5 r hr
   obtain ⟨vV'', vP'', cM'', h1, h2, h3, h4, h5⟩ := CallArity.resume_allA hRA hRB hgv hX0 H hchk
     har hlow hind hv hnt hout0 hΓF hslot hsym H3 hc hvdef hq hA hP hat hm2 hm3 hm4 hent hy' hfx

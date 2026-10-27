@@ -78,6 +78,10 @@ theorem checksPost :
     instsLB = true ∧ 3 = (vcpC.blocks[0]!).insts.size := by
   native_decide
 
+/-- The caller's moves after its call have no `ret` (as a check). -/
+theorem postMvC_noRet : (postMv (.x 0)).all (moveNoRetB (act vcpC rfC)) = true := by
+  native_decide
+
 theorem instL1 : ∃ fl, (vcpL.blocks[0]!).insts[1]? =
       some (.loadAcquire (.int 64) (.vreg 2 .int) (.vreg 0 .int) fl) ∧
     FormOk (act vcpL rfL).ctx (.loadAcquire (.int 64) (.vreg 2 .int) (.vreg 0 .int) fl) = true := by
@@ -411,10 +415,11 @@ theorem mc2_ret {x : ArmState} (hx : x.program = pL) (hr : IsRetL x) :
   simp only [MC2, hx, ite_true, hr]
 
 /-- **The caller's state after the callee returned** (as the caller resumes): at the return
-address, no error, its `sp`, its addresses as at the call, its program. -/
+address, no error, its `sp`, its addresses as at the call, its program, its x29 (the callee's
+epilogue restores it; the caller's `StRel.fp` needs it). -/
 def PostA (s y : ArmState) : Prop :=
   Arm.r .PC y = Arm.r .PC s + 4#64 ∧ Arm.r .ERR y = .None ∧ E2E.spv y = E2E.spv s ∧
-    (∀ a, RC.F a → y.mem a = s.mem a) ∧ y.program = pC0
+    (∀ a, RC.F a → y.mem a = s.mem a) ∧ y.program = pC0 ∧ E2E.xreg 29 y = E2E.xreg 29 s
 
 /-- **The callee's return** (`Ret` of `link_compose`): the caller's Arm state after it, the
 caller's CLIF state ready to return. -/
@@ -512,7 +517,7 @@ theorem calleePost (hS : StRel RC s m w₀C) {x : ArmState} {m2 : Loc → CV} {w
     (fun p hp => moves_noRet (R := RLx s) checksPost.2.2.1 p (by simp [hp]))
   obtain ⟨mt1, hq1⟩ := qa_q hqa1
   have hvb : (RLx s).vc.blocks[0]? = some vcpL.blocks[0]! := vb0L
-  obtain ⟨n2, hp2, hpc2, herr2, hsp2, hmem2, hprog2, hnr2, hn2, j, t, hj, hpcj⟩ :=
+  obtain ⟨n2, hp2, hpc2, herr2, hsp2, hmem2, hprog2, hx29, hnr2, hn2, j, t, hj, hpcj⟩ :=
     rets_privP hR (abiX hS) hq1 hvb instL2
   have hstr := q_stRel hq1
   have hshift : ∀ i, iterN (RLx s).step i (iterN (RLx s).step n1 x) =
@@ -531,7 +536,7 @@ theorem calleePost (hS : StRel RC s m w₀C) {x : ArmState} {m2 : Loc → CV} {w
   · rw [show n1 + n2 - 1 = n1 + (n2 - 1) by omega, ← hshift]
     exact ⟨j, t, hj, hpcj⟩
   · rw [← hshift]
-    refine ⟨?_, ?_, ?_, fun a ha => ?_, rfl⟩
+    refine ⟨?_, ?_, ?_, fun a ha => ?_, rfl, ?_⟩
     · rw [E2E.r_set_program, hpc2]
     · rw [E2E.r_set_program, herr2]
     · show Arm.r (.GPR 31#5) (set_program _ _) = Arm.r (.GPR 31#5) s
@@ -543,6 +548,12 @@ theorem calleePost (hS : StRel RC s m w₀C) {x : ArmState} {m2 : Loc → CV} {w
     · rw [E2E.mem_set_program, hmem2, hstr.gkeep a ha]
       show (enterL s).mem a = _
       rw [mem_enterL]
+    · show Arm.r (.GPR 29#5) (set_program _ _) = Arm.r (.GPR 29#5) s
+      rw [E2E.r_set_program]
+      show E2E.xreg 29 _ = _
+      rw [hx29]
+      show Arm.r (.GPR 29#5) (enterL s) = _
+      rw [r_enterL (by simp) (by simp)]
 
 /-- **A step of private events realizes an event-free CLIF step.** -/
 theorem realized_privStep {R : RL} {env : Clif.Env} {p : Clif.Program} {l : Lab} {L : List Lab}

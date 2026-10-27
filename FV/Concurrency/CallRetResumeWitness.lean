@@ -70,12 +70,14 @@ theorem resume_RX : ∃ (m m' : Loc → CV) (its : List RItem),
   obtain ⟨m', hms, hst'⟩ := mstep_callR hq vb0C hi hk hops hsz
     (hpresR_of_callee wfRC (q_stRel hq) defsC1 hcs spOf_yX hmem) (hkeep_of_callee hcs)
     VCodeThread.Witness.X0 yX
-  refine ⟨m, m', _, hq, hms, resumeQW wfRC hq vb0C hi ?_ ?_ spOf_yX hmem ?_ hst'
+  refine ⟨m, m', _, hq, hms, resumeQW wfRC hq vb0C hi ?_ ?_ spOf_yX hmem ?_ ?_ hst'
     (SameWorld.refl _ _)⟩
   · simp [yX, yR, r_of_w_different]
   · unfold yX yR
     rw [r_of_w_different (by simp), r_of_w_different (by simp)]
     exact (q_stRel hq).err
   · unfold yX; rw [w_program]; exact w_program
+  · unfold yX yR E2E.xreg
+    rw [r_of_w_different (by simp), r_of_w_different (by simp)]
 
 end Concurrency.CallRetResume.Witness

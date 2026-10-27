@@ -77,13 +77,14 @@ theorem resume_RC : ∃ (m m' : Loc → CV) (its : List RItem),
     fun c _ _ => by unfold yR; rw [regVal_w_pc]
   obtain ⟨m', hms, hst'⟩ := mstep_call hq vb0C hi hk hops hsz hpres hkeep
     VCodeThread.Witness.X0 yR
-  refine ⟨m, m', _, hq, hms, resumeQW wfRC hq vb0C hi (by simp [yR]) ?_ ?_ ?_ ?_ hst'
+  refine ⟨m, m', _, hq, hms, resumeQW wfRC hq vb0C hi (by simp [yR]) ?_ ?_ ?_ ?_ ?_ hst'
     (SameWorld.refl _ _)⟩
   · unfold yR; rw [r_of_w_different (by simp)]
     exact (q_stRel hq).err
   · simp only [yR, spOf, r_of_w_different (show StateField.GPR 31#5 ≠ .PC by simp)]
   · intro a _; unfold yR; rw [ArmFoot.w_mem]
   · exact w_program
+  · unfold yR E2E.xreg; rw [r_of_w_different (by simp)]
 
 theorem prepC : prepCheck vcC vcpC = true := by native_decide
 

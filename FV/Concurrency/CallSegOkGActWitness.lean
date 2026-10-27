@@ -116,6 +116,7 @@ theorem chainP_resume_C {env : Clif.Env} (henv : env.extern "ld" = none) {c : Bi
     ∃ g : Act, g.F = callerF ∧ g.s0 = sC0 ∧ g.f = fC ∧ StatOk link2 env pCL g ∧
       ∀ (r₀ : Reg → CV) (s : Clif.State) (vV vP : VState CV ArmState) (cM : MState CV ArmState)
         (x : ArmState) (mon : Mon),
+        (∀ r ∈ (g.RL link2).af.saves, ckeep r (r₀ r) = ckeep r (regVal (g.RL link2).s0 r)) →
         Match g.f g.ctx g.R g.gn g.bl g.A (RelW g.Γ g.f g.c) g.slots s vV →
         PMatch g.vc g.F.vc (csem (g.RL link2).F (g.RL link2).ctx (g.RL link2).X)
           (cEvs (g.RL link2).F (g.RL link2).ctx) g.Lp g.ss' (.run vV) (.run vP) →
@@ -123,8 +124,8 @@ theorem chainP_resume_C {env : Clif.Env} (henv : env.extern "ld" = none) {c : Bi
         AInv (g.RL link2) (.run cM) → ChainP link2 env pCL g r₀ (x, mon) s := by
   obtain ⟨g, -, hF, hs0, -, -, -, hf, -, -, -, -, -, -, -, hS⟩ :=
     statOk_C henv hc slots [] callerF []
-  exact ⟨g, hF, hs0, hf, hS, fun r₀ s vV vP cM x mon hm2 hm3 hm4 hq hA =>
-    chainP_resume hS hm2 hm3 hm4 hq hA⟩
+  exact ⟨g, hF, hs0, hf, hS, fun r₀ s vV vP cM x mon hr₀ hm2 hm3 hm4 hq hA =>
+    chainP_resume hS hr₀ hm2 hm3 hm4 hq hA⟩
 
 open RealizeCompiled.WitnessL in
 /-- `atomic_load`'s activation entered at `s0` by the caller's `bl`, below `extC`. -/
