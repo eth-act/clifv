@@ -66,15 +66,16 @@ theorem chksWithT_resultsCleanupT {I : LinkInput} (hin : InScopePT I = true)
     | ok a => exact ⟨a, rfl⟩
   rw [hpr] at hfit hra hdep ho
   obtain ⟨hl, hp, -, hlr, -, -, -, -⟩ := pipeCleanupT_spec hpr
-  obtain ⟨raw, hraw, hvp⟩ := prune_prepare_ok_inv hp
+  obtain ⟨raw, hraw, hvp⟩ := cleanupStage_prepare_ok_inv hp
   have hga : getOk (Except.ok (ε := String) a) = a := rfl
   simp only [outChksT, List.all_cons, List.all_nil, Bool.and_true, Bool.and_eq_true, hga,
     progOf_resultsCleanupT] at ho
   obtain ⟨hca, hcov, hrets, hent, hout, hsite, hsr, hci⟩ := ho
   have hS := lowerScopeT_of hs
   have hlc := lowerCheckT_complete (dominated_of hd) hS hl
-  have hpc := Prep.prepCheck_complete hp (prune_prepDomain (Spill.prepDomain_ofT (dominated_of hd) hS hl))
-  have hfr := frame_cleanup_of_lower hl hraw hvp hlr
+  have hpc := Prep.prepCheck_complete hp
+    (cleanupStage_prepDomain _ (Spill.prepDomain_ofT (dominated_of hd) hS hl))
+  have hfr := frame_stage_of_lower hl hraw hvp hlr
   obtain ⟨hdecl, hindB, -, -⟩ := hpg _ hgP
   rw [List.all_eq_true]
   intro c hc'

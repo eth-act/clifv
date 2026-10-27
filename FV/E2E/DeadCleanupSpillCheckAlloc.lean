@@ -79,7 +79,8 @@ theorem spillDefined_cleanup (hD : SpillDefinedHyp) {p : Clif.Program} {f : Clif
     ∃ D, Spill.SpillAvail (stagePrepared f vc vcp) D ∧ ∀ v, D 0 v = false := by
   obtain ⟨D, hav, hD0⟩ := hD p f vc vcp hsub har hd hs hen hl hp
   have hdom := prepDomain_of_lower hs hl hs.nonempty
-  obtain ⟨D', hav', hD0'⟩ := skipPrepared_spillAvail (f := f) hdom hp hav hD0
+  obtain ⟨D', hav', hD0'⟩ :=
+    skipPrepared_spillAvail (f := f) hdom (Spill.classesOkM_lower hs hl) hp hav hD0
   have hps : Backend.prepare (skipStage f vc) = .ok (mapBlocks (skipBlock (stageMask f vc)) vcp) := by
     rw [prepare_skipStage, hp]; rfl
   exact ⟨restrictedD (skipStage f vc) D',

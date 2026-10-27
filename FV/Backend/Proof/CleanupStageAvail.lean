@@ -70,7 +70,7 @@ private theorem sa_walk : ∀ (ms : List MInst) (m : List Bool), m.length = ms.l
       AgreeOff N (ms.foldl (fun A i => availInst i A) A)
         ((maskKeep m ms).foldl (fun B i => availInst i B) B)
   | [], m, _, _, _, A, B, h, _ => by
-    simp only [maskKeep, List.nil_zip, List.filterMap_nil, List.foldl_nil]
+    simp only [maskKeep, List.zip_nil_left, List.filterMap_nil, List.foldl_nil]
     exact ⟨trivial, h⟩
   | i :: ms, [], hl, _, _, _, _, _, _ => by simp at hl
   | i :: ms, k :: m, hl, hd, hu, A, B, h, hr => by
@@ -138,7 +138,7 @@ private theorem sa_block {T : VBlock → VBlock} (hT : DelMap T) {raw : VCode}
 restricted to the non-dead vregs holds of the mapped code. -/
 theorem skipAvail_of {T : VBlock → VBlock} (hT : DelMap T) (raw : VCode)
     (D : Nat → Nat → Bool) (hav : SpillAvail raw D)
-    (hok : ∀ b vb, raw.blocks[b]? = some vb → SkipBlockOk N T vb) :
+    (hok : ∀ (b : Nat) (vb : VBlock), raw.blocks[b]? = some vb → SkipBlockOk N T vb) :
     SpillAvail (mapBlocks T raw) (fun b v => D b v && !N v) := by
   constructor
   · intro ss ps hc b vb' k i ops hb hi hops o ho hu
@@ -169,7 +169,7 @@ theorem skipAvail_of {T : VBlock → VBlock} (hT : DelMap T) (raw : VCode)
       | none => simp [ha] at hold
       | some a =>
         simp only [ha] at hold ⊢
-        obtain ⟨-, -, -, -, hargs⟩ := hok0
+        obtain ⟨-, -, -, -, -, hargs⟩ := hok0
         rw [← hA a.homeNum (hargs a (Array.mem_toList_iff.mpr (Array.mem_of_getElem? ha)))]
         exact hold
 
@@ -251,7 +251,6 @@ private theorem sa_orig {vc : VCode} {mask : Nat → List Bool}
     refine ⟨mask b, ?_, hfit.1, ?_, ?_, ?_, hA⟩
     · unfold skipBlock
       rw [hlab, if_pos hfit]
-      simp
     · intro k x hx hm d hdx
       obtain ⟨y, hy, hop, -⟩ := hrel k x hx
       have hdy : d ∈ vdefs y := by
@@ -293,7 +292,7 @@ theorem prepSkip_prepare {vc raw : VCode} (hd : Prep.PrepDomain vc)
   rw [getElem!_pos (B ++ E) i hi2]
   by_cases hiB : i < B.size
   · rw [Array.getElem_append_left hiB]
-    have hi1 : i < (Prep.keep vc.blocks (Prep.reachable ss0)).size := by
+    have hi1 : i < (Prep.keep vc.blocks (reachable ss0)).size := by
       rw [← hS.size]
       exact hiB
     obtain ⟨b, hb, e, _⟩ := Prep.keep_src hi1
@@ -320,7 +319,7 @@ theorem prepSkip_prepare {vc raw : VCode} (hd : Prep.PrepDomain vc)
       · have := congrArg List.length hpp
         have h2 := congrArg List.length hx
         simp only [Array.length_toList, List.length_append] at this h2
-        simp only [this, h2]
+        simp only [this, h2, List.length_singleton]
       · intro k x hxk
         simp only [hpp] at hxk
         rw [hx]
