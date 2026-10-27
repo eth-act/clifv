@@ -165,7 +165,7 @@ theorem regLevelCorrect_coreU {R : RLU} (hR : R.Wf) {ra : BitVec 64}
     {a0 : AState} (hcheck : CheckedAt R.vc R.rf cc ins a0) {semU : Sem}
     (hU : CalleeUnwOkG R.F R.K R.G R.s0 (CallAt R.fa R.base) R.X R.XR R.U R.vc.CallSite R.gv)
     (hgot : GotSem R.gv R.X semU)
-    (hRz : Realizes R.vc R.rf semU ckeep R.stepU (fun s c => Q R.toRL s c ∧ AInv R.toRL c)
+    (hRz : Realizes R.vc R.rf semU ckeep R.stepU (QA R.toRL)
       R.GoodXU)
     (hrets : ∀ us uses w, semU (.rets us) uses w = csem R.F R.ctx R.X (.rets us) uses w)
     (hhalt : ∀ i uses w outs w', trapCode? i ≠ none → semU i uses w = some (outs, w', .halt) →
@@ -204,12 +204,11 @@ theorem regLevelCorrect_coreU {R : RLU} (hR : R.Wf) {ra : BitVec 64}
   have hRz' := realizes_and hRz
     (P := SavedInv R.rf ckeep (fun r => locVal R.fr (iterN R.step n0 R.s0) (.reg r)))
     fun _ _ hm hp => savedInv_step hrf hm hp
-  have hq0' : (Q R.toRL (iterN R.stepU n0 R.s0)
+  have hq0' : QA R.toRL (iterN R.stepU n0 R.s0)
       (MConf.init R.rf (locVal R.fr (iterN R.step n0 R.s0)) w₀) ∧
-      AInv R.toRL (MConf.init R.rf (locVal R.fr (iterN R.step n0 R.s0)) w₀)) ∧
       SavedInv R.rf ckeep (fun r => locVal R.fr (iterN R.step n0 R.s0) (.reg r))
         (MConf.init R.rf (locVal R.fr (iterN R.step n0 R.s0)) w₀ : MConf CV Arm.ArmState) :=
-    ⟨⟨by rw [h0]; exact hq0, hA0⟩, savedInv_init _ _ _ _⟩
+    ⟨.inl ⟨by rw [h0]; exact hq0, hA0⟩, savedInv_init _ _ _ _⟩
   have hfin : ∀ n1 n2 n3, E2E.runX R.stepU (n0 + n1 + n2 + n3) R.s0 =
       iterN R.stepU n3 (iterN R.stepU n2 (iterN R.stepU n1 (iterN R.stepU n0 R.s0))) := by
     intro n1 n2 n3
@@ -232,7 +231,7 @@ theorem regLevelCorrect_coreU {R : RLU} (hR : R.Wf) {ra : BitVec 64}
       refine VStep.step hvb hi (operands_retsC ns) (by rw [hvals] at hsem; exact hsem) ?_
         (VNext.ret rfl)
       rw [List.toList_toArray, filter_isDef_retOpsC]; rfl
-    obtain ⟨n2, c', c'', ⟨⟨hq2, -⟩, -⟩, hr2, hms, hr3, -⟩ :=
+    obtain ⟨n2, c', c'', ⟨hq2, -⟩, hr2, hms, hr3, -⟩ :=
       forward_last hSim hRz' h1 _ c1 _ (Nat.le_refl _) hr1 hq1
     cases c'' with
     | run s' => obtain ⟨_, e⟩ := hSim.run hr3; cases e
@@ -254,14 +253,13 @@ theorem regLevelCorrect_coreU {R : RLU} (hR : R.Wf) {ra : BitVec 64}
         cases hn with
         | ret _ =>
         rw [rets_store hlen2 rfl hho hcl] at hks
-        have hst := q_stRel hq2
-        obtain ⟨n3, ht3, hpc, herr, hsp, hx29, hregs, hmem, hfld, hprogF, hvalsM⟩ :=
+        obtain ⟨mt, hq2'⟩ := qa_q hq2
+        have hst := q_stRel hq2'
+        obtain ⟨n3, ht3, hpc, herr, hsp, hx29, hregs, hsvd, hmem, hfld, hprogF, hvalsM⟩ :=
           ret_machine hR hent hq2 hvb hi
         have e3 := RLU.iterN_stepU hR hU n3 _ ht3
         have hm0 : ∀ r, locVal R.fr (iterN R.step n0 R.s0) (.reg r) =
             regVal (iterN R.step n0 R.s0) r := fun _ => rfl
-        have hms : ∀ r, r.allocatable = true → _ = regVal _ r := fun r hr =>
-          hst.store (.reg r) (fun r' e => by cases e; exact hr) trivial
         refine ⟨n0 + n1 + n2 + n3, ⟨?_, ?_, ?_, ?_, ?_⟩, ?_, ?_, ?_, ?_, ?_⟩
         all_goals rw [hfin, e3]
         · exact hpc
@@ -273,24 +271,26 @@ theorem regLevelCorrect_coreU {R : RLU} (hR : R.Wf) {ra : BitVec 64}
           by_cases h29 : a = 10
           · subst h29; exact hx29
           obtain ⟨hcs, hal⟩ := calleeSaved_x (n := 19 + a) (by omega) (by omega)
+          by_cases hsv : Reg.x (19 + a) ∈ R.af.saves
+          · exact hsvd _ hsv
           have k1 := hks _ hcs
           simp only [ckeep, hm0] at k1
-          rw [hms _ hal] at k1
           have hne : ∀ q, q < 32 → q ≠ 19 + a →
               Arm.StateField.GPR (rnum (19 + a)) ≠ .GPR (BitVec.ofNat 5 q) :=
             fun q h1 h2 e => rnum_ne (a := 19 + a) (b := q) (by omega) h1 (Ne.symm h2)
               (Arm.StateField.GPR.inj e)
-          have k2 := hregs _ hal
+          have k2 := hregs _ hal hsv
           simp only [regVal] at k1 k2
           rw [hf0 _ (by simp) (hne 29 (by omega) (by omega)) (hne 31 (by omega) (by omega))
             (hne 16 (by omega) (by omega))] at k1
           exact setWidth128_inj (k2.trans k1)
         · intro n h8 h16
           obtain ⟨hcs, hal⟩ := calleeSaved_v h8 h16
+          by_cases hsv : Reg.v n ∈ R.af.saves
+          · exact hsvd _ hsv
           have k1 := hks _ hcs
           simp only [ckeep, hm0] at k1
-          rw [hms _ hal] at k1
-          have k2 := hregs _ hal
+          have k2 := hregs _ hal hsv
           simp only [regVal] at k1 k2
           rw [hf0 _ (by simp) (by simp) (by simp) (by simp)] at k1
           show (Arm.r (.SFP (rnum n)) _).setWidth 64 = (Arm.r (.SFP (rnum n)) R.s0).setWidth 64
@@ -324,7 +324,7 @@ theorem regLevelCorrect_coreU {R : RLU} (hR : R.Wf) {ra : BitVec 64}
       · exact trapIf_nodefs hops
     have h1 : VStep R.vc semU (.run ⟨b, k, ρ, w⟩) (.halt w') :=
       VStep.step hvb hi hops hsem (by rw [hdefs]; rfl) VNext.halt
-    obtain ⟨n2, c', c'', ⟨⟨hq2, -⟩, -⟩, hr2, hms, hr3, -⟩ :=
+    obtain ⟨n2, c', c'', ⟨hq2, -⟩, hr2, hms, hr3, -⟩ :=
       forward_last hSim hRz' h1 _ c1 _ (Nat.le_refl _) hr1 hq1
     cases c'' with
     | run s' => obtain ⟨_, e⟩ := hSim.run hr3; cases e
@@ -337,6 +337,10 @@ theorem regLevelCorrect_coreU {R : RLU} (hR : R.Wf) {ra : BitVec 64}
         subst hb' hk' hw'
         rw [hvb] at hvb'; cases hvb'
         rw [hi] at hi'; cases hi'
+        have hnr : ∀ us, i ≠ .rets us := by
+          intro us h
+          rcases hform with ⟨cd, rfl⟩ | ⟨kk, cd, rfl, -⟩ <;> cases h
+        have hq2 := (qa_op hq2 hvb hi hnr).1
         rcases hform with ⟨cd, rfl⟩ | ⟨kk, cd, rfl, -⟩
         · simp only [trapCode?, Option.some.injEq] at htc
           subst htc
@@ -356,7 +360,7 @@ theorem regLevelCorrect_coreU {R : RLU} (hR : R.Wf) {ra : BitVec 64}
     obtain ⟨n1, c1, hq1, hr1, -⟩ := forward hSim hRz' hstar hinit hq0'
     have h1 : VStep R.vc semU (.run ⟨b, k, ρ, w1⟩) (.halt w') :=
       VStep.step hvb hi hops hsem hlen VNext.halt
-    obtain ⟨n2, c', c'', ⟨⟨hq2, -⟩, hS2⟩, hr2, hms, hr3, -⟩ :=
+    obtain ⟨n2, c', c'', ⟨hq2, hS2⟩, hr2, hms, hr3, -⟩ :=
       forward_last hSim hRz' h1 _ c1 _ (Nat.le_refl _) hr1 hq1
     obtain ⟨u, hu⟩ : ∃ u, iterN R.stepU n2 (iterN R.stepU n1 (iterN R.stepU n0 R.s0)) = u :=
       ⟨_, rfl⟩
@@ -370,6 +374,7 @@ theorem regLevelCorrect_coreU {R : RLU} (hR : R.Wf) {ra : BitVec 64}
       subst hb' hk' hw'
       rw [hvb] at hvb'; cases hvb'
       rw [hi] at hi'; cases hi'
+      have hq2 := (qa_op hq2 hvb hi (fun _ h => by cases h)).1
       rw [hops] at hops'; cases hops'
       -- the allocated code reads the VCode's uses: the same raising callee
       have hU0 := matchRun_uses hcheck hr2 (MStep.op hvb hi hops hsz hsem2 hlen2 hho hcl hn) hvb hi
@@ -461,7 +466,7 @@ theorem regLevelCorrect_coreU {R : RLU} (hR : R.Wf) {ra : BitVec 64}
             (fun l => match l with | .reg r => regVal t r | l => m l), w'⟩ :
             MConf CV Arm.ArmState) :=
         ⟨hpre, hA', fun r hr => (by rw [hls0] at hr; cases hr), hB⟩
-      have hfs : Unw.FrameSaved R.af R.s0 t := frameSaved_of_stRel hR hf hsaved he hst' hinvT
+      have hfs : Unw.FrameSaved R.af R.s0 t := frameSaved_of_stRel hR hent hf hsaved he hst' hinvT
       obtain ⟨-, t', hrest, hretA, -, hmem'⟩ :=
         Unw.unwind_call_restores hrows hf (List.of_mem_zip hmem).2 hfs herrt
       have hstep : R.stepU u = Arm.w (.GPR 0#5) obj t' := by
@@ -496,7 +501,7 @@ theorem regLevelCorrect_world_atXU {vcp : VCode} {rf : RFunc} {af : AFunc} {fa :
     (hgot : GotSem gv X semU)
     (hRz : ∀ lm psF (R : RLU),
       R = ⟨⟨vcp, rf, af, fa, fb, lm, base, s, X, H, psF, K, G, gv⟩, XR, U, T⟩ → R.Wf →
-      Realizes R.vc R.rf semU ckeep R.stepU (fun s c => Q R.toRL s c ∧ AInv R.toRL c) R.GoodXU)
+      Realizes R.vc R.rf semU ckeep R.stepU (QA R.toRL) R.GoodXU)
     (hrets : ∀ us uses w, semU (.rets us) uses w =
       csem (frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af G s)
         ⟨fa.k, af.slotBase⟩ X (.rets us) uses w)
@@ -551,7 +556,7 @@ theorem regLevelCorrect_world_exU {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : 
     (hgot : GotSem gv X semU)
     (hRz : ∀ lm psF (R : RLU),
       R = ⟨⟨vcp, rf, af, fa, fb, lm, base, s, X, H, psF, K, G, gv⟩, XR, U, T⟩ → R.Wf →
-      Realizes R.vc R.rf semU ckeep R.stepU (fun s c => Q R.toRL s c ∧ AInv R.toRL c) R.GoodXU)
+      Realizes R.vc R.rf semU ckeep R.stepU (QA R.toRL) R.GoodXU)
     (hrets : ∀ us uses w, semU (.rets us) uses w =
       csem (frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af G s)
         ⟨fa.k, af.slotBase⟩ X (.rets us) uses w)
@@ -600,7 +605,7 @@ theorem regLevelCorrect_worldU {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnA
     (hgot : GotSem gv X semU)
     (hRz : ∀ lm psF (R : RLU),
       R = ⟨⟨vcp, rf, af, fa, fb, lm, base, s, X, H, psF, K, G, gv⟩, XR, U, T⟩ → R.Wf →
-      Realizes R.vc R.rf semU ckeep R.stepU (fun s c => Q R.toRL s c ∧ AInv R.toRL c) R.GoodXU)
+      Realizes R.vc R.rf semU ckeep R.stepU (QA R.toRL) R.GoodXU)
     (hrets : ∀ us uses w, semU (.rets us) uses w =
       csem (frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af G s)
         ⟨fa.k, af.slotBase⟩ X (.rets us) uses w)
@@ -649,7 +654,7 @@ theorem regLevelCorrect_backend_exU_of {vcp : VCode} {rf : RFunc} {af : AFunc} {
     (hRz : ∀ base s lm psF (R : RLU),
       R = ⟨⟨vcp, rf, af, fa, fb, lm, base, s, X, H, psF, K, fun _ => False, fun _ _ => False⟩,
         XR, U, T⟩ → R.Wf →
-      Realizes R.vc R.rf (semOf s) ckeep R.stepU (fun s c => Q R.toRL s c ∧ AInv R.toRL c)
+      Realizes R.vc R.rf (semOf s) ckeep R.stepU (QA R.toRL)
         R.GoodXU)
     (hrets : ∀ s us uses w, semOf s (.rets us) uses w =
       csem (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s)
@@ -693,7 +698,7 @@ theorem regLevelCorrect_backendU_of {vcp : VCode} {rf : RFunc} {af : AFunc} {fa 
     (hRz : ∀ base s lm psF (R : RLU),
       R = ⟨⟨vcp, rf, af, fa, fb, lm, base, s, X, H, psF, K, fun _ => False, fun _ _ => False⟩,
         XR, U, T⟩ → R.Wf →
-      Realizes R.vc R.rf (semOf s) ckeep R.stepU (fun s c => Q R.toRL s c ∧ AInv R.toRL c)
+      Realizes R.vc R.rf (semOf s) ckeep R.stepU (QA R.toRL)
         R.GoodXU)
     (hrets : ∀ s us uses w, semOf s (.rets us) uses w =
       csem (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s)
@@ -825,7 +830,7 @@ theorem realizes_csemU {R : RLU} (hR : R.Wf)
     (hlsda : R.T.lsda = lsda.map (List.map (·.entry))) (hpad : PadsNonzero R.af R.fa)
     (hlast : lastCallsOk R.af R.fa = true) :
     Realizes R.vc R.rf (csemU R.F R.ctx R.X R.XR) ckeep R.stepU
-      (fun s c => Q R.toRL s c ∧ AInv R.toRL c) R.GoodXU := by
+      (QA R.toRL) R.GoodXU := by
   have hreal := realizes_all hR hC hCT hTls hcov
   refine realizes_allU hR hU hreal (fun i uses w h => ?_) (fun info uses w r obj w' h hr => ?_)
     (realizesTryRaise_of_tables hR hU (tryRaiseSem_csemU _ _ _ _)
@@ -859,7 +864,7 @@ theorem realizes_csemU_backend {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnA
       Realizes R.vc R.rf
         (csemU (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s)
           ⟨fa.k, af.slotBase⟩ X XR) ckeep R.stepU
-        (fun s c => Q R.toRL s c ∧ AInv R.toRL c) R.GoodXU := by
+        (QA R.toRL) R.GoodXU := by
   intro base s lm psF R hReq hR
   subst hReq
   have hF : (⟨⟨vcp, rf, af, fa, fb, lm, base, s, X, H, psF, K, fun _ => False, fun _ _ => False⟩,
