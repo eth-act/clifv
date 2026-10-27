@@ -1,4 +1,5 @@
 import FV.E2E.Guarded
+import FV.Backend.Proof.VCodeSemISeq
 
 /-! # Runs on pairs of worlds (agent/link-widen, stage 2)
 
@@ -52,12 +53,6 @@ theorem pairSem_inv {i : MInst} {us : List CV} {p : W2} {o : List CV} {q : W2} {
     · cases h
   · cases h
 
-/-- A configuration with its world mapped. -/
-def _root_.Backend.Proof.VConf.mapW {V W W' : Type} (f : W → W') : VConf V W → VConf V W'
-  | .run s => .run ⟨s.b, s.k, s.ρ, f s.w⟩
-  | .ret vals w => .ret vals (f w)
-  | .halt w => .halt (f w)
-
 theorem vnext_map {V W W' : Type} (vc : VCode) (f : W → W') {b k n : Nat} {i : MInst}
     {uses : List V} {ρ : Nat → V} {w : W} {c : Ctl} {c' : VConf V W}
     (h : VNext vc b k n i uses ρ w c c') : VNext vc b k n i uses ρ (f w) c (c'.mapW f) := by
@@ -104,15 +99,6 @@ theorem vTrapFrom_pair {vc : VCode} {vs : VState CV W2} {c : Clif.TrapCode}
   exact ⟨⟨b, k, ρ, w.1, vb, i, ops, outs, w'.1, star_pair Prod.fst (.inl rfl) hs, hvb, hi, hops,
     h1, htc⟩, ⟨b, k, ρ, w.2, vb, i, ops, outs, w'.2, star_pair Prod.snd (.inr rfl) hs, hvb, hi, hops,
     h2, htc⟩⟩
-
-/-- A straight-line end with its worlds mapped. -/
-def _root_.Backend.Proof.SeqEnd.mapW {V W W' : Type} (f : W → W') : SeqEnd V W → SeqEnd V W'
-  | .fall ρ w => .fall ρ (f w)
-  | .stop k i ops ρ w outs w' ctl => .stop k i ops ρ (f w) outs (f w') ctl
-
-theorem _root_.Backend.Proof.SeqEnd.mapW_succ {V W W' : Type} (f : W → W') (e : SeqEnd V W) :
-    (e.succ).mapW f = (e.mapW f).succ := by
-  cases e <;> rfl
 
 /-- The invariant `R` holds of the worlds of a paired end. -/
 def _root_.Backend.Proof.SeqEnd.Rel (R : Arm.ArmState → Arm.ArmState → Prop) : SeqEnd CV W2 → Prop
