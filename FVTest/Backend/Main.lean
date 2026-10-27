@@ -1,5 +1,5 @@
 import FV.Backend
-import FV.Backend.ParameterCfgNIProduction
+import FV.Backend.MemoryNIProduction
 import FV.Opt.Legalize128Pass
 import FV.Opt.LegalExn
 import FVTest.Opt.Common
@@ -269,7 +269,7 @@ def run (input output : String) (o : Opts) : IO UInt32 := do
     pure afs
   let fa ← match stock with
     | none => (if pipelineT then compileFileWith allocNone pf (unv128 ++ unvTry) false
-        else compileFileParameterCfgNIWhen (!o.opt.isSome &&
+        else compileFileMemoryNIWhen (!o.opt.isSome &&
           !(pf.funcs.any fun p => p.func.toOption.any fun f => f.blocks.any (·.term.isTry)))
           allocNone pf (unv128 ++ unvTry) o.deadCleanup)
     | some c => (compileFileWith (StockConfig.allocate c clif rejected alloc) pf
