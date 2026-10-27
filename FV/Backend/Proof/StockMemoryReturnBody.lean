@@ -1,5 +1,5 @@
 import FV.Backend.Proof.StockMemoryAutoScan
-import FV.Backend.Proof.StockReturnedSourceRetention
+import FV.Backend.Proof.StockMemoryReturnSpec
 
 namespace Backend.Stock.Memory
 open Backend.Proof Backend.Proof.Driver Backend.Stock.Proof Isle Isle.Interp Isle.Aarch64
@@ -12,16 +12,9 @@ private theorem parameter_definition {f : Clif.Function} {result : Result}
     (run : Stock.lower f = .ok result) (dominated : Dominated f)
     {event : BlockScanEvent} (events : event ∈ result.blockScans.toList)
     {bi : Nat} {b : Clif.Block} (block : f.blocks[bi]? = some b) {x : Nat}
-    (parameter : x ∈ b.params.map (·.1)) : event.ctx.defInst? x = none := by
-  obtain ⟨ranges,params,earlier,suffix,starting,finishing,before,after,
-    label,nodeBi,data,core,build,ordered,initial,empty,parts,folded,
-    final,prefixRun,nodeRun,suffixRun,node,coreRun,eventEq,stateEq⟩ :=
-    stock_lower_blockScanOrigin run events
-  obtain ⟨original,st0,oldBuild,spec,view⟩ := buildCtx_source build
-  have defs : event.ctx.valDef = original.valDef := by
-    rw [eventEq,(stock_lowerBlockCore_scanOrigin coreRun).2.1]
-    exact view.valDef
-  simpa only [Ctx.defInst?,defs] using defInst_par spec.facts dominated.ssa block parameter
+    (parameter : x ∈ b.params.map (·.1)) : event.ctx.defInst? x = none :=
+  stock_lower_source_parameter_definition run dominated events block parameter
+
 
 /-- Original singleton load/return syntax derives the complete guarded body
 proof, including retention, actual selection, result/pointer mappings and final
@@ -46,40 +39,21 @@ theorem stock_single_load_return_body {f : Clif.Function} {result : Result}
             (Backend.lowerFunction.resolve result.final.alias (result.final.alias.size+1)))) ρ w =
               some (.fall ρ' w') ∧
             GuardedScanRel f result event.ctx event.block MR term.output.state s' ρ' w' := by
+  obtain ⟨spec⟩ := stock_single_load_return_spec run scope dominated events block singleton ret parameterBlock parameter
   have statement : b.body[0]? = some ⟨[z],.load .load .i32 flags x 0⟩ := by simp [singleton]
-  obtain ⟨term,record,body,step,split,member,current,unsunk,actual,records,recorded,emitted⟩ :=
-    stock_lower_returned_definition_emitted run scope dominated events block statement (z := z)
-      (by simp) ret (by simp)
-  obtain ⟨info,source,clif,results⟩ := ArithmeticBody.body_source_info run events split statement current
-  obtain ⟨emission,emissionRun,scan⟩ := stock_emitted_scan actual recorded emitted
-  have atInst : event.ctx.insts[record.inst]! = info := by simp only [getElem!_def,source,Option.getD_some]
-  obtain ⟨r,mapped⟩ := ArithmeticBody.emission_result_mapped emissionRun (by rw [atInst,results])
-  have inv := (stock_lower_record_context run scope events).1
-  obtain ⟨a,rfl⟩ := inv.valueReg z r mapped
-  obtain ⟨nreg,pointer⟩ := inv.typedReg x _ (inv.addr64 _ _ _ x source clif rfl)
-  have noDefinition := parameter_definition run dominated events parameterBlock parameter
-  have normal := stock_lower_load_scan_fall_refines_auto run scope dominated events records block statement current
-    source clif results rfl mapped noDefinition pointer recorded emitted stable memorySem memoryOk
-    (env := env) (cp := cp)
-  have bodyRecords : body.records = [record] := by
-    have scanned := split.scanned
-    simp only [sourceBodyIndices,singleton,List.length_cons,List.length_nil,List.range_succ,
-      List.range_zero,List.nil_append,List.map_cons,List.map_nil,List.reverse_cons,
-      List.reverse_nil,List.nil_append,Nat.add_zero] at scanned
-    cases scanned with
-    | cons head tail =>
-      cases tail
-      exact congrArg (fun r => [r]) (List.mem_singleton.mp member).symm
-  refine ⟨term,body,split,?_⟩
-  have each : ∀ r ∈ body.records,ScanFallRefines (IndexedSourceInst env cp f event.ctx event.block)
+  have normal := stock_lower_load_scan_fall_refines_auto run scope dominated events spec.records block statement spec.current
+    spec.source spec.clif spec.results rfl spec.mapped spec.parameter spec.pointer spec.recorded spec.emitted
+    stable memorySem memoryOk (env := env) (cp := cp)
+  refine ⟨spec.term,spec.body,spec.split,?_⟩
+  have each : ∀ r ∈ spec.body.records,ScanFallRefines (IndexedSourceInst env cp f event.ctx event.block)
       isem result.final.alias (GuardedScanRel f result event.ctx event.block MR) r := by
     intro r present
-    have same : r = record := by simpa only [bodyRecords,List.mem_singleton] using present
+    have same : r = spec.record := by simpa only [spec.bodyRecords,List.mem_singleton] using present
     subst r
     exact normal
   intro s s' steps ρ w held
-  apply split.scanned.fall_refines each s s'
+  apply spec.split.scanned.fall_refines each s s'
   · simpa only [sourceBodyIndices,List.reverse_reverse] using steps
-  · simpa only [split.state] using held
+  · simpa only [spec.split.state] using held
 
 end Backend.Stock.Memory
