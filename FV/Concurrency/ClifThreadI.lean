@@ -256,8 +256,10 @@ theorem placeSlots_bytes (sl : List (Clif.SlotId × Clif.StackSlot)) (sp : BitVe
   congr 1; funext a; unfold mix
   by_cases h : sp.toNat + off x.1 ≤ a ∧ a < sp.toNat + off x.1 + x.2.size <;> simp [h]
 
-/-- **`enterSlots` on a byte memory `B`** is its outcome with the placed slots' bytes cleared. -/
-theorem enterSlots_bytes (f : Clif.Function) (m : Clif.Mem) (B : Bytes) :
+/-- **`enterSlots` on a byte memory `B`** is its outcome with the placed slots' bytes cleared
+(without the slot-byte oracle `Clif.Place.init`). -/
+theorem enterSlots_bytes (f : Clif.Function) (m : Clif.Mem) (B : Bytes)
+    (hi : ∀ pl, m.place = some pl → pl.init = none) :
     Clif.enterSlots f (setB m B) =
       ((Clif.enterSlots f m).1, setB (Clif.enterSlots f m).2 (mix (slotZ f m) B)) := by
   obtain ⟨al, by0, nx, sy, pl⟩ := m
@@ -285,7 +287,10 @@ theorem enterSlots_bytes (f : Clif.Function) (m : Clif.Mem) (B : Bytes) :
       rw [e]
       have := placeSlots_bytes f.slots (pl.sps.headD 0 - BitVec.ofNat 64 d) off
         ⟨al, by0, nx, sy, some { pl with sps := (pl.sps.headD 0 - BitVec.ofNat 64 d) :: pl.sps }⟩ B
-      simp only [Clif.enterSlots, hf, setB_place, setB_allocs, setB_bytes, setB_next, setB_symbols]
+      have hi0 : pl.init = none := hi pl rfl
+      simp only [Clif.enterSlots, hf, hi0, Clif.initSlots_none, setB_place, setB_allocs, setB_bytes,
+        setB_next, setB_symbols]
+      rw [hi0] at this
       exact this
 
 theorem placeSlots_fst (sp : BitVec 64) (off : Clif.SlotId → Nat) (m : Clif.Mem)
@@ -321,7 +326,7 @@ theorem slotZ_frameSlot {f : Clif.Function} {m : Clif.Mem} {a : Nat} (hz : slotZ
       obtain ⟨x, hx, h1, h2⟩ := hz
       refine ⟨x, hx, _, ?_, h1, h2⟩
       simp only [Clif.enterSlots, hf]
-      rw [placeSlots_fst]
+      rw [Clif.initSlots_fst, placeSlots_fst]
       exact List.mem_map.mpr ⟨x, hx, rfl⟩
 
 theorem Res.bind_eq_ok {α β : Type} {x : Clif.Res α} {k : α → Clif.Res β} {v : β}
@@ -331,9 +336,11 @@ theorem Res.bind_eq_ok {α β : Type} {x : Clif.Res α} {k : α → Clif.Res β}
   | trap c => cases h
   | stuck m => cases h
 
-/-- **`enterFunc` on a byte memory `B`** is its outcome with the placed slots' bytes cleared. -/
+/-- **`enterFunc` on a byte memory `B`** is its outcome with the placed slots' bytes cleared
+(without the slot-byte oracle `Clif.Place.init`). -/
 theorem enterFunc_bytes {f : Clif.Function} {args : List Clif.Val} {m m' : Clif.Mem}
-    {fr : Clif.Frame} (h : Clif.enterFunc f args m = .ok (fr, m')) (B : Bytes) :
+    {fr : Clif.Frame} (h : Clif.enterFunc f args m = .ok (fr, m')) (B : Bytes)
+    (hi : ∀ pl, m.place = some pl → pl.init = none) :
     Clif.enterFunc f args (setB m B) = .ok (fr, setB m' (mix (slotZ f m) B)) ∧
       fr.func = f ∧ fr.slots = (Clif.enterSlots f m).1 := by
   unfold Clif.enterFunc at h ⊢
@@ -341,7 +348,7 @@ theorem enterFunc_bytes {f : Clif.Function} {args : List Clif.Val} {m m' : Clif.
   rw [h1, Clif.Res.ok_bind]
   obtain ⟨entry, h2, h⟩ := Res.bind_eq_ok h
   rw [h2, Clif.Res.ok_bind]
-  rw [enterSlots_bytes]
+  rw [enterSlots_bytes f m B hi]
   generalize hes : Clif.enterSlots f m = es at h ⊢
   obtain ⟨sl, m2⟩ := es
   simp only at h ⊢
@@ -354,12 +361,13 @@ theorem enterFunc_bytes {f : Clif.Function} {args : List Clif.Val} {m m' : Clif.
   exact ⟨⟨rfl, rfl⟩, rfl, rfl⟩
 
 /-- **The call of a program function is a `CStepI`** that adds the slots `enterFunc` placed to
-the mask. -/
+the mask (without the slot-byte oracle `Clif.Place.init`). -/
 theorem cstepI_call {env : Clif.Env} {p : Clif.Program} {s s' : Clif.State}
     {results : List Clif.ValueId} {fn : Clif.FnRef} {args : List Clif.ValueId}
     {rest : List Clif.Stmt} (hb : s.frame.body = { results, inst := .call fn args } :: rest)
     {ext : Clif.ExtFunc} {callee : Clif.Function} (he : s.frame.func.extern? fn = some ext)
-    (hc : p.func? ext.name = some callee) (hs : Clif.step env p s = .next s') (U : Nat → Prop) :
+    (hc : p.func? ext.name = some callee) (hs : Clif.step env p s = .next s') (U : Nat → Prop)
+    (hi : ∀ pl, s.mem.place = some pl → pl.init = none) :
     CStepI env p (.run s, U) [] (.run s', fun a => U a ∨ slotZ callee s.mem a) := by
   have key : ∀ B, Clif.step env p (withBytes s B) =
       .next (withBytes s' (mix (slotZ callee s.mem) B)) ∧ s'.frame.func = callee ∧
@@ -387,7 +395,7 @@ theorem cstepI_call {env : Clif.Env} {p : Clif.Program} {s s' : Clif.State}
         split at hs
         · rename_i r hef
           obtain ⟨fr', mem'⟩ := r
-          obtain ⟨hB, hf1, hf2⟩ := enterFunc_bytes hef B
+          obtain ⟨hB, hf1, hf2⟩ := enterFunc_bytes hef B hi
           simp only [setB] at hB
           rw [hB]
           cases hs

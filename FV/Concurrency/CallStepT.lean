@@ -66,7 +66,8 @@ theorem realizedT_call {l : Lab} {L : List Lab} (hl : l.evs = [])
     {rest : List Clif.Stmt} (hb : s.frame.body = { results, inst := .call fn args } :: rest)
     {e : Clif.ExtFunc} {callee : Clif.Function} (he : s.frame.func.extern? fn = some e)
     (hc : p.func? e.name = some callee) {s1 : Clif.State}
-    (hs : Clif.step env p (pushC ext s) = .next s1) (U D : Nat → Prop) :
+    (hs : Clif.step env p (pushC ext s) = .next s1) (U D : Nat → Prop)
+    (hi : ∀ pl, s.mem.place = some pl → pl.init = none) :
     ∃ vals B0 cs, s.frame.getMany args = .ok vals ∧ callee.blocks[0]? = some B0 ∧
       RealizedT env p Bnd (l :: L) 1 (encT U (.run (pushC ext s)))
         (encT (fun a => U a ∨ slotZ callee s.mem a)
@@ -79,6 +80,7 @@ theorem realizedT_call {l : Lab} {L : List Lab} (hl : l.evs = [])
       vals.map (·.ty) = B0.params.map (·.2) ∧ vals.map (·.ty) = callee.sig.params.map (·.ty) := by
   obtain ⟨vals, B0, cs, h1, h2, hI, h3⟩ :=
     CallEnterClif.cstepI_call_entry (s := pushC ext s) (by exact hb) (by exact he) hc hs U
+      (by exact hi)
   exact ⟨vals, B0, cs, h1, h2, realizedT_nil hl (cstepS_of_cstepI hI) D, h3⟩
 
 /-- **A private Arm segment realizing event-free CLIF steps** (the callee's epilogue and `ret`

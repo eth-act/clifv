@@ -24,7 +24,7 @@ private theorem slots_empty (name : String) (c : Configuration) (runs : List Cli
     dsimp only
     cases h' : pl.frame (source name c runs).name with
     | none => rfl
-    | some pair => rcases pair with ⟨d,off⟩; rfl
+    | some pair => rcases pair with ⟨d,off⟩; exact (Clif.initSlots_fst _ _ _ _ _).trans rfl
 
 theorem source_entry (name : String) (c : Configuration) (runs : List Clif.RunCommand)
     (u v : BitVec (valueType c).width) (mem : Clif.Mem) :

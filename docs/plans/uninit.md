@@ -199,6 +199,97 @@ exact bytes, not any bytes. It is implemented in small PRs, leaf first:
 
 The gap stays open until step 4 lands. That is months of work, not weeks.
 
+### 5.2 Step 1 (semantics), as built
+
+- `Clif.SlotInit` (`bytes : Nat → Nat → BitVec 8`, `next`) and `Place.init : Option SlotInit :=
+  none` (`FV/Clif/Mem.lean`). `Clif.enterSlots` places a covered function's slots as before, then
+  `Clif.initSlots`: with `init = some ini` and slots, the activation is the `ini.next + 1`-th one
+  with slots; its slot bytes become `ini.bytes (ini.next + 1) a` (`Mem.fillAt`) and the oracle
+  advances (`Place.advance`). Slotless activations and `init = none` are unchanged. So a
+  self-`return_call` of a slotless function still gives back its memory (`selfTail_mem`).
+- Every existing statement keeps its meaning. `LinkSys.PlaceAt`, `PlaceInv`, `PlacedInv`,
+  `bounded_placed` and the `LinkArmUClif` place lemmas pin `init = none` (`⟨sps, frames, none⟩`).
+  Internal lemmas, conclusions kept:
+  - `enterSlots_place`, `enterSlots_sps`, `enterFunc_sps`, `initState_place`,
+    `ClifThreadI.enterSlots_bytes`, `enterFunc_bytes`, `cstepI_call` and
+    `CallEnterClif.cstepI_call_entry` take an `init = none` premise; the general forms (which say
+    what happens to `init`) are `enterSlots_place_init`, `enterSlots_sps_init`,
+    `enterFunc_sps_init`.
+  - `linkEnvR_keepsPlace`, `linkEnvN_keepsPlace`, `linkEnvRX_keepsPlace` and
+    `LinkSys.envRX_keepsPlace` concluded `EnvKeepsPlace`/`XEnvKeepsPlace` of the linked
+    environment. That is false with the oracle for every premise on the memory (the memory is
+    quantified inside the conclusion, and a program callee with slots advances `init`), so those
+    names are retired; the forms on memories without the oracle are `linkEnvR_keepsPlace0`,
+    `linkEnvN_keepsPlace0`, `linkEnvRX_keepsPlace0`, `LinkSys.envRX_keepsPlace0`
+    (`EnvKeepsPlace0`/`XEnvKeepsPlace0`). All their callers pass `init = none`.
+- Native check: `clif-native --stale-seed n` fills the stack below the harness's `sp` with
+  `(n + 37·(a mod 16)) mod 256`, and `clif-filetest --stale-seed n` runs `Clif.run` with the same
+  oracle (slots at `Backend.slotLayout` offsets below a 16-aligned `sp`). On the prototype's 310
+  leaf functions × 5 runs = 1,550 runs per seed (seeds 90 and 195): 1,070 agree, 288 are native
+  `SIGSEGV`s on wild pointer arguments (`Clif.run` stuck, oracle-error), and 192 disagree, all
+  `Clif.run` `stuck` on an out-of-bounds slot access (a load wider than its slot, e.g. `load.i64`
+  of a 5-byte `ss0`, 40 functions; natively it reads the neighbouring bytes): no guarantee is
+  claimed there. 934 runs give different native results under the two seeds (stale reads); 742
+  of them are in functions without a disagreement, and `Clif.run` reproduces every one of them
+  under both seeds.
+
+### 5.3 Step 2 design: a call counter in the VCode world
+
+The VCode semantics is generic in its world type (`VState V W`, `ISem V W`), and `csem` fixes
+`W = Arm.ArmState`. Plan:
+- `W := Arm.ArmState × Nat`, the second component counting the activation's calls.
+- `ExtSemI.call : Nat → …`: call `i` gets the actual run's `i`-th callee result.
+- `csemI`: `csem` on the first component, a call bumping the counter.
+- CLIF ↔ VCode relation `RelW cm w.1 ∧ (counter of cm's slot-byte oracle) = base + entries of
+  the first w.2 calls`. Unlike a ghost inside `Arm.ArmState`, this relation is stable under
+  `SameWorld` (`MRStable`), because `SameWorld` acts on `w.1` only.
+- The call contract (`CalleeOkG`/`CallSoundCtlG`) is required only at the states of the
+  activation's own machine run, from its entry `s0`. There the prophecy `ExtSemI` is the
+  machine's result by definition.
+
+Non-call instructions lift from `csem` to `csemI` unchanged (`csemI i uses (w, n) = (csem i uses
+w).map (·, n)`), so the `Refines`/`MemRefines` obligations transfer generically. The reg-level
+simulation (`regLevelCorrect_world`) has to be redone with the counter in `StRel` and the
+run-restricted contract.
+
+### 5.4 Step 2, as built so far (leaf PRs)
+
+- #568 `FV/Backend/Proof/VCodeSemI.lean`: `ExtSemI` (`call : Nat → …`), `ExtSemI.at`/`.const`,
+  `MInst.isCallI`, `csemI`; `csem_call_congr` (only calls read `ExtSem.call`); world-map
+  simulation lemmas for VCode and allocated-code runs (`VStep_mapW`/`_liftW`,
+  `MStep_mapW`/`_liftW`, `vstar_*`, `mstar_*`); `vstar_csemI_const{,_lift}` (one `ExtSem` for
+  every call: today's runs).
+- #570 `VCodeSemISeq.lean`: `seqRun_csemI_noCall`, `LowerInstOk.csemI` (call-free lowerings).
+- #573 `VCodeSemICall.lean`: `callsI`, `SeqEnd.liftI`, `seqRun_csemI_le1`,
+  `LowerInstOk.csemI_le1` (at most one call: a CLIF call's lowering; the counter invariant
+  advances by the calls).
+- #575 `VCodeSemIDriver.lean`: `DriverSemG.csemI`, `LowerTermOk.csemI`; witness
+  `driverSemG_csemI`. With these the generic `Driver.DriverHyp` fields `dsem`, `insts` and
+  `terms` hold for the counted world once the per-index `csem` ones do.
+
+**Refined call contract (next).** `X.call n` should be the *canonical* callee run from the
+VCode world `w` with the callee's stack region (the addresses `StackBelow K (sp w)`, inside the
+caller's `F`) overwritten by the prophecy `P n`: the actual machine memory there at the
+activation's `n`-th call. This is a function of `(uses, w)`, so the CLIF-level contract
+(`XCallsOk` at index `n`, for every related `(cm, w)`) comes from the callee's own theorem with
+the slot-byte oracle built from `P n`. The machine-level contract (`CallSoundCtlG`) gets one more
+premise beside its `G`-keep one: the state's region below `sp` holds `P n` (`n` from the VCode
+counter via `StRel`). On the actual run it holds by the definition of `P n`, and the stale bytes
+that broke #556 (earlier callees' saves, spills, frame records) are then the same in the
+canonical and the actual run. Non-interference over the masked registers within one call is
+kept as today.
+
+Linking worklist for that contract (`FV/E2E/LinkArm.lean`, sizes as of `dbd6c21c`): an indexed
+`canon` (`canon` overwrites nothing today: the callee's future stack comes from `w`) with the
+region from `P n`, and the indexed `Cond`/`progX`/`X` (≈45 lines); `MachEntry`/`WorldEntry`/`Thm`
+(≈60); `progCall` (≈390; its NI bridge for the newly exposed outgoing/slot regions may become a
+direct realization, since those bytes are now the actual ones); `progResult` (≈100);
+`progOsCore` (≈190) and `calleeOk`/`calleeTryOk`; `xni`/`progX_ni`; `thm_of`. On the CLIF side
+`PlaceAt` (today `init = none`), `initState_mem` (today: every initialised callee-entry byte lies
+outside the new slots) and `progCall`'s `hRel`. The local call index (VCode counter) and the
+global activation count of the CLIF oracle differ (nested callees enter several activations);
+`CrunOk` has to carry that correspondence.
+
 ## 6. Heap (separate gap, SEM2)
 
 `BaseOk.baseKeepsAllocs`/`baseNoAlloc` require base externs to allocate nothing whenever a program

@@ -12,7 +12,8 @@ import FV.Clif.Syntax
   pointer never aliases a newer allocation. Consecutive allocations are separated by a
   16-byte gap. Exception: with the slot-placement oracle (`Mem.place`, a linked program's
   semantics) the stack slots of the functions it covers are placed at their compiled frame
-  addresses (`Mem.allocAt`, fresh uninitialised bytes), which later activations reuse.
+  addresses (`Mem.allocAt`, fresh uninitialised bytes), which later activations reuse; with the
+  slot-byte oracle (`Place.init`) their bytes start as the oracle's (`Mem.fillAt`).
 * Multi-byte values are little-endian unless the access carries the `big` flag.
 -/
 
@@ -87,14 +88,30 @@ structure Alloc where
 def Alloc.contains (a : Alloc) (addr n : Nat) : Bool :=
   a.base ≤ addr && addr + n ≤ a.base + a.size
 
+/-- **The slot-byte oracle** (SEM1, `docs/plans/uninit.md` §3/§5): what the stack slots of a
+placed activation (one whose slots the slot-placement oracle `Place` puts at their compiled
+frame addresses) hold when it starts. Stock Cranelift neither zeroes nor tracks them: the bytes
+are whatever an earlier activation left there. The `k`-th placed activation with stack slots of a
+run (counted from `1`; `0` is the activation the run starts in, whose slot bytes are its entry
+memory's) finds `bytes k a` at the address `a` of its slots; `next` counts those entered so far.
+The theorems instantiate it with the Arm memory at each activation's body entry. -/
+structure SlotInit where
+  bytes : Nat → Nat → BitVec 8
+  next : Nat := 0
+
+/-- The oracle after one more placed activation with slots. -/
+def SlotInit.succ (ini : SlotInit) : SlotInit := { ini with next := ini.next + 1 }
+
 /-- **The slot-placement oracle** of a linked program (`docs/contracts/e2e.md`, "Linking at
 the Arm level"): where the compiled code puts the stack slots of an activation. `sps`: the
 stack pointers of the activations (the running one's first); `frame`: per function name, the
 drop of its frame (the `sp` of an activation of it is its caller's minus the drop) and the
-offsets of its stack slots from its `sp`. Bookkeeping only: no access checks it. -/
+offsets of its stack slots from its `sp`; `init`: the slot-byte oracle (`SlotInit`), `none` (the
+default) for uninitialised placed slots. Bookkeeping only: no access checks it. -/
 structure Place where
   sps : List (BitVec 64)
   frame : String → Option (Nat × (SlotId → Nat))
+  init : Option SlotInit := none
 
 /-- Memory state. -/
 structure Mem where
@@ -133,6 +150,11 @@ slot-placement oracle places). -/
 def allocAt (m : Mem) (base size : Nat) : Mem :=
   { m with allocs := { base, size } :: m.allocs,
            bytes := fun a => if base ≤ a ∧ a < base + size then none else m.bytes a }
+
+/-- Set the bytes of `[base, base + size)` to `b` (a placed stack slot under the slot-byte
+oracle, `Clif.enterSlots`). -/
+def fillAt (m : Mem) (base size : Nat) (b : Nat → BitVec 8) : Mem :=
+  { m with bytes := fun a => if base ≤ a ∧ a < base + size then some (b a) else m.bytes a }
 
 /-- Leave an activation: the slot-placement oracle drops its stack pointer. -/
 def leave (m : Mem) : Mem :=
