@@ -21,7 +21,8 @@ theorem StockArithmeticStage_returns {cleanup : Bool} {vc vcp : VCode}
   | false => exact source
   | true =>
     exact (Backend.DeadCleanup.prune_correct (vc := vc) (sem := valueSem F ctx X)
-      (fun _ _ _ _ _ _ pure execution => valueSem_pure pure execution) ρ w).1 us outs world source
+      (fun _ _ _ _ _ _ pure execution => valueSem_pure pure execution)
+      (valueSem_cmpOverwrite F ctx X) ρ w).1 us outs world source
 
 /-- The production cleanup stage preserves ABI-aware executions under the
 value semantics used by the existing cleanup machine consumer. -/
@@ -38,7 +39,8 @@ theorem StockArithmeticStage_return {f : Clif.Function} {cleanup : Bool} {vc vcp
     | false => exact source
     | true =>
       have pruned := Backend.DeadCleanup.prune_correct (vc := vc) (sem := valueSem F ctx X)
-        (fun _ _ _ _ _ _ pure execution => valueSem_pure pure execution) ρ w
+        (fun _ _ _ _ _ _ pure execution => valueSem_pure pure execution)
+        (valueSem_cmpOverwrite F ctx X) ρ w
       cases outcome with
       | returned vals cm =>
         obtain ⟨us,outs,w',cm0,reached,abi,arity,values,memory,freed⟩ := source

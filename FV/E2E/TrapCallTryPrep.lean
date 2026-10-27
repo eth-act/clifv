@@ -18,6 +18,7 @@ open Backend Backend.Proof Backend.Proof.Driver E2E
 theorem tryRaise_clean {vc : VCode} {sem : Sem}
     (hp : ∀ i us w outs w' ctl, pureForm i = true →
       sem i us w = some (outs, w', ctl) → w' = w ∧ ctl = .next)
+    (hcmp : CmpOverwrite sem)
     (ht : ∀ vb ∈ vc.blocks.toList, ∃ t, vb.insts.back? = some t ∧ t.isTerminator = true)
     {XR : XRaise} {ρ₀ : Nat → CV} {w₀ : Arm.ArmState}
     (h : VTryRaiseFrom vc sem XR ⟨0, 0, ρ₀, w₀⟩) :
@@ -27,8 +28,8 @@ theorem tryRaise_clean {vc : VCode} {sem : Sem}
     cases hstar with
     | refl => exact ⟨vb, hb⟩
     | step h _ => cases h with | step he _ _ _ _ _ => exact ⟨_, he⟩
-  obtain ⟨c1, hstar', hr⟩ := star_sim hp ht (rel_entry hb0 ρ₀ w₀) hstar
-  obtain ⟨k', ρ', rfl, hb', hi', hu⟩ := rel_kept hr hb hi hop rfl
+  obtain ⟨c1, hstar', hr⟩ := star_sim hp hcmp ht (rel_entry hb0 ρ₀ w₀) hstar
+  obtain ⟨k', ρ', rfl, hb', hi', hu⟩ := rel_kept hr hb hi hop rfl rfl rfl
   exact ⟨b, k', ρ', w1, cleanBlock vc 0 vb, info, ti, ops, obj, w', hstar', hb', hi', hop,
     by rw [← hu]; exact hraise⟩
 
@@ -36,13 +37,14 @@ theorem tryRaise_clean {vc : VCode} {sem : Sem}
 theorem tryRaise_prune {vc : VCode} {sem : Sem}
     (hp : ∀ i us w outs w' ctl, pureForm i = true →
       sem i us w = some (outs, w', ctl) → w' = w ∧ ctl = .next)
+    (hcmp : CmpOverwrite sem)
     {XR : XRaise} {ρ₀ : Nat → CV} {w₀ : Arm.ArmState}
     (h : VTryRaiseFrom vc sem XR ⟨0, 0, ρ₀, w₀⟩) :
     VTryRaiseFrom (prune vc) sem XR ⟨0, 0, ρ₀, w₀⟩ := by
   unfold prune
   cases hc : vc.cfg with
   | error e => exact h
-  | ok p => exact tryRaise_clean hp (terminated_of_cfg hc) h
+  | ok p => exact tryRaise_clean hp hcmp (terminated_of_cfg hc) h
 
 end Backend.DeadCleanup
 
@@ -118,12 +120,14 @@ namespace E2E
 open Backend Backend.Proof Backend.Proof.Driver Backend.DeadCleanup
 
 /-- **The cleanup pipeline keeps a run to a raising `tryCall`** (`prune`, then `prepare`, for a
-semantics with `DriverSem` whose pure producers keep the world and continue). -/
+semantics with `DriverSem` whose pure producers keep the world and continue, and in which a
+compare's flags are overwritten by the next compare). -/
 theorem tryRaise_cleanup {sem : Sem} {vc vcp : VCode} (hds : DriverSem sem)
     (hp : ∀ i us w outs w' ctl, pureForm i = true →
       sem i us w = some (outs, w', ctl) → w' = w ∧ ctl = .next)
+    (hcmp : CmpOverwrite sem)
     (h : prepCheck (prune vc) vcp = true) (XR : XRaise) {ρ₀ : Nat → CV} {w₀ : Arm.ArmState}
     (hv : VTryRaiseFrom vc sem XR ⟨0, 0, ρ₀, w₀⟩) : VTryRaiseFrom vcp sem XR ⟨0, 0, ρ₀, w₀⟩ :=
-  prep_sound_tryRaise hds h XR ρ₀ w₀ (tryRaise_prune hp hv)
+  prep_sound_tryRaise hds h XR ρ₀ w₀ (tryRaise_prune hp hcmp hv)
 
 end E2E

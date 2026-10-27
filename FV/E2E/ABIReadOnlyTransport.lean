@@ -20,7 +20,7 @@ theorem checked_instruction {sig : Clif.Signature} {vc : VCode}
 private theorem pure_sem {F : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem} {i : MInst}
     (pure : pureForm i = true) (us : List CV) (w : Arm.ArmState) :
     sem F ctx X i us w = mspec ctx.slotBase i us w := by
-  cases i <;> simp only [sem,valueSem,pure,↓reduceIte]
+  cases i <;> simp only [sem,valueSem,specForm_of_pure pure,↓reduceIte]
 
 /-- Every checked instruction leaves the abstract world unchanged. -/
 theorem step_world {sig : Clif.Signature} {b k : Nat} {i : MInst}
@@ -31,12 +31,12 @@ theorem step_world {sig : Clif.Signature} {b k : Nat} {i : MInst}
   rcases instruction_cases checked with pure | ⟨pairs,rfl,_⟩ | ⟨op,key,off,fl,rfl,hop,_⟩ | ⟨pairs,rfl⟩
   · rw [pure_sem pure] at executed
     exact (mspec_pure pure executed).1
-  · simp only [sem,valueSem,pureForm,csem,Bool.false_eq_true,↓reduceIte,Option.some.injEq,Prod.mk.injEq] at executed
+  · simp only [sem,valueSem,specForm, pureForm, cmpForm, Bool.false_or,csem,Bool.false_eq_true,↓reduceIte,Option.some.injEq,Prod.mk.injEq] at executed
     exact executed.2.1.symm
   · simp only [sem,mspec,hop,ite_false,Option.map_eq_some_iff,Prod.mk.injEq] at executed
     obtain ⟨a,_,_,world,_⟩ := executed
     exact world.symm
-  · simp only [sem,valueSem,pureForm,csem,Bool.false_eq_true,↓reduceIte,Option.some.injEq,Prod.mk.injEq] at executed
+  · simp only [sem,valueSem,specForm, pureForm, cmpForm, Bool.false_or,csem,Bool.false_eq_true,↓reduceIte,Option.some.injEq,Prod.mk.injEq] at executed
     exact executed.2.1.symm
 
 /-- One read-only step transfers the exact outputs and control between worlds
@@ -65,7 +65,7 @@ theorem step_transport {sig : Clif.Signature} {args : List Clif.Val}
       intro pair member
       obtain ⟨v,found⟩ := registerRead_argument types (List.all_eq_true.mp reads pair member)
       exact registers pair.2 v found
-    simp [sem,valueSem,pureForm,csem,same] at executed ⊢
+    simp [sem,valueSem,specForm, pureForm, cmpForm, Bool.false_or,csem,same] at executed ⊢
     exact executed
   · obtain ⟨slot,v,member,offset,width⟩ := stackRead_argument types read
     have fp : Arm.r (.GPR 29#5) w' = Arm.r (.GPR 29#5) w :=
@@ -81,7 +81,7 @@ theorem step_transport {sig : Clif.Signature} {args : List Clif.Val}
       simp [sem,mspec,hop,amodeAddr,fp,data] at executed ⊢
       exact executed
     | cons a us => simp [sem,mspec,hop,amodeAddr] at executed
-  · simp [sem,valueSem,pureForm,csem] at executed ⊢
+  · simp [sem,valueSem,specForm, pureForm, cmpForm, Bool.false_or,csem] at executed ⊢
     exact executed
 
 private def worldOf : VConf CV Arm.ArmState → Arm.ArmState

@@ -5,7 +5,7 @@ import FV.Opt.LegalExn
 import FVTest.Opt.Common
 import FVTest.Backend.StockConfig
 import FVTest.Backend.AllocChoice
-import FVTest.Backend.OracleOrder
+import FVTest.Backend.CraneliftInput
 import FV.Backend.Proof.LowerSimUCheck
 import FV.E2E.RegLevelFrameSaved
 import FV.E2E.RegLevelUTry
@@ -16,8 +16,8 @@ import FV.E2E.RegLevelUTry
 [--opt [--opt-* options]]`: compile every function of a `.clif` file with the
 Lean backend (`FV/Backend.lean`). Register allocation: `regalloc2` (default, as Cranelift: the
 external `lean-regalloc` oracle, `$LEAN_REGALLOC` or `rust/target/release/lean-regalloc`, given
-the code in Cranelift's vreg numbering where the Stock driver's code is the same up to renaming,
-`FVTest/Backend/OracleOrder.lean`; every allocation validated by the Lean checker `checkAlloc`
+the code in the form Cranelift's lowering hands to regalloc2 (vreg numbering, `args`, calls to
+`sret` callees: `FVTest/Backend/CraneliftInput.lean`); every allocation validated by the Lean checker `checkAlloc`
 with the spill allocation as fallback, `docs/contracts/regalloc.md`; with `$FV_RA_OUT` set, the
 answers are written there; with `$FV_RA_DIAG` set, one line per function is appended there: the
 code regalloc2 was given and the allocation lowered), `lean` (the Lean allocator `leanAlloc`,
@@ -110,10 +110,11 @@ def allocVerdict (vcp : VCode) (ra : Except String RFunc) : String :=
 
 /-- `Allocator.run`, also returning each function's `AllocRecord` (the objects the unwinding
 theorems name). The `regalloc2` case is `allocateRegalloc2` with the allocation it lowers
-(`allocResult vcp (readyAnswer vcp ra)`) kept; `lean-regalloc` is given `oracle vcp`
-(`OracleOrder.oracleCode`: Cranelift's vreg numbering, #551), its answer rebuilt against `vcp`. -/
-def allocRecording (a : Allocator) (vcs : Array VCode) (oracle : VCode → VCode := id)
-    (why : VCode → String := fun _ => "") :
+(`allocResult vcp (readyAnswer vcp ra)`) kept; `lean-regalloc` is given `(shapeOf vcp).code`
+(`CraneliftInput.shape`: regalloc2's input as Cranelift builds it, #551), its answer read back
+and rebuilt against `vcp`. -/
+def allocRecording (a : Allocator) (vcs : Array VCode)
+    (shapeOf : VCode → CraneliftInput.Shape := fun vcp => .same vcp "") :
     IO (Array (Except String AFunc) × Array AllocRecord) := do
   match a with
   | .stack => pure (vcs.map allocate, vcs.map fun _ => none)
@@ -126,9 +127,10 @@ def allocRecording (a : Allocator) (vcs : Array VCode) (oracle : VCode → VCode
   | .regalloc2 bin env =>
     let prepared := vcs.map prepareChecked
     let ok := prepared.filterMap (·.toOption)
+    let shapes := ok.map shapeOf
     let rs : Array (Except String RFunc) ← do
       try
-        match ← OracleOrder.runLeanRegallocVia bin env oracle ok with
+        match ← CraneliftInput.runLeanRegallocVia bin env shapes ok with
         | .error e => pure (ok.map fun _ => .error e)
         | .ok rs => pure (rs.map (·.bind RAResult.oracle))
       catch e => pure (ok.map fun _ => .error (toString e))
@@ -153,7 +155,8 @@ def allocRecording (a : Allocator) (vcs : Array VCode) (oracle : VCode → VCode
             if raAnswerRoundTrip vcp rf then raAnswerJson vcp rf
             else raFailJson vcp.name "the answer does not rebuild the allocation"
           | .error e => raFailJson vcp.name e
-        if diagOn then diag := diag.push s!"{vcp.name}\t{why vcp}\t{allocVerdict vcp ra}"
+        if diagOn then
+          diag := diag.push s!"{vcp.name}\t{(shapes[j]?.map (·.why)).getD ""}\t{allocVerdict vcp ra}"
         j := j + 1
     -- `cargo fv --keep-temps`: regalloc2's answers, for `cargo fv link-proof` and `lean-link`
     -- (which rebuild the allocations from them, as for the Lean allocator's)
@@ -170,9 +173,9 @@ def allocRecording (a : Allocator) (vcs : Array VCode) (oracle : VCode → VCode
 the `regalloc2` case does (`allocResult vcp (readyAnswer vcp ra)` with `ra = leanAlloc vcp`);
 other names run `allocRecording a`. -/
 def allocRecordingNamed (n : String) (a : Allocator) (vcs : Array VCode)
-    (oracle : VCode → VCode := id) (why : VCode → String := fun _ => "") :
+    (shapeOf : VCode → CraneliftInput.Shape := fun vcp => .same vcp "") :
     IO (Array (Except String AFunc) × Array AllocRecord) := do
-  if n != "lean" then return ← allocRecording a vcs oracle why
+  if n != "lean" then return ← allocRecording a vcs shapeOf
   let (afs, ans) := allocateLeanAnswers vcs
   if let some p ← IO.getEnv "FV_RA_OUT" then
     IO.FS.writeFile p ("{\"functions\":[" ++ ",".intercalate ans.toList ++ "]}\n")
@@ -247,13 +250,11 @@ def run (input output : String) (o : Opts) : IO UInt32 := do
   let fa ← match stock with
     | none => compileFileParameterCfgNIWhen (!o.opt.isSome &&
         !(pf.funcs.any fun p => p.func.toOption.any fun f => f.blocks.any (·.term.isTry))) (fun vcs => do
-        -- regalloc2 sees the code in Cranelift's vreg numbering where the Stock driver's
-        -- code is the same up to renaming (`OracleOrder.oracleCode`, #551)
+        -- regalloc2 sees the code as Cranelift's lowering gives it (`CraneliftInput.shape`, #551)
         let byName (n : String) : Option Clif.Function :=
           (pf.funcs.find? (·.name == n)).bind (·.func.toOption)
-        let oracle := fun (vcp : VCode) => OracleOrder.oracleCode (byName vcp.name) o.deadCleanup vcp
-        let why := fun (vcp : VCode) => (OracleOrder.oracleCodeWhy (byName vcp.name) o.deadCleanup vcp).2
-        let (afs, recs) ← allocRecordingNamed ra alloc vcs oracle why
+        let shapeOf := fun (vcp : VCode) => CraneliftInput.shape (byName vcp.name) o.deadCleanup vcp
+        let (afs, recs) ← allocRecordingNamed ra alloc vcs shapeOf
         records.set ((vcs.map (·.name)).zip recs)
         pure afs) pf (unv128 ++ unvTry) o.deadCleanup
     | some c => (compileFileWith (StockConfig.allocate c clif rejected alloc) pf

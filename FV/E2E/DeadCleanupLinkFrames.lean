@@ -7,10 +7,10 @@ namespace E2E.LinkCheck
 open Backend Backend.Proof Backend.Proof.Driver Backend.DeadCleanup
 
 theorem preparedCleanupBlock_head {vc : VCode} {b : VBlock} {i : MInst}
-    (hi : b.insts[0]? = some i) (hn : pureForm i = false) :
+    (hi : b.insts[0]? = some i) (hn : pureForm i = false) (hc : cmpForm i = false) :
     (preparedCleanupBlock vc b).insts[0]? = some i := by
   rw [← Array.getElem?_toList] at hi ⊢
-  exact (preparedCleanupBlock_pureSublist vc b).head_nonpure hi hn
+  exact (preparedCleanupBlock_pureSublist vc b).head_nonpure hi hn hc
 
 /-- Entry arguments stay at position zero. -/
 theorem entryB_cleanup_of_lower {g : Clif.Function} {vc vcp : VCode}
@@ -23,6 +23,7 @@ theorem entryB_cleanup_of_lower {g : Clif.Function} {vc vcp : VCode}
   have hc : (preparedCleanup vc vcp).blocks[0]? = some (preparedCleanupBlock vc vb) := by
     rw [preparedCleanup_blocks, Array.getElem?_map, hvb]; rfl
   have hhead := preparedCleanupBlock_head (vc := vc) hi (show pureForm (.args ds) = false from rfl)
+    rfl
   simp only [entryB, hc, hhead, List.all_eq_true, decide_eq_true_eq]
   exact hds
 

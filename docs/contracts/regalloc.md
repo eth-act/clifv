@@ -238,31 +238,56 @@ Witnesses: `FVTest/Backend/FloatSpillT.lean` (`fMv`, float parameters/loads/stor
 `select`/`bitcast`/block parameters/return: all premises decided, `spillAcceptedT_mv`,
 `checkAlloc_mv`; the integer corollaries on `lowerWitness`'s source).
 
-## Cranelift's vreg numbering (#551, `FVTest/Backend/OracleOrder.lean`)
+## regalloc2's input as Cranelift builds it (#551, `FVTest/Backend/CraneliftInput.lean`)
 
-regalloc2's answer depends on the vreg numbers of its input, not only on the code: bundles are
-created in vreg order and a bundle's probe into the register list starts at its index plus its
-first instruction (`ion/process.rs`). Cranelift numbers vregs as its lowering allocates them
-(192 reserved numbers, the CLIF values in layout order, then the temporaries of the backward
-instruction traversal, aliases resolved); the legacy lowering numbers its temporaries forward,
-so on identical code regalloc2 chose other registers than in stock Cranelift (e.g.
-`ldr x3`/`ldr x5` instead of `ldr x4`/`ldr x5`). `lean-backend` therefore gives `lean-regalloc`
-the Stock driver's code (`Stock.lower`, Cranelift's traversal and numbering, after the same
-dead cleanup and `prepare`) whenever its regalloc2 input is the prepared VCode's up to an
-injective vreg renaming (`OracleOrder.sameInput`: same CFG, per instruction the same operands
-with the same kinds/positions/constraints, clobbers and branch/return kind, same block
-parameters and branch arguments), else the prepared VCode itself. The answer names no vregs, so
-it is rebuilt against the prepared VCode (`buildRFunc vcp`) and checked by `checkAlloc` as
-before: nothing new is trusted, and no theorem changes. `FV_RA_DIAG=<file>` appends one line
-per function: the code regalloc2 was given (`stock`, or the first difference) and which
-allocation was lowered.
+regalloc2's answer depends on more than the code: bundles are created in vreg order and a
+bundle's probe into the register list starts at its index plus its first instruction
+(`ion/process.rs`), so vreg numbers and instruction indices matter. `lean-backend` therefore
+gives `lean-regalloc` the prepared VCode of a function lowered by `lowerFunction` in the form
+Cranelift's lowering (cranelift-codegen 0.135.0, the version of the pinned nightly's cg_clif)
+hands to regalloc2 (`CraneliftInput.shape`):
+
+* **vreg numbering**: 192 reserved numbers, the CLIF values in layout order (block parameters,
+  instruction results, a `try_call`'s return and payload vregs; `Lower::new`), then the
+  temporaries in the order of the backward pass (lowered blocks last to first; in each the
+  terminator, then the instructions last to first; `Lower::lower`). The legacy lowering numbers
+  values by id and temporaries forward; a replay of its lowering calls (`CraneliftInput.replay`,
+  the calls of `Proof.Driver.lowBlocks` keeping only the current state) gives every
+  instruction's temporaries, which are renamed to Cranelift's numbers (on identical code
+  regalloc2 otherwise chose e.g. `ldr x3`/`ldr x5` instead of `ldr x4`/`ldr x5`);
+* **`args`** (#586): `gen_arg_setup` skips the entry parameters without IR uses
+  (`ValueUseState::Unused`, `machinst/lower.rs:527`) and `take_args` emits no `args` when none
+  is left (`machinst/abi.rs:2186`); `lowerFunction` lists every register-passed parameter and
+  emits `args []`. The pairs of parameters without CLIF use (and without use in the VCode) and an
+  empty `args` are left out;
+* **calls to an `sret` callee** (#587): `gen_call_output` allocates vregs for the CLIF returns
+  only and `gen_call_rets` skips the `StructReturn` return (`machinst/abi.rs:1991`), so the
+  call has no def and clobbers x0; `lowerFunction`'s x0 def of a fresh, unused vreg is left out;
+* **edge blocks**: `lowerFunction` reaches every successor of a `try_call`, and every successor
+  with block arguments of a `brif`/`br_table`, through an edge block of its own (a `jump` with
+  the arguments). Cranelift's `BlockLoweringOrder::new` makes an edge block only for a successor
+  with several CLIF predecessor edges (`machinst/blockorder.rs:204-225`); otherwise the branch
+  passes the arguments to the successor directly (regalloc2's per-successor branch arguments).
+  Such edge blocks are left out and the branch retargeted (`vcodeJsonAt`); a `jump` left out
+  has no operands, and the parallel copy at the edge is the same one `checkAlloc` checks.
+
+Nothing new is trusted and no theorem changes: the left-out operands are fixed-register defs of
+vregs without uses, an empty `args` and a left-out edge block's `jump` have no operands, so the
+answer is read back against the prepared VCode (`Shape.readBack`: the left-out operands get
+their fixed registers, edit positions are shifted over the left-out instructions), rebuilt
+(`buildRFunc vcp`) and checked by
+`checkAlloc` as before. Code from another lowering route (the Stock scalar routes) is given
+unchanged. This replaces the earlier `OracleOrder` workaround (the Stock driver's code whenever
+it was the same up to renaming). `FV_RA_DIAG=<file>` appends one line per function: what was
+given to regalloc2 and which allocation was lowered.
 
 Measured (`scripts/stock-crate-parity.py`, debug, byte-identical functions vs cg_clif):
-fv-demo 303 (Lean allocator) → 338 (regalloc2 on the legacy numbering) → 491 of 1372;
-survey a_arith/d_loops_iters/f_crypto/g_u128 293 → 531 of 1562. Every regalloc2 answer was
-accepted (0 spill fallbacks); in fv-demo 486 functions get the Stock numbering, and of the
-functions where the allocation is the only remaining cause none does: their code differs from
-Cranelift's (causes in #551).
+fv-demo 303 (Lean allocator) → 338 (regalloc2 on the legacy numbering) → 491 (`OracleOrder`)
+→ 571 (this numbering, `args`, `sret` call defs) → 592 of 1372 (edge blocks; allocation the only
+remaining cause: 321 → 134 → 54 → 33); survey a_arith/d_loops_iters/f_crypto/g_u128
+293 → 531 → 627 → 645 of 1562 (159 → 63 → 45). Every regalloc2 answer is accepted (0 spill
+fallbacks). Every function left where the allocation is the only cause returns an `sret`
+pointer in x0 (`mov x0, x8` before `ret`, #587).
 
 ## The Lean allocator (`leanAlloc`, V4b, `--regalloc lean`)
 

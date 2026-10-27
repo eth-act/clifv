@@ -43,7 +43,7 @@ def sb : BitVec 64 := sp0 - BitVec.ofNat 64 (frameDrop (artOf I.results f).af)
 /-- The caller's CLIF memory: no live allocation, the CLIF image's symbols, the slot-placement
 oracle at the entry's body `sp`. -/
 def cm : Clif.Mem :=
-  { symbols := fun n => I.syms.lookup n, place := some ⟨[sb], (sys I closedBase).frames⟩ }
+  { symbols := fun n => I.syms.lookup n, place := some ⟨[sb], (sys I closedBase).frames, none⟩ }
 
 /-- The reference CLIF entry state of `f` on `2, 3`. -/
 def cs : Clif.State where

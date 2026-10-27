@@ -1,4 +1,5 @@
 import FV.Backend.Proof.IselLowerAll
+import FV.Backend.Proof.IselFloatCmpTI
 import FV.Backend.Proof.IselBaseTI
 import FV.Backend.Proof.IselAtomicTI
 import FV.Backend.Proof.IselCmpDivRemTI
@@ -85,7 +86,7 @@ theorem lowerRulesCorrectTI_program : LowerRulesCorrectTI program := by
   simp only [closureRootIds, List.contains_cons, List.contains_nil, Bool.or_false,
     Bool.or_eq_true, beq_iff_eq] at hroot
 
-  rcases hroot with h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h
+  rcases hroot with h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h
   · rw [lower_rule_eq hr (k := 172) (r0 := rule_lower_53) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]
     apply iconst_okTI <;> assumption
   · exfalso; simp [floatMoveRootRule, h] at hfm
@@ -230,6 +231,8 @@ theorem lowerRulesCorrectTI_program : LowerRulesCorrectTI program := by
   · exfalso; simp [memRootRule, h] at hmem
   · rw [lower_rule_eq hr (k := 132) (r0 := rule_lower_1281) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]
     apply uextend_icmp_ruleOkTI <;> assumption
+  · rw [lower_rule_eq hr (k := 133) (r0 := rule_lower_1283) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]
+    apply uextend_fcmp_okTI <;> assumption
   · exfalso; simp [memRootRule, h] at hmem
   · rw [lower_rule_eq hr (k := 500) (r0 := rule_lower_1315) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]
     apply sextend_okTI <;> assumption
@@ -338,6 +341,8 @@ theorem lowerRulesCorrectTI_program : LowerRulesCorrectTI program := by
     apply popcnt_64_okTI <;> assumption
   · rw [lower_rule_eq hr (k := 302) (r0 := rule_lower_2146) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]
     apply ireduce_okTI <;> assumption
+  · rw [lower_rule_eq hr (k := 303) (r0 := rule_lower_2176) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]
+    apply fcmp_okTI <;> assumption
   · rw [lower_rule_eq hr (k := 470) (r0 := rule_lower_2215) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]
     apply icmp_ruleOkTI <;> assumption
   · rw [lower_rule_eq hr (k := 305) (r0 := rule_lower_2237) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]

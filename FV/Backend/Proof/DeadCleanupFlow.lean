@@ -3,8 +3,8 @@ import FV.Backend.Proof.DeadCleanupLive
 namespace Backend.DeadCleanup
 
 /-- Every entry-live register was either live on exit or read in the block. -/
-theorem scan_live_subset (nregs : Nat) (ms : List MInst) (exit : List Nat) :
-    ∀ n ∈ (scan nregs ms exit).2, n ∈ exit ++ ms.flatMap (uses nregs) := by
+theorem scan_live_subset (nregs : Nat) (e : Bool) (ms : List MInst) (exit : List Nat) :
+    ∀ n ∈ (scan nregs e ms exit).2, n ∈ exit ++ ms.flatMap (uses nregs) := by
   induction ms with
   | nil => simp [scan]
   | cons m ms ih =>
@@ -29,13 +29,13 @@ theorem blockUses_exit {vc : VCode} {b : VBlock} (hb : b ∈ vc.blocks.toList)
     n ∈ exitLive vc idx other := List.mem_flatMap.mpr ⟨b, hb, hn⟩
 
 /-- Agreement on boundary-live registers suffices at a block's entry. -/
-theorem scan_entry_agree {V : Type} {vc : VCode} {idx : Nat} {b : VBlock}
+theorem scan_entry_agree {V : Type} {vc : VCode} {idx : Nat} {b : VBlock} {e : Bool}
     (hb : b ∈ vc.blocks.toList) {a c : Nat → V}
     (ha : Agree (exitLive vc idx b) a c) :
-    Agree (scan vc.classes.size b.insts.toList (exitLive vc idx b)).2 a c := by
+    Agree (scan vc.classes.size e b.insts.toList (exitLive vc idx b)).2 a c := by
   intro n hn
   apply ha n
-  rcases List.mem_append.mp (scan_live_subset _ _ _ n hn) with he | hu
+  rcases List.mem_append.mp (scan_live_subset _ _ _ _ n hn) with he | hu
   · exact he
   · exact blockUses_exit hb (List.mem_append_right _ hu) idx b
 
@@ -43,6 +43,13 @@ theorem scan_entry_agree {V : Type} {vc : VCode} {idx : Nat} {b : VBlock}
 theorem pureForm_notTerminator {m : MInst} (hp : pureForm m = true) :
     m.isTerminator = false := by
   cases m <;> simp [pureForm, MInst.isTerminator, MInst.isBranch, MInst.isRet] at *
+
+/-- Compares cannot be block terminators. -/
+theorem cmpForm_of_terminator {m : MInst} (h : m.isTerminator = true) : cmpForm m = false := by
+  cases hc : cmpForm m
+  · rfl
+  · unfold cmpForm at hc
+    split at hc <;> simp_all [MInst.isTerminator, MInst.isBranch, MInst.isRet]
 
 /-- A successful CFG's final terminator survives cleanup. -/
 theorem cleanBlock_back (vc : VCode) (idx : Nat) (b : VBlock) {t : MInst}
@@ -55,7 +62,8 @@ theorem cleanBlock_back (vc : VCode) (idx : Nat) (b : VBlock) {t : MInst}
       simp_all
   have ht' : b.insts.toList.getLast? = some t := by simpa using ht
   obtain ⟨pre, he⟩ := List.getLast?_eq_some_iff.mp ht'
-  simpa [cleanBlock, he] using scan_last vc.classes.size pre t (exitLive vc idx b) hp
+  simpa [cleanBlock, he] using
+    scan_last vc.classes.size (exitDead vc b.label) pre t (exitLive vc idx b) hp
 
 /-! Non-vacuity: real instructions exercise live boundary and final return
 preservation. The loop's input is live on its own boundary. -/

@@ -103,7 +103,7 @@ def sb : BitVec 64 := sp0 - BitVec.ofNat 64 (frameDrop (artOf J.resultsCleanup f
 /-- The caller's CLIF memory: no live allocation, the CLIF image's symbols, the slot-placement
 oracle at the entry's body `sp` above the caller's `sp`. -/
 def cm : Clif.Mem :=
-  { symbols := fun n => J.syms.lookup n, place := some ⟨[sb, sp0], (sys J closedBase).frames⟩ }
+  { symbols := fun n => J.syms.lookup n, place := some ⟨[sb, sp0], (sys J closedBase).frames, none⟩ }
 
 /-- The entry registers of the input's `sum`. -/
 def regs0 : Clif.Regs := (Clif.Regs.empty.setMany (b0.params.map (·.1)) args').getD default

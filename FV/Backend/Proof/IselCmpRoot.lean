@@ -1,4 +1,5 @@
 import FV.Backend.Proof.IselCmpEmit
+import FV.Backend.Proof.IselFloatCmpEmit
 
 /-!
 # Family C root rules: `icmp` (2215), `uextend (icmp)` (1281)
@@ -255,14 +256,44 @@ theorem is_nonzero_cmp_okT {F : BitVec 64 → Prop} {isem : Sem} (hR : Refines F
   isel_split' hp hc h 650
   all_goals (try (isel_refute hp at hm; done))
   all_goals isel_inv' hp [] at hm he
-  · -- 4965 (fcmp): no `fcmp` in E
-    rcases ‹(∃ _ _, _) ∨ _› with ⟨_, _, _, rfl⟩ | ⟨-, rfl⟩ <;> isel_inv_simp [] at * <;> isel_destruct <;>
+  · -- 4965 (fcmp): `emit_fcmp`
+    rcases ‹(∃ _ _, _) ∨ _› with ⟨uty, z, hdc, rfl⟩ | ⟨-, rfl⟩ <;> isel_inv_simp [] at * <;> isel_destruct <;>
       subst_vars <;> isel_inv_simp [] at * <;> isel_destruct <;> subst_vars
     all_goals
       obtain ⟨hj⟩ : Nonempty (ctx.defInst? _ = some _) := ⟨‹_›⟩
       obtain ⟨hi⟩ : Nonempty (ctx.insts[_]? = some _) := ⟨‹_›⟩
       obtain ⟨hd⟩ : Nonempty (V.data 152 11 _ = _) := ⟨‹_›⟩
-      exact (opcode_absurdT hctx hj hi hd rfl (by decide)).elim
+      obtain ⟨cl, hcl⟩ := Option.isSome_iff_exists.mp (hctx.defClif _ _ _ hj hi)
+      have hdat := hctx.data _ _ cl hi hcl
+      rw [← hd] at hdat
+      obtain ⟨cc, ty, a, b, rfl, -, hok, hd2⟩ := instData_fcmp_inv hdat
+      simp only [List.cons.injEq] at hd2
+      obtain ⟨hv7, hvcc⟩ := hd2
+      subst hv7
+      obtain ⟨hvcc, -⟩ := hvcc
+      subst hvcc
+      isel_inv_simp [] at *
+      isel_destruct
+      subst_vars
+      obtain ⟨h655⟩ : Nonempty (ApplyInternal p (sem ctx) cfg _ 123 655 _ _ _ _) := ⟨‹_›⟩
+      refine (emit_fcmp_okT hp hc hctx hok hvb h655 (hn := by omega)).weaken ?_
+      rintro fr ρ bb hh hdf ⟨v, hv, rfl⟩
+    · obtain ⟨jx, infox, hjx, hix, hclx⟩ := cmp_defClif_inv hdc
+      obtain ⟨vals, hev, hl⟩ := hdf.1 x jx infox _ v hjx hix hclx rfl hv
+      obtain ⟨vz, hzv, hlt, rfl, -⟩ := evalInst_uextend_ok (hev default)
+      have := lookup_zip_single hl
+      subst this
+      obtain ⟨hty8, hT⟩ := fcmp_truthy hdf hj hi hcl hzv
+      obtain ⟨vt, vb⟩ := vz
+      simp only at hty8
+      subst hty8
+      change BitVec 8 at vb
+      have h8 : 8 < uty.width := hlt
+      have e := truthy_uextend8 (w := uty.width) (by omega) vb
+      show FcmpT cc a b fr (Clif.Sem.truthy (Clif.Sem.uextend (w := 8) uty.width vb))
+      rw [e]
+      exact hT
+    · exact (fcmp_truthy hdf hj hi hcl hv).2
   · -- 4966 (maybe_uextend (icmp …)): `emit_icmp`
     rcases ‹(∃ _ _, _) ∨ _› with ⟨uty, z, hdc, rfl⟩ | ⟨-, rfl⟩ <;> isel_inv_simp [] at * <;>
       isel_destruct <;> subst_vars <;> isel_inv_simp [] at * <;> isel_destruct <;> subst_vars
