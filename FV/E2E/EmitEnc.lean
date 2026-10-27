@@ -121,6 +121,17 @@ macro "enc" : tactic => `(tactic| (
   (repeat' split) <;>
   (try simp_all [ALUOp.addSub?, ALUOp.logic?, OperandSize.is64, CTy.bits, immOkB]) <;> (try omega)))
 
+set_option hygiene false in
+/-- `enc` with the FP load/store field helpers unfolded (the `d` pushes and pops). -/
+macro "encF" : tactic => `(tactic| (
+  rw [encodable_iff]
+  simp (disch := omega) [Insn.armFields, encZR_x, encSP_x, encV_v, encZR_xzr, encSP_sp, ite_pos', uField, sField,
+    bind, Except.bind, pure, Except.pure, OperandSize.is64, Reg.fp, Reg.lr, throw, throwThe,
+    MonadExceptOf.throw, Insn.armFields.fpLdstSize, Insn.armFields.fpOpc, ScalarSize.bytes,
+    ldstFields, Nat.mod_lt] <;>
+  (repeat' split) <;>
+  (try simp_all [Insn.armFields.fpLdstSize, Insn.armFields.fpOpc, ScalarSize.bytes]) <;> (try omega)))
+
 /-! ## Multi-line expansions -/
 
 /-- A general-purpose register `x0`–`x30`. -/
@@ -1045,6 +1056,8 @@ theorem moveInsts_enc {c : FnCtx} {cc : CheckCtx} {w : String} {fr : RAFrame} {s
   intro m hm
   unfold RAFrame.moveInsts at h
   split at h
+  · simp only [pure, Except.pure, Except.ok.injEq] at h; subst h; cases hm
+  · simp only [pure, Except.pure, Except.ok.injEq] at h; subst h; cases hm
   · rename_i a b
     obtain ⟨ha, hca⟩ := ldReg_of_locOk hs
     obtain ⟨hb, -⟩ := ldReg_of_locOk hd
@@ -1108,13 +1121,12 @@ theorem imm12_bits {v : Nat} {i : Imm12} (h : Imm12.ofNat? v = some i) : i.bits 
       omega
     · cases h
 
-theorem frameAdj_enc {size : Nat} (op : ALUOp) (hop : op = .add ∨ op = .sub) :
-    ∀ i t, Line.ins i t ∈ (if size == 0 then []
-      else match Imm12.ofNat? size with
-        | some i => [Line.ins (.aluImm12 op true .sp .sp i)]
-        | none => loadConst64 (.x 16) size ++ [.ins (.aluRRRExtend op true .sp .sp (.x 16) .uxtx)]) →
-      i.encodable = true := by
+/-- The `sp` adjustment of the frame (`spAdjLines`, Cranelift's `gen_sp_reg_adjust`) is
+encodable (before #479 stated over its inlined `if`). -/
+theorem frameAdj_enc (sub : Bool) (size : Nat) :
+    ∀ i t, Line.ins i t ∈ spAdjLines sub size → i.encodable = true := by
   intro i t h
+  unfold spAdjLines at h
   split at h
   · cases h
   · split at h
@@ -1122,35 +1134,108 @@ theorem frameAdj_enc {size : Nat} (op : ALUOp) (hop : op = .add ∨ op = .sub) :
       have := imm12_bits him
       simp only [List.mem_singleton, Line.ins.injEq] at h
       obtain ⟨rfl, -⟩ := h
-      rcases hop with rfl | rfl <;> enc
+      cases sub <;> enc
     · rcases List.mem_append.mp h with h | h
       · exact loadConst64_enc (by decide) _ i t h
       · simp only [List.mem_singleton, Line.ins.injEq] at h
         obtain ⟨rfl, -⟩ := h
-        rcases hop with rfl | rfl <;> enc
+        cases sub <;> enc
 
-theorem aEnc_prologue (c : FnCtx) (af : AFunc) : AEnc c af .prologue := by
+/-- A register a push or pop of class `int` may name: a callee-saved x19–x28, or a
+callee-saved d8–d15. -/
+def PushReg (int : Bool) (r : Reg) : Prop :=
+  if int then ∃ n, r = .x n ∧ 19 ≤ n ∧ n < 29 else ∃ n, r = .v n ∧ 8 ≤ n ∧ n < 16
+
+theorem pushLines_enc (int : Bool) {rs : List Reg} (h : ∀ r ∈ rs, PushReg int r) :
+    ∀ i t, Line.ins i t ∈ pushLines int rs → i.encodable = true := by
+  obtain ⟨hp, ho⟩ := pairsOf_mem rs
+  intro i t hi
+  unfold pushLines at hi
+  generalize hq : pairsOf rs = q at hi hp ho
+  obtain ⟨ps, o⟩ := q
+  simp only [List.mem_append, List.mem_map, List.mem_reverse] at hi
+  rcases hi with hi | ⟨⟨a, b⟩, hab, e⟩
+  · cases o with
+    | none => cases hi
+    | some r =>
+      simp only [List.mem_singleton, Line.ins.injEq] at hi
+      obtain ⟨rfl, -⟩ := hi
+      have hr := h r (ho r rfl)
+      cases int <;> simp only [PushReg, Bool.false_eq_true, ↓reduceIte] at hr ⊢ <;>
+        obtain ⟨n, rfl, h1, h2⟩ := hr <;> first | (enc; done) | encF
+  · simp only [Line.ins.injEq] at e
+    obtain ⟨rfl, -⟩ := e
+    have ha := h a (hp _ hab).1
+    have hb := h b (hp _ hab).2
+    cases int <;> simp only [PushReg, Bool.false_eq_true, ↓reduceIte] at ha hb ⊢ <;>
+      obtain ⟨n, rfl, h1, h2⟩ := ha <;> obtain ⟨n', rfl, h1', h2'⟩ := hb <;> first | (enc; done) | encF
+
+theorem popLines_enc (int : Bool) {rs : List Reg} (h : ∀ r ∈ rs, PushReg int r) :
+    ∀ i t, Line.ins i t ∈ popLines int rs → i.encodable = true := by
+  obtain ⟨hp, ho⟩ := pairsOf_mem rs
+  intro i t hi
+  unfold popLines at hi
+  generalize hq : pairsOf rs = q at hi hp ho
+  obtain ⟨ps, o⟩ := q
+  simp only [List.mem_append, List.mem_map] at hi
+  rcases hi with ⟨⟨a, b⟩, hab, e⟩ | hi
+  · simp only [Line.ins.injEq] at e
+    obtain ⟨rfl, -⟩ := e
+    have ha := h a (hp _ hab).1
+    have hb := h b (hp _ hab).2
+    cases int <;> simp only [PushReg, Bool.false_eq_true, ↓reduceIte] at ha hb ⊢ <;>
+      obtain ⟨n, rfl, h1, h2⟩ := ha <;> obtain ⟨n', rfl, h1', h2'⟩ := hb <;> first | (enc; done) | encF
+  · cases o with
+    | none => cases hi
+    | some r =>
+      simp only [List.mem_singleton, Line.ins.injEq] at hi
+      obtain ⟨rfl, -⟩ := hi
+      have hr := h r (ho r rfl)
+      cases int <;> simp only [PushReg, Bool.false_eq_true, ↓reduceIte] at hr ⊢ <;>
+        obtain ⟨n, rfl, h1, h2⟩ := hr <;> first | (enc; done) | encF
+
+theorem pushReg_int {saves : List Reg} (hsv : SavesOk saves) : ∀ r ∈ savesInt saves, PushReg true r := by
+  intro r hr
+  obtain ⟨hm, hx⟩ := List.mem_filter.1 hr
+  rcases calleeSaved_cases (hsv.1 r hm) with ⟨n, rfl, h1, h2⟩ | ⟨n, rfl, -, -⟩
+  · exact ⟨n, rfl, h1, h2⟩
+  · cases hx
+
+theorem pushReg_float {saves : List Reg} (hsv : SavesOk saves) :
+    ∀ r ∈ savesFloat saves, PushReg false r := by
+  intro r hr
+  obtain ⟨hm, hx⟩ := List.mem_filter.1 hr
+  rcases calleeSaved_cases (hsv.1 r hm) with ⟨n, rfl, -, -⟩ | ⟨n, rfl, h1, h2⟩
+  · cases hx
+  · exact ⟨n, rfl, h1, h2⟩
+
+/-- The prologue (fp/lr, the pushes of the callee-saved registers, the frame) is encodable. -/
+theorem aEnc_prologue (c : FnCtx) {af : AFunc} (hsv : SavesOk af.saves) : AEnc c af .prologue := by
   intro ps ls ps' h i t hi
   simp only [ainstLines, pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at h
   obtain ⟨rfl, -⟩ := h
   split at hi
-  · simp only [prologueLines, List.mem_append, List.mem_cons, List.mem_singleton,
-      List.not_mem_nil, or_false] at hi
-    rcases hi with (h | h) | h
+  · simp only [prologueLines, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hi
+    rcases hi with (((h | h) | h) | h) | h
     · simp only [Line.ins.injEq] at h; obtain ⟨rfl, -⟩ := h; enc
     · simp only [Line.ins.injEq] at h; obtain ⟨rfl, -⟩ := h; enc
-    · exact frameAdj_enc .sub (.inr rfl) i t h
+    · exact pushLines_enc true (pushReg_int hsv) i t h
+    · exact pushLines_enc false (pushReg_float hsv) i t h
+    · exact frameAdj_enc true _ i t h
   · cases hi
 
-theorem aEnc_epilogue (c : FnCtx) (af : AFunc) : AEnc c af .epilogueRet := by
+/-- The epilogue (the frame, the pops, fp/lr, `ret`) is encodable. -/
+theorem aEnc_epilogue (c : FnCtx) {af : AFunc} (hsv : SavesOk af.saves) :
+    AEnc c af .epilogueRet := by
   intro ps ls ps' h i t hi
   simp only [ainstLines, pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at h
   obtain ⟨rfl, -⟩ := h
   split at hi
-  · simp only [epilogueLines, List.mem_append, List.mem_cons, List.mem_singleton,
-      List.not_mem_nil, or_false] at hi
-    rcases hi with h | h | h
-    · exact frameAdj_enc .add (.inl rfl) i t h
+  · simp only [epilogueLines, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hi
+    rcases hi with ((h | h) | h) | h | h
+    · exact frameAdj_enc false _ i t h
+    · exact popLines_enc false (pushReg_float hsv) i t h
+    · exact popLines_enc true (pushReg_int hsv) i t h
     · simp only [Line.ins.injEq] at h; obtain ⟨rfl, -⟩ := h; enc
     · simp only [Line.ins.injEq] at h; obtain ⟨rfl, -⟩ := h; enc
   · simp only [List.mem_singleton, Line.ins.injEq] at hi
@@ -1382,6 +1467,7 @@ theorem immOkB_of {vc : VCode} (h : immsOkB vc = true) {b : Nat} {vb : VBlock} {
 theorem item_enc {cx c : FnCtx} {af : AFunc} {vc : VCode} {rf : RFunc} {cc : CheckCtx} {b : Nat}
     {vb : VBlock} {it : RItem} {c1 : List AInst}
     (hcov : FormsCovered cx vc) (himm : immsOkB vc = true) (hctl : ctlCheck vc rf = true)
+    (hsv : SavesOk af.saves)
     (hvb : vc.blocks[b]? = some vb) (hchk : ItemChk cc vb it)
     (hc : itemCode (RAFrame.compute vc rf) vb it = .ok c1) : ∀ a ∈ c1, AEnc c af a := by
   cases it with
@@ -1391,8 +1477,8 @@ theorem item_enc {cx c : FnCtx} {af : AFunc} {vc : VCode} {rf : RFunc} {cc : Che
     intro a ha
     cases a with
     | inst m => exact moveInsts_enc hw hm m ha
-    | prologue => exact aEnc_prologue c af
-    | epilogueRet => exact aEnc_epilogue c af
+    | prologue => exact aEnc_prologue c hsv
+    | epilogueRet => exact aEnc_epilogue c hsv
   | op k allocs =>
     obtain ⟨regs, i, i', rfl, hi, hasg, hcases⟩ := itemCode_op hc
     obtain ⟨w, ops, hops, hst⟩ := hchk i hi
@@ -1411,7 +1497,7 @@ theorem item_enc {cx c : FnCtx} {af : AFunc} {vc : VCode} {rf : RFunc} {cc : Che
     · cases ha
     · simp only [List.mem_singleton] at ha
       subst ha
-      exact aEnc_epilogue c af
+      exact aEnc_epilogue c hsv
 
 /-! ## The theorems -/
 
@@ -1425,6 +1511,9 @@ theorem emitFunc_encodable_of {cx : FnCtx} {vc : VCode} {rf : RFunc} {af : AFunc
   obtain ⟨body, ps, hb, hL, -⟩ := emitFunc_ok he
   obtain ⟨⟨-, -, hsz, hblk⟩, -, hctl⟩ := lowerRFunc_ok ha
   obtain ⟨cc, hitems⟩ := allocChecked_items hchk
+  have hsv : SavesOk af.saves := by
+    obtain ⟨hsh, e⟩ := lowerRFunc_saves ha
+    rw [e]; exact saveShapeOk_saves hsh
   have hA : ∀ x ∈ af.blocks.toList, ∀ a ∈ x.2.toList, AEnc ⟨k, af.slotBase⟩ af a := by
     intro x hx a hax
     obtain ⟨b, hbx⟩ := List.mem_iff_getElem?.mp hx
@@ -1442,10 +1531,10 @@ theorem emitFunc_encodable_of {cx : FnCtx} {vc : VCode} {rf : RFunc} {af : AFunc
     · split at hax
       · simp only [List.mem_singleton] at hax
         subst hax
-        exact aEnc_prologue _ af
+        exact aEnc_prologue _ hsv
       · cases hax
     · obtain ⟨it, hit', c1, hc1, hac⟩ := mem_itemsCode hcode hax
-      exact item_enc hcov himm hctl hvb (hitems b vb items hvb hit it hit') hc1 a hac
+      exact item_enc hcov himm hctl hsv hvb (hitems b vb items hvb hit it hit') hc1 a hac
   rw [hL]
   exact relaxLines_enc _ (allEnc_append (ftList_enc _ _ (Nat.le_refl _) (blocksLinesE_enc hA hb))
     (trapLines_enc _))

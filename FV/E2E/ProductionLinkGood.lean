@@ -28,7 +28,7 @@ theorem insnAt_ofLine_production {fa : FnAsm} {fb : FnBin} {lm : Std.HashMap Lbl
 theorem progCallG_production (hL : L.OkProduction) [hR : L.CrunOk] {M : Nat} (hM : 0 < M) (ihG : L.ThmG κ (M - 1)) {n : String}
     {h : Clif.Function} (hpf : L.P.func? n = some h) (hcal : ∃ g ∈ L.P.funcs, L.Callee g h)
     (hib : ((RAFrame.compute (L.A h).vcp (L.A h).rf).intBase = 0 ∧
-      (RAFrame.compute (L.A h).vcp (L.A h).rf).size = (L.A h).af.frameSize) ∨ L.NeedNI)
+      (RAFrame.compute (L.A h).vcp (L.A h).rf).size = (L.A h).af.frameSize - clobberBytes (L.A h).af.saves) ∨ L.NeedNI)
     {F : BitVec 64 → Prop} (himgF : ∀ a, L.Img a → F a)
     {uses : List CV} {w : Arm.ArmState} (herr : Arm.r .ERR w = .None)
     (hal : (spv w).toNat % 16 = 0)
@@ -59,7 +59,7 @@ theorem progCallG_production (hL : L.OkProduction) [hR : L.CrunOk] {M : Nat} (hM
     (lowerRFunc_ok hc.alloc).1.2.1
   have hsz_le := size_le_frameSize hc.alloc
   have hfits : ∀ p ∈ h.slots, ∃ off, (slotLayout h.slots).1.lookup p.1 = some off ∧
-      (L.A h).af.slotBase + off + p.2.size ≤ (L.A h).af.frameSize := by
+      (L.A h).af.slotBase + off + p.2.size ≤ (L.A h).af.frameSize - clobberBytes (L.A h).af.saves := by
     obtain ⟨g, hg, hcg⟩ := hcal
     exact hL.slotFits g hg h hcg
   have hce : ClifEntry h vals cs := clifEntry_initState hpf hinit
@@ -82,7 +82,7 @@ theorem progCallG_production (hL : L.OkProduction) [hR : L.CrunOk] {M : Nat} (hM
   let spb := spv w - BitVec.ofNat 64 (frameDrop (L.A h).af)
   let sz := (RAFrame.compute (L.A h).vcp (L.A h).rf).size
   let Fh : BitVec 64 → Prop := fun a =>
-    F a ∧ ¬ OutAt ib spb a ∧ ¬ SlotAt sz (L.A h).af.frameSize spb a
+    F a ∧ ¬ OutAt ib spb a ∧ ¬ SlotAt sz ((L.A h).af.frameSize - clobberBytes (L.A h).af.saves) spb a
   have hib_le : ib ≤ sz := intBase_le_size _ _
   have hspb : spb.toNat = (spv w).toNat - frameDrop (L.A h).af := hB
   have hlt := (spv w).isLt
@@ -93,12 +93,12 @@ theorem progCallG_production (hL : L.OkProduction) [hR : L.CrunOk] {M : Nat} (hM
     exact ⟨by omega, by omega⟩
   have hout_F : ∀ a, OutAt ib spb a → F a ∧ ¬ L.Img a := fun a ha => hdead a (hout_reg a ha)
   -- the callee's slot region (in the caller's dead stack) is outside the callee's `F`
-  have hslot_reg : ∀ a, SlotAt sz (L.A h).af.frameSize spb a →
+  have hslot_reg : ∀ a, SlotAt sz ((L.A h).af.frameSize - clobberBytes (L.A h).af.saves) spb a →
       StackBelow (frameDrop (L.A h).af + κ (M - 1) h) (spv w) a := by
     intro a ⟨h1, h2⟩
     rw [hspb] at h1 h2
     exact ⟨by omega, by omega⟩
-  have hslot_F : ∀ a, SlotAt sz (L.A h).af.frameSize spb a → F a ∧ ¬ L.Img a :=
+  have hslot_F : ∀ a, SlotAt sz ((L.A h).af.frameSize - clobberBytes (L.A h).af.saves) spb a → F a ∧ ¬ L.Img a :=
     fun a ha => hdead a (hslot_reg a ha)
   have hspb_add : ∀ j < ib, OutAt ib spb (spb + BitVec.ofNat 64 j) := by
     intro j hj
@@ -233,7 +233,7 @@ theorem progCallG_production (hL : L.OkProduction) [hR : L.CrunOk] {M : Nat} (hM
         (L.A h).af G (enterAt (L.A h) t) = Fh := by
       funext a
       apply propext
-      rw [frameWG_out hfr (by rw [hspt, ← hdrop]; exact hroom) hib_le hsz_le, ← hdrop, hspt]
+      rw [frameWG_out hfr (by rw [hspt, ← hdrop]; exact hroom) hib_le (size_le_frameBody hc.alloc), ← hdrop, hspt]
       constructor
       · rintro (⟨hb, hno, hns⟩ | hc | hg)
         · exact ⟨(hdead a hb).1, hno, hns⟩
@@ -358,9 +358,9 @@ theorem progGoodCore_production (hL : L.OkProduction) [L.CrunOk] {M : Nat} (ihG 
     L.RunGoodL (M - 1) h (enterAt (L.A h) t) := by
   have hpf := func?_of_mem hL.names hh
   have hib : ((RAFrame.compute (L.A h).vcp (L.A h).rf).intBase = 0 ∧
-      (RAFrame.compute (L.A h).vcp (L.A h).rf).size = (L.A h).af.frameSize) ∨ L.NeedNI := by
+      (RAFrame.compute (L.A h).vcp (L.A h).rf).size = (L.A h).af.frameSize - clobberBytes (L.A h).af.saves) ∨ L.NeedNI := by
     by_cases h0 : (RAFrame.compute (L.A h).vcp (L.A h).rf).intBase = 0
-    · by_cases h1 : (RAFrame.compute (L.A h).vcp (L.A h).rf).size = (L.A h).af.frameSize
+    · by_cases h1 : (RAFrame.compute (L.A h).vcp (L.A h).rf).size = (L.A h).af.frameSize - clobberBytes (L.A h).af.saves
       · exact .inl ⟨h0, h1⟩
       · exact .inr ⟨g, hg, h, hcallee, .inr h1⟩
     · exact .inr ⟨g, hg, h, hcallee, .inl h0⟩
