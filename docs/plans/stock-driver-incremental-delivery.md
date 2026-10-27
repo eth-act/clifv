@@ -9,8 +9,9 @@ required axioms/accepted identities/successful stages.
 
 ## Current delivery: arbitrary-length forward scalar CFGs
 
-PR #633 (`ac302a8a`) activated three-block chains. The next substantive packet,
-PR #634, removes that fixed bound and the older two-block forwarding restriction.
+PR #633 (`ac302a8a`) activated three-block chains. PR #634
+(`d6218f29`, merged2026-10-26T22:23:16Z) removes that fixed bound and the older
+two-block forwarding restriction.
 [Terminal author evidence](../research/stock-forward-cfg-production.md) records
 4,093 normal keys, 94 audit files/3,592 roots/all 3,544 old axiom sets exact,
 78 new and 78/70/34/34 retained integration checks, 24,000 native executions,

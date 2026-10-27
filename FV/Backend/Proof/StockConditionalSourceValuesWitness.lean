@@ -222,4 +222,69 @@ theorem named_source_branch_witness (word : BitVec Clif.Ty.i64.width) :
     simpa only [initial,show Backend.lowerFunction.resolve (#[] : Array (Option Nat)) ((#[] : Array (Option Nat)).size + 1) = id by
       funext r; cases r <;> rfl,Backend.Proof.Driver.mapRegs_id,List.map_id'] using execution world
 
+private def frontierAliases : Array (Option Nat) :=
+  (Array.replicate 193 none).set! 192 (some before.base.nextVreg)
+private def frontierRegisters (word : BitVec Clif.Ty.i64.width) (key : Nat) : CV :=
+  if key = before.base.nextVreg then word.setWidth 128 else 0
+private theorem frontier_alias : aliasNum frontierAliases 192 = before.base.nextVreg := by decide +kernel
+private theorem frontier_held (word : BitVec Clif.Ty.i64.width) (state : State) :
+    ValuesHeld (Demanded state) ctx (frame word)
+      (fun key => frontierRegisters word (aliasNum frontierAliases key)) := by
+  intro key _ value read
+  by_cases same : key = 7
+  · subst key
+    change some ⟨.i64,word⟩ = some value at read
+    cases read
+    refine ⟨192,rfl,?_⟩
+    change VHolds ⟨.i64,word⟩ (frontierRegisters word (aliasNum frontierAliases 192))
+    rw [frontier_alias]
+    change (word.setWidth 128).setWidth 64 = word
+    rw [BitVec.setWidth_setWidth_of_le _ (by decide)]
+    exact BitVec.setWidth_eq _
+  · simp [frame,same] at read
+
+/-- A complete named parameter branch inhabits the scratch-free source result
+with its real source operand resolved exactly to the compiler frontier. The
+proof companion's destination may coincide with that source; no inequality is
+assumed. The resolver instance exercises transport, not a claim about the
+whole driver's particular final alias table. -/
+theorem parameter_frontier_branch_witness (word : BitVec Clif.Ty.i64.width) :
+    ∃ (result : Result) (out : V) (next : State) (trace : List RuleId) (code : List MInst)
+      (aliases : Array (Option Nat)) (ρ : Nat → CV),
+      Stock.lower function = .ok result ∧ LowerScope function ∧ Dominated function ∧
+      Stock.runTerm (Driver.termCtx result.ctx 0
+        (.data 152 5 [.data 151 1 [],.value 7,.blockCalls [0,1]])) "lower_branch"
+        [.inst 0,.labels [2,1]] result.initial = .ok (some out,next,trace) ∧
+      aliasNum aliases 192 = result.initial.base.nextVreg ∧
+      Frag result.initial.base next.base code ∧
+      ∀ world,BranchExecution (fun _ => True) ispec 2 1 (code.map
+        (·.mapRegs (Backend.lowerFunction.resolve aliases (aliases.size+1)))) (word != 0)
+        result.initial.base next.base ρ world := by
+  obtain ⟨result,out,next,trace,run,scope,dominated,named,calls,source⟩ :=
+    ConditionalCalls.source_calls_fixture_witness
+  change Stock.lower function = .ok result at run
+  obtain ⟨ranges,created⟩ := lower_build run
+  have same := Except.ok.inj (created.symm.trans build)
+  have context : result.ctx = built.1 := congrArg Prod.fst same
+  have initial : result.initial = before := congrArg (fun p => p.2.2) same
+  have packet : ConditionalCalls.Calls ctx 0 [2,1] before out next := by
+    change ConditionalCalls.Calls (Driver.termCtx result.ctx 0
+      (.data 152 5 [.data 151 1 [],.value 7,.blockCalls [0,1]])) 0 [2,1] result.initial out next at calls
+    rw [context,initial] at calls
+    exact calls
+  have slot : ctx.insts[0]? = some ⟨.data 152 5 [.data 151 1 [],.value 7,.blockCalls [0,1]],[],[],none⟩ := rfl
+  have original := packet.source_of_slot (c := 7) (yes := ⟨1,[7]⟩) (no := ⟨2,[7]⟩) slot (by rw [termData_brif])
+  obtain ⟨yes,no,code,labels,fragment,execution⟩ := packet.parameter_source_values inv original
+    (dfg word) (getter word) typed rfl refines_ispec
+    (aliases := frontierAliases) (ρ := frontierRegisters word)
+    (by decide +kernel) extent (frontier_held word next)
+  simp only [List.cons.injEq,and_true] at labels
+  obtain ⟨rfl,rfl⟩ := labels
+  refine ⟨result,out,next,trace,code,frontierAliases,frontierRegisters word,
+    run,scope,dominated,named,?_,?_,?_⟩
+  · simpa only [initial] using frontier_alias
+  · simpa only [initial] using fragment
+  · intro world
+    simpa only [initial] using execution world
+
 end Backend.Stock.Proof.ConditionalValues.SourceWitness

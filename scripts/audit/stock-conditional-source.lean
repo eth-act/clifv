@@ -57,3 +57,8 @@ import FV.Backend.Proof.StockConditionalEmissionWitness
 #print axioms Backend.Stock.Proof.ConditionalValues.conditional_core_origin
 #print axioms Backend.Stock.Proof.ConditionalValues.conditional_core_origin_witness
 #print axioms Backend.Stock.Proof.ConditionalCalls.Calls.source_values
+
+#print axioms Backend.Stock.Proof.ConditionalValues.nonzero_source_branch_values
+#print axioms Backend.Stock.Proof.ConditionalValues.parameter_source_branch_values
+#print axioms Backend.Stock.Proof.ConditionalCalls.Calls.parameter_source_values
+#print axioms Backend.Stock.Proof.ConditionalValues.SourceWitness.parameter_frontier_branch_witness

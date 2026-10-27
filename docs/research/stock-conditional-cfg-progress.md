@@ -123,3 +123,17 @@ retains its old theorem statement. All692targeted module keys and46audit roots
 pass, Std3 only. This closes compiler origin and intermediate-demand bookkeeping;
 source body/chosen-edge/CFG/ABI/consumer composition remains. No new production
 PR or full-gate claim is made at this checkpoint.
+
+The scratch-free checkpoint adds nonzero651 and original parameter650 branch
+variants with no scratch-separation callback, plus selected-call output-demand
+composition. Common branch fragment/execution algebra is factored once; all old
+public theorem headers stay exact. The complete named source witness exercises
+nonidentity alias192→the actual allocation frontier for every64-bit word. This
+is a generic final-resolver transport instance, not a claim that the particular
+whole-driver result has that alias table. All692targeted keys/50audit roots pass,
+Std3 only; two bundled MCP checks report Std3/no warnings. Original comparison
+look-through still uses its earlier scratch callback; derive it from real
+allocation/availability or add the needed weaker path-sensitive variant before
+connecting arbitrary retained source comparisons. It must not become a new
+accepted-input predicate. Remaining work is actual body/first-trap/chosen-edge,
+CFG/ABI and production consumer composition, then remaining full140 obligations.
