@@ -357,4 +357,48 @@ theorem funRealT_link_2 {env : Clif.Env} (henv : env.extern "ld" = none) {Bnd : 
         (EndT env pCL Dcap) u c :=
   funRealT_link hP hdisj linkFree_CL hk hkp placeOk_2 hdep (linkOk_2 henv)
 
+/-- **Non-vacuity of `segOkG`**: every activation of the link of the caller and
+`atomic_load`, `LinkOk`, `PlaceOk` and `LinkFree` discharged. -/
+theorem segOkG_2 {env : Clif.Env} (henv : env.extern "ld" = none) {Bnd : Nat → Prop}
+    {c0 : TState} {Loc : Nat → Nat → Prop} {Dcap : Nat}
+    (hP : PartsOk env pCL c0 Loc) (hdisj : PartDisj Loc)
+    (hk : Clif.EnvKeepsAllocs env) (hkp : Clif.EnvKeepsPlace env)
+    (hdep : ∀ S, RReach env pCL c0 (.run S) → S.callers.length < Dcap) (g : Act) :
+    SegOkG (RealT env pCL Bnd) link2.M (OkB Bnd)
+      (Ent link2 env pCL Bnd c0 Loc fr2 Mx2 Dcap (fun _ => none)) (Ret link2 env pCL c0 Loc fr2)
+      (EndT env pCL Dcap) (Inv link2 env pCL Bnd c0 Loc fr2 Mx2 Dcap (fun _ => none) g) g :=
+  segOkG hP hdisj linkFree_CL hk hkp placeOk_2 hdep (linkOk_2 henv) g
+
+open ProgE2E PrivCohT Rel in
+/-- **Non-vacuity of `realizes_linked_calls`**: threads of the link of the caller and
+`atomic_load`, `LinkOk`, `PlaceOk` and `LinkFree` discharged. -/
+theorem realizes_linked_calls_2 {env : Clif.Env} (henv : env.extern "ld" = none) {n : Nat}
+    {Bnd : Nat → Nat → Prop} {c0 : Nat → TState} {Loc : Nat → Nat → Nat → Prop} {Dcap : Nat → Nat}
+    {g : Nat → Act} {sA : Nat → CallCompose.AT} {cs : Nat → TState} {D0 : Nat → Nat → Prop}
+    (hP : ∀ i < n, PartsOk env pCL (c0 i) (Loc i)) (hdisj : ∀ i < n, PartDisj (Loc i))
+    (hk : Clif.EnvKeepsAllocs env) (hkp : Clif.EnvKeepsPlace env)
+    (hdep : ∀ i < n, ∀ S, RReach env pCL (c0 i) (.run S) → S.callers.length < Dcap i)
+    (hent : ∀ i < n, Ent link2 env pCL (Bnd i) (c0 i) (Loc i) fr2 Mx2 (Dcap i) (fun _ => none)
+      (g i) (sA i) (cs i, D0 i))
+    {ls : Nat → List Lab} {t' : Nat → CallCompose.AT}
+    (hr : ∀ i < n, PRun Policy.arm link2.M (OkB (Bnd i)) (sA i) (ls i) (t' i)) :
+    ∃ k : Nat → Nat, (∀ i < n, k i ≤ (ls i).length) ∧
+      ∀ (PA : Traces ProgE2E.AState AKind BVal) (locsA locsC : List (Nat × Nat)) (MA0 MC0 : Bytes)
+        (rfA coA rmwA : Concurrency.Rel PEv), PA.n = n →
+        (∀ i < n, PA.tr i = conv (evTr ((ls i).take (k i)))) →
+        (PA.exec locsA rfA coA rmwA).Wf →
+        Acyclic (union (PA.exec locsA rfA coA rmwA).poLoc (PA.exec locsA rfA coA rmwA).com) →
+        InitFirst (PA.exec locsA rfA coA rmwA) →
+        (∀ i < n, ∀ a b, rmwA (.thr i a.1 a.2) (.thr i b.1 b.2) ↔
+          MonPair (evTr ((ls i).take (k i))) a b) →
+        locsC <+: locsA →
+        (∀ q (h : q < locsA.length), locsC.length ≤ q → ∃ j < n, D0 j (locsA[q]).1) →
+        (∀ q (h : q < locsC.length),
+          bytesI.get MA0 (locsC[q]).1 (locsC[q]).2 = bytesI.get MC0 (locsC[q]).1 (locsC[q]).2) →
+        StackDisjoint PA (fun j l => D0 j l ∨ Bnd j l) →
+        ∃ (PC : Traces TState SKind BVal) (φ : PEv → PEv), PC.n = n ∧
+          (∀ i < n, PC.st i 0 = cs i) ∧ PC.Runs (CStepS env pCL) ∧
+          Realizes PA locsA MA0 rfA coA rmwA PC locsC MC0 φ (fun _ _ _ => True) :=
+  realizes_linked_calls hP hdisj linkFree_CL hk hkp placeOk_2 hdep (linkOk_2 henv) hent hr
+
 end Concurrency.CallSegOkGT.Witness

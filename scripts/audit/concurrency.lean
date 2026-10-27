@@ -1191,3 +1191,5 @@ import FVTest.Concurrency.LitmusFull
 #print axioms Concurrency.CallSegOkGT.Witness.linkOk_2 -- witness: native_decide
 #print axioms Concurrency.CallSegOkGT.Witness.placeOk_2 -- witness: native_decide
 #print axioms Concurrency.CallSegOkGT.Witness.funRealT_link_2 -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.Witness.segOkG_2 -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.Witness.realizes_linked_calls_2 -- witness: native_decide
