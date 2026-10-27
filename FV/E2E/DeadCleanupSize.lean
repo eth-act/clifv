@@ -49,6 +49,7 @@ private theorem delMap_size {T : VBlock → VBlock} (hT : DelMap T) (vc : VCode)
     apply sum_map_le'
     intro vb hb
     have h := sum_sublist szInstW (hT.sub vb)
+    have hba : (T vb).branchArgs.size = vb.branchArgs.size := by rw [hT.map.branchArgs]
     simp only [Function.comp_def, vbW, wtA, wtL] at *
     omega
   · simp only [vcTg, mapBlocks_blocks, Array.toList_map, List.map_map]

@@ -366,10 +366,10 @@ def checksCleanup : Bool :=
   | .error _ => false
   | .ok vc =>
     lowerCheck sw vc &&
-    match Backend.prepare (Backend.DeadCleanup.prune vc) with
+    match Backend.prepare (cleanupStage sw vc) with
     | .error _ => false
     | .ok vcp =>
-      prepCheck (Backend.DeadCleanup.prune vc) vcp && (checkAlloc vcp (spillAlloc vcp)).isOk &&
+      prepCheck (cleanupStage sw vc) vcp && (checkAlloc vcp (spillAlloc vcp)).isOk &&
       match lowerRFunc vcp (spillAlloc vcp) with
       | .error _ => false
       | .ok af => match emitFunc 0 af with
@@ -403,7 +403,7 @@ theorem compiled_cleanup_exists :
     rw [hl] at h
     simp only [Bool.and_eq_true] at h
     obtain ⟨hlo, h⟩ := h
-    cases hp : Backend.prepare (Backend.DeadCleanup.prune vc) with
+    cases hp : Backend.prepare (cleanupStage sw vc) with
     | error e => rw [hp] at h; cases h
     | ok vcp =>
       rw [hp] at h
