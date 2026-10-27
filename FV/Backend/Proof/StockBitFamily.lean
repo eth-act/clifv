@@ -66,6 +66,55 @@ theorem bit_source_notrap {env : Clif.Env} {cp : Clif.Program} (fuel : Nat)
   apply PureBody.pure_source_notrap fuel s callers ?_ ret code
   intro stm member
   exact ⟨family_pure (family stm member),bit_inst_notrap (family stm member)⟩
+theorem unary_source_framed {f : Clif.Function} {result : Result}
+    (run : Stock.lower f = .ok result) (scope : LowerScope f) (dominated : Dominated f)
+    {event : BlockScanEvent} {record : ScanRecord}
+    (events : event ∈ result.blockScans.toList) (records : record ∈ event.output.records)
+    {bi j : Nat} {b : Clif.Block} {stm : Clif.Stmt}
+    (block : f.blocks[bi]? = some b) (statement : b.body[j]? = some stm)
+    (current : record.inst = blockStart f bi + j)
+    {op : Clif.UnaryOp} (unary : Unary op)
+    {info : IInfo} {x z a : Nat} {ty : Clif.Ty}
+    (source : event.ctx.insts[record.inst]? = some info) (clif : info.clif = some (.unary op ty x))
+    (results : info.results = [z]) (statementResults : stm.results = [z])
+    (mapped : event.ctx.valueReg? z = some (.vreg a .int))
+    {step : Step} (recorded : record.output.step = some step) (emitted : step.decision = .emitted)
+    {F : BitVec 64 → Prop} {isem : Backend.Proof.Sem} (refines : Refines F isem)
+    {fr : Clif.Frame} {ρ : Nat → CV}
+    (dfg : DFGCons event.ctx (restrict fr (availOf f (availIn f result.ctx) bi j)))
+    (held : ValuesHeld (fun v => Demanded record.output.state v ∧
+      v ∈ availOf f (availIn f result.ctx) bi j) event.ctx fr (fun k => ρ (aliasNum result.final.alias k)))
+    {env : Clif.Env} {cp : Clif.Program} {fr' : Clif.Frame} {cm cm' : Clif.Mem}
+    (sourceStep : SourceInstResult env cp event.ctx record.inst (fr,cm) (fr',cm')) :
+    ∃ ρ', PRun F isem (record.output.emitted.toList.map (·.mapRegs
+        (Backend.lowerFunction.resolve result.final.alias (result.final.alias.size+1)))) ρ ρ' ∧ cm' = cm ∧
+      ValuesHeld (fun v => Demanded record.input v ∧
+        v ∈ availOf f (availIn f result.ctx) bi (j+1)) event.ctx fr'
+        (fun k => ρ' (aliasNum result.final.alias k)) ∧
+      (∀ k,k < record.input.base.nextVreg ∨ record.output.state.base.nextVreg ≤ k → ρ' k = ρ k) := by
+  rcases unary with rfl | rfl | rfl | rfl | rfl
+  · obtain ⟨u,d,ρ',getX,output,bounds,execution,value,unchanged,kept,post⟩ :=
+      stock_lower_neg_source_by_instruction run scope dominated events records block statement current
+        source clif results statementResults mapped recorded emitted refines held sourceStep
+    exact ⟨ρ',execution,unchanged,post,kept⟩
+  · obtain ⟨u,d,ρ',getX,output,bounds,execution,value,unchanged,kept,post⟩ :=
+      ScalarCount.stock_lower_count_source_by_instruction run scope dominated false events records block statement current
+        source clif results statementResults mapped recorded emitted refines dfg held sourceStep
+    exact ⟨ρ',execution,unchanged,post,kept⟩
+  · obtain ⟨u,d,ρ',getX,output,bounds,execution,value,unchanged,kept,post⟩ :=
+      ScalarCount.stock_lower_count_source_by_instruction run scope dominated true events records block statement current
+        source clif results statementResults mapped recorded emitted refines dfg held sourceStep
+    exact ⟨ρ',execution,unchanged,post,kept⟩
+  · obtain ⟨u,d,ρ',getX,output,bounds,execution,value,unchanged,kept,post⟩ :=
+      stock_lower_bitrev_source_by_instruction run scope dominated events records block statement current
+        source clif results statementResults mapped recorded emitted refines held sourceStep
+    exact ⟨ρ',execution,unchanged,post,kept⟩
+  · obtain ⟨u,d,ρ',getX,output,bounds,execution,value,unchanged,kept,post⟩ :=
+      stock_lower_bswap_source_by_instruction run scope dominated events records block statement current
+        source clif results statementResults mapped recorded emitted refines held sourceStep
+    exact ⟨ρ',execution,unchanged,post,kept⟩
+
+/-- Retained original interface. -/
 theorem unary_source {f : Clif.Function} {result : Result}
     (run : Stock.lower f = .ok result) (scope : LowerScope f) (dominated : Dominated f)
     {event : BlockScanEvent} {record : ScanRecord}
@@ -91,28 +140,41 @@ theorem unary_source {f : Clif.Function} {result : Result}
       ValuesHeld (fun v => Demanded record.input v ∧
         v ∈ availOf f (availIn f result.ctx) bi (j+1)) event.ctx fr'
         (fun k => ρ' (aliasNum result.final.alias k)) := by
-  rcases unary with rfl | rfl | rfl | rfl | rfl
-  · obtain ⟨u,d,ρ',getX,output,bounds,execution,value,unchanged,kept,post⟩ :=
-      stock_lower_neg_source_by_instruction run scope dominated events records block statement current
-        source clif results statementResults mapped recorded emitted refines held sourceStep
-    exact ⟨ρ',execution,unchanged,post⟩
-  · obtain ⟨u,d,ρ',getX,output,bounds,execution,value,unchanged,kept,post⟩ :=
-      ScalarCount.stock_lower_count_source_by_instruction run scope dominated false events records block statement current
-        source clif results statementResults mapped recorded emitted refines dfg held sourceStep
-    exact ⟨ρ',execution,unchanged,post⟩
-  · obtain ⟨u,d,ρ',getX,output,bounds,execution,value,unchanged,kept,post⟩ :=
-      ScalarCount.stock_lower_count_source_by_instruction run scope dominated true events records block statement current
-        source clif results statementResults mapped recorded emitted refines dfg held sourceStep
-    exact ⟨ρ',execution,unchanged,post⟩
-  · obtain ⟨u,d,ρ',getX,output,bounds,execution,value,unchanged,kept,post⟩ :=
-      stock_lower_bitrev_source_by_instruction run scope dominated events records block statement current
-        source clif results statementResults mapped recorded emitted refines held sourceStep
-    exact ⟨ρ',execution,unchanged,post⟩
-  · obtain ⟨u,d,ρ',getX,output,bounds,execution,value,unchanged,kept,post⟩ :=
-      stock_lower_bswap_source_by_instruction run scope dominated events records block statement current
-        source clif results statementResults mapped recorded emitted refines held sourceStep
-    exact ⟨ρ',execution,unchanged,post⟩
+  obtain ⟨ρ',execution,unchanged,post,_⟩ := unary_source_framed run scope dominated events records block statement current unary source clif results statementResults mapped recorded emitted refines dfg held sourceStep
+  exact ⟨ρ',execution,unchanged,post⟩
 
+theorem rotate_source_framed {f : Clif.Function} {result : Result}
+    (run : Stock.lower f = .ok result) (scope : LowerScope f) (dominated : Dominated f)
+    {event : BlockScanEvent} {record : ScanRecord}
+    (events : event ∈ result.blockScans.toList) (records : record ∈ event.output.records)
+    {bi j : Nat} {b : Clif.Block} {stm : Clif.Stmt}
+    (block : f.blocks[bi]? = some b) (statement : b.body[j]? = some stm)
+    (current : record.inst = blockStart f bi + j)
+    (left : Bool)
+    {info : IInfo} {x y z a : Nat} {ty : Clif.Ty}
+    (source : event.ctx.insts[record.inst]? = some info) (clif : info.clif = some (.binary (ScalarRotate.rotateOp left) ty x y))
+    (results : info.results = [z]) (statementResults : stm.results = [z])
+    (mapped : event.ctx.valueReg? z = some (.vreg a .int))
+    {step : Step} (recorded : record.output.step = some step) (emitted : step.decision = .emitted)
+    {F : BitVec 64 → Prop} {isem : Backend.Proof.Sem} (refines : Refines F isem)
+    {fr : Clif.Frame} {ρ : Nat → CV}
+    (dfg : DFGCons event.ctx (restrict fr (availOf f (availIn f result.ctx) bi j)))
+    (held : ValuesHeld (fun v => Demanded record.output.state v ∧
+      v ∈ availOf f (availIn f result.ctx) bi j) event.ctx fr (fun k => ρ (aliasNum result.final.alias k)))
+    {env : Clif.Env} {cp : Clif.Program} {fr' : Clif.Frame} {cm cm' : Clif.Mem}
+    (sourceStep : SourceInstResult env cp event.ctx record.inst (fr,cm) (fr',cm')) :
+    ∃ ρ', PRun F isem (record.output.emitted.toList.map (·.mapRegs
+        (Backend.lowerFunction.resolve result.final.alias (result.final.alias.size+1)))) ρ ρ' ∧ cm' = cm ∧
+      ValuesHeld (fun v => Demanded record.input v ∧
+        v ∈ availOf f (availIn f result.ctx) bi (j+1)) event.ctx fr'
+        (fun k => ρ' (aliasNum result.final.alias k)) ∧
+      (∀ k,k < record.input.base.nextVreg ∨ record.output.state.base.nextVreg ≤ k → ρ' k = ρ k) := by
+  obtain ⟨u,amount,d,ρ',getX,getY,output,bounds,execution,value,unchanged,kept,post⟩ :=
+    ScalarRotate.stock_lower_rotate_source_by_instruction run scope dominated left events records
+      block statement current source clif results statementResults mapped recorded emitted refines dfg held sourceStep
+  exact ⟨ρ',execution,unchanged,post,kept⟩
+
+/-- Retained original interface. -/
 theorem rotate_source {f : Clif.Function} {result : Result}
     (run : Stock.lower f = .ok result) (scope : LowerScope f) (dominated : Dominated f)
     {event : BlockScanEvent} {record : ScanRecord}
@@ -138,9 +200,7 @@ theorem rotate_source {f : Clif.Function} {result : Result}
       ValuesHeld (fun v => Demanded record.input v ∧
         v ∈ availOf f (availIn f result.ctx) bi (j+1)) event.ctx fr'
         (fun k => ρ' (aliasNum result.final.alias k)) := by
-  obtain ⟨u,amount,d,ρ',getX,getY,output,bounds,execution,value,unchanged,kept,post⟩ :=
-    ScalarRotate.stock_lower_rotate_source_by_instruction run scope dominated left events records
-      block statement current source clif results statementResults mapped recorded emitted refines dfg held sourceStep
+  obtain ⟨ρ',execution,unchanged,post,_⟩ := rotate_source_framed run scope dominated events records block statement current left source clif results statementResults mapped recorded emitted refines dfg held sourceStep
   exact ⟨ρ',execution,unchanged,post⟩
 
 end Backend.Stock.Proof.BitBody

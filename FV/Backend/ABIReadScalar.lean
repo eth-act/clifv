@@ -54,8 +54,20 @@ def highmulProducer : MInst → Bool
   | .aluRRR .uMulH .size64 (.vreg _ .int) (.vreg _ .int) (.vreg _ .int) => true
   | _ => false
 
+/-- Flag-only extended comparisons and masked tests used by narrow operands.
+The zero destination preserves every physical argument register. -/
+def extendedComparisonProducer : MInst → Bool
+  | .aluRRRExtend .subS _ .xzr (.vreg _ .int) (.vreg _ .int) _
+  | .aluRRImmLogic .andS _ .xzr (.vreg _ .int) _ => true
+  | _ => false
+
+/-- The actual virtual-register CSETM consumer of scalar bmask. -/
+def maskProducer : MInst → Bool
+  | .csetm (.vreg _ .int) _ => true
+  | _ => false
+
 def instruction (sig : Clif.Signature) (b k : Nat) (i : MInst) : Bool :=
-  ABIReadFlags.instruction sig b k i || constant i || shift i || extension i || bitProducer i || popcountProducer i || comparisonProducer i || booleanProducer i || highmulProducer i
+  ABIReadFlags.instruction sig b k i || constant i || shift i || extension i || bitProducer i || popcountProducer i || comparisonProducer i || booleanProducer i || highmulProducer i || extendedComparisonProducer i || maskProducer i
 
 def check (sig : Clif.Signature) (vc : VCode) : Bool :=
   vc.blocks.toList.zipIdx.all fun (block,b) =>

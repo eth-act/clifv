@@ -172,3 +172,11 @@ root = "FVTest.Backend.Lowering.StockReturnedDivProductionRuntime"
 [[lean_exe]]
 name = "stock-returned-div-linked"
 root = "FVTest.Backend.Lowering.StockReturnedDivProductionLinked"
+
+[[lean_exe]]
+name = "stock-general-div-runtime"
+root = "FVTest.Backend.Lowering.StockGeneralDivProductionRuntime"
+
+[[lean_exe]]
+name = "stock-general-div-linked"
+root = "FVTest.Backend.Lowering.StockGeneralDivProductionLinked"
