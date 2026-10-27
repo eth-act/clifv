@@ -1,4 +1,6 @@
 import FV.Backend.Proof.StockMemoryRecordWitness
+import FV.Backend.Proof.StockMemorySelectedWitness
+import FV.Backend.Proof.StockMemorySelectedValues
 
 namespace Backend.Stock.Memory.LoadFixture
 open Backend.Proof Backend.Proof.Driver Backend.Stock.Proof
@@ -59,15 +61,15 @@ theorem guarded_load_source_witness (X : ExtSem) :
   have operands : ValueHeld input.event.ctx sourceFrame
       (fun k => initialRegs (aliasNum input.result.final.alias k)) 0 :=
     input_held input (fun _ => True) 0 trivial
-  obtain ⟨ρ',w',executed,same,memory,value,installed⟩ := stock_lower_parameter_load_values
+  obtain ⟨ρ',w',executed,same,memory,value,installed⟩ := stock_lower_load_selected_values
     input.run scope dominated input.events input.records
     (bi := 1) (j := 0) (b := function.blocks[1]!) (stm := ⟨[2],.load .load .i32 flags 0 0⟩)
     rfl rfl input.current input.source input.clif input.results rfl input.mapped input.parameter input.pointer
-    input.recorded input.emitted (n := 0) input.evalRun input.rootRun
+    input.recorded input.emitted input.selected
     (E2E.mrStable_holds relation function)
     (memRefines_csem relation.F ⟨0,0⟩ X rfl (fun _ _ h => by cases h))
     (E2E.memRelOk_holds relation function) (fr := sourceFrame) memory_world (input_dfg input)
-    operands (input_held input _) (by decide) (show Clif.evalInst sourceFrame heap
+    operands (input_held input _) (show Clif.evalInst sourceFrame heap
       (.load .load .i32 flags 0 0) = .ok ([⟨.i32,2779096485⟩],heap) from rfl)
   have sourceEval : instOutcome Clif.Env.empty {funcs := []} sourceFrame heap
       (.load .load .i32 flags 0 0) = .ok ([⟨.i32,2779096485⟩],heap) := rfl
