@@ -114,6 +114,7 @@ structure Live (g : Act) (U D : Nat → Prop) (s : Clif.State) : Prop where
   ndead : ∀ a, g.N a → ¬ ((g.RL L).spB.toNat ≤ a + g.K ∧ a < (g.RL L).spB.toNat)
   opens : ∀ om ∈ g.opens, om.2 < g.ext.length ∧ AllocInvD om.1 om.2 (pushC g.ext s)
   budget : (Dcap - g.ext.length) * Mx ≤ g.K
+  func : s.frame.func = g.f
 
 end live
 
@@ -167,31 +168,39 @@ theorem seg_live {env : Clif.Env} {p : Clif.Program} {L : Link} {Bnd : Nat → P
     · exact hm2.1
     · obtain ⟨_, _, _, _, _, _, _, _, _, _, vals, cm, _, _, _, _, _, hdone, _⟩ := hret
       exact callers_nil_of_done hdone
-  obtain ⟨⟨hli, hop, hsI'⟩, -⟩ := crun_preserve (c0 := c0) (ext := g.ext)
+  obtain ⟨⟨hli, hop, hsI', hbot⟩, -⟩ := crun_preserve (c0 := c0) (ext := g.ext)
     (Q := fun S => LInv p (pushC g.ext S) ∧
       (∀ om ∈ g.opens, om.2 < g.ext.length ∧ AllocInvD om.1 om.2 (pushC g.ext S)) ∧
-      SegInv p fr Mx (g.RL L).spB g.sps g.K s.mem S)
-    (fun S evs S1 hRS hs ⟨h1, h2, h3⟩ => by
+      SegInv p fr Mx (g.RL L).spB g.sps g.K s.mem S ∧ Clif.State.bottom S = g.f)
+    (fun S evs S1 hRS hs ⟨h1, h2, h3, h4⟩ => by
       refine ⟨linv_cstep hLF hs h1, fun om hom => ⟨(h2 om hom).1,
-        allocInvD_cstep hLF hk hs h1 (Nat.le_of_lt (h2 om hom).1) (h2 om hom).2⟩, ?_⟩
-      have hR1 : RReach env p c0 (.run (pushC g.ext S1)) := hRS.step (cstep_pushC hs)
-      obtain ⟨B, S2, hst, he⟩ := cstep_next hs
-      have hc2 : S2.callers = S1.callers := congrArg (·.callers) he
-      have hd1 : S2.callers.length * Mx ≤ g.K := by
-        have := hdep _ hR1
-        simp only [pushC, List.length_append] at this
-        rw [hc2]
-        calc S1.callers.length * Mx ≤ (Dcap - g.ext.length) * Mx :=
-              Nat.mul_le_mul_right _ (by omega)
-          _ ≤ g.K := hLv.budget
-      exact segInv_congr he (segInv_step hLF hk hkp hpo hKs (segInv_withBytes.mpr h3) hst hd1))
-    hrun hLv.reach ⟨hLv.linv, hLv.opens, hsI⟩
+        allocInvD_cstep hLF hk hs h1 (Nat.le_of_lt (h2 om hom).1) (h2 om hom).2⟩, ?_, ?_⟩
+      · have hR1 : RReach env p c0 (.run (pushC g.ext S1)) := hRS.step (cstep_pushC hs)
+        obtain ⟨B, S2, hst, he⟩ := cstep_next hs
+        have hc2 : S2.callers = S1.callers := congrArg (·.callers) he
+        have hd1 : S2.callers.length * Mx ≤ g.K := by
+          have := hdep _ hR1
+          simp only [pushC, List.length_append] at this
+          rw [hc2]
+          calc S1.callers.length * Mx ≤ (Dcap - g.ext.length) * Mx :=
+                Nat.mul_le_mul_right _ (by omega)
+            _ ≤ g.K := hLv.budget
+        exact segInv_congr he (segInv_step hLF hk hkp hpo hKs (segInv_withBytes.mpr h3) hst hd1)
+      · obtain ⟨B, S2, hst, he⟩ := cstep_next hs
+        have hc2 : S2.callers = S1.callers := congrArg (·.callers) he
+        have hf2 : S2.frame = S1.frame := congrArg (·.frame) he
+        have hI : LInv p (withBytes S B) := h3.linv
+        have hb := (Clif.step_next_linv hLF hI hst).2
+        have e : Clif.State.bottom S1 = Clif.State.bottom S2 := by
+          simp only [Clif.State.bottom, hc2, hf2]
+        rw [e, hb]; exact h4)
+    hrun hLv.reach ⟨hLv.linv, hLv.opens, hsI, by simp [Clif.State.bottom, hLv.call, hLv.func]⟩
   obtain ⟨l, hpl', hlen, -⟩ := hsI'.place
   rw [hcall'] at hlen
   obtain rfl : l = [] := List.eq_nil_of_length_eq_zero hlen
   refine ⟨_, _, hR2, .inr (.inr ⟨s', M, DE, hz, rfl, hMU, ⟨hLv.stat, hLv.syms, hLv.code, hLv.bnd,
     hDE, hreach', hcall', hLv.ret, hli, hpl', fun a k hk hv hN => ?_, hLv.ndead, hop,
-    hLv.budget⟩⟩)⟩
+    hLv.budget, by simpa [Clif.State.bottom, hcall'] using hbot⟩⟩)⟩
   simp only [Mem.valid, List.any_eq_true] at hv
   obtain ⟨y, hy, hcy⟩ := hv
   rcases hsI'.allocs y hy with h1 | ⟨h1, h2⟩
