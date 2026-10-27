@@ -1,5 +1,6 @@
 import FV.Backend.Proof.StockMemoryLoad
 import FV.Backend.Proof.StockMemorySelection
+import FV.Backend.Proof.StockMemoryLoadSelection
 import FV.E2E.Main
 import FV.Backend.Proof.MemRefines
 
@@ -121,5 +122,53 @@ theorem selected_load_helper_witness :
       next.base = (Proof.sinkState.base.fresh .int).2.emit
         (.load .uload32 (Proof.sinkState.base.fresh .int).1 (.unscaled (.vreg 192 .int) 0) flags) := by
   exact ⟨_,_,stock_uload32_helper data_program built.1 rfl Proof.sinkState #[] 80 _ _ _ rfl,rfl⟩
+
+/-- Actual rule368's addressing mode executes on the initialized nonzero heap,
+with pointer192 and result194 and every other vreg preserved. -/
+theorem unsigned_load_witness (X : ExtSem) :
+    ∃ ρ' w',seqRun (csem relation.F ⟨0,0⟩ X)
+      [.load .uload32 (.vreg 194 .int) (.unsignedOffset (.vreg 192 .int) 0) flags]
+      registers world = some (.fall ρ' w') ∧ SameWorld relation.F w' world ∧
+      relation.holds function frame.slots heap w' ∧
+      VHolds ⟨.i32,2779096485⟩ (ρ' 194) ∧ (∀ k,k ≠ 194 → ρ' k = registers k) := by
+  have held : Proof.ValueHeld built.1 frame registers 0 := by
+    intro pv source
+    have equal : pv = ⟨.i64,4096⟩ := Option.some.inj source.symm
+    subst pv
+    exact ⟨192,rfl,rfl⟩
+  have address := mapped_unsigned_address (sb := 0) (bytes := 4) (w := world)
+    held (show built.1.valueReg? 0 = some (.vreg 192 .int) from rfl)
+    frame_dfg (show built.1.valueType? 0 = some (.int 64) from rfl) (off := 0) (by decide)
+  obtain ⟨ρ',w',run,same,memory,values,keep⟩ := load_source_seqRun
+    (E2E.mrStable_holds relation function)
+    (memRefines_csem relation.F ⟨0,0⟩ X rfl (fun _ _ h => by cases h))
+    (E2E.memRelOk_holds relation function) memory_world
+    (d := 194) (am := .unsignedOffset (.vreg 192 .int) 0) (ρ := registers)
+    (by intro r member; exact ⟨192,List.mem_singleton.mp member⟩)
+    (aop := .uload32) (by decide) rfl rfl (by decide) (by decide) address source_load
+  exact ⟨ρ',w',run,same,memory,values _ (by simp),keep⟩
+
+/-- The complete actual load RHS, not a replacement instruction, chooses the
+same unsigned addressing mode as the captured source and the semantic witness. -/
+theorem selected_load_rhs_witness :
+    ∃ trace,(Isle.Interp.evalExpr Isle.Aarch64.program (Stock.sem built.1) {} 120
+      Isle.Aarch64.rule_lower_2610.rhs
+      (env3 (.value 0) (.op (.memFlags flags)) (.int 0))).run (Proof.sinkState,#[]) =
+        .ok (some (.regsVec [[(Proof.sinkState.base.fresh .int).1]]),
+          { (Proof.sinkState.mark 0) with base := (Proof.sinkState.base.fresh .int).2.emit (.load .uload32 (Proof.sinkState.base.fresh .int).1 (.unsignedOffset (.vreg 192 .int) 0) flags)},trace) :=
+  stock_parameter_load_rhs data_program built.1 rfl rfl rfl flags Proof.sinkState #[] 0
+
+/-- Both nested address helpers are inhabited by the actual parameter context. -/
+theorem selected_load_address_witness :
+    (Isle.Interp.applyTerm Isle.Aarch64.program (Stock.sem built.1) {} 60 89 575
+      [.ty (.int 32),.value 0,.int 0]).run (Proof.sinkState,#[]) =
+      .ok (some (.data 89 Isle.Aarch64.VIdx.AMode.UnsignedOffset [.reg (.vreg 192 .int),.op (.uimm12Scaled 0)]),
+        Proof.sinkState.mark 0,#[368]) ∧
+    (Isle.Interp.applyTerm Isle.Aarch64.program (Stock.sem built.1) {} 80 89 574
+      [.ty (.int 32),.value 0,.int 0]).run (Proof.sinkState,#[]) =
+      .ok (some (.data 89 Isle.Aarch64.VIdx.AMode.UnsignedOffset [.reg (.vreg 192 .int),.op (.uimm12Scaled 0)]),
+        Proof.sinkState.mark 0,#[368,362]) :=
+  ⟨stock_parameter_amode_zero data_program built.1 rfl rfl rfl Proof.sinkState #[] 0,
+    stock_parameter_load_address data_program built.1 rfl rfl rfl Proof.sinkState #[] 0⟩
 
 end Backend.Stock.Memory.LoadFixture

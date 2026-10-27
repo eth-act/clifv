@@ -1,5 +1,6 @@
 import FV.Backend.Proof.StockMemoryContractWitness
 import FV.Backend.Proof.StockMemoryLoadWitness
+import FV.Backend.Proof.StockMemoryGuardedWitness
 
 #print axioms Backend.Stock.Memory.domain_of_scalar
 #print axioms Backend.Stock.Memory.existing_source_witness
@@ -12,3 +13,19 @@ import FV.Backend.Proof.StockMemoryLoadWitness
 #print axioms Backend.Stock.Memory.LoadFixture.mapped_load_witness
 #print axioms Backend.Stock.Memory.stock_uload32_helper
 #print axioms Backend.Stock.Memory.LoadFixture.selected_load_helper_witness
+#print axioms Backend.Stock.Memory.load_source_seqRun
+#print axioms Backend.Stock.Memory.mapped_unsigned_address
+#print axioms Backend.Stock.Memory.stock_parameter_amode_zero
+#print axioms Backend.Stock.Memory.stock_parameter_load_address
+#print axioms Backend.Stock.Memory.stock_parameter_load_rhs
+#print axioms Backend.Stock.Memory.LoadFixture.unsigned_load_witness
+#print axioms Backend.Stock.Memory.LoadFixture.selected_load_rhs_witness
+#print axioms Backend.Stock.Memory.LoadFixture.selected_load_address_witness
+#print axioms Backend.Stock.Memory.stock_lower_parameter_load_record
+#print axioms Backend.Stock.Memory.stock_lower_parameter_load_values
+#print axioms Backend.Stock.Memory.LoadFixture.scope
+#print axioms Backend.Stock.Memory.LoadFixture.dominated
+#print axioms Backend.Stock.Memory.LoadFixture.record_observed
+#print axioms Backend.Stock.Memory.LoadFixture.record_input
+#print axioms Backend.Stock.Memory.LoadFixture.actual_load_record_witness
+#print axioms Backend.Stock.Memory.LoadFixture.guarded_load_source_witness

@@ -38,3 +38,32 @@ Keep all old theorem variants, required axiom sets, original source/world premis
 accepted identities, successful stages and complete prior-pipeline fallback.
 General addresses/stores/deferred effects/atomics/calls/loops and original-domain
 whole-driver simulation and completeness remain obligations after this batch.
+
+## Selected record and guarded source transfer
+
+The next checkpoint proves actual parameter-pointer address selection through
+helpers575/574 and load root1043. Higher-priority look-throughs and the nonzero
+offset alternative fail internally; rule368 supplies the unsigned zero-offset
+mode. Actual retained-record/root receipts then derive the emitted load, fresh
+allocation endpoint and final result alias. The guarded value theorem reuses
+whole-run availability, fresh-register framing and demand preservation.
+
+The complete original two-block fixture has standard-only proofs of scope,
+SSA and dominance, with its inherited pointer proved available through the
+existing greatest-fixed-point theorem. Its actual full Stock lowering supplies
+the retained source/root receipts and installs alias193→194. A positive witness
+executes that retained, resolved code on the live nonzero heap and transfers
+guarded values to the actual original source-step frame after the load.
+This does not yet prove a memory-capable whole-function domain or activation.
+
+All4208 normal modules, the affected tools (5026 jobs), and98 audit files pass
+in `/tmp/stock-memory-record-normal-gates-v1`. All27 new audited roots use only
+standard axioms. Source compiler behavior and all prior theorem variants remain
+unchanged. These checks validate the proof checkpoint; production integration
+and its runtime/consumer/paired-output gates remain required before activation.
+
+Next derive selected-root receipts directly from actual rule IDs and original
+source metadata, lift the memory record through the existing guarded body and
+entry/return composition, and discharge the semantic memory read boundary from
+the original world relation. Retain full earlier production fallback and all
+original #140 obligations; this checkpoint is backed up without a fragment PR.
