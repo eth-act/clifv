@@ -1,4 +1,5 @@
-import FV.E2E.StockMemoryPairedBody
+import FV.E2E.StockMemoryPairedReturnAt
+import FV.Backend.Proof.StockBlockCode
 import FV.Backend.Proof.StockMemoryBodyFixture
 import FV.Backend.Proof.StockMemoryPairedRecord
 import FV.Backend.Proof.StockMemoryRecordWitness
@@ -261,5 +262,61 @@ theorem complete_paired_body_witness :
     exact paired_before input input.event.output.state
   obtain ⟨ρ',q,executed,post⟩ := bodyRun _ _ steps (fun _ => ofX 4096) (world,otherWorld) before
   exact ⟨input,term,body,ρ',q,split,executed,post⟩
+
+private theorem initial_defined (input : RecordInput) :
+    SourceDefinedAt function input.result.ctx input.event.block 0 sourceFrame := by
+  intro x available
+  rw [input.atBlock] at available
+  have zero : x = 0 := by
+    obtain ⟨which,_⟩ := (mem_av (show function.blocks[1]? = some function.blocks[1]! from rfl)).mp available
+    rcases which with parameter | incoming | ⟨j,stm,earlier,statement,defined⟩
+    · change x ∈ ([] : List Nat) at parameter; cases parameter
+    · have out := (inFix_fixOk (f := function) (ctx := input.result.ctx) (gn := id)).out 1 x incoming 0 (by decide +kernel)
+      rcases out with parameter | defined | entry
+      · simpa [parsOf,function] using parameter
+      · simp [defsOf,function] at defined
+      · have impossible := (inFix_fixOk (f := function) (ctx := input.result.ctx) (gn := id)).cand 0 x entry
+        omega
+    · omega
+  subst x
+  exact ⟨_,rfl⟩
+
+/-- Complete actual paired load-and-ABI-return block execution starts at its
+real placed body boundary. Both original memory worlds and the exact returned
+ABI values are retained; instruction-zero entry remains a separate composition. -/
+theorem complete_paired_return_block_witness :
+    ∃ (input : RecordInput) (label : Nat) (vb : VBlock) (pre post : Array MInst),
+      input.result.code.blocks[label]? = some vb ∧
+      vb.insts = pre ++ input.event.output.code.map (·.mapRegs
+        (Backend.lowerFunction.resolve input.result.final.alias (input.result.final.alias.size+1))) ++ post ∧
+      RunOkABI function input.result.code (pairSem (csem relation.F ⟨0,0⟩ noExternal))
+        (MRP relation function 0 (fun _ => True)) sourceFrame.slots
+        ⟨label,pre.size,(fun _ => ofX 4096),(world,otherWorld)⟩
+        (.returned [⟨.i32,2779096485⟩] heap) := by
+  obtain ⟨input⟩ := record_input
+  have atBlock : function.blocks[input.event.block]? = some function.blocks[1]! := by rw [input.atBlock]; rfl
+  have tls : XTls relation.F noExternal := by intro Z n w w' subset same; rfl
+  obtain ⟨term,body,split,bodyRun⟩ := StockMemory.stock_single_load_return_paired_body
+    input.run scope dominated input.events atBlock rfl rfl (pi := 0) (pb := function.blocks[0]!) rfl
+    (by decide) (Γ := relation) (c := 0) (D := fun _ => True) (fc := ⟨0,0⟩)
+    rfl (fun _ _ h => by cases h) tls (env := Clif.Env.empty) (cp := {funcs := []})
+  obtain ⟨label,vb,pre,post,placed,code⟩ := stock_lower_block_scan_code input.run input.events
+  have family : ∀ stm ∈ function.blocks[1]!.body,OrdinaryBody.OrdinaryInst stm.inst := by
+    intro stm member
+    have same := List.mem_singleton.mp member
+    subst stm
+    constructor
+    · intro fn args impossible; cases impossible
+    · intro sig callee args impossible; cases impossible
+  have before : StockMemory.PairedScanRel function input.result input.event.ctx input.event.block relation 0 (fun _ => True)
+      input.event.output.state (0,sourceFrame,heap) (fun _ => ofX 4096) (world,otherWorld) := by
+    rw [input.atBlock]
+    exact paired_before input input.event.output.state
+  have finished := StockMemory.actual_ordinary_paired_return_refines_at input.run scope dominated rfl family rfl
+    input.events split (s := ⟨sourceFrame,[],heap⟩) rfl rfl rfl rfl (initial_defined input)
+    (show Clif.runLoop Clif.Env.empty {funcs := []} 2 ⟨sourceFrame,[],heap⟩ =
+      .returned [⟨.i32,2779096485⟩] heap from rfl)
+    tls bodyRun placed code (fun _ => ofX 4096) (world,otherWorld) before
+  exact ⟨input,label,vb,pre,post,placed,code,finished⟩
 
 end E2E.StockMemoryReadWitness
