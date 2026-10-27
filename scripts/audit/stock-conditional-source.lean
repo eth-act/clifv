@@ -1,3 +1,4 @@
+import FV.Backend.Proof.StockConditionalRouteWitness
 import FV.Backend.Proof.StockConditionalSourceTrapWitness
 import FV.Backend.Proof.StockConditionalSourceReturnWitness
 import FV.Backend.Proof.StockConditionalGuardedWitness
@@ -99,3 +100,9 @@ import FV.Backend.Proof.StockConditionalEmissionWitness
 #print axioms Backend.Stock.Proof.ConditionalValues.ConditionalBodySpec.trapping_parameter_core
 #print axioms Backend.Stock.Proof.ConditionalValues.TrapFixture.driver_witness
 #print axioms Backend.Stock.Proof.ConditionalValues.TrapWitness.trapping_parameter_core_witness
+
+#print axioms Backend.Stock.Proof.ConditionalValues.ConditionalBodySpec.selected_successor_guarded_of_demand
+#print axioms Backend.Stock.Proof.ConditionalValues.ConditionalBodySpec.selected_successor_guarded
+#print axioms Backend.Stock.Proof.ConditionalValues.SuccessorWitness.selected_successor_witness
+#print axioms Backend.Stock.Proof.SelectedCopyRoute.execute
+#print axioms Backend.Stock.Proof.ConditionalValues.RouteWitness.selected_route_execution_witness

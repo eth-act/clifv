@@ -262,3 +262,27 @@ historical evidence. No conditional production activation or full author gates
 are claimed. Next: actual selected-successor values/demand/definedness, ranked
 CFG and ABI composition, then compatible production consumers and the remaining
 original140 obligations.
+
+The selected-successor checkpoint transfers only successor-demanded inherited
+values, using original source availability and the actual retained guard. Real
+selected copies, including synthetic critical routes, establish source-definedness,
+DFG consistency and the next retained scan guard. The forward variant derives
+the demand inequality from the actual compiler traversal. Outgoing argument
+values remain an internal composition obligation; the accepted input predicate
+is unchanged. The next compatible class may use empty outgoing vectors while
+the existing full-domain per-successor obligation stays open.
+
+`SelectedCopyRoute.execute` executes both actual routes under VStepAt: direct
+copies, or first copies plus the real emitted synthetic jump and second copies.
+Actual computed CFG correspondence and terminal positions are derived or tied
+to the real placed block. A complete entered/returning original conditional
+source with a nonempty vector witnesses actual csem branch execution, its real
+position in assembled VCode, selected copies and guarded successor entry.
+All1131targeted keys and82audit roots pass, Std3 only; two bundled MCP reviews
+report Std3/no warnings. Five completed idle MCP workers were released; one warm
+cache and all saved source/evidence remain, with563GiB free. Main was fetched and
+remains d6218f29. No conditional production activation/full author gates claimed.
+Next compose whole-body return/trap and successor continuations through ABI,
+activate the smallest compatible conditional class across existing consumers,
+then broaden ranked CFG/conditions/per-edge coverage and every remaining140
+obligation. Avoid a separate PR for each proof fragment.
