@@ -371,3 +371,14 @@ Python validation scripts compile and effective nproc is2. These are preflight
 checks: full author gates, actual native/link/generated-proof execution, both
 identity/stage modes, examples/crates and frozen parent/candidate byte comparison
 are still pending. No conditional PR/merge or full-goal completion is claimed.
+
+The first native activation gate caught a test-boundary error on a real
+critical-edge case: allocation receives staged raw code, while the assertion
+compared with prepared code. A read-only diagnostic confirmed exact raw Stock
+input and successful verified stages/layout for all100functions. The corrected
+cohort passed all12ABI/allocator rows, both cleanup modes, exact previous fallback
+and the missing-binary control in an isolated run. The assertion is corrected
+only for the new conditional cohort; all earlier checks remain. Production code
+is unchanged. Freeze the corrected test revision for the final native/full gates;
+retain the first failed run and expensive unchanged proof-cache results as
+historical evidence, without treating the failed activation run as passed.
