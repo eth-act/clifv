@@ -19,3 +19,7 @@ Executable preflight v1 passes tools4996jobs,57/57focused roots and100graphs acr
 Historical witness/consumer port failures remain recorded in v1–v5: missing trap-family qualification, missing provider import, fixture field layout/definition dependency, a textual replacement overlap and unapplied checker predicates. Corrected consumer v6 passes; no failed attempt is counted as passing. No actual-byte native execution or final frozen-source/full-author validation is claimed yet.
 
 Next: freeze/push this substantive implementation; normal/trust/old exact axioms/public headers/ownership; complete current linked/generated/CLI/verified-linker/native-byte integration and all seven retained cohorts; runtime/encoder/identity/examples/actual crate and source-bound paired outputs. Publish terminal evidence and squash after current per-PR gates. Continue broader conditions/per-edge/table/loops/effects/calls/full140 afterward.
+
+## Terminal author validation
+
+All current author gates pass on `9f27ad6c3b13f3fd378693389e82e9cdaf616b65`. PR #637 activates route11 with complete prior fallback. [Terminal evidence](stock-parameter-cfg-production.md) records exact old axioms/headers, all current and seven retained cohorts, actual native executions and paired outputs. Full original140 remains open: broader conditions and nonempty conditional copies, tables/loops, memory/addressing/atomics, calls/exceptions, uncovered families and original-domain whole-driver/Stock-only/downstream completeness. Fallback preserves acceptance and is not completeness.
