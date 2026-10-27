@@ -59,11 +59,11 @@ theorem driverHyp_holds {p : Clif.Program} {f : Clif.Function} {vc : VCode} {ctx
   tryIndSig := tryIndSig_of_subset hsub
   cfg := hcfg }
 
-theorem retRegsT_int : ∀ (n nx nv : Nat),
+theorem retRegsT_int_range : ∀ (n nx nv : Nat),
     retRegsT (List.replicate n .int) nx nv = (List.range n).map fun i => Reg.x (nx + i)
   | 0, _, _ => rfl
   | n + 1, nx, nv => by
-    rw [List.replicate_succ, retRegsT, retRegsT_int n (nx + 1) nv, List.range_succ_eq_map,
+    rw [List.replicate_succ, retRegsT, retRegsT_int_range n (nx + 1) nv, List.range_succ_eq_map,
       List.map_cons, List.map_map]
     congr 1
     apply List.map_congr_left
@@ -86,7 +86,7 @@ theorem retRegsOk_of_int {vals : List Clif.Val} {us : List (Reg × Reg)}
     have h := hint v hv
     revert h
     cases v.ty <;> simp [tyClass, Clif.Ty.isInt]
-  rw [hv, List.replicate_append_replicate, Nat.add_sub_cancel' hlen, retRegsT_int, hus]
+  rw [hv, List.replicate_append_replicate, Nat.add_sub_cancel' hlen, retRegsT_int_range, hus]
   simp
 
 /-- **`IselSimT` from `IselSim`** for a function with integer returns: the run's realisation from

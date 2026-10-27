@@ -91,7 +91,10 @@ theorem compiled_exists (config : Configuration) (cleanup : Bool) :
                 | ok value => cases value; rfl
               exact ⟨result,vcp,rf,af,fa,fb,
                 ⟨lowered,prepared,prepOk,check,physical,emitted,layout⟩,
-                CompiledSemanticNI.of_checks semantic prepared prepOk check physical emitted layout,
+                CompiledSemanticNI.of_checks semantic
+                  (by rwa [Stock.Arithmetic.stageF_of_lowerCheck_false legacy])
+                  (by rwa [Stock.Arithmetic.stageF_of_lowerCheck_false legacy])
+                  check physical emitted layout,
                 reads,allocated,(formsCoveredB_iff _ _).mp covered,legacy⟩
 
 /-- Arbitrary entry values, including every unused parameter. -/

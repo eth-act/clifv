@@ -15,7 +15,7 @@ def lowerCheckedScalarNI (f : Clif.Function) (verify : Bool) : Except String VCo
   | .error _ => lowerCheckedLogicalNI f verify
 
 def lowerForAllocationScalarNI (f : Clif.Function) (verify cleanup : Bool) : Except String VCode :=
-  (lowerCheckedScalarNI f verify).map (Stock.Arithmetic.stage cleanup)
+  (lowerCheckedScalarNI f verify).map (Stock.Arithmetic.stageV verify cleanup f)
 
 /-- A failed complete attempt retries the previous complete logical pipeline
 with the original source, allocator and verification/cleanup settings. -/

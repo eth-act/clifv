@@ -11,14 +11,14 @@ verdict gains the proved actual-Stock alternative. Link/layout checks remain
 in the existing linker check list. -/
 def staticChksSemantic (cleanup : Bool) (I : LinkInput) (g : Clif.Function)
     (r : Except String Art) : List (String × Bool) :=
-  let old := staticChksWith (fun _ => Stock.Arithmetic.stage cleanup) I g r
+  let old := staticChksWith (Stock.Arithmetic.stageF cleanup) I g r
   old.take 1 ++ [("compiled: lowerCheck",Stock.Arithmetic.check g (getOk r).vc)] ++ old.drop 2
 
 /-- A complete arithmetic attempt is accepted only after the original static
 checks with semantic lowering validation. A failure retries the shipped scalar
 pipeline, preserving original source, allocator and cleanup settings. -/
 def LinkInput.pipeArithmetic (I : LinkInput) (cleanup : Bool) (fi : FnInput) : Except String Art :=
-  match I.pipeOfWithLowering Stock.Arithmetic.lowerCandidate (fun _ => Stock.Arithmetic.stage cleanup) fi with
+  match I.pipeOfWithLowering Stock.Arithmetic.lowerCandidate (Stock.Arithmetic.stageF cleanup) fi with
   | .ok a =>
     if (staticChksSemantic cleanup I fi.func (.ok a)).all (·.2) then .ok a
     else I.pipeProductionWith Stock.ScalarAdd.lower cleanup fi
@@ -29,11 +29,11 @@ set_option maxHeartbeats 1000000 in
 pipeline results. The arithmetic candidate never supplies allocation evidence. -/
 theorem LinkInput.pipeArithmetic_prepared {I : LinkInput} {cleanup : Bool} {fi : FnInput} {a : Art}
     (h : I.pipeArithmetic cleanup fi = .ok a) :
-    prepare (Stock.Arithmetic.stage cleanup a.vc) = .ok a.vcp ∧
+    prepare (Stock.Arithmetic.stageF cleanup fi.func a.vc) = .ok a.vcp ∧
     lowerRFunc a.vcp a.rf = .ok a.af ∧ emitFunc a.k a.af = .ok a.fa ∧ a.fa.layout = .ok a.fb ∧
     a.k = fi.k ∧ a.base = BitVec.ofNat 64 (I.baseOf fi.func.name) := by
   have fallback (h : I.pipeProductionWith Stock.ScalarAdd.lower cleanup fi = .ok a) :
-      prepare (Stock.Arithmetic.stage cleanup a.vc) = .ok a.vcp ∧
+      prepare (Stock.Arithmetic.stageF cleanup fi.func a.vc) = .ok a.vcp ∧
       lowerRFunc a.vcp a.rf = .ok a.af ∧ emitFunc a.k a.af = .ok a.fa ∧ a.fa.layout = .ok a.fb ∧
       a.k = fi.k ∧ a.base = BitVec.ofNat 64 (I.baseOf fi.func.name) := by
     have facts := LinkInput.pipeProductionWith_spec h
@@ -55,7 +55,7 @@ theorem LinkInput.pipeArithmetic_compiled {I : LinkInput} {cleanup : Bool} {fi :
   have hall := List.all_eq_true.mp checked
   have lower := hall ("compiled: lowerCheck",Stock.Arithmetic.check fi.func a.vc)
     (by simp [staticChksSemantic,staticChksWith,getOk])
-  have prep := hall ("compiled: prepCheck",prepCheck (Stock.Arithmetic.stage cleanup a.vc) a.vcp)
+  have prep := hall ("compiled: prepCheck",prepCheck (Stock.Arithmetic.stageF cleanup fi.func a.vc) a.vcp)
     (by simp [staticChksSemantic,staticChksWith,getOk])
   have check := hall ("compiled: checkAlloc",(Backend.checkAlloc a.vcp a.rf).toBool)
     (by simp [staticChksSemantic,staticChksWith,getOk])
@@ -66,7 +66,7 @@ theorem LinkInput.pipeArithmetic_compiled {I : LinkInput} {cleanup : Bool} {fi :
 remaining checks and stage labels. -/
 theorem staticChksSemantic_of_legacy {cleanup : Bool} {I : LinkInput} {g : Clif.Function}
     {r : Except String Art}
-    (h : (staticChksWith (fun _ => Stock.Arithmetic.stage cleanup) I g r).all (·.2) = true) :
+    (h : (staticChksWith (Stock.Arithmetic.stageF cleanup) I g r).all (·.2) = true) :
     (staticChksSemantic cleanup I g r).all (·.2) = true := by
   simp only [staticChksWith,List.all_cons,List.all_nil,Bool.and_true,Bool.and_eq_true] at h
   simp only [staticChksSemantic,staticChksWith,List.take_succ_cons,List.take_zero,List.drop_succ_cons,
