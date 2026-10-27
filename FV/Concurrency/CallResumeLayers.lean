@@ -223,7 +223,7 @@ theorem resume_layers {R : RL} (hR : R.Wf) {vc : VCode} {L : Nat → Prop}
       ckeep c (regVal y c) = ckeep c (regVal x c))
     (hpc : Arm.r .PC y = Arm.r .PC x + 4#64) (herr : Arm.r .ERR y = .None)
     (hsp : spOf y = spOf x) (hmem : ∀ a, R.FK a → y.mem a = x.mem a)
-    (hprog : y.program = x.program) (X : ExtSem) :
+    (hprog : y.program = x.program) (hfp : xreg 29 y = xreg 29 x) (X : ExtSem) :
     ∃ b0 m' ρ', src = .run ⟨b0, k, ρ, w⟩ ∧
       VStep vc (csem R.F R.ctx (xcallX X
         ((((ops.zip allocs).toList.filter (·.1.isDef))).map fun p => locVal R.fr y p.2) y))
@@ -237,7 +237,7 @@ theorem resume_layers {R : RL} (hR : R.Wf) {vc : VCode} {L : Nat → Prop}
     subst h; rfl) hms
   obtain ⟨b0, rfl, hLb, hσ⟩ := pmatch_call hP hvb hi
   exact ⟨b0, m', ρ', rfl, prep_vstep_next H3 (driverSem_csem _ _ _).toDriverSemG hLb hσ hv4,
-    .blk hLb hσ, hA', CallSeg.resumeQW hR hq hvb hi hpc herr hsp hmem hprog hst'
+    .blk hLb hσ, hA', CallSeg.resumeQW hR hq hvb hi hpc herr hsp hmem hprog hfp hst'
       (SameWorld.refl _ _)⟩
 
 end Concurrency.CallResumeL
