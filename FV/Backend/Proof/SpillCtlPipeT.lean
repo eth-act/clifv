@@ -143,7 +143,7 @@ theorem ctlSpillHypT_of (hI : IselCtlHypT) {f : Clif.Function} {vc : VCode}
     (hl : lowerFunction f = .ok vc) :
     ∀ vb ∈ vc.blocks.toList, ∀ i ∈ vb.insts.toList, i.isCtl = true → SpillInstOk i := by
   have hd := dominated_of hdom
-  obtain ⟨ctx, ranges, st0, bl, hb, hlb, hvb, -, -⟩ := lowerFunction_runT hl
+  obtain ⟨ctx, ranges, st0, bl, hb, hlb, hvb, -, -⟩ := lowerFunction_runT hs.externsE hl
   obtain ⟨hS, hT, hY⟩ := hI f ctx ranges st0 hdom hs hst hsel ha hb
   have hcf := ctxFacts_of hb
   obtain ⟨-, hstart⟩ := lowBlocks_start hlb
