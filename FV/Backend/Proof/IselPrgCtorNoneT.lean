@@ -425,11 +425,14 @@ theorem actor_none_soundT (hP : PInvT f ctx) (id : TermId) (as : List PA) (hp : 
     simp only [γ] at hw1
     obtain ⟨_, rfl, s, rfl, hs, hlen⟩ := hw1
     red_safe externCtor
-    rw [CS.retRegs_some hs.2]
+    obtain ⟨ps, hps⟩ := retRegsC_some ((sigRets s).map retClass) 0 0
+      (by have := hs.2; simp only [List.length_map]; omega)
+      (by have := hs.2; simp only [List.length_map]; omega)
+    rw [hps]
     dsimp only
     split
     · rename_i hne
-      simp [hlen] at hne
+      simp [hlen, retRegsC_len hps] at hne
     · exact CS.fin_ok ⟨_, rfl, _, rfl⟩
   -- gen_call_info (signature)
   · intro n1 n2 n3 n4 x1 x2; cintro; gl6; cok

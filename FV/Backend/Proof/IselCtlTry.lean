@@ -60,21 +60,23 @@ theorem ctor_try_call_info_iff (st : LState) (s : Clif.Signature) (items : List 
   rw [this]
   cases tryInfoOf s items ls <;> simp [eq_comm]
 
-theorem ctor_gen_try_call_rets_iff (st : LState) (s : Clif.Signature) (v : V) (st' : LState) :
+/-- **`gen_try_call_rets`** (typed, S11e6): the return vregs in the return registers of the
+returns' classes (`retRegsC`), then the payload registers that are not return registers. -/
+theorem ctor_gen_try_call_rets_iffC (st : LState) (s : Clif.Signature) (v : V) (st' : LState) :
     externCtor ctx T.gen_try_call_rets [.op (.sig s)] st = .ok (v, st') ↔
-      ∃ ps, retRegs (sigRets s).length = some ps ∧ ps.length = ctx.tryRegs.1.length ∧
+      ∃ ps, retRegsC ((sigRets s).map retClass) 0 0 = some ps ∧ ps.length = ctx.tryRegs.1.length ∧
         v = .op (.callRets (ps.zip ctx.tryRegs.1 ++
           ((payloadRegs s.callConv).zip ctx.tryRegs.2).filter fun q => !ps.contains q.1)) ∧
         st' = st := by
   have : externCtor ctx T.gen_try_call_rets [.op (.sig s)] st =
-      match retRegs (sigRets s).length with
+      match retRegsC ((sigRets s).map retClass) 0 0 with
       | some ps =>
         if ps.length != ctx.tryRegs.1.length then .unmodeled "gen_try_call_rets: return count"
         else .ok (.op (.callRets (ps.zip ctx.tryRegs.1 ++
           ((payloadRegs s.callConv).zip ctx.tryRegs.2).filter fun q => !ps.contains q.1)), st)
       | none => .unmodeled "gen_try_call_rets: more than 8 return values" := rfl
   rw [this]
-  cases retRegs (sigRets s).length with
+  cases retRegsC ((sigRets s).map retClass) 0 0 with
   | none => simp
   | some ps =>
     by_cases h : ps.length = ctx.tryRegs.1.length
@@ -88,6 +90,18 @@ theorem ctor_gen_try_call_rets_iff (st : LState) (s : Clif.Signature) (v : V) (s
       constructor
       · intro he; cases he
       · rintro ⟨ps', hps, h', -⟩; cases hps; exact absurd h' h
+
+/-- **`gen_try_call_rets`** of an integer signature (`sigIntB`, as `exnTableOpnd` checks): the
+return vregs in `retRegs`' registers x0.., then the payload registers that are not return
+registers. -/
+theorem ctor_gen_try_call_rets_iff {s : Clif.Signature} (hs : sigIntB s = true) (st : LState)
+    (v : V) (st' : LState) :
+    externCtor ctx T.gen_try_call_rets [.op (.sig s)] st = .ok (v, st') ↔
+      ∃ ps, retRegs (sigRets s).length = some ps ∧ ps.length = ctx.tryRegs.1.length ∧
+        v = .op (.callRets (ps.zip ctx.tryRegs.1 ++
+          ((payloadRegs s.callConv).zip ctx.tryRegs.2).filter fun q => !ps.contains q.1)) ∧
+        st' = st := by
+  rw [ctor_gen_try_call_rets_iffC, sigRets_classes_int (sigIntB_iff.mp hs).2, retRegsC_int]
 
 end
 
@@ -279,12 +293,14 @@ theorem try_bl_ruleOk {p : Program} (hp : Data p) (hpT : TryData p) {Rd F : BitV
   have hfn : ctx.func.extern? fn = some ext := by rw [hctx.func]; exact hext
   cases hp
   obtain ⟨t300, t302, t2297, t2474⟩ := hpT
+  have hsI := exnTableOpnd_int he
+  have hsE : sigIntB ext.sig = true := by rw [hsig]; exact hsI
   ctl_inv [*, rule_lower_2542, ext_func_ref_data_iff, ctor_abi_sig_iff, ctor_try_call_info_iff,
-    ctor_gen_try_call_rets_iff] at hmatch heval
+    ctor_gen_try_call_rets_iff hsI, ctor_gen_try_call_rets_iff hsE] at hmatch heval
   simp only [hi, hfn, Option.some.injEq] at *
   isel_destruct; subst_vars
   repeat (isel_inv_simp [ext_func_ref_data_iff, ctor_abi_sig_iff, ctor_try_call_info_iff,
-    ctor_gen_try_call_rets_iff, ext_value_list_slice_iff, ctor_put_in_regs_vec_iff] at * <;>
+    ctor_gen_try_call_rets_iff hsI, ctor_gen_try_call_rets_iff hsE, ext_value_list_slice_iff, ctor_put_in_regs_vec_iff] at * <;>
     isel_destruct <;> subst_vars)
   have hx' := ‹ctx.func.extern? fn = some _›
   rw [hctx.func, hext] at hx'
@@ -299,6 +315,7 @@ theorem try_bl_ruleOk {p : Program} (hp : Data p) (hpT : TryData p) {Rd F : BitV
   simp only [ctor_gen_call_args_gen _ _ _ hb hl, mapM_single_map, Option.some.injEq,
     exists_eq_left'] at *
   isel_destruct; subst_vars
+  try (simp only [ctor_gen_try_call_rets_iff hsE] at *; isel_destruct; subst_vars)
   simp only [ctor_gen_call_info_gen _ _ _ _ _ _ _ hl, Nat.reduceEqDiff, Nat.reduceLT,
     ite_true, ite_false, Option.some.injEq] at *
   isel_destruct; subst_vars
@@ -509,12 +526,14 @@ theorem try_got_ruleOk {p : Program} (hp : Data p) (hpT : TryData p) {Rd F : Bit
   clear hfirst
   cases hp
   obtain ⟨t300, t302, t2297, t2474⟩ := hpT
+  have hsI := exnTableOpnd_int he
+  have hsE : sigIntB ext.sig = true := by rw [hsig]; exact hsI
   ctl_inv [*, rule_lower_2551, ext_func_ref_data_iff, ctor_abi_sig_iff, ctor_try_call_info_iff,
-    ctor_gen_try_call_rets_iff, ctor_box_external_name_iff] at hmatch heval
+    ctor_gen_try_call_rets_iff hsI, ctor_gen_try_call_rets_iff hsE, ctor_box_external_name_iff] at hmatch heval
   simp only [hi, hfn, Option.some.injEq] at *
   isel_destruct; subst_vars
   repeat (isel_inv_simp [ext_func_ref_data_iff, ctor_abi_sig_iff, ctor_try_call_info_iff,
-    ctor_gen_try_call_rets_iff, ext_value_list_slice_iff, ctor_put_in_regs_vec_iff,
+    ctor_gen_try_call_rets_iff hsI, ctor_gen_try_call_rets_iff hsE, ext_value_list_slice_iff, ctor_put_in_regs_vec_iff,
     ctor_box_external_name_iff] at * <;> isel_destruct <;> subst_vars)
   have hx' := ‹ctx.func.extern? fn = some _›
   rw [hctx.func, hext] at hx'
@@ -532,6 +551,7 @@ theorem try_got_ruleOk {p : Program} (hp : Data p) (hpT : TryData p) {Rd F : Bit
   isel_destruct; subst_vars
   have h570 := ‹ApplyInternal _ _ _ _ 27 570 _ _ _ _›
   obtain ⟨rfl, hs0⟩ := kL _ (by omega) _ _ _ _ _ h570
+  try (simp only [ctor_gen_try_call_rets_iff hsE] at *; isel_destruct; subst_vars)
   simp only [ctor_gen_call_ind_info_gen _ _ _ _ _ _ hl, Nat.reduceEqDiff, Nat.reduceLT,
     ite_true, ite_false, Option.some.injEq] at *
   isel_destruct; subst_vars
