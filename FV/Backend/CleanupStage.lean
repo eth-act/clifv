@@ -24,4 +24,26 @@ def skipStage (f : Clif.Function) (vc : VCode) : VCode :=
 def cleanupStage (f : Clif.Function) (vc : VCode) : VCode :=
   DeadCleanup.prune (skipStage f vc)
 
+/-- **The cleanup stage as the compiler runs it**, reusing the lowering validator's verdict
+instead of running `lowerCheck` a second time: `checked` says the driver's validation of this `vc`
+passed (`lowerCheckFor`, which is `lowerCheck` on subset E). Without a verdict (verification off,
+e.g. over the validation budget) the skip does not run, so `lowerCheck` never runs outside the
+budget; with one it is `cleanupStage` (`cleanupStageChecked_true`). -/
+def cleanupStageChecked (checked : Bool) (f : Clif.Function) (vc : VCode) : VCode :=
+  DeadCleanup.prune (if checked && Compile.functionE f then Proof.Driver.skipDead f vc else vc)
+
+theorem cleanupStageChecked_true {f : Clif.Function} {vc : VCode}
+    (h : Compile.functionE f = true → Proof.Driver.lowerCheck f vc = true) :
+    cleanupStageChecked true f vc = cleanupStage f vc := by
+  unfold cleanupStageChecked cleanupStage skipStage
+  cases hE : Compile.functionE f
+  · simp
+  · simp [h hE]
+
+/-- With the verdict of `lowerCheck` itself (whatever it is), the checked stage is the stage. -/
+theorem cleanupStageChecked_lowerCheck (f : Clif.Function) (vc : VCode) :
+    cleanupStageChecked (Proof.Driver.lowerCheck f vc) f vc = cleanupStage f vc := by
+  unfold cleanupStageChecked cleanupStage skipStage
+  cases Proof.Driver.lowerCheck f vc <;> cases Compile.functionE f <;> simp
+
 end Backend
