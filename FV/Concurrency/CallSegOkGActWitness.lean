@@ -41,7 +41,8 @@ theorem statOk_C {env : Clif.Env} (henv : env.extern "ld" = none) {c : BitVec 64
   obtain ⟨cc, ins, a0, hat, hm4⟩ := CallLayers.alloc_init (vc := RC.vc) (rf := RC.rf) allocC ckeep
   obtain ⟨hlow, -, -, hnames, hind, hv, hnt, -, hout0, -, hexts⟩ := IselCall.Witness.checksFC
   refine ⟨⟨"f", callerF, sC0, 0, GL, 0x4000#64, fC, vcC, ctx, st0, R, gn, bl, A, ΓC, c, Lp, ss,
-    ss', cc, ins, a0, slots, ext, caller, opens⟩, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl,
+    ss', cc, ins, a0, slots, ext, caller, opens, fun _ => False⟩, rfl, rfl, rfl, rfl, rfl, rfl,
+    rfl, rfl, rfl, rfl,
     rfl, rfl, rfl, rfl, ?_⟩
   exact {
     mem := by simp [link2]
