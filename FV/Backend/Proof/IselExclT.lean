@@ -19,7 +19,10 @@ operand).
 * `exclOkT_program`: every root rule of `lower` is a closure root or passes `failsT` (one kernel
   decision over the exported rule list);
 * `lower_nonroot_nomatchT`: a root rule outside the closure matches no instruction of a
-  float-capable context whose function's externs have integer signatures (`Compile.functionET`).
+  float-capable context whose function's externs have integer signatures (`Compile.functionET`);
+  `lower_nonroot_nomatchT_calls`: the same when only the callees of the context's `call`
+  statements have integer signatures (`CallsE`; S11e6: a `try_call`'s callee may take and
+  return floats).
 
 The checker is stated once over the opcode lists (`failsTG p iOps fOps`) and proven sound
 (`failsTG_sound`) in a context whose instructions `InstSplit S` describes (an instruction of the
@@ -331,10 +334,65 @@ theorem instData_shapeT {f : Clif.Function} {c : Clif.Inst} {d : V}
 theorem float_of_ofClif {t : Clif.Ty} (h : CTy.ofClif t ∈ fTys) : t.isFloat = true := by
   cases t <;> simp_all [fTys, CTy.ofClif, Clif.Ty.isFloat]
 
-/-- **An instruction with a float result has a float-movement opcode** (externs with integer
-signatures; a `call_indirect`'s results are integers by `instData`). -/
-theorem floatRes_op {f : Clif.Function} (hx : f.externs.all (Compile.sigE ·.2.sig) = true)
-    {c : Clif.Inst} (hT : Compile.instET c = true) {d : V} (h : instData f c = .ok d)
+/-- **The callees of a context's `call` statements have integer signatures** (`Compile.sigE`;
+S11e6). It is what the typed exclusion uses of `f.externs.all sigE` (`callsE_of_externs`): a
+`call`'s results are integers. The callee of a `try_call` (a terminator) is not constrained. -/
+def CallsE (f : Clif.Function) (ctx : Ctx) : Prop :=
+  ∀ (ii : Nat) (info : IInfo) (fn : Clif.FnRef) (args : List Nat) (e : Clif.ExtFunc),
+    ctx.insts[ii]? = some info → info.clif = some (.call fn args) → f.extern? fn = some e →
+    Compile.sigE e.sig = true
+
+/-- Integer externs give `CallsE`. -/
+theorem callsE_of_externs {f : Clif.Function} (hx : f.externs.all (Compile.sigE ·.2.sig) = true)
+    (ctx : Ctx) : CallsE f ctx :=
+  fun _ _ _ _ _ _ _ he => List.all_eq_true.mp hx _ (Compile.lookup_mem he)
+
+/-- The callee condition of `CallsE` at one instruction. -/
+theorem CallsE.at {f : Clif.Function} {ctx : Ctx} (h : CallsE f ctx) {j : Nat} {info : IInfo}
+    {c : Clif.Inst} (hi : ctx.insts[j]? = some info) (hc : info.clif = some c) :
+    ∀ fn args, c = .call fn args → ∀ e, f.extern? fn = some e → Compile.sigE e.sig = true := by
+  intro fn args he e hx
+  subst he
+  exact h j info fn args e hi hc hx
+
+/-- The result types of an instruction other than `call` do not depend on the externs. -/
+theorem resultTypes_noncall {i : Clif.Inst} (h : ∀ fn args, i ≠ .call fn args)
+    (g g' : Clif.FnRef → Option Clif.Signature) (d : Nat → Option Clif.Signature) :
+    i.resultTypes g d = i.resultTypes g' d := by
+  cases i
+  case call fn args => exact absurd rfl (h fn args)
+  case float op _ _ => cases op <;> rfl
+  all_goals rfl
+
+/-- `Compile.resTy_not_float_of_instE` when only the instruction's callee (if a `call`) has an
+integer signature. -/
+theorem resTy_not_float_calls {f : Clif.Function} {i : Clif.Inst}
+    (hcx : ∀ fn args, i = .call fn args → ∀ e, f.extern? fn = some e → Compile.sigE e.sig = true)
+    (hi : Compile.instE i = true) (hc : Compile.isCallIndirect i = false) :
+    ∀ t ∈ (i.resultTypes (fun r => (f.extern? r).map (·.sig)) (f.sigDecls.lookup ·)).getD [],
+      t.isFloat = false := by
+  by_cases hcl : ∃ fn args, i = .call fn args
+  · obtain ⟨fn, args, rfl⟩ := hcl
+    intro t ht
+    cases he : f.extern? fn with
+    | none => simp [Clif.Inst.resultTypes, he] at ht
+    | some e =>
+      simp only [Clif.Inst.resultTypes, he, Option.map_some, Option.getD_some, List.mem_map] at ht
+      obtain ⟨p, hp, rfl⟩ := ht
+      have hs := hcx fn args rfl e he
+      simp only [Compile.sigE, Bool.and_eq_true, List.all_eq_true] at hs
+      have := hs.2 p hp
+      revert this; cases p.ty <;> decide
+  · intro t ht
+    rw [resultTypes_noncall (fun fn args he => hcl ⟨fn, args, he⟩) _
+      (fun r => (({ f with externs := [] } : Clif.Function).extern? r).map (·.sig))] at ht
+    exact Compile.resTy_not_float_of_instE (f := { f with externs := [] }) rfl hi hc t ht
+
+/-- **An instruction with a float result has a float-movement opcode** (its callee, if a
+`call`, with an integer signature; a `call_indirect`'s results are integers by `instData`). -/
+theorem floatRes_op_calls {f : Clif.Function} {c : Clif.Inst}
+    (hcx : ∀ fn args, c = .call fn args → ∀ e, f.extern? fn = some e → Compile.sigE e.sig = true)
+    (hT : Compile.instET c = true) {d : V} (h : instData f c = .ok d)
     {tys : List Clif.Ty}
     (hty : c.resultTypes (fun r => (f.extern? r).map (·.sig)) (f.sigDecls.lookup ·) = some tys)
     {t : Clif.Ty} (ht : t ∈ tys) (hf : t.isFloat = true) :
@@ -342,7 +400,7 @@ theorem floatRes_op {f : Clif.Function} (hx : f.externs.all (Compile.sigE ·.2.s
   by_cases hE : Compile.instE c = true
   · exfalso
     cases hci : Compile.isCallIndirect c
-    · have := Compile.resTy_not_float_of_instE hx hE hci t (by rw [hty]; exact ht)
+    · have := resTy_not_float_calls hcx hE hci t (by rw [hty]; exact ht)
       rw [hf] at this; cases this
     · cases c with
       | callIndirect sig cl args =>
@@ -391,6 +449,16 @@ theorem floatRes_op {f : Clif.Function} (hx : f.externs.all (Compile.sigE ·.2.s
     exact hfl _ (by simp [instNames]) mNamePairs_float (by simp)
   case store => simp [Clif.Inst.resultTypes] at hty; subst hty; cases ht
   all_goals exact absurd hT (by simpa [Compile.instET] using hE)
+
+/-- **An instruction with a float result has a float-movement opcode** (externs with integer
+signatures; a `call_indirect`'s results are integers by `instData`). -/
+theorem floatRes_op {f : Clif.Function} (hx : f.externs.all (Compile.sigE ·.2.sig) = true)
+    {c : Clif.Inst} (hT : Compile.instET c = true) {d : V} (h : instData f c = .ok d)
+    {tys : List Clif.Ty}
+    (hty : c.resultTypes (fun r => (f.extern? r).map (·.sig)) (f.sigDecls.lookup ·) = some tys)
+    {t : Clif.Ty} (ht : t ∈ tys) (hf : t.isFloat = true) :
+    ∃ kf ko fs, d = .data 152 kf (.data 151 ko [] :: fs) ∧ ko ∈ floatOps :=
+  floatRes_op_calls (fun _ _ _ e he => List.all_eq_true.mp hx _ (Compile.lookup_mem he)) hT h hty ht hf
 
 /-! ## The fields -/
 
@@ -485,8 +553,9 @@ theorem holdsAllT_exact {S : Clif.Inst → Bool} (fs : List V) :
   | nil => trivial
   | cons v fs ih => exact ⟨rfl, ih⟩
 
-/-- `inst_split` for one typed-scope instruction. -/
-theorem inst_split1 (hctx : CtxInvT f ctx) (hx : f.externs.all (Compile.sigE ·.2.sig) = true)
+/-- `inst_split` for one typed-scope instruction (the callees of the context's `call`s with
+integer signatures). -/
+theorem inst_split1_calls (hctx : CtxInvT f ctx) (hx : CallsE f ctx)
     {j : Nat} {info : IInfo} {c : Clif.Inst} (hT : Compile.instET c = true)
     (hi : ctx.insts[j]? = some info) (hc : info.clif = some c) (hd : instData f c = .ok info.data) :
     (info.resTys.head?.getD .invalid ∈ (.invalid :: eCTys) ∧ (AVT.data opsT).Holds f ctx info.data) ∨
@@ -507,13 +576,32 @@ theorem inst_split1 (hctx : CtxInvT f ctx) (hx : f.externs.all (Compile.sigE ·.
         cases tys with
         | nil => cases hh
         | cons t tys => simp only [List.map_cons, List.cons.injEq] at hh; exact ⟨t, List.mem_cons_self, hh.1⟩
-      exact floatRes_op hx hT hd hty ht (float_of_ofClif hf)
+      exact floatRes_op_calls (hx.at hi hc) hT hd hty ht (float_of_ofClif hf)
     · left
       refine ⟨List.mem_cons_of_mem _ ?_, c, hT, hd, instData_shapeT hT hd⟩
       simp only [mCTys, List.mem_append] at ht0
       rcases ht0 with h | h
       · exact h
       · exact absurd h hf
+
+/-- `inst_split` for one typed-scope instruction. -/
+theorem inst_split1 (hctx : CtxInvT f ctx) (hx : f.externs.all (Compile.sigE ·.2.sig) = true)
+    {j : Nat} {info : IInfo} {c : Clif.Inst} (hT : Compile.instET c = true)
+    (hi : ctx.insts[j]? = some info) (hc : info.clif = some c) (hd : instData f c = .ok info.data) :
+    (info.resTys.head?.getD .invalid ∈ (.invalid :: eCTys) ∧ (AVT.data opsT).Holds f ctx info.data) ∨
+      (info.resTys.head?.getD .invalid ∈ fTys ∧ (AVT.data floatOps).Holds f ctx info.data) :=
+  inst_split1_calls hctx (callsE_of_externs hx ctx) hT hi hc hd
+
+/-- **An instruction of the context** (the callees of its `call`s with integer signatures): an
+integer (or no) result with an opcode of the typed scope, or a float result with a
+float-movement opcode. -/
+theorem inst_split_calls (hctx : CtxInvT f ctx) (hsc : InstScopeT ctx)
+    (hx : CallsE f ctx) {j : Nat} {info : IInfo} {c : Clif.Inst}
+    (hi : ctx.insts[j]? = some info)
+    (hc : info.clif = some c) (hd : instData f c = .ok info.data) :
+    (info.resTys.head?.getD .invalid ∈ (.invalid :: eCTys) ∧ (AVT.data opsT).Holds f ctx info.data) ∨
+      (info.resTys.head?.getD .invalid ∈ fTys ∧ (AVT.data floatOps).Holds f ctx info.data) :=
+  inst_split1_calls hctx hx (hsc j info c hi hc) hi hc hd
 
 /-- **An instruction of the context**: an integer (or no) result with an opcode of the typed
 scope, or a float result with a float-movement opcode. -/
@@ -523,7 +611,7 @@ theorem inst_split (hctx : CtxInvT f ctx) (hsc : InstScopeT ctx)
     (hc : info.clif = some c) (hd : instData f c = .ok info.data) :
     (info.resTys.head?.getD .invalid ∈ (.invalid :: eCTys) ∧ (AVT.data opsT).Holds f ctx info.data) ∨
       (info.resTys.head?.getD .invalid ∈ fTys ∧ (AVT.data floatOps).Holds f ctx info.data) :=
-  inst_split1 hctx hx (hsc j info c hi hc) hi hc hd
+  inst_split_calls hctx hsc (callsE_of_externs hx ctx) hi hc hd
 
 section
 variable {S : Clif.Inst → Bool} {iOps fOps : List Nat} (hctx : CtxInvT f ctx)
@@ -746,6 +834,29 @@ end
 
 end
 
+section
+variable (hctx : CtxInvT f ctx) (hsc : InstScopeT ctx) (hx : CallsE f ctx)
+include hctx hsc hx
+
+/-- **Soundness of the checker** (the callees of the context's `call`s with integer
+signatures): `failsT p a q` means `q` matches no value `a` describes. -/
+theorem failsT_sound_calls : ∀ (q : Pattern) (a : AVT) (v : V) (st : LState)
+    (env env' : Interp.Env V), failsT p a q = true → a.Holds f ctx v →
+    matchPat p (sem ctx) st q v env = .ok (some env') → False :=
+  failsTG_sound (S := Compile.instET) hctx (inst_split_calls hctx hsc hx)
+
+theorem failsAnyT_sound_calls : ∀ (qs : List Pattern) (a : AVT) (v : V) (st : LState)
+    (env env' : Interp.Env V), failsAnyT p a qs = true → a.Holds f ctx v →
+    matchAll p (sem ctx) st qs v env = .ok (some env') → False :=
+  failsAnyTG_sound (S := Compile.instET) hctx (inst_split_calls hctx hsc hx)
+
+theorem failsArgsT_sound_calls : ∀ (qs : List Pattern) (as : List AVT) (vs : List V) (st : LState)
+    (env env' : Interp.Env V), failsArgsT p as qs = true → AVT.HoldsAll f ctx as vs →
+    matchArgs p (sem ctx) st qs vs env = .ok (some env') → False :=
+  failsArgsTG_sound (S := Compile.instET) hctx (inst_split_calls hctx hsc hx)
+
+end
+
 variable (hctx : CtxInvT f ctx) (hsc : InstScopeT ctx)
   (hx : f.externs.all (Compile.sigE ·.2.sig) = true)
 include hctx hsc hx
@@ -754,24 +865,25 @@ include hctx hsc hx
 theorem failsT_sound : ∀ (q : Pattern) (a : AVT) (v : V) (st : LState) (env env' : Interp.Env V),
     failsT p a q = true → a.Holds f ctx v →
     matchPat p (sem ctx) st q v env = .ok (some env') → False :=
-  failsTG_sound (S := Compile.instET) hctx (inst_split hctx hsc hx)
+  failsT_sound_calls hctx hsc (callsE_of_externs hx ctx)
 
 theorem failsAnyT_sound : ∀ (qs : List Pattern) (a : AVT) (v : V) (st : LState)
     (env env' : Interp.Env V), failsAnyT p a qs = true → a.Holds f ctx v →
     matchAll p (sem ctx) st qs v env = .ok (some env') → False :=
-  failsAnyTG_sound (S := Compile.instET) hctx (inst_split hctx hsc hx)
+  failsAnyT_sound_calls hctx hsc (callsE_of_externs hx ctx)
 
 theorem failsArgsT_sound : ∀ (qs : List Pattern) (as : List AVT) (vs : List V) (st : LState)
     (env env' : Interp.Env V), failsArgsT p as qs = true → AVT.HoldsAll f ctx as vs →
     matchArgs p (sem ctx) st qs vs env = .ok (some env') → False :=
-  failsArgsTG_sound (S := Compile.instET) hctx (inst_split hctx hsc hx)
+  failsArgsT_sound_calls hctx hsc (callsE_of_externs hx ctx)
 
 end
 
 /-- **The root rules of `lower` outside the closure never match an instruction of a
-float-capable context** (instructions in the typed scope, externs with integer signatures). -/
-theorem lower_nonroot_nomatchT {f : Clif.Function} {ctx : Ctx} (hctx : CtxInvT f ctx)
-    (hsc : InstScopeT ctx) (hx : f.externs.all (Compile.sigE ·.2.sig) = true) {ii : Nat}
+float-capable context** (instructions in the typed scope, the callees of its `call`s with integer
+signatures). -/
+theorem lower_nonroot_nomatchT_calls {f : Clif.Function} {ctx : Ctx} (hctx : CtxInvT f ctx)
+    (hsc : InstScopeT ctx) (hx : CallsE f ctx) {ii : Nat}
     {info : IInfo} {inst : Clif.Inst} (hi : ctx.insts[ii]? = some info) (hc : info.clif = some inst)
     {r : Rule} (hr : r ∈ program.rulesOf TId.lower) (hroot : closureRootIds.contains r.id = false) :
     ∀ cfg m s0 env s1, (matchRule program (sem ctx) cfg m r [.inst ii]).run s0 ≠ .ok (some env, s1) := by
@@ -786,9 +898,18 @@ theorem lower_nonroot_nomatchT {f : Clif.Function} {ctx : Ctx} (hctx : CtxInvT f
     · rename_i q hargs
       rw [hargs] at ha
       obtain ⟨e1, h1, -⟩ := matchArgs_cons_inv ha
-      exact failsT_sound hctx hsc hx q .inst _ _ _ _ hok
+      exact failsT_sound_calls hctx hsc hx q .inst _ _ _ _ hok
         ⟨ii, info, inst, rfl, hi, hc, hctx.data ii info inst hi hc⟩ h1
     · cases hok
+
+/-- **The root rules of `lower` outside the closure never match an instruction of a
+float-capable context** (instructions in the typed scope, externs with integer signatures). -/
+theorem lower_nonroot_nomatchT {f : Clif.Function} {ctx : Ctx} (hctx : CtxInvT f ctx)
+    (hsc : InstScopeT ctx) (hx : f.externs.all (Compile.sigE ·.2.sig) = true) {ii : Nat}
+    {info : IInfo} {inst : Clif.Inst} (hi : ctx.insts[ii]? = some info) (hc : info.clif = some inst)
+    {r : Rule} (hr : r ∈ program.rulesOf TId.lower) (hroot : closureRootIds.contains r.id = false) :
+    ∀ cfg m s0 env s1, (matchRule program (sem ctx) cfg m r [.inst ii]).run s0 ≠ .ok (some env, s1) :=
+  lower_nonroot_nomatchT_calls hctx hsc (callsE_of_externs hx ctx) hi hc hr hroot
 
 /-! ## With the float arithmetic (S11f) -/
 
@@ -856,15 +977,15 @@ theorem fArith_resTy {f : Clif.Function} {ctx : Ctx} (hctx : CtxInvT f ctx) {j :
 
 /-- **An instruction of a context with the float arithmetic**: as `inst_split`, the arithmetic
 among the float-result opcodes (`floatOpsA`). -/
-theorem inst_splitA {f : Clif.Function} {ctx : Ctx} (hctx : CtxInvT f ctx) (hsc : InstScopeTA ctx)
-    (hx : f.externs.all (Compile.sigE ·.2.sig) = true) :
+theorem inst_splitA_calls {f : Clif.Function} {ctx : Ctx} (hctx : CtxInvT f ctx)
+    (hsc : InstScopeTA ctx) (hx : CallsE f ctx) :
     InstSplit Compile.instETA f ctx opsT floatOpsA := by
   intro j info c hi hc hd
   have hTA := hsc j info c hi hc
   have hT := hTA
   simp only [Compile.instETA, Bool.or_eq_true] at hT
   rcases hT with hT | hA
-  · rcases inst_split1 hctx hx hT hi hc hd with ⟨h1, c', hT', hc', kf, ko, fs, he, hko⟩ |
+  · rcases inst_split1_calls hctx hx hT hi hc hd with ⟨h1, c', hT', hc', kf, ko, fs, he, hko⟩ |
       ⟨h1, c', hT', hc', kf, ko, fs, he, hko⟩
     · exact .inl ⟨h1, c', Compile.instETA_of_instET hT', hc', kf, ko, fs, he, hko⟩
     · exact .inr ⟨h1, c', Compile.instETA_of_instET hT', hc', kf, ko, fs, he,
@@ -872,11 +993,16 @@ theorem inst_splitA {f : Clif.Function} {ctx : Ctx} (hctx : CtxInvT f ctx) (hsc 
   · obtain ⟨kf, ko, fs, he, hko⟩ := instData_shapeA hA hd
     exact .inr ⟨fArith_resTy hctx hA hi hc, c, hTA, hd, kf, ko, fs, he, hko⟩
 
+theorem inst_splitA {f : Clif.Function} {ctx : Ctx} (hctx : CtxInvT f ctx) (hsc : InstScopeTA ctx)
+    (hx : f.externs.all (Compile.sigE ·.2.sig) = true) :
+    InstSplit Compile.instETA f ctx opsT floatOpsA :=
+  inst_splitA_calls hctx hsc (callsE_of_externs hx ctx)
+
 /-- **The root rules of `lower` outside the closure never match an instruction of a
-float-capable context with the float arithmetic** (instructions in `InstScopeTA`, externs with
-integer signatures). -/
-theorem lower_nonroot_nomatchTA {f : Clif.Function} {ctx : Ctx} (hctx : CtxInvT f ctx)
-    (hsc : InstScopeTA ctx) (hx : f.externs.all (Compile.sigE ·.2.sig) = true) {ii : Nat}
+float-capable context with the float arithmetic** (instructions in `InstScopeTA`, the callees
+of its `call`s with integer signatures). -/
+theorem lower_nonroot_nomatchTA_calls {f : Clif.Function} {ctx : Ctx} (hctx : CtxInvT f ctx)
+    (hsc : InstScopeTA ctx) (hx : CallsE f ctx) {ii : Nat}
     {info : IInfo} {inst : Clif.Inst} (hi : ctx.insts[ii]? = some info) (hc : info.clif = some inst)
     {r : Rule} (hr : r ∈ program.rulesOf TId.lower) (hroot : closureRootIds.contains r.id = false) :
     ∀ cfg m s0 env s1, (matchRule program (sem ctx) cfg m r [.inst ii]).run s0 ≠ .ok (some env, s1) := by
@@ -891,8 +1017,18 @@ theorem lower_nonroot_nomatchTA {f : Clif.Function} {ctx : Ctx} (hctx : CtxInvT 
     · rename_i q hargs
       rw [hargs] at ha
       obtain ⟨e1, h1, -⟩ := matchArgs_cons_inv ha
-      exact failsTG_sound hctx (inst_splitA hctx hsc hx) q .inst _ _ _ _ hok
+      exact failsTG_sound hctx (inst_splitA_calls hctx hsc hx) q .inst _ _ _ _ hok
         ⟨ii, info, inst, rfl, hi, hc, hctx.data ii info inst hi hc⟩ h1
     · cases hok
+
+/-- **The root rules of `lower` outside the closure never match an instruction of a
+float-capable context with the float arithmetic** (instructions in `InstScopeTA`, externs with
+integer signatures). -/
+theorem lower_nonroot_nomatchTA {f : Clif.Function} {ctx : Ctx} (hctx : CtxInvT f ctx)
+    (hsc : InstScopeTA ctx) (hx : f.externs.all (Compile.sigE ·.2.sig) = true) {ii : Nat}
+    {info : IInfo} {inst : Clif.Inst} (hi : ctx.insts[ii]? = some info) (hc : info.clif = some inst)
+    {r : Rule} (hr : r ∈ program.rulesOf TId.lower) (hroot : closureRootIds.contains r.id = false) :
+    ∀ cfg m s0 env s1, (matchRule program (sem ctx) cfg m r [.inst ii]).run s0 ≠ .ok (some env, s1) :=
+  lower_nonroot_nomatchTA_calls hctx hsc (callsE_of_externs hx ctx) hi hc hr hroot
 
 end Backend.Proof

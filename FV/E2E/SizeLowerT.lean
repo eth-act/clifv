@@ -140,11 +140,11 @@ theorem edges_leT {f : Clif.Function} {ctx : Ctx} {B : Clif.Block} {L : BLow} (W
 contract on `f`'s own terminators `IselSzT f`, on every input (the typed loop simulation
 `lowerFunction_runT`), every instruction of `lowerFunction f`'s VCode has at most `mIn f` register operands,
 its weight (with `mIn f` bounding the operands) is at most `vcIn (mIn f) f`, and its branch
-targets at most `tgIn f`. -/
+targets at most `tgIn f`. Integer externs (`hx`): `lowerFunction_runT`'s premise since #609. -/
 theorem size_lowerT {f : Clif.Function} {vc : VCode} (hI : IselSzT f)
-    (hl : lowerFunction f = .ok vc) :
+    (hx : f.externs.all (Compile.sigE ·.2.sig) = true) (hl : lowerFunction f = .ok vc) :
     maxRC vc ≤ mIn f ∧ vcW (mIn f) vc ≤ vcIn (mIn f) f ∧ vcTg vc ≤ tgIn f := by
-  obtain ⟨ctx, ranges, st0, bl, hb, hlb, hvb, -, -⟩ := lowerFunction_runT hl
+  obtain ⟨ctx, ranges, st0, bl, hb, hlb, hvb, -, -⟩ := lowerFunction_runT hx hl
   obtain ⟨hS, hT, hY⟩ := hI ctx ranges st0 hb
   have hcf := ctxFacts_of hb
   obtain ⟨-, hstart⟩ := lowBlocks_start hlb
@@ -342,9 +342,10 @@ theorem size_lowerT {f : Clif.Function} {vc : VCode} (hI : IselSzT f)
 
 /-- The spill allocation's words are within the input-side bound, given `IselSzT`. -/
 theorem spillWordBound_le_sizeBoundInT {f : Clif.Function} {vc vcp : VCode} (hI : IselSzT f)
+    (hx : f.externs.all (Compile.sigE ·.2.sig) = true)
     (hl : lowerFunction f = .ok vc) (hp : Backend.prepare vc = .ok vcp) :
     spillWordBound vcp ≤ sizeBoundIn f := by
-  obtain ⟨hM, hW, hT⟩ := size_lowerT hI hl
+  obtain ⟨hM, hW, hT⟩ := size_lowerT hI hx hl
   have h1 := spillWordBound_le vcp
   have h2 := vcW_mono (Nat.le_trans (maxRC_prepare hp) hM) vcp
   have h3 := vcW_prepare hp (mIn f)
@@ -354,9 +355,9 @@ theorem spillWordBound_le_sizeBoundInT {f : Clif.Function} {vc vcp : VCode} (hI 
 
 /-- `spillWordBound_le_sizeBoundInT` through the dead-code cleanup. -/
 theorem spillWordBound_cleanup_le_sizeBoundInT {f : Clif.Function} {vc vcp : VCode}
-    (hI : IselSzT f) (hl : lowerFunction f = .ok vc)
+    (hI : IselSzT f) (hx : f.externs.all (Compile.sigE ·.2.sig) = true) (hl : lowerFunction f = .ok vc)
     (hp : Backend.prepare (prune vc) = .ok vcp) : spillWordBound vcp ≤ sizeBoundIn f := by
-  obtain ⟨hM, hW, hT⟩ := size_lowerT hI hl
+  obtain ⟨hM, hW, hT⟩ := size_lowerT hI hx hl
   obtain ⟨hMc, hWc, hTc⟩ := prune_size vc (mIn f)
   have h1 := spillWordBound_le vcp
   have h2 := vcW_mono (Nat.le_trans (maxRC_prepare hp) (Nat.le_trans hMc hM)) vcp
@@ -372,7 +373,7 @@ theorem spillSizeOkB_of_sizeOkBT {f : Clif.Function} {vc vcp : VCode}
     (hdom : dominatedB f = true) (hs : LowerScopeT f) (hst : Compile.storeTypedB f = true)
     (hsel : Compile.selectTypedB f = true) (hsz : sizeOkB f = true)
     (hl : lowerFunction f = .ok vc) (hp : Backend.prepare vc = .ok vcp) : spillSizeOkB vcp = true := by
-  have h := spillWordBound_le_sizeBoundInT (iselSzT hdom hs hst hsel) hl hp
+  have h := spillWordBound_le_sizeBoundInT (iselSzT hdom hs hst hsel) hs.externsE hl hp
   have hs : sizeBoundIn f < 2 ^ 24 := of_decide_eq_true hsz
   exact decide_eq_true (by omega)
 
@@ -382,7 +383,7 @@ theorem spillSizeOkB_cleanup_of_sizeOkBT {f : Clif.Function} {vc vcp : VCode}
     (hsel : Compile.selectTypedB f = true) (hsz : sizeOkB f = true)
     (hl : lowerFunction f = .ok vc) (hp : Backend.prepare (prune vc) = .ok vcp) :
     spillSizeOkB vcp = true := by
-  have h := spillWordBound_cleanup_le_sizeBoundInT (iselSzT hdom hs hst hsel) hl hp
+  have h := spillWordBound_cleanup_le_sizeBoundInT (iselSzT hdom hs hst hsel) hs.externsE hl hp
   have hs : sizeBoundIn f < 2 ^ 24 := of_decide_eq_true hsz
   exact decide_eq_true (by omega)
 

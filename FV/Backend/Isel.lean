@@ -1489,7 +1489,7 @@ def lowerFunction (f : Clif.Function) : Except String VCode := do
     -- the terminator to.
     let sretParam := sretRet f
     let data ← match b.term with
-      | .tryCall .. | .tryCallIndirect .. => tryCallData f b.term
+      | .tryCall .. | .tryCallIndirect .. => tryCallDataC f b.term
       | _ => termData (abiTerm f b.term)
     if b.term matches .ret .. && sretParam.isEmpty && (sigRets f.sig != f.sig.returns) then
       throw "sret parameter is not an entry-block parameter"
@@ -1514,8 +1514,8 @@ def lowerFunction (f : Clif.Function) : Except String VCode := do
       -- the normal return) holding the `jump` with the successor's arguments: every
       -- successor of the call has a single predecessor, as regalloc2 requires of a branch
       -- with operands, and the handler edge blocks are the landing pads
-      let (sig, items) ← exnTableOpnd f et
-      let some ((retsL, paysL), st) := tryRegsOf sig d.st
+      let (sig, items) ← exnTableOpndC f et
+      let some ((retsL, paysL), st) := tryRegsOfC sig d.st
         | throw "try_call: more than 8 return values"
       if sig.returns.any (·.ty == .i128) then throw "try_call returning i128"
       let rets := retsL.toArray

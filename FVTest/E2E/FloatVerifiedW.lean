@@ -39,7 +39,8 @@ theorem parts : Compile.functionE fW = false ∧ unverifiedReason? fW = none ∧
 /-- **Witness**: `fW` is reported without reason, in the typed scope only. -/
 theorem reason_w :
     Backend.verifiable fW = true ∨ (Compile.functionE fW = false ∧ Backend.verifiableT fW = true) :=
-  verifiable_or_verifiableT_of_unverifiedReason parts.2.1
+  verifiable_or_verifiableT_of_unverifiedReason parts.2.1 (by
+    have h := parts.2.2.1; simp only [verifiableT, Bool.and_eq_true] at h; simp [h.1.1.1])
 
 /-- **Witness**: the typed subset of `fW` in a program without functions. -/
 theorem inSubsetT_w : InSubsetT { funcs := [] } fW :=
@@ -49,20 +50,23 @@ theorem inSubsetT_w : InSubsetT { funcs := [] } fW :=
 theorem lowerChecked_w :
     lowerFunction fW = .ok (getOk (lowerChecked fW true)) ∧
       lowerCheckT fW (getOk (lowerChecked fW true)) = true :=
-  let h := lowerChecked_spec (getOk_eq parts.2.2.2.1)
+  let h := lowerChecked_spec (getOk_eq parts.2.2.2.1) (by
+    have h := parts.2.2.1; simp only [verifiableT, Bool.and_eq_true] at h; simp [h.1.1.1])
   ⟨h.1, h.2.1⟩
 
 /-- **Witness**: `fMv` (float parameters and return) is reported without reason. -/
 theorem reason_mv :
     Backend.verifiable fMv = true ∨
       (Compile.functionE fMv = false ∧ Backend.verifiableT fMv = true) :=
-  verifiable_or_verifiableT_of_unverifiedReason parts.2.2.2.2.2.1
+  verifiable_or_verifiableT_of_unverifiedReason parts.2.2.2.2.2.1 (by
+    have h := parts.2.2.2.2.2.2.1; simp only [verifiableT, Bool.and_eq_true] at h; simp [h.1.1.1])
 
 /-- **Witness**: `fMv`'s validated lowering passes `lowerCheckT`. -/
 theorem lowerChecked_mv :
     lowerFunction fMv = .ok (getOk (lowerChecked fMv true)) ∧
       lowerCheckT fMv (getOk (lowerChecked fMv true)) = true :=
-  let h := lowerChecked_spec (getOk_eq parts.2.2.2.2.2.2.2)
+  let h := lowerChecked_spec (getOk_eq parts.2.2.2.2.2.2.2) (by
+    have h := parts.2.2.2.2.2.2.1; simp only [verifiableT, Bool.and_eq_true] at h; simp [h.1.1.1])
   ⟨h.1, h.2.1⟩
 
 end FloatVerifiedW

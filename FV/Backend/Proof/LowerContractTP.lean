@@ -257,7 +257,7 @@ theorem lowerInstOkP_of_rulesT (hrules : LowerRulesCorrectTI program)
       inst hi hc trivial cfg hco m n st tr env' s1 out st' tr2 hm1 hn1 hvb hfirst hmatch heval
     exact ⟨ms, rss, h1, h2, h3.toP⟩
   cases hroot : closureRoot r
-  · exact absurd hmatch (lower_nonroot_nomatchT hctx.inv hctx.scope hctx.externs hi hc hr
+  · exact absurd hmatch (lower_nonroot_nomatchT_calls hctx.inv hctx.scope hctx.calls hi hc hr
       (by rw [← closureRoot_eq]; exact hroot) cfg m (st, tr) env' s1)
   cases hE : Compile.instE inst
   · cases hfm : floatMoveRootRule r

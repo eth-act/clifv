@@ -37,11 +37,12 @@ theorem stackArgLoad_targets (r : Reg) (b : Nat) (am : AMode) : (stackArgLoad r 
   split <;> rfl
 
 /-- **The emission conditions of `lowerFunction`'s output (typed)**: every instruction has
-`emitOk`, and only a block's last instruction has branch targets. -/
+`emitOk`, and only a block's last instruction has branch targets. Integer externs (`hx`):
+`lowerFunction_runT`'s premise since #609. -/
 theorem vc_emitT {f : Clif.Function} {vc : VCode} (hI : IselEmitT f)
-    (hl : lowerFunction f = .ok vc) :
+    (hx : f.externs.all (Compile.sigE ·.2.sig) = true) (hl : lowerFunction f = .ok vc) :
     ∀ vb ∈ vc.blocks.toList, (∀ m ∈ vb.insts.toList, m.emitOk = true) ∧ TargetsLast vb := by
-  obtain ⟨ctx, ranges, st0, bl, hb, hlb, hvb, -, -⟩ := lowerFunction_runT hl
+  obtain ⟨ctx, ranges, st0, bl, hb, hlb, hvb, -, -⟩ := lowerFunction_runT hx hl
   obtain ⟨hS, hT, hY⟩ := hI ctx ranges st0 hb
   have hcf := ctxFacts_of hb
   obtain ⟨-, hstart⟩ := lowBlocks_start hlb
@@ -173,7 +174,7 @@ theorem emitParts_lowerT {f : Clif.Function} {vc vcp : VCode} (hdom : dominatedB
     (hp : Backend.prepare vc = .ok vcp) :
     immsOkB vcp = true ∧ vcp.noAlwaysB = true ∧ branchTargetsOkB vcp = true := by
   have hd := Spill.prepDomain_ofT (dominated_of hdom) hs hl
-  exact emitParts_of hp hd (prep_emit hp hd (vc_emitT hI hl))
+  exact emitParts_of hp hd (prep_emit hp hd (vc_emitT hI hs.externsE hl))
 
 private theorem clean_emitT {vc : VCode}
     (h : ∀ vb ∈ vc.blocks.toList, (∀ i ∈ vb.insts.toList, i.emitOk = true) ∧ TargetsLast vb) :
@@ -202,6 +203,6 @@ theorem emitParts_cleanup_lowerT {f : Clif.Function} {vc vcp : VCode} (hdom : do
     (hp : Backend.prepare (prune vc) = .ok vcp) :
     immsOkB vcp = true ∧ vcp.noAlwaysB = true ∧ branchTargetsOkB vcp = true := by
   have hd := prune_prepDomain (Spill.prepDomain_ofT (dominated_of hdom) hs hl)
-  exact emitParts_of hp hd (prep_emit hp hd (prune_emitT (vc_emitT hI hl)))
+  exact emitParts_of hp hd (prep_emit hp hd (prune_emitT (vc_emitT hI hs.externsE hl)))
 
 end E2E

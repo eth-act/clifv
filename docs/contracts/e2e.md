@@ -256,8 +256,10 @@ constructors that conclusion (`ctor_value_sound` keeps its statement over `Cov.a
 `ctor_value_sound_int_witness`).
 
 Remaining interim (S11e5 stages B/C): `instData` still rejects a `call_indirect` and
-`exnTableOpnd` a `try_call`/`try_call_indirect` with an `f32`/`f64` parameter or return
-(`sigIntB`; the totality scope `stmtInB`/`tryInB` says so). `Compile.functionE` does not
+`exnTableOpnd` a `try_call_indirect` with an `f32`/`f64` parameter or return
+(`sigIntB`; the totality scope `stmtInB`/`tryInB` says so; a direct `try_call` of such a callee is
+lowered since S11e6 slice 2b, `exnTableOpndC`, outside the scope, whose extern signatures are
+integer). `Compile.functionE` does not
 constrain `f.sigDecls`, so a float indirect call would put a float value into the integer driver
 model (`DriverCheck`, `CtxSpec.ctxE`/`tysOf_int` → `loop_run`), and the `try_call` contracts
 (`tryRegsOf`, `LowerTryOk`, `CallOk`/`ArgReg`, `ShapeOf`) are integer-shaped. Every theorem
@@ -344,13 +346,15 @@ the `retN`/value arguments).
   the stores into the outgoing area precede the `tryCall`, `try_sym_lowerTryOk`/
   `try_got_lowerTryOk`; `lowerCheck`'s `callsStackOkB` checks the callee's area against
   `vc.outgoing`).
-* **Float returns (S11e3, a fix)**: a `try_call`/`try_call_indirect` whose signature has an
-  `f32`/`f64` parameter or return now falls back (`exnTableOpnd`: `try_call with f32/f64
-  parameters or returns`). Before, `tryRegsOf`/`gen_try_call_rets` gave every return an integer
-  vreg in x0..x7 (`retRegs`), while AAPCS64 returns a float in v0..v7: a wrong ABI. It was not
-  observable before S11e3 (a float return could not be used: `buildCtx` rejected `f32`/`f64`
+* **Float returns (S11e3, a fix; S11e6 typed)**: a `try_call`/`try_call_indirect` whose
+  signature has an `f32`/`f64` parameter or return fell back (`exnTableOpnd`: `try_call with
+  f32/f64 parameters or returns`). Before, `tryRegsOf`/`gen_try_call_rets` gave every return an
+  integer vreg in x0..x7 (`retRegs`), while AAPCS64 returns a float in v0..v7: a wrong ABI. It was
+  not observable before S11e3 (a float return could not be used: `buildCtx` rejected `f32`/`f64`
   block parameters, so the wrong x0 def was dead), but with S11e3's float values it would have
-  read the normal-return value from x0. S11e5 types these returns.
+  read the normal-return value from x0. S11e6 slice 2 types these returns (`retRegsC`,
+  `tryRegsOfC`): `lowerFunction` lowers a direct `try_call` of a float signature (outside this
+  theorem's scope, whose extern signatures are integer; `try_call_indirect` still falls back).
 * **Claim**: exactly the normal return. `ArmRefines` is unchanged: when `Clif.runLoop`
   returns or traps, so does the Arm code. A run that passes through a `try_call` is related
   only along the path where the callee returns normally.

@@ -24,7 +24,7 @@ theorem CtxT.resTysE {f : Clif.Function} {ctx : Ctx} (h : CtxT f ctx) {ii : Nat}
   obtain ⟨ty, hty, rfl⟩ := List.mem_map.mp ht
   have hnf : ty.isFloat = false := by
     cases hci : Compile.isCallIndirect inst
-    · exact Compile.resTy_not_float_of_instE h.externs hE hci ty (by rw [htys]; exact hty)
+    · exact resTy_not_float_calls (h.calls.at hi hc) hE hci ty (by rw [htys]; exact hty)
     · cases inst with
       | callIndirect sig cl args =>
         cases hl : f.sigDecls.lookup sig with

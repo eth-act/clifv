@@ -110,7 +110,7 @@ theorem aliasWF_of_flat {al : List (Nat × Nat)}
 /-- **Witness**: `lowerShapeT_of_lowerT` on a float function (`return` of an `f64`, a `brif`
 with float edge arguments, a `jump` with a float argument). -/
 theorem lowerShapeT_mv : ∃ ctx st0 R gn bl, LowerShapeT fMv (vcOf fMv) ctx st0 R gn bl := by
-  obtain ⟨ctx, ranges, st0, bl, hb, hl, -, -, -⟩ := lowerFunction_runT lowerFunction_mv
+  obtain ⟨ctx, ranges, st0, bl, hb, hl, -, -, -⟩ := lowerFunction_runT (by native_decide) lowerFunction_mv
   have he := ctxBlOf_eq hb hl
   have hu : ((aliasOf fMv (ctxBlOf fMv).2).map (·.1)).Nodup := by native_decide
   have hwf : (aliasOf fMv (ctxBlOf fMv).2).all
@@ -125,7 +125,7 @@ theorem shapeOkT_tb : ∃ ctx ranges st0 bl, buildCtx fTb = .ok (ctx, ranges, st
     lowBlocks fTb (stmtCall ctx) (termCallF ctx) (tryCallF ctx) 0 fTb.blocks st0 fTb.blocks.length =
       some bl ∧
     shapeOkT fTb (vcOf fTb) ctx st0 (gnAt (gnTable st0.nextVreg (aliasOf fTb bl))) bl = true := by
-  obtain ⟨ctx, ranges, st0, bl, hb, hl, -, -, -⟩ := lowerFunction_runT lowerFunction_tb
+  obtain ⟨ctx, ranges, st0, bl, hb, hl, -, -, -⟩ := lowerFunction_runT (by native_decide) lowerFunction_tb
   have he := ctxBlOf_eq hb hl
   have hu : ((aliasOf fTb (ctxBlOf fTb).2).map (·.1)).Nodup := by native_decide
   have hwf : (aliasOf fTb (ctxBlOf fTb).2).all
@@ -139,7 +139,7 @@ targeting the recorded labels. -/
 theorem rawBack_mv : ∃ ctx st0 bl RR L t, Spill.LowT fMv (vcOf fMv) ctx st0 bl RR ∧
     bl[0]? = some L ∧ (fixBlock RR (rawBlockT fMv ctx bl 0 fMv.blocks[0]!)).insts.back? = some t ∧
     t.targets = L.targets ∧ L.targets.length = 2 := by
-  obtain ⟨ctx, st0, bl, RR, H⟩ := Spill.lowT_of lowerFunction_mv
+  obtain ⟨ctx, st0, bl, RR, H⟩ := Spill.lowT_of (by native_decide) lowerFunction_mv
   obtain ⟨ranges, hb⟩ := H.hb
   have he := ctxBlOf_eq hb H.hbl
   have hL : ((ctxBlOf fMv).2[0]?.map (·.targets.length)) = some 2 := by native_decide
@@ -153,7 +153,7 @@ theorem rawBack_mv : ∃ ctx st0 bl RR L t, Spill.LowT fMv (vcOf fMv) ctx st0 bl
 instruction without successors. -/
 theorem rawBack_tb : ∃ ctx st0 bl RR t, Spill.LowT fTb (vcOf fTb) ctx st0 bl RR ∧
     (fixBlock RR (rawBlockT fTb ctx bl 1 fTb.blocks[1]!)).insts.back? = some t ∧ t.targets = [] := by
-  obtain ⟨ctx, st0, bl, RR, H⟩ := Spill.lowT_of lowerFunction_tb
+  obtain ⟨ctx, st0, bl, RR, H⟩ := Spill.lowT_of (by native_decide) lowerFunction_tb
   obtain ⟨ranges, hb⟩ := H.hb
   have he := ctxBlOf_eq hb H.hbl
   have hL : ((ctxBlOf fTb).2[1]?.map (·.targets)) = some [] := by native_decide
