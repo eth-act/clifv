@@ -191,4 +191,27 @@ theorem callee_relW {L : Link} {RA : RL} (hRA : RA.Wf) (hcin : CodeIn L RA) {n :
     omega
   · rw [r_bodyOf _ _ (by simp) (by simp), r_enter (by simp) (by simp)]; exact herr
 
+/-- **The caller's memory at its paused call** (module doc): its CLIF memory is related to a world
+agreeing with the Arm state outside its world's private set. -/
+theorem caller_world {RA : RL} (hX0 : IselCall.NoCall RA.X) {f : Clif.Function} {vc : VCode}
+    {ctx : Ctx} {st0 : LState} {R : Reg → Reg} {gn : Nat → Nat} {bl : List Driver.BLow}
+    {A : Nat → Nat → List Clif.ValueId} {Γ : E2E.Rel} {c : BitVec 64} {env : Clif.Env}
+    {p : Clif.Program} {slots : List (Clif.SlotId × Nat)}
+    (H : DriverHypT f vc ctx st0 R gn bl A (csem RA.F RA.ctx RA.X) (RelW Γ f c) env p)
+    (hchk : IselCheck.threadCheckBlC f bl = true) {Lp : Nat → Prop} {ss ss' : Array (Array Nat)}
+    (H3 : PrepThread.PrepFacts vc RA.vc Lp ss ss') {cc : CheckCtx} {ins : Array (Option AState)}
+    {a0 : AState} (hc : CheckedAt RA.vc RA.rf cc ins a0) {r₀ : Reg → CV} {s' : Clif.State}
+    {vV' vP' : VState CV ArmState} {cM' : MState CV ArmState} {x : ArmState}
+    (hq : Q RA x (.run cM')) (hP : Pause RA (.run cM'))
+    (hat : IselCall.AtCallS s') (hm2 : Driver.Match f ctx R gn bl A (RelW Γ f c) slots s' vV')
+    (hm3 : PrepThread.PMatch vc RA.vc (csem RA.F RA.ctx RA.X) (VCodeThread.cEvs RA.F RA.ctx) Lp ss'
+      (.run vV') (.run vP'))
+    (hm4 : MatchRun cc ins ckeep r₀ cM' vP') :
+    ∃ w, MemRel Γ.F Γ.syms s'.mem w ∧ (∀ a, ¬ RA.F a → x.mem a = w.mem a) ∧
+      Arm.r .ERR x = .None ∧ spv x = RA.spB := by
+  obtain ⟨b, k, allocs, its, m, w, vb, info, rfl, -, -, -, b0, rfl, -, -⟩ :=
+    CallResumeAll.atCall_of_pause hX0 H hchk H3 hc hP hat hm2 hm3 hm4
+  have hst := q_stRel hq
+  exact ⟨w, hm2.2.2.2.1.1.1, fun a ha => hst.world.2.1 a ha, hst.err, hst.sp⟩
+
 end Concurrency.CallEntryRel

@@ -300,6 +300,9 @@ structure Act where
   caller : LFn
   /-- the open activations' CLIF memories at their calls and depths (`CallValid.AllocInvD`) -/
   opens : List (Clif.Mem × Nat)
+  /-- addresses no CLIF read of the activation's segments starts at (its frame padding and the
+  callers' private sets outside its slots) -/
+  N : Nat → Prop := fun _ => False
 
 /-- The activation's `RL` in the link. -/
 abbrev Act.RL (L : Link) (g : Act) : Backend.Proof.RL := L.act g.F g.s0 g.K g.G
@@ -349,23 +352,25 @@ structure StatOk (L : Link) (env : Clif.Env) (p : Clif.Program) (g : Act) : Prop
   sigs : ∀ e ∈ g.f.externs, ∀ callee, p.func? e.2.name = some callee → callee.sig = e.2.sig
 
 /-- **The static facts of a compiled function of the link** (module doc): the lowering, prep and
-allocation data of the CLIF function `f` compiled to `F` (named `nm`), such that every activation
-of `F` (well formed, entered at an ABI call, its body-entry stack pointer 16-aligned) has its
-`StatOk` with the memory relation of its world (`Γ`: its private set, the link's symbols `syms`,
-its slot base). -/
+allocation data of the CLIF function `f` compiled to `F` (named `nm`), its CLIF slots within its
+frame's slot area, such that every activation of `F` (well formed, entered at an ABI call, its
+body-entry stack pointer 16-aligned) has its `StatOk` with the memory relation of its world
+(`Γ`: its private set, the link's symbols `syms`, its slot base). -/
 def FnOk (L : Link) (env : Clif.Env) (p : Clif.Program) (syms : String → Option Nat)
     (nm : String) (F : LFn) (f : Clif.Function) : Prop :=
   F.Static ∧ F.af.frameSize % 16 = 0 ∧
+  (∀ q ∈ f.slots, ∃ off, (slotLayout f.slots).1.lookup q.1 = some off ∧
+    F.af.slotBase + off + q.2.size ≤ F.af.frameSize) ∧
   ∃ (vc : VCode) (ctx : Ctx) (st0 : LState) (R : Reg → Reg) (gn : Nat → Nat) (bl : List BLow)
     (A : Nat → Nat → List Clif.ValueId) (Lp : Nat → Prop) (ss ss' : Array (Array Nat))
     (cc : CheckCtx) (ins : Array (Option AState)) (a0 : AState),
     ∀ (s0 : ArmState) (K : Nat) (G : BitVec 64 → Prop) (ra c : BitVec 64)
       (slots : List (Clif.SlotId × Nat)) (ext : List (Clif.Frame × List Clif.ValueId))
-      (caller : LFn) (opens : List (Clif.Mem × Nat)),
+      (caller : LFn) (opens : List (Clif.Mem × Nat)) (N : Nat → Prop),
       (L.act F s0 K G).Wf → AbiCall F.fb F.base ra s0 → c.toNat % 16 = 0 →
       StatOk L env p ⟨nm, F, s0, K, G, ra, f, vc, ctx, st0, R, gn, bl, A,
         ⟨(L.act F s0 K G).F, syms, (L.act F s0 K G).ctx.slotBase, 0⟩, c, Lp, ss, ss', cc, ins, a0,
-        slots, ext, caller, opens⟩
+        slots, ext, caller, opens, N⟩
 
 /-- The pause of a chain segment at a call: the three relations and `Q` at the paused `call`. -/
 def CallPz (L : Link) (g : Act) (r₀ : Reg → CV) (x0 : ArmState × Mon) (P : List Lab)
