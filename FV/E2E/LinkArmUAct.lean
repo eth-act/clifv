@@ -52,6 +52,22 @@ theorem envRX_keepsPlace0 (hL : L.Ok) (hU : L.OkU) [hR : L.CrunOkX] (hN : L.Need
   · rw [h] at hG; cases hG
   · rw [h] at hG; exact hk n G hG
 
+/-- **The activation's environment keeps the oracle** (slot-byte oracle included) when the
+program's functions have no stack slots (otherwise a callee with slots advances `init`). -/
+theorem envRX_keepsPlace (hL : L.Ok) (hU : L.OkU) [hR : L.CrunOkX] (hN : L.NeedSlots) (M : Nat)
+    (hS : ∀ f ∈ L.P.funcs, f.slots = [])
+    (g : Clif.Function) : Clif.XEnvKeepsPlace (L.envRX M g) := by
+  have hk := Clif.linkEnvRX_keepsPlace (P := L.P) (env := L.envX) (R := L.crunX M)
+    (fun s o h hc => hR.runs M s o h (by
+      rcases hc with ⟨v, m, rfl⟩ | ⟨e, m, rfl⟩
+      · exact .inl ⟨v, m, rfl⟩
+      · exact .inr (.inr ⟨e, m, rfl⟩)))
+    hL.free hS (L.envX_keepsPlace hL hU hN)
+  intro n G hG
+  rcases L.envRX_restricts (M := M) (g := g) n with h | h
+  · rw [h] at hG; cases hG
+  · rw [h] at hG; exact hk n G hG
+
 theorem only_linkFree (hL : L.Ok) {g : Clif.Function} (hg : g ∈ L.P.funcs) :
     ∀ f ∈ (L.P.only g).funcs, Clif.LinkFree f := fun f hf => by
   simp only [Clif.Program.only, List.mem_cons, List.not_mem_nil, or_false] at hf
