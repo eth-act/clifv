@@ -1,3 +1,5 @@
+import FV.Backend.Proof.StockConditionalGuardedWitness
+import FV.Backend.Proof.StockConditionalOutgoingWitness
 import FV.Backend.Proof.StockConditionalDemandWitness
 import FV.Backend.Proof.StockConditionalCoreOriginWitness
 import FV.Backend.Proof.StockConditionPrefixWitness
@@ -76,3 +78,10 @@ import FV.Backend.Proof.StockConditionalEmissionWitness
 #print axioms Backend.Stock.Proof.ConditionalValues.SourceWitness.parameter_wide_full_frame_witness
 #print axioms Backend.Stock.Proof.ParameterBranch.parameter_selected
 #print axioms Backend.Stock.Proof.ParameterBranch.named_calls
+
+#print axioms Backend.Stock.Proof.outgoing_base_extent
+#print axioms Backend.Stock.Proof.ConditionalValues.BodyWitness.conditional_outgoing_frame_witness
+#print axioms Backend.Stock.Proof.ConditionalValues.nonzero_wide_allocation
+#print axioms Backend.Stock.Proof.ConditionalCalls.Calls.parameter_wide_bounds
+#print axioms Backend.Stock.Proof.ConditionalValues.ConditionalBodySpec.parameter_branch_values
+#print axioms Backend.Stock.Proof.ConditionalValues.GuardedWitness.executable_parameter_branch_witness

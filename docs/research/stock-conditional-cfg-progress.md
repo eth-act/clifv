@@ -1,13 +1,11 @@
 # Conditional source composition checkpoint
 
-Current packet: parameter ordinary-root selection, complete wide branch source
-execution and full virtual-register frame, actual retained scalar conditional
-bodies/source return/first-trap and branch→per-successor→scan demand transport
-pass1112normal module keys and61Std3audit roots. Original source branch choice/full real frame
-and scratch-free parameter/nonzero variants have complete witnesses. Production
-remains #634; no conditional production activation or full author gate is claimed.
-The next concrete bridge is guarded available-value preservation across actual
-branch allocation, then chosen-edge/source-CFG/ABI and consumer composition.
+Current packet: the actual retained wide parameter branch derives its source
+choice, rule/calls, original context, final-alias/demand bounds and guarded
+post-frame from the real driver/core. A complete original source and actual csem
+branch witness covers every64-bit input using result.final.alias. All1117normal
+module keys/67Std3audit roots pass. Production remains #634; conditional CFG/ABI
+and consumer activation plus full author gates are still pending.
 
 Main #634 (`d6218f29`) activates arbitrary-length forward scalar jump/return
 CFGs. Full original #140 remains open. This next implementation reuses the same
@@ -196,3 +194,29 @@ prerequisite. Derive actual outgoing base/extent and original source context
 facts where needed. Then widen to other conditions, modern per-edge consumers,
 bit-test/table/critical paths, loops/effects/calls and full original140. No old
 accepted identity/stage or input condition is removed by the staged route.
+
+The guarded retained-branch packet is now complete for wide parameter choices.
+`StockOutgoingFrame` reuses the actual argument-loop field proof to preserve
+both compiler base and demand extent, including per-successor/synthetic and
+exception argument paths. The complete executable conditional fixture inhabits
+this through its real nonempty outgoing collector and scan boundary.
+
+`StockConditionalWideAllocation` derives unchanged fresh frontier/demand size
+from actual650/651/722/242 execution. The new `ConditionalBodySpec.parameter_branch_values`
+then derives original context/slot, selection, source typing, final alias bounds,
+demand extent and held restricted values from the actual core and retained
+terminator record. It executes the real branch buffer under result.final.alias,
+chooses the original truth index, retains exact successor order and derives the
+complete guarded post-frame via no real vreg writes and stable memory relation.
+No rule/code/alias/demand/execution callback is added to accepted programs.
+
+The complete original-scope/dominated source enters and returns for every64-bit
+input on either source branch. Its actual csem branch executes from the real
+entry seed using the real final alias table and preserves the guarded source
+frame; this is no longer only a generic resolver instance. All1117targeted keys
+and67audit roots pass, Std3 only; two bundled retained-branch/complete-witness MCP
+reviews report Std3/no warnings. Full author gates and production activation are
+not claimed. Next derive source conditional continuation/getters/availability,
+compose body/first traps with actual source-selected direct/synthetic edge
+transfer, ranked CFG/ABI and compatible consumers. Broader conditions/per-edge
+consumers, bit-test/table/critical paths, loops/effects/calls and full140 remain.
