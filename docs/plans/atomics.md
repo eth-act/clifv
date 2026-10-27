@@ -1155,9 +1155,11 @@ they are; the per-thread layers are new files.
         it: **`CallSegOkGT.WitnessFull.realizes_call_fullT`** (the `CStepS` variant of
         `realizes_call_full`: `realizes_linked_calls` with one thread, every premise discharged —
         `PartsOk`/depth bound by the reachable states from the oracle entry state `csO`
-        (`reach_inv`), `Env.empty`'s `EnvKeeps*`, the caller's `Ent` with budget `0x200`). Open:
-        the rmw-callee witness re-derived the same way, a `CStepS` version of `program_correct`
-        (multi-threaded `Clif.run` with masks).
+        (`reach_inv`), `Env.empty`'s `EnvKeeps*`, the caller's `Ent` with budget `0x200`), and
+        the rmw-callee witness: **`CallSegOkGT.WitnessRmw.realizes_call_rmwT`** (the link `linkR`
+        of the caller and `atomic_rmw`, its LL/SC pair on the partition `a = 0 ∧ n = 8`, budget
+        `0x240`). Open: a `CStepS` version of `program_correct` (multi-threaded `Clif.run` with
+        masks).
   * **the prologue, from the ABI entry (done, `ArmAllocEntry.lean`)**: `stp_fplr_evs` (the
     prologue's `stp x29, x30, [sp, #-16]!`: one plain write at `sp - 16`, no exclusive);
     `q_init_lines` (`RegLevelFrame.q_init` with the prologue's lines, `LinesAt`, and its step
