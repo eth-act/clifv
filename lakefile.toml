@@ -184,3 +184,7 @@ root = "FVTest.Backend.Lowering.StockGeneralDivProductionLinked"
 [[lean_exe]]
 name = "dead-cleanup-generate"
 root = "FVTest.Link.DeadCleanupGenerate"
+
+[[lean_exe]]
+name = "stock-memory-linked"
+root = "FVTest.Backend.Lowering.StockMemoryProductionLinked"

@@ -13,6 +13,8 @@ import FV.E2E.StockLogicalNI
 import FV.E2E.StockScalarNI
 import FV.E2E.StockDivNI
 import FV.Backend.SemanticNICheck
+import FV.Backend.Proof.StockMemoryCheck
+import FV.E2E.StockMemoryNI
 
 namespace E2E
 open Backend Backend.Proof Backend.Proof.Driver
@@ -52,6 +54,11 @@ inductive CompiledSemanticNI (f : Clif.Function) (k : Nat) (vc vcp : VCode)
       CompiledStockArithmeticStage f cleanup k result vcp rf af fa fb →
       CompiledSemanticNI f k vc vcp rf af fa fb
 
+  | memory {cleanup : Bool} {result : Stock.Result} :
+      Stock.Memory.SingleClass f → result.code = vc → Stock.Memory.effectsOnly vc = true →
+      CompiledStockArithmeticStage f cleanup k result vcp rf af fa fb →
+      CompiledSemanticNI f k vc vcp rf af fa fb
+
 namespace CompiledSemanticNI
 variable {f : Clif.Function} {k : Nat} {vc vcp : VCode} {rf : RFunc}
   {af : AFunc} {fa : FnAsm} {fb : FnBin}
@@ -69,6 +76,7 @@ theorem toSemantic (hc : CompiledSemanticNI f k vc vcp rf af fa fb) :
   | scalar domain equal _ h => exact .scalar domain equal h
   | scalarDiv domain equal _ h => exact .scalar domain equal h
   | cfg domain equal _ h => exact .scalar domain equal h
+  | memory family equal _ h => exact .memory family.domain equal h
 
 /-- All new semantic and paired premises come from executable checks and actual
 pipeline observations, rather than new accepted-source assumptions. -/
@@ -85,7 +93,7 @@ theorem of_checks {cleanup : Bool} (lower : SemanticNI.check f vc = true)
     | true =>
       exact .stockCleanup ⟨⟨legacy,prepared,prepOk,allocChecked_of_checkAlloc check,alloc,emit,layout⟩,check⟩
   simp only [SemanticNI.check,Bool.or_eq_true,Bool.and_eq_true] at lower
-  rcases lower with legacy | ((((((((((⟨semantic,reads⟩ | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | ⟨semantic,reads⟩)
+  rcases lower with legacy | (((((((((((⟨semantic,reads⟩ | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | memory)
   · exact .compatible (retained legacy)
   · rcases Stock.Arithmetic.check_sound semantic with legacy | ⟨result,domain,run,equal,_⟩
     · exact .compatible (retained legacy)
@@ -130,6 +138,10 @@ theorem of_checks {cleanup : Bool} (lower : SemanticNI.check f vc = true)
 
   · obtain ⟨result,domain,run,equal⟩ := Stock.ParameterCfg.check_sound semantic
     exact .cfg domain equal reads
+      ⟨run,by rwa [equal],by rwa [equal],check,alloc,emit,layout⟩
+
+  · obtain ⟨result,family,run,equal,effects⟩ := Stock.Memory.check_sound memory
+    exact .memory family equal effects
       ⟨run,by rwa [equal],by rwa [equal],check,alloc,emit,layout⟩
 
 end CompiledSemanticNI
@@ -225,5 +237,19 @@ theorem backend_correct_world_niX_semantic {p : Clif.Program} {f : Clif.Function
       backend_correct_world_niX_stock_cfg domain reads h hcov hsym hslot hcs hrel hargs
         fuel vals cm returned
     exact ⟨us,outs,w,pins,arity,values,memory,site,base,fun _ _ => paired⟩
+
+  | memory family equal effects h =>
+    subst vc
+    classical
+    by_cases tls : XTls F X
+    · intro vals cm returned
+      obtain ⟨us,outs,w,pins,arity,values,memory,site,base,paired⟩ :=
+        backend_correct_world_niX_stock_memory family effects h hcov hsym hslot tls hcs hrel hargs
+          fuel vals cm returned
+      exact ⟨us,outs,w,pins,arity,values,memory,site,base,fun _ _ => paired⟩
+    · intro vals cm returned
+      obtain ⟨us,outs,w,pins,arity,values,memory,site,base⟩ :=
+        (backend_correct_worldX_stock_memory family.domain h hcov hsym hslot hcs hrel hargs fuel).1 vals cm returned
+      exact ⟨us,outs,w,pins,arity,values,memory,site,base,fun _ positive => False.elim (tls positive)⟩
 
 end E2E

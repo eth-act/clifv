@@ -9,6 +9,14 @@ import FV.Backend.Proof.StockMemorySingleWitness
 import FV.Backend.Proof.StockMemoryReadWitness
 import FV.E2E.StockMemoryReadWitness
 
+import FV.E2E.StockMemoryPairedFunctionWitness
+import FV.E2E.StockMemoryWorldX
+import FV.E2E.StockMemoryNI
+import FV.Backend.Proof.StockMemoryCheck
+import FV.E2E.StockMemoryEffectKernel
+
+import FV.E2E.StockMemoryActivationWitness
+
 #print axioms Backend.Stock.Memory.domain_of_scalar
 #print axioms Backend.Stock.Memory.existing_source_witness
 #print axioms Backend.Stock.Memory.load_source_result
@@ -100,3 +108,24 @@ import FV.E2E.StockMemoryReadWitness
 #print axioms E2E.StockMemory.stock_lower_return_record_paired_runOk
 #print axioms E2E.StockMemory.actual_ordinary_paired_return_refines_at
 #print axioms E2E.StockMemoryReadWitness.complete_paired_return_block_witness
+
+#print axioms E2E.StockMemory.mapped_entry_register_prelude_paired_frame
+#print axioms E2E.StockMemory.stock_lower_entry_prelude_paired_frame
+#print axioms E2E.StockMemory.actual_ordinary_paired_entry_return_refines_frame
+#print axioms E2E.StockMemory.single_load_return_paired_function_seeded
+#print axioms E2E.StockMemory.single_load_return_paired_function
+#print axioms E2E.StockMemoryFunctionWitness.source_class_witness
+#print axioms E2E.StockMemoryFunctionWitness.complete_paired_load_function_witness
+#print axioms Backend.Stock.Memory.SingleClass.domain
+#print axioms E2E.backend_correct_worldX_stock_memory
+#print axioms E2E.StockMemory.effectsOnly_instruction
+#print axioms E2E.StockMemory.return_value
+#print axioms E2E.StockMemory.machine_return
+#print axioms E2E.backend_correct_world_niX_stock_memory
+#print axioms Backend.Stock.Memory.sourceOk_sound
+#print axioms Backend.Stock.Memory.check_sound
+#print axioms E2E.StockMemoryEffectKernel.source_checked -- witness: native_decide
+#print axioms E2E.StockMemoryEffectKernel.actual_effects
+
+#print axioms Backend.Stock.Memory.effectsOnly_noTls
+#print axioms E2E.StockMemoryActivationWitness.default_memory_route_witness -- witness: native_decide
