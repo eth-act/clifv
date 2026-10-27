@@ -12,10 +12,10 @@ private theorem valueSemV_halt {gv : Nat → String → Prop} {F : BitVec 64 →
     {ctx : FnCtx} {X : ExtSem} {i : MInst} {us outs : List CV}
     {w w' : Arm.ArmState} (h : valueSemV gv F ctx X i us w = some (outs, w', .halt)) :
     csemV gv F ctx X i us w = some (outs, w', .halt) := by
-  by_cases hp : pureForm i = true
+  by_cases hp : specForm i = true
   · have hs : mspec ctx.slotBase i us w = some (outs, w', .halt) := by
       simpa [valueSemV, hp] using h
-    have := (mspec_pure hp hs).2
+    have := mspec_spec_next hp hs
     cases this
   · simpa [valueSemV, hp] using h
 
@@ -79,7 +79,7 @@ theorem regLevelCorrect_world_atX_value {vcp : VCode} {rf : RFunc} {af : AFunc} 
     rw [operands_retsC] at hops
     cases hops
     have hsem' := hsem
-    simp only [valueSemV, pureForm, Bool.false_eq_true, ↓reduceIte, csemV, csem, Option.some.injEq, Prod.mk.injEq] at hsem'
+    simp only [valueSemV, specForm, pureForm, cmpForm, Bool.false_or, Bool.false_eq_true, ↓reduceIte, csemV, csem, Option.some.injEq, Prod.mk.injEq] at hsem'
     obtain ⟨rfl, rfl, -⟩ := hsem'
     have h1 : VStep R.vc R.valueSem (.run ⟨b, k, ρ, w₁⟩) (.ret vals w₁) := by
       rw [hvals]
@@ -104,7 +104,7 @@ theorem regLevelCorrect_world_atX_value {vcp : VCode} {rf : RFunc} {af : AFunc} 
         rw [hi] at hi'; cases hi'
         rw [operands_retsC] at hops'; cases hops'
         have hsem3 := hsem2
-        simp only [RL.valueSem, valueSemV, pureForm, Bool.false_eq_true, ↓reduceIte, csemV, csem, Option.some.injEq, Prod.mk.injEq] at hsem3
+        simp only [RL.valueSem, valueSemV, specForm, pureForm, cmpForm, Bool.false_or, Bool.false_eq_true, ↓reduceIte, csemV, csem, Option.some.injEq, Prod.mk.injEq] at hsem3
         obtain ⟨rfl, rfl, rfl⟩ := hsem3
         cases hn with
         | ret _ =>

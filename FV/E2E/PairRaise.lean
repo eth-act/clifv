@@ -794,7 +794,7 @@ theorem raiseHypW_pair_valueSemU (fctx : FnCtx) (hsb : fctx.slotBase = sb) (hTls
   raiseHypW_pair (fun Rd => valueSemG F fctx X Rd syms [] [] 0 (fun _ _ _ _ => False))
     (valueSemU F fctx X XR) (fun _ => refines_valueSemG) (fun _ => memRefinesR_valueSemG hsb hsym)
     (fun Rd rd n w => by
-      simp only [valueSemG, pureForm, Bool.false_eq_true, ite_false]
+      simp only [valueSemG, specForm, pureForm, cmpForm, Bool.false_or, Bool.false_eq_true, ite_false]
       exact csemG_got fctx Rd rd n w)
     (fun cm i us w w' o w₁ ct o' w₁' ct' hw h h' =>
       guardedStep0_value (D := D) (syms := syms) hTls fctx cm [i] [] [] i

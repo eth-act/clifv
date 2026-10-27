@@ -63,6 +63,7 @@ theorem backend_correct_cleanup_exU {p : Clif.Program} {f : Clif.Function} {k : 
     (hmem : ∀ s, MemRefines (F s) slotOff syms (sem s))
     (hPure : ∀ s i us w outs w' ctl, pureForm i = true →
       sem s i us w = some (outs, w', ctl) → w' = w ∧ ctl = .next)
+    (hCmp : ∀ s, CmpOverwrite (sem s))
     -- the raising calls: the semantics, the callees' exceptional results
     (hRS : ∀ s, RaiseSem (F s) (X s) XR (sem s))
     (hXR : ∀ s, XRaiseOk env (f.externs.map (·.2))
@@ -84,7 +85,7 @@ theorem backend_correct_cleanup_exU {p : Clif.Program} {f : Clif.Function} {k : 
       (st0 := st0) (R := R) (gn := gn) (bl := bl) (A := A) ?_ hUs (hds s') (hRef s') (hmem s')
       (hRS s') (callsStack_mono (callsStack_of_check hc.lowerOk) houtB)
       (tryStack_mono (tryStack_of_check hc.lowerOk) houtB) (hXR s') (hXRi s') (hsym s'))
-    hds hPure hM6 hent hres hbe hargs hargF hcs hrel htr fuel
+    hds hPure hCmp hM6 hent hres hbe hargs hargF hcs hrel htr fuel
   exact {
     shape := hshape
     cert := hcert
@@ -143,6 +144,7 @@ theorem backend_correct_of_rules_cleanup_exU {p : Clif.Program} {f : Clif.Functi
     (hmem : ∀ s, MemRefines (F s) slotOff syms (sem s))
     (hPure : ∀ s i us w outs w' ctl, pureForm i = true →
       sem s i us w = some (outs, w', ctl) → w' = w ∧ ctl = .next)
+    (hCmp : ∀ s, CmpOverwrite (sem s))
     (hRS : ∀ s, RaiseSem (F s) (X s) XR (sem s))
     (hXR : ∀ s, XRaiseOk env (f.externs.map (·.2))
       (fun sl cm w => Rel.holds ⟨F s, syms, slotOff, out⟩ f sl cm w) (X s) XR)
@@ -166,7 +168,7 @@ theorem backend_correct_of_rules_cleanup_exU {p : Clif.Program} {f : Clif.Functi
       (outArgsOk_holds ⟨F s', syms, slotOff, out⟩ f) (hcalls s'))
     (fun s' => tryIndCalls_of_rules htryIndRules htryIndUn (hRef s')
       (mrStable_holds ⟨F s', syms, slotOff, out⟩ f) (hicalls s'))
-    hM6 hRef hds hcalls hicalls hmem hPure hRS hXR hXRi hsym houtB hent hres hbe hargs hargF hcs
+    hM6 hRef hds hcalls hicalls hmem hPure hCmp hRS hXR hXRi hsym houtB hent hres hbe hargs hargF hcs
     hrel htr fuel
 
 /-- **`backend_correct_m4_cleanup_ex` with unwinding**: the value semantics with unwinding. The
@@ -210,7 +212,7 @@ theorem backend_correct_m4_cleanup_exU {p : Clif.Program} {f : Clif.Function} {k
     hM6 (fun _ => refines_valueSemU _ _ _ _) (fun _ => driverSem_valueSemU _ _ _ _)
     (fun s' => callsRefine_valueSemU (hX s') (hexcl s'))
     (fun s' => indCallsRefine_valueSemU (hXI s') (hsym s') (fun _ _ _ h => h.1.symbols) (hexcl s'))
-    hmem (fun _ _ _ _ _ _ _ hp he => valueSemU_pure hp he)
+    hmem (fun _ _ _ _ _ _ _ hp he => valueSemU_pure hp he) (fun _ => valueSemU_cmpOverwrite _ _ _ _)
     (fun _ => raiseSem_valueSemU _ _ _ _) hXR hXRi hsym houtB
     hent hres hbe hargs hargF hcs hrel htr fuel
 

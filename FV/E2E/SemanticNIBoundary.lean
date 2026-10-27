@@ -134,7 +134,7 @@ theorem noTlsDiv {sig : Clif.Signature} {code : VCode}
   have supported := DivBoundary.checked_instruction checked (by simpa using hb) (by simpa using hi)
   cases i <;> simp_all [Backend.ABIReadDiv.instruction,Backend.ABIReadDiv.additional,Backend.ABIReadScalar.instruction,Backend.ABIReadScalar.constant,Backend.ABIReadScalar.shift,Backend.ABIReadScalar.extension,Backend.ABIReadScalar.bitProducer,Backend.ABIReadScalar.popcountProducer,Backend.ABIReadScalar.comparisonProducer,Backend.ABIReadScalar.booleanProducer,Backend.ABIReadScalar.highmulProducer,Backend.ABIReadScalar.extendedComparisonProducer,Backend.ABIReadScalar.maskProducer,
     Backend.ABIReadFlags.instruction,Backend.ABIReadOnly.instruction,
-    Backend.DeadCleanup.pureForm,Backend.ABIReadFlags.extra]
+    Backend.DeadCleanup.pureNoFlags,Backend.DeadCleanup.pureForm,Backend.ABIReadFlags.extra]
 
 theorem noTlsCfg {sig : Clif.Signature} {code : VCode}
     (checked : Backend.ABIReadCfg.check sig code = true) : code.hasTls = false := by

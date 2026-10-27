@@ -46,7 +46,7 @@ def sb : BitVec 64 := sp0 - BitVec.ofNat 64 (frameDrop (artOf J.results f).af)
 /-- The caller's CLIF memory: no live allocation, the CLIF image's symbols, the slot-placement
 oracle at the entry's body `sp` with `helperBase`'s frames. -/
 def cm : Clif.Mem :=
-  { symbols := fun n => J.syms.lookup n, place := some ⟨[sb], (sys J helperBase).frames⟩ }
+  { symbols := fun n => J.syms.lookup n, place := some ⟨[sb], (sys J helperBase).frames, none⟩ }
 
 /-- The source entry state of the original `rec128` on `x`, `n` (the source function's entry
 block's parameters bound to the `i128` argument and `n`, `helperBase`'s memory). -/
@@ -336,7 +336,7 @@ def sb : BitVec 64 := sp0 - BitVec.ofNat 64 (frameDrop (artOf J.resultsCleanup f
 /-- The caller's CLIF memory: no live allocation, the CLIF image's symbols, the slot-placement
 oracle at the entry's body `sp` with `helperBase`'s frames. -/
 def cm : Clif.Mem :=
-  { symbols := fun n => J.syms.lookup n, place := some ⟨[sb], (sys J helperBase).frames⟩ }
+  { symbols := fun n => J.syms.lookup n, place := some ⟨[sb], (sys J helperBase).frames, none⟩ }
 
 /-- The source entry state of the original `rec128` on `x`, `n` (the source function's entry
 block's parameters bound to the `i128` argument and `n`, `helperBase`'s memory). -/
