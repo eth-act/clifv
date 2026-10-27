@@ -1145,7 +1145,7 @@ import FVTest.Concurrency.LitmusFull
 #print axioms Concurrency.CallEntryRel.caller_world
 #print axioms Concurrency.CallEntryRel.Witness.wf_ld -- witness: native_decide
 #print axioms Concurrency.CallEntryRel.Witness.slots_fL -- witness: native_decide
-#print axioms Concurrency.CallEntryRel.Witness.enterSlots_at_ld
+#print axioms Concurrency.CallEntryRel.Witness.enterSlots_at_ld -- witness: native_decide
 #print axioms Concurrency.CallEntryRel.Witness.callee_relW_ld -- witness: native_decide
 #print axioms Concurrency.CallSegEnt.callee_chainP
 #print axioms Concurrency.CallSegRun.segInv_start
