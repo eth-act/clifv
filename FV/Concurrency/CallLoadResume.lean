@@ -135,20 +135,22 @@ theorem callerPost {y : ArmState} (hy : PostA sBF y) :
     ∃ nP, ∀ i < nP, ((∀ e ∈ stepEvs (iterN RC.step i y), RC.F e.addr) ∧
       NoStx (iterN RC.step i y)) ∧ (iterN RC.step i y).program = pC0 := by
   obtain ⟨m, -, hq, -⟩ := prefixF
-  obtain ⟨hpc, herr, hsp, hmem, hprog⟩ := hy
+  obtain ⟨hpc, herr, hsp, hmem, hprog, hfp⟩ := hy
   obtain ⟨info, hinfo⟩ := callC1
   have hstr := q_stRel hq
   rw [checksPost.2.1] at hq
-  have hq1 := resumeQ wfRC hq vb0C hinfo hpc herr hsp hmem (hprog.trans hstr.prog.symm)
+  have hq1 := resumeQ wfRC hq vb0C hinfo hpc herr hsp hmem (hprog.trans hstr.prog.symm) hfp
   have hA1 : AInv RC (.run ⟨0, (postMv (.x 0)).map (fun p => RItem.move p.1 p.2) ++
       [.op 2 #[.reg (.x 0)]], locVal RC.fr y, y⟩) := by
     intro _ ⟨a, ha⟩
     simp [postMv, savesL] at ha
-  obtain ⟨n1, hq2, -, hp1⟩ := moves_privA wfRC (postMv (.x 0)) _ _ _ hq1 hA1 (by simp [postMv, Loc.isSave])
+  obtain ⟨n1, hqa2, hp1⟩ := moves_privQA wfRC (postMv (.x 0)) _ _ _ (.inl ⟨hq1, hA1⟩)
+    (moves_noRet (R := RC) postMvC_noRet)
+  obtain ⟨mt2, hq2⟩ := qa_q hqa2
   obtain ⟨n2, hp2, -⟩ := rets_privP wfRC abiRC hq2 vb0C instC2
   refine ⟨n1 + n2, fun i hi => ?_⟩
   by_cases h : i < n1
-  · exact hp1 i h
+  · exact ⟨(hp1 i h).1, (hp1 i h).2.1⟩
   · have := hp2 (i - n1) (by omega)
     rw [← iterN_add, show n1 + (i - n1) = i by omega] at this
     exact ⟨this.1, this.2.1⟩

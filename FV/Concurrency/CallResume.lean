@@ -432,7 +432,7 @@ theorem noRet_epiLines (saves : List Reg) (size : Nat) : NoRet (epiLines saves s
 /-- **The return from a `rets` item** (`ret_machine`, per step): Cranelift's epilogue and the
 `ret`, each step's events private (the pops and the `ldp` read the clobber area and fp/lr), no
 store exclusive, the program kept, at a line; then the return address with no error, `sp` as at
-entry, the memory and the program kept. -/
+entry, the memory and the program kept, x29 as at entry (the `ldp` of fp/lr). -/
 theorem rets_privP {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb R.base ra R.s0)
     {s : ArmState} {b k : Nat} {allocs : Array Loc} {its : List RItem} {m : Loc → CV}
     {w : ArmState} (hq : Q R s (.run ⟨b, .op k allocs :: its, m, w⟩)) {vb : VBlock}
@@ -443,7 +443,7 @@ theorem rets_privP {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb R.
         ∃ j, Arm.r .PC (iterN R.step i s) = R.pcOf j) ∧
       Arm.r .PC (iterN R.step n s) = ra ∧ Arm.r .ERR (iterN R.step n s) = .None ∧
       spv (iterN R.step n s) = spv R.s0 ∧ (iterN R.step n s).mem = s.mem ∧
-      (iterN R.step n s).program = s.program ∧
+      (iterN R.step n s).program = s.program ∧ xreg 29 (iterN R.step n s) = xreg 29 R.s0 ∧
       (∀ i, i + 1 < n → AtNonRet R (iterN R.step i s)) ∧ 0 < n ∧
       ∃ j t, R.fa.lines.toList[j]? = some (.ins .ret t) ∧
         Arm.r .PC (iterN R.step (n - 1) s) = R.pcOf j := by
@@ -497,7 +497,7 @@ theorem rets_privP {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb R.
     rw [BitVec.toNat_sub_of_le (by rw [BitVec.le_def, BitVec.toNat_ofNat, hm]; exact h16),
       BitVec.toNat_ofNat, hm]
     omega
-  obtain ⟨s1, hsteps, hsp1, -, hx30, -, hm1, -⟩ := epilogue_ok (R.envOf j0) hs hsv hcb' s hal
+  obtain ⟨s1, hsteps, hsp1, hx29, hx30, -, hm1, -⟩ := epilogue_ok (R.envOf j0) hs hsv hcb' s hal
   have hev := epilogue_evsIn (R.envOf j0) hs hsv hcb' s hal
   have hplain : ∀ k ∈ Code.kinds (epiLines R.af.saves R.af.frameSize), k = .plainR ∨ k = .plainW := by
     intro k hk
@@ -560,8 +560,8 @@ theorem rets_privP {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb R.
         exact absurd he List.not_mem_nil
       · rw [cls_of_decode hdec3] at hc
         exact clsOf_ne_stx (isExcl_none ha3 hk) rel rs rn hc
-  refine ⟨?_, ?_, ?_, ?_, ?_, fun i hi => linesAt_nonRet hR hlat (noRet_epiLines _ _) i (by omega),
-    by omega,
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_,
+    fun i hi => linesAt_nonRet hR hlat (noRet_epiLines _ _) i (by omega), by omega,
     _, none, hj, by rw [Nat.add_sub_cancel, hiter]; exact hpc1⟩ <;> rw [hfin]
   · rw [Arm.r_of_w_same, hx30, hfplr, BitVec.extractLsb'_append_eq_left, hent.lr]
   · rw [Arm.r_of_w_different (by simp), herr1, hst.err]
@@ -571,6 +571,10 @@ theorem rets_privP {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb R.
     rw [hsp1, hslot, BitVec.sub_add_cancel]
   · rw [Arm.ArmState.mem_w_eq_mem, hm1]
   · rw [Arm.w_program, hprog1]
+  · show Arm.r (.GPR 29#5) _ = _
+    rw [Arm.r_of_w_different (by simp)]
+    show xreg 29 s1 = _
+    rw [hx29, hfplr, BitVec.extractLsb'_append_eq_right]
 
 /-! ## Steps of a linked machine -/
 

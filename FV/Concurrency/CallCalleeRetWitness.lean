@@ -26,7 +26,7 @@ open Arm ArmThread Backend Backend.Proof VCodeThread AllocThread ArmAllocThread 
 /-- **The callee's return contract at `yX`.** -/
 theorem retC_RX : RetC (RLx sBF) (Arm.r .PC sBF + 4#64) (fun r => regVal sBF r) yX := by
   obtain ⟨m, -, hq, -⟩ := prefixF
-  refine ⟨?_, ?_, ?_, fun a _ => ?_, fun r hr => by rw [regVal_yX hr]⟩
+  refine ⟨?_, ?_, ?_, fun a _ => ?_, ?_, fun r hr => by rw [regVal_yX hr]⟩
   · simp [yX, yR, r_of_w_different]
   · unfold yX yR
     rw [r_of_w_different (by simp), r_of_w_different (by simp)]
@@ -35,6 +35,9 @@ theorem retC_RX : RetC (RLx sBF) (Arm.r .PC sBF + 4#64) (fun r => regVal sBF r) 
     rw [spOf_yX, r_enterL (by simp) (by simp)]; rfl
   · show yX.mem a = (enterL sBF).mem a
     rw [mem_yX, mem_enterL]
+  · show Arm.r (.GPR 29#5) yX = Arm.r (.GPR 29#5) (enterL sBF)
+    unfold yX yR
+    rw [r_of_w_different (by simp), r_of_w_different (by simp), r_enterL (by simp) (by simp)]
 
 /-- **The caller's resume premises from the callee's return contract** (module doc). -/
 theorem resume_premises_RX :
@@ -44,7 +47,7 @@ theorem resume_premises_RX :
         (∀ q ∈ defPairs opsC1 #[.reg (.x 0), .reg (.x 0)], q.1.isLate = true → q.2 ≠ l) →
         locVal RC.fr yX l = locVal RC.fr sBF l) ∧
       (∀ c ∈ (MInst.call infoC1).clobbers, c ∈ calleeSaved →
-        ckeep c (regVal yX c) = ckeep c (regVal sBF c)) := by
+        ckeep c (regVal yX c) = ckeep c (regVal sBF c)) ∧ xreg 29 yX = xreg 29 sBF := by
   obtain ⟨m, -, hq, -⟩ := prefixF
   have hS := q_stRel hq
   exact resume_premises_of_retC wfRC (wfX hS) (abiX hS) retC_RX hS

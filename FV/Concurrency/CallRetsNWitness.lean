@@ -56,6 +56,7 @@ theorem arm_entryCRN_fC {env : Clif.Env} (henv : env.extern "ld" = none) {c : Bi
   exact arm_isel_refines_entryCRN wfRC scopeRC rfl agreesAt_MC2 abiRC H hchk
     (memRelOk_relW ΓC fC c) (relW_wf hc) VCodeThread.Witness.X0_tls (fun _ _ _ => rfl)
     (memRefines_csem RC.F RC.ctx _ rfl (fun _ _ h => by cases h)) (mrStable_relW ΓC fC c) fC_reg
-    H3 (hm3 _ _) hat hm4 hB0 hcall hfunc hslots hbody hterm hregs hty hsig hmr hargs hq hA hr
+    H3 (hm3 _ _) hat hm4 hB0 hcall hfunc hslots hbody hterm hregs hty hsig hmr
+    (CallSegAbi.hr₀_init wfRC abiRC hq) hargs hq hA hr
 
 end Concurrency.CallRetsN.Witness

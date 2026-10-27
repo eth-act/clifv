@@ -188,7 +188,7 @@ theorem resume_allP {RA RB : RL} (hRA : RA.Wf) (hRB : RB.Wf) (hgv : RA.gv = fun 
   have hstat' : cc2.checkStatic wh ops allocs (MInst.call info).clobbers = .ok () := by
     rw [hal2]; exact hstat
   -- the callee's return gives the resume premises
-  obtain ⟨hpc, herr, hsp, hmem, hpres, hkeep⟩ :=
+  obtain ⟨hpc, herr, hsp, hmem, hpres, hkeep, hfp⟩ :=
     resume_premises_of_retC hRA hRB hent hy hst hfx hlr hm0 hG hr₀B hdef
   -- layer 2
   have hpre : PrefixHold rvals ((defPairs ops allocs).map fun q => locVal RA.fr y q.2) :=
@@ -228,7 +228,7 @@ theorem resume_allP {RA RB : RL} (hRA : RA.Wf) (hRB : RB.Wf) (hgv : RA.gv = fun 
     have := vstep_det hv2 hv3
     simp only [VConf.run.injEq, VState.mk.injEq] at this
     simpa using this
-  refine ⟨_, _, _, hm2', .blk hL hσ, hA', CallSeg.resumeQW hRA hq hvb hi hpc herr hsp hmem hprog
+  refine ⟨_, _, _, hm2', .blk hL hσ, hA', CallSeg.resumeQW hRA hq hvb hi hpc herr hsp hmem hprog hfp
     hst' (SameWorld.refl _ _), aInv_stepS hRA hq hA hms⟩
 
 open CallRetResume CallResumeL IselResume in

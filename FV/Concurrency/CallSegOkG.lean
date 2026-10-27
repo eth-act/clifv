@@ -306,7 +306,8 @@ abbrev Act.RL (L : Link) (g : Act) : Backend.Proof.RL := L.act g.F g.s0 g.K g.G
 
 /-- The activation's callee-saved registers at its body entry (after the prologue). -/
 noncomputable def Act.r0 (L : Link) (g : Act) : Reg → CV := fun r =>
-  locVal (g.RL L).fr (iterN (g.RL L).step (prologueLines g.F.af.frameSize).length g.s0) (.reg r)
+  locVal (g.RL L).fr (iterN (g.RL L).step (prologueLines g.F.af.saves g.F.af.frameSize).length g.s0)
+    (.reg r)
 
 /-- **The static facts of an activation** (module doc): the premises of the chain theorems that do
 not depend on the run. -/
@@ -397,9 +398,12 @@ def ChainP (L : Link) (env : Clif.Env) (p : Clif.Program) (g : Act) (r₀ : Reg 
 
 variable {L : Link} {env : Clif.Env} {p : Clif.Program} {g : Act}
 
-/-- **The resume form** (`arm_isel_refinesCRNX`). -/
+/-- **The resume form** (`arm_isel_refinesCRNX`), with the checker's entry values of the saved
+registers the ABI-entry ones (`hr₀`: Cranelift's epilogue pops them back; the save slots are not
+`Q`'s locations). -/
 theorem chainP_resume (hS : StatOk L env p g) {r₀ : Reg → CV} {s : Clif.State}
     {vV vP : VState CV ArmState} {cM : MState CV ArmState} {x : ArmState} {mon : Mon}
+    (hr₀ : ∀ r ∈ (g.RL L).af.saves, ckeep r (r₀ r) = ckeep r (regVal (g.RL L).s0 r))
     (hm2 : Match g.f g.ctx g.R g.gn g.bl g.A (RelW g.Γ g.f g.c) g.slots s vV)
     (hm3 : PMatch g.vc g.F.vc (csem (g.RL L).F (g.RL L).ctx (g.RL L).X)
       (cEvs (g.RL L).F (g.RL L).ctx) g.Lp g.ss' (.run vV) (.run vP))
@@ -407,7 +411,8 @@ theorem chainP_resume (hS : StatOk L env p g) {r₀ : Reg → CV} {s : Clif.Stat
     (hA : AInv (g.RL L) (.run cM)) : ChainP L env p g r₀ (x, mon) s := fun ls t' hr => by
   obtain ⟨k, trS, t, ψ, hk, hx, hrun, href, hend⟩ := arm_isel_refinesCRNX hS.wf hS.scope rfl
     (agreesAt_M hS.ok hS.mem _ _ _) hS.abi hS.H hS.chk (hS.ΓF ▸ memRelOk_relW g.Γ g.f g.c)
-    (IselRefines.Witness.relW_wf hS.align) hS.tls hS.noCall hS.H3 hS.checked hm2 hm3 hm4 hq hA hr
+    (IselRefines.Witness.relW_wf hS.align) hS.tls hS.noCall hS.H3 hS.checked hr₀ hm2 hm3 hm4 hq
+    hA hr
   refine ⟨k, trS, t, ψ, hk, hx, hrun, href, ?_⟩
   rcases hend with h | h | ⟨tE, s', vV', vP', cM', h1, h2, h3, rfl, h4, h5, h6, h7⟩ |
     ⟨tE, s', h1, rfl, h2, h3⟩
@@ -427,7 +432,7 @@ theorem chainP_entry (hS : StatOk L env p g) {cs : Clif.State} {B0 : Clif.Block}
     (hsig : args.map (·.ty) = g.f.sig.params.map (·.ty))
     {m₀ : Loc → CV} {w₀ : Arm.ArmState} (hmr : RelW g.Γ g.f g.c g.slots cs.mem w₀)
     (hargs : ArgsAtEntry (g.RL L).F g.f.sig args w₀)
-    (hq : Q (g.RL L) (iterN (g.RL L).step (prologueLines g.F.af.frameSize).length g.s0)
+    (hq : Q (g.RL L) (iterN (g.RL L).step (prologueLines g.F.af.saves g.F.af.frameSize).length g.s0)
       (MConf.init g.F.rf m₀ w₀)) (hA : AInv (g.RL L) (MConf.init g.F.rf m₀ w₀)) {mon : Mon} :
     ChainP L env p g (fun r => m₀ (.reg r)) (g.s0, mon) cs := fun ls t' hr => by
   obtain ⟨k, trS, t, ψ, hk, hx, hrun, href, hend⟩ := arm_isel_refines_abiCRNX hS.wf hS.scope rfl

@@ -295,7 +295,7 @@ theorem realized_rets {R : RL} (hR : R.Wf) {ra : BitVec 64}
           {trS : List (List (Prog.Ev SKind BVal))}, (∀ x ∈ trS, x = []) →
           ClifCStepTerm.CRun env p c trS c' →
           CallCompose.Realized env p (PrivA R) L L.length c c' := by
-  obtain ⟨n, hpath, hpc, herr, hsp, hmem, hprog, hnr, hn0, -⟩ := rets_privP hR hent hq hvb hi
+  obtain ⟨n, hpath, hpc, herr, hsp, hmem, hprog, -, hnr, hn0, -⟩ := rets_privP hR hent hq hvb hi
   refine ⟨n, hn0, hpc, herr, hsp, hmem, hprog, fun {L mon t'} hlt hr => ?_⟩
   have hstep : ∀ i < L.length, (∀ e ∈ stepEvs (iterN R.step i s), R.F e.addr) ∧
       NoStx (iterN R.step i s) ∧ g (iterN R.step i s) = R.step (iterN R.step i s) := by

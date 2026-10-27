@@ -77,8 +77,11 @@ theorem F_RA2 : ∀ a, RC.F a → RA2.F a := fun a h => by
 theorem strel_sBF : ∃ m, StRel RA2 sBF m w₀C := by
   obtain ⟨m, -, hq, -⟩ := prefixF
   have hS := q_stRel hq
-  exact ⟨m, ⟨hS.store, SameWorld.mono F_RA2 hS.world, hS.err, hS.prog, hS.sp, hS.align, hS.fplr,
-    hS.code, hS.gkeep, hS.fp⟩⟩
+  refine ⟨m, ⟨hS.store, SameWorld.mono F_RA2 hS.world, hS.err, hS.prog, hS.sp, hS.align,
+    fun hf => ?_, hS.code, hS.gkeep, hS.fp⟩⟩
+  show Arm.read_mem_bytes RC.topN RC.topB sBF = Arm.read_mem_bytes RC.topN RC.topB RA2.sP
+  rw [show RA2.sP = RC.sP from RL.sP_hooks wfRC abiRC link2.H]
+  exact hS.fplr hf
 
 theorem mem_ld : ("ld", ldF) ∈ link2.fns := by simp [link2]
 
@@ -165,7 +168,7 @@ theorem retEnd_n_ld {s0 : ArmState} {env : Clif.Env} {p : Clif.Program} {MR : Me
     (hRB : (link2.act ldF s0 0 RC.F).Wf) (hent : AbiCall ldF.fb ldF.base (RC.pcOf 15 + 4#64) s0)
     (hret : RetEnd (link2.act ldF s0 0 RC.F) (RC.pcOf 15 + 4#64) env p MR slots r₀ x s') :
     ∃ n, 0 < n ∧ ∃ b k allocs its m w vb us ops ρ vals cm,
-      Q (link2.act ldF s0 0 RC.F) x (.run ⟨b, .op k allocs :: its, m, w⟩) ∧
+      QA (link2.act ldF s0 0 RC.F) x (.run ⟨b, .op k allocs :: its, m, w⟩) ∧
       ldF.vc.blocks[b]? = some vb ∧ vb.insts[k]? = some (.rets us) ∧
       (MInst.rets us).operands = .ok ops ∧ Clif.step env p s' = .done vals cm ∧
       PrefixHold vals (vuses ops ρ) ∧ MR slots s'.mem w ∧
