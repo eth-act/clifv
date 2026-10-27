@@ -1,5 +1,6 @@
 import FV.Concurrency.CallSeg
 import FV.Concurrency.ThreadProgress
+import FV.Concurrency.FrameEvs
 
 /-!
 # Resuming the caller after a compiled callee returns (T2j follow-up, #473, calls)
@@ -14,9 +15,10 @@ up to its return:
   to the same configuration;
 * `oneEv_op1`: **one step at a straight-line form with one Arm instruction** (`OneEvForm`, as
   `oneEv_op`): the Arm's step and the source step reading its bytes, related states after both;
-* `rets_privP`: **the return** from a `rets` item: the epilogue and the `ret`, each step's events
-  private (the `ldp` reads the fp/lr slot), at a line; the return address reached with `sp` as at
-  entry, the memory and program kept;
+* `rets_privP`: **the return** from a `rets` item: Cranelift's epilogue and the `ret`, each
+  step's events private (the pops and the `ldp` read the clobber area and fp/lr,
+  `FrameEvs.epilogue_evsIn`), at a line; the return address reached with `sp` as at entry, the
+  memory and program kept;
 * `cstep_ret_pushC`: the CLIF return of the bottom frame below suspended callers resumes the first
   of them.
 -/
@@ -164,7 +166,7 @@ theorem oneEv_op1 {R : RL} (hR : R.Wf) {s : ArmState} {mon : Mon} {b k : Nat} {a
   have hlen : l.evs.length ≤ 1 := by rw [hl]; exact len_instEvs a _
   refine ⟨_, (R.step (patch l.evs s), mon1), fun k => (0, k), .op hvb hi hops hfix hfoot1 hm2,
     PRun.cons hs hp trivial .nil, rfl,
-    ⟨by show Q R (R.step (patch l.evs s)) _; rw [show R.step (patch l.evs s) = s2 from hit]; exact hq2,
+    .inl ⟨by show Q R (R.step (patch l.evs s)) _; rw [show R.step (patch l.evs s) = s2 from hit]; exact hq2,
       aInv_step hR hq1 (aInv_patch hA _) hm2⟩, ?_⟩
   have htr : evTr [l] = [l.evs] := by simp [evTr]
   rw [htr]
@@ -202,26 +204,29 @@ theorem linesAt_nonRet {R : RL} (hR : R.Wf) {j : Nat} {ls1 : List Line} {s s' : 
     (h : LinesAt R j ls1 s s') (hnr : NoRet ls1) : ∀ i < ls1.length, AtNonRet R (iterN R.step i s) :=
   nonRet_execLines hR h.at_ h.hook h.prog h.pc h.err h.inter h.run hnr
 
-/-- **Through a list of moves whose lines have no `ret`** (`moves_privA`): every state of the
-run before its end is at a line other than `ret`. -/
+/-- **Through a list of moves whose lines have no `ret`** (`moves_privA`; no callee restore among
+them): every state of the run before its end is at a line other than `ret`. -/
 theorem moves_privP {R : RL} (hR : R.Wf) {b : Nat} {w : ArmState} :
     ∀ (mvs : List (Loc × Loc)) (its : List RItem) (s : ArmState) (m : Loc → CV),
       Q R s (.run ⟨b, mvs.map (fun p => RItem.move p.1 p.2) ++ its, m, w⟩) →
       AInv R (.run ⟨b, mvs.map (fun p => RItem.move p.1 p.2) ++ its, m, w⟩) →
       (∀ p ∈ mvs, ∀ code ls1, R.fr.moveInsts p.1 p.2 = .ok code →
         codeLinesE R.ctx R.af code {} = .ok (ls1, {}) → NoRet ls1) →
+      (∀ p ∈ mvs, p.1.isSave = false) →
       ∃ n, Q R (iterN R.step n s) (.run ⟨b, its, movesM mvs m, w⟩) ∧
         AInv R (.run ⟨b, its, movesM mvs m, w⟩) ∧
         ∀ i < n, ((∀ e ∈ stepEvs (iterN R.step i s), R.F e.addr) ∧ NoStx (iterN R.step i s)) ∧
           (iterN R.step i s).program = R.fb.program R.base ∧ AtNonRet R (iterN R.step i s)
-  | [], its, s, m, hq, hA, _ => ⟨0, hq, hA, fun _ h => absurd h (Nat.not_lt_zero _)⟩
-  | p :: mvs, its, s, m, hq, hA, hnr => by
-    obtain ⟨j, ls1, s', code, hcode, hls1, hlat, hq1, hpriv⟩ := move_lines hR hq
+  | [], its, s, m, hq, hA, _, _ => ⟨0, hq, hA, fun _ h => absurd h (Nat.not_lt_zero _)⟩
+  | p :: mvs, its, s, m, hq, hA, hnr, hns => by
+    obtain ⟨j, ls1, s', code, hcode, hls1, hlat, hq1, hpriv⟩ :=
+      move_lines hR hq (hns p List.mem_cons_self)
     have hA1 := Backend.Proof.aInv_step hR hq hA (.move (src := p.1) (dst := p.2))
     have hit := hlat.iter hR
     rw [← hit] at hq1
     obtain ⟨n, hq2, hA2, hp2⟩ := moves_privP hR mvs its _ _ hq1 hA1
-      fun p' hp' => hnr p' (List.mem_cons_of_mem _ hp')
+      (fun p' hp' => hnr p' (List.mem_cons_of_mem _ hp'))
+      (fun p' hp' => hns p' (List.mem_cons_of_mem _ hp'))
     have hnr1 : NoRet ls1 := hnr p List.mem_cons_self code ls1 hcode (hls1 {})
     refine ⟨ls1.length + n, by rw [iterN_add]; exact hq2, hA2, fun i hi => ?_⟩
     by_cases h : i < ls1.length
@@ -273,27 +278,6 @@ theorem srcStep_of_mstep_eq {R : RL} (hcov : ThreadProgress.CoveredCode R) (hX :
 
 /-! ## The return -/
 
-/-- **The epilogue's `ldp x29, x30, [sp], #16`**: one plain read at `sp`, no exclusive. -/
-theorem ldp_fplr_evs (env : Env) (s : ArmState) (hal : CheckSPAlignment s) :
-    ∃ a, (Insn.ldp Reg.fp Reg.lr (.spPostIndexed 16)).toArmInst env = .ok a ∧ isExcl a = false ∧
-      ∀ e ∈ instEvs a s, e.addr = spOf s ∧ e.k = .plainR := by
-  refine ⟨_, by simp [csimp_rules, Reg.fp, Reg.lr, pure, Except.pure]; rfl, rfl, ?_⟩
-  have hal' := spAligned hal
-  intro e he
-  simp [instEvs, pairEvs, LDST.reg_pair_constrain_unpredictable, hal, Arm.BitVec.lsb] at he
-  subst he
-  refine ⟨?_, rfl⟩
-  simp only [read_gpr, spOf]
-  bv_omega
-
-theorem kinds_spAdj (n : Nat) : Code.kinds (spAdjLines false n) = [] := by
-  have h := Code.kinds_epilogueLines n
-  rw [epilogueLines_eq, Code.kinds_append] at h
-  have h2 : Code.kinds [Line.ins (.ldp Reg.fp Reg.lr (.spPostIndexed 16)) none, .ins .ret none] =
-      [.plainR] := rfl
-  rw [h2] at h
-  simpa using h
-
 theorem noRet_spAdj (sub : Bool) (size : Nat) : NoRet (spAdjLines sub size) := by
   intro x t hln
   unfold spAdjLines at hln
@@ -312,17 +296,44 @@ theorem noRet_spAdj (sub : Bool) (size : Nat) : NoRet (spAdjLines sub size) := b
       · simp only [List.mem_singleton, Line.ins.injEq] at hln
         obtain ⟨rfl, -⟩ := hln; intro h; cases h
 
-theorem noRet_prologue (size : Nat) : NoRet (prologueLines size) := by
+theorem noRet_pushLines (int : Bool) (rs : List Reg) : NoRet (pushLines int rs) := by
   intro x t hln
-  rw [prologueLines_eq, List.mem_append] at hln
-  rcases hln with hln | hln
-  · simp only [List.mem_cons, List.not_mem_nil, or_false, Line.ins.injEq] at hln
-    rcases hln with ⟨rfl, -⟩ | ⟨rfl, -⟩ <;> intro h <;> cases h
-  · exact noRet_spAdj true size x t hln
+  obtain ⟨y, e, r, r', hy⟩ := pushLines_mem hln
+  simp only [Line.ins.injEq] at e
+  obtain ⟨rfl, -⟩ := e
+  rcases hy with rfl | rfl | rfl | rfl <;> intro h <;> cases h
 
-/-- **The return from a `rets` item** (`ret_machine`, per step): the epilogue and the `ret`, each
-step's events private (the `ldp` reads the fp/lr slot), no store exclusive, the program kept, at a
-line; then the return address with no error, `sp` as at entry, the memory and the program kept. -/
+theorem noRet_popLines (int : Bool) (rs : List Reg) : NoRet (popLines int rs) := by
+  intro x t hln
+  obtain ⟨y, e, r, r', hy⟩ := popLines_mem hln
+  simp only [Line.ins.injEq] at e
+  obtain ⟨rfl, -⟩ := e
+  rcases hy with rfl | rfl | rfl | rfl <;> intro h <;> cases h
+
+theorem noRet_prologue (saves : List Reg) (size : Nat) : NoRet (prologueLines saves size) := by
+  intro x t hln
+  rw [prologueLines_eq] at hln
+  simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hln
+  rcases hln with (h | h) | h | h | h
+  · simp only [Line.ins.injEq] at h; obtain ⟨rfl, -⟩ := h; intro h; cases h
+  · simp only [Line.ins.injEq] at h; obtain ⟨rfl, -⟩ := h; intro h; cases h
+  · exact noRet_pushLines _ _ x t h
+  · exact noRet_pushLines _ _ x t h
+  · exact noRet_spAdj true _ x t h
+
+theorem noRet_epiLines (saves : List Reg) (size : Nat) : NoRet (epiLines saves size) := by
+  intro x t hln
+  simp only [epiLines, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hln
+  rcases hln with h | h | h | h
+  · exact noRet_spAdj false _ x t h
+  · exact noRet_popLines _ _ x t h
+  · exact noRet_popLines _ _ x t h
+  · simp only [Line.ins.injEq] at h; obtain ⟨rfl, -⟩ := h; intro h; cases h
+
+/-- **The return from a `rets` item** (`ret_machine`, per step): Cranelift's epilogue and the
+`ret`, each step's events private (the pops and the `ldp` read the clobber area and fp/lr), no
+store exclusive, the program kept, at a line; then the return address with no error, `sp` as at
+entry, the memory and the program kept. -/
 theorem rets_privP {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb R.base ra R.s0)
     {s : ArmState} {b k : Nat} {allocs : Array Loc} {its : List RItem} {m : Loc → CV}
     {w : ArmState} (hq : Q R s (.run ⟨b, .op k allocs :: its, m, w⟩)) {vb : VBlock}
@@ -337,10 +348,11 @@ theorem rets_privP {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb R.
       (∀ i, i + 1 < n → AtNonRet R (iterN R.step i s)) ∧ 0 < n ∧
       ∃ j t, R.fa.lines.toList[j]? = some (.ins .ret t) ∧
         Arm.r .PC (iterN R.step (n - 1) s) = R.pcOf j := by
-  have hframe := lowerRFunc_frame hR.alloc
+  obtain ⟨hframe, hfs, -, hsv, -, hcb, -, -, -⟩ := RL.frame_facts hR
   have hst0 := hR.stack.frame
   have hsp0 := (spv R.s0).isLt
   have hs : R.af.frameSize < 2 ^ 64 := by have := hst0.1; omega
+  have hcb' : clobberBytes R.af.saves ≤ R.af.frameSize := by rw [hfs]; exact hcb
   obtain ⟨j0, items, pre, regs, i', c1, c2, ls1, ls2, ps1, psm, ps2, T, cc, wh, ops, rfl, hit, hsplit,
     hasg, hc1', hops, hstat, hchk', hc2, h1, h2, htr, hdrop, hpc, hst⟩ := q_op hq hvb hi
   obtain ⟨us', rfl⟩ := assign_rets hasg
@@ -352,107 +364,93 @@ theorem rets_privP {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb R.
   simp only [codeLinesE, ainstLines, hframe, ite_true, bind, Except.bind, pure, Except.pure,
     List.append_nil, Except.ok.injEq, Prod.mk.injEq] at h1
   obtain ⟨rfl, rfl⟩ := h1
-  rw [epilogueLines_eq] at hdrop
-  have hpl : ∀ ln ∈ spAdjLines false R.af.frameSize ++
-      [Line.ins (.ldp Reg.fp Reg.lr (.spPostIndexed 16)) none, .ins .ret none], ln.plain = true := by
+  rw [epilogueLines_epi] at hdrop
+  have hpl : ∀ ln ∈ epiLines R.af.saves R.af.frameSize ++ [Line.ins .ret none], ln.plain = true := by
     intro ln hln
     rcases List.mem_append.1 hln with hln | hln
-    · obtain ⟨_, _, _, hp⟩ := spAdjLines_ins false _ ln hln; exact hp
-    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hln
-      rcases hln with rfl | rfl <;> rfl
+    · obtain ⟨_, _, _, hp, -⟩ := epiLines_ins _ _ ln hln; exact hp
+    · simp only [List.mem_singleton] at hln; subst hln; rfl
   rw [ftR_plain_append _ _ _ hpl (noTrap_next h2)] at hdrop
-  obtain ⟨X, hX⟩ : ∃ X, X = relaxLines R.far (ftList (ls2 ++ nxtOf R.af b)) ++ T := ⟨_, rfl⟩
-  have hdrop' : R.L.drop j0 = (spAdjLines false R.af.frameSize ++
-      [Line.ins (.ldp Reg.fp Reg.lr (.spPostIndexed 16)) none]) ++ (.ins .ret none :: X) := by
-    rw [hdrop, hX]; simp
-  have hdropA : R.L.drop j0 = spAdjLines false R.af.frameSize ++
-      (Line.ins (.ldp Reg.fp Reg.lr (.spPostIndexed 16)) none :: .ins .ret none :: X) := by
-    rw [hdrop, hX]; simp
+  have hdrop' : R.L.drop j0 = epiLines R.af.saves R.af.frameSize ++
+      (.ins .ret none :: (relaxLines R.far (ftList (ls2 ++ nxtOf R.af b)) ++ T)) := by
+    rw [hdrop]; simp
+  -- `sp + size - clobberBytes` is the bottom of the clobber area, `sp + size` the fp/lr slot
   have hdrop0 : frameDrop R.af = R.af.frameSize + 16 := by simp [frameDrop, hframe]
   have hslot : spOf s + BitVec.ofNat 64 R.af.frameSize = spv R.s0 - 16#64 := by
     rw [hst.sp, RL.spB, hdrop0, BitVec.ofNat_add]; bv_omega
-  have hal : (spOf s + BitVec.ofNat 64 R.af.frameSize).toNat % 16 = 0 := by
-    have h16 : 16 ≤ (spv R.s0).toNat := by have := hst0.1; omega
-    rw [hslot, BitVec.toNat_sub_of_le (by rw [BitVec.le_def]; simpa using h16)]
+  have hB : spOf s + BitVec.ofNat 64 (R.af.frameSize - clobberBytes R.af.saves) = R.topB := by
+    obtain ⟨d, hd⟩ : ∃ d, R.af.frameSize = d + clobberBytes R.af.saves :=
+      ⟨_, (Nat.sub_add_cancel hcb').symm⟩
+    rw [hst.sp, RL.spB, RL.topB, RL.topN, hdrop0, hd, Nat.add_sub_cancel,
+      show d + clobberBytes R.af.saves + 16 = d + (16 + clobberBytes R.af.saves) by omega,
+      BitVec.ofNat_add, BitVec.ofNat_add]
+    bv_omega
+  have htopcb : R.topB + BitVec.ofNat 64 (clobberBytes R.af.saves) = spv R.s0 - 16#64 := by
+    rw [RL.topB, RL.topN, BitVec.ofNat_add]; bv_omega
+  have hal : (spOf s + BitVec.ofNat 64 (R.af.frameSize - clobberBytes R.af.saves)).toNat % 16 = 0 := by
+    rw [hB]
     have := hent.spAligned
-    simp; omega
-  obtain ⟨s1, hsteps, hsp1, hx29, hx30, ho1, hm1⟩ := epilogue_ok (R.envOf j0) hs s hal
-  have hinsE : ∀ ln ∈ spAdjLines false R.af.frameSize ++
-      [Line.ins (.ldp Reg.fp Reg.lr (.spPostIndexed 16)) none], ∃ x, ln = .ins x none ∧
-        x.hooked = false := fun ln h => by
-    rcases List.mem_append.1 h with h | h
-    · obtain ⟨x, e, hh, -⟩ := spAdjLines_ins false _ ln h; exact ⟨x, e, hh⟩
-    · simp only [List.mem_singleton] at h; exact ⟨_, h, rfl⟩
-  obtain ⟨hiter, hpc1, -, -⟩ := iterN_steps hR hdrop' hinsE hst.prog hpc hst.err hsteps
+    have := clobberBytes_mod R.af.saves
+    have h16 : 16 + clobberBytes R.af.saves ≤ (spv R.s0).toNat := by have := hst0.1; omega
+    have hm : (16 + clobberBytes R.af.saves) % 2 ^ 64 = 16 + clobberBytes R.af.saves :=
+      Nat.mod_eq_of_lt (by omega)
+    simp only [RL.topB, RL.topN]
+    rw [BitVec.toNat_sub_of_le (by rw [BitVec.le_def, BitVec.toNat_ofNat, hm]; exact h16),
+      BitVec.toNat_ofNat, hm]
+    omega
+  obtain ⟨s1, hsteps, hsp1, -, hx30, -, hm1, -⟩ := epilogue_ok (R.envOf j0) hs hsv hcb' s hal
+  have hev := epilogue_evsIn (R.envOf j0) hs hsv hcb' s hal
+  have hplain : ∀ k ∈ Code.kinds (epiLines R.af.saves R.af.frameSize), k = .plainR ∨ k = .plainW := by
+    intro k hk
+    have hk' : k ∈ Code.kinds (epilogueLines R.af.saves R.af.frameSize) := by
+      rw [epilogueLines_epi, Code.kinds_append]; exact List.mem_append_left _ hk
+    rw [Code.kinds_epilogueLines] at hk'
+    exact .inl (List.eq_of_mem_replicate hk')
+  obtain ⟨hiter, hpc1, -, -⟩ := iterN_steps hR hdrop'
+    (fun ln h => by obtain ⟨x, e, hh, -, -⟩ := epiLines_ins _ _ ln h; exact ⟨x, e, hh⟩)
+    hst.prog hpc hst.err hsteps
   obtain ⟨herr1, hprog1⟩ := hsteps.err
-  have hlat : LinesAt R j0 (spAdjLines false R.af.frameSize ++
-      [Line.ins (.ldp Reg.fp Reg.lr (.spPostIndexed 16)) none]) s s1 :=
-    ⟨lines_at hdrop', fun x t h => by obtain ⟨x', e, hh⟩ := hinsE _ h; cases e; exact hh,
+  have hlat : LinesAt R j0 (epiLines R.af.saves R.af.frameSize) s s1 :=
+    ⟨lines_at hdrop', fun x t h => by obtain ⟨x', e, hh, -, -⟩ := epiLines_ins _ _ _ h; cases e; exact hh,
       hst.prog, by rw [hpc]; rfl, hst.err, stepsOk_interOk hsteps hst.err, hsteps.exec⟩
-  -- the state at the `ldp`
-  obtain ⟨s0, hsteps0, hsp0', -, -⟩ := spAdj_ok (R.envOf j0) false hs s
-  obtain ⟨hiter0, -, -, -⟩ := iterN_steps hR hdropA
-    (fun ln h => by obtain ⟨x, e, hh, -⟩ := spAdjLines_ins false _ ln h; exact ⟨x, e, hh⟩)
-    hst.prog hpc hst.err hsteps0
-  simp only [Bool.false_eq_true, ite_false] at hsp0'
   -- the `ret`
-  have hj : R.fa.lines.toList[j0 + (spAdjLines false R.af.frameSize ++
-      [Line.ins (.ldp Reg.fp Reg.lr (.spPostIndexed 16)) none]).length]? = some (Line.ins .ret none) := by
-    have := congrArg (·[(spAdjLines false R.af.frameSize ++
-      [Line.ins (.ldp Reg.fp Reg.lr (.spPostIndexed 16)) none]).length]?) hdrop'
+  have hj : R.fa.lines.toList[j0 + (epiLines R.af.saves R.af.frameSize).length]? =
+      some (Line.ins .ret none) := by
+    have := congrArg (·[(epiLines R.af.saves R.af.frameSize).length]?) hdrop'
     simpa [List.getElem?_drop, RL.L] using this
   obtain ⟨a, ha, hstep⟩ := armStepX_ins (X := R.X) (H := R.H) hR.layout hR.lm hR.fit hj rfl
     (by rw [hprog1, hst.prog]) hpc1 (by rw [herr1, hst.err])
-  obtain ⟨a', ha', he'⟩ := exec_ret ⟨lineOffset R.fa.lines.toList (j0 + (spAdjLines false R.af.frameSize ++
-      [Line.ins (.ldp Reg.fp Reg.lr (.spPostIndexed 16)) none]).length), (R.lm[·]?)⟩ s1
+  obtain ⟨a', ha', he'⟩ := exec_ret ⟨lineOffset R.fa.lines.toList
+    (j0 + (epiLines R.af.saves R.af.frameSize).length), (R.lm[·]?)⟩ s1
   rw [ha] at ha'; cases ha'
-  have hfin : iterN R.step ((spAdjLines false R.af.frameSize ++
-      [Line.ins (.ldp Reg.fp Reg.lr (.spPostIndexed 16)) none]).length + 1) s =
+  have hfin : iterN R.step ((epiLines R.af.saves R.af.frameSize).length + 1) s =
       Arm.w .PC (xreg 30 s1) s1 := by
     rw [iterN_one_succ, hiter]; exact hstep.trans he'
-  have hfplr := hst.fplr hframe
-  rw [← hslot] at hfplr
+  -- fp/lr as the prologue left them
+  have hbytes := read_mem_bytes_bytes R.topN R.topB s R.sP (hst.fplr hframe)
+  obtain ⟨sP, -, hsP, hP16, -⟩ := RL.sP_steps hR hent
+  rw [hsP] at hbytes
+  have hfplr : Arm.read_mem_bytes 16 (spOf s + BitVec.ofNat 64 R.af.frameSize) s =
+      xreg 30 R.s0 ++ xreg 29 R.s0 := by
+    rw [hslot, ← htopcb, read_sub (n := 16) (o := clobberBytes R.af.saves) hbytes
+      (by simp only [RL.topN]; omega), htopcb]
+    exact hP16
   have hstepEvs := step_execLines (X := R.X) (H := R.H) hR.layout hR.lm hR.fit hlat.at_ hlat.hook
     hlat.prog hlat.pc hlat.err hlat.inter hlat.run
-  refine ⟨(spAdjLines false R.af.frameSize ++
-      [Line.ins (.ldp Reg.fp Reg.lr (.spPostIndexed 16)) none]).length + 1, fun i hi => ?_, ?_⟩
-  · by_cases hiL : i < (spAdjLines false R.af.frameSize ++
-        [Line.ins (.ldp Reg.fp Reg.lr (.spPostIndexed 16)) none]).length
-    · obtain ⟨x, t, a, hli, ha, hdec, hev, -⟩ := hstepEvs i hiL
-      have hns : isExcl a = false → NoStx (iterN R.step i s) := fun hx rel rs rn hc => by
-        rw [show R.step = ArmStepX R.X R.H R.fa from rfl, cls_of_decode hdec] at hc
-        exact clsOf_ne_stx hx rel rs rn hc
-      refine ⟨?_, linesAt_program hR hlat i (by omega), _, linesAt_pc hR hlat i (by omega)⟩
-      rw [show R.step = ArmStepX R.X R.H R.fa from rfl, hev]
-      by_cases hi0 : i < (spAdjLines false R.af.frameSize).length
-      · have hmem : Line.ins x t ∈ spAdjLines false R.af.frameSize := by
-          rw [List.getElem?_append_left hi0] at hli
-          exact List.mem_of_getElem? hli
-        have hk := kinds_mem_none (kinds_spAdj _) hmem
-        rw [VCodeEvents.instEvs_none ha hk]
-        exact ⟨fun e he => absurd he List.not_mem_nil, hns (isExcl_none ha hk)⟩
-      · have hiE : i = (spAdjLines false R.af.frameSize).length := by simp at hiL; omega
-        subst hiE
-        rw [List.getElem?_append_right (Nat.le_refl _)] at hli
-        simp only [Nat.sub_self, List.getElem?_cons_zero, Option.some.injEq, Line.ins.injEq] at hli
-        obtain ⟨rfl, -⟩ := hli
-        have hs0 : iterN R.step (spAdjLines false R.af.frameSize).length s = s0 := hiter0
-        have halS : CheckSPAlignment s0 := (checkSP_iff _).2 (by rw [hsp0']; exact hal)
-        obtain ⟨a2, ha2, hx2, hevs2⟩ := ldp_fplr_evs ⟨lineOffset R.fa.lines.toList
-          (j0 + (spAdjLines false R.af.frameSize).length), (R.lm[·]?)⟩ s0 halS
-        rw [ha] at ha2
-        cases ha2
-        have hs0' : iterN (ArmStepX R.X R.H R.fa) (spAdjLines false R.af.frameSize).length s = s0 :=
-          hiter0
-        have hns0 : NoStx s0 := by rw [← hs0]; exact hns hx2
-        rw [hs0']
-        refine ⟨fun e he => ?_, hns0⟩
-        obtain ⟨hadd, -⟩ := hevs2 e he
-        rw [hadd, hsp0', hslot]
-        have := RL.FK_F (fplr_inF hR hframe 0 (by omega))
-        simpa using this
-    · have hiE : i = (spAdjLines false R.af.frameSize ++
-          [Line.ins (.ldp Reg.fp Reg.lr (.spPostIndexed 16)) none]).length := by omega
+  refine ⟨(epiLines R.af.saves R.af.frameSize).length + 1, fun i hi => ?_, ?_⟩
+  · by_cases hiL : i < (epiLines R.af.saves R.af.frameSize).length
+    · obtain ⟨x, t, a, hli, ha, hdec, -, -⟩ := hstepEvs i hiL
+      refine ⟨⟨fun e he => ?_, fun rel rs rn hc => ?_⟩, linesAt_program hR hlat i (by omega), _,
+        linesAt_pc hR hlat i (by omega)⟩
+      · have hm : e ∈ (segEvs R.step (epiLines R.af.saves R.af.frameSize).length s).flatten :=
+          List.mem_flatten.2 ⟨_, stepEvs_mem_segEvs hiL, he⟩
+        rw [hlat.seg hR] at hm
+        obtain ⟨k, hk, hk'⟩ := hev e hm
+        rw [hk', hB]
+        exact RL.FK_F (fplr_inF hR hframe k (by simp only [RL.topN]; omega))
+      · rw [show R.step = ArmStepX R.X R.H R.fa from rfl, cls_of_decode hdec] at hc
+        exact clsOf_ne_stx (noExcl_of_kinds hplain (List.mem_of_getElem? hli) ha) rel rs rn hc
+    · have hiE : i = (epiLines R.af.saves R.af.frameSize).length := by omega
       subst hiE
       rw [hiter]
       obtain ⟨a3, ha3, -, hev3, hdec3⟩ := stepEvs_line (X := R.X) (H := R.H) hR.layout hR.lm hR.fit hj
@@ -463,14 +461,8 @@ theorem rets_privP {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb R.
         exact absurd he List.not_mem_nil
       · rw [cls_of_decode hdec3] at hc
         exact clsOf_ne_stx (isExcl_none ha3 hk) rel rs rn hc
-  have hnrE : NoRet (spAdjLines false R.af.frameSize ++
-      [Line.ins (.ldp Reg.fp Reg.lr (.spPostIndexed 16)) none]) := by
-    intro x t hln
-    rcases List.mem_append.1 hln with hln | hln
-    · exact noRet_spAdj false _ x t hln
-    · simp only [List.mem_singleton, Line.ins.injEq] at hln
-      obtain ⟨rfl, -⟩ := hln; intro h; cases h
-  refine ⟨?_, ?_, ?_, ?_, ?_, fun i hi => linesAt_nonRet hR hlat hnrE i (by omega), by omega,
+  refine ⟨?_, ?_, ?_, ?_, ?_, fun i hi => linesAt_nonRet hR hlat (noRet_epiLines _ _) i (by omega),
+    by omega,
     _, none, hj, by rw [Nat.add_sub_cancel, hiter]; exact hpc1⟩ <;> rw [hfin]
   · rw [Arm.r_of_w_same, hx30, hfplr, BitVec.extractLsb'_append_eq_left, hent.lr]
   · rw [Arm.r_of_w_different (by simp), herr1, hst.err]

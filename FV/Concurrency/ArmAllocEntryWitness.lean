@@ -40,7 +40,7 @@ theorem entry_premises : RAL.Wf ∧ MemScopeLS RAL ∧
 /-- **The precise run from the ABI entry through the `ldar`** (module doc). -/
 theorem run_load_entry : ∃ (lsP : List Lab) (e : Ev) (t' : ArmState × Mon),
     (∀ env p, Compiled env p RAL csL
-      (iterN RAL.step (prologueLines RAL.af.frameSize).length RAL.s0)) ∧
+      (iterN RAL.step (prologueLines RAL.af.saves RAL.af.frameSize).length RAL.s0)) ∧
     PRun Policy.arm RAL.step (OkPriv RAL) (RAL.s0, none) (lsP ++ [⟨[e], false⟩]) t' ∧
     e.k = .acqR ∧ e.n = 8 ∧ e.addr = 0 ∧
     (∀ l ∈ lsP, ∀ e' ∈ l.evs, PrivA RAL e'.addr.toNat ∧ (e'.k = .plainW ∨ e'.k = .plainR)) := by
@@ -48,14 +48,14 @@ theorem run_load_entry : ∃ (lsP : List Lab) (e : Ev) (t' : ArmState × Mon),
   have hpe := prologue_evs wfRL abiRL hlat
   -- the prologue
   obtain ⟨t0, r0, ht0⟩ := prun_fwd wfRL hlat (fun i hi => (hpe i hi).2) none
-  have hev0 : ∀ l ∈ (segEvs RAL.step (prologueLines RAL.af.frameSize).length RAL.s0).map
+  have hev0 : ∀ l ∈ (segEvs RAL.step (prologueLines RAL.af.saves RAL.af.frameSize).length RAL.s0).map
       (fun e => (⟨e, false⟩ : Lab)), ∀ e' ∈ l.evs, PrivA RAL e'.addr.toNat ∧ e'.k = .plainW := by
     intro l hl e' he'
     obtain ⟨x, hx, rfl⟩ := List.mem_map.mp hl
     obtain ⟨i, hi, rfl⟩ := mem_segEvs hx
     obtain ⟨hF, hK⟩ := (hpe i hi).1 e' he'
     exact ⟨privA_addr.2 hF, hK⟩
-  generalize iterN RAL.step (prologueLines RAL.af.frameSize).length RAL.s0 = s1 at hq hA ht0 ⊢
+  generalize iterN RAL.step (prologueLines RAL.af.saves RAL.af.frameSize).length RAL.s0 = s1 at hq hA ht0 ⊢
   obtain ⟨t0s, t0m⟩ := t0
   simp only at ht0
   subst ht0

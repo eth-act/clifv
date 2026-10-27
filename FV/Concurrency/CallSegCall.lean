@@ -219,14 +219,14 @@ theorem call_endK (hL : L.Ok) {nA : String} {FA : LFn} (hA : (nA, FA) ∈ L.fns)
       xreg 30 (enter FB x) = Arm.r .PC x + 4#64 ∧ (enter FB x).mem = x.mem ∧
       Q (L.act FB (enter FB x) KB (L.act FA s0 K G).FK)
         (iterN (L.act FB (enter FB x) KB (L.act FA s0 K G).FK).step
-          (prologueLines FB.af.frameSize).length (enter FB x))
+          (prologueLines FB.af.saves FB.af.frameSize).length (enter FB x))
         (MConf.init FB.rf (locVal (L.act FB (enter FB x) KB (L.act FA s0 K G).FK).fr
           (iterN (L.act FB (enter FB x) KB (L.act FA s0 K G).FK).step
-            (prologueLines FB.af.frameSize).length (enter FB x))) (bodyOf FB.af (enter FB x))) ∧
+            (prologueLines FB.af.saves FB.af.frameSize).length (enter FB x))) (bodyOf FB.af (enter FB x))) ∧
       AInv (L.act FB (enter FB x) KB (L.act FA s0 K G).FK)
         (MConf.init FB.rf (locVal (L.act FB (enter FB x) KB (L.act FA s0 K G).FK).fr
           (iterN (L.act FB (enter FB x) KB (L.act FA s0 K G).FK).step
-            (prologueLines FB.af.frameSize).length (enter FB x))) (bodyOf FB.af (enter FB x))) ∧
+            (prologueLines FB.af.saves FB.af.frameSize).length (enter FB x))) (bodyOf FB.af (enter FB x))) ∧
       ArgsAtEntry (L.act FB (enter FB x) KB (L.act FA s0 K G).FK).F fB.sig vals
         (bodyOf FB.af (enter FB x)) ∧
       CodeIn L (L.act FB (enter FB x) KB (L.act FA s0 K G).FK) ∧
@@ -312,7 +312,7 @@ theorem resume_ret {RA RB : RL} (hRA : RA.Wf) (hRB : RB.Wf) (hgv : RA.gv = fun _
     (hm0 : ∀ a, RA.FK a → RB.s0.mem a = x.mem a) (hG : ∀ a, RA.FK a → RB.G a)
     {r₀B : Reg → CV}
     (hr₀B : ∀ r ∈ calleeSaved, ckeep r (r₀B r) =
-      ckeep r (locVal RB.fr (iterN RB.step (prologueLines RB.af.frameSize).length RB.s0) (.reg r)))
+      ckeep r (locVal RB.fr (iterN RB.step (prologueLines RB.af.saves RB.af.frameSize).length RB.s0) (.reg r)))
     (hdr : ∀ (b : Nat) (vb : VBlock) (us : List (Reg × Reg)), RB.vc.blocks[b]? = some vb →
       (∃ k : Nat, vb.insts[k]? = some (MInst.rets us)) →
       CallDefsRet RA.vc (us.map (·.2)))
