@@ -137,3 +137,39 @@ Next derive actual selected load IDs from original opcode/type metadata rather
 than an explicit selected-ID premise, classify original source emission/sinking,
 compose complete memory functions, then discharge semantic memory read/NI and
 production consumers. Preserve the full original140 scope and earlier fallback.
+
+
+## Complete first memory source domain
+
+Original opcode/type metadata now derives actual load root1043. Additive guarded
+adapters remove the selected-ID premise; the real placed load/return witness uses
+that automatic path. Full actual load records preserve every sunk bit through
+nested address selection and binding. More generally, every original definition
+requested by its block return is retained and emitted through intervening scans,
+including nontrapping loads. This reuses return demand and original source scope,
+without a global no-load/no-sinking or retained-record input certificate.
+
+`StockMemoryReturnBody` derives complete singleton load/return body refinement
+from original syntax and a source parameter (including an inherited parameter).
+`StockMemorySingleDomain` proves the full memory-capable entry/return/trap
+contract for one-block i32 parameter-load/return functions. Nontrapping source
+accesses preserve their existing stuck behavior on invalid inputs; no new initial
+heap condition is imposed. The old pure and explicit-receipt variants remain.
+
+`StockMemorySingleWitness` now instantiates that universal domain and actual full
+Stock lowering at PC0: the original ABI parameter points to live nonzero heap
+bytes, the load reads0xa5a5a5a5, and the actual ABI returns that i32 result. This
+is a complete load-function witness, beyond the earlier separate entry/block
+witnesses. Maintained checkpoint gates pass in
+`/tmp/stock-memory-single-normal-gates-v1`:4229 normal modules,5014 affected tool
+jobs and65 memory roots with only standard axioms. All49 prior memory axiom sets
+and the changed witness's public header compare exactly; all other previously
+published backend proof files are unchanged. The earlier full98-file audit
+remains the ordinary checkpoint, not a rerun claim for this new snapshot.
+
+No memory production activation or agreement gain is claimed. Next reuse the
+existing initialized-byte/pair-world guarded-memory framework for exact read
+transport and complete consumer integration, then extend to the captured two-
+block/nop load-return class and further original140 families/effects/completeness.
+Keep substantive delivery boundaries; these commits are backed checkpoints,
+not fragment PRs. Preserve the full earlier production fallback.

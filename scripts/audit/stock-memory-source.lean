@@ -4,6 +4,8 @@ import FV.Backend.Proof.StockMemoryGuardedWitness
 import FV.Backend.Proof.StockMemoryOrdinaryWitness
 import FV.Backend.Proof.StockMemoryReturnWitness
 import FV.Backend.Proof.StockMemoryEntryWitness
+import FV.Backend.Proof.StockMemoryDispatchWitness
+import FV.Backend.Proof.StockMemorySingleWitness
 
 #print axioms Backend.Stock.Memory.domain_of_scalar
 #print axioms Backend.Stock.Memory.existing_source_witness
@@ -55,3 +57,21 @@ import FV.Backend.Proof.StockMemoryEntryWitness
 #print axioms Backend.Stock.Proof.OrdinaryBody.actual_ordinary_entry_return_refines_frame
 #print axioms Backend.Stock.Memory.EntryFixture.ordinary_entry_return_witness
 #print axioms Backend.Stock.Memory.LoadFixture.actual_load_return_block_witness
+
+#print axioms Backend.Stock.Memory.stock_selected_load_i32_rule
+#print axioms Backend.Stock.Memory.stock_lower_load_i32_selected_id
+#print axioms Backend.Stock.Memory.stock_lower_load_source_step_auto
+#print axioms Backend.Stock.Memory.stock_lower_load_scan_fall_refines_auto
+#print axioms Backend.Stock.Memory.stock_lower_parameter_load_sunk_eq
+#print axioms Backend.Stock.Memory.LoadFixture.source_dispatch_witness
+#print axioms Backend.Stock.Memory.LoadFixture.load_sunk_frame_witness
+
+#print axioms Backend.Stock.Proof.stock_lower_returned_definition_emitted
+#print axioms Backend.Stock.Memory.stock_single_load_return_body
+#print axioms Backend.Stock.Proof.OrdinaryBody.ordinary_source_notrap
+#print axioms Backend.Stock.Memory.domain_of_single_load_return
+#print axioms Backend.Stock.Memory.SingleFixture.scope
+#print axioms Backend.Stock.Memory.SingleFixture.dominated
+#print axioms Backend.Stock.Memory.SingleFixture.lowered
+#print axioms Backend.Stock.Memory.SingleFixture.domain
+#print axioms Backend.Stock.Memory.SingleFixture.complete_load_function_witness
