@@ -83,7 +83,9 @@ theorem retRegsOk_of_int {vals : List Clif.Val} {us : List (Reg × Reg)}
     refine ⟨by simp, ?_⟩
     intro c hc
     obtain ⟨v, hv, rfl⟩ := List.mem_map.mp hc
-    simp [tyClass, hint v hv]
+    have h := hint v hv
+    revert h
+    cases v.ty <;> simp [tyClass, Clif.Ty.isInt]
   rw [hv, List.replicate_append_replicate, Nat.add_sub_cancel' hlen, retRegsT_int, hus]
   simp
 
