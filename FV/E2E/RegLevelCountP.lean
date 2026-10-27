@@ -100,6 +100,44 @@ theorem RealizesCP.countedRun {S : Type} {sem : Nat → ISem V W} {step : S → 
   | ret => cases hs
   | halt => cases hs
 
+theorem RealizesCP.mono_T {S : Type} {sem : ISem V W} {step : S → S}
+    {Q : S → MConf V W → Prop} {T T' C P : S → Prop} (h : RealizesCP vc rf sem keep step Q T C P)
+    (hT : ∀ s, T s → T' s) : RealizesCP vc rf sem keep step Q T' C P := fun s c c' hq hp hs =>
+  let ⟨n, c'', hm, hq', ht, hc⟩ := h s c c' hq hp hs
+  ⟨n, c'', hm, hq', fun i hi => hT _ (ht i hi), hc⟩
+
+theorem RealizesCP.congr_Q {S : Type} {sem : ISem V W} {step : S → S}
+    {Q Q' : S → MConf V W → Prop} {T C P : S → Prop} (h : RealizesCP vc rf sem keep step Q T C P)
+    (hQ : ∀ s c, Q s c ↔ Q' s c) : RealizesCP vc rf sem keep step Q' T C P :=
+  fun s c c' hq hp hs =>
+    let ⟨n, c'', hm, hq', ht, hc⟩ := h s c c' ((hQ s c).2 hq) hp hs
+    ⟨n, c'', hm, (hQ _ _).1 hq', ht, hc⟩
+
+/-- **The machine without the count** realises what the machine with the count does, under
+`Q` of some count. -/
+theorem Realizes.ofStepC {S : Type} {sem : ISem V W} {step : S → S} {C T : S → Prop}
+    {Q : S × Nat → MConf V W → Prop} (h : Realizes vc rf sem keep (stepC C step) Q (fun p => T p.1)) :
+    Realizes vc rf sem keep step (fun s c => ∃ k, Q (s, k) c) T := by
+  rintro s c c' ⟨k, hq⟩ hs
+  obtain ⟨n, c'', hm, hq', ht⟩ := h (s, k) c c' hq hs
+  rw [iterN_stepC] at hq'
+  exact ⟨n, c'', hm, ⟨_, hq'⟩, fun i hi => by have := ht i hi; rwa [iterN_stepC] at this⟩
+
 end
+
+/-- **`u` is a state of the run of `Mm` from `s` with `n` call states before it** (`callsBefore`):
+where the activation's call number `n` happens, and where its contract is needed. -/
+def OnCall (Mm : Arm.ArmState → Arm.ArmState) (fa : FnAsm) (base : BitVec 64) (s : Arm.ArmState)
+    (n : Nat) (u : Arm.ArmState) : Prop :=
+  ∃ i, E2E.runX Mm i s = u ∧ callsBefore Mm fa base s i = n
+
+/-- From a point `n0` of the run with no call state before it, every later state is `OnCall`
+with its count from there. -/
+theorem onCall_of_run {Mm : Arm.ArmState → Arm.ArmState} {fa : FnAsm} {base : BitVec 64}
+    {s : Arm.ArmState} {n0 : Nat}
+    (h0 : countIn (fun u => CallPc fa base (Arm.r .PC u)) Mm s n0 = 0) (i : Nat) :
+    OnCall Mm fa base s (countIn (fun u => CallPc fa base (Arm.r .PC u)) Mm (iterN Mm n0 s) i)
+      (iterN Mm i (iterN Mm n0 s)) :=
+  ⟨n0 + i, by rw [runX_eq, iterN_add], by rw [callsBefore_eq_countIn, countIn_add, h0, Nat.zero_add]⟩
 
 end Backend.Proof
