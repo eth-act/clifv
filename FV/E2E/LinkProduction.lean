@@ -258,7 +258,9 @@ variable {κ : Nat → Clif.Function → Nat}
 theorem frameSize_mod_production (hL : L.OkProduction) {h : Clif.Function} (hh : h ∈ L.P.funcs) :
     (L.A h).af.frameSize % 16 = 0 := by
   rw [(lowerRFunc_ok (hL.compiled h hh).alloc).1.1]
-  exact alignTo16_mod _
+  have h1 := compute_saveBase (L.A h).vcp (L.A h).rf
+  have h2 := clobberBytes_mod (L.A h).rf.saved
+  omega
 end LinkSys
 
 namespace LinkSys
@@ -802,7 +804,7 @@ theorem progOsCore_production (hL : L.OkProduction) [hR : L.CrunOk] (hκ : L.Bud
       rw [hsw.2.2, L.program_canon]
   · -- the frame outside the dead stack
     rw [hs_eq]
-    refine ⟨?_, fun a ⟨ha, hb⟩ => ?_⟩
+    refine ⟨?_, fun a ⟨ha, hb⟩ => ?_, ?_⟩
     · show spv (Arm.set_program _ _) = spv t
       simp only [spv]; rw [r_set_program]
       have := hs_ret.ret.sp
@@ -812,6 +814,9 @@ theorem progOsCore_production (hL : L.OkProduction) [hR : L.CrunOk] (hκ : L.Bud
       have hsp : spv w = spOf t := (hsw.1 (.GPR 31#5) (by simp [Masked])).symm
       rw [hsp] at hb'
       exact stackBelow_mono hb' (L.budget_step hκ hM hg hcallee)
+    · rw [r_set_program]
+      exact (hs_ret.ret.savedX 29 (by simp [calleeSavedX]; exact ⟨10, by omega, rfl⟩)).trans
+        (r_enterAt _ _ (by simp) (by simp))
   · -- the results
     intro p hp
     obtain ⟨⟨op, r⟩, x⟩ := p

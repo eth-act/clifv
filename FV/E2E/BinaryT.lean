@@ -28,11 +28,12 @@ theorem frame_factsT {I : LinkInput} {B : BaseEnv} {F : BitVec 64 → Prop}
     (art I f).af.slotBase = (RAFrame.compute (art I f).vcp (art I f).rf).size ∧
     (RAFrame.compute (art I f).vcp (art I f).rf).intBase ≤
       (RAFrame.compute (art I f).vcp (art I f).rf).size ∧
-    (RAFrame.compute (art I f).vcp (art I f).rf).size ≤ (art I f).af.frameSize := by
+    (RAFrame.compute (art I f).vcp (art I f).rf).size ≤
+      (art I f).af.frameSize - clobberBytes (art I f).af.saves := by
   have hc := hL.compiled f hf
   have hfr : (art I f).af.frame = true := lowerRFunc_frame hc.alloc
   exact ⟨by simp [frameDrop, hfr], (lowerRFunc_ok hc.alloc).1.2.1, intBase_le_size _ _,
-    size_le_frameSize hc.alloc⟩
+    size_le_frameBody hc.alloc⟩
 
 /-- A byte of the free stack outside the slot region, or of the code, is outside the world; a
 byte that is neither is not. -/

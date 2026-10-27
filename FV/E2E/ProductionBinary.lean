@@ -65,9 +65,11 @@ abbrev sys (I : ProductionStackBound.CompilerInput) (B : BaseEnv) : LinkSys := P
 def spBody (af : AFunc) (r : Arm.ArmState) : BitVec 64 := spv r - BitVec.ofNat 64 (frameDrop af)
 
 /-- `a` is in the CLIF stack-slot region of the frame of `af` entered in `r`
-(`[sp_body + slotBase, sp_body + frameSize)`). -/
+(`[sp_body + slotBase, sp_body + frameSize − clobberBytes)`: the slots lie below Cranelift's
+clobber area, #479). -/
 def SlotArea (af : AFunc) (r : Arm.ArmState) (a : BitVec 64) : Prop :=
-  af.slotBase ≤ (a - spBody af r).toNat ∧ (a - spBody af r).toNat < af.frameSize
+  af.slotBase ≤ (a - spBody af r).toNat ∧
+    (a - spBody af r).toNat < af.frameSize - clobberBytes af.saves
 
 /-- The arguments `args` of a call with signature `sig` where AAPCS64 puts them in `r`: a
 register parameter in its register, a stack parameter in the caller's outgoing area at
@@ -208,11 +210,12 @@ theorem frame_facts {I : ProductionStackBound.CompilerInput} {B : BaseEnv} {F : 
     (art I f).af.slotBase = (RAFrame.compute (art I f).vcp (art I f).rf).size ∧
     (RAFrame.compute (art I f).vcp (art I f).rf).intBase ≤
       (RAFrame.compute (art I f).vcp (art I f).rf).size ∧
-    (RAFrame.compute (art I f).vcp (art I f).rf).size ≤ (art I f).af.frameSize := by
+    (RAFrame.compute (art I f).vcp (art I f).rf).size ≤
+      (art I f).af.frameSize - clobberBytes (art I f).af.saves := by
   have hc := hL.compiled f hf
   have hfr : (art I f).af.frame = true := lowerRFunc_frame hc.alloc
   exact ⟨by simp [frameDrop, hfr], (lowerRFunc_ok hc.alloc).1.2.1, intBase_le_size _ _,
-    size_le_frameSize hc.alloc⟩
+    size_le_frameBody hc.alloc⟩
 
 /-- A byte of the free stack outside the slot region, or of the code, is outside the world; a
 byte that is neither is not. -/
