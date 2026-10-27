@@ -56,7 +56,7 @@ executes that retained, resolved code on the live nonzero heap and transfers
 guarded values to the actual original source-step frame after the load.
 This does not yet prove a memory-capable whole-function domain or activation.
 
-All4208 normal modules, the affected tools (5026 jobs), and98 audit files pass
+All4208 normal modules, the affected tools (5014 jobs), and98 audit files pass
 in `/tmp/stock-memory-record-normal-gates-v1`. All27 new audited roots use only
 standard axioms. Source compiler behavior and all prior theorem variants remain
 unchanged. These checks validate the proof checkpoint; production integration
