@@ -1,0 +1,1279 @@
+{
+  "utc": "2026-10-27T14:06:16.832125+00:00",
+  "head": "9f27ad6c3b13f3fd378693389e82e9cdaf616b65",
+  "state": "Frozen9f27ad6c current78commands/64freshmodules/18roots plus24000actualbyte executions/3000references/0failures/0disagreements pass; immediately prior conditional-forward78commands pass. Complete normal/trust/full runtime/encoder/identities/examples already backed. Other retained cohorts and post exact-parity/crate/paired pending; no merge/full140/agreement gain claim.",
+  "files": {
+    "/tmp/stock-parameter-cfg-conditional-forward-gates-v1/.lock": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-conditional-forward-gates-v1/ede27658a8107b4cb15b13c64e50b82b3bdc315e97a87b39c111ca89aeb33dc9.inputs.json": "c18ac496bdbe38934f24bd7496cae0a37199a99b1438759db1f3bfc892331355",
+    "/tmp/stock-parameter-cfg-conditional-forward-gates-v1/integration-conditional-forward-1793107183076954946.json": "da561c023f9b34982277f590e99faf44fd89de2313679e141b7354488e11f262",
+    "/tmp/stock-parameter-cfg-conditional-forward-gates-v1/integration-conditional-forward-1793107183076954946.log": "bd9181a8e7c5c25b0bb522cca25e07f2ed458f6a72bb5cbedf56dcc8e4483165",
+    "/tmp/stock-parameter-cfg-conditional-forward-gates-v1/integration-conditional-forward.json": "da561c023f9b34982277f590e99faf44fd89de2313679e141b7354488e11f262",
+    "/tmp/stock-parameter-cfg-conditional-forward-gates-v1/receipt.json": "6f9c1846684c4ea53bc8645f8857187c373c82e67af90d2365953076458af331",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/GeneratedAxioms.lean": "3ac37627bfc5c51b71fb4f6867def0437c2f4a8e4297ca0321c8d05593e9c3de",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/cli-proof-current-Cleanup.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/cli-proof-current-Plain.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/cli-proof-retained-Cleanup.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/cli-proof-retained-Plain.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/current-module-keys.log": "9666c75314bdb9dd343409201e832ff156f1473123c345424f358f77b2f9e1a5",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/generated-Crates-StockCfgConditionalForwardProduction100CleanupFallbackEntries-Input.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/generated-Crates-StockCfgConditionalForwardProduction100CleanupFallbackEntries-Slice0.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/generated-Crates-StockCfgConditionalForwardProduction100CleanupFallbackEntries-Slice1.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/generated-Crates-StockCfgConditionalForwardProduction100CleanupFallbackEntries-Slice2.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/generated-Crates-StockCfgConditionalForwardProduction100CleanupFallbackEntries-Slice3.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/generated-Crates-StockCfgConditionalForwardProduction100CleanupFallbackEntries.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/generated-Crates-StockCfgConditionalForwardProduction100CleanupFallbackGlobal-Input.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/generated-Crates-StockCfgConditionalForwardProduction100CleanupFallbackGlobal-Slice0.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/generated-Crates-StockCfgConditionalForwardProduction100CleanupFallbackGlobal-Slice1.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/generated-Crates-StockCfgConditionalForwardProduction100CleanupFallbackGlobal-Slice2.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/generated-Crates-StockCfgConditionalForwardProduction100CleanupFallbackGlobal-Slice3.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/generated-Crates-StockCfgConditionalForwardProduction100CleanupFallbackGlobal.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/generated-Crates-StockCfgConditionalForwardProduction100CleanupStrictEntries-Input.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/generated-Crates-StockCfgConditionalForwardProduction100CleanupStrictEntries-Slice0.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/generated-Crates-StockCfgConditionalForwardProduction100CleanupStrictEntries-Slice1.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/generated-Crates-StockCfgConditionalForwardProduction100CleanupStrictEntries-Slice2.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/generated-Crates-StockCfgConditionalForwardProduction100CleanupStrictEntries-Slice3.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/generated-Crates-StockCfgConditionalForwardProduction100CleanupStrictEntries.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/generated-Crates-StockCfgConditionalForwardProduction100CleanupStrictGlobal-Input.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/generated-Crates-StockCfgConditionalForwardProduction100CleanupStrictGlobal-Slice0.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/generated-Crates-StockCfgConditionalForwardProduction100CleanupStrictGlobal-Slice1.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/generated-Crates-StockCfgConditionalForwardProduction100CleanupStrictGlobal-Slice2.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/generated-Crates-StockCfgConditionalForwardProduction100CleanupStrictGlobal-Slice3.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/generated-Crates-StockCfgConditionalForwardProduction100CleanupStrictGlobal.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/generated-Crates-StockCfgConditionalForwardProduction100PlainFallbackEntries-Input.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/generated-Crates-StockCfgConditionalForwardProduction100PlainFallbackEntries-Slice0.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/generated-Crates-StockCfgConditionalForwardProduction100PlainFallbackEntries-Slice1.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/generated-Crates-StockCfgConditionalForwardProduction100PlainFallbackEntries-Slice2.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/generated-Crates-StockCfgConditionalForwardProduction100PlainFallbackEntries-Slice3.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/generated-Crates-StockCfgConditionalForwardProduction100PlainFallbackEntries.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/generated-Crates-StockCfgConditionalForwardProduction100PlainFallbackGlobal-Input.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/generated-Crates-StockCfgConditionalForwardProduction100PlainFallbackGlobal-Slice0.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/generated-Crates-StockCfgConditionalForwardProduction100PlainFallbackGlobal-Slice1.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/generated-Crates-StockCfgConditionalForwardProduction100PlainFallbackGlobal-Slice2.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/generated-Crates-StockCfgConditionalForwardProduction100PlainFallbackGlobal-Slice3.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/generated-Crates-StockCfgConditionalForwardProduction100PlainFallbackGlobal.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/generated-Crates-StockCfgConditionalForwardProduction100PlainStrictEntries-Input.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/generated-Crates-StockCfgConditionalForwardProduction100PlainStrictEntries-Slice0.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/generated-Crates-StockCfgConditionalForwardProduction100PlainStrictEntries-Slice1.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/generated-Crates-StockCfgConditionalForwardProduction100PlainStrictEntries-Slice2.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/generated-Crates-StockCfgConditionalForwardProduction100PlainStrictEntries-Slice3.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/generated-Crates-StockCfgConditionalForwardProduction100PlainStrictEntries.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/generated-Crates-StockCfgConditionalForwardProduction100PlainStrictGlobal-Input.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/generated-Crates-StockCfgConditionalForwardProduction100PlainStrictGlobal-Slice0.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/generated-Crates-StockCfgConditionalForwardProduction100PlainStrictGlobal-Slice1.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/generated-Crates-StockCfgConditionalForwardProduction100PlainStrictGlobal-Slice2.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/generated-Crates-StockCfgConditionalForwardProduction100PlainStrictGlobal-Slice3.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/generated-Crates-StockCfgConditionalForwardProduction100PlainStrictGlobal.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/generated-Crates-StockCfgConditionalForwardProduction2CleanupFallbackGlobal.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/generated-Crates-StockCfgConditionalForwardProduction2PlainFallbackGlobal.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/generated-Crates-StockCfgConditionalForwardProduction2RetainedCleanupFallbackGlobal.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/generated-Crates-StockCfgConditionalForwardProduction2RetainedPlainFallbackGlobal.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/generated-Crates-StockCfgConditionalForwardProduction33CleanupFallbackEntries-Input.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/generated-Crates-StockCfgConditionalForwardProduction33CleanupFallbackEntries-Slice0.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/generated-Crates-StockCfgConditionalForwardProduction33CleanupFallbackEntries-Slice1.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/generated-Crates-StockCfgConditionalForwardProduction33CleanupFallbackEntries.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/generated-Crates-StockCfgConditionalForwardProduction33CleanupFallbackGlobal-Input.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/generated-Crates-StockCfgConditionalForwardProduction33CleanupFallbackGlobal-Slice0.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/generated-Crates-StockCfgConditionalForwardProduction33CleanupFallbackGlobal-Slice1.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/generated-Crates-StockCfgConditionalForwardProduction33CleanupFallbackGlobal.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/generated-Crates-StockCfgConditionalForwardProduction6MixedCleanupFallbackGlobal.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/generated-Crates-StockCfgConditionalForwardProduction6MixedPlainFallbackGlobal.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/generated-Crates-StockCfgConditionalForwardProduction7MixedCleanupFallbackGlobal.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/generated-Crates-StockCfgConditionalForwardProduction7MixedPlainFallbackGlobal.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/generated-axioms.log": "8ec7f21d252e12f78495eb108f2e9460185c9052a59164bb54b13d40fc1e3e16",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/link-check-current-Cleanup.log": "e513175d00d650393027c197e13374c556453c8df1b7fa390d2e944197aefc40",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/link-check-current-Plain.log": "f06c850fcf4cc2dbf6cae5afffe6f67cfff773aa71dcd8e14944f6678e6d5af5",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/link-check-retained-Cleanup.log": "24f6581c6603f7e852615d50c547179d3135b57aa6a6f37319c4182c597ff1f7",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/link-check-retained-Plain.log": "09cd430e7bcbd40a6c04b59fa0273e0ea1265e5ce867a0682ac9da8577c478e2",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/CfgConditionalForwardProductionCLIcurrentCleanup.lean": "f3bb1a23782f39cbd590e4ad227e2736e6021b7690fa4fbe58656f4c22ae322e",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/CfgConditionalForwardProductionCLIcurrentPlain.lean": "c6b605642cdf68477beed0c2ed5c250506b84b5777fa26452d4f40576b0d28ff",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/CfgConditionalForwardProductionCLIretainedCleanup.lean": "59ad4bd6ef61f448360d32242249720a6293986de19ec0dfc30bcf7f57e373a1",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/CfgConditionalForwardProductionCLIretainedPlain.lean": "6054fe2ddeb89f390e0b769dea338d72e56fc78f7697d3cd6acccbbbcc7b8fdf",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction100CleanupFallbackEntries/Input.lean": "52a7a59333d54a67dbd1e308f3609d88f7dab251ae15636e7e8f51f86b466740",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction100CleanupFallbackEntries/Slice0.lean": "4c1b555e5473046e752350a419830222c9f3d12e04adad7063a7b6b962398dc8",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction100CleanupFallbackEntries/Slice1.lean": "795f6fe6c67194d5327db4ce8b86923c6bd7142644f1f7d4cff7a1e9c5683b96",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction100CleanupFallbackEntries/Slice2.lean": "7c2d121460aac835854d2037c632a5631ddfaea2994dd32677af4da9b6f5de5a",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction100CleanupFallbackEntries/Slice3.lean": "922d0ef2806596cf02ddf04fc7ef647846f3a141e07e90625baf1a79f700181c",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction100CleanupFallbackEntries.lean": "8587b7c809496affb4873f21a89e0198be3fa27e76430fc93bcc4441963b9857",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction100CleanupFallbackGlobal/Input.lean": "057c6f4c36b576891fa7de6e6ca551c5092cde62bea493cb003653fb977fb732",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction100CleanupFallbackGlobal/Slice0.lean": "9e9e2689b3ab428fdd6c07c9d0e49dd61c75e5b36d1c9cddc0ddc3b942012ad8",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction100CleanupFallbackGlobal/Slice1.lean": "c42e98dbc521c7217cdee1356b180891adc59e005b7fb4d86609d48346d4e466",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction100CleanupFallbackGlobal/Slice2.lean": "c64f3892be1380a32c3d7f27e1c46e873b7eaf613d7ad742183ba1b9a571207a",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction100CleanupFallbackGlobal/Slice3.lean": "d03321038b9e8be48b1b9b16347234988ac2656de2ef0376f479d5929a9fd6fe",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction100CleanupFallbackGlobal.lean": "157616e5890752f49a79e256e95c8b95cbe40bc2a7f9ba98973f365e64898941",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction100CleanupStrictEntries/Input.lean": "33208e7e9fa22a15756d7bc56b7990e1789f8318a4348af896204bc10896c5fe",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction100CleanupStrictEntries/Slice0.lean": "a02b4f65245f1905bff56de780f6bb366ddbc10f114b6f6944e24393a615d8eb",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction100CleanupStrictEntries/Slice1.lean": "81d25d4364357f8c04694e5c4b51b5f97864233360fffc2cbbcd1643a3f60061",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction100CleanupStrictEntries/Slice2.lean": "c0d35d00f7e1d0de0cea0cfd8fc02ac89376233d50940af2c6bc75320147cb07",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction100CleanupStrictEntries/Slice3.lean": "4483a3fef13ae67d4daeab49a9fcb3591974eafa68a279365c936d6d053edaf3",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction100CleanupStrictEntries.lean": "e22f16a99fceac577b22b7d3a5eb94b74a03781f1f299c4c8526849d106de793",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction100CleanupStrictGlobal/Input.lean": "fb2c6e13bbf1abda69c893bd6064c14bad4550968dc44789d2875b12b4f1a400",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction100CleanupStrictGlobal/Slice0.lean": "85a58bd40d557a495fb057c1c161aa8e4e178a58c61ef836b82ac4e2efecce62",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction100CleanupStrictGlobal/Slice1.lean": "5891fa6185f8d2e180898927d8cc8e291dfe893d108fdf9fac320e19ffa08b38",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction100CleanupStrictGlobal/Slice2.lean": "01d0afa61485b50891e1023bfc765c9628014ca9a3b671b0e1f3fd6ea33d2371",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction100CleanupStrictGlobal/Slice3.lean": "0e5b750c58a46cb8d1660c35e0747326a12302d2efb42c5cd1ee5c131d4c49dc",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction100CleanupStrictGlobal.lean": "ff1c10967e315d5e72ddb425b2722a2df35dd9e4137863eaeedc8f8d69bdd589",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction100PlainFallbackEntries/Input.lean": "b4abab4403ca171860e74a76d8c2da0307e2c14f4627d3b0fbd3c7464f4864c5",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction100PlainFallbackEntries/Slice0.lean": "b6aff780dda555349969d86a3b56c7055a5b1fe4d417cf9d953907e7ebc5a86d",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction100PlainFallbackEntries/Slice1.lean": "27d23205e7fb81cff70d9dba37d1819aaeddcc75f5b03961f2137bd97b983422",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction100PlainFallbackEntries/Slice2.lean": "96d1a5973252c9b4e27f5ba4319772606f1bdcb48dc9f166496c15c4a6a9ff05",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction100PlainFallbackEntries/Slice3.lean": "0604af24208bed9423e9011c894214e7441e5a8a134adf192ee633037d20fa2d",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction100PlainFallbackEntries.lean": "3d21cc102dee2b134b3072b48d4962c009aeca260d14e7c8c0b4e1aff7e6edc2",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction100PlainFallbackGlobal/Input.lean": "518e50d3865125fc275bbf2b70a179009fc0d4f53af10e18a8492a047ff80550",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction100PlainFallbackGlobal/Slice0.lean": "fe136a6a99c79fb204d736d25cca32d7d9f4d2b0aeef08b6301d9efdd77a6e12",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction100PlainFallbackGlobal/Slice1.lean": "0c04f31409484053f869b4647d74aaba6a066350df0e278f1d7916fb7dee142a",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction100PlainFallbackGlobal/Slice2.lean": "ee602b6c8c99596d0af3564040f517d995d4b0984acde71c05dae4fe7580075f",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction100PlainFallbackGlobal/Slice3.lean": "f7e76fb370c4f58148c46a1ffa1134cd9f7575d022bf28fb876c98036e9c5a97",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction100PlainFallbackGlobal.lean": "60b0fd2d32a8979fb904cda608b7bf160bf5dda75d0f5e22051b930259b10ea2",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction100PlainStrictEntries/Input.lean": "88eb3c357e7c49700c119870f6b9a88c52a6d9ee11a4738980accf148a17e557",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction100PlainStrictEntries/Slice0.lean": "b31d235394f81ce97df67914eeb0788684a7d3b87f41f5bbfdf66ef02eb69531",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction100PlainStrictEntries/Slice1.lean": "cdfc55a2e1e11b111400ff69f0d0ff645c7eb13c6ca1829d33e5bc699470abb1",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction100PlainStrictEntries/Slice2.lean": "f1af15325313ab3535338bbcffa09151c9382e5ff139b60a1b682a99992937e3",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction100PlainStrictEntries/Slice3.lean": "4850d5586e578a96fe3e6ba905c33b09aff7d15851edfaf8509695e728005016",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction100PlainStrictEntries.lean": "aaaf6ac8f6c1e964582b38c241ed48aeb01baa82104ad4718fc3a7a7c05954dc",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction100PlainStrictGlobal/Input.lean": "0d1893ae1b71cf4226453427fb5166e3064e1ff37bad345fa8668b402c2856ef",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction100PlainStrictGlobal/Slice0.lean": "695f808e27aedb45f09cb938e8256adae9b4c56c8f73e7e78baac342cb455ee0",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction100PlainStrictGlobal/Slice1.lean": "65fe3759066f948e76707340c7cc98490b860e3e556d004c24f9f714ca884c58",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction100PlainStrictGlobal/Slice2.lean": "a67629460a165a9109d57a9c610b573b32510122952be6f2ccf693fdaa0d41e6",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction100PlainStrictGlobal/Slice3.lean": "0817b8c854567bd7ef149002a7817e69a4126427820c76848d542c4cb1f1da7a",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction100PlainStrictGlobal.lean": "b3dd28c6eee731bf6779e63188fba9419fba31843481e7908a6c5cc81505f07a",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction2CleanupFallbackGlobal.lean": "3e5bc0ade15d27d9c4f338d2a41021884e1ffe557082db37acbef083f956d7ac",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction2PlainFallbackGlobal.lean": "23d3293b815eea0915287b6cb5629d76a930951780a332da7b9a8b9c8c693280",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction2RetainedCleanupFallbackGlobal.lean": "5d4615e09a972c1cf1b02aac68f222f4a4ad9ce25bee592f0edd1a46e6b02fbc",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction2RetainedPlainFallbackGlobal.lean": "b70261468b9de363d42860895ded5543639bd3dca0923412b4139900472c039b",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction33CleanupFallbackEntries/Input.lean": "111eb783bc1d42c1aefc8753af6fd4a847938dad37f4ac23cec6256e8442b3eb",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction33CleanupFallbackEntries/Slice0.lean": "bec742068361dc5fcd71a9ca47c193468930f419670264c44ef19c5e8c49b90b",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction33CleanupFallbackEntries/Slice1.lean": "a50a85cb3bc91b922a4d95e93ca7e44a73a2ef0a9ae4f32d5396d32fcc437241",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction33CleanupFallbackEntries.lean": "eedccbd30ee39d1ff27962266c8dc7a8b218b9d014d980eb021d744603d2a9c7",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction33CleanupFallbackGlobal/Input.lean": "ab8eabaa546ab4d08b79f634dec97c3346ca290da1ef638b55db6027ab2a5a1f",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction33CleanupFallbackGlobal/Slice0.lean": "a699cd8da9d6648cba1d30c3bfe11ec0b0b135baf27cbf41f3544e7d87bcc5e2",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction33CleanupFallbackGlobal/Slice1.lean": "a671eb0de2932c9be882355bce7842098013152b0827e311b4acd5bbf6e9c181",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction33CleanupFallbackGlobal.lean": "42e38207cba70331d89f3d2db91cb9e4ef5729f95482ce266b504af276debece",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction6MixedCleanupFallbackGlobal.lean": "6a690c36325efbf86f76038f7da8e9059161a0e74ec8894c11ad49b1b89d25c9",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction6MixedPlainFallbackGlobal.lean": "724991f4b57e8d3dd211818f312332ff6d5991bf31d697861efb7d3011bb3a64",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction7MixedCleanupFallbackGlobal.lean": "388f2aaa98c879309def421ec39a9e753d58e9c233d64be654deb526cbf1c0bc",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction7MixedPlainFallbackGlobal.lean": "c63aaf5f2608507f89510e5e3773adb475059fccd519d808ff8529c9f01bd8da",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/StockCfgConditionalForwardProduction100CleanupFallbackEntries.elf": "a0bf541f30892d65178769b69d96d865e5dfc7e277b03f70615227d2b69cd63c",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/StockCfgConditionalForwardProduction100CleanupFallbackGlobal.elf": "a0bf541f30892d65178769b69d96d865e5dfc7e277b03f70615227d2b69cd63c",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/StockCfgConditionalForwardProduction100CleanupStrictEntries.elf": "a0bf541f30892d65178769b69d96d865e5dfc7e277b03f70615227d2b69cd63c",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/StockCfgConditionalForwardProduction100CleanupStrictGlobal.elf": "a0bf541f30892d65178769b69d96d865e5dfc7e277b03f70615227d2b69cd63c",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/StockCfgConditionalForwardProduction100PlainFallbackEntries.elf": "a0bf541f30892d65178769b69d96d865e5dfc7e277b03f70615227d2b69cd63c",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/StockCfgConditionalForwardProduction100PlainFallbackGlobal.elf": "a0bf541f30892d65178769b69d96d865e5dfc7e277b03f70615227d2b69cd63c",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/StockCfgConditionalForwardProduction100PlainStrictEntries.elf": "a0bf541f30892d65178769b69d96d865e5dfc7e277b03f70615227d2b69cd63c",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/StockCfgConditionalForwardProduction100PlainStrictGlobal.elf": "a0bf541f30892d65178769b69d96d865e5dfc7e277b03f70615227d2b69cd63c",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/StockCfgConditionalForwardProduction2CleanupFallbackGlobal-bundle/actual_stock_general_div_0.clif": "468cb0d41fd0792d55df5a1c5fb1387d668e119b5bff5d052df368185420cd83",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/StockCfgConditionalForwardProduction2CleanupFallbackGlobal-bundle/actual_stock_general_div_0.ra.json": "bebd29c77e026858b26ef885c9e0a7246f8bd8b3de55c7f9a8a2e9cd57dd7884",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/StockCfgConditionalForwardProduction2CleanupFallbackGlobal-bundle/actual_stock_general_div_1.clif": "9a5b0c1604cc49fa4d7fa435aa41b4a5684457c60441984a6db9991b1c839656",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/StockCfgConditionalForwardProduction2CleanupFallbackGlobal-bundle/actual_stock_general_div_1.ra.json": "640310dbed56bf00fc9358715adeb5c729c744de52e5c4895bbb6528d9954947",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/StockCfgConditionalForwardProduction2CleanupFallbackGlobal-bundle/bundle.json": "e89ffc9472f862fc02011c1d78c830f9abe1084c0b78360b0d84b2f8b80a9639",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/StockCfgConditionalForwardProduction2CleanupFallbackGlobal-bundle/data.clif": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/StockCfgConditionalForwardProduction2CleanupFallbackGlobal.elf": "72a3b98205e5b6ef8e0e326753306325d17854fadfb85a0ecad546d4165eacf6",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/StockCfgConditionalForwardProduction2PlainFallbackGlobal-bundle/actual_stock_general_div_0.clif": "468cb0d41fd0792d55df5a1c5fb1387d668e119b5bff5d052df368185420cd83",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/StockCfgConditionalForwardProduction2PlainFallbackGlobal-bundle/actual_stock_general_div_0.ra.json": "bebd29c77e026858b26ef885c9e0a7246f8bd8b3de55c7f9a8a2e9cd57dd7884",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/StockCfgConditionalForwardProduction2PlainFallbackGlobal-bundle/actual_stock_general_div_1.clif": "9a5b0c1604cc49fa4d7fa435aa41b4a5684457c60441984a6db9991b1c839656",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/StockCfgConditionalForwardProduction2PlainFallbackGlobal-bundle/actual_stock_general_div_1.ra.json": "640310dbed56bf00fc9358715adeb5c729c744de52e5c4895bbb6528d9954947",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/StockCfgConditionalForwardProduction2PlainFallbackGlobal-bundle/bundle.json": "3480a97002b8eda84f8e47f18c975044eb9c2f606b8ec2801cde6dcc6fe1dc24",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/StockCfgConditionalForwardProduction2PlainFallbackGlobal-bundle/data.clif": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/StockCfgConditionalForwardProduction2PlainFallbackGlobal.elf": "72a3b98205e5b6ef8e0e326753306325d17854fadfb85a0ecad546d4165eacf6",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/StockCfgConditionalForwardProduction2RetainedCleanupFallbackGlobal-bundle/actual_stock_general_div_0.clif": "468cb0d41fd0792d55df5a1c5fb1387d668e119b5bff5d052df368185420cd83",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/StockCfgConditionalForwardProduction2RetainedCleanupFallbackGlobal-bundle/actual_stock_general_div_0.ra.json": "1425673916f3293aa45db62924d38b4badd97b9afddb4eab3db07051724e6064",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/StockCfgConditionalForwardProduction2RetainedCleanupFallbackGlobal-bundle/actual_stock_general_div_1.clif": "9a5b0c1604cc49fa4d7fa435aa41b4a5684457c60441984a6db9991b1c839656",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/StockCfgConditionalForwardProduction2RetainedCleanupFallbackGlobal-bundle/actual_stock_general_div_1.ra.json": "0d57e111ded2fbf88be0b7f79473bd21e378e957484eb4db6da94b95f42f259c",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/StockCfgConditionalForwardProduction2RetainedCleanupFallbackGlobal-bundle/bundle.json": "f96147de79a6d58fbb6834113df86c755786b2b609310fbc87a4f21cb369ae10",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/StockCfgConditionalForwardProduction2RetainedCleanupFallbackGlobal-bundle/data.clif": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/StockCfgConditionalForwardProduction2RetainedCleanupFallbackGlobal.elf": "c4833282bc8a9e9700d3044eb72134bcf58c58bcd70913dcf83e6ab76f154d64",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/StockCfgConditionalForwardProduction2RetainedPlainFallbackGlobal-bundle/actual_stock_general_div_0.clif": "468cb0d41fd0792d55df5a1c5fb1387d668e119b5bff5d052df368185420cd83",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/StockCfgConditionalForwardProduction2RetainedPlainFallbackGlobal-bundle/actual_stock_general_div_0.ra.json": "1425673916f3293aa45db62924d38b4badd97b9afddb4eab3db07051724e6064",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/StockCfgConditionalForwardProduction2RetainedPlainFallbackGlobal-bundle/actual_stock_general_div_1.clif": "9a5b0c1604cc49fa4d7fa435aa41b4a5684457c60441984a6db9991b1c839656",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/StockCfgConditionalForwardProduction2RetainedPlainFallbackGlobal-bundle/actual_stock_general_div_1.ra.json": "0d57e111ded2fbf88be0b7f79473bd21e378e957484eb4db6da94b95f42f259c",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/StockCfgConditionalForwardProduction2RetainedPlainFallbackGlobal-bundle/bundle.json": "3724738613402637468becdcae5e64756eb4bfc436a864a6b477c4ea3def54fb",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/StockCfgConditionalForwardProduction2RetainedPlainFallbackGlobal-bundle/data.clif": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/StockCfgConditionalForwardProduction2RetainedPlainFallbackGlobal.elf": "c4833282bc8a9e9700d3044eb72134bcf58c58bcd70913dcf83e6ab76f154d64",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/StockCfgConditionalForwardProduction33CleanupFallbackEntries.elf": "764743d229e0d9a6b7284bbe1449fedfa051149dadf61b2b41c5733a4b848ae4",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/StockCfgConditionalForwardProduction33CleanupFallbackGlobal.elf": "764743d229e0d9a6b7284bbe1449fedfa051149dadf61b2b41c5733a4b848ae4",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/StockCfgConditionalForwardProduction6MixedCleanupFallbackGlobal.elf": "206f60ffd0fdc5493a828acf51a8d2249251f712a58220e73ad1562cb116eb97",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/StockCfgConditionalForwardProduction6MixedPlainFallbackGlobal.elf": "3e6d1ea0a3ca34763652a49c5c7235711f98652b2271657c40d398df18134b7e",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/StockCfgConditionalForwardProduction7MixedCleanupFallbackGlobal.elf": "6b06cd55dace095c84e391c046752c2e9e68349991a4b9670409760e1d04fb29",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/StockCfgConditionalForwardProduction7MixedPlainFallbackGlobal.elf": "f763eaa7532292cec7c7219b48e969e9462717162760cc0ae30678300333691a",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked-fixture.log": "3c7745c2bcb86b0ffe9f89bda99bc791a1df18738b41940948d397bafc9683bd",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.defaultI32-cleanup.cases.json": "82f833ae4aff25a3a94b822a37b94bca9bcc183c22616d0ca2ffdf40b00828b2",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.defaultI32-cleanup.clif": "b8caff1625daadbcc10da5f149f68246a09f12d45cf51320bf088e9e1b616524",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.defaultI32-cleanup.json": "ae67c6b4d3927372e1e6fbcc02067854349b0637bcd85129b56b3db8b694bf5c",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.defaultI32-cleanup.o": "b8cca88013344f34e02efc74683d2159981a54be1264905444946a89c025cabd",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.defaultI32-plain.cases.json": "82f833ae4aff25a3a94b822a37b94bca9bcc183c22616d0ca2ffdf40b00828b2",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.defaultI32-plain.clif": "b8caff1625daadbcc10da5f149f68246a09f12d45cf51320bf088e9e1b616524",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.defaultI32-plain.json": "ae67c6b4d3927372e1e6fbcc02067854349b0637bcd85129b56b3db8b694bf5c",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.defaultI32-plain.o": "b8cca88013344f34e02efc74683d2159981a54be1264905444946a89c025cabd",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.defaultI64-cleanup.cases.json": "82f833ae4aff25a3a94b822a37b94bca9bcc183c22616d0ca2ffdf40b00828b2",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.defaultI64-cleanup.clif": "b8caff1625daadbcc10da5f149f68246a09f12d45cf51320bf088e9e1b616524",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.defaultI64-cleanup.json": "ae67c6b4d3927372e1e6fbcc02067854349b0637bcd85129b56b3db8b694bf5c",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.defaultI64-cleanup.o": "b8cca88013344f34e02efc74683d2159981a54be1264905444946a89c025cabd",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.defaultI64-plain.cases.json": "82f833ae4aff25a3a94b822a37b94bca9bcc183c22616d0ca2ffdf40b00828b2",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.defaultI64-plain.clif": "b8caff1625daadbcc10da5f149f68246a09f12d45cf51320bf088e9e1b616524",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.defaultI64-plain.json": "ae67c6b4d3927372e1e6fbcc02067854349b0637bcd85129b56b3db8b694bf5c",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.defaultI64-plain.o": "b8cca88013344f34e02efc74683d2159981a54be1264905444946a89c025cabd",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.fastI32-cleanup.cases.json": "82f833ae4aff25a3a94b822a37b94bca9bcc183c22616d0ca2ffdf40b00828b2",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.fastI32-cleanup.clif": "799a637e08b5494ed71631ed88ec34f8be0668ac2c46d8e633f76b78590bca43",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.fastI32-cleanup.json": "ae67c6b4d3927372e1e6fbcc02067854349b0637bcd85129b56b3db8b694bf5c",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.fastI32-cleanup.o": "b8cca88013344f34e02efc74683d2159981a54be1264905444946a89c025cabd",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.fastI32-plain.cases.json": "82f833ae4aff25a3a94b822a37b94bca9bcc183c22616d0ca2ffdf40b00828b2",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.fastI32-plain.clif": "799a637e08b5494ed71631ed88ec34f8be0668ac2c46d8e633f76b78590bca43",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.fastI32-plain.json": "ae67c6b4d3927372e1e6fbcc02067854349b0637bcd85129b56b3db8b694bf5c",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.fastI32-plain.o": "b8cca88013344f34e02efc74683d2159981a54be1264905444946a89c025cabd",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.fastI64-cleanup.cases.json": "82f833ae4aff25a3a94b822a37b94bca9bcc183c22616d0ca2ffdf40b00828b2",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.fastI64-cleanup.clif": "799a637e08b5494ed71631ed88ec34f8be0668ac2c46d8e633f76b78590bca43",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.fastI64-cleanup.json": "ae67c6b4d3927372e1e6fbcc02067854349b0637bcd85129b56b3db8b694bf5c",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.fastI64-cleanup.o": "b8cca88013344f34e02efc74683d2159981a54be1264905444946a89c025cabd",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.fastI64-plain.cases.json": "82f833ae4aff25a3a94b822a37b94bca9bcc183c22616d0ca2ffdf40b00828b2",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.fastI64-plain.clif": "799a637e08b5494ed71631ed88ec34f8be0668ac2c46d8e633f76b78590bca43",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.fastI64-plain.json": "ae67c6b4d3927372e1e6fbcc02067854349b0637bcd85129b56b3db8b694bf5c",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.fastI64-plain.o": "b8cca88013344f34e02efc74683d2159981a54be1264905444946a89c025cabd",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.systemVI32-cleanup.cases.json": "82f833ae4aff25a3a94b822a37b94bca9bcc183c22616d0ca2ffdf40b00828b2",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.systemVI32-cleanup.clif": "ec87f8d74fdf4675a31de8c0485ad6b23333fda87c9f174ad62baaba3070cbcd",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.systemVI32-cleanup.json": "ae67c6b4d3927372e1e6fbcc02067854349b0637bcd85129b56b3db8b694bf5c",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.systemVI32-cleanup.o": "b8cca88013344f34e02efc74683d2159981a54be1264905444946a89c025cabd",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.systemVI32-plain.cases.json": "82f833ae4aff25a3a94b822a37b94bca9bcc183c22616d0ca2ffdf40b00828b2",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.systemVI32-plain.clif": "ec87f8d74fdf4675a31de8c0485ad6b23333fda87c9f174ad62baaba3070cbcd",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.systemVI32-plain.json": "ae67c6b4d3927372e1e6fbcc02067854349b0637bcd85129b56b3db8b694bf5c",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.systemVI32-plain.o": "b8cca88013344f34e02efc74683d2159981a54be1264905444946a89c025cabd",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.systemVI64-cleanup.cases.json": "82f833ae4aff25a3a94b822a37b94bca9bcc183c22616d0ca2ffdf40b00828b2",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.systemVI64-cleanup.clif": "ec87f8d74fdf4675a31de8c0485ad6b23333fda87c9f174ad62baaba3070cbcd",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.systemVI64-cleanup.json": "ae67c6b4d3927372e1e6fbcc02067854349b0637bcd85129b56b3db8b694bf5c",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.systemVI64-cleanup.o": "b8cca88013344f34e02efc74683d2159981a54be1264905444946a89c025cabd",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.systemVI64-plain.cases.json": "82f833ae4aff25a3a94b822a37b94bca9bcc183c22616d0ca2ffdf40b00828b2",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.systemVI64-plain.clif": "ec87f8d74fdf4675a31de8c0485ad6b23333fda87c9f174ad62baaba3070cbcd",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.systemVI64-plain.json": "ae67c6b4d3927372e1e6fbcc02067854349b0637bcd85129b56b3db8b694bf5c",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.systemVI64-plain.o": "b8cca88013344f34e02efc74683d2159981a54be1264905444946a89c025cabd",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.defaultI32-cleanup.cases.json": "82f833ae4aff25a3a94b822a37b94bca9bcc183c22616d0ca2ffdf40b00828b2",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.defaultI32-cleanup.clif": "b8caff1625daadbcc10da5f149f68246a09f12d45cf51320bf088e9e1b616524",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.defaultI32-cleanup.json": "96e470f8af73b235aa26869ef55f4ccef6d820d67dad3617706ea4fcd2f343e2",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.defaultI32-cleanup.o": "fa501abe06b333a79275a38a231a29a6d7a669f440c437a800da1925c7a06138",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.defaultI32-plain.cases.json": "82f833ae4aff25a3a94b822a37b94bca9bcc183c22616d0ca2ffdf40b00828b2",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.defaultI32-plain.clif": "b8caff1625daadbcc10da5f149f68246a09f12d45cf51320bf088e9e1b616524",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.defaultI32-plain.json": "96e470f8af73b235aa26869ef55f4ccef6d820d67dad3617706ea4fcd2f343e2",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.defaultI32-plain.o": "fa501abe06b333a79275a38a231a29a6d7a669f440c437a800da1925c7a06138",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.defaultI64-cleanup.cases.json": "82f833ae4aff25a3a94b822a37b94bca9bcc183c22616d0ca2ffdf40b00828b2",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.defaultI64-cleanup.clif": "b8caff1625daadbcc10da5f149f68246a09f12d45cf51320bf088e9e1b616524",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.defaultI64-cleanup.json": "96e470f8af73b235aa26869ef55f4ccef6d820d67dad3617706ea4fcd2f343e2",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.defaultI64-cleanup.o": "fa501abe06b333a79275a38a231a29a6d7a669f440c437a800da1925c7a06138",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.defaultI64-plain.cases.json": "82f833ae4aff25a3a94b822a37b94bca9bcc183c22616d0ca2ffdf40b00828b2",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.defaultI64-plain.clif": "b8caff1625daadbcc10da5f149f68246a09f12d45cf51320bf088e9e1b616524",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.defaultI64-plain.json": "96e470f8af73b235aa26869ef55f4ccef6d820d67dad3617706ea4fcd2f343e2",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.defaultI64-plain.o": "fa501abe06b333a79275a38a231a29a6d7a669f440c437a800da1925c7a06138",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.fastI32-cleanup.cases.json": "82f833ae4aff25a3a94b822a37b94bca9bcc183c22616d0ca2ffdf40b00828b2",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.fastI32-cleanup.clif": "799a637e08b5494ed71631ed88ec34f8be0668ac2c46d8e633f76b78590bca43",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.fastI32-cleanup.json": "96e470f8af73b235aa26869ef55f4ccef6d820d67dad3617706ea4fcd2f343e2",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.fastI32-cleanup.o": "fa501abe06b333a79275a38a231a29a6d7a669f440c437a800da1925c7a06138",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.fastI32-plain.cases.json": "82f833ae4aff25a3a94b822a37b94bca9bcc183c22616d0ca2ffdf40b00828b2",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.fastI32-plain.clif": "799a637e08b5494ed71631ed88ec34f8be0668ac2c46d8e633f76b78590bca43",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.fastI32-plain.json": "96e470f8af73b235aa26869ef55f4ccef6d820d67dad3617706ea4fcd2f343e2",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.fastI32-plain.o": "fa501abe06b333a79275a38a231a29a6d7a669f440c437a800da1925c7a06138",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.fastI64-cleanup.cases.json": "82f833ae4aff25a3a94b822a37b94bca9bcc183c22616d0ca2ffdf40b00828b2",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.fastI64-cleanup.clif": "799a637e08b5494ed71631ed88ec34f8be0668ac2c46d8e633f76b78590bca43",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.fastI64-cleanup.json": "96e470f8af73b235aa26869ef55f4ccef6d820d67dad3617706ea4fcd2f343e2",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.fastI64-cleanup.o": "fa501abe06b333a79275a38a231a29a6d7a669f440c437a800da1925c7a06138",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.fastI64-plain.cases.json": "82f833ae4aff25a3a94b822a37b94bca9bcc183c22616d0ca2ffdf40b00828b2",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.fastI64-plain.clif": "799a637e08b5494ed71631ed88ec34f8be0668ac2c46d8e633f76b78590bca43",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.fastI64-plain.json": "96e470f8af73b235aa26869ef55f4ccef6d820d67dad3617706ea4fcd2f343e2",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.fastI64-plain.o": "fa501abe06b333a79275a38a231a29a6d7a669f440c437a800da1925c7a06138",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.systemVI32-cleanup.cases.json": "82f833ae4aff25a3a94b822a37b94bca9bcc183c22616d0ca2ffdf40b00828b2",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.systemVI32-cleanup.clif": "ec87f8d74fdf4675a31de8c0485ad6b23333fda87c9f174ad62baaba3070cbcd",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.systemVI32-cleanup.json": "96e470f8af73b235aa26869ef55f4ccef6d820d67dad3617706ea4fcd2f343e2",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.systemVI32-cleanup.o": "fa501abe06b333a79275a38a231a29a6d7a669f440c437a800da1925c7a06138",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.systemVI32-plain.cases.json": "82f833ae4aff25a3a94b822a37b94bca9bcc183c22616d0ca2ffdf40b00828b2",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.systemVI32-plain.clif": "ec87f8d74fdf4675a31de8c0485ad6b23333fda87c9f174ad62baaba3070cbcd",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.systemVI32-plain.json": "96e470f8af73b235aa26869ef55f4ccef6d820d67dad3617706ea4fcd2f343e2",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.systemVI32-plain.o": "fa501abe06b333a79275a38a231a29a6d7a669f440c437a800da1925c7a06138",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.systemVI64-cleanup.cases.json": "82f833ae4aff25a3a94b822a37b94bca9bcc183c22616d0ca2ffdf40b00828b2",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.systemVI64-cleanup.clif": "ec87f8d74fdf4675a31de8c0485ad6b23333fda87c9f174ad62baaba3070cbcd",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.systemVI64-cleanup.json": "96e470f8af73b235aa26869ef55f4ccef6d820d67dad3617706ea4fcd2f343e2",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.systemVI64-cleanup.o": "fa501abe06b333a79275a38a231a29a6d7a669f440c437a800da1925c7a06138",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.systemVI64-plain.cases.json": "82f833ae4aff25a3a94b822a37b94bca9bcc183c22616d0ca2ffdf40b00828b2",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.systemVI64-plain.clif": "ec87f8d74fdf4675a31de8c0485ad6b23333fda87c9f174ad62baaba3070cbcd",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.systemVI64-plain.json": "96e470f8af73b235aa26869ef55f4ccef6d820d67dad3617706ea4fcd2f343e2",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.systemVI64-plain.o": "fa501abe06b333a79275a38a231a29a6d7a669f440c437a800da1925c7a06138",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/receipt.json": "ef75dde358185bf02bc163ab35942d488a6ae09cc1161fe934cd3c83c50e4690",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/runtime.log": "8be30cc91d27b6c3e7d4cfbd8695f0e29716806ff73de0ba18b68737358a2c6b",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/sources.json": "3a3b2edf99361981afdadca38ce11fa48076eafbd79fba2ce53be4567d174048",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/verified-link-Cleanup.log": "b3adaa4201e7bfa9c5d101c1127977eed191e6b4bdcaad9d411b2257aebe52b0",
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/verified-link-Plain.log": "a58a5a7e9e200089a2d0a7f1051cad20e201a30e5081ff969a06221c7c69cbdb",
+    "/tmp/stock-parameter-cfg-current-gates-v1/.lock": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-current-gates-v1/47233df8e26e7774514e5527d5f32d27fe2ac387e9469582bd4f91f81694680b.inputs.json": "584c371e635c7fa752e2edcc550279e806e8370ac7f20bc9be74811393c5b378",
+    "/tmp/stock-parameter-cfg-current-gates-v1/a47c911e9ceff4d61902cdc183a9da8d7e6cf6460d6fbf617864e270490e5337.inputs.json": "536dd87fbcf46b14c969c8b85998b9edbb122967a4a3ec3c216c60abd6e82697",
+    "/tmp/stock-parameter-cfg-current-gates-v1/integration-current-1793106554844055524.json": "fc108c467cf681bec237f5b389d808e01d8ae33db1814ed55e8c79b3dc2cfd3c",
+    "/tmp/stock-parameter-cfg-current-gates-v1/integration-current-1793106554844055524.log": "1d1f474985495bcc7254f152cabdea1bc978968a95ee759554e759110ec841d3",
+    "/tmp/stock-parameter-cfg-current-gates-v1/integration-current.json": "fc108c467cf681bec237f5b389d808e01d8ae33db1814ed55e8c79b3dc2cfd3c",
+    "/tmp/stock-parameter-cfg-current-gates-v1/native-execution-1793109702899001139.json": "e8a6535179adb04d2044f58726a63e92f6d26265c7765fd0c41fd6ea0918c99a",
+    "/tmp/stock-parameter-cfg-current-gates-v1/native-execution-1793109702899001139.log": "7177a119c184649a88af88f5447073fd432e7a19d04ace7f30d3b8353e79dbca",
+    "/tmp/stock-parameter-cfg-current-gates-v1/native-execution.json": "e8a6535179adb04d2044f58726a63e92f6d26265c7765fd0c41fd6ea0918c99a",
+    "/tmp/stock-parameter-cfg-current-gates-v1/receipt.json": "4d01a6a3f61d99debb5a81b0f83d0e1bb1e0ee95fe1fb519fc14596a10142138",
+    "/tmp/stock-parameter-cfg-current-integration-v1/GeneratedAxioms.lean": "630bb065342456e189408340c86bba579a3d056460034a11f9584f1c86b3657b",
+    "/tmp/stock-parameter-cfg-current-integration-v1/cli-proof-current-Cleanup.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-current-integration-v1/cli-proof-current-Plain.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-current-integration-v1/cli-proof-retained-Cleanup.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-current-integration-v1/cli-proof-retained-Plain.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-current-integration-v1/current-module-keys.log": "10bc042b1ee92f8acb14430f479050a46387cd16880901b7f6da215e462b0aa9",
+    "/tmp/stock-parameter-cfg-current-integration-v1/generated-Crates-StockCfgParameterProduction100CleanupFallbackEntries-Input.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-current-integration-v1/generated-Crates-StockCfgParameterProduction100CleanupFallbackEntries-Slice0.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-current-integration-v1/generated-Crates-StockCfgParameterProduction100CleanupFallbackEntries-Slice1.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-current-integration-v1/generated-Crates-StockCfgParameterProduction100CleanupFallbackEntries-Slice2.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-current-integration-v1/generated-Crates-StockCfgParameterProduction100CleanupFallbackEntries-Slice3.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-current-integration-v1/generated-Crates-StockCfgParameterProduction100CleanupFallbackEntries.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-current-integration-v1/generated-Crates-StockCfgParameterProduction100CleanupFallbackGlobal-Input.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-current-integration-v1/generated-Crates-StockCfgParameterProduction100CleanupFallbackGlobal-Slice0.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-current-integration-v1/generated-Crates-StockCfgParameterProduction100CleanupFallbackGlobal-Slice1.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-current-integration-v1/generated-Crates-StockCfgParameterProduction100CleanupFallbackGlobal-Slice2.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-current-integration-v1/generated-Crates-StockCfgParameterProduction100CleanupFallbackGlobal-Slice3.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-current-integration-v1/generated-Crates-StockCfgParameterProduction100CleanupFallbackGlobal.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-current-integration-v1/generated-Crates-StockCfgParameterProduction100CleanupStrictEntries-Input.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-current-integration-v1/generated-Crates-StockCfgParameterProduction100CleanupStrictEntries-Slice0.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-current-integration-v1/generated-Crates-StockCfgParameterProduction100CleanupStrictEntries-Slice1.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-current-integration-v1/generated-Crates-StockCfgParameterProduction100CleanupStrictEntries-Slice2.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-current-integration-v1/generated-Crates-StockCfgParameterProduction100CleanupStrictEntries-Slice3.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-current-integration-v1/generated-Crates-StockCfgParameterProduction100CleanupStrictEntries.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-current-integration-v1/generated-Crates-StockCfgParameterProduction100CleanupStrictGlobal-Input.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-current-integration-v1/generated-Crates-StockCfgParameterProduction100CleanupStrictGlobal-Slice0.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-current-integration-v1/generated-Crates-StockCfgParameterProduction100CleanupStrictGlobal-Slice1.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-current-integration-v1/generated-Crates-StockCfgParameterProduction100CleanupStrictGlobal-Slice2.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-current-integration-v1/generated-Crates-StockCfgParameterProduction100CleanupStrictGlobal-Slice3.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-current-integration-v1/generated-Crates-StockCfgParameterProduction100CleanupStrictGlobal.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-current-integration-v1/generated-Crates-StockCfgParameterProduction100PlainFallbackEntries-Input.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-current-integration-v1/generated-Crates-StockCfgParameterProduction100PlainFallbackEntries-Slice0.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-current-integration-v1/generated-Crates-StockCfgParameterProduction100PlainFallbackEntries-Slice1.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-current-integration-v1/generated-Crates-StockCfgParameterProduction100PlainFallbackEntries-Slice2.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-current-integration-v1/generated-Crates-StockCfgParameterProduction100PlainFallbackEntries-Slice3.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-current-integration-v1/generated-Crates-StockCfgParameterProduction100PlainFallbackEntries.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-current-integration-v1/generated-Crates-StockCfgParameterProduction100PlainFallbackGlobal-Input.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-current-integration-v1/generated-Crates-StockCfgParameterProduction100PlainFallbackGlobal-Slice0.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-current-integration-v1/generated-Crates-StockCfgParameterProduction100PlainFallbackGlobal-Slice1.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-current-integration-v1/generated-Crates-StockCfgParameterProduction100PlainFallbackGlobal-Slice2.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-current-integration-v1/generated-Crates-StockCfgParameterProduction100PlainFallbackGlobal-Slice3.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-current-integration-v1/generated-Crates-StockCfgParameterProduction100PlainFallbackGlobal.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-current-integration-v1/generated-Crates-StockCfgParameterProduction100PlainStrictEntries-Input.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-current-integration-v1/generated-Crates-StockCfgParameterProduction100PlainStrictEntries-Slice0.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-current-integration-v1/generated-Crates-StockCfgParameterProduction100PlainStrictEntries-Slice1.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-current-integration-v1/generated-Crates-StockCfgParameterProduction100PlainStrictEntries-Slice2.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-current-integration-v1/generated-Crates-StockCfgParameterProduction100PlainStrictEntries-Slice3.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-current-integration-v1/generated-Crates-StockCfgParameterProduction100PlainStrictEntries.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-current-integration-v1/generated-Crates-StockCfgParameterProduction100PlainStrictGlobal-Input.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-current-integration-v1/generated-Crates-StockCfgParameterProduction100PlainStrictGlobal-Slice0.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-current-integration-v1/generated-Crates-StockCfgParameterProduction100PlainStrictGlobal-Slice1.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-current-integration-v1/generated-Crates-StockCfgParameterProduction100PlainStrictGlobal-Slice2.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-current-integration-v1/generated-Crates-StockCfgParameterProduction100PlainStrictGlobal-Slice3.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-current-integration-v1/generated-Crates-StockCfgParameterProduction100PlainStrictGlobal.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-current-integration-v1/generated-Crates-StockCfgParameterProduction2CleanupFallbackGlobal.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-current-integration-v1/generated-Crates-StockCfgParameterProduction2PlainFallbackGlobal.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-current-integration-v1/generated-Crates-StockCfgParameterProduction2RetainedCleanupFallbackGlobal.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-current-integration-v1/generated-Crates-StockCfgParameterProduction2RetainedPlainFallbackGlobal.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-current-integration-v1/generated-Crates-StockCfgParameterProduction33CleanupFallbackEntries-Input.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-current-integration-v1/generated-Crates-StockCfgParameterProduction33CleanupFallbackEntries-Slice0.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-current-integration-v1/generated-Crates-StockCfgParameterProduction33CleanupFallbackEntries-Slice1.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-current-integration-v1/generated-Crates-StockCfgParameterProduction33CleanupFallbackEntries.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-current-integration-v1/generated-Crates-StockCfgParameterProduction33CleanupFallbackGlobal-Input.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-current-integration-v1/generated-Crates-StockCfgParameterProduction33CleanupFallbackGlobal-Slice0.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-current-integration-v1/generated-Crates-StockCfgParameterProduction33CleanupFallbackGlobal-Slice1.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-current-integration-v1/generated-Crates-StockCfgParameterProduction33CleanupFallbackGlobal.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-current-integration-v1/generated-Crates-StockCfgParameterProduction6MixedCleanupFallbackGlobal.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-current-integration-v1/generated-Crates-StockCfgParameterProduction6MixedPlainFallbackGlobal.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-current-integration-v1/generated-Crates-StockCfgParameterProduction7MixedCleanupFallbackGlobal.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-current-integration-v1/generated-Crates-StockCfgParameterProduction7MixedPlainFallbackGlobal.lean.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-current-integration-v1/generated-axioms.log": "c8abaa67a36b6211f553a44d43f5f65fcc4c7e66a686de4871e12f81709337cd",
+    "/tmp/stock-parameter-cfg-current-integration-v1/link-check-current-Cleanup.log": "925cfba8bfd527eaae7963b5be0834d93e3060dcdd4786e0cebd6a293f2e8550",
+    "/tmp/stock-parameter-cfg-current-integration-v1/link-check-current-Plain.log": "ed3ee40309c88413aa8554db51cb62aadd1b34c281f4ed223c2f7e7430bed942",
+    "/tmp/stock-parameter-cfg-current-integration-v1/link-check-retained-Cleanup.log": "4e45bec086fd3e50e8102e2aa55c237733a39a8a7ee12961cecb8d86a4bdb6ba",
+    "/tmp/stock-parameter-cfg-current-integration-v1/link-check-retained-Plain.log": "b4c986396063c0a7f0e5cc59915d6fabd9f886ffa11543cf25b29e903584d29d",
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/CfgParameterProductionCLIcurrentCleanup.lean": "70555e36fd5086cb61a52d5ecd123d3eb25c70862bb58fb4801d25851a9cc8d6",
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/CfgParameterProductionCLIcurrentPlain.lean": "24f22e4867576d397e2c641e1e6dc4da67733ced74e9bac7f5283c8114792e0b",
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/CfgParameterProductionCLIretainedCleanup.lean": "b8657875f396593c5b889726c744bf85c646137b5b971c6b919cc18710c237a7",
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/CfgParameterProductionCLIretainedPlain.lean": "f4b28d31858b0e740dd9191256fddd254d227e824d2b0b5bb692edd5c33fda33",
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction100CleanupFallbackEntries/Input.lean": "a42c4eae5ae7e201b878a3b816b98f73a472d677acb53daec304780b2de0ae40",
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction100CleanupFallbackEntries/Slice0.lean": "efbd7eceb9816eadb116b7555da0e21baa3d364992acb4973ee23a3b91d415fb",
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction100CleanupFallbackEntries/Slice1.lean": "bbb0b26dd851018e8f9455f71b80acd475f4ae9ce9127ca83a08cefa022d6a96",
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction100CleanupFallbackEntries/Slice2.lean": "fbef4a0045bf9fc062a8d50c8bf9c230dbf99ca632c0c54da5cc9995f11d9a01",
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction100CleanupFallbackEntries/Slice3.lean": "381f9ee13a6cf3914213d9e16ffbc1c549b737be510a82745fcdf07e37261b1e",
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction100CleanupFallbackEntries.lean": "433857c11b34fc1d5adb72f9264b5e170fbf6a0078549f810f93991bcd0fa016",
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction100CleanupFallbackGlobal/Input.lean": "d1c0b4ec73e9f304d101a0360a2c187b523597ddce565ea1b52ce6f6279d7a9e",
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction100CleanupFallbackGlobal/Slice0.lean": "9a2679dc1948dde6430acdfba4b45c92b10e86d8218ac8a4140969f671d64205",
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction100CleanupFallbackGlobal/Slice1.lean": "39b4f8650ee1602e1b92231560a3fc5f500eb9fe5ed28e4395a6b21a79be285a",
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction100CleanupFallbackGlobal/Slice2.lean": "9db5751899ff54e30728bd75e88c370e4cecbc219ea82d1f24c4c69fd291417b",
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction100CleanupFallbackGlobal/Slice3.lean": "7431a951742fadfd3b8c047d94f1c8ad67b997ef11783d843ef8b85c30cf14b1",
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction100CleanupFallbackGlobal.lean": "5bbeec9582c5221b4c0f351b26ba8f63b6bc88f536fb8d379e191802bcc07d8a",
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction100CleanupStrictEntries/Input.lean": "b273307820cedd91a61b74e70a4ad54cb5a7ff5d0ba1c5477116ffa3a175717e",
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction100CleanupStrictEntries/Slice0.lean": "2f2dbe623bd348b9c17317ca5834ac1e70cfad1536aaa2a1f431925b2c948745",
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction100CleanupStrictEntries/Slice1.lean": "7f892522733489e45cbbe703195f83c356137de7bd01669b7bf195ff277fd810",
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction100CleanupStrictEntries/Slice2.lean": "e8c072c00fb51386f4ca12254f824ea503bff0ada66ba5182a2f80d5c35ec852",
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction100CleanupStrictEntries/Slice3.lean": "b957b6a0508fc467a66f748ca5cdd957256dadd9165f3574553d7dc07a9af650",
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction100CleanupStrictEntries.lean": "39a71280d5b6e39e73ac1a2d29f58c4f53489fb1ff98403d25c25e2454a95ac0",
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction100CleanupStrictGlobal/Input.lean": "fea76724b29ae9d2567f64ed9aa6b8009d3f1cdcfe2c844b71387142ec1a16d0",
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction100CleanupStrictGlobal/Slice0.lean": "e1b466adee1ed6e678b95482c131c205954e79e07de754ac6ffb3e2e879a9afc",
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction100CleanupStrictGlobal/Slice1.lean": "a315bc0b694b5bc97b6394698fdd1dd3e4385ac0f9d0b3545d5512a90b35960f",
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction100CleanupStrictGlobal/Slice2.lean": "432bf5554d0db6bbc1ffc58b05dfad2401907ee747effeeeaf1c4328bced69ef",
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction100CleanupStrictGlobal/Slice3.lean": "809a03976bde07505597c843ee98571590945500151c994eacb9177836d3ffe6",
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction100CleanupStrictGlobal.lean": "a87811efb75da1801519a2f7007ffb971281b3d50a9c82dcc1df186c36ede2ff",
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction100PlainFallbackEntries/Input.lean": "0a5862591e52129b42737783d750a7e6b3dd0d3b151688900def00226495c27d",
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction100PlainFallbackEntries/Slice0.lean": "0e8db18537647a4f413f420c7ec439b482809e048d63defdd65652b2276999b9",
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction100PlainFallbackEntries/Slice1.lean": "bff4c5952b108be4b5900f06cceaac98a661aca1f084a8ad25aadb291a850600",
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction100PlainFallbackEntries/Slice2.lean": "1fbb84c3e7ad0a6a31c796ae0bb5177f817c69bbe14fdbdf995330165de393ad",
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction100PlainFallbackEntries/Slice3.lean": "48b5cf62d91578d5d45016e92d86dcafeaad479f1eb4b779fc2f42bbfd482fae",
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction100PlainFallbackEntries.lean": "54cef3dadfe05fafe66ebc58bb2cf6621d0d19d64db739b2a249c67003c4bba6",
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction100PlainFallbackGlobal/Input.lean": "c3177815352f1c553ad96a919fb22ae841c2496cb6a6310f92049a055e3eda88",
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction100PlainFallbackGlobal/Slice0.lean": "86b1c13bad15d85e8754bff49c4d1885a0ec7b58bc8d407ad66f59657bde42db",
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction100PlainFallbackGlobal/Slice1.lean": "451892561d962ac599e016834b9d26985935c5adf647deb35cb2e4eee6a3b2c2",
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction100PlainFallbackGlobal/Slice2.lean": "0cb24e2794b1a359bc0876ac937f9cfede14f9134ee5b3fb2b6340714fadbb6e",
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction100PlainFallbackGlobal/Slice3.lean": "0c504c8f4454c36ec6e6037986f5ba3a9e94d384d990f3264eda7a1eea72a4e4",
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction100PlainFallbackGlobal.lean": "aaef8885f5571b24a995f84ad81891287177355b70622c8b7023624c59f1b35c",
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction100PlainStrictEntries/Input.lean": "ab4841352ee1a69eb9ed5463e7d433b85c0d8a32c2db6910d5dc1a4c8dd46fa2",
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction100PlainStrictEntries/Slice0.lean": "4952b991bc1fe14b10b20655ca634f8d03a567a655147a619d9275093297bc78",
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction100PlainStrictEntries/Slice1.lean": "2ca6f7d96afd0392a4d88561a290547c2ad88b51e25d397457f177dfda2b2a61",
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction100PlainStrictEntries/Slice2.lean": "1cb4b72f317bd437408f6a043aede2f2b63a95e2a3a5795790d8095e0b451c7c",
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction100PlainStrictEntries/Slice3.lean": "dce08c5524a4ee299c859b88b4d1ebbc1ac29aef375357836bdb0177d65e9a71",
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction100PlainStrictEntries.lean": "b2e6432ebca6ca7ed05477f2ebcb081213dc4fd5a65979ab85f2a9be07bf198e",
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction100PlainStrictGlobal/Input.lean": "a7df4029554c132e6d376bbd1f90db2c10dbabce70812c8648811ff6fb1e0a0c",
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction100PlainStrictGlobal/Slice0.lean": "4ced26eebc26d0cba0fdb59a576fb4b78c7b297b73aa8078ea68b328fd8576c4",
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction100PlainStrictGlobal/Slice1.lean": "617fa34ceed1cf61c0c78d9c01fafcb1a573db5bc44d793be24a58d11d81da9e",
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction100PlainStrictGlobal/Slice2.lean": "f73c31a5270b9240a31eb88d83835f2f5ac649ea5363ae14265434dddfe37c96",
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction100PlainStrictGlobal/Slice3.lean": "1e047c41605dd2a15cd683dcc1a8176a183f288ca9a4b9fcb7305b5eaef75c67",
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction100PlainStrictGlobal.lean": "10a3519a570a92346537ee30b47e52580adc20ea156a80a21c7415c42b0cbebe",
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction2CleanupFallbackGlobal.lean": "92e78baf2a997a87758524489df9f1bd885c8e8a47449d274defdaffc3956f74",
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction2PlainFallbackGlobal.lean": "518a66ac1a8e17c1ad8c3fdd03c5d9d9a133cac1e126f589721a4a7110983e1d",
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction2RetainedCleanupFallbackGlobal.lean": "8ddf2cb992d82d3408801185e64aac25cba66fc7168da4a1f414708db023f975",
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction2RetainedPlainFallbackGlobal.lean": "9bc25d1cc5300c26abdd72704cc709bcffadd115036d8c8f6a8dbf1c842f4270",
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction33CleanupFallbackEntries/Input.lean": "efaee9d479b841bc2ec260c73f651165d83cd437c4d07f885a0929d040162fa9",
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction33CleanupFallbackEntries/Slice0.lean": "d23c8454d90a1ff866fa1a0b68c09d99e1dfeb7ad946c0a107e28da2ec62fea3",
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction33CleanupFallbackEntries/Slice1.lean": "85427a76f39d80d14add6a66a3a8e88e93ff1219d115954caa5661c9cadf1fa4",
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction33CleanupFallbackEntries.lean": "776c916429f14d84ac431bde0c24cd1aaeca72be94e5dbf661017ee84b593823",
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction33CleanupFallbackGlobal/Input.lean": "bf3cad858a2a8dd8b2794fe859c36ef2aa3ef79232e600edf678752aa9519088",
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction33CleanupFallbackGlobal/Slice0.lean": "a2c6db91af9b5942a1f5d4c3d16c5345124ea99d257727f7923d45956372006f",
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction33CleanupFallbackGlobal/Slice1.lean": "0d72a4d44c1694977ef97fbca7418a5ca00fdc98845c9ed304fdb8f7d180744f",
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction33CleanupFallbackGlobal.lean": "906408b790ba93318a1f622ffd4e4a4dd8d6d915b93b9d1f9d71bd2b115f9669",
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction6MixedCleanupFallbackGlobal.lean": "6103943f1a515ec0a2a5e033e669e14dbb468067876629506b1569ab22141c1f",
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction6MixedPlainFallbackGlobal.lean": "12c6edebf9fcf99144af02d5333f25bf017ea3ed127aa9dd1c6b0c16017a239d",
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction7MixedCleanupFallbackGlobal.lean": "f83f3a38bfa1715892eef57ff525d369b6e169d43b1f93bc5470bb6b69c14426",
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction7MixedPlainFallbackGlobal.lean": "6f50e11c4abc95b5419237bb7625bb504532c9f0d9c081487e72b00ea88699ad",
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/StockCfgParameterProduction100CleanupFallbackEntries.elf": "610691ad10e72dfb899f7002baaa64f2791baf7d732515215044de533f886b99",
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/StockCfgParameterProduction100CleanupFallbackGlobal.elf": "610691ad10e72dfb899f7002baaa64f2791baf7d732515215044de533f886b99",
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/StockCfgParameterProduction100CleanupStrictEntries.elf": "610691ad10e72dfb899f7002baaa64f2791baf7d732515215044de533f886b99",
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/StockCfgParameterProduction100CleanupStrictGlobal.elf": "610691ad10e72dfb899f7002baaa64f2791baf7d732515215044de533f886b99",
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/StockCfgParameterProduction100PlainFallbackEntries.elf": "610691ad10e72dfb899f7002baaa64f2791baf7d732515215044de533f886b99",
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/StockCfgParameterProduction100PlainFallbackGlobal.elf": "610691ad10e72dfb899f7002baaa64f2791baf7d732515215044de533f886b99",
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/StockCfgParameterProduction100PlainStrictEntries.elf": "610691ad10e72dfb899f7002baaa64f2791baf7d732515215044de533f886b99",
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/StockCfgParameterProduction100PlainStrictGlobal.elf": "610691ad10e72dfb899f7002baaa64f2791baf7d732515215044de533f886b99",
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/StockCfgParameterProduction2CleanupFallbackGlobal-bundle/actual_stock_general_div_0.clif": "e2b2b1a108d78174be782d7dade61caa201ae69f040b6a40aebb926ddbb3473b",
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/StockCfgParameterProduction2CleanupFallbackGlobal-bundle/actual_stock_general_div_0.ra.json": "2225f8faba7c90c5242dd598177e1114dc258f0ec90cda0a4aa1b0eb6f6300c0",
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/StockCfgParameterProduction2CleanupFallbackGlobal-bundle/actual_stock_general_div_1.clif": "cadd5c0a73364013ac7b3686f51fd56ed21d828fd9d9c294a7b8003b93e5fcc2",
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/StockCfgParameterProduction2CleanupFallbackGlobal-bundle/actual_stock_general_div_1.ra.json": "acf8b2ce330e3d1344609825d20f936509498f5392aa4d2ca6e3ff2a09675120",
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/StockCfgParameterProduction2CleanupFallbackGlobal-bundle/bundle.json": "96251490a784c59ed6d9fdbf907e1a740728e275f877e8a06bb6022defa66e61",
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/StockCfgParameterProduction2CleanupFallbackGlobal-bundle/data.clif": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/StockCfgParameterProduction2CleanupFallbackGlobal.elf": "c4833282bc8a9e9700d3044eb72134bcf58c58bcd70913dcf83e6ab76f154d64",
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/StockCfgParameterProduction2PlainFallbackGlobal-bundle/actual_stock_general_div_0.clif": "e2b2b1a108d78174be782d7dade61caa201ae69f040b6a40aebb926ddbb3473b",
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/StockCfgParameterProduction2PlainFallbackGlobal-bundle/actual_stock_general_div_0.ra.json": "2225f8faba7c90c5242dd598177e1114dc258f0ec90cda0a4aa1b0eb6f6300c0",
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/StockCfgParameterProduction2PlainFallbackGlobal-bundle/actual_stock_general_div_1.clif": "cadd5c0a73364013ac7b3686f51fd56ed21d828fd9d9c294a7b8003b93e5fcc2",
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/StockCfgParameterProduction2PlainFallbackGlobal-bundle/actual_stock_general_div_1.ra.json": "acf8b2ce330e3d1344609825d20f936509498f5392aa4d2ca6e3ff2a09675120",
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/StockCfgParameterProduction2PlainFallbackGlobal-bundle/bundle.json": "401438380c60a813695515b27ac7363f887f8696c1484c5f7d1680145cb86acf",
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/StockCfgParameterProduction2PlainFallbackGlobal-bundle/data.clif": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/StockCfgParameterProduction2PlainFallbackGlobal.elf": "c4833282bc8a9e9700d3044eb72134bcf58c58bcd70913dcf83e6ab76f154d64",
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/StockCfgParameterProduction2RetainedCleanupFallbackGlobal-bundle/actual_stock_general_div_0.clif": "e2b2b1a108d78174be782d7dade61caa201ae69f040b6a40aebb926ddbb3473b",
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/StockCfgParameterProduction2RetainedCleanupFallbackGlobal-bundle/actual_stock_general_div_0.ra.json": "2225f8faba7c90c5242dd598177e1114dc258f0ec90cda0a4aa1b0eb6f6300c0",
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/StockCfgParameterProduction2RetainedCleanupFallbackGlobal-bundle/actual_stock_general_div_1.clif": "cadd5c0a73364013ac7b3686f51fd56ed21d828fd9d9c294a7b8003b93e5fcc2",
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/StockCfgParameterProduction2RetainedCleanupFallbackGlobal-bundle/actual_stock_general_div_1.ra.json": "acf8b2ce330e3d1344609825d20f936509498f5392aa4d2ca6e3ff2a09675120",
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/StockCfgParameterProduction2RetainedCleanupFallbackGlobal-bundle/bundle.json": "8869116547eb481960e1f7fcf15e76cb0e3d4ee32ede4e52558187a70758fc03",
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/StockCfgParameterProduction2RetainedCleanupFallbackGlobal-bundle/data.clif": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/StockCfgParameterProduction2RetainedCleanupFallbackGlobal.elf": "c4833282bc8a9e9700d3044eb72134bcf58c58bcd70913dcf83e6ab76f154d64",
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/StockCfgParameterProduction2RetainedPlainFallbackGlobal-bundle/actual_stock_general_div_0.clif": "e2b2b1a108d78174be782d7dade61caa201ae69f040b6a40aebb926ddbb3473b",
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/StockCfgParameterProduction2RetainedPlainFallbackGlobal-bundle/actual_stock_general_div_0.ra.json": "2225f8faba7c90c5242dd598177e1114dc258f0ec90cda0a4aa1b0eb6f6300c0",
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/StockCfgParameterProduction2RetainedPlainFallbackGlobal-bundle/actual_stock_general_div_1.clif": "cadd5c0a73364013ac7b3686f51fd56ed21d828fd9d9c294a7b8003b93e5fcc2",
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/StockCfgParameterProduction2RetainedPlainFallbackGlobal-bundle/actual_stock_general_div_1.ra.json": "acf8b2ce330e3d1344609825d20f936509498f5392aa4d2ca6e3ff2a09675120",
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/StockCfgParameterProduction2RetainedPlainFallbackGlobal-bundle/bundle.json": "1f5987f9cadf694a2c13fb0717a0b21730d8e34a9f438f785e1d9ecfb004dc80",
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/StockCfgParameterProduction2RetainedPlainFallbackGlobal-bundle/data.clif": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/StockCfgParameterProduction2RetainedPlainFallbackGlobal.elf": "c4833282bc8a9e9700d3044eb72134bcf58c58bcd70913dcf83e6ab76f154d64",
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/StockCfgParameterProduction33CleanupFallbackEntries.elf": "a431c206e6f14fb81891891c7a56e7616f4d5eed4dd166cc0a3fc68bc5784c29",
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/StockCfgParameterProduction33CleanupFallbackGlobal.elf": "a431c206e6f14fb81891891c7a56e7616f4d5eed4dd166cc0a3fc68bc5784c29",
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/StockCfgParameterProduction6MixedCleanupFallbackGlobal.elf": "04cbd45ae2c2ed494adc94f37db00c7010ac43919df43f25e35e35388653e8aa",
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/StockCfgParameterProduction6MixedPlainFallbackGlobal.elf": "94cd66df12b1f95fa94977dbe5af258a9a51cb15fe05a23c67c9a3756c856051",
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/StockCfgParameterProduction7MixedCleanupFallbackGlobal.elf": "da6adc7a4e90fbb885ab050af031839d09ae764bcb992e8d448b6f80d831747b",
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/StockCfgParameterProduction7MixedPlainFallbackGlobal.elf": "07708c499fcbeb190fcc98c306c73f5a8b44fb9ab11db047064597111bef38f9",
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked-fixture.log": "f97d756044b3b280ce4771ee57e09ae25ea6f7adab7371d959b8e7002b83b4aa",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.defaultI32-cleanup-cranelift.jsonl": "d6a2cc0a93d19ddec13ff6ba5aa4a578aceb9ffcb9f5fa083d1551f1981ab74e",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.defaultI32-cleanup-cranelift.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.defaultI32-cleanup-lean.jsonl": "d6a2cc0a93d19ddec13ff6ba5aa4a578aceb9ffcb9f5fa083d1551f1981ab74e",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.defaultI32-cleanup-lean.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.defaultI32-cleanup-runs.clif": "930fd4c501b5b4f3b454e7b30581aab5f86cf15af4461a6c72ff522c8a365992",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.defaultI32-cleanup.cases.json": "82eedf54a22b5e0874745ebb32b426adfe1026cade582b2d4e5b2a2d8faffa12",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.defaultI32-cleanup.clif": "6717c17628d87ecec3b67873a9af0e96632287c987cc4506ee00be895514e26b",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.defaultI32-cleanup.json": "e453ce91bf97932bf8f43fdbf51353ba82fbcbbbc6fdbad668d322aed37f5b65",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.defaultI32-cleanup.o": "5271e1578ad2fd06ee7a4a5ee220e52169caf461f75cfe24fbfc2eb7461ac221",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.defaultI32-plain-cranelift.jsonl": "d6a2cc0a93d19ddec13ff6ba5aa4a578aceb9ffcb9f5fa083d1551f1981ab74e",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.defaultI32-plain-cranelift.stderr": "ad6ae5bb4cf981b1be8e75b01242a5de9324a1ec622f560855810b330dbe5853",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.defaultI32-plain-lean.jsonl": "d6a2cc0a93d19ddec13ff6ba5aa4a578aceb9ffcb9f5fa083d1551f1981ab74e",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.defaultI32-plain-lean.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.defaultI32-plain-runs.clif": "930fd4c501b5b4f3b454e7b30581aab5f86cf15af4461a6c72ff522c8a365992",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.defaultI32-plain.cases.json": "82eedf54a22b5e0874745ebb32b426adfe1026cade582b2d4e5b2a2d8faffa12",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.defaultI32-plain.clif": "6717c17628d87ecec3b67873a9af0e96632287c987cc4506ee00be895514e26b",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.defaultI32-plain.json": "e453ce91bf97932bf8f43fdbf51353ba82fbcbbbc6fdbad668d322aed37f5b65",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.defaultI32-plain.o": "5271e1578ad2fd06ee7a4a5ee220e52169caf461f75cfe24fbfc2eb7461ac221",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.defaultI64-cleanup-cranelift.jsonl": "d6a2cc0a93d19ddec13ff6ba5aa4a578aceb9ffcb9f5fa083d1551f1981ab74e",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.defaultI64-cleanup-cranelift.stderr": "ad6ae5bb4cf981b1be8e75b01242a5de9324a1ec622f560855810b330dbe5853",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.defaultI64-cleanup-lean.jsonl": "d6a2cc0a93d19ddec13ff6ba5aa4a578aceb9ffcb9f5fa083d1551f1981ab74e",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.defaultI64-cleanup-lean.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.defaultI64-cleanup-runs.clif": "930fd4c501b5b4f3b454e7b30581aab5f86cf15af4461a6c72ff522c8a365992",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.defaultI64-cleanup.cases.json": "82eedf54a22b5e0874745ebb32b426adfe1026cade582b2d4e5b2a2d8faffa12",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.defaultI64-cleanup.clif": "6717c17628d87ecec3b67873a9af0e96632287c987cc4506ee00be895514e26b",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.defaultI64-cleanup.json": "e453ce91bf97932bf8f43fdbf51353ba82fbcbbbc6fdbad668d322aed37f5b65",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.defaultI64-cleanup.o": "5271e1578ad2fd06ee7a4a5ee220e52169caf461f75cfe24fbfc2eb7461ac221",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.defaultI64-plain-cranelift.jsonl": "d6a2cc0a93d19ddec13ff6ba5aa4a578aceb9ffcb9f5fa083d1551f1981ab74e",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.defaultI64-plain-cranelift.stderr": "ad6ae5bb4cf981b1be8e75b01242a5de9324a1ec622f560855810b330dbe5853",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.defaultI64-plain-lean.jsonl": "d6a2cc0a93d19ddec13ff6ba5aa4a578aceb9ffcb9f5fa083d1551f1981ab74e",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.defaultI64-plain-lean.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.defaultI64-plain-runs.clif": "930fd4c501b5b4f3b454e7b30581aab5f86cf15af4461a6c72ff522c8a365992",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.defaultI64-plain.cases.json": "82eedf54a22b5e0874745ebb32b426adfe1026cade582b2d4e5b2a2d8faffa12",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.defaultI64-plain.clif": "6717c17628d87ecec3b67873a9af0e96632287c987cc4506ee00be895514e26b",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.defaultI64-plain.json": "e453ce91bf97932bf8f43fdbf51353ba82fbcbbbc6fdbad668d322aed37f5b65",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.defaultI64-plain.o": "5271e1578ad2fd06ee7a4a5ee220e52169caf461f75cfe24fbfc2eb7461ac221",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.fastI32-cleanup-cranelift.jsonl": "d6a2cc0a93d19ddec13ff6ba5aa4a578aceb9ffcb9f5fa083d1551f1981ab74e",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.fastI32-cleanup-cranelift.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.fastI32-cleanup-lean.jsonl": "d6a2cc0a93d19ddec13ff6ba5aa4a578aceb9ffcb9f5fa083d1551f1981ab74e",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.fastI32-cleanup-lean.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.fastI32-cleanup-runs.clif": "0edc0bfe2969a028ec2b9d7b0f41c93f533c2b568e520d472f466a489c85f777",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.fastI32-cleanup.cases.json": "82eedf54a22b5e0874745ebb32b426adfe1026cade582b2d4e5b2a2d8faffa12",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.fastI32-cleanup.clif": "4ed4cde914876f18c64a9b246b1491006bf0fd7ce268d8c60793186699b0c622",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.fastI32-cleanup.json": "e453ce91bf97932bf8f43fdbf51353ba82fbcbbbc6fdbad668d322aed37f5b65",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.fastI32-cleanup.o": "5271e1578ad2fd06ee7a4a5ee220e52169caf461f75cfe24fbfc2eb7461ac221",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.fastI32-plain-cranelift.jsonl": "d6a2cc0a93d19ddec13ff6ba5aa4a578aceb9ffcb9f5fa083d1551f1981ab74e",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.fastI32-plain-cranelift.stderr": "ad6ae5bb4cf981b1be8e75b01242a5de9324a1ec622f560855810b330dbe5853",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.fastI32-plain-lean.jsonl": "d6a2cc0a93d19ddec13ff6ba5aa4a578aceb9ffcb9f5fa083d1551f1981ab74e",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.fastI32-plain-lean.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.fastI32-plain-runs.clif": "0edc0bfe2969a028ec2b9d7b0f41c93f533c2b568e520d472f466a489c85f777",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.fastI32-plain.cases.json": "82eedf54a22b5e0874745ebb32b426adfe1026cade582b2d4e5b2a2d8faffa12",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.fastI32-plain.clif": "4ed4cde914876f18c64a9b246b1491006bf0fd7ce268d8c60793186699b0c622",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.fastI32-plain.json": "e453ce91bf97932bf8f43fdbf51353ba82fbcbbbc6fdbad668d322aed37f5b65",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.fastI32-plain.o": "5271e1578ad2fd06ee7a4a5ee220e52169caf461f75cfe24fbfc2eb7461ac221",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.fastI64-cleanup-cranelift.jsonl": "d6a2cc0a93d19ddec13ff6ba5aa4a578aceb9ffcb9f5fa083d1551f1981ab74e",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.fastI64-cleanup-cranelift.stderr": "ad6ae5bb4cf981b1be8e75b01242a5de9324a1ec622f560855810b330dbe5853",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.fastI64-cleanup-lean.jsonl": "d6a2cc0a93d19ddec13ff6ba5aa4a578aceb9ffcb9f5fa083d1551f1981ab74e",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.fastI64-cleanup-lean.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.fastI64-cleanup-runs.clif": "0edc0bfe2969a028ec2b9d7b0f41c93f533c2b568e520d472f466a489c85f777",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.fastI64-cleanup.cases.json": "82eedf54a22b5e0874745ebb32b426adfe1026cade582b2d4e5b2a2d8faffa12",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.fastI64-cleanup.clif": "4ed4cde914876f18c64a9b246b1491006bf0fd7ce268d8c60793186699b0c622",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.fastI64-cleanup.json": "e453ce91bf97932bf8f43fdbf51353ba82fbcbbbc6fdbad668d322aed37f5b65",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.fastI64-cleanup.o": "5271e1578ad2fd06ee7a4a5ee220e52169caf461f75cfe24fbfc2eb7461ac221",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.fastI64-plain-cranelift.jsonl": "d6a2cc0a93d19ddec13ff6ba5aa4a578aceb9ffcb9f5fa083d1551f1981ab74e",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.fastI64-plain-cranelift.stderr": "ad6ae5bb4cf981b1be8e75b01242a5de9324a1ec622f560855810b330dbe5853",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.fastI64-plain-lean.jsonl": "d6a2cc0a93d19ddec13ff6ba5aa4a578aceb9ffcb9f5fa083d1551f1981ab74e",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.fastI64-plain-lean.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.fastI64-plain-runs.clif": "0edc0bfe2969a028ec2b9d7b0f41c93f533c2b568e520d472f466a489c85f777",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.fastI64-plain.cases.json": "82eedf54a22b5e0874745ebb32b426adfe1026cade582b2d4e5b2a2d8faffa12",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.fastI64-plain.clif": "4ed4cde914876f18c64a9b246b1491006bf0fd7ce268d8c60793186699b0c622",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.fastI64-plain.json": "e453ce91bf97932bf8f43fdbf51353ba82fbcbbbc6fdbad668d322aed37f5b65",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.fastI64-plain.o": "5271e1578ad2fd06ee7a4a5ee220e52169caf461f75cfe24fbfc2eb7461ac221",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.systemVI32-cleanup-cranelift.jsonl": "d6a2cc0a93d19ddec13ff6ba5aa4a578aceb9ffcb9f5fa083d1551f1981ab74e",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.systemVI32-cleanup-cranelift.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.systemVI32-cleanup-lean.jsonl": "d6a2cc0a93d19ddec13ff6ba5aa4a578aceb9ffcb9f5fa083d1551f1981ab74e",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.systemVI32-cleanup-lean.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.systemVI32-cleanup-runs.clif": "97aff672b8c38f09e0e97694f38498b0e95dec53180b8878b8f75814b24b972b",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.systemVI32-cleanup.cases.json": "82eedf54a22b5e0874745ebb32b426adfe1026cade582b2d4e5b2a2d8faffa12",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.systemVI32-cleanup.clif": "10b0389bfe5a10dc6d20dee669a002368e2c453a30aa2ae7b4d8cc9b0b9dd9e0",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.systemVI32-cleanup.json": "e453ce91bf97932bf8f43fdbf51353ba82fbcbbbc6fdbad668d322aed37f5b65",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.systemVI32-cleanup.o": "5271e1578ad2fd06ee7a4a5ee220e52169caf461f75cfe24fbfc2eb7461ac221",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.systemVI32-plain-cranelift.jsonl": "d6a2cc0a93d19ddec13ff6ba5aa4a578aceb9ffcb9f5fa083d1551f1981ab74e",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.systemVI32-plain-cranelift.stderr": "ad6ae5bb4cf981b1be8e75b01242a5de9324a1ec622f560855810b330dbe5853",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.systemVI32-plain-lean.jsonl": "d6a2cc0a93d19ddec13ff6ba5aa4a578aceb9ffcb9f5fa083d1551f1981ab74e",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.systemVI32-plain-lean.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.systemVI32-plain-runs.clif": "97aff672b8c38f09e0e97694f38498b0e95dec53180b8878b8f75814b24b972b",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.systemVI32-plain.cases.json": "82eedf54a22b5e0874745ebb32b426adfe1026cade582b2d4e5b2a2d8faffa12",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.systemVI32-plain.clif": "10b0389bfe5a10dc6d20dee669a002368e2c453a30aa2ae7b4d8cc9b0b9dd9e0",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.systemVI32-plain.json": "e453ce91bf97932bf8f43fdbf51353ba82fbcbbbc6fdbad668d322aed37f5b65",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.systemVI32-plain.o": "5271e1578ad2fd06ee7a4a5ee220e52169caf461f75cfe24fbfc2eb7461ac221",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.systemVI64-cleanup-cranelift.jsonl": "d6a2cc0a93d19ddec13ff6ba5aa4a578aceb9ffcb9f5fa083d1551f1981ab74e",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.systemVI64-cleanup-cranelift.stderr": "ad6ae5bb4cf981b1be8e75b01242a5de9324a1ec622f560855810b330dbe5853",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.systemVI64-cleanup-lean.jsonl": "d6a2cc0a93d19ddec13ff6ba5aa4a578aceb9ffcb9f5fa083d1551f1981ab74e",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.systemVI64-cleanup-lean.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.systemVI64-cleanup-runs.clif": "97aff672b8c38f09e0e97694f38498b0e95dec53180b8878b8f75814b24b972b",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.systemVI64-cleanup.cases.json": "82eedf54a22b5e0874745ebb32b426adfe1026cade582b2d4e5b2a2d8faffa12",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.systemVI64-cleanup.clif": "10b0389bfe5a10dc6d20dee669a002368e2c453a30aa2ae7b4d8cc9b0b9dd9e0",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.systemVI64-cleanup.json": "e453ce91bf97932bf8f43fdbf51353ba82fbcbbbc6fdbad668d322aed37f5b65",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.systemVI64-cleanup.o": "5271e1578ad2fd06ee7a4a5ee220e52169caf461f75cfe24fbfc2eb7461ac221",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.systemVI64-plain-cranelift.jsonl": "d6a2cc0a93d19ddec13ff6ba5aa4a578aceb9ffcb9f5fa083d1551f1981ab74e",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.systemVI64-plain-cranelift.stderr": "ad6ae5bb4cf981b1be8e75b01242a5de9324a1ec622f560855810b330dbe5853",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.systemVI64-plain-lean.jsonl": "d6a2cc0a93d19ddec13ff6ba5aa4a578aceb9ffcb9f5fa083d1551f1981ab74e",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.systemVI64-plain-lean.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.systemVI64-plain-runs.clif": "97aff672b8c38f09e0e97694f38498b0e95dec53180b8878b8f75814b24b972b",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.systemVI64-plain.cases.json": "82eedf54a22b5e0874745ebb32b426adfe1026cade582b2d4e5b2a2d8faffa12",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.systemVI64-plain.clif": "10b0389bfe5a10dc6d20dee669a002368e2c453a30aa2ae7b4d8cc9b0b9dd9e0",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.systemVI64-plain.json": "e453ce91bf97932bf8f43fdbf51353ba82fbcbbbc6fdbad668d322aed37f5b65",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/lean-Backend.Stock.D0.Configuration.systemVI64-plain.o": "5271e1578ad2fd06ee7a4a5ee220e52169caf461f75cfe24fbfc2eb7461ac221",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/lld-one-thread.sh": "d99860f210a0947c9008418833e7e2170b060dde7fb747355f7b47fb5dde04ab",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/native-receipt.json": "87b932b189f7a747a47977f7c540ce2722287f3b05fe72c1c66148e9c7e9ea70",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.defaultI32-cleanup-cranelift.jsonl": "d6a2cc0a93d19ddec13ff6ba5aa4a578aceb9ffcb9f5fa083d1551f1981ab74e",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.defaultI32-cleanup-cranelift.stderr": "ad6ae5bb4cf981b1be8e75b01242a5de9324a1ec622f560855810b330dbe5853",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.defaultI32-cleanup-lean.jsonl": "d6a2cc0a93d19ddec13ff6ba5aa4a578aceb9ffcb9f5fa083d1551f1981ab74e",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.defaultI32-cleanup-lean.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.defaultI32-cleanup-runs.clif": "930fd4c501b5b4f3b454e7b30581aab5f86cf15af4461a6c72ff522c8a365992",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.defaultI32-cleanup.cases.json": "82eedf54a22b5e0874745ebb32b426adfe1026cade582b2d4e5b2a2d8faffa12",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.defaultI32-cleanup.clif": "6717c17628d87ecec3b67873a9af0e96632287c987cc4506ee00be895514e26b",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.defaultI32-cleanup.json": "2c1ad157f4d6d96f6c089309f436922c98a1a9f3fb02d8e1b89ae2e4ebcd8806",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.defaultI32-cleanup.o": "67a1bbbce6da0fe6bff3ed8f2e3be7f4698d70059d346941e2b230c1a95741c2",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.defaultI32-plain-cranelift.jsonl": "d6a2cc0a93d19ddec13ff6ba5aa4a578aceb9ffcb9f5fa083d1551f1981ab74e",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.defaultI32-plain-cranelift.stderr": "ad6ae5bb4cf981b1be8e75b01242a5de9324a1ec622f560855810b330dbe5853",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.defaultI32-plain-lean.jsonl": "d6a2cc0a93d19ddec13ff6ba5aa4a578aceb9ffcb9f5fa083d1551f1981ab74e",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.defaultI32-plain-lean.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.defaultI32-plain-runs.clif": "930fd4c501b5b4f3b454e7b30581aab5f86cf15af4461a6c72ff522c8a365992",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.defaultI32-plain.cases.json": "82eedf54a22b5e0874745ebb32b426adfe1026cade582b2d4e5b2a2d8faffa12",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.defaultI32-plain.clif": "6717c17628d87ecec3b67873a9af0e96632287c987cc4506ee00be895514e26b",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.defaultI32-plain.json": "2c1ad157f4d6d96f6c089309f436922c98a1a9f3fb02d8e1b89ae2e4ebcd8806",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.defaultI32-plain.o": "67a1bbbce6da0fe6bff3ed8f2e3be7f4698d70059d346941e2b230c1a95741c2",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.defaultI64-cleanup-cranelift.jsonl": "d6a2cc0a93d19ddec13ff6ba5aa4a578aceb9ffcb9f5fa083d1551f1981ab74e",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.defaultI64-cleanup-cranelift.stderr": "ad6ae5bb4cf981b1be8e75b01242a5de9324a1ec622f560855810b330dbe5853",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.defaultI64-cleanup-lean.jsonl": "d6a2cc0a93d19ddec13ff6ba5aa4a578aceb9ffcb9f5fa083d1551f1981ab74e",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.defaultI64-cleanup-lean.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.defaultI64-cleanup-runs.clif": "930fd4c501b5b4f3b454e7b30581aab5f86cf15af4461a6c72ff522c8a365992",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.defaultI64-cleanup.cases.json": "82eedf54a22b5e0874745ebb32b426adfe1026cade582b2d4e5b2a2d8faffa12",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.defaultI64-cleanup.clif": "6717c17628d87ecec3b67873a9af0e96632287c987cc4506ee00be895514e26b",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.defaultI64-cleanup.json": "2c1ad157f4d6d96f6c089309f436922c98a1a9f3fb02d8e1b89ae2e4ebcd8806",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.defaultI64-cleanup.o": "67a1bbbce6da0fe6bff3ed8f2e3be7f4698d70059d346941e2b230c1a95741c2",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.defaultI64-plain-cranelift.jsonl": "d6a2cc0a93d19ddec13ff6ba5aa4a578aceb9ffcb9f5fa083d1551f1981ab74e",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.defaultI64-plain-cranelift.stderr": "ad6ae5bb4cf981b1be8e75b01242a5de9324a1ec622f560855810b330dbe5853",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.defaultI64-plain-lean.jsonl": "d6a2cc0a93d19ddec13ff6ba5aa4a578aceb9ffcb9f5fa083d1551f1981ab74e",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.defaultI64-plain-lean.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.defaultI64-plain-runs.clif": "930fd4c501b5b4f3b454e7b30581aab5f86cf15af4461a6c72ff522c8a365992",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.defaultI64-plain.cases.json": "82eedf54a22b5e0874745ebb32b426adfe1026cade582b2d4e5b2a2d8faffa12",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.defaultI64-plain.clif": "6717c17628d87ecec3b67873a9af0e96632287c987cc4506ee00be895514e26b",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.defaultI64-plain.json": "2c1ad157f4d6d96f6c089309f436922c98a1a9f3fb02d8e1b89ae2e4ebcd8806",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.defaultI64-plain.o": "67a1bbbce6da0fe6bff3ed8f2e3be7f4698d70059d346941e2b230c1a95741c2",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.fastI32-cleanup-cranelift.jsonl": "d6a2cc0a93d19ddec13ff6ba5aa4a578aceb9ffcb9f5fa083d1551f1981ab74e",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.fastI32-cleanup-cranelift.stderr": "ad6ae5bb4cf981b1be8e75b01242a5de9324a1ec622f560855810b330dbe5853",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.fastI32-cleanup-lean.jsonl": "d6a2cc0a93d19ddec13ff6ba5aa4a578aceb9ffcb9f5fa083d1551f1981ab74e",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.fastI32-cleanup-lean.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.fastI32-cleanup-runs.clif": "0edc0bfe2969a028ec2b9d7b0f41c93f533c2b568e520d472f466a489c85f777",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.fastI32-cleanup.cases.json": "82eedf54a22b5e0874745ebb32b426adfe1026cade582b2d4e5b2a2d8faffa12",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.fastI32-cleanup.clif": "4ed4cde914876f18c64a9b246b1491006bf0fd7ce268d8c60793186699b0c622",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.fastI32-cleanup.json": "2c1ad157f4d6d96f6c089309f436922c98a1a9f3fb02d8e1b89ae2e4ebcd8806",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.fastI32-cleanup.o": "67a1bbbce6da0fe6bff3ed8f2e3be7f4698d70059d346941e2b230c1a95741c2",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.fastI32-plain-cranelift.jsonl": "d6a2cc0a93d19ddec13ff6ba5aa4a578aceb9ffcb9f5fa083d1551f1981ab74e",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.fastI32-plain-cranelift.stderr": "ad6ae5bb4cf981b1be8e75b01242a5de9324a1ec622f560855810b330dbe5853",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.fastI32-plain-lean.jsonl": "d6a2cc0a93d19ddec13ff6ba5aa4a578aceb9ffcb9f5fa083d1551f1981ab74e",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.fastI32-plain-lean.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.fastI32-plain-runs.clif": "0edc0bfe2969a028ec2b9d7b0f41c93f533c2b568e520d472f466a489c85f777",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.fastI32-plain.cases.json": "82eedf54a22b5e0874745ebb32b426adfe1026cade582b2d4e5b2a2d8faffa12",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.fastI32-plain.clif": "4ed4cde914876f18c64a9b246b1491006bf0fd7ce268d8c60793186699b0c622",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.fastI32-plain.json": "2c1ad157f4d6d96f6c089309f436922c98a1a9f3fb02d8e1b89ae2e4ebcd8806",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.fastI32-plain.o": "67a1bbbce6da0fe6bff3ed8f2e3be7f4698d70059d346941e2b230c1a95741c2",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.fastI64-cleanup-cranelift.jsonl": "d6a2cc0a93d19ddec13ff6ba5aa4a578aceb9ffcb9f5fa083d1551f1981ab74e",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.fastI64-cleanup-cranelift.stderr": "ad6ae5bb4cf981b1be8e75b01242a5de9324a1ec622f560855810b330dbe5853",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.fastI64-cleanup-lean.jsonl": "d6a2cc0a93d19ddec13ff6ba5aa4a578aceb9ffcb9f5fa083d1551f1981ab74e",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.fastI64-cleanup-lean.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.fastI64-cleanup-runs.clif": "0edc0bfe2969a028ec2b9d7b0f41c93f533c2b568e520d472f466a489c85f777",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.fastI64-cleanup.cases.json": "82eedf54a22b5e0874745ebb32b426adfe1026cade582b2d4e5b2a2d8faffa12",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.fastI64-cleanup.clif": "4ed4cde914876f18c64a9b246b1491006bf0fd7ce268d8c60793186699b0c622",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.fastI64-cleanup.json": "2c1ad157f4d6d96f6c089309f436922c98a1a9f3fb02d8e1b89ae2e4ebcd8806",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.fastI64-cleanup.o": "67a1bbbce6da0fe6bff3ed8f2e3be7f4698d70059d346941e2b230c1a95741c2",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.fastI64-plain-cranelift.jsonl": "d6a2cc0a93d19ddec13ff6ba5aa4a578aceb9ffcb9f5fa083d1551f1981ab74e",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.fastI64-plain-cranelift.stderr": "ad6ae5bb4cf981b1be8e75b01242a5de9324a1ec622f560855810b330dbe5853",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.fastI64-plain-lean.jsonl": "d6a2cc0a93d19ddec13ff6ba5aa4a578aceb9ffcb9f5fa083d1551f1981ab74e",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.fastI64-plain-lean.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.fastI64-plain-runs.clif": "0edc0bfe2969a028ec2b9d7b0f41c93f533c2b568e520d472f466a489c85f777",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.fastI64-plain.cases.json": "82eedf54a22b5e0874745ebb32b426adfe1026cade582b2d4e5b2a2d8faffa12",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.fastI64-plain.clif": "4ed4cde914876f18c64a9b246b1491006bf0fd7ce268d8c60793186699b0c622",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.fastI64-plain.json": "2c1ad157f4d6d96f6c089309f436922c98a1a9f3fb02d8e1b89ae2e4ebcd8806",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.fastI64-plain.o": "67a1bbbce6da0fe6bff3ed8f2e3be7f4698d70059d346941e2b230c1a95741c2",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.systemVI32-cleanup-cranelift.jsonl": "d6a2cc0a93d19ddec13ff6ba5aa4a578aceb9ffcb9f5fa083d1551f1981ab74e",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.systemVI32-cleanup-cranelift.stderr": "ad6ae5bb4cf981b1be8e75b01242a5de9324a1ec622f560855810b330dbe5853",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.systemVI32-cleanup-lean.jsonl": "d6a2cc0a93d19ddec13ff6ba5aa4a578aceb9ffcb9f5fa083d1551f1981ab74e",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.systemVI32-cleanup-lean.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.systemVI32-cleanup-runs.clif": "97aff672b8c38f09e0e97694f38498b0e95dec53180b8878b8f75814b24b972b",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.systemVI32-cleanup.cases.json": "82eedf54a22b5e0874745ebb32b426adfe1026cade582b2d4e5b2a2d8faffa12",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.systemVI32-cleanup.clif": "10b0389bfe5a10dc6d20dee669a002368e2c453a30aa2ae7b4d8cc9b0b9dd9e0",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.systemVI32-cleanup.json": "2c1ad157f4d6d96f6c089309f436922c98a1a9f3fb02d8e1b89ae2e4ebcd8806",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.systemVI32-cleanup.o": "67a1bbbce6da0fe6bff3ed8f2e3be7f4698d70059d346941e2b230c1a95741c2",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.systemVI32-plain-cranelift.jsonl": "d6a2cc0a93d19ddec13ff6ba5aa4a578aceb9ffcb9f5fa083d1551f1981ab74e",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.systemVI32-plain-cranelift.stderr": "ad6ae5bb4cf981b1be8e75b01242a5de9324a1ec622f560855810b330dbe5853",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.systemVI32-plain-lean.jsonl": "d6a2cc0a93d19ddec13ff6ba5aa4a578aceb9ffcb9f5fa083d1551f1981ab74e",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.systemVI32-plain-lean.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.systemVI32-plain-runs.clif": "97aff672b8c38f09e0e97694f38498b0e95dec53180b8878b8f75814b24b972b",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.systemVI32-plain.cases.json": "82eedf54a22b5e0874745ebb32b426adfe1026cade582b2d4e5b2a2d8faffa12",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.systemVI32-plain.clif": "10b0389bfe5a10dc6d20dee669a002368e2c453a30aa2ae7b4d8cc9b0b9dd9e0",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.systemVI32-plain.json": "2c1ad157f4d6d96f6c089309f436922c98a1a9f3fb02d8e1b89ae2e4ebcd8806",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.systemVI32-plain.o": "67a1bbbce6da0fe6bff3ed8f2e3be7f4698d70059d346941e2b230c1a95741c2",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.systemVI64-cleanup-cranelift.jsonl": "d6a2cc0a93d19ddec13ff6ba5aa4a578aceb9ffcb9f5fa083d1551f1981ab74e",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.systemVI64-cleanup-cranelift.stderr": "ad6ae5bb4cf981b1be8e75b01242a5de9324a1ec622f560855810b330dbe5853",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.systemVI64-cleanup-lean.jsonl": "d6a2cc0a93d19ddec13ff6ba5aa4a578aceb9ffcb9f5fa083d1551f1981ab74e",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.systemVI64-cleanup-lean.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.systemVI64-cleanup-runs.clif": "97aff672b8c38f09e0e97694f38498b0e95dec53180b8878b8f75814b24b972b",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.systemVI64-cleanup.cases.json": "82eedf54a22b5e0874745ebb32b426adfe1026cade582b2d4e5b2a2d8faffa12",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.systemVI64-cleanup.clif": "10b0389bfe5a10dc6d20dee669a002368e2c453a30aa2ae7b4d8cc9b0b9dd9e0",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.systemVI64-cleanup.json": "2c1ad157f4d6d96f6c089309f436922c98a1a9f3fb02d8e1b89ae2e4ebcd8806",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.systemVI64-cleanup.o": "67a1bbbce6da0fe6bff3ed8f2e3be7f4698d70059d346941e2b230c1a95741c2",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.systemVI64-plain-cranelift.jsonl": "d6a2cc0a93d19ddec13ff6ba5aa4a578aceb9ffcb9f5fa083d1551f1981ab74e",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.systemVI64-plain-cranelift.stderr": "ad6ae5bb4cf981b1be8e75b01242a5de9324a1ec622f560855810b330dbe5853",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.systemVI64-plain-lean.jsonl": "d6a2cc0a93d19ddec13ff6ba5aa4a578aceb9ffcb9f5fa083d1551f1981ab74e",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.systemVI64-plain-lean.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.systemVI64-plain-runs.clif": "97aff672b8c38f09e0e97694f38498b0e95dec53180b8878b8f75814b24b972b",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.systemVI64-plain.cases.json": "82eedf54a22b5e0874745ebb32b426adfe1026cade582b2d4e5b2a2d8faffa12",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.systemVI64-plain.clif": "10b0389bfe5a10dc6d20dee669a002368e2c453a30aa2ae7b4d8cc9b0b9dd9e0",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.systemVI64-plain.json": "2c1ad157f4d6d96f6c089309f436922c98a1a9f3fb02d8e1b89ae2e4ebcd8806",
+    "/tmp/stock-parameter-cfg-current-integration-v1/native-objects/regalloc2-Backend.Stock.D0.Configuration.systemVI64-plain.o": "67a1bbbce6da0fe6bff3ed8f2e3be7f4698d70059d346941e2b230c1a95741c2",
+    "/tmp/stock-parameter-cfg-current-integration-v1/receipt.json": "5268a27eb4861fd5c929a535a25ec9f1b1fea7b27bdd951a6390046dd028aa53",
+    "/tmp/stock-parameter-cfg-current-integration-v1/runtime.log": "c63ab1ee152add033c0e08783fe23fe7238d36c41cd550200ee2855261a233c7",
+    "/tmp/stock-parameter-cfg-current-integration-v1/sources.json": "3a3b2edf99361981afdadca38ce11fa48076eafbd79fba2ce53be4567d174048",
+    "/tmp/stock-parameter-cfg-current-integration-v1/verified-link-Cleanup.log": "eb7863335cdbd2c57e7cdd9cca867bfb02de9c2780130b73680ce641faca978e",
+    "/tmp/stock-parameter-cfg-current-integration-v1/verified-link-Plain.log": "86d95dce03589c286525d9e356fe1674df54577c1e202f972a632b66e3740beb",
+    "/tmp/stock-parameter-cfg-full-backup-receipt-v1.json": "1230d1607d101a107750785a761ba347c43705f07882d7ae897c921a579354be",
+    "/tmp/stock-parameter-cfg-next-memory-obligations-v1.json": "bf0460ebc754575ff4f8f7f23f40f49d9f79c0abc577043c7719e865efa8a07a",
+    "/tmp/stock-parameter-cfg-normal-backup-receipt-v1.json": "438b89394a88595f51d5ddd32bf7d9e5eb525234eb005b451a86a791d1dc3653",
+    "/tmp/stock-parameter-cfg-source-priorities-v1.json": "e3406bcdd78d2a8e26048ba6cfa5330995295cbb7a6dd25f68e56083f905c5a4",
+    "/tmp/stock-parameter-cfg-validation-planning-v1.json": "a3f3882d01f4bd2e3b3c31cc3b3cf0f47edc4f1f14b824a4f5820703291c73b6"
+  },
+  "compiled_outputs_excluded": {
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/CfgParameterProductionCLIretainedCleanup.olean": {
+      "sha256": "5c14d51042bba7aec9c2b35b88d9f4ff5ae35d1aeb29539b795179eca41d0bea",
+      "bytes": 161584
+    },
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/CfgParameterProductionCLIcurrentCleanup.olean": {
+      "sha256": "780c3eaf5b4e4787f793e8c85c739deab0a17d9188c8f66e6c2fcc37c58f9260",
+      "bytes": 161592
+    },
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/CfgParameterProductionCLIretainedPlain.olean": {
+      "sha256": "249de6e5729fd75aca577d1b7a562a1fe753406e7cd2cb4bc3be7dbce1e9af5f",
+      "bytes": 161640
+    },
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/CfgParameterProductionCLIcurrentPlain.olean": {
+      "sha256": "0f389068b73848d7391ebfa384ec5b5b77e10038a0e3f46cad7280d82852b195",
+      "bytes": 161632
+    },
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction7MixedPlainFallbackGlobal.olean": {
+      "sha256": "60a41a8040ad415f255091ce3657e6ad6458993433b14a03a0e2ee63db06d755",
+      "bytes": 214616
+    },
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction7MixedCleanupFallbackGlobal.olean": {
+      "sha256": "9491726848c1e95287bfe9d6f5e6913e0683ddfbabe9b75aec06f7e39083fa2b",
+      "bytes": 214496
+    },
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction6MixedPlainFallbackGlobal.olean": {
+      "sha256": "e7035ac1f5ee8f5e0d53569367f89a60d14a5b9f2137bef9652f46e73f803671",
+      "bytes": 199424
+    },
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction6MixedCleanupFallbackGlobal.olean": {
+      "sha256": "1658661c49371d7c3ef239b12c788df0674d079b60b520c8e42bc85f3b8d8998",
+      "bytes": 199320
+    },
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction33CleanupFallbackGlobal.olean": {
+      "sha256": "a4946a2eed99601a538f4f2693b65f9c42c7021ca7cc725c83785b6b963cd5f7",
+      "bytes": 210688
+    },
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction33CleanupFallbackEntries.olean": {
+      "sha256": "b9e98ccec518f9e8b1ef6c78091d82fb0c99727f4b12cd41a2f94f990e87783f",
+      "bytes": 276424
+    },
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction2RetainedPlainFallbackGlobal.olean": {
+      "sha256": "3ce0fdde5a217b9c53a0005d969ba68579d28548efc8ca53c9d9e69e880d897e",
+      "bytes": 140080
+    },
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction2RetainedCleanupFallbackGlobal.olean": {
+      "sha256": "98da195dff95761b3316e6a399a261021fae41dcccfc0f38836cb5bf3d0f082e",
+      "bytes": 139976
+    },
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction2PlainFallbackGlobal.olean": {
+      "sha256": "083145a0565e4f262234daad6c2c069cf693c76536a583c306e14eb14633832c",
+      "bytes": 140080
+    },
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction2CleanupFallbackGlobal.olean": {
+      "sha256": "0d2f82213f29a6cf7aca15615564f0e6fd1fdf5fc934668fdf160ee0d9cc5a1f",
+      "bytes": 139952
+    },
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction100PlainStrictGlobal.olean": {
+      "sha256": "7e5af57255608da02a9871dab2a9cb0cd193fa74782144d69e5a3a0f326b9d13",
+      "bytes": 482208
+    },
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction100PlainStrictEntries.olean": {
+      "sha256": "7619bbd245fa3a7a602ccdebc9aae51983bde203b248c701479e53570d3be45a",
+      "bytes": 636120
+    },
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction100PlainFallbackGlobal.olean": {
+      "sha256": "b632be8997970220ab007485179c44c7feefa46c77bc8ba96319b0941965a9d7",
+      "bytes": 482224
+    },
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction100PlainFallbackEntries.olean": {
+      "sha256": "b26eaf58354864dbafc78867ca1f30939ad30917f7764e3e0a7052001f00684f",
+      "bytes": 636120
+    },
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction100CleanupStrictGlobal.olean": {
+      "sha256": "e0d1d7862ebd9a89967cdbf4e8a465d5c309d63c940570c21e650f64e48316b2",
+      "bytes": 482176
+    },
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction100CleanupStrictEntries.olean": {
+      "sha256": "71802663a519b2c60c6e704c27df29881d22e48be0f6a1b610038ee5dd76c36a",
+      "bytes": 636072
+    },
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction100CleanupFallbackGlobal.olean": {
+      "sha256": "bc6cca2c5c2064f4f54885154f3c3809489ce90c2d2bca2d37377b9d5450f2ec",
+      "bytes": 482176
+    },
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction100CleanupFallbackEntries.olean": {
+      "sha256": "f411b7d471b90793a4e11784f00059e2246705cd876d37eaf1556ccfbddb1517",
+      "bytes": 636072
+    },
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction33CleanupFallbackEntries/Slice1.olean": {
+      "sha256": "f367cd89ba8b73cea4972bdec4a39d4b69ec9167e8b59934906df8229f6999b4",
+      "bytes": 30904
+    },
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction33CleanupFallbackEntries/Slice0.olean": {
+      "sha256": "3ef371e35024ec1104e420a0d1e8efaf5d0a12c0768f27919814680500236dd5",
+      "bytes": 30904
+    },
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction33CleanupFallbackEntries/Input.olean": {
+      "sha256": "c3ba29b59514378ba9a2a2cb56d7e6f9c4d60a0e50e023c2980b5ef396993c2a",
+      "bytes": 475976
+    },
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction33CleanupFallbackGlobal/Slice1.olean": {
+      "sha256": "4881d626b742d1ac4e5fe962211a2e204de4b0651cf45ba3c4a255edf5c62ac7",
+      "bytes": 30904
+    },
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction33CleanupFallbackGlobal/Slice0.olean": {
+      "sha256": "3efcf0ea5a642c20648ad42321dffd86e53af7db1595e49cc28d11958d0db7a0",
+      "bytes": 30904
+    },
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction33CleanupFallbackGlobal/Input.olean": {
+      "sha256": "3802746f3f0c3ad7c7367bd50e8738fbc98f209c124e3170f985c094acad8f21",
+      "bytes": 475976
+    },
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction100CleanupFallbackEntries/Slice3.olean": {
+      "sha256": "bd83de5bf1b9846ac8f85be232906cbf16df6e06f92f20a530024c6464a60413",
+      "bytes": 15248
+    },
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction100CleanupFallbackEntries/Slice2.olean": {
+      "sha256": "032d19faa0b6b7e8353f69122146f9e9b06a1ff439be3fe500543298acd4e239",
+      "bytes": 15248
+    },
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction100CleanupFallbackEntries/Slice1.olean": {
+      "sha256": "f799b38af04a86c8cc7511865c809094a9f7f365431e8fd851bd65f3995024f8",
+      "bytes": 46040
+    },
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction100CleanupFallbackEntries/Slice0.olean": {
+      "sha256": "538bd017e5fed29d4e831b9183b78ea3eae2702beb5521098d948dcb5f0f4881",
+      "bytes": 46040
+    },
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction100CleanupFallbackEntries/Input.olean": {
+      "sha256": "aac60871e6d541901e8e24884a870d8013a90c4cb69974e0c219215622c3ff23",
+      "bytes": 1328728
+    },
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction100CleanupFallbackGlobal/Slice3.olean": {
+      "sha256": "be76c065731979257f45ce8ba97cc30a59b6985c62f2b003cd41f06e752b9920",
+      "bytes": 15248
+    },
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction100CleanupFallbackGlobal/Slice2.olean": {
+      "sha256": "b081938cf40c1dfdacbc8ca90ab534295c8c854f421a50dd15a10e46472079a4",
+      "bytes": 15248
+    },
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction100CleanupFallbackGlobal/Slice1.olean": {
+      "sha256": "8cddaa981e2486a4825fc90e42f9cc95164db90562d2398d2f49be1bfca2d67c",
+      "bytes": 46040
+    },
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction100CleanupFallbackGlobal/Slice0.olean": {
+      "sha256": "4430511c6336f075df3b74b5fb1d8b33c05b6d23cf37492fd990a65765a0fda8",
+      "bytes": 46040
+    },
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction100CleanupFallbackGlobal/Input.olean": {
+      "sha256": "b372a85597d22ba23740e1c3deac278831491043d034a6fae45e37170c957ac9",
+      "bytes": 1328728
+    },
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction100CleanupStrictEntries/Slice3.olean": {
+      "sha256": "e68cfa253abac3f0d7463876d0e979ae8d14c08598fae147cc062ab4423c98ee",
+      "bytes": 15248
+    },
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction100CleanupStrictEntries/Slice2.olean": {
+      "sha256": "f14b040a38c13594a20dcb3eb2aeeadc18fd50a1873fa686dabac93a35706350",
+      "bytes": 15248
+    },
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction100CleanupStrictEntries/Slice1.olean": {
+      "sha256": "1bb0ec2af1ab0e0b490ed544d7b7280134988007821696019026cf3e50d77ba0",
+      "bytes": 46040
+    },
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction100CleanupStrictEntries/Slice0.olean": {
+      "sha256": "30070262d4c8c77114794a686c04a568cdf43814f68ad5c76a1038678c2c56e5",
+      "bytes": 46040
+    },
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction100CleanupStrictEntries/Input.olean": {
+      "sha256": "b63de88639bd8dcb31b61f1bb1e3b434f02dac7e265b94ef3bdedb241c60335d",
+      "bytes": 1328888
+    },
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction100CleanupStrictGlobal/Slice3.olean": {
+      "sha256": "6411eedaf5f49d4413dfb2952ff593a13b927aabdbff254387202263fc3a956b",
+      "bytes": 15240
+    },
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction100CleanupStrictGlobal/Slice2.olean": {
+      "sha256": "81e5d400311d6108bac007cf425211271a19d11051fbb145baef60ee7e151038",
+      "bytes": 15240
+    },
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction100CleanupStrictGlobal/Slice1.olean": {
+      "sha256": "c1f9f94dd39ec3bdc440433678871f6ec841b738d1bf6e15f54edc4bdd7e8342",
+      "bytes": 46032
+    },
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction100CleanupStrictGlobal/Slice0.olean": {
+      "sha256": "6e9e0fbf43b7f82cfcdcc438b75289aa65eb81add393ef914a21ea4d7e0a2aef",
+      "bytes": 46032
+    },
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction100CleanupStrictGlobal/Input.olean": {
+      "sha256": "b0e9d8a9b198c58ff8dcb4c13962fc63851f2f70d99f3722f6a7dc233023835f",
+      "bytes": 1328888
+    },
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction100PlainFallbackEntries/Slice3.olean": {
+      "sha256": "437b5a1cf9fd098d87bfb343e5370632293842baf07543e71463380be34d40c8",
+      "bytes": 15400
+    },
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction100PlainFallbackEntries/Slice2.olean": {
+      "sha256": "b70e32f74bcac2efb3e3c14775abc51c35ce1bb3c2c0612034972eed1176d813",
+      "bytes": 15400
+    },
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction100PlainFallbackEntries/Slice1.olean": {
+      "sha256": "fda61270b9976c6a31cb6496510f69895dd539f9a70de3a42fe8e6590ade73c3",
+      "bytes": 46192
+    },
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction100PlainFallbackEntries/Slice0.olean": {
+      "sha256": "628ef5ad7ac1d779b41b73cb302c2202d50ccdf5a019ba99f20ca732e257f64d",
+      "bytes": 46192
+    },
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction100PlainFallbackEntries/Input.olean": {
+      "sha256": "501105981eca8612ab76cba1ad5e921f327cd2e2c506eaa65d6ca4ba945a62dc",
+      "bytes": 1328888
+    },
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction100PlainFallbackGlobal/Slice3.olean": {
+      "sha256": "18a27c79081b1fd00d1c434b79a1fdb6267fe26ba4c7caa2307f4e9fb18613aa",
+      "bytes": 15392
+    },
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction100PlainFallbackGlobal/Slice2.olean": {
+      "sha256": "5c4a3e5e155764443b5a6a20e4c109d0c48a956c2b94fcb9c082dbfa3298e3aa",
+      "bytes": 15392
+    },
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction100PlainFallbackGlobal/Slice1.olean": {
+      "sha256": "ed3a9e9d755358c47cadd3fb681f2975423812c84516232b03aed53bbee42e06",
+      "bytes": 46184
+    },
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction100PlainFallbackGlobal/Slice0.olean": {
+      "sha256": "6314ec2c30d42b061cdd4318fc4a21700cf2a35ea0bd212db94994683b277ba4",
+      "bytes": 46184
+    },
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction100PlainFallbackGlobal/Input.olean": {
+      "sha256": "40e08882717187d1b6847b6686345480687398511bcd7569ce887ff4b1c681b6",
+      "bytes": 1328888
+    },
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction100PlainStrictEntries/Slice3.olean": {
+      "sha256": "ac4d4487d4285e08cda7ced5deb3145c9a8cafe3a29ae43c64caeda2d033f7f1",
+      "bytes": 15392
+    },
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction100PlainStrictEntries/Slice2.olean": {
+      "sha256": "fe1f36b65a54da93c5826024430a66727f41e5cf6fad5b97be8c47d4c2458333",
+      "bytes": 15392
+    },
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction100PlainStrictEntries/Slice1.olean": {
+      "sha256": "9027c200351af8995a9a9d5a8ab3f22bb974150d12e6814fc7c9a5b5d66b149f",
+      "bytes": 46184
+    },
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction100PlainStrictEntries/Slice0.olean": {
+      "sha256": "9ee2b58798c5cc8d085f2604adcda60dadf1e948ac7d320cc52d7cdd3bb7b5ce",
+      "bytes": 46184
+    },
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction100PlainStrictEntries/Input.olean": {
+      "sha256": "9062daa1c046e0509a1171bbb97a53529aa7c7390e8bb5b58a4b52ca6e3c4ba9",
+      "bytes": 1328720
+    },
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction100PlainStrictGlobal/Slice3.olean": {
+      "sha256": "0fe0250ca595109cf0e6d1b574bf5e599b4ead1a044b79eb23ccdcc3bdf80aad",
+      "bytes": 15384
+    },
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction100PlainStrictGlobal/Slice2.olean": {
+      "sha256": "64309f6088ce25afd6b629b5058af55861a5cf4199d01062fa673d628e90dd06",
+      "bytes": 15384
+    },
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction100PlainStrictGlobal/Slice1.olean": {
+      "sha256": "09ab9ccbdbb89e4c60f67dc64322e2496e7891fc7aaf67f5e7b1fe81302c41f5",
+      "bytes": 46176
+    },
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction100PlainStrictGlobal/Slice0.olean": {
+      "sha256": "ee0748f5fb94f8864a266a305b8d2fb2b1fc44a2dae014498e6e09b46cc74763",
+      "bytes": 46176
+    },
+    "/tmp/stock-parameter-cfg-current-integration-v1/linked/Crates/StockCfgParameterProduction100PlainStrictGlobal/Input.olean": {
+      "sha256": "9bf0d3eaf16d2f14c840e8e880246e96309b0b86058d4b6d42c13b2cff88f9b9",
+      "bytes": 1328712
+    },
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/CfgConditionalForwardProductionCLIretainedCleanup.olean": {
+      "sha256": "4cdf02aa921431f1f69bacb488bdf856eb6b5404c4162859e3b5b2da4780eb7e",
+      "bytes": 161264
+    },
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/CfgConditionalForwardProductionCLIcurrentCleanup.olean": {
+      "sha256": "a2c07ccaaea785c4561883e3d8da58c5f7bfb91a39302ddbe0b01165db0c4cce",
+      "bytes": 161320
+    },
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/CfgConditionalForwardProductionCLIretainedPlain.olean": {
+      "sha256": "eb7b84cd6fac76cccc23a52212e207acc24327e155a5a693379eba6c70d69391",
+      "bytes": 161320
+    },
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/CfgConditionalForwardProductionCLIcurrentPlain.olean": {
+      "sha256": "25534aa6a4c4c7cd64ed0ec9a131eadb52633b5a661a23a29f6beba6438b15c2",
+      "bytes": 161376
+    },
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction7MixedPlainFallbackGlobal.olean": {
+      "sha256": "e94d5501c84b9de45437b4b1033d883363ecf617c47a69a183778ee0a2c51a70",
+      "bytes": 214104
+    },
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction7MixedCleanupFallbackGlobal.olean": {
+      "sha256": "82522088a0149363e4622b8df1cedde4eb4b80da19eb0827713ee57bf475d0eb",
+      "bytes": 213968
+    },
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction6MixedPlainFallbackGlobal.olean": {
+      "sha256": "5f44906a71ef36df7115dc00326efd304ad5f2fe497697cfe25883bc8beeb61b",
+      "bytes": 198928
+    },
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction6MixedCleanupFallbackGlobal.olean": {
+      "sha256": "c56e1d6e2816f973bc197b748be1032550b5c86ac7c3e68cbbe8cfc2022f2700",
+      "bytes": 198832
+    },
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction33CleanupFallbackGlobal.olean": {
+      "sha256": "3bc98a15b9c6a7d5b167687eeb331b0fcbae7e995ada4415f699f62b5c16363c",
+      "bytes": 210696
+    },
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction33CleanupFallbackEntries.olean": {
+      "sha256": "d9c290414db4f0b16f88070205520fed9427feb3d1d29c4a3ba40b5493fe348c",
+      "bytes": 276456
+    },
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction2RetainedPlainFallbackGlobal.olean": {
+      "sha256": "a7667b41e8bbdd7dd127f03881b76f93f315d5e58e91d3cc81c3da0eacf40e3a",
+      "bytes": 139744
+    },
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction2RetainedCleanupFallbackGlobal.olean": {
+      "sha256": "2d7fb848ea514ca352786698a19a4524cd5c81dc6c8dbd49d754b42b3ef9cac9",
+      "bytes": 139632
+    },
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction2PlainFallbackGlobal.olean": {
+      "sha256": "d4940211b01b7eb3509c0b0f5c46f815264284c3bd49cf9a4650b8715e507d11",
+      "bytes": 139648
+    },
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction2CleanupFallbackGlobal.olean": {
+      "sha256": "47302ad2639cba0b4cee96e3045f45238212a3cea5eba999f4b10c0a4051ead6",
+      "bytes": 139536
+    },
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction100PlainStrictGlobal.olean": {
+      "sha256": "f1ee548fa24024297a38c579a469744d10b4144cbfa8cecfdc910908a4057e0d",
+      "bytes": 482256
+    },
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction100PlainStrictEntries.olean": {
+      "sha256": "453cc192596d4fddc6dec9982773d161e653f3405cdae6a4febc43b999eac18d",
+      "bytes": 636152
+    },
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction100PlainFallbackGlobal.olean": {
+      "sha256": "fa72e682d9a92dc281a382de2543adf2f7807b62abd041bf63253294173e2e79",
+      "bytes": 482256
+    },
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction100PlainFallbackEntries.olean": {
+      "sha256": "fca7ac29ddba6a78b383e8815c8c0a347b13b696dd252166cdd264695125f0e8",
+      "bytes": 636152
+    },
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction100CleanupStrictGlobal.olean": {
+      "sha256": "158fee4189f58b153f4c9dc031940194cf03a2fd2651e6e1312ff935bd64afcb",
+      "bytes": 482208
+    },
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction100CleanupStrictEntries.olean": {
+      "sha256": "f1ce4a5d392b7de2b05c504fb875b85640e9427ca7781fc91273b6d410010a3d",
+      "bytes": 636128
+    },
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction100CleanupFallbackGlobal.olean": {
+      "sha256": "6947a8e50f33cacd34fd4ec53d672f7c4f4dd78eb467099b2fec31274e0b3fa4",
+      "bytes": 482240
+    },
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction100CleanupFallbackEntries.olean": {
+      "sha256": "2050aa1d8bf570abcab00b7e3901f36b4d5860797f00c7887f5a166db4178f48",
+      "bytes": 636112
+    },
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction33CleanupFallbackEntries/Slice1.olean": {
+      "sha256": "d76908abf5eed1db76891c35354e1590966324d698aeb71dfb26173939be73a7",
+      "bytes": 30880
+    },
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction33CleanupFallbackEntries/Slice0.olean": {
+      "sha256": "5db788b6562fe6ec3aecf3b3222ffbfa730ed3af51812d578c29a5550d9432ce",
+      "bytes": 30880
+    },
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction33CleanupFallbackEntries/Input.olean": {
+      "sha256": "30d9bb807143ed7b69b38d02b51ad1be994815cee8595b8104b0c7d1b4ecbb69",
+      "bytes": 468640
+    },
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction33CleanupFallbackGlobal/Slice1.olean": {
+      "sha256": "2b6b1acf33446d9c8f37844f28fa27da8aa7644dfca417c9bd5894783e52e829",
+      "bytes": 30880
+    },
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction33CleanupFallbackGlobal/Slice0.olean": {
+      "sha256": "d610a7712c848bd2c4814a45aeec9ccbc1f6c71fe9cc767ab42c09b903cbc7d0",
+      "bytes": 30880
+    },
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction33CleanupFallbackGlobal/Input.olean": {
+      "sha256": "d807d733be3a03202022b1cb15559482d39971978ae039c138c55cb72fed488e",
+      "bytes": 468640
+    },
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction100CleanupFallbackEntries/Slice3.olean": {
+      "sha256": "919b5f671ccc7010a20560b8494aae5ffab0b3ff3bb453b84a9cc91f86a709af",
+      "bytes": 15272
+    },
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction100CleanupFallbackEntries/Slice2.olean": {
+      "sha256": "233ebf575cc78db881bded00a9963fc29692d6c2e15bddb3a36a47b1ba7d243e",
+      "bytes": 15272
+    },
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction100CleanupFallbackEntries/Slice1.olean": {
+      "sha256": "d7d3c6bcb402e6b30ddb77e0a8311841811a3c9e45f39aabb75a9f9993e18a1b",
+      "bytes": 45904
+    },
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction100CleanupFallbackEntries/Slice0.olean": {
+      "sha256": "130e0a86e315145dcad446b0e36e7842559e5c1d5ed39429895dae9f32e72ec7",
+      "bytes": 45904
+    },
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction100CleanupFallbackEntries/Input.olean": {
+      "sha256": "14438a31664476de4c60e997d52bee429a91d4c139f7d2e3886742ce4cd596d8",
+      "bytes": 1306408
+    },
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction100CleanupFallbackGlobal/Slice3.olean": {
+      "sha256": "24011da38fdee4d25c2bb790191690c28df1910980c58c695fcc7961b224465d",
+      "bytes": 15272
+    },
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction100CleanupFallbackGlobal/Slice2.olean": {
+      "sha256": "c4e76c22a55e331ce810b3f6ccfc1a3ff2fcdce34bc319212c5148f3d1c6945e",
+      "bytes": 15272
+    },
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction100CleanupFallbackGlobal/Slice1.olean": {
+      "sha256": "fa7e44f897f3b2411e9f60228638fd97efdf5d28d369fba302724be8f173c40c",
+      "bytes": 45904
+    },
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction100CleanupFallbackGlobal/Slice0.olean": {
+      "sha256": "44b5b8aec0527a4a1813f78fca1c25c7d772c36b6b421bf922289723278b3983",
+      "bytes": 45904
+    },
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction100CleanupFallbackGlobal/Input.olean": {
+      "sha256": "1ef2a5d627f9760f143e08351547976e8996ebf5f5d960ce220c5846f1d2c9fb",
+      "bytes": 1306408
+    },
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction100CleanupStrictEntries/Slice3.olean": {
+      "sha256": "13afe8f7e7ffb9743adfa777e3cb040afab761f2bb188c885d0823ede483f8e2",
+      "bytes": 15272
+    },
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction100CleanupStrictEntries/Slice2.olean": {
+      "sha256": "9da30f067187b74fbeb4737734e687d378d3fbfc591b9e3724319269bffa2f0f",
+      "bytes": 15272
+    },
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction100CleanupStrictEntries/Slice1.olean": {
+      "sha256": "a2069007bc9c9850adba9304c1fc03da5cdf48177bc5f84dfd3664b698b7c96b",
+      "bytes": 45904
+    },
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction100CleanupStrictEntries/Slice0.olean": {
+      "sha256": "4d63448e24bfa8444d6c64aa64bd556df4939ac7c3e69bfcde0d45344a54afea",
+      "bytes": 45904
+    },
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction100CleanupStrictEntries/Input.olean": {
+      "sha256": "095ebdf6d9beb6a56318ff4d4ba74a67433a1178a1c3d2409582026f77d9cea0",
+      "bytes": 1306568
+    },
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction100CleanupStrictGlobal/Slice3.olean": {
+      "sha256": "32edcdf30e4d8b8fffd701781ae771fa7db669466bbc65d8dd7a49a4983e6e12",
+      "bytes": 15272
+    },
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction100CleanupStrictGlobal/Slice2.olean": {
+      "sha256": "277c73e1a0f771dc4a90ce9f300b878fb668c31608065be4902d3946db6941d4",
+      "bytes": 15272
+    },
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction100CleanupStrictGlobal/Slice1.olean": {
+      "sha256": "da9f95b0c4fded2c999cebfa8927eafa1b8887cae17c55e95a5414b84e759942",
+      "bytes": 45904
+    },
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction100CleanupStrictGlobal/Slice0.olean": {
+      "sha256": "f3d33676933b0c4af982966ec759946265aab75eaafa4c1a4e1ecddf218040b8",
+      "bytes": 45904
+    },
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction100CleanupStrictGlobal/Input.olean": {
+      "sha256": "5a5e888e0d39d40561fe3c6cddad241a28f84bc32a79f480aa7a2a0775d84f6d",
+      "bytes": 1306568
+    },
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction100PlainFallbackEntries/Slice3.olean": {
+      "sha256": "73a6518a72a32ef54a1b34e1a2f2a6ae52d6696909f5b27374544f223fd7a8a5",
+      "bytes": 15424
+    },
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction100PlainFallbackEntries/Slice2.olean": {
+      "sha256": "03d56dff09880ac3d240e9a7bf533a09ae9b7b0bbeaf0f501c3e6c699e3c2268",
+      "bytes": 15424
+    },
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction100PlainFallbackEntries/Slice1.olean": {
+      "sha256": "580662739e75b7952c4cf1a1d2f28f5679ee8d492aa6f974d4ef5a88f35c3e03",
+      "bytes": 46056
+    },
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction100PlainFallbackEntries/Slice0.olean": {
+      "sha256": "c239a0c236509c9ca9e3c853a692f779e0bc79f71cc9f1357c83c64026d4c4ce",
+      "bytes": 46056
+    },
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction100PlainFallbackEntries/Input.olean": {
+      "sha256": "ac4346b38dc5a2b1ef3c25c341d9d728f2b7cadbc917d9fb5990ac9de6ee84a5",
+      "bytes": 1306568
+    },
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction100PlainFallbackGlobal/Slice3.olean": {
+      "sha256": "62706d0f78ded598d63e3b98be7e505f38eefb9d1f0728eac51790417a67a086",
+      "bytes": 15424
+    },
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction100PlainFallbackGlobal/Slice2.olean": {
+      "sha256": "b814ab99b81dd9f49e70b5f0302d668e20f12060834be5e0a3e99a7e8a2dc1ba",
+      "bytes": 15424
+    },
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction100PlainFallbackGlobal/Slice1.olean": {
+      "sha256": "03ab4c5889f642ffc95de8797a9bb554a364af0d932c3b72a2c2c41daf00fd04",
+      "bytes": 46056
+    },
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction100PlainFallbackGlobal/Slice0.olean": {
+      "sha256": "9c6d9708aa3378a2846b1704443eccb82f0af1de6c5d9ed914a2f78ee5ae992d",
+      "bytes": 46056
+    },
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction100PlainFallbackGlobal/Input.olean": {
+      "sha256": "23fd7d8c23dcf62aa2d0ff70c70fdaa3ff3aba315be6665333312d4cbb27493c",
+      "bytes": 1306568
+    },
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction100PlainStrictEntries/Slice3.olean": {
+      "sha256": "702434858e53944c4b22bca0f8ee23d49fae276809a15edd5e77e0e7c934d365",
+      "bytes": 15416
+    },
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction100PlainStrictEntries/Slice2.olean": {
+      "sha256": "3d13370c8ac2e4882da6cf724b45bea45bffb833662c3ef28571737a767a5043",
+      "bytes": 15416
+    },
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction100PlainStrictEntries/Slice1.olean": {
+      "sha256": "99f0d4e471984cfe07d6f1c673468cadbfb867dd1ac29d7a6298058799bd8341",
+      "bytes": 46048
+    },
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction100PlainStrictEntries/Slice0.olean": {
+      "sha256": "2a92145ea3117edb843eaa2c62a7d1addf504851ae599a2ec28149f0ee639a63",
+      "bytes": 46048
+    },
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction100PlainStrictEntries/Input.olean": {
+      "sha256": "e560fcf65b6e905d73f755fc0c5ce0ef88ad02f0f83588901e5bb848738608b6",
+      "bytes": 1306408
+    },
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction100PlainStrictGlobal/Slice3.olean": {
+      "sha256": "a96aa748d32fab0c5b46518140c4d508c502dd2d1823f72984fe0f692f02b57e",
+      "bytes": 15416
+    },
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction100PlainStrictGlobal/Slice2.olean": {
+      "sha256": "1d8fac7bb6bfb08206b5591339a98a3ece6de06222590631623aafcb2c88bfe7",
+      "bytes": 15416
+    },
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction100PlainStrictGlobal/Slice1.olean": {
+      "sha256": "f35167964da07933482b5f281e570c1484474b8b7ad4f2d95fa2d52877a32044",
+      "bytes": 46048
+    },
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction100PlainStrictGlobal/Slice0.olean": {
+      "sha256": "6d6af75804c603de10323555eda40166f9ffb31a40e6180e40d6e82cd33f8670",
+      "bytes": 46048
+    },
+    "/tmp/stock-parameter-cfg-conditional-forward-integration-v1/linked/Crates/StockCfgConditionalForwardProduction100PlainStrictGlobal/Input.olean": {
+      "sha256": "c9274fc668f3325f5706f5199d43394ade91c0a26feeac0406b28a46fbec0d81",
+      "bytes": 1306400
+    }
+  },
+  "parts": [
+    {
+      "path": "evidence/parameter-cfg-current-v1.part000",
+      "sha256": "2c013264a731afe43b8a0ce6e0d5d574628aa4be7294a79223656991a0e9f8ff",
+      "bytes": 20040209
+    }
+  ],
+  "archive_sha256": "2c013264a731afe43b8a0ce6e0d5d574628aa4be7294a79223656991a0e9f8ff",
+  "archive_bytes": 20040209
+}
