@@ -44,22 +44,25 @@ theorem linesAt_program {R : RL} (hR : R.Wf) {j : Nat} {ls1 : List Line} {s s' :
     rw [show R.step = ArmStepX R.X R.H R.fa from rfl, hit, exec_inst_program]
     exact linesAt_program hR h i (by omega)
 
-/-- **Through a list of moves**, per step (module doc). -/
+/-- **Through a list of moves** (no callee restore among them: a restore emits no code and
+leaves the return tail's `RetTail`, `move_lines`), per step (module doc). -/
 theorem moves_privA {R : RL} (hR : R.Wf) {b : Nat} {w : ArmState} :
     ∀ (mvs : List (Loc × Loc)) (its : List RItem) (s : ArmState) (m : Loc → CV),
       Q R s (.run ⟨b, mvs.map (fun p => RItem.move p.1 p.2) ++ its, m, w⟩) →
       AInv R (.run ⟨b, mvs.map (fun p => RItem.move p.1 p.2) ++ its, m, w⟩) →
+      (∀ p ∈ mvs, p.1.isSave = false) →
       ∃ n, Q R (iterN R.step n s) (.run ⟨b, its, movesM mvs m, w⟩) ∧
         AInv R (.run ⟨b, its, movesM mvs m, w⟩) ∧
         ∀ i < n, ((∀ e ∈ stepEvs (iterN R.step i s), R.F e.addr) ∧ NoStx (iterN R.step i s)) ∧
           (iterN R.step i s).program = R.fb.program R.base
-  | [], its, s, m, hq, hA => ⟨0, hq, hA, fun _ h => absurd h (Nat.not_lt_zero _)⟩
-  | p :: mvs, its, s, m, hq, hA => by
-    obtain ⟨j, ls1, s', code, -, -, hlat, hq1, hpriv⟩ := move_lines hR hq
+  | [], its, s, m, hq, hA, _ => ⟨0, hq, hA, fun _ h => absurd h (Nat.not_lt_zero _)⟩
+  | p :: mvs, its, s, m, hq, hA, hns => by
+    obtain ⟨j, ls1, s', code, -, -, hlat, hq1, hpriv⟩ := move_lines hR hq (hns p List.mem_cons_self)
     have hA1 := Backend.Proof.aInv_step hR hq hA (.move (src := p.1) (dst := p.2))
     have hit := hlat.iter hR
     rw [← hit] at hq1
     obtain ⟨n, hq2, hA2, hp2⟩ := moves_privA hR mvs its _ _ hq1 hA1
+      fun p' hp' => hns p' (List.mem_cons_of_mem _ hp')
     refine ⟨ls1.length + n, by rw [iterN_add]; exact hq2, hA2, fun i hi => ?_⟩
     by_cases h : i < ls1.length
     · exact ⟨hpriv i h, linesAt_program hR hlat i (by omega)⟩

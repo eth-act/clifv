@@ -130,7 +130,7 @@ theorem codeOk_eq {e : Except String (List AInst)} (h : codeOk e = true) :
   · cases h
 
 /-- The epilogue's lines. -/
-def EL : List Line := if RF.af.frame then epilogueLines RF.af.frameSize else [.ins .ret none]
+def EL : List Line := if RF.af.frame then epilogueLines RF.af.saves RF.af.frameSize else [.ins .ret none]
 
 /-- Lines starting with `dmb ish`. -/
 def headDmb : List Line → Bool

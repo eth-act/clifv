@@ -253,7 +253,7 @@ theorem arm_isel_refinesG2 {RA : RL} (hR : RA.Wf) (hsc : MemScopeLSC RA)
       · obtain ⟨evs, c'', hs⟩ : ∃ evs c'', SrcStep RA _ evs c'' := by
           rcases hrq with ⟨hq, -⟩ | hrt
           · exact srcStep_of_mstepC (coveredCodeC_of_lsC hsc) hgv hX hX0 hq hmst
-          · exact srcStep_of_retTail hX hrt hmst
+          · exact ThreadProgress.srcStep_of_retTail hX hrt hmst
         exact hD evs c'' hs
     · exfalso
       obtain ⟨b, k0, allocs, its, mm, ww, vb, info, rfl, hvb, hi⟩ := hcall

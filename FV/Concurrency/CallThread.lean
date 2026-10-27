@@ -32,7 +32,7 @@ structure CompiledE (env : Clif.Env) (p : Clif.Program) (RA : RL) (cs : Clif.Sta
   scope : MemScopeLS RA
   gv : RA.gv = fun _ _ => False
   abi : ∃ ra, AbiCall RA.fb RA.base ra RA.s0
-  front : Front env p RA cs (iterN RA.step (prologueLines RA.af.frameSize).length RA.s0)
+  front : Front env p RA cs (iterN RA.step (prologueLines RA.af.saves RA.af.frameSize).length RA.s0)
 
 /-- **The Arm prefix `P` drives the activation's allocated code to its end**: a run of the
 allocated code from an entry configuration to `Done`, refined by `P`'s events. -/

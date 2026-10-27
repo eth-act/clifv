@@ -202,7 +202,7 @@ theorem prefixC : ∃ (n0 j : Nat) (m : Loc → CV),
   obtain ⟨hlat, hq, hA⟩ := q_init_lines wfRC abiRC bodyRC
   have hpe := prologue_evs wfRC abiRC hlat
   have hpr0 := linesAt_program wfRC hlat
-  generalize hn0 : (prologueLines RC.af.frameSize).length = n0 at hpe hpr0 hq hA
+  generalize hn0 : (prologueLines RC.af.saves RC.af.frameSize).length = n0 at hpe hpr0 hq hA
   have hq0 := hq
   have hA0 := hA
   have e0 := checksRunC.1

@@ -30,7 +30,7 @@ under `OkPriv` is the single-core path, its events private plain writes. -/
 theorem prun_prologueG {RA : RL} (hR : RA.Wf) {g : ArmState → ArmState} (hg : AgreesAt RA g)
     {ra : BitVec 64} (hent : AbiCall RA.fb RA.base ra RA.s0) {mon : Mon} {L : List Lab}
     {t1 : ArmState × Mon} (hr : PRun Policy.arm g (OkPriv RA) (RA.s0, mon) L t1)
-    (hL : L.length ≤ (prologueLines RA.af.frameSize).length) :
+    (hL : L.length ≤ (prologueLines RA.af.saves RA.af.frameSize).length) :
     t1.1 = iterN RA.step L.length RA.s0 ∧ PrivW (PrivA RA) (evTr L) ∧
       ∀ p y, evAt (evTr L) p = some y → y.k = .plainW := by
   have hlat := prologue_linesAt hR hent
@@ -87,7 +87,7 @@ theorem arm_isel_refines_abiCRNX {RA : RL} (hR : RA.Wf) (hsc : MemScopeLSC RA)
     (hsig : args.map (·.ty) = f.sig.params.map (·.ty))
     {m₀ : Loc → CV} {w₀ : Arm.ArmState} (hmr : MR slots cs.mem w₀)
     (hargs : ArgsAtEntry RA.F f.sig args w₀)
-    (hq : Q RA (iterN RA.step (prologueLines RA.af.frameSize).length RA.s0)
+    (hq : Q RA (iterN RA.step (prologueLines RA.af.saves RA.af.frameSize).length RA.s0)
       (MConf.init RA.rf m₀ w₀)) (hA : AInv RA (MConf.init RA.rf m₀ w₀)) {mon : Mon}
     {ls : List Lab} {t' : ArmState × Mon} (hr : PRun Policy.arm g (OkPriv RA) (RA.s0, mon) ls t') :
     ∃ k trS t ψ, k ≤ ls.length ∧ CallCompose.XClosed (evTr (ls.take k)) ∧ CRun env p (.run cs) trS t ∧
@@ -100,7 +100,7 @@ theorem arm_isel_refines_abiCRNX {RA : RL} (hR : RA.Wf) (hsc : MemScopeLSC RA)
           MatchRun cc ins ckeep (fun r => m₀ (.reg r)) cM' vP') ∨
         (∃ tE s', PRun Policy.arm g (OkPriv RA) (RA.s0, mon) (ls.take k) tE ∧ t = .run s' ∧
           AtRetS s' ∧ RetEnd RA ra env p MR slots (fun r => m₀ (.reg r)) tE.1 s')) := by
-  generalize hP : (prologueLines RA.af.frameSize).length = P at hq
+  generalize hP : (prologueLines RA.af.saves RA.af.frameSize).length = P at hq
   have hpp : ∀ {L : List Lab} {t1 : ArmState × Mon},
       PRun Policy.arm g (OkPriv RA) (RA.s0, mon) L t1 → L.length ≤ P →
       t1.1 = iterN RA.step L.length RA.s0 ∧ PrivW (PrivA RA) (evTr L) ∧
@@ -173,7 +173,7 @@ theorem arm_isel_refines_abiCRN {RA : RL} (hR : RA.Wf) (hsc : MemScopeLSC RA)
     (hsig : args.map (·.ty) = f.sig.params.map (·.ty))
     {m₀ : Loc → CV} {w₀ : Arm.ArmState} (hmr : MR slots cs.mem w₀)
     (hargs : ArgsAtEntry RA.F f.sig args w₀)
-    (hq : Q RA (iterN RA.step (prologueLines RA.af.frameSize).length RA.s0)
+    (hq : Q RA (iterN RA.step (prologueLines RA.af.saves RA.af.frameSize).length RA.s0)
       (MConf.init RA.rf m₀ w₀)) (hA : AInv RA (MConf.init RA.rf m₀ w₀)) {mon : Mon}
     {ls : List Lab} {t' : ArmState × Mon} (hr : PRun Policy.arm g (OkPriv RA) (RA.s0, mon) ls t') :
     ∃ k trS t ψ, k ≤ ls.length ∧ CRun env p (.run cs) trS t ∧
