@@ -1,5 +1,5 @@
 import FV.Backend.Proof.StockMemoryReturnRefines
-import FV.Backend.Proof.StockMemoryScanRefines
+import FV.Backend.Proof.StockMemoryAutoScan
 import FV.Backend.Proof.StockMemoryBodyFixture
 import FV.Backend.Proof.StockMemorySelectedWitness
 import FV.Backend.Proof.RefinesCSem
@@ -91,11 +91,11 @@ private theorem body_run (input : RecordInput) {term : ScanRecord} {body : Block
           (Backend.lowerFunction.resolve input.result.final.alias (input.result.final.alias.size+1)))) ρ w =
             some (.fall ρ' w') ∧
           GuardedScanRel function input.result input.event.ctx input.event.block MR term.output.state s' ρ' w' := by
-  have normal := stock_lower_load_scan_fall_refines input.run scope dominated input.events input.records
+  have normal := stock_lower_load_scan_fall_refines_auto input.run scope dominated input.events input.records
     (bi := input.event.block) (j := 0) (b := function.blocks[1]!) (stm := ⟨[2],.load .load .i32 flags 0 0⟩)
     split.block rfl (by rw [input.atBlock]; exact input.current)
     input.source input.clif input.results rfl input.mapped input.parameter input.pointer
-    input.recorded input.emitted input.selected stable memorySem memoryOk (env := env) (cp := cp)
+    input.recorded input.emitted stable memorySem memoryOk (env := env) (cp := cp)
   have each : ∀ r ∈ body.records,ScanFallRefines (IndexedSourceInst env cp function input.event.ctx input.event.block)
       isem input.result.final.alias (GuardedScanRel function input.result input.event.ctx input.event.block MR) r := by
     intro r member
