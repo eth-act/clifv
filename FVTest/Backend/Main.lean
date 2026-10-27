@@ -1,5 +1,5 @@
 import FV.Backend
-import FV.Backend.ParameterCfgNIProduction
+import FV.Backend.MemoryNIProduction
 import FV.Opt.Legalize128Pass
 import FV.Opt.LegalExn
 import FVTest.Opt.Common
@@ -210,7 +210,7 @@ def run (input output : String) (o : Opts) : IO UInt32 := do
   -- the allocation of each function as lowered (by VCode name), for the unwinding checks
   let records ← IO.mkRef (#[] : Array (String × AllocRecord))
   let fa ← match stock with
-    | none => compileFileParameterCfgNIWhen (!o.opt.isSome &&
+    | none => compileFileMemoryNIWhen (!o.opt.isSome &&
         !(pf.funcs.any fun p => p.func.toOption.any fun f => f.blocks.any (·.term.isTry))) (fun vcs => do
         let (afs, recs) ← allocRecordingNamed ra alloc vcs
         records.set ((vcs.map (·.name)).zip recs)
