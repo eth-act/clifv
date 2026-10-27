@@ -53,7 +53,7 @@ theorem arm_alloc_refinesQ {R : RL}
         (PrepThread.conv (evTr (ls.take n))) ψ ∧
       (n = ls.length ∨ (Done R cE ∧ ∃ t, RelQ R t cE)) := by
   obtain ⟨n, trS, cE, ψ, hn, hs, href, hend⟩ :=
-    refines_of_itemSim (ItemSim.withRel hsim) hr (show RelQ R (s, mon) c from ⟨hq, hA⟩)
+    refines_of_itemSim (ItemSim.withRel hsim) hr (RelQ.of (t := (s, mon)) hq hA)
   exact ⟨n, trS, cE, ψ, hn, mtrun_of_srun hs, href, hend⟩
 
 /-- **`arm_alloc_refines_ls` ending at a related configuration.** -/
@@ -197,6 +197,49 @@ theorem srcStep_of_mstep {R : RL} (hcov : CoveredCode R) (hX : TlsMemFree R.X) {
     · rw [hp]
       exact .op hvb hi hops hsz hsem hlen hho hclob hnext
 
+/-- **`srcStep_of_mstep` at a `RelQ`-related configuration**: in a return tail the item is a
+move (a thread step without events) or the tail's `rets`, whose footprint needs no fact of the
+store. -/
+theorem srcStep_of_mstepQA {R : RL} (hcov : CoveredCode R) (hX : TlsMemFree R.X)
+    {t : ArmState × Mon} {c c' : MConf CV ArmState} (hqa : RelQ R t c)
+    (hs : MStep R.vc R.sem ckeep R.rf c c') : ∃ evs c'', SrcStep R c evs c'' := by
+  rcases hqa with ⟨hq, -⟩ | hrt
+  · exact srcStep_of_mstep hcov hX hq hs
+  cases hs with
+  | move => exact ⟨[], _, .move⟩
+  | @op b k allocs its m w vb i ops outs outs' w' ctl m2 c' hvb hi hops hsz hsem hlen hho hclob
+      hnext =>
+    simp only [RetTail] at hrt
+    obtain ⟨mt, D, hq, -, vb', pend, k', a', rest, us, hvb', he, hk', htl⟩ := hrt
+    obtain rfl : i = .rets us := by
+      rcases pend with _ | ⟨it, pend⟩
+      · simp only [List.nil_append, List.cons.injEq, RItem.op.injEq] at he
+        obtain ⟨⟨rfl, -⟩, -⟩ := he
+        rw [hvb] at hvb'; cases hvb'; rw [hi] at hk'; cases hk'; rfl
+      · simp only [List.cons_append, List.cons.injEq] at he
+        obtain ⟨rfl, -⟩ := he
+        simp [retTailOk, RItem.restoreReg, RItem.avoids] at htl
+    obtain ⟨hnc, hnt, -⟩ := hcov b vb k _ hvb hi
+    have hstr := q_stRel hq
+    have herrw : Arm.r .ERR w = .None := by
+      rw [← hstr.world.1 .ERR (by simp [Masked]), hstr.err]
+    have hst : (MInst.rets us).isCtl = false →
+        csemWF R.ctx (.rets us) (itemUses ops allocs m) = true ∧ CheckSPAlignment w :=
+      fun h => by simp [MInst.isCtl] at h
+    have hfoot := ifoot_csem (F := R.F) (ctx := R.ctx) (uses := itemUses ops allocs m) hX herrw
+      hnc hnt hst
+    have hsemC : csem R.F R.ctx R.X (.rets us) (itemUses ops allocs m) w = some (outs, w', ctl) := by
+      rw [← R.sem_eq hnc hnt]; exact hsem
+    have hp := patch_of_agrees (agrees_cEvs herrw hfoot hsemC)
+    refine ⟨cEvs R.F R.ctx (.rets us) (itemUses ops allocs m) w, c', .op hvb hi hops ?_ ?_ ?_⟩
+    · rw [hp]
+    · rw [hp]
+      unfold IFoot at hfoot ⊢
+      simp only [R.sem_eq hnc hnt]
+      exact hfoot
+    · rw [hp]
+      exact .op hvb hi hops hsz hsem hlen hho hclob hnext
+
 /-! ## All layers -/
 
 /-- **All layers composed, the realized prefix the whole run or ending where the CLIF thread
@@ -266,11 +309,11 @@ theorem arm_isel_refines_fullR {RA : RL} (hgv : RA.gv = fun _ _ => False) (hcov 
   rcases hendm with ⟨h, cE', hmst⟩ | h
   · have hk' := hkfull (by simp [conv, h])
     rw [hlenA] at hk'
-    rcases hend with h' | ⟨hD, t0, hq0, -⟩
+    rcases hend with h' | ⟨hD, t0, hq0⟩
     · exact .inl (hk'.trans h')
     · exfalso
       rw [← hsem] at hmst
-      obtain ⟨evs, c'', hs⟩ := srcStep_of_mstep hcov hX hq0 hmst
+      obtain ⟨evs, c'', hs⟩ := srcStep_of_mstepQA hcov hX hq0 hmst
       rcases hD with ⟨vals, m', w', rfl⟩ | ⟨w', rfl⟩ | hD
       · cases hmst
       · cases hmst

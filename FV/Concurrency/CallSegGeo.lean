@@ -75,7 +75,7 @@ theorem Nested.privA_callee_out (hB : StackAvail B.K B.af B.s0) (hn : Nested A B
       by_cases c2 : (x - B.spB).toNat < B.fr.size
       · refine Or.inl (Or.inl (Or.inl ?_))
         unfold frameF; rw [ho]; left; exact ⟨by omega, by omega⟩
-      by_cases c3 : (x - B.spB).toNat < B.af.frameSize
+      by_cases c3 : (x - B.spB).toNat < B.af.frameSize - clobberBytes B.af.saves
       · refine Or.inr (Or.inl ?_)
         unfold slotArea; exact ⟨by omega, c3⟩
       · refine Or.inl (Or.inl (Or.inl ?_))
