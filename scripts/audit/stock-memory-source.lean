@@ -29,3 +29,8 @@ import FV.Backend.Proof.StockMemoryGuardedWitness
 #print axioms Backend.Stock.Memory.LoadFixture.record_input
 #print axioms Backend.Stock.Memory.LoadFixture.actual_load_record_witness
 #print axioms Backend.Stock.Memory.LoadFixture.guarded_load_source_witness
+#print axioms Backend.Stock.Memory.stock_match_load_i32
+#print axioms Backend.Stock.Memory.stock_lower_load_selected_receipts
+#print axioms Backend.Stock.Memory.stock_lower_load_selected_values
+#print axioms Backend.Stock.Memory.LoadFixture.RecordInput.selected
+#print axioms Backend.Stock.Memory.LoadFixture.selected_receipts_witness

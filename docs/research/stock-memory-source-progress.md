@@ -67,3 +67,22 @@ source metadata, lift the memory record through the existing guarded body and
 entry/return composition, and discharge the semantic memory read boundary from
 the original world relation. Retain full earlier production fallback and all
 original #140 obligations; this checkpoint is backed up without a fragment PR.
+
+## Actual selected-rule receipts
+
+`StockMemorySelected` derives the original load's endian/data/type facts,
+matches its actual root, and extracts typed RHS/named-root executions from the
+real retained selected ID. `StockMemorySelectedValues` feeds those derived
+receipts into the existing memory transfer. The earlier guarded nonzero-heap
+source-step witness now uses this adapter, preserving its public statement.
+No separate RHS/root/endian certificate is needed at this interface.
+
+Focused maintained gates in `/tmp/stock-memory-selected-gates-v1` pass the
+664-module closure and all32 audited roots, using only standard axioms. The
+previous4208-module/98-file full validation remains the earlier checkpoint,
+not a claim of full production validation for these additions.
+
+Next adapt this transfer to the existing restricted-DFG guarded scan invariant,
+derive pointer demand from actual marking and emission/unsunk classification
+from the original source class, and compose whole bodies/blocks/ABI entry and
+return. Then resolve memory read/NI transport and activate complete consumers.
