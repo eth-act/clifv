@@ -266,7 +266,7 @@ run-restricted contract.
 - #575 `VCodeSemIDriver.lean`: `DriverSemG.csemI`, `LowerTermOk.csemI`; witness
   `driverSemG_csemI`. With these the generic `Driver.DriverHyp` fields `dsem`, `insts` and
   `terms` hold for the counted world once the per-index `csem` ones do.
-- step 2f `FV/E2E/LinkArmProph.lean`: the first worklist item below. `LinkSys.calleeRgn κ M g w`
+- #643 (step 2f) `FV/E2E/LinkArmProph.lean`: the first worklist item below. `LinkSys.calleeRgn κ M g w`
   is `Cond`'s own callee region `StackBelow (frameDrop (A g).af + κ (M - 1) g) (spv w)` (the plan's
   `StackBelow K (sp w)`, inside `F` and outside the image under `Cond`); `worldP` overlays it by
   the prophecy `Pn` (`StaleRegion.overlay`), and `canonP`/`CondP`/`progXP` are
