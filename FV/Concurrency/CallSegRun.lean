@@ -39,40 +39,40 @@ def SpsOk (spB : BitVec 64) (M : Nat) (l : List (BitVec 64)) : Prop :=
 
 /-- **The run invariant of an activation** (module doc). -/
 structure SegInv (p : Program) (fr : String → Option (Nat × (SlotId → Nat))) (M : Nat)
-    (spB : BitVec 64) (K : Nat) (m0 : Mem) (S : State) : Prop where
+    (spB : BitVec 64) (sps0 : List (BitVec 64)) (K : Nat) (m0 : Mem) (S : State) : Prop where
   linv : LInv p S
-  place : ∃ l sps0, S.mem.place = some ⟨l ++ spB :: sps0, fr, none⟩ ∧
+  place : ∃ l, S.mem.place = some ⟨l ++ spB :: sps0, fr, none⟩ ∧
     l.length = S.callers.length ∧ SpsOk spB M l
   allocs : ∀ x ∈ S.mem.allocs, (∀ a k, x.contains a k = true → m0.valid a k = true) ∨
     (spB.toNat ≤ x.base + K ∧ x.base + x.size ≤ spB.toNat)
 
 variable {p : Program} {fr : String → Option (Nat × (SlotId → Nat))} {M : Nat} {spB : BitVec 64}
-  {K : Nat} {m0 : Mem}
+  {sps0 : List (BitVec 64)} {K : Nat} {m0 : Mem}
 
 /-- At the start of a segment (depth `0`, memory `m0`). -/
 theorem segInv_start {S : State} (hI : LInv p S) (hc : S.callers = [])
-    {sps0 : List (BitVec 64)} (hpl : S.mem.place = some ⟨spB :: sps0, fr, none⟩) :
-    SegInv p fr M spB K S.mem S :=
-  ⟨hI, ⟨[], sps0, hpl, by rw [hc]; rfl, fun i h => absurd h (Nat.not_lt_zero _)⟩,
+    (hpl : S.mem.place = some ⟨spB :: sps0, fr, none⟩) :
+    SegInv p fr M spB sps0 K S.mem S :=
+  ⟨hI, ⟨[], hpl, by rw [hc]; rfl, fun i h => absurd h (Nat.not_lt_zero _)⟩,
     fun x hx => .inl fun a k hc => List.any_eq_true.mpr ⟨x, hx, hc⟩⟩
 
 /-- `SegInv` does not depend on the bytes. -/
 theorem segInv_withBytes {S : State} {B : Bytes} :
-    SegInv p fr M spB K m0 (withBytes S B) ↔ SegInv p fr M spB K m0 S :=
+    SegInv p fr M spB sps0 K m0 (withBytes S B) ↔ SegInv p fr M spB sps0 K m0 S :=
   ⟨fun ⟨a, b, c⟩ => ⟨a, b, c⟩, fun ⟨a, b, c⟩ => ⟨a, b, c⟩⟩
 
 /-- **A step keeps `SegInv`** (module doc). -/
 theorem segInv_step (hP : ∀ g ∈ p.funcs, LinkFree g) {env : Env} (hk : EnvKeepsAllocs env)
     (hkp : EnvKeepsPlace env) (hpo : PlaceOk p fr M) (hKs : K ≤ spB.toNat) {S S1 : State}
-    (hI : SegInv p fr M spB K m0 S) (h : step env p S = .next S1)
-    (hd : S1.callers.length * M ≤ K) : SegInv p fr M spB K m0 S1 := by
+    (hI : SegInv p fr M spB sps0 K m0 S) (h : step env p S = .next S1)
+    (hd : S1.callers.length * M ≤ K) : SegInv p fr M spB sps0 K m0 S1 := by
   have hI1 := (step_next_linv hP hI.linv h).1
-  obtain ⟨l, sps0, hpl, hlen, hsps⟩ := hI.place
+  obtain ⟨l, hpl, hlen, hsps⟩ := hI.place
   rcases step_next_cases hP hI.linv h with ⟨hc, -, ⟨hp1, hal⟩ | ⟨n, g, vals, rv, hg, hr⟩⟩ |
       ⟨c, hc, -, g, vals, he⟩ | ⟨c, hc, -, hm⟩
-  · exact ⟨hI1, ⟨l, sps0, by rw [hp1, hpl], by rw [hc, hlen], hsps⟩,
+  · exact ⟨hI1, ⟨l, by rw [hp1, hpl], by rw [hc, hlen], hsps⟩,
       fun x hx => hI.allocs x (hal ▸ hx)⟩
-  · exact ⟨hI1, ⟨l, sps0, by rw [hkp n g hg vals S.mem rv S1.mem hr, hpl], by rw [hc, hlen], hsps⟩,
+  · exact ⟨hI1, ⟨l, by rw [hkp n g hg vals S.mem rv S1.mem hr, hpl], by rw [hc, hlen], hsps⟩,
       fun x hx => hI.allocs x (hk n g hg vals S.mem rv S1.mem hr x hx)⟩
   · -- a call: the callee's slots placed below the caller's stack pointer
     obtain ⟨b, regs, -, -, -, -, hal, hfr⟩ := Opt.enterFunc_ok he
@@ -103,7 +103,7 @@ theorem segInv_step (hP : ∀ g ∈ p.funcs, LinkFree g) {env : Env} (hk : EnvKe
       rw [BitVec.toNat_sub_of_le (by
         rw [BitVec.le_def, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hd64]; exact hdtop),
         BitVec.toNat_ofNat, Nat.mod_eq_of_lt hd64]
-    refine ⟨hI1, ⟨(top - BitVec.ofNat 64 d) :: l, sps0, ?_, ?_, ?_⟩, fun x hx => ?_⟩
+    refine ⟨hI1, ⟨(top - BitVec.ofNat 64 d) :: l, ?_, ?_, ?_⟩, fun x hx => ?_⟩
     · rw [hpl', ← htop]; rfl
     · simp [hc, hlen]
     · intro i hi
@@ -131,7 +131,7 @@ theorem segInv_step (hP : ∀ g ∈ p.funcs, LinkFree g) {env : Env} (hk : EnvKe
       cases l with
       | nil => simp at hlen
       | cons y l' => exact ⟨y, l', rfl⟩
-    refine ⟨hI1, ⟨l', sps0, ?_, by simpa using hlen, fun i hi => ?_⟩, fun x hx => ?_⟩
+    refine ⟨hI1, ⟨l', ?_, by simpa using hlen, fun i hi => ?_⟩, fun x hx => ?_⟩
     · rw [hm]
       simp only [Mem.leave, Mem.free, hpl, List.cons_append, List.tail_cons]
     · have := hsps (i + 1) (by simp; omega)
@@ -166,14 +166,14 @@ theorem cstep_next {env : Env} {S S1 : State} {evs : List (Ev SKind BVal)}
 /-- `SegInv` is a property of a state up to its bytes. -/
 theorem segInv_congr {S S' : State}
     (h : withBytes S (fun _ => none) = withBytes S' (fun _ => none)) :
-    SegInv p fr M spB K m0 S → SegInv p fr M spB K m0 S' := by
+    SegInv p fr M spB sps0 K m0 S → SegInv p fr M spB sps0 K m0 S' := by
   intro hI
   have e1 : S.frame = S'.frame := congrArg (·.frame) h
   have e2 : S.callers = S'.callers := congrArg (·.callers) h
   have e3 : S.mem.allocs = S'.mem.allocs := congrArg (·.mem.allocs) h
   have e4 : S.mem.place = S'.mem.place := congrArg (·.mem.place) h
-  obtain ⟨hl, ⟨l, sps0, hp, hlen, hs⟩, ha⟩ := hI
-  refine ⟨⟨e1 ▸ hl.1, fun c hc => hl.2 c (e2 ▸ hc)⟩, ⟨l, sps0, e4 ▸ hp, e2 ▸ hlen, hs⟩,
+  obtain ⟨hl, ⟨l, hp, hlen, hs⟩, ha⟩ := hI
+  refine ⟨⟨e1 ▸ hl.1, fun c hc => hl.2 c (e2 ▸ hc)⟩, ⟨l, e4 ▸ hp, e2 ▸ hlen, hs⟩,
     fun x hx => ha x (e3 ▸ hx)⟩
 
 /-- **The memory events of an activation's run** (module doc): in `m0`'s valid ranges or in the
@@ -184,7 +184,7 @@ theorem segInv_crun (hP : ∀ g ∈ p.funcs, LinkFree g) {env : Env} (hk : EnvKe
     {ext : List (Frame × List ValueId)} (hbud : (Dcap - ext.length) * M ≤ K) :
     ∀ {S : State} {trS : List (List (Ev SKind BVal))} {t : TState},
       CRun env p (.run S) trS t → RReach env p c0 (.run (pushC ext S)) →
-      SegInv p fr M spB K m0 S →
+      SegInv p fr M spB sps0 K m0 S →
       ∀ evs ∈ trS, ∀ x ∈ evs, x.dir ≠ .F →
         m0.valid x.loc x.n = true ∨ (spB.toNat ≤ x.loc + K ∧ x.loc + x.n ≤ spB.toNat)
   | _, _, _, .nil, _, _ => fun _ h => absurd h List.not_mem_nil
@@ -216,7 +216,7 @@ theorem segInv_crun (hP : ∀ g ∈ p.funcs, LinkFree g) {env : Env} (hk : EnvKe
         have hd1' : S1'.callers.length * M ≤ K := by
           have : S1'.callers = S1.callers := congrArg (·.callers) he
           rw [this]; exact hd1
-        have hI1 : SegInv p fr M spB K m0 S1 :=
+        have hI1 : SegInv p fr M spB sps0 K m0 S1 :=
           segInv_congr he (segInv_step hP hk hkp hpo hKs (segInv_withBytes.mpr hI) hst hd1')
         exact segInv_crun hP hk hkp hpo hKs hdep hbud r hR1 hI1 evs hevs x hx hd
 

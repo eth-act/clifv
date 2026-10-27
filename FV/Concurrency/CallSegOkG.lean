@@ -303,6 +303,8 @@ structure Act where
   /-- addresses no CLIF read of the activation's segments starts at (its frame padding and the
   callers' private sets outside its slots) -/
   N : Nat → Prop := fun _ => False
+  /-- the slot-placement oracle's stack pointers below the activation's (its callers') -/
+  sps : List (BitVec 64) := []
 
 /-- The activation's `RL` in the link. -/
 abbrev Act.RL (L : Link) (g : Act) : Backend.Proof.RL := L.act g.F g.s0 g.K g.G
@@ -366,11 +368,11 @@ def FnOk (L : Link) (env : Clif.Env) (p : Clif.Program) (syms : String → Optio
     (cc : CheckCtx) (ins : Array (Option AState)) (a0 : AState),
     ∀ (s0 : ArmState) (K : Nat) (G : BitVec 64 → Prop) (ra c : BitVec 64)
       (slots : List (Clif.SlotId × Nat)) (ext : List (Clif.Frame × List Clif.ValueId))
-      (caller : LFn) (opens : List (Clif.Mem × Nat)) (N : Nat → Prop),
+      (caller : LFn) (opens : List (Clif.Mem × Nat)) (N : Nat → Prop) (sps : List (BitVec 64)),
       (L.act F s0 K G).Wf → AbiCall F.fb F.base ra s0 → c.toNat % 16 = 0 →
       StatOk L env p ⟨nm, F, s0, K, G, ra, f, vc, ctx, st0, R, gn, bl, A,
         ⟨(L.act F s0 K G).F, syms, (L.act F s0 K G).ctx.slotBase, 0⟩, c, Lp, ss, ss', cc, ins, a0,
-        slots, ext, caller, opens, N⟩
+        slots, ext, caller, opens, N, sps⟩
 
 /-- The pause of a chain segment at a call: the three relations and `Q` at the paused `call`. -/
 def CallPz (L : Link) (g : Act) (r₀ : Reg → CV) (x0 : ArmState × Mon) (P : List Lab)

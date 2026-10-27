@@ -47,16 +47,18 @@ theorem callee_chainP {L : Link} {env : Clif.Env} {p : Clif.Program}
     (hty : vals.map (·.ty) = B0.params.map (·.2))
     (hsigc : vals.map (·.ty) = fB.sig.params.map (·.ty))
     (ext : List (Clif.Frame × List Clif.ValueId)) (caller : LFn) (opens : List (Clif.Mem × Nat))
-    (N : Nat → Prop) :
+    (N : Nat → Prop) (sps : List (BitVec 64)) :
     ∃ h : Act, h.nm = e.name ∧ h.F = FB ∧ h.s0 = enter FB x ∧ h.K = KB ∧
       h.G = (g.RL L).FK ∧ h.ra = Arm.r .PC x + 4#64 ∧ h.f = fB ∧
       h.slots = (Clif.enterSlots fB s'.mem).1 ∧ h.ext = ext ∧ h.caller = caller ∧
-      h.opens = opens ∧ h.N = N ∧ StatOk L env p h ∧
+      h.opens = opens ∧ h.N = N ∧ h.sps = sps ∧ h.Γ.syms = syms ∧ StatOk L env p h ∧
       (∀ mon, ChainP L env p h (h.r0 L) (h.s0, mon) cs) ∧ CodeIn L (h.RL L) ∧
-      Nested (g.RL L) (h.RL L) ∧ L.M x = enter FB x ∧ stepEvs x = [] ∧ cls x = .plain := by
+      Nested (g.RL L) (h.RL L) ∧ L.M x = enter FB x ∧ stepEvs x = [] ∧ cls x = .plain ∧
+      (∀ f, f ≠ .PC → f ≠ .GPR 30#5 → Arm.r f (enter FB x) = Arm.r f x) ∧
+      xreg 30 (enter FB x) = Arm.r .PC x + 4#64 := by
   have huniq : ∀ e' ∈ g.f.externs, e'.2.name = e.name → e'.2 = e :=
     fun e' he' hn => hS.uniq e' he' _ (CallSegOkG.mem_of_lookup (hm2.2.1 ▸ he)) hn
-  obtain ⟨hM, hev, hcls, hWf, habi, -, -, -, hQ, hAI, hargs, hcinB, hnest⟩ :=
+  obtain ⟨hM, hev, hcls, hWf, habi, hfx, hlr, -, hQ, hAI, hargs, hcinB, hnest⟩ :=
     call_endK hS.ok hS.mem hS.wf hcin hS.H hS.chk hS.res hS.cu hS.low hS.ind hS.ver hS.nt hS.out0
       hS.slot hS.sym hS.noCall hS.H3 hS.checked hS.uv hS.dv hq hP hm2 hm3 hm4 hbody hcl he huniq
       hvals htys hB hFn.1 hKB hsig
@@ -86,9 +88,10 @@ theorem callee_chainP {L : Link} {env : Clif.Env} {p : Clif.Program}
       simp only [hf, Bool.false_eq_true, ite_false] at hle ⊢; omega
   obtain ⟨-, -, -, vc, ctx, st0, R, gn, bl, A, Lp, ss, ss', cc, ins, a0, hst⟩ := hFn
   have hSB := hst (enter FB x) KB (g.RL L).FK (Arm.r .PC x + 4#64)
-    (spv (bodyOf FB.af (enter FB x))) (Clif.enterSlots fB s'.mem).1 ext caller opens N hWf habi hal
-  refine ⟨_, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, hSB, fun mon => ?_, hcinB,
-    hnest, hM, hev, hcls⟩
+    (spv (bodyOf FB.af (enter FB x))) (Clif.enterSlots fB s'.mem).1 ext caller opens N sps hWf habi
+    hal
+  refine ⟨_, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, hSB,
+    fun mon => ?_, hcinB, hnest, hM, hev, hcls, hfx, hlr⟩
   exact chainP_entry hSB hB0 hcall hfunc (by rw [hslots]) hbodyc htermc hregs hty
     (by rw [hsigc]) (by rw [hmem]; exact hrel) hargs hQ hAI
 
