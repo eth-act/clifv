@@ -5,25 +5,42 @@ import FV.E2E.PairDriver
 /-!
 # The return of an allocated activation on the machine (#473, (1))
 
-**`rets_alloc`**: at a `rets` item of the allocated code, with layer 4b's `Q` and the
-allocation checker's relation (`MatchRun`) to a VCode configuration, the epilogue and the `ret`
-(`RegLevelFrame.ret_machine`) reach the return address with `sp` as at entry and the memory
+**`rets_alloc`**: at a `rets` item of the allocated code, with layer 4b's relation (`QA`: `Q`,
+or a return tail whose callee restores ran at the level of the allocated code only) and the
+allocation checker's relation (`MatchRun`) to a VCode configuration, Cranelift's epilogue and the
+`ret` (`RegLevelFrame.ret_machine`) reach the return address with `sp` as at entry and the memory
 kept, the returned VCode values (the `rets`' uses) in their fixed registers, and every
 callee-saved register holding, up to `ckeep` (the low halves of v8–v15), the checker's entry
 value `r₀` (the checker's `.ret` relation after the allocated `rets` step,
-`RegallocSound.sim_step_at`, as in `regLevelCorrect_world_atX`).
+`RegallocSound.sim_step_at`, as in `regLevelCorrect_world_atX`, for the registers the function
+does not save; the epilogue's pops, for the ones it saves, give their values at entry, which are
+`r₀`'s by `hr₀`).
 -/
 
 namespace Concurrency.CallRetsAlloc
 
 open Arm ArmThread Backend Backend.Proof E2E VCodeThread
 
-/-- **The allocated activation's return on the machine** (module doc). -/
+/-- Equal 8-byte slot values give equal callee-preserved parts. -/
+theorem ckeep_regVal_of_slotVal {t u : ArmState} {r : Reg} (h : slotVal t r = slotVal u r)
+    (hr : r ∈ calleeSaved) : ckeep r (regVal t r) = ckeep r (regVal u r) := by
+  rcases calleeSaved_cases hr with ⟨n, rfl, -⟩ | ⟨n, rfl, -⟩
+  · simp only [slotVal] at h
+    simp only [regVal, ckeep, h]
+  · simp only [slotVal] at h
+    simp only [regVal, ckeep, h]
+
+/-- **The allocated activation's return on the machine** (module doc). The relation at the
+`rets` is `QA` (`RelQ`): in a return tail the store differs from the machine's at the restored
+registers. `hr₀`: the registers the prologue pushes (`R.af.saves`) come back with their values at
+the ABI entry, so the checker's entry values must be those (Cranelift's frame: the restores emit
+no code, the save slots are not `Q`'s locations). -/
 theorem rets_alloc {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb R.base ra R.s0)
     {c : CheckCtx} {ins : Array (Option AState)} {a0 : AState}
     (hc : CheckedAt R.vc R.rf c ins a0) {r₀ : Reg → CV}
+    (hr₀ : ∀ r ∈ R.af.saves, ckeep r (r₀ r) = ckeep r (regVal R.s0 r))
     {s : ArmState} {b k : Nat} {allocs : Array Loc} {its : List RItem} {m : Loc → CV}
-    {w : ArmState} (hq : Q R s (.run ⟨b, .op k allocs :: its, m, w⟩)) {vs : VState CV ArmState}
+    {w : ArmState} (hqa : QA R s (.run ⟨b, .op k allocs :: its, m, w⟩)) {vs : VState CV ArmState}
     (hm : MatchRun c ins ckeep r₀ ⟨b, .op k allocs :: its, m, w⟩ vs) {vb : VBlock}
     {us : List (Reg × Reg)} (hvb : R.vc.blocks[b]? = some vb)
     (hi : vb.insts[k]? = some (.rets us)) :
@@ -79,16 +96,14 @@ theorem rets_alloc {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb R.
       cases hn with
       | ret _ =>
       rw [Backend.Proof.rets_store hlen2 rfl hho hcl] at hks
-      have hst := q_stRel hq
-      obtain ⟨n, ht, hpc, herr, hsp, -, hregs, hmem, -, hprogF, hvalsM⟩ :=
-        ret_machine hR hent hq hvbV hi
+      obtain ⟨n, ht, hpc, herr, hsp, -, hregs, hsaved, hmem, -, hprogF, hvalsM⟩ :=
+        ret_machine hR hent hqa hvbV hi
       refine ⟨n, _, operands_retsC ns, ht, hpc, herr, hsp, hmem, hprogF, fun r hr => ?_,
         fun j v p x hj hx => ?_⟩
-      · have hal := CallResumeL.calleeSaved_allocatable r hr
-        have hs1 : m (.reg r) = regVal s r :=
-          hst.store (.reg r) (fun r' e => by cases e; exact hal) trivial
-        rw [hregs r hal, ← hs1]
-        exact hks r hr
+      · by_cases hsv : r ∈ R.af.saves
+        · rw [ckeep_regVal_of_slotVal (hsaved r hsv) hr, hr₀ r hsv]
+        · rw [hregs r (CallResumeL.calleeSaved_allocatable r hr) hsv]
+          exact hks r hr
       · rw [← huses] at hx
         exact hvalsM _ (operands_retsC ns) j v p x hj hx
 /-! ## The VCode return at the `rets` (layers 2/3) -/
