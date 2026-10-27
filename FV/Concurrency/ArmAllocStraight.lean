@@ -4,8 +4,9 @@ import FV.Concurrency.ArmAllocItem
 # Layer 4b for the items without memory events (T2h, #311)
 
 The per-item obligation `ArmAllocThread.ItemSim` of layer 4b for the register-level relation
-(`RelQ`: `Q ∧ AInv`) and the allocated code's thread step (`SrcStep`: `AllocThread.MTStep` under
-the activation's `csem`, events `cEvs`), for the items whose instruction has no memory kind
+(`RelQ`: `QA`, i.e. `Q ∧ AInv` or a return tail) and the allocated code's thread step
+(`SrcStep`: `AllocThread.MTStep` under the activation's `csem`, events `cEvs`), for the items
+whose instruction has no memory kind
 (`Code.akinds`): the straight-line covered forms without memory access (`FormOk`), `args`, and
 every item whose step ends the function (`rets`, `udf`: the Arm run after it is the caller's):
 
@@ -27,8 +28,25 @@ open Code VCodeEvents
 abbrev SrcStep (R : RL) : MConf CV ArmState → List Ev → MConf CV ArmState → Prop :=
   MTStep R.vc R.rf R.sem ckeep (cEvs R.F R.ctx)
 
-/-- The register-level relation at item boundaries (the monitor is free). -/
-def RelQ (R : RL) (t : ArmState × Mon) (c : MConf CV ArmState) : Prop := Q R t.1 c ∧ AInv R c
+/-- The register-level relation at item boundaries (the monitor is free): `QA`, i.e. `Q ∧ AInv`,
+or a return tail (`RetTail`: the callee restores emit no code, the epilogue's pops restore the
+saved registers, so after a restore the store is the machine's but at the restored registers). -/
+def RelQ (R : RL) (t : ArmState × Mon) (c : MConf CV ArmState) : Prop := QA R t.1 c
+
+theorem RelQ.of {R : RL} {t : ArmState × Mon} {c : MConf CV ArmState} (hq : Q R t.1 c)
+    (hA : AInv R c) : RelQ R t c := .inl ⟨hq, hA⟩
+
+/-- `RelQ` at a configuration that is not running. -/
+theorem relQ_ret {R : RL} {t : ArmState × Mon} {vals : List CV} {m : Loc → CV} {w : ArmState} :
+    RelQ R t (.ret vals m w) := .inl ⟨trivial, trivial⟩
+
+theorem relQ_halt {R : RL} {t : ArmState × Mon} {w : ArmState} : RelQ R t (.halt w) :=
+  .inl ⟨trivial, trivial⟩
+
+/-- `RelQ` at an item gives `Q` with the machine's store. -/
+theorem RelQ.q {R : RL} {t : ArmState × Mon} {b : Nat} {its : List RItem} {m : Loc → CV}
+    {w : ArmState} (h : RelQ R t (.run ⟨b, its, m, w⟩)) : ∃ mt, Q R t.1 (.run ⟨b, its, mt, w⟩) :=
+  qa_q h
 
 /-- The allocated code is done: returned, trapped, or without a step (undefined behaviour). -/
 def Done (R : RL) (c : MConf CV ArmState) : Prop :=
@@ -100,21 +118,85 @@ theorem lines_at {R : RL} {j : Nat} {ls1 T : List Line} (h : R.L.drop j = ls1 ++
   rw [this, List.getElem?_append_left (List.getElem?_eq_some_iff.1 hk).1]
   exact hk
 
+/-- A `rets` item's step returns. -/
+theorem srcStep_rets {R : RL} {b k : Nat} {allocs : Array Loc} {its : List RItem} {m : Loc → CV}
+    {w : ArmState} {evs : List Ev} {c' : MConf CV ArmState} {vb : VBlock} {us : List (Reg × Reg)}
+    (hvb : R.vc.blocks[b]? = some vb) (hi : vb.insts[k]? = some (.rets us))
+    (hs : SrcStep R (.run ⟨b, .op k allocs :: its, m, w⟩) evs c') :
+    ∃ vals m' w', c' = .ret vals m' w' := by
+  cases hs with
+  | @op _ _ _ _ _ _ vb0 i0 ops0 _ _ hvb0 hi0 hops0 _ _ hst =>
+  rw [hvb] at hvb0; cases hvb0; rw [hi] at hi0; cases hi0
+  cases hst with
+  | @op _ _ _ _ _ _ vb1 i1 ops1 outs outs' w' ctl m2 c' hvb1 hi1 hops1 hsz hsem hlen hho hcl hn =>
+    rw [hvb] at hvb1; cases hvb1; rw [hi] at hi1; cases hi1; rw [hops0] at hops1; cases hops1
+    simp only [RL.sem, csemV, csem, Option.some.injEq, Prod.mk.injEq] at hsem
+    obtain ⟨-, -, rfl⟩ := hsem
+    cases hn with
+    | ret _ => exact ⟨_, _, _, rfl⟩
+
+/-- `RelQ` at an instruction item: `Q ∧ AInv`, or the item is the `rets` of a return tail, whose
+step returns without events. -/
+theorem RelQ.op' {R : RL} {t : ArmState × Mon} {b k : Nat} {allocs : Array Loc} {its : List RItem}
+    {m : Loc → CV} {w : ArmState} {evs : List Ev} {c' : MConf CV ArmState}
+    (h : RelQ R t (.run ⟨b, .op k allocs :: its, m, w⟩))
+    (hs : SrcStep R (.run ⟨b, .op k allocs :: its, m, w⟩) evs c') :
+    (Q R t.1 (.run ⟨b, .op k allocs :: its, m, w⟩) ∧ AInv R (.run ⟨b, .op k allocs :: its, m, w⟩)) ∨
+      (evs = [] ∧ ∃ vals m' w', c' = .ret vals m' w') := by
+  rcases h with h | h
+  · exact .inl h
+  · right
+    simp only [RetTail] at h
+    obtain ⟨_mt, _D, _hq, _hm, vb, pend, k', a', rest, us, hvb, he, hk, htl⟩ := h
+    rcases pend with _ | ⟨it, pend⟩
+    · simp only [List.nil_append, List.cons.injEq, RItem.op.injEq] at he
+      obtain ⟨⟨rfl, -⟩, -⟩ := he
+      refine ⟨?_, srcStep_rets hvb hk hs⟩
+      cases hs with
+      | @op _ _ _ _ _ _ vb0 i0 ops0 _ _ hvb0 hi0 hops0 hevs _ _ =>
+        rw [hvb] at hvb0; cases hvb0; rw [hk] at hi0; cases hi0
+        exact hevs.trans (cEvs_nil rfl _ _)
+    · simp only [List.cons_append, List.cons.injEq] at he
+      obtain ⟨rfl, -⟩ := he
+      simp [retTailOk, RItem.restoreReg, RItem.avoids] at htl
+
+/-- `RelQ` at an instruction item whose step does not return is `Q ∧ AInv` (a return tail ends
+at its `rets`, whose step returns). -/
+theorem RelQ.op {R : RL} {t : ArmState × Mon} {b k : Nat} {allocs : Array Loc} {its : List RItem}
+    {m : Loc → CV} {w : ArmState} {evs : List Ev} {c' : MConf CV ArmState}
+    (h : RelQ R t (.run ⟨b, .op k allocs :: its, m, w⟩))
+    (hs : SrcStep R (.run ⟨b, .op k allocs :: its, m, w⟩) evs c')
+    (hnr : ∀ vals m' w', c' ≠ .ret vals m' w') :
+    Q R t.1 (.run ⟨b, .op k allocs :: its, m, w⟩) ∧ AInv R (.run ⟨b, .op k allocs :: its, m, w⟩) := by
+  rcases RelQ.op' h hs with h | ⟨-, vals, m', w', rfl⟩
+  · exact h
+  · exact absurd rfl (hnr vals m' w')
+
+/-- A step returning without events: no Arm step. -/
+theorem itemSimOut_ret {R : RL} {ok : ArmState → Lab → Prop} {t : ArmState × Mon} {b : Nat}
+    {it : RItem} {its : List RItem} {m : Loc → CV} {w : ArmState} {vals : List CV}
+    {m' : Loc → CV} {w' : ArmState} {ls : List Lab}
+    (hs : SrcStep R (.run ⟨b, it :: its, m, w⟩) [] (.ret vals m' w')) :
+    ItemSimOut Policy.arm R.step ok (SrcStep R) (RelQ R) (PrivA R) (fun c => c.measure) t
+      (.run ⟨b, it :: its, m, w⟩) ls :=
+  ⟨0, [], _, t, fun _ => (0, 0), Nat.zero_le _, .inr (by simp [MConf.measure]), hs,
+    by rw [List.take_zero]; exact .nil, relQ_ret, img_nil (by simp) _⟩
+
 /-- **The per-item obligation of the event-free items** (module doc). -/
 theorem itemSim_noev {R : RL} (hR : R.Wf) (hsc : NoEvScope R) (hnm : NoMoves R) :
     ItemSim Policy.arm R.step (fun _ _ => True) (SrcStep R) (RelQ R) (Done R)
       (fun c => c.measure) (PrivA R) := by
-  rintro ⟨s, mon⟩ c ⟨hq, hA⟩ ls t' hr
+  rintro ⟨s, mon⟩ c hqa ls t' hr
   match c with
   | .ret vals m w => exact .inl (.inl ⟨vals, m, w, rfl⟩)
   | .halt w => exact .inl (.inr (.inl ⟨w, rfl⟩))
   | .run ⟨b, its, m, w⟩ =>
   by_cases hS : ∃ evs c', SrcStep R (.run ⟨b, its, m, w⟩) evs c'
   case neg => exact .inl (.inr (.inr fun evs c' h => hS ⟨evs, c', h⟩))
-  simp only at hq
   obtain ⟨evs0, c0, hs0⟩ := hS
   cases hs0 with
   | @move _ src dst its' =>
+    obtain ⟨mt, hq⟩ := RelQ.q hqa
     obtain ⟨items, hit, hmem⟩ := q_items hq
     exact absurd (hmem _ List.mem_cons_self) (hnm b items hit src dst)
   | @op _ k allocs its' _ _ vb i ops _ _ hvb hi hops hevs hfoot hst =>
@@ -135,11 +217,13 @@ theorem itemSim_noev {R : RL} (hR : R.Wf) (hsc : NoEvScope R) (hnm : NoMoves R) 
         (fun c => c.measure) (s, mon) (.run ⟨b, .op k allocs :: its', m, w⟩) ls := by
     intro c' hm hs hq' hA'
     exact ⟨0, [], c', (s, mon), fun _ => (0, 0), Nat.zero_le _, .inr (hlt c' hm), hs,
-      by rw [List.take_zero]; exact .nil, ⟨hq', hA'⟩, img_nil (by simp) _⟩
+      by rw [List.take_zero]; exact .nil, RelQ.of hq' hA', img_nil (by simp) _⟩
   -- a step ending the function: no Arm step
   by_cases hterm : (∃ vals m' w', c0 = .ret vals m' w') ∨ ∃ w', c0 = .halt w'
   · rcases hterm with ⟨vals, m', w', rfl⟩ | ⟨w', rfl⟩ <;>
     exact .inr (.inl (zero _ (Nat.zero_le _) hstep trivial trivial))
+  obtain ⟨hq, hA⟩ : Q R s _ ∧ AInv R _ :=
+    RelQ.op hqa hstep fun vals m' w' e => hterm (.inl ⟨vals, m', w', e⟩)
   rcases hsc' with ⟨hctl, hfo, -⟩ | ⟨ds, rfl⟩ | ⟨us, rfl⟩ | ⟨cd, rfl⟩
   rotate_left
   · -- `args`
@@ -207,7 +291,7 @@ theorem itemSim_noev {R : RL} (hR : R.Wf) (hsc : NoEvScope R) (hnm : NoMoves R) 
     subst hs1
     refine .inr (.inl ⟨ls1.length, [], _, (s1, mon1), fun _ => (0, 0), hN,
       .inr (hlt _ (Nat.le_of_eq measure_run)), .op hvb hi hops hevs hfoot (by rw [patch_nil]; exact hm''),
-      r1, ⟨hq'', aInv_step hR hq hA hm''⟩, img_nil hev1 _⟩)
+      r1, RelQ.of hq'' (aInv_step hR hq hA hm''), img_nil hev1 _⟩)
   · obtain ⟨-, hev, -⟩ := prun_nil hr fun i hi => hnom i (by omega)
     exact .inr (.inr (.inr (privW_of_nil hev)))
 
@@ -229,7 +313,7 @@ theorem arm_alloc_refines_noev {R : RL} (hR : R.Wf) (hsc : NoEvScope R) (hnm : N
       Refines (· = ·) (PrivA R) (MonPair (evTr (ls.take n))) (PrepThread.conv trS)
         (PrepThread.conv (evTr (ls.take n))) ψ ∧ (n = ls.length ∨ Done R cE) := by
   obtain ⟨n, trS, cE, ψ, hn, hs, href, hend⟩ :=
-    refines_of_itemSim (itemSim_noev hR hsc hnm) hr ⟨hq, hA⟩
+    refines_of_itemSim (itemSim_noev hR hsc hnm) hr (RelQ.of hq hA)
   exact ⟨n, trS, cE, ψ, hn, mtrun_of_srun hs, href, hend⟩
 
 end Concurrency.ArmAllocThread

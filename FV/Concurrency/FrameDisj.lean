@@ -10,10 +10,10 @@ its frame `[sp₀ - drop, sp₀)` (`Frame`; `drop = frameDrop R.af`) and, below 
 `sp` at or below `A`'s body `sp`), and `B` keeps exactly `A`'s frame and kept addresses
 (`B.G = A.FK`).
 
-* `frameF_frame`: an activation's frame addresses (`frameF`: spill/save/float-move slots, the
-  padding and fp/lr) are its `Frame`, or its code words;
-* `slotArea`: the explicit CLIF slots `[spB + size, spB + frameSize)` lie in the `Frame` and
-  outside `frameF`'s stack part (`slotArea_frame`, `slotArea_not_frameF`);
+* `frameF_frame`: an activation's frame addresses (`frameF`: spill/float-move slots, the
+  clobber area and fp/lr) are its `Frame`, or its code words;
+* `slotArea`: the explicit CLIF slots `[spB + size, spB + frameSize - clobberBytes)` lie in the
+  `Frame` and outside `frameF`'s stack part (`slotArea_frame`, `slotArea_not_frameF`);
 * `Nested.region_dead`, `Nested.frame_not_FK`: a nested callee's region is in the caller's dead
   stack, so its frame avoids the caller's frame and kept addresses;
 * **`Nested.gfree`**: the callee's kept addresses avoid its own region (`RL.Wf.gfree` of the
@@ -36,9 +36,10 @@ def Region (R : RL) : BitVec 64 → Prop := StackBelow (frameDrop R.af + R.K) (s
 /-- The activation's frame `[sp₀ - drop, sp₀)`. -/
 def Frame (R : RL) : BitVec 64 → Prop := StackBelow (frameDrop R.af) (spv R.s0)
 
-/-- The explicit CLIF slots: `[spB + size, spB + frameSize)`. -/
+/-- The explicit CLIF slots: `[spB + size, spB + frameSize - clobberBytes)`, below the clobber
+area the prologue pushes the saved registers into (part of `frameF`). -/
 def slotArea (R : RL) (a : BitVec 64) : Prop :=
-  R.fr.size ≤ (a - R.spB).toNat ∧ (a - R.spB).toNat < R.af.frameSize
+  R.fr.size ≤ (a - R.spB).toNat ∧ (a - R.spB).toNat < R.af.frameSize - clobberBytes R.af.saves
 
 /-- **The callee `B` is nested in the caller `A`** (module doc). -/
 structure Nested (A B : RL) : Prop where
