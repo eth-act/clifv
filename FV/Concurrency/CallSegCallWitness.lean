@@ -78,12 +78,12 @@ theorem strel_sBF : ∃ m, StRel RA2 sBF m w₀C := by
   obtain ⟨m, -, hq, -⟩ := prefixF
   have hS := q_stRel hq
   exact ⟨m, ⟨hS.store, SameWorld.mono F_RA2 hS.world, hS.err, hS.prog, hS.sp, hS.align, hS.fplr,
-    hS.code, hS.gkeep⟩⟩
+    hS.code, hS.gkeep, hS.fp⟩⟩
 
 theorem mem_ld : ("ld", ldF) ∈ link2.fns := by simp [link2]
 
 theorem budget_ld : ldF.af.frameSize + 16 + 0x10 ≤ RA2.K := by
-  have : (act vcpL rfL).af.frameSize = 224 := spC.2.2.2.2.2.2.2.2
+  have : (act vcpL rfL).af.frameSize = 160 := spC.2.2.2.2.2.2.2.2
   show (act vcpL rfL).af.frameSize + 16 + 0x10 ≤ 0x100
   omega
 
@@ -162,8 +162,8 @@ theorem call_endK_fC {env : Clif.Env} (henv : env.extern "ld" = none) (c : BitVe
 at a `rets` pause with its contract. -/
 theorem retEnd_n_ld {s0 : ArmState} {env : Clif.Env} {p : Clif.Program} {MR : MemRelT}
     {slots : List (Clif.SlotId × Nat)} {r₀ : Reg → CV} {x : ArmState} {s' : Clif.State}
-    (hRB : (link2.act ldF s0 0 RC.F).Wf) (hent : AbiCall ldF.fb ldF.base (RC.pcOf 24 + 4#64) s0)
-    (hret : RetEnd (link2.act ldF s0 0 RC.F) (RC.pcOf 24 + 4#64) env p MR slots r₀ x s') :
+    (hRB : (link2.act ldF s0 0 RC.F).Wf) (hent : AbiCall ldF.fb ldF.base (RC.pcOf 15 + 4#64) s0)
+    (hret : RetEnd (link2.act ldF s0 0 RC.F) (RC.pcOf 15 + 4#64) env p MR slots r₀ x s') :
     ∃ n, 0 < n ∧ ∃ b k allocs its m w vb us ops ρ vals cm,
       Q (link2.act ldF s0 0 RC.F) x (.run ⟨b, .op k allocs :: its, m, w⟩) ∧
       ldF.vc.blocks[b]? = some vb ∧ vb.insts[k]? = some (.rets us) ∧
@@ -215,16 +215,16 @@ theorem resume_ret_fC {env : Clif.Env} (henv : env.extern "ld" = none) (c : BitV
         Match fC ctx R gn bl A (RelW ΓC fC c) slots s' vV' →
         PMatch vcC RC.vc (csem RC.F RC.ctx RC.X) (cEvs RC.F RC.ctx) Lp ss' (.run vV') (.run vP') →
         MatchRun cc ins ckeep r₀ cM' vP' →
-        (link2.act ldF s0B 0 RC.F).Wf → AbiCall ldF.fb ldF.base (RC.pcOf 24 + 4#64) s0B →
+        (link2.act ldF s0B 0 RC.F).Wf → AbiCall ldF.fb ldF.base (RC.pcOf 15 + 4#64) s0B →
         (∀ f, f ≠ .PC → f ≠ .GPR 30#5 → Arm.r f s0B = Arm.r f x) →
         xreg 30 s0B = Arm.r .PC x + 4#64 → (∀ a, RC.FK a → s0B.mem a = x.mem a) →
         (∀ r ∈ calleeSaved, ckeep r (r₀B r) = ckeep r
           (locVal (link2.act ldF s0B 0 RC.F).fr (iterN (link2.act ldF s0B 0 RC.F).step
             (prologueLines ldF.af.saves ldF.af.frameSize).length s0B) (.reg r))) →
-        RetEnd (link2.act ldF s0B 0 RC.F) (RC.pcOf 24 + 4#64) env pCL (RelW ΓB fB cB) slotsB r₀B
+        RetEnd (link2.act ldF s0B 0 RC.F) (RC.pcOf 15 + 4#64) env pCL (RelW ΓB fB cB) slotsB r₀B
           xB sR →
         ΓB.F = (link2.act ldF s0B 0 RC.F).F → ΓB.syms = ΓC.syms →
-        RetC (link2.act ldF s0B 0 RC.F) (RC.pcOf 24 + 4#64) r₀B
+        RetC (link2.act ldF s0B 0 RC.F) (RC.pcOf 15 + 4#64) r₀B
           (iterN (link2.act ldF s0B 0 RC.F).step n xB) →
         Clif.step env pCL sR = .done rvals cmR →
         CallValid.AllocInvD s'.mem d sRet → sRet.callers.length = d → sRet.mem = cmR →

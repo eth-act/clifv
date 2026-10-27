@@ -496,11 +496,10 @@ theorem mstep_ldar (hS : StRel RC s m w₀C) (hx0 : regVal s (.x 0) = 0) (env : 
 
 /-- **The callee after its `ldar`**: the moves, the restores and the return, every step private,
 no store exclusive, on its program, at a line other than `ret` but the last, which is at the
-`ret`; after it the caller's state as it resumes (`PostA`). -/
+`ret`; after it the caller's state as it resumes (`PostA`). From `QA` (the restores emit no
+code: they continue a return tail, `moves_privQA`). -/
 theorem calleePost (hS : StRel RC s m w₀C) {x : ArmState} {m2 : Loc → CV} {w2 : ArmState}
-    (hq : Q (RLx s) x (.run ⟨0, (postMv (.x 1)).map (fun p => RItem.move p.1 p.2) ++
-      [.op 2 #[.reg (.x 0)]], m2, w2⟩))
-    (hA : AInv (RLx s) (.run ⟨0, (postMv (.x 1)).map (fun p => RItem.move p.1 p.2) ++
+    (hqa : QA (RLx s) x (.run ⟨0, (postMv (.x 1)).map (fun p => RItem.move p.1 p.2) ++
       [.op 2 #[.reg (.x 0)]], m2, w2⟩)) :
     ∃ nP, 0 < nP ∧
       (∀ i < nP, ((∀ e ∈ stepEvs (iterN (RLx s).step i x), (RLx s).F e.addr) ∧
@@ -509,8 +508,9 @@ theorem calleePost (hS : StRel RC s m w₀C) {x : ArmState} {m2 : Loc → CV} {w
       IsRetL (iterN (RLx s).step (nP - 1) x) ∧
       PostA s (set_program (iterN (RLx s).step nP x) pC0) := by
   have hR := wfX hS
-  obtain ⟨n1, hq1, hA1, hp1⟩ := moves_privP hR (postMv (.x 1)) [.op 2 #[.reg (.x 0)]] x m2 hq hA
-    (fun p hp => moves_noRet (R := RLx s) checksPost.2.2.1 p (by simp [hp])) (by simp [postMv, Loc.isSave])
+  obtain ⟨n1, hqa1, hp1⟩ := moves_privQA hR (postMv (.x 1)) [.op 2 #[.reg (.x 0)]] x m2 hqa
+    (fun p hp => moves_noRet (R := RLx s) checksPost.2.2.1 p (by simp [hp]))
+  obtain ⟨mt1, hq1⟩ := qa_q hqa1
   have hvb : (RLx s).vc.blocks[0]? = some vcpL.blocks[0]! := vb0L
   obtain ⟨n2, hp2, hpc2, herr2, hsp2, hmem2, hprog2, hnr2, hn2, j, t, hj, hpcj⟩ :=
     rets_privP hR (abiX hS) hq1 hvb instL2
@@ -631,11 +631,11 @@ theorem funReal_ld (env : Clif.Env) (hS : StRel RC s m w₀C) (hx0 : regVal s (.
     rw [h0] at hvb; cases hvb; rw [hil] at hi; cases hi
     exact ldar_form hfo
   rw [checksPost.1] at hqa hAa hsrc
-  obtain ⟨c', t1, φ, hsc, hp1, ht1, ⟨hq1, hA1⟩, -⟩ := oneEv_op1 hR hqa hAa hsrc hform
+  obtain ⟨c', t1, φ, hsc, hp1, ht1, hqa1, -⟩ := oneEv_op1 hR hqa hAa hsrc hform
     (.cons hsaR hpa trivial .nil)
   obtain rfl := PRun.det hp1 (.cons hsaR hpa trivial .nil)
   obtain ⟨m2, w2, rfl⟩ := srcStep_next (fun vb i hvb hi => (hform vb i hvb hi).ctl) hsc
-  obtain ⟨nP, hnP, hpP, hnrP, hretP, hpostP⟩ := calleePost hS hq1 hA1
+  obtain ⟨nP, hnP, hpP, hnrP, hretP, hpostP⟩ := calleePost hS hqa1
   -- the CLIF load and return
   obtain ⟨s1, d, hcl1, hcl2, hdr, hdc⟩ := cstep_ld env (bytesOf e.n e.val) (by simp [bytesOf, hen])
     (fun x hx => by simp only [bytesOf, List.mem_map] at hx; obtain ⟨_, _, rfl⟩ := hx; rfl)

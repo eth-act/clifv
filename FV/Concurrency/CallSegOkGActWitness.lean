@@ -16,7 +16,7 @@ On the link of the compiled caller and the compiled `atomic_load` (`LinkedMachin
   with the CLIF entry state related to the body-entry world `w₀C`; from every paused
   configuration related to a CLIF state);
 * `ret_seg_ld`: `ret_seg` for every activation of `atomic_load` entered by the caller's `bl`
-  (return address `RC.pcOf 24 + 4`) below the caller's suspended frame `extC`, at its done
+  (return address `RC.pcOf 15 + 4`) below the caller's suspended frame `extC`, at its done
   `return` with its contract.
 
 Checks by `native_decide` (witness only).
@@ -133,7 +133,7 @@ def actL (s0 : ArmState) : Act where
   s0 := s0
   K := 0
   G := RC.F
-  ra := RC.pcOf 24 + 4#64
+  ra := RC.pcOf 15 + 4#64
   f := fL
   vc := vcL
   ctx := { func := fL, insts := #[], valTy := #[], valDef := #[], valReg := #[], slotOff := [] }
@@ -158,7 +158,7 @@ def actL (s0 : ArmState) : Act where
 /-- **Non-vacuity of `ret_seg`**: every activation of `atomic_load` entered by the caller's `bl`
 at its done `return` with its contract, below the caller's suspended frame. -/
 theorem ret_seg_ld {s0 : ArmState} {env : Clif.Env} {p : Clif.Program}
-    (hRB : (link2.act ldF s0 0 RC.F).Wf) (hent : AbiCall ldF.fb ldF.base (RC.pcOf 24 + 4#64) s0)
+    (hRB : (link2.act ldF s0 0 RC.F).Wf) (hent : AbiCall ldF.fb ldF.base (RC.pcOf 15 + 4#64) s0)
     {x : ArmState} {sR : Clif.State}
     (hret : RetEnd ((actL s0).RL link2) (actL s0).ra env p (RelW (actL s0).Γ (actL s0).f (actL s0).c)
       (actL s0).slots ((actL s0).r0 link2) x sR)
@@ -171,7 +171,7 @@ theorem ret_seg_ld {s0 : ArmState} {env : Clif.Env} {p : Clif.Program}
           k = 0 ∧ d' = (encT U (.run (ClifLift.pushC extC sR)), D)) ∨
         ∃ vals cm regs v, Clif.step env p sR = .done vals cm ∧
           ({ csC.frame with body := [] } : Clif.Frame).regs.setMany [1] vals = some regs ∧
-          RetC ((actL s0).RL link2) (RC.pcOf 24 + 4#64) ((actL s0).r0 link2)
+          RetC ((actL s0).RL link2) (RC.pcOf 15 + 4#64) ((actL s0).r0 link2)
             (iterN ((actL s0).RL link2).step k x) ∧
           PRun Policy.arm link2.M (OkPriv ((actL s0).RL link2)) (x, mon) (ls.take k) v ∧
           v.1 = set_program (iterN ((actL s0).RL link2).step k x) (callerF.fb.program callerF.base) ∧

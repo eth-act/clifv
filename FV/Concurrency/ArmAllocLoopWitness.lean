@@ -14,11 +14,11 @@ import FV.Concurrency.ArmAllocMemWitness
   moves, as `spillAlloc` does), so `RLp` has moves (`¬ NoMoves RLp`), which `arm_alloc_refines_loop`
   allows.
 * `rmw_retry_w`, `cas_retry_w`: `rmw_retry`/`cas_retry` at `RLp`'s loops (labels `loop 0` at line
-  11 and `loop 1` at line 17), from the state `RLp.s0` with the pc at the label (a head of its own
+  8 and `loop 1` at line 14), from the state `RLp.s0` with the pc at the label (a head of its own
   loop); `retry_run_w`: `retry_run` on the `atomic_rmw` loop from there.
 
-The layout facts (the label map is a hash map, which the kernel does not reduce) are by
-`native_decide`.
+The layout facts (the label map is a hash map, which the kernel does not reduce) and the lines of
+the loops are by `native_decide`.
 -/
 
 namespace Concurrency.ArmAllocThread.LoopWitness
@@ -151,33 +151,33 @@ theorem sAt_err (j : Nat) : Arm.r .ERR (sAt j) = .None := by
 
 theorem hty64 : AtomTy (.int 64) := .inr (.inr (.inr rfl))
 
-/-- **Non-vacuity of `rmw_retry`**: `RLp`'s `atomic_rmw` loop (label `loop 0` at line 11) is a retry
-loop from `sAt 11`, which is a head of its own loop. -/
+/-- **Non-vacuity of `rmw_retry`**: `RLp`'s `atomic_rmw` loop (label `loop 0` at line 8) is a retry
+loop from `sAt 8`, which is a head of its own loop. -/
 theorem rmw_retry_w :
-    RetryLoop RLp.step (RmwHd (.int 64) .add (sAt 11)) (loopRd (.int 64) (sAt 11))
+    RetryLoop RLp.step (RmwHd (.int 64) .add (sAt 8)) (loopRd (.int 64) (sAt 8))
         ((rmwLoopMid .add 64).length + 1) 24#5 (fun _ => False) ∧
-      RmwHd (.int 64) .add (sAt 11) (sAt 11) :=
-  ⟨rmw_retry wfL hty64 (op := .add) (fl := flW) (j0 := 11) (n := 0) (T := RLp.L.drop 16)
-    (by decide +kernel) (by decide +kernel) (sAt_prog 11) (sAt_pc 11) (sAt_err 11),
+      RmwHd (.int 64) .add (sAt 8) (sAt 8) :=
+  ⟨rmw_retry wfL hty64 (op := .add) (fl := flW) (j0 := 8) (n := 0) (T := RLp.L.drop 13)
+    (by native_decide) (by native_decide) (sAt_prog 8) (sAt_pc 8) (sAt_err 8),
     loopInv_refl _ _ _ _⟩
 
-/-- **Non-vacuity of `cas_retry`**: `RLp`'s `atomic_cas` loop (label `loop 1` at line 17) is a retry
-loop from `sAt 17`, which is a head of its own loop. -/
+/-- **Non-vacuity of `cas_retry`**: `RLp`'s `atomic_cas` loop (label `loop 1` at line 14) is a retry
+loop from `sAt 14`, which is a head of its own loop. -/
 theorem cas_retry_w :
-    RetryLoop RLp.step (CasHd (.int 64) (sAt 17)) (loopRd (.int 64) (sAt 17)) 3 24#5
+    RetryLoop RLp.step (CasHd (.int 64) (sAt 14)) (loopRd (.int 64) (sAt 14)) 3 24#5
         (fun z => Arm.ConditionHolds Cond.ne.bits z = true) ∧
-      CasHd (.int 64) (sAt 17) (sAt 17) :=
-  ⟨cas_retry wfL hty64 (fl := flW) (j0 := 17) (n := 1) (X := RLp.L.drop 24)
-    (by decide +kernel) (sAt_prog 17) (sAt_pc 17) (sAt_err 17),
+      CasHd (.int 64) (sAt 14) (sAt 14) :=
+  ⟨cas_retry wfL hty64 (fl := flW) (j0 := 14) (n := 1) (X := RLp.L.drop 21)
+    (by native_decide) (sAt_prog 14) (sAt_pc 14) (sAt_err 14),
     loopInv_refl _ _ _ _⟩
 
-/-- **Non-vacuity of `retry_run`**: every precise run under `OkPriv` from the head `sAt 11` of
+/-- **Non-vacuity of `retry_run`**: every precise run under `OkPriv` from the head `sAt 8` of
 `RLp`'s `atomic_rmw` loop writes nothing or ends in a final iteration (`RetryOut`). -/
 theorem retry_run_w (mon : Mon) (ls : List Lab) (t' : ArmState × Mon)
-    (hr : PRun Policy.arm RLp.step (OkPriv RLp) (sAt 11, mon) ls t') :
-    RetryOut Policy.arm RLp.step (OkPriv RLp) (RmwHd (.int 64) .add (sAt 11))
-      (loopRd (.int 64) (sAt 11)) ((rmwLoopMid .add 64).length + 1) 24#5 (fun _ => False)
-      (sAt 11, mon) ls :=
-  retry_run rmw_retry_w.1 ls.length ls (sAt 11) mon t' (Nat.le_refl _) rmw_retry_w.2 hr
+    (hr : PRun Policy.arm RLp.step (OkPriv RLp) (sAt 8, mon) ls t') :
+    RetryOut Policy.arm RLp.step (OkPriv RLp) (RmwHd (.int 64) .add (sAt 8))
+      (loopRd (.int 64) (sAt 8)) ((rmwLoopMid .add 64).length + 1) 24#5 (fun _ => False)
+      (sAt 8, mon) ls :=
+  retry_run rmw_retry_w.1 ls.length ls (sAt 8) mon t' (Nat.le_refl _) rmw_retry_w.2 hr
 
 end Concurrency.ArmAllocThread.LoopWitness
