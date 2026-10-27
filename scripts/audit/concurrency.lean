@@ -1212,6 +1212,14 @@ import FVTest.Concurrency.LitmusFull
 #print axioms Concurrency.CallSegOkGT.WitnessFull.enterSlots_nil
 #print axioms Concurrency.CallSegOkGT.WitnessFull.res_some
 #print axioms Concurrency.CallSegOkGT.WitnessFull.stepTerm_ret_next
+#print axioms Concurrency.CallSegOkGT.WitnessFull.famG_congr
+#print axioms Concurrency.CallSegOkGT.WitnessFull.rinvG_strip
+#print axioms Concurrency.CallSegOkGT.WitnessFull.next_famG
+#print axioms Concurrency.CallSegOkGT.WitnessFull.step_famG
+#print axioms Concurrency.CallSegOkGT.WitnessFull.reach_invG
+#print axioms Concurrency.CallSegOkGT.WitnessFull.depthG
+#print axioms Concurrency.CallSegOkGT.WitnessFull.partsOkG
+#print axioms Concurrency.CallSegOkGT.WitnessFull.shape_O -- witness: native_decide
 #print axioms Concurrency.CallSegOkGT.WitnessFull.next_fam -- witness: native_decide
 #print axioms Concurrency.CallSegOkGT.WitnessFull.step_fam -- witness: native_decide
 #print axioms Concurrency.CallSegOkGT.WitnessFull.reach_inv -- witness: native_decide
@@ -1271,6 +1279,7 @@ import FVTest.Concurrency.LitmusFull
 #print axioms Concurrency.CallSegOkGT.WitnessRmw.func_f -- witness: native_decide
 #print axioms Concurrency.CallSegOkGT.WitnessRmw.fam_congr
 #print axioms Concurrency.CallSegOkGT.WitnessRmw.rinv_strip
+#print axioms Concurrency.CallSegOkGT.WitnessRmw.shape_O -- witness: native_decide
 #print axioms Concurrency.CallSegOkGT.WitnessRmw.next_fam -- witness: native_decide
 #print axioms Concurrency.CallSegOkGT.WitnessRmw.step_fam -- witness: native_decide
 #print axioms Concurrency.CallSegOkGT.WitnessRmw.reach_inv -- witness: native_decide
