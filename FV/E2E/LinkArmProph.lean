@@ -8,9 +8,7 @@ import FV.Backend.Proof.StaleRegion
 callee's stack region (below `sp`, inside the caller's `F`) are not the actual machine's. Here
 the callee runs from `w` with that region overwritten (`Backend.Proof.overlay`) by a prophecy
 `Pn`, the actual machine bytes there at the call; `XP … P n` is the external semantics of call
-number `n`, with the prophecy `P n` (the `ExtSemI.at n` of the counted VCode world; `ExtSemI`
-itself is not imported: `FV/Backend/Proof/VCodeSemI*.lean` and `FV/E2E/Pair.lean` both declare
-`VConf.mapW`, `SeqEnd.mapW`, `SeqEnd.mapW_succ`).
+number `n`, with the prophecy `P n` (`XPI`'s `.at n`, `FV/E2E/LinkArmProphThm.lean`).
 
 * `calleeRgn κ M g w`: the callee's stack region `StackBelow (frameDrop + κ (M - 1) g) (spv w)`
   (`Cond` places it inside `F` and outside the code image);
