@@ -197,14 +197,11 @@ theorem srcStep_of_mstep {R : RL} (hcov : CoveredCode R) (hX : TlsMemFree R.X) {
     · rw [hp]
       exact .op hvb hi hops hsz hsem hlen hho hclob hnext
 
-/-- **`srcStep_of_mstep` at a `RelQ`-related configuration**: in a return tail the item is a
-move (a thread step without events) or the tail's `rets`, whose footprint needs no fact of the
-store. -/
-theorem srcStep_of_mstepQA {R : RL} (hcov : CoveredCode R) (hX : TlsMemFree R.X)
-    {t : ArmState × Mon} {c c' : MConf CV ArmState} (hqa : RelQ R t c)
+/-- **The allocated code's progress in a return tail**: the item is a move (a thread step
+without events) or the tail's `rets`, whose footprint needs no fact of the store. -/
+theorem srcStep_of_retTail {R : RL} (hX : TlsMemFree R.X) {s : ArmState}
+    {c c' : MConf CV ArmState} (hrt : RetTail R s c)
     (hs : MStep R.vc R.sem ckeep R.rf c c') : ∃ evs c'', SrcStep R c evs c'' := by
-  rcases hqa with ⟨hq, -⟩ | hrt
-  · exact srcStep_of_mstep hcov hX hq hs
   cases hs with
   | move => exact ⟨[], _, .move⟩
   | @op b k allocs its m w vb i ops outs outs' w' ctl m2 c' hvb hi hops hsz hsem hlen hho hclob
@@ -219,7 +216,8 @@ theorem srcStep_of_mstepQA {R : RL} (hcov : CoveredCode R) (hX : TlsMemFree R.X)
       · simp only [List.cons_append, List.cons.injEq] at he
         obtain ⟨rfl, -⟩ := he
         simp [retTailOk, RItem.restoreReg, RItem.avoids] at htl
-    obtain ⟨hnc, hnt, -⟩ := hcov b vb k _ hvb hi
+    have hnc : ∀ info, MInst.rets us ≠ .call info := fun _ h => by cases h
+    have hnt : ∀ info ti, MInst.rets us ≠ .tryCall info ti := fun _ _ h => by cases h
     have hstr := q_stRel hq
     have herrw : Arm.r .ERR w = .None := by
       rw [← hstr.world.1 .ERR (by simp [Masked]), hstr.err]
@@ -239,6 +237,15 @@ theorem srcStep_of_mstepQA {R : RL} (hcov : CoveredCode R) (hX : TlsMemFree R.X)
       exact hfoot
     · rw [hp]
       exact .op hvb hi hops hsz hsem hlen hho hclob hnext
+
+/-- **`srcStep_of_mstep` at a `RelQ`-related configuration** (`srcStep_of_retTail` in a return
+tail). -/
+theorem srcStep_of_mstepQA {R : RL} (hcov : CoveredCode R) (hX : TlsMemFree R.X)
+    {t : ArmState × Mon} {c c' : MConf CV ArmState} (hqa : RelQ R t c)
+    (hs : MStep R.vc R.sem ckeep R.rf c c') : ∃ evs c'', SrcStep R c evs c'' := by
+  rcases hqa with ⟨hq, -⟩ | hrt
+  · exact srcStep_of_mstep hcov hX hq hs
+  · exact srcStep_of_retTail hX hrt hs
 
 /-! ## All layers -/
 
