@@ -31,6 +31,43 @@ simulation. Preparation commutes with cleanup; the transports preserve baseline
 definite assignment, entry emptiness, spill-size bounds, frame/entry checks,
 GOT/call knowledge, allocation acceptance, control lowering and emission.
 
+## Cranelift's skip of unused statements (`skipDead`, #552)
+
+Cranelift does not lower an instruction without lowering side effects none of
+whose results the code lowered after it reads (`machinst/lower.rs`
+`lower_clif_block`, `is_any_inst_result_needed`). This is how it omits, for
+example, the `cmp; cset` of an `icmp` that a `brif`/`select` rule recomputes,
+or an `ishl` that a `bor` rule folds into a shifted operand. The cleanup rules
+for dead `cset`s, compares, shifts and jumps (#597, #605, #607, #608) imitate
+this afterwards on machine instructions. `Backend.Proof.Driver.skipDead f vc`
+(`FV/Backend/SkipDead.lean`) is the mechanism itself:
+
+* It deletes from `lowerFunction f`'s VCode the segments of `skippable`
+  statements (pure, non-trapping) whose written vregs no kept code reads. A
+  backward fixpoint, Cranelift's demand, decides which statements these are.
+* The result is accepted only if `deleteCheck` holds: no kept instruction or
+  branch argument reads a vreg a deleted instruction writes, every block keeps
+  its last instruction, and the CFG is unchanged.
+
+The proof (`FV/Backend/Proof/LowerSimSkip.lean`, `driver_correct_skipDead`) is at
+the CLIF level and uses no flag reasoning:
+
+* The kept code's relation `MatchK` is the driver's `Match` of a corresponding
+  configuration of the full code. The correspondence (`CorrC`) means the same
+  block and world, the kept index of the position, and register files equal
+  outside the deleted instructions' definitions.
+* Kept statements, terminators and the entry run only kept instructions
+  (`stmt_run`, `term_step_abiP`, `term_step_tryP`, `entry_stepP`), so their runs
+  carry over to the kept code (`starP_deletes`, `FV/Backend/Proof/VCodeDelete.lean`).
+* A deleted statement is pure: the kept code takes no step, and its world stays
+  the kept run's.
+
+Status: proved (standard axioms, `scripts/audit/skip-dead.lean`). It is not yet
+in the pipeline. The next step replaces `prune vc` by
+`prune (skipDead f vc)` for subset-E functions in the cleanup chain, and then
+removes the subsumed cleanup rules. On the `icmp`/`brif` witness
+(`skipWitness`), `cmp; cset; cmp; b.eq` becomes stock's `cmp; b.eq`.
+
 ## Consumers and proof scope
 
 The `FV/E2E/DeadCleanup*` variants use `CompiledCleanup` and actual cleanup
