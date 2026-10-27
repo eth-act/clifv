@@ -21,12 +21,13 @@ open Backend Backend.Proof Backend.Proof.Driver Backend.Proof.Spill Backend.Dead
 
 /-- **The cleanup pipeline succeeds on every function of the typed input scope**, whatever the
 untrusted allocator answered (`o`), and its artifact passes the typed lowering validator
-(`lowerCheckT`), the `prepare` validator on the pruned code, `AllocChecked` and the covered
-forms. -/
+(`lowerCheckT`), the `prepare` validator on the code of the production cleanup stage
+(`cleanupStage g a.vc`, formerly `prune a.vc`), `AllocChecked` and the covered forms. Outside
+subset E the skip does not run (`skipStage`), so there the stage is `prune`. -/
 theorem pipeCleanupT_okT {g : Clif.Function} (h : fnScopeInTB g = true) (k : Nat)
     (base : BitVec 64) (o : Lean.Json) :
     ∃ a, pipeCleanupT g k base o = .ok a ∧ lowerCheckT g a.vc = true ∧
-      prepCheck (prune a.vc) a.vcp = true ∧ AllocChecked a.vcp a.rf ∧
+      prepCheck (cleanupStage g a.vc) a.vcp = true ∧ AllocChecked a.vcp a.rf ∧
       FormsCovered ⟨a.fa.k, a.af.slotBase⟩ a.vcp := by
   by_cases hE : Compile.functionE g = true
   · have hsc := fnScopeB_of_input (fnScopeInB_of_fnScopeInTB h hE)
@@ -45,14 +46,16 @@ theorem pipeCleanupT_okT {g : Clif.Function} (h : fnScopeInTB g = true) (k : Nat
     obtain ⟨hem, hfc, -, hci⟩ := hpost vcp hp
     have hk := killFreeB_of_scopeT hd hs habi hext hind har htc hl hp
     have hcov := (formsCoveredB_iff _ _).mp hfc
-    have hp' := prune_prepare_ok hp
+    have hst : cleanupStage g vc = prune vc := by simp [cleanupStage, skipStage, hE]
+    have hp' : Backend.prepare (cleanupStage g vc) = .ok (preparedCleanup vc vcp) := by
+      rw [hst]; exact prune_prepare_ok hp
     obtain ⟨hacc, af, ha, fa, fb, he, hla⟩ := backend_total_emit_cleanupT hD hS (arityOk_of har)
       htc (resClassOk_of_resClassOkB hrc) hl hp (ctlSpill_of_ctlSpillB hcs) hcov hk
       (ctlInsts_of_ctlInstsB hci) hem (raAnswer (preparedCleanup vc vcp) o) k
     refine ⟨⟨k, vc, preparedCleanup vc vcp, allocResult (preparedCleanup vc vcp)
         (readyAnswer (preparedCleanup vc vcp) (raAnswer (preparedCleanup vc vcp) o)), af, fa, fb,
         base⟩, ?_, lowerCheckT_complete hD hS hl,
-      Prep.prepCheck_complete hp' (prune_prepDomain (prepDomain_ofT hD hS hl)), hacc,
+      Prep.prepCheck_complete hp' (cleanupStage_prepDomain g (prepDomain_ofT hD hS hl)), hacc,
       formsCovered_ctx (preparedCleanup_formsCovered hcov) _⟩
     simp [pipeCleanupT, pipeTWithLowering, Backend.Stock.D0.defaultLower_eq_legacy, hl, hp', ha,
       he, hla, bind, Except.bind, pure, Except.pure]

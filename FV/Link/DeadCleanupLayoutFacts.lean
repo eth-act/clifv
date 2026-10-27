@@ -9,7 +9,7 @@ theorem pipeT_layout {f : Clif.Function} {k : Nat} {b : BitVec 64} {o : Lean.Jso
   rw [Backend.Stock.D0.defaultLower_eq_legacy] at h
   rcases h1 : lowerFunction f with _ | vc <;> simp only [h1, bind, Except.bind] at h
   · cases h
-  rcases h2 : prepare (Backend.DeadCleanup.prune vc) with _ | vcp <;> simp only [h2] at h
+  rcases h2 : prepare (cleanupStage f vc) with _ | vcp <;> simp only [h2] at h
   · cases h
   rcases h3 : lowerAllocReady vcp (raAnswer vcp o) with _ | af <;> simp only [h3] at h
   · cases h
