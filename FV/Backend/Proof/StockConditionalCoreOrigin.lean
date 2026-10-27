@@ -51,16 +51,21 @@ private theorem emission_origin {ctx : Ctx} {f : Clif.Function} {c : Nat}
       cases run
       exact ⟨out,trace,rfl,rfl⟩
 
-/-- Invert the real core once, preserving its exact context, compiler state,
-selected named branch, retained emission and body/terminator concatenation. -/
-theorem conditional_core_origin {ctx : Ctx} {order : Order} {f : Clif.Function}
+/-- Invert the actual conditional core once, retaining its branch emission,
+outgoing argument call and real backward scan boundary for all later consumers. -/
+theorem conditional_core_calls {ctx : Ctx} {order : Order} {f : Clif.Function}
     {b : Clif.Block} {bi start stop : Nat} {data : V} {targets : Array Nat}
     {input : State} {core : LoweredBlockCore} {c : Nat} {yes no : Clif.BlockCall}
     (term : b.term = .brif c yes no)
     (run : lowerBlockCore ctx order f b bi start stop data targets input = .ok core) :
-    Nonempty (CoreOrigin
-      {Driver.termCtx ctx (stop-1) data with tryRegs := input.tryRegs[stop-1]!}
-      f bi (stop-1) targets input core) := by
+    ∃ (emission : BranchEmission) (afterEdges : State),
+      core.branch = some emission ∧
+      emitBranch {Driver.termCtx ctx (stop-1) data with tryRegs := input.tryRegs[stop-1]!}
+        f (.brif c yes no) bi (stop-1) targets input = .ok emission ∧
+      collectOutgoing ctx order bi targets emission.state = .ok (afterEdges,core.outgoing) ∧
+      core.scan.input = {afterEdges with color := some afterEdges.endColor[bi]!} ∧
+      core.scan.ctx = {Driver.termCtx ctx (stop-1) data with tryRegs := input.tryRegs[stop-1]!} ∧
+      core.scan.isBranch = true ∧ core.code = core.scan.output.code ++ emission.code := by
   let actualCtx : Ctx := {Driver.termCtx ctx (stop-1) data with tryRegs := input.tryRegs[stop-1]!}
   unfold lowerBlockCore at run
   dsimp only at run
@@ -89,8 +94,23 @@ theorem conditional_core_origin {ctx : Ctx} {order : Order} {f : Clif.Function}
         dsimp only [actualCtx,Driver.termCtx] at scanned
         simp only [scanned,bind,Except.bind,pure,Except.pure,Except.ok.injEq] at run
         cases run
-        obtain ⟨out,trace,call,emitted⟩ := emission_origin branchCall
-        obtain ⟨selected⟩ := stock_named_branch_selection call
-        exact ⟨⟨emission,out,trace,call,selected,rfl,emitted,rfl,rfl⟩⟩
+        exact ⟨emission,next,rfl,rfl,outgoing,rfl,rfl,rfl,rfl⟩
+
+
+/-- The old core-origin interface is retained; its named branch and first-match
+selection are derived from the shared actual core-call decomposition. -/
+theorem conditional_core_origin {ctx : Ctx} {order : Order} {f : Clif.Function}
+    {b : Clif.Block} {bi start stop : Nat} {data : V} {targets : Array Nat}
+    {input : State} {core : LoweredBlockCore} {c : Nat} {yes no : Clif.BlockCall}
+    (term : b.term = .brif c yes no)
+    (run : lowerBlockCore ctx order f b bi start stop data targets input = .ok core) :
+    Nonempty (CoreOrigin
+      {Driver.termCtx ctx (stop-1) data with tryRegs := input.tryRegs[stop-1]!}
+      f bi (stop-1) targets input core) := by
+  obtain ⟨emission,afterEdges,retained,branchCall,outgoing,scanInput,scanCtx,branchScan,combined⟩ :=
+    conditional_core_calls term run
+  obtain ⟨out,trace,call,emitted⟩ := emission_origin branchCall
+  obtain ⟨selected⟩ := stock_named_branch_selection call
+  exact ⟨⟨emission,out,trace,call,selected,retained,emitted,combined,branchScan⟩⟩
 
 end Backend.Stock.Proof.ConditionalValues

@@ -1,5 +1,13 @@
 # Conditional source composition checkpoint
 
+Current packet: actual retained scalar conditional bodies, source return/first-
+trap continuations and branch→per-successor→scan demand transport pass1110normal
+module keys and55Std3audit roots. Original source branch choice/full real frame
+and scratch-free parameter/nonzero variants have complete witnesses. Production
+remains #634; no conditional production activation or full author gate is claimed.
+The next concrete bridge is guarded available-value preservation across actual
+branch allocation, then chosen-edge/source-CFG/ABI and consumer composition.
+
 Main #634 (`d6218f29`) activates arbitrary-length forward scalar jump/return
 CFGs. Full original #140 remains open. This next implementation reuses the same
 source view and existing condition/per-edge proofs; no production activation or
@@ -137,3 +145,31 @@ allocation/availability or add the needed weaker path-sensitive variant before
 connecting arbitrary retained source comparisons. It must not become a new
 accepted-input predicate. Remaining work is actual body/first-trap/chosen-edge,
 CFG/ABI and production consumer composition, then remaining full140 obligations.
+
+The retained-body checkpoint reuses `MaskBody.actual_body_refines_at_block` and
+original `LocalBody` source continuations in `ConditionalBodySpec`. It derives
+actual scan/body/branch placement, full source fuel, normal body execution and
+first-body-trap versus later-continuation behavior. Its executable complete
+three-block source witness derives the guarded machine input from `enterFunc`;
+no supplied machine body run or empty-caller restriction is added to the theorem.
+
+`conditional_core_calls` factors the real branch/outgoing/scan decomposition once,
+retaining the old `conditional_core_origin` header exactly. Actual per-successor
+argument collection derives branch-output→scan-input demand monotonicity; the
+complete executed source fixture inhabits this too. All1110targeted keys and55
+packet audit roots pass, standard-only. Two bundled body/MCP checks report Std3
+and no warnings. These remain focused checks; full author gates precede activation.
+
+Next derive original conditional operand availability/getters and selected root,
+source values outside the actual branch allocation interval, the guarded branch
+post-frame, source-chosen direct/synthetic edges, ranked conditional CFG/ABI and
+all production consumers. For ordinary parameters/nonzero there is no scratch
+callback. General comparison look-through's remaining internal scratch callback
+must be discharged or weakened on paths that allocate no real scratch. Existing
+per-edge, prepare, spill and copy proofs are reused; other bit-test/table/critical
+cases, loops/effects/calls/full-domain completeness remain in full140.
+
+Current main remains d6218f29 after fresh fetch. Four saved views and one warm
+cache are retained. Completed idle MCP workers were released;143obsolete unlinked
+cache artifacts reclaimed43,709,588bytes after inode/link/age rechecks, leaving
+about572GiB free. No dirty source, unique evidence or recovery backup was deleted.
