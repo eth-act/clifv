@@ -160,13 +160,13 @@ theorem calleePath (hS : StRel RC s m w₀C) (hx0 : regVal s (.x 0) = 0) :
   rw [show (RLx s).rf = rfL from rfl, checksRunL.1] at hq0 hA0
   have hnr := moves_noRet (R := RLx s) checksPost.2.2.1
   obtain ⟨n1, hq1, hA1, hp1⟩ := moves_privP hR savesL _ _ _ hq0 hA0
-    fun p hp => hnr p (by simp [hp])
+    (fun p hp => hnr p (by simp [hp])) (by simp [savesL, Loc.isSave])
   obtain ⟨m', hst, hm'⟩ := args_stepX (s := s) (spillL.map (fun p => RItem.move p.1 p.2) ++ rest2L) _
     (w₀X s)
   have hq2 := realizes_args hR hq1 hA1 vb0L argsL0.1 hst
   have hA2 := Backend.Proof.aInv_step hR hq1 hA1 hst
   obtain ⟨n2, hq3, hA3, hp2⟩ := moves_privP hR spillL rest2L _ m' hq2 hA2
-    fun p hp => hnr p (by simp [hp])
+    (fun p hp => hnr p (by simp [hp])) (by simp [spillL, Loc.isSave])
   have hsa := srcStep_of_mstep_nil (coveredX hS hx0) VCodeThread.Witness.X0_tls hq1
     (fun vb i hvb hi => by
       have h0 : (RLx s).vc.blocks[0]? = some vcpL.blocks[0]! := vb0L
@@ -510,7 +510,7 @@ theorem calleePost (hS : StRel RC s m w₀C) {x : ArmState} {m2 : Loc → CV} {w
       PostA s (set_program (iterN (RLx s).step nP x) pC0) := by
   have hR := wfX hS
   obtain ⟨n1, hq1, hA1, hp1⟩ := moves_privP hR (postMv (.x 1)) [.op 2 #[.reg (.x 0)]] x m2 hq hA
-    (fun p hp => moves_noRet (R := RLx s) checksPost.2.2.1 p (by simp [hp]))
+    (fun p hp => moves_noRet (R := RLx s) checksPost.2.2.1 p (by simp [hp])) (by simp [postMv, Loc.isSave])
   have hvb : (RLx s).vc.blocks[0]? = some vcpL.blocks[0]! := vb0L
   obtain ⟨n2, hp2, hpc2, herr2, hsp2, hmem2, hprog2, hnr2, hn2, j, t, hj, hpcj⟩ :=
     rets_privP hR (abiX hS) hq1 hvb instL2

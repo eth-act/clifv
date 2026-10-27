@@ -131,7 +131,7 @@ theorem resume_layersR {R : RL} (hR : R.Wf) {vc : VCode} {L : Nat → Prop}
       ckeep c (regVal y c) = ckeep c (regVal x c))
     (hpc : Arm.r .PC y = Arm.r .PC x + 4#64) (herr : Arm.r .ERR y = .None)
     (hsp : spOf y = spOf x) (hmem : ∀ a, R.FK a → y.mem a = x.mem a)
-    (hprog : y.program = x.program) (X : ExtSem) :
+    (hprog : y.program = x.program) (hfp : xreg 29 y = xreg 29 x) (X : ExtSem) :
     ∃ b0 m' ρ', src = .run ⟨b0, k, ρ, w⟩ ∧
       VStep vc (csem R.F R.ctx (xcallX X
         ((defPairs ops allocs).map fun p => locVal R.fr y p.2) y))
@@ -145,7 +145,7 @@ theorem resume_layersR {R : RL} (hR : R.Wf) {vc : VCode} {L : Nat → Prop}
     subst h; rfl) hms
   obtain ⟨b0, rfl, hLb, hσ⟩ := pmatch_call hP hvb hi
   exact ⟨b0, m', ρ', rfl, prep_vstep_next H3 (driverSem_csem _ _ _).toDriverSemG hLb hσ hv4,
-    .blk hLb hσ, hA', CallSeg.resumeQW hR hq hvb hi hpc herr hsp hmem hprog hst'
+    .blk hLb hσ, hA', CallSeg.resumeQW hR hq hvb hi hpc herr hsp hmem hprog hfp hst'
       (SameWorld.refl _ _)⟩
 
 /-! ## The premises from the callee's preservation facts -/
@@ -255,7 +255,7 @@ theorem resume_premises_of_retEnd {RA RB : RL} (hRA : RA.Wf) {env : Clif.Env}
     (hret : RetEnd RB ra env p MR slots r₀ xr s')
     {x : ArmState} {m : Loc → CV} {w : ArmState} (hst : StRel RA x m w)
     (hr₀ : ∀ r ∈ calleeSaved, ckeep r (r₀ r) = ckeep r (regVal x r))
-    (hra : ra = Arm.r .PC x + 4#64) (hsp0 : spv RB.s0 = spOf x)
+    (hra : ra = Arm.r .PC x + 4#64) (hsp0 : spv RB.s0 = spOf x) (hfp0 : xreg 29 RB.s0 = xreg 29 x)
     (hmr : ∀ a, RA.FK a → xr.mem a = x.mem a)
     {info : CallInfo} {ops : Array Operand} {allocs : Array Loc}
     (hdef : ∀ d ∈ info.defs, ∃ q ∈ defPairs ops allocs, q.1.isLate = true ∧ q.2 = .reg d.1) :
@@ -267,15 +267,16 @@ theorem resume_premises_of_retEnd {RA RB : RL} (hRA : RA.Wf) {env : Clif.Env}
         (∀ q ∈ defPairs ops allocs, q.1.isLate = true → q.2 ≠ l) →
         locVal RA.fr (iterN RB.step n xr) l = locVal RA.fr x l) ∧
       (∀ c ∈ (MInst.call info).clobbers, c ∈ calleeSaved →
-        ckeep c (regVal (iterN RB.step n xr) c) = ckeep c (regVal x c)) := by
+        ckeep c (regVal (iterN RB.step n xr) c) = ckeep c (regVal x c)) ∧
+      xreg 29 (iterN RB.step n xr) = xreg 29 x := by
   obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, n, -, -, -, -, -, -, -, -, -, hpc, herr, hsp, hmem,
-    -, hcs, -⟩ := hret
+    ⟨-, hx29⟩, hcs, -⟩ := hret
   have hcs' : ∀ r ∈ calleeSaved, ckeep r (regVal (iterN RB.step n xr) r) = ckeep r (regVal x r) :=
     fun r hr => (hcs r hr).trans (hr₀ r hr)
   have hsp' : spOf (iterN RB.step n xr) = spOf x := hsp.trans hsp0
   have hmem' : ∀ a, RA.FK a → (iterN RB.step n xr).mem a = x.mem a := fun a ha => by
     rw [hmem]; exact hmr a ha
   exact ⟨n, hpc.trans hra, herr, hsp', hmem', hpresR_of_callee hRA hst hdef hcs' hsp' hmem',
-    hkeep_of_callee hcs'⟩
+    hkeep_of_callee hcs', hx29.trans hfp0⟩
 
 end Concurrency.CallRetResume

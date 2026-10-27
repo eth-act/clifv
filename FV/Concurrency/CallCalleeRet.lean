@@ -45,7 +45,8 @@ theorem retC_of_retEnd {R : RL} {ra : BitVec 64} {env : Clif.Env} {p : Clif.Prog
     ∃ n, (∀ i < n, R.GoodX (iterN R.step i x)) ∧ RetC R ra r₀ (iterN R.step n x) := by
   obtain ⟨b, k, allocs, its, m, w, -, -, -, -, -, -, n, hq, -, -, -, -, -, -, -, hgood, hpc, herr,
     hsp, hmem, -, hcs, -⟩ := hret
-  exact ⟨n, hgood, hpc, herr, hsp, fun a ha => by rw [hmem]; exact gkeep_of_q hq a ha, hcs⟩
+  obtain ⟨mt, hq'⟩ := qa_q hq
+  exact ⟨n, hgood, hpc, herr, hsp, fun a ha => by rw [hmem]; exact gkeep_of_q hq' a ha, hcs⟩
 
 /-- **The caller's resume premises from the callee's return contract** (module doc): the state
 `y` after the callee's return satisfies the premises of `CallRetResume.resume_layersR` other

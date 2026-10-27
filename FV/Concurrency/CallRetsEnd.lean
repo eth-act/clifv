@@ -33,7 +33,7 @@ def RetEnd (RA : RL) (ra : BitVec 64) (env : Clif.Env) (p : Clif.Program) (MR : 
     (∀ i < n, RA.GoodX (iterN RA.step i x)) ∧
     Arm.r .PC (iterN RA.step n x) = ra ∧ Arm.r .ERR (iterN RA.step n x) = .None ∧
     spv (iterN RA.step n x) = spv RA.s0 ∧ (iterN RA.step n x).mem = x.mem ∧
-    (iterN RA.step n x).program = x.program ∧
+    ((iterN RA.step n x).program = x.program ∧ xreg 29 (iterN RA.step n x) = xreg 29 RA.s0) ∧
     (∀ r ∈ calleeSaved, ckeep r (regVal (iterN RA.step n x) r) = ckeep r (r₀ r)) ∧
     ∀ (j : Nat) (v q : Reg) (y : CV), us[j]? = some (v, q) → (vuses ops ρ)[j]? = some y →
       regVal (iterN RA.step n x) q = y

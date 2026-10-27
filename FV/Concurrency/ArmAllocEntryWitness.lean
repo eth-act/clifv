@@ -66,7 +66,7 @@ theorem run_load_entry : ∃ (lsP : List Lab) (e : Ev) (t' : ArmState × Mon),
   rw [show RAL.rf = rfL from rfl, e0] at hq0 hA0
   -- the saves
   obtain ⟨ls1, t1, r1, hq1, hA1, hev1⟩ := moves_fwdA wfRL (fun K => (K == .plainW) = true)
-    savesL _ _ _ t0m hq0 hA0 (moves_kinds checksRunL.2.1)
+    savesL _ _ _ t0m hq0 hA0 (moves_kinds checksRunL.2.1) (by simp [savesL, Loc.isSave])
   -- the entry `args`
   obtain ⟨m', hst, hm'⟩ := args_step (spillL.map (fun p => RItem.move p.1 p.2) ++ rest2L) _ w₀L
   have hq2 := realizes_args wfRL hq1 hA1 vb0L argsL0.1 hst
@@ -74,7 +74,7 @@ theorem run_load_entry : ∃ (lsP : List Lab) (e : Ev) (t' : ArmState × Mon),
   -- the spill moves
   obtain ⟨ls2, t2, r2, hq3, -, hev2⟩ := moves_fwdA wfRL
     (fun K => (K == .plainW || K == .plainR) = true) spillL rest2L t1.1 m' t1.2 hq2 hA2
-    (moves_kinds checksRunL.2.2.1)
+    (moves_kinds checksRunL.2.2.1) (by simp [spillL, Loc.isSave])
   -- the `ldar`
   obtain ⟨j, hj, hpc, hstr⟩ := q_head hq3 rfl head_ldarL
   obtain ⟨t3, ev, r3, -, hk, hn, ha⟩ := excl_step_fwd wfRL hj rfl hstr.prog hpc hstr.err

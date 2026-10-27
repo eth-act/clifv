@@ -47,7 +47,7 @@ theorem rets_alloc {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb R.
     ∃ n ops, (MInst.rets us).operands = .ok ops ∧ (∀ i < n, R.GoodX (iterN R.step i s)) ∧
       Arm.r .PC (iterN R.step n s) = ra ∧ Arm.r .ERR (iterN R.step n s) = .None ∧
       spv (iterN R.step n s) = spv R.s0 ∧ (iterN R.step n s).mem = s.mem ∧
-      (iterN R.step n s).program = s.program ∧
+      ((iterN R.step n s).program = s.program ∧ xreg 29 (iterN R.step n s) = xreg 29 R.s0) ∧
       (∀ r ∈ calleeSaved, ckeep r (regVal (iterN R.step n s) r) = ckeep r (r₀ r)) ∧
       ∀ (j : Nat) (v p : Reg) (x : CV), us[j]? = some (v, p) → (vuses ops vs.ρ)[j]? = some x →
         regVal (iterN R.step n s) p = x := by
@@ -96,9 +96,9 @@ theorem rets_alloc {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb R.
       cases hn with
       | ret _ =>
       rw [Backend.Proof.rets_store hlen2 rfl hho hcl] at hks
-      obtain ⟨n, ht, hpc, herr, hsp, -, hregs, hsaved, hmem, -, hprogF, hvalsM⟩ :=
+      obtain ⟨n, ht, hpc, herr, hsp, hx29, hregs, hsaved, hmem, -, hprogF, hvalsM⟩ :=
         ret_machine hR hent hqa hvbV hi
-      refine ⟨n, _, operands_retsC ns, ht, hpc, herr, hsp, hmem, hprogF, fun r hr => ?_,
+      refine ⟨n, _, operands_retsC ns, ht, hpc, herr, hsp, hmem, ⟨hprogF, hx29⟩, fun r hr => ?_,
         fun j v p x hj hx => ?_⟩
       · by_cases hsv : r ∈ R.af.saves
         · rw [ckeep_regVal_of_slotVal (hsaved r hsv) hr, hr₀ r hsv]
