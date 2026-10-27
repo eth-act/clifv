@@ -1,0 +1,31 @@
+{
+  "base": "791f3484bc94940c3073b8389ab86d7bfdb67855",
+  "candidate": "52b22dc9e1cb4329ec160ade0f2e12a4312f2d51",
+  "all_modified_old_public_headers_exact": true,
+  "method": "Direct exact source declaration header comparison before assignment, independently recomputed against saved base.",
+  "headers": {
+    "FV/E2E/CompiledSemantic.lean:of_checks": "4efc5992d52192777342b46354e7ab01c5082d2facbe11026b5a2f85b11d99a4",
+    "FV/E2E/CompiledSemantic.lean:check": "b3fe8da0f0eddf7f7bbc32b011d31666a25186da70e1ed9af67ed40fc09c02ae",
+    "FV/E2E/CompiledSemantic.lean:alloc": "fe5778097b869b1aaa13105d42c40745c1f7f9b80ecd05a82074542011948250",
+    "FV/E2E/CompiledSemantic.lean:emit": "f4195c4160ba7b2bbe2bfb3c27336a1d2b464ce1d60cfee4344f98e324140715",
+    "FV/E2E/CompiledSemantic.lean:layout": "b05a84b15fbc4d8c87b7033f968b8bc992bd3a79b7584885bd5816e2480b9336",
+    "FV/E2E/CompiledSemantic.lean:backend_correct_worldX_semantic": "a5664833241dadbf521697992fbffd22f18606ed5682889287ef4bde65a77f40",
+    "FV/E2E/CompiledSemanticNI.lean:toSemantic": "c01bbec3097143f82b618dceed3a5b1ae2107d024a7f1805074279cd4cec9f3d",
+    "FV/E2E/CompiledSemanticNI.lean:of_checks": "b18be0e8cb123ee4b269f4847834182f60a8b7cc9bcd394e30f02f7bf95a9c23",
+    "FV/E2E/CompiledSemanticNI.lean:backend_correct_world_niX_semantic": "edd606aa826bf2d8fe57a7325c0d75c7f2ab5aa77da2a64fc7d46a4c57e87515",
+    "FV/E2E/SemanticNIBoundary.lean:check": "b6a0700d980b2631e9226219e0004c3dd57012e58eb9a466c0c160f6d8e403ab",
+    "FV/E2E/SemanticNIBoundary.lean:alloc": "6047ab73720ad41efc60fe75d72707c7c631bc2d64ee68c87e408093c362b496",
+    "FV/E2E/SemanticNIBoundary.lean:emit": "8717f6886d5652643c6ced102e81e90b7c297a76a4e68a6d36a082facc134c7f",
+    "FV/E2E/SemanticNIBoundary.lean:layout": "c9335b1c7c4ad6e23d413f495aca8dfa911c21d69568ea3234a187ad37b1fe19",
+    "FV/E2E/SemanticNIBoundary.lean:entryRegs": "fb64c34d32007ac37f0d6e9bc0d4fc768a3f1b2c7241bd9ad1a08dee54701e14",
+    "FV/E2E/SemanticNIBoundary.lean:noTls": "2dcbb3c314544ede43167caf633d8b9cb4ef17dbba3068fb8bbc00f3ab9e1393",
+    "FV/E2E/SemanticNIBoundary.lean:noTlsFlags": "60f4e51d317dc17e177484a047cc5e28edc6ee9fcfb5e2c35ee0bbe5543f5bbb",
+    "FV/E2E/SemanticNIBoundary.lean:noTlsScalar": "52df000e96d1b25bcfed40ccbe9abe8710e6991fb394fcd2b2577c9d7478f69f",
+    "FV/E2E/SemanticNIBoundary.lean:noTlsDiv": "92b88c5b7dff188e855aa38b6159f6ae7075fec0493001c5f4dfc21832403c48",
+    "FV/E2E/SemanticNIBoundary.lean:noTlsCfg": "921728bbe92813d0dfe53123ea3291dac844f8078ca0085eab41d3e5ec15ebbe",
+    "FV/E2E/SemanticNIBoundary.lean:hasTls_of_vcode_semantic": "9173d210b1170498599b96e168df3b23815479206aaf4020dbd87cdbd4b3967c",
+    "FV/E2E/SemanticNIBoundary.lean:stackArgsAvoid_frameW_semantic": "df2779b5110d0ce29c9f8e7e3757aef97a185f474f77e2d0af7c8fcbf34e6ab3",
+    "FV/E2E/SemanticNIBoundary.lean:backend_correct_world_semantic": "4d8757d9e3c7ddc5ce0dec6f902f915b6edb5870fda309c0f00793c7d9546a77",
+    "FV/E2E/SemanticNIBoundary.lean:backend_correct_world_ni_semantic": "0c6a1b267094a63e972fed37e612dc0620a515130d3c420de9b334e92f7917e9"
+  }
+}
