@@ -326,6 +326,26 @@ run-restricted contract.
   at the states whose count is `n` (`CallSoundCtlG` with that premise beside its `G`-keep one).
   Witnesses `RegLevelCountIWitness.lean`.
 
+### 5.5 Segment locality: call states per realised segment (step 2k)
+
+`FV/E2E/RegLevelNoCall.lean`: `RL.CallSt R u := CallPc R.fa R.base (pc u)` (the pc is a
+`bl`/`blr` line of the activation), `RL.NoCallAt := ¬ CallSt`, `RL.GoodXN := GoodX ∧ NoCallAt`.
+Every `bl`/`blr` is hooked (`Insn.not_call_of_hooked`), so a state at an unhooked line is no
+call state (`RL.noCallAt_of_line`, `noCallAt_of_noCall`; `callSt_of_line` for the call line);
+`RL.goodXN_execLinesG`/`goodXN_execLines` are the straight-line builders. This per-state fact
+is all the count needs: we do not state "the item's own lines" as a range, because a non-call
+item's segment can leave its lines (relaxed branches, veneers, trap sections) and none of
+those is a call line either. Variants, new files beside the originals (the `*W.lean` pattern),
+same hypotheses as the original:
+- non-call items, `realizes_XN` in `RegLevelXN.lean`: `R.GoodX` replaced by `R.GoodXN` in the
+  conclusion (`∀ i < n, R.GoodXN (iterN R.step i s)`); zero-length segments need none.
+- `call`/`try_call`, `realizes_callN`/`realizes_tryCallN`: the original conclusion and
+  `∃ i0 < n, R.CallSt (iterN R.step i0 s) ∧ ∀ i < n, i ≠ i0 → R.NoCallAt (iterN R.step i s)`.
+- composition `realizes_allC` (`RegLevelCorrectC.lean`): `RealizesC … R.step (Q ∧ AInv)
+  R.GoodX R.CallSt` (`countIn` per segment `= opCalls`), via `countIn_zero_of`/`countIn_one_of`.
+Families: core (GoodX/move, Op, Args, Next, Branch, Goto, composition) and the rest (Call/
+symAddr, Try, JT, Atomic, Tls, Frame/prologue).
+
 **Refined call contract (next).** `X.call n` should be the *canonical* callee run from the
 VCode world `w` with the callee's stack region (the addresses `StackBelow K (sp w)`, inside the
 caller's `F`) overwritten by the prophecy `P n`: the actual machine memory there at the
