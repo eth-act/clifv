@@ -100,7 +100,6 @@ import FV.Link.DeadCleanupCompileTFast
 #print axioms E2E.LinkCheck.outChksTWith_eq
 #print axioms E2E.LinkCheck.outOkTRFast_eq
 #print axioms Link.DeadCleanup.outOkTFast_eq
-
 -- the decider-free typed scope fnScopeInTB3 / compileExeT3 (Floats15)
 #print axioms E2E.LinkCheck.lowerOutTB_of_T3
 #print axioms E2E.LinkCheck.resClassOkB_of_T3
@@ -123,3 +122,4 @@ import FV.Link.DeadCleanupCompileTFast
 #print axioms FloatScopeT3.pipeCleanupT_okT3_w -- witness: native_decide
 #print axioms FloatScopeT3.inScopePT_w -- witness: native_decide
 #print axioms E2E.FloatCompileExeT3Witness.correct_spec -- witness: native_decide
+

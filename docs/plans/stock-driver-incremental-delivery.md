@@ -7,6 +7,74 @@ is unchanged: actual Stock source semantics, simulation/completeness, production
 compiler/checker/linker/generated proofs, original inputs/theorem variants/exact
 required axioms/accepted identities/successful stages.
 
+## Current delivery: forward CFGs and conditional scalar leaves
+
+PR #633 (`ac302a8a`) activated three-block chains. PR #634
+(`d6218f29`, merged2026-10-26T22:23:16Z) removes that fixed bound and the older
+two-block forwarding restriction.
+[Terminal author evidence](../research/stock-forward-cfg-production.md) records
+4,093 normal keys, 94 audit files/3,592 roots/all 3,544 old axiom sets exact,
+78 new and 78/70/34/34 retained integration checks, 24,000 native executions,
+and runtime/encoder/identity/stage/example/actual-crate/paired-output gates.
+All 2,474 prior backend proof files and three shared theorem headers are exact.
+
+Default compiler/checker/verified-linker/generated consumers append route 8 and
+retain complete previous-route fallback on original inputs/settings. Source-
+ranked actual RPO/traversal, demand transport, return/first traps and ABI entry
+derive the existing Scalar.Domain for arbitrary-length forward jump/return CFGs.
+No accepted-input certificate or all-values-materialized premise is added.
+
+The same 4,543-symbol paired comparison remains 900→900 exact with no losses and
+four changed instances. Ten newly eligible captured instances are all two-block;
+the provider selects actual Stock for 273 instances after CLI legalization.
+The same ten cases with existing regalloc2 remain 0→0 exact. The changes remove
+duplicate cmp/cset in wrapping add/sub, with carry selection still different.
+These are bounded measurements, not completion percentages or allocator changes.
+
+Continue actual ordinary conditional, bit-test/table and critical correct-choice
+source simulations; then inherited loop values, memory/addressing/atomics,
+calls/exceptions, uncovered reachable families and original-domain whole-driver
+simulation/Stock-only/downstream completeness. Saved next code already derives
+actual brif calls and source-condition provenance, and proves a witnessed
+boolean-companion-to-branch semantic replacement using Std3. Connect these to
+the actual emission/body/alias/CFG/ABI consumers; do not rebuild existing scalar
+condition or per-edge prepare/spill/copy proofs. Preserve first traps and source
+fuel/definedness, original inputs, old variants, axioms, identities and stages.
+
+A same-input source inventory finds 1,695 brif instances but only four with
+current scalar bodies, original checks and source-forward control. Control
+composition remains required; effects/memory/calls are essential for broader
+coverage. Backedges require original SSA/dominance and carried-value invariants
+beyond forward demand order. No first-class/proof-fragment stop or wholesale
+prerequisite queue. Improve the shared-checker validation boundary when it fits
+a substantive batch, retaining all old gates and exact axiom sets.
+
+Keep #44 and concrete #140 interface coordination current. Reconcile each batch
+with main, push backups and squash-merge promptly after author gates. Keep one
+warm cache and bounded builds; archive unique evidence before deleting completed
+outputs, and preserve all dirty/unpublished source. Full original #140 remains
+open; fallback is acceptance preservation, not completeness.
+
+## Conditional source domain checkpoint (2026-10-27 UTC)
+
+The next implementation branch now proves the first legacy-compatible wide
+entry-parameter conditional class through actual selected direct/synthetic copies,
+scalar return leaves, instruction-zero ABI entry, returns and first traps. The
+source selector derives the unchanged Scalar.Domain and checker soundness;
+legacy edge-copy compatibility is proved internally. Complete original returning
+and reachable-divide-by-zero witnesses compile and execute. See
+[conditional progress](../research/stock-conditional-cfg-progress.md) for exact
+1190-key/108-root validation and the two fixed-example native input-check axioms.
+PR #635 activates this class in the shared default compiler/checker/linker and
+generated-proof consumers, appending route9 with0–8 retained and complete prior
+ForwardCfg pipeline fallback. All author gates pass on31a1befe; see
+[terminal evidence](../research/stock-conditional-cfg-production.md). Same-input
+agreement remains900→900/4543, with no losses or changed bytes. Continue the
+prepared ranked conditional tail class, general conditions/per-edge/loops and
+effects/calls/full-domain obligations. No proof-fragment or first-class stop.
+Broader control/per-edge/loops/effects/calls/full-domain obligations remain open;
+this first conditional class does not replace them.
+
 ## Starting point and next deliveries
 
 Arithmetic shipped in #356 (95b87108); complete add/sub/select activation shipped
@@ -156,6 +224,44 @@ root IDs790/791 are observed. All prior theorem variants and inputs remain.
 Full140 continues immediately with arbitrary-position/undemanded/sunk division
 and every original remaining obligation; no stop at this class.
 
+Arbitrary-position unused, consumed and multiple i32/i64 divisions/remainders
+pass all current author gates through the shared default consumers in #611.
+[Terminal evidence](../research/stock-general-div-production-activation.md)
+records validated code `cd57ac63` on main `1510186e`, all 3,947 normal keys,
+19 audits/577 public roots, 33 ownership partitions, exact old axiom/header and
+identity/stage parity, actual native execution, current and retained CLI/link/
+generated proofs, all six full gates and both verified examples. Terminal evidence
+is backed at `69182545`. The original nine arguments, source slot, arbitrary
+operands and zero/overflow traps remain. This completes this production class;
+full original #140 and general register agreement remain unfinished.
+
+Original i8/i16 scalar production coverage now extends the same default shared
+consumers. [Narrow activation evidence](../research/stock-narrow-production-activation.md)
+records validated `a1b29bf7`: 474 complete positive pipeline configurations,
+8,532 native executions, actual ordinary compiler CLI bytes, current/retained
+consumer cohorts, 38 ownership partitions, all six full gates and both verified
+examples. Old selectors/theorem variants, exact old axioms, input conditions,
+accepted identities and successful stages remain. The original i8 byte-swap
+scope rejection stays explicit. No new class uses a separate compiler stack.
+
+Production applicability remains important: the ordinary CLI retains its
+no-opt/no-TryCall input-file guard. `cargo-fv` compiles each function in its own
+file, so a try-call function does not disable unrelated pure Rust functions.
+The allocator default remains Lean. Fresh real-example agreement remains
+887/4,543 symbol comparisons; these class gates are not general register
+agreement or Stock-only completeness. Track these separately from proof counts.
+
+Bmask/nop production activation landed in #624 (`ab1abdfc`) through the same
+shared scalar/division compiler/checker/linker/generated-proof consumers.
+[Activation evidence](../research/stock-mask-production-activation.md) records
+all sixteen independent source/result width pairs, actual native and ordinary
+CLI behavior, retained artifacts and full original identity/stage/axiom parity.
+This is a completed production class; general CFG and register agreement remain
+unfinished. Continue original control/successor arguments/critical edges/loops,
+memory/effects and calls/unwind through the fixed obligations below. Keep legacy
+fallback until the complete original input domain and downstream consumers are
+proved. Do not remove production guards without the corresponding proofs.
+
 A concrete build boundary can be delivered alongside the next implementation:
 extract unchanged VCode outcomes, their prefix lemmas, ArgsAtEntry and Reach into
 a stable interface; retain names/definitions and LowerSim re-exports. Isolated
@@ -164,12 +270,21 @@ are still required. Coordinate the shared-file boundary on140. This avoids
 rebuilding generated interpreter proofs after unrelated simulation additions.
 Do not stop at either this first trapping class or a performance-only packet.
 
-Next: mixed scalar prefixes and returned final division; broader colored/sunk
-instructions; complete original widths/ABIs; every unchanged original #140 control/
+Next: complete original widths/ABIs and remaining pure-family cases; broader
+colored/sunk instructions; every unchanged original #140 control/
 memory/trap/effect/call/source/block/whole-driver/completeness/consumer obligation.
 Never exclude original accepted compare/cast syntax to simplify composition.
 Universal successful lowering and downstream completeness remain. Fallback is
 not Stock completeness; full original #140 remains unfinished.
+
+The CFG dependency packet derives quiet records and shared family/body execution
+for arbitrary original blocks, executable return/later-trap witnesses, and
+source consistency through actual successor binding. [Validated evidence](../research/stock-cfg-body-checkpoint.md)
+records3,984normal keys,79audit files and626exact prior axiom sets. All existing
+Lean sources/import keys remain intact; additions use isolated modules.
+Production CFG activation remains pending. Continue machine branch execution,
+actual guarded successor demand/value/world transfer and the existing per-edge
+preparation/consumer stack, then critical edges/loops and all original obligations.
 
 ## Maintained validation runner (landed #358)
 
@@ -338,3 +453,115 @@ witnesses. Old consumers and theorem variants stay. Next immediately activate
 unused/consumed/multiple divisions through the existing shared production route;
 then continue every original #140 obligation. This prerequisite is not production
 activation or whole-goal completion.
+
+## Bmask/nop production delivery (2026-10-25 UTC)
+
+Implementation `0aecff7c` passes all24 current readiness requirements and enables
+bmask/nop with independent four-width source/result types through the existing
+scalar/division compiler, checker, linker and generated-proof consumers.
+[Activation evidence](../research/stock-mask-production-activation.md) records
+3,976/3,976 normal modules,12nativeobjects/3,888byteexecutions,70ownership
+partitions,exact old axioms/headers/identities/stages and verified examples.
+Fresh paired real-crate agreement remains887/4,543symbol comparisons with no
+gains or losses; no full-goal or corpus-improvement claim. Publication replay
+keeps the implementation receipts on their actual source head.
+
+Continue original ABI/reachable-helper obligations and the full CFG closure:
+quiet original-block metadata/records, arbitrary scalar bodies, entry/branch
+semantics, successor-specific arguments/critical edges/block parameters/loops,
+and the existing per-edge preparation/consumers. Current scalar adapters reject
+nonempty successor-specific tables; retain those vectors through proved
+adapters. Then finish every original memory/effect/call/unwind, whole-driver and
+Stock-only/downstream completeness obligation above. Preserve saved work and
+remove the completed batch's unneeded clean worktree after archiving evidence.
+
+## Canonical original-block machine jump composition (2026-10-25 UTC)
+
+Implementation `22d1627f` derives one actual original core with its retained scan,
+prepared terminator, ABI widths, assembly and returned resolved block. Its
+source-driven return/trap contract executes the actual complete body and jump,
+retaining source continuation fuel. A genuine entered-source two-block returning
+witness supplies the guarded input without a machine-execution premise.
+[Evidence and limits](../research/stock-cfg-jump-checkpoint.md).
+
+This closes the body/jump dependency after #625; production CFG activation is
+still pending. Next derive demanded outgoing and inherited successor values,
+compose source DFG and actual per-edge copies into the guarded successor relation,
+then critical edges/loops and every remaining original #140 obligation. Do not
+replace the whole driver goal with this proof packet.
+
+## Actual outgoing values and successor parameter binding (2026-10-25 UTC)
+
+Implementation `49bf11e9` derives actual outgoing argument marks, mapping and
+bounds through the same compiled block, obtains argument values from its actual
+post-body guard, and executes the real per-successor copies to every target
+parameter. The real entered-source two-block witness executes body/jump and
+source successor binding before those copies. [Evidence and limits](../research/stock-successor-parameters-checkpoint.md).
+
+Next establish the inherited nonparameter value invariant, including backedges
+whose successor demands arise later during reverse compilation, using the saved
+source availability and available-value fresh-write frame results. This is an
+internal dynamic simulation obligation, never an additional accepted-program
+certificate. Continue complete guarded successors, synthetic critical edges,
+conditional/table branches/loops, production activation and every original140
+obligation; parameter binding alone does not establish those results.
+
+## Inherited-value body/jump carry (2026-10-25 UTC)
+
+Implementation `4c955f39` carries arbitrary already-held block-entry values
+without a demand premise through actual source steps, selected constant writes,
+complete constant/omitted/nop bodies and their actual jump. A genuine two-block
+7+9=16 execution witnesses the entire next-scan guard after real source binding,
+per-edge copies and inherited/DFG/memory transfer. [Evidence and limits](../research/stock-inherited-carry-checkpoint.md).
+
+Next reuse existing scalar/division record write bounds/frame results to extend
+carry; derive whole-edge demand/order coverage for new definitions and backedges
+internally. Continue arbitrary guarded successors, critical edges/loops, actual
+ABI/return and prepared/physical consumers toward substantive production CFG
+activation, then every original140obligation. Production CFG is still inactive;
+this witness does not replace the arbitrary-function theorem or physical entry.
+
+## Division/mixed-body carry and next production boundary (2026-10-25 UTC)
+
+Implementation `e91b7103` reuses the existing division source execution/frame
+for all old signed/unsigned/narrow/remainder cases, retains zero/overflow traps,
+and composes complete constant/division/nop bodies under carry, including unused
+and multiple divisions. Three real entry/normal/trap/body witnesses add no finite
+facts or native axioms. [Evidence](../research/stock-division-carry-checkpoint.md).
+
+Next prioritize actual return-block/core composition and a substantive two-block
+CFG production class through actual ABI/return and prepared/physical consumers,
+using the now-proved prefixes/jumps/per-edge copies/carry. Do not turn every
+remaining carry family into a wholesale activation gate. Continue successive
+function classes, broader scalar carry, whole-edge demand/order coverage,
+critical edges/loops and every original140obligation after that first activation.
+Production CFG remains inactive until its current proof/consumer gates pass.
+
+## Complete first CFG source class (2026-10-25 UTC)
+
+The direct two-block class now has general instruction-zero return/trap
+simulation, actual same-core ABI entry, internally derived successor coverage,
+complete return/zero-divisor witnesses and an executable source/artifact check.
+Actual single-successor vector equality transports it to the existing
+`Scalar.Domain`, including nonempty parameter copies. Full4031/4031 and20new
+audited roots pass. [Evidence and exact limits](../research/stock-two-block-source.md).
+
+Next close the concrete consumer boundary: existing ABI-read models exclude
+`.goto`, so add a proved CFG variant with entry-only argument-read/control-flow
+transport and realization. Keep old checks/models intact. Then wire and validate
+actual compiler/checker/linker/generated-proof default production with legacy
+fallback and land a substantive activation. Do not merge proof fragments as a
+substitute or wait for every remaining function family. Continue successive
+classes and every original #140 obligation after this first CFG activation.
+
+## Active ranked conditional tails checkpoint
+
+#635 is merged at91c809f7. The next substantive route10 implementation and complete source/domain/ABI witnesses are implemented; see [progress](../research/stock-conditional-forward-cfg-progress.md). Freeze and finish current author gates, preserving all prior fallback behavior and exact old theorem/axiom/input/identity-stage contracts, then squash and continue the remaining original #140 obligations.
+
+## Ranked conditional tails author gates complete
+
+PR #636 implements the route10 conditional entry/ranked-tail class on7170a146, with all current author gates passed; [terminal receipt](../research/stock-conditional-forward-cfg-production.md). Publish and squash under current author policy; retain the complete prior conditional pipeline and all original inputs/variants/axioms/identities/stages. The paired actual-output metric is900→900/4543, with no gains/losses/changedbytes. General ranked parameter-conditional return/first-trap/source-domain/ABI drafts are preserved outside this frozen packet. Continue those and computed/narrow conditions, per-edge/table/loops/effects/calls and original full140 obligations; no first-class/proof-fragment stop.
+
+## Nonentry parameter-condition CFG delivery
+
+PR #637, implementation `9f27ad6c3b13f3fd378693389e82e9cdaf616b65`, extends production through arbitrary ranked quiet scalar CFGs with original wide parameter conditions at later source blocks. [Terminal author evidence](../research/stock-parameter-cfg-production.md) records all gates; route11 retains0–10 and complete prior fallback. Conditional successor arguments remain empty. The actual paired comparison is 900→900/4543, with 0 losses. Continue broader control/per-edge obligations and actual-corpus memory/effects/calls; reuse existing memory primitives with mapped/guarded source variants and a memory-capable contract derived from ORIGINAL world premises. Preserve pure-domain variants and exact old axiom sets. Full original140 remains open: broader conditions and nonempty conditional copies, tables/loops, memory/addressing/atomics, calls/exceptions, uncovered families and original-domain whole-driver/Stock-only/downstream completeness. Fallback preserves acceptance and is not completeness.

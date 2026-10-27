@@ -555,7 +555,8 @@ theorem iselSzT {f : Clif.Function} (hdom : dominatedB f = true) (hs : LowerScop
     (hst : Compile.storeTypedB f = true) (hsel : Compile.selectTypedB f = true) : IselSzT f := by
   intro ctx ranges st0 hb
   have hctx : CtxT f ctx :=
-    ⟨ctxInvT_of hs hb, (ctxSpec_of hb).instScopeT hs.subsetT, functionET_externs hs.subsetT⟩
+    ⟨ctxInvT_of hs hb, (ctxSpec_of hb).instScopeT hs.subsetT,
+      callsE_of_externs (functionET_externs hs.subsetT) ctx⟩
   have hcl : Cov.Clean ctx := Cov.clean_of_build hb
   have hfam := CovT.famCover_of hs hdom hst hsel hb
   exact ⟨fun ii info inst s out s' tr hi hc h => CovT.stmt_szT hctx hcl hfam hi hc h,

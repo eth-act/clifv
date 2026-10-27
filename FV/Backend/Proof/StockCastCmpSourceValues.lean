@@ -57,7 +57,7 @@ binds its actual result through final aliases, and transfers the complete
 availability-guarded original source frame. Operand types, availability, RHS
 calls and scratch separation are derived internally. The caller's dispatcher
 supplies the actual trace root, as for the older base-cast variant. -/
-theorem stock_lower_cast_cmp_source_values {f : Clif.Function} {result : Result}
+theorem stock_lower_cast_cmp_source_values_framed {f : Clif.Function} {result : Result}
     (run : Stock.lower f = .ok result) (scope : LowerScope f) (dominated : Dominated f)
     {event : BlockScanEvent} {record : ScanRecord}
     (events : event ∈ result.blockScans.toList) (records : record ∈ event.output.records)
@@ -81,6 +81,7 @@ theorem stock_lower_cast_cmp_source_values {f : Clif.Function} {result : Result}
     cm' = cm ∧ ∀ world,∃ d,Runs F isem (record.output.emitted.toList.map
       (·.mapRegs (Backend.lowerFunction.resolve result.final.alias (result.final.alias.size+1)))) ρ world (fun ρ' _ =>
         step.results = [[.vreg d .int]] ∧
+        (∀ key,key < record.input.base.nextVreg ∨ record.output.state.base.nextVreg ≤ key → ρ' key = ρ key) ∧
         ValuesHeld (fun value => Demanded record.input value ∧ value ∈ availOf f (availIn f result.ctx) bi (j+1))
           event.ctx fr' (fun key => ρ' (aliasNum result.final.alias key))) := by
   obtain ⟨receipt⟩ := stock_lower_record_selection run events records recorded emitted
@@ -179,28 +180,66 @@ theorem stock_lower_cast_cmp_source_values {f : Clif.Function} {result : Result}
   apply (execution world).imp
   intro final world' executed resultValue
   obtain ⟨value,kept⟩ := resultValue
-  refine ⟨outputRegs,?_⟩
-  apply source_single_result_values source clif results sourceStep evaluatedValue
-  intro old required oldVal lookup
-  by_cases equal : old = z
-  · subst old
-    simp only [withValue,eq_self,ite_true] at lookup
-    cases lookup
-    exact ⟨a,mapped,by change VHolds _ (final (aliasNum result.final.alias a)); rw [installedFinal]; exact value⟩
-  · simp only [withValue,ite_eq_right equal] at lookup
-    have before := available_before_of_after_not_result foundBlock foundStmt required.2
-      (by simpa only [statementResults,List.mem_singleton] using equal)
-    have needed : Demanded record.output.state old := by
-      intro zero
-      have count := stock_lower_record_demand_mono run events records recorded emitted old
-      change record.output.state.demand[old]! = 0 at zero
-      rw [zero] at count
-      exact required.1 (Nat.eq_zero_of_le_zero count)
-    obtain ⟨key,map,previous⟩ := held old ⟨needed,before⟩ oldVal lookup
-    have outside := stock_lower_available_alias_outside_record run scope dominated events records
-      foundBlock foundStmt current before (by rw [← maps]; exact map)
-    refine ⟨key,map,?_⟩
-    change VHolds oldVal (final (aliasNum result.final.alias key))
-    rw [kept _ (by simpa only [scan_frontier,recordBase] using outside)]
-    exact previous
+  refine ⟨outputRegs,?_,?_⟩
+  · intro key outside
+    exact kept key (by simpa only [scan_frontier,recordBase] using outside)
+  · apply source_single_result_values source clif results sourceStep evaluatedValue
+    intro old required oldVal lookup
+    by_cases equal : old = z
+    · subst old
+      simp only [withValue,eq_self,ite_true] at lookup
+      cases lookup
+      exact ⟨a,mapped,by change VHolds _ (final (aliasNum result.final.alias a)); rw [installedFinal]; exact value⟩
+    · simp only [withValue,ite_eq_right equal] at lookup
+      have before := available_before_of_after_not_result foundBlock foundStmt required.2
+        (by simpa only [statementResults,List.mem_singleton] using equal)
+      have needed : Demanded record.output.state old := by
+        intro zero
+        have count := stock_lower_record_demand_mono run events records recorded emitted old
+        change record.output.state.demand[old]! = 0 at zero
+        rw [zero] at count
+        exact required.1 (Nat.eq_zero_of_le_zero count)
+      obtain ⟨key,map,previous⟩ := held old ⟨needed,before⟩ oldVal lookup
+      have outside := stock_lower_available_alias_outside_record run scope dominated events records
+        foundBlock foundStmt current before (by rw [← maps]; exact map)
+      refine ⟨key,map,?_⟩
+      change VHolds oldVal (final (aliasNum result.final.alias key))
+      rw [kept _ (by simpa only [scan_frontier,recordBase] using outside)]
+      exact previous
+
+/-- Retained original interface. -/
+theorem stock_lower_cast_cmp_source_values {f : Clif.Function} {result : Result}
+    (run : Stock.lower f = .ok result) (scope : LowerScope f) (dominated : Dominated f)
+    {event : BlockScanEvent} {record : ScanRecord}
+    (events : event ∈ result.blockScans.toList) (records : record ∈ event.output.records)
+    {bi j : Nat} {block : Clif.Block} {stmt : Clif.Stmt}
+    (foundBlock : f.blocks[bi]? = some block) (foundStmt : block.body[j]? = some stmt)
+    (current : record.inst = blockStart f bi + j)
+    {info : IInfo} {input z a : Nat} {ty : Clif.Ty}
+    (source : event.ctx.insts[record.inst]? = some info)
+    (clif : info.clif = some (.extend .uextend ty input))
+    (results : info.results = [z]) (statementResults : stmt.results = [z])
+    (mapped : event.ctx.valueReg? z = some (.vreg a .int))
+    {step : Step} (recorded : record.output.step = some step) (emitted : step.decision = .emitted)
+    (selectedId : step.rules.getLast? = some 811)
+    {F : BitVec 64 → Prop} {isem : Backend.Proof.Sem} (refines : Refines F isem)
+    {fr : Clif.Frame} {ρ : Nat → CV}
+    (dfg : DFGCons event.ctx (restrict fr (availOf f (availIn f result.ctx) bi j)))
+    (held : ValuesHeld (fun value => Demanded record.output.state value ∧ value ∈ availOf f (availIn f result.ctx) bi j)
+      event.ctx fr (fun key => ρ (aliasNum result.final.alias key)))
+    {env : Clif.Env} {cp : Clif.Program} {fr' : Clif.Frame} {cm cm' : Clif.Mem}
+    (sourceStep : SourceInstResult env cp event.ctx record.inst (fr,cm) (fr',cm')) :
+    cm' = cm ∧ ∀ world,∃ d,Runs F isem (record.output.emitted.toList.map
+      (·.mapRegs (Backend.lowerFunction.resolve result.final.alias (result.final.alias.size+1)))) ρ world (fun ρ' _ =>
+        step.results = [[.vreg d .int]] ∧
+        ValuesHeld (fun value => Demanded record.input value ∧ value ∈ availOf f (availIn f result.ctx) bi (j+1))
+          event.ctx fr' (fun key => ρ' (aliasNum result.final.alias key))) := by
+  obtain ⟨memory,execution⟩ := stock_lower_cast_cmp_source_values_framed run scope dominated
+    events records foundBlock foundStmt current source clif results statementResults mapped recorded emitted
+    selectedId refines dfg held sourceStep
+  refine ⟨memory,?_⟩
+  intro world
+  obtain ⟨d,ρ',w',executed,same,output,_,post⟩ := execution world
+  exact ⟨d,ρ',w',executed,same,output,post⟩
+
 end Backend.Stock.Proof.ScalarCmp

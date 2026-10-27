@@ -13,7 +13,7 @@ callee value, 1033) keep the typed invariant `ShpIsT`. The runs emit the stores 
 stack-passed arguments (no control forms), the GOT load of a fresh vreg and the call, whose
 argument registers are the signature's distinct `x0..x8` and whose defs are the fresh vregs of
 `gen_call_output` in `x0..x7` (the integer `callOk_of`); the ABI returns are integer
-(`call_retClassesT` from the typed context's integer externs). The context-independent runs
+(`call_retClassesSigE`: the typed context's integer `call` callees, `CtxT.calls`). The context-independent runs
 (`call_impl_ok`, the `ctor_*` facts, `total_*`, `mem_lower_*`) are the integer ones.
 -/
 
@@ -37,6 +37,14 @@ theorem shpIsT_of_since {N : Nat} {s0 s s' : LState} (h : ShpIsT N s0 s) (h' : C
   rcases List.mem_append.mp hm with hm | hm
   · exact hc0 m hm
   · exact hc m hm
+
+/-- A callee with an integer signature (`Compile.sigE`) returns integers (`call_retClassesT` for
+one signature: the typed context's `CtxT.calls`). -/
+theorem call_retClassesSigE {e : Clif.ExtFunc} (h : Compile.sigE e.sig = true) :
+    (sigRets e.sig).map retClass = List.replicate (sigRets e.sig).length .int := by
+  apply sigRets_classes_int
+  simp only [Compile.sigE, Compile.tyE, Bool.and_eq_true, List.all_eq_true] at h
+  exact List.all_eq_true.mpr fun p hp => (h.2 p hp).1
 
 theorem since_pushT {N : Nat} {st s s' : LState} {c : MInst} (h : CtlSinceT N st s)
     (he : s'.emitted = s.emitted.push c) (hc : c.isCtl = true → CtlShapeT N c) :
@@ -96,7 +104,7 @@ theorem run_2508 {p : Program} (hp : Data p) {f : Clif.Function} {ctx : Ctx}
   simp only [List.cons.injEq, and_true] at hfs
   obtain ⟨rfl, rfl⟩ := hfs
   have hsig := extern_sigAbiOk ha hext
-  have hrc := call_retClassesT hctx.externs hext
+  have hrc := call_retClassesSigE (hctx.calls ii info fn args ext hi hcl hext)
   have hint := hxi fn ext hext
   have hfn : ctx.func.extern? fn = some ext := by rw [hci.func]; exact hext
   simp only [ext_value_list_slice_iff, ext_func_ref_data_iff, hfn] at *
@@ -176,7 +184,7 @@ theorem run_2518 {p : Program} (hp : Data p) {f : Clif.Function} {ctx : Ctx}
   simp only [List.cons.injEq, and_true] at hfs
   obtain ⟨rfl, rfl⟩ := hfs
   have hsig := extern_sigAbiOk ha hext
-  have hrc := call_retClassesT hctx.externs hext
+  have hrc := call_retClassesSigE (hctx.calls ii info fn args ext hi hcl hext)
   have hint := hxi fn ext hext
   have hfn : ctx.func.extern? fn = some ext := by rw [hci.func]; exact hext
   simp only [ext_value_list_slice_iff, ext_func_ref_data_iff, hfn] at *
