@@ -139,8 +139,8 @@ import FV.Backend.Proof.StockConditionalEmissionWitness
 #print axioms Backend.Stock.ConditionalCfg.domain_of_eligible
 #print axioms Backend.Stock.ConditionalCfg.sourceOk_sound
 #print axioms Backend.Stock.ConditionalCfg.check_sound
-#print axioms Backend.Stock.Proof.ConditionalValues.conditional_source_checks_witness
-#print axioms Backend.Stock.Proof.ConditionalValues.checked_conditional_driver_witness
+#print axioms Backend.Stock.Proof.ConditionalValues.conditional_source_checks_witness -- witness: native_decide
+#print axioms Backend.Stock.Proof.ConditionalValues.checked_conditional_driver_witness -- witness: native_decide
 
 #print axioms E2E.CfgBoundary.checked_step_frame
 #print axioms E2E.CfgBoundary.checked_step_transport

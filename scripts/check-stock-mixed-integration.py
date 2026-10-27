@@ -38,13 +38,13 @@ def expected_roots(prefix="Mixed"):
     roots = set()
     for mode in ("Plain", "Cleanup"):
         for policy in ("Strict", "Fallback"):
-            roots.add(f"Stock{prefix}{100 if prefix in ('CfgLinearProduction', 'CfgForwardProduction') else 96 if prefix == 'CfgScalarEntryProduction' else 16 if prefix == 'CfgEntryProduction' else 6}{mode}{policy}Global")
-            if prefix in ("CfgScalarEntryProduction", "CfgLinearProduction", "CfgForwardProduction"):
-                roots.add(f"Stock{prefix}{100 if prefix in ('CfgLinearProduction', 'CfgForwardProduction') else 96}{mode}{policy}Entries")
+            roots.add(f"Stock{prefix}{100 if prefix in ('CfgLinearProduction', 'CfgForwardProduction', 'CfgConditionalProduction') else 96 if prefix == 'CfgScalarEntryProduction' else 16 if prefix == 'CfgEntryProduction' else 6}{mode}{policy}Global")
+            if prefix in ("CfgScalarEntryProduction", "CfgLinearProduction", "CfgForwardProduction", "CfgConditionalProduction"):
+                roots.add(f"Stock{prefix}{100 if prefix in ('CfgLinearProduction', 'CfgForwardProduction', 'CfgConditionalProduction') else 96}{mode}{policy}Entries")
         roots.add(f"Stock{prefix}2{mode}FallbackGlobal")
         roots.add(f"Stock{prefix}6Mixed{mode}FallbackGlobal")
         roots.add(f"Stock{prefix}2Retained{mode}FallbackGlobal")
-        if prefix in ("CfgProduction", "CfgEntryProduction", "CfgScalarEntryProduction", "CfgLinearProduction", "CfgForwardProduction"):
+        if prefix in ("CfgProduction", "CfgEntryProduction", "CfgScalarEntryProduction", "CfgLinearProduction", "CfgForwardProduction", "CfgConditionalProduction"):
             roots.add(f"Stock{prefix}7Mixed{mode}FallbackGlobal")
     roots.update((f"Stock{prefix}33CleanupFallbackGlobal", f"Stock{prefix}33CleanupFallbackEntries"))
     return roots
@@ -192,7 +192,7 @@ def main():
                 run(f"link-check-{label}-{mode}", ["lake", "env", str(view / ".lake/build/bin/link-check"),
                     str(source), "--lean", str(proof), "--module", proof.stem, *flags])
                 if label == "retained" and mode == "Plain":
-                    selected = re.search(r"Backend\.Stock\.(?:Scalar|ForwardCfg|LinearCfg|TwoBlock(?:\.Entry)?)\.lowerWithRoutes \[(.*?)\]", proof.read_text(), re.S)
+                    selected = re.search(r"Backend\.Stock\.(?:Scalar|ConditionalCfg|ForwardCfg|LinearCfg|TwoBlock(?:\.Entry)?)\.lowerWithRoutes \[(.*?)\]", proof.read_text(), re.S)
                     assert selected and re.search(r",\s*" + ("0" if options.kind in ("cfg", "cfgentry", "cfgscalarentry", "cfglinear", "cfgforward", "cfgconditional") else "[1-4]") + r"\)", selected.group(1)), "explicit retained reconstruction route was not exercised"
                 env["LEAN_PATH"] = str(generated) + ":" + leanpath
                 run(f"cli-proof-{label}-{mode}", ["lean", "--root=" + str(generated),

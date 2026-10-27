@@ -402,3 +402,14 @@ The historical full build completes 4151/4161 keys: two existing spill fixtures
 hit their 8-GiB memory cap, blocking eight dependents. A serial larger-cap retry
 and a clean current-revision full check remain required. Failed logs stay saved;
 no conditional merge or full author-gate pass is claimed.
+
+Final69c0959f full normal build passes4161/4161 and tools4958jobs. All new
+linked fixture modes, including mixed/try callers, now pass program/checker/ELF/
+history/stack/proof emission. The generated-root harness still expected the old
+six-case cohort; it now expects the actual100-case global/per-entry cohort and
+retained seven-function mixed cases. Its explicit retained-route regex also
+recognizes the new ConditionalCfg wrapper. Exact actual root-set comparison
+passes. The full audit reported94/95 files: both already inventoried fixed native
+input-check witness lines lacked the required `witness: native_decide` marker.
+Only those two markers are added; universal theorem policy is unchanged. These
+failed gate receipts are preserved; final corrected harness/audit gates rerun.
