@@ -494,7 +494,10 @@ theorem arm_isel_refinesG2NX {RA : RL} (hR : RA.Wf) (hsc : MemScopeLSC RA)
       rcases hD with ⟨vals, m', w', rfl⟩ | ⟨w', rfl⟩ | hD
       · cases hmst
       · cases hmst
-      · obtain ⟨evs, c'', hs⟩ := srcStep_of_mstepC (coveredCodeC_of_lsC hsc) hgv hX hX0 hrq.1 hmst
+      · obtain ⟨evs, c'', hs⟩ : ∃ evs c'', SrcStep RA _ evs c'' := by
+          rcases hrq with ⟨hq', -⟩ | hrt
+          · exact srcStep_of_mstepC (coveredCodeC_of_lsC hsc) hgv hX hX0 hq' hmst
+          · exact ThreadProgress.srcStep_of_retTail hX hrt hmst
         exact hD evs c'' hs
     · exfalso
       obtain ⟨b, k0, allocs, its, mm, ww, vb, info, rfl, hvb, hi⟩ := hcall
@@ -550,6 +553,7 @@ theorem arm_isel_refinesCRGNX {RA : RL} (hR : RA.Wf) (hsc : MemScopeLSC RA)
     {L : Nat → Prop} {ss ss' : Array (Array Nat)} (H3 : PrepFacts vc RA.vc L ss ss')
     {cc : CheckCtx} {ins : Array (Option AState)} {a0 : AState}
     (hc : CheckedAt RA.vc RA.rf cc ins a0) {r₀ : Reg → CV}
+    (hr₀ : ∀ r ∈ RA.af.saves, ckeep r (r₀ r) = ckeep r (regVal RA.s0 r))
     {s : Clif.State} {cM : MState CV ArmState} {x : ArmState}
     {mon : Mon}
     (hLA : ∀ {trM : List (List Ev)} {cE : MConf CV ArmState},
@@ -624,7 +628,10 @@ theorem arm_isel_refinesCRGNX {RA : RL} (hR : RA.Wf) (hsc : MemScopeLSC RA)
     rcases hD with ⟨vals, m', w', rfl⟩ | ⟨w', rfl⟩ | hD
     · cases hmst
     · cases hmst
-    · obtain ⟨evs, c'', hs⟩ := srcStep_of_mstepC (coveredCodeC_of_lsC hsc) hgv hX hX0 hrq.1 hmst
+    · obtain ⟨evs, c'', hs⟩ : ∃ evs c'', SrcStep RA _ evs c'' := by
+        rcases hrq with ⟨hq', -⟩ | hrt
+        · exact srcStep_of_mstepC (coveredCodeC_of_lsC hsc) hgv hX hX0 hq' hmst
+        · exact ThreadProgress.srcStep_of_retTail hX hrt hmst
       exact hD evs c'' hs
   · exfalso
     obtain ⟨b, k0, allocs, its, mm, ww, vb, info, rfl, hvb, hi⟩ := hcall
@@ -649,9 +656,9 @@ theorem arm_isel_refinesCRGNX {RA : RL} (hR : RA.Wf) (hsc : MemScopeLSC RA)
     subst hk'
     obtain ⟨ops, hops, rfl, rfl, rfl⟩ := ret_link H3 h6 h7 h8 hvb hi h11
     obtain ⟨n, ops2, hops2, hgood, hpc, herr, hsp, hmem, hprog, hcs, hres⟩ :=
-      rets_alloc hR hent hc hrq.1 h9 hvb hi
+      rets_alloc hR hent hc hr₀ hrq h9 hvb hi
     rw [hops] at hops2; cases hops2
-    exact ⟨b, kk, allocs, its, m, _, vb, _, ops, ρ, vals, cm, n, hrq.1, hvb, hi, hops, h10, h12,
+    exact ⟨b, kk, allocs, its, m, _, vb, _, ops, ρ, vals, cm, n, hrq, hvb, hi, hops, h10, h12,
       h13, h14, hgood, hpc, herr, hsp, hmem, hprog, hcs, hres⟩
 
 /-- **All layers from a segment's start, layers 2–4a given with the end off `rets`, pausing at
@@ -667,6 +674,7 @@ theorem arm_isel_refinesCRGN {RA : RL} (hR : RA.Wf) (hsc : MemScopeLSC RA)
     {L : Nat → Prop} {ss ss' : Array (Array Nat)} (H3 : PrepFacts vc RA.vc L ss ss')
     {cc : CheckCtx} {ins : Array (Option AState)} {a0 : AState}
     (hc : CheckedAt RA.vc RA.rf cc ins a0) {r₀ : Reg → CV}
+    (hr₀ : ∀ r ∈ RA.af.saves, ckeep r (r₀ r) = ckeep r (regVal RA.s0 r))
     {s : Clif.State} {cM : MState CV ArmState} {x : ArmState}
     {mon : Mon}
     (hLA : ∀ {trM : List (List Ev)} {cE : MConf CV ArmState},
@@ -702,7 +710,8 @@ theorem arm_isel_refinesCRGN {RA : RL} (hR : RA.Wf) (hsc : MemScopeLSC RA)
           MatchRun cc ins ckeep r₀ cM' vP') ∨
         (∃ tE s', PRun Policy.arm g (OkPriv RA) (x, mon) (ls.take k) tE ∧ t = .run s' ∧
           AtRetS s' ∧ RetEnd RA ra env p MR slots r₀ tE.1 s')) := by
-  obtain ⟨k, trS, t, ψ, hk, -, h⟩ := arm_isel_refinesCRGNX hR hsc hgv hg hent hX hX0 H3 hc hLA hq hA hr
+  obtain ⟨k, trS, t, ψ, hk, -, h⟩ :=
+    arm_isel_refinesCRGNX hR hsc hgv hg hent hX hX0 H3 hc hr₀ hLA hq hA hr
   exact ⟨k, trS, t, ψ, hk, h⟩
 
 /-- **All layers from related configurations, pausing at calls and at returns with their
@@ -721,6 +730,7 @@ theorem arm_isel_refinesCRN {RA : RL} (hR : RA.Wf) (hsc : MemScopeLSC RA)
     {L : Nat → Prop} {ss ss' : Array (Array Nat)} (H3 : PrepFacts vc RA.vc L ss ss')
     {cc : CheckCtx} {ins : Array (Option AState)} {a0 : AState}
     (hc : CheckedAt RA.vc RA.rf cc ins a0) {r₀ : Reg → CV}
+    (hr₀ : ∀ r ∈ RA.af.saves, ckeep r (r₀ r) = ckeep r (regVal RA.s0 r))
     {s : Clif.State} {vV vP : VState CV ArmState} {cM : MState CV ArmState} {x : ArmState}
     {mon : Mon}
     (hm2 : Match f ctx R gn bl A MR slots s vV)
@@ -737,7 +747,7 @@ theorem arm_isel_refinesCRN {RA : RL} (hR : RA.Wf) (hsc : MemScopeLSC RA)
           MatchRun cc ins ckeep r₀ cM' vP') ∨
         (∃ tE s', PRun Policy.arm g (OkPriv RA) (x, mon) (ls.take k) tE ∧ t = .run s' ∧
           AtRetS s' ∧ RetEnd RA ra env p MR slots r₀ tE.1 s')) :=
-  arm_isel_refinesCRGN hR hsc hgv hg hent hX hX0 H3 hc
+  arm_isel_refinesCRGN hR hsc hgv hg hent hX hX0 H3 hc hr₀
     (fun hM => isel_alloc_refinesCRN H hchk hMR hMRw hX hX0 H3 hc hm2 hm3 hm4 hM) hq hA hr
 
 /-- **All layers from the activation's entry configuration, pausing at calls and at returns
@@ -771,6 +781,7 @@ theorem arm_isel_refines_entryCRN {RA : RL} (hR : RA.Wf) (hsc : MemScopeLSC RA)
     (hty : args.map (·.ty) = B0.params.map (·.2))
     (hsig : args.map (·.ty) = f.sig.params.map (·.ty))
     {m₀ : Loc → CV} {w₀ : Arm.ArmState} (hmr : MR slots cs.mem w₀)
+    (hr₀ : ∀ r ∈ RA.af.saves, ckeep r (m₀ (.reg r)) = ckeep r (regVal RA.s0 r))
     (hargs : ArgsAtEntry RA.F f.sig args w₀) {x : ArmState} {mon : Mon}
     (hq : Q RA x (MConf.init RA.rf m₀ w₀)) (hA : AInv RA (MConf.init RA.rf m₀ w₀))
     {ls : List Lab} {t' : ArmState × Mon} (hr : PRun Policy.arm g (OkPriv RA) (x, mon) ls t') :
@@ -784,7 +795,7 @@ theorem arm_isel_refines_entryCRN {RA : RL} (hR : RA.Wf) (hsc : MemScopeLSC RA)
           MatchRun cc ins ckeep (fun r => m₀ (.reg r)) cM' vP') ∨
         (∃ tE s', PRun Policy.arm g (OkPriv RA) (x, mon) (ls.take k) tE ∧ t = .run s' ∧
           AtRetS s' ∧ RetEnd RA ra env p MR slots (fun r => m₀ (.reg r)) tE.1 s')) :=
-  arm_isel_refinesCRGN hR hsc hgv hg hent hX hX0 H3 hc (s := cs)
+  arm_isel_refinesCRGN hR hsc hgv hg hent hX hX0 H3 hc hr₀ (s := cs)
     (cM := ⟨0, RA.rf.blocks[0]!.toList, m₀, w₀⟩)
     (fun hM => isel_alloc_refines_entryCRN (ρ₀ := fun _ => 0) H hchk hMR hMRw hX hX0 hMem hMRs
       hreg hB0 hcall hfunc hslots hbody hterm hregs hty hsig hmr hargs H3 hc (hm3 _ _)
@@ -806,6 +817,7 @@ theorem arm_isel_refinesCRNX {RA : RL} (hR : RA.Wf) (hsc : MemScopeLSC RA)
     {L : Nat → Prop} {ss ss' : Array (Array Nat)} (H3 : PrepFacts vc RA.vc L ss ss')
     {cc : CheckCtx} {ins : Array (Option AState)} {a0 : AState}
     (hc : CheckedAt RA.vc RA.rf cc ins a0) {r₀ : Reg → CV}
+    (hr₀ : ∀ r ∈ RA.af.saves, ckeep r (r₀ r) = ckeep r (regVal RA.s0 r))
     {s : Clif.State} {vV vP : VState CV ArmState} {cM : MState CV ArmState} {x : ArmState}
     {mon : Mon}
     (hm2 : Match f ctx R gn bl A MR slots s vV)
@@ -822,7 +834,7 @@ theorem arm_isel_refinesCRNX {RA : RL} (hR : RA.Wf) (hsc : MemScopeLSC RA)
           MatchRun cc ins ckeep r₀ cM' vP') ∨
         (∃ tE s', PRun Policy.arm g (OkPriv RA) (x, mon) (ls.take k) tE ∧ t = .run s' ∧
           AtRetS s' ∧ RetEnd RA ra env p MR slots r₀ tE.1 s')) :=
-  arm_isel_refinesCRGNX hR hsc hgv hg hent hX hX0 H3 hc
+  arm_isel_refinesCRGNX hR hsc hgv hg hent hX hX0 H3 hc hr₀
     (fun hM => isel_alloc_refinesCRN H hchk hMR hMRw hX hX0 H3 hc hm2 hm3 hm4 hM) hq hA hr
 
 /-- **`arm_isel_refines_entryCRN` with the realized prefix exclusive-closed**
@@ -855,6 +867,7 @@ theorem arm_isel_refines_entryCRNX {RA : RL} (hR : RA.Wf) (hsc : MemScopeLSC RA)
     (hty : args.map (·.ty) = B0.params.map (·.2))
     (hsig : args.map (·.ty) = f.sig.params.map (·.ty))
     {m₀ : Loc → CV} {w₀ : Arm.ArmState} (hmr : MR slots cs.mem w₀)
+    (hr₀ : ∀ r ∈ RA.af.saves, ckeep r (m₀ (.reg r)) = ckeep r (regVal RA.s0 r))
     (hargs : ArgsAtEntry RA.F f.sig args w₀) {x : ArmState} {mon : Mon}
     (hq : Q RA x (MConf.init RA.rf m₀ w₀)) (hA : AInv RA (MConf.init RA.rf m₀ w₀))
     {ls : List Lab} {t' : ArmState × Mon} (hr : PRun Policy.arm g (OkPriv RA) (x, mon) ls t') :
@@ -868,7 +881,7 @@ theorem arm_isel_refines_entryCRNX {RA : RL} (hR : RA.Wf) (hsc : MemScopeLSC RA)
           MatchRun cc ins ckeep (fun r => m₀ (.reg r)) cM' vP') ∨
         (∃ tE s', PRun Policy.arm g (OkPriv RA) (x, mon) (ls.take k) tE ∧ t = .run s' ∧
           AtRetS s' ∧ RetEnd RA ra env p MR slots (fun r => m₀ (.reg r)) tE.1 s')) :=
-  arm_isel_refinesCRGNX hR hsc hgv hg hent hX hX0 H3 hc (s := cs)
+  arm_isel_refinesCRGNX hR hsc hgv hg hent hX hX0 H3 hc hr₀ (s := cs)
     (cM := ⟨0, RA.rf.blocks[0]!.toList, m₀, w₀⟩)
     (fun hM => isel_alloc_refines_entryCRN (ρ₀ := fun _ => 0) H hchk hMR hMRw hX hX0 hMem hMRs
       hreg hB0 hcall hfunc hslots hbody hterm hregs hty hsig hmr hargs H3 hc (hm3 _ _)
