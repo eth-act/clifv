@@ -173,3 +173,28 @@ transport and complete consumer integration, then extend to the captured two-
 block/nop load-return class and further original140 families/effects/completeness.
 Keep substantive delivery boundaries; these commits are backed checkpoints,
 not fragment PRs. Preserve the full earlier production fallback.
+
+
+## Exact paired reads on actual retained records
+
+`StockMemoryReadTransport` derives full canonical machine-load equality from the
+same initialized original source heap on both worlds. It proves exact paired
+loads for ordinary and existing guarded (`MemRefinesR`) semantics, deriving read
+permissions from source validity/readBits rather than a true read whitelist.
+`StockMemoryPairedRecord` derives the selected root, emitted code, result binding
+and final aliases internally, then executes the actual resolved retained record
+on both worlds with one identical resulting virtual file.
+
+Positive witnesses use distinct worlds, the live nonzero heap, the actual guarded
+evaluator, and the real full Stock record with193→194 binding. All4233 normal
+modules,5014 affected tool jobs,98 audit files and72 standard-only memory roots
+pass in `/tmp/stock-memory-paired-normal-gates-v1`. All3971 prior per-file audited
+axiom sets and all65 prior memory-root sets compare exactly. Published backend
+and E2E proof source bytes are unchanged; additions are new modules plus audit.
+
+Next connect exact paired guarded execution to the existing restricted-DFG
+original-source postconditions by semantic inclusion, reusing the established
+single-world transfer. Then compose memory bodies with ABI entry/return, complete
+paired consumer and production activation, and extend beyond the first function
+class. This checkpoint is not whole-function NI, activation, an agreement gain,
+or completion of original140. All saved work and prior variants remain.
