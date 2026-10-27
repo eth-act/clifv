@@ -1,3 +1,4 @@
+import FV.Backend.Proof.StockTermAvailability
 import FV.Backend.Proof.StockConditionalGuardedValues
 import FV.Backend.Proof.StockConditionalBodyWitness
 
@@ -75,10 +76,8 @@ theorem executable_parameter_branch_witness (X : ExtSem) (word : BitVec 64) :
     simpa only [states] using held
   have available : 7 ∈ availOf function (availIn function result.ctx) spec.core.scan.block 0 := by
     rw [spec.atBlock]
-    apply (mem_av (f := function) (bi := 0) (B := function.blocks[0]!) rfl).mpr
-    refine ⟨Or.inl (by decide +kernel),?_⟩
-    rintro ⟨j,stm,_,found,defined⟩
-    cases found
+    exact buildCtx_term_available spec.build dominated (b := function.blocks[0]!) rfl 7
+      (by simp [abiTerm,Backend.Proof.Driver.termArgs,function,ConditionalCalls.sourceFunction])
   have getC : (restrict (initial word) (availOf function (availIn function result.ctx)
       spec.core.scan.block 0)).getAs 7 .i64 = .ok word := by
     exact (getAs_congr (fr := initial word) (x := 7) (ty := .i64) (restrict_regs_of_mem available)).trans rfl

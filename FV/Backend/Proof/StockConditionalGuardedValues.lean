@@ -1,3 +1,4 @@
+import FV.Backend.Proof.StockConditionalBodyCalls
 import FV.Backend.Proof.StockConditionalWideAllocation
 import FV.Backend.Proof.StockConditionalParameterSelection
 import FV.Backend.Proof.StockConditionalBodyRefines
@@ -38,33 +39,7 @@ theorem ConditionalBodySpec.parameter_branch_values {f : Clif.Function} {result 
   have inv := (stock_lower_record_context run scope spec.events).1
   have ctxEq := (stock_lowerBlockCore_scanOrigin spec.coreRun).2.1
   have parameterHere : spec.core.scan.ctx.defInst? c = none := by rw [ctxEq]; exact parameter
-  have expected : Coverage.blockData f b.term =
-      .ok (.data 152 5 [.data 151 1 [],.value c,.blockCalls [0,1]]) := by
-    rw [termShape]
-    with_unfolding_all rfl
-  have dataEq := Except.ok.inj (spec.prepared.symm.trans expected)
-  obtain ⟨original,st0,oldBuild,ctxSpec,view⟩ := buildCtx_source spec.build
-  have range : spec.ranges[bi]! = (blockStart f bi,blockStart f bi+b.body.length+1) := by
-    simp only [getElem!_def,ctxSpec.ranges bi b block]
-  have placeholder : result.ctx.insts[blockStart f bi+b.body.length]? = some ⟨.op .unit,[],[],none⟩ := by
-    rw [view.insts]
-    exact ctxSpec.facts.term bi b block
-  have bound : spec.ranges[bi]!.2-1 < result.ctx.insts.size := by
-    have inside := (Array.getElem?_eq_some_iff.mp placeholder).1
-    rw [range]
-    dsimp only
-    omega
-  have slot : spec.core.scan.ctx.insts[spec.ranges[bi]!.2-1]? =
-      some ⟨.data 152 5 [.data 151 1 [],.value c,.blockCalls [0,1]],[],[],none⟩ := by
-    rw [ctxEq]
-    change (result.ctx.insts.set! (spec.ranges[bi]!.2-1) ⟨spec.data,[],[],none⟩)[spec.ranges[bi]!.2-1]? = _
-    simp only [dataEq,Array.set!_eq_setIfInBounds,Array.getElem?_setIfInBounds_self_of_lt bound]
-  have named : Stock.runTerm spec.core.scan.ctx "lower_branch"
-      [.inst (spec.ranges[bi]!.2-1),.labels result.order.successors[label]!.toList]
-      {spec.input with current := some (spec.ranges[bi]!.2-1),color := none,base.emitted := #[]} =
-      .ok (some spec.origin.out,spec.origin.emission.state,spec.origin.trace) := by
-    simpa only [ctxEq] using spec.origin.call
-  obtain ⟨calls,source⟩ := ParameterBranch.named_calls slot parameterHere named
+  obtain ⟨calls,source⟩ := spec.parameter_calls block termShape parameter
   have available := restrict_regs_isSome (by rw [getAs_ok getC]; rfl)
   have typed := stock_lower_available_getAs_type run spec.events available post.2.1 getC
   obtain ⟨emission,afterEdges,retained,branchCall,outgoing,scanInput,scanCtx,branchScan,combined⟩ :=

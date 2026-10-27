@@ -1,11 +1,12 @@
 # Conditional source composition checkpoint
 
-Current packet: the actual retained wide parameter branch derives its source
-choice, rule/calls, original context, final-alias/demand bounds and guarded
-post-frame from the real driver/core. A complete original source and actual csem
-branch witness covers every64-bit input using result.final.alias. All1117normal
-module keys/67Std3audit roots pass. Production remains #634; conditional CFG/ABI
-and consumer activation plus full author gates are still pending.
+Current packet: returning original source execution now composes the actual
+retained scalar body and wide parameter branch into one core run, with original
+fuel, source steps/definedness, selected source continuation, terminal position
+and guarded post-frame. A complete actual csem/result.final.alias witness covers
+every64-bit input. All1122normal module keys/74Std3audit roots pass. Production
+remains #634; later-trap/chosen-edge/CFG/ABI/consumer activation and full author
+gates remain pending.
 
 Main #634 (`d6218f29`) activates arbitrary-length forward scalar jump/return
 CFGs. Full original #140 remains open. This next implementation reuses the same
@@ -220,3 +221,29 @@ not claimed. Next derive source conditional continuation/getters/availability,
 compose body/first traps with actual source-selected direct/synthetic edge
 transfer, ranked CFG/ABI and compatible consumers. Broader conditions/per-edge
 consumers, bit-test/table/critical paths, loops/effects/calls and full140 remain.
+
+The returning-core checkpoint derives original terminator-operand availability
+from the existing dominance condition and actual Stock build. The complete
+all-input witness uses this general result. The actual slot/context/parameter
+selection is factored into `ConditionalBodySpec.parameter_calls` and reused;
+old guarded/allocation interfaces remain exact. One shared actual emission proof
+supplies both no-allocation and exact appended-instruction count.
+
+`ConditionalBodySpec.returning_parameter_core` derives source body execution,
+exact remaining fuel, all source definedness, the actual condition getter/width,
+source-selected successor binding and continuation, real core machine execution,
+correct truth index, real terminal position and full guarded frame. It reuses
+existing MaskBody/LocalBody proofs and source-definedness transfer. The boolean
+normalization mismatch found during composition was corrected by a kernel proof
+of the two source-value cases; failed debug runs remain historical evidence.
+
+For every64-bit input, a complete original source enters/returns, and its entire
+actual retained core executes under csem with the real final aliases and entry
+seed. The witness ties the source steps/getter to the original input and real
+last machine instruction. All1122targeted keys/74audit roots pass, Std3 only;
+two packet MCP reviews report Std3/no warnings. Four previous public headers
+were checked exact. No production activation or full author gates are claimed.
+Next complete the later-trap continuation, source-chosen direct/synthetic copies
+and successor demand/definedness, ranked CFG/ABI and compatible production
+consumers. Broader conditions/per-edge consumers and remaining original140 stay
+open; first scalar/branch class is not full-domain completeness.
