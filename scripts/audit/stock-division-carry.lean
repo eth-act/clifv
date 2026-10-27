@@ -1,0 +1,10 @@
+import FV.Backend.Proof.StockInheritedDivisionWitness
+
+#print axioms Backend.Stock.Proof.Inherited.record_frame_carry
+#print axioms Backend.Stock.Proof.Inherited.division_scan_carry_fall_refines
+#print axioms Backend.Stock.Proof.Inherited.division_scan_carry_trap_refines
+#print axioms Backend.Stock.Proof.Inherited.constant_division_body_carry_refines
+#print axioms Backend.Stock.Proof.Inherited.constant_division_body_carry_refines_local
+#print axioms Backend.Stock.Proof.InheritedDivisionWitness.executable_division_carry_witness
+#print axioms Backend.Stock.Proof.InheritedDivisionWitness.executable_division_zero_carry_witness
+#print axioms Backend.Stock.Proof.InheritedDivisionWitness.executable_division_body_carry_witness

@@ -116,4 +116,14 @@ theorem stock_br_cond_result_projects (ctx : Ctx) (cfg : Config)
     (fun t v st => Backend.externExtract ctx t v st.base) (fun t => t ∈ helperIds) (scope ctx)
     (fun _ _ _ => rfl) fuel).term 46 722 args (by decide) st trace
 
+/-- The same already-certified conditional helper closure includes its actual
+side-effect emitter. Reuse its base-state projection for exact branch code. -/
+theorem stock_emit_side_effect_projects (ctx : Ctx) (cfg : Config)
+    (overlap : cfg.checkOverlap = false) (fuel : Nat) (args : List V) (st : State) (trace : Array RuleId) :
+    projectResult State.base ((applyTerm program (Stock.sem ctx) cfg fuel 13 242 args).run (st,trace)) =
+      (applyTerm program (Backend.sem ctx) cfg fuel 13 242 args).run (st.base,trace) := by
+  exact (evaluation_scoped_restate program (Backend.sem ctx) cfg overlap State.base (Stock.externCtor ctx)
+    (fun t v st => Backend.externExtract ctx t v st.base) (fun t => t ∈ helperIds) (scope ctx)
+    (fun _ _ _ => rfl) fuel).term 13 242 args (by decide) st trace
+
 end Backend.Stock.Proof.BranchHelpers

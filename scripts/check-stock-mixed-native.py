@@ -28,6 +28,29 @@ def signed(value, bits):
 
 
 def run_commands(bits, kind="mixed", vectors=None):
+    if kind == "generaldiv":
+        cases = run_commands(bits, "returneddiv")
+        first = [(name,args,value) for name,args,value in cases
+                 if name.startswith("returned_stock_mixed_div_")]
+        vectors = list(dict.fromkeys(tuple(args) for _,args,_ in first))
+        prefixes = {tuple(args):value for name,args,value in run_commands(bits,"highmul",vectors)
+                    if name == "stock_highmul_ni"}
+        low, mask = -(1 << (bits-1)), (1 << bits)-1
+        for name,args,value in first:
+            suffix = name.removeprefix("returned_stock_mixed_div_")
+            safe = suffix.endswith("_two")
+            op = suffix.removesuffix("_two")
+            consumed = value if isinstance(value,str) else signed((value+args[0])*args[1],bits)
+            multiple = consumed
+            if not isinstance(consumed,str):
+                denominator = 2 if safe else args[8]
+                if denominator == 0:multiple = "int_divz"
+                elif op == "sdiv" and consumed == low and denominator == -1:multiple = "int_ovf"
+            unused = value if isinstance(value,str) else prefixes[tuple(args)]
+            cases.extend(("general_"+layout+"_"+name,args,result)
+                         for layout,result in (("unused",unused),("consumed",consumed),("multiple",multiple)))
+        assert len(first) == 88
+        return cases
     if kind == "returneddiv":
         cases = run_commands(bits, "mixeddiv")
         later = [("returned_"+name,args,value) for name,args,value in cases
@@ -247,7 +270,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("artifacts", type=Path)
     parser.add_argument("--native-bin", type=Path, default=Path("rust/target/release/clif-native"))
-    parser.add_argument("--class", dest="kind", choices=["mixed", "logical", "scalar", "not", "mul", "shift", "cast", "bit", "popcount", "minmax", "cmp", "highmul", "div", "mixeddiv", "returneddiv"], default="mixed")
+    parser.add_argument("--class", dest="kind", choices=["mixed", "logical", "scalar", "not", "mul", "shift", "cast", "bit", "popcount", "minmax", "cmp", "highmul", "div", "mixeddiv", "returneddiv", "generaldiv", "narrow", "mask", "cfg", "cfgentry", "cfgscalarentry", "cfglinear", "cfgforward", "cfgconditional", "cfgconditionalforward", "cfgparameter"], default="mixed")
     options = parser.parse_args()
     root = options.artifacts.resolve()
     native = options.native_bin.resolve()
@@ -265,6 +288,8 @@ def main():
         [a + b for a in ["default", "systemV", "fast"] for b in ["I32", "I64"]],
         ["plain", "cleanup"],
     ))
+    if options.kind in ("narrow", "mask"):
+        expected_grid = {key for key in expected_grid if key[1].endswith("I32")}
     seen, records = set(), []
     reference_cache = {}
     reference_executions = 0
@@ -279,7 +304,7 @@ def main():
         names = {f["name"] for f in json.loads(table.read_text())["functions"]}
         wanted = {"stock_mixed_ni", "retained_arithmetic", "retained_scalar",
                   "retained_prologue", "retained_d0", "retained_legacy"}
-        if options.kind in ("highmul", "div", "mixeddiv", "returneddiv"):
+        if options.kind in ("highmul", "div", "mixeddiv", "returneddiv", "generaldiv"):
             wanted = (wanted - {"stock_mixed_ni"}) | {"stock_highmul_ni", "retained_cmp", "retained_minmax", "retained_popcount", "retained_bit", "retained_cast", "retained_shift", "retained_mul", "retained_not", "retained_constant", "retained_logical", "retained_mixed"}
         elif options.kind == "cmp":
             wanted = (wanted - {"stock_mixed_ni"}) | {"stock_cmp_ni", "retained_minmax", "retained_popcount", "retained_bit", "retained_cast", "retained_shift", "retained_mul", "retained_not", "retained_constant", "retained_logical", "retained_mixed"}
@@ -301,14 +326,30 @@ def main():
             wanted = (wanted - {"stock_mixed_ni"}) | {"stock_scalar_ni", "retained_logical", "retained_mixed"}
         elif options.kind == "logical":
             wanted = (wanted - {"stock_mixed_ni"}) | {"stock_logical_ni", "retained_mixed"}
-        if options.kind in ("div", "mixeddiv", "returneddiv"):
+        if options.kind in ("div", "mixeddiv", "returneddiv", "generaldiv"):
             wanted |= {"stock_div_"+op for op in ("sdiv", "udiv", "srem", "urem")}
-        if options.kind in ("mixeddiv", "returneddiv"):
+        if options.kind in ("mixeddiv", "returneddiv", "generaldiv"):
             wanted |= {"stock_mixed_div_"+op+suffix for op in ("sdiv","udiv","srem","urem") for suffix in ("","_two")}
-        if options.kind == "returneddiv":
+        if options.kind in ("returneddiv","generaldiv"):
             wanted |= {"returned_stock_mixed_div_"+op+suffix for op in ("sdiv","udiv","srem","urem") for suffix in ("","_two")}
+        if options.kind == "generaldiv":
+            wanted |= {"general_"+layout+"_returned_stock_mixed_div_"+op+suffix
+                       for layout in ("unused","consumed","multiple")
+                       for op in ("sdiv","udiv","srem","urem") for suffix in ("","_two")}
+        if options.kind in ("narrow", "mask", "cfg", "cfgentry", "cfgscalarentry", "cfglinear", "cfgforward", "cfgconditional", "cfgconditionalforward", "cfgparameter"):
+            count = 79 if options.kind == "narrow" else 36 if options.kind == "mask" else 100 if options.kind in ("cfglinear", "cfgforward", "cfgconditional", "cfgconditionalforward", "cfgparameter") else 96 if options.kind == "cfgscalarentry" else 16 if options.kind == "cfgentry" else 12
+            wanted = {f"stock_{options.kind}_{i}" for i in range(count)}
+            case_path = obj.with_suffix(".cases.json")
+            cases = json.loads(case_path.read_text())
+            assert len(cases) == count*(10 if options.kind in ("cfg", "cfgentry", "cfgscalarentry", "cfglinear", "cfgforward", "cfgconditional", "cfgconditionalforward", "cfgparameter") else 9), (case_path, len(cases))
+            for name, args, value in cases:
+                assert name in wanted and len(args) == 9, (name, args)
+                assert all(type(arg) is int for arg in args), args
+                assert type(value) is int or value in ("int_divz", "int_ovf"), value
+            assert {name for name, _, _ in cases} == wanted
+        else:
+            cases = run_commands(int(width), options.kind)
         assert names == wanted, names
-        cases = run_commands(int(width), options.kind)
         attached = set()
         ordered_cases = []
         def add_commands(match):
@@ -357,7 +398,7 @@ def main():
                     assert row["actual"].get("returned") == row["expected"]["values"], row
             streams[engine] = rows
         assert [r["actual"] for r in streams["lean"]] == [r["actual"] for r in streams["cranelift"]]
-        records.append({"allocator": allocator, "configuration": config, "cleanup": cleanup,
+        records.append({**({"source_outcome_cases_sha256": sha(case_path)} if options.kind in ("narrow", "mask", "cfg", "cfgentry", "cfgscalarentry", "cfglinear", "cfgforward", "cfgconditional", "cfgconditionalforward", "cfgparameter") else {}), "allocator": allocator, "configuration": config, "cleanup": cleanup,
                         "runs": len(cases), "cranelift_reference_reused": reference_reused, "object_sha256": sha(obj),
                         "table_sha256": sha(table), "original_source_sha256": sha(original),
                         "executed_source_sha256": sha(source),

@@ -10,9 +10,10 @@ set_option maxRecDepth 8192
 attribute [local irreducible] Isle.Aarch64.program Stock.runTerm
 
 /-- A local scalar step evaluates without calls or control transfer. Division
-can still trap, and its original input conditions are retained. -/
+can still trap. Bmask and nop are local steps independently of whether ISLE
+may look through their definitions. -/
 def LocalInst : Clif.Inst → Prop
-  | .div .. => True
+  | .div .. | .bmask .. | .nop => True
   | inst => pureInst inst = true
 
 private theorem step_of_family {env : Clif.Env} {cp : Clif.Program}
