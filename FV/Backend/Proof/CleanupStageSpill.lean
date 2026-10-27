@@ -200,4 +200,67 @@ theorem skipStage_killFree (f : Clif.Function) {vc : VCode} (hk : killFreeB vc =
 theorem cleanupStage_killFree (f : Clif.Function) {vc : VCode} (hk : killFreeB vc = true) :
     killFreeB (cleanupStage f vc) = true := prune_killFree (skipStage_killFree f hk)
 
+/-! ## Positions -/
+
+theorem sublist_getElem?_ge {α : Type} {l' l : List α} (h : l'.Sublist l) :
+    ∀ {k : Nat} {x : α}, l'[k]? = some x → ∃ p, k ≤ p ∧ l[p]? = some x := by
+  induction h with
+  | slnil => intro k x hk; simp at hk
+  | cons a _ ih =>
+    intro k x hk
+    obtain ⟨p, hp, hl⟩ := ih hk
+    exact ⟨p + 1, by omega, by simpa using hl⟩
+  | cons_cons a _ ih =>
+    intro k x hk
+    cases k with
+    | zero => exact ⟨0, Nat.le_refl _, by simpa using hk⟩
+    | succ k =>
+      simp only [List.getElem?_cons_succ] at hk
+      obtain ⟨p, hp, hl⟩ := ih hk
+      exact ⟨p + 1, by omega, by simpa using hl⟩
+
+/-- An instruction of the mapped code is one of `vc`'s, in the same block, at a later or equal
+position. -/
+theorem DelMap.pos (hT : DelMap T) {vc : VCode} {b k : Nat} {vbK : VBlock} {i : MInst}
+    (hb : (mapBlocks T vc).blocks[b]? = some vbK) (hi : vbK.insts[k]? = some i) :
+    ∃ vb p, vc.blocks[b]? = some vb ∧ k ≤ p ∧ vb.insts[p]? = some i := by
+  obtain ⟨vb, hvb, rfl⟩ := mapBlocks_block hb
+  rw [← Array.getElem?_toList] at hi
+  obtain ⟨p, hp, hl⟩ := sublist_getElem?_ge (hT.sub vb) hi
+  exact ⟨vb, p, hvb, hp, by rw [← Array.getElem?_toList]; exact hl⟩
+
+theorem skipStage_pos (f : Clif.Function) {vc : VCode} {b k : Nat} {vbK : VBlock} {i : MInst}
+    (hb : (skipStage f vc).blocks[b]? = some vbK) (hi : vbK.insts[k]? = some i) :
+    ∃ vb p, vc.blocks[b]? = some vb ∧ k ≤ p ∧ vb.insts[p]? = some i := by
+  rw [skipStage_eq] at hb
+  exact (skipStage_delMap f vc).pos hb hi
+
+/-- **The skip keeps what it may not delete** (`skipDel`: the entry `args`, GOT loads), in the
+same block, at an earlier or equal position. -/
+theorem skipStage_keep (f : Clif.Function) {vc : VCode} {b k : Nat} {vb : VBlock} {i : MInst}
+    (hvb : vc.blocks[b]? = some vb) (hi : vb.insts[k]? = some i) (hd : skipDel i = false) :
+    ∃ vbK k', k' ≤ k ∧ (skipStage f vc).blocks[b]? = some vbK ∧ vbK.insts[k']? = some i := by
+  rcases stageMask_cases f vc with h | ⟨hlc, hdc⟩
+  · refine ⟨vb, k, Nat.le_refl _, ?_, hi⟩
+    rw [skipStage_eq, h, mapBlocks_skipBlock_nil]
+    exact hvb
+  · obtain ⟨ctx, st0, R, gn, bl, A, hS, -⟩ := skipDead_spec hlc
+    have hD := deletes_of_check hdc
+    rw [skipStage_eq, ← deleteWith_eq_mapBlocks hS.labels (fit_of_deleteCheck hdc)]
+    obtain ⟨vbK, hK, hins, -, -⟩ := hD.blk b vb hvb
+    have hlen := hD.len b vb hvb
+    have hk : k < (stageMask f vc b).length := by
+      rw [hlen]; exact (Array.getElem?_eq_some_iff.mp hi).1
+    cases hm : (stageMask f vc b)[k]? with
+    | none => rw [List.getElem?_eq_getElem hk] at hm; cases hm
+    | some x =>
+      cases x with
+      | false => rw [skipDel_of_check hdc hvb hi hm] at hd; cases hd
+      | true =>
+        refine ⟨vbK, kidx (stageMask f vc b) k,
+          Nat.le_trans List.count_le_length (List.length_take_le _ _), hK, ?_⟩
+        rw [← Array.getElem?_toList, hins, maskKeep_getElem? (by rw [hlen]; simp) hm,
+          Array.getElem?_toList]
+        exact hi
+
 end Backend.Proof.Driver
