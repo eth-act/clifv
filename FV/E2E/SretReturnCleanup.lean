@@ -73,10 +73,11 @@ theorem backend_correct_cleanup_ex_abi {p : Clif.Program} {f : Clif.Function} {k
     (hrel : Rel.holds ⟨F s, syms, slotOff, out⟩ f cs.frame.slots cs.mem w₀)
     (htr : TrapsExplicit env p cs) (fuel : Nat) :
     ArmRefinesAbi fb base ra astep s (sretArg f args) (Clif.runLoop env p fuel cs) := by
-  obtain ⟨ctx, st0, R, gn, bl, A, hshape, hcert, hbr⟩ := loweringObligations_of_check hc.lowerOk
-  refine backend_correct_of_layers_ex_abi (fun s' => iselSimAbi_of_driver (ctx := ctx) (st0 := st0)
-    (R := R) (gn := gn) (bl := bl) (A := A) ?_ (hds s') (hmem s') hS) (fun s' a w => by
-      obtain ⟨hr, ht⟩ := prune_correct (vc := vc) (hPure s') a w
+  obtain ⟨ctx, st0, R, gn, bl, A, hshape, hcert, hbr, hsk⟩ := skipStage_spec hc.lowerOk
+  refine backend_correct_of_layers_ex_abi (fun s' => iselSimAbi_of_driver_stage (ctx := ctx)
+    (st0 := st0) (R := R) (gn := gn) (bl := bl) (A := A) ?_ hsk (hds s') (hmem s') hS)
+    (fun s' a w => by
+      obtain ⟨hr, ht⟩ := prune_correct (vc := skipStage f vc) (hPure s') a w
       obtain ⟨pr, pt⟩ := prepareCorrect_of_check (hds s') hc.prepOk a w
       exact ⟨fun _ _ _ h => pr _ _ _ (hr _ _ _ h), fun _ h => pt _ (ht _ h)⟩)
     hM6 hent hres hbe
@@ -104,7 +105,7 @@ theorem backend_correct_cleanup_ex_abi {p : Clif.Program} {f : Clif.Function} {k
     tryIndSig := tryIndSig_of_subset hsub
     cfg := by
       obtain ⟨ss, ps, he⟩ := cfg_of_prepare hc.prepare
-      exact ⟨ss, ps, (prune_cfg vc).symm.trans he⟩ }
+      exact ⟨ss, ps, (cleanupStage_cfg f vc).symm.trans he⟩ }
 
 /-- `backend_correct_of_rules_cleanup_ex` with the ABI return values (`sretStableB f`). -/
 theorem backend_correct_of_rules_cleanup_ex_abi {p : Clif.Program} {f : Clif.Function} {k : Nat}
