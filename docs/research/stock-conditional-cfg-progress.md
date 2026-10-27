@@ -413,3 +413,22 @@ passes. The full audit reported94/95 files: both already inventoried fixed nativ
 input-check witness lines lacked the required `witness: native_decide` marker.
 Only those two markers are added; universal theorem policy is unchanged. These
 failed gate receipts are preserved; final corrected harness/audit gates rerun.
+
+Terminal activation packet #635 validates31a1befe on unchanged main d6218f29.
+All author gates pass:4161normalkeys/tools4958jobs;95audits/3698roots/all3592old
+AXsets exact/6owners;78current plus78/78/70/34/34retained consumer checks;24000
+native/3000references/0disagreement;5755runtime passes/0fail/0error with7known
+nonrunnable;1398identical encodings/0different;both1159E2E modes preserve original
+1150/prior1159identities and stages;21+53example tests/all20ELFs;93actual crate
+modules/96commands. All4543actual candidate/reference sources, bytes and full
+relocation targets bind to the immutable paired capture;900→900matches with
+0gains/losses/changedbytes. See stock-conditional-cfg-production.md/.json.
+
+The reporting-only identity output/runner-record basename collision was repaired
+by a separate maintained gate; original commands/logs stay saved. Remaining
+retention used2bounded8GiB lanes after full/examples, preserving the completed
+healthy forward cohort and retiring its serial parent at rc0. No failed gate
+was counted. CI cancelled, not claimed passed. Verified remote terminal evidence
+34cef2dc preserves71091files in5boundedparts,167335282compressedbytes; allfile
+and part hashes verified. Full140 remains open; follow-up ranked-tail proofs
+and staged source remain separate from the validated implementation.
