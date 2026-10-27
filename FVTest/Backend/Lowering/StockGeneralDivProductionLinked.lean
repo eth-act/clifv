@@ -72,7 +72,13 @@ private def checkCase (out : System.FilePath) (count : Nat) (cleanup fallback : 
         else if cfgscalarentry then FVTest.StockTwoBlockProductionRuntime.scalarEntryFunctions (configFor i)
         else if cfgentry then FVTest.StockTwoBlockProductionRuntime.entryFunctions (configFor i)
         else FVTest.StockTwoBlockProductionRuntime.functions (configFor i)
-      let original := fixtures[if mixed && i == 0 then (if cfgscalarentry then 76 else if cfgentry then 12 else 9) else i % (if conditional then 100 else if linear then 100 else if cfgscalarentry then 96 else if cfgentry then 16 else 12)]!.1
+      let index := if mixed && i == 0 then (if cfgscalarentry then 76 else if cfgentry then 12 else 9)
+        else i % (if conditional then 100 else if linear then 100 else if cfgscalarentry then 96 else if cfgentry then 16 else 12)
+      -- The retained mixed callers declare nine i64 arguments and an i64 result.
+      let chosen := if conditional && mixed && i == 0 then
+          fixtures.find? (fun (f,ty) => ty == .i64 && f.sig.returns.all (fun p => p.ty == .i64))
+        else fixtures[index]?
+      let original := (chosen.getD fixtures[0]!).1
       ({original with name}).print
     else if mask && !retainedMixed then maskSource name i
     else if narrow && !retainedMixed then narrowSource name i
@@ -94,6 +100,11 @@ private def checkCase (out : System.FilePath) (count : Nat) (cleanup fallback : 
       "function %" ++ n ++ "(i64, i64, i64, i64, i64, i64, i64, i64, i64) -> i64 system_v {\n    fn0 = colocated %" ++ names[0]! ++
       "(i64, i64, i64, i64, i64, i64, i64, i64, i64) -> i64 system_v\nblock0(v0: i64, v1: i64, v2: i64, v3: i64, v4: i64, v5: i64, v6: i64, v7: i64, v8: i64):\n    v9 = call fn0(v0, v1, v2, v3, v4, v5, v6, v7, v8)\n    v10 = iconst.i64 1\n    v11 = iadd v9, v10\n    return v11\n}\n")
   let mut funcs : List FnInput := names.zipIdx.map fun (_, k) => {clif, ra := "null", k, j := k+1}
+  if conditional && mixed then
+    let callee := funcs[0]!.func
+    require (decide (callee.sig.params.map (·.ty) = List.replicate 9 Clif.Ty.i64) &&
+      decide (callee.sig.returns.map (·.ty) = [Clif.Ty.i64]))
+      "conditional mixed callee differs from the retained caller signature"
   if cfg && mixed && count == 7 then
     require (funcs.any fun fi => fi.func.blocks.any (fun b => b.term.isTry))
       "mixed CFG regression lost its retained try-call function"

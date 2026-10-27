@@ -391,3 +391,14 @@ all previous cohorts retain the nonempty check. New mixed/retained cases also
 compare with the actual previous ForwardCfg provider. Production and proof
 sources are unchanged. Keep the failed linked run and repeat the affected linked
 and generated-proof gate on the final test revision.
+
+The mixed conditional linked cohort initially selected a 32-bit source while its
+retained callers declare nine i64 parameters and an i64 result. It now selects
+an existing compatible 64-bit source and asserts that exact signature. All 100
+runtime source identities remain unchanged; the focused linked build passes
+1631/1631 keys. Independently, actual conditional objects pass 24,000 native byte
+executions against 3,000 Cranelift reference executions with zero disagreements.
+The historical full build completes 4151/4161 keys: two existing spill fixtures
+hit their 8-GiB memory cap, blocking eight dependents. A serial larger-cap retry
+and a clean current-revision full check remain required. Failed logs stay saved;
+no conditional merge or full author-gate pass is claimed.
