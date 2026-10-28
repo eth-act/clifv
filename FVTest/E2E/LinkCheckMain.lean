@@ -91,13 +91,13 @@ def main (args : List String) : IO UInt32 := do
       let failSet : Std.HashSet String := failI.foldl (·.insert ·) {}
       let probe := Link.parMap (fun (fi : FnInput) =>
         let r := I0.pipeCleanupOf fi
-        (bad (staticChksWithT DeadCleanup.prune { I0 with D := max D0 (frameDrop (getOk r).af) }
+        (bad (staticChksWithT (fun _ => DeadCleanup.prune) { I0 with D := max D0 (frameDrop (getOk r).af) }
           fi.func r)).isEmpty) (I0.funcs.filter fun fi => failSet.contains fi.func.name)
       let fixed := (probe.filter id).length
       if fixed > 0 then
         let R0T : Res := Link.parMap (fun fi => (fi.func, I0.pipeCleanupOf fi)) I0.funcs
         let DT := (R0T.map fun e => frameDrop (getOk e.2).af).foldl max 0
-        (true, R0T, Link.parMap (fun e => (e.1.name, staticChksWithT DeadCleanup.prune { I0 with D := DT } e.1 e.2)) R0T,
+        (true, R0T, Link.parMap (fun e => (e.1.name, staticChksWithT (fun _ => DeadCleanup.prune) { I0 with D := DT } e.1 e.2)) R0T,
           s!"  typed checks: {fixed} of the {failI.length} function(s) failing the integer validators pass the typed ones (okBCleanupT's); the typed checker is used")
       else (false, R0I, statI, s!"  typed checks: none of the {failI.length} function(s) failing the integer validators pass the typed ones")
     else (false, R0I, statI, "")

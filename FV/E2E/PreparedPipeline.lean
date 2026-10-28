@@ -9,17 +9,17 @@ set_option autoImplicit false
 namespace E2E.LinkCheck
 open Backend Backend.Proof Backend.Proof.Driver
 
-def PreparedResults (stage : VCode → VCode) (I : LinkInput) (R : List (Clif.Function × Except String Art)) : Prop :=
-  ∀ e ∈ R, ∀ a, e.2 = .ok a → prepare (stage a.vc) = .ok a.vcp ∧
+def PreparedResults (stage : Clif.Function → VCode → VCode) (I : LinkInput) (R : List (Clif.Function × Except String Art)) : Prop :=
+  ∀ e ∈ R, ∀ a, e.2 = .ok a → prepare (stage e.1 a.vc) = .ok a.vcp ∧
     lowerRFunc a.vcp a.rf = .ok a.af ∧ emitFunc a.k a.af = .ok a.fa ∧ a.fa.layout = .ok a.fb ∧
     a.base = BitVec.ofNat 64 (I.baseOf e.1.name)
 
-structure PreparedFacts (stage : VCode → VCode) (I : LinkInput) (R : Res) (g : Clif.Function) (a : Art) : Prop where
-  pipe : prepare (stage a.vc) = .ok a.vcp ∧ lowerRFunc a.vcp a.rf = .ok a.af ∧
+structure PreparedFacts (stage : Clif.Function → VCode → VCode) (I : LinkInput) (R : Res) (g : Clif.Function) (a : Art) : Prop where
+  pipe : prepare (stage g a.vc) = .ok a.vcp ∧ lowerRFunc a.vcp a.rf = .ok a.af ∧
     emitFunc a.k a.af = .ok a.fa ∧ a.fa.layout = .ok a.fb ∧
     a.base = BitVec.ofNat 64 (I.baseOf g.name)
   lowerOk : lowerCheck g a.vc = true
-  prepOk : prepCheck (stage a.vc) a.vcp = true
+  prepOk : prepCheck (stage g a.vc) a.vcp = true
   check : checkAlloc a.vcp a.rf = .ok ()
   covered : FormsCovered ⟨a.fa.k, a.af.slotBase⟩
     a.vcp
@@ -45,7 +45,7 @@ structure PreparedFacts (stage : VCode → VCode) (I : LinkInput) (R : Res) (g :
   indOk : indSigsOk g = true
   ind : indB (progOf R) (fun n => I.syms.lookup n) g = true
 
-theorem preparedFacts (stage : VCode → VCode) {I : LinkInput} {R : Res} (hR : PreparedResults stage I R) (h : okRWith stage I R = true) {g : Clif.Function}
+theorem preparedFacts (stage : Clif.Function → VCode → VCode) {I : LinkInput} {R : Res} (hR : PreparedResults stage I R) (h : okRWith stage I R = true) {g : Clif.Function}
     (hg : g ∈ (progOf R).funcs) : PreparedFacts stage I R g (artOf R g) := by
   have hn := okRWith_names stage h
   obtain ⟨e, he, rfl, hart⟩ := artOf_spec hn hg
@@ -77,7 +77,7 @@ theorem preparedFacts (stage : VCode → VCode) {I : LinkInput} {R : Res} (hR : 
     simp only [hf, decide_eq_true_eq] at this
     exact this
 
-theorem preparedIndFacts (stage : VCode → VCode) {I : LinkInput} {R : Res} (hR : PreparedResults stage I R) (h : okRWith stage I R = true) {g : Clif.Function}
+theorem preparedIndFacts (stage : Clif.Function → VCode → VCode) {I : LinkInput} {R : Res} (hR : PreparedResults stage I R) (h : okRWith stage I R = true) {g : Clif.Function}
     (hg : g ∈ (progOf R).funcs) (hnf : ¬ Clif.IndFree g) :
     ∀ h ∈ (progOf R).funcs, mayB (fun n => I.syms.lookup n) g h.name = true →
       ((∃ sig ∈ indSigs g, LinkSys.IndSigMatch sig h) ∨
@@ -105,7 +105,7 @@ theorem preparedIndFacts (stage : VCode → VCode) {I : LinkInput} {R : Res} (hR
   revert hb8
   cases hb : sigParamBytes h'.sig <;> simp
 
-theorem preparedResults_sound (stage : VCode → VCode) {I : LinkInput} {R : Res} (hstage : stage = id ∨ stage = DeadCleanup.prune) (hR : PreparedResults stage I R) (hI : okRWith stage I R = true) {B : BaseEnv}
+theorem preparedResults_sound (stage : Clif.Function → VCode → VCode) {I : LinkInput} {R : Res} (hstage : stage = (fun _ => id) ∨ stage = (fun _ => DeadCleanup.prune)) (hR : PreparedResults stage I R) (hI : okRWith stage I R = true) {B : BaseEnv}
     {F : BitVec 64 → Prop} (hB : BaseOk (ofRes I R B F)) (hF : ∀ a, (ofRes I R B F).Img a → F a) :
     (ofRes I R B F).OkProduction := by
   have hn := okRWith_names stage hI
