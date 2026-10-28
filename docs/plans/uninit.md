@@ -1715,6 +1715,25 @@ as corollaries (target `Stage2Z`/`thmPRBRL_ofZ`, #697), after combining with #69
   `P + N + retLen`: `RL.Good`); the program-callee `hcall` and the nested callee twins by induction
   on `M` (callee `ThmPDERX29` at `M - 1` through `XPBTG`).
 
+**Lock to twins at the link; the one-`XI` blocker (UninitZ23b, PR #701, #713).**
+- `LinkArmTwinCLock.lean`: **`twinState_of_lock`** (two `StEqOutX Z` states holding the image, `Z`
+  avoiding the `K` bytes below the call `sp` `c`, `K` the κ budget: same pc, `sp`, program calls
+  and called slot bytes), **`twinBaseC_of_lock`** (one level of `TwinC` from the lock up to a shared
+  return index `T`: neither run returns before `T`, both at `T`), **`twinNC_base_of_lock`** (the
+  first clause of `TwinNC`), `twinC_succ_of`. The `sp` at call states comes from UninitZ23's
+  `realizes_allC0` (`RegLevelCallStart.lean`, cherry-picked verbatim). Witnesses
+  `LinkArmTwinCLockLslWitness.lean` on distinct pairs: `twinState_Lsl` (states differing in `x30`),
+  `twinBaseC_Lsl` (entries differing in `x1`), `not_callsTo_of_noHook`.
+- Finding (#713, not fixed): `backend_twoRunLERWZ` (and its whole chain from `backend_twoRunPRIY`)
+  takes one `XI` for both entries. At the link an entry's `ActEntryPR.calls` is provable only for the
+  `XI` of its own prophecies (`calleeOkXPBTGZ`'s `hQ`); for the second entry with the first's `XI`,
+  `hQ` is the lock at the call states (and `MaskedReg` includes `x30`, which the lock leaves free).
+  With two `XI`s (the RL level allows them), `vcode_niIG`'s pair run needs cross non-interference of
+  answers that differ by the dead-stack prophecies, again a machine-lock fact. So `CallTwinC` /
+  `DetRunPRBC` do not follow from `backend_twoRunLERWZ` as stated. Proposed: induction on the call
+  count with a prefix two-run theorem (`ActEntryPRN`), transferring the first run's prophecies to
+  the second up to the lock (`prophOkUpTo_congr`), with an `x30`-exempt `calleeOkXPBTGZ`.
+
 ## 6. Heap (separate gap, SEM2)
 
 `BaseOk.baseKeepsAllocs`/`baseNoAlloc` require base externs to allocate nothing whenever a program
