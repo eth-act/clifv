@@ -404,7 +404,7 @@ theorem vcode_ni_value_of {p : Clif.Program} {f : Clif.Function} {k : Nat} {vc v
       fun s callee args et hr hb hT ⟨B, hB, e⟩ =>
         htr.tryIndirect s callee args et hr hb hT ⟨B, hf ▸ hB, e⟩⟩
   have h29 : Arm.r (.GPR 29#5) w₀' = Arm.r (.GPR 29#5) w₀ := (hsw.1 _ (by simp [Masked])).symm
-  obtain ⟨kk, ρ₁, w₁, w₁', hs1, hm1, hsw1, hs2, hm2, hsw2⟩ := entry_step2P H
+  obtain ⟨kk, ρ₁, w₁, w₁', hs1, hm1, hsw1, hs2, hm2, hsw2⟩ := entry_step2Z H
     (driverSem_valueSem F ⟨fa.k, af.slotBase⟩ X) hmem (mrStable_relW Γ f c) hB0 hce.callers hce.func
     rfl hbody hterm hregs hty.symm hce.sig (ρ₀ := ρ₀) hrel hrel' hargs hreg h29 hstk
   have hFD : ∀ a, F a → F a ∨ D a := fun a h => .inl h
