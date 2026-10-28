@@ -932,6 +932,28 @@ segment chain from `RL.initW` + `RL.retLen` epilogue steps). Still open: the lif
 level and `backend_correct_worldPRIY`, the two-run induction (chains of equal shapes from the
 pair run), `thmPDERX_det_of` and its corollaries, and `hGd`.
 
+**Finding (UninitZ16b, the shapes of the two runs' chains; decided conservatively).** The checker
+relation of `checkedAt_sound` is existential and its interface (`IsSimulation`) pins only the
+block, instruction and world at an instruction item (`at_op`); an op step may even be matched by
+no VCode step (`step`'s first case). The relation of its proof, `Match` (`checkedAt_sound_match`),
+pins more: the block at every running configuration (`MatchRun`: `ms.b = vs.b`, `ms.w = vs.w`),
+a move by no VCode step and an op by exactly one (`sim_step_at`). It does not pin `its` (the
+position among the pending moves is free), and it need not: the shape after an `MStep` is a
+function of the shape before and of the *block or end kind* reached (`MNext.next` iff
+`k + 1 < n`, `goto` iff `k + 1 = n`, then only the target block matters; ret/halt), and the
+kind and block are `Match`'s VCode configuration's. So two allocated-code runs from one shape stay
+shape-equal step by step exactly when, at each op, their related VCode configurations reach the
+same place (`VConf.SameAt`: block and index, or both ret, or both halt), which the pair run gives
+(one `ctl` for both worlds, `pairSem`). But two independently built segment chains
+(`regLevelCorrect_world_atCSW`, one per run) cannot be aligned afterwards: the chain records
+machine configurations, not the VCode index each realises, and `Realizes`' `Q` cannot see the
+VCode run. Decision: the two runs are built **jointly** along the pair VCode run
+(`forward2`: `IsSimulationS` = `IsSimulation` + the block and op facts `Match` has; a pair step
+`PStep` = a step of each VCode run to configurations at the same place, with a pair invariant;
+`RealizesJ` = one segment of both machines, of equal length, from configurations whose successors
+are shape-equal); the single-run chain theorem stays as built. Its lift to the prophecy level is
+therefore not needed for item (3); the joint theorem is lifted instead.
+
 ## 6. Heap (separate gap, SEM2)
 
 `BaseOk.baseKeepsAllocs`/`baseNoAlloc` require base externs to allocate nothing whenever a program
