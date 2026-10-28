@@ -728,6 +728,12 @@ generalise them over a semantics family with the two facts they use: non-calls d
 value-semantics register level (`regLevelCorrect_world_value` → `…_valuePRS`, the chain of steps
 2i–2u for `valueSemV`: the pure items have no call states, the call items are `csem`'s). Then
 `backend_correct_world_ni_pipeline`'s NI clause counted, and the `CompiledEither` pipeline.
+Step 3f, as built: `FV/E2E/DeadCleanupRealizesC.lean`: `realizes_value_allC`
+(`realizes_value_all`'s proof on `realizes_allC`: each value step is matched by an `RL.sem` step
+of the same configuration, so the segment's call-state count carries over). Next on that chain:
+`realizes_value_allC_sp`, `regLevelCorrect_world_value_atCS`/`_worldCS`/`_worldPRS` (copies of
+`RegLevelCorrectPRS.lean`'s with `csemVI` → the counted `valueSemV`, `realizes_allC_sp` →
+`realizes_value_allC_sp`; the `rets`/halt cases as in `DeadCleanupRegLevel.lean`).
 
 ## 6. Heap (separate gap, SEM2)
 
