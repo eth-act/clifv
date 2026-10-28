@@ -1,4 +1,5 @@
 import FV.E2E.BackendTwoRunNI
+import FV.E2E.BackendTwoRunNZW
 import FV.E2E.LinkArmTwin
 
 /-!
@@ -10,14 +11,16 @@ contract is the first run's (`XPBTGY` with its prophecies), so the second run's 
 first run's call-`n` state up to `x30` and the lock set; that it is the first run's `n`-th call
 state needs the two runs' pcs before it to agree (`callsBefore`), i.e. the lock at every earlier
 index. The induction of `backend_twoRunLERWZI` has exactly that (the lock up to the call-`N`
-state), so:
+state), and the stage 2 of the first run reads the world outside `F`, so the call states'
+memories must also agree outside `F ∪ D` (`backend_twoRunLERWZNpW`):
 
-* `LockedUpTo`: `u` is the second run's state at index `i` (`n` calls before it), and at every
-  index `j ≤ i` the two runs are locked by a set avoiding the callees' dead stack;
+* `LockedUpTo`: `u` is the second run's state at index `i` (`n` calls before it), at every index
+  `j ≤ i` the two runs are locked by a set avoiding the callees' dead stack, and at `i` their
+  memories agree outside `F ∪ D`;
 * `LockedUpTo.lockedAt`, `LockedUpTo.callsBefore_eq` (both runs have `n` calls before `i`),
   `LockedUpTo.pc_eq`;
 * **`backend_twoRunLERWZIU`**: `backend_twoRunLERWZI` with the second entry's contracts only at
-  its call states `LockedUpTo` the first run (same proof).
+  its call states `LockedUpTo` the first run (same proof, on `backend_twoRunLERWZNpW`).
 -/
 
 namespace E2E
@@ -25,38 +28,42 @@ namespace E2E
 open Backend Backend.Proof Backend.Proof.Driver
 
 /-- **`u` is the second run's state at index `i`, `n` calls before it, locked with the first run
-at every index up to `i`** by sets avoiding the `K` bytes below `c`. -/
+at every index up to `i`** by sets avoiding the `K` bytes below `c`, with the memories at `i`
+equal outside `F ∪ D`. -/
 def LockedUpTo (Mm : Arm.ArmState → Arm.ArmState) (fa : FnAsm) (base : BitVec 64) (K : Nat)
-    (c : BitVec 64) (s t : Arm.ArmState) (n : Nat) (u : Arm.ArmState) : Prop :=
-  ∃ i, runX Mm i t = u ∧ callsBefore Mm fa base t i = n ∧ ∀ j ≤ i, ∃ Z,
-    StEqOutX Z (runX Mm j t) (runX Mm j s) ∧ ∀ a, StackBelow K c a → ¬ Z a
+    (c : BitVec 64) (F D : BitVec 64 → Prop) (s t : Arm.ArmState) (n : Nat) (u : Arm.ArmState) :
+    Prop :=
+  ∃ i, runX Mm i t = u ∧ callsBefore Mm fa base t i = n ∧ (∀ j ≤ i, ∃ Z,
+    StEqOutX Z (runX Mm j t) (runX Mm j s) ∧ ∀ a, StackBelow K c a → ¬ Z a) ∧
+    ∀ a, ¬ F a → ¬ D a → u.mem a = (runX Mm i s).mem a
 
 theorem LockedUpTo.lockedAt {Mm : Arm.ArmState → Arm.ArmState} {fa : FnAsm} {base : BitVec 64}
-    {K : Nat} {c : BitVec 64} {s t : Arm.ArmState} {n : Nat} {u : Arm.ArmState}
-    (h : LockedUpTo Mm fa base K c s t n u) : LockedAt Mm fa base K c s t n u :=
-  let ⟨i, hu, hn, hl⟩ := h
+    {K : Nat} {c : BitVec 64} {F D : BitVec 64 → Prop} {s t : Arm.ArmState} {n : Nat}
+    {u : Arm.ArmState} (h : LockedUpTo Mm fa base K c F D s t n u) :
+    LockedAt Mm fa base K c s t n u :=
+  let ⟨i, hu, hn, hl, _⟩ := h
   let ⟨Z, hz, hZ⟩ := hl i (Nat.le_refl i)
   ⟨i, Z, hu, hn, hu ▸ hz, hZ⟩
 
 /-- Locked runs have the same pcs up to `i`. -/
 theorem LockedUpTo.pc_eq {Mm : Arm.ArmState → Arm.ArmState} {fa : FnAsm} {base : BitVec 64}
-    {K : Nat} {c : BitVec 64} {s t : Arm.ArmState} {n : Nat} {u : Arm.ArmState}
-    (h : LockedUpTo Mm fa base K c s t n u) :
+    {K : Nat} {c : BitVec 64} {F D : BitVec 64 → Prop} {s t : Arm.ArmState} {n : Nat}
+    {u : Arm.ArmState} (h : LockedUpTo Mm fa base K c F D s t n u) :
     ∃ i, runX Mm i t = u ∧ callsBefore Mm fa base t i = n ∧
       ∀ j ≤ i, Arm.r .PC (runX Mm j t) = Arm.r .PC (runX Mm j s) :=
-  let ⟨i, hu, hn, hl⟩ := h
+  let ⟨i, hu, hn, hl, _⟩ := h
   ⟨i, hu, hn, fun j hj => let ⟨_, hz, _⟩ := hl j hj; hz.1 .PC (by simp)⟩
 
 /-- **Locked runs have the same call count**: the first run has `n` calls before the index of
-`u` too, and its state there is locked with `u`. -/
+`u` too, and its state there is locked with `u` and has its memory outside `F ∪ D`. -/
 theorem LockedUpTo.callsBefore_eq {Mm : Arm.ArmState → Arm.ArmState} {fa : FnAsm}
-    {base : BitVec 64} {K : Nat} {c : BitVec 64} {s t : Arm.ArmState} {n : Nat} {u : Arm.ArmState}
-    (h : LockedUpTo Mm fa base K c s t n u) :
+    {base : BitVec 64} {K : Nat} {c : BitVec 64} {F D : BitVec 64 → Prop} {s t : Arm.ArmState}
+    {n : Nat} {u : Arm.ArmState} (h : LockedUpTo Mm fa base K c F D s t n u) :
     ∃ i Z, runX Mm i t = u ∧ callsBefore Mm fa base s i = n ∧ StEqOutX Z u (runX Mm i s) ∧
-      ∀ a, StackBelow K c a → ¬ Z a := by
-  obtain ⟨i, hu, hn, hl⟩ := h
+      (∀ a, StackBelow K c a → ¬ Z a) ∧ ∀ a, ¬ F a → ¬ D a → u.mem a = (runX Mm i s).mem a := by
+  obtain ⟨i, hu, hn, hl, hm⟩ := h
   obtain ⟨Z, hz, hZ⟩ := hl i (Nat.le_refl i)
-  refine ⟨i, Z, hu, ?_, hu ▸ hz, hZ⟩
+  refine ⟨i, Z, hu, ?_, hu ▸ hz, hZ, hm⟩
   rw [← hn]
   exact (LinkSys.callsBefore_twin _ _ _ fun j hj =>
     let ⟨_, hz', _⟩ := hl j (Nat.le_of_lt hj); hz'.1 .PC (by simp)).symm
@@ -92,13 +99,13 @@ theorem backend_twoRunLERWZIU (hc : Compiled f k vc vcp rf af fa fb)
     (hC' : ∀ n, CalleeOkGP (fun u => (OnCallPR Kp' cc' P' Rr' (ArmStepX (XI.at 0) H fa) fa base t0 n u ∧
         spOf u = spv t0 - BitVec.ofNat 64 (frameDrop af)) ∧
         (CallPc fa base (Arm.r .PC u) → LockedUpTo (ArmStepX (XI.at 0) H fa) fa base K
-          (spv s - BitVec.ofNat 64 (frameDrop af)) s t0 n u))
+          (spv s - BitVec.ofNat 64 (frameDrop af)) F D s t0 n u))
       F K G' t0 (CallAt fa base) (XI.at n) H vcp.CallSite (GotV vcp))
     (hT' : vcp.hasTryCall = true → ∀ n, CalleeTryOkGP (fun u =>
         (OnCallPR Kp' cc' P' Rr' (ArmStepX (XI.at 0) H fa) fa base t0 n u ∧
           spOf u = spv t0 - BitVec.ofNat 64 (frameDrop af)) ∧
         (CallPc fa base (Arm.r .PC u) → LockedUpTo (ArmStepX (XI.at 0) H fa) fa base K
-          (spv s - BitVec.ofNat 64 (frameDrop af)) s t0 n u))
+          (spv s - BitVec.ofNat 64 (frameDrop af)) F D s t0 n u))
       F K G' t0 (CallAt fa base) (XI.at n) H vcp.TrySite (GotV vcp))
     {R : RL} (hR : R = actRL vcp rf af fa fb lm base s XI H psF K G (GotV vcp))
     (hcov : FormsCovered R.ctx R.vc)
@@ -142,7 +149,7 @@ theorem backend_twoRunLERWZIU (hc : Compiled f k vc vcp rf af fa fb)
   -- the core theorem at `N`
   have core := fun (N : Nat)
       (heN : ActEntryPRN vcp rf af fa fb K F G' XI H base ra' Kp' cc' P' Rr' t0 w₀' N) =>
-    backend_twoRunLERWZNp (R := actRL vcp rf af fa fb lm base s (XI.upTo N) H psF K G (GotV vcp))
+    backend_twoRunLERWZNpW (R := actRL vcp rf af fa fb lm base s (XI.upTo N) H psF K G (GotV vcp))
       hc ρ₀ hsw hs hvb hk hops hvals hsem hlm hpsF (he.toN N) heN rfl hcov hx30 (hcall N)
       (htls N) hag hx29
   -- induction on the call count
@@ -154,7 +161,7 @@ theorem backend_twoRunLERWZIU (hc : Compiled f k vc vcp rf af fa fb)
     | succ N ih =>
       intro hN
       have heN := ih (by omega)
-      obtain ⟨T, hlk, -, hc2, -, hcs2⟩ := (core N heN).2 (by omega)
+      obtain ⟨T, hlk, -, hc2, -, hcs2, hmemN⟩ := (core N heN).2 (by omega)
       have hcb : callsBefore (ArmStepX (XI.at 0) H fa) fa base t0
           ((prologueLines af.frameSize).length + T) = N := by
         rw [callsBefore_eq_countIn]; exact hc2
@@ -164,15 +171,21 @@ theorem backend_twoRunLERWZIU (hc : Compiled f k vc vcp rf af fa fb)
       have hlockN : ∀ u, CallPc fa base (Arm.r .PC u) →
           OnCall (ArmStepX (XI.at 0) H fa) fa base t0 N u →
           LockedUpTo (ArmStepX (XI.at 0) H fa) fa base K
-            (spv s - BitVec.ofNat 64 (frameDrop af)) s t0 N u := by
+            (spv s - BitVec.ofNat 64 (frameDrop af)) F D s t0 N u := by
         intro u hpc ⟨i, hu, hi⟩
         have hle := callsBefore_le_of_callSt hcb hcs hi
-        refine ⟨i, hu, hi, fun j hj => ?_⟩
-        obtain ⟨d, d', hz⟩ := hlk j (Nat.le_trans hj hle)
-        refine ⟨(actRL vcp rf af fa fb lm base s (XI.upTo N) H psF K G (GotV vcp)).Zc d d', ?_,
-          fun a ha hzz => hzz.2.2.1 ha⟩
-        rw [runX_eq, runX_eq]
-        exact hz
+        have hpci : CallPc fa base (Arm.r .PC (runX (ArmStepX (XI.at 0) H fa) i t0)) := by
+          rw [hu]; exact hpc
+        have hge := callsBefore_le_of_callSt hi hpci hcb
+        obtain rfl : i = (prologueLines af.frameSize).length + T := by omega
+        refine ⟨_, hu, hi, fun j hj => ?_, fun a hFa hDa => ?_⟩
+        · obtain ⟨d, d', hz⟩ := hlk j (Nat.le_trans hj hle)
+          refine ⟨(actRL vcp rf af fa fb lm base s (XI.upTo N) H psF K G (GotV vcp)).Zc d d', ?_,
+            fun a ha hzz => hzz.2.2.1 ha⟩
+          rw [runX_eq, runX_eq]
+          exact hz
+        · rw [← hu, runX_eq, runX_eq]
+          exact hmemN a hFa hDa
       refine ⟨heN.abi, heN.stack, heN.gfree, heN.hF, heN.proph, heN.regp, fun n hn => ?_,
         fun ht n hn => ?_, heN.pc, heN.tls, heN.body⟩
       · rcases Nat.lt_or_ge n N with h | h
