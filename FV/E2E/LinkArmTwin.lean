@@ -199,6 +199,58 @@ theorem detTabPRBG_of (T : Nat → Clif.Function → Arm.ArmState → Clif.SlotI
 theorem detTabPRB_of {M : Nat} (hd : L.CallTwin κ M) : L.DetTabPRB κ M :=
   L.detTabPRBG_of L.TableOf (fun _ _ _ _ _ htw ht => L.tableOf_twin htw ht) hd
 
+/-- **Twin runs are symmetric, one level.** -/
+theorem TwinBase.symm {M : Nat} {g : Clif.Function} {s s₀ : Arm.ArmState}
+    (h : L.TwinBase M g s s₀) : L.TwinBase M g s₀ s := by
+  intro i hi
+  have hi' := L.noRetAt_twin h hi
+  obtain ⟨h1, h2⟩ := h i hi'
+  refine ⟨h1.symm, fun hn => ?_⟩
+  obtain ⟨a, b, c, d⟩ := h2 (fun hr => hn (h1.1 hr))
+  exact ⟨a.symm, b.symm, fun h => (c h).symm, fun h x hx => (d h x (b ▸ hx)).symm⟩
+
+/-- **Twin runs are symmetric.** -/
+theorem Twin.symm : ∀ {M : Nat} {g : Clif.Function} {s s₀ : Arm.ArmState},
+    L.Twin M g s s₀ → L.Twin M g s₀ s
+  | 0, _, _, _, h => TwinBase.symm L h
+  | _ + 1, _, _, _, ⟨h1, h2⟩ => ⟨TwinBase.symm L h1, fun i hi h hc => by
+      have hi' := L.noRetAt_twin h1 hi
+      have hn : ¬ L.RetAt _ _ _ := hi' i (Nat.lt_succ_self i)
+      have hct := ((h1 i fun j hj => hi' j (by omega)).2 hn).2.2.1 h
+      exact Twin.symm (h2 i hi' h (hct.2 hc))⟩
+
+/-- **`DetTabPRBG` in reverse**: the table of the canonical callee run is the actual one's. -/
+def DetTabPRBGr (T : Nat → Clif.Function → Arm.ArmState → Clif.SlotInit → Prop)
+    (κ : Nat → Clif.Function → Nat) (M : Nat) : Prop :=
+  ∀ (n : String) (h : Clif.Function), L.P.func? n = some h → (∃ g ∈ L.P.funcs, L.Callee g h) →
+    ∀ (F : BitVec 64 → Prop), (∀ a, L.Img a → F a) →
+    ∀ (uses : List CV) (w : Arm.ArmState), Arm.r .ERR w = .None → (spv w).toNat % 16 = 0 →
+    frameDrop (L.A h).af + κ (M - 1) h ≤ (spv w).toNat →
+    (∀ a, StackBelow (frameDrop (L.A h).af + κ (M - 1) h) (spv w) a → F a ∧ ¬ L.Img a) →
+    ∀ (vals : List Clif.Val) (cm : Clif.Mem) (cs : Clif.State) (rvals : List Clif.Val)
+      (cm' : Clif.Mem) (ini : Clif.SlotInit),
+    MemRel F L.syms cm w → ArgsAt h.sig vals uses w → StackArgsAvoid F h.sig vals w →
+    (L.NeedSlots → L.PlaceAtB cm (spv w) ini) →
+    (L.NeedSlots → ∀ a, L.SlotByte h (spv w) a →
+      ini.bytes (ini.next + 1) a = w.mem (BitVec.ofNat 64 a)) →
+    Clif.initState L.P n vals cm = .ok cs → L.crun M cs = .returned rvals cm' →
+    ∀ t, L.CallerOk F h uses w t →
+      (∀ f, Masked f → f ≠ .PC → f ≠ .GPR 30#5 → Arm.r f t = Arm.r f (L.canon h uses w)) →
+      (∀ a, StackBelow (frameDrop (L.A h).af + κ (M - 1) h) (spv w) a →
+        t.mem a = (L.canon h uses w).mem a) →
+      T (M - 1) h (enterAt (L.A h) (L.canon h uses w)) (calleeIni h ini) →
+      T (M - 1) h (enterAt (L.A h) t) (calleeIni h ini)
+
+/-- **`DetTabPRBGr` from the determinism step** (`Twin.symm`), for any table predicate carried
+along twins. -/
+theorem detTabPRBGr_of (T : Nat → Clif.Function → Arm.ArmState → Clif.SlotInit → Prop)
+    (hT : ∀ M h s s₀ ini, L.Twin M h s s₀ → T M h s ini → T M h s₀ ini) {M : Nat}
+    (hd : L.CallTwin κ M) : L.DetTabPRBGr T κ M :=
+  fun n h hpf hcal F himgF uses w herr hal hroom hdead vals cm cs rvals cm' ini hmr hargs hsav hpl
+    hslotb hinit hrun t ht hmsk hrgn htab =>
+    hT _ _ _ _ _ (Twin.symm L (hd n h hpf hcal F himgF uses w herr hal hroom hdead vals cm cs rvals
+      cm' ini hmr hargs hsav hpl hslotb hinit hrun t ht hmsk hrgn)) htab
+
 /-- **Every run is its own twin** (the twin relation is not empty). -/
 theorem twin_refl : ∀ (M : Nat) (g : Clif.Function) (s : Arm.ArmState), L.Twin M g s s
   | 0, _, _ => fun _ _ => ⟨Iff.rfl, fun _ => ⟨rfl, rfl, fun _ => Iff.rfl, fun _ _ _ => rfl⟩⟩

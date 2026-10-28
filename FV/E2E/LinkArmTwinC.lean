@@ -181,6 +181,36 @@ theorem detTabPRBG_ofC (T : Nat → Clif.Function → Arm.ArmState → Clif.Slot
 theorem detTabPRB_ofC {M : Nat} (hd : L.CallTwinC κ M) : L.DetTabPRB κ M :=
   L.detTabPRBG_ofC L.TableOf (fun _ _ _ _ _ htw ht => L.tableOf_twinC htw ht) hd
 
+/-- **Twin runs (slot bytes at the calls) are symmetric, one level.** -/
+theorem TwinBaseC.symm {M : Nat} {g : Clif.Function} {s s₀ : Arm.ArmState}
+    (h : L.TwinBaseC M g s s₀) : L.TwinBaseC M g s₀ s := by
+  intro i hi
+  have hi' := L.noRetAt_twinC h hi
+  obtain ⟨h1, h2⟩ := h i hi'
+  refine ⟨h1.symm, fun hn => ?_⟩
+  obtain ⟨a, b, c, d⟩ := h2 (fun hr => hn (h1.1 hr))
+  exact ⟨a.symm, b.symm, fun h => (c h).symm,
+    fun h hc x hx => (d h ((c h).2 hc) x (b ▸ hx)).symm⟩
+
+/-- **Twin runs (slot bytes at the calls) are symmetric.** -/
+theorem TwinC.symm : ∀ {M : Nat} {g : Clif.Function} {s s₀ : Arm.ArmState},
+    L.TwinC M g s s₀ → L.TwinC M g s₀ s
+  | 0, _, _, _, h => TwinBaseC.symm L h
+  | _ + 1, _, _, _, ⟨h1, h2⟩ => ⟨TwinBaseC.symm L h1, fun i hi h hc => by
+      have hi' := L.noRetAt_twinC h1 hi
+      have hn : ¬ L.RetAt _ _ _ := hi' i (Nat.lt_succ_self i)
+      have hct := ((h1 i fun j hj => hi' j (by omega)).2 hn).2.2.1 h
+      exact TwinC.symm (h2 i hi' h (hct.2 hc))⟩
+
+/-- **`DetTabPRBGr` from `CallTwinC`** (`TwinC.symm`). -/
+theorem detTabPRBGr_ofC (T : Nat → Clif.Function → Arm.ArmState → Clif.SlotInit → Prop)
+    (hT : ∀ M h s s₀ ini, L.TwinC M h s s₀ → T M h s ini → T M h s₀ ini) {M : Nat}
+    (hd : L.CallTwinC κ M) : L.DetTabPRBGr T κ M :=
+  fun n h hpf hcal F himgF uses w herr hal hroom hdead vals cm cs rvals cm' ini hmr hargs hsav hpl
+    hslotb hinit hrun t ht hmsk hrgn htab =>
+    hT _ _ _ _ _ (TwinC.symm L (hd n h hpf hcal F himgF uses w herr hal hroom hdead vals cm cs
+      rvals cm' ini hmr hargs hsav hpl hslotb hinit hrun t ht hmsk hrgn)) htab
+
 /-- **Twin runs up to step `n`, slot bytes at the calls.** -/
 def TwinNC (M : Nat) (g : Clif.Function) (s s₀ : Arm.ArmState) (n : Nat) : Prop :=
   (∀ i < n, Arm.r .PC (runX (L.mach M g) i s) = Arm.r .PC (runX (L.mach M g) i s₀) ∧
