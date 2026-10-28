@@ -2783,6 +2783,36 @@ copies of the pair driver and of the P chain, and the `CompiledEither` dispatch:
   canonical call data (factor `thmPRBG_ofR`'s `hcall` block), `DetRunTwinCE` (TwinCE from the lock),
   `CallTwinCE (M + 1)` from it on `callLock_of`'s callee entries, the induction, `InitOkRU`.
 
+**The exports, the twins, the induction (UninitZ29b, branch `agent/uninit-z27b`, #713, #732).**
+- Exports (new files, old theorems unchanged; copies of the old proofs): `RL.GoodK` (`RL.Good`
+  and the kept bytes at call lines, independent of `X`), `RL.GoodX.goodK`; `RL.realizesJCPTPK`,
+  `twoRunCTPK`, `twoRunPRTPK`, `twoRunCTNPK`, `twoRunPRTNPK` and the value copies `…VK`;
+  `StEqOutX.inter`, `stEqOutX_inter_of_mDiffIn`, `stEqOutX_inter_of_wDiff`;
+  `backend_twoRunLWNpPK`/`PVK`, `backend_twoRunLERWZNpWPK`/`PVK`, `backend_twoRunLERWZIUPK`/`PVK`,
+  **`backend_twoRunLERWZIUPF_eitherK`** (per-index lock on `R.Zc d d' ∩ (F ∪ D)`, `RL.GoodK` of
+  both runs).
+- Finding (decided conservatively): `CallTwinCE κ M` (no table premise) does not follow from the
+  two-run route: its callee CLIF run answers nested slot reads from an arbitrary `ini`, so the
+  canonical callee machine run has no CLIF counterpart. New `CallTwinCET` (the canonical callee's
+  `TableOfE` given), `CallLock.callTwinCET`, `CallTwinCE.toT`, `detTabPRBr_ofCT`; `InitOkRU`
+  (UninitZ26, `agent/uninit-z28`) takes `detTab`/`detTabR` instead of `twin`.
+- Unmerged files changed in place: `LockRet`/`CallLock` take `TableOfE` and conclude `TwinCE`
+  (second, canonical); `callLock_of` on `ThmPRBRLE`; `xnifXPBTGY`/`progXBT_rel` on `CallTwinCET`;
+  `lockRet_of` (premise `blrLow`) on `backend_twoRunLERWZIUPF_eitherK`.
+- `LinkArmDetRunTwin.lean`: `callsTo_iff_of_lockB`, `twinState_of_lockB`, `twinBaseCE_of_lockB`
+  (code image at call lines only), `callerOk_of_lock`, **`twinCE_of_lockK`**, **`canonCallTwin`**
+  (`thmPRBG_ofR`'s call data, then the nested twins by `CallTwinCET` and `TwinCE.trans`/`symm`).
+- `LinkArmDetTabE.lean`: **`detTabPRBE_of`** (the actual callee entry as the first activation of
+  `LockRet` one level down; `argsAtEntry_transfer`), `detTabPRBE_zero`.
+- `LinkArmDetInduction.lean`: `twinNC_of_twinCE`, `detRunPRBCRU_of_lockRet`, **`detInduction`**,
+  **`detPRBRU_allK`**, **`detTabPRBE_allK`**, **`detTabPRBr_allK`**, `callTwinCET_allK`,
+  `thmPRBRLE_allK`, `detRunPRBCRU_allK`. Premises: `Ok`, `CrunOk`, `Budget`, `HooksKeep`,
+  `NeedSlots`, `NeedNI`, `BaseNIX`, `BaseRetOk`, `RetCount`, and the checks `x30Free`, `retsLow`,
+  `blrLow`.
+- Remaining: `InitOkRU.of_checks` (`DeadCleanupBinaryInitRUOf.lean` on `agent/uninit-z28` after
+  its rebase on this branch), `Lsl` witnesses of the new theorems, measurements of the three
+  checks (#713), PR to the merge train.
+
 ## 6. Heap (separate gap, SEM2)
 
 `BaseOk.baseKeepsAllocs`/`baseNoAlloc` require base externs to allocate nothing whenever a program
