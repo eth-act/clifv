@@ -485,6 +485,12 @@ slots or the table's entry `ini.next + 1` inside them; the entry is `PlaceAtB` a
 (`bounded_placed` under `EnvAdv`). Witnesses `LinkArmPlaceBWitness.lean`: `LinkWitness`'s `f`
 entered with the table `0xAB` has `0xAB` in its compiled slot at `slotAddr` (`initState_memB_f`).
 
+Step 2o (`FV/E2E/LinkPlaceBCount.lean`): the invariant at VCode counter `n`. `LinkSys.counter_at`:
+`h` entered from `PlaceAtB cm c ini`, memories `m 0 = cs.mem, …, m N` with step `k` advancing by
+`E k` (a program call: `crun_nextAdv`) ⇒ `PlaceAtB (m N) (h's sp) (ini.adv (slotted h + sumTo E N))`,
+i.e. `next = j0 + slotted? + Σ_{k<N} E k`; `NextAdv.unique` (the advance is determined by the
+memories), `nextAdv_chain`. Witness `LinkPlaceBCountWitness.counter_f` (`f`, two calls `+2`, `+3`: `6`).
+
 ## 6. Heap (separate gap, SEM2)
 
 `BaseOk.baseKeepsAllocs`/`baseNoAlloc` require base externs to allocate nothing whenever a program
