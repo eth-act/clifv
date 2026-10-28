@@ -1,4 +1,5 @@
 import FV.E2E.LinkArmStage2Z
+import FV.E2E.LinkArmStage2ZS
 
 /-!
 # The call contracts with the register prophecy but `x30` (SEM1 #537, #713)
@@ -16,6 +17,10 @@ proofs otherwise (new names, the old theorems kept):
 * `progOsCoreXPRRBRL30`, `progOsPRBRL30`, `progOsRegPRBRL30`, **`calleeOkPRBRL30`**,
   **`calleeTryOkPRBRL30`**;
 * **`calleeOkXPBTGZ30`**, **`calleeTryOkXPBTGZ30`**.
+
+The `…30R` forms take the determinism premise `DetPRBR` (#719; the names without `R` are their
+corollaries), and **`calleeOkXPBTGZS30R`**, **`calleeTryOkXPBTGZS30R`** are the contracts at the
+call sites' operands (`Stage2ZS`, as `calleeOkXPBTGZSR`).
 -/
 
 namespace E2E
@@ -28,9 +33,9 @@ variable (L : LinkSys)
 variable {κ : Nat → Clif.Function → Nat}
 
 /-- **`progOsCoreXPRRBRL` with the register prophecy but `x30`** (module doc). -/
-theorem progOsCoreXPRRBRL30 (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) {M : Nat}
+theorem progOsCoreXPRRBRL30R (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) {M : Nat}
     (ih : 0 < M → L.ThmPRBRL κ (M - 1))
-    (hdet : 0 < M → L.DetPRB κ (M - 1)) {g h : Clif.Function}
+    (hdet : 0 < M → L.DetPRBR κ (M - 1)) {g h : Clif.Function}
     (hg : g ∈ L.P.funcs) (hh : h ∈ L.P.funcs)
     (hcal : L.Callee g h)
     {F G : BitVec 64 → Prop} {s0 : Arm.ArmState} (himgF : ∀ a, L.Img a → F a)
@@ -110,13 +115,13 @@ theorem progOsCoreXPRRBRL30 (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) {M :
         rw [L.mem_worldPR, worldP, mem_overlay_out (R := L.calleeRgn κ M h w)
           (fun hr => ha (hdeadW a hr).1)]),
       hsw.2.2.trans (L.program_worldPR h _ _ w).symm⟩
-  exact L.progOsCorePRBRL hL hκ ih hdet hg hh hcal himgF himgG himgS hLu hLd hdefs0 hdefs hK hG
+  exact L.progOsCorePRBRLR hL hκ ih hdet hg hh hcal himgF himgG himgS hLu hLd hdefs0 hdefs hK hG
     hra hsw' hmsk hrgn hx
 
 /-- **`progOsPRBRL` with the register prophecy but `x30`.** -/
-theorem progOsPRBRL30 (hL : L.Ok) [L.CrunOk] (hκ : L.Budget κ) {M : Nat}
+theorem progOsPRBRL30R (hL : L.Ok) [L.CrunOk] (hκ : L.Budget κ) {M : Nat}
     (ih : 0 < M → L.ThmPRBRL κ (M - 1))
-    (hdet : 0 < M → L.DetPRB κ (M - 1)) {g : Clif.Function}
+    (hdet : 0 < M → L.DetPRBR κ (M - 1)) {g : Clif.Function}
     (hg : g ∈ L.P.funcs) {F G : BitVec 64 → Prop} {s0 : Arm.ArmState} (himgF : ∀ a, L.Img a → F a)
     (himgG : ∀ a, L.Img a → G a) (himgS : ∀ a, L.Img a → s0.mem a = L.imgMem a)
     {info : CallInfo} {h : Clif.Function} (hsite : L.ProgSite g info h) (ctx : FnCtx)
@@ -150,13 +155,13 @@ theorem progOsPRBRL30 (hL : L.Ok) [L.CrunOk] (hκ : L.Budget κ) {M : Nat}
   obtain ⟨hmskQ, hrgnQ⟩ := hQ t hQt hP.callPc
   obtain ⟨us', ds', rfl⟩ := assign_call_sym hasg
   exact ⟨L.pcall M h t, by simp only [callExec, hal, ↓reduceIte, L.hooks_some hpf],
-    L.progOsCoreXPRRBRL30 hL hκ ih hdet hg hh (.inl ⟨_, hsite⟩) himgF himgG himgS hLu hLd rfl
+    L.progOsCoreXPRRBRL30R hL hκ ih hdet hg hh (.inl ⟨_, hsite⟩) himgF himgG himgS hLu hLd rfl
       (call_defs hregs) hK hG (hL.raCall g hg _ h hsite _ hP.callPc) hsw hmskQ hrgnQ hx⟩
 
 /-- **`progOsRegPRBRL` with the register prophecy but `x30`.** -/
-theorem progOsRegPRBRL30 (hL : L.Ok) [L.CrunOk] (hκ : L.Budget κ) {M : Nat}
+theorem progOsRegPRBRL30R (hL : L.Ok) [L.CrunOk] (hκ : L.Budget κ) {M : Nat}
     (ih : 0 < M → L.ThmPRBRL κ (M - 1))
-    (hdet : 0 < M → L.DetPRB κ (M - 1)) {g : Clif.Function}
+    (hdet : 0 < M → L.DetPRBR κ (M - 1)) {g : Clif.Function}
     (hg : g ∈ L.P.funcs) {F G : BitVec 64 → Prop} {s0 : Arm.ArmState} (himgF : ∀ a, L.Img a → F a)
     (himgG : ∀ a, L.Img a → G a) (himgS : ∀ a, L.Img a → s0.mem a = L.imgMem a)
     {info : CallInfo} (hsite : (L.A g).vcp.CallSite info) (hreg : ∀ n, info.dest ≠ .sym n)
@@ -233,16 +238,16 @@ theorem progOsRegPRBRL30 (hL : L.Ok) [L.CrunOk] (hκ : L.Budget κ) {M : Nat}
       obtain ⟨hLu, hLd⟩ := hregs h hh ⟨hdecl.1, hgot⟩ (by rw [← hdecl.2, List.length_map])
       have hb : (blrTarget t).bind (symCallee L.Xb L.P) = some h := by rw [htgt]; exact hs
       exact ⟨L.pcall M h t, by simp only [callExec, hal, ↓reduceIte, L.hooks_none hb],
-        L.progOsCoreXPRRBRL30 hL hκ ih hdet hg hh (.inr (.inr ⟨hh, hdecl.1.1⟩)) himgF himgG himgS
+        L.progOsCoreXPRRBRL30R hL hκ ih hdet hg hh (.inr (.inr ⟨hh, hdecl.1.1⟩)) himgF himgG himgS
           hLu hLd rfl (call_defs_reg hregs0) hK hG
           (hL.raBlr g hg _ hsite hreg h hh hdecl.1.1 _ hP.callPc) hsw (hQ t hQt hP.callPc).1
           (hQ t hQt hP.callPc).2 hx⟩
     · cases hx
 
 /-- **`calleeOkPRBRL` with the register prophecy but `x30`** (module doc). -/
-theorem calleeOkPRBRL30 (hL : L.Ok) [L.CrunOk] (hκ : L.Budget κ) {M : Nat}
+theorem calleeOkPRBRL30R (hL : L.Ok) [L.CrunOk] (hκ : L.Budget κ) {M : Nat}
     (ih : 0 < M → L.ThmPRBRL κ (M - 1))
-    (hdet : 0 < M → L.DetPRB κ (M - 1)) {g : Clif.Function}
+    (hdet : 0 < M → L.DetPRBR κ (M - 1)) {g : Clif.Function}
     (hg : g ∈ L.P.funcs) {F G : BitVec 64 → Prop} {ra : BitVec 64} {s w₀ : Arm.ArmState}
     (he : L.MachEntry κ M g F G ra s w₀)
     {P : Nat → BitVec 64 → BitVec 8} {R : Nat → Arm.ArmState} {n : Nat}
@@ -255,13 +260,13 @@ theorem calleeOkPRBRL30 (hL : L.Ok) [L.CrunOk] (hκ : L.Budget κ) {M : Nat}
   os ctx info hsite := by
     cases hd : info.dest with
     | reg r =>
-      exact L.progOsRegPRBRL30 hL hκ ih hdet hg he.imgF he.imgG he.imgS hsite
+      exact L.progOsRegPRBRL30R hL hκ ih hdet hg he.imgF he.imgG he.imgS hsite
         (fun n => by rw [hd]; simp) ctx hQ
     | sym n =>
     have hdest := hd
     cases hpf : L.P.func? n with
     | some h =>
-      exact L.progOsPRBRL30 hL hκ ih hdet hg he.imgF he.imgG he.imgS ⟨hsite, n, hdest, hpf⟩ ctx hQ
+      exact L.progOsPRBRL30R hL hκ ih hdet hg he.imgF he.imgG he.imgS ⟨hsite, n, hdest, hpf⟩ ctx hQ
     | none =>
       have hb : L.BaseDest (destOf info) := .inr ⟨n, by simp [destOf, hdest], hpf⟩
       have h0 := hL.baseOs g hg info hsite hb F (κ M g) G s (CallAt (L.A g).fa (L.A g).base) ctx
@@ -279,15 +284,15 @@ theorem calleeOkPRBRL30 (hL : L.Ok) [L.CrunOk] (hκ : L.Budget κ) {M : Nat}
       simp only [callExec] at hex ⊢
       rw [L.hooks_base (.inr ⟨n, rfl, hpf⟩) t (fun h => by cases h)]
       exact hex
-  pc := (L.calleeOkPRBRL hL hκ ih hdet hg he (Q := fun _ => False) (P := P) (R := R) (n := n)
+  pc := (L.calleeOkPRBRLR hL hκ ih hdet hg he (Q := fun _ => False) (P := P) (R := R) (n := n)
     (fun _ h => h.elim)).pc
-  ext := (L.calleeOkPRBRL hL hκ ih hdet hg he (Q := fun _ => False) (P := P) (R := R) (n := n)
+  ext := (L.calleeOkPRBRLR hL hκ ih hdet hg he (Q := fun _ => False) (P := P) (R := R) (n := n)
     (fun _ h => h.elim)).ext
 
 /-- **`calleeTryOkPRBRL` with the register prophecy but `x30`.** -/
-theorem calleeTryOkPRBRL30 (hL : L.Ok) [L.CrunOk] (hκ : L.Budget κ) {M : Nat}
+theorem calleeTryOkPRBRL30R (hL : L.Ok) [L.CrunOk] (hκ : L.Budget κ) {M : Nat}
     (ih : 0 < M → L.ThmPRBRL κ (M - 1))
-    (hdet : 0 < M → L.DetPRB κ (M - 1)) {g : Clif.Function}
+    (hdet : 0 < M → L.DetPRBR κ (M - 1)) {g : Clif.Function}
     (hg : g ∈ L.P.funcs) {F G : BitVec 64 → Prop} {ra : BitVec 64} {s w₀ : Arm.ArmState}
     (he : L.MachEntry κ M g F G ra s w₀)
     {P : Nat → BitVec 64 → BitVec 8} {R : Nat → Arm.ArmState} {n : Nat}
@@ -304,7 +309,7 @@ theorem calleeTryOkPRBRL30 (hL : L.Ok) [L.CrunOk] (hκ : L.Budget κ) {M : Nat}
     cases hpf : L.P.func? n with
     | some h =>
       exact calleeTryOkGP_of_call (S := fun i t => i = info ∧ t = ti)
-        (fun ctx' i t ⟨e1, _⟩ => e1 ▸ (L.calleeOkPRBRL30 hL hκ ih hdet hg he hQ).os ctx' info
+        (fun ctx' i t ⟨e1, _⟩ => e1 ▸ (L.calleeOkPRBRL30R hL hκ ih hdet hg he hQ).os ctx' info
           hsite.callSite)
         (fun _ _ _ h => callAt_tryCall_call h)
         (fun i t ⟨_, e2⟩ => e2 ▸ trySite_clobberAll (hL.compiled g hg).alloc hsite)
@@ -381,8 +386,105 @@ theorem calleeTryOkPRBRL30 (hL : L.Ok) [L.CrunOk] (hκ : L.Budget κ) {M : Nat}
       exact hL.baseTry g hg F ctx _ ti ⟨hsite, .inl rfl⟩ c wh _ regs _ t w outs w' s' hops hst
         hasg hsw hal herr hsem' hex'
     | some h =>
-      exact calleeTryP_at ((L.calleeOkPRBRL30 hL hκ ih hdet hg he hQ).os ctx _ hsite.callSite)
+      exact calleeTryP_at ((L.calleeOkPRBRL30R hL hκ ih hdet hg he hQ).os ctx _ hsite.callSite)
         (fun _ _ h => callAt_tryCall_call h) hcl hQt hK hD hG hops hst hasg hP hsw hal herr hsem hex
+
+/-! ### The statements with `DetPRB` (corollaries, `DetPRB.toR`) -/
+
+/-- **`progOsCoreXPRRBRL` with the register prophecy but `x30`** (module doc). -/
+theorem progOsCoreXPRRBRL30 (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) {M : Nat}
+    (ih : 0 < M → L.ThmPRBRL κ (M - 1))
+    (hdet : 0 < M → L.DetPRB κ (M - 1)) {g h : Clif.Function}
+    (hg : g ∈ L.P.funcs) (hh : h ∈ L.P.funcs)
+    (hcal : L.Callee g h)
+    {F G : BitVec 64 → Prop} {s0 : Arm.ArmState} (himgF : ∀ a, L.Img a → F a)
+    (himgG : ∀ a, L.Img a → G a) (himgS : ∀ a, L.Img a → s0.mem a = L.imgMem a)
+    {Lu : List (Nat × Reg)} {Ld : List (Reg × Nat)} (hLu : Lu.map (·.2) = regLocs h.sig)
+    (hLd : (Ld.map (·.1)).take (sigRets h.sig).length =
+      (List.range (min (sigRets h.sig).length Ld.length)).map Reg.x)
+    {info : CallInfo} (hdefs0 : info.defs = callDefs Ld)
+    {ops : Array Operand} {regs : Array Reg}
+    (hdefs : ((ops.zip regs).toList.filter (·.1.isDef)) = (callDefOps Ld).zip (Ld.map (·.1)))
+    {t w w' : Arm.ArmState} {outs : List CV}
+    (hK : κ M g ≤ (spOf t).toNat) (hG : ∀ a, G a → t.mem a = s0.mem a)
+    (hra : RaOk (L.A h) (Arm.r .PC t))
+    (hsw : SameWorld F t w)
+    {P : Nat → BitVec 64 → BitVec 8} {R : Nat → Arm.ArmState} {n : Nat}
+    (hmskQ : ∀ f, MaskedReg f → f ≠ .GPR 30#5 → Arm.r f t = Arm.r f (R n))
+    (hrgnQ : ∀ a, StackBelow (κ M g) (spv t) a → t.mem a = P n a)
+    (hx : L.progXPRBT κ M F h (Lu.map (fun q => regVal t q.2)) (P n) (R n) w = some (outs, w')) :
+    SameWorld F (L.pcall M h t) w' ∧
+      FrameKeep (fun a => F a ∧ ¬ StackBelow (κ M g) (spOf t) a) t (L.pcall M h t) ∧
+      (∀ p ∈ defRegs ops regs outs, regVal (L.pcall M h t) p.1.2 = p.2) ∧
+      (∀ r, r.allocatable = true → (∀ p ∈ (ops.zip regs).toList, p.1.isDef = true → p.2 ≠ r) →
+        r ∉ (MInst.call info).clobbers → regVal (L.pcall M h t) r = regVal t r) ∧
+      (∀ r ∈ (MInst.call info).clobbers, r ∈ calleeSaved →
+        ckeep r (regVal (L.pcall M h t) r) = ckeep r (regVal t r)) :=
+  L.progOsCoreXPRRBRL30R hL hκ ih (fun h => DetPRB.toR L (hdet h)) hg hh hcal himgF himgG himgS
+    hLu hLd hdefs0 hdefs hK hG hra hsw hmskQ hrgnQ hx
+
+/-- **`progOsPRBRL` with the register prophecy but `x30`.** -/
+theorem progOsPRBRL30 (hL : L.Ok) [L.CrunOk] (hκ : L.Budget κ) {M : Nat}
+    (ih : 0 < M → L.ThmPRBRL κ (M - 1))
+    (hdet : 0 < M → L.DetPRB κ (M - 1)) {g : Clif.Function}
+    (hg : g ∈ L.P.funcs) {F G : BitVec 64 → Prop} {s0 : Arm.ArmState} (himgF : ∀ a, L.Img a → F a)
+    (himgG : ∀ a, L.Img a → G a) (himgS : ∀ a, L.Img a → s0.mem a = L.imgMem a)
+    {info : CallInfo} {h : Clif.Function} (hsite : L.ProgSite g info h) (ctx : FnCtx)
+    {P : Nat → BitVec 64 → BitVec 8} {R : Nat → Arm.ArmState} {n : Nat}
+    {Q : Arm.ArmState → Prop}
+    (hQ : ∀ t, Q t → CallPc (L.A g).fa (L.A g).base (Arm.r .PC t) →
+      (∀ f, MaskedReg f → f ≠ .GPR 30#5 → Arm.r f t = Arm.r f (R n)) ∧
+        ∀ a, StackBelow (κ M g) (spv t) a → t.mem a = P n a) :
+    CallSoundCtlGP Q F (κ M g) G s0 (CallAt (L.A g).fa (L.A g).base) (callExec (L.hooks M))
+      (csemV (GotV (L.A g).vcp) F ctx (L.XPRBT κ M g F P R n)) (.call info) .next :=
+  L.progOsPRBRL30R hL hκ ih (fun h => DetPRB.toR L (hdet h)) hg himgF himgG himgS hsite ctx hQ
+
+/-- **`progOsRegPRBRL` with the register prophecy but `x30`.** -/
+theorem progOsRegPRBRL30 (hL : L.Ok) [L.CrunOk] (hκ : L.Budget κ) {M : Nat}
+    (ih : 0 < M → L.ThmPRBRL κ (M - 1))
+    (hdet : 0 < M → L.DetPRB κ (M - 1)) {g : Clif.Function}
+    (hg : g ∈ L.P.funcs) {F G : BitVec 64 → Prop} {s0 : Arm.ArmState} (himgF : ∀ a, L.Img a → F a)
+    (himgG : ∀ a, L.Img a → G a) (himgS : ∀ a, L.Img a → s0.mem a = L.imgMem a)
+    {info : CallInfo} (hsite : (L.A g).vcp.CallSite info) (hreg : ∀ n, info.dest ≠ .sym n)
+    (ctx : FnCtx) {P : Nat → BitVec 64 → BitVec 8} {R : Nat → Arm.ArmState} {n : Nat}
+    {Q : Arm.ArmState → Prop}
+    (hQ : ∀ t, Q t → CallPc (L.A g).fa (L.A g).base (Arm.r .PC t) →
+      (∀ f, MaskedReg f → f ≠ .GPR 30#5 → Arm.r f t = Arm.r f (R n)) ∧
+        ∀ a, StackBelow (κ M g) (spv t) a → t.mem a = P n a) :
+    CallSoundCtlGP Q F (κ M g) G s0 (CallAt (L.A g).fa (L.A g).base) (callExec (L.hooks M))
+      (csemV (GotV (L.A g).vcp) F ctx (L.XPRBT κ M g F P R n)) (.call info) .next :=
+  L.progOsRegPRBRL30R hL hκ ih (fun h => DetPRB.toR L (hdet h)) hg himgF himgG himgS hsite hreg
+    ctx hQ
+
+/-- **`calleeOkPRBRL` with the register prophecy but `x30`** (module doc). -/
+theorem calleeOkPRBRL30 (hL : L.Ok) [L.CrunOk] (hκ : L.Budget κ) {M : Nat}
+    (ih : 0 < M → L.ThmPRBRL κ (M - 1))
+    (hdet : 0 < M → L.DetPRB κ (M - 1)) {g : Clif.Function}
+    (hg : g ∈ L.P.funcs) {F G : BitVec 64 → Prop} {ra : BitVec 64} {s w₀ : Arm.ArmState}
+    (he : L.MachEntry κ M g F G ra s w₀)
+    {P : Nat → BitVec 64 → BitVec 8} {R : Nat → Arm.ArmState} {n : Nat}
+    {Q : Arm.ArmState → Prop}
+    (hQ : ∀ t, Q t → CallPc (L.A g).fa (L.A g).base (Arm.r .PC t) →
+      (∀ f, MaskedReg f → f ≠ .GPR 30#5 → Arm.r f t = Arm.r f (R n)) ∧
+        ∀ a, StackBelow (κ M g) (spv t) a → t.mem a = P n a) :
+    CalleeOkGP Q F (κ M g) G s (CallAt (L.A g).fa (L.A g).base) (L.XPRBT κ M g F P R n) (L.hooks M)
+      (L.A g).vcp.CallSite (GotV (L.A g).vcp) :=
+  L.calleeOkPRBRL30R hL hκ ih (fun h => DetPRB.toR L (hdet h)) hg he hQ
+
+/-- **`calleeTryOkPRBRL` with the register prophecy but `x30`.** -/
+theorem calleeTryOkPRBRL30 (hL : L.Ok) [L.CrunOk] (hκ : L.Budget κ) {M : Nat}
+    (ih : 0 < M → L.ThmPRBRL κ (M - 1))
+    (hdet : 0 < M → L.DetPRB κ (M - 1)) {g : Clif.Function}
+    (hg : g ∈ L.P.funcs) {F G : BitVec 64 → Prop} {ra : BitVec 64} {s w₀ : Arm.ArmState}
+    (he : L.MachEntry κ M g F G ra s w₀)
+    {P : Nat → BitVec 64 → BitVec 8} {R : Nat → Arm.ArmState} {n : Nat}
+    {Q : Arm.ArmState → Prop}
+    (hQ : ∀ t, Q t → CallPc (L.A g).fa (L.A g).base (Arm.r .PC t) →
+      (∀ f, MaskedReg f → f ≠ .GPR 30#5 → Arm.r f t = Arm.r f (R n)) ∧
+        ∀ a, StackBelow (κ M g) (spv t) a → t.mem a = P n a) :
+    CalleeTryOkGP Q F (κ M g) G s (CallAt (L.A g).fa (L.A g).base) (L.XPRBT κ M g F P R n)
+      (L.hooks M) (L.A g).vcp.TrySite (GotV (L.A g).vcp) :=
+  L.calleeTryOkPRBRL30R hL hκ ih (fun h => DetPRB.toR L (hdet h)) hg he hQ
 
 /-- **`calleeOkXPBTGZ` with the register prophecy but `x30`** (module doc). -/
 theorem calleeOkXPBTGZ30 (hL : L.Ok) [L.CrunOk] (hκ : L.Budget κ) {M : Nat}
@@ -420,6 +522,46 @@ theorem calleeTryOkXPBTGZ30 (hL : L.Ok) [L.CrunOk] (hκ : L.Budget κ) {M : Nat}
       ((L.XPBTGY κ M g F P R env cs c).at n) (L.hooks M)
       (L.A g).vcp.TrySite (GotV (L.A g).vcp) :=
   (L.calleeTryOkPRBRL30 hL hκ ih hdet hg he hQ).ofCallSubU _ (L.XPBTGY_subZ hL h2)
+
+/-- **The call contract of `XPBTGY … n` at the call sites' operands, with the register prophecy
+but `x30`, determinism `DetPRBR`** (`calleeOkXPBTGZSR` with `calleeOkPRBRL30R`). -/
+theorem calleeOkXPBTGZS30R (hL : L.Ok) [L.CrunOk] (hκ : L.Budget κ) {M : Nat}
+    (ih : 0 < M → L.ThmPRBRL κ (M - 1))
+    (hdet : 0 < M → L.DetPRBR κ (M - 1)) {g : Clif.Function}
+    (hg : g ∈ L.P.funcs) {F G : BitVec 64 → Prop} {ra : BitVec 64} {s w₀ : Arm.ArmState}
+    (he : L.MachEntry κ M g F G ra s w₀)
+    {P : Nat → BitVec 64 → BitVec 8} {R : Nat → Arm.ArmState} {n : Nat}
+    {Q : Arm.ArmState → Prop}
+    (hQ : ∀ t, Q t → CallPc (L.A g).fa (L.A g).base (Arm.r .PC t) →
+      (∀ f, MaskedReg f → f ≠ .GPR 30#5 → Arm.r f t = Arm.r f (R n)) ∧
+        ∀ a, StackBelow (κ M g) (spv t) a → t.mem a = P n a)
+    {env : Clif.Env} {cs : Clif.State} {c : BitVec 64}
+    (h2 : L.Stage2ZS κ M g F P R env cs c Q n) :
+    CalleeOkGP Q F (κ M g) G s (CallAt (L.A g).fa (L.A g).base)
+      ((L.XPBTGY κ M g F P R env cs c).at n) (L.hooks M)
+      (L.A g).vcp.CallSite (GotV (L.A g).vcp) :=
+  (L.calleeOkPRBRL30R hL hκ ih hdet hg he hQ).ofCallSubS _ (L.XPBTGY_subZS hL h2)
+    (L.XPBTGY_ext hL n)
+
+/-- **The try-call contract of `XPBTGY … n` at the call sites' operands, with the register
+prophecy but `x30`, determinism `DetPRBR`.** -/
+theorem calleeTryOkXPBTGZS30R (hL : L.Ok) [L.CrunOk] (hκ : L.Budget κ) {M : Nat}
+    (ih : 0 < M → L.ThmPRBRL κ (M - 1))
+    (hdet : 0 < M → L.DetPRBR κ (M - 1)) {g : Clif.Function}
+    (hg : g ∈ L.P.funcs) {F G : BitVec 64 → Prop} {ra : BitVec 64} {s w₀ : Arm.ArmState}
+    (he : L.MachEntry κ M g F G ra s w₀)
+    {P : Nat → BitVec 64 → BitVec 8} {R : Nat → Arm.ArmState} {n : Nat}
+    {Q : Arm.ArmState → Prop}
+    (hQ : ∀ t, Q t → CallPc (L.A g).fa (L.A g).base (Arm.r .PC t) →
+      (∀ f, MaskedReg f → f ≠ .GPR 30#5 → Arm.r f t = Arm.r f (R n)) ∧
+        ∀ a, StackBelow (κ M g) (spv t) a → t.mem a = P n a)
+    {env : Clif.Env} {cs : Clif.State} {c : BitVec 64}
+    (h2 : L.Stage2ZS κ M g F P R env cs c Q n) :
+    CalleeTryOkGP Q F (κ M g) G s (CallAt (L.A g).fa (L.A g).base)
+      ((L.XPBTGY κ M g F P R env cs c).at n) (L.hooks M)
+      (L.A g).vcp.TrySite (GotV (L.A g).vcp) :=
+  (L.calleeTryOkPRBRL30R hL hκ ih hdet hg he hQ).ofCallSubS (fun _ _ h => h.callSite) _
+    (L.XPBTGY_subZS hL h2)
 
 end LinkSys
 
