@@ -372,7 +372,7 @@ theorem preparedCleanupBlock_interface (vc : VCode) (b : VBlock) :
 /-- Transported cleanup is a block map that preparation commutes with (`prepare_map`). Public
 for the production cleanup stage (`FV/Backend/Proof/CleanupStageFacts.lean`). -/
 theorem preparedCleanupBlock_blockMap (vc : VCode) : BlockMap (preparedCleanupBlock vc) :=
-  eraseBlock_map vc.classes.size (exitLive vc 0 default)
+  eraseBlock_map vc.classes.size (exitLive vc 0 default) (exitDead vc)
 
 /-- Transported cleanup can only delete instructions. -/
 theorem preparedCleanupBlock_sublist (vc : VCode) (b : VBlock) :
