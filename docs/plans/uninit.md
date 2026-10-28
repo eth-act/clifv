@@ -282,7 +282,7 @@ run-restricted contract.
   prophecy changes the canonical run, not the condition); `canonP_eq_overlay`,
   `sameWorld_canonP`, `mem_canonP_in`/`_out`, `r_canonP`, `program_canonP`. Witnesses
   `LinkArmProphWitness.lean` (on `LinkWitness.L` without an image, `sp = 0x8000`).
-- step 2h `FV/E2E/LinkArmProphThm.lean` (on #643, #644): `XPI … P : ExtSemI` (`XPI_at`: `.at n`
+- #648 (step 2h) `FV/E2E/LinkArmProphThm.lean` (on #643, #644): `XPI … P : ExtSemI` (`XPI_at`: `.at n`
   is `XP … P n`, by `rfl`). The prophecy of a machine run: `callsBefore Mm fa base s i` counts
   the call states (`CallPc`) before step `i`; `ProphOk K c Mm fa base s P`: at each call state
   with `sp = c`, `P (callsBefore … i)` holds the state's bytes `StackBelow K c`; `prophOf` is one
@@ -298,6 +298,21 @@ run-restricted contract.
   must equal the VCode `csemI` counter, a proof obligation of the counted simulation (every
   `bl`/`blr` executed by an activation is a `call`/`try_call`'s `callInsn?`). Witnesses
   `LinkArmProphThmWitness.lean`.
+- step 2i `FV/E2E/RegLevelCorrectI.lean` (on #648): `ISem.counted sem` (step at counter `n` is
+  `sem n`'s, the counter bumped by the calls; `csemI_eq_counted`), `csemVI` (`csemV` with
+  `X.at n`; `csemVI_sub`), `MStep.counted_proj`/`_lift`, `Realizes.counted` (the machine
+  realises the counted semantics under `Q` of the first components when it realises each `sem n`),
+  `RL.Q_withX` (`Q` does not read `R.X`); `regLevelCorrect_world_atI`/`regLevelCorrect_worldI`:
+  `regLevelCorrect_world` for the `csemVI` run from `(w₀, 0)`, machine `ArmStepX (XI.at 0) H fa`
+  (it reads only `XI.sym`), with the callee contracts of **every** index. Not yet: the counter in
+  the relation (`= callsBefore` of the machine run) and the contract only at the run's own call
+  of that index. That needs, per realised segment of an item, the number of `CallPc` states
+  (`1` for `call`/`try_call`, `0` otherwise): the existing `realizes_*` lemmas expose only the
+  per-state `RL.GoodX`, which says every `bl`/`blr` state has *some* call's `CallPre`, not that it
+  is the current item's; so every `realizes_*` case needs a variant with a per-segment fact (the
+  states are at the item's own lines, as the `*W.lean` variants did for `WritesAt`), plus the
+  static fact that only `call`/`try_call` emit `bl`/`blr` (`MInst.lines`, `FV/Backend/Asm.lean`).
+  Witnesses `RegLevelCorrectIWitness.lean`.
 
 **Refined call contract (next).** `X.call n` should be the *canonical* callee run from the
 VCode world `w` with the callee's stack region (the addresses `StackBelow K (sp w)`, inside the
