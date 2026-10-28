@@ -1131,6 +1131,54 @@ per call, `prefix_relatedPRI`), `RetOkPRB` (a scope fact of `Ok` + `NeedSlots`: 
 what they allocate, `baseKeepsAllocs`; return-count agreement of the declarations), then
 `thmPRBRL` and `compileExe_correct_init`.
 
+**Slotted witness system, depth 0, `RetOkPRB`, `Stage2PRBR`, as built (UninitZ17, 2026-10-28).**
+No existing statement changed; new leaf modules only; no generated-code change.
+- Witness system `FV/E2E/LinkSlotSysWitness.lean` (`Lsl`, the witness system for the slot-byte
+  statements from now on): `f n = r (h n)` compiled by the pipeline, `h` writes then reads its
+  slot, `r` reads its unwritten slot (the bytes `h` left there), `NeedSlots`, no base externs.
+  `#guard` checks on a computable mirror of the linked machine (`machC`): the machine returns
+  `82 = 41 + 41`, calling `h` then `r` at `f`'s body `sp`; `iniT` is the machine's byte table.
+  Theorems: `Lsl_ok`, `needSlots`, `run_f` (the CLIF run with `iniT` returns `82`; with the zero
+  table `41`, `run_f_zero`), `nextAdv_leave_f` (`NextAdv cs0.mem.leave cm' 2`: `ThmPRBRL`'s
+  conjunct, `CountPRB`'s count = the machine's two slotted activations), `not_nextAdv_f` (#694 on
+  a real program). No further false statement found.
+- `FV/E2E/LinkPlaceBLeave.lean`: `initState_place`, **`initState_leave_nextAdv`** (`NextAdv cm
+  cs.mem.leave (slotted h)`), `NextAdv.cancel`.
+- Depth `0`: `FV/E2E/LinkArmStage2Zero.lean` (`envOfB_zero_ret`, `callPost_xb_zero`,
+  **`stage2Y_zero`**, **`stage2PRB_zero`**), `FV/E2E/LinkArmCountZero.lean` (`reachN_cons`,
+  `reaches_reachN`, `step_done_mem_q`, **`returned_nextAdv_leave`** (a returning bare
+  activation advances the popped entry by `Σ_{j<k} advAt … j`), `place_reachN_keeps`,
+  `returned_keeps_leave`, `envR_zero_keeps`, **`countPRB_zero`**, `thmPRBRL_zero` (from
+  `RetOkPRB κ 0`)).
+- `RetOkPRB` is not a consequence of `Ok` (no field keeps symbols when every function is
+  `IndFree`; declarations of one extern outside `P`, or indirect call signatures, may differ in
+  their return registers). Scope conditions (`FV/E2E/LinkArmRetOkZero.lean`): `BaseRetOk` (base
+  externs keep valid addresses and symbols) and `RetCount g` (per extern name outside `P`: its
+  declarations and `g`'s indirect call signatures with equal return counts have equal `sigRets`
+  counts; decidable `retCountB`; fv-demo: 551/551 functions, the cross-name form fails on 3).
+  **`retOkPRB_zero`**, `thmPRBRL_zero_of`; `FV/E2E/LinkArmRetOkPRB.lean`: `sigRets_length_eq`,
+  `sigRets_length_of_abiMatch`, **`retOkPRB_of`** (every depth, under `NeedSlots`; without it
+  `thmPRBRL_of_thm` applies).
+- `Stage2PRB` reconsidered (`FV/E2E/LinkArmStage2R.lean`): its discharge at `M > 0` needs the
+  call correspondence up to call `n` (`prefix_relatedPRI`), whose premises include `TrapsExplicit`
+  of the CLIF run, available only for returning runs (`thmPRBRL_of` uses stage 2 only there);
+  post-return `CallStPRB` states carry counts `≥` the machine's return count, and at counts
+  without a CLIF invocation stage 2 is vacuous (**`stage2Y_of_not_invoked`**). New: **`Stage2PRBR`**
+  (with the returning-run premise, as `CountPRB`), `Stage2PRB.toR`, `stage2PRBR_zero`,
+  **`thmPRBRL_ofR`**. Witnesses `FV/E2E/LinkArmThmPRBRZeroWitness.lean`,
+  `FV/E2E/LinkArmStage2RWitness.lean` (`thmPRBRL_zero_Lsl`, `thmPRBRL_ofR_Lsl`, `retOkPRB_Lsl`,
+  `keeps_leave_h`, `stage2Y_sZ`).
+
+Next (general `M`, one strong induction on the call index `j` of a returning activation, giving
+both `Stage2PRBR` and `CountPRB`): (P1) `backend_prefixPRI` extended to the call itself (from
+`iselSim_prefixWI`'s matched VCode state at the statement start, run the call statement's segment
+to the VCode call instruction, then `regLevel_prefix_core` at counter `j`), with `RelatedN j`;
+(P2) at the machine's call `j` (pre-return), `CondBT`'s facts: `counter_reachN`, the slot bytes
+from `TabUpTo`'s call clause, `Σ_{i<j} advAt = Σ_{i<j} E i` (induction), the canonical callee's
+table by `DetTabPRB`; (P3) `progCallPRBRL` gives `advAt j = E j` (`initState_leave_nextAdv`,
+`tabUpTo_count`); (P4) `Stage2Y` at `j` (the answer `pcall … canon …` is `CallPost`-accepted);
+`CountPRB` then from `returned_nextAdv_leave`; then `thmPRBRL`, `compileExe_correct_init`.
+
 **Step 3h, as built (UninitZ10b): the call-count premises are theorems.** `InstCallsOne f` and
 `TryCallsOne f` hold for every `f` (`E2E.instCallsOne_all`, `E2E.tryCallsOne_all`,
 `FV/E2E/IselCallsOneAll.lean`), from `FV/Backend/Proof/IselCallsOne.lean`:
