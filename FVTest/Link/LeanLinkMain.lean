@@ -8,6 +8,8 @@ import FV.Link.Placed
 import FV.E2E.SrcScopeDefs
 import FV.Front.Read
 import FV.E2E.LinkScopeInputDefs
+import FV.E2E.LinkScopeInputDefsT
+import FV.E2E.LinkScopeInputDefsTC
 import FV.Link.Ld.Spec
 import FV.Link.ReachCheck
 import FV.Link.Ld.SpecTotal
@@ -57,14 +59,28 @@ decided input conditions `InScopeInT3`, no run-time decider; then `leanLink` and
 `OutOkTCleanup`; coverage `compileExeT3_correct`), else `Link.DeadCleanup.compileExeT` (`InScopePT`,
 then `leanLink`, then `OutOkTCleanup`; coverage `compileExeT_correct`); returned values by class.
 Otherwise the tool links with the bare Lean linker (`leanLink`, no
-compiler theorem; reported as such). **`--verified`** (integer-only) fails closed: an input outside `SrcScopeB`, outside
+compiler theorem; reported as such). **`--verified`** fails closed: an input outside `SrcScopeB`, outside
 the per-function input conditions decided on the CLIF alone (`fnScopeInB`, V7) or outside
 `InScopeP` is an error and the executable is not written, so every executable it writes is
 covered by the four theorems above and its input is in `InScopeIn` (`InScopeP`'s program-level
 conditions with `fnScopeInB`), on which the compiler is proven total
 (`Link.DeadCleanup.compileExe_total_reach_input`, `Link.compileExe_total_reach`, given the
-layout, reach and `file0` conditions). On such an error it also prints the functions failing a
-per-function condition (`exclusions`, the line `--verified: exclude: …`): `cargo fv` then links
+layout, reach and `file0` conditions). **Typed `--verified`** (S11e6, #419; the cleanup compiler
+without `--opt` and self tail calls): an input whose functions all meet the typed per-function
+conditions `fnScopeInTB` (`InScopeInT`'s; float data movement, float parameters and returns)
+— or, for functions with direct `try_call`s taking `f32`/`f64` parameters or returning
+`f32`/`f64`, the typed-try_call conditions `fnScopeInTCB` (the structural conjuncts of
+`fnScopeInTB` with `Compile.functionETC` and the decided output check `lowersTCB`:
+`lowerCheckTC` on `lowerFunction`'s output; a function passes under either list) — but not all
+`fnScopeInB` is compiled by `Link.DeadCleanup.compileExeT` (the typed branches: on `InScopePT`
+`InScopePT`/`leanLink`/`OutOkTCleanup`, else the third branch `leanLink`/`okBCleanupT`), and the
+written executable is covered by the typed theorems
+`compileExeT_correct`, `compileExeT_correct_peak`, `compileExeT_correct_source`,
+`compileExeT_correct_source_peak` (returned values by class) and, through the frontend,
+`Front.bundle_correct_rawT{,_peak}`; totality is proven on `InScopeIn` only. On such an error it
+also prints the functions failing a per-function condition (`exclusions`, the line
+`--verified: exclude: …`; the typed conditions `fnScopeInTB`, and on a typed input the functions
+failing `fnScopeTB` or the output checks `outChksT`): `cargo fv` then links
 the executable again with those functions' cg_clif code (left out of the region, outside code
 like a fallback) and runs `lean-link` again (T3c).
 
@@ -151,30 +167,78 @@ def srcFails (F : String → Option Clif.Function) (g : Clif.Function) : List St
     (if linkFreeB g then [] else ["linkFreeB"]) ++ (if declSigWithB F g then [] else ["declSigB"])
 
 /-- **`--verified`: the functions to leave out of the region** (T3c): those failing a
-per-function condition of the source domain (`srcFails`), of `fnScopeInB` or of the
-program-level conditions (`scopeFails`), when the program-wide conditions hold (`helperFreeB`,
-distinct names, `addrSlotsInputB`); `none` otherwise. `cargo fv` links the executable again
-with their cg_clif code (outside code, as a fallback's) and runs `lean-link` on it: leaving a
-function out of the program only drops conjuncts of the other functions' per-function conditions
-(each quantifies over the program's functions), and every condition is decided again on the
-relinked executable. -/
-def exclusions (S SC : LinkSpec) : Option (List String) :=
+per-function condition of the source domain (`srcFails`), of the input conditions decided on the
+CLIF alone (`fnScopeInB`; with `typed`, the typed `fnScopeInTB` — a function passes if it meets
+`fnScopeInTB` or the typed-try_call `fnScopeInTCB`, the causes reported are `fnScopeInFailsT`'s
+— which holds of every function meeting `fnScopeInB`, `fnScopeInTB_of_fnScopeInB`) or of the
+program-level conditions
+(`scopeFails`), and `extra` (on a typed input, the functions failing `fnScopeTB` or the output
+checks: `typedFails`), when the program-wide conditions hold (`helperFreeB`, distinct names,
+`addrSlotsInputB`); `none` otherwise. `cargo fv` links the executable again with their cg_clif
+code (outside code, as a fallback's) and runs `lean-link` on it: leaving a function out of the
+program only drops conjuncts of the other functions' per-function conditions (each quantifies
+over the program's functions), and every condition is decided again on the relinked
+executable. -/
+def exclusions (S SC : LinkSpec) (typed : Bool) (extra : List String := []) :
+    Option (List String) :=
   let srcP := S.input0.srcProg
   let P := SC.input0.prog
   let sy := assocMap SC.input0.syms
   let syms := fun n => sy[n]?
   let fm := funcMap P
   let fmS := funcMap srcP
+  -- `typed`: a function passes if it meets the typed conditions `fnScopeInTB` or the
+  -- typed-try_call ones `fnScopeInTCB`; the reported causes are the T list's
+  let fnFails := if typed then
+      fun g => if fnScopeInFailsT g = [] || fnScopeInFailsTC g = [] then [] else fnScopeInFailsT g
+    else fnScopeInFails
   if !helperFreeB srcP || !Link.nodupB (P.funcs.map (·.name)) || !addrSlotsInputB P syms then none
   else
     let src := srcP.funcs.filter fun g => !(srcFails (fun n => fmS[n]?) g).isEmpty
-    let fns := (P.funcs.zip (parMap (fun g => fnScopeInFails g ++ scopeFails (fun n => fm[n]?) P syms g)
+    let fns := (P.funcs.zip (parMap (fun g => fnFails g ++ scopeFails (fun n => fm[n]?) P syms g)
       P.funcs)).filter (!·.2.isEmpty)
-    some (Front.dedupFirst (src.map (·.name) ++ fns.map (·.1.name)))
+    some (Front.dedupFirst (src.map (·.name) ++ fns.map (·.1.name) ++ extra))
+
+/-- On a typed input (`--verified`) whose `compileExeT` fails: the functions failing the typed
+per-function conditions of `InScopePT` (`fnScopeTB`), and those whose compiled code fails the
+output checks (`OutOkTCleanup`; only when `InScopePT` holds), or, on the third branch (`tc`: the
+typed-try_call scope, outside `InScopePT`), the per-function checks of `okBCleanupT` on
+`resultsCleanup` (`chksWithT`, with the widened call-site checks `linkChksT`), with the failing
+conditions; in `compileExeT`'s std-sized forms (`inScopePTPar`, `outChksTWith`,
+`linkChksWithT`: hash maps, the pipeline once in parallel). -/
+def typedFails (SC : LinkSpec) (tc : Bool) : List (String × List String) :=
+  let I0 := SC.input0
+  let fs := if tc then [] else (I0.prog.funcs.zip (parMap fnScopeTB I0.prog.funcs)).filterMap fun (g, b) =>
+    if b then none else some (g.name, ["fnScopeTB"])
+  if !fs.isEmpty || (!tc && !inScopePTPar I0) then fs
+  else if tc then
+    -- `okBCleanupTFast`'s per-function checks
+    let I := SC.inputCleanup
+    let R : Res := parMap (fun fi => (fi.func, I.pipeCleanupOf fi)) I.funcs
+    let P := progOf R
+    let T := tabOf R
+    let C := LinkCtx.of I P T
+    let rs := parMap (fun e => (e.1.name, ((staticChksWithT (fun _ => Backend.DeadCleanup.prune) I e.1 e.2 ++
+      linkChksWithT C P e.1 e.2 ++
+      [("calleeInt", !calleeWithB (fun n => C.callees.contains n) C.anyInd C.S e.1 ||
+        e.1.sig.returns.all (·.ty.isInt))]).filter (!·.2)).map (·.1))) R
+    rs.filter (!·.2.isEmpty)
+  else
+    let Rs := Link.DeadCleanup.parResultsCleanupT I0
+    let I := I0.withDepth Rs
+    let P := progOf Rs
+    let m := funcMap P
+    let sy := assocMap I.syms
+    let cs := calleeSet P
+    let anyInd := P.funcs.any (!indFreeB ·)
+    let rs := parMap (fun e => (e.1.name, ((outChksTWith (fun n => m[n]?) (fun n => sy[n]?)
+      (fun n => cs.contains n) anyInd P e.1 e.2).filter (!·.2)).map (·.1))) Rs
+    rs.filter (!·.2.isEmpty)
 
 /-- Print `exclusions` (the line `cargo fv` reads). -/
-def printExclusions (exe : String) (S SC : LinkSpec) : IO Unit :=
-  match exclusions S SC with
+def printExclusions (exe : String) (S SC : LinkSpec) (typed : Bool) (extra : List String := []) :
+    IO Unit :=
+  match exclusions S SC typed extra with
   | some (n :: ns) => IO.eprintln s!"lean-link: {exe}: --verified: exclude: {" ".intercalate (n :: ns)}"
   | _ => pure ()
 
@@ -295,6 +359,8 @@ def main (args0 : List String) : IO UInt32 := do
   -- compiler's input's)
   let I := S.input0
   let srcOk := SrcScopeB I
+  -- the typed scope under `--verified` (S11e6): the cleanup compiler `compileExeT`
+  let typedOk := deadCleanup && !opt && !tailOn
   if verified && !srcOk then
     let P := I.srcProg
     let fmS := funcMap P
@@ -304,10 +370,13 @@ def main (args0 : List String) : IO UInt32 := do
     IO.eprintln s!"lean-link: {exe}: --verified: outside the source domain (SrcScopeB): {bad.length} function(s) failing legalOkB/linkFreeB/declSigB {(bad.take 3).map (·.1)}, helperFreeB {helperFreeB P}; not written"
     for (n, fs) in bad do
       IO.eprintln s!"lean-link:   {n}: {fs}"
-    printExclusions exe S SC
+    printExclusions exe S SC typedOk
     return 1
   -- the input conditions decided on the CLIF alone (`fnScopeInB`, `addrSlotsInputB`); with
-  -- `InScopeP`'s other program conditions, which `compile` checks, `InScopeIn`
+  -- `InScopeP`'s other program conditions, which `compile` checks, `InScopeIn`; with the cleanup
+  -- compiler, an input outside `fnScopeInB` whose functions all meet the typed `fnScopeInTB`
+  -- (`InScopeInT`'s) is compiled by `compileExeT` (`typedV`)
+  let mut typedV := false
   if verified then
     let P := SC.input0.prog
     let sy := assocMap SC.input0.syms
@@ -318,22 +387,57 @@ def main (args0 : List String) : IO UInt32 := do
     let bad := P.funcs.filterMap fun g => match fnScopeInFails g with
       | [] => none
       | fs => some (g.name, fs)
-    if !bad.isEmpty then
-      let causes := (bad.flatMap (·.2)).eraseDups.map fun c => s!"{c} {(bad.filter (·.2.contains c)).length}"
-      IO.eprintln s!"lean-link: {exe}: --verified: outside the input conditions (InScopeIn): {bad.length} function(s) failing fnScopeInB (by cause: {causes}) {(bad.take 3).map (·.1)}; not written"
-      for (n, fs) in bad do
+    let badT := if typedOk && !bad.isEmpty then
+        (P.funcs.zip (parMap (fun g => match fnScopeInFailsT g with
+            | [] => []
+            | fs => if fnScopeInFailsTC g = [] then [] else fs) P.funcs)).filterMap fun (g, fs) =>
+          match fs with
+          | [] => none
+          | fs => some (g.name, fs)
+      else bad
+    if !bad.isEmpty && typedOk && badT.isEmpty then
+      typedV := true
+      IO.println s!"lean-link: {exe}: --verified: typed scope (InScopeInT): {bad.length} function(s) outside fnScopeInB meet fnScopeInTB/fnScopeInTCB {(bad.take 3).map (·.1)}"
+    else if !badT.isEmpty then
+      let scopeN := if typedOk then "fnScopeInTB/fnScopeInTCB" else "fnScopeInB"
+      let causes := (badT.flatMap (·.2)).eraseDups.map fun c => s!"{c} {(badT.filter (·.2.contains c)).length}"
+      IO.eprintln s!"lean-link: {exe}: --verified: outside the input conditions (InScopeIn{if typedOk then "T" else ""}): {badT.length} function(s) failing {scopeN} (by cause: {causes}) {(badT.take 3).map (·.1)}; not written"
+      for (n, fs) in badT do
         IO.eprintln s!"lean-link:   {n}: {fs}"
-      printExclusions exe S SC
+      printExclusions exe S SC typedOk
       return 1
   -- The checked semantic provider handles a CFG function alongside retained
   -- try-call functions. Recompiling that mixed program only through the old
   -- provider can require a different region size from the emitted objects.
-  -- Other exception, optimizer and tail-call variants retain their routes.
+  -- Other exception, optimizer and tail-call variants retain their routes;
+  -- typed `--verified` (S11e6) keeps its own route below.
   let hasCfg := SC0.funcs.any (fun fi => (((Backend.Stock.ParameterCfg.eligible fi.func || Backend.Stock.ConditionalForwardCfg.eligible fi.func) || Backend.Stock.ConditionalCfg.eligible fi.func) || Backend.Stock.ForwardCfg.eligible fi.func || Backend.Stock.LinearCfg.eligible fi.func || Backend.Stock.TwoBlock.Entry.eligible fi.func))
-  let stockEnabled := !opt && !tailOn && SC0.funcs.any (fun fi => (((Backend.Stock.ParameterCfg.eligible fi.func || Backend.Stock.ConditionalForwardCfg.eligible fi.func) || Backend.Stock.ConditionalCfg.eligible fi.func) || Backend.Stock.ForwardCfg.eligible fi.func || Backend.Stock.LinearCfg.eligible fi.func || Backend.Stock.TwoBlock.Entry.eligible fi.func) || Backend.Stock.Scalar.activationEligible fi.func || Backend.Stock.Logical.activationEligible fi.func || Backend.Stock.Mixed.activationEligible fi.func || Backend.Stock.Arithmetic.eligible fi.func || Backend.Stock.ScalarAdd.activationEligible fi.func) &&
+  let stockEnabled := !typedV && !opt && !tailOn && SC0.funcs.any (fun fi => (((Backend.Stock.ParameterCfg.eligible fi.func || Backend.Stock.ConditionalForwardCfg.eligible fi.func) || Backend.Stock.ConditionalCfg.eligible fi.func) || Backend.Stock.ForwardCfg.eligible fi.func || Backend.Stock.LinearCfg.eligible fi.func || Backend.Stock.TwoBlock.Entry.eligible fi.func) || Backend.Stock.Scalar.activationEligible fi.func || Backend.Stock.Logical.activationEligible fi.func || Backend.Stock.Mixed.activationEligible fi.func || Backend.Stock.Arithmetic.eligible fi.func || Backend.Stock.ScalarAdd.activationEligible fi.func) &&
     (hasCfg || !(SC0.funcs.any fun fi => fi.func.blocks.any fun b => b.term.isTry))
   let routes := [Backend.Stock.ParameterCfg.lowerValidated,Backend.Stock.ConditionalForwardCfg.lowerValidated,Backend.Stock.ConditionalCfg.lowerValidated,Backend.Stock.ForwardCfg.lowerValidated,Backend.Stock.LinearCfg.lowerValidated,Backend.Stock.TwoBlock.Entry.lowerValidated,Backend.Stock.TwoBlock.lowerValidated,Backend.Stock.Scalar.lowerValidated,Backend.Stock.Logical.lowerValidated,Backend.Stock.Mixed.lowerValidated,
     Backend.Stock.Arithmetic.lowerValidated]
+  -- typed `--verified`: `compileExeT` (S11e6, #419)
+  if typedV then
+    match Link.DeadCleanup.compileExeT SC file0 with
+    | .ok file =>
+      IO.FS.writeBinFile exe file
+      IO.println s!"lean-link: {exe}: {summary} written by Link.DeadCleanup.compileExeT (Link.DeadCleanup.compileExeT_correct)"
+      IO.println s!"lean-link: {exe}: coverage: Link.DeadCleanup.compileExeT_correct, Link.DeadCleanup.compileExeT_correct_peak (returned values by class); the original (pre-i128-legalisation) program, in SrcScopeB: Link.DeadCleanup.compileExeT_correct_source, Link.DeadCleanup.compileExeT_correct_source_peak; cg_clif's program: Front.bundle_correct_rawT, Front.bundle_correct_raw_peakT; input in InScopeInT (typed scope; totality proven on InScopeIn only) (--verified)"
+      IO.println s!"lean-link: {exe}: exceptional edges not covered (typed scope: compileExeU is integer-only)"
+      IO.println s!"lean-link: {exe}: unwinding conditions: {Link.DeadCleanup.unwReport SC file}"
+      return 0
+    | .error e =>
+      if e != Link.DeadCleanup.outOkTMsg && e != Link.DeadCleanup.outOfScopeTMsg &&
+          e != Link.DeadCleanup.outOkTCMsg then
+        IO.eprintln s!"lean-link: {exe}: {e}"
+        return 1
+      let bad := typedFails SC (e == Link.DeadCleanup.outOkTCMsg)
+      let causes := (bad.flatMap (·.2)).eraseDups.map fun c => s!"{c} {(bad.filter (·.2.contains c)).length}"
+      IO.eprintln s!"lean-link: {exe}: --verified: typed scope: {e}: {bad.length} function(s) failing (by cause: {causes}) {(bad.take 3).map (·.1)}; not written"
+      for (n, fs) in bad do
+        IO.eprintln s!"lean-link:   {n}: {fs}"
+      printExclusions exe S SC true (bad.map (·.1))
+      return 1
   let compiled := if stockEnabled then SemanticCompilerWith.compileWithRoutes routes SC0 file0 deadCleanup
     else (compile SC file0).map fun file => (⟨file,none⟩ : SemanticCompilerWith.RoutedOutput)
   match compiled with
@@ -418,12 +522,12 @@ def main (args0 : List String) : IO UInt32 := do
     for (n, fs) in bad do
       IO.eprintln s!"lean-link:   {n}: {fs}"
     if verified then
-      printExclusions exe S SC
+      printExclusions exe S SC typedOk
       return 1
-    -- the typed scope (S11, #35; not under `--verified`, whose claim reaches the Rust source
-    -- through the integer front-end theorems): first `compileExeT3 SC file0 = .ok file` on the
-    -- decided input conditions `InScopeInT3` (no run-time decider), else `compileExeT` on
-    -- `InScopePT`; both with the output checks `OutOkTCleanup`
+    -- the typed scope (S11, #35; under `--verified` taken above when every function meets
+    -- `fnScopeInTB`): first `compileExeT3 SC file0 = .ok file` on the decided input conditions
+    -- `InScopeInT3` (no run-time decider), else `compileExeT` on `InScopePT`; both with the
+    -- output checks `OutOkTCleanup`
     if deadCleanup && !opt && !tailOn then
       match Link.DeadCleanup.compileExeT3 SC file0 with
       | .ok file =>

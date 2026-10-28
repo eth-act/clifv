@@ -37,7 +37,7 @@ theorem instCalls_pairT (hc : CompiledT f k vc vcp rf af fa fb) (hT : TypedRules
     (hslot : af.slotBase = slotOff)
     (hNI : XNI F syms (f.externs.map (·.2)) (indSigs f) c
       (CallLg env (f.externs.map (·.2)) (indSigs f)) X) (hTls : XTls F X)
-    {ctx : Ctx} (hctx : CtxT f ctx) (hst : StoresTyped ctx) :
+    {ctx : Ctx} (hctx : CtxT f ctx) (hsc : InstScopeT ctx) (hst : StoresTyped ctx) :
     InstCallsT f ctx (pairSem (csem F ⟨fa.k, af.slotBase⟩ X))
       (MRP ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c D) env p := by
   intro ii info inst st rss st' tr hmem hi hcl hsig hemp hvb hrun
@@ -53,7 +53,7 @@ theorem instCalls_pairT (hc : CompiledT f k vc vcp rf af fa fb) (hT : TypedRules
     (indCallsRefineP_csemGF hXI hsym (fun _ _ _ h => h.1.1) (fun _ _ _ h => h.2.1))
     (memRefinesR_csemGF (ctx := ⟨fa.k, af.slotBase⟩) hslot hsym)
     (memRefinesFP_csemGF (ctx := ⟨fa.k, af.slotBase⟩) hslot)
-    hctx (outArgsOk_relW Γ f c) (externsIn_self f) (memRelOk_relW Γ f c) hi hcl hsig
+    hctx hsc (outArgsOk_relW Γ f c) (externsIn_self f) (memRelOk_relW Γ f c) hi hcl hsig
     (hst ii info inst hi hcl)
     (fun fn args e hc' he => hstk B hB stm hstm fn args e (hst' ▸ hc') he) hvb hrun
   cases hov
@@ -224,7 +224,7 @@ theorem vcode_niT (hsub : InSubsetT p f) (hc : CompiledT f k vc vcp rf af fa fb)
     shape := hshape
     cert := hcert
     dsem := driverSemG_pair F ⟨fa.k, af.slotBase⟩ X
-    insts := instCalls_pairT hc hT hX hXI hsym hslot hNI hTls hctxT hstT
+    insts := instCalls_pairT hc hT hX hXI hsym hslot hNI hTls hctxT hshape.scope hstT
     terms := termCalls_pairT Γ rfl hTls ⟨fa.k, af.slotBase⟩ hT hctxT
     ext := H.ext
     indSig := H.indSig

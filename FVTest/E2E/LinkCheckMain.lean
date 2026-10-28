@@ -4,6 +4,8 @@ import FVTest.E2E.LinkProof
 import FVTest.E2E.SemanticLinkProofWith
 import FV.E2E.BinCheckFast
 import FV.Link.Image
+import FV.E2E.DeadCleanupLinkCheckT
+import FV.Link.DeadCleanupCompileTFast
 
 open E2E E2E.LinkCheck E2E.StackBound Lean Backend E2E.Elf E2E.BinCheck
 
@@ -71,13 +73,37 @@ def main (args : List String) : IO UInt32 := do
     IO.println s!"  profile: {(tot.map (·.1)).foldl (· + ·) 0} ms in total"
   let t0 ← IO.monoMsNow
   -- `I0.resultsProductionWith actualLower o.deadCleanup`, one task per function (`Link.parMap_eq`)
-  let R0 : Res := Link.parMap (fun fi => (fi.func, I0.pipeProductionWith actualLower o.deadCleanup fi)) I0.funcs
+  let R0I : Res := Link.parMap (fun fi => (fi.func, I0.pipeProductionWith actualLower o.deadCleanup fi)) I0.funcs
   -- the CLIF image's symbols and the call-level stack
   -- the checks that do not depend on the rest of the program, once (`staticChks`: the
   -- validators); then `diagR` with them (`chks = staticChks ++ linkChks`)
-  let D0 := (R0.map fun e => frameDrop (getOk e.2).af).foldl max 0
-  let stat := Link.parMap (fun e => (e.1.name, staticChksSemanticNI (productionStage o.deadCleanup) { I0 with D := D0 } e.1 e.2)) R0
+  let D0 := (R0I.map fun e => frameDrop (getOk e.2).af).foldl max 0
+  let statI := Link.parMap (fun e => (e.1.name, staticChksSemanticNI (productionStage o.deadCleanup) { I0 with D := D0 } e.1 e.2)) R0I
+  -- the typed checker (S11e6, #615): when integer validators reject functions, the cleanup
+  -- results `I.resultsCleanup` with the typed checks `chksWithT DeadCleanup.prune` (the checker
+  -- `okBCleanupT`, which accepts integer functions too: `Link.DeadCleanup.compileExeT`'s output,
+  -- typed `--verified`); used when the typed validators accept some of the rejected functions;
+  -- theorem `E2E.DeadCleanupExecBytes.binary_correct_exec_provenT`. The integer results are
+  -- dropped before the typed ones are computed (one result set at a time).
+  let failI := statI.filterMap fun e => if (bad e.2).isEmpty then none else some e.1
+  let (typed, R0, stat, note) :=
+    if o.deadCleanup && !failI.isEmpty then
+      let failSet : Std.HashSet String := failI.foldl (·.insert ·) {}
+      let probe := Link.parMap (fun (fi : FnInput) =>
+        let r := I0.pipeCleanupOf fi
+        (bad (staticChksWithT (fun _ => DeadCleanup.prune) { I0 with D := max D0 (frameDrop (getOk r).af) }
+          fi.func r)).isEmpty) (I0.funcs.filter fun fi => failSet.contains fi.func.name)
+      let fixed := (probe.filter id).length
+      if fixed > 0 then
+        let R0T : Res := Link.parMap (fun fi => (fi.func, I0.pipeCleanupOf fi)) I0.funcs
+        let DT := (R0T.map fun e => frameDrop (getOk e.2).af).foldl max 0
+        (true, R0T, Link.parMap (fun e => (e.1.name, staticChksWithT (fun _ => DeadCleanup.prune) { I0 with D := DT } e.1 e.2)) R0T,
+          s!"  typed checks: {fixed} of the {failI.length} function(s) failing the integer validators pass the typed ones (okBCleanupT's); the typed checker is used")
+      else (false, R0I, statI, s!"  typed checks: none of the {failI.length} function(s) failing the integer validators pass the typed ones")
+    else (false, R0I, statI, "")
   let nStat := (stat.filter fun e => !(bad e.2).isEmpty).length
+  if !note.isEmpty then IO.println note
+  IO.println s!"  checker: {if typed then "typed (okBCleanupT)" else "integer"}"
   IO.println s!"  static checks (the validators): {nStat} function(s) fail"
   IO.println s!"  static checks done in {(← IO.monoMsNow) - t0} ms"
   let mut keep := R0
@@ -99,7 +125,15 @@ def main (args : List String) : IO UInt32 := do
     let T := tabOf keep
     let C := LinkCtx.of I P T
     let gl := bad (globalChksWith C I P T)
-    let fs := (keep.zip (Link.parMap (fun e => bad ((statM[e.1.name]?).getD [] ++ linkChksWith C P e.1 e.2)) keep)).filterMap fun (e, b) =>
+    -- typed: `chksWithT`'s call-site checks (`linkChksT`: a `blr` that enters no function of the
+    -- program may have float uses/defs, `linkChksWithT_of`) and `calleeInt` with `C`'s declared
+    -- names and indirect-call flag (`calleeWithB_eq`)
+    let tyChk := fun (g : Clif.Function) => if typed then
+        [("calleeInt", !calleeWithB (fun n => C.callees.contains n) C.anyInd C.S g || g.sig.returns.all (·.ty.isInt))]
+      else []
+    let lc := fun (e : Clif.Function × Except String Art) =>
+      if typed then linkChksWithT C P e.1 e.2 else linkChksWith C P e.1 e.2
+    let fs := (keep.zip (Link.parMap (fun e => bad ((statM[e.1.name]?).getD [] ++ lc e ++ tyChk e.1)) keep)).filterMap fun (e, b) =>
       match b with
       | [] => none
       | b => some (e.1.name, b ++ (match e.2 with | .error m => [m] | .ok _ => []))

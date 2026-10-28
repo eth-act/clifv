@@ -206,7 +206,8 @@ theorem lowerInstOkP_of_rulesT (hrules : LowerRulesCorrectTI program)
     (hMR : MRStable F MR) {exts : List Clif.ExtFunc} (hcr : CallsRefineP Pc F env exts MR isem)
     {sigs : List Clif.Signature} (hicr : IndCallsRefineP Pc env sigs MR isem)
     (hMem : MemRefinesR Rd F sb syms isem) (hFP : MemRefinesFP Rd F sb isem)
-    {f : Clif.Function} {ctx : Ctx} (hctx : CtxT f ctx) {outB : Nat} (hout : OutArgsOk F outB MR)
+    {f : Clif.Function} {ctx : Ctx} (hctx : CtxT f ctx) (hsc : InstScopeT ctx) {outB : Nat}
+    (hout : OutArgsOk F outB MR)
     (hnorm : ExternsIn f exts) (hMRo : MemRelOk F sb syms f MR) {ii : Nat} {info : IInfo}
     {inst : Clif.Inst} (hi : ctx.insts[ii]? = some info) (hc : info.clif = some inst)
     (hsig : IndSigOk f sigs inst) (hst : StoreTyped ctx inst)
@@ -257,7 +258,7 @@ theorem lowerInstOkP_of_rulesT (hrules : LowerRulesCorrectTI program)
       inst hi hc trivial cfg hco m n st tr env' s1 out st' tr2 hm1 hn1 hvb hfirst hmatch heval
     exact ⟨ms, rss, h1, h2, h3.toP⟩
   cases hroot : closureRoot r
-  · exact absurd hmatch (lower_nonroot_nomatchT_calls hctx.inv hctx.scope hctx.calls hi hc hr
+  · exact absurd hmatch (lower_nonroot_nomatchT_calls hctx.inv hsc hctx.calls hi hc hr
       (by rw [← closureRoot_eq]; exact hroot) cfg m (st, tr) env' s1)
   cases hE : Compile.instE inst
   · cases hfm : floatMoveRootRule r
@@ -268,7 +269,7 @@ theorem lowerInstOkP_of_rulesT (hrules : LowerRulesCorrectTI program)
               hctx.inv ii info inst hi hc hsel.2 cfg hco m n st tr env' s1 out st' tr2 hm1 hn1 hvb
               hfirst hmatch heval
             exact ⟨ms, rss, h1, h2, h3.toP⟩
-          · exact absurd hmatch (hnE r hr hroot hfm hfmem hfa f ctx hctx ii info inst hi hc hE
+          · exact absurd hmatch (hnE r hr hroot hfm hfmem hfa f ctx hctx hsc ii info inst hi hc hE
               (fun h1 h2 => hsel ⟨h1, h2⟩) hst cfg m st tr env' s1 hfirst)
         · exact har hfa
       · exact hmF hfmem
@@ -309,7 +310,8 @@ theorem lowerInstOkP_runTermT (hrules : LowerRulesCorrectTI program)
     {exts : List Clif.ExtFunc} (hcr : CallsRefineP Pc F env exts MR isem)
     {sigs : List Clif.Signature} (hicr : IndCallsRefineP Pc env sigs MR isem)
     (hMem : MemRefinesR Rd F sb syms isem) (hFP : MemRefinesFP Rd F sb isem)
-    {f : Clif.Function} {ctx : Ctx} (hctx : CtxT f ctx) {outB : Nat} (hout : OutArgsOk F outB MR)
+    {f : Clif.Function} {ctx : Ctx} (hctx : CtxT f ctx) (hsc : InstScopeT ctx) {outB : Nat}
+    (hout : OutArgsOk F outB MR)
     (hnorm : ExternsIn f exts) (hMRo : MemRelOk F sb syms f MR) {ii : Nat} {info : IInfo}
     {inst : Clif.Inst} (hi : ctx.insts[ii]? = some info) (hc : info.clif = some inst)
     (hsig : IndSigOk f sigs inst) (hst : StoreTyped ctx inst)
@@ -336,7 +338,7 @@ theorem lowerInstOkP_runTermT (hrules : LowerRulesCorrectTI program)
     have hlen : (program.rulesOf TId.lower).length ≤ 1000 := by
       rw [show TId.lower = 686 from rfl, data_program.r686]; decide
     obtain ⟨ms, rss, h1, h2, h3⟩ := lowerInstOkP_of_rulesT hrules hT hFT hnE hcalls hind hmem
-      hmemF hR hMR hcr hicr hMem hFP hctx hout hnorm hMRo hi hc hsig hst hstk rfl (by omega) hvb ha
+      hmemF hR hMR hcr hicr hMem hFP hctx hsc hout hnorm hMRo hi hc hsig hst hstk rfl (by omega) hvb ha
     exact ⟨ms, rss, by simpa using h1, h2, h3⟩
 
 theorem tryOkP_of_rulesT {p : Program} (hp : Data p) (hrules : TryRulesCorrectTP p)
