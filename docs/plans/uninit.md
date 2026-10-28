@@ -875,6 +875,40 @@ semantics, and `ReadIn`'s third case becomes "outside `F` and outside the step's
   `Rd := ¬ Zof F D cm` give `GuardR`, hence `csem (F ∪ ¬ Rd)` (loads, atomics); and the transport
   across `prep` (`DriverSemG` of the guarded family). Not started.
 
+**Finding (#689, decided conservatively).** `ThmPDER`'s determinism clause is false when the two
+entries' return addresses differ, which is exactly `progCallPR`'s use (canonical entry `ra₀ =
+raStar`, actual call `ra = pc + 4`): `ProphRegOkUpTo` covers `x30` (the body keeps the entry `x30`
+up to its first `bl`), and `RetAgree`'s memory part covers the frame record's saved-LR word.
+`FV/E2E/LinkArmDetX.lean`: **`LinkSys.ThmPDERX`** (the clause with `ProphRegOkUpToX` and `RetAgreeX`,
+and the full forms when the entries agree on `x30`), `ThmPDER.thmPDERX`, `ThmPDERX.thmPR`,
+`Thm.thmPDERX_of_not_needNI`; the lock-step transfers `prophStep_of_stEqOutX`,
+`prophOkUpTo_of_lockstepX`, `prophRegOkUpToX_of_lockstepX`, `prophRegOkUpTo_of_lockstepX`,
+`retAgreeX_of_ret`, `retAgree_of_ret` (the alignment-free parts of item (3)). Witnesses
+`LinkArmDetXWitness.lean`.
+
+**Finding (route (a), decided conservatively).** "Each segment ends at the first arrival at the
+next item's line" does not by itself align two realisations: `Q`'s line index is existential and
+not unique (its lines are matched as a prefix of `R.L.drop j` with an arbitrary tail `T`; a suffix
+of the last block that repeats earlier, or an emitter state `ps1` with another trap numbering,
+gives a second index of the same configuration), so two runs whose pcs agree can each stop at a
+different index of the same configuration. Fix (no change to `Q` or any existing statement):
+the realisation cases start from `Q` **at an explicit witness** `QW R s j ps1 T c` and end at a
+witness computed from it, `RL.nextW` (the straight witness `RL.straightW`: the lines after the
+item's own; or the chosen entry witness `RL.entryW` of the block entered), at the first arrival
+at that line (`RL.SegLen`: `FirstArr` and the zero-length case `RL.EmptyW`). Two runs started at
+one witness with agreeing pcs then cut at the same index (`RL.segLen_eq`, from `firstArr_eq`).
+As built (branch `agent/uninit-z14b`): `RegLevelSegAlign.lean` (`QW`, `q_iff_qW`, `nextW`,
+`entryW`, `EmptyW`, `SegLen`, `SegNA`, `Inside`, `firstArr_of_inside(_out)`, `pcOf_ne(_le)`,
+`segLen_eq`), `RegLevelQW.lean` (`qW_op`, `qW_next`, `entryWit_exists`, `qW_entry`), and the
+cases `realizes_moveNA`, `realizes_trapIf_nextNA`, `realizes_gotoNA` (with `reach_bXNA`,
+`reach_rcbXNA`, `reach_cbXNA`, `RL.SegIn`), `realizes_op_coreXNA`/`realizes_op_nextNA`
+(`RunsAsNA`), `realizes_op_coreXSW` (`RunsAsSJ`), `realizes_callNA`, `realizes_symAddrNA`,
+`realizes_tlsNA`, `jt_machineNA`/`realizes_jtNA`. Remaining: the atomic loops, `tryCall`, the
+epilogue (`ret`, length = its line count) and the prologue (entry witness of block 0), the
+dispatcher `realizes_allCW` and the counted chain on `QW` exporting the segmentation, then the
+two-run induction (`lockstep_runX` with `stEqOutX_line` per index, guards from `WReadsIn` at the
+aligned VCode step), and `hGd` for the pair.
+
 ## 6. Heap (separate gap, SEM2)
 
 `BaseOk.baseKeepsAllocs`/`baseNoAlloc` require base externs to allocate nothing whenever a program
