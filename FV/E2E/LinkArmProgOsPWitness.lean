@@ -8,7 +8,7 @@ import FV.E2E.LinkArmProphDetEWitness
 * `progOsP_Lu`: on `LinkArmProphDetWitness.Lu` (a program with a call), `progOsP`'s induction
   hypothesis (`thmPDE_LU`), budget and state premise are discharged: every program call site has
   the contract of call `n` at the `QR` states;
-* `calleeOkP_Lu`: likewise the whole call contract of call `n` (`calleeOkP`);
+* `calleeOkP_Lu`, `calleeTryOkP_Lu`: likewise the whole call and `try_call` contracts of call `n`;
 * `placeArgs_self_u0`: `placeArgs` of `u0`'s own `x0`, `x1` is `u0`.
 -/
 
@@ -42,6 +42,16 @@ theorem calleeOkP_Lu (M : Nat) {g : Clif.Function} (hg : g ∈ Lu.P.funcs) {F G 
       (Lu.XPR (fun M _ => Lu.K M) M g F P R n) (Lu.hooks M) (Lu.A g).vcp.CallSite
       (GotV (Lu.A g).vcp) :=
   Lu.calleeOkP Lu_ok (Lu.budget_K Lu_ok) (fun _ => thmPDE_LU _) hg he fun _ hq _ => hq
+
+/-- `calleeTryOkP` on `Lu`: the `try_call` contract of call `n` at the `QR` states. -/
+theorem calleeTryOkP_Lu (M : Nat) {g : Clif.Function} (hg : g ∈ Lu.P.funcs)
+    {F G : BitVec 64 → Prop} {ra : BitVec 64} {s w₀ : Arm.ArmState}
+    (he : Lu.MachEntry (fun M _ => Lu.K M) M g F G ra s w₀) (P : Nat → BitVec 64 → BitVec 8)
+    (R : Nat → Arm.ArmState) (n : Nat) :
+    CalleeTryOkGP (QR (Lu.K M) P R n) F (Lu.K M) G s (CallAt (Lu.A g).fa (Lu.A g).base)
+      (Lu.XPR (fun M _ => Lu.K M) M g F P R n) (Lu.hooks M) (Lu.A g).vcp.TrySite
+      (GotV (Lu.A g).vcp) :=
+  Lu.calleeTryOkP Lu_ok (Lu.budget_K Lu_ok) (fun _ => thmPDE_LU _) hg he fun _ hq _ => hq
 
 theorem placeArgs_self_u0 :
     placeArgs [.x 0, .x 1] ([.x 0, .x 1].map (regVal LinkArmProphThmWitness.u0))

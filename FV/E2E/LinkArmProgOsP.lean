@@ -1,6 +1,7 @@
 import FV.E2E.LinkArmProgCallP
 import FV.E2E.LinkArmProphReg
 import FV.E2E.RegLevelCallN
+import FV.E2E.RegLevelTryP
 
 /-!
 # The call contract of call number `n` with both prophecies (SEM1 step 2s, `docs/plans/uninit.md` §5.8)
@@ -17,7 +18,7 @@ arguments are `t`'s own: `canon_self_r`, from `placeArgs_self`) and on the calle
 * `setReg_self`, `placeArgs_self`: writing a state's own register values changes nothing;
 * `canon_self_r`: `canon` with the world's own argument values keeps every register but the pc;
 * `progOsCoreXPR`: `progOsCoreP` at `worldPR` from the call state's prophecy facts;
-* `progOsP`; `progOsRegP` (a `blr`; `XPR_none`, `XPR_ind`); `calleeOkP` (`XPR_base`, `XPR_ext`).
+* `progOsP`; `progOsRegP` (a `blr`; `XPR_none`, `XPR_ind`); `calleeOkP` (`XPR_base`, `XPR_ext`); `calleeTryOkP`.
 -/
 
 namespace E2E
@@ -377,6 +378,103 @@ theorem calleeOkP (hL : L.Ok) [L.CrunOk] (hκ : L.Budget κ) {M : Nat}
         exact hL.basePc _ _ (.inr ⟨n, rfl, hpf⟩) herr hal
       | some h => rw [L.hooks_some hpf]; exact (L.pcall_pc M h u).2
   ext _ _ _ _ _ hx herr := L.XPR_ext hL hx herr
+
+/-- **`calleeTryOk` for call number `n` with both prophecies, on `ThmPDE`**, at the call states
+`Q`. -/
+theorem calleeTryOkP (hL : L.Ok) [L.CrunOk] (hκ : L.Budget κ) {M : Nat}
+    (ih : 0 < M → L.ThmPDE κ (M - 1)) {g : Clif.Function}
+    (hg : g ∈ L.P.funcs) {F G : BitVec 64 → Prop} {ra : BitVec 64} {s w₀ : Arm.ArmState}
+    (he : L.MachEntry κ M g F G ra s w₀)
+    {P : Nat → BitVec 64 → BitVec 8} {R : Nat → Arm.ArmState} {n : Nat}
+    {Q : Arm.ArmState → Prop}
+    (hQ : ∀ t, Q t → CallPc (L.A g).fa (L.A g).base (Arm.r .PC t) →
+      (∀ f, MaskedReg f → Arm.r f t = Arm.r f (R n)) ∧
+        ∀ a, StackBelow (κ M g) (spv t) a → t.mem a = P n a) :
+    CalleeTryOkGP Q F (κ M g) G s (CallAt (L.A g).fa (L.A g).base) (L.XPR κ M g F P R n)
+      (L.hooks M) (L.A g).vcp.TrySite (GotV (L.A g).vcp) := by
+  intro ctx info ti hsite
+  cases hd : info.dest with
+  | sym n =>
+    have hdest := hd
+    cases hpf : L.P.func? n with
+    | some h =>
+      exact calleeTryOkGP_of_call (S := fun i t => i = info ∧ t = ti)
+        (fun ctx' i t ⟨e1, _⟩ => e1 ▸ (L.calleeOkP hL hκ ih hg he hQ).os ctx' info hsite.callSite)
+        (fun _ _ _ h => callAt_tryCall_call h)
+        (fun i t ⟨_, e2⟩ => e2 ▸ trySite_clobberAll (hL.compiled g hg).alloc hsite)
+        ctx info ti ⟨rfl, rfl⟩
+    | none =>
+      have hb : L.BaseDest (destOf info) := .inr ⟨n, by simp [destOf, hdest], hpf⟩
+      intro c wh ops regs i' t w outs w' s' _ _ _ _ hops hst hasg _ hsw hal herr hsem hex
+      obtain ⟨d, us, ds⟩ := info
+      simp only at hdest
+      subst hdest
+      have hsem' : csem F ctx L.Xb (.tryCall ⟨.sym n, us, ds⟩ ti) (useVals ops regs t) w =
+          some (outs, w', .goto ti.handlers.length) := by
+        rw [← csemV_sub hsem]; simp [csem, L.XPR_base hpf]
+      obtain ⟨ic, rfl, hasg'⟩ := (assign_call_tryCall _ regs).2 ti i' hasg
+      obtain ⟨us', ds', hic⟩ := assign_call_sym hasg'
+      cases hic
+      have hex' : callExec L.Hb (.tryCall ⟨.sym n, us', ds'⟩ ti) t = some s' := by
+        simp only [callExec] at hex ⊢
+        rw [← L.hooks_base (M := M) (.inr ⟨n, rfl, hpf⟩) t (fun h => by cases h)]
+        exact hex
+      exact hL.baseTry g hg F ctx _ ti ⟨hsite, hb⟩ c wh ops regs _ t w outs w' s' hops hst hasg
+        hsw hal herr hsem' hex'
+  | reg r =>
+    obtain ⟨tv, Lu, Ld, hinfo, -⟩ :=
+      hL.blrRegs g hg info hsite.callSite (fun n => by rw [hd]; simp)
+    subst hinfo
+    intro c wh ops regs i' t w outs w' s' hQt hK hD hG hops hst hasg hP hsw hal herr hsem hex
+    have hcl := trySite_clobberAll (hL.compiled g hg).alloc hsite
+    have hopsC : (MInst.call ⟨.reg (.vreg tv .int), retPairs Lu, callDefs Ld⟩).operands = .ok ops := by
+      rw [← operands_tryCall_call _ ti]; exact hops
+    have hops1 := hopsC
+    rw [operands_call_reg] at hops1
+    cases hops1
+    obtain ⟨hsz', hloc, -, -⟩ := checkStatic_facts hst
+    obtain ⟨r0, hregs0⟩ := callRegs_eq_reg (regs := regs)
+      (by have := hsz'; simp only [Array.size_map] at this ⊢; simpa using this)
+      (fun p hp r hr => (hloc p hp).2 r hr)
+    obtain ⟨n0, rfl, hn0, -⟩ : ∃ n, r0 = .x n ∧ n < 29 ∧ n ≠ 16 := by
+      have hmem : (tgtOp tv, Loc.reg r0) ∈
+          (((tgtOp tv :: (retOps Lu ++ callDefOps Ld)).toArray).zip (regs.map Loc.reg)).toList := by
+        simp [Array.toList_zip, Array.toList_map, hregs0]
+      obtain ⟨n, hn, h29, h16, -⟩ := locOk_int (hloc _ hmem).1
+      exact ⟨n, hn, h29, h16⟩
+    obtain ⟨ic, rfl, hasg'⟩ := (assign_call_tryCall _ regs).2 ti i' hasg
+    obtain ⟨r1, us', ds', hr1, hic⟩ := assign_call_reg hasg'
+    cases hic
+    have h0 : regs[0]? = some (.x n0) := by
+      rw [← Array.getElem?_toList, hregs0]; rfl
+    rw [h0] at hr1
+    cases hr1
+    have hc := hL.compiled g hg
+    obtain ⟨lm, hlm⟩ := FnAsm.layout_labelOffsets hc.layout
+    have htgt : blrTarget t = some (lo64 (regVal t (.x n0))) := by
+      obtain ⟨j, x, tt, hj, hx, hpc⟩ := hP
+      simp only [MInst.callInsn?, Option.some.injEq] at hx
+      subst hx
+      rw [lo64_regVal_x]
+      exact blrTarget_of hc.layout hlm hj hn0 hpc
+        (fun k wd hk => hL.imgCode g hg t (fun a ha => (hG a (he.imgG a ha)).trans (he.imgS a ha)) k wd hk)
+    have huv := call_useVals_reg (tv := tv) (s := t) hregs0
+    cases hs : symCallee L.Xb L.P (lo64 (regVal t (.x n0))) with
+    | none =>
+      have hb : (blrTarget t).bind (symCallee L.Xb L.P) = none := by rw [htgt]; exact hs
+      have hsem' : csem F ctx L.Xb (.tryCall ⟨.reg (.vreg tv .int), retPairs Lu, callDefs Ld⟩ ti)
+          (useVals (tgtOp tv :: (retOps Lu ++ callDefOps Ld)).toArray regs t) w =
+          some (outs, w', .goto ti.handlers.length) := by
+        rw [← csemV_sub hsem, huv]; simp [csem, L.XPR_none hs]
+      have hex' : callExec L.Hb (.tryCall ⟨.reg (.x n0), us', ds'⟩ ti) t = some s' := by
+        simp only [callExec] at hex ⊢
+        rw [← L.hooks_base (M := M) (.inl rfl) t (fun _ => hb)]
+        exact hex
+      exact hL.baseTry g hg F ctx _ ti ⟨hsite, .inl rfl⟩ c wh _ regs _ t w outs w' s' hops hst
+        hasg hsw hal herr hsem' hex'
+    | some h =>
+      exact calleeTryP_at ((L.calleeOkP hL hκ ih hg he hQ).os ctx _ hsite.callSite)
+        (fun _ _ h => callAt_tryCall_call h) hcl hQt hK hD hG hops hst hasg hP hsw hal herr hsem hex
 
 end LinkSys
 
