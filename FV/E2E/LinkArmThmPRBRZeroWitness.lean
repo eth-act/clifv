@@ -1,15 +1,16 @@
-import FV.E2E.LinkArmRetOkZero
+import FV.E2E.LinkArmRetOkPRB
 import FV.E2E.LinkSlotSysWitness
 
 /-!
 # Witnesses for depth `0` of `ThmPRBRL` (`LinkArmStage2Zero`, `LinkArmCountZero`,
-`LinkArmRetOkZero`)
+`LinkArmRetOkZero`), and `RetOkPRB` at every depth (`LinkArmRetOkPRB`)
 
 On the slotted test system `LinkSlotSysWitness.Lsl` (`NeedSlots`; no base externs):
 
 * `baseRetOk_Lsl` (vacuous: no base extern), `retCount_Lsl` (`retCountB`, `native_decide`);
 * `stage2PRB_zero_Lsl`, `countPRB_zero_Lsl`, `retOkPRB_zero_Lsl`, and **`thmPRBRL_zero_Lsl`**:
   `ThmPRBRL` at depth `0` with the budget `K`;
+* `retOkPRB_Lsl`: `retOkPRB_of` at every depth (program callees `h`, `r` return);
 * `keeps_leave_h`: `returned_keeps_leave` (the core of `countPRB_zero`) on the slotted leaf `h`:
   its bare run on `41` from the placed entry returns `41` and gives back the popped entry's
   oracle, which is the caller's advanced by `1` (`initState_leave_nextAdv`). (`f`'s own run does
@@ -40,6 +41,9 @@ theorem retOkPRB_zero_Lsl : Lsl.RetOkPRB (fun M _ => Lsl.K M) 0 :=
 /-- **`ThmPRBRL` at depth `0` on the slotted test system.** -/
 theorem thmPRBRL_zero_Lsl : Lsl.ThmPRBRL (fun M _ => Lsl.K M) 0 :=
   Lsl.thmPRBRL_zero_of Lsl_ok (Lsl.budget_K Lsl_ok) baseRetOk_Lsl retCount_Lsl
+
+theorem retOkPRB_Lsl (M : Nat) : Lsl.RetOkPRB (fun M _ => Lsl.K M) M :=
+  Lsl.retOkPRB_of Lsl_ok needSlots baseRetOk_Lsl retCount_Lsl M
 
 /-- `h`'s entry on `41` from `memS iniT`. -/
 def csH : Clif.State := match Clif.initState Lsl.P "h" [⟨.i64, 41#64⟩] (memS iniT) with
