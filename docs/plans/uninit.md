@@ -2755,6 +2755,34 @@ copies of the pair driver and of the P chain, and the `CompiledEither` dispatch:
   → CallTwinCE (M + 1)` (premises also `∀ g, (L.A g).fa.blrLow` and `x30Free`, checks on the
   compiled code); `InitOkR` in `DeadCleanupBinaryInitR.lean`.
 
+**`hcall` assembly, `lockRet_of`, finding #732 (UninitZ28b, branch `agent/uninit-z27b`, #713).**
+- `LinkArmHCallLock.lean`: `hookLock_callS` (`hookLock_call` for any clobber list), `callDest_of_line`,
+  `hookLock_pre` (`call` or the call of a `try_call`), **`hcallLockXP`** (the `hcall` premise of
+  `backend_twoRunLERWZIUPF_either` at `XI := XPBTGY`: `SegFrom` anchor, `CallPre`'s answer through
+  `Stage2ZS`, the line's destination is the call's).
+- Finding [#732](https://github.com/eth-act/clifv/issues/732) (decided conservatively, new names):
+  `DetPRBR`/`DetRunPRBCR` (and `DetPRB`) are false when the canonical `us` names `x30` (the second
+  return holds its own return address there), so `InitOkR.det` is unsatisfiable. **`DetPRBRU`**
+  (premise `(L.A g).vc.RetsSite us`), `DetPRBR.toU`, **`DetRunPRBCRU`**, `DetRunPRBCR.toU`,
+  **`detPRBRU_ofC`**; the consumer chain in `U` form (`progCallPRBRLRU`, `progCallPRBRLTRU`,
+  `progOs*RU`, `calleeOk(Try)PRBRLRU`, `*30RU`, `calleeOk(Try)XPBTGZS(30)RU`, `progResultBTRU`,
+  `stage2_answerFRU`, `callCountERU`, `countStep_progERU`, `stage2PRBZS_ofERU`, `countPRB_succERU`,
+  `thmPRBRL_ofZSERU`, `thmPRBRLE_succSRU`, **`thmPRBRLE_allCRU`**, `calleeOk(Try)LockedRU`), the
+  `DetPRBR` names kept as corollaries. `LockRet`, `progXBT_rel`, `xnifXPBTGY` (unmerged) on
+  `DetPRBRU`/`RetsSite`. Not yet rippled: `thmPRBG_ofR`/`allCR`, `LinkArmTrapE`, `LinkArmThmPRBGT`,
+  `LinkArmProgramInitR`, `InitOkR`.
+- `LinkArmLockRetOf.lean`: `VCode.retsLow` (decidable: no `rets` register is an `x30` alias),
+  `retsLow_sound`, `armRet_of_retAgreeX`, `BaseNIX`, `callLock_zero`, **`lockRet_of`** (`LockRet κ M`
+  from `HooksKeep`, `NeedNI`, `BaseNIX`, `x30Free`, `retsLow`, `ThmPRBRL`/`DetPRBRU (M - 1)`,
+  `CallTwinCE M`, `CallLock M`, `RetOkPRB M`, `Stage2PRBZSE M`).
+- Remaining (finding, not built): the nested callee twins of `TwinNC`/`TwinCE` at the second run's
+  call states need `CallerOk` there, i.e. its memory outside `F` and its own code words at `blr`
+  lines. The backend's per-index lock exports only `StEqOutX (R.Zc d d')`: export the joint
+  invariant's `WIn (F ∪ D) d d'` (backend level, `Lk` already has it) and `GoodX` of both runs at
+  body states (RL level: `realizesJCPTP`/`TV` trace predicate exports only `.good`), then the
+  canonical call data (factor `thmPRBG_ofR`'s `hcall` block), `DetRunTwinCE` (TwinCE from the lock),
+  `CallTwinCE (M + 1)` from it on `callLock_of`'s callee entries, the induction, `InitOkRU`.
+
 ## 6. Heap (separate gap, SEM2)
 
 `BaseOk.baseKeepsAllocs`/`baseNoAlloc` require base externs to allocate nothing whenever a program
