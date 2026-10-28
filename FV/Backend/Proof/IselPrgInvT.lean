@@ -1,6 +1,6 @@
 import FV.Backend.Proof.IselPrgRootT
 import FV.Backend.Proof.IselPrgInv
-import FV.Compile.SubsetTF
+import FV.Compile.SubsetTFIn
 
 /-!
 # Progress of the ISLE lowering over the typed scope: the context invariant
