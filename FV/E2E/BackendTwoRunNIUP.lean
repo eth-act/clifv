@@ -106,6 +106,10 @@ theorem backend_twoRunLERWZIUP (hc : Compiled f k vc vcp rf af fa fb)
         ((prologueLines R.af.frameSize).length + T + R.retLen) t0) = spv t0 ∧
       xreg 29 (iterN ({ R with s0 := t0, G := G', X := XI.at 0 } : RL).step
         ((prologueLines R.af.frameSize).length + T + R.retLen) t0) = xreg 29 t0 ∧
+      (∀ i < (prologueLines R.af.frameSize).length + T + R.retLen,
+        R.Good (iterN ({ R with X := XI.at 0 } : RL).step i R.s0) ∧
+        ({ R with s0 := t0, G := G' } : RL).Good
+          (iterN ({ R with s0 := t0, G := G', X := XI.at 0 } : RL).step i t0)) ∧
       ∀ i < (prologueLines R.af.frameSize).length + T + R.retLen, ∃ d d',
         StEqOutX (R.Zc d d')
           (iterN ({ R with s0 := t0, G := G', X := XI.at 0 } : RL).step i t0)

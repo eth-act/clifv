@@ -103,10 +103,14 @@ theorem RL.twoRunCTNP {R : RL} {t0 : Arm.ArmState} {G' : BitVec 64 → Prop} {XI
           (iterN ({ R with X := XI.at 0 } : RL).step i R.s0) ∧
         ({ R with s0 := t0, G := G', X := XI'.at 0 } : RL).GoodXNY (fun _ => True)
           (iterN ({ R with s0 := t0, G := G', X := XI'.at 0 } : RL).step i t0)) ∧
-      (∀ i < N, ∃ c c' j, Lk c c' j
+      (∀ i < N, (∃ c c' j, Lk c c' j
         (iterN ({ R with X := XI.at 0 } : RL).step ((prologueLines R.af.frameSize).length + i) R.s0)
         (iterN ({ R with s0 := t0, G := G', X := XI'.at 0 } : RL).step
           ((prologueLines R.af.frameSize).length + i) t0)) ∧
+        R.Good (iterN ({ R with X := XI.at 0 } : RL).step
+          ((prologueLines R.af.frameSize).length + i) R.s0) ∧
+        ({ R with s0 := t0, G := G' } : RL).Good (iterN ({ R with s0 := t0, G := G', X := XI'.at 0 } :
+          RL).step ((prologueLines R.af.frameSize).length + i) t0)) ∧
       JR R ({ R with s0 := t0, G := G' } : RL) K LB
         (iterN ({ R with X := XI.at 0 } : RL).step ((prologueLines R.af.frameSize).length + N) R.s0)
         (.run ⟨b, .op k a :: its, m, w⟩)
@@ -253,10 +257,14 @@ theorem RL.twoRunPRTNP {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAsm} {fb 
           (iterN ({ R with X := XI.at 0 } : RL).step i R.s0) ∧
         ({ R with s0 := t0, G := G', X := XI'.at 0 } : RL).GoodXNY (fun _ => True)
           (iterN ({ R with s0 := t0, G := G', X := XI'.at 0 } : RL).step i t0)) ∧
-      (∀ i < N, ∃ c c' j, Lk c c' j
+      (∀ i < N, (∃ c c' j, Lk c c' j
         (iterN ({ R with X := XI.at 0 } : RL).step ((prologueLines R.af.frameSize).length + i) R.s0)
         (iterN ({ R with s0 := t0, G := G', X := XI'.at 0 } : RL).step
           ((prologueLines R.af.frameSize).length + i) t0)) ∧
+        R.Good (iterN ({ R with X := XI.at 0 } : RL).step
+          ((prologueLines R.af.frameSize).length + i) R.s0) ∧
+        ({ R with s0 := t0, G := G' } : RL).Good (iterN ({ R with s0 := t0, G := G', X := XI'.at 0 } :
+          RL).step ((prologueLines R.af.frameSize).length + i) t0)) ∧
       JR R ({ R with s0 := t0, G := G' } : RL) KJ LB
         (iterN ({ R with X := XI.at 0 } : RL).step ((prologueLines R.af.frameSize).length + N) R.s0)
         (.run ⟨b, .op k a :: its, m, w⟩)

@@ -2665,6 +2665,43 @@ as corollaries (target `Stage2Z`/`thmPRBRL_ofZ`, #697), after combining with #69
   `calleeOk(Try)PRBRL30R_Lsl`, `calleeOk(Try)XPBTGZS30R_Lsl`, `lockedCall_Lsl`,
   `calleeOk(Try)LockedR_Lsl`).
 
+**Item (2) and the backend half of the determinism step (UninitZ26b, branch `agent/uninit-z26b`,
+#713, #729).**
+- Pair driver with `XNI` at the exterior only (item (2)): `PairDriverF.lean` (**`XNIF`**,
+  `XNI.xnif`, `zof_iff_of_sub`, `sameWorld_zof_iff`, `callLockstepF`, `guardedStepF`),
+  `PairDriverDF.lean` (`instCalls_pairDF`, `tryCalls_pairDF`, `tryIndCalls_pairDF`),
+  `BackendPairRunDF.lean` (`xNIF_noCall`, **`vcode_niIDF`**, **`backend_pairRunDF`**: premise `XNIF`
+  and `D ⊆ F`). Witness `a2_pairRunDF`. The cleanup-path copies are UninitZ26c's.
+- Finding [#729](https://github.com/eth-act/clifv/issues/729) (decided conservatively, new names):
+  `backend_twoRunLERWZIU` cannot be instantiated for `DetRunPRBCR`: (1) `hcall` gets the first
+  run's `u` only as `InSeg` with an arbitrary call index `n`, so a program callee's lock has no
+  CLIF anchor (the canonical answer of `XPBTGY.at n` agrees with `u` only at the first run's call
+  state of count `n`); (2) the saved-LR word of a callee lies in the caller's dead stack, which
+  `Zc` excludes, and `RetAgreeX` leaves it out; (3) no return facts of the second run (its own
+  kept bytes `G`, `PostTrace`). The plan's item (4) (`pcall` through `TwinCE.trans`/`symm`) missed
+  (1) and (2).
+- Fix: `RegLevelTwoRunTP.lean` (`RL.SegFrom`: `u` is `i` steps after a segment start satisfying
+  `P`, the segment's calls the step's; `jointSegTP`, `realizesJCPTP`, **`twoRunCTP`**,
+  **`twoRunPRTP`**: `hstep` also gets `SegFrom` of the first run, the joint trace also `RL.Good`
+  of both runs), `RegLevelTwoRunNP.lean` (**`twoRunCTNP`**, **`twoRunPRTNP`**),
+  `BackendTwoRunNP.lean` (**`backend_twoRunLWNpP`**: `hcall` gets `SegFrom … (OnCall … n)`; full
+  case also `RL.Good` of both runs before the return), `BackendTwoRunNZWP.lean`
+  (`RL.retFacts_rets` from `StRel.fplr`/`gkeep` and `ret_machineNA`;
+  **`backend_twoRunLERWZNpWP`**), `BackendTwoRunNIUP.lean` (**`backend_twoRunLERWZIUP`**: the
+  saved `x30`/`x29` words of both runs, both runs' kept bytes, the second run's error, `sp`,
+  `x29` at the return, `RL.Good` of both runs before it). Witness `a2_twoRunLERWZIUP`.
+- Remaining for `DetRunPRBCR`/`CallTwinCE` (not built): the link statement `LockRet κ M`
+  (`DetRunPRBCR`'s premises; conclusion the per-index lock, `RetAgreeX`, memory outside `F ∪ D`,
+  saved-LR word, the second run's `ActRet`/`PostTrace`); from `backend_twoRunLERWZIUP` at
+  `XI := XPBTGY` (canonical prophecies) with the pair run `backend_pairRunDF` (`XNIF` of
+  `XPBTGY`: base calls by `baseNI`, program calls as `progX_ni` on `progCallPRBRLR` with
+  `ThmPRBRL`/`DetPRBR` at `M - 1`), `hC'`/`hT'` by `calleeOkLockedR`, `hcall` at program callees
+  by `LockRet (M - 1)` from the canonical callee to both call states (`SegFrom` gives the
+  anchor; saved-LR words equal since both entries' `x30` is `pc + 4`), base calls/TLS by
+  `HookNIX` (`OkDNX.baseNIX`, premise `NeedNI`); the return index is the canonical `n₀` by
+  `noRetAt_of` both ways (`PostTrace` from `RL.Good`). Then `DetRunPRBCR M` (nested twins by
+  `CallTwinCE M`) and `CallTwinCE (M + 1)` (`twinBaseCE_of_lock`).
+
 ## 6. Heap (separate gap, SEM2)
 
 `BaseOk.baseKeepsAllocs`/`baseNoAlloc` require base externs to allocate nothing whenever a program

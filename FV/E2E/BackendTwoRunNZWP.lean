@@ -12,7 +12,8 @@ run's call state, both runs' return facts (SEM1 #537, #713, #729)
   `rets` configuration (`StRel`, which the joint invariant `JR` carries for both) and the epilogue
   (`ret_machineNA`: it writes no memory): the frame record holds the entry `x30`/`x29` (the saved
   return address, which `RetAgreeX` leaves out), the kept bytes `G` are the entry's, no error,
-  the entry `sp` and `x29`.
+  the entry `sp` and `x29`; and `RL.Good` of both runs at every index before the return (so
+  `PostTrace` of both runs, which identifies the return index with the canonical one).
 
 * `RL.retFacts_rets`; **`backend_twoRunLERWZNpWP`**.
 -/
@@ -123,6 +124,10 @@ theorem backend_twoRunLERWZNpWP (hc : Compiled f k vc vcp rf af fa fb)
         ((prologueLines R.af.frameSize).length + T + R.retLen) t0) = spv t0 ∧
       xreg 29 (iterN ({ R with s0 := t0, G := G', X := (XI.upTo N).at 0 } : RL).step
         ((prologueLines R.af.frameSize).length + T + R.retLen) t0) = xreg 29 t0 ∧
+      (∀ i < (prologueLines R.af.frameSize).length + T + R.retLen,
+        R.Good (iterN ({ R with X := (XI.upTo N).at 0 } : RL).step i R.s0) ∧
+        ({ R with s0 := t0, G := G' } : RL).Good
+          (iterN ({ R with s0 := t0, G := G', X := (XI.upTo N).at 0 } : RL).step i t0)) ∧
       ∀ i < (prologueLines R.af.frameSize).length + T + R.retLen, ∃ d d',
         StEqOutX (R.Zc d d')
           (iterN ({ R with s0 := t0, G := G', X := (XI.upTo N).at 0 } : RL).step i t0)
@@ -182,7 +187,8 @@ theorem backend_twoRunLERWZNpWP (hc : Compiled f k vc vcp rf af fa fb)
   obtain ⟨hfull, hpre⟩ := backend_twoRunLWNpP hc ρ₀ hsw hs hvb hk hops hvals hsem hlm hpsF he he'
     hR hcov hx30 hcall htls hag hx29
   refine ⟨fun hN => ?_, fun hN => ?_⟩
-  · obtain ⟨T, e, e', hlk, ⟨⟨W, hqA, hqB⟩, -, -, -, -, hLB⟩, hpc, hpc', hre, hre'⟩ := hfull hN
+  · obtain ⟨T, e, e', hlk, ⟨⟨W, hqA, hqB⟩, -, -, -, -, hLB⟩, hpc, hpc', hre, hre', hgood⟩ :=
+      hfull hN
     refine ⟨T, hpc, hpc', ?_⟩
     have hs : ∀ (g : Arm.ArmState → Arm.ArmState) (x : Arm.ArmState) (j : Nat),
         iterN g ((prologueLines R.af.frameSize).length + T + j) x =
@@ -203,7 +209,7 @@ theorem backend_twoRunLERWZNpWP (hc : Compiled f k vc vcp rf af fa fb)
     refine ⟨by rw [hs, hs]; exact hra, fun a hFa hDa => ?_, by rw [hs]; exact f1,
       by rw [hs]; exact f2, fun a ha => by rw [hs]; exact g1 a ha,
       fun a ha => by rw [hs]; exact g2 a ha, by rw [hs]; exact e2, by rw [hs]; exact sp2,
-      by rw [hs]; exact x2, fun i hi => ?_⟩
+      by rw [hs]; exact x2, hgood, fun i hi => ?_⟩
     · rw [hs, hs]
       refine hm a ?_
       rintro ⟨-, -, -, hz⟩
