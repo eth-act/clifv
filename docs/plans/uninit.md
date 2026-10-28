@@ -1084,6 +1084,38 @@ outcome, `XPRBT_ext`); then `CalleeOkGP` for `XPBTGX … n` at the `OnCallPR` st
 (`runLoop_envOfB`), the table to the return by `noRetAt_of`, `NextAdv` by (a) at the return;
 (d) `thmPRBR` by induction on `M`; (e) `compileExe_correct_init`.
 
+**Stage 2 and `thmPRBR_of`, as built (UninitZ16, 2026-10-28).**
+- (a) `FV/E2E/LinkPlaceBReach.lean`: `advAt env p cs j` (the counter advance of the step of the
+  calling state of count `j`; unique: `advAt_eq`), **`nextAdv_reachN`** (a bare activation reached
+  after `k` calls has `cs`'s oracle advanced by `sumTo (advAt …) k`; non-call steps keep the
+  oracle, `step_bare_noCall_place`), **`LinkSys.counter_reachN`** (`PlaceAtB s.mem c
+  (ini.adv (sumTo (advAt …) k))` from `WorldEntryB.place`), `envAdv_envOfB`, `initState_linv_only`.
+- Finding [#692](https://github.com/eth-act/clifv/issues/692): `CallPostNX` (#690) is never
+  vacuous at a world without error, so `guardR` answers ε-junk where `XPRBT` has none, also at
+  calls unrelated to the CLIF run (e.g. a later activation at the same `sp`, which `OnCallPR`
+  admits); `CalleeOkGP.os` of `XPBTGX` is unprovable there. Fix (new names):
+  `CallPostXR := CallPost ∧ ((¬ ∀ r', CallPost r') → ExtOkR w r)` (vacuous exactly where
+  `CallPost` is), `CallPostNXR`, `guardR_extV`, `hX_guardRXRI`, `guardRXRI_ext`, `guardRXR_sub`
+  (`FV/E2E/ExtSemGuardRY.lean`); **`backend_correct_world_{cleanup,pipeline}PRGY`**.
+- (b) interface, `FV/E2E/LinkArmStage2Y.lean`: `CalleeOkGP.ofCallSubW` /
+  `CalleeTryOkGP.ofCallSubW` (antitone in the call results only at the worlds of the states `P`),
+  `XPBTGY`, `XPBTGY_ext`, **`Stage2Y`** (at the states `Q`, where `CallPost` of the invocation of
+  count `n` is not vacuous, `XPRBT … n` answers a `CallPost`-result), `XPBTGY_sub`,
+  **`calleeOkXPBTGY`**, **`calleeTryOkXPBTGY`**.
+- (c) `FV/E2E/LinkArmThmPRBROf.lean`: **`thmPRBR_of`**: `ThmPRBR κ M` from `ThmPRBR κ (M - 1)`,
+  `DetPRB κ (M - 1)` and three per-activation premises: `RetOkPRB` (`InvokedRetOk` of the run
+  under `envOfB`), `Stage2PRB` (`Stage2Y` at `CallStPRB`, the activation's call-`n` states),
+  `CountPRB` (the CLIF advance is the machine table's count to the return). The `ActEntryPR` is
+  `MachEntryPR`'s fields with `calleeOkXPBTGY` (`callStPRB_q`), the table by `noRetAt_of`.
+  Witnesses on `Lu` (`thmPRBR_of_Lu`, `countPRB_Lu`, `stage2Y_noExt`, …).
+
+Next: `CountPRB` (from (a), `tabUpTo_count`, `progCallPRBR`'s `TabUpTo … e`/`NextAdv … e` per call,
+the machine's call `j` related to the CLIF call `j`: `prefix_relatedPRI`), `Stage2PRB` (strong
+induction on `n`; `CondBT` at `worldPR (P n) (R n) w` from the related CLIF call, the table offset
+by `counter_reachN`), `RetOkPRB` (a scope fact of `Ok` + `NeedSlots`: callee runs free what they
+allocate, `baseKeepsAllocs`; return-count agreement of the declarations), then `thmPRBR` and
+`compileExe_correct_init`.
+
 **Step 3h, as built (UninitZ10b): the call-count premises are theorems.** `InstCallsOne f` and
 `TryCallsOne f` hold for every `f` (`E2E.instCallsOne_all`, `E2E.tryCallsOne_all`,
 `FV/E2E/IselCallsOneAll.lean`), from `FV/Backend/Proof/IselCallsOne.lean`:
