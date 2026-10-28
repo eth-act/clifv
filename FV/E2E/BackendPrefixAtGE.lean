@@ -442,7 +442,8 @@ theorem backend_prefix_cleanupPRI_atGE {p : Clif.Program} {f : Clif.Function} {k
       CallPc fa base (Arm.r .PC u) := by
   intro j hj
   obtain ⟨b, k, ρ, w, hstar⟩ :=
-    iselSim_prefixWI_next_cleanup hsub hc hone htc hX hsym hslot (fun _ => 0) hcs hrel hargs htr hrun
+    iselSim_prefixWI_next_cleanup_stage hsub hc hone htc hX hsym hslot (fun _ => 0) hcs hrel hargs
+      htr hrun
       t N hr hcn
   obtain ⟨b1, k1, ρ1, w1, vb, i, ops, r, hs1, hvb, hi, hcall, hops, hsem⟩ :=
     vstar_call_at (j := j) hstar (Nat.zero_le _) (by simp only [vctr]; omega)
