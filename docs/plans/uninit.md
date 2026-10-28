@@ -740,11 +740,6 @@ agreeing on non-calls whose calls fail; `seqRun_csemI_le1` for `ISem.counted sem
 with `valueSem`; then `prune_correct` and the GOT flow for `valueSemVI`, and
 `backend_correct_world_cleanupPRI`.
 
-of the same configuration, so the segment's call-state count carries over). Next on that chain:
-`realizes_value_allC_sp`, `regLevelCorrect_world_value_atCS`/`_worldCS`/`_worldPRS` (copies of
-`RegLevelCorrectPRS.lean`'s with `csemVI` → the counted `valueSemV`, `realizes_allC_sp` →
-`realizes_value_allC_sp`; the `rets`/halt cases as in `DeadCleanupRegLevel.lean`).
-
 **Steps 3h–3j, as built (UninitZ10, branch `agent/uninit-z10`).** Item (a) is complete for both
 compile paths.
 - `FV/E2E/CountedFam.lean`: `NoncallIndep sem`, `ProbeOf semB sem` (for `sem : Nat → ISem CV W`,
@@ -1020,8 +1015,6 @@ where `RelatedN … n` holds: `CondB` at the actual call with `ini := ini.adv (c
 equality from `prefix_related_cleanupPRI` at every `j < n` and `ThmPRB (M - 1)`'s `NextAdv`), by
 strong induction on `n`; then `thmPRB_of`, `thmPRB`, item (e).
 
-**Step 3k, as built (UninitZ10b): the call-count premises are theorems.** `InstCallsOne f` and
-
 **(3), as built (UninitZ14, 2026-10-28).** Finding: `CondB` is too weak for `ThmPRB (M - 1)`: the
 callee's CLIF entry is placed with `calleeIni h ini` (`ini.adv 1` when `h` has slots,
 `initState_memB`), so the canonical callee run's table must be `calleeIni h ini`'s, also without
@@ -1137,6 +1130,129 @@ half alone. `CountPRB` (from (a), `tabUpTo_count`, `progCallPRBRL`'s `TabUpTo �
 per call, `prefix_relatedPRI`), `RetOkPRB` (a scope fact of `Ok` + `NeedSlots`: callee runs free
 what they allocate, `baseKeepsAllocs`; return-count agreement of the declarations), then
 `thmPRBRL` and `compileExe_correct_init`.
+
+**Slotted witness system, depth 0, `RetOkPRB`, `Stage2PRBR`, as built (UninitZ17, 2026-10-28).**
+No existing statement changed; new leaf modules only; no generated-code change.
+- Witness system `FV/E2E/LinkSlotSysWitness.lean` (`Lsl`, the witness system for the slot-byte
+  statements from now on): `f n = r (h n)` compiled by the pipeline, `h` writes then reads its
+  slot, `r` reads its unwritten slot (the bytes `h` left there), `NeedSlots`, no base externs.
+  `#guard` checks on a computable mirror of the linked machine (`machC`): the machine returns
+  `82 = 41 + 41`, calling `h` then `r` at `f`'s body `sp`; `iniT` is the machine's byte table.
+  Theorems: `Lsl_ok`, `needSlots`, `run_f` (the CLIF run with `iniT` returns `82`; with the zero
+  table `41`, `run_f_zero`), `nextAdv_leave_f` (`NextAdv cs0.mem.leave cm' 2`: `ThmPRBRL`'s
+  conjunct, `CountPRB`'s count = the machine's two slotted activations), `not_nextAdv_f` (#694 on
+  a real program). No further false statement found.
+- `FV/E2E/LinkPlaceBLeave.lean`: `initState_place`, **`initState_leave_nextAdv`** (`NextAdv cm
+  cs.mem.leave (slotted h)`), `NextAdv.cancel`.
+- Depth `0`: `FV/E2E/LinkArmStage2Zero.lean` (`envOfB_zero_ret`, `callPost_xb_zero`,
+  **`stage2Y_zero`**, **`stage2PRB_zero`**), `FV/E2E/LinkArmCountZero.lean` (`reachN_cons`,
+  `reaches_reachN`, `step_done_mem_q`, **`returned_nextAdv_leave`** (a returning bare
+  activation advances the popped entry by `Σ_{j<k} advAt … j`), `place_reachN_keeps`,
+  `returned_keeps_leave`, `envR_zero_keeps`, **`countPRB_zero`**, `thmPRBRL_zero` (from
+  `RetOkPRB κ 0`)).
+- `RetOkPRB` is not a consequence of `Ok` (no field keeps symbols when every function is
+  `IndFree`; declarations of one extern outside `P`, or indirect call signatures, may differ in
+  their return registers). Scope conditions (`FV/E2E/LinkArmRetOkZero.lean`): `BaseRetOk` (base
+  externs keep valid addresses and symbols) and `RetCount g` (per extern name outside `P`: its
+  declarations and `g`'s indirect call signatures with equal return counts have equal `sigRets`
+  counts; decidable `retCountB`; fv-demo: 551/551 functions, the cross-name form fails on 3).
+  **`retOkPRB_zero`**, `thmPRBRL_zero_of`; `FV/E2E/LinkArmRetOkPRB.lean`: `sigRets_length_eq`,
+  `sigRets_length_of_abiMatch`, **`retOkPRB_of`** (every depth, under `NeedSlots`; without it
+  `thmPRBRL_of_thm` applies).
+- `Stage2PRB` reconsidered (`FV/E2E/LinkArmStage2R.lean`): its discharge at `M > 0` needs the
+  call correspondence up to call `n` (`prefix_relatedPRI`), whose premises include `TrapsExplicit`
+  of the CLIF run, available only for returning runs (`thmPRBRL_of` uses stage 2 only there);
+  post-return `CallStPRB` states carry counts `≥` the machine's return count, and at counts
+  without a CLIF invocation stage 2 is vacuous (**`stage2Y_of_not_invoked`**). New: **`Stage2PRBR`**
+  (with the returning-run premise, as `CountPRB`), `Stage2PRB.toR`, `stage2PRBR_zero`,
+  **`thmPRBRL_ofR`**. Witnesses `FV/E2E/LinkArmThmPRBRZeroWitness.lean`,
+  `FV/E2E/LinkArmStage2RWitness.lean` (`thmPRBRL_zero_Lsl`, `thmPRBRL_ofR_Lsl`, `retOkPRB_Lsl`,
+  `keeps_leave_h`, `stage2Y_sZ`).
+
+Next (general `M`, one strong induction on the call index `j` of a returning activation, giving
+both `Stage2PRBR` and `CountPRB`): (P1) `backend_prefixPRI` extended to the call itself (from
+`iselSim_prefixWI`'s matched VCode state at the statement start, run the call statement's segment
+to the VCode call instruction, then `regLevel_prefix_core` at counter `j`), with `RelatedN j`;
+(P2) at the machine's call `j` (pre-return), `CondBT`'s facts: `counter_reachN`, the slot bytes
+from `TabUpTo`'s call clause, `Σ_{i<j} advAt = Σ_{i<j} E i` (induction), the canonical callee's
+table by `DetTabPRB`; (P3) `progCallPRBRL` gives `advAt j = E j` (`initState_leave_nextAdv`,
+`tabUpTo_count`); (P4) `Stage2Y` at `j` (the answer `pcall … canon …` is `CallPost`-accepted);
+`CountPRB` then from `returned_nextAdv_leave`; then `thmPRBRL`, `compileExe_correct_init`.
+
+**Per-call pieces, as built (UninitZ18, 2026-10-28).** New leaf modules; no statement changed.
+- (P1) `FV/E2E/RegLevelPrefixG.lean` (`OnCallG`: the call state with the `Good` trace,
+  `regLevel_prefix_coreG/CG/PRSG`), `FV/E2E/BackendPrefixAt.lean`: `step_ne_done_of_callNum`,
+  `runLoop_returned_reachN`, `next_of_returned`, `iselSim_prefixWI_next`,
+  **`backend_prefixPRI_at`**, **`prefix_relatedPRI_at`** (calls `j ≤ N` of a returning run,
+  contracts `n < N` only).
+- Finding [#697](https://github.com/eth-act/clifv/issues/697): `Stage2Y`/`Stage2PRB(R)` ask for
+  an answer at **every** `uses` the CLIF invocation accepts; `VHolds` leaves the upper bits of a
+  narrow argument free, so `XPRBT`'s canonical callee state may differ from the actual one in
+  them and its slot table need not be the oracle's (spill-then-overlap). The machine contracts
+  only call the semantics at the call state's own operands `useVals ops regs u`. Fix (new names,
+  `FV/E2E/LinkArmStage2Z.lean`): `csemV_of_call_subAt`, `CalleeOkGP/CalleeTryOkGP.ofCallSubU`,
+  **`Stage2Z`** (stage 2 at the call's own operands), `Stage2Y.toZ`, `XPBTGY_subZ`,
+  `calleeOk(Try)XPBTGZ`, **`Stage2PRBZ`**, `Stage2PRBR.toZ`, `stage2PRBZ_zero`,
+  **`thmPRBRL_ofZ`**; base calls: `FV/E2E/LinkArmStage2Base.lean` (`stage2Y_base`,
+  `stage2Z_base`).
+- (P2/P4) `FV/E2E/LinkArmProgResultBT.lean` (**`progResultBT`**: a program call's result under
+  the oracle facts), `FV/E2E/LinkArmStage2Prog.lean` (`callPost_of_answers`, `envOfB_only_some`,
+  `OracleAt`, **`stage2_answer`**), `FV/E2E/LinkArmCallTab.lean` (`retAt_enterAt_iff`,
+  **`noRetAt_upTo`**, **`tabUpTo_call_at`**, `tableOf_callee`), `FV/E2E/LinkArmOracleAt.lean`
+  (**`callerFacts`**, **`oracleAt_of_call`**: `OracleAt` at a pre-return call from the caller
+  table's count and the invocation's placement, with `DetTabPRB`).
+- (P3) `FV/E2E/LinkArmProgCallPRBRLT.lean` (`progCallPRBRLT`: `progCallPRBRL` with the callee
+  run's trace), `FV/E2E/LinkArmCallCount.lean` (**`callCount`**: the caller table's count grows
+  over a program call by the CLIF advance `d` of the invocation, `NextAdv cm cm' d`).
+
+**The glue, as built (UninitZ19, 2026-10-28).** New leaf modules; no existing statement changed;
+no generated-code change.
+- Finding (refines #697): `Stage2Z` still quantifies over every call instruction assigning to the
+  machine call at the pc; only at a call site of the compiled code (`VCode.CallSite`) does the
+  scope fix the argument registers (`Ok.callRegs`, `Ok.blrRegs`, the latter only under the GOT
+  guard `gotGuard`), and the machine contracts are only applied there, under the guard (`csemV`).
+  New (`FV/E2E/LinkArmStage2ZS.lean`): `csemV_of_call_subAtG`, `CalleeOkGP/CalleeTryOkGP.ofCallSubS`,
+  **`Stage2ZS`**, `Stage2Z.toZS`, `XPBTGY_subZS`, `calleeOk(Try)XPBTGZS`, **`Stage2PRBZS`**,
+  `stage2PRBZS_zero`, **`thmPRBRL_ofZS`**.
+- Prefix at call `N` for the artifact of `Ok.compiled` (`FV/E2E/BackendPrefixAtCleanup.lean`):
+  `regLevel_value_prefixCG/PRSG`, `iselSim_prefixWI_next_cleanup`, `backend_prefix_cleanupPRI_at`,
+  `prefix_related_cleanupPRI_at`, `backend_prefixPRI_atS`, `prefix_relatedPRI_atS`,
+  **`prefix_relatedPRI_atE`** (`CompiledEither`), also giving the VCode call site and its GOT
+  guard (`gotGuard_of_inv`, `csemV_guard`).
+- `stage2_answerF` (`stage2_answer` whose oracle premise receives the invocation's facts: the
+  callee memory and arguments at the world with the prophecies, the callee's run, `IndTo` and the
+  target of an indirect call, the body `sp`; `stage2_answer` is its corollary).
+- (1) `FV/E2E/LinkArmCallDecode.lean`: `call_of_callLike`, **`callDecode`** (at a call site under
+  the guard, a program call's arguments are in the callee's parameter registers, the machine calls
+  it (`CallsTo`), `RaOk`).
+- (2) `FV/E2E/LinkArmInvokedStep.lean` (**`invoked_step`**: the step of an invoking state gets its
+  memory from the invoked extern; `reachN_call_at`; `callIdx_unique`), `FV/E2E/LinkArmProgInst.lean`
+  (`ProgInst`, **`nv_cases`**: the invocation behind a related call is a program call with
+  `stage2_answerF`'s facts or a base call), `FV/E2E/LinkArmCountStep.lean`
+  (`tabUpTo_succ_noCall`, `tabUpTo_succ_base`, `callDecodeBase`, `adv_base`, `adv_prog`),
+  `FV/E2E/LinkArmStage2Count.lean` (**`oracleAt_at`**, **`countStep_prog`**,
+  **`countStep_base`**: the count invariant `TabUpTo … i e → e = Σ_{k < callsBefore i} advAt k`
+  passes one machine step).
+- (3) `FV/E2E/LinkArmStage2PRBZSOf.lean`: **`stage2PRBZS_of`**: under `NeedSlots`,
+  `Stage2PRBZS κ (M' + 1)` from `ThmPRBRL κ M'`, `DetPRB κ M'`, `DetTabPRB κ (M' + 1)`,
+  `RetOkPRB κ (M' + 1)` (strong induction on the call count; the call state of stage 2 is the
+  machine's call-`n` state by `callIdx_unique`; the count invariant by an inner induction over the
+  machine steps; `oracleAt_at` then `stage2_answerF`).
+- (4) `FV/E2E/LinkArmThmPRBRLAll.lean`: **`thmPRBRL_succS`**, **`thmPRBRL_all`** (`ThmPRBRL` at
+  every depth from `BaseRetOk`, `RetCount`, and `DetPRB`, `DetTabPRB`, `CountPRB` at every depth).
+- Witnesses on `Lsl`: `FV/E2E/LinkArmStage2ZWitness.lean` (UninitZ18's modules: `thmPRBRL_ofZ_zero_Lsl`,
+  `prefix_relatedPRI_atE_f`, instances), `FV/E2E/LinkArmStage2GlueWitness.lean`
+  (`thmPRBRL_ofZS_zero_Lsl`, `stage2PRBZS_one_Lsl`, `thmPRBRL_every_Lsl`, concrete
+  `reachN_call_at_sP`, `invoked_step_sP`, `callIdx_unique_u0`).
+
+Next: `CountPRB` needs the machine's call count at the return to be the CLIF run's call count
+`k` (`callsBefore n = k`; the count invariant then gives `e = Σ_{j<k} advAt j`, and
+`returned_nextAdv_leave` the CLIF side). The counted register-level theorem relates the VCode
+counter to the machine's calls at every realised state (`RealizesCP.countedRun`) but
+`regLevelCorrect_world_atC` does not export it at the return; extend it (and the pipeline copies)
+with `callsBefore n = nc` for the VCode return `(w, nc)`, and `iselSim` with `nc = k`. Then
+`compileExe_correct_init` (CompiledCleanup, `BaseRetOk`/`RetCount`) and the fv-demo witness.
+`DetPRB`/`DetTabPRB` stay premises until `thmPDERX_det_of` lands (UninitZ17b).
 
 **Step 3h, as built (UninitZ10b): the call-count premises are theorems.** `InstCallsOne f` and
 `TryCallsOne f` hold for every `f` (`E2E.instCallsOne_all`, `E2E.tryCallsOne_all`,
@@ -1293,9 +1409,330 @@ semantics, and `ReadIn`'s third case becomes "outside `F` and outside the step's
   (the compiled `csemVI` run of `vcp` is a `csemVIG … Ok` run), giving `actWReadsIn … Ok` at every
   state before the return. Witness `BackendWorldIYWitness.lean` (`a2_worldPRIY`, `Ok := (· = F)`).
 - Open: `hGd` for the pair (`Ok w Y := Y = Zof F D cm` at a `cm` the pair relates `w` to). It
-  needs a per-step refinement of the counted pair run (`vcode_niI`): the rules on `csemG` with
+  needs a per-step refinement of the counted pair run (`vcode_niIG`): the rules on `csemG` with
   `Rd := ¬ Zof F D cm` give `GuardR`, hence `csem (F ∪ ¬ Rd)` (loads, atomics); and the transport
   across `prep` (`DriverSemG` of the guarded family). Not started.
+
+**Finding (#689, decided conservatively).** `ThmPDER`'s determinism clause is false when the two
+entries' return addresses differ, which is exactly `progCallPR`'s use (canonical entry `ra₀ =
+raStar`, actual call `ra = pc + 4`): `ProphRegOkUpTo` covers `x30` (the body keeps the entry `x30`
+up to its first `bl`), and `RetAgree`'s memory part covers the frame record's saved-LR word.
+`FV/E2E/LinkArmDetX.lean`: **`LinkSys.ThmPDERX`** (the clause with `ProphRegOkUpToX` and `RetAgreeX`,
+and the full forms when the entries agree on `x30`), `ThmPDER.thmPDERX`, `ThmPDERX.thmPR`,
+`Thm.thmPDERX_of_not_needNI`; the lock-step transfers `prophStep_of_stEqOutX`,
+`prophOkUpTo_of_lockstepX`, `prophRegOkUpToX_of_lockstepX`, `prophRegOkUpTo_of_lockstepX`,
+`retAgreeX_of_ret`, `retAgree_of_ret` (the alignment-free parts of item (3)). Witnesses
+`LinkArmDetXWitness.lean`.
+
+**Finding (route (a), decided conservatively).** "Each segment ends at the first arrival at the
+next item's line" does not by itself align two realisations: `Q`'s line index is existential and
+not unique (its lines are matched as a prefix of `R.L.drop j` with an arbitrary tail `T`; a suffix
+of the last block that repeats earlier, or an emitter state `ps1` with another trap numbering,
+gives a second index of the same configuration), so two runs whose pcs agree can each stop at a
+different index of the same configuration. Fix (no change to `Q` or any existing statement):
+the realisation cases start from `Q` **at an explicit witness** `QW R s j ps1 T c` and end at a
+witness computed from it, `RL.nextW` (the straight witness `RL.straightW`: the lines after the
+item's own; or the chosen entry witness `RL.entryW` of the block entered), at the first arrival
+at that line (`RL.SegLen`: `FirstArr` and the zero-length case `RL.EmptyW`). Two runs started at
+one witness with agreeing pcs then cut at the same index (`RL.segLen_eq`, from `firstArr_eq`).
+As built (branch `agent/uninit-z14b`): `RegLevelSegAlign.lean` (`QW`, `q_iff_qW`, `nextW`,
+`entryW`, `EmptyW`, `SegLen`, `SegNA`, `Inside`, `firstArr_of_inside(_out)`, `pcOf_ne(_le)`,
+`segLen_eq`), `RegLevelQW.lean` (`qW_op`, `qW_next`, `entryWit_exists`, `qW_entry`), and the
+cases `realizes_moveNA`, `realizes_trapIf_nextNA`, `realizes_gotoNA` (with `reach_bXNA`,
+`reach_rcbXNA`, `reach_cbXNA`, `RL.SegIn`), `realizes_op_coreXNA`/`realizes_op_nextNA`
+(`RunsAsNA`), `realizes_op_coreXSW` (`RunsAsSJ`), `realizes_callNA`, `realizes_symAddrNA`,
+`realizes_tlsNA`, `jt_machineNA`/`realizes_jtNA`. Remaining: the atomic loops, `tryCall`, the
+epilogue (`ret`, length = its line count) and the prologue (entry witness of block 0), the
+dispatcher `realizes_allCW` and the counted chain on `QW` exporting the segmentation, then the
+two-run induction (`lockstep_runX` with `stEqOutX_line` per index, guards from `WReadsIn` at the
+aligned VCode step), and `hGd` for the pair.
+
+**Route (a), continued (UninitZ15b, branch `agent/uninit-z14b`, PR #695).** *Finding (decided
+conservatively):* the chosen entry witness `RL.entryW` was a choice over a property that mentioned
+`StRel R` (the entry state, `K`, `G`), so two activations from different entries could choose
+different witnesses and `RL.segLen_eq`'s premise `hW` was unprovable for the two runs of item (3).
+`RL.EntryWit` now mentions the code data only (the pc of the label line and the block's lines at
+the witness); `qW_entry` keeps its statement. New: `RL.SameCode` (same `vc rf af fa base psF`),
+`RL.entryW_congr`, `RL.nextW_congr`, `RL.emptyW_congr`, `RL.nextW_run`/`RL.emptyW_run` (only blocks
+and items matter), **`RL.segLen_eq_same`** (two activations of one compiled function, one witness,
+configurations of the same blocks/items, agreeing pcs → same segment length). Remaining cases:
+`realizes_tryCallNA` (RegLevelTryNA.lean); the epilogue `ret_machineNA` (exactly `RL.retLen`
+steps; `ret_machineNR` is now its corollary); the prologue `q_initNA` (exactly the prologue's
+length, `QW` at the code-only initial witness `RL.initW`, `RL.initW_congr`; `q_initNR` is its
+corollary). Dispatcher (RegLevelCorrectCW.lean): `MConf.ShapeEq`, **`MStep.shapeEq`** (two steps
+from one configuration reach the same block and items; only havocked defs differ),
+`RL.SegLenA` (`SegLen` inside the activation, no step at a return/halt), `realizes_zeroNA`
+(`args`, `emitIsland`), **`realizes_allCW`** (`realizes_allCY` from `QW`, ending at
+`RL.nextW`, `ShapeEq` with the given step, `SegLenA`). All print the standard axioms.
+Then `RL.SegChain` (a trace predicate, segment lengths and configurations), `realizes_allC_spW`,
+and RegLevelCorrectPRSW.lean: **`regLevelCorrect_world_atCSW`** (the returning run = prologue +
+segment chain from `RL.initW` + `RL.retLen` epilogue steps). Still open: the lift to the prophecy
+level and `backend_correct_worldPRIY`, the two-run induction (chains of equal shapes from the
+pair run), `thmPDERX_det_of` and its corollaries, and `hGd`.
+
+**Finding (UninitZ16b, the shapes of the two runs' chains; decided conservatively).** The checker
+relation of `checkedAt_sound` is existential and its interface (`IsSimulation`) pins only the
+block, instruction and world at an instruction item (`at_op`); an op step may even be matched by
+no VCode step (`step`'s first case). The relation of its proof, `Match` (`checkedAt_sound_match`),
+pins more: the block at every running configuration (`MatchRun`: `ms.b = vs.b`, `ms.w = vs.w`),
+a move by no VCode step and an op by exactly one (`sim_step_at`). It does not pin `its` (the
+position among the pending moves is free), and it need not: the shape after an `MStep` is a
+function of the shape before and of the *block or end kind* reached (`MNext.next` iff
+`k + 1 < n`, `goto` iff `k + 1 = n`, then only the target block matters; ret/halt), and the
+kind and block are `Match`'s VCode configuration's. So two allocated-code runs from one shape stay
+shape-equal step by step exactly when, at each op, their related VCode configurations reach the
+same place (`VConf.SameAt`: block and index, or both ret, or both halt), which the pair run gives
+(one `ctl` for both worlds, `pairSem`). But two independently built segment chains
+(`regLevelCorrect_world_atCSW`, one per run) cannot be aligned afterwards: the chain records
+machine configurations, not the VCode index each realises, and `Realizes`' `Q` cannot see the
+VCode run. Decision: the two runs are built **jointly** along the pair VCode run
+(`forward2`: `IsSimulationS` = `IsSimulation` + the block and op facts `Match` has; a pair step
+`PStep` = a step of each VCode run to configurations at the same place, with a pair invariant;
+`RealizesJ` = one segment of both machines, of equal length, from configurations whose successors
+are shape-equal); the single-run chain theorem stays as built. Its lift to the prophecy level is
+therefore not needed for item (3); the joint theorem is lifted instead.
+
+**The paired run through the pipeline, as built (UninitZ16b/UninitZ17b, branch
+`agent/uninit-z14b`, PR #695).** `RegLevelForward2.lean` (`forward2`, `forward2_op`,
+`IsSimulationS`, `isSimulationS_match`), `RegLevelLock2.lean` (`RL.seg_lock`, `RL.jointSeg`),
+`RegLevelJointC.lean`/`RegLevelJointRL.lean` (`RealizesJCP`, `countedRun2`, `RL.realizesJCP`),
+`RegLevelTwoRun.lean` (`forward2C`, `forward2C_op`). Then:
+- `RegLevelTwoRunW.lean`: **`RL.twoRunC`** — two activations of one compiled function, from their
+  body entries along a returning pair VCode run: the same prologue length, then the joint
+  segments (the lock `Lk` at every index), the joint invariant `JR` at the `rets` item at the
+  same index `N`, the same epilogue length, both return. `RegLevelTwoRunPR.lean`:
+  **`RL.twoRunPR`** (from two `ActEntryPR` entries and `checkAlloc`).
+- `RegLevelPairRun.lean`: `PairOf`, `pstep_of_proj`/`pstar_of_proj` (a run of a semantics on
+  paired worlds projecting to both is a run of pair steps), `pairFst`/`pairSnd` (counted paired
+  worlds, one counter), `pairFst_proj`/`pairSnd_proj`, **`RL.twoRunC_pair`**.
+- `IselSimIG.lean`: the counted CLIF → VCode simulation for any counted family (`NcIndep`,
+  `NoCallProj`, `seqRun_counted_le1`, **`sim_runIG`**; copies of `IselSimI`/`IselSimITry`'s
+  proofs, whose `csem` statements stay). `PairEntry.lean`: **`entry_step2P`** (the entry on two
+  worlds is one `pairSem` run). `PairDriverIG.lean`: **`vcode_niIG`** — non-interference of the
+  counted VCode run: one paired counted run of `pairSem (csem F ctx (XI.at n))` from the paired
+  initial configuration, with the callee contracts and `XNI` needed only at the actual `n`-th
+  call.
+- `BackendTwoRun.lean`: `DriverSemG.counted` (prepare), `vRetFrom_gotVP` (GOT guard),
+  **`backend_twoRunPRIY`**: the paired run carried through `prepare`, the GOT guard and the
+  world-read guard to `RL.twoRunPR`. Witness `BackendTwoRunWitness.lean` (`a2_twoRunPRIY`, one
+  activation entered twice, lock "equal states").
+
+Open after this: see below.
+
+**Finding (#699, UninitZ17b; fixed by UninitZ18b, decided conservatively).** `WGuard` asked
+`csem Y` at every world-reading instruction, stores included, and `csem Y` of a store needs the
+*written* bytes to avoid `Y`, so with `Y = Zof F D cm` the guard failed at every store into an
+uninitialised byte of `D`. Moreover a guard on one world (`Ok w Y`) cannot name the bytes where
+the *two* worlds differ, which is what the lock-step needs. Fix (new names, old statements kept):
+- `RegLevelCorrectCYS.lean`: `MInst.loadForm` (loads, `ldar`, scalar SIMD&FP loads, atomic loops;
+  syntactic, so invariant under renaming/retargeting), `formOk_noLoad_memRd` (a covered form that
+  is not a load form reads no memory once allocated), **`WGuardS`** (`csem Y`, or not a load
+  form), `csemVGS`/`csemVIGS`/`RL.semGS` (+ `csemVGS_eqF`, `csemVGS_of_csemVG`),
+  `realizes_op_nextNYS`/`NAS`, **`realizes_allCYS`**, **`realizes_allCWS`** (+ `_spYS`, `_spWS`);
+  `RegLevelTwoRunS.lean`: `RL.jointSegS`, `RL.realizesJCPS`, **`RL.twoRunCS`**, **`RL.twoRunPRS`**;
+  `BackendTwoRunS.lean`: **`backend_twoRunPRIYS`** (witness `a2_twoRunPRIYS`).
+- The guard of the pair: `PairGuardS.lean`: `RdOk Y` (`csem Y` defined or not a load form),
+  **`PGuard F ctx X i us (w, w')`** (some `Y ⊇ F` containing every byte where `w`, `w'` differ,
+  `RdOk Y` on both), **`pairSemD`** (`pairSem` where `PGuard` holds), `rdOk_of_guardR` (the rules'
+  `csemG … (¬ Y)` steps read outside `Y`), `pGuard_of_csemG` (at `Y := Zof F D cm`),
+  `driverSemG_pairD`, `seqRun_pairP`/`pair_fallP`/`pair_stopP` (`seqRun_pair` into any paired
+  semantics). `PairDriverD.lean`: `instCalls_pairD`, `termCalls_pairD`, `tryCalls_pairD`,
+  `tryIndCalls_pairD`; `PairEntryD.lean`: `entry_step2PD` (the stack-argument loads read bytes
+  outside `F` equal on both worlds); `PairDriverID.lean`: **`vcode_niID`** (the paired counted run
+  of `vcode_niIG` is a run of `pairSemD`); `BackendPairRunD.lean`: `gotInvPD_star`,
+  **`backend_pairRunD`** (through `prepare` and the GOT guard: `hGdP` discharged, in paired form);
+  `BackendTwoRunD.lean`: `GuardedAt`, `PairOfG`, `pstar_of_projG`, **`backend_twoRunPRIYD`**
+  (`backend_twoRunPRIYS` without `hGdP`; `hK` receives `GuardedAt`: every paired step from the
+  pair configuration is a `pairSemD` step). Witnesses `a2_pairRunD`, `a2_twoRunPRIYD`.
+
+**Design for the machine lock (item (3), not built).** Each activation's own guard can stay
+trivial (`Ok := (· = F)`); the difference-set guard reaches the lock through `KJ` (built by `hK`
+from `Match` and `GuardedAt`: the next op of both MConfs is the paired VCode step's, same
+instruction, uses and worlds). Then `OkS c c' _ Y := (∀ a, F a → Y a) ∧ ∀ a, c.w.mem a ≠ c'.w.mem
+a → Y a` (`hG` from `KJ`). Lock: `Lk c c' i u u' := StEqOutX (Zc c c') u u'` with
+`Zc c c' b := (F b ∧ ¬ InFrame b) ∨ (¬ F b ∧ c.w.mem b ≠ c'.w.mem b) ∨ LRword b` (`InFrame`: the
+activation's frame `[spB, spB + frameDrop)`, equal in both runs at entry by `EntryAgree`, kept by
+equal writes). Reads then avoid `Zc` (`ReadInY`: a world byte is outside `F` and `Y`, so equal in
+both VCode worlds, hence in both machines by `StRel`; a `FrameRd` byte is in the frame; a
+jump-table byte is code), so `stEqOutX_line` gives `hstep` on unhooked lines; `hend` is `StRel` of
+both at the segment end (outside `F` the machine is the VCode world); `hpro` from `q_initNA`'s
+register facts and `EntryAgree`. Remaining beyond that: the call lines (`DetPRB κ (M - 1)` for
+program callees, `HookDetX` for base calls), then `LinkSys.thmPDERX_det_of`, `DetPRB`/`DetTabPRB`
+as corollaries (target `Stage2Z`/`thmPRBRL_ofZ`, #697), after combining with #696's stack.
+
+**The machine lock, as built (UninitZ19b, branch `agent/uninit-z18b`, PR #701).**
+- Finding (decided conservatively): `RL.twoRunPRS`'s `hstep` must hold for *every* pair of states
+  satisfying `GoodX`/`WReadsIn`, but a lock that ignores `x30` holds only on states that are no
+  `ret` and no frame-record line, which occur only outside the segments (epilogue/prologue). The
+  information is in `RL.seg_lock` (`i < n`) and was dropped. `RegLevelTwoRunT.lean`: `RL.InSeg`
+  (the `i`-th state of the segment realising the step of `c`, strictly before its end),
+  `RL.jointSegT`, `RL.realizesJCPT`, **`RL.twoRunCT`**, **`RL.twoRunPRT`** (same proofs, `hstep`
+  also receives `InSeg` for both runs). `BackendTwoRunT.lean`: `StepOrRet`, `pstar_of_projS`,
+  **`backend_twoRunPRIYT`** (`hK` receives that the paired configuration has a guarded step or is
+  the return, which is what the guard transfer needs; `GuardedAt` alone is vacuous at a stuck
+  configuration). Witness `a2_twoRunPRIYT`.
+- `BackendTwoRunL.lean`: `JTByte`, `MConf.WDiff`, **`RL.Zc c c' a := ¬ FrameRd false a ∧ ¬ JTByte a
+  ∧ ¬ StackBelow K spB a ∧ (F a ∨ WDiff c c' a)`** (the design's set, written with the located-read
+  predicates: the frame bytes but the saved-LR word, the jump tables and the callees' dead stack
+  below the body's `sp` are locked), `OkDiff F c c'`, `KJL` (every step of
+  either activation from `c`, `c'` is guarded by `OkDiff`), `readsAvoid_stepiEvs`,
+  `RL.notZc_of_readInY`, `stEqOutX_lineZ` (`stEqOutX_line` needing reads only of unhooked lines),
+  `rdOk_X`, `mstep_guard_of_match`, `pGuard_of_stepPair`, `mstep_okDiff_fst/snd` (`hK`: `Match` +
+  `sim`'s use equation `op_sound` + the paired step's `PGuard`), `QW.stRel`, `stEqOutX_zc_end`
+  (`hend`), **`backend_twoRunL`**: `backend_twoRunPRIYT` at `Lk := StEqOutX (Zc c c')`, `KJ := KJL`,
+  `OkS := OkDiff F`, with `hG`, `hG'`, `hLpc`, `hstart`, `hstep`, `hend`, `hK` discharged. Its
+  remaining premises: `hx30` (`FnAsm.x30Free`), `hfr` (a segment state's line, if `x30`-exempt, is
+  `bl`/`blr`), `hcall`/`htls` (the hooks keep the lock), `hpro` (the lock after both prologues).
+- Finding: `hfr` is true (the segments of non-`rets` items run only the item's lines, and only the
+  `rets` item emits the epilogue; a `rets` segment has length 0) but not derivable from
+  `realizes_allCWS`'s outputs: it needs a per-item "segment lines are the item's lines" fact
+  (threaded like `ReadsInY`). No non-vacuity witness of `backend_twoRunL` until then.
+- Finding [#705](https://github.com/eth-act/clifv/issues/705): `ThmPDER`/`ThmPDERX`'s NeedNI
+  clause is false as stated: the entries' `x29` is unconstrained (unmasked, not in `EntryAgree`),
+  the prologue saves it into the frame record and the epilogue restores it, and `RetAgreeX` asks
+  for equal `x29` and saved-fp bytes. With equal entry `x29` (true at every program call made from
+  a locked caller) the lock holds as designed. `DetPRB` stays true but its proof then needs the
+  body never to read the record's fp word, which `RL.FrameRd` (admits it) does not record; the
+  body's frame reads are spill slots below `fr.size` (`RL.frameRd_slot`, the only producer).
+- Finding [#704](https://github.com/eth-act/clifv/issues/704): `HookDetX` covers difference sets
+  below `sp` and saved-LR bytes only, but the locked states also differ on callers' frames above
+  `sp` (`DetPRB`'s `D = F ∧ ¬ Fh`) and on CLIF-invisible world bytes; base calls need a machine
+  analogue of `XNI` as a new trusted premise.
+- **Dead-stack conjunct** (UninitZ20b): `Zc` excludes the callees' dead stack `StackBelow K spB`
+  (the `K` bytes below the body's `sp`). They are equal at entry (`EntryAgree` covers
+  `frameDrop + K` bytes below the entry `sp`), only callees write them, and the caller's
+  `RetAgreeX` at its own return compares them, so they must be locked equal, not merely tolerated.
+  The call premise `hcall` therefore has to keep them equal (a callee's `RetAgreeX` gives exactly
+  that for program callees; `HookNIX` for base callees, whose `Z ⊆ F` leaves them out of `Z`).
+- **`FRFree`** (resolves the `hfr` finding). `RegLevelFRFree.lean`: `Insn.frLine` (the
+  frame-record pair `stp`/`ldp fp, lr`), `RL.FRFree s n` (the `n` steps from `s` run no `ret` and no
+  frame-record line), `frLine_lines` (no allocated instruction's lines hold one; only
+  `prologueLines`/`epilogueLines` do), `RL.frFree_*`; `*NAF` variants of every `realizes_*NA` case
+  (old names kept as corollaries) and `RegLevelCorrectCYSF.lean`: **`realizes_allCWSF`**; `RL.InSeg`
+  carries `FRFree`. `BackendTwoRunLF.lean`: `RL.InSeg.exempt`, **`backend_twoRunLF`**,
+  **`backend_twoRunLEF`** (`backend_twoRunL`/`LE` without `hfr`). `RL.RetsAt` (the JR
+  configurations are at a `rets` item) is exported by `twoRunCT`/`PRT` and every `backend_twoRun*T/L*`.
+- `BackendTwoRunLE.lean`: **`backend_twoRunLE`** discharges `hpro` from the entries: `EntryAgree`
+  plus equal entry `x29` (#705), body-entry worlds equal outside `F ∪ D` (`stEqOutX_entryZ`,
+  `stEqOutX_prologueZ`: the prologue reads nothing and its record's saved-LR word is in `Zc`).
+- **LER** (`BackendTwoRunLR.lean`): `RL.notZc_ret` (the bytes `RetAgreeX` compares, below the entry
+  `sp` by at most `frameDrop + K` but the saved-LR word, are frame bytes or dead stack, so outside
+  `Zc`), `RL.retAgreeX_rets` (the epilogue keeps the lock; after `retLen` steps the two runs are in
+  `RetAgreeX (frameDrop + K) (spv s0)`), **`backend_twoRunLER`**: lock along the body, both returns
+  at their `ra`, and `RetAgreeX` at the return, from `EntryAgree` and equal entry `x29`. Remaining
+  premises: `hx30` (decidable code check `FnAsm.x30Free`), `hcall`/`htls`.
+- **`HookNIX`** (#704, trusted, `LinkArmBaseNIX.lean`): `HookNIX Hb BD F`: from two states equal but
+  for `x30` and bytes `Z ⊆ F`, a base call of a destination in `BD` and the TLS hook give states
+  equal but for `x30` and `Z` (the machine analogue of `XNI`: an extern observes neither return
+  addresses nor bytes outside the world). `LinkSys.OkDNX := OkDX + HookNIX L.Hb L.BaseDest F` at the
+  exterior `F` of every machine entry, under `NeedNI`; `OkDNX.okDX`, `Ok.okDNX_of_not_needNI`,
+  `hookNIX_id`, `HookNIX.mono`. `stEqOutX_call_of_hookNIX`/`stEqOutX_tls_of_hookNIX`: base calls and
+  TLS keep the lock when `WDiff c c' ⊆ F`. Trust row in `docs/contracts/e2e.md`.
+- **`ThmPDERX29`** (#705): `ThmPDERX` whose NeedNI clause also assumes equal entry `x29`;
+  `ThmPDERX.thmPDERX29`, `ThmPDERX29.thmPR`, `Thm.thmPDERX29_of_not_needNI`. Witnesses:
+  `BackendTwoRunLRWitness` (`a2_twoRunLER`, `frLine_lines_jump`, `hookNIX_id_call`),
+  `LinkArmBaseNIXWitness` (`okDNX_Lu`, `thmPDERX29_LU`).
+
+**The lock with the world-difference invariant; the table side of `DetPRB`/`DetTabPRB`
+(UninitZ21b, branch `agent/uninit-z18b`, PR #701).**
+- Finding (decided conservatively): `hcall` received neither the bound `WDiff c c' ⊆ F` that
+  `stEqOutX_call_of_hookNIX` needs nor the call's destination (it had to keep the lock for every
+  hook destination, also for program functions the line does not call). The bound is not a pair-run
+  fact one can read off `hK` (the pair configurations carry no world relation), but the lock keeps
+  it: outside `F` the machine is the VCode world (`StRel`), and a byte outside `F` where the locked
+  states differ is in `Zc c c'`, so where the previous configurations' worlds differ.
+  `BackendTwoRunLW.lean`: `MConf.WIn Y` (two run configurations' worlds differ only on `Y`),
+  `MDiffIn F Y` (its machine form), `LineDest` (`bl n` ↦ `some n`, `blr` ↦ `none`),
+  `RL.InSeg.isRun`, `wDiff_of_wIn`, `mDiffIn_of_lock`, `wIn_end`, `stEqOutX_line_callD`,
+  `stEqOutX_lineZD`; **`backend_twoRunLW`** (`backend_twoRunLEF` at the lock
+  `StEqOutX (Zc c c') ∧ WIn (F ∪ D) c c' ∧ MDiffIn F (F ∪ D)`; `hcall`/`htls` receive
+  `WDiff c c' ⊆ F ∪ D`, `hcall` only the line's destination), **`backend_twoRunLERW`** (also the
+  returned states equal on the memory outside `F ∪ D`, from `RL.retLock_rets`, of which
+  `RL.retAgreeX_rets` is now a corollary). Base calls: `stEqOutX_call_of_hookNIX_D`/`_tls_` (`HookNIX`
+  when `F ∪ D` is inside the exterior; `DetPRB`'s only use has `D = F ∧ ¬ Fh ⊆ F`). Witnesses
+  `a2_twoRunLERW` (hook premises by `HookNIX` through the invariant) and **`r_twoRunLERW_Lsl`**
+  (`BackendTwoRunLWLslWitness.lean`: `Lsl`'s `r`, which reads its uninitialised slot, at the linked
+  machine's own hooks `Lsl.hooks M`; its code has no call or TLS line, `fR_noHookLines`).
+- Fixed in passing: `BackendTwoRun.lean` and `BackendWorldCleanupI.lean` both declared
+  `E2E.DriverSemG.counted`, so no module could import both; the generic one is now
+  `DriverSemG.countedW`.
+- Table side (item (4)), generic over the table predicate. `LinkArmTwin.lean`: **`Twin M g s s₀`**
+  (machine-level twin runs: up to the first return of the run from `s` both return at the same
+  indices and agree on the pc, `sp`, the program calls (`CallsTo`) and their slot bytes; at depth
+  `M + 1` the callee runs at those calls are twins one level down), `twin_refl`,
+  `callsBefore_twin`, `noRetAt_twin`, **`tabUpTo_twin`**, **`tableOf_twin`**; **`DetTabPRBG T`**
+  (`DetTabPRB` with any table predicate `T`: `DetTabPRB = DetTabPRBG TableOf`, `detTabPRB_iff`;
+  #700's `DetTabPRBE` is `DetTabPRBG TableOfE`), **`CallTwin κ M`** (the determinism step,
+  call-shaped with `DetTabPRB`'s premises: the callee runs from `t` and from `canon h uses w` are
+  twins), **`detTabPRBG_of`** (any `T` carried along `Twin`), **`detTabPRB_of`**.
+  `LinkArmDetPRBOf.lean`: `TwinN` (twins up to step `n`), `twinN_refl`, **`tabUpTo_twinN`**;
+  **`DetRunPRB κ M`** (`DetPRB` without table premises; conclusion: the actual run returns at the
+  canonical index with the canonical outcome, and the runs are `TwinN` up to there), `DetPRBG T U`
+  (`detPRB_iff`), **`detPRBG_of`**, **`detPRB_of`**.
+- Open: the program-callee case of `hcall` and the determinism steps `CallTwin`/`DetRunPRB`
+  (`thmPDERX_det_of`). Finding: `hcall` sees only the VCode configuration at the call, not the
+  CLIF call; a program callee's lock needs its CLIF entry (the callee's `ThmPDERX29` at
+  `M - 1`), reachable only through the link's `XI` (`XPBTG`: a returning VCode call is a returning
+  callee CLIF run). `ThmPDERX29` alone does not give `Twin` (it has no per-step facts), so the
+  determinism step must come from the lock (`backend_twoRunLW`'s per-index `StEqOutX`) plus the
+  prologue/epilogue states and a `blr`-target fact (`CallsTo` reads the `blr` register, exempt
+  from `x30Free`).
+
+**The determinism step's machine facts; call-restricted twins (UninitZ22b, PR #701).**
+- Finding (decided conservatively, new names, old kept): `TwinBase`/`TwinN` (hence `Twin`,
+  `CallTwin`, `DetRunPRB`) compare the slot bytes `SlotByte h (spv u)` of **every** `h` at
+  **every** state before the return. That is false in general: below the caller's dead stack the
+  two entries are unconstrained (`EntryAgree` covers `frameDrop + K` bytes), and `SlotByte h`
+  reaches `frameDrop (L.A h).af` below `sp` for functions never called. The table reads slot bytes
+  only at program calls, of the called function. `LinkArmTwinC.lean`: `TwinBaseC`, **`TwinC`**,
+  `TwinNC` (slot clause under `CallsTo g u h`), `Twin.twinC`, `TwinN.twinNC`, `twinC_refl`,
+  `twinNC_refl`, **`tabUpTo_twinC`**, **`tableOf_twinC`**, **`tabUpTo_twinNC`**, **`CallTwinC`**,
+  **`DetRunPRBC`** (`CallTwin.callTwinC`, `DetRunPRB.toC`), **`detTabPRBG_ofC`**,
+  **`detTabPRB_ofC`**, **`detPRBG_ofC`**, **`detPRB_ofC`**; symmetry `TwinBaseC.symm`,
+  **`TwinC.symm`** (and `TwinBase.symm`, `Twin.symm` in `LinkArmTwin.lean`); the reverse
+  transfer **`DetTabPRBGr T`** (canonical → actual callee table; `DetTabPRBEr = DetTabPRBGr
+  TableOfE`), **`detTabPRBGr_of`**, **`detTabPRBGr_ofC`**.
+- `blr` targets (`LinkArmBlrCheck.lean`): `blrTarget` decodes the code bytes from memory; every
+  state of a linked run holds the code image (`Ok.imgCode`), so equality of code bytes needs no
+  lock-set fact. **`FnAsm.blrLow`** (decidable: every `blr` jumps through `x0`–`x28`, what
+  `blrTarget_of` needs; `x30Free` exempts `blr`), `blrLow_line`, **`blrTarget_eq_of_lock`**,
+  **`LinkSys.callsTo_iff_of_lock`** (two `StEqOutX Z` states holding the image call the same
+  program functions), **`LinkSys.slotByte_eq_of_lock`** (a callee's slot bytes at a call with
+  `sp = c` are in the `K` bytes below `c` when `frameDrop (L.A h).af ≤ K`, the κ budget:
+  `Budget`). Measured (throwaway runner over `compileFile`, 2026-10-28): corpus + Cranelift runtests
+  1105 functions / 238 `blr` lines; fv-demo split CLIF 2122 functions / 882; survey 1329 / 488:
+  0 failing lines.
+- Explicit per-index lock set (`BackendTwoRunLWZ.lean`): **`backend_twoRunLERWZ`**
+  (`backend_twoRunLERW` with `∃ d d', StEqOutX (R.Zc d d')` at every index before the return:
+  prologue at the initial configurations, body at the paired ones, epilogue at the `rets` ones),
+  `RL.deadStack_eq_of_Zc` (locked states agree on `StackBelow R.K R.spB`).
+- Witnesses `LinkArmTwinCLslWitness.lean`: `lsl_blrLow`, `blr_x30_rejected`, `blr_x0_ok`,
+  `twinC_Lsl`, `twinNC_Lsl`, `twinC_symm_Lsl`.
+- Open (next): `CallTwinC`/`DetRunPRBC` themselves. Remaining glue: instantiate
+  `backend_twoRunLERWZ` at the link (`R.step` vs `L.mach M g`: `ArmStepX` reads `X` only through
+  `sym`, so the two agree when `(XI.at 0).sym = L.Xb.sym`); call states have `sp = R.spB`
+  (`StRel.sp` at segment starts) for `slotByte_eq_of_lock`; `RetAt` iff (no return before
+  `P + N + retLen`: `RL.Good`); the program-callee `hcall` and the nested callee twins by induction
+  on `M` (callee `ThmPDERX29` at `M - 1` through `XPBTG`).
+
+**Lock to twins at the link; the one-`XI` blocker (UninitZ23b, PR #701, #713).**
+- `LinkArmTwinCLock.lean`: **`twinState_of_lock`** (two `StEqOutX Z` states holding the image, `Z`
+  avoiding the `K` bytes below the call `sp` `c`, `K` the κ budget: same pc, `sp`, program calls
+  and called slot bytes), **`twinBaseC_of_lock`** (one level of `TwinC` from the lock up to a shared
+  return index `T`: neither run returns before `T`, both at `T`), **`twinNC_base_of_lock`** (the
+  first clause of `TwinNC`), `twinC_succ_of`. The `sp` at call states comes from UninitZ23's
+  `realizes_allC0` (`RegLevelCallStart.lean`, cherry-picked verbatim). Witnesses
+  `LinkArmTwinCLockLslWitness.lean` on distinct pairs: `twinState_Lsl` (states differing in `x30`),
+  `twinBaseC_Lsl` (entries differing in `x1`), `not_callsTo_of_noHook`.
+- Finding (#713, not fixed): `backend_twoRunLERWZ` (and its whole chain from `backend_twoRunPRIY`)
+  takes one `XI` for both entries. At the link an entry's `ActEntryPR.calls` is provable only for the
+  `XI` of its own prophecies (`calleeOkXPBTGZ`'s `hQ`); for the second entry with the first's `XI`,
+  `hQ` is the lock at the call states (and `MaskedReg` includes `x30`, which the lock leaves free).
+  With two `XI`s (the RL level allows them), `vcode_niIG`'s pair run needs cross non-interference of
+  answers that differ by the dead-stack prophecies, again a machine-lock fact. So `CallTwinC` /
+  `DetRunPRBC` do not follow from `backend_twoRunLERWZ` as stated. Proposed: induction on the call
+  count with a prefix two-run theorem (`ActEntryPRN`), transferring the first run's prophecies to
+  the second up to the lock (`prophOkUpTo_congr`), with an `x30`-exempt `calleeOkXPBTGZ`.
 
 ## 6. Heap (separate gap, SEM2)
 
