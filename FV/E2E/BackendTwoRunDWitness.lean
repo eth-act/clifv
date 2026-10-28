@@ -1,0 +1,71 @@
+import FV.E2E.BackendTwoRunD
+import FV.E2E.BackendTwoRunWitness
+
+/-!
+# Witness for the guarded pair run (SEM1 #537, #699, `BackendPairRunD.lean`, `BackendTwoRunD.lean`)
+
+`a2_pairRunD`: `backend_pairRunD` applies to `LinkWitness`'s compiled function `a2` (its paired
+run is guarded by the difference set); `a2_twoRunPRIYD`: `backend_twoRunPRIYD` applies to it,
+for one activation entered twice (lock "equal states", as `a2_twoRunPRIY`).
+-/
+
+namespace E2E.LinkWitness
+
+open Backend Backend.Proof Backend.Proof.Driver
+
+/-- **`backend_pairRunD` applies** to `a2` (two copies of one entry world). -/
+theorem a2_pairRunD {F : BitVec 64 → Prop} {c : BitVec 64} {args : List Clif.Val}
+    {cs : Clif.State} {w₀ : Arm.ArmState} (hce : ClifEntry fA2 args cs)
+    (hrel : RelW ⟨F, fun _ => none, (A fA2).af.slotBase,
+      (RAFrame.compute (A fA2).vcp (A fA2).rf).intBase⟩ fA2 c cs.frame.slots cs.mem w₀)
+    (hargs : ArgsAtEntry F fA2.sig args w₀)
+    (htr : TrapsExplicit Clif.Rust.env (L F).P.bare cs) (fuel : Nat) :
+    ∀ vals cm, Clif.runLoop Clif.Rust.env (L F).P.bare fuel cs = .returned vals cm →
+      ∃ us outs w, VRetFrom (A fA2).vcp
+        (pairDI (csemV (GotV (A fA2).vcp) F ⟨(A fA2).fa.k, (A fA2).af.slotBase⟩) F
+          ⟨(A fA2).fa.k, (A fA2).af.slotBase⟩ (ExtSemI.const Xb))
+        ⟨0, 0, fun _ => 0, ((w₀, w₀), 0)⟩ us outs w := by
+  have hL := L_ok (fun _ => True) (fun _ _ => trivial)
+  have hA2 : fA2 ∈ P.funcs := by simp [P]
+  intro vals cm hrun
+  obtain ⟨us, outs, w, h, -⟩ := backend_pairRunD (D := fun _ => False) (XI := ExtSemI.const Xb)
+    (hL.subset fA2 hA2)
+    a2_compiled a2_callsOne.1 a2_callsOne.2 (fun _ n _ => a2_xcalls _ _ _ n) (fun _ _ _ => xb_xNI)
+    (fun _ => xbTls F) (fun n b h => by cases h) rfl (fun _ => 0) hce hrel hrel hargs
+    (SameWorld.refl _ _) (fun _ _ _ => rfl) (fun _ _ _ _ _ => rfl) htr fuel vals cm hrun
+  exact ⟨us, outs, w, h⟩
+
+/-- **`backend_twoRunPRIYD` applies** to `a2`, one activation entered twice. -/
+theorem a2_twoRunPRIYD {F : BitVec 64 → Prop} {c : BitVec 64} {K : Nat} {args : List Clif.Val}
+    {cs : Clif.State} {w₀ : Arm.ArmState} (hce : ClifEntry fA2 args cs)
+    (hrel : RelW ⟨F, fun _ => none, (A fA2).af.slotBase,
+      (RAFrame.compute (A fA2).vcp (A fA2).rf).intBase⟩ fA2 c cs.frame.slots cs.mem w₀)
+    (hargs : ArgsAtEntry F fA2.sig args w₀)
+    (htr : TrapsExplicit Clif.Rust.env (L F).P.bare cs) (fuel : Nat)
+    {H : ArmHooks} {G : BitVec 64 → Prop} {base ra : BitVec 64} {Kp : Nat} {cc : BitVec 64}
+    {Pp : Nat → BitVec 64 → BitVec 8} {Rr : Nat → Arm.ArmState} {s : Arm.ArmState}
+    (he : ActEntryPR (A fA2).vcp (A fA2).rf (A fA2).af (A fA2).fa (A fA2).fb K F G
+      (ExtSemI.const Xb) H base ra Kp cc Pp Rr s w₀) :
+    ∀ vals cm, Clif.runLoop Clif.Rust.env (L F).P.bare fuel cs = .returned vals cm →
+      ∃ N, Arm.r .PC (iterN (ArmStepX Xb H (A fA2).fa)
+        ((prologueLines (A fA2).af.frameSize).length + N +
+          (spAdjLines false (A fA2).af.frameSize).length + 2) s) = ra := by
+  have hL := L_ok (fun _ => True) (fun _ _ => trivial)
+  have hA2 : fA2 ∈ P.funcs := by simp [P]
+  have hc := a2_compiled
+  obtain ⟨lm, hlm⟩ := FnAsm.layout_labelOffsets hc.layout
+  obtain ⟨body, psF, hpsF, -, hk⟩ := emitFunc_ok hc.emit
+  intro vals cm hrun
+  obtain ⟨N, -, -, -, -, -, -, hpc, -⟩ := backend_twoRunPRIYD (D := fun _ => False)
+    (hL.subset fA2 hA2) hc
+    a2_callsOne.1 a2_callsOne.2 (fun _ n _ => a2_xcalls _ _ _ n) (fun _ _ _ => xb_xNI)
+    (fun _ => xbTls F) (fun n b h => by cases h) rfl (fun _ => 0) hce hrel hrel hargs
+    (SameWorld.refl _ _) (fun _ _ _ => rfl) (fun _ _ _ _ _ => rfl) htr fuel hlm (hk ▸ hpsF) he he
+    rfl (hL.covered fA2 hA2) (fun _ _ => True) (fun _ _ u u' => u = u')
+    (fun _ _ => fun _ Y => Y = F) (fun _ _ => fun _ Y => Y = F) (fun _ _ _ _ _ h => h)
+    (fun _ _ _ _ _ h => h) (fun _ _ _ u u' => u = u') (fun _ _ _ _ _ h => h ▸ rfl)
+    (fun _ _ _ _ _ h => h) (fun _ _ _ _ _ _ _ _ _ _ h => h ▸ rfl)
+    (fun _ _ _ _ _ _ _ _ _ _ _ h => h) (fun _ _ _ _ _ _ _ _ _ _ _ => trivial) rfl vals cm hrun
+  exact ⟨N, hpc⟩
+
+end E2E.LinkWitness
