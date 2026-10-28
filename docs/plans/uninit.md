@@ -659,6 +659,49 @@ results; the slot bytes the callee's CLIF run reads are `P n`'s, the #665 `Place
 interface with UninitZ6b) and `xniP`/`progX_niP` (from `progCallPR`'s NI family). (iii)
 `ThmPDER`'s determinism clause by the lock-step (§5.8 (1), (2)).
 
+### 5.9 The CLIF → counted-VCode half: per-step contracts (UninitZ9, 2026-10-28)
+
+**Finding.** With `init = none` (`WorldEntry`) `ThmPR` already follows from `Thm` (`Thm.thmPR`),
+so the indexed pipeline matters only with the oracle (`WorldEntryB`, item (d)). There the
+per-index callee contract `XCallsOk env … (RelW …) (XPRI.at n)` — for **every** CLIF memory `cm`,
+VCode world `w` and argument list related by `RelW` — is false: the callee's CLIF run reads the
+table entries from `cm`'s counter on, and those are the machine's slot bytes only for the actual
+call (actual memory, arguments and index; a callee entered with other arguments enters other
+nested activations than the ones the table recorded). The driver (`driver_correct`) consumes the
+contracts per instruction for arbitrary related states (`LowerInstOk.run`); the rule theorems
+fix one memory relation for the states before and after a call (`CallRulesCorrect`: `∀ isem :
+Sem`, one `MR`) and `Sem`'s world is `Arm.ArmState`. So an index-dependent relation (counter
+`c_n` before call `n`, `c_{n+1}` after it) cannot be threaded through the rule-level contracts,
+and the index cannot live in the Arm world (every field `SameWorld` keeps is tied to the machine
+by `StRel`, every other one breaks `MRStable`). `LowerInstOk.csemI_le1` (#573) with one `MR` and
+a counter invariant `Q` is therefore not enough once the contract depends on `Q`.
+
+**Decision (conservative: no rule-level, driver or semantics change; new files).** Contracts per
+step of the actual CLIF run:
+1. `Clif.Env.only env A`: `env` whose externs answer only invocations `A name vals cm` (`stuck`
+   otherwise; the same names are defined). Every extern invocation of one `Clif.step` from `s`
+   is at `s.mem` with the one name and argument list the step determines (`call`,
+   `call_indirect` via `callExternAt`, `try_call`, `try_call_indirect`), so restricting to it
+   does not change the step.
+2. Each step of the simulation instantiates the existing `DriverHyp` with `sem := csem F ctx
+   (XI.at n)` (`n` = the counter), `MR := RelW …` and the restricted environment
+   (`instCalls_of_rules`, `termCalls_of_rules`, … unchanged), runs the existing one-step lemmas
+   (`stmt_run`, `term_step_*`, `entry_step`) and lifts the segment run to `csemI` at counter `n`.
+   The induction over the run (`sim_run_abi`'s, ≈100 lines) is redone with the per-step
+   hypothesis; nothing in `LowerSim.lean` changes.
+3. Call counts. The lift needs the executed part of a segment to contain at most one call, and
+   the counter to advance with the CLIF run's extern calls. Non-call statements and non-`try`
+   terminators: dynamic — the same `DriverHyp` with an `ExtSem` whose calls fail and an empty
+   environment (its contracts are vacuous) still runs the segment, so no executed instruction is
+   a call. `call`/`call_indirect`/`try_call(_indirect)`: the lowering emits exactly one
+   `MInst.isCallI` instruction; this is a property of the ISLE lowering, stated as a premise
+   (`LowerCallsOne`) until a rule-table certificate proves it.
+4. The pipeline premise is per state: for `s` reachable from the entry after `n` extern calls
+   with the CLIF counter invariant `Q s.mem n`, the contract of `XI.at n` for the environment
+   restricted at `s`, its returned memory satisfying `Q · (n + 1)`. Item (b) discharges it from
+   `progCallPR` at the machine's `n`-th call (`OnCallPR`), item (d) supplies `Q` (`counter_at`).
+
+
 ## 6. Heap (separate gap, SEM2)
 
 `BaseOk.baseKeepsAllocs`/`baseNoAlloc` require base externs to allocate nothing whenever a program
