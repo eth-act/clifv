@@ -1572,8 +1572,9 @@ as corollaries (target `Stage2Z`/`thmPRBRL_ofZ`, #697), after combining with #69
   the return, which is what the guard transfer needs; `GuardedAt` alone is vacuous at a stuck
   configuration). Witness `a2_twoRunPRIYT`.
 - `BackendTwoRunL.lean`: `JTByte`, `MConf.WDiff`, **`RL.Zc c c' a := ¬ FrameRd false a ∧ ¬ JTByte a
-  ∧ (F a ∨ WDiff c c' a)`** (the design's set, written with the located-read predicates: the frame
-  bytes but the saved-LR word and the jump tables are locked), `OkDiff F c c'`, `KJL` (every step of
+  ∧ ¬ StackBelow K spB a ∧ (F a ∨ WDiff c c' a)`** (the design's set, written with the located-read
+  predicates: the frame bytes but the saved-LR word, the jump tables and the callees' dead stack
+  below the body's `sp` are locked), `OkDiff F c c'`, `KJL` (every step of
   either activation from `c`, `c'` is guarded by `OkDiff`), `readsAvoid_stepiEvs`,
   `RL.notZc_of_readInY`, `stEqOutX_lineZ` (`stEqOutX_line` needing reads only of unhooked lines),
   `rdOk_X`, `mstep_guard_of_match`, `pGuard_of_stepPair`, `mstep_okDiff_fst/snd` (`hK`: `Match` +
@@ -1597,6 +1598,40 @@ as corollaries (target `Stage2Z`/`thmPRBRL_ofZ`, #697), after combining with #69
   below `sp` and saved-LR bytes only, but the locked states also differ on callers' frames above
   `sp` (`DetPRB`'s `D = F ∧ ¬ Fh`) and on CLIF-invisible world bytes; base calls need a machine
   analogue of `XNI` as a new trusted premise.
+- **Dead-stack conjunct** (UninitZ20b): `Zc` excludes the callees' dead stack `StackBelow K spB`
+  (the `K` bytes below the body's `sp`). They are equal at entry (`EntryAgree` covers
+  `frameDrop + K` bytes below the entry `sp`), only callees write them, and the caller's
+  `RetAgreeX` at its own return compares them, so they must be locked equal, not merely tolerated.
+  The call premise `hcall` therefore has to keep them equal (a callee's `RetAgreeX` gives exactly
+  that for program callees; `HookNIX` for base callees, whose `Z ⊆ F` leaves them out of `Z`).
+- **`FRFree`** (resolves the `hfr` finding). `RegLevelFRFree.lean`: `Insn.frLine` (the
+  frame-record pair `stp`/`ldp fp, lr`), `RL.FRFree s n` (the `n` steps from `s` run no `ret` and no
+  frame-record line), `frLine_lines` (no allocated instruction's lines hold one; only
+  `prologueLines`/`epilogueLines` do), `RL.frFree_*`; `*NAF` variants of every `realizes_*NA` case
+  (old names kept as corollaries) and `RegLevelCorrectCYSF.lean`: **`realizes_allCWSF`**; `RL.InSeg`
+  carries `FRFree`. `BackendTwoRunLF.lean`: `RL.InSeg.exempt`, **`backend_twoRunLF`**,
+  **`backend_twoRunLEF`** (`backend_twoRunL`/`LE` without `hfr`). `RL.RetsAt` (the JR
+  configurations are at a `rets` item) is exported by `twoRunCT`/`PRT` and every `backend_twoRun*T/L*`.
+- `BackendTwoRunLE.lean`: **`backend_twoRunLE`** discharges `hpro` from the entries: `EntryAgree`
+  plus equal entry `x29` (#705), body-entry worlds equal outside `F ∪ D` (`stEqOutX_entryZ`,
+  `stEqOutX_prologueZ`: the prologue reads nothing and its record's saved-LR word is in `Zc`).
+- **LER** (`BackendTwoRunLR.lean`): `RL.notZc_ret` (the bytes `RetAgreeX` compares, below the entry
+  `sp` by at most `frameDrop + K` but the saved-LR word, are frame bytes or dead stack, so outside
+  `Zc`), `RL.retAgreeX_rets` (the epilogue keeps the lock; after `retLen` steps the two runs are in
+  `RetAgreeX (frameDrop + K) (spv s0)`), **`backend_twoRunLER`**: lock along the body, both returns
+  at their `ra`, and `RetAgreeX` at the return, from `EntryAgree` and equal entry `x29`. Remaining
+  premises: `hx30` (decidable code check `FnAsm.x30Free`), `hcall`/`htls`.
+- **`HookNIX`** (#704, trusted, `LinkArmBaseNIX.lean`): `HookNIX Hb BD F`: from two states equal but
+  for `x30` and bytes `Z ⊆ F`, a base call of a destination in `BD` and the TLS hook give states
+  equal but for `x30` and `Z` (the machine analogue of `XNI`: an extern observes neither return
+  addresses nor bytes outside the world). `LinkSys.OkDNX := OkDX + HookNIX L.Hb L.BaseDest F` at the
+  exterior `F` of every machine entry, under `NeedNI`; `OkDNX.okDX`, `Ok.okDNX_of_not_needNI`,
+  `hookNIX_id`, `HookNIX.mono`. `stEqOutX_call_of_hookNIX`/`stEqOutX_tls_of_hookNIX`: base calls and
+  TLS keep the lock when `WDiff c c' ⊆ F`. Trust row in `docs/contracts/e2e.md`.
+- **`ThmPDERX29`** (#705): `ThmPDERX` whose NeedNI clause also assumes equal entry `x29`;
+  `ThmPDERX.thmPDERX29`, `ThmPDERX29.thmPR`, `Thm.thmPDERX29_of_not_needNI`. Witnesses:
+  `BackendTwoRunLRWitness` (`a2_twoRunLER`, `frLine_lines_jump`, `hookNIX_id_call`),
+  `LinkArmBaseNIXWitness` (`okDNX_Lu`, `thmPDERX29_LU`).
 
 ## 6. Heap (separate gap, SEM2)
 
