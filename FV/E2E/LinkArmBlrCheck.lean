@@ -89,6 +89,13 @@ theorem blrTarget_eq_of_lock {fa : FnAsm} {fb : FnBin} {base : BitVec 64}
     exact rnum_ne (a := n) (b := 30) (by omega) (by omega) (by omega) e
   rw [hlk.1 _ hne]
 
+/-- **The machine reads its external semantics only through `sym`** (so the activation's
+machine `R.step`, at `X := XI.at 0`, is the link's `L.mach M g` when the symbols agree). -/
+theorem armStepX_congr_sym {X X' : ExtSem} (hs : X.sym = X'.sym) (H : ArmHooks) (fa : FnAsm) :
+    ArmStepX X H fa = ArmStepX X' H fa := by
+  funext s
+  simp only [ArmStepX, hs]
+
 namespace LinkSys
 
 variable (L : LinkSys)

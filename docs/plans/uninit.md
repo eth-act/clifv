@@ -1700,7 +1700,8 @@ as corollaries (target `Stage2Z`/`thmPRBRL_ofZ`, #697), after combining with #69
   program functions), **`LinkSys.slotByte_eq_of_lock`** (a callee's slot bytes at a call with
   `sp = c` are in the `K` bytes below `c` when `frameDrop (L.A h).af ≤ K`, the κ budget:
   `Budget`). Measured (throwaway runner over `compileFile`, 2026-10-28): corpus + Cranelift runtests
-  1105 functions / 238 `blr` lines, fv-demo split CLIF and survey: see the PR body; 0 failing.
+  1105 functions / 238 `blr` lines; fv-demo split CLIF 2122 functions / 882; survey 1329 / 488:
+  0 failing lines.
 - Explicit per-index lock set (`BackendTwoRunLWZ.lean`): **`backend_twoRunLERWZ`**
   (`backend_twoRunLERW` with `∃ d d', StEqOutX (R.Zc d d')` at every index before the return:
   prologue at the initial configurations, body at the paired ones, epilogue at the `rets` ones),
