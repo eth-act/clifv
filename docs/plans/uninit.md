@@ -1383,6 +1383,53 @@ no existing statement changed; no generated-code change.
   but does not export it: needs `T` to carry it, i.e. a change inside `realizes_allC`, or a proof
   that call states are segment starts). Then `ThmPRBG` as designed in the UninitZ21 handoff.
 
+**Executable level, steps (b)–(c), as built (UninitZ23, branch `agent/uninit-z23`).** New leaf
+modules; no existing statement changed; no generated-code change; standard axioms only.
+- Call states are segment starts (`FV/E2E/RegLevelCallStart.lean`, shared with the determinism
+  side): `RL.callSt_of_q_call` (a `Q`-state at a `call`/`try_call` item is at its `bl`/`blr`),
+  `opCalls_pos`, `countIn_one_le`/`_two_le`, `RealizesCP0` (every `C`-state of a segment is its
+  first), **`realizes_allC0`** (trace `R.GoodX u ∧ (R.CallSt u → spOf u = R.spB)`),
+  **`RealizesCP0.countedRun`** (trace `∃ m, T m u ∧ (C u → P m u)`: a call state carries the
+  precondition, e.g. `OnCall … m u`, of its own count). Items (i)/(ii) of the finding above.
+- **Decision: `ThmPRBG` does not need them.** The per-state trace (`∃ m`) is only used at
+  non-call states (`GoodAt` asks for *some* semantics); at a call state the prefix theorem
+  `prefix_relatedPRI_atEG` at the call's count (the CLIF run has as many calls as the machine
+  before its return, `reachN_call_at`) gives the call data with `CallStPRB … m u` (count and body
+  `sp`), as in `countPRB_succE`; stage 2 (`XPBTGY_subZS`) turns the guarded answer into
+  `XPRBT … m`'s. So the pipeline copies with the refined trace were not built.
+- `FV/E2E/LinkArmActualEntry.lean`: **`actualEntry`** (`canonEntry` at the actual caller state
+  `t`, entered with `bodyOf (enterAt t)`: `WorldEntryB`, `MachEntryPR` with its own prophecies,
+  `RaOk`, the returning run one level down), `DetTabPRBEr` (= #701's `DetTabPRBGr L.TableOfE`,
+  the reverse transfer canonical → actual; a premise).
+- `FV/E2E/LinkArmThmPRBG.lean`: **`ansDecode`** (at a machine call of `h ∈ P` the `XPRBT` answer is
+  `progXPRBT`, with `h`'s argument registers, `RaOk`, `Callee`, and the `BlrTo` fact), **`ThmPRBG`**
+  (`ThmPRBRLE`'s entries → `RunGoodL M g s`), **`thmPRBG_of`** (nested call: `CondBT` of the
+  answer, `callerFacts`, `DetTabPRBEr` for the actual callee's `TableOfE`, `actualEntry`,
+  `ThmPRBG` one level down), `thmPRBG_noSlots` (from `thmG`), **`thmPRBG_allC`**.
+- `FV/E2E/LinkArmIniOfCongr.lean`: **`iniOf_congr`** (the machine's own table depends only on `A`,
+  `P`, `Xb`, `mach`; needed because the binary-level systems differ in `F`/`Img`).
+- `FV/E2E/LinkArmProgramInitEX.lean`: **`backend_correct_program_core_initEX`**,
+  **`backend_correct_program_initEX`** (returning runs: `ArmRefines` and `RunGoodL`).
+- `FV/E2E/DeadCleanupBinaryInit.lean`: `iniB` (the slot table `(sys I B).std.iniOf M f (modelOf
+  I f r)`), **`ClifRunB`**, `sysW`, `kapW`, **`InitOk`** (premises of the oracle route:
+  `BaseRetOk`, `RetCount`, `HooksKeep`, `DetPRB`, `DetTabPRBE`, `DetTabPRBEr` of the system the
+  proof instantiates), **`premisesB`**, `modelOf_diff`, `kapW_eq`, `iniOf_F`,
+  **`binary_correct_init`**; `iniOf_sysS`, `runGoodL_of_sysS`, `model_init_sysS` (the GOT-slot
+  system: one system for `ArmRefines` and `RunGoodL`), **`binary_correct_exec_init`**.
+- `FV/Link/DeadCleanupExeInit.lean`: **`Link.DeadCleanup.compileExe_correct_init`**: for
+  `compileExe S file0 = .ok file`, the executable run from `r` refines a **returning** whole-program
+  CLIF run from the reference entry placed with the machine's own slot table. A trapping CLIF run
+  under the oracle is not covered by any theorem yet.
+- Witnesses `FV/E2E/LinkArmThmPRBGWitness.lean`: `thmPRBG_zero_Lsl` (no premise),
+  `thmPRBG_allC_Lsl`, `backend_correct_program_core_initEX_Lsl`, `backend_correct_program_initEX_L0`,
+  `actualEntry_Lsl`, `ansDecode_Lsl`, `iniOf_std_L0`; `count_two`, `opCalls_le_one`,
+  `countedRun0_any`.
+- Open: the determinism premises (`DetPRB`, `DetTabPRBE`, `DetTabPRBEr`; #701/#713: `CallTwinC`,
+  `DetRunPRBC` are not proved yet); `tableOfE_twinC` (`TableOfE` along `TwinC`, then
+  `DetTabPRBEr = DetTabPRBGr L.TableOfE` by `detTabPRBGr_ofC`) once both stacks are on main; the
+  fv-demo witness (an executable whose returning run reads an unwritten slot, through
+  `compileExe_correct_init`).
+
 **Step 3h, as built (UninitZ10b): the call-count premises are theorems.** `InstCallsOne f` and
 `TryCallsOne f` hold for every `f` (`E2E.instCallsOne_all`, `E2E.tryCallsOne_all`,
 `FV/E2E/IselCallsOneAll.lean`), from `FV/Backend/Proof/IselCallsOne.lean`:
