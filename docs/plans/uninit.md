@@ -417,6 +417,16 @@ the activation's own calls. Do not relate them arithmetically inside the backend
   oracle-free (it never sees CLIF memory), and only the linking (`progCall`, `progResult`)
   touches the sum.
 
+**Count correspondence, CLIF side (step 2m, `FV/E2E/LinkPlaceB.lean`).** Interface agreed with
+the Arm side: the byte table `B j` is the machine memory at the `j`-th placed activation with
+slots of the whole run (an activation entered with counter `j0` reads `B (j0 + 1)`, `initSlots`);
+a callee run advances the counter by its own count `e`, and the caller's call `k` contributes
+`E k :=` that `e`. Built: `SlotInit.adv`, `NextAdv m m' e` (oracle kept, counter `+ e`),
+`EnvAdv`, `enterSlots_adv` (`+0`/`+1`), `PlaceInvB`/`placeInvB_step`/`runLoop_placeB`/
+`initState_placeB` (a returning run advances by some `e`), `linkEnvR_adv`/`linkEnvN_adv` (the
+linked environment advances when the base does; `envAdv_of_keepsPlace`: `e = 0`). Witnesses
+`LinkPlaceBWitness.lean` (one slotted function: counter `0 → 1`, slot bytes = table entry `1`).
+
 ### 5.6 Linking on `ThmP`: the caller-family obstacle (2026-10-28)
 
 Investigation for `thmP_of` (`ThmP κ (M-1) → ThmP κ M` on `XPI`), before reworking `progCall`.

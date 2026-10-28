@@ -1059,7 +1059,12 @@ with the conversions and the scalar comparisons: `CtxT.scope` and `Driver.LowerS
 `lowerInstOk_of_rulesTF`/`instCallsTF_of_rules` (`LowerContractTF`) and the validator
 `lowerCheckTCF` (`DriverCheckCF`/`DriverCheckTCF`) feed `E2E.backend_correct_finalTCF`.
 `NonEUnmatchableT` and the `InstScopeT` dispatchers take `InstScopeT ctx` explicitly (meaning
-unchanged); the link-level chain keeps `InstScopeT`.
+unchanged). The link-level chain with typed `try_call`s consumes them too (S11f link): the pinned
+dispatcher `lowerInstOkP_of_rulesTF`/`lowerInstOkP_runTermTF` (`LowerContractTPF`, the pinned
+`LowerInstOkP` of the float families from `LowerInstOk.toP`) feeds the pair drivers
+`E2E.instCalls_pairTCF`/`instCalls_pair_valueTCF`; the `InstScopeT` link theorems
+(`instCalls_pairT`, `instCalls_pair_valueT`, `instCalls_pairTC`, `instCalls_pair_valueTC`) are
+unchanged.
 
 ## Float `Args`/`Rets` in the control-form check (S11e5 Stage C, slice 5a)
 
