@@ -17,7 +17,11 @@ Decision (conservative: new names, `DetPRB` kept): **`DetPRBR κ M`**, `DetPRB` 
 canonical activation's returning CLIF run (`Clif.runLoop (L.envR M g) L.P.bare fuel cs`, as
 `ThmPRBRL`), its linked-call return address (`RaOk`), and for the agreeing entry its return
 address and frame pointer (`x29`, which `EntryAgree` does not cover; at a call both are the
-caller's). `DetPRB.toR` (every `DetPRB` is a `DetPRBR`).
+caller's), and the world difference `D` inside the exterior `F`: the lock of the two machine runs
+keeps the differing bytes out of the base externs' view only through `HookNIX … F` (`OkDNX`); at
+a program call the canonical and the actual callee worlds agree outside the callee's exterior
+(the caller's dead stack, which holds the callee's outgoing arguments and slots, is the
+canonical state's), so `D = ∅` there. `DetPRB.toR` (every `DetPRB` is a `DetPRBR`).
 -/
 
 namespace E2E
@@ -46,7 +50,7 @@ def DetPRBR (κ : Nat → Clif.Function → Nat) (M : Nat) : Prop :=
     L.TabUpTo M g s₀ ini.bytes ini.next n₀ e →
     Clif.runLoop (L.envR M g) L.P.bare fuel cs = .returned rvals cm' →
     RaOk (L.A g) (ra₀ - 4) →
-    ∀ (D : BitVec 64 → Prop) (w₀' : Arm.ArmState),
+    ∀ (D : BitVec 64 → Prop) (w₀' : Arm.ArmState), (∀ a, D a → F a) →
       RelW ⟨F, L.syms, (L.A g).af.slotBase, (RAFrame.compute (L.A g).vcp (L.A g).rf).intBase⟩
         g (spv w₀) cs.frame.slots cs.mem w₀' →
       SameWorld (fun a => F a ∨ D a) w₀ w₀' →
@@ -65,7 +69,7 @@ def DetPRBR (κ : Nat → Clif.Function → Nat) (M : Nat) : Prop :=
 /-- **Every `DetPRB` is a `DetPRBR`** (the extra premises unused). -/
 theorem DetPRB.toR {M : Nat} (h : L.DetPRB κ M) : L.DetPRBR κ M :=
   fun g hg F vals cs w₀ ini G₀ ra₀ s₀ us outs wf n₀ e _ _ _ hWE hME₀ htab hret₀ hpt₀ htab₀ _ _ D
-    w₀' hrel hsw hreg hstk G ra s hME hag _ _ =>
+    w₀' _ hrel hsw hreg hstk G ra s hME hag _ _ =>
     h g hg F vals cs w₀ ini G₀ ra₀ s₀ us outs wf n₀ e hWE hME₀ htab hret₀ hpt₀ htab₀ D w₀' hrel hsw
       hreg hstk G ra s hME hag
 

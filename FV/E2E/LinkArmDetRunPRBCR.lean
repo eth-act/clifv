@@ -35,7 +35,7 @@ def DetRunPRBCR (κ : Nat → Clif.Function → Nat) (M : Nat) : Prop :=
     PostTrace (L.A g).fa (L.A g).af (L.A g).base (L.mach M g) s₀ n₀ →
     Clif.runLoop (L.envR M g) L.P.bare fuel cs = .returned rvals cm' →
     RaOk (L.A g) (ra₀ - 4) →
-    ∀ (D : BitVec 64 → Prop) (w₀' : Arm.ArmState),
+    ∀ (D : BitVec 64 → Prop) (w₀' : Arm.ArmState), (∀ a, D a → F a) →
       RelW ⟨F, L.syms, (L.A g).af.slotBase, (RAFrame.compute (L.A g).vcp (L.A g).rf).intBase⟩
         g (spv w₀) cs.frame.slots cs.mem w₀' →
       SameWorld (fun a => F a ∨ D a) w₀ w₀' →
@@ -53,7 +53,7 @@ def DetRunPRBCR (κ : Nat → Clif.Function → Nat) (M : Nat) : Prop :=
 
 /-- Every `DetRunPRBC` is a `DetRunPRBCR`. -/
 theorem DetRunPRBC.toR {M : Nat} (h : L.DetRunPRBC κ M) : L.DetRunPRBCR κ M :=
-  fun g hg F vals cs w₀ ini G₀ ra₀ s₀ us outs wf n₀ _ _ _ hWE hME₀ _ hret₀ hpt₀ _ _ D w₀' hrel
+  fun g hg F vals cs w₀ ini G₀ ra₀ s₀ us outs wf n₀ _ _ _ hWE hME₀ _ hret₀ hpt₀ _ _ D w₀' _ hrel
     hsw hreg hstk G ra s hME hag _ _ =>
     h g hg F vals cs w₀ ini G₀ ra₀ s₀ us outs wf n₀ hWE hME₀ hret₀ hpt₀ D w₀' hrel hsw hreg hstk
       G ra s hME hag
@@ -76,7 +76,7 @@ theorem detPRBGR_ofC
       U M g s₀ ini.bytes ini.next n₀ e →
       Clif.runLoop (L.envR M g) L.P.bare fuel cs = .returned rvals cm' →
       RaOk (L.A g) (ra₀ - 4) →
-      ∀ (D : BitVec 64 → Prop) (w₀' : Arm.ArmState),
+      ∀ (D : BitVec 64 → Prop) (w₀' : Arm.ArmState), (∀ a, D a → F a) →
         RelW ⟨F, L.syms, (L.A g).af.slotBase, (RAFrame.compute (L.A g).vcp (L.A g).rf).intBase⟩
           g (spv w₀) cs.frame.slots cs.mem w₀' →
         SameWorld (fun a => F a ∨ D a) w₀ w₀' →
@@ -92,9 +92,9 @@ theorem detPRBGR_ofC
             PostTrace (L.A g).fa (L.A g).af (L.A g).base (L.mach M g) s n ∧
             U M g s ini.bytes ini.next n e :=
   fun g hg F vals cs w₀ ini G₀ ra₀ s₀ us outs wf n₀ e fuel rvals cm' hWE hME₀ htab hret₀ hpt₀ hU₀
-    hrun hra₀ D w₀' hrel hsw hreg hstk G ra s hME hag hra hx29 =>
+    hrun hra₀ D w₀' hD hrel hsw hreg hstk G ra s hME hag hra hx29 =>
     let ⟨hret, hpt, htw⟩ := hd g hg F vals cs w₀ ini G₀ ra₀ s₀ us outs wf n₀ fuel rvals cm' hWE
-      hME₀ htab hret₀ hpt₀ hrun hra₀ D w₀' hrel hsw hreg hstk G ra s hME hag hra hx29
+      hME₀ htab hret₀ hpt₀ hrun hra₀ D w₀' hD hrel hsw hreg hstk G ra s hME hag hra hx29
     ⟨n₀, hret, hpt, hU _ _ _ _ _ _ _ _ htw hU₀⟩
 
 /-- **`DetPRBR` from `DetRunPRBCR`** (`tabUpTo_twinNC`). -/
