@@ -1137,3 +1137,215 @@ import FVTest.Concurrency.LitmusFull
 #print axioms Concurrency.CallSegCall.Witness.call_endK_fC -- witness: native_decide
 #print axioms Concurrency.CallSegCall.Witness.retEnd_n_ld -- witness: native_decide
 #print axioms Concurrency.CallSegCall.Witness.resume_ret_fC -- witness: native_decide
+#print axioms Concurrency.CallEntryRel.enterSlots_at
+#print axioms Concurrency.CallEntryRel.spv_enter
+#print axioms Concurrency.CallEntryRel.slot_not_F
+#print axioms Concurrency.CallEntryRel.code_F
+#print axioms Concurrency.CallEntryRel.callee_relW
+#print axioms Concurrency.CallEntryRel.caller_world
+#print axioms Concurrency.CallEntryRel.Witness.wf_ld -- witness: native_decide
+#print axioms Concurrency.CallEntryRel.Witness.slots_fL -- witness: native_decide
+#print axioms Concurrency.CallEntryRel.Witness.enterSlots_at_ld -- witness: native_decide
+#print axioms Concurrency.CallEntryRel.Witness.callee_relW_ld -- witness: native_decide
+#print axioms Concurrency.CallSegEnt.callee_chainP
+#print axioms Concurrency.CallSegRun.segInv_start
+#print axioms Concurrency.CallSegRun.segInv_step
+#print axioms Concurrency.CallSegRun.segInv_crun
+#print axioms Concurrency.CallSegRun.cstep_next
+#print axioms Concurrency.CallSegRun.segInv_congr
+#print axioms Concurrency.CallSegLive.linv_cstep
+#print axioms Concurrency.CallSegLive.allocInvD_cstep
+#print axioms Concurrency.CallSegLive.crun_preserve
+#print axioms Concurrency.CallSegLive.seg_live
+#print axioms Concurrency.CallSegPc.callPc_of_pause
+#print axioms Concurrency.CallSegPc.ra_in
+#print axioms Concurrency.CallSegPc.ra_out
+#print axioms Concurrency.CallSegPc.ret_tys
+#print axioms Concurrency.CallSegOkGT.segOkG
+#print axioms Concurrency.CallSegOkGT.funRealT_link
+#print axioms Concurrency.CallSegOkGT.realizes_linked_calls
+#print axioms Concurrency.CallSegOkGT.Witness.callsInside_of
+#print axioms Concurrency.CallSegOkGT.Witness.rets_x0
+#print axioms Concurrency.CallSegOkGT.Witness.checks2 -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.Witness.name_fC -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.Witness.name_fL -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.Witness.slots_fC -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.Witness.noSelfB -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.Witness.inside_ld -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.Witness.inside_C -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.Witness.retsX0_C -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.Witness.defsRet_L -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.Witness.fs_C -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.Witness.fs_ld -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.Witness.drop_C -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.Witness.drop_ld -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.Witness.linkFree_CL -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.Witness.mem_link2
+#print axioms Concurrency.CallSegOkGT.Witness.scope_C -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.Witness.scope_ld -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.Witness.static_C -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.Witness.fnOk_C -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.Witness.fnOk_L -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.Witness.fr2_f
+#print axioms Concurrency.CallSegOkGT.Witness.fr2_ld
+#print axioms Concurrency.CallSegOkGT.Witness.linkOk_2 -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.Witness.placeOk_2 -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.Witness.funRealT_link_2 -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.Witness.segOkG_2 -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.Witness.realizes_linked_calls_2 -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.WitnessFull.stack_RA5 -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.WitnessFull.wf_RA5 -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.WitnessFull.codeIn_RA5 -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.WitnessFull.f5_ge -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.WitnessFull.checksO -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.WitnessFull.b0C -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.WitnessFull.regsC_eq -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.WitnessFull.locsC -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.WitnessFull.errW₀C -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.WitnessFull.relW_O -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.WitnessFull.argsAt_O -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.WitnessFull.body_RA5 -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.WitnessFull.linv_O -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.WitnessFull.func_f -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.WitnessFull.fam_congr
+#print axioms Concurrency.CallSegOkGT.WitnessFull.rinv_strip
+#print axioms Concurrency.CallSegOkGT.WitnessFull.enterSlots_nil
+#print axioms Concurrency.CallSegOkGT.WitnessFull.res_some
+#print axioms Concurrency.CallSegOkGT.WitnessFull.stepTerm_ret_next
+#print axioms Concurrency.CallSegOkGT.WitnessFull.famG_congr
+#print axioms Concurrency.CallSegOkGT.WitnessFull.rinvG_strip
+#print axioms Concurrency.CallSegOkGT.WitnessFull.next_famG
+#print axioms Concurrency.CallSegOkGT.WitnessFull.step_famG
+#print axioms Concurrency.CallSegOkGT.WitnessFull.reach_invG
+#print axioms Concurrency.CallSegOkGT.WitnessFull.depthG
+#print axioms Concurrency.CallSegOkGT.WitnessFull.partsOkG
+#print axioms Concurrency.CallSegOkGT.WitnessFull.shape_O -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.WitnessFull.next_fam -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.WitnessFull.step_fam -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.WitnessFull.reach_inv -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.WitnessFull.depth_O -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.WitnessFull.partDisj_O
+#print axioms Concurrency.CallSegOkGT.WitnessFull.evShape_congr
+#print axioms Concurrency.CallSegOkGT.WitnessFull.evShape_csC -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.WitnessFull.evShape_nil
+#print axioms Concurrency.CallSegOkGT.WitnessFull.partsOk_O -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.WitnessFull.keepsAllocs_E
+#print axioms Concurrency.CallSegOkGT.WitnessFull.keepsPlace_E
+#print axioms Concurrency.CallSegOkGT.WitnessFull.ent_O -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.WitnessFull.realizes_call_fullT -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.WitnessRmw.factsLR -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.WitnessRmw.laidR -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.WitnessRmw.laidC -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.WitnessRmw.mem_rmw
+#print axioms Concurrency.CallSegOkGT.WitnessRmw.mem_callerR
+#print axioms Concurrency.CallSegOkGT.WitnessRmw.okR -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.WitnessRmw.mem_linkR
+#print axioms Concurrency.CallSegOkGT.WitnessRmw.checksCR -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.WitnessRmw.checksRR -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.WitnessRmw.checksLR -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.WitnessRmw.name_fC -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.WitnessRmw.name_fR -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.WitnessRmw.slots_fC -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.WitnessRmw.slots_fR -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.WitnessRmw.cfgFC -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.WitnessRmw.fs_C -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.WitnessRmw.fs_R -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.WitnessRmw.drop_C -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.WitnessRmw.drop_R -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.WitnessRmw.linkFree_CR -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.WitnessRmw.scope_CR -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.WitnessRmw.scope_R -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.WitnessRmw.static_CR -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.WitnessRmw.static_R -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.WitnessRmw.fnOk_CR -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.WitnessRmw.fnOk_R -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.WitnessRmw.frR_f
+#print axioms Concurrency.CallSegOkGT.WitnessRmw.frR_rmw
+#print axioms Concurrency.CallSegOkGT.WitnessRmw.linkOk_R -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.WitnessRmw.placeOk_R -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.WitnessRmw.stack_RAc -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.WitnessRmw.wf_RAc -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.WitnessRmw.codeIn_RAc -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.WitnessRmw.fc_ge -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.WitnessRmw.checksO -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.WitnessRmw.b0C -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.WitnessRmw.regsC_eq -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.WitnessRmw.locsC -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.WitnessRmw.errW₀C -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.WitnessRmw.relW_O -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.WitnessRmw.argsAt_O -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.WitnessRmw.body_RAc -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.WitnessRmw.linv_O -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.WitnessRmw.func_f -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.WitnessRmw.fam_congr
+#print axioms Concurrency.CallSegOkGT.WitnessRmw.rinv_strip
+#print axioms Concurrency.CallSegOkGT.WitnessRmw.shape_O -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.WitnessRmw.next_fam -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.WitnessRmw.step_fam -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.WitnessRmw.reach_inv -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.WitnessRmw.depth_O -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.WitnessRmw.partDisj_O
+#print axioms Concurrency.CallSegOkGT.WitnessRmw.evShape_csC -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.WitnessRmw.partsOk_O -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.WitnessRmw.ent_O -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.WitnessRmw.realizes_call_rmwT -- witness: native_decide
+#print axioms Concurrency.CallSegOkG.seg_endP
+#print axioms Concurrency.CallSegOkG.seg_end
+#print axioms Concurrency.CallResumeAll.resume_allX
+#print axioms Concurrency.CallResumeAll.resume_allP
+#print axioms Concurrency.CallArity.resume_allAX
+#print axioms Concurrency.CallArity.resume_allA
+#print axioms Concurrency.CallSegExt.memRel_mono
+#print axioms Concurrency.CallSegExt.xfunReal
+#print axioms Concurrency.CallSegOkGT.toNat_sub_ofNat
+#print axioms Concurrency.CallSegOkGT.F_of_FK
+#print axioms Concurrency.CallSegOkGT.dead_not_FK
+#print axioms Concurrency.CallSegOkGT.call_stepX
+#print axioms Concurrency.CallSegOkGT.LinkOk.toX
+#print axioms Concurrency.CallSegOkGT.segOkG_ext
+#print axioms Concurrency.CallSegOkGT.segOkG
+#print axioms Concurrency.CallSegOkGT.funRealT_link_ext
+#print axioms Concurrency.CallSegOkGT.realizes_linked_calls_ext
+#print axioms Concurrency.CallSegOkGT.WitnessExt.laidX -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.WitnessExt.okX -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.WitnessExt.ret_evs
+#print axioms Concurrency.CallSegOkGT.WitnessExt.regVal_enter_saved
+#print axioms Concurrency.CallSegOkGT.WitnessExt.enterSlots_nil'
+#print axioms Concurrency.CallSegOkGT.WitnessExt.regs_enteredG
+#print axioms Concurrency.CallSegOkGT.WitnessExt.cstepG
+#print axioms Concurrency.CallSegOkGT.WitnessExt.ext_ret
+#print axioms Concurrency.CallSegOkGT.WitnessExt.specX -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.WitnessExt.regs_entered -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.WitnessExt.cstepX -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.WitnessExt.extX -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.WitnessExt.fnOk_CX -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.WitnessExt.linkOkX -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.WitnessExt.placeOkX -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.WitnessExt.funRealT_link_X -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.WitnessExt.codeIn_RAX -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.WitnessExt.shape_X -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.WitnessExt.partsOk_X -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.WitnessExt.depth_X -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.WitnessExt.ent_X -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.WitnessExt.realizes_call_extT -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.WitnessMix.okM -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.WitnessMix.fnOk_M -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.WitnessMix.fnOk_LM -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.WitnessMix.linkOkM -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.WitnessMix.placeOkM -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.WitnessMix.extM -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.WitnessMix.codeIn_RAM -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.WitnessMix.fam2_congr
+#print axioms Concurrency.CallSegOkGT.WitnessMix.next_one
+#print axioms Concurrency.CallSegOkGT.WitnessMix.next_call
+#print axioms Concurrency.CallSegOkGT.WitnessMix.next_ret
+#print axioms Concurrency.CallSegOkGT.WitnessMix.next_fam2
+#print axioms Concurrency.CallSegOkGT.WitnessMix.step_fam2
+#print axioms Concurrency.CallSegOkGT.WitnessMix.reach_inv2
+#print axioms Concurrency.CallSegOkGT.WitnessMix.depth2
+#print axioms Concurrency.CallSegOkGT.WitnessMix.partsOk2
+#print axioms Concurrency.CallSegOkGT.WitnessMix.shape_M -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.WitnessMix.partsOk_M -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.WitnessMix.depth_M -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.WitnessMix.ent_M -- witness: native_decide
+#print axioms Concurrency.CallSegOkGT.WitnessMix.realizes_calls_mixT -- witness: native_decide
