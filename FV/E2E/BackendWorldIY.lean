@@ -10,7 +10,7 @@ outside a guard set `Y ⊇ F` admitted by `Ok` at the VCode world of the step th
 guard is a premise on the VCode run (`hGd`): the run of `vcp` from the body entry `w₀` that the
 compilation gives is also a run of the guarded semantics `csemVIG … Ok`. For the lock-step of two
 runs (`LinkSys.thmPDER_det_of`, SEM1 item (3)) it is supplied by the counted pair run
-(`vcode_niI`) with `Ok w Y := Y = Zof F D cm` at a CLIF memory `cm` the pair relates `w` to.
+(`vcode_niIG`) with `Ok w Y := Y = Zof F D cm` at a CLIF memory `cm` the pair relates `w` to.
 -/
 
 namespace E2E
