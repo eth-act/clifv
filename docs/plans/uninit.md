@@ -1179,6 +1179,81 @@ table by `DetTabPRB`; (P3) `progCallPRBRL` gives `advAt j = E j` (`initState_lea
 `tabUpTo_count`); (P4) `Stage2Y` at `j` (the answer `pcall … canon …` is `CallPost`-accepted);
 `CountPRB` then from `returned_nextAdv_leave`; then `thmPRBRL`, `compileExe_correct_init`.
 
+**Per-call pieces, as built (UninitZ18, 2026-10-28).** New leaf modules; no statement changed.
+- (P1) `FV/E2E/RegLevelPrefixG.lean` (`OnCallG`: the call state with the `Good` trace,
+  `regLevel_prefix_coreG/CG/PRSG`), `FV/E2E/BackendPrefixAt.lean`: `step_ne_done_of_callNum`,
+  `runLoop_returned_reachN`, `next_of_returned`, `iselSim_prefixWI_next`,
+  **`backend_prefixPRI_at`**, **`prefix_relatedPRI_at`** (calls `j ≤ N` of a returning run,
+  contracts `n < N` only).
+- Finding [#697](https://github.com/eth-act/clifv/issues/697): `Stage2Y`/`Stage2PRB(R)` ask for
+  an answer at **every** `uses` the CLIF invocation accepts; `VHolds` leaves the upper bits of a
+  narrow argument free, so `XPRBT`'s canonical callee state may differ from the actual one in
+  them and its slot table need not be the oracle's (spill-then-overlap). The machine contracts
+  only call the semantics at the call state's own operands `useVals ops regs u`. Fix (new names,
+  `FV/E2E/LinkArmStage2Z.lean`): `csemV_of_call_subAt`, `CalleeOkGP/CalleeTryOkGP.ofCallSubU`,
+  **`Stage2Z`** (stage 2 at the call's own operands), `Stage2Y.toZ`, `XPBTGY_subZ`,
+  `calleeOk(Try)XPBTGZ`, **`Stage2PRBZ`**, `Stage2PRBR.toZ`, `stage2PRBZ_zero`,
+  **`thmPRBRL_ofZ`**; base calls: `FV/E2E/LinkArmStage2Base.lean` (`stage2Y_base`,
+  `stage2Z_base`).
+- (P2/P4) `FV/E2E/LinkArmProgResultBT.lean` (**`progResultBT`**: a program call's result under
+  the oracle facts), `FV/E2E/LinkArmStage2Prog.lean` (`callPost_of_answers`, `envOfB_only_some`,
+  `OracleAt`, **`stage2_answer`**), `FV/E2E/LinkArmCallTab.lean` (`retAt_enterAt_iff`,
+  **`noRetAt_upTo`**, **`tabUpTo_call_at`**, `tableOf_callee`), `FV/E2E/LinkArmOracleAt.lean`
+  (**`callerFacts`**, **`oracleAt_of_call`**: `OracleAt` at a pre-return call from the caller
+  table's count and the invocation's placement, with `DetTabPRB`).
+- (P3) `FV/E2E/LinkArmProgCallPRBRLT.lean` (`progCallPRBRLT`: `progCallPRBRL` with the callee
+  run's trace), `FV/E2E/LinkArmCallCount.lean` (**`callCount`**: the caller table's count grows
+  over a program call by the CLIF advance `d` of the invocation, `NextAdv cm cm' d`).
+
+**The glue, as built (UninitZ19, 2026-10-28).** New leaf modules; no existing statement changed;
+no generated-code change.
+- Finding (refines #697): `Stage2Z` still quantifies over every call instruction assigning to the
+  machine call at the pc; only at a call site of the compiled code (`VCode.CallSite`) does the
+  scope fix the argument registers (`Ok.callRegs`, `Ok.blrRegs`, the latter only under the GOT
+  guard `gotGuard`), and the machine contracts are only applied there, under the guard (`csemV`).
+  New (`FV/E2E/LinkArmStage2ZS.lean`): `csemV_of_call_subAtG`, `CalleeOkGP/CalleeTryOkGP.ofCallSubS`,
+  **`Stage2ZS`**, `Stage2Z.toZS`, `XPBTGY_subZS`, `calleeOk(Try)XPBTGZS`, **`Stage2PRBZS`**,
+  `stage2PRBZS_zero`, **`thmPRBRL_ofZS`**.
+- Prefix at call `N` for the artifact of `Ok.compiled` (`FV/E2E/BackendPrefixAtCleanup.lean`):
+  `regLevel_value_prefixCG/PRSG`, `iselSim_prefixWI_next_cleanup`, `backend_prefix_cleanupPRI_at`,
+  `prefix_related_cleanupPRI_at`, `backend_prefixPRI_atS`, `prefix_relatedPRI_atS`,
+  **`prefix_relatedPRI_atE`** (`CompiledEither`), also giving the VCode call site and its GOT
+  guard (`gotGuard_of_inv`, `csemV_guard`).
+- `stage2_answerF` (`stage2_answer` whose oracle premise receives the invocation's facts: the
+  callee memory and arguments at the world with the prophecies, the callee's run, `IndTo` and the
+  target of an indirect call, the body `sp`; `stage2_answer` is its corollary).
+- (1) `FV/E2E/LinkArmCallDecode.lean`: `call_of_callLike`, **`callDecode`** (at a call site under
+  the guard, a program call's arguments are in the callee's parameter registers, the machine calls
+  it (`CallsTo`), `RaOk`).
+- (2) `FV/E2E/LinkArmInvokedStep.lean` (**`invoked_step`**: the step of an invoking state gets its
+  memory from the invoked extern; `reachN_call_at`; `callIdx_unique`), `FV/E2E/LinkArmProgInst.lean`
+  (`ProgInst`, **`nv_cases`**: the invocation behind a related call is a program call with
+  `stage2_answerF`'s facts or a base call), `FV/E2E/LinkArmCountStep.lean`
+  (`tabUpTo_succ_noCall`, `tabUpTo_succ_base`, `callDecodeBase`, `adv_base`, `adv_prog`),
+  `FV/E2E/LinkArmStage2Count.lean` (**`oracleAt_at`**, **`countStep_prog`**,
+  **`countStep_base`**: the count invariant `TabUpTo … i e → e = Σ_{k < callsBefore i} advAt k`
+  passes one machine step).
+- (3) `FV/E2E/LinkArmStage2PRBZSOf.lean`: **`stage2PRBZS_of`**: under `NeedSlots`,
+  `Stage2PRBZS κ (M' + 1)` from `ThmPRBRL κ M'`, `DetPRB κ M'`, `DetTabPRB κ (M' + 1)`,
+  `RetOkPRB κ (M' + 1)` (strong induction on the call count; the call state of stage 2 is the
+  machine's call-`n` state by `callIdx_unique`; the count invariant by an inner induction over the
+  machine steps; `oracleAt_at` then `stage2_answerF`).
+- (4) `FV/E2E/LinkArmThmPRBRLAll.lean`: **`thmPRBRL_succS`**, **`thmPRBRL_all`** (`ThmPRBRL` at
+  every depth from `BaseRetOk`, `RetCount`, and `DetPRB`, `DetTabPRB`, `CountPRB` at every depth).
+- Witnesses on `Lsl`: `FV/E2E/LinkArmStage2ZWitness.lean` (UninitZ18's modules: `thmPRBRL_ofZ_zero_Lsl`,
+  `prefix_relatedPRI_atE_f`, instances), `FV/E2E/LinkArmStage2GlueWitness.lean`
+  (`thmPRBRL_ofZS_zero_Lsl`, `stage2PRBZS_one_Lsl`, `thmPRBRL_every_Lsl`, concrete
+  `reachN_call_at_sP`, `invoked_step_sP`, `callIdx_unique_u0`).
+
+Next: `CountPRB` needs the machine's call count at the return to be the CLIF run's call count
+`k` (`callsBefore n = k`; the count invariant then gives `e = Σ_{j<k} advAt j`, and
+`returned_nextAdv_leave` the CLIF side). The counted register-level theorem relates the VCode
+counter to the machine's calls at every realised state (`RealizesCP.countedRun`) but
+`regLevelCorrect_world_atC` does not export it at the return; extend it (and the pipeline copies)
+with `callsBefore n = nc` for the VCode return `(w, nc)`, and `iselSim` with `nc = k`. Then
+`compileExe_correct_init` (CompiledCleanup, `BaseRetOk`/`RetCount`) and the fv-demo witness.
+`DetPRB`/`DetTabPRB` stay premises until `thmPDERX_det_of` lands (UninitZ17b).
+
 **Step 3h, as built (UninitZ10b): the call-count premises are theorems.** `InstCallsOne f` and
 `TryCallsOne f` hold for every `f` (`E2E.instCallsOne_all`, `E2E.tryCallsOne_all`,
 `FV/E2E/IselCallsOneAll.lean`), from `FV/Backend/Proof/IselCallsOne.lean`:
