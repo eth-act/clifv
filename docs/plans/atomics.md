@@ -1072,9 +1072,14 @@ they are; the per-thread layers are new files.
           `chainP_resume`; `segOkG` is its corollary without externals), **`funRealT_link_ext`**,
           **`realizes_linked_calls_ext`**. Witness `CallSegOkGTExtWitness`: `linkX` (the caller
           `fC` and an external `ld` whose code is one `ret`, specification `v1 = bor v0, v0`),
-          `extX` (the contract proven), `linkOkX`, `funRealT_link_X`. Open: the end-to-end
-          witness (`realizes_linked_calls_ext` with every premise discharged, as
-          `realizes_call_fullT`) and a caller of a compiled and an external callee.
+          `ext_ret` (the contract of a one-`ret` external returning its argument, proven in any
+          well-formed link; `extX` on `linkX`), `linkOkX`, `funRealT_link_X`. End to end, every
+          premise discharged but the run: `CallSegOkGTExtFull.realizes_call_extT` (`linkX`, as
+          `realizes_call_fullT`, reachability by `WitnessFull.CallShape`) and
+          `CallSegOkGTMix.realizes_calls_mixT` (one link `[ld, xt, f]`: the compiled caller `fM`,
+          `v1 = call ld(v0); v2 = call xt(v1)`, calls the compiled `atomic_load` and then the
+          external `xt`; its compiled data, `fnOk_M`/`fnOk_LM`, `linkOkM`, and the two-call
+          reachability family `CallShape2`/`Fam2`/`reach_inv2`/`depth2`/`partsOk2`).
         (iv) the thread-wide private set (every activation's `PrivA` and the CLIF events' avoidance
         of it; with CLIF stack slots in callees the private sets of different activations overlap
         other activations' slots); then `SegOk`, `link_compose_ext`, and `realizes_call_full`/the

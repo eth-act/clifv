@@ -10,10 +10,12 @@ with an **external** `ld` instead of the compiled `atomic_load`:
   code, so the caller's memory holds it), at `retBase`; `linkX`: the link of `ld` and `f`;
 * `fX`: the external's CLIF specification `v1 = bor v0, v0; return v1` (it returns its
   argument), `pX = [fC, fX]`;
-* **`extX`**: the external's event contract `CallSegExt.ExtEvContractT` holds (here proven, not
-  assumed): from every call, the `ret` is one event-free label realized by the specification's
-  statement, and the return keeps `sp`, the callee-saved registers and the memory, back on the
-  caller's program with the argument in `x0`;
+* **`ext_ret`**: the event contract `CallSegExt.ExtEvContractT` of an external whose code is one
+  `ret` and whose specification returns its argument (`RetSpec`), in any well-formed link where
+  it is the only function of its name (proven, not assumed): from every call, the `ret` is one
+  event-free label realized by the specification's statement, and the return keeps `sp`, the
+  callee-saved registers and the memory, back on the caller's program with the argument in `x0`;
+  **`extX`** its instance on `linkX`;
 * `fnOk_CX`, **`linkOkX`** (`LinkOkX`: the caller compiled, the external's code and slot-free
   specification, `x0` the return register), `placeOkX`, `linkFreeX`;
 * **`funRealT_link_X`**: `funRealT_link_ext` on `linkX`/`pX` with the static premises and the
@@ -210,14 +212,24 @@ theorem enterSlots_nil' {f : Clif.Function} (hf : f.slots = []) (m : Clif.Mem) :
     · simp only [hf, Clif.placeSlots]; unfold Clif.initSlots; split <;> simp
     · simp [hf, Clif.bumpSlots]
 
-/-- The specification entered on one `i64` argument. -/
-theorem regs_entered {vals : List Clif.Val} {m : Clif.Mem} {s : Clif.State}
-    (hEn : Entered fX vals m s) :
+/-- **A specification returning its argument**: entry block `B` on one `i64` argument `v0`, the
+statement `v1 = bor v0, v0`, `return v1`, no stack slot, the argument and the result in `x0`. -/
+structure RetSpec (fS : Clif.Function) (B : Clif.Block) : Prop where
+  b0 : fS.blocks[0]? = some B
+  params : B.params = [(0, .i64)]
+  body : B.body = [{ results := [1], inst := .binary .bor .i64 0 0 }]
+  term : B.term = .ret [1]
+  slots : fS.slots = []
+  locs : locsOf fS.sig = [.reg (.x 0)]
+
+/-- A `RetSpec` specification entered on one `i64` argument. -/
+theorem regs_enteredG {fS : Clif.Function} {B : Clif.Block} (hS : RetSpec fS B)
+    {vals : List Clif.Val} {m : Clif.Mem} {s : Clif.State} (hEn : Entered fS vals m s) :
     ∃ b : BitVec 64, vals = [⟨.i64, b⟩] ∧ s.frame.regs 0 = some ⟨.i64, b⟩ := by
   obtain ⟨-, -, -, -, B0, hB0, -, -, hregs, htys⟩ := hEn
-  rw [b0X] at hB0
+  rw [hS.b0] at hB0
   cases hB0
-  rw [params_B0X] at hregs htys
+  rw [hS.params] at hregs htys
   cases vals with
   | nil => simp [Clif.Regs.setMany] at hregs
   | cons v vs =>
@@ -232,15 +244,16 @@ theorem regs_entered {vals : List Clif.Val} {m : Clif.Mem} {s : Clif.State}
       rw [← hregs]
       simp
 
-/-- **The specification's statement**: `v1 = v0`, no event. -/
-theorem cstepX (env : Clif.Env) {vals : List Clif.Val} {m : Clif.Mem} {s : Clif.State}
-    (hEn : Entered fX vals m s) {b : BitVec 64} (hr0 : s.frame.regs 0 = some ⟨.i64, b⟩) :
-    CStep env pX (.run s) [] (.run { s with frame := { s.frame with
+/-- **A `RetSpec` specification's statement**: `v1 = v0`, no event. -/
+theorem cstepG (env : Clif.Env) (p : Clif.Program) {fS : Clif.Function} {B : Clif.Block}
+    (hS : RetSpec fS B) {vals : List Clif.Val} {m : Clif.Mem} {s : Clif.State}
+    (hEn : Entered fS vals m s) {b : BitVec 64} (hr0 : s.frame.regs 0 = some ⟨.i64, b⟩) :
+    CStep env p (.run s) [] (.run { s with frame := { s.frame with
       regs := s.frame.regs.set 1 ⟨.i64, b⟩, body := [] } }) := by
   obtain ⟨-, -, -, -, B0, hB0, hbody, -, -, -⟩ := hEn
-  rw [b0X] at hB0
+  rw [hS.b0] at hB0
   cases hB0
-  rw [body_B0X] at hbody
+  rw [hS.body] at hbody
   have hga : s.frame.getAs 0 .i64 = .ok b := by
     simp [Clif.Frame.getAs, Clif.Frame.get, hr0, Clif.Val.as?, Clif.Res.ofOption]
   have hev : ∀ mem : Clif.Mem, Clif.evalInst s.frame mem (.binary .bor .i64 0 0) =
@@ -248,59 +261,65 @@ theorem cstepX (env : Clif.Env) {vals : List Clif.Val} {m : Clif.Mem} {s : Clif.
     intro mem
     simp [Clif.evalInst, hga, Clif.BinaryOp.isShift, Clif.Sem.binary]
     exact ⟨b, rfl, b, rfl, by simp only [Clif.Sem.bor]; congr 1; exact BitVec.or_self⟩
-  have hs : Clif.step env pX s = .next { s with frame := { s.frame with
+  have hs : Clif.step env p s = .next { s with frame := { s.frame with
       regs := s.frame.regs.set 1 ⟨.i64, b⟩, body := [] } } := by
-    rw [Clif.step_inst env pX s _ [] hbody (fun _ _ h => by cases h) (fun _ _ _ h => by cases h)]
+    rw [Clif.step_inst env p s _ [] hbody (fun _ _ h => by cases h) (fun _ _ _ h => by cases h)]
     rw [hev]
     simp [Clif.StepResult.ofRes, Clif.continueWith, Clif.Regs.setMany]
   exact ClifCStep.cstep_of_eval (evs := []) (m0 := s.mem) hbody (fun _ _ h => by cases h)
     (fun _ _ _ h => by cases h) ⟨by simp [evShape, hbody], by simp⟩ trivial
     (fun B _ => by rw [hev]; rfl) hs
 
-/-- **The external's event contract holds** (module doc): its code is one `ret`. -/
-theorem extX {env : Clif.Env} :
-    ExtEvContractT linkX env pX (fun _ => none) (· = "ld") (fun _ => [.x 0]) := by
+/-- **The event contract of an external whose code is one `ret`** and whose specification
+returns its argument (`RetSpec`), in any well-formed link where it is the only function named
+`nm`: from every call, the `ret` is one event-free label realized by the specification's
+statement, and the return keeps `sp`, the callee-saved registers and the memory, back on the
+caller's program with the argument in `x0`. -/
+theorem ext_ret {L : Link} {env : Clif.Env} {p : Clif.Program} {syms : String → Option Nat}
+    {nm : String} {FX : LFn} {fS : Clif.Function} {BS : Clif.Block} (hok : L.Ok)
+    (hmem : (nm, FX) ∈ L.fns) (huniq : ∀ F, (nm, F) ∈ L.fns → F = FX) (hl : FX.LaidOut)
+    (hline : FX.fa.lines.toList[0]? = some (.ins .ret none)) (hfS : p.func? nm = some fS)
+    (hS : RetSpec fS BS) :
+    ExtEvContractT L env p syms (· = nm) (fun _ => [.x 0]) := by
   refine ⟨fun n F fs hn hF hfs x mon K Fr m vals s hEn hAr hMR hFr hK hal herr hcl => ?_⟩
   subst hn
-  obtain rfl : F = idF := by
-    rcases mem_linkX hF with ⟨-, rfl⟩ | ⟨h, -⟩
-    · rfl
-    · exact absurd h (by decide)
-  rw [func_ldX] at hfs
+  have hFX : FX = F := (huniq F hF).symm
+  subst hFX
+  rw [hfS] at hfs
   cases hfs
-  obtain ⟨b, rfl, hr0⟩ := regs_entered hEn
-  have hcs := cstepX env hEn hr0
-  obtain ⟨hcall, -, -, hmem, B0, hB0, -, hterm, -, -⟩ := hEn
-  rw [b0X] at hB0
+  obtain ⟨b, rfl, hr0⟩ := regs_enteredG hS hEn
+  have hcs := cstepG env p hS hEn hr0
+  obtain ⟨hcall, -, -, hmem', B0, hB0, -, hterm, -, -⟩ := hEn
+  rw [hS.b0] at hB0
   cases hB0
-  rw [term_B0X] at hterm
+  rw [hS.term] at hterm
   obtain ⟨nc, Fc, hFc, hprog, hIn⟩ := hcl
-  obtain ⟨hal0, hby0, hsy0⟩ := enterSlots_nil' slots_fX m
+  obtain ⟨hal0, hby0, hsy0⟩ := enterSlots_nil' hS.slots m
   intro ls t' hr
   cases hr with
   | nil =>
     exact ⟨0, [], .run s, id, Nat.le_refl _, by simpa [evTr] using CallCompose.xClosed_nil, .nil,
       by simpa [evTr] using CallCompose.refines_nil, .inl rfl⟩
   | cons hs hp ho hrest =>
-    obtain ⟨hev, hcls⟩ := ret_evs laidX (j := 0) (t := none) rfl (enter_program idF x)
-      (enter_ofNat_zero idF x)
+    obtain ⟨hev, hcls⟩ := ret_evs hl (j := 0) (t := none) hline (enter_program FX x)
+      (enter_ofNat_zero FX x)
     obtain ⟨rfl, rfl⟩ := CallSeg.tstep_plain_nil hs hp hev hcls
-    have herr' : Arm.r .ERR (enter idF x) = .None := by
+    have herr' : Arm.r .ERR (enter FX x) = .None := by
       rw [Link.r_enter (by simp) (by simp)]; exact herr
-    have hM : linkX.M (enter idF x) = set_program (w .PC (xreg 30 (enter idF x)) (enter idF x))
+    have hM : L.M (enter FX x) = set_program (w .PC (xreg 30 (enter FX x)) (enter FX x))
         (Fc.fb.program Fc.base) :=
-      M_ret_x30 okX mem_idX hFc (enter_program idF x) (isRet_idF x) herr'
-        (by have hx30 : xreg 30 (enter idF x) = Arm.r .PC x + 4#64 := enter_x30 idF x
+      M_ret_x30 hok hF hFc (enter_program FX x) ⟨0, none, hline, enter_ofNat_zero FX x⟩ herr'
+        (by have hx30 : xreg 30 (enter FX x) = Arm.r .PC x + 4#64 := enter_x30 FX x
             rw [hx30]; exact hIn)
-    have hmemv : (linkX.M (enter idF x)).mem = x.mem := by
+    have hmemv : (L.M (enter FX x)).mem = x.mem := by
       rw [hM, mem_set_program, ArmFoot.w_mem, enter_mem]
     have hregv : ∀ r : Reg, (r ∈ calleeSaved ∨ r = .x 0) →
-        regVal (linkX.M (enter idF x)) r = regVal x r := by
+        regVal (L.M (enter FX x)) r = regVal x r := by
       intro r hr
       rw [hM, regVal_set_program, CallResumeL.Witness.regVal_w_pc]
       rcases hr with hr | rfl
-      · exact regVal_enter_saved idF x hr
-      · exact regVal_enter_x0 idF x
+      · exact regVal_enter_saved FX x hr
+      · exact regVal_enter_x0 FX x
     have htr : ∀ rest : List Lab, evTr ((⟨[], false⟩ :: rest : List Lab).take 1) = [[]] :=
       fun _ => by simp [evTr]
     refine ⟨1, [[]], _, id, by simp, ?_, .cons hcs .nil, ?_, .inr (.inr ⟨_, rfl, hcall,
@@ -312,7 +331,7 @@ theorem extX {env : Clif.Env} :
         rw [CallStepT.evAt_nil1] at hy; cases hy
     · exact {
         pc := by
-          have hx30 : xreg 30 (enter idF x) = Arm.r .PC x + 4#64 := enter_x30 idF x
+          have hx30 : xreg 30 (enter FX x) = Arm.r .PC x + 4#64 := enter_x30 FX x
           rw [hM, r_set_program, r_of_w_same, hx30]
         err := by rw [hM, r_set_program, r_of_w_different (by simp)]; exact herr'
         sp := by
@@ -325,22 +344,22 @@ theorem extX {env : Clif.Env} :
         mem := {
           bytes := fun a b' hv hb => by
             have hv' : m.valid a 1 = true := by
-              simpa [Clif.Mem.valid, hmem, hal0] using hv
-            have hb' : m.bytes a = some b' := by simpa [hmem, hby0] using hb
+              simpa [Clif.Mem.valid, hmem', hal0] using hv
+            have hb' : m.bytes a = some b' := by simpa [hmem', hby0] using hb
             have := hMR.bytes a b' hv' hb'
             unfold Arm.read_mem at this ⊢
             rw [hmemv]; exact this
-          valid := fun a n hv => ⟨(hMR.valid a n (by simpa [Clif.Mem.valid, hmem, hal0] using hv)).1,
-            fun _ _ h => h⟩
-          symbols := by simp [hmem, hsy0, hMR.symbols] }
+          valid := fun a n hv =>
+            ⟨(hMR.valid a n (by simpa [Clif.Mem.valid, hmem', hal0] using hv)).1, fun _ _ h => h⟩
+          symbols := by simp [hmem', hsy0, hMR.symbols] }
         rets := fun vals' cm hdone => by
-          have hst : Clif.step env pX { s with frame := { s.frame with
+          have hst : Clif.step env p { s with frame := { s.frame with
                 regs := s.frame.regs.set 1 ⟨.i64, b⟩, body := [] } } =
-              Clif.stepTerm env pX { s with frame := { s.frame with
+              Clif.stepTerm env p { s with frame := { s.frame with
                 regs := s.frame.regs.set 1 ⟨.i64, b⟩, body := [] } } (.ret [1]) := by
-            rw [Clif.step_term env pX _ rfl]
+            rw [Clif.step_term env p _ rfl]
             exact congrArg _ hterm
-          obtain ⟨hgm, -⟩ := (stepTerm_ret (env := env) (p := pX) (xs := [1])
+          obtain ⟨hgm, -⟩ := (stepTerm_ret (env := env) (p := p) (xs := [1])
             (s := { s with frame := { s.frame with
               regs := s.frame.regs.set 1 ⟨.i64, b⟩, body := [] } }) hcall).2.2 vals' cm
             (by rw [← hst]; exact hdone)
@@ -348,14 +367,14 @@ theorem extX {env : Clif.Env} :
             simp [Clif.Frame.getMany, Clif.Frame.get] at hgm
             exact hgm.symm
           subst hv'
-          refine ⟨[regVal (linkX.M (enter idF x)) (.x 0)], ⟨by simp, fun j v y hj hy => ?_⟩,
+          refine ⟨[regVal (L.M (enter FX x)) (.x 0)], ⟨by simp, fun j v y hj hy => ?_⟩,
             fun j r y hj hy => ?_⟩
           · cases j with
             | zero =>
               simp only [List.getElem?_cons_zero, Option.some.injEq] at hj hy
               subst hj hy
               rw [hregv _ (.inr rfl)]
-              exact hAr (.x 0) _ (by rw [locs_fX]; simp)
+              exact hAr (.x 0) _ (by rw [hS.locs]; simp)
             | succ j => simp at hj
           · cases j with
             | zero =>
@@ -363,6 +382,30 @@ theorem extX {env : Clif.Env} :
               subst hj hy
               rfl
             | succ j => simp at hj }
+
+/-- `fX` returns its argument. -/
+theorem specX : RetSpec fX B0X := ⟨b0X, params_B0X, body_B0X, term_B0X, slots_fX, locs_fX⟩
+
+/-- The specification entered on one `i64` argument. -/
+theorem regs_entered {vals : List Clif.Val} {m : Clif.Mem} {s : Clif.State}
+    (hEn : Entered fX vals m s) :
+    ∃ b : BitVec 64, vals = [⟨.i64, b⟩] ∧ s.frame.regs 0 = some ⟨.i64, b⟩ :=
+  regs_enteredG specX hEn
+
+/-- **The specification's statement**: `v1 = v0`, no event. -/
+theorem cstepX (env : Clif.Env) {vals : List Clif.Val} {m : Clif.Mem} {s : Clif.State}
+    (hEn : Entered fX vals m s) {b : BitVec 64} (hr0 : s.frame.regs 0 = some ⟨.i64, b⟩) :
+    CStep env pX (.run s) [] (.run { s with frame := { s.frame with
+      regs := s.frame.regs.set 1 ⟨.i64, b⟩, body := [] } }) :=
+  cstepG env pX specX hEn hr0
+
+/-- **The external's event contract holds** (module doc): its code is one `ret`. -/
+theorem extX {env : Clif.Env} :
+    ExtEvContractT linkX env pX (fun _ => none) (· = "ld") (fun _ => [.x 0]) :=
+  ext_ret okX mem_idX (fun F hF => by
+    rcases mem_linkX hF with ⟨-, rfl⟩ | ⟨h, -⟩
+    · rfl
+    · exact absurd h (by decide)) laidX rfl func_ldX specX
 
 /-! ## The link's static premises -/
 
