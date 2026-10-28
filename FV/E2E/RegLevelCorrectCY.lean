@@ -76,6 +76,22 @@ theorem csemVIG_sub {gv : Nat → String → Prop} {F : BitVec 64 → Prop} {ctx
   obtain ⟨r', h1, h2⟩ := h
   exact ⟨r', (csemVG_inv h1).2, h2⟩
 
+/-- **The guard at `Y := F` is no restriction**: `csemVG … (fun _ Y => Y = F)` is `csemV`. -/
+theorem csemVG_eqF (gv : Nat → String → Prop) (F : BitVec 64 → Prop) (ctx : FnCtx) (X : ExtSem) :
+    csemVG gv F ctx X (fun _ Y => Y = F) = csemV gv F ctx X := by
+  funext i us w
+  unfold csemVG
+  split
+  · rfl
+  · rename_i hg
+    cases h : csemV gv F ctx X i us w with
+    | none => rfl
+    | some r => exact absurd ⟨F, fun _ h => h, rfl, fun _ => ⟨r, csemV_sub h⟩⟩ hg
+
+theorem csemVIG_eqF (gv : Nat → String → Prop) (F : BitVec 64 → Prop) (ctx : FnCtx) (X : ExtSemI) :
+    csemVIG gv F ctx X (fun _ Y => Y = F) = csemVI gv F ctx X := by
+  simp only [csemVIG, csemVI, csemVG_eqF]
+
 /-- The activation's guarded semantics. -/
 noncomputable def RL.semG (R : RL) (Ok : Arm.ArmState → (BitVec 64 → Prop) → Prop) :
     ISem CV Arm.ArmState :=
