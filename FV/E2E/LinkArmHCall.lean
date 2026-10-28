@@ -238,12 +238,9 @@ theorem hooks_lock_tls {F : BitVec 64 → Prop} (hN : HookNIX L.Hb L.BaseDest F)
   exact hN.2 m r Z u u' hZ hZF
 
 set_option maxHeartbeats 2000000 in
-/-- **The call hook keeps a lock at a `call` of the first run's call-`n` state** (the dispatch of
-`progOsPRBRLR`/`progOsRegPRBRLR`): from `XPRBT … n`'s answer at the call's world, a call of a
-function of `P` (`bl`, or `blr` of its address) by `pcall_lockXPR`, a base call by
-`hooks_lock_base` (the second state's `blr` target is the first's: the target register is not
-`x30`). -/
-theorem hookLock_call (hL : L.Ok) (hκ : L.Budget κ) {M : Nat} (hcl : L.CallLock κ M)
+/-- **`hookLock_call` for any clobber list of the static check** (the call of a `try_call`
+is checked with the `try_call`'s clobbers; only the operands' locations are used). -/
+theorem hookLock_callS (hL : L.Ok) (hκ : L.Budget κ) {M : Nat} (hcl : L.CallLock κ M)
     {F : BitVec 64 → Prop} (hN : HookNIX L.Hb L.BaseDest F)
     {g : Clif.Function} (hg : g ∈ L.P.funcs) {G : BitVec 64 → Prop} {s0 : Arm.ArmState}
     (himgF : ∀ a, L.Img a → F a) (himgG : ∀ a, L.Img a → G a)
@@ -256,7 +253,7 @@ theorem hookLock_call (hL : L.Ok) (hκ : L.Budget κ) {M : Nat} (hcl : L.CallLoc
     {c : CheckCtx} {wh : String} {ops : Array Operand} {regs : Array Reg} {i' : MInst}
     {w : Arm.ArmState} {outs : List CV} {w' : Arm.ArmState}
     (hops : (MInst.call info).operands = .ok ops)
-    (hst : c.checkStatic wh ops (regs.map .reg) (MInst.call info).clobbers = .ok ())
+    (hst : ∃ clob, c.checkStatic wh ops (regs.map .reg) clob = .ok ())
     (hasg : (MInst.call info).assign regs = .ok i')
     (hP : CallAt (L.A g).fa (L.A g).base (Arm.r .PC t) i') (hsw : SameWorld F t w)
     (hG : ∀ a, G a → t.mem a = s0.mem a)
@@ -266,6 +263,7 @@ theorem hookLock_call (hL : L.Ok) (hκ : L.Budget κ) {M : Nat} (hcl : L.CallLoc
     (hZd : ∀ a, StackBelow (κ M g) (spv t) a → ¬ Z a)
     (himgt' : ∀ a, L.Img a → t'.mem a = L.imgMem a) :
     StEqOutX Z ((L.hooks M).call (callDest info) t) ((L.hooks M).call (callDest info) t') := by
+  obtain ⟨clob, hst⟩ := hst
   cases hd : info.dest with
   | sym nm =>
     have hcd : callDest info = some nm := by simp [callDest, hd]
@@ -368,6 +366,37 @@ theorem hookLock_call (hL : L.Ok) (hκ : L.Budget κ) {M : Nat} (hcl : L.CallLoc
           hG (hL.raBlr g hg _ hsite (fun n => by simp) h hh hdecl.1.1 _ hcp)
           hsw hmskQ hrgnQ hx hZ hZF hZd himgt'
       · cases hx
+
+/-- **The call hook keeps a lock at a `call` of the first run's call-`n` state** (the dispatch of
+`progOsPRBRLR`/`progOsRegPRBRLR`): from `XPRBT … n`'s answer at the call's world, a call of a
+function of `P` (`bl`, or `blr` of its address) by `pcall_lockXPR`, a base call by
+`hooks_lock_base` (the second state's `blr` target is the first's: the target register is not
+`x30`). -/
+theorem hookLock_call (hL : L.Ok) (hκ : L.Budget κ) {M : Nat} (hcl : L.CallLock κ M)
+    {F : BitVec 64 → Prop} (hN : HookNIX L.Hb L.BaseDest F)
+    {g : Clif.Function} (hg : g ∈ L.P.funcs) {G : BitVec 64 → Prop} {s0 : Arm.ArmState}
+    (himgF : ∀ a, L.Img a → F a) (himgG : ∀ a, L.Img a → G a)
+    (himgS : ∀ a, L.Img a → s0.mem a = L.imgMem a)
+    {info : CallInfo} (hsite : (L.A g).vcp.CallSite info) (ctx : FnCtx)
+    {P : Nat → BitVec 64 → BitVec 8} {R : Nat → Arm.ArmState} {n : Nat}
+    {t t' : Arm.ArmState}
+    (hmskQ : ∀ f, MaskedReg f → Arm.r f t = Arm.r f (R n))
+    (hrgnQ : ∀ a, StackBelow (κ M g) (spv t) a → t.mem a = P n a)
+    {c : CheckCtx} {wh : String} {ops : Array Operand} {regs : Array Reg} {i' : MInst}
+    {w : Arm.ArmState} {outs : List CV} {w' : Arm.ArmState}
+    (hops : (MInst.call info).operands = .ok ops)
+    (hst : c.checkStatic wh ops (regs.map .reg) (MInst.call info).clobbers = .ok ())
+    (hasg : (MInst.call info).assign regs = .ok i')
+    (hP : CallAt (L.A g).fa (L.A g).base (Arm.r .PC t) i') (hsw : SameWorld F t w)
+    (hG : ∀ a, G a → t.mem a = s0.mem a)
+    (hsem : csemV (GotV (L.A g).vcp) F ctx (L.XPRBT κ M g F P R n) (.call info)
+      (useVals ops regs t) w = some (outs, w', .next))
+    {Z : BitVec 64 → Prop} (hZ : StEqOutX Z t t') (hZF : ∀ a, Z a → F a)
+    (hZd : ∀ a, StackBelow (κ M g) (spv t) a → ¬ Z a)
+    (himgt' : ∀ a, L.Img a → t'.mem a = L.imgMem a) :
+    StEqOutX Z ((L.hooks M).call (callDest info) t) ((L.hooks M).call (callDest info) t') :=
+  L.hookLock_callS hL hκ hcl hN hg himgF himgG himgS hsite ctx hmskQ hrgnQ hops ⟨_, hst⟩ hasg hP
+    hsw hG hsem hZ hZF hZd himgt'
 
 end LinkSys
 
