@@ -659,6 +659,82 @@ results; the slot bytes the callee's CLIF run reads are `P n`'s, the #665 `Place
 interface with UninitZ6b) and `xniP`/`progX_niP` (from `progCallPR`'s NI family). (iii)
 `ThmPDER`'s determinism clause by the lock-step (§5.8 (1), (2)).
 
+### 5.9 The CLIF → counted-VCode half: per-step contracts (UninitZ9, 2026-10-28)
+
+**Finding.** With `init = none` (`WorldEntry`) `ThmPR` already follows from `Thm` (`Thm.thmPR`),
+so the indexed pipeline matters only with the oracle (`WorldEntryB`, item (d)). There the
+per-index callee contract `XCallsOk env … (RelW …) (XPRI.at n)` — for **every** CLIF memory `cm`,
+VCode world `w` and argument list related by `RelW` — is false: the callee's CLIF run reads the
+table entries from `cm`'s counter on, and those are the machine's slot bytes only for the actual
+call (actual memory, arguments and index; a callee entered with other arguments enters other
+nested activations than the ones the table recorded). The driver (`driver_correct`) consumes the
+contracts per instruction for arbitrary related states (`LowerInstOk.run`); the rule theorems
+fix one memory relation for the states before and after a call (`CallRulesCorrect`: `∀ isem :
+Sem`, one `MR`) and `Sem`'s world is `Arm.ArmState`. So an index-dependent relation (counter
+`c_n` before call `n`, `c_{n+1}` after it) cannot be threaded through the rule-level contracts,
+and the index cannot live in the Arm world (every field `SameWorld` keeps is tied to the machine
+by `StRel`, every other one breaks `MRStable`). `LowerInstOk.csemI_le1` (#573) with one `MR` and
+a counter invariant `Q` is therefore not enough once the contract depends on `Q`.
+
+**Decision (conservative: no rule-level, driver or semantics change; new files).** Contracts per
+step of the actual CLIF run:
+1. `Clif.Env.only env A`: `env` whose externs answer only invocations `A name vals cm` (`stuck`
+   otherwise; the same names are defined). Every extern invocation of one `Clif.step` from `s`
+   is at `s.mem` with the one name and argument list the step determines (`call`,
+   `call_indirect` via `callExternAt`, `try_call`, `try_call_indirect`), so restricting to it
+   does not change the step.
+2. Each step of the simulation instantiates the existing `DriverHyp` with `sem := csem F ctx
+   (XI.at n)` (`n` = the counter), `MR := RelW …` and the restricted environment
+   (`instCalls_of_rules`, `termCalls_of_rules`, … unchanged), runs the existing one-step lemmas
+   (`stmt_run`, `term_step_*`, `entry_step`) and lifts the segment run to `csemI` at counter `n`.
+   The induction over the run (`sim_run_abi`'s, ≈100 lines) is redone with the per-step
+   hypothesis; nothing in `LowerSim.lean` changes.
+3. Call counts. The lift needs the executed part of a segment to contain at most one call, and
+   the counter to advance with the CLIF run's extern calls. Non-call statements and non-`try`
+   terminators: dynamic — the same `DriverHyp` with an `ExtSem` whose calls fail and an empty
+   environment (its contracts are vacuous) still runs the segment, so no executed instruction is
+   a call. `call`/`call_indirect`/`try_call(_indirect)`: the lowering emits exactly one
+   `MInst.isCallI` instruction; this is a property of the ISLE lowering, stated as premises
+   (`InstCallsOne f`, `TryCallsOne f`) until a rule-table certificate proves them.
+4. The pipeline premise is per state: for `s` reached from the entry after `n` extern calls
+   (`ReachN`), the contract of `XI.at n` for the environment restricted to `s`'s invocation. No
+   counter invariant `Q` enters the simulation: the discharge (item (b)) reads it off the actual
+   run (`counter_at` along `ReachN`), at the machine's `n`-th call (`OnCallPR`).
+
+**As built (steps 3a–3e, branch `agent/uninit-z9`).**
+- `FV/E2E/ClifEnvOnly.lean`: `Clif.Env.only`, `onlyFn` (+`_of`/`_of_not`), `Env.only_extern_eq`,
+  `CallInv`, `IndInv`, `Invoked`, `stepCall_only`, `callExternAt_only`, `stepCallIndirect_only`,
+  **`step_only`** (`step (env.only A) p s = step env p s` when `A ⊇ Invoked env p s`).
+- `FV/E2E/IselSimI.lean`: `ExtSem.noCall`, `csem_noCall_call`, `csem_noCall_proj`, `MRI`,
+  `callNum`, `ReachN`, `xCallsOk_none`/`xCallsIndOk_none`, `step_none_of_callNum`,
+  `driverHyp_relW` (`iselSim_relW`'s `DriverHyp` for any contracts), `vTrapFrom_mapW`/
+  `vRetFrom_mapW`, `callsI_*`, `InstCallsOne`, `segCalls_of`, `stmt_stepI_noCall`,
+  `stmt_stepI_call`, `term_stepI`.
+- `FV/E2E/IselSimITry.lean`: `TryCallsOne`, `term_step_tryI` (`term_step_tryP`'s proof copied,
+  ending in the counted run: its `TermZone` star alone does not fix the number of calls, the
+  block can be re-entered), `sim_runI`, **`iselSim_relWI`** (CLIF → `csemI` from counter 0).
+- `FV/E2E/PrepareSoundW.lean`: `prep_soundW` (`prep_sound` for any world with `DriverSemG`; the
+  original uses only `jump`/`retarget`). `FV/E2E/GotFlowI.lean`: `GotInvI`, `vRetFrom_gotVI`,
+  `vTrapFrom_gotVI`.
+- `FV/E2E/BackendWorldI.lean`: `ActEntryPR`, **`backend_correct_worldPRI`** (legacy `Compiled`
+  path: `iselSim_relWI` → `prep_soundW` → GOT → `regLevelCorrect_worldPRS`).
+- Witnesses `FV/E2E/IselSimIWitness.lean`: `step_only_ret`, `a2_callsOne`, `a2_compiled`,
+  `a2_xcalls`, `a2_iselSimI`, `a2_worldPRI` (`LinkWitness`'s `a2`).
+
+**Remaining for item (a).** The cleanup path (`CompiledCleanup`, the one `Link.DeadCleanup`
+uses): CLIF → counted VCode for `valueSem` (the per-step lemmas above are stated for `csem`;
+generalise them over a semantics family with the two facts they use: non-calls do not read
+`X.call`, calls of `X.noCall` fail), `prune_correct` and the GOT flow counted, and the counted
+value-semantics register level (`regLevelCorrect_world_value` → `…_valuePRS`, the chain of steps
+2i–2u for `valueSemV`: the pure items have no call states, the call items are `csem`'s). Then
+`backend_correct_world_ni_pipeline`'s NI clause counted, and the `CompiledEither` pipeline.
+Step 3f, as built: `FV/E2E/DeadCleanupRealizesC.lean`: `realizes_value_allC`
+(`realizes_value_all`'s proof on `realizes_allC`: each value step is matched by an `RL.sem` step
+of the same configuration, so the segment's call-state count carries over). Next on that chain:
+`realizes_value_allC_sp`, `regLevelCorrect_world_value_atCS`/`_worldCS`/`_worldPRS` (copies of
+`RegLevelCorrectPRS.lean`'s with `csemVI` → the counted `valueSemV`, `realizes_allC_sp` →
+`realizes_value_allC_sp`; the `rets`/halt cases as in `DeadCleanupRegLevel.lean`).
+
 ## 6. Heap (separate gap, SEM2)
 
 `BaseOk.baseKeepsAllocs`/`baseNoAlloc` require base externs to allocate nothing whenever a program
