@@ -236,7 +236,7 @@ theorem iselSimT_of_rules {p : Clif.Program} {f : Clif.Function} {vc : VCode}
       (hRef s') (mrStable_holds ⟨F s', syms, slotOff, out⟩ f) (hcalls s') (hicalls s') (hmem s')
       (hFP s') (outArgsOk_holds ⟨F s', syms, slotOff, out⟩ f)
       (callsStack_mono (callsStackT_of_check hlow) houtB)
-      (memRelOk_holds ⟨F s', syms, slotOff, out⟩ f) hctxT hstT
+      (memRelOk_holds ⟨F s', syms, slotOff, out⟩ f) hctxT hshape.scope hstT
     terms := termCallsT_of_rules htermRules htermUn hbranch hbranchEx (hRef s')
       (mrStable_holds ⟨F s', syms, slotOff, out⟩ f) hctxT
     ext := fun B hB st hst fn args hi e he => hsub.externCalls B hB st hst fn args hi e he
