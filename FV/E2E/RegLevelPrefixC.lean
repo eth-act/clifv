@@ -1,4 +1,4 @@
-import FV.E2E.RegLevelCorrectC
+import FV.E2E.RegLevelCorrectPRS
 
 /-!
 # The counted register level up to call `N` (SEM1 #537, item (d), docs/plans/uninit.md §5.9)
@@ -305,9 +305,10 @@ theorem armStepX_call_irrel (X : ExtSem)
     (fa : FnAsm) : ArmStepX { X with call := c } H fa = ArmStepX X H fa := rfl
 
 /-- **The counted register level up to call `N`**: with the callee contracts of the calls
-`n < N` only, every state of the counted VCode run with counter `N` at a call instruction is
-matched by a state `u` of the machine run with `N` call states before it (`OnCall … N`), at the
-call, with the contract's premises for the VCode's arguments and world (`CallSiteAt`). -/
+`n < N` only (at the activation's call-`n` states at the body `sp`, `regLevelCorrect_world_atCS`'s
+shape), every state of the counted VCode run with counter `N` at a call instruction is matched by
+a state `u` of the machine run with `N` call states before it (`OnCall … N`) at the body `sp`, at
+the call, with the contract's premises for the VCode's arguments and world (`CallSiteAt`). -/
 theorem regLevel_prefixC {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAsm}
     {fb : FnBin} {k : Nat} {cc : CheckCtx} {ins : Array (Option AState)}
     {a0 : AState} (hcheck : CheckedAt vcp rf cc ins a0) (hok : EntryOk a0)
@@ -318,10 +319,12 @@ theorem regLevel_prefixC {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAsm}
     {base ra : BitVec 64} {s : Arm.ArmState} (hent : AbiCall fb base ra s)
     (hres : StackAvail K af s) (hG : ∀ a, G a → ¬ StackBelow (frameDrop af + K) (spv s) a)
     {N : Nat}
-    (hC : ∀ n < N, CalleeOkGP (OnCall (ArmStepX (XI.at 0) H fa) fa base s n)
+    (hC : ∀ n < N, CalleeOkGP (fun u => OnCall (ArmStepX (XI.at 0) H fa) fa base s n u ∧
+        spOf u = spv s - BitVec.ofNat 64 (frameDrop af))
       (frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af G s)
       K G s (CallAt fa base) (XI.at n) H vcp.CallSite gv)
-    (hCT : vcp.hasTryCall = true → ∀ n < N, CalleeTryOkGP (OnCall (ArmStepX (XI.at 0) H fa) fa base s n)
+    (hCT : vcp.hasTryCall = true → ∀ n < N, CalleeTryOkGP (fun u =>
+        OnCall (ArmStepX (XI.at 0) H fa) fa base s n u ∧ spOf u = spv s - BitVec.ofNat 64 (frameDrop af))
       (frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af G s) K G s
       (CallAt fa base) (XI.at n) H vcp.TrySite gv)
     (hpc : ∀ d s, Arm.r .ERR s = .None → Arm.CheckSPAlignment s →
@@ -339,6 +342,7 @@ theorem regLevel_prefixC {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAsm}
       vcp.blocks[b]? = some vb → vb.insts[k]? = some i →
       (∃ info, i = .call info ∨ ∃ ti, i = .tryCall info ti) → ∀ ops, i.operands = .ok ops →
       ∃ u, OnCall (ArmStepX (XI.at 0) H fa) fa base s N u ∧
+        spOf u = spv s - BitVec.ofNat 64 (frameDrop af) ∧
         CallSiteAt (frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af G s)
           K G s fa base i ((ops.toList.filter Operand.isUse).map (ρ ·.vreg)) w u := by
   obtain ⟨lm, hlm⟩ := FnAsm.layout_labelOffsets hlayout
@@ -351,16 +355,17 @@ theorem regLevel_prefixC {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAsm}
     by show 4 * fb.words.size ≤ 2 ^ 64; have := hent.fits; omega, hres, ⟨body, hb⟩, hent.program, hG⟩
   have hR : R.Wf := hRn 0
   have hstep : R.step = ArmStepX (XI.at 0) H fa := rfl
-  have hC' : ∀ n, CalleeOkGP (OnCall R.step fa base s n) R.F K G s (CallAt fa base) (XN.at n) H
-      vcp.CallSite gv := fun n => by
+  have hC' : ∀ n, CalleeOkGP (fun u => OnCall R.step fa base s n u ∧ spOf u = R.spB) R.F K G s
+      (CallAt fa base) (XN.at n) H vcp.CallSite gv := fun n => by
     by_cases h : n < N
-    · rw [hstep]; show CalleeOkGP _ _ _ _ _ _ ((XI.upTo N).at n) _ _ _
+    · show CalleeOkGP _ _ _ _ _ _ ((XI.upTo N).at n) _ _ _
       rw [XI.upTo_at_lt h]; exact hC n h
     · exact calleeOkGP_upTo_ge (by omega) hpc
-  have hCT' : vcp.hasTryCall = true → ∀ n, CalleeTryOkGP (OnCall R.step fa base s n) R.F K G s
+  have hCT' : vcp.hasTryCall = true → ∀ n, CalleeTryOkGP
+      (fun u => OnCall R.step fa base s n u ∧ spOf u = R.spB) R.F K G s
       (CallAt fa base) (XN.at n) H vcp.TrySite gv := fun ht n => by
     by_cases h : n < N
-    · rw [hstep]; show CalleeTryOkGP _ _ _ _ _ _ ((XI.upTo N).at n) _ _ _
+    · show CalleeTryOkGP _ _ _ _ _ _ ((XI.upTo N).at n) _ _ _
       rw [XI.upTo_at_lt h]; exact hCT ht n h
     · exact calleeTryOkGP_upTo_ge (by omega)
   obtain ⟨n0, ht0, hq0, hA0, -⟩ := q_initN hR hent hbe
@@ -379,7 +384,7 @@ theorem regLevel_prefixC {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAsm}
       (onCall_of_run hP0)
     have hq : ∀ u c, Q (Rn n) u c ∧ AInv (Rn n) c ↔ Q R u c ∧ AInv R c := fun u c =>
       and_congr (RL.Q_withX (Rn n) (XN.at 0) u c).symm Iff.rfl
-    exact ((realizes_allC (hRn n) (hC' n) (fun h => hCT' h n)
+    exact ((realizes_allC_sp (hRn n) (hC' n) (fun h => hCT' h n)
       (fun h => tlsOk_upTo (hTls h n)) hcov).mono_T
       (T' := R.Good) fun _ h => h.good).congr_Q hq)
   refine ⟨m₀, fun b k ρ w vb i hstar hvb hi hcall ops hops => ?_⟩
@@ -433,8 +438,53 @@ theorem regLevel_prefixC {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAsm}
       rw [hst.sp]; exact RL.K_le hR
     have hF : ∀ a, StackBelow K (spOf (iterN R.step (n1 + n2) (iterN R.step n0 s))) a → R.F a :=
       fun a ha => by rw [hst.sp] at ha; exact RL.below_F (R := R) ha
-    refine ⟨hK, hF, hst.gkeep, cc', wh, ops, regs, i', hops, hstat, hasg, hcpc regs i' rfl hasg,
+    refine ⟨hst.sp, hK, hF, hst.gkeep, cc', wh, ops, regs, i', hops, hstat, hasg, hcpc regs i' rfl hasg,
       hst.world, hst.align, hst.err, ?_⟩
     rw [← useVals_of_store hstat hm]; exact huse
+
+/-- **`regLevel_prefixC` from `checkAlloc`, with the prophecies** (`regLevelCorrect_worldPRS`'s
+premises, the contracts of the calls `n < N` only): for any entry vreg file `ρ₀`. -/
+theorem regLevel_prefixPRS {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAsm}
+    {fb : FnBin} {k : Nat} (hcheck : checkAlloc vcp rf = .ok ()) (halloc : lowerRFunc vcp rf = .ok af)
+    (hemit : emitFunc k af = .ok fa) (hlayout : fa.layout = .ok fb) {XI : ExtSemI} {H : ArmHooks}
+    {K : Nat} {G : BitVec 64 → Prop} {gv : Nat → String → Prop}
+    (hcov : FormsCovered ⟨fa.k, af.slotBase⟩ vcp)
+    {base ra : BitVec 64} {s : Arm.ArmState} (hent : AbiCall fb base ra s)
+    (hres : StackAvail K af s) (hG : ∀ a, G a → ¬ StackBelow (frameDrop af + K) (spv s) a)
+    {Kp : Nat} {c : BitVec 64} {P : Nat → BitVec 64 → BitVec 8}
+    (hproph : ProphOk Kp c (ArmStepX (XI.at 0) H fa) fa base s P) {R : Nat → Arm.ArmState}
+    (hregp : ProphRegOkM c (ArmStepX (XI.at 0) H fa) fa base s R) {N : Nat}
+    (hC : ∀ n < N, CalleeOkGP (fun u => OnCallPR Kp c P R (ArmStepX (XI.at 0) H fa) fa base s n u ∧
+        spOf u = spv s - BitVec.ofNat 64 (frameDrop af))
+      (frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af G s)
+      K G s (CallAt fa base) (XI.at n) H vcp.CallSite gv)
+    (hCT : vcp.hasTryCall = true → ∀ n < N,
+      CalleeTryOkGP (fun u =>
+        OnCallPR Kp c P R (ArmStepX (XI.at 0) H fa) fa base s n u ∧ spOf u = spv s - BitVec.ofNat 64 (frameDrop af))
+      (frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af G s) K G s
+      (CallAt fa base) (XI.at n) H vcp.TrySite gv)
+    (hpc : ∀ d s, Arm.r .ERR s = .None → Arm.CheckSPAlignment s →
+      Arm.r .PC (H.call d s) = Arm.r .PC s + 4)
+    (hTls : vcp.hasTls = true → ∀ n,
+      TlsOk (frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af G s) K (XI.at n) H)
+    {w₀ : Arm.ArmState} (hbe : BodyEntryW (frameWG K (RAFrame.compute vcp rf).intBase
+      (RAFrame.compute vcp rf).size af G s) vcp.EntryArg af s w₀) (ρ₀ : Nat → CV) :
+    ∀ b k ρ w vb i,
+      Star (VStep vcp (csemVI gv (frameWG K (RAFrame.compute vcp rf).intBase
+        (RAFrame.compute vcp rf).size af G s) ⟨fa.k, af.slotBase⟩ XI)) (.run ⟨0, 0, ρ₀, (w₀, 0)⟩)
+        (.run ⟨b, k, ρ, (w, N)⟩) →
+      vcp.blocks[b]? = some vb → vb.insts[k]? = some i →
+      (∃ info, i = .call info ∨ ∃ ti, i = .tryCall info ti) → ∀ ops, i.operands = .ok ops →
+      ∃ u, OnCall (ArmStepX (XI.at 0) H fa) fa base s N u ∧
+        spOf u = spv s - BitVec.ofNat 64 (frameDrop af) ∧
+        CallSiteAt (frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af G s)
+          K G s fa base i ((ops.toList.filter Operand.isUse).map (ρ ·.vreg)) w u := by
+  obtain ⟨cc, ins, hc⟩ := checked_of_checkAlloc hcheck
+  obtain ⟨a0, hat, hle⟩ := hc.at
+  obtain ⟨_, h⟩ := regLevel_prefixC hat (entryOk_of_le hle) halloc hemit hlayout hcov hent
+    hres hG (fun n hn => (hC n hn).mono fun _ h => ⟨onCallPR_of hproph hregp h.1, h.2⟩)
+    (fun h n hn => (hCT h n hn).mono fun _ h => ⟨onCallPR_of hproph hregp h.1, h.2⟩) hpc hTls hbe
+    (fun _ => ρ₀) (fun _ => Inv_mono hle Inv_entryState)
+  exact h
 
 end Backend.Proof
