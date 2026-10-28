@@ -1062,4 +1062,103 @@ theorem aidata_soundT (hP : PInvT f ctx) (v : V) (hv : γ f ctx .idata v) :
     ∃ k fs afs, v = .data tyInstData k fs ∧ aidata k = some afs ∧ γL f ctx afs fs :=
   aidata_soundTB hP.toB v hv
 
+/-! ## The float scope (S11f, #35) -/
+
+private theorem γ_val_float {x : Nat} (h : (ctx.valueType? x).isSome) (hF : FloatPos ctx x) :
+    γ f ctx aVF (.value x) := by
+  obtain ⟨t, ht⟩ := Option.isSome_iff_exists.mp h
+  simp only [aVF, γ]
+  refine ⟨x, t, rfl, ht, ?_⟩
+  rcases hF t ht with rfl | rfl <;> simp
+
+set_option maxRecDepth 100000 in
+/-- An admitted `fcmp` condition's `FloatCC` value is one of `fccIdxs`'. -/
+private theorem floatcc_mem {cc : Clif.FloatCC} (h : fccOk cc = true) :
+    γ f ctx (enumAlts TyId.FloatCC fccIdxs) (mkVariant TyId.FloatCC (floatccName cc)) := by
+  cases cc <;> simp only [fccOk, Bool.false_eq_true] at h <;> exact γ_enum rfl (by decide)
+
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 4000000 in
+/-- The `InstructionData` of an instruction of the float scope with a result, outside E, is one of
+`fDataTF`: `fData_of` on the typed movement scope; the data of a float operation, whose operands
+are typed values, integers in `intOperandsF` positions and floats in `floatOperands` positions. -/
+private theorem fData_ofF (hP : PInvTF f ctx) {c : Clif.Inst} (hof : InstOf f c)
+    (hE : ¬ Compile.instE c = true) {d : V} (hd : instData f c = .ok d)
+    {tys : List Clif.Ty}
+    (hrt : c.resultTypes (fun r => (f.extern? r).map (·.sig)) (f.sigDecls.lookup ·) = some tys)
+    (hne : tys ≠ []) : ∃ a ∈ fDataTF, γ f ctx a d := by
+  by_cases hET : Compile.instET c = true
+  · obtain ⟨a, ha, hγ⟩ := fData_of hP.toPInvTB hof hET hE hd hrt hne
+    exact ⟨a, List.mem_append_left _ ha, hγ⟩
+  have hF := hP.instETF c hof
+  have hargs := hP.argsTyped c hof
+  have hint := hP.intOpsFOf c hof
+  have hflo := hP.floatOpsOf c hof
+  cases c
+  case float op ty args =>
+    have hT : ∀ x ∈ args, (ctx.valueType? x).isSome := fun x hx =>
+      hargs x (by simpa [Driver.instArgs] using hx)
+    have hM : ∀ x ∈ args, γ f ctx aVM (.value x) := fun x hx => γ_val_typedT hP.toPInvTB (hT x hx)
+    have mBin : fDataBin ∈ fDataTF := List.mem_append_right _ (by simp)
+    have mUn : fDataUn ∈ fDataTF := List.mem_append_right _ (by simp)
+    have mFrom : fDataFrom ∈ fDataTF := List.mem_append_right _ (by simp)
+    have mTo : fDataTo ∈ fDataTF := List.mem_append_right _ (by simp)
+    have mCmp : fDataCmp ∈ fDataTF := List.mem_append_right _ (by simp)
+    rcases args with _ | ⟨x, _ | ⟨y, _ | ⟨z, zs⟩⟩⟩
+    · simp [instData, throw, throwThe, MonadExceptOf.throw] at hd
+    · cases op <;> simp only [instData, fUnaryOpcode, fCvtOpcode] at hd
+      all_goals first
+        | (simp [throw, throwThe, MonadExceptOf.throw] at hd; done)
+        | (split at hd
+           · simp only [pure, Except.pure, Except.ok.injEq] at hd
+             subst hd
+             first
+               | exact ⟨fDataUn, mUn, γ_mkVariantT rfl
+                   ⟨γ_enum rfl (by decide), hM x (by simp), trivial⟩⟩
+               | exact ⟨fDataFrom, mFrom, γ_mkVariantT rfl
+                   ⟨γ_enum rfl (by decide),
+                    γ_val_int (hT x (by simp)) (hint x (by simp [Compile.intOperandsF])), trivial⟩⟩
+               | exact ⟨fDataTo, mTo, γ_mkVariantT rfl
+                   ⟨γ_enum rfl (by decide),
+                    γ_val_float (hT x (by simp)) (hflo x (by simp [Compile.floatOperands])),
+                    trivial⟩⟩
+           · simp [throw, throwThe, MonadExceptOf.throw] at hd)
+    · cases op <;> simp only [instData, fBinaryOpcode] at hd
+      all_goals first
+        | (simp [throw, throwThe, MonadExceptOf.throw] at hd; done)
+        | (split at hd
+           · simp only [pure, Except.pure, Except.ok.injEq] at hd
+             subst hd
+             first
+               | exact ⟨fDataBin, mBin, γ_mkVariantT rfl
+                   ⟨γ_enum rfl (by decide),
+                    ⟨[x, y], rfl, γL_cons' (hM x (by simp)) (γL1 (hM y (by simp)))⟩, trivial⟩⟩
+               | (rename_i hok
+                  simp only [Bool.and_eq_true] at hok
+                  exact ⟨fDataCmp, mCmp, γ_mkVariantT rfl
+                   ⟨γ_opcT rfl,
+                    ⟨[x, y], rfl, γL_cons'
+                      (γ_val_float (hT x (by simp)) (hflo x (by simp [Compile.floatOperands])))
+                      (γL1 (γ_val_float (hT y (by simp)) (hflo y (by simp [Compile.floatOperands]))))⟩,
+                    floatcc_mem hok.2, trivial⟩⟩)
+           · simp [throw, throwThe, MonadExceptOf.throw] at hd)
+    · simp [instData, throw, throwThe, MonadExceptOf.throw] at hd
+  all_goals exact absurd (by simpa [Compile.instETF, Compile.instETA, Compile.fArithET,
+    Compile.fCvtET, Compile.fCmpET] using hF) hET
+
+/-- **The instruction defining a value** is described by one of `def_inst`'s outputs over the
+float scope (`defOutsTF`): an E instruction (`.idata`), or one of `fDataTF`. -/
+private theorem γ_defInstTF (hP : PInvTF f ctx) {x i : Nat} (hd : ctx.defInst? x = some i) :
+    ∃ out ∈ defOutsTF, γL f ctx out [.inst i] :=
+  γ_defInstG hP.toPInvTB (fun _ hof hE _ _ hd hrt hne => fData_ofF hP hof hE hd hrt hne) hd
+
+/-- **The extern extractors are sound** (`Model.ext`) over the float scope (`aextTF`):
+`aextG_sound` with the float scope's defining instructions (`γ_defInstTF`). -/
+theorem aextTF_sound (hP : PInvTF f ctx) (term : Term) (a : PA) (outs : List (List PA))
+    (must : Bool) (v : V) (st : LState) (h : aextTF term.id a = some (outs, must))
+    (hv : γ f ctx a v) :
+    (∃ fs, externExtract ctx term v st = .ok fs ∧ ∃ out ∈ outs, γL f ctx out fs) ∨
+      (externExtract ctx term v st = .fail ∧ must = false) :=
+  aextG_sound hP.toPInvTB (γ_defInstTF hP) term a outs must v st h hv
+
 end Backend.Proof.Prg

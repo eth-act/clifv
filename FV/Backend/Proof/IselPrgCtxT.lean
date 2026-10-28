@@ -23,8 +23,9 @@ namespace Backend.Proof.Prg
 
 open Backend Backend.Proof Backend.Proof.Driver Isle Isle.Aarch64
 
-/-- The result types of an E instruction of a typed-scope function are not floats. -/
-theorem resTy_not_float {f : Clif.Function} (hET : Compile.functionET f = true) {c : Clif.Inst}
+/-- The result types of an E instruction of a function with integer externs are not floats. -/
+theorem resTy_not_floatX {f : Clif.Function} (hX : f.externs.all (Compile.sigE ·.2.sig) = true)
+    {c : Clif.Inst}
     (hE : Compile.instE c = true) {d : V} (hd : instData f c = .ok d) {tys : List Clif.Ty}
     (hrt : c.resultTypes (fun r => (f.extern? r).map (·.sig)) (f.sigDecls.lookup ·) = some tys)
     {ty : Clif.Ty} (hty : ty ∈ tys) : ty.isFloat = false := by
@@ -36,12 +37,11 @@ theorem resTy_not_float {f : Clif.Function} (hET : Compile.functionET f = true) 
       simp only [Clif.Inst.resultTypes, he, Option.map_some, Option.some.injEq] at hrt
       subst hrt
       obtain ⟨p, hp, rfl⟩ := List.mem_map.mp hty
-      simp only [Compile.functionET, Bool.and_eq_true, List.all_eq_true] at hET
       have hl : f.externs.lookup fn = some e := he
       have hm : (fn, e) ∈ f.externs := by
         obtain ⟨l₁, l₂, h1, -⟩ := List.lookup_eq_some_iff.mp hl
         simp [h1]
-      have hs := hET.1.1.1.2 (fn, e) hm
+      have hs := List.all_eq_true.mp hX (fn, e) hm
       simp only [Compile.sigE, Bool.and_eq_true, List.all_eq_true] at hs
       have := hs.2 p hp
       revert this; cases p.ty <;> simp [Compile.tyE, Clif.Ty.isInt, Clif.Ty.isFloat]
@@ -72,6 +72,14 @@ theorem resTy_not_float {f : Clif.Function} (hET : Compile.functionET f = true) 
          | (revert hE; cases ty <;> simp [Compile.instE, Compile.tyE, Compile.unaryTyE,
              Compile.unaryE, Compile.binaryE, Clif.Ty.isInt, Clif.Ty.isFloat]))
     | (simp [Clif.Inst.resultTypes] at hrt; subst hrt; simp at hty)
+
+/-- The result types of an E instruction of a typed-scope function are not floats. -/
+theorem resTy_not_float {f : Clif.Function} (hET : Compile.functionET f = true) {c : Clif.Inst}
+    (hE : Compile.instE c = true) {d : V} (hd : instData f c = .ok d) {tys : List Clif.Ty}
+    (hrt : c.resultTypes (fun r => (f.extern? r).map (·.sig)) (f.sigDecls.lookup ·) = some tys)
+    {ty : Clif.Ty} (hty : ty ∈ tys) : ty.isFloat = false := by
+  simp only [Compile.functionET, Bool.and_eq_true] at hET
+  exact resTy_not_floatX hET.1.1.1.2 hE hd hrt hty
 
 section
 variable {f : Clif.Function} {ctx : Ctx} {ranges : Array (Nat × Nat)} {st0 : LState}

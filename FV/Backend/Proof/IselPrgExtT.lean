@@ -257,20 +257,32 @@ def aVF : PA := .val [.float 32, .float 64]
 `ueq` (9). -/
 def fccIdxs : List Nat := [0, 1, 2, 3, 4, 5, 6, 8, 10, 11, 12, 13]
 
+/-- The data of a two-operand float arithmetic instruction. -/
+def fDataBin : PA := idat VIdx.InstructionData.Binary [aOps [VIdx.Opcode.Fadd, VIdx.Opcode.Fsub,
+  VIdx.Opcode.Fmul, VIdx.Opcode.Fdiv, VIdx.Opcode.Fmin, VIdx.Opcode.Fmax], .vals [aVM, aVM]]
+
+/-- The data of a one-operand float arithmetic or rounding instruction. -/
+def fDataUn : PA := idat VIdx.InstructionData.Unary [aOps [VIdx.Opcode.Sqrt, VIdx.Opcode.Fneg,
+  VIdx.Opcode.Fabs, VIdx.Opcode.Ceil, VIdx.Opcode.Floor, VIdx.Opcode.Trunc, VIdx.Opcode.Nearest,
+  VIdx.Opcode.Fpromote, VIdx.Opcode.Fdemote], aVM]
+
+/-- The data of a conversion from an integer. -/
+def fDataFrom : PA :=
+  idat VIdx.InstructionData.Unary [aOps [VIdx.Opcode.FcvtFromUint, VIdx.Opcode.FcvtFromSint], aV]
+
+/-- The data of a saturating conversion of a float. -/
+def fDataTo : PA :=
+  idat VIdx.InstructionData.Unary [aOps [VIdx.Opcode.FcvtToUintSat, VIdx.Opcode.FcvtToSintSat], aVF]
+
+/-- The data of an `fcmp`. -/
+def fDataCmp : PA := idat VIdx.InstructionData.FloatCompare [opc VIdx.Opcode.Fcmp, .vals [aVF, aVF],
+  enumAlts TyId.FloatCC fccIdxs]
+
 /-- **The `InstructionData` of the float scope's instructions with results outside E**:
 `fDataT` and the S11f float operations (`Compile.instETF`): the two-operand arithmetic, the
 one-operand arithmetic and rounding, the conversions from an integer, the saturating conversions
 of a float, and `fcmp`. -/
-def fDataTF : List PA := fDataT ++
-  [idat VIdx.InstructionData.Binary [aOps [VIdx.Opcode.Fadd, VIdx.Opcode.Fsub, VIdx.Opcode.Fmul,
-      VIdx.Opcode.Fdiv, VIdx.Opcode.Fmin, VIdx.Opcode.Fmax], .vals [aVM, aVM]],
-   idat VIdx.InstructionData.Unary [aOps [VIdx.Opcode.Sqrt, VIdx.Opcode.Fneg, VIdx.Opcode.Fabs,
-      VIdx.Opcode.Ceil, VIdx.Opcode.Floor, VIdx.Opcode.Trunc, VIdx.Opcode.Nearest,
-      VIdx.Opcode.Fpromote, VIdx.Opcode.Fdemote], aVM],
-   idat VIdx.InstructionData.Unary [aOps [VIdx.Opcode.FcvtFromUint, VIdx.Opcode.FcvtFromSint], aV],
-   idat VIdx.InstructionData.Unary [aOps [VIdx.Opcode.FcvtToUintSat, VIdx.Opcode.FcvtToSintSat], aVF],
-   idat VIdx.InstructionData.FloatCompare [opc VIdx.Opcode.Fcmp, .vals [aVF, aVF],
-      enumAlts TyId.FloatCC fccIdxs]]
+def fDataTF : List PA := fDataT ++ [fDataBin, fDataUn, fDataFrom, fDataTo, fDataCmp]
 
 /-- The outputs of `def_inst` on a value of the float scope (`defOutsT` with `fDataTF`). -/
 def defOutsTF : List (List PA) := (.idata :: fDataTF).map fun d => [.inst (.ty mCTys) d]
