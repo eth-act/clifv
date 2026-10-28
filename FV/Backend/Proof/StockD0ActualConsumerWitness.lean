@@ -13,7 +13,7 @@ theorem actual_stock_witness (name : String) (c : Stock.D0.Configuration)
     (runs : List Clif.RunCommand) (k : Nat) (base : BitVec 64) (answer : Lean.Json) :
     ∃ (r : Stock.Result) (a : Art),
       Stock.lower (Stock.D0.source name c runs) = .ok r ∧
-      pipeTWithLowering Stock.D0.defaultLower id (Stock.D0.source name c runs)
+      pipeTWithLowering Stock.D0.defaultLower (fun _ => id) (Stock.D0.source name c runs)
         k base answer = .ok a ∧
       a.vc = Stock.D0.compact name r ∧
       Stock.D0.defaultLower (Stock.D0.source name c runs) = .ok a.vc ∧
@@ -21,7 +21,7 @@ theorem actual_stock_witness (name : String) (c : Stock.D0.Configuration)
       a.rf = allocResult a.vcp (readyAnswer a.vcp (raAnswer a.vcp answer)) := by
   obtain ⟨r, plain, clean, run, selected, hp, hc, code, cleanCode⟩ :=
     Stock.D0.complete_pipeline_witness name c runs k base answer
-  have actual : pipeTWithLowering Stock.D0.defaultLower id
+  have actual : pipeTWithLowering Stock.D0.defaultLower (fun _ => id)
       (Stock.D0.source name c runs) k base answer = .ok plain := hp
   have facts := pipeTWithLowering_spec actual
   exact ⟨r, plain, run, actual, code, facts.1, facts.2.1, facts.2.2.1⟩
@@ -33,7 +33,7 @@ theorem actual_stock_validated_witness (name : String) (c : Stock.D0.Configurati
     (runs : List Clif.RunCommand) (k : Nat) (base : BitVec 64) (answer : Lean.Json) :
     ∃ (r : Stock.Result) (a : Art),
       Stock.lower (Stock.D0.source name c runs) = .ok r ∧
-      pipeTWithLowering Stock.D0.defaultLower id (Stock.D0.source name c runs)
+      pipeTWithLowering Stock.D0.defaultLower (fun _ => id) (Stock.D0.source name c runs)
         k base answer = .ok a ∧
       a.vc = Stock.D0.compact name r ∧
       CompiledValidated (Stock.D0.source name c runs) a.k a.vc a.vcp
@@ -44,7 +44,7 @@ theorem actual_stock_validated_witness (name : String) (c : Stock.D0.Configurati
   obtain ⟨r, a, run, actual, code, rest⟩ := actual_stock_witness name c runs k base answer
   obtain ⟨a', hp, lowerOk, prepOk, check, covered⟩ :=
     pipeT_ok scope spillDefinedHyp k base answer
-  have samePipe : pipeTWithLowering Stock.D0.defaultLower id
+  have samePipe : pipeTWithLowering Stock.D0.defaultLower (fun _ => id)
       (Stock.D0.source name c runs) k base answer = .ok a' := hp
   have same : a' = a := Except.ok.inj (samePipe.symm.trans actual)
   subst a'
@@ -83,7 +83,7 @@ theorem actual_stock_production_modes_witness (name : String) (c : Stock.D0.Conf
     (runs : List Clif.RunCommand) (k : Nat) (base : BitVec 64) (answer : Lean.Json) :
     ∃ (r : Stock.Result) (plain clean : Art),
       Stock.lower (Stock.D0.source name c runs) = .ok r ∧
-      pipeTWithLowering Stock.D0.defaultLower id (Stock.D0.source name c runs)
+      pipeTWithLowering Stock.D0.defaultLower (fun _ => id) (Stock.D0.source name c runs)
         k base answer = .ok plain ∧
       pipeCleanupT (Stock.D0.source name c runs) k base answer = .ok clean ∧
       plain.vc = Stock.D0.compact name r ∧ clean.vc = Stock.D0.compact name r ∧
