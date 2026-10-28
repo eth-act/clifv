@@ -6,14 +6,43 @@ import FV.E2E.RegLevelTwoRunT
 
 `backend_twoRunPRIYD` on `RL.twoRunPRT`: the lock-step obligation `hstep` also receives, for both
 runs, that the state is the `i`-th state of the segment realising the step of the configuration,
-strictly before its end (`RL.InSeg`). Same proof.
+strictly before its end (`RL.InSeg`), and `hK` receives that the paired configuration has a
+guarded step or is the return (`StepOrRet`; `GuardedAt` follows, `guardedAt_of_step`): the lock
+needs the paired step's guard at the instruction of the configuration. Same proof otherwise.
 
+* `StepOrRet`, `pstar_of_projS`;
 * **`backend_twoRunPRIYT`**.
 -/
 
 namespace E2E
 
 open Backend Backend.Proof Backend.Proof.Driver
+
+section
+variable {V W W₁ : Type} {vc : VCode}
+
+/-- **`c` has a step of `sem`, or is a return.** -/
+def StepOrRet (vc : VCode) (sem : ISem V W) (c : VConf V W) : Prop :=
+  (∃ y, VStep vc sem c y) ∨ ∃ vals w, c = .ret vals w
+
+/-- **A run of `semD` with a further step is a run of pair steps of the projections**, every
+configuration of it with a step (`pstar_of_projG` with `StepOrRet`). -/
+theorem pstar_of_projS {semD : ISem V W} {sem₁ sem₂ : ISem V W₁} {π₁ π₂ : W → W₁}
+    (h₁ : ISem.ProjW π₁ semD sem₁) (h₂ : ISem.ProjW π₂ semD sem₂) {c x : VConf V W}
+    (h : Star (VStep vc semD) c x) (hx : ∃ y, VStep vc semD x y) :
+    Star (PStep vc sem₁ sem₂ (PairOfG π₁ π₂ (StepOrRet vc semD)))
+      (c.mapW π₁, c.mapW π₂) (x.mapW π₁, x.mapW π₂) := by
+  induction h with
+  | refl => exact .refl _
+  | @step a b _ hs rest ih =>
+    have hb : ∃ y, VStep vc semD b y := by
+      cases rest with
+      | refl => exact hx
+      | step h1 _ => exact ⟨_, h1⟩
+    exact .step ⟨VStep_mapW h₁ hs, VStep_mapW h₂ hs, VConf.sameAt_mapW π₁ π₂ b, b, rfl, rfl,
+      .inl hb⟩ (ih hx)
+
+end
 
 section
 variable {p : Clif.Program} {f : Clif.Function} {k : Nat} {vc vcp : VCode} {rf : RFunc}
@@ -89,8 +118,7 @@ theorem backend_twoRunPRIYT (hsub : InSubset p f) (hc : Compiled f k vc vcp rf a
         (prologueLines R.af.frameSize).length R.s0) (.reg r)) e x →
       Match ckc ins ckeep (fun r => locVal R.fr (iterN ({ R with s0 := t0, G := G', X := XI.at 0 } :
         RL).step (prologueLines R.af.frameSize).length t0) (.reg r)) e' x' →
-      PairOfG pairFst pairSnd (GuardedAt vcp
-        (ISem.counted fun n => pairSem (csemV (GotV vcp) F ⟨fa.k, af.slotBase⟩ (XI.at n)))
+      PairOfG pairFst pairSnd (StepOrRet vcp
         (pairDI (csemV (GotV vcp) F ⟨fa.k, af.slotBase⟩) F ⟨fa.k, af.slotBase⟩ XI)) x x' →
       KJ (e.mapW Prod.fst) (e'.mapW Prod.fst))
     (hpro : LB
@@ -160,30 +188,19 @@ theorem backend_twoRunPRIYT (hsub : InSubset p f) (hc : Compiled f k vc vcp rf a
     rw [hvals] at hsem ⊢
     refine VStep.step hvb hk (operands_retsC ns) hsem ?_ (VNext.ret rfl)
     rw [List.toList_toArray, filter_isDef_retOpsC]; rfl
-  have hsubD : ∀ i us w r,
-      pairDI (csemV (GotV vcp) F ⟨fa.k, af.slotBase⟩) F ⟨fa.k, af.slotBase⟩ XI i us w = some r →
-      ISem.counted (fun n => pairSem (csemV (GotV vcp) F ⟨fa.k, af.slotBase⟩ (XI.at n))) i us w =
-        some r := fun _ _ _ _ h => pairDI_sub h
   subst hR
-  have hy : PStep _ _ _ (PairOfG pairFst pairSnd (GuardedAt vcp _ _)) _ _ :=
+  have hy : PStep _ _ _ (PairOfG pairFst pairSnd (StepOrRet vcp _)) _ _ :=
     (⟨VStep_mapW hp₁ hlast, VStep_mapW hp₂ hlast, VConf.sameAt_mapW pairFst pairSnd (.ret outs w),
-      .ret outs w, rfl, rfl, guardedAt_ret outs w⟩ :
-      PStep vcp _ _ (PairOfG pairFst pairSnd (GuardedAt vcp
-        (ISem.counted fun n => pairSem (csemV (GotV vcp) F ⟨fa.k, af.slotBase⟩ (XI.at n)))
+      .ret outs w, rfl, rfl, .inr ⟨outs, w, rfl⟩⟩ :
+      PStep vcp _ _ (PairOfG pairFst pairSnd (StepOrRet vcp
         (pairDI (csemV (GotV vcp) F ⟨fa.k, af.slotBase⟩) F ⟨fa.k, af.slotBase⟩ XI)))
         ((VConf.run ⟨b, kk, ρ, w₁⟩).mapW pairFst, (VConf.run ⟨b, kk, ρ, w₁⟩).mapW pairSnd)
         ((VConf.ret outs w).mapW pairFst, (VConf.ret outs w).mapW pairSnd))
-  have hpp := pstar_of_projG hsubD hp₁ hp₂ hs ⟨_, hlast⟩
-  have hg0 : GuardedAt vcp
-      (ISem.counted fun n => pairSem (csemV (GotV vcp) F ⟨fa.k, af.slotBase⟩ (XI.at n)))
-      (pairDI (csemV (GotV vcp) F ⟨fa.k, af.slotBase⟩) F ⟨fa.k, af.slotBase⟩ XI)
-      (.run ⟨0, 0, ρ₀, ((w₀, w₀'), 0)⟩) :=
-    let ⟨_, h0⟩ := star_head_step hs hlast
-    guardedAt_of_step hsubD h0
+  have hpp := pstar_of_projS hp₁ hp₂ hs ⟨_, hlast⟩
   exact RL.twoRunPRT hc.check hc.alloc hc.emit hc.layout hlm hpsF he he' rfl hcov ρ₀
     (fun _ Y => Y = F) (fun _ Y => Y = F) KJ LB OkS OkS' hG hG' Lk hLpc hstart hstep hend hK hpro
-    hpp ⟨VConf.init ρ₀ ((w₀, w₀'), 0), rfl, rfl, hg0⟩
-    ⟨.run ⟨b, kk, ρ, w₁⟩, rfl, rfl, guardedAt_of_step hsubD hlast⟩ hy
+    hpp ⟨VConf.init ρ₀ ((w₀, w₀'), 0), rfl, rfl, .inl (star_head_step hs hlast)⟩
+    ⟨.run ⟨b, kk, ρ, w₁⟩, rfl, rfl, .inl ⟨_, hlast⟩⟩ hy
 
 end
 
