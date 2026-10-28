@@ -399,6 +399,16 @@ a callee run advances the counter by its own count `e`, and the caller's call `k
 linked environment advances when the base does; `envAdv_of_keepsPlace`: `e = 0`). Witnesses
 `LinkPlaceBWitness.lean` (one slotted function: counter `0 → 1`, slot bytes = table entry `1`).
 
+Step 2n (`FV/E2E/LinkArmPlaceB.lean`, `SrcBoundedB.lean`): `LinkSys.PlaceAtB cm c ini` (`PlaceAt`
+with `init = some ini`), `PlaceAtB.adv`; `Clif.runsOf_nextAdv`, `crun_advK`/`crun_adv`/
+`crun_nextAdv` (a returning callee run `crun M` advances the counter, from `CrunOk.runs` and the
+base keeping the oracle: `CrunOk` itself needs no oracle variant); `initState_memB` (the
+`initState_mem` facts with `PlaceAtB`: an initialised entry byte is the caller's outside the new
+slots or the table's entry `ini.next + 1` inside them; the entry is `PlaceAtB` at the callee's
+`sp` with the counter `+1`, `+0` without slots); `SrcBounded.PlacedInvB`/`bounded_placedB`
+(`bounded_placed` under `EnvAdv`). Witnesses `LinkArmPlaceBWitness.lean`: `LinkWitness`'s `f`
+entered with the table `0xAB` has `0xAB` in its compiled slot at `slotAddr` (`initState_memB_f`).
+
 ## 6. Heap (separate gap, SEM2)
 
 `BaseOk.baseKeepsAllocs`/`baseNoAlloc` require base externs to allocate nothing whenever a program

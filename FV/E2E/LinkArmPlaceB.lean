@@ -27,9 +27,36 @@ theorem runsOf_nextAdv {P : Program} {base : Env} {R : State → Outcome} (hR : 
   simp only [hi]
   exact hr
 
+/-- The bytes after `fillSlots`: a filled slot byte is the table's, any other is the former. -/
+theorem fillSlots_bytes (sp : BitVec 64) (off : SlotId → Nat) (b : Nat → BitVec 8) :
+    ∀ (slots : List (SlotId × StackSlot)) (m : Mem) (a : Nat) (x : BitVec 8),
+    (fillSlots slots sp off b m).bytes a = some x →
+      (∃ p ∈ slots, sp.toNat + off p.1 ≤ a ∧ a < sp.toNat + off p.1 + p.2.size ∧ x = b a) ∨
+      m.bytes a = some x
+  | [], m, a, x, h => .inr h
+  | q :: qs, m, a, x, h => by
+    simp only [fillSlots, List.foldl_cons] at h
+    rcases fillSlots_bytes sp off b qs _ a x h with ⟨p, hp, hr⟩ | h'
+    · exact .inl ⟨p, List.mem_cons_of_mem _ hp, hr⟩
+    · simp only [Mem.fillAt] at h'
+      split at h'
+      · rename_i hin
+        exact .inl ⟨q, List.mem_cons_self .., hin.1, hin.2, (Option.some.inj h').symm⟩
+      · exact .inr h'
+
+theorem fillSlots_fields (slots : List (SlotId × StackSlot)) (sp : BitVec 64) (off : SlotId → Nat)
+    (b : Nat → BitVec 8) (m : Mem) :
+    (fillSlots slots sp off b m).allocs = m.allocs ∧ (fillSlots slots sp off b m).symbols = m.symbols ∧
+      (fillSlots slots sp off b m).place = m.place := by
+  obtain ⟨bytes, h⟩ := fillSlots_eq slots sp off b m
+  rw [h]
+  exact ⟨rfl, rfl, rfl⟩
+
 end Clif
 
 namespace E2E
+
+open Backend Backend.Proof Backend.Proof.Driver
 
 namespace LinkSys
 
@@ -71,6 +98,94 @@ theorem crun_nextAdv [L.CrunOk] (hfree : ∀ g ∈ L.P.funcs, Clif.LinkFree g)
     {cm' : Clif.Mem} (hi : Clif.initState L.P n vals cm = .ok cs)
     (hr : L.crun M cs = .returned rvals cm') : ∃ e, Clif.NextAdv cm cm' e :=
   Clif.runsOf_nextAdv (CrunOk.runs M) hfree (Clif.envAdv_of_keepsPlace hk) hi hr
+
+/-- **The entry of a program function under the slot-byte oracle** (`initState_mem` with
+`PlaceAtB` for `PlaceAt`): the same slots, symbols and allocations; an initialised byte of the
+entry memory is either the caller memory's outside the new slots, or in a new slot and the byte
+table's entry `ini.next + 1` (the activation is the `ini.next + 1`-th placed one with slots);
+the entry memory is placed at the callee's `sp` with the counter advanced by `1` (by `0`
+without slots). -/
+theorem initState_memB {h : Clif.Function} {n : String} (hpf : L.P.func? n = some h)
+    {vals : List Clif.Val} {cm : Clif.Mem} {cs : Clif.State}
+    (hinit : Clif.initState L.P n vals cm = .ok cs) {c : BitVec 64} {ini : Clif.SlotInit}
+    (hpB : L.PlaceAtB cm c ini) :
+    cs.frame.slots = h.slots.map (fun p => (p.1,
+      (c - BitVec.ofNat 64 (frameDrop (L.A h).af)).toNat +
+        ((L.A h).af.slotBase + ((slotLayout h.slots).1.lookup p.1).getD 0))) ∧
+    cs.mem.symbols = cm.symbols ∧
+    (∀ x ∈ cs.mem.allocs, x ∈ cm.allocs ∨ ∃ p ∈ h.slots,
+      x = ⟨(c - BitVec.ofNat 64 (frameDrop (L.A h).af)).toNat +
+        ((L.A h).af.slotBase + ((slotLayout h.slots).1.lookup p.1).getD 0), p.2.size, false⟩) ∧
+    (∀ a b, cs.mem.bytes a = some b →
+      (cm.bytes a = some b ∧ ∀ p ∈ h.slots,
+        ¬ ((c - BitVec.ofNat 64 (frameDrop (L.A h).af)).toNat +
+            ((L.A h).af.slotBase + ((slotLayout h.slots).1.lookup p.1).getD 0) ≤ a ∧
+          a < (c - BitVec.ofNat 64 (frameDrop (L.A h).af)).toNat +
+            ((L.A h).af.slotBase + ((slotLayout h.slots).1.lookup p.1).getD 0) + p.2.size)) ∨
+      (∃ p ∈ h.slots,
+        (c - BitVec.ofNat 64 (frameDrop (L.A h).af)).toNat +
+            ((L.A h).af.slotBase + ((slotLayout h.slots).1.lookup p.1).getD 0) ≤ a ∧
+          a < (c - BitVec.ofNat 64 (frameDrop (L.A h).af)).toNat +
+            ((L.A h).af.slotBase + ((slotLayout h.slots).1.lookup p.1).getD 0) + p.2.size ∧
+        b = ini.bytes (ini.next + 1) a)) ∧
+    L.PlaceAtB cs.mem (c - BitVec.ofNat 64 (frameDrop (L.A h).af))
+      (if h.slots.isEmpty then ini else ini.adv 1) := by
+  obtain ⟨hh, rfl⟩ := Clif.Program.func?_some hpf
+  simp only [Clif.initState, hpf, Clif.Res.ofOption_some, Clif.Res.ok_bind] at hinit
+  cases he : Clif.enterFunc h vals cm with
+  | trap => rw [he] at hinit; cases hinit
+  | stuck => rw [he] at hinit; cases hinit
+  | ok r =>
+    obtain ⟨fr, mem'⟩ := r
+    rw [he] at hinit
+    simp only [Clif.Res.ok_bind, Clif.Res.pure_eq, Clif.Res.ok.injEq] at hinit
+    subst hinit
+    obtain ⟨_, _, _, _, _, _, hal, -⟩ := Opt.enterFunc_ok he
+    simp only
+    obtain ⟨sps, hcp⟩ := hpB
+    let sp := c - BitVec.ofNat 64 (frameDrop (L.A h).af)
+    let off : Clif.SlotId → Nat :=
+      fun id => (L.A h).af.slotBase + ((slotLayout h.slots).1.lookup id).getD 0
+    let acc : List (Clif.SlotId × Nat) × Clif.Mem :=
+      ([], { cm with place := some ⟨sp :: c :: sps, L.frames, some ini⟩ })
+    have hfr : L.frames h.name = some (frameDrop (L.A h).af, off) := by simp [frames, hpf, off]
+    have e : Clif.enterSlots h cm =
+        Clif.initSlots h.slots sp off (some ini) (h.slots.foldl (Clif.placeStep sp off) acc) := by
+      simp only [Clif.enterSlots, hcp, hfr, List.headD]
+      rfl
+    obtain ⟨h1, h2, h3, h4⟩ := Clif.placeSlots_spec sp off h.slots acc
+    have h5 : (h.slots.foldl (Clif.placeStep sp off) acc).2.place = acc.2.place :=
+      (Clif.placeSlots_facts sp off h.slots acc).1
+    rw [e] at hal
+    by_cases hs : h.slots.isEmpty
+    · simp only [Clif.initSlots, hs, ↓reduceIte] at hal
+      have hs1 := congrArg Prod.fst hal
+      have hs2 := congrArg Prod.snd hal
+      simp only at hs1 hs2
+      rw [hs1] at h1
+      rw [hs2] at h2 h3 h4 h5
+      refine ⟨h1.trans (List.nil_append _), h2, h3, fun a b hb => .inl (h4 a b hb),
+        ⟨c :: sps, ?_⟩⟩
+      rw [h5]
+      simp only [hs, ↓reduceIte]
+      rfl
+    · simp only [Clif.initSlots, hs, ↓reduceIte, Bool.false_eq_true, Prod.mk.injEq] at hal
+      obtain ⟨hs1, hs2⟩ := hal
+      rw [hs1] at h1
+      obtain ⟨fa, fs, fp⟩ := Clif.fillSlots_fields h.slots sp off (ini.bytes ini.succ.next)
+        { (h.slots.foldl (Clif.placeStep sp off) acc).2 with
+          place := (h.slots.foldl (Clif.placeStep sp off) acc).2.place.map (Clif.Place.advance ini) }
+      rw [hs2] at fa fs fp
+      refine ⟨h1.trans (List.nil_append _), fs.trans h2, fun x hx => h3 x (fa ▸ hx),
+        fun a b hb => ?_, ⟨c :: sps, ?_⟩⟩
+      · rw [← hs2] at hb
+        rcases Clif.fillSlots_bytes sp off _ h.slots _ a b hb with ⟨p, hp, hlo, hhi, rfl⟩ | hb'
+        · exact .inr ⟨p, hp, hlo, hhi, rfl⟩
+        · exact .inl (h4 a b hb')
+      · rw [fp, h5]
+        simp only [acc, Option.map_some, hs, Bool.false_eq_true, ↓reduceIte, Clif.Place.advance,
+          Clif.SlotInit.succ_eq_adv]
+        rfl
 
 end LinkSys
 

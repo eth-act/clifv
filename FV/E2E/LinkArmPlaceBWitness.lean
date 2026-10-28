@@ -111,4 +111,44 @@ theorem bounded_f0 : ∀ s', Opt.Legal.SReach Env.empty P0 sZ s' → Opt.Legal.M
     subst hp
     exact Nat.le_refl _
 
+
+/-! ## `initState_memB` on `LinkWitness`'s `f` (an 8-byte slot at its compiled address) -/
+
+namespace InitB
+
+open LinkWitness
+
+/-- `LinkWitness`'s entry memory with the slot-byte oracle `0xAB` at counter `0` (the caller's
+`sp` is `sp0`). -/
+def memB : Clif.Mem := { mem0 with place := some ⟨[sp0], framesW, some ini0⟩ }
+
+def initB : Clif.Res Clif.State := Clif.initState LinkWitness.P fF.name [arg] memB
+
+/-- The entry succeeds, and `f`'s slot (at `slotAddr = sp0 - 64 + 32`) holds the table's byte. -/
+def initBOk : Bool := match initB with
+  | .ok cs => cs.mem.bytes slotAddr == some 0xAB#8
+  | _ => false
+
+theorem initBOk_true : initBOk = true := by native_decide
+
+theorem placeAtB_memB (F : BitVec 64 → Prop) : (L F).PlaceAtB memB sp0 ini0 := ⟨[], rfl⟩
+
+/-- **`initState_memB` applies**: the entry of `f` from `memB` is placed at `f`'s body `sp` with
+the counter at `1`, and its slot bytes are the table's (here `0xAB`). -/
+theorem initState_memB_f (F : BitVec 64 → Prop) : ∃ cs, initB = .ok cs ∧
+    (L F).PlaceAtB cs.mem (sp0 - BitVec.ofNat 64 (frameDrop ((L F).A fF).af))
+      (if fF.slots.isEmpty then ini0 else ini0.adv 1) ∧ cs.mem.bytes slotAddr = some 0xAB#8 := by
+  have h := initBOk_true
+  unfold initBOk at h
+  cases hi : initB with
+  | ok cs =>
+    rw [hi] at h
+    have hpf : (L F).P.func? fF.name = some fF := entryFacts.2.2.2.1
+    obtain ⟨-, -, -, -, hpl⟩ := (L F).initState_memB hpf hi (placeAtB_memB F)
+    exact ⟨cs, rfl, hpl, by simpa using h⟩
+  | trap c => rw [hi] at h; cases h
+  | stuck m => rw [hi] at h; cases h
+
+end InitB
+
 end E2E.LinkArmPlaceBWitness
