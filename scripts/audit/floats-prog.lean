@@ -6,6 +6,7 @@ import FV.Backend.Proof.IselPrgTabF64
 import FV.Backend.Proof.IselPrgDriverT
 import FVTest.Backend.FloatProgT
 import FVTest.Link.FloatScopeInputT3F
+import FVTest.Link.FloatScopeTotalT3F
 
 -- S11 (#35) slice 8 totality: typed ISLE progress (driver totality, extern-helper model,
 -- context invariant, roots, hand-checked rules, the `f64const` sub-table)
@@ -47,3 +48,33 @@ import FVTest.Link.FloatScopeInputT3F
 #print axioms Backend.Proof.Prg.lowerFunction_ok_inputTF
 #print axioms E2E.LinkCheck.lowerFunction_ok_inT3F
 #print axioms E2E.FloatScopeInputT3FWitness.lowers -- witness: native_decide
+
+-- S11f (#35) stage 2: decider-free totality over the float scope
+#print axioms Backend.Proof.Driver.lowerCheck_partsTF
+#print axioms Backend.Proof.Driver.lowerCheckTCF_complete
+#print axioms Backend.Proof.Driver.lowBlocksC_of_lowBlocks
+#print axioms Backend.Proof.Driver.certOk_completeTF
+#print axioms Backend.Proof.Driver.alias_factsTF
+#print axioms Backend.Proof.Driver.shapeOkTS_completeI
+#print axioms Backend.Proof.Prep.prepare_okTF
+#print axioms Backend.Proof.Spill.classesOkM_lowerTF
+#print axioms Backend.Proof.Kill.killRunsHypTF
+#print axioms Backend.Proof.Kill.tryDefsExactTF
+#print axioms Backend.Proof.Kill.killFreeB_lowerTF
+#print axioms E2E.spillKillFreeTF
+#print axioms E2E.backend_total_emit_cleanupTF
+#print axioms Backend.Proof.Driver.formsCoveredB_completeTF
+#print axioms E2E.ctlSpillB_of_TF
+#print axioms E2E.ctlInsts_pipelineTF
+#print axioms E2E.emitConds_lowerTF
+#print axioms E2E.LinkCheck.resClassOkB_of_TF
+#print axioms E2E.LinkCheck.lowersTCB_of_T3F
+#print axioms E2E.LinkCheck.fnScopeInTCB_of_T3F
+#print axioms E2E.LinkCheck.pipeCleanupT_okT3F
+#print axioms E2E.LinkCheck.resultsCleanupT_ok_inT3F
+-- unchanged statements, proofs now through the float-scope versions
+#print axioms Backend.Proof.Driver.lowerCheckT_complete
+#print axioms Backend.Proof.Kill.killRunsHypT
+#print axioms Backend.Proof.Kill.tryDefsExactT
+#print axioms E2E.LinkCheck.pipeCleanupT_okT
+#print axioms E2E.FloatScopeTotalT3FWitness.pipeline_ok -- witness: native_decide
