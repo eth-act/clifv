@@ -1040,6 +1040,50 @@ while the caller's `TableOf` gives the actual call's; a transfer `TableOf s → 
 `EntryAgree`-related entries (a second determinism fact, `DetTabPRB`, stated premise like
 `DetPRB`) is needed, then `XPBTG_eq_of` by strong induction on `n`, `thmPRB_of`, `thmPRB`.
 
+**Stage 2 groundwork, as built (UninitZ15, 2026-10-28, PR #688).** Decisions (new names, old
+statements kept):
+- `DetTabPRB κ M` (`FV/E2E/LinkArmDetTabPRB.lean`): the second determinism fact, stated
+  call-shaped with `progCallPRB`'s premises: a call state `t` with `CallerOk`, the canonical
+  state's masked registers but `x30`/pc and its bytes in `StackBelow (frameDrop + κ (M - 1))`
+  moves `TableOf (M - 1) h (enterAt t) (calleeIni h ini)` to `enterAt (canon h uses w)`;
+  `progCallPRB_at`. A premise beside `DetPRB`, both for `thmPDER(X)_det_of`.
+- Finding [#687](https://github.com/eth-act/clifv/issues/687): `ThmPRB` is unsatisfiable at
+  entries with `ra = base` (`RetAt g s s`, so `TableOf` holds for every oracle,
+  `tableOf_of_retAt`, while the conclusion's table pins the first slotted callee's bytes).
+  `ThmPRBR` adds `RaOk (L.A g) (ra - 4)` (every linked call has it; a top-level entry has `ra`
+  outside the code), `ThmPRB.toR`; R-variants `progCallPRBR(_at)`, `progOsCorePRBR`,
+  `progOsCoreXPRRBR`, `progOsPRBR`, `progOsRegPRBR`, `calleeOkPRBR`, `calleeTryOkPRBR`.
+  `noRetAt_of` (under `RaOk` no `RetAt` precedes the return: `retStuck` / `PostTrace`) and
+  **`thmPRBR_of_thm`** (`¬ NeedSlots`: `Thm κ M → ThmPRBR κ M`), so `ThmPRBR` holds at every depth
+  for systems without slotted callees (witness `thmPRBR_LU`).
+- `tabUpTo_count` (`FV/E2E/LinkArmTabCount.lean`): the count of a table prefix is unique
+  (independent of table and offset), which ties `progCallPRB`'s per-call count (`NextAdv`) to the
+  caller's `E j`.
+- Finding [#690](https://github.com/eth-act/clifv/issues/690): `ActEntryPR` for `XPBG`/`XPBTG`
+  is unprovable: `CalleeOkGP.ext` asks the guarded answers to keep the program, `guardR`'s ε
+  answers are only `CallPost`-accepted, and `CallPost` never constrains the program.
+  `FV/E2E/ExtSemGuardRX.lean`: `CallPostX := CallPost ∧ ExtOkR`, `CallPostNX`, `fixW`,
+  `callPostNX_exists`, `xCallsOk_guardRX_only`, **`guardR_ext`**, **`hX_guardRXI`**;
+  `FV/E2E/BackendWorldPRGX.lean`: **`backend_correct_world_{cleanup,pipeline}PRGX`**;
+  `FV/E2E/LinkArmXPBTX.lean`: `XPBTGX` (the `XI` of the induction step), `XPBTGX_ext`,
+  `XPBTGX_eq_of`.
+- `FV/E2E/LinkArmEnvOfB.lean`: `PlacedB`, `envOfB` (program callees guarded by "placed with some
+  oracle"), `ActInvB`, `actInvB_step`, `step_envOfB`, **`runLoop_envOfB`** (the activation's
+  environment for `backend_correct_world_*PRGX` in `thmPRBR_of`, as `envOf` in `thm_of`).
+
+Next (`thmPRBR_of`, in order): (a) the CLIF counter along `ReachN` under `ActInvB`: the state
+after `k` calls is placed with `ini.adv (sumTo A k)`, `A j` the advance of invocation `j`
+(`InvokedN`; `placeInvB_step`, `NextAdv.unique`); (b) stage 2 at call `n` (strong induction on
+`n`): at an `OnCallPR … n` state `t` whose call is `RelatedN … n`, `CondBT` at `worldPR (P n)
+(R n) w` with `ini := ini0.adv (sumTo A n)` (= the caller table's offset by (a), `tabUpTo_count`
+and `progCallPRBR`'s per-call count for `j < n`), the slot bytes from `TabUpTo`'s call clause,
+the canonical table by `DetTabPRB`, and `CallPostNX` of `XPRBT`'s answer (`progCallPRBR`'s
+outcome, `XPRBT_ext`); then `CalleeOkGP` for `XPBTGX … n` at the `OnCallPR` states from
+`calleeOkPRBR` (a `P`-restricted `ofCallSub` with `XPBTGX_eq_of`, `ext` by `XPBTGX_ext`); (c)
+`thmPRBR_of` from `backend_correct_world_pipelinePRGX` with `XI := XPBTI`, `env := envOfB`
+(`runLoop_envOfB`), the table to the return by `noRetAt_of`, `NextAdv` by (a) at the return;
+(d) `thmPRBR` by induction on `M`; (e) `compileExe_correct_init`.
+
 **Step 3h, as built (UninitZ10b): the call-count premises are theorems.** `InstCallsOne f` and
 `TryCallsOne f` hold for every `f` (`E2E.instCallsOne_all`, `E2E.tryCallsOne_all`,
 `FV/E2E/IselCallsOneAll.lean`), from `FV/Backend/Proof/IselCallsOne.lean`:
