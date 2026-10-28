@@ -745,6 +745,71 @@ of the same configuration, so the segment's call-state count carries over). Next
 `RegLevelCorrectPRS.lean`'s with `csemVI` → the counted `valueSemV`, `realizes_allC_sp` →
 `realizes_value_allC_sp`; the `rets`/halt cases as in `DeadCleanupRegLevel.lean`).
 
+**Steps 3h–3j, as built (UninitZ10, branch `agent/uninit-z10`).** Item (a) is complete for both
+compile paths.
+- `FV/E2E/CountedFam.lean`: `NoncallIndep sem`, `ProbeOf semB sem` (for `sem : Nat → ISem CV W`,
+  any world), `SeqEnd.liftW`, `counted_noncall`/`counted_call`, `counted_probe_proj`,
+  `seqRun_counted_le1`; instances `noncallIndep_csem`/`probeOf_csem`,
+  `noncallIndep_valueSem`/`probeOf_valueSem`. `IselSimI`/`IselSimITry`: the step lemmas and the run
+  induction for any such family and memory relation (`stmt_stepG_noCall`, `stmt_stepG_call`,
+  `term_stepG`, `term_step_tryG`, `sim_runG`); the `csem` statements (`stmt_stepI_*`, `term_stepI`,
+  `term_step_tryI`, `sim_runI`) are unchanged, now instances.
+- `FV/E2E/IselSimICleanup.lean`: `valueSemI`, `driverHyp_relW_cleanup`, **`iselSim_relWI_cleanup`**.
+- `FV/E2E/BackendWorldCleanupI.lean`: `prune_correctW` (the cleanup simulation `star_sim` is
+  world-generic, so `prune_correct` holds for the counted world; `returns_cleanW`/`traps_cleanW`),
+  `pureForm_isCallI`/`cmpForm_isCallI`, `counted_pure`, `cmpOverwrite_counted`,
+  `DriverSemG.counted`, `valueSemV_sub`, `gotInvI_step_value`/`_star_value`,
+  `vRetFrom_gotV_valueI`/`vTrapFrom_gotV_valueI`, **`backend_correct_world_cleanupPRI`**
+  (`backend_correct_worldPRI`'s conclusion for `CompiledCleanup`).
+- `FV/E2E/CompiledEitherI.lean`: **`backend_correct_world_pipelinePRI`** (`CompiledEither`).
+- `FV/E2E/PairDriverI.lean`: `counted_pair_proj₁`/`₂`, `noncallIndep_pair`, `probeOf_pair`,
+  `xNI_none`, **`vcode_niI`**: the pair driver per CLIF step (family `pairSem (csem F ctx (XI.at
+  n))`, `MRP`), with `XNI` of call `n` needed, like the callee contracts, only at the CLIF states
+  reached after `n` calls and for the environment restricted to their invocation (decision:
+  per-state, the same shape as `hX`; the old one-`X` `XNI` premise is the special case).
+  `FV/E2E/PairDriverICleanup.lean`: **`vcode_niI_value`**.
+- `FV/E2E/BackendWorldNII.lean`: `backend_correct_world_niPRI`, `backend_correct_world_ni_cleanupPRI`,
+  **`backend_correct_world_ni_pipelinePRI`** (`backend_correct_world_ni_pipeline`'s two clauses,
+  counted: `ActEntryPR` activations, `XTls F (XI.at 0)`; the two outcomes are identified by the
+  world-generic `vRetFrom_det`).
+- Witnesses `FV/E2E/BackendWorldCleanupIWitness.lean` (`DeadCleanupWitness.source`, the closed
+  cleanup compilation that removes an instruction): `source_callsOne`, `source_xcalls`,
+  `source_xni`, `cleanupPRI_applies` (through `backend_correct_world_pipelinePRI`),
+  `ni_pipelinePRI_applies`.
+
+Item (b) interface, as built: `FV/E2E/ClifEnvOnlyContracts.lean`: `xCallsOk_only_of`,
+`xCallsIndOk_only_of`, `xNI_only_of` (the per-state premises from the contract at the admitted
+invocations only, the shape to discharge at the machine's `n`-th call), `xCallsOk_only`,
+`xCallsIndOk_only`, `xNI_only` (an environment's contract holds for each restriction, so the
+one-`ExtSem` premises give the per-state ones for `ExtSemI.const X`); witness `source_only`.
+`InstCallsOne`/`TryCallsOne` are theorems in #675 (UninitZ10b: `instCallsOne_all`,
+`tryCallsOne_all`); the premise-free `*_PRIC` corollaries of 3i/3j are one-liners once both are on
+main.
+
+Next: item (b) proper (`thmPR_of` on `backend_correct_world_ni_pipelinePRI`: discharge `hX`/`hNI`
+per state through `xCallsOk_only_of` from `progCallPR`/`calleeOkPR` at the machine's `n`-th call,
+`counter_at` along `ReachN`), item (d) (`WorldEntryB`), item (e).
+
+**Design notes for (b)+(d) (UninitZ10, not built).** With the oracle the CLIF outcome of an
+activation depends on its byte table, and the table must be the machine's: entry `j` is the memory
+at the `j`-th placed activation with slots that the whole machine run enters (§5.5). So the oracle
+statement cannot choose the outcome before the machine activation, as `ThmPR` does for `(P, R)`:
+the table, `P := prophOf` and `R := prophStOf` are all functions of the machine entry `s`. Proposed
+shape: `ThmPRB κ M` = for every `g`, CLIF entry placed with `PlaceAtB cs.mem (spv w₀) ini`
+(`WorldEntryB`) and machine entry `s` (`MachEntryPR … (prophOf s) (prophStOf s)`) whose run's
+entry-order table agrees with `ini` from `ini.next` on (`TableOf s ini`: for the activation's
+`n`-th call, the entries `ini.next + slotted g + sumTo E n …` are the callee run's, `counter_at`),
+a returning CLIF run gives one counted outcome realised by `s`. The induction step (`thmPRB_of`)
+uses `backend_correct_world_ni_pipelinePRI` with `XI := L.XPRI κ M g F (prophOf s) (prophStOf s)`
+and discharges `hX` at the state `s'` reached after `n` CLIF calls with `xCallsOk_only_of`: only
+the actual invocation (memory `s'.mem`, placed at the counter `counter_at` gives) and the machine's
+`n`-th call (`OnCallPR`) are related, and the callee's CLIF run reads the table entries the callee's
+machine run entered, i.e. `ThmPRB (M - 1)` for the callee with `ini.adv (counter)` and the
+canonical callee run (`progCallPR`) — its entry-order table is the caller's table from that
+counter on because the canonical callee state agrees with the actual call state on the region
+(`P n`) and the masked registers (`R n`), the determinism clause (item (c), UninitZ10b's lock-step).
+
+
 ## 6. Heap (separate gap, SEM2)
 
 `BaseOk.baseKeepsAllocs`/`baseNoAlloc` require base externs to allocate nothing whenever a program
