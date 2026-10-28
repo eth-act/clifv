@@ -437,7 +437,8 @@ forms of the typed shapes `CtlShapeT`, with defs above every value's vreg. -/
 theorem iselCtlHypT : IselCtlHypT := by
   intro f ctx ranges st0 hdom hs hst hsel ha hb
   have hx := externsE_of hs.subsetT
-  have hctx : CtxT f ctx := ⟨ctxInvT_of hs hb, (buildCtx_typed hs hb).2.2, callsE_of_externs hx ctx⟩
+  have hctx : CtxT f ctx :=
+    ⟨ctxInvT_of hs hb, (buildCtx_typed hs hb).2.2.toTF, callsE_of_externs hx ctx⟩
   have hcl : Clean ctx := Cov.clean_of_build hb
   have hfam := famCover_of hs hdom hst hsel hb
   refine ⟨fun ii info inst s out s' tr hi hc hN h => ?_,

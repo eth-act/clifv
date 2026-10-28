@@ -9,18 +9,18 @@ namespace Link.ActualImageProof
 open E2E E2E.LinkCheck E2E.BinCheck E2E.Elf Backend LinkSpec
 
 abbrev inputFor (S : LinkSpec) (lower : Clif.Function → Except String VCode)
-    (stage : VCode → VCode) : LinkInput := S.inputWithLowering lower stage
+    (stage : Clif.Function → VCode → VCode) : LinkInput := S.inputWithLowering lower stage
 abbrev resultsFor (S : LinkSpec) (lower : Clif.Function → Except String VCode)
-    (stage : VCode → VCode) : Res := S.input0.resultsWithLowering lower stage
+    (stage : Clif.Function → VCode → VCode) : Res := S.input0.resultsWithLowering lower stage
 abbrev artsFor (S : LinkSpec) (lower : Clif.Function → Except String VCode)
-    (stage : VCode → VCode) : List Art :=
+    (stage : Clif.Function → VCode → VCode) : List Art :=
   ((tabOf (resultsFor S lower stage)).take S.funcs.length).map (·.2)
 abbrev regionFor (S : LinkSpec) (lower : Clif.Function → Except String VCode)
-    (stage : VCode → VCode) (tp : Nat → Option Nat) : ByteArray :=
+    (stage : Clif.Function → VCode → VCode) (tp : Nat → Option Nat) : ByteArray :=
   ByteArray.mk (regionBytes (inputFor S lower stage) tp (artsFor S lower stage)).toArray
 
 theorem spec {S : LinkSpec} {lower : Clif.Function → Except String VCode}
-    {stage : VCode → VCode} {file0 file : ByteArray} (h : leanLinkWithLowering S file0 lower stage = .ok file) :
+    {stage : Clif.Function → VCode → VCode} {file0 file : ByteArray} (h : leanLinkWithLowering S file0 lower stage = .ok file) :
     ∃ phs, phdrs (fileRd file0) = some phs ∧ S.placeOkB = true ∧
       (resultsFor S lower stage).all (·.2.toBool) = true ∧
       S.namesOkB (tabOf (resultsFor S lower stage)) = true ∧
@@ -59,19 +59,19 @@ theorem spec {S : LinkSpec} {lower : Clif.Function → Except String VCode}
 
 /-- Actual-output successful linking establishes a static executable directly. -/
 theorem static_of_success {S : LinkSpec} {lower : Clif.Function → Except String VCode}
-    {stage : VCode → VCode} {file0 file : ByteArray}
+    {stage : Clif.Function → VCode → VCode} {file0 file : ByteArray}
     (h : leanLinkWithLowering S file0 lower stage = .ok file) : Static file := by
   obtain ⟨_, _, _, _, _, _, _, _, _, hout, _⟩ := spec h
   exact outsideOkB_static hout
 
 /-- The actual callback contributes exactly one result per input function. -/
 theorem tab_length (S : LinkSpec) (lower : Clif.Function → Except String VCode)
-    (stage : VCode → VCode) :
+    (stage : Clif.Function → VCode → VCode) :
     (tabOf (resultsFor S lower stage)).length = S.funcs.length := by
   simp [resultsFor, tabOf, LinkInput.resultsWithLowering, LinkSpec.input0]
 
 theorem names_getElem! {S : LinkSpec} {lower : Clif.Function → Except String VCode}
-    {stage : VCode → VCode}
+    {stage : Clif.Function → VCode → VCode}
     (hn : S.namesOkB (tabOf (resultsFor S lower stage)) = true) {i : Nat}
     (hi : i < S.funcs.length) : S.names[i]! = S.funcs[i].func.name := by
   have hs' := congrArg (·[i]?) (of_decide_eq_true hn)
@@ -82,7 +82,7 @@ theorem names_getElem! {S : LinkSpec} {lower : Clif.Function → Except String V
   exact Option.some.inj ((List.getElem?_eq_getElem _).symm.trans hs'.symm)
 
 theorem tab_entry {S : LinkSpec} {lower : Clif.Function → Except String VCode}
-    {stage : VCode → VCode}
+    {stage : Clif.Function → VCode → VCode}
     (hr : (resultsFor S lower stage).all (·.2.toBool) = true) {i : Nat}
     (hi : i < S.funcs.length) :
     ∃ fi a, S.funcs[i]? = some fi ∧
@@ -102,7 +102,7 @@ theorem tab_entry {S : LinkSpec} {lower : Clif.Function → Except String VCode}
     rfl
 
 theorem tab_placed {S : LinkSpec} {lower : Clif.Function → Except String VCode}
-    {stage : VCode → VCode} (hp : S.placeOkB = true)
+    {stage : Clif.Function → VCode → VCode} (hp : S.placeOkB = true)
     (hr : (resultsFor S lower stage).all (·.2.toBool) = true)
     (hn : S.namesOkB (tabOf (resultsFor S lower stage)) = true)
     (hs : S.sizesOkB (tabOf (resultsFor S lower stage)) = true) :
@@ -128,14 +128,14 @@ theorem tab_placed {S : LinkSpec} {lower : Clif.Function → Except String VCode
       ← Option.some.inj (hs'.trans (List.getElem?_eq_getElem hi'))]
 
 theorem arts_sizes {S : LinkSpec} {lower : Clif.Function → Except String VCode}
-    {stage : VCode → VCode} (hs : S.sizesOkB (tabOf (resultsFor S lower stage)) = true) :
+    {stage : Clif.Function → VCode → VCode} (hs : S.sizesOkB (tabOf (resultsFor S lower stage)) = true) :
     (artsFor S lower stage).map (·.fb.words.size) = S.sizes := by
   rw [List.map_map]
   exact of_decide_eq_true hs
 
 /-- `leanLink`'s output holds every placed function's resolved words, read-only. -/
 theorem placed_words {S : LinkSpec} {lower : Clif.Function → Except String VCode}
-    {stage : VCode → VCode} {file0 : ByteArray} {phs : List Phdr}
+    {stage : Clif.Function → VCode → VCode} {file0 : ByteArray} {phs : List Phdr}
     (hp : S.placeOkB = true) (hr : (resultsFor S lower stage).all (·.2.toBool) = true)
     (hn : S.namesOkB (tabOf (resultsFor S lower stage)) = true) (hs : S.sizesOkB (tabOf (resultsFor S lower stage)) = true)
     (hok : regionOkB file0 S.R (regionFor S lower stage (tpOff phs)).size (offsetOf phs S.R) = true)
@@ -165,7 +165,7 @@ theorem placed_words {S : LinkSpec} {lower : Clif.Function → Except String VCo
 resolved words (`resolveWord` with the file's thread-pointer offsets `tp`), its relocations
 passing the linker's checks. -/
 theorem words {S : LinkSpec} {lower : Clif.Function → Except String VCode}
-    {stage : VCode → VCode} {file0 file : ByteArray} (h : leanLinkWithLowering S file0 lower stage = .ok file) :
+    {stage : Clif.Function → VCode → VCode} {file0 file : ByteArray} (h : leanLinkWithLowering S file0 lower stage = .ok file) :
     ∃ tp : Nat → Option Nat, (∀ v, TpOff file v = tp v) ∧ ∀ e ∈ tabOf (resultsFor S lower stage),
       relocsOkB (inputFor S lower stage) tp e.2 = true ∧
       (∀ k < e.2.fb.words.size, ∀ j < 4, Elf.ro file (wAt e.2 (4 * k + j))) ∧
@@ -180,7 +180,7 @@ theorem words {S : LinkSpec} {lower : Clif.Function → Except String VCode}
 
 /-- **Every function of the compiler's table is in `leanLink`'s output** (`ArtOk`). -/
 theorem code {S : LinkSpec} {lower : Clif.Function → Except String VCode}
-    {stage : VCode → VCode} {file0 file : ByteArray} (h : leanLinkWithLowering S file0 lower stage = .ok file) :
+    {stage : Clif.Function → VCode → VCode} {file0 file : ByteArray} (h : leanLinkWithLowering S file0 lower stage = .ok file) :
     ∀ e ∈ tabOf (resultsFor S lower stage), ArtOk (inputFor S lower stage) file e.2 := by
   obtain ⟨tp, htp, hw⟩ := words h
   intro e he
@@ -191,7 +191,7 @@ theorem code {S : LinkSpec} {lower : Clif.Function → Except String VCode}
 /-- The actual linked file contains exactly the actual compiler artifacts;
 all outside-file properties come from the existing byte-writer checks. -/
 theorem bin_ok {S : LinkSpec} {lower : Clif.Function → Except String VCode}
-    {stage : VCode → VCode} {file0 file : ByteArray}
+    {stage : Clif.Function → VCode → VCode} {file0 file : ByteArray}
     (h : leanLinkWithLowering S file0 lower stage = .ok file) :
     BinOkWithResults (inputFor S lower stage) (resultsFor S lower stage) S.data file := by
   obtain ⟨_, _, _, _, _, _, _, _, _, hout, _⟩ := spec h
