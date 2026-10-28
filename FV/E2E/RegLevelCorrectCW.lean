@@ -372,28 +372,47 @@ theorem realizes_allCW {R : RL} (hR : R.Wf) {P : Arm.ArmState → Prop}
 
 /-- **A chain of realised segments** from `s` at witness `W` and configuration `c`: the
 segment lengths and the configurations reached, in order, each segment cut at its first arrival
-(`RL.SegLenA`) and ending at the next witness. Ends at `u`, witness `W'`, configuration `c'`. -/
-inductive RL.SegChain (R : RL) (s : Arm.ArmState) (W : Nat × PState × List Line)
-    (c : MConf CV Arm.ArmState) :
+(`RL.SegLenA`), ending at the next witness, its states satisfying `Tr`. Ends at `u`, witness
+`W'`, configuration `c'`. -/
+inductive RL.SegChain (R : RL) (Tr : Arm.ArmState → Prop) (s : Arm.ArmState)
+    (W : Nat × PState × List Line) (c : MConf CV Arm.ArmState) :
     List (Nat × MConf CV Arm.ArmState) → Arm.ArmState → Nat × PState × List Line →
       MConf CV Arm.ArmState → Prop
-  | nil : RL.SegChain R s W c [] s W c
+  | nil : RL.SegChain R Tr s W c [] s W c
   | snoc {l : List (Nat × MConf CV Arm.ArmState)} {u : Arm.ArmState}
       {W1 : Nat × PState × List Line} {c1 c2 : MConf CV Arm.ArmState} {n : Nat} :
-      RL.SegChain R s W c l u W1 c1 → R.SegLenA W1.1 W1.2.1 W1.2.2 c1 c2 u n →
-      RL.SegChain R s W c (l ++ [(n, c2)]) (iterN R.step n u)
+      RL.SegChain R Tr s W c l u W1 c1 → R.SegLenA W1.1 W1.2.1 W1.2.2 c1 c2 u n →
+      (∀ i < n, Tr (iterN R.step i u)) →
+      RL.SegChain R Tr s W c (l ++ [(n, c2)]) (iterN R.step n u)
         (R.nextW W1.1 W1.2.1 W1.2.2 c1 c2) c2
 
 /-- **The chain's end is its start after the sum of the segment lengths.** -/
-theorem RL.SegChain.iter {R : RL} {s : Arm.ArmState} {W : Nat × PState × List Line}
+theorem RL.SegChain.iter {R : RL} {Tr : Arm.ArmState → Prop} {s : Arm.ArmState}
+    {W : Nat × PState × List Line}
     {c : MConf CV Arm.ArmState} {l : List (Nat × MConf CV Arm.ArmState)} {u : Arm.ArmState}
     {W' : Nat × PState × List Line} {c' : MConf CV Arm.ArmState}
-    (h : R.SegChain s W c l u W' c') : u = iterN R.step (l.map Prod.fst).sum s := by
+    (h : R.SegChain Tr s W c l u W' c') : u = iterN R.step (l.map Prod.fst).sum s := by
   induction h with
   | nil => rfl
-  | snoc _ _ ih =>
+  | snoc _ _ _ ih =>
     rw [ih, List.map_append, List.sum_append, ← iterN_add]
     simp [Nat.add_comm]
+
+/-- **Every state of the chain's run before its end satisfies `Tr`.** -/
+theorem RL.SegChain.trace {R : RL} {Tr : Arm.ArmState → Prop} {s : Arm.ArmState}
+    {W : Nat × PState × List Line}
+    {c : MConf CV Arm.ArmState} {l : List (Nat × MConf CV Arm.ArmState)} {u : Arm.ArmState}
+    {W' : Nat × PState × List Line} {c' : MConf CV Arm.ArmState}
+    (h : R.SegChain Tr s W c l u W' c') : ∀ i < (l.map Prod.fst).sum, Tr (iterN R.step i s) := by
+  induction h with
+  | nil => intro i hi; simp at hi
+  | @snoc l u W1 c1 c2 n hch _ ht ih =>
+    have hu := hch.iter
+    rw [List.map_append, List.sum_append]
+    simp only [List.map_cons, List.map_nil, List.sum_cons, List.sum_nil, Nat.add_zero]
+    refine trace_add ih ?_
+    rw [← hu]
+    exact ht
 
 /-- **`realizes_allC_spY` exporting the segmentation**: under `Q` = "a chain of realised
 segments from `(s₀, W₀, c₀)` reaches the state at a witness at which `QW` holds", with the body
@@ -409,7 +428,8 @@ theorem realizes_allC_spW {R : RL} (hR : R.Wf) {P : Arm.ArmState → Prop}
     (hcov : FormsCovered R.ctx R.vc) (s₀ : Arm.ArmState) (W₀ : Nat × PState × List Line)
     (c₀ : MConf CV Arm.ArmState) :
     RealizesCP R.vc R.rf (R.semG Ok) ckeep R.step
-      (fun u c => (∃ l W, R.SegChain s₀ W₀ c₀ l u W c ∧ QW R u W.1 W.2.1 W.2.2 c) ∧ AInv R c)
+      (fun u c => (∃ l W, R.SegChain (fun u => R.Good u ∧ R.WReadsIn Ok u) s₀ W₀ c₀ l u W c ∧
+        QW R u W.1 W.2.1 W.2.2 c) ∧ AInv R c)
       (fun u => R.GoodX u ∧ R.WReadsIn Ok u) R.CallSt P := by
   intro s c c' ⟨⟨l, W, hch, hq⟩, hA⟩ hP h
   have hsp : spOf s = R.spB := by
@@ -418,6 +438,7 @@ theorem realizes_allC_spW {R : RL} (hR : R.Wf) {P : Arm.ArmState → Prop}
     | _ => cases h
   obtain ⟨n, c'', hm, -, hA', hq', ht, hcnt, hs⟩ :=
     realizes_allCW hR Ok hC hT hTls hcov hq hA ⟨hP, hsp⟩ h
-  exact ⟨n, c'', hm, ⟨⟨_, _, .snoc hch hs, hq'⟩, hA'⟩, ht, hcnt⟩
+  exact ⟨n, c'', hm, ⟨⟨_, _, .snoc hch hs fun i hi => ⟨(ht i hi).1.good, (ht i hi).2⟩, hq'⟩, hA'⟩,
+    ht, hcnt⟩
 
 end Backend.Proof
