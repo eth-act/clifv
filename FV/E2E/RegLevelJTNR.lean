@@ -14,7 +14,8 @@ namespace Backend.Proof
 open Backend E2E
 
 /-- **The machine runs a jump table** (its default branch possibly relaxed). -/
-theorem jt_machineNR {R : RL} (hR : R.Wf) {s : Arm.ArmState} {j0 : Nat} {d : Label}
+theorem jt_machineNR {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : Arm.ArmState} {j0 : Nat}
+    {d : Label}
     {ts : List Label} {nr na nb : Nat} (hr : nr < 29) (ha : na < 29) (hb : nb < 29)
     (hab : na ≠ nb) {jt : Lbl} (hjt : jt ≠ .skip) {T : List Line}
     (hdrop : R.L.drop j0 = relaxLine R.far (.ins (.bcond .hs (.block d)) none) ++
@@ -24,15 +25,16 @@ theorem jt_machineNR {R : RL} (hR : R.Wf) {s : Arm.ArmState} {j0 : Nat} {d : Lab
     (hcode : ∀ k w, R.fb.words[k]? = some w →
       Arm.read_mem_bytes 4 (R.base + BitVec.ofNat 64 (4 * k)) s = w) :
     (Arm.ConditionHolds Cond.hs.bits s = true → ∃ n jl, iterN R.step n s = Arm.w .PC (R.pcOf jl) s ∧
-      R.L[jl]? = some (.label (.block d)) ∧ ∀ i < n, R.GoodXNR (iterN R.step i s)) ∧
+      R.L[jl]? = some (.label (.block d)) ∧ ∀ i < n, R.GoodXNY Y (iterN R.step i s)) ∧
     (Arm.ConditionHolds Cond.hs.bits s = false → ∀ i l,
       (Arm.r (.GPR (rnum nr)) s).toNat % 2 ^ 32 = i → ts[i]? = some l →
       ∃ n jl s', iterN R.step n s = s' ∧ Arm.r .PC s' = R.pcOf jl ∧
         R.L[jl]? = some (.label (.block l)) ∧
         (∀ f, f ≠ .PC → f ≠ .GPR (rnum na) → f ≠ .GPR (rnum nb) → Arm.r f s' = Arm.r f s) ∧
         s'.mem = s.mem ∧ s'.program = s.program ∧
-        ∀ i < n, R.GoodXNR (iterN R.step i s)) := by
-  obtain ⟨n0, j1, hn0, hj1t, hj1f, -, hn1, hgx0⟩ := reach_rcbXNR hR hdrop (.inl ⟨.hs, rfl⟩) (by simp)
+        ∀ i < n, R.GoodXNY Y (iterN R.step i s)) := by
+  obtain ⟨n0, j1, hn0, hj1t, hj1f, -, hn1, hgx0⟩ := reach_rcbXNR (Y := Y) hR hdrop (.inl ⟨.hs, rfl⟩)
+    (by simp)
     (Arm.ConditionHolds Cond.hs.bits s) (fun env a ha => brCond_bcond ha s)
     (fun _ env a ha => by
       simp only [Insn.invertTo] at ha
@@ -256,14 +258,15 @@ theorem jt_machineNR {R : RL} (hR : R.Wf) {s : Arm.ArmState} {j0 : Nat} {d : Lab
 
 /-- **A jump table on the machine**: from `Q` at a `jtSequence` item, the machine reaches `Q`
 at an `MStep` successor (the temporaries havocked to the machine's values). -/
-theorem realizes_jtNR {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {allocs : Array Loc}
+theorem realizes_jtNR {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : Arm.ArmState} {b k : Nat}
+    {allocs : Array Loc}
     {its : List RItem} {m : Loc → CV} {w : Arm.ArmState} {c' : MConf CV Arm.ArmState}
     (hq : Q R s (.run ⟨b, .op k allocs :: its, m, w⟩)) {vb : VBlock} {d : Label}
     {ts : List Label} {ridx t1 t2 : Reg}
     (hvb : R.vc.blocks[b]? = some vb) (hi : vb.insts[k]? = some (.jtSequence d ts ridx t1 t2))
     (h : MStep R.vc R.sem ckeep R.rf (.run ⟨b, .op k allocs :: its, m, w⟩) c') :
     ∃ n c'', MStep R.vc R.sem ckeep R.rf (.run ⟨b, .op k allocs :: its, m, w⟩) c'' ∧
-      Q R (iterN R.step n s) c'' ∧ ∀ i < n, R.GoodXNR (iterN R.step i s) := by
+      Q R (iterN R.step n s) c'' ∧ ∀ i < n, R.GoodXNY Y (iterN R.step i s) := by
   have hck := (lowerRFunc_ok hR.alloc).2.2
   have hok := ctlCheck_inst hck hvb hi
   simp only [ctlInstOk, Bool.and_eq_true] at hok
@@ -311,7 +314,8 @@ theorem realizes_jtNR {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {alloc
       .ins (.aluRRR .add true (.x na) (.x na) (.x nb)), .ins (.br (.x na)), .label (.jt ps1.jt)] ++
       ts.map (fun l => Line.word (.block l) (.jt ps1.jt)) = jtBody d ts (.x nr) (.x na) (.x nb) (.jt ps1.jt)
       from rfl, ftList_jt, relaxLines_append, relaxLines_jtBody, List.append_assoc, List.append_assoc]
-  obtain ⟨hmTaken, hmNot⟩ := jt_machineNR hR hnr hna hnb hab (by simp) hdrop' hst.prog hpc hst.err hst.sp
+  obtain ⟨hmTaken, hmNot⟩ := jt_machineNR (Y := Y) hR hnr hna hnb hab (by simp) hdrop' hst.prog hpc
+    hst.err hst.sp
     hst.code
   obtain ⟨c, ins, _, hc, -⟩ := hR.check
   obtain ⟨preds, hcfg⟩ := hc.cfg
@@ -377,9 +381,9 @@ theorem realizes_jtNR {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {alloc
   have fin : ∀ (s' : Arm.ArmState) (n jl : Nat), iterN R.step n s = s' →
       Arm.r .PC s' = R.pcOf jl → R.L[jl]? = some (.label (.block vs.label)) →
       (∀ f, f ≠ .PC → f ≠ .GPR (rnum na) → f ≠ .GPR (rnum nb) → Arm.r f s' = Arm.r f s) →
-      s'.mem = s.mem → s'.program = s.program → (∀ i < n, R.GoodXNR (iterN R.step i s)) →
+      s'.mem = s.mem → s'.program = s.program → (∀ i < n, R.GoodXNY Y (iterN R.step i s)) →
       ∃ n c'', MStep R.vc R.sem ckeep R.rf (.run ⟨b, .op k (#[Reg.x nr, .x na, .x nb].map Loc.reg) :: its, m, w⟩) c'' ∧
-        Q R (iterN R.step n s) c'' ∧ ∀ i < n, R.GoodXNR (iterN R.step i s) := by
+        Q R (iterN R.step n s) c'' ∧ ∀ i < n, R.GoodXNY Y (iterN R.step i s) := by
     intro s' n jl hn hpc' hjl hf hmem hprog hsp
     have hsem' : R.sem (.jtSequence d ts (.vreg vr .int) (.vreg va .int) (.vreg vb' .int))
         (((#[(⟨vr, .int, .use, .early, .reg⟩ : Operand), ⟨va, .int, .def, .early, .reg⟩,

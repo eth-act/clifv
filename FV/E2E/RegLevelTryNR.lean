@@ -19,7 +19,7 @@ open Backend E2E
 /-- **The call of a `try_call` on the machine** (`realizes_tryCall`) **with its call state**:
 the segment's states satisfy `GoodX`, and exactly one of them (the first, at the `bl`/`blr`) is a
 call state. -/
-theorem realizes_tryCallNR {R : RL} (hR : R.Wf) {P : Arm.ArmState → Prop}
+theorem realizes_tryCallNR {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {P : Arm.ArmState → Prop}
     (hC : CalleeOkGP P R.F R.K R.G R.s0 (CallAt R.fa R.base) R.X R.H R.vc.CallSite R.gv)
     (hT : CalleeTryOkGP P R.F R.K R.G R.s0 (CallAt R.fa R.base) R.X R.H R.vc.TrySite R.gv)
     {s : Arm.ArmState} (hP : P s) {b k : Nat} {allocs : Array Loc}
@@ -36,7 +36,7 @@ theorem realizes_tryCallNR {R : RL} (hR : R.Wf) {P : Arm.ArmState → Prop}
     (hsucc : succOf R.vc b j = some st) (hitems : R.rf.blocks[st]? = some items)
     (hctl : ctl = .goto j) :
     ∃ n c'', MStep R.vc R.sem ckeep R.rf (.run ⟨b, .op k allocs :: its, m, w⟩) c'' ∧
-      Q R (iterN R.step n s) c'' ∧ (∀ i < n, R.GoodX (iterN R.step i s) ∧ R.ReadsIn (iterN R.step i s)) ∧
+      Q R (iterN R.step n s) c'' ∧ (∀ i < n, R.GoodX (iterN R.step i s) ∧ R.ReadsInY Y (iterN R.step i s)) ∧
       ∃ i0 < n, R.CallSt (iterN R.step i0 s) ∧
         ∀ i < n, i ≠ i0 → R.NoCallAt (iterN R.step i s) := by
   have hck := (lowerRFunc_ok hR.alloc).2.2
@@ -182,7 +182,7 @@ theorem realizes_tryCallNR {R : RL} (hR : R.Wf) {P : Arm.ArmState → Prop}
       relaxLines R.far (ftList (.ins (.b (.block ti.continuation)) none :: (ls2 ++ nxtOf R.af b))) ++ T := by
     rw [← List.drop_drop, hdrop']; rfl
   have hsp' : spOf s' = R.spB := hK.1.trans hst.sp
-  obtain ⟨n, jl, hn, hjl, -, hgx⟩ := reach_bXNR hR hdrop1 (by simp) hprog' hpc1 herr' hsp'
+  obtain ⟨n, jl, hn, hjl, -, hgx⟩ := reach_bXNR (Y := Y) hR hdrop1 (by simp) hprog' hpc1 herr' hsp'
   refine ⟨n + 1, _, MStep.op hvb hi hops hsz hsem hlen hho hc2'
     (MNext.goto hk1 hsucc hitems), ?_, fun i hi => ?_, 0, by omega,
     RL.callSt_of_line hj0 hpc (hxk.imp id fun ⟨r, e, _⟩ => ⟨r, e⟩), fun i hi hne => ?_⟩
@@ -193,7 +193,7 @@ theorem realizes_tryCallNR {R : RL} (hR : R.Wf) {P : Arm.ArmState → Prop}
   rotate_right
   · cases i with
     | zero =>
-      show R.GoodX s ∧ R.ReadsIn s
+      show R.GoodX s ∧ R.ReadsInY Y s
       refine ⟨RL.goodX_line hR hj0 hpc (by rcases hxk with ⟨_, rfl⟩ | ⟨_, rfl, _⟩ <;> rfl)
         (RL.good_of_sp hst.sp) hst.err hst.prog
         (RL.nextOk_pc4 (by rw [hs1, hpc1, pcOf_succ hj0, hpc]))
