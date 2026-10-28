@@ -535,6 +535,130 @@ Witnesses `LinkArmProphDetWitness.lean` (`prophOk_u1`: two different states in l
 (`worldP` overlay of the masked file), the base-hook locality premise, the reg-level lock-step
 giving `ProphStep` for two runs of one activation, then `progCallP` on `ThmPD`.
 
+### 5.8 Register prophecy, deterministic base hooks, the two-state step (steps 2n, 2o, 2026-10-28)
+
+**Step 2n** (`FV/E2E/LinkArmProphReg.lean`): `MaskedReg` (`Masked` but the pc; `maskedRegs`,
+`mem_maskedRegs`), `regOverlay S w` (`w` with `S`'s masked registers: `r_regOverlay_in`/`_out`,
+`regOverlay_self`, `sameWorld_regOverlay`), `prophStOf` (the *state* at call `n` of a run:
+`prophStOf_call`, `prophOf_eq_mem`), `ProphRegOk`/`prophRegOk_prophStOf`, and the new contract
+family `worldPR κ M g Pn Sn w := regOverlay Sn (worldP κ M g Pn w)`, `canonPR`, `progXPR`
+(`progXPR_eq`: `progX` of `worldPR`), `XPR`, `XPRI` (call `n` with `P n` and `R n`);
+`worldPR_self`/`progXPR_self`/`XPR_call_self` (with the world's own masked registers it is the
+`P` family), `sameWorld_worldPR`. `worldP` and `XP`/`XPI` stay. For `progCallP` the register
+prophecy is `R := prophStOf` of the activation's machine run, so at call `n` the actual state
+has the masked registers of `R n` (`ProphRegOk`) and the canonical callee state from
+`worldPR … (P n) (R n) w` agrees with it on every masked register but `x30` and the pc
+(`canon` sets the pc; the callee entry's `bl` sets `x30`) — the determinism premise of `ThmPD`.
+Witnesses `LinkArmProphRegWitness.lean`.
+
+**Step 2o** (`FV/E2E/LinkArmBaseDet.lean`, `LinkArmStepDet.lean`): `StEqOut Z s t` (same
+registers and program, same memory outside `Z`); `HookDet Hb BD` (from two `StEqOut Z` states with
+`Z` strictly below `sp` a base call/TLS hook gives `StEqOut Z` states); `OkD` = `Ok` +
+`baseDet : NeedNI → HookDet L.Hb L.BaseDest` (`Ok.okD_of_not_needNI`, `Ok.okD`). **Decision
+(conservative):** the premise is about the *dead stack* only (AAPCS64 has no red zone, so an
+extern never reads below its entry `sp` before writing it); differences above the hook's `sp`
+(non-live caller-frame bytes, the NI set `D`) are not covered by it: those are bytes no CLIF
+access reaches (`RelW` to the same CLIF memory), and the lock-step must keep them out of every
+hook's and instruction's reads by the `GoodX.reads` argument, not by a hook premise. The
+single-step half of the lock-step: `ReadsAvoid Z evs`, `stEqOut_exec_inst` (from
+`footprint_exec_inst`/`agrees_instEvs`: an instruction whose read events avoid `Z`),
+`stEqOut_stepi` (`stepiEvs`), `stEqOut_armStepX` (unhooked line, `HookedInsn`),
+`stEqOut_armStepX_call` (hooks that keep `StEqOut Z`). Witnesses `LinkArmBaseDetWitness.lean`,
+`LinkArmStepDetWitness.lean`. Note: `LinkArmStepDet` imports `FV.Concurrency.VCodeThread`
+(the instruction footprints), like `FV/ArmFault/Step.lean` already does.
+
+**Design changes found while building 2o (for the reg-level lock-step, item 3):**
+1. *`x30` differs between the two runs* (`canon`'s callee entry returns to `raStar`, the actual
+   one to the call site). `StEqOut` (all registers equal) therefore holds only from the first
+   `bl` of the body on, and the frame record bytes (inside the frame, above the body `sp`, so
+   outside the prophecy region) differ for the whole activation. The lock-step relation must be
+   `StEqOut` up to the registers `{x30}` until the first call and the frame-record bytes in `Z`,
+   which needs a *register* footprint: no instruction of the body but `bl`/`blr`/`ret` and the
+   prologue/epilogue frame-record pair reads `x30` (Cranelift never allocates `x30`). The memory
+   footprints exist (`ArmInstFoot`); a register footprint per `Insn` does not yet: that is the
+   next leaf (per `Insn` constructor: the encoded word's `exec_inst` reads only its operand
+   registers; `x30` is no operand of a lowered body `Insn`, checked on the compiled code).
+2. *`ThmPD`'s determinism clause is too weak for its own induction (`thmPD_of`).* Inside `g`'s
+   two runs, after a nested program call of `h` returns, the lock-step must continue with
+   `StEqOut`-related states (the bytes `h` left below `g`'s `sp` are part of `g`'s next
+   prophecy). `ThmPD` concludes only `ActRet` + `ProphOkUpTo`. The inductive statement needs, in
+   addition: the two runs' states at the return are `StEqOut Z` for the differing set `Z` of the
+   entries minus the callee region (registers equal but `x30`/pc). `progCallP` itself needs one
+   use of the determinism clause only, of `ThmPDE` (3) (the caller's prophecy is of the *actual* run, so no determinism across the
+   caller's calls is needed there): it uses the determinism clause once, from the canonical state
+   to the actual call state `t` (`OnCallP` + `ProphRegOk` give the premises). So `progCallP` on
+   `ThmPDE` (item 4, see (3)) is independent of item 3, and item 3 proves `ThmPDE` by induction
+   (`thmPDE_of`).
+3. *`ThmPD`'s determinism premises are on the wrong states (step 2p).* `MachEntry s w₀` relates
+   the machine entry `s` to `w₀` only outside `F` and on the unmasked registers (`BodyEntryW`);
+   the callee region lies in `F`. So two entries with the *same* `w₀` (take `w₀' := w₀`, `D := ∅`:
+   every premise of the clause holds trivially) may hold different stale region bytes and masked
+   registers, and their prophecies differ: the clause is false as soon as the callee calls before
+   overwriting its region. `FV/E2E/LinkArmProphDetE.lean`: `EntryAgree K s s₀` (masked registers
+   but `x30`/pc, the `K` bytes below `sp`, of the *machine entries*), `RetAgree`, and `ThmPDE`:
+   `ThmP`'s clauses, `¬ NeedNI →` realisation from every `MachEntry` (the outcome reads no stale
+   bytes), and under `NeedNI` `ThmP`'s NI clause (`MachEntryP … P`: `ThmPD`'s NI clause, for
+   every `MachEntry` without a prophecy, fails for the same reason) plus the determinism clause between a `MachEntryP … P`
+   entry `s₀` and a `MachEntry` entry `s` with `EntryAgree (frameDrop + κ M g) s s₀`, concluding
+   `ActRet`, `ProphOkUpTo … s P n` and `RetAgree` of the two runs at step `n` (design change 2).
+   `ThmPDE.thmP`, `Thm.thmPDE_of_not_needNI`; witnesses `LinkArmProphDetEWitness.lean`. `ThmPD`
+   stays (it is not used by anything); `progCallP` and `thmP_of` use `ThmPDE`. In `progCallP` the
+   entries are `enterAt (canonPR … (P n) (R n) w)` (`s₀`) and `enterAt t` (`s`): `EntryAgree`
+   holds by `ProphRegOk` (masked registers but the argument registers: `R n`; argument registers:
+   `CallerOk.regs`; `x30` is set by `enterAt`) and `OnCallP` (region bytes `P n` on both).
+
+**Steps 2q–2s, as built (the linking items on `ThmPDE`).**
+- `FV/E2E/LinkArmProgCallP.lean`: `progCallP` (`progCall` with `ih : ThmPDE κ (M - 1)`; the
+  callee outcome is `ThmPDE`'s for `P' := prophOf` of the canonical callee run; its two caller
+  families additionally assume agreement with `canon h uses w` on the masked registers but
+  `x30`/pc and on the callee's frame and region `StackBelow (frameDrop h + κ (M-1) h) (spv w)`;
+  under `NeedNI` the determinism clause from the canonical `MachEntryP` entry, without `NeedNI`
+  the prophecy-free clause), `canon_agree` (the canonical state is in the families),
+  `progOsCoreP`. Witness `progCallP_Lu`.
+- `FV/E2E/RegLevelCorrectPR.lean`: `ProphRegOkM`, `OnCallPR` (`OnCallP` + the masked registers
+  of `R n` at a call state with `sp = c`), `onCallPR_of`, `regLevelCorrect_worldPR`. Witness
+  `onCallPR_u0`.
+- `FV/E2E/LinkArmProgOsP.lean`: `setReg_self`, `placeArgs_self`, `canon_self_r`;
+  `progOsCoreXPR` (`progOsCoreP` at `worldPR … (P n) (R n) w` from a call state with the masked
+  registers of `R n` and `P n` in the `κ M g` bytes below its `sp`: the arguments `canon` places
+  are the state's own, so `canon` keeps every register but the pc); `progOsP`, `progOsRegP`,
+  `calleeOkP` (the call contract of `XPR … n` as `CallSoundCtlGP Q`/`CalleeOkGP Q` for every `Q`
+  that gives those two facts at call states), `XPR_base`/`_none`/`_ind`/`_ext`. Witnesses
+  `progOsP_Lu`, `calleeOkP_Lu`.
+
+**Steps 2t, 2u, as built.** (a) `FV/E2E/RegLevelTryP.lean`: `calleeTryP_at`,
+`calleeTryOkGP_of_call` (the `try_call` helpers at restricted states); `calleeTryOkP` in
+`LinkArmProgOsP.lean` (witness `calleeTryOkP_Lu`). (b) `FV/E2E/RegLevelCorrectPRS.lean`:
+`realizes_allC_sp` (the call states the composition hands the contract are segment starts, where
+`StRel.sp : spOf s = R.spB`), `regLevelCorrect_world_atCS`/`_worldCS`/`_worldPRS` (contracts at
+`OnCall(PR) … n u ∧ spOf u = spv s - frameDrop af`; same proofs). Witness `worldPRS_const`.
+
+**(4) Register prophecy in the linking statement (steps 2v, 2w, 2026-10-28).** `ThmP`/`ThmPDE`
+choose the outcome per byte prophecy `P` only (`MachEntryP`). With the register prophecy the
+activation's VCode run uses `XPRI … P R`, whose callee results depend on `R` (the callee runs from
+`worldPR … (R n)`), so the outcome is a function of `(P, R)`, and `R := prophStOf` of the machine
+run depends on the activation `s`. Decided (conservative): `FV/E2E/LinkArmProphDetR.lean`:
+`MachEntryPR` (`MachEntryP` + `ProphRegOkM (spv w₀) … s R`), `ProphRegOkUpTo`, `ThmPR`/`ThmPDER`
+(`∀ P R`; the determinism clause also concludes `ProphRegOkUpTo … R n`), `Thm.thmPR`,
+`ThmPDER.thmPR`, `Thm.thmPDER_of_not_needNI` (witnesses `LinkArmProphDetRWitness.lean`).
+`ThmPR → ThmP` does not follow (activations with one `P` have different `R`); the CLIF side
+(#665) needs only the outcome per actual run, so the induction is `thmPR_of : ThmPDER κ (M-1) →
+ThmPR κ M` and the top-level statement instantiates `(P, R)` with the actual run's
+`(prophOf, prophStOf)`. `FV/E2E/LinkArmProgCallPR.lean`, `LinkArmProgOsPR.lean`: `progCallPR`
+(callee prophecies `(prophOf, prophStOf)` of the canonical callee run), `progOsCorePR`,
+`progOsCoreXPRR`, `progOsPR`, `progOsRegPR`, `calleeOkPR`, `calleeTryOkPR` (witnesses
+`LinkArmProgOsPRWitness.lean`).
+
+**Remaining for `thmPR_of`.** (i) An indexed pipeline: `thm_of` goes through
+`backend_correct_world_ni_pipeline` (CLIF → VCode with one `ExtSem` `X`, then
+`regLevelCorrect_world`); `thmPR_of` needs it with `XPRI` (`csemVI`, the counted VCode run of step
+2j) ending in `regLevelCorrect_worldPRS` with `hC n := calleeOkPR … (Q := OnCallPR … n ∧ sp)` (the
+`Q`-facts from `OnCallPR` at `sp = spv w₀`, the region `κ M g` below it). (ii) `xCallsOkP`/
+`progResultP` (the CLIF-side call contract of `XPR … n`: `progXPR` defined with the callee's CLIF
+results; the slot bytes the callee's CLIF run reads are `P n`'s, the #665 `PlaceAtB`/`B j`
+interface with UninitZ6b) and `xniP`/`progX_niP` (from `progCallPR`'s NI family). (iii)
+`ThmPDER`'s determinism clause by the lock-step (§5.8 (1), (2)).
+
 ## 6. Heap (separate gap, SEM2)
 
 `BaseOk.baseKeepsAllocs`/`baseNoAlloc` require base externs to allocate nothing whenever a program
