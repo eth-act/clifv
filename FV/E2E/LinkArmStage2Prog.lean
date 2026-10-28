@@ -141,11 +141,10 @@ def OracleAt (κ : Nat → Clif.Function → Nat) (M : Nat) (h : Clif.Function) 
     (L.NeedSlots → ∀ a, L.SlotByte h c a → ini.bytes (ini.next + 1) a = W.mem (BitVec.ofNat 64 a)) ∧
     L.TableOf (M - 1) h (enterAt (L.A h) (L.canon h args W)) (calleeIni h ini)
 
-/-- **Stage 2 at one call** `(d, uses, w)` of an activation of `g` (body `sp` `c`, `g`'s stack
-facts) at count `n`: where `CallPost` of the invocation of count `n` is not vacuous, `XPRBT … n`
-answers an accepted result, given the oracle facts (`OracleAt`) of the program invocations of
-count `n` for the arguments the call passes. -/
-theorem stage2_answer (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) {M : Nat}
+/-- **Stage 2 at one call, with the invocation's facts** (`stage2_answer` whose oracle premise
+`hor` also receives the facts stage 2 derives at the invocation: the callee memory related to the
+world with the prophecies, the arguments there, and the callee's returning run). -/
+theorem stage2_answerF (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) {M : Nat}
     (ih : 0 < M → L.ThmPRBRL κ (M - 1)) (hdet : 0 < M → L.DetPRB κ (M - 1))
     {g : Clif.Function} (hg : g ∈ L.P.funcs) {F : BitVec 64 → Prop}
     (himgF : ∀ a, L.Img a → F a) {c : BitVec 64}
@@ -153,9 +152,16 @@ theorem stage2_answer (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) {M : Nat}
     (halign : c.toNat % 16 = 0)
     (P : Nat → BitVec 64 → BitVec 8) (R : Nat → Arm.ArmState) (cs : Clif.State) (n : Nat)
     {d : Option String} {uses : List CV} {w : Arm.ArmState}
-    (hor : ∀ h ∈ L.P.funcs, ∀ (args : List CV) (vals : List Clif.Val) (cm : Clif.Mem),
+    (hor : ∀ h ∈ L.P.funcs, ∀ (args : List CV) (vals : List Clif.Val) (cm : Clif.Mem)
+      (cs' : Clif.State) (rvals : List Clif.Val) (cm' : Clif.Mem),
       (d = some h.name ∧ uses = args ∨ d = none ∧ ∃ u, uses = u :: args) →
       InvokedN (L.envOfB M g c) L.P.bare cs n h.name vals cm →
+      L.Callee g h → 0 < M →
+      MemRel F L.syms cm (L.worldPR κ M h (P n) (R n) w) →
+      ArgsAt h.sig vals args (L.worldPR κ M h (P n) (R n) w) →
+      StackArgsAvoid F h.sig vals (L.worldPR κ M h (P n) (R n) w) →
+      SameWorld F w (L.worldPR κ M h (P n) (R n) w) →
+      Clif.initState L.P h.name vals cm = .ok cs' → L.crun M cs' = .returned rvals cm' →
       L.OracleAt κ M h c cm args (L.worldPR κ M h (P n) (R n) w))
     (hnv : ¬ ∀ r, CallPost ((L.envOfB M g c).only (InvokedN (L.envOfB M g c) L.P.bare cs n))
       (g.externs.map (·.2)) (indSigs g)
@@ -246,10 +252,11 @@ theorem stage2_answer (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) {M : Nat}
       -- the oracle facts
       have hinv : InvokedN (L.envOfB M g c) L.P.bare cs n h.name vals cm := by
         rw [hname]; exact hA
-      obtain ⟨ini, hpl, hslotb, htab⟩ := hor h hh args vals cm
+      obtain ⟨ini, hpl, hslotb, htab⟩ := hor h hh args vals cm _ rvals cm'
         (by rcases hd with ⟨e, rfl⟩ | ⟨e, -, rfl⟩
             · exact .inl ⟨by rw [e, hname], rfl⟩
-            · exact .inr ⟨e, _, rfl⟩) hinv
+            · exact .inr ⟨e, _, rfl⟩) hinv hcal hM hmrW.1.1 hargsW hsavW hsw
+        (by rw [hname]; exact hinit) hrun
       obtain ⟨outs, w', hx, hol, hho, hmr'⟩ :=
         L.progResultBT hL hκ ih hdet hg hh hcal himgF hroom hdead halign hargsW hsavW hmrW hpl
           hslotb htab (by rw [hname]; exact hinit) hrun
@@ -307,7 +314,8 @@ theorem stage2_answer (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) {M : Nat}
         intro off v hm
         obtain ⟨r, hr⟩ := (locsOf_small hb hb8).2 _ (List.of_mem_zip hm).1
         cases hr
-      obtain ⟨ini, hpl, hslotb, htab⟩ := hor h hh args vals cm (.inr ⟨hdn, u, hu⟩) hA
+      obtain ⟨ini, hpl, hslotb, htab⟩ := hor h hh args vals cm _ rvals cm' (.inr ⟨hdn, u, hu⟩) hA
+        hcal hM hmrW.1.1 hargsW hsavW hsw hinit hrun
       obtain ⟨outs, w', hx, hol, hho, hmr'⟩ :=
         L.progResultBT hL hκ ih hdet hg hh hcal himgF hroom hdead halign hargsW hsavW hmrW hpl
           hslotb htab hinit hrun
@@ -318,6 +326,34 @@ theorem stage2_answer (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) {M : Nat}
         exact hx
       · rw [hol]
         exact hsr sig hsig hm.ty hm.returns_length
+
+/-- **Stage 2 at one call** `(d, uses, w)` of an activation of `g` (body `sp` `c`, `g`'s stack
+facts) at count `n`: where `CallPost` of the invocation of count `n` is not vacuous, `XPRBT … n`
+answers an accepted result, given the oracle facts (`OracleAt`) of the program invocations of
+count `n` for the arguments the call passes (`stage2_answerF`). -/
+theorem stage2_answer (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) {M : Nat}
+    (ih : 0 < M → L.ThmPRBRL κ (M - 1)) (hdet : 0 < M → L.DetPRB κ (M - 1))
+    {g : Clif.Function} (hg : g ∈ L.P.funcs) {F : BitVec 64 → Prop}
+    (himgF : ∀ a, L.Img a → F a) {c : BitVec 64}
+    (hroom : κ M g ≤ c.toNat) (hdead : ∀ a, StackBelow (κ M g) c a → F a ∧ ¬ L.Img a)
+    (halign : c.toNat % 16 = 0)
+    (P : Nat → BitVec 64 → BitVec 8) (R : Nat → Arm.ArmState) (cs : Clif.State) (n : Nat)
+    {d : Option String} {uses : List CV} {w : Arm.ArmState}
+    (hor : ∀ h ∈ L.P.funcs, ∀ (args : List CV) (vals : List Clif.Val) (cm : Clif.Mem),
+      (d = some h.name ∧ uses = args ∨ d = none ∧ ∃ u, uses = u :: args) →
+      InvokedN (L.envOfB M g c) L.P.bare cs n h.name vals cm →
+      L.OracleAt κ M h c cm args (L.worldPR κ M h (P n) (R n) w))
+    (hnv : ¬ ∀ r, CallPost ((L.envOfB M g c).only (InvokedN (L.envOfB M g c) L.P.bare cs n))
+      (g.externs.map (·.2)) (indSigs g)
+      (RelW ⟨F, L.syms, (L.A g).af.slotBase, (RAFrame.compute (L.A g).vcp (L.A g).rf).intBase⟩ g c)
+      L.Xb.sym d uses w r) :
+    ∃ x, (L.XPRBT κ M g F P R n).call d uses w = some x ∧
+      CallPost ((L.envOfB M g c).only (InvokedN (L.envOfB M g c) L.P.bare cs n))
+        (g.externs.map (·.2)) (indSigs g)
+        (RelW ⟨F, L.syms, (L.A g).af.slotBase, (RAFrame.compute (L.A g).vcp (L.A g).rf).intBase⟩ g c)
+        L.Xb.sym d uses w x :=
+  L.stage2_answerF hL hκ ih hdet hg himgF hroom hdead halign P R cs n
+    (fun h hh args vals cm _ _ _ hd hA _ _ _ _ _ _ _ _ => hor h hh args vals cm hd hA) hnv
 
 end LinkSys
 
