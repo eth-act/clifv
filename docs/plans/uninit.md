@@ -417,6 +417,7 @@ the activation's own calls. Do not relate them arithmetically inside the backend
   oracle-free (it never sees CLIF memory), and only the linking (`progCall`, `progResult`)
   touches the sum.
 
+
 **Count correspondence, CLIF side (step 2m, `FV/E2E/LinkPlaceB.lean`).** Interface agreed with
 the Arm side: the byte table `B j` is the machine memory at the `j`-th placed activation with
 slots of the whole run (an activation entered with counter `j0` reads `B (j0 + 1)`, `initSlots`);
@@ -426,6 +427,7 @@ a callee run advances the counter by its own count `e`, and the caller's call `k
 `initState_placeB` (a returning run advances by some `e`), `linkEnvR_adv`/`linkEnvN_adv` (the
 linked environment advances when the base does; `envAdv_of_keepsPlace`: `e = 0`). Witnesses
 `LinkPlaceBWitness.lean` (one slotted function: counter `0 → 1`, slot bytes = table entry `1`).
+
 
 ### 5.6 Linking on `ThmP`: the caller-family obstacle (2026-10-28)
 
@@ -473,6 +475,65 @@ So the next Arm-side leaf is the two-run reg-level invariant of (2); the `LinkAr
 mechanical once `ThmPD` exists. CLIF side (#665): `Clif.NextAdv`, `EnvAdv`, `PlaceAtB`; the
 slot-byte table `B j` (memory at the `j`-th slotted body entry, counted from 1: `initSlots` reads
 `bytes (next + 1)`) is the canonical runs' bytes, which (2) makes equal to the actual run's.
+
+Step 2n (`FV/E2E/LinkArmPlaceB.lean`, `SrcBoundedB.lean`): `LinkSys.PlaceAtB cm c ini` (`PlaceAt`
+with `init = some ini`), `PlaceAtB.adv`; `Clif.runsOf_nextAdv`, `crun_advK`/`crun_adv`/
+`crun_nextAdv` (a returning callee run `crun M` advances the counter, from `CrunOk.runs` and the
+base keeping the oracle: `CrunOk` itself needs no oracle variant); `initState_memB` (the
+`initState_mem` facts with `PlaceAtB`: an initialised entry byte is the caller's outside the new
+slots or the table's entry `ini.next + 1` inside them; the entry is `PlaceAtB` at the callee's
+`sp` with the counter `+1`, `+0` without slots); `SrcBounded.PlacedInvB`/`bounded_placedB`
+(`bounded_placed` under `EnvAdv`). Witnesses `LinkArmPlaceBWitness.lean`: `LinkWitness`'s `f`
+entered with the table `0xAB` has `0xAB` in its compiled slot at `slotAddr` (`initState_memB_f`).
+
+Step 2o (`FV/E2E/LinkPlaceBCount.lean`): the invariant at VCode counter `n`. `LinkSys.counter_at`:
+`h` entered from `PlaceAtB cm c ini`, memories `m 0 = cs.mem, …, m N` with step `k` advancing by
+`E k` (a program call: `crun_nextAdv`) ⇒ `PlaceAtB (m N) (h's sp) (ini.adv (slotted h + sumTo E N))`,
+i.e. `next = j0 + slotted? + Σ_{k<N} E k`; `NextAdv.unique` (the advance is determined by the
+memories), `nextAdv_chain`. Witness `LinkPlaceBCountWitness.counter_f` (`f`, two calls `+2`, `+3`: `6`).
+
+### 5.7 Prophecy determinism: the masked-register obstacle, and step 2m as built (2026-10-28)
+
+**(2) as stated in §5.6 is false.** The `progCall` family (`CallerOk … w t`: `SameWorld F t w`)
+and the canonical state (`canon`, registers of the VCode world `w`) agree on the *unmasked*
+fields only; `StRel.world` is `SameWorld R.F s w`, so the machine's masked registers (x0–x28 but
+x18, x30, the SIMD file) at a call are unrelated to the world's. Callee-saved registers flow into
+the callee region: a callee `g` that does not use `x19` passes the caller's `x19` to its own
+callee `h`; `h`'s prologue saves it into `h`'s frame, which lies in `g`'s callee region; at `g`'s
+next call those stale bytes are part of `g`'s prophecy. So the prophecies of `g`'s runs from `t`
+and from `canon … w` differ whenever `t`'s `x19` differs from `w`'s, and under `init = some` a
+later uninitialised slot of a callee of `g` reads them (its CLIF outcome differs). Likewise
+`g`'s final frame bytes hold the entry `x30` (the frame record), which differs between `t` and
+the canonical state (`canon` sets `x30 := raStar`), so "equal final callee-region bytes" is
+false for the caller's region; it can hold only for `g`'s own callee region, or with equal `x30`.
+
+**Correction (decided conservatively, without changing code).** The determinism clause needs, in
+addition to §5.6 (2): equal masked registers but `x30`/pc at the body entry, and equal bytes of
+the activation's frame and callee region. For `progCallP` this means the canonical callee state
+must take the masked registers from the actual call state as well: the prophecy of call `n`
+carries the registers (`Pn` bytes *and* the masked register file at the `n`-th call state, read
+off the machine run like `P n`), and `worldP` overlays both. The non-deterministic parts that
+remain (base externs `L.Hb.call`/`L.Hb.tls` are arbitrary functions of the state; their leftover
+bytes below `sp` and scratch registers are unconstrained by `CalleeOk`) need a new base-hook
+premise in `Ok` (locality: from states equal outside a set `D` the hooks return states equal
+outside `D`), `NeedNI`-guarded like `baseNI`. The reg-level lock-step itself can use the per-state
+`RL.GoodX.reads` (D2: unhooked reads avoid `G` but code words) with the instruction footprints
+(`FV/Concurrency/ArmInstFoot.lean`).
+
+**Step 2m, as built** (`FV/E2E/LinkArmProphDet.lean`): the transfer half of (2), independent of
+how the lock-step is established. `runX_lockstep` (a relation the steps keep relates the runs at
+every index); `ProphStep K c fa base u u'` (same pc; at call states same `sp`, and with `sp = c`
+the same `K` bytes below `c`); `callsBefore_congr`, `ProphOkUpTo` (`ProphOk` up to step `n`, the
+callee's return: past it the two runs return to different addresses), `prophOkUpTo_congr`,
+`prophOk_congr`, `prophOkUpTo_prophOf`/`prophOk_prophOf_congr` (**`P' := prophOf` of the
+canonical run is a prophecy of every lock-step run**). `ThmPD κ M`: `ThmP` whose NI clause takes
+`MachEntry`, plus the determinism clause with the corrected premises (masked registers but
+`x30`/pc, frame and callee-region bytes, an activation from `w₀` with prophecy `P`) concluding
+`ActRet` and `ProphOkUpTo (κ M g) (spv w₀) … P n`; `ThmPD.thmP`, `Thm.thmPD_of_not_needNI`.
+Witnesses `LinkArmProphDetWitness.lean` (`prophOk_u1`: two different states in lock-step;
+`thmPD_LU`: `ThmPD` at every depth for a program with a call). Next: the prophecy of registers
+(`worldP` overlay of the masked file), the base-hook locality premise, the reg-level lock-step
+giving `ProphStep` for two runs of one activation, then `progCallP` on `ThmPD`.
 
 ## 6. Heap (separate gap, SEM2)
 
