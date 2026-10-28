@@ -92,7 +92,7 @@ theorem prefix_relatedPRI_atE_f
         (fun t => ¬ PostCall (Lsl.A fF).fa base (Arm.r .PC t) ∨
           spOf t = spv s - BitVec.ofNat 64 (frameDrop (Lsl.A fF).af)) j u ∧
       spOf u = spv s - BitVec.ofNat 64 (frameDrop (Lsl.A fF).af) ∧ CallSiteAt F K G s (Lsl.A fF).fa base i uses w u ∧
-      (i = .call info ∨ ∃ ti, i = .tryCall info ti) ∧
+      (i = .call info ∨ ∃ ti, i = .tryCall info ti) ∧ (Lsl.A fF).vcp.CallSite info ∧
       (XI.at j).call (callDest info) uses w = some r ∧
       RelatedN env Lsl.P.bare cs (fF.externs.map (·.2)) (indSigs fF)
         (RelW ⟨F, syms, (Lsl.A fF).af.slotBase, (RAFrame.compute (Lsl.A fF).vcp (Lsl.A fF).rf).intBase⟩ fF c) XI.sym j (callDest info) uses w :=
@@ -259,7 +259,8 @@ theorem stage2_answerF_Lsl
     {w : Arm.ArmState}
     (hor : ∀ h ∈ Lsl.P.funcs, ∀ (args : List CV) (vals : List Clif.Val) (cm : Clif.Mem)
       (cs' : Clif.State) (rvals : List Clif.Val) (cm' : Clif.Mem),
-      (d = some h.name ∧ uses = args ∨ d = none ∧ ∃ u, uses = u :: args) →
+      (d = some h.name ∧ uses = args ∨
+        d = none ∧ Lsl.IndTo g h ∧ ∃ u, uses = u :: args ∧ lo64 u = Lsl.Xb.sym h.name 0) →
       InvokedN (Lsl.envOfB M g c) Lsl.P.bare cs n h.name vals cm →
       Lsl.Callee g h → 0 < M →
       MemRel F Lsl.syms cm (Lsl.worldPR (fun M _ => Lsl.K M) M h (P n) (R n) w) →

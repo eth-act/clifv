@@ -154,7 +154,8 @@ theorem stage2_answerF (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) {M : Nat}
     {d : Option String} {uses : List CV} {w : Arm.ArmState}
     (hor : ∀ h ∈ L.P.funcs, ∀ (args : List CV) (vals : List Clif.Val) (cm : Clif.Mem)
       (cs' : Clif.State) (rvals : List Clif.Val) (cm' : Clif.Mem),
-      (d = some h.name ∧ uses = args ∨ d = none ∧ ∃ u, uses = u :: args) →
+      (d = some h.name ∧ uses = args ∨
+        d = none ∧ L.IndTo g h ∧ ∃ u, uses = u :: args ∧ lo64 u = L.Xb.sym h.name 0) →
       InvokedN (L.envOfB M g c) L.P.bare cs n h.name vals cm →
       L.Callee g h → 0 < M →
       MemRel F L.syms cm (L.worldPR κ M h (P n) (R n) w) →
@@ -252,11 +253,17 @@ theorem stage2_answerF (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) {M : Nat}
       -- the oracle facts
       have hinv : InvokedN (L.envOfB M g c) L.P.bare cs n h.name vals cm := by
         rw [hname]; exact hA
+      have hto : d = none → ext.colocated = false → L.IndTo g h := fun _ hcol => by
+        refine ⟨by rw [hname]; exact hmay, ?_⟩
+        rcases hmay with hdn | ⟨-, -, hall⟩
+        · exact .inl ⟨by rw [hname]; exact hdn, ext, hin, hname.symm, hcol⟩
+        · obtain ⟨sig, hs, hm⟩ := hall h hpf
+          exact .inr ⟨sig, hs, hm, hm.returns_length⟩
       obtain ⟨ini, hpl, hslotb, htab⟩ := hor h hh args vals cm _ rvals cm'
-        (by rcases hd with ⟨e, rfl⟩ | ⟨e, -, rfl⟩
+        (by rcases hd with ⟨e, rfl⟩ | ⟨e, hcol, rfl⟩
             · exact .inl ⟨by rw [e, hname], rfl⟩
-            · exact .inr ⟨e, _, rfl⟩) hinv hcal hM hmrW.1.1 hargsW hsavW hsw
-        (by rw [hname]; exact hinit) hrun
+            · exact .inr ⟨e, hto e hcol, _, rfl, by rw [lo64_ofX, hname]⟩) hinv hcal hM hmrW.1.1
+        hargsW hsavW hsw (by rw [hname]; exact hinit) hrun
       obtain ⟨outs, w', hx, hol, hho, hmr'⟩ :=
         L.progResultBT hL hκ ih hdet hg hh hcal himgF hroom hdead halign hargsW hsavW hmrW hpl
           hslotb htab (by rw [hname]; exact hinit) hrun
@@ -266,12 +273,7 @@ theorem stage2_answerF (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) {M : Nat}
       · have hs : symCallee L.Xb L.P (lo64 (ofX (L.Xb.sym ext.name 0))) = some h := by
           show L.P.funcs.find? (fun h' => L.Xb.sym h'.name 0 == lo64 (ofX (L.Xb.sym ext.name 0))) = some h
           rw [lo64_ofX]; exact (L.find_sym hL ext.name).1 h hpf
-        have hto : L.IndTo g h := by
-          refine ⟨by rw [hname]; exact hmay, ?_⟩
-          rcases hmay with hdn | ⟨-, -, hall⟩
-          · exact .inl ⟨by rw [hname]; exact hdn, ext, hin, hname.symm, hcol⟩
-          · obtain ⟨sig, hs, hm⟩ := hall h hpf
-            exact .inr ⟨sig, hs, hm, hm.returns_length⟩
+        have hto := hto rfl hcol
         rw [L.XPRBT_ind hs, if_pos ⟨hto, argsAt_regLocs hargsW⟩]
         exact hx
   · -- an indirect call
@@ -314,7 +316,8 @@ theorem stage2_answerF (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) {M : Nat}
         intro off v hm
         obtain ⟨r, hr⟩ := (locsOf_small hb hb8).2 _ (List.of_mem_zip hm).1
         cases hr
-      obtain ⟨ini, hpl, hslotb, htab⟩ := hor h hh args vals cm _ rvals cm' (.inr ⟨hdn, u, hu⟩) hA
+      obtain ⟨ini, hpl, hslotb, htab⟩ := hor h hh args vals cm _ rvals cm'
+        (.inr ⟨hdn, ⟨hdecl, .inr ⟨sig, hsig, hm, hm.returns_length⟩⟩, u, hu, hlo⟩) hA
         hcal hM hmrW.1.1 hargsW hsavW hsw hinit hrun
       obtain ⟨outs, w', hx, hol, hho, hmr'⟩ :=
         L.progResultBT hL hκ ih hdet hg hh hcal himgF hroom hdead halign hargsW hsavW hmrW hpl
@@ -353,7 +356,8 @@ theorem stage2_answer (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) {M : Nat}
         (RelW ⟨F, L.syms, (L.A g).af.slotBase, (RAFrame.compute (L.A g).vcp (L.A g).rf).intBase⟩ g c)
         L.Xb.sym d uses w x :=
   L.stage2_answerF hL hκ ih hdet hg himgF hroom hdead halign P R cs n
-    (fun h hh args vals cm _ _ _ hd hA _ _ _ _ _ _ _ _ => hor h hh args vals cm hd hA) hnv
+    (fun h hh args vals cm _ _ _ hd hA _ _ _ _ _ _ _ _ => hor h hh args vals cm
+      (hd.imp id fun ⟨e, _, u, hu, _⟩ => ⟨e, u, hu⟩) hA) hnv
 
 end LinkSys
 

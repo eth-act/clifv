@@ -284,7 +284,8 @@ theorem backend_prefix_cleanupPRI_at {p : Clif.Program} {f : Clif.Function} {k :
         (fun t => ¬ PostCall fa base (Arm.r .PC t) ∨
           spOf t = spv s - BitVec.ofNat 64 (frameDrop af)) j u ∧
       spOf u = spv s - BitVec.ofNat 64 (frameDrop af) ∧ CallSiteAt F K G s fa base i uses w u ∧
-      (i = .call info ∨ ∃ ti, i = .tryCall info ti) ∧ (XI.at j).call (callDest info) uses w = some r := by
+      (i = .call info ∨ ∃ ti, i = .tryCall info ti) ∧ vcp.CallSite info ∧
+      (XI.at j).call (callDest info) uses w = some r := by
   intro j hj
   obtain ⟨b, k, ρ, w, hstar⟩ :=
     iselSim_prefixWI_next_cleanup hsub hc hone htc hX hsym hslot (fun _ => 0) hcs hrel hargs htr hrun
@@ -317,7 +318,10 @@ theorem backend_prefix_cleanupPRI_at {p : Clif.Program} {f : Clif.Function} {k :
     (by rw [he.hF]; exact he.tls) (by rw [he.hF]; exact he.body) (fun _ => 0)
   rw [he.hF] at hM
   obtain ⟨u, hon, hsp, hsite⟩ := hM b3 k2 a2 w1 vb3 i3 hs4 hvb3 hi3 ⟨info, hci3⟩ ops hops3
-  refine ⟨u, i3, info, _, w1, r', hon, hsp, hsite, hci3, ?_⟩
+  refine ⟨u, i3, info, _, w1, r', hon, hsp, hsite, hci3, ⟨b3, vb3, k2, hvb3, ?_⟩, ?_⟩
+  · rcases hci3 with rfl | ⟨ti, rfl⟩
+    · exact .inl hi3
+    · exact .inr ⟨ti, hi3⟩
   have hu2' : (ops.toList.filter Operand.isUse).map (a2 ·.vreg) =
       (ops.toList.filter Operand.isUse).map (ρ1 ·.vreg) := hu2.symm
   rw [hu2']; exact hr'
@@ -352,18 +356,117 @@ theorem prefix_related_cleanupPRI_at {p : Clif.Program} {f : Clif.Function} {k :
         (fun t => ¬ PostCall fa base (Arm.r .PC t) ∨
           spOf t = spv s - BitVec.ofNat 64 (frameDrop af)) j u ∧
       spOf u = spv s - BitVec.ofNat 64 (frameDrop af) ∧ CallSiteAt F K G s fa base i uses w u ∧
-      (i = .call info ∨ ∃ ti, i = .tryCall info ti) ∧
+      (i = .call info ∨ ∃ ti, i = .tryCall info ti) ∧ vcp.CallSite info ∧
       (XI.at j).call (callDest info) uses w = some r ∧
       RelatedN env p cs (f.externs.map (·.2)) (indSigs f)
         (RelW ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c) XI.sym j (callDest info) uses w := by
   intro j hj
-  obtain ⟨u, i, info, uses, w, r, hon, hsp, hsite, hci, hx⟩ :=
+  obtain ⟨u, i, info, uses, w, r, hon, hsp, hsite, hci, hcs', hx⟩ :=
     backend_prefix_cleanupPRI_at (XI := XI.relOnly (RelatedN env p cs (f.externs.map (·.2))
       (indSigs f) (RelW ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c) XI.sym))
       hsub hc hone htc hcov (fun s n hs => xCalls_relOnly hnrc hs (hX s n hs)) hsym hslot hcs hrel
       hargs htr hrun (he.relOnly _) hr hcn j hj
   obtain ⟨hq, hx'⟩ := relOnly_call_some hx
-  exact ⟨u, i, info, uses, w, r, hon, hsp, hsite, hci, hx', hq⟩
+  exact ⟨u, i, info, uses, w, r, hon, hsp, hsite, hci, hcs', hx', hq⟩
+
+/-- **`backend_prefixPRI_at` with the call site**: the VCode call of the machine's call `j` is a
+call site of `vcp`. -/
+theorem backend_prefixPRI_atS {p : Clif.Program} {f : Clif.Function} {k : Nat} {vc vcp : VCode}
+    {rf : RFunc} {af : AFunc} {fa : FnAsm} {fb : FnBin}
+    (hsub : InSubset p f) (hc : Compiled f k vc vcp rf af fa fb)
+    (hone : InstCallsOne f) (htc : TryCallsOne f)
+    {XI : ExtSemI} {syms : String → Option Nat} {slotOff : Nat} {env : Clif.Env} {K : Nat}
+    {F : BitVec 64 → Prop} {c : BitVec 64}
+    (hcov : FormsCovered ⟨fa.k, af.slotBase⟩ vcp)
+    {w₀ : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State}
+    (hX : ∀ s n, ReachN env p cs s n →
+      XCallsOk (env.only (Clif.Invoked env p s)) (f.externs.map (·.2))
+        (RelW ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c) (XI.at n) ∧
+      XCallsIndOk (env.only (Clif.Invoked env p s)) (indSigs f)
+        (RelW ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c) (XI.at n))
+    (hsym : ∀ n b, syms n = some b → XI.sym n 0 = BitVec.ofNat 64 b)
+    (hslot : af.slotBase = slotOff)
+    (hcs : ClifEntry f args cs)
+    (hrel : RelW ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c cs.frame.slots cs.mem w₀)
+    (hargs : ArgsAtEntry F f.sig args w₀)
+    (htr : TrapsExplicit env p cs) {fuel : Nat} {v : List Clif.Val} {m : Clif.Mem}
+    (hrun : Clif.runLoop env p fuel cs = .returned v m) {N : Nat} {H : ArmHooks}
+    {G : BitVec 64 → Prop} {base ra : BitVec 64} {Kp : Nat} {cc : BitVec 64}
+    {P : Nat → BitVec 64 → BitVec 8} {R : Nat → Arm.ArmState} {s : Arm.ArmState}
+    (he : ActEntryPRN vcp rf af fa fb K F G XI H base ra Kp cc P R s w₀ N)
+    {t : Clif.State} (hr : ReachN env p cs t N) (hcn : callNum t = 1) :
+    ∀ j ≤ N, ∃ u i info uses w r, OnCallG (ArmStepX (XI.at 0) H fa) fa base s
+        (fun t => ¬ PostCall fa base (Arm.r .PC t) ∨
+          spOf t = spv s - BitVec.ofNat 64 (frameDrop af)) j u ∧
+      spOf u = spv s - BitVec.ofNat 64 (frameDrop af) ∧ CallSiteAt F K G s fa base i uses w u ∧
+      (i = .call info ∨ ∃ ti, i = .tryCall info ti) ∧ vcp.CallSite info ∧
+      (XI.at j).call (callDest info) uses w = some r := by
+  intro j hj
+  obtain ⟨b, k, ρ, w, hstar⟩ :=
+    iselSim_prefixWI_next hsub hc hone htc hX hsym hslot (fun _ => 0) hcs hrel hargs htr hrun t N
+      hr hcn
+  obtain ⟨b', hstar', -⟩ := prep_prefixW (DriverSemG.csemI fun m =>
+    (driverSem_csem F ⟨fa.k, af.slotBase⟩ (XI.at m)).toDriverSemG) hc.prepOk hstar
+  obtain ⟨hstar'', -⟩ := gotInvI_star
+    (show GotInvI vcp XI ⟨0, 0, fun _ => 0, (w₀, 0)⟩ from gotInv_entry vcp (XI.at 0) _ w₀) hstar'
+  obtain ⟨b1, k1, ρ1, w1, vb, i, ops, r, hs1, hvb, hi, hcall, hops, hsem⟩ :=
+    vstar_call_at (j := j) hstar'' (Nat.zero_le _) (by simp only [vctr]; omega)
+  have hM := regLevel_prefixPRSG hc.check hc.alloc hc.emit hc.layout (XI := XI) (H := H)
+    (K := K) (G := G) (gv := GotV vcp) (N := j) hcov he.abi he.stack he.gfree he.proph he.regp
+    (fun n hn => by rw [he.hF]; exact he.calls n (by omega))
+    (fun ht n hn => by rw [he.hF]; exact he.tries ht n (by omega)) he.pc
+    (by rw [he.hF]; exact he.tls) (by rw [he.hF]; exact he.body) (fun _ => 0)
+  rw [he.hF] at hM
+  obtain ⟨info, hci⟩ := callLike_of_isCallI hcall
+  obtain ⟨u, hon, hsp, hsite⟩ := hM b1 k1 ρ1 w1 vb i hs1 hvb hi ⟨info, hci⟩ ops hops
+  obtain ⟨r', hr'⟩ := csem_call_some hci (csemV_sub hsem)
+  refine ⟨u, i, info, _, w1, r', hon, hsp, hsite, hci, ⟨b1, vb, k1, hvb, ?_⟩, hr'⟩
+  rcases hci with rfl | ⟨ti, rfl⟩
+  · exact .inl hi
+  · exact .inr ⟨ti, hi⟩
+
+/-- **`prefix_relatedPRI_at` with the call site.** -/
+theorem prefix_relatedPRI_atS {p : Clif.Program} {f : Clif.Function} {k : Nat} {vc vcp : VCode}
+    {rf : RFunc} {af : AFunc} {fa : FnAsm} {fb : FnBin}
+    (hsub : InSubset p f) (hc : Compiled f k vc vcp rf af fa fb)
+    (hone : InstCallsOne f) (htc : TryCallsOne f)
+    {XI : ExtSemI} {syms : String → Option Nat} {slotOff : Nat} {env : Clif.Env} {K : Nat}
+    {F : BitVec 64 → Prop} {c : BitVec 64}
+    (hcov : FormsCovered ⟨fa.k, af.slotBase⟩ vcp)
+    {w₀ : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State}
+    (hnrc : NoRetCall env p cs)
+    (hX : ∀ s n, ReachN env p cs s n →
+      XCallsOk (env.only (Clif.Invoked env p s)) (f.externs.map (·.2))
+        (RelW ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c) (XI.at n) ∧
+      XCallsIndOk (env.only (Clif.Invoked env p s)) (indSigs f)
+        (RelW ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c) (XI.at n))
+    (hsym : ∀ n b, syms n = some b → XI.sym n 0 = BitVec.ofNat 64 b)
+    (hslot : af.slotBase = slotOff)
+    (hcs : ClifEntry f args cs)
+    (hrel : RelW ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c cs.frame.slots cs.mem w₀)
+    (hargs : ArgsAtEntry F f.sig args w₀)
+    (htr : TrapsExplicit env p cs) {fuel : Nat} {v : List Clif.Val} {m : Clif.Mem}
+    (hrun : Clif.runLoop env p fuel cs = .returned v m) {N : Nat} {H : ArmHooks}
+    {G : BitVec 64 → Prop} {base ra : BitVec 64} {Kp : Nat} {cc : BitVec 64}
+    {P : Nat → BitVec 64 → BitVec 8} {R : Nat → Arm.ArmState} {s : Arm.ArmState}
+    (he : ActEntryPRN vcp rf af fa fb K F G XI H base ra Kp cc P R s w₀ N)
+    {t : Clif.State} (hr : ReachN env p cs t N) (hcn : callNum t = 1) :
+    ∀ j ≤ N, ∃ u i info uses w r, OnCallG (ArmStepX (XI.at 0) H fa) fa base s
+        (fun t => ¬ PostCall fa base (Arm.r .PC t) ∨
+          spOf t = spv s - BitVec.ofNat 64 (frameDrop af)) j u ∧
+      spOf u = spv s - BitVec.ofNat 64 (frameDrop af) ∧ CallSiteAt F K G s fa base i uses w u ∧
+      (i = .call info ∨ ∃ ti, i = .tryCall info ti) ∧ vcp.CallSite info ∧
+      (XI.at j).call (callDest info) uses w = some r ∧
+      RelatedN env p cs (f.externs.map (·.2)) (indSigs f)
+        (RelW ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c) XI.sym j (callDest info) uses w := by
+  intro j hj
+  obtain ⟨u, i, info, uses, w, r, hon, hsp, hsite, hci, hcs', hx⟩ :=
+    backend_prefixPRI_atS (XI := XI.relOnly (RelatedN env p cs (f.externs.map (·.2)) (indSigs f)
+      (RelW ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c) XI.sym))
+      hsub hc hone htc hcov (fun s n hs => xCalls_relOnly hnrc hs (hX s n hs)) hsym hslot hcs hrel
+      hargs htr hrun (he.relOnly _) hr hcn j hj
+  obtain ⟨hq, hx'⟩ := relOnly_call_some hx
+  exact ⟨u, i, info, uses, w, r, hon, hsp, hsite, hci, hcs', hx', hq⟩
 
 /-- **The machine's calls up to call `N` itself are the CLIF run's, either artifact.** -/
 theorem prefix_relatedPRI_atE {p : Clif.Program} {f : Clif.Function} {k : Nat}
@@ -395,13 +498,13 @@ theorem prefix_relatedPRI_atE {p : Clif.Program} {f : Clif.Function} {k : Nat}
         (fun t => ¬ PostCall fa base (Arm.r .PC t) ∨
           spOf t = spv s - BitVec.ofNat 64 (frameDrop af)) j u ∧
       spOf u = spv s - BitVec.ofNat 64 (frameDrop af) ∧ CallSiteAt F K G s fa base i uses w u ∧
-      (i = .call info ∨ ∃ ti, i = .tryCall info ti) ∧
+      (i = .call info ∨ ∃ ti, i = .tryCall info ti) ∧ vcp.CallSite info ∧
       (XI.at j).call (callDest info) uses w = some r ∧
       RelatedN env p cs (f.externs.map (·.2)) (indSigs f)
         (RelW ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c) XI.sym j (callDest info) uses w := by
   cases hc with
   | legacy hc =>
-    exact prefix_relatedPRI_at hsub hc hone htc hcov hnrc hX hsym hslot hcs hrel hargs htr hrun he
+    exact prefix_relatedPRI_atS hsub hc hone htc hcov hnrc hX hsym hslot hcs hrel hargs htr hrun he
       hr hcn
   | cleanup hc =>
     exact prefix_related_cleanupPRI_at hsub hc hone htc hcov hnrc hX hsym hslot hcs hrel hargs htr
