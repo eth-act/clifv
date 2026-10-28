@@ -809,6 +809,51 @@ canonical callee run (`progCallPR`) — its entry-order table is the caller's ta
 counter on because the canonical callee state agrees with the actual call state on the region
 (`P n`) and the masked registers (`R n`), the determinism clause (item (c), UninitZ10b's lock-step).
 
+**Finding (UninitZ11, 2026-10-28): the `hX` of the design above cannot be discharged as stated.**
+`xCallsOk_only_of` restricts the *CLIF* side to the actual invocation `(vals, cm)`, but its
+premise still quantifies over every VCode `(uses, w)` with `ArgsAt ext.sig vals uses w` and
+`RelW … cm w`. `ArgsAt` fixes only the low `ty.width` bits of a register argument (`VHolds`), and
+`RelW` fixes neither `x29`/`x18`/flags/TPIDR nor the world bytes outside `cm`'s live allocations.
+`XPR n`'s canonical callee state is built from `(uses, w)` (`canon` puts the full 64-bit `uses`
+in the argument registers), so for two such `(uses, w)` the canonical callee runs can differ in
+what they spill: Cranelift spills an integer register as 64 bits whatever its CLIF type. A later
+nested callee whose slot overlaps that spill and reads it unwritten then reads different bytes in
+the two runs, while the CLIF callee run, with the oracle `ini` fixed, reads one table entry. So
+`XCallsOk … (XPRI.at n)` is false in general, and `EntryAgree` (the determinism clause) does not
+apply either, since it needs the masked registers, argument registers included, equal.
+Decision (to build next, no stage-1/stage-2 proof changes): a new call semantics `XPRB` that is
+`XPR n` on the *actual* call and an ε-chosen related result elsewhere. `ActualCall n d uses w`:
+`w` agrees with the machine's `n`-th call state `R n` (`prophStOf`) outside `F` (`SameWorld F`)
+and the argument values are `R n`'s argument registers, 64 bits. Stage 2 (VCode → Arm,
+`CalleeOkGP` at `OnCallPR … n`) only ever asks for the result at such `(uses, w)`:
+`OperandsSoundCtlAtI` gives `SameWorld F s w` and `uses = useVals ops regs s` at the machine
+state `s`, which is `R n` there, so `calleeOkPR` applies unchanged through `XPRB = XPR` on
+`ActualCall`. Stage 1 (`hX`, per CLIF state, `xCallsOk_only_of`): at an actual `(uses, w)` the
+canonical callee state agrees with the actual one on every register but `x30`/pc and outside `F`,
+and on the region (`P n`), so `EntryAgree` and the determinism clause transfer the table, and
+`ThmPRB (M - 1)` gives the related result; at any other `(uses, w)` the result is the ε-choice
+of a related one, which exists because the CLIF invocation of call `n` is unique (`ReachN`,
+deterministic run) and a world related to `cm'` exists (`w` with `cm'`'s bytes written; the
+callee keeps the allocations, `runLoop_allocs`). Only program callees need this (base externs keep
+`L.Ok`'s all-world contract), and only with `NeedSlots`. `XNI` is not needed for `ThmPRB`
+(statement per actual activation, §5.1 (i)). Alternatives rejected: restricting the stage-1
+contract to the counted VCode run's call states (needs `hX` variants through
+`iselSim_relWI`/`sim_runG` and the pipelines); a `w`-independent `XI` (the actual callee result
+cannot be shown related to `cm` in stage 1 without stage 2's invariant).
+
+As built (UninitZ11, stage 1 of the decision): `FV/E2E/ExtSemGuard.lean`: `ExtSem.guard`,
+`guard_of`, `guard_spec`, `CallPost` (the results `XCallsOk`/`XCallsIndOk` accept for a call),
+`xCallsOk_guard`, `xCallsIndOk_guard`. `FV/E2E/RelWPatch.lean`: `patchW cm' w` (`w` with `cm'`'s
+initialised live bytes), `relW_patchW`. `FV/E2E/CallPostExists.lean`: `valCV`, `outsOf`,
+`callPost_only_exists` (one invocation), `invoked_unique`, `callPost_invoked_exists` (the
+environment restricted to a state's invocation; premises: the returning invocation keeps the
+allocations and symbols, and fixes the ABI return count). Next: `XI.at n` cannot depend on the
+state, so the guard's `Q` uses the invocation of the call state with count `n`
+(`InvokedN n := ∃ s, ReachN … s n ∧ Invoked … s`, single-valued in a deterministic run: the
+invoking state is the last of its count's segment), plus `CallPost` antitone in the restriction
+(`env.only A'` for `A ⊆ A'`) and an `xCallsOk_guard` for any `Q` implying `CallPost`; then
+`XPRBI` and stage 2 (`guard_of` at `OnCallPR` states).
+
 
 **Step 3k, as built (UninitZ10b): the call-count premises are theorems.** `InstCallsOne f` and
 `TryCallsOne f` hold for every `f` (`E2E.instCallsOne_all`, `E2E.tryCallsOne_all`,
