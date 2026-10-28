@@ -4,6 +4,7 @@ import FV.E2E.LinkArmXPBTX
 import FV.E2E.LinkArmTabCount
 import FV.E2E.LinkArmThmPRBRWitness
 import FV.E2E.LinkArmTableBWitness
+import FV.E2E.LinkArmEnvOfB
 
 /-!
 # Witnesses for the program-keeping guard (#690) and the table count (`FV/E2E/ExtSemGuardRX.lean`,
@@ -141,5 +142,23 @@ theorem sumTo_congr_calls_Lu (M : Nat) (g : Clif.Function) (s : Arm.ArmState) :
     Clif.sumTo (fun _ => 1) (callsBefore (Lu.mach M g) (Lu.A g).fa (Lu.A g).base s 0) =
       Clif.sumTo (fun _ => 2) (callsBefore (Lu.mach M g) (Lu.A g).fa (Lu.A g).base s 0) :=
   LinkSys.sumTo_congr_calls 0 fun _ h => absurd h (Nat.not_lt_zero _)
+
+/-- `envOfB` is `envR` on `Lu` (no slotted callees: the guard is vacuous). -/
+theorem envOfB_envR_Lu (M : Nat) (g : Clif.Function) (c : BitVec 64) (n : String)
+    (vals : List Clif.Val) (cm : Clif.Mem) :
+    ((Lu.envOfB M g c).extern n).map (· vals cm) = ((Lu.envR M g).extern n).map (· vals cm) :=
+  Lu.envOfB_envR vals fun h => absurd h noSlots_Lu
+
+/-- **`runLoop_envOfB` on `Lu`**: from an activation state of `g` in its frame, the runs under
+`envOfB` and `envR` agree. -/
+theorem runLoop_envOfB_Lu (M : Nat) {g : Clif.Function} (hg : g ∈ Lu.P.funcs) (c : BitVec 64)
+    (n : Nat) {s : Clif.State} (hI : Clif.LInv (Lu.P.only g) s) (hc : s.callers = []) :
+    Clif.runLoop (Lu.envOfB M g c) Lu.P.bare n s = Clif.runLoop (Lu.envR M g) Lu.P.bare n s :=
+  Lu.runLoop_envOfB Lu_ok hg n s ⟨hI, hc, fun h => absurd h noSlots_Lu⟩
+
+theorem step_envOfB_Lu (M : Nat) {g : Clif.Function} (hg : g ∈ Lu.P.funcs) (c : BitVec 64)
+    {s : Clif.State} (hI : Clif.LInv (Lu.P.only g) s) :
+    Clif.step (Lu.envOfB M g c) Lu.P.bare s = Clif.step (Lu.envR M g) Lu.P.bare s :=
+  Lu.step_envOfB (Lu_ok.free g hg) hI.1 fun h => absurd h noSlots_Lu
 
 end E2E.LinkArmThmPRBRWitness
