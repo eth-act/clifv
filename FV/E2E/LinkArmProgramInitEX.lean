@@ -6,7 +6,7 @@ import FV.E2E.LinkArmThmPRBG
 
 `backend_correct_program_core_initE` / `backend_correct_program_initE` with, for the returning
 CLIF run, also the per-state facts of the machine run (`RunGoodL`, `LinkGood.lean`), which the
-executable-level theorem needs: under `NeedSlots` from `thmPRBG_allC` (premise `DetTabPRBEr`
+executable-level theorem needs: under `NeedSlots` from `thmPRBG_allC` (premise `DetTabPRBr`
 besides `backend_correct_program_initE`'s), otherwise (the oracle unused) from `thmG`.
 
 * **`backend_correct_program_core_initEX`**, **`backend_correct_program_initEX`**.
@@ -20,7 +20,7 @@ open Backend Backend.Proof Backend.Proof.Driver
 theorem backend_correct_program_core_initEX (L : LinkSys) (hL : L.Ok) [L.CrunOk]
     {κ : Nat → Clif.Function → Nat} (hκ : L.Budget κ) (hBR : L.BaseRetOk)
     (hRC : ∀ g ∈ L.P.funcs, L.RetCount g) (hdet : ∀ M, L.DetPRB κ M)
-    (hdt : ∀ M, L.DetTabPRBE κ M) (hdtr : ∀ M, L.DetTabPRBEr κ M) (hK : L.HooksKeep)
+    (hdt : ∀ M, L.DetTabPRBE κ M) (hdtr : ∀ M, L.DetTabPRBr κ M) (hK : L.HooksKeep)
     {f : Clif.Function}
     (hf : f ∈ L.P.funcs) (M : Nat) {ra : BitVec 64} {s w₀ : Arm.ArmState} {args : List Clif.Val}
     {cs : Clif.State}
@@ -89,7 +89,7 @@ theorem backend_correct_program_initEX (L : LinkSys) (hL : L.Ok)
     {κ : Nat → Clif.Function → Nat} (hκ : L.Budget κ) (hBR : L.BaseRetOk)
     (hRC : ∀ g ∈ L.P.funcs, L.RetCount g)
     (hdet : ∀ M, L.std.DetPRB κ M) (hdt : ∀ M, L.std.DetTabPRBE κ M)
-    (hdtr : ∀ M, L.std.DetTabPRBEr κ M) (hK : L.HooksKeep)
+    (hdtr : ∀ M, L.std.DetTabPRBr κ M) (hK : L.HooksKeep)
     {f : Clif.Function}
     (hf : f ∈ L.P.funcs) (M : Nat) {ra : BitVec 64} {s w₀ : Arm.ArmState} {args : List Clif.Val}
     {cs : Clif.State}

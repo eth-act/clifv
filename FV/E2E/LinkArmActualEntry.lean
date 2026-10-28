@@ -13,9 +13,10 @@ world `bodyOf (enterAt t)`.
 * **`actualEntry`**: `canonEntry` at the actual caller state (same proof; the body-entry world
   from `t`: its memory agrees with `w` outside `F` and with `canon` on the callee's stack region,
   `progCallPRBRL`'s `hrel'`);
-* **`DetTabPRBEr`**: `DetTabPRBE` in reverse (the canonical callee run's prefix-closed table is the
-  actual one's): `DetTabPRBGr L.TableOfE` of the determinism stack (#701, `detTabPRBGr_ofC`), a
-  premise here.
+* **`DetTabPRBr`**: `DetTabPRB` in reverse (the canonical callee run's table `TableOf` is the
+  actual one's): `DetTabPRBGr L.TableOf` of the determinism stack (#701: `detTabPRBGr_ofC` with
+  `tableOf_twinC`), a premise here. (The `TableOfE` form would not follow from `TwinC`, which
+  does not relate the two runs' errors.)
 -/
 
 namespace E2E
@@ -27,10 +28,10 @@ namespace LinkSys
 variable (L : LinkSys)
 variable {κ : Nat → Clif.Function → Nat}
 
-/-- **`DetTabPRBE` in reverse**: under `progCallPRB`'s premises the canonical callee run's
-prefix-closed table is the one of the callee run from every caller state `t` compatible with the
-canonical state (`DetTabPRBGr L.TableOfE`, #701). -/
-def DetTabPRBEr (κ : Nat → Clif.Function → Nat) (M : Nat) : Prop :=
+/-- **`DetTabPRB` in reverse**: under `progCallPRB`'s premises the canonical callee run's table
+is the one of the callee run from every caller state `t` compatible with the canonical state
+(`DetTabPRBGr L.TableOf`, #701). -/
+def DetTabPRBr (κ : Nat → Clif.Function → Nat) (M : Nat) : Prop :=
   ∀ (n : String) (h : Clif.Function), L.P.func? n = some h → (∃ g ∈ L.P.funcs, L.Callee g h) →
     ∀ (F : BitVec 64 → Prop), (∀ a, L.Img a → F a) →
     ∀ (uses : List CV) (w : Arm.ArmState), Arm.r .ERR w = .None → (spv w).toNat % 16 = 0 →
@@ -47,8 +48,8 @@ def DetTabPRBEr (κ : Nat → Clif.Function → Nat) (M : Nat) : Prop :=
       (∀ f, Masked f → f ≠ .PC → f ≠ .GPR 30#5 → Arm.r f t = Arm.r f (L.canon h uses w)) →
       (∀ a, StackBelow (frameDrop (L.A h).af + κ (M - 1) h) (spv w) a →
         t.mem a = (L.canon h uses w).mem a) →
-      L.TableOfE (M - 1) h (enterAt (L.A h) (L.canon h uses w)) (calleeIni h ini) →
-      L.TableOfE (M - 1) h (enterAt (L.A h) t) (calleeIni h ini)
+      L.TableOf (M - 1) h (enterAt (L.A h) (L.canon h uses w)) (calleeIni h ini) →
+      L.TableOf (M - 1) h (enterAt (L.A h) t) (calleeIni h ini)
 
 /-- **The actual callee entry** (module doc): `canonEntry` at a caller state `t` compatible with
 the canonical one, entered with `t`'s own body-entry world. -/

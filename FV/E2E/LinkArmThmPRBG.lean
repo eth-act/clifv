@@ -16,13 +16,13 @@ oracle-less world (`WorldEntry`). Here: **`ThmPRBG`**, the same at the entries o
 * its call states: the prefix theorem `prefix_relatedPRI_atEG` at the call's count (the CLIF run
   has as many calls as the machine before its return), whose answer of `XPBTGY … .at m` is, by
   stage 2 (`Stage2ZS` at the call state, `XPBTGY_subZS`), the answer of `XPRBT … m`
-  (`callDataPRB`);
+  (inside `thmPRBG_of`);
 * **`ansDecode`**: at such a call of the function `h` of `P` the answer is a program call
   (`progXPRBT`), with `h`'s argument registers, `RaOk`, and for a `blr` the `BlrTo` fact
   (`BlrAt`);
 * the nested activations: the program call's `CondBT` (callee CLIF run returns, canonical
-  `TableOf`) gives the callee's actual entry (`actualEntry`) and its prefix-closed table
-  (`DetTabPRBEr`, the reverse determinism transfer, a premise), and `ThmPRBG` one level down.
+  `TableOf`) gives the callee's actual entry (`actualEntry`) and its table (`DetTabPRBr`, the
+  reverse determinism transfer, a premise; then `TableOfE`), and `ThmPRBG` one level down.
 
 Results: `ansDecode`, `ThmPRBG`, **`thmPRBG_of`**, `thmPRBG_noSlots`, **`thmPRBG_allC`**.
 -/
@@ -154,11 +154,11 @@ def ThmPRBG (κ : Nat → Clif.Function → Nat) (M : Nat) : Prop :=
     L.RunGoodL M g s
 
 /-- **The induction step of `ThmPRBG`** (module doc): from `thmPRBRL_ofZSE`'s premises, `ThmPRBG`
-one level down and the reverse table transfer `DetTabPRBEr`. -/
+one level down and the reverse table transfer `DetTabPRBr`. -/
 theorem thmPRBG_of (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) {M : Nat}
     (ih : 0 < M → L.ThmPRBRL κ (M - 1)) (hdet : 0 < M → L.DetPRB κ (M - 1))
     (hret : L.RetOkPRB κ M) (h2 : L.Stage2PRBZSE κ M)
-    (ihG : 0 < M → L.ThmPRBG κ (M - 1)) (hdtr : 0 < M → L.DetTabPRBEr κ M) :
+    (ihG : 0 < M → L.ThmPRBG κ (M - 1)) (hdtr : 0 < M → L.DetTabPRBr κ M) :
     L.ThmPRBG κ M := by
   intro g hg F vals cs w₀ fuel rvals cm' ini G ra s hWE hME hra htab hrun
   have hc := hL.compiled g hg
@@ -322,9 +322,10 @@ theorem thmPRBG_of (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) {M : Nat}
       obtain ⟨hcOk, hmsk, hrgn, -⟩ := L.callerFacts hL hκ hM hg hh hcal hWE.img hLu hsw himgU hrah
         hmskQ hrgnQ (fun a ha => hdeadW a (by rw [hspW]; exact ha))
       have hpf := func?_of_mem hL.names hh
-      have htabE := hdtr hM h.name h hpf ⟨g, hg, hcal⟩ F hWE.img _ _ herrW halW hroomW hdeadW
+      have htabE := L.tableOfE_of (hdtr hM h.name h hpf ⟨g, hg, hcal⟩ F hWE.img _ _ herrW halW
+        hroomW hdeadW
         vals' cm cs' rvals' cm'' ini' hmr hargs hsav (fun hN => (hpl hN).1) (fun hN => (hpl hN).2)
-        hinit hrun2 _ hcOk hmsk hrgn (L.tableOfE_of htabC)
+        hinit hrun2 _ hcOk hmsk hrgn htabC)
       obtain ⟨Fh, G', w₀', m', hWE', hME', hra', hm'⟩ := L.actualEntry hL hM hpf ⟨g, hg, hcal⟩
         hWE.img herrW halW hroomW hdeadW hmr hargs hsav (fun hN => (hpl hN).1)
         (fun hN => (hpl hN).2) hinit hrun2 hcOk hrgn
@@ -340,10 +341,10 @@ theorem thmPRBG_noSlots (hL : L.Ok) [L.CrunOk] (hκ : L.Budget κ) (hN : ¬ L.Ne
       hME.entryP.entry
 
 /-- **`ThmPRBG` at every depth** under `NeedSlots`, from `thmPRBRLE_allC`'s premises and the
-reverse table transfer `DetTabPRBEr`. -/
+reverse table transfer `DetTabPRBr`. -/
 theorem thmPRBG_allC (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) (hN : L.NeedSlots)
     (hB : L.BaseRetOk) (hC : ∀ g ∈ L.P.funcs, L.RetCount g) (hdet : ∀ M, L.DetPRB κ M)
-    (hdt : ∀ M, L.DetTabPRBE κ M) (hdtr : ∀ M, L.DetTabPRBEr κ M) (M : Nat) :
+    (hdt : ∀ M, L.DetTabPRBE κ M) (hdtr : ∀ M, L.DetTabPRBr κ M) (M : Nat) :
     L.ThmPRBG κ M := by
   induction M with
   | zero =>

@@ -16,7 +16,7 @@ returning runs are covered.
 * `iniB`, **`ClifRunB`** (`ClifRun` with `place` under the oracle `iniB`), `sysW`, `kapW` (the
   linked system and budget the proof instantiates), **`InitOk`** (the oracle route's premises:
   the scope conditions `BaseRetOk`, `RetCount`, `HooksKeep` and the determinism premises `DetPRB`,
-  `DetTabPRBE`, `DetTabPRBEr`, of the system the proof uses), `iniOf_F`, `iniOf_sysS`;
+  `DetTabPRBE`, `DetTabPRBr`, of the system the proof uses), `iniOf_F`, `iniOf_sysS`;
 * **`premisesB`** (`premises` with `ClifRunB`), `modelOf_diff`;
 * **`binary_correct_init`**: a returning whole-program CLIF run is realised by the linked machine
   from the model state, which has the per-state facts (`RunGoodL`);
@@ -58,13 +58,13 @@ abbrev kapW (I : LinkInput) (B : BaseEnv) (f : Clif.Function) (r : Arm.ArmState)
 
 /-- **The premises of the oracle route** for the linked system `L` with budget `κ`: the scope
 conditions `BaseRetOk`, `RetCount`, `HooksKeep` and the determinism of the linked machine
-(`DetPRB`, `DetTabPRBE`, `DetTabPRBEr`, #701/#713). -/
+(`DetPRB`, `DetTabPRBE`, `DetTabPRBr`, #701/#713). -/
 structure InitOk (L : LinkSys) (κ : Nat → Clif.Function → Nat) : Prop where
   baseRet : L.BaseRetOk
   retCount : ∀ g ∈ L.P.funcs, L.RetCount g
   det : ∀ M, L.std.DetPRB κ M
   detTab : ∀ M, L.std.DetTabPRBE κ M
-  detTabR : ∀ M, L.std.DetTabPRBEr κ M
+  detTabR : ∀ M, L.std.DetTabPRBr κ M
   hooks : L.HooksKeep
 
 /-- The machine's own table does not depend on the exterior `F`. -/

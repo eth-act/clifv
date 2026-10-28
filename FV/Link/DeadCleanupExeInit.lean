@@ -10,7 +10,7 @@ CLIF run that reads an unwritten stack-slot byte is stuck there and the theorem 
 (#537). **`compileExe_correct_init`**: the same for a reference entry placed with the machine's
 own slot table (`ClifRunB`, `binary_correct_exec_init`), for **returning** CLIF runs; premises
 beside `compileExe_correct`'s: the oracle route's `InitOk` (scope conditions `BaseRetOk`,
-`RetCount`, `HooksKeep`; determinism `DetPRB`, `DetTabPRBE`, `DetTabPRBEr`, #701/#713) for the
+`RetCount`, `HooksKeep`; determinism `DetPRB`, `DetTabPRBE`, `DetTabPRBr`, #701/#713) for the
 system keeping the GOT slots. A trapping CLIF run under the oracle is not covered by any theorem
 yet.
 -/

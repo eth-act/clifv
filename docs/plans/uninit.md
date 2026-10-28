@@ -1399,12 +1399,13 @@ modules; no existing statement changed; no generated-code change; standard axiom
   `XPRBT … m`'s. So the pipeline copies with the refined trace were not built.
 - `FV/E2E/LinkArmActualEntry.lean`: **`actualEntry`** (`canonEntry` at the actual caller state
   `t`, entered with `bodyOf (enterAt t)`: `WorldEntryB`, `MachEntryPR` with its own prophecies,
-  `RaOk`, the returning run one level down), `DetTabPRBEr` (= #701's `DetTabPRBGr L.TableOfE`,
-  the reverse transfer canonical → actual; a premise).
+  `RaOk`, the returning run one level down), `DetTabPRBr` (= #701's `DetTabPRBGr L.TableOf`, the
+  reverse transfer canonical → actual; a premise, dischargeable by `detTabPRBGr_ofC` with
+  `tableOf_twinC` once `CallTwinC` is proved).
 - `FV/E2E/LinkArmThmPRBG.lean`: **`ansDecode`** (at a machine call of `h ∈ P` the `XPRBT` answer is
   `progXPRBT`, with `h`'s argument registers, `RaOk`, `Callee`, and the `BlrTo` fact), **`ThmPRBG`**
   (`ThmPRBRLE`'s entries → `RunGoodL M g s`), **`thmPRBG_of`** (nested call: `CondBT` of the
-  answer, `callerFacts`, `DetTabPRBEr` for the actual callee's `TableOfE`, `actualEntry`,
+  answer, `callerFacts`, `DetTabPRBr` for the actual callee's `TableOf`, then `tableOfE_of`, `actualEntry`,
   `ThmPRBG` one level down), `thmPRBG_noSlots` (from `thmG`), **`thmPRBG_allC`**.
 - `FV/E2E/LinkArmIniOfCongr.lean`: **`iniOf_congr`** (the machine's own table depends only on `A`,
   `P`, `Xb`, `mach`; needed because the binary-level systems differ in `F`/`Img`).
@@ -1412,7 +1413,7 @@ modules; no existing statement changed; no generated-code change; standard axiom
   **`backend_correct_program_initEX`** (returning runs: `ArmRefines` and `RunGoodL`).
 - `FV/E2E/DeadCleanupBinaryInit.lean`: `iniB` (the slot table `(sys I B).std.iniOf M f (modelOf
   I f r)`), **`ClifRunB`**, `sysW`, `kapW`, **`InitOk`** (premises of the oracle route:
-  `BaseRetOk`, `RetCount`, `HooksKeep`, `DetPRB`, `DetTabPRBE`, `DetTabPRBEr` of the system the
+  `BaseRetOk`, `RetCount`, `HooksKeep`, `DetPRB`, `DetTabPRBE`, `DetTabPRBr` of the system the
   proof instantiates), **`premisesB`**, `modelOf_diff`, `kapW_eq`, `iniOf_F`,
   **`binary_correct_init`**; `iniOf_sysS`, `runGoodL_of_sysS`, `model_init_sysS` (the GOT-slot
   system: one system for `ArmRefines` and `RunGoodL`), **`binary_correct_exec_init`**.
@@ -1424,11 +1425,18 @@ modules; no existing statement changed; no generated-code change; standard axiom
   `thmPRBG_allC_Lsl`, `backend_correct_program_core_initEX_Lsl`, `backend_correct_program_initEX_L0`,
   `actualEntry_Lsl`, `ansDecode_Lsl`, `iniOf_std_L0`; `count_two`, `opCalls_le_one`,
   `countedRun0_any`.
-- Open: the determinism premises (`DetPRB`, `DetTabPRBE`, `DetTabPRBEr`; #701/#713: `CallTwinC`,
-  `DetRunPRBC` are not proved yet); `tableOfE_twinC` (`TableOfE` along `TwinC`, then
-  `DetTabPRBEr = DetTabPRBGr L.TableOfE` by `detTabPRBGr_ofC`) once both stacks are on main; the
-  fv-demo witness (an executable whose returning run reads an unwritten slot, through
-  `compileExe_correct_init`).
+- **Finding:** the reverse premise is stated over `TableOf`, not `TableOfE`: `TwinC` (#701) does
+  not relate the two runs' errors, and `TableOfE` quantifies over the error-free prefixes of *its*
+  run, so `TableOfE` does not carry along `TwinC`. The same holds for UninitZ21's forward
+  `DetTabPRBE = DetTabPRBGr L.TableOfE`: `detTabPRBG_ofC L.TableOfE` needs a transport lemma that
+  `TwinC` does not give (an `ERR` clause in `TwinBaseC`, or `DetTabPRBE` restated over
+  `TableOf`, would fix it).
+- Open: the determinism premises (`DetPRB`, `DetTabPRBE`, `DetTabPRBr`; #701/#713: `CallTwinC`,
+  `DetRunPRBC` are not proved yet); the fv-demo witness (an executable whose returning run reads
+  an unwritten slot, through `compileExe_correct_init`): the CLIF run under the machine's own
+  table needs either a symbolic-oracle evaluation of the interpreter or `iniOf` computed from a
+  kernel-checked linked run (`linkedCall` is noncomputable, so the `machC` mirror needs an equality
+  proof per call); not built.
 
 **Step 3h, as built (UninitZ10b): the call-count premises are theorems.** `InstCallsOne f` and
 `TryCallsOne f` hold for every `f` (`E2E.instCallsOne_all`, `E2E.tryCallsOne_all`,

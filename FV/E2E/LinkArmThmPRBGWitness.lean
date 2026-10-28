@@ -10,7 +10,7 @@ import FV.E2E.RegLevelCorrectCWitness
 On the slotted system `Lsl = L0.std` (`LinkSlotSysWitness`: `f` calls `h`, `r` reads its slot):
 
 * `thmPRBG_zero_Lsl`: `ThmPRBG` at depth `0` (no premise left);
-* `thmPRBG_allC_Lsl`: `ThmPRBG` at every depth from `DetPRB`, `DetTabPRBE`, `DetTabPRBEr`;
+* `thmPRBG_allC_Lsl`: `ThmPRBG` at every depth from `DetPRB`, `DetTabPRBE`, `DetTabPRBr`;
 * `backend_correct_program_core_initEX_Lsl`, `backend_correct_program_initEX_L0`: the top-level
   statements with `Ok`, the budget, `BaseRetOk`, `RetCount`, `HooksKeep` discharged;
 * `actualEntry_Lsl`, `ansDecode_Lsl`: the actual callee entry and the call decoding at `Lsl`;
@@ -36,7 +36,7 @@ theorem thmPRBG_zero_Lsl : Lsl.ThmPRBG (fun M _ => Lsl.K M) 0 :=
 /-- **`ThmPRBG` at every depth on the slotted system** from the determinism premises. -/
 theorem thmPRBG_allC_Lsl (hdet : ∀ M, Lsl.DetPRB (fun M _ => Lsl.K M) M)
     (hdt : ∀ M, Lsl.DetTabPRBE (fun M _ => Lsl.K M) M)
-    (hdtr : ∀ M, Lsl.DetTabPRBEr (fun M _ => Lsl.K M) M) (M : Nat) :
+    (hdtr : ∀ M, Lsl.DetTabPRBr (fun M _ => Lsl.K M) M) (M : Nat) :
     Lsl.ThmPRBG (fun M _ => Lsl.K M) M :=
   Lsl.thmPRBG_allC Lsl_ok (Lsl.budget_K Lsl_ok) needSlots baseRetOk_Lsl retCount_Lsl hdet hdt hdtr M
 
@@ -45,7 +45,7 @@ theorem thmPRBG_allC_Lsl (hdet : ∀ M, Lsl.DetPRB (fun M _ => Lsl.K M) M)
 theorem backend_correct_program_core_initEX_Lsl
     (hdet : ∀ M, Lsl.DetPRB (fun M _ => Lsl.K M) M)
     (hdt : ∀ M, Lsl.DetTabPRBE (fun M _ => Lsl.K M) M)
-    (hdtr : ∀ M, Lsl.DetTabPRBEr (fun M _ => Lsl.K M) M) :
+    (hdtr : ∀ M, Lsl.DetTabPRBr (fun M _ => Lsl.K M) M) :
     type_of% (@backend_correct_program_core_initEX Lsl Lsl_ok _ (fun M _ => Lsl.K M)
       (Lsl.budget_K Lsl_ok) baseRetOk_Lsl retCount_Lsl hdet hdt hdtr hooksKeep_Lsl) :=
   @backend_correct_program_core_initEX Lsl Lsl_ok _ (fun M _ => Lsl.K M) (Lsl.budget_K Lsl_ok)
@@ -55,7 +55,7 @@ theorem backend_correct_program_core_initEX_Lsl
 theorem backend_correct_program_initEX_L0
     (hdet : ∀ M, L0.std.DetPRB (fun M _ => Lsl.K M) M)
     (hdt : ∀ M, L0.std.DetTabPRBE (fun M _ => Lsl.K M) M)
-    (hdtr : ∀ M, L0.std.DetTabPRBEr (fun M _ => Lsl.K M) M) :
+    (hdtr : ∀ M, L0.std.DetTabPRBr (fun M _ => Lsl.K M) M) :
     type_of% (@backend_correct_program_initEX L0 L0_ok (fun M _ => Lsl.K M)
       (L0.budget_K L0_ok) baseRetOk_Lsl retCount_Lsl hdet hdt hdtr hooksKeep_L0) :=
   @backend_correct_program_initEX L0 L0_ok (fun M _ => Lsl.K M) (L0.budget_K L0_ok)
