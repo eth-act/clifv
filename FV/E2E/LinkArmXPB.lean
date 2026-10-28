@@ -53,14 +53,18 @@ namespace LinkSys
 
 variable (L : LinkSys)
 
-/-- **`Cond` under the slot-byte oracle**: the CLIF witness memory placed with some oracle. -/
+/-- **`Cond` under the slot-byte oracle**: the CLIF witness memory placed with some oracle `ini`
+that is the table of the canonical callee run one level down (`TableOf`), when program callees
+have slots. -/
 def CondB (κ : Nat → Clif.Function → Nat) (M : Nat) (F : BitVec 64 → Prop) (g : Clif.Function)
     (uses : List CV) (w : Arm.ArmState) : Prop :=
   0 < M ∧ Arm.r .ERR w = .None ∧ (spv w).toNat % 16 = 0 ∧
   frameDrop (L.A g).af + κ (M - 1) g ≤ (spv w).toNat ∧
   (∀ a, StackBelow (frameDrop (L.A g).af + κ (M - 1) g) (spv w) a → F a ∧ ¬ L.Img a) ∧
   ∃ vals cm cs rvals cm' ini, MemRel F L.syms cm w ∧ ArgsAt g.sig vals uses w ∧
-    StackArgsAvoid F g.sig vals w ∧ (L.NeedSlots → L.PlaceAtB cm (spv w) ini) ∧
+    StackArgsAvoid F g.sig vals w ∧
+    (L.NeedSlots → L.PlaceAtB cm (spv w) ini ∧
+      L.TableOf (M - 1) g (enterAt (L.A g) (L.canon g uses w)) ini) ∧
     Clif.initState L.P g.name vals cm = .ok cs ∧ L.crun M cs = .returned rvals cm'
 
 /-- Without program callees with slots, `CondB` is `Cond`. -/

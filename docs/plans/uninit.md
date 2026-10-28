@@ -995,12 +995,25 @@ counter equality from `prefix_related*PRI` + `NextAdv` of the earlier calls), by
 on `n`. As built (UninitZ13), (1) and (2): `FV/E2E/ExtSemGuardR.lean`: `ExtSem.guardR`,
 `guardR_of`, `guardR_spec`, **`guardR_eq_of`** (stage 2: where every non-vacuous contract accepts
 `X`'s result, every answer is `X`'s), `callPost_not_vacuous`(`_ind`), **`xCallsOk_guardR_only`**;
-`FV/E2E/LinkArmXPB.lean`: `ExtSemI.guardRI`, **`hX_guardRI`** (stage 1 for any `XI`), `CondB`,
-`cond_iff_condB` (without `NeedSlots`), `progXB`, `progXPRB`, `XPRB`, `XPBI`, `XPRB_of_not_needSlots`,
-**`XPBG`** (`XPBI` guarded by `CallPostN` with `guardR`: the `XI` of the induction step, replacing
-`XPRBI`), `XPBG_eq_of`. Witnesses `FV/E2E/LinkArmXPBWitness.lean` (`guardR_vacuous`,
-`hX_sCall_R`, `XPRB_Lu`). `ThmPRB`'s statement does not mention `XPRBI`, so it is unchanged.
-Next: (3), then `thmPRB_of`, `thmPRB`, item (e).
+`FV/E2E/LinkArmXPB.lean`: `ExtSemI.guardRI`, **`hX_guardRI`** (stage 1 for any `XI`), `CondB`
+(`Cond` with, under `NeedSlots`, `PlaceAtB cm (spv w) ini` and `TableOf (M - 1) g (enterAt (canon
+…)) ini`: the oracle is the canonical callee run's table, so `ThmPRB (M - 1)` applies to the
+canonical callee), `cond_iff_condB` (without `NeedSlots`), `progXB`, `progXPRB`, `XPRB`, `XPBI`,
+`XPRB_of_not_needSlots`, **`XPBG`** (`XPBI` guarded by `CallPostN` with `guardR`: the `XI` of the
+induction step, replacing `XPRBI`), `XPBG_eq_of`. Witnesses `FV/E2E/LinkArmXPBWitness.lean`
+(`guardR_vacuous`, `hX_sCall_R`, `XPRB_Lu`). `ThmPRB`'s statement does not mention `XPRBI`, so it
+is unchanged.
+Next, (3): `progCallPRB` (copy of `progCallPR`, `LinkArmProgCallPR.lean`, 650 lines) on
+`ThmPRB (M - 1)`: `initState_memB` with `PlaceAtB` (LinkPlaceB), the callee's `MachEntryPR` with
+`(prophOf, prophStOf)` as there, `TableOf` from `CondB`; the transfer from the canonical callee
+state to the actual call state (`progCallPR`'s `∀ t, CallerOk … → agreement → …` clause) needs the
+determinism clause, here a stated premise `DetPRB κ (M - 1)` (ThmPDER's determinism clause for
+`ThmPRB`'s outcome, plus `TabUpTo` carried to the agreeing run) until `thmPDER_det_of` (UninitZ11b,
+blocked on `ReadsIn`, UninitZ12b's #682) gives it. Then `progOsPRB`/`calleeOkPRB` (copies of
+`LinkArmProgOsPR.lean`), and the stage-2 obligation of `XPBG_eq_of` at `OnCallPR … n` call states
+where `RelatedN … n` holds: `CondB` at the actual call with `ini := ini.adv (counter)` (the counter
+equality from `prefix_related_cleanupPRI` at every `j < n` and `ThmPRB (M - 1)`'s `NextAdv`), by
+strong induction on `n`; then `thmPRB_of`, `thmPRB`, item (e).
 
 **Step 3h, as built (UninitZ10b): the call-count premises are theorems.** `InstCallsOne f` and
 `TryCallsOne f` hold for every `f` (`E2E.instCallsOne_all`, `E2E.tryCallsOne_all`,
