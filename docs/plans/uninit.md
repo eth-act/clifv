@@ -1424,11 +1424,14 @@ modules; no existing statement changed; no generated-code change; standard axiom
 - Witnesses `FV/E2E/LinkArmThmPRBGWitness.lean`: `thmPRBG_zero_Lsl` (no premise),
   `thmPRBG_allC_Lsl`, `backend_correct_program_core_initEX_Lsl`, `backend_correct_program_initEX_L0`,
   `actualEntry_Lsl`, `ansDecode_Lsl`, `iniOf_std_L0`; `count_two`, `opCalls_le_one`,
-  `countedRun0_any`.
+  `countedRun0_any`; `FV/Link/DeadCleanupExeInitWitness.lean`: `exec_returns`
+  (`compileExe_correct_init` on a compiled executable, `f(x) = x` returning `41`; compiler-side
+  premises discharged, entry contract and `InitOk` left; no slotted callee, so the oracle is
+  unused there).
 - **Finding:** the reverse premise is stated over `TableOf`, not `TableOfE`: `TwinC` (#701) does
   not relate the two runs' errors, and `TableOfE` quantifies over the error-free prefixes of *its*
   run, so `TableOfE` does not carry along `TwinC`. The same holds for UninitZ21's forward
-  `DetTabPRBE = DetTabPRBGr L.TableOfE`: `detTabPRBG_ofC L.TableOfE` needs a transport lemma that
+  `DetTabPRBE = DetTabPRBG L.TableOfE`: `detTabPRBG_ofC L.TableOfE` needs a transport lemma that
   `TwinC` does not give (an `ERR` clause in `TwinBaseC`, or `DetTabPRBE` restated over
   `TableOf`, would fix it).
 - Open: the determinism premises (`DetPRB`, `DetTabPRBE`, `DetTabPRBr`; #701/#713: `CallTwinC`,
