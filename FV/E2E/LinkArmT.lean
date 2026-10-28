@@ -103,7 +103,9 @@ structure OkT : Prop where
   /-- distinct names, no `return_call` -/
   names : (L.P.funcs.map (·.name)).Nodup
   free : ∀ g ∈ L.P.funcs, Clif.LinkFree g
-  subset : ∀ g ∈ L.P.funcs, InSubsetTC L.P.bare g
+  /-- S11f (#35): the scope with the proven float operations (it was `InSubsetTC`,
+  `InSubsetTC.toTCF`) -/
+  subset : ∀ g ∈ L.P.funcs, InSubsetTCF L.P.bare g
   compiled : ∀ g ∈ L.P.funcs, CompiledAnyT L.P.bare g (L.A g).k (L.A g).vc (L.A g).vcp
     (L.A g).rf (L.A g).af (L.A g).fa (L.A g).fb
   /-- an `sret` function is in subset E, with the integer artifact contract -/
@@ -1949,7 +1951,7 @@ theorem thm_ofT (hL : L.OkT) [L.CrunOk] (hκ : L.Budget κ) {M : Nat} (ih : 0 < 
   have hX := L.xCallsOkT hL hκ ih hg hWE.img hWE.room hWE.dead hWE.align
   have hXI := L.xCallsIndOkT hL hκ ih hg hWE.img hWE.room hWE.dead hWE.align
   -- the typed world theorem (with the proven control families)
-  have hT := backend_correct_world_ni_pipelineAnyT (hL.subset g hg) hc typedRules_program
+  have hT := backend_correct_world_ni_pipelineAnyTF (hL.subset g hg) hc typedRules_program
     (X := L.X κ M g F) (syms := L.syms)
     (env := L.envOf M g (spv w₀)) (K := κ M g) (F := F) (c := spv w₀) (hL.covered g hg)
     hX hXI (fun n b hn => hL.symOk n b hn) rfl hWE.clif hWE.rel hWE.args
@@ -2096,7 +2098,7 @@ theorem backend_correct_program_coreT (L : LinkSys) (hL : L.OkT) [L.CrunOk]
     have hJ : L.ActInv f (spv w₀) cs := ⟨hIf, hcs.callers, hpl⟩
     have hm' : Clif.runLoop (L.envOf M f (spv w₀)) L.P.bare m cs = .trapped c := by
       rw [L.runLoop_envOfT hL hf m cs hJ]; exact hm
-    have h := backend_correct_world_pipelineAnyT (hL.subset f hf) hc typedRules_program
+    have h := backend_correct_world_pipelineAnyTF (hL.subset f hf) hc typedRules_program
       (X := L.X κ M f L.F) (syms := L.syms)
       (env := L.envOf M f (spv w₀)) (K := κ M f) (F := L.F) (c := spv w₀) (hL.covered f hf)
       (L.xCallsOkT hL hκ ih hf hL.imgF hWE.room hWE.dead hWE.align)
