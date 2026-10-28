@@ -250,7 +250,20 @@ theorem okRWith_soundT (stage : Clif.Function → VCode → VCode) {I : LinkInpu
           .cleanup ⟨hl, hlowT, hpr, (fa hg).prepOk, (fa hg).check, ha, he, hla⟩⟩, hb⟩
     · rcases hstage with rfl | rfl
       · exact ⟨.inr (.legacy ⟨hl, hlowTC, hpr, (fa hg).prepOk, (fa hg).check, ha, he, hla⟩), hb⟩
-      · exact ⟨.inr (.cleanup ⟨hl, hlowTC, hpr, (fa hg).prepOk, (fa hg).check, ha, he, hla⟩), hb⟩
+      · -- The skip runs only on subset-E functions accepted by `lowerCheck`; those go through
+        -- the typed branch (`functionET_of_functionE`, `lowerCheckT_of_lowerCheck`). On every
+        -- other function the stage is `prune vc`, which is what `CompiledCleanupTCF` is about.
+        cases hk : (Compile.functionE g && lowerCheck g (artOf R g).vc)
+        · have hst : cleanupStage g (artOf R g).vc = DeadCleanup.prune (artOf R g).vc := by
+            simp only [cleanupStage, skipStage, hk, Bool.false_eq_true, ↓reduceIte]
+          have hpo := (fa hg).prepOk
+          rw [hst] at hpr hpo
+          exact ⟨.inr (.cleanup ⟨hl, hlowTC, hpr, hpo, (fa hg).check, ha, he, hla⟩), hb⟩
+        · rw [Bool.and_eq_true] at hk
+          obtain ⟨hE, hlc⟩ := hk
+          exact ⟨.inl ⟨hinT g hg (Compile.functionET_of_functionE hE),
+            .cleanup ⟨hl, lowerCheckT_of_lowerCheck hlc, hpr, (fa hg).prepOk, (fa hg).check, ha,
+              he, hla⟩⟩, hb⟩
   refine
     { names := hn
       free := fun g hg => (fa hg).free
