@@ -1,0 +1,37 @@
+name: Quick checks
+
+# Checks that need no Lean build and finish in about a minute, so a PR learns of these
+# failures before the long jobs (full gate: hours, post-merge) would report them.
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: quick-checks-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    name: Quick checks
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: No NUL characters in Lean string literals
+        run: |
+          # leantar 0.1.20 (Lake's .ltar packer for the artifact cache) panics on a string
+          # constant with an internal NUL ("assertion failed: s2.len() == s.len()"), so
+          # `lake build -o` / `lake cache stage` fail and the full gate cannot publish lake-full.
+          # Build such a string at run time instead, e.g. `"".push (Char.ofNat 0) ++ s`.
+          if git grep -nE '\\x00|\\u0000' -- '*.lean'; then
+            echo "::error::NUL escape in a Lean source (see the comment in this step)"
+            exit 1
+          fi
+      - name: Script unit tests
+        run: python3 -m unittest discover -s scripts -p 'test_*.py'

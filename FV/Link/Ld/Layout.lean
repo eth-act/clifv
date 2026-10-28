@@ -217,10 +217,13 @@ the relocations `rels`. -/
 def Slot.piece (sl : Slot) (bytes : ByteArray) (rels : List Rel) : Piece :=
   { addr := sl.addr, fo := sl.fo, bytes := clampTo sl.size bytes, rels }
 
-/-- The GOT slot's key of symbol `j` of file `fi` (a local symbol: per file and index). -/
+/-- The GOT slot's key of symbol `j` of file `fi` (a local symbol: per file and index, after a NUL
+that no symbol name contains). The NUL is pushed, not written in a literal: leantar (Lake's .ltar
+packer, 0.1.20) panics on a string constant with an internal NUL, which broke `lake build -o`. -/
 def gotKey (files : Array Obj) (fi j : Nat) : String :=
   let sy := files[fi]!.syms[j]!
-  if sy.bind == 0 || j < files[fi]!.firstGlobal then s!"\x00{fi}:{j}" else sy.name
+  if sy.bind == 0 || j < files[fi]!.firstGlobal then ("".push (Char.ofNat 0)) ++ s!"{fi}:{j}"
+  else sy.name
 
 /-- **The layout's decisions** before any placement: the output sections (unsorted), the kept
 `.eh_frame` records (offsets in the output `.eh_frame`, its size with the terminator, the FDE
