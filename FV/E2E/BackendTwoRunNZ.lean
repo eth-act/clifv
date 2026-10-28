@@ -4,13 +4,13 @@ import FV.E2E.RegLevelCallStart
 /-!
 # The per-index lock with the contracts of the first `N` calls (SEM1 #537, #713)
 
-`backend_twoRunLWN` in the form of `backend_twoRunLERWZ`: either the run makes at most `N` calls
-and the conclusion is `backend_twoRunLERWZ`'s (both returns, `RetAgreeX`, the memory outside
-`F ∪ D`, the lock with its set `R.Zc d d'` at every index before the return), or the lock with its
-set holds at every index up to the first state with `N` calls before it, which is a call state of
-both runs (`RL.callSt_of_q_call`): the `N`-th call states are locked.
+`backend_twoRunLWNp` in the form of `backend_twoRunLERWZ`, along a given paired run with `C` calls:
+if `C ≤ N`, the conclusion of `backend_twoRunLERWZ` (both returns, `RetAgreeX`, the memory outside
+`F ∪ D`, the lock with its set `R.Zc d d'` at every index before the return); if `N < C`, the lock
+with its set at every index up to the first state with `N` calls before it, which is a call state
+of both runs (`RL.callSt_of_q_call`): the `N`-th call states are locked.
 
-* **`backend_twoRunLERWZN`**.
+* **`backend_twoRunLERWZNp`**.
 -/
 
 namespace E2E
@@ -22,32 +22,22 @@ variable {p : Clif.Program} {f : Clif.Function} {k : Nat} {vc vcp : VCode} {rf :
   {af : AFunc} {fa : FnAsm} {fb : FnBin}
 
 set_option maxHeartbeats 8000000 in
-/-- **The per-index lock with the contracts of the first `N` calls** (module doc). -/
-theorem backend_twoRunLERWZN (hsub : InSubset p f) (hc : Compiled f k vc vcp rf af fa fb)
-    (hone : InstCallsOne f) (htc : TryCallsOne f)
-    {XI : ExtSemI} {syms : String → Option Nat} {slotOff : Nat} {env : Clif.Env} {K : Nat}
-    {F : BitVec 64 → Prop} {c : BitVec 64} {args : List Clif.Val} {cs : Clif.State}
-    (hX : ∀ s n, ReachN env p cs s n →
-      XCallsOk (env.only (Clif.Invoked env p s)) (f.externs.map (·.2))
-        (RelW ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c) (XI.at n) ∧
-      XCallsIndOk (env.only (Clif.Invoked env p s)) (indSigs f)
-        (RelW ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c) (XI.at n))
-    (hNI : ∀ s n, ReachN env p cs s n → XNI F syms (f.externs.map (·.2)) (indSigs f) c
-      (CallLg (env.only (Clif.Invoked env p s)) (f.externs.map (·.2)) (indSigs f)) (XI.at n))
-    (hTls : ∀ n, XTls F (XI.at n))
-    (hsym : ∀ n b, syms n = some b → XI.sym n 0 = BitVec.ofNat 64 b)
-    (hslot : af.slotBase = slotOff)
-    {w₀ w₀' : Arm.ArmState} {D : BitVec 64 → Prop} (ρ₀ : Nat → CV) (hce : ClifEntry f args cs)
-    (hrel : RelW ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c cs.frame.slots cs.mem w₀)
-    (hrel' : RelW ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c cs.frame.slots cs.mem
-      w₀')
-    (hargs : ArgsAtEntry F f.sig args w₀)
+/-- **The per-index lock with the contracts of the first `N` calls, along a given paired run**
+(module doc). -/
+theorem backend_twoRunLERWZNp (hc : Compiled f k vc vcp rf af fa fb)
+    {XI : ExtSemI} {K : Nat} {F : BitVec 64 → Prop}
+    {w₀ w₀' : Arm.ArmState} {D : BitVec 64 → Prop} (ρ₀ : Nat → CV)
     (hsw : SameWorld (fun b => F b ∨ D b) w₀ w₀')
-    (hreg : ∀ r v, (ArgLoc.reg r, v) ∈ (locsOf f.sig).zip args → regVal w₀' r = regVal w₀ r)
-    (hstk : ∀ off v, (ArgLoc.stack off, v) ∈ (locsOf f.sig).zip args → ∀ k < v.ty.bytes,
-      w₀'.mem (Arm.r (.GPR 29#5) w₀ + BitVec.ofInt 64 (16 + (off : Int)) + BitVec.ofNat 64 k) =
-        w₀.mem (Arm.r (.GPR 29#5) w₀ + BitVec.ofInt 64 (16 + (off : Int)) + BitVec.ofNat 64 k))
-    (htr : TrapsExplicit env p cs) (fuel : Nat)
+    {us : List (Reg × Reg)} {outs : List CV} {w : (Arm.ArmState × Arm.ArmState) × Nat}
+    {b kk : Nat} {ρ : Nat → CV} {w₁ : (Arm.ArmState × Arm.ArmState) × Nat} {vb : VBlock}
+    {ops : Array Operand} {outs' : List CV}
+    (hs : Star (VStep vcp
+      (pairDI (csemV (GotV vcp) F ⟨fa.k, af.slotBase⟩) F ⟨fa.k, af.slotBase⟩ XI))
+      (.run ⟨0, 0, ρ₀, ((w₀, w₀'), 0)⟩) (.run ⟨b, kk, ρ, w₁⟩))
+    (hvb : vcp.blocks[b]? = some vb) (hk : vb.insts[kk]? = some (.rets us))
+    (hops : (MInst.rets us).operands = .ok ops) (hvals : outs = vuses ops ρ)
+    (hsem : pairDI (csemV (GotV vcp) F ⟨fa.k, af.slotBase⟩) F ⟨fa.k, af.slotBase⟩ XI (.rets us)
+      outs w₁ = some (outs', w, .ret))
     {lm : Std.HashMap Lbl Nat} (hlm : labelOffsets fa.lines = .ok lm) {body : List Line}
     {psF : PState} (hpsF : blocksLinesE ⟨fa.k, af.slotBase⟩ af af.blocks.toList {} = .ok (body, psF))
     {H : ArmHooks} {G G' : BitVec 64 → Prop}
@@ -74,8 +64,7 @@ theorem backend_twoRunLERWZN (hsub : InSubset p f) (hc : Compiled f k vc vcp rf 
       ∀ m r, StEqOutX (R.Zc c c') (H.tls m r u) (H.tls m r u'))
     (hag : EntryAgree (frameDrop af + K) s t0)
     (hx29 : Arm.r (.GPR 29#5) s = Arm.r (.GPR 29#5) t0) :
-    ∀ vals cm, Clif.runLoop env p fuel cs = .returned vals cm →
-    (∃ T,
+    (w₁.2 ≤ N → ∃ T,
       Arm.r .PC (iterN ({ R with X := (XI.upTo N).at 0 } : RL).step
         ((prologueLines R.af.frameSize).length + T + R.retLen) R.s0) = ra ∧
       Arm.r .PC (iterN ({ R with s0 := t0, G := G', X := (XI.upTo N).at 0 } : RL).step
@@ -93,8 +82,8 @@ theorem backend_twoRunLERWZN (hsub : InSubset p f) (hc : Compiled f k vc vcp rf 
       ∀ i < (prologueLines R.af.frameSize).length + T + R.retLen, ∃ d d',
         StEqOutX (R.Zc d d')
           (iterN ({ R with s0 := t0, G := G', X := (XI.upTo N).at 0 } : RL).step i t0)
-          (iterN ({ R with X := (XI.upTo N).at 0 } : RL).step i R.s0)) ∨
-    (∃ T,
+          (iterN ({ R with X := (XI.upTo N).at 0 } : RL).step i R.s0)) ∧
+    (N < w₁.2 → ∃ T,
       (∀ i ≤ (prologueLines R.af.frameSize).length + T, ∃ d d',
         StEqOutX (R.Zc d d')
           (iterN ({ R with s0 := t0, G := G', X := (XI.upTo N).at 0 } : RL).step i t0)
@@ -107,7 +96,6 @@ theorem backend_twoRunLERWZN (hsub : InSubset p f) (hc : Compiled f k vc vcp rf 
         ((prologueLines R.af.frameSize).length + T) R.s0) ∧
       R.CallSt (iterN ({ R with s0 := t0, G := G', X := (XI.upTo N).at 0 } : RL).step
         ((prologueLines R.af.frameSize).length + T) t0)) := by
-  intro vals cm hrun
   have hW0 : ({ actRL vcp rf af fa fb lm base s (XI.upTo N) H psF K G (GotV vcp) with
       X := (XI.upTo N).at 0 } : RL).Wf := by
     obtain ⟨-, -, -, -, hk⟩ := emitFunc_ok hc.emit
@@ -133,12 +121,10 @@ theorem backend_twoRunLERWZN (hsub : InSubset p f) (hc : Compiled f k vc vcp rf 
       (stEqOutX_entryZ hW0 he.abi he'.abi he.body he'.body (fun _ h => h) hsw hag hx29
         (c := .run ⟨0, [], fun _ => ρ₀ 0, w₀⟩) (c' := .run ⟨0, [], fun _ => ρ₀ 0, w₀'⟩)
         (fun _ h => h)).symm i hi⟩
-  rcases backend_twoRunLWN hsub hc hone htc hX hNI hTls hsym hslot ρ₀ hce hrel hrel' hargs hsw
-      hreg hstk htr fuel hlm hpsF he he' hR hcov hx30 hcall htls hag hx29 vals cm hrun with
-    ⟨T, e, e', hlk, ⟨⟨W, hqA, -⟩, -, -, -, -, hLB⟩, hpc, hpc', hre, hre'⟩ |
-    ⟨T, b, k, a, its, m, w, a', its', m', w', hlk, ⟨⟨W, hqA, -⟩, -, -, -, -, hLB⟩, hc1, hc2, vb, i,
-      hvb, hi, hcI⟩
-  · left
+  obtain ⟨hfull, hpre⟩ := backend_twoRunLWNp hc ρ₀ hsw hs hvb hk hops hvals hsem hlm hpsF he he'
+    hR hcov hx30 hcall htls hag hx29
+  refine ⟨fun hN => ?_, fun hN => ?_⟩
+  · obtain ⟨T, e, e', hlk, ⟨⟨W, hqA, -⟩, -, -, -, -, hLB⟩, hpc, hpc', hre, hre'⟩ := hfull hN
     refine ⟨T, hpc, hpc', ?_⟩
     have hs : ∀ (g : Arm.ArmState → Arm.ArmState) (x : Arm.ArmState) (j : Nat),
         iterN g ((prologueLines R.af.frameSize).length + T + j) x =
@@ -175,7 +161,8 @@ theorem backend_twoRunLERWZN (hsub : InSubset p f) (hc : Compiled f k vc vcp rf 
             ⟨i - ((prologueLines af.frameSize).length + T), by omega⟩
           rw [hs, hs]
           exact ⟨_, _, hepi j (by rw [hRe] at hi; omega)⟩
-  · right
+  · obtain ⟨T, b, k, a, its, m, w, a', its', m', w', hlk, ⟨⟨W, hqA, -⟩, -, -, -, -, hLB⟩, hc1, hc2,
+      vb, i, hvb, hi, hcI⟩ := hpre hN
     subst hR
     have hcs : (actRL vcp rf af fa fb lm base s (XI.upTo N) H psF K G (GotV vcp)).CallSt
         (iterN ({ actRL vcp rf af fa fb lm base s (XI.upTo N) H psF K G (GotV vcp) with

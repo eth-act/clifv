@@ -4,14 +4,15 @@ import FV.E2E.BackendTwoRunNPre
 # The machine lock with the contracts of the first `N` calls (SEM1 #537, #713)
 
 `backend_twoRunLW` for two activations entered with `ActEntryPRN … N` (the callee contracts of
-the calls `j < N` only), both run in `XI.upTo N` (`ActEntryPRN.upTo`). The paired run of the CLIF
-run (`backend_pairRunD`, in `XI`) either makes at most `N` calls, and is then a run of
-`XI.upTo N` to the return (the full lock, as `backend_twoRunLW`), or it passes the step from
-counter `N` (`vstar_split_ctr`, a call of `XI`), and the two machines are jointly realised up to
-that call's instruction item (`RL.twoRunPRTN`): the lock at every index up to it, both machines'
-call counts `N` there, the instruction a call.
+the calls `j < N` only), both run in `XI.upTo N` (`ActEntryPRN.upTo`), along a given paired run of
+`XI` to its `rets` configuration (`backend_pairRunD`'s output, taken as a premise so that the
+induction on `N` at the link uses one run for every `N`). With `C` its number of calls: if
+`C ≤ N` it is a run of `XI.upTo N` to the return (the full lock, as `backend_twoRunLW`); if
+`N < C` it passes the step from counter `N` (`vstar_split_ctr`, a call of `XI`), and the two
+machines are jointly realised up to that call's instruction item (`RL.twoRunPRTN`): the lock at
+every index up to it, both machines' call counts `N` there, the instruction a call.
 
-* **`backend_twoRunLWN`**.
+* **`backend_twoRunLWNp`**.
 -/
 
 namespace E2E
@@ -23,32 +24,24 @@ variable {p : Clif.Program} {f : Clif.Function} {k : Nat} {vc vcp : VCode} {rf :
   {af : AFunc} {fa : FnAsm} {fb : FnBin}
 
 set_option maxHeartbeats 8000000 in
-/-- **The machine lock with the contracts of the first `N` calls** (module doc). -/
-theorem backend_twoRunLWN (hsub : InSubset p f) (hc : Compiled f k vc vcp rf af fa fb)
-    (hone : InstCallsOne f) (htc : TryCallsOne f)
-    {XI : ExtSemI} {syms : String → Option Nat} {slotOff : Nat} {env : Clif.Env} {K : Nat}
-    {F : BitVec 64 → Prop} {c : BitVec 64} {args : List Clif.Val} {cs : Clif.State}
-    (hX : ∀ s n, ReachN env p cs s n →
-      XCallsOk (env.only (Clif.Invoked env p s)) (f.externs.map (·.2))
-        (RelW ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c) (XI.at n) ∧
-      XCallsIndOk (env.only (Clif.Invoked env p s)) (indSigs f)
-        (RelW ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c) (XI.at n))
-    (hNI : ∀ s n, ReachN env p cs s n → XNI F syms (f.externs.map (·.2)) (indSigs f) c
-      (CallLg (env.only (Clif.Invoked env p s)) (f.externs.map (·.2)) (indSigs f)) (XI.at n))
-    (hTls : ∀ n, XTls F (XI.at n))
-    (hsym : ∀ n b, syms n = some b → XI.sym n 0 = BitVec.ofNat 64 b)
-    (hslot : af.slotBase = slotOff)
-    {w₀ w₀' : Arm.ArmState} {D : BitVec 64 → Prop} (ρ₀ : Nat → CV) (hce : ClifEntry f args cs)
-    (hrel : RelW ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c cs.frame.slots cs.mem w₀)
-    (hrel' : RelW ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c cs.frame.slots cs.mem
-      w₀')
-    (hargs : ArgsAtEntry F f.sig args w₀)
+/-- **The machine lock with the contracts of the first `N` calls, along a given paired run**
+(module doc): the paired run of `XI` to its `rets` configuration (`backend_pairRunD`'s output) is
+given; with `C` its number of calls (`w₁.2`): if `N < C`, the lock up to the `N`-th call states; if
+`C ≤ N`, the full lock. -/
+theorem backend_twoRunLWNp (hc : Compiled f k vc vcp rf af fa fb)
+    {XI : ExtSemI} {K : Nat} {F : BitVec 64 → Prop}
+    {w₀ w₀' : Arm.ArmState} {D : BitVec 64 → Prop} (ρ₀ : Nat → CV)
     (hsw : SameWorld (fun b => F b ∨ D b) w₀ w₀')
-    (hreg : ∀ r v, (ArgLoc.reg r, v) ∈ (locsOf f.sig).zip args → regVal w₀' r = regVal w₀ r)
-    (hstk : ∀ off v, (ArgLoc.stack off, v) ∈ (locsOf f.sig).zip args → ∀ k < v.ty.bytes,
-      w₀'.mem (Arm.r (.GPR 29#5) w₀ + BitVec.ofInt 64 (16 + (off : Int)) + BitVec.ofNat 64 k) =
-        w₀.mem (Arm.r (.GPR 29#5) w₀ + BitVec.ofInt 64 (16 + (off : Int)) + BitVec.ofNat 64 k))
-    (htr : TrapsExplicit env p cs) (fuel : Nat)
+    {us : List (Reg × Reg)} {outs : List CV} {w : (Arm.ArmState × Arm.ArmState) × Nat}
+    {b kk : Nat} {ρ : Nat → CV} {w₁ : (Arm.ArmState × Arm.ArmState) × Nat} {vb : VBlock}
+    {ops : Array Operand} {outs' : List CV}
+    (hs : Star (VStep vcp
+      (pairDI (csemV (GotV vcp) F ⟨fa.k, af.slotBase⟩) F ⟨fa.k, af.slotBase⟩ XI))
+      (.run ⟨0, 0, ρ₀, ((w₀, w₀'), 0)⟩) (.run ⟨b, kk, ρ, w₁⟩))
+    (hvb : vcp.blocks[b]? = some vb) (hk : vb.insts[kk]? = some (.rets us))
+    (hops : (MInst.rets us).operands = .ok ops) (hvals : outs = vuses ops ρ)
+    (hsem : pairDI (csemV (GotV vcp) F ⟨fa.k, af.slotBase⟩) F ⟨fa.k, af.slotBase⟩ XI (.rets us)
+      outs w₁ = some (outs', w, .ret))
     {lm : Std.HashMap Lbl Nat} (hlm : labelOffsets fa.lines = .ok lm) {body : List Line}
     {psF : PState} (hpsF : blocksLinesE ⟨fa.k, af.slotBase⟩ af af.blocks.toList {} = .ok (body, psF))
     {H : ArmHooks} {G G' : BitVec 64 → Prop}
@@ -75,8 +68,7 @@ theorem backend_twoRunLWN (hsub : InSubset p f) (hc : Compiled f k vc vcp rf af 
       ∀ m r, StEqOutX (R.Zc c c') (H.tls m r u) (H.tls m r u'))
     (hag : EntryAgree (frameDrop af + K) s t0)
     (hx29 : Arm.r (.GPR 29#5) s = Arm.r (.GPR 29#5) t0) :
-    ∀ vals cm, Clif.runLoop env p fuel cs = .returned vals cm →
-    (∃ T e e',
+    (w₁.2 ≤ N → ∃ T e e',
       (∀ i < T, ∃ c c', StEqOutX (R.Zc c c')
         (iterN ({ R with X := (XI.upTo N).at 0 } : RL).step
           ((prologueLines R.af.frameSize).length + i) R.s0)
@@ -93,8 +85,8 @@ theorem backend_twoRunLWN (hsub : InSubset p f) (hc : Compiled f k vc vcp rf af 
         ((prologueLines R.af.frameSize).length + T + R.retLen) R.s0) = ra ∧
       Arm.r .PC (iterN ({ R with s0 := t0, G := G', X := (XI.upTo N).at 0 } : RL).step
         ((prologueLines R.af.frameSize).length + T + R.retLen) t0) = ra' ∧
-      R.RetsAt e ∧ R.RetsAt e') ∨
-    (∃ T b k a its m w a' its' m' w',
+      R.RetsAt e ∧ R.RetsAt e') ∧
+    (N < w₁.2 → ∃ T b k a its m w a' its' m' w',
       (∀ i < T, ∃ c c', StEqOutX (R.Zc c c')
         (iterN ({ R with X := (XI.upTo N).at 0 } : RL).step
           ((prologueLines R.af.frameSize).length + i) R.s0)
@@ -112,7 +104,6 @@ theorem backend_twoRunLWN (hsub : InSubset p f) (hc : Compiled f k vc vcp rf af 
       countIn (RL.CallSt R) ({ R with s0 := t0, G := G', X := (XI.upTo N).at 0 } : RL).step t0
         ((prologueLines R.af.frameSize).length + T) = N ∧
       ∃ vb i, vcp.blocks[b]? = some vb ∧ vb.insts[k]? = some i ∧ i.isCallI = true) := by
-  intro vals cm hrun
   have heU := he.upTo
   have heU' := he'.upTo
   have hRF : R.F = F := by subst hR; exact he.hF
@@ -245,10 +236,6 @@ theorem backend_twoRunLWN (hsub : InSubset p f) (hc : Compiled f k vc vcp rf af 
       subst hx hx' hR
       exact ⟨fun n d h => mstep_okDiff_fst hck hm hm' hp hRF h,
         fun n d h => mstep_okDiff_snd hck hm hm' hp hRF' h⟩
-  -- the paired run of the CLIF run, in `XI`
-  obtain ⟨us, outs, w, hv, -⟩ := backend_pairRunD hsub hc hone htc hX hNI hTls hsym hslot ρ₀ hce
-    hrel hrel' hargs hsw hreg hstk htr fuel vals cm hrun
-  obtain ⟨b, kk, ρ, w₁, vb, ops, outs', hs, hvb, hk, hops, hvals, hsem⟩ := hv
   have hp₁ : ∀ XP : ExtSemI, ISem.ProjW pairFst
       (pairDI (csemV (GotV vcp) F ⟨fa.k, af.slotBase⟩) F ⟨fa.k, af.slotBase⟩ XP)
       (csemVIGS R.gv R.F R.ctx XP (fun _ Y => Y = F)) := fun XP => by
@@ -257,9 +244,9 @@ theorem backend_twoRunLWN (hsub : InSubset p f) (hc : Compiled f k vc vcp rf af 
       (pairDI (csemV (GotV vcp) F ⟨fa.k, af.slotBase⟩) F ⟨fa.k, af.slotBase⟩ XP)
       (csemVIGS R.gv ({ R with s0 := t0, G := G' } : RL).F R.ctx XP (fun _ Y => Y = F)) :=
     fun XP => by rw [hRF', csemVIGS_eqF, hRgv, hRctx]; exact pairSnd_projD _ _ _ _
-  rcases Nat.lt_or_ge N w₁.2 with hN | hN
+  refine ⟨fun hN => ?_, fun hN => ?_⟩
+  rotate_left
   · -- the run passes the step from counter `N`: the lock up to that call
-    right
     obtain ⟨x, y, hsx, hxy, -, hxN, hyN⟩ := vstar_split_ctr hs (Nat.zero_le _) hN
     have hsxU := vstar_pairDI_upTo (N := N) hsx (Nat.le_of_eq hxN)
     have hpp := pstar_of_projSB (fun _ _ h => VStep.pairDI_upTo h) (hp₁ (XI.upTo N))
@@ -307,7 +294,6 @@ theorem backend_twoRunLWN (hsub : InSubset p f) (hc : Compiled f k vc vcp rf af 
     · rw [h4, ← hnc, hxN]
     · rw [h5, ← hnc', hxN]
   · -- the run makes at most `N` calls: it is a run of `XI.upTo N` to the return
-    left
     have hsU := vstar_pairDI_upTo (N := N) hs (by simpa [vctr] using hN)
     replace hsem : pairDI (csemV (GotV vcp) F ⟨fa.k, af.slotBase⟩) F ⟨fa.k, af.slotBase⟩
         (XI.upTo N) (.rets us) outs w₁ = some (outs', w, .ret) := by
