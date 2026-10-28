@@ -304,6 +304,91 @@ theorem armStepX_call_irrel (X : ExtSem)
     (c : Option String → List CV → Arm.ArmState → Option (List CV × Arm.ArmState)) (H : ArmHooks)
     (fa : FnAsm) : ArmStepX { X with call := c } H fa = ArmStepX X H fa := rfl
 
+/-- **The core of the prefix theorems**, for any counted semantics family `sem` that the machine
+realises from the activation's call-`n` states (`RealizesCP`, every `n`): every state of the
+counted VCode run with counter `N` at a call is matched by a machine state of the run with `N`
+call states before it, at the body `sp`, with the contract's premises (`CallSiteAt`). -/
+theorem regLevel_prefix_core {R : RL} (hR : R.Wf) {ra : BitVec 64}
+    (hent : AbiCall R.fb R.base ra R.s0) {w₀ : Arm.ArmState}
+    (hbe : BodyEntryW R.F R.vc.EntryArg R.af R.s0 w₀) {cc : CheckCtx} {ins : Array (Option AState)}
+    {a0 : AState} (hcheck : CheckedAt R.vc R.rf cc ins a0) {sem : Nat → ISem CV Arm.ArmState}
+    (hreal : ∀ n, RealizesCP R.vc R.rf (sem n) ckeep R.step (fun s c => Q R s c ∧ AInv R c) R.Good
+      R.CallSt (OnCall R.step R.fa R.base R.s0 n))
+    (ρsel : (Loc → CV) → Nat → CV)
+    (hsel : ∀ m₀ : Loc → CV, Inv ckeep a0 m₀ (ρsel m₀) (fun r => m₀ (.reg r))) :
+    ∃ m₀ : Loc → CV, ∀ b k ρ w N vb i,
+      Star (VStep R.vc (ISem.counted sem)) (.run ⟨0, 0, ρsel m₀, (w₀, 0)⟩) (.run ⟨b, k, ρ, (w, N)⟩) →
+      R.vc.blocks[b]? = some vb → vb.insts[k]? = some i →
+      (∃ info, i = .call info ∨ ∃ ti, i = .tryCall info ti) → ∀ ops, i.operands = .ok ops →
+      ∃ u, OnCall R.step R.fa R.base R.s0 N u ∧ spOf u = R.spB ∧
+        CallSiteAt R.F R.K R.G R.s0 R.fa R.base i ((ops.toList.filter Operand.isUse).map (ρ ·.vreg)) w u := by
+  obtain ⟨n0, ht0, hq0, hA0, -⟩ := q_initN hR hent hbe
+  let m₀ := locVal R.fr (iterN R.step n0 R.s0)
+  have hSim := isSimulation_match (sem := ISem.counted sem) (keep := ckeep) hcheck
+    (fun r => m₀ (.reg r))
+  have hinit := match_init (W := Arm.ArmState × Nat) hcheck m₀ (ρsel m₀) (w₀, 0) (hsel _)
+  have hP0 : countIn R.CallSt R.step R.s0 n0 = 0 := countIn_zero_of fun i hi => (ht0 i hi).2
+  have hRz := Realizes.ofStepC (vc := R.vc) (rf := R.rf) (keep := ckeep) (C := R.CallSt) (T := R.Good)
+    (Q := fun p c => (Q R p.1 (c.mapW Prod.fst) ∧ AInv R (c.mapW Prod.fst)) ∧ p.2 = c.world.2 ∧
+      ∃ i, p = iterN (stepC R.CallSt R.step) i (iterN R.step n0 R.s0, 0))
+    (RealizesCP.countedRun (vc := R.vc) (rf := R.rf) (keep := ckeep) (sem := sem)
+      (Q := fun u c => Q R u c ∧ AInv R c) (T := R.Good) (C := R.CallSt)
+      (P := fun n u => OnCall R.step R.fa R.base R.s0 n u) (s0 := iterN R.step n0 R.s0) hreal
+      (onCall_of_run hP0))
+  refine ⟨m₀, fun b k ρ w N vb i hstar hvb hi hcall ops hops => ?_⟩
+  obtain ⟨n1, c1, ⟨k1, hz1⟩, hr1, -⟩ :=
+    forward hSim hRz (show Star _ (VConf.init (ρsel m₀) (w₀, 0)) _ from hstar) hinit
+      ⟨0, ⟨hq0, hA0⟩, rfl, 0, rfl⟩
+  cases c1 with
+  | ret => exact hr1.elim
+  | halt => exact hr1.elim
+  | run ms =>
+  obtain ⟨b1, its1, m1, w1⟩ := ms
+  obtain ⟨n2, al, its', m', ⟨k2, hz2⟩, hm2⟩ := match_to_op (vs := ⟨b, k, ρ, (w, N)⟩) hcheck
+    hRz its1 b1 m1 w1 _ hr1 ⟨k1, hz1⟩ hvb hi
+  obtain ⟨hb1, hw1, -⟩ := id hm2
+  simp only at hb1 hw1
+  subst hb1 hw1
+  obtain ⟨⟨hq, -⟩, hk2, i2, hi2⟩ := hz2
+  rw [iterN_stepC] at hi2
+  simp only [Prod.mk.injEq, Nat.zero_add] at hi2
+  obtain ⟨hu, hcnt⟩ := hi2
+  simp only [MConf.world] at hk2
+  subst hk2
+  rw [← iterN_add] at hu
+  refine ⟨iterN R.step (n1 + n2) (iterN R.step n0 R.s0), ?_, ?_⟩
+  · rw [hu, hcnt]
+    exact onCall_of_run hP0 i2
+  · obtain ⟨-, huse⟩ := match_op_uses hcheck hm2 hvb hi hops
+    rw [← iterN_add] at hq
+    have hq' := hq
+    simp only [MConf.mapW] at hq'
+    obtain ⟨info, hci⟩ := hcall
+    have hcpc : ∀ regs i', al = regs.map Loc.reg → i.assign regs = .ok i' →
+        CallAt R.fa R.base (Arm.r .PC (iterN R.step (n1 + n2) (iterN R.step n0 R.s0))) i' := by
+      rcases hci with rfl | ⟨ti, rfl⟩
+      · exact callAt_of_q hq' hvb hi call_hcall
+      · exact callAt_of_q hq' hvb hi tryCall_hcall
+    obtain ⟨j0, vb0, items0, pre, code, ls, ps1, ps2, T, hvb0, hit, hsplit, hchk, hcode, hls, htr,
+      hdrop, hpc', hst⟩ := hq'
+    rw [hvb] at hvb0; cases hvb0
+    obtain ⟨c1, c2, hc1, hc2, rfl⟩ := itemsCode_cons hcode
+    obtain ⟨regs, i0, i', rfl, hi0, hasg, -⟩ := itemCode_op hc1
+    rw [hi] at hi0; cases hi0
+    obtain ⟨cc', wh, i2', ops2, hi2', hops2, hstat, -⟩ := op_checked hchk
+    rw [hi] at hi2'; cases hi2'
+    rw [hops] at hops2; cases hops2
+    have hm : ∀ r, r.allocatable = true →
+        m' (.reg r) = regVal (iterN R.step (n1 + n2) (iterN R.step n0 R.s0)) r := fun r hr =>
+      hst.store (.reg r) (fun r' e => by cases e; exact hr) trivial
+    have hK : R.K ≤ (spOf (iterN R.step (n1 + n2) (iterN R.step n0 R.s0))).toNat := by
+      rw [hst.sp]; exact RL.K_le hR
+    have hF : ∀ a, StackBelow R.K (spOf (iterN R.step (n1 + n2) (iterN R.step n0 R.s0))) a → R.F a :=
+      fun a ha => by rw [hst.sp] at ha; exact RL.below_F (R := R) ha
+    refine ⟨hst.sp, hK, hF, hst.gkeep, cc', wh, ops, regs, i', hops, hstat, hasg, hcpc regs i' rfl hasg,
+      hst.world, hst.align, hst.err, ?_⟩
+    rw [← useVals_of_store hstat hm]; exact huse
+
 /-- **The counted register level up to call `N`**: with the callee contracts of the calls
 `n < N` only (at the activation's call-`n` states at the body `sp`, `regLevelCorrect_world_atCS`'s
 shape), every state of the counted VCode run with counter `N` at a call instruction is matched by
@@ -354,7 +439,6 @@ theorem regLevel_prefixC {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAsm}
   have hRn : ∀ n, (Rn n).Wf := fun _ => ⟨⟨cc, ins, a0, hcheck, hok⟩, halloc, hemit, hlayout, hlm,
     by show 4 * fb.words.size ≤ 2 ^ 64; have := hent.fits; omega, hres, ⟨body, hb⟩, hent.program, hG⟩
   have hR : R.Wf := hRn 0
-  have hstep : R.step = ArmStepX (XI.at 0) H fa := rfl
   have hC' : ∀ n, CalleeOkGP (fun u => OnCall R.step fa base s n u ∧ spOf u = R.spB) R.F K G s
       (CallAt fa base) (XN.at n) H vcp.CallSite gv := fun n => by
     by_cases h : n < N
@@ -368,79 +452,13 @@ theorem regLevel_prefixC {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAsm}
     · show CalleeTryOkGP _ _ _ _ _ _ ((XI.upTo N).at n) _ _ _
       rw [XI.upTo_at_lt h]; exact hCT ht n h
     · exact calleeTryOkGP_upTo_ge (by omega)
-  obtain ⟨n0, ht0, hq0, hA0, -⟩ := q_initN hR hent hbe
-  let m₀ := locVal R.fr (iterN R.step n0 s)
-  have hSim := isSimulation_match (sem := csemVI R.gv R.F R.ctx XN) (keep := ckeep) hcheck
-    (fun r => m₀ (.reg r))
-  have hinit := match_init (W := Arm.ArmState × Nat) hcheck m₀ (ρsel m₀) (w₀, 0) (hsel _)
-  have hP0 : countIn R.CallSt R.step s n0 = 0 := countIn_zero_of fun i hi => (ht0 i hi).2
-  have hRz := Realizes.ofStepC (vc := R.vc) (rf := R.rf) (keep := ckeep) (C := R.CallSt) (T := R.Good)
-    (Q := fun p c => (Q R p.1 (c.mapW Prod.fst) ∧ AInv R (c.mapW Prod.fst)) ∧ p.2 = c.world.2 ∧
-      ∃ i, p = iterN (stepC R.CallSt R.step) i (iterN R.step n0 s, 0)) (by
-    refine RealizesCP.countedRun (vc := R.vc) (rf := R.rf) (keep := ckeep)
-      (sem := fun n => csemV R.gv R.F R.ctx (XN.at n))
-      (Q := fun u c => Q R u c ∧ AInv R c) (T := R.Good) (C := R.CallSt)
-      (P := fun n u => OnCall R.step fa base s n u) (s0 := iterN R.step n0 s) (fun n => ?_)
-      (onCall_of_run hP0)
-    have hq : ∀ u c, Q (Rn n) u c ∧ AInv (Rn n) c ↔ Q R u c ∧ AInv R c := fun u c =>
-      and_congr (RL.Q_withX (Rn n) (XN.at 0) u c).symm Iff.rfl
-    exact ((realizes_allC_sp (hRn n) (hC' n) (fun h => hCT' h n)
+  obtain ⟨m₀, h⟩ := regLevel_prefix_core hR hent hbe hcheck (sem := fun n => csemV R.gv R.F R.ctx (XN.at n))
+    (fun n => ((realizes_allC_sp (hRn n) (hC' n) (fun h => hCT' h n)
       (fun h => tlsOk_upTo (hTls h n)) hcov).mono_T
-      (T' := R.Good) fun _ h => h.good).congr_Q hq)
-  refine ⟨m₀, fun b k ρ w vb i hstar hvb hi hcall ops hops => ?_⟩
-  have hstar' : Star (VStep R.vc (csemVI R.gv R.F R.ctx XN)) (VConf.init (ρsel m₀) (w₀, 0))
-      (.run ⟨b, k, ρ, (w, N)⟩) := vstar_upTo hstar (Nat.le_refl _)
-  obtain ⟨n1, c1, ⟨k1, hz1⟩, hr1, -⟩ :=
-    forward hSim hRz hstar' hinit ⟨0, ⟨hq0, hA0⟩, rfl, 0, rfl⟩
-  cases c1 with
-  | ret => exact hr1.elim
-  | halt => exact hr1.elim
-  | run ms =>
-  obtain ⟨b1, its1, m1, w1⟩ := ms
-  obtain ⟨n2, al, its', m', ⟨k2, hz2⟩, hm2⟩ := match_to_op (vs := ⟨b, k, ρ, (w, N)⟩) hcheck
-    hRz its1 b1 m1 w1 _ hr1 ⟨k1, hz1⟩ hvb hi
-  obtain ⟨hb1, hw1, -⟩ := id hm2
-  simp only at hb1 hw1
-  subst hb1 hw1
-  obtain ⟨⟨hq, -⟩, hk2, i2, hi2⟩ := hz2
-  rw [iterN_stepC] at hi2
-  simp only [Prod.mk.injEq, Nat.zero_add] at hi2
-  obtain ⟨hu, hcnt⟩ := hi2
-  simp only [MConf.world] at hk2
-  subst hk2
-  rw [← iterN_add] at hu
-  refine ⟨iterN R.step (n1 + n2) (iterN R.step n0 s), ?_, ?_⟩
-  · rw [← hstep, hu, hcnt]
-    exact onCall_of_run hP0 i2
-  · obtain ⟨-, huse⟩ := match_op_uses hcheck hm2 hvb hi hops
-    rw [← iterN_add] at hq
-    have hq' := hq
-    simp only [MConf.mapW] at hq'
-    obtain ⟨info, hci⟩ := hcall
-    have hcpc : ∀ regs i', al = regs.map Loc.reg → i.assign regs = .ok i' →
-        CallAt fa base (Arm.r .PC (iterN R.step (n1 + n2) (iterN R.step n0 s))) i' := by
-      rcases hci with rfl | ⟨ti, rfl⟩
-      · exact callAt_of_q hq' hvb hi call_hcall
-      · exact callAt_of_q hq' hvb hi tryCall_hcall
-    obtain ⟨j0, vb0, items0, pre, code, ls, ps1, ps2, T, hvb0, hit, hsplit, hchk, hcode, hls, htr,
-      hdrop, hpc', hst⟩ := hq'
-    rw [hvb] at hvb0; cases hvb0
-    obtain ⟨c1, c2, hc1, hc2, rfl⟩ := itemsCode_cons hcode
-    obtain ⟨regs, i0, i', rfl, hi0, hasg, -⟩ := itemCode_op hc1
-    rw [hi] at hi0; cases hi0
-    obtain ⟨cc', wh, i2', ops2, hi2', hops2, hstat, -⟩ := op_checked hchk
-    rw [hi] at hi2'; cases hi2'
-    rw [hops] at hops2; cases hops2
-    have hm : ∀ r, r.allocatable = true →
-        m' (.reg r) = regVal (iterN R.step (n1 + n2) (iterN R.step n0 s)) r := fun r hr =>
-      hst.store (.reg r) (fun r' e => by cases e; exact hr) trivial
-    have hK : K ≤ (spOf (iterN R.step (n1 + n2) (iterN R.step n0 s))).toNat := by
-      rw [hst.sp]; exact RL.K_le hR
-    have hF : ∀ a, StackBelow K (spOf (iterN R.step (n1 + n2) (iterN R.step n0 s))) a → R.F a :=
-      fun a ha => by rw [hst.sp] at ha; exact RL.below_F (R := R) ha
-    refine ⟨hst.sp, hK, hF, hst.gkeep, cc', wh, ops, regs, i', hops, hstat, hasg, hcpc regs i' rfl hasg,
-      hst.world, hst.align, hst.err, ?_⟩
-    rw [← useVals_of_store hstat hm]; exact huse
+      (T' := R.Good) fun _ h => h.good).congr_Q fun u c =>
+        and_congr (RL.Q_withX (Rn n) (XN.at 0) u c).symm Iff.rfl) ρsel hsel
+  exact ⟨m₀, fun b k ρ w vb i hstar hvb hi hcall ops hops =>
+    h b k ρ w N vb i (vstar_upTo hstar (Nat.le_refl _)) hvb hi hcall ops hops⟩
 
 /-- **`regLevel_prefixC` from `checkAlloc`, with the prophecies** (`regLevelCorrect_worldPRS`'s
 premises, the contracts of the calls `n < N` only): for any entry vreg file `ρ₀`. -/

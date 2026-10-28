@@ -72,11 +72,13 @@ theorem vstar_call_at {V W : Type} {vc : VCode} {sem : Nat → ISem V W} {j : Na
           exact ⟨b, k, ρ, w1, vb, i, ops, _, .refl _, hvb, hi, hcall, hops, hs1⟩
 
 /-- **`prepare` maps run prefixes**: every state the VCode reaches from the entry is reached, in a
-renamed block, by the prepared VCode. -/
+renamed block, by the prepared VCode, whose instruction there is the same up to its targets. -/
 theorem prep_prefixW {W : Type} {vc vcp : VCode} {sem : ISem CV W} (hds : DriverSemG sem)
     (h : prepCheck vc vcp = true) {ρ₀ : Nat → CV} {w₀ : W} {b k : Nat} {ρ : Nat → CV} {w : W}
     (hs : Star (VStep vc sem) (.run ⟨0, 0, ρ₀, w₀⟩) (.run ⟨b, k, ρ, w⟩)) :
-    ∃ b', Star (VStep vcp sem) (.run ⟨0, 0, ρ₀, w₀⟩) (.run ⟨b', k, ρ, w⟩) := by
+    ∃ b', Star (VStep vcp sem) (.run ⟨0, 0, ρ₀, w₀⟩) (.run ⟨b', k, ρ, w⟩) ∧
+      ∀ vb i, vc.blocks[b]? = some vb → vb.insts[k]? = some i →
+        ∃ vb' i', vcp.blocks[b']? = some vb' ∧ vb'.insts[k]? = some i' ∧ SameInst i i' := by
   unfold prepCheck at h
   split at h
   · rename_i ss ps ss' ps' hcfg hcfg'
@@ -111,10 +113,28 @@ theorem prep_prefixW {W : Type} {vc vcp : VCode} {sem : ISem CV W} (hds : Driver
       split at h0
       · rename_i vb hvb; exact (Array.getElem?_eq_some_iff.mp hvb).1
       · cases h0
-    obtain ⟨b', -, -, hstar'⟩ := prep_starW hds hcfg hcfg' hL hk hs ⟨0, 0, ρ₀, w₀⟩
+    obtain ⟨b', hLb, hb', hstar'⟩ := prep_starW hds hcfg hcfg' hL hk hs ⟨0, 0, ρ₀, w₀⟩
       ⟨b, k, ρ, w⟩ 0 rfl rfl hL0 h0
-    exact ⟨b', hstar'⟩
+    refine ⟨b', hstar', fun vb i hvb hi => ?_⟩
+    obtain ⟨vb0, vb', hvb0, hvb', -, -, -, hins, -⟩ := (hk b b' hLb hb').blocks
+    rw [hvb] at hvb0; cases hvb0
+    obtain ⟨i', hi', hsame⟩ := hins k i hi
+    exact ⟨vb', i', hvb', hi', hsame⟩
   · cases h
+
+/-- **`prepare` keeps calls**: an instruction the same up to its targets as a call is that call;
+as a `try_call`, a `try_call` of the same call. -/
+theorem sameInst_callLike {i i' : MInst} {info : CallInfo} (h : SameInst i i')
+    (hi : i = .call info ∨ ∃ ti, i = .tryCall info ti) :
+    i' = .call info ∨ ∃ ti, i' = .tryCall info ti := by
+  rcases h with rfl | h
+  · exact hi
+  · rcases hi with rfl | ⟨ti, rfl⟩
+    · simp [MInst.setTargets] at h
+    · simp only [MInst.setTargets] at h
+      split at h
+      · exact .inr ⟨_, (Option.some.inj h).symm⟩
+      · cases h
 
 /-- **`ActEntryPR` up to call `N`**: the callee contracts of the calls `n < N` only; the hook's
 pc behaviour (which the contracts carry) separately. -/
@@ -183,7 +203,7 @@ theorem backend_prefixPRI {p : Clif.Program} {f : Clif.Function} {k : Nat} {vc v
   intro j hj
   obtain ⟨b, k, ρ, w, hstar, -⟩ :=
     iselSim_prefixWI hsub hc hone htc hX hsym hslot (fun _ => 0) hcs hrel hargs htr t N hr hcn
-  obtain ⟨b', hstar'⟩ := prep_prefixW (DriverSemG.csemI fun m =>
+  obtain ⟨b', hstar', -⟩ := prep_prefixW (DriverSemG.csemI fun m =>
     (driverSem_csem F ⟨fa.k, af.slotBase⟩ (XI.at m)).toDriverSemG) hc.prepOk hstar
   obtain ⟨hstar'', -⟩ := gotInvI_star
     (show GotInvI vcp XI ⟨0, 0, fun _ => 0, (w₀, 0)⟩ from gotInv_entry vcp (XI.at 0) _ w₀) hstar'
