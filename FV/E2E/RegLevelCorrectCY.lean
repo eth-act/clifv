@@ -6,7 +6,7 @@ import FV.E2E.RegLevelCorrectCR
 `RegLevelCorrectCR` gives `RL.ReadsIn` along the activation's run: every read is a jump-table
 byte, a frame byte, or a byte outside the frame addresses `F`. The lock-step of two runs needs
 the third kind narrowed to bytes the two runs agree on. That set is a per-step fact of the VCode
-run (in the pair run of `vcode_niI`: the bytes outside `Zof F D cm`), so it enters as a guard on
+run (in the pair run of `vcode_niIG`: the bytes outside `Zof F D cm`), so it enters as a guard on
 the VCode semantics:
 
 * `MInst.wReads`: the instructions whose lines may read world bytes (the straight-line forms and
