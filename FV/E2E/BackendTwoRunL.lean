@@ -197,9 +197,11 @@ theorem mstep_okDiff_fst {vc : VCode} {rf : RFunc} {ckc : CheckCtx}
     (hm : Match ckc ins ckeep r₀ e (pc.mapW pairFst))
     (hm' : Match ckc ins ckeep r₀' e' (pc.mapW pairSnd))
     (hp : StepOrRet vc (pairDI semP F ctx XI) pc) {d : MConf CV Arm.ArmState}
-    (h : MStep vc (csemVGS gv F ctx X (fun _ Y => Y = F)) ckeep rf (e.mapW Prod.fst) d) :
-    MStep vc (csemVGS gv F ctx X (OkDiff F (e.mapW Prod.fst) (e'.mapW Prod.fst))) ckeep rf
+    {Fs : BitVec 64 → Prop} (hFs : Fs = F)
+    (h : MStep vc (csemVGS gv Fs ctx X (fun _ Y => Y = F)) ckeep rf (e.mapW Prod.fst) d) :
+    MStep vc (csemVGS gv Fs ctx X (OkDiff F (e.mapW Prod.fst) (e'.mapW Prod.fst))) ckeep rf
       (e.mapW Prod.fst) d := by
+  subst hFs
   rcases hp with ⟨y, hy⟩ | ⟨vals, wr, rfl⟩
   · obtain ⟨b, k, ρ, ⟨⟨w, w'⟩, n⟩⟩ | _ | _ := pc
     · obtain ⟨⟨b1, its, m, ⟨w1, n1⟩⟩⟩ | _ | _ := e
@@ -235,9 +237,11 @@ theorem mstep_okDiff_snd {vc : VCode} {rf : RFunc} {ckc : CheckCtx}
     (hm : Match ckc ins ckeep r₀ e (pc.mapW pairFst))
     (hm' : Match ckc ins ckeep r₀' e' (pc.mapW pairSnd))
     (hp : StepOrRet vc (pairDI semP F ctx XI) pc) {d : MConf CV Arm.ArmState}
-    (h : MStep vc (csemVGS gv F ctx X (fun _ Y => Y = F)) ckeep rf (e'.mapW Prod.fst) d) :
-    MStep vc (csemVGS gv F ctx X (OkDiff F (e.mapW Prod.fst) (e'.mapW Prod.fst))) ckeep rf
+    {Fs : BitVec 64 → Prop} (hFs : Fs = F)
+    (h : MStep vc (csemVGS gv Fs ctx X (fun _ Y => Y = F)) ckeep rf (e'.mapW Prod.fst) d) :
+    MStep vc (csemVGS gv Fs ctx X (OkDiff F (e.mapW Prod.fst) (e'.mapW Prod.fst))) ckeep rf
       (e'.mapW Prod.fst) d := by
+  subst hFs
   rcases hp with ⟨y, hy⟩ | ⟨vals, wr, rfl⟩
   · obtain ⟨b, k, ρ, ⟨⟨w, w'⟩, n⟩⟩ | _ | _ := pc
     · obtain ⟨⟨b1, its, m, ⟨w1, n1⟩⟩⟩ | _ | _ := e
@@ -262,4 +266,205 @@ theorem mstep_okDiff_snd {vc : VCode} {rf : RFunc} {ckc : CheckCtx}
     · exact hm'.elim
     · cases h
     · cases h
+
+/-- **The pair facts of the lock at two allocated configurations**: every step of either
+activation from them is guarded by the difference set of their worlds (`OkDiff`). -/
+def KJL (R : RL) (XI : ExtSemI) (t0 : Arm.ArmState) (G' F : BitVec 64 → Prop)
+    (c c' : MConf CV Arm.ArmState) : Prop :=
+  (∀ n d, MStep R.vc (({ R with X := XI.at n } : RL).semGS (fun _ Y => Y = F)) ckeep R.rf c d →
+    MStep R.vc (({ R with X := XI.at n } : RL).semGS (OkDiff F c c')) ckeep R.rf c d) ∧
+  (∀ n d, MStep R.vc (({ R with s0 := t0, G := G', X := XI.at n } : RL).semGS
+      (fun _ Y => Y = F)) ckeep R.rf c' d →
+    MStep R.vc (({ R with s0 := t0, G := G', X := XI.at n } : RL).semGS (OkDiff F c c')) ckeep
+      R.rf c' d)
+
+/-- `QW` at a run configuration gives `StRel`. -/
+theorem QW.stRel {R : RL} {s : Arm.ArmState} {j : Nat} {ps1 : PState} {T : List Line}
+    {b : Nat} {its : List RItem} {m : Loc → CV} {w : Arm.ArmState}
+    (h : QW R s j ps1 T (.run ⟨b, its, m, w⟩)) : StRel R s m w := by
+  obtain ⟨_, _, _, _, _, _, -, -, -, -, -, -, -, -, -, hst⟩ := h
+  exact hst
+
+/-- **The lock carries over a segment end** (`hend`): at configurations `d`, `d'` related to the
+states by `QW`, a byte outside `Zc d d'` and inside `Zc c c'` is outside `F` where the two worlds
+agree, so the states agree on it. -/
+theorem stEqOutX_zc_end {R R' : RL} (hF : R'.F = R.F) {c c' d d' : MConf CV Arm.ArmState}
+    {u u' : Arm.ArmState} {W : Nat × PState × List Line} (hq : QW R u W.1 W.2.1 W.2.2 d)
+    (hq' : QW R' u' W.1 W.2.1 W.2.2 d') (h : StEqOutX (R.Zc c c') u u') :
+    StEqOutX (R.Zc d d') u u' := by
+  refine ⟨h.1, h.2.1, fun a ha => ?_⟩
+  by_cases hz : R.Zc c c' a
+  · obtain ⟨hfr, hjt, -⟩ := hz
+    have hn : ¬ (R.F a ∨ MConf.WDiff d d' a) := fun h' => ha ⟨hfr, hjt, h'⟩
+    obtain ⟨⟨b, its, m, w⟩⟩ | _ | _ := d
+    · obtain ⟨⟨b', its', m', w'⟩⟩ | _ | _ := d'
+      · have e1 := (QW.stRel hq).world.2.1 a fun h' => hn (.inl h')
+        have e2 := (QW.stRel hq').world.2.1 a fun h' => hn (.inl (hF ▸ h'))
+        rw [e1, e2]
+        exact Classical.byContradiction fun h' => hn (.inr h')
+      · exact absurd (.inr trivial) hn
+      · exact absurd (.inr trivial) hn
+    · exact absurd (.inr trivial) hn
+    · exact absurd (.inr trivial) hn
+  · exact h.2.2 a hz
+
+section
+variable {p : Clif.Program} {f : Clif.Function} {k : Nat} {vc vcp : VCode} {rf : RFunc}
+  {af : AFunc} {fa : FnAsm} {fb : FnBin}
+
+set_option maxHeartbeats 4000000 in
+/-- **Two activations of a compiled function along one CLIF run, in lock-step on the machine
+lock** (module doc): `backend_twoRunPRIYT` at `Lk := StEqOutX (Zc c c')`, `KJ := KJL`,
+`OkS := OkDiff F`. Premises left: the `x30` check of the code (`hx30`), that the segments of the
+body hold no `ret` and no frame-record line (`hfr`), the call and TLS hooks keeping the lock
+(`hcall`, `htls`, the call lines of item (2)), and the lock after the two prologues (`hpro`). -/
+theorem backend_twoRunL (hsub : InSubset p f) (hc : Compiled f k vc vcp rf af fa fb)
+    (hone : InstCallsOne f) (htc : TryCallsOne f)
+    {XI : ExtSemI} {syms : String → Option Nat} {slotOff : Nat} {env : Clif.Env} {K : Nat}
+    {F : BitVec 64 → Prop} {c : BitVec 64} {args : List Clif.Val} {cs : Clif.State}
+    (hX : ∀ s n, ReachN env p cs s n →
+      XCallsOk (env.only (Clif.Invoked env p s)) (f.externs.map (·.2))
+        (RelW ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c) (XI.at n) ∧
+      XCallsIndOk (env.only (Clif.Invoked env p s)) (indSigs f)
+        (RelW ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c) (XI.at n))
+    (hNI : ∀ s n, ReachN env p cs s n → XNI F syms (f.externs.map (·.2)) (indSigs f) c
+      (CallLg (env.only (Clif.Invoked env p s)) (f.externs.map (·.2)) (indSigs f)) (XI.at n))
+    (hTls : ∀ n, XTls F (XI.at n))
+    (hsym : ∀ n b, syms n = some b → XI.sym n 0 = BitVec.ofNat 64 b)
+    (hslot : af.slotBase = slotOff)
+    {w₀ w₀' : Arm.ArmState} {D : BitVec 64 → Prop} (ρ₀ : Nat → CV) (hce : ClifEntry f args cs)
+    (hrel : RelW ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c cs.frame.slots cs.mem w₀)
+    (hrel' : RelW ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c cs.frame.slots cs.mem
+      w₀')
+    (hargs : ArgsAtEntry F f.sig args w₀)
+    (hsw : SameWorld (fun b => F b ∨ D b) w₀ w₀')
+    (hreg : ∀ r v, (ArgLoc.reg r, v) ∈ (locsOf f.sig).zip args → regVal w₀' r = regVal w₀ r)
+    (hstk : ∀ off v, (ArgLoc.stack off, v) ∈ (locsOf f.sig).zip args → ∀ k < v.ty.bytes,
+      w₀'.mem (Arm.r (.GPR 29#5) w₀ + BitVec.ofInt 64 (16 + (off : Int)) + BitVec.ofNat 64 k) =
+        w₀.mem (Arm.r (.GPR 29#5) w₀ + BitVec.ofInt 64 (16 + (off : Int)) + BitVec.ofNat 64 k))
+    (htr : TrapsExplicit env p cs) (fuel : Nat)
+    {lm : Std.HashMap Lbl Nat} (hlm : labelOffsets fa.lines = .ok lm) {body : List Line}
+    {psF : PState} (hpsF : blocksLinesE ⟨fa.k, af.slotBase⟩ af af.blocks.toList {} = .ok (body, psF))
+    {H : ArmHooks} {G G' : BitVec 64 → Prop}
+    {base ra ra' : BitVec 64} {Kp Kp' : Nat} {cc cc' : BitVec 64} {P P' : Nat → BitVec 64 → BitVec 8}
+    {Rr Rr' : Nat → Arm.ArmState} {s t0 : Arm.ArmState}
+    (he : ActEntryPR vcp rf af fa fb K F G XI H base ra Kp cc P Rr s w₀)
+    (he' : ActEntryPR vcp rf af fa fb K F G' XI H base ra' Kp' cc' P' Rr' t0 w₀')
+    {R : RL} (hR : R = actRL vcp rf af fa fb lm base s XI H psF K G (GotV vcp))
+    (hcov : FormsCovered R.ctx R.vc)
+    (hx30 : fa.x30Free lm = true)
+    (hfr : ∀ n Ok c i u x, ({ R with X := XI.at n } : RL).InSeg Ok c i u →
+      ({ R with X := XI.at n } : RL).AtLine u x → x.x30Exempt = true → x.tlsTail = false →
+      (∃ m, x = .bl m) ∨ ∃ r, x = .blr r)
+    (hcall : ∀ n n' c c' i u u', ({ R with X := XI.at n } : RL).InSeg (OkDiff F c c') c i u →
+      ({ R with s0 := t0, G := G', X := XI.at n' } : RL).InSeg (OkDiff F c c') c' i u' →
+      ({ R with X := XI.at n } : RL).GoodX u →
+      ({ R with s0 := t0, G := G', X := XI.at n' } : RL).GoodX u' →
+      StEqOutX (R.Zc c c') u u' →
+      ((∃ m, ({ R with X := XI.at n } : RL).AtLine u (.bl m)) ∨
+        ∃ r, ({ R with X := XI.at n } : RL).AtLine u (.blr r)) →
+      ∀ d, StEqOutX (R.Zc c c') (H.call d u) (H.call d u'))
+    (htls : ∀ n n' c c' i u u', ({ R with X := XI.at n } : RL).InSeg (OkDiff F c c') c i u →
+      ({ R with s0 := t0, G := G', X := XI.at n' } : RL).InSeg (OkDiff F c c') c' i u' →
+      ({ R with X := XI.at n } : RL).GoodX u →
+      ({ R with s0 := t0, G := G', X := XI.at n' } : RL).GoodX u' →
+      StEqOutX (R.Zc c c') u u' →
+      (∃ a b c, ({ R with X := XI.at n } : RL).AtLine u (.ldrTlsDescLo12 a b c)) →
+      ∀ m r, StEqOutX (R.Zc c c') (H.tls m r u) (H.tls m r u'))
+    (hpro : StEqOutX
+      (R.Zc (MConf.init R.rf (locVal R.fr (iterN ({ R with X := XI.at 0 } : RL).step
+          (prologueLines R.af.frameSize).length R.s0)) w₀)
+        (MConf.init R.rf (locVal R.fr (iterN ({ R with s0 := t0, G := G', X := XI.at 0 } : RL).step
+          (prologueLines R.af.frameSize).length t0)) w₀'))
+      (iterN ({ R with X := XI.at 0 } : RL).step (prologueLines R.af.frameSize).length R.s0)
+      (iterN ({ R with s0 := t0, G := G', X := XI.at 0 } : RL).step
+        (prologueLines R.af.frameSize).length t0)) :
+    ∀ vals cm, Clif.runLoop env p fuel cs = .returned vals cm →
+    ∃ N e e',
+      (∀ i < (prologueLines R.af.frameSize).length,
+        ({ R with X := XI.at 0 } : RL).GoodXNY (fun _ => True)
+          (iterN ({ R with X := XI.at 0 } : RL).step i R.s0) ∧
+        ({ R with s0 := t0, G := G', X := XI.at 0 } : RL).GoodXNY (fun _ => True)
+          (iterN ({ R with s0 := t0, G := G', X := XI.at 0 } : RL).step i t0)) ∧
+      (∀ i < N, ∃ c c', StEqOutX (R.Zc c c')
+        (iterN ({ R with X := XI.at 0 } : RL).step ((prologueLines R.af.frameSize).length + i) R.s0)
+        (iterN ({ R with s0 := t0, G := G', X := XI.at 0 } : RL).step
+          ((prologueLines R.af.frameSize).length + i) t0)) ∧
+      JR R ({ R with s0 := t0, G := G' } : RL) (KJL R XI t0 G' F)
+        (fun d d' u u' => StEqOutX (R.Zc d d') u u')
+        (iterN ({ R with X := XI.at 0 } : RL).step ((prologueLines R.af.frameSize).length + N) R.s0) e
+        (iterN ({ R with s0 := t0, G := G', X := XI.at 0 } : RL).step
+          ((prologueLines R.af.frameSize).length + N) t0) e' ∧
+      (∀ i < R.retLen,
+        ({ R with X := XI.at 0 } : RL).GoodXNY (fun _ => True)
+          (iterN ({ R with X := XI.at 0 } : RL).step
+            ((prologueLines R.af.frameSize).length + N + i) R.s0) ∧
+        ({ R with s0 := t0, G := G', X := XI.at 0 } : RL).GoodXNY (fun _ => True)
+          (iterN ({ R with s0 := t0, G := G', X := XI.at 0 } : RL).step
+            ((prologueLines R.af.frameSize).length + N + i) t0)) ∧
+      Arm.r .PC (iterN ({ R with X := XI.at 0 } : RL).step
+        ((prologueLines R.af.frameSize).length + N + R.retLen) R.s0) = ra ∧
+      Arm.r .PC (iterN ({ R with s0 := t0, G := G', X := XI.at 0 } : RL).step
+        ((prologueLines R.af.frameSize).length + N + R.retLen) t0) = ra' := by
+  intro vals cm hrun
+  have hRF : R.F = F := by subst hR; exact he.hF
+  have hRF' : ({ R with s0 := t0, G := G' } : RL).F = F := by subst hR; exact he'.hF
+  have hfit : 4 * fb.words.size ≤ 2 ^ 64 := by have := he.abi.fits; omega
+  have hlay : fa.layout = .ok fb := hc.layout
+  have key := backend_twoRunPRIYT hsub hc hone htc hX hNI hTls hsym hslot ρ₀ hce hrel hrel' hargs
+    hsw hreg hstk htr fuel hlm hpsF he he' hR hcov (KJL R XI t0 G' F)
+    (fun d d' u u' => StEqOutX (R.Zc d d') u u') (fun c c' => OkDiff F c c')
+    (fun c c' => OkDiff F c c') (fun n c c' d hK h => hK.1 n d h) (fun n c c' d hK h => hK.2 n d h)
+    (fun c c' _ u u' => StEqOutX (R.Zc c c') u u') (fun _ _ _ _ _ h => h.1 .PC (by simp))
+    (fun _ _ _ _ _ h => h)
+    (fun n n' c c' i u u' _ hin hin' ⟨hg, hwr⟩ ⟨hg', _⟩ hl => by
+      subst hR
+      obtain ⟨x, ⟨j, tc, hj, hpc⟩, htl⟩ := hg.line
+      have ht : OnLine fa fb lm base u x := ⟨hlay, hlm, hfit, hg.prog, hg.err, ⟨j, tc, hj, hpc⟩⟩
+      have hat : ({ actRL vcp rf af fa fb lm base s XI H psF K G (GotV vcp) with X := XI.at n } :
+          RL).AtLine u x := ⟨j, tc, hj, hpc⟩
+      have hx := hfr n _ c i u x hin hat
+      have hx' : x.x30Exempt = true → (∃ m, x = .bl m) ∨ ∃ r', x = .blr r' := fun h => hx h htl
+      have hld : x.ldpFR = false := by
+        cases hl2 : x.ldpFR with
+        | false => rfl
+        | true =>
+          exfalso
+          have e : x = .ldp .fp .lr (.spPostIndexed 16) := by simpa [Insn.ldpFR] using hl2
+          subst e
+          rcases hx' (by decide) with ⟨_, h⟩ | ⟨_, h⟩ <;> cases h
+      have hZ : x.hooked = false → ReadsAvoid
+          ((actRL vcp rf af fa fb lm base s XI H psF K G (GotV vcp)).Zc c c') (stepiEvs u) := by
+        intro hk
+        apply readsAvoid_stepiEvs
+        intro a ha ev hev hdir k hk'
+        obtain ⟨j', a', ha', hd⟩ := ht.decodeAt
+        rw [hd, Option.some.injEq] at ha
+        subst ha
+        have hcov := (ExecBytes.instEvs_cover hev).1 hdir
+        obtain ⟨Y, -, hYO, hrd⟩ := hwr
+        have hr := hrd j x tc hj hpc hk _ a' ha' (ev.addr, ev.n) hcov k hk'
+        rw [hld] at hr
+        refine RL.notZc_of_readInY hr fun b hb => ?_
+        rcases hYO with hall | ⟨_, -, hYD⟩
+        · exact hall b
+        · exact hYD b hb
+      have hstep1 := stEqOutX_lineZ (X := XI.at 0) (H := H) ht hx30 hx' hl.symm hZ
+        (fun hb d => (hcall n n' c c' i u u' hin hin' hg hg' hl
+          (hb.imp (fun ⟨m, e⟩ => ⟨m, e ▸ hat⟩) fun ⟨r', e⟩ => ⟨r', e ▸ hat⟩) d).symm)
+        (fun m r' hb => (htls n n' c c' i u u' hin hin' hg hg' hl
+          (let ⟨a, b, c, e⟩ := hb; ⟨a, b, c, e ▸ hat⟩) m r').symm)
+      exact hstep1.symm)
+    (fun c c' d d' i u u' _ _ _ ⟨W, hq, hq'⟩ hl =>
+      stEqOutX_zc_end (hRF'.trans hRF.symm) hq hq' hl)
+    (fun ckc ins a0 hck e e' x x' hm hm' ⟨pc, hx, hx', hp⟩ => by
+      subst hx hx' hR
+      exact ⟨fun n d h => mstep_okDiff_fst hck hm hm' hp hRF h,
+        fun n d h => mstep_okDiff_snd hck hm hm' hp hRF' h⟩)
+    hpro vals cm hrun
+  obtain ⟨N, e, e', h1, h2, h3, h4, h5, h6⟩ := key
+  exact ⟨N, e, e', h1, fun i hi => let ⟨c, c', _, h⟩ := h2 i hi; ⟨c, c', h⟩, h3, h4, h5, h6⟩
+
+end
+
 end E2E
