@@ -349,7 +349,9 @@ same hypotheses as the original:
   `countIn_zero_of`/`countIn_one_of` (`RegLevelCountP.lean`).
 Files: core `RegLevelNoCall`, `MoveN`, `OpN` (`RunsAsN`), `GotoN` (`reach_*XN`), `NextN`
 (`args`/`island`/`rets`/`udf` are zero-length); rest `GoodXN`, `CallN` (`symAddrN`), `TryN`,
-`JTN`, `AtomicN`, `TlsN`, `FrameN` (`q_initN`, `ret_machineN`).
+`JTN`, `AtomicN`, `TlsN`, `FrameN` (`q_initN`, `ret_machineN`), `TrapN` (`trap_trapIfN`) (#657).
+Not built (nothing uses them yet): `*W` call-state variants, the `UTry` raise, `trapT`/`haltTry`
+and the `MemTrap` loop wrappers; add them when the linking needs them.
 
 As built: `RegLevelCountP.lean`: `RealizesCP`, `RealizesCP.countedRun` (from `RealizesCP` at
 every index `n` with precondition `P n`, where `P n` holds at the states of the run from `s0`
