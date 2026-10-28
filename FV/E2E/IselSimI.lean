@@ -258,21 +258,21 @@ theorem segCalls_of {sem : ISem CV W} {MRW : MemRelTW W} {env' : Clif.Env}
 /-! ### For any family with index-independent non-calls (`CountedFam.lean`) -/
 
 section fam
-variable {sem semB : Nat → Sem}
+variable {sem semB : Nat → ISem CV W} {MRW : MemRelTW W}
 
 /-- **A statement without an extern call, counted, for a family** `sem` with a probe `semB`
 (`ProbeOf`: `sem` on non-calls, failing calls): no VCode call runs. -/
 theorem stmt_stepG_noCall (hB : ProbeOf semB sem) {n : Nat}
-    (Hb : DriverHyp f vc ctx st0 R gn bl A (semB n) MR (env.only fun _ _ _ => False) p)
-    {s : Clif.State} {b k : Nat} {ρ : Nat → CV} {w : Arm.ArmState}
-    (hm : Match f ctx R gn bl A MR slots s ⟨b, k, ρ, w⟩)
+    (Hb : DriverHyp f vc ctx st0 R gn bl A (semB n) MRW (env.only fun _ _ _ => False) p)
+    {s : Clif.State} {b k : Nat} {ρ : Nat → CV} {w : W}
+    (hm : Match f ctx R gn bl A MRW slots s ⟨b, k, ρ, w⟩)
     {stm : Clif.Stmt} {rest : List Clif.Stmt} (hbody : s.frame.body = stm :: rest)
     (hnc : stm.inst.isCallLike = false)
     (hind : ∀ sig callee args, stm.inst = .callIndirect sig callee args → ∀ cv,
       s.frame.get callee = .ok cv → ∀ g ∈ p.funcs, s.mem.symbols g.name ≠ some cv.toNat) :
     (∀ s', Clif.step env p s = .next s' →
       ∃ b' k' ρ' w', Star (VStep vc (ISem.counted sem)) (.run ⟨b, k, ρ, (w, n)⟩)
-        (.run ⟨b', k', ρ', (w', n)⟩) ∧ Match f ctx R gn bl A MR slots s' ⟨b', k', ρ', w'⟩) ∧
+        (.run ⟨b', k', ρ', (w', n)⟩) ∧ Match f ctx R gn bl A MRW slots s' ⟨b', k', ρ', w'⟩) ∧
     (∀ c, Clif.step env p s = .trapped c → explicitTrapInst stm.inst = true →
       VTrapFrom vc (ISem.counted sem) ⟨b, k, ρ, (w, n)⟩ c) := by
   have hstep : Clif.step (env.only fun _ _ _ => False) p s = Clif.step env p s :=
@@ -285,18 +285,18 @@ theorem stmt_stepG_noCall (hB : ProbeOf semB sem) {n : Nat}
 
 /-- **A `call`/`call_indirect` statement, counted, for a family** (`stmt_stepI_call` for `sem`). -/
 theorem stmt_stepG_call (hni : NoncallIndep sem) {n : Nat} {s : Clif.State}
-    (Hs : DriverHyp f vc ctx st0 R gn bl A (sem n) MR (env.only (Clif.Invoked env p s)) p)
+    (Hs : DriverHyp f vc ctx st0 R gn bl A (sem n) MRW (env.only (Clif.Invoked env p s)) p)
     (hseg : ∀ b B j stm, f.blocks[b]? = some B → B.body[j]? = some stm →
       stm.inst.isCallLike = true → callsI (seg f R bl b j) = 1)
-    {b k : Nat} {ρ : Nat → CV} {w : Arm.ArmState}
-    (hm : Match f ctx R gn bl A MR slots s ⟨b, k, ρ, w⟩)
+    {b k : Nat} {ρ : Nat → CV} {w : W}
+    (hm : Match f ctx R gn bl A MRW slots s ⟨b, k, ρ, w⟩)
     {stm : Clif.Stmt} {rest : List Clif.Stmt} (hbody : s.frame.body = stm :: rest)
     (hcl : stm.inst.isCallLike = true)
     (hind : ∀ sig callee args, stm.inst = .callIndirect sig callee args → ∀ cv,
       s.frame.get callee = .ok cv → ∀ g ∈ p.funcs, s.mem.symbols g.name ≠ some cv.toNat) :
     (∀ s', Clif.step env p s = .next s' →
       ∃ b' k' ρ' w', Star (VStep vc (ISem.counted sem)) (.run ⟨b, k, ρ, (w, n)⟩)
-        (.run ⟨b', k', ρ', (w', n + 1)⟩) ∧ Match f ctx R gn bl A MR slots s' ⟨b', k', ρ', w'⟩) ∧
+        (.run ⟨b', k', ρ', (w', n + 1)⟩) ∧ Match f ctx R gn bl A MRW slots s' ⟨b', k', ρ', w'⟩) ∧
     (∀ c, Clif.step env p s = .trapped c → explicitTrapInst stm.inst = true →
       VTrapFrom vc (ISem.counted sem) ⟨b, k, ρ, (w, n)⟩ c) := by
   have hstep : Clif.step (env.only (Clif.Invoked env p s)) p s = Clif.step env p s :=
@@ -312,7 +312,7 @@ theorem stmt_stepG_call (hni : NoncallIndep sem) {n : Nat} {s : Clif.State}
     have hsrI : seqRun (ISem.counted sem) (seg f R bl b j) ρ (w, n) =
         some (.fall ρ' (w', n + 1)) := by
       rw [seqRun_counted_le1 hni hle ρ w n, hsr]
-      simp [SeqEnd.liftI, h1]
+      simp [SeqEnd.liftW, h1]
     rw [pos_succ] at hlt hM
     exact ⟨_, _, ρ', w', seqRun_fall_star hvb hsegat hlt hsrI, hM⟩
   · obtain ⟨k', i, ops, ρ₁, w₁, outs, w₂, hsr, htc⟩ := htrap c (hstep.trans hs) hexp
@@ -323,18 +323,18 @@ theorem stmt_stepG_call (hni : NoncallIndep sem) {n : Nat} {s : Clif.State}
 
 /-- **A terminator other than `try_call`, counted, for a family** (the probe: no VCode call). -/
 theorem term_stepG (hB : ProbeOf semB sem) {n : Nat}
-    (Hb : DriverHyp f vc ctx st0 R gn bl A (semB n) MR (env.only fun _ _ _ => False) p)
-    {s : Clif.State} {b k : Nat} {ρ : Nat → CV} {w : Arm.ArmState}
-    (hm : Match f ctx R gn bl A MR slots s ⟨b, k, ρ, w⟩) (hbody : s.frame.body = [])
+    (Hb : DriverHyp f vc ctx st0 R gn bl A (semB n) MRW (env.only fun _ _ _ => False) p)
+    {s : Clif.State} {b k : Nat} {ρ : Nat → CV} {w : W}
+    (hm : Match f ctx R gn bl A MRW slots s ⟨b, k, ρ, w⟩) (hbody : s.frame.body = [])
     (hnt : s.frame.term.isTry = false) :
     (∀ s', Clif.step env p s = .next s' →
       ∃ b' k' ρ' w', Star (VStep vc (ISem.counted sem)) (.run ⟨b, k, ρ, (w, n)⟩)
-        (.run ⟨b', k', ρ', (w', n)⟩) ∧ Match f ctx R gn bl A MR slots s' ⟨b', k', ρ', w'⟩) ∧
+        (.run ⟨b', k', ρ', (w', n)⟩) ∧ Match f ctx R gn bl A MRW slots s' ⟨b', k', ρ', w'⟩) ∧
     (∀ vals cm, Clif.step env p s = .done vals cm →
       ∃ us outs w' sv, VRetFrom vc (ISem.counted sem) ⟨b, k, ρ, (w, n)⟩ us outs (w', n) ∧
         us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
         s.frame.getMany (sretRet f) = .ok sv ∧ AllHold (vals ++ sv) outs ∧
-        MR slots s.mem w' ∧ cm = (s.mem.free (slots.map (·.2))).leave) ∧
+        MRW slots s.mem w' ∧ cm = (s.mem.free (slots.map (·.2))).leave) ∧
     (∀ c, Clif.step env p s = .trapped c →
       VTrapFrom vc (ISem.counted sem) ⟨b, k, ρ, (w, n)⟩ c) := by
   have hnr : ∀ fn args, s.frame.body = [] → s.frame.term ≠ .returnCall fn args := by
