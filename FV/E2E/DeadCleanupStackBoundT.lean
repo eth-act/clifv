@@ -25,7 +25,7 @@ theorem edgeB_of_calleeT {I : LinkInput} (hI : okBCleanupT I = true) {B : BaseEn
       exact .inl ⟨e, he, hn⟩
   rcases hc with ⟨info, hs, n, hd, hpf⟩ | ⟨e, he, hpf⟩ | hc
   · have hpf' : (progOf I.resultsCleanup).func? n = some h := hpf
-    obtain ⟨⟨e, he, hen⟩, -⟩ := siteOk_sound (site_sound (factsCleanupT hI hg).sites hs) hd hpf'
+    obtain ⟨⟨e, he, hen⟩, -⟩ := siteOkTC_sound (site_sound (factsCleanupT hI hg).sites hs) hd hpf'
     exact hdecl e he (by rw [hen, (Clif.Program.func?_some hpf').2])
   · obtain ⟨e', he', rfl⟩ := List.mem_map.1 he
     exact hdecl e' he' (Clif.Program.func?_some (p := progOf I.resultsCleanup) hpf).2.symm

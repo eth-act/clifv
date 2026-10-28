@@ -162,7 +162,9 @@ theorem iselSimTC_of_rules {p : Clif.Program} {f : Clif.Function} {vc : VCode}
     ∀ s, IselSimT (sem s) ⟨F s, syms, slotOff, out⟩ env p f vc := by
   obtain ⟨ctx, st0, R, gn, bl, A, hshape, hcert, hbr⟩ := loweringTC_of_check hlow
   have hctxT : CtxT f ctx :=
-    ctxT_of_functionETC hsub.subsetETC hshape.hctx.choose_spec hshape.ctxInvT hshape.scope
+    ctxT_of_functionETCF (Compile.functionETCF_of_functionETC hsub.subsetETC)
+      hshape.hctx.choose_spec hshape.ctxInvT hshape.scope
+  have hscT : InstScopeT ctx := instScopeT_of_lowerCheckTC hlow hshape.hctx.choose_spec
   have hstT : StoresTyped ctx :=
     storesTyped_of_buildCtx hsub.storeTyped hshape.hctx.choose_spec
   intro s'
@@ -176,12 +178,12 @@ theorem iselSimTC_of_rules {p : Clif.Program} {f : Clif.Function} {vc : VCode}
       (hRef s') (mrStable_holds ⟨F s', syms, slotOff, out⟩ f) (hcalls s') (hicalls s') (hmem s')
       (hFP s') (outArgsOk_holds ⟨F s', syms, slotOff, out⟩ f)
       (callsStack_mono (callsStackTC_of_check hlow) houtB)
-      (memRelOk_holds ⟨F s', syms, slotOff, out⟩ f) hctxT hstT
+      (memRelOk_holds ⟨F s', syms, slotOff, out⟩ f) hctxT hscT hstT
     terms := termCallsT_of_rules htermRules htermUn hbranch hbranchEx (hRef s')
       (mrStable_holds ⟨F s', syms, slotOff, out⟩ f) hctxT
     ext := fun B hB st hst fn args hi e he => hsub.externCalls B hB st hst fn args hi e he
     indSig := indSig_of_subsetTC hsub
-    subETC := hsub.subsetETC
+    subETC := Compile.functionETCF_of_functionETC hsub.subsetETC
     entryLocs := entryOkTC_of_check hlow
     brIdx := hbr
     noTail := noTail_of_subsetTC hsub

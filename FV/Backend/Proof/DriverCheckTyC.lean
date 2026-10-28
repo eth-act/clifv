@@ -1,5 +1,6 @@
 import FV.Backend.Proof.DriverCheckC
 import FV.Backend.Proof.TryRegsC
+import FV.Backend.Proof.InstScopeTF
 
 /-!
 # Soundness of the validator with typed `try_call`s (S11e6, #419)
@@ -10,7 +11,10 @@ and the shape check gives `LowerShapeTC`, `LowerShapeT` whose `try_call` facts a
 helpers' (`tryCallDataC`, `exnTableOpndC`, `tryRegsOfC`): `lowerShapeTC_of_ok`,
 `loweringTC_of_check` and the tail facts (`noTryCallTC_of_check`, `noTlsTC_of_check`,
 `callsStackTC_of_check`, `tryStackTC_of_check`, `entryOkTC_of_check`, `entryRegsTC_of_check`).
-`LowerShapeT`, `lowerCheckT` and their theorems are unchanged.
+`LowerShapeT`, `lowerCheckT` and their theorems are unchanged. S11f: `LowerShapeTC.scope` is
+`InstScopeTF` (the typed scope with the proven float operations; it was `InstScopeT`), so the
+shape also describes the validator with the float operations (`DriverCheckTCF.lean`);
+`instScopeT_of_lowerCheckTC` keeps the movement scope `lowerCheckTC` checks.
 -/
 
 namespace Backend.Proof.Driver
@@ -144,7 +148,7 @@ variable (f : Clif.Function) (vc : VCode) (ctx : Ctx) (st0 : LState) (R : Reg �
 structure LowerShapeTC : Prop where
   hctx : ∃ ranges, buildCtx f = .ok (ctx, ranges, st0)
   ctxInvT : CtxInvT f ctx
-  scope : InstScopeT ctx
+  scope : InstScopeTF ctx
   ren : VRenaming R gn
   temps : ∀ n, st0.nextVreg ≤ n → gn n = n
   params : ∀ B ∈ f.blocks, ∀ p ∈ B.params, gn p.1 = p.1
@@ -218,7 +222,7 @@ theorem lowerShapeTC_of_ok {f : Clif.Function} {vc : VCode} {ctx : Ctx} {ranges 
     intro bi B L hB hL
     have := all_range hblk (lt_of_getElem? hB)
     simpa [hB, hL] using this
-  refine ⟨⟨ranges, hb⟩, ctxOkT_sound hctx, instScopeOk_sound hsc, renOf_vrenaming gn, hgn, ?_,
+  refine ⟨⟨ranges, hb⟩, ctxOkT_sound hctx, (instScopeOk_sound hsc).toTF, renOf_vrenaming gn, hgn, ?_,
     hlen, hsize, ?_, ?_, hfresh, ?_, ?_⟩
   · intro B hB p hp
     have := List.all_eq_true.mp (List.all_eq_true.mp hpar B hB) p hp
@@ -284,6 +288,22 @@ theorem loweringTC_of_check {f : Clif.Function} {vc : VCode} (h : lowerCheckTC f
       have hS := lowerShapeTC_of_ok (gn := gnAt (gnTable st0.nextVreg (aliasOf f bl))) hb hl
         (fun n hn => gnAt_temp hn) h.1.1.1.1
       exact ⟨ctx, st0, _, _, bl, _, hS, cert_of_ok hS.len h.1.1.1.2, brIdx_of_ok h.1.1.2⟩
+
+/-- The instructions of `buildCtx`'s context are in the typed movement scope when `lowerCheckTC`
+accepts (its `instScopeOk`). -/
+theorem instScopeT_of_lowerCheckTC {f : Clif.Function} {vc : VCode} (h : lowerCheckTC f vc = true)
+    {ctx : Ctx} {ranges : Array (Nat × Nat)} {st0 : LState}
+    (hb : buildCtx f = .ok (ctx, ranges, st0)) : InstScopeT ctx := by
+  unfold lowerCheckTC at h
+  rw [hb] at h
+  simp only at h
+  split at h
+  · cases h
+  · simp only [Bool.and_eq_true] at h
+    have hs := h.1.1.1.1
+    simp only [shapeOkT, Bool.and_eq_true, decide_eq_true_eq] at hs
+    obtain ⟨⟨⟨⟨⟨⟨⟨⟨-, hsc⟩, -⟩, -⟩, -⟩, -⟩, -⟩, -⟩, -⟩ := hs
+    exact instScopeOk_sound hsc
 
 /-- The tail of `lowerCheckTC` (its conjuncts after the shape and certificate). -/
 theorem lowerCheckTC_tail {f : Clif.Function} {vc : VCode} (h : lowerCheckTC f vc = true) :

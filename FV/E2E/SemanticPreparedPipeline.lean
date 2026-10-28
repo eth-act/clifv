@@ -9,12 +9,12 @@ set_option autoImplicit false
 namespace E2E.LinkCheck
 open Backend Backend.Proof Backend.Proof.Driver
 
-structure SemanticPreparedFacts (stage : VCode → VCode) (I : LinkInput) (R : Res) (g : Clif.Function) (a : Art) : Prop where
-  pipe : prepare (stage a.vc) = .ok a.vcp ∧ lowerRFunc a.vcp a.rf = .ok a.af ∧
+structure SemanticPreparedFacts (stage : Clif.Function → VCode → VCode) (I : LinkInput) (R : Res) (g : Clif.Function) (a : Art) : Prop where
+  pipe : prepare (stage g a.vc) = .ok a.vcp ∧ lowerRFunc a.vcp a.rf = .ok a.af ∧
     emitFunc a.k a.af = .ok a.fa ∧ a.fa.layout = .ok a.fb ∧
     a.base = BitVec.ofNat 64 (I.baseOf g.name)
   lowerOk : SemanticNI.check g a.vc = true
-  prepOk : prepCheck (stage a.vc) a.vcp = true
+  prepOk : prepCheck (stage g a.vc) a.vcp = true
   check : checkAlloc a.vcp a.rf = .ok ()
   covered : FormsCovered ⟨a.fa.k, a.af.slotBase⟩
     a.vcp
@@ -40,7 +40,7 @@ structure SemanticPreparedFacts (stage : VCode → VCode) (I : LinkInput) (R : R
   indOk : indSigsOk g = true
   ind : indB (progOf R) (fun n => I.syms.lookup n) g = true
 
-theorem semanticPreparedFacts (stage : VCode → VCode) {I : LinkInput} {R : Res} (hR : PreparedResults stage I R) (h : okRSemanticNI stage I R = true) {g : Clif.Function}
+theorem semanticPreparedFacts (stage : Clif.Function → VCode → VCode) {I : LinkInput} {R : Res} (hR : PreparedResults stage I R) (h : okRSemanticNI stage I R = true) {g : Clif.Function}
     (hg : g ∈ (progOf R).funcs) : SemanticPreparedFacts stage I R g (artOf R g) := by
   have hn := okRSemanticNI_names stage h
   obtain ⟨e, he, rfl, hart⟩ := artOf_spec hn hg
@@ -72,7 +72,7 @@ theorem semanticPreparedFacts (stage : VCode → VCode) {I : LinkInput} {R : Res
     simp only [hf, decide_eq_true_eq] at this
     exact this
 
-theorem semanticPreparedIndFacts (stage : VCode → VCode) {I : LinkInput} {R : Res} (hR : PreparedResults stage I R) (h : okRSemanticNI stage I R = true) {g : Clif.Function}
+theorem semanticPreparedIndFacts (stage : Clif.Function → VCode → VCode) {I : LinkInput} {R : Res} (hR : PreparedResults stage I R) (h : okRSemanticNI stage I R = true) {g : Clif.Function}
     (hg : g ∈ (progOf R).funcs) (hnf : ¬ Clif.IndFree g) :
     ∀ h ∈ (progOf R).funcs, mayB (fun n => I.syms.lookup n) g h.name = true →
       ((∃ sig ∈ indSigs g, LinkSys.IndSigMatch sig h) ∨
@@ -100,7 +100,7 @@ theorem semanticPreparedIndFacts (stage : VCode → VCode) {I : LinkInput} {R : 
   revert hb8
   cases hb : sigParamBytes h'.sig <;> simp
 
-theorem semanticPreparedResults_sound (stage : VCode → VCode) {I : LinkInput} {R : Res} (hstage : stage = id ∨ stage = DeadCleanup.prune) (hR : PreparedResults stage I R) (hI : okRSemanticNI stage I R = true) {B : BaseEnv}
+theorem semanticPreparedResults_sound (stage : Clif.Function → VCode → VCode) {I : LinkInput} {R : Res} (hstage : stage = (fun _ => id) ∨ stage = (fun _ => DeadCleanup.prune)) (hR : PreparedResults stage I R) (hI : okRSemanticNI stage I R = true) {B : BaseEnv}
     {F : BitVec 64 → Prop} (hB : BaseOk (ofRes I R B F)) (hF : ∀ a, (ofRes I R B F).Img a → F a) :
     (ofRes I R B F).OkSemanticNI := by
   have hn := okRSemanticNI_names stage hI

@@ -88,10 +88,14 @@ vregs (`LinkSys.OkT.blrRegs`). -/
 theorem destsInt_of_okT {L : LinkSys} (hL : L.OkT) {g : Clif.Function} (hg : g ∈ L.P.funcs) :
     (L.A g).vcp.DestsInt := by
   intro b vb k info hb hi r hd
-  obtain ⟨t, Lu, Ld, he, -⟩ := hL.blrRegs g hg info ⟨b, vb, k, hb, hi⟩ (fun n => by rw [hd]; simp)
-  subst he
-  simp only [CallDest.reg.injEq] at hd
-  exact ⟨t, hd.symm⟩
+  rcases hL.blrRegs g hg info ⟨b, vb, k, hb, hi⟩ (fun n => by rw [hd]; simp) with
+    ⟨t, Lu, Ld, he, -⟩ | ⟨t, Lc, Dc, hshape, -⟩
+  · subst he
+    simp only [CallDest.reg.injEq] at hd
+    exact ⟨t, hd.symm⟩
+  · rw [hshape] at hd
+    simp only [CallDest.reg.injEq] at hd
+    exact ⟨t, hd.symm⟩
 
 /-- **`StepOkD` from the register-level per-state facts** and the memory-read facts. -/
 theorem stepOkD_of_goodT (hI : okBCleanupT I = true) (hc : codeMapB I (tabOf I.resultsCleanup) = true)

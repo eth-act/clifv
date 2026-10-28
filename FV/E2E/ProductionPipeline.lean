@@ -7,8 +7,8 @@ set_option autoImplicit false
 namespace E2E.LinkCheck
 open Backend
 
-def productionStage (cleanup : Bool) : VCode → VCode :=
-  cond cleanup DeadCleanup.prune id
+def productionStage (cleanup : Bool) : Clif.Function → VCode → VCode :=
+  fun _ => cond cleanup DeadCleanup.prune id
 
 def LinkInput.pipeProduction (I : LinkInput) (cleanup : Bool) (fi : FnInput) : Except String Art :=
   match I.pipeOfWithLowering Stock.Production.lower (productionStage cleanup) fi with
@@ -19,7 +19,7 @@ def LinkInput.resultsProduction (I : LinkInput) (cleanup : Bool) : Res :=
   I.funcs.map fun fi => (fi.func, I.pipeProduction cleanup fi)
 
 theorem productionStage_cases (cleanup : Bool) :
-    productionStage cleanup = id ∨ productionStage cleanup = DeadCleanup.prune := by
+    productionStage cleanup = (fun _ => id) ∨ productionStage cleanup = (fun _ => DeadCleanup.prune) := by
   cases cleanup with
   | false => exact .inl rfl
   | true => exact .inr rfl
@@ -27,7 +27,7 @@ theorem productionStage_cases (cleanup : Bool) :
 theorem LinkInput.pipeProduction_spec {I : LinkInput} {cleanup : Bool} {fi : FnInput} {a : Art}
     (h : I.pipeProduction cleanup fi = .ok a) :
     (Stock.Production.lower fi.func = .ok a.vc ∨ Stock.D0.defaultLower fi.func = .ok a.vc) ∧
-    prepare (productionStage cleanup a.vc) = .ok a.vcp ∧
+    prepare (productionStage cleanup fi.func a.vc) = .ok a.vcp ∧
     lowerRFunc a.vcp a.rf = .ok a.af ∧ emitFunc a.k a.af = .ok a.fa ∧
     a.fa.layout = .ok a.fb ∧ a.k = fi.k ∧
     a.base = BitVec.ofNat 64 (I.baseOf fi.func.name) := by
