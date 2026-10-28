@@ -2641,6 +2641,30 @@ as corollaries (target `Stage2Z`/`thmPRBRL_ofZ`, #697), after combining with #69
   outside `Fh`, `TwinCE.trans`/`symm`); base calls and TLS: `HookNIX … F` (`OkDNX.baseNIX`, under
   `NeedNI`; `stEqOutX_call_of_hookNIX_D`, `stEqOutX_tls_of_hookNIX_D`).
 
+**Item (3) and the call-state world agreement, as built (UninitZ25b/UninitZ26b, branch
+`agent/uninit-z26b`, #713).**
+- `LinkArmProgOsPRBRL30.lean`: the `x30`-exempt chain in `DetPRBR` form, `progOsCoreXPRRBRL30R`,
+  `progOsPRBRL30R`, `progOsRegPRBRL30R`, `calleeOkPRBRL30R`, `calleeTryOkPRBRL30R` (the
+  `DetPRB` names kept as corollaries via `DetPRB.toR`), and the stage-2 forms
+  **`calleeOkXPBTGZS30R`**, **`calleeTryOkXPBTGZS30R`**.
+- `BackendTwoRunNZW.lean`: **`backend_twoRunLERWZNpW`** (`backend_twoRunLERWZNp` whose prefix case
+  also gives the `N`-th call states' memories equal outside `F ∪ D`, from the joint `WIn`).
+- `BackendTwoRunNIU.lean`: `LockedUpTo` (the second run's state at index `i`, `n` calls before
+  it, locked with the first run at every `j ≤ i` by a set avoiding the callees' dead stack, the
+  memories at `i` equal outside `F ∪ D`), `.lockedAt`, `.pc_eq`, `.callsBefore_eq`;
+  **`backend_twoRunLERWZIU`** (`backend_twoRunLERWZI` with the second entry's contracts asked
+  only at its call states `LockedUpTo` the first run).
+- `LinkArmLockedCallee.lean` (item (3)): `useVals_eq_of_x30` (operand values of a checked
+  instruction never read `x30`), `LinkSys.lockedCall` (with `D ⊆ F` a locked call state is the
+  first run's call-`n` state up to `x30`, bytes of `F` and bytes outside the callees' dead stack),
+  **`calleeOkLockedR`**, **`calleeTryOkLockedR`** (`hC'`/`hT'` of `backend_twoRunLERWZIU` at the
+  link, from the canonical activation's `Stage2ZS`, for `D ⊆ F` and equal entry `sp`).
+- Witnesses: `BackendTwoRunNIUWitness.lean` (`lockedUpTo_self`, `lockedUpTo_x30` on distinct
+  states, `a2_twoRunLERWZNpW`, `a2_twoRunLERWZIU` on `LinkWitness`'s `a2`, two entries);
+  `LinkArmLockedCalleeWitness.lean` (`Lsl`: `useVals_eq_x30` on states differing in `x30`,
+  `calleeOk(Try)PRBRL30R_Lsl`, `calleeOk(Try)XPBTGZS30R_Lsl`, `lockedCall_Lsl`,
+  `calleeOk(Try)LockedR_Lsl`).
+
 ## 6. Heap (separate gap, SEM2)
 
 `BaseOk.baseKeepsAllocs`/`baseNoAlloc` require base externs to allocate nothing whenever a program
