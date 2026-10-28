@@ -22,6 +22,7 @@ open Backend Backend.Proof Backend.Proof.Driver
 premise, `docs/plans/uninit.md` §5.9). -/
 def TryCallsOne (f : Clif.Function) : Prop :=
   (∀ ctx ti fn args et data sig items targets info trs lo st1 out st' tr, CtxInv f ctx →
+    (∃ B ∈ f.blocks, B.term = .tryCall fn args et) →
     tryCallData f (.tryCall fn args et) = .ok data →
     exnTableOpnd f et = .ok (sig, items) → ctx.insts[ti]? = some ⟨.op .unit, [], [], none⟩ →
     tryInfoOf sig items targets = some info → tryRegsOf sig lo = some (trs, st1) →
@@ -30,6 +31,7 @@ def TryCallsOne (f : Clif.Function) : Prop :=
       { st1 with emitted := #[] } = .ok (some out, st', tr) →
     ∀ pre ci, st'.emitted.toList = pre ++ [.call ci] → callsI pre = 0) ∧
   (∀ ctx ti callee args et data sig items targets info trs lo st1 out st' tr, CtxInv f ctx →
+    (∃ B ∈ f.blocks, B.term = .tryCallIndirect callee args et) →
     tryCallData f (.tryCallIndirect callee args et) = .ok data →
     exnTableOpnd f et = .ok (sig, items) → ctx.insts[ti]? = some ⟨.op .unit, [], [], none⟩ →
     tryInfoOf sig items targets = some info → tryRegsOf sig lo = some (trs, st1) →
@@ -89,10 +91,10 @@ theorem term_step_tryI {n : Nat}
   have hpre0 : ∀ pre ci, L.tst'.emitted.toList = pre ++ [.call ci] → callsI pre = 0 := by
     rcases id hBT with ⟨fn, args, hBT'⟩ | ⟨callee, args, hBT'⟩
     · exact htc.1 ctx (L.start + B.body.length) fn args et L.data T.sig T.items L.targets
-        T.info T.regs L.tst T.st1 out L.tst' tr H.shape.ctxInv (hBT' ▸ hdata) hexn
+        T.info T.regs L.tst T.st1 out L.tst' tr H.shape.ctxInv ⟨B, hBmem, hBT'⟩ (hBT' ▸ hdata) hexn
         (H.shape.tslot b B L hB hL) hinfo hregs hvbL hrun
     · exact htc.2 ctx (L.start + B.body.length) callee args et L.data T.sig T.items L.targets
-        T.info T.regs L.tst T.st1 out L.tst' tr H.shape.ctxInv (hBT' ▸ hdata) hexn
+        T.info T.regs L.tst T.st1 out L.tst' tr H.shape.ctxInv ⟨B, hBmem, hBT'⟩ (hBT' ▸ hdata) hexn
         (H.shape.tslot b B L hB hL) hinfo hregs hvbL hrun
   -- the call `ci` of the terminator: its CLIF step and its lowering
   obtain ⟨ci, hciA, hnd, hnx, hok⟩ : ∃ ci : Clif.Inst,
