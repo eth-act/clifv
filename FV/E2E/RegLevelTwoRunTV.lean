@@ -1,13 +1,14 @@
-import FV.E2E.RegLevelTwoRunT
+import FV.E2E.RegLevelTwoRunTP
 import FV.E2E.RegLevelValueGS
 
 /-!
 # Two activations in lock-step, value semantics (SEM1 #537, cleanup path)
 
-`RL.jointSegT`, `RL.realizesJCPT`, `RL.twoRunCT`, `RL.twoRunPRT` (`RegLevelTwoRunT.lean`) for the
-guarded value semantics `RL.valueSemGS` (`RegLevelValueGS.lean`), the semantics of the cleanup
-path's code (`CompiledCleanup`). Same proofs on `realizes_value_allCWSF`; the lock step `hstep`
-still receives `RL.InSeg` (the realised `RL.semGS` step of the segment, which
+`RL.jointSegTP`, `RL.realizesJCPTP`, `RL.twoRunCTP`, `RL.twoRunPRTP` (`RegLevelTwoRunTP.lean`, the
+lock step `hstep` told the segment position `RL.InSeg` and the first run's segment start
+`RL.SegFrom`, #729) for the guarded value semantics `RL.valueSemGS` (`RegLevelValueGS.lean`), the
+semantics of the cleanup path's code (`CompiledCleanup`). Same proofs on `realizes_value_allCWSF`;
+`RL.InSeg` is still about the realised `RL.semGS` step of the segment (which
 `realizes_value_allCWSF` returns besides the value step), so the lock premises are the legacy ones.
 
 * `RL.jointSegTV`, `RL.realizesJCPTV`, **`RL.twoRunCTV`**, **`RL.twoRunPRTV`**.
@@ -38,7 +39,7 @@ theorem RL.jointSegTV {R R' : RL} (hR : R.Wf) (hR' : R'.Wf) (hsc : R.SameCode R'
       MStep R'.vc (R'.valueSemGS Ok') ckeep R'.rf c' d' → MConf.ShapeEq d d')
     (Lk : Nat → Arm.ArmState → Arm.ArmState → Prop)
     (hLpc : ∀ i u u', Lk i u u' → Arm.r .PC u = Arm.r .PC u') (h0 : Lk 0 s s')
-    (hstep : ∀ i u u', R.InSeg Ok c i u → R'.InSeg Ok' c' i u' →
+    (hstep : ∀ i u u', R.InSeg Ok c i u → R.SegFrom P c i u → R'.InSeg Ok' c' i u' →
       (R.GoodX u ∧ R.WReadsIn Ok u) → (R'.GoodX u' ∧ R'.WReadsIn Ok' u') →
       Lk i u u' → Lk (i + 1) (R.step u) (R'.step u')) :
     ∃ n d d', MStep R.vc (R.valueSemGS Ok) ckeep R.rf c d ∧
@@ -60,7 +61,7 @@ theorem RL.jointSegTV {R R' : RL} (hR : R.Wf) (hR' : R'.Wf) (hsc : R.SameCode R'
     realizes_value_allCWSF hR' Ok' hC' hT' hTls' hcov' hq' hA' hP' he'
   have hd := hsh d d' hm hm'
   obtain ⟨rfl, hL⟩ := RL.seg_lock hsc hc hd hs hs' Lk hLpc h0 fun i hi hi' hl =>
-    hstep i _ _ ⟨s, j, ps1, T, d₀, n, hq, hm0, hs0, hi, rfl, hf⟩
+    hstep i _ _ ⟨s, j, ps1, T, d₀, n, hq, hm0, hs0, hi, rfl, hf⟩ ⟨s, n, hP, rfl, hi, hcnt⟩
       ⟨s', j, ps1, T, d₀', n', hq', hm0', hs0', hi', rfl, hf'⟩
       (ht i hi) (ht' i hi') hl
   have hW := RL.nextW_shape hsc j ps1 T hc hd
@@ -106,6 +107,7 @@ theorem RL.realizesJCPTV {R : RL} {t0 : Arm.ArmState} {G' : BitVec 64 → Prop} 
     (hstart : ∀ c c' s s', K c c' → LB c c' s s' → Lk c c' 0 s s')
     (hstep : ∀ n n' c c' i u u', K c c' →
       ({ R with X := XI.at n } : RL).InSeg (OkS c c') c i u →
+      ({ R with X := XI.at n } : RL).SegFrom (fun u => P n u ∧ spOf u = R.spB) c i u →
       ({ R with s0 := t0, G := G', X := XI'.at n' } : RL).InSeg (OkS' c c') c' i u' →
       (({ R with X := XI.at n } : RL).GoodX u ∧
         ({ R with X := XI.at n } : RL).WReadsIn (OkS c c') u) →
@@ -141,7 +143,8 @@ theorem RL.realizesJCPTV {R : RL} {t0 : Arm.ArmState} {G' : BitVec 64 → Prop} 
       (fun h => hTls' h n') hcov hcov hqn hqn' hA hA' ⟨hP, QW.sp_of_mstep (R := Rn) hqn hd⟩
       ⟨hP', QW.sp_of_mstep (R := Rn') hqn' hd'⟩ hsh (hG n c c' d hK hd) (hG' n' c c' d' hK hd')
       (fun a b ha hb => (hshK a b (lift a ha) (lift' b hb)).1) (Lk c c') (hLpc c c')
-      (hstart c c' s s' hK hLB) fun i u u' hi hi' h1 h2 hl => hstep n n' c c' i u u' hK hi hi' h1 h2 hl
+      (hstart c c' s s' hK hLB) fun i u u' hi hp hi' h1 h2 hl =>
+        hstep n n' c c' i u u' hK hi hp hi' h1 h2 hl
   have hE := lift e he
   have hE' := lift' e' he'
   obtain ⟨-, hKe⟩ := hshK e e' hE hE'
@@ -200,6 +203,8 @@ theorem RL.twoRunCTV {R : RL} {t0 : Arm.ArmState} {G' : BitVec 64 → Prop} {XI 
     (hstart : ∀ c c' s s', K c c' → LB c c' s s' → Lk c c' 0 s s')
     (hstep : ∀ n n' c c' i u u', K c c' →
       ({ R with X := XI.at n } : RL).InSeg (OkS c c') c i u →
+      ({ R with X := XI.at n } : RL).SegFrom (fun u =>
+        OnCall ({ R with X := XI.at 0 } : RL).step R.fa R.base R.s0 n u ∧ spOf u = R.spB) c i u →
       ({ R with s0 := t0, G := G', X := XI'.at n' } : RL).InSeg (OkS' c c') c' i u' →
       (({ R with X := XI.at n } : RL).GoodX u ∧
         ({ R with X := XI.at n } : RL).WReadsIn (OkS c c') u) →
@@ -363,6 +368,8 @@ theorem RL.twoRunPRTV {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAsm} {fb :
     (hstart : ∀ c c' s s', KJ c c' → LB c c' s s' → Lk c c' 0 s s')
     (hstep : ∀ n n' c c' i u u', KJ c c' →
       ({ R with X := XI.at n } : RL).InSeg (OkS c c') c i u →
+      ({ R with X := XI.at n } : RL).SegFrom (fun u =>
+        OnCall ({ R with X := XI.at 0 } : RL).step R.fa R.base R.s0 n u ∧ spOf u = R.spB) c i u →
       ({ R with s0 := t0, G := G', X := XI'.at n' } : RL).InSeg (OkS' c c') c' i u' →
       (({ R with X := XI.at n } : RL).GoodX u ∧
         ({ R with X := XI.at n } : RL).WReadsIn (OkS c c') u) →

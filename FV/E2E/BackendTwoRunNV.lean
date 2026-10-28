@@ -5,20 +5,22 @@ import FV.E2E.DeadCleanupPipeline
 /-!
 # The machine lock with the contracts of the first `N` calls, cleanup path (SEM1 #537, #713)
 
-`backend_twoRunLWNp` (`BackendTwoRunN.lean`) for the shipped compiler's cleanup path
-(`CompiledCleanup`): the given paired run is one of the guarded paired value semantics
-`pairDI (valueSemV (GotV vcp) F ctx) F ctx XI` (pure producers and compares by their
-specification, `valueSemV`), each activation runs the guarded value semantics
-(`RL.valueSemGS`), and the joint realisation is `RL.twoRunPRTNV`/`RL.twoRunPRTV`. The lock
-premises (`hcall`, `htls`) and the conclusion's lock are those of `backend_twoRunLWNp`; the pair
-facts of the joint invariant are `KJLV` (`KJL` on `RL.valueSemGS`).
+`backend_twoRunLWNpP` (`BackendTwoRunNP.lean`: `hcall` also told the first run's segment start
+`RL.SegFrom`, #729) for the shipped compiler's cleanup path (`CompiledCleanup`): the given paired
+run is one of the guarded paired value semantics `pairDI (valueSemV (GotV vcp) F ctx) F ctx XI`
+(pure producers and compares by their specification, `valueSemV`), each activation runs the
+guarded value semantics (`RL.valueSemGS`), and the joint realisation is
+`RL.twoRunPRTNV`/`RL.twoRunPRTV`. The lock premises (`hcall`, `htls`) and the conclusion's lock
+are those of `backend_twoRunLWNpP`; the pair facts of the joint invariant are `KJLV` (`KJL` on
+`RL.valueSemGS`).
 
 * `valueSemV_nspec`, `valueSemV_noCall_call`, `valueSemVI_upTo_eq`,
   `pairSemD_upTo_eqV`, `vstar_pairDI_upToV`, `pairDI_upTo_subV`, `VStep.pairDI_upToV`
   (`BackendTwoRunNPre.lean` for `valueSemV`);
 * `mstep_guard_of_matchV`, `mstep_okDiff_fstV`, `mstep_okDiff_sndV`, `KJLV`
   (`BackendTwoRunL.lean` for `valueSemVGS`);
-* **`backend_twoRunLWNpV`**.
+* **`backend_twoRunLWNpPV`**, `backend_twoRunLWNpV` (`backend_twoRunLWNp`'s premise shape: `hcall`
+  without `SegFrom`).
 -/
 
 namespace E2E
@@ -235,10 +237,10 @@ variable {p : Clif.Program} {f : Clif.Function} {k : Nat} {vc vcp : VCode} {rf :
   {af : AFunc} {fa : FnAsm} {fb : FnBin}
 
 set_option maxHeartbeats 8000000 in
-/-- **`backend_twoRunLWNp` on the cleanup path** (module doc): the given paired run is one of the
+/-- **`backend_twoRunLWNpP` on the cleanup path** (module doc): the given paired run is one of the
 guarded paired value semantics; with `C` its number of calls (`w₁.2`): if `N < C`, the lock up to
 the `N`-th call states; if `C ≤ N`, the full lock. -/
-theorem backend_twoRunLWNpV (hc : CompiledCleanup f k vc vcp rf af fa fb)
+theorem backend_twoRunLWNpPV (hc : CompiledCleanup f k vc vcp rf af fa fb)
     {XI : ExtSemI} {K : Nat} {F : BitVec 64 → Prop}
     {w₀ w₀' : Arm.ArmState} {D : BitVec 64 → Prop} (ρ₀ : Nat → CV)
     (hsw : SameWorld (fun b => F b ∨ D b) w₀ w₀')
@@ -263,6 +265,9 @@ theorem backend_twoRunLWNpV (hc : CompiledCleanup f k vc vcp rf af fa fb)
     (hcov : FormsCovered R.ctx R.vc)
     (hx30 : fa.x30Free lm = true)
     (hcall : ∀ n n' c c' i u u', ({ R with X := (XI.upTo N).at n } : RL).InSeg (OkDiff F c c') c i u →
+      ({ R with X := (XI.upTo N).at n } : RL).SegFrom (fun u =>
+        OnCall ({ R with X := (XI.upTo N).at 0 } : RL).step R.fa R.base R.s0 n u ∧
+          spOf u = R.spB) c i u →
       ({ R with s0 := t0, G := G', X := (XI.upTo N).at n' } : RL).InSeg (OkDiff F c c') c' i u' →
       ({ R with X := (XI.upTo N).at n } : RL).GoodX u →
       ({ R with s0 := t0, G := G', X := (XI.upTo N).at n' } : RL).GoodX u' →
@@ -370,6 +375,9 @@ theorem backend_twoRunLWNpV (hc : CompiledCleanup f k vc vcp rf af fa fb)
     ⟨hproS, hwi0 _ _, mDiffIn_of_lock hRF ⟨_, rfl⟩ ⟨_, rfl⟩ hproS (hwi0 _ _)⟩
   have hstepL : ∀ n n' c c' i u u', KJLV R (XI.upTo N) t0 G' F c c' →
       ({ R with X := (XI.upTo N).at n } : RL).InSeg (OkDiff F c c') c i u →
+      ({ R with X := (XI.upTo N).at n } : RL).SegFrom (fun u =>
+        OnCall ({ R with X := (XI.upTo N).at 0 } : RL).step R.fa R.base R.s0 n u ∧
+          spOf u = R.spB) c i u →
       ({ R with s0 := t0, G := G', X := (XI.upTo N).at n' } : RL).InSeg (OkDiff F c c') c' i u' →
       (({ R with X := (XI.upTo N).at n } : RL).GoodX u ∧
         ({ R with X := (XI.upTo N).at n } : RL).WReadsIn (OkDiff F c c') u) →
@@ -382,7 +390,7 @@ theorem backend_twoRunLWNpV (hc : CompiledCleanup f k vc vcp rf af fa fb)
         MConf.WIn (fun b => F b ∨ D b) c c' ∧
         MDiffIn F (fun b => F b ∨ D b) (({ R with X := (XI.upTo N).at 0 } : RL).step u)
           (({ R with s0 := t0, G := G', X := (XI.upTo N).at 0 } : RL).step u')) :=
-    fun n n' c c' i u u' _ hin hin' ⟨hg, hwr⟩ ⟨hg', _⟩ ⟨hl, hwi, _⟩ => by
+    fun n n' c c' i u u' _ hin hsf hin' ⟨hg, hwr⟩ ⟨hg', _⟩ ⟨hl, hwi, _⟩ => by
       have hrc := RL.InSeg.isRun hin
       have hrc' := RL.InSeg.isRun hin'
       have hWD : ∀ a, MConf.WDiff c c' a → F a ∨ D a := wDiff_of_wIn hrc hrc' hwi
@@ -419,7 +427,7 @@ theorem backend_twoRunLWNpV (hc : CompiledCleanup f k vc vcp rf af fa fb)
         · exact hall b
         · exact hYD b hb
       have hstep1 := stEqOutX_lineZD (X := (XI.upTo N).at 0) (H := H) ht hx30 hx' hl.symm hZ
-        (fun d hd => (hcall n n' c c' i u u' hin hin' hg hg' hl hWD x d hat hd).symm)
+        (fun d hd => (hcall n n' c c' i u u' hin hsf hin' hg hg' hl hWD x d hat hd).symm)
         (fun m r' hb => (htls n n' c c' i u u' hin hin' hg hg' hl hWD
           (let ⟨a, b, c, e⟩ := hb; ⟨a, b, c, e ▸ hat⟩) m r').symm)
       exact ⟨hstep1.symm, hwi, mDiffIn_of_lock hRF hrc hrc' hstep1.symm hwi⟩
@@ -551,6 +559,88 @@ theorem backend_twoRunLWNpV (hc : CompiledCleanup f k vc vcp rf af fa fb)
         ⟨VConf.init ρ₀ ((w₀, w₀'), 0), rfl, rfl, .inl (star_head_step hsU hlast)⟩
         ⟨.run ⟨b, kk, ρ, w₁⟩, rfl, rfl, .inl ⟨_, hlast⟩⟩ hy
     exact ⟨T, e, e', fun i hi => let ⟨c, c', _, h⟩ := h2 i hi; ⟨c, c', h.1⟩, h3, h5, h6, h7⟩
+
+set_option maxHeartbeats 8000000 in
+/-- **`backend_twoRunLWNp` on the cleanup path** (`backend_twoRunLWNpPV` with `hcall` in
+`backend_twoRunLWNp`'s shape). -/
+theorem backend_twoRunLWNpV (hc : CompiledCleanup f k vc vcp rf af fa fb)
+    {XI : ExtSemI} {K : Nat} {F : BitVec 64 → Prop}
+    {w₀ w₀' : Arm.ArmState} {D : BitVec 64 → Prop} (ρ₀ : Nat → CV)
+    (hsw : SameWorld (fun b => F b ∨ D b) w₀ w₀')
+    {us : List (Reg × Reg)} {outs : List CV} {w : (Arm.ArmState × Arm.ArmState) × Nat}
+    {b kk : Nat} {ρ : Nat → CV} {w₁ : (Arm.ArmState × Arm.ArmState) × Nat} {vb : VBlock}
+    {ops : Array Operand} {outs' : List CV}
+    (hs : Star (VStep vcp
+      (pairDI (valueSemV (GotV vcp) F ⟨fa.k, af.slotBase⟩) F ⟨fa.k, af.slotBase⟩ XI))
+      (.run ⟨0, 0, ρ₀, ((w₀, w₀'), 0)⟩) (.run ⟨b, kk, ρ, w₁⟩))
+    (hvb : vcp.blocks[b]? = some vb) (hk : vb.insts[kk]? = some (.rets us))
+    (hops : (MInst.rets us).operands = .ok ops) (hvals : outs = vuses ops ρ)
+    (hsem : pairDI (valueSemV (GotV vcp) F ⟨fa.k, af.slotBase⟩) F ⟨fa.k, af.slotBase⟩ XI
+      (.rets us) outs w₁ = some (outs', w, .ret))
+    {lm : Std.HashMap Lbl Nat} (hlm : labelOffsets fa.lines = .ok lm) {body : List Line}
+    {psF : PState} (hpsF : blocksLinesE ⟨fa.k, af.slotBase⟩ af af.blocks.toList {} = .ok (body, psF))
+    {H : ArmHooks} {G G' : BitVec 64 → Prop}
+    {base ra ra' : BitVec 64} {Kp Kp' : Nat} {cc cc' : BitVec 64} {P P' : Nat → BitVec 64 → BitVec 8}
+    {Rr Rr' : Nat → Arm.ArmState} {s t0 : Arm.ArmState} {N : Nat}
+    (he : ActEntryPRN vcp rf af fa fb K F G XI H base ra Kp cc P Rr s w₀ N)
+    (he' : ActEntryPRN vcp rf af fa fb K F G' XI H base ra' Kp' cc' P' Rr' t0 w₀' N)
+    {R : RL} (hR : R = actRL vcp rf af fa fb lm base s (XI.upTo N) H psF K G (GotV vcp))
+    (hcov : FormsCovered R.ctx R.vc)
+    (hx30 : fa.x30Free lm = true)
+    (hcall : ∀ n n' c c' i u u', ({ R with X := (XI.upTo N).at n } : RL).InSeg (OkDiff F c c') c i u →
+      ({ R with s0 := t0, G := G', X := (XI.upTo N).at n' } : RL).InSeg (OkDiff F c c') c' i u' →
+      ({ R with X := (XI.upTo N).at n } : RL).GoodX u →
+      ({ R with s0 := t0, G := G', X := (XI.upTo N).at n' } : RL).GoodX u' →
+      StEqOutX (R.Zc c c') u u' → (∀ a, MConf.WDiff c c' a → F a ∨ D a) →
+      ∀ x d, ({ R with X := (XI.upTo N).at n } : RL).AtLine u x → LineDest x d →
+      StEqOutX (R.Zc c c') (H.call d u) (H.call d u'))
+    (htls : ∀ n n' c c' i u u', ({ R with X := (XI.upTo N).at n } : RL).InSeg (OkDiff F c c') c i u →
+      ({ R with s0 := t0, G := G', X := (XI.upTo N).at n' } : RL).InSeg (OkDiff F c c') c' i u' →
+      ({ R with X := (XI.upTo N).at n } : RL).GoodX u →
+      ({ R with s0 := t0, G := G', X := (XI.upTo N).at n' } : RL).GoodX u' →
+      StEqOutX (R.Zc c c') u u' → (∀ a, MConf.WDiff c c' a → F a ∨ D a) →
+      (∃ a b c, ({ R with X := (XI.upTo N).at n } : RL).AtLine u (.ldrTlsDescLo12 a b c)) →
+      ∀ m r, StEqOutX (R.Zc c c') (H.tls m r u) (H.tls m r u'))
+    (hag : EntryAgree (frameDrop af + K) s t0)
+    (hx29 : Arm.r (.GPR 29#5) s = Arm.r (.GPR 29#5) t0) :
+    (w₁.2 ≤ N → ∃ T e e',
+      (∀ i < T, ∃ c c', StEqOutX (R.Zc c c')
+        (iterN ({ R with X := (XI.upTo N).at 0 } : RL).step
+          ((prologueLines R.af.frameSize).length + i) R.s0)
+        (iterN ({ R with s0 := t0, G := G', X := (XI.upTo N).at 0 } : RL).step
+          ((prologueLines R.af.frameSize).length + i) t0)) ∧
+      JR R ({ R with s0 := t0, G := G' } : RL) (KJLV R (XI.upTo N) t0 G' F)
+        (fun d d' u u' => StEqOutX (R.Zc d d') u u' ∧ MConf.WIn (fun b => F b ∨ D b) d d' ∧
+          MDiffIn F (fun b => F b ∨ D b) u u')
+        (iterN ({ R with X := (XI.upTo N).at 0 } : RL).step
+          ((prologueLines R.af.frameSize).length + T) R.s0) e
+        (iterN ({ R with s0 := t0, G := G', X := (XI.upTo N).at 0 } : RL).step
+          ((prologueLines R.af.frameSize).length + T) t0) e' ∧
+      Arm.r .PC (iterN ({ R with X := (XI.upTo N).at 0 } : RL).step
+        ((prologueLines R.af.frameSize).length + T + R.retLen) R.s0) = ra ∧
+      Arm.r .PC (iterN ({ R with s0 := t0, G := G', X := (XI.upTo N).at 0 } : RL).step
+        ((prologueLines R.af.frameSize).length + T + R.retLen) t0) = ra' ∧
+      R.RetsAt e ∧ R.RetsAt e') ∧
+    (N < w₁.2 → ∃ T b k a its m w a' its' m' w',
+      (∀ i < T, ∃ c c', StEqOutX (R.Zc c c')
+        (iterN ({ R with X := (XI.upTo N).at 0 } : RL).step
+          ((prologueLines R.af.frameSize).length + i) R.s0)
+        (iterN ({ R with s0 := t0, G := G', X := (XI.upTo N).at 0 } : RL).step
+          ((prologueLines R.af.frameSize).length + i) t0)) ∧
+      JR R ({ R with s0 := t0, G := G' } : RL) (KJLV R (XI.upTo N) t0 G' F)
+        (fun d d' u u' => StEqOutX (R.Zc d d') u u' ∧ MConf.WIn (fun b => F b ∨ D b) d d' ∧
+          MDiffIn F (fun b => F b ∨ D b) u u')
+        (iterN ({ R with X := (XI.upTo N).at 0 } : RL).step
+          ((prologueLines R.af.frameSize).length + T) R.s0) (.run ⟨b, .op k a :: its, m, w⟩)
+        (iterN ({ R with s0 := t0, G := G', X := (XI.upTo N).at 0 } : RL).step
+          ((prologueLines R.af.frameSize).length + T) t0) (.run ⟨b, .op k a' :: its', m', w'⟩) ∧
+      countIn (RL.CallSt R) ({ R with X := (XI.upTo N).at 0 } : RL).step R.s0
+        ((prologueLines R.af.frameSize).length + T) = N ∧
+      countIn (RL.CallSt R) ({ R with s0 := t0, G := G', X := (XI.upTo N).at 0 } : RL).step t0
+        ((prologueLines R.af.frameSize).length + T) = N ∧
+      ∃ vb i, vcp.blocks[b]? = some vb ∧ vb.insts[k]? = some i ∧ i.isCallI = true) :=
+  backend_twoRunLWNpPV hc ρ₀ hsw hs hvb hk hops hvals hsem hlm hpsF he he' hR hcov hx30
+    (fun n n' c c' i u u' hin _ hin' => hcall n n' c c' i u u' hin hin') htls hag hx29
 
 end
 

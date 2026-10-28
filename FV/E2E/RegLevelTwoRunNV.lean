@@ -4,9 +4,9 @@ import FV.E2E.RegLevelTwoRunTV
 /-!
 # Two activations in lock-step up to a pair state, value semantics (SEM1 #537, #713, cleanup path)
 
-`RL.twoRunCTN`, `RL.twoRunPRTN` (`RegLevelTwoRunN.lean`) for the guarded value semantics
-`RL.valueSemGS` (`RegLevelValueGS.lean`): same proofs, on `RL.realizesJCPTV` and the generic
-`forward2C_opB`.
+`RL.twoRunCTNP`, `RL.twoRunPRTNP` (`RegLevelTwoRunNP.lean`: `hstep` also told the first run's
+segment start `RL.SegFrom`, #729) for the guarded value semantics `RL.valueSemGS`
+(`RegLevelValueGS.lean`): same proofs, on `RL.realizesJCPTV` and the generic `forward2C_opB`.
 
 * **`RL.twoRunCTNV`**, **`RL.twoRunPRTNV`**.
 -/
@@ -64,6 +64,8 @@ theorem RL.twoRunCTNV {R : RL} {t0 : Arm.ArmState} {G' : BitVec 64 → Prop} {XI
     (hstart : ∀ c c' s s', K c c' → LB c c' s s' → Lk c c' 0 s s')
     (hstep : ∀ n n' c c' i u u', K c c' →
       ({ R with X := XI.at n } : RL).InSeg (OkS c c') c i u →
+      ({ R with X := XI.at n } : RL).SegFrom (fun u =>
+        OnCall ({ R with X := XI.at 0 } : RL).step R.fa R.base R.s0 n u ∧ spOf u = R.spB) c i u →
       ({ R with s0 := t0, G := G', X := XI'.at n' } : RL).InSeg (OkS' c c') c' i u' →
       (({ R with X := XI.at n } : RL).GoodX u ∧
         ({ R with X := XI.at n } : RL).WReadsIn (OkS c c') u) →
@@ -213,6 +215,8 @@ theorem RL.twoRunPRTNV {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAsm} {fb 
     (hstart : ∀ c c' s s', KJ c c' → LB c c' s s' → Lk c c' 0 s s')
     (hstep : ∀ n n' c c' i u u', KJ c c' →
       ({ R with X := XI.at n } : RL).InSeg (OkS c c') c i u →
+      ({ R with X := XI.at n } : RL).SegFrom (fun u =>
+        OnCall ({ R with X := XI.at 0 } : RL).step R.fa R.base R.s0 n u ∧ spOf u = R.spB) c i u →
       ({ R with s0 := t0, G := G', X := XI'.at n' } : RL).InSeg (OkS' c c') c' i u' →
       (({ R with X := XI.at n } : RL).GoodX u ∧
         ({ R with X := XI.at n } : RL).WReadsIn (OkS c c') u) →
