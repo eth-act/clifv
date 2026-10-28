@@ -954,6 +954,41 @@ VCode run. Decision: the two runs are built **jointly** along the pair VCode run
 are shape-equal); the single-run chain theorem stays as built. Its lift to the prophecy level is
 therefore not needed for item (3); the joint theorem is lifted instead.
 
+**The paired run through the pipeline, as built (UninitZ16b/UninitZ17b, branch
+`agent/uninit-z14b`, PR #695).** `RegLevelForward2.lean` (`forward2`, `forward2_op`,
+`IsSimulationS`, `isSimulationS_match`), `RegLevelLock2.lean` (`RL.seg_lock`, `RL.jointSeg`),
+`RegLevelJointC.lean`/`RegLevelJointRL.lean` (`RealizesJCP`, `countedRun2`, `RL.realizesJCP`),
+`RegLevelTwoRun.lean` (`forward2C`, `forward2C_op`). Then:
+- `RegLevelTwoRunW.lean`: **`RL.twoRunC`** — two activations of one compiled function, from their
+  body entries along a returning pair VCode run: the same prologue length, then the joint
+  segments (the lock `Lk` at every index), the joint invariant `JR` at the `rets` item at the
+  same index `N`, the same epilogue length, both return. `RegLevelTwoRunPR.lean`:
+  **`RL.twoRunPR`** (from two `ActEntryPR` entries and `checkAlloc`).
+- `RegLevelPairRun.lean`: `PairOf`, `pstep_of_proj`/`pstar_of_proj` (a run of a semantics on
+  paired worlds projecting to both is a run of pair steps), `pairFst`/`pairSnd` (counted paired
+  worlds, one counter), `pairFst_proj`/`pairSnd_proj`, **`RL.twoRunC_pair`**.
+- `IselSimIG.lean`: the counted CLIF → VCode simulation for any counted family (`NcIndep`,
+  `NoCallProj`, `seqRun_counted_le1`, **`sim_runIG`**; copies of `IselSimI`/`IselSimITry`'s
+  proofs, whose `csem` statements stay). `PairEntry.lean`: **`entry_step2P`** (the entry on two
+  worlds is one `pairSem` run). `PairDriverI.lean`: **`vcode_niI`** — non-interference of the
+  counted VCode run: one paired counted run of `pairSem (csem F ctx (XI.at n))` from the paired
+  initial configuration, with the callee contracts and `XNI` needed only at the actual `n`-th
+  call.
+- `BackendTwoRun.lean`: `DriverSemG.counted` (prepare), `vRetFrom_gotVP` (GOT guard),
+  **`backend_twoRunPRIY`**: the paired run carried through `prepare`, the GOT guard and the
+  world-read guard to `RL.twoRunPR`. Witness `BackendTwoRunWitness.lean` (`a2_twoRunPRIY`, one
+  activation entered twice, lock "equal states").
+
+Open: (1) `hGdP`, the world-read guard of the paired run, is a premise (as `hGd` is
+`backend_correct_worldPRIY`'s); for the lock-step it must hold with `Ok w Y := Y = Zof F D cm`
+at the related CLIF memory, i.e. a guarded paired semantics through the driver (the rules'
+`csemG … Rd` contracts with `Rd` the complement of `Zof F D cm`, `Guarded.lean`).
+(2) The lock `Lk := StEqOutX (Zs i)` with `hstep` from `stEqOutX_line` (reads avoid `Zs i` by
+`WReadsIn (OkS …)`), the call lines from the callees' determinism (`DetPRB κ (M - 1)`), `hend`
+at the segment ends; then `LinkSys.thmPDERX_det_of` on `ThmPRBRL` with `CallPostNXR`/`XPBTGY`
+(#692, #694, branch `agent/uninit-z16b`) and `DetPRB`/`DetTabPRB` as corollaries, witnesses on
+`Lsl`. Not started; the stack of #695 and that of #696 must be combined first.
+
 ## 6. Heap (separate gap, SEM2)
 
 `BaseOk.baseKeepsAllocs`/`baseNoAlloc` require base externs to allocate nothing whenever a program
