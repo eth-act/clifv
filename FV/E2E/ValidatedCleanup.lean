@@ -14,8 +14,8 @@ open Backend Backend.Proof Backend.Proof.Driver Backend.DeadCleanup
 structure CompiledCleanupValidatedA (f : Clif.Function) (k : Nat) (vc vcp : VCode)
     (rf : RFunc) (af : AFunc) (fa : FnAsm) (fb : FnBin) : Prop where
   lowerOk : lowerCheck f vc = true
-  prepare : prepare (prune vc) = .ok vcp
-  prepOk : prepCheck (prune vc) vcp = true
+  prepare : prepare (cleanupStage f vc) = .ok vcp
+  prepOk : prepCheck (cleanupStage f vc) vcp = true
   check : AllocChecked vcp rf
   alloc : lowerRFunc vcp rf = .ok af
   emit : emitFunc k af = .ok fa
@@ -81,10 +81,10 @@ theorem backend_correct_cleanup_ex_validated {p : Clif.Program} {f : Clif.Functi
     (hrel : Rel.holds ⟨F s, syms, slotOff, out⟩ f cs.frame.slots cs.mem w₀)
     (htr : TrapsExplicit env p cs) (fuel : Nat) :
     ArmRefines fb base ra astep s (Clif.runLoop env p fuel cs) := by
-  obtain ⟨ctx, st0, R, gn, bl, A, hshape, hcert, hbr⟩ := loweringObligations_of_check hc.lowerOk
-  refine backend_correct_of_layers_ex (fun s' => iselSim_of_driver (ctx := ctx) (st0 := st0) (R := R)
-    (gn := gn) (bl := bl) (A := A) ?_ (hds s') (hmem s')) (fun s' a w => by
-      obtain ⟨hr, ht⟩ := prune_correct (vc := vc) (hPure s') (hCmp s') a w
+  obtain ⟨ctx, st0, R, gn, bl, A, hshape, hcert, hbr, hsk⟩ := skipStage_spec hc.lowerOk
+  refine backend_correct_of_layers_ex (fun s' => iselSim_of_driver_stage (ctx := ctx) (st0 := st0)
+    (R := R) (gn := gn) (bl := bl) (A := A) ?_ hsk (hds s') (hmem s')) (fun s' a w => by
+      obtain ⟨hr, ht⟩ := prune_correct (vc := skipStage f vc) (hPure s') (hCmp s') a w
       obtain ⟨pr, pt⟩ := prepareCorrect_of_check (hds s') hc.prepOk a w
       exact ⟨fun _ _ _ h => pr _ _ _ (hr _ _ _ h), fun _ h => pt _ (ht _ h)⟩)
     hM6 hent hres hbe
@@ -112,7 +112,7 @@ theorem backend_correct_cleanup_ex_validated {p : Clif.Program} {f : Clif.Functi
     tryIndSig := tryIndSig_of_subset hsub
     cfg := by
       obtain ⟨ss, ps, he⟩ := cfg_of_prepare hc.prepare
-      exact ⟨ss, ps, (prune_cfg vc).symm.trans he⟩ }
+      exact ⟨ss, ps, (cleanupStage_cfg f vc).symm.trans he⟩ }
 
 theorem backend_correct_of_rules_cleanup_ex_validated {p : Clif.Program} {f : Clif.Function} {k : Nat} {vc vcp : VCode}
     {rf : RFunc} {af : AFunc} {fa : FnAsm} {fb : FnBin}
@@ -214,14 +214,15 @@ theorem hasTry_of_hasTryCallCleanupA_validated {f : Clif.Function} {k : Nat} {vc
   Classical.byContradiction fun hn => by
     have hf : ∀ B ∈ f.blocks, B.term.isTry = false := fun B hB =>
       Bool.eq_false_iff.mpr fun ht => hn ⟨B, hB, ht⟩
-    rw [noTryCall_of_prepCheck hc.prepOk (prune_noTryCall (noTryCall_of_check hc.lowerOk hf))] at h
+    rw [noTryCall_of_prepCheck hc.prepOk
+      (cleanupStage_noTryCall f (noTryCall_of_check hc.lowerOk hf))] at h
     cases h
 
 theorem hasTls_of_vcodeCleanupA_validated {f : Clif.Function} {k : Nat} {vc vcp : VCode} {rf : RFunc}
     {af : AFunc} {fa : FnAsm} {fb : FnBin} (hc : CompiledCleanupValidatedA f k vc vcp rf af fa fb)
     (h : vcp.hasTls = true) : hasTls f = true := by
   cases hf : hasTls f
-  · rw [noTls_of_prepCheck hc.prepOk (prune_noTls (noTls_of_check hc.lowerOk hf))] at h
+  · rw [noTls_of_prepCheck hc.prepOk (cleanupStage_noTls f (noTls_of_check hc.lowerOk hf))] at h
     cases h
   · rfl
 
@@ -229,7 +230,7 @@ theorem outgoing_le_intBaseCleanupA_validated {f : Clif.Function} {k : Nat} {vc 
     {af : AFunc} {fa : FnAsm} {fb : FnBin} (hc : CompiledCleanupValidatedA f k vc vcp rf af fa fb) :
     vc.outgoing ≤ (RAFrame.compute vcp rf).intBase := by
   simp only [RAFrame.compute]
-  rw [outgoing_of_prepCheck hc.prepOk, prune_outgoing]
+  rw [outgoing_of_prepCheck hc.prepOk, cleanupStage_outgoing]
   exact le_alignTo _ 16 (by decide)
 
 set_option maxHeartbeats 1000000 in
@@ -316,9 +317,16 @@ theorem backend_correct_final_cleanup_ex_validated {p : Clif.Program} {f : Clif.
     (fun _ => memRefines_valueSem _ _ X hslot hsym) (outgoing_le_intBaseCleanupA_validated hc)
     hent hres hbe hargs (stackArgsAvoid_frameWCleanupA_validated hc hres hent hargs) hcs hrel htr fuel
 
-theorem iselSim_relW_cleanup_validated {p : Clif.Program} {f : Clif.Function} {k : Nat} {vc vcp : VCode}
-    {rf : RFunc} {af : AFunc} {fa : FnAsm} {fb : FnBin}
+/-- `iselSim_relW_cleanup_validated` for `vcK`, the lowering `vc` or its kept code (`SkipHyp`),
+from the lowering obligations of `vc`. -/
+theorem iselSim_relW_cleanup_validated_of {p : Clif.Program} {f : Clif.Function} {k : Nat}
+    {vc vcK vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAsm} {fb : FnBin}
     (hsub : InSubset p f) (hc : CompiledCleanupValidated f k vc vcp rf af fa fb)
+    {ctx : Ctx} {st0 : LState} {R : Reg → Reg} {gn : Nat → Nat} {bl : List BLow}
+    {A : Nat → Nat → List Clif.ValueId} {drop : Nat → Nat → Bool}
+    (hshape : LowerShape f vc ctx st0 R gn bl) (hcert : Cert f ctx st0 gn bl A)
+    (hbr : ∀ B ∈ f.blocks, BrIdxTyped ctx B.term)
+    (hsk : vcK = vc ∨ SkipHyp f vc R bl drop vcK)
     {X : ExtSem} {syms : String → Option Nat} {slotOff : Nat} {env : Clif.Env}
     {F : BitVec 64 → Prop} {c : BitVec 64}
     (hX : XCallsOk env (f.externs.map (·.2))
@@ -332,12 +340,11 @@ theorem iselSim_relW_cleanup_validated {p : Clif.Program} {f : Clif.Function} {k
     (hrel : RelW ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c cs.frame.slots cs.mem w₀)
     (hargs : ArgsAtEntry F f.sig args w₀) (htr : TrapsExplicit env p cs) (fuel : Nat) :
     (∀ vals cm, Clif.runLoop env p fuel cs = .returned vals cm →
-      ∃ us outs w, VReturns vc (valueSem F ⟨fa.k, af.slotBase⟩ X) ρ₀ w₀ us outs w ∧
+      ∃ us outs w, VReturns vcK (valueSem F ⟨fa.k, af.slotBase⟩ X) ρ₀ w₀ us outs w ∧
         us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
         PrefixHold vals outs ∧ MemRel F syms cm w) ∧
     (∀ c', Clif.runLoop env p fuel cs = .trapped c' →
-      VTraps vc (valueSem F ⟨fa.k, af.slotBase⟩ X) ρ₀ w₀ c') := by
-  obtain ⟨ctx, st0, R, gn, bl, A, hshape, hcert, hbr⟩ := loweringObligations_of_check hc.lowerOk
+      VTraps vcK (valueSem F ⟨fa.k, af.slotBase⟩ X) ρ₀ w₀ c') := by
   let Γ : Rel := ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩
   have hRef : Refines F (valueSem F ⟨fa.k, af.slotBase⟩ X) := refines_valueSem _ _ X
   have hmem : MemRefines F slotOff syms (valueSem F ⟨fa.k, af.slotBase⟩ X) :=
@@ -370,7 +377,7 @@ theorem iselSim_relW_cleanup_validated {p : Clif.Program} {f : Clif.Function} {k
     tryIndSig := tryIndSig_of_subset hsub
     cfg := by
       obtain ⟨ss, ps, he⟩ := cfg_of_prepare hc.prepare
-      exact ⟨ss, ps, (prune_cfg vc).symm.trans he⟩ }
+      exact ⟨ss, ps, (cleanupStage_cfg f vc).symm.trans he⟩ }
   obtain ⟨B0, hent, hbody, hterm, hty, hregs⟩ := hce.entry
   have hB0 : f.blocks[0]? = some B0 := by
     simpa [Clif.Function.entry?, List.head?_eq_getElem?] using hent
@@ -384,7 +391,8 @@ theorem iselSim_relW_cleanup_validated {p : Clif.Program} {f : Clif.Function} {k
         htr.indirect s st rest sig callee args hr hb hi ⟨B, hf ▸ hB, hst⟩,
       fun s callee args et hr hb hT ⟨B, hB, e⟩ =>
         htr.tryIndirect s callee args et hr hb hT ⟨B, hf ▸ hB, e⟩⟩
-  have hrun := driver_correct H (driverSem_valueSem F ⟨fa.k, af.slotBase⟩ X) hmem (mrStable_relW Γ f c) hB0 hce.callers hce.func rfl hbody hterm
+  have hrun := driver_correct_stage H hsk (driverSem_valueSem F ⟨fa.k, af.slotBase⟩ X) hmem
+    (mrStable_relW Γ f c) hB0 hce.callers hce.func rfl hbody hterm
     hregs hty.symm hce.sig (ρ₀ := ρ₀) hrel hargs hP fuel
   refine ⟨fun vals cm h => ?_, fun c' h => ?_⟩
   · rw [h] at hrun
@@ -392,6 +400,58 @@ theorem iselSim_relW_cleanup_validated {p : Clif.Program} {f : Clif.Function} {k
     exact ⟨us, outs, w, hret, h1, h2, h3, h5 ▸ memRel_leave (memRel_free h4.1.1 _)⟩
   · rw [h] at hrun
     exact hrun
+
+theorem iselSim_relW_cleanup_validated {p : Clif.Program} {f : Clif.Function} {k : Nat} {vc vcp : VCode}
+    {rf : RFunc} {af : AFunc} {fa : FnAsm} {fb : FnBin}
+    (hsub : InSubset p f) (hc : CompiledCleanupValidated f k vc vcp rf af fa fb)
+    {X : ExtSem} {syms : String → Option Nat} {slotOff : Nat} {env : Clif.Env}
+    {F : BitVec 64 → Prop} {c : BitVec 64}
+    (hX : XCallsOk env (f.externs.map (·.2))
+      (RelW ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c) X)
+    (hXI : XCallsIndOk env (indSigs f)
+      (RelW ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c) X)
+    (hsym : ∀ n b, syms n = some b → X.sym n 0 = BitVec.ofNat 64 b)
+    (hslot : af.slotBase = slotOff)
+    {args : List Clif.Val} {cs : Clif.State} {w₀ : Arm.ArmState} (ρ₀ : Nat → CV)
+    (hce : ClifEntry f args cs)
+    (hrel : RelW ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c cs.frame.slots cs.mem w₀)
+    (hargs : ArgsAtEntry F f.sig args w₀) (htr : TrapsExplicit env p cs) (fuel : Nat) :
+    (∀ vals cm, Clif.runLoop env p fuel cs = .returned vals cm →
+      ∃ us outs w, VReturns vc (valueSem F ⟨fa.k, af.slotBase⟩ X) ρ₀ w₀ us outs w ∧
+        us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
+        PrefixHold vals outs ∧ MemRel F syms cm w) ∧
+    (∀ c', Clif.runLoop env p fuel cs = .trapped c' →
+      VTraps vc (valueSem F ⟨fa.k, af.slotBase⟩ X) ρ₀ w₀ c') := by
+  obtain ⟨ctx, st0, R, gn, bl, A, hshape, hcert, hbr⟩ := loweringObligations_of_check hc.lowerOk
+  exact iselSim_relW_cleanup_validated_of hsub hc (drop := fun _ _ => false) hshape hcert hbr
+    (.inl rfl) hX hXI hsym hslot ρ₀ hce hrel hargs htr fuel
+
+/-- **`iselSim_relW_cleanup_validated` for the code after the skip of unused instructions**
+(`skipStage f vc`). -/
+theorem iselSim_relW_cleanup_validated_stage {p : Clif.Program} {f : Clif.Function} {k : Nat}
+    {vc vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAsm} {fb : FnBin}
+    (hsub : InSubset p f) (hc : CompiledCleanupValidated f k vc vcp rf af fa fb)
+    {X : ExtSem} {syms : String → Option Nat} {slotOff : Nat} {env : Clif.Env}
+    {F : BitVec 64 → Prop} {c : BitVec 64}
+    (hX : XCallsOk env (f.externs.map (·.2))
+      (RelW ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c) X)
+    (hXI : XCallsIndOk env (indSigs f)
+      (RelW ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c) X)
+    (hsym : ∀ n b, syms n = some b → X.sym n 0 = BitVec.ofNat 64 b)
+    (hslot : af.slotBase = slotOff)
+    {args : List Clif.Val} {cs : Clif.State} {w₀ : Arm.ArmState} (ρ₀ : Nat → CV)
+    (hce : ClifEntry f args cs)
+    (hrel : RelW ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c cs.frame.slots cs.mem w₀)
+    (hargs : ArgsAtEntry F f.sig args w₀) (htr : TrapsExplicit env p cs) (fuel : Nat) :
+    (∀ vals cm, Clif.runLoop env p fuel cs = .returned vals cm →
+      ∃ us outs w, VReturns (skipStage f vc) (valueSem F ⟨fa.k, af.slotBase⟩ X) ρ₀ w₀ us outs w ∧
+        us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
+        PrefixHold vals outs ∧ MemRel F syms cm w) ∧
+    (∀ c', Clif.runLoop env p fuel cs = .trapped c' →
+      VTraps (skipStage f vc) (valueSem F ⟨fa.k, af.slotBase⟩ X) ρ₀ w₀ c') := by
+  obtain ⟨ctx, st0, R, gn, bl, A, hshape, hcert, hbr, hsk⟩ := skipStage_spec hc.lowerOk
+  exact iselSim_relW_cleanup_validated_of hsub hc hshape hcert hbr hsk hX hXI hsym hslot ρ₀ hce
+    hrel hargs htr fuel
 
 theorem backend_correct_world_cleanup_validated {p : Clif.Program} {f : Clif.Function} {k : Nat} {vc vcp : VCode}
     {rf : RFunc} {af : AFunc} {fa : FnAsm} {fb : FnBin}
@@ -422,10 +482,11 @@ theorem backend_correct_world_cleanup_validated {p : Clif.Program} {f : Clif.Fun
       ∀ (H : ArmHooks) (G : BitVec 64 → Prop) (base ra : BitVec 64) (s : Arm.ArmState),
         ActEntry vcp rf af fa fb K F G X H base ra s w₀ →
         ∃ n, TrapAt fb base c' (runX (ArmStepX X H fa) n s)) := by
-  have hI := iselSim_relW_cleanup_validated hsub hc hX hXI hsym hslot (fun _ => 0) hcs hrel hargs htr fuel
-  have hP : PrepareCorrect (valueSem F ⟨fa.k, af.slotBase⟩ X) vc vcp := by
+  have hI := iselSim_relW_cleanup_validated_stage hsub hc hX hXI hsym hslot (fun _ => 0) hcs hrel
+    hargs htr fuel
+  have hP : PrepareCorrect (valueSem F ⟨fa.k, af.slotBase⟩ X) (skipStage f vc) vcp := by
     intro a w
-    obtain ⟨hr, ht⟩ := prune_correct (vc := vc)
+    obtain ⟨hr, ht⟩ := prune_correct (vc := skipStage f vc)
       (fun _ _ _ _ _ _ hp he => valueSem_pure hp he) (valueSem_cmpOverwrite _ _ _) a w
     obtain ⟨pr, pt⟩ := prepareCorrect_of_check (driverSem_valueSem F ⟨fa.k, af.slotBase⟩ X)
       hc.prepOk a w
@@ -443,7 +504,7 @@ theorem backend_correct_world_cleanup_validated {p : Clif.Program} {f : Clif.Fun
   · obtain ⟨us, outs, w, hv, hus, hlen, hhold, hmemR⟩ := hI.1 vals cm hrun
     have hrs : vc.RetsSite us := by
       obtain ⟨b, k, ρ, w₁, vb, ops, outs', -, hvb, hk, -⟩ := hv
-      exact ⟨b, vb, k, hvb, hk⟩
+      exact retsSite_of_skipStage ⟨b, vb, k, hvb, hk⟩
     refine ⟨us, outs, w, hus, hlen, hhold, hmemR, hrs, fun H G base ra s he => ?_⟩
     obtain ⟨n, h1, h2, h3, h4, h5, h6, h7⟩ :=
       (hM6 H G base ra s he).1 us outs w (vReturns_gotV_value (hP.1 _ _ _ hv))
@@ -645,9 +706,16 @@ theorem tryIndCalls_pair_value_validated
 
 end
 
-theorem vcode_ni_value_validated {p : Clif.Program} {f : Clif.Function} {k : Nat} {vc vcp : VCode}
-    {rf : RFunc} {af : AFunc} {fa : FnAsm} {fb : FnBin}
+/-- `vcode_ni_value_validated` for `vcK`, the lowering `vc` or its kept code (`SkipHyp`), from the
+lowering obligations of `vc`. -/
+theorem vcode_ni_value_validated_of {p : Clif.Program} {f : Clif.Function} {k : Nat}
+    {vc vcK vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAsm} {fb : FnBin}
     (hsub : InSubset p f) (hc : CompiledCleanupValidated f k vc vcp rf af fa fb)
+    {ctx : Ctx} {st0 : LState} {R : Reg → Reg} {gn : Nat → Nat} {bl : List BLow}
+    {A : Nat → Nat → List Clif.ValueId} {drop : Nat → Nat → Bool}
+    (hshape : LowerShape f vc ctx st0 R gn bl) (hcert : Cert f ctx st0 gn bl A)
+    (hbr : ∀ B ∈ f.blocks, BrIdxTyped ctx B.term)
+    (hsk : vcK = vc ∨ SkipHyp f vc R bl drop vcK)
     {X : ExtSem} {syms : String → Option Nat} {slotOff : Nat} {env : Clif.Env}
     {F : BitVec 64 → Prop} {c : BitVec 64}
     (hX : XCallsOk env (f.externs.map (·.2))
@@ -671,10 +739,9 @@ theorem vcode_ni_value_validated {p : Clif.Program} {f : Clif.Function} {k : Nat
         w₀.mem (Arm.r (.GPR 29#5) w₀ + BitVec.ofInt 64 (16 + (off : Int)) + BitVec.ofNat 64 k))
     (htr : TrapsExplicit env p cs) (fuel : Nat) :
     ∀ vals cm, Clif.runLoop env p fuel cs = .returned vals cm →
-      ∃ us outs w w', VReturns vc (valueSem F ⟨fa.k, af.slotBase⟩ X) ρ₀ w₀ us outs w ∧
-        VReturns vc (valueSem F ⟨fa.k, af.slotBase⟩ X) ρ₀ w₀' us outs w' ∧
+      ∃ us outs w w', VReturns vcK (valueSem F ⟨fa.k, af.slotBase⟩ X) ρ₀ w₀ us outs w ∧
+        VReturns vcK (valueSem F ⟨fa.k, af.slotBase⟩ X) ρ₀ w₀' us outs w' ∧
         SameWorld (fun b => F b ∨ D b) w w' := by
-  obtain ⟨ctx, st0, R, gn, bl, A, hshape, hcert, hbr⟩ := loweringObligations_of_check hc.lowerOk
   let Γ : Rel := ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩
   have hRef : Refines F (valueSem F ⟨fa.k, af.slotBase⟩ X) := refines_valueSem _ _ X
   have hmem : MemRefines F slotOff syms (valueSem F ⟨fa.k, af.slotBase⟩ X) :=
@@ -707,7 +774,7 @@ theorem vcode_ni_value_validated {p : Clif.Program} {f : Clif.Function} {k : Nat
     tryIndSig := tryIndSig_of_subset hsub
     cfg := by
       obtain ⟨ss, ps, he⟩ := cfg_of_prepare hc.prepare
-      exact ⟨ss, ps, (prune_cfg vc).symm.trans he⟩ }
+      exact ⟨ss, ps, (cleanupStage_cfg f vc).symm.trans he⟩ }
   have HP : DriverHyp f vc ctx st0 R gn bl A (pairSem (valueSem F ⟨fa.k, af.slotBase⟩ X)) (MRP Γ f c D)
       env p := {
     shape := hshape
@@ -741,7 +808,7 @@ theorem vcode_ni_value_validated {p : Clif.Program} {f : Clif.Function} {k : Nat
       fun s callee args et hr hb hT ⟨B, hB, e⟩ =>
         htr.tryIndirect s callee args et hr hb hT ⟨B, hf ▸ hB, e⟩⟩
   have h29 : Arm.r (.GPR 29#5) w₀' = Arm.r (.GPR 29#5) w₀ := (hsw.1 _ (by simp [Masked])).symm
-  obtain ⟨kk, ρ₁, w₁, w₁', hs1, hm1, hsw1, hs2, hm2, hsw2⟩ := entry_step2 H
+  obtain ⟨kk, ρ₁, w₁, w₁', hs1, hm1, hsw1, hs2, hm2, hsw2⟩ := entry_step2P H
     (driverSem_valueSem F ⟨fa.k, af.slotBase⟩ X) hmem (mrStable_relW Γ f c) hB0 hce.callers hce.func
     rfl hbody hterm hregs hty.symm hce.sig (ρ₀ := ρ₀) hrel hrel' hargs hreg h29 hstk
   have hFD : ∀ a, F a → F a ∨ D a := fun a h => .inl h
@@ -752,12 +819,92 @@ theorem vcode_ni_value_validated {p : Clif.Program} {f : Clif.Function} {k : Nat
         (SameWorld.trans hsw (SameWorld.symm (SameWorld.mono hFD hsw2)))
     exact sameWorld_zof hm1.2.2.2.1.1.1 hm2.2.2.2.1.1.1 h01 (fun b h => h)
   intro vals cm hrun
-  have hR := sim_run HP hP fuel cs ⟨0, kk, ρ₁, (w₁, w₁')⟩ (.refl _) hmP
-  rw [hrun] at hR
-  obtain ⟨us, outs, w, cm0, hret, -, -, -, hmr, -⟩ := hR
-  obtain ⟨h1, h2⟩ := vRetFrom_pair hret
-  exact ⟨us, outs, w.1, w.2, VRetFrom.prefix hs1 h1, VRetFrom.prefix hs2 h2,
-    SameWorld.mono (zof_sub cm0) hmr.2.2⟩
+  rcases hsk with rfl | hK
+  · have hR := sim_run HP hP fuel cs ⟨0, kk, ρ₁, (w₁, w₁')⟩ (.refl _) hmP
+    rw [hrun] at hR
+    obtain ⟨us, outs, w, cm0, hret, -, -, -, hmr, -⟩ := hR
+    obtain ⟨h1, h2⟩ := vRetFrom_pair hret
+    exact ⟨us, outs, w.1, w.2, VRetFrom.prefix hs1.star h1, VRetFrom.prefix hs2.star h2,
+      SameWorld.mono (zof_sub cm0) hmr.2.2⟩
+  · have hkk := entry_pos hB0 hbody hm1
+    have hs1K := entry_runK hK hB0 hkk hs1
+    have hs2K := entry_runK hK hB0 hkk hs2
+    have hR := sim_run_abiK hK HP hP (Q := fun _ => True) (fun _ _ _ _ => trivial) fuel cs
+      ⟨0, kidx (skipMask f R bl vc drop 0) kk, ρ₁, (w₁, w₁')⟩ (.refl _)
+      ⟨⟨0, kk, ρ₁, (w₁, w₁')⟩, ⟨rfl, rfl, rfl, fun _ _ => rfl⟩, hmP⟩
+    rw [hrun] at hR
+    obtain ⟨us, outs, w, cm0, hret, -, -, -, hmr, -⟩ := hR.runOk
+    obtain ⟨h1, h2⟩ := vRetFrom_pair hret
+    exact ⟨us, outs, w.1, w.2, VRetFrom.prefix hs1K h1, VRetFrom.prefix hs2K h2,
+      SameWorld.mono (zof_sub cm0) hmr.2.2⟩
+
+theorem vcode_ni_value_validated {p : Clif.Program} {f : Clif.Function} {k : Nat} {vc vcp : VCode}
+    {rf : RFunc} {af : AFunc} {fa : FnAsm} {fb : FnBin}
+    (hsub : InSubset p f) (hc : CompiledCleanupValidated f k vc vcp rf af fa fb)
+    {X : ExtSem} {syms : String → Option Nat} {slotOff : Nat} {env : Clif.Env}
+    {F : BitVec 64 → Prop} {c : BitVec 64}
+    (hX : XCallsOk env (f.externs.map (·.2))
+      (RelW ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c) X)
+    (hXI : XCallsIndOk env (indSigs f)
+      (RelW ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c) X)
+    (hsym : ∀ n b, syms n = some b → X.sym n 0 = BitVec.ofNat 64 b)
+    (hslot : af.slotBase = slotOff)
+    (hNI : XNI F syms (f.externs.map (·.2)) (indSigs f) c
+      (CallLg env (f.externs.map (·.2)) (indSigs f)) X) (hTls : XTls F X)
+    {args : List Clif.Val} {cs : Clif.State} {w₀ w₀' : Arm.ArmState} {D : BitVec 64 → Prop}
+    (ρ₀ : Nat → CV) (hce : ClifEntry f args cs)
+    (hrel : RelW ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c cs.frame.slots cs.mem w₀)
+    (hrel' : RelW ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c cs.frame.slots cs.mem
+      w₀')
+    (hargs : ArgsAtEntry F f.sig args w₀)
+    (hsw : SameWorld (fun b => F b ∨ D b) w₀ w₀')
+    (hreg : ∀ r v, (ArgLoc.reg r, v) ∈ (locsOf f.sig).zip args → regVal w₀' r = regVal w₀ r)
+    (hstk : ∀ off v, (ArgLoc.stack off, v) ∈ (locsOf f.sig).zip args → ∀ k < v.ty.bytes,
+      w₀'.mem (Arm.r (.GPR 29#5) w₀ + BitVec.ofInt 64 (16 + (off : Int)) + BitVec.ofNat 64 k) =
+        w₀.mem (Arm.r (.GPR 29#5) w₀ + BitVec.ofInt 64 (16 + (off : Int)) + BitVec.ofNat 64 k))
+    (htr : TrapsExplicit env p cs) (fuel : Nat) :
+    ∀ vals cm, Clif.runLoop env p fuel cs = .returned vals cm →
+      ∃ us outs w w', VReturns vc (valueSem F ⟨fa.k, af.slotBase⟩ X) ρ₀ w₀ us outs w ∧
+        VReturns vc (valueSem F ⟨fa.k, af.slotBase⟩ X) ρ₀ w₀' us outs w' ∧
+        SameWorld (fun b => F b ∨ D b) w w' := by
+  obtain ⟨ctx, st0, R, gn, bl, A, hshape, hcert, hbr⟩ := loweringObligations_of_check hc.lowerOk
+  exact vcode_ni_value_validated_of hsub hc (drop := fun _ _ => false) hshape hcert hbr (.inl rfl)
+    hX hXI hsym hslot hNI hTls ρ₀ hce hrel hrel' hargs hsw hreg hstk htr fuel
+
+/-- **`vcode_ni_value_validated` for the code after the skip of unused instructions**
+(`skipStage f vc`). -/
+theorem vcode_ni_value_validated_stage {p : Clif.Program} {f : Clif.Function} {k : Nat}
+    {vc vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAsm} {fb : FnBin}
+    (hsub : InSubset p f) (hc : CompiledCleanupValidated f k vc vcp rf af fa fb)
+    {X : ExtSem} {syms : String → Option Nat} {slotOff : Nat} {env : Clif.Env}
+    {F : BitVec 64 → Prop} {c : BitVec 64}
+    (hX : XCallsOk env (f.externs.map (·.2))
+      (RelW ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c) X)
+    (hXI : XCallsIndOk env (indSigs f)
+      (RelW ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c) X)
+    (hsym : ∀ n b, syms n = some b → X.sym n 0 = BitVec.ofNat 64 b)
+    (hslot : af.slotBase = slotOff)
+    (hNI : XNI F syms (f.externs.map (·.2)) (indSigs f) c
+      (CallLg env (f.externs.map (·.2)) (indSigs f)) X) (hTls : XTls F X)
+    {args : List Clif.Val} {cs : Clif.State} {w₀ w₀' : Arm.ArmState} {D : BitVec 64 → Prop}
+    (ρ₀ : Nat → CV) (hce : ClifEntry f args cs)
+    (hrel : RelW ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c cs.frame.slots cs.mem w₀)
+    (hrel' : RelW ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c cs.frame.slots cs.mem
+      w₀')
+    (hargs : ArgsAtEntry F f.sig args w₀)
+    (hsw : SameWorld (fun b => F b ∨ D b) w₀ w₀')
+    (hreg : ∀ r v, (ArgLoc.reg r, v) ∈ (locsOf f.sig).zip args → regVal w₀' r = regVal w₀ r)
+    (hstk : ∀ off v, (ArgLoc.stack off, v) ∈ (locsOf f.sig).zip args → ∀ k < v.ty.bytes,
+      w₀'.mem (Arm.r (.GPR 29#5) w₀ + BitVec.ofInt 64 (16 + (off : Int)) + BitVec.ofNat 64 k) =
+        w₀.mem (Arm.r (.GPR 29#5) w₀ + BitVec.ofInt 64 (16 + (off : Int)) + BitVec.ofNat 64 k))
+    (htr : TrapsExplicit env p cs) (fuel : Nat) :
+    ∀ vals cm, Clif.runLoop env p fuel cs = .returned vals cm →
+      ∃ us outs w w', VReturns (skipStage f vc) (valueSem F ⟨fa.k, af.slotBase⟩ X) ρ₀ w₀ us outs w ∧
+        VReturns (skipStage f vc) (valueSem F ⟨fa.k, af.slotBase⟩ X) ρ₀ w₀' us outs w' ∧
+        SameWorld (fun b => F b ∨ D b) w w' := by
+  obtain ⟨ctx, st0, R, gn, bl, A, hshape, hcert, hbr, hsk⟩ := skipStage_spec hc.lowerOk
+  exact vcode_ni_value_validated_of hsub hc hshape hcert hbr hsk hX hXI hsym hslot hNI hTls ρ₀ hce
+    hrel hrel' hargs hsw hreg hstk htr fuel
 
 theorem backend_correct_world_ni_value_validated {p : Clif.Program} {f : Clif.Function} {k : Nat} {vc vcp : VCode}
     {rf : RFunc} {af : AFunc} {fa : FnAsm} {fb : FnBin}
@@ -798,14 +945,15 @@ theorem backend_correct_world_ni_value_validated {p : Clif.Program} {f : Clif.Fu
             ∃ n, ActRet ra (fun a => F a ∨ D a) G us outs w s (runX (ArmStepX X H fa) n s) ∧
               PostTrace fa af base (ArmStepX X H fa) s n) := by
   intro vals cm hrun
-  have hPrep : PrepareCorrect (valueSem F ⟨fa.k, af.slotBase⟩ X) vc vcp := by
+  have hPrep : PrepareCorrect (valueSem F ⟨fa.k, af.slotBase⟩ X) (skipStage f vc) vcp := by
     intro a w
-    obtain ⟨hr, ht⟩ := prune_correct (vc := vc)
+    obtain ⟨hr, ht⟩ := prune_correct (vc := skipStage f vc)
       (fun _ _ _ _ _ _ hp he => valueSem_pure hp he) (valueSem_cmpOverwrite _ _ _) a w
     obtain ⟨pr, pt⟩ := prepareCorrect_of_check (driverSem_valueSem F ⟨fa.k, af.slotBase⟩ X)
       hc.prepOk a w
     exact ⟨fun _ _ _ he => pr _ _ _ (hr _ _ _ he), fun _ he => pt _ (ht _ he)⟩
-  have hI := iselSim_relW_cleanup_validated hsub hc hX hXI hsym hslot (fun _ => 0) hcs hrel hargs htr fuel
+  have hI := iselSim_relW_cleanup_validated_stage hsub hc hX hXI hsym hslot (fun _ => 0) hcs hrel
+    hargs htr fuel
   have hM6 : ∀ (w₀ : Arm.ArmState) (H : ArmHooks) (G : BitVec 64 → Prop) (base ra : BitVec 64)
       (s : Arm.ArmState), ActEntry vcp rf af fa fb K F G X H base ra s w₀ → _ :=
     fun w₀ H G base ra s he => by
@@ -818,7 +966,7 @@ theorem backend_correct_world_ni_value_validated {p : Clif.Program} {f : Clif.Fu
   obtain ⟨us, outs, w, hv, hus, hlen, hhold, hmemR⟩ := hI.1 vals cm hrun
   have hrs : vc.RetsSite us := by
     obtain ⟨b, k, ρ, w₁, vb, ops, outs', -, hvb, hk, -⟩ := hv
-    exact ⟨b, vb, k, hvb, hk⟩
+    exact retsSite_of_skipStage ⟨b, vb, k, hvb, hk⟩
   refine ⟨us, outs, w, hus, hlen, hhold, hmemR, hrs, fun H G base ra s he => ?_,
     fun hNI hTls D w₀' hrel' hsw hreg hstk H G base ra s he => ?_⟩
   · have hP := hPrep
@@ -826,7 +974,8 @@ theorem backend_correct_world_ni_value_validated {p : Clif.Program} {f : Clif.Fu
     obtain ⟨n, h1, h2, h3, h4, h5, h6, h7⟩ := (hM6 w₀ H G base ra s he).1 us outs w
       (vReturns_gotV_value (hP.1 _ _ _ hv))
     exact ⟨n, ⟨h1, h2, h3, h4, h5, h6⟩, h7⟩
-  · obtain ⟨us', outs', w1, w2, hv1, hv2, hsw12⟩ := vcode_ni_value_validated hsub hc hX hXI hsym hslot hNI hTls
+  · obtain ⟨us', outs', w1, w2, hv1, hv2, hsw12⟩ := vcode_ni_value_validated_stage hsub hc hX hXI
+      hsym hslot hNI hTls
       (fun _ => 0) hcs hrel hrel' hargs hsw hreg hstk htr fuel vals cm hrun
     obtain ⟨rfl, rfl, rfl⟩ := vRetFrom_det (vs := ⟨0, 0, fun _ => 0, w₀⟩) hv1 hv
     have hP := hPrep
@@ -873,14 +1022,15 @@ theorem backend_correct_worldX_cleanup_validated {p : Clif.Program} {f : Clif.Fu
           (∀ i < n, actGoodX vcp rf af fa fb base s X H K G (GotV vcp)
             (runX (ArmStepX X H fa) i s)) ∧
           ∀ m, Arm.r .ERR (runX (ArmStepX X H fa) (n + m + 1) s) ≠ .None) := by
-  have hPrep : PrepareCorrect (valueSem F ⟨fa.k, af.slotBase⟩ X) vc vcp := by
+  have hPrep : PrepareCorrect (valueSem F ⟨fa.k, af.slotBase⟩ X) (skipStage f vc) vcp := by
     intro a w
-    obtain ⟨hr, ht⟩ := prune_correct (vc := vc)
+    obtain ⟨hr, ht⟩ := prune_correct (vc := skipStage f vc)
       (fun _ _ _ _ _ _ hp he => valueSem_pure hp he) (valueSem_cmpOverwrite _ _ _) a w
     obtain ⟨pr, pt⟩ := prepareCorrect_of_check (driverSem_valueSem F ⟨fa.k, af.slotBase⟩ X)
       hc.prepOk a w
     exact ⟨fun _ _ _ he => pr _ _ _ (hr _ _ _ he), fun _ he => pt _ (ht _ he)⟩
-  have hI := iselSim_relW_cleanup_validated hsub hc hX hXI hsym hslot (fun _ => 0) hcs hrel hargs htr fuel
+  have hI := iselSim_relW_cleanup_validated_stage hsub hc hX hXI hsym hslot (fun _ => 0) hcs hrel
+    hargs htr fuel
   have hP := hPrep
     (fun _ => 0) w₀
   have hM6 : ∀ (H : ArmHooks) (G : BitVec 64 → Prop) (base ra : BitVec 64) (s : Arm.ArmState),
@@ -895,7 +1045,7 @@ theorem backend_correct_worldX_cleanup_validated {p : Clif.Program} {f : Clif.Fu
   · obtain ⟨us, outs, w, hv, hus, hlen, hhold, hmemR⟩ := hI.1 vals cm hrun
     have hrs : vc.RetsSite us := by
       obtain ⟨b, k, ρ, w₁, vb, ops, outs', -, hvb, hk, -⟩ := hv
-      exact ⟨b, vb, k, hvb, hk⟩
+      exact retsSite_of_skipStage ⟨b, vb, k, hvb, hk⟩
     refine ⟨us, outs, w, hus, hlen, hhold, hmemR, hrs, fun H G base ra s he => ?_⟩
     obtain ⟨n, ⟨h1, h2, h3, h4, h5, h6, h7⟩, h8⟩ :=
       (hM6 H G base ra s he).1 us outs w (vReturns_gotV_value (hP.1 _ _ _ hv))
@@ -945,14 +1095,15 @@ theorem backend_correct_world_niX_cleanup_validated {p : Clif.Program} {f : Clif
               ∀ i < n, actGoodX vcp rf af fa fb base s X H K G (GotV vcp)
                 (runX (ArmStepX X H fa) i s)) := by
   intro vals cm hrun
-  have hPrep : PrepareCorrect (valueSem F ⟨fa.k, af.slotBase⟩ X) vc vcp := by
+  have hPrep : PrepareCorrect (valueSem F ⟨fa.k, af.slotBase⟩ X) (skipStage f vc) vcp := by
     intro a w
-    obtain ⟨hr, ht⟩ := prune_correct (vc := vc)
+    obtain ⟨hr, ht⟩ := prune_correct (vc := skipStage f vc)
       (fun _ _ _ _ _ _ hp he => valueSem_pure hp he) (valueSem_cmpOverwrite _ _ _) a w
     obtain ⟨pr, pt⟩ := prepareCorrect_of_check (driverSem_valueSem F ⟨fa.k, af.slotBase⟩ X)
       hc.prepOk a w
     exact ⟨fun _ _ _ he => pr _ _ _ (hr _ _ _ he), fun _ he => pt _ (ht _ he)⟩
-  have hI := iselSim_relW_cleanup_validated hsub hc hX hXI hsym hslot (fun _ => 0) hcs hrel hargs htr fuel
+  have hI := iselSim_relW_cleanup_validated_stage hsub hc hX hXI hsym hslot (fun _ => 0) hcs hrel
+    hargs htr fuel
   have hM6 : ∀ (w₀ : Arm.ArmState) (H : ArmHooks) (G : BitVec 64 → Prop) (base ra : BitVec 64)
       (s : Arm.ArmState), ActEntry vcp rf af fa fb K F G X H base ra s w₀ → _ :=
     fun w₀ H G base ra s he => by
@@ -965,7 +1116,7 @@ theorem backend_correct_world_niX_cleanup_validated {p : Clif.Program} {f : Clif
   obtain ⟨us, outs, w, hv, hus, hlen, hhold, hmemR⟩ := hI.1 vals cm hrun
   have hrs : vc.RetsSite us := by
     obtain ⟨b, k, ρ, w₁, vb, ops, outs', -, hvb, hk, -⟩ := hv
-    exact ⟨b, vb, k, hvb, hk⟩
+    exact retsSite_of_skipStage ⟨b, vb, k, hvb, hk⟩
   refine ⟨us, outs, w, hus, hlen, hhold, hmemR, hrs, fun H G base ra s he => ?_,
     fun hNI hTls D w₀' hrel' hsw hreg hstk H G base ra s he => ?_⟩
   · have hP := hPrep
@@ -973,7 +1124,8 @@ theorem backend_correct_world_niX_cleanup_validated {p : Clif.Program} {f : Clif
     obtain ⟨n, ⟨h1, h2, h3, h4, h5, h6, h7⟩, h8⟩ := (hM6 w₀ H G base ra s he).1 us outs w
       (vReturns_gotV_value (hP.1 _ _ _ hv))
     exact ⟨n, ⟨h1, h2, h3, h4, h5, h6⟩, h7, h8⟩
-  · obtain ⟨us', outs', w1, w2, hv1, hv2, hsw12⟩ := vcode_ni_value_validated hsub hc hX hXI hsym hslot hNI hTls
+  · obtain ⟨us', outs', w1, w2, hv1, hv2, hsw12⟩ := vcode_ni_value_validated_stage hsub hc hX hXI
+      hsym hslot hNI hTls
       (fun _ => 0) hcs hrel hrel' hargs hsw hreg hstk htr fuel vals cm hrun
     obtain ⟨rfl, rfl, rfl⟩ := vRetFrom_det (vs := ⟨0, 0, fun _ => 0, w₀⟩) hv1 hv
     have hP := hPrep

@@ -79,7 +79,7 @@ theorem deletes_of_check {vc : VCode} {mask : Nat → List Bool} (h : deleteChec
     · cases hcfg
   · have h3 := (hb b vb hvb).1.2 (i, true)
       (mem_zip_of (by rw [Array.getElem?_toList]; exact hi) hm)
-    simp only [Bool.not_true, Bool.false_or, List.all_eq_true, Bool.not_eq_true'] at h3
+    simp only [↓reduceIte, List.all_eq_true, Bool.not_eq_true'] at h3
     intro hd
     have h5 : (deadDefs vc mask).contains u = true := List.contains_iff_mem.mpr hd
     rw [h3 u (by rw [useNums_eq]; exact hu)] at h5
@@ -90,6 +90,16 @@ theorem deletes_of_check {vc : VCode} {mask : Nat → List Bool} (h : deleteChec
     intro hd
     have : (deadDefs vc mask).contains n = true := List.contains_iff_mem.mpr hd
     rw [this] at h4; cases h4
+
+/-- **A deleted instruction is `skipDel`.** -/
+theorem skipDel_of_check {vc : VCode} {mask : Nat → List Bool} (h : deleteCheck vc mask = true)
+    {b k : Nat} {vb : VBlock} {i : MInst} (hvb : vc.blocks[b]? = some vb)
+    (hi : vb.insts[k]? = some i) (hm : (mask b)[k]? = some false) : skipDel i = true := by
+  unfold deleteCheck at h
+  simp only [Bool.and_eq_true, List.all_eq_true] at h
+  have h3 := (h.1 (vb, b) (mem_zipIdx_of (by rw [Array.getElem?_toList]; exact hvb))).1.2 (i, false)
+    (mem_zip_of (by rw [Array.getElem?_toList]; exact hi) hm)
+  simpa using h3
 
 /-! ## The mask of the skipped statements -/
 
@@ -540,6 +550,61 @@ theorem pos_of_drop_eq {b j : Nat} {B : Clif.Block} (hB : f.blocks[b]? = some B)
       simp [hz m (by omega)]
   rw [hsum j (Nat.le_refl _), Nat.add_zero]
 
+/-- The entry state's position is the entry code's length. -/
+theorem entry_pos {W : Type} {MRW : MemRelTW W} {cs : Clif.State} {B0 : Clif.Block}
+    (hB0 : f.blocks[0]? = some B0) (hbody : cs.frame.body = B0.body) {k : Nat}
+    {ρ : Nat → CV} {w : W} (hm : Match f ctx R gn bl A MRW slots cs ⟨0, k, ρ, w⟩) :
+    k = (pre f R 0).length := by
+  obtain ⟨-, -, -, -, B, j, hB, -, -, hbd, hk', -⟩ := hm
+  rw [hB0] at hB; cases hB
+  simp only at hk'
+  rw [hk', pos_of_drop_eq hB0 (by rw [← hbd, hbody])]
+
+/-- `Deletes` for the empty set: the deletion facts without the read condition. -/
+theorem Deletes.exact {G : Nat → Prop} {mask : Nat → List Bool} (hD : Deletes vc vcK mask G) :
+    Deletes vc vcK mask (fun _ => False) :=
+  ⟨hD.blk, hD.len, hD.last, hD.cfg, fun _ _ _ _ _ _ _ _ _ h => h, fun _ _ _ _ _ _ _ h => h⟩
+
+/-- **The entry code runs unchanged in the kept code** (it is kept whole): a run of `vc` through
+the entry code is a run of `vcK` to the kept index, with the same vreg file and world. -/
+theorem entry_runK {W : Type} {sw : ISem CV W} (hK : SkipHyp f vc R bl drop vcK)
+    {B0 : Clif.Block} (hB0 : f.blocks[0]? = some B0) {k : Nat} (hk : k = (pre f R 0).length)
+    {ρ₀ ρ₁ : Nat → CV} {w₀ w₁ : W}
+    (hstar : StarP (VStep vc sw) (AtSeg 0 0 k) (.run ⟨0, 0, ρ₀, w₀⟩) (.run ⟨0, k, ρ₁, w₁⟩)) :
+    Star (VStep vcK sw) (.run ⟨0, 0, ρ₀, w₀⟩)
+      (.run ⟨0, kidx (skipMask f R bl vc drop 0) k, ρ₁, w₁⟩) := by
+  obtain ⟨cK, hsK, hCK⟩ := starP_deletes hK.deletes.exact (fun b k' ρ w hz vb i _ _ => by
+      obtain ⟨t, ht, ρ', w', he⟩ := hz
+      simp only [VConf.run.injEq, VState.mk.injEq] at he
+      obtain ⟨rfl, rfl, -, -⟩ := he
+      exact skipMask_pre hB0 (by rw [← hk]; simpa using ht))
+    hstar (.run ⟨0, 0, ρ₀, w₀⟩) ⟨rfl, by simp, rfl, fun _ _ => rfl⟩
+  cases cK with
+  | run vsK =>
+    obtain ⟨b', k', ρK, wK⟩ := vsK
+    obtain ⟨hb, hk', hw, hρ⟩ := hCK
+    simp only at hb hk' hw hρ
+    subst hb hk' hw
+    have : ρK = ρ₁ := funext fun n => (hρ n id).symm
+    subst this
+    exact hsK
+  | ret _ _ => exact absurd hCK id
+  | halt _ => exact absurd hCK id
+
+/-- **The entry of the kept code**: from the entry run of `vc` (`entry_stepP`), the kept code's
+run to a state related by `MatchK`. -/
+theorem entry_matchK {W : Type} {sw : ISem CV W} {MRW : MemRelTW W}
+    (hK : SkipHyp f vc R bl drop vcK) {cs : Clif.State} {B0 : Clif.Block}
+    (hB0 : f.blocks[0]? = some B0) (hbody : cs.frame.body = B0.body) {k : Nat}
+    {ρ₀ ρ₁ : Nat → CV} {w₀ w₁ : W}
+    (hstar : StarP (VStep vc sw) (AtSeg 0 0 k) (.run ⟨0, 0, ρ₀, w₀⟩) (.run ⟨0, k, ρ₁, w₁⟩))
+    (hm : Match f ctx R gn bl A MRW slots cs ⟨0, k, ρ₁, w₁⟩) :
+    ∃ vsK, Star (VStep vcK sw) (.run ⟨0, 0, ρ₀, w₀⟩) (.run vsK) ∧
+      MatchK f ctx R gn bl A MRW slots (skipMask f R bl vc drop)
+        (DeadDef vc (skipMask f R bl vc drop)) cs vsK :=
+  ⟨_, entry_runK hK hB0 (entry_pos hB0 hbody hm) hstar, ⟨0, k, ρ₁, w₁⟩,
+    ⟨rfl, rfl, rfl, fun _ _ => rfl⟩, hm⟩
+
 /-- **The driver lemma for the kept code, with the ABI return values** (`driver_correct_abi` for
 `vcK`, the VCode without the unused statements). -/
 theorem driver_correct_abi_skip (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
@@ -557,24 +622,10 @@ theorem driver_correct_abi_skip (H : DriverHyp f vc ctx st0 R gn bl A sem MR env
     (hP : RunPrem env p f cs) {Q : List Clif.Val → Prop}
     (hQ : ∀ s sv, Reach env p cs s → s.frame.getMany (sretRet f) = .ok sv → Q sv) (fuel : Nat) :
     RunOkAbi vcK sem MR slots Q ⟨0, 0, ρ₀, w₀⟩ (Clif.runLoop env p fuel cs) := by
-  have hD := hK.deletes
   obtain ⟨k, ρ₁, w₁, hstar, hm⟩ := entry_stepP H hds hMem hMR hB0 hcall hfunc hslots hbody hterm
     hregs hty hsig hmr hargs (ρ₀ := ρ₀)
-  have hk : k = (pre f R 0).length := by
-    obtain ⟨-, -, -, -, B, j, hB, -, -, hbd, hk', -⟩ := hm
-    rw [hB0] at hB; cases hB
-    simp only at hk'
-    rw [hk', pos_of_drop_eq hB0 (by rw [← hbd, hbody])]
-  obtain ⟨cK, hsK, hCK⟩ := starP_deletes hD (fun b k' ρ w hz vb i _ _ => by
-      obtain ⟨t, ht, ρ', w', he⟩ := hz
-      simp only [VConf.run.injEq, VState.mk.injEq] at he
-      obtain ⟨rfl, rfl, -, -⟩ := he
-      exact skipMask_pre hB0 (by rw [← hk]; simpa using ht))
-    hstar (.run ⟨0, 0, ρ₀, w₀⟩) ⟨rfl, by simp, rfl, fun _ _ => rfl⟩
-  cases cK with
-  | run vsK => exact RunOkAbi.prefix hsK (sim_run_abiK hK H hP hQ fuel cs vsK (.refl _) ⟨_, hCK, hm⟩)
-  | ret _ _ => exact absurd hCK id
-  | halt _ => exact absurd hCK id
+  obtain ⟨vsK, hsK, hmK⟩ := entry_matchK hK hB0 hbody hstar hm
+  exact RunOkAbi.prefix hsK (sim_run_abiK hK H hP hQ fuel cs vsK (.refl _) hmK)
 
 /-- **The driver lemma for the kept code** (`driver_correct` for `vcK`). -/
 theorem driver_correct_skip (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)

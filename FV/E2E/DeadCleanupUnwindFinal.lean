@@ -2,7 +2,7 @@ import FV.E2E.DeadCleanupUnwind
 import FV.E2E.DeadCleanupUnwindIsel
 import FV.E2E.DeadCleanupUnwindRegLevel
 import FV.E2E.IselSimU
-import FV.Backend.Proof.LowerSimUCheck
+import FV.Backend.Proof.CleanupStageU
 import FV.E2E.DeadCleanupFinal
 
 /-!
@@ -31,6 +31,41 @@ the exceptional edge, layer for layer:
 namespace E2E
 
 open Backend Backend.Proof Backend.Proof.Driver Backend.DeadCleanup Backend.Proof.UnwindTables
+
+/-- **CLIF → VCode with unwinding for `vc` or its kept code** (`iselSimU_of_driver`, through
+`driver_correctU_stage`). -/
+theorem iselSimU_of_driver_stage {f : Clif.Function} {vc vcK : VCode} {ctx : Ctx} {st0 : LState}
+    {R : Reg → Reg} {gn : Nat → Nat} {bl : List BLow} {A : Nat → Nat → List Clif.ValueId}
+    {drop : Nat → Nat → Bool}
+    {sem : Sem} {X : ExtSem} {XR : XRaise} {Γ : Rel} {env : Clif.XEnv} {p : Clif.Program}
+    (H : DriverHyp f vc ctx st0 R gn bl A sem (fun sl cm w => Γ.holds f sl cm w) env.toEnv p)
+    (HU : UnwShape f vc ctx R gn bl A) (hsk : vcK = vc ∨ SkipHyp f vc R bl drop vcK)
+    (hds : DriverSem sem) (hRef : Refines Γ.F sem)
+    (hMem : MemRefines Γ.F Γ.slotOff Γ.syms sem) (hRS : RaiseSem Γ.F X XR sem)
+    (hstk : CallsStack f Γ.out) (htstk : TryStack f Γ.out)
+    (hXR : XRaiseOk env (f.externs.map (·.2)) (fun sl cm w => Γ.holds f sl cm w) X XR)
+    (hXRi : XRaiseIndOk env (indSigs f) (fun sl cm w => Γ.holds f sl cm w) X XR)
+    (hsym : ∀ n b, Γ.syms n = some b → X.sym n 0 = BitVec.ofNat 64 b) :
+    IselSimU sem XR Γ env p f vcK := by
+  have HR : RaiseHyp f sem (fun sl cm w => Γ.holds f sl cm w) env Γ.F X XR Γ.slotOff Γ.syms
+      Γ.out :=
+    ⟨hRS, hRef, hMem, mrStable_holds Γ f, outArgsOk_holds Γ f, memRelOk_holds Γ f, hstk, htstk,
+      hXR, hXRi, hsym, fun sl cm w h => (memRelOk_holds Γ f).symbols sl cm w h⟩
+  intro args cs w₀ ρ₀ hce hrel hargs htr fuel
+  obtain ⟨B0, hent, hbody, hterm, hty, hregs⟩ := hce.entry
+  have hB0 : f.blocks[0]? = some B0 := by
+    simpa [Clif.Function.entry?, List.head?_eq_getElem?] using hent
+  have hrun := driver_correctU_stage H HU HR hsk hds hB0 hce.callers hce.func rfl hbody hterm hregs
+    hty.symm hce.sig (ρ₀ := ρ₀) hrel hargs htr fuel
+  refine ⟨fun vals cm h => ?_, fun c h => ?_, fun e cm h => ?_⟩
+  · rw [h] at hrun
+    obtain ⟨us, outs, w, cm0, hret, h1, h2, h3, h4, h5⟩ := hrun
+    exact ⟨us, outs, w, hret, h1, h2, h3, h5 ▸ memRel_leave (memRel_free h4.1 _)⟩
+  · rw [h] at hrun
+    exact hrun
+  · rw [h] at hrun
+    obtain ⟨obj, w, cm0, hu, hex, h4, h5⟩ := hrun
+    exact ⟨obj, w, hu, hex, h5 ▸ memRel_leave (memRel_free h4.1 _)⟩
 
 /-- **`backend_correct_cleanup_ex` with unwinding**: any semantics with the M4 facts, the
 raising-call facts (`RaiseSem`) and pure producers that keep the world. -/
@@ -80,10 +115,10 @@ theorem backend_correct_cleanup_exU {p : Clif.Program} {f : Clif.Function} {k : 
     (hrel : Rel.holds ⟨F s, syms, slotOff, out⟩ f cs.frame.slots cs.mem w₀)
     (htr : TrapsExplicitX env p cs) (fuel : Nat) :
     ArmRefinesU fb base ra astep s (Clif.runLoopX env p fuel cs.toX) := by
-  obtain ⟨ctx, st0, R, gn, bl, A, hshape, hcert, hbr, hUs⟩ := loweringU_of_check hlU
-  refine backend_correct_cleanup_layersU_ex hc (fun s' => iselSimU_of_driver (ctx := ctx)
-      (st0 := st0) (R := R) (gn := gn) (bl := bl) (A := A) ?_ hUs (hds s') (hRef s') (hmem s')
-      (hRS s') (callsStack_mono (callsStack_of_check hc.lowerOk) houtB)
+  obtain ⟨ctx, st0, R, gn, bl, A, hshape, hcert, hbr, hUs, hsk⟩ := skipStage_specU hlU
+  refine backend_correct_cleanup_layersU_ex hc (fun s' => iselSimU_of_driver_stage (ctx := ctx)
+      (st0 := st0) (R := R) (gn := gn) (bl := bl) (A := A) ?_ hUs hsk (hds s') (hRef s')
+      (hmem s') (hRS s') (callsStack_mono (callsStack_of_check hc.lowerOk) houtB)
       (tryStack_mono (tryStack_of_check hc.lowerOk) houtB) (hXR s') (hXRi s') (hsym s'))
     hds hPure hCmp hM6 hent hres hbe hargs hargF hcs hrel htr fuel
   exact {
@@ -108,7 +143,7 @@ theorem backend_correct_cleanup_exU {p : Clif.Program} {f : Clif.Function} {k : 
     tryIndSig := tryIndSig_of_subset hsub
     cfg := by
       obtain ⟨ss, ps, he⟩ := cfg_of_prepare hc.prepare
-      exact ⟨ss, ps, (prune_cfg vc).symm.trans he⟩ }
+      exact ⟨ss, ps, (cleanupStage_cfg f vc).symm.trans he⟩ }
 
 /-- **`backend_correct_of_rules_cleanup_ex` with unwinding**: the terminator and `try_call`
 premises from the rules. -/

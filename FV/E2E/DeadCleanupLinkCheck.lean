@@ -4,17 +4,17 @@ namespace E2E.LinkCheck
 open Backend Backend.Proof Backend.Proof.Driver
 
 def pipeCleanup (f : Clif.Function) (k : Nat) (base : BitVec 64) (o : Lean.Json) : Except String Art :=
-  pipeWithLowering Backend.Stock.D0.defaultLower (fun _ => DeadCleanup.prune) f k base o
+  pipeWithLowering Backend.Stock.D0.defaultLower cleanupStage f k base o
 
 theorem pipeCleanup_spec {f : Clif.Function} {k : Nat} {base : BitVec 64} {o : Lean.Json} {a : Art}
     (h : pipeCleanup f k base o = .ok a) :
-    lowerFunction f = .ok a.vc ∧ prepare (DeadCleanup.prune a.vc) = .ok a.vcp ∧ lowerRFunc a.vcp a.rf = .ok a.af ∧
+    lowerFunction f = .ok a.vc ∧ prepare (cleanupStage f a.vc) = .ok a.vcp ∧ lowerRFunc a.vcp a.rf = .ok a.af ∧
       emitFunc a.k a.af = .ok a.fa ∧ a.fa.layout = .ok a.fb ∧ a.k = k ∧ a.base = base := by
   unfold pipeCleanup pipeWithLowering at h
   rw [Backend.Stock.D0.defaultLower_eq_legacy] at h
   rcases h1 : lowerFunction f with _ | vc <;> simp only [h1, bind, Except.bind] at h
   · cases h
-  rcases h2 : prepare (DeadCleanup.prune vc) with _ | vcp <;> simp only [h2] at h
+  rcases h2 : prepare (cleanupStage f vc) with _ | vcp <;> simp only [h2] at h
   · cases h
   rcases h3 : parseRAOut o with _ | o' <;> simp only [h3] at h
   · cases h
@@ -34,11 +34,11 @@ loaded at `base`: `lowerFunction`, `prepare`, `lowerAllocReady` (regalloc2's all
 accepted and emittable, else the spill allocation), `emitFunc`, `layout`. The artifact's
 allocation is the one lowered, `allocResult vcp (readyAnswer vcp ra)` (`lowerAllocReady_eq`). -/
 def pipeCleanupT (f : Clif.Function) (k : Nat) (base : BitVec 64) (o : Lean.Json) : Except String Art :=
-  pipeTWithLowering Backend.Stock.D0.defaultLower (fun _ => DeadCleanup.prune) f k base o
+  pipeTWithLowering Backend.Stock.D0.defaultLower cleanupStage f k base o
 
 theorem pipeCleanupT_spec {f : Clif.Function} {k : Nat} {base : BitVec 64} {o : Lean.Json} {a : Art}
     (h : pipeCleanupT f k base o = .ok a) :
-    lowerFunction f = .ok a.vc ∧ prepare (DeadCleanup.prune a.vc) = .ok a.vcp ∧
+    lowerFunction f = .ok a.vc ∧ prepare (cleanupStage f a.vc) = .ok a.vcp ∧
       a.rf = allocResult a.vcp (readyAnswer a.vcp (raAnswer a.vcp o)) ∧
       lowerRFunc a.vcp a.rf = .ok a.af ∧ emitFunc a.k a.af = .ok a.fa ∧ a.fa.layout = .ok a.fb ∧
       a.k = k ∧ a.base = base := by
@@ -46,7 +46,7 @@ theorem pipeCleanupT_spec {f : Clif.Function} {k : Nat} {base : BitVec 64} {o : 
   rw [Backend.Stock.D0.defaultLower_eq_legacy] at h
   rcases h1 : lowerFunction f with _ | vc <;> simp only [h1, bind, Except.bind] at h
   · cases h
-  rcases h2 : prepare (DeadCleanup.prune vc) with _ | vcp <;> simp only [h2] at h
+  rcases h2 : prepare (cleanupStage f vc) with _ | vcp <;> simp only [h2] at h
   · cases h
   rcases h3 : lowerAllocReady vcp (raAnswer vcp o) with _ | af <;> simp only [h3] at h
   · cases h
@@ -58,7 +58,7 @@ theorem pipeCleanupT_spec {f : Clif.Function} {k : Nat} {base : BitVec 64} {o : 
   exact ⟨rfl, h2, rfl, lowerAlloc_eq ((lowerAllocReady_eq _ _).symm.trans h3), h4, h5, rfl, rfl⟩
 
 
-/-- The same allocator choice as the legacy checker, with cleanup before prepare. -/
+/-- The same allocator choice as the legacy checker, with the cleanup stage before prepare. -/
 def LinkInput.pipeCleanupOf (I : LinkInput) (fi : FnInput) : Except String Art :=
   cond I.fallback pipeCleanupT pipeCleanup fi.func fi.k
     (BitVec.ofNat 64 (I.baseOf fi.func.name)) (raJ fi.ra fi.j)
@@ -67,7 +67,7 @@ def LinkInput.resultsCleanup (I : LinkInput) : Res :=
   I.funcs.map fun fi => (fi.func, I.pipeCleanupOf fi)
 
 theorem resultsCleanup_ok (I : LinkInput) :
-    ResOkWith (fun _ => DeadCleanup.prune) I I.resultsCleanup := by
+    ResOkWith cleanupStage I I.resultsCleanup := by
   intro e he a ha
   obtain ⟨fi, _, rfl⟩ := List.mem_map.1 he
   cases hfb : I.fallback <;>
@@ -77,19 +77,19 @@ theorem resultsCleanup_ok (I : LinkInput) :
   · obtain ⟨hl, hp, _, hlr, hem, hla, _, hb⟩ := pipeCleanupT_spec ha
     exact ⟨hl, hp, hlr, hem, hla, hb⟩
 
-def okBCleanup (I : LinkInput) : Bool := okRWith (fun _ => DeadCleanup.prune) I I.resultsCleanup
+def okBCleanup (I : LinkInput) : Bool := okRWith cleanupStage I I.resultsCleanup
 
 theorem okBCleanup_global {I : LinkInput} (h : okBCleanup I = true)
     (c : String × Bool) (hc : c ∈ globalChks I (progOf I.resultsCleanup) (tabOf I.resultsCleanup)) :
-    c.2 = true := okRWith_global (fun _ => DeadCleanup.prune) h c hc
+    c.2 = true := okRWith_global cleanupStage h c hc
 
 theorem okBCleanup_names {I : LinkInput} (h : okBCleanup I = true) :
-    ((progOf I.resultsCleanup).funcs.map (·.name)).Nodup := okRWith_names (fun _ => DeadCleanup.prune) h
+    ((progOf I.resultsCleanup).funcs.map (·.name)).Nodup := okRWith_names cleanupStage h
 
 theorem factsCleanup {I : LinkInput} (h : okBCleanup I = true) {g : Clif.Function}
     (hg : g ∈ (progOf I.resultsCleanup).funcs) :
-    FactsWith (fun _ => DeadCleanup.prune) I I.resultsCleanup g (artOf I.resultsCleanup g) :=
-  factsRWith (fun _ => DeadCleanup.prune) (resultsCleanup_ok I) h hg
+    FactsWith cleanupStage I I.resultsCleanup g (artOf I.resultsCleanup g) :=
+  factsRWith cleanupStage (resultsCleanup_ok I) h hg
 
 def LinkSys.ofInputCleanup (I : LinkInput) (B : BaseEnv) (F : BitVec 64 → Prop) : LinkSys :=
   ofRes I I.resultsCleanup B F
@@ -100,7 +100,7 @@ theorem okBCleanup_sound {I : LinkInput} (hI : okBCleanup I = true) {B : BaseEnv
     {F : BitVec 64 → Prop} (hB : BaseOk (LinkSys.ofInputCleanup I B F))
     (hF : ∀ a, (LinkSys.ofInputCleanup I B F).Img a → F a) :
     (LinkSys.ofInputCleanup I B F).Ok :=
-  okRWith_sound (fun _ => DeadCleanup.prune) (.inr rfl) (resultsCleanup_ok I) hI hB hF
+  okRWith_sound cleanupStage (.inr rfl) (resultsCleanup_ok I) hI hB hF
 
 /-- The legacy crate statement with the cleanup pipeline's concrete artifacts. -/
 def CrateStmtCleanup (I : LinkInput) (n : String) : Prop :=
@@ -125,7 +125,7 @@ def fnsBCleanup (I : LinkInput) (fs : List FnInput) : Bool :=
   let R := I.resultsCleanup
   let P := progOf R
   let T := tabOf R
-  fs.all fun fi => (chksWith (fun _ => DeadCleanup.prune) I P T fi.func (I.pipeCleanupOf fi)).all (·.2)
+  fs.all fun fi => (chksWith cleanupStage I P T fi.func (I.pipeCleanupOf fi)).all (·.2)
 
 theorem fnsBCleanup_append (I : LinkInput) (l₁ l₂ : List FnInput) :
     fnsBCleanup I (l₁ ++ l₂) = (fnsBCleanup I l₁ && fnsBCleanup I l₂) := by

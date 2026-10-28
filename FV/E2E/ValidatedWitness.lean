@@ -80,7 +80,7 @@ def source : Clif.Function :=
     blocks := [{ id := 0, body := [{ results := [0], inst := .tlsValue .i64 0 }], term := .ret [0] }] }
 def vc : VCode := (lowerFunction source).toOption.getD default
 def vcp (cleanup : Bool) : VCode :=
-  (Backend.prepare (if cleanup then prune vc else vc)).toOption.getD default
+  (Backend.prepare (if cleanup then cleanupStage source vc else vc)).toOption.getD default
 def rf (cleanup : Bool) : RFunc := spillAlloc (vcp cleanup)
 def af (cleanup : Bool) : AFunc := (lowerRFunc (vcp cleanup) (rf cleanup)).toOption.getD default
 def fa (cleanup : Bool) : FnAsm := (emitFunc 0 (af cleanup)).toOption.getD default
@@ -88,7 +88,7 @@ def fb (cleanup : Bool) : FnBin := (fa cleanup).layout.toOption.getD default
 
 def checks (cleanup : Bool) : Bool :=
   dominatedB source && lowerScopeB source && (lowerFunction source).toBool &&
-  (Backend.prepare (if cleanup then prune vc else vc)).toBool &&
+  (Backend.prepare (if cleanup then cleanupStage source vc else vc)).toBool &&
   (checkAlloc (vcp cleanup) (rf cleanup)).toBool &&
   (lowerRFunc (vcp cleanup) (rf cleanup)).toBool &&
   (emitFunc 0 (af cleanup)).toBool && (fa cleanup).layout.toBool && (vcp cleanup).hasTls

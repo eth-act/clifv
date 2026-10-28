@@ -13,14 +13,14 @@ structure CompilerInput extends LinkInput where
   cleanup : Bool := true
 instance : Coe CompilerInput LinkInput := ⟨CompilerInput.toLinkInput⟩
 def CompilerInput.stage (I : CompilerInput) : Clif.Function → VCode → VCode :=
-  fun _ => cond I.cleanup DeadCleanup.prune id
+  fun f => cond I.cleanup (cleanupStage f) id
 def CompilerInput.results (I : CompilerInput) : Res :=
   I.toLinkInput.resultsWithLowering I.lower I.stage
 
 def okB (I : CompilerInput) : Bool := okRWith I.stage I.toLinkInput I.results
 
 theorem stage_cases (I : CompilerInput) :
-    I.stage = (fun _ => id) ∨ I.stage = (fun _ => DeadCleanup.prune) := by
+    I.stage = (fun _ => id) ∨ I.stage = cleanupStage := by
   cases hc : I.cleanup with
   | false => exact .inl (by unfold CompilerInput.stage; rw [hc]; rfl)
   | true => exact .inr (by unfold CompilerInput.stage; rw [hc]; rfl)

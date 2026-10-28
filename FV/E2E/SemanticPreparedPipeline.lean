@@ -101,7 +101,7 @@ theorem semanticPreparedIndFacts (stage : Clif.Function → VCode → VCode) {I 
   revert hb8
   cases hb : sigParamBytes h'.sig <;> simp
 
-theorem semanticPreparedResults_sound (stage : Clif.Function → VCode → VCode) {I : LinkInput} {R : Res} (hstage : stage = (fun _ => id) ∨ stage = (fun _ => DeadCleanup.prune)) (hR : PreparedResults stage I R) (hI : okRSemanticNI stage I R = true) {B : BaseEnv}
+theorem semanticPreparedResults_sound (stage : Clif.Function → VCode → VCode) {I : LinkInput} {R : Res} (hstage : stage = (fun _ => id) ∨ stage = cleanupStage) (hR : PreparedResults stage I R) (hI : okRSemanticNI stage I R = true) {B : BaseEnv}
     {F : BitVec 64 → Prop} (hB : BaseOk (ofRes I R B F)) (hF : ∀ a, (ofRes I R B F).Img a → F a) :
     (ofRes I R B F).OkSemanticNI := by
   have hn := okRSemanticNI_names stage hI

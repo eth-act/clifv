@@ -1,6 +1,7 @@
 import FV.E2E.DeadCleanupTrapCall
 import FV.E2E.TrapCallTryPrep
 import FV.E2E.RegLevelTrapCallTry
+import FV.E2E.TrapCallTryStopSkip
 
 /-!
 # The shipped compiler's per-function theorem with callee traps, `try_call`s included (S9b, #375)
@@ -86,7 +87,7 @@ theorem backend_correct_final_cleanup_trapcallT {p : Clif.Program} {f : Clif.Fun
   have hicallsR := indCallsRefine_valueSemU (F := Γ.F) (ctx := fctx)
     (xCallsIndOk_trapEnv (c := c) (hXI s)) hsym (fun _ _ _ h => h.1.symbols) hexcl
   -- CLIF → VCode up to the trapping step, on the proof device `trapEnv env c`
-  obtain ⟨ctx, st0, R, gn, bl, A, hshape, hcert, hbr, hUs⟩ := loweringU_of_check hlU
+  obtain ⟨ctx, st0, R, gn, bl, A, hshape, hcert, hbr, hUs, hsk⟩ := skipStage_specU hlU
   have HD : DriverHyp f vc ctx st0 R gn bl A (valueSemU Γ.F fctx X (xrT XT))
       (fun sl cm w => Γ.holds f sl cm w) (trapEnv env c).toEnv p :=
     { shape := hshape
@@ -112,7 +113,7 @@ theorem backend_correct_final_cleanup_trapcallT {p : Clif.Program} {f : Clif.Fun
       tryIndSig := tryIndSig_of_subset hsub
       cfg := by
         obtain ⟨ss, ps, he⟩ := cfg_of_prepare hc.prepare
-        exact ⟨ss, ps, (prune_cfg vc).symm.trans he⟩ }
+        exact ⟨ss, ps, (cleanupStage_cfg f vc).symm.trans he⟩ }
   have HR : RaiseHyp f (valueSemU Γ.F fctx X (xrT XT)) (fun sl cm w => Γ.holds f sl cm w)
       (trapEnv env c) Γ.F X (xrT XT) Γ.slotOff Γ.syms Γ.out :=
     ⟨raiseSem_valueSemU _ _ _ _, hRef, hMem, mrStable_holds Γ f, outArgsOk_holds Γ f,
@@ -129,15 +130,15 @@ theorem backend_correct_final_cleanup_trapcallT {p : Clif.Program} {f : Clif.Fun
     hargs (stackArgsAvoid_frameWCleanupA hc hres hent hargs)
   -- `prune` + `prepare`
   have hPrep := prepareCorrectU_cleanup_value hc Γ.F fctx X (xrT XT)
-  rcases driver_trapStop (slots := cs.frame.slots) (ρ₀ := ρ₀) hp HD (hUs) HR
+  rcases driver_trapStop_stage (slots := cs.frame.slots) (ρ₀ := ρ₀) hp HD (hUs) HR hsk
       (driverSem_valueSemU Γ.F fctx X (xrT XT)) hB0 hcs.callers hcs.func rfl hbody hterm hregs
       hty.symm hcs.sig hrel hargsE htr hrun with h | ⟨obj, w', h⟩ | h
   · exact hR1 c ((hPrep.1 _ _).2 c h)
   · obtain ⟨n, hn⟩ := hR2 obj w' (hPrep.2 _ _ _ _ h)
     exact ⟨n, .inr hn⟩
-  · obtain ⟨n, hn⟩ := hR3 (tryRaise_cleanup (driverSem_valueSemU Γ.F fctx X (xrT XT))
-      (fun _ _ _ _ _ _ hp' h' => valueSemU_pure hp' h') (valueSemU_cmpOverwrite _ _ _ _)
-      hc.prepOk (xrT XT) h)
+  · obtain ⟨n, hn⟩ := hR3 (tryRaise_cleanup (vc := skipStage f vc)
+      (driverSem_valueSemU Γ.F fctx X (xrT XT))
+      (fun _ _ _ _ _ _ hp' h' => valueSemU_pure hp' h') (valueSemU_cmpOverwrite _ _ _ _) hc.prepOk (xrT XT) h)
     exact ⟨n, .inr hn⟩
 
 end E2E

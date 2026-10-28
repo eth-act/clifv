@@ -76,11 +76,12 @@ theorem backend_correct_worldX_cleanup_memtrapW {p : Clif.Program} {f : Clif.Fun
   have hpr : ∀ i us w outs w' ctl, pureForm i = true →
       valueSem F ⟨fa.k, af.slotBase⟩ X i us w = some (outs, w', ctl) → w' = w ∧ ctl = .next :=
     fun _ _ _ _ _ _ hp he => valueSem_pure hp he
-  rcases iselSim_relW_cleanup_memtrap hsub hc hX hXI hsym hslot (fun _ => 0) hcs hrel hargs htr
+  rcases iselSim_relW_cleanup_memtrap_stage hsub hc hX hXI hsym hslot (fun _ => 0) hcs hrel hargs
+    htr
     hmf fuel c' hrun with ht | ht
-  · have hP : PrepareCorrect (valueSem F ⟨fa.k, af.slotBase⟩ X) vc vcp := by
+  · have hP : PrepareCorrect (valueSem F ⟨fa.k, af.slotBase⟩ X) (skipStage f vc) vcp := by
       intro a w
-      obtain ⟨hr, ht⟩ := prune_correct (vc := vc) hpr (valueSem_cmpOverwrite _ _ _) a w
+      obtain ⟨hr, ht⟩ := prune_correct (vc := skipStage f vc) hpr (valueSem_cmpOverwrite _ _ _) a w
       obtain ⟨pr, pt⟩ := prepareCorrect_of_check (driverSem_valueSem F ⟨fa.k, af.slotBase⟩ X)
         hc.prepOk a w
       exact ⟨fun _ _ _ he => pr _ _ _ (hr _ _ _ he), fun _ he => pt _ (ht _ he)⟩

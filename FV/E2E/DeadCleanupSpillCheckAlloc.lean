@@ -1,18 +1,20 @@
 import FV.E2E.SpillCheckAlloc
 import FV.E2E.DeadCleanupAlloc
 import FV.Backend.Proof.DeadCleanupPreparedAvailability
+import FV.Backend.Proof.CleanupStageAvail
 
 namespace E2E
 open Backend Backend.Proof Backend.Proof.Driver Backend.DeadCleanup
 
+/-- (`hp` is about the production cleanup stage `cleanupStage f vc`, formerly `prune vc`.) -/
 theorem spillCheckAlloc_sets_cleanup {p : Clif.Program} {f : Clif.Function}
     {vc vcp : VCode} (hsub : InSubset p f) (har : Spill.ArityOk f) (hd : Dominated f)
-    (hs : LowerScope f) (hl : lowerFunction f = .ok vc) (hp : Backend.prepare (DeadCleanup.prune vc) = .ok vcp)
+    (hs : LowerScope f) (hl : lowerFunction f = .ok vc) (hp : Backend.prepare (cleanupStage f vc) = .ok vcp)
     (hDs : ∃ D, Spill.SpillAvail vcp D ∧ ∀ v, D 0 v = false) :
     checkAlloc vcp (spillAlloc vcp) = .ok () := by
   obtain ⟨D, hav, hD0⟩ := hDs
   have hloc := spillLocal_cleanup hsub har hd hs hl hp
-  have hdom := DeadCleanup.prune_prepDomain (prepDomain_of_lower hs hl hs.nonempty)
+  have hdom := cleanupStage_prepDomain f (prepDomain_of_lower hs hl hs.nonempty)
   obtain ⟨succs, preds, hcfg⟩ := Spill.cfg_ok_of_prepare hp hdom
   have hE := hloc.2.2 succs preds hcfg
   have hN : Spill.stN vcp = 128 + 2 * (spillAlloc vcp).spillSlots := by
@@ -67,26 +69,34 @@ theorem spillCheckAlloc_sets_cleanup {p : Clif.Program} {f : Clif.Function}
       cases hv
 
 /-- The old definite-assignment hypothesis supplies an empty-entry witness for
-cleanup, rather than introducing a new hypothesis about the cleaned pipeline. -/
+cleanup, rather than introducing a new hypothesis about the cleaned pipeline. (About the
+production cleanup stage's prepared code `stagePrepared f vc vcp`, formerly
+`preparedCleanup vc vcp`: the compiler now runs Cranelift's skip first.) -/
 theorem spillDefined_cleanup (hD : SpillDefinedHyp) {p : Clif.Program} {f : Clif.Function}
     {vc vcp : VCode} (hsub : InSubset p f) (har : Spill.ArityOk f) (hd : Dominated f)
     (hs : LowerScope f) (hen : Spill.entryParamsB f = true) (hl : lowerFunction f = .ok vc)
     (hp : Backend.prepare vc = .ok vcp) :
-    ∃ D, Spill.SpillAvail (preparedCleanup vc vcp) D ∧ ∀ v, D 0 v = false := by
+    ∃ D, Spill.SpillAvail (stagePrepared f vc vcp) D ∧ ∀ v, D 0 v = false := by
   obtain ⟨D, hav, hD0⟩ := hD p f vc vcp hsub har hd hs hen hl hp
-  exact ⟨restrictedD vc D,
-    preparedCleanup_spillAvail (prepDomain_of_lower hs hl hs.nonempty)
-      (Spill.classesOkM_lower hs hl) hp D hav,
-    restrictedD_entry_empty vc D hD0⟩
+  have hdom := prepDomain_of_lower hs hl hs.nonempty
+  obtain ⟨D', hav', hD0'⟩ :=
+    skipPrepared_spillAvail (f := f) hdom (Spill.classesOkM_lower hs hl) hp hav hD0
+  have hps : Backend.prepare (skipStage f vc) = .ok (mapBlocks (skipBlock (stageMask f vc)) vcp) := by
+    rw [prepare_skipStage, hp]; rfl
+  exact ⟨restrictedD (skipStage f vc) D',
+    preparedCleanup_spillAvail (skipStage_prepDomain f hdom)
+      (skipStage_classes f (Spill.classesOkM_lower hs hl)) hps D' hav',
+    restrictedD_entry_empty (skipStage f vc) D' hD0'⟩
 
 /-- Checker acceptance after cleanup under exactly the old definite-assignment
-hypothesis and raw successful preparation. -/
+hypothesis and raw successful preparation. (About `stagePrepared f vc vcp`, the production
+cleanup stage's prepared code, formerly `preparedCleanup vc vcp`.) -/
 theorem spillCheckAlloc_cleanup (hD : SpillDefinedHyp) {p : Clif.Program} {f : Clif.Function}
     {vc vcp : VCode} (hsub : InSubset p f) (har : Spill.ArityOk f) (hd : Dominated f)
     (hs : LowerScope f) (hen : Spill.entryParamsB f = true) (hl : lowerFunction f = .ok vc)
     (hp : Backend.prepare vc = .ok vcp) :
-    checkAlloc (preparedCleanup vc vcp) (spillAlloc (preparedCleanup vc vcp)) = .ok () :=
-  spillCheckAlloc_sets_cleanup hsub har hd hs hl (prune_prepare_ok hp)
+    checkAlloc (stagePrepared f vc vcp) (spillAlloc (stagePrepared f vc vcp)) = .ok () :=
+  spillCheckAlloc_sets_cleanup hsub har hd hs hl (cleanupStage_prepare_ok hp)
     (spillDefined_cleanup hD hsub har hd hs hen hl hp)
 
 end E2E
