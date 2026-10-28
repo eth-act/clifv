@@ -14,8 +14,10 @@ the argument registers (`useVals`), i.e. the premises of the call-`N` contract a
   index `j ≥ N` are vacuous (`calleeOkGP_upTo_ge`, `calleeTryOkGP_upTo_ge`), and the counted VCode
   run of `XI` to counter `N` is one of `XI.upTo N` (`vstar_upTo`);
 * `isSimulation_match`, `match_init`: `checkedAt_sound` with its relation `Match` named;
-  `match_op_uses` (at an instruction item the machine's operands are the VCode's);
-* `CallSiteAt`, **`regLevel_prefixC`**.
+  `match_op_uses` (at an instruction item the machine's operands are the VCode's), `match_to_op`
+  (past the pending moves);
+* `CallSiteAt`, **`regLevel_prefix_core`** (any counted family the machine realises),
+  **`regLevel_prefixC`**, `regLevel_prefixPRS` (from `checkAlloc`, with the prophecies).
 -/
 
 namespace Backend.Proof
