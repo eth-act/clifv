@@ -1,6 +1,7 @@
 import FV.E2E.LinkArmLockRet
 import FV.E2E.BackendTwoRunLE
 import FV.E2E.LinkArmProgOsPRBRL
+import FV.E2E.LinkArmBaseNIX
 
 /-!
 # The call hook from two locked call states (SEM1 #537, #713, step 3)
@@ -13,10 +14,13 @@ registers but `x30`/pc, the callee region), at the canonical return index; compo
 gives two returns equal but for `Z`: registers by `RetAgreeX` (the pc: both return addresses),
 the callee region by `RetAgreeX` and the saved frame record (both entries' `x30` is the call's
 `pc + 4`, `x29` the caller's), memory outside `F` the canonical return's, the rest of `F` kept
-from the call states.
+from the call states. At the first run's call state of count `n` the canonical callee state is the
+one of `progXPRBT`'s answer (`worldPR … (P n) (R n) w`), which the second run's locked state also
+agrees with (`pcall_lockXPR`). Base calls and TLS: the trusted `HookNIX` (`OkDNX.baseNIX`).
 
 * `mem_eq_of_saved`;
-* **`pcall_lock`**.
+* **`pcall_lock`**, **`pcall_lockXPR`**;
+* `hooks_lock_base`, `hooks_lock_tls`.
 -/
 
 namespace E2E
@@ -213,6 +217,25 @@ theorem pcall_lockXPR (hL : L.Ok) (hκ : L.Budget κ) {M : Nat} (hcl : L.CallLoc
     fun a ha => (hZ.2.2 a (hZd a (hreg a ha))).symm.trans (hrgn a ha)
   exact L.pcall_lock hL hcl hpf ⟨g, hg, hcal⟩ himgF herrw halw hroom hdeadW hmr hargs hsav
     (fun hN => (hpl hN).1) (fun hN => (hpl hN).2) htab hinit hrun hcOk hmsk hrgn hcOk' hmsk' hrgn' hZ
+
+/-- **A base call of the linked machine keeps a lock inside `F`** (`HookNIX`, the trusted base-hook
+premise `OkDNX.baseNIX` under `NeedNI`): a call of a destination outside `P` (for a `blr`, no
+function of `P` at the target in either state). -/
+theorem hooks_lock_base {F : BitVec 64 → Prop} (hN : HookNIX L.Hb L.BaseDest F) {M : Nat}
+    {d : Option String} (hb : L.BaseDest d) {u u' : Arm.ArmState}
+    (hn : d = none → (blrTarget u).bind (symCallee L.Xb L.P) = none)
+    (hn' : d = none → (blrTarget u').bind (symCallee L.Xb L.P) = none)
+    {Z : BitVec 64 → Prop} (hZ : StEqOutX Z u u') (hZF : ∀ a, Z a → F a) :
+    StEqOutX Z ((L.hooks M).call d u) ((L.hooks M).call d u') := by
+  rw [L.hooks_base hb u hn, L.hooks_base hb u' hn']
+  exact hN.1 d hb Z u u' hZ hZF
+
+/-- **The TLS hook of the linked machine keeps a lock inside `F`** (`HookNIX`). -/
+theorem hooks_lock_tls {F : BitVec 64 → Prop} (hN : HookNIX L.Hb L.BaseDest F) (M : Nat)
+    (m : String) (r : Reg) {u u' : Arm.ArmState} {Z : BitVec 64 → Prop} (hZ : StEqOutX Z u u')
+    (hZF : ∀ a, Z a → F a) : StEqOutX Z ((L.hooks M).tls m r u) ((L.hooks M).tls m r u') := by
+  rw [L.hooks_tls]
+  exact hN.2 m r Z u u' hZ hZF
 
 end LinkSys
 
