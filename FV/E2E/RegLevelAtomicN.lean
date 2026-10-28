@@ -203,7 +203,8 @@ theorem realizes_rmwLoopN {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {a
   · simp only [Arm.r_of_w_same]
     congr 1
     simp [rmwLoopLines]; omega
-  · refine stRel_after hR hst ?_ ?_ (SameWorld.w_left (by simp [Masked]) hsw1) ?_ ?_ ⟨?_, fun a ha => ?_⟩
+  · refine stRel_after hR hst ?_ ?_ (SameWorld.w_left (by simp [Masked]) hsw1) ?_ ?_
+      ⟨?_, fun a ha => ?_, ?_⟩
     · refine store_regs hst [27, 24, 28] (by simp) ?_ ?_ hfr2
       · intro n hn
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hn
@@ -220,6 +221,7 @@ theorem realizes_rmwLoopN {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {a
     · simp only [Arm.ArmState.mem_w_eq_mem, hmem1]
       refine mem_write_mem_bytes_ne _ _ _ _ _ (fun k hk e => hav k hk ?_)
       rw [← e]; exact RL.FK_F ha
+    · exact hfr2 _ (by simp) (by simp [rnum]) (by simp)
 
 set_option maxHeartbeats 8000000 in
 /-- **An `atomic_cas` loop on the machine**: from `Q` at an `atomicCasLoop` item, the machine
@@ -404,7 +406,8 @@ theorem realizes_casLoopN {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {a
       c2, ls2, _, ps2, T, hvb, hit, by rw [hsplit]; simp, hchk', hc2, hl2, htr, ?_, hpcF, ?_⟩
     · rw [← List.drop_drop, hdrop']
       exact List.drop_left' (by simp [casLoopLines, casLoopHead])
-    · refine stRel_after hR hst ?_ ?_ hswF ?_ hprogF ⟨?_, fun a ha => hmemF a (RL.FK_F ha)⟩
+    · refine stRel_after hR hst ?_ ?_ hswF ?_ hprogF
+        ⟨?_, fun a ha => hmemF a (RL.FK_F ha), ?_⟩
       · refine store_regs hst [27, 24] (by simp) ?_ ?_ hfrF
         · intro n hn
           simp only [List.mem_cons, List.not_mem_nil, or_false] at hn
@@ -416,6 +419,7 @@ theorem realizes_casLoopN {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {a
         simp [writeM, upd, Operand.isDef, Operand.isLate, hl]
       · rw [hfrF .ERR (by simp) (by simp) (by simp)]; exact hst.err
       · simp only [spOf]; exact hfrF _ (by simp) (by simp [rnum]) (by simp)
+      · exact hfrF _ (by simp) (by simp [rnum]) (by simp)
   have hfr1' : ∀ f, f ≠ .PC → (∀ n ∈ [27, 24], f ≠ .GPR (rnum n)) → (∀ g, f ≠ .FLAG g) →
       Arm.r f s1 = Arm.r f s := by
     intro f h1 h2 h3
