@@ -275,7 +275,7 @@ theorem compiledAT_of_lowerT_w :
 /-! ### The dead-cleanup route (`prune`, then `prepare`) -/
 
 def vcpcOf (f : Clif.Function) : VCode :=
-  match Backend.prepare (Backend.DeadCleanup.prune (vcOf f)) with
+  match Backend.prepare (cleanupStage f (vcOf f)) with
   | .ok vcp => vcp
   | .error _ => default
 
@@ -298,14 +298,14 @@ def fbcOf (f : Clif.Function) : FnBin :=
 `--lean-link` route: lowering, `prune`, `prepare`, the spill allocation). -/
 theorem compiledCleanupT_w : CompiledCleanupT fW 0 (vcOf fW) (vcpcOf fW)
     (spillAlloc (vcpcOf fW)) (afcOf fW) (facOf fW) (fbcOf fW) := by
-  have h1 : (Backend.prepare (Backend.DeadCleanup.prune (vcOf fW))).toBool = true := by native_decide
+  have h1 : (Backend.prepare (cleanupStage fW (vcOf fW))).toBool = true := by native_decide
   have h2 : (lowerRFunc (vcpcOf fW) (spillAlloc (vcpcOf fW))).toBool = true := by native_decide
   have h3 : (emitFunc 0 (afcOf fW)).toBool = true := by native_decide
   have h4 : (facOf fW).layout.toBool = true := by native_decide
   have h5 : (checkAlloc (vcpcOf fW) (spillAlloc (vcpcOf fW))).isOk = true := by native_decide
   refine ⟨lowerFunction_w, by native_decide, ?_, by native_decide, ?_, ?_, ?_, ?_⟩
   · unfold vcpcOf
-    cases h : Backend.prepare (Backend.DeadCleanup.prune (vcOf fW)) with
+    cases h : Backend.prepare (cleanupStage fW (vcOf fW)) with
     | error e => rw [h] at h1; cases h1
     | ok vcp => rfl
   · cases h : checkAlloc (vcpcOf fW) (spillAlloc (vcpcOf fW)) with
