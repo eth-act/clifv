@@ -18,8 +18,9 @@ as for `preparedCleanup` (`FV/E2E/DeadCleanupGotCheck.lean`, `DeadCleanupLinkCal
 namespace E2E
 open Backend Backend.Proof Backend.Proof.Driver Backend.DeadCleanup
 
-/-- What the stage may delete: pure (cleanup) or skippable (the skip) instructions. -/
-def stageDel (i : MInst) : Bool := pureForm i || skipDel i
+/-- What the stage may delete: pure producers and dead compares (cleanup) or skippable (the skip)
+instructions. -/
+def stageDel (i : MInst) : Bool := pureForm i || cmpForm i || skipDel i
 
 /-- Every block of the stage's prepared code deletes only `stageDel` instructions, in order. -/
 theorem stageBlock_drop {f : Clif.Function} {vc raw : VCode} (hd : Prep.PrepDomain vc)
@@ -39,7 +40,7 @@ private def gotQ (t : Nat) (i : MInst) : Option String :=
   | _ => none
 
 private theorem gotQ_del (t : Nat) (i : MInst) (h : stageDel i = true) : gotQ t i = none := by
-  cases i <;> simp_all [gotQ, stageDel, pureForm, skipDel]
+  cases i <;> simp_all [gotQ, stageDel, pureForm, cmpForm, skipDel]
 
 private theorem findSome_mem (f : MInst → Option String) (bs : List VBlock)
     (h : ∀ b ∈ bs, (T b).insts.toList.findSome? f = b.insts.toList.findSome? f) :
