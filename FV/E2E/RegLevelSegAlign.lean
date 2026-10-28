@@ -217,4 +217,105 @@ theorem RL.pcOf_ne {R : RL} (hR : R.Wf) {j0 j1 j2 : Nat} {x0 x1 : Insn}
   · rw [show lineOffset R.fa.lines.toList j2 = 2 ^ 64 by omega, Nat.mod_self] at he2
     omega
 
+/-- **An instruction line before an instruction line has a pc distinct from every earlier
+line's.** -/
+theorem RL.pcOf_ne_le {R : RL} (hR : R.Wf) {j0 j1 j2 : Nat} {x0 x1 : Insn}
+    {t0 t1 : Option Clif.TrapCode} (hj0 : R.L[j0]? = some (.ins x0 t0)) (h01 : j0 < j1)
+    (hj1 : R.L[j1]? = some (.ins x1 t1)) (h20 : j2 ≤ j0) : R.pcOf j1 ≠ R.pcOf j2 := by
+  intro he
+  simp only [RL.pcOf, RL.L] at he hj0 hj1
+  have hsz : (R.fa.lines.toList.map Line.size).sum ≤ 2 ^ 64 := by
+    rw [layout_sum hR.layout]; exact hR.fit
+  have hs0 := lineOffset_succ R.fa.lines.toList j0 _ hj0
+  have hs1 := lineOffset_succ R.fa.lines.toList j1 _ hj1
+  simp only [Line.size] at hs0 hs1
+  have hm1 := lineOffset_mono R.fa.lines.toList (show j0 + 1 ≤ j1 by omega)
+  have hm2 := lineOffset_mono R.fa.lines.toList h20
+  have hl1 := lineOffset_le_size R.fa.lines.toList (j1 + 1)
+  have he2 := congrArg BitVec.toNat ((BitVec.add_right_inj _).mp he)
+  simp only [BitVec.toNat_ofNat] at he2
+  rw [Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)] at he2
+  omega
+
+/-- **The states strictly inside a segment are at instruction lines after its first line `j0`
+and before `lim`.** -/
+def RL.Inside (R : RL) (s : Arm.ArmState) (n j0 lim : Nat) : Prop :=
+  ∀ i, 0 < i → i < n → ∃ jj x t, j0 < jj ∧ jj < lim ∧ R.L[jj]? = some (.ins x t) ∧
+    Arm.r .PC (iterN R.step i s) = R.pcOf jj
+
+theorem RL.Inside.zero {R : RL} {s : Arm.ArmState} {j0 lim : Nat} : R.Inside s 0 j0 lim :=
+  fun _ h0 h => absurd h (by omega)
+
+theorem RL.Inside.one {R : RL} {s : Arm.ArmState} {j0 lim : Nat} : R.Inside s 1 j0 lim :=
+  fun _ h0 h => absurd h (by omega)
+
+theorem RL.Inside.mono {R : RL} {s : Arm.ArmState} {n j0 lim lim' : Nat} (h : R.Inside s n j0 lim)
+    (hl : lim ≤ lim') : R.Inside s n j0 lim' := fun i h0 hi => by
+  obtain ⟨jj, x, t, h1, h2, h3, h4⟩ := h i h0 hi
+  exact ⟨jj, x, t, h1, by omega, h3, h4⟩
+
+/-- **Two inside runs in a row**: the second starts at an instruction line `j1` of the first's
+range. -/
+theorem RL.Inside.append {R : RL} {s : Arm.ArmState} {n n' j0 j1 lim : Nat}
+    (h : R.Inside s n j0 lim) (h' : R.Inside (iterN R.step n s) n' j1 lim) (h01 : j0 < j1)
+    (h1l : j1 < lim) {x1 : Insn} {t1 : Option Clif.TrapCode} (hj1 : R.L[j1]? = some (.ins x1 t1))
+    (hpc : 0 < n → Arm.r .PC (iterN R.step n s) = R.pcOf j1) :
+    R.Inside s (n + n') j0 lim := by
+  intro i h0 hi
+  rcases Nat.lt_or_ge i n with hlt | hge
+  · exact h i h0 hlt
+  · obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le hge
+    rcases Nat.eq_zero_or_pos k with rfl | hk
+    · exact ⟨j1, x1, t1, h01, h1l, hj1, by simpa using hpc h0⟩
+    · obtain ⟨jj, x, t, e1, e2, e3, e4⟩ := h' k hk (by omega)
+      exact ⟨jj, x, t, by omega, e2, e3, by rw [iterN_add]; exact e4⟩
+
+/-- **A segment inside its lines arrives first at a line at or after `lim`.** -/
+theorem RL.firstArr_of_inside {R : RL} (hR : R.Wf) {s : Arm.ArmState} {n j0 lim j1 : Nat}
+    {x0 : Insn} {t0 : Option Clif.TrapCode} (hj0 : R.L[j0]? = some (.ins x0 t0))
+    (h : R.Inside s n j0 lim) (hl : lim ≤ j1)
+    (hpc : Arm.r .PC (iterN R.step n s) = R.pcOf j1) : FirstArr R.step s n (R.pcOf j1) :=
+  ⟨hpc, fun i h0 hi => by
+    obtain ⟨jj, x, t, e1, e2, e3, e4⟩ := h i h0 hi
+    rw [e4]
+    exact RL.pcOf_ne hR hj0 e1 e3 (by omega)⟩
+
+/-- **A segment inside its lines arrives first at a line `jl` outside `(j0, lim)`.** -/
+theorem RL.firstArr_of_inside_out {R : RL} (hR : R.Wf) {s : Arm.ArmState} {n j0 lim jl : Nat}
+    {x0 : Insn} {t0 : Option Clif.TrapCode} (hj0 : R.L[j0]? = some (.ins x0 t0))
+    (h : R.Inside s n j0 lim) (hout : jl ≤ j0 ∨ lim ≤ jl) {p : BitVec 64}
+    (hp : p = R.pcOf jl) (hpc : Arm.r .PC (iterN R.step n s) = p) : FirstArr R.step s n p :=
+  ⟨hpc, fun i h0 hi => by
+    obtain ⟨jj, x, t, e1, e2, e3, e4⟩ := h i h0 hi
+    rw [e4, hp]
+    rcases hout with ho | ho
+    · exact RL.pcOf_ne_le hR hj0 e1 e3 ho
+    · exact RL.pcOf_ne hR hj0 e1 e3 (by omega)⟩
+
+/-- **A realised segment at a witness** (the conclusion of the `realizes_*NA` cases): `QW` at the
+next witness after `n` steps, the located reads of the states before, and the segment length. -/
+abbrev RL.SegNA (R : RL) (Y : BitVec 64 → Prop) (s : Arm.ArmState) (j : Nat) (ps1 : PState)
+    (T : List Line) (c c' : MConf CV Arm.ArmState) (n : Nat) : Prop :=
+  QW R (iterN R.step n s) (R.nextW j ps1 T c c').1 (R.nextW j ps1 T c c').2.1
+      (R.nextW j ps1 T c c').2.2 c' ∧
+    (∀ i < n, R.GoodXNY Y (iterN R.step i s)) ∧ R.SegLen j ps1 T c c' s n
+
+theorem RL.segLen_straight_iff {R : RL} {j : Nat} {ps1 : PState} {T : List Line} {b : Nat}
+    {it : RItem} {its : List RItem} {m m' : Loc → CV} {w w' : Arm.ArmState} :
+    R.EmptyW j ps1 T (.run ⟨b, it :: its, m, w⟩) (.run ⟨b, its, m', w'⟩) ↔
+      (R.straightW b it j ps1 T).1 = j := by
+  unfold RL.EmptyW
+  rw [if_pos (by simp [RL.Straight]), RL.nextW_straight]
+
+/-- **A straight run of instruction lines is a first arrival at the line after it.** -/
+theorem RL.firstArr_lines {R : RL} (hR : R.Wf) {s : Arm.ArmState} {j n : Nat}
+    (hins : ∀ k < n, ∃ x t, R.L[j + k]? = some (.ins x t))
+    (hpcs : ∀ i ≤ n, Arm.r .PC (iterN R.step i s) = R.pcOf (j + i)) :
+    FirstArr R.step s n (R.pcOf (j + n)) := by
+  refine ⟨hpcs n (Nat.le_refl _), fun i hi0 hin => ?_⟩
+  rw [hpcs i (by omega)]
+  obtain ⟨x0, t0, h0⟩ := hins 0 (by omega)
+  obtain ⟨x1, t1, h1⟩ := hins i hin
+  exact RL.pcOf_ne hR (by simpa using h0) (by omega) h1 (by omega)
+
 end Backend.Proof

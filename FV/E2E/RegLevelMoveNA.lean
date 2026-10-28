@@ -12,24 +12,6 @@ namespace Backend.Proof
 
 open Backend E2E
 
-theorem RL.segLen_straight_iff {R : RL} {j : Nat} {ps1 : PState} {T : List Line} {b : Nat}
-    {it : RItem} {its : List RItem} {m m' : Loc → CV} {w w' : Arm.ArmState} :
-    R.EmptyW j ps1 T (.run ⟨b, it :: its, m, w⟩) (.run ⟨b, its, m', w'⟩) ↔
-      (R.straightW b it j ps1 T).1 = j := by
-  unfold RL.EmptyW
-  rw [if_pos (by simp [RL.Straight]), RL.nextW_straight]
-
-/-- **A straight run of instruction lines is a first arrival at the line after it.** -/
-theorem RL.firstArr_lines {R : RL} (hR : R.Wf) {s : Arm.ArmState} {j n : Nat}
-    (hins : ∀ k < n, ∃ x t, R.L[j + k]? = some (.ins x t))
-    (hpcs : ∀ i ≤ n, Arm.r .PC (iterN R.step i s) = R.pcOf (j + i)) :
-    FirstArr R.step s n (R.pcOf (j + n)) := by
-  refine ⟨hpcs n (Nat.le_refl _), fun i hi0 hin => ?_⟩
-  rw [hpcs i (by omega)]
-  obtain ⟨x0, t0, h0⟩ := hins 0 (by omega)
-  obtain ⟨x1, t1, h1⟩ := hins i hin
-  exact RL.pcOf_ne hR (by simpa using h0) (by omega) h1 (by omega)
-
 /-- **A move on the machine, at a witness** (`realizes_moveNR`): the segment ends at `QW` at the
 next witness, at its first arrival. -/
 theorem realizes_moveNA {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : Arm.ArmState} {b : Nat}
