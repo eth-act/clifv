@@ -12,12 +12,23 @@ On the slotted system `LinkSlotSysWitness.Lsl`:
   oracle, at every depth (`tableOfE_of_err`), for each of `Lsl`'s functions;
 * `tabUpToE_of_Lsl`: the empty-prefix `TabUpTo` converts (`tabUpToE_of`);
 * `callsTo_err_zero_Lsl`: at depth `0` a program call of `Lsl` always ends in an error
-  (`callsTo_ret`: no `M'` with `0 = M' + 1`); `callsTo_ret_Lsl`: the instance at depth `M`.
+  (`callsTo_ret`: no `M'` with `0 = M' + 1`); `callsTo_ret_Lsl`: the instance at depth `M`;
+* `tabUpToE_count_zero_Lsl`: two prefix-closed tables of the empty prefix agree;
+  `tabUpToE_call_at_Lsl`: the instance of `tabUpToE_call_at`.
 -/
 
 namespace E2E.LinkSlotSysWitness
 
 open Backend Backend.Proof Backend.Proof.Driver
+
+theorem tabUpToE_count_zero_Lsl (M : Nat) (g : Clif.Function) (s : Arm.ArmState)
+    (ini : Clif.SlotInit) {e : Nat} (h : Lsl.TabUpToE M g s ini.bytes ini.next 0 e) : e = 0 :=
+  Lsl.tabUpToE_count (fun _ h => absurd h (Nat.not_lt_zero _))
+    (fun _ h => absurd h (Nat.not_lt_zero _)) h (Lsl.tabUpToE_zero M g s ini.bytes ini.next)
+
+theorem tabUpToE_call_at_Lsl :
+    type_of% (@LinkSys.tabUpToE_call_at Lsl) :=
+  @LinkSys.tabUpToE_call_at Lsl
 
 theorem callsTo_err_zero_Lsl {g h : Clif.Function} {t : Arm.ArmState} (hc : Lsl.CallsTo g t h)
     (hpb : progBase t = (Lsl.A g).base) : Arm.r .ERR (Lsl.mach 0 g t) ≠ .None := fun herr => by

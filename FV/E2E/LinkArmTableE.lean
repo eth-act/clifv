@@ -11,8 +11,9 @@ top-level entry cannot discharge it. The prefix-closed variant asks nothing abou
 
 * `TabUpToE M g s b k N e`: as `TabUpTo`, but at each call of the prefix the callee's table is
   given for **every** prefix of the callee's run before its first return without an error
-  (`∃ e'`), and the call's count `E j` is pinned (`slotted h` plus the callee run's count) only
-  when the callee returns; at depth `0` (program calls junk) only `e = 0`;
+  (`∃ e'`), and, only when the callee returns, the call's count `E j` is pinned by the
+  callee run's full `TabUpTo` up to its return (`slotted h` plus its count; a returning callee's
+  nested calls all returned, so `tabUpTo_count` applies); at depth `0` only `e = 0`;
 * `TableOfE M g s ini`: every prefix before the return **whose states have no error** has a
   `TabUpToE` with `ini`'s table.
 
@@ -50,7 +51,7 @@ def TabUpToE : Nat → Clif.Function → Arm.ArmState → (Nat → Nat → BitVe
             ∃ e', TabUpToE M h (enterAt (L.A h) t) b (k + Clif.sumTo E j + slotted h) N' e') ∧
           ∀ N', RetOf (L.A h) t (runX (L.mach M h) N' (enterAt (L.A h) t)) →
             (∀ N'' < N', ¬ RetOf (L.A h) t (runX (L.mach M h) N'' (enterAt (L.A h) t))) →
-            TabUpToE M h (enterAt (L.A h) t) b (k + Clif.sumTo E j + slotted h) N'
+            TabUpTo L M h (enterAt (L.A h) t) b (k + Clif.sumTo E j + slotted h) N'
               (E j - slotted h)
 
 /-- **The run's prefix-closed table is `ini`'s**: every prefix before the return whose states
@@ -103,7 +104,7 @@ theorem tabUpToE_of : ∀ (M : Nat) (g : Clif.Function) (s : Arm.ArmState)
       obtain ⟨e', he'⟩ := L.tabUpTo_mono ht₁ hle'
       exact ⟨e', tabUpToE_of M h _ b _ N' e' he'⟩
     · obtain rfl := firstRet_unique hr hm hr₁ hm₁
-      exact tabUpToE_of M h _ b _ N' _ ht₁
+      exact ht₁
 
 /-- **`TableOf` gives `TableOfE`**: the prefix-closed premise is the weaker one. -/
 theorem tableOfE_of {M : Nat} {g : Clif.Function} {s : Arm.ArmState} {ini : Clif.SlotInit}
