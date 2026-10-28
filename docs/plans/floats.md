@@ -919,7 +919,6 @@ pool (`emit_u64_le_const` unmodelled, #565); fv-demo 32220 → 32287 verified (6
 verified); the lean-link region leaves them out per executable (82/83 functions, before 17/18)
 until the link chain is typed. `float_try.clif` is byte-identical to stock Cranelift
 (`lean-backend-encode-check.sh`: 6/6).
-
 ## 4. Known hazards
 
 - Proofs that derive a type from its width (`ty_i64_of_width`, width injectivity in

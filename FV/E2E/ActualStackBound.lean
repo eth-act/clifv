@@ -12,17 +12,18 @@ structure CompilerInput extends LinkInput where
   lower : Clif.Function → Except String VCode := Stock.D0.defaultLower
   cleanup : Bool := true
 instance : Coe CompilerInput LinkInput := ⟨CompilerInput.toLinkInput⟩
-def CompilerInput.stage (I : CompilerInput) : VCode → VCode :=
-  cond I.cleanup DeadCleanup.prune id
+def CompilerInput.stage (I : CompilerInput) : Clif.Function → VCode → VCode :=
+  fun _ => cond I.cleanup DeadCleanup.prune id
 def CompilerInput.results (I : CompilerInput) : Res :=
   I.toLinkInput.resultsWithLowering I.lower I.stage
 
 def okB (I : CompilerInput) : Bool := okRWith I.stage I.toLinkInput I.results
 
-theorem stage_cases (I : CompilerInput) : I.stage = id ∨ I.stage = DeadCleanup.prune := by
+theorem stage_cases (I : CompilerInput) :
+    I.stage = (fun _ => id) ∨ I.stage = (fun _ => DeadCleanup.prune) := by
   cases hc : I.cleanup with
-  | false => exact .inl (by simp [CompilerInput.stage, hc])
-  | true => exact .inr (by simp [CompilerInput.stage, hc])
+  | false => exact .inl (by unfold CompilerInput.stage; rw [hc]; rfl)
+  | true => exact .inr (by unfold CompilerInput.stage; rw [hc]; rfl)
 
 def ofInput (I : CompilerInput) (B : BaseEnv) (F : BitVec 64 → Prop) : LinkSys :=
   ofRes I.toLinkInput I.results B F
