@@ -93,6 +93,7 @@ theorem prefix_relatedPRI_atE_f
           spOf t = spv s - BitVec.ofNat 64 (frameDrop (Lsl.A fF).af)) j u ∧
       spOf u = spv s - BitVec.ofNat 64 (frameDrop (Lsl.A fF).af) ∧ CallSiteAt F K G s (Lsl.A fF).fa base i uses w u ∧
       (i = .call info ∨ ∃ ti, i = .tryCall info ti) ∧ (Lsl.A fF).vcp.CallSite info ∧
+      gotGuard (GotV (Lsl.A fF).vcp) (XI.at 0) info uses ∧
       (XI.at j).call (callDest info) uses w = some r ∧
       RelatedN env Lsl.P.bare cs (fF.externs.map (·.2)) (indSigs fF)
         (RelW ⟨F, syms, (Lsl.A fF).af.slotBase, (RAFrame.compute (Lsl.A fF).vcp (Lsl.A fF).rf).intBase⟩ fF c) XI.sym j (callDest info) uses w :=

@@ -1,4 +1,5 @@
 import FV.E2E.BackendPrefixAt
+import FV.E2E.WorldUnwindGot
 
 /-!
 # The counted pipeline at call `N` itself, cleanup path and either artifact (SEM1 #537, #680 (3))
@@ -285,6 +286,7 @@ theorem backend_prefix_cleanupPRI_at {p : Clif.Program} {f : Clif.Function} {k :
           spOf t = spv s - BitVec.ofNat 64 (frameDrop af)) j u ∧
       spOf u = spv s - BitVec.ofNat 64 (frameDrop af) ∧ CallSiteAt F K G s fa base i uses w u ∧
       (i = .call info ∨ ∃ ti, i = .tryCall info ti) ∧ vcp.CallSite info ∧
+      gotGuard (GotV vcp) (XI.at 0) info uses ∧
       (XI.at j).call (callDest info) uses w = some r := by
   intro j hj
   obtain ⟨b, k, ρ, w, hstar⟩ :=
@@ -307,7 +309,7 @@ theorem backend_prefix_cleanupPRI_at {p : Clif.Program} {f : Clif.Function} {k :
     (driverSem_valueSem F ⟨fa.k, af.slotBase⟩ (XI.at m)).toDriverSemG
   obtain ⟨b3, hs3, hins⟩ := prep_prefixW hds hc.prepOk hs2
   obtain ⟨vb3, i3, hvb3, hi3, hsame⟩ := hins vb2 i hvb2 hi2
-  obtain ⟨hs4, -⟩ := gotInvI_star_value
+  obtain ⟨hs4, hinv4⟩ := gotInvI_star_value
     (show GotInvI vcp XI ⟨0, 0, fun _ => 0, (w₀, 0)⟩ from gotInv_entry vcp (XI.at 0) _ w₀) hs3
   have hci3 := sameInst_callLike hsame hci
   have hops3 : i3.operands = .ok ops := by rw [(sameInst_factsW hds hsame).1, hops]
@@ -318,7 +320,8 @@ theorem backend_prefix_cleanupPRI_at {p : Clif.Program} {f : Clif.Function} {k :
     (by rw [he.hF]; exact he.tls) (by rw [he.hF]; exact he.body) (fun _ => 0)
   rw [he.hF] at hM
   obtain ⟨u, hon, hsp, hsite⟩ := hM b3 k2 a2 w1 vb3 i3 hs4 hvb3 hi3 ⟨info, hci3⟩ ops hops3
-  refine ⟨u, i3, info, _, w1, r', hon, hsp, hsite, hci3, ⟨b3, vb3, k2, hvb3, ?_⟩, ?_⟩
+  have hgd := gotGuard_of_inv hinv4 hvb3 hi3 hops3 info hci3
+  refine ⟨u, i3, info, _, w1, r', hon, hsp, hsite, hci3, ⟨b3, vb3, k2, hvb3, ?_⟩, hgd, ?_⟩
   · rcases hci3 with rfl | ⟨ti, rfl⟩
     · exact .inl hi3
     · exact .inr ⟨ti, hi3⟩
@@ -357,17 +360,18 @@ theorem prefix_related_cleanupPRI_at {p : Clif.Program} {f : Clif.Function} {k :
           spOf t = spv s - BitVec.ofNat 64 (frameDrop af)) j u ∧
       spOf u = spv s - BitVec.ofNat 64 (frameDrop af) ∧ CallSiteAt F K G s fa base i uses w u ∧
       (i = .call info ∨ ∃ ti, i = .tryCall info ti) ∧ vcp.CallSite info ∧
+      gotGuard (GotV vcp) (XI.at 0) info uses ∧
       (XI.at j).call (callDest info) uses w = some r ∧
       RelatedN env p cs (f.externs.map (·.2)) (indSigs f)
         (RelW ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c) XI.sym j (callDest info) uses w := by
   intro j hj
-  obtain ⟨u, i, info, uses, w, r, hon, hsp, hsite, hci, hcs', hx⟩ :=
+  obtain ⟨u, i, info, uses, w, r, hon, hsp, hsite, hci, hcs', hgd, hx⟩ :=
     backend_prefix_cleanupPRI_at (XI := XI.relOnly (RelatedN env p cs (f.externs.map (·.2))
       (indSigs f) (RelW ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c) XI.sym))
       hsub hc hone htc hcov (fun s n hs => xCalls_relOnly hnrc hs (hX s n hs)) hsym hslot hcs hrel
       hargs htr hrun (he.relOnly _) hr hcn j hj
   obtain ⟨hq, hx'⟩ := relOnly_call_some hx
-  exact ⟨u, i, info, uses, w, r, hon, hsp, hsite, hci, hcs', hx', hq⟩
+  exact ⟨u, i, info, uses, w, r, hon, hsp, hsite, hci, hcs', hgd, hx', hq⟩
 
 /-- **`backend_prefixPRI_at` with the call site**: the VCode call of the machine's call `j` is a
 call site of `vcp`. -/
@@ -400,6 +404,7 @@ theorem backend_prefixPRI_atS {p : Clif.Program} {f : Clif.Function} {k : Nat} {
           spOf t = spv s - BitVec.ofNat 64 (frameDrop af)) j u ∧
       spOf u = spv s - BitVec.ofNat 64 (frameDrop af) ∧ CallSiteAt F K G s fa base i uses w u ∧
       (i = .call info ∨ ∃ ti, i = .tryCall info ti) ∧ vcp.CallSite info ∧
+      gotGuard (GotV vcp) (XI.at 0) info uses ∧
       (XI.at j).call (callDest info) uses w = some r := by
   intro j hj
   obtain ⟨b, k, ρ, w, hstar⟩ :=
@@ -420,7 +425,11 @@ theorem backend_prefixPRI_atS {p : Clif.Program} {f : Clif.Function} {k : Nat} {
   obtain ⟨info, hci⟩ := callLike_of_isCallI hcall
   obtain ⟨u, hon, hsp, hsite⟩ := hM b1 k1 ρ1 w1 vb i hs1 hvb hi ⟨info, hci⟩ ops hops
   obtain ⟨r', hr'⟩ := csem_call_some hci (csemV_sub hsem)
-  refine ⟨u, i, info, _, w1, r', hon, hsp, hsite, hci, ⟨b1, vb, k1, hvb, ?_⟩, hr'⟩
+  have hgd : gotGuard (GotV vcp) (XI.at j) info ((ops.toList.filter Operand.isUse).map (ρ1 ·.vreg)) := by
+    rcases hci with rfl | ⟨ti, rfl⟩
+    · exact csemV_guard hsem
+    · exact csemV_guard_try hsem
+  refine ⟨u, i, info, _, w1, r', hon, hsp, hsite, hci, ⟨b1, vb, k1, hvb, ?_⟩, hgd, hr'⟩
   rcases hci with rfl | ⟨ti, rfl⟩
   · exact .inl hi
   · exact .inr ⟨ti, hi⟩
@@ -456,17 +465,18 @@ theorem prefix_relatedPRI_atS {p : Clif.Program} {f : Clif.Function} {k : Nat} {
           spOf t = spv s - BitVec.ofNat 64 (frameDrop af)) j u ∧
       spOf u = spv s - BitVec.ofNat 64 (frameDrop af) ∧ CallSiteAt F K G s fa base i uses w u ∧
       (i = .call info ∨ ∃ ti, i = .tryCall info ti) ∧ vcp.CallSite info ∧
+      gotGuard (GotV vcp) (XI.at 0) info uses ∧
       (XI.at j).call (callDest info) uses w = some r ∧
       RelatedN env p cs (f.externs.map (·.2)) (indSigs f)
         (RelW ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c) XI.sym j (callDest info) uses w := by
   intro j hj
-  obtain ⟨u, i, info, uses, w, r, hon, hsp, hsite, hci, hcs', hx⟩ :=
+  obtain ⟨u, i, info, uses, w, r, hon, hsp, hsite, hci, hcs', hgd, hx⟩ :=
     backend_prefixPRI_atS (XI := XI.relOnly (RelatedN env p cs (f.externs.map (·.2)) (indSigs f)
       (RelW ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c) XI.sym))
       hsub hc hone htc hcov (fun s n hs => xCalls_relOnly hnrc hs (hX s n hs)) hsym hslot hcs hrel
       hargs htr hrun (he.relOnly _) hr hcn j hj
   obtain ⟨hq, hx'⟩ := relOnly_call_some hx
-  exact ⟨u, i, info, uses, w, r, hon, hsp, hsite, hci, hcs', hx', hq⟩
+  exact ⟨u, i, info, uses, w, r, hon, hsp, hsite, hci, hcs', hgd, hx', hq⟩
 
 /-- **The machine's calls up to call `N` itself are the CLIF run's, either artifact.** -/
 theorem prefix_relatedPRI_atE {p : Clif.Program} {f : Clif.Function} {k : Nat}
@@ -499,6 +509,7 @@ theorem prefix_relatedPRI_atE {p : Clif.Program} {f : Clif.Function} {k : Nat}
           spOf t = spv s - BitVec.ofNat 64 (frameDrop af)) j u ∧
       spOf u = spv s - BitVec.ofNat 64 (frameDrop af) ∧ CallSiteAt F K G s fa base i uses w u ∧
       (i = .call info ∨ ∃ ti, i = .tryCall info ti) ∧ vcp.CallSite info ∧
+      gotGuard (GotV vcp) (XI.at 0) info uses ∧
       (XI.at j).call (callDest info) uses w = some r ∧
       RelatedN env p cs (f.externs.map (·.2)) (indSigs f)
         (RelW ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c) XI.sym j (callDest info) uses w := by
