@@ -10,10 +10,12 @@ with an **external** `ld` instead of the compiled `atomic_load`:
   code, so the caller's memory holds it), at `retBase`; `linkX`: the link of `ld` and `f`;
 * `fX`: the external's CLIF specification `v1 = bor v0, v0; return v1` (it returns its
   argument), `pX = [fC, fX]`;
-* **`extX`**: the external's event contract `CallSegExt.ExtEvContractT` holds (here proven, not
-  assumed): from every call, the `ret` is one event-free label realized by the specification's
-  statement, and the return keeps `sp`, the callee-saved registers and the memory, back on the
-  caller's program with the argument in `x0`;
+* **`ext_ret`**: the event contract `CallSegExt.ExtEvContractT` of an external whose code is one
+  `ret` and whose specification returns its argument (`RetSpec`), in any well-formed link where
+  it is the only function of its name (proven, not assumed): from every call, the `ret` is one
+  event-free label realized by the specification's statement, and the return keeps `sp`, the
+  callee-saved registers and the memory, back on the caller's program with the argument in `x0`;
+  **`extX`** its instance on `linkX`;
 * `fnOk_CX`, **`linkOkX`** (`LinkOkX`: the caller compiled, the external's code and slot-free
   specification, `x0` the return register), `placeOkX`, `linkFreeX`;
 * **`funRealT_link_X`**: `funRealT_link_ext` on `linkX`/`pX` with the static premises and the
@@ -347,8 +349,8 @@ theorem ext_ret {L : Link} {env : Clif.Env} {p : Clif.Program} {syms : String �
             have := hMR.bytes a b' hv' hb'
             unfold Arm.read_mem at this ⊢
             rw [hmemv]; exact this
-          valid := fun a n hv => ⟨(hMR.valid a n (by simpa [Clif.Mem.valid, hmem', hal0] using hv)).1,
-            fun _ _ h => h⟩
+          valid := fun a n hv =>
+            ⟨(hMR.valid a n (by simpa [Clif.Mem.valid, hmem', hal0] using hv)).1, fun _ _ h => h⟩
           symbols := by simp [hmem', hsy0, hMR.symbols] }
         rets := fun vals' cm hdone => by
           have hst : Clif.step env p { s with frame := { s.frame with

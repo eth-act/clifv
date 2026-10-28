@@ -444,7 +444,8 @@ theorem fnOk_LM {env : Clif.Env} : FnOk linkM env pM (fun _ => none) "ld" ldF fL
     CallLayers.alloc_init (vc := ldF.vc) (rf := ldF.rf) allocL ckeep
   have hext : ∀ e ∈ fL.externs, env.extern e.2.name = none := by
     intro e he; rw [hnil] at he; cases he
-  refine ⟨static_ld, by rw [fs_ld], fun q hq => (by rw [CallEntryRel.Witness.slots_fL] at hq; cases hq), vcL, ctx, st0,
+  refine ⟨static_ld, by rw [fs_ld],
+    fun q hq => (by rw [CallEntryRel.Witness.slots_fL] at hq; cases hq), vcL, ctx, st0,
     R, gn, bl, A, Lp, ss, ss', cc, ins, a0,
     fun s0 K G ra c slots ext caller opens N sps hwf habi hc => ?_⟩
   exact {
@@ -599,5 +600,524 @@ theorem extM {env : Clif.Env} :
     · exact absurd h (by decide)
     · rfl
     · exact absurd h (by decide)) laidT rfl func_xtM specT
+
+/-! ## The caller's root activation -/
+
+/-- The caller in the link with a callee budget of `0x200` bytes (two frames of `MxM`). -/
+abbrev RAM : RL := linkM.act callerM sM0 0x200 GM
+
+theorem stack_RAM : StackAvail 0x200 callerM.af sM0 := by
+  have hs := spM
+  have hfs : callerM.af.frameSize = 240 := fs_M
+  refine ⟨?_, fun a ha => ?_⟩
+  · show callerM.af.frameSize + 16 + 0x200 ≤ (E2E.spv RCM.s0).toNat
+    rw [spv_RCM, hfs]; decide
+  · obtain ⟨j, hj, hd⟩ := codeAddr_words program_RCM ha
+    show callerM.af.frameSize + 16 + 0x200 ≤
+      (a - (E2E.spv RCM.s0 - BitVec.ofNat 64 (callerM.af.frameSize + 16 + 0x200))).toNat
+    rw [spv_RCM, hfs]
+    have hj' : j < 0x4000 := by have := hs.2.2.1; omega
+    rw [show RCM.base = 0x30000#64 from rfl] at hd
+    generalize j = J at hj' hd
+    bv_omega
+
+theorem wf_RAM : RAM.Wf where
+  check := wfRCM.check
+  alloc := wfRCM.alloc
+  emit := wfRCM.emit
+  layout := wfRCM.layout
+  lm := wfRCM.lm
+  fit := wfRCM.fit
+  stack := stack_RAM
+  psF := wfRCM.psF
+  prog0 := wfRCM.prog0
+  gfree := fun a hG ⟨h1, _⟩ => by
+    have := gM_ge hG
+    have e : (E2E.spv RAM.s0).toNat = 0x7000 := by
+      rw [show E2E.spv RAM.s0 = 0x7000#64 from spv_RCM]; rfl
+    omega
+
+/-- **The linked code is kept by the caller**: its own code, `atomic_load`'s and the external's
+words in its kept addresses `GM`, in memory at its entry. -/
+theorem codeIn_RAM : CallSegCall.CodeIn linkM RAM := by
+  intro n FB hB
+  rcases mem_linkM hB with ⟨-, rfl⟩ | ⟨-, rfl⟩ | ⟨-, rfl⟩
+  · refine .inr fun k wd hk => ?_
+    have hk' : (actW vcpL rfL).fb.words[k]? = some wd := hk
+    obtain ⟨hlt, -⟩ := Array.getElem?_eq_some_iff.mp hk'
+    have hG : ∀ i < 4, GL (0x20000#64 + BitVec.ofNat 64 (4 * k) + BitVec.ofNat 64 i) :=
+      fun i hi => by
+        unfold GL
+        have : (actW vcpL rfL).fb.words.size = 47 := spM.2.2.2.2.2.1
+        rw [this] at hlt ⊢
+        bv_omega
+    refine ⟨fun i hi => .inl (hG i hi), ?_⟩
+    have hR : Arm.read_mem_bytes 4 (0x20000#64 + BitVec.ofNat 64 (4 * k)) RAL.s0 = wd :=
+      abiRL.code k wd hk'
+    show Arm.read_mem_bytes 4 (0x20000#64 + BitVec.ofNat 64 (4 * k)) sM0 = wd
+    rw [← hR]
+    refine read_mem_bytes_congr 4 _ fun i hi => ?_
+    show memM _ = _
+    simp only [memM, hG i hi, ↓reduceIte]
+  · refine .inr fun k wd hk => ?_
+    have hk' : retFb.words[k]? = some wd := hk
+    rw [checksX.2.2.1] at hk'
+    obtain ⟨rfl, rfl⟩ : k = 0 ∧ 0xd65f03c0#32 = wd := by
+      cases k with
+      | zero => simpa using hk'
+      | succ k => simp at hk'
+    refine ⟨fun i hi => .inr ?_, retM⟩
+    show ((0x28000#64 + BitVec.ofNat 64 (4 * 0) + BitVec.ofNat 64 i) - 0x28000#64).toNat < 4
+    bv_omega
+  · exact .inl ⟨rfl, rfl⟩
+
+/-- The addresses outside the activation's world are at or above `0x6D00`. -/
+theorem fM_ge {a : BitVec 64} (h : RAM.F a) : 0x6D00 ≤ a.toNat := by
+  have hs := spM
+  have e : E2E.spv sM0 - BitVec.ofNat 64 (frameDrop callerM.af) = 0x6F00#64 := by
+    rw [show E2E.spv sM0 = 0x7000#64 from spv_RCM, drop_M]
+    rfl
+  have hsz : RCM.fr.size ≤ 240 := hs.2.2.2.1
+  have hfs : callerM.af.frameSize = 240 := fs_M
+  change frameWG 0x200 RCM.fr.intBase RCM.fr.size callerM.af GM sM0 a at h
+  unfold frameWG frameW frameF StackBelow at h
+  rw [e, hfs, drop_M] at h
+  rcases h with ((⟨h1, h2⟩ | ⟨h1, h2⟩ | hc) | ⟨h1, h2⟩) | hG
+  · generalize RCM.fr.size = n at hsz h2
+    bv_omega
+  · bv_omega
+  · obtain ⟨j, hj, hd⟩ := codeAddr_words program_RCM hc
+    rw [show RCM.base = 0x30000#64 from rfl] at hd
+    have : j < 0x4000 := by have := hs.2.2.1; omega
+    generalize j = J at this hd
+    bv_omega
+  · simp only [BitVec.toNat_ofNat] at h1 h2; omega
+  · have := gM_ge hG; omega
+
+/-! ## The CLIF entry state with the oracle -/
+
+/-- The caller's entry block. -/
+def B0M : Clif.Block := fM.blocks.headD default
+
+/-- The caller's entry registers: `v0 = 0`. -/
+def regsM : Clif.Regs :=
+  (Clif.Regs.empty.setMany (B0M.params.map (·.1)) argsL).getD Clif.Regs.empty
+
+/-- The caller's CLIF memory with the slot-placement oracle at its body `sp`. -/
+def memOM : Clif.Mem := { memL with place := some ⟨[RAM.spB], frM, none⟩ }
+
+/-- **The caller's CLIF entry state**: block 0, `v0 = 0`, no slots, `memL` with the oracle. -/
+def csOM : Clif.State :=
+  { frame := { func := fM, regs := regsM, slots := [], body := B0M.body, term := B0M.term }
+    callers := []
+    mem := memOM }
+
+/-- The thread's start: `csOM` with no masked byte. -/
+noncomputable def csTM : TState := encT (fun _ => False) (.run csOM)
+
+theorem checksOM : fM.blocks.isEmpty = false ∧
+    (Clif.Regs.empty.setMany (B0M.params.map (·.1)) argsL).isSome = true ∧
+    argsL.map (·.ty) = B0M.params.map (·.2) ∧ argsL.map (·.ty) = fM.sig.params.map (·.ty) ∧
+    (match locsOf fM.sig with | [.reg (.x 0)] => true | _ => false) = true ∧
+    B0M.body = [{ results := [1], inst := .call 0 [0] }, { results := [2], inst := .call 1 [1] }] ∧
+    B0M.term = .ret [2] ∧ fM.extern? 0 = some extL ∧ fM.extern? 1 = some extT ∧
+    pM.func? extL.name = some fL ∧ pM.func? extT.name = some fT ∧
+    (E2E.spv w₀M).toNat % 16 = 0 := by
+  native_decide -- witness: native_decide
+
+theorem b0M : fM.blocks[0]? = some B0M := by
+  have h := checksOM.1
+  unfold B0M
+  revert h
+  cases fM.blocks with
+  | nil => intro h; cases h
+  | cons b bs => intro _; rfl
+
+theorem regsM_eq : Clif.Regs.empty.setMany (B0M.params.map (·.1)) argsL = some regsM := by
+  have h := checksOM.2.1
+  unfold regsM
+  revert h
+  cases Clif.Regs.empty.setMany (B0M.params.map (·.1)) argsL with
+  | none => intro h; cases h
+  | some r => intro _; rfl
+
+theorem locsM : locsOf fM.sig = [.reg (.x 0)] := by
+  have h := checksOM.2.2.2.2.1
+  revert h
+  generalize locsOf fM.sig = l
+  intro h
+  match l, h with
+  | [.reg (.x 0)], _ => rfl
+
+theorem errW₀M : Arm.r .ERR w₀M = .None := by
+  rw [E2E.r_bodyOf _ _ (by simp) (by simp)]
+  exact abiRCM.err
+
+theorem relW_M : RelW ⟨RAM.F, fun _ => none, RAM.ctx.slotBase, 0⟩ fM (E2E.spv w₀M) [] memOM
+    w₀M := by
+  refine ⟨⟨⟨fun a b _ hb => by simp [memOM, memL] at hb, fun a n hv => ?_, rfl⟩,
+      fun id b h => by simp at h, E2E.outRel_zero _ _ _⟩, rfl, errW₀M⟩
+  simp only [Clif.Mem.valid, memOM, memL, List.any_cons, List.any_nil, Bool.or_false,
+    Clif.Alloc.contains] at hv
+  have hv' : a + n ≤ 8 := by
+    revert hv; simp only [Bool.and_eq_true, decide_eq_true_eq]; omega
+  refine ⟨by omega, fun k hk hF => ?_⟩
+  have := fM_ge hF
+  simp only [BitVec.toNat_ofNat] at this
+  omega
+
+theorem argsAt_M : ArgsAtEntry RAM.F fM.sig argsL w₀M := by
+  intro loc v h
+  rw [locsM] at h
+  simp only [argsL, List.zip_cons_cons, List.zip_nil_right, List.mem_singleton,
+    Prod.mk.injEq] at h
+  obtain ⟨rfl, rfl⟩ := h
+  show VHolds _ _
+  rw [VHolds, E2E.regVal_bodyOf _ _ (by decide), x0M]
+  rfl
+
+theorem body_RAM : BodyEntryW RAM.F RAM.vc.EntryArg RAM.af RAM.s0 w₀M :=
+  (E2E.Binary.bodyEntry_bodyOf RAM.af RAM.s0).w RAM.F entryArgRCM
+
+theorem linv_M : Clif.LInv pM csOM :=
+  ⟨⟨List.mem_cons_self .., .inl ⟨B0M, List.mem_of_getElem? b0M, List.suffix_refl _, rfl⟩⟩,
+    fun _ h => nomatch h⟩
+
+theorem func_fM : pM.func? "f" = some fM := by
+  simp [Clif.Program.func?, pM, name_fM]
+
+/-! ## The reachable CLIF states of a caller of two calls, generically
+
+A caller state `c0` whose block is two `call`s of program functions, each entered at a block of
+one statement other than a call, all three blocks returning (`CallShape2`): the states reachable
+from `c0` (up to their bytes) are the caller at its first call, the first callee at its entry
+and returning, the caller at its second call, the second callee at its entry and returning, and
+the caller returning (`Fam2`, `reach_inv2`), with at most one caller (`depth2`) and, if the first
+callee's statement accesses 8 bytes of `memL` and the second's none, every access on `LocO`
+(`partsOk2`). -/
+
+/-- **A caller state at two calls of one-statement callees** in `p` (section doc): `st2` is the
+second call; the first callee has no stack slots. -/
+structure CallShape2 (p : Clif.Program) (c0 : Clif.State) (st2 : Clif.Stmt) (B1 B2 : Clif.Block) :
+    Prop where
+  init : c0.callers = [] ∧ AllocsIn c0.mem
+  call1 : ∃ (rs : List Clif.ValueId) (fn : Clif.FnRef) (args : List Clif.ValueId)
+      (ex : Clif.ExtFunc) (f1 : Clif.Function),
+    c0.frame.body = [{ results := rs, inst := .call fn args }, st2] ∧
+    c0.frame.func.extern? fn = some ex ∧ p.func? ex.name = some f1 ∧ f1.blocks[0]? = some B1 ∧
+    f1.slots = []
+  call2 : ∃ (rs : List Clif.ValueId) (fn : Clif.FnRef) (args : List Clif.ValueId)
+      (ex : Clif.ExtFunc) (f2 : Clif.Function),
+    st2 = { results := rs, inst := .call fn args } ∧
+    c0.frame.func.extern? fn = some ex ∧ p.func? ex.name = some f2 ∧ f2.blocks[0]? = some B2
+  body1 : ∃ st : Clif.Stmt, B1.body = [st] ∧ (∀ fn args, st.inst ≠ .call fn args) ∧
+    ∀ sig callee args, st.inst ≠ .callIndirect sig callee args
+  body2 : ∃ st : Clif.Stmt, B2.body = [st] ∧ (∀ fn args, st.inst ≠ .call fn args) ∧
+    ∀ sig callee args, st.inst ≠ .callIndirect sig callee args
+  ret1 : ∃ xs, B1.term = .ret xs
+  ret2 : ∃ xs, B2.term = .ret xs
+  retC : ∃ ys, c0.frame.term = .ret ys
+
+/-- A frame of the caller `cF` with the body `b`. -/
+def Sus (cF : Clif.Frame) (b : List Clif.Stmt) (c : Clif.Frame) : Prop :=
+  c.body = b ∧ c.func = cF.func ∧ c.term = cF.term
+
+/-- **The CLIF states reachable from a `CallShape2`'s caller** (at `cF`), up to their bytes. -/
+def Fam2 (cF : Clif.Frame) (st2 : Clif.Stmt) (B1 B2 : Clif.Block) (s : Clif.State) : Prop :=
+  (s.frame = cF ∧ s.callers = [] ∧ AllocsIn s.mem) ∨
+  (s.frame.body = B1.body ∧ s.frame.term = B1.term ∧
+    (∃ c rs, s.callers = [(c, rs)] ∧ Sus cF [st2] c) ∧ AllocsIn s.mem) ∨
+  (s.frame.body = [] ∧ s.frame.term = B1.term ∧ ∃ c rs, s.callers = [(c, rs)] ∧ Sus cF [st2] c) ∨
+  (Sus cF [st2] s.frame ∧ s.callers = []) ∨
+  (s.frame.body = B2.body ∧ s.frame.term = B2.term ∧ ∃ c rs, s.callers = [(c, rs)] ∧ Sus cF [] c) ∨
+  (s.frame.body = [] ∧ s.frame.term = B2.term ∧ ∃ c rs, s.callers = [(c, rs)] ∧ Sus cF [] c) ∨
+  (Sus cF [] s.frame ∧ s.callers = [])
+
+theorem fam2_congr {cF : Clif.Frame} {st2 : Clif.Stmt} {B1 B2 : Clif.Block}
+    {s s' : Clif.State} (h : withBytes s (fun _ => none) = withBytes s' (fun _ => none))
+    (hs : Fam2 cF st2 B1 B2 s) : Fam2 cF st2 B1 B2 s' := by
+  have e1 : s.frame = s'.frame := congrArg (·.frame) h
+  have e2 : s.callers = s'.callers := congrArg (·.callers) h
+  have e3 : s.mem.allocs = s'.mem.allocs := congrArg (·.mem.allocs) h
+  unfold Fam2 AllocsIn at hs ⊢
+  rw [← e1, ← e2, ← e3]
+  exact hs
+
+section
+variable {p : Clif.Program} {c0 : Clif.State} {st2 : Clif.Stmt} {B1 B2 : Clif.Block}
+
+/-- A one-statement block's step: the statement done, the term and the callers kept. -/
+theorem next_one {env : Clif.Env} {s : Clif.State} {B : Bytes} {s' : Clif.State}
+    {st : Clif.Stmt} (hb : s.frame.body = [st]) (hnc : ∀ fn args, st.inst ≠ .call fn args)
+    (hni : ∀ sig callee args, st.inst ≠ .callIndirect sig callee args)
+    (hst : Clif.step env p (withBytes s B) = .next s') :
+    s'.frame.body = [] ∧ s'.frame.term = s.frame.term ∧ s'.callers = s.callers := by
+  have hbody : (withBytes s B).frame.body = [st] := hb
+  rw [Clif.step_inst env p _ _ [] hbody hnc hni] at hst
+  unfold Clif.StepResult.ofRes at hst
+  split at hst
+  · rename_i a _
+    obtain ⟨vs, m⟩ := a
+    simp only [Clif.continueWith] at hst
+    split at hst
+    · cases hst
+      exact ⟨rfl, rfl, rfl⟩
+    · cases hst
+  · cases hst
+  · cases hst
+
+/-- A direct call's step: the callee at its entry block below the caller with the call's rest. -/
+theorem next_call {env : Clif.Env} {s : Clif.State} {B : Bytes} {s' : Clif.State}
+    {rs : List Clif.ValueId} {fn : Clif.FnRef} {args : List Clif.ValueId}
+    {rest : List Clif.Stmt} {ex : Clif.ExtFunc} {f : Clif.Function} {Bf : Clif.Block}
+    (hb : s.frame.body = { results := rs, inst := .call fn args } :: rest)
+    (he : s.frame.func.extern? fn = some ex) (hfn : p.func? ex.name = some f)
+    (hB : f.blocks[0]? = some Bf) (hc : s.callers = [])
+    (hst : Clif.step env p (withBytes s B) = .next s') :
+    s'.frame.body = Bf.body ∧ s'.frame.term = Bf.term ∧
+      s'.callers = [({ s.frame with body := rest }, rs)] ∧
+      (f.slots = [] → s'.mem.allocs = s.mem.allocs) := by
+  obtain ⟨vals, B0, cs, -, hB0, rfl, hcc, -, -, hmem, hbody, hterm, -⟩ :=
+    CallEnterClif.step_call_entry (s := withBytes s B) hb he hfn hst
+  rw [hB] at hB0
+  cases hB0
+  refine ⟨hbody, hterm, ?_, fun hsl => ?_⟩
+  · show cs.callers ++ _ = _
+    rw [hcc, show (withBytes s B).callers = [] from hc]
+    rfl
+  · show cs.mem.allocs = _
+    rw [hmem]
+    exact (WitnessFull.enterSlots_nil hsl _).2
+
+/-- A `return` below one caller resumes it. -/
+theorem next_ret {env : Clif.Env} {s : Clif.State} {B : Bytes} {s' : Clif.State}
+    {xs : List Clif.ValueId} {c : Clif.Frame} {rs : List Clif.ValueId}
+    (hb : s.frame.body = []) (ht : s.frame.term = .ret xs) (hc : s.callers = [(c, rs)])
+    (hst : Clif.step env p (withBytes s B) = .next s') :
+    s'.frame.body = c.body ∧ s'.frame.func = c.func ∧ s'.frame.term = c.term ∧ s'.callers = [] := by
+  have hb' : (withBytes s B).frame.body = [] := hb
+  rw [Clif.step_term env p _ hb'] at hst
+  have ht' : (withBytes s B).frame.term = .ret xs := ht
+  rw [ht'] at hst
+  obtain ⟨regs, e1, e2⟩ := stepTerm_ret_next (s := withBytes s B) (c := c) (rs := rs) (cs := [])
+    hc hst
+  rw [e1]
+  exact ⟨rfl, rfl, rfl, e2⟩
+
+/-- **A step from a reachable state to a running state stays reachable.** -/
+theorem next_fam2 (H : CallShape2 p c0 st2 B1 B2) (env : Clif.Env) {s : Clif.State}
+    (hs : Fam2 c0.frame st2 B1 B2 s) (B : Bytes) {s' : Clif.State}
+    (hst : Clif.step env p (withBytes s B) = .next s') : Fam2 c0.frame st2 B1 B2 s' := by
+  obtain ⟨rs1, fn1, args1, ex1, f1, hb, he1, hf1, hB1, hsl1⟩ := H.call1
+  obtain ⟨rs2, fn2, args2, ex2, f2, hst2, he2, hf2, hB2⟩ := H.call2
+  obtain ⟨st1', hb1, hnc1, hni1⟩ := H.body1
+  obtain ⟨st2', hb2, hnc2, hni2⟩ := H.body2
+  obtain ⟨xs1, hx1⟩ := H.ret1
+  obtain ⟨xs2, hx2⟩ := H.ret2
+  obtain ⟨ys, hys⟩ := H.retC
+  rcases hs with ⟨hf, hc, ha⟩ | ⟨hfb, hft, ⟨c, rs, hc, hsus⟩, -⟩ | ⟨hfb, hft, c, rs, hc, hsus⟩ |
+    ⟨⟨hfb, hfu, hft⟩, hc⟩ | ⟨hfb, hft, c, rs, hc, hsus⟩ | ⟨hfb, hft, c, rs, hc, hsus⟩ |
+    ⟨⟨hfb, -, hft⟩, hc⟩
+  · -- the first call enters the first callee
+    obtain ⟨e1, e2, e3, e4⟩ := next_call (s := s) (by rw [hf]; exact hb) (by rw [hf]; exact he1)
+      hf1 hB1 hc hst
+    refine .inr (.inl ⟨e1, e2, ⟨_, rs1, e3, rfl, by rw [hf], by rw [hf]⟩, fun x hx => ?_⟩)
+    exact ha x (by rw [← e4 hsl1]; exact hx)
+  · -- the first callee's statement
+    obtain ⟨e1, e2, e3⟩ := next_one (hfb.trans hb1) hnc1 hni1 hst
+    exact .inr (.inr (.inl ⟨e1, e2.trans hft, c, rs, e3.trans hc, hsus⟩))
+  · -- the first callee returns into the caller
+    obtain ⟨e1, e2, e3, e4⟩ := next_ret hfb (hft.trans hx1) hc hst
+    exact .inr (.inr (.inr (.inl ⟨⟨e1.trans hsus.1, e2.trans hsus.2.1, e3.trans hsus.2.2⟩, e4⟩)))
+  · -- the second call enters the second callee
+    obtain ⟨e1, e2, e3, -⟩ := next_call (s := s) (rest := []) (by rw [hfb, hst2])
+      (by rw [hfu]; exact he2) hf2 hB2 hc hst
+    exact .inr (.inr (.inr (.inr (.inl ⟨e1, e2, _, rs2, e3, rfl, hfu, hft⟩))))
+  · -- the second callee's statement
+    obtain ⟨e1, e2, e3⟩ := next_one (hfb.trans hb2) hnc2 hni2 hst
+    exact .inr (.inr (.inr (.inr (.inr (.inl ⟨e1, e2.trans hft, c, rs, e3.trans hc, hsus⟩)))))
+  · -- the second callee returns into the caller
+    obtain ⟨e1, e2, e3, e4⟩ := next_ret hfb (hft.trans hx2) hc hst
+    exact .inr (.inr (.inr (.inr (.inr (.inr
+      ⟨⟨e1.trans hsus.1, e2.trans hsus.2.1, e3.trans hsus.2.2⟩, e4⟩)))))
+  · -- the caller returns: no next state
+    have hb' : (withBytes s B).frame.body = [] := hfb
+    rw [Clif.step_term env p _ hb'] at hst
+    have ht : (withBytes s B).frame.term = .ret ys := hft.trans hys
+    rw [ht] at hst
+    exact absurd hst ((stepTerm_ret (env := env) (p := p) (s := withBytes s B) (xs := ys) hc).1 s')
+
+/-- **A step from a reachable state stays reachable.** -/
+theorem step_fam2 (H : CallShape2 p c0 st2 B1 B2) (env : Clif.Env) {s : Clif.State}
+    (hs : Fam2 c0.frame st2 B1 B2 s) (B : Bytes) {t'' : TState} {B' : Bytes}
+    (h : res (Clif.step env p (withBytes s B)) = some (t'', B')) :
+    RInvG (Fam2 c0.frame st2 B1 B2) t'' := by
+  rcases res_some h with ⟨s', hst, rfl⟩ | ⟨v, rfl⟩
+  · exact next_fam2 H env hs B hst
+  · trivial
+
+/-- **The thread states reachable from a `CallShape2`'s caller.** -/
+theorem reach_inv2 (H : CallShape2 p c0 st2 B1 B2) {env : Clif.Env} {t : TState}
+    (h : RReach env p (.run c0) t) : RInvG (Fam2 c0.frame st2 B1 B2) t := by
+  induction h with
+  | base => exact Or.inl ⟨rfl, H.init⟩
+  | @step t evs t' _ hs ih =>
+    cases t with
+    | ret v => exact False.elim hs
+    | run s =>
+      obtain ⟨-, ⟨B, hB⟩, hf⟩ := hs
+      obtain ⟨t'', h1, h2⟩ := hf B hB
+      exact rinvG_strip (fun _ _ => fam2_congr) h2 (step_fam2 H env ih B h1)
+  | @stepS t evs t' _ hs ih =>
+    cases t with
+    | ret v => exact False.elim hs
+    | run s =>
+      obtain ⟨-, ⟨B, hB⟩, -, hf⟩ := hs
+      obtain ⟨t'', h1, h2⟩ := hf B hB
+      exact rinvG_strip (fun _ _ => fam2_congr) h2 (step_fam2 H env ih _ h1)
+  | strip _ he ih => exact rinvG_strip (fun _ _ => fam2_congr) he ih
+
+/-- **At most one caller** below every state reachable from a `CallShape2`'s caller. -/
+theorem depth2 (H : CallShape2 p c0 st2 B1 B2) {env : Clif.Env} :
+    ∀ S, RReach env p (.run c0) (.run S) → S.callers.length < 2 := by
+  intro S h
+  have hI : Fam2 c0.frame st2 B1 B2 S := reach_inv2 H h
+  rcases hI with ⟨-, hc, -⟩ | ⟨-, -, ⟨_, _, hc, -⟩, -⟩ | ⟨-, -, _, _, hc, -⟩ | ⟨-, hc⟩ |
+    ⟨-, -, _, _, hc, -⟩ | ⟨-, -, _, _, hc, -⟩ | ⟨-, hc⟩ <;> simp [hc]
+
+/-- **The accesses from the states reachable from a `CallShape2`'s caller lie on `LocO`**, if
+the first callee's statement accesses 8 bytes and the second's none. -/
+theorem partsOk2 (H : CallShape2 p c0 st2 B1 B2) {env : Clif.Env} {l : List (SKind × Nat)}
+    (hsh1 : ∀ s : Clif.State, s.frame.body = B1.body → evShape s = [l])
+    (hsh2 : ∀ s : Clif.State, s.frame.body = B2.body → evShape s = [[]])
+    (hl : ∀ x ∈ l, x.2 = 8 ∧ x.1.dir ≠ .F) : PartsOk env p (.run c0) LocO := by
+  intro t evs t' hR hs e he
+  cases t with
+  | ret v => exact False.elim hs
+  | run s =>
+  have hI : Fam2 c0.frame st2 B1 B2 s := reach_inv2 H hR
+  have hv0 := CallSegGeo.cstep_reads_valid hs
+  obtain ⟨⟨hsh', hd⟩, -, -⟩ := hs
+  have hnil : evShape s = [[]] → False := fun h => by
+    rw [h, List.mem_singleton, List.map_eq_nil_iff] at hsh'
+    subst hsh'; cases he
+  obtain ⟨_, _, _, _, _, hb, -⟩ := H.call1
+  obtain ⟨_, _, _, _, _, hst2, -⟩ := H.call2
+  rcases hI with ⟨hf, -, -⟩ | ⟨hfb, -, -, ha⟩ | ⟨hfb, -⟩ | ⟨⟨hfb, -⟩, -⟩ | ⟨hfb, -⟩ | ⟨hfb, -⟩ |
+    ⟨⟨hfb, -⟩, -⟩
+  · exact (hnil (by unfold evShape; rw [hf, hb])).elim
+  · rw [hsh1 s hfb, List.mem_singleton] at hsh'
+    have hm := List.mem_map_of_mem (f := fun e : Ev SKind BVal => (e.k, e.n)) he
+    rw [hsh'] at hm
+    have hn : e.n = 8 := (hl _ hm).1
+    have hdir : e.dir ≠ .F := by rw [(hd e he).1]; exact (hl _ hm).2
+    refine ⟨fun _ => ⟨?_, hn⟩, fun _ => by omega⟩
+    have hv := hv0 e he hdir
+    simp only [Clif.Mem.valid, List.any_eq_true] at hv
+    obtain ⟨y, hy, hcy⟩ := hv
+    have hy' := ha y hy
+    simp only [memL, List.mem_singleton] at hy'
+    subst hy'
+    simp only [Clif.Alloc.contains, Bool.and_eq_true, decide_eq_true_eq] at hcy
+    omega
+  · exact (hnil (evShape_nil hfb)).elim
+  · exact (hnil (by unfold evShape; rw [hfb, hst2])).elim
+  · exact (hnil (hsh2 s hfb)).elim
+  · exact (hnil (evShape_nil hfb)).elim
+  · exact (hnil (evShape_nil hfb)).elim
+
+end
+
+/-! ## The reachable CLIF states of `csOM` -/
+
+/-- `csOM` calls `atomic_load`, then the external's specification. -/
+theorem shape_M : CallShape2 pM csOM { results := [2], inst := .call 1 [1] } B0L BT := by
+  obtain ⟨-, -, -, -, -, hb, ht, he0, he1, hf0, hf1, -⟩ := checksOM
+  obtain ⟨-, -, -, hent, -, -, hsl⟩ := clifC
+  have hB0L : fL.blocks[0]? = some B0L := by
+    simpa [Clif.Function.entry?, List.head?_eq_getElem?] using hent
+  exact ⟨⟨rfl, fun _ hx => hx⟩, ⟨[1], 0, [0], extL, fL, hb, he0, hf0, hB0L, hsl⟩,
+    ⟨[2], 1, [1], extT, fT, rfl, he1, hf1, b0T⟩,
+    ⟨_, checksO.2.2.2.2.2.1, (fun _ _ h => by cases h), (fun _ _ _ h => by cases h)⟩,
+    ⟨_, body_BT, (fun _ _ h => by cases h), (fun _ _ _ h => by cases h)⟩,
+    ⟨_, checksO.2.2.2.2.2.2.1⟩, ⟨_, term_BT⟩, ⟨_, ht⟩⟩
+
+/-- **The accesses from the states reachable from `csOM` lie on `LocO`** (`atomic_load`'s 8
+bytes at `0`; the external's specification has none). -/
+theorem partsOk_M {env : Clif.Env} : PartsOk env pM (.run csOM) LocO :=
+  partsOk2 shape_M (l := [(.scR, 8)])
+    (fun s hs => (evShape_congr (s' := csL) (by rw [hs]; rfl)).trans shapeL1)
+    (fun s hs => by unfold evShape; rw [hs, body_BT])
+    (by decide)
+
+/-- **At most one caller** below every state reachable from `csOM`. -/
+theorem depth_M {env : Clif.Env} :
+    ∀ S, RReach env pM (.run csOM) (.run S) → S.callers.length < 2 :=
+  depth2 shape_M
+
+/-! ## The activation's entry and the program-level statement -/
+
+/-- **The caller's root activation in `linkM` entered at its ABI entry.** -/
+theorem ent_M : ∃ g : Act, Ent linkM Clif.Env.empty pM (PrivA RAM) (.run csOM) LocO frM MxM 2
+    (fun _ => none) g (sM0, none) (csTM, PrivA RAM) := by
+  obtain ⟨-, -, -, vc, ctx, st0, R, gn, bl, A, Lp, ss, ss', cc, ins, a0, hF⟩ :=
+    fnOk_M (env := Clif.Env.empty) rfl rfl
+  have hS := hF sM0 0x200 GM 0x4000#64 (E2E.spv w₀M) [] [] callerM [] (fun _ => False) []
+    wf_RAM abiRCM checksOM.2.2.2.2.2.2.2.2.2.2.2
+  obtain ⟨-, hq, hA⟩ := q_init_lines wf_RAM abiRCM body_RAM
+  refine ⟨⟨"f", callerM, sM0, 0x200, GM, 0x4000#64, fM, vc, ctx, st0, R, gn, bl, A,
+    ⟨RAM.F, fun _ => none, RAM.ctx.slotBase, 0⟩, E2E.spv w₀M, Lp, ss, ss', cc, ins, a0, [], [],
+    callerM, [], fun _ => False, []⟩, rfl, csOM, fun _ => False, rfl, ?_, ?_, func_fM⟩
+  · exact {
+      stat := hS
+      syms := rfl
+      code := codeIn_RAM
+      bnd := fun _ h => h
+      dirty := fun _ h => .inl h
+      reach := RReach.base
+      call := rfl
+      ret := fun h => absurd rfl h
+      linv := linv_M
+      place := rfl
+      nv := fun _ _ _ _ h => h
+      ndead := fun _ h => h.elim
+      opens := fun _ h => absurd h List.not_mem_nil
+      budget := show (2 - 0) * 256 ≤ 512 by decide
+      func := rfl }
+  · exact chainP_entry hS b0M rfl rfl rfl rfl rfl regsM_eq checksOM.2.2.1 checksOM.2.2.2.1 relW_M
+      argsAt_M hq hA
+
+open ProgE2E PrivCohT Rel in
+/-- **A compiled caller of a compiled callee and of an external, through both calls and back,
+from the generic theorem** (`realizes_linked_calls_ext` on `linkM`/`pM` with one thread, the
+caller's root activation, the external under its contract `extM`, every premise discharged but
+the run): every execution of the realized prefix of a precise run of the linked machine from the
+caller's ABI entry is realized by a `CStepS` thread of `pM` from `csOM`. -/
+theorem realizes_calls_mixT {ls : List Lab} {t' : CallCompose.AT}
+    (hr : PRun Policy.arm linkM.M (OkB (PrivA RAM)) (sM0, none) ls t') :
+    ∃ k : Nat → Nat, (∀ i < 1, k i ≤ ls.length) ∧
+      ∀ (PA : Traces ProgE2E.AState AKind BVal) (locsA locsC : List (Nat × Nat)) (MA0 MC0 : Bytes)
+        (rfA coA rmwA : Concurrency.Rel PEv), PA.n = 1 →
+        (∀ i < 1, PA.tr i = conv (evTr (ls.take (k i)))) →
+        (PA.exec locsA rfA coA rmwA).Wf →
+        Acyclic (union (PA.exec locsA rfA coA rmwA).poLoc (PA.exec locsA rfA coA rmwA).com) →
+        InitFirst (PA.exec locsA rfA coA rmwA) →
+        (∀ i < 1, ∀ a b, rmwA (.thr i a.1 a.2) (.thr i b.1 b.2) ↔
+          MonPair (evTr (ls.take (k i))) a b) →
+        locsC <+: locsA →
+        (∀ q (h : q < locsA.length), locsC.length ≤ q → ∃ j < 1, PrivA RAM (locsA[q]).1) →
+        (∀ q (h : q < locsC.length),
+          bytesI.get MA0 (locsC[q]).1 (locsC[q]).2 = bytesI.get MC0 (locsC[q]).1 (locsC[q]).2) →
+        StackDisjoint PA (fun _ l => PrivA RAM l ∨ PrivA RAM l) →
+        ∃ (PC : Traces TState SKind BVal) (φ : PEv → PEv), PC.n = 1 ∧
+          (∀ i < 1, PC.st i 0 = csTM) ∧ PC.Runs (CStepS Clif.Env.empty pM) ∧
+          Realizes PA locsA MA0 rfA coA rmwA PC locsC MC0 φ (fun _ _ _ => True) := by
+  obtain ⟨g, hg⟩ := ent_M
+  exact realizes_linked_calls_ext (env := Clif.Env.empty) (n := 1) (Bnd := fun _ => PrivA RAM)
+    (c0 := fun _ => .run csOM) (Loc := fun _ => LocO) (Dcap := fun _ => 2) (g := fun _ => g)
+    (sA := fun _ => (sM0, none)) (cs := fun _ => csTM) (D0 := fun _ => PrivA RAM)
+    (fun _ _ => partsOk_M) (fun _ _ => partDisj_O) linkFreeM keepsAllocs_E keepsPlace_E placeOkM
+    (fun _ _ => depth_M) (linkOkM rfl rfl) extM (fun _ _ => hg) (ls := fun _ => ls)
+    (t' := fun _ => t') (fun _ _ => hr)
 
 end Concurrency.CallSegOkGT.WitnessMix
