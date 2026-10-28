@@ -401,4 +401,131 @@ theorem r_twoRunLERWZIUF_either_Lsl (M : Nat) {F : BitVec 64 → Prop} {c : BitV
     hag hx29
   exact ⟨N, h⟩
 
+set_option maxHeartbeats 4000000 in
+/-- **`backend_twoRunLERWZIUPV` applies** to `Lsl`'s `r` compiled through the cleanup path, run by
+the linked machine's hooks at any depth, for two entries whose worlds differ inside `F`: besides
+`RetAgreeX` and the memory outside `F ∪ D`, the second run's frame record holds its entry
+`x30`/`x29` at the return (#729). -/
+theorem r_twoRunLERWZIUPV_Lsl (M : Nat) :
+    ∃ vc vcp af fa fb, CompiledCleanup fR 0 vc vcp (spillAlloc vcp) af fa fb ∧
+      ∀ (env : Clif.Env) (K : Nat) (F D : BitVec 64 → Prop) (c : BitVec 64) (w₀ w₀' : Arm.ArmState)
+        (args : List Clif.Val) (cs : Clif.State), (∀ a, D a → F a) →
+        ClifEntry fR args cs →
+        RelW ⟨F, fun _ => none, af.slotBase, (RAFrame.compute vcp (spillAlloc vcp)).intBase⟩
+          fR c cs.frame.slots cs.mem w₀ →
+        RelW ⟨F, fun _ => none, af.slotBase, (RAFrame.compute vcp (spillAlloc vcp)).intBase⟩
+          fR c cs.frame.slots cs.mem w₀' →
+        ArgsAtEntry F fR.sig args w₀ → SameWorld (fun b => F b ∨ D b) w₀ w₀' →
+        (∀ r v, (ArgLoc.reg r, v) ∈ (locsOf fR.sig).zip args → regVal w₀' r = regVal w₀ r) →
+        (∀ off v, (ArgLoc.stack off, v) ∈ (locsOf fR.sig).zip args → ∀ k < v.ty.bytes,
+          w₀'.mem (Arm.r (.GPR 29#5) w₀ + BitVec.ofInt 64 (16 + (off : Int)) + BitVec.ofNat 64 k) =
+            w₀.mem (Arm.r (.GPR 29#5) w₀ + BitVec.ofInt 64 (16 + (off : Int)) + BitVec.ofNat 64 k)) →
+        TrapsExplicit env Lsl.P.bare cs → ∀ fuel vals cm,
+        Clif.runLoop env Lsl.P.bare fuel cs = .returned vals cm →
+        ∀ (G G' : BitVec 64 → Prop) (base ra ra' : BitVec 64) (Kp Kp' : Nat) (cc cc' : BitVec 64)
+          (Pp Pp' : Nat → BitVec 64 → BitVec 8) (Rr Rr' : Nat → Arm.ArmState) (s t0 : Arm.ArmState),
+          ActEntryPR vcp (spillAlloc vcp) af fa fb K F G (ExtSemI.const Lsl.Xb) (Lsl.hooks M) base ra
+            Kp cc Pp Rr s w₀ →
+          ActEntryPR vcp (spillAlloc vcp) af fa fb K F G' (ExtSemI.const Lsl.Xb) (Lsl.hooks M) base
+            ra' Kp' cc' Pp' Rr' t0 w₀' →
+          EntryAgree (frameDrop af + K) s t0 → Arm.r (.GPR 29#5) s = Arm.r (.GPR 29#5) t0 →
+          ∃ N, RetAgreeX (frameDrop af + K) (spv s)
+            (iterN (ArmStepX Lsl.Xb (Lsl.hooks M) fa)
+              ((prologueLines af.frameSize).length + N + ((spAdjLines false af.frameSize).length + 2))
+              t0)
+            (iterN (ArmStepX Lsl.Xb (Lsl.hooks M) fa)
+              ((prologueLines af.frameSize).length + N + ((spAdjLines false af.frameSize).length + 2))
+              s) ∧
+            Arm.read_mem_bytes 16 (spv t0 - 16#64)
+              (iterN (ArmStepX Lsl.Xb (Lsl.hooks M) fa)
+                ((prologueLines af.frameSize).length + N +
+                  ((spAdjLines false af.frameSize).length + 2)) t0) = xreg 30 t0 ++ xreg 29 t0 := by
+  obtain ⟨vc, vcp, af, fa, fb, hc, hx30', hnh⟩ := cleanupChecks_sound fR_cleanupChecks
+  refine ⟨vc, vcp, af, fa, fb, hc, fun env K F D c w₀ w₀' args cs hD hce hrel hrel' hargs hsw hreg
+    hstk htr fuel vals cm hrun G G' base ra ra' Kp Kp' cc cc' Pp Pp' Rr Rr' s t0 he he' hag hx29 =>
+    ?_⟩
+  obtain ⟨lm, hlm⟩ := FnAsm.layout_labelOffsets hc.layout
+  obtain ⟨body, psF, hpsF, -, hk⟩ := emitFunc_ok hc.emit
+  have hpsF' : blocksLinesE ⟨fa.k, af.slotBase⟩ af af.blocks.toList {} = .ok (body, psF) := by
+    rw [hk]; exact hpsF
+  have hx30 : fa.x30Free lm = true := by
+    rwa [show getOk (labelOffsets fa.lines) = lm by rw [hlm]; rfl] at hx30'
+  obtain ⟨us, outs, w, ⟨b, kk, ρ, w₁, vb, ops, outs', hs, hvb, hkk, hops, hvals, hsem⟩, -⟩ :=
+    backend_pairRunDF_cleanup (XI := ExtSemI.const Lsl.Xb) (Lsl_ok.subset fR fR_mem) hc
+      (instCallsOne_all fR) (tryCallsOne_all fR) (fun _ _ _ => fR_xcalls _ _ _)
+      (fun _ _ _ => fR_xnif) (fun _ => lslTls F) (fun n b h => by cases h) rfl hD (fun _ => 0) hce
+      hrel hrel' hargs hsw hreg hstk htr fuel vals cm hrun
+  obtain ⟨N, -, -, h, -, -, hw2, -, -, -, -, -, -, -⟩ := backend_twoRunLERWZIUPV hc (fun _ => 0) hsw
+    hs hvb hkk hops hvals hsem hlm hpsF' he (he'.toN 0)
+    (fun n => (he'.calls n).mono fun _ hu => hu.1)
+    (fun ht n => (he'.tries ht n).mono fun _ hu => hu.1)
+    rfl (formsCovered_cleanup_complete (lowerScope_of fR_lowerScope) hc.lower hc.prepare _) hx30
+    (fun _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ ⟨_, _, hj, _⟩ hd => (noHook_lineDest hnh hj hd).elim)
+    (fun _ _ _ _ _ _ _ _ _ _ _ _ _ _ ⟨a, b, c, _, _, hj, _⟩ _ _ =>
+      (noHook_line hnh hj).2.2 a b c rfl |>.elim)
+    hag hx29
+  exact ⟨N, h, hw2⟩
+
+open DeadCleanupWitness in
+set_option maxHeartbeats 4000000 in
+/-- **`backend_twoRunLERWZIUPF_either` applies** to the cleanup compilation of `source` through the
+dispatch (`CompiledEither.cleanup`), for two entries: `RetAgreeX` and the second run's frame record
+at the return. -/
+theorem source_twoRunLERWZIUPF_either :
+    ∃ vc vcp af fa fb, CompiledEither source 0 vc vcp (spillAlloc vcp) af fa fb ∧
+      ∀ (env : Clif.Env) (K : Nat) (F : BitVec 64 → Prop) (c : BitVec 64) (w₀ : Arm.ArmState)
+        (args : List Clif.Val) (cs : Clif.State),
+        ClifEntry source args cs →
+        RelW ⟨F, fun _ => none, af.slotBase, (RAFrame.compute vcp (spillAlloc vcp)).intBase⟩
+          source c cs.frame.slots cs.mem w₀ →
+        ArgsAtEntry F source.sig args w₀ →
+        TrapsExplicit env ({ funcs := [] } : Clif.Program) cs → ∀ fuel vals cm,
+        Clif.runLoop env { funcs := [] } fuel cs = .returned vals cm →
+        ∀ (G G' : BitVec 64 → Prop) (base ra ra' : BitVec 64) (Kp Kp' : Nat) (cc cc' : BitVec 64)
+          (Pp Pp' : Nat → BitVec 64 → BitVec 8) (Rr Rr' : Nat → Arm.ArmState) (s t0 : Arm.ArmState),
+          ActEntryPR vcp (spillAlloc vcp) af fa fb K F G (ExtSemI.const xQuiet) idHooks base ra Kp cc
+            Pp Rr s w₀ →
+          ActEntryPR vcp (spillAlloc vcp) af fa fb K F G' (ExtSemI.const xQuiet) idHooks base ra' Kp'
+            cc' Pp' Rr' t0 w₀ →
+          EntryAgree (frameDrop af + K) s t0 → Arm.r (.GPR 29#5) s = Arm.r (.GPR 29#5) t0 →
+          ∃ N, RetAgreeX (frameDrop af + K) (spv s)
+            (iterN (ArmStepX xQuiet idHooks fa)
+              ((prologueLines af.frameSize).length + N + ((spAdjLines false af.frameSize).length + 2))
+              t0)
+            (iterN (ArmStepX xQuiet idHooks fa)
+              ((prologueLines af.frameSize).length + N + ((spAdjLines false af.frameSize).length + 2))
+              s) ∧
+            Arm.read_mem_bytes 16 (spv t0 - 16#64)
+              (iterN (ArmStepX xQuiet idHooks fa)
+                ((prologueLines af.frameSize).length + N +
+                  ((spAdjLines false af.frameSize).length + 2)) t0) = xreg 30 t0 ++ xreg 29 t0 := by
+  obtain ⟨vc, vcp, af, fa, fb, hc, hx30', hnh⟩ := cleanupChecks_sound source_cleanupChecks
+  have hsub : InSubset ({ funcs := [] } : Clif.Program) source :=
+    InSubset.of_verifiable input_conditions.1 (fun _ => rfl)
+  refine ⟨vc, vcp, af, fa, fb, .cleanup hc, fun env K F c w₀ args cs hce hrel hargs htr fuel vals cm
+    hrun G G' base ra ra' Kp Kp' cc cc' Pp Pp' Rr Rr' s t0 he he' hag hx29 => ?_⟩
+  obtain ⟨lm, hlm⟩ := FnAsm.layout_labelOffsets hc.layout
+  obtain ⟨body, psF, hpsF, -, hk⟩ := emitFunc_ok hc.emit
+  have hpsF' : blocksLinesE ⟨fa.k, af.slotBase⟩ af af.blocks.toList {} = .ok (body, psF) := by
+    rw [hk]; exact hpsF
+  have hx30 : fa.x30Free lm = true := by
+    rwa [show getOk (labelOffsets fa.lines) = lm by rw [hlm]; rfl] at hx30'
+  have hnil : (locsOf source.sig).zip args = [] := by
+    rw [show locsOf source.sig = [] from rfl]; rfl
+  obtain ⟨N, -, -, h, -, -, hw2, -, -, -, -, -, -, -⟩ := backend_twoRunLERWZIUPF_either
+    (D := fun _ => False) (XI := ExtSemI.const xQuiet) hsub (.cleanup hc) source_callsOne.1
+    source_callsOne.2 (fun _ n _ => source_xcalls _ _ _ n)
+    (fun _ _ _ => XNI.xnif (source_xni _ _ _ _ _)) (fun _ => xQuiet_tls F)
+    (fun n b h => by cases h) rfl (fun _ h => h.elim) (fun _ => 0) hce hrel hrel hargs
+    (SameWorld.refl _ _) (fun r v h => by simp [hnil] at h) (fun off v h => by simp [hnil] at h)
+    htr fuel hrun hlm hpsF' he (he'.toN 0)
+    (fun n => (he'.calls n).mono fun _ hu => hu.1)
+    (fun ht n => (he'.tries ht n).mono fun _ hu => hu.1)
+    rfl (formsCovered_cleanup_complete (lowerScope_of source_lowerScope) hc.lower hc.prepare _) hx30
+    (fun _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ ⟨_, _, hj, _⟩ hd => (noHook_lineDest hnh hj hd).elim)
+    (fun _ _ _ _ _ _ _ _ _ _ _ _ _ _ ⟨a, b, c, _, _, hj, _⟩ _ _ =>
+      (noHook_line hnh hj).2.2 a b c rfl |>.elim)
+    hag hx29
+  exact ⟨N, h, hw2⟩
+
 end E2E.TwoRunVWitness

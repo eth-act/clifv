@@ -103,6 +103,10 @@ theorem backend_twoRunLERWZNpWPV (hc : CompiledCleanup f k vc vcp rf af fa fb)
         ((prologueLines R.af.frameSize).length + T + R.retLen) t0) = spv t0 ∧
       xreg 29 (iterN ({ R with s0 := t0, G := G', X := (XI.upTo N).at 0 } : RL).step
         ((prologueLines R.af.frameSize).length + T + R.retLen) t0) = xreg 29 t0 ∧
+      (∀ i < (prologueLines R.af.frameSize).length + T + R.retLen,
+        R.Good (iterN ({ R with X := (XI.upTo N).at 0 } : RL).step i R.s0) ∧
+        ({ R with s0 := t0, G := G' } : RL).Good
+          (iterN ({ R with s0 := t0, G := G', X := (XI.upTo N).at 0 } : RL).step i t0)) ∧
       ∀ i < (prologueLines R.af.frameSize).length + T + R.retLen, ∃ d d',
         StEqOutX (R.Zc d d')
           (iterN ({ R with s0 := t0, G := G', X := (XI.upTo N).at 0 } : RL).step i t0)
@@ -162,7 +166,8 @@ theorem backend_twoRunLERWZNpWPV (hc : CompiledCleanup f k vc vcp rf af fa fb)
   obtain ⟨hfull, hpre⟩ := backend_twoRunLWNpPV hc ρ₀ hsw hs hvb hk hops hvals hsem hlm hpsF he he'
     hR hcov hx30 hcall htls hag hx29
   refine ⟨fun hN => ?_, fun hN => ?_⟩
-  · obtain ⟨T, e, e', hlk, ⟨⟨W, hqA, hqB⟩, -, -, -, -, hLB⟩, hpc, hpc', hre, hre'⟩ := hfull hN
+  · obtain ⟨T, e, e', hlk, ⟨⟨W, hqA, hqB⟩, -, -, -, -, hLB⟩, hpc, hpc', hre, hre', hgood⟩ :=
+      hfull hN
     refine ⟨T, hpc, hpc', ?_⟩
     have hs : ∀ (g : Arm.ArmState → Arm.ArmState) (x : Arm.ArmState) (j : Nat),
         iterN g ((prologueLines R.af.frameSize).length + T + j) x =
@@ -183,7 +188,7 @@ theorem backend_twoRunLERWZNpWPV (hc : CompiledCleanup f k vc vcp rf af fa fb)
     refine ⟨by rw [hs, hs]; exact hra, fun a hFa hDa => ?_, by rw [hs]; exact f1,
       by rw [hs]; exact f2, fun a ha => by rw [hs]; exact g1 a ha,
       fun a ha => by rw [hs]; exact g2 a ha, by rw [hs]; exact e2, by rw [hs]; exact sp2,
-      by rw [hs]; exact x2, fun i hi => ?_⟩
+      by rw [hs]; exact x2, hgood, fun i hi => ?_⟩
     · rw [hs, hs]
       refine hm a ?_
       rintro ⟨-, -, -, hz⟩
@@ -321,7 +326,7 @@ theorem backend_twoRunLERWZNpWV (hc : CompiledCleanup f k vc vcp rf af fa fb)
   obtain ⟨h1, h2⟩ := backend_twoRunLERWZNpWPV hc ρ₀ hsw hs hvb hk hops hvals hsem hlm hpsF he he'
     hR hcov hx30 (fun n n' c c' i u u' hin _ hin' => hcall n n' c c' i u u' hin hin') htls hag hx29
   refine ⟨fun hN => ?_, h2⟩
-  obtain ⟨T, a1, a2, a3, a4, -, -, -, -, -, -, -, a5⟩ := h1 hN
+  obtain ⟨T, a1, a2, a3, a4, -, -, -, -, -, -, -, -, a5⟩ := h1 hN
   exact ⟨T, a1, a2, a3, a4, a5⟩
 
 set_option maxHeartbeats 8000000 in
@@ -613,6 +618,10 @@ theorem backend_twoRunLERWZIUPV (hc : CompiledCleanup f k vc vcp rf af fa fb)
         ((prologueLines R.af.frameSize).length + T + R.retLen) t0) = spv t0 ∧
       xreg 29 (iterN ({ R with s0 := t0, G := G', X := XI.at 0 } : RL).step
         ((prologueLines R.af.frameSize).length + T + R.retLen) t0) = xreg 29 t0 ∧
+      (∀ i < (prologueLines R.af.frameSize).length + T + R.retLen,
+        R.Good (iterN ({ R with X := XI.at 0 } : RL).step i R.s0) ∧
+        ({ R with s0 := t0, G := G' } : RL).Good
+          (iterN ({ R with s0 := t0, G := G', X := XI.at 0 } : RL).step i t0)) ∧
       ∀ i < (prologueLines R.af.frameSize).length + T + R.retLen, ∃ d d',
         StEqOutX (R.Zc d d')
           (iterN ({ R with s0 := t0, G := G', X := XI.at 0 } : RL).step i t0)
@@ -745,7 +754,7 @@ theorem backend_twoRunLERWZIUV (hc : CompiledCleanup f k vc vcp rf af fa fb)
         StEqOutX (R.Zc d d')
           (iterN ({ R with s0 := t0, G := G', X := XI.at 0 } : RL).step i t0)
           (iterN ({ R with X := XI.at 0 } : RL).step i R.s0) := by
-  obtain ⟨T, a1, a2, a3, a4, -, -, -, -, -, -, -, a5⟩ := backend_twoRunLERWZIUPV hc ρ₀ hsw hs hvb
+  obtain ⟨T, a1, a2, a3, a4, -, -, -, -, -, -, -, -, a5⟩ := backend_twoRunLERWZIUPV hc ρ₀ hsw hs hvb
     hk hops hvals hsem hlm hpsF he he0 hC' hT' hR hcov hx30
     (fun N n n' c c' i u u' hin _ hin' => hcall N n n' c c' i u u' hin hin') htls hag hx29
   exact ⟨T, a1, a2, a3, a4, a5⟩

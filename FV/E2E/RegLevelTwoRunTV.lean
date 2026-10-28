@@ -123,7 +123,8 @@ theorem RL.realizesJCPTV {R : RL} {t0 : Arm.ArmState} {G' : BitVec 64 → Prop} 
       (({ R with s0 := t0, G := G', X := XI'.at n' } : RL).valueSemGS OkG') ckeep
       ({ R with X := XI.at 0 } : RL).step ({ R with s0 := t0, G := G', X := XI'.at 0 } : RL).step K
       (JR R ({ R with s0 := t0, G := G' } : RL) K LB)
-      (fun u u' => ∃ c c' i, Lk c c' i u u') (RL.CallSt R) (RL.CallSt R) (P n) (P' n') := by
+      (fun u u' => (∃ c c' i, Lk c c' i u u') ∧ R.Good u ∧ ({ R with s0 := t0, G := G' } : RL).Good u')
+      (RL.CallSt R) (RL.CallSt R) (P n) (P' n') := by
   intro n n' s c s' c' d d' ⟨⟨W, hq, hq'⟩, hA, hA', hsh, hK, hLB⟩ hP hP' hd hd' hshK
   let Rn : RL := { R with X := XI.at n }
   let Rn' : RL := { R with s0 := t0, G := G', X := XI'.at n' }
@@ -152,7 +153,8 @@ theorem RL.realizesJCPTV {R : RL} {t0 : Arm.ArmState} {G' : BitVec 64 → Prop} 
   have hq1' := QW.ofWithX (R := ({ R with s0 := t0, G := G' } : RL)) hqe'
   exact ⟨m, e, e', hE, hE', ⟨⟨_, hq1, hq1'⟩, hAe, hAe', hse, hKe,
     hend c c' e e' m _ _ hK hKe hse ⟨_, hq1, hq1'⟩ (hL m (Nat.le_refl _))⟩,
-    fun i hi => ⟨c, c', i, hL i (Nat.le_of_lt hi)⟩, hcnt, hcnt'⟩
+    fun i hi => ⟨⟨c, c', i, hL i (Nat.le_of_lt hi)⟩, (ht i hi).1.1.good, (ht i hi).2.1.good⟩,
+    hcnt, hcnt'⟩
 
 set_option maxHeartbeats 2000000 in
 /-- **`RL.twoRunCT` for the guarded value semantics** (same proof, on `RL.realizesJCPTV`). -/
@@ -245,10 +247,14 @@ theorem RL.twoRunCTV {R : RL} {t0 : Arm.ArmState} {G' : BitVec 64 → Prop} {XI 
           (iterN ({ R with X := XI.at 0 } : RL).step i R.s0) ∧
         ({ R with s0 := t0, G := G', X := XI'.at 0 } : RL).GoodXNY (fun _ => True)
           (iterN ({ R with s0 := t0, G := G', X := XI'.at 0 } : RL).step i t0)) ∧
-      (∀ i < N, ∃ c c' j, Lk c c' j
+      (∀ i < N, (∃ c c' j, Lk c c' j
         (iterN ({ R with X := XI.at 0 } : RL).step ((prologueLines R.af.frameSize).length + i) R.s0)
         (iterN ({ R with s0 := t0, G := G', X := XI'.at 0 } : RL).step
           ((prologueLines R.af.frameSize).length + i) t0)) ∧
+        R.Good (iterN ({ R with X := XI.at 0 } : RL).step
+          ((prologueLines R.af.frameSize).length + i) R.s0) ∧
+        ({ R with s0 := t0, G := G' } : RL).Good (iterN ({ R with s0 := t0, G := G', X := XI'.at 0 } :
+          RL).step ((prologueLines R.af.frameSize).length + i) t0)) ∧
       JR R ({ R with s0 := t0, G := G' } : RL) K LB
         (iterN ({ R with X := XI.at 0 } : RL).step ((prologueLines R.af.frameSize).length + N) R.s0) e
         (iterN ({ R with s0 := t0, G := G', X := XI'.at 0 } : RL).step
@@ -411,10 +417,14 @@ theorem RL.twoRunPRTV {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAsm} {fb :
           (iterN ({ R with X := XI.at 0 } : RL).step i R.s0) ∧
         ({ R with s0 := t0, G := G', X := XI'.at 0 } : RL).GoodXNY (fun _ => True)
           (iterN ({ R with s0 := t0, G := G', X := XI'.at 0 } : RL).step i t0)) ∧
-      (∀ i < N, ∃ c c' j, Lk c c' j
+      (∀ i < N, (∃ c c' j, Lk c c' j
         (iterN ({ R with X := XI.at 0 } : RL).step ((prologueLines R.af.frameSize).length + i) R.s0)
         (iterN ({ R with s0 := t0, G := G', X := XI'.at 0 } : RL).step
           ((prologueLines R.af.frameSize).length + i) t0)) ∧
+        R.Good (iterN ({ R with X := XI.at 0 } : RL).step
+          ((prologueLines R.af.frameSize).length + i) R.s0) ∧
+        ({ R with s0 := t0, G := G' } : RL).Good (iterN ({ R with s0 := t0, G := G', X := XI'.at 0 } :
+          RL).step ((prologueLines R.af.frameSize).length + i) t0)) ∧
       JR R ({ R with s0 := t0, G := G' } : RL) KJ LB
         (iterN ({ R with X := XI.at 0 } : RL).step ((prologueLines R.af.frameSize).length + N) R.s0) e
         (iterN ({ R with s0 := t0, G := G', X := XI'.at 0 } : RL).step

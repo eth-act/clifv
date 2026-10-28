@@ -300,7 +300,11 @@ theorem backend_twoRunLWNpPV (hc : CompiledCleanup f k vc vcp rf af fa fb)
         ((prologueLines R.af.frameSize).length + T + R.retLen) R.s0) = ra ∧
       Arm.r .PC (iterN ({ R with s0 := t0, G := G', X := (XI.upTo N).at 0 } : RL).step
         ((prologueLines R.af.frameSize).length + T + R.retLen) t0) = ra' ∧
-      R.RetsAt e ∧ R.RetsAt e') ∧
+      R.RetsAt e ∧ R.RetsAt e' ∧
+      ∀ i < (prologueLines R.af.frameSize).length + T + R.retLen,
+        R.Good (iterN ({ R with X := (XI.upTo N).at 0 } : RL).step i R.s0) ∧
+        ({ R with s0 := t0, G := G' } : RL).Good
+          (iterN ({ R with s0 := t0, G := G', X := (XI.upTo N).at 0 } : RL).step i t0)) ∧
     (N < w₁.2 → ∃ T b k a its m w a' its' m' w',
       (∀ i < T, ∃ c c', StEqOutX (R.Zc c c')
         (iterN ({ R with X := (XI.upTo N).at 0 } : RL).step
@@ -507,7 +511,7 @@ theorem backend_twoRunLWNpPV (hc : CompiledCleanup f k vc vcp rf af fa fb)
     simp only [vctr] at hxN
     refine ⟨T, bx, kx, a, its, m, w2, a', its', m', w2', fun i hi => ?_, h3, ?_, ?_,
       vbx, ix, hvbx, hix, hcI⟩
-    · obtain ⟨c, c', _, h⟩ := h2 i hi
+    · obtain ⟨⟨c, c', _, h⟩, -, -⟩ := h2 i hi
       exact ⟨c, c', h.1⟩
     · rw [h4, ← hnc, hxN]
     · rw [h5, ← hnc', hxN]
@@ -545,7 +549,7 @@ theorem backend_twoRunLWNpPV (hc : CompiledCleanup f k vc vcp rf af fa fb)
           ((VConf.run ⟨b, kk, ρ, w₁⟩).mapW pairFst, (VConf.run ⟨b, kk, ρ, w₁⟩).mapW pairSnd)
           ((VConf.ret outs w).mapW pairFst, (VConf.ret outs w).mapW pairSnd))
     have hpp := pstar_of_projS (hp₁ (XI.upTo N)) (hp₂ (XI.upTo N)) hsU ⟨_, hlast⟩
-    obtain ⟨T, e, e', -, h2, h3, -, h5, h6, h7⟩ :=
+    obtain ⟨T, e, e', hp0, h2, h3, hep, h5, h6, h7⟩ :=
       RL.twoRunPRTV hc.check hc.alloc hc.emit hc.layout hlm hpsF heU heU' rfl hcov ρ₀
         (fun _ Y => Y = F) (fun _ Y => Y = F) (KJLV _ (XI.upTo N) t0 G' F)
         (fun d d' u u' => StEqOutX (Backend.Proof.RL.Zc _ d d') u u' ∧
@@ -558,7 +562,19 @@ theorem backend_twoRunLWNpPV (hc : CompiledCleanup f k vc vcp rf af fa fb)
         hstepL hendL (hKL (XI.upTo N)) hpro hpp
         ⟨VConf.init ρ₀ ((w₀, w₀'), 0), rfl, rfl, .inl (star_head_step hsU hlast)⟩
         ⟨.run ⟨b, kk, ρ, w₁⟩, rfl, rfl, .inl ⟨_, hlast⟩⟩ hy
-    exact ⟨T, e, e', fun i hi => let ⟨c, c', _, h⟩ := h2 i hi; ⟨c, c', h.1⟩, h3, h5, h6, h7⟩
+    refine ⟨T, e, e', fun i hi => let ⟨⟨c, c', _, h⟩, _, _⟩ := h2 i hi; ⟨c, c', h.1⟩, h3, h5, h6,
+      h7.1, h7.2, fun i hi => ?_⟩
+    generalize (prologueLines (actRL vcp rf af fa fb lm base s (XI.upTo N) H psF K G
+      (GotV vcp)).af.frameSize).length = PL at hi hp0 h2 hep ⊢
+    generalize (actRL vcp rf af fa fb lm base s (XI.upTo N) H psF K G (GotV vcp)).retLen = RLn
+      at hi hep
+    rcases Nat.lt_or_ge i PL with h1 | h1
+    · exact ⟨(hp0 i h1).1.1.1.good, (hp0 i h1).2.1.1.good⟩
+    rcases Nat.lt_or_ge i (PL + T) with h1' | h1'
+    · obtain ⟨j, rfl⟩ : ∃ j, i = PL + j := ⟨i - PL, by omega⟩
+      exact (h2 j (by omega)).2
+    · obtain ⟨j, rfl⟩ : ∃ j, i = PL + T + j := ⟨i - (PL + T), by omega⟩
+      exact ⟨(hep j (by omega)).1.1.1.good, (hep j (by omega)).2.1.1.good⟩
 
 set_option maxHeartbeats 8000000 in
 /-- **`backend_twoRunLWNp` on the cleanup path** (`backend_twoRunLWNpPV` with `hcall` in
@@ -638,9 +654,12 @@ theorem backend_twoRunLWNpV (hc : CompiledCleanup f k vc vcp rf af fa fb)
         ((prologueLines R.af.frameSize).length + T) = N ∧
       countIn (RL.CallSt R) ({ R with s0 := t0, G := G', X := (XI.upTo N).at 0 } : RL).step t0
         ((prologueLines R.af.frameSize).length + T) = N ∧
-      ∃ vb i, vcp.blocks[b]? = some vb ∧ vb.insts[k]? = some i ∧ i.isCallI = true) :=
-  backend_twoRunLWNpPV hc ρ₀ hsw hs hvb hk hops hvals hsem hlm hpsF he he' hR hcov hx30
-    (fun n n' c c' i u u' hin _ hin' => hcall n n' c c' i u u' hin hin') htls hag hx29
+      ∃ vb i, vcp.blocks[b]? = some vb ∧ vb.insts[k]? = some i ∧ i.isCallI = true) := by
+  obtain ⟨h1, h2⟩ := backend_twoRunLWNpPV hc ρ₀ hsw hs hvb hk hops hvals hsem hlm hpsF he he' hR
+    hcov hx30 (fun n n' c c' i u u' hin _ hin' => hcall n n' c c' i u u' hin hin') htls hag hx29
+  refine ⟨fun hN => ?_, h2⟩
+  obtain ⟨T, e, e', a1, a2, a3, a4, a5, a6, -⟩ := h1 hN
+  exact ⟨T, e, e', a1, a2, a3, a4, a5, a6⟩
 
 end
 
