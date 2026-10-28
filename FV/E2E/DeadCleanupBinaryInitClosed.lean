@@ -29,6 +29,19 @@ theorem hooksKeep_closed (I : LinkInput) (f : Clif.Function) (r : Arm.ArmState)
       rw [Arm.r_of_w_different (by simp)]; exact h,
     fun _ _ _ h => h, fun _ s => Arm.w_program, fun _ _ _ => rfl⟩
 
+/-- `baseRetOk_closed` on the computable system `sys` (the condition reads only the base). -/
+theorem baseRetOk_closedSys (I : LinkInput) : (sys I closedBase).BaseRetOk := by
+  intro n G hG
+  change Clif.Env.empty.extern n = some G at hG
+  simp [Clif.Env.empty] at hG
+
+/-- `hooksKeep_closed` on the computable system `sys`. -/
+theorem hooksKeep_closedSys (I : LinkInput) : (sys I closedBase).HooksKeep :=
+  ⟨fun _ s h => by
+      show Arm.r .ERR (Arm.w .PC (Arm.r .PC s + 4) s) ≠ .None
+      rw [Arm.r_of_w_different (by simp)]; exact h,
+    fun _ _ _ h => h, fun _ s => Arm.w_program, fun _ _ _ => rfl⟩
+
 /-- `retCountB` reads only the program. -/
 theorem retCountB_sysS (I : LinkInput) (B : BaseEnv) (f : Clif.Function) (r : Arm.ArmState)
     (S : BitVec 64 → Prop) (g : Clif.Function) :
