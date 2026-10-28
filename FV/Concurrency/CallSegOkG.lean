@@ -203,11 +203,60 @@ theorem dirtyEnd_sub (hdisj : PartDisj Loc) {tr : List (List (Ev SKind BVal))}
 
 /-! ## A chain segment on the thread -/
 
-/-- **A chain segment of an activation below its callers is a realized prefix** (module doc):
-the activation `R`'s own CLIF run from `s` refining a prefix of a precise run with private set
-`PrivA R`, started below `ext` at a reachable state with mask `U` and a start-dirty set within
-`PrivA R`, the mask, the addresses starting no location and a set `N` no read of the run starts
-at, ending as the chain theorems end (whole run, `Stop`, or a pause `Pz`). -/
+/-- **A chain segment below its callers is a realized prefix** (module doc): an own CLIF run
+from `s` refining a prefix of a precise run with private set `P`, started below `ext` at a
+reachable state with mask `U` and a start-dirty set within `P`, the mask, the addresses starting
+no location and a set `N` no read of the run starts at, ending as the chain theorems end (whole
+run, `Stop`, or a pause `Pz`). -/
+theorem seg_endP {Bnd : Nat → Prop} {P : Nat → Prop} (hb : ∀ a, P a → Bnd a)
+    {Dcap : Nat}
+    {c0 : TState} (hP : PartsOk env p c0 Loc) (hdisj : PartDisj Loc)
+    {f : ArmState → ArmState} {ok : ArmState → Lab → Prop} {u t' : ArmState × Mon}
+    {ls : List Lab} (hr : PRun Policy.arm f ok u ls t') {k : Nat} (hk : k ≤ ls.length)
+    (ext : List (Clif.Frame × List Clif.ValueId)) {s : Clif.State}
+    (hR : RReach env p c0 (.run (pushC ext s))) {trS : List (List (Ev SKind BVal))} {t : TState}
+    {ψ : Nat × Nat → Nat × Nat} (hrun : CRun env p (.run s) trS t)
+    (hx : CallCompose.XClosed (evTr (ls.take k)))
+    (href : Refines Maps P (MonPair (evTr (ls.take k))) trS (conv (evTr (ls.take k))) ψ)
+    {U D N : Nat → Prop} (hD : ∀ a, D a → P a ∨ U a ∨ (¬ ∃ n, Loc a n) ∨ N a)
+    (hN : ∀ q x, evAt trS q = some x → x.dir = .R → ¬ N x.loc)
+    {Pz : Clif.State → Prop}
+    (hend : k = ls.length ∨ IselThread.Stop env p t ∨ ∃ s', t = .run s' ∧ Pz s') :
+    ∃ k' d', RealT env p Bnd ls k' (encT U (.run (pushC ext s)), D) d' ∧
+      (k' = ls.length ∨ EndT env p Dcap (ls.take k') d' ∨
+        (k' = k ∧ ∃ s' M DE, Pz s' ∧ t = .run s' ∧ d' = (encT M (.run (pushC ext s')), DE) ∧
+          (∀ a, M a → U a) ∧ (∀ a, DE a → P a ∨ M a ∨ (¬ ∃ n, Loc a n) ∨ N a) ∧
+          RReach env p c0 (.run (pushC ext s')))) := by
+  obtain ⟨hacc, hReachEnd⟩ := seg_parts hP hR hrun
+  have hu : Uniform trS := uniform_of_parts hdisj fun q x hx hF => (hacc q x hx).1 hF
+  have hpos : ∀ q x, evAt trS q = some x → x.dir = .R → 0 < x.n :=
+    fun q x hx hRd => (hacc q x hx).2 hRd
+  have hns : ∀ q x, evAt trS q = some x → x.dir = .R → ¬ ((¬ ∃ n, Loc x.loc n) ∨ N x.loc) :=
+    fun q x hx hRd hn => hn.elim (fun hn => hn ⟨x.n, (hacc q x hx).1 (by rw [hRd]; decide)⟩)
+      (hN q x hx hRd)
+  rcases realizedT_liftW (Bnd := Bnd) hr hk ext hrun hx href hD hu hpos hns hb with
+    ⟨trS', s1, hp, hRT, hs1, hret⟩ | ⟨k', -, trS', j, evs, -, -, sj, t'', hRT, hst, hm⟩
+  · rcases hend with h | h | ⟨s', rfl, hz⟩
+    · exact ⟨k, (encT (maskAfter U trS') (.run (pushC ext s1)), DirtyEnd D P trS'), hRT,
+        .inl h⟩
+    · refine ⟨k, (encT (maskAfter U trS') (.run (pushC ext s1)), DirtyEnd D P trS'), hRT,
+        .inr (.inl (.inl ⟨ext, s1, by exact strip_encT (maskAfter U trS') (.run (pushC ext s1)),
+          ?_⟩))⟩
+      cases t with
+      | run s' => obtain rfl := hs1 s' rfl; exact .inl h
+      | ret v => exact .inr (.inl ⟨v, hret v rfl⟩)
+    · obtain rfl := hs1 s' rfl
+      exact ⟨k, (encT (maskAfter U trS') (.run (pushC ext s1)), DirtyEnd D P trS'), hRT,
+        .inr (.inr ⟨rfl, s1, _, _, hz, rfl, rfl, fun _ => maskAfter_sub,
+          fun a => dirtyEnd_sub hdisj (fun q x hx => (hacc q x (evAt_of_prefix hp hx)).1) hD,
+          hReachEnd s1 rfl⟩)⟩
+  · refine ⟨k', (encT (maskAfter U (trS'.take j)) (.run sj), DirtyEnd D P (trS'.take j)),
+      hRT, .inr (.inl (.inr (.inl ⟨evs, t'', cstep_withBytes.mpr hst, ?_⟩)))⟩
+    show ReadsMasked (maskOf (encT (maskAfter U (trS'.take j)) (.run sj))) evs
+    rw [maskOf_encT]; exact hm
+
+/-- **A chain segment of an activation below its callers is a realized prefix** (`seg_endP`
+with the activation's private set `PrivA R`). -/
 theorem seg_end {Bnd : Nat → Prop} {R : Backend.Proof.RL} (hb : ∀ a, PrivA R a → Bnd a)
     {Dcap : Nat}
     {c0 : TState} (hP : PartsOk env p c0 Loc) (hdisj : PartDisj Loc)
@@ -226,34 +275,8 @@ theorem seg_end {Bnd : Nat → Prop} {R : Backend.Proof.RL} (hb : ∀ a, PrivA R
       (k' = ls.length ∨ EndT env p Dcap (ls.take k') d' ∨
         (k' = k ∧ ∃ s' M DE, Pz s' ∧ t = .run s' ∧ d' = (encT M (.run (pushC ext s')), DE) ∧
           (∀ a, M a → U a) ∧ (∀ a, DE a → PrivA R a ∨ M a ∨ (¬ ∃ n, Loc a n) ∨ N a) ∧
-          RReach env p c0 (.run (pushC ext s')))) := by
-  obtain ⟨hacc, hReachEnd⟩ := seg_parts hP hR hrun
-  have hu : Uniform trS := uniform_of_parts hdisj fun q x hx hF => (hacc q x hx).1 hF
-  have hpos : ∀ q x, evAt trS q = some x → x.dir = .R → 0 < x.n :=
-    fun q x hx hRd => (hacc q x hx).2 hRd
-  have hns : ∀ q x, evAt trS q = some x → x.dir = .R → ¬ ((¬ ∃ n, Loc x.loc n) ∨ N x.loc) :=
-    fun q x hx hRd hn => hn.elim (fun hn => hn ⟨x.n, (hacc q x hx).1 (by rw [hRd]; decide)⟩)
-      (hN q x hx hRd)
-  rcases realizedT_liftW (Bnd := Bnd) hr hk ext hrun hx href hD hu hpos hns hb with
-    ⟨trS', s1, hp, hRT, hs1, hret⟩ | ⟨k', -, trS', j, evs, -, -, sj, t'', hRT, hst, hm⟩
-  · rcases hend with h | h | ⟨s', rfl, hz⟩
-    · exact ⟨k, (encT (maskAfter U trS') (.run (pushC ext s1)), DirtyEnd D (PrivA R) trS'), hRT,
-        .inl h⟩
-    · refine ⟨k, (encT (maskAfter U trS') (.run (pushC ext s1)), DirtyEnd D (PrivA R) trS'), hRT,
-        .inr (.inl (.inl ⟨ext, s1, by exact strip_encT (maskAfter U trS') (.run (pushC ext s1)),
-          ?_⟩))⟩
-      cases t with
-      | run s' => obtain rfl := hs1 s' rfl; exact .inl h
-      | ret v => exact .inr (.inl ⟨v, hret v rfl⟩)
-    · obtain rfl := hs1 s' rfl
-      exact ⟨k, (encT (maskAfter U trS') (.run (pushC ext s1)), DirtyEnd D (PrivA R) trS'), hRT,
-        .inr (.inr ⟨rfl, s1, _, _, hz, rfl, rfl, fun _ => maskAfter_sub,
-          fun a => dirtyEnd_sub hdisj (fun q x hx => (hacc q x (evAt_of_prefix hp hx)).1) hD,
-          hReachEnd s1 rfl⟩)⟩
-  · refine ⟨k', (encT (maskAfter U (trS'.take j)) (.run sj), DirtyEnd D (PrivA R) (trS'.take j)),
-      hRT, .inr (.inl (.inr (.inl ⟨evs, t'', cstep_withBytes.mpr hst, ?_⟩)))⟩
-    show ReadsMasked (maskOf (encT (maskAfter U (trS'.take j)) (.run sj))) evs
-    rw [maskOf_encT]; exact hm
+          RReach env p c0 (.run (pushC ext s')))) :=
+  seg_endP hb hP hdisj hr hk ext hR hrun hx href hD hN hend
 
 end Concurrency.CallSegOkG
 

@@ -499,6 +499,145 @@ theorem linkEnvN_keepsPlace0 {P : Program} {base : Env} {M : Nat} (hP : ∀ g �
     (hk : EnvKeepsPlace base) : EnvKeepsPlace0 (linkEnvN P base M) :=
   linkEnvR_keepsPlace0 (runsOf_runLoop base P M) hP hk
 
+/-! ## Slotless programs keep any slot-byte oracle
+
+A program whose functions have no stack slots never advances the slot-byte oracle
+(`enterSlots_place_init`), so its linked environment keeps the whole oracle, `init` included:
+`linkEnvR_keepsPlace`/`linkEnvN_keepsPlace` with their pre-#567 conclusion. With a function
+with slots that conclusion is false (its activation advances `init`), hence the premise. -/
+
+/-- `PlaceInv` with the slot-byte oracle `i` (kept fixed by slotless programs). -/
+def PlaceInvI (sps : List (BitVec 64)) (fr : String → Option (Nat × (SlotId → Nat)))
+    (i : Option SlotInit) (s : State) : Prop :=
+  ∃ l, s.mem.place = some ⟨l ++ sps, fr, i⟩ ∧ l.length = s.callers.length + 1
+
+theorem placeInvI_step {P : Program} (hP : ∀ g ∈ P.funcs, LinkFree g)
+    (hS : ∀ g ∈ P.funcs, g.slots = []) {env : Env} (hk : EnvKeepsPlace env)
+    {sps : List (BitVec 64)} {fr : String → Option (Nat × (SlotId → Nat))} {i : Option SlotInit}
+    {s : State} (hI : LInv P s) (hp : PlaceInvI sps fr i s) :
+    (∀ s1, step env P s = .next s1 → PlaceInvI sps fr i s1) ∧
+    (∀ v m, step env P s = .done v m → m.place = some ⟨sps, fr, i⟩) := by
+  obtain ⟨l, hl, hlen⟩ := hp
+  refine ⟨fun s1 h => ?_, fun v m h => ?_⟩
+  · rcases step_next_cases hP hI h with ⟨hc, -, ⟨hpl, -⟩ | ⟨n, g, vals, rv, hg, hr⟩⟩ |
+      ⟨c, hc, -, g, vals, he⟩ | ⟨c, hc, -, hm⟩
+    · exact ⟨l, by rw [hpl, hl], by rw [hc, hlen]⟩
+    · exact ⟨l, by rw [hk n g hg vals s.mem rv s1.mem hr, hl], by rw [hc, hlen]⟩
+    · obtain ⟨_, _, _, _, _, _, hal, hfr⟩ := Opt.enterFunc_ok he
+      have hgP : g ∈ P.funcs := by
+        have := (step_next_linv hP hI h).1.1.1
+        rw [hfr] at this
+        exact this
+      obtain ⟨sp, ini, hsp, hini⟩ := (enterSlots_place_init g s.mem).2 _ hl
+      rw [hal, hini (.inr (hS g hgP))] at hsp
+      exact ⟨sp :: l, hsp, by rw [hc]; simp [hlen]⟩
+    · rw [hc] at hlen
+      cases l with
+      | nil => simp at hlen
+      | cons y l' =>
+        refine ⟨l', ?_, by simpa using hlen⟩
+        rw [hm]
+        simp only [Mem.leave, Mem.free, hl]
+        rfl
+  · obtain ⟨hc, hm⟩ := step_done_mem hP hI h
+    rw [hc] at hlen
+    cases l with
+    | nil => simp at hlen
+    | cons y l' =>
+      cases l' with
+      | cons => simp at hlen
+      | nil =>
+        rw [hm]
+        simp only [Mem.leave, Mem.free, hl]
+        rfl
+
+theorem runLoop_placeI {P : Program} (hP : ∀ g ∈ P.funcs, LinkFree g)
+    (hS : ∀ g ∈ P.funcs, g.slots = []) {env : Env} (hk : EnvKeepsPlace env)
+    {sps : List (BitVec 64)} {fr : String → Option (Nat × (SlotId → Nat))} {i : Option SlotInit} :
+    ∀ (N : Nat) (s : State) (vals : List Val) (mem : Mem), LInv P s → PlaceInvI sps fr i s →
+      runLoop env P N s = .returned vals mem → mem.place = some ⟨sps, fr, i⟩
+  | 0, _, _, _, _, _, h => by simp at h
+  | N + 1, s, vals, mem, hI, hp, h => by
+    rw [runLoop_succ'] at h
+    have hs := placeInvI_step hP hS hk hI hp
+    cases hst : step env P s with
+    | next s1 =>
+      rw [hst] at h
+      exact runLoop_placeI hP hS hk N s1 vals mem (step_next_linv hP hI hst).1 (hs.1 s1 hst) h
+    | done v m =>
+      rw [hst] at h
+      simp only [afterStep, Outcome.returned.injEq] at h
+      obtain ⟨rfl, rfl⟩ := h
+      exact hs.2 v m hst
+    | trapped c => rw [hst] at h; cases h
+    | stuck m => rw [hst] at h; cases h
+
+theorem initState_placeI {P : Program} (hS : ∀ g ∈ P.funcs, g.slots = []) {n : String}
+    {vals : List Val} {cm : Mem} {cs : State} (hi : initState P n vals cm = .ok cs) {pl : Place}
+    (hp : cm.place = some pl) : PlaceInvI pl.sps pl.frame pl.init cs := by
+  simp only [initState, Res.bind_eq_ok, Res.ofOption_eq_ok, Res.pure_eq_ok] at hi
+  obtain ⟨g, hg, ⟨fr, mem'⟩, he, rfl⟩ := hi
+  obtain ⟨_, _, _, _, _, _, hal, -⟩ := Opt.enterFunc_ok he
+  obtain ⟨sp, ini, hsp, hini⟩ := (enterSlots_place_init g cm).2 _ hp
+  rw [hal, hini (.inr (hS g (Program.func?_some hg).1))] at hsp
+  obtain ⟨sps, frm, i⟩ := pl
+  exact ⟨[sp], hsp, rfl⟩
+
+/-- **The linked environment of a slotless program keeps the oracle** (the program's functions'
+runs give it back, slot-byte oracle included) when the base externs keep it. -/
+theorem linkEnvR_keepsPlace {P : Program} {base : Env} {R : State → Outcome}
+    (hR : RunsOf base P R) (hP : ∀ g ∈ P.funcs, LinkFree g)
+    (hS : ∀ g ∈ P.funcs, g.slots = [])
+    (hk : EnvKeepsPlace base) : EnvKeepsPlace (linkEnvR P base R) := by
+  intro n gsem hg vals m rvals m' hr
+  cases hpf : P.func? n with
+  | none => rw [linkEnvR_none hpf] at hg; exact hk n gsem hg vals m rvals m' hr
+  | some g =>
+    rw [linkEnvR_some hpf] at hg
+    cases hg
+    simp only at hr
+    cases hi : initState P n vals m with
+    | ok s =>
+      rw [hi] at hr
+      simp only at hr
+      obtain ⟨M, hr⟩ := hR s _ hr (.inl ⟨_, _, rfl⟩)
+      have hI : LInv P s := by
+        simp only [initState, hpf, Res.ofOption_some, Res.ok_bind] at hi
+        cases he : enterFunc g vals m with
+        | ok r =>
+          rw [he] at hi
+          obtain ⟨fr, mem'⟩ := r
+          simp only [Res.ok_bind, Res.pure_eq, Res.ok.injEq] at hi
+          subst hi
+          exact ⟨LFrame.enterFunc (Program.func?_some hpf).1 he, fun _ h => nomatch h⟩
+        | trap => rw [he] at hi; cases hi
+        | stuck => rw [he] at hi; cases hi
+      cases hmp : m.place with
+      | none =>
+        have h0 : s.mem.place = none := by
+          simp only [initState, hpf, Res.ofOption_some, Res.ok_bind] at hi
+          cases he : enterFunc g vals m with
+          | ok r =>
+            rw [he] at hi
+            obtain ⟨fr, mem'⟩ := r
+            simp only [Res.ok_bind, Res.pure_eq, Res.ok.injEq] at hi
+            subst hi
+            obtain ⟨_, _, _, _, _, _, hal, -⟩ := Opt.enterFunc_ok he
+            have := (enterSlots_place_init g m).1 hmp
+            rwa [hal] at this
+          | trap => rw [he] at hi; cases hi
+          | stuck => rw [he] at hi; cases hi
+        exact runLoop_placeNone hP hk M s rvals m' hI h0 hr
+      | some pl =>
+        rw [runLoop_placeI hP hS hk M s rvals m' hI (initState_placeI hS hi hmp) hr]
+    | trap c => rw [hi] at hr; cases hr
+    | stuck msg => rw [hi] at hr; cases hr
+
+theorem linkEnvN_keepsPlace {P : Program} {base : Env} {M : Nat} (hP : ∀ g ∈ P.funcs, LinkFree g)
+    (hS : ∀ g ∈ P.funcs, g.slots = [])
+    (hk : EnvKeepsPlace base) : EnvKeepsPlace (linkEnvN P base M) :=
+  linkEnvR_keepsPlace (runsOf_runLoop base P M) hP hS hk
+
 /-! ## The allocations on returning runs -/
 
 /-- The externs create no allocation: their allocations are among their arguments'. -/
