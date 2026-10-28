@@ -71,7 +71,7 @@ private theorem values2_fieldsT {ctx : Ctx} {st : LState} {qs : List Pattern} {f
 
 /-- An operand of a binary statement of the context is in an integer position: its vreg is an X
 register. -/
-private theorem binary_operand_regT {f : Clif.Function} {ctx : Ctx} (hP : PInvT f ctx) {j : Nat}
+private theorem binary_operand_regT {f : Clif.Function} {ctx : Ctx} (hP : PInvTB f ctx) {j : Nat}
     {info : IInfo} {op : Clif.BinaryOp} {ty : Clif.Ty} {x z : Nat} (hi : ctx.insts[j]? = some info)
     (hcl : info.clif = some (.binary op ty x z)) :
     ctx.valueReg? x = some (.vreg x .int) ∧ ctx.valueReg? z = some (.vreg z .int) := by
@@ -88,7 +88,7 @@ private theorem binary_operand_regT {f : Clif.Function} {ctx : Ctx} (hP : PInvT 
 
 /-- The first result type of a matched `bor` instruction of a float-capable context: none (a slot
 without CLIF instruction) or an E integer (the `bor` is E's). -/
-private theorem head_borT {f : Clif.Function} {ctx : Ctx} (hP : PInvT f ctx) {ii : Nat}
+private theorem head_borT {f : Clif.Function} {ctx : Ctx} (hP : PInvTB f ctx) {ii : Nat}
     {info : IInfo} {a b : Nat} (hi : ctx.insts[ii]? = some info)
     (hd : info.data = .data 152 2 [.data 151 98 [], .values [a, b]]) :
     info.resTys.head? = none ∨ ∃ w, info.resTys.head? = some (.int w) := by
@@ -115,9 +115,9 @@ private theorem γ_regsVec1T {f : Clif.Function} {ctx : Ctx} (r : Reg) :
 variable {f : Clif.Function} {ctx : Ctx} {cfg : Config}
 
 set_option maxRecDepth 20000 in
-/-- **`extr_32_or_64`** (`lower.isle:1501`, rule 862) over the typed scope: from any successful match, the
-right-hand side returns one single register from fuel 60. -/
-theorem hand_1501T (hP : PInvT f ctx) (hc : cfg.checkOverlap = false) {args : List V} {m : Nat}
+/-- **`extr_32_or_64`** (`lower.isle:1501`, rule 862) over a float-capable context: from any
+successful match, the right-hand side returns one single register from fuel 60. -/
+theorem hand_1501TB (hP : PInvTB f ctx) (hc : cfg.checkOverlap = false) {args : List V} {m : Nat}
     {s s' : LState × Array RuleId} {env : Isle.Interp.Env V}
     (h : (matchRule program (sem ctx) cfg m rule_lower_1501 args).run s = .ok (some env, s'))
     (n : Nat) (hn : 60 ≤ n) :
@@ -178,9 +178,9 @@ theorem hand_1501T (hP : PInvT f ctx) (hc : cfg.checkOverlap = false) {args : Li
   exact ⟨_, _, he', γ_regsVec1T _⟩
 
 set_option maxRecDepth 20000 in
-/-- **`extr_32_or_64_2`** (`lower.isle:1507`, rule 863) over the typed scope: from any successful match, the
-right-hand side returns one single register from fuel 60. -/
-theorem hand_1507T (hP : PInvT f ctx) (hc : cfg.checkOverlap = false) {args : List V} {m : Nat}
+/-- **`extr_32_or_64_2`** (`lower.isle:1507`, rule 863) over a float-capable context: from any
+successful match, the right-hand side returns one single register from fuel 60. -/
+theorem hand_1507TB (hP : PInvTB f ctx) (hc : cfg.checkOverlap = false) {args : List V} {m : Nat}
     {s s' : LState × Array RuleId} {env : Isle.Interp.Env V}
     (h : (matchRule program (sem ctx) cfg m rule_lower_1507 args).run s = .ok (some env, s'))
     (n : Nat) (hn : 60 ≤ n) :
@@ -252,9 +252,9 @@ private theorem rule_of_idT {t : TermId} {r : Rule} (hr : r ∈ program.rulesOf 
   rw [hf] at hm
   exact List.mem_singleton.mp hm
 
-/-- **V7's hand-checked rules return over the typed scope**: a rule `handRules` names, from any
-successful match, returns its right-hand side's value from its fuel. -/
-theorem handRules_okT (hP : PInvT f ctx) (hc : cfg.checkOverlap = false) {t : TermId} {r : Rule}
+/-- **V7's hand-checked rules return over a float-capable context**: a rule `handRules` names,
+from any successful match, returns its right-hand side's value from its fuel. -/
+theorem handRules_okTB (hP : PInvTB f ctx) (hc : cfg.checkOverlap = false) {t : TermId} {r : Rule}
     (hr : r ∈ program.rulesOf t) {c : Nat} {a : PA} (hh : handRules r.id = some (c, a))
     {args : List V} {m : Nat} {s s' : LState × Array RuleId} {env : Isle.Interp.Env V}
     (hmatch : (matchRule program (sem ctx) cfg m r args).run s = .ok (some env, s'))
@@ -269,9 +269,37 @@ theorem handRules_okT (hP : PInvT f ctx) (hc : cfg.checkOverlap = false) {t : Te
     simp only [Bool.or_eq_true, beq_iff_eq] at hid
     rcases hid with hid | hid
     · obtain rfl := rule_of_idT hr (.inl rfl) lower_rule_862 hid
-      exact hand_1501T hP hc hmatch n hn
+      exact hand_1501TB hP hc hmatch n hn
     · obtain rfl := rule_of_idT hr (.inr rfl) lower_rule_863 hid
-      exact hand_1507T hP hc hmatch n hn
+      exact hand_1507TB hP hc hmatch n hn
   · cases hh
+
+/-- `hand_1501TB` under `PInvT`. -/
+theorem hand_1501T (hP : PInvT f ctx) (hc : cfg.checkOverlap = false) {args : List V} {m : Nat}
+    {s s' : LState × Array RuleId} {env : Isle.Interp.Env V}
+    (h : (matchRule program (sem ctx) cfg m rule_lower_1501 args).run s = .ok (some env, s'))
+    (n : Nat) (hn : 60 ≤ n) :
+    ∃ v s'', (evalExpr program (sem ctx) cfg n rule_lower_1501.rhs env).run s' = .ok (some v, s'') ∧
+      γ f ctx (.regsVec (some 1)) v :=
+  hand_1501TB hP.toB hc h n hn
+
+/-- `hand_1507TB` under `PInvT`. -/
+theorem hand_1507T (hP : PInvT f ctx) (hc : cfg.checkOverlap = false) {args : List V} {m : Nat}
+    {s s' : LState × Array RuleId} {env : Isle.Interp.Env V}
+    (h : (matchRule program (sem ctx) cfg m rule_lower_1507 args).run s = .ok (some env, s'))
+    (n : Nat) (hn : 60 ≤ n) :
+    ∃ v s'', (evalExpr program (sem ctx) cfg n rule_lower_1507.rhs env).run s' = .ok (some v, s'') ∧
+      γ f ctx (.regsVec (some 1)) v :=
+  hand_1507TB hP.toB hc h n hn
+
+/-- **V7's hand-checked rules return over the typed scope** (`handRules_okTB` under `PInvT`). -/
+theorem handRules_okT (hP : PInvT f ctx) (hc : cfg.checkOverlap = false) {t : TermId} {r : Rule}
+    (hr : r ∈ program.rulesOf t) {c : Nat} {a : PA} (hh : handRules r.id = some (c, a))
+    {args : List V} {m : Nat} {s s' : LState × Array RuleId} {env : Isle.Interp.Env V}
+    (hmatch : (matchRule program (sem ctx) cfg m r args).run s = .ok (some env, s'))
+    (n : Nat) (hn : c ≤ n) :
+    ∃ (v : V) (s'' : LState × Array RuleId),
+      (evalExpr program (sem ctx) cfg n r.rhs env).run s' = .ok (some v, s'') ∧ γ f ctx a v :=
+  handRules_okTB hP.toB hc hr hh hmatch n hn
 
 end Backend.Proof.Prg

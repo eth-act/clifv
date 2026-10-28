@@ -238,6 +238,50 @@ theorem pinv_tryCtxT (hP : PInvT f ctx) {ti : Nat}
   pinvT_of_insts hP { ctxInvT_termCtx hP.ctxInv hph data with } rfl rfl fun _ _ h =>
     termCtx_insts_casesT (ti := ti) (data := data) h
 
+/-- `pinvT_of_insts` for `PInvTB`. -/
+theorem pinvTB_of_insts (hP : PInvTB f ctx) {ctx' : Ctx} (hinv : CtxInvT f ctx')
+    (hvt : ctx'.valTy = ctx.valTy) (hso : ctx'.slotOff = ctx.slotOff)
+    (hins : ∀ (j : Nat) (info : IInfo), ctx'.insts[j]? = some info →
+      ctx.insts[j]? = some info ∨ (info.clif = none ∧ info.results = [] ∧ info.resTys = [])) :
+    PInvTB f ctx' := by
+  have hty : ∀ x, ctx'.valueType? x = ctx.valueType? x := fun x => by
+    simp only [Ctx.valueType?, hvt]
+  have hip : ∀ x, IntPos ctx x → IntPos ctx' x := fun x h t ht => h t (by rw [← hty]; exact ht)
+  refine ⟨hinv, fun j info c hi hc => ?_, hP.externsE, fun c hc x hx => hip x (hP.intArgsOf c hc x hx),
+    fun c hc x hx => ?_, fun j info hi r hr => ?_, fun j info hi hc => ?_,
+    fun j info c hi hc hE t ht => ?_, fun B hB x hx => hip x (hP.termIntOf B hB x hx),
+    fun ty s off hc => ?_, hP.callees, hP.indSigs, fun op ty x hc => ?_⟩
+  · rcases hins j info hi with h | ⟨h, -⟩
+    · exact hP.clifOf j info c h hc
+    · rw [h] at hc; cases hc
+  · rw [hty]; exact hP.argsTyped c hc x hx
+  · rw [hty]
+    rcases hins j info hi with h | ⟨-, h, -⟩
+    · exact hP.resTyped j info h r hr
+    · rw [h] at hr; cases hr
+  · rcases hins j info hi with h | ⟨-, -, h⟩
+    · exact hP.noClifRes j info h hc
+    · exact h
+  · rcases hins j info hi with h | ⟨h, -⟩
+    · exact hP.resE j info c h hc hE t ht
+    · rw [h] at hc; cases hc
+  · rw [hso]; exact hP.slots ty s off hc
+  · rw [hty]; exact hP.extNarrow op ty x hc
+
+/-- `pinv_termCtxT` for `PInvTB`. -/
+theorem pinv_termCtxTB (hP : PInvTB f ctx) {ti : Nat}
+    (hph : ctx.insts[ti]? = some ⟨.op .unit, [], [], none⟩) (data : V) :
+    PInvTB f (termCtx ctx ti data) :=
+  pinvTB_of_insts hP (ctxInvT_termCtx hP.ctxInv hph data) rfl rfl fun _ _ h =>
+    termCtx_insts_casesT h
+
+/-- `pinv_tryCtxT` for `PInvTB`. -/
+theorem pinv_tryCtxTB (hP : PInvTB f ctx) {ti : Nat}
+    (hph : ctx.insts[ti]? = some ⟨.op .unit, [], [], none⟩) (data : V) (trs : List Reg × List Reg) :
+    PInvTB f (tryCtx ctx ti data trs) :=
+  pinvTB_of_insts hP { ctxInvT_termCtx hP.ctxInv hph data with } rfl rfl fun _ _ h =>
+    termCtx_insts_casesT (ti := ti) (data := data) h
+
 end
 
 end Backend.Proof.Prg

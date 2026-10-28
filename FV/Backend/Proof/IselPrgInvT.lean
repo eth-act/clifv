@@ -51,4 +51,31 @@ structure PInvT (f : Clif.Function) (ctx : Ctx) : Prop where
   extNarrow : ∀ op ty x, InstOf f (.extend op ty x) →
     ∃ b, ctx.valueType? x = some (.int b) ∧ (b = 8 ∨ b = 16 ∨ b = 32)
 
+/-- **`PInvT` without the instruction scope** (S11f, #35): every field of `PInvT` except
+`instET`. The progress facts that hold for any instruction scope take it (`…B` theorems); `PInvT`
+(`PInvT.toB`) and the float scope's `PInvTF` (`IselPrgInvTF`) give it. -/
+structure PInvTB (f : Clif.Function) (ctx : Ctx) : Prop where
+  ctxInv : CtxInvT f ctx
+  clifOf : ∀ (j : Nat) (info : IInfo) (c : Clif.Inst), ctx.insts[j]? = some info → info.clif = some c → InstOf f c
+  externsE : f.externs.all (Compile.sigE ·.2.sig) = true
+  intArgsOf : ∀ (c : Clif.Inst), InstOf f c → ∀ x ∈ intArgs c, IntPos ctx x
+  argsTyped : ∀ (c : Clif.Inst), InstOf f c → ∀ x ∈ Driver.instArgs c, (ctx.valueType? x).isSome
+  resTyped : ∀ (j : Nat) (info : IInfo), ctx.insts[j]? = some info → ∀ r ∈ info.results, (ctx.valueType? r).isSome
+  noClifRes : ∀ (j : Nat) (info : IInfo), ctx.insts[j]? = some info → info.clif = none → info.resTys = []
+  resE : ∀ (j : Nat) (info : IInfo) (c : Clif.Inst), ctx.insts[j]? = some info → info.clif = some c →
+    Compile.instE c = true → ∀ t ∈ info.resTys, t ∈ eCTys
+  termIntOf : ∀ B ∈ f.blocks, ∀ x ∈ Compile.termIntOperands B.term, IntPos ctx x
+  slots : ∀ ty s off, InstOf f (.stackAddr ty s off) → (ctx.slotOff.lookup s).isSome
+  callees : ∀ (c : Clif.Inst) (fn : Nat), InstOf f c → ((∃ args, c = .call fn args) ∨ (∃ ty, c = .funcAddr ty fn)) →
+    ∃ ext, f.extern? fn = some ext ∧ SigOk ext.sig
+  indSigs : ∀ sig callee args s, InstOf f (.callIndirect sig callee args) →
+    f.sigDecls.lookup sig = some s → SigOk s
+  extNarrow : ∀ op ty x, InstOf f (.extend op ty x) →
+    ∃ b, ctx.valueType? x = some (.int b) ∧ (b = 8 ∨ b = 16 ∨ b = 32)
+
+/-- `PInvT` without its instruction scope. -/
+theorem PInvT.toB {f : Clif.Function} {ctx : Ctx} (h : PInvT f ctx) : PInvTB f ctx :=
+  ⟨h.ctxInv, h.clifOf, h.externsE, h.intArgsOf, h.argsTyped, h.resTyped, h.noClifRes, h.resE,
+    h.termIntOf, h.slots, h.callees, h.indSigs, h.extNarrow⟩
+
 end Backend.Proof.Prg

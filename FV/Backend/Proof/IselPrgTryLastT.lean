@@ -249,8 +249,10 @@ private theorem lower_branch_ids_nodupT :
 set_option maxRecDepth 100000 in
 /-- **A `try_call`'s code ends in a call**: a `lower_branch` run of the driver on a
 `try_call`/`try_call_indirect` at its placeholder slot `ti` (in the `try_call` context) that
-returns a value has emitted a call last. -/
-theorem tryCall_lastT {f : Clif.Function} {ctx : Ctx} (hP : PInvT f ctx) {ti : Nat}
+returns a value has emitted a call last. Over a float-capable context whose function's statements
+are in the float scope (`hsc`, `Compile.instETF`; S11f). -/
+theorem tryCall_lastG {f : Clif.Function} {ctx : Ctx} (hP : PInvTB f ctx)
+    (hsc : ∀ c, InstOf f c → Compile.instETF c = true) {ti : Nat}
     {t : Clif.Terminator} (hB : ∃ B ∈ f.blocks, B.term = t) {data : V}
     (hd : tryCallData f t = .ok data)
     (hi : ctx.insts[ti]? = some ⟨.op .unit, [], [], none⟩) {trs : List Reg × List Reg}
@@ -258,9 +260,10 @@ theorem tryCall_lastT {f : Clif.Function} {ctx : Ctx} (hP : PInvT f ctx) {ti : N
     (h : Driver.tryCallF ctx ti data trs targets s = .ok (some v, s', tr)) :
     ∃ c, s'.emitted.back? = some (.call c) := by
   have hctx' : CtxInvT f (tryCtx ctx ti data trs) := { ctxInvT_termCtx hP.ctxInv hi data with }
-  have hP' := pinv_tryCtxT hP hi data trs
+  have hP' := pinv_tryCtxTB hP hi data trs
   have hcT : CtxT f (tryCtx ctx ti data trs) :=
-    CtxT.ofExterns hctx' (fun ii info inst hii hc => hP'.instET _ (hP'.clifOf ii info inst hii hc)) hP.externsE
+    ⟨hctx', fun ii info inst hii hc => hsc _ (hP'.clifOf ii info inst hii hc),
+      callsE_of_externs hP.externsE _⟩
   have hi' : (tryCtx ctx ti data trs).insts[ti]? = some ⟨data, [], [], none⟩ :=
     termCtx_insts_self hi data
   have hti : ∀ x ∈ Compile.termIntOperands t, IntPos (tryCtx ctx ti data trs) x := by
@@ -315,5 +318,16 @@ theorem tryCall_lastT {f : Clif.Function} {ctx : Ctx} (hP : PInvT f ctx) {ti : N
   | brif c a b => simp [tryCallData, throw, throwThe, MonadExceptOf.throw] at hd
   | brTable x d tb => simp [tryCallData, throw, throwThe, MonadExceptOf.throw] at hd
   | returnCall fn args => simp [tryCallData, throw, throwThe, MonadExceptOf.throw] at hd
+
+/-- **A `try_call`'s code ends in a call** over the typed scope (`tryCall_lastG` under
+`PInvT`). -/
+theorem tryCall_lastT {f : Clif.Function} {ctx : Ctx} (hP : PInvT f ctx) {ti : Nat}
+    {t : Clif.Terminator} (hB : ∃ B ∈ f.blocks, B.term = t) {data : V}
+    (hd : tryCallData f t = .ok data)
+    (hi : ctx.insts[ti]? = some ⟨.op .unit, [], [], none⟩) {trs : List Reg × List Reg}
+    {targets : List Label} {s : LState} {v : V} {s' : LState} {tr : List Isle.RuleId}
+    (h : Driver.tryCallF ctx ti data trs targets s = .ok (some v, s', tr)) :
+    ∃ c, s'.emitted.back? = some (.call c) :=
+  tryCall_lastG hP.toB (fun c hc => Compile.instETF_of_instET (hP.instET c hc)) hB hd hi h
 
 end Backend.Proof.Prg

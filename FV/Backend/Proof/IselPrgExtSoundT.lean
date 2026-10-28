@@ -69,7 +69,7 @@ private theorem γ_aDist {c : Bool} :
       (if c then VIdx.RelocDistance.Near else VIdx.RelocDistance.Far) []) := by
   cases c <;> simp [γ, γAny, γL, aDist, enumAlts]
 
-private theorem γ_val_typedT (hP : PInvT f ctx) {x : Nat} (h : (ctx.valueType? x).isSome) :
+private theorem γ_val_typedT (hP : PInvTB f ctx) {x : Nat} (h : (ctx.valueType? x).isSome) :
     γ f ctx aVM (.value x) := by
   obtain ⟨t, ht⟩ := Option.isSome_iff_exists.mp h
   simp only [aVM, γ]; exact ⟨x, t, rfl, ht, hP.ctxInv.valTyM x t ht⟩
@@ -196,7 +196,7 @@ def ExtOkT (f : Clif.Function) (ctx : Ctx) (id : TermId) (a : PA)
   ∀ (term : Term), term.id = id → ∀ (outs : List (List PA)) (must : Bool) (v : V) (st : LState),
     r = some (outs, must) → γ f ctx a v → ExtConclT f ctx (externExtract ctx term v st) outs must
 
-gen_match_split aextT_split Backend.Proof.Prg.aextT.match_14
+gen_match_split aextG_split Backend.Proof.Prg.aextG.match_14
 
 /-- Reduce the goal's `externExtract` to its alternative at the literal term id of `hid`. -/
 macro "ext_redT " hid:ident : tactic =>
@@ -222,7 +222,7 @@ private theorem defClif_inv {n : Nat} {c : Clif.Inst} (h : ctx.defClif? n = some
     | none => simp [hj, hi] at h
     | some info => simp [hj, hi] at h; exact ⟨j, info, rfl, hi, h⟩
 
-private theorem instOf_defClif (hP : PInvT f ctx) {n : Nat} {c : Clif.Inst}
+private theorem instOf_defClif (hP : PInvTB f ctx) {n : Nat} {c : Clif.Inst}
     (h : ctx.defClif? n = some c) : InstOf f c := by
   obtain ⟨j, info, -, hi, hc⟩ := defClif_inv h
   exact hP.clifOf j info c hi hc
@@ -236,13 +236,13 @@ private theorem γ_opcT {k : Nat} {n : String} (hk : variantIdx tyOpcode n = som
 
 set_option maxRecDepth 100000 in
 /-- The `InstructionData` of an instruction of the typed scope with a result, outside E, is
-one of `fDataT`. -/
-private theorem fData_of (hP : PInvT f ctx) {c : Clif.Inst} (hof : InstOf f c)
+one of `fDataT` (S11f: for any instruction scope, given the instruction's `Compile.instET`). -/
+private theorem fData_of (hP : PInvTB f ctx) {c : Clif.Inst} (hof : InstOf f c)
+    (hET : Compile.instET c = true)
     (hE : ¬ Compile.instE c = true) {d : V} (hd : instData f c = .ok d)
     {tys : List Clif.Ty}
     (hrt : c.resultTypes (fun r => (f.extern? r).map (·.sig)) (f.sigDecls.lookup ·) = some tys)
     (hne : tys ≠ []) : ∃ a ∈ fDataT, γ f ctx a d := by
-  have hET := hP.instET c hof
   have hargs := hP.argsTyped c hof
   have hint := hP.intArgsOf c hof
   cases c
@@ -313,10 +313,16 @@ private theorem fData_of (hP : PInvT f ctx) {c : Clif.Inst} (hof : InstOf f c)
     · cases hd
   all_goals exact absurd (by simpa [Compile.instET] using hET) hE
 
-/-- **The instruction defining a value** is described by one of `def_inst`'s outputs over the
-typed scope (`defOutsT`): an E instruction (`.idata`), or one of `fDataT`. -/
-private theorem γ_defInstT (hP : PInvT f ctx) {x i : Nat} (hd : ctx.defInst? x = some i) :
-    ∃ out ∈ defOutsT, γL f ctx out [.inst i] := by
+/-- **The instruction defining a value** is described by one of `def_inst`'s outputs over a
+float-capable context whose instructions outside E with results have data among `ds`: an E
+instruction (`.idata`), or one of `ds` (S11f: for any instruction scope). -/
+private theorem γ_defInstG (hP : PInvTB f ctx) {ds : List PA}
+    (hds : ∀ (c : Clif.Inst), InstOf f c → ¬ Compile.instE c = true → ∀ {d : V} {tys : List Clif.Ty},
+      instData f c = .ok d →
+      c.resultTypes (fun r => (f.extern? r).map (·.sig)) (f.sigDecls.lookup ·) = some tys →
+      tys ≠ [] → ∃ a ∈ ds, γ f ctx a d)
+    {x i : Nat} (hd : ctx.defInst? x = some i) :
+    ∃ out ∈ (PA.idata :: ds).map (fun d => [.inst (.ty mCTys) d]), γL f ctx out [.inst i] := by
   obtain ⟨info, hi, hx⟩ := hP.ctxInv.defInst x i hd
   obtain ⟨c, hc⟩ := Option.isSome_iff_exists.mp (hP.ctxInv.defClif x i info hd hi)
   obtain ⟨tys, hrt, hres, hlen⟩ := hP.ctxInv.resTys i info c hi hc
@@ -330,14 +336,21 @@ private theorem γ_defInstT (hP : PInvT f ctx) {x i : Nat} (hd : ctx.defInst? x 
     | cons t ts => exact hP.ctxInv.resTysM i info hi t (by rw [hr]; exact List.mem_cons_self ..)
   have hof := hP.clifOf i info c hi hc
   have hdat := hP.ctxInv.data i info c hi hc
-  suffices hD : ∃ d ∈ (PA.idata :: fDataT), γ f ctx d info.data by
+  suffices hD : ∃ d ∈ (PA.idata :: ds), γ f ctx d info.data by
     obtain ⟨d, hdm, hγ⟩ := hD
     exact ⟨[.inst (.ty mCTys) d], List.mem_map.2 ⟨d, hdm, rfl⟩,
       γL1 ⟨i, info, rfl, hi, ⟨_, hty, rfl⟩, hγ, hP.resTyped i info hi⟩⟩
   by_cases hE : Compile.instE c = true
   · exact ⟨.idata, List.mem_cons_self .., c, hof, hE, hdat⟩
-  · obtain ⟨a, ha, hγ⟩ := fData_of hP hof hE hdat hrt hne
+  · obtain ⟨a, ha, hγ⟩ := hds c hof hE hdat hrt hne
     exact ⟨a, List.mem_cons_of_mem _ ha, hγ⟩
+
+/-- **The instruction defining a value** is described by one of `def_inst`'s outputs over the
+typed scope (`defOutsT`): an E instruction (`.idata`), or one of `fDataT`. -/
+private theorem γ_defInstT (hP : PInvT f ctx) {x i : Nat} (hd : ctx.defInst? x = some i) :
+    ∃ out ∈ defOutsT, γL f ctx out [.inst i] :=
+  γ_defInstG hP.toB (fun c hof hE _ _ hd hrt hne =>
+    fData_of hP.toB hof (hP.instET c hof) hE hd hrt hne) hd
 
 /-! ## Extractors -/
 
@@ -390,8 +403,10 @@ set_option maxHeartbeats 4000000 in
 /-- **The extern extractors are sound** (`Model.ext`): on a value `a` describes, an extractor
 `aextT` accepts never throws, and either succeeds with fields one of `aextT`'s outputs describes or
 fails, where `aextT` did not promise success. -/
-theorem aextT_sound (hP : PInvT f ctx) (term : Term) (a : PA) (outs : List (List PA)) (must : Bool)
-    (v : V) (st : LState) (h : aextT term.id a = some (outs, must)) (hv : γ f ctx a v) :
+theorem aextG_sound {dO : List (List PA)} (hP : PInvTB f ctx)
+    (hdi : ∀ {x i : Nat}, ctx.defInst? x = some i → ∃ out ∈ dO, γL f ctx out [.inst i])
+    (term : Term) (a : PA) (outs : List (List PA)) (must : Bool)
+    (v : V) (st : LState) (h : aextG dO term.id a = some (outs, must)) (hv : γ f ctx a v) :
     (∃ fs, externExtract ctx term v st = .ok fs ∧ ∃ out ∈ outs, γL f ctx out fs) ∨
       (externExtract ctx term v st = .fail ∧ must = false) := by
   show ExtConclT f ctx (externExtract ctx term v st) outs must
@@ -399,7 +414,7 @@ theorem aextT_sound (hP : PInvT f ctx) (term : Term) (a : PA) (outs : List (List
   | some pr =>
     have e : ∀ t, externExtract ctx term (.ty t) st = if pr t then .ok [.ty t] else .fail := by
       intro t; unfold externExtract; rw [hp]
-    unfold aextT at h
+    unfold aextG at h
     rw [hp] at h
     dsimp only at h
     cases a with
@@ -430,13 +445,13 @@ theorem aextT_sound (hP : PInvT f ctx) (term : Term) (a : PA) (outs : List (List
     | bot => exact absurd hv (isBot_γ rfl v)
     | _ => simp at h
   | none =>
-  have key : ExtOkT f ctx term.id a (aextT term.id a) := by
-    unfold aextT
+  have key : ExtOkT f ctx term.id a (aextG dO term.id a) := by
+    unfold aextG
     rw [hp]
     dsimp only
     split
     · next hb => intro _ _ _ _ w _ _ hw; exact absurd hw (isBot_γ hb w)
-    apply aextT_split _ (ExtOkT f ctx)
+    apply aextG_split _ (ExtOkT f ctx)
     -- offset32
     · intro lo hi term hid outs must v st h hv
       obtain ⟨rfl, rfl⟩ := okOne_inv h
@@ -453,7 +468,7 @@ theorem aextT_sound (hP : PInvT f ctx) (term : Term) (a : PA) (outs : List (List
       cases hd : ctx.defInst? x with
       | none => exact concl_fail rfl
       | some i =>
-        obtain ⟨out, hout, hg⟩ := γ_defInstT hP hd
+        obtain ⟨out, hout, hg⟩ := hdi hd
         exact .inl ⟨_, rfl, out, hout, hg⟩
     -- value_type
     · intro ts term hid outs must v st h hv
@@ -920,6 +935,14 @@ theorem aextT_sound (hP : PInvT f ctx) (term : Term) (a : PA) (outs : List (List
       cases h
   exact key term rfl outs must v st h hv
 
+/-- **The extern extractors are sound** (`Model.ext`) over the typed scope: `aextG_sound` with
+the typed scope's defining instructions (`γ_defInstT`). -/
+theorem aextT_sound (hP : PInvT f ctx) (term : Term) (a : PA) (outs : List (List PA)) (must : Bool)
+    (v : V) (st : LState) (h : aextT term.id a = some (outs, must)) (hv : γ f ctx a v) :
+    (∃ fs, externExtract ctx term v st = .ok fs ∧ ∃ out ∈ outs, γL f ctx out fs) ∨
+      (externExtract ctx term v st = .fail ∧ must = false) :=
+  aextG_sound hP.toB (γ_defInstT hP) term a outs must v st h hv
+
 /-! ## The `InstructionData` of an E instruction -/
 
 private theorem γAny_of_mem {as : List PA} {a : PA} {v : V} (ha : a ∈ as) (h : γ f ctx a v) :
@@ -1009,7 +1032,7 @@ set_option maxHeartbeats 4000000 in
 /-- **The `InstructionData` of an E instruction** (`Model.idata`) over the typed scope: the data
 `instData` gives an E instruction of `f` is variant `k` of `InstructionData` with fields `aidata k`
 describes (its operands are in integer positions). -/
-theorem aidata_soundT (hP : PInvT f ctx) (v : V) (hv : γ f ctx .idata v) :
+theorem aidata_soundTB (hP : PInvTB f ctx) (v : V) (hv : γ f ctx .idata v) :
     ∃ k fs afs, v = .data tyInstData k fs ∧ aidata k = some afs ∧ γL f ctx afs fs := by
   simp only [γ] at hv
   obtain ⟨c, hc, hE, h⟩ := hv
@@ -1033,5 +1056,10 @@ theorem aidata_soundT (hP : PInvT f ctx) (v : V) (hv : γ f ctx .idata v) :
   -- the float constants of S11e4 are outside E (`Compile.instE`)
   all_goals try (subst_vars; simp [Compile.instE, Compile.tyE] at hE; done)
   all_goals (simp only [pure, Except.pure, Except.ok.injEq] at h; subst h; idata_finT)
+
+/-- `aidata_soundTB` under `PInvT`. -/
+theorem aidata_soundT (hP : PInvT f ctx) (v : V) (hv : γ f ctx .idata v) :
+    ∃ k fs afs, v = .data tyInstData k fs ∧ aidata k = some afs ∧ γL f ctx afs fs :=
+  aidata_soundTB hP.toB v hv
 
 end Backend.Proof.Prg
