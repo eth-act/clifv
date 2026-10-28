@@ -12,10 +12,11 @@ overwriting its region. The agreement belongs to the machine entries:
 
 * `EntryAgree K s s₀`: the masked registers but `x30`/pc, and the `K` bytes below `sp`;
 * `ThmPDE κ M`: `ThmP`'s outcome and first clause; without `NeedNI` every `MachEntry` activation
-  realises it (no prophecy: the outcome reads no stale bytes, `Thm.thmP`); with `NeedNI`, `ThmPD`'s
-  non-interference clause and the **entry-level determinism**: a `MachEntry` activation `s` from
+  realises it (no prophecy: the outcome reads no stale bytes, `Thm.thmP`); with `NeedNI`, `ThmP`'s
+  non-interference clause (with the prophecy `P`: `ThmPD`'s, for every `MachEntry`, fails for the
+  same reason as its determinism clause) and the **entry-level determinism**: a `MachEntry` activation `s` from
   `w₀'` whose entry agrees with that of a `MachEntryP … P` activation `s₀` from `w₀`
-  (`EntryAgree (frameDrop + κ M g)`) realises the outcome with the prophecy `P` up to its return,
+  (`EntryAgree (frameDrop + κ M g)`) realises the outcome (with its trace) with the prophecy `P` up to its return,
   and at the return agrees with `s₀`'s run at the same step on every register but `x30`/pc and on
   the caller's region below the entry `sp` (what a caller's lock-step needs to continue past the
   call, §5.8 (2));
@@ -70,13 +71,14 @@ def ThmPDE (κ : Nat → Clif.Function → Nat) (M : Nat) : Prop :=
         (∀ off v, (ArgLoc.stack off, v) ∈ (locsOf g.sig).zip vals → ∀ k < v.ty.bytes,
           w₀'.mem (Arm.r (.GPR 29#5) w₀ + BitVec.ofInt 64 (16 + (off : Int)) + BitVec.ofNat 64 k) =
             w₀.mem (Arm.r (.GPR 29#5) w₀ + BitVec.ofInt 64 (16 + (off : Int)) + BitVec.ofNat 64 k)) →
-        (∀ G ra s, L.MachEntry κ M g F G ra s w₀' →
+        (∀ G ra s, L.MachEntryP κ M g F G ra s w₀' P →
           ∃ n, ActRet ra (fun a => F a ∨ D a) G us outs wf s (runX (L.mach M g) n s) ∧
             PostTrace (L.A g).fa (L.A g).af (L.A g).base (L.mach M g) s n) ∧
         (∀ G₀ ra₀ s₀, L.MachEntryP κ M g F G₀ ra₀ s₀ w₀ P →
           ∀ G ra s, L.MachEntry κ M g F G ra s w₀' →
             EntryAgree (frameDrop (L.A g).af + κ M g) s s₀ →
             ∃ n, ActRet ra (fun a => F a ∨ D a) G us outs wf s (runX (L.mach M g) n s) ∧
+              PostTrace (L.A g).fa (L.A g).af (L.A g).base (L.mach M g) s n ∧
               ProphOkUpTo (κ M g) (spv w₀) (L.mach M g) (L.A g).fa (L.A g).base s P n ∧
               RetAgree (frameDrop (L.A g).af + κ M g) (spv s) (runX (L.mach M g) n s)
                 (runX (L.mach M g) n s₀)))
@@ -88,7 +90,7 @@ theorem ThmPDE.thmP {M : Nat} (h : L.ThmPDE κ M) : L.ThmP κ M := by
     h g hg F vals cs w₀ fuel rvals cm' P hWE hrun
   exact ⟨us, outs, wf, hus, hlen, hhold, hmem, hrs, hall,
     fun hN D w₀' hrel hsw hreg hstk G ra s hME =>
-      (hni hN D w₀' hrel hsw hreg hstk).1 G ra s hME.entry⟩
+      (hni hN D w₀' hrel hsw hreg hstk).1 G ra s hME⟩
 
 /-- **Without non-interference today's statement gives `ThmPDE`.** -/
 theorem Thm.thmPDE_of_not_needNI {M : Nat} (hN : ¬ L.NeedNI) (h : L.Thm κ M) : L.ThmPDE κ M := by

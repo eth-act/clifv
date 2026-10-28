@@ -597,7 +597,8 @@ single-step half of the lock-step: `ReadsAvoid Z evs`, `stEqOut_exec_inst` (from
    overwriting its region. `FV/E2E/LinkArmProphDetE.lean`: `EntryAgree K s s₀` (masked registers
    but `x30`/pc, the `K` bytes below `sp`, of the *machine entries*), `RetAgree`, and `ThmPDE`:
    `ThmP`'s clauses, `¬ NeedNI →` realisation from every `MachEntry` (the outcome reads no stale
-   bytes), and under `NeedNI` the NI clause plus the determinism clause between a `MachEntryP … P`
+   bytes), and under `NeedNI` `ThmP`'s NI clause (`MachEntryP … P`: `ThmPD`'s NI clause, for
+   every `MachEntry` without a prophecy, fails for the same reason) plus the determinism clause between a `MachEntryP … P`
    entry `s₀` and a `MachEntry` entry `s` with `EntryAgree (frameDrop + κ M g) s s₀`, concluding
    `ActRet`, `ProphOkUpTo … s P n` and `RetAgree` of the two runs at step `n` (design change 2).
    `ThmPDE.thmP`, `Thm.thmPDE_of_not_needNI`; witnesses `LinkArmProphDetEWitness.lean`. `ThmPD`
