@@ -2835,6 +2835,10 @@ copies of the pair driver and of the P chain, and the `CompiledEither` dispatch:
   the `…PK` chain) and `source_twoRunLERWZIUPF_eitherK` (cleanup, the `…VK` chain).
 - Audit `scripts/audit/sem1-det.lean` (32 theorems: compiler theorems standard axioms; witnesses
   also the `native_decide` ones).
+- Measured (throwaway runner over `compileFile` and `lowerFunction`, 2026-10-28; #713 comment): 0
+  functions fail `x30Free`, `blrLow` or `retsLow` on corpus + Cranelift runtests (1,105 functions,
+  238 `blr` lines, 1,246 `rets` sites), fv-demo split CLIF (2,122 / 882 / 2,796), survey (1,329 /
+  488 / 1,573) and `examples/deps` (30,394 distinct files: 24,809 functions / 23,572 / 33,082).
 
 ## 6. Heap (separate gap, SEM2)
 
