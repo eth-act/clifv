@@ -1,5 +1,5 @@
 import Crates.AArithAbort
-import FV.E2E.Binary
+import FV.E2E.SemanticBinary
 import FV.E2E.NonVacuityLink
 
 /-! # Non-vacuity of the binary-level theorems on a real executable
@@ -16,12 +16,12 @@ to the caller with `5` in x0.
 
 namespace Crates.BinaryWitness
 
-open E2E E2E.LinkCheck E2E.Binary Backend Backend.Proof
+open E2E E2E.LinkCheck E2E.SemanticBinary Backend Backend.Proof
 
-abbrev I : LinkInput := Crates.AArithAbort.input
+abbrev I : SemanticStackBound.CompilerInput := Crates.AArithAbort.compilerInput
 
 /-- The entry's symbol. -/
-def n : String := "__fv_fe6c5eba82df__RNvMs6_NtCsazjiGSRkgVH_4core3numm12wrapping_add"
+def n : String := "__fv_f6c1042d3065__RNvMs6_NtCsazjiGSRkgVH_4core3numm12wrapping_add"
 
 /-- The entry (`core::num::<i32>::wrapping_add`). -/
 def f : Clif.Function := Crates.AArithAbort.fn6.func
@@ -84,7 +84,7 @@ def factsB : Bool :=
   LinkWitness.isRet run && decide (LinkWitness.retVals run = [⟨.i32, 5#32⟩]) &&
   (tabOf I.results).all (fun e => decide (e.2.base.toNat + 4 * e.2.fb.words.size + 4 ≤ 2 ^ 32)) &&
   decide (frameDrop (artOf I.results f).af + I.D * M ≤ 2 ^ 20) &&
-  StackBound.goodN I n && decide (StackBound.stackFn I f ≤ 2 ^ 20)
+  SemanticStackBound.goodN I n && decide (SemanticStackBound.stackFn I f ≤ 2 ^ 20)
 
 theorem factsB_true : factsB = true := by native_decide
 
@@ -95,8 +95,8 @@ theorem facts :
     locB = true ∧ LinkWitness.isRet run = true ∧ LinkWitness.retVals run = [⟨.i32, 5#32⟩] ∧
     (tabOf I.results).all (fun e => decide (e.2.base.toNat + 4 * e.2.fb.words.size + 4 ≤ 2 ^ 32))
       = true ∧
-    frameDrop (artOf I.results f).af + I.D * M ≤ 2 ^ 20 ∧ StackBound.goodN I n = true ∧
-    StackBound.stackFn I f ≤ 2 ^ 20 := by
+    frameDrop (artOf I.results f).af + I.D * M ≤ 2 ^ 20 ∧ SemanticStackBound.goodN I n = true ∧
+    SemanticStackBound.stackFn I f ≤ 2 ^ 20 := by
   have h := factsB_true
   simp only [factsB, Bool.and_eq_true, decide_eq_true_eq] at h
   obtain ⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨h1, h2⟩, h3⟩, h4⟩, h5⟩, h6⟩, h7⟩, h8⟩, h9⟩, h10⟩, h11⟩, h12⟩, h13⟩ := h
@@ -104,9 +104,9 @@ theorem facts :
 
 /-- **The stack premise holds as the input condition** (`StackBound.goodN_iff`): no call cycle of
 the program's call graph is reachable from the entry. -/
-theorem acyclic : ¬ StackBound.CycleFrom (StackBound.Calls I I.results) f := by
+theorem acyclic : ¬ SemanticStackBound.CycleFrom (SemanticStackBound.Calls I I.results) f := by
   obtain ⟨f', hf', hc⟩ :=
-    (StackBound.goodN_iff Crates.AArithAbort.okB_input).1 facts.2.2.2.2.2.2.2.2.2.2.2.1
+    (SemanticStackBound.goodN_iff Crates.AArithAbort.okB_input).1 facts.2.2.2.2.2.2.2.2.2.2.2.1
   rw [facts.1] at hf'
   cases hf'
   exact hc
@@ -228,7 +228,7 @@ theorem binary_depth_witness :
       XHolds ⟨.i32, 5#32⟩ (xreg 0 (runX ((sys I closedBase).mach M f) k (modelOf I f (r m)))) := by
   have hf := facts.1
   have hfm := (Clif.Program.func?_some hf).1
-  have hL := okB_sound Crates.AArithAbort.okB_input (Crates.AArithAbort.base_closed (img I))
+  have hL := SemanticStackBound.okB_sound (I := I) Crates.AArithAbort.okB_input (Crates.AArithAbort.base_closed (img I))
     (fun _ h => h)
   have htr := trapsExplicit_of_run hL hfm clifEntry rfl run_eq
   have hoc := outsideCall m (fun _ => none) facts.2.2.2.2.2.2.2.2.2.2.1
@@ -258,7 +258,7 @@ theorem binary_witness :
     (∃ file, Elf.Agrees file Crates.AArithAbort.exAll) ∧
     ∀ file, Elf.Agrees file Crates.AArithAbort.exAll →
       (imageOf file).Intact (r (memOf file)) ∧
-      OutsideCall I (BinCheck.roByte I Crates.AArithAbort.dataObjs) f (StackBound.stackFn I f)
+      OutsideCall I (BinCheck.roByte I Crates.AArithAbort.dataObjs) f (SemanticStackBound.stackFn I f)
         (r (memOf file)) args cs.mem ∧
       ClifRun I closedBase f (r (memOf file)) args cs ∧
       Clif.runLoop closedBase.env (prog I) (M + 1) cs =
@@ -267,7 +267,7 @@ theorem binary_witness :
           (runX ((sys I closedBase).mach M f) k (modelOf I f (r (memOf file)))) ∧
         XHolds ⟨.i32, 5#32⟩
           (xreg 0 (runX ((sys I closedBase).mach M f) k (modelOf I f (r (memOf file)))))) ∧
-      ∀ a, (modelOf I f (r (memOf file))).mem a ≠ (r (memOf file)).mem a → BinCheck.RelocAt I a := by
+      ∀ a, (modelOf I f (r (memOf file))).mem a ≠ (r (memOf file)).mem a → BinCheck.RelocAtWithResults I I.results a := by
   refine ⟨⟨_, agrees_fileOf⟩, fun file hfile => ?_⟩
   have hf := facts.1
   have hfm := (Clif.Program.func?_some hf).1
@@ -276,7 +276,7 @@ theorem binary_witness :
     exact (congrArg (Option.getD · 0) hb).trans rfl
   have hoc := outsideCall (memOf file) (BinCheck.roByte I Crates.AArithAbort.dataObjs)
     facts.2.2.2.2.2.2.2.2.2.2.2.2
-  have hL := okB_sound Crates.AArithAbort.okB_input (Crates.AArithAbort.base_closed (img I))
+  have hL := SemanticStackBound.okB_sound (I := I) Crates.AArithAbort.okB_input (Crates.AArithAbort.base_closed (img I))
     (fun _ h => h)
   have htr := trapsExplicit_of_run hL hfm clifEntry rfl run_eq
   obtain ⟨h1, h2⟩ := binary_correct_of_checks_acyclic Crates.AArithAbort.okB_input
