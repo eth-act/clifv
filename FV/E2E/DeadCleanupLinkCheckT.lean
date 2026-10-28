@@ -30,7 +30,7 @@ def okBCleanupTFast (I : LinkInput) : Bool :=
   let anyInd := P.funcs.any (!indFreeB ·)
   let sy := assocMap I.syms
   (globalChksWith C I P T).all (·.2) &&
-    (Link.parMap (fun e => (staticChksWithT (fun _ => DeadCleanup.prune) I e.1 e.2 ++
+    (Link.parMap (fun e => (staticChksWithT cleanupStage I e.1 e.2 ++
         linkChksWithT C P e.1 e.2 ++
         [("calleeInt", !calleeWithB (fun n => cs.contains n) anyInd (fun n => sy[n]?) e.1 ||
           e.1.sig.returns.all (·.ty.isInt))]).all (·.2)) R).all id
