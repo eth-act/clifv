@@ -14,7 +14,8 @@ the paired initial configuration (the entry code paired by `entry_step2P`) that 
 final worlds that agree outside `F ∪ D`.
 
 * `ncIndep_pair`, `noCallProj_pair`, `xNI_noCall`;
-* **`vcode_niI`**.
+* **`vcode_niIG`** (named apart from the `vcode_niI` of `agent/uninit-z16b`, which runs
+  `sim_runG` on `csemI`).
 -/
 
 namespace E2E
@@ -59,7 +60,7 @@ variable {p : Clif.Program} {f : Clif.Function} {k : Nat} {vc vcp : VCode} {rf :
   {af : AFunc} {fa : FnAsm} {fb : FnBin}
 
 /-- **Non-interference of the counted VCode run** (module doc). -/
-theorem vcode_niI (hsub : InSubset p f) (hc : Compiled f k vc vcp rf af fa fb)
+theorem vcode_niIG (hsub : InSubset p f) (hc : Compiled f k vc vcp rf af fa fb)
     (hone : InstCallsOne f) (htc : TryCallsOne f)
     {XI : ExtSemI} {syms : String → Option Nat} {slotOff : Nat} {env : Clif.Env}
     {F : BitVec 64 → Prop} {c : BitVec 64} {args : List Clif.Val} {cs : Clif.State}

@@ -4,7 +4,7 @@ import FV.E2E.PairEntryD
 /-!
 # Non-interference of the counted VCode run, reads guarded (SEM1 #537, #699)
 
-`vcode_niI` (`PairDriverI.lean`) on the guarded paired semantics `pairSemD`
+`vcode_niIG` (`PairDriverIG.lean`) on the guarded paired semantics `pairSemD`
 (`PairGuardS.lean`): the paired counted run from the paired initial configuration is a run of
 `ISem.counted fun n => pairSemD (csem F ctx (XI.at n)) F ctx (XI.at n)`, so at every step the
 reads of the instruction avoid a set containing `F` and every byte where the two worlds differ
@@ -60,7 +60,7 @@ section
 variable {p : Clif.Program} {f : Clif.Function} {k : Nat} {vc vcp : VCode} {rf : RFunc}
   {af : AFunc} {fa : FnAsm} {fb : FnBin}
 
-/-- **Non-interference of the counted VCode run, reads guarded** (module doc; `vcode_niI`'s
+/-- **Non-interference of the counted VCode run, reads guarded** (module doc; `vcode_niIG`'s
 premises and conclusion, the run in `pairSemD`). -/
 theorem vcode_niID (hsub : InSubset p f) (hc : Compiled f k vc vcp rf af fa fb)
     (hone : InstCallsOne f) (htc : TryCallsOne f)

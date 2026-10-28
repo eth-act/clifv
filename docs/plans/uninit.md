@@ -871,7 +871,7 @@ semantics, and `ReadIn`'s third case becomes "outside `F` and outside the step's
   (the compiled `csemVI` run of `vcp` is a `csemVIG … Ok` run), giving `actWReadsIn … Ok` at every
   state before the return. Witness `BackendWorldIYWitness.lean` (`a2_worldPRIY`, `Ok := (· = F)`).
 - Open: `hGd` for the pair (`Ok w Y := Y = Zof F D cm` at a `cm` the pair relates `w` to). It
-  needs a per-step refinement of the counted pair run (`vcode_niI`): the rules on `csemG` with
+  needs a per-step refinement of the counted pair run (`vcode_niIG`): the rules on `csemG` with
   `Rd := ¬ Zof F D cm` give `GuardR`, hence `csem (F ∪ ¬ Rd)` (loads, atomics); and the transport
   across `prep` (`DriverSemG` of the guarded family). Not started.
 
@@ -970,7 +970,7 @@ therefore not needed for item (3); the joint theorem is lifted instead.
 - `IselSimIG.lean`: the counted CLIF → VCode simulation for any counted family (`NcIndep`,
   `NoCallProj`, `seqRun_counted_le1`, **`sim_runIG`**; copies of `IselSimI`/`IselSimITry`'s
   proofs, whose `csem` statements stay). `PairEntry.lean`: **`entry_step2P`** (the entry on two
-  worlds is one `pairSem` run). `PairDriverI.lean`: **`vcode_niI`** — non-interference of the
+  worlds is one `pairSem` run). `PairDriverIG.lean`: **`vcode_niIG`** — non-interference of the
   counted VCode run: one paired counted run of `pairSem (csem F ctx (XI.at n))` from the paired
   initial configuration, with the callee contracts and `XNI` needed only at the actual `n`-th
   call.
@@ -1001,7 +1001,7 @@ the *two* worlds differ, which is what the lock-step needs. Fix (new names, old 
   semantics). `PairDriverD.lean`: `instCalls_pairD`, `termCalls_pairD`, `tryCalls_pairD`,
   `tryIndCalls_pairD`; `PairEntryD.lean`: `entry_step2PD` (the stack-argument loads read bytes
   outside `F` equal on both worlds); `PairDriverID.lean`: **`vcode_niID`** (the paired counted run
-  of `vcode_niI` is a run of `pairSemD`); `BackendPairRunD.lean`: `gotInvPD_star`,
+  of `vcode_niIG` is a run of `pairSemD`); `BackendPairRunD.lean`: `gotInvPD_star`,
   **`backend_pairRunD`** (through `prepare` and the GOT guard: `hGdP` discharged, in paired form);
   `BackendTwoRunD.lean`: `GuardedAt`, `PairOfG`, `pstar_of_projG`, **`backend_twoRunPRIYD`**
   (`backend_twoRunPRIYS` without `hGdP`; `hK` receives `GuardedAt`: every paired step from the

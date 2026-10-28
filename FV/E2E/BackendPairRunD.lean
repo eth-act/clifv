@@ -100,7 +100,7 @@ variable {p : Clif.Program} {f : Clif.Function} {k : Nat} {vc vcp : VCode} {rf :
   {af : AFunc} {fa : FnAsm} {fb : FnBin}
 
 /-- **The paired run of the allocated code, reads guarded by the difference set**: from two
-body-entry worlds related to the CLIF entry and agreeing outside `F ∪ D` (`vcode_niI`'s
+body-entry worlds related to the CLIF entry and agreeing outside `F ∪ D` (`vcode_niIG`'s
 premises), a returning CLIF run gives a returning paired counted run of `vcp` in the guarded
 paired semantics of `csemV (GotV vcp)`, final worlds agreeing outside `F ∪ D`. -/
 theorem backend_pairRunD (hsub : InSubset p f) (hc : Compiled f k vc vcp rf af fa fb)

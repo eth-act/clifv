@@ -132,7 +132,7 @@ theorem backend_twoRunPRIYS (hsub : InSubset p f) (hc : Compiled f k vc vcp rf a
       Arm.r .PC (iterN ({ R with s0 := t0, G := G', X := XI.at 0 } : RL).step
         ((prologueLines R.af.frameSize).length + N + R.retLen) t0) = ra' := by
   intro vals cm hrun
-  obtain ⟨us, outs, w, hv, -⟩ := vcode_niI hsub hc hone htc hX hNI hTls hsym hslot ρ₀ hce hrel hrel'
+  obtain ⟨us, outs, w, hv, -⟩ := vcode_niIG hsub hc hone htc hX hNI hTls hsym hslot ρ₀ hce hrel hrel'
     hargs hsw hreg hstk htr fuel vals cm hrun
   have hP := (prep_soundW (DriverSemG.counted fun n => driverSemG_pair F ⟨fa.k, af.slotBase⟩ (XI.at n))
     hc.prepOk ρ₀ ((w₀, w₀'), 0)).1 _ _ _ hv

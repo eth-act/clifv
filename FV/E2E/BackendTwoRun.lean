@@ -1,4 +1,4 @@
-import FV.E2E.PairDriverI
+import FV.E2E.PairDriverIG
 import FV.E2E.RegLevelPairRun
 import FV.E2E.RegLevelTwoRunPR
 import FV.E2E.GotFlowI
@@ -7,7 +7,7 @@ import FV.E2E.PrepareSoundW
 /-!
 # Two activations of a compiled function along one CLIF run (SEM1 #537, item (3))
 
-The paired counted VCode run of `vcode_niI` carried through the backend pipeline as
+The paired counted VCode run of `vcode_niIG` carried through the backend pipeline as
 `backend_correct_worldPRIY` carries the single one: `prepare` (`prep_soundW` with
 `DriverSemG.counted`), the GOT guard (`gotInvP_star`: the GOT invariant reads only the vreg
 file), and the world-read guard (`hGdP`, a premise as `hGd` is `backend_correct_worldPRIY`'s),
@@ -148,7 +148,7 @@ variable {p : Clif.Program} {f : Clif.Function} {k : Nat} {vc vcp : VCode} {rf :
 set_option maxHeartbeats 4000000 in
 /-- **Two activations of a compiled function along one returning CLIF run** (module doc): two
 body-entry worlds related to the CLIF entry, agreeing outside `F ∪ D` with the same arguments
-(`vcode_niI`'s premises), entered by two `ActEntryPR` activations `s`, `t0` of the compiled
+(`vcode_niIG`'s premises), entered by two `ActEntryPR` activations `s`, `t0` of the compiled
 function (one external semantics `XI`); the world-read guard `Ok` holds along the paired run
 (`hGdP`). Then the two machine runs, after the prologue, are realised jointly segment by segment
 (`RL.twoRunC`'s lock premises), reach shape-equal configurations of the `rets` item at the same
@@ -261,7 +261,7 @@ theorem backend_twoRunPRIY (hsub : InSubset p f) (hc : Compiled f k vc vcp rf af
       Arm.r .PC (iterN ({ R with s0 := t0, G := G', X := XI.at 0 } : RL).step
         ((prologueLines R.af.frameSize).length + N + R.retLen) t0) = ra' := by
   intro vals cm hrun
-  obtain ⟨us, outs, w, hv, -⟩ := vcode_niI hsub hc hone htc hX hNI hTls hsym hslot ρ₀ hce hrel hrel'
+  obtain ⟨us, outs, w, hv, -⟩ := vcode_niIG hsub hc hone htc hX hNI hTls hsym hslot ρ₀ hce hrel hrel'
     hargs hsw hreg hstk htr fuel vals cm hrun
   have hP := (prep_soundW (DriverSemG.counted fun n => driverSemG_pair F ⟨fa.k, af.slotBase⟩ (XI.at n))
     hc.prepOk ρ₀ ((w₀, w₀'), 0)).1 _ _ _ hv
