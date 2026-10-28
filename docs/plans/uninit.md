@@ -785,6 +785,26 @@ Next: item (b) proper (`thmPR_of` on `backend_correct_world_ni_pipelinePRI`: dis
 per state through `xCallsOk_only_of` from `progCallPR`/`calleeOkPR` at the machine's `n`-th call,
 `counter_at` along `ReachN`), item (d) (`WorldEntryB`), item (e).
 
+**Design notes for (b)+(d) (UninitZ10, not built).** With the oracle the CLIF outcome of an
+activation depends on its byte table, and the table must be the machine's: entry `j` is the memory
+at the `j`-th placed activation with slots that the whole machine run enters (§5.5). So the oracle
+statement cannot choose the outcome before the machine activation, as `ThmPR` does for `(P, R)`:
+the table, `P := prophOf` and `R := prophStOf` are all functions of the machine entry `s`. Proposed
+shape: `ThmPRB κ M` = for every `g`, CLIF entry placed with `PlaceAtB cs.mem (spv w₀) ini`
+(`WorldEntryB`) and machine entry `s` (`MachEntryPR … (prophOf s) (prophStOf s)`) whose run's
+entry-order table agrees with `ini` from `ini.next` on (`TableOf s ini`: for the activation's
+`n`-th call, the entries `ini.next + slotted g + sumTo E n …` are the callee run's, `counter_at`),
+a returning CLIF run gives one counted outcome realised by `s`. The induction step (`thmPRB_of`)
+uses `backend_correct_world_ni_pipelinePRI` with `XI := L.XPRI κ M g F (prophOf s) (prophStOf s)`
+and discharges `hX` at the state `s'` reached after `n` CLIF calls with `xCallsOk_only_of`: only
+the actual invocation (memory `s'.mem`, placed at the counter `counter_at` gives) and the machine's
+`n`-th call (`OnCallPR`) are related, and the callee's CLIF run reads the table entries the callee's
+machine run entered, i.e. `ThmPRB (M - 1)` for the callee with `ini.adv (counter)` and the
+canonical callee run (`progCallPR`) — its entry-order table is the caller's table from that
+counter on because the canonical callee state agrees with the actual call state on the region
+(`P n`) and the masked registers (`R n`), the determinism clause (item (c), UninitZ10b's lock-step).
+
+
 ## 6. Heap (separate gap, SEM2)
 
 `BaseOk.baseKeepsAllocs`/`baseNoAlloc` require base externs to allocate nothing whenever a program
