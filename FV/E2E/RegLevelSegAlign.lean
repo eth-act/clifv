@@ -318,4 +318,12 @@ theorem RL.firstArr_lines {R : RL} (hR : R.Wf) {s : Arm.ArmState} {j n : Nat}
   obtain ⟨x1, t1, h1⟩ := hins i hin
   exact RL.pcOf_ne hR (by simpa using h0) (by omega) h1 (by omega)
 
+theorem RL.emptyW_entry_iff {R : RL} {j : Nat} {ps1 : PState} {T : List Line} {b b'' : Nat}
+    {it : RItem} {its its'' : List RItem} {m m' : Loc → CV} {w w' : Arm.ArmState}
+    (h : ¬ (b'' = b ∧ its'' = its)) :
+    R.EmptyW j ps1 T (.run ⟨b, it :: its, m, w⟩) (.run ⟨b'', its'', m', w'⟩) ↔
+      ∀ x t, R.L[j]? ≠ some (.ins x t) := by
+  unfold RL.EmptyW
+  rw [if_neg (by simpa [RL.Straight] using h)]
+
 end Backend.Proof

@@ -11,13 +11,6 @@ namespace Backend.Proof
 
 open Backend E2E
 
-theorem relaxLines_single_ne (f : Lbl → Bool) (ln : Line) : (relaxLines f [ln]).length ≠ 0 := by
-  simp only [relaxLines, List.flatMap_cons, List.flatMap_nil, List.append_nil]
-  unfold relaxLine
-  split
-  · split <;> simp
-  · simp
-
 /-- **`trapIf` whose condition does not hold, at a witness** (`realizes_trapIf_nextNR`). -/
 theorem realizes_trapIf_nextNA {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : Arm.ArmState}
     {b k : Nat} {allocs : Array Loc}

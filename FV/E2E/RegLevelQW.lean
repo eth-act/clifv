@@ -14,6 +14,13 @@ namespace Backend.Proof
 
 open Backend E2E
 
+theorem relaxLines_single_ne (f : Lbl → Bool) (ln : Line) : (relaxLines f [ln]).length ≠ 0 := by
+  simp only [relaxLines, List.flatMap_cons, List.flatMap_nil, List.append_nil]
+  unfold relaxLine
+  split
+  · split <;> simp
+  · simp
+
 /-- `QW` at an instruction item, taken apart (`q_op`). -/
 theorem qW_op {R : RL} {s : Arm.ArmState} {b k : Nat} {allocs : Array Loc} {its : List RItem}
     {m : Loc → CV} {w : Arm.ArmState} {j0 : Nat} {ps1 : PState} {T : List Line}
