@@ -417,6 +417,53 @@ the activation's own calls. Do not relate them arithmetically inside the backend
   oracle-free (it never sees CLIF memory), and only the linking (`progCall`, `progResult`)
   touches the sum.
 
+### 5.6 Linking on `ThmP`: the caller-family obstacle (2026-10-28)
+
+Investigation for `thmP_of` (`ThmP κ (M-1) → ThmP κ M` on `XPI`), before reworking `progCall`.
+In `LinkArm.lean` the induction hypothesis is used at exactly one place (`progCall`, the
+`ih h hh Fh … hWE hm` call); every other item (`progOsCore`, `progOs*`, `calleeOk`,
+`calleeTryOk`, `progResult`, `xCallsOk`, `xCallsIndOk`, `progX_ni`, `xni`) only threads it to
+`progCall`. And `progXP … Pn uses w = progX … uses (worldP … w Pn)` by `rfl` (`progXP_eq`), so
+each item for `XP … P n` is the `X` item at the overlaid world. The real change is `progCall`
+with `ih : ThmP κ (M-1)`, and there `ThmP` as built (#648) is too weak:
+
+- `progCall` chooses **one** callee outcome and realises it from **every** caller state `t` with
+  `CallerOk F h uses w t` (`SameWorld F t w`: `t` may differ from `w` inside `F`, in particular in
+  the callee region `calleeRgn` and the caller's frame). `xCallsOk`/`calleeOk`/`xni` rely on that
+  universality: the actual machine state at call `n` is such a `t`, not the canonical state.
+- `ThmP` gives one outcome per prophecy `P'` of the *callee's* run (`MachEntryP … P'`). The callee
+  runs from two `CallerOk` states have prophecies `prophOf` that nothing relates (the region's
+  bytes at the callee's own calls are stale bytes its earlier callees left below the caller's
+  `sp`), so the outcome chosen for the canonical state's prophecy says nothing about the run from
+  `t`. Same for `ThmP`'s NI clause, which assumes the *same* `P` for the run from `w₀'`.
+- With `init = none` this is invisible (`Thm.thmP`: one outcome for all `P`). With `init = some`
+  the callee's CLIF outcome reads the stale bytes, so the obligation is real.
+
+What closes it (conservative: #648's statements stay; new names):
+
+1. Restrict the family: the caller state at call `n` is `OnCallP … P n`, i.e. its callee region
+   holds `P n`, the overlay of `worldP`. `progCallP` quantifies over `t` with `CallerOk F h uses
+   (worldP … w Pn) t` **and** `∀ a, calleeRgn a → t.mem a = Pn a`.
+2. **Prophecy determinism (the missing theorem):** two activations of `h` entered from states that
+   agree on the registers `CallerOk` fixes, the image, the callee region and the stack arguments,
+   and differ only on addresses the callee neither reads nor writes (`D`, as in the NI clause),
+   have the same prophecy (`prophOf` equal at every index) and the same final bytes in the callee
+   region. Stronger than `ActRet` (results, `MemRel`, memory outside `G` only). It needs a
+   lock-step invariant of two machine runs against the same counted VCode run (both `RL.Q`-related
+   to the same world at every segment boundary, so equal outside `frameWG`; inside `frameWG`
+   equal because both store the same values and their stale bytes come from equal region bytes):
+   a new reg-level theorem beside `regLevelCorrect_worldP`, and the callee's determinism
+   inductively (`ThmPD`: `ThmP` whose NI clause takes `MachEntry` and *concludes* `ProphOk … P`
+   and equal final region bytes).
+3. Then `progCallP` takes `ih : ThmPD κ (M-1)`, picks `P' := prophOf` of the canonical callee run
+   (`prophOk_prophOf`) and moves it to every `t` of the family by (2); the rest of `progCall` is
+   unchanged at the world `worldP … w Pn`.
+
+So the next Arm-side leaf is the two-run reg-level invariant of (2); the `LinkArm` items are
+mechanical once `ThmPD` exists. CLIF side (#665): `Clif.NextAdv`, `EnvAdv`, `PlaceAtB`; the
+slot-byte table `B j` (memory at the `j`-th slotted body entry, counted from 1: `initSlots` reads
+`bytes (next + 1)`) is the canonical runs' bytes, which (2) makes equal to the actual run's.
+
 ## 6. Heap (separate gap, SEM2)
 
 `BaseOk.baseKeepsAllocs`/`baseNoAlloc` require base externs to allocate nothing whenever a program
