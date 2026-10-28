@@ -219,9 +219,9 @@ theorem oracleAt_atE (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) {M' : Nat}
     hWE.room hWE.dead hWE.align htrE hsp herr hcp (func?_of_mem hL.names hh) hcal hct hmskQ hrgnQ
     hLu hsw hspw himgU hrah hmrW hargsW hsavW hpl hcnt hinit hrun⟩
 
-/-- **`callCount` with the prefix-closed table** (module doc). -/
-theorem callCountE (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) {M' : Nat}
-    (ih : L.ThmPRBRL κ M') (hdet : L.DetPRB κ M')
+/-- **`callCount` with the prefix-closed table** (module doc), determinism `DetPRBR` (#719). -/
+theorem callCountER (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) {M' : Nat}
+    (ih : L.ThmPRBRL κ M') (hdet : L.DetPRBR κ M')
     {g : Clif.Function} (hg : g ∈ L.P.funcs) {F G : BitVec 64 → Prop} {ra : BitVec 64}
     {s w₀ : Arm.ArmState} (hME : L.MachEntry κ (M' + 1) g F G ra s w₀)
     (hra : RaOk (L.A g) (ra - 4)) {ini : Clif.SlotInit} (htab : L.TableOfE (M' + 1) g s ini)
@@ -288,7 +288,7 @@ theorem callCountE (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) {M' : Nat}
   obtain ⟨inj, hpl, hslot, htabC⟩ := hor
   -- the callee's linking statement, with the trace of the actual callee run
   obtain ⟨us0, outs0, wf0, ec, -, -, -, -, -, hadv, hcall⟩ :=
-    L.progCallPRBRLT hL hM ih hdet hpf ⟨g, hg, hcal⟩ himgF
+    L.progCallPRBRLTR hL hM ih hdet hpf ⟨g, hg, hcal⟩ himgF
       (by rw [show Arm.r .ERR _ = Arm.r .ERR w from
             L.r_worldPR_out h _ _ w (fun hm => by simp [MaskedReg, Masked] at hm),
           ← hsw.1 .ERR (by simp [Masked])]; exact herr)
@@ -329,9 +329,60 @@ theorem callCountE (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) {M' : Nat}
     simp only [callsBefore, hcp, ↓reduceIte, Clif.sumTo]
     omega
 
-/-- **`countStep_prog` with the prefix-closed table.** -/
-theorem countStep_progE (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) (hN : L.NeedSlots)
-    {M' : Nat} (ih : L.ThmPRBRLE κ M') (hdet : L.DetPRB κ M') (hdt : L.DetTabPRBE κ (M' + 1))
+/-- **`callCount` with the prefix-closed table** (`callCountER` with `DetPRB`). -/
+theorem callCountE (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) {M' : Nat}
+    (ih : L.ThmPRBRL κ M') (hdet : L.DetPRB κ M')
+    {g : Clif.Function} (hg : g ∈ L.P.funcs) {F G : BitVec 64 → Prop} {ra : BitVec 64}
+    {s w₀ : Arm.ArmState} (hME : L.MachEntry κ (M' + 1) g F G ra s w₀)
+    (hra : RaOk (L.A g) (ra - 4)) {ini : Clif.SlotInit} (htab : L.TableOfE (M' + 1) g s ini)
+    (himgF : ∀ a, L.Img a → F a) {c : BitVec 64}
+    (hroom : κ (M' + 1) g ≤ c.toNat)
+    (hdead : ∀ a, StackBelow (κ (M' + 1) g) c a → F a ∧ ¬ L.Img a) (halign : c.toNat % 16 = 0)
+    {i : Nat}
+    (htrE : ∀ j < i, (¬ PostCall (L.A g).fa (L.A g).base (Arm.r .PC (runX (L.mach (M' + 1) g) j s)) ∨
+      spOf (runX (L.mach (M' + 1) g) j s) = spv s - BitVec.ofNat 64 (frameDrop (L.A g).af)) ∧
+      Arm.r .ERR (runX (L.mach (M' + 1) g) j s) = .None ∧
+      (runX (L.mach (M' + 1) g) j s).program = (L.A g).fb.program (L.A g).base)
+    (hsp : spOf (runX (L.mach (M' + 1) g) i s) = spv s - BitVec.ofNat 64 (frameDrop (L.A g).af))
+    (herr : Arm.r .ERR (runX (L.mach (M' + 1) g) i s) = .None)
+    (hcp : CallPc (L.A g).fa (L.A g).base (Arm.r .PC (runX (L.mach (M' + 1) g) i s)))
+    {h : Clif.Function} (hpf : L.P.func? h.name = some h) (hcal : L.Callee g h)
+    (hct : L.CallsTo g (runX (L.mach (M' + 1) g) i s) h)
+    {P : Nat → BitVec 64 → BitVec 8} {R : Nat → Arm.ArmState}
+    (hmskQ : ∀ f, MaskedReg f → Arm.r f (runX (L.mach (M' + 1) g) i s) =
+      Arm.r f (R (callsBefore (L.mach (M' + 1) g) (L.A g).fa (L.A g).base s i)))
+    (hrgnQ : ∀ a, StackBelow (κ (M' + 1) g) (spv (runX (L.mach (M' + 1) g) i s)) a →
+      (runX (L.mach (M' + 1) g) i s).mem a =
+        P (callsBefore (L.mach (M' + 1) g) (L.A g).fa (L.A g).base s i) a)
+    {Lu : List (Nat × Reg)} (hLu : Lu.map (·.2) = regLocs h.sig) {w : Arm.ArmState}
+    (hsw : SameWorld F (runX (L.mach (M' + 1) g) i s) w) (hspw : spv w = c)
+    (himgT : ∀ a, L.Img a → (runX (L.mach (M' + 1) g) i s).mem a = L.imgMem a)
+    (hrah : RaOk (L.A h) (Arm.r .PC (runX (L.mach (M' + 1) g) i s)))
+    {vals : List Clif.Val} {cm : Clif.Mem} {cs : Clif.State} {rvals : List Clif.Val}
+    {cm' : Clif.Mem}
+    (hmrW : MemRel F L.syms cm (L.worldPR κ (M' + 1) h
+      (P (callsBefore (L.mach (M' + 1) g) (L.A g).fa (L.A g).base s i))
+      (R (callsBefore (L.mach (M' + 1) g) (L.A g).fa (L.A g).base s i)) w))
+    (hargsW : ArgsAt h.sig vals (Lu.map (fun q => regVal (runX (L.mach (M' + 1) g) i s) q.2))
+      (L.worldPR κ (M' + 1) h (P (callsBefore (L.mach (M' + 1) g) (L.A g).fa (L.A g).base s i))
+        (R (callsBefore (L.mach (M' + 1) g) (L.A g).fa (L.A g).base s i)) w))
+    (hsavW : StackArgsAvoid F h.sig vals
+      (L.worldPR κ (M' + 1) h (P (callsBefore (L.mach (M' + 1) g) (L.A g).fa (L.A g).base s i))
+        (R (callsBefore (L.mach (M' + 1) g) (L.A g).fa (L.A g).base s i)) w))
+    (hor : L.OracleAt κ (M' + 1) h c cm (Lu.map (fun q => regVal (runX (L.mach (M' + 1) g) i s) q.2))
+      (L.worldPR κ (M' + 1) h (P (callsBefore (L.mach (M' + 1) g) (L.A g).fa (L.A g).base s i))
+        (R (callsBefore (L.mach (M' + 1) g) (L.A g).fa (L.A g).base s i)) w))
+    (hinit : Clif.initState L.P h.name vals cm = .ok cs)
+    (hrun : L.crun (M' + 1) cs = .returned rvals cm') :
+    ∃ d, (L.NeedSlots → Clif.NextAdv cm cm' d) ∧
+      ∀ e e', L.TabUpTo (M' + 1) g s ini.bytes ini.next i e →
+        L.TabUpTo (M' + 1) g s ini.bytes ini.next (i + 1) e' → e' = e + d :=
+  L.callCountER hL hκ ih (DetPRB.toR L hdet) hg hME hra htab himgF hroom hdead halign htrE hsp
+    herr hcp hpf hcal hct hmskQ hrgnQ hLu hsw hspw himgT hrah hmrW hargsW hsavW hor hinit hrun
+
+/-- **`countStep_prog` with the prefix-closed table**, determinism `DetPRBR` (#719). -/
+theorem countStep_progER (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) (hN : L.NeedSlots)
+    {M' : Nat} (ih : L.ThmPRBRLE κ M') (hdet : L.DetPRBR κ M') (hdt : L.DetTabPRBE κ (M' + 1))
     {g : Clif.Function} (hg : g ∈ L.P.funcs) {F : BitVec 64 → Prop} {vals : List Clif.Val}
     {cs : Clif.State} {w₀ : Arm.ArmState} {ini : Clif.SlotInit} {G : BitVec 64 → Prop}
     {ra : BitVec 64} {s : Arm.ArmState}
@@ -403,7 +454,7 @@ theorem countStep_progE (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) (hN : L.
     (callsBefore (L.mach (M' + 1) g) (L.A g).fa (L.A g).base s i) (runX (L.mach (M' + 1) g) i s)
     ⟨onCallPR_of hME.entryP.proph hME.reg ⟨i, rfl, rfl⟩, hsp⟩ hcp
   subst hargs
-  obtain ⟨d, hnd, hgrow⟩ := L.callCountE hL hκ (ThmPRBRLE.toThmPRBRL L ih) hdet hg he hra htab
+  obtain ⟨d, hnd, hgrow⟩ := L.callCountER hL hκ (ThmPRBRLE.toThmPRBRL L ih) hdet hg he hra htab
     hWE.img hWE.room hWE.dead hWE.align htrE hsp herr hcp (func?_of_mem hL.names hh) hcal hct
     hmskQ hrgnQ hLu hsw hspw himgU hrah hmrW hargsW hsavW hor hinit hrun
   have hm1 : tj1.mem = cm'' := L.adv_prog (hL.free g hg) hItj hctj hinvj
@@ -416,6 +467,68 @@ theorem countStep_progE (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) (hN : L.
   obtain ⟨e, h0⟩ := L.tabUpTo_mono h1 (Nat.le_succ i)
   rw [hgrow e e' h0 h1, hcnt e h0]
   simp only [callsBefore, hcp, ↓reduceIte, Clif.sumTo, hadv]
+
+/-- **`countStep_prog` with the prefix-closed table** (`countStep_progER` with `DetPRB`). -/
+theorem countStep_progE (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) (hN : L.NeedSlots)
+    {M' : Nat} (ih : L.ThmPRBRLE κ M') (hdet : L.DetPRB κ M') (hdt : L.DetTabPRBE κ (M' + 1))
+    {g : Clif.Function} (hg : g ∈ L.P.funcs) {F : BitVec 64 → Prop} {vals : List Clif.Val}
+    {cs : Clif.State} {w₀ : Arm.ArmState} {ini : Clif.SlotInit} {G : BitVec 64 → Prop}
+    {ra : BitVec 64} {s : Arm.ArmState}
+    (hWE : L.WorldEntryB κ (M' + 1) g F vals cs w₀ ini)
+    (hME : L.MachEntryPR κ (M' + 1) g F G ra s w₀ (L.BP (M' + 1) g s) (L.RP (M' + 1) g s))
+    (hra : RaOk (L.A g) (ra - 4)) (htab : L.TableOfE (M' + 1) g s ini) {i : Nat}
+    (htrE : ∀ j < i, (¬ PostCall (L.A g).fa (L.A g).base (Arm.r .PC (runX (L.mach (M' + 1) g) j s)) ∨
+      spOf (runX (L.mach (M' + 1) g) j s) = spv s - BitVec.ofNat 64 (frameDrop (L.A g).af)) ∧
+      Arm.r .ERR (runX (L.mach (M' + 1) g) j s) = .None ∧
+      (runX (L.mach (M' + 1) g) j s).program = (L.A g).fb.program (L.A g).base)
+    (hsp : spOf (runX (L.mach (M' + 1) g) i s) = spv s - BitVec.ofNat 64 (frameDrop (L.A g).af))
+    {ins : MInst} {info : CallInfo} (hi : ins = .call info ∨ ∃ ti, ins = .tryCall info ti)
+    (hS : (L.A g).vcp.CallSite info) {ops : Array Operand} {regs : Array Reg} {i' : MInst}
+    (hops : ins.operands = .ok ops) {cc : CheckCtx} {wh : String}
+    (hst : cc.checkStatic wh ops (regs.map .reg) ins.clobbers = .ok ())
+    (hasg : ins.assign regs = .ok i')
+    (hpi : CallAt (L.A g).fa (L.A g).base (Arm.r .PC (runX (L.mach (M' + 1) g) i s)) i')
+    (herr : Arm.r .ERR (runX (L.mach (M' + 1) g) i s) = .None)
+    (hgd : gotGuard (GotV (L.A g).vcp) L.Xb info (useVals ops regs (runX (L.mach (M' + 1) g) i s)))
+    (hGu : ∀ a, G a → (runX (L.mach (M' + 1) g) i s).mem a = s.mem a)
+    {w : Arm.ArmState} (hsw : SameWorld F (runX (L.mach (M' + 1) g) i s) w)
+    {h : Clif.Function} (hh : h ∈ L.P.funcs) {args : List CV}
+    (hd : callDest info = some h.name ∧ useVals ops regs (runX (L.mach (M' + 1) g) i s) = args ∨
+      callDest info = none ∧ L.IndTo g h ∧ ∃ u0,
+        useVals ops regs (runX (L.mach (M' + 1) g) i s) = u0 :: args ∧ lo64 u0 = L.Xb.sym h.name 0)
+    (hcal : L.Callee g h) {vals' : List Clif.Val} {cm : Clif.Mem} {cs' : Clif.State}
+    {rvals' : List Clif.Val} {cm'' : Clif.Mem}
+    (hmrW : MemRel F L.syms cm (L.worldPR κ (M' + 1) h
+      (L.BP (M' + 1) g s (callsBefore (L.mach (M' + 1) g) (L.A g).fa (L.A g).base s i))
+      (L.RP (M' + 1) g s (callsBefore (L.mach (M' + 1) g) (L.A g).fa (L.A g).base s i)) w))
+    (hargsW : ArgsAt h.sig vals' args (L.worldPR κ (M' + 1) h
+      (L.BP (M' + 1) g s (callsBefore (L.mach (M' + 1) g) (L.A g).fa (L.A g).base s i))
+      (L.RP (M' + 1) g s (callsBefore (L.mach (M' + 1) g) (L.A g).fa (L.A g).base s i)) w))
+    (hsavW : StackArgsAvoid F h.sig vals' (L.worldPR κ (M' + 1) h
+      (L.BP (M' + 1) g s (callsBefore (L.mach (M' + 1) g) (L.A g).fa (L.A g).base s i))
+      (L.RP (M' + 1) g s (callsBefore (L.mach (M' + 1) g) (L.A g).fa (L.A g).base s i)) w))
+    (hspw : spv w = spv w₀)
+    (hinit : Clif.initState L.P h.name vals' cm = .ok cs')
+    (hrun : L.crun (M' + 1) cs' = .returned rvals' cm'')
+    {tj tj1 : Clif.State}
+    (hrtj : ReachN (L.envOfB (M' + 1) g (spv w₀)) L.P.bare cs tj
+      (callsBefore (L.mach (M' + 1) g) (L.A g).fa (L.A g).base s i))
+    (hcnj : callNum tj = 1)
+    (hstj : Clif.step (L.envOfB (M' + 1) g (spv w₀)) L.P.bare tj = .next tj1)
+    (hinvj : Clif.Invoked (L.envOfB (M' + 1) g (spv w₀)) L.P.bare tj h.name vals' cm)
+    (hItj : Clif.LInv (L.P.only g) tj) (hctj : tj.callers = [])
+    (hptj : L.PlaceAtB tj.mem (spv w₀) (ini.adv (Clif.sumTo
+      (advAt (L.envOfB (M' + 1) g (spv w₀)) L.P.bare cs)
+      (callsBefore (L.mach (M' + 1) g) (L.A g).fa (L.A g).base s i))))
+    (hcnt : ∀ e, L.TabUpTo (M' + 1) g s ini.bytes ini.next i e →
+      e = Clif.sumTo (advAt (L.envOfB (M' + 1) g (spv w₀)) L.P.bare cs)
+        (callsBefore (L.mach (M' + 1) g) (L.A g).fa (L.A g).base s i)) :
+    ∀ e', L.TabUpTo (M' + 1) g s ini.bytes ini.next (i + 1) e' →
+      e' = Clif.sumTo (advAt (L.envOfB (M' + 1) g (spv w₀)) L.P.bare cs)
+        (callsBefore (L.mach (M' + 1) g) (L.A g).fa (L.A g).base s (i + 1)) :=
+  L.countStep_progER hL hκ hN ih (DetPRB.toR L hdet) hdt hg hWE hME hra htab htrE hsp hi hS hops
+    hst hasg hpi herr hgd hGu hsw hh hd hcal hmrW hargsW hsavW hspw hinit hrun hrtj hcnj hstj hinvj
+    hItj hctj hptj hcnt
 
 /-- **`Stage2PRBZS` with the prefix-closed table.** -/
 def Stage2PRBZSE (κ : Nat → Clif.Function → Nat) (M : Nat) : Prop :=
@@ -443,9 +556,9 @@ def CountPRBE (κ : Nat → Clif.Function → Nat) (M : Nat) : Prop :=
       PostTrace (L.A g).fa (L.A g).af (L.A g).base (L.mach M g) s n →
       L.TabUpTo M g s ini.bytes ini.next n e → L.NeedSlots → Clif.NextAdv cs.mem.leave cm' e
 
-/-- **`stage2PRBZS_of` with the prefix-closed table** (module doc). -/
-theorem stage2PRBZS_ofE (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) (hN : L.NeedSlots)
-    {M' : Nat} (ih : L.ThmPRBRLE κ M') (hdet : L.DetPRB κ M') (hdt : L.DetTabPRBE κ (M' + 1))
+/-- **`stage2PRBZS_of` with the prefix-closed table** (module doc), determinism `DetPRBR`. -/
+theorem stage2PRBZS_ofER (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) (hN : L.NeedSlots)
+    {M' : Nat} (ih : L.ThmPRBRLE κ M') (hdet : L.DetPRBR κ M') (hdt : L.DetTabPRBE κ (M' + 1))
     (hret : L.RetOkPRB κ (M' + 1)) : L.Stage2PRBZSE κ (M' + 1) := by
   intro g hg F vals cs w₀ fuel rvals cm' ini G ra s hWE hME hra htab hrun
   have hc := hL.compiled g hg
@@ -471,9 +584,9 @@ theorem stage2PRBZS_ofE (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) (hN : L.
   have ihO : L.ThmPRBRL κ M' := ThmPRBRLE.toThmPRBRL L ih
   have ih' : 0 < M' + 1 → L.ThmPRBRL κ (M' + 1 - 1) := fun _ => by
     rw [Nat.add_sub_cancel]; exact ihO
-  have hdet' : 0 < M' + 1 → L.DetPRB κ (M' + 1 - 1) := fun _ => by
+  have hdet' : 0 < M' + 1 → L.DetPRBR κ (M' + 1 - 1) := fun _ => by
     rw [Nat.add_sub_cancel]; exact hdet
-  have hpc := (L.calleeOkPRBRL hL hκ ih' hdet' hg he (hQ 0)).pc
+  have hpc := (L.calleeOkPRBRLR hL hκ ih' hdet' hg he (hQ 0)).pc
   suffices H : ∀ n, (∀ k < n, L.Stage2ZS κ (M' + 1) g F (L.BP (M' + 1) g s) (L.RP (M' + 1) g s)
       (L.envOfB (M' + 1) g (spv w₀)) cs (spv w₀) (L.CallStPRB κ (M' + 1) g s w₀ k) k) →
       L.Stage2ZS κ (M' + 1) g F (L.BP (M' + 1) g s) (L.RP (M' + 1) g s)
@@ -487,8 +600,8 @@ theorem stage2PRBZS_ofE (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) (hN : L.
       (L.hooks (M' + 1)) (L.A g).base ra (κ (M' + 1) g) (spv w₀) (L.BP (M' + 1) g s)
       (L.RP (M' + 1) g s) s w₀ n :=
     ⟨he.abi, he.stack, he.gfree, he.hF, hME.entryP.proph, hME.reg,
-      fun k hk => L.calleeOkXPBTGZS hL hκ ih' hdet' hg he (hQ k) (IH k hk),
-      fun _ k hk => L.calleeTryOkXPBTGZS hL hκ ih' hdet' hg he (hQ k)
+      fun k hk => L.calleeOkXPBTGZSR hL hκ ih' hdet' hg he (hQ k) (IH k hk),
+      fun _ k hk => L.calleeTryOkXPBTGZSR hL hκ ih' hdet' hg he (hQ k)
         (IH k hk),
       hpc,
       fun ht _ => by
@@ -496,7 +609,7 @@ theorem stage2PRBZS_ofE (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) (hN : L.
         exact ⟨h0.pc, h0.seq, h0.flags⟩,
       he.body⟩
   intro u w hu hsw ins info hi hS ops regs i' hops cc wh hst hasg hpi hal herr hgd hnv
-  refine L.stage2_answerF hL hκ ih' hdet' hg hWE.img hWE.room hWE.dead
+  refine L.stage2_answerFR hL hκ ih' hdet' hg hWE.img hWE.room hWE.dead
     hWE.align _ _ cs n ?_ hnv
   intro h hh args vals' cm cs' rvals' cm'' hd hA hcal hM hmrW hargsW hsavW hswW hspw hinit hrun2
   obtain ⟨t, hrt, hcnt1, hinvt⟩ := hA
@@ -549,7 +662,7 @@ theorem stage2PRBZS_ofE (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) (hN : L.
             hsavW', hsw', hinit', hrun', hspw'⟩ | ⟨nm, valsb, cmb, hinvN, hpfb, hshapeb⟩
         · obtain ⟨t', hrt', hcn', hinv'⟩ := hinvN
           obtain rfl := reachN_call_unique hrt' hcn' hrtj hcnj
-          exact L.countStep_progE hL hκ hN ih hdet hdt hg hWE hME hra htab htrj hspj hcij hCSj hopsj
+          exact L.countStep_progER hL hκ hN ih hdet hdt hg hWE hME hra htab htrj hspj hcij hCSj hopsj
             hstj' hasgj hpij herrj hgdj hGuj hswj hh' hshape hcal' hmrW' hargsW' hsavW' hspw'
             hinit' hrun' hrtj hcnj hstj hinv' hItj hctj hptj hcnt
         · obtain ⟨t', hrt', hcn', hinv'⟩ := hinvN
@@ -572,13 +685,19 @@ theorem stage2PRBZS_ofE (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) (hN : L.
     (fun _ => by rw [hcm]; exact hptn) (hcntAll _ (Nat.le_refl _))
   exact hor
 
-/-- **`countPRB_succ` with the prefix-closed table** (module doc). -/
-theorem countPRB_succE (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) (hN : L.NeedSlots)
+/-- **`stage2PRBZS_of` with the prefix-closed table** (`stage2PRBZS_ofER` with `DetPRB`). -/
+theorem stage2PRBZS_ofE (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) (hN : L.NeedSlots)
     {M' : Nat} (ih : L.ThmPRBRLE κ M') (hdet : L.DetPRB κ M') (hdt : L.DetTabPRBE κ (M' + 1))
+    (hret : L.RetOkPRB κ (M' + 1)) : L.Stage2PRBZSE κ (M' + 1) :=
+  L.stage2PRBZS_ofER hL hκ hN ih (DetPRB.toR L hdet) hdt hret
+
+/-- **`countPRB_succ` with the prefix-closed table** (module doc), determinism `DetPRBR`. -/
+theorem countPRB_succER (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) (hN : L.NeedSlots)
+    {M' : Nat} (ih : L.ThmPRBRLE κ M') (hdet : L.DetPRBR κ M') (hdt : L.DetTabPRBE κ (M' + 1))
     (hret : L.RetOkPRB κ (M' + 1)) : L.CountPRBE κ (M' + 1) := by
   intro g hg F vals cs w₀ fuel rvals cm' ini G ra s hWE hME hra htab hrun us' outs' wf' n e hAR
     hPT hte _
-  have hZS := L.stage2PRBZS_ofE hL hκ hN ih hdet hdt hret g hg F vals cs w₀ fuel rvals cm' ini G
+  have hZS := L.stage2PRBZS_ofER hL hκ hN ih hdet hdt hret g hg F vals cs w₀ fuel rvals cm' ini G
     ra s hWE hME hra htab hrun
   have hc := hL.compiled g hg
   have hgf := hL.free g hg
@@ -603,9 +722,9 @@ theorem countPRB_succE (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) (hN : L.N
   have ihO : L.ThmPRBRL κ M' := ThmPRBRLE.toThmPRBRL L ih
   have ih' : 0 < M' + 1 → L.ThmPRBRL κ (M' + 1 - 1) := fun _ => by
     rw [Nat.add_sub_cancel]; exact ihO
-  have hdet' : 0 < M' + 1 → L.DetPRB κ (M' + 1 - 1) := fun _ => by
+  have hdet' : 0 < M' + 1 → L.DetPRBR κ (M' + 1 - 1) := fun _ => by
     rw [Nat.add_sub_cancel]; exact hdet
-  have hpc := (L.calleeOkPRBRL hL hκ ih' hdet' hg he (hQ 0)).pc
+  have hpc := (L.calleeOkPRBRLR hL hκ ih' hdet' hg he (hQ 0)).pc
   -- the counted pipeline at the return
   have hpip := backend_correct_world_pipelinePRGYN (hL.subset g hg) hc
     (XI := L.XPBTI κ (M' + 1) g F (L.BP (M' + 1) g s) (L.RP (M' + 1) g s)) (syms := L.syms)
@@ -619,8 +738,8 @@ theorem countPRB_succE (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) (hN : L.N
       (L.hooks (M' + 1)) (L.A g).base ra (κ (M' + 1) g) (spv w₀) (L.BP (M' + 1) g s)
       (L.RP (M' + 1) g s) s w₀ :=
     ⟨he.abi, he.stack, he.gfree, he.hF, hME.entryP.proph, hME.reg,
-      fun k => L.calleeOkXPBTGZS hL hκ ih' hdet' hg he (hQ k) (hZS k),
-      fun _ k => L.calleeTryOkXPBTGZS hL hκ ih' hdet' hg he (hQ k) (hZS k),
+      fun k => L.calleeOkXPBTGZSR hL hκ ih' hdet' hg he (hQ k) (hZS k),
+      fun _ k => L.calleeTryOkXPBTGZSR hL hκ ih' hdet' hg he (hQ k) (hZS k),
       fun ht _ => by
         have h0 := hL.baseTls g hg (hasTls_of_vcode_pipeline hc ht) F (κ (M' + 1) g)
         exact ⟨h0.pc, h0.seq, h0.flags⟩,
@@ -657,8 +776,8 @@ theorem countPRB_succE (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) (hN : L.N
             (L.RP (M' + 1) g s) s w₀
             (callsBefore (L.mach (M' + 1) g) (L.A g).fa (L.A g).base s n - 1) :=
           ⟨he.abi, he.stack, he.gfree, he.hF, hME.entryP.proph, hME.reg,
-            fun k _ => L.calleeOkXPBTGZS hL hκ ih' hdet' hg he (hQ k) (hZS k),
-            fun _ k _ => L.calleeTryOkXPBTGZS hL hκ ih' hdet' hg he (hQ k) (hZS k),
+            fun k _ => L.calleeOkXPBTGZSR hL hκ ih' hdet' hg he (hQ k) (hZS k),
+            fun _ k _ => L.calleeTryOkXPBTGZSR hL hκ ih' hdet' hg he (hQ k) (hZS k),
             hpc,
             fun ht _ => by
               have h0 := hL.baseTls g hg (hasTls_of_vcode_pipeline hc ht) F (κ (M' + 1) g)
@@ -686,7 +805,7 @@ theorem countPRB_succE (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) (hN : L.N
             hsavW', hsw', hinit', hrun'', hspw'⟩ | ⟨nm, valsb, cmb, hinvN, hpfb, hshapeb⟩
         · obtain ⟨t', hrt', hcn', hinv'⟩ := hinvN
           obtain rfl := reachN_call_unique hrt' hcn' hrtj hcnj
-          exact L.countStep_progE hL hκ hN ih hdet hdt hg hWE hME hra htab htrj hspj hcij hCSj hopsj
+          exact L.countStep_progER hL hκ hN ih hdet hdt hg hWE hME hra htab htrj hspj hcij hCSj hopsj
             hstj' hasgj hpij herrj hgdj hGuj hswj hh' hshape hcal' hmrW' hargsW' hsavW' hspw'
             hinit' hrun'' hrtj hcnj hstj hinv' hItj hctj hptj hcnt
         · obtain ⟨t', hrt', hcn', hinv'⟩ := hinvN
@@ -702,6 +821,12 @@ theorem countPRB_succE (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) (hN : L.N
         simp only [callsBefore, hcp, ↓reduceIte, Nat.add_zero]
   rw [hcntAll n (Nat.le_refl n) e hte]
   exact nextAdv_leave_of_done hPf hk hI hWE.clif.callers hp0 rfl hu hd
+
+/-- **`countPRB_succ` with the prefix-closed table** (`countPRB_succER` with `DetPRB`). -/
+theorem countPRB_succE (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) (hN : L.NeedSlots)
+    {M' : Nat} (ih : L.ThmPRBRLE κ M') (hdet : L.DetPRB κ M') (hdt : L.DetTabPRBE κ (M' + 1))
+    (hret : L.RetOkPRB κ (M' + 1)) : L.CountPRBE κ (M' + 1) :=
+  L.countPRB_succER hL hκ hN ih (DetPRB.toR L hdet) hdt hret
 
 /-- `CountPRBE κ 0` (`countPRB_zero`'s proof: the table is not used). -/
 theorem countPRBE_zero (hL : L.Ok) [L.CrunOk] : L.CountPRBE κ 0 := by
@@ -791,6 +916,78 @@ theorem thmPRBRLE_allC (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) (hN : L.N
       (L.countPRBE_zero hL)
   | succ M ih =>
     exact L.thmPRBRLE_succS hL hκ hN ih (hdet M) (hdt (M + 1))
+      (L.retOkPRB_of (κ := κ) hL hN hB hC (M + 1))
+
+/-- **`thmPRBRL_ofZSE` with the determinism premise `DetPRBR`** (#719; same proof). -/
+theorem thmPRBRL_ofZSER (hL : L.Ok) [L.CrunOk] (hκ : L.Budget κ) {M : Nat}
+    (ih : 0 < M → L.ThmPRBRL κ (M - 1)) (hdet : 0 < M → L.DetPRBR κ (M - 1))
+    (hret : L.RetOkPRB κ M) (h2 : L.Stage2PRBZSE κ M) (hcnt : L.CountPRBE κ M) :
+    L.ThmPRBRLE κ M := by
+  intro g hg F vals cs w₀ fuel rvals cm' ini G ra s hWE hME hra htab hrun
+  have hc := hL.compiled g hg
+  have hI : Clif.LInv (L.P.only g) cs := runInv_entry (by simp [Clif.Program.only]) hWE.clif
+  have hJ : L.ActInvB g (spv w₀) cs := ⟨hI, hWE.clif.callers, fun hN => ⟨ini, hWE.place hN⟩⟩
+  have hrun' : Clif.runLoop (L.envOfB M g (spv w₀)) L.P.bare fuel cs = .returned rvals cm' := by
+    rw [L.runLoop_envOfB hL hg fuel cs hJ]; exact hrun
+  have hPf : ∀ f ∈ (L.P.only g).funcs, Clif.LinkFree f := fun f hf => by
+    simp only [Clif.Program.only, List.mem_cons, List.not_mem_nil, or_false] at hf
+    subst hf; exact hL.free f hg
+  have hnrc : NoRetCall (L.envOfB M g (spv w₀)) L.P.bare cs :=
+    noRetCall_of_linv hPf (fun _ h => by simp at h) hI
+  have h := backend_correct_world_pipelinePRGYNG (hL.subset g hg) hc
+    (XI := L.XPBTI κ M g F (L.BP M g s) (L.RP M g s)) (syms := L.syms)
+    (env := L.envOfB M g (spv w₀)) (K := κ M g) (F := F) (c := spv w₀) (hL.covered g hg)
+    hnrc (hret g hg F vals cs w₀ ini hWE) (fun n b hn => hL.symOk n b hn) rfl hWE.clif hWE.rel
+    hWE.args (trapsExplicit_of_returned hrun') fuel
+  obtain ⟨us, outs, wf, hus, hlen, hhold, hmem, hrs, hall⟩ := h.1 rvals cm' hrun'
+  have he := hME.entryP.entry
+  have hQ := L.callStPRB_q (κ := κ) (M := M) he.body.sp
+  have hAE : ActEntryPR (L.A g).vcp (L.A g).rf (L.A g).af (L.A g).fa (L.A g).fb (κ M g) F G
+      (L.XPBTGY κ M g F (L.BP M g s) (L.RP M g s) (L.envOfB M g (spv w₀)) cs (spv w₀))
+      (L.hooks M) (L.A g).base ra (κ M g) (spv w₀) (L.BP M g s) (L.RP M g s) s w₀ :=
+    ⟨he.abi, he.stack, he.gfree, he.hF, hME.entryP.proph, hME.reg,
+      fun n => L.calleeOkXPBTGZSR hL hκ ih hdet hg he (hQ n)
+        (h2 g hg F vals cs w₀ fuel rvals cm' ini G ra s hWE hME hra htab hrun n),
+      fun _ n => L.calleeTryOkXPBTGZSR hL hκ ih hdet hg he (hQ n)
+        (h2 g hg F vals cs w₀ fuel rvals cm' ini G ra s hWE hME hra htab hrun n),
+      fun ht _ => by
+        have h0 := hL.baseTls g hg (hasTls_of_vcode_pipeline hc ht) F (κ M g)
+        cases M <;> exact ⟨h0.pc, h0.seq, h0.flags⟩,
+      he.body⟩
+  obtain ⟨n, hret', htr, hgood, -⟩ := hall (L.hooks M) G (L.A g).base ra (κ M g) (spv w₀)
+    (L.BP M g s) (L.RP M g s) s hAE
+  have hnr := L.noRetAt_of hL hg he hra htr hret'.ret.err
+  obtain ⟨e, hteE⟩ := htab n hnr (fun j hj => (hgood j hj).1)
+  have hte : L.TabUpTo M g s ini.bytes ini.next n e :=
+    L.tabUpTo_of_E hL hg M s _ _ n e (fun j hj => (hgood j hj).2) (fun j hj => by
+      rcases Nat.lt_or_ge (j + 1) n with hlt | hge
+      · exact (hgood (j + 1) hlt).1
+      · obtain rfl : n = j + 1 := by omega
+        exact hret'.ret.err) hteE
+  exact ⟨us, outs, wf, n, e, hus, hlen, hhold, hmem, hrs, hret', htr, hte,
+    hcnt g hg F vals cs w₀ fuel rvals cm' ini G ra s hWE hME hra htab hrun us outs wf n e hret' htr
+      hte⟩
+
+/-- **The induction step of `ThmPRBRLE`, determinism `DetPRBR`** (#719). -/
+theorem thmPRBRLE_succSR (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) (hN : L.NeedSlots)
+    {M' : Nat} (ih : L.ThmPRBRLE κ M') (hdet : L.DetPRBR κ M') (hdt : L.DetTabPRBE κ (M' + 1))
+    (hret : L.RetOkPRB κ (M' + 1)) : L.ThmPRBRLE κ (M' + 1) :=
+  L.thmPRBRL_ofZSER hL hκ (fun _ => by rw [Nat.add_sub_cancel]; exact ThmPRBRLE.toThmPRBRL L ih)
+    (fun _ => by rw [Nat.add_sub_cancel]; exact hdet) hret
+    (L.stage2PRBZS_ofER hL hκ hN ih hdet hdt hret) (L.countPRB_succER hL hκ hN ih hdet hdt hret)
+
+/-- **`ThmPRBRLE` at every depth from the determinism premises `DetPRBR`, `DetTabPRBE`** (#719:
+`thmPRBRLE_allC` with the satisfiable determinism premise). -/
+theorem thmPRBRLE_allCR (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) (hN : L.NeedSlots)
+    (hB : L.BaseRetOk) (hC : ∀ g ∈ L.P.funcs, L.RetCount g) (hdet : ∀ M, L.DetPRBR κ M)
+    (hdt : ∀ M, L.DetTabPRBE κ M) (M : Nat) : L.ThmPRBRLE κ M := by
+  induction M with
+  | zero =>
+    exact L.thmPRBRL_ofZSER hL hκ (fun h => absurd h (Nat.lt_irrefl 0))
+      (fun h => absurd h (Nat.lt_irrefl 0)) (L.retOkPRB_zero hB hC) (L.stage2PRBZSE_zero hL)
+      (L.countPRBE_zero hL)
+  | succ M ih =>
+    exact L.thmPRBRLE_succSR hL hκ hN ih (hdet M) (hdt (M + 1))
       (L.retOkPRB_of (κ := κ) hL hN hB hC (M + 1))
 
 end LinkSys
