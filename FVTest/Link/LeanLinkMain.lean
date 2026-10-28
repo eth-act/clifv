@@ -78,7 +78,12 @@ with `Compile.functionETCF` and the decided output check `lowersTCB`: `lowerChec
 written executable is covered by the typed theorems
 `compileExeT_correct`, `compileExeT_correct_peak`, `compileExeT_correct_source`,
 `compileExeT_correct_source_peak` (returned values by class) and, through the frontend,
-`Front.bundle_correct_rawT{,_peak}`; totality is proven on `InScopeIn` only. On such an error it
+`Front.bundle_correct_rawT{,_peak}`; totality is proven on `InScopeIn` only. `compileExeT`
+lowers every function with `lowerFunction`, while the units hold the Stock routes' code
+(Cranelift's) where `lean-backend` took them; when some function differs (`stockDiffersB`, #691),
+the typed route is not tried: the smaller set of those functions or of the typed ones (outside
+`fnScopeInB`; the executable then takes the integer route) is left out of the region (the
+`exclude:` line below). On such an error it
 also prints the functions failing a per-function condition (`exclusions`, the line
 `--verified: exclude: …`; the typed conditions `fnScopeInTB`, and on a typed input the functions
 failing `fnScopeTB` or the output checks `outChksT`): `cargo fv` then links
@@ -236,6 +241,19 @@ def typedFails (SC : LinkSpec) (tc : Bool) : List (String × List String) :=
       (fun n => cs.contains n) anyInd P e.1 e.2).filter (!·.2)).map (·.1))) Rs
     rs.filter (!·.2.isEmpty)
 
+/-- Whether `lean-backend` compiled `g` with a Stock lowering other than `lowerFunction` (#691):
+as it does, `lower` (the Stock routes, `lowerCheckedParameterCfgNI`'s chain) on a function
+without `try_call` (`compileFileParameterCfgNIWhen`), and a different `VCode` from
+`lowerFunction`'s (`Stock.D0.defaultLower`, `pipeCleanupT`'s); a function on which `lower`
+fails takes `lowerFunction` in both. -/
+def stockDiffersB (lower : Clif.Function → Except String Backend.VCode) (g : Clif.Function) : Bool :=
+  !(g.blocks.any fun b => b.term.isTry) &&
+    match lower g with
+    | .error _ => false
+    | .ok vc => match Backend.Stock.D0.defaultLower g with
+      | .ok vl => !decide (vc = vl)
+      | .error _ => true
+
 /-- Print `exclusions` (the line `cargo fv` reads). -/
 def printExclusions (exe : String) (S SC : LinkSpec) (typed : Bool) (extra : List String := []) :
     IO Unit :=
@@ -378,6 +396,7 @@ def main (args0 : List String) : IO UInt32 := do
   -- compiler, an input outside `fnScopeInB` whose functions all meet the typed `fnScopeInTB`
   -- (`InScopeInT`'s) is compiled by `compileExeT` (`typedV`)
   let mut typedV := false
+  let mut typedN := 0
   if verified then
     let P := SC.input0.prog
     let sy := assocMap SC.input0.syms
@@ -398,6 +417,7 @@ def main (args0 : List String) : IO UInt32 := do
       else bad
     if !bad.isEmpty && typedOk && badT.isEmpty then
       typedV := true
+      typedN := bad.length
       IO.println s!"lean-link: {exe}: --verified: typed scope (InScopeInT): {bad.length} function(s) outside fnScopeInB meet fnScopeInTB/fnScopeInTCB {(bad.take 3).map (·.1)}"
     else if !badT.isEmpty then
       let scopeN := if typedOk then "fnScopeInTB/fnScopeInTCB" else "fnScopeInB"
@@ -419,6 +439,22 @@ def main (args0 : List String) : IO UInt32 := do
     Backend.Stock.Arithmetic.lowerValidated]
   -- typed `--verified`: `compileExeT` (S11e6, #419)
   if typedV then
+    -- #691: the region object rust-lld placed holds the units' code as `lean-backend` compiled
+    -- it: the Stock routes (Cranelift's code; `routes`' first, falling back to `lowerFunction`)
+    -- on a function without `try_call`, `lowerFunction` on the others. `compileExeT` lowers
+    -- every function with `lowerFunction` (`pipeCleanupT`), so on a function where the two
+    -- lowerings differ its layout is not the one reserved (`placeOkB`, `regionOkB`) and its
+    -- code not the units'. Leave out of the region the smaller of the two sets, then link again
+    -- (`cargo fv`): those functions (they keep cg_clif's code, as outside code), or the typed
+    -- functions (outside `fnScopeInB`; the executable then takes the integer route below).
+    let stockFns := (SC.funcs.zip (parMap (fun fi => stockDiffersB routes[0]! fi.func) SC.funcs)).filterMap
+      fun (fi, b) => if b then some fi.func.name else none
+    if !stockFns.isEmpty then
+      let typedSmaller := typedN ≤ stockFns.length
+      IO.eprintln s!"lean-link: {exe}: --verified: typed scope: {stockFns.length} function(s) compiled by the Stock lowering, which compileExeT does not reproduce (lowerFunction) {stockFns.take 3}; leaving out {if typedSmaller then s!"the {typedN} typed function(s)" else s!"those {stockFns.length}"}; not written"
+      if typedSmaller then printExclusions exe S SC false
+      else printExclusions exe S SC true stockFns
+      return 1
     match Link.DeadCleanup.compileExeT SC file0 with
     | .ok file =>
       IO.FS.writeBinFile exe file
