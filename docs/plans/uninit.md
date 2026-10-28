@@ -735,7 +735,7 @@ of the same configuration, so the segment's call-state count carries over). Next
 `RegLevelCorrectPRS.lean`'s with `csemVI` → the counted `valueSemV`, `realizes_allC_sp` →
 `realizes_value_allC_sp`; the `rets`/halt cases as in `DeadCleanupRegLevel.lean`).
 
-**Step 3h, as built (UninitZ10b): the call-count premises are theorems.** `InstCallsOne f` and
+**Step 3k, as built (UninitZ10b): the call-count premises are theorems.** `InstCallsOne f` and
 `TryCallsOne f` hold for every `f` (`E2E.instCallsOne_all`, `E2E.tryCallsOne_all`,
 `FV/E2E/IselCallsOneAll.lean`), from `FV/Backend/Proof/IselCallsOne.lean`:
 - the rule-table certificate `Cov.lower_call_fmts` (one `decide +kernel` over the exported rules
