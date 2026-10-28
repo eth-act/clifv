@@ -12,7 +12,7 @@ abbrev CompilerInput := E2E.ProductionStackBound.CompilerInput
 def okB (I : CompilerInput) : Bool := okRSemanticNI I.stage I.toLinkInput I.results
 
 theorem stage_cases (I : CompilerInput) :
-    I.stage = (fun _ => id) ∨ I.stage = (fun _ => DeadCleanup.prune) := by
+    I.stage = (fun _ => id) ∨ I.stage = cleanupStage := by
   cases hc : I.cleanup with
   | false => exact .inl (by unfold ProductionStackBound.CompilerInput.stage; rw [hc]; rfl)
   | true => exact .inr (by unfold ProductionStackBound.CompilerInput.stage; rw [hc]; rfl)

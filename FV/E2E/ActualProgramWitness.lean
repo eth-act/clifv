@@ -60,7 +60,7 @@ theorem entry_present (cleanup : Bool) :
 /-- All39 fields of the actual-output whole-program contract are jointly
 inhabited, using the code image as world rather than all memory addresses. -/
 theorem system_ok (cleanup : Bool) : (system cleanup).OkProduction := by
-  have stages : stage cleanup = (fun _ => id) ∨ stage cleanup = (fun _ => DeadCleanup.prune) := by
+  have stages : stage cleanup = (fun _ => id) ∨ stage cleanup = cleanupStage := by
     cases cleanup with
     | false => exact .inl rfl
     | true => exact .inr rfl
@@ -71,7 +71,7 @@ theorem system_ok (cleanup : Bool) : (system cleanup).OkProduction := by
 applies to this non-legacy-history Stock program in both modes. -/
 theorem program_correct (cleanup : Bool) :
     CrateStmtWithCompilerModes input actualLower (stage cleanup) "actual_stock_prologue" := by
-  have stages : stage cleanup = (fun _ => id) ∨ stage cleanup = (fun _ => DeadCleanup.prune) := by
+  have stages : stage cleanup = (fun _ => id) ∨ stage cleanup = cleanupStage := by
     cases cleanup with
     | false => exact .inl rfl
     | true => exact .inr rfl

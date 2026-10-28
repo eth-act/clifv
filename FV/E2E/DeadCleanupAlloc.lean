@@ -7,44 +7,46 @@ import FV.Backend.Proof.DeadCleanupClasses
 import FV.Backend.Proof.DeadCleanupEdgesOk
 import FV.Backend.Proof.DeadCleanupKill
 import FV.Backend.Proof.KillPrep
+import FV.Backend.Proof.CleanupStageSpill
 
 namespace E2E
 open Backend Backend.Proof Backend.Proof.Driver Backend.Proof.Cov Backend.DeadCleanup
 
-/-- The existing spill allocator's local contracts after cleanup. -/
+/-- The existing spill allocator's local contracts after cleanup. (In this file `hp` is about the
+production cleanup stage `cleanupStage f vc`, formerly `prune vc`.) -/
 theorem spillLocal_cleanup {p : Clif.Program} {f : Clif.Function} {vc vcp : VCode}
     (hsub : InSubset p f) (har : Spill.ArityOk f) (hd : Dominated f) (hs : LowerScope f)
-    (hl : lowerFunction f = .ok vc) (hp : Backend.prepare (prune vc) = .ok vcp) :
+    (hl : lowerFunction f = .ok vc) (hp : Backend.prepare (cleanupStage f vc) = .ok vcp) :
     Spill.SpillLocalOk vcp := by
-  have hdom := prune_prepDomain (prepDomain_of_lower hs hl hs.nonempty)
+  have hdom := cleanupStage_prepDomain f (prepDomain_of_lower hs hl hs.nonempty)
   refine ⟨fun b vb k i hb hi => ?_,
     Spill.classesOk_of (Spill.classesOkM_prepare hp hdom
-      (prune_classes (Spill.classesOkM_lower hs hl))),
-    Spill.edgesOk_prepare (prune_lowOk (Spill.lowOk_of hd hs har hl)) hp⟩
+      (cleanupStage_classes f (Spill.classesOkM_lower hs hl))),
+    Spill.edgesOk_prepare (cleanupStage_lowOk f (Spill.lowOk_of hd hs har hl)) hp⟩
   cases ht : i.isCtl
   · have hcov := formsCovered_cleanup_complete hs hl hp default b vb k i hb hi
     rw [ht] at hcov
     exact Spill.spillInstOk_of_formOk (hcov.resolve_left (by simp))
   · apply Spill.spillCtl_of_prepare hp hdom _ b vb k i hb hi ht
-    exact prune_insts (ctlSpillHyp hsub hd hs hl)
+    exact cleanupStage_insts f (ctlSpillHyp hsub hd hs hl)
 
 /-- Cleanup keeps the killed-register availability condition used by the
 existing spill correctness proof. -/
 theorem spillKillFree_cleanup {p : Clif.Program} {f : Clif.Function} {vc vcp : VCode}
     (hsub : InSubset p f) (har : Spill.ArityOk f) (hd : Dominated f) (hs : LowerScope f)
-    (hl : lowerFunction f = .ok vc) (hp : Backend.prepare (prune vc) = .ok vcp) :
+    (hl : lowerFunction f = .ok vc) (hp : Backend.prepare (cleanupStage f vc) = .ok vcp) :
     Spill.killFreeB vcp = true := by
-  exact Spill.killFreeB_prepare (prune_lowOk (Spill.lowOk_of hd hs har hl))
-    (prune_killFree (Kill.killFreeB_lower Kill.killRunsHyp Kill.tryDefsExact hd hs
+  exact Spill.killFreeB_prepare (cleanupStage_lowOk f (Spill.lowOk_of hd hs har hl))
+    (cleanupStage_killFree f (Kill.killFreeB_lower Kill.killRunsHyp Kill.tryDefsExact hd hs
       (abiSigsOk_of_inSubset hsub) har hl)) hp
 
 /-- Spill allocation is checked with the same source conditions as before. -/
 theorem spillAccepted_cleanup {p : Clif.Program} {f : Clif.Function} {vc vcp : VCode}
     (hsub : InSubset p f) (har : Spill.ArityOk f) (hd : Dominated f) (hs : LowerScope f)
-    (hl : lowerFunction f = .ok vc) (hp : Backend.prepare (prune vc) = .ok vcp) :
+    (hl : lowerFunction f = .ok vc) (hp : Backend.prepare (cleanupStage f vc) = .ok vcp) :
     AllocChecked vcp (spillAlloc vcp) := by
-  have hdom := prune_prepDomain (prepDomain_of_lower hs hl hs.nonempty)
-  have hedge := Spill.edgesOk_prepare (prune_lowOk (Spill.lowOk_of hd hs har hl)) hp
+  have hdom := cleanupStage_prepDomain f (prepDomain_of_lower hs hl hs.nonempty)
+  have hedge := Spill.edgesOk_prepare (cleanupStage_lowOk f (Spill.lowOk_of hd hs har hl)) hp
   exact Spill.spillStep4 vcp (Spill.killD vcp) (Spill.cfg_ok_of_prepare hp hdom)
     (spillLocal_cleanup hsub har hd hs hl hp)
     (Spill.spillAvail_of_killFree (spillKillFree_cleanup hsub har hd hs hl hp) hedge)
@@ -52,17 +54,17 @@ theorem spillAccepted_cleanup {p : Clif.Program} {f : Clif.Function} {vc vcp : V
 /-- Lowering the spill allocation remains total on the old input scope. -/
 theorem lowerRFunc_spillAlloc_cleanup {p : Clif.Program} {f : Clif.Function} {vc vcp : VCode}
     (hsub : InSubset p f) (har : Spill.ArityOk f) (hd : Dominated f) (hs : LowerScope f)
-    (hl : lowerFunction f = .ok vc) (hp : Backend.prepare (prune vc) = .ok vcp) :
+    (hl : lowerFunction f = .ok vc) (hp : Backend.prepare (cleanupStage f vc) = .ok vcp) :
     ∃ af, lowerRFunc vcp (spillAlloc vcp) = .ok af := by
   obtain ⟨ss, ps, hc⟩ := Spill.cfg_ok_of_prepare hp
-    (prune_prepDomain (prepDomain_of_lower hs hl hs.nonempty))
+    (cleanupStage_prepDomain f (prepDomain_of_lower hs hl hs.nonempty))
   obtain ⟨hi, h0⟩ := ctlInsts_cleanup_pipeline hsub hd hs hl hp
   exact lowerRFunc_spill_of hc (spillLocal_cleanup hsub har hd hs hl hp) hi h0
 
 /-- Any regalloc2 answer has a successfully lowered fallback, as before. -/
 theorem lowerAlloc_cleanup_total {p : Clif.Program} {f : Clif.Function} {vc vcp : VCode}
     (hsub : InSubset p f) (har : Spill.ArityOk f) (hd : Dominated f) (hs : LowerScope f)
-    (hl : lowerFunction f = .ok vc) (hp : Backend.prepare (prune vc) = .ok vcp)
+    (hl : lowerFunction f = .ok vc) (hp : Backend.prepare (cleanupStage f vc) = .ok vcp)
     (ra : Except String RFunc) : ∃ af, lowerAlloc vcp ra = .ok af := by
   rw [lowerAlloc_eq_lowerRFunc]
   have hsp := lowerRFunc_spillAlloc_cleanup hsub har hd hs hl hp
@@ -80,7 +82,8 @@ theorem lowerAlloc_cleanup_total {p : Clif.Program} {f : Clif.Function} {vc vcp 
 
 theorem allocChecked_allocResult_cleanup {p : Clif.Program} {f : Clif.Function}
     {vc vcp : VCode} (hsub : InSubset p f) (har : Spill.ArityOk f) (hd : Dominated f)
-    (hs : LowerScope f) (hl : lowerFunction f = .ok vc) (hp : Backend.prepare (prune vc) = .ok vcp)
+    (hs : LowerScope f) (hl : lowerFunction f = .ok vc)
+    (hp : Backend.prepare (cleanupStage f vc) = .ok vcp)
     (ra : Except String RFunc) : AllocChecked vcp (allocResult vcp ra) := by
   unfold allocResult
   cases ra with

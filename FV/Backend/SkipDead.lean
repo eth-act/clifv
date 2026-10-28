@@ -71,15 +71,23 @@ def cfgSame (vc vc' : VCode) : Bool :=
   | .ok x, .ok y => x == y
   | _, _ => false
 
-/-- **The deletion check**: every mask fits its block and keeps the block's last instruction, no
-kept instruction and no branch argument reads a vreg a deleted instruction writes, and the CFG is
-unchanged. -/
+/-- An instruction the deletion may remove: not the entry's `args` pseudo-instruction and not a
+GOT load (the code of a `skippable` statement contains neither; the completeness facts of the
+pipeline keep both in place). -/
+def skipDel : MInst → Bool
+  | .args _ | .loadExtNameGot .. => false
+  | _ => true
+
+/-- **The deletion check**: every mask fits its block and keeps the block's last instruction,
+every deleted instruction is `skipDel`, no kept instruction and no branch argument reads a vreg a
+deleted instruction writes, and the CFG is unchanged. -/
 def deleteCheck (vc : VCode) (mask : Nat → List Bool) : Bool :=
   let dead := deadDefs vc mask
   (vc.blocks.toList.zipIdx.all fun (vb, b) =>
     (mask b).length == vb.insts.size &&
     (vb.insts.size == 0 || (mask b).getLast? == some true) &&
-    ((vb.insts.toList.zip (mask b)).all fun (m, k) => !k || (useNums m).all (!dead.contains ·)) &&
+    ((vb.insts.toList.zip (mask b)).all fun (m, k) =>
+      if k then (useNums m).all (!dead.contains ·) else skipDel m) &&
     vb.branchArgs.toList.all fun r => match vregNum r with
       | .ok n => !dead.contains n
       | .error _ => true) &&

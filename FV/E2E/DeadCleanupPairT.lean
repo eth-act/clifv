@@ -23,11 +23,11 @@ variable {p : Clif.Program} {f : Clif.Function} {k : Nat} {vc vcp : VCode} {rf :
   {af : AFunc} {fa : FnAsm} {fb : FnBin} {X : ExtSem} {syms : String → Option Nat}
   {slotOff : Nat} {env : Clif.Env} {F : BitVec 64 → Prop} {c : BitVec 64} {D : BitVec 64 → Prop}
 
-/-- The pruned code's CFG is the lowered code's. -/
+/-- The cleaned code's CFG is the lowered code's. -/
 theorem cfg_of_cleanupT (hc : CompiledCleanupT f k vc vcp rf af fa fb) :
     ∃ ss ps, vc.cfg = .ok (ss, ps) := by
   obtain ⟨ss, ps, he⟩ := cfg_of_prepare hc.prepare
-  exact ⟨ss, ps, (prune_cfg vc).symm.trans he⟩
+  exact ⟨ss, ps, (cleanupStage_cfg f vc).symm.trans he⟩
 
 /-- **The typed driver hypothesis at `valueSem` with the memory relation `RelW`.** -/
 theorem driverHypT_relW_value (hsub : InSubsetT p f) (hc : CompiledCleanupT f k vc vcp rf af fa fb)
@@ -50,11 +50,12 @@ theorem driverHypT_relW_value (hsub : InSubsetT p f) (hc : CompiledCleanupT f k 
     (memRefines_valueSem _ _ X hslot hsym) (memRefinesFP_valueSem (fun _ => True) F _ X hslot)
     hshape hcert hbr
 
-/-- The prune-then-prepare step is correct for `valueSem`. -/
+/-- The prune-then-prepare step is correct for `valueSem`, from the code after the skip of unused
+instructions (`skipStage f vc`, which the production cleanup stage prunes; formerly from `vc`). -/
 theorem prepareCorrect_cleanupT (hc : CompiledCleanupT f k vc vcp rf af fa fb) :
-    PrepareCorrect (valueSem F ⟨fa.k, af.slotBase⟩ X) vc vcp := by
+    PrepareCorrect (valueSem F ⟨fa.k, af.slotBase⟩ X) (skipStage f vc) vcp := by
   intro a w
-  obtain ⟨hr, ht⟩ := prune_correct (vc := vc)
+  obtain ⟨hr, ht⟩ := prune_correct (vc := skipStage f vc)
     (fun _ _ _ _ _ _ hp he => valueSem_pure hp he) (valueSem_cmpOverwrite _ _ _) a w
   obtain ⟨pr, pt⟩ := prepareCorrect_of_check (driverSem_valueSem F ⟨fa.k, af.slotBase⟩ X)
     hc.prepOk a w
@@ -98,6 +99,61 @@ theorem iselSim_relW_cleanupT (hsub : InSubsetT p f)
   · rw [h] at hrun
     exact hrun
 
+/-- The untyped artifact of a typed one whose function is in subset E and accepted by
+`lowerCheck`. -/
+theorem CompiledCleanupT.toE (hc : CompiledCleanupT f k vc vcp rf af fa fb)
+    (hlc : lowerCheck f vc = true) : CompiledCleanup f k vc vcp rf af fa fb :=
+  ⟨hc.lower, hlc, hc.prepare, hc.prepOk, hc.check, hc.alloc, hc.emit, hc.layout⟩
+
+/-- **`iselSim_relW_cleanupT` for the code after the skip of unused instructions**
+(`skipStage f vc`): the skip only runs on a subset-E function accepted by `lowerCheck`, where the
+untyped `iselSim_relW_cleanup_stage` applies (the returned values' types from the typed run of
+`vc`); elsewhere `skipStage f vc = vc`. -/
+theorem iselSim_relW_cleanupT_stage (hsub : InSubsetT p f)
+    (hc : CompiledCleanupT f k vc vcp rf af fa fb) (hT : TypedRules)
+    (hX : XCallsOk env (f.externs.map (·.2))
+      (RelW ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c) X)
+    (hXI : XCallsIndOk env (indSigs f)
+      (RelW ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c) X)
+    (hsym : ∀ n b, syms n = some b → X.sym n 0 = BitVec.ofNat 64 b)
+    (hslot : af.slotBase = slotOff)
+    {args : List Clif.Val} {cs : Clif.State} {w₀ : Arm.ArmState} (ρ₀ : Nat → CV)
+    (hce : ClifEntry f args cs)
+    (hrel : RelW ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c cs.frame.slots cs.mem w₀)
+    (hargs : ArgsAtEntry F f.sig args w₀) (htr : TrapsExplicit env p cs) (fuel : Nat) :
+    (∀ vals cm, Clif.runLoop env p fuel cs = .returned vals cm →
+      ∃ us outs w, VReturns (skipStage f vc) (valueSem F ⟨fa.k, af.slotBase⟩ X) ρ₀ w₀ us outs w ∧
+        RetRegsOk vals us ∧ us.length = outs.length ∧
+        PrefixHold vals outs ∧ MemRel F syms cm w ∧
+        vals.map (·.ty) = Clif.AbiParam.tys f.sig.returns) ∧
+    (∀ c', Clif.runLoop env p fuel cs = .trapped c' →
+      VTraps (skipStage f vc) (valueSem F ⟨fa.k, af.slotBase⟩ X) ρ₀ w₀ c') := by
+  have hTv := iselSim_relW_cleanupT hsub hc hT hX hXI hsym hslot ρ₀ hce hrel hargs htr fuel
+  by_cases hE : (Compile.functionE f && lowerCheck f vc) = true
+  · simp only [Bool.and_eq_true] at hE
+    obtain ⟨hfE, hlc⟩ := hE
+    have hsubE : InSubset p f :=
+      ⟨hfE, hsub.externCalls, hsub.tryExterns, hsub.abiSigs, hsub.indSigs⟩
+    have hI := iselSim_relW_cleanup_stage hsubE (hc.toE hlc) hX hXI hsym hslot ρ₀ hce hrel hargs
+      htr fuel
+    refine ⟨fun vals cm h => ?_, hI.2⟩
+    obtain ⟨us, outs, w, hv, hus, hlen, hph, hmr⟩ := hI.1 vals cm h
+    obtain ⟨-, -, -, -, -, -, -, -, hty⟩ := hTv.1 vals cm h
+    have hint' : ∀ v ∈ vals, v.ty.isInt = true := by
+      intro v hv'
+      have hm : v.ty ∈ vals.map (·.ty) := List.mem_map_of_mem hv'
+      rw [hty] at hm
+      obtain ⟨r, hr, he⟩ := List.mem_map.mp hm
+      rw [← he]
+      exact List.all_eq_true.mp (functionE_sig_int hfE).2 r hr
+    exact ⟨us, outs, w, hv, retRegsOk_of_int hint' (by have := hph.1; omega) hus, hlen, hph, hmr,
+      hty⟩
+  · have he : skipStage f vc = vc := by
+      unfold skipStage
+      rw [if_neg hE]
+    rw [he]
+    exact hTv
+
 /-- **The typed dead-cleanup per-function theorem with the final world**
 (`backend_correct_world_cleanup` for the typed scope). -/
 theorem backend_correct_world_cleanupT (hsub : InSubsetT p f)
@@ -127,7 +183,8 @@ theorem backend_correct_world_cleanupT (hsub : InSubsetT p f)
       ∀ (H : ArmHooks) (G : BitVec 64 → Prop) (base ra : BitVec 64) (s : Arm.ArmState),
         ActEntry vcp rf af fa fb K F G X H base ra s w₀ →
         ∃ n, TrapAt fb base c' (runX (ArmStepX X H fa) n s)) := by
-  have hI := iselSim_relW_cleanupT hsub hc hT hX hXI hsym hslot (fun _ => 0) hcs hrel hargs htr fuel
+  have hI := iselSim_relW_cleanupT_stage hsub hc hT hX hXI hsym hslot (fun _ => 0) hcs hrel hargs
+    htr fuel
   have hP := prepareCorrect_cleanupT (F := F) (X := X) hc (fun _ => 0) w₀
   have hM6 : ∀ (H : ArmHooks) (G : BitVec 64 → Prop) (base ra : BitVec 64) (s : Arm.ArmState),
       ActEntry vcp rf af fa fb K F G X H base ra s w₀ → _ := fun H G base ra s he => by
@@ -141,7 +198,7 @@ theorem backend_correct_world_cleanupT (hsub : InSubsetT p f)
   · obtain ⟨us, outs, w, hv, hus, hlen, hhold, hmemR, htys⟩ := hI.1 vals cm hrun
     have hrs : vc.RetsSite us := by
       obtain ⟨b, k, ρ, w₁, vb, ops, outs', -, hvb, hk, -⟩ := hv
-      exact ⟨b, vb, k, hvb, hk⟩
+      exact retsSite_of_skipStage ⟨b, vb, k, hvb, hk⟩
     refine ⟨us, outs, w, hus, htys, hlen, hhold, hmemR, hrs, fun H G base ra s he => ?_⟩
     obtain ⟨n, h1, h2, h3, h4, h5, h6, h7⟩ :=
       (hM6 H G base ra s he).1 us outs w (vReturns_gotV_value (hP.1 _ _ _ hv))
@@ -403,6 +460,48 @@ theorem vcode_ni_valueT (hsub : InSubsetT p f) (hc : CompiledCleanupT f k vc vcp
   exact ⟨us, outs, w.1, w.2, VRetFrom.prefix hs1 h1, VRetFrom.prefix hs2 h2,
     SameWorld.mono (zof_sub cm0) hmr.2.2⟩
 
+/-- **`vcode_ni_valueT` for the code after the skip of unused instructions** (`skipStage f vc`;
+`vcode_ni_value_stage` where the skip runs, `vcode_ni_valueT` elsewhere). -/
+theorem vcode_ni_valueT_stage (hsub : InSubsetT p f) (hc : CompiledCleanupT f k vc vcp rf af fa fb)
+    (hT : TypedRules)
+    (hX : XCallsOk env (f.externs.map (·.2))
+      (RelW ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c) X)
+    (hXI : XCallsIndOk env (indSigs f)
+      (RelW ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c) X)
+    (hsym : ∀ n b, syms n = some b → X.sym n 0 = BitVec.ofNat 64 b)
+    (hslot : af.slotBase = slotOff)
+    (hNI : XNI F syms (f.externs.map (·.2)) (indSigs f) c
+      (CallLg env (f.externs.map (·.2)) (indSigs f)) X) (hTls : XTls F X)
+    {args : List Clif.Val} {cs : Clif.State} {w₀ w₀' : Arm.ArmState}
+    (ρ₀ : Nat → CV) (hce : ClifEntry f args cs)
+    (hrel : RelW ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c cs.frame.slots cs.mem w₀)
+    (hrel' : RelW ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c cs.frame.slots cs.mem
+      w₀')
+    (hargs : ArgsAtEntry F f.sig args w₀)
+    (hsw : SameWorld (fun b => F b ∨ D b) w₀ w₀')
+    (hreg : ∀ r v, (ArgLoc.reg r, v) ∈ (locsOf f.sig).zip args → regVal w₀' r = regVal w₀ r)
+    (hstk : ∀ off v, (ArgLoc.stack off, v) ∈ (locsOf f.sig).zip args → ∀ k < v.ty.bytes,
+      w₀'.mem (Arm.r (.GPR 29#5) w₀ + BitVec.ofInt 64 (16 + (off : Int)) + BitVec.ofNat 64 k) =
+        w₀.mem (Arm.r (.GPR 29#5) w₀ + BitVec.ofInt 64 (16 + (off : Int)) + BitVec.ofNat 64 k))
+    (htr : TrapsExplicit env p cs) (fuel : Nat) :
+    ∀ vals cm, Clif.runLoop env p fuel cs = .returned vals cm →
+      ∃ us outs w w', VReturns (skipStage f vc) (valueSem F ⟨fa.k, af.slotBase⟩ X) ρ₀ w₀ us outs w ∧
+        VReturns (skipStage f vc) (valueSem F ⟨fa.k, af.slotBase⟩ X) ρ₀ w₀' us outs w' ∧
+        SameWorld (fun b => F b ∨ D b) w w' := by
+  by_cases hE : (Compile.functionE f && lowerCheck f vc) = true
+  · simp only [Bool.and_eq_true] at hE
+    obtain ⟨hfE, hlc⟩ := hE
+    have hsubE : InSubset p f :=
+      ⟨hfE, hsub.externCalls, hsub.tryExterns, hsub.abiSigs, hsub.indSigs⟩
+    exact vcode_ni_value_stage hsubE (hc.toE hlc) hX hXI hsym hslot hNI hTls ρ₀ hce hrel hrel'
+      hargs hsw hreg hstk htr fuel
+  · have he : skipStage f vc = vc := by
+      unfold skipStage
+      rw [if_neg hE]
+    rw [he]
+    exact vcode_ni_valueT hsub hc hT hX hXI hsym hslot hNI hTls ρ₀ hce hrel hrel' hargs hsw hreg
+      hstk htr fuel
+
 /-- **The typed dead-cleanup per-function theorem with the final world and non-interference**
 (`backend_correct_world_ni_value` for the typed scope). -/
 theorem backend_correct_world_ni_valueT (hsub : InSubsetT p f)
@@ -443,7 +542,8 @@ theorem backend_correct_world_ni_valueT (hsub : InSubsetT p f)
               PostTrace fa af base (ArmStepX X H fa) s n) := by
   intro vals cm hrun
   have hPrep := prepareCorrect_cleanupT (F := F) (X := X) hc
-  have hI := iselSim_relW_cleanupT hsub hc hT hX hXI hsym hslot (fun _ => 0) hcs hrel hargs htr fuel
+  have hI := iselSim_relW_cleanupT_stage hsub hc hT hX hXI hsym hslot (fun _ => 0) hcs hrel hargs
+    htr fuel
   have hM6 : ∀ (w₀ : Arm.ArmState) (H : ArmHooks) (G : BitVec 64 → Prop) (base ra : BitVec 64)
       (s : Arm.ArmState), ActEntry vcp rf af fa fb K F G X H base ra s w₀ → _ :=
     fun w₀ H G base ra s he => by
@@ -456,14 +556,15 @@ theorem backend_correct_world_ni_valueT (hsub : InSubsetT p f)
   obtain ⟨us, outs, w, hv, hus, hlen, hhold, hmemR, htys⟩ := hI.1 vals cm hrun
   have hrs : vc.RetsSite us := by
     obtain ⟨b, k, ρ, w₁, vb, ops, outs', -, hvb, hk, -⟩ := hv
-    exact ⟨b, vb, k, hvb, hk⟩
+    exact retsSite_of_skipStage ⟨b, vb, k, hvb, hk⟩
   refine ⟨us, outs, w, hus, htys, hlen, hhold, hmemR, hrs, fun H G base ra s he => ?_,
     fun hNI hTls D w₀' hrel' hsw hreg hstk H G base ra s he => ?_⟩
   · have hP := hPrep (fun _ => 0) w₀
     obtain ⟨n, h1, h2, h3, h4, h5, h6, h7⟩ := (hM6 w₀ H G base ra s he).1 us outs w
       (vReturns_gotV_value (hP.1 _ _ _ hv))
     exact ⟨n, ⟨h1, h2, h3, h4, h5, h6⟩, h7⟩
-  · obtain ⟨us', outs', w1, w2, hv1, hv2, hsw12⟩ := vcode_ni_valueT hsub hc hT hX hXI hsym hslot
+  · obtain ⟨us', outs', w1, w2, hv1, hv2, hsw12⟩ := vcode_ni_valueT_stage hsub hc hT hX hXI hsym
+      hslot
       hNI hTls (fun _ => 0) hcs hrel hrel' hargs hsw hreg hstk htr fuel vals cm hrun
     obtain ⟨rfl, rfl, rfl⟩ := vRetFrom_det (vs := ⟨0, 0, fun _ => 0, w₀⟩) hv1 hv
     have hP := hPrep (fun _ => 0) w₀'

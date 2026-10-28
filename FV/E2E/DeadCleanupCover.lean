@@ -2,6 +2,7 @@ import FV.Backend.Proof.IselCovDriver
 import FV.Backend.Proof.LowerCover
 import FV.Backend.Proof.LogicImmComplete
 import FV.Backend.Proof.DeadCleanupPrepare
+import FV.Backend.Proof.CleanupStageFacts
 
 namespace Backend.Proof.Driver
 open Backend Backend.Proof Backend.Proof.Cov Backend.DeadCleanup
@@ -62,11 +63,12 @@ private theorem lower_covered {f : Clif.Function} {vc : VCode}
   intro vb hvb' i hi
   have := hall vb hvb' i hi
   simpa [Cov.Covered, Bool.or_eq_true] using this
+/-- (`hp` is about the production cleanup stage `cleanupStage f vc`, formerly `prune vc`.) -/
 theorem formsCovered_cleanup_complete {f : Clif.Function} {vc vcp : VCode}
-    (hs : LowerScope f) (hl : lowerFunction f = .ok vc) (hp : prepare (prune vc) = .ok vcp) (cx : FnCtx) :
-    FormsCovered cx vcp :=
-  formsCovered_of_prepare hp (prune_prepDomain (prepDomain_of_lower hs hl hs.nonempty))
-    (prune_insts (lower_covered hs hl (fun ctx _ _ hb => by
+    (hs : LowerScope f) (hl : lowerFunction f = .ok vc) (hp : prepare (cleanupStage f vc) = .ok vcp)
+    (cx : FnCtx) : FormsCovered cx vcp :=
+  formsCovered_of_prepare hp (cleanupStage_prepDomain f (prepDomain_of_lower hs hl hs.nonempty))
+    (cleanupStage_insts f (lower_covered hs hl (fun ctx _ _ hb => by
     have hctx : CtxInv f ctx := ctxOk_sound (ctxOk_complete hs hb)
     have hcl : Cov.Clean ctx := clean_of_build hb
     exact ⟨fun _ _ _ _ _ _ _ hi hc h => stmt_cov logicImmComplete hctx hcl hi hc h,

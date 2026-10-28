@@ -77,16 +77,21 @@ variable {f : Clif.Function} {vc : VCode} {ctx : Ctx} {st0 : LState} {R : Reg �
   {sem : ISem CV W} {MR : MemRelTW W} {env : Clif.Env} {p : Clif.Program}
   {slots : List (Clif.SlotId × Nat)}
 
-/-- **A memory trap at a matching state**: the statement's lowered loop is the VCode instruction
-at the matching position; its code is the trap's, its address use holds the CLIF address. -/
-theorem stmt_memtrap (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
+/-- **A memory trap at a matching state, at the statement's first instruction**: the statement's
+lowered loop is the VCode instruction at the matching position `k = pos b j` (the first of its
+nonempty segment); its code is the trap's, its address use holds the CLIF address. -/
+theorem stmt_memtrap0 (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
     {s : Clif.State} {b k : Nat} {ρ : Nat → CV} {w : W}
     (hm : Match f ctx R gn bl A MR slots s ⟨b, k, ρ, w⟩)
     {stm : Clif.Stmt} {rest : List Clif.Stmt} (hbody : s.frame.body = stm :: rest)
     (hmt : Clif.memTrapInst stm.inst = true) {c : Clif.TrapCode}
     (hs : Clif.step env p s = .trapped c) {Q : Nat → Nat → Prop}
     (hQ : ∀ a n, Clif.MemTrapAt env p s c a n → Q a n) :
-    VMemTrapFrom vc sem ⟨b, k, ρ, w⟩ c (addrPred Q) := by
+    ∃ B j, f.blocks[b]? = some B ∧ B.body[j]? = some stm ∧ k = pos f R bl b j ∧
+      0 < (seg f R bl b j).length ∧
+      ∃ vb i ops u us n, vc.blocks[b]? = some vb ∧ vb.insts[k]? = some i ∧
+        i.operands = .ok ops ∧ vuses ops ρ = u :: us ∧ loopTrap? i = some (c, n) ∧
+        addrPred Q (lo64 u) n := by
   obtain ⟨-, hfunc, -, -, B, j, hB, -, -, hbd, hk, hheld, hcons⟩ := hm
   simp only at hk hheld hcons hB
   subst hk
@@ -106,7 +111,9 @@ theorem stmt_memtrap (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
   rw [hbody] at hb'
   obtain ⟨rfl, -⟩ := List.cons.inj hb'
   have hseg := (seg_at hcode htne hjlt).1
+  have hlen0 := congrArg List.length (seg_eq (R := R) hB hL hstm hsl)
   rw [seg_eq hB hL hstm hsl, hemL] at hseg
+  rw [hemL] at hlen0
   -- the address value: held, of type `i64`
   have haddr : ∀ q, memAddr? stm.inst = some q → q ∈ instArgs stm.inst → ∀ pv,
       s.frame.get q = .ok pv → lo64 (ρ (gn q)) = BitVec.ofNat 64 pv.toNat := by
@@ -131,8 +138,8 @@ theorem stmt_memtrap (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
       have hk0 := hseg 0 (by simp)
       simp only [List.cons_append, List.map_cons, List.getElem_cons_zero, Nat.add_zero] at hk0
       simp only [MInst.mapRegs, H.shape.ren.vreg] at hk0
-      refine ⟨b, _, ρ, w, vb, _, _, ρ (gn q), [ρ (gn x)], ty.bytes, .refl _, hvb, hk0,
-        operands_rmwLoop _ _ _ _ _ _ _ _, by simp [vuses, Operand.isUse], ?_, ?_⟩
+      refine ⟨B, j, hB, hstm, rfl, by rw [hlen0]; simp, vb, _, _, ρ (gn q), [ρ (gn x)], ty.bytes,
+        hvb, hk0, operands_rmwLoop _ _ _ _ _ _ _ _, by simp [vuses, Operand.isUse], ?_, ?_⟩
       · simp [loopTrap?, hfl, ofClif_bytes_eq, atomTy_ofClif hety]
       · exact ⟨_, by rw [haddr q (by simp [hi, memAddr?]) (by simp [hi, instArgs]) pv hpv,
           ofNat_effAddr0], hQa⟩
@@ -144,11 +151,26 @@ theorem stmt_memtrap (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
       have hk0 := hseg 0 (by simp)
       simp only [List.cons_append, List.map_cons, List.getElem_cons_zero, Nat.add_zero] at hk0
       simp only [MInst.mapRegs, H.shape.ren.vreg] at hk0
-      refine ⟨b, _, ρ, w, vb, _, _, ρ (gn q), [ρ (gn e), ρ (gn x)], ty.bytes, .refl _, hvb, hk0,
-        operands_casLoop _ _ _ _ _ _ _, by simp [vuses, Operand.isUse], ?_, ?_⟩
+      refine ⟨B, j, hB, hstm, rfl, by rw [hlen0]; simp, vb, _, _, ρ (gn q),
+        [ρ (gn e), ρ (gn x)], ty.bytes, hvb, hk0, operands_casLoop _ _ _ _ _ _ _,
+        by simp [vuses, Operand.isUse], ?_, ?_⟩
       · simp [loopTrap?, hfl, ofClif_bytes_eq, atomTy_ofClif hety]
       · exact ⟨_, by rw [haddr q (by simp [hi, memAddr?]) (by simp [hi, instArgs]) pv hpv,
           ofNat_effAddr0], hQa⟩
+
+/-- **A memory trap at a matching state**: the statement's lowered loop is the VCode instruction
+at the matching position; its code is the trap's, its address use holds the CLIF address. -/
+theorem stmt_memtrap (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
+    {s : Clif.State} {b k : Nat} {ρ : Nat → CV} {w : W}
+    (hm : Match f ctx R gn bl A MR slots s ⟨b, k, ρ, w⟩)
+    {stm : Clif.Stmt} {rest : List Clif.Stmt} (hbody : s.frame.body = stm :: rest)
+    (hmt : Clif.memTrapInst stm.inst = true) {c : Clif.TrapCode}
+    (hs : Clif.step env p s = .trapped c) {Q : Nat → Nat → Prop}
+    (hQ : ∀ a n, Clif.MemTrapAt env p s c a n → Q a n) :
+    VMemTrapFrom vc sem ⟨b, k, ρ, w⟩ c (addrPred Q) := by
+  obtain ⟨-, -, -, -, -, -, vb, i, ops, u, us, n, h1, h2, h3, h4, h5, h6⟩ :=
+    stmt_memtrap0 H hm hbody hmt hs hQ
+  exact ⟨b, k, ρ, w, vb, i, ops, u, us, n, .refl _, h1, h2, h3, h4, h5, h6⟩
 
 /-- **The run premises with memory traps**: `RunPrem` whose statement clause also allows the
 memory traps of `Clif.memTrapInst`. -/

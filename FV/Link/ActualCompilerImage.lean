@@ -41,9 +41,11 @@ theorem leanLinkWithLowering_plain (S : LinkSpec) (file0 : ByteArray) :
     leanLinkWithLowering S file0 Stock.D0.defaultLower (fun _ => id) = leanLink S file0 := by
   rfl
 
-/-- Exact cleanup-instance results and errors, for arbitrary source and ELF input. -/
+/-- Exact cleanup-instance results and errors, for arbitrary source and ELF input. (The stage is
+the production cleanup stage `cleanupStage`, formerly `fun _ => DeadCleanup.prune`: the
+compiler now runs Cranelift's skip of unused instructions.) -/
 theorem leanLinkWithLowering_cleanup (S : LinkSpec) (file0 : ByteArray) :
-    leanLinkWithLowering S file0 Stock.D0.defaultLower (fun _ => DeadCleanup.prune) =
+    leanLinkWithLowering S file0 Stock.D0.defaultLower cleanupStage =
       DeadCleanup.leanLink S file0 := by
   rfl
 end Link

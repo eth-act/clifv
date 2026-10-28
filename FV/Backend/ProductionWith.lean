@@ -18,7 +18,8 @@ def lowerCheckedProductionWith (lower : Clif.Function → Except String VCode)
 
 def lowerForAllocationProductionWith (lower : Clif.Function → Except String VCode)
     (f : Clif.Function) (verify cleanup : Bool) : Except String VCode :=
-  (lowerCheckedProductionWith lower f verify).map fun vc => if cleanup then DeadCleanup.prune vc else vc
+  (lowerCheckedProductionWith lower f verify).map fun vc =>
+    if cleanup then cleanupStageChecked verify f vc else vc
 
 def compileFileProductionWith {m : Type → Type} [Monad m]
     (lower : Clif.Function → Except String VCode) (eligible : Clif.Function → Bool)

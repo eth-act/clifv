@@ -328,7 +328,8 @@ def main (args : List String) : IO UInt32 := do
       tLower := tLower + (t1 - t0)
       tCheck := tCheck + (t2 - t1)
       let t3 ← IO.monoMsNow
-      let selected := if deadCleanup then DeadCleanup.prune vc else vc
+      -- the stage with the verdict `r` just computed (`cleanupStageChecked_lowerCheck`)
+      let selected := if deadCleanup then cleanupStageChecked r f vc else vc
       let pr ← IO.lazyPure (fun _ => prepare selected)
       let t4 ← IO.monoMsNow
       tPrep := tPrep + (t4 - t3)

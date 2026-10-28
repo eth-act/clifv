@@ -37,7 +37,7 @@ theorem callPageReach_of_prov {S : LinkSpec} {phs : List Phdr} (hin : InScopeP (
   exact range_of_refs rfl rfl hf hpc.1 hpc.2.1 hpc.2.2 (hprov _ he r hr) _ htls
 
 /-- **The shipped compiler's code relocates against its CLIF function's declarations**
-(`relocOk_tab` through `DeadCleanup.prune`, `prune_allInsts`). -/
+(`relocOk_tab` through the cleanup stage `cleanupStage`, `cleanupStage_insts`). -/
 theorem relocOk_tab {S : LinkSpec} (hin : InScopeP (placed S).input0 = true) :
     ∀ e ∈ tabOf (placed S).inputCleanup.resultsCleanupT, ∀ r ∈ e.2.fb.relocs,
       Proof.RelocProv.RelocOk e.1 r := by
@@ -51,7 +51,7 @@ theorem relocOk_tab {S : LinkSpec} (hin : InScopeP (placed S).input0 = true) :
   have hv := Proof.RelocProv.lowerFunction_refs
     (lowerScope_of_fnScope (fnScope_of_inScope (S := S) hin hfi)) hlf
   have hv' := Proof.RelocProv.prepare_allInsts (fun _ => trivial)
-    (fun _ _ _ h => Proof.RelocProv.refsOk_setTargets h) hpr (Proof.RelocProv.prune_allInsts hv)
+    (fun _ _ _ h => Proof.RelocProv.refsOk_setTargets h) hpr (Proof.Driver.cleanupStage_insts _ hv)
   show ∀ r ∈ (getOk e0.2).fb.relocs, Proof.RelocProv.RelocOk e0.1 r
   rw [h1, h2]
   exact Proof.RelocProv.relocs_of_alloc hv' hal hem hla

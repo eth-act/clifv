@@ -168,7 +168,7 @@ theorem indFactsRWithT (stage : Clif.Function → VCode → VCode) {I : LinkInpu
   cases hb : sigParamBytes h'.sig <;> simp
 
 theorem okRWith_soundT (stage : Clif.Function → VCode → VCode) {I : LinkInput} {R : Res}
-    (hstage : stage = (fun _ => id) ∨ stage = (fun _ => DeadCleanup.prune)) (hR : ResOkWith stage I R)
+    (hstage : stage = (fun _ => id) ∨ stage = cleanupStage) (hR : ResOkWith stage I R)
     (hI : okRWithT stage I R = true) {B : BaseEnv}
     {F : BitVec 64 → Prop} (hB : BaseOk (ofRes I R B F)) (hF : ∀ a, (ofRes I R B F).Img a → F a) :
     (ofRes I R B F).OkT := by
