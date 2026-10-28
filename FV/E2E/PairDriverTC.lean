@@ -1,6 +1,7 @@
 import FV.E2E.LinkWorldTC
 import FV.E2E.GuardedFPPairC
 import FV.E2E.PairDriverT
+import FV.Backend.Proof.LowerContractTPF
 
 /-! # Non-interference of a compiled function, typed `try_call`s (S11e6, #419)
 
@@ -15,6 +16,12 @@ entry: `entry_step2TC` (class-aware `Args`, stack-passed floats under `MemRefine
 * `vcode_niTC`: two body-entry worlds that agree outside `F ∪ D` return through the same `rets`
   with the same values, final worlds agreeing outside `F ∪ D`;
 * `backend_correct_world_niTC`: `backend_correct_worldTC` with non-interference.
+
+S11f (#35): `instCalls_pairTCF` (the statement calls from `lowerInstOkP_runTermTF`, with the
+conversion and `fcmp` roots, no `InstScopeT` premise), `vcode_niTCF`,
+`backend_correct_world_niTCF` for the scope with the proven float operations (`InSubsetTCF`,
+`CompiledTCF`); `vcode_niTC` and `backend_correct_world_niTC` are their corollaries, statements
+unchanged.
 -/
 
 namespace Backend.Proof
@@ -166,6 +173,45 @@ theorem instCalls_pairTC (hc : CompiledTC f k vc vcp rf af fa fb) (hT : TypedRul
   rw [hem, List.toList_toArray]
   exact hok
 
+/-- **The typed statement calls on pairs of worlds, with the proven float operations**
+(`instCalls_pairTC` for `CompiledTCF`, over `CtxT` alone): the typed rule contracts with pinned
+calls, the conversion and `fcmp` roots (`lowerInstOkP_runTermTF`) at `csemGF` on each world,
+paired (`lowerInstOk_pairF`). -/
+theorem instCalls_pairTCF (hc : CompiledTCF f k vc vcp rf af fa fb) (hT : TypedRules)
+    (hX : XCallsOk env (f.externs.map (·.2))
+      (RelW ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c) X)
+    (hXI : XCallsIndOk env (indSigs f)
+      (RelW ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c) X)
+    (hsym : ∀ n b, syms n = some b → X.sym n 0 = BitVec.ofNat 64 b)
+    (hslot : af.slotBase = slotOff)
+    (hNI : XNI F syms (f.externs.map (·.2)) (indSigs f) c
+      (CallLg env (f.externs.map (·.2)) (indSigs f)) X) (hTls : XTls F X)
+    {ctx : Ctx} (hctx : CtxT f ctx) (hst : StoresTyped ctx) :
+    InstCallsT f ctx (pairSem (csem F ⟨fa.k, af.slotBase⟩ X))
+      (MRP ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c D) env p := by
+  intro ii info inst st rss st' tr hmem hi hcl hsig hemp hvb hrun
+  let Γ : Rel := ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩
+  have hstk := callsStack_mono (callsStackTCF_of_check hc.lowerOk)
+    (outgoing_le_intBaseATCF hc.toA)
+  refine lowerInstOk_pairF hNI hTls (Γ := Γ) rfl hctx.inv.func hsig fun Rd Pc => ?_
+  obtain ⟨B, hB, stm, hstm, hst'⟩ := hmem
+  obtain ⟨ms, rss', hem, hov, hok⟩ := lowerInstOkP_runTermTF lowerRulesCorrectTI_program
+    lowerRulesCorrectT_program lowerRulesCorrectFT_program lowerRulesCorrectCvtT_program
+    lowerRulesCorrectFC_program nonEUnmatchableTF_program hT.calls
+    hT.ind memRulesCorrectRTI_program memRulesCorrectRT_program refines_csemGF
+    (mrStable_relW Γ f c)
+    (callsRefineP_csemGF hX (fun _ _ _ h => h.1.1) (fun _ _ _ h => h.2.1))
+    (indCallsRefineP_csemGF hXI hsym (fun _ _ _ h => h.1.1) (fun _ _ _ h => h.2.1))
+    (memRefinesR_csemGF (ctx := ⟨fa.k, af.slotBase⟩) hslot hsym)
+    (memRefinesFP_csemGF (ctx := ⟨fa.k, af.slotBase⟩) hslot)
+    hctx (outArgsOk_relW Γ f c) (externsIn_self f) (memRelOk_relW Γ f c) hi hcl hsig
+    (hst ii info inst hi hcl)
+    (fun fn args e hc' he => hstk B hB stm hstm fn args e (hst' ▸ hc') he) hvb hrun
+  cases hov
+  rw [hemp, Array.empty_append] at hem
+  rw [hem, List.toList_toArray]
+  exact hok
+
 /-- **The typed `try_call` calls on pairs of worlds** (`TryCallsTC` of `pairSem`): the typed
 rule contracts with pinned calls at the guarded semantics with the float accesses `csemGF`,
 paired (`lowerTryOkC_pairF`). -/
@@ -203,12 +249,12 @@ theorem tryCalls_pairTC (hT : TypedRules)
   rw [← this]
   exact hok
 
-/-- **Non-interference of a typed compiled function's VCode run** (`vcode_ni` for the scope with
-typed `try_call`s): two body-entry worlds related to the same CLIF entry, that agree outside
-`F ∪ D`, with the same argument registers and stack-passed argument bytes, return (for a
-returning CLIF run) through the same `rets` with the same values, final worlds that agree outside
-`F ∪ D`. -/
-theorem vcode_niTC (hsub : InSubsetTC p f) (hc : CompiledTC f k vc vcp rf af fa fb)
+/-- **Non-interference of a compiled function's VCode run, with the proven float operations**
+(`vcode_ni` for the scope with the proven float operations): two body-entry worlds related to
+the same CLIF entry, that agree outside `F ∪ D`, with the same argument registers and
+stack-passed argument bytes, return (for a returning CLIF run) through the same `rets` with the
+same values, final worlds that agree outside `F ∪ D`. -/
+theorem vcode_niTCF (hsub : InSubsetTCF p f) (hc : CompiledTCF f k vc vcp rf af fa fb)
     (hT : TypedRules)
     (hX : XCallsOk env (f.externs.map (·.2))
       (RelW ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c) X)
@@ -234,23 +280,21 @@ theorem vcode_niTC (hsub : InSubsetTC p f) (hc : CompiledTC f k vc vcp rf af fa 
       ∃ us outs w w', VReturns vc (csem F ⟨fa.k, af.slotBase⟩ X) ρ₀ w₀ us outs w ∧
         VReturns vc (csem F ⟨fa.k, af.slotBase⟩ X) ρ₀ w₀' us outs w' ∧
         SameWorld (fun b => F b ∨ D b) w w' := by
-  obtain ⟨ctx, st0, R, gn, bl, A, hshape, hcert, hbr⟩ := loweringTC_of_check hc.lowerOk
+  obtain ⟨ctx, st0, R, gn, bl, A, hshape, hcert, hbr⟩ := loweringTCF_of_check hc.lowerOk
   let Γ : Rel := ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩
-  have H := driverHypTC_relW (c := c) hsub hc hT hX hXI hsym hslot hshape hcert hbr
+  have H := driverHypTCF_relW (c := c) hsub hc hT hX hXI hsym hslot hshape hcert hbr
   have hctxT : CtxT f ctx :=
-    ctxT_of_functionETCF (Compile.functionETCF_of_functionETC hsub.subsetETC)
-      hshape.hctx.choose_spec hshape.ctxInvT hshape.scope
-  have hscT : InstScopeT ctx := instScopeT_of_lowerCheckTC hc.lowerOk hshape.hctx.choose_spec
+    ctxT_of_functionETCF hsub.subsetETCF hshape.hctx.choose_spec hshape.ctxInvT hshape.scope
   have hstT : StoresTyped ctx := storesTyped_of_buildCtx hsub.storeTyped hshape.hctx.choose_spec
   have hmem : MemRefines F slotOff syms (csem F ⟨fa.k, af.slotBase⟩ X) :=
     memRefines_csem _ _ X hslot hsym
-  have houtB := outgoing_le_intBaseATC hc.toA
+  have houtB := outgoing_le_intBaseATCF hc.toA
   have HP : DriverHypTC f vc ctx st0 R gn bl A (pairSem (csem F ⟨fa.k, af.slotBase⟩ X))
       (MRP Γ f c D) env p := {
     shape := hshape
     cert := hcert
     dsem := driverSemG_pair F ⟨fa.k, af.slotBase⟩ X
-    insts := instCalls_pairTC hc hT hX hXI hsym hslot hNI hTls hctxT hscT hstT
+    insts := instCalls_pairTCF hc hT hX hXI hsym hslot hNI hTls hctxT hstT
     terms := termCalls_pairT Γ rfl hTls ⟨fa.k, af.slotBase⟩ hT hctxT
     ext := H.ext
     indSig := H.indSig
@@ -259,7 +303,7 @@ theorem vcode_niTC (hsub : InSubsetTC p f) (hc : CompiledTC f k vc vcp rf af fa 
     brIdx := H.brIdx
     noTail := H.noTail
     tries := ⟨_, tryCalls_pairTC hT hX hsym hslot hNI hTls hctxT,
-      tryStack_mono (tryStackTC_of_check hc.lowerOk) houtB⟩
+      tryStack_mono (tryStackTCF_of_check hc.lowerOk) houtB⟩
     tryExt := H.tryExt
     tryInd := tryIndCalls_pairT hT hXI hsym hNI hTls hctxT
     tryIndSig := H.tryIndSig
@@ -288,9 +332,124 @@ theorem vcode_niTC (hsub : InSubsetTC p f) (hc : CompiledTC f k vc vcp rf af fa 
   exact ⟨us, outs, w.1, w.2, VRetFrom.prefix hs1 h1, VRetFrom.prefix hs2 h2,
     SameWorld.mono (zof_sub cm0) hmr.2.2⟩
 
+/-- **Non-interference of a typed compiled function's VCode run** (`vcode_ni` for the scope with
+typed `try_call`s, `vcode_niTCF`): two body-entry worlds related to the same CLIF entry, that
+agree outside `F ∪ D`, with the same argument registers and stack-passed argument bytes, return
+(for a returning CLIF run) through the same `rets` with the same values, final worlds that agree
+outside `F ∪ D`. -/
+theorem vcode_niTC (hsub : InSubsetTC p f) (hc : CompiledTC f k vc vcp rf af fa fb)
+    (hT : TypedRules)
+    (hX : XCallsOk env (f.externs.map (·.2))
+      (RelW ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c) X)
+    (hXI : XCallsIndOk env (indSigs f)
+      (RelW ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c) X)
+    (hsym : ∀ n b, syms n = some b → X.sym n 0 = BitVec.ofNat 64 b)
+    (hslot : af.slotBase = slotOff)
+    (hNI : XNI F syms (f.externs.map (·.2)) (indSigs f) c
+      (CallLg env (f.externs.map (·.2)) (indSigs f)) X) (hTls : XTls F X)
+    {args : List Clif.Val} {cs : Clif.State} {w₀ w₀' : Arm.ArmState}
+    (ρ₀ : Nat → CV) (hce : ClifEntry f args cs)
+    (hrel : RelW ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c cs.frame.slots cs.mem w₀)
+    (hrel' : RelW ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c cs.frame.slots cs.mem
+      w₀')
+    (hargs : ArgsAtEntry F f.sig args w₀)
+    (hsw : SameWorld (fun b => F b ∨ D b) w₀ w₀')
+    (hreg : ∀ r v, (ArgLoc.reg r, v) ∈ (locsOf f.sig).zip args → regVal w₀' r = regVal w₀ r)
+    (hstk : ∀ off v, (ArgLoc.stack off, v) ∈ (locsOf f.sig).zip args → ∀ k < v.ty.bytes,
+      w₀'.mem (Arm.r (.GPR 29#5) w₀ + BitVec.ofInt 64 (16 + (off : Int)) + BitVec.ofNat 64 k) =
+        w₀.mem (Arm.r (.GPR 29#5) w₀ + BitVec.ofInt 64 (16 + (off : Int)) + BitVec.ofNat 64 k))
+    (htr : TrapsExplicit env p cs) (fuel : Nat) :
+    ∀ vals cm, Clif.runLoop env p fuel cs = .returned vals cm →
+      ∃ us outs w w', VReturns vc (csem F ⟨fa.k, af.slotBase⟩ X) ρ₀ w₀ us outs w ∧
+        VReturns vc (csem F ⟨fa.k, af.slotBase⟩ X) ρ₀ w₀' us outs w' ∧
+        SameWorld (fun b => F b ∨ D b) w w' :=
+  vcode_niTCF hsub.toTCF hc.toTCF hT hX hXI hsym hslot hNI hTls ρ₀ hce hrel hrel' hargs hsw hreg
+    hstk htr fuel
+
+/-- **The per-function theorem with the final world and non-interference, with the proven float
+operations** (`backend_correct_world_niTC` for `InSubsetTCF`/`CompiledTCF`): as
+`backend_correct_worldTCF`, and the one VCode outcome of the body-entry world `w₀` is realised
+also by every activation entered with a body-entry world `w₀'` related to the same CLIF entry
+that agrees with `w₀` outside `F ∪ D` (when the external semantics keeps the agreement: `XNI`,
+`XTls`), with the same argument registers and stack-passed argument bytes, up to the addresses
+`F ∪ D`. -/
+theorem backend_correct_world_niTCF (hsub : InSubsetTCF p f)
+    (hc : CompiledTCF f k vc vcp rf af fa fb)
+    (hT : TypedRules) {K : Nat}
+    (hcov : FormsCovered ⟨fa.k, af.slotBase⟩ vcp)
+    (hX : XCallsOk env (f.externs.map (·.2))
+      (RelW ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c) X)
+    (hXI : XCallsIndOk env (indSigs f)
+      (RelW ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c) X)
+    (hsym : ∀ n b, syms n = some b → X.sym n 0 = BitVec.ofNat 64 b)
+    (hslot : af.slotBase = slotOff)
+    {w₀ : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State}
+    (hcs : ClifEntry f args cs)
+    (hrel : RelW ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c cs.frame.slots cs.mem w₀)
+    (hargs : ArgsAtEntry F f.sig args w₀)
+    (htr : TrapsExplicit env p cs) (fuel : Nat) :
+    ∀ vals cm, Clif.runLoop env p fuel cs = .returned vals cm →
+      ∃ (us : List (Reg × Reg)) (outs : List CV) (w : Arm.ArmState),
+        RetRegsOk vals us ∧ vals.map (·.ty) = Clif.AbiParam.tys f.sig.returns ∧
+        us.length = outs.length ∧
+        PrefixHold vals outs ∧ MemRel F syms cm w ∧ vc.RetsSite us ∧
+        (∀ (H : ArmHooks) (G : BitVec 64 → Prop) (base ra : BitVec 64) (s : Arm.ArmState),
+          ActEntry vcp rf af fa fb K F G X H base ra s w₀ →
+          ∃ n, ActRet ra F G us outs w s (runX (ArmStepX X H fa) n s) ∧
+            PostTrace fa af base (ArmStepX X H fa) s n) ∧
+        (XNI F syms (f.externs.map (·.2)) (indSigs f) c
+          (CallLg env (f.externs.map (·.2)) (indSigs f)) X → XTls F X →
+        ∀ (D : BitVec 64 → Prop) (w₀' : Arm.ArmState),
+          RelW ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c cs.frame.slots cs.mem w₀' →
+          SameWorld (fun b => F b ∨ D b) w₀ w₀' →
+          (∀ r v, (ArgLoc.reg r, v) ∈ (locsOf f.sig).zip args → regVal w₀' r = regVal w₀ r) →
+          (∀ off v, (ArgLoc.stack off, v) ∈ (locsOf f.sig).zip args → ∀ k < v.ty.bytes,
+            w₀'.mem (Arm.r (.GPR 29#5) w₀ + BitVec.ofInt 64 (16 + (off : Int)) +
+              BitVec.ofNat 64 k) =
+              w₀.mem (Arm.r (.GPR 29#5) w₀ + BitVec.ofInt 64 (16 + (off : Int)) +
+                BitVec.ofNat 64 k)) →
+          ∀ (H : ArmHooks) (G : BitVec 64 → Prop) (base ra : BitVec 64) (s : Arm.ArmState),
+            ActEntry vcp rf af fa fb K F G X H base ra s w₀' →
+            ∃ n, ActRet ra (fun a => F a ∨ D a) G us outs w s (runX (ArmStepX X H fa) n s) ∧
+              PostTrace fa af base (ArmStepX X H fa) s n) := by
+  intro vals cm hrun
+  have hI := iselSim_relWTCF hsub hc hT hX hXI hsym hslot (fun _ => 0) hcs hrel hargs htr fuel
+  have hM6 : ∀ (w₀ : Arm.ArmState) (H : ArmHooks) (G : BitVec 64 → Prop) (base ra : BitVec 64)
+      (s : Arm.ArmState), ActEntry vcp rf af fa fb K F G X H base ra s w₀ → _ :=
+    fun w₀ H G base ra s he => by
+      have h := regLevelCorrect_world hc.check hc.alloc hc.emit hc.layout (X := X) (H := H)
+        (K := K) (G := G) (gv := GotV vcp) hcov he.abi he.stack he.gfree (by rw [he.hF]; exact he.calls)
+        (by rw [he.hF]; exact he.tries) (by rw [he.hF]; exact he.tls) (by rw [he.hF]; exact he.body)
+        (fun _ => 0)
+      rw [he.hF] at h
+      exact h
+  obtain ⟨us, outs, w, hv, hus, hlen, hhold, hmemR, htys⟩ := hI.1 vals cm hrun
+  have hrs : vc.RetsSite us := by
+    obtain ⟨b, k, ρ, w₁, vb, ops, outs', -, hvb, hk, -⟩ := hv
+    exact ⟨b, vb, k, hvb, hk⟩
+  refine ⟨us, outs, w, hus, htys, hlen, hhold, hmemR, hrs, fun H G base ra s he => ?_,
+    fun hNI hTls D w₀' hrel' hsw hreg hstk H G base ra s he => ?_⟩
+  · have hP := prepareCorrect_of_check (driverSem_csem F ⟨fa.k, af.slotBase⟩ X) hc.prepOk
+      (fun _ => 0) w₀
+    obtain ⟨n, h1, h2, h3, h4, h5, h6, h7⟩ := (hM6 w₀ H G base ra s he).1 us outs w
+      (vReturns_gotV (hP.1 _ _ _ hv))
+    exact ⟨n, ⟨h1, h2, h3, h4, h5, h6⟩, h7⟩
+  · obtain ⟨us', outs', w1, w2, hv1, hv2, hsw12⟩ := vcode_niTCF hsub hc hT hX hXI hsym hslot hNI
+      hTls (fun _ => 0) hcs hrel hrel' hargs hsw hreg hstk htr fuel vals cm hrun
+    obtain ⟨rfl, rfl, rfl⟩ := vRetFrom_det (vs := ⟨0, 0, fun _ => 0, w₀⟩) hv1 hv
+    have hP := prepareCorrect_of_check (driverSem_csem F ⟨fa.k, af.slotBase⟩ X) hc.prepOk
+      (fun _ => 0) w₀'
+    obtain ⟨n, h1, h2, h3, h4, h5, h6, h7⟩ := (hM6 w₀' H G base ra s he).1 us' outs' w2
+      (vReturns_gotV (hP.1 _ _ _ hv2))
+    refine ⟨n, ⟨h1, h2, fun a ha => ?_, fun g hg h29 h31 => ?_, h5, h6⟩, h7⟩
+    · rw [h3 a (fun hf => ha (.inl hf))]
+      exact (hsw12.2.1 a ha).symm
+    · rw [h4 g hg h29 h31]
+      exact (hsw12.1 g hg).symm
+
 /-- **The typed per-function theorem with the final world and non-interference** for the scope
-with typed `try_call`s (`backend_correct_world_ni` for `InSubsetTC`): as
-`backend_correct_worldTC`, and the one VCode outcome of the body-entry world `w₀` is realised
+with typed `try_call`s (`backend_correct_world_ni` for `InSubsetTC`, `backend_correct_world_niTCF`):
+as `backend_correct_worldTC`, and the one VCode outcome of the body-entry world `w₀` is realised
 also by every activation entered with a body-entry world `w₀'` related to the same CLIF entry
 that agrees with `w₀` outside `F ∪ D` (when the external semantics keeps the agreement: `XNI`,
 `XTls`), with the same argument registers and stack-passed argument bytes, up to the addresses
@@ -332,41 +491,9 @@ theorem backend_correct_world_niTC (hsub : InSubsetTC p f) (hc : CompiledTC f k 
           ∀ (H : ArmHooks) (G : BitVec 64 → Prop) (base ra : BitVec 64) (s : Arm.ArmState),
             ActEntry vcp rf af fa fb K F G X H base ra s w₀' →
             ∃ n, ActRet ra (fun a => F a ∨ D a) G us outs w s (runX (ArmStepX X H fa) n s) ∧
-              PostTrace fa af base (ArmStepX X H fa) s n) := by
-  intro vals cm hrun
-  have hI := iselSim_relWTC hsub hc hT hX hXI hsym hslot (fun _ => 0) hcs hrel hargs htr fuel
-  have hM6 : ∀ (w₀ : Arm.ArmState) (H : ArmHooks) (G : BitVec 64 → Prop) (base ra : BitVec 64)
-      (s : Arm.ArmState), ActEntry vcp rf af fa fb K F G X H base ra s w₀ → _ :=
-    fun w₀ H G base ra s he => by
-      have h := regLevelCorrect_world hc.check hc.alloc hc.emit hc.layout (X := X) (H := H)
-        (K := K) (G := G) (gv := GotV vcp) hcov he.abi he.stack he.gfree (by rw [he.hF]; exact he.calls)
-        (by rw [he.hF]; exact he.tries) (by rw [he.hF]; exact he.tls) (by rw [he.hF]; exact he.body)
-        (fun _ => 0)
-      rw [he.hF] at h
-      exact h
-  obtain ⟨us, outs, w, hv, hus, hlen, hhold, hmemR, htys⟩ := hI.1 vals cm hrun
-  have hrs : vc.RetsSite us := by
-    obtain ⟨b, k, ρ, w₁, vb, ops, outs', -, hvb, hk, -⟩ := hv
-    exact ⟨b, vb, k, hvb, hk⟩
-  refine ⟨us, outs, w, hus, htys, hlen, hhold, hmemR, hrs, fun H G base ra s he => ?_,
-    fun hNI hTls D w₀' hrel' hsw hreg hstk H G base ra s he => ?_⟩
-  · have hP := prepareCorrect_of_check (driverSem_csem F ⟨fa.k, af.slotBase⟩ X) hc.prepOk
-      (fun _ => 0) w₀
-    obtain ⟨n, h1, h2, h3, h4, h5, h6, h7⟩ := (hM6 w₀ H G base ra s he).1 us outs w
-      (vReturns_gotV (hP.1 _ _ _ hv))
-    exact ⟨n, ⟨h1, h2, h3, h4, h5, h6⟩, h7⟩
-  · obtain ⟨us', outs', w1, w2, hv1, hv2, hsw12⟩ := vcode_niTC hsub hc hT hX hXI hsym hslot hNI
-      hTls (fun _ => 0) hcs hrel hrel' hargs hsw hreg hstk htr fuel vals cm hrun
-    obtain ⟨rfl, rfl, rfl⟩ := vRetFrom_det (vs := ⟨0, 0, fun _ => 0, w₀⟩) hv1 hv
-    have hP := prepareCorrect_of_check (driverSem_csem F ⟨fa.k, af.slotBase⟩ X) hc.prepOk
-      (fun _ => 0) w₀'
-    obtain ⟨n, h1, h2, h3, h4, h5, h6, h7⟩ := (hM6 w₀' H G base ra s he).1 us' outs' w2
-      (vReturns_gotV (hP.1 _ _ _ hv2))
-    refine ⟨n, ⟨h1, h2, fun a ha => ?_, fun g hg h29 h31 => ?_, h5, h6⟩, h7⟩
-    · rw [h3 a (fun hf => ha (.inl hf))]
-      exact (hsw12.2.1 a ha).symm
-    · rw [h4 g hg h29 h31]
-      exact (hsw12.1 g hg).symm
+              PostTrace fa af base (ArmStepX X H fa) s n) :=
+  backend_correct_world_niTCF hsub.toTCF hc.toTCF hT hcov hX hXI hsym hslot hcs hrel hargs htr
+    fuel
 
 end
 
