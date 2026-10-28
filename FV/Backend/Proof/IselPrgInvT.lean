@@ -1,5 +1,6 @@
 import FV.Backend.Proof.IselPrgRootT
 import FV.Backend.Proof.IselPrgInv
+import FV.Compile.SubsetTFIn
 
 /-!
 # Progress of the ISLE lowering over the typed scope: the context invariant
@@ -50,5 +51,50 @@ structure PInvT (f : Clif.Function) (ctx : Ctx) : Prop where
   /-- Every `uextend`/`sextend` extends an 8-, 16- or 32-bit value. -/
   extNarrow : ∀ op ty x, InstOf f (.extend op ty x) →
     ∃ b, ctx.valueType? x = some (.int b) ∧ (b = 8 ∨ b = 16 ∨ b = 32)
+
+/-- **`PInvT` without the instruction scope** (S11f, #35): every field of `PInvT` except
+`instET`. The progress facts that hold for any instruction scope take it (`…B` theorems); `PInvT`
+(`PInvT.toB`) and the float scope's `PInvTF` (`IselPrgInvTF`) give it. -/
+structure PInvTB (f : Clif.Function) (ctx : Ctx) : Prop where
+  ctxInv : CtxInvT f ctx
+  clifOf : ∀ (j : Nat) (info : IInfo) (c : Clif.Inst), ctx.insts[j]? = some info → info.clif = some c → InstOf f c
+  externsE : f.externs.all (Compile.sigE ·.2.sig) = true
+  intArgsOf : ∀ (c : Clif.Inst), InstOf f c → ∀ x ∈ intArgs c, IntPos ctx x
+  argsTyped : ∀ (c : Clif.Inst), InstOf f c → ∀ x ∈ Driver.instArgs c, (ctx.valueType? x).isSome
+  resTyped : ∀ (j : Nat) (info : IInfo), ctx.insts[j]? = some info → ∀ r ∈ info.results, (ctx.valueType? r).isSome
+  noClifRes : ∀ (j : Nat) (info : IInfo), ctx.insts[j]? = some info → info.clif = none → info.resTys = []
+  resE : ∀ (j : Nat) (info : IInfo) (c : Clif.Inst), ctx.insts[j]? = some info → info.clif = some c →
+    Compile.instE c = true → ∀ t ∈ info.resTys, t ∈ eCTys
+  termIntOf : ∀ B ∈ f.blocks, ∀ x ∈ Compile.termIntOperands B.term, IntPos ctx x
+  slots : ∀ ty s off, InstOf f (.stackAddr ty s off) → (ctx.slotOff.lookup s).isSome
+  callees : ∀ (c : Clif.Inst) (fn : Nat), InstOf f c → ((∃ args, c = .call fn args) ∨ (∃ ty, c = .funcAddr ty fn)) →
+    ∃ ext, f.extern? fn = some ext ∧ SigOk ext.sig
+  indSigs : ∀ sig callee args s, InstOf f (.callIndirect sig callee args) →
+    f.sigDecls.lookup sig = some s → SigOk s
+  extNarrow : ∀ op ty x, InstOf f (.extend op ty x) →
+    ∃ b, ctx.valueType? x = some (.int b) ∧ (b = 8 ∨ b = 16 ∨ b = 32)
+
+/-- `PInvT` without its instruction scope. -/
+theorem PInvT.toB {f : Clif.Function} {ctx : Ctx} (h : PInvT f ctx) : PInvTB f ctx :=
+  ⟨h.ctxInv, h.clifOf, h.externsE, h.intArgsOf, h.argsTyped, h.resTyped, h.noClifRes, h.resE,
+    h.termIntOf, h.slots, h.callees, h.indSigs, h.extNarrow⟩
+
+/-- A value in a float position: of type `f32` or `f64` (if any). -/
+def FloatPos (ctx : Ctx) (x : Nat) : Prop := ∀ t, ctx.valueType? x = some t → t = .float 32 ∨ t = .float 64
+
+/-- **The context invariant of the progress analysis over the float scope** (S11f, #35):
+`PInvTB`, `f`'s statements are in the float scope (`Compile.instETF`), the operands of `f`'s
+statements in the integer positions of the conversions (`Compile.intOperandsF`) are integers, and
+those in float positions (`Compile.floatOperands`: of an `fcmp` and of a saturating conversion) are
+floats. -/
+structure PInvTF (f : Clif.Function) (ctx : Ctx) : Prop extends PInvTB f ctx where
+  instETF : ∀ (c : Clif.Inst), InstOf f c → Compile.instETF c = true
+  intOpsFOf : ∀ (c : Clif.Inst), InstOf f c → ∀ x ∈ Compile.intOperandsF c, IntPos ctx x
+  floatOpsOf : ∀ (c : Clif.Inst), InstOf f c → ∀ x ∈ Compile.floatOperands c, FloatPos ctx x
+
+/-- An `iconst` of the float scope is one of the typed movement scope. -/
+theorem instET_of_iconstF {ty : Clif.Ty} {imm : BitVec ty.width}
+    (h : Compile.instETF (.iconst ty imm) = true) : Compile.instET (.iconst ty imm) = true := by
+  simpa [Compile.instETF, Compile.instETA, Compile.fArithET, Compile.fCvtET, Compile.fCmpET] using h
 
 end Backend.Proof.Prg

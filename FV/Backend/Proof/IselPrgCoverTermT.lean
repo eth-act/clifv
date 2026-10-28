@@ -81,7 +81,7 @@ set_option maxRecDepth 100000 in
 /-- **A terminator's root**: the driver's `lower`/`lower_branch` call on a non-`try_call`
 terminator of `f` (at its placeholder slot, in its context `termCtx`, with one target per
 successor) is a root of the table whose inputs describe its arguments. -/
-theorem term_rootT {ranges : Array (Nat × Nat)} {st0 : LState} (hP : PInvT f ctx)
+theorem term_rootTB {ranges : Array (Nat × Nat)} {st0 : LState} (hP : PInvTB f ctx)
     (hb : buildCtx f = .ok (ctx, ranges, st0)) (hdom : dominatedB f = true)
     (hin : iselInB f = true) (hdrv : driverInB f = true) {ti : Nat}
     (hph : ctx.insts[ti]? = some ⟨.op .unit, [], [], none⟩) {t : Clif.Terminator}
@@ -90,10 +90,10 @@ theorem term_rootT {ranges : Array (Nat × Nat)} {st0 : LState} (hP : PInvT f ct
     ∃ q ∈ termRootsT, (∃ T : Term, program.termByName? (termCall t ti targets).1 = some T ∧
       T.id = q.1) ∧ γL f (termCtx ctx ti data) q.2 (termCall t ti targets).2 := by
   obtain ⟨B, hB, rfl⟩ := ht
-  have hP' := pinv_termCtxT hP hph data
+  have hP' := pinv_termCtxTB hP hph data
   have hself := termCtx_insts_self hph data
   have hA : ∀ x ∈ termArgs (abiTerm f B.term), γ f (termCtx ctx ti data) aVM (.value x) :=
-    fun x hx => γ_aVMT hP' (termArgs_typed hb hdom hB hx)
+    fun x hx => γ_aVMTB hP' (termArgs_typed hb hdom hB hx)
   have hI : ∀ x ∈ termArgs (abiTerm f B.term), x ∈ Compile.termIntOperands B.term →
       γ f (termCtx ctx ti data) aV (.value x) :=
     fun x hx hi => γ_aVT (termArgs_typed hb hdom hB hx) (hP'.termIntOf B hB x hi)
@@ -174,7 +174,7 @@ set_option maxRecDepth 100000 in
 of `f` (at its placeholder slot, in its context `tryCtx` with the return/payload vregs
 `tryRegsOf` allocates, with one target per exception-table item plus the continuation) is a
 root of the table whose inputs describe its arguments. -/
-theorem try_rootT {ranges : Array (Nat × Nat)} {st0 : LState} (hP : PInvT f ctx)
+theorem try_rootTB {ranges : Array (Nat × Nat)} {st0 : LState} (hP : PInvTB f ctx)
     (hb : buildCtx f = .ok (ctx, ranges, st0)) (hdom : dominatedB f = true)
     (hin : iselInB f = true) {ti : Nat} (hph : ctx.insts[ti]? = some ⟨.op .unit, [], [], none⟩)
     {t : Clif.Terminator} (ht : ∃ B ∈ f.blocks, B.term = t) {et : Clif.ExnTable}
@@ -185,7 +185,7 @@ theorem try_rootT {ranges : Array (Nat × Nat)} {st0 : LState} (hP : PInvT f ctx
     ∃ q ∈ termRootsT, q.1 = TId.lower_branch ∧
       γL f (tryCtx ctx ti data trs) q.2 [.inst ti, .labels targets] := by
   obtain ⟨B, hB, rfl⟩ := ht
-  have hP' := pinv_tryCtxT hP hph data trs
+  have hP' := pinv_tryCtxTB hP hph data trs
   have hself : (tryCtx ctx ti data trs).insts[ti]? = some ⟨data, [], [], none⟩ :=
     termCtx_insts_self hph data
   have hA : ∀ x ∈ termArgs (abiTerm f B.term), (ctx.valueType? x).isSome :=
@@ -248,6 +248,30 @@ theorem try_rootT {ranges : Array (Nat × Nat)} {st0 : LState} (hP : PInvT f ctx
       simp only [List.mem_cons] at hx'
       rcases hx' with rfl | hx' <;> simp [abiTerm, termArgs, *]
   | _ => simp [exnOf] at het
+
+/-- **A terminator's root** over the typed scope (`term_rootTB` under `PInvT`). -/
+theorem term_rootT {ranges : Array (Nat × Nat)} {st0 : LState} (hP : PInvT f ctx)
+    (hb : buildCtx f = .ok (ctx, ranges, st0)) (hdom : dominatedB f = true)
+    (hin : iselInB f = true) (hdrv : driverInB f = true) {ti : Nat}
+    (hph : ctx.insts[ti]? = some ⟨.op .unit, [], [], none⟩) {t : Clif.Terminator}
+    (ht : ∃ B ∈ f.blocks, B.term = t) {data : V} (hd : termData (abiTerm f t) = .ok data)
+    {targets : List Label} (hlen : targets.length = (destsOf t).length) :
+    ∃ q ∈ termRootsT, (∃ T : Term, program.termByName? (termCall t ti targets).1 = some T ∧
+      T.id = q.1) ∧ γL f (termCtx ctx ti data) q.2 (termCall t ti targets).2 :=
+  term_rootTB hP.toB hb hdom hin hdrv hph ht hd hlen
+
+/-- **A `try_call`'s root** over the typed scope (`try_rootTB` under `PInvT`). -/
+theorem try_rootT {ranges : Array (Nat × Nat)} {st0 : LState} (hP : PInvT f ctx)
+    (hb : buildCtx f = .ok (ctx, ranges, st0)) (hdom : dominatedB f = true)
+    (hin : iselInB f = true) {ti : Nat} (hph : ctx.insts[ti]? = some ⟨.op .unit, [], [], none⟩)
+    {t : Clif.Terminator} (ht : ∃ B ∈ f.blocks, B.term = t) {et : Clif.ExnTable}
+    (het : exnOf t = some et) {data : V} (hd : tryCallData f t = .ok data) {sig : Clif.Signature}
+    {items : List (Option Nat)} (hx : exnTableOpnd f et = .ok (sig, items))
+    {trs : List Reg × List Reg} {st1 st2 : LState} (hr : tryRegsOf sig st1 = some (trs, st2))
+    {targets : List Label} (hlen : targets.length = items.length + 1) :
+    ∃ q ∈ termRootsT, q.1 = TId.lower_branch ∧
+      γL f (tryCtx ctx ti data trs) q.2 [.inst ti, .labels targets] :=
+  try_rootTB hP.toB hb hdom hin hph ht het hd hx hr hlen
 
 end
 
