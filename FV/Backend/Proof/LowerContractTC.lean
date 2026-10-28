@@ -366,7 +366,7 @@ theorem ctxT_of_functionETC {f : Clif.Function} (hT : Compile.functionETC f = tr
     {ctx : Ctx} {ranges : Array (Nat × Nat)} {st0 : LState}
     (hb : buildCtx f = .ok (ctx, ranges, st0)) (hinv : CtxInvT f ctx) (hsc : InstScopeT ctx) :
     CtxT f ctx :=
-  ⟨hinv, hsc, callsE_of_functionETC hT hb⟩
+  ⟨hinv, hsc.toTF, callsE_of_functionETC hT hb⟩
 
 /-- The integer-position operands of a `functionETC` function's terminators other than the
 direct `try_call`s. -/
@@ -377,6 +377,42 @@ theorem termIntPos_of_functionETC {f : Clif.Function} (hT : Compile.functionETC 
   intro x hx t ht
   refine (ctxSpec_of hb).eCTys_of_not_floatDef ht fun hfd => ?_
   simp only [Compile.functionETC, Compile.opsTypedTC, Bool.and_eq_true, List.all_eq_true] at hT
+  have hx' : x ∈ Compile.termIntOperandsC B.term := by
+    cases h : B.term <;> rw [h] at hx <;> first | exact absurd h (hnt _ _ _) | exact hx
+  have := (hT.1.2 B hB).2 x hx'
+  simp [hfd] at this
+
+/-! ## Contexts of the scope with the float operations (S11f) -/
+
+/-- The callees of the `call` statements of `buildCtx`'s context of a `functionETCF` function
+have integer signatures. -/
+theorem callsE_of_functionETCF {f : Clif.Function} (hT : Compile.functionETCF f = true)
+    {ctx : Ctx} {ranges : Array (Nat × Nat)} {st0 : LState}
+    (hb : buildCtx f = .ok (ctx, ranges, st0)) : CallsE f ctx := by
+  intro ii info fn args e hi hc he
+  obtain ⟨B, hB, s, hs, -, hsi⟩ := (ctxSpec_of hb).inst_of hi hc
+  simp only [Compile.functionETCF, Compile.callsE, Bool.and_eq_true, List.all_eq_true] at hT
+  have := hT.1.1.1.2 B hB s hs
+  rw [← hsi] at this
+  simpa [he] using this
+
+/-- **`CtxT` of a `functionETCF` function's context** (`CtxInvT` and `InstScopeTF` from the
+shape). -/
+theorem ctxT_of_functionETCF {f : Clif.Function} (hT : Compile.functionETCF f = true)
+    {ctx : Ctx} {ranges : Array (Nat × Nat)} {st0 : LState}
+    (hb : buildCtx f = .ok (ctx, ranges, st0)) (hinv : CtxInvT f ctx) (hsc : InstScopeTF ctx) :
+    CtxT f ctx :=
+  ⟨hinv, hsc, callsE_of_functionETCF hT hb⟩
+
+/-- The integer-position operands of a `functionETCF` function's terminators other than the
+direct `try_call`s. -/
+theorem termIntPos_of_functionETCF {f : Clif.Function} (hT : Compile.functionETCF f = true)
+    {ctx : Ctx} {ranges : Array (Nat × Nat)} {st0 : LState}
+    (hb : buildCtx f = .ok (ctx, ranges, st0)) {B : Clif.Block} (hB : B ∈ f.blocks)
+    (hnt : ∀ fn args et, B.term ≠ .tryCall fn args et) : TermIntPos ctx B.term := by
+  intro x hx t ht
+  refine (ctxSpec_of hb).eCTys_of_not_floatDef ht fun hfd => ?_
+  simp only [Compile.functionETCF, Compile.opsTypedTCF, Bool.and_eq_true, List.all_eq_true] at hT
   have hx' : x ∈ Compile.termIntOperandsC B.term := by
     cases h : B.term <;> rw [h] at hx <;> first | exact absurd h (hnt _ _ _) | exact hx
   have := (hT.1.2 B hB).2 x hx'

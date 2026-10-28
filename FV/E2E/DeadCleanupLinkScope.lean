@@ -30,7 +30,7 @@ theorem progOf_resultsCleanupT (I : LinkInput) : progOf I.resultsCleanupT = I.pr
   simp [progOf, LinkInput.resultsCleanupT, LinkInput.prog, Function.comp_def]
 
 theorem resultsCleanupT_ok (I : LinkInput) (R : Res) :
-    ResOkWith prune (I.withDepth R) I.resultsCleanupT := by
+    ResOkWith (fun _ => prune) (I.withDepth R) I.resultsCleanupT := by
   intro e he a ha
   obtain ⟨fi, -, h1, h2⟩ := mem_resultsCleanupT he
   rw [h2] at ha
@@ -64,7 +64,7 @@ theorem pipeCleanupT_ok {g : Clif.Function} (hsc : fnScopeB g = true) (hD : Spil
 
 theorem chks_resultsCleanupT (hD : SpillDefinedHyp) {I : LinkInput} (hin : InScopeP I = true)
     (hlk : linkerOkR I I.resultsCleanupT = true) {e : Clif.Function × Except String Art} (he : e ∈ I.resultsCleanupT) :
-    (chksWith prune (I.withDepth I.resultsCleanupT) (progOf I.resultsCleanupT) (tabOf I.resultsCleanupT) e.1 e.2).all
+    (chksWith (fun _ => prune) (I.withDepth I.resultsCleanupT) (progOf I.resultsCleanupT) (tabOf I.resultsCleanupT) e.1 e.2).all
       (·.2) = true := by
   simp only [InScopeP, Bool.and_eq_true] at hin
   obtain ⟨hps, hfs⟩ := hin
@@ -191,7 +191,7 @@ theorem global_resultsCleanupT {I : LinkInput} (hin : InScopeP I = true) (hlk : 
 linker's facts describe: `InScopeP` (the input) and `linkerOkB` (the linker), no check of the
 compiler's own output. -/
 theorem okT_of_inScopeCleanup (hD : SpillDefinedHyp) {I : LinkInput} (hin : InScopeP I = true)
-    (hlk : linkerOkR I I.resultsCleanupT = true) : okRWith prune (I.withDepth I.resultsCleanupT) I.resultsCleanupT = true := by
+    (hlk : linkerOkR I I.resultsCleanupT = true) : okRWith (fun _ => prune) (I.withDepth I.resultsCleanupT) I.resultsCleanupT = true := by
   simp only [okRWith, Bool.and_eq_true]
   exact ⟨global_resultsCleanupT hin hlk, List.all_eq_true.2 fun e he => chks_resultsCleanupT hD hin hlk he⟩
 
@@ -204,7 +204,7 @@ theorem okCleanupT_sound (hD : SpillDefinedHyp) {I : LinkInput} (hin : InScopeP 
     (hB : BaseOk (LinkSys.ofInputCleanupT I B F))
     (hF : ∀ a, (LinkSys.ofInputCleanupT I B F).Img a → F a) :
     (LinkSys.ofInputCleanupT I B F).Ok :=
-  okRWith_sound prune (.inr rfl) (resultsCleanupT_ok I I.resultsCleanupT)
+  okRWith_sound (fun _ => prune) (.inr rfl) (resultsCleanupT_ok I I.resultsCleanupT)
     (okT_of_inScopeCleanup hD hin hlk) hB hF
 
 def CrateStmtCleanupT (I : LinkInput) (n : String) : Prop :=

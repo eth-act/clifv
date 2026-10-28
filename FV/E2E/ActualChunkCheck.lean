@@ -6,24 +6,24 @@ namespace E2E.LinkCheck
 open Backend
 
 def globalBWithLowering (I : LinkInput) (lower : Clif.Function → Except String VCode)
-    (stage : VCode → VCode) : Bool :=
+    (stage : Clif.Function → VCode → VCode) : Bool :=
   let R := I.resultsWithLowering lower stage
   (globalChks I (progOf R) (tabOf R)).all (·.2)
 
 def fnsBWithLowering (I : LinkInput) (lower : Clif.Function → Except String VCode)
-    (stage : VCode → VCode) (fs : List FnInput) : Bool :=
+    (stage : Clif.Function → VCode → VCode) (fs : List FnInput) : Bool :=
   let R := I.resultsWithLowering lower stage
   fs.all fun fi => (chksWith stage I (progOf R) (tabOf R) fi.func
     (I.pipeOfWithLowering lower stage fi)).all (·.2)
 
 theorem fnsBWithLowering_append (I : LinkInput) (lower : Clif.Function → Except String VCode)
-    (stage : VCode → VCode) (a b : List FnInput) :
+    (stage : Clif.Function → VCode → VCode) (a b : List FnInput) :
     fnsBWithLowering I lower stage (a ++ b) =
       (fnsBWithLowering I lower stage a && fnsBWithLowering I lower stage b) := by
   simp only [fnsBWithLowering, List.all_append]
 
 theorem okRWith_ofLowering {I : LinkInput} {lower : Clif.Function → Except String VCode}
-    {stage : VCode → VCode}
+    {stage : Clif.Function → VCode → VCode}
     (hg : globalBWithLowering I lower stage = true)
     (hf : fnsBWithLowering I lower stage I.funcs = true) :
     okRWith stage I (I.resultsWithLowering lower stage) = true := by
@@ -40,7 +40,7 @@ namespace E2E.BinCheck
 open Backend E2E.LinkCheck
 
 theorem artsOkWithCompilerModes_append {I : LinkInput}
-    {lower : Clif.Function → Except String VCode} {stage : VCode → VCode}
+    {lower : Clif.Function → Except String VCode} {stage : Clif.Function → VCode → VCode}
     {file : ByteArray} {a b : List FnInput}
     (ha : ArtsOkWithCompilerModes I lower stage file a)
     (hb : ArtsOkWithCompilerModes I lower stage file b) :
