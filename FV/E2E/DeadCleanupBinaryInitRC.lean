@@ -108,14 +108,14 @@ variable {I : LinkInput} {B : BaseEnv} {file : ByteArray}
 
 /-- **The closed base satisfies the trusted base-hook fact.** -/
 theorem baseNIX_closed (f : Clif.Function) (r : Arm.ArmState) (S : BitVec 64 → Prop) :
-    (sysS I closedBase f r S).std.BaseNIX :=
+    (sysS I closedBase f r S).BaseNIX :=
   fun _ _ _ _ F _ _ _ _ _ => hookNIX_closed _ F
 
 /-- **`InitOkRU` of the proof's system from the checks** (module doc). -/
 theorem initOkRU_sysS_of_checks (hI : okBCleanup I = true) (hB : BaseOk (sys I B))
     (f : Clif.Function) (r : Arm.ArmState) (S : BitVec 64 → Prop)
     (hchk : (sys I B).initChecksB = true) (hBR : (sys I B).BaseRetOk)
-    (hK : (sys I B).HooksKeep) (hNX : (sysS I B f r S).std.BaseNIX) :
+    (hK : (sys I B).HooksKeep) (hNX : (sysS I B f r S).BaseNIX) :
     InitOkRU (sysS I B f r S) (kapW I B f r) := by
   have hB' : BaseOk (LinkSys.ofInputCleanup I B (worldF I f (DeadCleanupStackBound.bud I f) r)) :=
     baseOk_F hB
@@ -132,7 +132,7 @@ theorem initOkRU_sysS_of_checks (hI : okBCleanup I = true) (hB : BaseOk (sys I B
   exact InitOkRU.of_checks hL
     ((DeadCleanupStackBound.budget_of hI B (worldF I f (DeadCleanupStackBound.bud I f) r)).extImg
       _ _ _)
-    hNI hNX (fun _ => hBR') (fun _ => hC) (fun _ => hK') hx30 hrl hblr
+    hNI hNX.std (fun _ => hBR') (fun _ => hC) (fun _ => hK') hx30 hrl hblr
 
 /-- **The executable refines a returning CLIF run under the slot-byte oracle, decidable checks**
 (module doc): `binary_correct_exec_initRU` with the code checks `initChecksB`, the base conditions
@@ -149,7 +149,7 @@ theorem binary_correct_exec_initRC {D : List Clif.DataObject} (hI : okBCleanup I
     (hav : OutsideAvoids (GotSlot I file) f (DeadCleanupStackBound.stackFn I f) r args cs.mem)
     (hr : ClifRunB I B M f r args cs)
     (hchk : (sys I B).initChecksB = true) (hBR : (sys I B).BaseRetOk)
-    (hK : (sys I B).HooksKeep) (hNX : (sysS I B f r (GotSlot I file)).std.BaseNIX)
+    (hK : (sys I B).HooksKeep) (hNX : (sysS I B f r (GotSlot I file)).BaseNIX)
     {vals : List Clif.Val} {cm : Clif.Mem}
     (hrun : Clif.runLoop B.env (prog I) (M + 1) cs = .returned vals cm) :
     ExecRefines (art I f).fb (art I f).base (xreg 30 r) (step I B file) r
@@ -171,7 +171,7 @@ theorem binary_correct_exec_initTRC {D : List Clif.DataObject} (hI : okBCleanup 
     (hav : OutsideAvoids (GotSlot I file) f (DeadCleanupStackBound.stackFn I f) r args cs.mem)
     (hr : ClifRunB I B M f r args cs)
     (hchk : (sys I B).initChecksB = true) (hBR : (sys I B).BaseRetOk)
-    (hK : (sys I B).HooksKeep) (hNX : (sysS I B f r (GotSlot I file)).std.BaseNIX)
+    (hK : (sys I B).HooksKeep) (hNX : (sysS I B f r (GotSlot I file)).BaseNIX)
     (htr : TrapsExplicit (Clif.linkEnvN (prog I) B.env M) (prog I).bare cs) {c : Clif.TrapCode}
     (hrun : Clif.runLoop B.env (prog I) (M + 1) cs = .trapped c) :
     ExecRefines (art I f).fb (art I f).base (xreg 30 r) (step I B file) r

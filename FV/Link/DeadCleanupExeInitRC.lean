@@ -39,7 +39,7 @@ theorem compileExe_correct_initRC {S : LinkSpec} {file0 file : ByteArray}
     (hr : ClifRunB S.inputCleanup B M f r args cs)
     (hchk : (sys S.inputCleanup B).initChecksB = true)
     (hBR : (sys S.inputCleanup B).BaseRetOk) (hK : (sys S.inputCleanup B).HooksKeep)
-    (hNX : (sysS S.inputCleanup B f r (GotSlot S.inputCleanup file)).std.BaseNIX)
+    (hNX : (sysS S.inputCleanup B f r (GotSlot S.inputCleanup file)).BaseNIX)
     {vals : List Clif.Val} {cm : Clif.Mem}
     (hrun : Clif.runLoop B.env (prog S.inputCleanup) (M + 1) cs = .returned vals cm) :
     ExecRefines (art S.inputCleanup f).fb (art S.inputCleanup f).base (xreg 30 r)
@@ -64,7 +64,7 @@ theorem compileExe_correct_initRCT {S : LinkSpec} {file0 file : ByteArray}
     (hr : ClifRunB S.inputCleanup B M f r args cs)
     (hchk : (sys S.inputCleanup B).initChecksB = true)
     (hBR : (sys S.inputCleanup B).BaseRetOk) (hK : (sys S.inputCleanup B).HooksKeep)
-    (hNX : (sysS S.inputCleanup B f r (GotSlot S.inputCleanup file)).std.BaseNIX)
+    (hNX : (sysS S.inputCleanup B f r (GotSlot S.inputCleanup file)).BaseNIX)
     (htr : TrapsExplicit (Clif.linkEnvN (prog S.inputCleanup) B.env M) (prog S.inputCleanup).bare cs)
     {c : Clif.TrapCode}
     (hrun : Clif.runLoop B.env (prog S.inputCleanup) (M + 1) cs = .trapped c) :
