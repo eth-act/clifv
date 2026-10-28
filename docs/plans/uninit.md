@@ -735,7 +735,7 @@ of the same configuration, so the segment's call-state count carries over). Next
 `RegLevelCorrectPRS.lean`'s with `csemVI` → the counted `valueSemV`, `realizes_allC_sp` →
 `realizes_value_allC_sp`; the `rets`/halt cases as in `DeadCleanupRegLevel.lean`).
 
-**Step 3i, as built (UninitZ10b, branch `agent/uninit-z10b-x30`): the `x30` footprint and the
+**Step 3l, as built (UninitZ10b, branch `agent/uninit-z10b-x30`): the `x30` footprint and the
 single steps of the lock-step (§5.8 (1)).**
 - `FV/E2E/ArmGprFoot.lean`: `GprFoot.setGpr`, `GprFree k f` (`f` commutes with setting `x_k`),
   one lemma per instruction class of the Arm model (load/store via `reg_imm_common`,
