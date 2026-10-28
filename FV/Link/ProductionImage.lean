@@ -24,7 +24,10 @@ theorem LinkSpec.inputProduction_results (S : LinkSpec) (cleanup : Bool) :
 def leanLinkProduction (S : LinkSpec) (file0 : ByteArray) (cleanup : Bool) : Except String ByteArray :=
   leanLinkWithResults S file0 (fun I => parResultsProduction I cleanup)
 
+/-- `I` is bound outside the map so the compiled code builds `S.input0` (an
+O(symbols × addrs) lookup) once, not once per function (#683). -/
 def LinkSpec.placedProduction (S : LinkSpec) (cleanup : Bool) : LinkSpec :=
+  let I : LinkInput := {S.input0 with addrs := []}
   S.withSizes (S.funcs.map fun fi =>
-    (getOk (({S.input0 with addrs := []} : LinkInput).pipeProduction cleanup fi)).fb.words.size)
+    (getOk (I.pipeProduction cleanup fi)).fb.words.size)
 end Link

@@ -187,14 +187,14 @@ theorem instData_okT {f : Clif.Function} {s : Clif.Stmt} (hT : Compile.instET s.
 
 /-- The result types of a statement of the typed movement scope satisfying `stmtInB` are types
 `buildCtx` admits (`valTyOk`: E's integers and `f32`/`f64`; `tysOf_ne` of `LowerTotalCtx.lean`
-with `eTy` replaced). -/
-theorem tysOf_okT {f : Clif.Function} (hET : Compile.functionET f = true) {s : Clif.Stmt}
-    (hi : Compile.instET s.inst = true) (hs : stmtInB f s = true) :
+with `eTy` replaced), for a function with integer externs (S11f: the only fact of the scope
+used). -/
+theorem tysOf_okTB {f : Clif.Function} (hXE : f.externs.all (Compile.sigE ·.2.sig) = true)
+    {s : Clif.Stmt} (hi : Compile.instET s.inst = true) (hs : stmtInB f s = true) :
     ∀ t ∈ tysOf f s, valTyOk t = true := by
   have hX : ∀ fn e, f.extern? fn = some e → ∀ p ∈ e.sig.returns, valTyOk p.ty = true := by
     intro fn e he p hp
-    simp only [Compile.functionET, Bool.and_eq_true, List.all_eq_true] at hET
-    have := hET.1.1.1.2 _ (Compile.lookup_mem he)
+    have := List.all_eq_true.mp hXE _ (Compile.lookup_mem he)
     simp only [Compile.sigE, Bool.and_eq_true, List.all_eq_true] at this
     exact valTyOk_of_tyE (this.2 p hp)
   rcases s with ⟨res, inst⟩
@@ -268,6 +268,14 @@ theorem tysOf_okT {f : Clif.Function} (hET : Compile.functionET f = true) {s : C
     subst ht
     exact valTyOk_of_tyM hi'
 
+/-- The result types of a statement of the typed movement scope satisfying `stmtInB` are types
+`buildCtx` admits (`tysOf_okTB`). -/
+theorem tysOf_okT {f : Clif.Function} (hET : Compile.functionET f = true) {s : Clif.Stmt}
+    (hi : Compile.instET s.inst = true) (hs : stmtInB f s = true) :
+    ∀ t ∈ tysOf f s, valTyOk t = true := by
+  simp only [Compile.functionET, Bool.and_eq_true] at hET
+  exact tysOf_okTB hET.1.1.1.2 hi hs
+
 /-! ## What `buildCtx` checks of every block holds -/
 
 /-- `blockC_of` on the typed movement scope: `BlockC`/`StmtC` are class-agnostic (`valTyOk`
@@ -294,14 +302,11 @@ theorem blockC_ofT {f : Clif.Function} (hET : Compile.functionET f = true)
 
 /-! ## `buildCtx` succeeds (typed) -/
 
-/-- **`buildCtx` is total on the typed movement scope** (`buildCtx_ok` with `functionET` for
-`functionE`): subset-E's integer block parameters, statement data and result types are
-`valTyOk` types, the load/store addresses are the declared `i64` values — all `buildCtx`
-checks, which are class-agnostic. -/
-theorem buildCtx_okT {f : Clif.Function} (hET : Compile.functionET f = true)
+/-- **`buildCtx` is total** as soon as every block passes `buildCtx`'s class-agnostic checks
+(`BlockC`; S11f: for any scope that gives them). -/
+theorem buildCtx_okC {f : Clif.Function} (hC : ∀ B ∈ f.blocks, BlockC f B)
     (hssa : (valueDefs f).Nodup) (hst : ∀ B ∈ f.blocks, ∀ s ∈ B.body, stmtInB f s = true) :
     ∃ ctx ranges st0, buildCtx f = .ok (ctx, ranges, st0) := by
-  have hC := blockC_ofT hET hst
   unfold buildCtx
   simp only [bind, Except.bind, pure, Except.pure, forIn_okYield]
   rw [forIn_eq_fold (blockStepM f) f.blocks _ ?blk]
@@ -347,6 +352,15 @@ theorem buildCtx_okT {f : Clif.Function} (hET : Compile.functionET f = true)
           simp [this, resStepM]
     · intro q hq vt
       simp [hpar q hq, parStepM]
+
+/-- **`buildCtx` is total on the typed movement scope** (`buildCtx_ok` with `functionET` for
+`functionE`): subset-E's integer block parameters, statement data and result types are
+`valTyOk` types, the load/store addresses are the declared `i64` values — all `buildCtx`
+checks, which are class-agnostic. -/
+theorem buildCtx_okT {f : Clif.Function} (hET : Compile.functionET f = true)
+    (hssa : (valueDefs f).Nodup) (hst : ∀ B ∈ f.blocks, ∀ s ∈ B.body, stmtInB f s = true) :
+    ∃ ctx ranges st0, buildCtx f = .ok (ctx, ranges, st0) :=
+  buildCtx_okC (blockC_ofT hET hst) hssa hst
 
 /-! ## The ABI of a typed signature -/
 
@@ -722,13 +736,19 @@ theorem blockBody_okT' {f : Clif.Function} {ctx : Ctx} {ranges : Array (Nat × N
 
 /-! ## The driver is total (typed) -/
 
-/-- **Totality of the lowering driver on the typed scope** (`lowerFunction_ok` with
-`Compile.functionET` for `Compile.functionE`): on input in the typed scope (`sigAbiOk`,
-dominance, `LowerScopeT`, branch arity, entry parameters) satisfying `driverInB`,
-`lowerFunction` succeeds as soon as the ISLE runs on `buildCtx`'s context make progress
-(`IselProg`). -/
-theorem lowerFunction_okT {f : Clif.Function} (hET : Compile.functionET f = true)
-    (hsig : sigAbiOk f.sig = true) (hdom : dominatedB f = true) (hs : LowerScopeT f)
+/-- **Totality of the lowering driver** for any scope whose blocks pass `buildCtx`'s checks
+(`hC`), with `Compile.sigET` signature, `termE` terminators, a nonempty body and in-range
+`try_call` returns (S11f: the scope-specific facts `lowerFunction_okT` takes from
+`Compile.functionET`/`LowerScopeT`): on input with `sigAbiOk`, dominance, branch arity, entry
+parameters and `driverInB`, `lowerFunction` succeeds as soon as the ISLE runs on `buildCtx`'s
+context make progress (`IselProg`). -/
+theorem lowerFunction_okG {f : Clif.Function}
+    (hC : (∀ B ∈ f.blocks, ∀ s ∈ B.body, stmtInB f s = true) → ∀ B ∈ f.blocks, BlockC f B)
+    (hsigET : Compile.sigET f.sig = true) (hterm : ∀ B ∈ f.blocks, Compile.termE B.term = true)
+    (hne : f.blocks ≠ [])
+    (htr : ∀ B ∈ f.blocks, ∀ et, IsTryWith B.term et → ∀ sig, f.sigDecls.lookup et.sig = some sig →
+      ∀ i, Clif.TryArg.ret i ∈ et.normal.args → i < sig.returns.length)
+    (hsig : sigAbiOk f.sig = true) (hdom : dominatedB f = true)
     (har : Spill.arityOkB f = true) (hent : Spill.entryParamsB f = true)
     (hin : driverInB f = true)
     (hprog : ∀ ctx ranges st0, buildCtx f = .ok (ctx, ranges, st0) → IselProg f ctx) :
@@ -737,17 +757,13 @@ theorem lowerFunction_okT {f : Clif.Function} (hET : Compile.functionET f = true
   obtain ⟨⟨hcc, h8⟩, hbl⟩ := hin
   have hssa : (valueDefs f).Nodup := by
     simp only [dominatedB, Bool.and_eq_true] at hdom; exact nodupB_sound hdom.1
-  obtain ⟨ctx, ranges, st0, hb⟩ := buildCtx_okT hET hssa fun B hB s hs => (hbl B hB).1 s hs
+  have hst : ∀ B ∈ f.blocks, ∀ s ∈ B.body, stmtInB f s = true := fun B hB s hs => (hbl B hB).1 s hs
+  obtain ⟨ctx, ranges, st0, hb⟩ := buildCtx_okC (hC hst) hssa hst
   have sp := ctxSpec_of hb
   have hP := hprog _ _ _ hb
   have hd := dominated_of hdom
   have hreg : ∀ x ∈ valueDefs f, ctx.valueReg? x = some (.vreg x (valClassOf ctx x)) :=
     fun x hx => (sp.facts.valsT x hx).2
-  have hET' := hET
-  simp only [Compile.functionET, Bool.and_eq_true, List.all_eq_true] at hET'
-  obtain ⟨⟨⟨⟨-, -⟩, hbT⟩, -⟩, -⟩ := hET'
-  have hsigET : Compile.sigET f.sig = true := by
-    simp only [Compile.functionET, Bool.and_eq_true] at hET; exact hET.1.1.1.1.1
   simp only [Compile.sigET, Bool.and_eq_true, List.all_eq_true] at hsigET
   obtain ⟨hMp, hMr⟩ := hsigET
   obtain ⟨bytes, hbytes⟩ := sigArgs_okT hsig hMp
@@ -771,20 +787,36 @@ theorem lowerFunction_okT {f : Clif.Function} (hET : Compile.functionET f = true
       have hBm := List.mem_of_getElem? hB
       have huse := (hd.uses ctx ranges st0 hb bi B hB).2
       have hT := (hbl B hBm).2
-      have hbT' := hbT B hBm
-      refine blockBody_okT' sp hP hB ⟨locs, n, hlocs⟩ (dataOk_of hbT'.2 hT)
-        (sretBad_false hs.nonempty hent _) (fun bc hbc => ?_) (fun et het => ?_)
+      have hbT' := hterm B hBm
+      refine blockBody_okT' sp hP hB ⟨locs, n, hlocs⟩ (dataOk_of hbT' hT)
+        (sretBad_false hne hent _) (fun bc hbc => ?_) (fun et het => ?_)
         (fun q hq => ⟨_, hreg q.1 ?_⟩) d
       · obtain ⟨tb, htb⟩ := Option.isSome_iff_exists.mp (termInB_dests hT bc hbc)
         exact ⟨tb, htb, Spill.arityOk_of har B hBm bc hbc tb htb, fun a ha =>
           hreg a (availOf_defs (huse a (dests_args_mem hbc ha)))⟩
       · exact tryOk_ofT (termInB_try het hT)
           (fun td htd v hv => hreg v (availOf_defs (huse v (try_vals_mem het htd hv))))
-          (hs.tryRet B hBm et het)
+          (htr B hBm et het)
       · simp only [valueDefs, List.mem_flatMap, List.mem_append, List.mem_map]
         exact ⟨B, hBm, .inl ⟨q, hq, rfl⟩⟩)
   rw [hF]
   exact ⟨_, rfl⟩
+
+/-- **Totality of the lowering driver on the typed scope** (`lowerFunction_ok` with
+`Compile.functionET` for `Compile.functionE`): on input in the typed scope (`sigAbiOk`,
+dominance, `LowerScopeT`, branch arity, entry parameters) satisfying `driverInB`,
+`lowerFunction` succeeds as soon as the ISLE runs on `buildCtx`'s context make progress
+(`IselProg`). -/
+theorem lowerFunction_okT {f : Clif.Function} (hET : Compile.functionET f = true)
+    (hsig : sigAbiOk f.sig = true) (hdom : dominatedB f = true) (hs : LowerScopeT f)
+    (har : Spill.arityOkB f = true) (hent : Spill.entryParamsB f = true)
+    (hin : driverInB f = true)
+    (hprog : ∀ ctx ranges st0, buildCtx f = .ok (ctx, ranges, st0) → IselProg f ctx) :
+    ∃ vc, lowerFunction f = .ok vc := by
+  have hET' := hET
+  simp only [Compile.functionET, Bool.and_eq_true, List.all_eq_true] at hET'
+  exact lowerFunction_okG (blockC_ofT hET) hET'.1.1.1.1.1 (fun B hB => (hET'.1.1.2 B hB).2)
+    hs.nonempty hs.tryRet hsig hdom har hent hin hprog
 
 /-! ## Non-vacuity -/
 
