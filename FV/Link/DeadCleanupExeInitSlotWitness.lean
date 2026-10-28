@@ -22,8 +22,10 @@ For a concrete caller state `rC` (the executable's bytes, `x0 = 41`, `sp = 0x100
 * **`run_init`**: the CLIF run from the reference entry placed with the machine's own table
   returns `82` (`runWith_withTable`);
 * **`stale_read_returns`**: `compileExe_correct_init` on this run: the executable's run from `rC`
-  returns `82` to the caller (`ExecRefines`); left: the entry contract `OutsideCall` and the oracle
-  route's `InitOk`.
+  returns `82` to the caller (`ExecRefines`), under the entry contract `OutsideCall` and the oracle
+  route's `InitOk`;
+* `outsideCall`: the entry contract holds for `rC`; **`stale_read_returns_init`**: the same with
+  only `InitOk` left.
 -/
 
 namespace Link.DeadCleanup.InitSlotWitness
@@ -463,6 +465,68 @@ theorem clifRunB : ClifRunB I B M0 fF rC [v41] csI := by
     simp only [Clif.Mem.withTable, hpl, Option.map_some]
     rfl
 
+/-! ## The entry contract of the caller's state -/
+
+/-- The caller's facts: `pc` at `f`, no error, the return address outside the code, `sp` the
+16-aligned `0x100000` with `f`'s stack bound below it, the code at and above `0x1000000` (so above
+the stack), `f`'s only parameter in `x0` holding `41`, `f`'s entry allocates nothing. -/
+def entryB : Bool :=
+  Arm.r .PC rC == (art I fF).base && (match Arm.r .ERR rC with | .None => true | _ => false) &&
+  !imgD (xreg 30 rC) && spv rC == 0x100000#64 &&
+  decide (DeadCleanupStackBound.stackFn I fF ≤ 0x100000) &&
+  (tabOf I.resultsCleanup).all (fun e => (e.2.fb.program e.2.base).all fun p =>
+    decide (0x1000000 ≤ p.1.toNat ∧ p.1.toNat + 4 ≤ 2 ^ 64)) &&
+  (match locsOf fF.sig with
+    | [.reg x] => (regVal rC x).setWidth v41.ty.width == v41.bits
+    | _ => false) &&
+  csC.mem.allocs.isEmpty
+
+set_option maxRecDepth 100000 in
+theorem entryB_true : entryB = true := by native_decide
+
+/-- **The entry contract of the caller's state** (`OutsideCall`), each field from `entryB`: no
+code below `sp` (the code lies at and above `0x1000000`); the CLIF memory has no allocation, so
+its byte, image and validity clauses are vacuous; the symbols are the entry memory's. -/
+theorem outsideCall : OutsideCall I (BinCheck.roByte I spec.data) fF
+    (DeadCleanupStackBound.stackFn I fF) rC [v41] csI.mem := by
+  have h := entryB_true
+  simp only [entryB, Bool.and_eq_true, beq_iff_eq, Bool.not_eq_true', decide_eq_true_eq,
+    List.all_eq_true, List.isEmpty_iff] at h
+  obtain ⟨⟨⟨⟨⟨⟨⟨hpc, herr⟩, hra⟩, hsp⟩, hst⟩, hcode⟩, hargs⟩, hal⟩ := h
+  have hv : ∀ a n, csI.mem.valid a n = false := fun a n => by
+    show csC.mem.allocs.any _ = false
+    rw [hal]; rfl
+  refine ⟨hpc, ?_, fun hi => ?_, ?_, ?_, fun a ha hb => ?_, ?_, fun a b hva => ?_,
+    fun a b b' hva => ?_, fun a n hva => ?_, ?_⟩
+  · split at herr <;> first | assumption | cases herr
+  · rw [(imgD_iff _).mpr hi] at hra; cases hra
+  · rw [hsp]; decide
+  · rw [hsp]; exact Nat.le_trans hst (by decide)
+  · obtain ⟨e, he, hp⟩ := List.any_eq_true.mp ((imgD_iff a).mpr ha)
+    obtain ⟨p, hp, hlt⟩ := List.any_eq_true.mp hp
+    have hlt := of_decide_eq_true hlt
+    obtain ⟨hlo, hhi⟩ := of_decide_eq_true (List.all_eq_true.mp (hcode e he) p hp)
+    rw [hsp] at hb
+    have hs := BitVec.toNat_sub a p.1
+    have ha' := a.isLt
+    have hb1 := hb.1
+    simp only [BitVec.toNat_ofNat] at hb1 hs
+    omega
+  · intro loc v hm
+    split at hargs
+    · rename_i x hl
+      rw [hl] at hm
+      simp only [List.zip_cons_cons, List.zip_nil_right, List.mem_singleton, Prod.mk.injEq] at hm
+      obtain ⟨rfl, rfl⟩ := hm
+      exact beq_iff_eq.mp hargs
+    · cases hargs
+  · rw [hv] at hva; cases hva
+  · rw [hv] at hva; cases hva
+  · rw [hv] at hva; cases hva
+  · show csC.mem.symbols = _
+    rw [(Clif.initState_symbols init_ok).1]
+    rfl
+
 /-! ## The executable theorem on the stale read -/
 
 /-- **The executable returns `82` on a stale read** (`compileExe_correct_init`, module doc): the
@@ -480,5 +544,14 @@ theorem stale_read_returns
   obtain ⟨v, m, -, hr, hty, hv⟩ := run_init
   exact ⟨v, m, hty, hv, compileExe_correct_init compile_eq B baseOk (hooksSim_closed _) hf hc M0
     intact ho clifRunB hIO hr⟩
+
+/-- **The executable returns `82` on a stale read, entry contract discharged**
+(`stale_read_returns` with `outsideCall`): the only premise left is the oracle route's `InitOk`. -/
+theorem stale_read_returns_init
+    (hIO : InitOk (sysS I B fF rC (GotSlot I file)) (kapW I B fF rC)) :
+    ∃ v cm, v.ty = .i64 ∧ v.bits.toNat = 82 ∧
+      ExecRefines (art I fF).fb (art I fF).base (xreg 30 rC) (step I B file) rC
+        (E2E.DeadCleanupBinCheck.RelocAt I) (.returned [v] cm) :=
+  stale_read_returns outsideCall hIO
 
 end Link.DeadCleanup.InitSlotWitness
