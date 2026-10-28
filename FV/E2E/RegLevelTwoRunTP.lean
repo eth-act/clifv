@@ -1,4 +1,5 @@
 import FV.E2E.RegLevelTwoRunT
+import FV.E2E.RegLevelCallStart
 
 /-!
 # Two activations in lock-step, the lock step told the first run's segment start (SEM1 #537,
@@ -12,7 +13,8 @@ semantics `XI.at n` answers for (#729): the realisation knows it (`hP : P s` at 
 `s`, `P n = OnCall … n`, and the segment's call count `hcnt`), the old theorems pass it away.
 
 * `RL.SegFrom` (`u` is `i` steps after a segment start satisfying `P`, before the end; the
-  segment's machine calls are the step's);
+  segment's machine calls are the step's, and a call state of the segment is its start, so a call
+  hook at `u` is at the start, `i = 0`, where `P` holds: `RL.SegFrom.call`); `RL.segStart_of_qw`;
 * `RL.jointSegTP`, `RL.realizesJCPTP`, **`RL.twoRunCTP`**, **`RL.twoRunPRTP`**: the same theorems
   with `hstep` also receiving `SegFrom` for the first run (same proofs); their joint trace also
   carries `RL.Good` of both runs' body states (a state after a call has the body's `sp`, what
@@ -24,10 +26,38 @@ namespace Backend.Proof
 open Backend E2E
 
 /-- **`u` is `i` steps after a segment start satisfying `P`**, strictly before the segment's end,
-and the segment's machine calls are the step's (`opCalls`). -/
+the segment's machine calls are the step's (`opCalls`), and its call states are its start. -/
 def RL.SegFrom (R : RL) (P : Arm.ArmState → Prop) (c : MConf CV Arm.ArmState) (i : Nat)
     (u : Arm.ArmState) : Prop :=
-  ∃ s n, P s ∧ u = iterN R.step i s ∧ i < n ∧ countIn R.CallSt R.step s n = opCalls R.vc c
+  ∃ s n, P s ∧ u = iterN R.step i s ∧ i < n ∧ countIn R.CallSt R.step s n = opCalls R.vc c ∧
+    ∀ k < n, R.CallSt (iterN R.step k s) → k = 0
+
+/-- **The call states of a realised segment are its start** (`realizes_allC0`'s argument, from
+the alignment `QW` at the start and the segment's call count). -/
+theorem RL.segStart_of_qw {R : RL} {s : Arm.ArmState} {j : Nat} {ps1 : PState} {T : List Line}
+    {c : MConf CV Arm.ArmState} (hq : QW R s j ps1 T c) {n : Nat}
+    (hcnt : countIn R.CallSt R.step s n = opCalls R.vc c) :
+    ∀ k < n, R.CallSt (iterN R.step k s) → k = 0 := by
+  intro k hk hck
+  refine Classical.byContradiction fun hne => ?_
+  have h1 : 1 ≤ countIn R.CallSt R.step s n := by
+    obtain ⟨n', rfl⟩ : ∃ n', n = k + n' := ⟨n - k, by omega⟩
+    rw [countIn_add]
+    have := countIn_one_le (step := R.step) (s := iterN R.step k s) (n := n') (by omega) hck
+    omega
+  rw [hcnt] at h1
+  obtain ⟨b, k', allocs, its, m, w, vb, ins, rfl, hvb, hi', hcI⟩ := opCalls_pos (vc := R.vc) h1
+  have hcs := RL.callSt_of_q_call hq.q hvb hi' hcI
+  have h2 := countIn_two_le hcs (Nat.pos_of_ne_zero hne) hk hck
+  rw [hcnt] at h2
+  simp [opCalls, hvb, hi', hcI] at h2
+
+/-- **A call state in `SegFrom` is the segment start**: `P` holds there. -/
+theorem RL.SegFrom.call {R : RL} {P : Arm.ArmState → Prop} {c : MConf CV Arm.ArmState} {i : Nat}
+    {u : Arm.ArmState} (h : R.SegFrom P c i u) (hc : R.CallSt u) : i = 0 ∧ P u := by
+  obtain ⟨s, n, hP, rfl, hi, -, hst⟩ := h
+  obtain rfl := hst i hi hc
+  exact ⟨rfl, hP⟩
 
 /-- **`RL.jointSegT` with the first run's segment start handed to the lock step.** -/
 theorem RL.jointSegTP {R R' : RL} (hR : R.Wf) (hR' : R'.Wf) (hsc : R.SameCode R')
@@ -72,7 +102,8 @@ theorem RL.jointSegTP {R R' : RL} (hR : R.Wf) (hR' : R'.Wf) (hsc : R.SameCode R'
     realizes_allCWSF hR' Ok' hC' hT' hTls' hcov' hq' hP' he'
   have hd := hsh d d' hm hm'
   obtain ⟨rfl, hL⟩ := RL.seg_lock hsc hc hd hs hs' Lk hLpc h0 fun i hi hi' hl =>
-    hstep i _ _ ⟨s, j, ps1, T, d, n, hq, hm, hs, hi, rfl, hf⟩ ⟨s, n, hP, rfl, hi, hcnt⟩
+    hstep i _ _ ⟨s, j, ps1, T, d, n, hq, hm, hs, hi, rfl, hf⟩
+      ⟨s, n, hP, rfl, hi, hcnt, RL.segStart_of_qw hq hcnt⟩
       ⟨s', j, ps1, T, d', n', hq', hm', hs', hi', rfl, hf'⟩
       (ht i hi) (ht' i hi') hl
   have hW := RL.nextW_shape hsc j ps1 T hc hd
