@@ -8,15 +8,16 @@ import FV.E2E.SpillDefined
 conditions `InScopeP` and the linker's facts `linkerOkB` (its program-independent hypothesis
 `SpillDefinedHyp` is proven: `crate_correct_inScope_proven`, used by `crate_correct_proven`). Both hold
 for the survey crate `a_arith` (`Crates.InScopeInputs.AArith.input`, 58
-functions) and for `fv-demo` (`Crates.InScopeInputs.FvDemo.input`, 551 functions): decided by
+functions) and for `fv-demo` (`Crates.InScopeInputs.FvDemo.input`, 557 of its 558 functions; `link-check --input-only` drops the one outside `InScopeP`): decided by
 `native_decide` (`fvcheck` holds the compiled code of `FV.E2E.LinkScopeDefs`). The closed
 base environment satisfies the
 base premises of `a_arith`'s linked system (`base_closedT`), so the theorem is not vacuous in them
 either.
 
-The inputs are the 2026-10-04 ones, frozen in `Crates.InScopeInputs` (#709): `linkerOkB` lays out
-`LinkInput.resultsT`, which the shipped routed compiler no longer emits; an `inScope` theorem for
-the routed compiler is open. -/
+The inputs (`Crates.InScopeInputs`, written by `scripts/regen-crate-proofs.sh`) come from
+executables compiled by `pipeT`'s pipeline (`lean-backend --pipeline-t`), the compiler
+`LinkSys.ofInputT` describes, so `linkerOkB` decides their link map.
+-/
 
 namespace Crates.InScopeWitness
 

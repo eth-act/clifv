@@ -70,7 +70,7 @@ validator and listed as `compiled, unverified (validation budget)`.
 open Backend
 
 def usage : String :=
-  "usage: lean-backend <in.clif> <out.o|out.s> [--traps <out.json>] [--rules <out.txt>] [--dump <dir>] [--regalloc lean|regalloc2|spill|stack|regalloc2-small] [--personality <sym>] [--opt] [--dead-cleanup|--no-dead-cleanup] [--stock-config <request.json> --config-receipt <receipt.json>]"
+  "usage: lean-backend <in.clif> <out.o|out.s> [--traps <out.json>] [--rules <out.txt>] [--dump <dir>] [--regalloc lean|regalloc2|spill|stack|regalloc2-small] [--personality <sym>] [--opt] [--dead-cleanup|--no-dead-cleanup] [--pipeline-t] [--stock-config <request.json> --config-receipt <receipt.json>]"
 
 /-- The rules the end-to-end theorem covers: the emitter-subset closure, and the `try_call`
 rules of `lower_branch` (ids 1034 `bl`, 1035 GOT + `blr`: `Backend.Proof.tryRootRule`, proven by
@@ -92,6 +92,10 @@ structure Opts where
   stockConfig : Option String := none
   configReceipt : Option String := none
   deadCleanup : Bool := true
+  /-- `--pipeline-t` (or `FV_PIPELINE_T=1`): compile with `E2E.LinkCheck.pipeT`'s pipeline (the
+  D0 lowering, no dead cleanup, no Stock routes), the compiler `crate_correct_inScope` covers.
+  Only for regenerating `crate-proofs/Crates/InScopeInputs` (`scripts/regen-crate-proofs.sh`). -/
+  pipelineT : Bool := false
 
 /-- One function's allocation as the backend lowered it: the prepared VCode `vcp`, the
 allocation `rf` with `lowerRFunc vcp rf = .ok af` (`lowerAllocReady_eq`, `lowerAlloc_eq`), and
@@ -213,6 +217,8 @@ def unwindCheckFailure? (f : Clif.Function) (rec : AllocRecord) (fa? : Option Fn
 
 def run (input output : String) (o : Opts) : IO UInt32 := do
   let src ← IO.FS.readFile input
+  let pipelineT := o.pipelineT || (← IO.getEnv "FV_PIPELINE_T") == some "1"
+  let o := if pipelineT then { o with deadCleanup := false } else o
   if o.configReceipt.isSome != o.stockConfig.isSome then
     IO.eprintln "lean-backend: --stock-config and --config-receipt must be supplied together"
     return 2
@@ -253,16 +259,19 @@ def run (input output : String) (o : Opts) : IO UInt32 := do
   let rejected ← IO.mkRef (#[] : Array (String × String))
   -- the allocation of each function as lowered (by VCode name), for the unwinding checks
   let records ← IO.mkRef (#[] : Array (String × AllocRecord))
+  let allocNone : Array VCode → IO (Array (Except String AFunc)) := fun vcs => do
+    -- regalloc2 sees the code as Cranelift's lowering gives it (`CraneliftInput.shape`, #551)
+    let byName (n : String) : Option Clif.Function :=
+      (pf.funcs.find? (·.name == n)).bind (·.func.toOption)
+    let shapeOf := fun (vcp : VCode) => CraneliftInput.shape (byName vcp.name) o.deadCleanup vcp
+    let (afs, recs) ← allocRecordingNamed ra alloc vcs shapeOf
+    records.set ((vcs.map (·.name)).zip recs)
+    pure afs
   let fa ← match stock with
-    | none => compileFileParameterCfgNIWhen (!o.opt.isSome &&
-        !(pf.funcs.any fun p => p.func.toOption.any fun f => f.blocks.any (·.term.isTry))) (fun vcs => do
-        -- regalloc2 sees the code as Cranelift's lowering gives it (`CraneliftInput.shape`, #551)
-        let byName (n : String) : Option Clif.Function :=
-          (pf.funcs.find? (·.name == n)).bind (·.func.toOption)
-        let shapeOf := fun (vcp : VCode) => CraneliftInput.shape (byName vcp.name) o.deadCleanup vcp
-        let (afs, recs) ← allocRecordingNamed ra alloc vcs shapeOf
-        records.set ((vcs.map (·.name)).zip recs)
-        pure afs) pf (unv128 ++ unvTry) o.deadCleanup
+    | none => (if pipelineT then compileFileWith allocNone pf (unv128 ++ unvTry) false
+        else compileFileParameterCfgNIWhen (!o.opt.isSome &&
+          !(pf.funcs.any fun p => p.func.toOption.any fun f => f.blocks.any (·.term.isTry)))
+          allocNone pf (unv128 ++ unvTry) o.deadCleanup)
     | some c => (compileFileWith (StockConfig.allocate c clif rejected alloc) pf
         (unv128 ++ unvTry ++ pf.funcs.map (fun p => (p.name, "experimental stock-configured driver (outside backend_correct)"))) o.deadCleanup)
   if let (some request, some receipt) := (stock.map (·.request), o.configReceipt) then
@@ -393,6 +402,7 @@ def main (args : List String) : IO UInt32 := do
     | "--config-receipt" :: c :: rest => opts { o with configReceipt := some c } rest
     | "--dead-cleanup" :: rest => opts { o with deadCleanup := true } rest
     | "--no-dead-cleanup" :: rest => opts { o with deadCleanup := false } rest
+    | "--pipeline-t" :: rest => opts { o with pipelineT := true } rest
     | _ => none
   let (optCfg, args) ← match Opt.parseOptArgs args with
     | .ok r => pure r
