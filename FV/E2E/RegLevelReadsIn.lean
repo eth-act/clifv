@@ -1,0 +1,235 @@
+import FV.E2E.RegLevelNoCall
+
+/-!
+# Where the reads of an activation's run land (SEM1 #537, step 3p, docs/plans/uninit.md §5.9)
+
+`RL.GoodX.reads` (D2) bounds the reads of the run only away from the kept addresses `G`. The
+lock-step of two runs (`lockstep_runX`) needs more: every read is a byte the two runs agree on.
+`RL.ReadsIn R u`: every memory read of the unhooked instruction at the pc of `u` is
+
+* a byte of one of the function's data (`.word`) lines (the jump tables), or
+* a byte of the activation's own frame `[spB, spB + frameDrop)` other than the frame record's
+  saved-LR word (`RL.FrameRd`); the LR word only for the epilogue's `ldp x29, x30, [sp], #16`
+  (`Insn.ldpFR`), or
+* a byte outside the frame addresses `F` (a covered form's access to the world).
+
+`RL.ReadIn lr a` implies `RL.ReadOk a` (`RL.readIn_ok`), so `ReadsIn` refines D2. Builders as for
+D2 (`RL.readsIn_of_line`, `RL.readsIn_noLoad`, `RL.readsIn_hooked`, `RL.readsIn_execLinesG`).
+`RL.GoodXNR` is `GoodXN` with `ReadsIn`; the `realizes_*NR` variants (files `*NR.lean`) state it.
+-/
+
+namespace Backend.Proof
+
+open Backend E2E
+
+/-- The epilogue's frame-record reload `ldp x29, x30, [sp], #16`. -/
+def _root_.Backend.Insn.ldpFR (i : Insn) : Bool :=
+  decide (i = .ldp .fp .lr (.spPostIndexed 16))
+
+/-- **A byte of the activation's frame** read by its body: `spB + o` with `o < frameDrop`, not
+the frame record's saved-LR word (`frameDrop - 8 ≤ o`) unless `lr`. -/
+def RL.FrameRd (R : RL) (lr : Bool) (a : BitVec 64) : Prop :=
+  ∃ o, o < frameDrop R.af ∧ (o + 8 < frameDrop R.af ∨ lr = true) ∧ a = R.spB + BitVec.ofNat 64 o
+
+/-- **A byte the activation's run may read, located** (module doc). -/
+def RL.ReadIn (R : RL) (lr : Bool) (a : BitVec 64) : Prop :=
+  (∃ j tg bs, R.L[j]? = some (.word tg bs) ∧ ∃ i < 4, a = R.pcOf j + BitVec.ofNat 64 i) ∨
+    R.FrameRd lr a ∨ ¬ R.F a
+
+/-- **The reads at `u`, located**: the reads of the unhooked instruction `x` at the pc are
+`ReadIn x.ldpFR`. -/
+def RL.ReadsIn (R : RL) (u : Arm.ArmState) : Prop :=
+  ∀ j x t, R.L[j]? = some (.ins x t) → Arm.r .PC u = R.pcOf j → x.hooked = false →
+    ∀ env a, x.toArmInst env = .ok a → ∀ p ∈ E2E.ExecBytes.MemReads a u, ∀ k < p.2,
+      R.ReadIn x.ldpFR (p.1 + BitVec.ofNat 64 k)
+
+/-- **`GoodXN` with the located reads.** -/
+def RL.GoodXNR (R : RL) (u : Arm.ArmState) : Prop := R.GoodXN u ∧ R.ReadsIn u
+
+theorem RL.FrameRd.mono {R : RL} {a : BitVec 64} (h : R.FrameRd false a) (lr : Bool) :
+    R.FrameRd lr a := by
+  obtain ⟨o, ho, hl, e⟩ := h
+  exact ⟨o, ho, hl.elim Or.inl fun h => absurd h (by decide), e⟩
+
+theorem RL.ReadIn.mono {R : RL} {a : BitVec 64} (h : R.ReadIn false a) (lr : Bool) :
+    R.ReadIn lr a :=
+  h.imp_right (Or.imp_left fun h => h.mono lr)
+
+/-- The kept addresses are not in the activation's frame. -/
+theorem RL.G_not_frame {R : RL} (hR : R.Wf) {a : BitVec 64} (h : R.G a) :
+    ∀ o, o < frameDrop R.af → a ≠ R.spB + BitVec.ofNat 64 o := by
+  intro o ho e
+  obtain ⟨hB, hK⟩ := spBody_toNat hR.stack
+  apply hR.gfree a h
+  subst e
+  simp only [RL.spB] at hB ⊢
+  have : (spv R.s0 - BitVec.ofNat 64 (frameDrop R.af) + BitVec.ofNat 64 o).toNat =
+      (spv R.s0).toNat - frameDrop R.af + o := by
+    rw [BitVec.toNat_add, hB, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := o) (by omega)]
+    exact Nat.mod_eq_of_lt (by have := (spv R.s0).isLt; omega)
+  simp only [StackBelow, this]
+  omega
+
+/-- **The located reads are D2's.** -/
+theorem RL.readIn_ok {R : RL} (hR : R.Wf) {lr : Bool} {a : BitVec 64} (h : R.ReadIn lr a) :
+    R.ReadOk a := by
+  rcases h with h | ⟨o, ho, -, rfl⟩ | h
+  · exact .inr h
+  · exact .inl fun hG => RL.G_not_frame hR hG o ho rfl
+  · exact .inl fun hG => h (.inr hG)
+
+/-- **The located reads give D2.** -/
+theorem RL.ReadsIn.readsAt {R : RL} (hR : R.Wf) {u : Arm.ArmState} (h : R.ReadsIn u) :
+    R.ReadsAt u :=
+  fun j x t hj hpc hx env a ha p hp k hk => RL.readIn_ok hR (h j x t hj hpc hx env a ha p hp k hk)
+
+theorem RL.GoodXNR.goodXN {R : RL} {u : Arm.ArmState} (h : R.GoodXNR u) : R.GoodXN u := h.1
+
+theorem RL.GoodXNR.goodX {R : RL} {u : Arm.ArmState} (h : R.GoodXNR u) : R.GoodX u := h.1.1
+
+/-- A slot of the allocator's frame is a frame read. -/
+theorem RL.frameRd_slot {R : RL} (hR : R.Wf) {o : Nat} (ho : o < R.fr.size) :
+    R.FrameRd false (R.spB + BitVec.ofNat 64 o) := by
+  refine ⟨o, Nat.lt_of_lt_of_le ho (RL.size_le_drop hR), .inl ?_, rfl⟩
+  obtain ⟨⟨hfs, -⟩, hfr, -⟩ := lowerRFunc_ok hR.alloc
+  have hle : R.fr.size ≤ R.fr.total := compute_size_le_total R.vc R.rf
+  by_cases h0 : R.fr.total = 0
+  · simp only [RL.fr] at h0 hle ho; omega
+  · have hframe := hfr h0
+    simp only [frameDrop, hframe, ite_true, hfs]
+    simp only [RL.fr] at hle ho ⊢; omega
+
+/-! ## Builders -/
+
+/-- `ReadsIn` at an instruction line from the reads of its instruction. -/
+theorem RL.readsIn_of_line {R : RL} (hR : R.Wf) {u : Arm.ArmState} {j : Nat} {x : Insn}
+    {t : Option Clif.TrapCode} (hj : R.L[j]? = some (.ins x t)) (hpc : Arm.r .PC u = R.pcOf j)
+    (h : x.hooked = false → ∀ env a, x.toArmInst env = .ok a →
+      ∀ p ∈ E2E.ExecBytes.MemReads a u, ∀ k < p.2, R.ReadIn x.ldpFR (p.1 + BitVec.ofNat 64 k)) :
+    R.ReadsIn u := by
+  intro j' x' t' hj' hpc' hh
+  obtain rfl := RL.pcOf_inj hR hj hj' (hpc.symm.trans hpc')
+  rw [hj] at hj'
+  cases hj'
+  exact h hh
+
+/-- `ReadsIn` at a line whose instruction is no load. -/
+theorem RL.readsIn_noLoad {R : RL} (hR : R.Wf) {u : Arm.ArmState} {j : Nat} {x : Insn}
+    {t : Option Clif.TrapCode} (hj : R.L[j]? = some (.ins x t)) (hpc : Arm.r .PC u = R.pcOf j)
+    (hx : x.loads = false) : R.ReadsIn u :=
+  RL.readsIn_of_line hR hj hpc fun _ _ a ha p hp => by
+    rw [Insn.memReads_nil hx ha] at hp; cases hp
+
+/-- `ReadsIn` at a hooked line. -/
+theorem RL.readsIn_hooked {R : RL} (hR : R.Wf) {u : Arm.ArmState} {j : Nat} {x : Insn}
+    {t : Option Clif.TrapCode} (hj : R.L[j]? = some (.ins x t)) (hpc : Arm.r .PC u = R.pcOf j)
+    (hx : x.hooked = true) : R.ReadsIn u :=
+  RL.readsIn_of_line hR hj hpc fun h => by rw [hx] at h; cases h
+
+/-- `ReadsIn` where the pc is at no instruction line of the activation. -/
+theorem RL.readsIn_noLine {R : RL} {u : Arm.ArmState}
+    (h : ∀ j x t, R.L[j]? = some (.ins x t) → Arm.r .PC u ≠ R.pcOf j) : R.ReadsIn u :=
+  fun j x t hj hpc => absurd hpc (h j x t hj)
+
+/-- `ReadsIn` at a `GoodX` state whose line holds no load. -/
+theorem RL.readsIn_of_goodX {R : RL} (hR : R.Wf) {u : Arm.ArmState} (hg : R.GoodX u)
+    (h : ∀ x, R.AtLine u x → x.loads = false) : R.ReadsIn u := by
+  obtain ⟨x, ⟨j, t, hj, hpc⟩, -⟩ := hg.line
+  exact RL.readsIn_noLoad hR hj hpc (h x ⟨j, t, hj, hpc⟩)
+
+/-- **The located reads of a straight-line run** from the reads of its lines: the lines' reads
+satisfy `Pa`, which at every loading line `x` gives `ReadIn x.ldpFR`. -/
+theorem RL.readsIn_execLinesP {R : RL} (hR : R.Wf) {ls : List Line} {j : Nat} {s s' : Arm.ArmState}
+    (hat : ∀ k ln, ls[k]? = some ln → R.fa.lines.toList[j + k]? = some ln)
+    (hhook : ∀ i t, Line.ins i t ∈ ls → i.hooked = false)
+    (hprog : s.program = R.fb.program R.base) (hpc : Arm.r .PC s = R.pcOf j)
+    (herr : Arm.r .ERR s = .None) (hinter : InterOk (R.envOf j) ls s)
+    (hrun : execLines (R.envOf j) ls s = some s') {Pa : BitVec 64 → Prop}
+    (hrd : LinesReads (R.envOf j) ls s Pa)
+    (hP : ∀ x t, Line.ins x t ∈ ls → x.loads = true → ∀ a, Pa a → R.ReadIn x.ldpFR a) :
+    ∀ i < ls.length, R.ReadsIn (iterN R.step i s) := by
+  intro i hi
+  have hpcs := iterN_execLines_pc (X := R.X) (H := R.H) hR.layout hR.lm hR.fit ls j s s' hat hhook
+    hprog hpc herr hinter hrun
+  obtain ⟨ln, hln⟩ : ∃ ln, ls[i]? = some ln := ⟨ls[i], List.getElem?_eq_getElem hi⟩
+  have hmem := List.mem_of_getElem? hln
+  obtain ⟨x, t, rfl⟩ := execLines_ins hrun _ hmem
+  have hj : R.L[j + i]? = some (.ins x t) := hat i _ hln
+  have hpci : Arm.r .PC (iterN R.step i s) = R.pcOf (j + i) := hpcs i (by omega)
+  have hst : ∃ s1, execLines (R.envOf j) (ls.take i) s = some s1 ∧ iterN R.step i s = s1 := by
+    rcases Nat.eq_zero_or_pos i with rfl | hi0
+    · exact ⟨s, by simp [execLines], rfl⟩
+    · obtain ⟨s1, hs1⟩ := execLines_take i hrun
+      have hlen : (ls.take i).length = i := by simp; omega
+      have hit := iterN_execLines (X := R.X) (H := R.H) hR.layout hR.lm hR.fit (ls.take i) j s s1
+        (fun k ln hk => by
+          rw [List.getElem?_take] at hk
+          split at hk
+          · exact hat k ln hk
+          · cases hk)
+        (fun i' t' hm => hhook i' t' (List.mem_of_mem_take hm)) hprog hpc herr
+        (fun k hk0 hk s2 hs2 => hinter k hk0 (by omega) s2 (by
+          rwa [List.take_take, Nat.min_eq_left (by omega)] at hs2)) hs1
+      rw [hlen] at hit
+      exact ⟨s1, hs1, hit⟩
+  obtain ⟨s1, hs1, hit1⟩ := hst
+  refine RL.readsIn_of_line hR hj hpci fun _ env a ha p hp k hk => ?_
+  cases hl : x.loads
+  · rw [Insn.memReads_nil hl ha] at hp; cases hp
+  · rw [hit1] at hp
+    exact hP x t hmem hl _ (hrd i x t hln s1 hs1 env a ha p hp k hk)
+
+/-- `RL.readsIn_execLinesP` for reads `ReadIn false` (no line reads the saved LR word). -/
+theorem RL.readsIn_execLines {R : RL} (hR : R.Wf) {ls : List Line} {j : Nat} {s s' : Arm.ArmState}
+    (hat : ∀ k ln, ls[k]? = some ln → R.fa.lines.toList[j + k]? = some ln)
+    (hhook : ∀ i t, Line.ins i t ∈ ls → i.hooked = false)
+    (hprog : s.program = R.fb.program R.base) (hpc : Arm.r .PC s = R.pcOf j)
+    (herr : Arm.r .ERR s = .None) (hinter : InterOk (R.envOf j) ls s)
+    (hrun : execLines (R.envOf j) ls s = some s')
+    (hrd : LinesReads (R.envOf j) ls s (R.ReadIn false)) :
+    ∀ i < ls.length, R.ReadsIn (iterN R.step i s) :=
+  RL.readsIn_execLinesP hR hat hhook hprog hpc herr hinter hrun hrd fun x _ _ _ _ h => h.mono _
+
+/-- **The states of a straight-line run with their located reads** (`RL.goodXN_execLinesG`). -/
+theorem RL.goodXNR_execLinesG {R : RL} (hR : R.Wf) {ls : List Line} {j : Nat} {s s' : Arm.ArmState}
+    (hat : ∀ k ln, ls[k]? = some ln → R.fa.lines.toList[j + k]? = some ln)
+    (hhook : ∀ i t, Line.ins i t ∈ ls → i.hooked = false)
+    (htail : ∀ i t, Line.ins i t ∈ ls → i.tlsTail = false)
+    (hprog : s.program = R.fb.program R.base) (hpc : Arm.r .PC s = R.pcOf j)
+    (herr : Arm.r .ERR s = .None) (h0 : R.Good s) (hinter : InterOk (R.envOf j) ls s)
+    (hrun : execLines (R.envOf j) ls s = some s')
+    (hrd : LinesReads (R.envOf j) ls s (R.ReadIn false)) :
+    ∀ i < ls.length, R.GoodXNR (iterN R.step i s) := fun i hi =>
+  ⟨RL.goodXN_execLinesG hR hat hhook htail hprog hpc herr h0 hinter hrun
+      (hrd.mono fun _ h => RL.readIn_ok hR h) i hi,
+    RL.readsIn_execLines hR hat hhook hprog hpc herr hinter hrun hrd i hi⟩
+
+theorem RL.goodXNR_execLines {R : RL} (hR : R.Wf) {ls : List Line} {j : Nat} {s s' : Arm.ArmState}
+    (hat : ∀ k ln, ls[k]? = some ln → R.fa.lines.toList[j + k]? = some ln)
+    (hhook : ∀ i t, Line.ins i t ∈ ls → i.hooked = false)
+    (htail : ∀ i t, Line.ins i t ∈ ls → i.tlsTail = false)
+    (hprog : s.program = R.fb.program R.base) (hpc : Arm.r .PC s = R.pcOf j)
+    (herr : Arm.r .ERR s = .None) (hsp : spOf s = R.spB) (hinter : InterOk (R.envOf j) ls s)
+    (hrun : execLines (R.envOf j) ls s = some s')
+    (hrd : LinesReads (R.envOf j) ls s (R.ReadIn false)) :
+    ∀ i < ls.length, R.GoodXNR (iterN R.step i s) :=
+  RL.goodXNR_execLinesG hR hat hhook htail hprog hpc herr (.inr hsp) hinter hrun hrd
+
+/-- `RL.goodXNR_execLinesG` for reads `Pa` that are D2's and, at each loading line `x`,
+`ReadIn x.ldpFR` (the epilogue's `ldp` reads the saved LR word). -/
+theorem RL.goodXNR_execLinesGP {R : RL} (hR : R.Wf) {ls : List Line} {j : Nat}
+    {s s' : Arm.ArmState}
+    (hat : ∀ k ln, ls[k]? = some ln → R.fa.lines.toList[j + k]? = some ln)
+    (hhook : ∀ i t, Line.ins i t ∈ ls → i.hooked = false)
+    (htail : ∀ i t, Line.ins i t ∈ ls → i.tlsTail = false)
+    (hprog : s.program = R.fb.program R.base) (hpc : Arm.r .PC s = R.pcOf j)
+    (herr : Arm.r .ERR s = .None) (h0 : R.Good s) (hinter : InterOk (R.envOf j) ls s)
+    (hrun : execLines (R.envOf j) ls s = some s') {Pa : BitVec 64 → Prop}
+    (hok : ∀ a, Pa a → R.ReadOk a)
+    (hP : ∀ x t, Line.ins x t ∈ ls → x.loads = true → ∀ a, Pa a → R.ReadIn x.ldpFR a)
+    (hrd : LinesReads (R.envOf j) ls s Pa) :
+    ∀ i < ls.length, R.GoodXNR (iterN R.step i s) := fun i hi =>
+  ⟨RL.goodXN_execLinesG hR hat hhook htail hprog hpc herr h0 hinter hrun (hrd.mono hok) i hi,
+    RL.readsIn_execLinesP hR hat hhook hprog hpc herr hinter hrun hrd hP i hi⟩
+
+end Backend.Proof

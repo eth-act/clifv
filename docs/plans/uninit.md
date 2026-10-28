@@ -1115,6 +1115,44 @@ allocations by externs. So `ReadsAvoid Z (stepiEvs u₀)` needs a new per-state 
 CLIF-mapped at the state), proven next to `GoodX.reads` in each `realizes_*` case, plus the
 CLIF-side fact that a byte mapped at a state was mapped at entry or allocated in the run.
 
+**Step 3p, as built (UninitZ12b, branch `agent/uninit-z12b`): the located reads (item (ii), Arm
+side).**
+- `FV/E2E/RegLevelReadsIn.lean`: `Insn.ldpFR` (the epilogue's `ldp x29, x30, [sp], #16`),
+  `RL.FrameRd lr a` (`spB + o`, `o < frameDrop`, not the record's saved-LR word unless `lr`),
+  **`RL.ReadIn lr a`** (a jump-table byte, a `FrameRd` byte, or a byte outside `F`),
+  **`RL.ReadsIn u`** (the reads of the unhooked instruction `x` at the pc are `ReadIn x.ldpFR`:
+  only the epilogue's `ldp` reads the saved LR word), `RL.GoodXNR` (`GoodXN ∧ ReadsIn`),
+  `RL.readIn_ok`/`RL.ReadsIn.readsAt` (it refines D2), builders as for D2
+  (`readsIn_of_line/_noLoad/_hooked/_noLine`, `readsIn_execLinesP`, `goodXNR_execLines(G,GP)`);
+  `RegLevelGoodXNR.lean` (`goodXNR_ofIns`, `goodXNR_line`).
+- The `realizes_*N` cases with `GoodXNR`: `RegLevel{Move,Op,Next,Call,Try,JT,Atomic,Tls,Frame,
+  Goto,Trap}NR.lean` (copies of the `*N` files: moves read slots `frameRd_slot`, covered forms
+  outside `F` (`formOk_reads`), the jump table its words, atomics outside `F`, the epilogue's
+  `ldp` the record (`ReadIn true`); `realizes_callNR`/`realizes_tryCallNR` state
+  `GoodX ∧ ReadsIn`).
+- Up the counted chain: `realizes_allCR`, `regLevelCorrect_world_atCR`/`_worldCR`/`_worldPRR`
+  (`RegLevelCorrectCR/PRR.lean`), `realizes_allC_spR`, `regLevelCorrect_world_atCSR`/`_worldCSR`/
+  `_worldPRSR` (`RegLevelCorrectPRSR.lean`), **`backend_correct_worldPRIR`**
+  (`BackendWorldIR.lean`): the `*` theorems (same proofs) that also give `actReadsIn` (= `RL.ReadsIn`
+  of the activation) at every state of the run before the return. Existing statements unchanged.
+- Witnesses `RegLevelReadsInWitness.lean` (`worldPRSR_const`, `a2_worldPRIR`). Axioms standard.
+
+**Finding (item (ii), CLIF side; design for the next step).** For the lock-step the `¬ F`
+disjunct must become "a byte equal in both runs". `D` may contain world bytes outside `F`, so
+`¬ F` alone is not enough; the bytes the two runs agree on outside `F` are those CLIF holds
+(valid and initialised) at the matching CLIF state: both machine runs realise the *same* CLIF run
+from `cs` (`iselSim_relWI` applies to `w₀` and to `w₀'`, `RelW` to the same `cs.mem`), and a CLIF
+load of an uninitialised byte is stuck (`Mem.load`). Plan: (a) refine the third disjunct of
+`ReadIn` per segment to the bytes the realised VCode instruction's `csem` accesses at the
+segment's world (`AccessOk`, from `reads_of_accR`/`formOk_reads`, which already have them before
+weakening to `¬ F`); (b) from the counted simulation, every such access is a CLIF access of an
+initialised valid byte of the matching CLIF state, related to both worlds by `MemRel F`; (c) take
+the lock-step sets as the exact difference sets of the two runs (`Zs i a := (runX f i s).mem a ≠
+(runX f i s₀).mem a`, plus the record's LR bytes), so a write of equal values shrinks them;
+then `lockstep_runX` with `stEqOutX_line` per index gives the determinism clause of
+`LinkSys.thmPDER_det_of` (nested program calls through `ih : ThmPDER κ (M-1)`, base calls through
+`HookDetX`).
+
 ## 6. Heap (separate gap, SEM2)
 
 `BaseOk.baseKeepsAllocs`/`baseNoAlloc` require base externs to allocate nothing whenever a program
