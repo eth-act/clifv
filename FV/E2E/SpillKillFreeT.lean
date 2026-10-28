@@ -44,6 +44,14 @@ theorem spillKillFreeT {f : Clif.Function} {vc vcp : VCode} (hd : Dominated f)
   Spill.killFreeB_prepare (Spill.lowOk_ofT hd hs har htc hl)
     (Kill.killFreeB_lowerT Kill.killRunsHypT Kill.tryDefsExactT hd hs ha har htc hl) hp
 
+/-- **`killFreeB` on the float scope**: `spillKillFreeT` over `LowerScopeTF`. -/
+theorem spillKillFreeTF {f : Clif.Function} {vc vcp : VCode} (hd : Dominated f)
+    (hs : LowerScopeTF f) (ha : Spill.AbiSigsOk f) (har : Spill.ArityOk f)
+    (htc : Compile.tryArgClassOk f = true) (hl : lowerFunction f = .ok vc)
+    (hp : Backend.prepare vc = .ok vcp) : Spill.killFreeB vcp = true :=
+  Spill.killFreeB_prepare (Spill.lowOk_ofTF hd hs har htc hl)
+    (Kill.killFreeB_lowerTF Kill.killRunsHypTF Kill.tryDefsExactTF hd hs ha har htc hl) hp
+
 /-- `AbiSigsOk` from its decided conjuncts (`sigAbiOk`, `indSigsOk`). -/
 theorem abiSigsOk_of_checks {g : Clif.Function} (h1 : sigAbiOk g.sig = true)
     (h2 : g.externs.all (fun e => sigAbiOk e.2.sig) = true) (h3 : indSigsOk g = true) :

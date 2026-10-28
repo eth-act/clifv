@@ -1,6 +1,7 @@
 import FV.Backend.Proof.KillHypT
 import FV.Backend.Proof.KillDriver
 import FV.Backend.Proof.IselFlowT
+import FV.Backend.Proof.IselExclTF
 
 set_option Elab.async false
 
@@ -88,25 +89,25 @@ theorem stmt_killT {f : Clif.Function} {ctx : Ctx} (hctx : CtxInvT f ctx)
   · exact hp
   · exact absurd hq hres
 
-/-- **`KillRunsHyp` over the typed scope.** -/
-theorem killRunsHypT : KillRunsHypT := by
+/-- **`KillRunsHyp` over the float scope.** -/
+theorem killRunsHypTF : KillRunsHypTF := by
   intro f ctx ranges st0 _ hs _ hb
-  have hctx : CtxInvT f ctx := ctxInvT_of hs hb
-  have hsc : InstScopeT ctx := (ctxSpec_of hb).instScopeT hs.subsetT
-  have hx : f.externs.all (Compile.sigE ·.2.sig) = true := by
-    have h := hs.subsetT
-    simp only [Compile.functionET, Bool.and_eq_true] at h
-    exact h.1.1.1.2
+  have hctx : CtxInvT f ctx := ctxInvT_ofF hs hb
+  have hsc : InstScopeTF ctx := (ctxSpec_of hb).instScopeTF hs.subsetTF
+  have hx : CallsE f ctx := callsE_of_externs hs.externsE ctx
   have htr := (ctxFacts_of hb).tryRegs
   have hvr := valRegK_of_build hb
   have hd := dataK_of_build hb
   exact ⟨fun ii info inst s out s' tr hi hc hN h =>
       stmt_killT hctx htr hvr hd hi hc
-        (fun rl hrl hid => lower_nonroot_nomatchT hctx hsc hx hi hc hrl
+        (fun rl hrl hid => lower_nonroot_nomatchTF_calls hctx hsc hx hi hc hrl
           (by rcases hid with h | h <;> rw [h] <;> decide) {}) hN h,
     fun ti t data targets s out s' tr _ hph hty hdat hN h =>
       term_kill htr hvr hd hph hty hdat hN h,
     fun ti t et data sig items lo trs st1 targets out s' tr _ _ _ _ hdat he hlo htr h =>
       try_kill hvr hd hdat he hlo htr h⟩
+
+/-- **`KillRunsHyp` over the typed scope.** -/
+theorem killRunsHypT : KillRunsHypT := killRunsHypTF.toT
 
 end Backend.Proof.Kill

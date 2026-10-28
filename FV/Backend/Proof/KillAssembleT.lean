@@ -150,8 +150,8 @@ end Insts
 
 section Segs
 variable {f : Clif.Function} {ctx : Ctx} {ranges : Array (Nat × Nat)} {st0 : LState}
-  {bl : List BLow}
-  (hd : Dominated f) (hs : LowerScopeT f) (ha : AbiSigsOk f)
+  {bl : List BLow} {S : Clif.Function → Prop}
+  (hd : Dominated f) (hs : S f) (ha : AbiSigsOk f)
   (hb : buildCtx f = .ok (ctx, ranges, st0))
   (hlb : lowBlocks f (stmtCall ctx) (termCallF ctx) (tryCallF ctx) 0 f.blocks st0 f.blocks.length =
     some bl)
@@ -160,7 +160,7 @@ include hd hs ha hb hlb hlf
 
 /-- **A run segment's killed vregs and uses** (`seg_ok`, typed: the run facts are the typed
 ones; the statements' code is the same). -/
-theorem seg_okT (hK : KillRunsHypT) (hX : TryDefsExactT) {lo mid hi : Nat} {c : List MInst}
+theorem seg_okT (hK : KillRunsHypP S) (hX : TryDefsExactP S) {lo mid hi : Nat} {c : List MInst}
     (h : Seg f bl lo mid hi c) :
     ctx.valDef.size ≤ lo ∧ lo ≤ mid ∧ (∀ m ∈ c, ∀ k ∈ unstored m, lo ≤ k ∧ k < hi) ∧
       ∀ m ∈ c, ∀ u ∈ useVregs m,
@@ -272,13 +272,13 @@ end Segs
 
 section Assemble
 variable {f : Clif.Function} {ctx : Ctx} {ranges : Array (Nat × Nat)} {st0 : LState}
-  {bl : List BLow} {vc : VCode}
-  (hd : Dominated f) (hs : LowerScopeT f) (ha : AbiSigsOk f)
+  {bl : List BLow} {vc : VCode} {S : Clif.Function → Prop}
+  (hd : Dominated f) (hs : S f) (ha : AbiSigsOk f)
   (hb : buildCtx f = .ok (ctx, ranges, st0))
   (hlb : lowBlocks f (stmtCall ctx) (termCallF ctx) (tryCallF ctx) 0 f.blocks st0 f.blocks.length =
     some bl)
   (hlf : LoopFactsT f ctx bl) (hvb : vc.blocks = vcBlocksOfT f ctx bl)
-  (hK : KillRunsHypT) (hX : TryDefsExactT)
+  (hK : KillRunsHypP S) (hX : TryDefsExactP S)
 include hd hs ha hb hlb hlf hvb hK hX
 
 /-- **A killed vreg** is killed by an instruction of a run segment, inside the segment's range
@@ -430,13 +430,13 @@ end Assemble
 
 section Edges
 variable {f : Clif.Function} {ctx : Ctx} {ranges : Array (Nat × Nat)} {st0 : LState}
-  {bl : List BLow} {vc : VCode}
-  (hd : Dominated f) (hs : LowerScopeT f) (ha : AbiSigsOk f)
+  {bl : List BLow} {vc : VCode} {S : Clif.Function → Prop}
+  (hd : Dominated f) (hs : S f) (ha : AbiSigsOk f)
   (hb : buildCtx f = .ok (ctx, ranges, st0))
   (hlb : lowBlocks f (stmtCall ctx) (termCallF ctx) (tryCallF ctx) 0 f.blocks st0 f.blocks.length =
     some bl)
   (hlf : LoopFactsT f ctx bl) (hvb : vc.blocks = vcBlocksOfT f ctx bl)
-  (hK : KillRunsHypT) (hX : TryDefsExactT)
+  (hK : KillRunsHypP S) (hX : TryDefsExactP S)
   (H : LowT f vc ctx st0 bl (asmR f bl)) (hv : LowOk vc)
 include hd hs ha hb hlb hlf hvb hK hX H hv
 
@@ -690,6 +690,42 @@ theorem killFreeB_lowerT (hK : KillRunsHypT) (hX : TryDefsExactT) {f : Clif.Func
       exact ⟨⟨ranges, hb⟩, ⟨stE, nlE, hr⟩, by rw [hvb]; simp [vcBlocksOfT],
         ⟨_, asm_ren f bl'⟩, hlf, (lowBlocks_spec hlb).1⟩
   have hv := lowOk_ofT hd hs har htc hl
+  unfold killFreeB
+  simp only [Bool.and_eq_true]
+  refine ⟨?_, ?_⟩
+  · refine List.all_eq_true.mpr fun vb hvb' => List.all_eq_true.mpr fun i hi =>
+      List.all_eq_true.mpr fun u hu => ?_
+    have := uses_nkT hd hs ha hb hlb hlf hvb hK hX hvb' hi hu
+    simpa using this
+  · split
+    · rfl
+    · rename_i succs preds hc
+      refine List.all_eq_true.mpr fun b _ => ?_
+      split
+      · rfl
+      · rename_i vb hvbb
+        exact List.all_eq_true.mpr fun a ha' =>
+          args_okT hd hs ha hb hlb hlf hvb hK hX H hv hc hvbb ha'
+
+/-- **`lowerFunction`'s VCode passes `killFreeB`** on float-scope input (`killFreeB_lowerT` over
+`LowerScopeTF`, with the float-scope run facts `killRunsHypTF`, `tryDefsExactTF`). -/
+theorem killFreeB_lowerTF (hK : KillRunsHypTF) (hX : TryDefsExactTF) {f : Clif.Function}
+    {vc : VCode} (hd : Dominated f) (hs : LowerScopeTF f) (ha : AbiSigsOk f) (har : ArityOk f)
+    (htc : Compile.tryArgClassOk f = true)
+    (hl : lowerFunction f = .ok vc) : killFreeB vc = true := by
+  obtain ⟨ctx, ranges, st0, bl, hb, hlb, hvb, -, hlf⟩ := lowerFunction_runT hs.externsE hl
+  have H : LowT f vc ctx st0 bl (asmR f bl) := by
+    have hlb' := hlb
+    rw [lowBlocks_eq] at hlb'
+    cases hr : lowB f (stmtCall ctx) (termCallF ctx) (tryCallF ctx) 0 f.blocks st0 f.blocks.length with
+    | none => rw [hr] at hlb'; cases hlb'
+    | some r =>
+      rw [hr] at hlb'
+      obtain ⟨bl', stE, nlE⟩ := r
+      cases hlb'
+      exact ⟨⟨ranges, hb⟩, ⟨stE, nlE, hr⟩, by rw [hvb]; simp [vcBlocksOfT],
+        ⟨_, asm_ren f bl'⟩, hlf, (lowBlocks_spec hlb).1⟩
+  have hv := lowOk_ofTF hd hs har htc hl
   unfold killFreeB
   simp only [Bool.and_eq_true]
   refine ⟨?_, ?_⟩
