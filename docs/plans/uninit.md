@@ -607,6 +607,34 @@ single-step half of the lock-step: `ReadsAvoid Z evs`, `stEqOut_exec_inst` (from
    holds by `ProphRegOk` (masked registers but the argument registers: `R n`; argument registers:
    `CallerOk.regs`; `x30` is set by `enterAt`) and `OnCallP` (region bytes `P n` on both).
 
+**Steps 2q–2s, as built (the linking items on `ThmPDE`).**
+- `FV/E2E/LinkArmProgCallP.lean`: `progCallP` (`progCall` with `ih : ThmPDE κ (M - 1)`; the
+  callee outcome is `ThmPDE`'s for `P' := prophOf` of the canonical callee run; its two caller
+  families additionally assume agreement with `canon h uses w` on the masked registers but
+  `x30`/pc and on the callee's frame and region `StackBelow (frameDrop h + κ (M-1) h) (spv w)`;
+  under `NeedNI` the determinism clause from the canonical `MachEntryP` entry, without `NeedNI`
+  the prophecy-free clause), `canon_agree` (the canonical state is in the families),
+  `progOsCoreP`. Witness `progCallP_Lu`.
+- `FV/E2E/RegLevelCorrectPR.lean`: `ProphRegOkM`, `OnCallPR` (`OnCallP` + the masked registers
+  of `R n` at a call state with `sp = c`), `onCallPR_of`, `regLevelCorrect_worldPR`. Witness
+  `onCallPR_u0`.
+- `FV/E2E/LinkArmProgOsP.lean`: `setReg_self`, `placeArgs_self`, `canon_self_r`;
+  `progOsCoreXPR` (`progOsCoreP` at `worldPR … (P n) (R n) w` from a call state with the masked
+  registers of `R n` and `P n` in the `κ M g` bytes below its `sp`: the arguments `canon` places
+  are the state's own, so `canon` keeps every register but the pc); `progOsP`, `progOsRegP`,
+  `calleeOkP` (the call contract of `XPR … n` as `CallSoundCtlGP Q`/`CalleeOkGP Q` for every `Q`
+  that gives those two facts at call states), `XPR_base`/`_none`/`_ind`/`_ext`. Witnesses
+  `progOsP_Lu`, `calleeOkP_Lu`.
+
+**Next (in order).** (a) `calleeTryOkP` (as `calleeOk`→`calleeOkP`). (b) The `sp` at call
+states: `OnCallPR` gives its facts only at call states with `sp = c` (the body `sp`), while
+`CallSoundCtlGP Q` hands the contract any `Q`-state; `thmP_of` needs `Q := OnCallPR … n ∧ spOf =
+R.spB`. The run's call states are segment starts where `StRel.sp : spOf s = R.spB` holds, so a
+variant of `realizes_allC`/`regLevelCorrect_worldPR` passing `spOf u = R.spB` into the contract's
+state predicate closes it (no new machine fact). (c) `progResultP`, `xniP`, `thmP_of`
+(`ThmPDE κ (M-1) → ThmP κ M` on `XPRI` with `R := prophStOf`), then `ThmPDE`'s determinism clause
+by the lock-step (§5.8 (1), (2): register footprint for `x30`, `RetAgree` across nested calls).
+
 ## 6. Heap (separate gap, SEM2)
 
 `BaseOk.baseKeepsAllocs`/`baseNoAlloc` require base externs to allocate nothing whenever a program
