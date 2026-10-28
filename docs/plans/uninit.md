@@ -925,9 +925,10 @@ of the counted run with counter `n`, or is the pending `jump` of a matched `try_
 `sim_prefix_call` (calling states are matched), **`iselSim_prefixWI`** (`Compiled` path, the
 premises of `iselSim_relWI`: a calling CLIF state with count `n` has its memory `RelW`-related to
 a world the counted VCode run from the entry reaches with counter `n`). Witness
-`FV/E2E/IselSimIPrefixWitness.lean` (`a2_prefixWI`). Next: the `CompiledCleanup`/`CompiledEither`
-variants (the `valueSem` family, `iselSim_relWI_cleanup`'s set-up), then the VCode → Arm prefix
-(contracts `hC j` for `j < n` only, concluding the `OnCall … n` machine state).
+`FV/E2E/IselSimIPrefixWitness.lean` (`a2_prefixWI`). Cleanup path:
+`FV/E2E/IselSimIPrefixCleanup.lean`: **`iselSim_prefixWI_cleanup`** (`valueSemI`); witness
+`DeadCleanupWitness.prefix_cleanup_applies`. Next: the VCode → Arm prefix (contracts `hC j` for
+`j < n` only, concluding the `OnCall … n` machine state), then the GOT/prune steps.
 
 
 **Step 3h, as built (UninitZ10b): the call-count premises are theorems.** `InstCallsOne f` and
