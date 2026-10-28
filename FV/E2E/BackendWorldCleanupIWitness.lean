@@ -1,4 +1,4 @@
-import FV.E2E.BackendWorldCleanupI
+import FV.E2E.CompiledEitherI
 import FV.E2E.DeadCleanupWitness
 
 /-!
@@ -42,7 +42,8 @@ theorem source_xcalls (env' : Clif.Env) (MR : MemRelT) (XI : ExtSemI) (n : Nat) 
   exact xCallsIndOk_nil _ _ _
 
 /-- **`backend_correct_world_cleanupPRI` applies** to the closed cleanup compilation of
-`source` (the entry premises remain). -/
+`source` (the entry premises remain), here through `backend_correct_world_pipelinePRI` with the
+artifact `CompiledEither.cleanup`. -/
 theorem cleanupPRI_applies :
     ∃ vc vcp af fa fb, CompiledCleanup source 0 vc vcp (spillAlloc vcp) af fa fb ∧
       ∀ (env : Clif.Env) (XI : ExtSemI) (K : Nat) (F : BitVec 64 → Prop) (c : BitVec 64)
@@ -70,7 +71,7 @@ theorem cleanupPRI_applies :
             ∃ n, TrapAt fb base c' (runX (ArmStepX (XI.at 0) H fa) n s)) := by
   obtain ⟨hsub, vc, vcp, af, fa, fb, hc, hcov, -⟩ := compiled_covered_exists
   refine ⟨vc, vcp, af, fa, fb, hc, fun env XI K F c w₀ args cs hce hrel hargs htr fuel => ?_⟩
-  exact backend_correct_world_cleanupPRI hsub hc source_callsOne.1 source_callsOne.2
+  exact backend_correct_world_pipelinePRI hsub (.cleanup hc) source_callsOne.1 source_callsOne.2
     (hcov _) (fun _ n _ => source_xcalls _ _ _ n) (fun n b h => by cases h) rfl hce hrel
     hargs htr fuel
 
