@@ -869,6 +869,57 @@ invokedRetOk_sCall, hX_sCall}` (a state at `call fn0()` to a returning extern),
 `DeadCleanupWitness.{prb_applies, prb_pipeline_applies}`. So `XPRBI := (L.XPRI …).guardI
 (CallPostN …)`; stage 2 needs `guard_of` at the machine's call states.
 
+**Item (d) statement layer, as built (UninitZ12): `FV/E2E/LinkArmTableB.lean`.** The linked
+machine runs a program callee atomically (`pcall` = `linkedCall` of `mach (M - 1) h`), so the
+machine side of the byte table is recursive in the depth. Table entry `k` is the memory at the
+entry state of the `k`-th placed activation with slots (= the memory at the call, the body-entry
+world has the entry memory, `BodyEntry.mem`), restricted to its slot bytes.
+- `CallsTo g t h` (the step at `t` calls `h` of `P`: `bl n`, or `blr` to `h`'s address, as
+  `callHook`), `SlotByte h c a` (the slot addresses `initState_memB` gives), `RetAt g s t`;
+- **`TabUpTo M g s b k N e`**: the first `N` steps of `mach M g` from `s` enter the placed
+  activations with slots `k + 1, …, k + e` of `b`; per call `j` (`callsBefore`) a count `E j`:
+  `0` at a call outside `P`, else `slotted h` (its slot bytes `= b (k + Σ_{<j} E + 1)`, the memory
+  at the call) plus the callee run's own `TabUpTo (M - 1)` up to its first `RetOf`; depth `0`:
+  no program call, `e = 0`;
+- **`TableOf M g s ini`**: every prefix before `RetAt` has a `TabUpTo … ini.bytes ini.next`;
+- **`WorldEntryB`** (`WorldEntry` with `NeedSlots → PlaceAtB cs.mem (spv w₀) ini`),
+  `WorldEntryB.toWorldEntry` (without `NeedSlots`);
+- **`ThmPRB κ M`**: for `g`, a `WorldEntryB … ini`, a machine entry `s` with
+  `MachEntryPR … (prophOf s) (prophStOf s)` and `TableOf M g s ini`, a returning CLIF run under
+  `envR M g` gives `us outs wf n e` with `ThmPR`'s facts, `ActRet`/`PostTrace` at `n`,
+  `TabUpTo M g s ini.bytes ini.next n e` and `NeedSlots → NextAdv cs.mem cm' e` (the machine's
+  count is the CLIF counter's advance: what the caller needs for its later calls);
+- **`XPRBI κ M g F P R env cs c`** `:= (L.XPRI …).guardI (CallPostN env L.P.bare cs …)`,
+  `XPRBI_of` (stage-2 interface: `guard_of`), `tabUpTo_zero`, `tabUpTo_mono`, `tableOf_of_retAt`.
+Witnesses `FV/E2E/LinkArmTableBWitness.lean` (on `Lu`). The determinism clause is not part of
+`ThmPRB`: `thmPRB_of` takes it as a stated premise (UninitZ10b's `thmPDER_det_of` interface, with
+`TabUpTo` transferred between agreeing entries) until it lands.
+
+**Finding (UninitZ12, 2026-10-28): stage 2 needs the CLIF/machine call correspondence of the
+earlier calls.** At the machine's call `n` (`OnCallPR … n`), `guard_of` needs `XPR n`'s result
+accepted by `CallPostN n`: for the CLIF invocation `(m_n, vals_n)` of count `n` related to the
+call's world, the callee's CLIF run (`ThmPRB (M - 1)`, `WorldEntryB` with `m_n`'s oracle) must
+read the table entries the machine callee entered. `m_n`'s counter is `ini.next + Σ_{j<n}
+adv_j` (`counter_at`, CLIF advances), the machine's is `ini.next + Σ_{j<n} E j` (`TabUpTo`).
+They agree when every earlier CLIF invocation `j` is the one the machine's call `j` simulates
+(then `ThmPRB (M - 1)`'s `NextAdv` conclusion gives `adv_j = E j`), but that correspondence is
+known only inside the simulation (`sim_runG` + the register level); the contracts `hC n` of
+`ActEntryPR` are demanded for all `n` up front, and stage 2 sees only the Arm/VCode side. An
+index-dependent memory relation (counter `= C n`) cannot be threaded through the rule-level
+contracts (§5.9 first Finding).
+**Decision (next, conservative: new files, no existing statement changed): a prefix form of the
+counted pipeline.** `backend_correct_world_*PRB_upTo`: from the CLIF entry and an `ActEntryPR`
+whose callee contracts are given only for the indices `j < n`, every CLIF state with count `n`
+reached from `cs` is matched by a machine state on the run with `callsBefore = n` (an `OnCall …
+n` state at a call, `SameWorld F` with a VCode world `RelW`-related to the CLIF memory, the
+arguments `ArgsAt`). `thmPRB_of` then proves `hC n` by strong induction on `n`: the prefix
+theorem at `n` gives the correspondence of every invocation `j ≤ n`, `ThmPRB (M - 1)` at each
+`j < n` gives `adv_j = E j`, so the counters agree at `n`, `TableOf` of the actual callee comes
+from the caller's `TabUpTo` prefix, the determinism premise transfers it to the canonical callee
+(`progCallPR`), and `ThmPRB (M - 1)` gives `CallPost` for `XPR n`'s result. Ingredients: the run
+inductions `sim_runG` (CLIF → counted VCode) and `realizes_allC`/`countedRun` (VCode → Arm) are
+already sequential, so the prefix forms are copies stopping at the first count-`n` state.
+
 
 **Step 3h, as built (UninitZ10b): the call-count premises are theorems.** `InstCallsOne f` and
 `TryCallsOne f` hold for every `f` (`E2E.instCallsOne_all`, `E2E.tryCallsOne_all`,
