@@ -1,5 +1,7 @@
 import FV.E2E.IselSimIPrefix
 import FV.E2E.IselSimIWitness
+import FV.E2E.IselSimIPrefixCleanup
+import FV.E2E.BackendWorldCleanupIWitness
 
 /-!
 # Witness for the counted prefix simulation (`FV/E2E/IselSimIPrefix.lean`)
@@ -28,3 +30,30 @@ theorem a2_prefixWI {F : BitVec 64 → Prop} {c : BitVec 64} {args : List Clif.V
     (fun _ n _ => a2_xcalls _ _ _ n) (fun n b h => by cases h) rfl ρ₀ hce hrel hargs htr
 
 end E2E.LinkWitness
+
+
+namespace E2E.DeadCleanupWitness
+
+open Backend Backend.Proof Backend.Proof.Driver Backend.DeadCleanup
+
+/-- **`iselSim_prefixWI_cleanup` applies** to the closed cleanup compilation of `source`. -/
+theorem prefix_cleanup_applies :
+    ∃ vc vcp af fa fb, CompiledCleanup source 0 vc vcp (spillAlloc vcp) af fa fb ∧
+      ∀ (env : Clif.Env) (XI : ExtSemI) (F : BitVec 64 → Prop) (c : BitVec 64)
+        (w₀ : Arm.ArmState) (ρ₀ : Nat → CV) (args : List Clif.Val) (cs : Clif.State),
+        ClifEntry source args cs →
+        RelW ⟨F, fun _ => none, af.slotBase, (RAFrame.compute vcp (spillAlloc vcp)).intBase⟩
+          source c cs.frame.slots cs.mem w₀ →
+        ArgsAtEntry F source.sig args w₀ →
+        TrapsExplicit env ({ funcs := [] } : Clif.Program) cs →
+        ∀ t n, ReachN env { funcs := [] } cs t n → callNum t = 1 →
+          ∃ b k ρ w, Star (VStep vc (valueSemI F ⟨fa.k, af.slotBase⟩ XI))
+            (.run ⟨0, 0, ρ₀, (w₀, 0)⟩) (.run ⟨b, k, ρ, (w, n)⟩) ∧
+            RelW ⟨F, fun _ => none, af.slotBase, (RAFrame.compute vcp (spillAlloc vcp)).intBase⟩
+              source c t.frame.slots t.mem w := by
+  obtain ⟨hsub, vc, vcp, af, fa, fb, hc, -, -⟩ := compiled_covered_exists
+  exact ⟨vc, vcp, af, fa, fb, hc, fun env XI F c w₀ ρ₀ args cs hce hrel hargs htr =>
+    iselSim_prefixWI_cleanup hsub hc source_callsOne.1 source_callsOne.2
+      (fun _ n _ => source_xcalls _ _ _ n) (fun n b h => by cases h) rfl ρ₀ hce hrel hargs htr⟩
+
+end E2E.DeadCleanupWitness
