@@ -74,7 +74,7 @@ theorem driverHyp_relW_cleanup {p : Clif.Program} {f : Clif.Function} {k : Nat} 
     tryIndSig := tryIndSig_of_subset hsub
     cfg := by
       obtain ⟨ss, ps, he⟩ := cfg_of_prepare hc.prepare
-      exact ⟨ss, ps, (prune_cfg vc).symm.trans he⟩ }
+      exact ⟨ss, ps, (cleanupStage_cfg f vc).symm.trans he⟩ }
 
 /-- **CLIF → counted VCode on the cleanup path** (`iselSim_relW_cleanup` for the counted run
 `valueSemI F ctx XI` from counter `0`), with the callee contract of call number `n` needed only at

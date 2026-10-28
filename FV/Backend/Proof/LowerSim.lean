@@ -2212,7 +2212,7 @@ the same CLIF entry, with the same register arguments (in the parameter register
 stack-argument bytes (`x29` the same), the entry code (`Args`, then the loads) reaches the first
 statement in both with the same vreg file; each world agrees with its entry world outside the
 allocatable registers (`SameWorld F`). -/
-theorem entry_step2P (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p) (hds : DriverSem sem)
+theorem entry_step2Z (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p) (hds : DriverSem sem)
     {F : BitVec 64 → Prop} {sb : Nat} {syms : String → Option Nat}
     (hMem : MemRefines F sb syms sem) (hMR : MRStable F MR)
     {cs : Clif.State} {B0 : Clif.Block} (hB0 : f.blocks[0]? = some B0)
@@ -2474,7 +2474,7 @@ theorem entry_step2P (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p) (hds : 
     ⟨hcall, hfunc, hslots, hmr₂', B0, 0, hB0, hterm, Nat.zero_le _, by simp [hbody],
       by simp [pos, hpre]; omega, hheld, hdfg⟩, hsw2'⟩
 
-/-- **Entry on two worlds** (`entry_step2P` as plain runs). -/
+/-- **Entry on two worlds** (`entry_step2Z` as plain runs). -/
 theorem entry_step2 (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p) (hds : DriverSem sem)
     {F : BitVec 64 → Prop} {sb : Nat} {syms : String → Option Nat}
     (hMem : MemRefines F sb syms sem) (hMR : MRStable F MR)
@@ -2495,7 +2495,7 @@ theorem entry_step2 (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p) (hds : D
       Match f ctx R gn bl A MR slots cs ⟨0, k, ρ₁, w₁⟩ ∧ SameWorld F w₁ w₀ ∧
       Star (VStep vc sem) (.run ⟨0, 0, ρ₀, w₀'⟩) (.run ⟨0, k, ρ₁, w₁'⟩) ∧
       Match f ctx R gn bl A MR slots cs ⟨0, k, ρ₁, w₁'⟩ ∧ SameWorld F w₁' w₀' :=
-  let ⟨k, ρ₁, w₁, w₁', h1, h2, h3, h4, h5, h6⟩ := entry_step2P H hds hMem hMR hB0 hcall hfunc
+  let ⟨k, ρ₁, w₁, w₁', h1, h2, h3, h4, h5, h6⟩ := entry_step2Z H hds hMem hMR hB0 hcall hfunc
     hslots hbody hterm hregs hty hsig (ρ₀ := ρ₀) hmr hmr' hargs hreg h29 hstk
   ⟨k, ρ₁, w₁, w₁', h1.star, h2, h3, h4.star, h5, h6⟩
 

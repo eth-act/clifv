@@ -200,7 +200,7 @@ theorem vcode_niU_core_of {vcK : VCode} {drop : Nat → Nat → Bool}
   have hB0 : f.blocks[0]? = some B0 := by
     simpa [Clif.Function.entry?, List.head?_eq_getElem?] using hent
   have h29 : Arm.r (.GPR 29#5) w₀' = Arm.r (.GPR 29#5) w₀ := (hsw.1 _ (by simp [Masked])).symm
-  obtain ⟨kk, ρ₁, w₁, w₁', hs1, hm1, hsw1, hs2, hm2, hsw2⟩ := entry_step2P H hds hmem
+  obtain ⟨kk, ρ₁, w₁, w₁', hs1, hm1, hsw1, hs2, hm2, hsw2⟩ := entry_step2Z H hds hmem
     (mrStable_relW Γ f c) hB0 hce.callers hce.func rfl hbody hterm hregs hty.symm hce.sig
     (ρ₀ := ρ₀) hrel hrel' hargs hreg h29 hstk
   have hFD : ∀ a, F a → F a ∨ D a := fun a h => .inl h
