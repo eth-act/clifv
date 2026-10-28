@@ -626,14 +626,27 @@ single-step half of the lock-step: `ReadsAvoid Z evs`, `stEqOut_exec_inst` (from
   that gives those two facts at call states), `XPR_base`/`_none`/`_ind`/`_ext`. Witnesses
   `progOsP_Lu`, `calleeOkP_Lu`.
 
-**Next (in order).** (a) `calleeTryOkP` (as `calleeOk`→`calleeOkP`). (b) The `sp` at call
-states: `OnCallPR` gives its facts only at call states with `sp = c` (the body `sp`), while
-`CallSoundCtlGP Q` hands the contract any `Q`-state; `thmP_of` needs `Q := OnCallPR … n ∧ spOf =
-R.spB`. The run's call states are segment starts where `StRel.sp : spOf s = R.spB` holds, so a
-variant of `realizes_allC`/`regLevelCorrect_worldPR` passing `spOf u = R.spB` into the contract's
-state predicate closes it (no new machine fact). (c) `progResultP`, `xniP`, `thmP_of`
-(`ThmPDE κ (M-1) → ThmP κ M` on `XPRI` with `R := prophStOf`), then `ThmPDE`'s determinism clause
-by the lock-step (§5.8 (1), (2): register footprint for `x30`, `RetAgree` across nested calls).
+**Steps 2t, 2u, as built.** (a) `FV/E2E/RegLevelTryP.lean`: `calleeTryP_at`,
+`calleeTryOkGP_of_call` (the `try_call` helpers at restricted states); `calleeTryOkP` in
+`LinkArmProgOsP.lean` (witness `calleeTryOkP_Lu`). (b) `FV/E2E/RegLevelCorrectPRS.lean`:
+`realizes_allC_sp` (the call states the composition hands the contract are segment starts, where
+`StRel.sp : spOf s = R.spB`), `regLevelCorrect_world_atCS`/`_worldCS`/`_worldPRS` (contracts at
+`OnCall(PR) … n u ∧ spOf u = spv s - frameDrop af`; same proofs). Witness `worldPRS_const`.
+
+**(4) Open design point for `thmP_of` (found 2026-10-28, not yet decided in code).** `ThmP`/`ThmPDE`
+choose the outcome per byte prophecy `P` only (`MachEntryP`). With the register prophecy the
+activation's VCode run uses `XPRI … P R`, whose callee results depend on `R` (the callee runs from
+`worldPR … (R n)`), so the outcome is a function of `(P, R)` and `R := prophStOf` of the machine
+run depends on the activation `s`. Conservative plan: new `ThmPR`/`ThmPDER` quantifying `∀ P R`
+with `MachEntryPR` (`MachEntryP` + `ProphRegOkM (spv w₀) … s R`) and the determinism clause
+transferring both (`EntryAgree` already fixes the masked registers, so `prophStOf` of the
+canonical run is one of the actual run's by the same lock-step); `progCallP` then picks
+`(P', R') := (prophOf, prophStOf)` of the canonical callee run. `ThmPR → ThmP` does not follow
+(different activations with one `P` have different `R`); the CLIF side (#665) needs only the
+outcome per actual run, so `thmP_of` becomes `thmPR_of : ThmPDER κ (M-1) → ThmPR κ M`, and the
+top-level statement instantiates `(P, R)` with the actual run's prophecies. Remaining after that:
+`progResultP`, `xniP`, `thmPR_of` (`regLevelCorrect_worldPRS` with `calleeOkP`/`calleeTryOkP` at
+`Q := OnCallPR … ∧ sp`), then `ThmPDER`'s determinism clause by the lock-step (§5.8 (1), (2)).
 
 ## 6. Heap (separate gap, SEM2)
 
