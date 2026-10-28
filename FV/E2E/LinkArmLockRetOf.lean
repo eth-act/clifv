@@ -25,7 +25,9 @@ New premises (decidable checks on the compiled code): `FnAsm.x30Free` (as `backe
 #704), under `NeedNI`; `HooksKeep` (as `InitOkR`).
 
 * `VCode.retsLow`, `retsLow_sound`, `regVal_eq_of_ne30`, `EntryAgree.symm_of_sp`,
-  `armRet_of_retAgreeX`, `BaseNIX`, `OkDNX.baseNIX'`, `callLock_zero`, `zc_sub_F`;
+  `armRet_of_retAgreeX`, `BaseNIX`, `OkDNX.baseNIX'`, `MachEntry.ofWithCrun`, `BaseNIX.withCrun`,
+  `BaseNIX.std`, `OkDNX.stdBaseNIX` (`L.std.BaseNIX` for `InitOkRU.of_checks`), `callLock_zero`,
+  `zc_sub_F`;
 * **`lockRet_of`**.
 -/
 
@@ -98,6 +100,27 @@ def BaseNIX : Prop :=
     L.MachEntry κ M g F G ra s w₀ → HookNIX L.Hb L.BaseDest F
 
 theorem _root_.E2E.LinkSys.OkDNX.baseNIX' {L : LinkSys} (h : L.OkDNX) : L.BaseNIX := h.baseNIX
+
+/-- **A machine entry of `L` with other callee runs is one of `L`** (`MachEntry` does not mention
+the callee runs). -/
+theorem MachEntry.ofWithCrun {c : Nat → Clif.State → Clif.Outcome} {M : Nat} {g : Clif.Function}
+    {F G : BitVec 64 → Prop} {ra : BitVec 64} {s w₀ : Arm.ArmState}
+    (h : (L.withCrun c).MachEntry κ M g F G ra s w₀) : L.MachEntry κ M g F G ra s w₀ :=
+  { abi := h.abi, stack := h.stack, gfree := h.gfree, hF := h.hF, imgG := h.imgG,
+    imgS := h.imgS, body := h.body }
+
+/-- **`BaseNIX` does not depend on the callee runs.** -/
+theorem BaseNIX.withCrun {L : LinkSys} (h : L.BaseNIX) (c : Nat → Clif.State → Clif.Outcome) :
+    (L.withCrun c).BaseNIX :=
+  fun hN κ M g F G ra s w₀ hME => h hN κ M g F G ra s w₀ (MachEntry.ofWithCrun L hME)
+
+/-- **`BaseNIX` of the default callee runs** (`L.std`, the system the determinism induction runs
+over in `InitOkRU.of_checks`) from `L`'s. -/
+theorem BaseNIX.std {L : LinkSys} (h : L.BaseNIX) : L.std.BaseNIX := h.withCrun _
+
+/-- **`BaseNIX` of the default callee runs from the trusted `OkDNX`.** -/
+theorem _root_.E2E.LinkSys.OkDNX.stdBaseNIX {L : LinkSys} (h : L.OkDNX) : L.std.BaseNIX :=
+  h.baseNIX'.std
 
 /-- **`CallLock` at depth `0`**: no callee run returns at depth `0`. -/
 theorem callLock_zero [hR : L.CrunOk] : L.CallLock κ 0 :=
