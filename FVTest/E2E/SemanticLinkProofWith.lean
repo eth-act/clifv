@@ -150,11 +150,14 @@ theorem link_ok (B : BaseEnv) (F : BitVec 64 → Prop) (hB : BaseOk (ofRes input
     (hF : ∀ a, (ofRes input actualResults B F).Img a → F a) : (ofRes input actualResults B F).OkSemanticNI :=
   SemanticStackBound.okB_sound (I := compilerInput) okB_input hB hF
 
-{if noTls then closedText else ""}-- Keep the closed check behind a definition during native certificate elaboration.
+{if noTls then closedText else ""}/-- The entries (`--entries`, default: every function). -/
+def entryNames : List String :=
+  [{", ".intercalate (entries.map leanStr)}]
+
+-- Keep the closed check behind a definition during native certificate elaboration.
 -- This avoids re-evaluating large compilation results in type equality checking.
 private def entriesPresentB : Bool :=
-  [{", ".intercalate (entries.map leanStr)}].all
-    (fun n => ((progOf actualResults).func? n).isSome)
+  entryNames.all (fun n => ((progOf actualResults).func? n).isSome)
 
 section
 attribute [local irreducible] entriesPresentB
@@ -163,9 +166,8 @@ end
 
 /-- The entries are functions of the program. -/
 theorem entries_present :
-    [{", ".intercalate (entries.map leanStr)}].all
-      (fun n => ((progOf actualResults).func? n).isSome) = true := by
-  simpa only [entriesPresentB] using entriesPresentB_true
+    entryNames.all (fun n => ((progOf actualResults).func? n).isSome) = true :=
+  entriesPresentB_true
 
 "
   let parts := ["exHdr"] ++ sl.map (s!"ex{·}") ++ ["exData", "exSyms"]

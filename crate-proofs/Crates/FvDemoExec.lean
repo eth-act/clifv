@@ -1,5 +1,5 @@
 import Crates.FvDemo
-import FV.E2E.ExecProven
+import FV.E2E.SemanticExecProven
 
 /-! # `fv-demo`: the theorem about the executable's own words
 
@@ -22,30 +22,30 @@ machine, by `native_decide` on the same input and excerpts:
 
 namespace Crates.FvDemo
 
-open E2E E2E.LinkCheck E2E.Binary E2E.BinCheck E2E.ExecBytes
+open E2E E2E.LinkCheck E2E.SemanticBinary E2E.BinCheck E2E.SemanticExecBytes
 
 /-- The code map check of the executable's program (`codeMapB`). -/
-theorem codeMap_ok : codeMapB input (tabOf input.results) = true := by native_decide
+theorem codeMap_ok : codeMapB input (tabOf actualResults) = true := by native_decide
 
 /-- The GOT check of the executable's program on the proof's excerpts (`gotB`). -/
-theorem gotB_ok : gotB input exAll = true := by native_decide
+theorem gotB_ok : gotB compilerInput exAll = true := by native_decide
 
 /-- **`binary_correct_exec_proven` for `fv-demo`**: for every file agreeing with the excerpts,
 under the base environment's premises (`BaseOk`, `HooksSim`) and those of the outside call, the
 executable machine run from `r` refines the whole-program CLIF run of an entry whose calls reach no
 call cycle. -/
 theorem binary_correct_exec (file : ByteArray) (hfile : Elf.Agrees file exAll) (B : BaseEnv)
-    (hB : BaseOk (sys input B)) (hH : HooksSim input B) {n : String} {f : Clif.Function}
-    (hf : (prog input).func? n = some f)
-    (hc : ¬ StackBound.CycleFrom (StackBound.Calls input input.results) f) (M : Nat)
+    (hB : BaseOk (sys compilerInput B)) (hH : HooksSim compilerInput B) {n : String} {f : Clif.Function}
+    (hf : (prog compilerInput).func? n = some f)
+    (hc : ¬ SemanticStackBound.CycleFrom (SemanticStackBound.Calls compilerInput compilerInput.results) f) (M : Nat)
     {r : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State} (hX : (imageOf file).Intact r)
-    (ho : OutsideCall input (BinCheck.roByte input dataObjs) f (StackBound.stackFn input f) r args
+    (ho : OutsideCall compilerInput (BinCheck.roByte compilerInput dataObjs) f (SemanticStackBound.stackFn compilerInput f) r args
       cs.mem)
-    (hav : OutsideAvoids (GotSlot input file) f (StackBound.stackFn input f) r args cs.mem)
-    (hr : ClifRun input B f r args cs)
-    (htr : TrapsExplicit (Clif.linkEnvN (prog input) B.env M) (prog input).bare cs) :
-    ExecRefines (art input f).fb (art input f).base (xreg 30 r) (step input B file) r
-      (RelocAt input) (Clif.runLoop B.env (prog input) (M + 1) cs) :=
+    (hav : OutsideAvoids (GotSlot compilerInput file) f (SemanticStackBound.stackFn compilerInput f) r args cs.mem)
+    (hr : ClifRun compilerInput B f r args cs)
+    (htr : TrapsExplicit (Clif.linkEnvN (prog compilerInput) B.env M) (prog compilerInput).bare cs) :
+    ExecRefines (art compilerInput f).fb (art compilerInput f).base (xreg 30 r) (step compilerInput B file) r
+      (BinCheck.RelocAtWithResults compilerInput actualResults) (Clif.runLoop B.env (prog compilerInput) (M + 1) cs) :=
   binary_correct_exec_proven okB_input codeMap_ok (bin_ok file hfile) (gotB_sound gotB_ok hfile) B
     hB hH hf hc M hX ho hav hr htr
 
