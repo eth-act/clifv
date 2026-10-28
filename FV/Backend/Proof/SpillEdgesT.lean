@@ -44,8 +44,40 @@ theorem LowT.param_cls (hd : Dominated f) {TB : Clif.Block} (hTB : TB ∈ f.bloc
   obtain ⟨ranges, hb⟩ := H.hb
   exact valClassOf_of_type (((ctxFacts_of hb).types hd.ssa).2 TB hTB p hp)
 
-/-- **A branch argument has its target parameter's class** (typed scope). -/
-theorem LowT.arg_cls (hd : Dominated f) (hs : LowerScopeT f) {B : Clif.Block} (hB : B ∈ f.blocks)
+/-- **Branch arguments have their target parameters' classes**, from `Compile.edgeClassOk`
+(`CtxSpec.edgeClass`'s proof). -/
+theorem _root_.Backend.Proof.Driver.CtxSpec.edgeClassE {ranges : Array (Nat × Nat)}
+    (sp : CtxSpec f ctx ranges st0) (hE : Compile.edgeClassOk f = true)
+    {B : Clif.Block} (hB : B ∈ f.blocks) {bc : Clif.BlockCall} (hbc : bc ∈ dests B.term)
+    {tb : Clif.Block} (htb : f.block? bc.block = some tb) {a : Nat} {p : Clif.ValueId × Clif.Ty}
+    (hap : (a, p) ∈ bc.args.zip tb.params) :
+    ∀ t, ctx.valueType? a = some t → t.valClass = (CTy.ofClif p.2).valClass := by
+  simp only [Compile.edgeClassOk, Bool.and_eq_true, List.all_eq_true] at hE
+  have h := (hE B hB).1 bc (by rw [blockCalls_eq_dests]; exact hbc)
+  rw [htb] at h
+  exact sp.class_of_argClassOk (List.all_eq_true.mp h _ hap)
+    ((sp.blockC tb (block?_mem htb)).1 p (List.of_mem_zip hap).2)
+
+/-- **A `try_call`'s value arguments have their target parameters' classes**, from
+`Compile.edgeClassOk` (`CtxSpec.tryEdgeClass`'s proof). -/
+theorem _root_.Backend.Proof.Driver.CtxSpec.tryEdgeClassE {ranges : Array (Nat × Nat)}
+    (sp : CtxSpec f ctx ranges st0) (hE : Compile.edgeClassOk f = true)
+    {B : Clif.Block} (hB : B ∈ f.blocks) {et : Clif.ExnTable} (het : IsTryWith B.term et)
+    {td : Clif.TryDest} (htd : td ∈ et.dests) {tb : Clif.Block} (htb : f.block? td.block = some tb)
+    {v : Nat} {p : Clif.ValueId × Clif.Ty} (hap : (Clif.TryArg.val v, p) ∈ td.args.zip tb.params) :
+    ∀ t, ctx.valueType? v = some t → t.valClass = (CTy.ofClif p.2).valClass := by
+  simp only [Compile.edgeClassOk, Bool.and_eq_true, List.all_eq_true] at hE
+  have h := (hE B hB).2
+  have hv := (sp.blockC tb (block?_mem htb)).1 p (List.of_mem_zip hap).2
+  rcases het with ⟨fn, args, he⟩ | ⟨c, args, he⟩ <;> rw [he] at h <;> simp only at h <;>
+  · have h2 := List.all_eq_true.mp h td htd
+    rw [htb] at h2
+    have h3 := List.all_eq_true.mp h2 _ hap
+    exact sp.class_of_argClassOk h3 hv
+
+/-- **A branch argument has its target parameter's class** (`Compile.edgeClassOk`). -/
+theorem LowT.arg_clsE (hd : Dominated f) (hE : Compile.edgeClassOk f = true) {B : Clif.Block}
+    (hB : B ∈ f.blocks)
     {bc : Clif.BlockCall} (hbc : bc ∈ dests B.term) {tb : Clif.Block}
     (htb : f.block? bc.block = some tb) {a : Nat} {p : Clif.ValueId × Clif.Ty}
     (hap : (a, p) ∈ bc.args.zip tb.params) : valClassOf ctx a = valClassOf ctx p.1 := by
@@ -55,11 +87,20 @@ theorem LowT.arg_cls (hd : Dominated f) (hs : LowerScopeT f) {B : Clif.Block} (h
   rw [htb] at htb'
   cases htb'
   obtain ⟨t, ht, -⟩ := sp.regEq a _ (hargs a (List.of_mem_zip hap).1)
-  rw [valClassOf_of_type ht, sp.edgeClass hs.subsetT hB hbc htb hap t ht,
+  rw [valClassOf_of_type ht, sp.edgeClassE hE hB hbc htb hap t ht,
     H.param_cls hd (block?_mem htb) (List.of_mem_zip hap).2]
 
-/-- **A typed edge block's arguments have their target parameters' classes.** -/
-theorem LowT.edge_cls (hd : Dominated f) (hs : LowerScopeT f) (htc : Compile.tryArgClassOk f = true)
+/-- **A branch argument has its target parameter's class** (typed scope). -/
+theorem LowT.arg_cls (hd : Dominated f) (hs : LowerScopeT f) {B : Clif.Block} (hB : B ∈ f.blocks)
+    {bc : Clif.BlockCall} (hbc : bc ∈ dests B.term) {tb : Clif.Block}
+    (htb : f.block? bc.block = some tb) {a : Nat} {p : Clif.ValueId × Clif.Ty}
+    (hap : (a, p) ∈ bc.args.zip tb.params) : valClassOf ctx a = valClassOf ctx p.1 :=
+  H.arg_clsE hd (functionETF_parts hs.toTF.subsetTF).2.2.2.2.1 hB hbc htb hap
+
+/-- **A typed edge block's arguments have their target parameters' classes**
+(`Compile.edgeClassOk`). -/
+theorem LowT.edge_clsE (hd : Dominated f) (hE : Compile.edgeClassOk f = true)
+    (htc : Compile.tryArgClassOk f = true)
     {bi : Nat} {B : Clif.Block} {L : BLow} (hB : f.blocks[bi]? = some B) (hL : bl[bi]? = some L)
     {e : VBlock} (he : e ∈ edgeBlocksT f ctx B L) :
     ∃ tl TB, e.insts = #[.jump tl] ∧ f.blocks[tl]? = some TB ∧
@@ -85,7 +126,7 @@ theorem LowT.edge_cls (hd : Dominated f) (hs : LowerScopeT f) (htc : Compile.try
       refine ⟨tl, TB, rfl, hTBi, fun k a q hak hq => ?_⟩
       simp only [List.getElem?_toArray, List.getElem?_map] at hak
       obtain ⟨a0, ha0, rfl⟩ := Option.map_eq_some_iff.mp hak
-      exact ⟨a0, by rw [vregOf, H.arg_cls hd hs hBm hbc hTB (zip_mem_of_idx ha0 hq)]⟩
+      exact ⟨a0, by rw [vregOf, H.arg_clsE hd hE hBm hbc hTB (zip_mem_of_idx ha0 hq)]⟩
   · obtain ⟨T, hT, -, hexn, -, hregs, -, -⟩ := (lowTerm_spec hlt).2 et het
     rw [shape_edgeBlocksT_try het hT] at he
     obtain ⟨p, hp, hpe⟩ := List.mem_filterMap.mp he
@@ -118,7 +159,7 @@ theorem LowT.edge_cls (hd : Dominated f) (hs : LowerScopeT f) (htc : Compile.try
       obtain ⟨t, ht, -⟩ := sp.regEq v _ hok
       refine ⟨v, ?_⟩
       simp only [tryEdgeArgT, vregOf]
-      rw [valClassOf_of_type ht, sp.tryEdgeClass hs.subsetT hBm het htd htb hz t ht,
+      rw [valClassOf_of_type ht, sp.tryEdgeClassE hE hBm het htd htb hz t ht,
         H.param_cls hd (block?_mem htb) (List.of_mem_zip hz).2]
     | ret i =>
       simp only at hok
@@ -137,23 +178,31 @@ theorem LowT.edge_cls (hd : Dominated f) (hs : LowerScopeT f) (htc : Compile.try
       · exact ⟨_, rfl⟩
       · exact ⟨_, rfl⟩
 
+/-- **A typed edge block's arguments have their target parameters' classes.** -/
+theorem LowT.edge_cls (hd : Dominated f) (hs : LowerScopeT f) (htc : Compile.tryArgClassOk f = true)
+    {bi : Nat} {B : Clif.Block} {L : BLow} (hB : f.blocks[bi]? = some B) (hL : bl[bi]? = some L)
+    {e : VBlock} (he : e ∈ edgeBlocksT f ctx B L) :
+    ∃ tl TB, e.insts = #[.jump tl] ∧ f.blocks[tl]? = some TB ∧
+      ∀ (k : Nat) (a : Reg) (p : Clif.ValueId × Clif.Ty), e.branchArgs[k]? = some a →
+        TB.params[k]? = some p → ∃ v, a = .vreg v (valClassOf ctx p.1) :=
+  H.edge_clsE hd (functionETF_parts hs.toTF.subsetTF).2.2.2.2.1 htc hB hL he
+
 end
 
-/-- **`lowerFunction`'s VCode meets `LowOk`** on `Dominated`, `LowerScopeT`, `ArityOk` input whose
-`try_call` return/payload arguments go to integer parameters (`lowOk_of`, typed). -/
-theorem lowOk_ofT {f : Clif.Function} {vc : VCode} (hd : Dominated f) (hs : LowerScopeT f)
+/-- **`lowerFunction`'s VCode meets `LowOk`** on `Dominated`, float-scope (`LowerScopeTF`),
+`ArityOk` input whose `try_call` return/payload arguments go to integer parameters (`lowOk_of`,
+float scope; the `br_table` indices typed by `brIdxOk`). -/
+theorem lowOk_ofTF {f : Clif.Function} {vc : VCode} (hd : Dominated f) (hs : LowerScopeTF f)
     (ha : ArityOk f) (htc : Compile.tryArgClassOk f = true) (h : lowerFunction f = .ok vc) :
     LowOk vc := by
   obtain ⟨ctx, st0, bl, RR, H⟩ := lowT_of hs.externsE h
   obtain ⟨gn, hRR⟩ := H.ren
-  have hbt : ∀ B ∈ f.blocks, BrIdxTyped ctx B.term := by
-    obtain ⟨ctx', st0', R', gn', bl', A', hshape, -, hbt'⟩ :=
-      loweringT_of_check (lowerCheckT_complete hd hs h)
-    obtain ⟨ranges', hb'⟩ := hshape.hctx
-    obtain ⟨ranges, hb⟩ := H.hb
-    rw [hb] at hb'
-    cases hb'
-    exact hbt'
+  obtain ⟨ranges, hb⟩ := H.hb
+  have hE : Compile.edgeClassOk f = true := (functionETF_parts hs.subsetTF).2.2.2.2.1
+  have hbt : ∀ B ∈ f.blocks, BrIdxTyped ctx B.term := brIdx_of_ok (hs.ctxFacts ctx ranges st0 hb).1
+  have hrb := fun {x : Nat} {B : Clif.Block} {L : BLow} (hB : f.blocks[x]? = some B)
+    (hL : bl[x]? = some L) => H.raw_backG (ctxInvT_ofF hs hb)
+      (fun B' hB' => termIntPos_ofF hs hb hB') hbt hB hL
   have hn : 0 < f.blocks.length := List.length_pos_iff.mpr hs.nonempty
   obtain ⟨B0, hB0⟩ : ∃ B0, f.blocks[0]? = some B0 := ⟨_, List.getElem?_eq_getElem hn⟩
   -- the block at a CLIF block's index
@@ -185,7 +234,7 @@ theorem lowOk_ofT {f : Clif.Function} {vc : VCode} (hd : Dominated f) (hs : Lowe
   · -- no branch to the entry
     intro b vb t hvb hback h0
     rcases H.cases hvb with ⟨B, L, -, hB, hL, rfl⟩ | ⟨bi, B, L, e, hB, hL, he, -, -, rfl⟩
-    · obtain ⟨t', hb', -, hnt, htry⟩ := H.raw_back hs hbt hB hL
+    · obtain ⟨t', hb', -, hnt, htry⟩ := hrb hB hL
       rw [hb'] at hback
       cases hback
       have hBm := List.mem_of_getElem? hB
@@ -198,7 +247,7 @@ theorem lowOk_ofT {f : Clif.Function} {vc : VCode} (hd : Dominated f) (hs : Lowe
         rw [htg] at h0
         obtain ⟨e, he, hl⟩ := ((H.raw_tgt hB hL).2 et het).2 0 h0
         have := (H.edge_at hB hL he).1; rw [hl] at this; omega
-    · obtain ⟨tl, TB, hins, -, -, htl0, -⟩ := H.edge_facts hs hB hL he
+    · obtain ⟨tl, TB, hins, -, -, htl0, -⟩ := H.edge_factsG hs.noEntryPred hB hL he
       rw [backE e tl hins] at hback
       cases hback
       simp [MInst.targets] at h0
@@ -207,7 +256,7 @@ theorem lowOk_ofT {f : Clif.Function} {vc : VCode} (hd : Dominated f) (hs : Lowe
     intro b vb hvb hba
     rcases H.cases hvb with ⟨B, L, -, hB, hL, rfl⟩ | ⟨bi, B, L, e, hB, hL, he, -, -, rfl⟩
     · have hBm := List.mem_of_getElem? hB
-      obtain ⟨t', hb', hjump, -, -⟩ := H.raw_back hs hbt hB hL
+      obtain ⟨t', hb', hjump, -, -⟩ := hrb hB hL
       obtain ⟨bc, hj⟩ : ∃ bc, B.term = .jump bc := by
         refine Classical.byContradiction fun hj => hba ?_
         simp only [fixBlock, rawBlockT]
@@ -238,13 +287,13 @@ theorem lowOk_ofT {f : Clif.Function} {vc : VCode} (hd : Dominated f) (hs : Lowe
         obtain ⟨a0, ha0, rfl⟩ := Option.map_eq_some_iff.mp (by simpa using hak)
         obtain ⟨p0, hp0, rfl⟩ := Option.map_eq_some_iff.mp hpk
         refine ⟨gn a0, p0.1, valClassOf ctx p0.1, ?_, rfl⟩
-        rw [vregOf, hRR.vreg, H.arg_cls hd hs hBm (by rw [hj]; simp [dests]) hTB
+        rw [vregOf, hRR.vreg, H.arg_clsE hd hE hBm (by rw [hj]; simp [dests]) hTB
           (zip_mem_of_idx ha0 hp0)]
       · unfold edgeBlocksT at he
         rw [hj] at he
         simp at he
-    · obtain ⟨tl, TB, hins, -, hTB, htl0, hlen, -⟩ := H.edge_facts hs hB hL he
-      obtain ⟨tl', TB', hins', hTB', hcls⟩ := H.edge_cls hd hs htc hB hL he
+    · obtain ⟨tl, TB, hins, -, hTB, htl0, hlen, -⟩ := H.edge_factsG hs.noEntryPred hB hL he
+      obtain ⟨tl', TB', hins', hTB', hcls⟩ := H.edge_clsE hd hE htc hB hL he
       rw [hins] at hins'
       obtain rfl : tl = tl' := by simpa using hins'
       obtain rfl : TB = TB' := Option.some.inj (hTB.symm.trans hTB')
@@ -266,7 +315,7 @@ theorem lowOk_ofT {f : Clif.Function} {vc : VCode} (hd : Dominated f) (hs : Lowe
       obtain ⟨-, hat⟩ := H.edge_at hB hL he
       rw [hel, htb] at hat
       cases hat
-      obtain ⟨-, -, -, hpar, -⟩ := H.edge_facts hs hB hL he
+      obtain ⟨-, -, -, hpar, -⟩ := H.edge_factsG hs.noEntryPred hB hL he
       exact hpar
     have viaB : ∀ (TB : Clif.Block), f.blocks[l]? = some TB → TB.params = [] → tb.params = #[] := by
       intro TB hTB hp
@@ -275,7 +324,7 @@ theorem lowOk_ofT {f : Clif.Function} {vc : VCode} (hd : Dominated f) (hs : Lowe
       simp [fixBlock, rawBlockT, hp]
     rcases H.cases hvb with ⟨B, L, -, hB, hL, rfl⟩ | ⟨bi, B, L, e, hB, hL, he, -, -, rfl⟩
     · have hBm := List.mem_of_getElem? hB
-      obtain ⟨t', hb', -, hnt, htry⟩ := H.raw_back hs hbt hB hL
+      obtain ⟨t', hb', -, hnt, htry⟩ := hrb hB hL
       rw [hb'] at hback
       cases hback
       rcases try_or B.term with ht | ⟨et, het⟩
@@ -298,7 +347,7 @@ theorem lowOk_ofT {f : Clif.Function} {vc : VCode} (hd : Dominated f) (hs : Lowe
         rw [htg] at hl
         obtain ⟨e, he, hel⟩ := ((H.raw_tgt hB hL).2 et het).2 l hl
         exact viaE _ _ _ e hB hL he hel
-    · obtain ⟨tl, TB, hins, -, hTB, -, hlen, -⟩ := H.edge_facts hs hB hL he
+    · obtain ⟨tl, TB, hins, -, hTB, -, hlen, -⟩ := H.edge_factsG hs.noEntryPred hB hL he
       rw [backE e tl hins] at hback
       cases hback
       simp [MInst.targets] at hl
@@ -309,7 +358,7 @@ theorem lowOk_ofT {f : Clif.Function} {vc : VCode} (hd : Dominated f) (hs : Lowe
   · -- a `try_call`'s block has no branch arguments
     intro b vb info ti hvb hback
     rcases H.cases hvb with ⟨B, L, -, hB, hL, rfl⟩ | ⟨bi, B, L, e, hB, hL, he, -, -, rfl⟩
-    · obtain ⟨t', hb', -, hnt, -⟩ := H.raw_back hs hbt hB hL
+    · obtain ⟨t', hb', -, hnt, -⟩ := hrb hB hL
       rw [hb'] at hback
       cases hback
       rcases try_or B.term with ht | ⟨et, het⟩
@@ -318,13 +367,13 @@ theorem lowOk_ofT {f : Clif.Function} {vc : VCode} (hd : Dominated f) (hs : Lowe
         split
         · rename_i bc hbc; rcases het with ⟨_, _, h⟩ | ⟨_, _, h⟩ <;> rw [h] at hbc <;> cases hbc
         · simp
-    · obtain ⟨tl, TB, hins, -⟩ := H.edge_facts hs hB hL he
+    · obtain ⟨tl, TB, hins, -⟩ := H.edge_factsG hs.noEntryPred hB hL he
       rw [backE e tl hins] at hback
       cases hback
   · -- a `try_call`'s successor is its own
     intro b vb info ti j l hvb hback hj b' vb' t' j' hvb' hback' hj'
     rcases H.cases hvb with ⟨B, L, -, hB, hL, rfl⟩ | ⟨bi, B, L, e, hB, hL, he, -, -, rfl⟩
-    · obtain ⟨t0, hb0, -, hnt, htry⟩ := H.raw_back hs hbt hB hL
+    · obtain ⟨t0, hb0, -, hnt, htry⟩ := hrb hB hL
       rw [hb0] at hback
       cases hback
       rcases try_or B.term with ht | ⟨et, het⟩
@@ -336,7 +385,7 @@ theorem lowOk_ofT {f : Clif.Function} {vc : VCode} (hd : Dominated f) (hs : Lowe
       have hge := (H.edge_at hB hL he).1
       rw [hel] at hge
       rcases H.cases hvb' with ⟨B', L', -, hB', hL', rfl⟩ | ⟨bi', B', L', e', hB', hL', he', -, -, rfl⟩
-      · obtain ⟨t1, hb1, -, hnt', htry'⟩ := H.raw_back hs hbt hB' hL'
+      · obtain ⟨t1, hb1, -, hnt', htry'⟩ := hrb hB' hL'
         rw [hb1] at hback'
         cases hback'
         have hlm' : ∀ hl' : l ∈ L'.targets, ∃ e' ∈ edgeBlocksT f ctx B' L', e'.label = l := by
@@ -367,7 +416,7 @@ theorem lowOk_ofT {f : Clif.Function} {vc : VCode} (hd : Dominated f) (hs : Lowe
           refine ⟨rfl, ?_⟩
           rw [htg] at hj
           exact nodup_idx hnodup hj' hj
-      · obtain ⟨tl, TB, hins, -, hTB, -⟩ := H.edge_facts hs hB' hL' he'
+      · obtain ⟨tl, TB, hins, -, hTB, -⟩ := H.edge_factsG hs.noEntryPred hB' hL' he'
         rw [backE e' tl hins] at hback'
         cases hback'
         have hj0 : j' = 0 := by
@@ -377,9 +426,16 @@ theorem lowOk_ofT {f : Clif.Function} {vc : VCode} (hd : Dominated f) (hs : Lowe
         subst hj'
         have := (List.getElem?_eq_some_iff.mp hTB).1
         omega
-    · obtain ⟨tl, TB, hins, -⟩ := H.edge_facts hs hB hL he
+    · obtain ⟨tl, TB, hins, -⟩ := H.edge_factsG hs.noEntryPred hB hL he
       rw [backE e tl hins] at hback
       cases hback
+
+/-- **`lowerFunction`'s VCode meets `LowOk`** on `Dominated`, `LowerScopeT`, `ArityOk` input whose
+`try_call` return/payload arguments go to integer parameters (`lowOk_of`, typed). -/
+theorem lowOk_ofT {f : Clif.Function} {vc : VCode} (hd : Dominated f) (hs : LowerScopeT f)
+    (ha : ArityOk f) (htc : Compile.tryArgClassOk f = true) (h : lowerFunction f = .ok vc) :
+    LowOk vc :=
+  lowOk_ofTF hd hs.toTF ha htc h
 
 /-- **`lowerFunction`'s VCode is in `prepare`'s domain** (`prepDomain_of_lower`, float scope):
 the `br_table` indices are typed by `brIdxOk` (`LowerScopeTF.ctxFacts`). -/
