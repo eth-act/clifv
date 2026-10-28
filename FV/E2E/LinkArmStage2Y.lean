@@ -1,13 +1,13 @@
 import FV.E2E.LinkArmXPBT
 import FV.E2E.ExtSemGuardRY
 import FV.E2E.PrefixRelated
-import FV.E2E.LinkArmProgOsPRBR
+import FV.E2E.LinkArmProgOsPRBRL
 
 /-!
 # The call contracts of the induction step's guarded semantics (SEM1 #537, #680 (3), stage 2)
 
 `ActEntryPR.calls` for the induction step's `XI` asks `CalleeOkGP` of its call `n` at the
-activation's call-`n` states. `calleeOkPRBR` gives it for `XPRBT … n`; the guarded semantics
+activation's call-`n` states. `calleeOkPRBRL` gives it for `XPRBT … n`; the guarded semantics
 answers only `XPRBT`'s results where stage 2 holds, and stage 2 can hold only at the worlds of
 the call states (the answer is computed from the prophecies `P n`, `R n` of those states). With
 `CallPostNX` (#690) it cannot hold at unrelated calls (#692), so the guard is `CallPostNXR`:
@@ -19,7 +19,7 @@ the call states (the answer is computed from the prophecies `P n`, `R n` of thos
 * **`Stage2Y`**: stage 2 of call `n` at the states `Q` (where `CallPost` of the CLIF invocation of
   count `n` is not vacuous, `XPRBT … n` answers a `CallPost`-result);
 * **`calleeOkXPBTGY`**, **`calleeTryOkXPBTGY`**: the contracts of `XPBTGY … n` at `Q` from
-  `calleeOkPRBR`/`calleeTryOkPRBR` and `Stage2Y`.
+  `calleeOkPRBRL`/`calleeTryOkPRBRL` (induction hypothesis `ThmPRBRL`, #694) and `Stage2Y`.
 -/
 
 namespace E2E
@@ -132,7 +132,7 @@ theorem XPBTGY_sub (hL : L.Ok) {M : Nat} {g : Clif.Function} {F : BitVec 64 → 
 
 /-- **The call contract of `XPBTGY … n`** at the states `Q` where stage 2 holds. -/
 theorem calleeOkXPBTGY (hL : L.Ok) [L.CrunOk] (hκ : L.Budget κ) {M : Nat}
-    (ih : 0 < M → L.ThmPRBR κ (M - 1))
+    (ih : 0 < M → L.ThmPRBRL κ (M - 1))
     (hdet : 0 < M → L.DetPRB κ (M - 1)) {g : Clif.Function}
     (hg : g ∈ L.P.funcs) {F G : BitVec 64 → Prop} {ra : BitVec 64} {s w₀ : Arm.ArmState}
     (he : L.MachEntry κ M g F G ra s w₀)
@@ -146,13 +146,13 @@ theorem calleeOkXPBTGY (hL : L.Ok) [L.CrunOk] (hκ : L.Budget κ) {M : Nat}
     CalleeOkGP Q F (κ M g) G s (CallAt (L.A g).fa (L.A g).base)
       ((L.XPBTGY κ M g F P R env cs c).at n) (L.hooks M)
       (L.A g).vcp.CallSite (GotV (L.A g).vcp) :=
-  (L.calleeOkPRBR hL hκ ih hdet hg he hQ).ofCallSubW _
+  (L.calleeOkPRBRL hL hκ ih hdet hg he hQ).ofCallSubW _
     (fun _ _ hu hsw _ _ _ hr => L.XPBTGY_sub hL h2 hu hsw hr)
     (L.XPBTGY_ext hL n)
 
 /-- **The try-call contract of `XPBTGY … n`** at the states `Q` where stage 2 holds. -/
 theorem calleeTryOkXPBTGY (hL : L.Ok) [L.CrunOk] (hκ : L.Budget κ) {M : Nat}
-    (ih : 0 < M → L.ThmPRBR κ (M - 1))
+    (ih : 0 < M → L.ThmPRBRL κ (M - 1))
     (hdet : 0 < M → L.DetPRB κ (M - 1)) {g : Clif.Function}
     (hg : g ∈ L.P.funcs) {F G : BitVec 64 → Prop} {ra : BitVec 64} {s w₀ : Arm.ArmState}
     (he : L.MachEntry κ M g F G ra s w₀)
@@ -166,7 +166,7 @@ theorem calleeTryOkXPBTGY (hL : L.Ok) [L.CrunOk] (hκ : L.Budget κ) {M : Nat}
     CalleeTryOkGP Q F (κ M g) G s (CallAt (L.A g).fa (L.A g).base)
       ((L.XPBTGY κ M g F P R env cs c).at n) (L.hooks M)
       (L.A g).vcp.TrySite (GotV (L.A g).vcp) :=
-  (L.calleeTryOkPRBR hL hκ ih hdet hg he hQ).ofCallSubW _
+  (L.calleeTryOkPRBRL hL hκ ih hdet hg he hQ).ofCallSubW _
     (fun _ _ hu hsw _ _ _ hr => L.XPBTGY_sub hL h2 hu hsw hr)
 
 end LinkSys

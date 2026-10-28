@@ -1102,19 +1102,34 @@ outcome, `XPRBT_ext`); then `CalleeOkGP` for `XPBTGX … n` at the `OnCallPR` st
   `XPBTGY`, `XPBTGY_ext`, **`Stage2Y`** (at the states `Q`, where `CallPost` of the invocation of
   count `n` is not vacuous, `XPRBT … n` answers a `CallPost`-result), `XPBTGY_sub`,
   **`calleeOkXPBTGY`**, **`calleeTryOkXPBTGY`**.
-- (c) `FV/E2E/LinkArmThmPRBROf.lean`: **`thmPRBR_of`**: `ThmPRBR κ M` from `ThmPRBR κ (M - 1)`,
+- Finding [#694](https://github.com/eth-act/clifv/issues/694): `ThmPRB`/`ThmPRBR` end with
+  `NeedSlots → NextAdv cs.mem cm' e`, from the entry memory (the activation's `sp` on top) to the
+  returned one, which the return popped (`Mem.leave`): false for every returning run under
+  `NeedSlots` (witness `not_nextAdv_entry`), so the PRB induction hypothesis is unsatisfiable on
+  systems with slotted callees (all earlier witnesses are on `¬ NeedSlots`). Fix (new names):
+  **`ThmPRBRL`** with `NextAdv cs.mem.leave cm' e` (`nextAdv_leave_entry`), and the copies
+  `progCallPRBRL(_at)` (`FV/E2E/LinkArmProgCallPRBRL.lean`), `progOsCorePRBRL`,
+  `progOsCoreXPRRBRL`, `progOsPRBRL`, `progOsRegPRBRL`, `calleeOkPRBRL`, `calleeTryOkPRBRL`
+  (`FV/E2E/LinkArmProgOsPRBRL.lean`; same proofs, the conjunct is only passed through).
+- (c) `FV/E2E/LinkArmThmPRBROf.lean`: **`thmPRBRL_of`**: `ThmPRBRL κ M` from `ThmPRBRL κ (M - 1)`,
   `DetPRB κ (M - 1)` and three per-activation premises: `RetOkPRB` (`InvokedRetOk` of the run
   under `envOfB`), `Stage2PRB` (`Stage2Y` at `CallStPRB`, the activation's call-`n` states),
-  `CountPRB` (the CLIF advance is the machine table's count to the return). The `ActEntryPR` is
-  `MachEntryPR`'s fields with `calleeOkXPBTGY` (`callStPRB_q`), the table by `noRetAt_of`.
-  Witnesses on `Lu` (`thmPRBR_of_Lu`, `countPRB_Lu`, `stage2Y_noExt`, …).
+  `CountPRB` (the CLIF advance from the popped entry is the machine table's count to the
+  return). The `ActEntryPR` is `MachEntryPR`'s fields with `calleeOkXPBTGY` (`callStPRB_q`), the
+  table by `noRetAt_of`. `thmPRBRL_of_thm` (`¬ NeedSlots`). Witnesses on `Lu` (`thmPRBRL_LU`,
+  `thmPRBRL_of_Lu`, `countPRB_Lu`, `stage2Y_noExt`, …).
 
-Next: `CountPRB` (from (a), `tabUpTo_count`, `progCallPRBR`'s `TabUpTo … e`/`NextAdv … e` per call,
-the machine's call `j` related to the CLIF call `j`: `prefix_relatedPRI`), `Stage2PRB` (strong
-induction on `n`; `CondBT` at `worldPR (P n) (R n) w` from the related CLIF call, the table offset
-by `counter_reachN`), `RetOkPRB` (a scope fact of `Ok` + `NeedSlots`: callee runs free what they
-allocate, `baseKeepsAllocs`; return-count agreement of the declarations), then `thmPRBR` and
-`compileExe_correct_init`.
+Next: `Stage2PRB` is stated at every `CallStPRB … n` state, which includes call-`n` states after
+the activation returned (same code and `sp`, another activation); there the related CLIF call `n`
+fixes the answer from the prophecies `P n`, `R n` of the activation's own call `n`, whose existence
+(before the return, calling the same callee with compatible arguments) needs the simulation up to
+call `n` (`backend_prefixPRI` extended to the state *at* call `N`, contracts `j < N` by strong
+induction). Base externs are the easy half (`baseX`/`baseXI`, `symInj`); at depth `0` every
+returning invocation is a base one (`CrunOk.zero`), so `Stage2PRB κ 0` should follow from that
+half alone. `CountPRB` (from (a), `tabUpTo_count`, `progCallPRBRL`'s `TabUpTo … e`/`NextAdv … e`
+per call, `prefix_relatedPRI`), `RetOkPRB` (a scope fact of `Ok` + `NeedSlots`: callee runs free
+what they allocate, `baseKeepsAllocs`; return-count agreement of the declarations), then
+`thmPRBRL` and `compileExe_correct_init`.
 
 **Step 3h, as built (UninitZ10b): the call-count premises are theorems.** `InstCallsOne f` and
 `TryCallsOne f` hold for every `f` (`E2E.instCallsOne_all`, `E2E.tryCallsOne_all`,

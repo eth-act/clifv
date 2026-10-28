@@ -1,17 +1,19 @@
 import FV.E2E.LinkArmStage2Y
 import FV.E2E.BackendWorldPRGY
 import FV.E2E.LinkArmThmPRBR
+import FV.E2E.LinkArmProgCallPRBRL
 import FV.E2E.LinkPlaceBReach
 
 /-!
-# The induction step of `ThmPRBR` from the pipeline (SEM1 #537, #680 (3), `thmPRBR_of`)
+# The induction step of `ThmPRBRL` from the pipeline (SEM1 #537, #680 (3), `thmPRBRL_of`)
 
 `thm_of` (`LinkArm`) for the slot-byte statement: the activation runs under `envOfB`
 (`runLoop_envOfB`), `backend_correct_world_pipelinePRGY` with `XI := XPBTI` (guarded:
 `XPBTGY`, #692) gives the outcome, its `ActEntryPR` is built from `MachEntryPR` with the call
 contracts `calleeOkXPBTGY` at the activation's call states, and the table up to the return is the
 caller's (`TableOf`, `noRetAt_of`). Three per-activation facts stay premises of this step, each
-stated for the activations of depth `M` (`ThmPRBR`'s premises):
+stated for the activations of depth `M` (`ThmPRBRL`'s premises; `ThmPRBRL` is `ThmPRBR` with the
+advance from the popped entry, #694):
 
 * `RetOkPRB κ M`: the scope fact `InvokedRetOk` of the activation's run under `envOfB` (the
   invoked externs keep validity and symbols and agree on ABI return counts);
@@ -19,7 +21,8 @@ stated for the activations of depth `M` (`ThmPRBR`'s premises):
 * `CountPRB κ M`: the CLIF counter advance of the run is the machine table's count up to the
   return.
 
-**`thmPRBR_of`**: `ThmPRBR κ M` from `ThmPRBR κ (M - 1)`, `DetPRB κ (M - 1)` and the three.
+**`thmPRBRL_of`**: `ThmPRBRL κ M` from `ThmPRBRL κ (M - 1)`, `DetPRB κ (M - 1)` and the three;
+**`thmPRBRL_of_thm`**: `ThmPRBRL` from `Thm` without program callees with slots.
 -/
 
 namespace E2E
@@ -75,9 +78,9 @@ def CountPRB (κ : Nat → Clif.Function → Nat) (M : Nat) : Prop :=
     ∀ (us : List (Reg × Reg)) (outs : List CV) (wf : Arm.ArmState) (n e : Nat),
       ActRet ra F G us outs wf s (runX (L.mach M g) n s) →
       PostTrace (L.A g).fa (L.A g).af (L.A g).base (L.mach M g) s n →
-      L.TabUpTo M g s ini.bytes ini.next n e → L.NeedSlots → Clif.NextAdv cs.mem cm' e
+      L.TabUpTo M g s ini.bytes ini.next n e → L.NeedSlots → Clif.NextAdv cs.mem.leave cm' e
 
-/-- The activation's call states see the prophecies (`calleeOkPRBR`'s `hQ`). -/
+/-- The activation's call states see the prophecies (`calleeOkPRBRL`'s `hQ`). -/
 theorem callStPRB_q {M : Nat} {g : Clif.Function} {s w₀ : Arm.ArmState}
     (hsp : spv w₀ = spv s - BitVec.ofNat 64 (frameDrop (L.A g).af)) (n : Nat) :
     ∀ t, L.CallStPRB κ M g s w₀ n t → CallPc (L.A g).fa (L.A g).base (Arm.r .PC t) →
@@ -89,11 +92,11 @@ theorem callStPRB_q {M : Nat} {g : Clif.Function} {s w₀ : Arm.ArmState}
   rw [e] at ha
   exact hb hpc e a ha
 
-/-- **The induction step of `ThmPRBR`** (module doc). -/
-theorem thmPRBR_of (hL : L.Ok) [L.CrunOk] (hκ : L.Budget κ) {M : Nat}
-    (ih : 0 < M → L.ThmPRBR κ (M - 1)) (hdet : 0 < M → L.DetPRB κ (M - 1))
+/-- **The induction step of `ThmPRBRL`** (module doc). -/
+theorem thmPRBRL_of (hL : L.Ok) [L.CrunOk] (hκ : L.Budget κ) {M : Nat}
+    (ih : 0 < M → L.ThmPRBRL κ (M - 1)) (hdet : 0 < M → L.DetPRB κ (M - 1))
     (hret : L.RetOkPRB κ M) (h2 : L.Stage2PRB κ M) (hcnt : L.CountPRB κ M) :
-    L.ThmPRBR κ M := by
+    L.ThmPRBRL κ M := by
   intro g hg F vals cs w₀ fuel rvals cm' ini G ra s hWE hME hra htab hrun
   have hc := hL.compiled g hg
   have hI : Clif.LInv (L.P.only g) cs := runInv_entry (by simp [Clif.Program.only]) hWE.clif
@@ -132,6 +135,16 @@ theorem thmPRBR_of (hL : L.Ok) [L.CrunOk] (hκ : L.Budget κ) {M : Nat}
   exact ⟨us, outs, wf, n, e, hus, hlen, hhold, hmem, hrs, hret', htr, hte,
     hcnt g hg F vals cs w₀ fuel rvals cm' ini G ra s hWE hME hra htab hrun us outs wf n e hret' htr
       hte⟩
+
+/-- **`ThmPRBRL` from `Thm` without program callees with slots** (`thmPRBR_of_thm`). -/
+theorem thmPRBRL_of_thm (hL : L.Ok) (hN : ¬ L.NeedSlots) {M : Nat} (hT : L.Thm κ M) :
+    L.ThmPRBRL κ M := by
+  intro g hg F vals cs w₀ fuel rvals cm' ini G ra s hWE hME hra htab hrun
+  obtain ⟨us, outs, wf, hus, hlen, hhold, hmem, hrs, hall, -⟩ :=
+    hT g hg F vals cs w₀ fuel rvals cm' (hWE.toWorldEntry L hN) hrun
+  obtain ⟨n, hret, htr⟩ := hall G ra s hME.entryP.entry
+  obtain ⟨e, he⟩ := htab n (L.noRetAt_of hL hg hME.entryP.entry hra htr hret.ret.err)
+  exact ⟨us, outs, wf, n, e, hus, hlen, hhold, hmem, hrs, hret, htr, he, fun h => absurd h hN⟩
 
 end LinkSys
 

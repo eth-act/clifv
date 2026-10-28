@@ -103,6 +103,35 @@ theorem linkFreeJ : ∀ g ∈ PJ.funcs, LinkFree g := by
 theorem noCall_sJ : sJ1.mem.place = sJ.mem.place :=
   step_bare_noCall_place linkFreeJ linv_sJ rfl rfl step_sJ
 
+/-! ## #694: a return pops the activation's stack pointer -/
+
+/-- The memory `f0`'s activation (entered at `sZ`) returns. -/
+def mRet : Mem := match runLoop Env.empty P0.bare 5 sZ with
+  | .returned _ m => m
+  | _ => mZ
+
+theorem run_sZ : runLoop Env.empty P0.bare 5 sZ = .returned [] mRet := rfl
+
+/-- **#694**: the advance from the entry memory to the returned one never holds (the return
+popped the entry's stack pointer). -/
+theorem not_nextAdv_entry (e : Nat) : ¬ NextAdv sZ.mem mRet e := by
+  intro h
+  have h1 := h _ _ sZ_place rfl
+  have h2 : mRet.place = some ⟨[0x8000#64], fr0, some { ini0 with next := 1 }⟩ := rfl
+  rw [h2] at h1
+  simp only [Option.some.injEq, Place.mk.injEq] at h1
+  exact absurd h1.1 (by simp)
+
+/-- **The corrected conjunct holds**: the advance from the entry with its stack pointer popped
+(`Mem.leave`), here by `0`. -/
+theorem nextAdv_leave_entry : NextAdv sZ.mem.leave mRet 0 := by
+  intro pl ini hp hi
+  have h1 : sZ.mem.leave.place = some ⟨[0x8000#64], fr0, some { ini0 with next := 1 }⟩ := rfl
+  rw [h1] at hp
+  cases hp
+  cases hi
+  rfl
+
 /-! ## `LinkWitness`'s system -/
 
 open LinkWitness LinkArmProphThmWitness InitB
