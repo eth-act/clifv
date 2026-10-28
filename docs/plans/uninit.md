@@ -2458,6 +2458,43 @@ as corollaries (target `Stage2Z`/`thmPRBRL_ofZ`, #697), after combining with #69
   the second up to the lock (`prophOkUpTo_congr`), with an `x30`-exempt `calleeOkXPBTGZ`.
 
 
+**The prefix two-run route, backend side (UninitZ24b, branch `agent/uninit-z24b`, #713).**
+- `RegLevelTwoRunN.lean`: `forward2_opB`/`forward2C_opB` (`forward2_op` needs the step out of the
+  last pair state only to reach its instruction item past the moves, which do not depend on the
+  semantics: the step may be one of another semantics, of the first run only), **`RL.twoRunCTN`**,
+  **`RL.twoRunPRTN`** (`twoRunCT`/`PRT` up to a pair state: the lock before its op item, `JR` at
+  it, the machines' call counts equal to its counters).
+- `BackendTwoRunNPre.lean`: **`ActEntryPRN.upTo`** (the contracts of the first `N` calls are
+  `ActEntryPR` of `XI.upTo N`; `ArmStepX` reads only `sym`, `armStepX_upTo` is `rfl`),
+  `vstar_pairDI_upTo` (the paired run to counter `≤ N` is one of `XI.upTo N`), `pairDI_upTo_sub`,
+  `vstar_split_ctr`, `pstar_of_projSB` (the pair guard `StepOrRet` in the larger semantics).
+- Decided: the prefix theorems take the paired run of `XI` (`backend_pairRunD`'s output) as a
+  premise, so that the induction on `N` uses one run (its call count `C = w₁.2` is the bound), and
+  their hook premises `hcall`/`htls` are stated at `(XI.upTo N).at n` (honest; the link discharges
+  them generically). **`backend_twoRunLWNp`**, **`backend_twoRunLERWZNp`**: both entries
+  `ActEntryPRN … N`: if `C ≤ N`, `backend_twoRunLERWZ`'s conclusion; if `N < C`, the lock with its
+  set `R.Zc d d'` at every index up to and including the first index with `N` calls before it,
+  which is a call state of both runs (`RL.callSt_of_q_call`).
+- `BackendTwoRunNI.lean`: `LockedAt`, `callsBefore_le_of_callSt`, **`backend_twoRunLERWZI`**: the
+  first entry with every contract (`ActEntryPR`), the second with `ActEntryPRN … 0` and the
+  contracts of call `n` only at its call states locked with the first run's state of the same index
+  (`LockedAt`, the set avoiding the callees' dead stack) ⇒ `backend_twoRunLERWZ`'s conclusion
+  (induction on `N ≤ C`). Witness `a2_twoRunLERWZI` (`LinkWitness`'s `a2`, two entries).
+- `LinkArmProgOsPRBRL30.lean`: the call contracts with the register prophecy but `x30`
+  (`progXPRBT` enters the callee at `canon`, which agrees with the caller but on `x30`/pc; the
+  arguments are argument registers): **`calleeOkPRBRL30`**, **`calleeTryOkPRBRL30`**,
+  **`calleeOkXPBTGZ30`**, **`calleeTryOkXPBTGZ30`** (+ `progOs*30`). `LinkArmTwinCTrans.lean`:
+  **`TwinBaseC.trans`**, **`TwinC.trans`**.
+- Open (link): `CallTwinC`/`DetRunPRBC`. Findings: (1) the two-run chain is `Compiled` (legacy)
+  only, `L.Ok.compiled` is `CompiledEither`; (2) the pair run at the link needs `XNI` of the link's
+  guarded `XPBTGY` (program calls answered from canonical callee runs: callee non-interference at
+  `M - 1`); (3) a program callee's `hcall` (lock through `pcall`) needs the callee's
+  `backend_twoRunLERWZI` conclusion at `M - 1` (`RetAgreeX`, the memory outside `F ∪ D`, the dead
+  stack). So the induction on `M` is over a link-level "lock to the return" statement (canonical
+  entry with `MachEntryPR` vs another entry), from which `DetRunPRBC M` and `CallTwinC (M + 1)`
+  follow with `twinBaseC_of_lock` and `TwinC.trans`/`symm`. (#716: an `ERR`-carrying `TwinC` for
+  `TableOfE`.)
+
 ## 6. Heap (separate gap, SEM2)
 
 `BaseOk.baseKeepsAllocs`/`baseNoAlloc` require base externs to allocate nothing whenever a program
