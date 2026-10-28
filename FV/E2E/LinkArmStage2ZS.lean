@@ -188,6 +188,44 @@ theorem calleeTryOkXPBTGZS (hL : L.Ok) [L.CrunOk] (hκ : L.Budget κ) {M : Nat}
   (L.calleeTryOkPRBRL hL hκ ih hdet hg he hQ).ofCallSubS (fun _ _ h => h.callSite) _
     (L.XPBTGY_subZS hL h2)
 
+/-- **`calleeOkXPBTGZS` with the determinism premise `DetPRBR`** (#719). -/
+theorem calleeOkXPBTGZSR (hL : L.Ok) [L.CrunOk] (hκ : L.Budget κ) {M : Nat}
+    (ih : 0 < M → L.ThmPRBRL κ (M - 1))
+    (hdet : 0 < M → L.DetPRBR κ (M - 1)) {g : Clif.Function}
+    (hg : g ∈ L.P.funcs) {F G : BitVec 64 → Prop} {ra : BitVec 64} {s w₀ : Arm.ArmState}
+    (he : L.MachEntry κ M g F G ra s w₀)
+    {P : Nat → BitVec 64 → BitVec 8} {R : Nat → Arm.ArmState} {n : Nat}
+    {Q : Arm.ArmState → Prop}
+    (hQ : ∀ t, Q t → CallPc (L.A g).fa (L.A g).base (Arm.r .PC t) →
+      (∀ f, MaskedReg f → Arm.r f t = Arm.r f (R n)) ∧
+        ∀ a, StackBelow (κ M g) (spv t) a → t.mem a = P n a)
+    {env : Clif.Env} {cs : Clif.State} {c : BitVec 64}
+    (h2 : L.Stage2ZS κ M g F P R env cs c Q n) :
+    CalleeOkGP Q F (κ M g) G s (CallAt (L.A g).fa (L.A g).base)
+      ((L.XPBTGY κ M g F P R env cs c).at n) (L.hooks M)
+      (L.A g).vcp.CallSite (GotV (L.A g).vcp) :=
+  (L.calleeOkPRBRLR hL hκ ih hdet hg he hQ).ofCallSubS _ (L.XPBTGY_subZS hL h2)
+    (L.XPBTGY_ext hL n)
+
+/-- **`calleeTryOkXPBTGZS` with the determinism premise `DetPRBR`** (#719). -/
+theorem calleeTryOkXPBTGZSR (hL : L.Ok) [L.CrunOk] (hκ : L.Budget κ) {M : Nat}
+    (ih : 0 < M → L.ThmPRBRL κ (M - 1))
+    (hdet : 0 < M → L.DetPRBR κ (M - 1)) {g : Clif.Function}
+    (hg : g ∈ L.P.funcs) {F G : BitVec 64 → Prop} {ra : BitVec 64} {s w₀ : Arm.ArmState}
+    (he : L.MachEntry κ M g F G ra s w₀)
+    {P : Nat → BitVec 64 → BitVec 8} {R : Nat → Arm.ArmState} {n : Nat}
+    {Q : Arm.ArmState → Prop}
+    (hQ : ∀ t, Q t → CallPc (L.A g).fa (L.A g).base (Arm.r .PC t) →
+      (∀ f, MaskedReg f → Arm.r f t = Arm.r f (R n)) ∧
+        ∀ a, StackBelow (κ M g) (spv t) a → t.mem a = P n a)
+    {env : Clif.Env} {cs : Clif.State} {c : BitVec 64}
+    (h2 : L.Stage2ZS κ M g F P R env cs c Q n) :
+    CalleeTryOkGP Q F (κ M g) G s (CallAt (L.A g).fa (L.A g).base)
+      ((L.XPBTGY κ M g F P R env cs c).at n) (L.hooks M)
+      (L.A g).vcp.TrySite (GotV (L.A g).vcp) :=
+  (L.calleeTryOkPRBRLR hL hκ ih hdet hg he hQ).ofCallSubS (fun _ _ h => h.callSite) _
+    (L.XPBTGY_subZS hL h2)
+
 /-- **Stage 2 at the call sites' operands of activations whose CLIF run returns.** -/
 def Stage2PRBZS (κ : Nat → Clif.Function → Nat) (M : Nat) : Prop :=
   ∀ g ∈ L.P.funcs, ∀ (F : BitVec 64 → Prop) (vals : List Clif.Val) (cs : Clif.State)
