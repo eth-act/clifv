@@ -119,8 +119,10 @@ after the `bl`, no error, the caller's `sp`, the callee-saved registers (x19–x
 v8–v15) and the caller's private memory as at the call, back on the caller's program, the
 specification's CLIF memory at its `return` agreeing with the Arm memory, the returned values in
 the external's return registers. `CallSegOkGT.funRealT_link_ext`/`realizes_linked_calls_ext`
-take it as a premise; `CallSegOkGT.WitnessExt.extX` proves it for a one-`ret` external whose
-specification returns its argument (non-vacuity). Specifications without stack slots only.
+take it as a premise; `CallSegOkGT.WitnessExt.ext_ret` proves it for a one-`ret` external whose
+specification returns its argument, in any well-formed link (non-vacuity; the end-to-end
+witnesses `WitnessExt.realizes_call_extT` and `WitnessMix.realizes_calls_mixT` discharge it this
+way). Specifications without stack slots only.
 
 ## Thread-local storage: trusted TLSDESC hook (agent/stack-tls-proof, 2026-10-01)
 

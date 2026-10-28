@@ -266,6 +266,105 @@ run-restricted contract.
 - #575 `VCodeSemIDriver.lean`: `DriverSemG.csemI`, `LowerTermOk.csemI`; witness
   `driverSemG_csemI`. With these the generic `Driver.DriverHyp` fields `dsem`, `insts` and
   `terms` hold for the counted world once the per-index `csem` ones do.
+- #643 (step 2f) `FV/E2E/LinkArmProph.lean`: the first worklist item below. `LinkSys.calleeRgn κ M g w`
+  is `Cond`'s own callee region `StackBelow (frameDrop (A g).af + κ (M - 1) g) (spv w)` (the plan's
+  `StackBelow K (sp w)`, inside `F` and outside the image under `Cond`); `worldP` overlays it by
+  the prophecy `Pn` (`StaleRegion.overlay`), and `canonP`/`CondP`/`progXP` are
+  `canon`/`Cond`/`progX` of that world (`progXP_eq`, by `rfl`). `XP … P n : ExtSem` is call number
+  `n` (`progXP` with `P n`), i.e. the future `ExtSemI.at n`: `ExtSemI` cannot be imported next to
+  `LinkArm` yet, because `VCodeSemI*.lean` and `FV/E2E/Pair.lean` both declare `VConf.mapW`,
+  `SeqEnd.mapW`, `SeqEnd.mapW_succ` ([#640](https://github.com/eth-act/clifv/issues/640), fixed
+  by #644: Pair imports `VCodeSemISeq` and drops its copies). (a) the world's own bytes give today's contract (`worldP_self`,
+  `canonP_self`, `progXP_self`, `XP_call_self`); (b) the canonical state depends on the world's
+  registers, program and bytes outside the region, and on the prophecy inside it only
+  (`worldP_congr`, `canonP_congr`, `condP_congr`, `progXP_congr`); (c) `Cond` depends on registers
+  and the memory outside `F` only (`cond_congr`), so `CondP ↔ Cond` (`condP_iff_cond`: the
+  prophecy changes the canonical run, not the condition); `canonP_eq_overlay`,
+  `sameWorld_canonP`, `mem_canonP_in`/`_out`, `r_canonP`, `program_canonP`. Witnesses
+  `LinkArmProphWitness.lean` (on `LinkWitness.L` without an image, `sp = 0x8000`).
+- #648 (step 2h) `FV/E2E/LinkArmProphThm.lean` (on #643, #644): `XPI … P : ExtSemI` (`XPI_at`: `.at n`
+  is `XP … P n`, by `rfl`). The prophecy of a machine run: `callsBefore Mm fa base s i` counts
+  the call states (`CallPc`) before step `i`; `ProphOk K c Mm fa base s P`: at each call state
+  with `sp = c`, `P (callsBefore … i)` holds the state's bytes `StackBelow K c`; `prophOf` is one
+  (`prophOf_call`, `prophOk_prophOf`). `MachEntryP … P`: `MachEntry` and `ProphOk (κ M g)
+  (spv w₀) (mach M g) …` (the callees' budget below the body's `sp`). `ThmP κ M`: `Thm` with the
+  outcome chosen after a prophecy `P` and realised by the `MachEntryP … P` activations (also in
+  the NI clause, the same `P`): the counted VCode run's calls read `P`, so its outcome depends
+  on it. `Thm.thmP` (one outcome for every prophecy) and `thmP` (it holds today at every depth).
+  Deviations from the worklist: no `WorldEntryP` (with `PlaceAt`'s `init = none` it would be
+  `WorldEntry`; with an oracle the statement also needs the oracle's agreement with the
+  machine's slotted activation entries in call order, recursively through nested linked calls,
+  which is the CLIF-side `PlaceAt`/`CrunOk` item); the counted machine count (`CallPc` states)
+  must equal the VCode `csemI` counter, a proof obligation of the counted simulation (every
+  `bl`/`blr` executed by an activation is a `call`/`try_call`'s `callInsn?`). Witnesses
+  `LinkArmProphThmWitness.lean`.
+- #651 (step 2i) `FV/E2E/RegLevelCorrectI.lean` (on #648): `ISem.counted sem` (step at counter `n` is
+  `sem n`'s, the counter bumped by the calls; `csemI_eq_counted`), `csemVI` (`csemV` with
+  `X.at n`; `csemVI_sub`), `MStep.counted_proj`/`_lift`, `Realizes.counted` (the machine
+  realises the counted semantics under `Q` of the first components when it realises each `sem n`),
+  `RL.Q_withX` (`Q` does not read `R.X`); `regLevelCorrect_world_atI`/`regLevelCorrect_worldI`:
+  `regLevelCorrect_world` for the `csemVI` run from `(w₀, 0)`, machine `ArmStepX (XI.at 0) H fa`
+  (it reads only `XI.sym`), with the callee contracts of **every** index. Not yet: the counter in
+  the relation (`= callsBefore` of the machine run) and the contract only at the run's own call
+  of that index. That needs, per realised segment of an item, the number of `CallPc` states
+  (`1` for `call`/`try_call`, `0` otherwise): the existing `realizes_*` lemmas expose only the
+  per-state `RL.GoodX`, which says every `bl`/`blr` state has *some* call's `CallPre`, not that it
+  is the current item's; so every `realizes_*` case needs a variant with a per-segment fact (the
+  states are at the item's own lines, as the `*W.lean` variants did for `WritesAt`). The static
+  fact that only `call`/`try_call` emit `bl`/`blr` exists already (`lines_noCall`,
+  `lines_callKeys`, `L_callKeys` in `FV/E2E/RegLevelCallSite.lean`, S10e). Witnesses
+  `RegLevelCorrectIWitness.lean`.
+- step 2j `FV/E2E/RegLevelCountI.lean` (on #651): the obligation and its lift. `countIn C step s n`
+  (the `C` states among the first `n`; `callsBefore_eq_countIn`: the prophecy index is `countIn`
+  of the call states), `stepC C step` (the machine paired with that count, `iterN_stepC`),
+  `opCalls vc c` (`1` when `c`'s next item is a call), `MStep.counted_ctr` (a counted step adds
+  `opCalls`); `RealizesC … C`: `Realizes` whose every segment passes `opCalls vc c` states of
+  `C`; `RealizesC.counted`: from `RealizesC` at every index, `stepC C step` realises the counted
+  semantics under `Q` of the first components **and counter = count**. Next: `RealizesC` for
+  `realizes_all` with `C` the call states (`CallPc fa base` at the pc), i.e. the per-segment
+  variants above, then `regLevelCorrect_world_atI` on `stepC` with the contract of index `n` only
+  at the states whose count is `n` (`CallSoundCtlG` with that premise beside its `G`-keep one).
+  Witnesses `RegLevelCountIWitness.lean`.
+
+### 5.5 Segment locality: call states per realised segment (step 2k)
+
+`FV/E2E/RegLevelNoCall.lean`: `RL.CallSt R u := CallPc R.fa R.base (pc u)` (the pc is a
+`bl`/`blr` line of the activation), `RL.NoCallAt := ¬ CallSt`, `RL.GoodXN := GoodX ∧ NoCallAt`.
+Every `bl`/`blr` is hooked (`Insn.not_call_of_hooked`), so a state at an unhooked line is no
+call state (`RL.noCallAt_of_line`, `noCallAt_of_noCall`; `callSt_of_line` for the call line);
+`RL.goodXN_execLinesG`/`goodXN_execLines` are the straight-line builders. This per-state fact
+is all the count needs: we do not state "the item's own lines" as a range, because a non-call
+item's segment can leave its lines (relaxed branches, veneers, trap sections) and none of
+those is a call line either. Variants, new files beside the originals (the `*W.lean` pattern),
+same hypotheses as the original:
+- non-call items, `realizes_XN` in `RegLevelXN.lean`: `R.GoodX` replaced by `R.GoodXN` in the
+  conclusion (`∀ i < n, R.GoodXN (iterN R.step i s)`); zero-length segments need none.
+- `call`/`try_call`, `realizes_callN`/`realizes_tryCallN`: the contract restricted to states `P`
+  (`CalleeOkGP P`, `CalleeTryOkGP P`: `CallSoundCtlG`'s obligation only at states with `P`;
+  `CalleeOkG.p`/`CalleeTryOkG.p` restrict the old ones) and `hP : P s` at the segment's first
+  state (the `bl`/`blr` state); conclusion: the original's and
+  `∃ i0 < n, R.CallSt (iterN R.step i0 s) ∧ ∀ i < n, i ≠ i0 → R.NoCallAt (iterN R.step i s)`.
+- composition `realizes_allC` (`RegLevelCorrectC.lean`): `RealizesCP … R.step (Q ∧ AInv)
+  R.GoodX R.CallSt P` (`RealizesC` from the states `P`: per segment `countIn = opCalls`), via
+  `countIn_zero_of`/`countIn_one_of` (`RegLevelCountP.lean`).
+Files: core `RegLevelNoCall`, `MoveN`, `OpN` (`RunsAsN`), `GotoN` (`reach_*XN`), `NextN`
+(`args`/`island`/`rets`/`udf` are zero-length); rest `GoodXN`, `CallN` (`symAddrN`), `TryN`,
+`JTN`, `AtomicN`, `TlsN`, `FrameN` (`q_initN`, `ret_machineN`), `TrapN` (`trap_trapIfN`) (#657).
+Not built (nothing uses them yet): `*W` call-state variants, the `UTry` raise, `trapT`/`haltTry`
+and the `MemTrap` loop wrappers; add them when the linking needs them.
+
+As built: `RegLevelCountP.lean`: `RealizesCP`, `RealizesCP.countedRun` (from `RealizesCP` at
+every index `n` with precondition `P n`, where `P n` holds at the states of the run from `s0`
+with count `n`: the machine with the count `stepC` realises the counted semantics under `Q`,
+*counter = count* and *on the run*), `Realizes.ofStepC`, `OnCall Mm fa base s n u` (`u` is a
+state of the run of `Mm` from `s` with `callsBefore … = n`), `onCall_of_run`.
+`RegLevelCorrectC.lean`: `regLevelCorrect_world_atC`/`regLevelCorrect_worldC`:
+`regLevelCorrect_world_atI`/`_worldI` (same conclusion) with the contracts of index `n`
+required only at `OnCall (ArmStepX (XI.at 0) H fa) fa base s n`, i.e. at the activation's own
+run where it has made `n` calls (the prophecy index of `ProphOk`). The prologue makes no call
+(`q_initN`), so the counted VCode run's counter is the machine's call count. Witnesses
+`RegLevelCorrectCWitness.lean` (`countIn` facts, `countedRun_any`, `worldC_const`). Next: the
+refined contract below, with `P n` from `ProphOk` at the `OnCall … n` state.
 
 **Refined call contract (next).** `X.call n` should be the *canonical* callee run from the
 VCode world `w` with the callee's stack region (the addresses `StackBelow K (sp w)`, inside the

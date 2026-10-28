@@ -49,7 +49,8 @@ theorem driverHypT_relW_of {sem : Sem} (hsub : InSubsetT p f) (hT : TypedRules)
       lowerRulesCorrectFT_program nonEUnmatchableT_program hT.callsT hT.indT
       memRulesCorrectRTI_program memRulesCorrectRT_program hRef (mrStable_relW Γ f c) hcalls
       hicalls hmem hFP (outArgsOk_relW Γ f c)
-      (callsStack_mono (callsStackT_of_check hlow) houtB) (memRelOk_relW Γ f c) hctxT hstT
+      (callsStack_mono (callsStackT_of_check hlow) houtB) (memRelOk_relW Γ f c) hctxT
+      hshape.scope hstT
     terms := termCallsT_of_rules hT.term hT.termUn hT.branch hT.branchEx hRef
       (mrStable_relW Γ f c) hctxT
     ext := fun B hB st hst fn args hi e he => hsub.externCalls B hB st hst fn args hi e he

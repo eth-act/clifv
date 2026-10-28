@@ -79,9 +79,10 @@ theorem verdict_t : unverifiedReason? fTryF = none ∧
   have hn : unverifiedReason? fTryF = none := by native_decide
   have hE : Compile.functionE fTryF = false := by native_decide
   have hT : Compile.functionET fTryF = false := by native_decide
+  have hTC : Compile.functionETC fTryF = true := by native_decide
   have hv : (lowerChecked fTryF true).toBool = true := by native_decide
-  refine ⟨hn, ?_, lowerChecked_specTC (getOk_eq hv) hE hT⟩
-  rcases verdict_of_unverifiedReason hn with h | ⟨-, h⟩ | h
+  refine ⟨hn, ?_, lowerChecked_specTC (getOk_eq hv) hE hT hTC⟩
+  rcases verdict_of_unverifiedReason hn (by simp [hTC]) with h | ⟨-, h⟩ | h
   · simp [Backend.verifiable, hE] at h
   · simp [Backend.verifiableT, hT] at h
   · exact h

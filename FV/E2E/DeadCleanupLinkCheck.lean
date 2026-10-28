@@ -4,7 +4,7 @@ namespace E2E.LinkCheck
 open Backend Backend.Proof Backend.Proof.Driver
 
 def pipeCleanup (f : Clif.Function) (k : Nat) (base : BitVec 64) (o : Lean.Json) : Except String Art :=
-  pipeWithLowering Backend.Stock.D0.defaultLower DeadCleanup.prune f k base o
+  pipeWithLowering Backend.Stock.D0.defaultLower (fun _ => DeadCleanup.prune) f k base o
 
 theorem pipeCleanup_spec {f : Clif.Function} {k : Nat} {base : BitVec 64} {o : Lean.Json} {a : Art}
     (h : pipeCleanup f k base o = .ok a) :
@@ -34,7 +34,7 @@ loaded at `base`: `lowerFunction`, `prepare`, `lowerAllocReady` (regalloc2's all
 accepted and emittable, else the spill allocation), `emitFunc`, `layout`. The artifact's
 allocation is the one lowered, `allocResult vcp (readyAnswer vcp ra)` (`lowerAllocReady_eq`). -/
 def pipeCleanupT (f : Clif.Function) (k : Nat) (base : BitVec 64) (o : Lean.Json) : Except String Art :=
-  pipeTWithLowering Backend.Stock.D0.defaultLower DeadCleanup.prune f k base o
+  pipeTWithLowering Backend.Stock.D0.defaultLower (fun _ => DeadCleanup.prune) f k base o
 
 theorem pipeCleanupT_spec {f : Clif.Function} {k : Nat} {base : BitVec 64} {o : Lean.Json} {a : Art}
     (h : pipeCleanupT f k base o = .ok a) :
@@ -67,7 +67,7 @@ def LinkInput.resultsCleanup (I : LinkInput) : Res :=
   I.funcs.map fun fi => (fi.func, I.pipeCleanupOf fi)
 
 theorem resultsCleanup_ok (I : LinkInput) :
-    ResOkWith DeadCleanup.prune I I.resultsCleanup := by
+    ResOkWith (fun _ => DeadCleanup.prune) I I.resultsCleanup := by
   intro e he a ha
   obtain ⟨fi, _, rfl⟩ := List.mem_map.1 he
   cases hfb : I.fallback <;>
@@ -77,19 +77,19 @@ theorem resultsCleanup_ok (I : LinkInput) :
   · obtain ⟨hl, hp, _, hlr, hem, hla, _, hb⟩ := pipeCleanupT_spec ha
     exact ⟨hl, hp, hlr, hem, hla, hb⟩
 
-def okBCleanup (I : LinkInput) : Bool := okRWith DeadCleanup.prune I I.resultsCleanup
+def okBCleanup (I : LinkInput) : Bool := okRWith (fun _ => DeadCleanup.prune) I I.resultsCleanup
 
 theorem okBCleanup_global {I : LinkInput} (h : okBCleanup I = true)
     (c : String × Bool) (hc : c ∈ globalChks I (progOf I.resultsCleanup) (tabOf I.resultsCleanup)) :
-    c.2 = true := okRWith_global DeadCleanup.prune h c hc
+    c.2 = true := okRWith_global (fun _ => DeadCleanup.prune) h c hc
 
 theorem okBCleanup_names {I : LinkInput} (h : okBCleanup I = true) :
-    ((progOf I.resultsCleanup).funcs.map (·.name)).Nodup := okRWith_names DeadCleanup.prune h
+    ((progOf I.resultsCleanup).funcs.map (·.name)).Nodup := okRWith_names (fun _ => DeadCleanup.prune) h
 
 theorem factsCleanup {I : LinkInput} (h : okBCleanup I = true) {g : Clif.Function}
     (hg : g ∈ (progOf I.resultsCleanup).funcs) :
-    FactsWith DeadCleanup.prune I I.resultsCleanup g (artOf I.resultsCleanup g) :=
-  factsRWith DeadCleanup.prune (resultsCleanup_ok I) h hg
+    FactsWith (fun _ => DeadCleanup.prune) I I.resultsCleanup g (artOf I.resultsCleanup g) :=
+  factsRWith (fun _ => DeadCleanup.prune) (resultsCleanup_ok I) h hg
 
 def LinkSys.ofInputCleanup (I : LinkInput) (B : BaseEnv) (F : BitVec 64 → Prop) : LinkSys :=
   ofRes I I.resultsCleanup B F
@@ -100,7 +100,7 @@ theorem okBCleanup_sound {I : LinkInput} (hI : okBCleanup I = true) {B : BaseEnv
     {F : BitVec 64 → Prop} (hB : BaseOk (LinkSys.ofInputCleanup I B F))
     (hF : ∀ a, (LinkSys.ofInputCleanup I B F).Img a → F a) :
     (LinkSys.ofInputCleanup I B F).Ok :=
-  okRWith_sound DeadCleanup.prune (.inr rfl) (resultsCleanup_ok I) hI hB hF
+  okRWith_sound (fun _ => DeadCleanup.prune) (.inr rfl) (resultsCleanup_ok I) hI hB hF
 
 /-- The legacy crate statement with the cleanup pipeline's concrete artifacts. -/
 def CrateStmtCleanup (I : LinkInput) (n : String) : Prop :=
@@ -125,7 +125,7 @@ def fnsBCleanup (I : LinkInput) (fs : List FnInput) : Bool :=
   let R := I.resultsCleanup
   let P := progOf R
   let T := tabOf R
-  fs.all fun fi => (chksWith DeadCleanup.prune I P T fi.func (I.pipeCleanupOf fi)).all (·.2)
+  fs.all fun fi => (chksWith (fun _ => DeadCleanup.prune) I P T fi.func (I.pipeCleanupOf fi)).all (·.2)
 
 theorem fnsBCleanup_append (I : LinkInput) (l₁ l₂ : List FnInput) :
     fnsBCleanup I (l₁ ++ l₂) = (fnsBCleanup I l₁ && fnsBCleanup I l₂) := by
