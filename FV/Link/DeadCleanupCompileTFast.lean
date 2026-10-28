@@ -1,6 +1,6 @@
 import FV.Link.DeadCleanupImage
 import FV.E2E.LinkScopeFast
-import FV.E2E.LinkCheckFast
+import FV.E2E.CalleeWith
 import FV.E2E.LinkOutCleanupT
 
 /-! # The typed scope's checks at the size of std (S11e6, #419)
@@ -15,8 +15,8 @@ once, compile the functions once in parallel tasks and check them in parallel, a
 the definitions:
 
 * `inScopePTPar_eq : inScopePTPar I = InScopePT I`;
-* `calleeWithB_eq`: the callers' declared names as a hash set (`calleeB`; `calleeSet` of
-  `FV/E2E/LinkCheckFast.lean`);
+* `calleeWithB_eq` (`FV/E2E/CalleeWith.lean`): the callers' declared names as a hash set
+  (`calleeB`; `calleeSet` of `FV/E2E/LinkCheckFast.lean`);
 * `outChksTWith_eq`: `outChksT` with the program's functions, the symbols and the callee set
   given;
 * `outOkTFast_eq : outOkTFast S = OutOkTCleanup S.inputCleanup`.
@@ -37,17 +37,6 @@ def inScopePTPar (I : LinkInput) : Bool :=
 theorem inScopePTPar_eq (I : LinkInput) : inScopePTPar I = InScopePT I := by
   simp only [inScopePTPar, assocMap_fun, progScopeFastB_eq, InScopePT, Link.parMap_eq,
     List.all_map, Function.comp_def, id]
-
-/-- `calleeB P S g` with the declared names (`cs`) and "some function of `P` has an indirect
-call" (`anyInd`) given. -/
-def calleeWithB (cs : String → Bool) (anyInd : Bool) (S : String → Option Nat)
-    (g : Clif.Function) : Bool :=
-  cs g.name || ((S g.name).isSome && anyInd)
-
-theorem calleeWithB_eq (P : Clif.Program) (S : String → Option Nat) (g : Clif.Function) :
-    calleeWithB (fun n => (calleeSet P).contains n) (P.funcs.any (!indFreeB ·)) S g =
-      calleeB P S g := by
-  simp only [calleeWithB, calleeSet_contains, calleeB]
 
 /-- `siteOk` with the program's functions looked up through `F`. -/
 def siteOkWith (F : String → Option Clif.Function) (P : Clif.Program) (g : Clif.Function)
