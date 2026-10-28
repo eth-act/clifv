@@ -150,7 +150,8 @@ theorem invoked_sub_invokedN {env : Clif.Env} {p : Clif.Program} {cs s : Clif.St
 
 /-- **An accepted result exists for every call** to the environment restricted to the invocation
 of call number `n`, when that invocation, if it returns, keeps the live allocations and symbols
-and its possible declarations agree on an ABI return count. -/
+and its possible declarations (those with as many parameters as it has values, #733) agree on an
+ABI return count. -/
 theorem callPost_invokedN_exists {env : Clif.Env} {p : Clif.Program} {cs : Clif.State} {n : Nat}
     {exts : List Clif.ExtFunc} {sigs : List Clif.Signature} {Γ : Rel} {f : Clif.Function}
     {c : BitVec 64} {sym : String → Int → BitVec 64}
@@ -158,10 +159,11 @@ theorem callPost_invokedN_exists {env : Clif.Env} {p : Clif.Program} {cs : Clif.
       g vals m = .returned rvals cm' →
       (∀ a k, cm'.valid a k = true → m.valid a k = true) ∧ cm'.symbols = m.symbols ∧
       ∃ ℓ, rvals.length ≤ ℓ ∧
-        (∀ ext ∈ exts, ext.name = nm → rvals.length = ext.sig.returns.length →
-          (sigRets ext.sig).length = ℓ) ∧
+        (∀ ext ∈ exts, ext.name = nm → vals.length = ext.sig.params.length →
+          rvals.length = ext.sig.returns.length → (sigRets ext.sig).length = ℓ) ∧
         (∀ sig ∈ sigs, (∀ s', env.sigOf nm = some s' → sig.abiMatch s' = true) →
-          rvals.length = sig.returns.length → (sigRets sig).length = ℓ)) :
+          vals.length = sig.params.length → rvals.length = sig.returns.length →
+          (sigRets sig).length = ℓ)) :
     ∀ d uses w, ∃ r,
       CallPost (env.only (InvokedN env p cs n)) exts sigs (RelW Γ f c) sym d uses w r := by
   intro d uses w

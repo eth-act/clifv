@@ -28,7 +28,7 @@ theorem callPost_e (Γ : Rel) (f : Clif.Function) (c : BitVec 64) (sym : String 
   simp only [envE, ↓reduceIte] at hg
   cases hg
   cases hret
-  exact ⟨fun _ _ h => h, rfl, Nat.zero_le _, fun ext hext _ _ => by
+  exact ⟨fun _ _ h => h, rfl, Nat.zero_le _, fun ext hext _ _ _ => by
     simp only [List.mem_singleton] at hext; subst hext; rfl, fun _ h => nomatch h⟩
 
 theorem guard_xCallsOk_e (X : ExtSem) (Γ : Rel) (f : Clif.Function) (c : BitVec 64) :

@@ -48,7 +48,8 @@ theorem prefixHold_outsOf {rvals : List Clif.Val} {ℓ : Nat} (h : rvals.length 
   exact vHolds_valCV v
 
 /-- **An accepted result exists for every call** to the environment restricted to the single
-invocation `(n0, vals0, cm0)`. -/
+invocation `(n0, vals0, cm0)`. The declarations compared are those with as many parameters as the
+invocation has values (a call through one passes that many, #733). -/
 theorem callPost_only_exists {env : Clif.Env} {A : String → List Clif.Val → Clif.Mem → Prop}
     {exts : List Clif.ExtFunc} {sigs : List Clif.Signature} {Γ : Rel} {f : Clif.Function}
     {c : BitVec 64} {sym : String → Int → BitVec 64}
@@ -58,10 +59,11 @@ theorem callPost_only_exists {env : Clif.Env} {A : String → List Clif.Val → 
     (hR : ∀ g rvals cm', env.extern n0 = some g → g vals0 cm0 = .returned rvals cm' →
       (∀ a k, cm'.valid a k = true → cm0.valid a k = true) ∧ cm'.symbols = cm0.symbols ∧
       rvals.length ≤ ℓ ∧
-      (∀ ext ∈ exts, ext.name = n0 → rvals.length = ext.sig.returns.length →
-        (sigRets ext.sig).length = ℓ) ∧
+      (∀ ext ∈ exts, ext.name = n0 → vals0.length = ext.sig.params.length →
+        rvals.length = ext.sig.returns.length → (sigRets ext.sig).length = ℓ) ∧
       (∀ sig ∈ sigs, (∀ s, env.sigOf n0 = some s → sig.abiMatch s = true) →
-        rvals.length = sig.returns.length → (sigRets sig).length = ℓ)) :
+        vals0.length = sig.params.length → rvals.length = sig.returns.length →
+        (sigRets sig).length = ℓ)) :
     ∀ d uses w, ∃ r, CallPost (env.only A) exts sigs (RelW Γ f c) sym d uses w r := by
   intro d uses w
   -- the invocation's outcome (if it returns)
@@ -70,7 +72,8 @@ theorem callPost_only_exists {env : Clif.Env} {A : String → List Clif.Val → 
     obtain ⟨hv, hsym, hℓ, hext, hsig⟩ := hR g0 rv0 cm1 hg0 hr0
     -- every admitted returning call is this one
     have key : ∀ (n : String) g' vals rvals cm cm', (env.only A).extern n = some g' →
-        g' vals cm = .returned rvals cm' → n = n0 ∧ rvals = rv0 ∧ cm = cm0 ∧ cm' = cm1 := by
+        g' vals cm = .returned rvals cm' →
+          n = n0 ∧ vals = vals0 ∧ rvals = rv0 ∧ cm = cm0 ∧ cm' = cm1 := by
       intro n g' vals rvals cm cm' hg' hret
       obtain ⟨g, hg1, rfl⟩ := Clif.Env.only_extern_eq hg'
       obtain ⟨hAi, hret'⟩ := onlyFn_returned hret
@@ -79,14 +82,17 @@ theorem callPost_only_exists {env : Clif.Env} {A : String → List Clif.Val → 
       cases hg1
       rw [hr0] at hret'
       cases hret'
-      exact ⟨rfl, rfl, rfl, rfl⟩
-    refine ⟨(outsOf rv0 ℓ, patchW cm1 w), fun ext hext' g sl cm args vals rvals cm' hg _ _ hmr hret
-        hlen => ?_, fun sig hsig' n g sl cm u args vals rvals cm' _ _ hg hs _ _ _ hmr hret hlen _ => ?_⟩
-    · obtain ⟨hn, rfl, rfl, rfl⟩ := key _ _ _ _ _ _ hg hret
-      exact ⟨by rw [outsOf_length hℓ]; exact (hext ext hext' hn hlen).symm, prefixHold_outsOf hℓ,
-        relW_patchW hmr hv hsym⟩
-    · obtain ⟨rfl, rfl, rfl, rfl⟩ := key _ _ _ _ _ _ hg hret
-      exact ⟨by rw [outsOf_length hℓ]; exact (hsig sig hsig' (by simpa using hs) hlen).symm,
+      exact ⟨rfl, rfl, rfl, rfl, rfl⟩
+    refine ⟨(outsOf rv0 ℓ, patchW cm1 w), fun ext hext' g sl cm args vals rvals cm' hg _ ha hmr hret
+        hlen => ?_, fun sig hsig' n g sl cm u args vals rvals cm' _ _ hg hs _ _ _ hmr hret hlen hty =>
+        ?_⟩
+    · obtain ⟨hn, rfl, rfl, rfl, rfl⟩ := key _ _ _ _ _ _ hg hret
+      exact ⟨by rw [outsOf_length hℓ]; exact (hext ext hext' hn ha.1 hlen).symm,
+        prefixHold_outsOf hℓ, relW_patchW hmr hv hsym⟩
+    · obtain ⟨rfl, rfl, rfl, rfl, rfl⟩ := key _ _ _ _ _ _ hg hret
+      have hpl : vals.length = sig.params.length := by
+        simpa [Clif.AbiParam.tys] using congrArg List.length hty
+      exact ⟨by rw [outsOf_length hℓ]; exact (hsig sig hsig' (by simpa using hs) hpl hlen).symm,
         prefixHold_outsOf hℓ, relW_patchW hmr hv hsym⟩
   · -- no admitted call returns: every result is accepted
     have none_ret : ∀ (n : String) g' vals rvals cm cm', (env.only A).extern n = some g' →
@@ -160,7 +166,9 @@ theorem callPost_invoked_exists {env : Clif.Env} {p : Clif.Program} {s : Clif.St
     subst hm0
     exact callPost_only_exists (n0 := n0) (vals0 := vals0) (cm0 := s.mem)
       (fun n vals cm h => invoked_unique h h0) ℓ
-      (fun g rvals cm' hg hret => hR n0 vals0 g rvals cm' h0 hg hret)
+      (fun g rvals cm' hg hret => by
+        obtain ⟨hv, hsy, hl, he, hs⟩ := hR n0 vals0 g rvals cm' h0 hg hret
+        exact ⟨hv, hsy, hl, fun ext hx hn _ => he ext hx hn, fun sig hx hm _ => hs sig hx hm⟩)
   · intro d uses w
     have none_ret : ∀ (n : String) g' vals rvals cm cm',
         (env.only (Clif.Invoked env p s)).extern n = some g' →

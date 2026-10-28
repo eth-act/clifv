@@ -68,15 +68,17 @@ theorem retOkPRB_of (hL : L.Ok) [hR : L.CrunOk] (hN : L.NeedSlots) (hB : L.BaseR
     refine ⟨hv, hs, ?_⟩
     have hmem := sigsOf_mem (g := g) (nm := nm)
     by_cases hex : ∃ s, ((∃ ext ∈ g.externs.map (·.2), ext.name = nm ∧ s = ext.sig) ∨
-        s ∈ indSigs g) ∧ rvals.length = s.returns.length
-    · obtain ⟨s, hs, hl⟩ := hex
-      refine ⟨(sigRets s).length, hl ▸ returns_le_sigRets s, fun ext hext hnm hl' => ?_,
-        fun sig hsg _ hl' => ?_⟩
-      · exact hC g hg nm hpf ext.sig (hmem _ (.inl ⟨ext, hext, hnm, rfl⟩)) s (hmem s hs) (by omega)
-      · exact hC g hg nm hpf sig (hmem _ (.inr hsg)) s (hmem s hs) (by omega)
-    · refine ⟨rvals.length, Nat.le_refl _, fun ext hext hnm hl' => ?_, fun sig hsg _ hl' => ?_⟩
-      · exact absurd ⟨ext.sig, .inl ⟨ext, hext, hnm, rfl⟩, hl'⟩ hex
-      · exact absurd ⟨sig, .inr hsg, hl'⟩ hex
+        s ∈ indSigs g) ∧ vals'.length = s.params.length ∧ rvals.length = s.returns.length
+    · obtain ⟨s, hs, hp, hl⟩ := hex
+      refine ⟨(sigRets s).length, hl ▸ returns_le_sigRets s, fun ext hext hnm hp' hl' => ?_,
+        fun sig hsg _ hp' hl' => ?_⟩
+      · exact hC g hg nm hpf ext.sig (hmem _ (.inl ⟨ext, hext, hnm, rfl⟩)) s (hmem s hs)
+          (by omega) (by omega)
+      · exact hC g hg nm hpf sig (hmem _ (.inr hsg)) s (hmem s hs) (by omega) (by omega)
+    · refine ⟨rvals.length, Nat.le_refl _, fun ext hext hnm hp' hl' => ?_,
+        fun sig hsg _ hp' hl' => ?_⟩
+      · exact absurd ⟨ext.sig, .inl ⟨ext, hext, hnm, rfl⟩, hp', hl'⟩ hex
+      · exact absurd ⟨sig, .inr hsg, hp', hl'⟩ hex
   | some h =>
     -- a program callee: its whole-program run
     obtain ⟨hh, hname⟩ := Clif.Program.func?_some hpf
@@ -115,11 +117,11 @@ theorem retOkPRB_of (hL : L.Ok) [hR : L.CrunOk] (hN : L.NeedSlots) (hB : L.BaseR
             · rw [hL.declSig g hg ext hext h (hnm ▸ hpf)]
             · exact sigRets_length_of_abiMatch hm
           refine ⟨(sigRets h.sig).length, hsR ▸ hl ▸ returns_le_sigRets s,
-            fun ext hext hnm _ => ?_, fun sig _ hsg _ => ?_⟩
+            fun ext hext hnm _ _ => ?_, fun sig _ hsg _ _ => ?_⟩
           · rw [hL.declSig g hg ext hext h (hnm ▸ hpf)]
           · exact sigRets_length_of_abiMatch (hsg h.sig hsig)
-        · refine ⟨rvals.length, Nat.le_refl _, fun ext hext hnm hl' => ?_,
-            fun sig hsg hm hl' => ?_⟩
+        · refine ⟨rvals.length, Nat.le_refl _, fun ext hext hnm _ hl' => ?_,
+            fun sig hsg hm _ hl' => ?_⟩
           · exact absurd ⟨ext.sig, .inl ⟨ext, hext, hnm, rfl⟩, hl'⟩ hex
           · exact absurd ⟨sig, .inr ⟨hsg, hm h.sig hsig⟩, hl'⟩ hex
     · cases hr
