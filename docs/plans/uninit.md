@@ -583,8 +583,8 @@ single-step half of the lock-step: `ReadsAvoid Z evs`, `stEqOut_exec_inst` (from
    `StEqOut`-related states (the bytes `h` left below `g`'s `sp` are part of `g`'s next
    prophecy). `ThmPD` concludes only `ActRet` + `ProphOkUpTo`. The inductive statement needs, in
    addition: the two runs' states at the return are `StEqOut Z` for the differing set `Z` of the
-   entries minus the callee region (registers equal but `x30`/pc). `progCallP` itself needs only
-   `ThmPD` as built (the caller's prophecy is of the *actual* run, so no determinism across the
+   entries minus the callee region (registers equal but `x30`/pc). `progCallP` itself needs one
+   use of the determinism clause only, of `ThmPDE` (3) (the caller's prophecy is of the *actual* run, so no determinism across the
    caller's calls is needed there): it uses the determinism clause once, from the canonical state
    to the actual call state `t` (`OnCallP` + `ProphRegOk` give the premises). So `progCallP` on
    `ThmPDE` (item 4, see (3)) is independent of item 3, and item 3 proves `ThmPDE` by induction
