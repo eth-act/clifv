@@ -386,7 +386,7 @@ def FnOk (L : Link) (env : Clif.Env) (p : Clif.Program) (syms : String → Optio
     (nm : String) (F : LFn) (f : Clif.Function) : Prop :=
   F.Static ∧ F.af.frameSize % 16 = 0 ∧
   (∀ q ∈ f.slots, ∃ off, (slotLayout f.slots).1.lookup q.1 = some off ∧
-    F.af.slotBase + off + q.2.size ≤ F.af.frameSize) ∧
+    F.af.slotBase + off + q.2.size ≤ F.af.frameSize - clobberBytes F.af.saves) ∧
   ∃ (vc : VCode) (ctx : Ctx) (st0 : LState) (R : Reg → Reg) (gn : Nat → Nat) (bl : List BLow)
     (A : Nat → Nat → List Clif.ValueId) (Lp : Nat → Prop) (ss ss' : Array (Array Nat))
     (cc : CheckCtx) (ins : Array (Option AState)) (a0 : AState),

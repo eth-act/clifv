@@ -106,7 +106,7 @@ theorem callee_relW {L : Link} {RA : RL} (hRA : RA.Wf) (hcin : CodeIn L RA) {n :
     (hpl : cm.place = some ⟨spv x :: sps, fr, none⟩)
     (hfr : fr fB.name = some (frameDrop FB.af, slotOffs FB.af fB))
     (hfits : ∀ p ∈ fB.slots, ∃ off, (slotLayout fB.slots).1.lookup p.1 = some off ∧
-      FB.af.slotBase + off + p.2.size ≤ FB.af.frameSize) :
+      FB.af.slotBase + off + p.2.size ≤ FB.af.frameSize - clobberBytes FB.af.saves) :
     RelW ⟨(L.act FB (enter FB x) KB RA.FK).F, syms, FB.af.slotBase, 0⟩ fB
       (spv (bodyOf FB.af (enter FB x))) (Clif.enterSlots fB cm).1 (Clif.enterSlots fB cm).2
       (bodyOf FB.af (enter FB x)) := by
