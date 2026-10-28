@@ -199,6 +199,12 @@ theorem detTabPRBG_of (T : Nat → Clif.Function → Arm.ArmState → Clif.SlotI
 theorem detTabPRB_of {M : Nat} (hd : L.CallTwin κ M) : L.DetTabPRB κ M :=
   L.detTabPRBG_of L.TableOf (fun _ _ _ _ _ htw ht => L.tableOf_twin htw ht) hd
 
+/-- **Every run is its own twin** (the twin relation is not empty). -/
+theorem twin_refl : ∀ (M : Nat) (g : Clif.Function) (s : Arm.ArmState), L.Twin M g s s
+  | 0, _, _ => fun _ _ => ⟨Iff.rfl, fun _ => ⟨rfl, rfl, fun _ => Iff.rfl, fun _ _ _ => rfl⟩⟩
+  | M + 1, _, _ => ⟨fun _ _ => ⟨Iff.rfl, fun _ => ⟨rfl, rfl, fun _ => Iff.rfl, fun _ _ _ => rfl⟩⟩,
+      fun _ _ h _ => twin_refl M h _⟩
+
 end LinkSys
 
 end E2E

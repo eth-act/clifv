@@ -1633,6 +1633,51 @@ as corollaries (target `Stage2Z`/`thmPRBRL_ofZ`, #697), after combining with #69
   `BackendTwoRunLRWitness` (`a2_twoRunLER`, `frLine_lines_jump`, `hookNIX_id_call`),
   `LinkArmBaseNIXWitness` (`okDNX_Lu`, `thmPDERX29_LU`).
 
+**The lock with the world-difference invariant; the table side of `DetPRB`/`DetTabPRB`
+(UninitZ21b, branch `agent/uninit-z18b`, PR #701).**
+- Finding (decided conservatively): `hcall` received neither the bound `WDiff c c' ⊆ F` that
+  `stEqOutX_call_of_hookNIX` needs nor the call's destination (it had to keep the lock for every
+  hook destination, also for program functions the line does not call). The bound is not a pair-run
+  fact one can read off `hK` (the pair configurations carry no world relation), but the lock keeps
+  it: outside `F` the machine is the VCode world (`StRel`), and a byte outside `F` where the locked
+  states differ is in `Zc c c'`, so where the previous configurations' worlds differ.
+  `BackendTwoRunLW.lean`: `MConf.WIn Y` (two run configurations' worlds differ only on `Y`),
+  `MDiffIn F Y` (its machine form), `LineDest` (`bl n` ↦ `some n`, `blr` ↦ `none`),
+  `RL.InSeg.isRun`, `wDiff_of_wIn`, `mDiffIn_of_lock`, `wIn_end`, `stEqOutX_line_callD`,
+  `stEqOutX_lineZD`; **`backend_twoRunLW`** (`backend_twoRunLEF` at the lock
+  `StEqOutX (Zc c c') ∧ WIn (F ∪ D) c c' ∧ MDiffIn F (F ∪ D)`; `hcall`/`htls` receive
+  `WDiff c c' ⊆ F ∪ D`, `hcall` only the line's destination), **`backend_twoRunLERW`** (also the
+  returned states equal on the memory outside `F ∪ D`, from `RL.retLock_rets`, of which
+  `RL.retAgreeX_rets` is now a corollary). Base calls: `stEqOutX_call_of_hookNIX_D`/`_tls_` (`HookNIX`
+  when `F ∪ D` is inside the exterior; `DetPRB`'s only use has `D = F ∧ ¬ Fh ⊆ F`). Witnesses
+  `a2_twoRunLERW` (hook premises by `HookNIX` through the invariant) and **`r_twoRunLERW_Lsl`**
+  (`BackendTwoRunLWLslWitness.lean`: `Lsl`'s `r`, which reads its uninitialised slot, at the linked
+  machine's own hooks `Lsl.hooks M`; its code has no call or TLS line, `fR_noHookLines`).
+- Fixed in passing: `BackendTwoRun.lean` and `BackendWorldCleanupI.lean` both declared
+  `E2E.DriverSemG.counted`, so no module could import both; the generic one is now
+  `DriverSemG.countedW`.
+- Table side (item (4)), generic over the table predicate. `LinkArmTwin.lean`: **`Twin M g s s₀`**
+  (machine-level twin runs: up to the first return of the run from `s` both return at the same
+  indices and agree on the pc, `sp`, the program calls (`CallsTo`) and their slot bytes; at depth
+  `M + 1` the callee runs at those calls are twins one level down), `twin_refl`,
+  `callsBefore_twin`, `noRetAt_twin`, **`tabUpTo_twin`**, **`tableOf_twin`**; **`DetTabPRBG T`**
+  (`DetTabPRB` with any table predicate `T`: `DetTabPRB = DetTabPRBG TableOf`, `detTabPRB_iff`;
+  #700's `DetTabPRBE` is `DetTabPRBG TableOfE`), **`CallTwin κ M`** (the determinism step,
+  call-shaped with `DetTabPRB`'s premises: the callee runs from `t` and from `canon h uses w` are
+  twins), **`detTabPRBG_of`** (any `T` carried along `Twin`), **`detTabPRB_of`**.
+  `LinkArmDetPRBOf.lean`: `TwinN` (twins up to step `n`), `twinN_refl`, **`tabUpTo_twinN`**;
+  **`DetRunPRB κ M`** (`DetPRB` without table premises; conclusion: the actual run returns at the
+  canonical index with the canonical outcome, and the runs are `TwinN` up to there), `DetPRBG T U`
+  (`detPRB_iff`), **`detPRBG_of`**, **`detPRB_of`**.
+- Open: the program-callee case of `hcall` and the determinism steps `CallTwin`/`DetRunPRB`
+  (`thmPDERX_det_of`). Finding: `hcall` sees only the VCode configuration at the call, not the
+  CLIF call; a program callee's lock needs its CLIF entry (the callee's `ThmPDERX29` at
+  `M - 1`), reachable only through the link's `XI` (`XPBTG`: a returning VCode call is a returning
+  callee CLIF run). `ThmPDERX29` alone does not give `Twin` (it has no per-step facts), so the
+  determinism step must come from the lock (`backend_twoRunLW`'s per-index `StEqOutX`) plus the
+  prologue/epilogue states and a `blr`-target fact (`CallsTo` reads the `blr` register, exempt
+  from `x30Free`).
+
 ## 6. Heap (separate gap, SEM2)
 
 `BaseOk.baseKeepsAllocs`/`baseNoAlloc` require base externs to allocate nothing whenever a program

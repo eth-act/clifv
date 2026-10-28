@@ -78,6 +78,12 @@ theorem tabUpTo_twinN {M : Nat} {g : Clif.Function} {s s₀ : Arm.ArmState}
       exact hpre N'' hN'' ((htb N'' hpre'').1.2 ((L.retAt_enterAt_iff).2 hr))
     · exact L.tabUpTo_twin M h _ _ b _ N' _ htw' hpre htab
 
+/-- **Every run prefix is its own twin.** -/
+theorem twinN_refl (M : Nat) (g : Clif.Function) (s : Arm.ArmState) (n : Nat) :
+    L.TwinN M g s s n :=
+  ⟨fun _ _ => ⟨rfl, rfl, fun _ => Iff.rfl, fun _ _ _ => rfl⟩,
+    fun M' _ _ _ h _ => L.twin_refl M' h _⟩
+
 /-- **The determinism step of `DetPRB`** (module doc): from a canonical entry's outcome, the
 actual entry's run returns at the same index with that outcome, and the two runs are twins up to
 there. No table premise. -/
