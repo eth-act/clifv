@@ -52,6 +52,8 @@ Launch rules (checked every second):
     retried once alone at its cap.
 Ready modules are started longest-remaining-critical-path first (recorded seconds); when the first
 one does not fit the budget, it reserves it and only modules that cannot delay it are backfilled.
+A module that must run alone (heavy, or a retry) keeps its turn once it starts draining: until the
+running modules finish, only modules whose recorded seconds end before theirs start.
 
 Logs: OUT/sched.log (one line per start/finish/check) and OUT/<module>.log / .time / .mem.
 """
@@ -653,6 +655,7 @@ def main():
         settle(want - assumed, "all")
     verify_rounds = 0
     last_wait = ""
+    draining = None  # the solo module waiting for the running ones to finish
     try:
         while True:
             for m, (p, t0, c, unit) in list(running.items()):
@@ -763,7 +766,13 @@ def main():
                 used = sum(c for (_, _, c, _) in running.values())
                 now = time.time()
                 reserve = None  # (shadow time, spare budget then) held for the first light module that did not fit
-                for m in ready:
+                # A solo module that is draining keeps its turn: it goes first, and until it starts
+                # only modules expected to finish before the running ones do (solo_shadow) start.
+                # Without this, modules ranked above it kept the scheduler busy and it never ran.
+                solo_shadow = None
+                if draining not in ready:
+                    draining = None
+                for m in ([draining] if draining else []) + [m for m in ready if m != draining]:
                     c = retry_cap.get(m, cap[m])
                     est = est_peak(m, c)
                     if is_heavy(m, c):
@@ -789,6 +798,8 @@ def main():
                     elif m not in retry_cap:
                         if len(running) >= a.max_jobs:
                             break
+                        if solo_shadow is not None and now + secs[m] > solo_shadow:
+                            continue
                         if room is not None and est > room:
                             wait = f"clifv slice: room {gib(max(room, 0))} < {gib(est)} for {m}"
                             break
@@ -820,19 +831,24 @@ def main():
                             break
                         continue
                     # solo: heavy module (gate passed) or retry after an OOM kill; drain first
+                    if solo_shadow is not None:
+                        continue  # another solo module is draining
                     if running:
                         # our own light modules hold the memory, not the machine: do not block
                         # the other schedulers' heavy modules meanwhile (m keeps its queue place)
                         if ticket and ticket[1] == m:
                             dequeue()
+                        draining = m
+                        solo_shadow = max(max(now, t0 + secs[x]) for x, (_, t0, _, _) in running.items())
                         wait = f"draining for solo {m} ({gib(c)})"
-                        break
+                        continue
                     if not claim(m):
                         continue
                     if ticket and ticket[1] == m:
                         dequeue()
                     start(m, c)
                     solo_set.add(m)
+                    draining = None
                     break
             key = re.sub(r"[\d.]+G", "", wait)
             if wait and key != last_wait:
