@@ -217,7 +217,7 @@ theorem prep_emit {vc vcp : VCode} (hp : prepare vc = .ok vcp) (hd : Prep.PrepDo
   have cs2 : Prep.CfgSpec (B ++ E) ss2 := Prep.cfg_spec hc2
   obtain ⟨-, -, -, -, -, hR, -, -, -, -⟩ := Prep.facts_basic hd cs0 cs2 hS
   intro vb' hvb
-  have hvb' : vb' ∈ ((rpo ss2).map fun i => (B ++ E)[i]!).toList := hvb
+  have hvb' : vb' ∈ ((prepOrder B.size ss2).map fun i => (B ++ E)[i]!).toList := hvb
   rw [Array.mem_toList_iff, Array.mem_map] at hvb'
   obtain ⟨i, hiR, rfl⟩ := hvb'
   have hi2 : i < (B ++ E).size := hR i (by simpa using hiR)

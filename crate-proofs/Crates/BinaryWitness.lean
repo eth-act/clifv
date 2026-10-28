@@ -21,7 +21,10 @@ open E2E E2E.LinkCheck E2E.SemanticBinary Backend Backend.Proof
 abbrev I : SemanticStackBound.CompilerInput := Crates.AArithAbort.compilerInput
 
 /-- The entry's symbol. -/
-def n : String := "__fv_f6c1042d3065__RNvMs6_NtCsazjiGSRkgVH_4core3numm12wrapping_add"
+def n : String :=
+  -- the merge's `__fv_<hash>_` prefix depends on the build directory: look the name up
+  (Crates.AArithAbort.entryNames.find?
+    (·.endsWith "_RNvMs6_NtCsazjiGSRkgVH_4core3numm12wrapping_add")).getD ""
 
 /-- The entry (`core::num::<i32>::wrapping_add`). -/
 def f : Clif.Function := Crates.AArithAbort.fn6.func
