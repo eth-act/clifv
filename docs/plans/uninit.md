@@ -979,15 +979,48 @@ therefore not needed for item (3); the joint theorem is lifted instead.
   world-read guard to `RL.twoRunPR`. Witness `BackendTwoRunWitness.lean` (`a2_twoRunPRIY`, one
   activation entered twice, lock "equal states").
 
-Open: (1) `hGdP`, the world-read guard of the paired run, is a premise (as `hGd` is
-`backend_correct_worldPRIY`'s); for the lock-step it must hold with `Ok w Y := Y = Zof F D cm`
-at the related CLIF memory, i.e. a guarded paired semantics through the driver (the rules'
-`csemG … Rd` contracts with `Rd` the complement of `Zof F D cm`, `Guarded.lean`).
-(2) The lock `Lk := StEqOutX (Zs i)` with `hstep` from `stEqOutX_line` (reads avoid `Zs i` by
-`WReadsIn (OkS …)`), the call lines from the callees' determinism (`DetPRB κ (M - 1)`), `hend`
-at the segment ends; then `LinkSys.thmPDERX_det_of` on `ThmPRBRL` with `CallPostNXR`/`XPBTGY`
-(#692, #694, branch `agent/uninit-z16b`) and `DetPRB`/`DetTabPRB` as corollaries, witnesses on
-`Lsl`. Not started; the stack of #695 and that of #696 must be combined first.
+Open after this: see below.
+
+**Finding (#699, UninitZ17b; fixed by UninitZ18b, decided conservatively).** `WGuard` asked
+`csem Y` at every world-reading instruction, stores included, and `csem Y` of a store needs the
+*written* bytes to avoid `Y`, so with `Y = Zof F D cm` the guard failed at every store into an
+uninitialised byte of `D`. Moreover a guard on one world (`Ok w Y`) cannot name the bytes where
+the *two* worlds differ, which is what the lock-step needs. Fix (new names, old statements kept):
+- `RegLevelCorrectCYS.lean`: `MInst.loadForm` (loads, `ldar`, scalar SIMD&FP loads, atomic loops;
+  syntactic, so invariant under renaming/retargeting), `formOk_noLoad_memRd` (a covered form that
+  is not a load form reads no memory once allocated), **`WGuardS`** (`csem Y`, or not a load
+  form), `csemVGS`/`csemVIGS`/`RL.semGS` (+ `csemVGS_eqF`, `csemVGS_of_csemVG`),
+  `realizes_op_nextNYS`/`NAS`, **`realizes_allCYS`**, **`realizes_allCWS`** (+ `_spYS`, `_spWS`);
+  `RegLevelTwoRunS.lean`: `RL.jointSegS`, `RL.realizesJCPS`, **`RL.twoRunCS`**, **`RL.twoRunPRS`**;
+  `BackendTwoRunS.lean`: **`backend_twoRunPRIYS`** (witness `a2_twoRunPRIYS`).
+- The guard of the pair: `PairGuardS.lean`: `RdOk Y` (`csem Y` defined or not a load form),
+  **`PGuard F ctx X i us (w, w')`** (some `Y ⊇ F` containing every byte where `w`, `w'` differ,
+  `RdOk Y` on both), **`pairSemD`** (`pairSem` where `PGuard` holds), `rdOk_of_guardR` (the rules'
+  `csemG … (¬ Y)` steps read outside `Y`), `pGuard_of_csemG` (at `Y := Zof F D cm`),
+  `driverSemG_pairD`, `seqRun_pairP`/`pair_fallP`/`pair_stopP` (`seqRun_pair` into any paired
+  semantics). `PairDriverD.lean`: `instCalls_pairD`, `termCalls_pairD`, `tryCalls_pairD`,
+  `tryIndCalls_pairD`; `PairEntryD.lean`: `entry_step2PD` (the stack-argument loads read bytes
+  outside `F` equal on both worlds); `PairDriverID.lean`: **`vcode_niID`** (the paired counted run
+  of `vcode_niI` is a run of `pairSemD`); `BackendPairRunD.lean`: `gotInvPD_star`,
+  **`backend_pairRunD`** (through `prepare` and the GOT guard: `hGdP` discharged, in paired form);
+  `BackendTwoRunD.lean`: `GuardedAt`, `PairOfG`, `pstar_of_projG`, **`backend_twoRunPRIYD`**
+  (`backend_twoRunPRIYS` without `hGdP`; `hK` receives `GuardedAt`: every paired step from the
+  pair configuration is a `pairSemD` step). Witnesses `a2_pairRunD`, `a2_twoRunPRIYD`.
+
+**Design for the machine lock (item (3), not built).** Each activation's own guard can stay
+trivial (`Ok := (· = F)`); the difference-set guard reaches the lock through `KJ` (built by `hK`
+from `Match` and `GuardedAt`: the next op of both MConfs is the paired VCode step's, same
+instruction, uses and worlds). Then `OkS c c' _ Y := (∀ a, F a → Y a) ∧ ∀ a, c.w.mem a ≠ c'.w.mem
+a → Y a` (`hG` from `KJ`). Lock: `Lk c c' i u u' := StEqOutX (Zc c c') u u'` with
+`Zc c c' b := (F b ∧ ¬ InFrame b) ∨ (¬ F b ∧ c.w.mem b ≠ c'.w.mem b) ∨ LRword b` (`InFrame`: the
+activation's frame `[spB, spB + frameDrop)`, equal in both runs at entry by `EntryAgree`, kept by
+equal writes). Reads then avoid `Zc` (`ReadInY`: a world byte is outside `F` and `Y`, so equal in
+both VCode worlds, hence in both machines by `StRel`; a `FrameRd` byte is in the frame; a
+jump-table byte is code), so `stEqOutX_line` gives `hstep` on unhooked lines; `hend` is `StRel` of
+both at the segment end (outside `F` the machine is the VCode world); `hpro` from `q_initNA`'s
+register facts and `EntryAgree`. Remaining beyond that: the call lines (`DetPRB κ (M - 1)` for
+program callees, `HookDetX` for base calls), then `LinkSys.thmPDERX_det_of`, `DetPRB`/`DetTabPRB`
+as corollaries (target `Stage2Z`/`thmPRBRL_ofZ`, #697), after combining with #696's stack.
 
 ## 6. Heap (separate gap, SEM2)
 
