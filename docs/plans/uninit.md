@@ -1291,6 +1291,26 @@ no existing statement changed; no generated-code change.
   `thmPRBRL_allC_Lsl`, `actRet_unique_Lsl`, `backend_correct_program_core_init_Lsl`,
   `backend_correct_program_init_L0`.
 
+**#700, steps 1–2, as built (UninitZ20, branch `agent/uninit-z20b`).**
+- `FV/E2E/LinkArmTableE.lean`: **`TabUpToE`** (at each call of the prefix: the callee's slot
+  bytes, `slotted h ≤ E j`, the callee's table for every callee prefix before its first return
+  without an error, and, only if it returns, its full `TabUpTo` with count `E j - slotted h`),
+  **`TableOfE`** (every pre-return prefix whose states have no error), `tabUpToE_zero/mono`,
+  `firstRet_unique`, **`tabUpToE_of`**, **`tableOfE_of`** (`TableOf → TableOfE`),
+  `tableOfE_of_retAt`, `tableOfE_of_err`.
+- `FV/E2E/LinkArmTableECall.lean`: `mach_callsTo`, **`callsTo_ret`** (a program call whose next
+  state has no error returns: `junkAt` is an error), **`tabUpToE_count`**, **`tabUpToE_call_at`**
+  (the callee's `TableOfE` without its return). Witnesses `FV/E2E/LinkArmTableEWitness.lean`.
+- Found: the machine's states before its return are not known to be error-free (`ArmStepX` does
+  not keep an error through the arbitrary base hooks), so `TableOfE` at the return needs the
+  pipeline to export the `GoodX` trace (`err`, `prog`) up to the return, as `RegLevelCorrectPRSN`
+  exports the call count: `realizes_allC` already realises `GoodX`, the `*_atCS` proofs weaken it
+  to `Good` (`mono_T`). Same for the prefix theorems (`OnCallG`'s trace).
+- Next for #700: export `GoodX` at the return and at the prefix calls; `DetTabPRBE` (premise);
+  E-copies of `oracleAt_of_call`/`OracleAt`, `progResultBT`, `stage2_answerF`, `callCount`,
+  `countStep_*`, `stage2PRBZS_of`, `countPRB_succ`, `thmPRBRL_ofZS`; `ThmPRBRLE` (implies
+  `ThmPRBRL`); the machine's table `iniOf` with `TableOfE` at a top-level entry.
+
 Next: (1) #700's fix, then `TableOfE M f s (iniOf …)` at the top-level entry; (2) the executable
 level: `exec_of_model` needs the model run's `RunOk`, which `binary_correct_exec_proven` gets from
 the `Good`-trace chain of the `init = none` statement (`binary_correct_of_checksX`); the oracle
