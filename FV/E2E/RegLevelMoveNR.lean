@@ -15,11 +15,12 @@ open Backend E2E
 
 /-- **A move on the machine**: from `Q` at a move item, the machine runs the move's lines and
 reaches `Q` at the next item with `MStep.move`'s store. -/
-theorem realizes_moveNR {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b : Nat} {src dst : Loc}
+theorem realizes_moveNR {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : Arm.ArmState} {b : Nat}
+    {src dst : Loc}
     {its : List RItem} {m : Loc → CV} {w : Arm.ArmState}
     (hq : Q R s (.run ⟨b, .move src dst :: its, m, w⟩)) :
     ∃ n, Q R (iterN R.step n s) (.run ⟨b, its, upd m dst (m src), w⟩) ∧
-      ∀ i < n, R.GoodXNR (iterN R.step i s) := by
+      ∀ i < n, R.GoodXNY Y (iterN R.step i s) := by
   obtain ⟨j, vb, items, pre, code, ls, ps1, ps2, T, hvb, hit, hsplit, hchk, hcode, hls, htr, hdrop,
     hpc, hst⟩ := hq
   obtain ⟨⟨c, wh, hcm⟩, hLs, hLd, hT, hchk'⟩ := move_facts hit hsplit hchk
@@ -56,7 +57,7 @@ theorem realizes_moveNR {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b : Nat} {src d
       (fun i t h => by obtain ⟨i', t', e, hh⟩ := hins _ h; cases e; exact hh)
       (by rw [hst.prog]) (by rw [hpc]; rfl) hst.err (hint _) (hrun _)
   -- the move's reads: bytes of the frame's slot area, which `G` avoids
-  have hrd : LinesReads (R.envOf j) ls1' s (R.ReadIn false) := by
+  have hrd : LinesReads (R.envOf j) ls1' s (R.ReadInY Y false) := by
     obtain ⟨is', e, hrd⟩ := moveInsts_reads (vc := R.vc) (rf := R.rf) R.ctx hcm hLs hLd hT hc1
       hst.align
     obtain rfl := (List.map_inj_right fun _ _ h => AInst.inst.inj h).1 e

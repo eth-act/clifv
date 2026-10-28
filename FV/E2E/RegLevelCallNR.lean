@@ -14,7 +14,7 @@ namespace Backend.Proof
 open Backend E2E
 /-- **A call on the machine** (`realizes_callN`) **with its located reads**: the segment's states
 satisfy `GoodX` and `ReadsIn`, and exactly one of them (the `bl`/`blr`) is a call state. -/
-theorem realizes_callNR {R : RL} (hR : R.Wf)
+theorem realizes_callNR {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop}
     {P : Arm.ArmState → Prop}
     (hC : CalleeOkGP P R.F R.K R.G R.s0 (CallAt R.fa R.base) R.X R.H R.vc.CallSite R.gv)
     {s : Arm.ArmState} (hP : P s)
@@ -28,7 +28,7 @@ theorem realizes_callNR {R : RL} (hR : R.Wf)
     (hlen : outs.length = ((ops.zip allocs).toList.filter (·.1.isDef)).length)
     (hk : k + 1 < vb.insts.size) :
     ∃ n c'', MStep R.vc R.sem ckeep R.rf (.run ⟨b, .op k allocs :: its, m, w⟩) c'' ∧
-      Q R (iterN R.step n s) c'' ∧ (∀ i < n, R.GoodX (iterN R.step i s) ∧ R.ReadsIn (iterN R.step i s)) ∧
+      Q R (iterN R.step n s) c'' ∧ (∀ i < n, R.GoodX (iterN R.step i s) ∧ R.ReadsInY Y (iterN R.step i s)) ∧
       ∃ i0 < n, R.CallSt (iterN R.step i0 s) ∧
         ∀ i < n, i ≠ i0 → R.NoCallAt (iterN R.step i s) := by
   have hW' : Arm.r .ERR w' = .None ∧ w'.program = w.program := by
@@ -55,7 +55,7 @@ theorem realizes_callNR {R : RL} (hR : R.Wf)
       outs, w', hops, hstat, hasg, callAt_of_q hq hvb hi call_hcall regs i' hal hasg, hst.world,
       hst.align, hst.err, hsemU⟩
   refine realizes_op_coreXS hR hq hvb hi hops hsz hsem hlen hk (exec := fun _ => callExec R.H)
-    (Seg := fun s n => (∀ i < n, R.GoodX (iterN R.step i s) ∧ R.ReadsIn (iterN R.step i s)) ∧
+    (Seg := fun s n => (∀ i < n, R.GoodX (iterN R.step i s) ∧ R.ReadsInY Y (iterN R.step i s)) ∧
       ∃ i0 < n, R.CallSt (iterN R.step i0 s) ∧
       ∀ i < n, i ≠ i0 → R.NoCallAt (iterN R.step i s))
     (fun _ => RL.callAtGP hR (hC.os R.ctx info ⟨b, vb, k, hvb, .inl hi⟩) hP (q_stRel hq).sp
@@ -73,7 +73,7 @@ theorem realizes_callNR {R : RL} (hR : R.Wf)
         (∀ ln ∈ ls1, ln.plain = true) ∧ (∀ ds, MInst.call info' ≠ .args ds) ∧
         (∀ us, MInst.call info' ≠ .rets us) ∧
         RunsAsS R (fun _ => callExec R.H) (.call info') ls1 R.CallPre fun s n =>
-          (∀ i < n, R.GoodX (iterN R.step i s) ∧ R.ReadsIn (iterN R.step i s)) ∧
+          (∀ i < n, R.GoodX (iterN R.step i s) ∧ R.ReadsInY Y (iterN R.step i s)) ∧
           ∃ i0 < n, R.CallSt (iterN R.step i0 s) ∧
             ∀ i < n, i ≠ i0 → R.NoCallAt (iterN R.step i s) := by
     intro x hl1 hpl hxt hxg hxz hxh hxc hstep
@@ -91,7 +91,7 @@ theorem realizes_callNR {R : RL} (hR : R.Wf)
         0, Nat.one_pos, RL.callSt_of_line hj hpc hxc, fun i hi hne => absurd (by omega) hne⟩
       · rw [hC.pc _ _ hst.err hal, hpc, List.length_singleton, pcOf_succ hj]
       · obtain rfl : i = 0 := by omega
-        show R.GoodX s ∧ R.ReadsIn s
+        show R.GoodX s ∧ R.ReadsInY Y s
         exact ⟨RL.goodX_line hR hj hpc hxt (RL.good_of_sp hst.sp) hst.err hst.prog
           (RL.nextOk_pc4 (by rw [hs, hC.pc _ _ hst.err hal]))
           (fun rd rn n e => absurd e (hxg rd rn n)) (fun r e => ⟨hxz r e, hst.code⟩) (fun _ => hpre')
@@ -113,7 +113,7 @@ theorem realizes_callNR {R : RL} (hR : R.Wf)
     rw [step_blr (off := 0) (n := "") (rd := .xzr) (rn := .xzr) hR hj hprog hpc, hd]
 
 /-- `runsAs_symAddr` with `GoodXNR`: neither line is a call line. -/
-theorem runsAs_symAddrNR {R : RL} (hR : R.Wf) {i' : MInst} {x1 x2 : Insn}
+theorem runsAs_symAddrNR {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {i' : MInst} {x1 x2 : Insn}
     (hl : ∀ ps, i'.lines R.ctx ps = .ok ([.ins x1, .ins x2], ps))
     (hstep : ∀ s j, R.L[j]? = some (.ins x1) → R.L[j + 1]? = some (.ins x2) →
       s.program = R.fb.program R.base → Arm.r .PC s = R.pcOf j →
@@ -124,7 +124,7 @@ theorem runsAs_symAddrNR {R : RL} (hR : R.Wf) {i' : MInst} {x1 x2 : Insn}
       Arm.r .PC s = R.pcOf j → Arm.r .PC (R.step s) = R.pcOf (j + 1) ∧
         Arm.r .ERR (R.step s) = Arm.r .ERR s ∧ (R.step s).program = s.program ∧
         (R.step s).mem = s.mem) :
-    RunsAsNR R (fun _ => symExec R.X) i' [.ins x1, .ins x2] fun _ => True := by
+    RunsAsNY R Y (fun _ => symExec R.X) i' [.ins x1, .ins x2] fun _ => True := by
   intro j T s _ _ s' hd hst hpc _ hex
   have hprog := hst.prog
   have hj : R.L[j]? = some (.ins x1) := drop_get (Z := [.ins x2]) hd
@@ -140,12 +140,12 @@ theorem runsAs_symAddrNR {R : RL} (hR : R.Wf) {i' : MInst} {x1 x2 : Insn}
   refine ⟨2, by simpa [iterN] using e, ?_, fun i hi => ?_⟩
   rotate_left
   · rcases (by omega : i = 0 ∨ i = 1) with rfl | rfl
-    · show R.GoodXNR s
+    · show R.GoodXNY Y s
       exact ⟨⟨RL.goodX_line hR hj hpc ht.1 (RL.good_of_sp hst.sp) hst.err hprog
         (RL.nextOk_pc4 (by rw [hm1, pcOf_succ hj, hpc])) (fun _ _ _ _ a ha => hst.gkeep a ha)
         (fun r e => absurd e (hx1.2 r)) (not_call_insn hx1.1 hx1.2) (RL.readsAt_hooked hR hj hpc hhk.1),
         RL.noCallAt_of_noCall hR hj hpc hx1⟩, RL.readsIn_hooked hR hj hpc hhk.1⟩
-    · show R.GoodXNR (R.step s)
+    · show R.GoodXNY Y (R.step s)
       exact ⟨⟨RL.goodX_line hR hj1 hm1 ht.2 (R.good_succ hR hj hx1.1 hx1.2 hm1)
         (by rw [hm2]; exact hst.err) (by rw [hm3, hprog])
         (RL.nextOk_pc4 (by rw [e, hpc8, hm1, pcOf_succ hj, hpc]; bv_omega))
@@ -157,7 +157,7 @@ theorem runsAs_symAddrNR {R : RL} (hR : R.Wf) {i' : MInst} {x1 x2 : Insn}
   rfl
 
 /-- **`loadExtNameGot/Near` on the machine** (`realizes_symAddr`) with `GoodXNR`. -/
-theorem realizes_symAddrNR {R : RL} (hR : R.Wf) {s : Arm.ArmState}
+theorem realizes_symAddrNR {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : Arm.ArmState}
     {b k : Nat} {allocs : Array Loc} {its : List RItem} {m : Loc → CV} {w : Arm.ArmState}
     (hq : Q R s (.run ⟨b, .op k allocs :: its, m, w⟩))
     {vb : VBlock} {i : MInst} {ops : Array Operand} {outs : List CV} {w' : Arm.ArmState}
@@ -170,7 +170,7 @@ theorem realizes_symAddrNR {R : RL} (hR : R.Wf) {s : Arm.ArmState}
     (hlen : outs.length = ((ops.zip allocs).toList.filter (·.1.isDef)).length)
     (hk : k + 1 < vb.insts.size) :
     ∃ n c'', MStep R.vc R.sem ckeep R.rf (.run ⟨b, .op k allocs :: its, m, w⟩) c'' ∧
-      Q R (iterN R.step n s) c'' ∧ ∀ i < n, R.GoodXNR (iterN R.step i s) := by
+      Q R (iterN R.step n s) c'' ∧ ∀ i < n, R.GoodXNY Y (iterN R.step i s) := by
   have hW' : Arm.r .ERR w' = .None ∧ w'.program = w.program := by
     have herr : Arm.r .ERR w = .None := by
       have hst := q_stRel hq

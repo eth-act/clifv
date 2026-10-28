@@ -15,7 +15,8 @@ open Backend E2E
 
 /-- **`ElfTlsGetAddr` on the machine**: the `adrp` step, then the hooked step (to the line after
 the sequence, past its last `add`), from states satisfying `GoodX`. -/
-theorem realizes_tlsNR {R : RL} (hR : R.Wf) (hT : TlsOk R.F R.K R.X R.H) {s : Arm.ArmState}
+theorem realizes_tlsNR {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} (hT : TlsOk R.F R.K R.X R.H)
+    {s : Arm.ArmState}
     {b k : Nat} {allocs : Array Loc} {its : List RItem} {m : Loc → CV} {w : Arm.ArmState}
     (hq : Q R s (.run ⟨b, .op k allocs :: its, m, w⟩))
     {vb : VBlock} {n : String} {d t : Nat} {ops : Array Operand} {outs : List CV}
@@ -29,7 +30,7 @@ theorem realizes_tlsNR {R : RL} (hR : R.Wf) (hT : TlsOk R.F R.K R.X R.H) {s : Ar
     (hlen : outs.length = ((ops.zip allocs).toList.filter (·.1.isDef)).length)
     (hk : k + 1 < vb.insts.size) :
     ∃ n c'', MStep R.vc R.sem ckeep R.rf (.run ⟨b, .op k allocs :: its, m, w⟩) c'' ∧
-      Q R (iterN R.step n s) c'' ∧ ∀ i < n, R.GoodXNR (iterN R.step i s) := by
+      Q R (iterN R.step n s) c'' ∧ ∀ i < n, R.GoodXNY Y (iterN R.step i s) := by
   have hW' : Arm.r .ERR w' = .None ∧ w'.program = w.program := by
     have herr : Arm.r .ERR w = .None := by
       have hst := q_stRel hq
@@ -104,7 +105,7 @@ theorem realizes_tlsNR {R : RL} (hR : R.Wf) (hT : TlsOk R.F R.K R.X R.H) {s : Ar
       refine ⟨2, by simp only [iterN, h1, h2], ?_, fun i hi => ?_⟩
       · rw [hfin]; rfl
       rcases (by omega : i = 0 ∨ i = 1) with rfl | rfl
-      · show R.GoodXNR s
+      · show R.GoodXNY Y s
         exact RL.goodXNR_line hR hj hpc ⟨fun _ h => Insn.noConfusion h, fun _ h => Insn.noConfusion h⟩
           rfl (RL.good_of_sp hst.sp) herr hprog
           (RL.nextOk_pc4 (by rw [h1, Arm.r_of_w_same])) (fun _ _ _ h => by cases h)

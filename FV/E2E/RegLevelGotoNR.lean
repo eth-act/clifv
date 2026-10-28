@@ -14,43 +14,46 @@ namespace Backend.Proof
 open Backend E2E
 
 /-- `step_branchX` with no call state. -/
-theorem RL.goodXNR_branch {R : RL} (hR : R.Wf) {s : Arm.ArmState} {j : Nat} {i : Insn} {l : Lbl}
+theorem RL.goodXNR_branch {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : Arm.ArmState} {j : Nat}
+    {i : Insn} {l : Lbl}
     (hj : R.L[j]? = some (.ins i none))
     (hi : i = .b l ∨ (∃ c, i = .bcond c l) ∨ (∃ nz w r, i = .cbz nz w r l) ∨
       (∃ nz r bit, i = .tbz nz r bit l)) (hl : l ≠ .skip)
     (hprog : s.program = R.fb.program R.base) (hpc : Arm.r .PC s = R.pcOf j)
-    (herr : Arm.r .ERR s = .None) (hsp : spOf s = R.spB) : R.GoodXNR s :=
+    (herr : Arm.r .ERR s = .None) (hsp : spOf s = R.spB) : R.GoodXNY Y s :=
   ⟨⟨step_branchX hR hj hi hl hprog hpc herr hsp, RL.noCallAt_of_line hR hj hpc (by
     rcases hi with rfl | ⟨_, rfl⟩ | ⟨_, _, _, rfl⟩ | ⟨_, _, _, rfl⟩ <;> rfl)⟩,
     RL.readsIn_noLoad hR hj hpc (by
       rcases hi with rfl | ⟨_, rfl⟩ | ⟨_, _, _, rfl⟩ | ⟨_, _, _, rfl⟩ <;> rfl)⟩
 
 /-- `step_skipX` with no call state. -/
-theorem RL.goodXNR_skip {R : RL} (hR : R.Wf) {s : Arm.ArmState} {j : Nat} {i x : Insn}
+theorem RL.goodXNR_skip {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : Arm.ArmState} {j : Nat}
+    {i x : Insn}
     (hj : R.L[j]? = some (.ins i none)) (hj1 : R.L[j + 1]? = some (.ins x none))
     (hi : (∃ c, i = .bcond c .skip) ∨ (∃ nz w r, i = .cbz nz w r .skip) ∨
       (∃ nz r bit, i = .tbz nz r bit .skip)) (hx : x.pairFirst = false)
     (hprog : s.program = R.fb.program R.base) (hpc : Arm.r .PC s = R.pcOf j)
-    (herr : Arm.r .ERR s = .None) (hsp : spOf s = R.spB) : R.GoodXNR s :=
+    (herr : Arm.r .ERR s = .None) (hsp : spOf s = R.spB) : R.GoodXNY Y s :=
   ⟨⟨step_skipX hR hj hj1 hi hx hprog hpc herr hsp, RL.noCallAt_of_line hR hj hpc (by
     rcases hi with ⟨_, rfl⟩ | ⟨_, _, _, rfl⟩ | ⟨_, _, _, rfl⟩ <;> rfl)⟩,
     RL.readsIn_noLoad hR hj hpc (by
       rcases hi with ⟨_, rfl⟩ | ⟨_, _, _, rfl⟩ | ⟨_, _, _, rfl⟩ <;> rfl)⟩
 
 /-- `reach_b` with the body's `sp`: the states before reaching the label satisfy `GoodX`. -/
-theorem reach_bXNR {R : RL} (hR : R.Wf) {s : Arm.ArmState} {j0 : Nat} {x : Lbl} {Z T : List Line}
+theorem reach_bXNR {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : Arm.ArmState} {j0 : Nat} {x : Lbl}
+    {Z T : List Line}
     (hdrop : R.L.drop j0 = relaxLines R.far (ftList (.ins (.b x) none :: Z)) ++ T) (hx : x ≠ .skip)
     (hprog : s.program = R.fb.program R.base) (hpc : Arm.r .PC s = R.pcOf j0)
     (herr : Arm.r .ERR s = .None) (hsp : spOf s = R.spB) :
     ∃ n jl, iterN R.step n s = Arm.w .PC (R.pcOf jl) s ∧ R.L[jl]? = some (.label x) ∧
-      (∀ i < n, spOf (iterN R.step i s) = spOf s) ∧ ∀ i < n, R.GoodXNR (iterN R.step i s) := by
+      (∀ i < n, spOf (iterN R.step i s) = spOf s) ∧ ∀ i < n, R.GoodXNY Y (iterN R.step i s) := by
   rcases ft_b x Z with ⟨Z', rfl, he⟩ | he
   · rw [he, ft_label, relaxLines_cons, relaxLine_label, List.singleton_append] at hdrop
     refine ⟨0, j0, ?_, drop_get hdrop, fun i hi => by omega, fun i hi => by omega⟩
     simp only [iterN]; rw [← hpc, Arm.w_irrelevant]
   · rw [he, relaxLines_cons, relaxLine_of_none rfl, List.singleton_append] at hdrop
     obtain ⟨a, jl, ha, hjl, hstep⟩ := step_branch hR (drop_get hdrop) (.inl rfl) hx hprog hpc herr
-    have hg := RL.goodXNR_branch hR (drop_get hdrop) (.inl rfl) hx hprog hpc herr hsp
+    have hg := RL.goodXNR_branch (Y := Y) hR (drop_get hdrop) (.inl rfl) hx hprog hpc herr hsp
     refine ⟨1, jl, ?_, hjl, fun i hi => ?_, fun i hi => ?_⟩
     · simp only [iterN]; rw [hstep, brCond_b ha]; rfl
     · obtain rfl : i = 0 := by omega
@@ -58,7 +61,8 @@ theorem reach_bXNR {R : RL} (hR : R.Wf) {s : Arm.ArmState} {j0 : Nat} {x : Lbl} 
     · obtain rfl : i = 0 := by omega
       exact hg
 /-- `reach_rcb` with the body's `sp`: the states before reaching the target satisfy `GoodX`. -/
-theorem reach_rcbXNR {R : RL} (hR : R.Wf) {s : Arm.ArmState} {j0 : Nat} {bc : Insn} {t : Lbl}
+theorem reach_rcbXNR {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : Arm.ArmState} {j0 : Nat}
+    {bc : Insn} {t : Lbl}
     {T : List Line} (hdrop : R.L.drop j0 = relaxLine R.far (.ins bc none) ++ T)
     (hbc : (∃ c, bc = .bcond c t) ∨ (∃ nz w r, bc = .cbz nz w r t) ∨ (∃ nz r bit, bc = .tbz nz r bit t))
     (ht : t ≠ .skip) (cond : Bool) (hc : ∀ env a, bc.toArmInst env = .ok a → brCond a s = cond)
@@ -70,7 +74,7 @@ theorem reach_rcbXNR {R : RL} (hR : R.Wf) {s : Arm.ArmState} {j0 : Nat} {bc : In
       (cond = true → R.L[jl]? = some (.label t)) ∧
       (cond = false → jl = j0 + (relaxLine R.far (.ins bc none)).length) ∧
       (∀ i < n, spOf (iterN R.step i s) = spOf s) ∧ (cond = false → n = 1) ∧
-      ∀ i < n, R.GoodXNR (iterN R.step i s) := by
+      ∀ i < n, R.GoodXNY Y (iterN R.step i s) := by
   have h1 : ∀ i < 1, spOf (iterN R.step i s) = spOf s := fun i hi => by
     obtain rfl : i = 0 := by omega
     rfl
@@ -80,7 +84,7 @@ theorem reach_rcbXNR {R : RL} (hR : R.Wf) {s : Arm.ArmState} {j0 : Nat} {bc : In
   · rw [h] at hdrop
     have hj := drop_get (Z := []) (by simpa using hdrop)
     obtain ⟨a, jl, ha, hjl, hstep⟩ := step_branch hR hj hform ht hprog hpc herr
-    have hg : ∀ i < 1, R.GoodXNR (iterN R.step i s) := fun i hi => by
+    have hg : ∀ i < 1, R.GoodXNY Y (iterN R.step i s) := fun i hi => by
       obtain rfl : i = 0 := by omega
       exact RL.goodXNR_branch hR hj hform ht hprog hpc herr hsp
     rw [hc _ _ ha] at hstep
@@ -99,7 +103,7 @@ theorem reach_rcbXNR {R : RL} (hR : R.Wf) {s : Arm.ArmState} {j0 : Nat} {bc : In
     have hj0 := drop_get (Z := [_]) (by simpa using hdrop)
     have hj1 := drop_succ2 hdrop
     obtain ⟨a, ha, hstep⟩ := step_skip hR hj0 hj1 (invertTo_form hbc) hprog hpc herr
-    have hg0 := RL.goodXNR_skip hR hj0 hj1 (invertTo_form hbc) rfl hprog hpc herr hsp
+    have hg0 := RL.goodXNR_skip (Y := Y) hR hj0 hj1 (invertTo_form hbc) rfl hprog hpc herr hsp
     rw [hcs hct _ _ ha] at hstep
     cases cond
     · exact ⟨1, j0 + 2, by simp only [iterN]; rw [hstep]; rfl, by simp, by simp [h], h1, fun _ => rfl,
@@ -112,7 +116,7 @@ theorem reach_rcbXNR {R : RL} (hR : R.Wf) {s : Arm.ArmState} {j0 : Nat} {bc : In
         rw [Arm.r_of_w_different (by simp), herr]
       obtain ⟨a', jl, ha', hjl, hstep'⟩ := step_branch hR hj1 (.inl rfl) ht hprog1
         (Arm.r_of_w_same ..) herr1
-      have hg1 := RL.goodXNR_branch hR hj1 (.inl rfl) ht hprog1 (Arm.r_of_w_same ..) herr1
+      have hg1 := RL.goodXNR_branch (Y := Y) hR hj1 (.inl rfl) ht hprog1 (Arm.r_of_w_same ..) herr1
         (by rw [spOf_w_pc, hsp])
       rw [brCond_b ha'] at hstep'
       simp only [Bool.not_true, Bool.false_eq_true, ite_false] at hstep
@@ -132,7 +136,8 @@ theorem reach_rcbXNR {R : RL} (hR : R.Wf) {s : Arm.ArmState} {j0 : Nat} {bc : In
           exact hg1
 
 /-- `reach_cb` with the body's `sp`: the states before reaching the label satisfy `GoodX`. -/
-theorem reach_cbXNR {R : RL} (hR : R.Wf) {s : Arm.ArmState} {j0 : Nat} {bc : Insn} {t e : Lbl}
+theorem reach_cbXNR {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : Arm.ArmState} {j0 : Nat}
+    {bc : Insn} {t e : Lbl}
     {Z T : List Line}
     (hdrop : R.L.drop j0 = relaxLines R.far (ftList (.ins bc none :: .ins (.b e) none :: Z)) ++ T)
     (hbc : (∃ c, bc = .bcond c t) ∨ (∃ nz w r, bc = .cbz nz w r t) ∨ (∃ nz r bit, bc = .tbz nz r bit t))
@@ -146,7 +151,7 @@ theorem reach_cbXNR {R : RL} (hR : R.Wf) {s : Arm.ArmState} {j0 : Nat} {bc : Ins
     (herr : Arm.r .ERR s = .None) (hsp : spOf s = R.spB) :
     ∃ n jl, iterN R.step n s = Arm.w .PC (R.pcOf jl) s ∧
       R.L[jl]? = some (.label (if cond then t else e)) ∧
-      (∀ i < n, spOf (iterN R.step i s) = spOf s) ∧ ∀ i < n, R.GoodXNR (iterN R.step i s) := by
+      (∀ i < n, spOf (iterN R.step i s) = spOf s) ∧ ∀ i < n, R.GoodXNY Y (iterN R.step i s) := by
   have hnb : ∀ x, bc ≠ .b x := by
     rcases hbc with ⟨c, rfl⟩ | ⟨nz, w, r, rfl⟩ | ⟨nz, r, bit, rfl⟩ <;> intro x h <;> cases h
   rcases ft_cb bc e Z hnb with ⟨L, Z', rfl, hct, hft⟩ | hft
@@ -169,7 +174,8 @@ theorem reach_cbXNR {R : RL} (hR : R.Wf) {s : Arm.ArmState} {j0 : Nat} {bc : Ins
           rcases c <;> simp_all [Cond.invert]
       · simp [Insn.invertTo, Insn.condTarget?]
       · simp [Insn.invertTo, Insn.condTarget?]
-    obtain ⟨n, jl, hn, hjt, hjf, hsp', -, hg⟩ := reach_rcbXNR hR hdrop hform he (!cond) (hc' hct e)
+    obtain ⟨n, jl, hn, hjt, hjf, hsp', -, hg⟩ := reach_rcbXNR (Y := Y) hR hdrop hform he (!cond)
+      (hc' hct e)
       (fun _ env a ha => by rw [hcc hct env a ha, Bool.not_not]) hprog hpc herr hsp
     refine ⟨n, jl, hn, ?_, hsp', hg⟩
     cases cond
@@ -178,13 +184,13 @@ theorem reach_cbXNR {R : RL} (hR : R.Wf) {s : Arm.ArmState} {j0 : Nat} {bc : Ins
         rw [hjf rfl, ← List.drop_drop, hdrop, List.drop_left, List.append_assoc]
       simpa using drop_get (by simpa using hd')
   · rw [hft, relaxLines_cons, List.append_assoc] at hdrop
-    obtain ⟨n, jl, hn, hjt, hjf, hsp', -, hg⟩ := reach_rcbXNR hR hdrop hbc ht cond hc
+    obtain ⟨n, jl, hn, hjt, hjf, hsp', -, hg⟩ := reach_rcbXNR (Y := Y) hR hdrop hbc ht cond hc
       (fun hct' => hc' hct' .skip) hprog hpc herr hsp
     cases cond
     · have hd1 : R.L.drop jl = relaxLines R.far (ftList (.ins (.b e) none :: Z)) ++ T := by
         rw [hjf rfl, ← List.drop_drop, hdrop, List.drop_left]
       have hs1 : (iterN R.step n s).program = R.fb.program R.base := by rw [hn, Arm.w_program, hprog]
-      obtain ⟨n', jl', hn', hjl', hsp'', hg'⟩ := reach_bXNR hR hd1 he hs1
+      obtain ⟨n', jl', hn', hjl', hsp'', hg'⟩ := reach_bXNR (Y := Y) hR hd1 he hs1
         (by rw [hn]; exact Arm.r_of_w_same ..)
         (by rw [hn, Arm.r_of_w_different (by simp), herr]) (by rw [hn, spOf_w_pc, hsp])
       refine ⟨n + n', jl', ?_, by simpa using hjl', fun i hi => ?_, fun i hi => ?_⟩
@@ -203,14 +209,15 @@ theorem reach_cbXNR {R : RL} (hR : R.Wf) {s : Arm.ArmState} {j0 : Nat} {bc : Ins
 
 /-- **Block-ending branches on the machine**: from `Q` at a `jump`/`condBr`/`testBitAndBranch`
 item, the machine reaches `Q` at the `MStep` successor (the chosen successor's items). -/
-theorem realizes_gotoNR {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {allocs : Array Loc}
+theorem realizes_gotoNR {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : Arm.ArmState} {b k : Nat}
+    {allocs : Array Loc}
     {its : List RItem} {m : Loc → CV} {w : Arm.ArmState} {c' : MConf CV Arm.ArmState}
     (hq : Q R s (.run ⟨b, .op k allocs :: its, m, w⟩)) {vb : VBlock} {i : MInst}
     (hvb : R.vc.blocks[b]? = some vb) (hi : vb.insts[k]? = some i)
     (hbr : (∃ l, i = .jump l) ∨ (∃ t e kk, i = .condBr t e kk) ∨
       (∃ kd t e rn bit, i = .testBitAndBranch kd t e rn bit))
     (h : MStep R.vc R.sem ckeep R.rf (.run ⟨b, .op k allocs :: its, m, w⟩) c') :
-    ∃ n, Q R (iterN R.step n s) c' ∧ ∀ i < n, R.GoodXNR (iterN R.step i s) := by
+    ∃ n, Q R (iterN R.step n s) c' ∧ ∀ i < n, R.GoodXNY Y (iterN R.step i s) := by
   have hck := (lowerRFunc_ok hR.alloc).2.2
   obtain ⟨j0, vb0, items, pre, code, ls, ps1, ps2, T, hvb0, hit, hsplit, hchk, hcode, hls, htr, hdrop,
     hpc, hst⟩ := hq
@@ -285,7 +292,7 @@ theorem realizes_gotoNR {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {all
   have hst0 : st ≠ 0 := ctlCheck_succ hck hsucc
   -- the machine reaches the successor's label
   have hreach : ∃ n jl, iterN R.step n s = Arm.w .PC (R.pcOf jl) s ∧
-      R.L[jl]? = some (.label (.block vs.label)) ∧ ∀ i < n, R.GoodXNR (iterN R.step i s) := by
+      R.L[jl]? = some (.label (.block vs.label)) ∧ ∀ i < n, R.GoodXNY Y (iterN R.step i s) := by
     rw [List.append_assoc] at hdrop
     rcases hbr with ⟨l, rfl⟩ | ⟨t, e, kk, rfl⟩ | ⟨kd, t, e, rn, bit, rfl⟩
     · obtain ⟨rfl, rfl⟩ := assign_none (fun f => rfl) hasg
@@ -300,7 +307,8 @@ theorem realizes_gotoNR {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {all
       rw [hj0 l rfl] at hlj
       simp only [MInst.targets, List.getElem?_cons_zero, Option.some.injEq] at hlj
       rw [← hlj]
-      obtain ⟨n, jl, hn, hjl, -, hg⟩ := reach_bXNR hR (by simpa using hdrop) (by simp) (by rw [hst.prog])
+      obtain ⟨n, jl, hn, hjl, -, hg⟩ := reach_bXNR (Y := Y) hR (by simpa using hdrop) (by simp)
+        (by rw [hst.prog])
         hpc hst.err hst.sp
       exact ⟨n, jl, hn, hjl, hg⟩
     · have hkk : ∀ r sz, kk = .zero r sz ∨ kk = .notZero r sz → r.isVregInt = true := by
@@ -321,7 +329,8 @@ theorem realizes_gotoNR {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {all
           (∃ nz w r, k'.insn (.block t) = .cbz nz w r (.block t)) ∨
           (∃ nz r bit, k'.insn (.block t) = .tbz nz r bit (.block t)) := by
         cases k' <;> simp [CondBrKind.insn]
-      obtain ⟨n, jl, hn, hjl, -, hg⟩ := reach_cbXNR hR (by simpa using hdrop) hbc (by simp) (by simp)
+      obtain ⟨n, jl, hn, hjl, -, hg⟩ := reach_cbXNR (Y := Y) hR (by simpa using hdrop) hbc (by simp)
+        (by simp)
         (kk.holds _ w)
         (fun env a ha => kind_brCond hst hkr _ ha)
         (fun hct e' env a ha => kind_brCond_inv hst hkr _ _ hct ha)
@@ -357,7 +366,7 @@ theorem realizes_gotoNR {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {all
       simp only [CheckCtx.locOk, Bool.and_eq_true] at hal
       have hm : m (.reg (.x n')) = (Arm.r (.GPR (rnum n')) s).setWidth 128 := by
         rw [hst.store (.reg (.x n')) (fun r e => by cases e; exact hal.2) trivial]; rfl
-      obtain ⟨n, jl, hn, hjl, -, hg⟩ := reach_cbXNR hR (by simpa using hdrop)
+      obtain ⟨n, jl, hn, hjl, -, hg⟩ := reach_cbXNR (Y := Y) hR (by simpa using hdrop)
         (bc := .tbz (kd == .nz) (.x n') bit (.block t)) (.inr (.inr ⟨_, _, _, rfl⟩)) (by simp) (by simp)
         ((Arm.r (.GPR (rnum n')) s).getLsbD bit == (kd == .nz))
         (fun env a ha => brCond_tbz (by omega) ha s)

@@ -14,7 +14,8 @@ namespace Backend.Proof
 open Backend E2E
 
 /-- Instruction lines placed at line `j` run on the machine as `execLines` runs them. -/
-theorem run_insNR {R : RL} (hR : R.Wf) {j : Nat} {ls T : List Line} {s s' : Arm.ArmState}
+theorem run_insNR {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {j : Nat} {ls T : List Line}
+    {s s' : Arm.ArmState}
     (hd : R.L.drop j = ls ++ T) (hins : ∀ ln ∈ ls, ∃ i t, ln = .ins i t ∧ i.hooked = false)
     (hprog : s.program = R.fb.program R.base) (hpc : Arm.r .PC s = R.pcOf j)
     (herr : Arm.r .ERR s = .None) (hint : LinesInterOk (R.envOf j) ls s)
@@ -22,7 +23,7 @@ theorem run_insNR {R : RL} (hR : R.Wf) {j : Nat} {ls T : List Line} {s s' : Arm.
     iterN R.step ls.length s = s' ∧ Arm.r .PC s' = R.pcOf (j + ls.length) ∧
       (∀ i, 0 < i → i ≤ ls.length → R.Good (iterN R.step i s)) ∧
       ((∀ i t, Line.ins i t ∈ ls → i.tlsTail = false) → R.Good s →
-        LinesReads (R.envOf j) ls s (R.ReadIn false) → ∀ i < ls.length, R.GoodXNR (iterN R.step i s)) := by
+        LinesReads (R.envOf j) ls s (R.ReadInY Y false) → ∀ i < ls.length, R.GoodXNY Y (iterN R.step i s)) := by
   have hat : ∀ k ln, ls[k]? = some ln → R.fa.lines.toList[j + k]? = some ln := by
     intro k ln hk
     have := congrArg (·[k]?) hd
@@ -45,18 +46,23 @@ theorem run_insNR {R : RL} (hR : R.Wf) {j : Nat} {ls T : List Line} {s s' : Arm.
   simp [BitVec.toNat_add]
 
 set_option maxHeartbeats 4000000 in
-/-- **An `atomic_rmw` loop on the machine**: from `Q` at an `atomicRmwLoop` item, the machine
-runs the loop body once and the `cbnz` falls through (status 0), reaching `Q` at the next item
-(the scratch defs havocked to the machine's values). -/
-theorem realizes_rmwLoopNR {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {allocs : Array Loc}
+/-- **An `atomic_rmw` loop on the machine, the world reads guarded by `Y`**: from `Q` at an
+`atomicRmwLoop` item whose `csem` also gives a result at the guard set `Y` (`hsemY`), the
+machine runs the loop body once and the `cbnz` falls through (status 0), reaching `Q` at the next
+item (the scratch defs havocked to the machine's values), every state before it `GoodXNY Y`. -/
+theorem realizes_rmwLoopNY {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : Arm.ArmState} {b k : Nat}
+    {allocs : Array Loc}
     {its : List RItem} {m : Loc → CV} {w : Arm.ArmState} {c' : MConf CV Arm.ArmState}
     (hq : Q R s (.run ⟨b, .op k allocs :: its, m, w⟩)) {vb : VBlock} {ty : CTy}
     {op : AtomicRmwLoopOp} {fl : Clif.MemFlags} {ra ro rd r1 r2 : Reg}
     (hvb : R.vc.blocks[b]? = some vb)
     (hi : vb.insts[k]? = some (.atomicRmwLoop ty op fl ra ro rd r1 r2))
-    (h : MStep R.vc R.sem ckeep R.rf (.run ⟨b, .op k allocs :: its, m, w⟩) c') :
+    (h : MStep R.vc R.sem ckeep R.rf (.run ⟨b, .op k allocs :: its, m, w⟩) c')
+    (hsemY : ∀ ops, (MInst.atomicRmwLoop ty op fl ra ro rd r1 r2).operands = .ok ops →
+      ∃ rY, csem Y R.ctx R.X (.atomicRmwLoop ty op fl ra ro rd r1 r2)
+        (((ops.zip allocs).toList.filter (·.1.isUse)).map (m ·.2)) w = some rY) :
     ∃ n c'', MStep R.vc R.sem ckeep R.rf (.run ⟨b, .op k allocs :: its, m, w⟩) c'' ∧
-      Q R (iterN R.step n s) c'' ∧ ∀ i < n, R.GoodXNR (iterN R.step i s) := by
+      Q R (iterN R.step n s) c'' ∧ ∀ i < n, R.GoodXNY Y (iterN R.step i s) := by
   have hck := (lowerRFunc_ok hR.alloc).2.2
   have hok := ctlCheck_inst hck hvb hi
   simp only [ctlInstOk, Bool.and_eq_true] at hok
@@ -120,6 +126,12 @@ theorem realizes_rmwLoopNR {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {
   obtain ⟨hty, hav, hrunw, rfl, rfl⟩ := loopSem_inv hsem
   simp only [List.zip_cons_cons, List.zip_nil_right, List.foldl_cons, List.foldl_nil, setReg_x,
     lo64_regVal_x, rnum] at hrunw hav
+  obtain ⟨rY, hY⟩ := hsemY _ hops
+  rw [hU] at hY
+  simp only [csem, herrw, ite_true] at hY
+  obtain ⟨-, havY, -, -, -⟩ := loopSem_inv hY
+  simp only [List.zip_cons_cons, List.zip_nil_right, List.foldl_cons, List.foldl_nil, setReg_x,
+    lo64_regVal_x, rnum] at havY
   have hsw0 : SameWorld R.F s (Arm.w (.GPR 26#5) (Arm.r (.GPR 26#5) s)
       (Arm.w (.GPR 25#5) (Arm.r (.GPR 25#5) s) w)) :=
     SameWorld.w_right (by simp [Masked]) (SameWorld.w_right (by simp [Masked]) hst.world)
@@ -142,7 +154,8 @@ theorem realizes_rmwLoopNR {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {
       (.ins (.cbz true true (.x 24) (.loop ps1.aloop)) none :: (relaxLines R.far (ftList (ls2 ++ nxtOf R.af b)) ++ T)) := by
     rw [← List.drop_drop, hdrop']; simp [rmwLoopLines]
   have hpc1 : Arm.r .PC s = R.pcOf (j0 + 1) := by rw [hpc, RL.pcOf_succ_label hL0]
-  obtain ⟨hit1, hpcs1, hgood1, hgx1⟩ := run_insNR hR hd1 (rmwBody_ins hty op fl) hst.prog hpc1 hst.err
+  obtain ⟨hit1, hpcs1, hgood1, hgx1⟩ := run_insNR (Y := Y) hR hd1 (rmwBody_ins hty op fl) hst.prog
+    hpc1 hst.err
     hint1 hrun1
   have herr1 : Arm.r .ERR s1 = .None := by
     rw [hfr1 .ERR (by simp) (by simp) (by simp)]; exact hst.err
@@ -184,7 +197,7 @@ theorem realizes_rmwLoopNR {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {
   rotate_right
   · rcases Nat.lt_or_ge i (rmwLoopBody ty.bits op fl).length with hi1 | hi1
     · exact hgx1 (rmwBody_tail hty op fl) (RL.good_of_sp hst.sp)
-        (rmwBody_reads hty op fl _ s fun q hq => .inr (.inr (hav q hq))) i hi1
+        (rmwBody_reads hty op fl _ s fun q hq => .inr (.inr ⟨hav q hq, havY q hq⟩)) i hi1
     · obtain rfl : i = (rmwLoopBody ty.bits op fl).length := by omega
       rw [hit1]
       refine RL.goodXNR_ofIns hR hLc hpcs1 rfl rfl ?_ herr1 hprog1' ?_ ?_
@@ -221,20 +234,46 @@ theorem realizes_rmwLoopNR {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {
       refine mem_write_mem_bytes_ne _ _ _ _ _ (fun k hk e => hav k hk ?_)
       rw [← e]; exact RL.FK_F ha
 
+set_option maxHeartbeats 4000000 in
+/-- **An `atomic_rmw` loop on the machine**: from `Q` at an `atomicRmwLoop` item, the machine
+runs the loop body once and the `cbnz` falls through (status 0), reaching `Q` at the next item
+(the scratch defs havocked to the machine's values). -/
+theorem realizes_rmwLoopNR {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {allocs : Array Loc}
+    {its : List RItem} {m : Loc → CV} {w : Arm.ArmState} {c' : MConf CV Arm.ArmState}
+    (hq : Q R s (.run ⟨b, .op k allocs :: its, m, w⟩)) {vb : VBlock} {ty : CTy}
+    {op : AtomicRmwLoopOp} {fl : Clif.MemFlags} {ra ro rd r1 r2 : Reg}
+    (hvb : R.vc.blocks[b]? = some vb)
+    (hi : vb.insts[k]? = some (.atomicRmwLoop ty op fl ra ro rd r1 r2))
+    (h : MStep R.vc R.sem ckeep R.rf (.run ⟨b, .op k allocs :: its, m, w⟩) c') :
+    ∃ n c'', MStep R.vc R.sem ckeep R.rf (.run ⟨b, .op k allocs :: its, m, w⟩) c'' ∧
+      Q R (iterN R.step n s) c'' ∧ ∀ i < n, R.GoodXNR (iterN R.step i s) :=
+  realizes_rmwLoopNY (Y := R.F) hR hq hvb hi h fun ops hops => by
+    cases h with
+    | @op b k allocs its m w vb'' i ops' outs outs' w' ctl m2 c' hvb' hi' hops' hsz' hsem =>
+      rw [hvb] at hvb'; cases hvb'
+      rw [hi] at hi'; cases hi'
+      rw [hops] at hops'; cases hops'
+      exact ⟨_, R.sem_csem hsem⟩
+
 set_option maxHeartbeats 8000000 in
-/-- **An `atomic_cas` loop on the machine**: from `Q` at an `atomicCasLoop` item, the machine
+/-- **An `atomic_cas` loop on the machine, the world reads guarded by `Y`**: from `Q` at an
+`atomicCasLoop` item whose `csem` also gives a result at the guard set `Y` (`hsemY`), the machine
 runs the head; if the values differ, `b.ne` jumps to the exit label, else the `stlxr` stores and
 the `cbnz` falls through (status 0); it reaches `Q` at the next item (the scratch def havocked
-to the machine's value). -/
-theorem realizes_casLoopNR {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {allocs : Array Loc}
+to the machine's value), every state before it `GoodXNY Y`. -/
+theorem realizes_casLoopNY {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : Arm.ArmState} {b k : Nat}
+    {allocs : Array Loc}
     {its : List RItem} {m : Loc → CV} {w : Arm.ArmState} {c' : MConf CV Arm.ArmState}
     (hq : Q R s (.run ⟨b, .op k allocs :: its, m, w⟩)) {vb : VBlock} {ty : CTy}
     {fl : Clif.MemFlags} {ra re rx rd r1 : Reg}
     (hvb : R.vc.blocks[b]? = some vb)
     (hi : vb.insts[k]? = some (.atomicCasLoop ty fl ra re rx rd r1))
-    (h : MStep R.vc R.sem ckeep R.rf (.run ⟨b, .op k allocs :: its, m, w⟩) c') :
+    (h : MStep R.vc R.sem ckeep R.rf (.run ⟨b, .op k allocs :: its, m, w⟩) c')
+    (hsemY : ∀ ops, (MInst.atomicCasLoop ty fl ra re rx rd r1).operands = .ok ops →
+      ∃ rY, csem Y R.ctx R.X (.atomicCasLoop ty fl ra re rx rd r1)
+        (((ops.zip allocs).toList.filter (·.1.isUse)).map (m ·.2)) w = some rY) :
     ∃ n c'', MStep R.vc R.sem ckeep R.rf (.run ⟨b, .op k allocs :: its, m, w⟩) c'' ∧
-      Q R (iterN R.step n s) c'' ∧ ∀ i < n, R.GoodXNR (iterN R.step i s) := by
+      Q R (iterN R.step n s) c'' ∧ ∀ i < n, R.GoodXNY Y (iterN R.step i s) := by
   have hck := (lowerRFunc_ok hR.alloc).2.2
   have hok := ctlCheck_inst hck hvb hi
   simp only [ctlInstOk, Bool.and_eq_true] at hok
@@ -308,6 +347,19 @@ theorem realizes_casLoopNR {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {
   obtain ⟨hty, hav, hrunh, rfl, rfl⟩ := loopSem_inv hhead
   simp only [List.zip_cons_cons, List.zip_nil_right, List.foldl_cons, List.foldl_nil, setReg_x,
     lo64_regVal_x, rnum] at hrunh hav
+  obtain ⟨rY, hY⟩ := hsemY _ hops
+  rw [hU] at hY
+  simp only [csem, herrw, ite_true] at hY
+  obtain ⟨o1Y, t1Y, c1Y, hheadY, -⟩ : ∃ outs1 t1 c1,
+      loopSem Y ty (regVal s (.x 25)) (casLoopHead ty.bits fl) [.x 25, .x 26, .x 28]
+        [regVal s (.x 25), regVal s (.x 26), regVal s (.x 28)] [.x 27, .x 24] w = some (outs1, t1, c1) ∧
+        True := by
+    split at hY
+    · exact ⟨_, _, _, ‹_›, trivial⟩
+    · cases hY
+  obtain ⟨-, havY, -, -, -⟩ := loopSem_inv hheadY
+  simp only [List.zip_cons_cons, List.zip_nil_right, List.foldl_cons, List.foldl_nil, setReg_x,
+    lo64_regVal_x, rnum] at havY
   have hsw0 : SameWorld R.F s (Arm.w (.GPR 28#5) (Arm.r (.GPR 28#5) s) (Arm.w (.GPR 26#5)
       (Arm.r (.GPR 26#5) s) (Arm.w (.GPR 25#5) (Arm.r (.GPR 25#5) s) w))) :=
     SameWorld.w_right (by simp [Masked]) (SameWorld.w_right (by simp [Masked])
@@ -357,10 +409,11 @@ theorem realizes_casLoopNR {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {
         (relaxLines R.far (ftList (ls2 ++ nxtOf R.af b)) ++ T)) := by
     rw [← List.drop_drop, hdrop']; simp [casLoopLines, casLoopHead]
   have hpc1 : Arm.r .PC s = R.pcOf (j0 + 1) := by rw [hpc, RL.pcOf_succ_label hL0]
-  obtain ⟨hit1, hpcs1, hgood1, hgx1⟩ := run_insNR hR hd1 (casHead_ins _ fl) hst.prog hpc1 hst.err hint1 hrun1
-  have hgx01 : ∀ i < 2, R.GoodXNR (iterN R.step i s) := fun i hi =>
+  obtain ⟨hit1, hpcs1, hgood1, hgx1⟩ := run_insNR (Y := Y) hR hd1 (casHead_ins _ fl) hst.prog hpc1
+    hst.err hint1 hrun1
+  have hgx01 : ∀ i < 2, R.GoodXNY Y (iterN R.step i s) := fun i hi =>
     hgx1 (casHead_tail _ fl) (RL.good_of_sp hst.sp)
-      (casHead_reads _ fl _ s fun q hq => .inr (.inr (hav q hq))) i
+      (casHead_reads _ fl _ s fun q hq => .inr (.inr ⟨hav q hq, havY q hq⟩)) i
       (by simp [casLoopHead]; omega)
   simp only [casLoopHead, List.length_cons, List.length_nil] at hit1 hpcs1 hgood1
   have herr1 : Arm.r .ERR s1 = .None := by
@@ -382,10 +435,10 @@ theorem realizes_casLoopNR {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {
       (∀ f, f ≠ .PC → (∀ n ∈ [27, 24], f ≠ .GPR (rnum n)) → (∀ g, f ≠ .FLAG g) →
         Arm.r f sF = Arm.r f s) →
       (∀ a, R.F a → sF.mem a = s.mem a) → sF.program = s.program → ctl = .next →
-      (∀ i < nst, R.GoodXNR (iterN R.step i s)) →
+      (∀ i < nst, R.GoodXNY Y (iterN R.step i s)) →
       ∃ n c'', MStep R.vc R.sem ckeep R.rf (.run ⟨b, .op k
           (#[Reg.x 25, .x 26, .x 28, .x 27, .x 24].map Loc.reg) :: its, m, w⟩) c'' ∧
-        Q R (iterN R.step n s) c'' ∧ ∀ i < n, R.GoodXNR (iterN R.step i s) := by
+        Q R (iterN R.step n s) c'' ∧ ∀ i < n, R.GoodXNY Y (iterN R.step i s) := by
     intro sF nst hitF hpcF hswF h27F hlen2 hfrF hmemF hprogF hctl hgoodF
     subst hctl
     have hk : k + 1 < vb.insts.size := by
@@ -422,7 +475,7 @@ theorem realizes_casLoopNR {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {
     simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq, rnum] at h2
     exact hfr1 f h1 (by simp [h2.1]) h3
   have hpc3 : Arm.r .PC s1 = R.pcOf (j0 + 3) := by rw [hpcs1]
-  have hgx2 : R.NextOk s1 (R.step s1) → R.GoodXNR (iterN R.step 2 s) := fun hnx => by
+  have hgx2 : R.NextOk s1 (R.step s1) → R.GoodXNY Y (iterN R.step 2 s) := fun hnx => by
     rw [hit1]
     exact RL.goodXNR_ofIns hR hL3 hpc3 rfl rfl (by rw [← hit1]; exact hgood1 2 (by omega) (by omega))
       herr1 hprog1' hnx (RL.readsIn_noLoad hR hL3 hpc3 rfl)
@@ -459,7 +512,7 @@ theorem realizes_casLoopNR {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {
         (.ins (.cbz true true (.x 24) (.loop ps1.aloop)) none :: .label (.loop (ps1.aloop + 1)) ::
           (relaxLines R.far (ftList (ls2 ++ nxtOf R.af b)) ++ T)) := by
       rw [← List.drop_drop, hdrop']; simp [casLoopLines, casLoopHead]
-    obtain ⟨hit3, hpcs3, -, hgx3⟩ := run_insNR hR hd4 (by simp [Insn.hooked])
+    obtain ⟨hit3, hpcs3, -, hgx3⟩ := run_insNR (Y := Y) hR hd4 (by simp [Insn.hooked])
       (by simp [Arm.w_program, hprog1']) (by simp) herr2
       (fun q h0 h1 => by simp at h1; omega) hrun3
     simp only [List.length_cons, List.length_nil, Nat.zero_add, iterN] at hit3
@@ -522,5 +575,27 @@ theorem realizes_casLoopNR {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {
       rw [mem_write_mem_bytes_ne _ _ _ _ _ (fun q hq e => hav q hq (by rw [← h25s, ← e]; exact ha))]
       simp [Arm.ArmState.mem_w_eq_mem, hmem1]
     · simp [Arm.w_program, hprog3, hprog1]
+
+set_option maxHeartbeats 8000000 in
+/-- **An `atomic_cas` loop on the machine**: from `Q` at an `atomicCasLoop` item, the machine
+runs the head; if the values differ, `b.ne` jumps to the exit label, else the `stlxr` stores and
+the `cbnz` falls through (status 0); it reaches `Q` at the next item (the scratch def havocked
+to the machine's value). -/
+theorem realizes_casLoopNR {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {allocs : Array Loc}
+    {its : List RItem} {m : Loc → CV} {w : Arm.ArmState} {c' : MConf CV Arm.ArmState}
+    (hq : Q R s (.run ⟨b, .op k allocs :: its, m, w⟩)) {vb : VBlock} {ty : CTy}
+    {fl : Clif.MemFlags} {ra re rx rd r1 : Reg}
+    (hvb : R.vc.blocks[b]? = some vb)
+    (hi : vb.insts[k]? = some (.atomicCasLoop ty fl ra re rx rd r1))
+    (h : MStep R.vc R.sem ckeep R.rf (.run ⟨b, .op k allocs :: its, m, w⟩) c') :
+    ∃ n c'', MStep R.vc R.sem ckeep R.rf (.run ⟨b, .op k allocs :: its, m, w⟩) c'' ∧
+      Q R (iterN R.step n s) c'' ∧ ∀ i < n, R.GoodXNR (iterN R.step i s) :=
+  realizes_casLoopNY (Y := R.F) hR hq hvb hi h fun ops hops => by
+    cases h with
+    | @op b k allocs its m w vb'' i ops' outs outs' w' ctl m2 c' hvb' hi' hops' hsz' hsem =>
+      rw [hvb] at hvb'; cases hvb'
+      rw [hi] at hi'; cases hi'
+      rw [hops] at hops'; cases hops'
+      exact ⟨_, R.sem_csem hsem⟩
 
 end Backend.Proof

@@ -15,14 +15,15 @@ open Backend E2E
 
 /-- **A taken `trapIf` on the machine**: one branch to the deferred trap label, whose next
 line is the trap site; every state after the trap site's step errs. -/
-theorem trap_trapIfNR {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {allocs : Array Loc}
+theorem trap_trapIfNR {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : Arm.ArmState} {b k : Nat}
+    {allocs : Array Loc}
     {its : List RItem} {m : Loc → CV} {w : Arm.ArmState}
     (hq : Q R s (.run ⟨b, .op k allocs :: its, m, w⟩)) {vb : VBlock} {kk : CondBrKind}
     {code : Clif.TrapCode} (hvb : R.vc.blocks[b]? = some vb)
     (hi : vb.insts[k]? = some (.trapIf kk code)) {ops : Array Operand}
     (hops : (MInst.trapIf kk code).operands = .ok ops)
     (hholds : kk.holds (((ops.zip allocs).toList.filter (·.1.isUse)).map (m ·.2)) w = true) :
-    ∃ n, TrapAt R.fb R.base code (iterN R.step n s) ∧ (∀ i < n, R.GoodXNR (iterN R.step i s)) ∧
+    ∃ n, TrapAt R.fb R.base code (iterN R.step n s) ∧ (∀ i < n, R.GoodXNY Y (iterN R.step i s)) ∧
       ∀ m, Arm.r .ERR (iterN R.step (n + m + 1) s) ≠ .None := by
   have hck := (lowerRFunc_ok hR.alloc).2.2
   obtain ⟨j0, items, pre, regs, i', c1, c2, ls1, ls2, ps1, psm, ps2, T, cc, wh, ops', rfl, hit, hsplit,
@@ -58,7 +59,7 @@ theorem trap_trapIfNR {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {alloc
       (∃ nz w r, k'.insn (.trap ps1.traps.size) = .cbz nz w r (.trap ps1.traps.size)) ∨
       (∃ nz r bit, k'.insn (.trap ps1.traps.size) = .tbz nz r bit (.trap ps1.traps.size)) := by
     cases k' <;> simp [CondBrKind.insn]
-  obtain ⟨nst, jl, hnst, hjt, -, -, -, hgx⟩ := reach_rcbXNR hR hdrop' hform (by simp) true
+  obtain ⟨nst, jl, hnst, hjt, -, -, -, hgx⟩ := reach_rcbXNR (Y := Y) hR hdrop' hform (by simp) true
     (fun env a ha => by rw [kind_brCond hst hkr _ ha, hholds])
     (fun hct env a ha => by rw [kind_brCond_inv hst hkr _ _ hct ha, hholds])
     (by rw [hst.prog]) hpc hst.err hst.sp
@@ -107,7 +108,8 @@ theorem trap_trapIfNR {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {alloc
   exact RL.udf_stuck hR hudf' hpcF hprogF herrF m
 
 /-- `trap_trapIf` with the trap site's `udf` line. -/
-theorem trap_trapIf_lineNR {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {allocs : Array Loc}
+theorem trap_trapIf_lineNR {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : Arm.ArmState}
+    {b k : Nat} {allocs : Array Loc}
     {its : List RItem} {m : Loc → CV} {w : Arm.ArmState}
     (hq : Q R s (.run ⟨b, .op k allocs :: its, m, w⟩)) {vb : VBlock} {kk : CondBrKind}
     {code : Clif.TrapCode} (hvb : R.vc.blocks[b]? = some vb)
@@ -115,7 +117,7 @@ theorem trap_trapIf_lineNR {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {
     (hops : (MInst.trapIf kk code).operands = .ok ops)
     (hholds : kk.holds (((ops.zip allocs).toList.filter (·.1.isUse)).map (m ·.2)) w = true) :
     ∃ n, TrapAt R.fb R.base code (iterN R.step n s) ∧ UdfLine R.fa R.base (iterN R.step n s) ∧
-      ∀ i < n, R.GoodXNR (iterN R.step i s) := by
+      ∀ i < n, R.GoodXNY Y (iterN R.step i s) := by
   have hck := (lowerRFunc_ok hR.alloc).2.2
   obtain ⟨j0, items, pre, regs, i', c1, c2, ls1, ls2, ps1, psm, ps2, T, cc, wh, ops', rfl, hit, hsplit,
     hasg, hc1', hops', hstat, hchk', hc2, h1, h2, htr, hdrop, hpc, hst⟩ := q_op hq hvb hi
@@ -150,7 +152,7 @@ theorem trap_trapIf_lineNR {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {
       (∃ nz w r, k'.insn (.trap ps1.traps.size) = .cbz nz w r (.trap ps1.traps.size)) ∨
       (∃ nz r bit, k'.insn (.trap ps1.traps.size) = .tbz nz r bit (.trap ps1.traps.size)) := by
     cases k' <;> simp [CondBrKind.insn]
-  obtain ⟨nst, jl, hnst, hjt, -, -, -, hgx⟩ := reach_rcbXNR hR hdrop' hform (by simp) true
+  obtain ⟨nst, jl, hnst, hjt, -, -, -, hgx⟩ := reach_rcbXNR (Y := Y) hR hdrop' hform (by simp) true
     (fun env a ha => by rw [kind_brCond hst hkr _ ha, hholds])
     (fun hct env a ha => by rw [kind_brCond_inv hst hkr _ _ hct ha, hholds])
     (by rw [hst.prog]) hpc hst.err hst.sp

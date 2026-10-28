@@ -1153,6 +1153,32 @@ then `lockstep_runX` with `stEqOutX_line` per index gives the determinism clause
 `LinkSys.thmPDER_det_of` (nested program calls through `ih : ThmPDER κ (M-1)`, base calls through
 `HookDetX`).
 
+**Item (2), as built (UninitZ13b, branch `agent/uninit-z13b`): guarded world reads, Arm side.**
+The guard set is a per-step fact of the VCode run, so it enters as a guard on the VCode
+semantics, and `ReadIn`'s third case becomes "outside `F` and outside the step's guard set".
+- `RegLevelReadsIn.lean`: `RL.ReadInY Y lr a` (third case `¬ F a ∧ ¬ Y a`), `RL.ReadsInY Y`,
+  `RL.GoodXNY Y`; `ReadIn`/`ReadsIn`/`GoodXNR` are the instances at `Y := F` (same meaning). The
+  builders and every `realizes_*NR` theorem of a case that reads no world byte are generic in `Y`
+  (implicit; the old uses elaborate at `Y := F`).
+- The cases that read world bytes take the step's `csem` at `Y` (`formOk_reads`, `loopSem_inv`
+  are generic in the frame set): **`realizes_op_nextNY`** (`hsemY`, `Y ⊇ F`),
+  **`realizes_rmwLoopNY`**, **`realizes_casLoopNY`**; `realizes_rmwLoopNR`/`_casLoopNR` keep
+  their statements (now the `Y := F` instances).
+- `RegLevelCorrectCY.lean`: `MInst.wReads` (straight-line forms and atomic loops), **`WGuard F ctx
+  X Ok i us w`** (`∃ Y ⊇ F, Ok w Y ∧ (i.wReads → csem Y ctx X i us w ≠ none)`), the guarded
+  semantics `csemVG`/`csemVIG` (`csemV`/`csemVI` where `WGuard` holds; `csemVIG_eqF`: at
+  `Ok := (· = F)` it is `csemVI`), `RL.WReadsIn Ok u` (`ReadsInY Y u` for a `Y ⊇ F` that is
+  everything or admitted by `Ok`), `MStep.guardLift`, **`realizes_allCY`**, `realizes_allC_spY`.
+- `RegLevelCorrectPRSY.lean`: `actWReadsIn`, `regLevelCorrect_world_atCSY`/`_worldCSY`/
+  `_worldPRSY` (the `*SR` proofs on the guarded semantics); `BackendWorldIY.lean`:
+  **`backend_correct_worldPRIY`** = `backend_correct_worldPRIR` with `Ok` and the premise `hGd`
+  (the compiled `csemVI` run of `vcp` is a `csemVIG … Ok` run), giving `actWReadsIn … Ok` at every
+  state before the return. Witness `BackendWorldIYWitness.lean` (`a2_worldPRIY`, `Ok := (· = F)`).
+- Open: `hGd` for the pair (`Ok w Y := Y = Zof F D cm` at a `cm` the pair relates `w` to). It
+  needs a per-step refinement of the counted pair run (`vcode_niI`): the rules on `csemG` with
+  `Rd := ¬ Zof F D cm` give `GuardR`, hence `csem (F ∪ ¬ Rd)` (loads, atomics); and the transport
+  across `prep` (`DriverSemG` of the guarded family). Not started.
+
 ## 6. Heap (separate gap, SEM2)
 
 `BaseOk.baseKeepsAllocs`/`baseNoAlloc` require base externs to allocate nothing whenever a program

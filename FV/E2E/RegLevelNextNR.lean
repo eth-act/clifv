@@ -15,14 +15,15 @@ open Backend E2E
 
 /-- **`trapIf` whose condition does not hold**: one conditional branch (to the trap section),
 not taken. -/
-theorem realizes_trapIf_nextNR {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {allocs : Array Loc}
+theorem realizes_trapIf_nextNR {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : Arm.ArmState}
+    {b k : Nat} {allocs : Array Loc}
     {its : List RItem} {m : Loc → CV} {w : Arm.ArmState} {c' : MConf CV Arm.ArmState}
     (hq : Q R s (.run ⟨b, .op k allocs :: its, m, w⟩)) {vb : VBlock} {kk : CondBrKind}
     {code : Clif.TrapCode} (hvb : R.vc.blocks[b]? = some vb)
     (hi : vb.insts[k]? = some (.trapIf kk code))
     (h : MStep R.vc R.sem ckeep R.rf (.run ⟨b, .op k allocs :: its, m, w⟩) c')
     (hnh : ∀ w', c' ≠ .halt w') :
-    ∃ n, Q R (iterN R.step n s) c' ∧ ∀ i < n, R.GoodXNR (iterN R.step i s) := by
+    ∃ n, Q R (iterN R.step n s) c' ∧ ∀ i < n, R.GoodXNY Y (iterN R.step i s) := by
   have hck := (lowerRFunc_ok hR.alloc).2.2
   obtain ⟨j0, items, pre, regs, i', c1, c2, ls1, ls2, ps1, psm, ps2, T, cc, wh, ops, rfl, hit, hsplit,
     hasg, hc1', hops, hstat, hchk', hc2, h1, h2, htr, hdrop, hpc, hst⟩ := q_op hq hvb hi
@@ -75,7 +76,7 @@ theorem realizes_trapIf_nextNR {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Na
       (∃ nz w r, k'.insn (.trap ps1.traps.size) = .cbz nz w r (.trap ps1.traps.size)) ∨
       (∃ nz r bit, k'.insn (.trap ps1.traps.size) = .tbz nz r bit (.trap ps1.traps.size)) := by
     cases k' <;> simp [CondBrKind.insn]
-  obtain ⟨n, jl, hn, -, hjf, -, -, hg⟩ := reach_rcbXNR hR hdrop' hform (by simp) false
+  obtain ⟨n, jl, hn, -, hjf, -, -, hg⟩ := reach_rcbXNR (Y := Y) hR hdrop' hform (by simp) false
     (fun env a ha => by rw [kind_brCond hst hkr _ ha, hnot])
     (fun hct env a ha => by rw [kind_brCond_inv hst hkr _ _ hct ha, hnot])
     (by rw [hst.prog]) hpc hst.err hst.sp

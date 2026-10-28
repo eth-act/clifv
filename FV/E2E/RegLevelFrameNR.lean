@@ -14,7 +14,8 @@ namespace Backend.Proof
 open Backend E2E
 
 /-- Straight-line lines at line `j` of the final code run as machine steps. -/
-theorem iterN_stepsNR {R : RL} (hR : R.Wf) {ls T : List Line} {j : Nat} {s s' : Arm.ArmState}
+theorem iterN_stepsNR {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {ls T : List Line} {j : Nat}
+    {s s' : Arm.ArmState}
     (hdrop : R.L.drop j = ls ++ T)
     (hins : ∀ ln ∈ ls, ∃ x, ln = .ins x none ∧ x.hooked = false)
     (hprog : s.program = R.fb.program R.base) (hpc : Arm.r .PC s = R.pcOf j)
@@ -23,8 +24,8 @@ theorem iterN_stepsNR {R : RL} (hR : R.Wf) {ls T : List Line} {j : Nat} {s s' : 
       (∀ i, 0 < i → i ≤ ls.length → R.Good (iterN R.step i s)) ∧
       ((∀ i t, Line.ins i t ∈ ls → i.tlsTail = false) → R.Good s → ∀ {Pa : BitVec 64 → Prop},
         (∀ a, Pa a → R.ReadOk a) →
-        (∀ x t, Line.ins x t ∈ ls → x.loads = true → ∀ a, Pa a → R.ReadIn x.ldpFR a) →
-        LinesReads (R.envOf j) ls s Pa → ∀ i < ls.length, R.GoodXNR (iterN R.step i s)) := by
+        (∀ x t, Line.ins x t ∈ ls → x.loads = true → ∀ a, Pa a → R.ReadInY Y x.ldpFR a) →
+        LinesReads (R.envOf j) ls s Pa → ∀ i < ls.length, R.GoodXNY Y (iterN R.step i s)) := by
   have hat : ∀ k ln, ls[k]? = some ln → R.fa.lines.toList[j + k]? = some ln := by
     intro k ln hk
     have := congrArg (·[k]?) hdrop
@@ -51,9 +52,10 @@ theorem iterN_stepsNR {R : RL} (hR : R.Wf) {ls T : List Line} {j : Nat} {s s' : 
 /-- **After the prologue**: the machine is at the entry configuration of the allocated code
 (store = the machine's locations, world = any body-entry world `w₀`), `AInv` holds, and every
 field but the pc, x16, x29 and `sp` is as at entry. -/
-theorem q_initNR {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb R.base ra R.s0)
+theorem q_initNR {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {ra : BitVec 64}
+    (hent : AbiCall R.fb R.base ra R.s0)
     {w₀ : Arm.ArmState} (hbe : BodyEntryW R.F R.vc.EntryArg R.af R.s0 w₀) :
-    ∃ n, (∀ i < n, R.GoodXNR (iterN R.step i R.s0)) ∧
+    ∃ n, (∀ i < n, R.GoodXNY Y (iterN R.step i R.s0)) ∧
       Q R (iterN R.step n R.s0) (MConf.init R.rf (locVal R.fr (iterN R.step n R.s0)) w₀) ∧
       AInv R (MConf.init R.rf (locVal R.fr (iterN R.step n R.s0)) w₀) ∧
       ∀ f, f ≠ .PC → f ≠ .GPR 29#5 → f ≠ .GPR 31#5 → f ≠ .GPR 16#5 →
@@ -70,7 +72,7 @@ theorem q_initNR {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb R.ba
     simp only [RL.pcOf, RL.L] at hj0 ⊢
     rw [lineOffset_succ _ _ _ hj0]
     simp [lineOffset, Line.size]
-  obtain ⟨hiter, hpc', -, hgx⟩ := iterN_stepsNR hR hdrop
+  obtain ⟨hiter, hpc', -, hgx⟩ := iterN_stepsNR (Y := Y) hR hdrop
     (fun ln h => by obtain ⟨x, e, hh, -⟩ := prologueLines_ins _ ln h; exact ⟨x, e, hh⟩)
     hent.program hpc1 hent.err hsteps
   obtain ⟨herr', hprog'⟩ := hsteps.err
@@ -181,11 +183,12 @@ theorem q_initNR {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb R.ba
 /-- **The return on the machine**: from `Q` at a `Rets` item, the epilogue and `ret` reach the
 return address with `sp` and x29 as at entry, the allocatable registers and the memory as at
 the item, and the returned values in their fixed registers. -/
-theorem ret_machineNR {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb R.base ra R.s0)
+theorem ret_machineNR {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {ra : BitVec 64}
+    (hent : AbiCall R.fb R.base ra R.s0)
     {s : Arm.ArmState} {b k : Nat} {allocs : Array Loc} {its : List RItem} {m : Loc → CV}
     {w : Arm.ArmState} (hq : Q R s (.run ⟨b, .op k allocs :: its, m, w⟩)) {vb : VBlock}
     {us : List (Reg × Reg)} (hvb : R.vc.blocks[b]? = some vb) (hi : vb.insts[k]? = some (.rets us)) :
-    ∃ n, (∀ i < n, R.GoodXNR (iterN R.step i s)) ∧
+    ∃ n, (∀ i < n, R.GoodXNY Y (iterN R.step i s)) ∧
       Arm.r .PC (iterN R.step n s) = ra ∧ Arm.r .ERR (iterN R.step n s) = .None ∧
       spv (iterN R.step n s) = spv R.s0 ∧ xreg 29 (iterN R.step n s) = xreg 29 R.s0 ∧
       (∀ r, r.allocatable = true → regVal (iterN R.step n s) r = regVal s r) ∧
@@ -264,7 +267,7 @@ theorem ret_machineNR {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb
     constructor <;> omega
   have hPE : ∀ x t, Line.ins x t ∈ spAdjLines false R.af.frameSize ++
       [Line.ins (.ldp Reg.fp Reg.lr (.spPostIndexed 16)) none] → x.loads = true →
-      ∀ a, (∃ k < 16, a = spv R.s0 - 16#64 + BitVec.ofNat 64 k) → R.ReadIn x.ldpFR a := by
+      ∀ a, (∃ k < 16, a = spv R.s0 - 16#64 + BitVec.ofNat 64 k) → R.ReadInY Y x.ldpFR a := by
     rintro x t hm hl _ ⟨k, hk, rfl⟩
     rcases List.mem_append.1 hm with hm | hm
     · rw [spAdjLines_noLoads false _ x t hm] at hl; cases hl
@@ -279,7 +282,7 @@ theorem ret_machineNR {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb
     simp only [BitVec.toNat_add, BitVec.toNat_sub, BitVec.toNat_ofNat]
     simp only [spv] at *
     omega
-  obtain ⟨hiter, hpc1, hgood, hgx⟩ := iterN_stepsNR hR hdrop'
+  obtain ⟨hiter, hpc1, hgood, hgx⟩ := iterN_stepsNR (Y := Y) hR hdrop'
     (fun ln h => by
       rcases List.mem_append.1 h with h | h
       · obtain ⟨x, e, hh, -⟩ := spAdjLines_ins false _ ln h; exact ⟨x, e, hh⟩
