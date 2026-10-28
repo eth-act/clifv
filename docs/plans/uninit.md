@@ -1015,6 +1015,31 @@ where `RelatedN … n` holds: `CondB` at the actual call with `ini := ini.adv (c
 equality from `prefix_related_cleanupPRI` at every `j < n` and `ThmPRB (M - 1)`'s `NextAdv`), by
 strong induction on `n`; then `thmPRB_of`, `thmPRB`, item (e).
 
+**(3), as built (UninitZ14, 2026-10-28).** Finding: `CondB` is too weak for `ThmPRB (M - 1)`: the
+callee's CLIF entry is placed with `calleeIni h ini` (`ini.adv 1` when `h` has slots,
+`initState_memB`), so the canonical callee run's table must be `calleeIni h ini`'s, also without
+`NeedSlots` (`TableOf` at depth `0` excludes program calls), and the new slot bytes
+`ini.bytes (ini.next + 1)` must be the call world's memory (else `RelW` fails on them). Decision
+(new names, `CondB` kept): `FV/E2E/LinkArmXPBT.lean`: **`CondBT`** (both added), `progXBT`,
+`progXPRBT`, `XPRBT`, `XPBTI`, **`XPBTG`** (the `XI` of the induction step), `XPBTG_eq_of`,
+`XPRBT_{prog,none,ind,base,ext}`. `FV/E2E/LinkArmProgCallPRB.lean`: **`DetPRB κ M`** (`ThmPDER`'s
+determinism clause for any outcome of a `ThmPRB` entry `s₀` with its own prophecies and table,
+plus `TabUpTo` with the same count on the agreeing run), `calleeIni`, **`progCallPRB`** (premises
+`ThmPRB (M - 1)`, `DetPRB (M - 1)`, `PlaceAtB`, slot bytes, callee table; conclusion: one outcome,
+`NextAdv` of the callee's CLIF run, and for every compatible caller state the linked call's
+`ActRet` and `TabUpTo` with that count; the non-interference clause of `progCallPR` is not
+restated, `DetPRB` covers both cases). `FV/E2E/LinkArmProgOsPRB.lean`: `progOsCorePRB`,
+`progOsCoreXPRRB`, `progOsPRB`, `progOsRegPRB`, **`calleeOkPRB`**, **`calleeTryOkPRB`** (for
+`XPRBT … n`). `FV/E2E/BackendWorldPRG.lean`: **`backend_correct_world_{cleanup,pipeline}PRG`**
+(`guardRI`, stage 1 by `hX_guardRI`); witnesses `FV/E2E/BackendWorldPRGWitness.lean`.
+Item (e): `Link.DeadCleanup.compileExe` compiles every function by the untyped cleanup path
+(`compiledCleanup_of`, `FV/E2E/DeadCleanupExecMemTrap.lean`: `CompiledCleanup`), so the prefix
+files already cover it; the typed `CompiledCleanupT/TC` are `compileExeT{,3}`'s only.
+Open for stage 2: `CondBT` at `worldPR (P n) (R n) w` needs the canonical callee run's table,
+while the caller's `TableOf` gives the actual call's; a transfer `TableOf s → TableOf s₀` for
+`EntryAgree`-related entries (a second determinism fact, `DetTabPRB`, stated premise like
+`DetPRB`) is needed, then `XPBTG_eq_of` by strong induction on `n`, `thmPRB_of`, `thmPRB`.
+
 **Step 3h, as built (UninitZ10b): the call-count premises are theorems.** `InstCallsOne f` and
 `TryCallsOne f` hold for every `f` (`E2E.instCallsOne_all`, `E2E.tryCallsOne_all`,
 `FV/E2E/IselCallsOneAll.lean`), from `FV/Backend/Proof/IselCallsOne.lean`:
