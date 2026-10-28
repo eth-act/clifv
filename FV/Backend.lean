@@ -12,6 +12,8 @@ import FV.Backend.Proof.DriverCheck
 import FV.Backend.Proof.DriverCheckTy
 import FV.Backend.Proof.DriverCheckC
 import FV.Compile.SubsetTC
+import FV.Compile.SubsetTF
+import FV.Backend.Proof.DriverCheckCF
 import FV.Backend.DeadCleanup
 import FV.Compile.Subset
 import Std.Data.HashSet
@@ -69,12 +71,16 @@ def Allocator.ofName? (n : String) : IO (Option Allocator) := do
 
 /-- The lowering validator of `f`'s theorem: M7's `lowerCheck` on subset E (`E2E.InSubset`), the
 typed `lowerCheckT` on the typed scope (`E2E.InSubsetT`, S11e5 Stage C;
-`lowerCheckT_of_lowerCheck`), and outside it `lowerCheckTC`, the typed validator over the typed
-`try_call` lowering (`E2E.InSubsetTC`, S11e6: direct `try_call`s of `f32`/`f64` callees). -/
+`lowerCheckT_of_lowerCheck`), `lowerCheckTC`, the typed validator over the typed `try_call`
+lowering, on the scope with typed `try_call`s (`E2E.InSubsetTC`, S11e6: direct `try_call`s of
+`f32`/`f64` callees), and outside it `lowerCheckTCF`, `lowerCheckTC` admitting the proven float
+operations (`E2E.InSubsetTCF`, S11f: float arithmetic, rounding, conversions;
+`lowerCheckTCF_of_lowerCheckTC`). -/
 def lowerCheckFor (f : Clif.Function) (vc : VCode) : Bool :=
   if Compile.functionE f then Proof.Driver.lowerCheck f vc
   else if Compile.functionET f then Proof.Driver.lowerCheckT f vc
-  else Proof.Driver.lowerCheckTC f vc
+  else if Compile.functionETC f then Proof.Driver.lowerCheckTC f vc
+  else Proof.Driver.lowerCheckTCF f vc
 
 /-- The conditions of the typed theorem with typed `try_call`s that do not need the rest of the
 file (`E2E.InSubsetTC`: `subsetETC`, `storeTyped`, `abiSigs`, `indSigs`; S11e6): the scope
@@ -82,6 +88,13 @@ file (`E2E.InSubsetTC`: `subsetETC`, `storeTyped`, `abiSigs`, `indSigs`; S11e6):
 `f32`/`f64`), float stores storing float values. -/
 def verifiableTC (f : Clif.Function) : Bool :=
   Compile.functionETC f && Compile.storeTypedB f && abiSigs f && indSigsOk f
+
+/-- The conditions of the typed theorem with the proven float operations that do not need the
+rest of the file (`E2E.InSubsetTCF`: `subsetETCF`, `storeTyped`, `abiSigs`, `indSigs`; S11f): the
+scope `Compile.functionETCF` (`functionETC` with the float arithmetic, rounding and
+conversions), float stores storing float values. -/
+def verifiableTCF (f : Clif.Function) : Bool :=
+  Compile.functionETCF f && Compile.storeTypedB f && abiSigs f && indSigsOk f
 
 /-- The proved D0 Stock dispatcher with legacy fallback, then (if `verify`) the lowering validator
 (`lowerCheckFor`: `lowerCheck`, or `lowerCheckT` outside subset E, whose acceptance the
@@ -127,14 +140,16 @@ def overBudget? (f : Clif.Function) : Option String :=
 labels); also returns the ISLE rules that fired. -/
 def compileFunction (k : Nat) (f : Clif.Function) (deadCleanup : Bool := true) :
     Except String (FnAsm × Array Isle.RuleId) := do
-  let vc ← lowerForAllocation f (verifiable f || verifiableT f || verifiableTC f) deadCleanup
+  let vc ← lowerForAllocation f
+    (verifiable f || verifiableT f || verifiableTC f || verifiableTCF f) deadCleanup
   let af ← allocate vc
   pure (← emitFunc k af, vc.rulesFired)
 
 /-- Compile one function with the given allocator. -/
 def compileFunctionWith (a : Allocator) (k : Nat) (f : Clif.Function) (deadCleanup : Bool := true) :
     IO (Except String (FnAsm × Array Isle.RuleId)) := do
-  match lowerForAllocation f (verifiable f || verifiableT f || verifiableTC f) deadCleanup with
+  match lowerForAllocation f
+      (verifiable f || verifiableT f || verifiableTC f || verifiableTCF f) deadCleanup with
   | .error e => pure (.error e)
   | .ok vc =>
     let rs ← a.run #[vc]
@@ -177,9 +192,10 @@ def hasTryCall (f : Clif.Function) : Bool :=
 /-- Why a compiled function is outside the per-activation theorems (`E2E.InSubset`, and outside
 subset E the typed `E2E.InSubsetT` of S11e5 Stage C: float data movement, float parameters and
 returns, `backend_correct_finalT`/`backend_correct_final_cleanupT` with `E2E.typedRules_program`):
-outside clif-subset-v2 E and its typed scopes (`Compile.functionET`, and since S11e6
-`Compile.functionETC` with typed direct `try_call`s, `E2E.backend_correct_finalTC`; with
-`Compile.storeTypedB`),
+outside clif-subset-v2 E and its typed scopes (`Compile.functionET`, since S11e6
+`Compile.functionETC` with typed direct `try_call`s, `E2E.backend_correct_finalTC`, and since
+S11f `Compile.functionETCF` with the proven float arithmetic, rounding and conversions,
+`E2E.backend_correct_finalTCF`; with `Compile.storeTypedB`),
 stack-passed arguments of an indirect call, or unsupported signatures.
 The activation runs in a program without functions; every callee, including the function
 itself, is supplied by the environment's call contract. The linking theorem discharges
@@ -188,7 +204,7 @@ Stack-passed parameters and direct-call arguments are covered. `try_call` and
 `try_call_indirect` are covered for normal returns; unwinding remains trusted. Atomics use
 the single-threaded Arm model, and TLS uses the trusted resolver contract. -/
 def unverifiedReason? (f : Clif.Function) : Option String :=
-  if !(Compile.functionE f || (Compile.functionETC f && Compile.storeTypedB f)) then
+  if !(Compile.functionE f || (Compile.functionETCF f && Compile.storeTypedB f)) then
     some "outside clif-subset-v2 E"
   else if !abiSigs f then some "special-purpose parameter other than one sret pointer (outside backend_correct)"
   else if !indSigsOk f then

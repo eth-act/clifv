@@ -1048,8 +1048,15 @@ rounding operations, the eight roots fire on it (and not the generic-size ones, 
 `fcmp` root), and kernel-checked edge values (±0, ±0.5, ±1.5, `2^52-0.5`, `2^52+1`,
 ±∞, quiet NaN). Oracle: `FVTest/Backend/float_round.clif`.
 
-**Boundary.** Nothing downstream consumes `LowerRulesCorrectFT`/`InstScopeTA` yet (the driver
-and the end-to-end scope keep `InstScopeT`).
+**Boundary.** Since S11f's scope PR the per-function chain with typed `try_call`s consumes them
+with the conversions: `CtxT.scope` and `Driver.LowerShapeTC.scope` are `InstScopeTF`
+(`Compile.instETF = instETA ∨ fCvtET`), the exclusion `lower_nonroot_nomatchTF_calls`
+(`IselExclTF`, `exclOkTF_program`), the non-E unmatchability `NonEUnmatchableTF`
+(`IselNonETF`), the conversion family `LowerRulesCorrectCvtT`/`floatCvtRootRule`
+(`IselLowerCvtT`), the dispatcher `lowerInstOk_of_rulesTF`/`instCallsTF_of_rules`
+(`LowerContractTF`) and the validator `lowerCheckTCF` (`DriverCheckCF`/`DriverCheckTCF`) feed
+`E2E.backend_correct_finalTCF`. `NonEUnmatchableT` and the `InstScopeT` dispatchers take
+`InstScopeT ctx` explicitly (meaning unchanged); the link-level chain keeps `InstScopeT`.
 
 ## Float `Args`/`Rets` in the control-form check (S11e5 Stage C, slice 5a)
 

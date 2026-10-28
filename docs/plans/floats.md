@@ -832,8 +832,33 @@ fires the sixteen roots, `float_cvt_root_applies`; boundary values NaN, ±∞, b
 `FVTest/Backend/float_cvt.clif`. **Not proven, by design: trapping `fcvt_to_{u,s}int`**
 (`fpu_to_int_cvt`: NaN → `BAD_CONVERSION_TO_INTEGER`, bounds → `INTEGER_OVERFLOW`); cg_clif's
 `cast.rs` never emits them (Rust `as` saturates), so their roots stay outside the closure.
-Open: admitting the conversions in the end-to-end scope (`Compile.fArithET`/`InstScopeTA` and
-the exclusion checker), which is what turns the deps fallbacks into verified functions.
+
+**S11f scope (per-function verdict): arithmetic, rounding and conversions verified.** The
+backend now reports functions of `Compile.functionETCF` verified (`FV/Compile/SubsetTF.lean`:
+`functionETC` whose statements are in `instETF = instET ∨ fArithET ∨ fCvtET`, the `fcvt_from_*`
+operand an integer position `intOperandsF`), validated by `lowerCheckTCF`
+(`FV/Backend/Proof/DriverCheckCF.lean`: `lowerCheckTC` with `instScopeOkF`), under
+`E2E.backend_correct_finalTCF` (`FV/E2E/FinalTCF.lean`, no rule premise). The chain:
+`CtxT.scope` and `Driver.LowerShapeTC.scope` are the weaker `InstScopeTF`, `DriverHypTC.subETC`
+the weaker `functionETCF` (the families' proofs never read them: every family and
+`LowerSimTC`'s simulation are stronger); the statements whose truth depends on the
+instructions (`NonEUnmatchableT`, `lowerInstOk_of_rulesT[P]`, `lowerInstOk_runTermT[P]`,
+`instCallsT_of_rules`, `PairDriverT.instCalls_pairT`, `DeadCleanupPairT.instCalls_pair_valueT`)
+take `InstScopeT ctx` explicitly, so their meaning is unchanged. New: `exclOkTF_program`,
+`lower_nonroot_nomatchTF_calls` (`IselExclTF`: integer-result opcodes `opsTF`, float-result
+`floatOpsF`), `nonEUnmatchableTF_program` (`IselNonETF`), `floatCvtRootRule`,
+`lowerRulesCorrectCvtT_program` (`IselLowerCvtT`), the dispatcher `lowerInstOk_of_rulesTF` /
+`instCallsTF_of_rules` (`LowerContractTF`), `loweringTCF_of_check`,
+`lowerCheckTCF_of_lowerCheckTC` (`DriverCheckTCF`), `verdict_of_unverifiedReasonF`,
+`lowerChecked_specTCF`. The compiler functions `unverifiedReason?` (scope `functionETCF`) and
+`lowerCheckFor` (`lowerCheckTCF` outside `functionETC`) changed, so `verdict_of_unverifiedReason`
+and `lowerChecked_specTC` take the premise that `f` is in the scopes they name. Witness:
+`FVTest/E2E/FloatArithFinalTCF.lean` (`fOps`: `fcvt_from_sint`, `fmul`, `fadd`, `sqrt`,
+`floor`, `fpromote`, `nearest`, `fdemote`, `fcvt_to_{s,u}int_sat`; outside `functionETC`,
+rejected by `lowerCheckTC`, accepted by `lowerCheckTCF`, `backend_correct_finalTCF_fOps`,
+`verdict_f`). Generated code unchanged. Open: `fcmp` (its `brif`/`select` fusions with
+`fcmp` must be proven or excluded first), and the link-level chain (`InScopeIn`,
+`fnScopeInTB3`, `lowerFunction_ok_inputT`, `compileExeT3`), which keeps `functionET`.
 
 **S11e6 (#419), slice 2: typed `try_call`.** The lowering (2a, #540; 2b): `gen_try_call_rets`
 puts each return in the register of its class (`retRegsC`: x0.. / v0..; `retRegsC_int` on integer
