@@ -4,9 +4,10 @@ import FV.Backend.Proof.DeadCleanupDeletion
 # Ordered deletions of whitelisted instructions
 
 `DropSublist p xs ys`: `xs` is `ys` with some instructions satisfying `p` deleted, in order.
-`DeadCleanup.PureSublist` is `DropSublist pureForm` (`PureSublist.drop`); the skip of unused
-instructions deletes `skipDel` instructions only, and the production cleanup stage (the skip,
-then the cleanup) deletes `fun i => pureForm i || skipDel i` ones (`DropSublist.trans`).
+`DeadCleanup.PureSublist` is `DropSublist (pureForm ∨ cmpForm)` (`dropSublist_of_pure`); the skip of
+unused instructions deletes `skipDel` instructions only, and the production cleanup stage (the
+skip, then the cleanup) deletes `fun i => pureForm i || cmpForm i || skipDel i` ones
+(`DropSublist.trans`).
 -/
 
 namespace Backend.Proof.Driver
@@ -32,11 +33,13 @@ theorem DropSublist.mono {xs ys : List MInst} (h : DropSublist p xs ys)
   | drop hp _ ih => exact .drop (hpq _ hp) ih
   | keep _ ih => exact .keep ih
 
+/-- `PureSublist` deletes pure producers and dead compares (`cmpForm`, main #605/#608): the
+statement changed with the cleanup (it was `DropSublist pureForm`). -/
 theorem dropSublist_of_pure {xs ys : List MInst} (h : PureSublist xs ys) :
-    DropSublist pureForm xs ys := by
+    DropSublist (fun i => pureForm i || cmpForm i) xs ys := by
   induction h with
   | nil => exact .nil
-  | drop hp _ ih => exact .drop hp ih
+  | drop hp _ ih => exact .drop (by rcases hp with hp | hp <;> simp [hp]) ih
   | keep _ ih => exact .keep ih
 
 theorem DropSublist.sublist {xs ys : List MInst} (h : DropSublist p xs ys) : xs.Sublist ys := by
