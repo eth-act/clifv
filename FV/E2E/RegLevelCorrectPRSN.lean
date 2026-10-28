@@ -1,0 +1,717 @@
+import FV.E2E.DeadCleanupRegLevelPRS
+
+/-!
+# The machine's call count at the return (SEM1 #537, #680 (3), `CountPRB` (a))
+
+The counted register-level theorems keep the counted machine's count equal to the VCode counter
+(`RealizesCP.countedRun`: `p.2 = c.world.2`) but did not export it at the return. Here:
+
+* `forward_lastC`: `forward` + `forward_last` on the counted machine `stepC`, read back on the
+  plain machine, with *count = counter* at the last configuration;
+* `regLevelCorrect_world_atCSN`, `regLevelCorrect_worldCSN`, **`regLevelCorrect_worldPRSN`**:
+  `regLevelCorrect_world_atCS`/`_worldCS`/`_worldPRS` (same proofs) whose return index `n` also
+  has `callsBefore (ArmStepX (XI.at 0) H fa) fa base s n = nc`, `nc` the VCode return's counter;
+* `regLevelCorrect_world_value_atCSN`, `_value_worldCSN`, **`_value_worldPRSN`**: likewise for
+  the value semantics (cleanup path).
+-/
+
+namespace Backend.Proof
+
+open Backend E2E Backend.Proof.Driver Backend.DeadCleanup
+
+private theorem valueSemV_haltI {gv : Nat → String → Prop} {F : BitVec 64 → Prop}
+    {ctx : FnCtx} {X : ExtSem} {i : MInst} {us outs : List CV}
+    {w w' : Arm.ArmState} (h : valueSemV gv F ctx X i us w = some (outs, w', .halt)) :
+    csemV gv F ctx X i us w = some (outs, w', .halt) := by
+  by_cases hp : specForm i = true
+  · have hs : mspec ctx.slotBase i us w = some (outs, w', .halt) := by
+      simpa [valueSemV, hp] using h
+    have := mspec_spec_next hp hs
+    cases this
+  · simpa [valueSemV, hp] using h
+
+
+/-- **`forward_last` on the counted machine**, read back on the plain machine: the configuration
+`c'` before the last step is reached after `n` plain steps, and the count of `C` states among them
+is `c'`'s counter. -/
+theorem forward_lastC {V W S : Type} {vc : VCode} {rf : RFunc} {sem : ISem V (W × Nat)}
+    {keep : Reg → V → V} {Rl : MConf V (W × Nat) → VConf V (W × Nat) → Prop}
+    (hR : IsSimulation vc rf sem keep Rl) {step : S → S} {C T : S → Prop}
+    {Q : S → MConf V (W × Nat) → Prop} {s0 : S}
+    (hQ : Realizes vc rf sem keep (stepC C step)
+      (fun p c => Q p.1 c ∧ p.2 = c.world.2 ∧ ∃ i, p = iterN (stepC C step) i (s0, 0))
+      (fun p => T p.1))
+    {vs0 vs : VState V (W × Nat)} {v1 : VConf V (W × Nat)}
+    (hstar : Star (VStep vc sem) (.run vs0) (.run vs)) (h1 : VStep vc sem (.run vs) v1)
+    {c0 : MConf V (W × Nat)} (hr0 : Rl c0 (.run vs0)) (hq0 : Q s0 c0) (hc0 : c0.world.2 = 0) :
+    ∃ n c' c'', Q (iterN step n s0) c' ∧ Rl c' (.run vs) ∧ MStep vc sem keep rf c' c'' ∧
+      Rl c'' v1 ∧ (∀ i < n, T (iterN step i s0)) ∧ countIn C step s0 n = c'.world.2 := by
+  obtain ⟨n1, c1, hz1, hr1, ht1⟩ := forward (s := (s0, 0)) hR hQ hstar hr0 ⟨hq0, hc0.symm, 0, rfl⟩
+  obtain ⟨n2, c', c'', ⟨hq2, hk2, -⟩, hr2, hms, hr3, ht2⟩ :=
+    forward_last hR hQ h1 _ c1 _ (Nat.le_refl _) hr1 hz1
+  rw [← iterN_add, iterN_stepC] at hq2 hk2
+  refine ⟨n1 + n2, c', c'', hq2, hr2, hms, hr3, fun i hi => ?_, ?_⟩
+  · have := trace_add (T := fun p : S × Nat => T p.1) ht1 ht2 i hi
+    rw [iterN_stepC] at this
+    exact this
+  · simpa using hk2
+
+/-- **`regLevelCorrect_world_atCS` with the machine's call count at the return**: the return
+index `n` has `callsBefore … n = nc`, the counted VCode run's counter at its return (the counted
+run's `p.2 = c.world.2` at the `rets` item; the epilogue makes no call, `ret_machineN`). -/
+theorem regLevelCorrect_world_atCSN {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAsm}
+    {fb : FnBin} {k : Nat} {cc : CheckCtx} {ins : Array (Option AState)}
+    {a0 : AState} (hcheck : CheckedAt vcp rf cc ins a0) (hok : EntryOk a0)
+    (halloc : lowerRFunc vcp rf = .ok af)
+    (hemit : emitFunc k af = .ok fa) (hlayout : fa.layout = .ok fb) {XI : ExtSemI} {H : ArmHooks}
+    {K : Nat} {G : BitVec 64 → Prop} {gv : Nat → String → Prop}
+    (hcov : FormsCovered ⟨fa.k, af.slotBase⟩ vcp)
+    {base ra : BitVec 64} {s : Arm.ArmState} (hent : AbiCall fb base ra s)
+    (hres : StackAvail K af s) (hG : ∀ a, G a → ¬ StackBelow (frameDrop af + K) (spv s) a)
+    (hC : ∀ n, CalleeOkGP (fun u => OnCall (ArmStepX (XI.at 0) H fa) fa base s n u ∧
+        spOf u = spv s - BitVec.ofNat 64 (frameDrop af))
+      (frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af G s)
+      K G s (CallAt fa base) (XI.at n) H vcp.CallSite gv)
+    (hCT : vcp.hasTryCall = true → ∀ n, CalleeTryOkGP (fun u =>
+        OnCall (ArmStepX (XI.at 0) H fa) fa base s n u ∧ spOf u = spv s - BitVec.ofNat 64 (frameDrop af))
+      (frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af G s) K G s
+      (CallAt fa base) (XI.at n) H vcp.TrySite gv)
+    (hTls : vcp.hasTls = true → ∀ n,
+      TlsOk (frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af G s) K (XI.at n) H)
+    {w₀ : Arm.ArmState} (hbe : BodyEntryW (frameWG K (RAFrame.compute vcp rf).intBase
+      (RAFrame.compute vcp rf).size af G s) vcp.EntryArg af s w₀)
+    (ρsel : (Loc → CV) → Nat → CV)
+    (hsel : ∀ m₀ : Loc → CV, Inv ckeep a0 m₀ (ρsel m₀) (fun r => m₀ (.reg r))) :
+    ∃ m₀ : Loc → CV,
+    (∀ us vals w nc, VRetFrom vcp (csemVI gv (frameWG K (RAFrame.compute vcp rf).intBase
+        (RAFrame.compute vcp rf).size af G s) ⟨fa.k, af.slotBase⟩ XI) ⟨0, 0, ρsel m₀, (w₀, 0)⟩
+        us vals (w, nc) →
+      ∃ n, callsBefore (ArmStepX (XI.at 0) H fa) fa base s n = nc ∧
+        ArmRet ra s (E2E.runX (ArmStepX (XI.at 0) H fa) n s) ∧
+        (∀ (j : Nat) v p x, us[j]? = some (v, p) → vals[j]? = some x →
+          regVal (E2E.runX (ArmStepX (XI.at 0) H fa) n s) p = x) ∧
+        (∀ a, ¬ (frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af G s) a →
+          (E2E.runX (ArmStepX (XI.at 0) H fa) n s).mem a = w.mem a) ∧
+        (∀ f, ¬ Masked f → f ≠ .GPR 29#5 → f ≠ .GPR 31#5 →
+          Arm.r f (E2E.runX (ArmStepX (XI.at 0) H fa) n s) = Arm.r f w) ∧
+        (∀ a, G a → (E2E.runX (ArmStepX (XI.at 0) H fa) n s).mem a = s.mem a) ∧
+        (E2E.runX (ArmStepX (XI.at 0) H fa) n s).program = s.program ∧
+        ∀ i, 0 < i → i < n → PostCall fa base (Arm.r .PC (E2E.runX (ArmStepX (XI.at 0) H fa) i s)) →
+          spv (E2E.runX (ArmStepX (XI.at 0) H fa) i s) = spv s - BitVec.ofNat 64 (frameDrop af)) ∧
+    (∀ c, VTrapFrom vcp (csemVI gv (frameWG K (RAFrame.compute vcp rf).intBase
+        (RAFrame.compute vcp rf).size af G s) ⟨fa.k, af.slotBase⟩ XI) ⟨0, 0, ρsel m₀, (w₀, 0)⟩ c →
+      ∃ n, TrapAt fb base c (E2E.runX (ArmStepX (XI.at 0) H fa) n s)) := by
+  obtain ⟨lm, hlm⟩ := FnAsm.layout_labelOffsets hlayout
+  obtain ⟨body, psF, hb, -, hk⟩ := emitFunc_ok hemit
+  subst hk
+  let Rn : Nat → RL := fun n => ⟨vcp, rf, af, fa, fb, lm, base, s, XI.at n, H, psF, K, G, gv⟩
+  let R : RL := Rn 0
+  have hRn : ∀ n, (Rn n).Wf := fun _ => ⟨⟨cc, ins, a0, hcheck, hok⟩, halloc, hemit, hlayout, hlm,
+    by show 4 * fb.words.size ≤ 2 ^ 64; have := hent.fits; omega, hres, ⟨body, hb⟩, hent.program, hG⟩
+  have hR : R.Wf := hRn 0
+  have hck := (lowerRFunc_ok hR.alloc).2.2
+  obtain ⟨n0, ht0, hq0, hA0, hf0⟩ := q_initN hR hent hbe
+  obtain ⟨Rl, hSim, hinit, hkeep⟩ :=
+    checkedAt_sound R.vc R.rf (csemVI R.gv R.F R.ctx XI) ckeep hcheck (locVal R.fr (iterN R.step n0 s))
+      (ρsel (locVal R.fr (iterN R.step n0 s))) (w₀, 0) (hsel _)
+  have hP0 : countIn R.CallSt R.step s n0 = 0 := countIn_zero_of fun i hi => (ht0 i hi).2
+  have hRzC : Realizes R.vc R.rf (csemVI R.gv R.F R.ctx XI) ckeep (stepC R.CallSt R.step)
+      (fun p c => (Q R p.1 (c.mapW Prod.fst) ∧ AInv R (c.mapW Prod.fst)) ∧ p.2 = c.world.2 ∧
+        ∃ i, p = iterN (stepC R.CallSt R.step) i (iterN R.step n0 s, 0)) (fun p => R.Good p.1) := by
+    refine RealizesCP.countedRun (vc := R.vc) (rf := R.rf) (keep := ckeep)
+      (sem := fun n => csemV R.gv R.F R.ctx (XI.at n))
+      (Q := fun u c => Q R u c ∧ AInv R c) (T := R.Good) (C := R.CallSt)
+      (P := fun n u => OnCall R.step fa base s n u) (s0 := iterN R.step n0 s) (fun n => ?_)
+      (onCall_of_run hP0)
+    have hq : ∀ u c, Q (Rn n) u c ∧ AInv (Rn n) c ↔ Q R u c ∧ AInv R c := fun u c =>
+      and_congr (RL.Q_withX (Rn n) (XI.at 0) u c).symm Iff.rfl
+    exact ((realizes_allC_sp (hRn n) (hC n) (fun h => hCT h n) (fun h => hTls h n) hcov).mono_T
+      (T' := R.Good) fun _ h => h.good).congr_Q hq
+  have hRz := Realizes.ofStepC hRzC
+  have hfin0 : ∀ n1 n2 n3, E2E.runX (ArmStepX (XI.at 0) H fa) (n0 + n1 + n2 + n3) s =
+      iterN R.step n3 (iterN R.step n2 (iterN R.step n1 (iterN R.step n0 s))) := by
+    intro n1 n2 n3; rw [runX_eq]; simp only [iterN_add]; rfl
+  have hfin1 : ∀ n1 n3, E2E.runX (ArmStepX (XI.at 0) H fa) (n0 + n1 + n3) s =
+      iterN R.step n3 (iterN R.step n1 (iterN R.step n0 s)) := by
+    intro n1 n3; rw [runX_eq]; simp only [iterN_add]; rfl
+  refine ⟨locVal R.fr (iterN R.step n0 s), fun us vals w nc hret => ?_, fun c htr => ?_⟩
+  · -- a return
+    obtain ⟨b, k, ρ, w₁, vb, ops, outs, hstar, hvb, hi, hops, hvals, hsem⟩ := hret
+    obtain ⟨ns, rfl⟩ := ctlCheck_rets hck hvb hi
+    rw [operands_retsC] at hops
+    cases hops
+    obtain ⟨hsemV, hnc⟩ := ISem.counted_some hsem
+    have hnc' : nc = w₁.2 := by simpa [MInst.isCallI] using hnc
+    have hsem' := hsemV
+    simp only [csemV, csem, Option.some.injEq, Prod.mk.injEq] at hsem'
+    obtain ⟨rfl, hw, -⟩ := hsem'
+    have h1 : VStep R.vc (csemVI R.gv R.F R.ctx XI) (.run ⟨b, k, ρ, w₁⟩) (.ret vals (w, nc)) := by
+      rw [hvals]
+      refine VStep.step hvb hi (operands_retsC ns) (by rw [hvals] at hsem; exact hsem) ?_ (VNext.ret rfl)
+      rw [List.toList_toArray, filter_isDef_retOpsC]; rfl
+    obtain ⟨n1, c', c'', ⟨hq2, -⟩, hr2, hms, hr3, ht1, hcnt⟩ :=
+      forward_lastC (Q := fun u c => Q R u (c.mapW Prod.fst) ∧ AInv R (c.mapW Prod.fst)) hSim hRzC
+        hstar h1 hinit ⟨hq0, hA0⟩ rfl
+    cases c'' with
+    | run s' => obtain ⟨_, e⟩ := hSim.run hr3; cases e
+    | halt w'' => cases hSim.halt hr3
+    | ret uses m' w'' =>
+      have hks := hkeep hr3
+      cases hms with
+      | op hvb' hi' hops' hsz hsem2 hlen2 hho hcl hn =>
+        obtain ⟨hb', hk', hw'⟩ := hSim.at_op hr2
+        dsimp only at hb' hk' hw'
+        subst hb' hk' hw'
+        rw [hvb] at hvb'; cases hvb'
+        rw [hi] at hi'; cases hi'
+        rw [operands_retsC] at hops'; cases hops'
+        cases hn with
+        | ret _ =>
+        obtain ⟨hsem3, -⟩ := ISem.counted_some hsem2
+        simp only [csemV, csem, Option.some.injEq, Prod.mk.injEq] at hsem3
+        obtain ⟨rfl, -, -⟩ := hsem3
+        rw [rets_store hlen2 rfl hho hcl] at hks
+        have hq2' : Q R (iterN R.step n1 (iterN R.step n0 s))
+            (.run ⟨b, .op k _ :: _, _, w₁.1⟩) := hq2
+        have hst := q_stRel hq2'
+        obtain ⟨n3, ht3, hpc, herr, hsp, hx29, hregs, hmem, hfld, hprogF, hvalsM⟩ :=
+          ret_machineN hR hent hq2' hvb hi
+        have htr : ∀ i < n0 + n1 + n3, R.Good (E2E.runX (ArmStepX (XI.at 0) H fa) i s) := by
+          intro i hi
+          rw [runX_eq]
+          exact trace_add (fun j hj => (ht0 j hj).1.good)
+            (trace_add ht1 fun j hj => (ht3 j hj).1.good) i (by omega)
+        have hm0 : ∀ r, locVal R.fr (iterN R.step n0 s) (.reg r) = regVal (iterN R.step n0 s) r :=
+          fun _ => rfl
+        have hms : ∀ r, r.allocatable = true → _ = regVal _ r := fun r hr =>
+          hst.store (.reg r) (fun r' e => by cases e; exact hr) trivial
+        dsimp only at hms
+        refine ⟨n0 + n1 + n3, ?_, ⟨?_, ?_, ?_, ?_, ?_⟩, ?_, ?_, ?_, ?_, ?_,
+          fun i hi0 hi hpcall => ?_⟩
+        rotate_right
+        · exact (htr i hi).resolve_left (fun h => h hpcall)
+        · have e0 : countIn (fun u => CallPc fa base (Arm.r .PC u)) (ArmStepX (XI.at 0) H fa) s n0 =
+              0 := hP0
+          have e1 : countIn (fun u => CallPc fa base (Arm.r .PC u)) (ArmStepX (XI.at 0) H fa)
+              (iterN (ArmStepX (XI.at 0) H fa) n0 s) n1 = nc := by
+            rw [hnc']; exact hcnt
+          have e3 : countIn (fun u => CallPc fa base (Arm.r .PC u)) (ArmStepX (XI.at 0) H fa)
+              (iterN (ArmStepX (XI.at 0) H fa) (n0 + n1) s) n3 = 0 := by
+            rw [iterN_add]; exact countIn_zero_of fun j hj => (ht3 j hj).2
+          rw [callsBefore_eq_countIn, countIn_add, countIn_add, e0, e1, e3, Nat.zero_add, Nat.add_zero]
+        all_goals rw [hfin1]
+        · exact hpc
+        · exact herr
+        · exact hsp
+        · intro n hn
+          simp only [calleeSavedX, List.mem_map, List.mem_range] at hn
+          obtain ⟨a, ha, rfl⟩ := hn
+          by_cases h29 : a = 10
+          · subst h29; exact hx29
+          obtain ⟨hcs, hal⟩ := calleeSaved_x (n := 19 + a) (by omega) (by omega)
+          have k1 := hks _ hcs
+          simp only [ckeep, hm0] at k1
+          rw [hms _ hal] at k1
+          have hne : ∀ q, q < 32 → q ≠ 19 + a →
+              Arm.StateField.GPR (rnum (19 + a)) ≠ .GPR (BitVec.ofNat 5 q) :=
+            fun q h1 h2 e => rnum_ne (a := 19 + a) (b := q) (by omega) h1 (Ne.symm h2)
+              (Arm.StateField.GPR.inj e)
+          have k2 := hregs _ hal
+          simp only [regVal] at k1 k2
+          rw [hf0 _ (by simp) (hne 29 (by omega) (by omega)) (hne 31 (by omega) (by omega))
+            (hne 16 (by omega) (by omega))] at k1
+          exact setWidth128_inj (k2.trans k1)
+        · intro n h8 h16
+          obtain ⟨hcs, hal⟩ := calleeSaved_v h8 h16
+          have k1 := hks _ hcs
+          simp only [ckeep, hm0] at k1
+          rw [hms _ hal] at k1
+          have k2 := hregs _ hal
+          simp only [regVal] at k1 k2
+          rw [hf0 _ (by simp) (by simp) (by simp) (by simp)] at k1
+          show (Arm.r (.SFP (rnum n)) _).setWidth 64 = (Arm.r (.SFP (rnum n)) s).setWidth 64
+          rw [k2]
+          exact setWidth128_inj k1
+        · intro j v p x hj hx
+          have e1 := hSim.ret hr3
+          simp only [VConf.ret.injEq] at e1
+          rw [e1.1] at hx
+          exact hvalsM _ (operands_retsC ns) j v p x hj hx
+        · intro a ha
+          rw [hmem, ← hw]
+          exact hst.world.2.1 a ha
+        · intro f hf h29 h31
+          rw [hfld f hf h29 h31, ← hw]
+          exact hst.world.1 f hf
+        · intro a ha
+          rw [hmem]
+          exact hst.gkeep a ha
+        · rw [hprogF, hst.prog]
+          exact hent.program.symm
+  · -- a trap
+    obtain ⟨b, k, ρ, w, vb, i, ops, outs, w', hstar, hvb, hi, hops, hsem, htc⟩ := htr
+    obtain ⟨n1, c1, hz1, hr1, ht1⟩ := forward hSim hRz hstar hinit ⟨0, ⟨hq0, hA0⟩, rfl, 0, rfl⟩
+    obtain ⟨hsemV, -⟩ := ISem.counted_some hsem
+    obtain ⟨hnil, hform⟩ := csem_halt (csemV_sub hsemV)
+    subst hnil
+    have hdefs : ops.toList.filter Operand.isDef = [] := by
+      rcases hform with ⟨cd, rfl⟩ | ⟨kk, cd, rfl, -⟩
+      · rw [udf_ops hops]; rfl
+      · exact trapIf_nodefs hops
+    have h1 : VStep R.vc (csemVI R.gv R.F R.ctx XI) (.run ⟨b, k, ρ, w⟩) (.halt w') :=
+      VStep.step hvb hi hops hsem (by rw [hdefs]; rfl) VNext.halt
+    obtain ⟨n2, c', c'', ⟨_, ⟨hq2, -⟩, -⟩, hr2, hms, hr3, -⟩ :=
+      forward_last hSim hRz h1 _ c1 _ (Nat.le_refl _) hr1 hz1
+    cases c'' with
+    | run s' => obtain ⟨_, e⟩ := hSim.run hr3; cases e
+    | ret vs m' w'' => cases hSim.ret hr3
+    | halt w'' =>
+      cases hms with
+      | op hvb' hi' hops' hsz hsem2 hlen2 hho hcl hn =>
+        obtain ⟨hb', hk', hw'⟩ := hSim.at_op hr2
+        dsimp only at hb' hk' hw'
+        subst hb' hk' hw'
+        rw [hvb] at hvb'; cases hvb'
+        rw [hi] at hi'; cases hi'
+        have hq2' : Q R (iterN R.step n2 (iterN R.step n1 (iterN R.step n0 s)))
+            (.run ⟨b, .op k _ :: _, _, w.1⟩) := hq2
+        rcases hform with ⟨cd, rfl⟩ | ⟨kk, cd, rfl, hholds⟩
+        · simp only [trapCode?, Option.some.injEq] at htc
+          subst htc
+          obtain ⟨htrap, -⟩ := trap_udf hR hq2' hvb hi
+          exact ⟨n0 + n1 + n2 + 0, by rw [hfin0]; exact htrap⟩
+        · cases hn with
+          | halt =>
+          obtain ⟨hsem3, -⟩ := ISem.counted_some hsem2
+          obtain ⟨-, hform2⟩ := csem_halt (csemV_sub hsem3)
+          rcases hform2 with ⟨_, e⟩ | ⟨kk', cd', e, hholds'⟩
+          · cases e
+          · cases e
+            simp only [trapCode?, Option.some.injEq] at htc
+            subst htc
+            obtain ⟨n3, htrap, -, -⟩ := trap_trapIf hR hq2' hvb hi hops' hholds'
+            exact ⟨n0 + n1 + n2 + n3, by rw [hfin0]; exact htrap⟩
+
+
+/-- **`regLevelCorrect_worldCS` with the call count at the return** (`regLevelCorrect_world_atCSN`). -/
+theorem regLevelCorrect_worldCSN {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAsm}
+    {fb : FnBin} {k : Nat} (hcheck : checkAlloc vcp rf = .ok ()) (halloc : lowerRFunc vcp rf = .ok af)
+    (hemit : emitFunc k af = .ok fa) (hlayout : fa.layout = .ok fb) {XI : ExtSemI} {H : ArmHooks}
+    {K : Nat} {G : BitVec 64 → Prop} {gv : Nat → String → Prop}
+    (hcov : FormsCovered ⟨fa.k, af.slotBase⟩ vcp)
+    {base ra : BitVec 64} {s : Arm.ArmState} (hent : AbiCall fb base ra s)
+    (hres : StackAvail K af s) (hG : ∀ a, G a → ¬ StackBelow (frameDrop af + K) (spv s) a)
+    (hC : ∀ n, CalleeOkGP (fun u => OnCall (ArmStepX (XI.at 0) H fa) fa base s n u ∧
+        spOf u = spv s - BitVec.ofNat 64 (frameDrop af))
+      (frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af G s)
+      K G s (CallAt fa base) (XI.at n) H vcp.CallSite gv)
+    (hCT : vcp.hasTryCall = true → ∀ n, CalleeTryOkGP (fun u =>
+        OnCall (ArmStepX (XI.at 0) H fa) fa base s n u ∧ spOf u = spv s - BitVec.ofNat 64 (frameDrop af))
+      (frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af G s) K G s
+      (CallAt fa base) (XI.at n) H vcp.TrySite gv)
+    (hTls : vcp.hasTls = true → ∀ n,
+      TlsOk (frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af G s) K (XI.at n) H)
+    {w₀ : Arm.ArmState} (hbe : BodyEntryW (frameWG K (RAFrame.compute vcp rf).intBase
+      (RAFrame.compute vcp rf).size af G s) vcp.EntryArg af s w₀) (ρ₀ : Nat → CV) :
+    (∀ us vals w nc, VRetFrom vcp (csemVI gv (frameWG K (RAFrame.compute vcp rf).intBase
+        (RAFrame.compute vcp rf).size af G s) ⟨fa.k, af.slotBase⟩ XI) ⟨0, 0, ρ₀, (w₀, 0)⟩
+        us vals (w, nc) →
+      ∃ n, callsBefore (ArmStepX (XI.at 0) H fa) fa base s n = nc ∧
+        ArmRet ra s (E2E.runX (ArmStepX (XI.at 0) H fa) n s) ∧
+        (∀ (j : Nat) v p x, us[j]? = some (v, p) → vals[j]? = some x →
+          regVal (E2E.runX (ArmStepX (XI.at 0) H fa) n s) p = x) ∧
+        (∀ a, ¬ (frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af G s) a →
+          (E2E.runX (ArmStepX (XI.at 0) H fa) n s).mem a = w.mem a) ∧
+        (∀ f, ¬ Masked f → f ≠ .GPR 29#5 → f ≠ .GPR 31#5 →
+          Arm.r f (E2E.runX (ArmStepX (XI.at 0) H fa) n s) = Arm.r f w) ∧
+        (∀ a, G a → (E2E.runX (ArmStepX (XI.at 0) H fa) n s).mem a = s.mem a) ∧
+        (E2E.runX (ArmStepX (XI.at 0) H fa) n s).program = s.program ∧
+        ∀ i, 0 < i → i < n → PostCall fa base (Arm.r .PC (E2E.runX (ArmStepX (XI.at 0) H fa) i s)) →
+          spv (E2E.runX (ArmStepX (XI.at 0) H fa) i s) = spv s - BitVec.ofNat 64 (frameDrop af)) ∧
+    (∀ c, VTrapFrom vcp (csemVI gv (frameWG K (RAFrame.compute vcp rf).intBase
+        (RAFrame.compute vcp rf).size af G s) ⟨fa.k, af.slotBase⟩ XI) ⟨0, 0, ρ₀, (w₀, 0)⟩ c →
+      ∃ n, TrapAt fb base c (E2E.runX (ArmStepX (XI.at 0) H fa) n s)) := by
+  obtain ⟨cc, ins, hc⟩ := checked_of_checkAlloc hcheck
+  obtain ⟨a0, hat, hle⟩ := hc.at
+  obtain ⟨_, h⟩ := regLevelCorrect_world_atCSN hat (entryOk_of_le hle) halloc hemit hlayout hcov hent
+    hres hG hC hCT hTls hbe (fun _ => ρ₀) (fun _ => Inv_mono hle Inv_entryState)
+  exact h
+
+
+/-- **`regLevelCorrect_worldPRS` with the call count at the return** (`regLevelCorrect_worldCSN`). -/
+theorem regLevelCorrect_worldPRSN {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAsm}
+    {fb : FnBin} {k : Nat} (hcheck : checkAlloc vcp rf = .ok ()) (halloc : lowerRFunc vcp rf = .ok af)
+    (hemit : emitFunc k af = .ok fa) (hlayout : fa.layout = .ok fb) {XI : ExtSemI} {H : ArmHooks}
+    {K : Nat} {G : BitVec 64 → Prop} {gv : Nat → String → Prop}
+    (hcov : FormsCovered ⟨fa.k, af.slotBase⟩ vcp)
+    {base ra : BitVec 64} {s : Arm.ArmState} (hent : AbiCall fb base ra s)
+    (hres : StackAvail K af s) (hG : ∀ a, G a → ¬ StackBelow (frameDrop af + K) (spv s) a)
+    {Kp : Nat} {c : BitVec 64} {P : Nat → BitVec 64 → BitVec 8}
+    (hproph : ProphOk Kp c (ArmStepX (XI.at 0) H fa) fa base s P) {R : Nat → Arm.ArmState}
+    (hregp : ProphRegOkM c (ArmStepX (XI.at 0) H fa) fa base s R)
+    (hC : ∀ n, CalleeOkGP (fun u => OnCallPR Kp c P R (ArmStepX (XI.at 0) H fa) fa base s n u ∧
+        spOf u = spv s - BitVec.ofNat 64 (frameDrop af))
+      (frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af G s)
+      K G s (CallAt fa base) (XI.at n) H vcp.CallSite gv)
+    (hCT : vcp.hasTryCall = true → ∀ n,
+      CalleeTryOkGP (fun u =>
+        OnCallPR Kp c P R (ArmStepX (XI.at 0) H fa) fa base s n u ∧ spOf u = spv s - BitVec.ofNat 64 (frameDrop af))
+      (frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af G s) K G s
+      (CallAt fa base) (XI.at n) H vcp.TrySite gv)
+    (hTls : vcp.hasTls = true → ∀ n,
+      TlsOk (frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af G s) K (XI.at n) H)
+    {w₀ : Arm.ArmState} (hbe : BodyEntryW (frameWG K (RAFrame.compute vcp rf).intBase
+      (RAFrame.compute vcp rf).size af G s) vcp.EntryArg af s w₀) (ρ₀ : Nat → CV) :
+    (∀ us vals w nc, VRetFrom vcp (csemVI gv (frameWG K (RAFrame.compute vcp rf).intBase
+        (RAFrame.compute vcp rf).size af G s) ⟨fa.k, af.slotBase⟩ XI) ⟨0, 0, ρ₀, (w₀, 0)⟩
+        us vals (w, nc) →
+      ∃ n, callsBefore (ArmStepX (XI.at 0) H fa) fa base s n = nc ∧
+        ArmRet ra s (E2E.runX (ArmStepX (XI.at 0) H fa) n s) ∧
+        (∀ (j : Nat) v p x, us[j]? = some (v, p) → vals[j]? = some x →
+          regVal (E2E.runX (ArmStepX (XI.at 0) H fa) n s) p = x) ∧
+        (∀ a, ¬ (frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af G s) a →
+          (E2E.runX (ArmStepX (XI.at 0) H fa) n s).mem a = w.mem a) ∧
+        (∀ f, ¬ Masked f → f ≠ .GPR 29#5 → f ≠ .GPR 31#5 →
+          Arm.r f (E2E.runX (ArmStepX (XI.at 0) H fa) n s) = Arm.r f w) ∧
+        (∀ a, G a → (E2E.runX (ArmStepX (XI.at 0) H fa) n s).mem a = s.mem a) ∧
+        (E2E.runX (ArmStepX (XI.at 0) H fa) n s).program = s.program ∧
+        ∀ i, 0 < i → i < n → PostCall fa base (Arm.r .PC (E2E.runX (ArmStepX (XI.at 0) H fa) i s)) →
+          spv (E2E.runX (ArmStepX (XI.at 0) H fa) i s) = spv s - BitVec.ofNat 64 (frameDrop af)) ∧
+    (∀ c, VTrapFrom vcp (csemVI gv (frameWG K (RAFrame.compute vcp rf).intBase
+        (RAFrame.compute vcp rf).size af G s) ⟨fa.k, af.slotBase⟩ XI) ⟨0, 0, ρ₀, (w₀, 0)⟩ c →
+      ∃ n, TrapAt fb base c (E2E.runX (ArmStepX (XI.at 0) H fa) n s)) :=
+  regLevelCorrect_worldCSN hcheck halloc hemit hlayout hcov hent hres hG
+    (fun n => (hC n).mono fun _ h => ⟨onCallPR_of hproph hregp h.1, h.2⟩)
+    (fun h n => (hCT h n).mono fun _ h => ⟨onCallPR_of hproph hregp h.1, h.2⟩) hTls hbe ρ₀
+
+/-- **`regLevelCorrect_world_value_atCS` with the call count at the return** (as
+`regLevelCorrect_world_atCSN`). -/
+theorem regLevelCorrect_world_value_atCSN {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAsm}
+    {fb : FnBin} {k : Nat} {cc : CheckCtx} {ins : Array (Option AState)}
+    {a0 : AState} (hcheck : CheckedAt vcp rf cc ins a0) (hok : EntryOk a0)
+    (halloc : lowerRFunc vcp rf = .ok af)
+    (hemit : emitFunc k af = .ok fa) (hlayout : fa.layout = .ok fb) {XI : ExtSemI} {H : ArmHooks}
+    {K : Nat} {G : BitVec 64 → Prop} {gv : Nat → String → Prop}
+    (hcov : FormsCovered ⟨fa.k, af.slotBase⟩ vcp)
+    {base ra : BitVec 64} {s : Arm.ArmState} (hent : AbiCall fb base ra s)
+    (hres : StackAvail K af s) (hG : ∀ a, G a → ¬ StackBelow (frameDrop af + K) (spv s) a)
+    (hC : ∀ n, CalleeOkGP (fun u => OnCall (ArmStepX (XI.at 0) H fa) fa base s n u ∧
+        spOf u = spv s - BitVec.ofNat 64 (frameDrop af))
+      (frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af G s)
+      K G s (CallAt fa base) (XI.at n) H vcp.CallSite gv)
+    (hCT : vcp.hasTryCall = true → ∀ n, CalleeTryOkGP (fun u =>
+        OnCall (ArmStepX (XI.at 0) H fa) fa base s n u ∧ spOf u = spv s - BitVec.ofNat 64 (frameDrop af))
+      (frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af G s) K G s
+      (CallAt fa base) (XI.at n) H vcp.TrySite gv)
+    (hTls : vcp.hasTls = true → ∀ n,
+      TlsOk (frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af G s) K (XI.at n) H)
+    {w₀ : Arm.ArmState} (hbe : BodyEntryW (frameWG K (RAFrame.compute vcp rf).intBase
+      (RAFrame.compute vcp rf).size af G s) vcp.EntryArg af s w₀)
+    (ρsel : (Loc → CV) → Nat → CV)
+    (hsel : ∀ m₀ : Loc → CV, Inv ckeep a0 m₀ (ρsel m₀) (fun r => m₀ (.reg r))) :
+    ∃ m₀ : Loc → CV,
+    (∀ us vals w nc, VRetFrom vcp (valueSemVI gv (frameWG K (RAFrame.compute vcp rf).intBase
+        (RAFrame.compute vcp rf).size af G s) ⟨fa.k, af.slotBase⟩ XI) ⟨0, 0, ρsel m₀, (w₀, 0)⟩
+        us vals (w, nc) →
+      ∃ n, callsBefore (ArmStepX (XI.at 0) H fa) fa base s n = nc ∧
+        ArmRet ra s (E2E.runX (ArmStepX (XI.at 0) H fa) n s) ∧
+        (∀ (j : Nat) v p x, us[j]? = some (v, p) → vals[j]? = some x →
+          regVal (E2E.runX (ArmStepX (XI.at 0) H fa) n s) p = x) ∧
+        (∀ a, ¬ (frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af G s) a →
+          (E2E.runX (ArmStepX (XI.at 0) H fa) n s).mem a = w.mem a) ∧
+        (∀ f, ¬ Masked f → f ≠ .GPR 29#5 → f ≠ .GPR 31#5 →
+          Arm.r f (E2E.runX (ArmStepX (XI.at 0) H fa) n s) = Arm.r f w) ∧
+        (∀ a, G a → (E2E.runX (ArmStepX (XI.at 0) H fa) n s).mem a = s.mem a) ∧
+        (E2E.runX (ArmStepX (XI.at 0) H fa) n s).program = s.program ∧
+        ∀ i, 0 < i → i < n → PostCall fa base (Arm.r .PC (E2E.runX (ArmStepX (XI.at 0) H fa) i s)) →
+          spv (E2E.runX (ArmStepX (XI.at 0) H fa) i s) = spv s - BitVec.ofNat 64 (frameDrop af)) ∧
+    (∀ c, VTrapFrom vcp (valueSemVI gv (frameWG K (RAFrame.compute vcp rf).intBase
+        (RAFrame.compute vcp rf).size af G s) ⟨fa.k, af.slotBase⟩ XI) ⟨0, 0, ρsel m₀, (w₀, 0)⟩ c →
+      ∃ n, TrapAt fb base c (E2E.runX (ArmStepX (XI.at 0) H fa) n s)) := by
+  obtain ⟨lm, hlm⟩ := FnAsm.layout_labelOffsets hlayout
+  obtain ⟨body, psF, hb, -, hk⟩ := emitFunc_ok hemit
+  subst hk
+  let Rn : Nat → RL := fun n => ⟨vcp, rf, af, fa, fb, lm, base, s, XI.at n, H, psF, K, G, gv⟩
+  let R : RL := Rn 0
+  have hRn : ∀ n, (Rn n).Wf := fun _ => ⟨⟨cc, ins, a0, hcheck, hok⟩, halloc, hemit, hlayout, hlm,
+    by show 4 * fb.words.size ≤ 2 ^ 64; have := hent.fits; omega, hres, ⟨body, hb⟩, hent.program, hG⟩
+  have hR : R.Wf := hRn 0
+  have hck := (lowerRFunc_ok hR.alloc).2.2
+  obtain ⟨n0, ht0, hq0, hA0, hf0⟩ := q_initN hR hent hbe
+  obtain ⟨Rl, hSim, hinit, hkeep⟩ :=
+    checkedAt_sound R.vc R.rf (valueSemVI R.gv R.F R.ctx XI) ckeep hcheck (locVal R.fr (iterN R.step n0 s))
+      (ρsel (locVal R.fr (iterN R.step n0 s))) (w₀, 0) (hsel _)
+  have hP0 : countIn R.CallSt R.step s n0 = 0 := countIn_zero_of fun i hi => (ht0 i hi).2
+  have hRzC : Realizes R.vc R.rf (valueSemVI R.gv R.F R.ctx XI) ckeep (stepC R.CallSt R.step)
+      (fun p c => (Q R p.1 (c.mapW Prod.fst) ∧ AInv R (c.mapW Prod.fst)) ∧ p.2 = c.world.2 ∧
+        ∃ i, p = iterN (stepC R.CallSt R.step) i (iterN R.step n0 s, 0)) (fun p => R.Good p.1) := by
+    refine RealizesCP.countedRun (vc := R.vc) (rf := R.rf) (keep := ckeep)
+      (sem := fun n => valueSemV R.gv R.F R.ctx (XI.at n))
+      (Q := fun u c => Q R u c ∧ AInv R c) (T := R.Good) (C := R.CallSt)
+      (P := fun n u => OnCall R.step fa base s n u) (s0 := iterN R.step n0 s) (fun n => ?_)
+      (onCall_of_run hP0)
+    have hq : ∀ u c, Q (Rn n) u c ∧ AInv (Rn n) c ↔ Q R u c ∧ AInv R c := fun u c =>
+      and_congr (RL.Q_withX (Rn n) (XI.at 0) u c).symm Iff.rfl
+    exact ((realizes_value_allC_sp (hRn n) (hC n) (fun h => hCT h n) (fun h => hTls h n) hcov).mono_T
+      (T' := R.Good) fun _ h => h.good).congr_Q hq
+  have hRz := Realizes.ofStepC hRzC
+  have hfin0 : ∀ n1 n2 n3, E2E.runX (ArmStepX (XI.at 0) H fa) (n0 + n1 + n2 + n3) s =
+      iterN R.step n3 (iterN R.step n2 (iterN R.step n1 (iterN R.step n0 s))) := by
+    intro n1 n2 n3; rw [runX_eq]; simp only [iterN_add]; rfl
+  have hfin1 : ∀ n1 n3, E2E.runX (ArmStepX (XI.at 0) H fa) (n0 + n1 + n3) s =
+      iterN R.step n3 (iterN R.step n1 (iterN R.step n0 s)) := by
+    intro n1 n3; rw [runX_eq]; simp only [iterN_add]; rfl
+  refine ⟨locVal R.fr (iterN R.step n0 s), fun us vals w nc hret => ?_, fun c htr => ?_⟩
+  · -- a return
+    obtain ⟨b, k, ρ, w₁, vb, ops, outs, hstar, hvb, hi, hops, hvals, hsem⟩ := hret
+    obtain ⟨ns, rfl⟩ := ctlCheck_rets hck hvb hi
+    rw [operands_retsC] at hops
+    cases hops
+    obtain ⟨hsemV, hnc⟩ := ISem.counted_some hsem
+    have hnc' : nc = w₁.2 := by simpa [MInst.isCallI] using hnc
+    have hsem' := hsemV
+    simp only [valueSemV, specForm, pureForm, cmpForm, Bool.false_or, Bool.false_eq_true,
+      ↓reduceIte, csemV, csem, Option.some.injEq, Prod.mk.injEq] at hsem'
+    obtain ⟨rfl, hw, -⟩ := hsem'
+    have h1 : VStep R.vc (valueSemVI R.gv R.F R.ctx XI) (.run ⟨b, k, ρ, w₁⟩) (.ret vals (w, nc)) := by
+      rw [hvals]
+      refine VStep.step hvb hi (operands_retsC ns) (by rw [hvals] at hsem; exact hsem) ?_ (VNext.ret rfl)
+      rw [List.toList_toArray, filter_isDef_retOpsC]; rfl
+    obtain ⟨n1, c', c'', ⟨hq2, -⟩, hr2, hms, hr3, ht1, hcnt⟩ :=
+      forward_lastC (Q := fun u c => Q R u (c.mapW Prod.fst) ∧ AInv R (c.mapW Prod.fst)) hSim hRzC
+        hstar h1 hinit ⟨hq0, hA0⟩ rfl
+    cases c'' with
+    | run s' => obtain ⟨_, e⟩ := hSim.run hr3; cases e
+    | halt w'' => cases hSim.halt hr3
+    | ret uses m' w'' =>
+      have hks := hkeep hr3
+      cases hms with
+      | op hvb' hi' hops' hsz hsem2 hlen2 hho hcl hn =>
+        obtain ⟨hb', hk', hw'⟩ := hSim.at_op hr2
+        dsimp only at hb' hk' hw'
+        subst hb' hk' hw'
+        rw [hvb] at hvb'; cases hvb'
+        rw [hi] at hi'; cases hi'
+        rw [operands_retsC] at hops'; cases hops'
+        cases hn with
+        | ret _ =>
+        obtain ⟨hsem3, -⟩ := ISem.counted_some hsem2
+        simp only [valueSemV, specForm, pureForm, cmpForm, Bool.false_or, Bool.false_eq_true,
+          ↓reduceIte, csemV, csem, Option.some.injEq, Prod.mk.injEq] at hsem3
+        obtain ⟨rfl, -, -⟩ := hsem3
+        rw [rets_store hlen2 rfl hho hcl] at hks
+        have hq2' : Q R (iterN R.step n1 (iterN R.step n0 s))
+            (.run ⟨b, .op k _ :: _, _, w₁.1⟩) := hq2
+        have hst := q_stRel hq2'
+        obtain ⟨n3, ht3, hpc, herr, hsp, hx29, hregs, hmem, hfld, hprogF, hvalsM⟩ :=
+          ret_machineN hR hent hq2' hvb hi
+        have htr : ∀ i < n0 + n1 + n3, R.Good (E2E.runX (ArmStepX (XI.at 0) H fa) i s) := by
+          intro i hi
+          rw [runX_eq]
+          exact trace_add (fun j hj => (ht0 j hj).1.good)
+            (trace_add ht1 fun j hj => (ht3 j hj).1.good) i (by omega)
+        have hm0 : ∀ r, locVal R.fr (iterN R.step n0 s) (.reg r) = regVal (iterN R.step n0 s) r :=
+          fun _ => rfl
+        have hms : ∀ r, r.allocatable = true → _ = regVal _ r := fun r hr =>
+          hst.store (.reg r) (fun r' e => by cases e; exact hr) trivial
+        dsimp only at hms
+        refine ⟨n0 + n1 + n3, ?_, ⟨?_, ?_, ?_, ?_, ?_⟩, ?_, ?_, ?_, ?_, ?_,
+          fun i hi0 hi hpcall => ?_⟩
+        rotate_right
+        · exact (htr i hi).resolve_left (fun h => h hpcall)
+        · have e0 : countIn (fun u => CallPc fa base (Arm.r .PC u)) (ArmStepX (XI.at 0) H fa) s n0 =
+              0 := hP0
+          have e1 : countIn (fun u => CallPc fa base (Arm.r .PC u)) (ArmStepX (XI.at 0) H fa)
+              (iterN (ArmStepX (XI.at 0) H fa) n0 s) n1 = nc := by
+            rw [hnc']; exact hcnt
+          have e3 : countIn (fun u => CallPc fa base (Arm.r .PC u)) (ArmStepX (XI.at 0) H fa)
+              (iterN (ArmStepX (XI.at 0) H fa) (n0 + n1) s) n3 = 0 := by
+            rw [iterN_add]; exact countIn_zero_of fun j hj => (ht3 j hj).2
+          rw [callsBefore_eq_countIn, countIn_add, countIn_add, e0, e1, e3, Nat.zero_add, Nat.add_zero]
+        all_goals rw [hfin1]
+        · exact hpc
+        · exact herr
+        · exact hsp
+        · intro n hn
+          simp only [calleeSavedX, List.mem_map, List.mem_range] at hn
+          obtain ⟨a, ha, rfl⟩ := hn
+          by_cases h29 : a = 10
+          · subst h29; exact hx29
+          obtain ⟨hcs, hal⟩ := calleeSaved_x (n := 19 + a) (by omega) (by omega)
+          have k1 := hks _ hcs
+          simp only [ckeep, hm0] at k1
+          rw [hms _ hal] at k1
+          have hne : ∀ q, q < 32 → q ≠ 19 + a →
+              Arm.StateField.GPR (rnum (19 + a)) ≠ .GPR (BitVec.ofNat 5 q) :=
+            fun q h1 h2 e => rnum_ne (a := 19 + a) (b := q) (by omega) h1 (Ne.symm h2)
+              (Arm.StateField.GPR.inj e)
+          have k2 := hregs _ hal
+          simp only [regVal] at k1 k2
+          rw [hf0 _ (by simp) (hne 29 (by omega) (by omega)) (hne 31 (by omega) (by omega))
+            (hne 16 (by omega) (by omega))] at k1
+          exact setWidth128_inj (k2.trans k1)
+        · intro n h8 h16
+          obtain ⟨hcs, hal⟩ := calleeSaved_v h8 h16
+          have k1 := hks _ hcs
+          simp only [ckeep, hm0] at k1
+          rw [hms _ hal] at k1
+          have k2 := hregs _ hal
+          simp only [regVal] at k1 k2
+          rw [hf0 _ (by simp) (by simp) (by simp) (by simp)] at k1
+          show (Arm.r (.SFP (rnum n)) _).setWidth 64 = (Arm.r (.SFP (rnum n)) s).setWidth 64
+          rw [k2]
+          exact setWidth128_inj k1
+        · intro j v p x hj hx
+          have e1 := hSim.ret hr3
+          simp only [VConf.ret.injEq] at e1
+          rw [e1.1] at hx
+          exact hvalsM _ (operands_retsC ns) j v p x hj hx
+        · intro a ha
+          rw [hmem, ← hw]
+          exact hst.world.2.1 a ha
+        · intro f hf h29 h31
+          rw [hfld f hf h29 h31, ← hw]
+          exact hst.world.1 f hf
+        · intro a ha
+          rw [hmem]
+          exact hst.gkeep a ha
+        · rw [hprogF, hst.prog]
+          exact hent.program.symm
+  · -- a trap
+    obtain ⟨b, k, ρ, w, vb, i, ops, outs, w', hstar, hvb, hi, hops, hsem, htc⟩ := htr
+    obtain ⟨n1, c1, hz1, hr1, ht1⟩ := forward hSim hRz hstar hinit ⟨0, ⟨hq0, hA0⟩, rfl, 0, rfl⟩
+    obtain ⟨hsemV, -⟩ := ISem.counted_some hsem
+    obtain ⟨hnil, hform⟩ := csem_halt (csemV_sub (valueSemV_haltI hsemV))
+    subst hnil
+    have hdefs : ops.toList.filter Operand.isDef = [] := by
+      rcases hform with ⟨cd, rfl⟩ | ⟨kk, cd, rfl, -⟩
+      · rw [udf_ops hops]; rfl
+      · exact trapIf_nodefs hops
+    have h1 : VStep R.vc (valueSemVI R.gv R.F R.ctx XI) (.run ⟨b, k, ρ, w⟩) (.halt w') :=
+      VStep.step hvb hi hops hsem (by rw [hdefs]; rfl) VNext.halt
+    obtain ⟨n2, c', c'', ⟨_, ⟨hq2, -⟩, -⟩, hr2, hms, hr3, -⟩ :=
+      forward_last hSim hRz h1 _ c1 _ (Nat.le_refl _) hr1 hz1
+    cases c'' with
+    | run s' => obtain ⟨_, e⟩ := hSim.run hr3; cases e
+    | ret vs m' w'' => cases hSim.ret hr3
+    | halt w'' =>
+      cases hms with
+      | op hvb' hi' hops' hsz hsem2 hlen2 hho hcl hn =>
+        obtain ⟨hb', hk', hw'⟩ := hSim.at_op hr2
+        dsimp only at hb' hk' hw'
+        subst hb' hk' hw'
+        rw [hvb] at hvb'; cases hvb'
+        rw [hi] at hi'; cases hi'
+        have hq2' : Q R (iterN R.step n2 (iterN R.step n1 (iterN R.step n0 s)))
+            (.run ⟨b, .op k _ :: _, _, w.1⟩) := hq2
+        rcases hform with ⟨cd, rfl⟩ | ⟨kk, cd, rfl, hholds⟩
+        · simp only [trapCode?, Option.some.injEq] at htc
+          subst htc
+          obtain ⟨htrap, -⟩ := trap_udf hR hq2' hvb hi
+          exact ⟨n0 + n1 + n2 + 0, by rw [hfin0]; exact htrap⟩
+        · cases hn with
+          | halt =>
+          obtain ⟨hsem3, -⟩ := ISem.counted_some hsem2
+          obtain ⟨-, hform2⟩ := csem_halt (csemV_sub (valueSemV_haltI hsem3))
+          rcases hform2 with ⟨_, e⟩ | ⟨kk', cd', e, hholds'⟩
+          · cases e
+          · cases e
+            simp only [trapCode?, Option.some.injEq] at htc
+            subst htc
+            obtain ⟨n3, htrap, -, -⟩ := trap_trapIf hR hq2' hvb hi hops' hholds'
+            exact ⟨n0 + n1 + n2 + n3, by rw [hfin0]; exact htrap⟩
+
+
+/-- **`regLevelCorrect_world_value_worldCS` with the call count at the return.** -/
+theorem regLevelCorrect_world_value_worldCSN {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAsm}
+    {fb : FnBin} {k : Nat} (hcheck : checkAlloc vcp rf = .ok ()) (halloc : lowerRFunc vcp rf = .ok af)
+    (hemit : emitFunc k af = .ok fa) (hlayout : fa.layout = .ok fb) {XI : ExtSemI} {H : ArmHooks}
+    {K : Nat} {G : BitVec 64 → Prop} {gv : Nat → String → Prop}
+    (hcov : FormsCovered ⟨fa.k, af.slotBase⟩ vcp)
+    {base ra : BitVec 64} {s : Arm.ArmState} (hent : AbiCall fb base ra s)
+    (hres : StackAvail K af s) (hG : ∀ a, G a → ¬ StackBelow (frameDrop af + K) (spv s) a)
+    (hC : ∀ n, CalleeOkGP (fun u => OnCall (ArmStepX (XI.at 0) H fa) fa base s n u ∧
+        spOf u = spv s - BitVec.ofNat 64 (frameDrop af))
+      (frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af G s)
+      K G s (CallAt fa base) (XI.at n) H vcp.CallSite gv)
+    (hCT : vcp.hasTryCall = true → ∀ n, CalleeTryOkGP (fun u =>
+        OnCall (ArmStepX (XI.at 0) H fa) fa base s n u ∧ spOf u = spv s - BitVec.ofNat 64 (frameDrop af))
+      (frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af G s) K G s
+      (CallAt fa base) (XI.at n) H vcp.TrySite gv)
+    (hTls : vcp.hasTls = true → ∀ n,
+      TlsOk (frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af G s) K (XI.at n) H)
+    {w₀ : Arm.ArmState} (hbe : BodyEntryW (frameWG K (RAFrame.compute vcp rf).intBase
+      (RAFrame.compute vcp rf).size af G s) vcp.EntryArg af s w₀) (ρ₀ : Nat → CV) :
+    (∀ us vals w nc, VRetFrom vcp (valueSemVI gv (frameWG K (RAFrame.compute vcp rf).intBase
+        (RAFrame.compute vcp rf).size af G s) ⟨fa.k, af.slotBase⟩ XI) ⟨0, 0, ρ₀, (w₀, 0)⟩
+        us vals (w, nc) →
+      ∃ n, callsBefore (ArmStepX (XI.at 0) H fa) fa base s n = nc ∧
+        ArmRet ra s (E2E.runX (ArmStepX (XI.at 0) H fa) n s) ∧
+        (∀ (j : Nat) v p x, us[j]? = some (v, p) → vals[j]? = some x →
+          regVal (E2E.runX (ArmStepX (XI.at 0) H fa) n s) p = x) ∧
+        (∀ a, ¬ (frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af G s) a →
+          (E2E.runX (ArmStepX (XI.at 0) H fa) n s).mem a = w.mem a) ∧
+        (∀ f, ¬ Masked f → f ≠ .GPR 29#5 → f ≠ .GPR 31#5 →
+          Arm.r f (E2E.runX (ArmStepX (XI.at 0) H fa) n s) = Arm.r f w) ∧
+        (∀ a, G a → (E2E.runX (ArmStepX (XI.at 0) H fa) n s).mem a = s.mem a) ∧
+        (E2E.runX (ArmStepX (XI.at 0) H fa) n s).program = s.program ∧
+        ∀ i, 0 < i → i < n → PostCall fa base (Arm.r .PC (E2E.runX (ArmStepX (XI.at 0) H fa) i s)) →
+          spv (E2E.runX (ArmStepX (XI.at 0) H fa) i s) = spv s - BitVec.ofNat 64 (frameDrop af)) ∧
+    (∀ c, VTrapFrom vcp (valueSemVI gv (frameWG K (RAFrame.compute vcp rf).intBase
+        (RAFrame.compute vcp rf).size af G s) ⟨fa.k, af.slotBase⟩ XI) ⟨0, 0, ρ₀, (w₀, 0)⟩ c →
+      ∃ n, TrapAt fb base c (E2E.runX (ArmStepX (XI.at 0) H fa) n s)) := by
+  obtain ⟨cc, ins, hc⟩ := checked_of_checkAlloc hcheck
+  obtain ⟨a0, hat, hle⟩ := hc.at
+  obtain ⟨_, h⟩ := regLevelCorrect_world_value_atCSN hat (entryOk_of_le hle) halloc hemit hlayout hcov
+    hent hres hG hC hCT hTls hbe (fun _ => ρ₀) (fun _ => Inv_mono hle Inv_entryState)
+  exact h
+
+
+/-- **`regLevelCorrect_world_value_worldPRS` with the call count at the return.** -/
+theorem regLevelCorrect_world_value_worldPRSN {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAsm}
+    {fb : FnBin} {k : Nat} (hcheck : checkAlloc vcp rf = .ok ()) (halloc : lowerRFunc vcp rf = .ok af)
+    (hemit : emitFunc k af = .ok fa) (hlayout : fa.layout = .ok fb) {XI : ExtSemI} {H : ArmHooks}
+    {K : Nat} {G : BitVec 64 → Prop} {gv : Nat → String → Prop}
+    (hcov : FormsCovered ⟨fa.k, af.slotBase⟩ vcp)
+    {base ra : BitVec 64} {s : Arm.ArmState} (hent : AbiCall fb base ra s)
+    (hres : StackAvail K af s) (hG : ∀ a, G a → ¬ StackBelow (frameDrop af + K) (spv s) a)
+    {Kp : Nat} {c : BitVec 64} {P : Nat → BitVec 64 → BitVec 8}
+    (hproph : ProphOk Kp c (ArmStepX (XI.at 0) H fa) fa base s P) {R : Nat → Arm.ArmState}
+    (hregp : ProphRegOkM c (ArmStepX (XI.at 0) H fa) fa base s R)
+    (hC : ∀ n, CalleeOkGP (fun u => OnCallPR Kp c P R (ArmStepX (XI.at 0) H fa) fa base s n u ∧
+        spOf u = spv s - BitVec.ofNat 64 (frameDrop af))
+      (frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af G s)
+      K G s (CallAt fa base) (XI.at n) H vcp.CallSite gv)
+    (hCT : vcp.hasTryCall = true → ∀ n,
+      CalleeTryOkGP (fun u =>
+        OnCallPR Kp c P R (ArmStepX (XI.at 0) H fa) fa base s n u ∧ spOf u = spv s - BitVec.ofNat 64 (frameDrop af))
+      (frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af G s) K G s
+      (CallAt fa base) (XI.at n) H vcp.TrySite gv)
+    (hTls : vcp.hasTls = true → ∀ n,
+      TlsOk (frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af G s) K (XI.at n) H)
+    {w₀ : Arm.ArmState} (hbe : BodyEntryW (frameWG K (RAFrame.compute vcp rf).intBase
+      (RAFrame.compute vcp rf).size af G s) vcp.EntryArg af s w₀) (ρ₀ : Nat → CV) :
+    (∀ us vals w nc, VRetFrom vcp (valueSemVI gv (frameWG K (RAFrame.compute vcp rf).intBase
+        (RAFrame.compute vcp rf).size af G s) ⟨fa.k, af.slotBase⟩ XI) ⟨0, 0, ρ₀, (w₀, 0)⟩
+        us vals (w, nc) →
+      ∃ n, callsBefore (ArmStepX (XI.at 0) H fa) fa base s n = nc ∧
+        ArmRet ra s (E2E.runX (ArmStepX (XI.at 0) H fa) n s) ∧
+        (∀ (j : Nat) v p x, us[j]? = some (v, p) → vals[j]? = some x →
+          regVal (E2E.runX (ArmStepX (XI.at 0) H fa) n s) p = x) ∧
+        (∀ a, ¬ (frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af G s) a →
+          (E2E.runX (ArmStepX (XI.at 0) H fa) n s).mem a = w.mem a) ∧
+        (∀ f, ¬ Masked f → f ≠ .GPR 29#5 → f ≠ .GPR 31#5 →
+          Arm.r f (E2E.runX (ArmStepX (XI.at 0) H fa) n s) = Arm.r f w) ∧
+        (∀ a, G a → (E2E.runX (ArmStepX (XI.at 0) H fa) n s).mem a = s.mem a) ∧
+        (E2E.runX (ArmStepX (XI.at 0) H fa) n s).program = s.program ∧
+        ∀ i, 0 < i → i < n → PostCall fa base (Arm.r .PC (E2E.runX (ArmStepX (XI.at 0) H fa) i s)) →
+          spv (E2E.runX (ArmStepX (XI.at 0) H fa) i s) = spv s - BitVec.ofNat 64 (frameDrop af)) ∧
+    (∀ c, VTrapFrom vcp (valueSemVI gv (frameWG K (RAFrame.compute vcp rf).intBase
+        (RAFrame.compute vcp rf).size af G s) ⟨fa.k, af.slotBase⟩ XI) ⟨0, 0, ρ₀, (w₀, 0)⟩ c →
+      ∃ n, TrapAt fb base c (E2E.runX (ArmStepX (XI.at 0) H fa) n s)) :=
+  regLevelCorrect_world_value_worldCSN hcheck halloc hemit hlayout hcov hent hres hG
+    (fun n => (hC n).mono fun _ h => ⟨onCallPR_of hproph hregp h.1, h.2⟩)
+    (fun h n => (hCT h n).mono fun _ h => ⟨onCallPR_of hproph hregp h.1, h.2⟩) hTls hbe ρ₀
+
+
+end Backend.Proof
