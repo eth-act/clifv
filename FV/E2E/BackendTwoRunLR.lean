@@ -1,5 +1,6 @@
 import FV.E2E.BackendTwoRunLF
 import FV.E2E.LinkArmDetX
+import FV.E2E.LinkArmBaseNIX
 
 /-!
 # The return agreement from the machine lock (SEM1 #537, `docs/plans/uninit.md` §5.9)
@@ -205,6 +206,22 @@ theorem RL.retAgreeX_rets {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall 
     rw [hlen, iterN_add]; rfl
   rw [e1, e2]
   exact retAgreeX_of_ret (X := R.X) (H := R.H) ht hlk fun a ha h8 => RL.notZc_ret hR d d' ha h8
+
+/-- **A base call keeps the lock** (`HookNIX`, #704) when the lock set is inside the exterior:
+the worlds of the two configurations differ only on `F` (the lock set is `F` or the difference
+set, less the frame, the tables and the dead stack). -/
+theorem stEqOutX_call_of_hookNIX {R : RL} {Hb : ArmHooks} {BD : Option String → Prop}
+    (hN : HookNIX Hb BD R.F) {c c' : MConf CV Arm.ArmState}
+    (hW : ∀ a, MConf.WDiff c c' a → R.F a) {d : Option String} (hd : BD d) {u u' : Arm.ArmState}
+    (h : StEqOutX (R.Zc c c') u u') : StEqOutX (R.Zc c c') (Hb.call d u) (Hb.call d u') :=
+  hN.1 d hd _ u u' h fun _ ⟨_, _, _, hz⟩ => hz.elim id (hW _)
+
+/-- **A TLS hook keeps the lock** (`HookNIX`, #704), as `stEqOutX_call_of_hookNIX`. -/
+theorem stEqOutX_tls_of_hookNIX {R : RL} {Hb : ArmHooks} {BD : Option String → Prop}
+    (hN : HookNIX Hb BD R.F) {c c' : MConf CV Arm.ArmState}
+    (hW : ∀ a, MConf.WDiff c c' a → R.F a) (n : String) (r : Reg) {u u' : Arm.ArmState}
+    (h : StEqOutX (R.Zc c c') u u') : StEqOutX (R.Zc c c') (Hb.tls n r u) (Hb.tls n r u') :=
+  hN.2 n r _ u u' h fun _ ⟨_, _, _, hz⟩ => hz.elim id (hW _)
 
 section
 variable {p : Clif.Program} {f : Clif.Function} {k : Nat} {vc vcp : VCode} {rf : RFunc}
