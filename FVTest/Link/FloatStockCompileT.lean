@@ -1,4 +1,5 @@
 import FV.Link.SemanticCompileT
+import FV.Link.SemanticExeSourceT
 import FV.E2E.StockProductionFixtures
 import FV.Backend.Lowering.StockArithmeticNI
 import FV.Clif.Print
@@ -71,7 +72,8 @@ def artsB : Bool :=
 def checks : Bool :=
   artsB && SemanticStackBound.okBTS input &&
   !(SemanticCompilerWith.attempt lower spec file0 true).toBool &&
-  (SemanticCompilerWith.attemptT lower spec file0).toBool
+  (SemanticCompilerWith.attemptT lower spec file0).toBool &&
+  SrcScopeB input.toLinkInput
 
 set_option maxRecDepth 100000 in
 set_option maxHeartbeats 10000000 in
@@ -84,7 +86,7 @@ theorem parts : artsB = true ∧ SemanticStackBound.okBTS input = true ∧
     ∃ file, SemanticCompilerWith.attemptT lower spec file0 = .ok file := by
   have h := checks_true
   simp only [checks, Bool.and_eq_true, Bool.not_eq_true'] at h
-  obtain ⟨⟨⟨ha, hb⟩, hc⟩, hd⟩ := h
+  obtain ⟨⟨⟨⟨ha, hb⟩, hc⟩, hd⟩, -⟩ := h
   refine ⟨ha, hb, hc, ?_⟩
   cases e : SemanticCompilerWith.attemptT lower spec file0 with
   | error m => rw [e] at hd; cases hd
@@ -110,5 +112,13 @@ theorem correct_applies : ∃ file, SemanticCompilerWith.attemptT lower spec fil
   obtain ⟨-, -, -, file, hf⟩ := parts
   exact ⟨file, hf, fun B hB hH _ _ hfn hc M _ _ _ hX ho hr htr =>
     SemanticCompilerWith.attemptT_correct hf B hB hH hfn hc M hX ho hr htr⟩
+
+/-- **The premises of `attemptT_correct_source{,_peak}` on the compiler side hold**: `attemptT`
+succeeds and the input is in the source domain `SrcScopeB`. -/
+theorem source_applies : (∃ file, SemanticCompilerWith.attemptT lower spec file0 = .ok file) ∧
+    SrcScopeB input.toLinkInput = true := by
+  have h := checks_true
+  simp only [checks, Bool.and_eq_true] at h
+  exact ⟨(parts).2.2.2, h.2⟩
 
 end E2E.FloatStockCompileTWitness
