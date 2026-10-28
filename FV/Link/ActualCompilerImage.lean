@@ -10,21 +10,21 @@ open E2E E2E.LinkCheck Backend
 
 /-- The compiler's actual result table, evaluated once in parallel. -/
 def parResultsWithLowering (I : LinkInput)
-    (lower : Clif.Function → Except String VCode) (stage : VCode → VCode) : Res :=
+    (lower : Clif.Function → Except String VCode) (stage : Clif.Function → VCode → VCode) : Res :=
   parMap (fun fi => (fi.func, I.pipeOfWithLowering lower stage fi)) I.funcs
 
 theorem parResultsWithLowering_eq (I : LinkInput)
-    (lower : Clif.Function → Except String VCode) (stage : VCode → VCode) :
+    (lower : Clif.Function → Except String VCode) (stage : Clif.Function → VCode → VCode) :
     parResultsWithLowering I lower stage = I.resultsWithLowering lower stage := by
   simp only [parResultsWithLowering, parMap_eq, LinkInput.resultsWithLowering]
 
 /-- Placement and stack depth are computed from this same actual result table. -/
 def LinkSpec.inputWithLowering (S : LinkSpec)
-    (lower : Clif.Function → Except String VCode) (stage : VCode → VCode) : LinkInput :=
+    (lower : Clif.Function → Except String VCode) (stage : Clif.Function → VCode → VCode) : LinkInput :=
   S.input0.withDepth (S.input0.resultsWithLowering lower stage)
 
 theorem LinkSpec.inputWithLowering_results (S : LinkSpec)
-    (lower : Clif.Function → Except String VCode) (stage : VCode → VCode) :
+    (lower : Clif.Function → Except String VCode) (stage : Clif.Function → VCode → VCode) :
     (S.inputWithLowering lower stage).resultsWithLowering lower stage =
       S.input0.resultsWithLowering lower stage := by
   rfl
@@ -32,18 +32,18 @@ theorem LinkSpec.inputWithLowering_results (S : LinkSpec)
 /-- Compile through the callback and write exactly its table, retaining every
 existing placement, relocation, code-map, ELF and outside-image check. -/
 def leanLinkWithLowering (S : LinkSpec) (file0 : ByteArray)
-    (lower : Clif.Function → Except String VCode) (stage : VCode → VCode) :
+    (lower : Clif.Function → Except String VCode) (stage : Clif.Function → VCode → VCode) :
     Except String ByteArray :=
   leanLinkWithResults S file0 (fun I => parResultsWithLowering I lower stage)
 
 /-- Exact legacy-instance results and errors, for arbitrary source and ELF input. -/
 theorem leanLinkWithLowering_plain (S : LinkSpec) (file0 : ByteArray) :
-    leanLinkWithLowering S file0 Stock.D0.defaultLower id = leanLink S file0 := by
+    leanLinkWithLowering S file0 Stock.D0.defaultLower (fun _ => id) = leanLink S file0 := by
   rfl
 
 /-- Exact cleanup-instance results and errors, for arbitrary source and ELF input. -/
 theorem leanLinkWithLowering_cleanup (S : LinkSpec) (file0 : ByteArray) :
-    leanLinkWithLowering S file0 Stock.D0.defaultLower DeadCleanup.prune =
+    leanLinkWithLowering S file0 Stock.D0.defaultLower (fun _ => DeadCleanup.prune) =
       DeadCleanup.leanLink S file0 := by
   rfl
 end Link

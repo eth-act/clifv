@@ -52,7 +52,7 @@ private def checkCase (out : System.FilePath) (count : Nat) (cleanup fallback : 
   let mut answers : Array Lean.Json := #[Lean.Json.null]
   for fi in funcs do
     let raw ← get (Stock.Prologue.AllConfigurations.lower fi.func)
-    let prep ← get (prepare (productionStage cleanup raw))
+    let prep ← get (prepare (productionStage cleanup fi.func raw))
     let answer ← if mixed then pure Lean.Json.null else get (oracle prep)
     if !mixed then
       require (checkAlloc prep (← get (buildRFunc prep (← get (parseRAOut answer))))).isOk

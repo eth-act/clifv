@@ -3,6 +3,7 @@ import FV.Backend.Proof.DriverCheckTy
 import FV.Backend.Proof.IselExclT
 import FV.Backend.Proof.IselTermFactsTy
 import FV.Compile.StoreTyped
+import FV.Backend.Proof.InstScopeTF
 
 /-!
 # The typed lowering contracts (S11e5 Stage C, slice 7)
@@ -17,11 +18,17 @@ contexts (`CtxT`), for the integer
 instructions of a mixed context; the float families already proven over `CtxInvT`
 (`LowerRulesCorrectT`, `MemRulesCorrectRT`, `LowerRulesCorrectFT`) are reused unchanged.
 
-* `CtxT f ctx`: `CtxInvT f ctx ∧ InstScopeT ctx ∧ CallsE f ctx` (`CtxInv.toCtxT`; integer
+* `CtxT f ctx`: `CtxInvT f ctx ∧ InstScopeTF ctx ∧ CallsE f ctx` (`CtxInv.toCtxT`; integer
   externs give `CallsE`, `CtxT.ofExterns`). S11e6: until then the third field was
   `f.externs.all sigE`; the proofs only use it for the `call` statements, and a `try_call`'s
   callee may have float parameters and returns (`IselCtlTryF`), so the field is the weaker
-  `CallsE` (every family over `CtxT` is stronger).
+  `CallsE` (every family over `CtxT` is stronger). S11f: until then the second field was
+  `InstScopeT`; the rule families' proofs never read it, so it is the weaker `InstScopeTF` (the
+  S11f float arithmetic, rounding and conversions among the instructions, `Compile.instETF`):
+  every family over `CtxT` is stronger. The statements whose truth depends on the instructions
+  (`NonEUnmatchableT`, the dispatchers `lowerInstOk_of_rulesT`, `lowerInstOk_runTermT`,
+  `instCallsT_of_rules`) take `InstScopeT ctx` explicitly, so their meaning is unchanged; the
+  dispatchers over `InstScopeTF` are `LowerContractTF.lean`'s.
 * Statements, on the subset-E instructions (`Compile.instE`) of a typed context:
   `LowerRuleOkTX`, `LowerRulesCorrectTI` (the integer `lower` roots: closure roots that are not
   call, indirect-call, memory, float-movement or float-arithmetic roots), `MemRuleOkRTX`,
@@ -47,18 +54,19 @@ open Backend Isle Isle.Interp Isle.Aarch64 Backend.Proof.Driver
 /-! ## Float-capable rule contexts -/
 
 /-- **The context premise of the typed obligations**: a float-capable lowering context
-(`CtxInvT`), its instructions in the typed movement scope (`InstScopeT`), and the callees of its
-`call` statements with integer signatures (`CallsE`: the statement calls are integer-only; the
-callee of a `try_call` terminator is not constrained). -/
+(`CtxInvT`), its instructions in the typed scope with the proven float operations
+(`InstScopeTF`; weakened from `InstScopeT` in S11f), and the callees of its `call` statements
+with integer signatures (`CallsE`: the statement calls are integer-only; the callee of a
+`try_call` terminator is not constrained). -/
 structure CtxT (f : Clif.Function) (ctx : Ctx) : Prop where
   inv : CtxInvT f ctx
-  scope : InstScopeT ctx
+  scope : InstScopeTF ctx
   calls : CallsE f ctx
 
 /-- A typed context of a function with integer externs (`Compile.functionET`). -/
 theorem CtxT.ofExterns {f : Clif.Function} {ctx : Ctx} (hinv : CtxInvT f ctx)
     (hsc : InstScopeT ctx) (hx : f.externs.all (Compile.sigE ·.2.sig) = true) : CtxT f ctx :=
-  ⟨hinv, hsc, callsE_of_externs hx ctx⟩
+  ⟨hinv, hsc.toTF, callsE_of_externs hx ctx⟩
 
 /-- **Integer specialization**: a subset-E context is a typed one. -/
 theorem CtxInv.toCtxT {f : Clif.Function} {ctx : Ctx} (h : CtxInv f ctx)
@@ -191,11 +199,13 @@ constant, `load`/`store` of a float, a `select` of floats, a `bitcast`), the fir
 closure root is a float-movement, float-memory or float-arithmetic root, or the `select` root
 971 on a float `select`. The integer `store` roots dispatch on the stored value's type, so a
 float `store` is assumed store-typed (`StoreTyped`). Stated with the lowering's premise that the
-rules before `r` failed. -/
+rules before `r` failed, for contexts whose instructions are in the typed movement scope
+(`InstScopeT`, explicit since `CtxT.scope` is the weaker `InstScopeTF`: the statement is the one
+before S11f). -/
 def NonEUnmatchableT (p : Program) : Prop :=
   ∀ r ∈ p.rulesOf TId.lower, closureRoot r = true → floatMoveRootRule r = false →
     floatMemRootRule r = false → floatArithRootRule r = false →
-  ∀ (f : Clif.Function) (ctx : Ctx), CtxT f ctx →
+  ∀ (f : Clif.Function) (ctx : Ctx), CtxT f ctx → InstScopeT ctx →
   ∀ (ii : Nat) (info : IInfo) (inst : Clif.Inst), ctx.insts[ii]? = some info →
     info.clif = some inst → Compile.instE inst = false → (r.id = 971 → ¬ FloatSelect inst) →
     StoreTyped ctx inst →
@@ -568,7 +578,8 @@ theorem lowerInstOk_of_rulesT (hrules : LowerRulesCorrectTI program)
     (hMR : MRStable F MR) {exts : List Clif.ExtFunc} (hcr : CallsRefine F env exts MR isem)
     {sigs : List Clif.Signature} (hicr : IndCallsRefine env sigs MR isem)
     (hMem : MemRefines F sb syms isem) (hFP : MemRefinesFP (fun _ => True) F sb isem)
-    {f : Clif.Function} {ctx : Ctx} (hctx : CtxT f ctx) {outB : Nat} (hout : OutArgsOk F outB MR)
+    {f : Clif.Function} {ctx : Ctx} (hctx : CtxT f ctx) (hsc : InstScopeT ctx) {outB : Nat}
+    (hout : OutArgsOk F outB MR)
     (hnorm : ExternsIn f exts) (hMRo : MemRelOk F sb syms f MR) {ii : Nat} {info : IInfo}
     {inst : Clif.Inst} (hi : ctx.insts[ii]? = some info) (hc : info.clif = some inst)
     (hsig : IndSigOk f sigs inst) (hst : StoreTyped ctx inst)
@@ -616,7 +627,7 @@ theorem lowerInstOk_of_rulesT (hrules : LowerRulesCorrectTI program)
     fun hfa => hFT F isem MR env cp hR hMR r hr hfa f ctx hctx.inv ii info inst hi hc trivial
       cfg hco m n st tr env' s1 out st' tr2 hm1 hn1 hvb hfirst hmatch heval
   cases hroot : closureRoot r
-  · exact absurd hmatch (lower_nonroot_nomatchT_calls hctx.inv hctx.scope hctx.calls hi hc hr
+  · exact absurd hmatch (lower_nonroot_nomatchT_calls hctx.inv hsc hctx.calls hi hc hr
       (by rw [← closureRoot_eq]; exact hroot) cfg m (st, tr) env' s1)
   cases hE : Compile.instE inst
   · -- an instruction of the typed scope outside subset E
@@ -626,7 +637,7 @@ theorem lowerInstOk_of_rulesT (hrules : LowerRulesCorrectTI program)
         · by_cases hsel : r.id = 971 ∧ FloatSelect inst
           · exact (hT F isem MR env cp hR hMR).2 r hr hsel.1 f ctx hctx.inv ii info inst hi hc
               hsel.2 cfg hco m n st tr env' s1 out st' tr2 hm1 hn1 hvb hfirst hmatch heval
-          · exact absurd hmatch (hnE r hr hroot hfm hfmem hfa f ctx hctx ii info inst hi hc hE
+          · exact absurd hmatch (hnE r hr hroot hfm hfmem hfa f ctx hctx hsc ii info inst hi hc hE
               (fun h1 h2 => hsel ⟨h1, h2⟩) hst cfg m st tr env' s1 hfirst)
         · exact har hfa
       · exact hmF hfmem
@@ -666,7 +677,8 @@ theorem lowerInstOk_runTermT (hrules : LowerRulesCorrectTI program)
     {exts : List Clif.ExtFunc} (hcr : CallsRefine F env exts MR isem)
     {sigs : List Clif.Signature} (hicr : IndCallsRefine env sigs MR isem)
     (hMem : MemRefines F sb syms isem) (hFP : MemRefinesFP (fun _ => True) F sb isem)
-    {f : Clif.Function} {ctx : Ctx} (hctx : CtxT f ctx) {outB : Nat} (hout : OutArgsOk F outB MR)
+    {f : Clif.Function} {ctx : Ctx} (hctx : CtxT f ctx) (hsc : InstScopeT ctx) {outB : Nat}
+    (hout : OutArgsOk F outB MR)
     (hnorm : ExternsIn f exts) (hMRo : MemRelOk F sb syms f MR) {ii : Nat} {info : IInfo}
     {inst : Clif.Inst} (hi : ctx.insts[ii]? = some info) (hc : info.clif = some inst)
     (hsig : IndSigOk f sigs inst) (hst : StoreTyped ctx inst)
@@ -693,7 +705,7 @@ theorem lowerInstOk_runTermT (hrules : LowerRulesCorrectTI program)
     have hlen : (program.rulesOf TId.lower).length ≤ 1000 := by
       rw [show TId.lower = 686 from rfl, data_program.r686]; decide
     obtain ⟨ms, rss, h1, h2, h3⟩ := lowerInstOk_of_rulesT hrules hT hFT hnE hcalls hind hmem hmemF
-      hR hMR hcr hicr hMem hFP hctx hout hnorm hMRo hi hc hsig hst hstk rfl (by omega) hvb ha
+      hR hMR hcr hicr hMem hFP hctx hsc hout hnorm hMRo hi hc hsig hst hstk rfl (by omega) hvb ha
     exact ⟨ms, rss, by simpa using h1, h2, h3⟩
 
 theorem lowerTermOk_of_rulesT {p : Program} (hp : Data p) (hrules : LowerTermRulesCorrectT p)
@@ -1157,12 +1169,13 @@ theorem instCallsT_of_rules (hrules : LowerRulesCorrectTI Isle.Aarch64.program)
     (hicr : IndCallsRefine env (indSigs f) MR sem)
     (hMem : MemRefines F sb syms sem) (hFP : MemRefinesFP (fun _ => True) F sb sem) {outB : Nat}
     (hout : OutArgsOk F outB MR) (hstk : CallsStack f outB)
-    (hMRo : MemRelOk F sb syms f MR) (hctx : CtxT f ctx) (hst : StoresTyped ctx) :
+    (hMRo : MemRelOk F sb syms f MR) (hctx : CtxT f ctx) (hsc : InstScopeT ctx)
+    (hst : StoresTyped ctx) :
     InstCallsT f ctx sem MR env p := by
   intro ii info inst st rss st' tr hmem' hi hc hsig hemp hvb hrun
   obtain ⟨B, hB, stm, hstm, rfl⟩ := hmem'
   obtain ⟨ms, rss', hem, hov, hok⟩ := lowerInstOk_runTermT hrules hT hFT hnE hcalls hind hmem hmemF
-    (env := env) (cp := p) hR hMR hcr hicr hMem hFP hctx hout (externsIn_self f) hMRo hi hc hsig
+    (env := env) (cp := p) hR hMR hcr hicr hMem hFP hctx hsc hout (externsIn_self f) hMRo hi hc hsig
     (hst ii info _ hi hc)
     (fun fn args e hc he => hstk B hB stm hstm fn args e hc he) hvb hrun
   cases hov
