@@ -1,5 +1,6 @@
 import FV.E2E.BackendWorldNII
 import FV.E2E.DeadCleanupWitness
+import FV.E2E.ClifEnvOnlyContracts
 
 /-!
 # Non-vacuity of the counted cleanup pipeline (SEM1, `docs/plans/uninit.md` §5.9)
@@ -118,5 +119,18 @@ theorem ni_pipelinePRI_applies :
       source_callsOne.2 (hcov _) (fun _ n _ => source_xcalls _ _ _ n) (fun n b h => by cases h)
       rfl hce hrel hargs htr fuel vals cm hrun
   exact ⟨us, outs, w, h1, h2, h3, h4⟩
+
+/-- The restriction lemmas on `source`: its contracts and `XNI` for the Rust environment give
+those of every restriction of it (`xCallsOk_only`, `xCallsIndOk_only`, `xNI_only`), e.g. to the
+invocation of a CLIF state. -/
+theorem source_only (A : String → List Clif.Val → Clif.Mem → Prop) (MR : MemRelT) (X : ExtSem)
+    (F : BitVec 64 → Prop) (c : BitVec 64) :
+    XCallsOk (Clif.Rust.env.only A) (source.externs.map (·.2)) MR X ∧
+      XCallsIndOk (Clif.Rust.env.only A) (indSigs source) MR X ∧
+      XNI F (fun _ => none) (source.externs.map (·.2)) (indSigs source) c
+        (CallLg (Clif.Rust.env.only A) (source.externs.map (·.2)) (indSigs source)) X :=
+  ⟨xCallsOk_only A (source_xcalls Clif.Rust.env MR (ExtSemI.const X) 0).1,
+    xCallsIndOk_only A (source_xcalls Clif.Rust.env MR (ExtSemI.const X) 0).2,
+    xNI_only A (source_xni Clif.Rust.env F _ c X)⟩
 
 end E2E.DeadCleanupWitness
