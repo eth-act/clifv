@@ -373,7 +373,7 @@ def linkChksT (I : LinkInput) (P : Clif.Program) (T : List (Clif.Function × Art
   let may := indToB (fun n => I.syms.lookup n) g
   [("outFits", g.externs.all (fun e => !(P.func? e.2.name).isSome || outFitsB e.2.sig fr.intBase)),
    ("calleeFrame/slotFits",
-     !calleeB P (fun n => I.syms.lookup n) g || ((!g.slots.isEmpty || fr.size == a.af.frameSize) && slotFitsB g a)),
+     !calleeB P (fun n => I.syms.lookup n) g || ((!g.slots.isEmpty || fr.size == a.af.frameSize - clobberBytes a.af.saves) && slotFitsB g a)),
    ("callRegs/blrRegs", allInsts a.vcp (siteB (siteOkTC P g may a.vcp))),
    ("declSig", g.externs.all fun e => match P.func? e.2.name with
       | some h => decide (e.2.sig = h.sig)
@@ -411,7 +411,7 @@ def linkChksWithT (C : LinkCtx) (P : Clif.Program) (g : Clif.Function)
   [("outFits", g.externs.all (fun e => !(C.F e.2.name).isSome || outFitsB e.2.sig fr.intBase)),
    ("calleeFrame/slotFits",
      !(C.callees.contains g.name || ((C.S g.name).isSome && C.anyInd)) ||
-       ((!g.slots.isEmpty || fr.size == a.af.frameSize) && slotFitsB g a)),
+       ((!g.slots.isEmpty || fr.size == a.af.frameSize - clobberBytes a.af.saves) && slotFitsB g a)),
    ("callRegs/blrRegs", allInsts a.vcp (siteB (siteWithOkTC C.F P g may a.vcp))),
    ("declSig", declSigWithB C.F g),
    ("raCall/raBlr", raCallFastB C.ents g a),
