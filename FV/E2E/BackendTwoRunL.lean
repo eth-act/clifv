@@ -9,15 +9,21 @@ The lock-step premises of `backend_twoRunPRIYT` at a concrete lock: two activati
 compiled function, one entered with world `w₀`, the other with `w₀'`, the same outside `F ∪ D`,
 run in lock-step equal but for `x30` and the bytes of
 
-  `Zc c c' a := ¬ FrameRd false a ∧ ¬ JTByte a ∧ (F a ∨ WDiff c c' a)`
+  `Zc c c' a := ¬ FrameRd false a ∧ ¬ JTByte a ∧ ¬ StackBelow K spB a ∧ (F a ∨ WDiff c c' a)`
 
 (`RL.Zc`): outside the activation's own frame bytes but its saved-LR word, outside the jump
-tables, and in `F` or where the two VCode worlds of the current configurations differ. The reads
-of the body avoid `Zc`: a world read is outside a guard set containing `F` and the difference
-set (`OkDiff`), a frame read is of the frame but its saved-LR word, a table read is code.
+tables, outside the callees' dead stack below the body's `sp` (equal at entry by `EntryAgree`,
+written only by the callees, which keep it equal by the call premise: the caller's return
+agreement needs it), and in `F` or where the two VCode worlds of the current configurations
+differ. The reads of the body avoid `Zc`: a world read is outside a guard set containing `F` and
+the difference set (`OkDiff`), a frame read is of the frame but its saved-LR word, a table read
+is code.
 
 * `RL.JTByte`, `MConf.WDiff`, `RL.Zc`, `OkDiff`;
-* `readsAvoid_stepiEvs`, `RL.readInY_notZc`.
+* `readsAvoid_stepiEvs`, `RL.notZc_of_readInY`, `stEqOutX_lineZ`, `rdOk_X`,
+  `mstep_guard_of_match`, `pGuard_of_stepPair`, `mstep_okDiff_fst`, `mstep_okDiff_snd`, `KJL`,
+  `QW.stRel`, `stEqOutX_zc_end`;
+* **`backend_twoRunL`**.
 -/
 
 namespace E2E
@@ -37,7 +43,7 @@ def _root_.Backend.MConf.WDiff : MConf CV Arm.ArmState → MConf CV Arm.ArmState
 
 /-- **The lock set** at configurations `c`, `c'` (module doc). -/
 def _root_.Backend.Proof.RL.Zc (R : RL) (c c' : MConf CV Arm.ArmState) (a : BitVec 64) : Prop :=
-  ¬ R.FrameRd false a ∧ ¬ R.JTByte a ∧ (R.F a ∨ MConf.WDiff c c' a)
+  ¬ R.FrameRd false a ∧ ¬ R.JTByte a ∧ ¬ StackBelow R.K R.spB a ∧ (R.F a ∨ MConf.WDiff c c' a)
 
 /-- **The guard of the lock**: a set containing `F` and the bytes where the worlds of `c`, `c'`
 differ. -/
@@ -68,7 +74,7 @@ theorem readsAvoid_stepiEvs {Z : BitVec 64 → Prop} {t : Arm.ArmState}
 theorem RL.notZc_of_readInY {R : RL} {Y : BitVec 64 → Prop} {c c' : MConf CV Arm.ArmState}
     {a : BitVec 64} (h : R.ReadInY Y false a) (hY : ∀ b, MConf.WDiff c c' b → Y b) :
     ¬ R.Zc c c' a := by
-  rintro ⟨hfr, hjt, hFD⟩
+  rintro ⟨hfr, hjt, -, hFD⟩
   rcases h with hj | hf | ⟨hF, hYa⟩
   · exact hjt hj
   · exact hfr hf
@@ -294,8 +300,8 @@ theorem stEqOutX_zc_end {R R' : RL} (hF : R'.F = R.F) {c c' d d' : MConf CV Arm.
     StEqOutX (R.Zc d d') u u' := by
   refine ⟨h.1, h.2.1, fun a ha => ?_⟩
   by_cases hz : R.Zc c c' a
-  · obtain ⟨hfr, hjt, -⟩ := hz
-    have hn : ¬ (R.F a ∨ MConf.WDiff d d' a) := fun h' => ha ⟨hfr, hjt, h'⟩
+  · obtain ⟨hfr, hjt, hds, -⟩ := hz
+    have hn : ¬ (R.F a ∨ MConf.WDiff d d' a) := fun h' => ha ⟨hfr, hjt, hds, h'⟩
     obtain ⟨⟨b, its, m, w⟩⟩ | _ | _ := d
     · obtain ⟨⟨b', its', m', w'⟩⟩ | _ | _ := d'
       · have e1 := (QW.stRel hq).world.2.1 a fun h' => hn (.inl h')

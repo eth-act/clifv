@@ -71,7 +71,7 @@ theorem RL.lrWord_Zc {R : RL} (hR : R.Wf) (c c' : MConf CV Arm.ArmState) {k : Na
     simp only [BitVec.toNat_add, BitVec.toNat_sub, BitVec.toNat_ofNat]
     rw [Nat.mod_eq_of_lt (a := k) (by omega)]
     omega
-  refine ⟨?_, ?_, .inl (RL.FK_F (fplr_inF hR hframe k hk))⟩
+  refine ⟨?_, ?_, ?_, .inl (RL.FK_F (fplr_inF hR hframe k hk))⟩
   · rintro ⟨o, ho, ho8, he⟩
     have hB := (spBody_toNat hR.stack).1
     have he' := congrArg BitVec.toNat he
@@ -91,6 +91,10 @@ theorem RL.lrWord_Zc {R : RL} (hR : R.Wf) (c c' : MConf CV Arm.ArmState) {k : Na
         Nat.mod_eq_of_lt (a := R.af.frameSize + k) (by omega)]
       omega
     rw [this, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)] at h2
+    omega
+  · rintro ⟨h1, -⟩
+    have hB := (spBody_toNat hR.stack).1
+    rw [hk64, RL.spB, hB] at h1
     omega
 
 /-- **The lock at the two entries**: equal masked registers but `x30`/pc and equal bytes below
@@ -132,10 +136,16 @@ theorem stEqOutX_entryZ {R : RL} (hR : R.Wf) {t0 : Arm.ArmState} {ra ra' : BitVe
       omega
     · by_cases hjt : R.JTByte a
       · exact RL.jtByte_mem_eq hR hent.code hent'.code hjt
-      · have hn : ¬ (R.F a ∨ MConf.WDiff c c' a) := fun h => ha ⟨hfr, hjt, h⟩
-        have hF : ¬ R.F a := fun h => hn (.inl h)
-        rw [← hbe.mem a hF, ← hbe'.mem a (fun h => hF (hF' a h))]
-        exact Classical.byContradiction fun h => hn (.inr (hW a h))
+      · by_cases hds : StackBelow R.K R.spB a
+        · apply hag.2
+          obtain ⟨hB, hK⟩ := spBody_toNat hR.stack
+          obtain ⟨h1, h2⟩ := hds
+          rw [RL.spB, hB] at h1 h2
+          exact ⟨by omega, by omega⟩
+        · have hn : ¬ (R.F a ∨ MConf.WDiff c c' a) := fun h => ha ⟨hfr, hjt, hds, h⟩
+          have hF : ¬ R.F a := fun h => hn (.inl h)
+          rw [← hbe.mem a hF, ← hbe'.mem a (fun h => hF (hF' a h))]
+          exact Classical.byContradiction fun h => hn (.inr (hW a h))
 
 theorem spAdjLines_x30 (sub : Bool) (size : Nat) :
     ∀ x t, Line.ins x t ∈ spAdjLines sub size → x.x30Exempt = false := by
