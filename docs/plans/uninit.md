@@ -1323,6 +1323,46 @@ the `Good`-trace chain of the `init = none` statement (`binary_correct_of_checks
 version needs that chain (or `RunOk` from `thmPRBRL`'s trace) under `PlaceAtB`, then
 `ClifRunB`/`premisesB`, `binary_correct_init`, `compileExe_correct_init`, the fv-demo witness.
 
+**#700, steps 4–5, as built (UninitZ21, branch `agent/uninit-z21`): no table premise at a
+top-level entry.** New leaf modules; no existing statement changed; no generated-code change.
+- `FV/E2E/BackendPrefixAtGE.lean`: the prefix theorems with the error-free trace (`RL.GoodE`:
+  `Good`, no error, the activation's program): `regLevel_prefix_coreGE`, `regLevel_prefixCGE`,
+  `_PRSGE`, `regLevel_value_prefixCGE`, `_PRSGE`, `backend_prefixPRI_atSGE`,
+  `backend_prefix_cleanupPRI_atGE`, `backend_prefixPRI_atEGE`, **`prefix_relatedPRI_atEG`**
+  (`prefix_relatedPRI_atE` whose trace is also `GoodE`; same call step by `callIdx_unique`).
+- `FV/E2E/LinkArmThmPRBRLE.lean`: `progBase_of_callsTo`, **`tabUpTo_count_E`** (a table and a
+  prefix-closed table of a prefix have one count), **`tabUpTo_of_E`** (a prefix-closed table is a
+  table when the states after the prefix's steps have no error: `callsTo_ret`), `ThmPRBRLE`
+  (`ThmPRBRL` with `TableOfE`), `ThmPRBRLE.toThmPRBRL`, `DetTabPRBE` (= UninitZ21b's
+  `DetTabPRBG L.TableOfE`), `tableOf_of_retAtN`, **`canonEntry`** (the canonical callee entry of
+  `progCallPRBRL`), **`tableOf_canon_of_E`**: the canonical callee's `TableOf` (what the call
+  semantics `progXBT` asks, `OracleAt`) from its `TableOfE` by `ThmPRBRLE` one level down. So the
+  callees keep the old statement and every lemma about the call semantics stays.
+- `FV/E2E/LinkArmStage2E.lean`: `oracleAt_of_callE` (callee `TableOfE` by `tabUpToE_call_at`,
+  `DetTabPRBE`, `tableOf_canon_of_E`), `oracleAt_atE`, `callCountE` (the callee count pinned by
+  `progCallPRBRLT`'s return and `tabUpTo_count_E`), `countStep_progE`, `Stage2PRBZSE`,
+  **`stage2PRBZS_ofE`**, `CountPRBE`, **`countPRB_succE`**, `countPRBE_zero`,
+  `stage2PRBZSE_zero`, **`thmPRBRL_ofZSE`** (the table up to the return from
+  `backend_correct_world_pipelinePRGYNG`'s error-free trace), `thmPRBRLE_succS`,
+  **`thmPRBRLE_allC`** (under `NeedSlots`, from `BaseRetOk`, `RetCount`, `DetPRB`, `DetTabPRBE`).
+- `FV/Arm/ProgramKeep.lean`: `Arm.ProgKeep.stepi_program` (a copy of
+  `Concurrency.ArmFoot.stepi_program` outside the concurrency cone).
+- `FV/E2E/LinkArmIniOf.lean`: **`HooksKeep`** (new scope condition: the outside code's hooks keep an
+  error state and the loaded program; with arbitrary hooks an error can be cleared inside a
+  returning callee, and then no table fits), error and program persistence (`mach_errK`,
+  `runX_progK`), `calleeAt`, `retIdx`, `callStep`, `callE`/`cntE` (the entries per call / of a
+  prefix), `tabB` (the bytes of entry `x`: the call owning `x`, `Owns`), `tabB_at`,
+  **`tabUpToE_tabB`**, `iniOf M g s := ⟨tabB M g s 0, 0⟩`, **`tableOfE_iniOf`**: the machine's own
+  table is the run's `TableOfE`.
+- `FV/E2E/LinkArmProgramInitE.lean`: **`backend_correct_program_core_initE`**,
+  **`backend_correct_program_initE`**: `backend_correct_program_(core_)init` with the oracle
+  `L.iniOf M f s` and without `TableOf` (premises `BaseRetOk`, `RetCount`, `DetPRB`,
+  `DetTabPRBE`, `HooksKeep`; without `NeedSlots` by `thm`).
+- Witnesses `FV/E2E/LinkArmIniOfWitness.lean` (on `Lsl`): `hooksKeep_L0`, `tableOfE_iniOf_Lsl`,
+  `tableOfE_iniOf_some`, `thmPRBRLE_zero_Lsl` (no premise), `thmPRBRLE_allC_Lsl`,
+  `stage2PRBZS_ofE_Lsl`, `countPRB_succE_Lsl`, `backend_correct_program_core_initE_Lsl`,
+  `backend_correct_program_initE_L0`.
+
 **Step 3h, as built (UninitZ10b): the call-count premises are theorems.** `InstCallsOne f` and
 `TryCallsOne f` hold for every `f` (`E2E.instCallsOne_all`, `E2E.tryCallsOne_all`,
 `FV/E2E/IselCallsOneAll.lean`), from `FV/Backend/Proof/IselCallsOne.lean`:
