@@ -179,19 +179,19 @@ def fuel0 : Nat := 400
 /-- The mirrored machine run of `f` from the model state. -/
 def runM (n : Nat) : Arm.ArmState := runX (LS.machC fuel0 M0 fF) n sC
 
-/-- The machine's facts: the mirror takes the machine's path for `27` steps, without error;
-`f` calls `h` at step `23` (its first call) and `r` at step `26` (its second); `h` has no call
+/-- The machine's facts: the mirror takes the machine's path for `18` steps, without error;
+`f` calls `h` at step `14` (its first call) and `r` at step `17` (its second); `h` has no call
 instruction. -/
 def machB : Bool :=
-  LS.okC fuel0 M0 fF sC 27 &&
-  (List.range 27).all (fun j => match Arm.r .ERR (runM j) with | .None => true | _ => false) &&
-  decide (insnAtC (LS.A fF).fa (progBase (runM 23)) (Arm.r .PC (runM 23)) = some (.bl "h")) &&
-  decide (insnAtC (LS.A fF).fa (progBase (runM 26)) (Arm.r .PC (runM 26)) = some (.bl "r")) &&
-  ((List.range 23).filter fun j => callPcB (LS.A fF).fa (LS.A fF).base (Arm.r .PC (runM j))).length == 0 &&
-  ((List.range 26).filter fun j => callPcB (LS.A fF).fa (LS.A fF).base (Arm.r .PC (runM j))).length == 1 &&
-  callPcB (LS.A fF).fa (LS.A fF).base (Arm.r .PC (runM 23)) &&
-  callPcB (LS.A fF).fa (LS.A fF).base (Arm.r .PC (runM 26)) &&
-  progBase (runM 23) == (LS.A fF).base && progBase (runM 26) == (LS.A fF).base &&
+  LS.okC fuel0 M0 fF sC 18 &&
+  (List.range 18).all (fun j => match Arm.r .ERR (runM j) with | .None => true | _ => false) &&
+  decide (insnAtC (LS.A fF).fa (progBase (runM 14)) (Arm.r .PC (runM 14)) = some (.bl "h")) &&
+  decide (insnAtC (LS.A fF).fa (progBase (runM 17)) (Arm.r .PC (runM 17)) = some (.bl "r")) &&
+  ((List.range 14).filter fun j => callPcB (LS.A fF).fa (LS.A fF).base (Arm.r .PC (runM j))).length == 0 &&
+  ((List.range 17).filter fun j => callPcB (LS.A fF).fa (LS.A fF).base (Arm.r .PC (runM j))).length == 1 &&
+  callPcB (LS.A fF).fa (LS.A fF).base (Arm.r .PC (runM 14)) &&
+  callPcB (LS.A fF).fa (LS.A fF).base (Arm.r .PC (runM 17)) &&
+  progBase (runM 14) == (LS.A fF).base && progBase (runM 17) == (LS.A fF).base &&
   (LS.A fH).fa.lines.toList.all (fun l => match l with
       | Line.ins (.bl _) _ | Line.ins (.blr _) _ => false | _ => true) &&
   (LS.P.funcs.all fun g => decide (((LS.A g).fa.lines.toList.map Line.size).sum ≤ 2 ^ 64))
@@ -199,15 +199,15 @@ def machB : Bool :=
 set_option maxRecDepth 100000 in
 theorem machB_true : machB = true := by native_decide
 
-theorem machB_parts : LS.okC fuel0 M0 fF sC 27 = true ∧
-    (∀ j < 27, Arm.r .ERR (runM j) = .None) ∧
-    insnAtC (LS.A fF).fa (progBase (runM 23)) (Arm.r .PC (runM 23)) = some (.bl "h") ∧
-    insnAtC (LS.A fF).fa (progBase (runM 26)) (Arm.r .PC (runM 26)) = some (.bl "r") ∧
-    ((List.range 23).filter fun j => callPcB (LS.A fF).fa (LS.A fF).base (Arm.r .PC (runM j))).length = 0 ∧
-    ((List.range 26).filter fun j => callPcB (LS.A fF).fa (LS.A fF).base (Arm.r .PC (runM j))).length = 1 ∧
-    callPcB (LS.A fF).fa (LS.A fF).base (Arm.r .PC (runM 23)) = true ∧
-    callPcB (LS.A fF).fa (LS.A fF).base (Arm.r .PC (runM 26)) = true ∧
-    progBase (runM 23) = (LS.A fF).base ∧ progBase (runM 26) = (LS.A fF).base ∧
+theorem machB_parts : LS.okC fuel0 M0 fF sC 18 = true ∧
+    (∀ j < 18, Arm.r .ERR (runM j) = .None) ∧
+    insnAtC (LS.A fF).fa (progBase (runM 14)) (Arm.r .PC (runM 14)) = some (.bl "h") ∧
+    insnAtC (LS.A fF).fa (progBase (runM 17)) (Arm.r .PC (runM 17)) = some (.bl "r") ∧
+    ((List.range 14).filter fun j => callPcB (LS.A fF).fa (LS.A fF).base (Arm.r .PC (runM j))).length = 0 ∧
+    ((List.range 17).filter fun j => callPcB (LS.A fF).fa (LS.A fF).base (Arm.r .PC (runM j))).length = 1 ∧
+    callPcB (LS.A fF).fa (LS.A fF).base (Arm.r .PC (runM 14)) = true ∧
+    callPcB (LS.A fF).fa (LS.A fF).base (Arm.r .PC (runM 17)) = true ∧
+    progBase (runM 14) = (LS.A fF).base ∧ progBase (runM 17) = (LS.A fF).base ∧
     (LS.A fH).fa.lines.toList.all (fun l => match l with
       | Line.ins (.bl _) _ | Line.ins (.blr _) _ => false | _ => true) = true ∧
     (∀ g ∈ LS.P.funcs, ((LS.A g).fa.lines.toList.map Line.size).sum ≤ 2 ^ 64) := by
@@ -224,12 +224,12 @@ theorem machB_parts : LS.okC fuel0 M0 fF sC 27 = true ∧
 theorem fF_mem : fF ∈ LS.P.funcs := (Clif.Program.func?_some hf).1
 theorem fH_mem : fH ∈ LS.P.funcs := (Clif.Program.func?_some hfH).1
 
-/-- **The machine's first `27` steps are the mirror's.** -/
-theorem runEq {j : Nat} (hj : j ≤ 27) : runX (LO.std.mach M0 fF) j sC = runM j := by
+/-- **The machine's first `18` steps are the mirror's.** -/
+theorem runEq {j : Nat} (hj : j ≤ 18) : runX (LO.std.mach M0 fF) j sC = runM j := by
   rw [LinkSys.mach_std, mach_F I B _ (fun _ => False)]
-  exact LS.runX_mach_eq fuel0 machB_parts.2.2.2.2.2.2.2.2.2.2.2 M0 fF sC 27 fF_mem machB_parts.1 j hj
+  exact LS.runX_mach_eq fuel0 machB_parts.2.2.2.2.2.2.2.2.2.2.2 M0 fF sC 18 fF_mem machB_parts.1 j hj
 
-theorem cb_eq {n : Nat} (hn : n ≤ 27) :
+theorem cb_eq {n : Nat} (hn : n ≤ 18) :
     callsBefore (LO.std.mach M0 fF) (LO.std.A fF).fa (LO.std.A fF).base sC n =
       ((List.range n).filter fun j => callPcB (LS.A fF).fa (LS.A fF).base (Arm.r .PC (runM j))).length := by
   rw [callsBefore_eq]
@@ -250,7 +250,7 @@ theorem hK : LO.std.HooksKeep :=
 theorem hprog : sC.program = (LO.std.A fF).fb.program (LO.std.A fF).base := by
   simp only [sC, program_set_program]; rfl
 
-theorem insnAt_at {j : Nat} (hj : j ≤ 27) (hpb : progBase (runM j) = (LS.A fF).base) {i : Insn}
+theorem insnAt_at {j : Nat} (hj : j ≤ 18) (hpb : progBase (runM j) = (LS.A fF).base) {i : Insn}
     (hi : insnAtC (LS.A fF).fa (progBase (runM j)) (Arm.r .PC (runM j)) = some i) :
     insnAt (LO.std.A fF).fa (LO.std.A fF).base (Arm.r .PC (runX (LO.std.mach M0 fF) j sC)) = some i := by
   rw [runEq hj]
@@ -259,27 +259,27 @@ theorem insnAt_at {j : Nat} (hj : j ≤ 27) (hpb : progBase (runM j) = (LS.A fF)
   rw [hpb] at hi
   exact hi
 
-theorem herr {i : Nat} (hi : i < 27) :
+theorem herr {i : Nat} (hi : i < 18) :
     ∀ j ≤ i, Arm.r .ERR (runX (LO.std.mach (14 + 1) fF) j sC) = .None := fun j hj => by
   rw [show 14 + 1 = M0 from rfl, runEq (by omega)]
   exact machB_parts.2.1 j (by omega)
 
-theorem hcp {j : Nat} (hj : j ≤ 27)
+theorem hcp {j : Nat} (hj : j ≤ 18)
     (h : callPcB (LS.A fF).fa (LS.A fF).base (Arm.r .PC (runM j)) = true) :
     CallPc (LO.std.A fF).fa (LO.std.A fF).base (Arm.r .PC (runX (LO.std.mach (14 + 1) fF) j sC)) := by
   rw [show 14 + 1 = M0 from rfl, runEq hj]
   exact (callPc_iff _ _ _).mpr h
 
-theorem hct1 : LO.std.CallsTo fF (runX (LO.std.mach (14 + 1) fF) 23 sC) fH :=
+theorem hct1 : LO.std.CallsTo fF (runX (LO.std.mach (14 + 1) fF) 14 sC) fH :=
   .inl ⟨"h", insnAt_at (by decide) machB_parts.2.2.2.2.2.2.2.2.1 machB_parts.2.2.1, hfH⟩
 
-theorem hct2 : LO.std.CallsTo fF (runX (LO.std.mach (14 + 1) fF) 26 sC) fR :=
+theorem hct2 : LO.std.CallsTo fF (runX (LO.std.mach (14 + 1) fF) 17 sC) fR :=
   .inl ⟨"r", insnAt_at (by decide) machB_parts.2.2.2.2.2.2.2.2.2.1 machB_parts.2.2.2.1, hfR⟩
 
-theorem cb23 : callsBefore (LO.std.mach (14 + 1) fF) (LO.std.A fF).fa (LO.std.A fF).base sC 23 = 0 :=
+theorem cb23 : callsBefore (LO.std.mach (14 + 1) fF) (LO.std.A fF).fa (LO.std.A fF).base sC 14 = 0 :=
   (cb_eq (by decide)).trans machB_parts.2.2.2.2.1
 
-theorem cb26 : callsBefore (LO.std.mach (14 + 1) fF) (LO.std.A fF).fa (LO.std.A fF).base sC 26 = 1 :=
+theorem cb26 : callsBefore (LO.std.mach (14 + 1) fF) (LO.std.A fF).fa (LO.std.A fF).base sC 17 = 1 :=
   (cb_eq (by decide)).trans machB_parts.2.2.2.2.2.1
 
 /-- The first call's entries: `h`'s own, and none of its run's (`h` makes no call). -/
@@ -299,18 +299,18 @@ theorem callE1_ge : 1 ≤ LO.std.callE (14 + 1) fF sC 1 := by
   omega
 
 /-- **Entry `1` of the machine's table**: the memory at the machine's call of `h`. -/
-theorem tab1 : LO.std.tabB M0 fF sC 0 1 = fun a => (runM 23).mem (BitVec.ofNat 64 a) := by
+theorem tab1 : LO.std.tabB M0 fF sC 0 1 = fun a => (runM 14).mem (BitVec.ofNat 64 a) := by
   have e := LO.std.tabB_at (M := 14) hL hK fF_mem hprog (herr (by decide))
     (hcp (by decide) machB_parts.2.2.2.2.2.2.1) hct1 (x := 1) (k := 0)
     (by rw [cb23]; simp [Clif.sumTo]) (fun _ => by rw [cb23]; simp [Clif.sumTo, callE0])
   rw [cb23, slotted_fH, ite_eq_left_of_eq_true _ _ (eq_true (by simp [Clif.sumTo]))] at e
   rw [show M0 = 14 + 1 from rfl, e]
   funext a
-  show (runX (LO.std.mach M0 fF) 23 sC).mem _ = _
+  show (runX (LO.std.mach M0 fF) 14 sC).mem _ = _
   rw [runEq (by decide)]
 
 /-- **Entry `2` of the machine's table**: the memory at the machine's call of `r`. -/
-theorem tab2 : LO.std.tabB M0 fF sC 0 2 = fun a => (runM 26).mem (BitVec.ofNat 64 a) := by
+theorem tab2 : LO.std.tabB M0 fF sC 0 2 = fun a => (runM 17).mem (BitVec.ofNat 64 a) := by
   have e := LO.std.tabB_at (M := 14) hL hK fF_mem hprog (herr (by decide))
     (hcp (by decide) machB_parts.2.2.2.2.2.2.2.1) hct2 (x := 2) (k := 0)
     (by rw [cb26]; simp [Clif.sumTo, callE0])
@@ -318,7 +318,7 @@ theorem tab2 : LO.std.tabB M0 fF sC 0 2 = fun a => (runM 26).mem (BitVec.ofNat 6
   rw [cb26, slotted_fR, ite_eq_left_of_eq_true _ _ (eq_true (by simp [Clif.sumTo, callE0]))] at e
   rw [show M0 = 14 + 1 from rfl, e]
   funext a
-  show (runX (LO.std.mach M0 fF) 26 sC).mem _ = _
+  show (runX (LO.std.mach M0 fF) 17 sC).mem _ = _
   rw [runEq (by decide)]
 
 /-- The machine's own table of the outside call is the sysW one at the model state. -/
@@ -331,8 +331,8 @@ theorem iniB_eq : iniB I B M0 fF rC = LO.std.iniOf M0 fF sC := by
 /-- **The computable table**: entries `1` and `2` are the memory at the machine's calls of `h`
 and `r` (`tab1`, `tab2`); zero elsewhere. -/
 def bC (k a : Nat) : BitVec 8 :=
-  if k = 1 then (runM 23).mem (BitVec.ofNat 64 a)
-  else if k = 2 then (runM 26).mem (BitVec.ofNat 64 a) else 0
+  if k = 1 then (runM 14).mem (BitVec.ofNat 64 a)
+  else if k = 2 then (runM 17).mem (BitVec.ofNat 64 a) else 0
 
 /-- The caller's CLIF memory: placed at `sp = 0x100000` with the table `b`. -/
 def memB (b : Nat → Nat → BitVec 8) : Clif.Mem :=
