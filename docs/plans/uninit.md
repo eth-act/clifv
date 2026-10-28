@@ -1560,6 +1560,44 @@ register facts and `EntryAgree`. Remaining beyond that: the call lines (`DetPRB 
 program callees, `HookDetX` for base calls), then `LinkSys.thmPDERX_det_of`, `DetPRB`/`DetTabPRB`
 as corollaries (target `Stage2Z`/`thmPRBRL_ofZ`, #697), after combining with #696's stack.
 
+**The machine lock, as built (UninitZ19b, branch `agent/uninit-z18b`, PR #701).**
+- Finding (decided conservatively): `RL.twoRunPRS`'s `hstep` must hold for *every* pair of states
+  satisfying `GoodX`/`WReadsIn`, but a lock that ignores `x30` holds only on states that are no
+  `ret` and no frame-record line, which occur only outside the segments (epilogue/prologue). The
+  information is in `RL.seg_lock` (`i < n`) and was dropped. `RegLevelTwoRunT.lean`: `RL.InSeg`
+  (the `i`-th state of the segment realising the step of `c`, strictly before its end),
+  `RL.jointSegT`, `RL.realizesJCPT`, **`RL.twoRunCT`**, **`RL.twoRunPRT`** (same proofs, `hstep`
+  also receives `InSeg` for both runs). `BackendTwoRunT.lean`: `StepOrRet`, `pstar_of_projS`,
+  **`backend_twoRunPRIYT`** (`hK` receives that the paired configuration has a guarded step or is
+  the return, which is what the guard transfer needs; `GuardedAt` alone is vacuous at a stuck
+  configuration). Witness `a2_twoRunPRIYT`.
+- `BackendTwoRunL.lean`: `JTByte`, `MConf.WDiff`, **`RL.Zc c c' a := ¬ FrameRd false a ∧ ¬ JTByte a
+  ∧ (F a ∨ WDiff c c' a)`** (the design's set, written with the located-read predicates: the frame
+  bytes but the saved-LR word and the jump tables are locked), `OkDiff F c c'`, `KJL` (every step of
+  either activation from `c`, `c'` is guarded by `OkDiff`), `readsAvoid_stepiEvs`,
+  `RL.notZc_of_readInY`, `stEqOutX_lineZ` (`stEqOutX_line` needing reads only of unhooked lines),
+  `rdOk_X`, `mstep_guard_of_match`, `pGuard_of_stepPair`, `mstep_okDiff_fst/snd` (`hK`: `Match` +
+  `sim`'s use equation `op_sound` + the paired step's `PGuard`), `QW.stRel`, `stEqOutX_zc_end`
+  (`hend`), **`backend_twoRunL`**: `backend_twoRunPRIYT` at `Lk := StEqOutX (Zc c c')`, `KJ := KJL`,
+  `OkS := OkDiff F`, with `hG`, `hG'`, `hLpc`, `hstart`, `hstep`, `hend`, `hK` discharged. Its
+  remaining premises: `hx30` (`FnAsm.x30Free`), `hfr` (a segment state's line, if `x30`-exempt, is
+  `bl`/`blr`), `hcall`/`htls` (the hooks keep the lock), `hpro` (the lock after both prologues).
+- Finding: `hfr` is true (the segments of non-`rets` items run only the item's lines, and only the
+  `rets` item emits the epilogue; a `rets` segment has length 0) but not derivable from
+  `realizes_allCWS`'s outputs: it needs a per-item "segment lines are the item's lines" fact
+  (threaded like `ReadsInY`). No non-vacuity witness of `backend_twoRunL` until then.
+- Finding [#705](https://github.com/eth-act/clifv/issues/705): `ThmPDER`/`ThmPDERX`'s NeedNI
+  clause is false as stated: the entries' `x29` is unconstrained (unmasked, not in `EntryAgree`),
+  the prologue saves it into the frame record and the epilogue restores it, and `RetAgreeX` asks
+  for equal `x29` and saved-fp bytes. With equal entry `x29` (true at every program call made from
+  a locked caller) the lock holds as designed. `DetPRB` stays true but its proof then needs the
+  body never to read the record's fp word, which `RL.FrameRd` (admits it) does not record; the
+  body's frame reads are spill slots below `fr.size` (`RL.frameRd_slot`, the only producer).
+- Finding [#704](https://github.com/eth-act/clifv/issues/704): `HookDetX` covers difference sets
+  below `sp` and saved-LR bytes only, but the locked states also differ on callers' frames above
+  `sp` (`DetPRB`'s `D = F ∧ ¬ Fh`) and on CLIF-invisible world bytes; base calls need a machine
+  analogue of `XNI` as a new trusted premise.
+
 ## 6. Heap (separate gap, SEM2)
 
 `BaseOk.baseKeepsAllocs`/`baseNoAlloc` require base externs to allocate nothing whenever a program
