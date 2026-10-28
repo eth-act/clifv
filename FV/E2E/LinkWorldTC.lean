@@ -42,7 +42,9 @@ theorem driverHypTC_relW_of {sem : Sem} (hsub : InSubsetTC p f) (hT : TypedRules
     DriverHypTC f vc ctx st0 R gn bl A sem (RelW ⟨F, syms, slotOff, out⟩ f c) env p := by
   let Γ : Rel := ⟨F, syms, slotOff, out⟩
   have hctxT : CtxT f ctx :=
-    ctxT_of_functionETC hsub.subsetETC hshape.hctx.choose_spec hshape.ctxInvT hshape.scope
+    ctxT_of_functionETCF (Compile.functionETCF_of_functionETC hsub.subsetETC)
+      hshape.hctx.choose_spec hshape.ctxInvT hshape.scope
+  have hscT : InstScopeT ctx := instScopeT_of_lowerCheckTC hlow hshape.hctx.choose_spec
   have hstT : StoresTyped ctx := storesTyped_of_buildCtx hsub.storeTyped hshape.hctx.choose_spec
   exact {
     shape := hshape
@@ -52,12 +54,12 @@ theorem driverHypTC_relW_of {sem : Sem} (hsub : InSubsetTC p f) (hT : TypedRules
       lowerRulesCorrectFT_program nonEUnmatchableT_program hT.callsT hT.indT
       memRulesCorrectRTI_program memRulesCorrectRT_program hRef (mrStable_relW Γ f c) hcalls
       hicalls hmem hFP (outArgsOk_relW Γ f c)
-      (callsStack_mono (callsStackTC_of_check hlow) houtB) (memRelOk_relW Γ f c) hctxT hstT
+      (callsStack_mono (callsStackTC_of_check hlow) houtB) (memRelOk_relW Γ f c) hctxT hscT hstT
     terms := termCallsT_of_rules hT.term hT.termUn hT.branch hT.branchEx hRef
       (mrStable_relW Γ f c) hctxT
     ext := fun B hB st hst fn args hi e he => hsub.externCalls B hB st hst fn args hi e he
     indSig := indSig_of_subsetTC hsub
-    subETC := hsub.subsetETC
+    subETC := Compile.functionETCF_of_functionETC hsub.subsetETC
     entryLocs := entryOkTC_of_check hlow
     brIdx := hbr
     noTail := noTail_of_subsetTC hsub

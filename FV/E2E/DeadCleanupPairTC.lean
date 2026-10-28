@@ -166,7 +166,7 @@ theorem instCalls_pair_valueTC (hc : CompiledCleanupTC f k vc vcp rf af fa fb)
     (hslot : af.slotBase = slotOff)
     (hNI : XNI F syms (f.externs.map (·.2)) (indSigs f) c
       (CallLg env (f.externs.map (·.2)) (indSigs f)) X) (hTls : XTls F X)
-    {ctx : Ctx} (hctx : CtxT f ctx) (hst : StoresTyped ctx) :
+    {ctx : Ctx} (hctx : CtxT f ctx) (hsc : InstScopeT ctx) (hst : StoresTyped ctx) :
     InstCallsT f ctx (pairSem (valueSem F ⟨fa.k, af.slotBase⟩ X))
       (MRP ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c D) env p := by
   intro ii info inst st rss st' tr hmem hi hcl hsig hemp hvb hrun
@@ -183,7 +183,7 @@ theorem instCalls_pair_valueTC (hc : CompiledCleanupTC f k vc vcp rf af fa fb)
     (indCallsRefineP_valueSemGF hXI hsym (fun _ _ _ h => h.1.1) (fun _ _ _ h => h.2.1))
     (memRefinesR_valueSemGF (ctx := ⟨fa.k, af.slotBase⟩) hslot hsym)
     (memRefinesFP_valueSemGF (ctx := ⟨fa.k, af.slotBase⟩) hslot)
-    hctx (outArgsOk_relW Γ f c) (externsIn_self f) (memRelOk_relW Γ f c) hi hcl hsig
+    hctx hsc (outArgsOk_relW Γ f c) (externsIn_self f) (memRelOk_relW Γ f c) hi hcl hsig
     (hst ii info inst hi hcl)
     (fun fn args e hc' he => hstk B hB stm hstm fn args e (hst' ▸ hc') he) hvb hrun
   cases hov
@@ -259,7 +259,9 @@ theorem vcode_ni_valueTC (hsub : InSubsetTC p f) (hc : CompiledCleanupTC f k vc 
   let Γ : Rel := ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩
   have H := driverHypTC_relW_value (c := c) hsub hc hT hX hXI hsym hslot hshape hcert hbr
   have hctxT : CtxT f ctx :=
-    ctxT_of_functionETC hsub.subsetETC hshape.hctx.choose_spec hshape.ctxInvT hshape.scope
+    ctxT_of_functionETCF (Compile.functionETCF_of_functionETC hsub.subsetETC)
+      hshape.hctx.choose_spec hshape.ctxInvT hshape.scope
+  have hscT : InstScopeT ctx := instScopeT_of_lowerCheckTC hc.lowerOk hshape.hctx.choose_spec
   have hstT : StoresTyped ctx := storesTyped_of_buildCtx hsub.storeTyped hshape.hctx.choose_spec
   have hmem : MemRefines F slotOff syms (valueSem F ⟨fa.k, af.slotBase⟩ X) :=
     memRefines_valueSem _ _ X hslot hsym
@@ -269,7 +271,7 @@ theorem vcode_ni_valueTC (hsub : InSubsetTC p f) (hc : CompiledCleanupTC f k vc 
     shape := hshape
     cert := hcert
     dsem := driverSemG_pair_value F ⟨fa.k, af.slotBase⟩ X
-    insts := instCalls_pair_valueTC hc hT hX hXI hsym hslot hNI hTls hctxT hstT
+    insts := instCalls_pair_valueTC hc hT hX hXI hsym hslot hNI hTls hctxT hscT hstT
     terms := termCalls_pair_valueT Γ rfl hTls ⟨fa.k, af.slotBase⟩ hT hctxT
     ext := H.ext
     indSig := H.indSig
