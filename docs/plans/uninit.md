@@ -735,6 +735,45 @@ of the same configuration, so the segment's call-state count carries over). Next
 `RegLevelCorrectPRS.lean`'s with `csemVI` → the counted `valueSemV`, `realizes_allC_sp` →
 `realizes_value_allC_sp`; the `rets`/halt cases as in `DeadCleanupRegLevel.lean`).
 
+**Step 3i, as built (UninitZ10b, branch `agent/uninit-z10b-x30`): the `x30` footprint and the
+single steps of the lock-step (§5.8 (1)).**
+- `FV/E2E/ArmGprFoot.lean`: `GprFoot.setGpr`, `GprFree k f` (`f` commutes with setting `x_k`),
+  one lemma per instruction class of the Arm model (load/store via `reg_imm_common`,
+  `reg_pair_common`), `ArmInst.gprs` (the GPR fields a class names; SIMD&FP data registers
+  excluded, `x30` added for `bl`/`blr`), **`gprFree_exec_inst`** (`k ∉ ai.gprs → k ≠ 31 →
+  GprFree k (exec_inst ai)`): every instruction reads and writes only the GPRs it names.
+- `FV/E2E/LinkArmStepX30.lean`: `StEqOutX Z` (all registers but `x30`, program, memory outside
+  `Z`), `stEqOut_setGpr30`, `stEqOutX_exec_inst`, `stEqOutX_stepi` (`DecX30Free`: the decoded
+  instruction names no `x30`), **`stEqOutX_armStepX`** (unhooked line), `stEqOutX_armStepX_call`.
+- `FV/E2E/LinkArmStepFrameRec.lean`: the lines that name `x30`: `stEqOutX_stpFR` (the prologue's
+  `stp x29, x30, [sp, #-16]!` adds the record's high 8 bytes `HiBytes A 8 16` to `Z`),
+  `stEqOutX_ldpFR` (the epilogue's `ldp` keeps `StEqOutX Z` when the saved `x29` is outside `Z`),
+  `stEqOutX_ret` (registers but `x30`/pc: `RetAgree`'s register part).
+- Witnesses `ArmGprFootWitness.lean` (`add_x30Free`, `str_d30_x30Free`, `add_writes_x0`, …),
+  `LinkArmStepX30Witness.lean` (`add_lockstep`, `stp_lockstep`, `ldp_lockstep`, `ret_lockstep_x0`,
+  and `prologue_stp`/`epilogue_ldp`/`ret_insn`: the backend's own frame-record and `ret` encode
+  to exactly these instructions).
+
+**Finding (base hooks, decided conservatively).** `HookDet` (step 2o) assumes all registers equal
+and differences only strictly below `sp`. In the lock-step the two runs differ in `x30` at a
+call until the `bl` overwrites it, and in the caller's saved LR bytes (above the callee's `sp`)
+for the whole activation. Program callees are covered by the induction (`EntryAgree` excludes
+`x30`; they read above their `sp` only stack arguments). A base extern, an arbitrary function,
+could read the caller's frame record (an unwinder taking a backtrace does). Decision: the
+multi-step lock-step takes a new base-hook premise `HookDetX` beside `OkD.baseDet` (from
+`StEqOutX Z` states, with `Z` below `sp` or within the frame records' LR bytes, a base call or TLS
+hook gives `StEqOutX Z` states: the extern does not observe return addresses), `NeedNI`-guarded
+like `baseNI`; nothing in the existing statements changes.
+
+**Remaining for `ThmPDER`'s determinism clause (item 3).** (i) A compiled-code check `DecX30Free`
+on every body line but `bl`/`blr`/`ret`/the frame-record pair (decidable on `fb`, Cranelift never
+allocates `x30`) with its soundness lemma; (ii) `ReadsAvoid Z (stepiEvs u₀)` along the canonical
+run from `RL.GoodX.reads` (`Z` = the NI set `D` and the activation's LR bytes; no body line but the
+epilogue `ldp` reads the record); (iii) the run induction `lockstep_runX` (`StEqOutX` at every
+index up to the return, nested program calls by `ih : ThmPDER κ (M-1)`, base hooks by
+`HookDetX`), then `ProphStep` ⇒ `prophOk_congr` (step 2m) and `RetAgree` from `stEqOutX_ret`;
+(iv) `LinkSys.thmPDER_det_of`.
+
 ## 6. Heap (separate gap, SEM2)
 
 `BaseOk.baseKeepsAllocs`/`baseNoAlloc` require base externs to allocate nothing whenever a program
