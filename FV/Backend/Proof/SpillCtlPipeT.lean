@@ -135,16 +135,17 @@ theorem entryParams_factsT {f : Clif.Function} {ctx : Ctx} {ranges : Array (Nat 
       show tyClass t = (CTy.ofClif t).valClass by cases t <;> rfl]
     simp [valClassOf, hty]
 
-/-- **`CtlSpillHyp` from the typed ISLE inversion**, for typed-scope input whose signatures pass
-the end-to-end subset's ABI check and whose entry block is typed like the signature. -/
-theorem ctlSpillHypT_of (hI : IselCtlHypT) {f : Clif.Function} {vc : VCode}
-    (hdom : dominatedB f = true) (hs : LowerScopeT f) (hst : Compile.storeTypedB f = true)
-    (hsel : Compile.selectTypedB f = true) (ha : AbiSigsOk f) (hec : EntryClassOk f)
+/-- **`CtlSpillHyp` from the typed ISLE inversion of one function** (`IselCtlOn`), for input
+with integer externs whose signatures pass the end-to-end subset's ABI check and whose entry
+block is typed like the signature: `ctlSpillHypT_of`'s proof, for the typed and float scopes. -/
+theorem ctlSpillHypG_of {f : Clif.Function} {vc : VCode}
+    (hx : f.externs.all (Compile.sigE ·.2.sig) = true) (hIf : IselCtlOn f)
+    (hdom : dominatedB f = true) (ha : AbiSigsOk f) (hec : EntryClassOk f)
     (hl : lowerFunction f = .ok vc) :
     ∀ vb ∈ vc.blocks.toList, ∀ i ∈ vb.insts.toList, i.isCtl = true → SpillInstOk i := by
   have hd := dominated_of hdom
-  obtain ⟨ctx, ranges, st0, bl, hb, hlb, hvb, -, -⟩ := lowerFunction_runT hs.externsE hl
-  obtain ⟨hS, hT, hY⟩ := hI f ctx ranges st0 hdom hs hst hsel ha hb
+  obtain ⟨ctx, ranges, st0, bl, hb, hlb, hvb, -, -⟩ := lowerFunction_runT hx hl
+  obtain ⟨hS, hT, hY⟩ := hIf ctx ranges st0 hb
   have hcf := ctxFacts_of hb
   obtain ⟨-, hstart⟩ := lowBlocks_start hlb
   obtain ⟨-, hspec⟩ := lowBlocks_spec hlb
@@ -257,5 +258,14 @@ theorem ctlSpillHypT_of (hI : IselCtlHypT) {f : Clif.Function} {vc : VCode}
     simp at hi
     subst hi
     exact spillInstOk_jump tl
+
+/-- **`CtlSpillHyp` from the typed ISLE inversion**, for typed-scope input whose signatures pass
+the end-to-end subset's ABI check and whose entry block is typed like the signature. -/
+theorem ctlSpillHypT_of (hI : IselCtlHypT) {f : Clif.Function} {vc : VCode}
+    (hdom : dominatedB f = true) (hs : LowerScopeT f) (hst : Compile.storeTypedB f = true)
+    (hsel : Compile.selectTypedB f = true) (ha : AbiSigsOk f) (hec : EntryClassOk f)
+    (hl : lowerFunction f = .ok vc) :
+    ∀ vb ∈ vc.blocks.toList, ∀ i ∈ vb.insts.toList, i.isCtl = true → SpillInstOk i :=
+  ctlSpillHypG_of hs.externsE (hI.on hdom hs hst hsel ha) hdom ha hec hl
 
 end Backend.Proof.Spill

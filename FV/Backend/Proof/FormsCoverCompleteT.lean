@@ -126,14 +126,16 @@ def TryCovT (f : Clif.Function) (ctx : Ctx) : Prop :=
     ctx.insts[ti]? = some ⟨.op .unit, [], [], none⟩ → tryCallData f B.term = .ok data →
     tryCallF ctx ti data trs targets s = .ok (out, s', tr) → Cov.CovSince s s'
 
-/-- **Form coverage of the compiled function (typed).** Given the ISLE runs' coverage, every
-instruction of `prepare (lowerFunction f)` is a control form or `FormOk`. -/
-theorem formsCovered_of_runsT {f : Clif.Function} {vc vcp : VCode} (hd : Dominated f)
-    (hs : LowerScopeT f) (hl : lowerFunction f = .ok vc) (hp : prepare vc = .ok vcp)
+/-- **Form coverage of the compiled function (typed)**, for input with integer externs whose
+VCode is in `prepare`'s domain. Given the ISLE runs' coverage, every instruction of
+`prepare (lowerFunction f)` is a control form or `FormOk`. -/
+theorem formsCovered_of_runsG {f : Clif.Function} {vc vcp : VCode}
+    (hx : f.externs.all (Compile.sigE ·.2.sig) = true) (hpd : Prep.PrepDomain vc)
+    (hl : lowerFunction f = .ok vc) (hp : prepare vc = .ok vcp)
     (hrun : ∀ ctx ranges st0, buildCtx f = .ok (ctx, ranges, st0) →
       StmtCovT ctx ∧ TermCovT f ctx ∧ TryCovT f ctx)
     (cx : FnCtx) : FormsCovered cx vcp := by
-  obtain ⟨ctx, ranges, st0, bl, hb, hlb, hvb, -, -⟩ := lowerFunction_runT hs.externsE hl
+  obtain ⟨ctx, ranges, st0, bl, hb, hlb, hvb, -, -⟩ := lowerFunction_runT hx hl
   obtain ⟨hS, hT, hY⟩ := hrun ctx ranges st0 hb
   have hcf := ctxFacts_of hb
   obtain ⟨-, hstart⟩ := lowBlocks_start hlb
@@ -185,11 +187,20 @@ theorem formsCovered_of_runsT {f : Clif.Function} {vc vcp : VCode} (hd : Dominat
           rw [hms] at hm
           exact hcov m (by simpa using hm)
       · rfl)
-  apply formsCovered_of_prepare hp (Spill.prepDomain_ofT hd hs hl)
+  apply formsCovered_of_prepare hp hpd
   rw [hvb]
   intro vb hvb' i hi
   have := hall vb hvb' i hi
   simpa [Cov.Covered, Bool.or_eq_true] using this
+
+/-- **Form coverage of the compiled function (typed).** Given the ISLE runs' coverage, every
+instruction of `prepare (lowerFunction f)` is a control form or `FormOk`. -/
+theorem formsCovered_of_runsT {f : Clif.Function} {vc vcp : VCode} (hd : Dominated f)
+    (hs : LowerScopeT f) (hl : lowerFunction f = .ok vc) (hp : prepare vc = .ok vcp)
+    (hrun : ∀ ctx ranges st0, buildCtx f = .ok (ctx, ranges, st0) →
+      StmtCovT ctx ∧ TermCovT f ctx ∧ TryCovT f ctx)
+    (cx : FnCtx) : FormsCovered cx vcp :=
+  formsCovered_of_runsG hs.externsE (Spill.prepDomain_ofT hd hs hl) hl hp hrun cx
 
 /-- **Completeness of `formsCoveredB` on the typed scope**: on input in `Dominated` and
 `LowerScopeT` with class-checked float `store`s and `select`s, `prepare (lowerFunction f)` is

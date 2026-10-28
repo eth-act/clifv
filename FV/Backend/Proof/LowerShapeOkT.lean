@@ -1,6 +1,7 @@
 import FV.Backend.Proof.LowerLoopT
 import FV.Backend.Proof.LowerShapeOk
 import FV.Backend.Proof.IselTermFactsTy
+import FV.Backend.Proof.LowerLoopCtxTF
 
 /-!
 # Completeness of the typed shape check (S11e5 Stage C, slice 3)
@@ -59,6 +60,18 @@ theorem termIntPos_of (hs : LowerScopeT f) {ctx : Ctx} {ranges : Array (Nat × N
   have hT := hs.subsetT
   simp only [Compile.functionET, Compile.opsTypedT, Bool.and_eq_true, List.all_eq_true] at hT
   have := (hT.1.2 B hB).2 x hx
+  simp [hfd] at this
+
+/-- The integer operands of a float-scope function's terminators are in integer positions of
+`buildCtx`'s context (`Compile.opsTypedTF`). -/
+theorem termIntPos_ofF (hs : LowerScopeTF f) {ctx : Ctx} {ranges : Array (Nat × Nat)}
+    {st0 : LState} (hb : buildCtx f = .ok (ctx, ranges, st0)) {B : Clif.Block}
+    (hB : B ∈ f.blocks) : TermIntPos ctx B.term := by
+  intro x hx t ht
+  refine (ctxSpec_of hb).eCTys_of_not_floatDef ht fun hfd => ?_
+  have hO := (functionETF_parts hs.subsetTF).2.2.2.1
+  simp only [Compile.opsTypedTF, Bool.and_eq_true, List.all_eq_true] at hO
+  have := (hO B hB).2 x hx
   simp [hfd] at this
 
 /-! ## Renaming the typed recorded code -/

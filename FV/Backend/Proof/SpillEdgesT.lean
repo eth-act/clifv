@@ -381,18 +381,14 @@ theorem lowOk_ofT {f : Clif.Function} {vc : VCode} (hd : Dominated f) (hs : Lowe
       rw [backE e tl hins] at hback
       cases hback
 
-/-- **`lowerFunction`'s VCode is in `prepare`'s domain** (`prepDomain_of_lower`, typed scope). -/
-theorem prepDomain_ofT {f : Clif.Function} {vc : VCode} (hd : Dominated f) (hs : LowerScopeT f)
+/-- **`lowerFunction`'s VCode is in `prepare`'s domain** (`prepDomain_of_lower`, float scope):
+the `br_table` indices are typed by `brIdxOk` (`LowerScopeTF.ctxFacts`). -/
+theorem prepDomain_ofTF {f : Clif.Function} {vc : VCode} (hs : LowerScopeTF f)
     (h : lowerFunction f = .ok vc) : Prep.PrepDomain vc := by
   obtain ⟨ctx, st0, bl, RR, H⟩ := lowT_of hs.externsE h
-  have hbt : ∀ B ∈ f.blocks, BrIdxTyped ctx B.term := by
-    obtain ⟨ctx', st0', R', gn', bl', A', hshape, -, hbt'⟩ :=
-      loweringT_of_check (lowerCheckT_complete hd hs h)
-    obtain ⟨ranges', hb'⟩ := hshape.hctx
-    obtain ⟨ranges, hb⟩ := H.hb
-    rw [hb] at hb'
-    cases hb'
-    exact hbt'
+  obtain ⟨ranges, hb⟩ := H.hb
+  have hbt : ∀ B ∈ f.blocks, BrIdxTyped ctx B.term :=
+    brIdx_of_ok (hs.ctxFacts ctx ranges st0 hb).1
   have hn : 0 < f.blocks.length := List.length_pos_iff.mpr hs.nonempty
   obtain ⟨B0, hB0⟩ : ∃ B0, f.blocks[0]? = some B0 := ⟨_, List.getElem?_eq_getElem hn⟩
   refine ⟨(Array.getElem?_eq_some_iff.mp (H.raw_at hB0)).1, ?_, fun b vb t hvb hback h2 => ?_⟩
@@ -409,7 +405,8 @@ theorem prepDomain_ofT {f : Clif.Function} {vc : VCode} (hd : Dominated f) (hs :
     rw [this]; exact List.nodup_range
   · refine Classical.byContradiction fun hba => ?_
     rcases H.cases hvb with ⟨B, L, -, hB, hL, rfl⟩ | ⟨bi, B, L, e, hB, hL, he, -, -, rfl⟩
-    · obtain ⟨t', hb', hjump, -, -⟩ := H.raw_back hs hbt hB hL
+    · obtain ⟨t', hb', hjump, -, -⟩ := H.raw_backG (ctxInvT_ofF hs hb)
+        (fun B' hB' => termIntPos_ofF hs hb hB') hbt hB hL
       obtain ⟨bc, hj⟩ : ∃ bc, B.term = .jump bc := by
         refine Classical.byContradiction fun hj => hba ?_
         simp only [fixBlock, rawBlockT]
@@ -420,10 +417,15 @@ theorem prepDomain_ofT {f : Clif.Function} {vc : VCode} (hd : Dominated f) (hs :
       rw [hb'] at hback
       cases hback
       simp [MInst.targets] at h2
-    · obtain ⟨tl, TB, hins, -⟩ := H.edge_facts hs hB hL he
+    · obtain ⟨tl, TB, hins, -⟩ := H.edge_factsG hs.noEntryPred hB hL he
       simp [fixBlock, hins] at hback
       subst hback
       simp [MInst.targets, MInst.mapRegs] at h2
+
+/-- **`lowerFunction`'s VCode is in `prepare`'s domain** (`prepDomain_of_lower`, typed scope). -/
+theorem prepDomain_ofT {f : Clif.Function} {vc : VCode} (_hd : Dominated f) (hs : LowerScopeT f)
+    (h : lowerFunction f = .ok vc) : Prep.PrepDomain vc :=
+  prepDomain_ofTF hs.toTF h
 
 /-- **The CFG facts of the typed pipeline's output** (`edgesHyp_of` over `LowerScopeT`, with the
 input check `Compile.tryArgClassOk`). -/
