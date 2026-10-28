@@ -1254,6 +1254,49 @@ with `callsBefore n = nc` for the VCode return `(w, nc)`, and `iselSim` with `nc
 `compileExe_correct_init` (CompiledCleanup, `BaseRetOk`/`RetCount`) and the fv-demo witness.
 `DetPRB`/`DetTabPRB` stay premises until `thmPDERX_det_of` lands (UninitZ17b).
 
+**`CountPRB` and the top-level statement, as built (UninitZ20, 2026-10-28).** New leaf modules;
+no existing statement changed; no generated-code change.
+- (a) machine side, `FV/E2E/RegLevelCorrectPRSN.lean`: `forward_lastC` (`forward`/`forward_last`
+  on the counted machine `stepC`, read back on the plain one, with *count = counter*);
+  `regLevelCorrect_world_atCSN`, `_worldCSN`, **`_worldPRSN`** and the value-semantics copies
+  `_world_value_atCSN`, `_value_worldCSN`, **`_value_worldPRSN`**: the return index `n` also has
+  `callsBefore (ArmStepX (XI.at 0) H fa) fa base s n = nc`, `nc` the VCode return's counter (the
+  epilogue makes no call, `ret_machineN`).
+- (b) CLIF side, `FV/E2E/IselSimIN.lean`: `RunOkAbiN` (`RunOkAbi` whose return has a state `u` of
+  the CLIF run reached after `w.2` calls whose step returns), `sim_runGN`, **`iselSim_relWIN`**,
+  **`iselSim_relWI_cleanupN`**.
+- Pipeline, `FV/E2E/BackendWorldPRGYN.lean`: `backend_correct_worldPRIN`, `_cleanupPRIN`,
+  `_pipelinePRIN`, `_{cleanup,pipeline}PRICN`, **`_{cleanup,pipeline}PRGYN`**: the return also has
+  `∃ u, ReachN env p cs u (callsBefore … n) ∧ Clif.step env p u = .done vals cm`.
+- `FV/E2E/LinkArmCountPRBSucc.lean`: `nextAdv_leave_of_done` (`returned_nextAdv_leave` from a
+  given returning state), `retAt_of_actRet`, `actRet_unique` (two returns with the trace are one
+  step, `noRetAt_of` both ways), **`countPRB_succ`** (`CountPRB κ (M' + 1)` from the premises of
+  `stage2PRBZS_of`: the pipeline at the return with stage 2 by `stage2PRBZS_of`, the count
+  invariant of `stage2PRBZS_of` up to the return, each machine call before it realised by the
+  prefix theorem at the last CLIF call), **`thmPRBRL_allC`** (`thmPRBRL_all` without `CountPRB`).
+- Finding [#700](https://github.com/eth-act/clifv/issues/700): `TableOf M g s ini` presupposes
+  that every program callee the machine calls before its return returns (`TabUpTo`'s call clause
+  `∃ N', RetOf …` at every pre-return prefix; a non-returning callee is `junkAt`, so `TableOf` is
+  false for every `ini`). Inside the induction that is harmless (`tableOf_callee`); at a top-level
+  entry it cannot be discharged without the theorem itself. Proposed fix (new names): a
+  prefix-closed `TabUpToE`, `TableOfE` over the error-free prefixes, `ThmPRBRLE`, the machine's own
+  table `iniOf`.
+- `FV/E2E/LinkArmProgramInit.lean`: **`backend_correct_program_core_init`**,
+  **`backend_correct_program_init`**: the linked program under the slot-byte oracle at a top-level
+  entry (`PlaceAtB … ini`, `TableOf M f s ini`): a returning (whole-program) CLIF run is realised
+  by the linked machine (`ArmRefines`), from `thmPRBRL_allC` with the entry's own prophecies and
+  `RaOk` from `raOutside`; premises `BaseRetOk`, `RetCount`, `DetPRB`, `DetTabPRB`, `TableOf`.
+- Witnesses `FV/E2E/CountPRBNWitness.lean`: `worldPRSN_const`, `a2_iselSimIN`, `a2_worldPRIN`,
+  `prgyN_applies`, `prgyN_pipeline_applies`, `countPRB_one_Lsl`, `countPRB_succ_Lsl`,
+  `thmPRBRL_allC_Lsl`, `actRet_unique_Lsl`, `backend_correct_program_core_init_Lsl`,
+  `backend_correct_program_init_L0`.
+
+Next: (1) #700's fix, then `TableOfE M f s (iniOf …)` at the top-level entry; (2) the executable
+level: `exec_of_model` needs the model run's `RunOk`, which `binary_correct_exec_proven` gets from
+the `Good`-trace chain of the `init = none` statement (`binary_correct_of_checksX`); the oracle
+version needs that chain (or `RunOk` from `thmPRBRL`'s trace) under `PlaceAtB`, then
+`ClifRunB`/`premisesB`, `binary_correct_init`, `compileExe_correct_init`, the fv-demo witness.
+
 **Step 3h, as built (UninitZ10b): the call-count premises are theorems.** `InstCallsOne f` and
 `TryCallsOne f` hold for every `f` (`E2E.instCallsOne_all`, `E2E.tryCallsOne_all`,
 `FV/E2E/IselCallsOneAll.lean`), from `FV/Backend/Proof/IselCallsOne.lean`:
