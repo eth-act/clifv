@@ -217,7 +217,7 @@ structure BinGen where
   dataLines : List String
 
 def usage : String :=
-  "usage: link-check <dir> [--lean FILE.lean --module NAME] [--entries a,b,…] [--prune] [--profile] [--dead-cleanup|--no-dead-cleanup]"
+  "usage: link-check <dir> [--lean FILE.lean --module NAME] [--entries a,b,…] [--prune] [--profile] [--dead-cleanup|--no-dead-cleanup] [--input-only FILE.lean --module NAME]"
 
 structure Opts where
   dir : String
@@ -227,6 +227,9 @@ structure Opts where
   prune : Bool := false
   profile : Bool := false
   deadCleanup : Bool := true
+  /-- `--input-only FILE`: write only the crate's `LinkInput` (module `Crates.NAME`), before any
+  check (`crate-proofs/Crates/InScopeInputs`, from a `lean-backend --pipeline-t` build). -/
+  inputOnly : Option String := none
 
 def parseOpts : List String → Option Opts → Option Opts
   | [], o => o
@@ -237,6 +240,7 @@ def parseOpts : List String → Option Opts → Option Opts
   | "--prune" :: rest, some o => parseOpts rest (some { o with prune := true })
   | "--dead-cleanup" :: rest, some o => parseOpts rest (some { o with deadCleanup := true })
   | "--no-dead-cleanup" :: rest, some o => parseOpts rest (some { o with deadCleanup := false })
+  | "--input-only" :: f :: rest, some o => parseOpts rest (some { o with inputOnly := some f })
   | "--profile" :: rest, some o => parseOpts rest (some { o with profile := true })
   | d :: rest, none => parseOpts rest (some { dir := d })
   | _, _ => none
