@@ -12,8 +12,8 @@ namespace Backend.Proof
 
 open Backend E2E
 
-/-- **`ElfTlsGetAddr` on the machine, at a witness** (`realizes_tlsNR`). -/
-theorem realizes_tlsNA {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} (hT : TlsOk R.F R.K R.X R.H)
+/-- **`realizes_tlsNA` with the segment's lines** (`RL.FRFree`). -/
+theorem realizes_tlsNAF {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} (hT : TlsOk R.F R.K R.X R.H)
     {s : Arm.ArmState}
     {b k : Nat} {allocs : Array Loc} {its : List RItem} {m : Loc → CV} {w : Arm.ArmState}
     {j : Nat} {ps1 : PState} {T : List Line}
@@ -29,7 +29,7 @@ theorem realizes_tlsNA {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} (hT : TlsOk
     (hlen : outs.length = ((ops.zip allocs).toList.filter (·.1.isDef)).length)
     (hk : k + 1 < vb.insts.size) :
     ∃ n c'', MStep R.vc R.sem ckeep R.rf (.run ⟨b, .op k allocs :: its, m, w⟩) c'' ∧
-      R.SegNA Y s j ps1 T (.run ⟨b, .op k allocs :: its, m, w⟩) c'' n := by
+      R.SegNA Y s j ps1 T (.run ⟨b, .op k allocs :: its, m, w⟩) c'' n ∧ R.FRFree s n := by
   have hq' : Q R s (.run ⟨b, .op k allocs :: its, m, w⟩) := hq.q
   have hW' : Arm.r .ERR w' = .None ∧ w'.program = w.program := by
     have herr : Arm.r .ERR w = .None := by
@@ -43,9 +43,11 @@ theorem realizes_tlsNA {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} (hT : TlsOk
   refine (fun H => ?_) (realizes_op_coreXSW hR hq hvb hi hops hsz hsem hlen hk
     (exec := fun _ => tlsExec R.H)
     (fun _ => ((RL.callAt hR (os_tls hT n d t) (q_stRel hq').sp).toI _).v R.gv)
-    (Pre := fun _ => True) trivial (SegJ := R.StraightSeg Y) (fun regs i' _ _ hex _ => ?_) hW')
-  · obtain ⟨n, c'', ls1, hms, hqn, ⟨hg, hin, hn0⟩, hWn, hS, hT', hpl, hpn⟩ := H
-    exact ⟨n, c'', hms, hqn, hg, RL.segLen_straight_of hR hS hWn hT' hpl hpn hin hn0⟩
+    (Pre := fun _ => True) trivial (SegJ := fun ls1 j s n => R.StraightSeg Y ls1 j s n ∧
+      ∀ x t, Line.ins x t ∈ ls1 → x.frLine = false) (fun regs i' _ _ hex _ => ?_) hW')
+  · obtain ⟨n, c'', ls1, hms, hqn, ⟨⟨hg, hin, hn0⟩, hfl⟩, hWn, hS, hT', hpl, hpn⟩ := H
+    exact ⟨n, c'', hms, ⟨hqn, hg, RL.segLen_straight_of hR hS hWn hT' hpl hpn hin hn0⟩,
+      RL.frFree_straight hR hT' hpl hfl hq.pc hin hn0⟩
   obtain ⟨_, s0, _, hex⟩ := hex
   cases i' with
   | elfTlsGetAddr n' rd tmp =>
@@ -62,7 +64,12 @@ theorem realizes_tlsNA {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} (hT : TlsOk
       intro ps
       have : (tmp == Reg.x 0) = false := by simpa using htmp
       simp [MInst.lines, this, pure, Except.pure]
-    refine ⟨_, hl, ?_, fun _ h => MInst.noConfusion h, fun _ h => MInst.noConfusion h, ?_⟩
+    refine ⟨_, hl, ?_, fun _ h => MInst.noConfusion h, fun _ h => MInst.noConfusion h,
+      RunsAsSJ.and_lines (SegJ := R.StraightSeg Y) ?_ (P := fun ls1 =>
+        ∀ x t, Line.ins x t ∈ ls1 → x.frLine = false) (by
+        intro x t hx
+        simp only [List.mem_cons, List.not_mem_nil, or_false, Line.ins.injEq] at hx
+        rcases hx with ⟨rfl, -⟩ | ⟨rfl, -⟩ | ⟨rfl, -⟩ | ⟨rfl, -⟩ | ⟨rfl, -⟩ | ⟨rfl, -⟩ <;> rfl)⟩
     · intro ln hln
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hln
       rcases hln with rfl | rfl | rfl | rfl | rfl | rfl <;> simp [Line.plain, Insn.condTarget?]
@@ -124,5 +131,26 @@ theorem realizes_tlsNA {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} (hT : TlsOk
       · obtain rfl : i = 1 := by omega
         exact ⟨j + 1, _, _, by omega, by simp, hj1, by rw [e1]; exact hpc1⟩
   | _ => simp [tlsExec] at hex
+
+/-- **`ElfTlsGetAddr` on the machine, at a witness** (`realizes_tlsNR`). -/
+theorem realizes_tlsNA {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} (hT : TlsOk R.F R.K R.X R.H)
+    {s : Arm.ArmState}
+    {b k : Nat} {allocs : Array Loc} {its : List RItem} {m : Loc → CV} {w : Arm.ArmState}
+    {j : Nat} {ps1 : PState} {T : List Line}
+    (hq : QW R s j ps1 T (.run ⟨b, .op k allocs :: its, m, w⟩))
+    {vb : VBlock} {n : String} {d t : Nat} {ops : Array Operand} {outs : List CV}
+    {w' : Arm.ArmState}
+    (hvb : R.vc.blocks[b]? = some vb)
+    (hi : vb.insts[k]? = some (.elfTlsGetAddr n (.vreg d .int) (.vreg t .int)))
+    (hops : (MInst.elfTlsGetAddr n (.vreg d .int) (.vreg t .int)).operands = .ok ops)
+    (hsz : allocs.size = ops.size)
+    (hsem : R.sem (.elfTlsGetAddr n (.vreg d .int) (.vreg t .int))
+      (((ops.zip allocs).toList.filter (·.1.isUse)).map (m ·.2)) w = some (outs, w', .next))
+    (hlen : outs.length = ((ops.zip allocs).toList.filter (·.1.isDef)).length)
+    (hk : k + 1 < vb.insts.size) :
+    ∃ n c'', MStep R.vc R.sem ckeep R.rf (.run ⟨b, .op k allocs :: its, m, w⟩) c'' ∧
+      R.SegNA Y s j ps1 T (.run ⟨b, .op k allocs :: its, m, w⟩) c'' n :=
+  let ⟨n, c'', h1, h2, _⟩ := realizes_tlsNAF (Y := Y) hR hT hq hvb hi hops hsz hsem hlen hk
+  ⟨n, c'', h1, h2⟩
 
 end Backend.Proof

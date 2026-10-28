@@ -1,4 +1,5 @@
 import FV.E2E.RegLevelTwoRunS
+import FV.E2E.RegLevelCorrectCYSF
 
 /-!
 # Two activations in lock-step, the lock step told where it is (SEM1 #537)
@@ -8,7 +9,8 @@ interface: the lock-step obligation `hstep` also receives, for both runs, that t
 `i`-th state of the segment realising the step of the configuration, strictly before its end
 (`RL.InSeg`). The machine lock needs it: a lock that ignores `x30` holds only on states that are no
 `ret` and no epilogue frame-record reload, and those lines occur only at the end of an activation,
-outside the segments (`docs/plans/uninit.md` §5.9, machine lock). The old theorems pass this
+outside the segments (`docs/plans/uninit.md` §5.9, machine lock): `RL.InSeg` carries that the
+segment runs none of them (`RL.FRFree`, from `realizes_allCWSF`). The old theorems pass this
 information away (`RL.seg_lock` has it); same proofs otherwise.
 
 * `RL.InSeg`;
@@ -20,12 +22,13 @@ namespace Backend.Proof
 open Backend E2E
 
 /-- **`u` is the `i`-th state of the segment of `R`'s run from a state at `c`** that realises the
-step of `c` (the guarded semantics at `Ok`), strictly before the segment's end. -/
+step of `c` (the guarded semantics at `Ok`), strictly before the segment's end; the segment runs
+no frame-record line and no `ret` (`RL.FRFree`). -/
 def RL.InSeg (R : RL) (Ok : Arm.ArmState → (BitVec 64 → Prop) → Prop)
     (c : MConf CV Arm.ArmState) (i : Nat) (u : Arm.ArmState) : Prop :=
   ∃ (s : Arm.ArmState) (j : Nat) (ps1 : PState) (T : List Line) (d : MConf CV Arm.ArmState)
     (n : Nat), QW R s j ps1 T c ∧ MStep R.vc (R.semGS Ok) ckeep R.rf c d ∧
-    R.SegLenA j ps1 T c d s n ∧ i < n ∧ u = iterN R.step i s
+    R.SegLenA j ps1 T c d s n ∧ i < n ∧ u = iterN R.step i s ∧ R.FRFree s n
 
 /-- **`RL.jointSegS` with the segment positions handed to the lock step.** -/
 theorem RL.jointSegT {R R' : RL} (hR : R.Wf) (hR' : R'.Wf) (hsc : R.SameCode R')
@@ -64,12 +67,14 @@ theorem RL.jointSegT {R R' : RL} (hR : R.Wf) (hR' : R'.Wf) (hsc : R.SameCode R')
       countIn R'.CallSt R'.step s' n = opCalls R'.vc c' ∧
       R.SegLenA j ps1 T c d s n ∧ R'.SegLenA j ps1 T c' d' s' n ∧
       ∀ i ≤ n, Lk i (iterN R.step i s) (iterN R'.step i s') := by
-  obtain ⟨n, d, hm, -, hAd, hqd, ht, hcnt, hs⟩ := realizes_allCWS hR Ok hC hT hTls hcov hq hA hP he
-  obtain ⟨n', d', hm', -, hAd', hqd', ht', hcnt', hs'⟩ :=
-    realizes_allCWS hR' Ok' hC' hT' hTls' hcov' hq' hA' hP' he'
+  obtain ⟨n, d, hm, -, hAd, hqd, ht, hcnt, hs, hf⟩ :=
+    realizes_allCWSF hR Ok hC hT hTls hcov hq hA hP he
+  obtain ⟨n', d', hm', -, hAd', hqd', ht', hcnt', hs', hf'⟩ :=
+    realizes_allCWSF hR' Ok' hC' hT' hTls' hcov' hq' hA' hP' he'
   have hd := hsh d d' hm hm'
   obtain ⟨rfl, hL⟩ := RL.seg_lock hsc hc hd hs hs' Lk hLpc h0 fun i hi hi' hl =>
-    hstep i _ _ ⟨s, j, ps1, T, d, n, hq, hm, hs, hi, rfl⟩ ⟨s', j, ps1, T, d', n', hq', hm', hs', hi', rfl⟩
+    hstep i _ _ ⟨s, j, ps1, T, d, n, hq, hm, hs, hi, rfl, hf⟩
+      ⟨s', j, ps1, T, d', n', hq', hm', hs', hi', rfl, hf'⟩
       (ht i hi) (ht' i hi') hl
   have hW := RL.nextW_shape hsc j ps1 T hc hd
   rw [hW] at hqd'

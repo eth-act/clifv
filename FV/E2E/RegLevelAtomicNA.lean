@@ -39,9 +39,19 @@ theorem relaxLines_rmwLoopLines {ty : CTy} (hty : AtomTy ty) (op : AtomicRmwLoop
   rw [hb, relaxLines_append, relaxLines_of_none fun ln h => relaxable_none (hP ln h).2]
   rfl
 
+theorem frLine_rmwLoopBody (bits : Nat) (op : AtomicRmwLoopOp) (fl : Clif.MemFlags) :
+    ∀ x t, Line.ins x t ∈ rmwLoopBody bits op fl → x.frLine = false := by
+  intro x t hx
+  simp only [rmwLoopBody, List.mem_append, List.mem_cons, List.mem_map, List.not_mem_nil,
+    or_false, Line.ins.injEq] at hx
+  rcases hx with (⟨rfl, -⟩ | ⟨a, ha, rfl, -⟩) | ⟨rfl, -⟩
+  · rfl
+  · exact frLine_rmwLoopMid ha
+  · rfl
+
 set_option maxHeartbeats 4000000 in
-/-- **An `atomic_rmw` loop on the machine, at a witness** (`realizes_rmwLoopNY`). -/
-theorem realizes_rmwLoopNA {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : Arm.ArmState} {b k : Nat}
+/-- **`realizes_rmwLoopNA` with the segment's lines** (`RL.FRFree`). -/
+theorem realizes_rmwLoopNAF {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : Arm.ArmState} {b k : Nat}
     {allocs : Array Loc}
     {its : List RItem} {m : Loc → CV} {w : Arm.ArmState} {c' : MConf CV Arm.ArmState}
     {j0 : Nat} {ps1 : PState} {T : List Line}
@@ -54,7 +64,7 @@ theorem realizes_rmwLoopNA {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : Ar
       ∃ rY, csem Y R.ctx R.X (.atomicRmwLoop ty op fl ra ro rd r1 r2)
         (((ops.zip allocs).toList.filter (·.1.isUse)).map (m ·.2)) w = some rY) :
     ∃ n c'', MStep R.vc R.sem ckeep R.rf (.run ⟨b, .op k allocs :: its, m, w⟩) c'' ∧
-      R.SegNA Y s j0 ps1 T (.run ⟨b, .op k allocs :: its, m, w⟩) c'' n := by
+      R.SegNA Y s j0 ps1 T (.run ⟨b, .op k allocs :: its, m, w⟩) c'' n ∧ R.FRFree s n := by
   have hck := (lowerRFunc_ok hR.alloc).2.2
   have hok := ctlCheck_inst hck hvb hi
   simp only [ctlInstOk, Bool.and_eq_true] at hok
@@ -198,7 +208,7 @@ theorem realizes_rmwLoopNA {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : Ar
       regVal (Arm.w .PC (R.pcOf (j0 + 1 + (rmwLoopBody ty.bits op fl).length + 1)) s1) (.x 24),
       regVal (Arm.w .PC (R.pcOf (j0 + 1 + (rmwLoopBody ty.bits op fl).length + 1)) s1) (.x 28)])
       (m2 := m) hvb hi hops hsz' hsem0 hlen ⟨by simp, fun h => by simp [havocFrom, MInst.keptDefs] at h,
-        fun n h => ?_⟩ ?_ (MNext.next hk), ?_, fun i hi => ?_, ?_⟩
+        fun n h => ?_⟩ ?_ (MNext.next hk), ⟨?_, fun i hi => ?_, ?_⟩, ?_⟩
   · simp only [havocFrom, MInst.keptDefs, Option.some.injEq] at h
     subst h
     simp [regVal, rnum, h27]
@@ -255,10 +265,31 @@ theorem realizes_rmwLoopNA {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : Ar
       exact ⟨j0 + 1 + i, x, t, by omega, by omega, hatb i _ hln, hpcsI i (by omega)⟩
     · obtain rfl : i = (rmwLoopBody ty.bits op fl).length := by omega
       exact ⟨_, _, _, by omega, by omega, hLc, hpcsI _ (Nat.le_refl _)⟩
+  · refine RL.frFree_of hR fun i hi => ?_
+    rcases Nat.lt_or_ge i (rmwLoopBody ty.bits op fl).length with hi1 | hi1
+    · obtain ⟨ln, hln⟩ : ∃ ln, (rmwLoopBody ty.bits op fl)[i]? = some ln :=
+        ⟨_, List.getElem?_eq_getElem hi1⟩
+      obtain ⟨x, t, rfl, -⟩ := rmwBody_ins hty op fl _ (List.mem_of_getElem? hln)
+      exact ⟨j0 + 1 + i, x, t, hatb i _ hln, hpcsI i (by omega),
+        frLine_rmwLoopBody _ _ _ x t (List.mem_of_getElem? hln)⟩
+    · obtain rfl : i = (rmwLoopBody ty.bits op fl).length := by omega
+      exact ⟨_, _, _, hLc, hpcsI _ (Nat.le_refl _), rfl⟩
+
+theorem frLine_casLoopLines (bits : Nat) (fl : Clif.MemFlags) (a o : Lbl) :
+    ∀ x t, Line.ins x t ∈ casLoopLines bits fl a o → x.frLine = false := by
+  intro x t hx
+  simp only [casLoopLines, casLoopHead, List.cons_append, List.nil_append, List.mem_cons,
+    List.not_mem_nil, or_false, Line.ins.injEq, reduceCtorEq, false_or] at hx
+  rcases hx with ⟨rfl, -⟩ | ⟨rfl, -⟩ | ⟨rfl, -⟩ | ⟨rfl, -⟩ | ⟨rfl, -⟩
+  · rfl
+  · exact frLine_casLoopCmp _
+  · rfl
+  · rfl
+  · rfl
 
 set_option maxHeartbeats 8000000 in
-/-- **An `atomic_cas` loop on the machine, at a witness** (`realizes_casLoopNY`). -/
-theorem realizes_casLoopNA {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : Arm.ArmState} {b k : Nat}
+/-- **`realizes_casLoopNA` with the segment's lines** (`RL.FRFree`). -/
+theorem realizes_casLoopNAF {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : Arm.ArmState} {b k : Nat}
     {allocs : Array Loc}
     {its : List RItem} {m : Loc → CV} {w : Arm.ArmState} {c' : MConf CV Arm.ArmState}
     {j0 : Nat} {ps1 : PState} {T : List Line}
@@ -271,7 +302,7 @@ theorem realizes_casLoopNA {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : Ar
       ∃ rY, csem Y R.ctx R.X (.atomicCasLoop ty fl ra re rx rd r1)
         (((ops.zip allocs).toList.filter (·.1.isUse)).map (m ·.2)) w = some rY) :
     ∃ n c'', MStep R.vc R.sem ckeep R.rf (.run ⟨b, .op k allocs :: its, m, w⟩) c'' ∧
-      R.SegNA Y s j0 ps1 T (.run ⟨b, .op k allocs :: its, m, w⟩) c'' n := by
+      R.SegNA Y s j0 ps1 T (.run ⟨b, .op k allocs :: its, m, w⟩) c'' n ∧ R.FRFree s n := by
   have hck := (lowerRFunc_ok hR.alloc).2.2
   have hok := ctlCheck_inst hck hvb hi
   simp only [ctlInstOk, Bool.and_eq_true] at hok
@@ -446,6 +477,9 @@ theorem realizes_casLoopNA {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : Ar
     rw [e1, Option.some.injEq] at e2
     rw [hpc7]; simp only [RL.pcOf, RL.L]; rw [e2]
   obtain ⟨xb, tb, hb⟩ := hL1
+  have hfrC : ∀ jj x t, j0 ≤ jj → jj < j0 + 7 → R.L[jj]? = some (.ins x t) → x.frLine = false :=
+    fun jj x t h1 h2 hj => frLine_casLoopLines _ _ _ _ x t (RL.mem_of_drop hdrop' hj h1
+      (by simp [casLoopLines, casLoopHead]; omega))
   have fin : ∀ (sF : Arm.ArmState) (nst : Nat), iterN R.step nst s = sF →
       Arm.r .PC sF = R.pcOf (j0 + 7) → SameWorld R.F sF w' →
       [regVal sF (.x 27)] = outs.take 1 → outs.length = 2 →
@@ -456,7 +490,8 @@ theorem realizes_casLoopNA {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : Ar
       ∃ n c'', MStep R.vc R.sem ckeep R.rf (.run ⟨b, .op k
           (#[Reg.x 25, .x 26, .x 28, .x 27, .x 24].map Loc.reg) :: its, m, w⟩) c'' ∧
         R.SegNA Y s j0 ps1 T (.run ⟨b, .op k
-          (#[Reg.x 25, .x 26, .x 28, .x 27, .x 24].map Loc.reg) :: its, m, w⟩) c'' n := by
+          (#[Reg.x 25, .x 26, .x 28, .x 27, .x 24].map Loc.reg) :: its, m, w⟩) c'' n ∧
+        R.FRFree s n := by
     intro sF nst hitF hpcF hswF h27F hlen2 hfrF hmemF hprogF hctl hgoodF hinF hposF
     subst hctl
     have hk : k + 1 < vb.insts.size := by
@@ -464,7 +499,7 @@ theorem realizes_casLoopNA {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : Ar
       | next hk => exact hk
     refine ⟨nst, _, MStep.op (outs' := [regVal sF (.x 27), regVal sF (.x 24)]) (m2 := m) hvb hi hops
       hsz' hsem0 hlen ⟨by simp [hlen2], fun h => by simp [havocFrom, MInst.keptDefs] at h, fun n h => ?_⟩ ?_
-      (MNext.next hk), ?_, hgoodF, ?_⟩
+      (MNext.next hk), ⟨?_, hgoodF, ?_⟩, ?_⟩
     · simp only [havocFrom, MInst.keptDefs, Option.some.injEq] at h
       subst h
       simpa using h27F
@@ -489,6 +524,11 @@ theorem realizes_casLoopNA {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : Ar
         · simp only [spOf]; exact hfrF _ (by simp) (by simp [rnum]) (by simp)
     · exact RL.segLen_straight_base hR (by simp [RL.Straight]) (by rw [hWs, hj7]) hb hinF
         (by rw [hitF]; exact hpcF) hposF (by omega)
+    · refine RL.frFree_of hR fun i hi => ?_
+      rcases Nat.eq_zero_or_pos i with rfl | hi0
+      · exact ⟨j0 + 1, xb, tb, hb, hpc1, hfrC _ _ _ (by omega) (by omega) hb⟩
+      · obtain ⟨jj, x, t, h1, h2, h3, h4⟩ := hinF i hi0 hi
+        exact ⟨jj, x, t, h3, h4, hfrC _ _ _ (by omega) h2 h3⟩
   have hfr1' : ∀ f, f ≠ .PC → (∀ n ∈ [27, 24], f ≠ .GPR (rnum n)) → (∀ g, f ≠ .FLAG g) →
       Arm.r f s1 = Arm.r f s := by
     intro f h1 h2 h3
@@ -609,5 +649,41 @@ theorem realizes_casLoopNA {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : Ar
       · exact hin12 i h0 hi2
       · exact ⟨j0 + 4, _, _, by omega, by omega, hL4, by rw [hi3, Arm.r_of_w_same]⟩
       · exact ⟨j0 + 5, _, _, by omega, by omega, hL5, by rw [hi4]; exact hpcs3⟩
+
+/-- **An `atomic_rmw` loop on the machine, at a witness** (`realizes_rmwLoopNY`). -/
+theorem realizes_rmwLoopNA {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : Arm.ArmState} {b k : Nat}
+    {allocs : Array Loc}
+    {its : List RItem} {m : Loc → CV} {w : Arm.ArmState} {c' : MConf CV Arm.ArmState}
+    {j0 : Nat} {ps1 : PState} {T : List Line}
+    (hq : QW R s j0 ps1 T (.run ⟨b, .op k allocs :: its, m, w⟩)) {vb : VBlock} {ty : CTy}
+    {op : AtomicRmwLoopOp} {fl : Clif.MemFlags} {ra ro rd r1 r2 : Reg}
+    (hvb : R.vc.blocks[b]? = some vb)
+    (hi : vb.insts[k]? = some (.atomicRmwLoop ty op fl ra ro rd r1 r2))
+    (h : MStep R.vc R.sem ckeep R.rf (.run ⟨b, .op k allocs :: its, m, w⟩) c')
+    (hsemY : ∀ ops, (MInst.atomicRmwLoop ty op fl ra ro rd r1 r2).operands = .ok ops →
+      ∃ rY, csem Y R.ctx R.X (.atomicRmwLoop ty op fl ra ro rd r1 r2)
+        (((ops.zip allocs).toList.filter (·.1.isUse)).map (m ·.2)) w = some rY) :
+    ∃ n c'', MStep R.vc R.sem ckeep R.rf (.run ⟨b, .op k allocs :: its, m, w⟩) c'' ∧
+      R.SegNA Y s j0 ps1 T (.run ⟨b, .op k allocs :: its, m, w⟩) c'' n :=
+  let ⟨n, c'', h1, h2, _⟩ := realizes_rmwLoopNAF hR hq hvb hi h hsemY
+  ⟨n, c'', h1, h2⟩
+
+/-- **An `atomic_cas` loop on the machine, at a witness** (`realizes_casLoopNY`). -/
+theorem realizes_casLoopNA {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : Arm.ArmState} {b k : Nat}
+    {allocs : Array Loc}
+    {its : List RItem} {m : Loc → CV} {w : Arm.ArmState} {c' : MConf CV Arm.ArmState}
+    {j0 : Nat} {ps1 : PState} {T : List Line}
+    (hq : QW R s j0 ps1 T (.run ⟨b, .op k allocs :: its, m, w⟩)) {vb : VBlock} {ty : CTy}
+    {fl : Clif.MemFlags} {ra re rx rd r1 : Reg}
+    (hvb : R.vc.blocks[b]? = some vb)
+    (hi : vb.insts[k]? = some (.atomicCasLoop ty fl ra re rx rd r1))
+    (h : MStep R.vc R.sem ckeep R.rf (.run ⟨b, .op k allocs :: its, m, w⟩) c')
+    (hsemY : ∀ ops, (MInst.atomicCasLoop ty fl ra re rx rd r1).operands = .ok ops →
+      ∃ rY, csem Y R.ctx R.X (.atomicCasLoop ty fl ra re rx rd r1)
+        (((ops.zip allocs).toList.filter (·.1.isUse)).map (m ·.2)) w = some rY) :
+    ∃ n c'', MStep R.vc R.sem ckeep R.rf (.run ⟨b, .op k allocs :: its, m, w⟩) c'' ∧
+      R.SegNA Y s j0 ps1 T (.run ⟨b, .op k allocs :: its, m, w⟩) c'' n :=
+  let ⟨n, c'', h1, h2, _⟩ := realizes_casLoopNAF hR hq hvb hi h hsemY
+  ⟨n, c'', h1, h2⟩
 
 end Backend.Proof

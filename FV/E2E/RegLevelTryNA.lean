@@ -13,10 +13,8 @@ namespace Backend.Proof
 
 open Backend E2E
 
-/-- **The call of a `try_call` on the machine, at a witness** (`realizes_tryCallNR`): the
-continuation's items at its chosen entry witness, reached at the first arrival; exactly one call
-state (the first). -/
-theorem realizes_tryCallNA {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {P : Arm.ArmState → Prop}
+/-- **`realizes_tryCallNA` with the segment's lines** (`RL.FRFree`). -/
+theorem realizes_tryCallNAF {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {P : Arm.ArmState → Prop}
     (hC : CalleeOkGP P R.F R.K R.G R.s0 (CallAt R.fa R.base) R.X R.H R.vc.CallSite R.gv)
     (hT : CalleeTryOkGP P R.F R.K R.G R.s0 (CallAt R.fa R.base) R.X R.H R.vc.TrySite R.gv)
     {s : Arm.ArmState} (hP : P s) {b k : Nat} {allocs : Array Loc}
@@ -40,7 +38,7 @@ theorem realizes_tryCallNA {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {P : Ar
       (∀ i < n, R.GoodX (iterN R.step i s) ∧ R.ReadsInY Y (iterN R.step i s)) ∧
       (∃ i0 < n, R.CallSt (iterN R.step i0 s) ∧
         ∀ i < n, i ≠ i0 → R.NoCallAt (iterN R.step i s)) ∧
-      R.SegLen j0 ps1 T (.run ⟨b, .op k allocs :: its, m, w⟩) c'' s n := by
+      R.SegLen j0 ps1 T (.run ⟨b, .op k allocs :: its, m, w⟩) c'' s n ∧ R.FRFree s n := by
   have hck := (lowerRFunc_ok hR.alloc).2.2
   have hcpc := callAt_of_q hq.q hvb hi tryCall_hcall
   obtain ⟨vb0, items0, pre, code, ls, ps2, hvb0, hit, hsplit, hchk, hcode, hls, htr,
@@ -177,8 +175,8 @@ theorem realizes_tryCallNA {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {P : Ar
       relaxLines R.far (ftList (.ins (.b (.block ti.continuation)) none :: (ls2 ++ nxtOf R.af b))) ++ T := by
     rw [← List.drop_drop, hdrop']; rfl
   have hsp' : spOf s' = R.spB := hK.1.trans hst.sp
-  obtain ⟨n, jl, lim, hn, hjl, -, hgx, hseg, -⟩ :=
-    reach_bXNA (Y := Y) hR hdrop1 (by simp) hprog' hpc1 herr' hsp'
+  obtain ⟨n, jl, lim, hn, hjl, -, hgx, hseg, -, hfrB⟩ :=
+    reach_bXNAF (Y := Y) hR hdrop1 (by simp) hprog' hpc1 herr' hsp'
   have hiter : iterN R.step (n + 1) s = Arm.w .PC (R.pcOf jl) s' := by
     simp only [iterN]; rw [hs1, hn]
   have hfr := R.frameOkK hR
@@ -235,9 +233,15 @@ theorem realizes_tryCallNA {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {P : Ar
         · obtain rfl : k = j0 + 1 := by omega
           exact ⟨_, _, hx1⟩
   obtain ⟨lim', hseg'⟩ := hseg'
+  have hfr1 : R.FRFree s (1 + n) := by
+    refine RL.FRFree.append (RL.frFree_one hR (Nat.le_refl _) hj0
+      (by rcases hxk with ⟨_, rfl⟩ | ⟨_, rfl, _⟩ <;> rfl) hpc) ?_
+    have e : iterN R.step 1 s = s' := by simp only [iterN]; exact hs1
+    rw [e]; exact hfrB
   refine ⟨n + 1, _, MStep.op hvb hi hops hsz hsem hlen hho hc2'
     (MNext.goto hk1 hsucc hitems), ?_, fun i hi => ?_, ⟨0, by omega,
-    RL.callSt_of_line hj0 hpc (hxk.imp id fun ⟨r, e, _⟩ => ⟨r, e⟩), fun i hi hne => ?_⟩, ?_⟩
+    RL.callSt_of_line hj0 hpc (hxk.imp id fun ⟨r, e, _⟩ => ⟨r, e⟩), fun i hi hne => ?_⟩, ?_,
+    by rw [Nat.add_comm]; exact hfr1⟩
   · rw [RL.nextW_entry hns, hiter]
     exact hqE
   · cases i with
@@ -262,5 +266,37 @@ theorem realizes_tryCallNA {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {P : Ar
     exact (hgx i (by omega)).1.2
   · exact RL.segLen_entry_of hR hns hjl' ((Arm.r_of_w_same ..).symm.trans hpcE)
       (by rw [hiter]; exact Arm.r_of_w_same ..) hseg'
+
+/-- **The call of a `try_call` on the machine, at a witness** (`realizes_tryCallNR`): the
+continuation's items at its chosen entry witness, reached at the first arrival; exactly one call
+state (the first). -/
+theorem realizes_tryCallNA {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {P : Arm.ArmState → Prop}
+    (hC : CalleeOkGP P R.F R.K R.G R.s0 (CallAt R.fa R.base) R.X R.H R.vc.CallSite R.gv)
+    (hT : CalleeTryOkGP P R.F R.K R.G R.s0 (CallAt R.fa R.base) R.X R.H R.vc.TrySite R.gv)
+    {s : Arm.ArmState} (hP : P s) {b k : Nat} {allocs : Array Loc}
+    {its : List RItem} {m : Loc → CV} {w : Arm.ArmState}
+    {j0 : Nat} {ps1 : PState} {T : List Line}
+    (hq : QW R s j0 ps1 T (.run ⟨b, .op k allocs :: its, m, w⟩))
+    {vb : VBlock} {info : CallInfo} {ti : TryInfo} {ops : Array Operand} {outs : List CV}
+    {w' : Arm.ArmState} {ctl : Ctl}
+    (hvb : R.vc.blocks[b]? = some vb) (hi : vb.insts[k]? = some (.tryCall info ti))
+    (hops : (MInst.tryCall info ti).operands = .ok ops) (hsz : allocs.size = ops.size)
+    (hsem : R.sem (.tryCall info ti) (((ops.zip allocs).toList.filter (·.1.isUse)).map (m ·.2)) w =
+      some (outs, w', ctl))
+    (hlen : outs.length = ((ops.zip allocs).toList.filter (·.1.isDef)).length)
+    {j st : Nat} {items : Array RItem} (hk1 : k + 1 = vb.insts.size)
+    (hsucc : succOf R.vc b j = some st) (hitems : R.rf.blocks[st]? = some items)
+    (hctl : ctl = .goto j) :
+    ∃ n c'', MStep R.vc R.sem ckeep R.rf (.run ⟨b, .op k allocs :: its, m, w⟩) c'' ∧
+      QW R (iterN R.step n s) (R.nextW j0 ps1 T (.run ⟨b, .op k allocs :: its, m, w⟩) c'').1
+        (R.nextW j0 ps1 T (.run ⟨b, .op k allocs :: its, m, w⟩) c'').2.1
+        (R.nextW j0 ps1 T (.run ⟨b, .op k allocs :: its, m, w⟩) c'').2.2 c'' ∧
+      (∀ i < n, R.GoodX (iterN R.step i s) ∧ R.ReadsInY Y (iterN R.step i s)) ∧
+      (∃ i0 < n, R.CallSt (iterN R.step i0 s) ∧
+        ∀ i < n, i ≠ i0 → R.NoCallAt (iterN R.step i s)) ∧
+      R.SegLen j0 ps1 T (.run ⟨b, .op k allocs :: its, m, w⟩) c'' s n :=
+  let ⟨n, c'', h1, h2, h3, h4, h5, _⟩ := realizes_tryCallNAF (Y := Y) hR hC hT hP hq hvb hi hops
+    hsz hsem hlen hk1 hsucc hitems hctl
+  ⟨n, c'', h1, h2, h3, h4, h5⟩
 
 end Backend.Proof
