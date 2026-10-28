@@ -151,6 +151,24 @@ theorem preparedCleanup_emitCondsB {vc vcp : VCode} {ss ps : Array (Array Nat)}
     intro i hi
     exact hP vb (Array.mem_toList_iff.mpr hvb) i (Array.mem_toList_iff.mpr hi)
 
+/-- **The spill allocator's local facts on the cleaned float-scope pipeline's output**
+(`spillLocal_cleanup` over `LowerScopeTF`). -/
+theorem spillLocal_cleanupTF {f : Clif.Function} {vc vcp : VCode} (hd : Dominated f)
+    (hs : LowerScopeTF f) (har : ArityOk f) (htc : Compile.tryArgClassOk f = true)
+    (hrc : ResClassOk f) (hl : lowerFunction f = .ok vc) (hp : prepare vc = .ok vcp)
+    (hctl : ∀ vb ∈ vc.blocks.toList, ∀ i ∈ vb.insts.toList, i.isCtl = true → SpillInstOk i)
+    (hform : FormsCovered default vcp) : SpillLocalOk (preparedCleanup vc vcp) := by
+  have hp' := prune_prepare_ok hp
+  have hdom := prune_prepDomain (prepDomain_ofTF hs hl)
+  refine ⟨fun b vb k i hvb hi => ?_,
+    classesOk_of (classesOkM_prepare hp' hdom (prune_classes (classesOkM_lowerTF hs hrc hl))),
+    edgesOk_prepare (prune_lowOk (lowOk_ofTF hd hs har htc hl)) hp'⟩
+  cases hct : i.isCtl
+  · have hcov := preparedCleanup_formsCovered (vc := vc) hform b vb k i hvb hi
+    rw [hct] at hcov
+    exact spillInstOk_of_formOk (hcov.resolve_left (by simp))
+  · exact spillCtl_of_prepare hp' hdom (prune_insts hctl) b vb k i hvb hi hct
+
 /-- **The spill allocator's local facts on the cleaned typed pipeline's output**
 (`spillLocal_cleanup` over `LowerScopeT`; the premises of `spillLocalOk_of_pipelineT`, with the
 covered forms on `prepare`'s raw output). -/
@@ -158,17 +176,24 @@ theorem spillLocal_cleanupT {f : Clif.Function} {vc vcp : VCode} (hd : Dominated
     (hs : LowerScopeT f) (har : ArityOk f) (htc : Compile.tryArgClassOk f = true)
     (hrc : ResClassOk f) (hl : lowerFunction f = .ok vc) (hp : prepare vc = .ok vcp)
     (hctl : ∀ vb ∈ vc.blocks.toList, ∀ i ∈ vb.insts.toList, i.isCtl = true → SpillInstOk i)
-    (hform : FormsCovered default vcp) : SpillLocalOk (preparedCleanup vc vcp) := by
-  have hp' := prune_prepare_ok hp
-  have hdom := prune_prepDomain (prepDomain_ofT hd hs hl)
-  refine ⟨fun b vb k i hvb hi => ?_,
-    classesOk_of (classesOkM_prepare hp' hdom (prune_classes (classesOkM_lowerT hs hrc hl))),
-    edgesOk_prepare (prune_lowOk (lowOk_ofT hd hs har htc hl)) hp'⟩
-  cases hct : i.isCtl
-  · have hcov := preparedCleanup_formsCovered (vc := vc) hform b vb k i hvb hi
-    rw [hct] at hcov
-    exact spillInstOk_of_formOk (hcov.resolve_left (by simp))
-  · exact spillCtl_of_prepare hp' hdom (prune_insts hctl) b vb k i hvb hi hct
+    (hform : FormsCovered default vcp) : SpillLocalOk (preparedCleanup vc vcp) :=
+  spillLocal_cleanupTF hd hs.toTF har htc hrc hl hp hctl hform
+
+/-- **The spill allocation of the cleaned float-scope pipeline's output is `AllocChecked`**
+(`spillAccepted_cleanupT` over `LowerScopeTF`). -/
+theorem spillAccepted_cleanupTF {f : Clif.Function} {vc vcp : VCode} (hd : Dominated f)
+    (hs : LowerScopeTF f) (har : ArityOk f) (htc : Compile.tryArgClassOk f = true)
+    (hrc : ResClassOk f) (hl : lowerFunction f = .ok vc) (hp : prepare vc = .ok vcp)
+    (hctl : ∀ vb ∈ vc.blocks.toList, ∀ i ∈ vb.insts.toList, i.isCtl = true → SpillInstOk i)
+    (hform : FormsCovered default vcp) (hk : killFreeB vcp = true) :
+    AllocChecked (preparedCleanup vc vcp) (spillAlloc (preparedCleanup vc vcp)) := by
+  have hdom0 := prepDomain_ofTF hs hl
+  obtain ⟨ss, ps, hcfg⟩ := cfg_ok_of_prepare hp hdom0
+  exact spillStep4 _ (restrictedD vc (killD vcp))
+    ⟨ss, ps, by rw [preparedCleanup_cfg]; exact hcfg⟩
+    (spillLocal_cleanupTF hd hs har htc hrc hl hp hctl hform)
+    (preparedCleanup_spillAvail hdom0 (classesOkM_lowerTF hs hrc hl) hp _
+      (spillAvail_of_killFree hk (edgesOk_prepare (lowOk_ofTF hd hs har htc hl) hp)))
 
 /-- **The spill allocation of the cleaned typed pipeline's output is `AllocChecked`** given
 `spillLocal_cleanupT`'s premises and `killFreeB` of `prepare`'s raw output (its availability,
@@ -178,14 +203,8 @@ theorem spillAccepted_cleanupT {f : Clif.Function} {vc vcp : VCode} (hd : Domina
     (hrc : ResClassOk f) (hl : lowerFunction f = .ok vc) (hp : prepare vc = .ok vcp)
     (hctl : ∀ vb ∈ vc.blocks.toList, ∀ i ∈ vb.insts.toList, i.isCtl = true → SpillInstOk i)
     (hform : FormsCovered default vcp) (hk : killFreeB vcp = true) :
-    AllocChecked (preparedCleanup vc vcp) (spillAlloc (preparedCleanup vc vcp)) := by
-  have hdom0 := prepDomain_ofT hd hs hl
-  obtain ⟨ss, ps, hcfg⟩ := cfg_ok_of_prepare hp hdom0
-  exact spillStep4 _ (restrictedD vc (killD vcp))
-    ⟨ss, ps, by rw [preparedCleanup_cfg]; exact hcfg⟩
-    (spillLocal_cleanupT hd hs har htc hrc hl hp hctl hform)
-    (preparedCleanup_spillAvail hdom0 (classesOkM_lowerT hs hrc hl) hp _
-      (spillAvail_of_killFree hk (edgesHyp_ofT hd hs har htc hl hp)))
+    AllocChecked (preparedCleanup vc vcp) (spillAlloc (preparedCleanup vc vcp)) :=
+  spillAccepted_cleanupTF hd hs.toTF har htc hrc hl hp hctl hform hk
 
 /-- **The allocation the backend lowers is `AllocChecked`** once the spill allocation is,
 whatever regalloc2 answered. -/
@@ -211,8 +230,8 @@ theorem allocChecked_allocResult_of {vcp : VCode} (hsa : AllocChecked vcp (spill
 run-time facts on `prepare`'s raw output `vcp`, for every answer `ra` of the untrusted allocator,
 `lowerAllocReady`, `emitFunc` and `layout` succeed on the cleaned code, and the allocation lowered
 is `AllocChecked`. -/
-theorem backend_total_emit_cleanupT {f : Clif.Function} {vc vcp : VCode} (hd : Dominated f)
-    (hs : LowerScopeT f) (har : ArityOk f) (htc : Compile.tryArgClassOk f = true)
+theorem backend_total_emit_cleanupTF {f : Clif.Function} {vc vcp : VCode} (hd : Dominated f)
+    (hs : LowerScopeTF f) (har : ArityOk f) (htc : Compile.tryArgClassOk f = true)
     (hrc : ResClassOk f) (hl : lowerFunction f = .ok vc) (hp : Backend.prepare vc = .ok vcp)
     (hsc : ∀ vb ∈ vc.blocks.toList, ∀ i ∈ vb.insts.toList, i.isCtl = true → SpillInstOk i)
     (hcov : FormsCovered default vcp) (hk : killFreeB vcp = true) (hctl : CtlInsts vcp)
@@ -222,18 +241,35 @@ theorem backend_total_emit_cleanupT {f : Clif.Function} {vc vcp : VCode} (hd : D
     ∃ af, lowerAllocReady (preparedCleanup vc vcp) ra = .ok af ∧
       ∃ fa fb, emitFunc k af = .ok fa ∧ fa.layout = .ok fb := by
   have hp' := prune_prepare_ok hp
-  have hdom := prune_prepDomain (prepDomain_ofT hd hs hl)
-  obtain ⟨ss, ps, hcfg⟩ := cfg_ok_of_prepare hp (prepDomain_ofT hd hs hl)
+  have hdom := prune_prepDomain (prepDomain_ofTF hs hl)
+  obtain ⟨ss, ps, hcfg⟩ := cfg_ok_of_prepare hp (prepDomain_ofTF hs hl)
   have hcfg' : (preparedCleanup vc vcp).cfg = .ok (ss, ps) := by
     rw [preparedCleanup_cfg]; exact hcfg
-  have hacc := spillAccepted_cleanupT hd hs har htc hrc hl hp hsc hcov hk
+  have hacc := spillAccepted_cleanupTF hd hs har htc hrc hl hp hsc hcov hk
   have hcov' := preparedCleanup_formsCovered (vc := vc) hcov
   have hctl' := preparedCleanup_ctlInsts (vc := vc) hctl
   have hem' := preparedCleanup_emitCondsB (vc := vc) hcfg hem
   exact ⟨allocChecked_allocResult_of hacc _,
     lowerAllocReady_emit_of
-      (lowerRFunc_spill_of hcfg' (spillLocal_cleanupT hd hs har htc hrc hl hp hsc hcov)
+      (lowerRFunc_spill_of hcfg' (spillLocal_cleanupTF hd hs har htc hrc hl hp hsc hcov)
         hctl'.1 hctl'.2)
       (fun af ha => emitReady_spill_of hdom hp' hacc hcov' hctl' hem' ha) ra k⟩
+
+/-- **The cleaned typed pipeline's allocation, emission and layout succeed**
+(`backend_total_emitT` for `prepare (prune vc) = .ok (preparedCleanup vc vcp)`): from the same
+run-time facts on `prepare`'s raw output `vcp`, for every answer `ra` of the untrusted allocator,
+`lowerAllocReady`, `emitFunc` and `layout` succeed on the cleaned code, and the allocation lowered
+is `AllocChecked`. -/
+theorem backend_total_emit_cleanupT {f : Clif.Function} {vc vcp : VCode} (hd : Dominated f)
+    (hs : LowerScopeT f) (har : ArityOk f) (htc : Compile.tryArgClassOk f = true)
+    (hrc : ResClassOk f) (hl : lowerFunction f = .ok vc) (hp : Backend.prepare vc = .ok vcp)
+    (hsc : ∀ vb ∈ vc.blocks.toList, ∀ i ∈ vb.insts.toList, i.isCtl = true → SpillInstOk i)
+    (hcov : FormsCovered default vcp) (hk : killFreeB vcp = true) (hctl : CtlInsts vcp)
+    (hem : emitCondsB vcp = true) (ra : Except String RFunc) (k : Nat) :
+    AllocChecked (preparedCleanup vc vcp)
+        (allocResult (preparedCleanup vc vcp) (readyAnswer (preparedCleanup vc vcp) ra)) ∧
+    ∃ af, lowerAllocReady (preparedCleanup vc vcp) ra = .ok af ∧
+      ∃ fa fb, emitFunc k af = .ok fa ∧ fa.layout = .ok fb :=
+  backend_total_emit_cleanupTF hd hs.toTF har htc hrc hl hp hsc hcov hk hctl hem ra k
 
 end E2E
