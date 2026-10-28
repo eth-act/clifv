@@ -18,6 +18,7 @@ import FVTest.Link.LdArgs
 import FV.Link.ExeUCompile
 import FV.Link.SemanticCompileDefs
 import FV.Link.UnwReport
+import FV.Link.SemanticCompileT
 
 /-! # `lake exe lean-link DIR [--dead-cleanup|--no-dead-cleanup] [--opt] [--verified] [--ld FILE]`:
 the executable compiler on an executable (L1, L2b)
@@ -81,7 +82,12 @@ written executable is covered by the typed theorems
 `Front.bundle_correct_rawT{,_peak}`; totality is proven on `InScopeIn` only. `compileExeT`
 lowers every function with `lowerFunction`, while the units hold the Stock routes' code
 (Cranelift's) where `lean-backend` took them; when some function differs (`stockDiffersB`, #691),
-the typed route is not tried: the smaller set of those functions or of the typed ones (outside
+the typed compiler on the Stock route (#722) `Link.SemanticCompilerWith.attemptT` (the Stock
+route's pipeline and link `leanLinkProductionWith` on its placement `placedProductionWith`, i.e.
+the units' code, accepted by the typed checks `okRWithTS`: the Stock validator on an integer
+function, the typed validators on `lowerFunction`'s output) is tried instead; coverage
+`attemptT_correct`, `attemptT_correct_depth`, `attemptT_correct_peak` (returned values by
+class). When it fails, the smaller set of those functions or of the typed ones (outside
 `fnScopeInB`; the executable then takes the integer route) is left out of the region (the
 `exclude:` line below). On such an error it
 also prints the functions failing a per-function condition (`exclusions`, the line
@@ -253,6 +259,27 @@ def stockDiffersB (lower : Clif.Function → Except String Backend.VCode) (g : C
     | .ok vc => match Backend.Stock.D0.defaultLower g with
       | .ok vl => !decide (vc = vl)
       | .error _ => true
+
+/-- On a typed input whose `Link.SemanticCompilerWith.attemptT lower SP` fails (#722): the
+functions failing the per-function checks of `okRWithTS` on the Stock route's results
+(`chksWithTS` in `okRWithTSFast`'s std-sized form), with the failing conditions, and the failing
+global checks (as `<global>`). -/
+def typedStockFails (lower : Clif.Function → Except String Backend.VCode) (SP : LinkSpec) :
+    List (String × List String) :=
+  let I := SP.inputProductionWith lower true
+  let R : Res := parMap (fun fi => (fi.func, I.pipeProductionWith lower true fi)) I.funcs
+  let P := progOf R
+  let T := tabOf R
+  let C := LinkCtx.of I P T
+  let cs := calleeSet P
+  let anyInd := P.funcs.any (!indFreeB ·)
+  let sy := assocMap I.syms
+  let gl := ((globalChksWith C I P T).filter (!·.2)).map (·.1)
+  let rs := parMap (fun e => (e.1.name, ((staticChksWithTS (productionStage true) I e.1 e.2 ++
+      linkChksWithT C P e.1 e.2 ++
+      [("calleeInt", !calleeWithB (fun n => cs.contains n) anyInd (fun n => sy[n]?) e.1 ||
+        e.1.sig.returns.all (·.ty.isInt))]).filter (!·.2)).map (·.1))) R
+  (if gl.isEmpty then [] else [("<global>", gl)]) ++ rs.filter (!·.2.isEmpty)
 
 /-- Print `exclusions` (the line `cargo fv` reads). -/
 def printExclusions (exe : String) (S SC : LinkSpec) (typed : Bool) (extra : List String := []) :
@@ -450,6 +477,31 @@ def main (args0 : List String) : IO UInt32 := do
     let stockFns := (SC.funcs.zip (parMap (fun fi => stockDiffersB routes[0]! fi.func) SC.funcs)).filterMap
       fun (fi, b) => if b then some fi.func.name else none
     if !stockFns.isEmpty then
+      -- #722: the typed compiler on the Stock route: the units' code (the Stock route's pipeline
+      -- and placement), the typed checks per function
+      let SP := SC0.placedProductionWith routes[0]! true
+      let att := SemanticCompilerWith.attemptT routes[0]! SP file0
+      if let .ok file := att then
+        IO.FS.writeBinFile exe file
+        IO.println s!"lean-link: {exe}: {summary} written by Link.SemanticCompilerWith.attemptT (Link.SemanticCompilerWith.attemptT_correct); {stockFns.length} function(s) Stock-lowered, {typedN} typed function(s) in the region"
+        if let some f := ldFile then
+          match ← ldCheck SP file0 f with
+          | .ok () => IO.println s!"lean-link: {exe}: lean-ld's plan meets the link spec (Plan.specOkB)"
+          | .error e => IO.eprintln s!"lean-link: {exe}: lean-ld's plan: {e}"
+        IO.println s!"lean-link: {exe}: coverage: Link.SemanticCompilerWith.attemptT_correct, Link.SemanticCompilerWith.attemptT_correct_depth, Link.SemanticCompilerWith.attemptT_correct_peak (returned values by class); about the legalised program; input in InScopeInT (typed scope; totality proven on InScopeIn only) (--verified)"
+        return 0
+      if let .error e := att then
+        let bad := typedStockFails routes[0]! SP
+        let causes := (bad.flatMap (·.2)).eraseDups.map fun c => s!"{c} {(bad.filter (·.2.contains c)).length}"
+        IO.eprintln s!"lean-link: {exe}: --verified: typed Stock route (attemptT): {e}: {bad.length} function(s) failing (by cause: {causes}) {(bad.take 3).map (·.1)}"
+        for (n, fs) in bad.take 50 do
+          IO.eprintln s!"lean-link:   {n}: {fs}"
+        -- leave out only the functions failing the typed checks when that set is the smallest
+        let badFns := (bad.filter (·.1 != "<global>")).map (·.1)
+        if !badFns.isEmpty && badFns.length < min typedN stockFns.length then
+          IO.eprintln s!"lean-link: {exe}: --verified: typed Stock route: leaving out the {badFns.length} function(s) failing the typed checks; not written"
+          printExclusions exe S SC true badFns
+          return 1
       let typedSmaller := typedN ≤ stockFns.length
       IO.eprintln s!"lean-link: {exe}: --verified: typed scope: {stockFns.length} function(s) compiled by the Stock lowering, which compileExeT does not reproduce (lowerFunction) {stockFns.take 3}; leaving out {if typedSmaller then s!"the {typedN} typed function(s)" else s!"those {stockFns.length}"}; not written"
       if typedSmaller then printExclusions exe S SC false
