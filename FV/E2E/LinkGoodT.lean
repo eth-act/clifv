@@ -746,7 +746,7 @@ theorem thmG_ofT (hL : L.OkT) [L.CrunOk] (hκ : L.Budget κ) {M : Nat} (ih : 0 <
   have hJ : L.ActInv g (spv w₀) cs := ⟨hI, hWE.clif.callers, hWE.place⟩
   have hrun' : Clif.runLoop (L.envOf M g (spv w₀)) L.P.bare fuel cs = .returned rvals cm' := by
     rw [L.runLoop_envOfT hL hg fuel cs hJ]; exact hrun
-  have h := backend_correct_world_niX_pipelineAnyT (hL.subset g hg) hc typedRules_program
+  have h := backend_correct_world_niX_pipelineAnyTF (hL.subset g hg) hc typedRules_program
     (X := L.X κ M g F) (syms := L.syms)
     (env := L.envOf M g (spv w₀)) (K := κ M g) (F := F) (c := spv w₀) (hL.covered g hg)
     (L.xCallsOkT hL hκ ih hg hWE.img hWE.room hWE.dead hWE.align)
@@ -838,7 +838,7 @@ theorem backend_correct_program_coreXT (L : LinkSys) (hL : L.OkT) [L.CrunOk]
     have hJ : L.ActInv f (spv w₀) cs := ⟨hIf, hcs.callers, hpl⟩
     have hm' : Clif.runLoop (L.envOf M f (spv w₀)) L.P.bare m cs = .trapped c := by
       rw [L.runLoop_envOfT hL hf m cs hJ]; exact hm
-    have h := backend_correct_worldX_pipelineAnyT (hL.subset f hf) hc typedRules_program
+    have h := backend_correct_worldX_pipelineAnyTF (hL.subset f hf) hc typedRules_program
       (X := L.X κ M f L.F) (syms := L.syms)
       (env := L.envOf M f (spv w₀)) (K := κ M f) (F := L.F) (c := spv w₀) (hL.covered f hf)
       (L.xCallsOkT hL hκ ih hf hL.imgF hWE.room hWE.dead hWE.align)
