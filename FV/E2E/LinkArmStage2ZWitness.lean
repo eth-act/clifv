@@ -267,7 +267,7 @@ theorem stage2_answerF_Lsl
       MemRel F Lsl.syms cm (Lsl.worldPR (fun M _ => Lsl.K M) M h (P n) (R n) w) →
       ArgsAt h.sig vals args (Lsl.worldPR (fun M _ => Lsl.K M) M h (P n) (R n) w) →
       StackArgsAvoid F h.sig vals (Lsl.worldPR (fun M _ => Lsl.K M) M h (P n) (R n) w) →
-      SameWorld F w (Lsl.worldPR (fun M _ => Lsl.K M) M h (P n) (R n) w) →
+      SameWorld F w (Lsl.worldPR (fun M _ => Lsl.K M) M h (P n) (R n) w) → spv w = c →
       Clif.initState Lsl.P h.name vals cm = .ok cs' → Lsl.crun M cs' = .returned rvals cm' →
       Lsl.OracleAt (fun M _ => Lsl.K M) M h c cm args (Lsl.worldPR (fun M _ => Lsl.K M) M h (P n) (R n) w))
     (hnv : ¬ ∀ r, CallPost ((Lsl.envOfB M g c).only (InvokedN (Lsl.envOfB M g c) Lsl.P.bare cs n))

@@ -161,7 +161,7 @@ theorem stage2_answerF (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) {M : Nat}
       MemRel F L.syms cm (L.worldPR κ M h (P n) (R n) w) →
       ArgsAt h.sig vals args (L.worldPR κ M h (P n) (R n) w) →
       StackArgsAvoid F h.sig vals (L.worldPR κ M h (P n) (R n) w) →
-      SameWorld F w (L.worldPR κ M h (P n) (R n) w) →
+      SameWorld F w (L.worldPR κ M h (P n) (R n) w) → spv w = c →
       Clif.initState L.P h.name vals cm = .ok cs' → L.crun M cs' = .returned rvals cm' →
       L.OracleAt κ M h c cm args (L.worldPR κ M h (P n) (R n) w))
     (hnv : ¬ ∀ r, CallPost ((L.envOfB M g c).only (InvokedN (L.envOfB M g c) L.P.bare cs n))
@@ -263,7 +263,7 @@ theorem stage2_answerF (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) {M : Nat}
         (by rcases hd with ⟨e, rfl⟩ | ⟨e, hcol, rfl⟩
             · exact .inl ⟨by rw [e, hname], rfl⟩
             · exact .inr ⟨e, hto e hcol, _, rfl, by rw [lo64_ofX, hname]⟩) hinv hcal hM hmrW.1.1
-        hargsW hsavW hsw (by rw [hname]; exact hinit) hrun
+        hargsW hsavW hsw hsp (by rw [hname]; exact hinit) hrun
       obtain ⟨outs, w', hx, hol, hho, hmr'⟩ :=
         L.progResultBT hL hκ ih hdet hg hh hcal himgF hroom hdead halign hargsW hsavW hmrW hpl
           hslotb htab (by rw [hname]; exact hinit) hrun
@@ -318,7 +318,7 @@ theorem stage2_answerF (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) {M : Nat}
         cases hr
       obtain ⟨ini, hpl, hslotb, htab⟩ := hor h hh args vals cm _ rvals cm'
         (.inr ⟨hdn, ⟨hdecl, .inr ⟨sig, hsig, hm, hm.returns_length⟩⟩, u, hu, hlo⟩) hA
-        hcal hM hmrW.1.1 hargsW hsavW hsw hinit hrun
+        hcal hM hmrW.1.1 hargsW hsavW hsw hmr.2.1 hinit hrun
       obtain ⟨outs, w', hx, hol, hho, hmr'⟩ :=
         L.progResultBT hL hκ ih hdet hg hh hcal himgF hroom hdead halign hargsW hsavW hmrW hpl
           hslotb htab hinit hrun
@@ -356,7 +356,7 @@ theorem stage2_answer (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) {M : Nat}
         (RelW ⟨F, L.syms, (L.A g).af.slotBase, (RAFrame.compute (L.A g).vcp (L.A g).rf).intBase⟩ g c)
         L.Xb.sym d uses w x :=
   L.stage2_answerF hL hκ ih hdet hg himgF hroom hdead halign P R cs n
-    (fun h hh args vals cm _ _ _ hd hA _ _ _ _ _ _ _ _ => hor h hh args vals cm
+    (fun h hh args vals cm _ _ _ hd hA _ _ _ _ _ _ _ _ _ => hor h hh args vals cm
       (hd.imp id fun ⟨e, _, u, hu, _⟩ => ⟨e, u, hu⟩) hA) hnv
 
 end LinkSys
