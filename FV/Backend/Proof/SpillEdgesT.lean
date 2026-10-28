@@ -32,21 +32,10 @@ theorem zip_mem_of_idx {α β : Type} {as : List α} {bs : List β} {k : Nat} {a
     (ha : as[k]? = some a) (hb : bs[k]? = some b) : (a, b) ∈ as.zip bs :=
   List.mem_of_getElem? (List.getElem?_zip_eq_some.mpr ⟨ha, hb⟩)
 
-section
-variable {f : Clif.Function} {vc : VCode} {ctx : Ctx} {st0 : LState} {bl : List BLow} {RR : Reg → Reg}
-  (H : LowT f vc ctx st0 bl RR)
-include H
-
-/-- A block parameter's class is that of its declared type. -/
-theorem LowT.param_cls (hd : Dominated f) {TB : Clif.Block} (hTB : TB ∈ f.blocks)
-    {p : Clif.ValueId × Clif.Ty} (hp : p ∈ TB.params) :
-    valClassOf ctx p.1 = (CTy.ofClif p.2).valClass := by
-  obtain ⟨ranges, hb⟩ := H.hb
-  exact valClassOf_of_type (((ctxFacts_of hb).types hd.ssa).2 TB hTB p hp)
-
 /-- **Branch arguments have their target parameters' classes**, from `Compile.edgeClassOk`
 (`CtxSpec.edgeClass`'s proof). -/
-theorem _root_.Backend.Proof.Driver.CtxSpec.edgeClassE {ranges : Array (Nat × Nat)}
+theorem _root_.Backend.Proof.Driver.CtxSpec.edgeClassE {f : Clif.Function} {ctx : Ctx}
+    {st0 : LState} {ranges : Array (Nat × Nat)}
     (sp : CtxSpec f ctx ranges st0) (hE : Compile.edgeClassOk f = true)
     {B : Clif.Block} (hB : B ∈ f.blocks) {bc : Clif.BlockCall} (hbc : bc ∈ dests B.term)
     {tb : Clif.Block} (htb : f.block? bc.block = some tb) {a : Nat} {p : Clif.ValueId × Clif.Ty}
@@ -60,7 +49,8 @@ theorem _root_.Backend.Proof.Driver.CtxSpec.edgeClassE {ranges : Array (Nat × N
 
 /-- **A `try_call`'s value arguments have their target parameters' classes**, from
 `Compile.edgeClassOk` (`CtxSpec.tryEdgeClass`'s proof). -/
-theorem _root_.Backend.Proof.Driver.CtxSpec.tryEdgeClassE {ranges : Array (Nat × Nat)}
+theorem _root_.Backend.Proof.Driver.CtxSpec.tryEdgeClassE {f : Clif.Function} {ctx : Ctx}
+    {st0 : LState} {ranges : Array (Nat × Nat)}
     (sp : CtxSpec f ctx ranges st0) (hE : Compile.edgeClassOk f = true)
     {B : Clif.Block} (hB : B ∈ f.blocks) {et : Clif.ExnTable} (het : IsTryWith B.term et)
     {td : Clif.TryDest} (htd : td ∈ et.dests) {tb : Clif.Block} (htb : f.block? td.block = some tb)
@@ -74,6 +64,18 @@ theorem _root_.Backend.Proof.Driver.CtxSpec.tryEdgeClassE {ranges : Array (Nat �
     rw [htb] at h2
     have h3 := List.all_eq_true.mp h2 _ hap
     exact sp.class_of_argClassOk h3 hv
+
+section
+variable {f : Clif.Function} {vc : VCode} {ctx : Ctx} {st0 : LState} {bl : List BLow} {RR : Reg → Reg}
+  (H : LowT f vc ctx st0 bl RR)
+include H
+
+/-- A block parameter's class is that of its declared type. -/
+theorem LowT.param_cls (hd : Dominated f) {TB : Clif.Block} (hTB : TB ∈ f.blocks)
+    {p : Clif.ValueId × Clif.Ty} (hp : p ∈ TB.params) :
+    valClassOf ctx p.1 = (CTy.ofClif p.2).valClass := by
+  obtain ⟨ranges, hb⟩ := H.hb
+  exact valClassOf_of_type (((ctxFacts_of hb).types hd.ssa).2 TB hTB p hp)
 
 /-- **A branch argument has its target parameter's class** (`Compile.edgeClassOk`). -/
 theorem LowT.arg_clsE (hd : Dominated f) (hE : Compile.edgeClassOk f = true) {B : Clif.Block}
