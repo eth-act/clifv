@@ -13,12 +13,16 @@ stage 2. Stage 2 used the returning run only to know that the run passes each ca
 (`prefix_relatedPRI_atEG_ends`). The callees of a trapping run return, so `ThmPRBRLE` one level
 down covers them.
 
+Determinism premises: `DetPRBR` (#719; the `DetPRB` forms are corollaries through `DetPRB.toR`).
+
 * `reach_envOfB`, `trapsExplicit_envOfB`: the run premises under `envOfB`;
-* `Stage2PRBZSEnds`, **`stage2PRBZS_ofE_ends`**, `stage2PRBZSEnds_zero`: `Stage2PRBZSE` for a run
-  that returns or traps;
-* `ThmPRBTE`, **`thmPRBTE_of`**, **`thmPRBTE_allC`**: the trapping counterpart of `ThmPRBRLE`;
-* **`backend_correct_program_core_initET`**, **`backend_correct_program_initET`**: the trapping
-  counterparts of `backend_correct_program_core_initE` / `backend_correct_program_initE`.
+* `Stage2PRBZSEnds`, **`stage2PRBZS_ofE_endsR`** (`stage2PRBZS_ofE_ends`), `stage2PRBZSEnds_zero`:
+  `Stage2PRBZSE` for a run that returns or traps;
+* `ThmPRBTE`, **`thmPRBTE_ofR`**, **`thmPRBTE_allCR`** (`thmPRBTE_of`, `thmPRBTE_allC`): the
+  trapping counterpart of `ThmPRBRLE`;
+* **`backend_correct_program_core_initETR`**, **`backend_correct_program_initETR`**
+  (`…_initET`): the trapping counterparts of `backend_correct_program_core_initE` /
+  `backend_correct_program_initE`.
 -/
 
 namespace E2E
@@ -75,10 +79,10 @@ def Stage2PRBZSEnds (κ : Nat → Clif.Function → Nat) (M : Nat) : Prop :=
     ∀ n, L.Stage2ZS κ M g F (L.BP M g s) (L.RP M g s) (L.envOfB M g (spv w₀)) cs (spv w₀)
       (L.CallStPRB κ M g s w₀ n) n
 
-/-- **`stage2PRBZS_ofE` for a run that returns or traps** (`stage2PRBZS_ofE`'s proof with
-`prefix_relatedPRI_atEG_ends`). -/
-theorem stage2PRBZS_ofE_ends (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) (hN : L.NeedSlots)
-    {M' : Nat} (ih : L.ThmPRBRLE κ M') (hdet : L.DetPRB κ M') (hdt : L.DetTabPRBE κ (M' + 1))
+/-- **`stage2PRBZS_ofER` for a run that returns or traps** (`stage2PRBZS_ofER`'s proof with
+`prefix_relatedPRI_atEG_ends`), determinism `DetPRBR`. -/
+theorem stage2PRBZS_ofE_endsR (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) (hN : L.NeedSlots)
+    {M' : Nat} (ih : L.ThmPRBRLE κ M') (hdet : L.DetPRBR κ M') (hdt : L.DetTabPRBE κ (M' + 1))
     (hret : L.RetOkPRB κ (M' + 1)) : L.Stage2PRBZSEnds κ (M' + 1) := by
   intro g hg F vals cs w₀ fuel ini G ra s hWE hME hra htab htrL hend
   have hc := hL.compiled g hg
@@ -104,9 +108,9 @@ theorem stage2PRBZS_ofE_ends (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) (hN
   have ihO : L.ThmPRBRL κ M' := ThmPRBRLE.toThmPRBRL L ih
   have ih' : 0 < M' + 1 → L.ThmPRBRL κ (M' + 1 - 1) := fun _ => by
     rw [Nat.add_sub_cancel]; exact ihO
-  have hdet' : 0 < M' + 1 → L.DetPRB κ (M' + 1 - 1) := fun _ => by
+  have hdet' : 0 < M' + 1 → L.DetPRBR κ (M' + 1 - 1) := fun _ => by
     rw [Nat.add_sub_cancel]; exact hdet
-  have hpc := (L.calleeOkPRBRL hL hκ ih' hdet' hg he (hQ 0)).pc
+  have hpc := (L.calleeOkPRBRLR hL hκ ih' hdet' hg he (hQ 0)).pc
   suffices H : ∀ n, (∀ k < n, L.Stage2ZS κ (M' + 1) g F (L.BP (M' + 1) g s) (L.RP (M' + 1) g s)
       (L.envOfB (M' + 1) g (spv w₀)) cs (spv w₀) (L.CallStPRB κ (M' + 1) g s w₀ k) k) →
       L.Stage2ZS κ (M' + 1) g F (L.BP (M' + 1) g s) (L.RP (M' + 1) g s)
@@ -120,8 +124,8 @@ theorem stage2PRBZS_ofE_ends (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) (hN
       (L.hooks (M' + 1)) (L.A g).base ra (κ (M' + 1) g) (spv w₀) (L.BP (M' + 1) g s)
       (L.RP (M' + 1) g s) s w₀ n :=
     ⟨he.abi, he.stack, he.gfree, he.hF, hME.entryP.proph, hME.reg,
-      fun k hk => L.calleeOkXPBTGZS hL hκ ih' hdet' hg he (hQ k) (IH k hk),
-      fun _ k hk => L.calleeTryOkXPBTGZS hL hκ ih' hdet' hg he (hQ k)
+      fun k hk => L.calleeOkXPBTGZSR hL hκ ih' hdet' hg he (hQ k) (IH k hk),
+      fun _ k hk => L.calleeTryOkXPBTGZSR hL hκ ih' hdet' hg he (hQ k)
         (IH k hk),
       hpc,
       fun ht _ => by
@@ -129,7 +133,7 @@ theorem stage2PRBZS_ofE_ends (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) (hN
         exact ⟨h0.pc, h0.seq, h0.flags⟩,
       he.body⟩
   intro u w hu hsw ins info hi hS ops regs i' hops cc wh hst hasg hpi hal herr hgd hnv
-  refine L.stage2_answerF hL hκ ih' hdet' hg hWE.img hWE.room hWE.dead
+  refine L.stage2_answerFR hL hκ ih' hdet' hg hWE.img hWE.room hWE.dead
     hWE.align _ _ cs n ?_ hnv
   intro h hh args vals' cm cs' rvals' cm'' hd hA hcal hM hmrW hargsW hsavW hswW hspw hinit hrun2
   obtain ⟨t, hrt, hcnt1, hinvt⟩ := hA
@@ -182,7 +186,7 @@ theorem stage2PRBZS_ofE_ends (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) (hN
             hsavW', hsw', hinit', hrun', hspw'⟩ | ⟨nm, valsb, cmb, hinvN, hpfb, hshapeb⟩
         · obtain ⟨t', hrt', hcn', hinv'⟩ := hinvN
           obtain rfl := reachN_call_unique hrt' hcn' hrtj hcnj
-          exact L.countStep_progE hL hκ hN ih hdet hdt hg hWE hME hra htab htrj hspj hcij hCSj hopsj
+          exact L.countStep_progER hL hκ hN ih hdet hdt hg hWE hME hra htab htrj hspj hcij hCSj hopsj
             hstj' hasgj hpij herrj hgdj hGuj hswj hh' hshape hcal' hmrW' hargsW' hsavW' hspw'
             hinit' hrun' hrtj hcnj hstj hinv' hItj hctj hptj hcnt
         · obtain ⟨t', hrt', hcn', hinv'⟩ := hinvN
@@ -204,6 +208,13 @@ theorem stage2PRBZS_ofE_ends (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) (hN
     hops hst hasg hpi herr hgd hGun hsw hh hd hcal hmrW hargsW hsavW hspw hinit hrun2
     (fun _ => by rw [hcm]; exact hptn) (hcntAll _ (Nat.le_refl _))
   exact hor
+
+/-- **`stage2PRBZS_ofE` for a run that returns or traps** (`stage2PRBZS_ofE_endsR` with
+`DetPRB`). -/
+theorem stage2PRBZS_ofE_ends (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) (hN : L.NeedSlots)
+    {M' : Nat} (ih : L.ThmPRBRLE κ M') (hdet : L.DetPRB κ M') (hdt : L.DetTabPRBE κ (M' + 1))
+    (hret : L.RetOkPRB κ (M' + 1)) : L.Stage2PRBZSEnds κ (M' + 1) :=
+  L.stage2PRBZS_ofE_endsR hL hκ hN ih (DetPRB.toR L hdet) hdt hret
 
 /-- `Stage2PRBZSEnds κ 0` (`stage2PRB_zero`'s proof: the run is not used). -/
 theorem stage2PRBZSEnds_zero (hL : L.Ok) [L.CrunOk] : L.Stage2PRBZSEnds κ 0 :=
@@ -227,9 +238,10 @@ def ThmPRBTE (κ : Nat → Clif.Function → Nat) (M : Nat) : Prop :=
     Clif.runLoop (L.envR M g) L.P.bare fuel cs = .trapped c →
     ∃ n, TrapAt (L.A g).fb (L.A g).base c (runX (L.mach M g) n s)
 
-/-- **The trapping step** (`thmPRBRL_ofZSE` with the pipeline's trap clause). -/
-theorem thmPRBTE_of (hL : L.Ok) [L.CrunOk] (hκ : L.Budget κ) {M : Nat}
-    (ih : 0 < M → L.ThmPRBRL κ (M - 1)) (hdet : 0 < M → L.DetPRB κ (M - 1))
+/-- **The trapping step** (`thmPRBRL_ofZSER` with the pipeline's trap clause), determinism
+`DetPRBR`. -/
+theorem thmPRBTE_ofR (hL : L.Ok) [L.CrunOk] (hκ : L.Budget κ) {M : Nat}
+    (ih : 0 < M → L.ThmPRBRL κ (M - 1)) (hdet : 0 < M → L.DetPRBR κ (M - 1))
     (hret : L.RetOkPRB κ M) (h2 : L.Stage2PRBZSEnds κ M) : L.ThmPRBTE κ M := by
   intro g hg F vals cs w₀ fuel c ini G ra s hWE hME hra htab htrL hrun
   have hc := hL.compiled g hg
@@ -254,8 +266,8 @@ theorem thmPRBTE_of (hL : L.Ok) [L.CrunOk] (hκ : L.Budget κ) {M : Nat}
       (L.XPBTGY κ M g F (L.BP M g s) (L.RP M g s) (L.envOfB M g (spv w₀)) cs (spv w₀))
       (L.hooks M) (L.A g).base ra (κ M g) (spv w₀) (L.BP M g s) (L.RP M g s) s w₀ :=
     ⟨he.abi, he.stack, he.gfree, he.hF, hME.entryP.proph, hME.reg,
-      fun n => L.calleeOkXPBTGZS hL hκ ih hdet hg he (hQ n) (hZS n),
-      fun _ n => L.calleeTryOkXPBTGZS hL hκ ih hdet hg he (hQ n) (hZS n),
+      fun n => L.calleeOkXPBTGZSR hL hκ ih hdet hg he (hQ n) (hZS n),
+      fun _ n => L.calleeTryOkXPBTGZSR hL hκ ih hdet hg he (hQ n) (hZS n),
       fun ht _ => by
         have h0 := hL.baseTls g hg (hasTls_of_vcode_pipeline hc ht) F (κ M g)
         cases M <;> exact ⟨h0.pc, h0.seq, h0.flags⟩,
@@ -263,30 +275,43 @@ theorem thmPRBTE_of (hL : L.Ok) [L.CrunOk] (hκ : L.Budget κ) {M : Nat}
   exact h.2 c hrun' (L.hooks M) G (L.A g).base ra (κ M g) (spv w₀) (L.BP M g s) (L.RP M g s) s
     hAE
 
-/-- **`ThmPRBTE` at every depth** under `NeedSlots`, from `thmPRBRLE_allC`'s premises (the
-callees of a trapping run return: `ThmPRBRLE` one level down). -/
-theorem thmPRBTE_allC (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) (hN : L.NeedSlots)
-    (hB : L.BaseRetOk) (hC : ∀ g ∈ L.P.funcs, L.RetCount g) (hdet : ∀ M, L.DetPRB κ M)
+/-- **The trapping step** with `DetPRB` (`thmPRBTE_ofR`, `DetPRB.toR`). -/
+theorem thmPRBTE_of (hL : L.Ok) [L.CrunOk] (hκ : L.Budget κ) {M : Nat}
+    (ih : 0 < M → L.ThmPRBRL κ (M - 1)) (hdet : 0 < M → L.DetPRB κ (M - 1))
+    (hret : L.RetOkPRB κ M) (h2 : L.Stage2PRBZSEnds κ M) : L.ThmPRBTE κ M :=
+  L.thmPRBTE_ofR hL hκ ih (fun h => DetPRB.toR L (hdet h)) hret h2
+
+/-- **`ThmPRBTE` at every depth** under `NeedSlots`, from `thmPRBRLE_allCR`'s premises (the
+callees of a trapping run return: `ThmPRBRLE` one level down), determinism `DetPRBR`. -/
+theorem thmPRBTE_allCR (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) (hN : L.NeedSlots)
+    (hB : L.BaseRetOk) (hC : ∀ g ∈ L.P.funcs, L.RetCount g) (hdet : ∀ M, L.DetPRBR κ M)
     (hdt : ∀ M, L.DetTabPRBE κ M) (M : Nat) : L.ThmPRBTE κ M := by
   cases M with
   | zero =>
-    exact L.thmPRBTE_of hL hκ (fun h => absurd h (Nat.lt_irrefl 0))
+    exact L.thmPRBTE_ofR hL hκ (fun h => absurd h (Nat.lt_irrefl 0))
       (fun h => absurd h (Nat.lt_irrefl 0)) (L.retOkPRB_zero hB hC) (L.stage2PRBZSEnds_zero hL)
   | succ M =>
-    have ihE := L.thmPRBRLE_allC hL hκ hN hB hC hdet hdt M
+    have ihE := L.thmPRBRLE_allCR hL hκ hN hB hC hdet hdt M
     have hret := L.retOkPRB_of (κ := κ) hL hN hB hC (M + 1)
-    exact L.thmPRBTE_of hL hκ (fun _ => by rw [Nat.add_sub_cancel]; exact ThmPRBRLE.toThmPRBRL L ihE)
+    exact L.thmPRBTE_ofR hL hκ (fun _ => by rw [Nat.add_sub_cancel]; exact ThmPRBRLE.toThmPRBRL L ihE)
       (fun _ => by rw [Nat.add_sub_cancel]; exact hdet M) hret
-      (L.stage2PRBZS_ofE_ends hL hκ hN ihE (hdet M) (hdt (M + 1)) hret)
+      (L.stage2PRBZS_ofE_endsR hL hκ hN ihE (hdet M) (hdt (M + 1)) hret)
+
+/-- **`ThmPRBTE` at every depth** with `DetPRB` (`thmPRBTE_allCR`, `DetPRB.toR`). -/
+theorem thmPRBTE_allC (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) (hN : L.NeedSlots)
+    (hB : L.BaseRetOk) (hC : ∀ g ∈ L.P.funcs, L.RetCount g) (hdet : ∀ M, L.DetPRB κ M)
+    (hdt : ∀ M, L.DetTabPRBE κ M) (M : Nat) : L.ThmPRBTE κ M :=
+  L.thmPRBTE_allCR hL hκ hN hB hC (fun M => DetPRB.toR L (hdet M)) hdt M
 
 end LinkSys
 
 /-- **A trapping activation entered from outside, under the machine's own slot table**
 (`backend_correct_program_core_initE` for a trapping CLIF run whose traps are explicit): under
-`NeedSlots` by `thmPRBTE_allC`, otherwise (the oracle unused) by `backend_correct_program_core`. -/
-theorem backend_correct_program_core_initET (L : LinkSys) (hL : L.Ok) [L.CrunOk]
+`NeedSlots` by `thmPRBTE_allCR`, otherwise (the oracle unused) by `backend_correct_program_core`;
+determinism `DetPRBR`. -/
+theorem backend_correct_program_core_initETR (L : LinkSys) (hL : L.Ok) [L.CrunOk]
     {κ : Nat → Clif.Function → Nat} (hκ : L.Budget κ) (hBR : L.BaseRetOk)
-    (hRC : ∀ g ∈ L.P.funcs, L.RetCount g) (hdet : ∀ M, L.DetPRB κ M)
+    (hRC : ∀ g ∈ L.P.funcs, L.RetCount g) (hdet : ∀ M, L.DetPRBR κ M)
     (hdt : ∀ M, L.DetTabPRBE κ M) (hK : L.HooksKeep) {f : Clif.Function}
     (hf : f ∈ L.P.funcs) (M : Nat) {ra : BitVec 64} {s w₀ : Arm.ArmState} {args : List Clif.Val}
     {cs : Clif.State}
@@ -340,18 +365,19 @@ theorem backend_correct_program_core_initET (L : LinkSys) (hL : L.Ok) [L.CrunOk]
       ⟨⟨hME, prophOk_prophOf _ _ _ _ _ _⟩, fun _ hcp _ _ _ _ => by rw [prophStOf_call hcp]⟩
     have hra : RaOk (L.A f) (ra - 4) := .inl fun k hk => by
       rw [BitVec.sub_add_cancel]; exact hent.raOutside k hk
-    exact L.thmPRBTE_allC hL hκ hN hBR hRC hdet hdt M f hf L.F args cs w₀ fuel c (L.iniOf M f s)
+    exact L.thmPRBTE_allCR hL hκ hN hBR hRC hdet hdt M f hf L.F args cs w₀ fuel c (L.iniOf M f s)
       L.Img ra s hWE hMEP hra (L.tableOfE_iniOf hL hK hf hent.program) htr hrun
   · exact backend_correct_program_core L hL hκ hf M hent hres hF hgfree himg hbe hargs hcs hsav
       hrel (fun h => absurd h hN) htr (o := .trapped c) fun _ => ⟨fuel, hrun⟩
 
 /-- **The whole-program trapping run under the machine's own slot table**: a trapping
 whole-program CLIF run of at most `M + 1` steps (its traps explicit) from `f`'s entry placed with
-the machine's own table is realised by the linked machine of depth `M` reaching the trap site. -/
-theorem backend_correct_program_initET (L : LinkSys) (hL : L.Ok)
+the machine's own table is realised by the linked machine of depth `M` reaching the trap site;
+determinism `DetPRBR`. -/
+theorem backend_correct_program_initETR (L : LinkSys) (hL : L.Ok)
     {κ : Nat → Clif.Function → Nat} (hκ : L.Budget κ) (hBR : L.BaseRetOk)
     (hRC : ∀ g ∈ L.P.funcs, L.RetCount g)
-    (hdet : ∀ M, L.std.DetPRB κ M) (hdt : ∀ M, L.std.DetTabPRBE κ M) (hK : L.HooksKeep)
+    (hdet : ∀ M, L.std.DetPRBR κ M) (hdt : ∀ M, L.std.DetTabPRBE κ M) (hK : L.HooksKeep)
     {f : Clif.Function}
     (hf : f ∈ L.P.funcs) (M : Nat) {ra : BitVec 64} {s w₀ : Arm.ArmState} {args : List Clif.Val}
     {cs : Clif.State}
@@ -378,8 +404,56 @@ theorem backend_correct_program_initET (L : LinkSys) (hL : L.Ok)
     (fun _ => hrel.1.symbols) (by rw [hrun]; exact fun _ h => nomatch h)
     (by rw [hrun]; exact fun h => nomatch h)
   rw [hrun] at hm
-  exact backend_correct_program_core_initET L.std (hL.withCrun _) hκ hBR hRC hdet hdt
+  exact backend_correct_program_core_initETR L.std (hL.withCrun _) hκ hBR hRC hdet hdt
     ⟨hK.err, hK.tlsErr, hK.prog, hK.tlsProg⟩ hf M hent hres hF hgfree himg hbe hargs hcs hsav hrel
     hpl htr hm
+
+/-- `backend_correct_program_core_initETR` with `DetPRB` (`DetPRB.toR`). -/
+theorem backend_correct_program_core_initET (L : LinkSys) (hL : L.Ok) [L.CrunOk]
+    {κ : Nat → Clif.Function → Nat} (hκ : L.Budget κ) (hBR : L.BaseRetOk)
+    (hRC : ∀ g ∈ L.P.funcs, L.RetCount g) (hdet : ∀ M, L.DetPRB κ M)
+    (hdt : ∀ M, L.DetTabPRBE κ M) (hK : L.HooksKeep) {f : Clif.Function}
+    (hf : f ∈ L.P.funcs) (M : Nat) {ra : BitVec 64} {s w₀ : Arm.ArmState} {args : List Clif.Val}
+    {cs : Clif.State}
+    (hent : AbiEntry (L.A f).fb (L.A f).base ra s) (hres : StackAvail (κ M f) (L.A f).af s)
+    (hF : L.F = frameWG (κ M f) (RAFrame.compute (L.A f).vcp (L.A f).rf).intBase
+      (RAFrame.compute (L.A f).vcp (L.A f).rf).size (L.A f).af L.Img s)
+    (hgfree : ∀ a, L.Img a → ¬ StackBelow (frameDrop (L.A f).af + κ M f) (spv s) a)
+    (himg : ∀ a, L.Img a → s.mem a = L.imgMem a)
+    (hbe : BodyEntry (L.A f).af s w₀) (hargs : ArgsIn f.sig args s) (hcs : ClifEntry f args cs)
+    (hsav : StackArgsAvoid L.Img f.sig args s)
+    (hrel : Rel.holds ⟨L.F, L.syms, (L.A f).af.slotBase,
+      (RAFrame.compute (L.A f).vcp (L.A f).rf).intBase⟩ f cs.frame.slots cs.mem w₀)
+    (hpl : L.NeedSlots → L.PlaceAtB cs.mem (spv w₀) (L.iniOf M f s))
+    (htr : TrapsExplicit (Clif.linkEnvR L.P L.base (L.crun M)) L.P.bare cs)
+    {fuel : Nat} {c : Clif.TrapCode}
+    (hrun : Clif.runLoop (L.envR M f) L.P.bare fuel cs = .trapped c) :
+    ArmRefines (L.A f).fb (L.A f).base ra (L.mach M f) s (.trapped c) :=
+  backend_correct_program_core_initETR L hL hκ hBR hRC (fun M => LinkSys.DetPRB.toR L (hdet M))
+    hdt hK hf M hent hres hF hgfree himg hbe hargs hcs hsav hrel hpl htr hrun
+
+/-- `backend_correct_program_initETR` with `DetPRB` (`DetPRB.toR`). -/
+theorem backend_correct_program_initET (L : LinkSys) (hL : L.Ok)
+    {κ : Nat → Clif.Function → Nat} (hκ : L.Budget κ) (hBR : L.BaseRetOk)
+    (hRC : ∀ g ∈ L.P.funcs, L.RetCount g)
+    (hdet : ∀ M, L.std.DetPRB κ M) (hdt : ∀ M, L.std.DetTabPRBE κ M) (hK : L.HooksKeep)
+    {f : Clif.Function}
+    (hf : f ∈ L.P.funcs) (M : Nat) {ra : BitVec 64} {s w₀ : Arm.ArmState} {args : List Clif.Val}
+    {cs : Clif.State}
+    (hent : AbiEntry (L.A f).fb (L.A f).base ra s) (hres : StackAvail (κ M f) (L.A f).af s)
+    (hF : L.F = frameWG (κ M f) (RAFrame.compute (L.A f).vcp (L.A f).rf).intBase
+      (RAFrame.compute (L.A f).vcp (L.A f).rf).size (L.A f).af L.Img s)
+    (hgfree : ∀ a, L.Img a → ¬ StackBelow (frameDrop (L.A f).af + κ M f) (spv s) a)
+    (himg : ∀ a, L.Img a → s.mem a = L.imgMem a)
+    (hbe : BodyEntry (L.A f).af s w₀) (hargs : ArgsIn f.sig args s) (hcs : ClifEntry f args cs)
+    (hsav : StackArgsAvoid L.Img f.sig args s)
+    (hrel : Rel.holds ⟨L.F, L.syms, (L.A f).af.slotBase,
+      (RAFrame.compute (L.A f).vcp (L.A f).rf).intBase⟩ f cs.frame.slots cs.mem w₀)
+    (hpl : L.NeedSlots → L.PlaceAtB cs.mem (spv w₀) (L.std.iniOf M f s))
+    (htr : TrapsExplicit (Clif.linkEnvN L.P L.base M) L.P.bare cs) {c : Clif.TrapCode}
+    (hrun : Clif.runLoop L.base L.P (M + 1) cs = .trapped c) :
+    ArmRefines (L.A f).fb (L.A f).base ra (L.mach M f) s (.trapped c) :=
+  backend_correct_program_initETR L hL hκ hBR hRC (fun M => LinkSys.DetPRB.toR L.std (hdet M))
+    hdt hK hf M hent hres hF hgfree himg hbe hargs hcs hsav hrel hpl htr hrun
 
 end E2E

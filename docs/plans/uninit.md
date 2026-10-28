@@ -2032,6 +2032,26 @@ standard axioms only (witnesses: native_decide certificates).
   (`regLevelCorrect_world_atCSNX` drops `trap_udf`/`trap_trapIf`'s traces). Needed: a counted
   trap clause through `sim_runGN` → `regLevelCorrect_world_atCSNX` → `…pipelinePRGYNX`.
 
+**Corrected premises at the executable level (UninitZ25, branch `agent/uninit-z25`, stacked on
+#720 and #723).** New leaf modules; existing statements unchanged (`LinkArmTrapE` from #720 made
+`DetPRBR`-primary, its `DetPRB` names kept as corollaries through `DetPRB.toR`).
+- `FV/E2E/LinkArmTrapE.lean`: `stage2PRBZS_ofE_endsR`, `thmPRBTE_ofR`, **`thmPRBTE_allCR`**,
+  `backend_correct_program_core_initETR`, **`backend_correct_program_initETR`**.
+- `FV/E2E/LinkArmProgramInitR.lean`: **`backend_correct_program_core_initEXR`**,
+  **`backend_correct_program_initEXR`** (returning runs with `RunGoodL`, on `thmPRBRLE_allCR`,
+  `thmPRBG_allCR`).
+- `FV/E2E/DeadCleanupBinaryInitR.lean`: **`InitOkR`** (`BaseRetOk`, `RetCount`, `HooksKeep`,
+  `DetPRBR` (#719), `CallTwinCE` (#716); `InitOkR.detTab`/`detTabR` by `detTabPRBE_ofCE` /
+  `detTabPRBr_ofCE`), **`binary_correct_initR`**, **`binary_correct_initTR`** (trapping runs, the
+  model's machine reaches the trap site), `model_init_sysSR`, **`binary_correct_exec_initR`**.
+- `FV/Link/DeadCleanupExeInitR.lean`: **`compileExe_correct_initR`** (`compileExe_correct_init`
+  on `InitOkR`; no `DetPRB` premise left in the end-state theorem).
+- Witnesses: `DeadCleanupExeInitSlotWitnessR.stale_read_returns_initR` (the stale read returns
+  `82`, premise `InitOkR` only); `LinkArmTrapEWitness`: `thmPRBTE_zero_Lsl` (no premise),
+  `thmPRBTE_one_Lsl` (from `DetPRBR` at `0` and `CallTwinCE` at `1`), `thmPRBTE_allCR_Lsl`.
+- Open: `InitOkR`'s `DetPRBR`, `CallTwinCE` as theorems (#713 open items); the exe-level trap
+  theorem (above).
+
 **Step 3h, as built (UninitZ10b): the call-count premises are theorems.** `InstCallsOne f` and
 `TryCallsOne f` hold for every `f` (`E2E.instCallsOne_all`, `E2E.tryCallsOne_all`,
 `FV/E2E/IselCallsOneAll.lean`), from `FV/Backend/Proof/IselCallsOne.lean`:
