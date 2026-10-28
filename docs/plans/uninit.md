@@ -740,6 +740,42 @@ agreeing on non-calls whose calls fail; `seqRun_csemI_le1` for `ISem.counted sem
 with `valueSem`; then `prune_correct` and the GOT flow for `valueSemVI`, and
 `backend_correct_world_cleanupPRI`.
 
+**Steps 3h–3j, as built (UninitZ10, branch `agent/uninit-z10`).** Item (a) is complete for both
+compile paths.
+- `FV/E2E/CountedFam.lean`: `NoncallIndep sem`, `ProbeOf semB sem` (for `sem : Nat → ISem CV W`,
+  any world), `SeqEnd.liftW`, `counted_noncall`/`counted_call`, `counted_probe_proj`,
+  `seqRun_counted_le1`; instances `noncallIndep_csem`/`probeOf_csem`,
+  `noncallIndep_valueSem`/`probeOf_valueSem`. `IselSimI`/`IselSimITry`: the step lemmas and the run
+  induction for any such family and memory relation (`stmt_stepG_noCall`, `stmt_stepG_call`,
+  `term_stepG`, `term_step_tryG`, `sim_runG`); the `csem` statements (`stmt_stepI_*`, `term_stepI`,
+  `term_step_tryI`, `sim_runI`) are unchanged, now instances.
+- `FV/E2E/IselSimICleanup.lean`: `valueSemI`, `driverHyp_relW_cleanup`, **`iselSim_relWI_cleanup`**.
+- `FV/E2E/BackendWorldCleanupI.lean`: `prune_correctW` (the cleanup simulation `star_sim` is
+  world-generic, so `prune_correct` holds for the counted world; `returns_cleanW`/`traps_cleanW`),
+  `pureForm_isCallI`/`cmpForm_isCallI`, `counted_pure`, `cmpOverwrite_counted`,
+  `DriverSemG.counted`, `valueSemV_sub`, `gotInvI_step_value`/`_star_value`,
+  `vRetFrom_gotV_valueI`/`vTrapFrom_gotV_valueI`, **`backend_correct_world_cleanupPRI`**
+  (`backend_correct_worldPRI`'s conclusion for `CompiledCleanup`).
+- `FV/E2E/CompiledEitherI.lean`: **`backend_correct_world_pipelinePRI`** (`CompiledEither`).
+- `FV/E2E/PairDriverI.lean`: `counted_pair_proj₁`/`₂`, `noncallIndep_pair`, `probeOf_pair`,
+  `xNI_none`, **`vcode_niI`**: the pair driver per CLIF step (family `pairSem (csem F ctx (XI.at
+  n))`, `MRP`), with `XNI` of call `n` needed, like the callee contracts, only at the CLIF states
+  reached after `n` calls and for the environment restricted to their invocation (decision:
+  per-state, the same shape as `hX`; the old one-`X` `XNI` premise is the special case).
+  `FV/E2E/PairDriverICleanup.lean`: **`vcode_niI_value`**.
+- `FV/E2E/BackendWorldNII.lean`: `backend_correct_world_niPRI`, `backend_correct_world_ni_cleanupPRI`,
+  **`backend_correct_world_ni_pipelinePRI`** (`backend_correct_world_ni_pipeline`'s two clauses,
+  counted: `ActEntryPR` activations, `XTls F (XI.at 0)`; the two outcomes are identified by the
+  world-generic `vRetFrom_det`).
+- Witnesses `FV/E2E/BackendWorldCleanupIWitness.lean` (`DeadCleanupWitness.source`, the closed
+  cleanup compilation that removes an instruction): `source_callsOne`, `source_xcalls`,
+  `source_xni`, `cleanupPRI_applies` (through `backend_correct_world_pipelinePRI`),
+  `ni_pipelinePRI_applies`.
+
+Next: item (b) (`thmPR_of` on `backend_correct_world_ni_pipelinePRI`: discharge `hX`/`hNI` per
+state from `progCallPR`/`calleeOkPR` at the machine's `n`-th call, `counter_at` along `ReachN`),
+item (d) (`WorldEntryB`), item (e).
+
 ## 6. Heap (separate gap, SEM2)
 
 `BaseOk.baseKeepsAllocs`/`baseNoAlloc` require base externs to allocate nothing whenever a program
