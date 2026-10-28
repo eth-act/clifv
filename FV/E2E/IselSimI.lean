@@ -1,6 +1,7 @@
 import FV.E2E.ClifEnvOnly
 import FV.E2E.LinkWorld
 import FV.Backend.Proof.VCodeSemIDriver
+import FV.E2E.CountedFam
 
 /-!
 # CLIF → counted VCode, with the callee contracts per step of the run (SEM1, `docs/plans/uninit.md` §5.9)
@@ -254,6 +255,105 @@ theorem segCalls_of {sem : ISem CV W} {MRW : MemRelTW W} {env' : Clif.Env}
     (fun x r h => Nat.lt_of_lt_of_le (H.shape.valsBelow x r h) hst0) hrun hcl
   rw [seg_eq hB hL hstm hsl, callsI_map_mapRegs, callsI_append, h, callsI_extraOf]
 
+/-! ### For any family with index-independent non-calls (`CountedFam.lean`) -/
+
+section fam
+variable {sem semB : Nat → Sem}
+
+/-- **A statement without an extern call, counted, for a family** `sem` with a probe `semB`
+(`ProbeOf`: `sem` on non-calls, failing calls): no VCode call runs. -/
+theorem stmt_stepG_noCall (hB : ProbeOf semB sem) {n : Nat}
+    (Hb : DriverHyp f vc ctx st0 R gn bl A (semB n) MR (env.only fun _ _ _ => False) p)
+    {s : Clif.State} {b k : Nat} {ρ : Nat → CV} {w : Arm.ArmState}
+    (hm : Match f ctx R gn bl A MR slots s ⟨b, k, ρ, w⟩)
+    {stm : Clif.Stmt} {rest : List Clif.Stmt} (hbody : s.frame.body = stm :: rest)
+    (hnc : stm.inst.isCallLike = false)
+    (hind : ∀ sig callee args, stm.inst = .callIndirect sig callee args → ∀ cv,
+      s.frame.get callee = .ok cv → ∀ g ∈ p.funcs, s.mem.symbols g.name ≠ some cv.toNat) :
+    (∀ s', Clif.step env p s = .next s' →
+      ∃ b' k' ρ' w', Star (VStep vc (ISem.counted sem)) (.run ⟨b, k, ρ, (w, n)⟩)
+        (.run ⟨b', k', ρ', (w', n)⟩) ∧ Match f ctx R gn bl A MR slots s' ⟨b', k', ρ', w'⟩) ∧
+    (∀ c, Clif.step env p s = .trapped c → explicitTrapInst stm.inst = true →
+      VTrapFrom vc (ISem.counted sem) ⟨b, k, ρ, (w, n)⟩ c) := by
+  have hstep : Clif.step (env.only fun _ _ _ => False) p s = Clif.step env p s :=
+    step_none_of_callNum (by simp [callNum, hbody, hnc]) (fun _ _ h => by rw [hbody] at h; cases h)
+  obtain ⟨S1, S2⟩ := stmt_step Hb hm hbody hind
+  have hp := counted_probe_proj hB n
+  refine ⟨fun s' hs => ?_, fun c hs hexp => vTrapFrom_mapW hp (S2 c (hstep.trans hs) hexp)⟩
+  obtain ⟨⟨b', k', ρ', w'⟩, hstar, hM⟩ := S1 s' (hstep.trans hs)
+  exact ⟨b', k', ρ', w', vstar_mapW hp hstar, hM⟩
+
+/-- **A `call`/`call_indirect` statement, counted, for a family** (`stmt_stepI_call` for `sem`). -/
+theorem stmt_stepG_call (hni : NoncallIndep sem) {n : Nat} {s : Clif.State}
+    (Hs : DriverHyp f vc ctx st0 R gn bl A (sem n) MR (env.only (Clif.Invoked env p s)) p)
+    (hseg : ∀ b B j stm, f.blocks[b]? = some B → B.body[j]? = some stm →
+      stm.inst.isCallLike = true → callsI (seg f R bl b j) = 1)
+    {b k : Nat} {ρ : Nat → CV} {w : Arm.ArmState}
+    (hm : Match f ctx R gn bl A MR slots s ⟨b, k, ρ, w⟩)
+    {stm : Clif.Stmt} {rest : List Clif.Stmt} (hbody : s.frame.body = stm :: rest)
+    (hcl : stm.inst.isCallLike = true)
+    (hind : ∀ sig callee args, stm.inst = .callIndirect sig callee args → ∀ cv,
+      s.frame.get callee = .ok cv → ∀ g ∈ p.funcs, s.mem.symbols g.name ≠ some cv.toNat) :
+    (∀ s', Clif.step env p s = .next s' →
+      ∃ b' k' ρ' w', Star (VStep vc (ISem.counted sem)) (.run ⟨b, k, ρ, (w, n)⟩)
+        (.run ⟨b', k', ρ', (w', n + 1)⟩) ∧ Match f ctx R gn bl A MR slots s' ⟨b', k', ρ', w'⟩) ∧
+    (∀ c, Clif.step env p s = .trapped c → explicitTrapInst stm.inst = true →
+      VTrapFrom vc (ISem.counted sem) ⟨b, k, ρ, (w, n)⟩ c) := by
+  have hstep : Clif.step (env.only (Clif.Invoked env p s)) p s = Clif.step env p s :=
+    Clif.step_only fun _ _ _ h => h
+  obtain ⟨B, j, hB, -, hjlt, hstm, rfl, hnext, htrap⟩ := stmt_run Hs hm hbody hind
+  obtain ⟨L, hL⟩ := Hs.blow hB
+  obtain ⟨vb, hvb, -, -, -, -, -, -, hcode, htne, -⟩ := Hs.shape.blk b B L hB hL
+  obtain ⟨hsegat, hlt⟩ := seg_at hcode htne hjlt
+  have h1 := hseg b B j stm hB hstm hcl
+  have hle : callsI (seg f R bl b j) ≤ 1 := by omega
+  refine ⟨fun s' hs => ?_, fun c hs hexp => ?_⟩
+  · obtain ⟨ρ', w', hsr, hM⟩ := hnext s' (hstep.trans hs)
+    have hsrI : seqRun (ISem.counted sem) (seg f R bl b j) ρ (w, n) =
+        some (.fall ρ' (w', n + 1)) := by
+      rw [seqRun_counted_le1 hni hle ρ w n, hsr]
+      simp [SeqEnd.liftI, h1]
+    rw [pos_succ] at hlt hM
+    exact ⟨_, _, ρ', w', seqRun_fall_star hvb hsegat hlt hsrI, hM⟩
+  · obtain ⟨k', i, ops, ρ₁, w₁, outs, w₂, hsr, htc⟩ := htrap c (hstep.trans hs) hexp
+    have hsrI := seqRun_counted_le1 hni hle ρ w n
+    rw [hsr] at hsrI
+    obtain ⟨hstar, -, hi, hops, hsem, -, -⟩ := seqRun_stop_star hvb hsegat hsrI
+    exact ⟨b, _, ρ₁, _, vb, i, ops, outs, _, hstar, hvb, hi, hops, hsem, htc⟩
+
+/-- **A terminator other than `try_call`, counted, for a family** (the probe: no VCode call). -/
+theorem term_stepG (hB : ProbeOf semB sem) {n : Nat}
+    (Hb : DriverHyp f vc ctx st0 R gn bl A (semB n) MR (env.only fun _ _ _ => False) p)
+    {s : Clif.State} {b k : Nat} {ρ : Nat → CV} {w : Arm.ArmState}
+    (hm : Match f ctx R gn bl A MR slots s ⟨b, k, ρ, w⟩) (hbody : s.frame.body = [])
+    (hnt : s.frame.term.isTry = false) :
+    (∀ s', Clif.step env p s = .next s' →
+      ∃ b' k' ρ' w', Star (VStep vc (ISem.counted sem)) (.run ⟨b, k, ρ, (w, n)⟩)
+        (.run ⟨b', k', ρ', (w', n)⟩) ∧ Match f ctx R gn bl A MR slots s' ⟨b', k', ρ', w'⟩) ∧
+    (∀ vals cm, Clif.step env p s = .done vals cm →
+      ∃ us outs w' sv, VRetFrom vc (ISem.counted sem) ⟨b, k, ρ, (w, n)⟩ us outs (w', n) ∧
+        us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
+        s.frame.getMany (sretRet f) = .ok sv ∧ AllHold (vals ++ sv) outs ∧
+        MR slots s.mem w' ∧ cm = (s.mem.free (slots.map (·.2))).leave) ∧
+    (∀ c, Clif.step env p s = .trapped c →
+      VTrapFrom vc (ISem.counted sem) ⟨b, k, ρ, (w, n)⟩ c) := by
+  have hnr : ∀ fn args, s.frame.body = [] → s.frame.term ≠ .returnCall fn args := by
+    intro fn args _ h
+    obtain ⟨-, -, -, -, B, j, hB, hterm, -⟩ := hm
+    exact Hb.noTail B (List.mem_of_getElem? hB) fn args (hterm.symm.trans h)
+  have hstep : Clif.step (env.only fun _ _ _ => False) p s = Clif.step env p s :=
+    step_none_of_callNum (by simp [callNum, hbody, hnt]) hnr
+  obtain ⟨T1, T2, T3⟩ := term_step_abi Hb hm hbody hnt
+  have hp := counted_probe_proj hB n
+  refine ⟨fun s' hs => ?_, fun vals cm hs => ?_,
+    fun c hs => vTrapFrom_mapW hp (T3 c (hstep.trans hs))⟩
+  · obtain ⟨⟨b', k', ρ', w'⟩, hstar, hM⟩ := T1 s' (hstep.trans hs)
+    exact ⟨b', k', ρ', w', vstar_mapW hp hstar, hM⟩
+  · obtain ⟨us, outs, w', sv, hret, h1, h2, h3, h4, h5, h6⟩ := T2 vals cm (hstep.trans hs)
+    exact ⟨us, outs, w', sv, vRetFrom_mapW hp hret, h1, h2, h3, h4, h5, h6⟩
+
+end fam
+
 /-- **A statement without an extern call, counted**: the probe (`noCall`, the environment
 answering nothing) runs its segment, which therefore executes no VCode call. -/
 theorem stmt_stepI_noCall {n : Nat}
@@ -270,13 +370,7 @@ theorem stmt_stepI_noCall {n : Nat}
         (.run ⟨b', k', ρ', (w', n)⟩) ∧ Match f ctx R gn bl A MR slots s' ⟨b', k', ρ', w'⟩) ∧
     (∀ c, Clif.step env p s = .trapped c → explicitTrapInst stm.inst = true →
       VTrapFrom vc (csemI F fctx XI) ⟨b, k, ρ, (w, n)⟩ c) := by
-  have hstep : Clif.step (env.only fun _ _ _ => False) p s = Clif.step env p s :=
-    step_none_of_callNum (by simp [callNum, hbody, hnc]) (fun _ _ h => by rw [hbody] at h; cases h)
-  obtain ⟨S1, S2⟩ := stmt_step Hb hm hbody hind
-  have hp := csem_noCall_proj F fctx XI n
-  refine ⟨fun s' hs => ?_, fun c hs hexp => vTrapFrom_mapW hp (S2 c (hstep.trans hs) hexp)⟩
-  obtain ⟨⟨b', k', ρ', w'⟩, hstar, hM⟩ := S1 s' (hstep.trans hs)
-  exact ⟨b', k', ρ', w', vstar_mapW hp hstar, hM⟩
+  exact stmt_stepG_noCall (probeOf_csem F fctx XI) Hb hm hbody hnc hind
 
 /-- **A `call`/`call_indirect` statement, counted**: its segment runs with `XI.at n` in the
 environment restricted to its invocation, and has one VCode call: the counter goes to `n + 1`. -/
@@ -296,27 +390,7 @@ theorem stmt_stepI_call {n : Nat} {s : Clif.State}
         (.run ⟨b', k', ρ', (w', n + 1)⟩) ∧ Match f ctx R gn bl A MR slots s' ⟨b', k', ρ', w'⟩) ∧
     (∀ c, Clif.step env p s = .trapped c → explicitTrapInst stm.inst = true →
       VTrapFrom vc (csemI F fctx XI) ⟨b, k, ρ, (w, n)⟩ c) := by
-  have hstep : Clif.step (env.only (Clif.Invoked env p s)) p s = Clif.step env p s :=
-    Clif.step_only fun _ _ _ h => h
-  obtain ⟨B, j, hB, -, hjlt, hstm, rfl, hnext, htrap⟩ := stmt_run Hs hm hbody hind
-  obtain ⟨L, hL⟩ := Hs.blow hB
-  obtain ⟨vb, hvb, -, -, -, -, -, -, hcode, htne, -⟩ := Hs.shape.blk b B L hB hL
-  obtain ⟨hsegat, hlt⟩ := seg_at hcode htne hjlt
-  have h1 := hseg b B j stm hB hstm hcl
-  have hle : callsI (seg f R bl b j) ≤ 1 := by omega
-  refine ⟨fun s' hs => ?_, fun c hs hexp => ?_⟩
-  · obtain ⟨ρ', w', hsr, hM⟩ := hnext s' (hstep.trans hs)
-    have hsrI : seqRun (csemI F fctx XI) (seg f R bl b j) ρ (w, n) =
-        some (.fall ρ' (w', n + 1)) := by
-      rw [seqRun_csemI_le1 F fctx XI hle ρ w n, hsr]
-      simp [SeqEnd.liftI, h1]
-    rw [pos_succ] at hlt hM
-    exact ⟨_, _, ρ', w', seqRun_fall_star hvb hsegat hlt hsrI, hM⟩
-  · obtain ⟨k', i, ops, ρ₁, w₁, outs, w₂, hsr, htc⟩ := htrap c (hstep.trans hs) hexp
-    have hsrI := seqRun_csemI_le1 F fctx XI hle ρ w n
-    rw [hsr] at hsrI
-    obtain ⟨hstar, -, hi, hops, hsem, -, -⟩ := seqRun_stop_star hvb hsegat hsrI
-    exact ⟨b, _, ρ₁, _, vb, i, ops, outs, _, hstar, hvb, hi, hops, hsem, htc⟩
+  exact stmt_stepG_call (noncallIndep_csem F fctx XI) Hs hseg hm hbody hcl hind
 
 /-- **A terminator other than `try_call`, counted** (the probe: no VCode call). -/
 theorem term_stepI {n : Nat}
@@ -334,20 +408,7 @@ theorem term_stepI {n : Nat}
         s.frame.getMany (sretRet f) = .ok sv ∧ AllHold (vals ++ sv) outs ∧
         MR slots s.mem w' ∧ cm = (s.mem.free (slots.map (·.2))).leave) ∧
     (∀ c, Clif.step env p s = .trapped c → VTrapFrom vc (csemI F fctx XI) ⟨b, k, ρ, (w, n)⟩ c) := by
-  have hnr : ∀ fn args, s.frame.body = [] → s.frame.term ≠ .returnCall fn args := by
-    intro fn args _ h
-    obtain ⟨-, -, -, -, B, j, hB, hterm, -⟩ := hm
-    exact Hb.noTail B (List.mem_of_getElem? hB) fn args (hterm.symm.trans h)
-  have hstep : Clif.step (env.only fun _ _ _ => False) p s = Clif.step env p s :=
-    step_none_of_callNum (by simp [callNum, hbody, hnt]) hnr
-  obtain ⟨T1, T2, T3⟩ := term_step_abi Hb hm hbody hnt
-  have hp := csem_noCall_proj F fctx XI n
-  refine ⟨fun s' hs => ?_, fun vals cm hs => ?_,
-    fun c hs => vTrapFrom_mapW hp (T3 c (hstep.trans hs))⟩
-  · obtain ⟨⟨b', k', ρ', w'⟩, hstar, hM⟩ := T1 s' (hstep.trans hs)
-    exact ⟨b', k', ρ', w', vstar_mapW hp hstar, hM⟩
-  · obtain ⟨us, outs, w', sv, hret, h1, h2, h3, h4, h5, h6⟩ := T2 vals cm (hstep.trans hs)
-    exact ⟨us, outs, w', sv, vRetFrom_mapW hp hret, h1, h2, h3, h4, h5, h6⟩
+  exact term_stepG (probeOf_csem F fctx XI) Hb hm hbody hnt
 
 end steps
 

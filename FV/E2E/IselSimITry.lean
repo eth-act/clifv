@@ -44,12 +44,12 @@ section
 variable {f : Clif.Function} {vc : VCode} {ctx : Ctx} {st0 : LState} {R : Reg → Reg}
   {gn : Nat → Nat} {bl : List BLow} {A : Nat → Nat → List Clif.ValueId}
   {F : BitVec 64 → Prop} {fctx : FnCtx} {XI : ExtSemI} {MR : MemRelT} {env : Clif.Env}
-  {p : Clif.Program} {slots : List (Clif.SlotId × Nat)}
+  {p : Clif.Program} {slots : List (Clif.SlotId × Nat)} {sem semB : Nat → Sem}
 
-/-- **`try_call`/`try_call_indirect` step, counted** (`term_step_tryP`'s proof for `csem F fctx
-(XI.at n)`, the run lifted to `csemI F fctx XI`: one VCode call, the counter `n` to `n + 1`). -/
-theorem term_step_tryI {n : Nat}
-    (H : DriverHyp f vc ctx st0 R gn bl A (csem F fctx (XI.at n)) MR env p) (htc : TryCallsOne f)
+/-- **`try_call`/`try_call_indirect` step, counted, for a family** (`term_step_tryP`'s proof for
+`sem n`, the run lifted to `ISem.counted sem`: one VCode call, the counter `n` to `n + 1`). -/
+theorem term_step_tryG (hni : NoncallIndep sem) {n : Nat}
+    (H : DriverHyp f vc ctx st0 R gn bl A (sem n) MR env p) (htc : TryCallsOne f)
     {s : Clif.State} {b k : Nat} {ρ : Nat → CV} {w : Arm.ArmState}
     (hm : Match f ctx R gn bl A MR slots s ⟨b, k, ρ, w⟩) (hbody : s.frame.body = [])
     {et : Clif.ExnTable} (hT : IsTryWith s.frame.term et)
@@ -60,7 +60,7 @@ theorem term_step_tryI {n : Nat}
       (s'.frame.body = [] ∧ ∃ bc, s'.frame.term = .jump bc) ∧
       (∀ c, Clif.step env p s' ≠ .trapped c) ∧ (∀ vals cm, Clif.step env p s' ≠ .done vals cm) ∧
       ∀ s'', Clif.step env p s' = .next s'' →
-        ∃ b' k' ρ' w', Star (VStep vc (csemI F fctx XI)) (.run ⟨b, k, ρ, (w, n)⟩)
+        ∃ b' k' ρ' w', Star (VStep vc (ISem.counted sem)) (.run ⟨b, k, ρ, (w, n)⟩)
           (.run ⟨b', k', ρ', (w', n + 1)⟩) ∧
           Match f ctx R gn bl A MR slots s'' ⟨b', k', ρ', w'⟩ := by
   obtain ⟨hcall, hfunc, hslots, hmem, B, j, hB, hterm, hj, hbd, hk, hheld, hcons⟩ := hm
@@ -106,7 +106,7 @@ theorem term_step_tryI {n : Nat}
         s.frame.regs.setMany ((List.range T.sig.returns.length).map
           (s.frame.func.freshValue + ·)) rvals = some regs' ∧
         s' = tryNext s regs' bc cm') ∧
-      LowerTryOk (csem F fctx (XI.at n)) MR env p
+      LowerTryOk (sem n) MR env p
         (tryCtx ctx (L.start + B.body.length) L.data T.regs) ci T.info
         { T.st1 with emitted := #[] } L.tst' L.tst'.emitted.toList := by
     rcases hBT with ⟨fn, args, hBT⟩ | ⟨callee, args, hBT⟩
@@ -250,7 +250,7 @@ theorem term_step_tryI {n : Nat}
       rw [vuseNums_tryCall] at hu
       exact hU' _ (by rw [hms]; simp) u hu
   have hAg : Agree gn D ρ₀ ρ := fun _ _ => rfl
-  have hren := seqRun_rename (sem := csem F fctx (XI.at n)) (ρ₀ := ρ₀) (ρ := ρ) (w := w)
+  have hren := seqRun_rename (sem := sem n) (ρ₀ := ρ₀) (ρ := ρ) (w := w)
     H.shape.ren (H.dsem.rename R gn H.shape.ren) hD hdefs
   obtain ⟨ρ₁', hsr', -, hA2⟩ := (hren (huses hU) hAg).2 hsr
   obtain ⟨hsegat, hsize⟩ := tseg_at hcode
@@ -275,7 +275,7 @@ theorem term_step_tryI {n : Nat}
     simp [callsI, MInst.isCallI]
   have htk : callsI (((pre ++ [MInst.tryCall ci' T.info]).map (·.mapRegs R)).take pre.length) = 0 := by
     rw [List.map_append, List.take_left' (by simp), callsI_map_mapRegs, hp0]
-  have hsrI := seqRun_csemI_le1 F fctx XI hle ρ w n
+  have hsrI := seqRun_counted_le1 hni hle ρ w n
   rw [hsr'] at hsrI
   simp only [Option.map_some, SeqEnd.liftI, htk, Nat.add_zero, MInst.isCallI] at hsrI
   obtain ⟨hstar, -, hi, hops, hsem, hlen, -⟩ := seqRun_stop_starP hvb hsegat hsrI
@@ -401,10 +401,10 @@ theorem term_step_tryI {n : Nat}
   have hpc : parCopyEnv ρ₂ [] [] = ρ₂ := rfl
   rw [hpc] at henv2
   have hebback : eb.insts.back? = some (.jump tl) := by rw [hebi]; rfl
-  have hjump : csemI F fctx XI (.jump tl) [] (w₂, n + 1) = some ([], (w₂, n + 1), .goto 0) := by
-    rw [csemI_noncall F fctx XI (by rfl) [] w₂ (n + 1) n, H.dsem.jump tl w₂]
+  have hjump : ISem.counted sem (.jump tl) [] (w₂, n + 1) = some ([], (w₂, n + 1), .goto 0) := by
+    rw [counted_noncall hni (by rfl) [] w₂ (n + 1) n, H.dsem.jump tl w₂]
     rfl
-  have hstep2 : VStep vc (csemI F fctx XI) (.run ⟨tlab, 0, parCopyEnv ρ₂ [] [], (w₂, n + 1)⟩)
+  have hstep2 : VStep vc (ISem.counted sem) (.run ⟨tlab, 0, parCopyEnv ρ₂ [] [], (w₂, n + 1)⟩)
       (.run ⟨tl, 0, parCopyEnv ρ₂ (TB.params.map (·.1)) xs, (w₂, n + 1)⟩) := by
     rw [hpc]
     refine VStep.step heb (by rw [hebi]; rfl) (i := .jump tl) (ops := #[]) rfl
@@ -412,21 +412,21 @@ theorem term_step_tryI {n : Nat}
     rw [succOf_eq H.shape.labels hcfg heb hebback]; rfl
   exact ⟨_, _, _, _, hstar.star.trans (.step hstep1 (.single hstep2)), hM⟩
 
-/-- **Whole runs, counted**: from matching states at CLIF call count `n`, every CLIF outcome
-is realised by the counted VCode run from counter `n` (call number `n` with `XI.at n`): the
-steps without extern call by the probe with failing calls (`Hb`), the calling ones with the
+/-- **Whole runs, counted, for a family**: from matching states at CLIF call count `n`, every
+CLIF outcome is realised by the counted VCode run from counter `n` (call number `n` with
+`sem n`): the steps without extern call by the probe `semB n` (`Hb`), the calling ones with the
 environment restricted to their invocation (`Hs`). -/
-theorem sim_runI {cs : Clif.State} (hP : RunPrem env p f cs)
-    (Hb : ∀ n, DriverHyp f vc ctx st0 R gn bl A (csem F fctx (XI.at n).noCall) MR
-      (env.only fun _ _ _ => False) p)
-    (Hs : ∀ s n, ReachN env p cs s n → DriverHyp f vc ctx st0 R gn bl A (csem F fctx (XI.at n)) MR
+theorem sim_runG (hni : NoncallIndep sem) (hPr : ProbeOf semB sem) {cs : Clif.State}
+    (hP : RunPrem env p f cs)
+    (Hb : ∀ n, DriverHyp f vc ctx st0 R gn bl A (semB n) MR (env.only fun _ _ _ => False) p)
+    (Hs : ∀ s n, ReachN env p cs s n → DriverHyp f vc ctx st0 R gn bl A (sem n) MR
       (env.only (Clif.Invoked env p s)) p)
     (hseg : ∀ b B j stm, f.blocks[b]? = some B → B.body[j]? = some stm →
       stm.inst.isCallLike = true → callsI (seg f R bl b j) = 1)
     (htc : TryCallsOne f) :
     ∀ fuel s n b k ρ w, ReachN env p cs s n →
       Match f ctx R gn bl A MR slots s ⟨b, k, ρ, w⟩ →
-        RunOkAbi vc (csemI F fctx XI) (MRI MR) slots (fun _ => True) ⟨b, k, ρ, (w, n)⟩
+        RunOkAbi vc (ISem.counted sem) (MRI MR) slots (fun _ => True) ⟨b, k, ρ, (w, n)⟩
           (Clif.runLoop env p fuel s) := by
   intro fuel
   induction fuel using Nat.strongRecOn with
@@ -441,7 +441,7 @@ theorem sim_runI {cs : Clif.State} (hP : RunPrem env p f cs)
     | nil =>
       cases hty : s.frame.term.isTry with
       | false =>
-        obtain ⟨T1, T2, T3⟩ := term_stepI (Hb n) hm hbody hty
+        obtain ⟨T1, T2, T3⟩ := term_stepG hPr (Hb n) hm hbody hty
         have hc0 : callNum s = 0 := by simp [callNum, hbody, hty]
         cases hs : Clif.step env p s with
         | next s' =>
@@ -466,7 +466,7 @@ theorem sim_runI {cs : Clif.State} (hP : RunPrem env p f cs)
             s.frame.get callee = .ok cv → ∀ g ∈ p.funcs, s.mem.symbols g.name ≠ some cv.toNat :=
           fun callee args ht => hP.tryIndirect s callee args et hr.reach hbody ht
             ⟨B, hBmem, hterm.symm.trans ht⟩
-        obtain ⟨Tnd, Tnx⟩ := term_step_tryI (Hs s n hr) htc hm hbody hT hind
+        obtain ⟨Tnd, Tnx⟩ := term_step_tryG hni (Hs s n hr) htc hm hbody hT hind
         have hst : Clif.step (env.only (Clif.Invoked env p s)) p s = Clif.step env p s :=
           Clif.step_only fun _ _ _ h => h
         have hc1 : callNum s = 1 := by simp [callNum, hbody, hty]
@@ -481,7 +481,7 @@ theorem sim_runI {cs : Clif.State} (hP : RunPrem env p f cs)
           cases m with
           | zero => trivial
           | succ m' =>
-            show RunOkAbi vc (csemI F fctx XI) (MRI MR) slots (fun _ => True) _
+            show RunOkAbi vc (ISem.counted sem) (MRI MR) slots (fun _ => True) _
               (Clif.runLoop env p (m' + 1) s')
             rw [Clif.runLoop_succ]
             cases hs' : Clif.step env p s' with
@@ -518,7 +518,7 @@ theorem sim_runI {cs : Clif.State} (hP : RunPrem env p f cs)
           ⟨B, hBmem, hst⟩
       cases hcl : st.inst.isCallLike with
       | false =>
-        obtain ⟨S1, S2⟩ := stmt_stepI_noCall (Hb n) hm hbody hcl hind
+        obtain ⟨S1, S2⟩ := stmt_stepG_noCall hPr (Hb n) hm hbody hcl hind
         have hc0 : callNum s = 0 := by simp [callNum, hbody, hcl]
         cases hs : Clif.step env p s with
         | next s' =>
@@ -530,7 +530,7 @@ theorem sim_runI {cs : Clif.State} (hP : RunPrem env p f cs)
         | trapped c => exact S2 c hs (hP.stmt s c st rest hr.reach hs hbody)
         | stuck => trivial
       | true =>
-        obtain ⟨S1, S2⟩ := stmt_stepI_call (Hs s n hr) hseg hm hbody hcl hind
+        obtain ⟨S1, S2⟩ := stmt_stepG_call hni (Hs s n hr) hseg hm hbody hcl hind
         have hc1 : callNum s = 1 := by simp [callNum, hbody, hcl]
         cases hs : Clif.step env p s with
         | next s' =>
@@ -542,6 +542,43 @@ theorem sim_runI {cs : Clif.State} (hP : RunPrem env p f cs)
         | trapped c => exact S2 c hs (hP.stmt s c st rest hr.reach hs hbody)
         | stuck => trivial
 
+
+/-- **`try_call`/`try_call_indirect` step, counted** (`term_step_tryG` for `csem F fctx (XI.at n)`). -/
+theorem term_step_tryI {n : Nat}
+    (H : DriverHyp f vc ctx st0 R gn bl A (csem F fctx (XI.at n)) MR env p) (htc : TryCallsOne f)
+    {s : Clif.State} {b k : Nat} {ρ : Nat → CV} {w : Arm.ArmState}
+    (hm : Match f ctx R gn bl A MR slots s ⟨b, k, ρ, w⟩) (hbody : s.frame.body = [])
+    {et : Clif.ExnTable} (hT : IsTryWith s.frame.term et)
+    (hind : ∀ callee args, s.frame.term = .tryCallIndirect callee args et → ∀ cv,
+      s.frame.get callee = .ok cv → ∀ g ∈ p.funcs, s.mem.symbols g.name ≠ some cv.toNat) :
+    (∀ vals cm, Clif.step env p s ≠ .done vals cm) ∧
+    ∀ s', Clif.step env p s = .next s' →
+      (s'.frame.body = [] ∧ ∃ bc, s'.frame.term = .jump bc) ∧
+      (∀ c, Clif.step env p s' ≠ .trapped c) ∧ (∀ vals cm, Clif.step env p s' ≠ .done vals cm) ∧
+      ∀ s'', Clif.step env p s' = .next s'' →
+        ∃ b' k' ρ' w', Star (VStep vc (csemI F fctx XI)) (.run ⟨b, k, ρ, (w, n)⟩)
+          (.run ⟨b', k', ρ', (w', n + 1)⟩) ∧
+          Match f ctx R gn bl A MR slots s'' ⟨b', k', ρ', w'⟩ :=
+  term_step_tryG (sem := fun n => csem F fctx (XI.at n)) (noncallIndep_csem F fctx XI) H htc hm
+    hbody hT hind
+
+/-- **Whole runs, counted** (`sim_runG` for `csem F fctx (XI.at n)`, the probe with failing
+calls). -/
+theorem sim_runI {cs : Clif.State} (hP : RunPrem env p f cs)
+    (Hb : ∀ n, DriverHyp f vc ctx st0 R gn bl A (csem F fctx (XI.at n).noCall) MR
+      (env.only fun _ _ _ => False) p)
+    (Hs : ∀ s n, ReachN env p cs s n → DriverHyp f vc ctx st0 R gn bl A (csem F fctx (XI.at n)) MR
+      (env.only (Clif.Invoked env p s)) p)
+    (hseg : ∀ b B j stm, f.blocks[b]? = some B → B.body[j]? = some stm →
+      stm.inst.isCallLike = true → callsI (seg f R bl b j) = 1)
+    (htc : TryCallsOne f) :
+    ∀ fuel s n b k ρ w, ReachN env p cs s n →
+      Match f ctx R gn bl A MR slots s ⟨b, k, ρ, w⟩ →
+        RunOkAbi vc (csemI F fctx XI) (MRI MR) slots (fun _ => True) ⟨b, k, ρ, (w, n)⟩
+          (Clif.runLoop env p fuel s) :=
+  sim_runG (sem := fun n => csem F fctx (XI.at n))
+    (semB := fun n => csem F fctx (XI.at n).noCall) (noncallIndep_csem F fctx XI)
+    (probeOf_csem F fctx XI) hP Hb Hs hseg htc
 end
 
 /-- **CLIF → counted VCode for the backend's `csem`** (`iselSim_relW` for the counted run
