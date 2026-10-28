@@ -1,4 +1,4 @@
-import FV.E2E.LinkArmTableE
+import FV.E2E.LinkArmTableECall
 import FV.E2E.LinkSlotSysWitness
 
 /-!
@@ -10,12 +10,26 @@ On the slotted system `LinkSlotSysWitness.Lsl`:
 * `tableOfE_of_Lsl`: every `TableOf` of `Lsl` is a `TableOfE`;
 * **`tableOfE_err_Lsl`**: a machine entry with an error has the prefix-closed table of every
   oracle, at every depth (`tableOfE_of_err`), for each of `Lsl`'s functions;
-* `tabUpToE_of_Lsl`: the empty-prefix `TabUpTo` converts (`tabUpToE_of`).
+* `tabUpToE_of_Lsl`: the empty-prefix `TabUpTo` converts (`tabUpToE_of`);
+* `callsTo_err_zero_Lsl`: at depth `0` a program call of `Lsl` always ends in an error
+  (`callsTo_ret`: no `M'` with `0 = M' + 1`); `callsTo_ret_Lsl`: the instance at depth `M`.
 -/
 
 namespace E2E.LinkSlotSysWitness
 
 open Backend Backend.Proof Backend.Proof.Driver
+
+theorem callsTo_err_zero_Lsl {g h : Clif.Function} {t : Arm.ArmState} (hc : Lsl.CallsTo g t h)
+    (hpb : progBase t = (Lsl.A g).base) : Arm.r .ERR (Lsl.mach 0 g t) ≠ .None := fun herr => by
+  obtain ⟨M', hM, -⟩ := Lsl.callsTo_ret hc hpb herr
+  exact absurd hM (Nat.succ_ne_zero M').symm
+
+theorem callsTo_ret_Lsl {M : Nat} {g h : Clif.Function} {t : Arm.ArmState}
+    (hc : Lsl.CallsTo g t h) (hpb : progBase t = (Lsl.A g).base)
+    (herr : Arm.r .ERR (Lsl.mach M g t) = .None) :
+    ∃ M', M = M' + 1 ∧ ∃ N', RetOf (Lsl.A h) t (runX (Lsl.mach M' h) N' (enterAt (Lsl.A h) t)) ∧
+      ∀ N'' < N', ¬ RetOf (Lsl.A h) t (runX (Lsl.mach M' h) N'' (enterAt (Lsl.A h) t)) :=
+  Lsl.callsTo_ret hc hpb herr
 
 theorem tabE_zero_Lsl (M : Nat) (g : Clif.Function) (s : Arm.ArmState) (ini : Clif.SlotInit) :
     Lsl.TabUpToE M g s ini.bytes ini.next 0 0 :=
