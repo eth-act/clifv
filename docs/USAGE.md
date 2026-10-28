@@ -621,6 +621,16 @@ reach the `sret` vtable methods). Times: under a second per survey crate and 5 s
 in `link-check`; `lake build` of all ten proofs (`crate-proofs/Crates/`, `fv-demo`'s 551
 functions in 18 slices) about 13 s.
 
+**Regenerating the checked-in proofs.** The files of `crate-proofs/Crates/` written by
+`link-proof` embed the compiler's output (the CLIF, the register allocator's answers, the
+executable's bytes), so any change to generated code makes them fail. A PR that changes generated
+code reruns `scripts/regen-crate-proofs.sh` (the survey's `cargo fv test --keep-temps`, `a_arith`
+again with `--panic-abort`, `fv-demo`'s `cargo fv build --keep-temps`, then `link-proof --prune`
+per crate into the existing files) in the same PR and commits the result, after building this
+checkout's tools (`lake build lean-backend clif-decode link-check`; `cargo build --release -p
+cargo-fv -p clif-data-export -p lean-regalloc` in `rust/`). `fv-demo` currently proves 557 of its
+558 functions (`_RNxC7fv_demo12Hg2RhPxboVSE` fails `callRegs/blrRegs`, #709).
+
 ## Examples and results
 
 * `examples/fv-demo`: a library with 19 unit tests: integer arithmetic, slices, enums,
