@@ -2045,12 +2045,19 @@ standard axioms only (witnesses: native_decide certificates).
   `detTabPRBr_ofCE`), **`binary_correct_initR`**, **`binary_correct_initTR`** (trapping runs, the
   model's machine reaches the trap site), `model_init_sysSR`, **`binary_correct_exec_initR`**.
 - `FV/Link/DeadCleanupExeInitR.lean`: **`compileExe_correct_initR`** (`compileExe_correct_init`
-  on `InitOkR`; no `DetPRB` premise left in the end-state theorem).
+  on `InitOkR`; no `DetPRB` premise left in the end-state theorem), **`compileExe_correct_initTR`**
+  (trapping runs with `TrapsExplicit`, as `compileExe_correct`; the chain `IselSimINT` →
+  `TrapWorldW` → `RegLevelCorrectPRSNXT` → `BackendWorldPRGYNXT` → `LinkArmThmPRBGT` →
+  `DeadCleanupBinaryInitTR`).
 - Witnesses: `DeadCleanupExeInitSlotWitnessR.stale_read_returns_initR` (the stale read returns
   `82`, premise `InitOkR` only); `LinkArmTrapEWitness`: `thmPRBTE_zero_Lsl` (no premise),
-  `thmPRBTE_one_Lsl` (from `DetPRBR` at `0` and `CallTwinCE` at `1`), `thmPRBTE_allCR_Lsl`.
-- Open: `InitOkR`'s `DetPRBR`, `CallTwinCE` as theorems (#713 open items); the exe-level trap
-  theorem (above).
+  `thmPRBTE_one_Lsl` (from `DetPRBR` at `0` and `CallTwinCE` at `1`), `thmPRBTE_allCR_Lsl`;
+  (UninitZ26) `FV/Link/DeadCleanupExeInitTrapWitnessR.lean`: `f(x) = 1 / x` (`udiv`) compiled by
+  `compileExe`, the caller state `rC` with `x0 = 0`: `run_traps` (the CLIF run traps with
+  `int_divz`), `trapsExplicit` (every environment), `not_needSlots`, `outsideCall`, `clifRunB`,
+  **`divz_traps_initR`** (`compileExe_correct_initTR`: the executable's run from `rC` reaches the
+  trap site with `int_divz`, premise `InitOkR` only).
+- Open: `InitOkR`'s `DetPRBR`, `CallTwinCE` as theorems (#713 open items).
 
 **Step 3h, as built (UninitZ10b): the call-count premises are theorems.** `InstCallsOne f` and
 `TryCallsOne f` hold for every `f` (`E2E.instCallsOne_all`, `E2E.tryCallsOne_all`,
