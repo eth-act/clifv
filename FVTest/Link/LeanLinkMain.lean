@@ -69,9 +69,10 @@ layout, reach and `file0` conditions). **Typed `--verified`** (S11e6, #419; the 
 without `--opt` and self tail calls): an input whose functions all meet the typed per-function
 conditions `fnScopeInTB` (`InScopeInT`'s; float data movement, float parameters and returns)
 — or, for functions with direct `try_call`s taking `f32`/`f64` parameters or returning
-`f32`/`f64`, the typed-try_call conditions `fnScopeInTCB` (the structural conjuncts of
-`fnScopeInTB` with `Compile.functionETC` and the decided output check `lowersTCB`:
-`lowerCheckTC` on `lowerFunction`'s output; a function passes under either list) — but not all
+`f32`/`f64` and (S11f, #35) functions with the proven float arithmetic, rounding, conversions and
+scalar comparisons, the conditions `fnScopeInTCB` (the structural conjuncts of `fnScopeInTB`
+with `Compile.functionETCF` and the decided output check `lowersTCB`: `lowerCheckTCF` on
+`lowerFunction`'s output; a function passes under either list) — but not all
 `fnScopeInB` is compiled by `Link.DeadCleanup.compileExeT` (the typed branches: on `InScopePT`
 `InScopePT`/`leanLink`/`OutOkTCleanup`, else the third branch `leanLink`/`okBCleanupT`), and the
 written executable is covered by the typed theorems

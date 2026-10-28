@@ -1,8 +1,8 @@
 import FV.E2E.LinkScopeInputDefs
 import FV.E2E.LinkScopeDefsT
 import FV.E2E.EmitCondsDefs
-import FV.Compile.SubsetTC
-import FV.Backend.Proof.DriverCheckC
+import FV.Compile.SubsetTF
+import FV.Backend.Proof.DriverCheckCF
 
 /-! # The typed-try_call input conditions (S11e6, #419): the definitions
 
@@ -22,6 +22,11 @@ by `driverInTCB` (`driverInB` without `termInB`). Sound as an admission predicat
 third-branch correctness chain (`binary_correct_exec_provenT`) needs `okBCleanupT` only — so
 the input conditions only select the region.
 
+S11f (#35): widened in place to the scope with the proven float operations
+(`Compile.functionETCF` for `Compile.functionETC`, the validator `lowerCheckTCF` for
+`lowerCheckTC` in `lowersTCB`, as `staticChksWithT`'s lowering check): `compileExeT`'s third
+branch accepts such functions (`okBCleanupT`), so the input conditions admit them.
+
 `fnScopeInFailsTC`: the conjuncts a function fails, by name (the analogue of `fnScopeInFailsT`;
 the shared conjuncts keep `fnScopeInFailsT`'s names). Kept free of proofs, like
 `LinkScopeInputDefs(T)`.
@@ -32,11 +37,12 @@ namespace E2E.LinkCheck
 open Backend Backend.Proof Backend.Proof.Driver
 
 /-- **The run-time decider of the typed-try_call input scope**: `lowerFunction` succeeds and its
-output meets the typed-try_call validator `lowerCheckTC` (what the production `lowerCheck` runs
-on such functions, `Backend.lowerCheck`). -/
+output meets the validator of the scope with the proven float operations `lowerCheckTCF` (what
+the production `lowerCheck` runs on such functions, `Backend.lowerCheckFor`; S11f, it was
+`lowerCheckTC`). -/
 def lowersTCB (g : Clif.Function) : Bool :=
   match lowerFunction g with
-  | .ok vc => lowerCheckTC g vc
+  | .ok vc => lowerCheckTCF g vc
   | .error _ => false
 
 /-- **The driver's input conditions for the typed-try_call scope**: `driverInB`
@@ -47,12 +53,12 @@ def driverInTCB (g : Clif.Function) : Bool :=
   g.blocks.all fun B => B.body.all (stmtInB g)
 
 /-- **The typed-try_call per-function input conditions**: `fnScopeInTB`'s structural conjuncts
-with `Compile.functionETC` for `Compile.functionET`, without `Compile.tryArgClassOk`,
-`lowerScopeTB`, `Prg.iselInB` and `driverInB`'s terminator half (all reject such functions by
-construction), with `driverInTCB` for `driverInB` and `lowersTCB` in the `functionE`
-disjunct's output checks (in place of `lowerOutTB`). -/
+with `Compile.functionETCF` (S11f; it was `Compile.functionETC`) for `Compile.functionET`,
+without `Compile.tryArgClassOk`, `lowerScopeTB`, `Prg.iselInB` and `driverInB`'s terminator half
+(all reject such functions by construction), with `driverInTCB` for `driverInB` and `lowersTCB`
+in the `functionE` disjunct's output checks (in place of `lowerOutTB`). -/
 def fnScopeInTCB (g : Clif.Function) : Bool :=
-  Compile.functionETC g && Compile.storeTypedB g &&
+  Compile.functionETCF g && Compile.storeTypedB g &&
   (sigAbiOk g.sig && g.externs.all (fun e => sigAbiOk e.2.sig)) && indSigsOk g &&
   decide (regLocs g.sig).Nodup && (regLocs g.sig).all (·.isArgReg) &&
   g.sig.params.all (fun p => decide (p.ty.width ≤ 64)) && linkFreeB g &&
@@ -65,7 +71,7 @@ def fnScopeInTCB (g : Clif.Function) : Bool :=
 def fnScopeInFailsTC (g : Clif.Function) : List String :=
   let c (b : Bool) (n : String) : List String := if b then [] else [n]
   let outE := Compile.functionE g
-  c (Compile.functionETC g) "functionETC" ++ c (Compile.storeTypedB g) "storeTypedB" ++
+  c (Compile.functionETCF g) "functionETCF" ++ c (Compile.storeTypedB g) "storeTypedB" ++
   c (sigAbiOk g.sig && g.externs.all (fun e => sigAbiOk e.2.sig)) "sigAbiOk" ++
   c (indSigsOk g) "indSigsOk" ++
   c (decide (regLocs g.sig).Nodup && (regLocs g.sig).all (·.isArgReg) &&
@@ -76,6 +82,6 @@ def fnScopeInFailsTC (g : Clif.Function) : List String :=
   c (outE || Spill.resClassOkB g) "resClassOkB" ++
   (if outE then [] else match lowerFunction g with
     | .error _ => ["lowerFunction"]
-    | .ok vc => c (lowerCheckTC g vc) "lowerCheckTC")
+    | .ok vc => c (lowerCheckTCF g vc) "lowerCheckTCF")
 
 end E2E.LinkCheck
