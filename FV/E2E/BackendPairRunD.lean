@@ -6,7 +6,7 @@ import FV.E2E.BackendTwoRun
 
 `vcode_niID`'s paired counted run of the selected code, carried to the allocated code as
 `backend_twoRunPRIY` carries the unguarded one: `prepare` (`prep_soundW` with
-`DriverSemG.counted` of `driverSemG_pairD`) and the GOT guard (`gotInvPD_star`, the guard of
+`DriverSemG.countedW` of `driverSemG_pairD`) and the GOT guard (`gotInvPD_star`, the guard of
 `pairSemD` does not see the semantics' GOT check). This discharges the world-read guard premise
 of the pair run in its paired form: every step of the returning paired run of `vcp` reads
 outside a set containing `F` and every byte where the two worlds differ.
@@ -136,7 +136,7 @@ theorem backend_pairRunD (hsub : InSubset p f) (hc : Compiled f k vc vcp rf af f
   intro vals cm hrun
   obtain ⟨us, outs, w, hv, hsw'⟩ := vcode_niID hsub hc hone htc hX hNI hTls hsym hslot ρ₀ hce hrel
     hrel' hargs hsw hreg hstk htr fuel vals cm hrun
-  have hP := (prep_soundW (DriverSemG.counted fun n => driverSemG_pairD F ⟨fa.k, af.slotBase⟩ (XI.at n))
+  have hP := (prep_soundW (DriverSemG.countedW fun n => driverSemG_pairD F ⟨fa.k, af.slotBase⟩ (XI.at n))
     hc.prepOk ρ₀ ((w₀, w₀'), 0)).1 _ _ _ hv
   exact ⟨us, outs, w, vRetFrom_gotVPD hP, hsw'⟩
 

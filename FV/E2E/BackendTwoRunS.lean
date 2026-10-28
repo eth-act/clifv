@@ -134,7 +134,7 @@ theorem backend_twoRunPRIYS (hsub : InSubset p f) (hc : Compiled f k vc vcp rf a
   intro vals cm hrun
   obtain ⟨us, outs, w, hv, -⟩ := vcode_niIG hsub hc hone htc hX hNI hTls hsym hslot ρ₀ hce hrel hrel'
     hargs hsw hreg hstk htr fuel vals cm hrun
-  have hP := (prep_soundW (DriverSemG.counted fun n => driverSemG_pair F ⟨fa.k, af.slotBase⟩ (XI.at n))
+  have hP := (prep_soundW (DriverSemG.countedW fun n => driverSemG_pair F ⟨fa.k, af.slotBase⟩ (XI.at n))
     hc.prepOk ρ₀ ((w₀, w₀'), 0)).1 _ _ _ hv
   obtain ⟨b, kk, ρ, w₁, vb, ops, outs', hs, hvb, hk, hops, hvals, hsem⟩ :=
     hGdP _ _ _ (vRetFrom_gotVP hP)

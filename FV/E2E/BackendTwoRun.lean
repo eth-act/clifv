@@ -9,11 +9,11 @@ import FV.E2E.PrepareSoundW
 
 The paired counted VCode run of `vcode_niIG` carried through the backend pipeline as
 `backend_correct_worldPRIY` carries the single one: `prepare` (`prep_soundW` with
-`DriverSemG.counted`), the GOT guard (`gotInvP_star`: the GOT invariant reads only the vreg
+`DriverSemG.countedW`), the GOT guard (`gotInvP_star`: the GOT invariant reads only the vreg
 file), and the world-read guard (`hGdP`, a premise as `hGd` is `backend_correct_worldPRIY`'s),
 then `RL.twoRunC_pair` on the two activations entered with `ActEntryPR`.
 
-* `DriverSemG.counted`, `csemV_of_some`, `gotInvP_step`, `gotInvP_star`, `vRetFrom_gotVP`;
+* `DriverSemG.countedW`, `csemV_of_some`, `gotInvP_step`, `gotInvP_star`, `vRetFrom_gotVP`;
 * **`backend_twoRunPRIY`**.
 -/
 
@@ -21,8 +21,9 @@ namespace E2E
 
 open Backend Backend.Proof Backend.Proof.Driver
 
-/-- **`DriverSemG` of a counted family** from `DriverSemG` at every index. -/
-theorem DriverSemG.counted {W : Type} {semF : Nat → ISem CV W} (h : ∀ n, DriverSemG (semF n)) :
+/-- **`DriverSemG` of a counted family** from `DriverSemG` at every index (any world type;
+`BackendWorldCleanupI`'s `DriverSemG.counted` is the `Sem` instance). -/
+theorem DriverSemG.countedW {W : Type} {semF : Nat → ISem CV W} (h : ∀ n, DriverSemG (semF n)) :
     DriverSemG (ISem.counted semF) where
   jump := fun l w => by
     obtain ⟨w, n⟩ := w
@@ -263,7 +264,7 @@ theorem backend_twoRunPRIY (hsub : InSubset p f) (hc : Compiled f k vc vcp rf af
   intro vals cm hrun
   obtain ⟨us, outs, w, hv, -⟩ := vcode_niIG hsub hc hone htc hX hNI hTls hsym hslot ρ₀ hce hrel hrel'
     hargs hsw hreg hstk htr fuel vals cm hrun
-  have hP := (prep_soundW (DriverSemG.counted fun n => driverSemG_pair F ⟨fa.k, af.slotBase⟩ (XI.at n))
+  have hP := (prep_soundW (DriverSemG.countedW fun n => driverSemG_pair F ⟨fa.k, af.slotBase⟩ (XI.at n))
     hc.prepOk ρ₀ ((w₀, w₀'), 0)).1 _ _ _ hv
   obtain ⟨b, kk, ρ, w₁, vb, ops, outs', hs, hvb, hk, hops, hvals, hsem⟩ :=
     hGdP _ _ _ (vRetFrom_gotVP hP)
