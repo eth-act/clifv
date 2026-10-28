@@ -8,6 +8,9 @@
 #   scripts/main-gate.sh loop WORKTREE       forever: check out the newest origin/main tip in
 #                                            WORKTREE (a dedicated worktree), `run` it, record and
 #                                            post the result on #261; stop: touch $GATE_DIR/stop
+#                                            (takes effect between runs; killing the loop kills
+#                                            its current run). A run that gets the lock after
+#                                            origin/main moved on, or after a stop, is dropped.
 #   scripts/main-gate.sh watch               block until the loop records a result or dies
 #
 # State (outside /tmp, survives reboots): GATE_DIR (default /home/kev/work/clifv-main-gate):
@@ -145,6 +148,10 @@ EOF
 loop() { # WORKTREE
   local W=$1 R=$GATE_DIR/results.tsv
   touch "$R"; echo $$ > "$GATE_DIR/loop.pid"
+  local run=
+  # The run is its own process group (setsid); never leave it holding the lock when the loop dies.
+  trap '[ -n "$run" ] && kill -TERM -- -"$run" 2>/dev/null; rm -f "$GATE_DIR/loop.pid"' EXIT
+  trap 'exit 143' TERM INT HUP
   cd "$W" || exit 1
   while true; do
     [ -e "$GATE_DIR/stop" ] && { echo "stop $(date -Is)"; rm -f "$GATE_DIR/loop.pid"; exit 0; }
@@ -162,8 +169,10 @@ loop() { # WORKTREE
     s=$(git rev-parse --short=8 HEAD)
     L=$GATE_DIR/runs/$s
     echo "run $s start $(date -Is) clif=$clif"
-    flock "$LOCK" "$0" run-locked "$L" "$clif"
-    rc=$?
+    GATE_LOOP_TIP=$tip setsid flock "$LOCK" "$0" run-locked "$L" "$clif" &
+    run=$!
+    wait "$run"; rc=$?; run=
+    [ $rc = 4 ] && { echo "run $s dropped $(date -Is): origin/main moved on or stop requested while waiting for the lock"; continue; }
     [ $rc = 3 ] && { echo "run $s stopped $(date -Is): missing host tools, not recorded; loop exits"; rm -f "$GATE_DIR/loop.pid"; exit 3; }
     res=$([ $rc = 0 ] && echo GREEN || echo RED)
     [ $rc = 0 ] && lastgreen=$tip
@@ -188,7 +197,13 @@ watch() {
 mkdir -p "$GATE_DIR"
 case "${1:-}" in
   run) [ $# -ge 2 ] || usage; flock "$LOCK" "$0" run-locked "$2" "${3:-1}" ;;
-  run-locked) [ $# -ge 2 ] || usage; check_tools || exit 3; cd "$(git rev-parse --show-toplevel)" && run_gate "$2" "${3:-1}" ;;
+  run-locked)
+    [ $# -ge 2 ] || usage; check_tools || exit 3; cd "$(git rev-parse --show-toplevel)" || exit 1
+    if [ -n "${GATE_LOOP_TIP:-}" ]; then # started by `loop`: the lock wait may have been long
+      [ -e "$GATE_DIR/stop" ] && exit 4
+      git fetch -q origin && [ "$(git rev-parse origin/main)" != "$GATE_LOOP_TIP" ] && exit 4
+    fi
+    run_gate "$2" "${3:-1}" ;;
   loop)
     [ $# = 2 ] || usage
     W=$(cd "$2" && pwd) || exit 1
