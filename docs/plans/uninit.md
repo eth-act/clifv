@@ -740,6 +740,11 @@ agreeing on non-calls whose calls fail; `seqRun_csemI_le1` for `ISem.counted sem
 with `valueSem`; then `prune_correct` and the GOT flow for `valueSemVI`, and
 `backend_correct_world_cleanupPRI`.
 
+of the same configuration, so the segment's call-state count carries over). Next on that chain:
+`realizes_value_allC_sp`, `regLevelCorrect_world_value_atCS`/`_worldCS`/`_worldPRS` (copies of
+`RegLevelCorrectPRS.lean`'s with `csemVI` → the counted `valueSemV`, `realizes_allC_sp` →
+`realizes_value_allC_sp`; the `rets`/halt cases as in `DeadCleanupRegLevel.lean`).
+
 ## 6. Heap (separate gap, SEM2)
 
 `BaseOk.baseKeepsAllocs`/`baseNoAlloc` require base externs to allocate nothing whenever a program
