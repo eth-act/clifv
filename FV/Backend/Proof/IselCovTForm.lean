@@ -612,6 +612,24 @@ theorem cov_fpuCmp {sz : ScalarSize} {rn rm : Reg}
   simp only [AT.cFpuCmp, Bool.and_eq_true] at hc
   obtain ⟨_, rfl⟩ := F_of hc.1 g2 r2; obtain ⟨_, rfl⟩ := F_of hc.2 g3 r3; rfl
 
+theorem cov_fpuRound {op : FpuRoundMode} {rd rn : Reg}
+    (hc : AT.cFpuRound [a1, a2, a3] = true) (g2 : γ f ctx a2 v2) (g3 : γ f ctx a3 v3)
+    (r2 : v2.reg? = some rd) (r3 : v3.reg? = some rn) : Covered (.fpuRound op rd rn) = true := by
+  simp only [AT.cFpuRound, Bool.and_eq_true] at hc
+  obtain ⟨_, rfl⟩ := F_of hc.1 g2 r2; obtain ⟨_, rfl⟩ := F_of hc.2 g3 r3; rfl
+
+theorem cov_fpuToInt {op : FpuToIntOp} {rd rn : Reg}
+    (hc : AT.cFpuToInt [a1, a2, a3] = true) (g2 : γ f ctx a2 v2) (g3 : γ f ctx a3 v3)
+    (r2 : v2.reg? = some rd) (r3 : v3.reg? = some rn) : Covered (.fpuToInt op rd rn) = true := by
+  simp only [AT.cFpuToInt, Bool.and_eq_true] at hc
+  obtain ⟨_, rfl⟩ := V_of hc.1 g2 r2; obtain ⟨_, rfl⟩ := F_of hc.2 g3 r3; rfl
+
+theorem cov_intToFpu {op : IntToFpuOp} {rd rn : Reg}
+    (hc : AT.cIntToFpu [a1, a2, a3] = true) (g2 : γ f ctx a2 v2) (g3 : γ f ctx a3 v3)
+    (r2 : v2.reg? = some rd) (r3 : v3.reg? = some rn) : Covered (.intToFpu op rd rn) = true := by
+  simp only [AT.cIntToFpu, Bool.and_eq_true] at hc
+  obtain ⟨_, rfl⟩ := F_of hc.1 g2 r2; obtain ⟨_, rfl⟩ := V_of hc.2 g3 r3; rfl
+
 theorem cov_vecDupImm {rd : Reg} {imm : ASIMDMovModImm} {inv : Bool} {s : VectorSize}
     (hc : AT.cVecDupImm [a1, a2, a3, a4] = true) (g1 : γ f ctx a1 v1) (g2 : γ f ctx a2 v2)
     (g3 : γ f ctx a3 v3) (r1 : v1.reg? = some rd) (m2 : v2.movModImm? = some imm)
@@ -783,6 +801,9 @@ theorem covOk_sound {t k : Nat} {as : List AT} {vs : List V} (hc : AT.covOk k as
        | (apply cov_fpuRR hc <;> assumption)
        | (apply cov_fpuCmp hc <;> assumption)
        | (apply cov_vecDupImm hc <;> assumption)
+       | (apply cov_fpuRound hc <;> assumption)
+       | (apply cov_fpuToInt hc <;> assumption)
+       | (apply cov_intToFpu hc <;> assumption)
        | (apply cov_fpuLoad32 hc <;> assumption)
        | (apply cov_fpuLoad64 hc <;> assumption)
        | (apply cov_fpuStore32 hc <;> assumption)

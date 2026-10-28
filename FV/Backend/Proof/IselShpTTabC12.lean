@@ -22,4 +22,9 @@ theorem shpTabT24_ok : (shpTabT24).all shpEntryOkT = true := by
   repeat' apply And.intro
   all_goals decide +kernel
 
+theorem shpTabT25_ok : (shpTabT25).all shpEntryOkT = true := by
+  simp only [shpTabT25, List.all_cons, List.all_nil, Bool.and_eq_true, and_true]
+  repeat' apply And.intro
+  all_goals decide +kernel
+
 end Backend.Proof.CovT

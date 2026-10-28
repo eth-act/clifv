@@ -11,6 +11,7 @@ import FV.Backend.Proof.IselEmitTTabC8
 import FV.Backend.Proof.IselEmitTTabC9
 import FV.Backend.Proof.IselEmitTTabC10
 import FV.Backend.Proof.IselEmitTTabC11
+import FV.Backend.Proof.IselEmitTTabC12
 import FV.Backend.Proof.IselEmitTTabS0
 import FV.Backend.Proof.IselEmitTTabS1
 import FV.Backend.Proof.IselEmitTTabS2
@@ -88,7 +89,7 @@ open Backend Backend.Proof Isle Isle.Aarch64
 theorem emitTabT_ok : chkTab program emitTabT aextET actorET apreET aOracle = true := by
   unfold chkTab
   show (emitTabT).all emitEntryOkT = true
-  simp only [emitTabT, List.all_append, emitTabT0_ok, emitTabT1_ok, emitTabT2_ok, emitTabT3_ok, emitTabT4_ok, emitTabT5_ok, emitTabT6_ok, emitTabT7_ok, emitTabT8_ok, emitTabT9_ok, emitTabT10_ok, emitTabT11_ok, emitTabT12_ok, emitTabT13_ok, emitTabT14_ok, emitTabT15_ok, emitTabT16_ok, emitTabT17_ok, emitTabT18_ok, emitTabT19_ok, emitTabT20_ok, emitTabT21_ok, emitTabT22_ok, emitTabT23_ok, Bool.and_self]
+  simp only [emitTabT, List.all_append, emitTabT0_ok, emitTabT1_ok, emitTabT2_ok, emitTabT3_ok, emitTabT4_ok, emitTabT5_ok, emitTabT6_ok, emitTabT7_ok, emitTabT8_ok, emitTabT9_ok, emitTabT10_ok, emitTabT11_ok, emitTabT12_ok, emitTabT13_ok, emitTabT14_ok, emitTabT15_ok, emitTabT16_ok, emitTabT17_ok, emitTabT18_ok, emitTabT19_ok, emitTabT20_ok, emitTabT21_ok, emitTabT22_ok, emitTabT23_ok, emitTabT24_ok, Bool.and_self]
 
 /-- **Every rule of `lower` is hand-checked or checks on every family** (`emitStmtOkT`). -/
 theorem emitStmtT_ok : (program.rulesOf TId.lower).all emitStmtOkT = true := by
