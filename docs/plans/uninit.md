@@ -964,12 +964,15 @@ a world the counted VCode run from the entry reaches with counter `n`). Witness
 - Witnesses `FV/E2E/BackendPrefixIWitness.lean`: `LinkWitness.{upTo_const_at, a2_prefixPRI}`,
   `DeadCleanupWitness.prefix_cleanupPRI_applies`.
 
-How `thmPRB_of` is to use it (not built yet): the correspondence of call `j < N` is read off a
-run of the pipeline with `XI.relOnly Q` (to define: calls answered only where `Q j d uses w`,
-"related to the CLIF invocation of count `j`"): stage 1 (`hX`) transfers from `XI` (the contracts
-ask only at related arguments),
-the machine contracts transfer (`CalleeOkGP` is antitone in the call results), and
-`backend_prefix*PRI`'s last conjunct then gives `Q j d uses w` at the machine's call-`j` state.
+The correspondence of the earlier calls, as built: `FV/E2E/PrefixRelated.lean`: `ExtSemI.relOnly
+XI Q` (call `n` of `XI` where `Q n d uses w`, undefined elsewhere), `relOnly_call_some`/`_of`,
+`csemV_of_call_sub`, `CalleeOkGP.ofCallSub`/`CalleeTryOkGP.ofCallSub` (the machine contracts are
+antitone in the call results), `ActEntryPRN.relOnly`, `RelatedN` (the call's `CallPostN` is not
+vacuous), `xCalls_relOnly` (stage 1 for `XI.relOnly (RelatedN …)` from stage 1 for `XI`: every
+query of the extern contracts is related, `callPost_not_vacuous`), **`prefix_related_cleanupPRI`**,
+**`prefix_relatedPRI`**: `backend_prefix*PRI`'s conclusion plus `RelatedN … j (callDest info) uses
+w` at the machine's call `j < N` (premise `NoRetCall` added). Witness
+`FV/E2E/PrefixRelatedWitness.lean` (`relOnly_none`, `relOnly_all`, `prefix_related_applies`).
 
 **Finding (UninitZ13, 2026-10-28): `XPRBI` cannot meet the stage-2 contract when program callees
 have slots.** `XPRBI := (L.XPRI …).guardI (CallPostN …)` answers `XPR`'s result where `CallPostN`
@@ -982,14 +985,22 @@ memory makes the callee's CLIF run return — not implied (the callee may read a
 byte). Where `XPR` is `none` the guard answers ε and the contract fails. Second, where
 `CallPostN` is vacuous (no CLIF invocation of count `n`, or none related to `(uses, w)`), a `none`
 of `XPR` also becomes an ε answer, while the unguarded `XPR`'s contracts are vacuous there.
-**Decision (next, conservative, new definitions only):** (1) `CondB`/`progXB`/`XPRB`: `Cond` with
+**Decision (conservative, new definitions only):** (1) `CondB`/`progXB`/`XPRB`: `Cond` with
 `∃ ini, PlaceAtB cm (spv w) ini` (the result is still the machine's `pcall` from `canon`, so the
 generated code and `progX`'s users are unchanged); (2) a guard that keeps `none` where no CLIF
 invocation is related (`ExtSem.guardR`: ε only when `CallPost` is not vacuous), so the contracts
 outside the simulated calls stay vacuous; (3) `progOsPRB`/`calleeOkPRB` on `ThmPRB (M - 1)` (the
 `progOsPR` proofs with `WorldEntryB`/`TableOf` from the table prefix `TabUpTo` at the call and the
-counter equality from `backend_prefix*PRI` + `NextAdv` of the earlier calls), by strong induction
-on `n`.
+counter equality from `prefix_related*PRI` + `NextAdv` of the earlier calls), by strong induction
+on `n`. As built (UninitZ13), (1) and (2): `FV/E2E/ExtSemGuardR.lean`: `ExtSem.guardR`,
+`guardR_of`, `guardR_spec`, **`guardR_eq_of`** (stage 2: where every non-vacuous contract accepts
+`X`'s result, every answer is `X`'s), `callPost_not_vacuous`(`_ind`), **`xCallsOk_guardR_only`**;
+`FV/E2E/LinkArmXPB.lean`: `ExtSemI.guardRI`, **`hX_guardRI`** (stage 1 for any `XI`), `CondB`,
+`cond_iff_condB` (without `NeedSlots`), `progXB`, `progXPRB`, `XPRB`, `XPBI`, `XPRB_of_not_needSlots`,
+**`XPBG`** (`XPBI` guarded by `CallPostN` with `guardR`: the `XI` of the induction step, replacing
+`XPRBI`), `XPBG_eq_of`. Witnesses `FV/E2E/LinkArmXPBWitness.lean` (`guardR_vacuous`,
+`hX_sCall_R`, `XPRB_Lu`). `ThmPRB`'s statement does not mention `XPRBI`, so it is unchanged.
+Next: (3), then `thmPRB_of`, `thmPRB`, item (e).
 
 **Step 3h, as built (UninitZ10b): the call-count premises are theorems.** `InstCallsOne f` and
 `TryCallsOne f` hold for every `f` (`E2E.instCallsOne_all`, `E2E.tryCallsOne_all`,
