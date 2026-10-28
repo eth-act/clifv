@@ -587,8 +587,24 @@ single-step half of the lock-step: `ReadsAvoid Z evs`, `stEqOut_exec_inst` (from
    `ThmPD` as built (the caller's prophecy is of the *actual* run, so no determinism across the
    caller's calls is needed there): it uses the determinism clause once, from the canonical state
    to the actual call state `t` (`OnCallP` + `ProphRegOk` give the premises). So `progCallP` on
-   `ThmPD` (item 4) is independent of item 3, and item 3 proves a stronger `ThmPDS` (new name)
-   with `ThmPDS.thmPD`.
+   `ThmPDE` (item 4, see (3)) is independent of item 3, and item 3 proves `ThmPDE` by induction
+   (`thmPDE_of`).
+3. *`ThmPD`'s determinism premises are on the wrong states (step 2p).* `MachEntry s w₀` relates
+   the machine entry `s` to `w₀` only outside `F` and on the unmasked registers (`BodyEntryW`);
+   the callee region lies in `F`. So two entries with the *same* `w₀` (take `w₀' := w₀`, `D := ∅`:
+   every premise of the clause holds trivially) may hold different stale region bytes and masked
+   registers, and their prophecies differ: the clause is false as soon as the callee calls before
+   overwriting its region. `FV/E2E/LinkArmProphDetE.lean`: `EntryAgree K s s₀` (masked registers
+   but `x30`/pc, the `K` bytes below `sp`, of the *machine entries*), `RetAgree`, and `ThmPDE`:
+   `ThmP`'s clauses, `¬ NeedNI →` realisation from every `MachEntry` (the outcome reads no stale
+   bytes), and under `NeedNI` the NI clause plus the determinism clause between a `MachEntryP … P`
+   entry `s₀` and a `MachEntry` entry `s` with `EntryAgree (frameDrop + κ M g) s s₀`, concluding
+   `ActRet`, `ProphOkUpTo … s P n` and `RetAgree` of the two runs at step `n` (design change 2).
+   `ThmPDE.thmP`, `Thm.thmPDE_of_not_needNI`; witnesses `LinkArmProphDetEWitness.lean`. `ThmPD`
+   stays (it is not used by anything); `progCallP` and `thmP_of` use `ThmPDE`. In `progCallP` the
+   entries are `enterAt (canonPR … (P n) (R n) w)` (`s₀`) and `enterAt t` (`s`): `EntryAgree`
+   holds by `ProphRegOk` (masked registers but the argument registers: `R n`; argument registers:
+   `CallerOk.regs`; `x30` is set by `enterAt`) and `OnCallP` (region bytes `P n` on both).
 
 ## 6. Heap (separate gap, SEM2)
 
