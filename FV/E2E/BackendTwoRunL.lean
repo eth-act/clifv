@@ -22,7 +22,7 @@ is code.
 * `RL.JTByte`, `MConf.WDiff`, `RL.Zc`, `OkDiff`;
 * `readsAvoid_stepiEvs`, `RL.notZc_of_readInY`, `stEqOutX_lineZ`, `rdOk_X`,
   `mstep_guard_of_match`, `pGuard_of_stepPair`, `mstep_okDiff_fst`, `mstep_okDiff_snd`, `KJL`,
-  `QW.stRel`, `stEqOutX_zc_end`;
+  `QW.stRel`, `QWA.stRel`, `stEqOutX_zc_end`;
 * **`backend_twoRunL`**.
 -/
 
@@ -291,12 +291,31 @@ theorem QW.stRel {R : RL} {s : Arm.ArmState} {j : Nat} {ps1 : PState} {T : List 
   obtain ⟨_, _, _, _, _, _, -, -, -, -, -, -, -, -, -, hst⟩ := h
   exact hst
 
+/-- `QWA` at a run configuration gives `StRel` at some store (the machine's in a return tail). -/
+theorem QWA.stRel {R : RL} {s : Arm.ArmState} {j : Nat} {ps1 : PState} {T : List Line}
+    {b : Nat} {its : List RItem} {m : Loc → CV} {w : Arm.ArmState}
+    (h : QWA R s j ps1 T (.run ⟨b, its, m, w⟩)) : ∃ mt, StRel R s mt w := by
+  rcases h with ⟨hq, -⟩ | h
+  · exact ⟨m, QW.stRel hq⟩
+  · simp only [RetTailW] at h
+    obtain ⟨mt, -, hq, -⟩ := h
+    exact ⟨mt, QW.stRel hq⟩
+
+/-- `QWA` of an activation gives `QA` of the activation at another external semantics (the
+prologue, hence the frame top `StRel.fplr` compares with, does not read it). -/
+theorem QWA.qaX {R : RL} {s : Arm.ArmState} {j : Nat} {ps1 : PState} {T : List Line}
+    {c : MConf CV Arm.ArmState} (h : QWA R s j ps1 T c) {X : ExtSem}
+    (hR : ({ R with X := X } : RL).Wf) {ra : BitVec 64} (hent : AbiCall R.fb R.base ra R.s0) :
+    QA { R with X := X } s c :=
+  (RL.QA_withX R X (RL.sP_withX (R := R) (⟨hR.check, hR.alloc, hR.emit, hR.layout, hR.lm, hR.fit,
+    hR.stack, hR.psF, hR.prog0, hR.gfree⟩ : R.Wf) hent X) s c).2 h.qa
+
 /-- **The lock carries over a segment end** (`hend`): at configurations `d`, `d'` related to the
-states by `QW`, a byte outside `Zc d d'` and inside `Zc c c'` is outside `F` where the two worlds
+states by `QWA`, a byte outside `Zc d d'` and inside `Zc c c'` is outside `F` where the two worlds
 agree, so the states agree on it. -/
 theorem stEqOutX_zc_end {R R' : RL} (hF : R'.F = R.F) {c c' d d' : MConf CV Arm.ArmState}
-    {u u' : Arm.ArmState} {W : Nat × PState × List Line} (hq : QW R u W.1 W.2.1 W.2.2 d)
-    (hq' : QW R' u' W.1 W.2.1 W.2.2 d') (h : StEqOutX (R.Zc c c') u u') :
+    {u u' : Arm.ArmState} {W : Nat × PState × List Line} (hq : QWA R u W.1 W.2.1 W.2.2 d)
+    (hq' : QWA R' u' W.1 W.2.1 W.2.2 d') (h : StEqOutX (R.Zc c c') u u') :
     StEqOutX (R.Zc d d') u u' := by
   refine ⟨h.1, h.2.1, fun a ha => ?_⟩
   by_cases hz : R.Zc c c' a
@@ -304,8 +323,8 @@ theorem stEqOutX_zc_end {R R' : RL} (hF : R'.F = R.F) {c c' d d' : MConf CV Arm.
     have hn : ¬ (R.F a ∨ MConf.WDiff d d' a) := fun h' => ha ⟨hfr, hjt, hds, h'⟩
     obtain ⟨⟨b, its, m, w⟩⟩ | _ | _ := d
     · obtain ⟨⟨b', its', m', w'⟩⟩ | _ | _ := d'
-      · have e1 := (QW.stRel hq).world.2.1 a fun h' => hn (.inl h')
-        have e2 := (QW.stRel hq').world.2.1 a fun h' => hn (.inl (hF ▸ h'))
+      · have e1 := (QWA.stRel hq).choose_spec.world.2.1 a fun h' => hn (.inl h')
+        have e2 := (QWA.stRel hq').choose_spec.world.2.1 a fun h' => hn (.inl (hF ▸ h'))
         rw [e1, e2]
         exact Classical.byContradiction fun h' => hn (.inr h')
       · exact absurd (.inr trivial) hn
@@ -379,39 +398,39 @@ theorem backend_twoRunL (hsub : InSubset p f) (hc : Compiled f k vc vcp rf af fa
       ∀ m r, StEqOutX (R.Zc c c') (H.tls m r u) (H.tls m r u'))
     (hpro : StEqOutX
       (R.Zc (MConf.init R.rf (locVal R.fr (iterN ({ R with X := XI.at 0 } : RL).step
-          (prologueLines R.af.frameSize).length R.s0)) w₀)
+          (prologueLines R.af.saves R.af.frameSize).length R.s0)) w₀)
         (MConf.init R.rf (locVal R.fr (iterN ({ R with s0 := t0, G := G', X := XI.at 0 } : RL).step
-          (prologueLines R.af.frameSize).length t0)) w₀'))
-      (iterN ({ R with X := XI.at 0 } : RL).step (prologueLines R.af.frameSize).length R.s0)
+          (prologueLines R.af.saves R.af.frameSize).length t0)) w₀'))
+      (iterN ({ R with X := XI.at 0 } : RL).step (prologueLines R.af.saves R.af.frameSize).length R.s0)
       (iterN ({ R with s0 := t0, G := G', X := XI.at 0 } : RL).step
-        (prologueLines R.af.frameSize).length t0)) :
+        (prologueLines R.af.saves R.af.frameSize).length t0)) :
     ∀ vals cm, Clif.runLoop env p fuel cs = .returned vals cm →
     ∃ N e e',
-      (∀ i < (prologueLines R.af.frameSize).length,
+      (∀ i < (prologueLines R.af.saves R.af.frameSize).length,
         ({ R with X := XI.at 0 } : RL).GoodXNY (fun _ => True)
           (iterN ({ R with X := XI.at 0 } : RL).step i R.s0) ∧
         ({ R with s0 := t0, G := G', X := XI.at 0 } : RL).GoodXNY (fun _ => True)
           (iterN ({ R with s0 := t0, G := G', X := XI.at 0 } : RL).step i t0)) ∧
       (∀ i < N, ∃ c c', StEqOutX (R.Zc c c')
-        (iterN ({ R with X := XI.at 0 } : RL).step ((prologueLines R.af.frameSize).length + i) R.s0)
+        (iterN ({ R with X := XI.at 0 } : RL).step ((prologueLines R.af.saves R.af.frameSize).length + i) R.s0)
         (iterN ({ R with s0 := t0, G := G', X := XI.at 0 } : RL).step
-          ((prologueLines R.af.frameSize).length + i) t0)) ∧
+          ((prologueLines R.af.saves R.af.frameSize).length + i) t0)) ∧
       JR R ({ R with s0 := t0, G := G' } : RL) (KJL R XI t0 G' F)
         (fun d d' u u' => StEqOutX (R.Zc d d') u u')
-        (iterN ({ R with X := XI.at 0 } : RL).step ((prologueLines R.af.frameSize).length + N) R.s0) e
+        (iterN ({ R with X := XI.at 0 } : RL).step ((prologueLines R.af.saves R.af.frameSize).length + N) R.s0) e
         (iterN ({ R with s0 := t0, G := G', X := XI.at 0 } : RL).step
-          ((prologueLines R.af.frameSize).length + N) t0) e' ∧
+          ((prologueLines R.af.saves R.af.frameSize).length + N) t0) e' ∧
       (∀ i < R.retLen,
         ({ R with X := XI.at 0 } : RL).GoodXNY (fun _ => True)
           (iterN ({ R with X := XI.at 0 } : RL).step
-            ((prologueLines R.af.frameSize).length + N + i) R.s0) ∧
+            ((prologueLines R.af.saves R.af.frameSize).length + N + i) R.s0) ∧
         ({ R with s0 := t0, G := G', X := XI.at 0 } : RL).GoodXNY (fun _ => True)
           (iterN ({ R with s0 := t0, G := G', X := XI.at 0 } : RL).step
-            ((prologueLines R.af.frameSize).length + N + i) t0)) ∧
+            ((prologueLines R.af.saves R.af.frameSize).length + N + i) t0)) ∧
       Arm.r .PC (iterN ({ R with X := XI.at 0 } : RL).step
-        ((prologueLines R.af.frameSize).length + N + R.retLen) R.s0) = ra ∧
+        ((prologueLines R.af.saves R.af.frameSize).length + N + R.retLen) R.s0) = ra ∧
       Arm.r .PC (iterN ({ R with s0 := t0, G := G', X := XI.at 0 } : RL).step
-        ((prologueLines R.af.frameSize).length + N + R.retLen) t0) = ra' ∧
+        ((prologueLines R.af.saves R.af.frameSize).length + N + R.retLen) t0) = ra' ∧
       R.RetsAt e ∧ R.RetsAt e' := by
   intro vals cm hrun
   have hRF : R.F = F := by subst hR; exact he.hF

@@ -63,11 +63,13 @@ theorem realizes_mono_congr (vc : VCode) (rf : RFunc) (sem : ISem CV Arm.ArmStat
   ((realizes_any vc rf sem ckeep).mono_T fun _ _ => .inl trivial).congr_Q
     fun _ _ => ⟨fun h => ⟨h, trivial⟩, fun h => h.1⟩
 
-theorem q_withX (R : RL) (X : ExtSem) (s : Arm.ArmState) (c : MConf CV Arm.ArmState) :
-    Q { R with X := X } s c ↔ Q R s c := RL.Q_withX R X s c
+theorem q_withX (R : RL) (X : ExtSem) (hP : ({ R with X := X } : RL).sP = R.sP)
+    (s : Arm.ArmState) (c : MConf CV Arm.ArmState) :
+    Q { R with X := X } s c ↔ Q R s c := RL.Q_withX R X hP s c
 
-theorem stRel_withX {R : RL} {X : ExtSem} {s : Arm.ArmState} {m : Loc → CV} {w : Arm.ArmState}
-    (h : StRel R s m w) : StRel R s m w := (h.withX (X := X)).ofWithX
+theorem stRel_withX {R : RL} {X : ExtSem} (hP : ({ R with X := X } : RL).sP = R.sP)
+    {s : Arm.ArmState} {m : Loc → CV} {w : Arm.ArmState}
+    (h : StRel R s m w) : StRel R s m w := (h.withX hP).ofWithX hP
 
 open RegLevelCorrectUWitness in
 /-- **`regLevelCorrect_worldI` applies to a compiled function with a call** with one external

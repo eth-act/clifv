@@ -111,7 +111,7 @@ theorem progOsCorePRBRLR (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) {M : Na
       rw [hsw.2.2, L.program_canon]
   · -- the frame outside the dead stack
     rw [hs_eq]
-    refine ⟨?_, fun a ⟨ha, hb⟩ => ?_⟩
+    refine ⟨?_, fun a ⟨ha, hb⟩ => ?_, ?_⟩
     · show spv (Arm.set_program _ _) = spv t
       simp only [spv]; rw [r_set_program]
       have := hs_ret.ret.sp
@@ -121,6 +121,9 @@ theorem progOsCorePRBRLR (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) {M : Na
       have hsp : spv w = spOf t := (hsw.1 (.GPR 31#5) (by simp [Masked])).symm
       rw [hsp] at hb'
       exact stackBelow_mono hb' (L.budget_step hκ hM hg hcallee)
+    · rw [r_set_program]
+      exact (hs_ret.ret.savedX 29 (by simp [calleeSavedX]; exact ⟨10, by omega, rfl⟩)).trans
+        (r_enterAt _ _ (by simp) (by simp))
   · -- the results
     intro p hp
     obtain ⟨⟨op, r⟩, x⟩ := p

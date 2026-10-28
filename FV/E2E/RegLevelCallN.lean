@@ -139,8 +139,8 @@ theorem realizes_op_coreXS {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {
     have herr' : Arm.r .ERR s' = .None := by
       rw [hW.1 .ERR (by simp [Masked]), hW'.1]
     refine ⟨fun l hl hL => ?_, hW, herr', ?_, hsp', align_of_sp (by rw [hsp', hst.sp]) hst.align,
-      fun hframe => ?_, code_keep hR.prog0 hst.code fun a ha => hK.2 a (.inl (.inr (.inr ha))),
-      fun a ha => (hK.2 a (.inr ha)).trans (hst.gkeep a ha)⟩
+      fun hframe => ?_, code_keep hR.prog0 hst.code fun a ha => hK.2.1 a (.inl (.inr (.inr ha))),
+      fun a ha => (hK.2.1 a (.inr ha)).trans (hst.gkeep a ha), fun hf => hK.2.2.trans (hst.fp hf)⟩
     · cases l with
       | reg r => exact hr2 r (hl r rfl)
       | stack k' c =>
@@ -151,7 +151,7 @@ theorem realizes_op_coreXS {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {
           locVal_frame_keep hfr hst.sp hK hL (fun r h => by cases h)]
     · rw [hW.2.2, hW'.2, ← hst.world.2.2, hst.prog]
     · rw [← hst.fplr hframe]
-      exact read_mem_bytes_congr _ _ (fun k hk => hK.2 _ (fplr_inF hR hframe k hk))
+      exact read_mem_bytes_congr _ _ (fun k hk => hK.2.1 _ (fplr_inF hR hframe k hk))
 
 /-- **A call on the machine** (`realizes_call`) **with its call state**: the segment's states
 satisfy `GoodX`, and exactly one of them (the `bl`/`blr`) is a call state. -/

@@ -124,7 +124,7 @@ def memB : Clif.Mem := { mem0 with place := some ⟨[sp0], framesW, some ini0⟩
 
 def initB : Clif.Res Clif.State := Clif.initState LinkWitness.P fF.name [arg] memB
 
-/-- The entry succeeds, and `f`'s slot (at `slotAddr = sp0 - 64 + 32`) holds the table's byte. -/
+/-- The entry succeeds, and `f`'s slot (at `slotAddr = sp0 - 64 + 16`) holds the table's byte. -/
 def initBOk : Bool := match initB with
   | .ok cs => cs.mem.bytes slotAddr == some 0xAB#8
   | _ => false

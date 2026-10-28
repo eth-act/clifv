@@ -33,11 +33,11 @@ theorem a2_twoRunLERWZI {F : BitVec 64 → Prop} {c : BitVec 64} {K : Nat} {args
     ∀ vals cm, Clif.runLoop Clif.Rust.env (L F).P.bare fuel cs = .returned vals cm →
       ∃ N, RetAgreeX (frameDrop (A fA2).af + K) (spv s)
         (iterN (ArmStepX Xb idHooks (A fA2).fa)
-          ((prologueLines (A fA2).af.frameSize).length + N +
-            ((spAdjLines false (A fA2).af.frameSize).length + 2)) t0)
+          ((prologueLines (A fA2).af.saves (A fA2).af.frameSize).length + N +
+            ((epiLines (A fA2).af.saves (A fA2).af.frameSize).length + 1)) t0)
         (iterN (ArmStepX Xb idHooks (A fA2).fa)
-          ((prologueLines (A fA2).af.frameSize).length + N +
-            ((spAdjLines false (A fA2).af.frameSize).length + 2)) s) := by
+          ((prologueLines (A fA2).af.saves (A fA2).af.frameSize).length + N +
+            ((epiLines (A fA2).af.saves (A fA2).af.frameSize).length + 1)) s) := by
   have hL := L_ok (fun _ => True) (fun _ _ => trivial)
   have hA2 : fA2 ∈ P.funcs := by simp [P]
   have hc := a2_compiled

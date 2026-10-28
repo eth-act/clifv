@@ -139,9 +139,9 @@ theorem allocM : checkAlloc vcpM rfM = .ok () := by
   | ok u => intro _; rfl
   | error e => intro h; cases h
 
-theorem spM : E2E.spv RCM.s0 = 0x7000#64 ∧ frameDrop RCM.af = 256 ∧
-    RCM.fb.words.size ≤ 0x4000 ∧ RCM.fr.size ≤ 240 ∧ RCM.af.frameSize = 240 ∧
-    (actW vcpL rfL).fb.words.size = 47 ∧ 0 < RCM.fb.words.size := by
+theorem spM : E2E.spv RCM.s0 = 0x7000#64 ∧ frameDrop RCM.af = 192 ∧
+    RCM.fb.words.size ≤ 0x4000 ∧ RCM.fr.size ≤ 240 ∧ RCM.af.frameSize = 176 ∧
+    (actW vcpL rfL).fb.words.size = 29 ∧ 0 < RCM.fb.words.size := by
   native_decide -- witness: native_decide
 
 theorem codeRCM : ∀ k < RCM.fb.words.size,
@@ -181,11 +181,11 @@ theorem stackRCM : StackAvail 0 (actW vcpM rfM).af RCM.s0 := by
   have hs := spM
   refine ⟨?_, fun a ha => ?_⟩
   · rw [spv_RCM]; show (actW vcpM rfM).af.frameSize + 16 + 0 ≤ _
-    have : (actW vcpM rfM).af.frameSize = 240 := hs.2.2.2.2.1
+    have : (actW vcpM rfM).af.frameSize = 176 := hs.2.2.2.2.1
     simp only [BitVec.toNat_ofNat]; omega
   · obtain ⟨j, hj, hd⟩ := codeAddr_words program_RCM ha
     rw [spv_RCM]
-    have : (actW vcpM rfM).af.frameSize = 240 := hs.2.2.2.2.1
+    have : (actW vcpM rfM).af.frameSize = 176 := hs.2.2.2.2.1
     show (actW vcpM rfM).af.frameSize + 16 + 0 ≤ _
     rw [this]
     have hj' : j < 0x4000 := by have := hs.2.2.1; omega
@@ -295,7 +295,7 @@ theorem checksPM : fM.name = "f" ∧ fT.name = "xt" ∧ fM.slots = [] ∧ fT.slo
       | .returnCall .. => false
       | _ => true) = true ∧
     callsInsideB callerM = true ∧ callsInsideB idT = true ∧ retsX0B vcpM = true ∧
-    frameDrop callerM.af = 256 ∧ callerM.af.frameSize = 240 := by
+    frameDrop callerM.af = 192 ∧ callerM.af.frameSize = 176 := by
   native_decide -- witness: native_decide
 
 theorem name_fM : fM.name = "f" := checksPM.1
@@ -306,9 +306,9 @@ theorem slots_fM : fM.slots = [] := checksPM.2.2.1
 
 theorem slots_fT : fT.slots = [] := checksPM.2.2.2.1
 
-theorem drop_M : frameDrop callerM.af = 256 := checksPM.2.2.2.2.2.2.2.2.2.1
+theorem drop_M : frameDrop callerM.af = 192 := checksPM.2.2.2.2.2.2.2.2.2.1
 
-theorem fs_M : callerM.af.frameSize = 240 := checksPM.2.2.2.2.2.2.2.2.2.2
+theorem fs_M : callerM.af.frameSize = 176 := checksPM.2.2.2.2.2.2.2.2.2.2
 
 theorem cfgM : ∃ ss ps, vcM.cfg = .ok (ss, ps) := by
   have h := checksCM.2.2.2.2.2.2.2.2.1
@@ -498,7 +498,7 @@ def frM (n : String) : Option (Nat × (Clif.SlotId → Nat)) :=
   else if n = "xt" then some (0, fun _ => 0)
   else none
 
-/-- **The frame bound**: the caller's frame, 240 bytes and the frame record. -/
+/-- **The frame bound**: the caller's frame, 176 bytes and the frame record (bound 256). -/
 def MxM : Nat := 256
 
 theorem frM_f : frM "f" = some (frameDrop callerM.af, slotOffs callerM.af fM) := by simp [frM]
@@ -608,7 +608,7 @@ abbrev RAM : RL := linkM.act callerM sM0 0x200 GM
 
 theorem stack_RAM : StackAvail 0x200 callerM.af sM0 := by
   have hs := spM
-  have hfs : callerM.af.frameSize = 240 := fs_M
+  have hfs : callerM.af.frameSize = 176 := fs_M
   refine ⟨?_, fun a ha => ?_⟩
   · show callerM.af.frameSize + 16 + 0x200 ≤ (E2E.spv RCM.s0).toNat
     rw [spv_RCM, hfs]; decide
@@ -648,7 +648,7 @@ theorem codeIn_RAM : CallSegCall.CodeIn linkM RAM := by
     have hG : ∀ i < 4, GL (0x20000#64 + BitVec.ofNat 64 (4 * k) + BitVec.ofNat 64 i) :=
       fun i hi => by
         unfold GL
-        have : (actW vcpL rfL).fb.words.size = 47 := spM.2.2.2.2.2.1
+        have : (actW vcpL rfL).fb.words.size = 29 := spM.2.2.2.2.2.1
         rw [this] at hlt ⊢
         bv_omega
     refine ⟨fun i hi => .inl (hG i hi), ?_⟩
@@ -674,11 +674,11 @@ theorem codeIn_RAM : CallSegCall.CodeIn linkM RAM := by
 /-- The addresses outside the activation's world are at or above `0x6D00`. -/
 theorem fM_ge {a : BitVec 64} (h : RAM.F a) : 0x6D00 ≤ a.toNat := by
   have hs := spM
-  have e : E2E.spv sM0 - BitVec.ofNat 64 (frameDrop callerM.af) = 0x6F00#64 := by
+  have e : E2E.spv sM0 - BitVec.ofNat 64 (frameDrop callerM.af) = 0x6F40#64 := by
     rw [show E2E.spv sM0 = 0x7000#64 from spv_RCM, drop_M]
     rfl
   have hsz : RCM.fr.size ≤ 240 := hs.2.2.2.1
-  have hfs : callerM.af.frameSize = 240 := fs_M
+  have hfs : callerM.af.frameSize = 176 := fs_M
   change frameWG 0x200 RCM.fr.intBase RCM.fr.size callerM.af GM sM0 a at h
   unfold frameWG frameW frameF StackBelow at h
   rw [e, hfs, drop_M] at h

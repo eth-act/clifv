@@ -115,6 +115,37 @@ theorem QW.world_change {R : RL} {s : Arm.ArmState} {j : Nat} {ps1 : PState} {T 
   exact ⟨vb, items, pre, code, ls, ps2, h1, h2, h3, h4, h5, h6, h7, h8, h9,
     { hst with world := hst.world.trans hw }⟩
 
+/-- `QWA` admits a change of the configuration's world within `SameWorld F` (with `AInv` at the
+new configuration). -/
+theorem QWA.world_change {R : RL} {s : Arm.ArmState} {j : Nat} {ps1 : PState} {T : List Line}
+    {b : Nat} {its : List RItem} {m : Loc → CV} {w w' : Arm.ArmState}
+    (hq : QWA R s j ps1 T (.run ⟨b, its, m, w⟩)) (hw : SameWorld R.F w w')
+    (hA : AInv R (.run ⟨b, its, m, w'⟩)) : QWA R s j ps1 T (.run ⟨b, its, m, w'⟩) := by
+  rcases hq with ⟨hq, -⟩ | ⟨mt, D, hq, hm, ht⟩
+  · exact .inl ⟨hq.world_change hw, hA⟩
+  · exact .inr ⟨mt, D, hq.world_change hw, hm, ht⟩
+
+/-- `QWA` at an instruction other than a `Rets` is `QW ∧ AInv` (a return tail ends at its
+`Rets`; `qa_op`). -/
+theorem QWA.op {R : RL} {s : Arm.ArmState} {j : Nat} {ps1 : PState} {T : List Line} {b k : Nat}
+    {a : Array Loc} {its : List RItem} {m : Loc → CV} {w : Arm.ArmState}
+    (h : QWA R s j ps1 T (.run ⟨b, .op k a :: its, m, w⟩)) {vb : VBlock} {i : MInst}
+    (hvb : R.vc.blocks[b]? = some vb) (hi : vb.insts[k]? = some i) (hnr : ∀ us, i ≠ .rets us) :
+    QW R s j ps1 T (.run ⟨b, .op k a :: its, m, w⟩) ∧ AInv R (.run ⟨b, .op k a :: its, m, w⟩) := by
+  rcases h with h | h
+  · exact h
+  · simp only [RetTailW] at h
+    obtain ⟨_mt, _D, _hq, _hm, vb', pend, k', a', rest, us, hvb', he, hk', htl⟩ := h
+    rcases pend with _ | ⟨it, pend⟩
+    · simp only [List.nil_append, List.cons.injEq, RItem.op.injEq] at he
+      obtain ⟨⟨rfl, -⟩, -⟩ := he
+      rw [hvb] at hvb'; cases hvb'
+      rw [hi] at hk'; cases hk'
+      exact absurd rfl (hnr us)
+    · simp only [List.cons_append, List.cons.injEq] at he
+      obtain ⟨rfl, -⟩ := he
+      simp [retTailOk, RItem.restoreReg, RItem.isRestore, RItem.avoids] at htl
+
 /-- `AInv` is kept by every step of the allocated code from a `Q` state, in any semantics. -/
 theorem aInv_step_anySem {R : RL} {sem : ISem CV Arm.ArmState} (hR : R.Wf)
     {s : Arm.ArmState} {c c' : MConf CV Arm.ArmState}
@@ -162,26 +193,28 @@ theorem realizes_value_allCWSF {R : RL} (hR : R.Wf) {P : Arm.ArmState → Prop}
       CalleeTryOkGP P R.F R.K R.G R.s0 (CallAt R.fa R.base) R.X R.H R.vc.TrySite R.gv)
     (hTls : R.vc.hasTls = true → TlsOk R.F R.K R.X R.H)
     (hcov : FormsCovered R.ctx R.vc) {s : Arm.ArmState} {j : Nat} {ps1 : PState} {T : List Line}
-    {c c' : MConf CV Arm.ArmState} (hq : QW R s j ps1 T c) (hA : AInv R c) (hP : P s)
+    {c c' : MConf CV Arm.ArmState} (hq : QWA R s j ps1 T c) (hP : P s)
     (hG : MStep R.vc (R.valueSemGS Ok) ckeep R.rf c c') :
     ∃ n c'' d₀, MStep R.vc (R.valueSemGS Ok) ckeep R.rf c c'' ∧
       MStep R.vc (R.semGS Ok) ckeep R.rf c d₀ ∧ MConf.ShapeEq d₀ c'' ∧
-      MConf.ShapeEq c'' c' ∧ AInv R c'' ∧
-      QW R (iterN R.step n s) (R.nextW j ps1 T c c'').1 (R.nextW j ps1 T c c'').2.1
+      MConf.ShapeEq c'' c' ∧
+      QWA R (iterN R.step n s) (R.nextW j ps1 T c c'').1 (R.nextW j ps1 T c c'').2.1
         (R.nextW j ps1 T c c'').2.2 c'' ∧
       (∀ i < n, R.GoodX (iterN R.step i s) ∧ R.WReadsIn Ok (iterN R.step i s)) ∧
       countIn R.CallSt R.step s n = opCalls R.vc c ∧ R.SegLenA j ps1 T c c'' s n ∧
       R.SegLenA j ps1 T c d₀ s n ∧ R.FRFree s n := by
   cases hG with
   | move =>
-    obtain ⟨n, c'', hm, hsh, hA', hq', ht, hcnt, hs, hf⟩ :=
-      realizes_allCWSF hR Ok hC hT hTls hcov hq hA hP MStep.move
+    obtain ⟨n, c'', hm, hsh, hq', ht, hcnt, hs, hf⟩ :=
+      realizes_allCWSF hR Ok hC hT hTls hcov hq hP MStep.move
     cases hm with
-    | move => exact ⟨n, _, _, MStep.move, MStep.move, ⟨rfl, rfl⟩, hsh, hA', hq', ht, hcnt, hs, hs, hf⟩
+    | move => exact ⟨n, _, _, MStep.move, MStep.move, ⟨rfl, rfl⟩, hsh, hq', ht, hcnt, hs, hs, hf⟩
   | @op b k allocs its m w vb i ops outs outs' w' ctl m2 c' hb hi hop hsz hs hl hho hcl hn =>
     obtain ⟨hg, hsV⟩ := valueSemVGS_inv hs
     by_cases hp : specForm i = true
-    · have hspec : mspec R.ctx.slotBase i
+    · obtain ⟨hqw, hA⟩ := QWA.op hq hb hi fun us e => by
+        subst e; simp [specForm, pureForm, cmpForm] at hp
+      have hspec : mspec R.ctx.slotBase i
           (((ops.zip allocs).toList.filter (·.1.isUse)).map (m ·.2)) w = some (outs, w', ctl) := by
         simpa [valueSemV, hp] using hsV
       have hc := mspec_spec_next hp hspec
@@ -204,8 +237,8 @@ theorem realizes_value_allCWSF {R : RL} (hR : R.Wf) {P : Arm.ArmState → Prop}
             (.run ⟨b, its, writeM m2
               ((((ops.zip allocs).toList.filter (·.1.isDef)).zip outs').filter (·.1.1.isLate)), wc⟩) :=
           MStep.op hb hi hop hsz hsem hl hho hcl (MNext.next hk)
-        obtain ⟨n, c'', hactual, -, hA', hq', ht, hcnt, hs', hf⟩ :=
-          realizes_allCWSF hR Ok hC hT hTls hcov hq hA hP hold
+        obtain ⟨n, c'', hactual, -, hq', ht, hcnt, hs', hf⟩ :=
+          realizes_allCWSF hR Ok hC hT hTls hcov (.inl ⟨hqw, hA⟩) hP hold
         cases hactual with
         | @op _ _ _ _ _ _ vb' i' ops' os os' ww ct m3 cc hb' hi' hop' hsz' hsem' hl' hho' hcl' hn' =>
           rw [hb] at hb'; cases hb'
@@ -220,16 +253,16 @@ theorem realizes_value_allCWSF {R : RL} (hR : R.Wf) {P : Arm.ArmState → Prop}
                   ((((ops.zip allocs).toList.filter (·.1.isDef)).zip os').filter (·.1.1.isLate)), w'⟩) :=
               MStep.op hb hi hop hsz hs hl hho' hcl' (MNext.next hk')
             exact ⟨n, _, _, hnew, MStep.op hb hi hop hsz hsem hl hho' hcl' (MNext.next hk'),
-              ⟨rfl, rfl⟩, ⟨rfl, rfl⟩, aInv_step_anySem hR hq.q hA hnew,
-              QW.world_change hq' hworld, ht, hcnt, hs', hs', hf⟩
+              ⟨rfl, rfl⟩, ⟨rfl, rfl⟩,
+              QWA.world_change hq' hworld (aInv_step_anySem hR hqw.q hA hnew), ht, hcnt, hs', hs', hf⟩
     · have hnsp : specForm i = false := by simpa using hp
       have hsG : R.semGS Ok i (((ops.zip allocs).toList.filter (·.1.isUse)).map (m ·.2)) w =
           some (outs, w', ctl) := by
         have := hs
         simp only [RL.valueSemGS, valueSemVGS_nspec hnsp] at this
         exact this
-      obtain ⟨n, c'', hactual, hsh, hA', hq', ht, hcnt, hs', hf⟩ :=
-        realizes_allCWSF hR Ok hC hT hTls hcov hq hA hP (MStep.op hb hi hop hsz hsG hl hho hcl hn)
+      obtain ⟨n, c'', hactual, hsh, hq', ht, hcnt, hs', hf⟩ :=
+        realizes_allCWSF hR Ok hC hT hTls hcov hq hP (MStep.op hb hi hop hsz hsG hl hho hcl hn)
       cases hactual with
       | @op _ _ _ _ _ _ vb' i' ops' os os' ww ct m3 cc hb' hi' hop' hsz' hsem' hl' hho' hcl' hn' =>
         rw [hb] at hb'; cases hb'
@@ -238,6 +271,6 @@ theorem realizes_value_allCWSF {R : RL} (hR : R.Wf) {P : Arm.ArmState → Prop}
           MStep.op hb hi hop' hsz' (by simp only [RL.valueSemGS, valueSemVGS_nspec hnsp]; exact hsem')
             hl' hho' hcl' hn'
         exact ⟨n, _, _, hnew, MStep.op hb hi hop' hsz' hsem' hl' hho' hcl' hn',
-          MConf.shapeEq_rfl _, hsh, hA', hq', ht, hcnt, hs', hs', hf⟩
+          MConf.shapeEq_rfl _, hsh, hq', ht, hcnt, hs', hs', hf⟩
 
 end Backend.Proof

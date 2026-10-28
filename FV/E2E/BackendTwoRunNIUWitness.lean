@@ -68,16 +68,16 @@ theorem a2_twoRunLERWZNpW {F : BitVec 64 → Prop} {c : BitVec 64} {K : Nat} {ar
     ∀ vals cm, Clif.runLoop Clif.Rust.env (L F).P.bare fuel cs = .returned vals cm →
       ∃ C, (C ≤ N → ∃ T, RetAgreeX (frameDrop (A fA2).af + K) (spv s)
         (iterN (ArmStepX Xb idHooks (A fA2).fa)
-          ((prologueLines (A fA2).af.frameSize).length + T +
-            ((spAdjLines false (A fA2).af.frameSize).length + 2)) t0)
+          ((prologueLines (A fA2).af.saves (A fA2).af.frameSize).length + T +
+            ((epiLines (A fA2).af.saves (A fA2).af.frameSize).length + 1)) t0)
         (iterN (ArmStepX Xb idHooks (A fA2).fa)
-          ((prologueLines (A fA2).af.frameSize).length + T +
-            ((spAdjLines false (A fA2).af.frameSize).length + 2)) s)) ∧
+          ((prologueLines (A fA2).af.saves (A fA2).af.frameSize).length + T +
+            ((epiLines (A fA2).af.saves (A fA2).af.frameSize).length + 1)) s)) ∧
       (N < C → ∃ T, ∀ a, ¬ F a → ¬ False →
         (iterN (ArmStepX Xb idHooks (A fA2).fa)
-          ((prologueLines (A fA2).af.frameSize).length + T) t0).mem a =
+          ((prologueLines (A fA2).af.saves (A fA2).af.frameSize).length + T) t0).mem a =
         (iterN (ArmStepX Xb idHooks (A fA2).fa)
-          ((prologueLines (A fA2).af.frameSize).length + T) s).mem a) := by
+          ((prologueLines (A fA2).af.saves (A fA2).af.frameSize).length + T) s).mem a) := by
   have hL := L_ok (fun _ => True) (fun _ _ => trivial)
   have hA2 : fA2 ∈ P.funcs := by simp [P]
   have hc := a2_compiled
@@ -135,18 +135,18 @@ theorem a2_twoRunLERWZIU {F : BitVec 64 → Prop} {c : BitVec 64} {K : Nat} {arg
     ∀ vals cm, Clif.runLoop Clif.Rust.env (L F).P.bare fuel cs = .returned vals cm →
       ∃ T, RetAgreeX (frameDrop (A fA2).af + K) (spv s)
         (iterN (ArmStepX Xb idHooks (A fA2).fa)
-          ((prologueLines (A fA2).af.frameSize).length + T +
-            ((spAdjLines false (A fA2).af.frameSize).length + 2)) t0)
+          ((prologueLines (A fA2).af.saves (A fA2).af.frameSize).length + T +
+            ((epiLines (A fA2).af.saves (A fA2).af.frameSize).length + 1)) t0)
         (iterN (ArmStepX Xb idHooks (A fA2).fa)
-          ((prologueLines (A fA2).af.frameSize).length + T +
-            ((spAdjLines false (A fA2).af.frameSize).length + 2)) s) ∧
+          ((prologueLines (A fA2).af.saves (A fA2).af.frameSize).length + T +
+            ((epiLines (A fA2).af.saves (A fA2).af.frameSize).length + 1)) s) ∧
       ∀ a, ¬ F a →
         (iterN (ArmStepX Xb idHooks (A fA2).fa)
-          ((prologueLines (A fA2).af.frameSize).length + T +
-            ((spAdjLines false (A fA2).af.frameSize).length + 2)) t0).mem a =
+          ((prologueLines (A fA2).af.saves (A fA2).af.frameSize).length + T +
+            ((epiLines (A fA2).af.saves (A fA2).af.frameSize).length + 1)) t0).mem a =
         (iterN (ArmStepX Xb idHooks (A fA2).fa)
-          ((prologueLines (A fA2).af.frameSize).length + T +
-            ((spAdjLines false (A fA2).af.frameSize).length + 2)) s).mem a := by
+          ((prologueLines (A fA2).af.saves (A fA2).af.frameSize).length + T +
+            ((epiLines (A fA2).af.saves (A fA2).af.frameSize).length + 1)) s).mem a := by
   have hL := L_ok (fun _ => True) (fun _ _ => trivial)
   have hA2 : fA2 ∈ P.funcs := by simp [P]
   have hc := a2_compiled

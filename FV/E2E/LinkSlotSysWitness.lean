@@ -23,7 +23,7 @@ table is the machine's (entry `k` = the memory at the `k`-th placed activation w
 
 Checked (`#guard`, on a computable mirror of the linked machine `machC`, depth `1`): the machine
 returns `82` to the entry's return address with the entry's `sp`, calling `h` then `r` at the
-body `sp` `0xFFF00`, and `iniT` is the machine's table on both callees' slot bytes. Theorems:
+body `sp` `0xFFF40`, and `iniT` is the machine's table on both callees' slot bytes. Theorems:
 
 * `Lsl_ok`, `needSlots`: `LinkSys.Ok` (`okB`, `native_decide`) and `NeedSlots`;
 * `run_f`: the whole-program CLIF run from `f`'s entry `cs0` on `41` (placed at `0x100000` with
@@ -185,7 +185,7 @@ def resM := machC 1 2000 fF sEntry
 def callSt (k : Nat) : Arm.ArmState := ((resM.2[k - 1]?).map (·.2)).getD sEntry
 
 /-- `r`'s slot address at its call: the body `sp` plus the slot base. -/
-def slotR : Nat := 0x100000 - 256 - 272 + 240
+def slotR : Nat := 0x100000 - 192 - 208 + 32
 
 /-- **The byte table**: entry `2` (`r`) holds `h`'s leftover `41` at `r`'s slot. -/
 def iniT : Clif.SlotInit := { bytes := fun k a => if k = 2 ∧ a = slotR then 41#8 else 0#8 }
@@ -194,8 +194,8 @@ def iniT : Clif.SlotInit := { bytes := fun k a => if k = 2 ∧ a = slotR then 41
 #guard match resM.1 with
   | some (_, t) => Arm.r (.GPR 0#5) t == 82#64 && spv t == 0x100000#64
   | none => false
--- It calls `h` then `r`, both at the body `sp` of `f` (`0x100000 - 256`).
-#guard resM.2.map (fun p => (p.1, spv p.2)) == [("h", 0xFFF00#64), ("r", 0xFFF00#64)]
+-- It calls `h` then `r`, both at the body `sp` of `f` (`0x100000 - 192`).
+#guard resM.2.map (fun p => (p.1, spv p.2)) == [("h", 0xFFF40#64), ("r", 0xFFF40#64)]
 -- `iniT` is the machine's table on both callees' slot bytes.
 #guard [(1, fH), (2, fR)].all fun (k, h) =>
   let c := spv (callSt k) - BitVec.ofNat 64 (frameDrop (Lsl.A h).af) +
@@ -235,7 +235,7 @@ def checkB : Bool :=
   (match runOf { bytes := fun _ _ => 0#8 } with
     | .returned [v] _ => v.bits.toNat == 41
     | _ => false) &&
-  (cs0.mem.place.map (·.sps)) == some [0xFFF00#64, 0x100000#64]
+  (cs0.mem.place.map (·.sps)) == some [0xFFF40#64, 0x100000#64]
 
 theorem checkB_true : checkB = true := by native_decide
 

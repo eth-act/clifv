@@ -108,6 +108,8 @@ theorem regLevel_trapStop_coreT {R : RL} (hR : R.Wf) {ra : BitVec 64}
       rw [hops] at hops'; cases hops'
       have hU0 := matchRun_uses hcheck hr2 (MStep.op hvb hi hops hsz hsem2 hlen2 hho hcl hn) hvb hi
         hops
+      have hq2 := (qa_op hq2 hvb hi (fun us h => by
+        rcases hik with rfl | ⟨ti, rfl⟩ <;> cases h)).1
       obtain ⟨j0, items, pre, regs, i', cA, cB, ls1, ls2, ps1, psm, ps2, T', cc', wh, ops'', hal, hit,
         hsplit, hasg, hc1', hops'', hstat, hchk', hcode2, h1', h2', htr', hdrop, hpc, hst⟩ :=
         q_op hq2 hvb hi

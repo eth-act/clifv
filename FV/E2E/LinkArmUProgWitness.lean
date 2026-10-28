@@ -92,7 +92,7 @@ def uChk : Bool :=
     !hasTls g && indFreeB g && lowerCheckU g a.vc && (callSites a.af a.fa).toBool &&
       (unwindRows a.af a.fa).toBool && padsNonzeroB a.af a.fa && lastCallsOk a.af a.fa &&
       savedCheck a.vcp a.rf && (RAFrame.compute a.vcp a.rf).intBase == 0 &&
-      (RAFrame.compute a.vcp a.rf).size == a.af.frameSize
+      (RAFrame.compute a.vcp a.rf).size == a.af.frameSize - clobberBytes a.af.saves
 
 theorem uChk_true : uChk = true := by native_decide
 
@@ -210,7 +210,7 @@ theorem LU_okU (F : BitVec 64 → Prop) : (LU F).OkU where
     intro s _ _ _ c wh ops regs i' w _ _ _ _ hsw _ herr _ obj w' h
     simp only [LU, IselSimUWitness.XR, Option.some.injEq, Prod.mk.injEq] at h
     obtain ⟨rfl, rfl⟩ := h
-    exact ⟨s, rfl, hsw, ⟨rfl, fun _ _ => rfl⟩, herr, rfl, fun _ _ _ _ => rfl, fun _ _ _ => rfl⟩
+    exact ⟨s, rfl, hsw, ⟨rfl, fun _ _ => rfl, rfl⟩, herr, rfl, fun _ _ _ _ => rfl, fun _ _ _ => rfl⟩
   baseNoRaise g hg info hs hb i hi F' K G s0 Pc s _ _ _ c wh ops regs i' w _ _ _ _ _ _ _ _ h :=
     absurd rfl h
   baseKeepsPlaceU _ n G hG vals m e m' hu := by

@@ -85,7 +85,7 @@ theorem regLevel_value_prefixCG {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : Fn
     (fun n => ((realizes_value_allC_sp (hRn n) (hC' n) (fun h => hCT' h n)
       (fun h => tlsOk_upTo (hTls h n)) hcov).mono_T
       (T' := R.Good) fun _ h => h.good).congr_Q fun u c =>
-        and_congr (RL.Q_withX (Rn n) (XN.at 0) u c).symm Iff.rfl) ρsel hsel
+        (RL.QA_withX (Rn n) (XN.at 0) (RL.sP_withX (hRn n) hent (XN.at 0)) u c).symm) ρsel hsel
   exact ⟨m₀, fun b k ρ w vb i hstar hvb hi hcall ops hops =>
     h b k ρ w N vb i (vstar_upTo_value hstar (Nat.le_refl _)) hvb hi hcall ops hops⟩
 

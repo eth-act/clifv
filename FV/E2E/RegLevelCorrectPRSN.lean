@@ -116,15 +116,15 @@ theorem regLevelCorrect_world_atCSN {vcp : VCode} {rf : RFunc} {af : AFunc} {fa 
       (ρsel (locVal R.fr (iterN R.step n0 s))) (w₀, 0) (hsel _)
   have hP0 : countIn R.CallSt R.step s n0 = 0 := countIn_zero_of fun i hi => (ht0 i hi).2
   have hRzC : Realizes R.vc R.rf (csemVI R.gv R.F R.ctx XI) ckeep (stepC R.CallSt R.step)
-      (fun p c => (Q R p.1 (c.mapW Prod.fst) ∧ AInv R (c.mapW Prod.fst)) ∧ p.2 = c.world.2 ∧
+      (fun p c => QA R p.1 (c.mapW Prod.fst) ∧ p.2 = c.world.2 ∧
         ∃ i, p = iterN (stepC R.CallSt R.step) i (iterN R.step n0 s, 0)) (fun p => R.Good p.1) := by
     refine RealizesCP.countedRun (vc := R.vc) (rf := R.rf) (keep := ckeep)
       (sem := fun n => csemV R.gv R.F R.ctx (XI.at n))
-      (Q := fun u c => Q R u c ∧ AInv R c) (T := R.Good) (C := R.CallSt)
+      (Q := fun u c => QA R u c) (T := R.Good) (C := R.CallSt)
       (P := fun n u => OnCall R.step fa base s n u) (s0 := iterN R.step n0 s) (fun n => ?_)
       (onCall_of_run hP0)
-    have hq : ∀ u c, Q (Rn n) u c ∧ AInv (Rn n) c ↔ Q R u c ∧ AInv R c := fun u c =>
-      and_congr (RL.Q_withX (Rn n) (XI.at 0) u c).symm Iff.rfl
+    have hq : ∀ u c, QA (Rn n) u c ↔ QA R u c := fun u c =>
+      (RL.QA_withX (Rn n) (XI.at 0) (RL.sP_withX (hRn n) hent (XI.at 0)) u c).symm
     exact ((realizes_allC_sp (hRn n) (hC n) (fun h => hCT h n) (fun h => hTls h n) hcov).mono_T
       (T' := R.Good) fun _ h => h.good).congr_Q hq
   have hRz := Realizes.ofStepC hRzC
@@ -149,9 +149,9 @@ theorem regLevelCorrect_world_atCSN {vcp : VCode} {rf : RFunc} {af : AFunc} {fa 
       rw [hvals]
       refine VStep.step hvb hi (operands_retsC ns) (by rw [hvals] at hsem; exact hsem) ?_ (VNext.ret rfl)
       rw [List.toList_toArray, filter_isDef_retOpsC]; rfl
-    obtain ⟨n1, c', c'', ⟨hq2, -⟩, hr2, hms, hr3, ht1, hcnt⟩ :=
-      forward_lastC (Q := fun u c => Q R u (c.mapW Prod.fst) ∧ AInv R (c.mapW Prod.fst)) hSim hRzC
-        hstar h1 hinit ⟨hq0, hA0⟩ rfl
+    obtain ⟨n1, c', c'', hq2, hr2, hms, hr3, ht1, hcnt⟩ :=
+      forward_lastC (Q := fun u c => QA R u (c.mapW Prod.fst)) hSim hRzC
+        hstar h1 hinit (.inl ⟨hq0, hA0⟩) rfl
     cases c'' with
     | run s' => obtain ⟨_, e⟩ := hSim.run hr3; cases e
     | halt w'' => cases hSim.halt hr3
@@ -171,10 +171,11 @@ theorem regLevelCorrect_world_atCSN {vcp : VCode} {rf : RFunc} {af : AFunc} {fa 
         simp only [csemV, csem, Option.some.injEq, Prod.mk.injEq] at hsem3
         obtain ⟨rfl, -, -⟩ := hsem3
         rw [rets_store hlen2 rfl hho hcl] at hks
-        have hq2' : Q R (iterN R.step n1 (iterN R.step n0 s))
+        have hq2' : QA R (iterN R.step n1 (iterN R.step n0 s))
             (.run ⟨b, .op k _ :: _, _, w₁.1⟩) := hq2
-        have hst := q_stRel hq2'
-        obtain ⟨n3, ht3, hpc, herr, hsp, hx29, hregs, hmem, hfld, hprogF, hvalsM⟩ :=
+        obtain ⟨mt, hq2''⟩ := qa_q hq2'
+        have hst := q_stRel hq2''
+        obtain ⟨n3, ht3, hpc, herr, hsp, hx29, hregs, hsvd, hmem, hfld, hprogF, hvalsM⟩ :=
           ret_machineN hR hent hq2' hvb hi
         have htr : ∀ i < n0 + n1 + n3, R.Good (E2E.runX (ArmStepX (XI.at 0) H fa) i s) := by
           intro i hi
@@ -183,9 +184,6 @@ theorem regLevelCorrect_world_atCSN {vcp : VCode} {rf : RFunc} {af : AFunc} {fa 
             (trace_add ht1 fun j hj => (ht3 j hj).1.good) i (by omega)
         have hm0 : ∀ r, locVal R.fr (iterN R.step n0 s) (.reg r) = regVal (iterN R.step n0 s) r :=
           fun _ => rfl
-        have hms : ∀ r, r.allocatable = true → _ = regVal _ r := fun r hr =>
-          hst.store (.reg r) (fun r' e => by cases e; exact hr) trivial
-        dsimp only at hms
         refine ⟨n0 + n1 + n3, ?_, ⟨?_, ?_, ?_, ?_, ?_⟩, ?_, ?_, ?_, ?_, ?_,
           fun i hi0 hi hpcall => ?_⟩
         rotate_right
@@ -209,24 +207,26 @@ theorem regLevelCorrect_world_atCSN {vcp : VCode} {rf : RFunc} {af : AFunc} {fa 
           by_cases h29 : a = 10
           · subst h29; exact hx29
           obtain ⟨hcs, hal⟩ := calleeSaved_x (n := 19 + a) (by omega) (by omega)
+          by_cases hsv : Reg.x (19 + a) ∈ R.af.saves
+          · exact hsvd _ hsv
           have k1 := hks _ hcs
           simp only [ckeep, hm0] at k1
-          rw [hms _ hal] at k1
           have hne : ∀ q, q < 32 → q ≠ 19 + a →
               Arm.StateField.GPR (rnum (19 + a)) ≠ .GPR (BitVec.ofNat 5 q) :=
             fun q h1 h2 e => rnum_ne (a := 19 + a) (b := q) (by omega) h1 (Ne.symm h2)
               (Arm.StateField.GPR.inj e)
-          have k2 := hregs _ hal
+          have k2 := hregs _ hal hsv
           simp only [regVal] at k1 k2
           rw [hf0 _ (by simp) (hne 29 (by omega) (by omega)) (hne 31 (by omega) (by omega))
             (hne 16 (by omega) (by omega))] at k1
           exact setWidth128_inj (k2.trans k1)
         · intro n h8 h16
           obtain ⟨hcs, hal⟩ := calleeSaved_v h8 h16
+          by_cases hsv : Reg.v n ∈ R.af.saves
+          · exact hsvd _ hsv
           have k1 := hks _ hcs
           simp only [ckeep, hm0] at k1
-          rw [hms _ hal] at k1
-          have k2 := hregs _ hal
+          have k2 := hregs _ hal hsv
           simp only [regVal] at k1 k2
           rw [hf0 _ (by simp) (by simp) (by simp) (by simp)] at k1
           show (Arm.r (.SFP (rnum n)) _).setWidth 64 = (Arm.r (.SFP (rnum n)) s).setWidth 64
@@ -250,7 +250,7 @@ theorem regLevelCorrect_world_atCSN {vcp : VCode} {rf : RFunc} {af : AFunc} {fa 
           exact hent.program.symm
   · -- a trap
     obtain ⟨b, k, ρ, w, vb, i, ops, outs, w', hstar, hvb, hi, hops, hsem, htc⟩ := htr
-    obtain ⟨n1, c1, hz1, hr1, ht1⟩ := forward hSim hRz hstar hinit ⟨0, ⟨hq0, hA0⟩, rfl, 0, rfl⟩
+    obtain ⟨n1, c1, hz1, hr1, ht1⟩ := forward hSim hRz hstar hinit ⟨0, .inl ⟨hq0, hA0⟩, rfl, 0, rfl⟩
     obtain ⟨hsemV, -⟩ := ISem.counted_some hsem
     obtain ⟨hnil, hform⟩ := csem_halt (csemV_sub hsemV)
     subst hnil
@@ -260,7 +260,7 @@ theorem regLevelCorrect_world_atCSN {vcp : VCode} {rf : RFunc} {af : AFunc} {fa 
       · exact trapIf_nodefs hops
     have h1 : VStep R.vc (csemVI R.gv R.F R.ctx XI) (.run ⟨b, k, ρ, w⟩) (.halt w') :=
       VStep.step hvb hi hops hsem (by rw [hdefs]; rfl) VNext.halt
-    obtain ⟨n2, c', c'', ⟨_, ⟨hq2, -⟩, -⟩, hr2, hms, hr3, -⟩ :=
+    obtain ⟨n2, c', c'', ⟨_, hq2, -⟩, hr2, hms, hr3, -⟩ :=
       forward_last hSim hRz h1 _ c1 _ (Nat.le_refl _) hr1 hz1
     cases c'' with
     | run s' => obtain ⟨_, e⟩ := hSim.run hr3; cases e
@@ -273,8 +273,12 @@ theorem regLevelCorrect_world_atCSN {vcp : VCode} {rf : RFunc} {af : AFunc} {fa 
         subst hb' hk' hw'
         rw [hvb] at hvb'; cases hvb'
         rw [hi] at hi'; cases hi'
-        have hq2' : Q R (iterN R.step n2 (iterN R.step n1 (iterN R.step n0 s)))
+        have hq2'' : QA R (iterN R.step n2 (iterN R.step n1 (iterN R.step n0 s)))
             (.run ⟨b, .op k _ :: _, _, w.1⟩) := hq2
+        have hnr : ∀ us, i ≠ .rets us := by
+          intro us h
+          rcases hform with ⟨cd, rfl⟩ | ⟨kk, cd, rfl, -⟩ <;> cases h
+        have hq2' := (qa_op hq2'' hvb hi hnr).1
         rcases hform with ⟨cd, rfl⟩ | ⟨kk, cd, rfl, hholds⟩
         · simp only [trapCode?, Option.some.injEq] at htc
           subst htc
@@ -443,15 +447,15 @@ theorem regLevelCorrect_world_value_atCSN {vcp : VCode} {rf : RFunc} {af : AFunc
       (ρsel (locVal R.fr (iterN R.step n0 s))) (w₀, 0) (hsel _)
   have hP0 : countIn R.CallSt R.step s n0 = 0 := countIn_zero_of fun i hi => (ht0 i hi).2
   have hRzC : Realizes R.vc R.rf (valueSemVI R.gv R.F R.ctx XI) ckeep (stepC R.CallSt R.step)
-      (fun p c => (Q R p.1 (c.mapW Prod.fst) ∧ AInv R (c.mapW Prod.fst)) ∧ p.2 = c.world.2 ∧
+      (fun p c => QA R p.1 (c.mapW Prod.fst) ∧ p.2 = c.world.2 ∧
         ∃ i, p = iterN (stepC R.CallSt R.step) i (iterN R.step n0 s, 0)) (fun p => R.Good p.1) := by
     refine RealizesCP.countedRun (vc := R.vc) (rf := R.rf) (keep := ckeep)
       (sem := fun n => valueSemV R.gv R.F R.ctx (XI.at n))
-      (Q := fun u c => Q R u c ∧ AInv R c) (T := R.Good) (C := R.CallSt)
+      (Q := fun u c => QA R u c) (T := R.Good) (C := R.CallSt)
       (P := fun n u => OnCall R.step fa base s n u) (s0 := iterN R.step n0 s) (fun n => ?_)
       (onCall_of_run hP0)
-    have hq : ∀ u c, Q (Rn n) u c ∧ AInv (Rn n) c ↔ Q R u c ∧ AInv R c := fun u c =>
-      and_congr (RL.Q_withX (Rn n) (XI.at 0) u c).symm Iff.rfl
+    have hq : ∀ u c, QA (Rn n) u c ↔ QA R u c := fun u c =>
+      (RL.QA_withX (Rn n) (XI.at 0) (RL.sP_withX (hRn n) hent (XI.at 0)) u c).symm
     exact ((realizes_value_allC_sp (hRn n) (hC n) (fun h => hCT h n) (fun h => hTls h n) hcov).mono_T
       (T' := R.Good) fun _ h => h.good).congr_Q hq
   have hRz := Realizes.ofStepC hRzC
@@ -477,9 +481,9 @@ theorem regLevelCorrect_world_value_atCSN {vcp : VCode} {rf : RFunc} {af : AFunc
       rw [hvals]
       refine VStep.step hvb hi (operands_retsC ns) (by rw [hvals] at hsem; exact hsem) ?_ (VNext.ret rfl)
       rw [List.toList_toArray, filter_isDef_retOpsC]; rfl
-    obtain ⟨n1, c', c'', ⟨hq2, -⟩, hr2, hms, hr3, ht1, hcnt⟩ :=
-      forward_lastC (Q := fun u c => Q R u (c.mapW Prod.fst) ∧ AInv R (c.mapW Prod.fst)) hSim hRzC
-        hstar h1 hinit ⟨hq0, hA0⟩ rfl
+    obtain ⟨n1, c', c'', hq2, hr2, hms, hr3, ht1, hcnt⟩ :=
+      forward_lastC (Q := fun u c => QA R u (c.mapW Prod.fst)) hSim hRzC
+        hstar h1 hinit (.inl ⟨hq0, hA0⟩) rfl
     cases c'' with
     | run s' => obtain ⟨_, e⟩ := hSim.run hr3; cases e
     | halt w'' => cases hSim.halt hr3
@@ -500,10 +504,11 @@ theorem regLevelCorrect_world_value_atCSN {vcp : VCode} {rf : RFunc} {af : AFunc
           ↓reduceIte, csemV, csem, Option.some.injEq, Prod.mk.injEq] at hsem3
         obtain ⟨rfl, -, -⟩ := hsem3
         rw [rets_store hlen2 rfl hho hcl] at hks
-        have hq2' : Q R (iterN R.step n1 (iterN R.step n0 s))
+        have hq2' : QA R (iterN R.step n1 (iterN R.step n0 s))
             (.run ⟨b, .op k _ :: _, _, w₁.1⟩) := hq2
-        have hst := q_stRel hq2'
-        obtain ⟨n3, ht3, hpc, herr, hsp, hx29, hregs, hmem, hfld, hprogF, hvalsM⟩ :=
+        obtain ⟨mt, hq2''⟩ := qa_q hq2'
+        have hst := q_stRel hq2''
+        obtain ⟨n3, ht3, hpc, herr, hsp, hx29, hregs, hsvd, hmem, hfld, hprogF, hvalsM⟩ :=
           ret_machineN hR hent hq2' hvb hi
         have htr : ∀ i < n0 + n1 + n3, R.Good (E2E.runX (ArmStepX (XI.at 0) H fa) i s) := by
           intro i hi
@@ -512,9 +517,6 @@ theorem regLevelCorrect_world_value_atCSN {vcp : VCode} {rf : RFunc} {af : AFunc
             (trace_add ht1 fun j hj => (ht3 j hj).1.good) i (by omega)
         have hm0 : ∀ r, locVal R.fr (iterN R.step n0 s) (.reg r) = regVal (iterN R.step n0 s) r :=
           fun _ => rfl
-        have hms : ∀ r, r.allocatable = true → _ = regVal _ r := fun r hr =>
-          hst.store (.reg r) (fun r' e => by cases e; exact hr) trivial
-        dsimp only at hms
         refine ⟨n0 + n1 + n3, ?_, ⟨?_, ?_, ?_, ?_, ?_⟩, ?_, ?_, ?_, ?_, ?_,
           fun i hi0 hi hpcall => ?_⟩
         rotate_right
@@ -538,24 +540,26 @@ theorem regLevelCorrect_world_value_atCSN {vcp : VCode} {rf : RFunc} {af : AFunc
           by_cases h29 : a = 10
           · subst h29; exact hx29
           obtain ⟨hcs, hal⟩ := calleeSaved_x (n := 19 + a) (by omega) (by omega)
+          by_cases hsv : Reg.x (19 + a) ∈ R.af.saves
+          · exact hsvd _ hsv
           have k1 := hks _ hcs
           simp only [ckeep, hm0] at k1
-          rw [hms _ hal] at k1
           have hne : ∀ q, q < 32 → q ≠ 19 + a →
               Arm.StateField.GPR (rnum (19 + a)) ≠ .GPR (BitVec.ofNat 5 q) :=
             fun q h1 h2 e => rnum_ne (a := 19 + a) (b := q) (by omega) h1 (Ne.symm h2)
               (Arm.StateField.GPR.inj e)
-          have k2 := hregs _ hal
+          have k2 := hregs _ hal hsv
           simp only [regVal] at k1 k2
           rw [hf0 _ (by simp) (hne 29 (by omega) (by omega)) (hne 31 (by omega) (by omega))
             (hne 16 (by omega) (by omega))] at k1
           exact setWidth128_inj (k2.trans k1)
         · intro n h8 h16
           obtain ⟨hcs, hal⟩ := calleeSaved_v h8 h16
+          by_cases hsv : Reg.v n ∈ R.af.saves
+          · exact hsvd _ hsv
           have k1 := hks _ hcs
           simp only [ckeep, hm0] at k1
-          rw [hms _ hal] at k1
-          have k2 := hregs _ hal
+          have k2 := hregs _ hal hsv
           simp only [regVal] at k1 k2
           rw [hf0 _ (by simp) (by simp) (by simp) (by simp)] at k1
           show (Arm.r (.SFP (rnum n)) _).setWidth 64 = (Arm.r (.SFP (rnum n)) s).setWidth 64
@@ -579,7 +583,7 @@ theorem regLevelCorrect_world_value_atCSN {vcp : VCode} {rf : RFunc} {af : AFunc
           exact hent.program.symm
   · -- a trap
     obtain ⟨b, k, ρ, w, vb, i, ops, outs, w', hstar, hvb, hi, hops, hsem, htc⟩ := htr
-    obtain ⟨n1, c1, hz1, hr1, ht1⟩ := forward hSim hRz hstar hinit ⟨0, ⟨hq0, hA0⟩, rfl, 0, rfl⟩
+    obtain ⟨n1, c1, hz1, hr1, ht1⟩ := forward hSim hRz hstar hinit ⟨0, .inl ⟨hq0, hA0⟩, rfl, 0, rfl⟩
     obtain ⟨hsemV, -⟩ := ISem.counted_some hsem
     obtain ⟨hnil, hform⟩ := csem_halt (csemV_sub (valueSemV_haltI hsemV))
     subst hnil
@@ -589,7 +593,7 @@ theorem regLevelCorrect_world_value_atCSN {vcp : VCode} {rf : RFunc} {af : AFunc
       · exact trapIf_nodefs hops
     have h1 : VStep R.vc (valueSemVI R.gv R.F R.ctx XI) (.run ⟨b, k, ρ, w⟩) (.halt w') :=
       VStep.step hvb hi hops hsem (by rw [hdefs]; rfl) VNext.halt
-    obtain ⟨n2, c', c'', ⟨_, ⟨hq2, -⟩, -⟩, hr2, hms, hr3, -⟩ :=
+    obtain ⟨n2, c', c'', ⟨_, hq2, -⟩, hr2, hms, hr3, -⟩ :=
       forward_last hSim hRz h1 _ c1 _ (Nat.le_refl _) hr1 hz1
     cases c'' with
     | run s' => obtain ⟨_, e⟩ := hSim.run hr3; cases e
@@ -602,8 +606,12 @@ theorem regLevelCorrect_world_value_atCSN {vcp : VCode} {rf : RFunc} {af : AFunc
         subst hb' hk' hw'
         rw [hvb] at hvb'; cases hvb'
         rw [hi] at hi'; cases hi'
-        have hq2' : Q R (iterN R.step n2 (iterN R.step n1 (iterN R.step n0 s)))
+        have hq2'' : QA R (iterN R.step n2 (iterN R.step n1 (iterN R.step n0 s)))
             (.run ⟨b, .op k _ :: _, _, w.1⟩) := hq2
+        have hnr : ∀ us, i ≠ .rets us := by
+          intro us h
+          rcases hform with ⟨cd, rfl⟩ | ⟨kk, cd, rfl, -⟩ <;> cases h
+        have hq2' := (qa_op hq2'' hvb hi hnr).1
         rcases hform with ⟨cd, rfl⟩ | ⟨kk, cd, rfl, hholds⟩
         · simp only [trapCode?, Option.some.injEq] at htc
           subst htc

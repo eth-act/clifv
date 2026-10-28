@@ -141,6 +141,34 @@ theorem call_stepX {L : Link} {env : Clif.Env} {p : Clif.Program} {g : Act}
   obtain ⟨rfl, rfl, -, rfl⟩ := e2
   exact step_call hS.ok hS.mem hB hS.wf hq hvb' hi' rfl
 
+/-- **At a call pause the relation is `Q ∧ AInv`**: `RelQ` (`QA`) at a `call` item is not a return
+tail (`qa_op`). -/
+theorem callPz_q {L : Link} {env : Clif.Env} {p : Clif.Program} {g : Act}
+    (hS : StatOk L env p g) {r₀ : Reg → CV} {t : ArmState × Mon} {s' : Clif.State}
+    {vV' vP' : VState CV ArmState} {cM' : MState CV ArmState} (hq : RelQ (g.RL L) t (.run cM'))
+    (hP : Pause (g.RL L) (.run cM')) (hat : AtCallS s')
+    (hm2 : Match g.f g.ctx g.R g.gn g.bl g.A (RelW g.Γ g.f g.c) g.slots s' vV')
+    (hm3 : PMatch g.vc g.F.vc (csem (g.RL L).F (g.RL L).ctx (g.RL L).X)
+      (cEvs (g.RL L).F (g.RL L).ctx) g.Lp g.ss' (.run vV') (.run vP'))
+    (hm4 : MatchRun g.cc g.ins ckeep r₀ cM' vP') :
+    Q (g.RL L) t.1 (.run cM') ∧ AInv (g.RL L) (.run cM') := by
+  obtain ⟨b, k, allocs, its, m, w, vb, info, rfl, -, hvb, hi, -⟩ :=
+    CallResumeAll.atCall_of_pause hS.noCall hS.H hS.chk hS.H3 hS.checked hP hat hm2 hm3 hm4
+  exact qa_op hq hvb hi (fun us h => by cases h)
+
+/-- **The activation's body-entry values of the registers the prologue pushes are the ABI
+entry's** (`chainP_resume`'s `hr₀` for `Act.r0`; the prologue keeps the callee-saved
+registers). -/
+theorem r0_saves {L : Link} {env : Clif.Env} {p : Clif.Program} {g : Act}
+    (hS : StatOk L env p g) :
+    ∀ r ∈ (g.RL L).af.saves, ckeep r (g.r0 L r) = ckeep r (regVal (g.RL L).s0 r) := by
+  obtain ⟨-, -, -, hsv, -⟩ := RL.frame_facts hS.wf
+  intro r hr
+  have hcs := hsv.1 r hr
+  simp only [Act.r0, locVal]
+  exact congrArg (ckeep r) (regVal_calleeSaved_congr
+    (fun f h1 h2 h3 h4 h5 => prologue_fields hS.wf hS.abi f h1 h3 h5 h2) r hcs)
+
 /-- **The activations of a link with externals**: compiled program functions and externals
 (`CallSegExt.XAct`). -/
 inductive AG where
@@ -232,6 +260,7 @@ theorem segOkG_ext {L : Link} {env : Clif.Env} {p : Clif.Program} {Bnd : Nat →
     obtain ⟨v0, hv0, hrest⟩ := CallCompose.take_prun hr k'
     obtain rfl : tE = v0 := (PRun.det (prun_okPriv hLv.bnd hv0) hpre).symm
     have hS := hLv'.stat
+    replace hRQ := callPz_q hS hRQ hPz hat hm2 hm3 hm4
     have hcall' : s'.callers = [] := hLv'.call
     by_cases hDc : Dcap ≤ g.ext.length
     · exact ⟨k', _, hR, .inr (.inl (.inl ⟨g.ext, s', by exact strip_encT M (.run (pushC g.ext s')),
@@ -421,7 +450,7 @@ theorem segOkG_ext {L : Link} {env : Clif.Env} {p : Clif.Program} {Bnd : Nat →
         obtain ⟨vV'', vP'', cM'', h1, h2, h3, h4, h5⟩ := CallArity.resume_allAX hS.wf rfl
           hS.noCall hS.H hS.chk hS.ar hS.low hS.ind hS.ver hS.nt hS.out0 hS.ΓF hS.slot hS.sym hS.H3
           hS.checked hS.dv hRQ.1 hRQ.2 hPz hat hm2 hm3 hm4 hRA.pc hRA.err hRA.sp hRA.keep
-          hRA.saved hRA.prog (usB := (xr e.name).map fun r => (r, r)) (ysB := ys)
+          hRA.saved hRA.prog hRA.fp (usB := (xr e.name).map fun r => (r, r)) (ysB := ys)
           (fun j v q u hj hu => by
             rw [List.getElem?_map] at hj
             cases hr : (xr e.name)[j]? with
@@ -448,7 +477,7 @@ theorem segOkG_ext {L : Link} {env : Clif.Env} {p : Clif.Program} {Bnd : Nat →
             (valid_of_allocInvD hD rfl a k hv), hLv'.ndead, fun om hom => ⟨(hLv'.opens om hom).1,
             by rw [hpe]; exact hopens om (by rw [hxo]; exact List.mem_cons_of_mem _ hom)⟩,
           hLv'.budget, hLv'.func⟩, ?_, hnm⟩
-        exact chainP_resume (mon := z.2) hS h1 h2 h3 h4 h5
+        exact chainP_resume (mon := z.2) hS (r0_saves hS) h1 h2 h3 h4 h5
     -- a compiled callee
     obtain ⟨FB, hFBm, hFn, hfr, hMx⟩ := hL.fn e.name callee hpf hXe
     obtain ⟨hNK, hbud⟩ := budget_call hLv'.budget hdlt hMx
@@ -608,7 +637,7 @@ theorem segOkG_ext {L : Link} {env : Clif.Env} {p : Clif.Program} {Bnd : Nat →
           · exact .inl h'
       · have hq : Q (g.RL L) z.1 (.run cM'') := by
           rw [hz1, hcaller]; exact h4
-        exact chainP_resume (mon := z.2) hS h1 h2 h3 hq h5
+        exact chainP_resume (mon := z.2) hS (r0_saves hS) h1 h2 h3 hq h5
   · -- the return pause
     obtain ⟨v0, hv0, hrest⟩ := CallCompose.take_prun hr k'
     obtain rfl : v0 = tE := PRun.det (prun_okPriv hLv.bnd hv0) hpre

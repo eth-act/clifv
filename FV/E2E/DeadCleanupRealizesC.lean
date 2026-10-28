@@ -54,21 +54,40 @@ private theorem aInv_step_semC {R : RL} {sem : Sem} (hR : R.Wf)
     | ret => trivial
     | halt => trivial
 
+/-- A `Rets` step of the value semantics ends the run (`rets_mstep`; `Rets` is not pure). -/
+private theorem rets_mstepVC {R : RL} {b k : Nat} {a : Array Loc} {its : List RItem}
+    {m : Loc → CV} {w : Arm.ArmState} {c' : MConf CV Arm.ArmState} {vb : VBlock}
+    {us : List (Reg × Reg)} (hvb : R.vc.blocks[b]? = some vb) (hi : vb.insts[k]? = some (.rets us))
+    (h : MStep R.vc R.valueSem ckeep R.rf (.run ⟨b, .op k a :: its, m, w⟩) c') :
+    ∃ vals m' w', c' = .ret vals m' w' := by
+  cases h with
+  | op hvb' hi' hop hsz hs hl hho hcl hn =>
+    rw [hvb] at hvb'; cases hvb'
+    rw [hi] at hi'; cases hi'
+    exact rets_mstep hvb hi (MStep.op hvb hi hop hsz
+      (by simpa [RL.valueSem, valueSemV, RL.sem, specForm, pureForm, cmpForm] using hs) hl hho hcl hn)
+
 /-- **The realizer of the value semantics with the call states per segment** (`realizes_allC`
-for `RL.valueSem`). -/
+for `RL.valueSem`), under `QA`. -/
 theorem realizes_value_allC {R : RL} (hR : R.Wf) {P : Arm.ArmState → Prop}
     (hC : CalleeOkGP P R.F R.K R.G R.s0 (CallAt R.fa R.base) R.X R.H R.vc.CallSite R.gv)
     (hT : R.vc.hasTryCall = true →
       CalleeTryOkGP P R.F R.K R.G R.s0 (CallAt R.fa R.base) R.X R.H R.vc.TrySite R.gv)
     (hTls : R.vc.hasTls = true → TlsOk R.F R.K R.X R.H)
     (hcov : FormsCovered R.ctx R.vc) :
-    RealizesCP R.vc R.rf R.valueSem ckeep R.step (fun s c => Q R s c ∧ AInv R c) R.GoodX
-      R.CallSt P := by
-  intro s c c' ⟨hq, hA⟩ hP hm
-  have hreal := realizes_allC hR hC hT hTls hcov
+    RealizesCP R.vc R.rf R.valueSem ckeep R.step (QA R) R.GoodX R.CallSt P := by
+  refine realizesQA_CP hR (fun s c c' hq hA hP hm hns => ?_)
+    (fun _ _ _ _ _ _ _ hq hs => let ⟨n, h1, h2⟩ := realizes_moveN hR hq hs
+      ⟨n, h1, fun i hi => (h2 i hi).1, countIn_zero_of fun i hi => (h2 i hi).2⟩)
+    (fun _ _ _ _ _ _ _ _ _ hvb hi h => rets_mstepVC hvb hi h)
+  have hreal := realizes_stepC hR hC hT hTls hcov
+  have hno : ∀ {b k allocs its m w}, ∀ b' src dst its' m' w',
+      (MConf.run ⟨b, .op k allocs :: its, m, w⟩ : MConf CV Arm.ArmState) =
+        .run ⟨b', .move src dst :: its', m', w'⟩ → src.isSave = false :=
+    fun _ _ _ _ _ _ e => by cases e
   cases hm with
   | move =>
-    obtain ⟨n, c'', hstep, hq', ht, hcnt⟩ := hreal s _ _ ⟨hq, hA⟩ hP MStep.move
+    obtain ⟨n, c'', hstep, hq', ht, hcnt⟩ := hreal s _ _ hq hA hP MStep.move hns
     cases hstep with
     | move => exact ⟨n, _, MStep.move, hq', ht, hcnt⟩
   | @op b k allocs its m w vb i ops outs outs' w' ctl m2 c' hb hi hop hsz hs hl hho hcl hn =>
@@ -92,7 +111,7 @@ theorem realizes_value_allC {R : RL} (hR : R.Wf) {P : Arm.ArmState → Prop}
             (.run ⟨b, its, writeM m2
               ((((ops.zip allocs).toList.filter (·.1.isDef)).zip outs').filter (·.1.1.isLate)), wc⟩) :=
           MStep.op hb hi hop hsz hsem hl hho hcl (MNext.next hk)
-        obtain ⟨n, c'', hactual, ⟨hq', _⟩, ht, hcnt⟩ := hreal s _ _ ⟨hq, hA⟩ hP hold
+        obtain ⟨n, c'', hactual, ⟨hq', _⟩, ht, hcnt⟩ := hreal s _ _ hq hA hP hold hno
         cases hactual with
         | @op _ _ _ _ _ _ vb' i' ops' os os' ww ct m3 cc hb' hi' hop' hsz' hsem' hl' hho' hcl' hn' =>
           rw [hb] at hb'; cases hb'
@@ -110,7 +129,7 @@ theorem realizes_value_allC {R : RL} (hR : R.Wf) {P : Arm.ArmState → Prop}
     · have hold : MStep R.vc R.sem ckeep R.rf
           (.run ⟨b, .op k allocs :: its, m, w⟩) c' :=
         MStep.op hb hi hop hsz (by simpa [RL.valueSem, valueSemV, RL.sem, hp] using hs) hl hho hcl hn
-      obtain ⟨n, c'', hactual, ⟨hq', _⟩, ht, hcnt⟩ := hreal s _ _ ⟨hq, hA⟩ hP hold
+      obtain ⟨n, c'', hactual, ⟨hq', _⟩, ht, hcnt⟩ := hreal s _ _ hq hA hP hold hno
       cases hactual with
       | @op _ _ _ _ _ _ vb' i' ops' os os' ww ct m3 cc hb' hi' hop' hsz' hsem' hl' hho' hcl' hn' =>
         rw [hb] at hb'; cases hb'

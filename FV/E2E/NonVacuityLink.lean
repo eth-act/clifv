@@ -1091,7 +1091,7 @@ theorem L_ok (F : BitVec 64 → Prop) (hF : ∀ a, Img P A a → F a) : (L F).Ok
     simp only [calleeB, Bool.or_eq_true, List.any_eq_true, beq_iff_eq]
     exact .inl ⟨g, hg, e, he, by rw [hen, hname]⟩
   have hcal : ∀ g ∈ P.funcs, ∀ h, (L F).Callee g h → (h.slots = [] →
-      (RAFrame.compute (A h).vcp (A h).rf).size = (A h).af.frameSize) ∧
+      (RAFrame.compute (A h).vcp (A h).rf).size = (A h).af.frameSize - clobberBytes (A h).af.saves) ∧
       slotFitsB h (A h) = true := by
     intro g hg h hh
     have hc : calleeB h = true ∧ h ∈ P.funcs := by
@@ -1214,8 +1214,8 @@ def arg : Clif.Val := ⟨.i64, 41#64⟩
 def bF : Clif.Block := fF.entry?.getD default
 
 /-- The address of `f`'s stack slot `ss0` in its frame: the body's `sp` (`sp0 - 64`) plus the
-slot base `32`. -/
-def slotAddr : Nat := 0x100000 - 32
+slot base `16`. -/
+def slotAddr : Nat := 0x100000 - 48
 
 /-- The slot-placement oracle's frames of the linked program (`LinkSys.frames`): every function
 of `P` at its compiled frame. -/
@@ -1289,12 +1289,14 @@ def locB : Bool :=
   | _ => false
 
 /-- The frame of `f`: 64 bytes below the entry `sp` (fp/lr, a 48-byte frame: the 16-byte
-outgoing area, 16 bytes of saves, the 8-byte slot at `32`). -/
+outgoing area, the 8-byte slot at `16`, and the 16-byte clobber area of the two saved registers
+at `32`, under fp/lr). -/
 def frameB : Bool :=
   (A fF).af.frame && decide (frameDrop (A fF).af = 64) && decide ((A fF).af.frameSize = 48) &&
-  decide ((A fF).af.slotBase = 32) && decide ((RAFrame.compute (A fF).vcp (A fF).rf).intBase = 16) &&
-  decide ((RAFrame.compute (A fF).vcp (A fF).rf).size = 32) &&
-  decide ((slotLayout fF.slots).1 = [(0, 0)]) && decide (fF.slots.map (·.1) = [0])
+  decide ((A fF).af.slotBase = 16) && decide ((RAFrame.compute (A fF).vcp (A fF).rf).intBase = 16) &&
+  decide ((RAFrame.compute (A fF).vcp (A fF).rf).size = 16) &&
+  decide ((slotLayout fF.slots).1 = [(0, 0)]) && decide (fF.slots.map (·.1) = [0]) &&
+  decide (clobberBytes (A fF).af.saves = 16)
 
 /-- The entry facts of `f` and its run: `f 41 = d (vt, u (t (w (v (g (k (s 41, 0, …, 41)) +
 r 3)))))` returns `802`; the loader wrote the vtable, and `f`'s slot is uninitialised. -/
@@ -1325,13 +1327,13 @@ theorem entryFacts :
 
 theorem frameFacts :
     (A fF).af.frame = true ∧ frameDrop (A fF).af = 64 ∧ (A fF).af.frameSize = 48 ∧
-    (A fF).af.slotBase = 32 ∧ (RAFrame.compute (A fF).vcp (A fF).rf).intBase = 16 ∧
-    (RAFrame.compute (A fF).vcp (A fF).rf).size = 32 ∧ (slotLayout fF.slots).1 = [(0, 0)] ∧
-    fF.slots.map (·.1) = [0] := by
+    (A fF).af.slotBase = 16 ∧ (RAFrame.compute (A fF).vcp (A fF).rf).intBase = 16 ∧
+    (RAFrame.compute (A fF).vcp (A fF).rf).size = 16 ∧ (slotLayout fF.slots).1 = [(0, 0)] ∧
+    fF.slots.map (·.1) = [0] ∧ clobberBytes (A fF).af.saves = 16 := by
   have h := entryFacts.2.2.1
   simp only [frameB, Bool.and_eq_true, decide_eq_true_eq] at h
-  obtain ⟨⟨⟨⟨⟨⟨⟨h1, h2⟩, h3⟩, h4⟩, h5⟩, h6⟩, h7⟩, h8⟩ := h
-  exact ⟨h1, h2, h3, h4, h5, h6, h7, h8⟩
+  obtain ⟨⟨⟨⟨⟨⟨⟨⟨h1, h2⟩, h3⟩, h4⟩, h5⟩, h6⟩, h7⟩, h8⟩, h9⟩ := h
+  exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9⟩
 
 theorem wordsAt_mem_inv {base : BitVec 64} {p : BitVec 64 × BitVec 32} :
     ∀ {ws : List (BitVec 32)} {k : Nat}, List.Mem p (wordsAt base k ws) →
@@ -1382,7 +1384,7 @@ def s0 : Arm.ArmState :=
     (setMem (Arm.set_program Arm.ArmState.default ((A fF).fb.program (A fF).base)) memS))))
 
 /-- The body-entry world: after the prologue (`stp x29, x30, [sp, #-16]!; mov x29, sp;
-sub sp, sp, #48`). -/
+stp x21, x25, [sp, #-16]!; sub sp, sp, #32`). -/
 def w0 : Arm.ArmState := Arm.w (.GPR 31#5) (sp0 - 64) (Arm.w (.GPR 29#5) (sp0 - 16) s0)
 
 /-- The addresses outside the world of the entry activation: its frame, its callees' stack,
@@ -1410,18 +1412,17 @@ theorem spv_s0 : spv s0 = sp0 := by simp [s0, spv, Arm.r_of_w_different, Arm.r_o
 
 theorem spv_w0 : spv w0 = sp0 - 64 := by simp [w0, spv, Arm.r_of_w_same]
 
-/-- The frame of `f` above its body `sp`, outside the spill/save area `[16, 32)` and fp/lr
-`[48, 64)`, and the outgoing area `[0, 16)` belong to the world. -/
-theorem not_F0 {x : BitVec 64} (h1 : 0xFFFC0 ≤ x.toNat) (h2 : x.toNat < 0x100000)
-    (h3 : ¬ (0xFFFD0 ≤ x.toNat ∧ x.toNat < 0xFFFE0)) (h4 : x.toNat < 0xFFFF0) : ¬ F0 x := by
-  obtain ⟨hfr, hd, hfs, -, hib, hsz, -⟩ := frameFacts
+/-- The frame of `f` above its body `sp` and below its clobber area `[32, 48)` and fp/lr
+`[48, 64)` (the outgoing area `[0, 16)` and the slot at `16`) belongs to the world. -/
+theorem not_F0 {x : BitVec 64} (h1 : 0xFFFC0 ≤ x.toNat) (h2 : x.toNat < 0xFFFE0) : ¬ F0 x := by
+  obtain ⟨hfr, hd, hfs, -, hib, hsz, -, -, hcl⟩ := frameFacts
   have hbody : (spv s0 - BitVec.ofNat 64 (frameDrop (A fF).af)).toNat = 0xFFFC0 := by
     rw [spv_s0, hd]; decide
   have hsub : (x - (spv s0 - BitVec.ofNat 64 (frameDrop (A fF).af))).toNat = x.toNat - 0xFFFC0 := by
     rw [spv_s0, hd]
     simp only [sp0]
     bv_omega
-  simp only [F0, frameWG, frameW, frameF, StackBelow, hib, hsz, hsub, hbody, hfs]
+  simp only [F0, frameWG, frameW, frameF, StackBelow, hib, hsz, hsub, hbody, hfs, hcl]
   rintro (((⟨ha, hb⟩ | ⟨ha, hb⟩ | hc) | ⟨hlt, -⟩) | hi)
   · omega
   · rw [hd] at hb; omega
@@ -1783,7 +1784,7 @@ theorem backend_correct_program_witness :
     hca2⟩, hpw⟩, hpa2⟩, hl9⟩, hl9e⟩, hk9⟩, hl10⟩, hl10e⟩, hk10⟩, hs9p⟩, hs9r⟩, ha2p⟩, ha2r⟩ := hc
   obtain ⟨hbound, hloc, -, hfunc, hentry, hsig, hparams, hset, hret, hvals, hvtw, hnone⟩ :=
     entryFacts
-  obtain ⟨hframe, hdrop, hfs, hsb, hib, hsz, hlay, hslots⟩ := frameFacts
+  obtain ⟨hframe, hdrop, hfs, hsb, hib, hsz, hlay, hslots, -⟩ := frameFacts
   have hrun : run0 = .returned [⟨.i64, 802#64⟩] (retMem run0) := by
     rw [← hvals]; exact eq_returned hret
   have hfa := facts (g := fF) (by simp [P])
@@ -1977,7 +1978,7 @@ theorem backend_correct_program_witness :
         rw [if_pos ⟨h1, by omega⟩, hb]
         rfl
     · rcases hvalid a n ha with ⟨h1, h2⟩ | ⟨h1, h2⟩
-      · refine ⟨by simp [slotAddr] at h2 ⊢; omega, fun k hk => not_F0 ?_ ?_ ?_ ?_⟩ <;>
+      · refine ⟨by simp [slotAddr] at h2 ⊢; omega, fun k hk => not_F0 ?_ ?_⟩ <;>
           simp only [BitVec.toNat_ofNat, slotAddr] at h1 h2 ⊢ <;>
           rw [Nat.mod_eq_of_lt (by omega)] <;> omega
       · refine ⟨by simp [vtAddr] at h2 ⊢; omega, fun k hk => not_F0_vt ?_ ?_⟩ <;>
@@ -1996,9 +1997,7 @@ theorem backend_correct_program_witness :
       · cases h
     · show OutRel _ (RAFrame.compute (A fF).vcp (A fF).rf).intBase _ _
       rw [hib]
-      refine ⟨by decide, fun j hj => not_F0 ?_ ?_ ?_ ?_, fun a n ha k hk j hj e => ?_⟩
-      · rw [spv_w0]; simp only [sp0]; bv_omega
-      · rw [spv_w0]; simp only [sp0]; bv_omega
+      refine ⟨by decide, fun j hj => not_F0 ?_ ?_, fun a n ha k hk j hj e => ?_⟩
       · rw [spv_w0]; simp only [sp0]; bv_omega
       · rw [spv_w0]; simp only [sp0]; bv_omega
       · rw [spv_w0] at e

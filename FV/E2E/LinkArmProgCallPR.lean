@@ -30,7 +30,7 @@ theorem progCallPR (hL : L.Ok) [hR : L.CrunOk] {M : Nat} (hM : 0 < M) (ih : L.Th
     {n : String}
     {h : Clif.Function} (hpf : L.P.func? n = some h) (hcal : ∃ g ∈ L.P.funcs, L.Callee g h)
     (hib : ((RAFrame.compute (L.A h).vcp (L.A h).rf).intBase = 0 ∧
-      (RAFrame.compute (L.A h).vcp (L.A h).rf).size = (L.A h).af.frameSize) ∨ L.NeedNI)
+      (RAFrame.compute (L.A h).vcp (L.A h).rf).size = (L.A h).af.frameSize - clobberBytes (L.A h).af.saves) ∨ L.NeedNI)
     {F : BitVec 64 → Prop} (himgF : ∀ a, L.Img a → F a)
     {uses : List CV} {w : Arm.ArmState} (herr : Arm.r .ERR w = .None)
     (hal : (spv w).toNat % 16 = 0)
@@ -88,7 +88,7 @@ theorem progCallPR (hL : L.Ok) [hR : L.CrunOk] {M : Nat} (hM : 0 < M) (ih : L.Th
     (lowerRFunc_ok hc.alloc).1.2.1
   have hsz_le := size_le_frameSize hc.alloc
   have hfits : ∀ p ∈ h.slots, ∃ off, (slotLayout h.slots).1.lookup p.1 = some off ∧
-      (L.A h).af.slotBase + off + p.2.size ≤ (L.A h).af.frameSize := by
+      (L.A h).af.slotBase + off + p.2.size ≤ (L.A h).af.frameSize - clobberBytes (L.A h).af.saves := by
     obtain ⟨g, hg, hcg⟩ := hcal
     exact hL.slotFits g hg h hcg
   have hce : ClifEntry h vals cs := clifEntry_initState hpf hinit
@@ -112,7 +112,7 @@ theorem progCallPR (hL : L.Ok) [hR : L.CrunOk] {M : Nat} (hM : 0 < M) (ih : L.Th
   let spb := spv w - BitVec.ofNat 64 (frameDrop (L.A h).af)
   let sz := (RAFrame.compute (L.A h).vcp (L.A h).rf).size
   let Fh : BitVec 64 → Prop := fun a =>
-    F a ∧ ¬ OutAt ib spb a ∧ ¬ SlotAt sz (L.A h).af.frameSize spb a
+    F a ∧ ¬ OutAt ib spb a ∧ ¬ SlotAt sz ((L.A h).af.frameSize - clobberBytes (L.A h).af.saves) spb a
   have hib_le : ib ≤ sz := intBase_le_size _ _
   have hspb : spb.toNat = (spv w).toNat - frameDrop (L.A h).af := hB
   have hlt := (spv w).isLt
@@ -123,12 +123,12 @@ theorem progCallPR (hL : L.Ok) [hR : L.CrunOk] {M : Nat} (hM : 0 < M) (ih : L.Th
     exact ⟨by omega, by omega⟩
   have hout_F : ∀ a, OutAt ib spb a → F a ∧ ¬ L.Img a := fun a ha => hdead a (hout_reg a ha)
   -- the callee's slot region (in the caller's dead stack) is outside the callee's `F`
-  have hslot_reg : ∀ a, SlotAt sz (L.A h).af.frameSize spb a →
+  have hslot_reg : ∀ a, SlotAt sz ((L.A h).af.frameSize - clobberBytes (L.A h).af.saves) spb a →
       StackBelow (frameDrop (L.A h).af + κ (M - 1) h) (spv w) a := by
     intro a ⟨h1, h2⟩
     rw [hspb] at h1 h2
     exact ⟨by omega, by omega⟩
-  have hslot_F : ∀ a, SlotAt sz (L.A h).af.frameSize spb a → F a ∧ ¬ L.Img a :=
+  have hslot_F : ∀ a, SlotAt sz ((L.A h).af.frameSize - clobberBytes (L.A h).af.saves) spb a → F a ∧ ¬ L.Img a :=
     fun a ha => hdead a (hslot_reg a ha)
   have hspb_add : ∀ j < ib, OutAt ib spb (spb + BitVec.ofNat 64 j) := by
     intro j hj
@@ -259,7 +259,7 @@ theorem progCallPR (hL : L.Ok) [hR : L.CrunOk] {M : Nat} (hM : 0 < M) (ih : L.Th
     · exact hmr.valid a n (Clif.runLoop_allocs hL.free (hL.baseKeepsAllocs hN) Nr cs rvals cm'
         (runInv_entry hh hce) (Clif.initState_allocInv hinit) hrunN a n hv)
     have hsl1 := hsl0 hN
-    have hsz1 : sz = (L.A h).af.frameSize := by
+    have hsz1 : sz = (L.A h).af.frameSize - clobberBytes (L.A h).af.saves := by
       obtain ⟨g, hg, hcg⟩ := hcal
       exact hL.calleeFrame g hg h hcg hsl1
     by_cases hib0 : ib = 0
@@ -291,7 +291,7 @@ theorem progCallPR (hL : L.Ok) [hR : L.CrunOk] {M : Nat} (hM : 0 < M) (ih : L.Th
         (L.A h).af G (enterAt (L.A h) t) = Fh := by
       funext a
       apply propext
-      rw [frameWG_out hfr (by rw [hspt, ← hdrop]; exact hroom) hib_le hsz_le, ← hdrop, hspt]
+      rw [frameWG_out hfr (by rw [hspt, ← hdrop]; exact hroom) hib_le (size_le_frameBody hc.alloc), ← hdrop, hspt]
       constructor
       · rintro (⟨hb, hno, hns⟩ | hc | hg)
         · exact ⟨(hdead a hb).1, hno, hns⟩
@@ -480,9 +480,9 @@ theorem progOsCorePR (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) {M : Nat}
         ckeep r (regVal (L.pcall M h t) r) = ckeep r (regVal t r)) := by
   have hpf := func?_of_mem hL.names hh
   have hib : ((RAFrame.compute (L.A h).vcp (L.A h).rf).intBase = 0 ∧
-      (RAFrame.compute (L.A h).vcp (L.A h).rf).size = (L.A h).af.frameSize) ∨ L.NeedNI := by
+      (RAFrame.compute (L.A h).vcp (L.A h).rf).size = (L.A h).af.frameSize - clobberBytes (L.A h).af.saves) ∨ L.NeedNI := by
     by_cases h0 : (RAFrame.compute (L.A h).vcp (L.A h).rf).intBase = 0
-    · by_cases h1 : (RAFrame.compute (L.A h).vcp (L.A h).rf).size = (L.A h).af.frameSize
+    · by_cases h1 : (RAFrame.compute (L.A h).vcp (L.A h).rf).size = (L.A h).af.frameSize - clobberBytes (L.A h).af.saves
       · exact .inl ⟨h0, h1⟩
       · exact .inr ⟨g, hg, h, hcallee, .inr h1⟩
     · exact .inr ⟨g, hg, h, hcallee, .inl h0⟩
@@ -545,7 +545,7 @@ theorem progOsCorePR (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) {M : Nat}
       rw [hsw.2.2, L.program_canon]
   · -- the frame outside the dead stack
     rw [hs_eq]
-    refine ⟨?_, fun a ⟨ha, hb⟩ => ?_⟩
+    refine ⟨?_, fun a ⟨ha, hb⟩ => ?_, ?_⟩
     · show spv (Arm.set_program _ _) = spv t
       simp only [spv]; rw [r_set_program]
       have := hs_ret.ret.sp
@@ -555,6 +555,9 @@ theorem progOsCorePR (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) {M : Nat}
       have hsp : spv w = spOf t := (hsw.1 (.GPR 31#5) (by simp [Masked])).symm
       rw [hsp] at hb'
       exact stackBelow_mono hb' (L.budget_step hκ hM hg hcallee)
+    · rw [r_set_program]
+      exact (hs_ret.ret.savedX 29 (by simp [calleeSavedX]; exact ⟨10, by omega, rfl⟩)).trans
+        (r_enterAt _ _ (by simp) (by simp))
   · -- the results
     intro p hp
     obtain ⟨⟨op, r⟩, x⟩ := p
