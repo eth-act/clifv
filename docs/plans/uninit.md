@@ -273,8 +273,8 @@ run-restricted contract.
   `canon`/`Cond`/`progX` of that world (`progXP_eq`, by `rfl`). `XP … P n : ExtSem` is call number
   `n` (`progXP` with `P n`), i.e. the future `ExtSemI.at n`: `ExtSemI` cannot be imported next to
   `LinkArm` yet, because `VCodeSemI*.lean` and `FV/E2E/Pair.lean` both declare `VConf.mapW`,
-  `SeqEnd.mapW`, `SeqEnd.mapW_succ` ([#640](https://github.com/eth-act/clifv/issues/640); fix
-  that before the next item). (a) the world's own bytes give today's contract (`worldP_self`,
+  `SeqEnd.mapW`, `SeqEnd.mapW_succ` ([#640](https://github.com/eth-act/clifv/issues/640), fixed
+  by #644: Pair imports `VCodeSemISeq` and drops its copies). (a) the world's own bytes give today's contract (`worldP_self`,
   `canonP_self`, `progXP_self`, `XP_call_self`); (b) the canonical state depends on the world's
   registers, program and bytes outside the region, and on the prophecy inside it only
   (`worldP_congr`, `canonP_congr`, `condP_congr`, `progXP_congr`); (c) `Cond` depends on registers
@@ -282,6 +282,22 @@ run-restricted contract.
   prophecy changes the canonical run, not the condition); `canonP_eq_overlay`,
   `sameWorld_canonP`, `mem_canonP_in`/`_out`, `r_canonP`, `program_canonP`. Witnesses
   `LinkArmProphWitness.lean` (on `LinkWitness.L` without an image, `sp = 0x8000`).
+- step 2h `FV/E2E/LinkArmProphThm.lean` (on #643, #644): `XPI … P : ExtSemI` (`XPI_at`: `.at n`
+  is `XP … P n`, by `rfl`). The prophecy of a machine run: `callsBefore Mm fa base s i` counts
+  the call states (`CallPc`) before step `i`; `ProphOk K c Mm fa base s P`: at each call state
+  with `sp = c`, `P (callsBefore … i)` holds the state's bytes `StackBelow K c`; `prophOf` is one
+  (`prophOf_call`, `prophOk_prophOf`). `MachEntryP … P`: `MachEntry` and `ProphOk (κ M g)
+  (spv w₀) (mach M g) …` (the callees' budget below the body's `sp`). `ThmP κ M`: `Thm` with the
+  outcome chosen after a prophecy `P` and realised by the `MachEntryP … P` activations (also in
+  the NI clause, the same `P`): the counted VCode run's calls read `P`, so its outcome depends
+  on it. `Thm.thmP` (one outcome for every prophecy) and `thmP` (it holds today at every depth).
+  Deviations from the worklist: no `WorldEntryP` (with `PlaceAt`'s `init = none` it would be
+  `WorldEntry`; with an oracle the statement also needs the oracle's agreement with the
+  machine's slotted activation entries in call order, recursively through nested linked calls,
+  which is the CLIF-side `PlaceAt`/`CrunOk` item); the counted machine count (`CallPc` states)
+  must equal the VCode `csemI` counter, a proof obligation of the counted simulation (every
+  `bl`/`blr` executed by an activation is a `call`/`try_call`'s `callInsn?`). Witnesses
+  `LinkArmProphThmWitness.lean`.
 
 **Refined call contract (next).** `X.call n` should be the *canonical* callee run from the
 VCode world `w` with the callee's stack region (the addresses `StackBelow K (sp w)`, inside the
