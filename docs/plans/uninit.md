@@ -417,6 +417,7 @@ the activation's own calls. Do not relate them arithmetically inside the backend
   oracle-free (it never sees CLIF memory), and only the linking (`progCall`, `progResult`)
   touches the sum.
 
+
 **Count correspondence, CLIF side (step 2m, `FV/E2E/LinkPlaceB.lean`).** Interface agreed with
 the Arm side: the byte table `B j` is the machine memory at the `j`-th placed activation with
 slots of the whole run (an activation entered with counter `j0` reads `B (j0 + 1)`, `initSlots`);
@@ -473,6 +474,16 @@ So the next Arm-side leaf is the two-run reg-level invariant of (2); the `LinkAr
 mechanical once `ThmPD` exists. CLIF side (#665): `Clif.NextAdv`, `EnvAdv`, `PlaceAtB`; the
 slot-byte table `B j` (memory at the `j`-th slotted body entry, counted from 1: `initSlots` reads
 `bytes (next + 1)`) is the canonical runs' bytes, which (2) makes equal to the actual run's.
+
+Step 2n (`FV/E2E/LinkArmPlaceB.lean`, `SrcBoundedB.lean`): `LinkSys.PlaceAtB cm c ini` (`PlaceAt`
+with `init = some ini`), `PlaceAtB.adv`; `Clif.runsOf_nextAdv`, `crun_advK`/`crun_adv`/
+`crun_nextAdv` (a returning callee run `crun M` advances the counter, from `CrunOk.runs` and the
+base keeping the oracle: `CrunOk` itself needs no oracle variant); `initState_memB` (the
+`initState_mem` facts with `PlaceAtB`: an initialised entry byte is the caller's outside the new
+slots or the table's entry `ini.next + 1` inside them; the entry is `PlaceAtB` at the callee's
+`sp` with the counter `+1`, `+0` without slots); `SrcBounded.PlacedInvB`/`bounded_placedB`
+(`bounded_placed` under `EnvAdv`). Witnesses `LinkArmPlaceBWitness.lean`: `LinkWitness`'s `f`
+entered with the table `0xAB` has `0xAB` in its compiled slot at `slotAddr` (`initState_memB_f`).
 
 ## 6. Heap (separate gap, SEM2)
 
