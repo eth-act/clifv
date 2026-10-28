@@ -389,6 +389,34 @@ outside the new slots) and `progCall`'s `hRel`. The local call index (VCode coun
 global activation count of the CLIF oracle differ (nested callees enter several activations);
 `CrunOk` has to carry that correspondence.
 
+**Step 2l, as built** (`FV/E2E/RegLevelCorrectP.lean`): `OnCallP Kp c P Mm fa base s n u` is
+`OnCall … n u` plus "if `u` is a call state with `sp = c`, its `Kp` bytes below `c` are `P n`";
+`onCallP_of_prophOk` (every `OnCall … n` state of a run with the prophecy `P` is `OnCallP`);
+`CalleeOkGP.mono`/`CalleeTryOkGP.mono`; `regLevelCorrect_worldP`: `regLevelCorrect_worldC`
+(same conclusion) for a prophecy `P` of the machine run (`ProphOk Kp c`), with the contracts of
+index `n` needed only at `OnCallP … P n`. With `XI := L.XPI κ M g F P`, `Kp := κ M g`,
+`c := spv w₀` this is the per-function input `progCall` needs: call `n`'s contract is
+discharged by the callee's `ThmP` at the prophecy `P n`, and the premise is exactly
+`MachEntryP.proph`. Witnesses `RegLevelCorrectPWitness.lean` (`onCallP_entry`,
+`worldP_const` with `prophOf`).
+
+**Count correspondence (design for `PlaceAt`/`CrunOk`).** The CLIF oracle counts slotted
+activations globally (`SlotInit.next`, nested callees included); the VCode counter `n` counts
+the activation's own calls. Do not relate them arithmetically inside the backend; instead:
+- the oracle is a prophecy of the *whole* machine run: `bytes j` is the machine memory at the
+  `j`-th slotted activation entry (the CLIF and the machine run enter activations in the same
+  order: both are sequential and the linking simulates call for call), so the stale bytes the
+  CLIF slot sees are by definition the bytes the machine slot holds;
+- each activation carries its entry index `j0 = ini.next` (the `PlaceAt` field, no longer
+  `none`), and a second prophecy `E k` = slotted entries made during the activation's call `k`
+  (its callee's whole nested run, read off the machine run like `P k`);
+- `RelW`/`CrunOk` invariant at VCode counter `n`: `cm.place.init = some ⟨bytes, j0 + slotted? +
+  Σ_{k<n} E k⟩` (`slotted?` = 1 when the activation itself has slots). A call `n` hands the
+  callee `j0' = that value`, and the callee's `ThmP` returns `next = j0' + E n`, which is the
+  invariant at `n + 1`. `E` lives in `ThmP`'s outcome next to `P`, so the reg-level layer stays
+  oracle-free (it never sees CLIF memory), and only the linking (`progCall`, `progResult`)
+  touches the sum.
+
 ## 6. Heap (separate gap, SEM2)
 
 `BaseOk.baseKeepsAllocs`/`baseNoAlloc` require base externs to allocate nothing whenever a program
