@@ -722,8 +722,11 @@ they are; the per-thread layers are new files.
       on `R`'s program), `itemSim_lsCN`, `itemSim_lsCL` and **`arm_alloc_refines_lsCL`**:
       `arm_alloc_refines_lsC` for every such machine. Witness (`ArmAllocLinkedWitness.lean`):
       `agreesAt_MC2`, `caller_lsCL` (the linked machine `MC2` of the caller of `atomic_load`).
-    * **Open: the generic call theorem** (every compiled function whose callees are compiled
-      program functions or `ExtEvContract` externals realizes its whole run). Needed: (1) layer
+    * **The generic call theorem (done for program callees, AtomicsCalls19,
+      `CallSegOkGT.funRealT_link`/`realizes_linked_calls`; see "`SegOkG` and the generic call
+      theorem" below)** (every compiled function whose callees are compiled program functions
+      realizes its runs up to an `EndT` end; `ExtEvContract` externals are not covered by it:
+      `StatOk.envx` excludes environment externs). Needed: (1) layer
       4b's pc invariant on a linked machine — **done** (above); (2) layer 2's return coverage — **done at layer 2**
       (`IselStep.term_retN`: a return's code runs to the VCode return without memory instructions;
       `SimResR`/`SegResR` record that a CLIF thread that returned realizes the whole VCode trace,
@@ -1011,11 +1014,8 @@ they are; the per-thread layers are new files.
           `CallSegOkGWitness` (from a trap state, the caller's call), `CallSegOkGActWitness` (the
           caller's `StatOk` in `link2`, its chain property from the ABI entry and resumed; the
           callee's return pause), `CallSegGeoWitness` (`atomic_load` nested in its caller). The
-          call case is WIP in `FV/Concurrency/Scratch/CallSegOkG.lean.wip` (not a module).
-          **New gap**: a callee's start-dirty set must cover its frame padding (slot area outside
-          the placed slots), which can hold stale bytes of earlier sibling callees; closing it
-          needs that no CLIF read of a segment starts in a live frame's padding
-          (`cstep_reads_valid` + `AllocInvD` + #567's slot placement).
+          frame-padding gap (a callee's start-dirty set covering stale bytes in its frame's slot
+          padding) is closed by `CallSegLive.seg_live` (AtomicsCalls18, #642).
         - *The call pause and the resume (done, AtomicsCalls17, `CallSegCall.lean`)*:
           **`CodeIn L R`** (every linked function `R`'s own or its words in `R.G` and in memory at
           `R`'s entry; `CodeIn.code` via `gkeep`/`StRel.code`, `CodeIn.callee` for `G = R.FK`),
@@ -1029,22 +1029,57 @@ they are; the per-thread layers are new files.
           callee's `rets` registers are `CallDefsRet` of the caller). Witness
           `CallSegCallWitness` (the caller in `link2` with budget `0x100`, `atomic_load` entered
           with `0x10`; the resume after `atomic_load`).
-        - *Waiting on #567*: the callee's `Ent` (its entry `RelW`, and `AllocInvD` of the open
-          activations: the start of the callee's run), the frame-padding gap above, then the
-          call case of `segOkG` (scratch) and the assembly below.
-        - *Left for `SegOkG` (next)*: per activation `g = (n, F, s0, K, G, ra, ext, …)` of a link
-          whose functions are all compiled (a bundle of each function's static facts: the
-          `driverHypT_ofA` checks, `PrepFacts`, `CheckedAt`, `MemScopeLSC`, `LFn.Static`),
-          `ok` = `OkPriv` of the thread's bound (implies each `OkPriv (L.act …)` by `PRun.mono`);
-          `Inv` entry form = `arm_isel_refines_abiCRNX`'s premises at `pushC ext cs` with the
-          mask/dirty invariants (dirty ⊆ `PrivA ∪ U ∪ NS`, `AllocInvD` for every open
-          activation), resume form = `arm_isel_refinesCRNX`'s premises (from `resume_allA`);
-          the four ends: whole run / `Stop` / masked read → `E`; call pause → `call_end` +
-          `realizedT_call` (`Ent` of the callee, `KB = KA - frameDrop`) with the resume
-          obligation `Ret → Inv` via `resume_allA` (premise `hB`: the callee's `RelW`, item (1),
-          #567; `hval` from `valid_of_allocInvD`); return pause → `realizedT_ret` (`Ret`). Then
-          `link_composeT`, the top-level theorem (end: `Stop`, masked read, masked return),
-          `realizes_call_full`/rmw witness re-derived, TO-PROVE T2 rows.
+        - *The callee's entry and the padding gap (done, AtomicsCalls18, #642)*:
+          `CallEntryRel.callee_relW`, `CallSegEnt.callee_chainP`, `CallSegRun.SegInv`,
+          `CallSegLive.Live`/**`seg_live`**, `CallSegPc.ra_in`/`ra_out`/`ret_tys`.
+        - ***`SegOkG` and the generic call theorem (done, AtomicsCalls19, `CallSegOkGT.lean`)***:
+          `Inv` (the activation's chain property from its own CLIF state below its callers, and
+          `Live`), `Ent`, `Ret` (the bottom activation at its done `return`; a callee after its
+          `ret` with the CLIF return into its caller realized, the returned state's `LInv`, the
+          open activations' `AllocInvD`, the oracle popped, the dirty set bounded); `LinkOk` (the
+          static premises of the link: every program function compiled, `FnOk`, with its oracle
+          frame `fr n = (frameDrop, slotOffs)` and `frameSize + 16 ≤ Mx`; `CallsInside`; no
+          direct self-call; the callees' `rets` registers `CallDefsRet` of every caller).
+          **`segOkG`**: `SegOkG` for every activation. Call pause: `call_next`,
+          `step_call_entry`/`cstepI_call`, the `bl` by `tstep_plain_nil` and `realizedT_nil`, the
+          callee from `callee_chainP` with budget `K - (frameSize + 16)` (`budget_call`; a call at
+          depth ≥ `Dcap` is an `EndT` end), `ext := (frame, results) :: ext`, `opens :=
+          (mem, depth) :: opens`, `sps := spB :: sps`, `N := (N ∪ (PrivA g ∖ PrivA h)) ∖ slotZ`
+          (its `nv` from the caller's `MemRel.valid`, its `ndead` from the nesting); the callee's
+          `Ret` resumes the caller by `resume_ret` + `chainP_resume` (`hval` from the head open
+          activation's `AllocInvD`). Return pause: `ret_seg`, `LInv`/`AllocInvD`/oracle across the
+          CLIF return (`step_next_linv`, `allocInvD_step`, `step_done_mem`).
+          **`funRealT_link`** (`link_composeT` with every activation compiled, no external
+          callee) and **`realizes_linked_calls`** (`realizes_linkedT` with each thread a root
+          activation). Premises: `PartsOk` (accesses from reachable CLIF states on a location
+          partition: no mixed-size accesses), `PartDisj`, `LinkFree`, `EnvKeepsAllocs`,
+          `EnvKeepsPlace`, `PlaceOk p fr Mx`, the depth bound `Dcap` of reachable CLIF states,
+          `LinkOk`, each thread's `Ent`; trusted: `StackDisjoint` (race freedom on the threads'
+          stacks and start-dirty sets). Every callee is a program function (`StatOk.envx`), so no
+          `ExtEvContract` premise is needed.
+          **External callees (#649, done)**: `CallSegExt` — an external is Arm code of the link
+          with a slot-free CLIF specification in the program; its trusted contract
+          `ExtEvContractT` (`ExtChain`: the `ChainP` shape — `Refines Maps` with private set the
+          external's stack `XPriv K x` up to its return `XRetA`: pc after the `bl`, `sp`,
+          callee-saved registers, the caller's `FK` memory, the caller's program, `MemRel` of the
+          specification's memory, the returned values in its return registers; entry premises:
+          `Entered`, `ArgsInRegs`, `MemRel`, the return address in linked code); `XAct`/`XEnt`/
+          `XRet`, **`xfunReal`** (the chain lifted by `seg_endP`, the invariants along the
+          specification's run, the CLIF return by `cstepS_ret_pop` at no label). `CallSegOkGT`:
+          `AG` (compiled or external activations), `EntX`/`RetX`/`InvX`, `LinkOkX`,
+          **`segOkG_ext`** (the call pause into an external: `call_stepX`, `XEnt`; the resume
+          from `XRet` by `CallArity.resume_allAX`, the RB-free `CallResumeAll.resume_allX`, and
+          `chainP_resume`; `segOkG` is its corollary without externals), **`funRealT_link_ext`**,
+          **`realizes_linked_calls_ext`**. Witness `CallSegOkGTExtWitness`: `linkX` (the caller
+          `fC` and an external `ld` whose code is one `ret`, specification `v1 = bor v0, v0`),
+          `ext_ret` (the contract of a one-`ret` external returning its argument, proven in any
+          well-formed link; `extX` on `linkX`), `linkOkX`, `funRealT_link_X`. End to end, every
+          premise discharged but the run: `CallSegOkGTExtFull.realizes_call_extT` (`linkX`, as
+          `realizes_call_fullT`, reachability by `WitnessFull.CallShape`) and
+          `CallSegOkGTMix.realizes_calls_mixT` (one link `[ld, xt, f]`: the compiled caller `fM`,
+          `v1 = call ld(v0); v2 = call xt(v1)`, calls the compiled `atomic_load` and then the
+          external `xt`; its compiled data, `fnOk_M`/`fnOk_LM`, `linkOkM`, and the two-call
+          reachability family `CallShape2`/`Fam2`/`reach_inv2`/`depth2`/`partsOk2`).
         (iv) the thread-wide private set (every activation's `PrivA` and the CLIF events' avoidance
         of it; with CLIF stack slots in callees the private sets of different activations overlap
         other activations' slots); then `SegOk`, `link_compose_ext`, and `realizes_call_full`/the
@@ -1137,12 +1172,17 @@ they are; the per-thread layers are new files.
         `FunRealG`/`SegOkG`/**`link_composeG`** (the linking induction for any realization with
         `zero`/`le`/`trans`), **`link_composeT`**, **`realizes_linkedT`** (program level, premise
         `StackDisjoint` for the bounds and start-dirty sets). Witnesses `CallComposeTWitness.lean`
-        (`realizedT_trans0`, `funRealT_ext`, `linkedT_ret`). **Next**: `SegOkG` for compiled
-        activations (a `Refines` segment of `CStep` runs → `RealizedT` of `CStepS` runs, truncated
-        before a read of a masked byte; invariant: dirty ⊆ mask ∪ `RL.F` of the running activation),
-        then AtomicsCalls7's steps 1–3 (`RetEnd` → (2c), the two `rets` ends, (2b) entry with
-        `cstepI_call`), the linked machine, `realizes_call_full`/rmw witness on `link_composeT`, a
-        `CStepS` version of `program_correct` (multi-threaded `Clif.run` with masks).
+        (`realizedT_trans0`, `funRealT_ext`, `linkedT_ret`). `SegOkG` for compiled activations
+        and the generic call theorem on `link_composeT`: **done** (`CallSegOkGT.segOkG`,
+        `funRealT_link`, `realizes_linked_calls`, above). The load-callee witness re-derived from
+        it: **`CallSegOkGT.WitnessFull.realizes_call_fullT`** (the `CStepS` variant of
+        `realizes_call_full`: `realizes_linked_calls` with one thread, every premise discharged —
+        `PartsOk`/depth bound by the reachable states from the oracle entry state `csO`
+        (`reach_inv`), `Env.empty`'s `EnvKeeps*`, the caller's `Ent` with budget `0x200`), and
+        the rmw-callee witness: **`CallSegOkGT.WitnessRmw.realizes_call_rmwT`** (the link `linkR`
+        of the caller and `atomic_rmw`, its LL/SC pair on the partition `a = 0 ∧ n = 8`, budget
+        `0x240`). Open: a `CStepS` version of `program_correct` (multi-threaded `Clif.run` with
+        masks).
   * **the prologue, from the ABI entry (done, `ArmAllocEntry.lean`)**: `stp_fplr_evs` (the
     prologue's `stp x29, x30, [sp, #-16]!`: one plain write at `sp - 16`, no exclusive);
     `q_init_lines` (`RegLevelFrame.q_init` with the prologue's lines, `LinesAt`, and its step

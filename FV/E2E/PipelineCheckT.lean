@@ -1,6 +1,7 @@
 import FV.E2E.PipelineCheck
 import FV.E2E.LinkCheckT
 import FV.E2E.LinkArmT
+import FV.E2E.LinkSiteTC
 
 /-! # Typed copies of `FV.E2E.PipelineCheck` (S11e5 Stage C, slice 8)
 
@@ -14,7 +15,8 @@ open Backend Backend.Proof Backend.Proof.Driver
 def staticChksWithT (stage : VCode → VCode) (I : LinkInput) (g : Clif.Function) (r : Except String Art) : List (String × Bool) :=
   let a := getOk r
   [("compiled: pipeline", r.toBool),
-   ("compiled: lowerCheckT", lowerCheckT g a.vc),
+   ("compiled: lowerCheckT/TC",
+     (Compile.functionET g && lowerCheckT g a.vc) || (Compile.functionETC g && lowerCheckTC g a.vc)),
    ("compiled: prepCheck", prepCheck (stage a.vc) a.vcp),
    ("compiled: checkAlloc", (checkAlloc a.vcp a.rf).toBool),
    ("covered", formsCoveredB ⟨a.fa.k, a.af.slotBase⟩ a.vcp),
@@ -26,7 +28,7 @@ def staticChksWithT (stage : VCode → VCode) (I : LinkInput) (g : Clif.Function
    ("fits", decide (a.base.toNat + 4 * a.fb.words.size ≤ 2 ^ 64)),
    ("depth", decide (frameDrop a.af ≤ I.D)),
    ("free (no return_call)", linkFreeB g),
-   ("subset: typed movement scope", Compile.functionET g && Compile.storeTypedB g),
+   ("subset: storeTyped", Compile.storeTypedB g),
    ("subset: ABI signatures", sigAbiOk g.sig && g.externs.all (fun e => sigAbiOk e.2.sig)),
    ("subset: indirect-call signatures", indSigsOk g),
    ("sret: subset E, lowerCheck", !(g.sig.params.any (·.purpose == .sret)) ||
@@ -34,7 +36,7 @@ def staticChksWithT (stage : VCode → VCode) (I : LinkInput) (g : Clif.Function
 
 def chksWithT (stage : VCode → VCode) (I : LinkInput) (P : Clif.Program)
     (T : List (Clif.Function × Art)) (g : Clif.Function) (r : Except String Art) :
-    List (String × Bool) := staticChksWithT stage I g r ++ linkChks I P T g r ++ [("calleeInt", calleeIntChk I P g)]
+    List (String × Bool) := staticChksWithT stage I g r ++ linkChksT I P T g r ++ [("calleeInt", calleeIntChk I P g)]
 
 def okRWithT (stage : VCode → VCode) (I : LinkInput) (R : Res) : Bool :=
   (globalChks I (progOf R) (tabOf R)).all (·.2) &&
@@ -44,7 +46,8 @@ structure FactsWithT (stage : VCode → VCode) (I : LinkInput) (R : Res) (g : Cl
   pipe : lowerFunction g = .ok a.vc ∧ prepare (stage a.vc) = .ok a.vcp ∧ lowerRFunc a.vcp a.rf = .ok a.af ∧
     emitFunc a.k a.af = .ok a.fa ∧ a.fa.layout = .ok a.fb ∧
     a.base = BitVec.ofNat 64 (I.baseOf g.name)
-  lowerOk : lowerCheckT g a.vc = true
+  lowerOk : (Compile.functionET g = true ∧ lowerCheckT g a.vc = true) ∨
+    (Compile.functionETC g = true ∧ lowerCheckTC g a.vc = true)
   prepOk : prepCheck (stage a.vc) a.vcp = true
   check : checkAlloc a.vcp a.rf = .ok ()
   covered : FormsCovered ⟨a.fa.k, a.af.slotBase⟩
@@ -58,7 +61,7 @@ structure FactsWithT (stage : VCode → VCode) (I : LinkInput) (R : Res) (g : Cl
   callee : calleeB (progOf R) (fun n => I.syms.lookup n) g = true → (g.slots = [] →
     (RAFrame.compute a.vcp a.rf).size =
       a.af.frameSize) ∧ slotFitsB g a = true
-  sites : allInsts a.vcp (siteB (siteOk (progOf R) g
+  sites : allInsts a.vcp (siteB (siteOkTC (progOf R) g
     (indToB (fun n => I.syms.lookup n) g) a.vcp)) = true
   declSig : ∀ e ∈ g.externs.map (·.2), ∀ h, (progOf R).func? e.name = some h → e.sig = h.sig
   entry : entryB g a.vcp = true
@@ -66,7 +69,7 @@ structure FactsWithT (stage : VCode → VCode) (I : LinkInput) (R : Res) (g : Cl
   ra : raCallB (tabOf R) g a = true
   depth : frameDrop a.af ≤ I.D
   free : Clif.LinkFree g
-  subsetT : Compile.functionET g = true ∧ Compile.storeTypedB g = true
+  storeT : Compile.storeTypedB g = true
   sretE : g.sig.params.any (·.purpose == .sret) = true →
     Compile.functionE g = true ∧ lowerCheck g a.vc = true
   calleeInt : calleeB (progOf R) (fun n => I.syms.lookup n) g = true →
@@ -94,14 +97,19 @@ theorem factsRWithT (stage : VCode → VCode) {I : LinkInput} {R : Res} (hR : Re
     simp only [okRWithT, chksWithT, Bool.and_eq_true, List.all_eq_true] at h
     exact h.2 e he
   rw [hart]
-  simp only [chksWithT, staticChksWithT, linkChks, List.cons_append, List.nil_append, List.mem_cons,
+  simp only [chksWithT, staticChksWithT, linkChksT, List.cons_append, List.nil_append, List.mem_cons,
     List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq, List.append_assoc] at hall
   obtain ⟨h1, h2, h3, h4, h5, h7, h9, h10, h11, h15, h16, h18, h19, h20, h22, h23, hsr, h8,
     h12, h13, h14, h17, h24, hci⟩ := hall
   simp only [List.all_eq_true, decide_eq_true_eq, Bool.or_eq_true, Bool.not_eq_true',
     Bool.and_eq_true, beq_iff_eq, bne_iff_ne, ne_eq] at h8 h9 h10 h11 h12 h14 h16 h18 h20 h22 hsr
   simp only [calleeIntChk, Bool.or_eq_true, Bool.not_eq_true', List.all_eq_true] at hci
-  refine ⟨hR e he _ (getOk_eq h1), h2, h3, toBool_unit h4,
+  refine ⟨hR e he _ (getOk_eq h1),
+    (by rw [Bool.or_eq_true, Bool.and_eq_true, Bool.and_eq_true] at h2
+        rcases h2 with h | h
+        · exact .inl ⟨h.1, h.2⟩
+        · exact .inr ⟨h.1, h.2⟩),
+    h3, toBool_unit h4,
     (formsCoveredB_iff _ _).1 h5, h7, fun x hx hs => ?_, h9, h10, h11, fun hc => ?_, h13,
     fun x hx h' hf => ?_, h15, h16, h17, h18, linkFreeB_sound h19, h20, fun hs => ?_,
     fun hc p hp => ?_, ⟨h22.1, h22.2⟩, h23, h24⟩
@@ -175,7 +183,7 @@ theorem okRWith_soundT (stage : VCode → VCode) {I : LinkInput} {R : Res}
     intro g hg info h ⟨hs, n, hd, hf⟩
     have hf' : (progOf R).func? n = some h := hf
     obtain ⟨⟨e, he, hen⟩, Lu, Ld, heq, h1, h2⟩ :=
-      siteOk_sound (site_sound (fa hg).sites hs) hd hf'
+      siteOkTC_sound (site_sound (fa hg).sites hs) hd hf'
     obtain ⟨hh, hname⟩ := Clif.Program.func?_some hf'
     refine ⟨hh, ?_, n, Lu, Ld, heq, h1, h2⟩
     simp only [calleeB, Bool.or_eq_true, List.any_eq_true, beq_iff_eq]
@@ -206,35 +214,53 @@ theorem okRWith_soundT (stage : VCode → VCode) {I : LinkInput} {R : Res}
       (h.slots = [] → (RAFrame.compute (artOf R h).vcp (artOf R h).rf).size =
         (artOf R h).af.frameSize) ∧ slotFitsB h (artOf R h) = true := fun g hg h hh =>
     (fa (hcalB g hg h hh).2).callee (hcalB g hg h hh).1
-  have hpipe : ∀ g ∈ (progOf R).funcs,
-      CompiledEitherT g (artOf R g).k (artOf R g).vc (artOf R g).vcp
-        (artOf R g).rf (artOf R g).af (artOf R g).fa
-        (artOf R g).fb ∧ (artOf R g).base = BitVec.ofNat 64 (I.baseOf g.name) := by
+  have hinT : ∀ g ∈ (progOf R).funcs, Compile.functionET g = true →
+      InSubsetT (ofRes I R B F).P.bare g := by
+    intro g hg hET
+    refine ⟨hET, fun b _ st _ fn args _ e he => Clif.Program.bare_func? _ _,
+      fun b _ fn args et _ e he => Clif.Program.bare_func? _ _, (fa hg).abi, fun sig hs => ?_,
+      (fa hg).storeT⟩
+    have := List.all_eq_true.mp (fa hg).indOk sig hs
+    simpa [Bool.and_eq_true, decide_eq_true_eq] using this
+  have hinTC : ∀ g ∈ (progOf R).funcs, Compile.functionETC g = true →
+      InSubsetTC (ofRes I R B F).P.bare g := by
+    intro g hg hETC
+    refine ⟨hETC, fun b _ st _ fn args _ e he => Clif.Program.bare_func? _ _,
+      fun b _ fn args et _ e he => Clif.Program.bare_func? _ _, (fa hg).abi, fun sig hs => ?_,
+      (fa hg).storeT⟩
+    have := List.all_eq_true.mp (fa hg).indOk sig hs
+    simpa [Bool.and_eq_true, decide_eq_true_eq] using this
+  have hcomp : ∀ g ∈ (progOf R).funcs,
+      CompiledAnyT (ofRes I R B F).P.bare g (artOf R g).k (artOf R g).vc (artOf R g).vcp
+        (artOf R g).rf (artOf R g).af (artOf R g).fa (artOf R g).fb ∧
+      (artOf R g).base = BitVec.ofNat 64 (I.baseOf g.name) := by
     intro g hg
     obtain ⟨hl, hpr, ha, he, hla, hb⟩ := (fa hg).pipe
-    rcases hstage with rfl | rfl
-    · exact ⟨.legacy ⟨hl, (fa hg).lowerOk, hpr, (fa hg).prepOk, (fa hg).check, ha, he, hla⟩, hb⟩
-    · exact ⟨.cleanup ⟨hl, (fa hg).lowerOk, hpr, (fa hg).prepOk, (fa hg).check, ha, he, hla⟩, hb⟩
-  have hsubT : ∀ g ∈ (progOf R).funcs, InSubsetT (ofRes I R B F).P.bare g := by
-    intro g hg
-    refine ⟨(fa hg).subsetT.1, ?_, ?_, (fa hg).abi, ?_, (fa hg).subsetT.2⟩
-    · intro b _ st _ fn args _ e he
-      exact Clif.Program.bare_func? _ _
-    · intro b _ fn args et _ e he
-      exact Clif.Program.bare_func? _ _
-    · intro sig hs
-      have := List.all_eq_true.mp (fa hg).indOk sig hs
-      simpa [Bool.and_eq_true, decide_eq_true_eq] using this
+    rcases (fa hg).lowerOk with ⟨hET, hlowT⟩ | ⟨hETC, hlowTC⟩
+    · rcases hstage with rfl | rfl
+      · exact ⟨.inl ⟨hinT g hg hET,
+          .legacy ⟨hl, hlowT, hpr, (fa hg).prepOk, (fa hg).check, ha, he, hla⟩⟩, hb⟩
+      · exact ⟨.inl ⟨hinT g hg hET,
+          .cleanup ⟨hl, hlowT, hpr, (fa hg).prepOk, (fa hg).check, ha, he, hla⟩⟩, hb⟩
+    · rcases hstage with rfl | rfl
+      · exact ⟨.inr (.legacy ⟨hl, hlowTC, hpr, (fa hg).prepOk, (fa hg).check, ha, he, hla⟩), hb⟩
+      · exact ⟨.inr (.cleanup ⟨hl, hlowTC, hpr, (fa hg).prepOk, (fa hg).check, ha, he, hla⟩), hb⟩
   refine
     { names := hn
       free := fun g hg => (fa hg).free
-      subset := hsubT
-      compiled := fun g hg => (hpipe g hg).1
+      subset := fun g hg =>
+        (fa hg).lowerOk.elim (fun h => (hinT g hg h.1).toTC) (fun h => hinTC g hg h.1)
+      compiled := fun g hg => (hcomp g hg).1
       sretE := fun g hg hs => by
         obtain ⟨hE, hlc⟩ := (fa hg).sretE hs
         obtain ⟨hl, hpr, ha, he, hla, -⟩ := (fa hg).pipe
-        have hT := hsubT g hg
-        refine ⟨⟨hE, hT.externCalls, hT.tryExterns, hT.abiSigs, hT.indSigs⟩, ?_⟩
+        have hS : InSubset (ofRes I R B F).P.bare g := by
+          rcases (fa hg).lowerOk with ⟨hET, -⟩ | ⟨hETC, -⟩
+          · exact ⟨hE, (hinT g hg hET).externCalls, (hinT g hg hET).tryExterns,
+              (hinT g hg hET).abiSigs, (hinT g hg hET).indSigs⟩
+          · exact ⟨hE, (hinTC g hg hETC).externCalls, (hinTC g hg hETC).tryExterns,
+              (hinTC g hg hETC).abiSigs, (hinTC g hg hETC).indSigs⟩
+        refine ⟨hS, ?_⟩
         rcases hstage with rfl | rfl
         · exact .legacy ⟨hl, hlc, hpr, (fa hg).prepOk, (fa hg).check, ha, he, hla⟩
         · exact .cleanup ⟨hl, hlc, hpr, (fa hg).prepOk, (fa hg).check, ha, he, hla⟩
@@ -248,13 +274,16 @@ theorem okRWith_soundT (stage : VCode → VCode) {I : LinkInput} {R : Res}
       slotFits := fun g hg h hh => slotFitsB_sound (hcal g hg h hh).2
       callRegs := fun g hg info h hs => (site g hg info h hs).2.2
       blrRegs := fun g hg info hs hreg => by
-        obtain ⟨t, Lu, Ld, heq, hall⟩ := blrOk_sound (siteOk_reg (site_sound (fa hg).sites hs) hreg)
-        exact ⟨t, Lu, Ld, heq, fun h hh hb hl =>
-          hall h hh (indToB_of hb.1) (fun n hn => (hb.2 n (gotOf_sound hn)).symm) hl⟩
+        obtain hbl := siteOkTC_reg (site_sound (fa hg).sites hs) hreg
+        rcases blrOkTC_sound hbl with ⟨t, Lu, Ld, heq, hall⟩ | ⟨t, Lc, Dc, hshape, hno⟩
+        · exact .inl ⟨t, Lu, Ld, heq, fun h hh hb hl =>
+            hall h hh (indToB_of hb.1) (fun n hn => (hb.2 n (gotOf_sound hn)).symm) hl⟩
+        · exact .inr ⟨t, Lc, Dc, hshape, fun h hh hb => absurd hh (fun hc => hno h hh (indToB_of hb.1)
+            (fun n hn => (hb.2 n (gotOf_sound hn)).symm))⟩
       raBlr := fun g hg info hs hreg h hh hmay pc hpc => by
         by_cases hhg : h.name = g.name
         · rw [Clif.name_inj hn hh hg hhg]
-          exact raOk_self (hpipe g hg).1.layout (List.all_eq_true.1 hstar _ (tab_mem hn hg)) hpc
+          exact raOk_self (hcomp g hg).1.layout (List.all_eq_true.1 hstar _ (tab_mem hn hg)) hpc
         · exact raCallB_sound (fa hg).ra hpc _ (tab_mem hn hh) hhg
       indScope := fun g hg hnf => ⟨hB.keepSyms ⟨g, hg, hnf⟩, ?_, hB.aliasSyms ⟨g, hg, hnf⟩⟩
       indSig := fun g hg hnf h hh hmay hm => indFactsRWithT stage hR hI hg hnf h hh (mayB_of hmay) hm
@@ -327,7 +356,7 @@ theorem okRWith_soundT (stage : VCode → VCode) {I : LinkInput} {R : Res}
   · obtain ⟨hh, -⟩ := site g hg info h hs
     by_cases hhg : h.name = g.name
     · rw [Clif.name_inj hn hh hg hhg]
-      exact raOk_self (hpipe g hg).1.layout (List.all_eq_true.1 hstar _ (tab_mem hn hg)) hpc
+      exact raOk_self (hcomp g hg).1.layout (List.all_eq_true.1 hstar _ (tab_mem hn hg)) hpc
     · exact raCallB_sound (fa hg).ra hpc _ (tab_mem hn hh) hhg
   · simp only [raStarB, List.all_eq_true] at hstar
     exact outside_sound (hstar _ (tab_mem hn hh)) k hk
