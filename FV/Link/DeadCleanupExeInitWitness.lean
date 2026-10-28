@@ -12,6 +12,8 @@ executable laid out as `ExeUnwindWitness`'s, with no code outside the program (`
   discharged (`compile_eq`, `BaseOk`, `HooksSim`, the call graph), the entry contract
   (`Image.Intact`, `OutsideCall`, `ClifRunB` of the machine state `r`) and the oracle route's
   `InitOk` left: the run of the written `file` from `r` returns `41` to the caller (`ExecRefines`).
+* `model_returns`: `binary_correct_init` likewise on the executable's binary facts (the linked
+  machine from the model state realises the run, with the per-state facts `RunGoodL`).
 
 (`f` has no slotted program callee, so the oracle is unused here; a witness exercising an
 unwritten slot read through this theorem is open, `docs/plans/uninit.md` §5.9.)
@@ -136,5 +138,27 @@ theorem exec_returns {r : Arm.ArmState} (hX : (imageOf file).Intact r)
       (.returned [v41] {}) :=
   compileExe_correct_init compile_eq closedBase baseOk (hooksSim_closed _) hf hc 0 hX ho hr hIO
     run_ret
+
+/-- **The model returns `41`** (`binary_correct_init` on the same executable's binary facts,
+module doc): the linked machine from the model state of `r` realises the run, with the per-state
+facts. -/
+theorem model_returns {r : Arm.ArmState} (hX : (imageOf file).Intact r)
+    (ho : OutsideCall spec.inputCleanup (BinCheck.roByte spec.inputCleanup spec.data) fF
+      (DeadCleanupStackBound.stackFn spec.inputCleanup fF) r [v41] cs0.mem)
+    (hr : ClifRunB spec.inputCleanup closedBase 0 fF r [v41] cs0)
+    (hIO : InitOk (sysW spec.inputCleanup closedBase fF r) (kapW spec.inputCleanup closedBase fF r)) :
+    ArmRefines (art spec.inputCleanup fF).fb (art spec.inputCleanup fF).base (xreg 30 r)
+      ((sys spec.inputCleanup closedBase).mach 0 fF) (modelOf spec.inputCleanup fF r)
+      (.returned [v41] {}) ∧
+    (∀ a, (modelOf spec.inputCleanup fF r).mem a ≠ r.mem a →
+      E2E.DeadCleanupBinCheck.RelocAt spec.inputCleanup a) ∧
+    (sys spec.inputCleanup closedBase).RunGoodL 0 fF (modelOf spec.inputCleanup fF r) := by
+  obtain ⟨hin, hl⟩ := compileExe_spec compile_eq
+  have hg : DeadCleanupStackBound.goodN spec.inputCleanup "f" = true := by
+    have h := chk_true
+    simp only [chk, Bool.and_eq_true] at h
+    exact h.2
+  exact binary_correct_init (binFacts_of_checks (okB_leanLink hin hl) (binOk_leanLink hl))
+    closedBase baseOk hg hf 0 hX ho hr hIO run_ret
 
 end Link.DeadCleanup.InitWitness
