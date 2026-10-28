@@ -1,4 +1,4 @@
-import FV.E2E.RegLevelSegAlign
+import FV.E2E.RegLevelFRFree
 import FV.E2E.RegLevelMoveNR
 
 /-!
@@ -12,9 +12,9 @@ namespace Backend.Proof
 
 open Backend E2E
 
-/-- **A move on the machine, at a witness** (`realizes_moveNR`): the segment ends at `QW` at the
-next witness, at its first arrival. -/
-theorem realizes_moveNA {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : Arm.ArmState} {b : Nat}
+/-- **`realizes_moveNA` with the segment's lines** (`RL.FRFree`: the move's lines are no
+frame-record line and no `ret`). -/
+theorem realizes_moveNAF {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : Arm.ArmState} {b : Nat}
     {src dst : Loc} {its : List RItem} {m : Loc → CV} {w : Arm.ArmState} {j : Nat} {ps1 : PState}
     {T : List Line} (hq : QW R s j ps1 T (.run ⟨b, .move src dst :: its, m, w⟩)) :
     ∃ n, QW R (iterN R.step n s)
@@ -27,7 +27,7 @@ theorem realizes_moveNA {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : Arm.A
         (.run ⟨b, its, upd m dst (m src), w⟩) ∧
       (∀ i < n, R.GoodXNY Y (iterN R.step i s)) ∧
       R.SegLen j ps1 T (.run ⟨b, .move src dst :: its, m, w⟩)
-        (.run ⟨b, its, upd m dst (m src), w⟩) s n := by
+        (.run ⟨b, its, upd m dst (m src), w⟩) s n ∧ R.FRFree s n := by
   obtain ⟨vb, items, pre, code, ls, ps2, hvb, hit, hsplit, hchk, hcode, hls, htr, hdrop,
     hpc, hst⟩ := hq
   obtain ⟨⟨c, wh, hcm⟩, hLs, hLd, hT, hchk'⟩ := move_facts hit hsplit hchk
@@ -83,7 +83,7 @@ theorem realizes_moveNA {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : Arm.A
     rintro a ⟨o, ho, rfl⟩
     exact .inr (.inl (by rw [show spOf s = R.spB from hst.sp]; exact RL.frameRd_slot hR ho))
   refine ⟨ls1'.length, ⟨vb, items, pre ++ [.move src dst], c2, ls2, ps2, hvb,
-    hit, by rw [hsplit]; simp, hchk', hc2, h2, htr, ?_, ?_, ?_⟩, fun i hi => ?_, ?_, ?_⟩
+    hit, by rw [hsplit]; simp, hchk', hc2, h2, htr, ?_, ?_, ?_⟩, fun i hi => ?_, ⟨?_, ?_⟩, ?_⟩
   · rw [← List.drop_drop, hdrop', List.drop_left]
   · exact hpcs _ (Nat.le_refl _)
   · rw [hiter]
@@ -113,4 +113,29 @@ theorem realizes_moveNA {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : Arm.A
     exact ⟨x, t, hat k _ hln⟩
   · rw [RL.segLen_straight_iff, RL.nextW_straight.symm.trans hW]
     simp
+  · refine RL.frFree_of hR fun i hi => ?_
+    obtain ⟨ln, hln⟩ : ∃ ln, ls1'[i]? = some ln := ⟨_, List.getElem?_eq_getElem hi⟩
+    obtain ⟨x, t, rfl⟩ := hins' _ (List.mem_of_getElem? hln)
+    exact ⟨j + i, x, t, hat i _ hln, hpcs i (Nat.le_of_lt hi),
+      frLine_codeLinesE (by simp) (hcl ps1) x t (List.mem_of_getElem? hln)⟩
+
+/-- **A move on the machine, at a witness** (`realizes_moveNR`): the segment ends at `QW` at the
+next witness, at its first arrival. -/
+theorem realizes_moveNA {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : Arm.ArmState} {b : Nat}
+    {src dst : Loc} {its : List RItem} {m : Loc → CV} {w : Arm.ArmState} {j : Nat} {ps1 : PState}
+    {T : List Line} (hq : QW R s j ps1 T (.run ⟨b, .move src dst :: its, m, w⟩)) :
+    ∃ n, QW R (iterN R.step n s)
+        (R.nextW j ps1 T (.run ⟨b, .move src dst :: its, m, w⟩)
+          (.run ⟨b, its, upd m dst (m src), w⟩)).1
+        (R.nextW j ps1 T (.run ⟨b, .move src dst :: its, m, w⟩)
+          (.run ⟨b, its, upd m dst (m src), w⟩)).2.1
+        (R.nextW j ps1 T (.run ⟨b, .move src dst :: its, m, w⟩)
+          (.run ⟨b, its, upd m dst (m src), w⟩)).2.2
+        (.run ⟨b, its, upd m dst (m src), w⟩) ∧
+      (∀ i < n, R.GoodXNY Y (iterN R.step i s)) ∧
+      R.SegLen j ps1 T (.run ⟨b, .move src dst :: its, m, w⟩)
+        (.run ⟨b, its, upd m dst (m src), w⟩) s n :=
+  let ⟨n, h1, h2, h3, _⟩ := realizes_moveNAF hR (Y := Y) hq
+  ⟨n, h1, h2, h3⟩
+
 end Backend.Proof

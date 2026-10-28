@@ -12,8 +12,16 @@ namespace Backend.Proof
 
 open Backend E2E
 
-/-- `jt_machineNR` with `RL.SegIn`. -/
-theorem jt_machineNA {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : Arm.ArmState} {j0 : Nat}
+/-- The lines of a jump-table tail hold no frame-record line and no `ret`. -/
+theorem frLine_jtTail (ts : List Label) (r a b : Reg) (jt : Lbl) :
+    ∀ x t, Line.ins x t ∈ jtTail ts r a b jt → x.frLine = false := by
+  intro x t hx
+  simp only [jtTail, List.mem_cons, List.mem_append, List.mem_map, Line.ins.injEq, reduceCtorEq,
+    List.not_mem_nil, or_false, false_or, and_false, exists_false] at hx
+  rcases hx with ⟨rfl, -⟩ | ⟨rfl, -⟩ | ⟨rfl, -⟩ | ⟨rfl, -⟩ | ⟨rfl, -⟩ <;> rfl
+
+/-- **`jt_machineNA` with the segment's lines** (`RL.FRFree`). -/
+theorem jt_machineNAF {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : Arm.ArmState} {j0 : Nat}
     {d : Label}
     {ts : List Label} {nr na nb : Nat} (hr : nr < 29) (ha : na < 29) (hb : nb < 29)
     (hab : na ≠ nb) {jt : Lbl} (hjt : jt ≠ .skip) {T : List Line}
@@ -25,14 +33,20 @@ theorem jt_machineNA {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : Arm.ArmS
       Arm.read_mem_bytes 4 (R.base + BitVec.ofNat 64 (4 * k)) s = w) :
     (Arm.ConditionHolds Cond.hs.bits s = true → ∃ n jl lim, iterN R.step n s = Arm.w .PC (R.pcOf jl) s ∧
       R.L[jl]? = some (.label (.block d)) ∧ (∀ i < n, R.GoodXNY Y (iterN R.step i s)) ∧
-      R.SegIn s n j0 lim) ∧
+      R.SegIn s n j0 lim ∧ R.FRFree s n) ∧
     (Arm.ConditionHolds Cond.hs.bits s = false → ∀ i l,
       (Arm.r (.GPR (rnum nr)) s).toNat % 2 ^ 32 = i → ts[i]? = some l →
       ∃ n jl lim s', iterN R.step n s = s' ∧ Arm.r .PC s' = R.pcOf jl ∧
         R.L[jl]? = some (.label (.block l)) ∧
         (∀ f, f ≠ .PC → f ≠ .GPR (rnum na) → f ≠ .GPR (rnum nb) → Arm.r f s' = Arm.r f s) ∧
         s'.mem = s.mem ∧ s'.program = s.program ∧
-        (∀ i < n, R.GoodXNY Y (iterN R.step i s)) ∧ R.SegIn s n j0 lim) := by
+        (∀ i < n, R.GoodXNY Y (iterN R.step i s)) ∧ R.SegIn s n j0 lim ∧ R.FRFree s n) := by
+  have hne : relaxLine R.far (.ins (.bcond .hs (.block d)) none) ≠ [] := fun h => by
+    obtain ⟨_, _, hy⟩ := relaxLine_ins_head R.far (.bcond .hs (.block d)) none
+    rw [h] at hy
+    cases hy
+  have hfl0 := frLine_relaxLine R.far (ln := .ins (.bcond .hs (.block d)) none)
+    fun x t e => by cases e; rfl
   obtain ⟨n0, j1, hn0, hj1t, hj1f, -, hn1, hgx0, hseg0, -⟩ := reach_rcbXNA (Y := Y) hR hdrop
     (.inl ⟨.hs, rfl⟩) (by simp)
     (Arm.ConditionHolds Cond.hs.bits s) (fun env a ha => brCond_bcond ha s)
@@ -40,7 +54,8 @@ theorem jt_machineNA {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : Arm.ArmS
       simp only [Insn.invertTo] at ha
       rw [brCond_bcond ha s, condHolds_invert _ (by decide) (by decide)])
     hprog hpc herr hspB
-  refine ⟨fun hhs => ⟨n0, j1, _, hn0, hj1t hhs, hgx0, hseg0⟩, fun hhs i l hi hl => ?_⟩
+  refine ⟨fun hhs => ⟨n0, j1, _, hn0, hj1t hhs, hgx0, hseg0,
+    RL.frFree_segIn hR hdrop (Nat.le_refl _) hne hfl0 hpc hseg0⟩, fun hhs i l hi hl => ?_⟩
   have hdrop1 : R.L.drop j1 = jtTail ts (.x nr) (.x na) (.x nb) jt ++ T := by
     rw [hj1f hhs, ← List.drop_drop, hdrop, List.drop_left]
   have hL : ∀ t ln, (jtTail ts (.x nr) (.x na) (.x nb) jt)[t]? = some ln → R.L[j1 + t]? = some ln := by
@@ -223,8 +238,14 @@ theorem jt_machineNA {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : Arm.ArmS
         · exact ⟨_, _, h3⟩
         · exact ⟨_, _, h4⟩
         · exact ⟨_, _, h5⟩
+  have hdrop2 : R.L.drop j0 = (relaxLine R.far (.ins (.bcond .hs (.block d)) none) ++
+      jtTail ts (.x nr) (.x na) (.x nb) jt) ++ T := by rw [hdrop, List.append_assoc]
   refine ⟨6, jtl, j1 + 5, s6, ?_, by simp only [s6, Arm.r_of_w_same, hV], hjtl, ?_, ?_, ?_,
-    fun k hk => ?_, hseg⟩
+    fun k hk => ?_, hseg, RL.frFree_segIn hR hdrop2 (by simp [jtTail]; omega)
+      (by simp [jtTail]) (fun x t hx => by
+        rcases List.mem_append.1 hx with hx | hx
+        · exact hfl0 x t hx
+        · exact frLine_jtTail _ _ _ _ _ x t hx) hpc hseg⟩
   · simp only [iterN]; rw [e1]; exact (by rw [e2, e3, e4, e5, e6])
   rotate_left 3
   · have hg : ∀ {u : Arm.ArmState}, spOf u = spOf s → R.Good u := fun h => .inr (h.trans hspB)
@@ -274,6 +295,34 @@ theorem jt_machineNA {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : Arm.ArmS
   · simp [s6, s5, s4, s3, s2, s1, Arm.ArmState.mem_w_eq_mem]
   · simp [s6, s5, s4, s3, s2, s1, Arm.w_program]
 
+/-- `jt_machineNR` with `RL.SegIn`. -/
+theorem jt_machineNA {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : Arm.ArmState} {j0 : Nat}
+    {d : Label}
+    {ts : List Label} {nr na nb : Nat} (hr : nr < 29) (ha : na < 29) (hb : nb < 29)
+    (hab : na ≠ nb) {jt : Lbl} (hjt : jt ≠ .skip) {T : List Line}
+    (hdrop : R.L.drop j0 = relaxLine R.far (.ins (.bcond .hs (.block d)) none) ++
+      (jtTail ts (.x nr) (.x na) (.x nb) jt ++ T))
+    (hprog : s.program = R.fb.program R.base) (hpc : Arm.r .PC s = R.pcOf j0)
+    (herr : Arm.r .ERR s = .None) (hspB : spOf s = R.spB)
+    (hcode : ∀ k w, R.fb.words[k]? = some w →
+      Arm.read_mem_bytes 4 (R.base + BitVec.ofNat 64 (4 * k)) s = w) :
+    (Arm.ConditionHolds Cond.hs.bits s = true → ∃ n jl lim, iterN R.step n s = Arm.w .PC (R.pcOf jl) s ∧
+      R.L[jl]? = some (.label (.block d)) ∧ (∀ i < n, R.GoodXNY Y (iterN R.step i s)) ∧
+      R.SegIn s n j0 lim) ∧
+    (Arm.ConditionHolds Cond.hs.bits s = false → ∀ i l,
+      (Arm.r (.GPR (rnum nr)) s).toNat % 2 ^ 32 = i → ts[i]? = some l →
+      ∃ n jl lim s', iterN R.step n s = s' ∧ Arm.r .PC s' = R.pcOf jl ∧
+        R.L[jl]? = some (.label (.block l)) ∧
+        (∀ f, f ≠ .PC → f ≠ .GPR (rnum na) → f ≠ .GPR (rnum nb) → Arm.r f s' = Arm.r f s) ∧
+        s'.mem = s.mem ∧ s'.program = s.program ∧
+        (∀ i < n, R.GoodXNY Y (iterN R.step i s)) ∧ R.SegIn s n j0 lim) := by
+  obtain ⟨h1, h2⟩ := jt_machineNAF (Y := Y) hR hr ha hb hab hjt hdrop hprog hpc herr hspB hcode
+  refine ⟨fun hh => ?_, fun hh i l hi hl => ?_⟩
+  · obtain ⟨n, jl, lim, a, b, c, d, -⟩ := h1 hh
+    exact ⟨n, jl, lim, a, b, c, d⟩
+  · obtain ⟨n, jl, lim, s', a, b, c, d, e, f, g, k, -⟩ := h2 hh i l hi hl
+    exact ⟨n, jl, lim, s', a, b, c, d, e, f, g, k⟩
+
 /-- **The end of a branch segment at a block entry** has `SegLen`: the segment is inside the
 branch lines (`RL.SegIn`) and ends at the entered block's label. -/
 theorem RL.segLen_entry_of {R : RL} (hR : R.Wf) {j : Nat} {ps1 : PState} {T : List Line}
@@ -302,8 +351,8 @@ theorem RL.segLen_entry_of {R : RL} (hR : R.Wf) {j : Nat} {ps1 : PState} {T : Li
       · exact .inl h1
     exact RL.firstArr_of_inside_out hR hx0 hseg.1 hout hpcE.symm (hpn.trans hpcE)
 
-/-- **A jump table on the machine, at a witness** (`realizes_jtNR`). -/
-theorem realizes_jtNA {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : Arm.ArmState} {b k : Nat}
+/-- **`realizes_jtNA` with the segment's lines** (`RL.FRFree`). -/
+theorem realizes_jtNAF {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : Arm.ArmState} {b k : Nat}
     {allocs : Array Loc}
     {its : List RItem} {m : Loc → CV} {w : Arm.ArmState} {c' : MConf CV Arm.ArmState}
     {j : Nat} {ps1 : PState} {T : List Line}
@@ -312,7 +361,7 @@ theorem realizes_jtNA {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : Arm.Arm
     (hvb : R.vc.blocks[b]? = some vb) (hi : vb.insts[k]? = some (.jtSequence d ts ridx t1 t2))
     (h : MStep R.vc R.sem ckeep R.rf (.run ⟨b, .op k allocs :: its, m, w⟩) c') :
     ∃ n c'', MStep R.vc R.sem ckeep R.rf (.run ⟨b, .op k allocs :: its, m, w⟩) c'' ∧
-      R.SegNA Y s j ps1 T (.run ⟨b, .op k allocs :: its, m, w⟩) c'' n := by
+      R.SegNA Y s j ps1 T (.run ⟨b, .op k allocs :: its, m, w⟩) c'' n ∧ R.FRFree s n := by
   have hck := (lowerRFunc_ok hR.alloc).2.2
   have hok := ctlCheck_inst hck hvb hi
   simp only [ctlInstOk, Bool.and_eq_true] at hok
@@ -360,7 +409,7 @@ theorem realizes_jtNA {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : Arm.Arm
       .ins (.aluRRR .add true (.x na) (.x na) (.x nb)), .ins (.br (.x na)), .label (.jt ps1.jt)] ++
       ts.map (fun l => Line.word (.block l) (.jt ps1.jt)) = jtBody d ts (.x nr) (.x na) (.x nb) (.jt ps1.jt)
       from rfl, ftList_jt, relaxLines_append, relaxLines_jtBody, List.append_assoc, List.append_assoc]
-  obtain ⟨hmTaken, hmNot⟩ := jt_machineNA (Y := Y) hR hnr hna hnb hab (by simp) hdrop' hst.prog hpc
+  obtain ⟨hmTaken, hmNot⟩ := jt_machineNAF (Y := Y) hR hnr hna hnb hab (by simp) hdrop' hst.prog hpc
     hst.err hst.sp hst.code
   obtain ⟨c, ins, _, hc, -⟩ := hR.check
   obtain ⟨preds, hcfg⟩ := hc.cfg
@@ -431,12 +480,12 @@ theorem realizes_jtNA {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : Arm.Arm
       Arm.r .PC s' = R.pcOf jl → R.L[jl]? = some (.label (.block vs.label)) →
       (∀ f, f ≠ .PC → f ≠ .GPR (rnum na) → f ≠ .GPR (rnum nb) → Arm.r f s' = Arm.r f s) →
       s'.mem = s.mem → s'.program = s.program → (∀ i < n, R.GoodXNY Y (iterN R.step i s)) →
-      R.SegIn s n j lim →
+      R.SegIn s n j lim → R.FRFree s n →
       ∃ n c'', MStep R.vc R.sem ckeep R.rf
         (.run ⟨b, .op k (#[Reg.x nr, .x na, .x nb].map Loc.reg) :: its, m, w⟩) c'' ∧
         R.SegNA Y s j ps1 T (.run ⟨b, .op k (#[Reg.x nr, .x na, .x nb].map Loc.reg) :: its, m, w⟩)
-          c'' n := by
-    intro s' n jl lim hn hpc' hjl hf hmem hprog hsp hseg
+          c'' n ∧ R.FRFree s n := by
+    intro s' n jl lim hn hpc' hjl hf hmem hprog hsp hseg hfr
     have hsem' : R.sem (.jtSequence d ts (.vreg vr .int) (.vreg va .int) (.vreg vb' .int))
         (((#[(⟨vr, .int, .use, .early, .reg⟩ : Operand), ⟨va, .int, .def, .early, .reg⟩,
           ⟨vb', .int, .def, .early, .reg⟩].zip (#[Reg.x nr, .x na, .x nb].map Loc.reg)).toList.filter
@@ -448,7 +497,7 @@ theorem realizes_jtNA {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : Arm.Arm
       hsem' hlen ⟨by rw [hout2]; rfl,
         fun h => by simp [havocFrom, MInst.keptDefs, MInst.isBranch] at h,
         fun n h => by simp [havocFrom, MInst.keptDefs, MInst.isBranch] at h; subst h; rfl⟩
-      (hcl0 _) (MNext.goto hk1 hsucc hitems), ?_, hsp, ?_⟩
+      (hcl0 _) (MNext.goto hk1 hsucc hitems), ⟨?_, hsp, ?_⟩, hfr⟩
     · rw [hstore, RL.nextW_entry hns, hn]
       exact hqE
     · rw [hstore]
@@ -459,12 +508,12 @@ theorem realizes_jtNA {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : Arm.Arm
     obtain ⟨-, -, hj⟩ := hsem
     injection hj with hj
     subst hj
-    obtain ⟨n, jl, lim, hn', hjl, hsp, hseg⟩ := hmTaken hhs'
+    obtain ⟨n, jl, lim, hn', hjl, hsp, hseg, hfr⟩ := hmTaken hhs'
     simp only [MInst.targets, List.getElem?_cons_zero, Option.some.injEq] at hlj
     rw [hlj] at hjl
     exact fin _ n jl lim hn' (Arm.r_of_w_same ..) hjl
       (fun f hf _ _ => Arm.r_of_w_different hf) (by simp [Arm.ArmState.mem_w_eq_mem])
-      (by simp [Arm.w_program]) hsp hseg
+      (by simp [Arm.w_program]) hsp hseg hfr
   · rename_i hhs'
     split at hsem
     · rename_i hlt
@@ -473,10 +522,24 @@ theorem realizes_jtNA {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : Arm.Arm
       injection hj with hj
       subst hj
       simp only [MInst.targets, List.getElem?_cons_succ] at hlj
-      obtain ⟨n, jl, lim, s', hn', hpc', hjl, hf, hmem, hprog, hsp, hseg⟩ :=
+      obtain ⟨n, jl, lim, s', hn', hpc', hjl, hf, hmem, hprog, hsp, hseg, hfr⟩ :=
         hmNot (by simpa using hhs') _ vs.label
         (by simp [lo64, regVal, BitVec.toNat_setWidth]) hlj
-      exact fin s' n jl lim hn' hpc' hjl hf hmem hprog hsp hseg
+      exact fin s' n jl lim hn' hpc' hjl hf hmem hprog hsp hseg hfr
     · cases hsem
+
+/-- **A jump table on the machine, at a witness** (`realizes_jtNR`). -/
+theorem realizes_jtNA {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : Arm.ArmState} {b k : Nat}
+    {allocs : Array Loc}
+    {its : List RItem} {m : Loc → CV} {w : Arm.ArmState} {c' : MConf CV Arm.ArmState}
+    {j : Nat} {ps1 : PState} {T : List Line}
+    (hq : QW R s j ps1 T (.run ⟨b, .op k allocs :: its, m, w⟩)) {vb : VBlock} {d : Label}
+    {ts : List Label} {ridx t1 t2 : Reg}
+    (hvb : R.vc.blocks[b]? = some vb) (hi : vb.insts[k]? = some (.jtSequence d ts ridx t1 t2))
+    (h : MStep R.vc R.sem ckeep R.rf (.run ⟨b, .op k allocs :: its, m, w⟩) c') :
+    ∃ n c'', MStep R.vc R.sem ckeep R.rf (.run ⟨b, .op k allocs :: its, m, w⟩) c'' ∧
+      R.SegNA Y s j ps1 T (.run ⟨b, .op k allocs :: its, m, w⟩) c'' n :=
+  let ⟨n, c'', h1, h2, _⟩ := realizes_jtNAF (Y := Y) hR hq hvb hi h
+  ⟨n, c'', h1, h2⟩
 
 end Backend.Proof

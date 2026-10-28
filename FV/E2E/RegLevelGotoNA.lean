@@ -1,4 +1,4 @@
-import FV.E2E.RegLevelQW
+import FV.E2E.RegLevelFRFree
 import FV.E2E.RegLevelGotoNR
 
 /-!
@@ -20,19 +20,46 @@ def RL.SegIn (R : RL) (s : Arm.ArmState) (n j0 lim : Nat) : Prop :=
   R.Inside s n j0 lim ∧ (∀ k, j0 ≤ k → k < lim → ∃ x t, R.L[k]? = some (.ins x t)) ∧
     (n = 0 ↔ ∀ x t, R.L[j0]? ≠ some (.ins x t))
 
-/-- `reach_bXNR` with `RL.SegIn`. -/
-theorem reach_bXNA {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : Arm.ArmState} {j0 : Nat}
+/-- **A segment `SegIn` inside the lines `ls` at `j0`** runs no frame-record line and no `ret`
+when `ls` holds none. -/
+theorem RL.frFree_segIn {R : RL} (hR : R.Wf) {s : Arm.ArmState} {n j0 lim : Nat}
+    {ls T : List Line} (hd : R.L.drop j0 = ls ++ T) (hlim : lim ≤ j0 + ls.length) (hne : ls ≠ [])
+    (hls : ∀ x t, Line.ins x t ∈ ls → x.frLine = false) (hpc : Arm.r .PC s = R.pcOf j0)
+    (hseg : R.SegIn s n j0 lim) : R.FRFree s n := by
+  apply RL.frFree_of hR
+  intro i hi
+  rcases Nat.eq_zero_or_pos i with rfl | hi0
+  · obtain ⟨x, t, hj⟩ : ∃ x t, R.L[j0]? = some (.ins x t) :=
+      Classical.byContradiction fun hno =>
+        absurd (hseg.2.2.mpr fun x t hx => hno ⟨x, t, hx⟩) (by omega)
+    have hl : 0 < ls.length := List.length_pos_iff.2 hne
+    exact ⟨j0, x, t, hj, hpc, hls x t (RL.mem_of_drop hd hj (Nat.le_refl _) (by omega))⟩
+  · obtain ⟨jj, x, t, h1, h2, h3, h4⟩ := hseg.1 i hi0 hi
+    exact ⟨jj, x, t, h3, h4, hls x t (RL.mem_of_drop hd h3 (by omega) (by omega))⟩
+
+/-- **`FRFree` of two runs in a row.** -/
+theorem RL.FRFree.append {R : RL} {s : Arm.ArmState} {a b : Nat} (h : R.FRFree s a)
+    (h' : R.FRFree (iterN R.step a s) b) : R.FRFree s (a + b) := by
+  intro i hi x hx
+  rcases Nat.lt_or_ge i a with hlt | hge
+  · exact h i hlt x hx
+  · obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le hge
+    rw [iterN_add] at hx
+    exact h' k (by omega) x hx
+
+/-- **`reach_bXNA` with the segment's lines** (`RL.FRFree`). -/
+theorem reach_bXNAF {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : Arm.ArmState} {j0 : Nat}
     {x : Lbl} {Z T : List Line}
     (hdrop : R.L.drop j0 = relaxLines R.far (ftList (.ins (.b x) none :: Z)) ++ T) (hx : x ≠ .skip)
     (hprog : s.program = R.fb.program R.base) (hpc : Arm.r .PC s = R.pcOf j0)
     (herr : Arm.r .ERR s = .None) (hsp : spOf s = R.spB) :
     ∃ n jl lim, iterN R.step n s = Arm.w .PC (R.pcOf jl) s ∧ R.L[jl]? = some (.label x) ∧
       (∀ i < n, spOf (iterN R.step i s) = spOf s) ∧ (∀ i < n, R.GoodXNY Y (iterN R.step i s)) ∧
-      R.SegIn s n j0 lim ∧ n ≤ 1 := by
+      R.SegIn s n j0 lim ∧ n ≤ 1 ∧ R.FRFree s n := by
   rcases ft_b x Z with ⟨Z', rfl, he⟩ | he
   · rw [he, ft_label, relaxLines_cons, relaxLine_label, List.singleton_append] at hdrop
     refine ⟨0, j0, j0, ?_, drop_get hdrop, fun i hi => by omega, fun i hi => by omega,
-      ⟨RL.Inside.zero, fun k h1 h2 => by omega, ?_⟩, by omega⟩
+      ⟨RL.Inside.zero, fun k h1 h2 => by omega, ?_⟩, by omega, RL.frFree_zero R s⟩
     · simp only [iterN]; rw [← hpc, Arm.w_irrelevant]
     · refine ⟨fun _ x' t' h => ?_, fun _ => rfl⟩
       rw [drop_get hdrop] at h; cases h
@@ -41,7 +68,8 @@ theorem reach_bXNA {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : Arm.ArmSta
     have hg := RL.goodXNR_branch (Y := Y) hR (drop_get hdrop) (.inl rfl) hx hprog hpc herr hsp
     refine ⟨1, jl, j0 + 1, ?_, hjl, fun i hi => ?_, fun i hi => ?_,
       ⟨RL.Inside.one, fun k h1 h2 => ?_, ⟨fun h => absurd h (by omega),
-        fun h => absurd (drop_get hdrop) (h _ _)⟩⟩, Nat.le_refl _⟩
+        fun h => absurd (drop_get hdrop) (h _ _)⟩⟩, Nat.le_refl _,
+        RL.frFree_one hR (Nat.le_refl _) (drop_get hdrop) rfl hpc⟩
     · simp only [iterN]; rw [hstep, brCond_b ha]; rfl
     · obtain rfl : i = 0 := by omega
       rfl
@@ -49,6 +77,18 @@ theorem reach_bXNA {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : Arm.ArmSta
       exact hg
     · obtain rfl : k = j0 := by omega
       exact ⟨_, _, drop_get hdrop⟩
+
+/-- `reach_bXNR` with `RL.SegIn`. -/
+theorem reach_bXNA {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : Arm.ArmState} {j0 : Nat}
+    {x : Lbl} {Z T : List Line}
+    (hdrop : R.L.drop j0 = relaxLines R.far (ftList (.ins (.b x) none :: Z)) ++ T) (hx : x ≠ .skip)
+    (hprog : s.program = R.fb.program R.base) (hpc : Arm.r .PC s = R.pcOf j0)
+    (herr : Arm.r .ERR s = .None) (hsp : spOf s = R.spB) :
+    ∃ n jl lim, iterN R.step n s = Arm.w .PC (R.pcOf jl) s ∧ R.L[jl]? = some (.label x) ∧
+      (∀ i < n, spOf (iterN R.step i s) = spOf s) ∧ (∀ i < n, R.GoodXNY Y (iterN R.step i s)) ∧
+      R.SegIn s n j0 lim ∧ n ≤ 1 :=
+  let ⟨n, jl, lim, h1, h2, h3, h4, h5, h6, _⟩ := reach_bXNAF (Y := Y) hR hdrop hx hprog hpc herr hsp
+  ⟨n, jl, lim, h1, h2, h3, h4, h5, h6⟩
 
 /-- `reach_rcbXNR` with `RL.SegIn`. -/
 theorem reach_rcbXNA {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : Arm.ArmState} {j0 : Nat}
@@ -148,7 +188,7 @@ theorem reach_rcbXNA {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : Arm.ArmS
           exact hg1
 
 /-- `reach_cbXNR` with `RL.SegIn`. -/
-theorem reach_cbXNA {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : Arm.ArmState} {j0 : Nat}
+theorem reach_cbXNAF {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : Arm.ArmState} {j0 : Nat}
     {bc : Insn} {t e : Lbl}
     {Z T : List Line}
     (hdrop : R.L.drop j0 = relaxLines R.far (ftList (.ins bc none :: .ins (.b e) none :: Z)) ++ T)
@@ -164,9 +204,15 @@ theorem reach_cbXNA {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : Arm.ArmSt
     ∃ n jl lim, iterN R.step n s = Arm.w .PC (R.pcOf jl) s ∧
       R.L[jl]? = some (.label (if cond then t else e)) ∧
       (∀ i < n, spOf (iterN R.step i s) = spOf s) ∧ (∀ i < n, R.GoodXNY Y (iterN R.step i s)) ∧
-      R.SegIn s n j0 lim := by
+      R.SegIn s n j0 lim ∧ R.FRFree s n := by
   have hnb : ∀ x, bc ≠ .b x := by
     rcases hbc with ⟨c, rfl⟩ | ⟨nz, w, r, rfl⟩ | ⟨nz, r, bit, rfl⟩ <;> intro x h <;> cases h
+  have hbcf : bc.frLine = false := by
+    rcases hbc with ⟨_, rfl⟩ | ⟨_, _, _, rfl⟩ | ⟨_, _, _, rfl⟩ <;> rfl
+  have hne : ∀ y t', relaxLine R.far (.ins y t') ≠ [] := fun y t' h => by
+    obtain ⟨_, _, hy⟩ := relaxLine_ins_head R.far y t'
+    rw [h] at hy
+    cases hy
   rcases ft_cb bc e Z hnb with ⟨L, Z', rfl, hct, hft⟩ | hft
   · have hLt : L = t := by
       rcases hbc with ⟨c, rfl⟩ | ⟨nz, w, r, rfl⟩ | ⟨nz, r, bit, rfl⟩ <;>
@@ -190,7 +236,8 @@ theorem reach_cbXNA {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : Arm.ArmSt
     obtain ⟨n, jl, hn, hjt, hjf, hsp', -, hg, hin, -⟩ := reach_rcbXNA (Y := Y) hR hdrop hform he
       (!cond) (hc' hct e)
       (fun _ env a ha => by rw [hcc hct env a ha, Bool.not_not]) hprog hpc herr hsp
-    refine ⟨n, jl, _, hn, ?_, hsp', hg, hin⟩
+    refine ⟨n, jl, _, hn, ?_, hsp', hg, hin, RL.frFree_segIn hR hdrop (Nat.le_refl _) (hne _ _)
+      (frLine_relaxLine R.far fun x t' e' => by cases e'; rw [frLine_invertTo]; exact hbcf) hpc hin⟩
     cases cond
     · simpa using hjt rfl
     · have hd' : R.L.drop jl = [Line.label L] ++ relaxLines R.far (ftList Z') ++ T := by
@@ -204,7 +251,7 @@ theorem reach_cbXNA {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : Arm.ArmSt
       have hd1 : R.L.drop jl = relaxLines R.far (ftList (.ins (.b e) none :: Z)) ++ T := by
         rw [hjf rfl, ← List.drop_drop, hdrop, List.drop_left]
       have hs1 : (iterN R.step 1 s).program = R.fb.program R.base := by rw [hn, Arm.w_program, hprog]
-      obtain ⟨n', jl', lim', hn', hjl', hsp'', hg', hin', hn'1⟩ := reach_bXNA (Y := Y) hR hd1 he hs1
+      obtain ⟨n', jl', lim', hn', hjl', hsp'', hg', hin', hn'1, hfr'⟩ := reach_bXNAF (Y := Y) hR hd1 he hs1
         (by rw [hn]; exact Arm.r_of_w_same ..)
         (by rw [hn, Arm.r_of_w_different (by simp), herr]) (by rw [hn, spOf_w_pc, hsp])
       have hlen0 : 0 < (relaxLine R.far (.ins bc none)).length := by
@@ -226,7 +273,10 @@ theorem reach_cbXNA {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : Arm.ArmSt
           · exact hin.2.1 k h1 hk
           · obtain rfl : k = jl := by omega
             exact hjl_ins (by omega)
-      refine ⟨1 + n', jl', _, ?_, by simpa using hjl', fun i hi => ?_, fun i hi => ?_, hseg⟩
+      have hfr0 : R.FRFree s 1 := RL.frFree_segIn hR hdrop (Nat.le_refl _) (hne _ _)
+        (frLine_relaxLine R.far fun x t' e' => by cases e'; exact hbcf) hpc hin
+      refine ⟨1 + n', jl', _, ?_, by simpa using hjl', fun i hi => ?_, fun i hi => ?_, hseg,
+        hfr0.append hfr'⟩
       · rw [iterN_add, hn', hn, Arm.w_of_w_shadow]
       · rcases Nat.lt_or_ge i 1 with h | h
         · exact hsp' i h
@@ -238,11 +288,34 @@ theorem reach_cbXNA {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : Arm.ArmSt
         · obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le h
           rw [iterN_add]
           exact hg' k (by omega)
-    · exact ⟨n, jl, _, hn, by simpa using hjt rfl, hsp', hg, hin⟩
+    · exact ⟨n, jl, _, hn, by simpa using hjt rfl, hsp', hg, hin,
+        RL.frFree_segIn hR hdrop (Nat.le_refl _) (hne _ _)
+          (frLine_relaxLine R.far fun x t' e' => by cases e'; exact hbcf) hpc hin⟩
 
-/-- **Block-ending branches on the machine, at a witness** (`realizes_gotoNR`): the successor's
-items at its chosen entry witness, reached at the first arrival. -/
-theorem realizes_gotoNA {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : Arm.ArmState} {b k : Nat}
+/-- `reach_cbXNR` with `RL.SegIn`. -/
+theorem reach_cbXNA {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : Arm.ArmState} {j0 : Nat}
+    {bc : Insn} {t e : Lbl}
+    {Z T : List Line}
+    (hdrop : R.L.drop j0 = relaxLines R.far (ftList (.ins bc none :: .ins (.b e) none :: Z)) ++ T)
+    (hbc : (∃ c, bc = .bcond c t) ∨ (∃ nz w r, bc = .cbz nz w r t) ∨ (∃ nz r bit, bc = .tbz nz r bit t))
+    (ht : t ≠ .skip) (he : e ≠ .skip)
+    (cond : Bool) (hc : ∀ env a, bc.toArmInst env = .ok a → brCond a s = cond)
+    (hc' : bc.condTarget? = some t → ∀ e' env a, (bc.invertTo e').toArmInst env = .ok a →
+      brCond a s = !cond)
+    (hcc : bc.condTarget? = some t → ∀ env a, ((bc.invertTo e).invertTo .skip).toArmInst env = .ok a →
+      brCond a s = cond)
+    (hprog : s.program = R.fb.program R.base) (hpc : Arm.r .PC s = R.pcOf j0)
+    (herr : Arm.r .ERR s = .None) (hsp : spOf s = R.spB) :
+    ∃ n jl lim, iterN R.step n s = Arm.w .PC (R.pcOf jl) s ∧
+      R.L[jl]? = some (.label (if cond then t else e)) ∧
+      (∀ i < n, spOf (iterN R.step i s) = spOf s) ∧ (∀ i < n, R.GoodXNY Y (iterN R.step i s)) ∧
+      R.SegIn s n j0 lim :=
+  let ⟨n, jl, lim, h1, h2, h3, h4, h5, _⟩ :=
+    reach_cbXNAF (Y := Y) hR hdrop hbc ht he cond hc hc' hcc hprog hpc herr hsp
+  ⟨n, jl, lim, h1, h2, h3, h4, h5⟩
+
+/-- **`realizes_gotoNA` with the segment's lines** (`RL.FRFree`). -/
+theorem realizes_gotoNAF {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : Arm.ArmState} {b k : Nat}
     {allocs : Array Loc}
     {its : List RItem} {m : Loc → CV} {w : Arm.ArmState} {c' : MConf CV Arm.ArmState}
     {j : Nat} {ps1 : PState} {T : List Line}
@@ -251,7 +324,7 @@ theorem realizes_gotoNA {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : Arm.A
     (hbr : (∃ l, i = .jump l) ∨ (∃ t e kk, i = .condBr t e kk) ∨
       (∃ kd t e rn bit, i = .testBitAndBranch kd t e rn bit))
     (h : MStep R.vc R.sem ckeep R.rf (.run ⟨b, .op k allocs :: its, m, w⟩) c') :
-    ∃ n, R.SegNA Y s j ps1 T (.run ⟨b, .op k allocs :: its, m, w⟩) c' n := by
+    ∃ n, R.SegNA Y s j ps1 T (.run ⟨b, .op k allocs :: its, m, w⟩) c' n ∧ R.FRFree s n := by
   have hck := (lowerRFunc_ok hR.alloc).2.2
   obtain ⟨vb0, items, pre, code, ls, ps2, hvb0, hit, hsplit, hchk, hcode, hls, htr, hdrop,
     hpc, hst⟩ := hq
@@ -323,7 +396,7 @@ theorem realizes_gotoNA {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : Arm.A
   have hst0 : st ≠ 0 := ctlCheck_succ hck hsucc
   have hreach : ∃ n jl lim, iterN R.step n s = Arm.w .PC (R.pcOf jl) s ∧
       R.L[jl]? = some (.label (.block vs.label)) ∧ (∀ i < n, R.GoodXNY Y (iterN R.step i s)) ∧
-      R.SegIn s n j lim := by
+      R.SegIn s n j lim ∧ R.FRFree s n := by
     rw [List.append_assoc] at hdrop
     rcases hbr with ⟨l, rfl⟩ | ⟨t, e, kk, rfl⟩ | ⟨kd, t, e, rn, bit, rfl⟩
     · obtain ⟨rfl, rfl⟩ := assign_none (fun f => rfl) hasg
@@ -338,9 +411,9 @@ theorem realizes_gotoNA {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : Arm.A
       rw [hj0 l rfl] at hlj
       simp only [MInst.targets, List.getElem?_cons_zero, Option.some.injEq] at hlj
       rw [← hlj]
-      obtain ⟨n, jl, lim, hn, hjl, -, hg, hseg, -⟩ := reach_bXNA (Y := Y) hR (by simpa using hdrop)
+      obtain ⟨n, jl, lim, hn, hjl, -, hg, hseg, -, hfr⟩ := reach_bXNAF (Y := Y) hR (by simpa using hdrop)
         (by simp) (by rw [hst.prog]) hpc hst.err hst.sp
-      exact ⟨n, jl, lim, hn, hjl, hg, hseg⟩
+      exact ⟨n, jl, lim, hn, hjl, hg, hseg, hfr⟩
     · have hkk : ∀ r sz, kk = .zero r sz ∨ kk = .notZero r sz → r.isVregInt = true := by
         intro r sz hr
         have := ctlCheck_inst hck hvb hi
@@ -359,14 +432,14 @@ theorem realizes_gotoNA {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : Arm.A
           (∃ nz w r, k'.insn (.block t) = .cbz nz w r (.block t)) ∨
           (∃ nz r bit, k'.insn (.block t) = .tbz nz r bit (.block t)) := by
         cases k' <;> simp [CondBrKind.insn]
-      obtain ⟨n, jl, lim, hn, hjl, -, hg, hseg⟩ := reach_cbXNA (Y := Y) hR (by simpa using hdrop)
+      obtain ⟨n, jl, lim, hn, hjl, -, hg, hseg, hfr⟩ := reach_cbXNAF (Y := Y) hR (by simpa using hdrop)
         hbc (by simp) (by simp)
         (kk.holds _ w)
         (fun env a ha => kind_brCond hst hkr _ ha)
         (fun hct e' env a ha => kind_brCond_inv hst hkr _ _ hct ha)
         (fun _ env a ha => kind_brCond hst hkr _ (by rwa [CondBrKind.insn_invertTo_invertTo] at ha))
         (by rw [hst.prog]) hpc hst.err hst.sp
-      refine ⟨n, jl, lim, hn, ?_, hg, hseg⟩
+      refine ⟨n, jl, lim, hn, ?_, hg, hseg, hfr⟩
       rw [hjl, hU]
       rw [hjc t e kk rfl] at hlj
       simp only [MInst.targets] at hlj
@@ -397,7 +470,7 @@ theorem realizes_gotoNA {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : Arm.A
       simp only [CheckCtx.locOk, Bool.and_eq_true] at hal
       have hm : m (.reg (.x n')) = (Arm.r (.GPR (rnum n')) s).setWidth 128 := by
         rw [hst.store (.reg (.x n')) (fun r e => by cases e; exact hal.2) trivial]; rfl
-      obtain ⟨n, jl, lim, hn, hjl, -, hg, hseg⟩ := reach_cbXNA (Y := Y) hR (by simpa using hdrop)
+      obtain ⟨n, jl, lim, hn, hjl, -, hg, hseg, hfr⟩ := reach_cbXNAF (Y := Y) hR (by simpa using hdrop)
         (bc := .tbz (kd == .nz) (.x n') bit (.block t)) (.inr (.inr ⟨_, _, _, rfl⟩)) (by simp)
         (by simp)
         ((Arm.r (.GPR (rnum n')) s).getLsbD bit == (kd == .nz))
@@ -409,7 +482,7 @@ theorem realizes_gotoNA {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : Arm.A
           simp only [Insn.invertTo, Bool.not_not] at ha
           exact brCond_tbz (by omega) ha s)
         (by rw [hst.prog]) hpc hst.err hst.sp
-      refine ⟨n, jl, lim, hn, ?_, hg, hseg⟩
+      refine ⟨n, jl, lim, hn, ?_, hg, hseg, hfr⟩
       rw [hjl]
       obtain ⟨a, hUa, hja⟩ := hjt kd t e _ bit rfl
       have ha : a = m (.reg (.x n')) := by
@@ -421,7 +494,7 @@ theorem realizes_gotoNA {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : Arm.A
       simp only [MInst.targets, hm, lo64_regX] at hlj
       cases hcond : ((Arm.r (.GPR (rnum n')) s).getLsbD bit == (kd == .nz)) <;>
         simp only [hcond] at hlj ⊢ <;> simp at hlj <;> rw [hlj] <;> simp
-  obtain ⟨n, jl, lim, hn, hjl, hg, hseg⟩ := hreach
+  obtain ⟨n, jl, lim, hn, hjl, hg, hseg, hfr⟩ := hreach
   have hns : ¬ (st = b ∧ items'.toList = its) := by
     rintro ⟨rfl, he⟩
     rw [hit] at hitems; cases hitems
@@ -432,7 +505,7 @@ theorem realizes_gotoNA {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : Arm.A
   obtain ⟨hpcE, hqE⟩ := qW_entry hR hst0 hvs hitems hjl (Arm.r_of_w_same ..) (hst.pc _)
   have hW := RL.nextW_entry (R := R) (j := j) (ps1 := ps1) (T := T)
     (it := .op k (regs.map Loc.reg)) (m := m) (m' := m) (w := w) (w' := w) hns
-  refine ⟨n, ?_, hg, ?_, ?_⟩
+  refine ⟨n, ⟨?_, hg, ?_, ?_⟩, hfr⟩
   · rw [hW, hn]; exact hqE
   · rw [hW]
     have hpn : Arm.r .PC (iterN R.step n s) = R.pcOf (R.entryW st).1 := by rw [hn]; exact hpcE
@@ -453,5 +526,20 @@ theorem realizes_gotoNA {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : Arm.A
         (by rw [← hpcE, Arm.r_of_w_same]) hpn
   · rw [RL.emptyW_entry_iff hns]
     exact hseg.2.2
+
+/-- **Block-ending branches on the machine, at a witness** (`realizes_gotoNR`): the successor's
+items at its chosen entry witness, reached at the first arrival. -/
+theorem realizes_gotoNA {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : Arm.ArmState} {b k : Nat}
+    {allocs : Array Loc}
+    {its : List RItem} {m : Loc → CV} {w : Arm.ArmState} {c' : MConf CV Arm.ArmState}
+    {j : Nat} {ps1 : PState} {T : List Line}
+    (hq : QW R s j ps1 T (.run ⟨b, .op k allocs :: its, m, w⟩)) {vb : VBlock} {i : MInst}
+    (hvb : R.vc.blocks[b]? = some vb) (hi : vb.insts[k]? = some i)
+    (hbr : (∃ l, i = .jump l) ∨ (∃ t e kk, i = .condBr t e kk) ∨
+      (∃ kd t e rn bit, i = .testBitAndBranch kd t e rn bit))
+    (h : MStep R.vc R.sem ckeep R.rf (.run ⟨b, .op k allocs :: its, m, w⟩) c') :
+    ∃ n, R.SegNA Y s j ps1 T (.run ⟨b, .op k allocs :: its, m, w⟩) c' n :=
+  let ⟨n, h1, _⟩ := realizes_gotoNAF (Y := Y) hR hq hvb hi hbr h
+  ⟨n, h1⟩
 
 end Backend.Proof

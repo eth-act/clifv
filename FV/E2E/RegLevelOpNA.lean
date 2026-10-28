@@ -1,4 +1,4 @@
-import FV.E2E.RegLevelQW
+import FV.E2E.RegLevelFRFree
 import FV.E2E.RegLevelOpNR
 
 /-!
@@ -29,9 +29,8 @@ theorem RunsAsNA.mono {R : RL} {Y : BitVec 64 → Prop}
     (hPQ : ∀ u, P u → Q u) : RunsAsNA R Y exec i' ls1 P :=
   fun j T s m w s' hd hst hpc hp hex => h j T s m w s' hd hst hpc (hPQ s hp) hex
 
-/-- `realizes_op_coreXNR` from `QW`, on `RunsAsNA`: the next item at the straight witness, at the
-first arrival. -/
-theorem realizes_op_coreXNA {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : Arm.ArmState}
+/-- **`realizes_op_coreXNA` with the segment's lines** (`RL.FRFree`). -/
+theorem realizes_op_coreXNAF {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : Arm.ArmState}
     {b k : Nat} {allocs : Array Loc}
     {its : List RItem} {m : Loc → CV} {w : Arm.ArmState} {j : Nat} {ps1 : PState} {T : List Line}
     (hq : QW R s j ps1 T (.run ⟨b, .op k allocs :: its, m, w⟩))
@@ -54,7 +53,7 @@ theorem realizes_op_coreXNA {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : A
       RunsAsNA R Y exec i' ls1 Pre)
     (hW' : Arm.r .ERR w' = .None ∧ w'.program = w.program) :
     ∃ n c'', MStep R.vc R.sem ckeep R.rf (.run ⟨b, .op k allocs :: its, m, w⟩) c'' ∧
-      R.SegNA Y s j ps1 T (.run ⟨b, .op k allocs :: its, m, w⟩) c'' n := by
+      R.SegNA Y s j ps1 T (.run ⟨b, .op k allocs :: its, m, w⟩) c'' n ∧ R.FRFree s n := by
   obtain ⟨vb0, items, pre, code, ls, ps2, hvb0, hit, hsplit, hchk, hcode, hls, htr, hdrop,
     hpc, hst⟩ := hq
   rw [hvb] at hvb0
@@ -99,8 +98,8 @@ theorem realizes_op_coreXNA {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : A
   have hW1 : ∀ (m' : Loc → CV) (w'' : Arm.ArmState),
       R.nextW j ps1 T (.run ⟨b, .op k (regs.map Loc.reg) :: its, m, w⟩) (.run ⟨b, its, m', w''⟩) =
         (j + ls1.length, ps1, T) := fun _ _ => RL.nextW_straight.trans hWs
-  refine ⟨nst, _, MStep.op hvb hi hops hsz hsem hlen (HavocOuts.refl _ _ _) hc2' (MNext.next hk), ?_,
-    hgood, ?_, ?_⟩
+  refine ⟨nst, _, MStep.op hvb hi hops hsz hsem hlen (HavocOuts.refl _ _ _) hc2' (MNext.next hk),
+    ⟨?_, hgood, ?_, ?_⟩, ?_⟩
   · rw [hW1]
     have hfr := R.frameOkK hR
     refine ⟨vb, items, pre ++ [.op k (regs.map Loc.reg)], c2, ls2, ps2, hvb,
@@ -143,6 +142,48 @@ theorem realizes_op_coreXNA {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : A
       | _ => simp [Line.plain] at hpln
   · rw [RL.segLen_straight_iff, hWs, hn0]
     simp
+  · refine RL.frFree_inside hR hdrop' (Nat.le_refl _) (frLine_lines (hl1 ps1)) hpc (fun h0 => ?_) hin
+    have hne : ls1 ≠ [] := fun he => absurd (hn0.mpr he) (by omega)
+    obtain ⟨ln, lt, hcons⟩ := List.exists_cons_of_ne_nil hne
+    have hj0 : R.L[j]? = some ln := by
+      have := congrArg (·[0]?) hdrop'
+      simp only [List.getElem?_drop, Nat.add_zero, hcons, List.cons_append,
+        List.getElem?_cons_zero] at this
+      exact this
+    have hpln := hpl ln (by rw [hcons]; exact List.mem_cons_self ..)
+    refine ⟨by rw [hcons]; simp, ?_⟩
+    cases ln with
+    | ins x t => exact ⟨x, t, hj0⟩
+    | _ => simp [Line.plain] at hpln
+
+/-- `realizes_op_coreXNR` from `QW`, on `RunsAsNA`: the next item at the straight witness, at the
+first arrival. -/
+theorem realizes_op_coreXNA {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : Arm.ArmState}
+    {b k : Nat} {allocs : Array Loc}
+    {its : List RItem} {m : Loc → CV} {w : Arm.ArmState} {j : Nat} {ps1 : PState} {T : List Line}
+    (hq : QW R s j ps1 T (.run ⟨b, .op k allocs :: its, m, w⟩))
+    {vb : VBlock} {i : MInst} {ops : Array Operand} {outs : List CV} {w' : Arm.ArmState}
+    (hvb : R.vc.blocks[b]? = some vb) (hi : vb.insts[k]? = some i) (hops : i.operands = .ok ops)
+    (hsz : allocs.size = ops.size)
+    (hsem : R.sem i (((ops.zip allocs).toList.filter (·.1.isUse)).map (m ·.2)) w =
+      some (outs, w', .next))
+    (hlen : outs.length = ((ops.zip allocs).toList.filter (·.1.isDef)).length)
+    (hk : k + 1 < vb.insts.size)
+    {exec : Env → MInst → Arm.ArmState → Option Arm.ArmState}
+    (hOS : ∀ env, OperandsSoundCtlAtI R.F R.FK
+      (fun i' => ∃ regs, allocs = regs.map Loc.reg ∧ i.assign regs = .ok i') (exec env) R.sem i .next s)
+    {Pre : Arm.ArmState → Prop} (hpre : Pre s)
+    (hL : ∀ regs i', i.assign regs = .ok i' → allocs = regs.map Loc.reg →
+      (∃ env s s', exec env i' s = some s') →
+      (∃ (c : CheckCtx) (wh : String), c.checkStatic wh ops (regs.map Loc.reg) i.clobbers = .ok ()) →
+      ∃ ls1, (∀ ps, i'.lines R.ctx ps = .ok (ls1, ps)) ∧
+      (∀ ln ∈ ls1, ln.plain = true) ∧ (∀ ds, i' ≠ .args ds) ∧ (∀ us, i' ≠ .rets us) ∧
+      RunsAsNA R Y exec i' ls1 Pre)
+    (hW' : Arm.r .ERR w' = .None ∧ w'.program = w.program) :
+    ∃ n c'', MStep R.vc R.sem ckeep R.rf (.run ⟨b, .op k allocs :: its, m, w⟩) c'' ∧
+      R.SegNA Y s j ps1 T (.run ⟨b, .op k allocs :: its, m, w⟩) c'' n :=
+  let ⟨n, c'', h1, h2, _⟩ := realizes_op_coreXNAF hR hq hvb hi hops hsz hsem hlen hk hOS hpre hL hW'
+  ⟨n, c'', h1, h2⟩
 
 /-- **Straight-line lines** (`runsAs_of_linesOkNR`) **with where the states are.** -/
 theorem runsAs_of_linesOkNA {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {i' : MInst}
@@ -179,9 +220,8 @@ theorem runsAs_of_linesOkNA {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {i' : 
     obtain ⟨x, t, rfl, -⟩ := hins _ (List.mem_of_getElem? hln)
     exact ⟨j + i, x, t, by omega, by omega, hat i _ hln, hpcs i (by omega)⟩
 
-/-- **`realizes_op_nextNY` from `QW`**: the next item at the straight witness, at the first
-arrival. -/
-theorem realizes_op_nextNA {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} (hYF : ∀ a, R.F a → Y a)
+/-- **`realizes_op_nextNA` with the segment's lines** (`RL.FRFree`). -/
+theorem realizes_op_nextNAF {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} (hYF : ∀ a, R.F a → Y a)
     {s : Arm.ArmState} {b k : Nat} {allocs : Array Loc}
     {its : List RItem} {m : Loc → CV} {w : Arm.ArmState} {j : Nat} {ps1 : PState} {T : List Line}
     (hq : QW R s j ps1 T (.run ⟨b, .op k allocs :: its, m, w⟩))
@@ -206,7 +246,7 @@ theorem realizes_op_nextNA {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} (hYF : 
       LinesReads env ls u (fun a => ¬ F' a))
     (hW' : Arm.r .ERR w' = .None ∧ w'.program = w.program) :
     ∃ n c'', MStep R.vc R.sem ckeep R.rf (.run ⟨b, .op k allocs :: its, m, w⟩) c'' ∧
-      R.SegNA Y s j ps1 T (.run ⟨b, .op k allocs :: its, m, w⟩) c'' n := by
+      R.SegNA Y s j ps1 T (.run ⟨b, .op k allocs :: its, m, w⟩) c'' n ∧ R.FRFree s n := by
   have hpre : ∀ regs i' ls1, allocs = regs.map Loc.reg → i.assign regs = .ok i' →
       (∀ ps, i'.lines R.ctx ps = .ok (ls1, ps)) → ∀ env, LinesReads env ls1 s (R.ReadInY Y false) := by
     intro regs i' ls1 hal' hasg hl1 env
@@ -235,7 +275,7 @@ theorem realizes_op_nextNA {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} (hYF : 
     have hY := hRd (allocOk_of_checkStatic hstat) hasg (hl1 {}) hswY herrw halw hsemY env
     exact fun k x t hk s1 hs1 env' a ha p hp q hq =>
       .inr (.inr ⟨hF k x t hk s1 hs1 env' a ha p hp q hq, hY k x t hk s1 hs1 env' a ha p hp q hq⟩)
-  exact realizes_op_coreXNA hR hq hvb hi hops hsz hsem hlen hk (exec := fun env => execMInst R.ctx env)
+  exact realizes_op_coreXNAF hR hq hvb hi hops hsz hsem hlen hk (exec := fun env => execMInst R.ctx env)
     (fun env => (((hOS env).at (fun _ => RL.FK_F) s).toI _).v R.gv) (Pre := fun u =>
       ∀ regs i' ls1, allocs = regs.map Loc.reg → i.assign regs = .ok i' →
         (∀ ps, i'.lines R.ctx ps = .ok (ls1, ps)) → ∀ env, LinesReads env ls1 u (R.ReadInY Y false))
@@ -244,5 +284,37 @@ theorem realizes_op_nextNA {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} (hYF : 
       obtain ⟨⟨ls1, hl1, hins, hpl, hint⟩, hna, hnr⟩ := hL regs i' hasg
       exact ⟨ls1, hl1, hpl, hna, hnr, (runsAs_of_linesOkNA hR hl1 hins hint).mono
         fun u hu env => hu regs i' ls1 hal' hasg hl1 env⟩) hW'
+
+/-- **`realizes_op_nextNY` from `QW`**: the next item at the straight witness, at the first
+arrival. -/
+theorem realizes_op_nextNA {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} (hYF : ∀ a, R.F a → Y a)
+    {s : Arm.ArmState} {b k : Nat} {allocs : Array Loc}
+    {its : List RItem} {m : Loc → CV} {w : Arm.ArmState} {j : Nat} {ps1 : PState} {T : List Line}
+    (hq : QW R s j ps1 T (.run ⟨b, .op k allocs :: its, m, w⟩))
+    {vb : VBlock} {i : MInst} {ops : Array Operand} {outs : List CV} {w' : Arm.ArmState}
+    (hvb : R.vc.blocks[b]? = some vb) (hi : vb.insts[k]? = some i) (hops : i.operands = .ok ops)
+    (hsz : allocs.size = ops.size)
+    (hsem : R.sem i (((ops.zip allocs).toList.filter (·.1.isUse)).map (m ·.2)) w =
+      some (outs, w', .next))
+    {rY : List CV × Arm.ArmState × Ctl}
+    (hsemY : csem Y R.ctx R.X i (((ops.zip allocs).toList.filter (·.1.isUse)).map (m ·.2)) w =
+      some rY)
+    (hlen : outs.length = ((ops.zip allocs).toList.filter (·.1.isDef)).length)
+    (hk : k + 1 < vb.insts.size)
+    (hOS : ∀ env, OperandsSound R.F (execMInst R.ctx env) (csem R.F R.ctx R.X) i)
+    (hL : ∀ regs i', i.assign regs = .ok i' →
+      LinesOk R.ctx i' ∧ (∀ ds, i' ≠ .args ds) ∧ (∀ us, i' ≠ .rets us))
+    (hRd : ∀ {F' : BitVec 64 → Prop} {regs : Array Reg} {i' : MInst} {ls : List Line}
+      {ps ps' : PState} {u v : Arm.ArmState}
+      {r : List CV × Arm.ArmState × Ctl}, AllocOk ops regs → i.assign regs = .ok i' →
+      i'.lines R.ctx ps = .ok (ls, ps') → SameWorld F' u v → Arm.r .ERR v = .None →
+      Arm.CheckSPAlignment v → csem F' R.ctx R.X i (useVals ops regs u) v = some r → ∀ env,
+      LinesReads env ls u (fun a => ¬ F' a))
+    (hW' : Arm.r .ERR w' = .None ∧ w'.program = w.program) :
+    ∃ n c'', MStep R.vc R.sem ckeep R.rf (.run ⟨b, .op k allocs :: its, m, w⟩) c'' ∧
+      R.SegNA Y s j ps1 T (.run ⟨b, .op k allocs :: its, m, w⟩) c'' n :=
+  let ⟨n, c'', h1, h2, _⟩ := realizes_op_nextNAF hR hYF hq hvb hi hops hsz hsem hsemY hlen hk hOS
+    hL hRd hW'
+  ⟨n, c'', h1, h2⟩
 
 end Backend.Proof

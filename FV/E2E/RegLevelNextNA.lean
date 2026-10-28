@@ -1,4 +1,4 @@
-import FV.E2E.RegLevelQW
+import FV.E2E.RegLevelFRFree
 import FV.E2E.RegLevelNextNR
 
 /-!
@@ -11,8 +11,8 @@ namespace Backend.Proof
 
 open Backend E2E
 
-/-- **`trapIf` whose condition does not hold, at a witness** (`realizes_trapIf_nextNR`). -/
-theorem realizes_trapIf_nextNA {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : Arm.ArmState}
+/-- **`realizes_trapIf_nextNA` with the segment's lines** (`RL.FRFree`). -/
+theorem realizes_trapIf_nextNAF {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : Arm.ArmState}
     {b k : Nat} {allocs : Array Loc}
     {its : List RItem} {m : Loc → CV} {w : Arm.ArmState} {c' : MConf CV Arm.ArmState}
     {j : Nat} {ps1 : PState} {T : List Line}
@@ -21,7 +21,7 @@ theorem realizes_trapIf_nextNA {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s 
     (hi : vb.insts[k]? = some (.trapIf kk code))
     (h : MStep R.vc R.sem ckeep R.rf (.run ⟨b, .op k allocs :: its, m, w⟩) c')
     (hnh : ∀ w', c' ≠ .halt w') :
-    ∃ n, R.SegNA Y s j ps1 T (.run ⟨b, .op k allocs :: its, m, w⟩) c' n := by
+    ∃ n, R.SegNA Y s j ps1 T (.run ⟨b, .op k allocs :: its, m, w⟩) c' n ∧ R.FRFree s n := by
   have hck := (lowerRFunc_ok hR.alloc).2.2
   obtain ⟨items, pre, regs, i', c1, c2, ls1, ls2, psm, ps2, cc, wh, ops, hc1o, rfl, hit, hsplit,
     hasg, hc1', hops, hstat, hchk', hc2, h1, h2, htr, hdrop, hpc, hst⟩ := qW_op hq hvb hi
@@ -86,7 +86,9 @@ theorem realizes_trapIf_nextNA {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s 
   have hpcn : Arm.r .PC (iterN R.step 1 s) =
       R.pcOf (j + (relaxLines R.far [.ins (k'.insn (.trap ps1.traps.size)) none]).length) := by
     rw [hn, Arm.r_of_w_same, hjf rfl]; simp [relaxLines]
-  refine ⟨1, ?_, hg, ?_, ?_⟩
+  refine ⟨1, ⟨?_, hg, ?_, ?_⟩, RL.frFree_head hR (Nat.le_refl _) hdrop'
+    (frLine_relaxLine R.far fun x' t' e => by cases e; exact frLine_kind _ _) hpc
+    (relaxLine_ins_head _ _ _)⟩
   · rw [hW, hn]
     rw [hn] at hpcn
     exact qW_next hvb hit hsplit hchk' hc2 h2 htr hdrop (by rw [List.singleton_append, hft]; rfl)
@@ -95,5 +97,19 @@ theorem realizes_trapIf_nextNA {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s 
     exact ⟨hpcn, fun i h0 hi => absurd hi (by omega)⟩
   · rw [RL.segLen_straight_iff, RL.straightW_eq hvb hc1o h1o]
     simpa using relaxLines_single_ne R.far _
+
+/-- **`trapIf` whose condition does not hold, at a witness** (`realizes_trapIf_nextNR`). -/
+theorem realizes_trapIf_nextNA {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : Arm.ArmState}
+    {b k : Nat} {allocs : Array Loc}
+    {its : List RItem} {m : Loc → CV} {w : Arm.ArmState} {c' : MConf CV Arm.ArmState}
+    {j : Nat} {ps1 : PState} {T : List Line}
+    (hq : QW R s j ps1 T (.run ⟨b, .op k allocs :: its, m, w⟩)) {vb : VBlock} {kk : CondBrKind}
+    {code : Clif.TrapCode} (hvb : R.vc.blocks[b]? = some vb)
+    (hi : vb.insts[k]? = some (.trapIf kk code))
+    (h : MStep R.vc R.sem ckeep R.rf (.run ⟨b, .op k allocs :: its, m, w⟩) c')
+    (hnh : ∀ w', c' ≠ .halt w') :
+    ∃ n, R.SegNA Y s j ps1 T (.run ⟨b, .op k allocs :: its, m, w⟩) c' n :=
+  let ⟨n, h1, _⟩ := realizes_trapIf_nextNAF (Y := Y) hR hq hvb hi h hnh
+  ⟨n, h1⟩
 
 end Backend.Proof
