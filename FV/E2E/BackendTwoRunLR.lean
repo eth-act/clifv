@@ -44,15 +44,18 @@ theorem RL.notZc_ret {R : RL} (hR : R.Wf) (d d' : MConf CV Arm.ArmState) {a : Bi
     refine ⟨by rw [RL.spB, hB]; omega, by rw [RL.spB, hB]; omega⟩
 
 set_option maxHeartbeats 1000000 in
-/-- **The return agreement from the lock at the `rets` item** (module doc): from states locked at
-`Zc d d'`, the first (`u`) at `Q` of a `rets` configuration, the two runs return after `retLen`
-steps in `RetAgreeX (frameDrop + K) (spv s0)`. -/
-theorem RL.retAgreeX_rets {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb R.base ra R.s0)
+/-- **The return agreement and the lock at the return from the lock at the `rets` item**: from
+states locked at `Zc d d'`, the first (`u`) at `Q` of a `rets` configuration, the two runs return
+after `retLen` steps in `RetAgreeX (frameDrop + K) (spv s0)`, with the same program and the same
+memory outside `Zc d d'`. -/
+theorem RL.retLock_rets {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb R.base ra R.s0)
     (hx30 : R.fa.x30Free R.lm = true) {u u' : Arm.ArmState} {e : MConf CV Arm.ArmState}
     (hq : Q R u e) (hre : R.RetsAt e) {d d' : MConf CV Arm.ArmState}
     (hl : StEqOutX (R.Zc d d') u' u) :
     RetAgreeX (frameDrop R.af + R.K) (spv R.s0) (iterN R.step R.retLen u')
-      (iterN R.step R.retLen u) := by
+      (iterN R.step R.retLen u) ∧
+    (iterN R.step R.retLen u').program = (iterN R.step R.retLen u).program ∧
+    ∀ a, ¬ R.Zc d d' a → (iterN R.step R.retLen u').mem a = (iterN R.step R.retLen u).mem a := by
   obtain ⟨b, k, allocs, its, m, w, vb, us, rfl, hvb, hi⟩ := hre
   obtain ⟨n3, hn3, hgx, -⟩ := ret_machineNA (Y := fun _ => True) hR hent hq hvb hi
   subst hn3
@@ -205,7 +208,19 @@ theorem RL.retAgreeX_rets {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall 
       [Line.ins (.ldp Reg.fp Reg.lr (.spPostIndexed 16)) none]).length u) := by
     rw [hlen, iterN_add]; rfl
   rw [e1, e2]
-  exact retAgreeX_of_ret (X := R.X) (H := R.H) ht hlk fun a ha h8 => RL.notZc_ret hR d d' ha h8
+  obtain ⟨hr, hp, hm⟩ := retAgree_line_ret (X := R.X) (H := R.H) ht hlk
+  exact ⟨⟨hr, fun a ha h8 => hm a (RL.notZc_ret hR d d' ha h8)⟩, hp, hm⟩
+
+/-- **The return agreement from the lock at the `rets` item** (module doc): from states locked at
+`Zc d d'`, the first (`u`) at `Q` of a `rets` configuration, the two runs return after `retLen`
+steps in `RetAgreeX (frameDrop + K) (spv s0)`. -/
+theorem RL.retAgreeX_rets {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb R.base ra R.s0)
+    (hx30 : R.fa.x30Free R.lm = true) {u u' : Arm.ArmState} {e : MConf CV Arm.ArmState}
+    (hq : Q R u e) (hre : R.RetsAt e) {d d' : MConf CV Arm.ArmState}
+    (hl : StEqOutX (R.Zc d d') u' u) :
+    RetAgreeX (frameDrop R.af + R.K) (spv R.s0) (iterN R.step R.retLen u')
+      (iterN R.step R.retLen u) :=
+  (RL.retLock_rets hR hent hx30 hq hre hl).1
 
 /-- **A base call keeps the lock** (`HookNIX`, #704) when the lock set is inside the exterior:
 the worlds of the two configurations differ only on `F` (the lock set is `F` or the difference

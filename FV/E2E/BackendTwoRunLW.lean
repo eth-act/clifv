@@ -316,8 +316,9 @@ theorem backend_twoRunLW (hsub : InSubset p f) (hc : Compiled f k vc vcp rf af f
 
 set_option maxHeartbeats 4000000 in
 /-- **`backend_twoRunLER` with the world-difference invariant and the call destination**: the
-lock along the body, both returns at their return addresses, and `RetAgreeX` at the return;
-the call and TLS premises as in `backend_twoRunLW`. -/
+lock along the body, both returns at their return addresses, `RetAgreeX` at the return, and the
+two returned states equal on the memory outside `F ∪ D`; the call and TLS premises as in
+`backend_twoRunLW`. -/
 theorem backend_twoRunLERW (hsub : InSubset p f) (hc : Compiled f k vc vcp rf af fa fb)
     (hone : InstCallsOne f) (htc : TryCallsOne f)
     {XI : ExtSemI} {syms : String → Option Nat} {slotOff : Nat} {env : Clif.Env} {K : Nat}
@@ -383,9 +384,14 @@ theorem backend_twoRunLERW (hsub : InSubset p f) (hc : Compiled f k vc vcp rf af
         (iterN ({ R with s0 := t0, G := G', X := XI.at 0 } : RL).step
           ((prologueLines R.af.frameSize).length + N + R.retLen) t0)
         (iterN ({ R with X := XI.at 0 } : RL).step
-          ((prologueLines R.af.frameSize).length + N + R.retLen) R.s0) := by
+          ((prologueLines R.af.frameSize).length + N + R.retLen) R.s0) ∧
+      ∀ a, ¬ F a → ¬ D a →
+        (iterN ({ R with s0 := t0, G := G', X := XI.at 0 } : RL).step
+          ((prologueLines R.af.frameSize).length + N + R.retLen) t0).mem a =
+        (iterN ({ R with X := XI.at 0 } : RL).step
+          ((prologueLines R.af.frameSize).length + N + R.retLen) R.s0).mem a := by
   intro vals cm hrun
-  obtain ⟨N, e, e', hlk, ⟨⟨W, hqA, -⟩, -, -, -, -, hLB⟩, hpc, hpc', hre, -⟩ :=
+  obtain ⟨N, e, e', hlk, ⟨⟨W, hqA, -⟩, -, -, -, -, hLB⟩, hpc, hpc', hre, hre'⟩ :=
     backend_twoRunLW hsub hc hone htc hX hNI hTls hsym hslot ρ₀ hce hrel hrel' hargs hsw hreg hstk
       htr fuel hlm hpsF he he' hR hcov hx30 hcall htls hag hx29 vals cm hrun
   refine ⟨N, hlk, hpc, hpc', ?_⟩
@@ -406,7 +412,19 @@ theorem backend_twoRunLERW (hsub : InSubset p f) (hc : Compiled f k vc vcp rf af
     ⟨⟨ckc, ins, a0, hat, entryOk_of_le hle⟩, hc.alloc, hc.emit, hc.layout, hlm,
       by show 4 * fb.words.size ≤ 2 ^ 64; have := he.abi.fits; omega, he.stack, ⟨body, hpsF⟩,
       he.abi.program, he.gfree⟩
-  exact RL.retAgreeX_rets hW0 he.abi hx30 (QW.withX (X := XI.at 0) hqA).q hre hLB.1.symm
+  have hr1 : ∃ ms, e = .run ms := by
+    obtain ⟨_, _, _, _, _, _, _, _, rfl, -⟩ := hre; exact ⟨_, rfl⟩
+  have hr2 : ∃ ms, e' = .run ms := by
+    obtain ⟨_, _, _, _, _, _, _, _, rfl, -⟩ := hre'; exact ⟨_, rfl⟩
+  obtain ⟨hra, -, hm⟩ := RL.retLock_rets hW0 he.abi hx30 (QW.withX (X := XI.at 0) hqA).q hre
+    hLB.1.symm
+  refine ⟨hra, fun a hFa hDa => hm a ?_⟩
+  rintro ⟨-, -, -, hz⟩
+  rcases hz with h | h
+  · exact hFa h
+  · rcases wDiff_of_wIn hr1 hr2 hLB.2.1 a h with h' | h'
+    · exact hFa h'
+    · exact hDa h'
 
 end
 
