@@ -2702,6 +2702,59 @@ as corollaries (target `Stage2Z`/`thmPRBRL_ofZ`, #697), after combining with #69
   `noRetAt_of` both ways (`PostTrace` from `RL.Good`). Then `DetRunPRBCR M` (nested twins by
   `CallTwinCE M`) and `CallTwinCE (M + 1)` (`twinBaseCE_of_lock`).
 
+**Item (1): the cleanup path (UninitZ26c, branch `agent/uninit-z26c`, #713, #729).** Value-semantics
+copies of the pair driver and of the P chain, and the `CompiledEither` dispatch:
+- `RegLevelValueGS.lean` (`RL.valueSemGS`, the `WGuardS`-guarded `valueSemV`;
+  **`realizes_value_allCWSF`**, which also returns the `RL.semGS` step so `RL.InSeg` is unchanged);
+  `RegLevelTwoRunTV.lean`/`RegLevelTwoRunNV.lean` (**`twoRunCTV`**, **`twoRunPRTV`**,
+  **`twoRunCTNV`**, **`twoRunPRTNV`**, P form); `BackendTwoRunNV.lean` (**`backend_twoRunLWNpPV`**);
+  `BackendTwoRunNIV.lean` (**`backend_twoRunLERWZNpWPV`**, **`backend_twoRunLERWZIV`**,
+  **`backend_twoRunLERWZIUPV`**; the old shapes as corollaries); `PairDriverDValue.lean`,
+  `BackendPairRunDCleanup.lean` (**`vcode_niID_value`**, **`vcode_niIDF_value`**,
+  **`backend_pairRunD_cleanup`**, **`backend_pairRunDF_cleanup`**). `PairEntryD.lean`: proofs
+  generalised (`entryLoads_runPDG`, `entry_step2PDG`; old statements kept as corollaries).
+- `BackendTwoRunEither.lean`: **`backend_pairRunDF_either`**, **`backend_twoRunLERWZIUF_either`**,
+  **`backend_twoRunLERWZIUPF_either`** (`CompiledEither`: the CLIF return to the two-run lock and
+  return facts, the paired semantics hidden; the same premises on both paths). Witnesses
+  `BackendTwoRunVWitness.lean` (`r` compiled through the cleanup path, distinct worlds `D ⊆ F`).
+
+**Items (2)-(4) at the link: `XNIF`, the lock to the return, the call hook (UninitZ27b, branch
+`agent/uninit-z27b` on `agent/uninit-z26c`, #713, #729).**
+- `LinkArmXNIF.lean`: **`xnifXPBTGY`** (`hNI` of the either theorems at the link's
+  `XPBTGY … .at n`, from `NeedNI`, `ThmPRBRL`/`DetPRBR (M - 1)`, `CallTwinCE M`). Finding (no new
+  premise): `guardR` answers an ε-chosen result where `XPRBT`'s answer is rejected, so `XNIF` needs
+  the ε-choices at the two worlds to coincide. `guardR_rel` (a guard keeps a relation when its
+  predicate is the same at both worlds), `callPostXR_progTransfer` (`CallPostNXR` of a program
+  invocation does not depend on the world outside `F`: the stack-passed arguments are in the
+  outgoing area, `Ok.outFits`), **`progXBT_rel`** (`progXBT` at two worlds with equal registers
+  but pc, callee region and memory outside `F`: defined together, `CondBT`'s callee table by
+  `CallTwinCE` + `tableOf_twinC`; same results, worlds equal outside `F`), `worldPR_rel`,
+  `r_canon_congr`. Base calls: `stage2Y_base` (the answers are `Xb`'s at every world) + `baseNI`.
+- `LinkArmLockRet.lean`: **`LockRet κ M`** (`DetRunPRBCR`'s premises; the lock at every index
+  before `n₀` by sets avoiding the callees' dead stack, `RetAgreeX`, memory outside `F ∪ D`, the
+  second run's saved frame record, `ActRet`, `PostTrace` at `n₀`), `LockRet.ret`; **`CallLock κ M`**
+  (its call form one level down, at the canonical callee's return index `k`); **`callLock_of`**
+  (`CallLock M` from `ThmPRBRL`/`LockRet` at `M - 1`: `progCallPRBRLR`'s callee entries).
+- `LinkArmHCall.lean` (`hcall`/`htls`): **`pcall_lock`** (two call states agreeing with the
+  canonical one give locked `pcall` results: `RetAgreeX` twice, the saved record by
+  `mem_eq_of_saved`, kept bytes), **`pcall_lockXPR`** (at the first run's call-`n` state, the
+  canonical state of `progXPRBT`'s answer, and a second state locked by a set inside `F`
+  avoiding the dead stack), `hooks_lock_base`, `hooks_lock_tls` (`HookNIX`).
+- #729 follow-up (P chain, legacy and value): `RL.SegFrom` also records that the segment's call
+  states are its start (`RL.segStart_of_qw`, `realizes_allC0`'s argument; `RL.SegFrom.call`), so at
+  a call hook `u` is the segment start and `OnCall … n u ∧ spOf u = R.spB` holds there (the anchor
+  of `pcall_lockXPR`: `callsBefore = n`, the body `sp`, the prophecies of call `n`).
+- Witnesses `LinkArmLockRetWitness.lean`.
+- Remaining (not built): the dispatch of `hcall` from `GoodX.call`'s `CallPre` (the `csemV` answer
+  of `XPBTGY … .at n` to `XPRBT`'s by `XPBTGY_subZS`, then `bl`/`blr`/`try_call` as in
+  `progOsPRBRLR`/`progOsRegPRBRLR`/`calleeTryOkPRBRLR`, to `pcall_lockXPR` or `hooks_lock_base`;
+  `blrTarget_eq_of_lock` for the second state's `blr` target); `lockRet_of` (`LockRet M` from
+  `backend_twoRunLERWZIUPF_either` with `he` as in `thmPRBRL_ofZSER`, `he0` from `MachEntry`
+  with the second run's own prophecies, `hC'`/`hT'` by `calleeOkLockedR`, `hNI` by `xnifXPBTGY`,
+  the return index `n₀` by `noRetAt_of`); the induction `ThmPRBRLE M ∧ LockRet M → DetRunPRBCR M
+  → CallTwinCE (M + 1)` (premises also `∀ g, (L.A g).fa.blrLow` and `x30Free`, checks on the
+  compiled code); `InitOkR` in `DeadCleanupBinaryInitR.lean`.
+
 ## 6. Heap (separate gap, SEM2)
 
 `BaseOk.baseKeepsAllocs`/`baseNoAlloc` require base externs to allocate nothing whenever a program
