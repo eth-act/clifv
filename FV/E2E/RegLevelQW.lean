@@ -85,7 +85,7 @@ theorem RL.entryWit_exists {R : RL} (hR : R.Wf) {t : Nat} {vb : VBlock} {items :
   obtain ⟨-, rfl⟩ := hb'
   obtain ⟨j0, ls, ps1, ps2, T, hj0, hdrop, hls, htr, -⟩ := hblk t _ _ haf
   simp only [ht, ite_false, List.nil_append, List.toList_toArray] at hls
-  refine ⟨(j0 + 1, ps1, T), fun vb' jl hvb' hjl => ?_, fun s m w items' hit' hpc hst => ?_⟩
+  refine ⟨(j0 + 1, ps1, T), fun vb' jl hvb' hjl => ?_, fun items' hit' => ?_⟩
   · rw [hvb] at hvb'; cases hvb'
     simp only [RL.pcOf, RL.L]
     rw [lineOffset_succ _ _ _ hj0]
@@ -96,8 +96,7 @@ theorem RL.entryWit_exists {R : RL} (hR : R.Wf) {t : Nat} {vb : VBlock} {items :
     simp only [Line.size, Nat.add_zero, RL.L] at e2 ⊢
     rw [e2]
   · rw [hit] at hit'; cases hit'
-    exact ⟨vb, items, [], code, ls, ps2, hvb, hit, rfl, itemsChecked_block hR hvb hit, hcode, hls,
-      htr, hdrop, hpc, hst⟩
+    exact ⟨vb, code, ls, ps2, hvb, itemsChecked_block hR hvb hit, hcode, hls, htr, hdrop⟩
 
 /-- **Entering a block at the chosen entry witness** (`q_entry`). -/
 theorem qW_entry {R : RL} (hR : R.Wf) {t : Nat} {vb : VBlock} {items : Array RItem} (ht : t ≠ 0)
@@ -109,6 +108,7 @@ theorem qW_entry {R : RL} (hR : R.Wf) {t : Nat} {vb : VBlock} {items : Array RIt
       QW R s (R.entryW t).1 (R.entryW t).2.1 (R.entryW t).2.2 (.run ⟨t, items.toList, m, w⟩) := by
   have hW := RL.entryW_spec (RL.entryWit_exists hR ht hvb hit)
   have hp : Arm.r .PC s = R.pcOf (R.entryW t).1 := hpc.trans (hW.1 vb jl hvb hjl)
-  exact ⟨hp, hW.2 s m w items hit hp hst⟩
+  obtain ⟨vb', code, ls, ps2, hvb', hchk, hcode, hls, htr, hdrop⟩ := hW.2 items hit
+  exact ⟨hp, vb', items, [], code, ls, ps2, hvb', hit, rfl, hchk, hcode, hls, htr, hdrop, hp, hst⟩
 
 end Backend.Proof

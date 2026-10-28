@@ -93,14 +93,19 @@ theorem firstArr_eq {f f' : Arm.ArmState → Arm.ArmState} {s s' : Arm.ArmState}
 
 /-! ## The witness after a step -/
 
-/-- **An entry witness of block `t`**: its `pc` is that of the block's label line, and there
-any state related to a store and world is `QW` at block `t`'s start. -/
+/-- **An entry witness of block `t`**: its `pc` is that of the block's label line, and the
+block's lines start at its line with the emitter state and tail of the witness. Only the code
+data of `R` occur (no entry state, hooks, budget or kept set), so two activations of one
+compiled function choose the same witness (`RL.entryW_congr`). -/
 def RL.EntryWit (R : RL) (t : Nat) (W : Nat × PState × List Line) : Prop :=
   (∀ vb jl, R.vc.blocks[t]? = some vb → R.L[jl]? = some (.label (.block vb.label)) →
       R.pcOf jl = R.pcOf W.1) ∧
-    ∀ (s : Arm.ArmState) (m : Loc → CV) (w : Arm.ArmState) (items : Array RItem),
-      R.rf.blocks[t]? = some items → Arm.r .PC s = R.pcOf W.1 → StRel R s m w →
-      QW R s W.1 W.2.1 W.2.2 (.run ⟨t, items.toList, m, w⟩)
+    ∀ (items : Array RItem), R.rf.blocks[t]? = some items →
+      ∃ vb code ls ps2, R.vc.blocks[t]? = some vb ∧ ItemsChecked R vb items.toList ∧
+        itemsCode R.fr vb items.toList = .ok code ∧
+        codeLinesE R.ctx R.af code W.2.1 = .ok (ls, ps2) ∧
+        ps2.traps.toList <+: R.psF.traps.toList ∧
+        R.L.drop W.1 = relaxLines R.far (ftList (ls ++ nxtOf R.af t)) ++ W.2.2
 
 open Classical in
 /-- **The chosen entry witness of block `t`.** -/
@@ -112,6 +117,61 @@ theorem RL.entryW_spec {R : RL} {t : Nat} (h : ∃ W, R.EntryWit t W) :
   unfold RL.entryW
   rw [dif_pos h]
   exact Classical.choose_spec h
+
+/-- **Two activations of one compiled function**: the same code data (VCode, allocation,
+allocated and laid-out function, load address, emitter state); entry state, hooks, budget, kept
+set and GOT pins may differ. -/
+structure RL.SameCode (R R' : RL) : Prop where
+  vc : R'.vc = R.vc
+  rf : R'.rf = R.rf
+  af : R'.af = R.af
+  fa : R'.fa = R.fa
+  base : R'.base = R.base
+  psF : R'.psF = R.psF
+
+theorem RL.entryWit_congr {R R' : RL} (h : R.SameCode R') (t : Nat) :
+    R'.EntryWit t = R.EntryWit t := by
+  obtain ⟨vc, rf, af, fa, fb, lm, base, s0, X, H, psF, K, G, gv⟩ := R
+  obtain ⟨vc', rf', af', fa', fb', lm', base', s0', X', H', psF', K', G', gv'⟩ := R'
+  obtain ⟨h1, h2, h3, h4, h5, h6⟩ := h
+  dsimp only at h1 h2 h3 h4 h5 h6
+  subst h1 h2 h3 h4 h5 h6
+  rfl
+
+/-- **Two activations of one compiled function choose the same entry witnesses.** -/
+theorem RL.entryW_congr {R R' : RL} (h : R.SameCode R') (t : Nat) : R'.entryW t = R.entryW t := by
+  unfold RL.entryW
+  rw [RL.entryWit_congr h]
+
+/-- **An initial witness**: the line after the prologue, where block 0's lines start with the
+emitter state and tail of the witness (code data only, as `RL.EntryWit`). -/
+def RL.InitWit (R : RL) (W : Nat × PState × List Line) : Prop :=
+  W.1 = 1 + (prologueLines R.af.frameSize).length ∧
+    ∀ (items : Array RItem), R.rf.blocks[0]? = some items →
+      ∃ vb code ls ps2, R.vc.blocks[0]? = some vb ∧ ItemsChecked R vb items.toList ∧
+        itemsCode R.fr vb items.toList = .ok code ∧
+        codeLinesE R.ctx R.af code W.2.1 = .ok (ls, ps2) ∧
+        ps2.traps.toList <+: R.psF.traps.toList ∧
+        R.L.drop W.1 = relaxLines R.far (ftList (ls ++ nxtOf R.af 0)) ++ W.2.2
+
+open Classical in
+/-- **The chosen initial witness.** -/
+noncomputable def RL.initW (R : RL) : Nat × PState × List Line :=
+  if h : ∃ W, R.InitWit W then Classical.choose h else (0, {}, [])
+
+theorem RL.initW_spec {R : RL} (h : ∃ W, R.InitWit W) : R.InitWit R.initW := by
+  unfold RL.initW
+  rw [dif_pos h]
+  exact Classical.choose_spec h
+
+/-- **Two activations of one compiled function choose the same initial witness.** -/
+theorem RL.initW_congr {R R' : RL} (h : R.SameCode R') : R'.initW = R.initW := by
+  obtain ⟨vc, rf, af, fa, fb, lm, base, s0, X, H, psF, K, G, gv⟩ := R
+  obtain ⟨vc', rf', af', fa', fb', lm', base', s0', X', H', psF', K', G', gv'⟩ := R'
+  obtain ⟨h1, h2, h3, h4, h5, h6⟩ := h
+  dsimp only at h1 h2 h3 h4 h5 h6
+  subst h1 h2 h3 h4 h5 h6
+  rfl
 
 /-- **The witness after a straight step** over item `it` of block `b`: the lines after the
 item's own. -/
@@ -325,5 +385,54 @@ theorem RL.emptyW_entry_iff {R : RL} {j : Nat} {ps1 : PState} {T : List Line} {b
       ∀ x t, R.L[j]? ≠ some (.ins x t) := by
   unfold RL.EmptyW
   rw [if_neg (by simpa [RL.Straight] using h)]
+
+/-- **Two activations of one compiled function compute the same next witness.** -/
+theorem RL.nextW_congr {R R' : RL} (h : R.SameCode R') (j : Nat) (ps1 : PState) (T : List Line)
+    (c c'' : MConf CV Arm.ArmState) : R'.nextW j ps1 T c c'' = R.nextW j ps1 T c c'' := by
+  obtain ⟨vc, rf, af, fa, fb, lm, base, s0, X, H, psF, K, G, gv⟩ := R
+  obtain ⟨vc', rf', af', fa', fb', lm', base', s0', X', H', psF', K', G', gv'⟩ := R'
+  obtain ⟨h1, h2, h3, h4, h5, h6⟩ := h
+  dsimp only at h1 h2 h3 h4 h5 h6
+  subst h1 h2 h3 h4 h5 h6
+  rfl
+
+/-- **Two activations of one compiled function have the same zero-length cases.** -/
+theorem RL.emptyW_congr {R R' : RL} (h : R.SameCode R') (j : Nat) (ps1 : PState) (T : List Line)
+    (c c'' : MConf CV Arm.ArmState) : R'.EmptyW j ps1 T c c'' ↔ R.EmptyW j ps1 T c c'' := by
+  obtain ⟨vc, rf, af, fa, fb, lm, base, s0, X, H, psF, K, G, gv⟩ := R
+  obtain ⟨vc', rf', af', fa', fb', lm', base', s0', X', H', psF', K', G', gv'⟩ := R'
+  obtain ⟨h1, h2, h3, h4, h5, h6⟩ := h
+  dsimp only at h1 h2 h3 h4 h5 h6
+  subst h1 h2 h3 h4 h5 h6
+  exact Iff.rfl
+
+/-- The next witness sees only the blocks and items of the two configurations. -/
+theorem RL.nextW_run {R : RL} (j : Nat) (ps1 : PState) (T : List Line) (b b'' : Nat)
+    (its its'' : List RItem) (m m' m₂ m₂' : Loc → CV) (w w' w₂ w₂' : Arm.ArmState) :
+    R.nextW j ps1 T (.run ⟨b, its, m₂, w₂⟩) (.run ⟨b'', its'', m₂', w₂'⟩) =
+      R.nextW j ps1 T (.run ⟨b, its, m, w⟩) (.run ⟨b'', its'', m', w'⟩) := by
+  cases its <;> rfl
+
+/-- The zero-length case sees only the blocks and items of the two configurations. -/
+theorem RL.emptyW_run {R : RL} (j : Nat) (ps1 : PState) (T : List Line) (b b'' : Nat)
+    (its its'' : List RItem) (m m' m₂ m₂' : Loc → CV) (w w' w₂ w₂' : Arm.ArmState) :
+    R.EmptyW j ps1 T (.run ⟨b, its, m₂, w₂⟩) (.run ⟨b'', its'', m₂', w₂'⟩) ↔
+      R.EmptyW j ps1 T (.run ⟨b, its, m, w⟩) (.run ⟨b'', its'', m', w'⟩) := by
+  cases its <;> exact Iff.rfl
+
+/-- **Two activations of one compiled function, started at one witness at configurations of the
+same blocks and items, with agreeing pcs, cut their segments at the same index.** -/
+theorem RL.segLen_eq_same {R R' : RL} (h : R.SameCode R') {j : Nat} {ps1 : PState}
+    {T : List Line} {b b'' : Nat} {its its'' : List RItem} {m m' m₂ m₂' : Loc → CV}
+    {w w' w₂ w₂' : Arm.ArmState} {s s' : Arm.ArmState} {n n' : Nat}
+    (hs : R.SegLen j ps1 T (.run ⟨b, its, m, w⟩) (.run ⟨b'', its'', m', w'⟩) s n)
+    (hs' : R'.SegLen j ps1 T (.run ⟨b, its, m₂, w₂⟩) (.run ⟨b'', its'', m₂', w₂'⟩) s' n')
+    (hpc : ∀ i ≤ max n n', Arm.r .PC (iterN R.step i s) = Arm.r .PC (iterN R'.step i s')) :
+    n = n' :=
+  RL.segLen_eq (by simp only [RL.L, h.fa]) h.base hs hs'
+    ((RL.nextW_run (R := R') j ps1 T b b'' its its'' m m' m₂ m₂' w w' w₂ w₂').trans
+      (RL.nextW_congr h j ps1 T _ _))
+    ((RL.emptyW_run (R := R') j ps1 T b b'' its its'' m m' m₂ m₂' w w' w₂ w₂').trans
+      (RL.emptyW_congr h j ps1 T _ _)) hpc
 
 end Backend.Proof
