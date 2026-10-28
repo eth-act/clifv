@@ -1,3 +1,5 @@
+import FV.Backend.Proof.LowerSimUCheckTC
+import FVTest.Backend.UnwCheckTCWitness
 import FV.Link.DeadCleanupCompileT3
 import FVTest.E2E.FloatScopeT3
 import FVTest.Link.FloatCompileExeT3
@@ -15,6 +17,17 @@ import FVTest.Link.FloatCompileExeT
 import FV.Link.DeadCleanupCompileT
 import FV.E2E.FinalTC
 import FV.Backend.Proof.IselCtlTryF
+import FV.Link.DeadCleanupExePeakT
+import FVTest.Link.FloatCompileExeTPeak
+import FV.Link.DeadCleanupExeSourceT
+import FV.Front.ExeT
+import FVTest.Link.FloatCompileExeTSource
+import FV.E2E.CompiledAnyT
+import FV.E2E.PairDriverTC
+import FV.E2E.DeadCleanupPairTC
+import FV.E2E.DeadCleanupLinkCheckT
+import FVTest.Link.FloatTryCompileExeT
+import FV.Link.DeadCleanupCompileTFast
 import FV.E2E.FinalTCF
 import FVTest.E2E.FloatArithFinalTCF
 import FVTest.E2E.FloatCmpFinalTCF
@@ -61,6 +74,77 @@ import FVTest.E2E.FloatCmpFinalTCF
 #print axioms Link.DeadCleanup.compileExeT_eq
 #print axioms E2E.FloatCompileExeTWitness.correct_spec -- witness: native_decide
 
+-- S11e6 slice 2c (#419): direct `try_call` with f32/f64 signatures, per-function typed chain
+#print axioms E2E.backend_correct_finalTC
+#print axioms E2E.backend_correct_final_exTC
+#print axioms E2E.verdict_of_unverifiedReason
+#print axioms E2E.lowerChecked_specTC
+#print axioms Backend.Proof.tryUnmatchableTC_program
+#print axioms Backend.Proof.Driver.tryCallsTC_of_rules
+#print axioms E2E.LinkCheck.okBCleanupTFast_eq
+#print axioms E2E.FloatTryCompileExeTWitness.okBCleanupT_spec -- witness: native_decide
+#print axioms E2E.FloatTryCompileExeTWitness.checks_true -- witness: native_decide
+#print axioms E2E.FloatTryCompileExeTWitness.correct_spec -- witness: native_decide
+#print axioms Backend.Proof.tryRulesCorrectTFP_program
+
+-- S11e6 (#419): typed cleanup peak theorems
+#print axioms E2E.DeadCleanupExecBytes.binary_correct_exec_peak_provenT
+#print axioms Link.DeadCleanup.compileExe_correct_peakT
+#print axioms Link.DeadCleanup.compileExeT_correct_peak
+#print axioms E2E.FloatCompileExeTPeakWitness.correct_peakT_spec -- witness: native_decide
+#print axioms E2E.FloatCompileExeTPeakWitness.correct_peakT_specC -- witness: native_decide
+
+-- S11e6 (#419): typed source and frontend theorems (`lean-link --verified` on a typed input)
+#print axioms Link.DeadCleanup.compileExe_correct_sourceT
+#print axioms Link.DeadCleanup.compileExe_correct_source_peakT
+#print axioms Link.DeadCleanup.compileExeT_correct_source
+#print axioms Link.DeadCleanup.compileExeT_correct_source_peak
+#print axioms Front.bundle_correct_sourceT
+#print axioms Front.bundle_correct_source_peakT
+#print axioms Front.bundle_correct_rawT
+#print axioms Front.bundle_correct_raw_peakT
+#print axioms E2E.FloatCompileExeTSourceWitness.source_spec -- witness: native_decide
+#print axioms E2E.FloatCompileExeTSourceWitness.source_peak_spec -- witness: native_decide
+#print axioms E2E.FloatCompileExeTSourceWitness.sourceT_specC -- witness: native_decide
+#print axioms E2E.FloatCompileExeTSourceWitness.source_peakT_specC -- witness: native_decide
+
+-- S11e6 (#419): link layer: world-form per-function theorems, typed try_calls
+#print axioms E2E.driverHypTC_relW_of
+#print axioms E2E.driverHypTC_relW
+#print axioms E2E.iselSim_relWTC
+#print axioms E2E.backend_correct_worldTC
+#print axioms Backend.Proof.LowerTryOkPC.sem_ext
+#print axioms E2E.lowerTryOkC_pair_of
+#print axioms E2E.lowerTryOkC_pairF
+#print axioms E2E.lowerTryOkC_pairF_value
+#print axioms Backend.Proof.tryOkPC_of_rules
+#print axioms Backend.Proof.tryOkPC_runTerm
+#print axioms E2E.tryCalls_pairTC
+#print axioms E2E.vcode_niTC
+#print axioms E2E.backend_correct_world_niTC
+#print axioms E2E.iselSim_relW_cleanupTC
+#print axioms E2E.backend_correct_world_cleanupTC
+#print axioms E2E.vcode_ni_valueTC
+#print axioms E2E.backend_correct_world_ni_valueTC
+#print axioms E2E.backend_correct_worldXTC
+#print axioms E2E.backend_correct_world_niXTC
+#print axioms E2E.backend_correct_worldX_cleanupTC
+#print axioms E2E.backend_correct_world_niX_cleanupTC
+#print axioms E2E.backend_correct_world_pipelineTC
+#print axioms E2E.backend_correct_world_ni_pipelineTC
+#print axioms E2E.backend_correct_worldX_pipelineTC
+#print axioms E2E.backend_correct_world_niX_pipelineTC
+#print axioms E2E.backend_correct_world_pipelineAnyT
+#print axioms E2E.backend_correct_world_ni_pipelineAnyT
+#print axioms E2E.backend_correct_worldX_pipelineAnyT
+#print axioms E2E.backend_correct_world_niX_pipelineAnyT
+
+-- S11e6 (#419): `compileExeT`'s typed checks at the size of std (equal to the definitions)
+#print axioms E2E.LinkCheck.inScopePTPar_eq
+#print axioms E2E.LinkCheck.calleeWithB_eq
+#print axioms E2E.LinkCheck.outChksTWith_eq
+#print axioms E2E.LinkCheck.outOkTRFast_eq
+#print axioms Link.DeadCleanup.outOkTFast_eq
 -- the decider-free typed scope fnScopeInTB3 / compileExeT3 (Floats15)
 #print axioms E2E.LinkCheck.lowerOutTB_of_T3
 #print axioms E2E.LinkCheck.resClassOkB_of_T3
@@ -84,6 +168,7 @@ import FVTest.E2E.FloatCmpFinalTCF
 #print axioms FloatScopeT3.inScopePT_w -- witness: native_decide
 #print axioms E2E.FloatCompileExeT3Witness.correct_spec -- witness: native_decide
 
+
 -- S11e6 slice 2c (#419): direct `try_call` with f32/f64 signatures, per-function typed chain
 #print axioms E2E.backend_correct_finalTC
 #print axioms E2E.backend_correct_final_exTC
@@ -93,6 +178,14 @@ import FVTest.E2E.FloatCmpFinalTCF
 #print axioms Backend.Proof.Driver.tryCallsTC_of_rules
 #print axioms Backend.Proof.tryRulesCorrectTFP_program
 
+-- S11e6 #585: the typed-try_call exceptional-edge validator
+#print axioms Backend.Proof.Driver.loweringUTC_of_check
+#print axioms Backend.Proof.Driver.unwShape_of_okTC
+#print axioms Backend.Proof.Driver.tryExnBTC_sound
+#print axioms Backend.Proof.Driver.exnArgRegC_int
+#print axioms UnwCheckTCWitness.unwCheckTC_true -- witness: native_decide
+#print axioms UnwCheckTCWitness.lowerCheckUTC_true -- witness: native_decide
+#print axioms UnwCheckTCWitness.unwCheck_false -- witness: native_decide
 -- S11f (#35): float arithmetic, rounding and conversions in the per-function typed chain
 #print axioms E2E.backend_correct_finalTCF
 #print axioms E2E.backend_correct_final_exTCF
