@@ -66,19 +66,14 @@ theorem retOkPRB_of (hL : L.Ok) [hR : L.CrunOk] (hN : L.NeedSlots) (hB : L.BaseR
       Clif.linkEnvR_none hpf] at hG
     obtain ⟨hv, hs⟩ := hB nm G hG vals' m rvals cm' hr
     refine ⟨hv, hs, ?_⟩
-    have hmem : ∀ s, ((∃ ext ∈ g.externs.map (·.2), ext.name = nm ∧ s = ext.sig) ∨
-        s ∈ indSigs g) → s ∈ L.baseSigs g := by
-      rintro s (⟨ext, hext, hnm, rfl⟩ | hs)
-      · refine List.mem_append_left _ (List.mem_map.mpr ⟨ext, List.mem_filter.mpr ⟨hext, ?_⟩, rfl⟩)
-        simp [hnm, hpf]
-      · exact List.mem_append_right _ hs
+    have hmem := sigsOf_mem (g := g) (nm := nm)
     by_cases hex : ∃ s, ((∃ ext ∈ g.externs.map (·.2), ext.name = nm ∧ s = ext.sig) ∨
         s ∈ indSigs g) ∧ rvals.length = s.returns.length
     · obtain ⟨s, hs, hl⟩ := hex
       refine ⟨(sigRets s).length, hl ▸ returns_le_sigRets s, fun ext hext hnm hl' => ?_,
         fun sig hsg _ hl' => ?_⟩
-      · exact hC g hg ext.sig (hmem _ (.inl ⟨ext, hext, hnm, rfl⟩)) s (hmem s hs) (by omega)
-      · exact hC g hg sig (hmem _ (.inr hsg)) s (hmem s hs) (by omega)
+      · exact hC g hg nm hpf ext.sig (hmem _ (.inl ⟨ext, hext, hnm, rfl⟩)) s (hmem s hs) (by omega)
+      · exact hC g hg nm hpf sig (hmem _ (.inr hsg)) s (hmem s hs) (by omega)
     · refine ⟨rvals.length, Nat.le_refl _, fun ext hext hnm hl' => ?_, fun sig hsg _ hl' => ?_⟩
       · exact absurd ⟨ext.sig, .inl ⟨ext, hext, hnm, rfl⟩, hl'⟩ hex
       · exact absurd ⟨sig, .inr hsg, hl'⟩ hex
