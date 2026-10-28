@@ -146,10 +146,10 @@ theorem backend_correct_world_ni_cleanupPRI {p : Clif.Program} {f : Clif.Functio
                 (runX (ArmStepX (XI.at 0) H fa) n s) ∧
               PostTrace fa af base (ArmStepX (XI.at 0) H fa) s n) := by
   intro vals cm hrun
-  have hI := iselSim_relWI_cleanup hsub hc hone htc hX hsym hslot (fun _ => 0) hcs hrel hargs
-    htr fuel
+  have hI := iselSim_relWI_cleanup_stage hsub hc hone htc hX hsym hslot (fun _ => 0) hcs hrel
+    hargs htr fuel
   have hPr : ∀ w : Arm.ArmState, _ := fun w =>
-    prune_correctW (vc := vc) (sem := valueSemI F ⟨fa.k, af.slotBase⟩ XI)
+    prune_correctW (vc := skipStage f vc) (sem := valueSemI F ⟨fa.k, af.slotBase⟩ XI)
       (fun _ _ _ _ _ _ hi hs => counted_pure (fun _ _ _ _ _ _ _ hp he => valueSem_pure hp he) hi hs)
       (cmpOverwrite_counted fun n => valueSem_cmpOverwrite _ _ _) (fun _ => 0) (w, 0)
   have hP : ∀ w : Arm.ArmState, _ := fun w => prep_soundW (DriverSemG.counted fun m =>
@@ -168,14 +168,15 @@ theorem backend_correct_world_ni_cleanupPRI {p : Clif.Program} {f : Clif.Functio
   obtain ⟨us, outs, ⟨w, nc⟩, hv, hus, hlen, hhold, hmemR⟩ := hI.1 vals cm hrun
   have hrs : vc.RetsSite us := by
     obtain ⟨b, k, ρ, w₁, vb, ops, outs', -, hvb, hk, -⟩ := hv
-    exact ⟨b, vb, k, hvb, hk⟩
+    exact retsSite_of_skipStage ⟨b, vb, k, hvb, hk⟩
   refine ⟨us, outs, w, hus, hlen, hhold, hmemR, hrs, fun H G base ra Kp cc P R s he => ?_,
     fun hNI hTls D w₀' hrel' hsw hreg hstk H G base ra Kp cc P R s he => ?_⟩
   · obtain ⟨n, h1, h2, h3, h4, h5, h6, h7⟩ :=
       (hM6 w₀ H G base ra Kp cc P R s he).1 us outs w nc
         (vRetFrom_gotV_valueI ((hP w₀).1 _ _ _ ((hPr w₀).1 _ _ _ hv)))
     exact ⟨n, ⟨h1, h2, h3, h4, h5, h6⟩, h7⟩
-  · obtain ⟨us', outs', w1, w2, nc', hv1, hv2, hsw12⟩ := vcode_niI_value hsub hc hone htc hX hsym
+  · obtain ⟨us', outs', w1, w2, nc', hv1, hv2, hsw12⟩ := vcode_niI_value_stage hsub hc hone htc hX
+      hsym
       hslot hNI hTls (fun _ => 0) hcs hrel hrel' hargs hsw hreg hstk htr fuel vals cm hrun
     obtain ⟨rfl, rfl, he12⟩ := vRetFrom_det (vs := ⟨0, 0, fun _ => 0, (w₀, 0)⟩) hv1 hv
     cases he12

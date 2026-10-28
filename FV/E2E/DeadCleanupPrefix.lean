@@ -1,6 +1,6 @@
 import FV.E2E.BackendPrefixI
 import FV.E2E.BackendWorldCleanupI
-import FV.E2E.IselSimIPrefixCleanup
+import FV.E2E.IselSimIPrefixSkip
 import FV.E2E.DeadCleanupRegLevelPRS
 
 /-!
@@ -220,7 +220,8 @@ theorem backend_prefix_cleanupPRI {p : Clif.Program} {f : Clif.Function} {k : Na
       (i = .call info ∨ ∃ ti, i = .tryCall info ti) ∧ (XI.at j).call (callDest info) uses w = some r := by
   intro j hj
   obtain ⟨b, k, ρ, w, hstar, -⟩ :=
-    iselSim_prefixWI_cleanup hsub hc hone htc hX hsym hslot (fun _ => 0) hcs hrel hargs htr t N hr hcn
+    iselSim_prefixWI_cleanup_stage hsub hc hone htc hX hsym hslot (fun _ => 0) hcs hrel hargs htr t
+      N hr hcn
   obtain ⟨b1, k1, ρ1, w1, vb, i, ops, r, hs1, hvb, hi, hcall, hops, hsem⟩ :=
     vstar_call_at (j := j) hstar (Nat.zero_le _) hj
   obtain ⟨info, hci⟩ := callLike_of_isCallI hcall
