@@ -1,4 +1,4 @@
-import FV.E2E.CompiledEitherI
+import FV.E2E.BackendWorldNII
 import FV.E2E.DeadCleanupWitness
 
 /-!
@@ -74,5 +74,49 @@ theorem cleanupPRI_applies :
   exact backend_correct_world_pipelinePRI hsub (.cleanup hc) source_callsOne.1 source_callsOne.2
     (hcov _) (fun _ n _ => source_xcalls _ _ _ n) (fun n b h => by cases h) rfl hce hrel
     hargs htr fuel
+
+/-- `source` admits no call (no externs, no indirect call): `XNI` holds at every index. -/
+theorem source_xni (env' : Clif.Env) (F : BitVec 64 → Prop) (syms : String → Option Nat)
+    (c : BitVec 64) (X : ExtSem) :
+    XNI F syms (source.externs.map (·.2)) (indSigs source) c
+      (CallLg env' (source.externs.map (·.2)) (indSigs source)) X := by
+  have : indSigs source = [] := by decide
+  rintro n sig vals cm _ _ _ _ _ _ _ _ _ _ ⟨hk, -⟩
+  rw [this] at hk
+  rcases hk with ⟨e, he, -⟩ | ⟨hs, -⟩
+  · simp [source] at he
+  · simp at hs
+
+/-- **The premises of `backend_correct_world_ni_pipelinePRI` are jointly satisfied** by the
+closed cleanup compilation of `source`, including the non-interference clause's `XNI` (every
+index, the restricted environment), and the theorem applies. -/
+theorem ni_pipelinePRI_applies :
+    ∃ vc vcp af fa fb, CompiledEither source 0 vc vcp (spillAlloc vcp) af fa fb ∧
+      InstCallsOne source ∧ TryCallsOne source ∧ FormsCovered ⟨fa.k, af.slotBase⟩ vcp ∧
+      (∀ (env : Clif.Env) (XI : ExtSemI) (F : BitVec 64 → Prop) (c : BitVec 64) cs s n,
+        ReachN env ({ funcs := [] } : Clif.Program) cs s n →
+        XNI F (fun _ => none) (source.externs.map (·.2)) (indSigs source) c
+          (CallLg (env.only (Clif.Invoked env { funcs := [] } s)) (source.externs.map (·.2))
+            (indSigs source)) (XI.at n)) ∧
+      ∀ (env : Clif.Env) (XI : ExtSemI) (K : Nat) (F : BitVec 64 → Prop) (c : BitVec 64)
+        (w₀ : Arm.ArmState) (args : List Clif.Val) (cs : Clif.State),
+        ClifEntry source args cs →
+        RelW ⟨F, fun _ => none, af.slotBase, (RAFrame.compute vcp (spillAlloc vcp)).intBase⟩
+          source c cs.frame.slots cs.mem w₀ →
+        ArgsAtEntry F source.sig args w₀ →
+        TrapsExplicit env ({ funcs := [] } : Clif.Program) cs → ∀ fuel vals cm,
+        Clif.runLoop env { funcs := [] } fuel cs = .returned vals cm →
+        ∃ (us : List (Reg × Reg)) (outs : List CV) (w : Arm.ArmState),
+          us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
+          PrefixHold vals outs ∧ MemRel F (fun _ => none) cm w := by
+  obtain ⟨hsub, vc, vcp, af, fa, fb, hc, hcov, -⟩ := compiled_covered_exists
+  refine ⟨vc, vcp, af, fa, fb, .cleanup hc, source_callsOne.1, source_callsOne.2, hcov _,
+    fun env XI F c cs s n _ => source_xni _ _ _ _ _,
+    fun env XI K F c w₀ args cs hce hrel hargs htr fuel vals cm hrun => ?_⟩
+  obtain ⟨us, outs, w, h1, h2, h3, h4, -⟩ :=
+    backend_correct_world_ni_pipelinePRI (K := K) (XI := XI) hsub (.cleanup hc) source_callsOne.1
+      source_callsOne.2 (hcov _) (fun _ n _ => source_xcalls _ _ _ n) (fun n b h => by cases h)
+      rfl hce hrel hargs htr fuel vals cm hrun
+  exact ⟨us, outs, w, h1, h2, h3, h4⟩
 
 end E2E.DeadCleanupWitness
