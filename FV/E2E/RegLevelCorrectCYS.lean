@@ -7,11 +7,14 @@ import FV.E2E.RegLevelCorrectCW
 instruction, stores included; `csem Y` of a store needs the *written* bytes to avoid `Y`
 (`straightSem`'s `AccessOk`), so with the lock-step's `Ok w Y := Y = Zof F D cm` the guard fails
 at every store into a byte of `D` the CLIF memory has not yet initialised (#699). The lock-step
-needs only the *reads* to avoid `Y`. Here the guard admits, besides `csem Y`, a straight-line
-form whose allocated instructions read no memory (`MInst.memRd = false`: the stores other than
-the 128-bit SIMD&FP register-offset form), whose lines read nothing (`lines_noLoads`).
-`WGuard` implies `WGuardS` (`wGuardS_of_wGuard`); at `Ok := (· = F)` both are no restriction.
+needs only the *reads* to avoid `Y`. Here the guard admits, besides `csem Y`, any instruction
+that is not a load form (`MInst.loadForm`: loads, `ldar`, scalar SIMD&FP loads, atomic loops):
+a covered straight-line form of that kind reads no memory once allocated
+(`formOk_noLoad_memRd`, so its lines read nothing, `lines_noLoads`). The condition is syntactic,
+so it is invariant under the driver's renaming and retargeting. `WGuard` implies `WGuardS`
+(`wGuardS_of_wGuard`); at `Ok := (· = F)` both are no restriction.
 
+* `MInst.loadForm`, `formOk_noLoad_memRd`;
 * `WGuardS`, `csemVGS`, `csemVIGS`, `RL.semGS` (+ `_inv`, `_le`, `_agree`, `_eqF`,
   `csemVGS_of_csemVG`);
 * `realizes_op_nextNYS`, `realizes_op_nextNAS`: `realizes_op_nextNY`/`realizes_op_nextNA` with
@@ -24,14 +27,45 @@ namespace Backend.Proof
 
 open Backend E2E Backend.Proof.Driver
 
+/-- The forms whose allocated lines read world memory: the loads (`ldr`, `ldar`, the scalar
+SIMD&FP `ldr`) and the atomic loops. -/
+def _root_.Backend.MInst.loadForm : MInst → Bool
+  | .load .. | .loadAcquire .. | .fpuLoad .. | .atomicRmwLoop .. | .atomicCasLoop .. => true
+  | _ => false
+
+set_option maxHeartbeats 4000000 in
+/-- **A covered form other than the loads reads no memory once allocated**
+(`formOk_reads`' case analysis). -/
+theorem formOk_noLoad_memRd {ctx : FnCtx} {i : MInst} (h : FormOk ctx i = true)
+    (hl : i.loadForm = false) {regs : Array Reg} {i' : MInst} (hasg : i.assign regs = .ok i') :
+    i'.memRd = false := by
+  by_cases hmr : i'.memRd = false
+  · exact hmr
+  exfalso
+  unfold FormOk at h
+  split at h
+  all_goals first
+    | (simp [MInst.loadForm] at hl; done)
+    | exact hmr (formOk_fpuStore_memRd h hasg)
+    | (cases h; done)
+    | (assign_inv hasg <;> exact hmr rfl)
+    | skip
+  all_goals
+    simp only [Bool.and_eq_true, bne_iff_ne, ne_eq] at h
+    obtain ⟨hop, hm⟩ := h
+    unfold memOk at hm
+    split at hm <;> (try cases hm)
+    all_goals (assign_inv hasg <;> exact hmr (memRd_store hop))
+
 /-- **The guard of the world reads, reads only**: a set `Y ⊇ F` admitted by `Ok` at the world
-at which, for a world-reading instruction, `csem Y` gives a result, or the instruction is a
-straight-line form whose allocated instructions read no memory (a store). -/
+at which, for a world-reading instruction, `csem Y` gives a result, or the instruction is not a
+load form (`MInst.loadForm`: a store or a form without memory access, whose allocated lines read
+nothing, `formOk_noLoad_memRd`). -/
 def WGuardS (F : BitVec 64 → Prop) (ctx : FnCtx) (X : ExtSem)
     (Ok : Arm.ArmState → (BitVec 64 → Prop) → Prop) (i : MInst) (us : List CV) (w : Arm.ArmState) :
     Prop :=
-  ∃ Y, (∀ a, F a → Y a) ∧ Ok w Y ∧ (i.wReads = true → (∃ r, csem Y ctx X i us w = some r) ∨
-    (i.isAtomicLoop = false ∧ ∀ (regs : Array Reg) i', i.assign regs = .ok i' → i'.memRd = false))
+  ∃ Y, (∀ a, F a → Y a) ∧ Ok w Y ∧
+    (i.wReads = true → (∃ r, csem Y ctx X i us w = some r) ∨ i.loadForm = false)
 
 theorem wGuardS_of_wGuard {F : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem}
     {Ok : Arm.ArmState → (BitVec 64 → Prop) → Prop} {i : MInst} {us : List CV} {w : Arm.ArmState}
@@ -270,7 +304,8 @@ theorem realizes_allCYS {R : RL} (hR : R.Wf) {P : Arm.ArmState → Prop}
       obtain rfl := csem_ctl hct (R.sem_csem hsem)
       have hwi : i.wReads = true := by
         simp [MInst.wReads, hct]
-      have hsemY := (hwr hwi).imp_right (·.2)
+      have hsemY := (hwr hwi).imp_right fun h (regs : Array Reg) (i' : MInst) hasg =>
+        formOk_noLoad_memRd hfo h (regs := regs) (i' := i') hasg
       cases hn with
       | next hk =>
         have hnc : ∀ info, i ≠ .call info := by rintro info rfl; simp [MInst.isCtl] at hct
@@ -348,12 +383,12 @@ theorem realizes_allCYS {R : RL} (hR : R.Wf) {P : Arm.ArmState → Prop}
       case atomicRmwLoop ty op fl ra ro rd r1 r2 =>
         obtain ⟨n, c'', hm, hq', ht⟩ := realizes_rmwLoopNY hR hq hvb hi hstep fun ops' hops' => by
           rw [hops] at hops'; cases hops'
-          exact (hwr rfl).resolve_right fun h => by simp [MInst.isAtomicLoop] at h
+          exact (hwr rfl).resolve_right fun h => by simp [MInst.loadForm] at h
         exact fin Y hYF hYO n c'' hm hq' ht (hoc0 rfl)
       case atomicCasLoop ty fl ra re rx rd r1 =>
         obtain ⟨n, c'', hm, hq', ht⟩ := realizes_casLoopNY hR hq hvb hi hstep fun ops' hops' => by
           rw [hops] at hops'; cases hops'
-          exact (hwr rfl).resolve_right fun h => by simp [MInst.isAtomicLoop] at h
+          exact (hwr rfl).resolve_right fun h => by simp [MInst.loadForm] at h
         exact fin Y hYF hYO n c'' hm hq' ht (hoc0 rfl)
       case tryCall info ti =>
         have hc : ctl = .goto ti.handlers.length := by
@@ -480,7 +515,8 @@ theorem realizes_allCWS {R : RL} (hR : R.Wf) {P : Arm.ArmState → Prop}
       obtain rfl := csem_ctl hct (R.sem_csem hsem)
       have hwi : i.wReads = true := by
         simp [MInst.wReads, hct]
-      have hsemY := (hwr hwi).imp_right (·.2)
+      have hsemY := (hwr hwi).imp_right fun h (regs : Array Reg) (i' : MInst) hasg =>
+        formOk_noLoad_memRd hfo h (regs := regs) (i' := i') hasg
       cases hn with
       | next hk =>
         have hnc : ∀ info, i ≠ .call info := by rintro info rfl; simp [MInst.isCtl] at hct
@@ -587,13 +623,13 @@ theorem realizes_allCWS {R : RL} (hR : R.Wf) {P : Arm.ArmState → Prop}
       case atomicRmwLoop ty op fl ra ro rd r1 r2 =>
         obtain ⟨n, c'', hm, hq', ht, hs⟩ := realizes_rmwLoopNA hR hq hvb hi hstep fun ops' hops' => by
           rw [hops] at hops'; cases hops'
-          exact (hwr rfl).resolve_right fun h => by simp [MInst.isAtomicLoop] at h
+          exact (hwr rfl).resolve_right fun h => by simp [MInst.loadForm] at h
         exact fin Y hYF hYO n c'' hm hq' ht (hoc0 rfl)
           (toA hm (fun _ h => by cases h) (fun h => by rcases h with ⟨_, h⟩ | ⟨_, _, h⟩ <;> cases h) hs)
       case atomicCasLoop ty fl ra re rx rd r1 =>
         obtain ⟨n, c'', hm, hq', ht, hs⟩ := realizes_casLoopNA hR hq hvb hi hstep fun ops' hops' => by
           rw [hops] at hops'; cases hops'
-          exact (hwr rfl).resolve_right fun h => by simp [MInst.isAtomicLoop] at h
+          exact (hwr rfl).resolve_right fun h => by simp [MInst.loadForm] at h
         exact fin Y hYF hYO n c'' hm hq' ht (hoc0 rfl)
           (toA hm (fun _ h => by cases h) (fun h => by rcases h with ⟨_, h⟩ | ⟨_, _, h⟩ <;> cases h) hs)
       case tryCall info ti =>
