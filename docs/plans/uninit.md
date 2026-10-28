@@ -730,10 +730,15 @@ value-semantics register level (`regLevelCorrect_world_value` → `…_valuePRS`
 `backend_correct_world_ni_pipeline`'s NI clause counted, and the `CompiledEither` pipeline.
 Step 3f, as built: `FV/E2E/DeadCleanupRealizesC.lean`: `realizes_value_allC`
 (`realizes_value_all`'s proof on `realizes_allC`: each value step is matched by an `RL.sem` step
-of the same configuration, so the segment's call-state count carries over). Next on that chain:
-`realizes_value_allC_sp`, `regLevelCorrect_world_value_atCS`/`_worldCS`/`_worldPRS` (copies of
-`RegLevelCorrectPRS.lean`'s with `csemVI` → the counted `valueSemV`, `realizes_allC_sp` →
-`realizes_value_allC_sp`; the `rets`/halt cases as in `DeadCleanupRegLevel.lean`).
+of the same configuration, so the segment's call-state count carries over). Step 3g, as built:
+`FV/E2E/DeadCleanupRegLevelPRS.lean`: `valueSemVI` (the counted `valueSemV`),
+`realizes_value_allC_sp`, `regLevelCorrect_world_value_atCS`/`_worldCS`/**`_worldPRS`** (copies of
+`RegLevelCorrectPRS.lean`'s; `rets`/halt as in `DeadCleanupRegLevel.lean`). Next for the cleanup
+path: generalise `IselSimI`/`IselSimITry`'s step lemmas and `sim_runI` from `csem F fctx (XI.at n)`
+to a family `sem : Nat → Sem` (hypotheses: non-calls do not depend on the index; a probe `semB`
+agreeing on non-calls whose calls fail; `seqRun_csemI_le1` for `ISem.counted sem`), instantiate
+with `valueSem`; then `prune_correct` and the GOT flow for `valueSemVI`, and
+`backend_correct_world_cleanupPRI`.
 
 ## 6. Heap (separate gap, SEM2)
 
