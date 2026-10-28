@@ -2846,6 +2846,28 @@ copies of the pair driver and of the P chain, and the `CompiledEither` dispatch:
   region below its clobber area (`frameSize - clobberBytes saves`, as `progCallPRBRLR`);
   `lockRet_of`'s return index with `saves`; `fH_frame` against `NeedNI`'s new frame body.
 
+**The `DetPRBRU` consumer ripple and `InitOkRU` (UninitZ26, branch `agent/uninit-z28`, stacked on
+`agent/uninit-z27b`).** Old names kept as corollaries (`DetPRBR.toU`, `InitOkR.toU`); the program-
+level `…RU` theorems take the oracle route's premises only under `NeedSlots` (the proofs use them
+only in that branch; `HooksKeep`'s table step moved into it).
+- `LinkArmThmPRBG`: `thmPRBG_ofRU`, **`thmPRBG_allCRU`**; `LinkArmTrapE`: `stage2PRBZS_ofE_endsRU`,
+  `thmPRBTE_ofRU`, **`thmPRBTE_allCRU`**, `backend_correct_program_core_initETRU`,
+  **`backend_correct_program_initETRU`**; `LinkArmThmPRBGT`: `thmPRBGT_ofRU`, **`thmPRBGT_allCRU`**,
+  `backend_correct_program_core_initETXRU`, **`backend_correct_program_initETXRU`**;
+  `LinkArmProgramInitR`: `backend_correct_program_core_initEXRU`, **`backend_correct_program_initEXRU`**.
+- `DeadCleanupBinaryInitRU.lean`: **`InitOkRU`** (`baseRet`, `retCount`, `det : NeedSlots → ∀ M,
+  DetPRBRU`, `twin`, `hooks`, each under `NeedSlots`), `InitOkRU.detTab`/`detTabR`,
+  `InitOkRU.of_not_needSlots`, **`binary_correct_initRU`**, **`binary_correct_initTRU`**,
+  `model_init_sysSRU`, **`binary_correct_exec_initRU`**; `DeadCleanupBinaryInitTRU.lean`:
+  `model_init_sysSTRU`, **`binary_correct_exec_initTRU`**; `FV/Link/DeadCleanupExeInitRU.lean`:
+  **`compileExe_correct_initRU`**, **`compileExe_correct_initTRU`**. `DeadCleanupBinaryInitClosed`:
+  `baseRetOk_closed`, `hooksKeep_closed`, `retCount_of_B` (closed base).
+- Witnesses: **`InitTrapWitness.divz_traps_initRU`** (no premise: `1 udiv 0` has no slotted callee,
+  `InitOkRU.of_not_needSlots`); `InitSlotWitness.stale_read_returns_initRU` (premises: `DetPRBRU` and
+  `CallTwinCE` of the proof's system only).
+- Next: UninitZ29b's `InitOkRU.of_checks` (`FV/E2E/DeadCleanupBinaryInitRUOf.lean`) from its induction;
+  then the stale-read witness without premises.
+
 ## 6. Heap (separate gap, SEM2)
 
 `BaseOk.baseKeepsAllocs`/`baseNoAlloc` require base externs to allocate nothing whenever a program
