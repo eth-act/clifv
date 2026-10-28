@@ -17,7 +17,7 @@ arguments are `t`'s own: `canon_self_r`, from `placeArgs_self`) and on the calle
 * `setReg_self`, `placeArgs_self`: writing a state's own register values changes nothing;
 * `canon_self_r`: `canon` with the world's own argument values keeps every register but the pc;
 * `progOsCoreXPR`: `progOsCoreP` at `worldPR` from the call state's prophecy facts;
-* `progOsP`; `progOsRegP` (a `blr`; `XPR_none`, `XPR_ind`).
+* `progOsP`; `progOsRegP` (a `blr`; `XPR_none`, `XPR_ind`); `calleeOkP` (`XPR_base`, `XPR_ext`).
 -/
 
 namespace E2E
@@ -281,6 +281,102 @@ theorem progOsRegP (hL : L.Ok) [L.CrunOk] (hκ : L.Budget κ) {M : Nat}
           (hL.raBlr g hg _ hsite hreg h hh hdecl.1.1 _ hP.callPc) hsw (hQ t hQt hP.callPc).1
           (hQ t hQt hP.callPc).2 hx⟩
     · cases hx
+
+theorem XPR_base {M : Nat} {g : Clif.Function} {F : BitVec 64 → Prop}
+    {P : Nat → BitVec 64 → BitVec 8} {R : Nat → Arm.ArmState} {n : Nat} {m : String}
+    (hn : L.P.func? m = none) (uses : List CV) (w : Arm.ArmState) :
+    (L.XPR κ M g F P R n).call (some m) uses w = L.Xb.call (some m) uses w := by
+  simp [XPR, hn]
+
+theorem progXPR_ext {M : Nat} {F : BitVec 64 → Prop} {h : Clif.Function}
+    {uses : List CV} {Pn : BitVec 64 → BitVec 8} {Sn w : Arm.ArmState} {outs : List CV}
+    {w' : Arm.ArmState} (hx : L.progXPR κ M F h uses Pn Sn w = some (outs, w')) :
+    Arm.r .ERR w' = .None ∧ w'.program = w.program := by
+  have := L.progX_ext hx
+  exact ⟨this.1, this.2.trans (L.program_worldPR h Pn Sn w)⟩
+
+theorem XPR_ext (hL : L.Ok) {M : Nat} {g : Clif.Function} {F : BitVec 64 → Prop}
+    {P : Nat → BitVec 64 → BitVec 8} {R : Nat → Arm.ArmState} {n : Nat} {d : Option String}
+    {uses : List CV} {w : Arm.ArmState} {outs : List CV} {w' : Arm.ArmState}
+    (hx : (L.XPR κ M g F P R n).call d uses w = some (outs, w'))
+    (herr : Arm.r .ERR w = .None) : Arm.r .ERR w' = .None ∧ w'.program = w.program := by
+  cases d with
+  | some m =>
+    cases hpf : L.P.func? m with
+    | none =>
+      rw [L.XPR_base hpf] at hx
+      exact hL.baseExt _ _ _ _ _ (.inr ⟨m, rfl, hpf⟩) hx herr
+    | some h =>
+      rw [L.XPR_prog hpf] at hx
+      exact L.progXPR_ext hx
+  | none =>
+    cases uses with
+    | nil => exact hL.baseExt _ _ _ _ _ (.inl rfl) hx herr
+    | cons u args =>
+      cases hs : symCallee L.Xb L.P (lo64 u) with
+      | none =>
+        rw [L.XPR_none hs] at hx
+        exact hL.baseExt _ _ _ _ _ (.inl rfl) hx herr
+      | some h =>
+        rw [L.XPR_ind hs] at hx
+        split at hx
+        · exact L.progXPR_ext hx
+        · cases hx
+
+/-- **`calleeOk` for call number `n` with both prophecies, on `ThmPDE`**: the call contract of an
+activation of `g` for `XPR … n`, at the call states `Q` (masked registers of `R n`, `P n` below
+`sp`). -/
+theorem calleeOkP (hL : L.Ok) [L.CrunOk] (hκ : L.Budget κ) {M : Nat}
+    (ih : 0 < M → L.ThmPDE κ (M - 1)) {g : Clif.Function}
+    (hg : g ∈ L.P.funcs) {F G : BitVec 64 → Prop} {ra : BitVec 64} {s w₀ : Arm.ArmState}
+    (he : L.MachEntry κ M g F G ra s w₀)
+    {P : Nat → BitVec 64 → BitVec 8} {R : Nat → Arm.ArmState} {n : Nat}
+    {Q : Arm.ArmState → Prop}
+    (hQ : ∀ t, Q t → CallPc (L.A g).fa (L.A g).base (Arm.r .PC t) →
+      (∀ f, MaskedReg f → Arm.r f t = Arm.r f (R n)) ∧
+        ∀ a, StackBelow (κ M g) (spv t) a → t.mem a = P n a) :
+    CalleeOkGP Q F (κ M g) G s (CallAt (L.A g).fa (L.A g).base) (L.XPR κ M g F P R n) (L.hooks M)
+      (L.A g).vcp.CallSite (GotV (L.A g).vcp) where
+  os ctx info hsite := by
+    cases hd : info.dest with
+    | reg r =>
+      exact L.progOsRegP hL hκ ih hg he.imgF he.imgG he.imgS hsite (fun n => by rw [hd]; simp) ctx
+        hQ
+    | sym n =>
+    have hdest := hd
+    cases hpf : L.P.func? n with
+    | some h => exact L.progOsP hL hκ ih hg he.imgF he.imgG he.imgS ⟨hsite, n, hdest, hpf⟩ ctx hQ
+    | none =>
+      have hb : L.BaseDest (destOf info) := .inr ⟨n, by simp [destOf, hdest], hpf⟩
+      have h0 := hL.baseOs g hg info hsite hb F (κ M g) G s (CallAt (L.A g).fa (L.A g).base) ctx
+      intro t _ h1 h2 h3 c wh ops regs i' w outs w' hops hst hasg h4 hsw hal herr hsem
+      obtain ⟨d, us, ds⟩ := info
+      simp only at hdest
+      subst hdest
+      have hsem' : csem F ctx L.Xb (.call ⟨.sym n, us, ds⟩) (useVals ops regs t) w =
+          some (outs, w', .next) := by
+        rw [← csemV_sub hsem]; simp [csem, L.XPR_base hpf]
+      obtain ⟨s', hex, rest⟩ :=
+        h0 t h1 h2 h3 c wh ops regs i' w outs w' hops hst hasg h4 hsw hal herr hsem'
+      refine ⟨s', ?_, rest⟩
+      obtain ⟨us', ds', rfl⟩ := assign_call_sym hasg
+      simp only [callExec] at hex ⊢
+      rw [L.hooks_base (.inr ⟨n, rfl, hpf⟩) t (fun h => by cases h)]
+      exact hex
+  pc d u herr hal := by
+    cases d with
+    | none =>
+      cases hb : (blrTarget u).bind (symCallee L.Xb L.P) with
+      | none =>
+        rw [L.hooks_base (.inl rfl) u (fun _ => hb)]; exact hL.basePc _ _ (.inl rfl) herr hal
+      | some h => rw [L.hooks_none hb]; exact (L.pcall_pc M h u).2
+    | some n =>
+      cases hpf : L.P.func? n with
+      | none =>
+        rw [L.hooks_base (.inr ⟨n, rfl, hpf⟩) u (fun h => by cases h)]
+        exact hL.basePc _ _ (.inr ⟨n, rfl, hpf⟩) herr hal
+      | some h => rw [L.hooks_some hpf]; exact (L.pcall_pc M h u).2
+  ext _ _ _ _ _ hx herr := L.XPR_ext hL hx herr
 
 end LinkSys
 
