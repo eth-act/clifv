@@ -89,9 +89,12 @@ def replay (f : Clif.Function) :
   pure (ctx, ranges, out, sdefs, st0.nextVreg)
 
 /-- Cranelift's vreg number of every vreg number `lowerFunction f` uses (values by id,
-temporaries from `firstTemp` on; `bvs`, `ranges` from `replay f`), and the number of vregs. -/
+temporaries from `firstTemp` on; `bvs`, `ranges` from `replay f`), and the number of vregs.
+`drop b j`: statement `j` of block `b` was skipped (`skipDead`), so, as in Cranelift, which never
+lowers it, its temporaries get no number. -/
 def numbering (f : Clif.Function) (ctx : Ctx) (ranges : Array (Nat × Nat))
-    (bvs : Array BlockVregs) (firstTemp : Nat) : Except String (Std.HashMap Nat Nat × Nat) := do
+    (bvs : Array BlockVregs) (firstTemp : Nat) (drop : Nat → Nat → Bool) :
+    Except String (Std.HashMap Nat Nat × Nat) := do
   let reqs ← Stock.allocationRequests f ranges
   let alloc := Stock.allocateRequests ctx.valTy.size ctx.insts.size reqs
   let mut m : Std.HashMap Nat Nat := {}
@@ -112,7 +115,8 @@ def numbering (f : Clif.Function) (ctx : Ctx) (ranges : Array (Nat × Nat))
     for t in [bv.term.1:bv.term.2] do
       m := m.insert t next
       next := next + 1
-    for (lo, hi) in bv.stmts.reverse do
+    for ((lo, hi), j) in bv.stmts.zipIdx.reverse do
+      if drop bi j then continue
       for t in [lo:hi] do
         m := m.insert t next
         next := next + 1
@@ -206,6 +210,34 @@ def rename (m : Std.HashMap Nat Nat) (next : Nat) (vc : VCode) : VCode :=
       insts := b.insts.map (·.mapRegs R)
       params := b.params.map R
       branchArgs := b.branchArgs.map R } }
+
+/-- `skipDead f vc` with the statements it skipped (`drop b j`: statement `j` of block `b`;
+none when the skip does not apply), recomputed as `skipDead` computes them. -/
+def skipDeadDrops (f : Clif.Function) (vc : VCode) : VCode × (Nat → Nat → Bool) :=
+  match buildCtx f with
+  | .error _ => (vc, fun _ _ => false)
+  | .ok (ctx, _, st0) =>
+    match lowBlocks f (stmtCall ctx) (termCallF ctx) (tryCallF ctx) 0 f.blocks st0
+        f.blocks.length with
+    | none => (vc, fun _ _ => false)
+    | some bl =>
+      let R := renOf (gnAt (gnTable st0.nextVreg (aliasOf f bl)))
+      let drop := skipAt f (skipDrops f R bl vc)
+      let mask := skipMask f R bl vc drop
+      if deleteCheck vc mask then (deleteWith vc mask, drop) else (vc, fun _ _ => false)
+
+theorem skipDeadDrops_fst (f : Clif.Function) (vc : VCode) :
+    (skipDeadDrops f vc).1 = skipDead f vc := by
+  unfold skipDeadDrops skipDead
+  cases buildCtx f with
+  | error => rfl
+  | ok x =>
+    obtain ⟨ctx, _, st0⟩ := x
+    dsimp only
+    cases lowBlocks f (stmtCall ctx) (termCallF ctx) (tryCallF ctx) 0 f.blocks st0
+        f.blocks.length with
+    | none => rfl
+    | some bl => dsimp only; split <;> rfl
 
 /-- Is `a` the VCode `b`, block by block? -/
 def sameCode (a b : VCode) : Bool :=
@@ -336,23 +368,31 @@ def reshape (vcp : VCode) (ir sdefs : Std.HashSet Nat) (m : Std.HashMap Nat Nat)
          edges := some (edges'.map (·.map (·.map R))), dropInst, dropOps,
          why := s!"cranelift (args pairs -{nArgs}, insts -{dropped}, sret call defs -{nSret}, edge blocks -{gone.size})" }
 
-/-- regalloc2's input for the prepared `vcp` of `f` (`deadCleanup`: the allocator's input was
-pruned), in Cranelift's form when `vcp` is `lowerFunction f`'s code. -/
+/-- regalloc2's input for the prepared `vcp` of `f` (`deadCleanup`: the allocator's input went
+through the cleanup stage: on subset E possibly Cranelift's skip of unused statements, `skipDead`,
+then the dead-producer cleanup), in Cranelift's form when `vcp` is `lowerFunction f`'s code. -/
 def shape (f : Option Clif.Function) (deadCleanup : Bool) (vcp : VCode) : Shape :=
   match f with
   | none => .same vcp "no CLIF function"
   | some f =>
-    let legacy : Except String VCode := do
+    let noDrop : Nat → Nat → Bool := fun _ _ => false
+    let legacy : Except String (VCode × (Nat → Nat → Bool)) := do
       let vc ← lowerFunction f
-      prepare (if deadCleanup then DeadCleanup.prune vc else vc)
+      let lv ← prepare (if deadCleanup then DeadCleanup.prune vc else vc)
+      if !deadCleanup || sameCode lv vcp || !Compile.functionE f then return (lv, noDrop)
+      -- the skip ran (`cleanupStageChecked`): its statements are not lowered
+      let (sk, drop) := skipDeadDrops f vc
+      match prepare (DeadCleanup.prune sk) with
+      | .ok lv' => return (if sameCode lv' vcp then (lv', drop) else (lv, noDrop))
+      | .error _ => return (lv, noDrop)
     match legacy with
     | .error e => .same vcp s!"not lowerFunction's code: {e}"
-    | .ok lv =>
+    | .ok (lv, drop) =>
       if !sameCode lv vcp then .same vcp "not lowerFunction's code (another lowering route)"
       else
         let r := do
           let (ctx, ranges, bvs, sdefs, firstTemp) ← replay f
-          pure (← numbering f ctx ranges bvs firstTemp, sdefs)
+          pure (← numbering f ctx ranges bvs firstTemp drop, sdefs)
         match r with
         | .error e => .same vcp s!"numbering: {e}"
         | .ok ((m, next), sdefs) =>
