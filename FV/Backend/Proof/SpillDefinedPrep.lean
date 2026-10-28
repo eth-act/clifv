@@ -174,7 +174,7 @@ variable {vc : VCode} (hv : LowOk vc) {ss0 ps0 ss1 ps1 ss2 : Array (Array Nat)} 
 
 local notation "V1" => Prep.keep vc.blocks (reachable ss0)
 local notation "N0" => Prep.next0Of (Prep.keep vc.blocks (reachable ss0))
-local notation "V3" => Array.map (fun i => (B ++ E)[i]!) (rpo ss2)
+local notation "V3" => Array.map (fun i => (B ++ E)[i]!) (prepOrder B.size ss2)
 
 include hS in
 theorem srcOf_kept {k : Nat} (hk : k < (V1).size) (hkB : k < B.size) :
@@ -341,14 +341,14 @@ theorem defAvail_prepare {vc vcp : VCode} (hv : LowOk vc) (hp : prepare vc = .ok
   obtain ⟨h10, hV0, hn1, hn2, hR, hRn, hR0⟩ := basics hv cs0 cs2 hS
   -- the sets of the kept blocks' starts grow
   have hstart : ∀ succs preds,
-      ({ vc with blocks := (rpo ss2).map fun i => (B ++ E)[i]! } : VCode).cfg = .ok (succs, preds) →
+      ({ vc with blocks := (prepOrder B.size ss2).map fun i => (B ++ E)[i]! } : VCode).cfg = .ok (succs, preds) →
       ∀ q k (hk : k < (Prep.keep vc.blocks (reachable ss0)).size) (hkB : k < B.size) b0
         (hb0 : b0 < vc.blocks.size),
-      ((rpo ss2).map fun i => (B ++ E)[i]!)[q]? = some B[k] →
+      ((prepOrder B.size ss2).map fun i => (B ++ E)[i]!)[q]? = some B[k] →
       (Prep.keep vc.blocks (reachable ss0))[k] = vc.blocks[b0] → ∀ x,
       defStart vc ss0 ps0 M b0 x = true →
-      defStart { vc with blocks := (rpo ss2).map fun i => (B ++ E)[i]! } succs preds
-        (prepSets ((rpo ss2).map fun i => (B ++ E)[i]!)
+      defStart { vc with blocks := (prepOrder B.size ss2).map fun i => (B ++ E)[i]! } succs preds
+        (prepSets ((prepOrder B.size ss2).map fun i => (B ++ E)[i]!)
           (Prep.next0Of (Prep.keep vc.blocks (reachable ss0))) M) q x = true := by
     intro succs preds hc3 q k hk hkB b0 hb0 hq e0 x hx
     unfold defStart at hx ⊢
@@ -358,11 +358,11 @@ theorem defAvail_prepare {vc vcp : VCode} (hv : LowOk vc) (hp : prepare vc = .ok
     · exact .inl hx
     · exact .inr (entryStored_prep hv hc0 hc1 cs2 hS hns hc3 (hed succs preds hc3) hk hkB hq hb0
         e0 hx)
-  refine ⟨prepSets ((rpo ss2).map fun i => (B ++ E)[i]!)
+  refine ⟨prepSets ((prepOrder B.size ss2).map fun i => (B ++ E)[i]!)
     (Prep.next0Of (Prep.keep vc.blocks (reachable ss0))) M, ⟨?_, ?_⟩, ?_⟩
   · -- uses
     intro succs preds hc3 q vb' k i' ops hvb' hi' hops o ho hu
-    change ((rpo ss2).map fun i => (B ++ E)[i]!)[q]? = some vb' at hvb'
+    change ((prepOrder B.size ss2).map fun i => (B ++ E)[i]!)[q]? = some vb' at hvb'
     rcases cls3 hv cs0 cs1 cs2 hS hvb' with ⟨kk, hk, hkB, -, rfl⟩ | ⟨e, -, he, -⟩
     · obtain ⟨b0, hb0, e0, -⟩ := v1_vc hv hk
       have hops_eq := ops_kept hS hk hkB
@@ -382,9 +382,9 @@ theorem defAvail_prepare {vc vcp : VCode} (hv : LowOk vc) (hp : prepare vc = .ok
       exact (jump_noUse hops ho hu).elim
   · -- edges
     intro succs preds hc3 q vb' ss' s sb' hvb' hss hs hsb' v hv'
-    change ((rpo ss2).map fun i => (B ++ E)[i]!)[q]? = some vb' at hvb'
-    change ((rpo ss2).map fun i => (B ++ E)[i]!)[s]? = some sb' at hsb'
-    have cs3 : Prep.CfgSpec ((rpo ss2).map fun i => (B ++ E)[i]!) succs := Prep.cfg_spec hc3
+    change ((prepOrder B.size ss2).map fun i => (B ++ E)[i]!)[q]? = some vb' at hvb'
+    change ((prepOrder B.size ss2).map fun i => (B ++ E)[i]!)[s]? = some sb' at hsb'
+    have cs3 : Prep.CfgSpec ((prepOrder B.size ss2).map fun i => (B ++ E)[i]!) succs := Prep.cfg_spec hc3
     obtain ⟨j, hj, hjs⟩ := List.getElem_of_mem hs
     have hj' : ss'[j]? = some s := by simp [← hjs]
     obtain ⟨vb'', t3, l', hvb'', ht3, htj3, hlab⟩ := succ3 cs3 hss hj'
@@ -430,8 +430,8 @@ theorem defAvail_prepare {vc vcp : VCode} (hv : LowOk vc) (hp : prepare vc = .ok
       rw [e0] at hops_eq
       have hAA : ∀ x, defAt vc.blocks[b0].insts (defStart vc ss0 ps0 M b0)
           vc.blocks[b0].insts.size x = true →
-          defAt B[kk].insts (defStart { vc with blocks := (rpo ss2).map fun i => (B ++ E)[i]! }
-            succs preds (prepSets ((rpo ss2).map fun i => (B ++ E)[i]!)
+          defAt B[kk].insts (defStart { vc with blocks := (prepOrder B.size ss2).map fun i => (B ++ E)[i]! }
+            succs preds (prepSets ((prepOrder B.size ss2).map fun i => (B ++ E)[i]!)
               (Prep.next0Of (Prep.keep vc.blocks (reachable ss0))) M) q)
             B[kk].insts.size x = true := by
         intro x hx
@@ -492,12 +492,12 @@ theorem defAvail_prepare {vc vcp : VCode} (hv : LowOk vc) (hp : prepare vc = .ok
       simp [hv']
   · -- nothing defined on entry
     intro v
-    have hRs : 0 < (rpo ss2).size := (Array.getElem?_eq_some_iff.mp hR0).1
+    have hRs : 0 < (prepOrder B.size ss2).size := (Array.getElem?_eq_some_iff.mp hR0).1
     have h0B : 0 < B.size := by rw [hS.size]; exact h10
-    have hV30 : ((rpo ss2).map fun i => (B ++ E)[i]!)[0]? = some B[0] := by
+    have hV30 : ((prepOrder B.size ss2).map fun i => (B ++ E)[i]!)[0]? = some B[0] := by
       obtain ⟨hi, e⟩ := Prep.v3_get hR hRs
       rw [e]; congr 1
-      have : (rpo ss2)[0] = 0 := Option.some.inj ((Array.getElem?_eq_getElem hRs).symm.trans hR0)
+      have : (prepOrder B.size ss2)[0] = 0 := Option.some.inj ((Array.getElem?_eq_getElem hRs).symm.trans hR0)
       simp only [this]
       exact Array.getElem_append_left h0B
     have hV1vc : (Prep.keep vc.blocks (reachable ss0))[0] = vc.blocks[0]'hv.nonempty :=

@@ -31,3 +31,20 @@ cargo fv build --keep-temps
 exe=$(ls -t target/fv/plain/aarch64-unknown-linux-musl/debug/build/fv-demo/*/out/fv_demo 2>/dev/null | head -n 1 || true)
 [ -n "$exe" ] || { echo "regen-crate-proofs: no fv_demo executable" >&2; exit 1; }
 cargo fv link-proof --exe "$exe" --prune --lean "$OUT/FvDemo.lean" --module FvDemo
+
+# Crates/InScopeInputs (Crates.InScopeWitness): a_arith and fv-demo compiled by `pipeT`'s pipeline
+# (`lean-backend --pipeline-t`, the compiler `crate_correct_inScope` covers), own target
+# directories; `link-check --input-only` writes the input alone.
+export FV_PIPELINE_T=1
+cd "$ROOT/examples/survey"
+CARGO_TARGET_DIR=$PWD/target/pipeline-t cargo fv test -p a_arith --keep-temps || true
+CARGO_TARGET_DIR=$PWD/target/pipeline-t cargo fv link-proof --exe /a_arith/ --exe /values- --crate a_arith || true
+"$ROOT/.lake/build/bin/link-check" target/pipeline-t/fv/link-proof \
+  --input-only "$OUT/InScopeInputs/AArith.lean" --module InScopeInputs.AArith
+cd "$ROOT/examples/fv-demo"
+CARGO_TARGET_DIR=$PWD/target/pipeline-t cargo fv build --keep-temps
+exe=$(ls -t target/pipeline-t/fv/plain/aarch64-unknown-linux-musl/debug/build/fv-demo/*/out/fv_demo 2>/dev/null | head -n 1 || true)
+[ -n "$exe" ] || { echo "regen-crate-proofs: no pipeline-t fv_demo executable" >&2; exit 1; }
+CARGO_TARGET_DIR=$PWD/target/pipeline-t cargo fv link-proof --exe "$exe" || true
+"$ROOT/.lake/build/bin/link-check" target/pipeline-t/fv/link-proof \
+  --input-only "$OUT/InScopeInputs/FvDemo.lean" --module InScopeInputs.FvDemo

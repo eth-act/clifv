@@ -1977,6 +1977,61 @@ modules; no existing statement changed; no generated-code change; standard axiom
   kernel-checked linked run (`linkedCall` is noncomputable, so the `machC` mirror needs an equality
   proof per call); not built.
 
+**Executable level, stale-read witness, as built (UninitZ24, branch `agent/uninit-z24`).** New
+leaf modules; no existing statement changed; no generated-code change; standard axioms only.
+- `FV/E2E/LinkPlaceBTable.lean` (the oracle-dependence lemma): `Mem.withTable` (replace the
+  slot-byte table, keep counter/sps/frames), `EnvTable` (`envTable_empty`), `evalInst_withTable`,
+  `enterSlots_withTable`, `enterFunc_withTable`, `step_withTable`, **`runLoop_withTable`**,
+  `initState_withTable`, **`runWith_withTable`**: a returning run whose counter advances by `E`
+  gives the same run under any table agreeing on the entries `next+1..next+E` (the only entries
+  the run reads). Witness `LinkPlaceBTableWitness.run_f_junk` (junk outside entries 1, 2 → `82`).
+- `FV/E2E/LinkMachEval.lean` (certified evaluator of the noncomputable linked machine):
+  `insnAtC`/`insnAt_eq_insnAtC`, `retOfB`/`retOf_iff`, `callPcB`/`callPc_iff`, `callsBefore_eq`,
+  `callsBefore_noCalls`, `LinkSys.machC`/`okC`, **`LinkSys.runX_mach_eq`** (if `okC`, the
+  machine's first steps are the mirror's).
+- `FV/Link/DeadCleanupExeInitSlotWitness.lean`: `f = r∘h` compiled by the shipped compiler into
+  an executable; concrete caller state `rC`; `modelOf_eq`, `tab1`/`tab2` (entries 1, 2 of the
+  machine's own table `iniB` = memory at the machine's calls of `h`, `r`, via `tabB_at` +
+  mirror), `run_init` (CLIF run under `iniB` returns 82), `run_zero` (zero table → 41),
+  `clifRunB`, **`stale_read_returns`**: `compileExe_correct_init` on that run, `ExecRefines … rC
+  (.returned [82] cm)`. Left: `OutsideCall` of `rC` (dischargeable: `enterFunc_symbols`,
+  `enterSlots_allocs`, image ≥ 0x1000000 > sp) and `InitOk`.
+- Decision: the oracle-dependence lemma was not harder than the per-step machC equality and is
+  reusable; both were built (the lemma for the CLIF side, the mirror for the machine table).
+- Open: (2) trapping CLIF runs under the oracle (`compileExe_correct_init` trap variant; the
+  PR-route pipeline has the trap clause, `backend_correct_world_pipelinePRGYNX`, but
+  `ThmPRBRLE`/`ThmPRBG` are stated for returning runs only); (3) `InitOkR` on UninitZ25b's
+  `thmPRBRLE_allCR`/`thmPRBG_allCR` (#719, `DetPRBR`) and `CallTwinCE` (#716) once merged.
+
+**Stale-read witness completed; traps under the oracle, linking level (UninitZ25, branch
+`agent/uninit-z24`, PR #720).** New leaf modules and declarations; no existing statement changed;
+standard axioms only (witnesses: native_decide certificates).
+- `DeadCleanupExeInitSlotWitness`: `entryB` (one native_decide over the caller state `rC`),
+  **`outsideCall`** (the entry contract `OutsideCall … rC [41] csI.mem`: pc/err/sp/x30 by the
+  certificate, `stackFree` from the code lying at and above `0x1000000` (> sp = `0x100000`),
+  `args` (`locsOf f.sig = [x0]`), bytes/image/valid vacuous (`f`'s entry allocates nothing),
+  symbols from `initState_symbols`), **`stale_read_returns_init`**: the executable returns `82`
+  with only `InitOk` left.
+- `FV/E2E/BackendPrefixAtEnds.lean`: the prefix theorems used the returning run only to pass each
+  call; `RunEnds` (returns or traps), `runLoop_ends_reachN`, `next_of_ends`,
+  `not_explicitTrap_of_callLike`, `iselSim_prefixWI_next{,_cleanup}_ends` (a call step does not
+  trap under `TrapsExplicit`; a `try_call`'s continuation does not trap, `term_step_tryG`), the
+  chain up to **`prefix_relatedPRI_atEG_ends`**.
+- `FV/E2E/LinkArmTrapE.lean`: `trapsExplicit_envOfB`, `Stage2PRBZSEnds` /
+  **`stage2PRBZS_ofE_ends`** (stage 2 for a run that returns or traps), `ThmPRBTE` (trapping
+  counterpart of `ThmPRBRLE`: `∃ n, TrapAt … (runX (mach M g) n s)`), **`thmPRBTE_of`**,
+  **`thmPRBTE_allC`** (the callees of a trapping run return: `ThmPRBRLE` one level down; the trap
+  is the pipeline's trap clause, `backend_correct_world_pipelinePRGYNG`),
+  **`backend_correct_program_core_initET`**, **`backend_correct_program_initET`** (premise
+  `TrapsExplicit` as in `backend_correct_program_budgetX`).
+- Open: the trapping counterpart of `ThmPRBG` (`RunGoodL` for a trapping run under the oracle),
+  hence the executable-level trap theorem: `thmPRBG_of`'s call data (`hcall`) needs, for each
+  machine call before the trap, a CLIF calling state of that count; the returning route gets it
+  from the counted return (`iselSim_relWIN`: `∃ u, ReachN … u w.2`, `forward_lastC`), the trap
+  clause has no count (`VTrapFrom`), nor a per-state trace in the PR route
+  (`regLevelCorrect_world_atCSNX` drops `trap_udf`/`trap_trapIf`'s traces). Needed: a counted
+  trap clause through `sim_runGN` → `regLevelCorrect_world_atCSNX` → `…pipelinePRGYNX`.
+
 **Step 3h, as built (UninitZ10b): the call-count premises are theorems.** `InstCallsOne f` and
 `TryCallsOne f` hold for every `f` (`E2E.instCallsOne_all`, `E2E.tryCallsOne_all`,
 `FV/E2E/IselCallsOneAll.lean`), from `FV/Backend/Proof/IselCallsOne.lean`:
