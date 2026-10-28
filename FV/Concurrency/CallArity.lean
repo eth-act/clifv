@@ -141,7 +141,7 @@ theorem resume_allAX {RA : RL} (hRA : RA.Wf) (hgv : RA.gv = fun _ _ => False)
     (hpc : Arm.r .PC y = Arm.r .PC x + 4#64) (herr : Arm.r .ERR y = .None)
     (hsp : spOf y = spOf x) (hmem : ∀ a, RA.FK a → y.mem a = x.mem a)
     (hcs : ∀ r ∈ calleeSaved, ckeep r (regVal y r) = ckeep r (regVal x r))
-    (hprog : y.program = x.program)
+    (hprog : y.program = x.program) (hfp : xreg 29 y = xreg 29 x)
     {usB : List (Reg × Reg)} {ysB : List CV} {rvals : List Clif.Val}
     (hus : ∀ (j : Nat) (v q : Reg) (u : CV), usB[j]? = some (v, q) → ysB[j]? = some u →
       regVal y q = u)
@@ -185,7 +185,7 @@ theorem resume_allAX {RA : RL} (hRA : RA.Wf) (hgv : RA.gv = fun _ _ => False)
     rw [hrl, hlen]
     exact returns_le_sigRets _
   exact resume_allX hRA hgv hX0 H hchk hlow hind hv hnt hout0 hΓF hslot hsym H3 hc hvdef hq
-    hA hP hat hm2 hm3 hm4 hpc herr hsp hmem hcs hprog hus hpreB hB hval hmemB hbody hcl hext
+    hA hP hat hm2 hm3 hm4 hpc herr hsp hmem hcs hprog hfp hus hpreB hB hval hmemB hbody hcl hext
     huniq hvals htys hrty hregs habi
 
 /-- **`resume_all` with `habi` from checks** (module doc): the def registers by
@@ -240,12 +240,13 @@ theorem resume_allA {RA RB : RL} (hRA : RA.Wf) (hRB : RB.Wf) (hgv : RA.gv = fun 
         vV'' ∧
       PMatch vc RA.vc (csem RA.F RA.ctx RA.X) (cEvs RA.F RA.ctx) L ss' (.run vV'') (.run vP'') ∧
       MatchRun cc ins ckeep r₀ cM'' vP'' ∧ Q RA y (.run cM'') ∧ AInv RA (.run cM'') := by
-  obtain ⟨hpc, herr, hsp, hmem, hcs⟩ := hy
+  obtain ⟨hpc, herr, hsp, hmem, hx29, hcs⟩ := hy
   obtain ⟨he, hsp0, hra⟩ := ArmAllocThread.entry_premises hRB hent hfx hlr
   exact resume_allAX hRA hgv hX0 H hchk har hlow hind hv hnt hout0 hΓF hslot hsym H3 hc hvdef hq
     hA hP hat hm2 hm3 hm4 (hpc.trans hra) herr (hsp.trans hsp0)
     (fun a ha => (hmem a (hG a ha)).trans (hm0 a ha))
-    (fun r hr => (hcs r hr).trans ((hr₀B r hr).trans (he r hr))) hprog hus hpreB hdr hB hval
+    (fun r hr => (hcs r hr).trans ((hr₀B r hr).trans (he r hr))) hprog
+    (hx29.trans (hfx (.GPR 29#5) (by simp) (by simp))) hus hpreB hdr hB hval
     hmemB hbody hcl hext huniq hvals htys hrty hregs
 
 end Concurrency.CallArity
