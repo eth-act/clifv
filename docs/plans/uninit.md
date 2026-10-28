@@ -2813,6 +2813,29 @@ copies of the pair driver and of the P chain, and the `CompiledEither` dispatch:
   its rebase on this branch), `Lsl` witnesses of the new theorems, measurements of the three
   checks (#713), PR to the merge train.
 
+**The induction witnessed; `L.std.BaseNIX` (UninitZ30b, branch `agent/uninit-z27b`, #713).**
+- `LinkArmLockRetOf.lean`: `MachEntry.ofWithCrun` (`MachEntry` is a structure, so `L.BaseNIX` and
+  `(L.withCrun c).BaseNIX` are not defeq), `BaseNIX.withCrun`, **`BaseNIX.std`**,
+  **`OkDNX.stdBaseNIX`** (the `L.std.BaseNIX` premise of `InitOkRU.of_checks` on
+  `agent/uninit-z28`, from `L.BaseNIX` or the trusted `OkDNX`).
+- `LinkArmDetInductionWitness.lean` on `Lsl = L0.std` (`f` calls `h`, then `r`, which reads the slot
+  bytes `h` left behind): every premise of the induction holds, none vacuously. The three checks
+  (`x30Free_Lsl`, `retsLow_Lsl`, `blrLow_Lsl`, one `native_decide`), **`needNI_Lsl`** (`h`'s frame
+  has a slot region, so `NeedNI`, `BaseNIX` and the two-run route are live), `hookNIX_L0` (the
+  closed base's `pc + 4` call hook and identity TLS), `baseNIX_Lsl` by `BaseNIX.std`. Then,
+  unconditional at every depth: **`detInduction_Lsl`**, `thmPRBRLE_allK_Lsl`,
+  `detRunPRBCRU_allK_Lsl`, **`detPRBRU_allK_Lsl`**, `callTwinCET_allK_Lsl`,
+  **`detTabPRBE_allK_Lsl`**, **`detTabPRBr_allK_Lsl`**, and the chain's steps with every premise
+  discharged (`lockRet_of_Lsl`, `callLock_Lsl`, `stage2PRBZSE_Lsl`, `detTabPRBE_of_Lsl`,
+  `thmPRBRLE_allCRU_Lsl`, `canonCallTwin_LslK`, `hcallLockXP_LslK`, `progXBT_rel_LslK`,
+  `xnifXPBTGY_LslK`, `hooks_lock_base_LslK`, `hooks_lock_tls_LslK`, `detTabPRBr_ofCT_Lsl`,
+  `detPRBRU_ofC_Lsl`).
+- `BackendTwoRunEitherKWitness.lean`: `backend_twoRunLERWZIUPF_eitherK` on both artifacts, the
+  lock set inside `F` at every index before the return: `r_twoRunLERWZIUPF_eitherK_Lsl` (legacy,
+  the `…PK` chain) and `source_twoRunLERWZIUPF_eitherK` (cleanup, the `…VK` chain).
+- Audit `scripts/audit/sem1-det.lean` (32 theorems: compiler theorems standard axioms; witnesses
+  also the `native_decide` ones).
+
 ## 6. Heap (separate gap, SEM2)
 
 `BaseOk.baseKeepsAllocs`/`baseNoAlloc` require base externs to allocate nothing whenever a program
