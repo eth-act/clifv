@@ -909,6 +909,28 @@ dispatcher `realizes_allCW` and the counted chain on `QW` exporting the segmenta
 two-run induction (`lockstep_runX` with `stEqOutX_line` per index, guards from `WReadsIn` at the
 aligned VCode step), and `hGd` for the pair.
 
+**Route (a), continued (UninitZ15b, branch `agent/uninit-z14b`, PR #695).** *Finding (decided
+conservatively):* the chosen entry witness `RL.entryW` was a choice over a property that mentioned
+`StRel R` (the entry state, `K`, `G`), so two activations from different entries could choose
+different witnesses and `RL.segLen_eq`'s premise `hW` was unprovable for the two runs of item (3).
+`RL.EntryWit` now mentions the code data only (the pc of the label line and the block's lines at
+the witness); `qW_entry` keeps its statement. New: `RL.SameCode` (same `vc rf af fa base psF`),
+`RL.entryW_congr`, `RL.nextW_congr`, `RL.emptyW_congr`, `RL.nextW_run`/`RL.emptyW_run` (only blocks
+and items matter), **`RL.segLen_eq_same`** (two activations of one compiled function, one witness,
+configurations of the same blocks/items, agreeing pcs → same segment length). Remaining cases:
+`realizes_tryCallNA` (RegLevelTryNA.lean); the epilogue `ret_machineNA` (exactly `RL.retLen`
+steps; `ret_machineNR` is now its corollary); the prologue `q_initNA` (exactly the prologue's
+length, `QW` at the code-only initial witness `RL.initW`, `RL.initW_congr`; `q_initNR` is its
+corollary). Dispatcher (RegLevelCorrectCW.lean): `MConf.ShapeEq`, **`MStep.shapeEq`** (two steps
+from one configuration reach the same block and items; only havocked defs differ),
+`RL.SegLenA` (`SegLen` inside the activation, no step at a return/halt), `realizes_zeroNA`
+(`args`, `emitIsland`), **`realizes_allCW`** (`realizes_allCY` from `QW`, ending at
+`RL.nextW`, `ShapeEq` with the given step, `SegLenA`). All print the standard axioms.
+Still open: the counted chain exporting the segmentation (plan: run `RealizesCP.countedRun`/
+`forward` with `Q u c := ` "a segment chain from the post-prologue state reaches `(u, c)` at a
+witness", the chain recording `(n_k, W_k, shape_k)`), the two-run induction, `thmPDERX_det_of`
+and its corollaries, and `hGd`.
+
 ## 6. Heap (separate gap, SEM2)
 
 `BaseOk.baseKeepsAllocs`/`baseNoAlloc` require base externs to allocate nothing whenever a program

@@ -370,4 +370,54 @@ theorem realizes_allCW {R : RL} (hR : R.Wf) {P : Arm.ArmState → Prop}
           exact finT n c'' hm hq' ht (hoc0 rfl)
             (toA hm (fun _ h => by cases h) (fun h => by rcases h with ⟨_, h⟩ | ⟨_, _, h⟩ <;> cases h) hs)
 
+/-- **A chain of realised segments** from `s` at witness `W` and configuration `c`: the
+segment lengths and the configurations reached, in order, each segment cut at its first arrival
+(`RL.SegLenA`) and ending at the next witness. Ends at `u`, witness `W'`, configuration `c'`. -/
+inductive RL.SegChain (R : RL) (s : Arm.ArmState) (W : Nat × PState × List Line)
+    (c : MConf CV Arm.ArmState) :
+    List (Nat × MConf CV Arm.ArmState) → Arm.ArmState → Nat × PState × List Line →
+      MConf CV Arm.ArmState → Prop
+  | nil : RL.SegChain R s W c [] s W c
+  | snoc {l : List (Nat × MConf CV Arm.ArmState)} {u : Arm.ArmState}
+      {W1 : Nat × PState × List Line} {c1 c2 : MConf CV Arm.ArmState} {n : Nat} :
+      RL.SegChain R s W c l u W1 c1 → R.SegLenA W1.1 W1.2.1 W1.2.2 c1 c2 u n →
+      RL.SegChain R s W c (l ++ [(n, c2)]) (iterN R.step n u)
+        (R.nextW W1.1 W1.2.1 W1.2.2 c1 c2) c2
+
+/-- **The chain's end is its start after the sum of the segment lengths.** -/
+theorem RL.SegChain.iter {R : RL} {s : Arm.ArmState} {W : Nat × PState × List Line}
+    {c : MConf CV Arm.ArmState} {l : List (Nat × MConf CV Arm.ArmState)} {u : Arm.ArmState}
+    {W' : Nat × PState × List Line} {c' : MConf CV Arm.ArmState}
+    (h : R.SegChain s W c l u W' c') : u = iterN R.step (l.map Prod.fst).sum s := by
+  induction h with
+  | nil => rfl
+  | snoc _ _ ih =>
+    rw [ih, List.map_append, List.sum_append, ← iterN_add]
+    simp [Nat.add_comm]
+
+/-- **`realizes_allC_spY` exporting the segmentation**: under `Q` = "a chain of realised
+segments from `(s₀, W₀, c₀)` reaches the state at a witness at which `QW` holds", with the body
+`sp` at the contract's states. -/
+theorem realizes_allC_spW {R : RL} (hR : R.Wf) {P : Arm.ArmState → Prop}
+    (Ok : Arm.ArmState → (BitVec 64 → Prop) → Prop)
+    (hC : CalleeOkGP (fun u => P u ∧ spOf u = R.spB) R.F R.K R.G R.s0 (CallAt R.fa R.base) R.X R.H
+      R.vc.CallSite R.gv)
+    (hT : R.vc.hasTryCall = true →
+      CalleeTryOkGP (fun u => P u ∧ spOf u = R.spB) R.F R.K R.G R.s0 (CallAt R.fa R.base) R.X R.H
+        R.vc.TrySite R.gv)
+    (hTls : R.vc.hasTls = true → TlsOk R.F R.K R.X R.H)
+    (hcov : FormsCovered R.ctx R.vc) (s₀ : Arm.ArmState) (W₀ : Nat × PState × List Line)
+    (c₀ : MConf CV Arm.ArmState) :
+    RealizesCP R.vc R.rf (R.semG Ok) ckeep R.step
+      (fun u c => (∃ l W, R.SegChain s₀ W₀ c₀ l u W c ∧ QW R u W.1 W.2.1 W.2.2 c) ∧ AInv R c)
+      (fun u => R.GoodX u ∧ R.WReadsIn Ok u) R.CallSt P := by
+  intro s c c' ⟨⟨l, W, hch, hq⟩, hA⟩ hP h
+  have hsp : spOf s = R.spB := by
+    cases c with
+    | run st => obtain ⟨b, its, m, w⟩ := st; exact (q_stRel hq.q).sp
+    | _ => cases h
+  obtain ⟨n, c'', hm, -, hA', hq', ht, hcnt, hs⟩ :=
+    realizes_allCW hR Ok hC hT hTls hcov hq hA ⟨hP, hsp⟩ h
+  exact ⟨n, c'', hm, ⟨⟨_, _, .snoc hch hs, hq'⟩, hA'⟩, ht, hcnt⟩
+
 end Backend.Proof
