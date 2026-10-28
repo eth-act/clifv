@@ -772,9 +772,18 @@ compile paths.
   `source_xni`, `cleanupPRI_applies` (through `backend_correct_world_pipelinePRI`),
   `ni_pipelinePRI_applies`.
 
-Next: item (b) (`thmPR_of` on `backend_correct_world_ni_pipelinePRI`: discharge `hX`/`hNI` per
-state from `progCallPR`/`calleeOkPR` at the machine's `n`-th call, `counter_at` along `ReachN`),
-item (d) (`WorldEntryB`), item (e).
+Item (b) interface, as built: `FV/E2E/ClifEnvOnlyContracts.lean`: `xCallsOk_only_of`,
+`xCallsIndOk_only_of`, `xNI_only_of` (the per-state premises from the contract at the admitted
+invocations only, the shape to discharge at the machine's `n`-th call), `xCallsOk_only`,
+`xCallsIndOk_only`, `xNI_only` (an environment's contract holds for each restriction, so the
+one-`ExtSem` premises give the per-state ones for `ExtSemI.const X`); witness `source_only`.
+`InstCallsOne`/`TryCallsOne` are theorems in #675 (UninitZ10b: `instCallsOne_all`,
+`tryCallsOne_all`); the premise-free `*_PRIC` corollaries of 3i/3j are one-liners once both are on
+main.
+
+Next: item (b) proper (`thmPR_of` on `backend_correct_world_ni_pipelinePRI`: discharge `hX`/`hNI`
+per state through `xCallsOk_only_of` from `progCallPR`/`calleeOkPR` at the machine's `n`-th call,
+`counter_at` along `ReachN`), item (d) (`WorldEntryB`), item (e).
 
 ## 6. Heap (separate gap, SEM2)
 
