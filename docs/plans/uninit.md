@@ -780,8 +780,9 @@ index up to the return, nested program calls by `ih : ThmPDER κ (M-1)`, base ho
   exempt or its `toArmInst` at the line's encoder environment names no `x30`),
   **`decX30Free_of_check`** (`RL`) / `decX30Free_of_line` (laid-out function): at a non-exempt
   line of a function passing the check, `DecX30Free`. Measured (throwaway runner over
-  `compileFile`): corpus + Cranelift runtests 160 files, 1105 functions, 54572 instruction lines
-  (3836 exempt), 0 failing; fv-demo and survey: see the PR. Witness `x30Free_all` (every
+  `compileFile`, 2026-10-28): corpus + Cranelift runtests 1105 functions / 54572 instruction
+  lines (3836 exempt); fv-demo split CLIF 2122 functions / 108285 lines (10812 exempt); survey
+  1329 functions / 60030 lines (6054 exempt): 0 failing lines. Witness `x30Free_all` (every
   function of `LinkWitness`'s program).
 - `FV/E2E/LinkArmBaseDetX.lean` (the base-hook finding above): `fpChain`, `LRByte` (a saved-LR
   byte of the frame-record chain), **`HookDetX Hb BD`** (from `StEqOutX Z` states with `Z` below
