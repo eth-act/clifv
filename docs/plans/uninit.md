@@ -1311,7 +1311,13 @@ no existing statement changed; no generated-code change.
   pipeline to export the `GoodX` trace (`err`, `prog`) up to the return, as `RegLevelCorrectPRSN`
   exports the call count: `realizes_allC` already realises `GoodX`, the `*_atCS` proofs weaken it
   to `Good` (`mono_T`). Same for the prefix theorems (`OnCallG`'s trace).
-- Next for #700: export `GoodX` at the return and at the prefix calls; `DetTabPRBE` (premise);
+- Step 3 (branch `agent/uninit-z20c`): `FV/E2E/RegLevelCorrectPRSNG.lean` (`RL.GoodE` := `Good` ∧
+  no error ∧ the activation's program, the part of `GoodX` independent of the call semantics;
+  `regLevelCorrect_world_atCSNG`, `_worldCSNG`, **`_worldPRSNG`**, value copies), 
+  `FV/E2E/BackendWorldPRGYNG.lean` (`backend_correct_world_*PRING/PRICNG/PRGYNG`): the return index
+  `n` also has `∀ i < n, ERR = None ∧ program = fb.program base`. Witnesses
+  `FV/E2E/BackendWorldPRGYNGWitness.lean`.
+- Next for #700: the same trace at the prefix calls (`OnCallG`); `DetTabPRBE` (premise);
   E-copies of `oracleAt_of_call`/`OracleAt`, `progResultBT`, `stage2_answerF`, `callCount`,
   `countStep_*`, `stage2PRBZS_of`, `countPRB_succ`, `thmPRBRL_ofZS`; `ThmPRBRLE` (implies
   `ThmPRBRL`); the machine's table `iniOf` with `TableOfE` at a top-level entry.
