@@ -65,7 +65,7 @@ theorem r_canon_congr_Lsl (g : Clif.Function) (uses : List CV) (f : Arm.StateFie
 theorem progXBT_rel_Lsl {M : Nat}
     (ih : 0 < M → Lsl.ThmPRBRL (fun M _ => Lsl.K M) (M - 1))
     (hdet : 0 < M → Lsl.DetPRBRU (fun M _ => Lsl.K M) (M - 1))
-    (htw : 0 < M → Lsl.CallTwinCE (fun M _ => Lsl.K M) M) {h : Clif.Function}
+    (htw : 0 < M → Lsl.CallTwinCET (fun M _ => Lsl.K M) M) {h : Clif.Function}
     (hh : h ∈ Lsl.P.funcs) (hcal : ∃ g ∈ Lsl.P.funcs, Lsl.Callee g h) {F : BitVec 64 → Prop}
     (himgF : ∀ a, Lsl.Img a → F a) {uses : List CV} {W W' : Arm.ArmState}
     (hr : ∀ f, f ≠ .PC → Arm.r f W = Arm.r f W') (hp : W.program = W'.program)
@@ -80,7 +80,7 @@ theorem progXBT_rel_Lsl {M : Nat}
 theorem xnifXPBTGY_Lsl (hN : Lsl.NeedNI) {M : Nat}
     (ih : 0 < M → Lsl.ThmPRBRL (fun M _ => Lsl.K M) (M - 1))
     (hdet : 0 < M → Lsl.DetPRBRU (fun M _ => Lsl.K M) (M - 1))
-    (htw : 0 < M → Lsl.CallTwinCE (fun M _ => Lsl.K M) M) {g : Clif.Function}
+    (htw : 0 < M → Lsl.CallTwinCET (fun M _ => Lsl.K M) M) {g : Clif.Function}
     (hg : g ∈ Lsl.P.funcs) {F : BitVec 64 → Prop} (himgF : ∀ a, Lsl.Img a → F a)
     (P : Nat → BitVec 64 → BitVec 8) (R : Nat → Arm.ArmState) {c : BitVec 64} {cs : Clif.State}
     (hnrc : NoRetCall (Lsl.envOfB M g c) Lsl.P.bare cs) {s : Clif.State} {n : Nat}
@@ -92,7 +92,7 @@ theorem xnifXPBTGY_Lsl (hN : Lsl.NeedNI) {M : Nat}
   Lsl.xnifXPBTGY Lsl_ok hN ih hdet htw hg himgF P R hnrc hs
 
 theorem callLock_of_Lsl {M : Nat} (hM : 0 < M)
-    (ih : Lsl.ThmPRBRL (fun M _ => Lsl.K M) (M - 1))
+    (ih : Lsl.ThmPRBRLE (fun M _ => Lsl.K M) (M - 1))
     (hlock : Lsl.LockRet (fun M _ => Lsl.K M) (M - 1)) : Lsl.CallLock (fun M _ => Lsl.K M) M :=
   Lsl.callLock_of Lsl_ok hM ih hlock
 

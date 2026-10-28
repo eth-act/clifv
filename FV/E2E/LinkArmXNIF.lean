@@ -1,3 +1,4 @@
+import FV.E2E.LinkArmLockRet
 import FV.E2E.LinkArmTwinCE
 import FV.E2E.LinkArmStage2Prog
 import FV.E2E.LinkArmStage2Base
@@ -20,7 +21,8 @@ registers free) are compared:
   unguarded answers are related (`progXBT_rel`): the worlds with the call's prophecies
   (`worldPR … (P n) (R n)`) have the same registers but the pc, the prophecy in the callee
   region and memories equal outside `F`; the condition `CondBT` carries over (the canonical
-  callee table by `CallTwinCE` one level down, `tableOf_twinC`), and the canonical callee runs
+  callee table by `CallTwinCET` one level down, the canonical table given, `tableOf_twinC`),
+  and the canonical callee runs
   from both return with the same results and worlds equal outside `F` (`progCallPRBRLR`). A
   guard whose predicate is the same at both worlds and respects the relation keeps it, also for
   its ε-chosen answers (`guardR_rel`).
@@ -140,11 +142,11 @@ theorem r_canon_congr (g : Clif.Function) (uses : List CV) {w w' : Arm.ArmState}
 set_option maxHeartbeats 1000000 in
 /-- **The program call answer at two worlds with the same registers but the pc, the same
 callee region and memories equal outside `F`**: one is defined iff the other is (`CondBT`
-carries over, the callee table by `CallTwinCE`), with the same results and worlds equal outside
+carries over, the callee table by `CallTwinCET`), with the same results and worlds equal outside
 `F` (`progCallPRBRLRU`). -/
 theorem progXBT_rel (hL : L.Ok) [hR : L.CrunOk] {M : Nat}
     (ih : 0 < M → L.ThmPRBRL κ (M - 1)) (hdet : 0 < M → L.DetPRBRU κ (M - 1))
-    (htw : 0 < M → L.CallTwinCE κ M) {h : Clif.Function} (hh : h ∈ L.P.funcs)
+    (htw : 0 < M → L.CallTwinCET κ M) {h : Clif.Function} (hh : h ∈ L.P.funcs)
     (hcal : ∃ g ∈ L.P.funcs, L.Callee g h) {F : BitVec 64 → Prop}
     (himgF : ∀ a, L.Img a → F a) {uses : List CV} {W W' : Arm.ArmState}
     (hr : ∀ f, f ≠ .PC → Arm.r f W = Arm.r f W') (hp : W.program = W'.program)
@@ -207,7 +209,8 @@ theorem progXBT_rel (hL : L.Ok) [hR : L.CrunOk] {M : Nat}
     · rw [if_neg hi, if_neg hi]; exact (hrgn a ha).symm
   -- the canonical callee table at the other world
   have htwc := htw hM h.name h hpf hcal F himgF uses W herr hal hroom hdead vals cm cs rvals cm' ini
-    hmr hargs hsav (fun hN => (hpl hN).1) (fun hN => (hpl hN).2) hinit hrun _ hcok hmsk hdd
+    hmr hargs hsav (fun hN => (hpl hN).1) (fun hN => (hpl hN).2) (L.tableOfE_of htab) hinit hrun _
+    hcok hmsk hdd
   have htab' : L.TableOf (M - 1) h (enterAt (L.A h) (L.canon h uses W')) (calleeIni h ini) :=
     L.tableOf_twinC (TwinCE.twinC L (TwinCE.symm L htwc)) htab
   have hcond' : L.CondBT κ M F h uses W' :=
@@ -397,10 +400,10 @@ theorem worldPR_rel {M : Nat} (h : Clif.Function) (Pn : BitVec 64 → BitVec 8) 
 set_option maxHeartbeats 1000000 in
 /-- **Step 1 of the determinism induction: `XNIF` of the induction step's guarded semantics**
 (module doc): call `n` of `XPBTGY` at the calls the CLIF run of count `n` admits, under
-`NeedNI`, from `ThmPRBRL`/`DetPRBRU` (#732) one level down and `CallTwinCE` at this level. -/
+`NeedNI`, from `ThmPRBRL`/`DetPRBRU` (#732) one level down and `CallTwinCET` at this level. -/
 theorem xnifXPBTGY (hL : L.Ok) [hR : L.CrunOk] (hN : L.NeedNI) {M : Nat}
     (ih : 0 < M → L.ThmPRBRL κ (M - 1)) (hdet : 0 < M → L.DetPRBRU κ (M - 1))
-    (htw : 0 < M → L.CallTwinCE κ M) {g : Clif.Function} (hg : g ∈ L.P.funcs)
+    (htw : 0 < M → L.CallTwinCET κ M) {g : Clif.Function} (hg : g ∈ L.P.funcs)
     {F : BitVec 64 → Prop} (himgF : ∀ a, L.Img a → F a) (P : Nat → BitVec 64 → BitVec 8)
     (R : Nat → Arm.ArmState) {c : BitVec 64} {cs : Clif.State}
     (hnrc : NoRetCall (L.envOfB M g c) L.P.bare cs) {s : Clif.State} {n : Nat}

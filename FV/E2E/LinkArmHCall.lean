@@ -81,9 +81,9 @@ theorem pcall_lock (hL : L.Ok) {M : Nat} (hcl : L.CallLock κ M) {nm : String} {
     simp only [frameDrop, this, ↓reduceIte] at hroom
     omega
   obtain ⟨k, hk⟩ := hcl nm h hpf hcal F himgF uses w herr hal hroom hdead vals cm cs rvals cm' ini
-    hmr hargs hsav hpl hslotb htab hinit hrun
-  obtain ⟨e1, -, ra1, mo1, sv1, ar1, kp1⟩ := hk u hu hmu hdu
-  obtain ⟨e2, -, ra2, mo2, sv2, ar2, kp2⟩ := hk u' hu' hmu' hdu'
+    hmr hargs hsav hpl hslotb (L.tableOfE_of htab) hinit hrun
+  obtain ⟨e1, -, ra1, mo1, sv1, ar1, kp1, -⟩ := hk u hu hmu hdu
+  obtain ⟨e2, -, ra2, mo2, sv2, ar2, kp2, -⟩ := hk u' hu' hmu' hdu'
   have hpc : Arm.r .PC u = Arm.r .PC u' := hZ.1 _ (by decide)
   rw [e1, e2]
   refine ⟨fun f hf => ?_, by simp only [program_set_program]; exact hZ.2.1, fun a ha => ?_⟩

@@ -1,3 +1,5 @@
+import FV.E2E.BackendTwoRunEitherK
+import FV.E2E.LinkArmDetRunTwin
 import FV.E2E.LinkArmHCallLock
 import FV.E2E.LinkArmStage2E
 import FV.E2E.LinkArmIniOf
@@ -51,20 +53,6 @@ theorem retsLow_sound {vc : VCode} (h : vc.retsLow = true) {us : List (Reg × Re
   have h3 := List.all_eq_true.mp h2 p hp
   rw [hn] at h3
   simpa using h3
-
-/-- **A register other than an `x30` alias has equal values in states equal but for `x30`/pc.** -/
-theorem regVal_eq_of_ne30 {u v : Arm.ArmState}
-    (h : ∀ f, f ≠ .PC → f ≠ .GPR 30#5 → Arm.r f u = Arm.r f v) {p : Reg}
-    (hp : ∀ n, p = .x n → n < 30) : regVal u p = regVal v p := by
-  cases p with
-  | x n =>
-    have hn := hp n rfl
-    simp only [regVal]
-    rw [h _ (by simp) (fun e => by
-      have := congrArg (fun f => match f with | Arm.StateField.GPR i => i.toNat | _ => 0) e
-      simp [rnum_toNat (show n < 32 by omega)] at this; omega)]
-  | v n => simp only [regVal]; rw [h _ (by simp) (by simp)]
-  | _ => rfl
 
 /-- **`EntryAgree` is symmetric between entries with the same `sp`.** -/
 theorem EntryAgree.symm_of_sp {K : Nat} {s s₀ : Arm.ArmState} (h : EntryAgree K s s₀)
@@ -133,9 +121,10 @@ theorem lockRet_of (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) (hK : L.Hooks
     (hN : L.NeedNI) (hNX : L.BaseNIX)
     (hx30 : ∀ g ∈ L.P.funcs, ∀ lm, labelOffsets (L.A g).fa.lines = .ok lm →
       (L.A g).fa.x30Free lm = true)
-    (hrl : ∀ g ∈ L.P.funcs, (L.A g).vc.retsLow = true) {M : Nat}
+    (hrl : ∀ g ∈ L.P.funcs, (L.A g).vc.retsLow = true)
+    (hblr : ∀ g ∈ L.P.funcs, (L.A g).fa.blrLow = true) {M : Nat}
     (ih : 0 < M → L.ThmPRBRL κ (M - 1)) (hdet : 0 < M → L.DetPRBRU κ (M - 1))
-    (htw : 0 < M → L.CallTwinCE κ M) (hcl : L.CallLock κ M) (hret : L.RetOkPRB κ M)
+    (htw : 0 < M → L.CallTwinCET κ M) (hcl : L.CallLock κ M) (hret : L.RetOkPRB κ M)
     (h2 : L.Stage2PRBZSE κ M) : L.LockRet κ M := by
   intro g hg F vals cs w₀ ini G₀ ra₀ s₀ us outs wf n₀ fuel rvals cm' hWE hME₀ htab hret₀ hrs hpt₀
     hrun hra₀ D w₀' hD hrel hsw hreg hstk G ra s hME hag hra hx29
@@ -151,8 +140,7 @@ theorem lockRet_of (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) (hK : L.Hooks
     noRetCall_of_linv hPf (fun _ h => by simp at h) hI
   have he := hME₀.entryP.entry
   have hQ := L.callStPRB_q (κ := κ) (M := M) he.body.sp
-  have hS2 := h2 g hg F vals cs w₀ fuel rvals cm' ini G₀ ra₀ s₀ hWE hME₀ hra₀ (L.tableOfE_of htab)
-    hrun
+  have hS2 := h2 g hg F vals cs w₀ fuel rvals cm' ini G₀ ra₀ s₀ hWE hME₀ hra₀ htab hrun
   -- the canonical (first) entry
   have hAE : ActEntryPR (L.A g).vcp (L.A g).rf (L.A g).af (L.A g).fa (L.A g).fb (κ M g) F G₀
       (L.XPBTGY κ M g F (L.BP M g s₀) (L.RP M g s₀) (L.envOfB M g (spv w₀)) cs (spv w₀))
@@ -197,7 +185,7 @@ theorem lockRet_of (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) (hK : L.Hooks
       (L.A g).base s₀ (L.XPBTGY κ M g F (L.BP M g s₀) (L.RP M g s₀) (L.envOfB M g (spv w₀)) cs
         (spv w₀)) (L.hooks M) psF (κ M g) G₀ (GotV (L.A g).vcp)).F = F := he.hF
   obtain ⟨T, hpc1, hpc2, hagr, hmo, -, hsv2, -, hG2, herr2, hsp2, hx292, hgood, hlk⟩ :=
-    backend_twoRunLERWZIUPF_either (hL.subset g hg) hc (instCallsOne_all g) (tryCallsOne_all g)
+    backend_twoRunLERWZIUPF_eitherK (hL.subset g hg) hc (instCallsOne_all g) (tryCallsOne_all g)
       (XI := L.XPBTGY κ M g F (L.BP M g s₀) (L.RP M g s₀) (L.envOfB M g (spv w₀)) cs (spv w₀))
       (syms := L.syms) (env := L.envOfB M g (spv w₀)) (K := κ M g) (F := F) (c := spv w₀)
       (hX_guardRXRI (L.XPBTI κ M g F (L.BP M g s₀) (L.RP M g s₀)) hnrc
@@ -241,13 +229,27 @@ theorem lockRet_of (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) (hK : L.Hooks
       (¬ PostCall (L.A g).fa (L.A g).base (Arm.r .PC (runX (L.mach M g) i s)) ∨
       spOf (runX (L.mach M g) i s) = spv s - BitVec.ofNat 64 (frameDrop (L.A g).af)) := by
     intro i hi
-    rw [runX_eq, runX_eq]; exact hgood i hi
+    rw [runX_eq, runX_eq]; exact ⟨(hgood i hi).1.1, (hgood i hi).2.1⟩
   have hlk' : ∀ i < k, ∃ Z, StEqOutX Z (runX (L.mach M g) i s) (runX (L.mach M g) i s₀) ∧
       ∀ a, StackBelow (κ M g) (spv s₀ - BitVec.ofNat 64 (frameDrop (L.A g).af)) a → ¬ Z a := by
     intro i hi
     obtain ⟨d, d', hz⟩ := hlk i hi
     rw [runX_eq, runX_eq]
-    exact ⟨_, hz, fun a ha hzz => hzz.2.2.1 ha⟩
+    exact ⟨_, hz, fun a ha hzz => hzz.1.2.2.1 ha⟩
+  -- the lock with its set inside `F` (canonical run first), the second run's code image
+  have hlkF : ∀ i < k, ∃ Z, StEqOutX Z (runX (L.mach M g) i s₀) (runX (L.mach M g) i s) ∧
+      (∀ a, Z a → F a) ∧
+      ∀ a, StackBelow (κ M g) (spv s₀ - BitVec.ofNat 64 (frameDrop (L.A g).af)) a → ¬ Z a := by
+    intro i hi
+    obtain ⟨d, d', hz⟩ := hlk i hi
+    rw [runX_eq, runX_eq]
+    exact ⟨_, hz.symm, fun a hzz => hzz.2.elim id (hD a), fun a ha hzz => hzz.1.2.2.1 ha⟩
+  have himgS : ∀ i < k, CallPc (L.A g).fa (L.A g).base (Arm.r .PC (runX (L.mach M g) i s)) →
+      ∀ a, L.Img a → (runX (L.mach M g) i s).mem a = L.imgMem a := by
+    intro i hi hcp a ha
+    have hG := (hgood i hi).2.2
+    rw [runX_eq] at hcp ⊢
+    exact (hG hcp a (hME.imgG a ha)).trans (hME.imgS a ha)
   -- `k` is the canonical return index `n₀`
   have herr1 : Arm.r .ERR (runX (L.mach M g) k s₀) = .None :=
     (hagr'.1 .ERR (by simp) (by simp)).symm.trans herr2'
@@ -266,10 +268,21 @@ theorem lockRet_of (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) (hK : L.Hooks
     · exact h
     · exact absurd hretn (L.noRetAt_of hL hg he hra₀ hpt1 herr1 n₀ h)
   subst hkn
+  have hcan := L.canonCallTwin hL hκ ih hdet hret h2 htw hg hWE hME₀ hra₀ htab hrun
+  have htwin : L.TwinCE M g s₀ s := L.twinCE_of_lockK hL hg (hblr g hg)
+    (K := κ M g) (c := spv s₀ - BitVec.ofNat 64 (frameDrop (L.A g).af))
+    (by rw [← he.body.sp]; exact hWE.room) hlkF himgS
+    (fun i hi hcp => hcan i (fun j hj => L.noRetAt_of hL hg he hra₀ hpt₀ hret₀.ret.err j
+      (by omega)) hcp)
+    (fun i hi => ⟨L.noRetAt_of hL hg he hra₀ hpt₀ hret₀.ret.err i hi,
+      fun hr => L.noRetAt_of hL hg hME hra (fun i' _ hik hpcall => (hgood' i' hik).2.resolve_left
+        (not_not_intro hpcall)) herr2' i hi hr⟩)
+    ⟨hretn, ⟨hpc2'.trans hME.abi.lr.symm, herr2', (L.runX_progK hK M g k s).trans hME.abi.program,
+      hsp2'⟩⟩
   refine ⟨hlk', hagr', hmo', hsv2', ⟨armRet_of_retAgreeX hret₀.ret hagr'.1 hag.1 hpc2' herr2'
     hsp2' hx292', fun j v p x hj hx => ?_, fun a ha => ?_, fun f hf h29 h31 => ?_, hG2',
     L.runX_progK hK M g k s⟩, fun i _ hik hpcall => (hgood' i hik).2.resolve_left
-      (not_not_intro hpcall)⟩
+      (not_not_intro hpcall), TwinCE.symm L htwin⟩
   · rw [regVal_eq_of_ne30 hagr'.1 (retsLow_sound (hrl g hg) hrs (v, p) (List.mem_of_getElem? hj))]
     exact hret₀.regs j v p x hj hx
   · rw [hmo' a (fun h => ha (.inl h)) (fun h => ha (.inr h))]

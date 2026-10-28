@@ -11,17 +11,23 @@ activation's return and `TwinNC`; the induction on `M` needs more of the two-run
 level down from two locked call states, and the two callee returns must again be locked (equal
 but for `x30` and bytes of the lock set). Decision (new names):
 
-* **`LockRet κ M`**: `DetRunPRBCR`'s premises; conclusion the lock at every index before the
+* **`LockRet κ M`**: `DetRunPRBCR`'s premises (the canonical entry's prefix-closed table
+  `TableOfE`, which `TableOf` gives: `tableOfE_of`); conclusion the lock at every index before the
   canonical return `n₀` (sets avoiding the callees' dead stack), `RetAgreeX` at `n₀`, the
   memories outside `F ∪ D` equal there, the second run's saved frame record, its `ActRet` and
-  `PostTrace` at `n₀`;
+  `PostTrace` at `n₀`, and the twin runs `TwinCE` (second, canonical) of the determinism step;
 * **`CallLock κ M`**: the call form one level down (as `CallTwinCE` is `TwinCE`'s): a call of a
   function `h` of `P` from a state `t` agreeing with the canonical one (`CallerOk`, masked
-  registers but `x30`/pc, the callee region) returns at the canonical callee's return index `k`
-  with `pcall`'s state, locked with the canonical callee run at every index before `k`, and at
-  `k`: `RetAgreeX`, memory outside `F`, saved frame record, `ArmRet`, kept bytes;
-* **`callLock_of`**: `CallLock κ M` from `ThmPRBRL κ (M - 1)` and `LockRet κ (M - 1)` (the
-  callee entries of `progCallPRBRLR`, the canonical one with the prophecies of its own run).
+  registers but `x30`/pc, the callee region), the canonical callee's prefix-closed table given,
+  returns at the canonical callee's return index `k` with `pcall`'s state, locked with the
+  canonical callee run at every index before `k`, and at `k`: `RetAgreeX`, memory outside `F`,
+  saved frame record, `ArmRet`, kept bytes; and the two callee runs are twins (`TwinCE`);
+* **`callLock_of`**: `CallLock κ M` from `ThmPRBRLE κ (M - 1)` and `LockRet κ (M - 1)` (the
+  callee entries of `progCallPRBRLR`, the canonical one with the prophecies of its own run);
+* **`CallTwinCET κ M`**: `CallTwinCE` with the canonical callee's prefix-closed table as premise
+  (#713: `CallTwinCE` itself has no CLIF counterpart of the canonical callee run: its callee
+  CLIF run answers the slot reads of nested callees from an arbitrary table), `CallLock.callTwinCET`,
+  `CallTwinCE.toT`.
 -/
 
 namespace E2E
@@ -43,7 +49,7 @@ def LockRet (κ : Nat → Clif.Function → Nat) (M : Nat) : Prop :=
     L.WorldEntryB κ M g F vals cs w₀ ini →
     L.MachEntryPR κ M g F G₀ ra₀ s₀ w₀ (prophOf (L.mach M g) (L.A g).fa (L.A g).base s₀)
       (prophStOf (L.mach M g) (L.A g).fa (L.A g).base s₀) →
-    L.TableOf M g s₀ ini →
+    L.TableOfE M g s₀ ini →
     ActRet ra₀ F G₀ us outs wf s₀ (runX (L.mach M g) n₀ s₀) →
     (L.A g).vc.RetsSite us →
     PostTrace (L.A g).fa (L.A g).af (L.A g).base (L.mach M g) s₀ n₀ →
@@ -68,7 +74,8 @@ def LockRet (κ : Nat → Clif.Function → Nat) (M : Nat) : Prop :=
         (∀ a, ¬ F a → ¬ D a → (runX (L.mach M g) n₀ s).mem a = (runX (L.mach M g) n₀ s₀).mem a) ∧
         Arm.read_mem_bytes 16 (spv s - 16#64) (runX (L.mach M g) n₀ s) = xreg 30 s ++ xreg 29 s ∧
         ActRet ra (fun a => F a ∨ D a) G us outs wf s (runX (L.mach M g) n₀ s) ∧
-        PostTrace (L.A g).fa (L.A g).af (L.A g).base (L.mach M g) s n₀
+        PostTrace (L.A g).fa (L.A g).af (L.A g).base (L.mach M g) s n₀ ∧
+        L.TwinCE M g s s₀
 
 /-- **The lock to the return gives the determinism step's return facts.** -/
 theorem LockRet.ret {M : Nat} (h : L.LockRet κ M) :
@@ -79,7 +86,7 @@ theorem LockRet.ret {M : Nat} (h : L.LockRet κ M) :
       L.WorldEntryB κ M g F vals cs w₀ ini →
       L.MachEntryPR κ M g F G₀ ra₀ s₀ w₀ (prophOf (L.mach M g) (L.A g).fa (L.A g).base s₀)
         (prophStOf (L.mach M g) (L.A g).fa (L.A g).base s₀) →
-      L.TableOf M g s₀ ini →
+      L.TableOfE M g s₀ ini →
       ActRet ra₀ F G₀ us outs wf s₀ (runX (L.mach M g) n₀ s₀) →
       (L.A g).vc.RetsSite us →
       PostTrace (L.A g).fa (L.A g).af (L.A g).base (L.mach M g) s₀ n₀ →
@@ -101,7 +108,7 @@ theorem LockRet.ret {M : Nat} (h : L.LockRet κ M) :
             PostTrace (L.A g).fa (L.A g).af (L.A g).base (L.mach M g) s n₀ :=
   fun g hg F vals cs w₀ ini G₀ ra₀ s₀ us outs wf n₀ fuel rvals cm' hWE hME₀ htab hret₀ hrs hpt₀
     hrun hra₀ D w₀' hD hrel hsw hreg hstk G ra s hME hag hra hx29 =>
-    let ⟨_, _, _, _, hret, hpt⟩ := h g hg F vals cs w₀ ini G₀ ra₀ s₀ us outs wf n₀ fuel rvals cm'
+    let ⟨_, _, _, _, hret, hpt, _⟩ := h g hg F vals cs w₀ ini G₀ ra₀ s₀ us outs wf n₀ fuel rvals cm'
       hWE hME₀ htab hret₀ hrs hpt₀ hrun hra₀ D w₀' hD hrel hsw hreg hstk G ra s hME hag hra hx29
     ⟨hret, hpt⟩
 
@@ -119,7 +126,7 @@ def CallLock (κ : Nat → Clif.Function → Nat) (M : Nat) : Prop :=
     (L.NeedSlots → L.PlaceAtB cm (spv w) ini) →
     (L.NeedSlots → ∀ a, L.SlotByte h (spv w) a →
       ini.bytes (ini.next + 1) a = w.mem (BitVec.ofNat 64 a)) →
-    L.TableOf (M - 1) h (enterAt (L.A h) (L.canon h uses w)) (calleeIni h ini) →
+    L.TableOfE (M - 1) h (enterAt (L.A h) (L.canon h uses w)) (calleeIni h ini) →
     Clif.initState L.P n vals cm = .ok cs → L.crun M cs = .returned rvals cm' →
     ∃ k, ∀ t, L.CallerOk F h uses w t →
       (∀ f, Masked f → f ≠ .PC → f ≠ .GPR 30#5 → Arm.r f t = Arm.r f (L.canon h uses w)) →
@@ -139,14 +146,15 @@ def CallLock (κ : Nat → Clif.Function → Nat) (M : Nat) : Prop :=
         Arm.read_mem_bytes 16 (spv w - 16#64) (runX (L.mach (M - 1) h) k (enterAt (L.A h) t)) =
           xreg 30 (enterAt (L.A h) t) ++ xreg 29 (enterAt (L.A h) t) ∧
         ArmRet (Arm.r .PC t + 4) (enterAt (L.A h) t) (runX (L.mach (M - 1) h) k (enterAt (L.A h) t)) ∧
-        ∀ a, F a → ¬ StackBelow (frameDrop (L.A h).af + κ (M - 1) h) (spv w) a →
-          (runX (L.mach (M - 1) h) k (enterAt (L.A h) t)).mem a = t.mem a
+        (∀ a, F a → ¬ StackBelow (frameDrop (L.A h).af + κ (M - 1) h) (spv w) a →
+          (runX (L.mach (M - 1) h) k (enterAt (L.A h) t)).mem a = t.mem a) ∧
+        L.TwinCE (M - 1) h (enterAt (L.A h) t) (enterAt (L.A h) (L.canon h uses w))
 
 set_option maxHeartbeats 2000000 in
 /-- **`CallLock` from the lock to the return one level down** (module doc): the callee entries of
 `progCallPRBRLR` (same construction), `LockRet` in place of `DetPRBR`. -/
 theorem callLock_of (hL : L.Ok) [hR : L.CrunOk] {M : Nat} (hM : 0 < M)
-    (ih : L.ThmPRBRL κ (M - 1)) (hlock : L.LockRet κ (M - 1)) : L.CallLock κ M := by
+    (ih : L.ThmPRBRLE κ (M - 1)) (hlock : L.LockRet κ (M - 1)) : L.CallLock κ M := by
   intro n h hpf hcal F himgF uses w herr hal hroom hdead vals cm cs rvals cm' ini hmr hargs hsav
     hpl hslotb htab hinit hrun
   obtain ⟨hh, hname⟩ := Clif.Program.func?_some hpf
@@ -513,7 +521,7 @@ theorem callLock_of (hL : L.Ok) [hR : L.CrunOk] {M : Nat} (hM : 0 < M)
   have hx29t : Arm.r (.GPR 29#5) (enterAt (L.A h) t) = Arm.r (.GPR 29#5) (enterAt (L.A h) cn) := by
     rw [r_enterAt _ _ (by simp) (by simp), r_enterAt _ _ (by simp) (by simp),
       hZ.1 _ (by simp [Masked]), hcOk.world.1 _ (by simp [Masked])]
-  obtain ⟨hlk, hagr, hmo, hsv, hret, htrk⟩ := hlock h hh Fh vals cs w₀ (calleeIni h ini) G
+  obtain ⟨hlk, hagr, hmo, hsv, hret, htrk, htwc⟩ := hlock h hh Fh vals cs w₀ (calleeIni h ini) G
     (Arm.r .PC cn + 4) (enterAt (L.A h) cn) us outs wf n₀ m rvals cm' hWE hME0 htab hret0 hrs htr0
     hm (by rw [BitVec.add_sub_cancel]; exact hcOk.ra) D w₀' (fun _ h => (h : False).elim)
     hrel' hsw hreg hstk G (Arm.r .PC t + 4) (enterAt (L.A h) t)
@@ -521,13 +529,58 @@ theorem callLock_of (hL : L.Ok) [hR : L.CrunOk] {M : Nat} (hM : 0 < M)
   have hspc : spv (enterAt (L.A h) cn) = spv w := by rw [spv_enterAt, hsp0]
   have hspt : spv (enterAt (L.A h) t) = spv w := by rw [spv_enterAt, hst]
   refine ⟨hpcall t n₀ ht.ra htrk hret.ret hret.prog, fun i hi => ?_, ?_, fun a ha => ?_, ?_,
-    hret.ret, fun a hF hnr => ?_⟩
+    hret.ret, fun a hF hnr => ?_, htwc⟩
   · obtain ⟨Z, hz, hZ'⟩ := hlk i hi
     exact ⟨Z, hz, fun a ha => hZ' a (by rw [hspc]; exact ha)⟩
   · rw [← hspc]; exact hagr
   · exact hmo a (fun hf => ha hf.1) (fun h => (h : False))
   · rw [hspt] at hsv; exact hsv
   · rw [hret.gkeep a ⟨hF, hnr⟩, mem_enterAt]
+
+/-- **The determinism step at a call, given the canonical callee's table** (module doc): the
+premises of `CallTwinCE` and the canonical callee run's prefix-closed table (as `CallLock`). -/
+def CallTwinCET (κ : Nat → Clif.Function → Nat) (M : Nat) : Prop :=
+  ∀ (n : String) (h : Clif.Function), L.P.func? n = some h → (∃ g ∈ L.P.funcs, L.Callee g h) →
+    ∀ (F : BitVec 64 → Prop), (∀ a, L.Img a → F a) →
+    ∀ (uses : List CV) (w : Arm.ArmState), Arm.r .ERR w = .None → (spv w).toNat % 16 = 0 →
+    frameDrop (L.A h).af + κ (M - 1) h ≤ (spv w).toNat →
+    (∀ a, StackBelow (frameDrop (L.A h).af + κ (M - 1) h) (spv w) a → F a ∧ ¬ L.Img a) →
+    ∀ (vals : List Clif.Val) (cm : Clif.Mem) (cs : Clif.State) (rvals : List Clif.Val)
+      (cm' : Clif.Mem) (ini : Clif.SlotInit),
+    MemRel F L.syms cm w → ArgsAt h.sig vals uses w → StackArgsAvoid F h.sig vals w →
+    (L.NeedSlots → L.PlaceAtB cm (spv w) ini) →
+    (L.NeedSlots → ∀ a, L.SlotByte h (spv w) a →
+      ini.bytes (ini.next + 1) a = w.mem (BitVec.ofNat 64 a)) →
+    L.TableOfE (M - 1) h (enterAt (L.A h) (L.canon h uses w)) (calleeIni h ini) →
+    Clif.initState L.P n vals cm = .ok cs → L.crun M cs = .returned rvals cm' →
+    ∀ t, L.CallerOk F h uses w t →
+      (∀ f, Masked f → f ≠ .PC → f ≠ .GPR 30#5 → Arm.r f t = Arm.r f (L.canon h uses w)) →
+      (∀ a, StackBelow (frameDrop (L.A h).af + κ (M - 1) h) (spv w) a →
+        t.mem a = (L.canon h uses w).mem a) →
+      L.TwinCE (M - 1) h (enterAt (L.A h) t) (enterAt (L.A h) (L.canon h uses w))
+
+/-- **`CallLock` gives the call twins** (its last conjunct). -/
+theorem CallLock.callTwinCET {M : Nat} (h : L.CallLock κ M) : L.CallTwinCET κ M :=
+  fun n hf hpf hcal F himgF uses w herr hal hroom hdead vals cm cs rvals cm' ini hmr hargs hsav
+    hpl hslotb htab hinit hrun t ht hmsk hrgn =>
+    let ⟨_, hk⟩ := h n hf hpf hcal F himgF uses w herr hal hroom hdead vals cm cs rvals cm' ini hmr
+      hargs hsav hpl hslotb htab hinit hrun
+    (hk t ht hmsk hrgn).2.2.2.2.2.2.2
+
+/-- **Every `CallTwinCE` is a `CallTwinCET`** (the table premise unused). -/
+theorem CallTwinCE.toT {M : Nat} (h : L.CallTwinCE κ M) : L.CallTwinCET κ M :=
+  fun n hf hpf hcal F himgF uses w herr hal hroom hdead vals cm cs rvals cm' ini hmr hargs hsav
+    hpl hslotb _ hinit hrun t ht hmsk hrgn =>
+    h n hf hpf hcal F himgF uses w herr hal hroom hdead vals cm cs rvals cm' ini hmr hargs hsav hpl
+      hslotb hinit hrun t ht hmsk hrgn
+
+/-- **`DetTabPRBr` from `CallTwinCET`** (`tableOf_twinC`; the canonical table is given). -/
+theorem detTabPRBr_ofCT {M : Nat} (hd : L.CallTwinCET κ M) : L.DetTabPRBr κ M :=
+  fun n h hpf hcal F himgF uses w herr hal hroom hdead vals cm cs rvals cm' ini hmr hargs hsav hpl
+    hslotb hinit hrun t ht hmsk hrgn htab =>
+    L.tableOf_twinC (TwinCE.twinC L (TwinCE.symm L (hd n h hpf hcal F himgF uses w herr hal hroom
+      hdead vals cm cs rvals cm' ini hmr hargs hsav hpl hslotb (L.tableOfE_of htab) hinit hrun t ht
+      hmsk hrgn))) htab
 
 end LinkSys
 
