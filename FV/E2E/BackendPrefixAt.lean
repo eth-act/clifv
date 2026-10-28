@@ -1,4 +1,5 @@
 import FV.E2E.PrefixRelated
+import FV.E2E.RegLevelPrefixG
 
 /-!
 # The counted pipeline at call `N` itself (SEM1 #537, #680 (3), `docs/plans/uninit.md` §5.9 (P1))
@@ -222,7 +223,9 @@ theorem backend_prefixPRI_at {p : Clif.Program} {f : Clif.Function} {k : Nat} {v
     {P : Nat → BitVec 64 → BitVec 8} {R : Nat → Arm.ArmState} {s : Arm.ArmState}
     (he : ActEntryPRN vcp rf af fa fb K F G XI H base ra Kp cc P R s w₀ N)
     {t : Clif.State} (hr : ReachN env p cs t N) (hcn : callNum t = 1) :
-    ∀ j ≤ N, ∃ u i info uses w r, OnCall (ArmStepX (XI.at 0) H fa) fa base s j u ∧
+    ∀ j ≤ N, ∃ u i info uses w r, OnCallG (ArmStepX (XI.at 0) H fa) fa base s
+        (fun t => ¬ PostCall fa base (Arm.r .PC t) ∨
+          spOf t = spv s - BitVec.ofNat 64 (frameDrop af)) j u ∧
       spOf u = spv s - BitVec.ofNat 64 (frameDrop af) ∧ CallSiteAt F K G s fa base i uses w u ∧
       (i = .call info ∨ ∃ ti, i = .tryCall info ti) ∧ (XI.at j).call (callDest info) uses w = some r := by
   intro j hj
@@ -235,7 +238,7 @@ theorem backend_prefixPRI_at {p : Clif.Program} {f : Clif.Function} {k : Nat} {v
     (show GotInvI vcp XI ⟨0, 0, fun _ => 0, (w₀, 0)⟩ from gotInv_entry vcp (XI.at 0) _ w₀) hstar'
   obtain ⟨b1, k1, ρ1, w1, vb, i, ops, r, hs1, hvb, hi, hcall, hops, hsem⟩ :=
     vstar_call_at (j := j) hstar'' (Nat.zero_le _) (by simp only [vctr]; omega)
-  have hM := regLevel_prefixPRS hc.check hc.alloc hc.emit hc.layout (XI := XI) (H := H)
+  have hM := regLevel_prefixPRSG hc.check hc.alloc hc.emit hc.layout (XI := XI) (H := H)
     (K := K) (G := G) (gv := GotV vcp) (N := j) hcov he.abi he.stack he.gfree he.proph he.regp
     (fun n hn => by rw [he.hF]; exact he.calls n (by omega))
     (fun ht n hn => by rw [he.hF]; exact he.tries ht n (by omega)) he.pc
@@ -273,7 +276,9 @@ theorem prefix_relatedPRI_at {p : Clif.Program} {f : Clif.Function} {k : Nat} {v
     {P : Nat → BitVec 64 → BitVec 8} {R : Nat → Arm.ArmState} {s : Arm.ArmState}
     (he : ActEntryPRN vcp rf af fa fb K F G XI H base ra Kp cc P R s w₀ N)
     {t : Clif.State} (hr : ReachN env p cs t N) (hcn : callNum t = 1) :
-    ∀ j ≤ N, ∃ u i info uses w r, OnCall (ArmStepX (XI.at 0) H fa) fa base s j u ∧
+    ∀ j ≤ N, ∃ u i info uses w r, OnCallG (ArmStepX (XI.at 0) H fa) fa base s
+        (fun t => ¬ PostCall fa base (Arm.r .PC t) ∨
+          spOf t = spv s - BitVec.ofNat 64 (frameDrop af)) j u ∧
       spOf u = spv s - BitVec.ofNat 64 (frameDrop af) ∧ CallSiteAt F K G s fa base i uses w u ∧
       (i = .call info ∨ ∃ ti, i = .tryCall info ti) ∧
       (XI.at j).call (callDest info) uses w = some r ∧
