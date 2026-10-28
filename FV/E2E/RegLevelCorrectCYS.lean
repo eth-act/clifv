@@ -1,4 +1,5 @@
 import FV.E2E.RegLevelCorrectCW
+import FV.E2E.PairGuardS
 
 /-!
 # The world-read guard on reads only (SEM1 #537, #699)
@@ -26,12 +27,6 @@ so it is invariant under the driver's renaming and retargeting. `WGuard` implies
 namespace Backend.Proof
 
 open Backend E2E Backend.Proof.Driver
-
-/-- The forms whose allocated lines read world memory: the loads (`ldr`, `ldar`, the scalar
-SIMD&FP `ldr`) and the atomic loops. -/
-def _root_.Backend.MInst.loadForm : MInst → Bool
-  | .load .. | .loadAcquire .. | .fpuLoad .. | .atomicRmwLoop .. | .atomicCasLoop .. => true
-  | _ => false
 
 set_option maxHeartbeats 4000000 in
 /-- **A covered form other than the loads reads no memory once allocated**
