@@ -836,6 +836,19 @@ contract to the counted VCode run's call states (needs `hX` variants through
 `iselSim_relWI`/`sim_runG` and the pipelines); a `w`-independent `XI` (the actual callee result
 cannot be shown related to `cm` in stage 1 without stage 2's invariant).
 
+As built (UninitZ11, stage 1 of the decision): `FV/E2E/ExtSemGuard.lean`: `ExtSem.guard`,
+`guard_of`, `guard_spec`, `CallPost` (the results `XCallsOk`/`XCallsIndOk` accept for a call),
+`xCallsOk_guard`, `xCallsIndOk_guard`. `FV/E2E/RelWPatch.lean`: `patchW cm' w` (`w` with `cm'`'s
+initialised live bytes), `relW_patchW`. `FV/E2E/CallPostExists.lean`: `valCV`, `outsOf`,
+`callPost_only_exists` (one invocation), `invoked_unique`, `callPost_invoked_exists` (the
+environment restricted to a state's invocation; premises: the returning invocation keeps the
+allocations and symbols, and fixes the ABI return count). Next: `XI.at n` cannot depend on the
+state, so the guard's `Q` uses the invocation of the call state with count `n`
+(`InvokedN n := ∃ s, ReachN … s n ∧ Invoked … s`, single-valued in a deterministic run: the
+invoking state is the last of its count's segment), plus `CallPost` antitone in the restriction
+(`env.only A'` for `A ⊆ A'`) and an `xCallsOk_guard` for any `Q` implying `CallPost`; then
+`XPRBI` and stage 2 (`guard_of` at `OnCallPR` states).
+
 
 **Step 3h, as built (UninitZ10b): the call-count premises are theorems.** `InstCallsOne f` and
 `TryCallsOne f` hold for every `f` (`E2E.instCallsOne_all`, `E2E.tryCallsOne_all`,

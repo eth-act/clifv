@@ -52,4 +52,13 @@ theorem callPost_sRet (fn : Clif.Function) (p : Clif.Program) (Γ : Rel) (f : Cl
       sym d uses w r :=
   callPost_invoked_exists 0 fun n vals _ _ _ h => absurd h (invoked_sRet fn p n vals _)
 
+/-- `xCallsOk_guard_only`: the guard accepting results for `A0` meets the contracts of the
+restriction to `sRet`'s invocations (a subset of `A0`'s). -/
+theorem guard_only_sRet (X : ExtSem) (fn : Clif.Function) (p : Clif.Program) (Γ : Rel)
+    (f : Clif.Function) (c : BitVec 64) :
+    XCallsOk (envE.only (Clif.Invoked envE p (sRet fn))) [extE] (RelW Γ f c)
+      (X.guard (CallPost (envE.only A0) [extE] [] (RelW Γ f c) X.sym)) :=
+  (xCallsOk_guard_only (fun n vals m h => absurd h (invoked_sRet fn p n vals m)) X
+    (callPost_e Γ f c X.sym)).1
+
 end E2E.CallPostExistsWitness
