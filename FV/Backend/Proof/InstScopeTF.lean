@@ -5,7 +5,8 @@ import FV.Compile.SubsetTF
 # The supported instructions with the proven float operations (S11f, #35)
 
 `InstScopeTF ctx`: every instruction of `ctx` is in `Compile.instETF` (the typed movement scope,
-the S11f float arithmetic and rounding, the saturating and `from` conversions). It is the scope
+the S11f float arithmetic and rounding, the saturating and `from` conversions, the scalar
+`fcmp`). It is the scope
 premise of the typed rule contexts (`CtxT.scope`) and of the typed shapes with typed `try_call`s
 (`Driver.LowerShapeTC.scope`); `InstScopeT` (the movement scope alone) gives it
 (`InstScopeT.toTF`). `Driver.instScopeOkF` decides it (`instScopeOkF_sound`,

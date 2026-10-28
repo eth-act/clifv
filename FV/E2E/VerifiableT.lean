@@ -34,7 +34,7 @@ typed direct `try_call`s (`Backend.verifiableTC`, `Compile.functionETC`), valida
 
 S11f: outside the scope with typed `try_call`s the backend reports a function verified in the
 scope with the proven float operations (`Backend.verifiableTCF`, `Compile.functionETCF`: the
-float arithmetic, rounding and conversions), validated by `lowerCheckTCF`
+float arithmetic, rounding, conversions and scalar comparisons), validated by `lowerCheckTCF`
 (`Backend.lowerCheckFor`):
 
 * `InSubsetTCF.of_verifiableTCF`, `verdict_of_unverifiedReasonF` (a function reported without

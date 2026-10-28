@@ -6,11 +6,12 @@ import FV.Backend.Proof.LowerContractTF
 
 `IselNonETI`'s checker over the instructions of `Compile.instETF`: besides the float movement,
 a non-E instruction may be an S11f float arithmetic or rounding instruction (a float result, an
-opcode of `arithOps`) or a conversion (`fcvt_to_*_sat`: an integer result, `cvtIOps`;
-`fcvt_from_*`: a float result, `cvtFOps`). `rootNEF` evaluates a root pattern against them
-(`nonE_splitF`), with `failsArgsTG p opsTF floatOpsF` for the fields (look-through instructions
-of `InstScopeTF`, `inst_splitF_calls`). `nonEOkF` also exempts the conversion roots
-(`floatCvtRootRule`, `LowerRulesCorrectCvtT`).
+opcode of `arithOps`), a conversion (`fcvt_to_*_sat`: an integer result, `cvtIOps`;
+`fcvt_from_*`: a float result, `cvtFOps`) or a scalar comparison (`fcmp`: an `i8` result,
+`cmpOps`). `rootNEF` evaluates a root pattern against them (`nonE_splitF`), with
+`failsArgsTG p opsTF floatOpsF` for the fields (look-through instructions of `InstScopeTF`,
+`inst_splitF_calls`). `nonEOkF` also exempts the conversion roots (`floatCvtRootRule`,
+`LowerRulesCorrectCvtT`) and the `fcmp` roots (`floatCmpRootRule`, `LowerRulesCorrectFC`).
 
 * `nonEOkF_program` (one kernel decision), `nonE_splitF`, `rootNEF_sound`;
 * `nonEUnmatchableTF_program : NonEUnmatchableTF program`.
@@ -25,7 +26,7 @@ open Backend Isle Isle.Interp Isle.Aarch64
 set_option maxRecDepth 20000
 
 /-- Opcodes of the non-E instructions of `instETF` with an integer or no result. -/
-def neIOpsF : List Nat := neIOps ++ cvtIOps
+def neIOpsF : List Nat := neIOps ++ (cvtIOps ++ cmpOps)
 
 /-- Opcodes of the non-E instructions of `instETF` with a float result (`select` only when
 `sel = false`). -/
@@ -60,10 +61,10 @@ def rootNEFAny (sel : Bool) : List Pattern → Bool
 end
 
 /-- A closure root of `lower` that is not a float root (movement, memory, arithmetic,
-conversion) nor an integer `store` root is refuted on the non-E instructions. -/
+conversion, comparison) nor an integer `store` root is refuted on the non-E instructions. -/
 def nonEOkF (r : Rule) : Bool :=
   !closureRootIds.contains r.id || floatMoveRootRule r || floatMemRootRule r ||
-    floatArithRootRule r || floatCvtRootRule r || intStoreRoot r ||
+    floatArithRootRule r || floatCvtRootRule r || floatCmpRootRule r || intStoreRoot r ||
     match r.args with
     | [q] => rootNEF p (r.id == 971) q
     | _ => false
@@ -96,6 +97,12 @@ theorem cvtINames_neI : [("Unary", "FcvtToUintSat"), ("Unary", "FcvtToSintSat")]
     | _, _ => false) = true := by
   decide +kernel
 
+theorem cmpNames_neI : [("FloatCompare", "Fcmp")].all
+    (fun pr => match variantIdx 152 pr.1, variantIdx 151 pr.2 with
+    | some _, some ko => neIOpsF.contains ko
+    | _, _ => false) = true := by
+  decide +kernel
+
 /-- **A non-E instruction of the scope with the proven float operations**: an integer or no
 result with an opcode of `neIOpsF`, or a float result with one of `neFOpsF sel`. -/
 theorem nonE_splitF {f : Clif.Function} {ctx : Ctx} (hctx : CtxInvT f ctx) {j : Nat}
@@ -108,7 +115,7 @@ theorem nonE_splitF {f : Clif.Function} {ctx : Ctx} (hctx : CtxInvT f ctx) {j : 
         (AVT.data (neFOpsF sel)).HoldsS Compile.instETF f ctx info.data) := by
   have hT := hTF
   simp only [Compile.instETF, Compile.instETA, Bool.or_eq_true] at hT
-  rcases hT with (hT | hA) | hV
+  rcases hT with ((hT | hA) | hV) | hC
   · rcases nonE_split hctx hi hc hd hT hE hsel with ⟨h1, c', hT', hc', kf, ko, fs, he, hko⟩ |
       ⟨h1, c', hT', hc', kf, ko, fs, he, hko⟩
     · exact .inl ⟨h1, c', Compile.instETF_of_instET hT', hc', kf, ko, fs, he,
@@ -137,6 +144,13 @@ theorem nonE_splitF {f : Clif.Function} {ctx : Ctx} (hctx : CtxInvT f ctx) {j : 
           rcases hty with rfl | rfl <;> simp [eCTys, CTy.ofClif]
         · rcases hop with rfl | rfl <;> simp [instNames, fFmt, fOpc]
       · cases he
+  · obtain ⟨cc, ty, x, y, rfl, -⟩ := fCmpET_cases hC
+    rcases instData_names hd with ⟨rest, hd'⟩ | ⟨ty', imm, he, -⟩
+    · refine .inl ⟨?_, _, hTF, hd, data_of_names hd' ?_ cmpNames_neI⟩
+      · rw [fcmp_resTy hctx hi hc]
+        simp [eCTys]
+      · simp [instNames, fFmt, fOpc]
+    · cases he
 
 /-! ## Soundness -/
 
@@ -221,11 +235,11 @@ end
 /-- **The integer roots never match the non-E instructions of a typed context with the proven
 float operations.** -/
 theorem nonEUnmatchableTF_program : NonEUnmatchableTF program := by
-  intro r hr hroot hfm hmm hfa hfc f ctx hctx ii info inst hi hc hE hsel hst cfg m st tr env' s1
-    _ hmatch
+  intro r hr hroot hfm hmm hfa hfc hfcmp f ctx hctx ii info inst hi hc hE hsel hst cfg m st tr
+    env' s1 _ hmatch
   have hok := List.all_eq_true.mp nonEOkF_program r hr
   rw [closureRoot_eq] at hroot
-  simp only [nonEOkF, hroot, hfm, hmm, hfa, hfc, Bool.not_true, Bool.false_or] at hok
+  simp only [nonEOkF, hroot, hfm, hmm, hfa, hfc, hfcmp, Bool.not_true, Bool.false_or] at hok
   cases his : intStoreRoot r
   · rw [his, Bool.false_or] at hok
     cases m with

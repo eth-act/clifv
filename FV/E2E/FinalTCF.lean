@@ -8,11 +8,12 @@ import FV.Backend.Proof.IselLowerCvtT
 
 `backend_correct_final[_ex]TC` (`E2E/FinalTC.lean`) for functions whose statements may also be
 the S11f float operations whose `lower` roots are proven over float-capable contexts: the
-arithmetic, rounding and the saturating/`from` conversions. The scope is `InSubsetTCF`
-(`InSubsetTC` with `Compile.functionETCF`), the lowering validator `lowerCheckTCF`
-(`CompiledTCF`/`CompiledATCF`), the driver simulation `driver_correctTC` (`LowerSimTC.lean`,
-whose `DriverHypTC` takes the scope `functionETCF`), and the driver's statements come from
-`instCallsTF_of_rules` (the conversion roots `lowerRulesCorrectCvtT_program`, the non-E
+arithmetic, rounding, the saturating/`from` conversions and the scalar comparisons (`fcmp` of
+`f32`/`f64`). The scope is `InSubsetTCF` (`InSubsetTC` with `Compile.functionETCF`), the
+lowering validator `lowerCheckTCF` (`CompiledTCF`/`CompiledATCF`), the driver simulation
+`driver_correctTC` (`LowerSimTC.lean`, whose `DriverHypTC` takes the scope `functionETCF`), and
+the driver's statements come from `instCallsTF_of_rules` (the conversion roots
+`lowerRulesCorrectCvtT_program`, the `fcmp` roots `lowerRulesCorrectFC_program`, the non-E
 unmatchability `nonEUnmatchableTF_program`). The final theorems take no rule-family premise.
 
 * `InSubsetTCF`, `InSubsetTC.toTCF`, `CompiledTCF`, `CompiledATCF`, `CompiledTC.toTCF`,
@@ -112,10 +113,10 @@ theorem CompiledTCF.toA {f : Clif.Function} {k : Nat} {vc vcp : VCode} {rf : RFu
 
 /-- **CLIF → VCode for the scope with the float operations, from the rule families**: the
 driver hypothesis of `buildCtx`'s context (`loweringTCF_of_check`), the statement calls from the
-typed families with the conversion roots and `NonEUnmatchableTF` (`instCallsTF_of_rules`), the
-terminator calls from the typed families, the direct `try_call`s from the proven
-`tryRulesCorrectTFP_program` (`tryCallsTC_of_rules`), the `try_call_indirect`s from the integer
-typed families. -/
+typed families with the conversion and `fcmp` roots and `NonEUnmatchableTF`
+(`instCallsTF_of_rules`), the terminator calls from the typed families, the direct `try_call`s
+from the proven `tryRulesCorrectTFP_program` (`tryCallsTC_of_rules`), the `try_call_indirect`s
+from the integer typed families. -/
 theorem iselSimTCF_of_rules {p : Clif.Program} {f : Clif.Function} {vc : VCode}
     (hsub : InSubsetTCF p f) (hlow : lowerCheckTCF f vc = true)
     (hcfg : ∃ ss ps, vc.cfg = .ok (ss, ps))
@@ -125,6 +126,7 @@ theorem iselSimTCF_of_rules {p : Clif.Program} {f : Clif.Function} {vc : VCode}
     (hrulesF : LowerRulesCorrectT Isle.Aarch64.program)
     (hrulesA : LowerRulesCorrectFT Isle.Aarch64.program)
     (hrulesC : LowerRulesCorrectCvtT Isle.Aarch64.program)
+    (hrulesFC : LowerRulesCorrectFC Isle.Aarch64.program)
     (hnE : NonEUnmatchableTF Isle.Aarch64.program)
     (hcallRules : CallRulesCorrectT Isle.Aarch64.program)
     (hindRules : IndRulesCorrectT Isle.Aarch64.program)
@@ -157,8 +159,8 @@ theorem iselSimTCF_of_rules {p : Clif.Program} {f : Clif.Function} {vc : VCode}
     shape := hshape
     cert := hcert
     dsem := (hds s').toDriverSemG
-    insts := instCallsTF_of_rules hrules hrulesF hrulesA hrulesC hnE hcallRules hindRules hmemRules
-      hmemF
+    insts := instCallsTF_of_rules hrules hrulesF hrulesA hrulesC hrulesFC hnE hcallRules hindRules
+      hmemRules hmemF
       (hRef s') (mrStable_holds ⟨F s', syms, slotOff, out⟩ f) (hcalls s') (hicalls s') (hmem s')
       (hFP s') (outArgsOk_holds ⟨F s', syms, slotOff, out⟩ f)
       (callsStack_mono (callsStackTCF_of_check hlow) houtB)
@@ -182,8 +184,8 @@ theorem iselSimTCF_of_rules {p : Clif.Program} {f : Clif.Function} {vc : VCode}
     cfg := hcfg }
 
 /-- **`backend_correct` for the scope with the float operations, from the rule families**
-(`backend_correct_of_rules_exTC` with `InSubsetTCF`, `CompiledATCF`, the conversion family and
-`NonEUnmatchableTF`). -/
+(`backend_correct_of_rules_exTC` with `InSubsetTCF`, `CompiledATCF`, the conversion and `fcmp`
+families and `NonEUnmatchableTF`). -/
 theorem backend_correct_of_rules_exTCF {p : Clif.Program} {f : Clif.Function} {k : Nat}
     {vc vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAsm} {fb : FnBin}
     (hsub : InSubsetTCF p f) (hc : CompiledATCF f k vc vcp rf af fa fb)
@@ -194,6 +196,7 @@ theorem backend_correct_of_rules_exTCF {p : Clif.Program} {f : Clif.Function} {k
     (hrulesF : LowerRulesCorrectT Isle.Aarch64.program)
     (hrulesA : LowerRulesCorrectFT Isle.Aarch64.program)
     (hrulesC : LowerRulesCorrectCvtT Isle.Aarch64.program)
+    (hrulesFC : LowerRulesCorrectFC Isle.Aarch64.program)
     (hnE : NonEUnmatchableTF Isle.Aarch64.program)
     (hcallRules : CallRulesCorrectT Isle.Aarch64.program)
     (hindRules : IndRulesCorrectT Isle.Aarch64.program)
@@ -223,7 +226,7 @@ theorem backend_correct_of_rules_exTCF {p : Clif.Program} {f : Clif.Function} {k
     ArmRefinesT fb base ra astep s (Clif.runLoop env p fuel cs) := by
   exact backend_correct_of_layers_exT
     (iselSimTCF_of_rules hsub hc.lowerOk (cfg_of_prepare hc.prepare) hrules hrulesF hrulesA
-      hrulesC hnE
+      hrulesC hrulesFC hnE
       hcallRules hindRules hmemRules hmemF
       htermRules htermUn hbranch hbranchEx htryIndRules htryIndUn hRef hds hcalls
       hicalls hmem hFP houtB)
@@ -295,7 +298,8 @@ theorem stackArgsAvoid_frameWATCF {f : Clif.Function} {k : Nat} {vc vcp : VCode}
 
 /-- **The typed M4 assembly at `csem` with the float operations** (`backend_correct_m4_exTC`
 for `InSubsetTCF`/`CompiledATCF`): every rule family proven (with `lowerRulesCorrectCvtT_program`,
-`nonEUnmatchableTF_program`), the register-level layer `hM6` as hypothesis. -/
+`lowerRulesCorrectFC_program`, `nonEUnmatchableTF_program`), the register-level layer `hM6` as
+hypothesis. -/
 theorem backend_correct_m4_exTCF {p : Clif.Program} {f : Clif.Function} {k : Nat} {vc vcp : VCode}
     {rf : RFunc} {af : AFunc} {fa : FnAsm} {fb : FnBin}
     (hsub : InSubsetTCF p f) (hc : CompiledATCF f k vc vcp rf af fa fb)
@@ -322,8 +326,8 @@ theorem backend_correct_m4_exTCF {p : Clif.Program} {f : Clif.Function} {k : Nat
     ArmRefinesT fb base ra astep s (Clif.runLoop env p fuel cs) :=
   have hT := typedRules_program
   backend_correct_of_rules_exTCF hsub hc lowerRulesCorrectTI_program lowerRulesCorrectT_program
-    lowerRulesCorrectFT_program lowerRulesCorrectCvtT_program nonEUnmatchableTF_program hT.callsT
-    hT.indT
+    lowerRulesCorrectFT_program lowerRulesCorrectCvtT_program lowerRulesCorrectFC_program
+    nonEUnmatchableTF_program hT.callsT hT.indT
     memRulesCorrectRTI_program memRulesCorrectRT_program hT.term hT.termUn hT.branch hT.branchEx
     hT.tryIndT hT.tryIndUn
     hM6 hRef (fun s' => driverSem_csem (F s') (ctx s') (X s'))
@@ -336,7 +340,8 @@ theorem backend_correct_m4_exTCF {p : Clif.Program} {f : Clif.Function} {k : Nat
 (`backend_correct_final_exTC` for `InSubsetTCF`/`CompiledATCF`): the Arm run of the compiled
 function refines the CLIF run, each returned value in the ABI return register of its class. All
 rule families are proven (`typedRules_program`, `tryRulesCorrectTFP_program`, the S11e4/S11f
-float families with the conversions, the typed integer families); no `TypedRules` premise. -/
+float families with the conversions and comparisons, the typed integer families); no
+`TypedRules` premise. -/
 theorem backend_correct_final_exTCF {p : Clif.Program} {f : Clif.Function} {k : Nat}
     {vc vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAsm} {fb : FnBin}
     (hsub : InSubsetTCF p f) (hc : CompiledATCF f k vc vcp rf af fa fb)
@@ -374,8 +379,8 @@ theorem backend_correct_final_exTCF {p : Clif.Program} {f : Clif.Function} {k : 
 /-- **The typed final theorem with the proven float operations** (`backend_correct_finalTC`
 for `InSubsetTCF`/`CompiledTCF`, the allocation accepted by `checkAlloc`; no rule-family
 premise): functions with the S11f float arithmetic (`fadd`…`fmax`, `sqrt`, `fneg`, `fabs`,
-`fpromote`, `fdemote`), rounding (`ceil`, `floor`, `trunc`, `nearest`) and conversions
-(`fcvt_from_{u,s}int`, `fcvt_to_{u,s}int_sat`). -/
+`fpromote`, `fdemote`), rounding (`ceil`, `floor`, `trunc`, `nearest`), conversions
+(`fcvt_from_{u,s}int`, `fcvt_to_{u,s}int_sat`) and scalar comparisons (`fcmp` of `f32`/`f64`). -/
 theorem backend_correct_finalTCF {p : Clif.Program} {f : Clif.Function} {k : Nat} {vc vcp : VCode}
     {rf : RFunc} {af : AFunc} {fa : FnAsm} {fb : FnBin}
     (hsub : InSubsetTCF p f) (hc : CompiledTCF f k vc vcp rf af fa fb)

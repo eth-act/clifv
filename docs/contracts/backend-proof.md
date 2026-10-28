@@ -1028,7 +1028,8 @@ typed per-step contracts and the widened scope are the remaining S11e5 slices.
   `lower_nonroot_nomatchT` keep their statements.
 * **`fcmp` (S11f, #35).** `rule_lower_2176`/`rule_lower_1283` are closure roots, proven over
   float-capable contexts (`LowerRulesCorrectFC`, `IselFloatCmp.lean`); `Compile.fArithET`
-  still excludes `fcmp` (its end-to-end scope admission is open).
+  excludes `fcmp`, the scope with the proven float operations admits it (`Compile.fCmpET`, see
+  Boundary).
 * **Rounding: `ceil`/`floor`/`trunc`/`nearest`** (`FV/Backend/Proof/IselFloatRound.lean`): the
   eight pinned-size roots `rule_lower_567/570/578/581/589/592/600/603` (ids 682/683/685/686/
   688/689/691/692, `lower.isle:567-603`) proven at `CtxInvT` (`ceil32_okT … nearest64_okT`)
@@ -1049,14 +1050,16 @@ rounding operations, the eight roots fire on it (and not the generic-size ones, 
 ±∞, quiet NaN). Oracle: `FVTest/Backend/float_round.clif`.
 
 **Boundary.** Since S11f's scope PR the per-function chain with typed `try_call`s consumes them
-with the conversions: `CtxT.scope` and `Driver.LowerShapeTC.scope` are `InstScopeTF`
-(`Compile.instETF = instETA ∨ fCvtET`), the exclusion `lower_nonroot_nomatchTF_calls`
-(`IselExclTF`, `exclOkTF_program`), the non-E unmatchability `NonEUnmatchableTF`
+with the conversions and the scalar comparisons: `CtxT.scope` and `Driver.LowerShapeTC.scope` are
+`InstScopeTF` (`Compile.instETF = instETA ∨ fCvtET ∨ fCmpET`), the exclusion
+`lower_nonroot_nomatchTF_calls` (`IselExclTF`, `exclOkTF_program`; the vector `fcmp` root
+`rule_lower_2179` by `rule_lower_2179_nomatchT`), the non-E unmatchability `NonEUnmatchableTF`
 (`IselNonETF`), the conversion family `LowerRulesCorrectCvtT`/`floatCvtRootRule`
-(`IselLowerCvtT`), the dispatcher `lowerInstOk_of_rulesTF`/`instCallsTF_of_rules`
-(`LowerContractTF`) and the validator `lowerCheckTCF` (`DriverCheckCF`/`DriverCheckTCF`) feed
-`E2E.backend_correct_finalTCF`. `NonEUnmatchableT` and the `InstScopeT` dispatchers take
-`InstScopeT ctx` explicitly (meaning unchanged); the link-level chain keeps `InstScopeT`.
+(`IselLowerCvtT`), the `fcmp` family `LowerRulesCorrectFC`/`floatCmpRootRule`, the dispatcher
+`lowerInstOk_of_rulesTF`/`instCallsTF_of_rules` (`LowerContractTF`) and the validator
+`lowerCheckTCF` (`DriverCheckCF`/`DriverCheckTCF`) feed `E2E.backend_correct_finalTCF`.
+`NonEUnmatchableT` and the `InstScopeT` dispatchers take `InstScopeT ctx` explicitly (meaning
+unchanged); the link-level chain keeps `InstScopeT`.
 
 ## Float `Args`/`Rets` in the control-form check (S11e5 Stage C, slice 5a)
 

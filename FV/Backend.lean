@@ -91,8 +91,8 @@ def verifiableTC (f : Clif.Function) : Bool :=
 
 /-- The conditions of the typed theorem with the proven float operations that do not need the
 rest of the file (`E2E.InSubsetTCF`: `subsetETCF`, `storeTyped`, `abiSigs`, `indSigs`; S11f): the
-scope `Compile.functionETCF` (`functionETC` with the float arithmetic, rounding and
-conversions), float stores storing float values. -/
+scope `Compile.functionETCF` (`functionETC` with the float arithmetic, rounding, conversions
+and scalar comparisons), float stores storing float values. -/
 def verifiableTCF (f : Clif.Function) : Bool :=
   Compile.functionETCF f && Compile.storeTypedB f && abiSigs f && indSigsOk f
 
@@ -194,7 +194,8 @@ subset E the typed `E2E.InSubsetT` of S11e5 Stage C: float data movement, float 
 returns, `backend_correct_finalT`/`backend_correct_final_cleanupT` with `E2E.typedRules_program`):
 outside clif-subset-v2 E and its typed scopes (`Compile.functionET`, since S11e6
 `Compile.functionETC` with typed direct `try_call`s, `E2E.backend_correct_finalTC`, and since
-S11f `Compile.functionETCF` with the proven float arithmetic, rounding and conversions,
+S11f `Compile.functionETCF` with the proven float arithmetic, rounding, conversions and scalar
+comparisons,
 `E2E.backend_correct_finalTCF`; with `Compile.storeTypedB`),
 stack-passed arguments of an indirect call, or unsupported signatures.
 The activation runs in a program without functions; every callee, including the function
