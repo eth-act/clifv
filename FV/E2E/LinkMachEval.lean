@@ -1,4 +1,4 @@
-import FV.E2E.LinkArm
+import FV.E2E.LinkArmIniOf
 
 /-!
 # A certified evaluator of the linked machine (SEM1 #537, witnesses)
@@ -93,6 +93,68 @@ theorem runX_succ_eval (f : Arm.ArmState → Arm.ArmState) (k : Nat) (s : Arm.Ar
 /-- The first return of `h` called at `t` within `fuel` steps of the run `run`. -/
 def firstRetC (run : Nat → Arm.ArmState) (h : Art) (t : Arm.ArmState) (fuel : Nat) : Option Nat :=
   (List.range fuel).find? fun k => retOfB h t (run k)
+
+/-- `CallPc` as a `Bool`. -/
+def callPcB (fa : FnAsm) (base pc : BitVec 64) : Bool :=
+  (List.range fa.lines.toList.length).any fun j => match fa.lines.toList[j]? with
+    | some (Line.ins (.bl _) _) | some (Line.ins (.blr _) _) =>
+      decide (pc = base + BitVec.ofNat 64 (lineOffset fa.lines.toList j))
+    | _ => false
+
+theorem callPc_iff (fa : FnAsm) (base pc : BitVec 64) : CallPc fa base pc ↔ callPcB fa base pc = true := by
+  unfold CallPc callPcB
+  constructor
+  · rintro ⟨j, i, t, hl, hi, he⟩
+    have hjl : j < fa.lines.toList.length := by
+      rcases Nat.lt_or_ge j fa.lines.toList.length with h1 | h1
+      · exact h1
+      · rw [List.getElem?_eq_none h1] at hl; cases hl
+    refine List.any_eq_true.mpr ⟨j, List.mem_range.mpr hjl, ?_⟩
+    rw [hl]
+    rcases hi with ⟨n, rfl⟩ | ⟨r, rfl⟩ <;> simp [he]
+  · intro h
+    obtain ⟨j, -, hj⟩ := List.any_eq_true.mp h
+    split at hj
+    · rename_i n t hl
+      exact ⟨j, _, t, hl, .inl ⟨n, rfl⟩, of_decide_eq_true hj⟩
+    · rename_i r t hl
+      exact ⟨j, _, t, hl, .inr ⟨r, rfl⟩, of_decide_eq_true hj⟩
+    · cases hj
+
+/-- **`callsBefore` by counting.** -/
+theorem callsBefore_eq (Mm : Arm.ArmState → Arm.ArmState) (fa : FnAsm) (base : BitVec 64)
+    (s : Arm.ArmState) : ∀ i, callsBefore Mm fa base s i =
+      ((List.range i).filter fun j => callPcB fa base (Arm.r .PC (runX Mm j s))).length
+  | 0 => rfl
+  | i + 1 => by
+    rw [callsBefore, callsBefore_eq Mm fa base s i, List.range_succ, List.filter_append,
+      List.length_append]
+    by_cases h : CallPc fa base (Arm.r .PC (runX Mm i s))
+    · simp [h, (callPc_iff _ _ _).mp h]
+    · have : callPcB fa base (Arm.r .PC (runX Mm i s)) = false := by
+        cases hb : callPcB fa base (Arm.r .PC (runX Mm i s))
+        · rfl
+        · exact absurd ((callPc_iff _ _ _).mpr hb) h
+      simp [h, this]
+
+/-- A function without `bl`/`blr` lines makes no call: `callsBefore` is `0`. -/
+theorem callsBefore_noCalls {fa : FnAsm} (base : BitVec 64)
+    (h : fa.lines.toList.all (fun l => match l with
+      | Line.ins (.bl _) _ | Line.ins (.blr _) _ => false | _ => true) = true)
+    (Mm : Arm.ArmState → Arm.ArmState) (s : Arm.ArmState) (i : Nat) :
+    callsBefore Mm fa base s i = 0 := by
+  rw [callsBefore_eq]
+  simp only [List.length_eq_zero_iff, List.filter_eq_nil_iff]
+  intro j _ hc
+  obtain ⟨k, -, hk⟩ := List.any_eq_true.mp hc
+  split at hk
+  · rename_i n t hl
+    have := List.all_eq_true.mp h _ (List.mem_of_getElem? hl)
+    simp at this
+  · rename_i r t hl
+    have := List.all_eq_true.mp h _ (List.mem_of_getElem? hl)
+    simp at this
+  · cases hk
 
 namespace LinkSys
 
