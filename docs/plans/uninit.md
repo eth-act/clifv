@@ -740,6 +740,11 @@ agreeing on non-calls whose calls fail; `seqRun_csemI_le1` for `ISem.counted sem
 with `valueSem`; then `prune_correct` and the GOT flow for `valueSemVI`, and
 `backend_correct_world_cleanupPRI`.
 
+of the same configuration, so the segment's call-state count carries over). Next on that chain:
+`realizes_value_allC_sp`, `regLevelCorrect_world_value_atCS`/`_worldCS`/`_worldPRS` (copies of
+`RegLevelCorrectPRS.lean`'s with `csemVI` → the counted `valueSemV`, `realizes_allC_sp` →
+`realizes_value_allC_sp`; the `rets`/halt cases as in `DeadCleanupRegLevel.lean`).
+
 **Steps 3h–3j, as built (UninitZ10, branch `agent/uninit-z10`).** Item (a) is complete for both
 compile paths.
 - `FV/E2E/CountedFam.lean`: `NoncallIndep sem`, `ProbeOf semB sem` (for `sem : Nat → ISem CV W`,
@@ -1015,6 +1020,8 @@ where `RelatedN … n` holds: `CondB` at the actual call with `ini := ini.adv (c
 equality from `prefix_related_cleanupPRI` at every `j < n` and `ThmPRB (M - 1)`'s `NextAdv`), by
 strong induction on `n`; then `thmPRB_of`, `thmPRB`, item (e).
 
+**Step 3k, as built (UninitZ10b): the call-count premises are theorems.** `InstCallsOne f` and
+
 **(3), as built (UninitZ14, 2026-10-28).** Finding: `CondB` is too weak for `ThmPRB (M - 1)`: the
 callee's CLIF entry is placed with `calleeIni h ini` (`ini.adv 1` when `h` has slots,
 `initState_memB`), so the canonical callee run's table must be `calleeIni h ini`'s, also without
@@ -1149,6 +1156,146 @@ what they allocate, `baseKeepsAllocs`; return-count agreement of the declaration
 `a2_iselSimIC`. The premises are stated for the integer subset (`Compile.functionE`, the
 `Compiled` pipeline); they are universal, so every function of the typed scope has them, and a
 typed pipeline (`CtxInvT`) would take the same proof over `IselShpTCall`'s typed runs.
+
+**Step 3l, as built (UninitZ10b, branch `agent/uninit-z10b-x30`): the `x30` footprint and the
+single steps of the lock-step (§5.8 (1)).**
+- `FV/E2E/ArmGprFoot.lean`: `GprFoot.setGpr`, `GprFree k f` (`f` commutes with setting `x_k`),
+  one lemma per instruction class of the Arm model (load/store via `reg_imm_common`,
+  `reg_pair_common`), `ArmInst.gprs` (the GPR fields a class names; SIMD&FP data registers
+  excluded, `x30` added for `bl`/`blr`), **`gprFree_exec_inst`** (`k ∉ ai.gprs → k ≠ 31 →
+  GprFree k (exec_inst ai)`): every instruction reads and writes only the GPRs it names.
+- `FV/E2E/LinkArmStepX30.lean`: `StEqOutX Z` (all registers but `x30`, program, memory outside
+  `Z`), `stEqOut_setGpr30`, `stEqOutX_exec_inst`, `stEqOutX_stepi` (`DecX30Free`: the decoded
+  instruction names no `x30`), **`stEqOutX_armStepX`** (unhooked line), `stEqOutX_armStepX_call`.
+- `FV/E2E/LinkArmStepFrameRec.lean`: the lines that name `x30`: `stEqOutX_stpFR` (the prologue's
+  `stp x29, x30, [sp, #-16]!` adds the record's high 8 bytes `HiBytes A 8 16` to `Z`),
+  `stEqOutX_ldpFR` (the epilogue's `ldp` keeps `StEqOutX Z` when the saved `x29` is outside `Z`),
+  `stEqOutX_ret` (registers but `x30`/pc: `RetAgree`'s register part).
+- Witnesses `ArmGprFootWitness.lean` (`add_x30Free`, `str_d30_x30Free`, `add_writes_x0`, …),
+  `LinkArmStepX30Witness.lean` (`add_lockstep`, `stp_lockstep`, `ldp_lockstep`, `ret_lockstep_x0`,
+  and `prologue_stp`/`epilogue_ldp`/`ret_insn`: the backend's own frame-record and `ret` encode
+  to exactly these instructions).
+
+**Finding (base hooks, decided conservatively).** `HookDet` (step 2o) assumes all registers equal
+and differences only strictly below `sp`. In the lock-step the two runs differ in `x30` at a
+call until the `bl` overwrites it, and in the caller's saved LR bytes (above the callee's `sp`)
+for the whole activation. Program callees are covered by the induction (`EntryAgree` excludes
+`x30`; they read above their `sp` only stack arguments). A base extern, an arbitrary function,
+could read the caller's frame record (an unwinder taking a backtrace does). Decision: the
+multi-step lock-step takes a new base-hook premise `HookDetX` beside `OkD.baseDet` (from
+`StEqOutX Z` states, with `Z` below `sp` or within the frame records' LR bytes, a base call or TLS
+hook gives `StEqOutX Z` states: the extern does not observe return addresses), `NeedNI`-guarded
+like `baseNI`; nothing in the existing statements changes.
+
+**Remaining for `ThmPDER`'s determinism clause (item 3).** (i) A compiled-code check `DecX30Free`
+on every body line but `bl`/`blr`/`ret`/the frame-record pair (decidable on `fb`, Cranelift never
+allocates `x30`) with its soundness lemma; (ii) `ReadsAvoid Z (stepiEvs u₀)` along the canonical
+run from `RL.GoodX.reads` (`Z` = the NI set `D` and the activation's LR bytes; no body line but the
+epilogue `ldp` reads the record); (iii) the run induction `lockstep_runX` (`StEqOutX` at every
+index up to the return, nested program calls by `ih : ThmPDER κ (M-1)`, base hooks by
+`HookDetX`), then `ProphStep` ⇒ `prophOk_congr` (step 2m) and `RetAgree` from `stEqOutX_ret`;
+(iv) `LinkSys.thmPDER_det_of`.
+
+**Steps 3m–3o, as built (UninitZ11b, branch `agent/uninit-z11b`).**
+- `FV/E2E/LinkArmX30Check.lean` (item (i)): `Insn.x30Exempt` (`bl`, `blr`, `blrTlsDesc`, `ret`, the
+  frame-record pair), `Insn.x30Ok`, **`FnAsm.x30Free fa lm`** (decidable: every instruction line is
+  exempt or its `toArmInst` at the line's encoder environment names no `x30`),
+  **`decX30Free_of_check`** (`RL`) / `decX30Free_of_line` (laid-out function): at a non-exempt
+  line of a function passing the check, `DecX30Free`. Measured (throwaway runner over
+  `compileFile`, 2026-10-28): corpus + Cranelift runtests 1105 functions / 54572 instruction
+  lines (3836 exempt); fv-demo split CLIF 2122 functions / 108285 lines (10812 exempt); survey
+  1329 functions / 60030 lines (6054 exempt): 0 failing lines. Witness `x30Free_all` (every
+  function of `LinkWitness`'s program).
+- `FV/E2E/LinkArmBaseDetX.lean` (the base-hook finding above): `fpChain`, `LRByte` (a saved-LR
+  byte of the frame-record chain), **`HookDetX Hb BD`** (from `StEqOutX Z` states with `Z` below
+  `sp` or saved-LR bytes, base calls and TLS hooks give `StEqOutX Z` states), `LinkSys.OkDX`
+  (`OkD` + `baseDetX : NeedNI → HookDetX L.Hb L.BaseDest`), `Ok.okDX_of_not_needNI`, `Ok.okDX`.
+  Trusted (outside code), `docs/contracts/e2e.md`. Witnesses `LinkArmBaseDetXWitness.lean`.
+- `FV/E2E/LinkArmStepLine.lean`: `OnLine` (the canonical state at an instruction line of the
+  laid-out function), the lock-step per line kind on `ArmStepX`: `stEqOutX_line_free` (checked
+  lines; reads avoid `Z`), `stEqOutX_line_call`, `stEqOutX_line_stpFR` (the record's LR bytes join
+  `Z`), `stEqOutX_line_ldpFR`, `retAgree_line_ret`, combined **`stEqOutX_line`** (any line but
+  `ret`/the TLS tail, to `zNext Z x t`; obligations: a checked line reads nothing in `Z`, the
+  `ldp` reloads `fp` from outside `Z`, hooks keep `StEqOutX Z`); **`lockstep_runX`** (the run induction from
+  per-index steps). Witnesses `LinkArmStepLineWitness.lean` (a laid-out
+  `stp; add; ldp; ret`, each line stepped from two states differing in `x30`).
+
+**Finding (item (ii), decided conservatively: not from `GoodX.reads` alone).** `RL.GoodX.reads`
+bounds the reads of the run only away from the kept addresses `G`; it does not keep them out of
+the NI set `D` or the frame record. The differing set of the two entries is (outside the
+`EntryAgree` region) `D` and the callers' frames in `F`, plus the record's LR bytes after the
+`stp`. A body read is a frame-slot read (move code, `moveInsts_reads`), the epilogue's `ldp`
+(`memReads_ldp_fplr`), a jump-table word, or a covered form's access (`formOk_reads`: outside
+`F`, a CLIF-mapped byte). CLIF-mapped bytes at entry are equal in both runs (`RelW` to the same
+`cs.mem`); bytes mapped later are this activation's slots (in the `EntryAgree` region) or
+allocations by externs. So `ReadsAvoid Z (stepiEvs u₀)` needs a new per-state fact
+(`RL.ReadsIn`: every read is a frame slot, a jump-table byte, the record's `fp` word, or a byte
+CLIF-mapped at the state), proven next to `GoodX.reads` in each `realizes_*` case, plus the
+CLIF-side fact that a byte mapped at a state was mapped at entry or allocated in the run.
+
+**Step 3p, as built (UninitZ12b, branch `agent/uninit-z12b`): the located reads (item (ii), Arm
+side).**
+- `FV/E2E/RegLevelReadsIn.lean`: `Insn.ldpFR` (the epilogue's `ldp x29, x30, [sp], #16`),
+  `RL.FrameRd lr a` (`spB + o`, `o < frameDrop`, not the record's saved-LR word unless `lr`),
+  **`RL.ReadIn lr a`** (a jump-table byte, a `FrameRd` byte, or a byte outside `F`),
+  **`RL.ReadsIn u`** (the reads of the unhooked instruction `x` at the pc are `ReadIn x.ldpFR`:
+  only the epilogue's `ldp` reads the saved LR word), `RL.GoodXNR` (`GoodXN ∧ ReadsIn`),
+  `RL.readIn_ok`/`RL.ReadsIn.readsAt` (it refines D2), builders as for D2
+  (`readsIn_of_line/_noLoad/_hooked/_noLine`, `readsIn_execLinesP`, `goodXNR_execLines(G,GP)`);
+  `RegLevelGoodXNR.lean` (`goodXNR_ofIns`, `goodXNR_line`).
+- The `realizes_*N` cases with `GoodXNR`: `RegLevel{Move,Op,Next,Call,Try,JT,Atomic,Tls,Frame,
+  Goto,Trap}NR.lean` (copies of the `*N` files: moves read slots `frameRd_slot`, covered forms
+  outside `F` (`formOk_reads`), the jump table its words, atomics outside `F`, the epilogue's
+  `ldp` the record (`ReadIn true`); `realizes_callNR`/`realizes_tryCallNR` state
+  `GoodX ∧ ReadsIn`).
+- Up the counted chain: `realizes_allCR`, `regLevelCorrect_world_atCR`/`_worldCR`/`_worldPRR`
+  (`RegLevelCorrectCR/PRR.lean`), `realizes_allC_spR`, `regLevelCorrect_world_atCSR`/`_worldCSR`/
+  `_worldPRSR` (`RegLevelCorrectPRSR.lean`), **`backend_correct_worldPRIR`**
+  (`BackendWorldIR.lean`): the `*` theorems (same proofs) that also give `actReadsIn` (= `RL.ReadsIn`
+  of the activation) at every state of the run before the return. Existing statements unchanged.
+- Witnesses `RegLevelReadsInWitness.lean` (`worldPRSR_const`, `a2_worldPRIR`). Axioms standard.
+
+**Finding (item (ii), CLIF side; design for the next step).** For the lock-step the `¬ F`
+disjunct must become "a byte equal in both runs". `D` may contain world bytes outside `F`, so
+`¬ F` alone is not enough; the bytes the two runs agree on outside `F` are those CLIF holds
+(valid and initialised) at the matching CLIF state: both machine runs realise the *same* CLIF run
+from `cs` (`iselSim_relWI` applies to `w₀` and to `w₀'`, `RelW` to the same `cs.mem`), and a CLIF
+load of an uninitialised byte is stuck (`Mem.load`). Plan: (a) refine the third disjunct of
+`ReadIn` per segment to the bytes the realised VCode instruction's `csem` accesses at the
+segment's world (`AccessOk`, from `reads_of_accR`/`formOk_reads`, which already have them before
+weakening to `¬ F`); (b) from the counted simulation, every such access is a CLIF access of an
+initialised valid byte of the matching CLIF state, related to both worlds by `MemRel F`; (c) take
+the lock-step sets as the exact difference sets of the two runs (`Zs i a := (runX f i s).mem a ≠
+(runX f i s₀).mem a`, plus the record's LR bytes), so a write of equal values shrinks them;
+then `lockstep_runX` with `stEqOutX_line` per index gives the determinism clause of
+`LinkSys.thmPDER_det_of` (nested program calls through `ih : ThmPDER κ (M-1)`, base calls through
+`HookDetX`).
+
+**Item (2), as built (UninitZ13b, branch `agent/uninit-z13b`): guarded world reads, Arm side.**
+The guard set is a per-step fact of the VCode run, so it enters as a guard on the VCode
+semantics, and `ReadIn`'s third case becomes "outside `F` and outside the step's guard set".
+- `RegLevelReadsIn.lean`: `RL.ReadInY Y lr a` (third case `¬ F a ∧ ¬ Y a`), `RL.ReadsInY Y`,
+  `RL.GoodXNY Y`; `ReadIn`/`ReadsIn`/`GoodXNR` are the instances at `Y := F` (same meaning). The
+  builders and every `realizes_*NR` theorem of a case that reads no world byte are generic in `Y`
+  (implicit; the old uses elaborate at `Y := F`).
+- The cases that read world bytes take the step's `csem` at `Y` (`formOk_reads`, `loopSem_inv`
+  are generic in the frame set): **`realizes_op_nextNY`** (`hsemY`, `Y ⊇ F`),
+  **`realizes_rmwLoopNY`**, **`realizes_casLoopNY`**; `realizes_rmwLoopNR`/`_casLoopNR` keep
+  their statements (now the `Y := F` instances).
+- `RegLevelCorrectCY.lean`: `MInst.wReads` (straight-line forms and atomic loops), **`WGuard F ctx
+  X Ok i us w`** (`∃ Y ⊇ F, Ok w Y ∧ (i.wReads → csem Y ctx X i us w ≠ none)`), the guarded
+  semantics `csemVG`/`csemVIG` (`csemV`/`csemVI` where `WGuard` holds; `csemVIG_eqF`: at
+  `Ok := (· = F)` it is `csemVI`), `RL.WReadsIn Ok u` (`ReadsInY Y u` for a `Y ⊇ F` that is
+  everything or admitted by `Ok`), `MStep.guardLift`, **`realizes_allCY`**, `realizes_allC_spY`.
+- `RegLevelCorrectPRSY.lean`: `actWReadsIn`, `regLevelCorrect_world_atCSY`/`_worldCSY`/
+  `_worldPRSY` (the `*SR` proofs on the guarded semantics); `BackendWorldIY.lean`:
+  **`backend_correct_worldPRIY`** = `backend_correct_worldPRIR` with `Ok` and the premise `hGd`
+  (the compiled `csemVI` run of `vcp` is a `csemVIG … Ok` run), giving `actWReadsIn … Ok` at every
+  state before the return. Witness `BackendWorldIYWitness.lean` (`a2_worldPRIY`, `Ok := (· = F)`).
+- Open: `hGd` for the pair (`Ok w Y := Y = Zof F D cm` at a `cm` the pair relates `w` to). It
+  needs a per-step refinement of the counted pair run (`vcode_niI`): the rules on `csemG` with
+  `Rd := ¬ Zof F D cm` give `GuardR`, hence `csem (F ∪ ¬ Rd)` (loads, atomics); and the transport
+  across `prep` (`DriverSemG` of the guarded family). Not started.
 
 ## 6. Heap (separate gap, SEM2)
 
