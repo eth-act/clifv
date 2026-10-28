@@ -31,6 +31,8 @@ import FV.Link.DeadCleanupCompileTFast
 import FV.E2E.FinalTCF
 import FVTest.E2E.FloatArithFinalTCF
 import FVTest.E2E.FloatCmpFinalTCF
+import FV.Backend.Proof.LowerContractTPF
+import FVTest.Link.FloatArithCompileExeT
 
 -- S11e5 Stage C (#35): the typed scope (float data movement, float parameters and returns)
 #print axioms E2E.typedRules_program
@@ -226,3 +228,68 @@ import FVTest.E2E.FloatCmpFinalTCF
 #print axioms FloatCmpFinalTCF.fcmp_excl_w -- witness: native_decide
 #print axioms FloatCmpFinalTCF.verdict_f -- witness: native_decide
 #print axioms FloatCmpFinalTCF.backend_correct_finalTCF_fCmp -- witness: native_decide
+
+-- S11f (#35): the link-level chain with the proven float operations (compileExeT's third branch
+-- admits `Compile.functionETCF`; `LinkSys.OkT.subset` is `InSubsetTCF`)
+#print axioms Backend.Proof.lowerInstOkP_of_rulesTF
+#print axioms Backend.Proof.lowerInstOkP_runTermTF
+#print axioms E2E.driverHypTCF_relW_of
+#print axioms E2E.driverHypTCF_relW
+#print axioms E2E.iselSim_relWTCF
+#print axioms E2E.backend_correct_worldTCF
+#print axioms E2E.instCalls_pairTCF
+#print axioms E2E.vcode_niTCF
+#print axioms E2E.backend_correct_world_niTCF
+#print axioms E2E.CompiledCleanupTC.toTCF
+#print axioms E2E.CompiledCleanupTCF.toA
+#print axioms E2E.outgoing_le_intBaseCleanupATCF
+#print axioms E2E.cfg_of_cleanupTCF
+#print axioms E2E.driverHypTCF_relW_value
+#print axioms E2E.prepareCorrect_cleanupTCF
+#print axioms E2E.iselSim_relW_cleanupTCF
+#print axioms E2E.backend_correct_world_cleanupTCF
+#print axioms E2E.instCalls_pair_valueTCF
+#print axioms E2E.vcode_ni_valueTCF
+#print axioms E2E.backend_correct_world_ni_valueTCF
+#print axioms E2E.CompiledEitherTC.toTCF
+#print axioms E2E.CompiledEitherTCF.lowerOk
+#print axioms E2E.backend_correct_worldXTCF
+#print axioms E2E.backend_correct_world_niXTCF
+#print axioms E2E.backend_correct_worldX_cleanupTCF
+#print axioms E2E.backend_correct_world_niX_cleanupTCF
+#print axioms E2E.backend_correct_world_pipelineTCF
+#print axioms E2E.backend_correct_world_ni_pipelineTCF
+#print axioms E2E.backend_correct_worldX_pipelineTCF
+#print axioms E2E.backend_correct_world_niX_pipelineTCF
+#print axioms E2E.hasTls_of_vcodeCleanupATCF
+#print axioms E2E.backend_correct_world_pipelineAnyTF
+#print axioms E2E.backend_correct_world_ni_pipelineAnyTF
+#print axioms E2E.backend_correct_worldX_pipelineAnyTF
+#print axioms E2E.backend_correct_world_niX_pipelineAnyTF
+-- the TC statements, now corollaries of the TCF ones
+#print axioms E2E.driverHypTC_relW_of
+#print axioms E2E.driverHypTC_relW
+#print axioms E2E.iselSim_relWTC
+#print axioms E2E.backend_correct_worldTC
+#print axioms E2E.vcode_niTC
+#print axioms E2E.backend_correct_world_niTC
+#print axioms E2E.driverHypTC_relW_value
+#print axioms E2E.iselSim_relW_cleanupTC
+#print axioms E2E.backend_correct_world_cleanupTC
+#print axioms E2E.vcode_ni_valueTC
+#print axioms E2E.backend_correct_world_ni_valueTC
+#print axioms E2E.backend_correct_worldXTC
+#print axioms E2E.backend_correct_world_niXTC
+#print axioms E2E.backend_correct_worldX_cleanupTC
+#print axioms E2E.backend_correct_world_niX_cleanupTC
+#print axioms E2E.LinkCheck.okRWith_soundT
+#print axioms E2E.FloatArithCompileExeTWitness.checks_true -- witness: native_decide
+#print axioms E2E.FloatArithCompileExeTWitness.okBCleanupT_spec -- witness: native_decide
+#print axioms E2E.FloatArithCompileExeTWitness.correct_spec -- witness: native_decide
+#print axioms E2E.FloatArithCompileExeTWitness.compiledTCF_w -- witness: native_decide
+#print axioms E2E.FloatArithCompileExeTWitness.compiledCleanupTCF_w -- witness: native_decide
+#print axioms E2E.FloatArithCompileExeTWitness.worldTCF_w -- witness: native_decide
+#print axioms E2E.FloatArithCompileExeTWitness.world_niX_cleanupTCF_w -- witness: native_decide
+#print axioms E2E.FloatArithCompileExeTWitness.world_ni_pipelineTCF_w -- witness: native_decide
+#print axioms E2E.FloatArithCompileExeTWitness.world_pipelineAnyTF_w -- witness: native_decide
+#print axioms E2E.FloatArithCompileExeTWitness.world_niX_pipelineAnyTF_w -- witness: native_decide

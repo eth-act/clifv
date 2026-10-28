@@ -7,7 +7,13 @@ import FV.E2E.LinkSiteTC
 
 The declarations of `FV.E2E.PipelineCheck` that depend on the integer link contract
 (`LinkSys.Ok`, `LinkSys.Thm`, `okB`, `ArmRefines`), for the typed contract `LinkSys.OkT`
-(suffix `T`; `LinkSys.Ok.*` as `LinkSys.OkT.*`). -/
+(suffix `T`; `LinkSys.Ok.*` as `LinkSys.OkT.*`).
+
+S11f (#35): the lowering check of `staticChksWithT` (and `FactsWithT.lowerOk`) admits, outside
+the typed movement scope, the scope with the proven float operations (`Compile.functionETCF`
+with `lowerCheckTCF`; it was `Compile.functionETC` with `lowerCheckTC`, which it contains:
+`Compile.functionETCF_of_functionETC`, `lowerCheckTCF_of_lowerCheckTC`). The compiled code is
+unchanged; `okRWith_soundT`'s statement is unchanged. -/
 
 namespace E2E.LinkCheck
 open Backend Backend.Proof Backend.Proof.Driver
@@ -15,8 +21,8 @@ open Backend Backend.Proof Backend.Proof.Driver
 def staticChksWithT (stage : Clif.Function → VCode → VCode) (I : LinkInput) (g : Clif.Function) (r : Except String Art) : List (String × Bool) :=
   let a := getOk r
   [("compiled: pipeline", r.toBool),
-  ("compiled: lowerCheckT/TC",
-    (Compile.functionET g && lowerCheckT g a.vc) || (Compile.functionETC g && lowerCheckTC g a.vc)),
+  ("compiled: lowerCheckT/TCF",
+    (Compile.functionET g && lowerCheckT g a.vc) || (Compile.functionETCF g && lowerCheckTCF g a.vc)),
   ("compiled: prepCheck", prepCheck (stage g a.vc) a.vcp),
    ("compiled: checkAlloc", (checkAlloc a.vcp a.rf).toBool),
    ("covered", formsCoveredB ⟨a.fa.k, a.af.slotBase⟩ a.vcp),
@@ -47,7 +53,7 @@ structure FactsWithT (stage : Clif.Function → VCode → VCode) (I : LinkInput)
     emitFunc a.k a.af = .ok a.fa ∧ a.fa.layout = .ok a.fb ∧
     a.base = BitVec.ofNat 64 (I.baseOf g.name)
   lowerOk : (Compile.functionET g = true ∧ lowerCheckT g a.vc = true) ∨
-    (Compile.functionETC g = true ∧ lowerCheckTC g a.vc = true)
+    (Compile.functionETCF g = true ∧ lowerCheckTCF g a.vc = true)
   prepOk : prepCheck (stage g a.vc) a.vcp = true
   check : checkAlloc a.vcp a.rf = .ok ()
   covered : FormsCovered ⟨a.fa.k, a.af.slotBase⟩
@@ -222,10 +228,10 @@ theorem okRWith_soundT (stage : Clif.Function → VCode → VCode) {I : LinkInpu
       (fa hg).storeT⟩
     have := List.all_eq_true.mp (fa hg).indOk sig hs
     simpa [Bool.and_eq_true, decide_eq_true_eq] using this
-  have hinTC : ∀ g ∈ (progOf R).funcs, Compile.functionETC g = true →
-      InSubsetTC (ofRes I R B F).P.bare g := by
-    intro g hg hETC
-    refine ⟨hETC, fun b _ st _ fn args _ e he => Clif.Program.bare_func? _ _,
+  have hinTC : ∀ g ∈ (progOf R).funcs, Compile.functionETCF g = true →
+      InSubsetTCF (ofRes I R B F).P.bare g := by
+    intro g hg hETCF
+    refine ⟨hETCF, fun b _ st _ fn args _ e he => Clif.Program.bare_func? _ _,
       fun b _ fn args et _ e he => Clif.Program.bare_func? _ _, (fa hg).abi, fun sig hs => ?_,
       (fa hg).storeT⟩
     have := List.all_eq_true.mp (fa hg).indOk sig hs
@@ -249,7 +255,7 @@ theorem okRWith_soundT (stage : Clif.Function → VCode → VCode) {I : LinkInpu
     { names := hn
       free := fun g hg => (fa hg).free
       subset := fun g hg =>
-        (fa hg).lowerOk.elim (fun h => (hinT g hg h.1).toTC) (fun h => hinTC g hg h.1)
+        (fa hg).lowerOk.elim (fun h => (hinT g hg h.1).toTC.toTCF) (fun h => hinTC g hg h.1)
       compiled := fun g hg => (hcomp g hg).1
       sretE := fun g hg hs => by
         obtain ⟨hE, hlc⟩ := (fa hg).sretE hs
