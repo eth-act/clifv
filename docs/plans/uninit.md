@@ -1368,6 +1368,26 @@ top-level entry.** New leaf modules; no existing statement changed; no generated
   `stage2PRBZS_ofE_Lsl`, `countPRB_succE_Lsl`, `backend_correct_program_core_initE_Lsl`,
   `backend_correct_program_initE_L0`.
 
+**Executable level, step (a), as built (UninitZ22, branch `agent/uninit-z22`).** New leaf modules;
+no existing statement changed; no generated-code change.
+- `FV/E2E/RegLevelCorrectPRSNX.lean`: `regLevelCorrect_world_atCSNX`, `_worldCSNX`,
+  **`_worldPRSNX`**, `_world_value_atCSNX`, `_value_worldCSNX`, **`_value_worldPRSNX`**: the
+  `*NG` theorems whose return index also has `∀ i < n, ∃ m, actGoodX … (XI.at m) …` (realised
+  trace `T u := ∃ m, (Rn m).GoodX u`; prologue/epilogue from `GoodXN` at `m = 0`).
+- `FV/E2E/BackendWorldPRGYNX.lean`: `backend_correct_worldPRINX`, `_cleanupPRINX`,
+  `_pipelinePRINX`, `_pipelinePRICNX`, **`_pipelinePRGYNX`**. Witness
+  `BackendWorldPRGYNXWitness.lean`: `prgyNX_pipeline_applies`.
+- **Finding (blocks step (b), `ThmPRBG`)**: `∃ m` forgets which call `m` is. At a nested call state
+  `u` of the trace, `GoodX.call` gives `CallPre` under `XG.at m`, but the guarded semantics may
+  answer an ε-chosen result (`guardRXR_sub`), so the program-call facts (`CondBT`: the callee's
+  CLIF run returns, its canonical `TableOf`) need `Stage2ZS … (CallStPRB … m) m` at `u`, i.e.
+  `OnCallPR m u` and `spOf u = spB`. Needed next: (i) a `RealizesCP.countedRun` variant with
+  `T u := ∃ m, T m u ∧ (C u → OnCall … m u)` (provable: `opCalls ≤ 1`, so a call state of a
+  realised segment has no earlier call state in it, and its count is the segment's); (ii) the body
+  `sp` at the trace's call states (`realizes_allC_sp` derives it from `StRel.sp` at segment starts
+  but does not export it: needs `T` to carry it, i.e. a change inside `realizes_allC`, or a proof
+  that call states are segment starts). Then `ThmPRBG` as designed in the UninitZ21 handoff.
+
 **Step 3h, as built (UninitZ10b): the call-count premises are theorems.** `InstCallsOne f` and
 `TryCallsOne f` hold for every `f` (`E2E.instCallsOne_all`, `E2E.tryCallsOne_all`,
 `FV/E2E/IselCallsOneAll.lean`), from `FV/Backend/Proof/IselCallsOne.lean`:
