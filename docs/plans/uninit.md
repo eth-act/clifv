@@ -389,6 +389,16 @@ outside the new slots) and `progCall`'s `hRel`. The local call index (VCode coun
 global activation count of the CLIF oracle differ (nested callees enter several activations);
 `CrunOk` has to carry that correspondence.
 
+**Count correspondence, CLIF side (step 2m, `FV/E2E/LinkPlaceB.lean`).** Interface agreed with
+the Arm side: the byte table `B j` is the machine memory at the `j`-th placed activation with
+slots of the whole run (an activation entered with counter `j0` reads `B (j0 + 1)`, `initSlots`);
+a callee run advances the counter by its own count `e`, and the caller's call `k` contributes
+`E k :=` that `e`. Built: `SlotInit.adv`, `NextAdv m m' e` (oracle kept, counter `+ e`),
+`EnvAdv`, `enterSlots_adv` (`+0`/`+1`), `PlaceInvB`/`placeInvB_step`/`runLoop_placeB`/
+`initState_placeB` (a returning run advances by some `e`), `linkEnvR_adv`/`linkEnvN_adv` (the
+linked environment advances when the base does; `envAdv_of_keepsPlace`: `e = 0`). Witnesses
+`LinkPlaceBWitness.lean` (one slotted function: counter `0 → 1`, slot bytes = table entry `1`).
+
 ## 6. Heap (separate gap, SEM2)
 
 `BaseOk.baseKeepsAllocs`/`baseNoAlloc` require base externs to allocate nothing whenever a program
