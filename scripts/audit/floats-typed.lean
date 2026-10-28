@@ -1,3 +1,5 @@
+import FV.Backend.Proof.LowerSimUCheckTC
+import FVTest.Backend.UnwCheckTCWitness
 import FV.Link.DeadCleanupCompileT3
 import FVTest.E2E.FloatScopeT3
 import FVTest.Link.FloatCompileExeT3
@@ -164,3 +166,20 @@ import FV.Link.DeadCleanupCompileTFast
 #print axioms E2E.FloatCompileExeT3Witness.correct_spec -- witness: native_decide
 
 
+-- S11e6 slice 2c (#419): direct `try_call` with f32/f64 signatures, per-function typed chain
+#print axioms E2E.backend_correct_finalTC
+#print axioms E2E.backend_correct_final_exTC
+#print axioms E2E.verdict_of_unverifiedReason
+#print axioms E2E.lowerChecked_specTC
+#print axioms Backend.Proof.tryUnmatchableTC_program
+#print axioms Backend.Proof.Driver.tryCallsTC_of_rules
+#print axioms Backend.Proof.tryRulesCorrectTFP_program
+
+-- S11e6 #585: the typed-try_call exceptional-edge validator
+#print axioms Backend.Proof.Driver.loweringUTC_of_check
+#print axioms Backend.Proof.Driver.unwShape_of_okTC
+#print axioms Backend.Proof.Driver.tryExnBTC_sound
+#print axioms Backend.Proof.Driver.exnArgRegC_int
+#print axioms UnwCheckTCWitness.unwCheckTC_true -- witness: native_decide
+#print axioms UnwCheckTCWitness.lowerCheckUTC_true -- witness: native_decide
+#print axioms UnwCheckTCWitness.unwCheck_false -- witness: native_decide
