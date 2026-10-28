@@ -1,5 +1,6 @@
 import FV.E2E.RegLevelFrame
 import FV.E2E.RegLevelGoodXNR
+import FV.E2E.RegLevelSegAlign
 
 /-!
 # The prologue and the return on the machine with no call state (SEM1 #537, step 2k)
@@ -49,14 +50,14 @@ theorem iterN_stepsNR {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {ls T : List
   apply BitVec.eq_of_toNat_eq
   simp [BitVec.toNat_add]
 
-/-- **After the prologue**: the machine is at the entry configuration of the allocated code
-(store = the machine's locations, world = any body-entry world `w₀`), `AInv` holds, and every
-field but the pc, x16, x29 and `sp` is as at entry. -/
-theorem q_initNR {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {ra : BitVec 64}
+/-- **After the prologue, at the chosen initial witness**: `q_initNR` with the prologue's length
+(a function of the code only) and `QW` at `R.initW`. -/
+theorem q_initNA {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {ra : BitVec 64}
     (hent : AbiCall R.fb R.base ra R.s0)
     {w₀ : Arm.ArmState} (hbe : BodyEntryW R.F R.vc.EntryArg R.af R.s0 w₀) :
-    ∃ n, (∀ i < n, R.GoodXNY Y (iterN R.step i R.s0)) ∧
-      Q R (iterN R.step n R.s0) (MConf.init R.rf (locVal R.fr (iterN R.step n R.s0)) w₀) ∧
+    ∃ n, n = (prologueLines R.af.frameSize).length ∧ (∀ i < n, R.GoodXNY Y (iterN R.step i R.s0)) ∧
+      QW R (iterN R.step n R.s0) R.initW.1 R.initW.2.1 R.initW.2.2
+        (MConf.init R.rf (locVal R.fr (iterN R.step n R.s0)) w₀) ∧
       AInv R (MConf.init R.rf (locVal R.fr (iterN R.step n R.s0)) w₀) ∧
       ∀ f, f ≠ .PC → f ≠ .GPR 29#5 → f ≠ .GPR 31#5 → f ≠ .GPR 16#5 →
         Arm.r f (iterN R.step n R.s0) = Arm.r f R.s0 := by
@@ -76,7 +77,7 @@ theorem q_initNR {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {ra : BitVec 64}
     (fun ln h => by obtain ⟨x, e, hh, -⟩ := prologueLines_ins _ ln h; exact ⟨x, e, hh⟩)
     hent.program hpc1 hent.err hsteps
   obtain ⟨herr', hprog'⟩ := hsteps.err
-  refine ⟨(prologueLines R.af.frameSize).length,
+  refine ⟨(prologueLines R.af.frameSize).length, rfl,
     hgx (prologueLines_tail _) (.inl (by rw [hent.pc]; exact RL.not_postCall_base hR hent.fits))
       (Pa := fun _ => False) (fun _ h => h.elim) (fun _ _ _ _ _ h => h.elim)
       (linesReads_noLoads (prologueLines_noLoads _)), ?_⟩
@@ -129,10 +130,16 @@ theorem q_initNR {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {ra : BitVec 64}
     constructor <;> omega
   refine ⟨?_, ?_, hfield⟩
   · have hitems : R.rf.blocks[0]! = items := by simp [getElem!_def, hit]
+    have hIW : R.InitWit (1 + (prologueLines R.af.frameSize).length, ps1, T) :=
+      ⟨rfl, fun items' hit' => by
+        rw [hit] at hit'; cases hit'
+        exact ⟨vb, code, ls, ps2, hvb, itemsChecked_block hR hvb hit, hcode, hls, htr,
+          by rw [← List.drop_drop, hdrop, List.drop_left]⟩⟩
+    have hW := RL.initW_spec ⟨_, hIW⟩
+    obtain ⟨vb', code', ls', ps2', hvb', hchk', hcodeW, hls', htr', hdrop'⟩ := hW.2 items hit
     simp only [MConf.init, hitems]
-    refine ⟨1 + (prologueLines R.af.frameSize).length, vb, items, [], code, ls, ps1, ps2, T, hvb,
-      hit, rfl, itemsChecked_block hR hvb hit, hcode, hls, htr, ?_, hpc', ?_⟩
-    · rw [← List.drop_drop, hdrop, List.drop_left]
+    refine ⟨vb', items, [], code', ls', ps2', hvb', hit, rfl, hchk', hcodeW, hls', htr', hdrop',
+      by rw [hW.1]; exact hpc', ?_⟩
     · refine ⟨fun l _ _ => rfl, ⟨fun f hf => ?_, hmemF, ?_⟩, by rw [herr', hent.err], by rw [hprog', hent.program],
         hspB, ?_, fun _ => ?_, code_keep hR.prog0 hent.code hcode', hgk⟩
       · by_cases h29 : f = .GPR 29#5
@@ -180,15 +187,31 @@ theorem q_initNR {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {ra : BitVec 64}
       rw [hfield _ (by simp) (by simp) (by simp) (by simp)]
     | _ => simp [Reg.isArgReg] at hr
 
-/-- **The return on the machine**: from `Q` at a `Rets` item, the epilogue and `ret` reach the
-return address with `sp` and x29 as at entry, the allocatable registers and the memory as at
-the item, and the returned values in their fixed registers. -/
-theorem ret_machineNR {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {ra : BitVec 64}
+/-- **After the prologue**: the machine is at the entry configuration of the allocated code
+(store = the machine's locations, world = any body-entry world `w₀`), `AInv` holds, and every
+field but the pc, x16, x29 and `sp` is as at entry. -/
+theorem q_initNR {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {ra : BitVec 64}
+    (hent : AbiCall R.fb R.base ra R.s0)
+    {w₀ : Arm.ArmState} (hbe : BodyEntryW R.F R.vc.EntryArg R.af R.s0 w₀) :
+    ∃ n, (∀ i < n, R.GoodXNY Y (iterN R.step i R.s0)) ∧
+      Q R (iterN R.step n R.s0) (MConf.init R.rf (locVal R.fr (iterN R.step n R.s0)) w₀) ∧
+      AInv R (MConf.init R.rf (locVal R.fr (iterN R.step n R.s0)) w₀) ∧
+      ∀ f, f ≠ .PC → f ≠ .GPR 29#5 → f ≠ .GPR 31#5 → f ≠ .GPR 16#5 →
+        Arm.r f (iterN R.step n R.s0) = Arm.r f R.s0 :=
+  let ⟨n, _, hg, hq, hA, hf⟩ := q_initNA (Y := Y) hR hent hbe
+  ⟨n, hg, hq.q, hA, hf⟩
+
+/-- **The number of machine steps of the epilogue and `ret`** (a function of the code only). -/
+def RL.retLen (R : RL) : Nat := (spAdjLines false R.af.frameSize).length + 2
+
+/-- **The return on the machine, with its length**: `ret_machineNR`, the run taking exactly
+`R.retLen` steps (the epilogue's lines and the `ret`). -/
+theorem ret_machineNA {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {ra : BitVec 64}
     (hent : AbiCall R.fb R.base ra R.s0)
     {s : Arm.ArmState} {b k : Nat} {allocs : Array Loc} {its : List RItem} {m : Loc → CV}
     {w : Arm.ArmState} (hq : Q R s (.run ⟨b, .op k allocs :: its, m, w⟩)) {vb : VBlock}
     {us : List (Reg × Reg)} (hvb : R.vc.blocks[b]? = some vb) (hi : vb.insts[k]? = some (.rets us)) :
-    ∃ n, (∀ i < n, R.GoodXNY Y (iterN R.step i s)) ∧
+    ∃ n, n = R.retLen ∧ (∀ i < n, R.GoodXNY Y (iterN R.step i s)) ∧
       Arm.r .PC (iterN R.step n s) = ra ∧ Arm.r .ERR (iterN R.step n s) = .None ∧
       spv (iterN R.step n s) = spv R.s0 ∧ xreg 29 (iterN R.step n s) = xreg 29 R.s0 ∧
       (∀ r, r.allocatable = true → regVal (iterN R.step n s) r = regVal s r) ∧
@@ -318,7 +341,7 @@ theorem ret_machineNR {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {ra : BitVec
       rw [ho1 _ (by simp) (by simp) (by simp) (by simp) (by simp)]
   refine ⟨(spAdjLines false R.af.frameSize ++
       [Line.ins (.ldp Reg.fp Reg.lr (.spPostIndexed 16)) none]).length + 1,
-    fun i hi => ?_, ?_⟩
+    by simp [RL.retLen], fun i hi => ?_, ?_⟩
   · rcases Nat.lt_or_ge i (spAdjLines false R.af.frameSize ++
         [Line.ins (.ldp Reg.fp Reg.lr (.spPostIndexed 16)) none]).length with hi1 | hi1
     · refine hgx (fun x t h => ?_) (RL.good_of_sp hst.sp) hokE hPE hrdE i hi1
@@ -372,5 +395,26 @@ theorem ret_machineNR {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {ra : BitVec
       exact this.2
     rw [hregs p hal, hst.store (.reg p) (fun r e => by cases e; exact hal) trivial]
     rfl
+
+/-- **The return on the machine**: from `Q` at a `Rets` item, the epilogue and `ret` reach the
+return address with `sp` and x29 as at entry, the allocatable registers and the memory as at
+the item, and the returned values in their fixed registers. -/
+theorem ret_machineNR {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {ra : BitVec 64}
+    (hent : AbiCall R.fb R.base ra R.s0)
+    {s : Arm.ArmState} {b k : Nat} {allocs : Array Loc} {its : List RItem} {m : Loc → CV}
+    {w : Arm.ArmState} (hq : Q R s (.run ⟨b, .op k allocs :: its, m, w⟩)) {vb : VBlock}
+    {us : List (Reg × Reg)} (hvb : R.vc.blocks[b]? = some vb) (hi : vb.insts[k]? = some (.rets us)) :
+    ∃ n, (∀ i < n, R.GoodXNY Y (iterN R.step i s)) ∧
+      Arm.r .PC (iterN R.step n s) = ra ∧ Arm.r .ERR (iterN R.step n s) = .None ∧
+      spv (iterN R.step n s) = spv R.s0 ∧ xreg 29 (iterN R.step n s) = xreg 29 R.s0 ∧
+      (∀ r, r.allocatable = true → regVal (iterN R.step n s) r = regVal s r) ∧
+      (iterN R.step n s).mem = s.mem ∧
+      (∀ f, ¬ Masked f → f ≠ .GPR 29#5 → f ≠ .GPR 31#5 → Arm.r f (iterN R.step n s) = Arm.r f s) ∧
+      (iterN R.step n s).program = s.program ∧
+      ∀ ops, (MInst.rets us).operands = .ok ops → ∀ (j : Nat) (v p : Reg) (x : CV), us[j]? = some (v, p) →
+        ((((ops.zip allocs).toList.filter (·.1.isUse)).map (m ·.2)))[j]? = some x →
+        regVal (iterN R.step n s) p = x :=
+  let ⟨n, _, h⟩ := ret_machineNA (Y := Y) hR hent hq hvb hi
+  ⟨n, h⟩
 
 end Backend.Proof
