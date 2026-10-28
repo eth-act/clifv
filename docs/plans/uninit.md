@@ -735,6 +735,25 @@ of the same configuration, so the segment's call-state count carries over). Next
 `RegLevelCorrectPRS.lean`'s with `csemVI` → the counted `valueSemV`, `realizes_allC_sp` →
 `realizes_value_allC_sp`; the `rets`/halt cases as in `DeadCleanupRegLevel.lean`).
 
+**Step 3h, as built (UninitZ10b): the call-count premises are theorems.** `InstCallsOne f` and
+`TryCallsOne f` hold for every `f` (`E2E.instCallsOne_all`, `E2E.tryCallsOne_all`,
+`FV/E2E/IselCallsOneAll.lean`), from `FV/Backend/Proof/IselCallsOne.lean`:
+- the rule-table certificate `Cov.lower_call_fmts` (one `decide +kernel` over the exported rules
+  of `lower`, `callFmtOk`): every root rule is a call root (1031–1033), outside the closure
+  (`excludedUnmatchable`), or names a root `InstructionData` format whose variant is neither
+  `Call` nor `CallIndirect` (`ruleFmt_match`: it cannot match a call, whose data has that format,
+  `instData_call_fmt`); `lower_branch` needs none (`tryUnmatchable`, `tryIndUnmatchable`);
+- the call roots' runs, copies of the shape inversions (`IselShpCall.run_*`, `IselShpTry.shpTry_*`)
+  concluding the count `CallsSince 1` (stack-argument stores, a GOT load, one call):
+  `callRun_2508`/`_2518`/`_2529`, `tryRun_2542`/`_2551`/`_2561`;
+- `Cov.lower_callsOne`, `Cov.tryCall_callsOne`, `Cov.tryCallInd_callsOne` (the driver's calls).
+`iselSim_relWIC`, `backend_correct_worldPRIC`: the pipeline theorems without the two premises
+(the originals stay). Witnesses `FV/E2E/IselCallsOneWitness.lean`: `f_hasCall`, `f_segCalls`
+(every call statement of `LinkWitness`'s entry `f` has a one-call segment in its compiled code),
+`a2_iselSimIC`. The premises are stated for the integer subset (`Compile.functionE`, the
+`Compiled` pipeline); they are universal, so every function of the typed scope has them, and a
+typed pipeline (`CtxInvT`) would take the same proof over `IselShpTCall`'s typed runs.
+
 ## 6. Heap (separate gap, SEM2)
 
 `BaseOk.baseKeepsAllocs`/`baseNoAlloc` require base externs to allocate nothing whenever a program
