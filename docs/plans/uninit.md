@@ -1678,6 +1678,42 @@ as corollaries (target `Stage2Z`/`thmPRBRL_ofZ`, #697), after combining with #69
   prologue/epilogue states and a `blr`-target fact (`CallsTo` reads the `blr` register, exempt
   from `x30Free`).
 
+**The determinism step's machine facts; call-restricted twins (UninitZ22b, PR #701).**
+- Finding (decided conservatively, new names, old kept): `TwinBase`/`TwinN` (hence `Twin`,
+  `CallTwin`, `DetRunPRB`) compare the slot bytes `SlotByte h (spv u)` of **every** `h` at
+  **every** state before the return. That is false in general: below the caller's dead stack the
+  two entries are unconstrained (`EntryAgree` covers `frameDrop + K` bytes), and `SlotByte h`
+  reaches `frameDrop (L.A h).af` below `sp` for functions never called. The table reads slot bytes
+  only at program calls, of the called function. `LinkArmTwinC.lean`: `TwinBaseC`, **`TwinC`**,
+  `TwinNC` (slot clause under `CallsTo g u h`), `Twin.twinC`, `TwinN.twinNC`, `twinC_refl`,
+  `twinNC_refl`, **`tabUpTo_twinC`**, **`tableOf_twinC`**, **`tabUpTo_twinNC`**, **`CallTwinC`**,
+  **`DetRunPRBC`** (`CallTwin.callTwinC`, `DetRunPRB.toC`), **`detTabPRBG_ofC`**,
+  **`detTabPRB_ofC`**, **`detPRBG_ofC`**, **`detPRB_ofC`**; symmetry `TwinBaseC.symm`,
+  **`TwinC.symm`** (and `TwinBase.symm`, `Twin.symm` in `LinkArmTwin.lean`); the reverse
+  transfer **`DetTabPRBGr T`** (canonical → actual callee table; `DetTabPRBEr = DetTabPRBGr
+  TableOfE`), **`detTabPRBGr_of`**, **`detTabPRBGr_ofC`**.
+- `blr` targets (`LinkArmBlrCheck.lean`): `blrTarget` decodes the code bytes from memory; every
+  state of a linked run holds the code image (`Ok.imgCode`), so equality of code bytes needs no
+  lock-set fact. **`FnAsm.blrLow`** (decidable: every `blr` jumps through `x0`–`x28`, what
+  `blrTarget_of` needs; `x30Free` exempts `blr`), `blrLow_line`, **`blrTarget_eq_of_lock`**,
+  **`LinkSys.callsTo_iff_of_lock`** (two `StEqOutX Z` states holding the image call the same
+  program functions), **`LinkSys.slotByte_eq_of_lock`** (a callee's slot bytes at a call with
+  `sp = c` are in the `K` bytes below `c` when `frameDrop (L.A h).af ≤ K`, the κ budget:
+  `Budget`). Measured (throwaway runner over `compileFile`, 2026-10-28): corpus + Cranelift runtests
+  1105 functions / 238 `blr` lines, fv-demo split CLIF and survey: see the PR body; 0 failing.
+- Explicit per-index lock set (`BackendTwoRunLWZ.lean`): **`backend_twoRunLERWZ`**
+  (`backend_twoRunLERW` with `∃ d d', StEqOutX (R.Zc d d')` at every index before the return:
+  prologue at the initial configurations, body at the paired ones, epilogue at the `rets` ones),
+  `RL.deadStack_eq_of_Zc` (locked states agree on `StackBelow R.K R.spB`).
+- Witnesses `LinkArmTwinCLslWitness.lean`: `lsl_blrLow`, `blr_x30_rejected`, `blr_x0_ok`,
+  `twinC_Lsl`, `twinNC_Lsl`, `twinC_symm_Lsl`.
+- Open (next): `CallTwinC`/`DetRunPRBC` themselves. Remaining glue: instantiate
+  `backend_twoRunLERWZ` at the link (`R.step` vs `L.mach M g`: `ArmStepX` reads `X` only through
+  `sym`, so the two agree when `(XI.at 0).sym = L.Xb.sym`); call states have `sp = R.spB`
+  (`StRel.sp` at segment starts) for `slotByte_eq_of_lock`; `RetAt` iff (no return before
+  `P + N + retLen`: `RL.Good`); the program-callee `hcall` and the nested callee twins by induction
+  on `M` (callee `ThmPDERX29` at `M - 1` through `XPBTG`).
+
 ## 6. Heap (separate gap, SEM2)
 
 `BaseOk.baseKeepsAllocs`/`baseNoAlloc` require base externs to allocate nothing whenever a program
