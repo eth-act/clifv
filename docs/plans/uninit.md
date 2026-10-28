@@ -1424,7 +1424,7 @@ modules; no existing statement changed; no generated-code change; standard axiom
 - Witnesses `FV/E2E/LinkArmThmPRBGWitness.lean`: `thmPRBG_zero_Lsl` (no premise),
   `thmPRBG_allC_Lsl`, `backend_correct_program_core_initEX_Lsl`, `backend_correct_program_initEX_L0`,
   `actualEntry_Lsl`, `ansDecode_Lsl`, `iniOf_std_L0`; `count_two`, `opCalls_le_one`,
-  `countedRun0_any`; `FV/Link/DeadCleanupExeInitWitness.lean`: `exec_returns`
+  `countedRun0_any`; `FV/Link/DeadCleanupExeInitWitness.lean`: `exec_returns`, `model_returns`
   (`compileExe_correct_init` on a compiled executable, `f(x) = x` returning `41`; compiler-side
   premises discharged, entry contract and `InitOk` left; no slotted callee, so the oracle is
   unused there).
