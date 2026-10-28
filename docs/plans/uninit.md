@@ -2870,6 +2870,41 @@ only in that branch; `HooksKeep`'s table step moved into it).
 - Next: UninitZ29b's `InitOkRU.of_checks` (`FV/E2E/DeadCleanupBinaryInitRUOf.lean`) from its induction;
   then the stale-read witness without premises.
 
+**#733 and the oracle route on decidable checks (UninitZ27, branch `agent/uninit-z28`).**
+- [#733](https://github.com/eth-act/clifv/issues/733) (an `sret` `call_indirect` next to a `void`
+  outside extern failed `RetCount` on deps/std). Decision (conservative; the parent's option (a), a
+  base signature table making mismatched indirect calls to outside externs stuck, was not built):
+  (a) needs `linkEnvR`/`envOfB` to carry the base's `sigOf` (restating `callExternAt_eq`,
+  `runLoop_linkR`, `CrunOk.link`, `step_envOfB`, `runLoop_envOfB`, and alias-consistent tables in
+  `IndScope`), and the frontend/optimiser chain (`Front.bundle_correct_raw`, `LegalSource`) requires
+  `B.env.sigOf n = none` for every program with an indirect call, so a table would not reach the
+  end-to-end theorem. Instead, with **no CLIF semantics change**: a declaration can stand for an
+  invocation only with as many parameters as the invocation has values (`ArgsAt` for a call
+  through a declaration, the parameter types for an indirect call, both in `CallPost`), so
+  `InvokedRetOk` and `RetCount` (names kept, definitions weakened: theorems with them as premises
+  are stronger) compare only signatures with equal parameter counts; `agreeB`, `retCountB`,
+  `agreeB_sound` accordingly; `callPost_only_exists`, `callPost_invokedN_exists` take the weaker
+  premise (`callPost_invoked_exists` unchanged). Weaker conclusions (the old strong forms had no
+  other consumer): `retOkPRB_zero`, `retOkPRB_of`, `retCountB_sound`, the witnesses
+  `invokedRetOk_sCall`, `retOkPRB_zero_Lsl`, `retOkPRB_Lsl`, `retCount_Lsl`.
+- `DeadCleanupBinaryInitRC.lean`: **`LinkSys.initChecksB`** (per function `retCountB`,
+  `FnAsm.x30Free` at its label offsets, `VCode.retsLow`, `FnAsm.blrLow`, `slotsNIB`: a function
+  with slots has an outgoing-argument area or a slot region, so `NeedSlots → NeedNI`,
+  `needNI_of_slotsNIB`), `initChecksB_sound`, `hookNIX_closed`, `baseNIX_closed`,
+  `initOkRU_sysS_of_checks`, **`binary_correct_exec_initRC`**, **`binary_correct_exec_initTRC`**;
+  `FV/Link/DeadCleanupExeInitRC.lean`: **`compileExe_correct_initRC`**,
+  **`compileExe_correct_initRCT`** (premises besides `compileExe_correct`'s: `initChecksB`, the base's
+  `BaseRetOk` and `HooksKeep`, and the trusted `BaseNIX` (#704) of the proof's system).
+- Witnesses: `InitSlotWitness.stale_read_returns_initRU` now has **no premise** (via
+  `compileExe_correct_initRC`, closed base: `baseRetOk_closedSys`, `hooksKeep_closedSys`,
+  `baseNIX_closed`); `InitTrapWitness.divz_traps_initRC` (no premise). Audit
+  `scripts/audit/uninit-oracle.lean`.
+- Measured (scratch tool on lean-link bundles, cleanup pipeline): `initChecksB` holds on every
+  function, each of the five checks with 0 failures: fv-demo 2/2 executables (907, 465 functions),
+  survey 18/18 (3,251), deps 4/4 (16,739, 19,918, 17,147, 15,232), deps with `--build-std` 4/4
+  (52,645, 56,672, 47,043, 50,603); `RetCount` before #733: 1–2 failures per deps executable, 8–9
+  per std one.
+
 ## 6. Heap (separate gap, SEM2)
 
 `BaseOk.baseKeepsAllocs`/`baseNoAlloc` require base externs to allocate nothing whenever a program
