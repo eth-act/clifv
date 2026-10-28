@@ -774,6 +774,40 @@ index up to the return, nested program calls by `ih : ThmPDER κ (M-1)`, base ho
 `HookDetX`), then `ProphStep` ⇒ `prophOk_congr` (step 2m) and `RetAgree` from `stEqOutX_ret`;
 (iv) `LinkSys.thmPDER_det_of`.
 
+**Steps 3m–3o, as built (UninitZ11b, branch `agent/uninit-z11b`).**
+- `FV/E2E/LinkArmX30Check.lean` (item (i)): `Insn.x30Exempt` (`bl`, `blr`, `blrTlsDesc`, `ret`, the
+  frame-record pair), `Insn.x30Ok`, **`FnAsm.x30Free fa lm`** (decidable: every instruction line is
+  exempt or its `toArmInst` at the line's encoder environment names no `x30`),
+  **`decX30Free_of_check`** (`RL`) / `decX30Free_of_line` (laid-out function): at a non-exempt
+  line of a function passing the check, `DecX30Free`. Measured (throwaway runner over
+  `compileFile`): corpus + Cranelift runtests 160 files, 1105 functions, 54572 instruction lines
+  (3836 exempt), 0 failing; fv-demo and survey: see the PR. Witness `x30Free_all` (every
+  function of `LinkWitness`'s program).
+- `FV/E2E/LinkArmBaseDetX.lean` (the base-hook finding above): `fpChain`, `LRByte` (a saved-LR
+  byte of the frame-record chain), **`HookDetX Hb BD`** (from `StEqOutX Z` states with `Z` below
+  `sp` or saved-LR bytes, base calls and TLS hooks give `StEqOutX Z` states), `LinkSys.OkDX`
+  (`OkD` + `baseDetX : NeedNI → HookDetX L.Hb L.BaseDest`), `Ok.okDX_of_not_needNI`, `Ok.okDX`.
+  Trusted (outside code), `docs/contracts/e2e.md`. Witnesses `LinkArmBaseDetXWitness.lean`.
+- `FV/E2E/LinkArmStepLine.lean`: `OnLine` (the canonical state at an instruction line of the
+  laid-out function), the lock-step per line kind on `ArmStepX`: `stEqOutX_line_free` (checked
+  lines; reads avoid `Z`), `stEqOutX_line_call`, `stEqOutX_line_stpFR` (the record's LR bytes join
+  `Z`), `stEqOutX_line_ldpFR`, `retAgree_line_ret`; **`lockstep_runX`** (the run induction from
+  per-index steps). Witnesses `LinkArmStepLineWitness.lean` (a laid-out
+  `stp; add; ldp; ret`, each line stepped from two states differing in `x30`).
+
+**Finding (item (ii), decided conservatively: not from `GoodX.reads` alone).** `RL.GoodX.reads`
+bounds the reads of the run only away from the kept addresses `G`; it does not keep them out of
+the NI set `D` or the frame record. The differing set of the two entries is (outside the
+`EntryAgree` region) `D` and the callers' frames in `F`, plus the record's LR bytes after the
+`stp`. A body read is a frame-slot read (move code, `moveInsts_reads`), the epilogue's `ldp`
+(`memReads_ldp_fplr`), a jump-table word, or a covered form's access (`formOk_reads`: outside
+`F`, a CLIF-mapped byte). CLIF-mapped bytes at entry are equal in both runs (`RelW` to the same
+`cs.mem`); bytes mapped later are this activation's slots (in the `EntryAgree` region) or
+allocations by externs. So `ReadsAvoid Z (stepiEvs u₀)` needs a new per-state fact
+(`RL.ReadsIn`: every read is a frame slot, a jump-table byte, the record's `fp` word, or a byte
+CLIF-mapped at the state), proven next to `GoodX.reads` in each `realizes_*` case, plus the
+CLIF-side fact that a byte mapped at a state was mapped at entry or allocated in the run.
+
 ## 6. Heap (separate gap, SEM2)
 
 `BaseOk.baseKeepsAllocs`/`baseNoAlloc` require base externs to allocate nothing whenever a program
