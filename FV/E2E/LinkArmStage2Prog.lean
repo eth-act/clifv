@@ -144,8 +144,8 @@ def OracleAt (κ : Nat → Clif.Function → Nat) (M : Nat) (h : Clif.Function) 
 /-- **Stage 2 at one call, with the invocation's facts** (`stage2_answer` whose oracle premise
 `hor` also receives the facts stage 2 derives at the invocation: the callee memory related to the
 world with the prophecies, the arguments there, and the callee's returning run). -/
-theorem stage2_answerF (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) {M : Nat}
-    (ih : 0 < M → L.ThmPRBRL κ (M - 1)) (hdet : 0 < M → L.DetPRB κ (M - 1))
+theorem stage2_answerFR (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) {M : Nat}
+    (ih : 0 < M → L.ThmPRBRL κ (M - 1)) (hdet : 0 < M → L.DetPRBR κ (M - 1))
     {g : Clif.Function} (hg : g ∈ L.P.funcs) {F : BitVec 64 → Prop}
     (himgF : ∀ a, L.Img a → F a) {c : BitVec 64}
     (hroom : κ M g ≤ c.toNat) (hdead : ∀ a, StackBelow (κ M g) c a → F a ∧ ¬ L.Img a)
@@ -265,7 +265,7 @@ theorem stage2_answerF (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) {M : Nat}
             · exact .inr ⟨e, hto e hcol, _, rfl, by rw [lo64_ofX, hname]⟩) hinv hcal hM hmrW.1.1
         hargsW hsavW hsw hsp (by rw [hname]; exact hinit) hrun
       obtain ⟨outs, w', hx, hol, hho, hmr'⟩ :=
-        L.progResultBT hL hκ ih hdet hg hh hcal himgF hroom hdead halign hargsW hsavW hmrW hpl
+        L.progResultBTR hL hκ ih hdet hg hh hcal himgF hroom hdead halign hargsW hsavW hmrW hpl
           hslotb htab (by rw [hname]; exact hinit) hrun
       refine ⟨(outs, w'), ?_, by rw [hol, hsig], hho, hmr'⟩
       rcases hd with ⟨rfl, rfl⟩ | ⟨rfl, hcol, rfl⟩
@@ -320,7 +320,7 @@ theorem stage2_answerF (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) {M : Nat}
         (.inr ⟨hdn, ⟨hdecl, .inr ⟨sig, hsig, hm, hm.returns_length⟩⟩, u, hu, hlo⟩) hA
         hcal hM hmrW.1.1 hargsW hsavW hsw hmr.2.1 hinit hrun
       obtain ⟨outs, w', hx, hol, hho, hmr'⟩ :=
-        L.progResultBT hL hκ ih hdet hg hh hcal himgF hroom hdead halign hargsW hsavW hmrW hpl
+        L.progResultBTR hL hκ ih hdet hg hh hcal himgF hroom hdead halign hargsW hsavW hmrW hpl
           hslotb htab hinit hrun
       subst hdn hu
       refine ⟨(outs, w'), ?_, ?_, hho, hmr'⟩
@@ -329,6 +329,39 @@ theorem stage2_answerF (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) {M : Nat}
         exact hx
       · rw [hol]
         exact hsr sig hsig hm.ty hm.returns_length
+
+/-- **Stage 2 at one call, with the invocation's facts** (`stage2_answerFR` with `DetPRB`). -/
+theorem stage2_answerF (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) {M : Nat}
+    (ih : 0 < M → L.ThmPRBRL κ (M - 1)) (hdet : 0 < M → L.DetPRB κ (M - 1))
+    {g : Clif.Function} (hg : g ∈ L.P.funcs) {F : BitVec 64 → Prop}
+    (himgF : ∀ a, L.Img a → F a) {c : BitVec 64}
+    (hroom : κ M g ≤ c.toNat) (hdead : ∀ a, StackBelow (κ M g) c a → F a ∧ ¬ L.Img a)
+    (halign : c.toNat % 16 = 0)
+    (P : Nat → BitVec 64 → BitVec 8) (R : Nat → Arm.ArmState) (cs : Clif.State) (n : Nat)
+    {d : Option String} {uses : List CV} {w : Arm.ArmState}
+    (hor : ∀ h ∈ L.P.funcs, ∀ (args : List CV) (vals : List Clif.Val) (cm : Clif.Mem)
+      (cs' : Clif.State) (rvals : List Clif.Val) (cm' : Clif.Mem),
+      (d = some h.name ∧ uses = args ∨
+        d = none ∧ L.IndTo g h ∧ ∃ u, uses = u :: args ∧ lo64 u = L.Xb.sym h.name 0) →
+      InvokedN (L.envOfB M g c) L.P.bare cs n h.name vals cm →
+      L.Callee g h → 0 < M →
+      MemRel F L.syms cm (L.worldPR κ M h (P n) (R n) w) →
+      ArgsAt h.sig vals args (L.worldPR κ M h (P n) (R n) w) →
+      StackArgsAvoid F h.sig vals (L.worldPR κ M h (P n) (R n) w) →
+      SameWorld F w (L.worldPR κ M h (P n) (R n) w) → spv w = c →
+      Clif.initState L.P h.name vals cm = .ok cs' → L.crun M cs' = .returned rvals cm' →
+      L.OracleAt κ M h c cm args (L.worldPR κ M h (P n) (R n) w))
+    (hnv : ¬ ∀ r, CallPost ((L.envOfB M g c).only (InvokedN (L.envOfB M g c) L.P.bare cs n))
+      (g.externs.map (·.2)) (indSigs g)
+      (RelW ⟨F, L.syms, (L.A g).af.slotBase, (RAFrame.compute (L.A g).vcp (L.A g).rf).intBase⟩ g c)
+      L.Xb.sym d uses w r) :
+    ∃ x, (L.XPRBT κ M g F P R n).call d uses w = some x ∧
+      CallPost ((L.envOfB M g c).only (InvokedN (L.envOfB M g c) L.P.bare cs n))
+        (g.externs.map (·.2)) (indSigs g)
+        (RelW ⟨F, L.syms, (L.A g).af.slotBase, (RAFrame.compute (L.A g).vcp (L.A g).rf).intBase⟩ g c)
+        L.Xb.sym d uses w x :=
+  L.stage2_answerFR hL hκ ih (fun h => DetPRB.toR L (hdet h)) hg himgF hroom hdead halign P R cs n
+    hor hnv
 
 /-- **Stage 2 at one call** `(d, uses, w)` of an activation of `g` (body `sp` `c`, `g`'s stack
 facts) at count `n`: where `CallPost` of the invocation of count `n` is not vacuous, `XPRBT … n`

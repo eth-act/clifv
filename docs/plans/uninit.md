@@ -2550,6 +2550,70 @@ as corollaries (target `Stage2Z`/`thmPRBRL_ofZ`, #697), after combining with #69
   follow with `twinBaseC_of_lock` and `TwinC.trans`/`symm`. (#716: an `ERR`-carrying `TwinC` for
   `TableOfE`.)
 
+**The link side: corrected determinism premises, errors in the twins (UninitZ25b, branch
+`agent/uninit-z24c`, #716, #719).**
+- `LinkArmTwinCRun.lean` (UninitZ24b): `actRL_step_mach`, `actRL_step_mach'` (the activation's
+  machine is `L.mach M g` when `XI.sym = L.Xb.sym`), **`twinNC_base_of_twoRun`** (the first
+  `TwinNC` clause from the backend lock form). Audited: standard axioms; none needs `Compiled`.
+- #716, `LinkArmTwinCE.lean`: `TwinBaseCE` (`TwinBaseC` and: before the first return both states
+  are error-free together), **`TwinCE`**, `TwinCE.twinC`, `twinCE_refl`, **`TwinCE.symm`**,
+  **`TwinCE.trans`**, **`tabUpToE_twinCE`**, **`tableOfE_twinCE`**, **`twinBaseCE_of_lock`** (the
+  lock leaves only `x30` and memory free, so locked states have the same `ERR`), **`CallTwinCE`**,
+  `CallTwinCE.toC`, `detTabPRBG_ofCE`, `detTabPRBGr_ofCE`, **`detTabPRBE_ofCE`** (`DetTabPRBE` from
+  `CallTwinCE`), `detTabPRBEr_ofCE`, **`detTabPRBr_ofCE`**, `detTabPRB_ofCE'`.
+- Finding [#719](https://github.com/eth-act/clifv/issues/719): `DetPRB` (and `DetRunPRB`,
+  `DetRunPRBC`, `DetPRBG`) has no premise that the canonical activation's CLIF run returns. For a
+  function that loads through a pointer argument at a byte CLIF does not validate, `MemRel`
+  relates nothing there, the two worlds may differ (`D`), the machine reads it and returns
+  different values: the premise is false for real programs, every theorem taking `∀ M, DetPRB`
+  is vacuous outside toy systems. A second gap: with `D` outside the exterior `F`, a base call can
+  read the differing bytes; the trusted machine-level premise is only `HookNIX … F` (`OkDNX`).
+  Fix (new names, old ones kept): **`DetPRBR`** (`LinkArmDetPRBR.lean`: `DetPRB` with the
+  canonical returning CLIF run, both return addresses `RaOk`, equal entry `x29`, and
+  `∀ a, D a → F a`), `DetPRB.toR`; **`DetRunPRBCR`**, `DetRunPRBC.toR`, `detPRBGR_ofC`,
+  **`detPRBR_ofC`** (`LinkArmDetRunPRBCR.lean`). At a program call the canonical and the actual
+  callee worlds agree outside the callee's exterior `Fh` (the caller's dead stack, holding the
+  callee's outgoing arguments and slots, is the canonical state's, `hrgn`), so the use sites take
+  `D = ∅`. The consumers, each with the `DetPRB` name kept as its corollary (`DetPRB.toR`):
+  `progCallPRBRLR`, `progCallPRBRLTR`, `progOsCorePRBRLR`, `progOsCoreXPRRBRLR`, `progOsPRBRLR`,
+  `progOsRegPRBRLR`, `calleeOkPRBRLR`, `calleeTryOkPRBRLR`, `progResultBTR`, `stage2_answerFR`,
+  `calleeOkXPBTGZSR`, `calleeTryOkXPBTGZSR`, `callCountER`, `countStep_progER`,
+  `stage2PRBZS_ofER`, `countPRB_succER`, `thmPRBRL_ofZSER`, `thmPRBRLE_succSR`,
+  **`thmPRBRLE_allCR`**, `thmPRBG_ofR`, **`thmPRBG_allCR`** (premises `∀ M, DetPRBR`,
+  `DetTabPRBE`, `DetTabPRBr`: all three now have a satisfiable form and a derivation from the
+  determinism step `CallTwinCE`/`DetRunPRBCR`).
+- Witnesses `LinkArmTwinCEWitness.lean` (`Lsl`, at the calling function `f`, on two entries that
+  differ in `x1`): `twinBaseCE_Lsl`, `twinCE_Lsl`, `twinCE_symm_Lsl`, `twinCE_trans_Lsl`,
+  `tableOfE_twinCE_Lsl`, `callTwinCE_zero_Lsl`, `detTabPRBE_zero_Lsl`, `detTabPRBr_zero_Lsl`,
+  `thmPRBRLE_allCR_Lsl`, `thmPRBRLE_allCR_of_det_Lsl`, `thmPRBG_allCR_Lsl`;
+  `twinNC_base_of_twoRun_Lsl` (`r`, states differing in `x30`).
+- Open (the determinism step itself, `DetRunPRBCR`/`CallTwinCE` by induction on `M`), with what
+  each piece needs:
+  (1) cleanup path: `backend_twoRunLERWZI` and its RL chain (`RL.twoRunCTN`, `twoRunCT`, …) are
+  stated for `csem` runs of `Compiled` code; `CompiledCleanup` runs `valueSem` (`mspec` on pure
+  forms and compares: the worlds differ from `csem`'s by `SameWorld F`, so a `csem` pair run of the
+  cleaned `vcp` is not available). Needed: `RL.valueSemGS`, `realizes_value_allCWSF` (as
+  `realizes_value_allC` wraps `realizes_allC`), value copies of `jointSegT`/`realizesJCPT`/
+  `twoRunCT(N)`/`twoRunPRT(N)` and of `backend_twoRunLWNp`/`LERWZNp`/`LERWZI`, and a guarded
+  paired value run of `vcp` (`backend_pairRunD` for `CompiledCleanup`: `vcode_niID` on
+  `valueSem`, `prune_correctW`, `prep_soundW`, the GOT step).
+  (2) `XNI` of the link's `XPBTGY` quantifies over every difference set `Z ⊇ F`; program calls are
+  answered by canonical callee runs, so `XNI` is callee determinism with a world difference `Z`;
+  with `Z ⊄ F` the callee's base calls may read differing bytes (`HookNIX` covers `F` only). With
+  `D ⊆ F` the pair driver only needs `XNI` at `Zof F D cm = F`: a pair driver taking `XNI` at that
+  one set (`vcode_niID`, `instCalls_pairD`, `tryCalls_pairD`, `tryIndCalls_pairD`,
+  `backend_pairRunD`) makes it the callee's `DetRunPRBCR` at `M - 1` with `D = ∅` (both callee
+  entries `canon (worldPR … w)`, `canon (worldPR … w')` agree on the masked registers (`R n`) and
+  the dead stack (`P n`)).
+  (3) the second entry's contracts `hC'`/`hT'` of `backend_twoRunLERWZI` at its locked call states:
+  with `D ⊆ F` the lock set is inside `F`, so `SameWorld F u w` gives `SameWorld F u₀ w` for the
+  first run's locked state `u₀`: `Stage2ZS` there is the canonical activation's, and the
+  prophecies are the first run's but `x30` (`calleeOkXPBTGZ30`; a `ZS`/`DetPRBR` form is needed).
+  (4) `hcall` at program callees: `pcall` from two locked call states, through the callee lock to
+  the return at `M - 1` against the canonical callee state from each side (`RetAgreeX`, memory
+  outside `Fh`, `TwinCE.trans`/`symm`); base calls and TLS: `HookNIX … F` (`OkDNX.baseNIX`, under
+  `NeedNI`; `stEqOutX_call_of_hookNIX_D`, `stEqOutX_tls_of_hookNIX_D`).
+
 ## 6. Heap (separate gap, SEM2)
 
 `BaseOk.baseKeepsAllocs`/`baseNoAlloc` require base externs to allocate nothing whenever a program

@@ -9,6 +9,7 @@ up to the step `k` of its return) with the caller table's call clause (the calle
 `PostTrace` (no return into the callee's code but with its body `sp`), which makes `k` the first
 return (`linkedCall_eq`), but does not state it. `progCallPRBRLT`: the same proof, the per-call
 clause also stating `PostTrace` up to `k`; `progCallPRBRLT_at` (with `DetTabPRB`).
+`progCallPRBRLTR`: with the determinism premise `DetPRBR` (#719); `progCallPRBRLT` its corollary.
 -/
 
 namespace E2E
@@ -20,9 +21,10 @@ namespace LinkSys
 variable (L : LinkSys)
 variable {κ : Nat → Clif.Function → Nat}
 
-/-- **`progCallPRBRL` with the callee run's trace up to its return.** -/
-theorem progCallPRBRLT (hL : L.Ok) [hR : L.CrunOk] {M : Nat} (hM : 0 < M) (ih : L.ThmPRBRL κ (M - 1))
-    (hdet : L.DetPRB κ (M - 1)) {n : String}
+/-- **`progCallPRBRL` with the callee run's trace up to its return, determinism `DetPRBR`.** -/
+theorem progCallPRBRLTR (hL : L.Ok) [hR : L.CrunOk] {M : Nat} (hM : 0 < M)
+    (ih : L.ThmPRBRL κ (M - 1))
+    (hdet : L.DetPRBR κ (M - 1)) {n : String}
     {h : Clif.Function} (hpf : L.P.func? n = some h) (hcal : ∃ g ∈ L.P.funcs, L.Callee g h)
     {F : BitVec 64 → Prop} (himgF : ∀ a, L.Img a → F a)
     {uses : List CV} {w : Arm.ArmState} (herr : Arm.r .ERR w = .None)
@@ -367,7 +369,7 @@ theorem progCallPRBRLT (hL : L.Ok) [hR : L.CrunOk] {M : Nat} (hM : 0 < M) (ih : 
   have hst : spv t = spv w := hZ.1 _ (by simp [Masked])
   have herrt : Arm.r .ERR t = .None := by rw [hZ.1 _ (by simp [Masked])]; exact herr
   let w₀' := bodyOf (L.A h).af (enterAt (L.A h) t)
-  let D : BitVec 64 → Prop := fun a => F a ∧ ¬ Fh a
+  let D : BitVec 64 → Prop := fun _ => False
   have hspw₀' : spv w₀' = spb := by
     simp only [w₀']; rw [spv_bodyOf, spv_enterAt, hst]
   have hbw : BodyEntryW Fh (L.A h).vcp.EntryArg (L.A h).af (enterAt (L.A h) t) w₀' :=
@@ -402,12 +404,20 @@ theorem progCallPRBRLT (hL : L.Ok) [hR : L.CrunOk] {M : Nat} (hM : 0 < M) (ih : 
       have h30 : f ≠ .GPR 30#5 := by rintro rfl; exact hf (by simp [Masked])
       rw [r_bodyOf _ _ h29 h31, r_bodyOf _ _ h29 h31, r_enterAt _ _ hpc h30, r_enterAt _ _ hpc h30,
         hcOk.world.1 f hf, hZ.1 f hf]
-    · have hnZ : ¬ F a := fun hz => by
-        by_cases hf : Fh a
-        · exact ha (.inl hf)
-        · exact ha (.inr ⟨hz, hf⟩)
-      simp only [w₀, w₀', mem_bodyOf, mem_enterAt]
-      rw [hcOk.world.2.1 a (fun hf => hnZ (hFZ a hf)), hZ.2.1 a hnZ]
+    · by_cases hFa : F a
+      · -- a byte of the exterior outside `Fh`: the callee's outgoing area or slot region, in the
+        -- caller's dead stack, where `t` holds the canonical state's bytes
+        have hFh : ¬ Fh a := fun hf => ha (.inl hf)
+        have hrg : StackBelow (frameDrop (L.A h).af + κ (M - 1) h) (spv w) a := by
+          by_cases ho : OutAt ib spb a
+          · exact hout_reg a ho
+          · by_cases hs : SlotAt sz (L.A h).af.frameSize spb a
+            · exact hslot_reg a hs
+            · exact (hFh ⟨hFa, ho, hs⟩).elim
+        simp only [w₀, w₀', mem_bodyOf, mem_enterAt]
+        exact (hrgn a hrg).symm
+      · simp only [w₀, w₀', mem_bodyOf, mem_enterAt]
+        rw [hcOk.world.2.1 a (fun hf => hFa (hFZ a hf)), hZ.2.1 a hFa]
   have hreg : ∀ r v, (ArgLoc.reg r, v) ∈ (locsOf h.sig).zip vals →
       regVal w₀' r = regVal w₀ r := by
     intro r v hm
@@ -431,13 +441,55 @@ theorem progCallPRBRLT (hL : L.Ok) [hR : L.CrunOk] {M : Nat} (hM : 0 < M) (ih : 
     · rw [r_enterAt _ _ hpc h30, r_enterAt _ _ hpc h30]; exact hmsk f hf hpc h30
     · rw [spv_enterAt, hst] at ha
       rw [mem_enterAt, mem_enterAt]; exact hrgn a ha
+  have hx29t : Arm.r (.GPR 29#5) (enterAt (L.A h) t) = Arm.r (.GPR 29#5) (enterAt (L.A h) cn) := by
+    rw [r_enterAt _ _ (by simp) (by simp), r_enterAt _ _ (by simp) (by simp),
+      hZ.1 _ (by simp [Masked]), hcOk.world.1 _ (by simp [Masked])]
   obtain ⟨k, hret, htrk, htabk⟩ := hdet h hh Fh vals cs w₀ (calleeIni h ini) G
-    (Arm.r .PC cn + 4) (enterAt (L.A h) cn) us outs wf n₀ e hWE hME0 htab hret0 htr0 htab0 D w₀'
+    (Arm.r .PC cn + 4) (enterAt (L.A h) cn) us outs wf n₀ e m rvals cm' hWE hME0 htab hret0 htr0
+    htab0 hm (by rw [BitVec.add_sub_cancel]; exact hcOk.ra) D w₀' (fun _ h => (h : False).elim)
     hrel' hsw hreg hstk G (Arm.r .PC t + 4) (enterAt (L.A h) t)
-    (hME t w₀' hst herrt ht.img hbw) hagree
+    (hME t w₀' hst herrt ht.img hbw) hagree (by rw [BitVec.add_sub_cancel]; exact ht.ra) hx29t
   refine ⟨k, hpcall t k ht.ra htrk hret.ret hret.prog, ⟨hret.ret, hret.regs, fun a ha => hret.mem a
-    (fun h' => ha (h'.elim (fun h1 => hFZ a h1.1) (fun h2 => h2.1))), hret.fields, hret.gkeep,
+    (fun h' => ha (h'.elim (fun h1 => hFZ a h1.1) (fun h2 => (h2 : False).elim))), hret.fields,
+    hret.gkeep,
     hret.prog⟩, htabk, htrk⟩
+
+/-- **`progCallPRBRL` with the callee run's trace up to its return** (`progCallPRBRLTR` with
+`DetPRB.toR`). -/
+theorem progCallPRBRLT (hL : L.Ok) [hR : L.CrunOk] {M : Nat} (hM : 0 < M) (ih : L.ThmPRBRL κ (M - 1))
+    (hdet : L.DetPRB κ (M - 1)) {n : String}
+    {h : Clif.Function} (hpf : L.P.func? n = some h) (hcal : ∃ g ∈ L.P.funcs, L.Callee g h)
+    {F : BitVec 64 → Prop} (himgF : ∀ a, L.Img a → F a)
+    {uses : List CV} {w : Arm.ArmState} (herr : Arm.r .ERR w = .None)
+    (hal : (spv w).toNat % 16 = 0)
+    (hroom : frameDrop (L.A h).af + κ (M - 1) h ≤ (spv w).toNat)
+    (hdead : ∀ a, StackBelow (frameDrop (L.A h).af + κ (M - 1) h) (spv w) a → F a ∧ ¬ L.Img a)
+    {vals : List Clif.Val} {cm : Clif.Mem} {cs : Clif.State} {rvals : List Clif.Val}
+    {cm' : Clif.Mem} {ini : Clif.SlotInit} (hmr : MemRel F L.syms cm w)
+    (hargs : ArgsAt h.sig vals uses w)
+    (hsav : StackArgsAvoid F h.sig vals w) (hpl : L.NeedSlots → L.PlaceAtB cm (spv w) ini)
+    (hslotb : L.NeedSlots → ∀ a, L.SlotByte h (spv w) a →
+      ini.bytes (ini.next + 1) a = w.mem (BitVec.ofNat 64 a))
+    (htab : L.TableOf (M - 1) h (enterAt (L.A h) (L.canon h uses w)) (calleeIni h ini))
+    (hinit : Clif.initState L.P n vals cm = .ok cs)
+    (hrun : L.crun M cs = .returned rvals cm') :
+    ∃ (us : List (Reg × Reg)) (outs : List CV) (wf : Arm.ArmState) (e : Nat),
+      us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
+      PrefixHold rvals outs ∧ MemRel F L.syms cm' wf ∧ (L.A h).vc.RetsSite us ∧
+      (L.NeedSlots → Clif.NextAdv cs.mem.leave cm' e) ∧
+      (∀ t, L.CallerOk F h uses w t →
+        (∀ f, Masked f → f ≠ .PC → f ≠ .GPR 30#5 → Arm.r f t = Arm.r f (L.canon h uses w)) →
+        (∀ a, StackBelow (frameDrop (L.A h).af + κ (M - 1) h) (spv w) a →
+          t.mem a = (L.canon h uses w).mem a) → ∃ k,
+        L.pcall M h t =
+          Arm.set_program (runX (L.mach (M - 1) h) k (enterAt (L.A h) t)) t.program ∧
+        ActRet (Arm.r .PC t + 4) F
+          (fun a => F a ∧ ¬ StackBelow (frameDrop (L.A h).af + κ (M - 1) h) (spv w) a)
+          us outs wf (enterAt (L.A h) t) (runX (L.mach (M - 1) h) k (enterAt (L.A h) t)) ∧
+        L.TabUpTo (M - 1) h (enterAt (L.A h) t) (calleeIni h ini).bytes (calleeIni h ini).next k
+          e ∧ PostTrace (L.A h).fa (L.A h).af (L.A h).base (L.mach (M - 1) h) (enterAt (L.A h) t) k) :=
+  L.progCallPRBRLTR hL hM ih (DetPRB.toR L hdet) hpf hcal himgF herr hal hroom hdead hmr hargs
+    hsav hpl hslotb htab hinit hrun
 
 end LinkSys
 
