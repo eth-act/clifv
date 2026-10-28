@@ -48,8 +48,12 @@ def f64RootOk (t : TermId) (as : List PA) (out : PA) (fu : Nat) : Bool :=
   | some e => e.osome && PA.le e.out out && decide (e.fu ≤ fu)
   | none => false
 
-/-- A run of an `f64Tab` root returns a value its output describes. -/
-theorem f64_run (hP : PInvT f ctx) (hc : cfg.checkOverlap = false) {t : TermId} {as : List PA}
+/-- A run of an `f64Tab` root returns a value its output describes, under any sound model `aext`
+for which `f64Tab` checks (S11f: the typed scope's `aextT`, the float scope's `aextTF`). -/
+theorem f64_runG {aext : TermId → PA → Option (List (List PA) × Bool)}
+    (hM : Model f ctx aext actorT aidata)
+    (hT : chkTab program f64Tab aext actorT aidata (fun _ => none) = true)
+    (hc : cfg.checkOverlap = false) {t : TermId} {as : List PA}
     {out : PA} {fu : Nat} (hok : f64RootOk t as out fu = true) {args : List V}
     (hargs : γL f ctx as args) {n : Nat} (hn : fu ≤ n) (ty : TypeId) (st : LState)
     (tr : Array RuleId) :
@@ -61,12 +65,21 @@ theorem f64_run (hP : PInvT f ctx) (hc : cfg.checkOverlap = false) {t : TermId} 
     simp only [Bool.and_eq_true, decide_eq_true_eq] at hok
     obtain ⟨⟨hos, hle⟩, hfu⟩ := hok
     obtain ⟨hmem, het, hleL⟩ := tabFind_sound he
-    obtain ⟨v, st', tr', hrun, hsome, hout⟩ := progress (model_ofT hP) (handOk_none f64Tab) hc
-      f64Tab_ok n e hmem (by omega) ty args st tr (leL_sound _ _ hleL _ hargs)
+    obtain ⟨v, st', tr', hrun, hsome, hout⟩ := progress hM (handOk_none f64Tab) hc
+      hT n e hmem (by omega) ty args st tr (leL_sound _ _ hleL _ hargs)
     obtain ⟨w, rfl⟩ := Option.isSome_iff_exists.mp (hsome hos)
     rw [het] at hrun
     exact ⟨w, st', tr', hrun, le_sound _ _ hle w (hout w rfl)⟩
   · cases hok
+
+/-- A run of an `f64Tab` root returns a value its output describes. -/
+theorem f64_run (hP : PInvT f ctx) (hc : cfg.checkOverlap = false) {t : TermId} {as : List PA}
+    {out : PA} {fu : Nat} (hok : f64RootOk t as out fu = true) {args : List V}
+    (hargs : γL f ctx as args) {n : Nat} (hn : fu ≤ n) (ty : TypeId) (st : LState)
+    (tr : Array RuleId) :
+    ∃ w st' tr', (applyTerm program (sem ctx) cfg n ty t args).run (st, tr) =
+      .ok (some w, (st', tr')) ∧ γ f ctx out w :=
+  f64_runG (model_ofT hP) f64Tab_ok hc hok hargs hn ty st tr
 
 /-- The `f64Tab` roots the hand proof calls: `constant_f64` below `2^32`, `output_reg`,
 `fpu_move_fp_imm` and `mov_to_fpu` at 64 bits, `imm` of an `i64` from `2^32` on. -/
@@ -94,14 +107,17 @@ theorem γ_data_nil (t : TypeId) (k : Nat) : γ f ctx (.data t k []) (.data t k 
 /-! ## `constant_f64` from `2^32` on -/
 
 section Hi
-variable (hP : PInvT f ctx) (hc : cfg.checkOverlap = false)
+variable {aext : TermId → PA → Option (List (List PA) × Bool)}
+  (hM : Model f ctx aext actorT aidata)
+  (hT : chkTab program f64Tab aext actorT aidata (fun _ => none) = true)
+  (hc : cfg.checkOverlap = false)
 
 set_option maxRecDepth 100000 in
 set_option maxHeartbeats 4000000 in
-include hP hc in
+include hM hT hc in
 /-- **`constant_f64` of a pattern of at least `2^32`** without the literal pool (an `fmov`
 immediate or zero low 32 bits) returns a register. -/
-theorem constant_f64_hi {c : Int} (hlo : 2 ^ 32 ≤ c) (hhi : c < 2 ^ 64)
+theorem constant_f64_hiG {c : Int} (hlo : 2 ^ 32 ≤ c) (hhi : c < 2 ^ 64)
     (hpf : (fpModImm? (u64 c) .size64).isSome = true ∨ u64 c % 2 ^ 32 = 0) (k : Nat)
     (st : LState) (tr : Array RuleId) :
     ∃ w s', (applyTerm program (sem ctx) cfg (k + 2000) 27 587 [.int c]).run (st, tr) =
@@ -134,7 +150,7 @@ theorem constant_f64_hi {c : Int} (hlo : 2 ^ 32 ≤ c) (hhi : c < 2 ^ 64)
     have hargs : (evalArgs program (sem ctx) cfg (k + 1998) [.var 71 1, .term 95 2035 []] env).run
         (st, tr) = .ok (some [.op (.fpModImm mm), .data 95 3 []], (st, tr)) := by
       isel_eval [henv, hp.t2035]
-    obtain ⟨w, st', tr', h411, hγ⟩ := f64_run hP hc f64Root_411
+    obtain ⟨w, st', tr', h411, hγ⟩ := f64_runG hM hT hc f64Root_411
       (args := [.op (.fpModImm mm), .data 95 3 []]) ⟨⟨_, rfl, mm, rfl⟩, γ_data_nil 95 3, trivial⟩
       (n := k + 1998) (by omega) 27 st tr
     have hrhs : (evalExpr program (sem ctx) cfg (k + 1999) rule_inst_4268.rhs env).run (st, tr) =
@@ -170,7 +186,7 @@ theorem constant_f64_hi {c : Int} (hlo : 2 ^ 32 ≤ c) (hhi : c < 2 ^ 64)
         .ok (some [.ty (.int 64), .data 122 1 [], .int c], (st, tr)) := by
       have hI : CTy.ofName? "I64" = some (.int 64) := rfl
       isel_eval [henv, hI, hp.t2235]
-    obtain ⟨w1, st1, tr1, h553, hγ1⟩ := f64_run hP hc f64Root_553
+    obtain ⟨w1, st1, tr1, h553, hγ1⟩ := f64_runG hM hT hc f64Root_553
       (args := [.ty (.int 64), .data 122 1 [], .int c])
       ⟨⟨_, List.mem_singleton_self _, rfl⟩, γ_data_nil 122 1,
         ⟨c, rfl, fun l hl => by cases hl; omega, fun h hh => by cases hh; omega⟩, trivial⟩
@@ -185,7 +201,7 @@ theorem constant_f64_hi {c : Int} (hlo : 2 ^ 32 ≤ c) (hhi : c < 2 ^ 64)
         [.term 27 553 [.constPrim 14 "I64", .term 122 2235 [], .var 4 0], .term 95 2035 []] env).run
         (st, tr) = .ok (some [w1, .data 95 3 []], (st1, tr1)) :=
       evalArgs_cons_iff.mpr ⟨w1, (st1, tr1), _, h553e, hrest, rfl⟩
-    obtain ⟨w, st', tr', h409, hγ⟩ := f64_run hP hc f64Root_409 (args := [w1, .data 95 3 []])
+    obtain ⟨w, st', tr', h409, hγ⟩ := f64_runG hM hT hc f64Root_409 (args := [w1, .data 95 3 []])
       ⟨hγ1, γ_data_nil 95 3, trivial⟩ (n := k + 1998) (by omega) 27 st1 tr1
     have hrhs : (evalExpr program (sem ctx) cfg (k + 1999) rule_inst_4273.rhs env).run (st, tr) =
         .ok (some w, (st', tr')) := evalExpr_term_iff.mpr ⟨_, _, hargs409, h409⟩
@@ -201,6 +217,16 @@ theorem constant_f64_hi {c : Int} (hlo : 2 ^ 32 ≤ c) (hhi : c < 2 ^ 64)
     simp only [M.except_ok_bind, M.run_bind, hrhs, run_fire, run_pure']
 
 end Hi
+
+/-- **`constant_f64` of a pattern of at least `2^32`** without the literal pool returns a
+register (`constant_f64_hiG` under `PInvT`). -/
+theorem constant_f64_hi (hP : PInvT f ctx) (hc : cfg.checkOverlap = false) {c : Int}
+    (hlo : 2 ^ 32 ≤ c) (hhi : c < 2 ^ 64)
+    (hpf : (fpModImm? (u64 c) .size64).isSome = true ∨ u64 c % 2 ^ 32 = 0) (k : Nat)
+    (st : LState) (tr : Array RuleId) :
+    ∃ w s', (applyTerm program (sem ctx) cfg (k + 2000) 27 587 [.int c]).run (st, tr) =
+      .ok (some w, s') ∧ γ f ctx .reg w :=
+  constant_f64_hiG (model_ofT hP) f64Tab_ok hc hlo hhi hpf k st tr
 
 /-! ## Rule 585 -/
 
@@ -311,10 +337,15 @@ private theorem matchRule_mono_le585 {m m' : Nat} (hm : m ≤ m') {r : Rule} {vs
 
 set_option maxRecDepth 100000 in
 set_option maxHeartbeats 4000000 in
-/-- **`f64const`** (`lower.isle:68`, rule 585) over the typed scope: from a successful match on
-an instruction an `f64Safe` entry describes, the right-hand side returns one single register from
-fuel `f64Fuel`. -/
-theorem hand_585T (hP : PInvT f ctx) (hc : cfg.checkOverlap = false) {t d : PA}
+/-- **`f64const`** (`lower.isle:68`, rule 585) over a float-capable context whose `f64const`s are
+in the typed scope (`hcon`: their bits are `Compile.f64PoolFree`), under a sound model `aext` for
+which `f64Tab` checks: from a successful match on an instruction an `f64Safe` entry describes, the
+right-hand side returns one single register from fuel `f64Fuel`. -/
+theorem hand_585G {aext : TermId → PA → Option (List (List PA) × Bool)} (hP : PInvTB f ctx)
+    (hM : Model f ctx aext actorT aidata)
+    (hT : chkTab program f64Tab aext actorT aidata (fun _ => none) = true)
+    (hcon : ∀ ty imm, InstOf f (.iconst ty imm) → Compile.instET (.iconst ty imm) = true)
+    (hc : cfg.checkOverlap = false) {t d : PA}
     (hsafe : mayInvalid t = false ∨ mayF64c d = false) {args : List V}
     (hargs : γL f ctx [.inst t d] args) {m : Nat} {s s' : LState × Array RuleId}
     {env : Isle.Interp.Env V}
@@ -343,7 +374,7 @@ theorem hand_585T (hP : PInvT f ctx) (hc : cfg.checkOverlap = false) {t d : PA}
   have hdd := hctx.data j info cl hi hcl
   rw [hd] at hdd
   obtain ⟨imm, rfl, rfl⟩ := instData_f64const_inv hdd
-  have hpf := hP.instET _ (hP.clifOf j info _ hi hcl)
+  have hpf := hcon _ _ (hP.clifOf j info _ hi hcl)
   have hpf2 : imm.toNat = 0 ∨ (fpModImm? imm.toNat .size64).isSome = true ∨ imm.toNat < 2 ^ 32 ∨
       imm.toNat % 2 ^ 32 = 0 := by
     simp only [Compile.instET, Compile.tyE, Compile.f64PoolFree, Bool.or_eq_true,
@@ -367,7 +398,7 @@ theorem hand_585T (hP : PInvT f ctx) (hc : cfg.checkOverlap = false) {t d : PA}
   obtain ⟨w587, s2, h587, hγ587⟩ : ∃ w s2, (applyTerm program (sem ctx) cfg (k + 2997) 27 587
       [.int (imm.toNat : Int)]).run (st1, tr1) = .ok (some w, s2) ∧ γ f ctx .reg w := by
     by_cases hsmall : imm.toNat < 2 ^ 32
-    · obtain ⟨w, st', tr', hr, hγ⟩ := f64_run hP hc f64Root_587 (args := [.int (imm.toNat : Int)])
+    · obtain ⟨w, st', tr', hr, hγ⟩ := f64_runG hM hT hc f64Root_587 (args := [.int (imm.toNat : Int)])
         ⟨⟨_, rfl, fun l hl => by cases hl; omega, fun h hh => by cases hh; omega⟩, trivial⟩
         (n := k + 2997) (by omega) 27 st1 tr1
       exact ⟨w, _, hr, hγ⟩
@@ -380,11 +411,11 @@ theorem hand_585T (hP : PInvT f ctx) (hc : cfg.checkOverlap = false) {t d : PA}
         · omega
         · exact .inr h3
       have h64 : imm.toNat < 2 ^ 64 := by simpa using hlt
-      have := constant_f64_hi hP hc (c := (imm.toNat : Int)) (by omega) (by omega) hpf' (k + 997)
+      have := constant_f64_hiG hM hT hc (c := (imm.toNat : Int)) (by omega) (by omega) hpf' (k + 997)
         st1 tr1
       rwa [show k + 997 + 2000 = k + 2997 by omega] at this
   obtain ⟨st2, tr2⟩ := s2
-  obtain ⟨w, st3, tr3, h172, hγ⟩ := f64_run hP hc f64Root_172 (args := [w587]) ⟨hγ587, trivial⟩
+  obtain ⟨w, st3, tr3, h172, hγ⟩ := f64_runG hM hT hc f64Root_172 (args := [w587]) ⟨hγ587, trivial⟩
     (n := k + 2999) (by omega) 25 st2 tr2
   refine ⟨w, (st3, tr3), ?_, hγ⟩
   show (evalExpr program (sem ctx) cfg (k + 3000) (.term 25 172 [.term 27 587 [.var 4 0]]) _).run _ = _
@@ -395,9 +426,25 @@ theorem hand_585T (hP : PInvT f ctx) (hc : cfg.checkOverlap = false) {t d : PA}
     evalArgs_nil_iff.mpr ⟨rfl, rfl⟩, rfl⟩
   exact henv
 
-/-- **The hand-checked rules of the typed scope return** (`HandOk` for `handRulesT`): V7's two
-(`handRules_okT`) and rule 585 (`hand_585T`), on a table whose entries are `f64Safe`. -/
-theorem handOkT (hP : PInvT f ctx) (hc : cfg.checkOverlap = false) (tab : PTab)
+/-- **`f64const`** (`lower.isle:68`, rule 585) over the typed scope (`hand_585G` under `PInvT`). -/
+theorem hand_585T (hP : PInvT f ctx) (hc : cfg.checkOverlap = false) {t d : PA}
+    (hsafe : mayInvalid t = false ∨ mayF64c d = false) {args : List V}
+    (hargs : γL f ctx [.inst t d] args) {m : Nat} {s s' : LState × Array RuleId}
+    {env : Isle.Interp.Env V}
+    (h : (matchRule program (sem ctx) cfg m rule_lower_68 args).run s = .ok (some env, s'))
+    (n : Nat) (hn : f64Fuel ≤ n) :
+    ∃ v s'', (evalExpr program (sem ctx) cfg n rule_lower_68.rhs env).run s' = .ok (some v, s'') ∧
+      γ f ctx (.regsVec (some 1)) v :=
+  hand_585G hP.toB (model_ofT hP) f64Tab_ok (fun _ _ h => hP.instET _ h) hc hsafe hargs h n hn
+
+/-- **The hand-checked rules return** (`HandOk` for `handRulesT`) over a float-capable context
+whose `f64const`s are in the typed scope, under a sound model for which `f64Tab` checks: V7's two
+(`handRules_okTB`) and rule 585 (`hand_585G`), on a table whose entries are `f64Safe`. -/
+theorem handOkG {aext : TermId → PA → Option (List (List PA) × Bool)} (hP : PInvTB f ctx)
+    (hM : Model f ctx aext actorT aidata)
+    (hT : chkTab program f64Tab aext actorT aidata (fun _ => none) = true)
+    (hcon : ∀ ty imm, InstOf f (.iconst ty imm) → Compile.instET (.iconst ty imm) = true)
+    (hc : cfg.checkOverlap = false) (tab : PTab)
     (htab : tab.all f64Safe = true) : HandOk f ctx program cfg tab handRulesT := by
   intro e he r hr c a hh args hargs m s env s' hmatch n hn
   simp only [handRulesT] at hh
@@ -413,7 +460,12 @@ theorem handOkT (hP : PInvT f ctx) (hc : cfg.checkOverlap = false) (tab : PTab)
     obtain rfl := List.mem_singleton.mp hm
     obtain ⟨t, d, hins, hsafe⟩ := f64Safe_inv (List.all_eq_true.mp htab e he) ht
     rw [hins] at hargs
-    exact hand_585T hP hc hsafe hargs hmatch n hn
-  · exact handRules_okT hP hc hr hh hmatch n hn
+    exact hand_585G hP hM hT hcon hc hsafe hargs hmatch n hn
+  · exact handRules_okTB hP hc hr hh hmatch n hn
+
+/-- **The hand-checked rules of the typed scope return** (`handOkG` under `PInvT`). -/
+theorem handOkT (hP : PInvT f ctx) (hc : cfg.checkOverlap = false) (tab : PTab)
+    (htab : tab.all f64Safe = true) : HandOk f ctx program cfg tab handRulesT :=
+  handOkG hP.toB (model_ofT hP) f64Tab_ok (fun _ _ h => hP.instET _ h) hc tab htab
 
 end Backend.Proof.Prg
