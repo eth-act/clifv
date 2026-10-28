@@ -4619,6 +4619,7 @@ i128 helpers' contract (`hlegal`), the indirect-call signatures (`hsig`), `Image
 | `BaseOk.baseX`, `.baseXI`, `.baseTry` | — | trusted (outside code) | the externs' CLIF semantics is what the machine's outside calls do (`XCallsOk`, `XCallsIndOk`, `CalleeTryOk`) |
 | `BaseOk.baseTls`, `.baseTlsNI` | a `tls_value` / `NeedNI` | trusted (loader/runtime) | the TLSDESC resolver (on the hook-free route only `TlsLoader`) |
 | `BaseOk.baseNI` | `NeedNI` | trusted (outside code) | non-interference of outside calls |
+| `OkD.baseDet` (`HookDet`), `OkDX.baseDetX` (`HookDetX`) | `NeedNI` (prophecy determinism, `docs/plans/uninit.md` §5.8–§5.9) | trusted (outside code) | outside calls and the TLS resolver are deterministic on the dead stack below `sp`, and do not observe return addresses (`x30`, the saved-LR bytes of the frame-record chain, `LRByte`); an extern that takes a backtrace is outside the premise |
 | `BaseOk.baseKeepsPlace`, `.baseKeepsAllocs` | `NeedSlots` | trusted (outside code) | outside calls keep the slot-placement oracle and the allocations |
 | `HooksSim.call`, `.tls` | — | trusted (outside code) | the hooks read no relocated instruction byte and not the program field |
 | `hlegal` (`HelperOk`, `ExtLegal`, `EnvKeepsBounded`) | the program mentions `i128` | trusted (outside code) | the i128 helpers' contracts (gap "legalisation environment restrictions") |
