@@ -40,10 +40,11 @@ def ThmPRBRL (κ : Nat → Clif.Function → Nat) (M : Nat) : Prop :=
       PostTrace (L.A g).fa (L.A g).af (L.A g).base (L.mach M g) s n ∧
       L.TabUpTo M g s ini.bytes ini.next n e ∧ (L.NeedSlots → Clif.NextAdv cs.mem.leave cm' e)
 
-/-- **`progCallPRB` on `ThmPRBRL`, determinism `DetPRBR`** (module doc): the same conclusion. -/
-theorem progCallPRBRLR (hL : L.Ok) [hR : L.CrunOk] {M : Nat} (hM : 0 < M)
+/-- **`progCallPRB` on `ThmPRBRL`, determinism `DetPRBRU`** (#732; module doc): the same
+conclusion. -/
+theorem progCallPRBRLRU (hL : L.Ok) [hR : L.CrunOk] {M : Nat} (hM : 0 < M)
     (ih : L.ThmPRBRL κ (M - 1))
-    (hdet : L.DetPRBR κ (M - 1)) {n : String}
+    (hdet : L.DetPRBRU κ (M - 1)) {n : String}
     {h : Clif.Function} (hpf : L.P.func? n = some h) (hcal : ∃ g ∈ L.P.funcs, L.Callee g h)
     {F : BitVec 64 → Prop} (himgF : ∀ a, L.Img a → F a)
     {uses : List CV} {w : Arm.ArmState} (herr : Arm.r .ERR w = .None)
@@ -464,7 +465,7 @@ theorem progCallPRBRLR (hL : L.Ok) [hR : L.CrunOk] {M : Nat} (hM : 0 < M)
     rw [r_enterAt _ _ (by simp) (by simp), r_enterAt _ _ (by simp) (by simp),
       hZ.1 _ (by simp [Masked]), hcOk.world.1 _ (by simp [Masked])]
   obtain ⟨k, hret, htrk, htabk⟩ := hdet h hh Fh vals cs w₀ (calleeIni h ini) G
-    (Arm.r .PC cn + 4) (enterAt (L.A h) cn) us outs wf n₀ e m rvals cm' hWE hME0 htab hret0 htr0
+    (Arm.r .PC cn + 4) (enterAt (L.A h) cn) us outs wf n₀ e m rvals cm' hWE hME0 htab hret0 hrs htr0
     htab0 hm (by rw [BitVec.add_sub_cancel]; exact hcOk.ra) D w₀' (fun _ h => (h : False).elim)
     hrel' hsw hreg hstk G (Arm.r .PC t + 4) (enterAt (L.A h) t)
     (hME t w₀' hst herrt ht.img hbw) hagree (by rw [BitVec.add_sub_cancel]; exact ht.ra) hx29t
@@ -472,6 +473,44 @@ theorem progCallPRBRLR (hL : L.Ok) [hR : L.CrunOk] {M : Nat} (hM : 0 < M)
     (fun h' => ha (h'.elim (fun h1 => hFZ a h1.1) (fun h2 => (h2 : False).elim))), hret.fields,
     hret.gkeep,
     hret.prog⟩, htabk⟩
+
+/-- **`progCallPRB` on `ThmPRBRL`, determinism `DetPRBR`** (module doc): `progCallPRBRLRU` with
+`DetPRBR.toU`. -/
+theorem progCallPRBRLR (hL : L.Ok) [hR : L.CrunOk] {M : Nat} (hM : 0 < M)
+    (ih : L.ThmPRBRL κ (M - 1))
+    (hdet : L.DetPRBR κ (M - 1)) {n : String}
+    {h : Clif.Function} (hpf : L.P.func? n = some h) (hcal : ∃ g ∈ L.P.funcs, L.Callee g h)
+    {F : BitVec 64 → Prop} (himgF : ∀ a, L.Img a → F a)
+    {uses : List CV} {w : Arm.ArmState} (herr : Arm.r .ERR w = .None)
+    (hal : (spv w).toNat % 16 = 0)
+    (hroom : frameDrop (L.A h).af + κ (M - 1) h ≤ (spv w).toNat)
+    (hdead : ∀ a, StackBelow (frameDrop (L.A h).af + κ (M - 1) h) (spv w) a → F a ∧ ¬ L.Img a)
+    {vals : List Clif.Val} {cm : Clif.Mem} {cs : Clif.State} {rvals : List Clif.Val}
+    {cm' : Clif.Mem} {ini : Clif.SlotInit} (hmr : MemRel F L.syms cm w)
+    (hargs : ArgsAt h.sig vals uses w)
+    (hsav : StackArgsAvoid F h.sig vals w) (hpl : L.NeedSlots → L.PlaceAtB cm (spv w) ini)
+    (hslotb : L.NeedSlots → ∀ a, L.SlotByte h (spv w) a →
+      ini.bytes (ini.next + 1) a = w.mem (BitVec.ofNat 64 a))
+    (htab : L.TableOf (M - 1) h (enterAt (L.A h) (L.canon h uses w)) (calleeIni h ini))
+    (hinit : Clif.initState L.P n vals cm = .ok cs)
+    (hrun : L.crun M cs = .returned rvals cm') :
+    ∃ (us : List (Reg × Reg)) (outs : List CV) (wf : Arm.ArmState) (e : Nat),
+      us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
+      PrefixHold rvals outs ∧ MemRel F L.syms cm' wf ∧ (L.A h).vc.RetsSite us ∧
+      (L.NeedSlots → Clif.NextAdv cs.mem.leave cm' e) ∧
+      (∀ t, L.CallerOk F h uses w t →
+        (∀ f, Masked f → f ≠ .PC → f ≠ .GPR 30#5 → Arm.r f t = Arm.r f (L.canon h uses w)) →
+        (∀ a, StackBelow (frameDrop (L.A h).af + κ (M - 1) h) (spv w) a →
+          t.mem a = (L.canon h uses w).mem a) → ∃ k,
+        L.pcall M h t =
+          Arm.set_program (runX (L.mach (M - 1) h) k (enterAt (L.A h) t)) t.program ∧
+        ActRet (Arm.r .PC t + 4) F
+          (fun a => F a ∧ ¬ StackBelow (frameDrop (L.A h).af + κ (M - 1) h) (spv w) a)
+          us outs wf (enterAt (L.A h) t) (runX (L.mach (M - 1) h) k (enterAt (L.A h) t)) ∧
+        L.TabUpTo (M - 1) h (enterAt (L.A h) t) (calleeIni h ini).bytes (calleeIni h ini).next k
+          e) :=
+  L.progCallPRBRLRU hL hM ih (DetPRBR.toU L hdet) hpf hcal himgF herr hal hroom hdead hmr hargs
+    hsav hpl hslotb htab hinit hrun
 
 /-- **`progCallPRB` on `ThmPRBRL`** (module doc): `progCallPRBRLR` with `DetPRB.toR`. -/
 theorem progCallPRBRL (hL : L.Ok) [hR : L.CrunOk] {M : Nat} (hM : 0 < M) (ih : L.ThmPRBRL κ (M - 1))

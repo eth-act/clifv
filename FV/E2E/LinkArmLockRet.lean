@@ -45,6 +45,7 @@ def LockRet (κ : Nat → Clif.Function → Nat) (M : Nat) : Prop :=
       (prophStOf (L.mach M g) (L.A g).fa (L.A g).base s₀) →
     L.TableOf M g s₀ ini →
     ActRet ra₀ F G₀ us outs wf s₀ (runX (L.mach M g) n₀ s₀) →
+    (L.A g).vc.RetsSite us →
     PostTrace (L.A g).fa (L.A g).af (L.A g).base (L.mach M g) s₀ n₀ →
     Clif.runLoop (L.envR M g) L.P.bare fuel cs = .returned rvals cm' →
     RaOk (L.A g) (ra₀ - 4) →
@@ -80,6 +81,7 @@ theorem LockRet.ret {M : Nat} (h : L.LockRet κ M) :
         (prophStOf (L.mach M g) (L.A g).fa (L.A g).base s₀) →
       L.TableOf M g s₀ ini →
       ActRet ra₀ F G₀ us outs wf s₀ (runX (L.mach M g) n₀ s₀) →
+      (L.A g).vc.RetsSite us →
       PostTrace (L.A g).fa (L.A g).af (L.A g).base (L.mach M g) s₀ n₀ →
       Clif.runLoop (L.envR M g) L.P.bare fuel cs = .returned rvals cm' →
       RaOk (L.A g) (ra₀ - 4) →
@@ -97,10 +99,10 @@ theorem LockRet.ret {M : Nat} (h : L.LockRet κ M) :
           Arm.r (.GPR 29#5) s = Arm.r (.GPR 29#5) s₀ →
           ActRet ra (fun a => F a ∨ D a) G us outs wf s (runX (L.mach M g) n₀ s) ∧
             PostTrace (L.A g).fa (L.A g).af (L.A g).base (L.mach M g) s n₀ :=
-  fun g hg F vals cs w₀ ini G₀ ra₀ s₀ us outs wf n₀ fuel rvals cm' hWE hME₀ htab hret₀ hpt₀ hrun
-    hra₀ D w₀' hD hrel hsw hreg hstk G ra s hME hag hra hx29 =>
+  fun g hg F vals cs w₀ ini G₀ ra₀ s₀ us outs wf n₀ fuel rvals cm' hWE hME₀ htab hret₀ hrs hpt₀
+    hrun hra₀ D w₀' hD hrel hsw hreg hstk G ra s hME hag hra hx29 =>
     let ⟨_, _, _, _, hret, hpt⟩ := h g hg F vals cs w₀ ini G₀ ra₀ s₀ us outs wf n₀ fuel rvals cm'
-      hWE hME₀ htab hret₀ hpt₀ hrun hra₀ D w₀' hD hrel hsw hreg hstk G ra s hME hag hra hx29
+      hWE hME₀ htab hret₀ hrs hpt₀ hrun hra₀ D w₀' hD hrel hsw hreg hstk G ra s hME hag hra hx29
     ⟨hret, hpt⟩
 
 /-- **The lock to the return at a call** (module doc): `LockRet` one level down, from a caller
@@ -426,7 +428,7 @@ theorem callLock_of (hL : L.Ok) [hR : L.CrunOk] {M : Nat} (hM : 0 < M)
   have hME0 : L.MachEntryPR κ (M - 1) h Fh G (Arm.r .PC cn + 4) (enterAt (L.A h) cn) w₀ P' R' :=
     ⟨⟨hME cn w₀ hsp0 herrc hcOk.img hbw0, prophOk_prophOf _ _ _ _ _ _⟩,
       fun _ hc _ _ _ _ => by simp only [R']; rw [prophStOf_call hc]⟩
-  obtain ⟨us, outs, wf, n₀, -, -, -, -, -, -, hret0, htr0, -, -⟩ :=
+  obtain ⟨us, outs, wf, n₀, -, -, -, -, -, hrs, hret0, htr0, -, -⟩ :=
     ih h hh Fh vals cs w₀ m rvals cm' (calleeIni h ini) G (Arm.r .PC cn + 4) (enterAt (L.A h) cn)
       hWE hME0 (by rw [BitVec.add_sub_cancel]; exact hcOk.ra) htab hm
   refine ⟨n₀, fun t ht hmsk hrgn => ?_⟩
@@ -512,7 +514,7 @@ theorem callLock_of (hL : L.Ok) [hR : L.CrunOk] {M : Nat} (hM : 0 < M)
     rw [r_enterAt _ _ (by simp) (by simp), r_enterAt _ _ (by simp) (by simp),
       hZ.1 _ (by simp [Masked]), hcOk.world.1 _ (by simp [Masked])]
   obtain ⟨hlk, hagr, hmo, hsv, hret, htrk⟩ := hlock h hh Fh vals cs w₀ (calleeIni h ini) G
-    (Arm.r .PC cn + 4) (enterAt (L.A h) cn) us outs wf n₀ m rvals cm' hWE hME0 htab hret0 htr0
+    (Arm.r .PC cn + 4) (enterAt (L.A h) cn) us outs wf n₀ m rvals cm' hWE hME0 htab hret0 hrs htr0
     hm (by rw [BitVec.add_sub_cancel]; exact hcOk.ra) D w₀' (fun _ h => (h : False).elim)
     hrel' hsw hreg hstk G (Arm.r .PC t + 4) (enterAt (L.A h) t)
     (hME t w₀' hst herrt ht.img hbw) hagree (by rw [BitVec.add_sub_cancel]; exact ht.ra) hx29t

@@ -141,9 +141,9 @@ set_option maxHeartbeats 1000000 in
 /-- **The program call answer at two worlds with the same registers but the pc, the same
 callee region and memories equal outside `F`**: one is defined iff the other is (`CondBT`
 carries over, the callee table by `CallTwinCE`), with the same results and worlds equal outside
-`F` (`progCallPRBRLR`). -/
+`F` (`progCallPRBRLRU`). -/
 theorem progXBT_rel (hL : L.Ok) [hR : L.CrunOk] {M : Nat}
-    (ih : 0 < M → L.ThmPRBRL κ (M - 1)) (hdet : 0 < M → L.DetPRBR κ (M - 1))
+    (ih : 0 < M → L.ThmPRBRL κ (M - 1)) (hdet : 0 < M → L.DetPRBRU κ (M - 1))
     (htw : 0 < M → L.CallTwinCE κ M) {h : Clif.Function} (hh : h ∈ L.P.funcs)
     (hcal : ∃ g ∈ L.P.funcs, L.Callee g h) {F : BitVec 64 → Prop}
     (himgF : ∀ a, L.Img a → F a) {uses : List CV} {W W' : Arm.ArmState}
@@ -215,7 +215,7 @@ theorem progXBT_rel (hL : L.Ok) [hR : L.CrunOk] {M : Nat}
       fun a ha => hdead a (by rw [← hsp]; exact ha), vals, cm, cs, rvals, cm', ini, hmr', hargs',
       hsav', hpl', htab', hinit, hrun⟩
   -- the canonical callee runs from both canonical states
-  obtain ⟨us, outs, wf, e, hus, hlen, hhold, -, hrs, -, hall⟩ := L.progCallPRBRLR hL hM (ih hM)
+  obtain ⟨us, outs, wf, e, hus, hlen, hhold, -, hrs, -, hall⟩ := L.progCallPRBRLRU hL hM (ih hM)
     (hdet hM) hpf hcal himgF herr hal hroom hdead hmr hargs hsav (fun hN => (hpl hN).1)
     (fun hN => (hpl hN).2) htab hinit hrun
   obtain ⟨k₀, hpc₀, hret₀, -⟩ := hall _ hc0 (fun _ _ _ _ => rfl) (fun _ _ => rfl)
@@ -397,9 +397,9 @@ theorem worldPR_rel {M : Nat} (h : Clif.Function) (Pn : BitVec 64 → BitVec 8) 
 set_option maxHeartbeats 1000000 in
 /-- **Step 1 of the determinism induction: `XNIF` of the induction step's guarded semantics**
 (module doc): call `n` of `XPBTGY` at the calls the CLIF run of count `n` admits, under
-`NeedNI`, from `ThmPRBRL`/`DetPRBR` one level down and `CallTwinCE` at this level. -/
+`NeedNI`, from `ThmPRBRL`/`DetPRBRU` (#732) one level down and `CallTwinCE` at this level. -/
 theorem xnifXPBTGY (hL : L.Ok) [hR : L.CrunOk] (hN : L.NeedNI) {M : Nat}
-    (ih : 0 < M → L.ThmPRBRL κ (M - 1)) (hdet : 0 < M → L.DetPRBR κ (M - 1))
+    (ih : 0 < M → L.ThmPRBRL κ (M - 1)) (hdet : 0 < M → L.DetPRBRU κ (M - 1))
     (htw : 0 < M → L.CallTwinCE κ M) {g : Clif.Function} (hg : g ∈ L.P.funcs)
     {F : BitVec 64 → Prop} (himgF : ∀ a, L.Img a → F a) (P : Nat → BitVec 64 → BitVec 8)
     (R : Nat → Arm.ArmState) {c : BitVec 64} {cs : Clif.State}
