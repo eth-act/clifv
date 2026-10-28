@@ -8,10 +8,12 @@ import FV.E2E.LinkArmTrapE
 `InitOkR` (`DeadCleanupBinaryInitR`) asks for `DetPRBR` at every depth, which is false when the
 canonical return list names `x30` (#732): `InitOkR` cannot be constructed. **`InitOkRU`**: the
 same scope conditions with the determinism `DetPRBRU` (`DetPRBR` at the result registers of a
-`rets` site, #732) and the call twins `CallTwinCE` (#716), every field only under `NeedSlots`
-(without program callees with slots the oracle is unused and the theorems hold without them).
+`rets` site, #732) and the table transfers `DetTabPRBE`, `DetTabPRBr` (what `InitOkR` used its
+call twins `CallTwinCE` for; `CallTwinCE` without the canonical callee's table premise does not
+follow from the two-run route), every field only under `NeedSlots` (without program callees with
+slots the oracle is unused and the theorems hold without them).
 
-* `InitOkRU`, `InitOkRU.detTab`, `InitOkRU.detTabR`, `InitOkRU.of_not_needSlots`;
+* `InitOkRU`, `InitOkRU.of_not_needSlots`;
 * **`binary_correct_initRU`**, **`binary_correct_initTRU`**: `binary_correct_initR` /
   `binary_correct_initTR` under `InitOkRU`;
 * `model_init_sysSRU`, **`binary_correct_exec_initRU`**: `binary_correct_exec_initR` under
@@ -27,28 +29,21 @@ open Backend Backend.Proof E2E.LinkCheck
 
 /-- **The premises of the oracle route, satisfiable form** (module doc): under `NeedSlots`, the
 scope conditions `BaseRetOk`, `RetCount`, `HooksKeep`, the determinism `DetPRBRU` (#732) and the
-call twins `CallTwinCE` (#716) of the linked system `L` with budget `κ`. -/
+table transfers `DetTabPRBE`, `DetTabPRBr` of the linked system `L` with budget `κ`. -/
 structure InitOkRU (L : LinkSys) (κ : Nat → Clif.Function → Nat) : Prop where
   baseRet : L.NeedSlots → L.BaseRetOk
   retCount : L.NeedSlots → ∀ g ∈ L.P.funcs, L.RetCount g
   det : L.NeedSlots → ∀ M, L.std.DetPRBRU κ M
-  twin : L.NeedSlots → ∀ M, L.std.CallTwinCE κ M
+  detTab : L.NeedSlots → ∀ M, L.std.DetTabPRBE κ M
+  detTabR : L.NeedSlots → ∀ M, L.std.DetTabPRBr κ M
   hooks : L.NeedSlots → L.HooksKeep
-
-theorem InitOkRU.detTab {L : LinkSys} {κ : Nat → Clif.Function → Nat} (h : InitOkRU L κ)
-    (hN : L.NeedSlots) (M : Nat) : L.std.DetTabPRBE κ M :=
-  L.std.detTabPRBE_ofCE (h.twin hN M)
-
-theorem InitOkRU.detTabR {L : LinkSys} {κ : Nat → Clif.Function → Nat} (h : InitOkRU L κ)
-    (hN : L.NeedSlots) (M : Nat) : L.std.DetTabPRBr κ M :=
-  L.std.detTabPRBr_ofCE (h.twin hN M)
 
 /-- **Without program callees with slots `InitOkRU` holds** (every field is under
 `NeedSlots`). -/
 theorem InitOkRU.of_not_needSlots {L : LinkSys} {κ : Nat → Clif.Function → Nat}
     (hN : ¬ L.NeedSlots) : InitOkRU L κ :=
   ⟨fun h => absurd h hN, fun h => absurd h hN, fun h => absurd h hN, fun h => absurd h hN,
-    fun h => absurd h hN⟩
+    fun h => absurd h hN, fun h => absurd h hN⟩
 
 /-- **`binary_correct_init` under `InitOkRU`** (module doc). -/
 theorem binary_correct_initRU {I : LinkInput} {X : Image} {R : BitVec 64 → Prop}

@@ -2856,15 +2856,17 @@ only in that branch; `HooksKeep`'s table step moved into it).
   `backend_correct_program_core_initETXRU`, **`backend_correct_program_initETXRU`**;
   `LinkArmProgramInitR`: `backend_correct_program_core_initEXRU`, **`backend_correct_program_initEXRU`**.
 - `DeadCleanupBinaryInitRU.lean`: **`InitOkRU`** (`baseRet`, `retCount`, `det : NeedSlots → ∀ M,
-  DetPRBRU`, `twin`, `hooks`, each under `NeedSlots`), `InitOkRU.detTab`/`detTabR`,
-  `InitOkRU.of_not_needSlots`, **`binary_correct_initRU`**, **`binary_correct_initTRU`**,
+  DetPRBRU`, `detTab` (`DetTabPRBE`), `detTabR` (`DetTabPRBr`), `hooks`, each under `NeedSlots`;
+  table transfers instead of `CallTwinCE`, which without the canonical callee's table premise does
+  not follow from the two-run route, UninitZ29b), `InitOkRU.of_not_needSlots`,
+  **`binary_correct_initRU`**, **`binary_correct_initTRU`**,
   `model_init_sysSRU`, **`binary_correct_exec_initRU`**; `DeadCleanupBinaryInitTRU.lean`:
   `model_init_sysSTRU`, **`binary_correct_exec_initTRU`**; `FV/Link/DeadCleanupExeInitRU.lean`:
   **`compileExe_correct_initRU`**, **`compileExe_correct_initTRU`**. `DeadCleanupBinaryInitClosed`:
   `baseRetOk_closed`, `hooksKeep_closed`, `retCount_of_B` (closed base).
 - Witnesses: **`InitTrapWitness.divz_traps_initRU`** (no premise: `1 udiv 0` has no slotted callee,
-  `InitOkRU.of_not_needSlots`); `InitSlotWitness.stale_read_returns_initRU` (premises: `DetPRBRU` and
-  `CallTwinCE` of the proof's system only).
+  `InitOkRU.of_not_needSlots`); `InitSlotWitness.stale_read_returns_initRU` (premises: `DetPRBRU`,
+  `DetTabPRBE`, `DetTabPRBr` of the proof's system only).
 - Next: UninitZ29b's `InitOkRU.of_checks` (`FV/E2E/DeadCleanupBinaryInitRUOf.lean`) from its induction;
   then the stale-read witness without premises.
 

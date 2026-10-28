@@ -48,7 +48,7 @@ theorem InitOkR.detTabR {L : LinkSys} {κ : Nat → Clif.Function → Nat} (h : 
 theorem InitOkR.toU {L : LinkSys} {κ : Nat → Clif.Function → Nat} (h : InitOkR L κ) :
     InitOkRU L κ :=
   ⟨fun _ => h.baseRet, fun _ => h.retCount, fun _ M => LinkSys.DetPRBR.toU L.std (h.det M),
-    fun _ => h.twin, fun _ => h.hooks⟩
+    fun _ => h.detTab, fun _ => h.detTabR, fun _ => h.hooks⟩
 
 /-- **`binary_correct_init` under `InitOkR`** (module doc). -/
 theorem binary_correct_initR {I : LinkInput} {X : Image} {R : BitVec 64 → Prop}
