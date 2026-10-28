@@ -203,11 +203,60 @@ theorem dirtyEnd_sub (hdisj : PartDisj Loc) {tr : List (List (Ev SKind BVal))}
 
 /-! ## A chain segment on the thread -/
 
-/-- **A chain segment of an activation below its callers is a realized prefix** (module doc):
-the activation `R`'s own CLIF run from `s` refining a prefix of a precise run with private set
-`PrivA R`, started below `ext` at a reachable state with mask `U` and a start-dirty set within
-`PrivA R`, the mask, the addresses starting no location and a set `N` no read of the run starts
-at, ending as the chain theorems end (whole run, `Stop`, or a pause `Pz`). -/
+/-- **A chain segment below its callers is a realized prefix** (module doc): an own CLIF run
+from `s` refining a prefix of a precise run with private set `P`, started below `ext` at a
+reachable state with mask `U` and a start-dirty set within `P`, the mask, the addresses starting
+no location and a set `N` no read of the run starts at, ending as the chain theorems end (whole
+run, `Stop`, or a pause `Pz`). -/
+theorem seg_endP {Bnd : Nat → Prop} {P : Nat → Prop} (hb : ∀ a, P a → Bnd a)
+    {Dcap : Nat}
+    {c0 : TState} (hP : PartsOk env p c0 Loc) (hdisj : PartDisj Loc)
+    {f : ArmState → ArmState} {ok : ArmState → Lab → Prop} {u t' : ArmState × Mon}
+    {ls : List Lab} (hr : PRun Policy.arm f ok u ls t') {k : Nat} (hk : k ≤ ls.length)
+    (ext : List (Clif.Frame × List Clif.ValueId)) {s : Clif.State}
+    (hR : RReach env p c0 (.run (pushC ext s))) {trS : List (List (Ev SKind BVal))} {t : TState}
+    {ψ : Nat × Nat → Nat × Nat} (hrun : CRun env p (.run s) trS t)
+    (hx : CallCompose.XClosed (evTr (ls.take k)))
+    (href : Refines Maps P (MonPair (evTr (ls.take k))) trS (conv (evTr (ls.take k))) ψ)
+    {U D N : Nat → Prop} (hD : ∀ a, D a → P a ∨ U a ∨ (¬ ∃ n, Loc a n) ∨ N a)
+    (hN : ∀ q x, evAt trS q = some x → x.dir = .R → ¬ N x.loc)
+    {Pz : Clif.State → Prop}
+    (hend : k = ls.length ∨ IselThread.Stop env p t ∨ ∃ s', t = .run s' ∧ Pz s') :
+    ∃ k' d', RealT env p Bnd ls k' (encT U (.run (pushC ext s)), D) d' ∧
+      (k' = ls.length ∨ EndT env p Dcap (ls.take k') d' ∨
+        (k' = k ∧ ∃ s' M DE, Pz s' ∧ t = .run s' ∧ d' = (encT M (.run (pushC ext s')), DE) ∧
+          (∀ a, M a → U a) ∧ (∀ a, DE a → P a ∨ M a ∨ (¬ ∃ n, Loc a n) ∨ N a) ∧
+          RReach env p c0 (.run (pushC ext s')))) := by
+  obtain ⟨hacc, hReachEnd⟩ := seg_parts hP hR hrun
+  have hu : Uniform trS := uniform_of_parts hdisj fun q x hx hF => (hacc q x hx).1 hF
+  have hpos : ∀ q x, evAt trS q = some x → x.dir = .R → 0 < x.n :=
+    fun q x hx hRd => (hacc q x hx).2 hRd
+  have hns : ∀ q x, evAt trS q = some x → x.dir = .R → ¬ ((¬ ∃ n, Loc x.loc n) ∨ N x.loc) :=
+    fun q x hx hRd hn => hn.elim (fun hn => hn ⟨x.n, (hacc q x hx).1 (by rw [hRd]; decide)⟩)
+      (hN q x hx hRd)
+  rcases realizedT_liftW (Bnd := Bnd) hr hk ext hrun hx href hD hu hpos hns hb with
+    ⟨trS', s1, hp, hRT, hs1, hret⟩ | ⟨k', -, trS', j, evs, -, -, sj, t'', hRT, hst, hm⟩
+  · rcases hend with h | h | ⟨s', rfl, hz⟩
+    · exact ⟨k, (encT (maskAfter U trS') (.run (pushC ext s1)), DirtyEnd D P trS'), hRT,
+        .inl h⟩
+    · refine ⟨k, (encT (maskAfter U trS') (.run (pushC ext s1)), DirtyEnd D P trS'), hRT,
+        .inr (.inl (.inl ⟨ext, s1, by exact strip_encT (maskAfter U trS') (.run (pushC ext s1)),
+          ?_⟩))⟩
+      cases t with
+      | run s' => obtain rfl := hs1 s' rfl; exact .inl h
+      | ret v => exact .inr (.inl ⟨v, hret v rfl⟩)
+    · obtain rfl := hs1 s' rfl
+      exact ⟨k, (encT (maskAfter U trS') (.run (pushC ext s1)), DirtyEnd D P trS'), hRT,
+        .inr (.inr ⟨rfl, s1, _, _, hz, rfl, rfl, fun _ => maskAfter_sub,
+          fun a => dirtyEnd_sub hdisj (fun q x hx => (hacc q x (evAt_of_prefix hp hx)).1) hD,
+          hReachEnd s1 rfl⟩)⟩
+  · refine ⟨k', (encT (maskAfter U (trS'.take j)) (.run sj), DirtyEnd D P (trS'.take j)),
+      hRT, .inr (.inl (.inr (.inl ⟨evs, t'', cstep_withBytes.mpr hst, ?_⟩)))⟩
+    show ReadsMasked (maskOf (encT (maskAfter U (trS'.take j)) (.run sj))) evs
+    rw [maskOf_encT]; exact hm
+
+/-- **A chain segment of an activation below its callers is a realized prefix** (`seg_endP`
+with the activation's private set `PrivA R`). -/
 theorem seg_end {Bnd : Nat → Prop} {R : Backend.Proof.RL} (hb : ∀ a, PrivA R a → Bnd a)
     {Dcap : Nat}
     {c0 : TState} (hP : PartsOk env p c0 Loc) (hdisj : PartDisj Loc)
@@ -226,34 +275,8 @@ theorem seg_end {Bnd : Nat → Prop} {R : Backend.Proof.RL} (hb : ∀ a, PrivA R
       (k' = ls.length ∨ EndT env p Dcap (ls.take k') d' ∨
         (k' = k ∧ ∃ s' M DE, Pz s' ∧ t = .run s' ∧ d' = (encT M (.run (pushC ext s')), DE) ∧
           (∀ a, M a → U a) ∧ (∀ a, DE a → PrivA R a ∨ M a ∨ (¬ ∃ n, Loc a n) ∨ N a) ∧
-          RReach env p c0 (.run (pushC ext s')))) := by
-  obtain ⟨hacc, hReachEnd⟩ := seg_parts hP hR hrun
-  have hu : Uniform trS := uniform_of_parts hdisj fun q x hx hF => (hacc q x hx).1 hF
-  have hpos : ∀ q x, evAt trS q = some x → x.dir = .R → 0 < x.n :=
-    fun q x hx hRd => (hacc q x hx).2 hRd
-  have hns : ∀ q x, evAt trS q = some x → x.dir = .R → ¬ ((¬ ∃ n, Loc x.loc n) ∨ N x.loc) :=
-    fun q x hx hRd hn => hn.elim (fun hn => hn ⟨x.n, (hacc q x hx).1 (by rw [hRd]; decide)⟩)
-      (hN q x hx hRd)
-  rcases realizedT_liftW (Bnd := Bnd) hr hk ext hrun hx href hD hu hpos hns hb with
-    ⟨trS', s1, hp, hRT, hs1, hret⟩ | ⟨k', -, trS', j, evs, -, -, sj, t'', hRT, hst, hm⟩
-  · rcases hend with h | h | ⟨s', rfl, hz⟩
-    · exact ⟨k, (encT (maskAfter U trS') (.run (pushC ext s1)), DirtyEnd D (PrivA R) trS'), hRT,
-        .inl h⟩
-    · refine ⟨k, (encT (maskAfter U trS') (.run (pushC ext s1)), DirtyEnd D (PrivA R) trS'), hRT,
-        .inr (.inl (.inl ⟨ext, s1, by exact strip_encT (maskAfter U trS') (.run (pushC ext s1)),
-          ?_⟩))⟩
-      cases t with
-      | run s' => obtain rfl := hs1 s' rfl; exact .inl h
-      | ret v => exact .inr (.inl ⟨v, hret v rfl⟩)
-    · obtain rfl := hs1 s' rfl
-      exact ⟨k, (encT (maskAfter U trS') (.run (pushC ext s1)), DirtyEnd D (PrivA R) trS'), hRT,
-        .inr (.inr ⟨rfl, s1, _, _, hz, rfl, rfl, fun _ => maskAfter_sub,
-          fun a => dirtyEnd_sub hdisj (fun q x hx => (hacc q x (evAt_of_prefix hp hx)).1) hD,
-          hReachEnd s1 rfl⟩)⟩
-  · refine ⟨k', (encT (maskAfter U (trS'.take j)) (.run sj), DirtyEnd D (PrivA R) (trS'.take j)),
-      hRT, .inr (.inl (.inr (.inl ⟨evs, t'', cstep_withBytes.mpr hst, ?_⟩)))⟩
-    show ReadsMasked (maskOf (encT (maskAfter U (trS'.take j)) (.run sj))) evs
-    rw [maskOf_encT]; exact hm
+          RReach env p c0 (.run (pushC ext s')))) :=
+  seg_endP hb hP hdisj hr hk ext hR hrun hx href hD hN hend
 
 end Concurrency.CallSegOkG
 
@@ -300,6 +323,11 @@ structure Act where
   caller : LFn
   /-- the open activations' CLIF memories at their calls and depths (`CallValid.AllocInvD`) -/
   opens : List (Clif.Mem × Nat)
+  /-- addresses no CLIF read of the activation's segments starts at (its frame padding and the
+  callers' private sets outside its slots) -/
+  N : Nat → Prop := fun _ => False
+  /-- the slot-placement oracle's stack pointers below the activation's (its callers') -/
+  sps : List (BitVec 64) := []
 
 /-- The activation's `RL` in the link. -/
 abbrev Act.RL (L : Link) (g : Act) : Backend.Proof.RL := L.act g.F g.s0 g.K g.G
@@ -349,23 +377,25 @@ structure StatOk (L : Link) (env : Clif.Env) (p : Clif.Program) (g : Act) : Prop
   sigs : ∀ e ∈ g.f.externs, ∀ callee, p.func? e.2.name = some callee → callee.sig = e.2.sig
 
 /-- **The static facts of a compiled function of the link** (module doc): the lowering, prep and
-allocation data of the CLIF function `f` compiled to `F` (named `nm`), such that every activation
-of `F` (well formed, entered at an ABI call, its body-entry stack pointer 16-aligned) has its
-`StatOk` with the memory relation of its world (`Γ`: its private set, the link's symbols `syms`,
-its slot base). -/
+allocation data of the CLIF function `f` compiled to `F` (named `nm`), its CLIF slots within its
+frame's slot area, such that every activation of `F` (well formed, entered at an ABI call, its
+body-entry stack pointer 16-aligned) has its `StatOk` with the memory relation of its world
+(`Γ`: its private set, the link's symbols `syms`, its slot base). -/
 def FnOk (L : Link) (env : Clif.Env) (p : Clif.Program) (syms : String → Option Nat)
     (nm : String) (F : LFn) (f : Clif.Function) : Prop :=
   F.Static ∧ F.af.frameSize % 16 = 0 ∧
+  (∀ q ∈ f.slots, ∃ off, (slotLayout f.slots).1.lookup q.1 = some off ∧
+    F.af.slotBase + off + q.2.size ≤ F.af.frameSize) ∧
   ∃ (vc : VCode) (ctx : Ctx) (st0 : LState) (R : Reg → Reg) (gn : Nat → Nat) (bl : List BLow)
     (A : Nat → Nat → List Clif.ValueId) (Lp : Nat → Prop) (ss ss' : Array (Array Nat))
     (cc : CheckCtx) (ins : Array (Option AState)) (a0 : AState),
     ∀ (s0 : ArmState) (K : Nat) (G : BitVec 64 → Prop) (ra c : BitVec 64)
       (slots : List (Clif.SlotId × Nat)) (ext : List (Clif.Frame × List Clif.ValueId))
-      (caller : LFn) (opens : List (Clif.Mem × Nat)),
+      (caller : LFn) (opens : List (Clif.Mem × Nat)) (N : Nat → Prop) (sps : List (BitVec 64)),
       (L.act F s0 K G).Wf → AbiCall F.fb F.base ra s0 → c.toNat % 16 = 0 →
       StatOk L env p ⟨nm, F, s0, K, G, ra, f, vc, ctx, st0, R, gn, bl, A,
         ⟨(L.act F s0 K G).F, syms, (L.act F s0 K G).ctx.slotBase, 0⟩, c, Lp, ss, ss', cc, ins, a0,
-        slots, ext, caller, opens⟩
+        slots, ext, caller, opens, N, sps⟩
 
 /-- The pause of a chain segment at a call: the three relations and `Q` at the paused `call`. -/
 def CallPz (L : Link) (g : Act) (r₀ : Reg → CV) (x0 : ArmState × Mon) (P : List Lab)
