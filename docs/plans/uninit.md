@@ -849,6 +849,26 @@ invoking state is the last of its count's segment), plus `CallPost` antitone in 
 (`env.only A'` for `A ⊆ A'`) and an `xCallsOk_guard` for any `Q` implying `CallPost`; then
 `XPRBI` and stage 2 (`guard_of` at `OnCallPR` states).
 
+As built (UninitZ12, `InvokedN` and the stage-1 discharge): `FV/E2E/InvokedN.lean`:
+`reachN_uncons`, `reachN_cmp` (the reached states lie on one path), `reachN_call_unique`,
+`InvokedN`, **`invokedN_unique`**, `NoRetCall` + `noRetCall_of_linv`, `callNum_of_invoked`,
+`invoked_sub_invokedN`, `callPost_invokedN_exists`. **Finding:** a `return_call` to an extern
+has `callNum = 0` and its step can continue in the caller (`stepReturnCall` → `returnValues` →
+`.next`), so a later call in the same run could have the same count and `InvokedN` would not be
+single-valued. **Decision:** scope condition `NoRetCall` (no reached state ends in
+`return_call`; cg_clif emits none; `callNum` is not changed), discharged from `Clif.LInv` for
+`LinkFree` functions (the existing link scope already demands `linkFreeB`).
+`FV/E2E/BackendWorldPRB.lean`: `ExtSemI.guardI XI Q` (call `n` is `(XI.at n).guard (Q n)`),
+`CallPostN`, `InvokedRetOk` (the returning invocation keeps allocations and symbols; its
+declarations agree on the ABI return count), **`hX_guardI`** (the per-state `hX` of the
+counted pipelines for `XI.guardI (CallPostN …)`, any `XI`), **`backend_correct_world_cleanupPRB`**,
+**`backend_correct_world_pipelinePRB`** (the `*_PRIC` theorems with `hX` replaced by `NoRetCall`
+and `InvokedRetOk`; the NI clause is not carried: §5.1 (i)). Witnesses
+`FV/E2E/BackendWorldPRBWitness.lean`: `InvokedNWitness.{invokedN_sCall, noRetCall_sCall,
+invokedRetOk_sCall, hX_sCall}` (a state at `call fn0()` to a returning extern),
+`DeadCleanupWitness.{prb_applies, prb_pipeline_applies}`. So `XPRBI := (L.XPRI …).guardI
+(CallPostN …)`; stage 2 needs `guard_of` at the machine's call states.
+
 
 **Step 3h, as built (UninitZ10b): the call-count premises are theorems.** `InstCallsOne f` and
 `TryCallsOne f` hold for every `f` (`E2E.instCallsOne_all`, `E2E.tryCallsOne_all`,
