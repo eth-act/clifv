@@ -68,7 +68,11 @@ On the original (pre-`i128`-legalisation) program: `Link.compileExe_correct_sour
 `Link.compileExe_correct_source_peak` (any entry, stack from the source run's call depth). The
 compiler `lean-link`/`cargo fv --lean-link` ship by default, `Link.DeadCleanup.compileExe`, has the
 same four (`Link.DeadCleanup.compileExe_correct{,_peak,_source,_source_peak}`, L1f #217); its
-`--verified` mode writes only executables they cover (outside `SrcScopeB`/`InScopeIn`: an error).
+`--verified` mode writes only executables they cover (outside `SrcScopeB`/`InScopeIn`: an error),
+or, on the typed input scope `InScopeInT` (S11e6, #419), their typed versions
+`Link.DeadCleanup.compileExeT_correct{,_peak,_source,_source_peak}` and
+`Front.bundle_correct_{source,raw}{,_peak}T` (returned values by class; totality on `InScopeIn`
+only).
 `Link.compileExe_total_reach` (L1e, `FV/Link/ExeInputReach.lean`): totality for the Lean
 compiler's layout (`S.placed`) under conditions decided on the inputs `S` (CLIF program, data, link
 map) and `file0` only: `InScopeIn`, `layoutOkB`, `file0OkB` (rust-lld's checks moved from the patched

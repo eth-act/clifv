@@ -1,5 +1,6 @@
 import FV.Link.DeadCleanupExeT
 import FV.Link.ExeInputReachCleanupIn
+import FV.Link.DeadCleanupCompileTFast
 
 /-! # The shipped executable compiler with the typed scope (S11, #35)
 
@@ -9,8 +10,9 @@ accepts its output only when the decided output checks `OutOkTCleanup` hold. Cor
 `compileExeT_correct` (`compileExe_correct` on `InScopeP`, `compileExe_correctT` otherwise,
 returned values by class: `ExecRefinesT`). Totality on `InScopeIn`:
 `compileExeT_total_reach_input` (`compileExe_total_reach_input`). Used by `lean-link` without
-`--verified`; `--verified` stays on `compileExe` (integer-only: its claim reaches the Rust
-source through the integer front-end theorems).
+`--verified`, and by `lean-link --verified` on the typed input scope `InScopeInT` (S11e6; the
+typed source and frontend theorems: `FV/Link/DeadCleanupExeSourceT.lean`, `FV/Front/ExeT.lean`).
+The typed checks run in their std-sized forms (`FV/Link/DeadCleanupCompileTFast.lean`).
 -/
 
 namespace Link.DeadCleanup
@@ -24,12 +26,14 @@ def outOkTMsg : String := "the typed input's compiled code fails the output chec
 def outOfScopeTMsg : String := "the input is outside the verified subset (InScopeP, InScopePT)"
 
 /-- **The executable compiler with the typed scope**: `compileExe` on `InScopeP`; on
-`InScopePT` the Lean linker followed by the output checks `OutOkTCleanup`. -/
+`InScopePT` the Lean linker followed by the output checks `OutOkTCleanup`. Both typed checks are
+evaluated in their std-sized forms (`inScopePTPar`, `outOkTFast`: hash maps, the pipeline once
+in parallel; equal to `InScopePT`, `OutOkTCleanup S.inputCleanup`, S11e6). -/
 def compileExeT (S : LinkSpec) (file0 : ByteArray) : Except String ByteArray :=
   if inScopePar S.input0 then leanLink S file0
-  else if InScopePT S.input0 then
+  else if inScopePTPar S.input0 then
     match leanLink S file0 with
-    | .ok file => if OutOkTCleanup S.inputCleanup then .ok file else .error outOkTMsg
+    | .ok file => if outOkTFast S then .ok file else .error outOkTMsg
     | .error e => .error e
   else .error outOfScopeTMsg
 
@@ -62,7 +66,8 @@ theorem compileExeT_spec {S : LinkSpec} {file0 file : ByteArray}
         split at h
         · rename_i ho
           cases h
-          exact ⟨by rw [inScopePT_input]; exact ht, ho, hl⟩
+          exact ⟨by rw [inScopePT_input, ← inScopePTPar_eq]; exact ht,
+            (outOkTFast_eq S) ▸ ho, hl⟩
         · cases h
       · cases h
     · cases h

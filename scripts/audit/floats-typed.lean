@@ -15,6 +15,12 @@ import FVTest.Link.FloatCompileExeT
 import FV.Link.DeadCleanupCompileT
 import FV.E2E.FinalTC
 import FV.Backend.Proof.IselCtlTryF
+import FV.Link.DeadCleanupExePeakT
+import FVTest.Link.FloatCompileExeTPeak
+import FV.Link.DeadCleanupExeSourceT
+import FV.Front.ExeT
+import FVTest.Link.FloatCompileExeTSource
+import FV.Link.DeadCleanupCompileTFast
 
 -- S11e5 Stage C (#35): the typed scope (float data movement, float parameters and returns)
 #print axioms E2E.typedRules_program
@@ -58,6 +64,42 @@ import FV.Backend.Proof.IselCtlTryF
 #print axioms Link.DeadCleanup.compileExeT_eq
 #print axioms E2E.FloatCompileExeTWitness.correct_spec -- witness: native_decide
 
+-- S11e6 slice 2c (#419): direct `try_call` with f32/f64 signatures, per-function typed chain
+#print axioms E2E.backend_correct_finalTC
+#print axioms E2E.backend_correct_final_exTC
+#print axioms E2E.verdict_of_unverifiedReason
+#print axioms E2E.lowerChecked_specTC
+#print axioms Backend.Proof.tryUnmatchableTC_program
+#print axioms Backend.Proof.Driver.tryCallsTC_of_rules
+#print axioms Backend.Proof.tryRulesCorrectTFP_program
+
+-- S11e6 (#419): typed cleanup peak theorems
+#print axioms E2E.DeadCleanupExecBytes.binary_correct_exec_peak_provenT
+#print axioms Link.DeadCleanup.compileExe_correct_peakT
+#print axioms Link.DeadCleanup.compileExeT_correct_peak
+#print axioms E2E.FloatCompileExeTPeakWitness.correct_peakT_spec -- witness: native_decide
+#print axioms E2E.FloatCompileExeTPeakWitness.correct_peakT_specC -- witness: native_decide
+
+-- S11e6 (#419): typed source and frontend theorems (`lean-link --verified` on a typed input)
+#print axioms Link.DeadCleanup.compileExe_correct_sourceT
+#print axioms Link.DeadCleanup.compileExe_correct_source_peakT
+#print axioms Link.DeadCleanup.compileExeT_correct_source
+#print axioms Link.DeadCleanup.compileExeT_correct_source_peak
+#print axioms Front.bundle_correct_sourceT
+#print axioms Front.bundle_correct_source_peakT
+#print axioms Front.bundle_correct_rawT
+#print axioms Front.bundle_correct_raw_peakT
+#print axioms E2E.FloatCompileExeTSourceWitness.source_spec -- witness: native_decide
+#print axioms E2E.FloatCompileExeTSourceWitness.source_peak_spec -- witness: native_decide
+#print axioms E2E.FloatCompileExeTSourceWitness.sourceT_specC -- witness: native_decide
+#print axioms E2E.FloatCompileExeTSourceWitness.source_peakT_specC -- witness: native_decide
+
+-- S11e6 (#419): `compileExeT`'s typed checks at the size of std (equal to the definitions)
+#print axioms E2E.LinkCheck.inScopePTPar_eq
+#print axioms E2E.LinkCheck.calleeWithB_eq
+#print axioms E2E.LinkCheck.outChksTWith_eq
+#print axioms E2E.LinkCheck.outOkTRFast_eq
+#print axioms Link.DeadCleanup.outOkTFast_eq
 -- the decider-free typed scope fnScopeInTB3 / compileExeT3 (Floats15)
 #print axioms E2E.LinkCheck.lowerOutTB_of_T3
 #print axioms E2E.LinkCheck.resClassOkB_of_T3
@@ -81,11 +123,4 @@ import FV.Backend.Proof.IselCtlTryF
 #print axioms FloatScopeT3.inScopePT_w -- witness: native_decide
 #print axioms E2E.FloatCompileExeT3Witness.correct_spec -- witness: native_decide
 
--- S11e6 slice 2c (#419): direct `try_call` with f32/f64 signatures, per-function typed chain
-#print axioms E2E.backend_correct_finalTC
-#print axioms E2E.backend_correct_final_exTC
-#print axioms E2E.verdict_of_unverifiedReason
-#print axioms E2E.lowerChecked_specTC
-#print axioms Backend.Proof.tryUnmatchableTC_program
-#print axioms Backend.Proof.Driver.tryCallsTC_of_rules
-#print axioms Backend.Proof.tryRulesCorrectTFP_program
+
