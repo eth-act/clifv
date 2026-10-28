@@ -44,7 +44,7 @@ theorem a2_twoRunLERW {F : BitVec 64 → Prop} {c : BitVec 64} {K : Nat} {args :
     have h := List.all_eq_true.mp x30Free_all fA2 hA2
     rwa [show getOk (labelOffsets (A fA2).fa.lines) = lm by rw [hlm]; rfl] at h
   intro vals cm hrun
-  obtain ⟨N, -, -, -, h, -⟩ := backend_twoRunLERW (D := fun _ => False)
+  obtain ⟨N, -, -, -, h, -, -⟩ := backend_twoRunLERW (D := fun _ => False)
     (hL.subset fA2 hA2) hc
     a2_callsOne.1 a2_callsOne.2 (fun _ n _ => a2_xcalls _ _ _ n) (fun _ _ _ => xb_xNI)
     (fun _ => xbTls F) (fun n b h => by cases h) rfl (fun _ => 0) hce hrel hrel hargs

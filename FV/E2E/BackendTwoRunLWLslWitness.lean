@@ -107,7 +107,7 @@ theorem r_twoRunLERW_Lsl (M : Nat) {F : BitVec 64 → Prop} {c : BitVec 64} {K :
   have hind : indSigs fR = [] := indSigs_nil_of_indFree (indFreeB_sound fR_indFree)
   have hnh := fR_noHookLines
   intro vals cm hrun
-  obtain ⟨N, -, -, -, h, -⟩ := backend_twoRunLERW (D := fun _ => False)
+  obtain ⟨N, -, -, -, h, -, -⟩ := backend_twoRunLERW (D := fun _ => False)
     (Lsl_ok.subset fR fR_mem) hc (instCallsOne_all fR) (tryCallsOne_all fR)
     (fun _ _ _ => ⟨(by rw [hext]; exact fun _ hin => nomatch hin),
       (by rw [hind]; exact xCallsIndOk_nil _ _ _)⟩)

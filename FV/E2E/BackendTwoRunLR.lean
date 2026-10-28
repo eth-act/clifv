@@ -55,7 +55,8 @@ theorem RL.retLock_rets {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.
     RetAgreeX (frameDrop R.af + R.K) (spv R.s0) (iterN R.step R.retLen u')
       (iterN R.step R.retLen u) ∧
     (iterN R.step R.retLen u').program = (iterN R.step R.retLen u).program ∧
-    ∀ a, ¬ R.Zc d d' a → (iterN R.step R.retLen u').mem a = (iterN R.step R.retLen u).mem a := by
+    (∀ a, ¬ R.Zc d d' a → (iterN R.step R.retLen u').mem a = (iterN R.step R.retLen u).mem a) ∧
+    ∀ i < R.retLen, StEqOutX (R.Zc d d') (iterN R.step i u') (iterN R.step i u) := by
   obtain ⟨b, k, allocs, its, m, w, vb, us, rfl, hvb, hi⟩ := hre
   obtain ⟨n3, hn3, hgx, -⟩ := ret_machineNA (Y := fun _ => True) hR hent hq hvb hi
   subst hn3
@@ -209,7 +210,8 @@ theorem RL.retLock_rets {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.
     rw [hlen, iterN_add]; rfl
   rw [e1, e2]
   obtain ⟨hr, hp, hm⟩ := retAgree_line_ret (X := R.X) (H := R.H) ht hlk
-  exact ⟨⟨hr, fun a ha h8 => hm a (RL.notZc_ret hR d d' ha h8)⟩, hp, hm⟩
+  exact ⟨⟨hr, fun a ha h8 => hm a (RL.notZc_ret hR d d' ha h8)⟩, hp, hm,
+    fun i hi => H i (by rw [hlen] at hi; omega)⟩
 
 /-- **The return agreement from the lock at the `rets` item** (module doc): from states locked at
 `Zc d d'`, the first (`u`) at `Q` of a `rets` configuration, the two runs return after `retLen`

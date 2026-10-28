@@ -192,15 +192,15 @@ theorem stpAddr_fr (s : Arm.ArmState) : stpAddr 0x7e s = spv s - 16#64 := by
   rw [h, BitVec.sub_eq_add_neg]
   rfl
 
-/-- **The prologue keeps a lock** whose set contains the frame record's saved-LR word: it reads
-nothing and names `x30` only in the record store. -/
-theorem stEqOutX_prologueZ {R : RL} (hR : R.Wf) {ra : BitVec 64}
+/-- **The prologue keeps a lock at every step** whose set contains the frame record's saved-LR
+word: it reads nothing and names `x30` only in the record store. -/
+theorem stEqOutX_prologueZ_le {R : RL} (hR : R.Wf) {ra : BitVec 64}
     (hent : AbiCall R.fb R.base ra R.s0) (hx30 : R.fa.x30Free R.lm = true)
     {Z : BitVec 64 → Prop}
     (hLR : ∀ k, 8 ≤ k → k < 16 → Z (spv R.s0 - 16#64 + BitVec.ofNat 64 k)) {t : Arm.ArmState}
     (h : StEqOutX Z t R.s0) :
-    StEqOutX Z (iterN R.step (prologueLines R.af.frameSize).length t)
-      (iterN R.step (prologueLines R.af.frameSize).length R.s0) := by
+    ∀ i ≤ (prologueLines R.af.frameSize).length,
+      StEqOutX Z (iterN R.step i t) (iterN R.step i R.s0) := by
   have hst0 := hR.stack.frame
   have hs : R.af.frameSize < 2 ^ 64 := by have := hst0.1; have := (spv R.s0).isLt; omega
   have hal0 : Arm.CheckSPAlignment R.s0 := (checkSP_iff _).2 hent.spAligned
@@ -229,8 +229,6 @@ theorem stEqOutX_prologueZ {R : RL} (hR : R.Wf) {ra : BitVec 64}
     hent.program hpc1 hent.err hsteps).2.2.2 (prologueLines_tail _)
     (.inl (by rw [hent.pc]; exact RL.not_postCall_base hR hent.fits))
     (linesReads_noLoads (prologueLines_noLoads _))
-  suffices H : ∀ i ≤ (prologueLines R.af.frameSize).length,
-      StEqOutX Z (iterN R.step i t) (iterN R.step i R.s0) from H _ (Nat.le_refl _)
   intro i hi
   induction i with
   | zero => exact h
@@ -271,6 +269,17 @@ theorem stEqOutX_prologueZ {R : RL} (hR : R.Wf) {ra : BitVec 64}
     · obtain ⟨rfl, -⟩ := hex (by rw [e]; decide)
       rw [stpAddr_fr]
       exact hLR k hk8 hk16
+
+/-- **The prologue keeps a lock** whose set contains the frame record's saved-LR word: it reads
+nothing and names `x30` only in the record store. -/
+theorem stEqOutX_prologueZ {R : RL} (hR : R.Wf) {ra : BitVec 64}
+    (hent : AbiCall R.fb R.base ra R.s0) (hx30 : R.fa.x30Free R.lm = true)
+    {Z : BitVec 64 → Prop}
+    (hLR : ∀ k, 8 ≤ k → k < 16 → Z (spv R.s0 - 16#64 + BitVec.ofNat 64 k)) {t : Arm.ArmState}
+    (h : StEqOutX Z t R.s0) :
+    StEqOutX Z (iterN R.step (prologueLines R.af.frameSize).length t)
+      (iterN R.step (prologueLines R.af.frameSize).length R.s0) :=
+  stEqOutX_prologueZ_le hR hent hx30 hLR h _ (Nat.le_refl _)
 
 section
 variable {p : Clif.Program} {f : Clif.Function} {k : Nat} {vc vcp : VCode} {rf : RFunc}

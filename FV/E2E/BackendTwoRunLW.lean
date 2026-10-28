@@ -385,21 +385,23 @@ theorem backend_twoRunLERW (hsub : InSubset p f) (hc : Compiled f k vc vcp rf af
           ((prologueLines R.af.frameSize).length + N + R.retLen) t0)
         (iterN ({ R with X := XI.at 0 } : RL).step
           ((prologueLines R.af.frameSize).length + N + R.retLen) R.s0) ∧
-      ∀ a, ¬ F a → ¬ D a →
+      (∀ a, ¬ F a → ¬ D a →
         (iterN ({ R with s0 := t0, G := G', X := XI.at 0 } : RL).step
           ((prologueLines R.af.frameSize).length + N + R.retLen) t0).mem a =
         (iterN ({ R with X := XI.at 0 } : RL).step
-          ((prologueLines R.af.frameSize).length + N + R.retLen) R.s0).mem a := by
+          ((prologueLines R.af.frameSize).length + N + R.retLen) R.s0).mem a) ∧
+      ∀ i < (prologueLines R.af.frameSize).length + N + R.retLen, ∃ Z : BitVec 64 → Prop,
+        StEqOutX Z (iterN ({ R with s0 := t0, G := G', X := XI.at 0 } : RL).step i t0)
+          (iterN ({ R with X := XI.at 0 } : RL).step i R.s0) := by
   intro vals cm hrun
   obtain ⟨N, e, e', hlk, ⟨⟨W, hqA, -⟩, -, -, -, -, hLB⟩, hpc, hpc', hre, hre'⟩ :=
     backend_twoRunLW hsub hc hone htc hX hNI hTls hsym hslot ρ₀ hce hrel hrel' hargs hsw hreg hstk
       htr fuel hlm hpsF he he' hR hcov hx30 hcall htls hag hx29 vals cm hrun
   refine ⟨N, hlk, hpc, hpc', ?_⟩
-  have hs : ∀ (g : Arm.ArmState → Arm.ArmState) (x : Arm.ArmState),
-      iterN g ((prologueLines R.af.frameSize).length + N + R.retLen) x =
-        iterN g R.retLen (iterN g ((prologueLines R.af.frameSize).length + N) x) :=
-    fun g x => iterN_add ..
-  rw [hs, hs]
+  have hs : ∀ (g : Arm.ArmState → Arm.ArmState) (x : Arm.ArmState) (j : Nat),
+      iterN g ((prologueLines R.af.frameSize).length + N + j) x =
+        iterN g j (iterN g ((prologueLines R.af.frameSize).length + N) x) :=
+    fun g x j => iterN_add ..
   subst hR
   have hF := he.hF
   subst hF
@@ -416,15 +418,38 @@ theorem backend_twoRunLERW (hsub : InSubset p f) (hc : Compiled f k vc vcp rf af
     obtain ⟨_, _, _, _, _, _, _, _, rfl, -⟩ := hre; exact ⟨_, rfl⟩
   have hr2 : ∃ ms, e' = .run ms := by
     obtain ⟨_, _, _, _, _, _, _, _, rfl, -⟩ := hre'; exact ⟨_, rfl⟩
-  obtain ⟨hra, -, hm⟩ := RL.retLock_rets hW0 he.abi hx30 (QW.withX (X := XI.at 0) hqA).q hre
+  obtain ⟨hra, -, hm, hepi⟩ := RL.retLock_rets hW0 he.abi hx30 (QW.withX (X := XI.at 0) hqA).q hre
     hLB.1.symm
-  refine ⟨hra, fun a hFa hDa => hm a ?_⟩
-  rintro ⟨-, -, -, hz⟩
-  rcases hz with h | h
-  · exact hFa h
-  · rcases wDiff_of_wIn hr1 hr2 hLB.2.1 a h with h' | h'
-    · exact hFa h'
-    · exact hDa h'
+  refine ⟨by rw [hs, hs]; exact hra, fun a hFa hDa => ?_, fun i hi => ?_⟩
+  · rw [hs, hs]
+    refine hm a ?_
+    rintro ⟨-, -, -, hz⟩
+    rcases hz with h | h
+    · exact hFa h
+    · rcases wDiff_of_wIn hr1 hr2 hLB.2.1 a h with h' | h'
+      · exact hFa h'
+      · exact hDa h'
+  · have hPe : (prologueLines (actRL vcp rf af fa fb lm base s XI H psF K G (GotV vcp)).af.frameSize).length
+        = (prologueLines af.frameSize).length := rfl
+    have hRe : (actRL vcp rf af fa fb lm base s XI H psF K G (GotV vcp)).retLen =
+        ({ actRL vcp rf af fa fb lm base s XI H psF K G (GotV vcp) with X := XI.at 0 } : RL).retLen :=
+      rfl
+    rw [hPe] at hi hs
+    rcases Nat.lt_or_ge i (prologueLines af.frameSize).length with h1 | h1
+    · exact ⟨_, stEqOutX_prologueZ_le hW0 he.abi hx30
+        (fun k h8 h16 => RL.lrWord_Zc hW0 _ _ h8 h16)
+        (stEqOutX_entryZ hW0 he.abi he'.abi he.body he'.body (fun _ h => h) hsw hag hx29
+          (c := .run ⟨0, [], fun _ => ρ₀ 0, w₀⟩) (c' := .run ⟨0, [], fun _ => ρ₀ 0, w₀'⟩)
+          (fun _ h => h)).symm i (Nat.le_of_lt h1)⟩
+    · rcases Nat.lt_or_ge i ((prologueLines af.frameSize).length + N) with h2 | h2
+      · obtain ⟨j, rfl⟩ : ∃ j, i = (prologueLines af.frameSize).length + j :=
+          ⟨i - (prologueLines af.frameSize).length, by omega⟩
+        obtain ⟨c, c', hcc⟩ := hlk j (by omega)
+        exact ⟨_, hcc.symm⟩
+      · obtain ⟨j, rfl⟩ : ∃ j, i = (prologueLines af.frameSize).length + N + j :=
+          ⟨i - ((prologueLines af.frameSize).length + N), by omega⟩
+        rw [hs, hs]
+        exact ⟨_, hepi j (by rw [hRe] at hi; omega)⟩
 
 end
 
