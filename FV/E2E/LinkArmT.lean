@@ -1,6 +1,6 @@
 import FV.E2E.LinkArm
 import FV.E2E.CompiledEitherT
-import FV.E2E.CompiledAnyT
+import FV.E2E.CompiledAnyTS
 import FV.E2E.LinkSiteTC
 import FV.E2E.TypedRulesProg
 import FV.E2E.LinkWorldT
@@ -40,22 +40,6 @@ struct pointer included). -/
 def RetsOkT (g : Clif.Function) (rvals : List Clif.Val) (us : List (Reg × Reg)) : Prop :=
   RetRegsOk rvals us ∧
     (g.sig.params.any (·.purpose == .sret) = true → us.map (·.2) = (List.range us.length).map Reg.x)
-
-theorem classes_int {rvals : List Clif.Val} (hint : ∀ v ∈ rvals, v.ty.isInt = true) :
-    rvals.map (fun v => tyClass v.ty) = List.replicate rvals.length .int := by
-  rw [List.eq_replicate_iff]
-  simp only [List.length_map, List.mem_map, true_and]
-  rintro _ ⟨v, hv, rfl⟩
-  simp only [tyClass, hint v hv, ite_true]
-
-/-- Integer returns in x0.. are in their classes' return registers. -/
-theorem retRegsOk_of_x {rvals : List Clif.Val} {us : List (Reg × Reg)}
-    (hus : us.map (·.2) = (List.range us.length).map Reg.x)
-    (hint : ∀ v ∈ rvals, v.ty.isInt = true) (hle : rvals.length ≤ us.length) :
-    RetRegsOk rvals us := by
-  refine ⟨List.replicate (us.length - rvals.length) .int, ?_⟩
-  rw [classes_int hint, List.replicate_append_replicate, Nat.add_sub_cancel' hle, retRegsT_int,
-    hus, List.range_eq_range']
 
 /-- **A call site reads an integer callee's `j`-th result from x`j`**: the callee's returns
 (`RetsOkT`) of its declared (integer) return types. -/
@@ -106,7 +90,9 @@ structure OkT : Prop where
   /-- S11f (#35): the scope with the proven float operations (it was `InSubsetTC`,
   `InSubsetTC.toTCF`) -/
   subset : ∀ g ∈ L.P.funcs, InSubsetTCF L.P.bare g
-  compiled : ∀ g ∈ L.P.funcs, CompiledAnyT L.P.bare g (L.A g).k (L.A g).vc (L.A g).vcp
+  /-- #722: either typed artifact, or the Stock artifact of an integer function without `sret`
+  parameter (`CompiledAnyTS`; it was `CompiledAnyT`, its left case) -/
+  compiled : ∀ g ∈ L.P.funcs, CompiledAnyTS L.P.bare g (L.A g).k (L.A g).vc (L.A g).vcp
     (L.A g).rf (L.A g).af (L.A g).fa (L.A g).fb
   /-- an `sret` function is in subset E, with the integer artifact contract -/
   sretE : ∀ g ∈ L.P.funcs, g.sig.params.any (·.purpose == .sret) = true →
@@ -1952,11 +1938,11 @@ theorem thm_ofT (hL : L.OkT) [L.CrunOk] (hκ : L.Budget κ) {M : Nat} (ih : 0 < 
         (L.hooks M) (L.A g).base ra s w₀' := fun G ra s w₀' hME =>
     ⟨hME.abi, hME.stack, hME.gfree, hME.hF, L.calleeOkT hL hκ ih hg hME,
       fun _ => L.calleeTryOkT hL hκ ih hg hME,
-      fun ht => L.tlsOk_hooks (hL.baseTls g hg (hasTls_of_vcode_pipelineAnyT hc ht) F (κ M g)), hME.body⟩
+      fun ht => L.tlsOk_hooks (hL.baseTls g hg (hasTls_of_vcode_pipelineAnyTS hc ht) F (κ M g)), hME.body⟩
   have hX := L.xCallsOkT hL hκ ih hg hWE.img hWE.room hWE.dead hWE.align
   have hXI := L.xCallsIndOkT hL hκ ih hg hWE.img hWE.room hWE.dead hWE.align
   -- the typed world theorem (with the proven control families)
-  have hT := backend_correct_world_ni_pipelineAnyTF (hL.subset g hg) hc typedRules_program
+  have hT := backend_correct_world_ni_pipelineAnyTS (hL.subset g hg) hc typedRules_program
     (X := L.X κ M g F) (syms := L.syms)
     (env := L.envOf M g (spv w₀)) (K := κ M g) (F := F) (c := spv w₀) (hL.covered g hg)
     hX hXI (fun n b hn => hL.symOk n b hn) rfl hWE.clif hWE.rel hWE.args
@@ -2103,7 +2089,7 @@ theorem backend_correct_program_coreT (L : LinkSys) (hL : L.OkT) [L.CrunOk]
     have hJ : L.ActInv f (spv w₀) cs := ⟨hIf, hcs.callers, hpl⟩
     have hm' : Clif.runLoop (L.envOf M f (spv w₀)) L.P.bare m cs = .trapped c := by
       rw [L.runLoop_envOfT hL hf m cs hJ]; exact hm
-    have h := backend_correct_world_pipelineAnyTF (hL.subset f hf) hc typedRules_program
+    have h := backend_correct_world_pipelineAnyTS (hL.subset f hf) hc typedRules_program
       (X := L.X κ M f L.F) (syms := L.syms)
       (env := L.envOf M f (spv w₀)) (K := κ M f) (F := L.F) (c := spv w₀) (hL.covered f hf)
       (L.xCallsOkT hL hκ ih hf hL.imgF hWE.room hWE.dead hWE.align)
@@ -2113,7 +2099,7 @@ theorem backend_correct_program_coreT (L : LinkSys) (hL : L.OkT) [L.CrunOk]
     exact h.2 c hm' (L.hooks M) L.Img (L.A f).base ra s ⟨hME.abi, hME.stack, hME.gfree, hME.hF,
       L.calleeOkT hL hκ ih hf hME,
       fun _ => L.calleeTryOkT hL hκ ih hf hME,
-      fun ht => L.tlsOk_hooks (hL.baseTls f hf (hasTls_of_vcode_pipelineAnyT hc ht) L.F (κ M f)), hME.body⟩
+      fun ht => L.tlsOk_hooks (hL.baseTls f hf (hasTls_of_vcode_pipelineAnyTS hc ht) L.F (κ M f)), hME.body⟩
 
 /-- **`backend_correct_program` with a per-function stack budget** `κ` (`LinkSys.Budget`): the
 stack premises and the world's exterior `L.F` use `κ M f` (the callees' stack of the entry
