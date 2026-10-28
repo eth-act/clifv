@@ -36,4 +36,20 @@ theorem guard_xCallsOk_e (X : ExtSem) (Γ : Rel) (f : Clif.Function) (c : BitVec
       (X.guard (CallPost (envE.only A0) [extE] [] (RelW Γ f c) X.sym)) :=
   xCallsOk_guard X (callPost_e Γ f c X.sym)
 
+/-- A returning state (no extern invocation). -/
+def sRet (fn : Clif.Function) : Clif.State :=
+  { frame := { func := fn, regs := Clif.Regs.empty, slots := [], body := [], term := .ret [] },
+    callers := [], mem := {} }
+
+theorem invoked_sRet (fn : Clif.Function) (p : Clif.Program) (n : String)
+    (vals : List Clif.Val) (m : Clif.Mem) : ¬ Clif.Invoked envE p (sRet fn) n vals m :=
+  fun h => h.2
+
+/-- `callPost_invoked_exists` applies at a state, here one that invokes nothing. -/
+theorem callPost_sRet (fn : Clif.Function) (p : Clif.Program) (Γ : Rel) (f : Clif.Function)
+    (c : BitVec 64) (sym : String → Int → BitVec 64) :
+    ∀ d uses w, ∃ r, CallPost (envE.only (Clif.Invoked envE p (sRet fn))) [extE] [] (RelW Γ f c)
+      sym d uses w r :=
+  callPost_invoked_exists 0 fun n vals _ _ _ h => absurd h (invoked_sRet fn p n vals _)
+
 end E2E.CallPostExistsWitness
