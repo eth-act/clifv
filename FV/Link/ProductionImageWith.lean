@@ -25,9 +25,11 @@ def leanLinkProductionWith (lower : ProductionLowering) (S : LinkSpec) (file0 : 
     (cleanup : Bool) : Except String ByteArray :=
   leanLinkWithResults S file0 (fun I => parResultsProductionWith lower I cleanup)
 
+/-- `I` is bound outside the map so the compiled code builds `S.input0` once (#683). -/
 def LinkSpec.placedProductionWith (S : LinkSpec) (lower : ProductionLowering) (cleanup : Bool) : LinkSpec :=
+  let I : LinkInput := {S.input0 with addrs := []}
   S.withSizes (S.funcs.map fun fi =>
-    (getOk (({S.input0 with addrs := []} : LinkInput).pipeProductionWith lower cleanup fi)).fb.words.size)
+    (getOk (I.pipeProductionWith lower cleanup fi)).fb.words.size)
 
 theorem LinkSpec.inputProductionWith_original (S : LinkSpec) (cleanup : Bool) :
     S.inputProductionWith Stock.Production.lower cleanup = S.inputProduction cleanup := rfl

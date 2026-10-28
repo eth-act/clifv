@@ -1,7 +1,7 @@
 import Crates.BinaryWitness
-import FV.E2E.ExecFrameSim
-import FV.E2E.ExecGoodRun
-import FV.E2E.ExecProven
+import FV.E2E.SemanticExecFrameSim
+import FV.E2E.SemanticExecGoodRun
+import FV.E2E.SemanticExecProven
 
 /-! # Non-vacuity of the theorem about the executable's own words
 
@@ -18,17 +18,17 @@ code). The theorem then gives the **executable machine's** return to the caller 
 
 namespace Crates.BinaryExecWitness
 
-open E2E E2E.LinkCheck E2E.Binary E2E.BinCheck E2E.ExecBytes Backend Backend.Proof
+open E2E E2E.LinkCheck E2E.SemanticBinary E2E.BinCheck E2E.SemanticExecBytes Backend Backend.Proof
 open Crates.BinaryWitness
 
 /-! ## Simulation facts of single instructions (any input)
 
-Instances of the frame property `exec_sim`: the instruction's memory reads (`MemReads`) avoid
+Instances of the frame property `exec_sim`: the instruction's memory reads (`ExecBytes.MemReads`) avoid
 the relocated bytes; none but `ldp`'s 16 stack bytes. -/
 
 section SimLemmas
 
-variable {J : LinkInput}
+variable {J : SemanticStackBound.CompilerInput}
 
 /-- `add w0, w0, w1` on the machine. -/
 theorem exec_add_w0 (env : Env) (s : Arm.ArmState) :
@@ -45,37 +45,37 @@ theorem sim_stp {env : Env} {a : Arm.ArmInst}
     {m e : Arm.ArmState} (h : Sim J m e) : Sim J (Arm.exec_inst a m) (Arm.exec_inst a e) := by
   simp [csimp_rules, Reg.fp, Reg.lr, pure, Except.pure] at ha
   subst ha
-  exact exec_sim _ h (by simp [MemReads, ExecFrame.RegPair.reads, ExecFrame.RegPair.mk])
+  exact exec_sim _ h (by simp [ExecBytes.MemReads, ExecFrame.RegPair.reads, ExecFrame.RegPair.mk])
 
 theorem sim_mov {env : Env} {a : Arm.ArmInst}
     (ha : (Insn.mov true Reg.fp .sp).toArmInst env = .ok a) {m e : Arm.ArmState} (h : Sim J m e) :
     Sim J (Arm.exec_inst a m) (Arm.exec_inst a e) := by
   simp [csimp_rules, Reg.fp, pure, Except.pure] at ha
   subst ha
-  exact exec_sim _ h (by simp [MemReads])
+  exact exec_sim _ h (by simp [ExecBytes.MemReads])
 
 theorem sim_add {env : Env} {a : Arm.ArmInst}
     (ha : (Insn.aluRRR .add false (.x 0) (.x 0) (.x 1)).toArmInst env = .ok a) {m e : Arm.ArmState}
     (h : Sim J m e) : Sim J (Arm.exec_inst a m) (Arm.exec_inst a e) := by
   simp [csimp_rules, pure, Except.pure] at ha
   subst ha
-  exact exec_sim _ h (by simp [MemReads])
+  exact exec_sim _ h (by simp [ExecBytes.MemReads])
 
 theorem sim_ldp {env : Env} {a : Arm.ArmInst}
     (ha : (Insn.ldp Reg.fp Reg.lr (.spPostIndexed 16)).toArmInst env = .ok a)
-    {m e : Arm.ArmState} (hR : ∀ k < 16, ¬ RelocAt J (spOf m + BitVec.ofNat 64 k))
+    {m e : Arm.ArmState} (hR : ∀ k < 16, ¬ RelocAtWithResults J J.results (spOf m + BitVec.ofNat 64 k))
     (h : Sim J m e) : Sim J (Arm.exec_inst a m) (Arm.exec_inst a e) := by
   simp [csimp_rules, Reg.fp, Reg.lr, pure, Except.pure] at ha
   subst ha
   refine exec_sim _ h ?_
-  simpa [MemReads, ExecFrame.RegPair.reads, ExecFrame.RegPair.mk, ExecFrame.RegPair.addr,
+  simpa [ExecBytes.MemReads, ExecFrame.RegPair.reads, ExecFrame.RegPair.mk, ExecFrame.RegPair.addr,
     ExecFrame.RegPair.scale, spOf, Arm.read_gpr] using hR
 
 theorem sim_ret {env : Env} {a : Arm.ArmInst} (ha : Insn.ret.toArmInst env = .ok a)
     {m e : Arm.ArmState} (h : Sim J m e) : Sim J (Arm.exec_inst a m) (Arm.exec_inst a e) := by
   simp [csimp_rules, pure, Except.pure] at ha
   subst ha
-  exact exec_sim _ h (by simp [MemReads])
+  exact exec_sim _ h (by simp [ExecBytes.MemReads])
 
 end SimLemmas
 
@@ -83,7 +83,7 @@ end SimLemmas
 
 section StepOkPlain
 
-variable {J : LinkInput} {B : BaseEnv} {file : ByteArray}
+variable {J : SemanticStackBound.CompilerInput} {B : BaseEnv} {file : ByteArray}
 
 /-- The machine step at an unhooked instruction line, from an exec lemma of the instruction. -/
 theorem mach_line {Mx : Nat} {g : Clif.Function} (hF : FnOk J file g) {j : Nat} {i : Insn}
@@ -112,7 +112,7 @@ theorem stepOk_plain {Mx : Nat} {g : Clif.Function} (hF : FnOk J file g)
     (hsite : siteAt J (Arm.r .PC m) = some (siteOf (prog J) i0))
     (hP : ∀ env a, i0.toArmInst env = .ok a → ∀ e, Sim J m e →
       Sim J (Arm.exec_inst a m) (Arm.exec_inst a e))
-    (hplain : ∀ k < 4, ¬ RelocAt J (Arm.r .PC m + BitVec.ofNat 64 k)) :
+    (hplain : ∀ k < 4, ¬ RelocAtWithResults J J.results (Arm.r .PC m + BitVec.ofNat 64 k)) :
     StepOk J B file Mx g m := by
   have hi0 : insnAt (art J g).fa (art J g).base (Arm.r .PC m) = some i0 := by
     rw [hpc]; exact insnAt_of_line hF hj
@@ -209,7 +209,7 @@ theorem code :
     lineOffset L 6 = 16 ∧ (art I f).fb.relocs = [] ∧ f.name = n ∧ bse + 20 ≤ 2 ^ 32 ∧
     (∀ e ∈ tabOf I.results, e.1.name ≠ n →
       e.2.base.toNat + 4 * e.2.fb.words.size ≤ bse ∨ bse + 20 ≤ e.2.base.toNat) ∧
-    (∀ a, RelocAt I a → a.toNat < 2 ^ 32 ∧ (a.toNat < bse ∨ bse + 20 ≤ a.toNat)) := by
+    (∀ a, RelocAtWithResults I I.results a → a.toNat < 2 ^ 32 ∧ (a.toNat < bse ∨ bse + 20 ≤ a.toNat)) := by
   have h := codeB_true
   simp only [codeB, Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq] at h
   obtain ⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨h1, h2⟩, h3⟩, h4⟩, h5⟩, h6⟩, h7⟩, h8⟩, h9⟩, h10⟩, h11⟩, h12⟩, h13⟩, h14⟩,
@@ -231,7 +231,7 @@ theorem toNat_wAt {o : Nat} (ho : o ≤ 20) : (wAt (art I f) o).toNat = bse + o 
   rw [Nat.mod_eq_of_lt (by omega : o < 2 ^ 64), Nat.mod_eq_of_lt (by omega)]
 
 /-- The words of the entry's code are no relocated bytes. -/
-theorem plain_f {o : Nat} (ho : o ≤ 16) : ∀ k < 4, ¬ RelocAt I (wAt (art I f) o + BitVec.ofNat 64 k) := by
+theorem plain_f {o : Nat} (ho : o ≤ 16) : ∀ k < 4, ¬ RelocAtWithResults I I.results (wAt (art I f) o + BitVec.ofNat 64 k) := by
   intro k hk hR
   have := (code.2.2.2.2.2.2.2.2.2.2.2.2.2.2 _ hR).2
   have h1 := toNat_wAt (o := o) (by omega)
@@ -264,7 +264,7 @@ theorem siteAt_f {file : ByteArray} (hF : ∀ g ∈ (prog I).funcs, FnOk I file 
       have hfit := (hF g hg).fits
       have hd : (art I g).base.toNat + 4 * (art I g).fb.words.size ≤ bse ∨
           bse + 20 ≤ (art I g).base.toNat :=
-        code.2.2.2.2.2.2.2.2.2.2.2.2.2.1 _ (tab_mem (okB_names Crates.AArithAbort.okB_input) hg) hgn
+        code.2.2.2.2.2.2.2.2.2.2.2.2.2.1 _ (tab_mem (SemanticStackBound.okB_names Crates.AArithAbort.okB_input) hg) hgn
       have := congrArg BitVec.toNat hpc
       rw [ha, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega : lineOffset _ j < 2 ^ 64),
         Nat.mod_eq_of_lt (by omega)] at this
@@ -364,7 +364,7 @@ theorem stepOk_at {B : BaseEnv} {Mx : Nat} {m : Arm.ArmState} {j o : Nat} {i0 : 
     hP (by rw [hpc]; exact plain_f ho16)
 
 omit hF in
-theorem stack_notReloc : ∀ k < 16, ¬ RelocAt I (sp0 - 16#64 + BitVec.ofNat 64 k) := by
+theorem stack_notReloc : ∀ k < 16, ¬ RelocAtWithResults I I.results (sp0 - 16#64 + BitVec.ofNat 64 k) := by
   intro k hk hR
   have := (code.2.2.2.2.2.2.2.2.2.2.2.2.2.2 _ hR).1
   rw [show sp0 - 16#64 = BitVec.ofNat 64 (2 ^ 40 - 16) from rfl, BitVec.toNat_add,
@@ -441,7 +441,7 @@ end Run
 theorem fnOk_all (file : ByteArray) (hfile : Elf.Agrees file Crates.AArithAbort.exAll) :
     ∀ g ∈ (prog I).funcs, FnOk I file g := fun _ hg =>
   fnOk Crates.AArithAbort.okB_input (Crates.AArithAbort.bin_ok file hfile)
-    (okB_sound Crates.AArithAbort.okB_input (Crates.AArithAbort.base_closed (img I)) (fun _ h => h)) hg
+    (SemanticStackBound.okB_sound (I := I) Crates.AArithAbort.okB_input (Crates.AArithAbort.base_closed (img I)) (fun _ h => h)) hg
 
 theorem entry_model (m : Arm.Memory) : Entry (modelOf I f (r m)) where
   prog := by simp only [modelOf, program_set_program]
@@ -464,7 +464,7 @@ theorem binary_correct_exec_witness :
     (∃ file, Elf.Agrees file Crates.AArithAbort.exAll) ∧
     ∀ file, Elf.Agrees file Crates.AArithAbort.exAll →
       (imageOf file).Intact (r (memOf file)) ∧
-      OutsideCall I (BinCheck.roByte I Crates.AArithAbort.dataObjs) f (StackBound.stackFn I f)
+      OutsideCall I (BinCheck.roByte I Crates.AArithAbort.dataObjs) f (SemanticStackBound.stackFn I f)
         (r (memOf file)) args cs.mem ∧
       ClifRun I closedBase f (r (memOf file)) args cs ∧
       TrapsExplicit (Clif.linkEnvN (prog I) closedBase.env M) (prog I).bare cs ∧
@@ -477,7 +477,7 @@ theorem binary_correct_exec_witness :
   have hf := facts.1
   have hfm := (Clif.Program.func?_some hf).1
   obtain ⟨hX, hoc, -⟩ := binary_witness.2 file hfile
-  have hL := okB_sound Crates.AArithAbort.okB_input (Crates.AArithAbort.base_closed (img I))
+  have hL := SemanticStackBound.okB_sound (I := I) Crates.AArithAbort.okB_input (Crates.AArithAbort.base_closed (img I))
     (fun _ h => h)
   have htr := trapsExplicit_of_run hL hfm clifEntry rfl run_eq
   have hrun := runOk_entry (fnOk_all file hfile) (entry_model (memOf file)) closedBase M
@@ -554,7 +554,7 @@ theorem gotSlot_lt (file : ByteArray) {a : BitVec 64} (ha : GotSlot I file a) :
 /-- The outside caller keeps the GOT slots: they are below its stack (at `2^40`, of at most `2^20`
 bytes), it passes no stack argument, and its CLIF memory has no live allocation. -/
 theorem outsideAvoids (file : ByteArray) :
-    OutsideAvoids (GotSlot I file) f (StackBound.stackFn I f) (r (memOf file)) args cs.mem where
+    OutsideAvoids (GotSlot I file) f (SemanticStackBound.stackFn I f) (r (memOf file)) args cs.mem where
   stack := fun a ha hb => by
     have h1 := gotSlot_lt file ha
     have h2 := facts.2.2.2.2.2.2.2.2.2.2.2.2

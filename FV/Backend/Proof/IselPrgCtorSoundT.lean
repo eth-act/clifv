@@ -242,8 +242,8 @@ theorem ofvOkT_sound {a : PA} {v : V} (h : ofvOkT a = true) (hv : γ f ctx a v) 
     (MInst.ofV v).isSome := ofvOkT_sound' h hv
 
 /-- The alternatives of `actorT` past the type predicates are sound: the float ones here, the
-others V7's (`actor_none_soundT`). -/
-theorem actorT_none_sound (hP : PInvT f ctx) (id : TermId) (as : List PA) (hp : tyPred id = none) :
+others V7's (`actor_none_soundTB`). -/
+theorem actorT_none_soundB (hP : PInvTB f ctx) (id : TermId) (as : List PA) (hp : tyPred id = none) :
     CS.ActP f ctx id as (actorT id as) := by
   unfold actorT
   rw [hp]
@@ -282,17 +282,22 @@ theorem actorT_none_sound (hP : PInvT f ctx) (id : TermId) (as : List PA) (hp : 
       | some m => simp only [hm, Option.map_some]; exact CS.fin_ok (by simp [γ, OpOk])
     · cases h
   -- the others: V7's
-  · exact actor_none_soundT hP _ _ hp
+  · exact actor_none_soundTB hP _ _ hp
 
-/-- **The extern constructors' transfer function over the typed scope is sound**
+/-- `actorT_none_soundB` under `PInvT`. -/
+theorem actorT_none_sound (hP : PInvT f ctx) (id : TermId) (as : List PA) (hp : tyPred id = none) :
+    CS.ActP f ctx id as (actorT id as) :=
+  actorT_none_soundB hP.toB id as hp
+
+/-- **The extern constructors' transfer function over a float-capable context is sound**
 (`Model.ctor` for `actorT`). -/
-theorem actorT_sound (hP : PInvT f ctx) (term : Term) (as : List PA) (a : PA) (must : Bool)
+theorem actorT_soundB (hP : PInvTB f ctx) (term : Term) (as : List PA) (a : PA) (must : Bool)
     (vs : List V) (st : LState)
     (h : actorT term.id as = some (a, must)) (hv : γL f ctx as vs) :
     (∃ w st', externCtor ctx term vs st = .ok (w, st') ∧ γ f ctx a w) ∨
       (externCtor ctx term vs st = .fail ∧ must = false) := by
   cases hp : tyPred term.id with
-  | none => exact actorT_none_sound hP term.id as hp a must h term vs st rfl hv
+  | none => exact actorT_none_soundB hP term.id as hp a must h term vs st rfl hv
   | some pr =>
     unfold actorT at h
     rw [hp] at h
@@ -336,5 +341,15 @@ theorem actorT_sound (hP : PInvT f ctx) (term : Term) (as : List PA) (a : PA) (m
           intro hall
           exact hc (List.all_eq_true.1 hall t ht)
     · cases h
+
+
+/-- **The extern constructors' transfer function over the typed scope is sound**
+(`Model.ctor` for `actorT`). -/
+theorem actorT_sound (hP : PInvT f ctx) (term : Term) (as : List PA) (a : PA) (must : Bool)
+    (vs : List V) (st : LState)
+    (h : actorT term.id as = some (a, must)) (hv : γL f ctx as vs) :
+    (∃ w st', externCtor ctx term vs st = .ok (w, st') ∧ γ f ctx a w) ∨
+      (externCtor ctx term vs st = .fail ∧ must = false) :=
+  actorT_soundB hP.toB term as a must vs st h hv
 
 end Backend.Proof.Prg
