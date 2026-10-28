@@ -29,13 +29,16 @@ theorem γ_aVT {x : Nat} (h : (ctx.valueType? x).isSome) (hi : IntPos ctx x) :
   simp only [aV, γ]
   exact ⟨x, t, rfl, ht, hi t ht⟩
 
-theorem γ_aVMT (hP : PInvT f ctx) {x : Nat} (h : (ctx.valueType? x).isSome) :
+theorem γ_aVMTB (hP : PInvTB f ctx) {x : Nat} (h : (ctx.valueType? x).isSome) :
     γ f ctx aVM (.value x) := by
   obtain ⟨t, ht⟩ := Option.isSome_iff_exists.mp h
   simp only [aVM, γ]
   exact ⟨x, t, rfl, ht, hP.ctxInv.valTyM x t ht⟩
 
-theorem γ_tyCallT (hP : PInvT f ctx) {ii : Nat} {info : IInfo} {c : Clif.Inst}
+theorem γ_aVMT (hP : PInvT f ctx) {x : Nat} (h : (ctx.valueType? x).isSome) :
+    γ f ctx aVM (.value x) := γ_aVMTB hP.toB h
+
+theorem γ_tyCallTB (hP : PInvTB f ctx) {ii : Nat} {info : IInfo} {c : Clif.Inst}
     (hi : ctx.insts[ii]? = some info) (hc : info.clif = some c) (hE : Compile.instE c = true) :
     γ f ctx tyCall (.ty (info.resTys.head?.getD .invalid)) := by
   apply γ_ty_mem
@@ -45,12 +48,16 @@ theorem γ_tyCallT (hP : PInvT f ctx) {ii : Nat} {info : IInfo} {c : Clif.Inst}
     have := hP.resE ii info c hi hc hE t (by simp [h])
     simp [this]
 
+theorem γ_tyCallT (hP : PInvT f ctx) {ii : Nat} {info : IInfo} {c : Clif.Inst}
+    (hi : ctx.insts[ii]? = some info) (hc : info.clif = some c) (hE : Compile.instE c = true) :
+    γ f ctx tyCall (.ty (info.resTys.head?.getD .invalid)) := γ_tyCallTB hP.toB hi hc hE
+
 end
 
 set_option maxRecDepth 100000 in
-/-- `stmt_root` for an E statement of a float-capable context (`PInvT`): its operands are in
-integer positions (`instArgs_intArgs`), its results E's integers (`PInvT.resE`). -/
-theorem stmt_rootE {f : Clif.Function} {ctx : Ctx} (hP : PInvT f ctx) {ii : Nat} {info : IInfo}
+/-- `stmt_root` for an E statement of a float-capable context (`PInvTB`): its operands are in
+integer positions (`instArgs_intArgs`), its results E's integers (`PInvTB.resE`). -/
+theorem stmt_rootEB {f : Clif.Function} {ctx : Ctx} (hP : PInvTB f ctx) {ii : Nat} {info : IInfo}
     {c : Clif.Inst} (hi : ctx.insts[ii]? = some info) (hc : info.clif = some c)
     (hE : Compile.instE c = true) :
     γ f ctx (formOf f c) (.inst ii) ∧ formOf f c ∈ stmtForms ∧
@@ -213,7 +220,7 @@ theorem stmt_rootE {f : Clif.Function} {ctx : Ctx} (hP : PInvT f ctx) {ii : Nat}
     split at hd
     case isFalse => cases hd
     simp only [pure, Except.pure, Except.ok.injEq] at hd
-    refine ⟨γ_inst hi (γ_tyCallT hP hi hc hE) (by
+    refine ⟨γ_inst hi (γ_tyCallTB hP hi hc hE) (by
       rw [← hd]; prg_data
       · exact γ_valsMin (Nat.zero_le _) fun x hx =>
           hP.argsTyped _ hof x (by simpa [Driver.instArgs] using hx)
@@ -234,7 +241,7 @@ theorem stmt_rootE {f : Clif.Function} {ctx : Ctx} (hP : PInvT f ctx) {ii : Nat}
       split at hd
       case isFalse => cases hd
       simp only [pure, Except.pure, Except.ok.injEq] at hd
-      refine ⟨γ_inst hi (γ_tyCallT hP hi hc hE) (by
+      refine ⟨γ_inst hi (γ_tyCallTB hP hi hc hE) (by
         rw [← hd]; prg_data
         · exact γ_valsMin (by simp) fun x hx =>
             hP.argsTyped _ hof x (by simpa [Driver.instArgs] using hx)
@@ -249,6 +256,16 @@ theorem stmt_rootE {f : Clif.Function} {ctx : Ctx} (hP : PInvT f ctx) {ii : Nat}
   case bitcast => exact absurd hE (by simp [Compile.instE])
   case float => exact absurd hE (by simp [Compile.instE])
   all_goals simp [instData, throw, throwThe, MonadExceptOf.throw] at hd
+
+set_option maxRecDepth 100000 in
+/-- `stmt_root` for an E statement of a float-capable context (`stmt_rootEB` under `PInvT`). -/
+theorem stmt_rootE {f : Clif.Function} {ctx : Ctx} (hP : PInvT f ctx) {ii : Nat} {info : IInfo}
+    {c : Clif.Inst} (hi : ctx.insts[ii]? = some info) (hc : info.clif = some c)
+    (hE : Compile.instE c = true) :
+    γ f ctx (formOf f c) (.inst ii) ∧ formOf f c ∈ stmtForms ∧
+      (info.results ≠ [] → ∀ rss, γ f ctx (stmtOut (formOf f c)) (.regsVec rss) →
+        rss.length = info.results.length ∧ ∀ rs ∈ rss, rs.length = 1) :=
+  stmt_rootEB hP.toB hi hc hE
 
 
 /-! ## The typed statement forms in `stmtFormsT` -/
@@ -322,24 +339,24 @@ theorem sfT_bitcast {ty : Clif.Ty} (h : ty ∈ eTys ++ fTys) : fBitcast ty ∈ s
 
 set_option maxHeartbeats 1000000 in
 set_option maxRecDepth 100000 in
-/-- **A statement's root over the typed scope**: the form `formOfT` of its instruction describes
-`.inst ii`, is a statement root of the typed table, and every output `stmtOut` describes has one
-single register per result. -/
-theorem stmt_rootT {f : Clif.Function} {ctx : Ctx} (hP : PInvT f ctx) {ii : Nat} {info : IInfo}
-    {c : Clif.Inst} (hi : ctx.insts[ii]? = some info) (hc : info.clif = some c) :
+/-- **A statement's root over a float-capable context**, for a statement of the typed scope
+(`hET`): the form `formOfT` of its instruction describes `.inst ii`, is a statement root of the
+typed table, and every output `stmtOut` describes has one single register per result. -/
+theorem stmt_rootTB {f : Clif.Function} {ctx : Ctx} (hP : PInvTB f ctx) {ii : Nat} {info : IInfo}
+    {c : Clif.Inst} (hi : ctx.insts[ii]? = some info) (hc : info.clif = some c)
+    (hET : Compile.instET c = true) :
     γ f ctx (formOfT f c) (.inst ii) ∧ formOfT f c ∈ stmtFormsT ∧
       (info.results ≠ [] → ∀ rss, γ f ctx (stmtOut (formOfT f c)) (.regsVec rss) →
         rss.length = info.results.length ∧ ∀ rs ∈ rss, rs.length = 1) := by
   by_cases hE : Compile.instE c = true
   · have hf : formOfT f c = formOf f c := by simp [formOfT, hE]
     rw [hf]
-    obtain ⟨h1, h2, h3⟩ := stmt_rootE hP hi hc hE
+    obtain ⟨h1, h2, h3⟩ := stmt_rootEB hP hi hc hE
     exact ⟨h1, mem_stmtFormsT_of h2, h3⟩
   have hctx := hP.ctxInv
   have hd := hctx.data ii info c hi hc
   obtain ⟨tys, hty, hrt, hlen⟩ := hctx.resTys ii info c hi hc
   have hof := hP.clifOf ii info c hi hc
-  have hET := hP.instET c hof
   have hargs := hP.argsTyped c hof
   have hint := hP.intArgsOf c hof
   have hR := hP.resTyped ii info hi
@@ -416,7 +433,7 @@ theorem stmt_rootT {f : Clif.Function} {ctx : Ctx} (hP : PInvT f ctx) {ii : Nat}
       show p ∈ (if ty.isFloat then [p] else [x, p])
       rw [if_pos hfloat]; exact List.mem_singleton_self _
     exact γ_instDataV (by rfl) (γL_cons' (γ_opcodeV (by rfl)) (γL_cons'
-      (γ_vals (γL_cons' (γ_aVMT hP (hargs x (by simp [Driver.instArgs])))
+      (γ_vals (γL_cons' (γ_aVMTB hP (hargs x (by simp [Driver.instArgs])))
         (γL_cons' (γ_aVT (hargs p (by simp [Driver.instArgs])) (hint p hp)) γL_nil')))
       (γL_cons' (γ_memFlags hbig) (γL_cons' (γ_int_any _) γL_nil'))))
   case select ty c x y =>
@@ -435,8 +452,8 @@ theorem stmt_rootT {f : Clif.Function} {ctx : Ctx} (hP : PInvT f ctx) {ii : Nat}
       rw [← hd]
       exact γ_instDataV (by rfl) (γL_cons' (γ_opcodeV (by rfl)) (γL_cons'
         (γ_vals (γL_cons' (γ_aVT (hargs c (by simp [Driver.instArgs])) (hint c hcI))
-          (γL_cons' (γ_aVMT hP (hargs x (by simp [Driver.instArgs])))
-            (γL_cons' (γ_aVMT hP (hargs y (by simp [Driver.instArgs]))) γL_nil')))) γL_nil'))
+          (γL_cons' (γ_aVMTB hP (hargs x (by simp [Driver.instArgs])))
+            (γL_cons' (γ_aVMTB hP (hargs y (by simp [Driver.instArgs]))) γL_nil')))) γL_nil'))
     · cases hd
   case bitcast ty fl x =>
     simp only [Compile.instET, Compile.tyM, Bool.or_eq_true] at hET
@@ -449,8 +466,20 @@ theorem stmt_rootT {f : Clif.Function} {ctx : Ctx} (hP : PInvT f ctx) {ii : Nat}
       refine ⟨γ_inst hi hT ?_ hR, sfT_bitcast hty2, hsingle ty _ _ (by decide) (by decide) hl⟩
       rw [← hd]
       exact γ_instDataV (by rfl) (γL_cons' (γ_opcodeV (by rfl)) (γL_cons'
-        (γ_aVMT hP (hargs x (by simp [Driver.instArgs]))) (γL_cons' trivial γL_nil')))
+        (γ_aVMTB hP (hargs x (by simp [Driver.instArgs]))) (γL_cons' trivial γL_nil')))
     · cases hd
   all_goals exact absurd (by simpa [Compile.instET] using hET) hE
+
+set_option maxHeartbeats 1000000 in
+set_option maxRecDepth 100000 in
+/-- **A statement's root over the typed scope** (`stmt_rootTB` under `PInvT`): the form
+`formOfT` of its instruction describes `.inst ii`, is a statement root of the typed table, and
+every output `stmtOut` describes has one single register per result. -/
+theorem stmt_rootT {f : Clif.Function} {ctx : Ctx} (hP : PInvT f ctx) {ii : Nat} {info : IInfo}
+    {c : Clif.Inst} (hi : ctx.insts[ii]? = some info) (hc : info.clif = some c) :
+    γ f ctx (formOfT f c) (.inst ii) ∧ formOfT f c ∈ stmtFormsT ∧
+      (info.results ≠ [] → ∀ rss, γ f ctx (stmtOut (formOfT f c)) (.regsVec rss) →
+        rss.length = info.results.length ∧ ∀ rs ∈ rss, rs.length = 1) :=
+  stmt_rootTB hP.toB hi hc (hP.instET c (hP.clifOf ii info c hi hc))
 
 end Backend.Proof.Prg

@@ -5,6 +5,7 @@ import FV.Backend.Proof.IselPrgHandT
 import FV.Backend.Proof.IselPrgTabF64
 import FV.Backend.Proof.IselPrgDriverT
 import FVTest.Backend.FloatProgT
+import FVTest.Link.FloatScopeInputT3F
 
 -- S11 (#35) slice 8 totality: typed ISLE progress (driver totality, extern-helper model,
 -- context invariant, roots, hand-checked rules, the `f64const` sub-table)
@@ -34,3 +35,15 @@ import FVTest.Backend.FloatProgT
 -- non-vacuity witnesses
 #print axioms Backend.Proof.Driver.buildCtx_okT_witness
 #print axioms FloatProgT.lowerFunction_ok_inputT_witness -- witness: native_decide
+
+-- S11f (#35): the float scope (functionETF) — lowerFunction totality from input conditions
+#print axioms Backend.Proof.Prg.aextTF_sound
+#print axioms Backend.Proof.Prg.stmt_rootTF
+#print axioms Backend.Proof.Prg.pinv_buildTF
+#print axioms Backend.Proof.Prg.prgTabTF_ok
+#print axioms Backend.Proof.Prg.f64TabF_ok
+#print axioms Backend.Proof.Prg.iselProgTF_of_input
+#print axioms Backend.Proof.Driver.lowerFunction_okTF
+#print axioms Backend.Proof.Prg.lowerFunction_ok_inputTF
+#print axioms E2E.LinkCheck.lowerFunction_ok_inT3F
+#print axioms E2E.FloatScopeInputT3FWitness.lowers -- witness: native_decide

@@ -18,22 +18,27 @@ variable {f : Clif.Function} {ctx : Ctx}
 
 namespace CS
 
-theorem mapM_regT (hP : PInvT f ctx) :
+theorem mapM_regTB (hP : PInvTB f ctx) :
     ∀ (ns : List Nat), (∀ x ∈ ns, (ctx.valueType? x).isSome = true) →
       ∃ rs, ns.mapM ctx.valueReg? = some rs ∧ rs.length = ns.length
   | [], _ => ⟨[], rfl, rfl⟩
   | x :: ns, h => by
     obtain ⟨t, ht⟩ := Option.isSome_iff_exists.1 (h x (List.mem_cons_self ..))
-    obtain ⟨rs, hrs, hl⟩ := mapM_regT hP ns (fun y hy => h y (List.mem_cons_of_mem _ hy))
+    obtain ⟨rs, hrs, hl⟩ := mapM_regTB hP ns (fun y hy => h y (List.mem_cons_of_mem _ hy))
     refine ⟨.vreg x t.valClass :: rs, ?_, by simp [hl]⟩
     simp [List.mapM_cons, hP.ctxInv.typedReg x t ht, hrs]
+
+theorem mapM_regT (hP : PInvT f ctx) :
+    ∀ (ns : List Nat), (∀ x ∈ ns, (ctx.valueType? x).isSome = true) →
+      ∃ rs, ns.mapM ctx.valueReg? = some rs ∧ rs.length = ns.length :=
+  mapM_regTB hP.toB
 
 end CS
 
 set_option maxHeartbeats 4000000 in
-/-- Every alternative of `actor`'s dispatch past the type predicates is sound over the typed scope
-(`actor_none_sound` with `PInvT`: a typed value's register has its type's class). -/
-theorem actor_none_soundT (hP : PInvT f ctx) (id : TermId) (as : List PA) (hp : tyPred id = none) :
+/-- Every alternative of `actor`'s dispatch past the type predicates is sound over a float-capable
+context (`actor_none_sound` with `PInvTB`: a typed value's register has its type's class). -/
+theorem actor_none_soundTB (hP : PInvTB f ctx) (id : TermId) (as : List PA) (hp : tyPred id = none) :
     CS.ActP f ctx id as (actor id as) := by
   unfold actor
   rw [hp]
@@ -201,7 +206,7 @@ theorem actor_none_soundT (hP : PInvT f ctx) (id : TermId) (as : List PA) (hp : 
         simp only [V.value.injEq] at hy
         subst hy
         simp [ht]
-      obtain ⟨rs, hrs, hl⟩ := CS.mapM_regT hP ns htyped
+      obtain ⟨rs, hrs, hl⟩ := CS.mapM_regTB hP ns htyped
       red_safe externCtor
       rw [hrs]
       refine CS.fin_ok ⟨_, rfl, by simp, .inr ?_⟩
@@ -211,7 +216,7 @@ theorem actor_none_soundT (hP : PInvT f ctx) (id : TermId) (as : List PA) (hp : 
   · intro lo; cintro; gl1; cok
     simp only [γ] at hw1
     obtain ⟨ns, rfl, -, htyped⟩ := hw1
-    obtain ⟨rs, hrs, -⟩ := CS.mapM_regT hP ns htyped
+    obtain ⟨rs, hrs, -⟩ := CS.mapM_regTB hP ns htyped
     red_safe externCtor
     rw [hrs]
     exact CS.fin_ok ⟨_, rfl, by simp, .inl rfl⟩
@@ -1085,5 +1090,10 @@ theorem actor_none_soundT (hP : PInvT f ctx) (id : TermId) (as : List PA) (hp : 
   -- no other alternative
   · intro _ _ _ _ h
     cases h
+
+/-- `actor_none_soundTB` under `PInvT`. -/
+theorem actor_none_soundT (hP : PInvT f ctx) (id : TermId) (as : List PA) (hp : tyPred id = none) :
+    CS.ActP f ctx id as (actor id as) :=
+  actor_none_soundTB hP.toB id as hp
 
 end Backend.Proof.Prg
