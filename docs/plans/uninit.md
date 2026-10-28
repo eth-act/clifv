@@ -926,10 +926,11 @@ from one configuration reach the same block and items; only havocked defs differ
 `RL.SegLenA` (`SegLen` inside the activation, no step at a return/halt), `realizes_zeroNA`
 (`args`, `emitIsland`), **`realizes_allCW`** (`realizes_allCY` from `QW`, ending at
 `RL.nextW`, `ShapeEq` with the given step, `SegLenA`). All print the standard axioms.
-Still open: the counted chain exporting the segmentation (plan: run `RealizesCP.countedRun`/
-`forward` with `Q u c := ` "a segment chain from the post-prologue state reaches `(u, c)` at a
-witness", the chain recording `(n_k, W_k, shape_k)`), the two-run induction, `thmPDERX_det_of`
-and its corollaries, and `hGd`.
+Then `RL.SegChain` (a trace predicate, segment lengths and configurations), `realizes_allC_spW`,
+and RegLevelCorrectPRSW.lean: **`regLevelCorrect_world_atCSW`** (the returning run = prologue +
+segment chain from `RL.initW` + `RL.retLen` epilogue steps). Still open: the lift to the prophecy
+level and `backend_correct_worldPRIY`, the two-run induction (chains of equal shapes from the
+pair run), `thmPDERX_det_of` and its corollaries, and `hGd`.
 
 ## 6. Heap (separate gap, SEM2)
 
