@@ -39,6 +39,12 @@ theorem retRegsOk_of_x {rvals : List Clif.Val} {us : List (Reg × Reg)}
   rw [classes_int hint, List.replicate_append_replicate, Nat.add_sub_cancel' hle, retRegsT_int,
     hus, List.range_eq_range']
 
+/-- **Every return of `vc` is in x0, x1, …** (#722): the condition under which the typed link
+layer (`LinkSys.OkT.sretE`) admits an `sret` function outside subset E; `lowerFunction` appends
+the struct pointer to an `sret` function's returns. -/
+def RetsX (vc : VCode) : Prop :=
+  ∀ us, vc.RetsSite us → us.map (·.2) = (List.range us.length).map Reg.x
+
 /-- **The Stock artifact of an integer function** (#722): an integer function (`InSubset`)
 without `sret` parameter, with the Stock route's artifact contract (`CompiledSemanticNI`). -/
 def CompiledStockT (p : Clif.Program) (f : Clif.Function) (k : Nat) (vc vcp : VCode) (rf : RFunc)

@@ -264,7 +264,7 @@ theorem okR_soundT {I : LinkInput} {R : Res} (hR : ResOk I R) (hI : okRT I R = t
         obtain ⟨hE, hlc⟩ := (fa hg).sretE hs
         obtain ⟨hl, hpr, ha, he, hla, -⟩ := (fa hg).pipe
         have hT := hsubT g hg
-        exact ⟨⟨hE, hT.externCalls, hT.tryExterns, hT.abiSigs, hT.indSigs⟩,
+        exact .inl ⟨⟨hE, hT.externCalls, hT.tryExterns, hT.abiSigs, hT.indSigs⟩,
           .legacy ⟨hl, hlc, hpr, (fa hg).prepOk, (fa hg).check, ha, he, hla⟩⟩
       calleeInt := fun g hg h hh => (fa (hcalB g hg h hh).2).calleeInt (hcalB g hg h hh).1
       covered := fun g hg => (fa hg).covered

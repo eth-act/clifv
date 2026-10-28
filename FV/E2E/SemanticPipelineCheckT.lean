@@ -44,6 +44,17 @@ def lowerOkTSB (g : Clif.Function) (vc : VCode) : Bool :=
     (lowersToB g vc &&
       ((Compile.functionET g && lowerCheckT g vc) || (Compile.functionETCF g && lowerCheckTCF g vc)))
 
+/-- Every return of the code is in x0, x1, … (`RetsX`, decided per instruction). -/
+def retsXB : MInst → Bool
+  | .rets us => decide (us.map (·.2) = (List.range us.length).map Reg.x)
+  | _ => true
+
+theorem retsXB_sound {vc : VCode} (h : allInsts vc retsXB = true) : RetsX vc := by
+  intro us hr
+  obtain ⟨b, vb, k, hb, hk⟩ := hr
+  have := allInsts_sound h hb hk
+  simpa [retsXB] using this
+
 def staticChksWithTS (stage : Clif.Function → VCode → VCode) (I : LinkInput) (g : Clif.Function)
     (r : Except String Art) : List (String × Bool) :=
   let a := getOk r
@@ -63,8 +74,8 @@ def staticChksWithTS (stage : Clif.Function → VCode → VCode) (I : LinkInput)
    ("subset: storeTyped", Compile.storeTypedB g),
    ("subset: ABI signatures", sigAbiOk g.sig && g.externs.all (fun e => sigAbiOk e.2.sig)),
    ("subset: indirect-call signatures", indSigsOk g),
-   ("sret: subset E, lowerCheck", !(g.sig.params.any (·.purpose == .sret)) ||
-     (Compile.functionE g && lowerCheck g a.vc))]
+   ("sret: subset E, lowerCheck, or returns in x0..", !(g.sig.params.any (·.purpose == .sret)) ||
+     (Compile.functionE g && lowerCheck g a.vc) || allInsts a.vc retsXB)]
 
 def chksWithTS (stage : Clif.Function → VCode → VCode) (I : LinkInput) (P : Clif.Program)
     (T : List (Clif.Function × Art)) (g : Clif.Function) (r : Except String Art) :
@@ -132,7 +143,7 @@ structure FactsWithTS (stage : Clif.Function → VCode → VCode) (I : LinkInput
   free : Clif.LinkFree g
   storeT : Compile.storeTypedB g = true
   sretE : g.sig.params.any (·.purpose == .sret) = true →
-    Compile.functionE g = true ∧ lowerCheck g a.vc = true
+    (Compile.functionE g = true ∧ lowerCheck g a.vc = true) ∨ allInsts a.vc retsXB = true
   calleeInt : calleeB (progOf R) (fun n => I.syms.lookup n) g = true →
     ∀ p ∈ g.sig.returns, p.ty.isInt = true
   abi : sigAbiOk g.sig = true ∧ ∀ e ∈ g.externs, sigAbiOk e.2.sig = true
@@ -195,9 +206,10 @@ theorem factsRWithTS (stage : Clif.Function → VCode → VCode) {I : LinkInput}
     have := h14 _ hm
     simp only [hf, decide_eq_true_eq] at this
     exact this
-  · rcases hsr with h | h
+  · rcases hsr with (h | h) | h
     · rw [hs] at h; cases h
-    · exact h
+    · exact .inl h
+    · exact .inr h
   · rcases hci with h | h
     · rw [hc] at h; cases h
     · exact h p hp
@@ -343,16 +355,17 @@ theorem okRWithTS_soundT (stage : Clif.Function → VCode → VCode) {I : LinkIn
         · exact hinTC g hg h.1
       compiled := fun g hg => (hcomp g hg).1
       sretE := fun g hg hs => by
-        obtain ⟨hE, hlc⟩ := (fa hg).sretE hs
-        obtain ⟨hpr, ha, he, hla, -⟩ := (fa hg).pipe
-        have hl : lowerFunction g = .ok (artOf R g).vc := by
-          rcases (fa hg).lowerOk with ⟨-, hns, -⟩ | ⟨hl, -⟩
-          · rw [hs] at hns; cases hns
-          · exact hl
-        refine ⟨hinE g hg hE, ?_⟩
-        rcases hstage with rfl | rfl
-        · exact .legacy ⟨hl, hlc, hpr, (fa hg).prepOk, (fa hg).check, ha, he, hla⟩
-        · exact .cleanup ⟨hl, hlc, hpr, (fa hg).prepOk, (fa hg).check, ha, he, hla⟩
+        rcases (fa hg).sretE hs with ⟨hE, hlc⟩ | hx
+        · obtain ⟨hpr, ha, he, hla, -⟩ := (fa hg).pipe
+          have hl : lowerFunction g = .ok (artOf R g).vc := by
+            rcases (fa hg).lowerOk with ⟨-, hns, -⟩ | ⟨hl, -⟩
+            · rw [hs] at hns; cases hns
+            · exact hl
+          refine .inl ⟨hinE g hg hE, ?_⟩
+          rcases hstage with rfl | rfl
+          · exact .legacy ⟨hl, hlc, hpr, (fa hg).prepOk, (fa hg).check, ha, he, hla⟩
+          · exact .cleanup ⟨hl, hlc, hpr, (fa hg).prepOk, (fa hg).check, ha, he, hla⟩
+        · exact .inr (retsXB_sound hx)
       calleeInt := fun g hg h hh => (fa (hcalB g hg h hh).2).calleeInt (hcalB g hg h hh).1
       covered := fun g hg => (fa hg).covered
       outFits := fun g hg e he hs i off p hl hp => ?_

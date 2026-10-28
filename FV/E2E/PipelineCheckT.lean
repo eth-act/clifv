@@ -266,7 +266,7 @@ theorem okRWith_soundT (stage : Clif.Function → VCode → VCode) {I : LinkInpu
               (hinT g hg hET).abiSigs, (hinT g hg hET).indSigs⟩
           · exact ⟨hE, (hinTC g hg hETC).externCalls, (hinTC g hg hETC).tryExterns,
               (hinTC g hg hETC).abiSigs, (hinTC g hg hETC).indSigs⟩
-        refine ⟨hS, ?_⟩
+        refine .inl ⟨hS, ?_⟩
         rcases hstage with rfl | rfl
         · exact .legacy ⟨hl, hlc, hpr, (fa hg).prepOk, (fa hg).check, ha, he, hla⟩
         · exact .cleanup ⟨hl, hlc, hpr, (fa hg).prepOk, (fa hg).check, ha, he, hla⟩

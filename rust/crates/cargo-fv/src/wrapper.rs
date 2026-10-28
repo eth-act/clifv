@@ -799,6 +799,13 @@ pub fn linker_main(meta_json: &str, argv: Vec<OsString>) -> i32 {
                         // again on every link)
                         let more = leanlink::exclusions(&e);
                         if cfg.lean_link_verified && !cfg.trap_replaced && round < 4 && !more.is_subset(&exclude) {
+                            // lean-link's reasons: its `--verified:` lines with the causes, and
+                            // the first per-function lines (`lean-link:   <name>: [conditions]`)
+                            let why = e.lines().filter(|l| l.contains(": --verified: ") && !l.contains(": --verified: exclude: "));
+                            let per = e.lines().filter(|l| l.starts_with("lean-link:   ")).take(20);
+                            for l in why.chain(per) {
+                                eprint_fv(l.trim_start_matches("lean-link: "));
+                            }
                             exclude.extend(more);
                             eprint_fv(&format!(
                                 "--lean-link --verified: {}: {} function(s) fail a per-function input condition; linking again with their cg_clif code ({})",
