@@ -13,7 +13,7 @@ specification, `valueSemV`), each activation runs the guarded value semantics
 premises (`hcall`, `htls`) and the conclusion's lock are those of `backend_twoRunLWNp`; the pair
 facts of the joint invariant are `KJLV` (`KJL` on `RL.valueSemGS`).
 
-* `specForm_of_isCallI`, `valueSemV_nspec`, `valueSemV_noCall_call`, `valueSemVI_upTo_eq`,
+* `valueSemV_nspec`, `valueSemV_noCall_call`, `valueSemVI_upTo_eq`,
   `pairSemD_upTo_eqV`, `vstar_pairDI_upToV`, `pairDI_upTo_subV`, `VStep.pairDI_upToV`
   (`BackendTwoRunNPre.lean` for `valueSemV`);
 * `mstep_guard_of_matchV`, `mstep_okDiff_fstV`, `mstep_okDiff_sndV`, `KJLV`
@@ -24,10 +24,6 @@ facts of the joint invariant are `KJLV` (`KJL` on `RL.valueSemGS`).
 namespace E2E
 
 open Backend Backend.Proof Backend.Proof.Driver Backend.DeadCleanup
-
-/-- A call is no specification form. -/
-theorem specForm_of_isCallI {i : MInst} (h : i.isCallI = true) : specForm i = false := by
-  cases i <;> first | rfl | (simp [MInst.isCallI] at h)
 
 /-- Off the specification forms `valueSemV` is `csemV`. -/
 theorem valueSemV_nspec {gv : Nat → String → Prop} {F : BitVec 64 → Prop} {ctx : FnCtx}

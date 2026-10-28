@@ -10,7 +10,7 @@ uses the cleanup path (`CompiledCleanup`), whose code runs the value semantics `
 (`DeadCleanupRealizes.lean`: pure producers and compares by their specification `mspec`, the
 other forms by `csemV`). Here the guarded value semantics, with the same guard:
 
-* `specForm_loadForm`, `valueSemVGS`, `valueSemVIGS`, `RL.valueSemGS` (+ `_inv`, `_nspec`,
+* `specForm_loadForm`, `specForm_of_isCallI`, `valueSemVGS`, `valueSemVIGS`, `RL.valueSemGS` (+ `_inv`, `_nspec`,
   `RL.valueSemGS_agree`, `valueSemVGS_eqF`, `valueSemVIGS_eqF`);
 * `QW.world_change`, `aInv_step_anySem`, `MConf.shapeEq_rfl`;
 * **`realizes_value_allCWSF`**: `realizes_allCWSF` for `RL.valueSemGS` (as `realizes_value_allC`
@@ -29,6 +29,10 @@ open Backend E2E Backend.DeadCleanup Backend.Proof.Driver
 /-- A specification form (pure producer or compare) is not a load form. -/
 theorem specForm_loadForm {i : MInst} (h : specForm i = true) : i.loadForm = false := by
   cases i <;> first | rfl | (simp [specForm, pureForm, cmpForm] at h)
+
+/-- A call is no specification form. -/
+theorem specForm_of_isCallI {i : MInst} (h : i.isCallI = true) : specForm i = false := by
+  cases i <;> first | rfl | (simp [MInst.isCallI] at h)
 
 open Classical in
 /-- **The guarded value semantics**: `valueSemV` where `WGuardS` holds, undefined elsewhere. -/

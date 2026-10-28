@@ -7,10 +7,12 @@ import FV.E2E.PairGuardS
 `entry_step2P` (`PairEntry.lean`) with the paired run in the guarded paired semantics
 `pairSemD` (`PairGuardS.lean`): the `Args` step is not a load form; each stack-argument load
 reads bytes outside `F` that are equal on both worlds, so its reads avoid `F` and the difference
-set (`csem_load` at that set). Same proofs.
+set (`csem_load` at that set). Same proofs. The pair guard does not depend on the semantics, so
+the proofs are for any semantics with the memory forms (`entryLoads_runPDG`, `entry_step2PDG`;
+the value semantics of the cleanup path uses them); the `csem` forms are their instances.
 
-* `entryLoads_runPD`;
-* **`entry_step2PD`**.
+* `entryLoads_runPDG`, `entryLoads_runPD`;
+* **`entry_step2PDG`**, **`entry_step2PD`**.
 -/
 
 namespace Backend.Proof.Driver
@@ -22,9 +24,9 @@ section
 variable {R : Reg → Reg} {sem : Sem}
 
 /-- **The stack-argument loads on two worlds** with the same `x29` and the same argument bytes:
-one paired run, whose projections are the two runs. -/
-theorem entryLoads_runPD {F : BitVec 64 → Prop} {sb : Nat} {syms : String → Option Nat}
-    {ctx' : FnCtx} {X : ExtSem} (hMem : MemRefines F sb syms sem) (hs : sem = csem F ctx' X) :
+one paired run, whose projections are the two runs (any semantics with the memory forms). -/
+theorem entryLoads_runPDG {F : BitVec 64 → Prop} {sb : Nat} {syms : String → Option Nat}
+    {ctx' : FnCtx} {X : ExtSem} (hMem : MemRefines F sb syms sem) :
     ∀ (E : List (((Nat × Clif.Ty) × ArgLoc) × Nat)) (ρ : Nat → CV) (w w' : Arm.ArmState),
       (∀ q ∈ E, R (.vreg q.1.1.1 .int) = .vreg q.1.1.1 .int) →
       (E.map (·.1.1.1)).Nodup →
@@ -44,7 +46,7 @@ theorem entryLoads_runPD {F : BitVec 64 → Prop} {sb : Nat} {syms : String → 
     obtain ⟨⟨⟨x, ty⟩, loc⟩, b⟩ := q
     cases loc with
     | reg p =>
-      exact entryLoads_runPD hMem hs E ρ w w' (fun q hq => hR q (List.mem_cons_of_mem _ hq)) hnd.2
+      exact entryLoads_runPDG hMem E ρ w w' (fun q hq => hR q (List.mem_cons_of_mem _ hq)) hnd.2
         (fun q hq => hst q (List.mem_cons_of_mem _ hq)) h29
         (fun q hq => hby q (List.mem_cons_of_mem _ hq))
     | stack off =>
@@ -80,7 +82,6 @@ theorem entryLoads_runPD {F : BitVec 64 → Prop} {sb : Nat} {syms : String → 
             (.load (loadOpOfBytes b) (.vreg x .int) (.fpOffset (16 + (off : Int))) trustedFlags)
             [] (w, w') = some ([o], (v1, v1'), .next) := by
         intro o v1 v1' h1 h2
-        subst hs
         have hY : Avoids (fun a => F a ∨ w.mem a ≠ w'.mem a) (loadOpOfBytes b).bytes
             (Arm.r (.GPR 29#5) w + BitVec.ofInt 64 (16 + (off : Int))) := by
           intro k hk h
@@ -107,7 +108,7 @@ theorem entryLoads_runPD {F : BitVec 64 → Prop} {sb : Nat} {syms : String → 
       have hst1 : ∀ q ∈ E, ∀ o, q.1.2 = .stack o → (q.2 = 1 ∨ q.2 = 2 ∨ q.2 = 4 ∨ q.2 = 8) ∧
           Avoids F q.2 (Arm.r (.GPR 29#5) w1 + BitVec.ofInt 64 (16 + (o : Int))) := fun q hq o ho => by
         rw [h29a]; exact hst q (List.mem_cons_of_mem _ hq) o ho
-      obtain ⟨ρ', v1, v1', hP, hA, hB⟩ := entryLoads_runPD hMem hs E
+      obtain ⟨ρ', v1, v1', hP, hA, hB⟩ := entryLoads_runPDG hMem E
         (upd ρ x (ofX (loadVal (loadOpOfBytes b)
           (Arm.r (.GPR 29#5) w + BitVec.ofInt 64 (16 + (off : Int))) w)))
         w1 w1' (fun q hq => hR q (List.mem_cons_of_mem _ hq)) hnd.2 hst1
@@ -127,6 +128,25 @@ theorem entryLoads_runPD {F : BitVec 64 → Prop} {sb : Nat} {syms : String → 
       · simp only [List.filterMap_cons, entryLoadOf, hRx]
         rw [seqRun_load_consW hw1', hB]; rfl
 
+/-- **The stack-argument loads on two worlds** with the same `x29` and the same argument bytes:
+one paired run, whose projections are the two runs. -/
+theorem entryLoads_runPD {F : BitVec 64 → Prop} {sb : Nat} {syms : String → Option Nat}
+    {ctx' : FnCtx} {X : ExtSem} (hMem : MemRefines F sb syms sem) (_hs : sem = csem F ctx' X) :
+    ∀ (E : List (((Nat × Clif.Ty) × ArgLoc) × Nat)) (ρ : Nat → CV) (w w' : Arm.ArmState),
+      (∀ q ∈ E, R (.vreg q.1.1.1 .int) = .vreg q.1.1.1 .int) →
+      (E.map (·.1.1.1)).Nodup →
+      (∀ q ∈ E, ∀ off, q.1.2 = .stack off → (q.2 = 1 ∨ q.2 = 2 ∨ q.2 = 4 ∨ q.2 = 8) ∧
+        Avoids F q.2 (Arm.r (.GPR 29#5) w + BitVec.ofInt 64 (16 + (off : Int)))) →
+      Arm.r (.GPR 29#5) w' = Arm.r (.GPR 29#5) w →
+      (∀ q ∈ E, ∀ off, q.1.2 = .stack off → ∀ k < q.2,
+        w'.mem (Arm.r (.GPR 29#5) w + BitVec.ofInt 64 (16 + (off : Int)) + BitVec.ofNat 64 k) =
+          w.mem (Arm.r (.GPR 29#5) w + BitVec.ofInt 64 (16 + (off : Int)) + BitVec.ofNat 64 k)) →
+      ∃ ρ' w1 w1', seqRun (pairSemD sem F ctx' X) (E.filterMap (entryLoadOf R)) ρ (w, w') =
+          some (.fall ρ' (w1, w1')) ∧
+        seqRun sem (E.filterMap (entryLoadOf R)) ρ w = some (.fall ρ' w1) ∧
+        seqRun sem (E.filterMap (entryLoadOf R)) ρ w' = some (.fall ρ' w1') :=
+  entryLoads_runPDG hMem
+
 end
 
 section
@@ -134,11 +154,11 @@ variable {f : Clif.Function} {vc : VCode} {ctx : Ctx} {st0 : LState} {R : Reg �
   {gn : Nat → Nat} {bl : List BLow} {A : Nat → Nat → List Clif.ValueId} {sem : Sem}
   {MR : MemRelT} {env : Clif.Env} {p : Clif.Program} {slots : List (Clif.SlotId × Nat)}
 
-/-- **`entry_step2P` with the paired run guarded** (its proof). -/
-theorem entry_step2PD (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p) (hds : DriverSem sem)
+/-- **`entry_step2P` with the paired run guarded** (its proof), for any semantics with the memory
+forms. -/
+theorem entry_step2PDG (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p) (hds : DriverSem sem)
     {F : BitVec 64 → Prop} {sb : Nat} {syms : String → Option Nat}
     (hMem : MemRefines F sb syms sem) (hMR : MRStable F MR) {ctx' : FnCtx} {X : ExtSem}
-    (hs : sem = csem F ctx' X)
     {cs : Clif.State} {B0 : Clif.Block} (hB0 : f.blocks[0]? = some B0)
     (hcall : cs.callers = []) (hfunc : cs.frame.func = f) (hslots : cs.frame.slots = slots)
     (hbody : cs.frame.body = B0.body) (hterm : cs.frame.term = B0.term) {args : List Clif.Val}
@@ -307,7 +327,8 @@ theorem entry_step2PD (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p) (hds :
             exact hstk off v (hl ▸ hmem) k hk)]
     · rw [hfr' y hy, hfr y hy]
   rw [hρ₂] at hrun'
-  obtain ⟨ρP, wP, wP', hrunP, hrunA, hrunB⟩ := entryLoads_runPD hMem hs E ρ₁ w₀ w₀' hRid
+  obtain ⟨ρP, wP, wP', hrunP, hrunA, hrunB⟩ := entryLoads_runPDG (ctx' := ctx') (X := X) hMem E ρ₁
+    w₀ w₀' hRid
     (by rw [hEids]; exact hnd) (hloadsF w₀ rfl) h29 (fun q hq off ho k hk => by
       obtain ⟨m, v, hm, hv⟩ := hEmem q hq
       obtain ⟨hmem, hqb, -⟩ := hentry q hq m v hm hv
@@ -410,6 +431,33 @@ theorem entry_step2PD (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p) (hds :
       by simp [pos, hpre]; omega, hheld, hdfg⟩, hsw2, .step hstep' hstar',
     ⟨hcall, hfunc, hslots, hmr₂', B0, 0, hB0, hterm, Nat.zero_le _, by simp [hbody],
       by simp [pos, hpre]; omega, hheld, hdfg⟩, hsw2', .step hstepP hstarP⟩
+
+/-- **`entry_step2P` with the paired run guarded** (`entry_step2PDG` at `csem`). -/
+theorem entry_step2PD (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p) (hds : DriverSem sem)
+    {F : BitVec 64 → Prop} {sb : Nat} {syms : String → Option Nat}
+    (hMem : MemRefines F sb syms sem) (hMR : MRStable F MR) {ctx' : FnCtx} {X : ExtSem}
+    (_hs : sem = csem F ctx' X)
+    {cs : Clif.State} {B0 : Clif.Block} (hB0 : f.blocks[0]? = some B0)
+    (hcall : cs.callers = []) (hfunc : cs.frame.func = f) (hslots : cs.frame.slots = slots)
+    (hbody : cs.frame.body = B0.body) (hterm : cs.frame.term = B0.term) {args : List Clif.Val}
+    (hregs : Clif.Regs.empty.setMany (B0.params.map (·.1)) args = some cs.frame.regs)
+    (hty : args.map (·.ty) = B0.params.map (·.2))
+    (hsig : args.map (·.ty) = f.sig.params.map (·.ty))
+    {ρ₀ : Nat → CV} {w₀ w₀' : Arm.ArmState} (hmr : MR slots cs.mem w₀)
+    (hmr' : MR slots cs.mem w₀') (hargs : ArgsAtEntry F f.sig args w₀)
+    (hreg : ∀ r v, (ArgLoc.reg r, v) ∈ (locsOf f.sig).zip args → regVal w₀' r = regVal w₀ r)
+    (h29 : Arm.r (.GPR 29#5) w₀' = Arm.r (.GPR 29#5) w₀)
+    (hstk : ∀ off v, (ArgLoc.stack off, v) ∈ (locsOf f.sig).zip args → ∀ k < v.ty.bytes,
+      w₀'.mem (Arm.r (.GPR 29#5) w₀ + BitVec.ofInt 64 (16 + (off : Int)) + BitVec.ofNat 64 k) =
+        w₀.mem (Arm.r (.GPR 29#5) w₀ + BitVec.ofInt 64 (16 + (off : Int)) + BitVec.ofNat 64 k)) :
+    ∃ k ρ₁ w₁ w₁', Star (VStep vc sem) (.run ⟨0, 0, ρ₀, w₀⟩) (.run ⟨0, k, ρ₁, w₁⟩) ∧
+      Match f ctx R gn bl A MR slots cs ⟨0, k, ρ₁, w₁⟩ ∧ SameWorld F w₁ w₀ ∧
+      Star (VStep vc sem) (.run ⟨0, 0, ρ₀, w₀'⟩) (.run ⟨0, k, ρ₁, w₁'⟩) ∧
+      Match f ctx R gn bl A MR slots cs ⟨0, k, ρ₁, w₁'⟩ ∧ SameWorld F w₁' w₀' ∧
+      Star (VStep vc (pairSemD sem F ctx' X)) (.run ⟨0, 0, ρ₀, (w₀, w₀')⟩)
+        (.run ⟨0, k, ρ₁, (w₁, w₁')⟩) :=
+  entry_step2PDG H hds hMem hMR hB0 hcall hfunc hslots hbody hterm hregs hty hsig hmr hmr' hargs
+    hreg h29 hstk
 
 
 end
