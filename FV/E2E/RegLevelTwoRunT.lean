@@ -19,6 +19,12 @@ information away (`RL.seg_lock` has it); same proofs otherwise.
 
 namespace Backend.Proof
 
+/-- **A configuration at a `rets` instruction** of the activation. -/
+def RL.RetsAt (R : RL) (e : MConf CV Arm.ArmState) : Prop :=
+  ∃ (b k : Nat) (allocs : Array Loc) (its : List RItem) (m : Loc → CV) (w : Arm.ArmState)
+    (vb : VBlock) (us : List (Reg × Reg)), e = .run ⟨b, .op k allocs :: its, m, w⟩ ∧
+    R.vc.blocks[b]? = some vb ∧ vb.insts[k]? = some (.rets us)
+
 open Backend E2E
 
 /-- **`u` is the `i`-th state of the segment of `R`'s run from a state at `c`** that realises the
@@ -268,7 +274,8 @@ theorem RL.twoRunCT {R : RL} {t0 : Arm.ArmState} {G' : BitVec 64 → Prop} {XI X
       Arm.r .PC (iterN ({ R with X := XI.at 0 } : RL).step
         ((prologueLines R.af.frameSize).length + N + R.retLen) R.s0) = ra ∧
       Arm.r .PC (iterN ({ R with s0 := t0, G := G', X := XI'.at 0 } : RL).step
-        ((prologueLines R.af.frameSize).length + N + R.retLen) t0) = ra' := by
+        ((prologueLines R.af.frameSize).length + N + R.retLen) t0) = ra' ∧
+      R.RetsAt e ∧ R.RetsAt e' := by
   let R0 : RL := { R with X := XI.at 0 }
   let R0' : RL := { R with s0 := t0, G := G', X := XI'.at 0 }
   let R'' : RL := { R with s0 := t0, G := G' }
@@ -332,7 +339,8 @@ theorem RL.twoRunCT {R : RL} {t0 : Arm.ArmState} {G' : BitVec 64 → Prop} {XI X
       iterN R0'.step j s₁' := fun j => iterN_add ..
   have hJ2 := (⟨⟨W, hqA, hqB⟩, hJr⟩ : JR R R'' K LB _ _ _ _)
   rw [← hs N, ← hs' N] at hJ2
-  refine ⟨N, _, _, fun i hi => ⟨ht0 i hi, ht0' i hi⟩, fun i hi => ?_, hJ2, fun i hi => ?_, ?_, ?_⟩
+  refine ⟨N, _, _, fun i hi => ⟨ht0 i hi, ht0' i hi⟩, fun i hi => ?_, hJ2, fun i hi => ?_, ?_, ?_,
+    ⟨_, _, _, _, _, _, _, _, rfl, hvb, hi⟩, ⟨_, _, _, _, _, _, _, _, rfl, hvb2, hi2⟩⟩
   · rw [hs, hs']; exact htN i hi
   · rw [Nat.add_assoc, hs, hs', iterN_add, iterN_add]
     exact ⟨ht3 i hi, ht3' i hi⟩
@@ -430,7 +438,8 @@ theorem RL.twoRunPRT {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAsm} {fb : 
       Arm.r .PC (iterN ({ R with X := XI.at 0 } : RL).step
         ((prologueLines R.af.frameSize).length + N + R.retLen) R.s0) = ra ∧
       Arm.r .PC (iterN ({ R with s0 := t0, G := G', X := XI'.at 0 } : RL).step
-        ((prologueLines R.af.frameSize).length + N + R.retLen) t0) = ra' := by
+        ((prologueLines R.af.frameSize).length + N + R.retLen) t0) = ra' ∧
+      R.RetsAt e ∧ R.RetsAt e' := by
   subst hR
   obtain ⟨-, -, -, -, hk⟩ := emitFunc_ok hemit
   subst hk

@@ -360,7 +360,8 @@ theorem backend_twoRunLE (hsub : InSubset p f) (hc : Compiled f k vc vcp rf af f
       Arm.r .PC (iterN ({ R with X := XI.at 0 } : RL).step
         ((prologueLines R.af.frameSize).length + N + R.retLen) R.s0) = ra ∧
       Arm.r .PC (iterN ({ R with s0 := t0, G := G', X := XI.at 0 } : RL).step
-        ((prologueLines R.af.frameSize).length + N + R.retLen) t0) = ra' := by
+        ((prologueLines R.af.frameSize).length + N + R.retLen) t0) = ra' ∧
+      R.RetsAt e ∧ R.RetsAt e' := by
 
   have hpro : StEqOutX
       (R.Zc (MConf.init R.rf (locVal R.fr (iterN ({ R with X := XI.at 0 } : RL).step

@@ -121,7 +121,8 @@ theorem backend_twoRunLF (hsub : InSubset p f) (hc : Compiled f k vc vcp rf af f
       Arm.r .PC (iterN ({ R with X := XI.at 0 } : RL).step
         ((prologueLines R.af.frameSize).length + N + R.retLen) R.s0) = ra ∧
       Arm.r .PC (iterN ({ R with s0 := t0, G := G', X := XI.at 0 } : RL).step
-        ((prologueLines R.af.frameSize).length + N + R.retLen) t0) = ra' :=
+        ((prologueLines R.af.frameSize).length + N + R.retLen) t0) = ra' ∧
+      R.RetsAt e ∧ R.RetsAt e' :=
   backend_twoRunL hsub hc hone htc hX hNI hTls hsym hslot ρ₀ hce hrel hrel' hargs hsw hreg hstk htr
     fuel hlm hpsF he he' hR hcov hx30 (fun _ _ _ _ _ _ hin hat hx ht => RL.InSeg.exempt hin hat hx ht)
     hcall
@@ -208,7 +209,8 @@ theorem backend_twoRunLEF (hsub : InSubset p f) (hc : Compiled f k vc vcp rf af 
       Arm.r .PC (iterN ({ R with X := XI.at 0 } : RL).step
         ((prologueLines R.af.frameSize).length + N + R.retLen) R.s0) = ra ∧
       Arm.r .PC (iterN ({ R with s0 := t0, G := G', X := XI.at 0 } : RL).step
-        ((prologueLines R.af.frameSize).length + N + R.retLen) t0) = ra' :=
+        ((prologueLines R.af.frameSize).length + N + R.retLen) t0) = ra' ∧
+      R.RetsAt e ∧ R.RetsAt e' :=
   backend_twoRunLE hsub hc hone htc hX hNI hTls hsym hslot ρ₀ hce hrel hrel' hargs hsw hreg hstk htr
     fuel hlm hpsF he he' hR hcov hx30 (fun _ _ _ _ _ _ hin hat hx ht => RL.InSeg.exempt hin hat hx ht)
     hcall

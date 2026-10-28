@@ -411,7 +411,8 @@ theorem backend_twoRunL (hsub : InSubset p f) (hc : Compiled f k vc vcp rf af fa
       Arm.r .PC (iterN ({ R with X := XI.at 0 } : RL).step
         ((prologueLines R.af.frameSize).length + N + R.retLen) R.s0) = ra ∧
       Arm.r .PC (iterN ({ R with s0 := t0, G := G', X := XI.at 0 } : RL).step
-        ((prologueLines R.af.frameSize).length + N + R.retLen) t0) = ra' := by
+        ((prologueLines R.af.frameSize).length + N + R.retLen) t0) = ra' ∧
+      R.RetsAt e ∧ R.RetsAt e' := by
   intro vals cm hrun
   have hRF : R.F = F := by subst hR; exact he.hF
   have hRF' : ({ R with s0 := t0, G := G' } : RL).F = F := by subst hR; exact he'.hF
@@ -468,8 +469,8 @@ theorem backend_twoRunL (hsub : InSubset p f) (hc : Compiled f k vc vcp rf af fa
       exact ⟨fun n d h => mstep_okDiff_fst hck hm hm' hp hRF h,
         fun n d h => mstep_okDiff_snd hck hm hm' hp hRF' h⟩)
     hpro vals cm hrun
-  obtain ⟨N, e, e', h1, h2, h3, h4, h5, h6⟩ := key
-  exact ⟨N, e, e', h1, fun i hi => let ⟨c, c', _, h⟩ := h2 i hi; ⟨c, c', h⟩, h3, h4, h5, h6⟩
+  obtain ⟨N, e, e', h1, h2, h3, h4, h5, h6, h7⟩ := key
+  exact ⟨N, e, e', h1, fun i hi => let ⟨c, c', _, h⟩ := h2 i hi; ⟨c, c', h⟩, h3, h4, h5, h6, h7⟩
 
 end
 
