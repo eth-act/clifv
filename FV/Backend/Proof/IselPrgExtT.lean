@@ -56,10 +56,8 @@ def rangeTest (lo hi : Option Int) (L H : Int) : Option (List (List PA) × Bool)
     else mayOne [.int (some (max l L)) (some (min h H))]
   | _, _ => mayOne [range L H]
 
-/-- **Abstract extern extractors over a float-capable context** (`externExtract`), with the
-outputs `defOuts` of `def_inst` (the kinds of instruction that may define a value; S11f: the
-typed movement scope's `defOutsT`, the float scope's `defOutsTF`). -/
-def aextG (defOuts : List (List PA)) (id : TermId) (a : PA) : Option (List (List PA) × Bool) :=
+/-- **Abstract extern extractors over the typed scope** (`externExtract`). -/
+def aextT (id : TermId) (a : PA) : Option (List (List PA) × Bool) :=
   match tyPred id with
   | some pr =>
     match a with
@@ -72,7 +70,7 @@ def aextG (defOuts : List (List PA)) (id : TermId) (a : PA) : Option (List (List
   if a.isBot then noMatch else
   match id, a with
   | TId.offset32, .int lo hi => okOne [.int lo hi]
-  | TId.def_inst, .val _ => some (defOuts, false)
+  | TId.def_inst, .val _ => some (defOutsT, false)
   | TId.value_type, .val ts => okOne [.ty ts]
   | TId.inst_data_value, .inst t d => okOne [t, d]
   | TId.first_result, .inst _ _ => mayOne [aVM]
@@ -147,10 +145,6 @@ def aextG (defOuts : List (List PA)) (id : TermId) (a : PA) : Option (List (List
   | TId.u32_from_u64, .int lo hi => rangeTest lo hi 0 (2 ^ 32 - 1)
   | TId.u64_low32_bits_unset, a => intTest a (fun i => u64 i % 2 ^ 32 == 0) [a]
   | _, _ => none
-
-/-- **Abstract extern extractors over the typed scope** (`externExtract`): `aextG` with the
-typed movement scope's defining instructions `defOutsT`. -/
-def aextT (id : TermId) (a : PA) : Option (List (List PA) × Bool) := aextG defOutsT id a
 
 /-! ## `MInst.ofV` on the float instructions -/
 
@@ -247,47 +241,5 @@ def actorT (id : TermId) (as : List PA) : Option (PA × Bool) :=
   | TId.asimd_fp_mod_imm_from_u64, [x, s] =>
     if isInt x && sSize s then cMay (.op .fpModImm none) else none
   | _, _ => actor id as
-
-/-! ## The float scope (S11f, #35) -/
-
-/-- A float value: `f32` or `f64`. -/
-def aVF : PA := .val [.float 32, .float 64]
-
-/-- The `fcmp` conditions `instData` admits (`Backend.fccOk`): every `FloatCC` but `one` (7) and
-`ueq` (9). -/
-def fccIdxs : List Nat := [0, 1, 2, 3, 4, 5, 6, 8, 10, 11, 12, 13]
-
-/-- The data of a two-operand float arithmetic instruction. -/
-def fDataBin : PA := idat VIdx.InstructionData.Binary [aOps [VIdx.Opcode.Fadd, VIdx.Opcode.Fsub,
-  VIdx.Opcode.Fmul, VIdx.Opcode.Fdiv, VIdx.Opcode.Fmin, VIdx.Opcode.Fmax], .vals [aVM, aVM]]
-
-/-- The data of a one-operand float arithmetic or rounding instruction. -/
-def fDataUn : PA := idat VIdx.InstructionData.Unary [aOps [VIdx.Opcode.Sqrt, VIdx.Opcode.Fneg,
-  VIdx.Opcode.Fabs, VIdx.Opcode.Ceil, VIdx.Opcode.Floor, VIdx.Opcode.Trunc, VIdx.Opcode.Nearest,
-  VIdx.Opcode.Fpromote, VIdx.Opcode.Fdemote], aVM]
-
-/-- The data of a conversion from an integer. -/
-def fDataFrom : PA :=
-  idat VIdx.InstructionData.Unary [aOps [VIdx.Opcode.FcvtFromUint, VIdx.Opcode.FcvtFromSint], aV]
-
-/-- The data of a saturating conversion of a float. -/
-def fDataTo : PA :=
-  idat VIdx.InstructionData.Unary [aOps [VIdx.Opcode.FcvtToUintSat, VIdx.Opcode.FcvtToSintSat], aVF]
-
-/-- The data of an `fcmp`. -/
-def fDataCmp : PA := idat VIdx.InstructionData.FloatCompare [opc VIdx.Opcode.Fcmp, .vals [aVF, aVF],
-  enumAlts TyId.FloatCC fccIdxs]
-
-/-- **The `InstructionData` of the float scope's instructions with results outside E**:
-`fDataT` and the S11f float operations (`Compile.instETF`): the two-operand arithmetic, the
-one-operand arithmetic and rounding, the conversions from an integer, the saturating conversions
-of a float, and `fcmp`. -/
-def fDataTF : List PA := fDataT ++ [fDataBin, fDataUn, fDataFrom, fDataTo, fDataCmp]
-
-/-- The outputs of `def_inst` on a value of the float scope (`defOutsT` with `fDataTF`). -/
-def defOutsTF : List (List PA) := (.idata :: fDataTF).map fun d => [.inst (.ty mCTys) d]
-
-/-- **Abstract extern extractors over the float scope**: `aextG` with `defOutsTF`. -/
-def aextTF (id : TermId) (a : PA) : Option (List (List PA) × Bool) := aextG defOutsTF id a
 
 end Backend.Proof.Prg

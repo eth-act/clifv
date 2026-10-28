@@ -1,18 +1,19 @@
 import FV.Backend.Proof.IselPrgRootT
-import FV.Backend.Proof.IselFloatCmpEmit
+import FV.Backend.Proof.IselPrgExtTF
 
 /-!
 # Progress of the ISLE lowering over the float scope: the roots (S11f, #35)
 
 The V7 progress analysis over the float scope (`Compile.functionETF`: the typed movement scope
-with the S11f float operations of `Compile.instETF`). The transfer functions are `IselPrgExtT`'s
-`aextTF` (`def_inst` may also find a float operation, `fDataTF`) and `actorT`.
+with the S11f float operations of `Compile.instETF`). The transfer functions are
+`IselPrgExtTF`'s `aextTF` (`def_inst` may also find a float operation, `fDataTF`) and `actorT`.
 
 `formOfTF` is the root form of a statement: `formOfT` on the typed movement scope; for a float
 operation its `InstructionData` with the opcode (`fOpcIdx`), the operands as values of the typed
 scope (`aVM`), of E (`aV`: the integer operand of an `fcvt_from_*`) or floats (`aVF`: the
 operands of an `fcmp` and of a saturating `fcvt_to_*_sat`, whose `lower` roots match on the operand
-type), and an `fcmp`'s condition as its `FloatCC` variant. `stmtFormsTF` lists every form.
+type), and an `fcmp`'s condition as its `FloatCC` variant (`fccIdxF`). `stmtFormsTF` lists every
+form.
 -/
 
 namespace Backend.Proof.Prg
@@ -46,10 +47,15 @@ def fFormBin (op : Clif.FOp) (ty : Clif.Ty) : PA :=
 def fFormUn (op : Clif.FOp) (ty : Clif.Ty) : PA :=
   .inst (tyOf ty) (idat VIdx.InstructionData.Unary [opc (fOpcIdx op), fArgOf op])
 
+/-- The variant index of a `FloatCC` (`mkVariant TyId.FloatCC (floatccName cc)`). -/
+def fccIdxF : Clif.FloatCC → Nat
+  | .eq => 0 | .gt => 1 | .ge => 2 | .lt => 3 | .le => 4 | .ne => 5 | .ord => 6 | .one => 7
+  | .uno => 8 | .ueq => 9 | .ugt => 10 | .uge => 11 | .ult => 12 | .ule => 13
+
 /-- The form of an `fcmp` (its result an `i8`). -/
 def fFormCmp (cc : Clif.FloatCC) : PA :=
   .inst (.ty [.int 8]) (idat VIdx.InstructionData.FloatCompare
-    [opc VIdx.Opcode.Fcmp, .vals [aVF, aVF], .data TyId.FloatCC (fccIdx cc) []])
+    [opc VIdx.Opcode.Fcmp, .vals [aVF, aVF], .data TyId.FloatCC (fccIdxF cc) []])
 
 /-- **The root form of a statement of the float scope**: `formOfT`, or the form of a float
 operation. -/

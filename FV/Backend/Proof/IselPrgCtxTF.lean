@@ -46,8 +46,7 @@ theorem pinv_buildTF (hdom : dominatedB f = true) (hs : LowerScopeTF f)
     have h := hbl B hB
     simp only [Bool.and_eq_true, List.all_eq_true] at h
     exact h.1.2 s hs
-  refine { toPInvTB := ⟨hctx, hclif, hX, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩,
-    instETF := hF, intOpsFOf := ?_, floatOpsOf := ?_ }
+  refine PInvTF.mk ⟨hctx, hclif, hX, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ hF ?_ ?_
   -- intArgsOf
   · intro c hc x hx
     obtain ⟨j, info, hi, hcl⟩ := hinst c hc
@@ -134,9 +133,9 @@ theorem pinvTF_of_insts (hP : PInvTF f ctx) {ctx' : Ctx} (hinv : CtxInvT f ctx')
     PInvTF f ctx' := by
   have hty : ∀ x, ctx'.valueType? x = ctx.valueType? x := fun x => by
     simp only [Ctx.valueType?, hvt]
-  exact { toPInvTB := pinvTB_of_insts hP.toPInvTB hinv hvt hso hins, instETF := hP.instETF,
-    intOpsFOf := fun c hc x hx t ht => hP.intOpsFOf c hc x hx t (by rw [← hty]; exact ht),
-    floatOpsOf := fun c hc x hx t ht => hP.floatOpsOf c hc x hx t (by rw [← hty]; exact ht) }
+  exact PInvTF.mk (pinvTB_of_insts hP.toPInvTB hinv hvt hso hins) hP.instETF
+    (fun c hc x hx t ht => hP.intOpsFOf c hc x hx t (by rw [← hty]; exact ht))
+    (fun c hc x hx t ht => hP.floatOpsOf c hc x hx t (by rw [← hty]; exact ht))
 
 /-- **`PInvTF` of a terminator's context** (`termCtx`). -/
 theorem pinv_termCtxTF (hP : PInvTF f ctx) {ti : Nat}

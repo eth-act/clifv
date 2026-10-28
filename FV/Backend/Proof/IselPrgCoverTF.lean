@@ -65,6 +65,12 @@ theorem formOfTF_of_instET {f : Clif.Function} {c : Clif.Inst} (h : Compile.inst
 theorem fTys_of_isFloat {ty : Clif.Ty} (h : ty.isFloat = true) : ty ∈ fTys := by
   cases ty <;> simp_all [fTys, Clif.Ty.isFloat]
 
+set_option maxRecDepth 100000 in
+/-- The `FloatCC` value of an `fcmp`'s condition is variant `fccIdxF`. -/
+theorem mkVariant_floatccF (cc : Clif.FloatCC) :
+    mkVariant TyId.FloatCC (floatccName cc) = .data TyId.FloatCC (fccIdxF cc) [] := by
+  cases cc <;> rfl
+
 /-! ## Statement roots over the float scope -/
 
 set_option maxHeartbeats 4000000 in
@@ -162,7 +168,7 @@ theorem stmt_rootTF {f : Clif.Function} {ctx : Ctx} (hP : PInvTF f ctx) {ii : Na
                   refine γ_instDataV rfl (γL_cons' (γ_opcodeV rfl) (γL_cons'
                     (γ_vals (γL_cons' (hFl x (by simp [Compile.floatOperands]))
                       (γL_cons' (hFl y (by simp [Compile.floatOperands])) γL_nil'))) (γL_cons' ?_ γL_nil')))
-                  rw [mkVariant_floatcc]
+                  rw [mkVariant_floatccF]
                   exact ⟨[], rfl, trivial⟩)
            · simp [throw, throwThe, MonadExceptOf.throw] at hd)
     · simp [instData, throw, throwThe, MonadExceptOf.throw] at hd
