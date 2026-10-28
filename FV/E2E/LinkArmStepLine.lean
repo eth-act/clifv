@@ -70,7 +70,7 @@ theorem stEqOutX_line_free {X : ExtSem} {H : ArmHooks} {fa : FnAsm} {fb : FnBin}
     {lm : Std.HashMap Lbl Nat} {base : BitVec 64} {Z : BitVec 64 → Prop} {s t : ArmState}
     {x : Insn} (ht : OnLine fa fb lm base t x) (hc : fa.x30Free lm = true)
     (hx : x.x30Exempt = false) (h : StEqOutX Z s t) (hZ : E2E.ReadsAvoid Z (stepiEvs t))
-    (htls : ∀ n r', StEqOutX Z (H.tls n r' s) (H.tls n r' t)) :
+    (htls : ∀ n r', (∃ a b c, x = .ldrTlsDescLo12 a b c) → StEqOutX Z (H.tls n r' s) (H.tls n r' t)) :
     StEqOutX Z (ArmStepX X H fa s) (ArmStepX X H fa t) := by
   obtain ⟨j, tc, hj, hpc⟩ := ht.line
   have h30 := decX30Free_of_line ht.layout ht.lm ht.fit hc ht.prog hj hx hpc
@@ -79,7 +79,7 @@ theorem stEqOutX_line_free {X : ExtSem} {H : ArmHooks} {fa : FnAsm} {fb : FnBin}
   simp only [ArmStepX, hpb, hpc', ht.insnAt_eq]
   split
   all_goals first
-    | exact htls _ _
+    | (rename_i hh; exact htls _ _ ⟨_, _, _, Option.some.inj hh⟩)
     | exact stEqOutX_w (stEqOutX_w h _ _) _ _
     | exact stEqOutX_w h _ _
     | exact stEqOutX_stepi h hZ h30
@@ -150,6 +150,36 @@ theorem retAgree_line_ret {X : ExtSem} {H : ArmHooks} {fa : FnAsm} {fb : FnBin}
     (fun u hu => by simp only [ArmStepX, hu]) (fun _ => rfl)
   rw [hs, ht']
   exact stEqOutX_ret h
+
+/-- The lock-step set after the step at line `x` from `t`: the prologue's record store adds the
+record's saved-LR bytes. -/
+def zNext (Z : BitVec 64 → Prop) (x : Insn) (t : ArmState) : BitVec 64 → Prop :=
+  fun a => Z a ∨ (x = .stp .fp .lr (.spPreIndexed (-16)) ∧ HiBytes (stpAddr 0x7e t) 8 16 a)
+
+/-- **One step of the lock-step at any instruction line but `ret` and the TLS tail.** The
+obligations per line kind: a checked line reads nothing in `Z`; the epilogue's `ldp` reloads
+`fp` from outside `Z`; a call / TLS hook keeps `StEqOutX Z`. -/
+theorem stEqOutX_line {X : ExtSem} {H : ArmHooks} {fa : FnAsm} {fb : FnBin}
+    {lm : Std.HashMap Lbl Nat} {base : BitVec 64} {Z : BitVec 64 → Prop} {s t : ArmState}
+    {x : Insn} (ht : OnLine fa fb lm base t x) (hc : fa.x30Free lm = true)
+    (htail : x.tlsTail = false) (hret : x ≠ .ret) (h : StEqOutX Z s t)
+    (hZ : x.x30Exempt = false → E2E.ReadsAvoid Z (stepiEvs t))
+    (hlo : x = .ldp .fp .lr (.spPostIndexed 16) →
+      ∀ k < 8, ¬ Z (read_gpr 64 31 t + BitVec.ofNat 64 k))
+    (hcall : ((∃ n, x = .bl n) ∨ ∃ r', x = .blr r') → ∀ d, StEqOutX Z (H.call d s) (H.call d t))
+    (htls : ∀ n r', (∃ a b c, x = .ldrTlsDescLo12 a b c) → StEqOutX Z (H.tls n r' s) (H.tls n r' t)) :
+    StEqOutX (zNext Z x t) (ArmStepX X H fa s) (ArmStepX X H fa t) := by
+  have hmono : ∀ a, Z a → zNext Z x t a := fun _ ha => .inl ha
+  cases hE : x.x30Exempt with
+  | false => exact (stEqOutX_line_free ht hc hE h (hZ hE) htls).mono hmono
+  | true =>
+    rcases x30Exempt_cases hE with ⟨n, rfl⟩ | ⟨r', rfl⟩ | ⟨r', n, rfl⟩ | rfl | rfl | rfl
+    · exact stEqOutX_line_call ht (.inl ⟨n, rfl⟩) h fun d => (hcall (.inl ⟨n, rfl⟩) d).mono hmono
+    · exact stEqOutX_line_call ht (.inr ⟨r', rfl⟩) h fun d => (hcall (.inr ⟨r', rfl⟩) d).mono hmono
+    · simp [Insn.tlsTail] at htail
+    · exact absurd rfl hret
+    · exact (stEqOutX_line_stpFR ht h).mono fun a ha => ha.elim .inl fun hb => .inr ⟨rfl, hb⟩
+    · exact (stEqOutX_line_ldpFR ht h (hlo rfl)).mono hmono
 
 theorem runX_succ_app (f : ArmState → ArmState) (k : Nat) (s : ArmState) :
     runX f (k + 1) s = f (runX f k s) := by

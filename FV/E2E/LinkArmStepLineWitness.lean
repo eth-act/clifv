@@ -66,7 +66,15 @@ theorem add_line :
     StEqOutX (fun _ => False)
       (ArmStepX X Hid faW (GprFoot.setGpr 30#5 v (tAt 1))) (ArmStepX X Hid faW (tAt 1)) :=
   stEqOutX_line_free (onLine 1 _ rfl (by decide)) faW_x30Free (by decide)
-    (stEqOutX_setGpr30 v _) (fun _ _ _ _ _ h => h) (fun _ _ => stEqOutX_setGpr30 v _)
+    (stEqOutX_setGpr30 v _) (fun _ _ _ _ _ h => h) (fun _ _ _ => stEqOutX_setGpr30 v _)
+
+/-- The combined step at the prologue line (`stEqOutX_line`). -/
+theorem stp_line_any :
+    StEqOutX (zNext (fun _ => False) (.stp .fp .lr (.spPreIndexed (-16))) (tAt 0))
+      (ArmStepX X Hid faW (GprFoot.setGpr 30#5 v (tAt 0))) (ArmStepX X Hid faW (tAt 0)) :=
+  stEqOutX_line (onLine 0 _ rfl (by decide)) faW_x30Free (by decide) (by decide)
+    (stEqOutX_setGpr30 v _) (fun _ _ _ _ _ _ h => h) (fun _ _ _ h => h)
+    (fun _ _ => stEqOutX_setGpr30 v _) (fun _ _ _ => stEqOutX_setGpr30 v _)
 
 theorem ldp_line :
     StEqOutX (fun _ => False)

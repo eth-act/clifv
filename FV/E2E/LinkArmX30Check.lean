@@ -25,7 +25,8 @@ open Backend Backend.Proof
 /-- The lines that may name `x30`: the calls, `ret` and the frame-record pair. -/
 def _root_.Backend.Insn.x30Exempt : Insn → Bool
   | .bl _ | .blr _ | .blrTlsDesc _ _ | .ret => true
-  | i => i == .stp .fp .lr (.spPreIndexed (-16)) || i == .ldp .fp .lr (.spPostIndexed 16)
+  | i => decide (i = .stp .fp .lr (.spPreIndexed (-16))) ||
+      decide (i = .ldp .fp .lr (.spPostIndexed 16))
 
 /-- One line's check: exempt, or its instruction names no `x30`. -/
 def _root_.Backend.Insn.x30Ok (env : Env) (i : Insn) : Bool :=
@@ -108,5 +109,18 @@ theorem decX30Free_of_line {fa : FnAsm} {fb : FnBin} {lm : Std.HashMap Lbl Nat}
   intro y hy hy30
   have := List.all_eq_true.mp hok y hy
   simp [hy30] at this
+
+/-- **The exempt lines.** -/
+theorem x30Exempt_cases {x : Insn} (h : x.x30Exempt = true) :
+    (∃ n, x = .bl n) ∨ (∃ r, x = .blr r) ∨ (∃ r n, x = .blrTlsDesc r n) ∨ x = .ret ∨
+      x = .stp .fp .lr (.spPreIndexed (-16)) ∨ x = .ldp .fp .lr (.spPostIndexed 16) := by
+  unfold Insn.x30Exempt at h
+  split at h
+  · exact .inl ⟨_, rfl⟩
+  · exact .inr (.inl ⟨_, rfl⟩)
+  · exact .inr (.inr (.inl ⟨_, _, rfl⟩))
+  · exact .inr (.inr (.inr (.inl rfl)))
+  · simp only [Bool.or_eq_true, decide_eq_true_eq] at h
+    exact .inr (.inr (.inr (.inr h)))
 
 end E2E

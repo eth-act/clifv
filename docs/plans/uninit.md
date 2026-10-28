@@ -791,7 +791,9 @@ index up to the return, nested program calls by `ih : ThmPDER κ (M-1)`, base ho
 - `FV/E2E/LinkArmStepLine.lean`: `OnLine` (the canonical state at an instruction line of the
   laid-out function), the lock-step per line kind on `ArmStepX`: `stEqOutX_line_free` (checked
   lines; reads avoid `Z`), `stEqOutX_line_call`, `stEqOutX_line_stpFR` (the record's LR bytes join
-  `Z`), `stEqOutX_line_ldpFR`, `retAgree_line_ret`; **`lockstep_runX`** (the run induction from
+  `Z`), `stEqOutX_line_ldpFR`, `retAgree_line_ret`, combined **`stEqOutX_line`** (any line but
+  `ret`/the TLS tail, to `zNext Z x t`; obligations: a checked line reads nothing in `Z`, the
+  `ldp` reloads `fp` from outside `Z`, hooks keep `StEqOutX Z`); **`lockstep_runX`** (the run induction from
   per-index steps). Witnesses `LinkArmStepLineWitness.lean` (a laid-out
   `stp; add; ldp; ret`, each line stepped from two states differing in `x30`).
 
