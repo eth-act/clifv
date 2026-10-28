@@ -61,7 +61,7 @@ private theorem rets_mstepVW {R : RL} {b k : Nat} {a : Array Loc} {its : List RI
     rw [hvb] at hvb'; cases hvb'
     rw [hi] at hi'; cases hi'
     exact rets_mstep hvb hi (MStep.op hvb hi hop hsz
-      (by simpa [RL.valueSem, valueSemV, RL.sem, pureForm] using hs) hl hho hcl hn)
+      (by simpa [RL.valueSem, valueSemV, RL.sem, specForm, pureForm, cmpForm] using hs) hl hho hcl hn)
 
 /-- `realizes_value_all` with the writes (`RL.GoodXW`). -/
 theorem realizes_value_allW {R : RL} (hR : R.Wf)
