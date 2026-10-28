@@ -856,8 +856,35 @@ and `lowerChecked_specTC` take the premise that `f` is in the scopes they name. 
 `FVTest/E2E/FloatArithFinalTCF.lean` (`fOps`: `fcvt_from_sint`, `fmul`, `fadd`, `sqrt`,
 `floor`, `fpromote`, `nearest`, `fdemote`, `fcvt_to_{s,u}int_sat`; outside `functionETC`,
 rejected by `lowerCheckTC`, accepted by `lowerCheckTCF`, `backend_correct_finalTCF_fOps`,
-`verdict_f`). Generated code unchanged. Open: the link-level chain (`InScopeIn`,
-`fnScopeInTB3`, `lowerFunction_ok_inputT`, `compileExeT3`), which keeps `functionET`.
+`verdict_f`). Generated code unchanged. Open: the input-scope chain (`InScopeIn`,
+`fnScopeInTB3`, `lowerFunction_ok_inputT`, `compileExeT3`), which keeps `functionET`; the
+shipped compiler's third branch covers the scope (next paragraph).
+
+**S11f link: `compileExeT`'s third branch admits the float operations.** The link-level chain
+with typed `try_call`s (S11e6) is widened from `functionETC`/`lowerCheckTC` to
+`functionETCF`/`lowerCheckTCF`, so `Link.DeadCleanup.compileExeT` (the shipped executable
+compiler) accepts functions with the S11f float arithmetic, rounding, conversions and scalar
+`fcmp` under the unchanged `compileExeT_correct`. Compiler change (scope check only, generated
+code unchanged): `staticChksWithT`'s lowering check (`okBCleanupT`/`okBCleanupTFast`) is
+`(functionET ∧ lowerCheckT) ∨ (functionETCF ∧ lowerCheckTCF)` (was `functionETC ∧
+lowerCheckTC`, which it contains), and `lean-link --verified`'s admission `fnScopeInTCB`/
+`lowersTCB`/`fnScopeInFailsTC` use `functionETCF`/`lowerCheckTCF`. Proofs: the pinned dispatcher
+`lowerInstOkP_of_rulesTF`/`lowerInstOkP_runTermTF` (`LowerContractTPF`); the `TCF` forms of the
+link theorems over `InSubsetTCF` and `CompiledTCF`/`CompiledCleanupTCF`/`CompiledEitherTCF`
+(`LinkWorldTC`: `driverHypTCF_relW[_of]`, `iselSim_relWTCF`, `backend_correct_worldTCF`;
+`PairDriverTC`: `instCalls_pairTCF`, `vcode_niTCF`, `backend_correct_world_niTCF`;
+`DeadCleanupPairTC`: `driverHypTCF_relW_value`, `iselSim_relW_cleanupTCF`,
+`backend_correct_world_cleanupTCF`, `instCalls_pair_valueTCF`, `vcode_ni_valueTCF`,
+`backend_correct_world_ni_valueTCF`; `CompiledEitherTC`: the `X`/`niX`/cleanup forms and the four
+`…_pipelineTCF`; `CompiledAnyT`: the four `…_pipelineAnyTF`), the `TC` theorems kept as their
+corollaries (`InSubsetTC.toTCF`, `CompiledTC.toTCF`, `CompiledCleanupTC.toTCF`,
+`CompiledEitherTC.toTCF`), statements unchanged. Widened in place (statements unchanged, meaning
+stronger): `CompiledAnyT`'s right disjunct is `CompiledEitherTCF`, `LinkSys.OkT.subset` is
+`InSubsetTCF`, `FactsWithT.lowerOk` and `okRWith_soundT` follow the check. Witness:
+`FVTest/Link/FloatArithCompileExeT.lean` (`%fa`: `fadd`, `fmul`, `fcmp lt` under `uextend.i32`;
+outside `functionETC`, rejected by `lowerCheckTC`, accepted by `lowerCheckTCF`, admitted by
+`fnScopeInTCB`; `compileExeT` succeeds through its third branch, `correct_spec`; the `TCF` world
+theorems instantiated on its `CompiledTCF`/`CompiledCleanupTCF` artifacts).
 
 **S11f scope: scalar `fcmp` verified.** `instETF` also admits `fCmpET` (`fcmp` of two
 `f32`/`f64` operands at a condition of `fccOk`, i.e. not `one`/`ueq`; `i8` result; the operands
