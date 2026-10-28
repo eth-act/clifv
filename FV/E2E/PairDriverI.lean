@@ -1,5 +1,6 @@
 import FV.E2E.IselSimIG
 import FV.E2E.PairDriver
+import FV.E2E.PairEntry
 
 /-!
 # Non-interference of the counted VCode run (SEM1 #537, item (3))
@@ -8,9 +9,9 @@ import FV.E2E.PairDriver
 the counted paired semantics `ISem.counted fun n => pairSem (csem F ctx (XI.at n))` (both worlds,
 one call counter), with the callee contracts and their non-interference needed only for the
 actual `n`-th call of the run (as `iselSim_relWI`). Two body-entry worlds related to the same CLIF
-entry, agreeing outside `F ∪ D` with the same arguments, run the entry code to the same vreg file
-at the same index (counter `0`), and from there one paired counted VCode run returns, with final
-worlds that agree outside `F ∪ D`.
+entry, agreeing outside `F ∪ D` with the same arguments, give one paired counted VCode run from
+the paired initial configuration (the entry code paired by `entry_step2P`) that returns, with
+final worlds that agree outside `F ∪ D`.
 
 * `ncIndep_pair`, `noCallProj_pair`, `xNI_noCall`;
 * **`vcode_niI`**.
@@ -85,13 +86,9 @@ theorem vcode_niI (hsub : InSubset p f) (hc : Compiled f k vc vcp rf af fa fb)
         w₀.mem (Arm.r (.GPR 29#5) w₀ + BitVec.ofInt 64 (16 + (off : Int)) + BitVec.ofNat 64 k))
     (htr : TrapsExplicit env p cs) (fuel : Nat) :
     ∀ vals cm, Clif.runLoop env p fuel cs = .returned vals cm →
-      ∃ kk ρ₁ w₁ w₁' us outs w,
-        Star (VStep vc (csemI F ⟨fa.k, af.slotBase⟩ XI)) (.run ⟨0, 0, ρ₀, (w₀, 0)⟩)
-          (.run ⟨0, kk, ρ₁, (w₁, 0)⟩) ∧
-        Star (VStep vc (csemI F ⟨fa.k, af.slotBase⟩ XI)) (.run ⟨0, 0, ρ₀, (w₀', 0)⟩)
-          (.run ⟨0, kk, ρ₁, (w₁', 0)⟩) ∧
+      ∃ us outs w,
         VRetFrom vc (ISem.counted fun n => pairSem (csem F ⟨fa.k, af.slotBase⟩ (XI.at n)))
-          ⟨0, kk, ρ₁, ((w₁, w₁'), 0)⟩ us outs w ∧
+          ⟨0, 0, ρ₀, ((w₀, w₀'), 0)⟩ us outs w ∧
         SameWorld (fun b => F b ∨ D b) w.1.1 w.1.2 := by
   intro vals cm hrun
   obtain ⟨ctx, st0, R, gn, bl, A, hshape, hcert, hbr⟩ := loweringObligations_of_check hc.lowerOk
@@ -156,7 +153,7 @@ theorem vcode_niI (hsub : InSubset p f) (hc : Compiled f k vc vcp rf af fa fb)
       fun s callee args et hr hb hT ⟨B, hB, e⟩ =>
         htr.tryIndirect s callee args et hr hb hT ⟨B, hf ▸ hB, e⟩⟩
   have h29 : Arm.r (.GPR 29#5) w₀' = Arm.r (.GPR 29#5) w₀ := (hsw.1 _ (by simp [Masked])).symm
-  obtain ⟨kk, ρ₁, w₁, w₁', hs1, hm1, hsw1, hs2, hm2, hsw2⟩ := entry_step2 (Hb1 0)
+  obtain ⟨kk, ρ₁, w₁, w₁', -, hm1, hsw1, -, hm2, hsw2, hsP⟩ := entry_step2P (Hb1 0)
     (driverSem_csem F ⟨fa.k, af.slotBase⟩ (XI.at 0).noCall)
     (memRefines_csem _ _ (XI.at 0).noCall hslot hsym) (mrStable_relW Γ f c) hB0 hce.callers
     hce.func rfl hbody hterm hregs hty.symm hce.sig (ρ₀ := ρ₀) hrel hrel' hargs hreg h29 hstk
@@ -172,9 +169,8 @@ theorem vcode_niI (hsub : InSubset p f) (hc : Compiled f k vc vcp rf af fa fb)
     .refl hmP
   rw [hrun] at hR
   obtain ⟨us, outs, w, cm0, -, hret, -, -, -, -, hmr, -⟩ := hR
-  have hp := csem_noCall_proj F ⟨fa.k, af.slotBase⟩ XI 0
-  exact ⟨kk, ρ₁, w₁, w₁', us, outs, w, vstar_mapW hp hs1, vstar_mapW hp hs2, hret,
-    SameWorld.mono (zof_sub cm0) hmr.2.2⟩
+  exact ⟨us, outs, w, VRetFrom.prefix (vstar_mapW (noCallProj_pair F ⟨fa.k, af.slotBase⟩ XI 0) hsP)
+    hret, SameWorld.mono (zof_sub cm0) hmr.2.2⟩
 
 end
 
