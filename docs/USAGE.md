@@ -629,7 +629,12 @@ again with `--panic-abort`, `fv-demo`'s `cargo fv build --keep-temps`, then `lin
 per crate into the existing files) in the same PR and commits the result, after building this
 checkout's tools (`lake build lean-backend clif-decode link-check`; `cargo build --release -p
 cargo-fv -p clif-data-export -p lean-regalloc` in `rust/`). `fv-demo` currently proves 557 of its
-558 functions (`_RNxC7fv_demo12Hg2RhPxboVSE` fails `callRegs/blrRegs`, #709).
+558 functions (`_RNxC7fv_demo12Hg2RhPxboVSE` fails `callRegs/blrRegs`, #709). The script also
+writes `Crates/InScopeInputs/{AArith,FvDemo}.lean` (for `Crates.InScopeWitness`) from `a_arith`
+and `fv-demo` built once more with `FV_PIPELINE_T=1` (`lean-backend --pipeline-t`: `pipeT`'s
+pipeline, the D0 lowering without dead cleanup or Stock routes, the compiler
+`crate_correct_inScope` covers; off by default) into `target/pipeline-t`, and `link-check
+--input-only FILE --module NAME`, which writes the crate's `LinkInput` alone.
 
 ## Examples and results
 
