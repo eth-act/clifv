@@ -97,8 +97,9 @@ theorem prepareCorrect_cleanupStage {sem : Sem} {f : Clif.Function} {vc vcp : VC
     (hds : DriverSem sem)
     (hPure : ∀ i us w outs w' ctl, pureForm i = true →
       sem i us w = some (outs, w', ctl) → w' = w ∧ ctl = .next)
+    (hcmp : CmpOverwrite sem)
     (h : prepCheck (cleanupStage f vc) vcp = true) : PrepareCorrect sem (skipStage f vc) vcp :=
-  prepareCorrect_prune hds hPure h
+  prepareCorrect_prune hds hPure hcmp h
 
 /-- **The typed dead-cleanup `backend_correct`** from the typed rule families (`ArmRefinesT`). -/
 theorem backend_correct_of_rules_cleanup_exT {p : Clif.Program} {f : Clif.Function} {k : Nat}
