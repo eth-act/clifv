@@ -24,7 +24,7 @@ variable {α : Type} {m : Type → Type} [Monad m] [MonadTrace m] [MonadLiftT IO
   [MonadAlwaysExcept ε m] [MonadLiftT BaseIO m]
 
 /-- Add a trace node with the `Tactic.sym` trace class -/
-def withTraceNode (msg : MessageData) (k : m α)
+meta def withTraceNode (msg : MessageData) (k : m α)
     (collapsed : Bool := true)
     (tag : String := "")
     : m α := do

@@ -1,6 +1,7 @@
 module
 
 public import FV.Opt.Proof.Dom
+public meta import FV.Opt.Cfg
 
 @[expose] public section
 

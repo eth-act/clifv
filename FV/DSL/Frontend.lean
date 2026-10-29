@@ -2,6 +2,7 @@ module
 
 public import Lean
 public import FV.DSL.Check
+public meta import FV.DSL.Ty
 
 @[expose] public section
 
@@ -41,7 +42,7 @@ abbrev U64 := BitVec 64
 infixl:70 " /? " => DSL.Ops.udiv
 infixl:70 " %? " => DSL.Ops.urem
 
-def Ty.surface : Ty → String
+meta def Ty.surface : Ty → String
   | .int w => s!"BitVec {w.bits}"
   | .bool => "Bool"
   | .unit => "Unit"
@@ -102,10 +103,10 @@ structure Scope where
 
 def Scope.depth (sc : Scope) : Nat := sc.vars.size
 def Scope.push (sc : Scope) (v : LVar) : Scope := { sc with vars := sc.vars.push v }
-def Scope.setMoved (sc : Scope) (lvl : Nat) (b : Bool) : Scope :=
+meta def Scope.setMoved (sc : Scope) (lvl : Nat) (b : Bool) : Scope :=
   { sc with vars := sc.vars.modify lvl fun v => { v with moved := b } }
 
-def Scope.lookup? (sc : Scope) (n : Name) : Option (Nat × LVar) := Id.run do
+meta def Scope.lookup? (sc : Scope) (n : Name) : Option (Nat × LVar) := Id.run do
   let mut i := sc.vars.size
   while i > 0 do
     i := i - 1
@@ -115,11 +116,11 @@ def Scope.lookup? (sc : Scope) (n : Name) : Option (Nat × LVar) := Id.run do
 def Scope.rename (sc : Scope) (lvl : Nat) (n : Name) (isMut : Bool) : Scope :=
   { sc with vars := sc.vars.modify lvl fun v => { v with name := n, isMut } }
 
-def tmpName (lvl : Nat) : Name := Name.mkSimple s!"_t{lvl}"
+meta def tmpName (lvl : Nat) : Name := Name.mkSimple s!"_t{lvl}"
 
 /-! ## Types -/
 
-def widthOf? : Nat → Option IntW
+meta def widthOf? : Nat → Option IntW
   | 8 => some .w8
   | 16 => some .w16
   | 32 => some .w32
@@ -158,7 +159,7 @@ meta partial def parseTy (t : Term) : TermElabM Ty := do
     | _ => throwErrorAt t "flat def: unsupported type `{t}`"
   | _ => throwErrorAt t "flat def: unsupported type `{t}`"
 
-def num (n : Nat) : Term := Syntax.mkNumLit (toString n)
+meta def num (n : Nat) : Term := Syntax.mkNumLit (toString n)
 
 meta def wStx : IntW → TermElabM Term
   | .w8 => `(DSL.IntW.w8)
@@ -258,7 +259,7 @@ meta partial def PE.deep (d : Nat) : PE → TermElabM Term
   | .mapEmpty k v => do `(DSL.Expr.mapEmpty (k := $(← tyDeep k)) (v := $(← tyDeep v)))
   | .mapContains l k => do `(DSL.Expr.mapContains $(← varAt d l) $(← k.deep d))
 
-def nameAt (sc : Scope) (l : Nat) : Ident := mkIdent sc.vars[l]!.name
+meta def nameAt (sc : Scope) (l : Nat) : Ident := mkIdent sc.vars[l]!.name
 
 meta partial def PE.shallow (sc : Scope) : PE → TermElabM Term
   | .var l | .clone l => pure (nameAt sc l)
@@ -299,7 +300,7 @@ meta partial def PE.shallow (sc : Scope) : PE → TermElabM Term
   | .mapEmpty k v => do `((DSL.Map.empty : DSL.Map $(← tyShallow k) $(← tyShallow v)))
   | .mapContains l k => do `((DSL.Map.contains $(nameAt sc l) $(← k.shallow sc)))
 
-def astIdent (fn : Name) : Ident := mkIdent (fn ++ `ast)
+meta def astIdent (fn : Name) : Ident := mkIdent (fn ++ `ast)
 
 meta partial def exprsDeep (d : Nat) : List PE → TermElabM Term
   | [] => `(DSL.Exprs.nil)
@@ -710,7 +711,7 @@ def packPE (sc : Scope) (ns : List Name) : PE :=
   go ns
 
 /-- The binder name for a packed value of `ns`. -/
-def packBinder (lvl : Nat) : List Name → Name
+meta def packBinder (lvl : Nat) : List Name → Name
   | [n] => n
   | _ => tmpName lvl
 

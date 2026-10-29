@@ -2,6 +2,9 @@ module
 
 public import FV.Clif.MemTrap
 public import FV.Clif.Parse
+public meta import FV.Clif.Run
+public meta import FV.Clif.Syntax
+public meta import FV.Clif.Mem
 
 @[expose] public section
 

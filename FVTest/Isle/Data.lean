@@ -1,6 +1,13 @@
 module
 
 public import FV.Isle
+public meta import FV.Isle.Generated.Manifest
+public meta import FV.Isle.Syntax
+public meta import FV.Isle.Generated.Program
+public meta import FV.Isle.Generated.Rules01
+public meta import FV.Isle.Generated.RuleLists00
+public meta import FV.Isle.Generated.Types00
+public meta import FV.Isle.Generated.Ids
 
 @[expose] public section
 

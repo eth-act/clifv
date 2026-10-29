@@ -2,6 +2,10 @@ module
 
 public import FV.Concurrency.ClifThreadI
 public import FV.Clif.Parse
+public meta import FV.Clif.Syntax
+public meta import FV.Clif.Run
+meta import FV.Concurrency.ClifThreadI
+meta import FV.Clif.Parse
 
 @[expose] public section
 

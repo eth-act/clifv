@@ -46,8 +46,12 @@ theorem ctor_tcbc_iff {ctx : Ctx} (st : LState) (ty : CTy) (n : Int) (v : V) (st
     show (match (List.range 64).filter ((u64 n).testBit ·) with
       | [bit] => if bit < ty.bits then _ else _
       | _ => _) = _
-    split
-    · split <;> rfl
+    -- module system: the two sides use different matchers (this module's, the defining
+    -- module's), so `split` on one no longer reduces the other; case on the list instead.
+    generalize (List.range 64).filter ((u64 n).testBit ·) = l
+    rcases l with _ | ⟨b, _ | ⟨c, l⟩⟩
+    · rfl
+    · by_cases h : b < ty.bits <;> simp [h]
     · rfl
   rw [this]
   cases tcbc ty n <;> simp [eq_comm]

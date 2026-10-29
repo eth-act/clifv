@@ -9,6 +9,9 @@ module
 
 public import Lean
 public import FV.Arm.Exec
+public meta import FV.Arm.BitVec
+public meta import FV.Arm.State
+public meta import Lean.Meta.Tactic.Rewrite
 
 @[expose] public section
 
@@ -33,7 +36,7 @@ def optionListtoList (xs : List (Option α)) : List α :=
 
 /- Obtain `Array α` from `Array (Option α)` by discarding any `none`
 elements. -/
-def optionArraytoArray (array : Array (Option α)) : Array α :=
+meta def optionArraytoArray (array : Array (Option α)) : Array α :=
   Array.foldl (fun acc val =>
     match val with
     | none => acc

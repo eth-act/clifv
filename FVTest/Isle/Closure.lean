@@ -1,6 +1,9 @@
 module
 
 public import FV.Isle
+public meta import FV.Isle.Generated.Closure
+public meta import FV.Isle.Syntax
+public meta import FV.Isle.Generated.Program
 
 @[expose] public section
 
