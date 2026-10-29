@@ -284,13 +284,6 @@ def KJL (R : RL) (XI : ExtSemI) (t0 : Arm.ArmState) (G' F : BitVec 64 → Prop)
     MStep R.vc (({ R with s0 := t0, G := G', X := XI.at n } : RL).semGS (OkDiff F c c')) ckeep
       R.rf c' d)
 
-/-- `QW` at a run configuration gives `StRel`. -/
-theorem QW.stRel {R : RL} {s : Arm.ArmState} {j : Nat} {ps1 : PState} {T : List Line}
-    {b : Nat} {its : List RItem} {m : Loc → CV} {w : Arm.ArmState}
-    (h : QW R s j ps1 T (.run ⟨b, its, m, w⟩)) : StRel R s m w := by
-  obtain ⟨_, _, _, _, _, _, -, -, -, -, -, -, -, -, -, hst⟩ := h
-  exact hst
-
 /-- `QWA` at a run configuration gives `StRel` at some store (the machine's in a return tail). -/
 theorem QWA.stRel {R : RL} {s : Arm.ArmState} {j : Nat} {ps1 : PState} {T : List Line}
     {b : Nat} {its : List RItem} {m : Loc → CV} {w : Arm.ArmState}
