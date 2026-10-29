@@ -14,7 +14,8 @@ semantics `XI.at n` answers for (#729): the realisation knows it (`hP : P s` at 
 
 * `RL.SegFrom` (`u` is `i` steps after a segment start satisfying `P`, before the end; the
   segment's machine calls are the step's, and a call state of the segment is its start, so a call
-  hook at `u` is at the start, `i = 0`, where `P` holds: `RL.SegFrom.call`); `RL.segStart_of_qw`;
+  hook at `u` is at the start, `i = 0`, where `P` holds: `RL.SegFrom.call`); `RL.segStart_of_qw`,
+  `RL.segStart_of_qwa` (the same from `QWA`, the alignment of the Cranelift-frame realisation);
 * `RL.jointSegTP`, `RL.realizesJCPTP`, **`RL.twoRunCTP`**, **`RL.twoRunPRTP`**: the same theorems
   with `hstep` also receiving `SegFrom` for the first run (same proofs); their joint trace also
   carries `RL.Good` of both runs' body states (a state after a call has the body's `sp`, what
@@ -48,6 +49,26 @@ theorem RL.segStart_of_qw {R : RL} {s : Arm.ArmState} {j : Nat} {ps1 : PState} {
   rw [hcnt] at h1
   obtain ⟨b, k', allocs, its, m, w, vb, ins, rfl, hvb, hi', hcI⟩ := opCalls_pos (vc := R.vc) h1
   have hcs := RL.callSt_of_q_call hq.q hvb hi' hcI
+  have h2 := countIn_two_le hcs (Nat.pos_of_ne_zero hne) hk hck
+  rw [hcnt] at h2
+  simp [opCalls, hvb, hi', hcI] at h2
+
+/-- **`RL.segStart_of_qw` from `QWA`** (the alignment `realizes_allCWSF` carries since the
+Cranelift frame, #479: `QW ∧ AInv` or a return tail). -/
+theorem RL.segStart_of_qwa {R : RL} {s : Arm.ArmState} {j : Nat} {ps1 : PState} {T : List Line}
+    {c : MConf CV Arm.ArmState} (hq : QWA R s j ps1 T c) {n : Nat}
+    (hcnt : countIn R.CallSt R.step s n = opCalls R.vc c) :
+    ∀ k < n, R.CallSt (iterN R.step k s) → k = 0 := by
+  intro k hk hck
+  refine Classical.byContradiction fun hne => ?_
+  have h1 : 1 ≤ countIn R.CallSt R.step s n := by
+    obtain ⟨n', rfl⟩ : ∃ n', n = k + n' := ⟨n - k, by omega⟩
+    rw [countIn_add]
+    have := countIn_one_le (step := R.step) (s := iterN R.step k s) (n := n') (by omega) hck
+    omega
+  rw [hcnt] at h1
+  obtain ⟨b, k', allocs, its, m, w, vb, ins, rfl, hvb, hi', hcI⟩ := opCalls_pos (vc := R.vc) h1
+  have hcs := RL.callSt_of_q_call (qa_q hq.qa).choose_spec hvb hi' hcI
   have h2 := countIn_two_le hcs (Nat.pos_of_ne_zero hne) hk hck
   rw [hcnt] at h2
   simp [opCalls, hvb, hi', hcI] at h2
@@ -103,7 +124,7 @@ theorem RL.jointSegTP {R R' : RL} (hR : R.Wf) (hR' : R'.Wf) (hsc : R.SameCode R'
   have hd := hsh d d' hm hm'
   obtain ⟨rfl, hL⟩ := RL.seg_lock hsc hc hd hs hs' Lk hLpc h0 fun i hi hi' hl =>
     hstep i _ _ ⟨s, j, ps1, T, d, n, hq, hm, hs, hi, rfl, hf⟩
-      ⟨s, n, hP, rfl, hi, hcnt, RL.segStart_of_qw hq hcnt⟩
+      ⟨s, n, hP, rfl, hi, hcnt, RL.segStart_of_qwa hq hcnt⟩
       ⟨s', j, ps1, T, d', n', hq', hm', hs', hi', rfl, hf'⟩
       (ht i hi) (ht' i hi') hl
   have hW := RL.nextW_shape hsc j ps1 T hc hd

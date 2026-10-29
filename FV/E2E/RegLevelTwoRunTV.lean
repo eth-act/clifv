@@ -62,7 +62,7 @@ theorem RL.jointSegTV {R R' : RL} (hR : R.Wf) (hR' : R'.Wf) (hsc : R.SameCode R'
   have hd := hsh d d' hm hm'
   obtain ⟨rfl, hL⟩ := RL.seg_lock hsc hc hd hs hs' Lk hLpc h0 fun i hi hi' hl =>
     hstep i _ _ ⟨s, j, ps1, T, d₀, n, hq, hm0, hs0, hi, rfl, hf⟩
-      ⟨s, n, hP, rfl, hi, hcnt, RL.segStart_of_qw hq hcnt⟩
+      ⟨s, n, hP, rfl, hi, hcnt, RL.segStart_of_qwa hq hcnt⟩
       ⟨s', j, ps1, T, d₀', n', hq', hm0', hs0', hi', rfl, hf'⟩
       (ht i hi) (ht' i hi') hl
   have hW := RL.nextW_shape hsc j ps1 T hc hd

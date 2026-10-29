@@ -61,8 +61,9 @@ theorem blrLow_Lsl : ∀ g ∈ Lsl.P.funcs, (Lsl.A g).fa.blrLow = true := by
   simp only [Bool.and_eq_true] at h
   exact h.2
 
-/-- `h`'s frame is not just the frame record: its slot region (`NeedNI`'s second disjunct). -/
-theorem fH_frame : (RAFrame.compute (Lsl.A fH).vcp (Lsl.A fH).rf).size ≠ (Lsl.A fH).af.frameSize := by
+/-- `h`'s frame body is not just its spill area: its slot region (`NeedNI`'s second disjunct). -/
+theorem fH_frame : (RAFrame.compute (Lsl.A fH).vcp (Lsl.A fH).rf).size ≠
+    (Lsl.A fH).af.frameSize - clobberBytes (Lsl.A fH).af.saves := by
   native_decide
 
 /-- **The slotted system needs non-interference** (`f` calls `h`, whose frame has a slot). -/

@@ -2839,6 +2839,12 @@ copies of the pair driver and of the P chain, and the `CompiledEither` dispatch:
   functions fail `x30Free`, `blrLow` or `retsLow` on corpus + Cranelift runtests (1,105 functions,
   238 `blr` lines, 1,246 `rets` sites), fv-demo split CLIF (2,122 / 882 / 2,796), survey (1,329 /
   488 / 1,573) and `examples/deps` (30,394 distinct files: 24,809 functions / 23,572 / 33,082).
+- Ported to Cranelift's frame (#743, main d727bbc4; statements change only where their originals
+  did): the `…K` copies by a 3-way merge of the originals' port (`prologueLines saves frameSize`,
+  `epiLines`, `QWA` alignment, `sP_withX`); `RL.segStart_of_qwa` (the `QWA` form of
+  `segStart_of_qw`, used by `jointSegTP`/`jointSegTV`); `LockRet`/`detTabPRBE_of`: the callee's slot
+  region below its clobber area (`frameSize - clobberBytes saves`, as `progCallPRBRLR`);
+  `lockRet_of`'s return index with `saves`; `fH_frame` against `NeedNI`'s new frame body.
 
 ## 6. Heap (separate gap, SEM2)
 

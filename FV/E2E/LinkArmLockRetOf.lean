@@ -230,6 +230,9 @@ theorem lockRet_of (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) (hK : L.Hooks
   obtain ⟨k, hkdef⟩ : ∃ k, k = (prologueLines (Backend.Proof.actRL (L.A g).vcp (L.A g).rf
       (L.A g).af (L.A g).fa (L.A g).fb lm (L.A g).base s₀
       (L.XPBTGY κ M g F (L.BP M g s₀) (L.RP M g s₀) (L.envOfB M g (spv w₀)) cs (spv w₀))
+      (L.hooks M) psF (κ M g) G₀ (GotV (L.A g).vcp)).af.saves (Backend.Proof.actRL (L.A g).vcp
+      (L.A g).rf (L.A g).af (L.A g).fa (L.A g).fb lm (L.A g).base s₀
+      (L.XPBTGY κ M g F (L.BP M g s₀) (L.RP M g s₀) (L.envOfB M g (spv w₀)) cs (spv w₀))
       (L.hooks M) psF (κ M g) G₀ (GotV (L.A g).vcp)).af.frameSize).length + T +
       (Backend.Proof.actRL (L.A g).vcp (L.A g).rf (L.A g).af (L.A g).fa (L.A g).fb lm (L.A g).base
         s₀ (L.XPBTGY κ M g F (L.BP M g s₀) (L.RP M g s₀) (L.envOfB M g (spv w₀)) cs (spv w₀))
