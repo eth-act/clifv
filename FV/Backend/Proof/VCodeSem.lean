@@ -55,41 +55,41 @@ and the world, the values of the def operands (in operand order), the new world 
 control outcome; `none` when the instruction has no defined behaviour. -/
 abbrev ISem (V W : Type) := MInst → List V → W → Option (List V × W × Ctl)
 
-def _root_.Backend.Operand.isUse (o : Operand) : Bool := o.kind == .use
-def _root_.Backend.Operand.isDef (o : Operand) : Bool := o.kind == .def
-def _root_.Backend.Operand.isEarly (o : Operand) : Bool := o.pos == .early
-def _root_.Backend.Operand.isLate (o : Operand) : Bool := o.pos == .late
+@[expose] def _root_.Backend.Operand.isUse (o : Operand) : Bool := o.kind == .use
+@[expose] def _root_.Backend.Operand.isDef (o : Operand) : Bool := o.kind == .def
+@[expose] def _root_.Backend.Operand.isEarly (o : Operand) : Bool := o.pos == .early
+@[expose] def _root_.Backend.Operand.isLate (o : Operand) : Bool := o.pos == .late
 
 /-- Function update. -/
-def upd {α β : Type} [DecidableEq α] (f : α → β) (a : α) (x : β) : α → β :=
+@[expose] def upd {α β : Type} [DecidableEq α] (f : α → β) (a : α) (x : β) : α → β :=
   fun b => if b = a then x else f b
 
 section
 variable {V W : Type}
 
 /-- Write `(operand, value)` pairs into the vreg file, in order. -/
-def writeV (ρ : Nat → V) (dv : List (Operand × V)) : Nat → V :=
+@[expose] def writeV (ρ : Nat → V) (dv : List (Operand × V)) : Nat → V :=
   dv.foldl (fun ρ p => upd ρ p.1.vreg p.2) ρ
 
 /-- Write `((operand, location), value)` triples into the location store, in order. -/
-def writeM (m : Loc → V) (dl : List ((Operand × Loc) × V)) : Loc → V :=
+@[expose] def writeM (m : Loc → V) (dl : List ((Operand × Loc) × V)) : Loc → V :=
   dl.foldl (fun m p => upd m p.1.2 p.2) m
 
 /-- The parallel copy `ps := xs` (reads the old file). -/
-def parCopyEnv (ρ : Nat → V) (ps xs : List Nat) : Nat → V :=
+@[expose] def parCopyEnv (ρ : Nat → V) (ps xs : List Nat) : Nat → V :=
   fun v => match (ps.zip xs).lookup v with
     | some x => ρ x
     | none => ρ v
 
 /-- Successor number `j` of block `b` (by the CFG of `vc`). -/
-def succOf (vc : VCode) (b j : Nat) : Option Nat :=
+@[expose] def succOf (vc : VCode) (b j : Nat) : Option Nat :=
   match vc.cfg with
   | .ok (ss, _) => ss[b]?.bind (·[j]?)
   | .error _ => none
 
 /-- The vreg file entering successor `s` of block `b`: the branch arguments of `b` copied in
 parallel into the parameters of `s`. -/
-def edgeEnv (vc : VCode) (b s : Nat) (ρ : Nat → V) : Option (Nat → V) := do
+@[expose] def edgeEnv (vc : VCode) (b s : Nat) (ρ : Nat → V) : Option (Nat → V) := do
   let vb ← vc.blocks[b]?
   let sb ← vc.blocks[s]?
   if vb.branchArgs.size = sb.params.size then
@@ -152,7 +152,7 @@ variable (keep : Reg → V → V)
 
 /-- `m'` is `m` after clobbering the registers `clob`: other locations are unchanged; a
 clobbered callee-saved register keeps its `keep`-part. -/
-def Clobbered (clob : List Reg) (m m' : Loc → V) : Prop :=
+@[expose] def Clobbered (clob : List Reg) (m m' : Loc → V) : Prop :=
   (∀ l, (∀ c ∈ clob, l ≠ .reg c) → m' l = m l) ∧
   (∀ c ∈ clob, c ∈ calleeSaved → keep c (m' (.reg c)) = keep c (m (.reg c)))
 
@@ -170,7 +170,7 @@ inductive MNext (b k n : Nat) (i : MInst) (uses : List V) (its : List RItem) (m 
 /-- The number of leading defs whose values the allocated code keeps when instruction `i` has
 control outcome `ctl` (`none`: all): `MInst.keptDefs`, or for a `try_call`'s call returning
 normally (`MInst.normalDead`, successor `ti.handlers.length`) its results. -/
-def havocFrom (i : MInst) (ctl : Ctl) : Option Nat :=
+@[expose] def havocFrom (i : MInst) (ctl : Ctl) : Option Nat :=
   match i.keptDefs with
   | some n => some n
   | none => match i.normalDead, ctl with
@@ -181,7 +181,7 @@ def havocFrom (i : MInst) (ctl : Ctl) : Option Nat :=
 `havocFrom` (a branch's defs, `JTSequence`'s temporaries, dead after the branch; the
 scratch registers of the LL/SC loops; the exception payload registers of a `try_call`'s call
 on its normal return; the checker forgets them), which are havocked. -/
-def HavocOuts (i : MInst) (ctl : Ctl) (outs outs' : List V) : Prop :=
+@[expose] def HavocOuts (i : MInst) (ctl : Ctl) (outs outs' : List V) : Prop :=
   outs'.length = outs.length ∧ (havocFrom i ctl = none → outs' = outs) ∧
     ∀ n, havocFrom i ctl = some n → outs'.take n = outs.take n
 

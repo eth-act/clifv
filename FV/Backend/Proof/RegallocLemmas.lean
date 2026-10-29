@@ -144,7 +144,7 @@ theorem checkStatic_ok {w : String} {ops : Array Operand} {allocs : Array Loc} {
 
 
 /-- The successor facts `verifyBlock` establishes for the out-state `out` of block `b`. -/
-def EdgesOk (c : CheckCtx) (ins : Array (Option AState)) (b : Nat) (out : AState) : Prop :=
+@[expose] def EdgesOk (c : CheckCtx) (ins : Array (Option AState)) (b : Nat) (out : AState) : Prop :=
   ∀ s ∈ (c.succs[b]?.getD #[]).toList, ∃ e a', c.edge b s out = .ok e ∧
     ins[s]? = some (some a') ∧ a'.le e = true
 

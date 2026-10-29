@@ -19,37 +19,37 @@ namespace Arm
 A simple Map-like type based on lists
 -/
 
-def Map (α : Type u) (β : Type v) := List (α × β)
+@[expose] def Map (α : Type u) (β : Type v) := List (α × β)
 
 instance [x : Repr (List (α × β))] : Repr (Map α β) where
   reprPrec := x.reprPrec
 
-def Map.empty : Map α β := []
+@[expose] def Map.empty : Map α β := []
 
-def Map.find? [DecidableEq α] (m : Map α β) (a' : α) : Option β :=
+@[expose] def Map.find? [DecidableEq α] (m : Map α β) (a' : α) : Option β :=
   match m with
   | [] => none
   | (a, b) :: m => if a = a' then some b else find? m a'
 
-def Map.contains [DecidableEq α] (m : Map α β) (a : α) : Bool :=
+@[expose] def Map.contains [DecidableEq α] (m : Map α β) (a : α) : Bool :=
   m.find? a |>.isSome
 
-def Map.insert [DecidableEq α] (m : Map α β) (a' : α) (b' : β) : Map α β :=
+@[expose] def Map.insert [DecidableEq α] (m : Map α β) (a' : α) (b' : β) : Map α β :=
   match m with
   | [] => [(a', b')]
   | (a, b) :: m => if a = a' then (a', b') :: m else (a, b) :: insert m a' b'
 
-def Map.erase [DecidableEq α] (m : Map α β) (a' : α) : Map α β :=
+@[expose] def Map.erase [DecidableEq α] (m : Map α β) (a' : α) : Map α β :=
   match m with
   | [] => []
   | (a, b) :: m => if a = a' then erase m a' else (a, b) :: erase m a'
 
-def Map.isEmpty (m : Map α β) : Bool :=
+@[expose] def Map.isEmpty (m : Map α β) : Bool :=
   match m with
   | [] => true
   | _ => false
 
-def Map.size (m : Map α β) : Nat :=
+@[expose] def Map.size (m : Map α β) : Nat :=
   m.length
 
 @[simp] theorem Map.find?_empty [DecidableEq α] (a : α) : (Map.empty (β := β)).find? a = none := rfl

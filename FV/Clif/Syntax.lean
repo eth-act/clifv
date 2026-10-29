@@ -32,11 +32,11 @@ inductive Ty where
 namespace Ty
 
 /-- Bit width of a type. -/
-def width : Ty → Nat
+@[expose] def width : Ty → Nat
   | i8 => 8 | i16 => 16 | i32 => 32 | i64 => 64 | i128 => 128 | f32 => 32 | f64 => 64
 
 /-- Byte width of a type. -/
-def bytes (t : Ty) : Nat := t.width / 8
+@[expose] def bytes (t : Ty) : Nat := t.width / 8
 
 /-- CLIF spelling of the type. -/
 def name : Ty → String
@@ -48,12 +48,12 @@ def ofName? : String → Option Ty
   | "i128" => some i128 | "f32" => some f32 | "f64" => some f64 | _ => none
 
 /-- An integer type (`i8 … i128`). -/
-@[simp] def isInt : Ty → Bool
+@[expose, simp] def isInt : Ty → Bool
   | i8 | i16 | i32 | i64 | i128 => true
   | f32 | f64 => false
 
 /-- A float type (`f32`, `f64`). -/
-@[simp] def isFloat (t : Ty) : Bool := !t.isInt
+@[expose, simp] def isFloat (t : Ty) : Bool := !t.isInt
 
 /-- The integer type of a width. -/
 def ofWidth? : Nat → Option Ty
@@ -91,19 +91,19 @@ namespace Val
 def ofInt (ty : Ty) (i : Int) : Val := ⟨ty, BitVec.ofInt ty.width i⟩
 
 /-- The value of type `ty` with bit pattern `n` (mod 2^width). -/
-def ofNat (ty : Ty) (n : Nat) : Val := ⟨ty, BitVec.ofNat ty.width n⟩
+@[expose] def ofNat (ty : Ty) (n : Nat) : Val := ⟨ty, BitVec.ofNat ty.width n⟩
 
 /-- CLIF booleans are `i8` 0/1 (the result of `icmp` and the overflow flags). -/
-def ofBool (b : Bool) : Val := ⟨.i8, if b then 1#8 else 0#8⟩
+@[expose] def ofBool (b : Bool) : Val := ⟨.i8, if b then 1#8 else 0#8⟩
 
 /-- Unsigned interpretation. -/
-def toNat (v : Val) : Nat := v.bits.toNat
+@[expose] def toNat (v : Val) : Nat := v.bits.toNat
 
 /-- Signed interpretation. -/
-def toInt (v : Val) : Int := v.bits.toInt
+@[expose] def toInt (v : Val) : Int := v.bits.toInt
 
 /-- The bits of `v` at type `ty`, if `v` has that type. -/
-def as? (v : Val) (ty : Ty) : Option (BitVec ty.width) :=
+@[expose] def as? (v : Val) (ty : Ty) : Option (BitVec ty.width) :=
   if h : v.ty = ty then some (h ▸ v.bits) else none
 
 @[simp] theorem as?_mk (ty : Ty) (x : BitVec ty.width) : (Val.mk ty x).as? ty = some x := by
@@ -416,7 +416,7 @@ structure ExnTable where
 
 /-- The handler successors of an exception table, in item order (Cranelift's successor order:
 handlers first, then the normal return, `ExceptionTableData::all_branches`). -/
-def ExnTable.handlers (et : ExnTable) : List TryDest :=
+@[expose] def ExnTable.handlers (et : ExnTable) : List TryDest :=
   et.items.filterMap fun
     | .tag _ d | .default d => some d
     | .context _ => none
@@ -424,14 +424,14 @@ def ExnTable.handlers (et : ExnTable) : List TryDest :=
 /-- All successors in Cranelift's order: the handlers, then the normal return. -/
 def ExnTable.dests (et : ExnTable) : List TryDest := et.handlers ++ [et.normal]
 
-def TryDest.vals (d : TryDest) : List ValueId :=
+@[expose] def TryDest.vals (d : TryDest) : List ValueId :=
   d.args.filterMap fun | .val v => some v | _ => none
 
 def TryDest.mapVals (g : ValueId → ValueId) (d : TryDest) : TryDest :=
   { d with args := d.args.map fun | .val v => .val (g v) | a => a }
 
 /-- The values an exception table reads: successor arguments and context values. -/
-def ExnTable.vals (et : ExnTable) : List ValueId :=
+@[expose] def ExnTable.vals (et : ExnTable) : List ValueId :=
   et.normal.vals ++ et.items.flatMap fun
     | .tag _ d | .default d => d.vals
     | .context v => [v]
@@ -463,7 +463,7 @@ inductive Terminator where
   deriving DecidableEq, Repr, Inhabited
 
 /-- A `try_call`/`try_call_indirect` terminator. -/
-def Terminator.isTry : Terminator → Bool
+@[expose] def Terminator.isTry : Terminator → Bool
   | .tryCall .. | .tryCallIndirect .. => true
   | _ => false
 
@@ -618,11 +618,11 @@ structure Program where
 
 namespace Function
 
-def block? (f : Function) (b : BlockId) : Option Block := f.blocks.find? (·.id == b)
+@[expose] def block? (f : Function) (b : BlockId) : Option Block := f.blocks.find? (·.id == b)
 
 def slot? (f : Function) (s : SlotId) : Option StackSlot := (f.slots.lookup s)
 
-def extern? (f : Function) (r : FnRef) : Option ExtFunc := f.externs.lookup r
+@[expose] def extern? (f : Function) (r : FnRef) : Option ExtFunc := f.externs.lookup r
 
 def entry? (f : Function) : Option Block := f.blocks.head?
 
@@ -635,7 +635,7 @@ def Program.func? (p : Program) (name : String) : Option Function :=
 
 /-- Result types of an instruction, given the function's extern declarations (for `call`).
 `none` if the instruction is ill-formed (e.g. `iconcat.i128`). -/
-def Inst.resultTypes (sigOf : FnRef → Option Signature)
+@[expose] def Inst.resultTypes (sigOf : FnRef → Option Signature)
     (sigDeclOf : Nat → Option Signature) : Inst → Option (List Ty)
   | .iconst ty _ | .unary _ ty _ | .binary _ ty _ _ | .div _ ty _ _
   | .uaddOverflowTrap ty _ _ _ | .select ty _ _ _ | .selectSpectreGuard ty _ _ _

@@ -79,15 +79,15 @@ structure LState where
   outgoing : Nat := 0
   deriving Inhabited
 
-def LState.fresh (st : LState) (cls : RegClass) : Reg × LState :=
+@[expose] def LState.fresh (st : LState) (cls : RegClass) : Reg × LState :=
   (.vreg st.nextVreg cls, { st with nextVreg := st.nextVreg + 1, classes := st.classes.push cls })
 
 def LState.emit (st : LState) (i : MInst) : LState := { st with emitted := st.emitted.push i }
 
 /-! ## CLIF → ISLE data -/
 
-def opcodeV (name : String) : V := mkVariant tyOpcode name
-def instDataV (fmt : String) (fs : List V) : V := mkVariant tyInstData fmt fs
+@[expose] def opcodeV (name : String) : V := mkVariant tyOpcode name
+@[expose] def instDataV (fmt : String) (fs : List V) : V := mkVariant tyInstData fmt fs
 
 def intccName : Clif.IntCC → String
   | .eq => "Equal" | .ne => "NotEqual" | .slt => "SignedLessThan"
@@ -210,7 +210,7 @@ the typed calls (S11e5a). A `call` is typed (`f32`/`f64` parameters and returns 
 `Compile.functionE` does not constrain `f.sigDecls`, so such a call would put float values
 into the integer driver model (`DriverCheck`), and a `try_call`'s returns wait for a typed
 `LowerTryOk` (`docs/plans/floats.md`, S11e5). -/
-def sigIntB (s : Clif.Signature) : Bool :=
+@[expose] def sigIntB (s : Clif.Signature) : Bool :=
   s.params.all (·.ty.isInt) && s.returns.all (·.ty.isInt)
 
 /-- Calling conventions with the AAPCS64 argument/return locations and clobbers:
@@ -386,17 +386,17 @@ inductive ArgLoc where
   | stack (off : Nat)
   deriving Repr, Inhabited, BEq
 
-def alignTo (n a : Nat) : Nat := (n + a - 1) / a * a
+@[expose] def alignTo (n a : Nat) : Nat := (n + a - 1) / a * a
 
 /-- The register class AAPCS64 passes a value of type `t` in (`rc_for_type`): an integer in an
 X register, an `f32`/`f64` in (the low lanes of) a V register. -/
-def tyClass (t : Clif.Ty) : RegClass := if t.isInt then .int else .float
+@[expose] def tyClass (t : Clif.Ty) : RegClass := if t.isInt then .int else .float
 
 /-- One value of `argLocsC` (`compute_arg_locs`' loop body for a single-register value), on
 (locations, next X register, next V register, next stack offset): a value of class `.int`
 takes `x nx` while `nx < 8`, one of class `.float` takes `v nv` while `nv < 8`; otherwise an
 8-byte-minimum naturally aligned stack slot. -/
-def argLocStep (q : Array ArgLoc × Nat × Nat × Nat) (p : RegClass × Nat) :
+@[expose] def argLocStep (q : Array ArgLoc × Nat × Nat × Nat) (p : RegClass × Nat) :
     Array ArgLoc × Nat × Nat × Nat :=
   let size := max p.2 8
   let off := alignTo q.2.2.2 size
@@ -412,14 +412,14 @@ def argLocStep (q : Array ArgLoc × Nat × Nat × Nat) (p : RegClass × Nat) :
 (`compute_arg_locs`): x0..x7 for integers and v0..v7 for floats (separate counters), then
 8-byte (at least) naturally aligned stack slots; and the stack-argument space rounded up to
 16. -/
-def argLocsC (ps : List (RegClass × Nat)) : List ArgLoc × Nat :=
+@[expose] def argLocsC (ps : List (RegClass × Nat)) : List ArgLoc × Nat :=
   let q := ps.foldl argLocStep (#[], 0, 0, 0)
   (q.1.toList, alignTo q.2.2.2 16)
 
 /-- Argument locations for integer parameters of the given byte sizes: `x0..x7`, then 8-byte
 (at least) naturally aligned stack slots; and the stack-argument space rounded up to 16. The
 integer specialisation of `argLocsC` (`Proof.argLocsC_int`). -/
-def argLocs (bytes : List Nat) : List ArgLoc × Nat :=
+@[expose] def argLocs (bytes : List Nat) : List ArgLoc × Nat :=
   let (locs, _, stack) := bytes.foldl (init := (#[], 0, 0)) fun (acc, nx, st) b =>
     if nx < 8 then (acc.push (.reg (.x nx)), nx + 1, st)
     else
@@ -432,7 +432,7 @@ def argLocs (bytes : List Nat) : List ArgLoc × Nat :=
 integer in the next of x0..x7, a float in the next of v0..v7 (separate counters, next `x nx`
 and `v nv`); `none` when a class runs out of its 8 registers (a Cranelift error without
 `enable_multi_ret_implicit_sret`). -/
-def retRegsC : List RegClass → Nat → Nat → Option (List Reg)
+@[expose] def retRegsC : List RegClass → Nat → Nat → Option (List Reg)
   | [], _, _ => some []
   | .int :: cs, nx, nv => if nx < 8 then (retRegsC cs (nx + 1) nv).map (.x nx :: ·) else none
   | .float :: cs, nx, nv => if nv < 8 then (retRegsC cs nx (nv + 1)).map (.v nv :: ·) else none
@@ -440,7 +440,7 @@ def retRegsC : List RegClass → Nat → Nat → Option (List Reg)
 /-- Return registers of `n` integer values: `x0..x7` (more than 8 return values is a Cranelift
 error without `enable_multi_ret_implicit_sret`). The integer specialisation of `retRegsC`
 (`Proof.retRegsC_int`). -/
-def retRegs (n : Nat) : Option (List Reg) :=
+@[expose] def retRegs (n : Nat) : Option (List Reg) :=
   if n ≤ 8 then some ((List.range n).map .x) else none
 
 /-- The byte sizes of the parameters of a signature as AAPCS64 places them
@@ -449,7 +449,7 @@ register of its class (`tyClass`), then 8-byte-minimum naturally aligned stack s
 **`sret`** parameter is the hidden struct-return pointer, in **x8** (Cranelift's aarch64
 `compute_arg_locs`: the sret slot does not consume the x0..x7 sequence and must be
 pointer-sized). -/
-def sigArgs (s : Clif.Signature) : Except String (List Nat) :=
+@[expose] def sigArgs (s : Clif.Signature) : Except String (List Nat) :=
   s.params.mapM fun p =>
     if p.ty == .i128 then throw "i128 parameter"
     else match p.purpose with
@@ -460,7 +460,7 @@ def sigArgs (s : Clif.Signature) : Except String (List Nat) :=
 /-- One step of `paramLocs`' placement of the parameters of an `sret` signature: the `sret`
 parameter in x8, every other parameter at the next location of `rest` (`argLocsC` of the
 non-`sret` parameters). -/
-def sretLocStep (q : Array ArgLoc × List ArgLoc) (p : Clif.AbiParam) : Array ArgLoc × List ArgLoc :=
+@[expose] def sretLocStep (q : Array ArgLoc × List ArgLoc) (p : Clif.AbiParam) : Array ArgLoc × List ArgLoc :=
   if p.purpose == .sret then (q.1.push (.reg (.x 8)), q.2)
   else match q.2 with
     | l :: r => (q.1.push l, r)
@@ -470,7 +470,7 @@ def sretLocStep (q : Array ArgLoc × List ArgLoc) (p : Clif.AbiParam) : Array Ar
 parameters (class `tyClass` of their type), with every `sret` parameter in x8 (in parameter
 order). The `sret` parameter does not take a slot of the x0..x7 sequence: the next normal
 integer parameter still goes in x0 (Cranelift's aarch64 `compute_arg_locs`). -/
-def paramLocs (ps : List Clif.AbiParam) (bytes : List Nat) : Except String (List ArgLoc × Nat) := do
+@[expose] def paramLocs (ps : List Clif.AbiParam) (bytes : List Nat) : Except String (List ArgLoc × Nat) := do
   if ps.any (·.purpose == .sret) then
     let normal := ((ps.zip bytes).filter (!·.1.purpose == .sret)).map fun q => (tyClass q.1.ty, q.2)
     let locs := (ps.foldl sretLocStep (#[], (argLocsC normal).1)).1
@@ -481,7 +481,7 @@ def paramLocs (ps : List Clif.AbiParam) (bytes : List Nat) : Except String (List
 /-- **The AAPCS64 argument locations of a signature** (`compute_arg_locs`): `paramLocs` with
 the `sigArgs` sizes; integer parameters in x0..x7, `f32`/`f64` ones in v0..v7, an `sret`
 parameter in x8, then the stack. -/
-def sigArgLocs (s : Clif.Signature) : Except String (List ArgLoc × Nat) := do
+@[expose] def sigArgLocs (s : Clif.Signature) : Except String (List ArgLoc × Nat) := do
   let bytes ← sigArgs s
   paramLocs s.params bytes
 
@@ -522,7 +522,7 @@ def stackLayoutOk (s : Clif.Signature) : Bool :=
 `ensure_struct_return_ptr_is_returned`, which is `keep in sync` in Cranelift's abi.rs): a
 signature with an `sret` parameter and no returns returns the struct pointer in x0, i.e.
 its only ABI return is the sret parameter itself. -/
-def sigRets (s : Clif.Signature) : List Clif.AbiParam :=
+@[expose] def sigRets (s : Clif.Signature) : List Clif.AbiParam :=
   match s.params.find? (·.purpose == .sret) with
   | some p => if s.returns.isEmpty then [p] else s.returns
   | none => s.returns
@@ -530,12 +530,12 @@ def sigRets (s : Clif.Signature) : List Clif.AbiParam :=
 /-- The register class of an ABI return (`sigRets`): `tyClass` of its type; the struct pointer
 an `sret` signature returns is a pointer (Cranelift's verifier: the `sret` parameter has the
 pointer type), in an X register. -/
-def retClass (p : Clif.AbiParam) : RegClass :=
+@[expose] def retClass (p : Clif.AbiParam) : RegClass :=
   if p.purpose == .sret then .int else tyClass p.ty
 
 /-- **The AAPCS64 return registers of a signature** (`compute_arg_locs` on `sigRets`): integer
 returns in x0..x7, `f32`/`f64` ones in v0..v7 (`retRegsC` of their `retClass`). -/
-def abiRetRegs (s : Clif.Signature) : Option (List Reg) :=
+@[expose] def abiRetRegs (s : Clif.Signature) : Option (List Reg) :=
   retRegsC ((sigRets s).map retClass) 0 0
 
 /-- The signatures the end-to-end theorem covers (`E2E.InSubset.abiSigs`): `normal`
@@ -603,7 +603,7 @@ def sigParamBytes (s : Clif.Signature) : Except String (List Nat) := sigArgs s
 
 /-- `exception_payload_regs` (`isa/aarch64/abi.rs`): x0 and x1 for `system_v` (the default),
 `tail`, `preserve_all` and `apple_aarch64` callees, none for the others. -/
-def payloadRegs (c : Option Clif.CallConv) : List Reg :=
+@[expose] def payloadRegs (c : Option Clif.CallConv) : List Reg :=
   match c with
   | none | some .systemV | some .tail | some .preserveAll | some .appleAarch64 => [.x 0, .x 1]
   | _ => []
@@ -612,7 +612,7 @@ def payloadRegs (c : Option Clif.CallConv) : List Reg :=
 item order), then the continuation (the last label). `clobberAll` is
 `get_regs_clobbered_by_call(callee, true) = ALL_CLOBBERS` (`tail`/`preserve_all` callees);
 `rets` the number of ABI returns (`sigRets`), the results `gen_try_call_rets` puts first. -/
-def tryInfoOf (sig : Clif.Signature) (items : List (Option Nat)) (ls : List Label) :
+@[expose] def tryInfoOf (sig : Clif.Signature) (items : List (Option Nat)) (ls : List Label) :
     Option TryInfo :=
   if ls.length != items.length + 1 then none
   else some {
@@ -625,7 +625,7 @@ def tryInfoOf (sig : Clif.Signature) (items : List (Option Nat)) (ls : List Labe
 conventions other than `system_v` are rejected (Cranelift 0.136.1 panics on a `fast` one;
 `tail`/`preserve_all` callees are not lowered by this backend), and so are `context` items
 (Wasmtime's dynamic contexts; cg_clif never emits them). -/
-def exnTableOpnd (f : Clif.Function) (et : Clif.ExnTable) :
+@[expose] def exnTableOpnd (f : Clif.Function) (et : Clif.ExnTable) :
     Except String (Clif.Signature × List (Option Nat)) := do
   let some sig := f.sigDecls.lookup et.sig | throw s!"try_call of undeclared sig{et.sig}"
   if !(sig.callConv.isNone || sig.callConv == some .systemV) then
@@ -638,7 +638,7 @@ def exnTableOpnd (f : Clif.Function) (et : Clif.ExnTable) :
   pure (sig, items)
 
 /-- The `InstructionData` of a `try_call`/`try_call_indirect` terminator. -/
-def tryCallData (f : Clif.Function) : Clif.Terminator → Except String V
+@[expose] def tryCallData (f : Clif.Function) : Clif.Terminator → Except String V
   | .tryCall fn args et => do
     let (sig, items) ← exnTableOpnd f et
     let some ext := f.extern? fn | throw s!"unknown fn{fn}"
@@ -656,7 +656,7 @@ def tryCallData (f : Clif.Function) : Clif.Terminator → Except String V
 return registers `retRegs`: `exnTableOpnd` admits integer signatures only, `sigIntB`), then per payload
 register (`payloadRegs`) the vreg of the return in that register (`set_vreg_alias`), else a
 fresh one. `none`: more than 8 return values. -/
-def tryRegsOf (sig : Clif.Signature) (st : LState) : Option ((List Reg × List Reg) × LState) := do
+@[expose] def tryRegsOf (sig : Clif.Signature) (st : LState) : Option ((List Reg × List Reg) × LState) := do
   let ps ← retRegs (sigRets sig).length
   let (rets, st) := ps.foldl (init := ((#[] : Array Reg), st)) fun (acc, st) _ =>
     let (r, st') := st.fresh .int
@@ -723,7 +723,7 @@ def normArgReg (R : Reg → Reg) (rets : List Reg) : Clif.TryArg → Reg
 
 /-- `lowerFunction`'s replacement of the call a `try_call` rule emits last by the `tryCall`
 terminator with `try_call_info` `info`. -/
-def tryFix (info : TryInfo) (ms : List MInst) : List MInst :=
+@[expose] def tryFix (info : TryInfo) (ms : List MInst) : List MInst :=
   match ms.getLast? with
   | some (.call c) => ms.dropLast ++ [.tryCall c info]
   | _ => ms
@@ -752,7 +752,7 @@ def stackArgStore (r : Reg) (bytes : Nat) (am : AMode) : MInst :=
 
 /-- The register classes of returned values (one register each): the class of the first
 register of each (`int` for an empty list), as `retRegsC` places them. -/
-def regsClasses (rss : List (List Reg)) : List RegClass :=
+@[expose] def regsClasses (rss : List (List Reg)) : List RegClass :=
   rss.map fun rs => (rs.head?.map Reg.homeCls).getD .int
 
 /-! ## Extern helpers -/
@@ -1309,7 +1309,7 @@ def externCtor (ctx : Ctx) (t : Term) (args : List V) (st : LState) : ExtResult 
   | _, args => .unmodeled s!"constructor {t.name} ({args.length} args)"
 
 /-- The embedding: ISLE constants, data, and the extern helpers. -/
-def sem (ctx : Ctx) : Isle.Sem V LState where
+@[expose] def sem (ctx : Ctx) : Isle.Sem V LState where
   int ty i := .int (normInt ty i)
   bool b := .bool b
   prim ty n := if ty == TyId.Type then (CTy.ofName? n).map .ty else none
@@ -1349,16 +1349,16 @@ structure VCode where
   deriving Inhabited
 
 /-- Does the VCode contain a `tryCall` (the call of a `try_call`)? -/
-def VCode.hasTryCall (vc : VCode) : Bool :=
+@[expose] def VCode.hasTryCall (vc : VCode) : Bool :=
   vc.blocks.any fun vb => vb.insts.any fun i => i matches .tryCall ..
 
 /-- Does the VCode contain an `ElfTlsGetAddr` (the TLSDESC sequence of a `tls_value`)? -/
-def VCode.hasTls (vc : VCode) : Bool :=
+@[expose] def VCode.hasTls (vc : VCode) : Bool :=
   vc.blocks.any fun vb => vb.insts.any fun i => i matches .elfTlsGetAddr ..
 
 /-- Stack-slot layout (`Callee::new`): slots in id order, each aligned to
 `max(8, align)`. -/
-def slotLayout (slots : List (Nat × Clif.StackSlot)) : List (Nat × Nat) × Nat :=
+@[expose] def slotLayout (slots : List (Nat × Clif.StackSlot)) : List (Nat × Nat) × Nat :=
   let sorted := slots.toArray.qsort (fun a b => a.1 < b.1) |>.toList
   let (offs, end_) := sorted.foldl (init := (#[], 0)) fun (acc, e) (id, s) =>
     let align := max 8 (s.align.getD 1)
@@ -1458,7 +1458,7 @@ def blockArgRegs (ctx : Ctx) (f : Clif.Function) (bc : Clif.BlockCall) :
     | none => throw s!"unknown value v{a}"
 
 /-- Lower one function to VCode. -/
-def lowerFunction (f : Clif.Function) : Except String VCode := do
+@[expose] def lowerFunction (f : Clif.Function) : Except String VCode := do
   if !aapcsConv f.sig.callConv then
     throw s!"calling convention {repr f.sig.callConv}"
   let paramBytes ← sigParamBytes f.sig

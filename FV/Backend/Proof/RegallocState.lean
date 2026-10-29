@@ -132,12 +132,12 @@ section
 variable {V : Type} (keep : Reg → V → V)
 
 /-- The meaning of a symbol, as a predicate on the value of the location holding it. -/
-def Holds (ρ : Nat → V) (r₀ : Reg → V) : Sym → V → Prop
+@[expose] def Holds (ρ : Nat → V) (r₀ : Reg → V) : Sym → V → Prop
   | .vreg v, x => x = ρ v
   | .entry r, x => r ∈ calleeSaved ∧ keep r x = keep r (r₀ r)
 
 /-- The checker's invariant between an abstract state and the concrete store. -/
-def Inv (a : AState) (m : Loc → V) (ρ : Nat → V) (r₀ : Reg → V) : Prop :=
+@[expose] def Inv (a : AState) (m : Loc → V) (ρ : Nat → V) (r₀ : Reg → V) : Prop :=
   ∀ l s, s ∈ a.get l → Holds keep ρ r₀ s (m l)
 
 variable {keep}

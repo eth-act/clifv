@@ -52,7 +52,7 @@ deriving DecidableEq, Repr
 
 instance : ToString ArmInst where toString a := toString (repr a)
 
-def decode_data_proc_imm (i : BitVec 32) : Option ArmInst :=
+@[expose] def decode_data_proc_imm (i : BitVec 32) : Option ArmInst :=
   open ArmInst in
   open DataProcImmInst in
   match_bv i with
@@ -71,7 +71,7 @@ def decode_data_proc_imm (i : BitVec 32) : Option ArmInst :=
     DPI (Extract {sf, op21, N, o0, Rm, imms, Rn, Rd})
   | _ => none
 
-def decode_branch (i : BitVec 32) : Option ArmInst :=
+@[expose] def decode_branch (i : BitVec 32) : Option ArmInst :=
   open ArmInst in
   open BranchInst in
   match_bv i with
@@ -96,7 +96,7 @@ def decode_branch (i : BitVec 32) : Option ArmInst :=
     BR (Mrs {o0, op1, CRn, CRm, op2, Rt})
   | _ => none
 
-def decode_data_proc_reg (i : BitVec 32) : Option ArmInst :=
+@[expose] def decode_data_proc_reg (i : BitVec 32) : Option ArmInst :=
   open ArmInst in
   open DataProcRegInst in
   match_bv i with
@@ -124,7 +124,7 @@ def decode_data_proc_reg (i : BitVec 32) : Option ArmInst :=
     DPR (Data_processing_three_source {sf, op54, op31, Rm, o0, Ra, Rn, Rd})
   | _ => none
 
-def decode_data_proc_sfp (i : BitVec 32) : Option ArmInst :=
+@[expose] def decode_data_proc_sfp (i : BitVec 32) : Option ArmInst :=
   open ArmInst in
   open DataProcSFPInst in
   match_bv i with
@@ -160,7 +160,7 @@ def decode_data_proc_sfp (i : BitVec 32) : Option ArmInst :=
     DPSFP (FP_data_processing_three_source {M, S, ftype, o1, Rm, o0, Ra, Rn, Rd})
   | _ => none
 
-def decode_ldst_inst (i : BitVec 32) : Option ArmInst :=
+@[expose] def decode_ldst_inst (i : BitVec 32) : Option ArmInst :=
   open ArmInst in
   open LDSTInst in
   match_bv i with
@@ -190,7 +190,7 @@ def decode_ldst_inst (i : BitVec 32) : Option ArmInst :=
   | _ => none
 
 /-- (FV addition) Decode the A64 "Reserved" group (`op0 = 0`, `op1 = 0000`). -/
-def decode_reserved (i : BitVec 32) : Option ArmInst :=
+@[expose] def decode_reserved (i : BitVec 32) : Option ArmInst :=
   open ArmInst in
   open ReservedInst in
   match_bv i with
@@ -199,7 +199,7 @@ def decode_reserved (i : BitVec 32) : Option ArmInst :=
   | _ => none
 
 -- Decode a 32-bit instruction `i`.
-def decode_raw_inst (i : BitVec 32) : Option ArmInst :=
+@[expose] def decode_raw_inst (i : BitVec 32) : Option ArmInst :=
   open ArmInst in
   match_bv i with
   | [op0:1, _x:2, op1:4, _y:25] =>

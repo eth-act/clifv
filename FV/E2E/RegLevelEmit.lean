@@ -31,7 +31,7 @@ namespace Backend
 
 /-- One step of `fallthrough` at a line `ln` followed by `n1`, `n2`: the emitted lines and
 the number of input lines consumed. -/
-def ftStep (ln : Line) (n1 n2 : Option Line) : List Line × Nat :=
+@[expose] def ftStep (ln : Line) (n1 n2 : Option Line) : List Line × Nat :=
   let dflt : List Line × Nat := match ln, n1 with
     | .ins (.b x) none, some (.label l) => if x == l then ([], 1) else ([ln], 1)
     | _, _ => ([ln], 1)
@@ -47,7 +47,7 @@ theorem ftStep_pos (ln : Line) (n1 n2 : Option Line) :
   all_goals simp_all
 
 /-- `fallthrough` as a function on the line list. -/
-def ftList : List Line → List Line
+@[expose] def ftList : List Line → List Line
   | [] => []
   | ln :: rest =>
     (ftStep ln rest[0]? rest[1]?).1 ++ ftList ((ln :: rest).drop (ftStep ln rest[0]? rest[1]?).2)
@@ -252,7 +252,7 @@ def ainstLines (c : FnCtx) (af : AFunc) : AInst → PState → Except String (Li
   | .inst m, ps => m.lines c ps
 
 /-- The lines of a block's code. -/
-def codeLinesE (c : FnCtx) (af : AFunc) : List AInst → PState → Except String (List Line × PState)
+@[expose] def codeLinesE (c : FnCtx) (af : AFunc) : List AInst → PState → Except String (List Line × PState)
   | [], ps => pure ([], ps)
   | a :: as, ps => do
     let (l1, ps1) ← ainstLines c af a ps
@@ -260,7 +260,7 @@ def codeLinesE (c : FnCtx) (af : AFunc) : List AInst → PState → Except Strin
     pure (l1 ++ l2, ps2)
 
 /-- The lines of the blocks (each introduced by its label), before `fallthrough`. -/
-def blocksLinesE (c : FnCtx) (af : AFunc) :
+@[expose] def blocksLinesE (c : FnCtx) (af : AFunc) :
     List (Label × Array AInst) → PState → Except String (List Line × PState)
   | [], ps => pure ([], ps)
   | (l, code) :: bs, ps => do
@@ -647,13 +647,13 @@ theorem blocksLinesE_block {c : FnCtx} {af : AFunc} :
 /-! ## The final lines, block by block -/
 
 /-- The label of the block after `b` (the lookahead of `fallthrough` at the end of `b`). -/
-def nxtOf (af : AFunc) (b : Nat) : List Line :=
+@[expose] def nxtOf (af : AFunc) (b : Nat) : List Line :=
   match af.blocks[b + 1]? with
   | some p => [.label (.block p.1)]
   | none => []
 
 /-- The trap section appended after the body. -/
-def trapLines (ts : List (Lbl × Clif.TrapCode)) : List Line :=
+@[expose] def trapLines (ts : List (Lbl × Clif.TrapCode)) : List Line :=
   ts.flatMap (fun p => [Line.label p.1, Line.ins (.udf 0xc11f) (some p.2)])
 
 /-- The far labels `emitFunc` relaxes the branches to (`relaxOf` of the lines before relaxation). -/

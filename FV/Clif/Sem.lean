@@ -30,7 +30,7 @@ def iadd (x y : BitVec w) : BitVec w := x + y
 /-- `isub`: wrapping subtraction. -/
 def isub (x y : BitVec w) : BitVec w := x - y
 /-- `ineg`: wrapping negation. -/
-def ineg (x : BitVec w) : BitVec w := -x
+@[expose] def ineg (x : BitVec w) : BitVec w := -x
 /-- `imul`: wrapping multiplication (low half of the product). -/
 def imul (x y : BitVec w) : BitVec w := x * y
 
@@ -43,7 +43,7 @@ def smulhi (x y : BitVec w) : BitVec w :=
   ((x.signExtend (w + w)) * (y.signExtend (w + w))).extractLsb' w w
 
 /-- `iabs`: absolute value; `iabs MIN = MIN`. -/
-def iabs (x : BitVec w) : BitVec w := if x.msb then -x else x
+@[expose] def iabs (x : BitVec w) : BitVec w := if x.msb then -x else x
 
 /-! ## Division (trapping) -/
 
@@ -72,10 +72,10 @@ def srem (x y : BitVec w) : Except TrapCode (BitVec w) :=
 def band (x y : BitVec w) : BitVec w := x &&& y
 def bor (x y : BitVec w) : BitVec w := x ||| y
 def bxor (x y : BitVec w) : BitVec w := x ^^^ y
-def bnot (x : BitVec w) : BitVec w := ~~~x
+@[expose] def bnot (x : BitVec w) : BitVec w := ~~~x
 
 /-- `bitselect c, x, y`: bits of `x` where `c` is set, bits of `y` elsewhere. -/
-def bitselect (c x y : BitVec w) : BitVec w := (c &&& x) ||| (~~~c &&& y)
+@[expose] def bitselect (c x y : BitVec w) : BitVec w := (c &&& x) ||| (~~~c &&& y)
 
 /-! ## Shifts and rotates
 
@@ -93,19 +93,19 @@ def rotr {v : Nat} (x : BitVec w) (y : BitVec v) : BitVec w := x.rotateRight (sh
 /-! ## Bit counting -/
 
 /-- `clz`: number of leading zero bits (`w` for zero). -/
-def clz (x : BitVec w) : BitVec w := x.clz
+@[expose] def clz (x : BitVec w) : BitVec w := x.clz
 /-- `ctz`: number of trailing zero bits (`w` for zero). -/
-def ctz (x : BitVec w) : BitVec w := x.ctz
+@[expose] def ctz (x : BitVec w) : BitVec w := x.ctz
 /-- `popcnt`: number of one bits. -/
-def popcnt (x : BitVec w) : BitVec w := x.cpop
+@[expose] def popcnt (x : BitVec w) : BitVec w := x.cpop
 /-- `cls`: number of leading bits equal to the sign bit, not counting the sign bit. -/
-def cls (x : BitVec w) : BitVec w := if x.msb then (~~~x).clz - 1 else x.clz - 1
+@[expose] def cls (x : BitVec w) : BitVec w := if x.msb then (~~~x).clz - 1 else x.clz - 1
 /-- `bitrev`: reverse the bit order. -/
-def bitrev (x : BitVec w) : BitVec w := x.reverse
+@[expose] def bitrev (x : BitVec w) : BitVec w := x.reverse
 
 /-- `bswap`: reverse the byte order (`w` a multiple of 8). Byte `i` of the result is byte
 `w/8 - 1 - i` of `x`. -/
-def bswap (x : BitVec w) : BitVec w :=
+@[expose] def bswap (x : BitVec w) : BitVec w :=
   (List.range (w / 8)).foldl
     (fun acc i => acc ||| (((x >>> (8 * i)) &&& BitVec.ofNat w 0xff) <<< (w - 8 * (i + 1))))
     0
@@ -192,7 +192,7 @@ def icmp (cc : IntCC) (x y : BitVec w) : BitVec 8 := bool8 (intcc cc x y)
 def truthy (x : BitVec w) : Bool := x != 0
 
 /-- `select c, x, y`. -/
-def select {v : Nat} (c : BitVec v) (x y : BitVec w) : BitVec w := if truthy c then x else y
+@[expose] def select {v : Nat} (c : BitVec v) (x y : BitVec w) : BitVec w := if truthy c then x else y
 
 /-- `bmask x`: all ones if `x` is non-zero, else zero. -/
 def bmask {v : Nat} (x : BitVec v) : BitVec w := if truthy x then BitVec.allOnes w else 0
@@ -221,7 +221,7 @@ def atomicRmw (op : AtomicRmwOp) (old x : BitVec w) : BitVec w :=
 
 /-! ## Opcode dispatch on `BitVec` -/
 
-def unary (op : UnaryOp) (x : BitVec w) : BitVec w :=
+@[expose] def unary (op : UnaryOp) (x : BitVec w) : BitVec w :=
   match op with
   | .ineg => ineg x | .bnot => bnot x | .iabs => iabs x | .clz => clz x | .ctz => ctz x
   | .cls => cls x | .popcnt => popcnt x | .bitrev => bitrev x | .bswap => bswap x

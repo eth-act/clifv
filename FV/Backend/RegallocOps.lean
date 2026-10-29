@@ -73,7 +73,7 @@ structure Operand where
 
 namespace OpSpec
 /-- `reg_use` -/
-def use : OpSpec := ⟨.use, .early, .reg⟩
+@[expose] def use : OpSpec := ⟨.use, .early, .reg⟩
 /-- `reg_def` -/
 def def_ : OpSpec := ⟨.def, .late, .reg⟩
 /-- `reg_early_def` -/
@@ -127,7 +127,7 @@ def Reg.realClass? : Reg → Option RegClass
 
 /-- AAPCS64 callee-saved registers that the allocator may use (`is_reg_saved_in_prologue`):
 x19–x28 and v8–v15 (only their low 64 bits are callee-saved; the frame saves all 128). -/
-def calleeSaved : List Reg := (List.range 10).map (fun i => .x (19 + i)) ++ (List.range 8).map (fun i => .v (8 + i))
+@[expose] def calleeSaved : List Reg := (List.range 10).map (fun i => .x (19 + i)) ++ (List.range 8).map (fun i => .v (8 + i))
 
 /-- `DEFAULT_AAPCS_CLOBBERS`: x0–x17, v0–v31. -/
 def defaultAapcsClobbers : List Reg := (List.range 18).map .x ++ (List.range 32).map .v
@@ -316,7 +316,7 @@ def MInst.operands (i : MInst) : Except String (Array Operand) := do
 
 /-- Substitute the allocation: the `k`-th vreg occurrence (the `k`-th operand) becomes
 `regs[k]`; real registers stay. -/
-def MInst.assign (i : MInst) (regs : Array Reg) : Except String MInst := do
+@[expose] def MInst.assign (i : MInst) (regs : Array Reg) : Except String MInst := do
   let put (_ : OpSpec) (r : Reg) : StateT Nat (Except String) Reg := do
     match r with
     | .vreg .. =>
@@ -331,7 +331,7 @@ def MInst.assign (i : MInst) (regs : Array Reg) : Except String MInst := do
   pure i'
 
 /-- Registers clobbered by the instruction (`inst_clobbers`). -/
-def MInst.clobbers : MInst → List Reg
+@[expose] def MInst.clobbers : MInst → List Reg
   | .call info => defaultAapcsClobbers.filter fun r => !(info.defs.any (·.1 == r))
   | .tryCall info ti =>
     (if ti.clobberAll then allClobbers else defaultAapcsClobbers).filter fun r =>
@@ -347,7 +347,7 @@ def MInst.isRet : MInst → Bool
 the branch (`JTSequence`'s temporaries): the checker forgets them. A `tryCall` is a
 `MachTerminator::Branch` too, but its defs are live into its successors, so it is not
 `isBranch` (`MInst.isTerminator` includes it). -/
-def MInst.isBranch : MInst → Bool
+@[expose] def MInst.isBranch : MInst → Bool
   | .jump _ | .condBr .. | .testBitAndBranch .. | .jtSequence .. => true
   | _ => false
 
@@ -357,7 +357,7 @@ may not write, and the checker forgets them: a branch's defs (`JTSequence`'s tem
 after the branch), and the scratch defs of the LL/SC loops (x24, x28 of `AtomicRMWLoop`, x24
 of `AtomicCASLoop`: `stlxr`'s status register is not written when the `atomic_cas` comparison
 fails, x28 is not written by an `xchg`). -/
-def MInst.keptDefs (i : MInst) : Option Nat :=
+@[expose] def MInst.keptDefs (i : MInst) : Option Nat :=
   match i with
   | .atomicRmwLoop .. | .atomicCasLoop .. => some 1
   | i => if i.isBranch then some 0 else none
@@ -368,16 +368,16 @@ then the exception payload registers that are not return registers (`gen_try_cal
 those are meaningful only on the handler edges: on the normal return (successor
 `ti.handlers.length`, the last) the callee leaves in them whatever it likes, and the checker
 forgets them on that edge (`CheckCtx.edgeForget`). -/
-def MInst.normalDead : MInst → Option (Nat × Nat)
+@[expose] def MInst.normalDead : MInst → Option (Nat × Nat)
   | .tryCall _ ti => some (ti.handlers.length, ti.rets)
   | _ => none
 
 /-- Does the instruction end a block (`is_term` is not `None`)? -/
-def MInst.isTerminator (i : MInst) : Bool :=
+@[expose] def MInst.isTerminator (i : MInst) : Bool :=
   i.isBranch || i.isRet || i matches .tryCall ..
 
 /-- Successor labels of a branch, in successor order (`JTSequence`: default, then table). -/
-def MInst.targets : MInst → List Label
+@[expose] def MInst.targets : MInst → List Label
   | .jump l => [l]
   | .condBr t e _ | .testBitAndBranch _ t e _ _ => [t, e]
   | .jtSequence d ts _ _ _ => d :: ts
@@ -385,7 +385,7 @@ def MInst.targets : MInst → List Label
   | _ => []
 
 /-- Replace the successor labels (same count as `targets`). -/
-def MInst.setTargets (i : MInst) (ls : List Label) : Option MInst :=
+@[expose] def MInst.setTargets (i : MInst) (ls : List Label) : Option MInst :=
   match i, ls with
   | .jump _, [l] => some (.jump l)
   | .condBr _ _ k, [t, e] => some (.condBr t e k)
@@ -405,7 +405,7 @@ def MInst.setTargets (i : MInst) (ls : List Label) : Option MInst :=
 
 /-- Successor block indices (by label) and predecessor lists (one entry per edge) of every
 block. Every block must end in a terminator. -/
-def VCode.cfg (vc : VCode) : Except String (Array (Array Nat) × Array (Array Nat)) := do
+@[expose] def VCode.cfg (vc : VCode) : Except String (Array (Array Nat) × Array (Array Nat)) := do
   let idxOf (l : Label) : Except String Nat :=
     match vc.blocks.findIdx? (·.label == l) with
     | some i => pure i
@@ -421,7 +421,7 @@ def VCode.cfg (vc : VCode) : Except String (Array (Array Nat) × Array (Array Na
   pure (succs, preds)
 
 /-- Blocks reachable from the entry (block 0), by a fuel-bounded worklist. -/
-def reachable (succs : Array (Array Nat)) : Array Bool := Id.run do
+@[expose] def reachable (succs : Array (Array Nat)) : Array Bool := Id.run do
   let mut seen := Array.replicate succs.size false
   if succs.size == 0 then return seen
   seen := seen.set! 0 true
@@ -439,7 +439,7 @@ def reachable (succs : Array (Array Nat)) : Array Bool := Id.run do
 
 /-- Reverse postorder of the blocks reachable from block 0 (depth-first, successors in
 order; fuel-bounded by the number of edges and blocks). -/
-def rpo (succs : Array (Array Nat)) : Array Nat := Id.run do
+@[expose] def rpo (succs : Array (Array Nat)) : Array Nat := Id.run do
   if succs.size == 0 then return #[]
   let mut seen := (Array.replicate succs.size false).set! 0 true
   let mut post : Array Nat := #[]
@@ -463,7 +463,7 @@ def rpo (succs : Array (Array Nat)) : Array Nat := Id.run do
 
 /-- The first occurrence of each index of `l`, in order, after `out`; `seen` marks the
 indices already taken. -/
-def firstOcc (seen : Array Bool) : List Nat → Array Nat → Array Nat
+@[expose] def firstOcc (seen : Array Bool) : List Nat → Array Nat → Array Nat
   | [], out => out
   | j :: js, out =>
     if seen[j]! then firstOcc seen js out else firstOcc (seen.set! j true) js (out.push j)
@@ -474,7 +474,7 @@ blocks (indices `≥ n`) in successor order. `rpo succs` already lists the origi
 that order (an edge block passes the search on to its single successor); each original block
 is followed by its edge-block successors, and every index is kept at its first occurrence (an
 edge block's only predecessor is its source, which comes first in `rpo succs`). -/
-def prepOrder (n : Nat) (succs : Array (Array Nat)) : Array Nat :=
+@[expose] def prepOrder (n : Nat) (succs : Array (Array Nat)) : Array Nat :=
   firstOcc (Array.replicate succs.size false)
     ((rpo succs).toList.flatMap fun i =>
       if i < n then i :: (succs[i]!.toList.filter (n ≤ ·)) else [i]) #[]
@@ -485,7 +485,7 @@ block `jump target`; order the blocks as Cranelift's `BlockLoweringOrder` does (
 reverse postorder, each block's edge blocks right after it; regalloc2's loop-depth estimate
 and checker assume predecessors mostly come first). The entry block must not be a branch
 target (Cranelift's verifier forbids it) and has no parameters. -/
-def prepare (vc : VCode) : Except String VCode := do
+@[expose] def prepare (vc : VCode) : Except String VCode := do
   let (succs, _) ← vc.cfg
   let live := reachable succs
   let kept : Array VBlock := (vc.blocks.zip live).filterMap fun (b, l) => if l = true then some b else none

@@ -127,6 +127,6 @@ def format (bits w t : Nat) : String :=
 
 /-- Exponent and trailing-significand widths of a float type width (32 → binary32,
 64 → binary64). -/
-def fields (width : Nat) : Nat × Nat := if width = 32 then (8, 23) else (11, 52)
+@[expose] def fields (width : Nat) : Nat × Nat := if width = 32 then (8, 23) else (11, 52)
 
 end Clif.FloatLit

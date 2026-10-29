@@ -91,6 +91,6 @@ def roundToInt (rm : RMode) (v : Int) (exp : Int) : Int :=
   if roundUp then intResult + 1 else intResult
 
 /-- The signed exact value `(-1)^sign * mant` as an integer. -/
-def signed (sign : Bool) (mant : Nat) : Int := if sign then -(mant : Int) else mant
+@[expose] def signed (sign : Bool) (mant : Nat) : Int := if sign then -(mant : Int) else mant
 
 end IEEE

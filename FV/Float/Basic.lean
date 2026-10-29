@@ -94,7 +94,7 @@ def unpack (f : Fmt) (x : Bits f) : FPType × Bool × Nat × Int :=
   else (.nonzero, sign, 2 ^ f.F + frac, (bexp : Int) - f.bias - f.F)
 
 /-- `FPZero(sign)`. -/
-def zero (f : Fmt) (sign : Bool) : Bits f := pack f sign 0 0
+@[expose] def zero (f : Fmt) (sign : Bool) : Bits f := pack f sign 0 0
 
 /-- `FPInfinity(sign)`. -/
 def infinity (f : Fmt) (sign : Bool) : Bits f := pack f sign f.expOnes 0
@@ -140,7 +140,7 @@ def processNaNs3 (f : Fmt) (t1 t2 t3 : FPType) (op1 op2 op3 : Bits f) : Option (
   else none
 
 /-- `FPNeg` (AH = 0): flip the sign bit, also of NaNs. -/
-def neg (f : Fmt) (a : Bits f) : Bits f := a ^^^ BitVec.ofNat _ (2 ^ (f.E + f.F))
+@[expose] def neg (f : Fmt) (a : Bits f) : Bits f := a ^^^ BitVec.ofNat _ (2 ^ (f.E + f.F))
 
 /-- `FPAbs` (AH = 0): clear the sign bit, also of NaNs. -/
 def abs (f : Fmt) (a : Bits f) : Bits f := a &&& BitVec.ofNat _ (2 ^ (f.E + f.F) - 1)

@@ -221,16 +221,16 @@ structure RAFrame where
   deriving Repr, Inhabited
 
 /-- Does the allocated code use a float spill slot? -/
-def RFunc.floatStack (rf : RFunc) : Bool :=
+@[expose] def RFunc.floatStack (rf : RFunc) : Bool :=
   (rf.blocks.foldl (· ++ ·) #[]).any fun it => it.locs.any fun | .stack _ .float => true | _ => false
 
 /-- Does the allocated code move between float registers (needs `fmoveTmp`)? -/
-def RFunc.floatMove (rf : RFunc) : Bool :=
+@[expose] def RFunc.floatMove (rf : RFunc) : Bool :=
   (rf.blocks.foldl (· ++ ·) #[]).any fun
     | .move (.reg (.v _)) (.reg (.v _)) => true
     | _ => false
 
-def RAFrame.compute (vc : VCode) (rf : RFunc) : RAFrame :=
+@[expose] def RAFrame.compute (vc : VCode) (rf : RFunc) : RAFrame :=
   let floatStack := rf.floatStack
   let floatMove := rf.floatMove
   let intBase := alignTo vc.outgoing 16
@@ -246,7 +246,7 @@ def RAFrame.compute (vc : VCode) (rf : RFunc) : RAFrame :=
   { intBase, floatBase, saveOff := fo ++ io, fmoveTmp := tmp, size,
     total := alignTo (size + vc.slotBytes) 16 }
 
-def RAFrame.offset (fr : RAFrame) : Loc → Except String Nat
+@[expose] def RAFrame.offset (fr : RAFrame) : Loc → Except String Nat
   | .stack s .int => pure (fr.intBase + 8 * s)
   | .stack s .float => pure (fr.floatBase + 16 * s)
   | .save r => match fr.saveOff.lookup r with
@@ -282,7 +282,7 @@ def slotLoadAt (cls : RegClass) (r : Reg) (off : Nat) : List MInst :=
     | .float => .load .fpuLoad128 r (.unsignedOffset (.x 16) 0) trustedFlags]
 
 /-- Machine code of a move. -/
-def RAFrame.moveInsts (fr : RAFrame) (src dst : Loc) : Except String (List AInst) := do
+@[expose] def RAFrame.moveInsts (fr : RAFrame) (src dst : Loc) : Except String (List AInst) := do
   match src, dst with
   | .reg a, .reg b => match a.realClass? with
     | some .int => pure [.inst (.mov .size64 b a)]
@@ -329,12 +329,12 @@ def Reg.isFpArgReg : Reg → Bool
 
 /-- A class-compatible `Args` pair: an int vreg in an argument register (as before the typed ABI),
 or an f32/f64 vreg in an FP argument register v0–v7. -/
-def argPairOk (p : Reg × Reg) : Bool :=
+@[expose] def argPairOk (p : Reg × Reg) : Bool :=
   (p.1.isVregInt && p.2.isArgReg) || (p.1.isVregFloat && p.2.isFpArgReg)
 
 /-- A class-compatible `Rets` pair: an int vreg (as before the typed ABI), or an f32/f64 vreg
 returned in an FP return register v0–v7. -/
-def retPairOk (p : Reg × Reg) : Bool :=
+@[expose] def retPairOk (p : Reg × Reg) : Bool :=
   p.1.isVregInt || (p.1.isVregFloat && p.2.isFpArgReg)
 
 /-- `ctlCheck` on instruction `k` of block `b`. -/
@@ -365,7 +365,7 @@ value of a `Rets` is a vreg (so its `j`-th pair is its `j`-th operand: the retur
 fixed uses in order, `E2E.RegLevelFrame`). `Args`/`Rets` pairs are class-compatible
 (`argPairOk`, `retPairOk`): an f32/f64 value is passed and returned in v0–v7 (S11e5 Stage C;
 before, `ctlCheckInt`, they had to be int vregs: `ctlCheck_of_int`). -/
-def ctlCheck (vc : VCode) (rf : RFunc) : Bool :=
+@[expose] def ctlCheck (vc : VCode) (rf : RFunc) : Bool :=
   (vc.blocks.toList.zipIdx.all fun (vb, b) => vb.insts.toList.zipIdx.all fun (i, k) =>
     ctlInstOk b k i) &&
   (let items := (rf.blocks[0]?.getD #[]).toList
@@ -382,7 +382,7 @@ def ctlInstOkInt (b k : Nat) : MInst → Bool
   | i => ctlInstOk b k i
 
 /-- `ctlCheck` before the typed ABI (S11e5 Stage C): `Args`/`Rets` of int vregs only. -/
-def ctlCheckInt (vc : VCode) (rf : RFunc) : Bool :=
+@[expose] def ctlCheckInt (vc : VCode) (rf : RFunc) : Bool :=
   (vc.blocks.toList.zipIdx.all fun (vb, b) => vb.insts.toList.zipIdx.all fun (i, k) =>
     ctlInstOkInt b k i) &&
   (let items := (rf.blocks[0]?.getD #[]).toList
@@ -415,7 +415,7 @@ theorem ctlCheck_of_int {vc : VCode} {rf : RFunc} (h : ctlCheckInt vc rf = true)
   refine ⟨⟨fun x hx y hy => ctlInstOk_of_int (h1 x hx y hy), h2⟩, h3⟩
 
 /-- Lower a checked allocated function to `AFunc`. -/
-def lowerRFunc (vc : VCode) (rf : RFunc) : Except String AFunc := do
+@[expose] def lowerRFunc (vc : VCode) (rf : RFunc) : Except String AFunc := do
   let fr := RAFrame.compute vc rf
   -- Allocator slots are addressed `[sp, #off]` below 32 KiB, beyond through `x16 = sp + off`
   -- (`slotStoreAt`/`slotLoadAt`; proof: `RegallocSlotsFar`), so the frame has no size limit. The
@@ -443,7 +443,7 @@ def lowerRFunc (vc : VCode) (rf : RFunc) : Except String AFunc := do
 /-- The allocation the backend lowers: regalloc2's (`ra`) if `checkAlloc` accepts it and
 `lowerRFunc` lowers it, else the spill allocation, which `lowerRFunc` lowers for every in-scope
 function (`E2E.lowerRFunc_spillAlloc`; so the backend is total on that input). -/
-def allocResult (vc : VCode) (ra : Except String RFunc) : RFunc :=
+@[expose] def allocResult (vc : VCode) (ra : Except String RFunc) : RFunc :=
   match ra with
   | .ok rf =>
     if (checkAlloc vc rf).isOk then

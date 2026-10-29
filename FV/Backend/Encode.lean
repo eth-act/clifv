@@ -56,12 +56,12 @@ def Reg.encV : Reg → Except String (BitVec 5)
   | r => throw s!"{repr r} where a SIMD&FP register is required"
 
 /-- `cond` field (the `Cond` constructors are in hardware order; Arm ARM chapter C1, "Condition code" table). -/
-def Cond.bits : Cond → BitVec 4
+@[expose] def Cond.bits : Cond → BitVec 4
   | .eq => 0 | .ne => 1 | .hs => 2 | .lo => 3 | .mi => 4 | .pl => 5 | .vs => 6 | .vc => 7
   | .hi => 8 | .ls => 9 | .ge => 10 | .lt => 11 | .gt => 12 | .le => 13 | .al => 14 | .nv => 15
 
 /-- `option` field of extended-register operands (Arm ARM `DecodeRegExtend`). -/
-def ExtendOp.bits : ExtendOp → BitVec 3
+@[expose] def ExtendOp.bits : ExtendOp → BitVec 3
   | .uxtb => 0 | .uxth => 1 | .uxtw => 2 | .uxtx => 3
   | .sxtb => 4 | .sxth => 5 | .sxtw => 6 | .sxtx => 7
 
@@ -108,7 +108,7 @@ def bitmaskEnc? (is64 : Bool) (value : Nat) : Option (BitVec 1 × BitVec 6 × Bi
 31 down to bit 0, with the class's fixed bits written out, as in the class's encoding diagram
 in Arm ARM C4.1 (class names are the model's, after the C4.1 headings). The model structures'
 `_fixed` fields are not read (the decoder always fills them with their defaults). -/
-def armBits : ArmInst → BitVec 32
+@[expose] def armBits : ArmInst → BitVec 32
   -- C4.1 Data Processing -- Immediate
   | .DPI (.Add_sub_imm x) => x.sf ++ x.op ++ x.S ++ 0b100010#6 ++ x.sh ++ x.imm12 ++ x.Rn ++ x.Rd
   | .DPI (.Logical_imm x) => x.sf ++ x.opc ++ 0b100100#6 ++ x.N ++ x.immr ++ x.imms ++ x.Rn ++ x.Rd
@@ -203,7 +203,7 @@ def armBits : ArmInst → BitVec 32
 default): the fields `armBits` ignores. Identity on every value `Insn.armFields` builds (they
 are structure literals that leave `_fixed` at its default); `decode_raw_inst (armBits a) =
 some a.norm` for every `a` (`Backend.decode_armBits`, `FV/Backend/Proof/Encode.lean`). -/
-def _root_.Arm.ArmInst.norm : ArmInst → ArmInst
+@[expose] def _root_.Arm.ArmInst.norm : ArmInst → ArmInst
   | .DPI (.Add_sub_imm x) =>
     .DPI (.Add_sub_imm { sf := x.sf, op := x.op, S := x.S, sh := x.sh, imm12 := x.imm12,
                          Rn := x.Rn, Rd := x.Rd })
@@ -346,7 +346,7 @@ structure Env where
 
 /-- Where a label operand points: `Lbl.skip` is the instruction after the next one (`pc + 8`,
 the inverted short branch of a relaxed branch); other labels are the function's labels. -/
-def Env.target (env : Env) : Lbl → Option Nat
+@[expose] def Env.target (env : Env) : Lbl → Option Nat
   | .skip => some (env.pc + 8)
   | l => env.lbl l
 
@@ -393,7 +393,7 @@ def ALUOp.addSub? : ALUOp → Option (BitVec 1 × BitVec 1)
   | _ => none
 
 /-- `shift` field (C6.2 shifted-register forms: 00 LSL, 01 LSR, 10 ASR, 11 ROR). -/
-def ShiftOp.bits : ShiftOp → BitVec 2
+@[expose] def ShiftOp.bits : ShiftOp → BitVec 2
   | .lsl => 0 | .lsr => 1 | .asr => 2 | .ror => 3
 
 /-- `(Q, size)` of an arrangement (C7.2 `<T>` tables). -/
@@ -403,14 +403,14 @@ def VectorSize.qsize : VectorSize → BitVec 1 × BitVec 2
 
 /-- `(size, V, opc)` of a single-register load (C6.2 LDRB, LDRSB (64), LDRH, LDRSH (64), LDR
 (32), LDRSW, LDR (64); C7.2 LDR (SIMD&FP) 128-bit), and its register-field encoder. -/
-def LoadOp.fields : LoadOp → BitVec 2 × BitVec 1 × BitVec 2
+@[expose] def LoadOp.fields : LoadOp → BitVec 2 × BitVec 1 × BitVec 2
   | .uload8 => (0, 0, 1) | .sload8 => (0, 0, 2) | .uload16 => (1, 0, 1) | .sload16 => (1, 0, 2)
   | .uload32 => (2, 0, 1) | .sload32 => (2, 0, 2) | .uload64 => (3, 0, 1)
   | .fpuLoad128 => (0, 1, 3)
 
 /-- `(size, V, opc)` of a single-register store (C6.2 STRB, STRH, STR (32/64); C7.2 STR
 (SIMD&FP) 128-bit). -/
-def StoreOp.fields : StoreOp → BitVec 2 × BitVec 1 × BitVec 2
+@[expose] def StoreOp.fields : StoreOp → BitVec 2 × BitVec 1 × BitVec 2
   | .store8 => (0, 0, 0) | .store16 => (1, 0, 0) | .store32 => (2, 0, 0) | .store64 => (3, 0, 0)
   | .fpuStore128 => (0, 1, 2)
 
@@ -448,7 +448,7 @@ def ldstFields (size : BitVec 2) (V : BitVec 1) (opc : BitVec 2) (bytes : Nat) (
 
 /-- The encoding-class fields of one instruction at `env.pc` (structure literals: the
 `_fixed` fields keep their defaults). -/
-def Insn.armFields (env : Env) (i : Insn) : Except String ArmInst := do
+@[expose] def Insn.armFields (env : Env) (i : Insn) : Except String ArmInst := do
   match i with
   | .aluRRR op w rd rn rm =>
     let sf := b1 w

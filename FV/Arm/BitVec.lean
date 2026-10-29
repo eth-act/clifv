@@ -294,7 +294,7 @@ attribute [bitvec_rules] BitVec.val_toFin
 /-! # `BitVec` definitions used in LNSym -/
 
 /-- Get the width of a bitvector. -/
-protected def width (_ : BitVec n) : Nat := n
+@[expose] protected def width (_ : BitVec n) : Nat := n
 
 /-- Convert a bitvector into its hex representation, without leading zeroes.
 
@@ -344,7 +344,7 @@ theorem partInstall_eq (x y : BitVec n) :
   simp [partInstall]
 
 /-- Flatten a list of bitvectors into one bitvector. -/
-protected def flatten {n : Nat} (xs : List (BitVec n)) : BitVec (n * xs.length) :=
+@[expose] protected def flatten {n : Nat} (xs : List (BitVec n)) : BitVec (n * xs.length) :=
   match xs with
   | [] => 0#0
   | x :: rest =>
@@ -354,7 +354,7 @@ protected def flatten {n : Nat} (xs : List (BitVec n)) : BitVec (n * xs.length) 
     BitVec.cast h (x ++ (BitVec.flatten rest))
 
 /-- Tail-recursive version of `BitVec.flatten`. -/
-protected def flattenTR {n : Nat} (xs : List (BitVec n)) (i : Nat)
+@[expose] protected def flattenTR {n : Nat} (xs : List (BitVec n)) (i : Nat)
   (acc : BitVec len) (H : n > 0) : BitVec len :=
   match xs with
   | [] => acc
@@ -367,7 +367,7 @@ Generate a random bitvector of width n. The range of the values
 can also be specified using lo and hi arguments, which default to 0
 and 2^n - 1 (inclusive), respectively.
 -/
-protected def rand (n : Nat) (lo := 0) (hi := 2^n - 1) : IO (BitVec n) := do
+@[expose] protected def rand (n : Nat) (lo := 0) (hi := 2^n - 1) : IO (BitVec n) := do
   pure (BitVec.ofNat n (← IO.rand lo hi))
 
 @[bitvec_rules]
@@ -383,7 +383,7 @@ abbrev lsb (x : BitVec n) (i : Nat) : BitVec 1 :=
   BitVec.extractLsb' i 1 x
 
 /-- Reverse bits of a bit-vector. -/
-def reverse (x : BitVec n) : BitVec n :=
+@[expose] def reverse (x : BitVec n) : BitVec n :=
   let rec reverseTR (x : BitVec n) (i : Nat) (acc : BitVec n) :=
     match i with
     | 0 => acc
@@ -898,7 +898,7 @@ theorem sub_le_sub_iff_right (a b c : BitVec w₁) (hac : c ≤ a)
 Definition to extract the `n`th least significant *Byte* from a bitvector.
 TODO: this should be named `getLsByte`, or `getLsbByte` (Shilpi prefers this).
 -/
-def extractLsByte (val : BitVec w₁) (n : Nat) : BitVec 8 :=
+@[expose] def extractLsByte (val : BitVec w₁) (n : Nat) : BitVec 8 :=
   val.extractLsb' (n * 8) 8
 
 theorem extractLsByte_def (val : BitVec w₁) (n : Nat) :
@@ -1083,7 +1083,7 @@ abbrev BVPatComp := TSyntax `bvpat_comp
 abbrev BVPat := TSyntax `bvpat
 
 /-- Return the number of bits in a bit-vector component pattern. -/
-def BVPatComp.length (c : BVPatComp) : Nat := Id.run do
+@[expose] def BVPatComp.length (c : BVPatComp) : Nat := Id.run do
   match c with
   | `(bvpat_comp| $n:num) =>
     let some str := n.raw.isLit? `num | pure 0
@@ -1133,7 +1133,7 @@ def BVPat.getComponents (p : BVPat) : Array BVPatComp :=
 /--
 Return the number of bits in a bit-vector pattern.
 -/
-def BVPat.length (p : BVPat) : Nat := Id.run do
+@[expose] def BVPat.length (p : BVPat) : Nat := Id.run do
   let mut sz := 0
   for c in p.getComponents do
     sz := sz + c.length

@@ -54,7 +54,7 @@ def Reg.isVirtual : Reg → Bool
   | _ => false
 
 /-- The class of a register: a vreg's own, `float` for a V register, `int` otherwise. -/
-def Reg.homeCls : Reg → RegClass
+@[expose] def Reg.homeCls : Reg → RegClass
   | .vreg _ c => c
   | .v _ => .float
   | _ => .int
@@ -90,9 +90,9 @@ def bits : CTy → Nat
 def laneBits : CTy → Nat
   | .invalid => 0 | .int b => b | .float b => b | .vec lb _ _ => lb
 def bytes (t : CTy) : Nat := t.bits / 8
-def isInt : CTy → Bool
+@[expose] def isInt : CTy → Bool
   | .int _ => true | _ => false
-def isFloat : CTy → Bool
+@[expose] def isFloat : CTy → Bool
   | .float _ => true | _ => false
 def isVector : CTy → Bool
   | .vec .. => true | _ => false
@@ -159,7 +159,7 @@ inductive Cond where
   deriving DecidableEq, Repr, Inhabited, BEq
 
 /-- `Cond::invert`. -/
-def Cond.invert : Cond → Cond
+@[expose] def Cond.invert : Cond → Cond
   | .eq => .ne | .ne => .eq | .hs => .lo | .lo => .hs | .mi => .pl | .pl => .mi
   | .vs => .vc | .vc => .vs | .hi => .ls | .ls => .hi | .ge => .lt | .lt => .ge
   | .gt => .le | .le => .gt | .al => .nv | .nv => .al
@@ -277,7 +277,7 @@ inductive CondBrKind where
   deriving DecidableEq, Repr, Inhabited, BEq
 
 /-- `CondBrKind::invert`. -/
-def CondBrKind.invert : CondBrKind → CondBrKind
+@[expose] def CondBrKind.invert : CondBrKind → CondBrKind
   | .zero r s => .notZero r s
   | .notZero r s => .zero r s
   | .cond c => .cond c.invert
@@ -304,7 +304,7 @@ inductive TryHandler where
   | default (l : Label)
   deriving DecidableEq, Repr, Inhabited, BEq
 
-def TryHandler.label : TryHandler → Label
+@[expose] def TryHandler.label : TryHandler → Label
   | .tag _ l | .default l => l
 
 /-- `TryCallInfo`: the normal-return continuation and the handlers (exception-table order).
@@ -344,7 +344,7 @@ inductive AtomicRmwLoopOp where
   | add | sub | and | nand | xor | or | smax | smin | umax | umin | xchg
   deriving DecidableEq, Repr, Inhabited
 
-def AtomicRmwLoopOp.all : List AtomicRmwLoopOp :=
+@[expose] def AtomicRmwLoopOp.all : List AtomicRmwLoopOp :=
   [.add, .sub, .and, .nand, .xor, .or, .smax, .smin, .umax, .umin, .xchg]
 
 /-- The variant name of an `AtomicRMWLoopOp` in the generated ISLE types. -/
@@ -492,7 +492,7 @@ inductive MInst where
 /-! ### Operands -/
 
 /-- Register occurrences of an addressing mode (all are uses). -/
-def AMode.regs : AMode → List Reg
+@[expose] def AMode.regs : AMode → List Reg
   | .regReg a b | .regScaled a b | .regScaledExtended a b _ | .regExtended a b _ => [a, b]
   | .unscaled a _ | .unsignedOffset a _ | .regOffset a _ => [a]
   | _ => []
@@ -507,7 +507,7 @@ def AMode.mapRegs (f : Reg → Reg) : AMode → AMode
   | .regOffset a i => .regOffset (f a) i
   | m => m
 
-def CondBrKind.regs : CondBrKind → List Reg
+@[expose] def CondBrKind.regs : CondBrKind → List Reg
   | .zero r _ | .notZero r _ => [r]
   | .cond _ => []
 
@@ -518,7 +518,7 @@ def CondBrKind.mapRegs (f : Reg → Reg) : CondBrKind → CondBrKind
 
 /-- Registers read by an instruction (`get_operands` uses), excluding the fixed-register
 pairs of `call`/`args`/`rets`, which the allocator handles separately. -/
-def MInst.uses : MInst → List Reg
+@[expose] def MInst.uses : MInst → List Reg
   | .aluRRR _ _ _ rn rm => [rn, rm]
   | .aluRRRR _ _ _ rn rm ra => [rn, rm, ra]
   | .aluRRImm12 _ _ _ rn _ | .aluRRImmLogic _ _ _ rn _ | .aluRRImmShift _ _ _ rn _ => [rn]
@@ -567,7 +567,7 @@ def MInst.uses : MInst → List Reg
   | .fpuCmp _ rn rm => [rn, rm]
 
 /-- Registers written by an instruction (excluding `call`/`args` fixed pairs). -/
-def MInst.defs : MInst → List Reg
+@[expose] def MInst.defs : MInst → List Reg
   | .aluRRR _ _ rd _ _ | .aluRRRR _ _ rd _ _ _ | .aluRRImm12 _ _ rd _ _
   | .aluRRImmLogic _ _ rd _ _ | .aluRRImmShift _ _ rd _ _ | .aluRRRShift _ _ rd _ _ _
   | .aluRRRExtend _ _ rd _ _ _ | .bitRR _ _ rd _ | .load _ rd _ _ | .mov _ rd _
@@ -710,7 +710,7 @@ def ImmLogic.bitsAtSize (i : ImmLogic) : Nat :=
   | .size64 => mask64 i.value
 
 /-- `ImmLogic::invert`. -/
-def ImmLogic.invert (i : ImmLogic) : ImmLogic :=
+@[expose] def ImmLogic.invert (i : ImmLogic) : ImmLogic :=
   ⟨2 ^ 64 - 1 - mask64 i.value, i.size⟩
 
 /-- `MoveWideConst::maybe_from_u64`. -/
@@ -936,7 +936,7 @@ def ALUOp3.ofIdx? : Nat → Option ALUOp3
   | VIdx.ALUOp3.MAdd => some .mAdd | VIdx.ALUOp3.MSub => some .mSub
   | VIdx.ALUOp3.UMAddL => some .uMAddL | VIdx.ALUOp3.SMAddL => some .sMAddL | _ => none
 
-def Cond.all : List Cond :=
+@[expose] def Cond.all : List Cond :=
   [.eq, .ne, .hs, .lo, .mi, .pl, .vs, .vc, .hi, .ls, .ge, .lt, .gt, .le, .al, .nv]
 
 def Cond.name : Cond → String
@@ -945,7 +945,7 @@ def Cond.name : Cond → String
   | .gt => "Gt" | .le => "Le" | .al => "Al" | .nv => "Nv"
 
 /-- Variant index of a condition in the ISLE enum `Cond`. -/
-def Cond.idx : Cond → Nat
+@[expose] def Cond.idx : Cond → Nat
   | .eq => VIdx.Cond.Eq | .ne => VIdx.Cond.Ne | .hs => VIdx.Cond.Hs | .lo => VIdx.Cond.Lo
   | .mi => VIdx.Cond.Mi | .pl => VIdx.Cond.Pl | .vs => VIdx.Cond.Vs | .vc => VIdx.Cond.Vc
   | .hi => VIdx.Cond.Hi | .ls => VIdx.Cond.Ls | .ge => VIdx.Cond.Ge | .lt => VIdx.Cond.Lt
@@ -959,14 +959,14 @@ def Cond.ofIdx? : Nat → Option Cond
   | VIdx.Cond.Gt => some .gt | VIdx.Cond.Le => some .le | VIdx.Cond.Al => some .al
   | VIdx.Cond.Nv => some .nv | _ => none
 
-def ExtendOp.all : List ExtendOp := [.uxtb, .uxth, .uxtw, .uxtx, .sxtb, .sxth, .sxtw, .sxtx]
+@[expose] def ExtendOp.all : List ExtendOp := [.uxtb, .uxth, .uxtw, .uxtx, .sxtb, .sxth, .sxtw, .sxtx]
 
 def ExtendOp.name : ExtendOp → String
   | .uxtb => "UXTB" | .uxth => "UXTH" | .uxtw => "UXTW" | .uxtx => "UXTX"
   | .sxtb => "SXTB" | .sxth => "SXTH" | .sxtw => "SXTW" | .sxtx => "SXTX"
 
 /-- Variant index of an extend op in the ISLE enum `ExtendOp`. -/
-def ExtendOp.idx : ExtendOp → Nat
+@[expose] def ExtendOp.idx : ExtendOp → Nat
   | .uxtb => VIdx.ExtendOp.UXTB | .uxth => VIdx.ExtendOp.UXTH | .uxtw => VIdx.ExtendOp.UXTW
   | .uxtx => VIdx.ExtendOp.UXTX | .sxtb => VIdx.ExtendOp.SXTB | .sxth => VIdx.ExtendOp.SXTH
   | .sxtw => VIdx.ExtendOp.SXTW | .sxtx => VIdx.ExtendOp.SXTX

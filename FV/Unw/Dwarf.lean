@@ -29,7 +29,7 @@ namespace Unw
 /-! ## LEB128 -/
 
 /-- Decode an unsigned LEB128 number at the head of a byte list. -/
-def uleb? : List UInt8 → Option (Nat × List UInt8)
+@[expose] def uleb? : List UInt8 → Option (Nat × List UInt8)
   | [] => none
   | b :: bs =>
     if b.toNat < 128 then some (b.toNat, bs)
@@ -37,7 +37,7 @@ def uleb? : List UInt8 → Option (Nat × List UInt8)
 
 /-- Decode a signed LEB128 number at the head of a byte list (the last byte's bit 6 is the
 sign). -/
-def sleb? : List UInt8 → Option (Int × List UInt8)
+@[expose] def sleb? : List UInt8 → Option (Int × List UInt8)
   | [] => none
   | b :: bs =>
     if b.toNat < 128 then some (if b.toNat < 64 then (b.toNat : Int) else b.toNat - 128, bs)
@@ -59,12 +59,12 @@ inductive CfaInsn where
   deriving DecidableEq, Repr, Inhabited
 
 /-- Little-endian unsigned number of a byte list. -/
-def leNat : List UInt8 → Nat
+@[expose] def leNat : List UInt8 → Nat
   | [] => 0
   | b :: bs => b.toNat + 256 * leNat bs
 
 /-- Decode one call frame instruction (code alignment 4, data alignment −8). -/
-def decodeCfa1? : List UInt8 → Option (CfaInsn × List UInt8)
+@[expose] def decodeCfa1? : List UInt8 → Option (CfaInsn × List UInt8)
   | [] => none
   | b :: bs =>
     let n := b.toNat
@@ -98,7 +98,7 @@ def decodeCfa1? : List UInt8 → Option (CfaInsn × List UInt8)
 
 /-- Decode a whole instruction sequence (`fuel` bounds the steps; every instruction takes at
 least one byte, so the length suffices). -/
-def decodeCfaN? : Nat → List UInt8 → Option (List CfaInsn)
+@[expose] def decodeCfaN? : Nat → List UInt8 → Option (List CfaInsn)
   | _, [] => some []
   | 0, _ :: _ => none
   | fuel + 1, bs@(_ :: _) => do
@@ -106,7 +106,7 @@ def decodeCfaN? : Nat → List UInt8 → Option (List CfaInsn)
     let is ← decodeCfaN? fuel r
     pure (i :: is)
 
-def decodeCfa? (bs : List UInt8) : Option (List CfaInsn) := decodeCfaN? bs.length bs
+@[expose] def decodeCfa? (bs : List UInt8) : Option (List CfaInsn) := decodeCfaN? bs.length bs
 
 /-! ## Rows -/
 
@@ -120,10 +120,10 @@ structure Row where
   deriving DecidableEq, Repr, Inhabited
 
 /-- The rule of register `r` in a row: `some off` = saved at CFA + `off`. -/
-def Row.rule (row : Row) (r : Nat) : Option Int := row.saved.lookup r
+@[expose] def Row.rule (row : Row) (r : Nat) : Option Int := row.saved.lookup r
 
 /-- Execute one non-advance instruction on a row. -/
-def Row.exec (row : Row) : CfaInsn → Row
+@[expose] def Row.exec (row : Row) : CfaInsn → Row
   | .defCfa reg off => { row with cfaReg := reg, cfaOff := off }
   | .defCfaOffset off => { row with cfaOff := off }
   | .defCfaRegister reg => { row with cfaReg := reg }
@@ -132,14 +132,14 @@ def Row.exec (row : Row) : CfaInsn → Row
 
 /-- The row at code offset `pc` (from the function start): run the instructions from `row`
 at location `loc`, stopping at the first `advance` past `pc`. -/
-def rowAtFrom (pc : Nat) : Row → Nat → List CfaInsn → Row
+@[expose] def rowAtFrom (pc : Nat) : Row → Nat → List CfaInsn → Row
   | row, _, [] => row
   | row, loc, .advance d :: is => if loc + d ≤ pc then rowAtFrom pc row (loc + d) is else row
   | row, loc, i :: is => rowAtFrom pc (row.exec i) loc is
 
 /-- The row at code offset `pc` of a function whose CIE's initial instructions are `cie` and
 whose FDE's are `fde`. -/
-def rowAt (cie fde : List CfaInsn) (pc : Nat) : Row :=
+@[expose] def rowAt (cie fde : List CfaInsn) (pc : Nat) : Row :=
   rowAtFrom pc (rowAtFrom 0 { cfaReg := 31, cfaOff := 0 } 0 cie) 0 fde
 
 /-! ## The LSDA -/
@@ -154,7 +154,7 @@ structure CallSiteEntry where
   deriving DecidableEq, Repr, Inhabited
 
 /-- Decode `n` bytes worth of call-site entries (four ULEB128s each). -/
-def decodeSitesN? : Nat → List UInt8 → Option (List CallSiteEntry)
+@[expose] def decodeSitesN? : Nat → List UInt8 → Option (List CallSiteEntry)
   | _, [] => some []
   | 0, _ :: _ => none
   | fuel + 1, bs@(_ :: _) => do
@@ -168,7 +168,7 @@ def decodeSitesN? : Nat → List UInt8 → Option (List CallSiteEntry)
 /-- The call-site table of an LSDA with `lpStart` omitted (`0xff`), a `udata4` type table
 (`0x03`, its offset a ULEB128) and a `uleb128` call-site table (`0x01`, its byte length a
 ULEB128). Other encodings: `none`. -/
-def decodeLsda? : List UInt8 → Option (List CallSiteEntry)
+@[expose] def decodeLsda? : List UInt8 → Option (List CallSiteEntry)
   | 0xff :: 0x03 :: bs => do
     let (_, r) ← uleb? bs
     match r with
@@ -180,7 +180,7 @@ def decodeLsda? : List UInt8 → Option (List CallSiteEntry)
 
 /-- The personality's lookup: the first entry whose range contains `off` (the call's return
 offset − 1). -/
-def lookup (sites : List CallSiteEntry) (off : Nat) : Option CallSiteEntry :=
+@[expose] def lookup (sites : List CallSiteEntry) (off : Nat) : Option CallSiteEntry :=
   sites.find? fun e => decide (e.start ≤ off ∧ off < e.start + e.len)
 
 end Unw

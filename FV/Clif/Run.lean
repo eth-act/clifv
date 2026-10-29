@@ -35,7 +35,7 @@ inductive Outcome where
   deriving Inhabited
 
 /-- The returned values, if the outcome is `returned`. -/
-def Outcome.returnedVals? : Outcome → Option (List Val)
+@[expose] def Outcome.returnedVals? : Outcome → Option (List Val)
   | .returned vals _ => some vals
   | _ => none
 
@@ -53,21 +53,21 @@ structure Env where
   names : List String := []
   sigOf : String → Option Signature := fun _ => none
 
-def Env.empty : Env := {}
+@[expose] def Env.empty : Env := {}
 
-instance : Inhabited Env := ⟨Env.empty⟩
+@[expose] instance : Inhabited Env := ⟨Env.empty⟩
 
 /-- SSA register file of one frame. -/
 abbrev Regs := ValueId → Option Val
 
 namespace Regs
 
-def empty : Regs := fun _ => none
+@[expose] def empty : Regs := fun _ => none
 
-def set (r : Regs) (x : ValueId) (v : Val) : Regs := fun y => if y = x then some v else r y
+@[expose] def set (r : Regs) (x : ValueId) (v : Val) : Regs := fun y => if y = x then some v else r y
 
 /-- Bind `xs` to `vs` (lengths must agree). Later bindings shadow earlier ones. -/
-def setMany (r : Regs) : List ValueId → List Val → Option Regs
+@[expose] def setMany (r : Regs) : List ValueId → List Val → Option Regs
   | [], [] => some r
   | x :: xs, v :: vs => setMany (r.set x v) xs vs
   | _, _ => none
@@ -115,7 +115,7 @@ inductive StepResult where
 
 namespace Frame
 
-def get (fr : Frame) (x : ValueId) : Res Val :=
+@[expose] def get (fr : Frame) (x : ValueId) : Res Val :=
   Res.ofOption s!"use of undefined value v{x}" (fr.regs x)
 
 /-- Operand `x` at type `ty`. -/
@@ -123,7 +123,7 @@ def getAs (fr : Frame) (x : ValueId) (ty : Ty) : Res (BitVec ty.width) := do
   let v ← fr.get x
   Res.ofOption s!"v{x} has type {v.ty.name}, expected {ty.name}" (v.as? ty)
 
-def getMany (fr : Frame) : List ValueId → Res (List Val)
+@[expose] def getMany (fr : Frame) : List ValueId → Res (List Val)
   | [] => .ok []
   | x :: xs => do
     let v ← fr.get x
@@ -136,7 +136,7 @@ end Frame
 def AbiParam.tys (ps : List AbiParam) : List Ty := ps.map (·.ty)
 
 /-- Purposes (`sret`, `vmctx`, `sarg`, normal) of a list of ABI parameters. -/
-def AbiParam.purposes (ps : List AbiParam) : List ArgPurpose := ps.map (·.purpose)
+@[expose] def AbiParam.purposes (ps : List AbiParam) : List ArgPurpose := ps.map (·.purpose)
 
 /-- An indirect call whose call-site signature is `declared` may enter a function whose
 signature is `target` (`stepCallIndirect`): the same parameter types and parameter purposes
@@ -145,7 +145,7 @@ pointer goes in x8 rather than x0), and the same return types. Cranelift require
 function must match the specified signature" (`call_indirect`); a call violating it has no
 defined behaviour, so `Clif.run` is stuck there. (Cranelift's interpreter checks only the value
 types; extension flags and calling conventions are not compared.) -/
-def Signature.abiMatch (declared target : Signature) : Bool :=
+@[expose] def Signature.abiMatch (declared target : Signature) : Bool :=
   AbiParam.tys declared.params == AbiParam.tys target.params &&
     AbiParam.purposes declared.params == AbiParam.purposes target.params &&
     AbiParam.tys declared.returns == AbiParam.tys target.returns
@@ -157,7 +157,7 @@ theorem Signature.abiMatch_eq_true {d t : Signature} :
   simp [Signature.abiMatch, and_assoc]
 
 /-- `stuck` unless the values have exactly the given types. -/
-def checkTys (what : String) (vs : List Val) (tys : List Ty) : Res Unit :=
+@[expose] def checkTys (what : String) (vs : List Val) (tys : List Ty) : Res Unit :=
   Res.check (vs.map (·.ty) == tys) s!"{what}: type/arity mismatch"
 
 /-- Effective address `p + offset`, wrapping modulo 2^64 (p is zero-extended). -/
@@ -172,7 +172,7 @@ def LoadOp.size (ty : Ty) : LoadOp → Nat
   | .uload16 | .sload16 => 2
   | .uload32 | .sload32 => 4
 
-def LoadOp.signed : LoadOp → Bool
+@[expose] def LoadOp.signed : LoadOp → Bool
   | .sload8 | .sload16 | .sload32 => true
   | _ => false
 
@@ -183,11 +183,11 @@ def StoreOp.size (ty : Ty) : StoreOp → Nat
   | .istore32 => 4
 
 /-- The bits of `v` at type `ty` (`stuck` on another type). -/
-def Val.at (v : Val) (ty : Ty) : Res (BitVec ty.width) :=
+@[expose] def Val.at (v : Val) (ty : Ty) : Res (BitVec ty.width) :=
   Res.ofOption s!"operand has type {v.ty.name}, expected {ty.name}" (v.as? ty)
 
 /-- Semantics of `Inst.float op ty` on its operand values (`FV/Clif/FSem.lean`). -/
-def evalFloat (op : FOp) (ty : Ty) (vs : List Val) : Res Val := do
+@[expose] def evalFloat (op : FOp) (ty : Ty) (vs : List Val) : Res Val := do
   let bad : Res Val := .stuck s!"{op.name}.{ty.name}: ill-typed float operation"
   match op, vs with
   | .fcmp cc, [a, b] => do
@@ -421,7 +421,7 @@ def bumpSlots (slots : List (SlotId × StackSlot)) (mem : Mem) : List (SlotId ×
     ([], mem)
 
 /-- Stack slots placed at `sp + off id` (uninitialised). -/
-def placeSlots (slots : List (SlotId × StackSlot)) (sp : BitVec 64) (off : SlotId → Nat)
+@[expose] def placeSlots (slots : List (SlotId × StackSlot)) (sp : BitVec 64) (off : SlotId → Nat)
     (mem : Mem) : List (SlotId × Nat) × Mem :=
   slots.foldl
     (fun (acc : List (SlotId × Nat) × Mem) (s : SlotId × StackSlot) =>
@@ -429,19 +429,19 @@ def placeSlots (slots : List (SlotId × StackSlot)) (sp : BitVec 64) (off : Slot
     ([], mem)
 
 /-- The stack slots `slots` placed at `sp + off id` with their bytes set to `b` (`Mem.fillAt`). -/
-def fillSlots (slots : List (SlotId × StackSlot)) (sp : BitVec 64) (off : SlotId → Nat)
+@[expose] def fillSlots (slots : List (SlotId × StackSlot)) (sp : BitVec 64) (off : SlotId → Nat)
     (b : Nat → BitVec 8) (mem : Mem) : Mem :=
   slots.foldl (fun m s => m.fillAt (sp.toNat + off s.1) s.2.size b) mem
 
 /-- The oracle `p` with its slot-byte oracle advanced past one more activation (`ini`, its
 `Place.init` before it). -/
-def Place.advance (ini : SlotInit) (p : Place) : Place := { p with init := some ini.succ }
+@[expose] def Place.advance (ini : SlotInit) (p : Place) : Place := { p with init := some ini.succ }
 
 /-- The placed slots `r` (`placeSlots slots sp off`) of an activation under the slot-byte oracle
 `ini` (`Place.init`, SEM1) before it: unchanged without it or without slots; otherwise one more
 activation with slots (`Place.advance`), whose slot bytes are the oracle's for it (`fillSlots`,
 `ini.bytes (ini.next + 1)`). -/
-def initSlots (slots : List (SlotId × StackSlot)) (sp : BitVec 64) (off : SlotId → Nat) :
+@[expose] def initSlots (slots : List (SlotId × StackSlot)) (sp : BitVec 64) (off : SlotId → Nat) :
     Option SlotInit → List (SlotId × Nat) × Mem → List (SlotId × Nat) × Mem
   | none, r => r
   | some ini, r =>
@@ -549,14 +549,14 @@ def continueWith (s : State) (rest : List Stmt) (results : List ValueId) (vals :
   | some regs => .next { s with frame := { s.frame with regs, body := rest }, mem }
   | none => .stuck "result arity mismatch"
 
-def StepResult.ofRes {α : Type} (r : Res α) (k : α → StepResult) : StepResult :=
+@[expose] def StepResult.ofRes {α : Type} (r : Res α) (k : α → StepResult) : StepResult :=
   match r with
   | .ok a => k a
   | .trap c => .trapped c
   | .stuck m => .stuck m
 
 /-- Execute a `call fnN(args)` statement. -/
-def stepCall (env : Env) (p : Program) (s : State) (rest : List Stmt) (results : List ValueId)
+@[expose] def stepCall (env : Env) (p : Program) (s : State) (rest : List Stmt) (results : List ValueId)
     (fn : FnRef) (args : List ValueId) : StepResult :=
   let fr := s.frame
   StepResult.ofRes (do
@@ -587,7 +587,7 @@ def stepCall (env : Env) (p : Program) (s : State) (rest : List Stmt) (results :
 
 /-- The names of the externs the functions of `p` declare: with the functions of `p`, the
 function symbols of the program's image (`Program.initMem` gives each an entry stub). -/
-def Program.externNames (p : Program) : List String :=
+@[expose] def Program.externNames (p : Program) : List String :=
   p.funcs.flatMap fun f => f.externs.map (·.2.name)
 
 /-- An indirect call of an extern: the first name of `env.names ++ p.externNames` (the
@@ -602,7 +602,7 @@ match purposes against: an extern's semantics is an untyped `List Val → Mem �
 names of `env.names` have no declaration, and the functions of `p` may declare one extern with
 different signatures; the extern's semantics receives the call's values, whatever the
 convention. -/
-def callExternAt (env : Env) (p : Program) (mem : Mem) (declared : Signature) (addr : Nat)
+@[expose] def callExternAt (env : Env) (p : Program) (mem : Mem) (declared : Signature) (addr : Nat)
     (vals : List Val) : Res (List Val × Mem) := do
   let name ← Res.ofOption "call_indirect: no function at the callee address"
     ((env.names ++ p.externNames).find? fun n => mem.symbols n == some addr)
@@ -625,7 +625,7 @@ parameter types and purposes, return types; `stuck` otherwise, Cranelift's "the 
 must match the specified signature"); otherwise the extern at that address (a name of the
 environment or of the program, `callExternAt`) is called like a `call`; `stuck` for an address
 with no function. -/
-def stepCallIndirect (env : Env) (p : Program) (s : State) (rest : List Stmt)
+@[expose] def stepCallIndirect (env : Env) (p : Program) (s : State) (rest : List Stmt)
     (results : List ValueId) (sig : Nat) (callee : ValueId) (args : List ValueId) :
     StepResult :=
   let fr := s.frame
@@ -661,7 +661,7 @@ def returnValues (s : State) (vals : List Val) (mem : Mem) : StepResult :=
     | none => .stuck "call result arity mismatch"
 
 /-- Execute `return_call fnN(args)`: the callee replaces the current frame. -/
-def stepReturnCall (env : Env) (p : Program) (s : State) (fn : FnRef) (args : List ValueId) :
+@[expose] def stepReturnCall (env : Env) (p : Program) (s : State) (fn : FnRef) (args : List ValueId) :
     StepResult :=
   let fr := s.frame
   StepResult.ofRes (do
@@ -691,7 +691,7 @@ def stepReturnCall (env : Env) (p : Program) (s : State) (fn : FnRef) (args : Li
 
 /-- A value id above every value `f` defines (block parameters and results): `try_call` binds
 the call's results there before its normal-return successor reads them as `retN`. -/
-def Function.freshValue (f : Function) : ValueId :=
+@[expose] def Function.freshValue (f : Function) : ValueId :=
   f.blocks.foldl (init := 0) fun m b =>
     let m := b.params.foldl (fun m p => max m (p.1 + 1)) m
     b.body.foldl (fun m st => st.results.foldl (fun m r => max m (r + 1)) m) m
@@ -710,7 +710,7 @@ def tryNormal (et : ExnTable) (base : ValueId) : Res BlockCall := do
 normal return is modelled: `Clif.run` has no unwinding, so a callee never resumes at a
 handler successor (the exceptional edges exist for the backend, which emits landing pads
 and the LSDA for them). -/
-def stepTryCall (env : Env) (p : Program) (s : State) (fn : FnRef) (args : List ValueId)
+@[expose] def stepTryCall (env : Env) (p : Program) (s : State) (fn : FnRef) (args : List ValueId)
     (et : ExnTable) : StepResult :=
   let fr := s.frame
   StepResult.ofRes (do
@@ -726,7 +726,7 @@ def stepTryCall (env : Env) (p : Program) (s : State) (fn : FnRef) (args : List 
     ((List.range n).map (base + ·)) fn args
 
 /-- Execute `try_call_indirect callee(args), et` (see `stepTryCall`). -/
-def stepTryCallIndirect (env : Env) (p : Program) (s : State) (callee : ValueId)
+@[expose] def stepTryCallIndirect (env : Env) (p : Program) (s : State) (callee : ValueId)
     (args : List ValueId) (et : ExnTable) : StepResult :=
   let fr := s.frame
   StepResult.ofRes (do
@@ -738,7 +738,7 @@ def stepTryCallIndirect (env : Env) (p : Program) (s : State) (callee : ValueId)
     ((List.range n).map (base + ·)) et.sig callee args
 
 /-- Execute the terminator of the current block. -/
-def stepTerm (env : Env) (p : Program) (s : State) : Terminator → StepResult
+@[expose] def stepTerm (env : Env) (p : Program) (s : State) : Terminator → StepResult
   | .jump dest => StepResult.ofRes (enterBlock s.frame dest) fun fr => .next { s with frame := fr }
   | .brif c t e => StepResult.ofRes (s.frame.get c) fun cv =>
     StepResult.ofRes (enterBlock s.frame (if Sem.truthy cv.bits then t else e)) fun fr =>
@@ -753,7 +753,7 @@ def stepTerm (env : Env) (p : Program) (s : State) : Terminator → StepResult
   | .tryCallIndirect callee args et => stepTryCallIndirect env p s callee args et
 
 /-- One small step. -/
-def step (env : Env) (p : Program) (s : State) : StepResult :=
+@[expose] def step (env : Env) (p : Program) (s : State) : StepResult :=
   match s.frame.body with
   | [] => stepTerm env p s s.frame.term
   | st :: rest =>
@@ -794,7 +794,7 @@ theorem step_inst (env : Env) (p : Program) (s : State) (st : Stmt) (rest : List
   | _ => simp only [hi]
 
 /-- Iterate `step` at most `fuel` times. -/
-def runLoop (env : Env) (p : Program) : Nat → State → Outcome
+@[expose] def runLoop (env : Env) (p : Program) : Nat → State → Outcome
   | 0, _ => .outOfFuel
   | fuel + 1, s =>
     match step env p s with
@@ -821,7 +821,7 @@ def initState (p : Program) (f : String) (args : List Val) (mem : Mem) : Res Sta
   pure { frame := fr, callers := [], mem := mem' }
 
 /-- Run `f` on `args` from memory `mem` for at most `fuel` steps. -/
-def runWith (env : Env) (p : Program) (f : String) (args : List Val) (mem : Mem) (fuel : Nat) :
+@[expose] def runWith (env : Env) (p : Program) (f : String) (args : List Val) (mem : Mem) (fuel : Nat) :
     Outcome :=
   match initState p f args mem with
   | .ok s => runLoop env p fuel s
@@ -830,7 +830,7 @@ def runWith (env : Env) (p : Program) (f : String) (args : List Val) (mem : Mem)
 
 /-- Run `f` on `args` for at most `fuel` steps, from the program's initial memory
 (`Program.initMem`: empty without data objects, else the link-time image). -/
-def run (env : Env) (p : Program) (f : String) (args : List Val) (fuel : Nat) : Outcome :=
+@[expose] def run (env : Env) (p : Program) (f : String) (args : List Val) (fuel : Nat) : Outcome :=
   match p.initMem with
   | .ok mem => runWith env p f args mem fuel
   | .trap c => .trapped c

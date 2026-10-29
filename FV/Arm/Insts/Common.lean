@@ -234,7 +234,7 @@ theorem zero_iff_z_eq_one (x : BitVec 64) :
 
 
 /-- `Aligned x a` witnesses that the bitvector `x` is `a`-bit aligned. -/
-def Aligned (x : BitVec n) (a : Nat) : Prop :=
+@[expose] def Aligned (x : BitVec n) (a : Nat) : Prop :=
   extractLsb' 0 a x = BitVec.zero _
 
 /-- We need to prove why the Aligned predicate is Decidable. -/
@@ -267,7 +267,7 @@ theorem Aligned_AddWithCarry_64_4 (x : BitVec 64) (y : BitVec 64) (carry_in : Bi
 
 /-- Check correct stack pointer (SP) alignment for AArch64 state; returns
 true when sp is aligned. -/
-def CheckSPAlignment (s : ArmState) : Prop :=
+@[expose] def CheckSPAlignment (s : ArmState) : Prop :=
   -- (FIXME) Incomplete specification: should also check PSTATE.EL
   -- after we model that.
   let sp := read_gpr 64 31#5 s
@@ -595,7 +595,7 @@ def elem_get (vector : BitVec n) (e : Nat) (size : Nat) : BitVec size :=
 
 /-- Divide bv `vector` into elements, each of size `size`. This function sets
 the `e`'th element in the `vector`. -/
-@[state_simp_rules]
+@[expose, state_simp_rules]
 def elem_set (vector : BitVec n) (e : Nat) (size : Nat)
   (value : BitVec size) : BitVec n :=
   -- assert (e+1)*size <= n

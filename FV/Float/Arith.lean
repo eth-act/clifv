@@ -101,7 +101,7 @@ def div (f : Fmt) (rm : RMode) (op1 op2 : Bits f) : Bits f :=
 
 /-- `FPSqrt(op, fpcr)`. The root is computed with at least `F + 3` bits and a sticky bit for an
 inexact root. -/
-def sqrt (f : Fmt) (rm : RMode) (op : Bits f) : Bits f :=
+@[expose] def sqrt (f : Fmt) (rm : RMode) (op : Bits f) : Bits f :=
   let (t, s, m, e) := unpack f op
   if t = .snan ∨ t = .qnan then processNaN f t op
   else if t = .zero then zero f s
@@ -140,7 +140,7 @@ def mulAdd (f : Fmt) (rm : RMode) (addend op1 op2 : Bits f) : Bits f :=
       roundSum f rm m e
 
 /-- `FPMax(op1, op2, fpcr)` (AH = 0, `altfp = FALSE`): NaN-propagating, `max(-0, +0) = +0`. -/
-def max (f : Fmt) (rm : RMode) (op1 op2 : Bits f) : Bits f :=
+@[expose] def max (f : Fmt) (rm : RMode) (op1 op2 : Bits f) : Bits f :=
   let (t1, s1, m1, e1) := unpack f op1
   let (t2, s2, m2, e2) := unpack f op2
   match processNaNs f t1 t2 op1 op2 with

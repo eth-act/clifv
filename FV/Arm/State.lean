@@ -29,11 +29,11 @@ section State
 
 abbrev Store α β := α → β
 
-def read_store {α β : Type} [DecidableEq α]
+@[expose] def read_store {α β : Type} [DecidableEq α]
   (a : α) (store : Store α β) : β :=
   store a
 
-def write_store {α β : Type} [DecidableEq α]
+@[expose] def write_store {α β : Type} [DecidableEq α]
   (a : α) (b : β) (store : Store α β) : Store α β :=
   fun x => if x = a then b else (store x)
 
@@ -74,7 +74,7 @@ theorem write_store_commute [DecidableEq α] (store : Store α β)
   simp [write_store]
   split <;> simp_all
 
-instance [Repr β]: Repr (Store (BitVec n) β) where
+@[expose] instance [Repr β]: Repr (Store (BitVec n) β) where
   reprPrec store _ :=
     let rec helper (a : Nat) (acc : Lean.Format) :=
       let a_bv := BitVec.ofNat n a
@@ -124,7 +124,7 @@ inductive PFlag where
   | V : PFlag
 deriving DecidableEq, Repr, Hashable
 
-instance : ToString PFlag :=
+@[expose] instance : ToString PFlag :=
   ⟨fun p => match p with
     | PFlag.N => "N"
     | PFlag.Z => "Z"
@@ -139,7 +139,7 @@ structure PState where
   v : BitVec 1
 deriving DecidableEq, Repr
 
-def PState.zero : PState :=
+@[expose] def PState.zero : PState :=
   { n := 0#1, z := 0#1, c := 0#1, v := 0#1 }
 
 /--
@@ -195,7 +195,7 @@ section State
 attribute [local simp] store_read_over_write_same store_read_over_write_different
   store_write_over_write_shadow store_write_irrelevant write_store_commute
 
-def ArmState.default : ArmState := {
+@[expose] def ArmState.default : ArmState := {
     gpr := fun _ => 0#64,
     sfp := fun _ => 0#128,
     pc := 0#64,
@@ -327,7 +327,7 @@ def toFin : StateField → Fin 71
 section ToExpr
 open Lean PFlag
 
-instance : ToExpr PFlag where
+@[expose] instance : ToExpr PFlag where
   toTypeExpr := mkConst ``PFlag
   toExpr := fun
     | N => mkConst ``N
@@ -335,7 +335,7 @@ instance : ToExpr PFlag where
     | C => mkConst ``C
     | Z => mkConst ``Z
 
-instance : ToExpr StateField where
+@[expose] instance : ToExpr StateField where
   toTypeExpr := mkConst ``StateField
   toExpr := fun
     | GPR x    => mkApp (mkConst ``GPR) (toExpr x)
@@ -349,7 +349,7 @@ end ToExpr
 
 end StateField
 
-instance : ToString StateField :=
+@[expose] instance : ToString StateField :=
   ⟨fun s => match s with
   | StateField.GPR i  => "x" ++ (ToString.toString i.toNat)
   | StateField.SFP i  => "q" ++ (ToString.toString i.toNat)
@@ -719,7 +719,7 @@ However, due to layering violations with `Arm/MemoryProofs.lean`, we currently k
 
 
 /-- We export read_mem_bytes, not read_mem. FIXME: make private. -/
-def read_mem (addr : BitVec 64) (s : ArmState) : BitVec 8 :=
+@[expose] def read_mem (addr : BitVec 64) (s : ArmState) : BitVec 8 :=
   read_store addr s.mem
 
 /--
@@ -871,7 +871,7 @@ As an easy corollary, we get `getLsbD` theorems on these to allow
 /--
 A variant of `read_mem` that directly talks about writes to memory, instead of over the entire `ArmState`
 -/
-def Memory.read (addr : BitVec 64) (m : Memory) : BitVec 8 :=
+@[expose] def Memory.read (addr : BitVec 64) (m : Memory) : BitVec 8 :=
   read_store addr m
 
 theorem ArmState.read_mem_eq_mem_read : read_mem addr s = s.mem.read addr := rfl

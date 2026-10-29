@@ -211,19 +211,19 @@ inductive Line where
   | label (l : Lbl)
   deriving Repr, Inhabited
 
-def Line.size : Line → Nat
+@[expose] def Line.size : Line → Nat
   | .ins .. | .word .. => 4
   | .label _ => 0
 
 /-! ## Expansion of allocated instructions (`emit.rs`) -/
 
-def OperandSize.is64 (s : OperandSize) : Bool := s == .size64
+@[expose] def OperandSize.is64 (s : OperandSize) : Bool := s == .size64
 
 def hex (n : Nat) : String := "0x" ++ String.ofList (Nat.toDigits 16 n)
 
 /-- `movz`/`movk` sequence for a 64-bit constant (a correct, not necessarily minimal,
 replacement of `Inst::load_constant`; used only for address offsets). -/
-def loadConst64 (rd : Reg) (value : Nat) : List Line :=
+@[expose] def loadConst64 (rd : Reg) (value : Nat) : List Line :=
   let value := mask64 value
   let chunk (i : Nat) := (value / 2 ^ (16 * i)) % 2 ^ 16
   let first := .ins (.movWide .movZ true rd ⟨chunk 0, 0⟩)
@@ -240,7 +240,7 @@ structure FnCtx where
 
 /-- `mem_finalize`: turn pseudo addressing modes into real ones (`x16` holds large
 offsets). Returns the extra instructions and the final mode. -/
-def memFinalize (c : FnCtx) (m : AMode) (accessBytes : Nat) : Except String (List Line × AMode) :=
+@[expose] def memFinalize (c : FnCtx) (m : AMode) (accessBytes : Nat) : Except String (List Line × AMode) :=
   let fin (base : Reg) (off : Int) : List Line × AMode :=
     match simm9? off with
     | some s => ([], .unscaled base s)
@@ -263,7 +263,7 @@ structure PState where
   traps : Array (Lbl × Clif.TrapCode) := #[]
 
 /-- The branch of a `CondBrKind` to `target`. -/
-def CondBrKind.insn (k : CondBrKind) (target : Lbl) : Insn :=
+@[expose] def CondBrKind.insn (k : CondBrKind) (target : Lbl) : Insn :=
   match k with
   | .zero r s => .cbz false s.is64 r target
   | .notZero r s => .cbz true s.is64 r target
@@ -347,7 +347,7 @@ def casLoopLines (bits : Nat) (fl : Clif.MemFlags) (again out : Lbl) : List Line
      .ins (.cbz true true (.x 24) again), .label out]
 
 /-- Expand one allocated instruction (real registers only). -/
-def MInst.lines (c : FnCtx) (m : MInst) (ps : PState) : Except String (List Line × PState) := do
+@[expose] def MInst.lines (c : FnCtx) (m : MInst) (ps : PState) : Except String (List Line × PState) := do
   let one (i : Insn) : Except String (List Line × PState) := pure ([.ins i], ps)
   match m with
   | .aluRRR op s rd rn rm => one (.aluRRR op (s.is64 || op == .sMulH || op == .uMulH) rd rn rm)
@@ -504,7 +504,7 @@ where
     else [.ins (.aluImm12 .sub true rd rn ⟨(-off).toNat, false⟩)]
 
 /-- Prologue and epilogue (frame size a multiple of 16). -/
-def prologueLines (size : Nat) : List Line :=
+@[expose] def prologueLines (size : Nat) : List Line :=
   [.ins (.stp Reg.fp Reg.lr (.spPreIndexed (-16))), .ins (.mov true Reg.fp .sp)] ++
   (if size == 0 then []
    else match Imm12.ofNat? size with
@@ -538,13 +538,13 @@ structure FnAsm where
   deriving Inhabited
 
 /-- The target of a conditional branch. -/
-def Insn.condTarget? : Insn → Option Lbl
+@[expose] def Insn.condTarget? : Insn → Option Lbl
   | .bcond c t => if c == .al || c == .nv then none else some t
   | .cbz _ _ _ t | .tbz _ _ _ t => some t
   | _ => none
 
 /-- The conditional branch with the opposite condition, to `target`. -/
-def Insn.invertTo (target : Lbl) : Insn → Insn
+@[expose] def Insn.invertTo (target : Lbl) : Insn → Insn
   | .bcond c _ => .bcond c.invert target
   | .cbz nz w r _ => .cbz (!nz) w r target
   | .tbz nz r bit _ => .tbz (!nz) r bit target
@@ -552,7 +552,7 @@ def Insn.invertTo (target : Lbl) : Insn → Insn
 
 /-- Branches to the next block fall through (as Cranelift's `MachBuffer` does): `b L` right
 before `L:` is dropped, and `b.c T; b E; T:` becomes `b.!c E; T:`. -/
-def fallthrough (lines : Array Line) : Array Line := Id.run do
+@[expose] def fallthrough (lines : Array Line) : Array Line := Id.run do
   let mut out : Array Line := #[]
   let mut i := 0
   for _ in [0:lines.size] do
@@ -576,7 +576,7 @@ def fallthrough (lines : Array Line) : Array Line := Id.run do
 
 /-- The lines of an allocated function (`k` = its index in the file) before branch relaxation:
 the blocks' lines after `fallthrough`, then the deferred traps. -/
-def emitPre (k : Nat) (af : AFunc) : Except String (Array Line) := do
+@[expose] def emitPre (k : Nat) (af : AFunc) : Except String (Array Line) := do
   let c : FnCtx := { k, slotBase := af.slotBase }
   let mut ps : PState := {}
   let mut lines : Array Line := #[]
@@ -648,17 +648,17 @@ def Insn.relaxTarget? (i : Insn) : Option Lbl :=
   | _ => none
 
 /-- A relaxable line: a conditional branch (no trap code) with its relaxable target. -/
-def Line.relaxable? : Line → Option (Insn × Lbl)
+@[expose] def Line.relaxable? : Line → Option (Insn × Lbl)
   | .ins c none => c.relaxTarget?.map (c, ·)
   | _ => none
 
 /-- Relax one line: a relaxable branch to a far label becomes `b.!c .+8; b T`. -/
-def relaxLine (far : Lbl → Bool) (ln : Line) : List Line :=
+@[expose] def relaxLine (far : Lbl → Bool) (ln : Line) : List Line :=
   match ln.relaxable? with
   | some (c, t) => if far t then [.ins (c.invertTo .skip) none, .ins (.b t) none] else [ln]
   | none => [ln]
 
-def relaxLines (far : Lbl → Bool) (ls : List Line) : List Line := ls.flatMap (relaxLine far)
+@[expose] def relaxLines (far : Lbl → Bool) (ls : List Line) : List Line := ls.flatMap (relaxLine far)
 
 /-- `farTargets` at byte offset `pc` with the far labels found so far in `acc`. -/
 def farTargets.go (m : Std.HashMap Lbl Nat) : List Line → Nat → List Lbl → List Lbl
@@ -673,7 +673,7 @@ def farTargets.go (m : Std.HashMap Lbl Nat) : List Line → Nat → List Lbl →
 
 /-- The targets of the relaxable branches of `lines` that do not reach their label at the
 offsets `lines` is laid out at (none if a label is defined twice: `layout` rejects that). -/
-def farTargets (lines : List Line) : List Lbl :=
+@[expose] def farTargets (lines : List Line) : List Lbl :=
   match labelOffsets.go lines 0 {} with
   | .ok m => farTargets.go m lines 0 []
   | .error _ => []
@@ -690,7 +690,7 @@ def relaxOf (pre : List Line) : Lbl → Bool := relaxFar pre (pre.length + 1) {}
 
 /-- Expand an allocated function (`k` = its index in the file) into its final line list
 (`emitPre`, then branch relaxation), with byte offsets of the trap sites. -/
-def emitFunc (k : Nat) (af : AFunc) : Except String FnAsm := do
+@[expose] def emitFunc (k : Nat) (af : AFunc) : Except String FnAsm := do
   let pre := (← emitPre k af).toList
   let lines := (relaxLines (relaxOf pre) pre).toArray
   let mut off := 0
@@ -726,7 +726,7 @@ def ExtendOp.asm : ExtendOp → String
   | .sxtb => "sxtb" | .sxth => "sxth" | .sxtw => "sxtw" | .sxtx => "sxtx"
 
 /-- Register width of the index in an extended operand (`w` for byte/half/word extends). -/
-def ExtendOp.is64 : ExtendOp → Bool
+@[expose] def ExtendOp.is64 : ExtendOp → Bool
   | .uxtx | .sxtx => true
   | _ => false
 
@@ -816,7 +816,7 @@ def FpuRoundMode.asm : FpuRoundMode → String
   | .zero32 | .zero64 => "frintz" | .nearest32 | .nearest64 => "frintn"
 
 /-- The operand precision of a rounding mode. -/
-def FpuRoundMode.size : FpuRoundMode → ScalarSize
+@[expose] def FpuRoundMode.size : FpuRoundMode → ScalarSize
   | .minus32 | .plus32 | .zero32 | .nearest32 => .size32
   | .minus64 | .plus64 | .zero64 | .nearest64 => .size64
 

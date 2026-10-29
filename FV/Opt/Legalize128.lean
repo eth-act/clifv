@@ -79,7 +79,7 @@ def typeMapOf (f : Function) : Std.HashMap ValueId Ty := Id.run do
   return m
 
 /-- Does a signature mention `i128`? -/
-def sig128 (s : Signature) : Bool := (s.params ++ s.returns).any (·.ty == .i128)
+@[expose] def sig128 (s : Signature) : Bool := (s.params ++ s.returns).any (·.ty == .i128)
 
 /-- Does the instruction (its controlling type or any operand) mention `i128`? -/
 def inst128 (ty : ValueId → Option Ty) : Inst → Bool
@@ -166,7 +166,7 @@ inductive SlotEl where
 (`x0..x7`), `v` the float registers (`v0..v7`), `st` the stack bytes (a multiple of 8),
 `hole`: a pair went on the stack while Cranelift still had `x7` free. An `i128` group
 `[.val q, .lo, .hi]` is followed by the empty group of the parameter `q` it carries in `x7`. -/
-def expandGroups (ps : List AbiParam) : Except String (List (List SlotEl)) :=
+@[expose] def expandGroups (ps : List AbiParam) : Except String (List (List SlotEl)) :=
   go ps 0 0 0 false
 where
   go : List AbiParam → Nat → Nat → Nat → Bool → Except String (List (List SlotEl))
@@ -215,11 +215,11 @@ where
         return [.val p] :: rest
 
 /-- The `AbiParam` of a slot. -/
-def elTy : SlotEl → AbiParam
+@[expose] def elTy : SlotEl → AbiParam
   | .val p => p
   | _ => { ty := .i64 }
 
-def expandSig (s : Signature) : Except String Signature := do
+@[expose] def expandSig (s : Signature) : Except String Signature := do
   let pg ← expandGroups s.params
   let rg ← expandGroups s.returns
   return { s with params := pg.flatMap (·.map elTy), returns := rg.flatMap (·.map elTy) }

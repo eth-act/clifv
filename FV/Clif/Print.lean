@@ -20,11 +20,11 @@ namespace Clif
 
 namespace Print
 
-def UnaryOp.name : UnaryOp → String
+@[expose] def UnaryOp.name : UnaryOp → String
   | .ineg => "ineg" | .bnot => "bnot" | .iabs => "iabs" | .clz => "clz" | .ctz => "ctz"
   | .cls => "cls" | .popcnt => "popcnt" | .bitrev => "bitrev" | .bswap => "bswap"
 
-def BinaryOp.name : BinaryOp → String
+@[expose] def BinaryOp.name : BinaryOp → String
   | .iadd => "iadd" | .isub => "isub" | .imul => "imul"
   | .umulhi => "umulhi" | .smulhi => "smulhi"
   | .band => "band" | .bor => "bor" | .bxor => "bxor"
@@ -33,34 +33,34 @@ def BinaryOp.name : BinaryOp → String
   | .uaddSat => "uadd_sat" | .saddSat => "sadd_sat"
   | .usubSat => "usub_sat" | .ssubSat => "ssub_sat"
 
-def DivOp.name : DivOp → String
+@[expose] def DivOp.name : DivOp → String
   | .udiv => "udiv" | .sdiv => "sdiv" | .urem => "urem" | .srem => "srem"
 
-def OverflowOp.name : OverflowOp → String
+@[expose] def OverflowOp.name : OverflowOp → String
   | .uaddOverflow => "uadd_overflow" | .saddOverflow => "sadd_overflow"
   | .usubOverflow => "usub_overflow" | .ssubOverflow => "ssub_overflow"
   | .umulOverflow => "umul_overflow" | .smulOverflow => "smul_overflow"
 
-def CarryOp.name : CarryOp → String
+@[expose] def CarryOp.name : CarryOp → String
   | .uaddOverflowCin => "uadd_overflow_cin" | .saddOverflowCin => "sadd_overflow_cin"
   | .usubOverflowBin => "usub_overflow_bin" | .ssubOverflowBin => "ssub_overflow_bin"
 
-def LoadOp.name : LoadOp → String
+@[expose] def LoadOp.name : LoadOp → String
   | .load => "load" | .uload8 => "uload8" | .sload8 => "sload8" | .uload16 => "uload16"
   | .sload16 => "sload16" | .uload32 => "uload32" | .sload32 => "sload32"
 
-def StoreOp.name : StoreOp → String
+@[expose] def StoreOp.name : StoreOp → String
   | .store => "store" | .istore8 => "istore8" | .istore16 => "istore16"
   | .istore32 => "istore32"
 
-def v (x : ValueId) : String := s!"v{x}"
+@[expose] def v (x : ValueId) : String := s!"v{x}"
 
-def vs (xs : List ValueId) : String := ", ".intercalate (xs.map v)
+@[expose] def vs (xs : List ValueId) : String := ", ".intercalate (xs.map v)
 
-def offset (i : Int) : String :=
+@[expose] def offset (i : Int) : String :=
   if i == 0 then "" else if i > 0 then s!"+{i}" else s!"{i}"
 
-def memFlags (f : MemFlags) : String := Id.run do
+@[expose] def memFlags (f : MemFlags) : String := Id.run do
   let mut out := ""
   match f.trapCode with
   | none => out := out ++ " notrap"
@@ -75,7 +75,7 @@ def memFlags (f : MemFlags) : String := Id.run do
   | none => pure ()
   return out
 
-def blockCall (b : BlockCall) : String :=
+@[expose] def blockCall (b : BlockCall) : String :=
   if b.args.isEmpty then s!"block{b.block}" else s!"block{b.block}({vs b.args})"
 
 def tryArg : TryArg → String
@@ -88,7 +88,7 @@ def tryDest (d : TryDest) : String :=
   else s!"block{d.block}({", ".intercalate (d.args.map tryArg)})"
 
 /-- `sigN, normal, [ items ]` (Cranelift's `DisplayExceptionTable`). -/
-def exnTable (et : ExnTable) : String :=
+@[expose] def exnTable (et : ExnTable) : String :=
   let items := et.items.map fun
     | .tag n d => s!"tag{n}: {tryDest d}"
     | .default d => s!"default: {tryDest d}"
@@ -113,17 +113,17 @@ def signature (s : Signature) : String :=
   ps ++ rs ++ cc
 
 /-- Suffix `.ty` for a value's type, if known. -/
-def sfxOf (tys : ValueId → Option Ty) (x : ValueId) : String :=
+@[expose] def sfxOf (tys : ValueId → Option Ty) (x : ValueId) : String :=
   match tys x with
   | some t => "." ++ t.name
   | none => ""
 
 /-- Cranelift's text of the bits `x` of a float type of width `w`. -/
-def floatText (w : Nat) (x : BitVec w) : String :=
+@[expose] def floatText (w : Nat) (x : BitVec w) : String :=
   let (e, t) := FloatLit.fields w
   FloatLit.format x.toNat e t
 
-def inst (tys : ValueId → Option Ty) : Inst → String
+@[expose] def inst (tys : ValueId → Option Ty) : Inst → String
   | .iconst ty imm =>
     if ty.isFloat then s!"{ty.name}const {floatText ty.width imm}"
     else s!"iconst.{ty.name} {imm.toInt}"
@@ -165,7 +165,7 @@ def inst (tys : ValueId → Option Ty) : Inst → String
   | .float (.fcmp cc) ty args => s!"fcmp.{ty.name} {cc.name} {vs args}"
   | .float op ty args => s!"{op.name}.{ty.name} {vs args}"
 
-def term (tys : ValueId → Option Ty) : Terminator → String
+@[expose] def term (tys : ValueId → Option Ty) : Terminator → String
   | .jump b => s!"jump {blockCall b}"
   | .brif c t e => s!"brif{sfxOf tys c} {v c}, {blockCall t}, {blockCall e}"
   | .brTable x d tbl =>

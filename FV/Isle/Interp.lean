@@ -102,14 +102,14 @@ abbrev M (σ : Type) := StateT (σ × Array RuleId) (Except Err)
 
 variable {V σ : Type} (p : Program) (sem : Sem V σ) (cfg : Config)
 
-def termOf (t : TermId) : Except Err Term :=
+@[expose] def termOf (t : TermId) : Except Err Term :=
   match p.term? t with
   | some term => pure term
   | none => throw (.malformed s!"unknown term {t}")
 
 mutual
 /-- Match `pat` against `v`, extending `env`; `none` if it does not match. -/
-def matchPat (st : σ) : Pattern → V → Env V → Except Err (Option (Env V))
+@[expose] def matchPat (st : σ) : Pattern → V → Env V → Except Err (Option (Env V))
   | .bind _ x sub, v, env =>
     if x < env.size then matchPat st sub v (env.set! x (some v))
     else throw (.malformed s!"variable {x} out of range")
@@ -151,7 +151,7 @@ def matchAll (st : σ) : List Pattern → V → Env V → Except Err (Option (En
     | some env' => matchAll st qs v env'
     | none => pure none
 /-- Match patterns against values pointwise. -/
-def matchArgs (st : σ) : List Pattern → List V → Env V → Except Err (Option (Env V))
+@[expose] def matchArgs (st : σ) : List Pattern → List V → Env V → Except Err (Option (Env V))
   | [], [], env => pure (some env)
   | q :: qs, w :: ws, env => do
     match ← matchPat st q w env with
@@ -161,7 +161,7 @@ def matchArgs (st : σ) : List Pattern → List V → Env V → Except Err (Opti
 end
 
 /-- Append a fired rule to the trace. -/
-def fire (r : RuleId) : M σ Unit := modify fun (s, tr) => (s, tr.push r)
+@[expose] def fire (r : RuleId) : M σ Unit := modify fun (s, tr) => (s, tr.push r)
 
 /-- The rules of one priority class starting at the head of `rs`, and the rest. -/
 def splitClass (prio : Int) : List Rule → List Rule × List Rule
@@ -174,7 +174,7 @@ def splitClass (prio : Int) : List Rule → List Rule × List Rule
 
 mutual
 /-- Evaluate an expression; `none` means a `partial` constructor failed. -/
-def evalExpr : Nat → Expr → Env V → M σ (Option V)
+@[expose] def evalExpr : Nat → Expr → Env V → M σ (Option V)
   | 0, _, _ => throw .outOfFuel
   | _ + 1, .var _ x, env =>
     match env[x]? with
@@ -216,7 +216,7 @@ def evalBinds : Nat → List (VarId × TypeId × Expr) → Env V → M σ (Optio
       if x < env.size then evalBinds n bs (env.set! x (some v))
       else throw (.malformed s!"variable {x} out of range")
 /-- Apply the constructor of term `t` (result type `ty`) to values. -/
-def applyTerm : Nat → TypeId → TermId → List V → M σ (Option V)
+@[expose] def applyTerm : Nat → TypeId → TermId → List V → M σ (Option V)
   | 0, _, _, _ => throw .outOfFuel
   | n + 1, ty, t, vs => do
     let term ← termOf p t
@@ -240,14 +240,14 @@ def applyTerm : Nat → TypeId → TermId → List V → M σ (Option V)
         | none => pure none
     | _ => throw (.malformed s!"term {term.name} has no constructor")
 /-- Match phase of one rule: argument patterns, then the if-lets. -/
-def matchRule : Nat → Rule → List V → M σ (Option (Env V))
+@[expose] def matchRule : Nat → Rule → List V → M σ (Option (Env V))
   | 0, _, _ => throw .outOfFuel
   | n + 1, r, vs => do
     let (st, _) ← get
     match ← matchArgs p sem st r.args vs (Array.replicate r.vars.length none) with
     | none => pure none
     | some env => matchIfLets n r.iflets env
-def matchIfLets : Nat → List IfLet → Env V → M σ (Option (Env V))
+@[expose] def matchIfLets : Nat → List IfLet → Env V → M σ (Option (Env V))
   | 0, _, _ => throw .outOfFuel
   | _ + 1, [], env => pure (some env)
   | n + 1, il :: ils, env => do
@@ -259,7 +259,7 @@ def matchIfLets : Nat → List IfLet → Env V → M σ (Option (Env V))
       | none => pure none
       | some env' => matchIfLets n ils env'
 /-- Try one rule; on failure restore the state (the match phase is pure). -/
-def tryRule : Nat → Rule → List V → M σ (Option (Env V))
+@[expose] def tryRule : Nat → Rule → List V → M σ (Option (Env V))
   | 0, _, _ => throw .outOfFuel
   | n + 1, r, vs => do
     let saved ← get
@@ -277,7 +277,7 @@ def alsoMatching : Nat → List Rule → List V → M σ (List String)
     let rest ← alsoMatching n rs vs
     pure (if m.isSome then r.name :: rest else rest)
 /-- The first matching rule in `ruleBefore` order. -/
-def selectRule : Nat → Term → List Rule → List V → M σ (Option (Rule × Env V))
+@[expose] def selectRule : Nat → Term → List Rule → List V → M σ (Option (Rule × Env V))
   | 0, _, _, _ => throw .outOfFuel
   | _ + 1, _, [], _ => pure none
   | n + 1, term, r :: rs, vs => do

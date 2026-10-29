@@ -30,11 +30,11 @@ def tyM (t : Ty) : Bool := tyE t || t.isFloat
 /-- An `f64` constant `constant_f64` lowers without the literal pool (inst.isle:4264-4274: zero,
 an `fmov` immediate (`fpModImm?`), a value below `2^32` (`constant_f32`), or zero low 32 bits
 (`mov x; fmov d`)); the last rule's `emit_u64_le_const` is not modelled. -/
-def f64PoolFree (n : Nat) : Bool :=
+@[expose] def f64PoolFree (n : Nat) : Bool :=
   n == 0 || (Backend.fpModImm? n .size64).isSome || decide (n < 2 ^ 32) || n % 2 ^ 32 == 0
 
 /-- The instructions of the typed scope: `instE`, and the float data movement of S11e4. -/
-def instET : Inst → Bool
+@[expose] def instET : Inst → Bool
   | .iconst ty imm => tyE ty || ty == .f32 || (ty == .f64 && f64PoolFree imm.toNat)
   | .load op ty f _ _ => flagsE f && (tyE ty || (ty.isFloat && op == .load))
   | .store op ty f _ _ _ => flagsE f && (tyE ty || (ty.isFloat && op == .store))
@@ -83,7 +83,7 @@ def intOperands : Inst → List Nat
 
 /-- The operands of a terminator in integer positions: a branch condition, a `br_table`
 index, the callee and arguments of a `try_call` (calls are integer-only). -/
-def termIntOperands : Terminator → List Nat
+@[expose] def termIntOperands : Terminator → List Nat
   | .brif c _ _ => [c]
   | .brTable x _ _ => [x]
   | .tryCall _ args _ => args
@@ -92,14 +92,14 @@ def termIntOperands : Terminator → List Nat
 
 /-- `call_indirect` (its results have its declared signature's types, integers by
 `instData`'s `sigIntB`). -/
-def isCallIndirect : Inst → Bool
+@[expose] def isCallIndirect : Inst → Bool
   | .callIndirect .. => true
   | _ => false
 
 /-- The values `f` defines with a float type: block parameters and statement results (the
 result types `buildCtx` uses; a `call_indirect`'s are integers by `instData`, so it is not
 listed). -/
-def floatDefs (f : Function) : List ValueId :=
+@[expose] def floatDefs (f : Function) : List ValueId :=
   f.blocks.flatMap fun b =>
     (b.params.filter (·.2.isFloat)).map (·.1) ++
     b.body.flatMap fun s =>
@@ -108,7 +108,7 @@ def floatDefs (f : Function) : List ValueId :=
           (f.sigDecls.lookup ·)).getD [])).filter (·.2.isFloat)).map (·.1)
 
 /-- The operands in integer positions are not float-defined values. -/
-def opsTypedT (f : Function) : Bool :=
+@[expose] def opsTypedT (f : Function) : Bool :=
   let fd := floatDefs f
   f.blocks.all fun b =>
     b.body.all (fun s => (intOperands s.inst).all fun x => !fd.contains x) &&
@@ -117,7 +117,7 @@ def opsTypedT (f : Function) : Bool :=
 /-- Every definition of `f` with whether its type is a float: block parameters, statement
 results at the result types `buildCtx` uses; a `call_indirect`'s results are integers
 (`instData`'s `sigIntB`). -/
-def defFloats (f : Function) : List (ValueId × Bool) :=
+@[expose] def defFloats (f : Function) : List (ValueId × Bool) :=
   f.blocks.flatMap fun b =>
     b.params.map (fun p => (p.1, p.2.isFloat)) ++
     b.body.flatMap fun s =>
@@ -157,7 +157,7 @@ def edgeClassOk (f : Function) : Bool :=
       | _ => true)
 
 /-- **The typed movement scope.** -/
-def functionET (f : Function) : Bool :=
+@[expose] def functionET (f : Function) : Bool :=
   sigET f.sig && f.globals.all (globalE ·.2) && f.externs.all (sigE ·.2.sig) &&
     f.blocks.all (fun b =>
       b.params.all (tyM ·.2) && b.body.all (instET ·.inst) && termE b.term) &&

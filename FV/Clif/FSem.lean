@@ -45,14 +45,14 @@ def lift2 (g : (f : Fmt) → IEEE.Bits f → IEEE.Bits f → IEEE.Bits f) :
   | _, _, _ => none
 
 /-- A unary operation on the bits of a float type. -/
-def lift1 (g : (f : Fmt) → IEEE.Bits f → IEEE.Bits f) :
+@[expose] def lift1 (g : (f : Fmt) → IEEE.Bits f → IEEE.Bits f) :
     (ty : Ty) → BitVec ty.width → Option (BitVec ty.width)
   | .f32, a => some (g Fmt.b32 a)
   | .f64, a => some (g Fmt.b64 a)
   | _, _ => none
 
 /-- A ternary operation on the bits of a float type. -/
-def lift3 (g : (f : Fmt) → IEEE.Bits f → IEEE.Bits f → IEEE.Bits f → IEEE.Bits f) :
+@[expose] def lift3 (g : (f : Fmt) → IEEE.Bits f → IEEE.Bits f → IEEE.Bits f → IEEE.Bits f) :
     (ty : Ty) → BitVec ty.width → BitVec ty.width → BitVec ty.width → Option (BitVec ty.width)
   | .f32, a, b, c => some (g Fmt.b32 a b c)
   | .f64, a, b, c => some (g Fmt.b64 a b c)
@@ -64,7 +64,7 @@ def copysign (f : Fmt) (x y : IEEE.Bits f) : IEEE.Bits f :=
   (x &&& ~~~s) ||| (y &&& s)
 
 /-- Binary operations (`fadd fsub fmul fdiv fmin fmax fcopysign`). -/
-def binary : FOp → Option ((f : Fmt) → IEEE.Bits f → IEEE.Bits f → IEEE.Bits f)
+@[expose] def binary : FOp → Option ((f : Fmt) → IEEE.Bits f → IEEE.Bits f → IEEE.Bits f)
   | .fadd => some fun f => IEEE.add f .rne
   | .fsub => some fun f => IEEE.sub f .rne
   | .fmul => some fun f => IEEE.mul f .rne
@@ -75,7 +75,7 @@ def binary : FOp → Option ((f : Fmt) → IEEE.Bits f → IEEE.Bits f → IEEE.
   | _ => none
 
 /-- Unary same-type operations (`fneg fabs sqrt ceil floor trunc nearest`). -/
-def unary : FOp → Option ((f : Fmt) → IEEE.Bits f → IEEE.Bits f)
+@[expose] def unary : FOp → Option ((f : Fmt) → IEEE.Bits f → IEEE.Bits f)
   | .fneg => some IEEE.neg
   | .fabs => some IEEE.abs
   | .sqrt => some fun f => IEEE.sqrt f .rne
@@ -86,7 +86,7 @@ def unary : FOp → Option ((f : Fmt) → IEEE.Bits f → IEEE.Bits f)
   | _ => none
 
 /-- `fma x y z = x * y + z`, rounded once (`FPMulAdd(z, x, y)`). -/
-def fma (f : Fmt) (x y z : IEEE.Bits f) : IEEE.Bits f := IEEE.mulAdd f .rne z x y
+@[expose] def fma (f : Fmt) (x y z : IEEE.Bits f) : IEEE.Bits f := IEEE.mulAdd f .rne z x y
 
 /-- `fcmp cc` on the comparison result (`FloatCC`, `docs/ir.md` table). -/
 def condHolds : FloatCC → Cmp → Bool
@@ -106,27 +106,27 @@ def condHolds : FloatCC → Cmp → Bool
   | .uge, c => c == .un || c == .gt || c == .eq
 
 /-- `fcmp cc x y` at a float type. -/
-def fcmp (cc : FloatCC) : (ty : Ty) → BitVec ty.width → BitVec ty.width → Option Bool
+@[expose] def fcmp (cc : FloatCC) : (ty : Ty) → BitVec ty.width → BitVec ty.width → Option Bool
   | .f32, a, b => some (condHolds cc (IEEE.compare Fmt.b32 a b))
   | .f64, a, b => some (condHolds cc (IEEE.compare Fmt.b64 a b))
   | _, _, _ => none
 
 /-- `fpromote.f64 x` (`x : f32`). -/
-def fpromote (x : BitVec 32) : BitVec 64 := IEEE.convert Fmt.b32 Fmt.b64 .rne x
+@[expose] def fpromote (x : BitVec 32) : BitVec 64 := IEEE.convert Fmt.b32 Fmt.b64 .rne x
 
 /-- `fdemote.f32 x` (`x : f64`). -/
-def fdemote (x : BitVec 64) : BitVec 32 := IEEE.convert Fmt.b64 Fmt.b32 .rne x
+@[expose] def fdemote (x : BitVec 64) : BitVec 32 := IEEE.convert Fmt.b64 Fmt.b32 .rne x
 
 /-- The truncation of a float to an integer of width `w` (`unsigned` or signed), saturating,
 NaN ↦ 0 (`fcvt_to_{u,s}int_sat`). -/
-def toIntSat (unsigned : Bool) (w : Nat) : (ty : Ty) → BitVec ty.width → Option (BitVec w)
+@[expose] def toIntSat (unsigned : Bool) (w : Nat) : (ty : Ty) → BitVec ty.width → Option (BitVec w)
   | .f32, a => some (IEEE.toFixed Fmt.b32 a unsigned w .rz)
   | .f64, a => some (IEEE.toFixed Fmt.b64 a unsigned w .rz)
   | _, _ => none
 
 /-- The trapping truncation (`fcvt_to_{u,s}int`): `bad_toint` on NaN, `int_ovf` if the
 truncated value is outside the range of the `w`-bit result. -/
-def toInt (unsigned : Bool) (w : Nat) : (ty : Ty) → BitVec ty.width → Option (Except TrapCode (BitVec w))
+@[expose] def toInt (unsigned : Bool) (w : Nat) : (ty : Ty) → BitVec ty.width → Option (Except TrapCode (BitVec w))
   | .f32, a => some (check (IEEE.isNaN Fmt.b32 a) (IEEE.truncInt? Fmt.b32 a))
   | .f64, a => some (check (IEEE.isNaN Fmt.b64 a) (IEEE.truncInt? Fmt.b64 a))
   | _, _ => none
@@ -141,7 +141,7 @@ where
       if lo ≤ i ∧ i ≤ hi then .ok (BitVec.ofInt w i) else .error .intOvf
 
 /-- `fcvt_from_{u,s}int.ty x` for an integer `x` of width `w`. -/
-def fromInt (unsigned : Bool) {w : Nat} (x : BitVec w) : (ty : Ty) → Option (BitVec ty.width)
+@[expose] def fromInt (unsigned : Bool) {w : Nat} (x : BitVec w) : (ty : Ty) → Option (BitVec ty.width)
   | .f32 => some (IEEE.fromFixed Fmt.b32 w x unsigned .rne)
   | .f64 => some (IEEE.fromFixed Fmt.b64 w x unsigned .rne)
   | _ => none

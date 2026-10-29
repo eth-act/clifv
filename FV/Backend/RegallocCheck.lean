@@ -112,7 +112,7 @@ def Loc.isReg : Loc → Bool
 
 /-- Dense index of a location in the abstract state (registers x0–x31 = 0–31, v0–v31 =
 32–63, save slots 64–127, spill slots from 128 on, int/float interleaved). -/
-def Loc.index : Loc → Option Nat
+@[expose] def Loc.index : Loc → Option Nat
   | .reg (.x n) => if n < 32 then some n else none
   | .reg (.v n) => if n < 32 then some (32 + n) else none
   | .save (.x n) => if n < 32 then some (64 + n) else none
@@ -133,7 +133,7 @@ locations; that made one `checkAllocAt` cost about 10 GB in `decide +kernel` cer
 Compiled code runs the `Array` versions (`@[csimp]`); `*_eq` give the `Array` forms to proofs. -/
 
 /-- `a.map f` (see above). -/
-def mapSets (f : List Sym → List Sym) (a : AState) : AState := ⟨a.toList.map f⟩
+@[expose] def mapSets (f : List Sym → List Sym) (a : AState) : AState := ⟨a.toList.map f⟩
 
 /-- `mapSets` as compiled. -/
 def mapSetsArray (f : List Sym → List Sym) (a : AState) : AState := a.map f
@@ -144,23 +144,23 @@ def mapSetsArray (f : List Sym → List Sym) (a : AState) : AState := a.map f
 @[csimp] theorem mapSets_eq_mapSetsArray : @mapSets = @mapSetsArray := by
   funext f a; exact mapSets_eq f a
 
-def get (a : AState) (l : Loc) : List Sym :=
+@[expose] def get (a : AState) (l : Loc) : List Sym :=
   match l.index with
   | some i => a.getD i []
   | none => []
 
-def put (a : AState) (l : Loc) (s : List Sym) : AState :=
+@[expose] def put (a : AState) (l : Loc) (s : List Sym) : AState :=
   match l.index with
   | some i => a.setIfInBounds i s
   | none => a
 
-def remove (a : AState) (s : Sym) : AState := a.mapSets (·.filter (· != s))
+@[expose] def remove (a : AState) (s : Sym) : AState := a.mapSets (·.filter (· != s))
 
 theorem remove_eq (a : AState) (s : Sym) : a.remove s = a.map (·.filter (· != s)) := by
   simp only [remove, mapSets_eq]
 
 /-- A definition: the symbol leaves every location and is the only content of `l`. -/
-def define (a : AState) (l : Loc) (s : Sym) : AState := (a.remove s).put l [s]
+@[expose] def define (a : AState) (l : Loc) (s : Sym) : AState := (a.remove s).put l [s]
 
 /-- `meet` on the location lists. -/
 def meetSets : List (List Sym) → List (List Sym) → List (List Sym)
@@ -202,7 +202,7 @@ theorem meet_eq (a b : AState) :
   funext a b; exact meet_eq a b
 
 /-- The parallel copy `params := args` on symbols. -/
-def parCopy (a : AState) (params args : List Nat) : AState :=
+@[expose] def parCopy (a : AState) (params args : List Nat) : AState :=
   let ps := params.map Sym.vreg
   a.mapSets fun s =>
     let adds := (params.zip args).filterMap fun (p, x) =>
@@ -257,7 +257,7 @@ structure CheckCtx where
   size : Nat
 
 /-- `pure ()` if `b`, else the error `msg ()` (built only on failure). -/
-def ensure (b : Bool) (msg : Unit → String) : Except String Unit :=
+@[expose] def ensure (b : Bool) (msg : Unit → String) : Except String Unit :=
   if b then pure () else throw (msg ())
 
 section
@@ -297,12 +297,12 @@ def CheckCtx.checkOperand (where_ : String) (ops : Array Operand) (allocs : Arra
 
 /-- The locations a def must not share: every use and clobber (early def), every late use and
 clobber (late def). -/
-def defConflicts (uses : List (Operand × Loc)) (clobLocs : List Loc) : OpPos → List Loc
+@[expose] def defConflicts (uses : List (Operand × Loc)) (clobLocs : List Loc) : OpPos → List Loc
   | .early => uses.map (·.2) ++ clobLocs
   | .late => (uses.filter (·.1.pos == .late)).map (·.2) ++ clobLocs
 
 /-- Static checks of one instruction's allocation (state-independent). -/
-def CheckCtx.checkStatic (where_ : String) (ops : Array Operand) (allocs : Array Loc)
+@[expose] def CheckCtx.checkStatic (where_ : String) (ops : Array Operand) (allocs : Array Loc)
     (clob : List Reg) : Except String Unit := do
   ensure (ops.size == allocs.size) fun _ =>
     s!"{where_}: {allocs.size} allocations for {ops.size} operands"
@@ -318,27 +318,27 @@ def CheckCtx.checkStatic (where_ : String) (ops : Array Operand) (allocs : Array
   (uses.filter (·.1.pos == .late)).forM fun (o, l) =>
     ensure (!clobLocs.contains l) fun _ => s!"{where_}: late use of v{o.vreg} in clobbered {repr l}"
 
-def needs (where_ : String) (a : AState) (l : Loc) (s : Sym) : Except String Unit :=
+@[expose] def needs (where_ : String) (a : AState) (l : Loc) (s : Sym) : Except String Unit :=
   ensure ((a.get l).contains s) fun _ =>
     s!"{where_}: {repr l} does not hold {repr s} (holds {repr (a.get l)})"
 
 /-- The operand–location pairs of kind `k` at position `p`. -/
-def atPos (pairs : List (Operand × Loc)) (k : OpKind) (p : OpPos) : List (Operand × Loc) :=
+@[expose] def atPos (pairs : List (Operand × Loc)) (k : OpKind) (p : OpPos) : List (Operand × Loc) :=
   pairs.filter fun (o, _) => o.kind == k && o.pos == p
 
 /-- Definitions: each vreg in turn becomes the only content of its location. -/
-def defineAll (a : AState) (ds : List (Operand × Loc)) : AState :=
+@[expose] def defineAll (a : AState) (ds : List (Operand × Loc)) : AState :=
   ds.foldl (fun a (o, l) => a.define l (.vreg o.vreg)) a
 
 /-- A clobbered register loses every vreg; a callee-saved one keeps its entry value (AAPCS64:
 the callee preserves d8–d15, which Cranelift's clobber set over-approximates as clobbered). -/
-def clobberAll (a : AState) (clob : List Reg) : AState :=
+@[expose] def clobberAll (a : AState) (clob : List Reg) : AState :=
   clob.foldl (fun a r => a.put (.reg r) ((a.get (.reg r)).filter (· == .entry r))) a
 
 /-- The def vregs of `pairs` leave every location (dead scratch defs, `MInst.keptDefs`: a
 branch's defs, `JTSequence`'s temporaries, are dead after the branch; the LL/SC loops' scratch
 registers; the proof's allocated-code semantics havocs them). -/
-def forgetDefs (a : AState) (pairs : List (Operand × Loc)) : AState :=
+@[expose] def forgetDefs (a : AState) (pairs : List (Operand × Loc)) : AState :=
   a.mapSets (·.filter fun s => !(pairs.any fun p => p.1.kind == .def && s == .vreg p.1.vreg))
 
 theorem forgetDefs_eq (a : AState) (pairs : List (Operand × Loc)) : forgetDefs a pairs =
@@ -346,7 +346,7 @@ theorem forgetDefs_eq (a : AState) (pairs : List (Operand × Loc)) : forgetDefs 
   simp only [forgetDefs, AState.mapSets_eq]
 
 /-- The def vregs of the operands `os` leave every location (`forgetDefs` without locations). -/
-def forgetOps (a : AState) (os : List Operand) : AState :=
+@[expose] def forgetOps (a : AState) (os : List Operand) : AState :=
   a.mapSets (·.filter fun s => !(os.any fun o => o.kind == .def && s == .vreg o.vreg))
 
 theorem forgetOps_eq (a : AState) (os : List Operand) : forgetOps a os =
@@ -355,7 +355,7 @@ theorem forgetOps_eq (a : AState) (os : List Operand) : forgetOps a os =
 
 /-- The transfer of an original instruction with operand–location pairs `pairs`, in execution
 order: early defs, clobbers, late defs; the defs past the first `keptDefs` are then forgotten. -/
-def transferOp (i : MInst) (pairs : List (Operand × Loc)) (a : AState) : AState :=
+@[expose] def transferOp (i : MInst) (pairs : List (Operand × Loc)) (a : AState) : AState :=
   let a' :=
     defineAll (clobberAll (defineAll a (atPos pairs .def .early)) i.clobbers) (atPos pairs .def .late)
   match i.keptDefs with
@@ -363,7 +363,7 @@ def transferOp (i : MInst) (pairs : List (Operand × Loc)) (a : AState) : AState
   | some n => forgetDefs a' ((pairs.filter (·.1.kind == .def)).drop n)
 
 /-- At a `Rets`: every callee-saved register holds its entry value. -/
-def retCheck (where_ : String) (i : MInst) (a : AState) : Except String Unit :=
+@[expose] def retCheck (where_ : String) (i : MInst) (a : AState) : Except String Unit :=
   match i with
   | .rets _ => calleeSaved.forM fun r =>
       needs s!"{where_} (return: callee-saved register not restored)" a (.reg r) (.entry r)
@@ -371,7 +371,7 @@ def retCheck (where_ : String) (i : MInst) (a : AState) : Except String Unit :=
 
 /-- Transfer (with the state-dependent checks) of one original instruction: early uses are
 checked in the in-state, late uses after the early defs. -/
-def CheckCtx.stepOp (where_ : String) (i : MInst) (ops : Array Operand) (allocs : Array Loc)
+@[expose] def CheckCtx.stepOp (where_ : String) (i : MInst) (ops : Array Operand) (allocs : Array Loc)
     (a : AState) : Except String AState := do
   c.checkStatic where_ ops allocs i.clobbers
   let pairs := (ops.zip allocs).toList
@@ -384,7 +384,7 @@ def CheckCtx.stepOp (where_ : String) (i : MInst) (ops : Array Operand) (allocs 
 
 /-- Static checks of a move: at least one side a register, both of one class, a callee-save
 slot only with its own register. -/
-def CheckCtx.checkMove (where_ : String) (src dst : Loc) : Except String Unit :=
+@[expose] def CheckCtx.checkMove (where_ : String) (src dst : Loc) : Except String Unit :=
   match src.cls? with
   | none => throw s!"{where_}: bad move source {repr src}"
   | some cls => do
@@ -396,14 +396,14 @@ def CheckCtx.checkMove (where_ : String) (src dst : Loc) : Except String Unit :=
       ensure (r == r') fun _ => s!"{where_}: save slot of {repr r} used with {repr r'}"
     | _, _ => pure ()
 
-def CheckCtx.stepMove (where_ : String) (src dst : Loc) (a : AState) : Except String AState := do
+@[expose] def CheckCtx.stepMove (where_ : String) (src dst : Loc) (a : AState) : Except String AState := do
   c.checkMove where_ src dst
   pure (a.put dst (a.get src))
 
 /-- Run the items of block `vb` from its in-state, `next` being the index of the next VCode
 instruction due: structural checks, transfer and checks of every item. Returns the
 out-state. -/
-def CheckCtx.runItems (vb : VBlock) : Nat → List RItem → AState → Except String AState
+@[expose] def CheckCtx.runItems (vb : VBlock) : Nat → List RItem → AState → Except String AState
   | next, [], a => do
     ensure (next == vb.insts.size) fun _ => s!"block {vb.label}: missing instructions"
     pure a
@@ -423,7 +423,7 @@ def CheckCtx.runItems (vb : VBlock) : Nat → List RItem → AState → Except S
         CheckCtx.runItems vb (next + 1) its a
 
 /-- Run one block from its in-state. Returns the out-state. -/
-def CheckCtx.runBlock (b : Nat) (a : AState) : Except String AState :=
+@[expose] def CheckCtx.runBlock (b : Nat) (a : AState) : Except String AState :=
   match c.vc.blocks[b]?, c.rf.blocks[b]? with
   | some vb, some items => c.runItems vb 0 items.toList a
   | none, _ => throw s!"no block {b}"
@@ -432,7 +432,7 @@ def CheckCtx.runBlock (b : Nat) (a : AState) : Except String AState :=
 /-- The state entering successor `s` of block `b` before the branch arguments: the defs of
 `b`'s terminator that are dead on that edge (`MInst.normalDead`: the exception payload defs of
 a `try_call`'s call, on its normal-return edge) leave every set. -/
-def CheckCtx.edgeForget (b s : Nat) (a : AState) : AState :=
+@[expose] def CheckCtx.edgeForget (b s : Nat) (a : AState) : AState :=
   match c.vc.blocks[b]? with
   | some vb => match vb.insts.back? with
     | some i => match i.normalDead with
@@ -447,7 +447,7 @@ def CheckCtx.edgeForget (b s : Nat) (a : AState) : AState :=
   | none => a
 
 /-- The parallel copy of the branch arguments of block `b` into the parameters of `s`. -/
-def CheckCtx.edgeCopy (b s : Nat) (a : AState) : Except String AState :=
+@[expose] def CheckCtx.edgeCopy (b s : Nat) (a : AState) : Except String AState :=
   match c.vc.blocks[b]?, c.vc.blocks[s]? with
   | some vb, some sb => do
     ensure (vb.branchArgs.size == sb.params.size) fun _ =>
@@ -463,7 +463,7 @@ def CheckCtx.edgeCopy (b s : Nat) (a : AState) : Except String AState :=
 
 /-- The state entering successor `s` of block `b`: the defs dead on the edge forgotten
 (`edgeForget`), then the branch arguments as a parallel copy (`edgeCopy`). -/
-def CheckCtx.edge (b s : Nat) (a : AState) : Except String AState :=
+@[expose] def CheckCtx.edge (b s : Nat) (a : AState) : Except String AState :=
   c.edgeCopy b s (c.edgeForget b s a)
 
 /-- One round over all blocks; returns the new in-states and whether any changed. -/
@@ -494,7 +494,7 @@ def CheckCtx.fixpoint (fuel : Nat) (ins : Array (Option AState)) :
 
 /-- Block `b` of the proposed in-states `ins`: reached, its items check from its in-state, and
 every successor's in-state is included in the state the edge produces. -/
-def CheckCtx.verifyBlock (ins : Array (Option AState)) (b : Nat) : Except String Unit :=
+@[expose] def CheckCtx.verifyBlock (ins : Array (Option AState)) (b : Nat) : Except String Unit :=
   match ins[b]? with
   | some (some a) => do
     let out ← c.runBlock b a
@@ -508,12 +508,12 @@ def CheckCtx.verifyBlock (ins : Array (Option AState)) (b : Nat) : Except String
 end
 
 /-- The entry state: callee-saved registers hold their entry values. -/
-def entryState (size : Nat) : AState :=
+@[expose] def entryState (size : Nat) : AState :=
   calleeSaved.foldl (fun a r => a.put (.reg r) [.entry r]) (Array.replicate size [])
 
 /-- Check the proposed in-states: the entry block's is included in `entryState`, every block
 passes `verifyBlock`. This (not the iteration) is what the soundness proof relies on. -/
-def CheckCtx.verify (c : CheckCtx) (ins : Array (Option AState)) : Except String Unit :=
+@[expose] def CheckCtx.verify (c : CheckCtx) (ins : Array (Option AState)) : Except String Unit :=
   match ins[0]? with
   | some (some a0) => do
     ensure (a0.le (entryState c.size)) fun _ => "entry in-state is not the entry state"
@@ -521,7 +521,7 @@ def CheckCtx.verify (c : CheckCtx) (ins : Array (Option AState)) : Except String
   | _ => throw "the entry block is never reached"
 
 /-- Check an allocated function against the (prepared) VCode it was allocated from. -/
-def checkAlloc (vc : VCode) (rf : RFunc) : Except String Unit := do
+@[expose] def checkAlloc (vc : VCode) (rf : RFunc) : Except String Unit := do
   let (succs, preds) ← vc.cfg
   ensure (vc.blocks.size != 0) fun _ => "no blocks"
   ensure (rf.blocks.size == vc.blocks.size) fun _ => "block count differs"

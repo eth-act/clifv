@@ -32,12 +32,12 @@ inductive Res (α : Type) where
 
 namespace Res
 
-def bind {α β : Type} : Res α → (α → Res β) → Res β
+@[expose] def bind {α β : Type} : Res α → (α → Res β) → Res β
   | .ok a, f => f a
   | .trap c, _ => .trap c
   | .stuck m, _ => .stuck m
 
-instance : Monad Res where
+@[expose] instance : Monad Res where
   pure := .ok
   bind := Res.bind
 
@@ -54,7 +54,7 @@ instance : LawfulMonad Res := LawfulMonad.mk'
     (Res.stuck m >>= f) = .stuck m := rfl
 
 /-- `some a ↦ ok a`, `none ↦ stuck msg`. -/
-def ofOption {α : Type} (msg : String) : Option α → Res α
+@[expose] def ofOption {α : Type} (msg : String) : Option α → Res α
   | some a => .ok a
   | none => .stuck msg
 
@@ -64,7 +64,7 @@ def ofOption {α : Type} (msg : String) : Option α → Res α
     ofOption msg (none : Option α) = .stuck msg := rfl
 
 /-- `ok ↦ ok`, `error c ↦ trap c`. -/
-def ofExcept {α : Type} : Except TrapCode α → Res α
+@[expose] def ofExcept {α : Type} : Except TrapCode α → Res α
   | .ok a => .ok a
   | .error c => .trap c
 
@@ -74,7 +74,7 @@ def ofExcept {α : Type} : Except TrapCode α → Res α
     ofExcept (.error c : Except TrapCode α) = .trap c := rfl
 
 /-- Precondition check: `stuck msg` unless `b`. -/
-def check (b : Bool) (msg : String) : Res Unit := if b then .ok () else .stuck msg
+@[expose] def check (b : Bool) (msg : String) : Res Unit := if b then .ok () else .stuck msg
 
 @[simp] theorem check_true (msg : String) : check true msg = .ok () := rfl
 @[simp] theorem check_false (msg : String) : check false msg = .stuck msg := rfl
@@ -89,7 +89,7 @@ structure Alloc where
   readonly : Bool := false
   deriving DecidableEq, Repr, Inhabited
 
-def Alloc.contains (a : Alloc) (addr n : Nat) : Bool :=
+@[expose] def Alloc.contains (a : Alloc) (addr n : Nat) : Bool :=
   a.base ≤ addr && addr + n ≤ a.base + a.size
 
 /-- **The slot-byte oracle** (SEM1, `docs/plans/uninit.md` §3/§5): what the stack slots of a
@@ -104,7 +104,7 @@ structure SlotInit where
   next : Nat := 0
 
 /-- The oracle after one more placed activation with slots. -/
-def SlotInit.succ (ini : SlotInit) : SlotInit := { ini with next := ini.next + 1 }
+@[expose] def SlotInit.succ (ini : SlotInit) : SlotInit := { ini with next := ini.next + 1 }
 
 /-- **The slot-placement oracle** of a linked program (`docs/contracts/e2e.md`, "Linking at
 the Arm level"): where the compiled code puts the stack slots of an activation. `sps`: the
@@ -133,9 +133,9 @@ structure Mem where
 
 namespace Mem
 
-def empty : Mem := {}
+@[expose] def empty : Mem := {}
 
-instance : Inhabited Mem := ⟨empty⟩
+@[expose] instance : Inhabited Mem := ⟨empty⟩
 
 /-- Is `[addr, addr + n)` inside one live allocation? -/
 def valid (m : Mem) (addr n : Nat) : Bool := m.allocs.any (·.contains addr n)
@@ -157,7 +157,7 @@ def allocAt (m : Mem) (base size : Nat) : Mem :=
 
 /-- Set the bytes of `[base, base + size)` to `b` (a placed stack slot under the slot-byte
 oracle, `Clif.enterSlots`). -/
-def fillAt (m : Mem) (base size : Nat) (b : Nat → BitVec 8) : Mem :=
+@[expose] def fillAt (m : Mem) (base size : Nat) (b : Nat → BitVec 8) : Mem :=
   { m with bytes := fun a => if base ≤ a ∧ a < base + size then some (b a) else m.bytes a }
 
 /-- Leave an activation: the slot-placement oracle drops its stack pointer. -/
@@ -177,7 +177,7 @@ def leave (m : Mem) : Mem :=
 
 /-- Free the allocations with the given base addresses. Their bytes become unreachable
 (addresses are never reused). -/
-def free (m : Mem) (bases : List Nat) : Mem :=
+@[expose] def free (m : Mem) (bases : List Nat) : Mem :=
   { m with allocs := m.allocs.filter (fun a => !bases.contains a.base) }
 
 /-- Byte `i` of an `n`-byte access in the given byte order. -/
@@ -210,7 +210,7 @@ def checkAccess (m : Mem) (flags : MemFlags) (addr n : Nat) : Res Unit :=
     | none => .stuck s!"`notrap` access out of bounds at {addr}"
 
 /-- Checked load of `n` bytes as a `w`-bit value. -/
-def load (m : Mem) (flags : MemFlags) (addr n w : Nat) : Res (BitVec w) := do
+@[expose] def load (m : Mem) (flags : MemFlags) (addr n w : Nat) : Res (BitVec w) := do
   m.checkAccess flags addr n
   Res.ofOption s!"read of uninitialised memory at {addr}"
     (m.readBits (flags.endianness == some .big) addr n w)
@@ -220,7 +220,7 @@ def readonlyAt (m : Mem) (addr n : Nat) : Bool :=
   m.allocs.any fun a => a.readonly && a.base < addr + n && addr < a.base + a.size
 
 /-- Checked store of the low `n` bytes of `x`. A store into read-only data is `stuck`. -/
-def store {w : Nat} (m : Mem) (flags : MemFlags) (addr n : Nat) (x : BitVec w) : Res Mem := do
+@[expose] def store {w : Nat} (m : Mem) (flags : MemFlags) (addr n : Nat) (x : BitVec w) : Res Mem := do
   m.checkAccess flags addr n
   Res.check (!m.readonlyAt addr n) s!"store to read-only data at {addr}"
   pure (m.writeBits (flags.endianness == some .big) addr n x)
@@ -235,11 +235,11 @@ def itemSize : DataItem → Nat
   | .byte _ => 1
   | .addr .. => 8
 
-def size (o : DataObject) : Nat := (o.items.map itemSize).sum
+@[expose] def size (o : DataObject) : Nat := (o.items.map itemSize).sum
 
 /-- Allocate the objects in order (bump allocator, alignment `max align 16`), read-only
 unless `writable`. Returns each object's address. -/
-def place (m : Mem) : List DataObject → List (String × Nat) × Mem
+@[expose] def place (m : Mem) : List DataObject → List (String × Nat) × Mem
   | [] => ([], m)
   | o :: os =>
     let (base, m1) := m.alloc (size o) o.align
@@ -261,7 +261,7 @@ def writeItems (syms : List (String × Nat)) (m : Mem) (addr : Nat) :
 initialised, and `symbols` mapping each object name to its address. Names must be distinct;
 relocations may name objects of `ds` (vtables reference function symbols — resolved by
 `Program.initMem`, which registers the function stubs before writing the objects). -/
-def memWith (funcs : List String) (ds : List DataObject) : Res Mem := do
+@[expose] def memWith (funcs : List String) (ds : List DataObject) : Res Mem := do
   let names := ds.map (·.name)
   Res.check (names.eraseDups.length == names.length) "duplicate data object name"
   let (syms0, m) := place Mem.empty ds
@@ -281,7 +281,7 @@ def memWith (funcs : List String) (ds : List DataObject) : Res Mem := do
     writeItems symsList m base o.items
   pure { m with symbols := syms }
 
-def mem (ds : List DataObject) : Res Mem := memWith [] ds
+@[expose] def mem (ds : List DataObject) : Res Mem := memWith [] ds
 
 end Image
 
@@ -290,7 +290,7 @@ extended with one entry-stub address per function (and per extern declaration), 
 `func_addr` and data-object relocations to function symbols resolve to the same
 addresses (`Clif.Rust`). Function symbols are only registered when the program has data
 objects — `run_of_data_nil` keeps `Clif.run` starting from `Mem.empty` otherwise. -/
-def Program.initMem (p : Program) : Res Mem :=
+@[expose] def Program.initMem (p : Program) : Res Mem :=
   match p.data with
   | [] => .ok Mem.empty
   | ds => do

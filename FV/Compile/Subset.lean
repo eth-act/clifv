@@ -17,28 +17,28 @@ namespace Compile
 open Clif
 
 /-- Integer types of E: `i8 … i64` (not `i128`, no floats). -/
-def tyE (t : Ty) : Bool := t.isInt && t != .i128
+@[expose] def tyE (t : Ty) : Bool := t.isInt && t != .i128
 
-def unaryE : UnaryOp → Bool
+@[expose] def unaryE : UnaryOp → Bool
   | .ineg | .bnot | .clz | .ctz | .popcnt | .bitrev => true
   | _ => false
 
 /-- `bswap` needs at least two bytes (the reader's `iSwappable` = i16..i128). -/
-def unaryTyE : UnaryOp → Ty → Bool
+@[expose] def unaryTyE : UnaryOp → Ty → Bool
   | .bswap, t => t != .i8 && tyE t
   | op, t => unaryE op && tyE t
 
-def binaryE : BinaryOp → Bool
+@[expose] def binaryE : BinaryOp → Bool
   | .iadd | .isub | .imul | .umulhi | .smulhi | .band | .bor | .bxor
   | .ishl | .ushr | .sshr | .rotl | .rotr
   | .smin | .smax | .umin | .umax => true
   | _ => false
 
-def flagsE (f : MemFlags) : Bool :=
+@[expose] def flagsE (f : MemFlags) : Bool :=
   f.endianness.isNone && !f.canMove &&
     (f.trapCode.isNone || f.trapCode == some .heapOob)
 
-def instE : Inst → Bool
+@[expose] def instE : Inst → Bool
   | .iconst ty _ => tyE ty
   | .unary op ty _ => unaryTyE op ty
   | .binary op ty _ _ => binaryE op && tyE ty
@@ -71,12 +71,12 @@ def instE : Inst → Bool
 
 /-- Global values: `symbol %name[+offset]` (the target of `symbol_value`) and
 `symbol tls %name[+offset]` (the target of `tls_value`). -/
-def globalE : GlobalValue → Bool
+@[expose] def globalE : GlobalValue → Bool
   | .symbol .. => true
   | .tlsSymbol .. => true
   | _ => false
 
-def termE : Terminator → Bool
+@[expose] def termE : Terminator → Bool
   | .jump _ | .brif _ _ _ | .brTable _ _ _ | .ret _ | .trap _ => true
   | .returnCall _ _ => false
   -- `try_call`/`try_call_indirect` of an extern: inside the end-to-end theorem for its normal
@@ -84,10 +84,10 @@ def termE : Terminator → Bool
   | .tryCall .. => true
   | .tryCallIndirect .. => true
 
-def sigE (s : Signature) : Bool :=
+@[expose] def sigE (s : Signature) : Bool :=
   s.params.all (tyE ·.ty) && s.returns.all (tyE ·.ty)
 
-def functionE (f : Function) : Bool :=
+@[expose] def functionE (f : Function) : Bool :=
   sigE f.sig && f.globals.all (globalE ·.2) && f.externs.all (sigE ·.2.sig) &&
     f.blocks.all fun b =>
       b.params.all (tyE ·.2) && b.body.all (instE ·.inst) && termE b.term

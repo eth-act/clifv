@@ -28,7 +28,7 @@ section
 variable {V W S : Type} {vc : VCode} {rf : RFunc} {sem : ISem V W} {keep : Reg → V → V}
 
 /-- `n` steps of a deterministic machine. -/
-def iterN (f : S → S) : Nat → S → S
+@[expose] def iterN (f : S → S) : Nat → S → S
   | 0, s => s
   | n + 1, s => iterN f n (f s)
 
@@ -75,7 +75,7 @@ theorem VStep_det {v v1 v2 : VConf V W} (h1 : VStep vc sem v v1) (h2 : VStep vc 
 /-- The concrete machine `step` realises the allocated code under `Q`: from a related state it
 reaches (in some number of steps) a state related to some `MStep` successor, every state of the
 way before it satisfying `T` (a trace invariant; `fun _ => True` for none). -/
-def Realizes (vc : VCode) (rf : RFunc) (sem : ISem V W) (keep : Reg → V → V) (step : S → S)
+@[expose] def Realizes (vc : VCode) (rf : RFunc) (sem : ISem V W) (keep : Reg → V → V) (step : S → S)
     (Q : S → MConf V W → Prop) (T : S → Prop) : Prop :=
   ∀ s c c', Q s c → MStep vc sem keep rf c c' →
     ∃ n c'', MStep vc sem keep rf c c'' ∧ Q (iterN step n s) c'' ∧ ∀ i < n, T (iterN step i s)

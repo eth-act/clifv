@@ -83,7 +83,7 @@ open _root_.BitVec Arm.BitVec
 --   |-----|-----|-----|--------...
 --
 --
-def mem_overlap (a1 a2 b1 b2 : BitVec 64) : Bool :=
+@[expose] def mem_overlap (a1 a2 b1 b2 : BitVec 64) : Bool :=
   b1 - a1 <= a2 - a1 ||
   b2 - a1 <= a2 - a1 ||
   a1 - b1 <= b2 - b1 ||
@@ -93,12 +93,12 @@ def mem_overlap (a1 a2 b1 b2 : BitVec 64) : Bool :=
 -- `mem_separate`: returns true when memory regions A and B are
 -- separate from each other.
 
-def mem_separate (a1 a2 b1 b2 : BitVec 64) : Bool :=
+@[expose] def mem_separate (a1 a2 b1 b2 : BitVec 64) : Bool :=
   not (mem_overlap a1 a2 b1 b2)
 
 ----------------------------------------------------------------------
 -- `mem_subset`: returns true when A is a subset of B.
-def mem_subset (a1 a2 b1 b2 : BitVec 64) : Bool :=
+@[expose] def mem_subset (a1 a2 b1 b2 : BitVec 64) : Bool :=
   (b2 - b1 = BitVec.ofNat 64 (2^64 - 1)) ||
   ((a2 - b1 <= b2 - b1 && a1 - b1 <= a2 - b1))
 
@@ -122,7 +122,7 @@ example : mem_subset (BitVec.ofNat 64 (2^64 - 1)) 0#64 0#64 (BitVec.ofNat 64 (2^
 ----------------------------------------------------------------------
 -- `mem_legal`: returns true when the specified region does not wrap
 -- around.
-def mem_legal (a1 a2 : BitVec 64) : Bool :=
+@[expose] def mem_legal (a1 a2 : BitVec 64) : Bool :=
   a1 <= a2
 
 /-
@@ -229,7 +229,7 @@ section NewDefinitions
 `mem_legal' a n` witnessses that `(a + n)` does not overflow, and thus `[a..a+n)` is a valid range
 of memory. Note that the interval is left closed, right open, and thus `n` is the number of bytes in the memory range.
 -/
-def mem_legal' (a : BitVec 64) (n : Nat) : Prop :=
+@[expose] def mem_legal' (a : BitVec 64) (n : Nat) : Prop :=
   a.toNat + n ≤ 2^64
 
 /-- Build a `mem_legal'` from a proof obligation that can be closed by `omega`. -/
@@ -610,7 +610,7 @@ abbrev Memory.Region := BitVec 64 × Nat
 def Memory.Region.mk (a : BitVec 64) (n : Nat) : Memory.Region := (a, n)
 
 /-- A hypothesis that memory regions `a` and `b` are separate. -/
-def Memory.Region.separate (a b : Memory.Region) : Prop :=
+@[expose] def Memory.Region.separate (a b : Memory.Region) : Prop :=
   mem_separate' a.fst a.snd b.fst b.snd
 
 /-- A list of memory regions, that are known to be pairwise disjoint. -/

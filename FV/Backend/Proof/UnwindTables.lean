@@ -105,7 +105,7 @@ theorem sleb?_sleb (n : Int) (rest : List UInt8) :
 /-! ## CFI programs -/
 
 /-- The decoded instruction of a row's `Cfi`. -/
-def _root_.Backend.Cfi.insn : Cfi → Unw.CfaInsn
+@[expose] def _root_.Backend.Cfi.insn : Cfi → Unw.CfaInsn
   | .defCfaOffset o => .defCfaOffset o
   | .defCfaRegister r => .defCfaRegister r
   | .offset r off => .offset r off
@@ -184,13 +184,13 @@ theorem decodeCfa1?_advance (delta : Nat) (h0 : delta / 4 ≠ 0) (hb : delta / 4
         omega
 
 /-- The decoded instructions of the rows from location `at_`. -/
-def insnsFrom : Nat → List (Nat × Cfi) → List Unw.CfaInsn
+@[expose] def insnsFrom : Nat → List (Nat × Cfi) → List Unw.CfaInsn
   | _, [] => []
   | at_, (o, i) :: rows => advInsns (o - at_) ++ i.insn :: insnsFrom o rows
 
 /-- Rows the encoding round-trips: CFA offsets multiples of 8, code offsets below `2 ^ 32`
 (the FDE's 32-bit address range). -/
-def RowsOk (rows : List (Nat × Cfi)) : Prop := ∀ r ∈ rows, r.2.Ok ∧ r.1 < 2 ^ 32
+@[expose] def RowsOk (rows : List (Nat × Cfi)) : Prop := ∀ r ∈ rows, r.2.Ok ∧ r.1 < 2 ^ 32
 
 theorem decodeCfaN?_cons_of (fuel : Nat) (bs rest : List UInt8) (i : Unw.CfaInsn)
     (h : Unw.decodeCfa1? (bs ++ rest) = some (i, rest)) (hne : bs ≠ []) :
@@ -254,10 +254,10 @@ theorem decodeCfa?_cfiProgram (rows : List (Nat × Cfi)) (hok : RowsOk rows) :
 /-! ## The LSDA -/
 
 /-- The decoded entry of a call site. -/
-def _root_.Backend.CallSite.entry (s : CallSite) : Unw.CallSiteEntry := ⟨s.start, s.len, s.pad, s.action⟩
+@[expose] def _root_.Backend.CallSite.entry (s : CallSite) : Unw.CallSiteEntry := ⟨s.start, s.len, s.pad, s.action⟩
 
 /-- The bytes of one call-site entry. -/
-def siteBytes (s : CallSite) : List UInt8 :=
+@[expose] def siteBytes (s : CallSite) : List UInt8 :=
   (uleb s.start).data.toList ++ (uleb s.len).data.toList ++ (uleb s.pad).data.toList ++
     (uleb s.action).data.toList
 
@@ -335,7 +335,7 @@ def handlerEntry? (labs : List (Label × Nat)) (ret : Nat) (h : TryHandler) :
 `ret`: no landing pad for a plain call; for a `try_call` the landing pad of its first handler
 (the label's offset in the final code) with the cleanup (tag 0) or catch-all (tag 1)
 action. -/
-def entryFor (labs : List (Label × Nat)) : Option TryInfo × Nat → Option Unw.CallSiteEntry
+@[expose] def entryFor (labs : List (Label × Nat)) : Option TryInfo × Nat → Option Unw.CallSiteEntry
   | (c, ret) =>
     match handlersOf c with
     | [] => some ⟨ret - 1, 1, 0, 0⟩
@@ -344,7 +344,7 @@ def entryFor (labs : List (Label × Nat)) : Option TryInfo × Nat → Option Unw
 /-- The call-site table `sites` is right for `af` compiled to `fa` (decidable): the `k`-th
 `bl`/`blr` of the final code is the `k`-th call of `af`, and the personality's lookup at the
 call's return offset − 1 finds that call's entry (`entryFor`). -/
-def CallSitesOk (af : AFunc) (fa : FnAsm) (sites : List CallSite) : Prop :=
+@[expose] def CallSitesOk (af : AFunc) (fa : FnAsm) (sites : List CallSite) : Prop :=
   let r := scanLines fa.lines.toList 0 [] []
   r.2.length = af.calls.length ∧
   ∀ p ∈ af.calls.zip r.2,
@@ -519,7 +519,7 @@ def callInsn? : Option Insn → Bool
   | _ => false
 
 /-- A call instruction line (`bl`/`blr`). -/
-def _root_.Backend.Line.isCall (l : Line) : Bool := callInsn? l.insn?
+@[expose] def _root_.Backend.Line.isCall (l : Line) : Bool := callInsn? l.insn?
 
 theorem loadConst64_noCall (rd : Reg) (v : Nat) : ∀ l ∈ loadConst64 rd v, l.isCall = false := by
   intro l hl
@@ -561,11 +561,11 @@ theorem store_lines_noCall {c : FnCtx} {op : StoreOp} {r : Reg} {o : Int} {fl : 
     · rfl
 
 /-- The DWARF register and CFA offset of a callee-save store of a frame of `frameSize`. -/
-def saveRow (frameSize : Nat) (s : AInst) : Option (Nat × Int) :=
+@[expose] def saveRow (frameSize : Nat) (s : AInst) : Option (Nat × Int) :=
   s.calleeSave?.bind fun (r, o) => r.dwarf?.map fun d => (d, o - 16 - frameSize)
 
 /-- Rows at nondecreasing offsets from `at_`, a multiple of 4 apart, up to `hi`. -/
-def RowsIn (at_ hi : Nat) : List (Nat × Cfi) → Prop
+@[expose] def RowsIn (at_ hi : Nat) : List (Nat × Cfi) → Prop
   | [] => True
   | (o, _) :: rs => at_ ≤ o ∧ o ≤ hi ∧ (o - at_) % 4 = 0 ∧ RowsIn o hi rs
 
@@ -586,7 +586,7 @@ theorem RowsIn.lower {a b hi : Nat} : ∀ {rows}, RowsIn a hi rows → b ≤ a �
   | (o, _) :: rs, ⟨h1, h2, h3, h4⟩, hb, hm => ⟨by omega, h2, by omega, h4⟩
 
 /-- The `(register, CFA offset)` of an `offset` row. -/
-def offsetPair (r : Nat × Cfi) : Nat × Int :=
+@[expose] def offsetPair (r : Nat × Cfi) : Nat × Int :=
   match r.2 with
   | .offset d o => (d, o)
   | _ => (0, 0)
@@ -676,14 +676,14 @@ theorem rowAtFrom_insnsFrom (pc : Nat) : ∀ (rows : List (Nat × Cfi)) (row : U
       exact rowAtFrom_insnsFrom pc rows _ _ h4
 
 /-- The CIE's initial instructions (`DW_CFA_def_cfa sp, 0`, both CIEs of `ehFrame`). -/
-def cieInsns : List Unw.CfaInsn := [.defCfa 31 0]
+@[expose] def cieInsns : List Unw.CfaInsn := [.defCfa 31 0]
 
 theorem decodeCfa?_cie : Unw.decodeCfa? [0x0c, 31, 0] = some cieInsns := by decide
 
 /-- The row of a function with a frame of `frameSize` bytes at its call sites: CFA = sp +
 `frameSize` + 16 (the entry sp), x29 at CFA − 16, x30 (the return address) at CFA − 8, each
 saved callee-saved register `(d, off)` at CFA + `off` (latest rule first). -/
-def frameRow (frameSize : Nat) (saved : List (Nat × Int)) : Unw.Row :=
+@[expose] def frameRow (frameSize : Nat) (saved : List (Nat × Int)) : Unw.Row :=
   { cfaReg := 31, cfaOff := frameSize + 16, saved := saved.reverse ++ [(30, -8), (29, -16)] }
 
 /-- The row of a function without a frame: the CIE's (CFA = sp, return address in x30). -/
@@ -889,7 +889,7 @@ theorem unwindRows_leaf {af : AFunc} {fa : FnAsm} {rows : List (Nat × Cfi)}
 namespace Witness
 
 /-- Block 0: the prologue, `str x19, [sp]` and a `try_call f` whose catch handler is block 2. -/
-def af : AFunc where
+@[expose] def af : AFunc where
   name := "w"
   frameSize := 16
   slotBase := 0
@@ -898,11 +898,11 @@ def af : AFunc where
     (1, #[.epilogueRet]), (2, #[.epilogueRet])]
 
 /-- Its final code, unwind rows and call-site table. -/
-def fa : FnAsm := (emitFunc 0 af).toOption.getD default
-def rows : List (Nat × Cfi) :=
+@[expose] def fa : FnAsm := (emitFunc 0 af).toOption.getD default
+@[expose] def rows : List (Nat × Cfi) :=
   [(4, .defCfaOffset 16), (4, .offset 29 (-16)), (4, .offset 30 (-8)), (8, .defCfaRegister 29),
     (12, .defCfaRegister 31), (12, .defCfaOffset 32), (16, .offset 19 (-32))]
-def sites : List CallSite := [⟨19, 1, 32, 1⟩]
+@[expose] def sites : List CallSite := [⟨19, 1, 32, 1⟩]
 
 theorem ok_of_toOption {ε α : Type} {e : Except ε α} {x : α} (h : e.toOption = some x) :
     e = .ok x := by

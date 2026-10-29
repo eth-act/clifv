@@ -66,19 +66,19 @@ def Reg.dwarf? : Reg → Option Nat
   | _ => none
 
 /-- A callee-save store of block 0: `(register, sp offset)`. -/
-def AInst.calleeSave? : AInst → Option (Reg × Int)
+@[expose] def AInst.calleeSave? : AInst → Option (Reg × Int)
   | .inst (.store op r (.spOffset off) _) =>
     if (op == .store64 || op == .fpuStore128) && calleeSaved.contains r then some (r, off) else none
   | _ => none
 
 /-- The instruction of a line (none for labels and jump-table words). -/
-def Line.insn? : Line → Option Insn
+@[expose] def Line.insn? : Line → Option Insn
   | .ins i _ => some i
   | _ => none
 
 /-- The rows of the callee-save stores `saves` of block 0, emitted from byte offset `off`:
 the stores' lines and, after each, the row saving its register at CFA + `o - 16 - frameSize`. -/
-def saveRows (c : FnCtx) (frameSize : Nat) : Nat → List AInst →
+@[expose] def saveRows (c : FnCtx) (frameSize : Nat) : Nat → List AInst →
     Except String (List Line × List (Nat × Cfi))
   | _, [] => pure ([], [])
   | off, s :: rest => do
@@ -93,17 +93,17 @@ def saveRows (c : FnCtx) (frameSize : Nat) : Nat → List AInst →
     pure (ls ++ ls', (off, .offset dr cfaOff) :: rows)
 
 /-- The rows of the prologue `stp x29, x30, [sp, #-16]!; mov x29, sp`. -/
-def prologueRows : List (Nat × Cfi) :=
+@[expose] def prologueRows : List (Nat × Cfi) :=
   [(4, .defCfaOffset 16), (4, .offset 29 (-16)), (4, .offset 30 (-8)), (8, .defCfaRegister 29)]
 
 /-- The rows at the end of the prologue (byte offset `at_`, after its `sub sp`): CFA = sp +
 `frameSize` + 16. -/
-def frameRows (frameSize at_ : Nat) : List (Nat × Cfi) :=
+@[expose] def frameRows (frameSize at_ : Nat) : List (Nat × Cfi) :=
   [(at_, .defCfaRegister 31), (at_, .defCfaOffset (frameSize + 16))]
 
 /-- Unwind rows `(code offset, instruction)` of an allocated function `af` whose final code
 is `fa`, in code order. -/
-def unwindRows (af : AFunc) (fa : FnAsm) : Except String (List (Nat × Cfi)) := do
+@[expose] def unwindRows (af : AFunc) (fa : FnAsm) : Except String (List (Nat × Cfi)) := do
   if !af.frame then return []
   let some (_, code) := af.blocks[0]? | throw "unwind: no entry block"
   let code := code.toList
@@ -122,13 +122,13 @@ def unwindRows (af : AFunc) (fa : FnAsm) : Except String (List (Nat × Cfi)) := 
   return prologueRows ++ frameRows af.frameSize (4 * pro.length) ++ srows
 
 /-- Unsigned LEB128. -/
-def uleb (n : Nat) : ByteArray :=
+@[expose] def uleb (n : Nat) : ByteArray :=
   if n < 128 then ⟨#[UInt8.ofNat n]⟩ else ⟨#[UInt8.ofNat (n % 128 + 128)]⟩ ++ uleb (n / 128)
 termination_by n
 decreasing_by omega
 
 /-- Signed LEB128. -/
-def sleb (n : Int) : ByteArray :=
+@[expose] def sleb (n : Int) : ByteArray :=
   let b := (n % 128).toNat  -- `Int` `/` and `%` are Euclidean: `b ∈ [0, 128)`, `rest` = ⌊n/128⌋
   let rest := n / 128
   let sign := b ≥ 64
@@ -143,7 +143,7 @@ decreasing_by
   omega
 
 /-- Code alignment factor 4 and data alignment factor -8 (the CIE's, as Cranelift's). -/
-def Cfi.bytes : Cfi → ByteArray
+@[expose] def Cfi.bytes : Cfi → ByteArray
   | .defCfaOffset o => ⟨#[0x0e]⟩ ++ uleb o
   | .defCfaRegister r => ⟨#[0x0d]⟩ ++ uleb r
   | .offset r off =>
@@ -154,7 +154,7 @@ def Cfi.bytes : Cfi → ByteArray
     else ⟨#[0x11]⟩ ++ uleb r ++ sleb (off / (-8))            -- DW_CFA_offset_extended_sf
 
 /-- `DW_CFA_advance_loc*` by `delta` bytes (a multiple of 4). -/
-def cfiAdvance (delta : Nat) : ByteArray :=
+@[expose] def cfiAdvance (delta : Nat) : ByteArray :=
   let d := delta / 4
   if d == 0 then .empty
   else if d < 64 then ⟨#[UInt8.ofNat (0x40 + d)]⟩
@@ -163,12 +163,12 @@ def cfiAdvance (delta : Nat) : ByteArray :=
   else ⟨#[0x04, UInt8.ofNat d, UInt8.ofNat (d / 256), UInt8.ofNat (d / 65536), UInt8.ofNat (d / 16777216)]⟩
 
 /-- An FDE's instruction bytes for rows in code order, the location being at `at_`. -/
-def cfiProgramFrom : Nat → List (Nat × Cfi) → ByteArray
+@[expose] def cfiProgramFrom : Nat → List (Nat × Cfi) → ByteArray
   | _, [] => .empty
   | at_, (o, i) :: rows => cfiAdvance (o - at_) ++ i.bytes ++ cfiProgramFrom o rows
 
 /-- An FDE's instruction bytes for rows in code order. -/
-def cfiProgram (rows : List (Nat × Cfi)) : ByteArray := cfiProgramFrom 0 rows
+@[expose] def cfiProgram (rows : List (Nat × Cfi)) : ByteArray := cfiProgramFrom 0 rows
 
 /-! ## Call sites and landing pads (the LSDA, `.gcc_except_table`)
 
@@ -197,7 +197,7 @@ def labsAfter (ln : Line) (off : Nat) (labs : List (Label × Nat)) : List (Label
   | _ => labs
 
 /-- The return offsets after line `ln` at byte offset `off` (latest first). -/
-def retsAfter (ln : Line) (off : Nat) (rets : List Nat) : List Nat :=
+@[expose] def retsAfter (ln : Line) (off : Nat) (rets : List Nat) : List Nat :=
   match ln with
   | .ins (.bl _) _ | .ins (.blr _) _ => (off + 4) :: rets
   | _ => rets
@@ -205,7 +205,7 @@ def retsAfter (ln : Line) (off : Nat) (rets : List Nat) : List Nat :=
 /-- The block labels of `lines` with their byte offsets (latest first: `lookup` finds a
 label's last definition) and the return offsets of its calls (`bl`/`blr`, in code order),
 the lines starting at byte offset `off`. -/
-def scanLines : List Line → Nat → List (Label × Nat) → List Nat → List (Label × Nat) × List Nat
+@[expose] def scanLines : List Line → Nat → List (Label × Nat) → List Nat → List (Label × Nat) × List Nat
   | [], _, labs, rets => (labs, rets.reverse)
   | ln :: rest, off, labs, rets =>
     scanLines rest (off + ln.size) (labsAfter ln off labs) (retsAfter ln off rets)
@@ -216,7 +216,7 @@ def handlersOf : Option TryInfo → List TryHandler
   | none => []
 
 /-- The call-site entry of handler `h` of a call returning to `ret`. -/
-def handlerEntry (labs : List (Label × Nat)) (ret : Nat) (h : TryHandler) :
+@[expose] def handlerEntry (labs : List (Label × Nat)) (ret : Nat) (h : TryHandler) :
     Except String CallSite := do
   let some pad := labs.lookup h.label | throw s!"LSDA: no landing pad label {h.label}"
   match h with
@@ -226,14 +226,14 @@ def handlerEntry (labs : List (Label × Nat)) (ret : Nat) (h : TryHandler) :
   | .default _ => throw "LSDA: a `default` handler (cg_clif uses tags 0 and 1)"
 
 /-- The call-site entries of one call (`some ti` for a `tryCall`) returning to `ret`. -/
-def siteEntries (labs : List (Label × Nat)) : Option TryInfo × Nat → Except String (List CallSite)
+@[expose] def siteEntries (labs : List (Label × Nat)) : Option TryInfo × Nat → Except String (List CallSite)
   | (c, ret) =>
     let handlers := handlersOf c
     if handlers.isEmpty then pure [⟨ret - 1, 1, 0, 0⟩]
     else handlers.mapM (handlerEntry labs ret)
 
 /-- The calls of an allocated function in code order (`some ti` for a `tryCall`). -/
-def AFunc.calls (af : AFunc) : List (Option TryInfo) :=
+@[expose] def AFunc.calls (af : AFunc) : List (Option TryInfo) :=
   af.blocks.toList.flatMap fun (_, code) =>
     code.toList.filterMap fun
       | .inst (.call _) => some none
@@ -243,7 +243,7 @@ def AFunc.calls (af : AFunc) : List (Option TryInfo) :=
 /-- The call-site table of an allocated function `af` whose final code is `fa` (every `bl`/
 `blr` is a call, in code order, and `af`'s calls are in the same order), or `none` if the
 function has no `try_call` (it needs no LSDA). -/
-def callSites (af : AFunc) (fa : FnAsm) : Except String (Option (List CallSite)) := do
+@[expose] def callSites (af : AFunc) (fa : FnAsm) : Except String (Option (List CallSite)) := do
   let calls := af.calls
   if !calls.any (·.isSome) then return none
   let (labs, rets) := scanLines fa.lines.toList 0 [] []

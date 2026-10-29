@@ -476,7 +476,7 @@ structure Converter where
   deriving Repr, DecidableEq, Inhabited
 
 /-- Rule order for one term: descending priority, then ascending rule id (source order). -/
-def ruleBefore (a b : Rule) : Bool :=
+@[expose] def ruleBefore (a b : Rule) : Bool :=
   a.prio > b.prio || (a.prio == b.prio && a.id < b.id)
 
 structure Program where
@@ -528,7 +528,7 @@ def termByName? (p : Program) (n : String) : Option Term := p.terms.find? (·.na
 def ruleByName? (p : Program) (n : String) : Option Rule := p.rules.find? (·.name == n)
 
 /-- Rules of a term, in matching order. -/
-def rulesOf (p : Program) (t : TermId) : List Rule := (p.ruleLists[t]?).getD []
+@[expose] def rulesOf (p : Program) (t : TermId) : List Rule := (p.ruleLists[t]?).getD []
 
 /-- Specs attached to a term. -/
 def specsOf (p : Program) (t : TermId) : List SpecDef :=
@@ -558,7 +558,7 @@ def hasInternalCtor (t : Term) : Bool :=
   | .decl _ (some .internal) _ => true
   | _ => false
 
-def flags (t : Term) : TermFlags :=
+@[expose] def flags (t : Term) : TermFlags :=
   match t.kind with
   | .decl f _ _ => f
   | _ => ⟨true, false, false, false⟩

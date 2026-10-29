@@ -106,7 +106,7 @@ def SuccsIn (succs : Array (Array Nat)) : Prop := ∀ b s : Nat, s ∈ (succs[b]
 /-! ## A worklist loop, unrolled -/
 
 /-- `n` iterations of a worklist loop that stops on an empty worklist. -/
-def iterW {σ ι : Type} (work : σ → List ι) (F : σ → ι → List ι → σ) : Nat → σ → σ
+@[expose] def iterW {σ ι : Type} (work : σ → List ι) (F : σ → ι → List ι → σ) : Nat → σ → σ
   | 0, st => st
   | m + 1, st => match work st with
     | [] => st

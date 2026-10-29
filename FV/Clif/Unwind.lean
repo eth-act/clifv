@@ -60,12 +60,12 @@ inductive XOutcome where
   deriving Inhabited
 
 /-- The returned values, if the outcome is `returned`. -/
-def XOutcome.returnedVals? : XOutcome → Option (List Val)
+@[expose] def XOutcome.returnedVals? : XOutcome → Option (List Val)
   | .returned vals _ => some vals
   | _ => none
 
 /-- The payload of the exception, if the outcome is `unwound`. -/
-def XOutcome.unwoundPayload? : XOutcome → Option (List Val)
+@[expose] def XOutcome.unwoundPayload? : XOutcome → Option (List Val)
   | .unwound e _ => some e.payload
   | _ => none
 
@@ -94,7 +94,7 @@ structure XEnv where
   sigOf : String → Option Signature := fun _ => none
 
 /-- The environment of `Clif.run`: an extern that unwinds is `stuck`. -/
-def XEnv.toEnv (env : XEnv) : Env where
+@[expose] def XEnv.toEnv (env : XEnv) : Env where
   extern n := (env.extern n).map fun g vals mem => (g vals mem).toOutcome
   names := env.names
   sigOf := env.sigOf
@@ -212,7 +212,7 @@ def callRaise (env : XEnv) (p : Program) (mem : Mem) (fr : Frame) (fn : FnRef)
   | _ => none
 
 /-- The extern an indirect call at address `addr` calls unwinds (`callExternAt`). -/
-def externAtRaise (env : XEnv) (p : Program) (mem : Mem) (declared : Signature) (addr : Nat)
+@[expose] def externAtRaise (env : XEnv) (p : Program) (mem : Mem) (declared : Signature) (addr : Nat)
     (vals : List Val) : Option (Exn × Mem) :=
   match (env.names ++ p.externNames).find? fun n => mem.symbols n == some addr with
   | some name =>
@@ -348,7 +348,7 @@ def runWithX (env : XEnv) (p : Program) (f : String) (args : List Val) (mem : Me
   | .stuck m => .stuck m
 
 /-- Run `f` on `args` from the program's initial memory (`run`). -/
-def runX (env : XEnv) (p : Program) (f : String) (args : List Val) (fuel : Nat) : XOutcome :=
+@[expose] def runX (env : XEnv) (p : Program) (f : String) (args : List Val) (fuel : Nat) : XOutcome :=
   match p.initMem with
   | .ok mem => runWithX env p f args mem fuel
   | .trap c => .trapped c
@@ -640,7 +640,7 @@ def mainTable : ExnTable where
   normal := ⟨1, [.ret 0]⟩
   items := [.tag 3 ⟨3, [.exn 0]⟩, .tag 7 ⟨2, [.exn 0]⟩]
 
-def mainFn : Function where
+@[expose] def mainFn : Function where
   name := "main"
   sig := sig1
   externs := [(0, { name := "mid", sig := sig1 })]
@@ -655,7 +655,7 @@ def mainFn : Function where
       term := .ret [4] },
     { id := 3, params := [(5, .i64)], term := .ret [5] }]
 
-def midFn : Function where
+@[expose] def midFn : Function where
   name := "mid"
   sig := sig1
   externs := [(0, { name := "throw", sig := sig1 })]
@@ -663,13 +663,13 @@ def midFn : Function where
                body := [{ results := [1], inst := .call 0 [0] }],
                term := .ret [1] }]
 
-def prog : Program := { funcs := [mainFn, midFn] }
+@[expose] def prog : Program := { funcs := [mainFn, midFn] }
 
 /-- `%throw` unwinds with tag `tag` and its argument as payload. -/
-def throwSem (tag : Nat) (vals : List Val) (mem : Mem) : XOutcome :=
+@[expose] def throwSem (tag : Nat) (vals : List Val) (mem : Mem) : XOutcome :=
   .unwound ⟨fun t => t == tag, vals⟩ mem
 
-def env (tag : Nat) : XEnv where
+@[expose] def env (tag : Nat) : XEnv where
   extern n := if n = "throw" then some (throwSem tag) else none
 
 /-- Caught by the `tag7` handler of the caller of the frame that called the thrower. -/

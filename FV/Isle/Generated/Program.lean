@@ -145,7 +145,7 @@ def specs : Array SpecDef := specs_0 ++ specs_1 ++ specs_2 ++ specs_3 ++ specs_4
 /-- The aarch64 lowering unit. A structure literal over flat tables (no computation), so
 that the kernel evaluates `program.term? t`, `program.rulesOf t` by `rfl`;
 `FVTest/Isle/Data.lean` checks `ruleLists` against `Program.build`'s bucket sort. -/
-def program : Program where
+@[expose] def program : Program where
   name := "aarch64"
   files := files
   types := types

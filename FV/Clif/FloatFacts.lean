@@ -18,7 +18,7 @@ private theorem ofOption_eq_ok {α : Type} {m : String} {o : Option α} {a : α}
 
 /-- The result type of `Inst.float op ty` (`Inst.resultTypes`): `i8` for `fcmp`, the
 controlling type otherwise. -/
-def floatResTy : FOp → Ty → Ty
+@[expose] def floatResTy : FOp → Ty → Ty
   | .fcmp _, _ => .i8
   | _, ty => ty
 

@@ -293,7 +293,7 @@ end
 section
 variable {V W : Type}
 
-def MConf.measure : MConf V W → Nat
+@[expose] def MConf.measure : MConf V W → Nat
   | .run s => s.its.length
   | _ => 0
 

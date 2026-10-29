@@ -30,19 +30,19 @@ def callsE (f : Function) : Bool :=
 /-- The operands of a terminator in integer positions, with typed direct `try_call`s: a branch
 condition, a `br_table` index, the callee and arguments of a `try_call_indirect` (integer-only);
 a direct `try_call`'s arguments are passed in their classes' registers. -/
-def termIntOperandsC : Terminator → List Nat
+@[expose] def termIntOperandsC : Terminator → List Nat
   | .tryCall _ _ _ => []
   | t => termIntOperands t
 
 /-- `opsTypedT` with `termIntOperandsC`. -/
-def opsTypedTC (f : Function) : Bool :=
+@[expose] def opsTypedTC (f : Function) : Bool :=
   let fd := floatDefs f
   f.blocks.all fun b =>
     b.body.all (fun s => (intOperands s.inst).all fun x => !fd.contains x) &&
       (termIntOperandsC b.term).all fun x => !fd.contains x
 
 /-- **The typed movement scope with typed direct `try_call`s.** -/
-def functionETC (f : Function) : Bool :=
+@[expose] def functionETC (f : Function) : Bool :=
   sigET f.sig && f.globals.all (globalE ·.2) && f.externs.all (sigET ·.2.sig) && callsE f &&
     f.blocks.all (fun b =>
       b.params.all (tyM ·.2) && b.body.all (instET ·.inst) && termE b.term) &&

@@ -181,7 +181,7 @@ structure Advanced_simd_modified_immediate_cls where
   Rd      : BitVec 5                     --   [4:0]
 deriving DecidableEq, Repr
 
-instance : ToString Advanced_simd_modified_immediate_cls where toString a := toString (repr a)
+@[expose] instance : ToString Advanced_simd_modified_immediate_cls where toString a := toString (repr a)
 
 /-- (FV addition) Floating-point data-processing (2 source): FMUL, FDIV, FADD, FSUB, FMAX,
 FMIN, FMAXNM, FMINNM, FNMUL (scalar). -/

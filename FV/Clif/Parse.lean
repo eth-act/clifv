@@ -38,7 +38,7 @@ inductive ParseError where
   | malformed (msg : String)
   deriving Repr, Inhabited, BEq
 
-def ParseError.toString : ParseError → String
+@[expose] def ParseError.toString : ParseError → String
   | .unsupported m => s!"unsupported: {m}"
   | .malformed m => s!"parse error: {m}"
 
@@ -129,8 +129,8 @@ structure PState where
 
 abbrev P := ReaderT (Array Tok) (StateT PState (Except ParseError))
 
-def malformed {α : Type} (msg : String) : P α := throw (.malformed msg)
-def unsupported {α : Type} (msg : String) : P α := throw (.unsupported msg)
+@[expose] def malformed {α : Type} (msg : String) : P α := throw (.malformed msg)
+@[expose] def unsupported {α : Type} (msg : String) : P α := throw (.unsupported msg)
 
 def peekAt (k : Nat) : P (Option Tok) := do
   let toks ← read
@@ -138,7 +138,7 @@ def peekAt (k : Nat) : P (Option Tok) := do
 
 def peek : P (Option Tok) := peekAt 0
 
-def advance : P Unit := modify fun s => { s with pos := s.pos + 1 }
+@[expose] def advance : P Unit := modify fun s => { s with pos := s.pos + 1 }
 
 def next : P Tok := do
   match ← peek with
@@ -177,7 +177,7 @@ def optWord (w : String) : P Bool := do
   | some (.word v) => if v == w then advance; return true else return false
   | _ => return false
 
-def anyWord : P String := do
+@[expose] def anyWord : P String := do
   match ← next with
   | .word w => return w
   | t => malformed s!"expected identifier, got '{t.show}'"
@@ -248,14 +248,14 @@ def isEntity (pre : String) (t : Option Tok) : Bool :=
   | _ => false
 
 /-- A type name. Non-integer types are `unsupported`. -/
-def parseTyName (w : String) : P Ty :=
+@[expose] def parseTyName (w : String) : P Ty :=
   match Ty.ofName? w with
   | some t => pure t
   | none =>
     if w.startsWith "i" || w.startsWith "f" then unsupported s!"type {w}"
     else malformed s!"expected a type, got '{w}'"
 
-def ty : P Ty := do parseTyName (← anyWord)
+@[expose] def ty : P Ty := do parseTyName (← anyWord)
 
 /-- Optional offset `+N`/`-N` (the sign is mandatory, as in the reader). -/
 def optOffset : P Int := do
@@ -495,7 +495,7 @@ def exnItem : P ExnItem := do
     | none => malformed s!"expected an exception table item, got '{w}'"
 
 /-- `sigN, normal-return, [ items ]` (cranelift-reader `parse_exception_table`). -/
-def exnTable : P ExnTable := do
+@[expose] def exnTable : P ExnTable := do
   let sig ← entity "sig"
   expectPunct ','
   let normal ← tryDest
@@ -561,7 +561,7 @@ inductive Item where
   | inst (i : Inst)
   | term (t : Terminator)
 
-def item (op : String) (sfx : Option Ty) : P Item := do
+@[expose] def item (op : String) (sfx : Option Ty) : P Item := do
   if let some u := unaryOp? op then
     let x ← value
     return .inst (.unary u (← ctrl sfx x) x)
@@ -745,7 +745,7 @@ def item (op : String) (sfx : Option Ty) : P Item := do
   | _ => unsupported s!"opcode {op}"
 
 /-- Result types of an instruction in the current parser state. -/
-def resultTypes (i : Inst) : P (List Ty) := do
+@[expose] def resultTypes (i : Inst) : P (List Ty) := do
   let ext := (← get).externs
   let sigs := (← get).sigDecls
   match i.resultTypes (fun r => (ext.lookup r).map (·.sig)) (fun s => (sigs.lookup s)) with
@@ -805,7 +805,7 @@ def block : P Block := do
   malformed s!"block{id} has no terminator"
 
 /-- `function %name sig { decls blocks }` -/
-def function : P Function := do
+@[expose] def function : P Function := do
   collectAliases
   expectWord "function"
   let name ← anyName
@@ -1035,7 +1035,7 @@ def parseFile (src : String) : ParsedFile := Id.run do
            funcs := chunks.toList.map (parseChunk ·.toList) }
 
 /-- Parse a `.clif` file; every function must be in subset S. -/
-def parse (src : String) : Except String Program := do
+@[expose] def parse (src : String) : Except String Program := do
   let pf := parseFile src
   let data ← pf.data
   let mut funcs := #[]

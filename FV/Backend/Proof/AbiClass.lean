@@ -31,7 +31,7 @@ theorem tyClass_int {t : Clif.Ty} (h : t.isInt = true) : tyClass t = .int := by
 /-! ## Arguments -/
 
 /-- `argLocs`' step. -/
-def xArgStep (q : Array ArgLoc × Nat × Nat) (b : Nat) : Array ArgLoc × Nat × Nat :=
+@[expose] def xArgStep (q : Array ArgLoc × Nat × Nat) (b : Nat) : Array ArgLoc × Nat × Nat :=
   if q.2.1 < 8 then (q.1.push (.reg (.x q.2.1)), q.2.1 + 1, q.2.2)
   else (q.1.push (.stack (alignTo q.2.2 (max b 8))), q.2.1, alignTo q.2.2 (max b 8) + max b 8)
 
@@ -472,7 +472,7 @@ theorem retRegsC_vreg_int (xs : List Nat) :
 /-! ## Witnesses -/
 
 /-- `(f64, i64, f32) → (f64, i64, f32)`. -/
-def sigFIF : Clif.Signature :=
+@[expose] def sigFIF : Clif.Signature :=
   { params := [⟨.f64, .none, .normal⟩, ⟨.i64, .none, .normal⟩, ⟨.f32, .none, .normal⟩]
     returns := [⟨.f64, .none, .normal⟩, ⟨.i64, .none, .normal⟩, ⟨.f32, .none, .normal⟩] }
 
@@ -484,7 +484,7 @@ theorem abiRetRegs_sigFIF : abiRetRegs sigFIF = some [.v 0, .x 0, .v 1] := rfl
 
 /-- Nine `f64`, an `i64`, an `f32`: v0..v7, the ninth `f64` on the stack, the `i64` in x0 (the
 X counter is untouched by the floats), the `f32` in an 8-byte stack slot. -/
-def sigSpill : Clif.Signature :=
+@[expose] def sigSpill : Clif.Signature :=
   { params := List.replicate 9 ⟨.f64, .none, .normal⟩ ++
       [⟨.i64, .none, .normal⟩, ⟨.f32, .none, .normal⟩] }
 
@@ -494,7 +494,7 @@ theorem sigArgLocs_sigSpill :
 
 /-- An `sret` pointer in x8 takes neither counter: `(sret i64, f64, i32)` goes to
 `[x8, v0, x0]`, and the struct pointer is the only (integer) return. -/
-def sigSret : Clif.Signature :=
+@[expose] def sigSret : Clif.Signature :=
   { params := [⟨.i64, .none, .sret⟩, ⟨.f64, .none, .normal⟩, ⟨.i32, .none, .normal⟩] }
 
 theorem sigArgLocs_sigSret :
@@ -509,7 +509,7 @@ theorem abiRetRegs_nineFloats :
 /-- An integer signature `(i64, sret i64, i8 × 8) → ()`: its hypotheses hold, and both sides of
 `sigArgLocs_eq` are x0..x7 with x8 for the `sret` pointer and the ninth integer on the
 stack. -/
-def sigInt : Clif.Signature :=
+@[expose] def sigInt : Clif.Signature :=
   { params := ⟨.i64, .none, .normal⟩ :: ⟨.i64, .none, .sret⟩ :: List.replicate 8 ⟨.i8, .none, .normal⟩ }
 
 theorem sigInt_int : sigInt.params.all (·.ty.isInt) = true := rfl

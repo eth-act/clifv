@@ -31,14 +31,14 @@ namespace Backend.Proof.Driver
 open Backend
 
 /-- The counterpart in `vcp` of block `b` of `vc`: the block with the same label. -/
-def sigmaOf (vc vcp : VCode) (b : Nat) : Option Nat :=
+@[expose] def sigmaOf (vc vcp : VCode) (b : Nat) : Option Nat :=
   match vc.blocks[b]? with
   | some vb => vcp.blocks.findIdx? (·.label == vb.label)
   | none => none
 
 /-- `t` is an edge block of `vcp` (`jump`, no parameters, no branch arguments) whose only
 successor is `s'`. -/
-def edgeBlockOk (vcp : VCode) (ss' : Array (Array Nat)) (t s' : Nat) : Bool :=
+@[expose] def edgeBlockOk (vcp : VCode) (ss' : Array (Array Nat)) (t s' : Nat) : Bool :=
   match vcp.blocks[t]? with
   | some eb =>
     (match eb.insts.toList with
@@ -48,14 +48,14 @@ def edgeBlockOk (vcp : VCode) (ss' : Array (Array Nat)) (t s' : Nat) : Bool :=
   | none => false
 
 /-- The last instruction of `vb'` is that of `vb`, possibly retargeted. -/
-def lastOk (vb vb' : VBlock) : Bool :=
+@[expose] def lastOk (vb vb' : VBlock) : Bool :=
   match vb.insts.back?, vb'.insts.back? with
   | some i, some i' => decide (i' = i) || decide (i.setTargets i'.targets = some i')
   | none, none => true
   | _, _ => false
 
 /-- Block `b` of `vc` and its counterpart `b'` in `vcp`. -/
-def keptOk (vc vcp : VCode) (ss ss' : Array (Array Nat)) (b b' : Nat) : Bool :=
+@[expose] def keptOk (vc vcp : VCode) (ss ss' : Array (Array Nat)) (b b' : Nat) : Bool :=
   match vc.blocks[b]?, vcp.blocks[b']? with
   | some vb, some vb' =>
     decide (vb'.params = vb.params) && decide (vb'.branchArgs = vb.branchArgs) &&
@@ -73,10 +73,10 @@ def keptOk (vc vcp : VCode) (ss ss' : Array (Array Nat)) (b b' : Nat) : Bool :=
   | _, _ => false
 
 /-- Block `b` is reachable from the entry (`reachable`, as in `prepare`). -/
-def liveOf (ss : Array (Array Nat)) (b : Nat) : Bool := (reachable ss)[b]?.getD false
+@[expose] def liveOf (ss : Array (Array Nat)) (b : Nat) : Bool := (reachable ss)[b]?.getD false
 
 /-- **The `prepare` validator.** -/
-def prepCheck (vc vcp : VCode) : Bool :=
+@[expose] def prepCheck (vc vcp : VCode) : Bool :=
   match vc.cfg, vcp.cfg with
   | .ok (ss, _), .ok (ss', _) =>
     decide (sigmaOf vc vcp 0 = some 0) && liveOf ss 0 &&

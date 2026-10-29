@@ -48,18 +48,18 @@ called for their frames, as for LLVM frames without landing pads).
 namespace Backend
 
 /-- Little-endian bytes. -/
-def le (width n : Nat) : ByteArray := Id.run do
+@[expose] def le (width n : Nat) : ByteArray := Id.run do
   let mut b := ByteArray.emptyWithCapacity width
   for i in [0:width] do
     b := b.push (UInt8.ofNat (n >>> (8 * i)))
   return b
 
 def le16 (n : Nat) : ByteArray := le 2 n
-def le32 (n : Nat) : ByteArray := le 4 n
+@[expose] def le32 (n : Nat) : ByteArray := le 4 n
 def le64 (n : Nat) : ByteArray := le 8 n
 
 /-- Zero bytes to pad `n` up to a multiple of `a`. -/
-def padTo (a n : Nat) : ByteArray := ⟨Array.replicate ((a - n % a) % a) 0⟩
+@[expose] def padTo (a n : Nat) : ByteArray := ⟨Array.replicate ((a - n % a) % a) 0⟩
 
 /-- A string table: the bytes (starting with the empty name) and each name's offset. -/
 def strTable (names : List String) : ByteArray × List Nat := Id.run do
@@ -83,7 +83,7 @@ structure ElfSym where
   size : Nat
 
 /-- `Elf64_Sym` (24 bytes). -/
-def ElfSym.bytes (s : ElfSym) (nameOff : Nat) : ByteArray :=
+@[expose] def ElfSym.bytes (s : ElfSym) (nameOff : Nat) : ByteArray :=
   le32 nameOff ++ ⟨#[UInt8.ofNat (s.bind * 16 + s.type), 0]⟩ ++ le16 s.shndx ++ le64 s.value ++
     le64 s.size
 
@@ -153,7 +153,7 @@ omitted (landing pads relative to the function start), type table `udata4` with 
 entry 0 (catch-all, `catch_unwind`'s type), the call-site table (`uleb128`), the action table
 with the one catch action (`ttypeIndex` 1, no next action), padding so that the type table is
 4-aligned, the type table, and padding to a multiple of 4. -/
-def lsdaBytes (sites : List CallSite) : ByteArray := Id.run do
+@[expose] def lsdaBytes (sites : List CallSite) : ByteArray := Id.run do
   let entries := sites.foldl (fun b s => b ++ uleb s.start ++ uleb s.len ++ uleb s.pad ++ uleb s.action)
     ByteArray.empty
   let cs : ByteArray := ⟨#[0x01]⟩ ++ uleb entries.size ++ entries

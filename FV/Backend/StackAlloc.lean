@@ -75,7 +75,7 @@ structure Frame where
   size : Nat
   deriving Inhabited
 
-def Frame.compute (vc : VCode) : Frame :=
+@[expose] def Frame.compute (vc : VCode) : Frame :=
   let outgoing := vc.outgoing
   let spillStart := alignTo (outgoing + vc.slotBytes) 16
   let nf := (vc.classes.filter (· == .float)).size
