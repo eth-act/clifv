@@ -70,6 +70,7 @@ structure Sem (V σ : Type) where
   /-- Extern extractor of `term`: the input value to the term's argument values. -/
   extract : Term → V → σ → ExtResult (List V)
 
+@[expose] section
 /-- Interpretation errors (as opposed to "no rule matched" of a partial term, which is a
 `none` result). -/
 inductive Err where
@@ -85,6 +86,7 @@ inductive Err where
   /-- Ill-formed program or values (type confusion, unbound variable, arity mismatch). -/
   | malformed (msg : String)
   deriving Repr, DecidableEq, Inhabited
+end
 
 structure Config where
   /-- Also check that no other rule of the chosen rule's priority matches. -/

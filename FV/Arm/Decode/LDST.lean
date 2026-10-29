@@ -20,6 +20,7 @@ open _root_.BitVec Arm.BitVec
 
 -- Load and Store Instructions
 
+@[expose] section
 structure Reg_imm_post_indexed_cls where
   size    : BitVec 2            -- [31:30]
   _fixed1 : BitVec 3 := 0b111#3 -- [29:27]
@@ -32,9 +33,11 @@ structure Reg_imm_post_indexed_cls where
   Rn      : BitVec 5            --   [9:5]
   Rt      : BitVec 5            --   [4:0]
 deriving DecidableEq, Repr
+end
 
 instance : ToString Reg_imm_post_indexed_cls where toString a := toString (repr a)
 
+@[expose] section
 structure Reg_unsigned_imm_cls where
   size    : BitVec 2            -- [31:30]
   _fixed1 : BitVec 3 := 0b111#3 -- [29:27]
@@ -45,9 +48,11 @@ structure Reg_unsigned_imm_cls where
   Rn      : BitVec 5            --   [9:5]
   Rt      : BitVec 5            --   [4:0]
 deriving DecidableEq, Repr
+end
 
 instance : ToString Reg_unsigned_imm_cls where toString a := toString (repr a)
 
+@[expose] section
 structure Reg_unscaled_imm_cls where
   size    : BitVec 2            -- [31:30]
   _fixed1 : BitVec 3 := 0b111#3 -- [29:27]
@@ -60,9 +65,11 @@ structure Reg_unscaled_imm_cls where
   Rn      : BitVec 5            --   [9:5]
   Rt      : BitVec 5            --   [4:0]
 deriving DecidableEq, Repr
+end
 
 instance : ToString Reg_unscaled_imm_cls where toString a := toString (repr a)
 
+@[expose] section
 structure Reg_pair_pre_indexed_cls where
   opc     : BitVec 2            -- [31:30]
   _fixed1 : BitVec 3 := 0b101#3 -- [29:27]
@@ -74,9 +81,11 @@ structure Reg_pair_pre_indexed_cls where
   Rn      : BitVec 5            --   [9:5]
   Rt      : BitVec 5            --   [4:0]
 deriving DecidableEq, Repr
+end
 
 instance : ToString Reg_pair_pre_indexed_cls where toString a := toString (repr a)
 
+@[expose] section
 structure Reg_pair_post_indexed_cls where
   opc     : BitVec 2            -- [31:30]
   _fixed1 : BitVec 3 := 0b101#3 -- [29:27]
@@ -88,9 +97,11 @@ structure Reg_pair_post_indexed_cls where
   Rn      : BitVec 5            --   [9:5]
   Rt      : BitVec 5            --   [4:0]
 deriving DecidableEq, Repr
+end
 
 instance : ToString Reg_pair_post_indexed_cls where toString a := toString (repr a)
 
+@[expose] section
 structure Reg_pair_signed_offset_cls where
   opc     : BitVec 2            -- [31:30]
   _fixed1 : BitVec 3 := 0b101#3 -- [29:27]
@@ -102,9 +113,11 @@ structure Reg_pair_signed_offset_cls where
   Rn      : BitVec 5            --   [9:5]
   Rt      : BitVec 5            --   [4:0]
 deriving DecidableEq, Repr
+end
 
 instance : ToString Reg_pair_signed_offset_cls where toString a := toString (repr a)
 
+@[expose] section
 /-- (FV addition) Load/store register (immediate pre-indexed). -/
 structure Reg_imm_pre_indexed_cls where
   size    : BitVec 2            -- [31:30]
@@ -118,9 +131,11 @@ structure Reg_imm_pre_indexed_cls where
   Rn      : BitVec 5            --   [9:5]
   Rt      : BitVec 5            --   [4:0]
 deriving DecidableEq, Repr
+end
 
 instance : ToString Reg_imm_pre_indexed_cls where toString a := toString (repr a)
 
+@[expose] section
 /-- (FV addition) Load/store register (exclusive / acquire-release):
 LDXR/LDAXR/STXR/STLXR (`ord = 0`) and LDAR/STLR (`ord = 1`, `Rs = 11111`),
 single-register (`o0` distinguishes plain exclusive from acquire-release). -/
@@ -136,12 +151,14 @@ structure Reg_exclusive_cls where
   Rn      : BitVec 5            --   [9:5]
   Rt      : BitVec 5            --   [4:0]
 deriving DecidableEq, Repr
+end
 
 instance : ToString Reg_exclusive_cls where toString a := toString (repr a)
 
 def Reg_exclusive_cls.toBitVec32 (x : Reg_exclusive_cls) : BitVec 32 :=
   x.size ++ x._fixed1 ++ x.ord ++ x.L ++ x._fixed2 ++ x.Rs ++ x.o0 ++ x._fixed3 ++ x.Rn ++ x.Rt
 
+@[expose] section
 /-- (FV addition) Load/store register (register offset). -/
 structure Reg_reg_offset_cls where
   size    : BitVec 2            -- [31:30]
@@ -157,9 +174,11 @@ structure Reg_reg_offset_cls where
   Rn      : BitVec 5            --   [9:5]
   Rt      : BitVec 5            --   [4:0]
 deriving DecidableEq, Repr
+end
 
 instance : ToString Reg_reg_offset_cls where toString a := toString (repr a)
 
+@[expose] section
 /-- (FV addition) Load register (literal): LDR (literal) W/X/S/D/Q, LDRSW (literal),
 PRFM (literal). -/
 structure Reg_literal_cls where
@@ -170,9 +189,11 @@ structure Reg_literal_cls where
   imm19   : BitVec 19           -- [23:5]
   Rt      : BitVec 5            --   [4:0]
 deriving DecidableEq, Repr
+end
 
 instance : ToString Reg_literal_cls where toString a := toString (repr a)
 
+@[expose] section
 inductive LDSTInst where
   | Reg_imm_post_indexed :
     Reg_imm_post_indexed_cls → LDSTInst
@@ -195,6 +216,7 @@ inductive LDSTInst where
   | Reg_literal :
     Reg_literal_cls → LDSTInst
 deriving DecidableEq, Repr
+end
 
 instance : ToString LDSTInst where toString a := toString (repr a)
 

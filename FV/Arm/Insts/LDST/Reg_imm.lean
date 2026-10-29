@@ -58,6 +58,7 @@ namespace LDST
 
 open _root_.BitVec Arm.BitVec
 
+@[expose] section
 /-- (FV) The offset operand of a single-register load/store. -/
 inductive Reg_offset where
   /-- Unsigned 12-bit immediate, scaled by the access size ("unsigned offset"). -/
@@ -67,7 +68,9 @@ inductive Reg_offset where
   /-- Register offset `Rm`, extended by `option` and shifted by `scale` iff `S = 1`. -/
   | reg    : (Rm : BitVec 5) → (option : BitVec 3) → (S : BitVec 1) → Reg_offset
 deriving DecidableEq, Repr
+end
 
+@[expose] section
 structure Reg_imm_cls where
   size      : BitVec 2
   opc       : BitVec 2
@@ -78,6 +81,7 @@ structure Reg_imm_cls where
   postindex : Bool
   imm       : Reg_offset
 deriving DecidableEq, Repr
+end
 
 instance : ToString Reg_imm_cls where toString a := toString (repr a)
 

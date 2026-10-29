@@ -72,7 +72,7 @@ theorem argLocsC_int (bytes : List Nat) :
 
 /-- A location of the typed placement: x0..x8 (x8: the `sret` pointer), v0..v7, or a stack
 slot. -/
-def ArgLocOk : ArgLoc → Prop
+@[expose] def ArgLocOk : ArgLoc → Prop
   | .reg r => (∃ n, n ≤ 8 ∧ r = .x n) ∨ (∃ n, n < 8 ∧ r = .v n)
   | .stack _ => True
 

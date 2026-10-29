@@ -95,6 +95,7 @@ theorem write_store_commute [DecidableEq α] (store : Store α β)
 
 ---- Model of the Arm machine state ----
 
+@[expose] section
 inductive StateError where
   | None                       : StateError
   | NotFound (e : String)      : StateError
@@ -107,6 +108,7 @@ inductive StateError where
   the `UDF` (Linux delivers `SIGILL`); the model stops there with `PC` unchanged. -/
   | Trap (imm16 : BitVec 16)   : StateError
 deriving DecidableEq, Repr
+end
 
 -- Injective Lemmas for StateError
 attribute [state_simp_rules] StateError.NotFound.injEq
@@ -117,12 +119,14 @@ attribute [state_simp_rules] StateError.Other.injEq
 attribute [state_simp_rules] StateError.Trap.injEq
 
 -- PFlag (Process State's Flags)
+@[expose] section
 inductive PFlag where
   | N : PFlag
   | Z : PFlag
   | C : PFlag
   | V : PFlag
 deriving DecidableEq, Repr, Hashable
+end
 
 @[expose] instance : ToString PFlag :=
   ⟨fun p => match p with
@@ -131,6 +135,7 @@ deriving DecidableEq, Repr, Hashable
     | PFlag.C => "C"
     | PFlag.V => "V"⟩
 
+@[expose] section
 @[ext]
 structure PState where
   n : BitVec 1
@@ -138,6 +143,7 @@ structure PState where
   c : BitVec 1
   v : BitVec 1
 deriving DecidableEq, Repr
+end
 
 @[expose] def PState.zero : PState :=
   { n := 0#1, z := 0#1, c := 0#1, v := 0#1 }
@@ -189,7 +195,7 @@ deriving Repr
 
 end Arm
 end
-@[expose] public section
+public section
 namespace Arm
 section State
 attribute [local simp] store_read_over_write_same store_read_over_write_different
@@ -294,6 +300,7 @@ section Accessor_updater_functions
 
 open _root_.BitVec Arm.BitVec
 
+@[expose] section
 inductive StateField where
   | GPR    : BitVec 5 → StateField
   | SFP    : BitVec 5 → StateField
@@ -303,6 +310,7 @@ inductive StateField where
   /-- (FV addition) `TPIDR_EL0` (the EL0 thread pointer). -/
   | TPIDR  : StateField
 deriving DecidableEq, Repr, Hashable
+end
 
 namespace StateField
 

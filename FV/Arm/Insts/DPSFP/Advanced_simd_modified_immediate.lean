@@ -32,12 +32,14 @@ namespace DPSFP
 
 open _root_.BitVec Arm.BitVec
 
+@[expose] section
 inductive ImmediateOp where
   | MOVI : ImmediateOp
   | MVNI : ImmediateOp
   | ORR : ImmediateOp
   | BIC : ImmediateOp
 deriving DecidableEq, Repr
+end
 
 instance : ToString ImmediateOp where toString a := toString (repr a)
 

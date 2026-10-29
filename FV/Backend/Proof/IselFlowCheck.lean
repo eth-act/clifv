@@ -32,15 +32,17 @@ open Backend Isle Isle.Interp Isle.Aarch64
 
 /-! ## The abstract domain -/
 
+@[expose] section
 /-- An abstract value: flow level `f` and safety flag `s`. -/
 structure FA where
   f : Nat
   s : Bool
   deriving DecidableEq, Repr, Inhabited
+end
 
 namespace FA
 /-- Least upper bound. -/
-def join (a b : FA) : FA := ⟨max a.f b.f, a.s && b.s⟩
+@[expose] def join (a b : FA) : FA := ⟨max a.f b.f, a.s && b.s⟩
 /-- The order: a larger flow level, fewer guarantees. -/
 def le (a b : FA) : Bool := decide (a.f ≤ b.f) && (!b.s || a.s)
 /-- Anything. -/

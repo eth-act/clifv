@@ -20,6 +20,7 @@ open _root_.BitVec Arm.BitVec
 
 -- Data Processing (Register) Instructions --
 
+@[expose] section
 structure Add_sub_carry_cls where
   sf      : BitVec 1                 -- [31:31]
   op      : BitVec 1                 -- [30:30]
@@ -30,12 +31,14 @@ structure Add_sub_carry_cls where
   Rn      : BitVec 5                 --   [9:5]
   Rd      : BitVec 5                 --   [4:0]
 deriving DecidableEq, Repr
+end
 
 instance : ToString Add_sub_carry_cls where toString a := toString (repr a)
 
 def Add_sub_carry_cls.toBitVec32 (x : Add_sub_carry_cls) : BitVec 32 :=
   x.sf ++ x.op ++ x.S ++ x._fixed1 ++ x.Rm ++ x._fixed2 ++ x.Rn ++ x.Rd
 
+@[expose] section
 structure Add_sub_shifted_reg_cls where
   sf      : BitVec 1                 -- [31:31]
   op      : BitVec 1                 -- [30:30]
@@ -48,12 +51,14 @@ structure Add_sub_shifted_reg_cls where
   Rn      : BitVec 5                 --   [9:5]
   Rd      : BitVec 5                 --   [4:0]
 deriving DecidableEq, Repr
+end
 
 instance : ToString Add_sub_shifted_reg_cls where toString a := toString (repr a)
 
 def Add_sub_shifted_reg_cls.toBitVec32 (x : Add_sub_shifted_reg_cls) : BitVec 32 :=
   x.sf ++ x.op ++ x.S ++ x._fixed1 ++ x.shift ++ x._fixed2 ++ x.Rm ++ x.imm6 ++ x.Rn ++ x.Rd
 
+@[expose] section
 structure Conditional_select_cls where
   sf     : BitVec 1                 -- [31:31]
   op     : BitVec 1                 -- [30:30]
@@ -65,12 +70,14 @@ structure Conditional_select_cls where
   Rn     : BitVec 5                 --   [9:5]
   Rd     : BitVec 5                 --   [4:0]
 deriving DecidableEq, Repr
+end
 
 instance : ToString Conditional_select_cls where toString a := toString (repr a)
 
 def Conditional_select_cls.toBitVec32 (x : Conditional_select_cls) : BitVec 32 :=
   x.sf ++ x.op ++ x.S ++ x._fixed ++ x.Rm ++ x.cond ++ x.op2 ++ x.Rn ++ x.Rd
 
+@[expose] section
 structure Data_processing_one_source_cls where
   sf      : BitVec 1                 -- [31:31]
   _fixed1 : BitVec 1 := 0b1#1        -- [30:30]
@@ -81,6 +88,7 @@ structure Data_processing_one_source_cls where
   Rn      : BitVec 5                 --   [9:5]
   Rd      : BitVec 5                 --   [4:0]
 deriving DecidableEq, Repr
+end
 
 instance : ToString Data_processing_one_source_cls where toString a := toString (repr a)
 
@@ -88,6 +96,7 @@ def Data_processing_one_source_cls.toBitVec32
   (x : Data_processing_one_source_cls) : BitVec 32 :=
   x.sf ++ x._fixed1 ++ x.S ++ x._fixed2 ++ x.opcode2 ++ x.opcode ++ x.Rn ++ x.Rd
 
+@[expose] section
 structure Data_processing_two_source_cls where
   sf      : BitVec 1                 -- [31:31]
   _fixed1 : BitVec 1 := 0b0#1        -- [30:30]
@@ -98,6 +107,7 @@ structure Data_processing_two_source_cls where
   Rn      : BitVec 5                 --   [9:5]
   Rd      : BitVec 5                 --   [4:0]
 deriving DecidableEq, Repr
+end
 
 instance : ToString Data_processing_two_source_cls where toString a := toString (repr a)
 
@@ -105,6 +115,7 @@ def Data_processing_two_source_cls.toBitVec32
   (x : Data_processing_two_source_cls) : BitVec 32 :=
   x.sf ++ x._fixed1 ++ x.S ++ x._fixed2 ++ x.Rm ++ x.opcode ++ x.Rn ++ x.Rd
 
+@[expose] section
 structure Logical_shifted_reg_cls where
   sf     : BitVec 1                 -- [31:31]
   opc    : BitVec 2                 -- [30:29]
@@ -116,12 +127,14 @@ structure Logical_shifted_reg_cls where
   Rn     : BitVec 5                 --   [9:5]
   Rd     : BitVec 5                 --   [4:0]
 deriving DecidableEq, Repr
+end
 
 instance : ToString Logical_shifted_reg_cls where toString a := toString (repr a)
 
 def Logical_shifted_reg_cls.toBitVec32 (x : Logical_shifted_reg_cls) : BitVec 32 :=
   x.sf ++ x.opc ++ x._fixed ++ x.shift ++ x.N ++ x.Rm ++ x.imm6 ++ x.Rn ++ x.Rd
 
+@[expose] section
 structure Data_processing_three_source_cls where
   sf     : BitVec 1                 -- [31:31]
   op54   : BitVec 2                 -- [30:29]
@@ -133,12 +146,14 @@ structure Data_processing_three_source_cls where
   Rn     : BitVec 5                 --   [9:5]
   Rd     : BitVec 5                 --   [4:0]
 deriving DecidableEq, Repr
+end
 
 instance : ToString Data_processing_three_source_cls where toString a := toString (repr a)
 
 def Data_processing_three_source_cls.toBitVec32 (x : Data_processing_three_source_cls) : BitVec 32 :=
   x.sf ++ x.op54 ++ x._fixed ++ x.op31 ++ x.Rm ++ x.o0 ++ x.Ra ++ x.Rn ++ x.Rd
 
+@[expose] section
 /-- (FV addition) Add/subtract (extended register): `ADD/ADDS/SUB/SUBS (extended register)`. -/
 structure Add_sub_ext_reg_cls where
   sf      : BitVec 1                 -- [31:31]
@@ -153,12 +168,14 @@ structure Add_sub_ext_reg_cls where
   Rn      : BitVec 5                 --   [9:5]
   Rd      : BitVec 5                 --   [4:0]
 deriving DecidableEq, Repr
+end
 
 instance : ToString Add_sub_ext_reg_cls where toString a := toString (repr a)
 
 def Add_sub_ext_reg_cls.toBitVec32 (x : Add_sub_ext_reg_cls) : BitVec 32 :=
   x.sf ++ x.op ++ x.S ++ x._fixed1 ++ x.opt ++ x._fixed2 ++ x.Rm ++ x.option ++ x.imm3 ++ x.Rn ++ x.Rd
 
+@[expose] section
 /-- (FV addition) Conditional compare (immediate): `CCMN/CCMP (immediate)`. -/
 structure Conditional_compare_imm_cls where
   sf      : BitVec 1                 -- [31:31]
@@ -173,12 +190,14 @@ structure Conditional_compare_imm_cls where
   o3      : BitVec 1                 --   [4:4]
   nzcv    : BitVec 4                 --   [3:0]
 deriving DecidableEq, Repr
+end
 
 instance : ToString Conditional_compare_imm_cls where toString a := toString (repr a)
 
 def Conditional_compare_imm_cls.toBitVec32 (x : Conditional_compare_imm_cls) : BitVec 32 :=
   x.sf ++ x.op ++ x.S ++ x._fixed1 ++ x.imm5 ++ x.cond ++ x._fixed2 ++ x.o2 ++ x.Rn ++ x.o3 ++ x.nzcv
 
+@[expose] section
 /-- (FV addition) Conditional compare (register): `CCMN/CCMP (register)`. -/
 structure Conditional_compare_reg_cls where
   sf      : BitVec 1                 -- [31:31]
@@ -193,6 +212,7 @@ structure Conditional_compare_reg_cls where
   o3      : BitVec 1                 --   [4:4]
   nzcv    : BitVec 4                 --   [3:0]
 deriving DecidableEq, Repr
+end
 
 instance : ToString Conditional_compare_reg_cls where toString a := toString (repr a)
 
@@ -200,6 +220,7 @@ def Conditional_compare_reg_cls.toBitVec32 (x : Conditional_compare_reg_cls) : B
   x.sf ++ x.op ++ x.S ++ x._fixed1 ++ x.Rm ++ x.cond ++ x._fixed2 ++ x.o2 ++ x.Rn ++ x.o3 ++ x.nzcv
 
 
+@[expose] section
 inductive DataProcRegInst where
   | Add_sub_carry :
     Add_sub_carry_cls → DataProcRegInst
@@ -222,6 +243,7 @@ inductive DataProcRegInst where
   | Conditional_compare_reg :
     Conditional_compare_reg_cls → DataProcRegInst
 deriving DecidableEq, Repr
+end
 
 instance : ToString DataProcRegInst where toString a := toString (repr a)
 

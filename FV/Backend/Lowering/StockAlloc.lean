@@ -13,10 +13,12 @@ namespace Backend.Stock
 /-- Stock reserves 192 register numbers for physical-register representations. -/
 def firstUserVreg : Nat := 192
 
+@[expose] section
 inductive AllocationRequest where
   | value (id : Nat)
   | exception (instruction returns payloads : Nat)
   deriving Inhabited, Repr, DecidableEq
+end
 
 def AllocationRequest.count : AllocationRequest → Nat
   | .value _ => 1

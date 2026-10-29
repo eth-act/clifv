@@ -36,6 +36,7 @@ open Std.Format
 -- types, but their sub-categories' names (e.g.,
 -- DataProcImmInst.Add_sub_imm) are longer and use underscores.
 
+@[expose] section
 /--
 A fully-decoded Arm instruction is represented by the ArmInst
 structure.
@@ -49,6 +50,7 @@ inductive ArmInst where
   /-- (FV addition) The A64 "Reserved" group: `UDF`. -/
   | RES   : ReservedInst    → ArmInst
 deriving DecidableEq, Repr
+end
 
 instance : ToString ArmInst where toString a := toString (repr a)
 

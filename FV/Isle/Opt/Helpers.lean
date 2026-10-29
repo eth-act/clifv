@@ -30,6 +30,7 @@ that does not match. Rust `Option` results are Lean `Option`s.
 
 namespace Isle.Opt
 
+@[expose] section
 /-- A Cranelift `Type` as the mid-end rules see it (`src/ir/types.rs`): scalar integers and
 floats, fixed vectors, and `INVALID`. Dynamic vectors do not occur (no rule constant names
 one). -/
@@ -39,6 +40,7 @@ inductive CTy where
   | float (bits : Nat)
   | vec (laneBits lanes : Nat) (isFloat : Bool)
   deriving DecidableEq, Repr, Inhabited, Hashable
+end
 
 namespace CTy
 

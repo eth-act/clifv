@@ -45,6 +45,7 @@ sign). -/
 
 /-! ## Call frame instructions -/
 
+@[expose] section
 /-- A decoded call frame instruction (data alignment −8 applied to `offset`s: `off` is the
 byte offset from the CFA). -/
 inductive CfaInsn where
@@ -57,6 +58,7 @@ inductive CfaInsn where
   | offset (reg : Nat) (off : Int)
   | nop
   deriving DecidableEq, Repr, Inhabited
+end
 
 /-- Little-endian unsigned number of a byte list. -/
 @[expose] def leNat : List UInt8 → Nat
@@ -110,6 +112,7 @@ least one byte, so the length suffices). -/
 
 /-! ## Rows -/
 
+@[expose] section
 /-- An unwind row: the CFA is `cfaReg + cfaOff`; `saved` lists the registers saved at
 CFA-relative offsets (DWARF numbers; latest rule first); every other register has its
 initial rule (`same value` for callee-saved registers in the AArch64 ABI). -/
@@ -118,6 +121,7 @@ structure Row where
   cfaOff : Nat
   saved : List (Nat × Int) := []
   deriving DecidableEq, Repr, Inhabited
+end
 
 /-- The rule of register `r` in a row: `some off` = saved at CFA + `off`. -/
 @[expose] def Row.rule (row : Row) (r : Nat) : Option Int := row.saved.lookup r
@@ -144,6 +148,7 @@ whose FDE's are `fde`. -/
 
 /-! ## The LSDA -/
 
+@[expose] section
 /-- One call-site table entry: `[start, start + len)` → landing pad `pad` (0 = none) and
 action-table offset + 1 `action` (0 = cleanup only). Offsets from the function start. -/
 structure CallSiteEntry where
@@ -152,6 +157,7 @@ structure CallSiteEntry where
   pad : Nat
   action : Nat
   deriving DecidableEq, Repr, Inhabited
+end
 
 /-- Decode `n` bytes worth of call-site entries (four ULEB128s each). -/
 @[expose] def decodeSitesN? : Nat → List UInt8 → Option (List CallSiteEntry)

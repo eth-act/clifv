@@ -21,11 +21,13 @@ where
       let y := (x + n / x) / 2
       if y < x then go fuel n y else x
 
+@[expose] section
 /-- The rounding error of a truncated value in units of the last kept place: exactly zero,
 in `(0, ½)`, exactly `½`, or in `(½, 1)`. -/
 inductive Err
   | exact | low | half | high
   deriving DecidableEq, Repr
+end
 
 /-- `mant / 2^s` (`s > 0`) truncated, with the error class; `sticky` means the true value lies
 strictly between `mant` and `mant + 1` (a nonzero discarded tail below `mant`'s last bit). -/

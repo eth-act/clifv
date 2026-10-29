@@ -21,6 +21,7 @@ Conventions:
 
 namespace Clif
 
+@[expose] section
 /-- CLIF scalar types: the integers and the IEEE 754 binary32/binary64 floats (`f32`/`f64`).
 A float value is its raw bit pattern (`Val.bits`); its arithmetic is in `FV/Float`. Vectors
 and `f16`/`f128` are outside the subset. -/
@@ -28,6 +29,7 @@ inductive Ty where
   | i8 | i16 | i32 | i64 | i128
   | f32 | f64
   deriving DecidableEq, Repr, Inhabited, Hashable
+end
 
 namespace Ty
 
@@ -79,11 +81,13 @@ def intOfWidth : Ty → Ty
 
 end Ty
 
+@[expose] section
 /-- A CLIF runtime value: a width-indexed bit vector. -/
 structure Val where
   ty : Ty
   bits : BitVec ty.width
   deriving DecidableEq, Repr
+end
 
 namespace Val
 
@@ -111,12 +115,14 @@ namespace Val
 
 end Val
 
+@[expose] section
 /-- Trap codes (Cranelift 0.136.1 spelling: `stk_ovf heap_oob int_ovf int_divz bad_toint`
 and `user<N>` with `1 ≤ N ≤ 250`). -/
 inductive TrapCode where
   | stkOvf | heapOob | intOvf | intDivz | badToint
   | user (n : Nat)
   deriving DecidableEq, Repr, Inhabited
+end
 
 namespace TrapCode
 
@@ -137,10 +143,13 @@ namespace TrapCode
 
 end TrapCode
 
+@[expose] section
 inductive Endianness where
   | little | big
   deriving DecidableEq, Repr, Inhabited
+end
 
+@[expose] section
 /-- Memory-operation flags. `trapCode = none` is `notrap`. The default trap code of a
 memory access is `heap_oob`. -/
 structure MemFlags where
@@ -150,13 +159,16 @@ structure MemFlags where
   canMove : Bool := false
   endianness : Option Endianness := none
   deriving DecidableEq, Repr, Inhabited
+end
 
 @[expose] def MemFlags.notrap (f : MemFlags) : Bool := f.trapCode.isNone
 
+@[expose] section
 /-- Integer condition codes of `icmp`. -/
 inductive IntCC where
   | eq | ne | slt | sge | sgt | sle | ult | uge | ugt | ule
   deriving DecidableEq, Repr, Inhabited
+end
 
 namespace IntCC
 
@@ -170,11 +182,14 @@ namespace IntCC
 
 end IntCC
 
+@[expose] section
 /-- Unary integer operations `x → x` (same type in and out). -/
 inductive UnaryOp where
   | ineg | bnot | iabs | clz | ctz | cls | popcnt | bitrev | bswap
   deriving DecidableEq, Repr, Inhabited
+end
 
+@[expose] section
 /-- Binary integer operations `x, y → x`. For shifts and rotates the amount `y` may have
 any integer type; for all other operations both operands have type `ty`. -/
 inductive BinaryOp where
@@ -184,40 +199,55 @@ inductive BinaryOp where
   | smin | smax | umin | umax
   | uaddSat | saddSat | usubSat | ssubSat
   deriving DecidableEq, Repr, Inhabited
+end
 
+@[expose] section
 /-- Trapping division operations. -/
 inductive DivOp where
   | udiv | sdiv | urem | srem
   deriving DecidableEq, Repr, Inhabited
+end
 
+@[expose] section
 /-- Operations producing `(result, i8 overflow flag)`. -/
 inductive OverflowOp where
   | uaddOverflow | saddOverflow | usubOverflow | ssubOverflow | umulOverflow | smulOverflow
   deriving DecidableEq, Repr, Inhabited
+end
 
+@[expose] section
 /-- Operations with an `i8` carry/borrow input, producing `(result, i8 flag)`. -/
 inductive CarryOp where
   | uaddOverflowCin | saddOverflowCin | usubOverflowBin | ssubOverflowBin
   deriving DecidableEq, Repr, Inhabited
+end
 
+@[expose] section
 inductive ExtendOp where
   | uextend | sextend
   deriving DecidableEq, Repr, Inhabited
+end
 
+@[expose] section
 /-- Loads. `load` reads `ty.bytes` bytes; the others read 1/2/4 bytes and extend to `ty`. -/
 inductive LoadOp where
   | load | uload8 | sload8 | uload16 | sload16 | uload32 | sload32
   deriving DecidableEq, Repr, Inhabited
+end
 
+@[expose] section
 /-- Stores. `store` writes `ty.bytes` bytes; the others truncate to 1/2/4 bytes. -/
 inductive StoreOp where
   | store | istore8 | istore16 | istore32
   deriving DecidableEq, Repr, Inhabited
+end
 
+@[expose] section
 /-- Read-modify-write operations of `atomic_rmw`. -/
 inductive AtomicRmwOp where
   | add | sub | and | nand | or | xor | xchg | umin | umax | smin | smax
   deriving DecidableEq, Repr, Inhabited
+end
 
 namespace AtomicRmwOp
 
@@ -232,10 +262,12 @@ namespace AtomicRmwOp
 
 end AtomicRmwOp
 
+@[expose] section
 /-- Float condition codes of `fcmp` (`FloatCC`). -/
 inductive FloatCC where
   | eq | ne | lt | le | gt | ge | ord | uno | one | ueq | ult | ule | ugt | uge
   deriving DecidableEq, Repr, Inhabited
+end
 
 namespace FloatCC
 
@@ -250,6 +282,7 @@ namespace FloatCC
 
 end FloatCC
 
+@[expose] section
 /-- Float operations (`Inst.float op ty args`). The operands per operation and the role of
 `ty` (Cranelift's controlling type) are listed in `FOp.arity`/`Inst.resultTypes`:
 * `fadd fsub fmul fdiv fmin fmax fcopysign`: `x, y : ty → ty`;
@@ -267,6 +300,7 @@ inductive FOp where
   | fcvtToUint | fcvtToSint | fcvtToUintSat | fcvtToSintSat
   | fcvtFromUint | fcvtFromSint
   deriving DecidableEq, Repr, Inhabited
+end
 
 namespace FOp
 
@@ -308,12 +342,15 @@ abbrev BlockId := Nat
 abbrev SlotId := Nat
 abbrev FnRef := Nat
 
+@[expose] section
 /-- A branch target with its block arguments, e.g. `block3(v1, v2)`. -/
 structure BlockCall where
   block : BlockId
   args : List ValueId := []
   deriving DecidableEq, Repr, Inhabited
+end
 
+@[expose] section
 /-- Non-terminator instructions of the subset. -/
 inductive Inst where
   /-- `iconst.ty imm` (`ty` ∈ i8..i64); at `f32`/`f64` it is `f32const`/`f64const` with the
@@ -382,7 +419,9 @@ inductive Inst where
   the result type, except for `fcmp` (the operand type; the result is `i8`). -/
   | float (op : FOp) (ty : Ty) (args : List ValueId)
   deriving DecidableEq, Repr, Inhabited
+end
 
+@[expose] section
 /-- An argument of a `try_call` successor block call: a value, the `i`-th return value of the
 call (`retN`, normal-return successor only) or the `i`-th exception payload (`exnN`, handler
 successors only; `x0`/`x1` on aarch64). -/
@@ -391,13 +430,17 @@ inductive TryArg where
   | ret (i : Nat)
   | exn (i : Nat)
   deriving DecidableEq, Repr, Inhabited
+end
 
+@[expose] section
 /-- A successor of a `try_call`: a block with `TryArg` arguments. -/
 structure TryDest where
   block : BlockId
   args : List TryArg := []
   deriving DecidableEq, Repr, Inhabited
+end
 
+@[expose] section
 /-- An item of an exception table (Cranelift 0.136.1 `ExceptionTableItem`): `tagN: dest`,
 `default: dest`, or `context vN` (a dynamic context value for the unwinder). -/
 inductive ExnItem where
@@ -405,7 +448,9 @@ inductive ExnItem where
   | default (dest : TryDest)
   | context (v : ValueId)
   deriving DecidableEq, Repr, Inhabited
+end
 
+@[expose] section
 /-- The exception table of a `try_call`/`try_call_indirect`: the callee signature `sigN`,
 the normal-return successor, and the handler items (`sigN, block1(ret0), [ tag0: block2(exn0) ]`). -/
 structure ExnTable where
@@ -413,6 +458,7 @@ structure ExnTable where
   normal : TryDest
   items : List ExnItem := []
   deriving DecidableEq, Repr, Inhabited
+end
 
 /-- The handler successors of an exception table, in item order (Cranelift's successor order:
 handlers first, then the normal return, `ExceptionTableData::all_branches`). -/
@@ -442,6 +488,7 @@ def ExnTable.mapVals (g : ValueId → ValueId) (et : ExnTable) : ExnTable :=
     | .default d => .default (d.mapVals g)
     | .context v => .context (g v) }
 
+@[expose] section
 /-- Block terminators. -/
 inductive Terminator where
   | jump (dest : BlockCall)
@@ -461,18 +508,22 @@ inductive Terminator where
   /-- `try_call_indirect callee(args), exception-table` (the signature is the table's). -/
   | tryCallIndirect (callee : ValueId) (args : List ValueId) (et : ExnTable)
   deriving DecidableEq, Repr, Inhabited
+end
 
 /-- A `try_call`/`try_call_indirect` terminator. -/
 @[expose] def Terminator.isTry : Terminator → Bool
   | .tryCall .. | .tryCallIndirect .. => true
   | _ => false
 
+@[expose] section
 /-- One instruction with its result values, e.g. `v3, v4 = uadd_overflow v1, v2`. -/
 structure Stmt where
   results : List ValueId := []
   inst : Inst
   deriving DecidableEq, Repr, Inhabited
+end
 
+@[expose] section
 structure Block where
   id : BlockId
   params : List (ValueId × Ty) := []
@@ -480,12 +531,16 @@ structure Block where
   body : List Stmt := []
   term : Terminator
   deriving DecidableEq, Repr, Inhabited
+end
 
+@[expose] section
 /-- ABI extension flags on parameters/returns (`uext`/`sext`); no effect on `Clif.run`. -/
 inductive ArgExt where
   | none | uext | sext
   deriving DecidableEq, Repr, Inhabited
+end
 
+@[expose] section
 /-- Special purpose of a parameter (`vmctx`, `sret`, `sarg(N)`); in `Clif.run` it only matters
 to `call_indirect`, which enters a function of the program only when the call-site signature
 has its parameter purposes (`Clif.Signature.abiMatch`). -/
@@ -493,16 +548,21 @@ inductive ArgPurpose where
   | normal | vmctx | sret
   | sarg (size : Nat)
   deriving DecidableEq, Repr, Inhabited
+end
 
+@[expose] section
 structure AbiParam where
   ty : Ty
   ext : ArgExt := .none
   purpose : ArgPurpose := .normal
   deriving DecidableEq, Repr, Inhabited
+end
 
+@[expose] section
 inductive CallConv where
   | fast | tail | systemV | windowsFastcall | appleAarch64 | probestack | winch | preserveAll
   deriving DecidableEq, Repr, Inhabited
+end
 
 namespace CallConv
 
@@ -518,6 +578,7 @@ namespace CallConv
 
 end CallConv
 
+@[expose] section
 /-- A function signature. `callConv = none` means the reader's default. Calling conventions
 have no effect on `Clif.run`. -/
 structure Signature where
@@ -525,13 +586,17 @@ structure Signature where
   returns : List AbiParam := []
   callConv : Option CallConv := none
   deriving DecidableEq, Repr, Inhabited
+end
 
+@[expose] section
 /-- `ssN = explicit_slot size[, align = align]`. -/
 structure StackSlot where
   size : Nat
   align : Option Nat := none
   deriving DecidableEq, Repr, Inhabited
+end
 
+@[expose] section
 /-- Global value declarations `gvN = ...`. Only `symbol` declarations have a meaning in
 `Clif.run` (through `symbol_value`); the `global_value` instruction is outside subset S. -/
 inductive GlobalValue where
@@ -547,7 +612,9 @@ inductive GlobalValue where
   `tls_value` takes it). -/
   | tlsSymbol (name : String) (offset : Int) (colocated : Bool)
   deriving DecidableEq, Repr, Inhabited
+end
 
+@[expose] section
 /-- `fnN = [colocated] %name(sig)`: an external function reference. `name` is resolved at run
 time first against the functions of the program, then against the `Env`. -/
 structure ExtFunc where
@@ -555,7 +622,9 @@ structure ExtFunc where
   sig : Signature
   colocated : Bool := false
   deriving DecidableEq, Repr, Inhabited
+end
 
+@[expose] section
 /-- How a run command checks its result. -/
 inductive Expect where
   /-- `; run: %f(args) == vals` -/
@@ -568,14 +637,18 @@ inductive Expect where
   /-- `; print: %f(args)`: no expectation. -/
   | print
   deriving DecidableEq, Repr, Inhabited
+end
 
+@[expose] section
 /-- A filetest run command (`; run: ...` comment) attached to a function. -/
 structure RunCommand where
   func : String
   args : List Val := []
   expect : Expect
   deriving DecidableEq, Repr, Inhabited
+end
 
+@[expose] section
 structure Function where
   name : String
   sig : Signature
@@ -589,7 +662,9 @@ structure Function where
   /-- Run commands (filetest comments following the function); empty for emitted code. -/
   runs : List RunCommand := []
   deriving DecidableEq, Repr, Inhabited
+end
 
+@[expose] section
 /-- One item of a data object's contents. -/
 inductive DataItem where
   /-- One byte. -/
@@ -597,7 +672,9 @@ inductive DataItem where
   /-- The 8-byte little-endian absolute address `&name + addend` (an `Abs8` relocation). -/
   | addr (name : String) (addend : Int)
   deriving DecidableEq, Repr, Inhabited
+end
 
+@[expose] section
 /-- A link-time data object (`; data:` directive of a filetest, see `docs/contracts/clif.md`):
 a symbol `name` with initial contents, placed at an address aligned to `align`. Read-only
 unless `writable`. -/
@@ -607,7 +684,9 @@ structure DataObject where
   writable : Bool := false
   items : List DataItem
   deriving DecidableEq, Repr, Inhabited
+end
 
+@[expose] section
 /-- A CLIF file: header lines (`test ...`, `target ...`, `set ...`, kept verbatim), link-time
 data objects (`; data:` directives, empty for emitted code) and functions. -/
 structure Program where
@@ -615,6 +694,7 @@ structure Program where
   data : List DataObject := []
   funcs : List Function
   deriving DecidableEq, Repr, Inhabited
+end
 
 namespace Function
 

@@ -31,12 +31,14 @@ Accepted input (Cranelift 0.136.1 reader syntax):
 
 namespace Clif
 
+@[expose] section
 /-- Parse errors. `unsupported`: valid CLIF outside subset S (opcode, type or feature);
 `malformed`: anything else. -/
 inductive ParseError where
   | unsupported (msg : String)
   | malformed (msg : String)
   deriving Repr, Inhabited, BEq
+end
 
 @[expose] def ParseError.toString : ParseError → String
   | .unsupported m => s!"unsupported: {m}"
@@ -48,6 +50,7 @@ namespace Parse
 
 /-! ## Lexer -/
 
+@[expose] section
 inductive Tok where
   | word (s : String)
   /-- `%name` (without the `%`). -/
@@ -57,6 +60,7 @@ inductive Tok where
   | arrow
   | punct (c : Char)
   deriving Repr, BEq, Inhabited
+end
 
 @[expose] def Tok.show : Tok → String
   | .word s => s | .name s => "%" ++ s | .int s => s | .arrow => "->"

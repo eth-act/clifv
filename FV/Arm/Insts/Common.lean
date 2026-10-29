@@ -333,12 +333,14 @@ theorem CheckSPAlignment_of_r_sp_aligned {s : ArmState} {value}
 
 ----------------------------------------------------------------------
 
+@[expose] section
 inductive ShiftType where
   | LSL : ShiftType
   | LSR : ShiftType
   | ASR : ShiftType
   | ROR : ShiftType
 deriving DecidableEq, Repr
+end
 
 instance : ToString ShiftType where toString a := toString (repr a)
 
@@ -359,6 +361,7 @@ def shift_reg (bv : BitVec n) (st : ShiftType) (sa : BitVec 6)
   | ShiftType.ASR => sshiftRight bv sa.toNat
   | ShiftType.ROR => rotateRight bv sa.toNat
 
+@[expose] section
 inductive LogicalShiftedRegType where
   | AND  : LogicalShiftedRegType
   | BIC  : LogicalShiftedRegType
@@ -369,6 +372,7 @@ inductive LogicalShiftedRegType where
   | ANDS : LogicalShiftedRegType
   | BICS : LogicalShiftedRegType
 deriving DecidableEq, Repr
+end
 
 instance : ToString LogicalShiftedRegType where toString a := toString (repr a)
 
@@ -377,12 +381,14 @@ def zero_flag_spec (bv : BitVec n) : BitVec 1 :=
 
 ----------------------------------------------------------------------
 
+@[expose] section
 inductive LogicalImmType where
   | AND : LogicalImmType
   | ORR : LogicalImmType
   | EOR : LogicalImmType
   | ANDS : LogicalImmType
 deriving DecidableEq, Repr
+end
 
 instance : ToString LogicalImmType where toString a := toString (repr a)
 
@@ -443,6 +449,7 @@ dsimproc [state_simp_rules] reduceDecodeBitMasks (decode_bit_masks _ _ _ _ _) :=
 
 ----------------------------------------------------------------------
 
+@[expose] section
 inductive SIMDThreeSameLogicalType where
   | AND  : SIMDThreeSameLogicalType
   | BIC  : SIMDThreeSameLogicalType
@@ -453,6 +460,7 @@ inductive SIMDThreeSameLogicalType where
   | BIT : SIMDThreeSameLogicalType
   | BIF : SIMDThreeSameLogicalType
 deriving DecidableEq, Repr
+end
 
 instance : ToString SIMDThreeSameLogicalType where toString a := toString (repr a)
 
@@ -513,6 +521,7 @@ theorem zero_lt_shift_left_pos {x n : Nat} (h : 0 < x) :
 ----------------------------------------------------------------------
 
 -- Floating-point convert/move instruction types
+@[expose] section
 inductive FPConvOp where
   | FPConvOp_CVT_FtoI : FPConvOp
   | FPConvOp_CVT_ItoF : FPConvOp
@@ -520,6 +529,7 @@ inductive FPConvOp where
   | FPConvOp_MOV_ItoF : FPConvOp
   | FPConvOp_CVT_FtoI_JS : FPConvOp
 deriving DecidableEq, Repr
+end
 
 ----------------------------------------------------------------------
 
@@ -605,20 +615,24 @@ def elem_set (vector : BitVec n) (e : Nat) (size : Nat)
 ----------------------------------------------------------------------
 
 -- MemOp: Memory access instruction types
+@[expose] section
 inductive MemOp where
   | MemOp_LOAD : MemOp
   | MemOp_STORE : MemOp
   | MemOp_PREFETCH : MemOp
 deriving DecidableEq, Repr
+end
 
 ----------------------------------------------------------------------
 
+@[expose] section
 /-- (FV addition) Register extension type.
 Ref.: Arm ARM (DDI 0487) shared pseudocode `ExtendType`. -/
 inductive ExtendType where
   | UXTB | UXTH | UXTW | UXTX
   | SXTB | SXTH | SXTW | SXTX
 deriving DecidableEq, Repr
+end
 
 instance : ToString ExtendType where toString a := toString (repr a)
 

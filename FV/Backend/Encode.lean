@@ -901,11 +901,13 @@ the encoded word back as the intended instruction. -/
 
 /-! ## Relocations -/
 
+@[expose] section
 /-- AArch64 ELF relocation types used (AAELF64 "ELF for the Arm 64-bit Architecture", relocation codes table). -/
 inductive RelocType where
   | call26 | adrGotPage | ld64GotLo12Nc | adrPrelPgHi21 | addAbsLo12Nc
   | tlsDescAdrPage21 | tlsDescLd64Lo12 | tlsDescAddLo12 | tlsDescCall
   deriving DecidableEq, Repr, Inhabited, BEq
+end
 
 /-- ELF `R_AARCH64_*` number. -/
 def RelocType.elf : RelocType → Nat
@@ -936,6 +938,7 @@ def RelocType.isTls : RelocType → Bool
   | .tlsDescAdrPage21 | .tlsDescLd64Lo12 | .tlsDescAddLo12 | .tlsDescCall => true
   | _ => false
 
+@[expose] section
 /-- A relocation: byte offset of the instruction, type, target symbol, RELA addend. -/
 structure Reloc where
   offset : Nat
@@ -943,6 +946,7 @@ structure Reloc where
   sym : String
   addend : Int
   deriving DecidableEq, Repr, Inhabited, BEq
+end
 
 /-- The relocation an instruction needs (its immediate field is left zero). -/
 def Insn.reloc? : Insn → Option (RelocType × String × Int)

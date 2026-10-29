@@ -69,6 +69,7 @@ check says callee-saved registers hold their entry values when the function retu
 
 namespace Backend
 
+@[expose] section
 /-- A location of the allocated code. `stack slot cls`: regalloc2 spill slot `slot` of class
 `cls` (the frame keeps int and float slots in separate areas, so they never overlap);
 `save r`: the frame slot where the prologue saves callee-saved register `r`. -/
@@ -77,7 +78,9 @@ inductive Loc where
   | stack (slot : Nat) (cls : RegClass)
   | save (r : Reg)
   deriving DecidableEq, Repr, Inhabited, Hashable
+end
 
+@[expose] section
 /-- An item of an allocated block: the `k`-th VCode instruction of the block with the
 location of each operand (in `MInst.operands` order), or a move inserted by the allocator or
 the frame (callee-saved save/restore). -/
@@ -85,6 +88,7 @@ inductive RItem where
   | op (k : Nat) (allocs : Array Loc)
   | move (src dst : Loc)
   deriving DecidableEq, Repr, Inhabited
+end
 
 /-- An allocated function: one item list per block of the prepared VCode (same order). -/
 structure RFunc where
@@ -95,11 +99,13 @@ structure RFunc where
   saved : List Reg
   deriving Repr, Inhabited
 
+@[expose] section
 /-- Symbolic values. -/
 inductive Sym where
   | vreg (n : Nat)
   | entry (r : Reg)
   deriving DecidableEq, Repr, Inhabited
+end
 
 /-- The class of a location, if it is a location of the allocated code at all. -/
 @[expose] def Loc.cls? : Loc → Option RegClass

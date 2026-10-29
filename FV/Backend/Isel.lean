@@ -82,7 +82,7 @@ structure LState where
 @[expose] def LState.fresh (st : LState) (cls : RegClass) : Reg × LState :=
   (.vreg st.nextVreg cls, { st with nextVreg := st.nextVreg + 1, classes := st.classes.push cls })
 
-def LState.emit (st : LState) (i : MInst) : LState := { st with emitted := st.emitted.push i }
+@[expose] def LState.emit (st : LState) (i : MInst) : LState := { st with emitted := st.emitted.push i }
 
 /-! ## CLIF → ISLE data -/
 
@@ -381,10 +381,12 @@ no register of its class goes to the stack. `sigArgLocs` (entry and calls) and `
 x-register placement `argLocs` (`Proof.sigArgLocs_eq`), on integer returns `retRegs`
 (`Proof.abiRetRegs_int`). -/
 
+@[expose] section
 inductive ArgLoc where
   | reg (r : Reg)
   | stack (off : Nat)
   deriving Repr, Inhabited, BEq
+end
 
 @[expose] def alignTo (n a : Nat) : Nat := (n + a - 1) / a * a
 
@@ -731,7 +733,7 @@ terminator with `try_call_info` `info`. -/
 def storeOpOfBytes : Nat → StoreOp
   | 1 => .store8 | 2 => .store16 | 4 => .store32 | _ => .store64
 
-def loadOpOfBytes : Nat → LoadOp
+@[expose] def loadOpOfBytes : Nat → LoadOp
   | 1 => .uload8 | 2 => .uload16 | 4 => .uload32 | _ => .uload64
 
 /-- `MemFlagsData::trusted()`: `notrap aligned`. -/
@@ -739,13 +741,13 @@ def loadOpOfBytes : Nat → LoadOp
 
 /-- The load of a stack-passed value of `bytes` bytes into `r`: an integer `ldr`/`ldrb`/`ldrh`
 for an integer register, `ldr s`/`ldr d` for a float one. -/
-def stackArgLoad (r : Reg) (bytes : Nat) (am : AMode) : MInst :=
+@[expose] def stackArgLoad (r : Reg) (bytes : Nat) (am : AMode) : MInst :=
   match r.homeCls with
   | .float => .fpuLoad (if bytes == 4 then .size32 else .size64) r am trustedFlags
   | .int => .load (loadOpOfBytes bytes) r am trustedFlags
 
 /-- The store of a stack-passed value of `bytes` bytes from `r` (`stackArgLoad`'s inverse). -/
-def stackArgStore (r : Reg) (bytes : Nat) (am : AMode) : MInst :=
+@[expose] def stackArgStore (r : Reg) (bytes : Nat) (am : AMode) : MInst :=
   match r.homeCls with
   | .float => .fpuStore (if bytes == 4 then .size32 else .size64) r am trustedFlags
   | .int => .store (storeOpOfBytes bytes) r am trustedFlags
@@ -760,9 +762,9 @@ register of each (`int` for an empty list), as `retRegsC` places them. -/
 section Helpers
 variable (ctx : Ctx)
 
-def Ctx.valueType? (v : Nat) : Option CTy := (ctx.valTy[v]?).join
+@[expose] def Ctx.valueType? (v : Nat) : Option CTy := (ctx.valTy[v]?).join
 def Ctx.defInst? (v : Nat) : Option Nat := (ctx.valDef[v]?).join
-def Ctx.defClif? (v : Nat) : Option Clif.Inst := do
+@[expose] def Ctx.defClif? (v : Nat) : Option Clif.Inst := do
   let i ← ctx.defInst? v
   (← ctx.insts[i]?).clif
 def Ctx.valueReg? (v : Nat) : Option Reg := (ctx.valReg[v]?).join
@@ -830,7 +832,7 @@ def V.intcc? : V → Option Nat := V.enum? tyIntCC some
 open Isle (ExtResult) in
 /-- Extern extractors: the input value to the term's argument values. Dispatch is on the term
 id (`Isle.Aarch64.TId.*`, generated), a `Nat`-literal match. -/
-def externExtract (ctx : Ctx) (t : Term) (v : V) (_st : LState) : ExtResult (List V) :=
+@[expose] def externExtract (ctx : Ctx) (t : Term) (v : V) (_st : LState) : ExtResult (List V) :=
   match tyPred t.id, v with
   | some p, .ty ty => if p ty then .ok [.ty ty] else .fail
   | some _, _ => .unmodeled s!"{t.name} on a non-type"
@@ -987,10 +989,10 @@ def fpModImm? (value : Nat) (s : ScalarSize) : Option ASIMDFPModImm :=
 
 /-- `ASIMDMovModImm::zero` (imms.rs:748-756): immediate 0, no shift, the 64-bit form iff the
 size is 64 bits. -/
-def movModImmZero (s : ScalarSize) : ASIMDMovModImm := ⟨0#8, 0, s == .size64, false⟩
+@[expose] def movModImmZero (s : ScalarSize) : ASIMDMovModImm := ⟨0#8, 0, s == .size64, false⟩
 
 /-- `load_constant_full` (`aarch64/lower/isle.rs`): a `movz`/`movn` and `movk`s. -/
-def loadConstantFull (bits : Nat) (signExt : Bool) (extendTo : OperandSize) (value : Nat)
+@[expose] def loadConstantFull (bits : Nat) (signExt : Bool) (extendTo : OperandSize) (value : Nat)
     (st : LState) : Reg × LState :=
   let value := mask64 value
   let value :=
@@ -1031,7 +1033,7 @@ def regsOf? : V → Option (List (List Reg))
 
 open Isle (ExtResult) in
 /-- Extern constructors, dispatched on the term id (`Isle.Aarch64.TId.*`). -/
-def externCtor (ctx : Ctx) (t : Term) (args : List V) (st : LState) : ExtResult (V × LState) :=
+@[expose] def externCtor (ctx : Ctx) (t : Term) (args : List V) (st : LState) : ExtResult (V × LState) :=
   let ok (v : V) : ExtResult (V × LState) := .ok (v, st)
   let optOk (o : Option V) : ExtResult (V × LState) := match o with
     | some v => .ok (v, st)

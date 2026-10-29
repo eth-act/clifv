@@ -25,6 +25,7 @@ namespace LDST
 
 open _root_.BitVec Arm.BitVec
 
+@[expose] section
 structure Reg_pair_cls where
   opc       : BitVec 2
   SIMD?     : Bool
@@ -36,6 +37,7 @@ structure Reg_pair_cls where
   Rn        : BitVec 5
   Rt        : BitVec 5
 deriving DecidableEq, Repr
+end
 
 instance : ToString Reg_pair_cls where toString a := toString (repr a)
 

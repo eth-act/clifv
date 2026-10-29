@@ -6,9 +6,11 @@ public section
 
 namespace Backend.Stock.D0
 
+@[expose] section
 inductive Configuration where
   | defaultI32 | systemVI32 | fastI32 | defaultI64 | systemVI64 | fastI64
   deriving DecidableEq, Repr, Inhabited
+end
 
 def configurations : List Configuration := [.defaultI32, .systemVI32, .fastI32, .defaultI64, .systemVI64, .fastI64]
 def valueType : Configuration → Clif.Ty
@@ -44,9 +46,11 @@ def denseCode (vc : VCode) : VCode := {
 
 def compact (name : String) (r : Result) : VCode := {denseCode r.code with name}
 
+@[expose] section
 inductive Origin where
   | stockD0 | legacy
   deriving DecidableEq, Repr, Inhabited
+end
 
 /-- Internal origin metadata for proving and testing the fixed dispatcher. -/
 def selectWith (stock : Clif.Function → Except String Result) (f : Clif.Function) :

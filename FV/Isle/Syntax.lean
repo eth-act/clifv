@@ -28,6 +28,7 @@ abbrev VarId := Nat
 /-- Index into `Program.rules` (`sema::RuleId`). -/
 abbrev RuleId := Nat
 
+@[expose] section
 /-- Source position: file name as in Cranelift's generated code (`src/isa/aarch64/lower.isle`,
 `<OUT_DIR>/clif_lower.isle`) and **1-based** line. (Cranelift's generated-code comments and
 `trace-log` output print 0-based lines.) -/
@@ -35,6 +36,7 @@ structure Pos where
   file : String
   line : Nat
   deriving Repr, DecidableEq, Inhabited, Hashable
+end
 
 /-- S-expressions (`cranelift_isle::printer::SExpr`), used for specs and for the source form of
 internal extractors. -/
@@ -84,22 +86,29 @@ end
 
 instance : DecidableEq SExpr := SExpr.decEq
 
+@[expose] section
 /-- ISLE built-in integer types. -/
 inductive IntTy where
   | u8 | u16 | u32 | u64 | u128 | usize | i8 | i16 | i32 | i64 | i128 | isize
   deriving Repr, DecidableEq, Inhabited
+end
 
+@[expose] section
 /-- How the fields of a variant/struct were declared. -/
 inductive FieldsKind where
   | unit | named | tuple
   deriving Repr, DecidableEq, Inhabited
+end
 
+@[expose] section
 /-- A field: name (`"0"`, `"1"`, ... for tuple fields) and type. -/
 structure Field where
   name : String
   ty : TypeId
   deriving Repr, DecidableEq, Inhabited
+end
 
+@[expose] section
 /-- An enum variant; `fullName` is the variant's term name `Enum.Variant`. -/
 structure Variant where
   name : String
@@ -107,7 +116,9 @@ structure Variant where
   fieldsKind : FieldsKind
   fields : List Field
   deriving Repr, DecidableEq, Inhabited
+end
 
+@[expose] section
 inductive TypeKind where
   | bool
   | int (t : IntTy)
@@ -116,14 +127,18 @@ inductive TypeKind where
   | enum (isExtern : Bool) (variants : List Variant)
   | struct (isExtern : Bool) (fieldsKind : FieldsKind) (fields : List Field)
   deriving Repr, DecidableEq, Inhabited
+end
 
+@[expose] section
 structure TypeDef where
   id : TypeId
   name : String
   kind : TypeKind
   pos : Option Pos
   deriving Repr, DecidableEq, Inhabited
+end
 
+@[expose] section
 /-- `(decl pure multi partial rec ...)` flags. -/
 structure TermFlags where
   isPure : Bool
@@ -131,20 +146,26 @@ structure TermFlags where
   isPartial : Bool
   isRec : Bool
   deriving Repr, DecidableEq, Inhabited
+end
 
+@[expose] section
 /-- A term's constructor: internal (defined by rules) or an extern Rust function. -/
 inductive Ctor where
   | internal
   | external (fn : String)
   deriving Repr, DecidableEq, Inhabited
+end
 
+@[expose] section
 /-- A term's extractor. Internal extractors are macros that `cranelift-isle` expands into rule
 patterns; `form` is the source `(extractor ...)` definition, kept for reference only. -/
 inductive Extractor where
   | internal (form : SExpr)
   | external (fn : String) (infallible : Bool)
   deriving Repr, DecidableEq, Inhabited
+end
 
+@[expose] section
 inductive TermKind where
   /-- Variant number `variant` of the term's result type (an enum). -/
   | enumVariant (variant : Nat)
@@ -152,7 +173,9 @@ inductive TermKind where
   | struct
   | decl (flags : TermFlags) (ctor : Option Ctor) (extractor : Option Extractor)
   deriving Repr, DecidableEq, Inhabited
+end
 
+@[expose] section
 structure Term where
   id : TermId
   name : String
@@ -161,6 +184,7 @@ structure Term where
   kind : TermKind
   pos : Pos
   deriving Repr, DecidableEq, Inhabited
+end
 
 /-- Left-hand-side patterns (`sema::Pattern`). Each node carries the type of the value it
 matches. -/
@@ -418,12 +442,15 @@ end
 
 instance : DecidableEq Expr := Expr.decEq
 
+@[expose] section
 /-- `(if-let lhs rhs)`; `(if e)` is `(if-let _ e)`. -/
 structure IfLet where
   lhs : Pattern
   rhs : Expr
   deriving Repr, DecidableEq, Inhabited
+end
 
+@[expose] section
 structure Rule where
   id : RuleId
   /-- Stable Lean name `rule_<file stem>_<line>` (also the name of the generated `def`). -/
@@ -444,12 +471,16 @@ structure Rule where
   prio : Int
   pos : Pos
   deriving Repr, DecidableEq, Inhabited
+end
 
+@[expose] section
 /-- Kinds of VeriISLE spec-language definitions. -/
 inductive SpecKind where
   | spec | specMacro | model | state | form | instantiate | attr
   deriving Repr, DecidableEq, Inhabited
+end
 
+@[expose] section
 /-- A spec-language definition, as its full S-expression. `name` is the term (`spec`,
 `instantiate`, `attr` on a term), rule (`attr` on a rule), macro, type (`model`), state or form
 name. `term`/`rule` link to the program when the name resolves. -/
@@ -461,19 +492,24 @@ structure SpecDef where
   pos : Pos
   body : SExpr
   deriving Repr, DecidableEq, Inhabited
+end
 
+@[expose] section
 /-- `(extern const $name ty)`. -/
 structure Const where
   name : String
   ty : TypeId
   deriving Repr, DecidableEq, Inhabited
+end
 
+@[expose] section
 /-- `(convert inner outer term)`. -/
 structure Converter where
   inner : TypeId
   outer : TypeId
   term : TermId
   deriving Repr, DecidableEq, Inhabited
+end
 
 /-- Rule order for one term: descending priority, then ascending rule id (source order). -/
 @[expose] def ruleBefore (a b : Rule) : Bool :=
@@ -567,6 +603,7 @@ end Term
 
 /-! ## Closure reports (`FV/Isle/Generated/Closure.lean`) -/
 
+@[expose] section
 /-- A rule in the closure of the emitter subset. `tags` are the VeriISLE tags on the rule, its
 root term and every term it mentions; `defaultExcludedBy` is their intersection with the
 `veri --default-excludes` tags (non-empty: every expansion containing this rule is skipped by
@@ -582,11 +619,15 @@ structure ClosureRule where
   defaultExcludedBy : List String
   lhsReasons : List String
   deriving Repr, DecidableEq, Inhabited
+end
 
+@[expose] section
 inductive ClosureTermKind where
   | enumVariant | struct | decl
   deriving Repr, DecidableEq, Inhabited
+end
 
+@[expose] section
 /-- A term mentioned by closure rules: its extern Rust constructor/extractor (if any), whether
 VeriISLE has a `spec` for it, whether it carries the VeriISLE `chain` attribute, and its tags. -/
 structure ClosureTerm where
@@ -599,5 +640,6 @@ structure ClosureTerm where
   chain : Bool
   tags : List String
   deriving Repr, DecidableEq, Inhabited
+end
 
 end Isle

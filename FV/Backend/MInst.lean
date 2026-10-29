@@ -35,10 +35,13 @@ open Isle
 
 /-! ## Registers -/
 
+@[expose] section
 inductive RegClass where
   | int | float
   deriving DecidableEq, Repr, Inhabited, BEq, Hashable
+end
 
+@[expose] section
 /-- A register operand: a virtual register (before stack allocation) or a real one.
 `xzr` and `sp` are the two meanings of encoding 31 (Cranelift's `zero_reg` / `stack_reg`). -/
 inductive Reg where
@@ -48,6 +51,7 @@ inductive Reg where
   | sp
   | v (n : Nat)
   deriving DecidableEq, Repr, Inhabited, BEq, Hashable
+end
 
 @[expose] def Reg.isVirtual : Reg → Bool
   | .vreg .. => true
@@ -70,6 +74,7 @@ def Reg.invalid : Reg := .vreg (2 ^ 21 - 1) .int
 
 /-! ## CLIF types as seen by the ISLE rules (`Type` values) -/
 
+@[expose] section
 /-- A Cranelift `Type`: scalar integers `I8..I128`, floats, fixed vectors and `INVALID` (the
 type of an instruction without results). Only what the rules mention. -/
 inductive CTy where
@@ -78,6 +83,7 @@ inductive CTy where
   | float (bits : Nat)
   | vec (laneBits lanes : Nat) (isFloat : Bool)
   deriving DecidableEq, Repr, Inhabited, BEq, Hashable
+end
 
 namespace CTy
 @[expose] def ofClif : Clif.Ty → CTy
@@ -122,9 +128,11 @@ end CTy
 
 /-! ## Operand types (ISLE `inst.isle`) -/
 
+@[expose] section
 inductive OperandSize where
   | size32 | size64
   deriving DecidableEq, Repr, Inhabited, BEq
+end
 
 @[expose] def OperandSize.bits : OperandSize → Nat
   | .size32 => 32 | .size64 => 64
@@ -132,31 +140,43 @@ inductive OperandSize where
 /-- `OperandSize::from_ty` / `from_bits`: 64 for 64-bit types, else 32. -/
 def OperandSize.ofBits (b : Nat) : OperandSize := if b > 32 then .size64 else .size32
 
+@[expose] section
 inductive ALUOp where
   | add | sub | orr | orrNot | and | andS | andNot | eor | eorNot | addS | subS
   | sMulH | uMulH | sDiv | uDiv | extr | lsr | asr | lsl | adc | adcS | sbc | sbcS
   deriving DecidableEq, Repr, Inhabited, BEq
+end
 
+@[expose] section
 inductive ALUOp3 where
   | mAdd | mSub | uMAddL | sMAddL
   deriving DecidableEq, Repr, Inhabited, BEq
+end
 
+@[expose] section
 inductive MoveWideOp where
   | movZ | movN
   deriving DecidableEq, Repr, Inhabited, BEq
+end
 
+@[expose] section
 inductive BfmOp where
   | uBfm | sBfm
   deriving DecidableEq, Repr, Inhabited, BEq
+end
 
+@[expose] section
 inductive BitOp where
   | rbit | clz | cls | rev16 | rev32 | rev64
   deriving DecidableEq, Repr, Inhabited, BEq
+end
 
+@[expose] section
 /-- Condition codes, in the order of the ISLE `Cond` enum (= the hardware encoding). -/
 inductive Cond where
   | eq | ne | hs | lo | mi | pl | vs | vc | hi | ls | ge | lt | gt | le | al | nv
   deriving DecidableEq, Repr, Inhabited, BEq
+end
 
 /-- `Cond::invert`. -/
 @[expose] def Cond.invert : Cond → Cond
@@ -164,82 +184,109 @@ inductive Cond where
   | .vs => .vc | .vc => .vs | .hi => .ls | .ls => .hi | .ge => .lt | .lt => .ge
   | .gt => .le | .le => .gt | .al => .nv | .nv => .al
 
+@[expose] section
 inductive ExtendOp where
   | uxtb | uxth | uxtw | uxtx | sxtb | sxth | sxtw | sxtx
   deriving DecidableEq, Repr, Inhabited, BEq
+end
 
+@[expose] section
 inductive ShiftOp where
   | lsl | lsr | asr | ror
   deriving DecidableEq, Repr, Inhabited, BEq
+end
 
+@[expose] section
 /-- `ShiftOpAndAmt` (amount `< 64`). -/
 structure ShiftOpAndAmt where
   op : ShiftOp
   amt : Nat
   deriving DecidableEq, Repr, Inhabited, BEq
+end
 
+@[expose] section
 /-- `Imm12`: 12 bits, optionally shifted left by 12. -/
 structure Imm12 where
   bits : Nat
   shift12 : Bool
   deriving DecidableEq, Repr, Inhabited, BEq
+end
 
 @[expose] def Imm12.value (i : Imm12) : Nat := if i.shift12 then i.bits * 4096 else i.bits
 
+@[expose] section
 /-- `ImmLogic`: the value (as given to `maybe_from_u64`) and the operand size it was built
 for. The `N:immr:imms` encoding is left to the assembler. -/
 structure ImmLogic where
   value : Nat
   size : OperandSize
   deriving DecidableEq, Repr, Inhabited, BEq
+end
 
+@[expose] section
 /-- `MoveWideConst`: `bits << (16 * shift)`. -/
 structure MoveWideConst where
   bits : Nat
   shift : Nat
   deriving DecidableEq, Repr, Inhabited, BEq
+end
 
+@[expose] section
 structure NZCV where
   n : Bool
   z : Bool
   c : Bool
   v : Bool
   deriving DecidableEq, Repr, Inhabited, BEq
+end
 
 @[expose] def NZCV.bits (f : NZCV) : Nat :=
   (if f.n then 8 else 0) + (if f.z then 4 else 0) + (if f.c then 2 else 0) + (if f.v then 1 else 0)
 
+@[expose] section
 inductive ScalarSize where
   | size8 | size16 | size32 | size64 | size128
   deriving DecidableEq, Repr, Inhabited, BEq
+end
 
 /-- Bytes of a scalar of size `s`. -/
 @[expose] def ScalarSize.bytes : ScalarSize → Nat
   | .size8 => 1 | .size16 => 2 | .size32 => 4 | .size64 => 8 | .size128 => 16
 
+@[expose] section
 inductive VectorSize where
   | size8x8 | size8x16 | size16x4 | size16x8 | size32x2 | size32x4 | size64x2
   deriving DecidableEq, Repr, Inhabited, BEq
+end
 
+@[expose] section
 inductive VecMisc2 where
   | cnt
   deriving DecidableEq, Repr, Inhabited, BEq
+end
 
+@[expose] section
 inductive VecLanesOp where
   | addv | uaddlv
   deriving DecidableEq, Repr, Inhabited, BEq
+end
 
+@[expose] section
 inductive VecALUOp where
   | addp
   deriving DecidableEq, Repr, Inhabited, BEq
+end
 
+@[expose] section
 /-- `ASIMDFPModImm` (`isa/aarch64/inst/imms.rs`): the 8-bit encoded floating-point immediate
 (`enc_bits`, expanded by Arm's `VFPExpandImm`) and the scalar size it was built for. -/
 structure ASIMDFPModImm where
   imm : BitVec 8
   size : ScalarSize
   deriving DecidableEq, Repr, Inhabited, BEq
+end
 
+@[expose] section
 /-- `ASIMDMovModImm` (`imms.rs`): the 8-bit immediate, its left shift, whether it is the 64-bit
 byte-mask form (`is_64bit`), and whether the shift shifts in ones (`MSL`, `shift_ones`). -/
 structure ASIMDMovModImm where
@@ -248,11 +295,15 @@ structure ASIMDMovModImm where
   is64 : Bool
   shiftOnes : Bool
   deriving DecidableEq, Repr, Inhabited, BEq
+end
 
+@[expose] section
 inductive TestBitAndBranchKind where
   | z | nz
   deriving DecidableEq, Repr, Inhabited, BEq
+end
 
+@[expose] section
 /-- Addressing modes (`AMode`). `unsignedOffset` carries the byte offset (already scaled). -/
 inductive AMode where
   | spPostIndexed (simm9 : Int)
@@ -269,12 +320,15 @@ inductive AMode where
   | incomingArg (off : Int)
   | slotOffset (off : Int)
   deriving DecidableEq, Repr, Inhabited, BEq
+end
 
+@[expose] section
 inductive CondBrKind where
   | zero (r : Reg) (size : OperandSize)
   | notZero (r : Reg) (size : OperandSize)
   | cond (c : Cond)
   deriving DecidableEq, Repr, Inhabited, BEq
+end
 
 /-- `CondBrKind::invert`. -/
 @[expose] def CondBrKind.invert : CondBrKind → CondBrKind
@@ -284,11 +338,14 @@ inductive CondBrKind where
 
 abbrev Label := Nat
 
+@[expose] section
 inductive CallDest where
   | sym (name : String)
   | reg (r : Reg)
   deriving DecidableEq, Repr, Inhabited, BEq
+end
 
+@[expose] section
 /-- `CallInfo`: argument registers (vreg used, real register), return registers (real
 register, vreg defined). -/
 structure CallInfo where
@@ -296,17 +353,21 @@ structure CallInfo where
   uses : List (Reg × Reg)
   defs : List (Reg × Reg)
   deriving DecidableEq, Repr, Inhabited, BEq
+end
 
+@[expose] section
 /-- A handler of a `try_call` (`TryCallHandler` without `Context`): an exception tag or the
 default, with its landing pad (the label of the handler successor). -/
 inductive TryHandler where
   | tag (n : Nat) (l : Label)
   | default (l : Label)
   deriving DecidableEq, Repr, Inhabited, BEq
+end
 
 @[expose] def TryHandler.label : TryHandler → Label
   | .tag _ l | .default l => l
 
+@[expose] section
 /-- `TryCallInfo`: the normal-return continuation and the handlers (exception-table order).
 `clobberAll`: the callee's exceptional ABI restores no register (`tail`/`preserve_all`
 callees, `get_regs_clobbered_by_call(_, true) = ALL_CLOBBERS`); for `system_v` the unwinder
@@ -320,14 +381,19 @@ structure TryInfo where
   clobberAll : Bool := false
   rets : Nat := 0
   deriving DecidableEq, Repr, Inhabited, BEq
+end
 
+@[expose] section
 inductive LoadOp where
   | uload8 | sload8 | uload16 | sload16 | uload32 | sload32 | uload64 | fpuLoad128
   deriving DecidableEq, Repr, Inhabited, BEq
+end
 
+@[expose] section
 inductive StoreOp where
   | store8 | store16 | store32 | store64 | fpuStore128
   deriving DecidableEq, Repr, Inhabited, BEq
+end
 
 /-- Access size in bytes (`Inst::mem_type`), used by `mem_finalize`. -/
 @[expose] def LoadOp.bytes : LoadOp → Nat
@@ -338,11 +404,13 @@ inductive StoreOp where
 
 /-! ## Machine instructions -/
 
+@[expose] section
 /-- The `op` of an `atomicRmwLoop` (`AtomicRMWLoopOp`; the constructor order is the generated
 ISLE type's, so `VIdx.AtomicRMWLoopOp.*` indices are `all`'s indices). -/
 inductive AtomicRmwLoopOp where
   | add | sub | and | nand | xor | or | smax | smin | umax | umin | xchg
   deriving DecidableEq, Repr, Inhabited
+end
 
 @[expose] def AtomicRmwLoopOp.all : List AtomicRmwLoopOp :=
   [.add, .sub, .and, .nand, .xor, .or, .smax, .smin, .umax, .umin, .xchg]
@@ -353,39 +421,52 @@ def AtomicRmwLoopOp.name : AtomicRmwLoopOp → String
   | .or => "Orr" | .smax => "Smax" | .smin => "Smin" | .umax => "Umax" | .umin => "Umin"
   | .xchg => "Xchg"
 
+@[expose] section
 /-- Scalar floating-point unary operations of `Insn.fpuRR` (Cranelift `FPUOp1`, `inst.isle`).
 `cvt32To64`/`cvt64To32` are FCVT between precisions; their `size` is the source's. -/
 inductive FPUOp1 where
   | abs | neg | sqrt | cvt32To64 | cvt64To32
   deriving DecidableEq, Repr, Inhabited, BEq
+end
 
+@[expose] section
 /-- Scalar floating-point binary operations of `Insn.fpuRRR` (Cranelift `FPUOp2`). -/
 inductive FPUOp2 where
   | add | sub | mul | div | max | min
   deriving DecidableEq, Repr, Inhabited, BEq
+end
 
+@[expose] section
 /-- Scalar fused multiply-add operations of `Insn.fpuRRRR` (Cranelift `FPUOp3`):
 `fmadd`/`fmsub`/`fnmadd`/`fnmsub`. -/
 inductive FPUOp3 where
   | mAdd | mSub | nMAdd | nMSub
   deriving DecidableEq, Repr, Inhabited, BEq
+end
 
+@[expose] section
 /-- Round-to-integral modes of `Insn.fpuRound` with the operand precision (Cranelift
 `FpuRoundMode`): `frintm`/`frintp`/`frintz`/`frintn`. -/
 inductive FpuRoundMode where
   | minus32 | minus64 | plus32 | plus64 | zero32 | zero64 | nearest32 | nearest64
   deriving DecidableEq, Repr, Inhabited, BEq
+end
 
+@[expose] section
 /-- Float → integer conversions of `Insn.fpuToInt` (Cranelift `FpuToIntOp`, `fcvtzs`/`fcvtzu`). -/
 inductive FpuToIntOp where
   | f32ToU32 | f32ToI32 | f32ToU64 | f32ToI64 | f64ToU32 | f64ToI32 | f64ToU64 | f64ToI64
   deriving DecidableEq, Repr, Inhabited, BEq
+end
 
+@[expose] section
 /-- Integer → float conversions of `Insn.intToFpu` (Cranelift `IntToFpuOp`, `scvtf`/`ucvtf`). -/
 inductive IntToFpuOp where
   | u32ToF32 | i32ToF32 | u32ToF64 | i32ToF64 | u64ToF32 | i64ToF32 | u64ToF64 | i64ToF64
   deriving DecidableEq, Repr, Inhabited, BEq
+end
 
+@[expose] section
 /-- The aarch64 `MInst` subset. Field order follows `inst.isle`. `args`/`rets` are Cranelift's
 `Args`/`Rets` pseudo-instructions: `(vreg, real register)` pairs defined at entry / used at
 return. -/
@@ -488,6 +569,7 @@ inductive MInst where
   /-- S11f: `scvtf/ucvtf sd/dd, wn/xn` (Cranelift `IntToFpu`). -/
   | intToFpu (op : IntToFpuOp) (rd rn : Reg)
   deriving DecidableEq, Repr, Inhabited, BEq
+end
 
 /-! ### Operands -/
 
@@ -734,6 +816,7 @@ def shiftImm? (n : Nat) : Option Nat := if n ≤ 63 then some n else none
 
 /-! ## The interpreter's value domain -/
 
+@[expose] section
 /-- Opaque (ISLE `primitive` / extern) values that are not CLIF entities or registers. -/
 inductive Opnd where
   | imm12 (i : Imm12)
@@ -778,6 +861,7 @@ inductive Opnd where
   /-- `ASIMDMovModImm` (`asimd_mov_mod_imm_zero`, `asimd_mov_mod_imm_from_u64`). -/
   | movModImm (i : ASIMDMovModImm)
   deriving DecidableEq, Repr, Inhabited, BEq
+end
 
 /-- Values of the ISLE interpreter (`Isle.Sem V σ`). ISLE integers of every width are `int`
 (kept in the range of their ISLE type by the helpers that make them); enums and structs
@@ -1173,7 +1257,7 @@ def storeOpOfIdx? : Nat → Option StoreOp
 
 /-- The typed instruction of an ISLE `MInst` value (`none`: not in the modelled subset).
 `BranchTarget` values are labels (`branch_target` is the identity on labels). -/
-def MInst.ofV (v : V) : Option MInst := do
+@[expose] def MInst.ofV (v : V) : Option MInst := do
   let (k, fs) ← v.enumOf? tyMInst
   match k, fs with
   | VIdx.MInst.AluRRR, [op, s, rd, rn, rm] =>

@@ -49,12 +49,14 @@ interpretation aborts with an error rather than guessing.
 namespace Isle.Opt
 open Isle
 
+@[expose] section
 /-- A side-effecting (skeleton) instruction, as `simplify_skeleton` sees it: an instruction
 (`div`, `trapz`, `trapnz`, ...) or a terminator (`brif`, `br_table`, `jump`). -/
 inductive SkelInst where
   | inst (i : Clif.Inst)
   | term (t : Clif.Terminator)
   deriving DecidableEq, Repr, Inhabited
+end
 
 /-- ISLE values of the mid-end embedding. -/
 inductive V where
@@ -314,6 +316,7 @@ def toSkel : V → Option SkelInst
     | _, _ => none
   | _ => none
 
+@[expose] section
 /-- `SkeletonInstSimplification` (`prelude_opt.isle`) with skeleton instructions as
 `SkelInst`. `RemoveDeadStore` is not built by any closure rule. -/
 inductive SkelSimp where
@@ -324,6 +327,7 @@ inductive SkelSimp where
   | replaceBranchCond (c : Nat)
   | replaceWithTwo (first second : SkelInst)
   deriving DecidableEq, Repr, Inhabited
+end
 
 /-- A result of `simplify_skeleton` (`none`: it mentions a poison value or an instruction
 without a `SkelInst` form, or is `RemoveDeadStore`; dropped). -/

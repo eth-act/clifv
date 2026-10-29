@@ -419,12 +419,14 @@ def constShift (op : BinaryOp) (n : Nat) : List Stmt :=
         K 8 (64 - m : Nat), S 9 (bin .ushr .i64 0 8), K 10 (64 - m : Nat),
         S 11 (bin .ushr .i64 1 10), S 2 (bin .bor .i64 6 9), S 3 (bin .bor .i64 7 11)]
 
+@[expose] section
 /-- How a variable amount is made an `i64` in `[0, 128)`: from the low half of an `i128`
 amount / an `i64` amount (`band a, 127`), or a narrower one (`uextend` first). -/
 inductive AmtKind where
   | wide
   | narrow
   deriving DecidableEq, Repr
+end
 
 /-- The amount prefix of a variable shift (input amount `a` = `2`; the rotate amount in
 `r`, temporaries from `t`): `amt128` for a variable amount. Returns the statements, the

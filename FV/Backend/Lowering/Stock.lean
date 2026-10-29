@@ -54,9 +54,11 @@ def mustLower : Clif.Inst → Bool
 def colored (i : Clif.Inst) : Bool :=
   mustLower i || match i with | .load .. => true | _ => false
 
+@[expose] section
 inductive UseState where
   | unused | once | multiple
   deriving DecidableEq, Repr, Inhabited
+end
 
 def UseState.inc : UseState → UseState
   | .unused => .once | _ => .multiple
@@ -93,14 +95,17 @@ def useStates (ctx : Ctx) (args : Array (List Nat)) : Array UseState := Id.run d
               work := args[i]! ++ work
   return uses
 
+@[expose] section
 structure Opportunistic where
   block : Nat
   regs : List Reg
   count : Nat
   deriving Inhabited, Repr, DecidableEq
+end
 
 deriving instance DecidableEq for LState
 
+@[expose] section
 structure State where
   base : LState
   demand : Array Nat
@@ -115,6 +120,7 @@ structure State where
   opportunistic : Array (Option Opportunistic)
   alias : Array (Option Nat) := #[]
   deriving Inhabited, DecidableEq
+end
 
 def State.mark (st : State) (v : Nat) : State :=
   { st with demand := st.demand.modify v (· + 1) }
@@ -283,10 +289,12 @@ def buildCtx (f : Clif.Function) : Except String (Ctx × Array (Nat × Nat) × S
   let requests ← allocationRequests f ranges
   pure (finishCtx ctx ranges (allocateRequests ctx.valTy.size ctx.insts.size requests))
 
+@[expose] section
 inductive Node where
   | original (block : Nat)
   | edge (pred successorIndex target : Nat)
   deriving DecidableEq, Repr, Inhabited
+end
 
 def destinations : Clif.Terminator → List (Nat × List Clif.TryArg)
   | .jump bc => [(bc.block, bc.args.map .val)]
@@ -330,10 +338,13 @@ def blockOrder (f : Clif.Function) : Except String Order := do
       if nodes.contains (.edge bi k s) then label (.edge bi k s) else label (.original s)
   pure { nodes, successors }
 
+@[expose] section
 inductive Decision where
   | emitted | omitted | sunk | opportunistic
   deriving DecidableEq, Repr, Inhabited
+end
 
+@[expose] section
 /-- A schedule entry records the call and its before/after states, including
 emissions, demands, aliases and memory color. Omitted entries make no ISLE call. -/
 structure Step where
@@ -347,7 +358,9 @@ structure Step where
   /-- Raw forward-ordered chunk before final alias resolution. -/
   emitted : Array MInst := #[]
   deriving Inhabited, DecidableEq
+end
 
+@[expose] section
 /-- One source instruction's backward-scan transition. Branch terminators are
 scanned for their color after their separate lowering, producing no second step.
 `emitted` is a forward-ordered prefix to prepend to the block's accumulated code. -/
@@ -356,6 +369,7 @@ structure Scan where
   step : Option Step
   emitted : Array MInst := #[]
   deriving Inhabited, DecidableEq
+end
 
 /-- A backward-scan event, including the embedding used for this block. These
 records are replay inputs; whole-function certification must also establish
@@ -369,12 +383,15 @@ structure ScanEvent where
   input : State
   output : Scan
 
+@[expose] section
 structure ScanRecord where
   inst : Nat
   input : State
   output : Scan
   deriving Inhabited, DecidableEq
+end
 
+@[expose] section
 /-- A complete backward scan: records remain in scan order, while `code` keeps
 each emitted chunk in forward order and puts earlier source chunks first. -/
 structure BlockScan where
@@ -382,6 +399,7 @@ structure BlockScan where
   records : List ScanRecord
   code : Array MInst
   deriving Inhabited, DecidableEq
+end
 
 structure BlockScanEvent where
   ctx : Ctx

@@ -35,6 +35,7 @@ namespace Backend
 
 /-! ## Labels and instructions -/
 
+@[expose] section
 /-- A function-local label. -/
 inductive Lbl where
   | block (l : Label)
@@ -47,6 +48,7 @@ inductive Lbl where
   | skip
   -- `BEq` is the lawful one from `DecidableEq` (the layout proof uses `Std.HashMap` lemmas)
   deriving DecidableEq, Repr, Inhabited, Hashable
+end
 
 /-- Assembly name of a label of function `k` (its index in the file). -/
 @[expose] def Lbl.name (k : Nat) : Lbl → String
@@ -56,6 +58,7 @@ inductive Lbl where
   | .loop n => s!".L{k}_a{n}"
   | .skip => ".+8"
 
+@[expose] section
 /-- One AArch64 instruction over real registers: one line of assembly, one 4-byte word.
 Constructors follow the assembly the backend prints (including the aliases `mov`, `cset`,
 `lsl`/`lsr`/`asr`/`ror #imm`), so that `llvm-mc` checks the alias translation the encoder does.
@@ -202,6 +205,7 @@ inductive Insn where
   `AMode::Label`, the constant pool). -/
   | fpuLoadLit (size : ScalarSize) (rt : Reg) (target : Lbl)
   deriving DecidableEq, Repr, Inhabited, BEq
+end
 
 /-- One element of a function's code: an instruction (4 bytes, optionally a trap site), a
 jump-table word `target - base` (4 bytes of data), or a label (0 bytes). -/
@@ -521,11 +525,13 @@ large sizes), then pops fp/lr and returns. It does not read `fp`: the body keeps
      | none => loadConst64 (.x 16) size ++ [.ins (.aluRRRExtend .add true .sp .sp (.x 16) .uxtx)]) ++
   [.ins (.ldp Reg.fp Reg.lr (.spPostIndexed 16)), .ins .ret]
 
+@[expose] section
 /-- A trap site: byte offset from the function start and trap code. -/
 structure TrapSite where
   offset : Nat
   code : Clif.TrapCode
   deriving DecidableEq, Repr, Inhabited
+end
 
 /-- A function's final code: the line list, its size in bytes and trap table. -/
 structure FnAsm where

@@ -45,6 +45,7 @@ dead).
 
 namespace Backend
 
+@[expose] section
 /-- An instruction after allocation. `inst` holds only real registers. -/
 inductive AInst where
   | inst (m : MInst)
@@ -53,6 +54,7 @@ inductive AInst where
   /-- `mov sp, x29; ldp x29, x30, [sp], #16; ret` -/
   | epilogueRet
   deriving Repr, Inhabited, BEq
+end
 
 /-- An allocated function. -/
 structure AFunc where

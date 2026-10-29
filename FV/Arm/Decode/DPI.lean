@@ -20,6 +20,7 @@ open _root_.BitVec Arm.BitVec
 
 -- Data Processing (Immediate) Instructions --
 
+@[expose] section
 structure Add_sub_imm_cls where
   sf     : BitVec 1               -- [31:31]
   op     : BitVec 1               -- [30:30]
@@ -30,12 +31,14 @@ structure Add_sub_imm_cls where
   Rn     : BitVec 5               --   [9:5]
   Rd     : BitVec 5               --   [4:0]
 deriving DecidableEq, Repr
+end
 
 instance : ToString Add_sub_imm_cls where toString a := toString (repr a)
 
 def Add_sub_imm_cls.toBitVec32 (x : Add_sub_imm_cls) : BitVec 32 :=
   x.sf ++ x.op ++ x.S ++ x._fixed ++ x.sh ++ x.imm12 ++ x.Rn ++ x.Rd
 
+@[expose] section
 structure Logical_imm_cls where
   sf     : BitVec 1                -- [31:31]
   opc    : BitVec 2                -- [30:29]
@@ -46,12 +49,14 @@ structure Logical_imm_cls where
   Rn     : BitVec 5                --  [9:5]
   Rd     : BitVec 5                --  [4:0]
 deriving DecidableEq, Repr
+end
 
 instance : ToString Logical_imm_cls where toString a := toString (repr a)
 
 def Logical_imm_cls.toBitVec32 (x : Logical_imm_cls) : BitVec 32 :=
   x.sf ++ x.opc ++ x._fixed ++ x.N ++ x.immr ++ x.imms ++ x.Rn ++ x.Rd
 
+@[expose] section
 structure PC_rel_addressing_cls where
   op     : BitVec 1              -- [31:31]
   immlo  : BitVec 2              -- [30:29]
@@ -59,9 +64,11 @@ structure PC_rel_addressing_cls where
   immhi  : BitVec 19             -- [23:5]
   Rd     : BitVec 5              -- [4:0]
 deriving DecidableEq, Repr
+end
 
 instance : ToString PC_rel_addressing_cls where toString a := toString (repr a)
 
+@[expose] section
 structure Bitfield_cls where
   sf     : BitVec 1                -- [31:31]
   opc    : BitVec 2                -- [30:29]
@@ -72,12 +79,14 @@ structure Bitfield_cls where
   Rn     : BitVec 5                --  [9:5]
   Rd     : BitVec 5                --  [4:0]
 deriving DecidableEq, Repr
+end
 
 instance : ToString Bitfield_cls where toString a := toString (repr a)
 
 def Bitfield_cls.toBitVec32 (x : Bitfield_cls) : BitVec 32 :=
   x.sf ++ x.opc ++ x._fixed ++ x.N ++ x.immr ++ x.imms ++ x.Rn ++ x.Rd
 
+@[expose] section
 structure Move_wide_imm_cls where
   sf     : BitVec 1                -- [31:31]
   opc    : BitVec 2                -- [30:29]
@@ -86,12 +95,14 @@ structure Move_wide_imm_cls where
   imm16  : BitVec 16               -- [20:5]
   Rd     : BitVec 5                -- [4:0]
 deriving DecidableEq, Repr
+end
 
 instance : ToString Move_wide_imm_cls where toString a := toString (repr a)
 
 def Move_wide_imm_cls.toBitVec32 (x : Move_wide_imm_cls) : BitVec 32 :=
   x.sf ++ x.opc ++ x._fixed ++ x.hw ++ x.imm16 ++ x.Rd
 
+@[expose] section
 /-- (FV addition) Extract: `EXTR` (and its alias `ROR (immediate)`). -/
 structure Extract_cls where
   sf     : BitVec 1                -- [31:31]
@@ -104,12 +115,14 @@ structure Extract_cls where
   Rn     : BitVec 5                --  [9:5]
   Rd     : BitVec 5                --  [4:0]
 deriving DecidableEq, Repr
+end
 
 instance : ToString Extract_cls where toString a := toString (repr a)
 
 def Extract_cls.toBitVec32 (x : Extract_cls) : BitVec 32 :=
   x.sf ++ x.op21 ++ x._fixed ++ x.N ++ x.o0 ++ x.Rm ++ x.imms ++ x.Rn ++ x.Rd
 
+@[expose] section
 inductive DataProcImmInst where
   | Add_sub_imm :
     Add_sub_imm_cls → DataProcImmInst
@@ -124,6 +137,7 @@ inductive DataProcImmInst where
   | Extract :
     Extract_cls → DataProcImmInst
 deriving DecidableEq, Repr
+end
 
 instance : ToString DataProcImmInst where toString a := toString (repr a)
 

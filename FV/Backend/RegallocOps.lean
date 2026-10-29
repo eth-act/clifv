@@ -40,28 +40,37 @@ Everything here is total.
 
 namespace Backend
 
+@[expose] section
 inductive OpKind where
   | use | def
   deriving DecidableEq, Repr, Inhabited
+end
 
+@[expose] section
 inductive OpPos where
   | early | late
   deriving DecidableEq, Repr, Inhabited
+end
 
+@[expose] section
 /-- regalloc2 `OperandConstraint` (the variants this backend produces, plus `any`/`stack`). -/
 inductive Constraint where
   | any | reg | stack
   | fixed (r : Reg)
   | reuse (idx : Nat)
   deriving DecidableEq, Repr, Inhabited
+end
 
+@[expose] section
 /-- How a register occurrence is collected (`OperandVisitorImpl` method). -/
 structure OpSpec where
   kind : OpKind
   pos : OpPos
   con : Constraint
   deriving DecidableEq, Repr, Inhabited
+end
 
+@[expose] section
 /-- A regalloc2 operand: vreg (number and class), kind, position, constraint. -/
 structure Operand where
   vreg : Nat
@@ -70,6 +79,7 @@ structure Operand where
   pos : OpPos
   con : Constraint
   deriving DecidableEq, Repr, Inhabited
+end
 
 namespace OpSpec
 /-- `reg_use` -/

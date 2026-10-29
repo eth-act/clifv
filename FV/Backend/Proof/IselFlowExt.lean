@@ -55,7 +55,7 @@ def opVals : Opnd → List Nat
 
 mutual
 /-- The registers inside a value. -/
-def _root_.Backend.V.regsIn : V → List Reg
+@[expose] def _root_.Backend.V.regsIn : V → List Reg
   | .reg r => [r]
   | .regs rs => rs
   | .regsVec rss => rss.flatten
@@ -63,44 +63,44 @@ def _root_.Backend.V.regsIn : V → List Reg
   | .data _ _ fs => regsInL fs
   | _ => []
 /-- The registers inside a list of values. -/
-def regsInL : List V → List Reg
+@[expose] def regsInL : List V → List Reg
   | [] => []
   | v :: vs => v.regsIn ++ regsInL vs
 end
 
 mutual
 /-- The CLIF values inside a value. -/
-def _root_.Backend.V.valsIn : V → List Nat
+@[expose] def _root_.Backend.V.valsIn : V → List Nat
   | .value n => [n]
   | .values ns => ns
   | .op o => opVals o
   | .data _ _ fs => valsInL fs
   | _ => []
 /-- The CLIF values inside a list of values. -/
-def valsInL : List V → List Nat
+@[expose] def valsInL : List V → List Nat
   | [] => []
   | v :: vs => v.valsIn ++ valsInL vs
 end
 
 mutual
 /-- The instruction indices inside a value. -/
-def _root_.Backend.V.instsIn : V → List Nat
+@[expose] def _root_.Backend.V.instsIn : V → List Nat
   | .inst j => [j]
   | .data _ _ fs => instsInL fs
   | _ => []
 /-- The instruction indices inside a list of values. -/
-def instsInL : List V → List Nat
+@[expose] def instsInL : List V → List Nat
   | [] => []
   | v :: vs => v.instsIn ++ instsInL vs
 end
 
 mutual
 /-- Does the value hold `MInst.ElfTlsGetAddr` data? -/
-def _root_.Backend.V.tlsIn : V → Bool
+@[expose] def _root_.Backend.V.tlsIn : V → Bool
   | .data ty k fs => (ty == tyMInst && k == VIdx.MInst.ElfTlsGetAddr) || tlsInL fs
   | _ => false
 /-- Does a value of the list hold `MInst.ElfTlsGetAddr` data? -/
-def tlsInL : List V → Bool
+@[expose] def tlsInL : List V → Bool
   | [] => false
   | v :: vs => v.tlsIn || tlsInL vs
 end
@@ -155,10 +155,10 @@ theorem tlsIn_of_mem {v : V} {vs : List V} (h : v ∈ vs) (ht : v.tlsIn = true) 
 /-! ## The state change of an extern constructor -/
 
 /-- An instruction the extern helpers may emit: no `tryCall` (only `lowerFunction` makes one). -/
-def NoTry (m : MInst) : Prop := ∀ c ti, m ≠ .tryCall c ti
+@[expose] def NoTry (m : MInst) : Prop := ∀ c ti, m ≠ .tryCall c ti
 
 /-- An `ElfTlsGetAddr`. -/
-def IsTls (m : MInst) : Prop := ∃ sym rd tmp, m = .elfTlsGetAddr sym rd tmp
+@[expose] def IsTls (m : MInst) : Prop := ∃ sym rd tmp, m = .elfTlsGetAddr sym rd tmp
 
 /-- The atoms-and-state contract of one extern constructor call `id args` from `st` returning
 `v` in `st'`. -/
@@ -226,7 +226,7 @@ theorem ofV_ok {v : V} {m : MInst} (h : MInst.ofV v = some m) :
 /-! ## Helpers of the constructors -/
 
 /-- An instruction that is neither a `tryCall` nor an `ElfTlsGetAddr`. -/
-def Benign (m : MInst) : Prop := NoTry m ∧ ¬ IsTls m
+@[expose] def Benign (m : MInst) : Prop := NoTry m ∧ ¬ IsTls m
 
 theorem foldl_inv {α β : Type} (I : α → Prop) (f : α → β → α) :
     ∀ (l : List β) (a : α), I a → (∀ b ∈ l, ∀ a, I a → I (f a b)) → I (l.foldl f a)

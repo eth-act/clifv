@@ -81,6 +81,7 @@ instance : LawfulMonad Res := LawfulMonad.mk'
 
 end Res
 
+@[expose] section
 /-- A live allocation `[base, base + size)`. Stores into a `readonly` allocation (link-time
 data not marked writable) are `stuck`. -/
 structure Alloc where
@@ -88,6 +89,7 @@ structure Alloc where
   size : Nat
   readonly : Bool := false
   deriving DecidableEq, Repr, Inhabited
+end
 
 @[expose] def Alloc.contains (a : Alloc) (addr n : Nat) : Bool :=
   a.base ≤ addr && addr + n ≤ a.base + a.size
