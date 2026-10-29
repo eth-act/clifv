@@ -736,7 +736,8 @@ whole search of a goal), kernel-checked methods: `bv_normalize`
 (`decide`), case splits on `if`/`bif` conditions, `toNat`/`toInt` arithmetic with `omega`,
 minterm decomposition + `grind`, case splits on constant shift amounts, sign-mask lemmas
 (`sshiftRight` by `w-1`, `(x ||| -x).msb`), per-index bit evaluation. The shift and spaceship
-modules (`RuleShifts1`..`5`, `RuleSpaceship`) first try a targeted method on each goal
+modules (`RuleShifts1`..`5`, `RuleSpaceship`, and `RuleCprop3` for its shift reassociations)
+first try a targeted method on each goal
 (`kbv_amt`/`kbv_cmp`, `FV/Opt/Proof/RuleInfraShiftAmt.lean`, through a module-`local`
 `elab_rules` for `kbv`): shift amounts as `Nat` arithmetic, rotations as `rotateLeft`, comparison
 results by case split. Some lemmas are proved by hand instead (bswap/popcount, pow2

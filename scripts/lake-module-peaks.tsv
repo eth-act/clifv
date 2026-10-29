@@ -1712,7 +1712,7 @@ FV.Opt.Proof.RuleBitops9	2054	22
 FV.Opt.Proof.RuleBitopsEmbed	2116	14
 FV.Opt.Proof.RuleCprop	7827	222
 FV.Opt.Proof.RuleCprop2	2810	30
-FV.Opt.Proof.RuleCprop3	3174	2800
+FV.Opt.Proof.RuleCprop3	2984	124
 FV.Opt.Proof.RuleCprop4	2083	30
 FV.Opt.Proof.RuleCtor	116	2
 FV.Opt.Proof.RuleData	124	2
