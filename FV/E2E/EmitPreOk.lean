@@ -382,7 +382,7 @@ theorem emitOrder_head (af : AFunc) (h : 0 < af.blocks.size) :
     (emitOrder af).head?.map (·.2) = some 0 := by
   obtain ⟨b0, L, hL⟩ : ∃ b0 L, af.blocks.toList = b0 :: L := by
     cases hl : af.blocks.toList with
-    | nil => simp at hl; omega
+    | nil => rw [← Array.length_toList, hl] at h; cases h
     | cons b0 L => exact ⟨_, _, rfl⟩
   unfold emitOrder
   rw [hL]
@@ -444,7 +444,7 @@ theorem emitPre_of {k : Nat} {af : AFunc}
     obtain ⟨code, -, -, -, hbi, -⟩ := hss i ss[i] (List.getElem?_eq_getElem hil)
     rw [hi] at hbi
     simp only [Option.some.injEq, Prod.mk.injEq] at hbi
-    exact ⟨ss[i], List.getElem_mem hil, by rw [← hbi.1.1]⟩
+    exact ⟨ss[i], List.getElem_mem hil, by rw [hbi.1]⟩
   -- every segment: its block, its last instruction's raw lines
   have hseg' : ∀ s ∈ ss, ∃ code ps1 ps2, af.blocks[s.idx]? = some (s.label, code) ∧
       codeLinesE ⟨k, af.slotBase⟩ af code.toList.getLast?.toList ps1 = .ok (s.term, ps2) := by
@@ -467,7 +467,7 @@ theorem emitPre_of {k : Nat} {af : AFunc}
         rw [ho] at hb0 hh
         simp only [List.getElem?_cons_zero, Option.some.injEq] at hb0
         simp only [List.head?_cons, Option.map_some, Option.some.injEq] at hh ⊢
-        rw [← hb0] at hh
+        rw [hb0] at hh
         exact hh
   have hraw : ∀ s ∈ ss, RawTerm (af.blocks[s.idx]?.bind (·.2.back?)) s.term := by
     intro s hs
@@ -481,7 +481,8 @@ theorem emitPre_of {k : Nat} {af : AFunc}
       ∃ s' ∈ ss, s'.label = l := by
     intro s hs ln hln l htl
     obtain ⟨code, ps1, ps2, hb, e2⟩ := hseg' s hs
-    have hbm : (s.label, code) ∈ af.blocks.toList := by simpa using List.mem_of_getElem? hb
+    have hbm : (s.label, code) ∈ af.blocks.toList :=
+      List.mem_of_getElem? (by simpa using hb : af.blocks.toList[s.idx]? = some _)
     have hc := EmitLabels.code_chunk (T := af.blocks.toList.map (·.1)) _ _ _ _ e2
       (fun m hm l' hl' => ht _ hbm m (EmitLabels.mem_of_getLast?_toList hm) l' hl')
     rcases hc.uses_in (.block l) (EmitLabels.mem_uses.2 ⟨ln, hln, target_used htl⟩) with
@@ -518,7 +519,7 @@ theorem emitPre_spill_ok {p : Clif.Program} {f : Clif.Function} {vc vcp : VCode}
   intro k
   have hcov := formsCovered_completeB hs hl hp ⟨k, af.slotBase⟩
   obtain ⟨hins, vb0, -, hvb0, -⟩ := ctlInsts_pipeline hsub (dominated_of hd) (lowerScope_of hs) hl hp
-  obtain ⟨hlab, ht⟩ := EmitLabels.lowerRFunc_targets htg
+  obtain ⟨hlab, ht⟩ := lowerRFunc_targets htg
     (Nat.le_of_eq (spillAlloc_size vcp).symm) ha
   refine emitPre_of ?_ ?_ ht
   · intro x hx a ha' ps

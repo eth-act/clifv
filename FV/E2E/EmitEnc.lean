@@ -1369,7 +1369,8 @@ theorem step_enc (allLabels : Bool) (m m' : MBuf) (hm : AllEnc m.out.toList)
     rcases List.mem_or_eq_of_mem_set hi with hi | hi
     · exact hE i t' hi
     · cases hi
-      exact encodable_invertTo (hm c tc (by simpa using List.mem_of_getElem? (by simpa using hp))) _
+      exact encodable_invertTo (hm c tc (List.mem_of_getElem?
+        (by simpa using hp : m.out.toList[p]? = some (Line.ins c tc)))) _
 
 theorem optimize_enc (allLabels : Bool) (m : MBuf) (hm : AllEnc m.out.toList) :
     AllEnc (MBuf.optimize allLabels m).out.toList := by

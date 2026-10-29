@@ -155,7 +155,7 @@ theorem relaxLine_safe (far : Lbl → Bool) {ln : Line} (h : ln.nearTgt = none) 
 /-! ## `MachBuffer`'s simplification -/
 
 /-- A line `MachBuffer` may remove or rewrite: a `b`, or a relaxable conditional branch. -/
-def Line.removable (ln : Line) : Bool := ln.isBLine || ln.relaxable?.isSome
+def _root_.Backend.Line.removable (ln : Line) : Bool := ln.isBLine || ln.relaxable?.isSome
 
 theorem removable_nearTgt {ln : Line} (h : ln.removable = true) : ln.nearTgt = none := by
   cases ln with
@@ -326,8 +326,7 @@ theorem relabel_cases (f : Lbl → Lbl) (hf : ∀ t, f t = t ∨ ∃ X, f t = .b
         · rfl
         · rename_i hn
           exfalso; apply hn
-          refine .inr (.inr ⟨rfl, ?_⟩)
-          simp [Insn.relaxTarget?, Insn.condTarget?, h1, h2]
+          simp [Insn.isBr, Insn.relaxTarget?, Insn.condTarget?, h1, h2]
     | cbz nz w r t =>
       rcases hf t with e | ⟨X, e⟩
       · exact .inl (by simp [Line.relabel, Line.target?, Insn.setTarget, e])
@@ -343,6 +342,18 @@ theorem relabel_cases (f : Lbl → Lbl) (hf : ∀ t, f t = t ∨ ∃ X, f t = .b
         exact .inr (by simp [Line.relabel, Line.target?, Insn.setTarget, e, Line.nearTgt,
           Insn.pcRelSpec?, Insn.isBr, Insn.relaxTarget?, Insn.condTarget?])
     | _ => exact .inl rfl
+
+/-- Retargeting a line keeps its branch shape (a `b` is retargeted to a block). -/
+theorem relabel_bOk (f : Lbl → Lbl) (hf : ∀ t, f t = t ∨ ∃ X, f t = .block X) (y : Line)
+    (hb : y.bOk = true) : (y.relabel f).bOk = true := by
+  cases y with
+  | ins i tc =>
+    cases i <;> simp only [Line.relabel, Line.target?, Insn.setTarget]
+    all_goals first
+      | exact hb
+      | (rename_i t; rcases hf t with e | ⟨X, e⟩ <;> rw [e] <;> first | exact hb | rfl)
+  | word _ _ => rfl
+  | label _ => rfl
 
 theorem goodN_relabel {n : Nat} (f : Lbl → Lbl) (hf : ∀ t, f t = t ∨ ∃ X, f t = .block X)
     {L : List Line} (h : GoodN n L) (hb : ∀ ln ∈ L, ln.bOk = true) :
@@ -623,6 +634,30 @@ theorem nearBlk_jt (t1 t2 : Reg) (n : Nat) :
   · simp [Line.relaxable?, Insn.relaxTarget?, Insn.condTarget?]
   · simp [Line.nearTgt, Insn.pcRelSpec?, Insn.isBr, Insn.relaxTarget?, Insn.condTarget?]
 
+theorem casLoopLines_bOk (bits : Nat) (fl : Clif.MemFlags) (a o : Lbl) :
+    ∀ ln ∈ casLoopLines bits fl a o, ln.bOk = true := by
+  intro ln hl
+  simp only [casLoopLines, casLoopHead, List.cons_append, List.nil_append, List.mem_cons,
+    List.not_mem_nil, or_false] at hl
+  rcases hl with rfl | rfl | rfl | rfl | rfl | rfl | rfl
+  all_goals first
+    | rfl
+    | (unfold casLoopCmp; split <;> rfl)
+    | simp (config := {decide := true}) [Line.bOk]
+
+theorem rmwLoopLines_bOk (bits : Nat) (op : AtomicRmwLoopOp) (fl : Clif.MemFlags) (l : Lbl) :
+    ∀ ln ∈ rmwLoopLines bits op fl l, ln.bOk = true := by
+  intro ln hl
+  simp only [rmwLoopLines, rmwLoopBody, List.mem_cons, List.mem_append, List.mem_map,
+    List.mem_singleton, List.not_mem_nil, or_false] at hl
+  rcases hl with (rfl | (rfl | ⟨i, hi, rfl⟩) | rfl) | rfl
+  · rfl
+  · rfl
+  · have := EmitLabels.rmwLoopMid_pc op bits i hi
+    cases i <;> simp_all [Line.bOk, Insn.pcRelSpec?]
+  · rfl
+  · simp [Line.bOk]
+
 theorem lines_ok {c : FnCtx} {ps ps' : PState} {m : MInst} {ls : List Line}
     (hm : m.noAlways = true) (h : m.lines c ps = .ok (ls, ps')) :
     Good ls ∧ ∀ ln ∈ ls, ln.bOk = true := by
@@ -771,11 +806,7 @@ theorem lines_ok {c : FnCtx} {ps ps' : PState} {m : MInst} {ls : List Line}
     · simp only [pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at h
       obtain ⟨rfl, -⟩ := h
       have hb := nearBlk_rmw ty.bits op fl ps.aloop
-      refine ⟨by simpa using Good.blk hb .nil, fun ln hl => ?_⟩
-      have := hb.nob ln hl
-      cases ln with
-      | ins i tr => cases i <;> simp_all [Line.bOk, Line.isBLine]
-      | _ => rfl
+      exact ⟨by simpa using Good.blk hb .nil, rmwLoopLines_bOk _ _ _ _⟩
   case atomicCasLoop ty fl addr expect replace oldval scratch =>
     simp only [MInst.lines] at h
     split at h
@@ -783,11 +814,7 @@ theorem lines_ok {c : FnCtx} {ps ps' : PState} {m : MInst} {ls : List Line}
     · simp only [pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at h
       obtain ⟨rfl, -⟩ := h
       have hb := nearBlk_cas ty.bits fl ps.aloop
-      refine ⟨by simpa using Good.blk hb .nil, fun ln hl => ?_⟩
-      have := hb.nob ln hl
-      cases ln with
-      | ins i tr => cases i <;> simp_all [Line.bOk, Line.isBLine]
-      | _ => rfl
+      exact ⟨by simpa using Good.blk hb .nil, casLoopLines_bOk _ _ _ _⟩
 
 
 theorem nearOkB_ins {i : Insn} {tr : Option Clif.TrapCode} (h : i.pcRelSpec? = none) :
@@ -891,7 +918,7 @@ theorem segsOf_good {c : FnCtx} {af : AFunc} :
       (fun m hm => hna0 m ((List.dropLast_sublist _).subset hm)) h1
     obtain ⟨g2, b2⟩ := codeLinesE_good _ ps1 ps2 l2
       (fun m hm => hna0 m (EmitLabels.mem_of_getLast?_toList hm)) h2
-    obtain ⟨g3, b3⟩ := segsOf_good bs ps2 ps' l3 (fun p hp => hna p (by simp [hp])) h3
+    obtain ⟨g3, b3⟩ := segsOf_good bs ps2 _ l3 (fun p hp => hna p (by simp [hp])) h3
     simp only [List.map_cons, segLines, List.cons_append, List.append_assoc]
     refine ⟨.safe (by simp [Line.nearTgt]) (g1.append (g2.append g3)), ?_⟩
     intro ln hl
@@ -911,23 +938,21 @@ theorem trapLines_nearOkB (ps : PState) : ∀ ln ∈ trapLines ps, ln.nearOkB = 
 
 theorem stepLine_removable {ln : Line} {t : Lbl}
     (h : (ln.ubr?).orElse (fun _ => ln.cbr?) = some t) : ln.removable = true ∧ ∃ X, t = .block X := by
-  cases ln with
-  | ins i tc =>
-    cases tc with
-    | none =>
-      cases i <;> simp only [Line.ubr?, Line.cbr?, Option.orElse] at h
-      all_goals first
-        | (cases h; exact ⟨rfl, _, rfl⟩)
-        | skip
-      all_goals
-        split at h
-        · rename_i l hl
-          cases h
-          refine ⟨?_, _, rfl⟩
-          simp [Line.removable, Line.relaxable?, Insn.relaxTarget?, hl]
-        · cases h
-    | some _ => simp [Line.ubr?, Line.cbr?, Option.orElse] at h
-  | _ => simp [Line.ubr?, Line.cbr?, Option.orElse] at h
+  unfold Line.ubr? Line.cbr? at h
+  split at h
+  · simp only [Option.orElse, Option.some.injEq] at h
+    subst h
+    exact ⟨by simp [Line.removable, Line.isBLine], _, rfl⟩
+  · simp only [Option.orElse] at h
+    split at h
+    · rename_i c _
+      split at h
+      · rename_i l hc
+        cases h
+        refine ⟨?_, _, rfl⟩
+        simp [Line.removable, Line.relaxable?, Insn.relaxTarget?, hc]
+      · cases h
+    · cases h
 
 /-- The inverse of a conditional branch to a block, retargeted to a block, keeps the branch
 shape and stays relaxable. -/
@@ -964,7 +989,7 @@ theorem foldl_insert_get {t : Lbl} : ∀ (als : List Lbl) (A : Std.TreeMap Lbl L
 /-- What `MachBuffer` keeps of its input `I` (the lines pushed so far): its lines are `I`'s
 with removable lines removed or replaced (`MBRel`), and the labels are aliased to blocks. -/
 def MBGood (I : List Line) (m : MBuf) : Prop :=
-  MBRel I m.out.toList ∧ ∀ k x, m.alias[k]? = some x → ∃ X, x = .block X
+  MBRel I m.out.toList ∧ ∀ k x : Lbl, m.alias[k]? = some x → ∃ X : Label, x = .block X
 
 theorem step_mbGood {I : List Line} (allLabels : Bool) (m m' : MBuf) (hm : MBGood I m)
     (h : MBuf.step allLabels m = some m') : MBGood I m' := by
@@ -984,7 +1009,7 @@ theorem step_mbGood {I : List Line} (allLabels : Bool) (m m' : MBuf) (hm : MBGoo
   · refine ⟨?_, by rw [hal]; exact ha⟩
     obtain ⟨rfl, hy1, hy2⟩ := invert_shape hct X
     rw [ho, Array.set!, Array.toList_setIfInBounds]
-    refine hE.set p _ _ ?_ ?_ hy1 hy2
+    refine hE.set p (Line.ins c) _ ?_ ?_ hy1 hy2
     · simp only [MBuf.erase, List.toList_toArray, List.getElem?_eraseIdx_of_lt hpk,
         Array.getElem?_toList, hp]
     · obtain ⟨-, l, hl⟩ : True ∧ ∃ l, c.condTarget? = some l := by
@@ -1046,16 +1071,7 @@ theorem machBuf_goodN (allLabels : Bool) (ls : List Line) (hg : Good ls)
   dsimp only
   refine ⟨goodN_relabel _ hf (good_goodN (good_mbrel hg hr)) hbo, fun ln hl => ?_⟩
   obtain ⟨y, hy, rfl⟩ := List.mem_map.1 hl
-  rcases relabel_cases _ hf y (hbo y hy) with e | e
-  · rw [e]; exact hbo y hy
-  · -- a retargeted line keeps its shape
-    cases y with
-    | ins i tc =>
-      have := hbo _ hy
-      cases i <;> simp_all [Line.relabel, Line.target?, Insn.setTarget, Line.bOk]
-      all_goals rcases hf ‹_› with e' | ⟨X, e'⟩ <;> simp [e']
-    | word _ _ => rfl
-    | label _ => rfl
+  exact relabel_bOk _ hf y (hbo y hy)
 
 /-- The emission plan's lines: `GoodN 8`, every line with its branch shape. -/
 theorem emitPlan_goodN {k : Nat} {af : AFunc} {p : Plan} (h : emitPlan k af = .ok p)
@@ -1192,7 +1208,7 @@ theorem emitFunc_near_of {k : Nat} {af : AFunc} {fa : FnAsm} (hna : af.NoAlways)
   obtain ⟨g, -⟩ := emitPlan_goodN hp hna
   rw [hL]
   apply goodN_nearOk
-  apply goodN_relax
+  apply goodN_relax (n := 8)
   exact g.append (GoodN.safes (fun ln hl => by
     have := trapLines_nearOkB p.ps ln hl; simp [Line.nearOkB] at this; exact this.1) .nil |>
     fun h => by simpa using h)

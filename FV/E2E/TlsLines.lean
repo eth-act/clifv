@@ -369,6 +369,7 @@ theorem machBuf_tls (allLabels : Bool) (ls : List Line) (h : TlsSeqOk ls) :
       split
       · exact optimize_tls _ _ hp
       · exact hp
+  unfold TlsSeqOk at h
   unfold machBuf
   dsimp only
   unfold TlsSeqOk
