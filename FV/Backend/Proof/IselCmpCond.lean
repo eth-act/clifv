@@ -1,6 +1,17 @@
 module
 
-public import FV.Backend.Proof.IselCmpExt
+import FV.Backend.Proof.IselCmpExt
+import FV.Backend.Proof.IselCmpTerms
+import FV.Backend.Proof.IselCmpBase
+public import FV.Backend.Proof.IselFamily
+public import FV.Backend.Proof.IselCmpRun
+public import FV.Backend.Proof.IselSemCmp
+import FV.Backend.Proof.IselInterp
+public import FV.Backend.Proof.IselCmpInv
+import FV.Backend.Proof.FastSubst
+import FV.Backend.Proof.IselAttr
+import FV.Arm.MinTheory
+public meta import Lean.Elab.Tactic.Basic
 
 @[expose] public section
 

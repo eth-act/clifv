@@ -1,6 +1,14 @@
 module
 
-public import FV.E2E.RegLevelJT
+import FV.E2E.RegLevelJT
+import FV.E2E.RegLevelNext
+import FV.E2E.RegLevelGoto
+import FV.E2E.RegLevelArgs
+public import FV.E2E.RegLevelGoodX
+import FV.E2E.RegLevelRelax
+import FV.Backend.Proof.IselGeneric
+import FV.Backend.Proof.EncodeLayout
+import FV.Arm.MinTheory
 
 @[expose] public section
 

@@ -1,6 +1,10 @@
 module
 
-public import FV.Backend.Proof.IselSemCmp
+import FV.Backend.Proof.IselSemCmp
+import FV.Backend.Proof.IselExtern
+import FV.Backend.Proof.IselInterp
+public import FV.Backend.Proof.IselContract
+import FV.Arm.MinTheory
 
 @[expose] public section
 

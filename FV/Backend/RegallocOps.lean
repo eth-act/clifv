@@ -1,6 +1,7 @@
 module
 
-public import FV.Backend.StackAlloc
+import FV.Backend.StackAlloc
+public import FV.Backend.Isel
 
 @[expose] public section
 

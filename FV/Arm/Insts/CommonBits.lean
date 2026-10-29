@@ -13,7 +13,8 @@ Author(s): Shilpi Goel, Yan Peng, Nathan Wetzler
 module
 
 public import FV.Arm.BitVec
-public import FV.Arm.State
+import FV.Arm.State
+import FV.Arm.MinTheory
 
 @[expose] public section
 

@@ -1,6 +1,8 @@
 module
 
 public import Lean
+public meta import Lean.Elab.Tactic.Basic
+public meta import Lean.Meta.Tactic.Subst
 
 @[expose] public meta section
 

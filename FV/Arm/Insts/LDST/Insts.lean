@@ -5,10 +5,10 @@ Author(s): Shilpi Goel
 -/
 module
 
-public import FV.Arm.Insts.LDST.Reg_imm
-public import FV.Arm.Insts.LDST.Reg_unscaled_imm
-public import FV.Arm.Insts.LDST.Reg_pair
-public import FV.Arm.Insts.LDST.Reg_literal
+import FV.Arm.Insts.LDST.Reg_imm
+import FV.Arm.Insts.LDST.Reg_unscaled_imm
+import FV.Arm.Insts.LDST.Reg_pair
+import FV.Arm.Insts.LDST.Reg_literal
 
 @[expose] public section
 

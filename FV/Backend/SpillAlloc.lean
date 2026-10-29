@@ -2,6 +2,7 @@ module
 
 public import FV.Backend.RegallocCheck
 public import Std.Data.HashMap
+public import Std.Data.HashMap.Basic
 
 @[expose] public section
 

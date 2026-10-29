@@ -1,6 +1,8 @@
 module
 
 public import Lean
+meta import Lean.Meta.Tactic.Simp.Attr
+public meta import Lean.Meta.Tactic.Simp.Simproc
 
 @[expose] public section
 

@@ -3,6 +3,8 @@ module
 public import Lean
 -- Importers evaluate the builtin simprocs of the simp sets they load.
 public meta import Lean.Meta.Tactic.Simp.BuiltinSimprocs
+public meta import Lean.Elab.Command
+public meta import Lean.Meta.Tactic.Simp.Simproc
 
 @[expose] public section
 

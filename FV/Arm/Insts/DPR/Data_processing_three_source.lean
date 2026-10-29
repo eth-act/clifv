@@ -11,8 +11,11 @@ Author(s): Nathan Wetzler
 
 module
 
-public import FV.Arm.Decode
-public import FV.Arm.Insts.Common
+import FV.Arm.Decode
+import FV.Arm.Insts.Common
+public import FV.Arm.State
+public import FV.Arm.Decode.DPR
+import FV.Arm.Attr
 
 @[expose] public section
 

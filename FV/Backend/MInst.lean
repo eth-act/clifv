@@ -1,7 +1,10 @@
 module
 
-public import FV.Clif
-public import FV.Isle
+import FV.Clif
+import FV.Isle
+public import FV.Isle.Generated.Program
+public import FV.Isle.Generated.Ids
+public import FV.Clif.Syntax
 
 @[expose] public section
 

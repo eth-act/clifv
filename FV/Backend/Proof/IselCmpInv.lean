@@ -1,6 +1,7 @@
 module
 
-public import FV.Backend.Proof.IselGeneric
+import FV.Backend.Proof.IselGeneric
+public import FV.Isle.Interp
 
 @[expose] public section
 

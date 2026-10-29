@@ -1,8 +1,8 @@
 module
 
 public import FV.Backend.Lowering.StockScalarNI
-public import FV.Backend.Lowering.StockTwoBlock
-public import FV.Backend.ABIReadCfg
+import FV.Backend.Lowering.StockTwoBlock
+import FV.Backend.ABIReadCfg
 
 @[expose] public section
 

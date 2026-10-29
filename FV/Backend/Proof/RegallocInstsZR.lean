@@ -1,7 +1,10 @@
 module
 
-public import FV.Backend.Proof.RegallocTac
-public import FV.Backend.Proof.EncodeLayout
+import FV.Backend.Proof.RegallocTac
+import FV.Backend.Proof.EncodeLayout
+public import FV.Backend.Proof.RegallocCSem
+import FV.Backend.Proof.IselGeneric
+import FV.Arm.MinTheory
 
 @[expose] public section
 

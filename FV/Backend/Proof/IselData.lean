@@ -1,8 +1,8 @@
 module
 
 public import FV.Backend.Isel
-public import FV.Compile.Subset
-public import FV.Backend.Proof.IselAttr
+import FV.Compile.Subset
+import FV.Backend.Proof.IselAttr
 
 @[expose] public section
 

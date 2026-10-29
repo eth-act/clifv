@@ -32,10 +32,11 @@ Author(s): Yan Peng
 
 module
 
-public import FV.Arm.Decode
+import FV.Arm.Decode
 public import FV.Arm.Insts.Common
-public import FV.Arm.BitVec
+import FV.Arm.BitVec
 public import FV.Arm.Insts.DPSFP.FP_data_processing_one_source
+import FV.Arm.Attr
 
 @[expose] public section
 

@@ -5,7 +5,8 @@ Conversions of the shared float core: `FPRoundInt`, `FPConvert` (with `FPConvert
 -/
 module
 
-public import FV.Float.Arith
+import FV.Float.Arith
+public import FV.Float.Round
 
 @[expose] public section
 

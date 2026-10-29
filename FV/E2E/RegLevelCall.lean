@@ -1,6 +1,13 @@
 module
 
-public import FV.E2E.RegLevelNext
+import FV.E2E.RegLevelNext
+import FV.E2E.RegLevelGoto
+public import FV.E2E.RegLevelOp
+import FV.E2E.RegLevelRelax
+import FV.Backend.Proof.IselGeneric
+import FV.Backend.Proof.EncodeLayout
+import FV.Arm.MinTheory
+meta import Lean.Elab.Tactic.Omega.Frontend
 
 @[expose] public section
 

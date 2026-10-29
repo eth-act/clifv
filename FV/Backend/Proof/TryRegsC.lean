@@ -1,8 +1,10 @@
 module
 
-public import FV.Backend.Proof.TryRegs
-public import FV.Backend.Proof.AbiClass
-public import FV.Compile.SubsetT
+import FV.Backend.Proof.TryRegs
+import FV.Backend.Proof.AbiClass
+import FV.Compile.SubsetT
+public import FV.Compile.Subset
+public import FV.Backend.Isel
 
 @[expose] public section
 

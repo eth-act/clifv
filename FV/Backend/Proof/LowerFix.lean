@@ -1,6 +1,8 @@
 module
 
 public import FV.Backend.Proof.LowerSpec
+import FV.Arm.MinTheory
+import Std.Data.HashSet.Lemmas
 
 @[expose] public section
 

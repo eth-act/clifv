@@ -25,6 +25,11 @@ import all Init.Data.Array.MapIdx
 import all Init.Data.Array.Extract
 import all Init.Data.Array.TakeDrop
 import all Init.Data.List.Impl
+import FV.E2E.RegLevelNext
+import FV.E2E.RegLevelGoto
+import FV.Backend.Proof.IselInterp
+import FV.Backend.Proof.EncodeLayout
+import FV.Arm.MinTheory
 
 @[expose] public section
 

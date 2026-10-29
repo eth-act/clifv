@@ -1,6 +1,8 @@
 module
 
-public import FV.Backend.Proof.EncodeLayout
+import FV.Backend.Proof.EncodeLayout
+public import FV.Backend.Proof.Encode
+import FV.Arm.MinTheory
 
 @[expose] public section
 

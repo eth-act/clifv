@@ -1,8 +1,22 @@
 module
 
-public import FV.Backend.Proof.IselCtlTbz
-public import FV.Backend.Proof.IselCmpExt
+import FV.Backend.Proof.IselCtlTbz
+import FV.Backend.Proof.IselCmpExt
 public import FV.Backend.Proof.IselTermsImm
+import FV.Backend.Proof.IselCtlBrif
+import FV.Backend.Proof.IselCmpEmit
+import FV.Backend.Proof.IselCtlBranch
+import FV.Backend.Proof.IselCtlUnmatch
+import FV.Backend.Proof.IselCtlBase
+import FV.Backend.Proof.IselCmpTerms
+import FV.Backend.Proof.IselCmpBase
+public import FV.Backend.Proof.IselCmpRun
+public import FV.Backend.Proof.IselSemCmp
+import FV.Backend.Proof.IselInterp
+public import FV.Backend.Proof.IselCmpInv
+import FV.Backend.Proof.FastSubst
+import FV.Backend.Proof.IselAttr
+import FV.Arm.MinTheory
 
 @[expose] public section
 

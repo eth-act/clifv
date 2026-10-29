@@ -1,6 +1,10 @@
 module
 
-public import FV.E2E.RegLevelDriverSem
+import FV.E2E.RegLevelDriverSem
+public import FV.Backend.Proof.RegallocCSem
+import FV.Backend.Proof.IselInterp
+public import FV.Backend.Proof.LowerContract
+import FV.Arm.MinTheory
 
 @[expose] public section
 

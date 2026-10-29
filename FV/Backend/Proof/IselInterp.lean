@@ -1,7 +1,11 @@
 module
 
-public import FV.Backend.Proof.IselData
-public import FV.SimprocAttr
+import FV.Backend.Proof.IselData
+import FV.SimprocAttr
+import FV.Backend.Proof.IselAttr
+public import FV.Isle.Interp
+public import Std.Tactic.BVDecide.Normalize.BitVec
+public import Std.Do.Triple.SpecLemmas
 
 @[expose] public section
 

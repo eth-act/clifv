@@ -15,6 +15,8 @@ import all Std.Data.DHashMap.Internal.AssocList.Basic
 import all Std.Data.DHashMap.Internal.Defs
 import all Std.Data.DHashMap.Internal.Index
 import all Std.Data.DHashMap.Raw
+import Std.Tactic.BVDecide.Normalize.Prop
+import Std.Data.DTreeMap.Internal.Operations
 
 @[expose] public section
 

@@ -1,7 +1,7 @@
 module
 
 public import FV.Backend.Lowering.StockConditionalForwardCfgNI
-public import FV.Backend.Lowering.StockParameterCfg
+import FV.Backend.Lowering.StockParameterCfg
 
 @[expose] public section
 

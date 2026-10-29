@@ -6,7 +6,11 @@ Author(s): Shilpi Goel
 
 module
 
-public import FV.Arm.Attr
+import FV.Arm.Attr
+import FV.SimprocAttr
+public import Std.Tactic.BVDecide.Normalize.Prop
+public import Std.Tactic.BVDecide.Normalize.BitVec
+public import Std.Data.DTreeMap.Internal.Operations
 
 @[expose] public section
 

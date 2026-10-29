@@ -9,8 +9,11 @@ Author(s): Yan Peng
 
 module
 
-public import FV.Arm.Decode
+import FV.Arm.Decode
 public import FV.Arm.Insts.Common
+import FV.Arm.MinTheory
+public import FV.Arm.Decode.DPR
+import FV.Arm.Attr
 
 @[expose] public section
 

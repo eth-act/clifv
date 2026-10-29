@@ -1,7 +1,13 @@
 module
 
 public import FV.E2E.RegLevelUnwind
-public import FV.E2E.RegLevelFrame
+import FV.E2E.RegLevelFrame
+import FV.E2E.RegLevelCall
+public import FV.E2E.RegLevelMove
+import FV.Backend.Proof.IselInterp
+import FV.Backend.Proof.IselGeneric
+import FV.Arm.MinTheory
+meta import Lean.Elab.Tactic.Omega.Frontend
 
 @[expose] public section
 

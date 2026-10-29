@@ -1,9 +1,10 @@
 module
 
 public import FV.Backend
-public import FV.Backend.RegallocPerEdgePrepare
+import FV.Backend.RegallocPerEdgePrepare
 public import FV.Backend.RegallocPerEdgePrepareCheck
 public import FV.Backend.RegallocPerEdgeSpill
+public import FV.Backend.RegallocPerEdge
 
 @[expose] public section
 

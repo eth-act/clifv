@@ -1,8 +1,14 @@
 module
 
 public import FV.E2E.RegLevelUnwind
-public import FV.E2E.RegLevelNext
-public import FV.E2E.RegLevelCall
+import FV.E2E.RegLevelNext
+import FV.E2E.RegLevelCall
+import FV.E2E.RegLevelGoto
+public import FV.E2E.RegLevelMove
+import FV.E2E.RegLevelRelax
+import FV.Backend.Proof.EncodeLayout
+import FV.Arm.MinTheory
+import Std.Data.HashMap.Lemmas
 
 @[expose] public section
 

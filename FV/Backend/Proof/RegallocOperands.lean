@@ -1,8 +1,11 @@
 module
 
-public import FV.Backend.Proof.RegallocSound
+import FV.Backend.Proof.RegallocSound
 public import FV.Backend.Encode
 public import FV.Arm.Exec
+import FV.Backend.Proof.RegallocLemmas
+public import FV.Backend.Proof.VCodeSem
+import FV.Arm.MinTheory
 
 @[expose] public section
 

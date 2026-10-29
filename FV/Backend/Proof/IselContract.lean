@@ -1,9 +1,13 @@
 module
 
-public import FV.Backend.Proof.IselGeneric
+import FV.Backend.Proof.IselGeneric
 public import FV.Backend.Proof.IselData
 public import FV.Backend.Proof.RegallocOperands
-public import FV.Backend.Proof.AbiClass
+import FV.Backend.Proof.AbiClass
+public import FV.Compile.Subset
+public import FV.Isle.Generated.Closure
+public import FV.Clif.Run
+import FV.Arm.MinTheory
 
 @[expose] public section
 

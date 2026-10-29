@@ -2,6 +2,7 @@ module
 
 public import FV.Backend.Proof.RegallocCSem
 public import FV.Backend.Proof.LowerRename
+import FV.Arm.MinTheory
 
 @[expose] public section
 

@@ -1,6 +1,7 @@
 module
 
 public import FV.Backend.Proof.RegallocMem
+import FV.Arm.MinTheory
 
 @[expose] public section
 

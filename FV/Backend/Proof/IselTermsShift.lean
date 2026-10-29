@@ -1,7 +1,15 @@
 module
 
-public import FV.Backend.Proof.IselFamAluBShiftBase
-public import FV.Backend.Proof.IselFamAluBIconst
+import FV.Backend.Proof.IselFamAluBShiftBase
+import FV.Backend.Proof.IselFamAluBIconst
+import FV.Backend.Proof.IselTermsAluB
+public import FV.Backend.Proof.IselRulesALU
+import FV.Backend.Proof.IselExtern
+import FV.Backend.Proof.IselInterp
+public import FV.Backend.Proof.IselContract
+import FV.Backend.Proof.IselAttr
+import FV.Backend.Proof.IselGeneric
+import FV.Arm.MinTheory
 
 @[expose] public section
 

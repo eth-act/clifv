@@ -1,6 +1,7 @@
 module
 
-public import FV.Backend.Proof.LowerSpec
+import FV.Backend.Proof.LowerSpec
+public import FV.Backend.Proof.DriverCheck
 
 @[expose] public section
 

@@ -1,6 +1,6 @@
 module
 
-public import FV.Backend.Proof.RegallocMemOS
+import FV.Backend.Proof.RegallocMemOS
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Format.Basic
@@ -24,6 +24,12 @@ import all Init.Data.Array.MapIdx
 import all Init.Data.Array.Extract
 import all Init.Data.Array.TakeDrop
 import all Init.Data.List.Impl
+import FV.Backend.Proof.RegallocOS
+public import FV.Backend.Proof.RegallocInstsFP
+import FV.Backend.Proof.RegallocMemCorr
+public import FV.Backend.Proof.RegallocMem
+import FV.Backend.Proof.IselGeneric
+import FV.Arm.MinTheory
 
 @[expose] public section
 

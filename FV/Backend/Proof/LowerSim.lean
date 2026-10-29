@@ -1,7 +1,12 @@
 module
 
 public import FV.Backend.Proof.LowerLemmas
-public import FV.Backend.Proof.TryRegs
+import FV.Backend.Proof.TryRegs
+public import FV.Backend.Proof.LowerShape
+public import FV.Backend.Proof.LowerFrame
+public import FV.Backend.Proof.LowerContract
+import FV.Backend.Proof.IselGeneric
+import FV.Arm.MinTheory
 
 @[expose] public section
 

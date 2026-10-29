@@ -18,8 +18,11 @@ Released under Apache 2.0 license; see third_party/NOTICE-lnsym.md.
 
 module
 
-public import FV.Arm.Decode
-public import FV.Arm.Insts.Common
+import FV.Arm.Decode
+import FV.Arm.Insts.Common
+public import FV.Arm.State
+public import FV.Arm.Decode.Reserved
+import FV.Arm.Attr
 
 @[expose] public section
 

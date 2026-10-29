@@ -1,6 +1,11 @@
 module
 
 public import FV.Backend.Proof.LowerLoopRun
+import FV.Backend.Proof.TryRegsC
+import FV.Backend.Proof.IselExtern
+import FV.Backend.Proof.IselInterp
+import FV.Backend.Proof.PrepareComplete
+import FV.Arm.MinTheory
 
 @[expose] public section
 

@@ -1,7 +1,10 @@
 module
 
-public import FV.Backend.Proof.LowerContract
-public import FV.Clif.FloatFacts
+import FV.Backend.Proof.LowerContract
+import FV.Clif.FloatFacts
+public import FV.Backend.Proof.IselContract
+public import FV.Backend.Proof.DriverCheck
+import FV.Arm.MinTheory
 
 @[expose] public section
 

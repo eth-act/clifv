@@ -8,8 +8,10 @@ module
 public import Lean.Data.Format
 public import FV.Arm.BitVec
 public import FV.Arm.Map
-public import FV.Arm.Attr
-public import FV.Arm.MinTheory
+import FV.Arm.Attr
+import FV.Arm.MinTheory
+meta import Lean.Elab.Tactic.Omega.Frontend
+public import Lean.ToExpr
 
 @[expose] public section
 

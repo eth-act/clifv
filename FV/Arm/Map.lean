@@ -7,6 +7,8 @@ Author(s): Leonardo de Moura
 module
 
 public import Lean
+import Std.Tactic.BVDecide.Normalize.Prop
+public meta import Lean.Meta.Tactic.Simp.Main
 
 @[expose] public section
 

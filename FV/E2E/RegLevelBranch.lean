@@ -1,6 +1,10 @@
 module
 
-public import FV.E2E.RegLevelArgs
+import FV.E2E.RegLevelArgs
+public import FV.E2E.RegLevelGoodX
+import FV.Backend.Proof.EncodeLayout
+public import FV.Backend.Proof.EncodeBranch
+import FV.Arm.MinTheory
 
 @[expose] public section
 

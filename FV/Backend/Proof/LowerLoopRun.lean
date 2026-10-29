@@ -1,8 +1,16 @@
 module
 
 public import FV.Backend.Proof.LowerLoopCtx
-public import FV.Backend.Proof.IselFlow
-public import FV.Backend.Proof.TryRegsC
+import FV.Backend.Proof.IselFlow
+import FV.Backend.Proof.TryRegsC
+import FV.Backend.Proof.TryRegs
+import FV.Backend.Proof.IselExtern
+import FV.Backend.Proof.IselInterp
+import FV.Backend.Proof.PrepareComplete
+public import FV.Backend.Proof.LowerLoopCode
+import FV.Backend.Proof.DriverCheckSound
+import FV.Backend.Proof.AbiClass
+import FV.Arm.MinTheory
 
 @[expose] public section
 

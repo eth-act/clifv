@@ -6,10 +6,12 @@ Author(s): Shilpi Goel
 -- Modified by fv-compiler-rust (2026): ported to Lean v4.34.1, module prefix FV.Arm, wrapped in namespace Arm, LRAT-certificate `bv_check` proofs replaced by `bv_omega`/`bv_decide`.
 module
 
-public import FV.Arm.State
+import FV.Arm.State
 public import FV.Arm.Memory.Separate
 public import Std.Tactic.BVDecide
-public import FV.Arm.Tactics.BvOmegaBench
+import FV.Arm.Tactics.BvOmegaBench
+import FV.Arm.MinTheory
+import FV.Arm.Attr
 
 @[expose] public section
 

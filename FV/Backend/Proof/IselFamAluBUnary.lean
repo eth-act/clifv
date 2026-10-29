@@ -1,6 +1,13 @@
 module
 
 public import FV.Backend.Proof.IselFamAluBBase
+public import FV.Backend.Proof.IselRulesALU
+import FV.Backend.Proof.IselTerms
+import FV.Backend.Proof.IselExtern
+import FV.Backend.Proof.IselInterp
+import FV.Backend.Proof.IselAttr
+import FV.Arm.MinTheory
+meta import Lean.Elab.Tactic.Omega.Frontend
 
 @[expose] public section
 

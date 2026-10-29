@@ -1,7 +1,7 @@
 module
 
-public import FV.Backend
-public import FV.Backend.Lowering.Stock
+import FV.Backend
+import FV.Backend.Lowering.Stock
 public import FV.Backend.RegallocPerEdgeDriver
 
 @[expose] public section

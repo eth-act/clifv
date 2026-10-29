@@ -10,7 +10,13 @@ Author(s): Shilpi Goel, Siddharth Bhat, Alex Keizer
 
 module
 
-public import FV.Arm.Attr
+import FV.Arm.Attr
+import FV.SimprocAttr
+import Std.Tactic.BVDecide.Normalize.Prop
+public import Std.Tactic.BVDecide.Normalize.BitVec
+meta import Lean.Elab.Tactic.Omega.Frontend
+public import Std.Do.Triple.SpecLemmas
+import Std.Data.DTreeMap.Internal.Balancing
 
 @[expose] public section
 

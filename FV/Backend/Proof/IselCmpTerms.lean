@@ -1,6 +1,16 @@
 module
 
-public import FV.Backend.Proof.IselCmpBase
+import FV.Backend.Proof.IselCmpBase
+import FV.Backend.Proof.IselFamily
+import FV.Backend.Proof.IselExtern
+import FV.Backend.Proof.IselInterp
+public import FV.Backend.Proof.IselCmpInv
+import FV.Backend.Proof.FastSubst
+public import FV.Backend.Proof.IselContract
+import FV.Backend.Proof.IselAttr
+import FV.Backend.Proof.IselGeneric
+import FV.Arm.MinTheory
+import Lean.Elab.Tactic.RCases
 
 @[expose] public section
 

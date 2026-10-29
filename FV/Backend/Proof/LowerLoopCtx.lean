@@ -1,7 +1,9 @@
 module
 
-public import FV.Backend.Proof.LowerLoopCode
-public import FV.Backend.Proof.PrepareComplete
+import FV.Backend.Proof.LowerLoopCode
+import FV.Backend.Proof.PrepareComplete
+public import FV.Backend.Proof.LowerSpec
+import FV.Arm.MinTheory
 
 @[expose] public section
 

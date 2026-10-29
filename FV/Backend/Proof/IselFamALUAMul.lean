@@ -1,8 +1,14 @@
 module
 
-public import FV.Backend.Proof.IselTermsALUAMul
-public import FV.Backend.Proof.IselFamALUALogicNot
-public import FV.Backend.Proof.IselFamALUARules
+import FV.Backend.Proof.IselTermsALUAMul
+import FV.Backend.Proof.IselFamALUALogicNot
+import FV.Backend.Proof.IselFamALUARules
+import FV.Backend.Proof.IselFamilyALU
+import FV.Backend.Proof.IselFamALUA
+import FV.Backend.Proof.IselExtern
+import FV.Backend.Proof.IselInterp
+public import FV.Backend.Proof.IselContract
+import FV.Arm.MinTheory
 
 @[expose] public section
 

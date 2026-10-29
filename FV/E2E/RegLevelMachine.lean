@@ -1,9 +1,12 @@
 module
 
-public import FV.E2E.Statement
-public import FV.E2E.RegLevelRelax
+import FV.E2E.Statement
+import FV.E2E.RegLevelRelax
 public import FV.Backend.Proof.RegallocCSem
 public import FV.Backend.Proof.RegallocFwd
+public import FV.Backend.Proof.EncodeStep
+import FV.Backend.Proof.EncodeLayout
+import FV.Arm.MinTheory
 
 @[expose] public section
 

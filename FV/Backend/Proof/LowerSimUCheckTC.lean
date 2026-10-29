@@ -2,6 +2,8 @@ module
 
 public import FV.Backend.Proof.LowerSimUCheck
 public import FV.Backend.Proof.DriverCheckTyC
+import FV.Backend.Proof.IselInterp
+import FV.Arm.MinTheory
 
 @[expose] public section
 

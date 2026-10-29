@@ -11,6 +11,7 @@ public import FV.Arm.Decode.BR
 public import FV.Arm.Decode.LDST
 public import FV.Arm.Decode.DPSFP
 public import FV.Arm.Decode.Reserved
+public import FV.Arm.BitVec
 
 @[expose] public section
 

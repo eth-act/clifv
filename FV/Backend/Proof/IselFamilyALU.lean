@@ -1,7 +1,8 @@
 module
 
-public import FV.Backend.Proof.IselFamily
-public import FV.Backend.Proof.IselRulesALU
+import FV.Backend.Proof.IselFamily
+import FV.Backend.Proof.IselRulesALU
+public import FV.Backend.Proof.IselContract
 
 @[expose] public section
 

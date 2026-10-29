@@ -2,7 +2,9 @@ module
 
 public import FV.Backend.Proof.RegallocOperands
 public import FV.Backend.Regalloc
-public import FV.Arm.Memory.MemoryProofs
+import FV.Arm.Memory.MemoryProofs
+public import FV.Arm.Memory.Separate
+import FV.Arm.MinTheory
 
 @[expose] public section
 

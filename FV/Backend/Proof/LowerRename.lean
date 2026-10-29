@@ -1,6 +1,8 @@
 module
 
-public import FV.Backend.Proof.LowerSeq
+import FV.Backend.Proof.LowerSeq
+public import FV.Backend.Proof.IselContract
+import FV.Arm.MinTheory
 
 @[expose] public section
 

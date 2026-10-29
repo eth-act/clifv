@@ -1,6 +1,7 @@
 module
 
 public import FV.Opt.Basic
+public import Std.Data.HashSet.Basic
 
 @[expose] public section
 

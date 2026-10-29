@@ -7,8 +7,9 @@ Author(s): Shilpi Goel
 module
 
 public import Lean
-public import FV.Arm.Attr
-public import FV.Arm.Tactics.Attr
+import FV.Arm.Attr
+import FV.Arm.Tactics.Attr
+public meta import Lean.Meta.Tactic.Simp.Main
 
 @[expose] public meta section
 

@@ -17,10 +17,12 @@ Author(s): Shilpi Goel
 
 module
 
-public import FV.Arm.Decode
+import FV.Arm.Decode
 public import FV.Arm.State
-public import FV.Arm.Insts.Common
-public import FV.Arm.BitVec
+import FV.Arm.Insts.Common
+import FV.Arm.BitVec
+public import FV.Arm.Decode.BR
+import FV.Arm.Attr
 
 @[expose] public section
 

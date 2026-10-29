@@ -1,6 +1,9 @@
 module
 
 public import FV.Backend.Proof.EncodeBranch
+import FV.Backend.Proof.Encode
+import FV.Arm.MinTheory
+import Std.Data.HashMap.Lemmas
 
 @[expose] public section
 

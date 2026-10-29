@@ -1,7 +1,10 @@
 module
 
-public import FV.E2E.RegLevelGoto
+import FV.E2E.RegLevelGoto
 public import FV.E2E.RegLevelCall
+import FV.E2E.RegLevelArgs
+import FV.E2E.RegLevelRelax
+import FV.Arm.MinTheory
 
 @[expose] public section
 

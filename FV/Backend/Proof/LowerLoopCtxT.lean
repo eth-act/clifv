@@ -3,6 +3,7 @@ module
 public import FV.Backend.Proof.LowerLoopCtx
 public import FV.Backend.Proof.DriverCheckT
 public import FV.Compile.SubsetT
+import FV.Arm.MinTheory
 
 @[expose] public section
 

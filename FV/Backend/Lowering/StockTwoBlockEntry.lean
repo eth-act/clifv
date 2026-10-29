@@ -1,7 +1,8 @@
 module
 
 public import FV.Backend.Lowering.StockScalar
-public import FV.Backend.StockScalarCheck
+import FV.Backend.StockScalarCheck
+public import FV.Backend.StockArithmeticCheck
 
 @[expose] public section
 

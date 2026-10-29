@@ -7,7 +7,9 @@ Author(s): Shilpi Goel
 module
 
 public import Lean
-public import FV.SimprocAttr
+import FV.SimprocAttr
+meta import Lean.Meta.Tactic.Simp.Attr
+public meta import Lean.Meta.Tactic.Simp.Simproc
 
 @[expose] public section
 

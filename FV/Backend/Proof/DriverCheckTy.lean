@@ -1,6 +1,8 @@
 module
 
 public import FV.Backend.Proof.LowerLoopCtxT
+import FV.Backend.Proof.DriverCheckSound
+import FV.Arm.MinTheory
 
 @[expose] public section
 

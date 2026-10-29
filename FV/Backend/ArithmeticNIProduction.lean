@@ -1,7 +1,8 @@
 module
 
-public import FV.Backend.ArithmeticProduction
+import FV.Backend.ArithmeticProduction
 public import FV.Backend.Lowering.StockArithmeticNI
+public import FV.Backend.ScalarProduction
 
 @[expose] public section
 

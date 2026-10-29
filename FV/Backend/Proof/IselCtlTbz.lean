@@ -1,8 +1,8 @@
 module
 
-public import FV.Backend.Proof.IselCtlBrif
-public import FV.Backend.Proof.IselFamALUAMul
-public import FV.Backend.Proof.IselFamALUALogic
+import FV.Backend.Proof.IselCtlBrif
+import FV.Backend.Proof.IselFamALUAMul
+import FV.Backend.Proof.IselFamALUALogic
 import all Init.Data.Format.Basic
 import all Init.Data.Int.Repr
 import all Init.Data.Nat.Bitwise.Basic
@@ -13,6 +13,18 @@ import all Init.Data.String.Defs
 import all Init.Data.String.Slice
 import all Init.Data.String.TakeDrop
 import all Init.Prelude
+import FV.Backend.Proof.IselCmpRoot
+import FV.Backend.Proof.IselCtlBranch
+import FV.Backend.Proof.IselCtlUnmatch
+import FV.Backend.Proof.IselCtlBase
+import FV.Backend.Proof.IselCmpTerms
+import FV.Backend.Proof.IselCmpBase
+import FV.Backend.Proof.IselInterp
+public import FV.Backend.Proof.IselCmpInv
+import FV.Backend.Proof.FastSubst
+public import FV.Backend.Proof.IselContract
+import FV.Backend.Proof.IselAttr
+import FV.Arm.MinTheory
 
 @[expose] public section
 

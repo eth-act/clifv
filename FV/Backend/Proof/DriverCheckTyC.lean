@@ -1,8 +1,10 @@
 module
 
 public import FV.Backend.Proof.DriverCheckC
-public import FV.Backend.Proof.TryRegsC
+import FV.Backend.Proof.TryRegsC
 public import FV.Backend.Proof.InstScopeTF
+import FV.Backend.Proof.DriverCheckSound
+import FV.Arm.MinTheory
 
 @[expose] public section
 

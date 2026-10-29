@@ -2,7 +2,9 @@ module
 
 public import FV.E2E.RegLevelMove
 public import FV.E2E.ExecReads
-public import FV.E2E.MoveReads
+import FV.E2E.MoveReads
+import FV.E2E.RegLevelRelax
+import FV.Arm.MinTheory
 
 @[expose] public section
 

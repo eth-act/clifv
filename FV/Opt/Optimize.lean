@@ -2,11 +2,11 @@ module
 
 public import FV.Opt.Gvn
 public import FV.Opt.Dce
-public import FV.Opt.Simplify
+import FV.Opt.Simplify
 public import FV.Opt.Licm
 public import FV.Opt.HandRules
-public import FV.Compile.Subset
-public import FV.Isle.Opt.Simplify
+import FV.Compile.Subset
+import FV.Isle.Opt.Simplify
 public import FV.Opt.Validate
 public import FV.Opt.RuleAllow
 

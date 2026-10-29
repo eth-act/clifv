@@ -1,7 +1,14 @@
 module
 
 public import FV.Backend.Proof.IselLcf
-public import FV.Backend.Proof.IselTermsAluB
+import FV.Backend.Proof.IselTermsAluB
+public import FV.Backend.Proof.IselRulesALU
+import FV.Backend.Proof.IselTerms
+import FV.Backend.Proof.IselExtern
+import FV.Backend.Proof.IselInterp
+import FV.Backend.Proof.IselAttr
+import FV.Backend.Proof.IselGeneric
+import FV.Arm.MinTheory
 
 @[expose] public section
 

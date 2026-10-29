@@ -1,7 +1,7 @@
 module
 
 public import FV.Backend.SpillAlloc
-public import FV.Backend.RegallocPerEdge
+import FV.Backend.RegallocPerEdge
 
 @[expose] public section
 

@@ -1,6 +1,7 @@
 module
 
 public import FV.Backend.Lowering.StockAlloc
+public import FV.Backend.RegallocOps
 
 @[expose] public section
 

@@ -1,6 +1,10 @@
 module
 
 public import FV.Backend.Proof.IselRules
+import FV.Backend.Proof.IselTerms
+import FV.Backend.Proof.IselExtern
+import FV.Backend.Proof.IselInterp
+import FV.Backend.Proof.IselAttr
 
 @[expose] public section
 

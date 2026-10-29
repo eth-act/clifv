@@ -1,6 +1,8 @@
 module
 
-public import FV.Backend.Lowering.StockConditionalRankedCfg
+import FV.Backend.Lowering.StockConditionalRankedCfg
+public import FV.Backend.Lowering.StockScalar
+public import FV.Backend.StockArithmeticCheck
 
 @[expose] public section
 

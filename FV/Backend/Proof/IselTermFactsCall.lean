@@ -1,6 +1,17 @@
 module
 
-public import FV.Backend.Proof.IselTermFactsBase
+import FV.Backend.Proof.IselTermFactsBase
+public import FV.Backend.Proof.IselCtlTry
+import FV.Backend.Proof.TryRegs
+import FV.Backend.Proof.IselCtl
+import FV.Backend.Proof.IselCmpBase
+import FV.Backend.Proof.IselFamily
+import FV.Backend.Proof.IselExtern
+import FV.Backend.Proof.IselInterp
+import FV.Backend.Proof.FastSubst
+import FV.Backend.Proof.IselAttr
+import FV.Backend.Proof.IselGeneric
+import FV.Arm.MinTheory
 
 @[expose] public section
 

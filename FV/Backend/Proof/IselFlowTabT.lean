@@ -1,7 +1,8 @@
 module
 
 public import FV.Backend.Proof.IselFlowCheck
-public import FV.Backend.Proof.IselExcl
+import FV.Backend.Proof.IselExcl
+import FV.Arm.MinTheory
 
 @[expose] public section
 

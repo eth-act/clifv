@@ -3,6 +3,9 @@ module
 public import FV.Backend.SpillAlloc
 public import Lean.Data.Json
 public import FV.Backend.Proof.PrepareCheck
+public import FV.Backend.StackAlloc
+public import Lean.Data.Json.FromToJson.Basic
+public import Lean.Data.Json.Parser
 
 @[expose] public section
 

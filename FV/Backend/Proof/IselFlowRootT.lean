@@ -1,6 +1,8 @@
 module
 
 public import FV.Backend.Proof.IselFlowTabT
+public import FV.Backend.Proof.IselExclBase
+import FV.Arm.MinTheory
 
 @[expose] public section
 

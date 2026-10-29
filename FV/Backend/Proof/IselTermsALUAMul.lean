@@ -1,6 +1,13 @@
 module
 
-public import FV.Backend.Proof.IselTermsLogicNot
+import FV.Backend.Proof.IselTermsLogicNot
+import FV.Backend.Proof.IselTermsALUA
+public import FV.Backend.Proof.IselRulesALU
+import FV.Backend.Proof.IselTerms
+import FV.Backend.Proof.IselExtern
+import FV.Backend.Proof.IselInterp
+import FV.Backend.Proof.IselAttr
+import FV.Arm.MinTheory
 
 @[expose] public section
 

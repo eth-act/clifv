@@ -1,7 +1,9 @@
 module
 
 public import FV.Clif.Syntax
-public import FV.Float
+import FV.Float
+public import FV.Float.Convert
+public import FV.Float.Arith
 
 @[expose] public section
 

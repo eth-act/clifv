@@ -2,7 +2,7 @@
 -- Do not edit. Regenerate: `cargo run --manifest-path rust/Cargo.toml -p isle2lean --release`.
 module
 
-public import FV.Isle.Generated.Opt.Ids
+import FV.Isle.Generated.Opt.Ids
 public import FV.Isle.Generated.Opt.TypeArray
 public import FV.Isle.Generated.Opt.TermTable
 public import FV.Isle.Generated.Opt.RuleArray

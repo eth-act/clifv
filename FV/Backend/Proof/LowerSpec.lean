@@ -1,6 +1,7 @@
 module
 
-public import FV.Backend.Proof.DriverCheckSound
+import FV.Backend.Proof.DriverCheckSound
+public import FV.Backend.Proof.LowerShape
 
 @[expose] public section
 

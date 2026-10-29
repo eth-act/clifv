@@ -1,8 +1,12 @@
 module
 
-public import FV.Backend.Proof.LowerLoop
-public import FV.Backend.Proof.LowerFix
+import FV.Backend.Proof.LowerLoop
+import FV.Backend.Proof.LowerFix
 public import Std.Data.HashSet.Lemmas
+import FV.Backend.Proof.IselInterp
+public import FV.Backend.Proof.LowerSpec
+import FV.Backend.Proof.DriverCheckSound
+import FV.Arm.MinTheory
 
 @[expose] public section
 

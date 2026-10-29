@@ -1,7 +1,12 @@
 module
 
-public import FV.Backend.Proof.RegallocAtomic
-public import FV.Backend.Proof.IselSemCmp
+import FV.Backend.Proof.RegallocAtomic
+import FV.Backend.Proof.IselSemCmp
+public import FV.Backend.Proof.RegallocTac
+import FV.Backend.Proof.IselInterp
+import FV.Backend.Proof.IselGeneric
+import FV.Arm.MinTheory
+meta import Lean.Elab.Tactic.Omega.Frontend
 
 @[expose] public section
 

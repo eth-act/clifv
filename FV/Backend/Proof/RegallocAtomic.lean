@@ -1,6 +1,11 @@
 module
 
-public import FV.Backend.Proof.RegallocMemOS
+import FV.Backend.Proof.RegallocMemOS
+import FV.Backend.Proof.RegallocOS
+public import FV.Backend.Proof.RegallocTac
+import FV.Backend.Proof.RegallocMemCorr
+import FV.Backend.Proof.IselGeneric
+import FV.Arm.MinTheory
 
 @[expose] public section
 

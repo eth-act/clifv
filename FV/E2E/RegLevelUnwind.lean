@@ -2,6 +2,10 @@ module
 
 public import FV.Unw.Model
 public import FV.Backend.Proof.UnwindTables
+import FV.Backend.Proof.EncodeLayout
+import FV.Arm.Memory.MemoryProofs
+import FV.Arm.MinTheory
+import Std.Data.HashMap.Lemmas
 
 @[expose] public section
 

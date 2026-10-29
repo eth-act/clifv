@@ -1,9 +1,10 @@
 module
 
-public import FV.Backend.Proof.IselFlowSplit
+import FV.Backend.Proof.IselFlowSplit
 public import FV.Backend.Proof.IselFlowCheck
 public import FV.Backend.Proof.DriverCheck
 public import FV.Backend.Proof.AbiClass
+import Std.Tactic.BVDecide.Normalize.Prop
 
 @[expose] public section
 

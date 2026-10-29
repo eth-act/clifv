@@ -1,8 +1,17 @@
 module
 
-public import FV.E2E.RegLevelCall
-public import FV.Backend.Proof.RegallocMem
-public import FV.Backend.Proof.RegallocTac
+import FV.E2E.RegLevelCall
+import FV.Backend.Proof.RegallocMem
+import FV.Backend.Proof.RegallocTac
+import FV.E2E.RegLevelNext
+import FV.E2E.RegLevelGoto
+import FV.E2E.RegLevelArgs
+public import FV.E2E.RegLevelGoodX
+import FV.E2E.RegLevelRelax
+import FV.Backend.Proof.IselGeneric
+import FV.Backend.Proof.EncodeLayout
+public import FV.Backend.Proof.EncodeBranch
+import FV.Arm.MinTheory
 
 @[expose] public section
 

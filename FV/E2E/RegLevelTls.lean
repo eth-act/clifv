@@ -1,6 +1,8 @@
 module
 
-public import FV.E2E.RegLevelCall
+import FV.E2E.RegLevelCall
+public import FV.E2E.RegLevelGoodX
+import FV.Arm.MinTheory
 
 @[expose] public section
 

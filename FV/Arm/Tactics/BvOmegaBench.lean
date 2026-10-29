@@ -11,12 +11,15 @@ and allows us to send bug reports to the Lean developers.
 -/
 module
 
-public import FV.Arm.Tactics.Attr
+import FV.Arm.Tactics.Attr
 public import Lean
 public import Lean.Elab.Tactic.Omega.Frontend
 public import Lean.Elab.Tactic.Omega
-public import FV.Arm.Tactics.Simp
+import FV.Arm.Tactics.Simp
 public meta import FV.Arm.Tactics.Attr
+public meta import Lean.Elab.Tactic.Omega.Frontend
+public meta import Lean.Meta.Tactic.Simp.Main
+public meta import Std.Do.Triple.SpecLemmas
 
 @[expose] public meta section
 

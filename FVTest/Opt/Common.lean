@@ -1,6 +1,6 @@
 module
 
-public import FV.Opt
+import FV.Opt
 public import FV.Opt.OptimizeX
 public import FV.Clif.Parse
 

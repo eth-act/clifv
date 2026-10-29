@@ -6,7 +6,7 @@ Released under Apache 2.0 license; see third_party/NOTICE-lnsym.md.
 -- only `UDF #imm16` (permanently undefined) is allocated there.
 module
 
-public import FV.Arm.BitVec
+import FV.Arm.BitVec
 
 @[expose] public section
 

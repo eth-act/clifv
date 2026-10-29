@@ -2,6 +2,10 @@ module
 
 public import FV.Backend.Proof.IselContract
 public import FV.Backend.Proof.IselRules
+import FV.Backend.Proof.IselExtern
+import FV.Backend.Proof.IselInterp
+import FV.Backend.Proof.IselGeneric
+import FV.Arm.MinTheory
 
 @[expose] public section
 

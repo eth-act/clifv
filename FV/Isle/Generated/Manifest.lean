@@ -2,7 +2,7 @@
 -- Do not edit. Regenerate: `cargo run --manifest-path rust/Cargo.toml -p isle2lean --release`.
 module
 
-public import FV.Isle.Syntax
+import FV.Isle.Syntax
 
 @[expose] public section
 

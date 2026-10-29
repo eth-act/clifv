@@ -13,12 +13,13 @@ public import FV.Backend.Obj
 public import FV.Backend.Proof.DriverCheck
 public import FV.Backend.Proof.DriverCheckTy
 public import FV.Backend.Proof.DriverCheckC
-public import FV.Compile.SubsetTC
-public import FV.Compile.SubsetTF
+import FV.Compile.SubsetTC
+import FV.Compile.SubsetTF
 public import FV.Backend.Proof.DriverCheckCF
 public import FV.Backend.DeadCleanup
-public import FV.Compile.Subset
+import FV.Compile.Subset
 public import Std.Data.HashSet
+public import FV.Clif.Parse
 
 @[expose] public section
 

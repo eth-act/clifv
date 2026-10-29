@@ -1,9 +1,13 @@
 module
 
-public import FV.Backend.Proof.LowerSpec
-public import FV.Backend.Proof.LowerContract
-public import FV.Backend.Proof.IselTermFactsRules
-public import FV.Backend.Proof.IselTermFactsCall
+import FV.Backend.Proof.LowerSpec
+import FV.Backend.Proof.LowerContract
+import FV.Backend.Proof.IselTermFactsRules
+import FV.Backend.Proof.IselTermFactsCall
+import FV.Backend.Proof.IselInterp
+public import FV.Backend.Proof.IselContract
+public import FV.Backend.Proof.DriverCheck
+import FV.Arm.MinTheory
 
 @[expose] public section
 

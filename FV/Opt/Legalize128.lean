@@ -1,7 +1,9 @@
 module
 
-public import FV.Clif
+import FV.Clif
 public import Std.Data.HashMap
+public import FV.Clif.Run
+public import Std.Data.HashMap.Basic
 
 @[expose] public section
 

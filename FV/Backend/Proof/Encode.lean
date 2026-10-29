@@ -1,12 +1,14 @@
 module
 
-public import FV.Backend.Proof.EncodeDPI
-public import FV.Backend.Proof.EncodeBR
-public import FV.Backend.Proof.EncodeDPR
-public import FV.Backend.Proof.EncodeDPSFP
-public import FV.Backend.Proof.EncodeLDST
-public import FV.Backend.Proof.EncodeRES
+import FV.Backend.Proof.EncodeDPI
+import FV.Backend.Proof.EncodeBR
+import FV.Backend.Proof.EncodeDPR
+import FV.Backend.Proof.EncodeDPSFP
+import FV.Backend.Proof.EncodeLDST
+import FV.Backend.Proof.EncodeRES
 public import FV.Arm.Exec
+public import FV.Backend.Encode
+import FV.Arm.MinTheory
 
 @[expose] public section
 

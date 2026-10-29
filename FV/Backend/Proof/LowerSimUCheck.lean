@@ -2,6 +2,8 @@ module
 
 public import FV.Backend.Proof.DriverCheckSound
 public import FV.E2E.UnwindSem
+import FV.Backend.Proof.IselInterp
+import FV.Arm.MinTheory
 
 @[expose] public section
 

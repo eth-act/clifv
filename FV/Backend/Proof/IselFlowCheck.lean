@@ -1,7 +1,8 @@
 module
 
-public import FV.Backend.Proof.IselFlowGen
+import FV.Backend.Proof.IselFlowGen
 public import FV.Backend.Isel
+import FV.Backend.Proof.IselGeneric
 
 @[expose] public section
 

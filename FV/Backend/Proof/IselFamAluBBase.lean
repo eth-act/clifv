@@ -1,7 +1,10 @@
 module
 
 public import FV.Backend.Proof.IselFamily
-public import FV.Backend.Proof.IselRulesALU
+import FV.Backend.Proof.IselRulesALU
+import FV.Backend.Proof.IselExtern
+import FV.Backend.Proof.IselInterp
+import FV.Arm.MinTheory
 
 @[expose] public section
 

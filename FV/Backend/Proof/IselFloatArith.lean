@@ -1,6 +1,15 @@
 module
 
-public import FV.Backend.Proof.IselFloatBitcast
+import FV.Backend.Proof.IselFloatBitcast
+public import FV.Backend.Proof.IselFamAluBPopcnt
+import FV.Backend.Proof.IselFamAluBShiftTerms
+import FV.Backend.Proof.IselCmpTerms
+import FV.Backend.Proof.IselCmpBase
+import FV.Backend.Proof.IselExtern
+import FV.Backend.Proof.IselInterp
+import FV.Backend.Proof.FastSubst
+import FV.Backend.Proof.IselAttr
+import FV.Arm.MinTheory
 
 @[expose] public section
 

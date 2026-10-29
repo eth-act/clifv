@@ -1,6 +1,9 @@
 module
 
-public import FV.Backend.Proof.RegallocLayout
+import FV.Backend.Proof.RegallocLayout
+public import FV.Backend.Proof.RegallocFrame
+import FV.Arm.Memory.MemoryProofs
+import FV.Arm.MinTheory
 
 @[expose] public section
 

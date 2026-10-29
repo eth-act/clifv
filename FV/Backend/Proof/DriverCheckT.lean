@@ -1,6 +1,9 @@
 module
 
-public import FV.Backend.Proof.DriverCheckSound
+import FV.Backend.Proof.DriverCheckSound
+public import FV.Backend.Proof.IselContract
+public import FV.Backend.Proof.DriverCheck
+import FV.Arm.MinTheory
 
 @[expose] public section
 

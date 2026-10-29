@@ -1,6 +1,8 @@
 module
 
 public import FV.Backend.Proof.RelaxLayout
+import FV.Backend.Proof.EncodeLayout
+import FV.Arm.MinTheory
 
 @[expose] public section
 

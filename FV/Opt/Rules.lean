@@ -1,6 +1,6 @@
 module
 
-public import FV.Opt.Basic
+import FV.Opt.Basic
 public import FV.Isle.Opt.Simplify
 
 @[expose] public section

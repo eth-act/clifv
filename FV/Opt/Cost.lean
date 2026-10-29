@@ -1,6 +1,7 @@
 module
 
-public import FV.Opt.Basic
+import FV.Opt.Basic
+public import FV.Clif.Syntax
 
 @[expose] public section
 

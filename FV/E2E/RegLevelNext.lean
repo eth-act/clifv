@@ -1,6 +1,11 @@
 module
 
-public import FV.E2E.RegLevelGoto
+import FV.E2E.RegLevelGoto
+import FV.E2E.RegLevelArgs
+import FV.E2E.RegLevelOp
+public import FV.E2E.RegLevelGoodX
+import FV.E2E.RegLevelRelax
+import FV.Arm.MinTheory
 
 @[expose] public section
 

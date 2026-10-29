@@ -1,7 +1,8 @@
 module
 
-public import FV.Backend.Production
+import FV.Backend.Production
 public import FV.Backend.Lowering.StockPrologueAll
+public import FV.Backend
 
 @[expose] public section
 

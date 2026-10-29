@@ -1,6 +1,7 @@
 module
 
-public import FV.Backend.Lowering.StockPrologueAll
+import FV.Backend.Lowering.StockPrologueAll
+public import FV.Backend.Lowering.StockD0
 
 @[expose] public section
 

@@ -1,7 +1,7 @@
 module
 
 public import FV.Backend.Lowering.StockMixedNI
-public import FV.Backend.StockLogicalCheck
+import FV.Backend.StockLogicalCheck
 
 @[expose] public section
 

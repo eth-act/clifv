@@ -1,10 +1,20 @@
 module
 
 public import FV.Backend.Proof.IselCtlCall
-public import FV.Backend.Proof.IselFamily
-public import FV.Backend.Proof.LowerLemmas
-public import FV.Arm.Memory.MemoryProofs
+import FV.Backend.Proof.IselFamily
+import FV.Backend.Proof.LowerLemmas
+import FV.Arm.Memory.MemoryProofs
 public import FV.Backend.Proof.IselContractP
+import FV.Backend.Proof.IselCmpTerms
+import FV.Backend.Proof.IselCmpBase
+import FV.Backend.Proof.IselCmpRun
+import FV.Backend.Proof.IselExtern
+import FV.Backend.Proof.IselInterp
+import FV.Backend.Proof.FastSubst
+import FV.Backend.Proof.RegallocLemmas
+import FV.Backend.Proof.IselAttr
+import FV.Backend.Proof.IselGeneric
+import FV.Arm.MinTheory
 
 @[expose] public section
 

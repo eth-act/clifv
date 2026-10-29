@@ -1,6 +1,9 @@
 module
 
 public import FV.Backend.Proof.IselFlowExt
+import Std.Tactic.BVDecide.Normalize.Prop
+import Std.Tactic.BVDecide.Normalize.Bool
+import Std.Do.Triple.SpecLemmas
 
 @[expose] public section
 

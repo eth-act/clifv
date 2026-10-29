@@ -5,7 +5,7 @@ Author(s): Shilpi Goel, Yan Peng
 -/
 module
 
-public import FV.Arm.BitVec
+import FV.Arm.BitVec
 
 @[expose] public section
 

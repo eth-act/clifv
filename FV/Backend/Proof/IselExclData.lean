@@ -1,6 +1,9 @@
 module
 
 public import FV.Backend.Proof.IselExclBase
+public import FV.Backend.Proof.IselFamily
+import FV.Backend.Proof.IselInterp
+import FV.Arm.MinTheory
 
 @[expose] public section
 

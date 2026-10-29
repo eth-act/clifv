@@ -1,7 +1,19 @@
 module
 
-public import FV.E2E.RegLevelTrap
+import FV.E2E.RegLevelTrap
 public import FV.Backend.Proof.IselCtlTerm
+import FV.E2E.RegLevelNext
+import FV.E2E.RegLevelBranch
+public import FV.E2E.RegLevelArgs
+import FV.E2E.RegLevelOp
+public import FV.E2E.RegLevelGoodX
+import FV.Backend.Proof.RegallocLayout
+import FV.E2E.RegLevelRelax
+import FV.Backend.Proof.IselInterp
+import FV.Backend.Proof.IselGeneric
+import FV.Arm.Memory.MemoryProofs
+import FV.Arm.MinTheory
+meta import Lean.Elab.Tactic.Omega.Frontend
 
 @[expose] public section
 

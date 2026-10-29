@@ -2,7 +2,15 @@ module
 
 public import FV.Backend.Proof.IselCtlCallRules
 public import FV.Backend.Proof.IselCtlUnmatch
-public import FV.Backend.Proof.TryRegs
+import FV.Backend.Proof.TryRegs
+import FV.Backend.Proof.IselCmpBase
+import FV.Backend.Proof.IselCmpRun
+import FV.Backend.Proof.IselExtern
+import FV.Backend.Proof.IselInterp
+import FV.Backend.Proof.FastSubst
+import FV.Backend.Proof.AbiClass
+import FV.Backend.Proof.IselAttr
+import FV.Arm.MinTheory
 
 @[expose] public section
 

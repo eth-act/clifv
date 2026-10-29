@@ -1,6 +1,8 @@
 module
 
-public import FV.Backend.Proof.IselInterp
+import FV.Backend.Proof.IselInterp
+import FV.Backend.Proof.IselAttr
+public import FV.Backend.Isel
 
 @[expose] public section
 

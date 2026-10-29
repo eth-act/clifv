@@ -1,9 +1,13 @@
 module
 
-public import FV.Backend.Proof.LowerSpec
+import FV.Backend.Proof.LowerSpec
 public import FV.Backend.Proof.PrepareComplete
-public import FV.Backend.Proof.IselTermFacts
-public import FV.Backend.Proof.LowerLoopPrep
+import FV.Backend.Proof.IselTermFacts
+import FV.Backend.Proof.LowerLoopPrep
+import FV.Backend.Proof.LowerLoopSim
+public import FV.Backend.Proof.LowerLoopRun
+import FV.Backend.Proof.IselInterp
+import FV.Arm.MinTheory
 
 @[expose] public section
 

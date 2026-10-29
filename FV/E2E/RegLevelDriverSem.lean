@@ -1,11 +1,14 @@
 module
 
 public import FV.Backend.Proof.RegallocCSem
-public import FV.Backend.Proof.CSemRename
-public import FV.Backend.Proof.LowerRename
-public import FV.Backend.Proof.IselContract
+import FV.Backend.Proof.CSemRename
+import FV.Backend.Proof.LowerRename
+import FV.Backend.Proof.IselContract
 public import FV.Backend.Proof.LowerContract
-public import FV.Backend.Proof.IselCtlCall
+import FV.Backend.Proof.IselCtlCall
+import FV.Backend.Proof.IselExtern
+import FV.Backend.Proof.IselInterp
+import FV.Arm.MinTheory
 
 @[expose] public section
 

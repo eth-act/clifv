@@ -1,6 +1,7 @@
 module
 
-public import FV.Backend.RegallocOps
+import FV.Backend.RegallocOps
+public import FV.Backend.Isel
 
 @[expose] public section
 

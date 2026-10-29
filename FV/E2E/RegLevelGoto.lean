@@ -1,6 +1,10 @@
 module
 
 public import FV.E2E.RegLevelBranch
+import FV.E2E.RegLevelArgs
+import FV.E2E.RegLevelOp
+import FV.E2E.RegLevelRelax
+import FV.Arm.MinTheory
 
 @[expose] public section
 

@@ -1,9 +1,9 @@
 module
 
 public import FV.Backend.Lowering.StockLogicalNI
-public import FV.Backend.StockScalarCheck
-public import FV.Backend.ABIReadScalar
-public import FV.Backend.ABIReadDiv
+import FV.Backend.StockScalarCheck
+import FV.Backend.ABIReadScalar
+import FV.Backend.ABIReadDiv
 
 @[expose] public section
 

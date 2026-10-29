@@ -1,7 +1,9 @@
 module
 
 public import FV.Backend.Proof.LowerSpec
-public import FV.Backend.Proof.IselFlowData
+import FV.Backend.Proof.IselFlowData
+public import FV.Backend.Proof.IselFlowExt
+import FV.Arm.MinTheory
 
 @[expose] public section
 

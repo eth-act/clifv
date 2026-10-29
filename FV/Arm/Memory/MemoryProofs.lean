@@ -7,11 +7,11 @@ Author(s): Shilpi Goel
 module
 
 import all FV.Arm.State
-public import FV.Arm.FromMathlib
-public import FV.Arm.State
+import FV.Arm.FromMathlib
+import FV.Arm.State
 public import FV.Arm.Memory.Separate
-public import FV.Arm.Memory.SeparateProofs
-public import FV.Arm.Tactics.BvOmegaBench
+import FV.Arm.Memory.SeparateProofs
+import FV.Arm.Tactics.BvOmegaBench
 
 @[expose] public section
 

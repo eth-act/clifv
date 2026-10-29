@@ -1,7 +1,9 @@
 module
 
 public import Lean
-public import FV.Backend.Isel
+import FV.Backend.Isel
+public meta import Lean.Elab.Command
+public meta import Lean.Meta.Tactic.Replace
 
 @[expose] public meta section
 

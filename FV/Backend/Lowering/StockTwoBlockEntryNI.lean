@@ -1,7 +1,7 @@
 module
 
 public import FV.Backend.Lowering.StockTwoBlockNI
-public import FV.Backend.Lowering.StockTwoBlockEntry
+import FV.Backend.Lowering.StockTwoBlockEntry
 
 @[expose] public section
 

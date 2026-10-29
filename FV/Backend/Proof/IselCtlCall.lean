@@ -1,6 +1,12 @@
 module
 
 public import FV.Backend.Proof.IselCtlTerm
+import FV.Backend.Proof.LowerLemmas
+public import FV.Backend.Proof.IselCtlBase
+import FV.Backend.Proof.IselExtern
+import FV.Backend.Proof.IselInterp
+import FV.Backend.Proof.AbiClass
+import FV.Arm.MinTheory
 
 @[expose] public section
 

@@ -1,6 +1,11 @@
 module
 
-public import FV.Backend.Proof.IselRulesALU
+import FV.Backend.Proof.IselRulesALU
+import FV.Backend.Proof.IselExtern
+import FV.Backend.Proof.IselInterp
+public import FV.Backend.Proof.IselData
+import FV.Backend.Proof.IselAttr
+public import Std.Do.Triple.SpecLemmas
 
 @[expose] public section
 

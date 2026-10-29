@@ -1,9 +1,10 @@
 module
 
-public import FV.Clif.Syntax
+import FV.Clif.Syntax
 public import FV.Isle.Interp
 public import FV.Isle.Generated.Opt.Program
 public import FV.Isle.Opt.Helpers
+public import FV.Isle.Generated.Opt.Ids
 
 @[expose] public section
 

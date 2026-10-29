@@ -1,6 +1,22 @@
 module
 
-public import FV.Backend.Proof.IselTermFactsBase
+import FV.Backend.Proof.IselTermFactsBase
+import FV.Backend.Proof.IselCtl
+import FV.Backend.Proof.IselCtlBrTable
+import FV.Backend.Proof.IselCtlTbz
+import FV.Backend.Proof.IselFamALUALogic
+import FV.Backend.Proof.IselCtlBrif
+import FV.Backend.Proof.IselCmpRoot
+import FV.Backend.Proof.IselCtlBranch
+import FV.Backend.Proof.IselCtlUnmatch
+import FV.Backend.Proof.IselCtlTerm
+import FV.Backend.Proof.IselCtlBase
+import FV.Backend.Proof.IselCmpBase
+public import FV.Backend.Proof.IselCmpRun
+import FV.Backend.Proof.IselInterp
+import FV.Backend.Proof.FastSubst
+import FV.Backend.Proof.IselAttr
+import FV.Arm.MinTheory
 
 @[expose] public section
 

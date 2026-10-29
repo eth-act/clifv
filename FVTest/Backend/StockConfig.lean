@@ -1,6 +1,6 @@
 module
 
-public import FV.Backend
+import FV.Backend
 public import FV.Backend.RegallocPerEdgeDriver
 public import Lean.Data.Json
 

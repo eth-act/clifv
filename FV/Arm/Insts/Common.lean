@@ -9,11 +9,18 @@ Author(s): Shilpi Goel, Yan Peng, Nathan Wetzler
 
 module
 
-public import FV.Arm.BitVec
+import FV.Arm.BitVec
 public import FV.Arm.State
-public import FV.Arm.Insts.CommonBits
+import FV.Arm.Insts.CommonBits
 -- The dsimprocs below evaluate the bit-mask functions at elaboration time.
 meta import FV.Arm.Insts.CommonBits
+public meta import FV.Arm.Insts.CommonBits
+import FV.Arm.MinTheory
+import FV.Arm.Attr
+meta import Lean.Elab.Tactic.Omega.Frontend
+public meta import Lean.Meta.Tactic.Simp.BuiltinSimprocs.Nat
+public import Lean.Meta.Transform
+public import Lean.Meta.LitValues
 
 @[expose] public section
 

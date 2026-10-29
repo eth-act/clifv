@@ -2,6 +2,7 @@ module
 
 public import FV.Opt.Rules
 public import FV.Clif.Run
+public import FV.Opt.Basic
 
 @[expose] public section
 

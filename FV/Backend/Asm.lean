@@ -3,6 +3,7 @@ module
 public import FV.Backend.StackAlloc
 public import Std.Data.HashMap
 public import Std.Data.HashSet
+public import Std.Data.HashSet.Basic
 
 @[expose] public section
 

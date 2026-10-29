@@ -1,12 +1,20 @@
 module
 
 public import FV.E2E.RegLevelTls
-public import FV.E2E.RegLevelFrame
+import FV.E2E.RegLevelFrame
 public import FV.E2E.RegLevelTry
 public import FV.Backend.Proof.RegallocCover
-public import FV.Backend.Proof.RegallocCSemWorld
-public import FV.E2E.RegLevelAtomic
-public import FV.E2E.RegLevelOpReads
+import FV.Backend.Proof.RegallocCSemWorld
+import FV.E2E.RegLevelAtomic
+import FV.E2E.RegLevelOpReads
+import FV.E2E.RegLevelTrap
+import FV.E2E.RegLevelJT
+import FV.E2E.RegLevelNext
+import FV.E2E.RegLevelGoto
+public import FV.E2E.RegLevelArgs
+import FV.Backend.Proof.IselInterp
+import FV.Backend.Proof.EncodeLayout
+import FV.Arm.MinTheory
 
 @[expose] public section
 

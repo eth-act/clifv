@@ -10,9 +10,10 @@ Author(s): Yan Peng
 
 module
 
-public import FV.Arm.Decode
-public import FV.Arm.Insts.Common
+import FV.Arm.Decode
+import FV.Arm.Insts.Common
 public import FV.Arm.Insts.LDST.Reg_imm
+import FV.Arm.Attr
 
 @[expose] public section
 

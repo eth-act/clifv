@@ -54,9 +54,14 @@ Released under Apache 2.0 license; see third_party/NOTICE-lnsym.md.
 
 module
 
-public import FV.Arm.Decode
-public import FV.Arm.Insts.Common
-public import FV.Float
+import FV.Arm.Decode
+import FV.Arm.Insts.Common
+import FV.Float
+public import FV.Float.Convert
+public import FV.Float.Arith
+public import FV.Arm.State
+public import FV.Arm.Decode.DPSFP
+import FV.Arm.Attr
 
 @[expose] public section
 

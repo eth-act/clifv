@@ -2,6 +2,9 @@ module
 
 public import FV.E2E.RegLevelSim
 public import FV.Backend.Proof.RegallocMoves
+import FV.Backend.Proof.RegallocLayout
+import FV.Backend.Proof.IselGeneric
+import FV.Arm.MinTheory
 
 @[expose] public section
 

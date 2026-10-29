@@ -1,7 +1,10 @@
 module
 
-public import FV.Backend.Proof.RegallocOperands
+import FV.Backend.Proof.RegallocOperands
 public import FV.Backend.Proof.IselContract
+import FV.Backend.Proof.RegallocLemmas
+import FV.Arm.MinTheory
+import Lean.Meta.Tactic.Simp.RegisterCommand
 
 @[expose] public section
 

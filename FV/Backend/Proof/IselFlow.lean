@@ -1,11 +1,19 @@
 module
 
-public import FV.Backend.Proof.LowerSpec
-public import FV.Backend.Proof.IselFlowGen
+import FV.Backend.Proof.LowerSpec
+import FV.Backend.Proof.IselFlowGen
 public import FV.Backend.Proof.IselFlowInst
 public import FV.Backend.Proof.IselFlowRootF
 public import FV.Backend.Proof.IselFlowRootT
-public import FV.Backend.Proof.IselCtlUnmatch
+import FV.Backend.Proof.IselCtlUnmatch
+import FV.Backend.Proof.IselExcl
+import FV.Backend.Proof.IselExclSound
+import FV.Backend.Proof.IselFlowData
+public import FV.Backend.Proof.IselFamily
+import FV.Backend.Proof.IselInterp
+import FV.Backend.Proof.LowerContract
+import FV.Backend.Proof.IselGeneric
+import FV.Arm.MinTheory
 
 @[expose] public section
 

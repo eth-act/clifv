@@ -1,7 +1,12 @@
 module
 
-public import FV.Backend.Proof.LowerShape
-public import FV.Backend.Proof.AbiClass
+import FV.Backend.Proof.LowerShape
+import FV.Backend.Proof.AbiClass
+public import FV.Backend.Proof.LowerRename
+public import FV.Backend.Proof.LowerSeq
+import FV.Backend.Proof.IselGeneric
+public import FV.Backend.Proof.DriverCheck
+import FV.Arm.MinTheory
 
 @[expose] public section
 

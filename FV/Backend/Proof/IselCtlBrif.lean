@@ -1,7 +1,16 @@
 module
 
-public import FV.Backend.Proof.IselCtlBranch
-public import FV.Backend.Proof.IselCmpRoot
+import FV.Backend.Proof.IselCtlBranch
+import FV.Backend.Proof.IselCmpRoot
+public import FV.Backend.Proof.IselCmpCond
+import FV.Backend.Proof.IselCtlUnmatch
+import FV.Backend.Proof.IselCtlBase
+import FV.Backend.Proof.IselCmpTerms
+import FV.Backend.Proof.IselCmpBase
+import FV.Backend.Proof.IselInterp
+import FV.Backend.Proof.FastSubst
+import FV.Backend.Proof.IselAttr
+import FV.Arm.MinTheory
 
 @[expose] public section
 

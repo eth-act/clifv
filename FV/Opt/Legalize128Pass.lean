@@ -1,6 +1,7 @@
 module
 
 public import FV.Opt.Legal
+public import FV.Clif.Parse
 
 @[expose] public section
 

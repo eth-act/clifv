@@ -1,6 +1,7 @@
 module
 
 public import FV.Backend.Lowering.StockScalarAdd
+public import FV.Backend.Lowering.StockPrologueAll
 
 @[expose] public section
 

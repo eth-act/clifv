@@ -1,8 +1,10 @@
 module
 
-public import FV.E2E.RegLevelOp
-public import FV.Backend.Proof.LowerLemmas
+import FV.E2E.RegLevelOp
+import FV.Backend.Proof.LowerLemmas
 public import FV.Backend.Proof.PairsC
+public import FV.E2E.RegLevelMove
+import FV.Arm.MinTheory
 
 @[expose] public section
 

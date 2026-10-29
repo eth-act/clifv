@@ -2,6 +2,8 @@ module
 
 public import FV.E2E.RegLevelMove
 public import FV.E2E.ExecReads
+import FV.Backend.Proof.RegallocLayout
+import FV.Arm.MinTheory
 
 @[expose] public section
 

@@ -1,6 +1,9 @@
 module
 
-public import FV.Backend.Proof.LowerLemmas
+import FV.Backend.Proof.LowerLemmas
+public import FV.Backend.Proof.LowerRename
+import FV.Backend.Proof.IselGeneric
+import FV.Arm.MinTheory
 
 @[expose] public section
 

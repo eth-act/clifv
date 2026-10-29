@@ -1,10 +1,18 @@
 module
 
-public import FV.Backend.Proof.FastSubst
-public import FV.Backend.Proof.IselCmpInv
-public import FV.Backend.Proof.IselCmpRun
-public import FV.Backend.Proof.IselFamily
+import FV.Backend.Proof.FastSubst
+import FV.Backend.Proof.IselCmpInv
+import FV.Backend.Proof.IselCmpRun
+import FV.Backend.Proof.IselFamily
 public meta import Lean.Meta.Tactic.Rename
+import FV.Backend.Proof.IselExtern
+import FV.Backend.Proof.IselInterp
+import FV.Backend.Proof.IselData
+public import FV.Backend.Isel
+import FV.Arm.MinTheory
+public meta import Lean.Elab.Tactic.Basic
+public meta import Lean.Meta.Tactic.Cases
+import Lean.Declaration
 
 @[expose] public section
 

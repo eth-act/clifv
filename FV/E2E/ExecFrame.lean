@@ -1,6 +1,8 @@
 module
 
 public import FV.Arm.Exec
+import FV.Arm.MinTheory
+import FV.Arm.Attr
 
 @[expose] public section
 

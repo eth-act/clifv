@@ -1,7 +1,7 @@
 module
 
-public import FV.Backend.Isel
-public import FV.Compile.Subset
+import FV.Backend.Isel
+import FV.Compile.Subset
 public import FV.Compile.StoreTyped
 
 @[expose] public section

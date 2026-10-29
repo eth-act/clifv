@@ -1,10 +1,11 @@
 module
 
-public import FV.Backend.Isel
+import FV.Backend.Isel
 public import FV.Backend.Proof.DriverCheck
-public import FV.Clif.Run
+import FV.Clif.Run
 public import FV.Backend.Proof.LowerRename
-public import FV.Backend.Proof.RegallocOperands
+import FV.Backend.Proof.RegallocOperands
+import FV.Arm.MinTheory
 
 @[expose] public section
 

@@ -2,7 +2,9 @@ module
 
 public import FV.Unw.Dwarf
 public import FV.E2E.RegLevelMachine
-public import FV.Arm.Memory.MemoryProofs
+import FV.Arm.Memory.MemoryProofs
+public import FV.E2E.Statement
+import FV.Arm.MinTheory
 
 @[expose] public section
 

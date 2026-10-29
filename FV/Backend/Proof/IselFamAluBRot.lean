@@ -1,6 +1,16 @@
 module
 
-public import FV.Backend.Proof.IselFamAluBRotTerms
+import FV.Backend.Proof.IselFamAluBRotTerms
+import FV.Backend.Proof.IselFamAluBShift
+public import FV.Backend.Proof.IselFamAluBShiftTerms
+import FV.Backend.Proof.IselFamAluBIconst
+import FV.Backend.Proof.IselTermsAluB
+import FV.Backend.Proof.IselCmpBase
+import FV.Backend.Proof.IselExtern
+import FV.Backend.Proof.IselInterp
+import FV.Backend.Proof.FastSubst
+import FV.Backend.Proof.IselAttr
+import FV.Arm.MinTheory
 
 @[expose] public section
 

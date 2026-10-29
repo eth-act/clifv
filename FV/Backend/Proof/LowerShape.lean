@@ -1,6 +1,8 @@
 module
 
-public import FV.Backend.Proof.LowerFrame
+import FV.Backend.Proof.LowerFrame
+public import FV.Backend.Proof.LowerRename
+public import FV.Backend.Proof.DriverCheck
 
 @[expose] public section
 

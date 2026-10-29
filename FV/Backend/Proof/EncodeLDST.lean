@@ -1,6 +1,9 @@
 module
 
-public import FV.Backend.Proof.EncodeBase
+import FV.Backend.Proof.EncodeBase
+public import FV.Backend.Encode
+import Std.Tactic.BVDecide.Normalize.Prop
+import Std.Data.DTreeMap.Internal.Operations
 
 @[expose] public section
 

@@ -1,8 +1,10 @@
 module
 
-public import FV.Backend.Proof.RegallocInstsInt
-public import FV.Backend.Proof.RegallocInstsZR
-public import FV.Backend.Proof.RegallocInstsFP
+import FV.Backend.Proof.RegallocInstsInt
+import FV.Backend.Proof.RegallocInstsZR
+import FV.Backend.Proof.RegallocInstsFP
+public import FV.Backend.Proof.RegallocTac
+import FV.Arm.MinTheory
 
 @[expose] public section
 

@@ -1,6 +1,17 @@
 module
 
-public import FV.Backend.Proof.IselFamAluBShift
+import FV.Backend.Proof.IselFamAluBShift
+public import FV.Backend.Proof.IselFamAluBShiftTerms
+import FV.Backend.Proof.IselTermsAluB
+import FV.Backend.Proof.IselLcf
+import FV.Backend.Proof.IselCmpTerms
+import FV.Backend.Proof.IselCmpBase
+import FV.Backend.Proof.IselExtern
+import FV.Backend.Proof.IselInterp
+import FV.Backend.Proof.FastSubst
+import FV.Backend.Proof.IselAttr
+import FV.Arm.MinTheory
+meta import Lean.Elab.Tactic.Omega.Frontend
 
 @[expose] public section
 

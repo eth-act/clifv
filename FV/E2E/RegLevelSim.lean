@@ -1,7 +1,12 @@
 module
 
 public import FV.E2E.RegLevelMachine
-public import FV.Backend.Proof.RegallocLayout
+import FV.Backend.Proof.RegallocLayout
+public import FV.Backend.Proof.RegallocFrame
+public import FV.E2E.RegLevelEmit
+public import FV.E2E.Statement
+import FV.Arm.MinTheory
+meta import Lean.Elab.Tactic.Omega.Frontend
 
 @[expose] public section
 

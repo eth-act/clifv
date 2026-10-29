@@ -1,6 +1,6 @@
 module
 
-public import FV.Backend
+import FV.Backend
 public import FV.Backend.ParameterCfgNIProduction
 public import FV.Opt.Legalize128Pass
 public import FV.Opt.LegalExn
@@ -8,9 +8,9 @@ public import FVTest.Opt.Common
 public import FVTest.Backend.StockConfig
 public import FVTest.Backend.AllocChoice
 public import FVTest.Backend.CraneliftInput
-public import FV.Backend.Proof.LowerSimUCheck
+import FV.Backend.Proof.LowerSimUCheck
 public import FV.Backend.Proof.LowerSimUCheckTC
-public import FV.Compile.SubsetTC
+import FV.Compile.SubsetTC
 public import FV.E2E.RegLevelFrameSaved
 public import FV.E2E.RegLevelUTry
 

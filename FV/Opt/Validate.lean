@@ -1,6 +1,6 @@
 module
 
-public import FV.Opt.Check
+import FV.Opt.Check
 public import FV.Opt.Simplify
 public import FV.Compile.Subset
 

@@ -1,6 +1,8 @@
 module
 
 public import FV.Backend.MInst
+public import FV.Isle.Interp
+public import FV.Clif.Print
 
 @[expose] public section
 

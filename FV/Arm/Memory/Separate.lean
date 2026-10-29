@@ -7,8 +7,10 @@ Author(s): Shilpi Goel, Siddharth Bhat
 module
 
 public import FV.Arm.State
-public import FV.Arm.BitVec
-public import FV.Arm.Tactics.BvOmegaBench
+import FV.Arm.BitVec
+import FV.Arm.Tactics.BvOmegaBench
+import FV.Arm.MinTheory
+import FV.Arm.Attr
 
 @[expose] public section
 

@@ -1,7 +1,12 @@
 module
 
 public import FV.Backend.Proof.RegallocSlots
-public import FV.Backend.Proof.RegallocMemAddr
+import FV.Backend.Proof.RegallocMemAddr
+import FV.Backend.Proof.RegallocInstsFP
+public import FV.Backend.Proof.RegallocTac
+public import FV.Backend.Proof.RegallocMem
+import FV.Backend.Proof.IselGeneric
+import FV.Arm.MinTheory
 
 @[expose] public section
 
