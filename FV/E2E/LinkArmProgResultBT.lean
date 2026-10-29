@@ -24,8 +24,8 @@ variable {κ : Nat → Clif.Function → Nat}
 
 /-- **A call of a function `h` of `P` from a world of `g`, under the slot-byte oracle**:
 `progXBT` is defined and gives the callee's CLIF results and memory in `g`'s relation. -/
-theorem progResultBTR (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) {M : Nat}
-    (ih : 0 < M → L.ThmPRBRL κ (M - 1)) (hdet : 0 < M → L.DetPRBR κ (M - 1))
+theorem progResultBTRU (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) {M : Nat}
+    (ih : 0 < M → L.ThmPRBRL κ (M - 1)) (hdet : 0 < M → L.DetPRBRU κ (M - 1))
     {g h : Clif.Function}
     (hg : g ∈ L.P.funcs) (hh : h ∈ L.P.funcs)
     (hcallee : L.Callee g h) {F : BitVec 64 → Prop}
@@ -64,7 +64,7 @@ theorem progResultBTR (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) {M : Nat}
       ini.bytes (ini.next + 1) a = w.mem (BitVec.ofNat 64 a) := fun hN => by
     rw [hsp]; exact hslotb hN
   obtain ⟨us, outsV, wf, e, hus, hlen, hhold, hmemR, -, -, hcall⟩ :=
-    L.progCallPRBRLR hL hM (ih hM) (hdet hM) hpf ⟨g, hg, hcallee⟩ himgF herrw
+    L.progCallPRBRLRU hL hM (ih hM) (hdet hM) hpf ⟨g, hg, hcallee⟩ himgF herrw
       (by rw [hsp]; exact halign) hroom' hdead' hmemR0 hargs hsav hplw hslotw htab hinit hret
   obtain ⟨kc, hc_eq, hc_ret, -⟩ := hcall _ (L.callerOk_canon hL hh himgF args w)
     (L.canon_agree (κ := κ) h args w M).1 (L.canon_agree (κ := κ) h args w M).2
@@ -131,6 +131,34 @@ theorem progResultBTR (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) {M : Nat}
       rw [hcs] at hv0
       exact hout.2.2 a n hv0 k hk j hj
   · rw [hspT, hsp]
+
+/-- **A call of a function `h` of `P` from a world of `g`, under the slot-byte oracle,
+determinism `DetPRBR`** (`progResultBTRU` with `DetPRBR.toU`). -/
+theorem progResultBTR (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) {M : Nat}
+    (ih : 0 < M → L.ThmPRBRL κ (M - 1)) (hdet : 0 < M → L.DetPRBR κ (M - 1))
+    {g h : Clif.Function}
+    (hg : g ∈ L.P.funcs) (hh : h ∈ L.P.funcs)
+    (hcallee : L.Callee g h) {F : BitVec 64 → Prop}
+    (himgF : ∀ a, L.Img a → F a) {c : BitVec 64}
+    (hroom : κ M g ≤ c.toNat) (hdead : ∀ a, StackBelow (κ M g) c a → F a ∧ ¬ L.Img a)
+    (halign : c.toNat % 16 = 0)
+    {sl : List (Clif.SlotId × Nat)} {cm : Clif.Mem} {w : Arm.ArmState} {args : List CV}
+    {vals rvals : List Clif.Val} {cm' : Clif.Mem} {cs : Clif.State} {ini : Clif.SlotInit}
+    (hargs : ArgsAt h.sig vals args w) (hsav : StackArgsAvoid F h.sig vals w)
+    (hmr : RelW ⟨F, L.syms, (L.A g).af.slotBase, (RAFrame.compute (L.A g).vcp (L.A g).rf).intBase⟩
+      g c sl cm w)
+    (hpl : L.NeedSlots → L.PlaceAtB cm c ini)
+    (hslotb : L.NeedSlots → ∀ a, L.SlotByte h c a →
+      ini.bytes (ini.next + 1) a = w.mem (BitVec.ofNat 64 a))
+    (htab : L.TableOf (M - 1) h (enterAt (L.A h) (L.canon h args w)) (calleeIni h ini))
+    (hinit : Clif.initState L.P h.name vals cm = .ok cs)
+    (hret : L.crun M cs = .returned rvals cm') :
+    ∃ outs w', L.progXBT κ M F h args w = some (outs, w') ∧ outs.length = (sigRets h.sig).length ∧
+      PrefixHold rvals outs ∧
+      RelW ⟨F, L.syms, (L.A g).af.slotBase, (RAFrame.compute (L.A g).vcp (L.A g).rf).intBase⟩
+        g c sl cm' w' :=
+  L.progResultBTRU hL hκ ih (fun h => DetPRBR.toU L (hdet h)) hg hh hcallee himgF hroom hdead
+    halign hargs hsav hmr hpl hslotb htab hinit hret
 
 /-- **A call of a function `h` of `P` from a world of `g`, under the slot-byte oracle**
 (`progResultBTR` with `DetPRB`). -/

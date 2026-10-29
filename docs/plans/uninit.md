@@ -2702,6 +2702,150 @@ as corollaries (target `Stage2Z`/`thmPRBRL_ofZ`, #697), after combining with #69
   `noRetAt_of` both ways (`PostTrace` from `RL.Good`). Then `DetRunPRBCR M` (nested twins by
   `CallTwinCE M`) and `CallTwinCE (M + 1)` (`twinBaseCE_of_lock`).
 
+**Item (1): the cleanup path (UninitZ26c, branch `agent/uninit-z26c`, #713, #729).** Value-semantics
+copies of the pair driver and of the P chain, and the `CompiledEither` dispatch:
+- `RegLevelValueGS.lean` (`RL.valueSemGS`, the `WGuardS`-guarded `valueSemV`;
+  **`realizes_value_allCWSF`**, which also returns the `RL.semGS` step so `RL.InSeg` is unchanged);
+  `RegLevelTwoRunTV.lean`/`RegLevelTwoRunNV.lean` (**`twoRunCTV`**, **`twoRunPRTV`**,
+  **`twoRunCTNV`**, **`twoRunPRTNV`**, P form); `BackendTwoRunNV.lean` (**`backend_twoRunLWNpPV`**);
+  `BackendTwoRunNIV.lean` (**`backend_twoRunLERWZNpWPV`**, **`backend_twoRunLERWZIV`**,
+  **`backend_twoRunLERWZIUPV`**; the old shapes as corollaries); `PairDriverDValue.lean`,
+  `BackendPairRunDCleanup.lean` (**`vcode_niID_value`**, **`vcode_niIDF_value`**,
+  **`backend_pairRunD_cleanup`**, **`backend_pairRunDF_cleanup`**). `PairEntryD.lean`: proofs
+  generalised (`entryLoads_runPDG`, `entry_step2PDG`; old statements kept as corollaries).
+- `BackendTwoRunEither.lean`: **`backend_pairRunDF_either`**, **`backend_twoRunLERWZIUF_either`**,
+  **`backend_twoRunLERWZIUPF_either`** (`CompiledEither`: the CLIF return to the two-run lock and
+  return facts, the paired semantics hidden; the same premises on both paths). Witnesses
+  `BackendTwoRunVWitness.lean` (`r` compiled through the cleanup path, distinct worlds `D ⊆ F`).
+
+**Items (2)-(4) at the link: `XNIF`, the lock to the return, the call hook (UninitZ27b, branch
+`agent/uninit-z27b` on `agent/uninit-z26c`, #713, #729).**
+- `LinkArmXNIF.lean`: **`xnifXPBTGY`** (`hNI` of the either theorems at the link's
+  `XPBTGY … .at n`, from `NeedNI`, `ThmPRBRL`/`DetPRBR (M - 1)`, `CallTwinCE M`). Finding (no new
+  premise): `guardR` answers an ε-chosen result where `XPRBT`'s answer is rejected, so `XNIF` needs
+  the ε-choices at the two worlds to coincide. `guardR_rel` (a guard keeps a relation when its
+  predicate is the same at both worlds), `callPostXR_progTransfer` (`CallPostNXR` of a program
+  invocation does not depend on the world outside `F`: the stack-passed arguments are in the
+  outgoing area, `Ok.outFits`), **`progXBT_rel`** (`progXBT` at two worlds with equal registers
+  but pc, callee region and memory outside `F`: defined together, `CondBT`'s callee table by
+  `CallTwinCE` + `tableOf_twinC`; same results, worlds equal outside `F`), `worldPR_rel`,
+  `r_canon_congr`. Base calls: `stage2Y_base` (the answers are `Xb`'s at every world) + `baseNI`.
+- `LinkArmLockRet.lean`: **`LockRet κ M`** (`DetRunPRBCR`'s premises; the lock at every index
+  before `n₀` by sets avoiding the callees' dead stack, `RetAgreeX`, memory outside `F ∪ D`, the
+  second run's saved frame record, `ActRet`, `PostTrace` at `n₀`), `LockRet.ret`; **`CallLock κ M`**
+  (its call form one level down, at the canonical callee's return index `k`); **`callLock_of`**
+  (`CallLock M` from `ThmPRBRL`/`LockRet` at `M - 1`: `progCallPRBRLR`'s callee entries).
+- `LinkArmHCall.lean` (`hcall`/`htls`): **`pcall_lock`** (two call states agreeing with the
+  canonical one give locked `pcall` results: `RetAgreeX` twice, the saved record by
+  `mem_eq_of_saved`, kept bytes), **`pcall_lockXPR`** (at the first run's call-`n` state, the
+  canonical state of `progXPRBT`'s answer, and a second state locked by a set inside `F`
+  avoiding the dead stack), `hooks_lock_base`, `hooks_lock_tls` (`HookNIX`).
+- #729 follow-up (P chain, legacy and value): `RL.SegFrom` also records that the segment's call
+  states are its start (`RL.segStart_of_qw`, `realizes_allC0`'s argument; `RL.SegFrom.call`), so at
+  a call hook `u` is the segment start and `OnCall … n u ∧ spOf u = R.spB` holds there (the anchor
+  of `pcall_lockXPR`: `callsBefore = n`, the body `sp`, the prophecies of call `n`).
+- Witnesses `LinkArmLockRetWitness.lean`.
+- Remaining (not built): the dispatch of `hcall` from `GoodX.call`'s `CallPre` (the `csemV` answer
+  of `XPBTGY … .at n` to `XPRBT`'s by `XPBTGY_subZS`, then `bl`/`blr`/`try_call` as in
+  `progOsPRBRLR`/`progOsRegPRBRLR`/`calleeTryOkPRBRLR`, to `pcall_lockXPR` or `hooks_lock_base`;
+  `blrTarget_eq_of_lock` for the second state's `blr` target); `lockRet_of` (`LockRet M` from
+  `backend_twoRunLERWZIUPF_either` with `he` as in `thmPRBRL_ofZSER`, `he0` from `MachEntry`
+  with the second run's own prophecies, `hC'`/`hT'` by `calleeOkLockedR`, `hNI` by `xnifXPBTGY`,
+  the return index `n₀` by `noRetAt_of`); the induction `ThmPRBRLE M ∧ LockRet M → DetRunPRBCR M
+  → CallTwinCE (M + 1)` (premises also `∀ g, (L.A g).fa.blrLow` and `x30Free`, checks on the
+  compiled code); `InitOkR` in `DeadCleanupBinaryInitR.lean`.
+
+**`hcall` assembly, `lockRet_of`, finding #732 (UninitZ28b, branch `agent/uninit-z27b`, #713).**
+- `LinkArmHCallLock.lean`: `hookLock_callS` (`hookLock_call` for any clobber list), `callDest_of_line`,
+  `hookLock_pre` (`call` or the call of a `try_call`), **`hcallLockXP`** (the `hcall` premise of
+  `backend_twoRunLERWZIUPF_either` at `XI := XPBTGY`: `SegFrom` anchor, `CallPre`'s answer through
+  `Stage2ZS`, the line's destination is the call's).
+- Finding [#732](https://github.com/eth-act/clifv/issues/732) (decided conservatively, new names):
+  `DetPRBR`/`DetRunPRBCR` (and `DetPRB`) are false when the canonical `us` names `x30` (the second
+  return holds its own return address there), so `InitOkR.det` is unsatisfiable. **`DetPRBRU`**
+  (premise `(L.A g).vc.RetsSite us`), `DetPRBR.toU`, **`DetRunPRBCRU`**, `DetRunPRBCR.toU`,
+  **`detPRBRU_ofC`**; the consumer chain in `U` form (`progCallPRBRLRU`, `progCallPRBRLTRU`,
+  `progOs*RU`, `calleeOk(Try)PRBRLRU`, `*30RU`, `calleeOk(Try)XPBTGZS(30)RU`, `progResultBTRU`,
+  `stage2_answerFRU`, `callCountERU`, `countStep_progERU`, `stage2PRBZS_ofERU`, `countPRB_succERU`,
+  `thmPRBRL_ofZSERU`, `thmPRBRLE_succSRU`, **`thmPRBRLE_allCRU`**, `calleeOk(Try)LockedRU`), the
+  `DetPRBR` names kept as corollaries. `LockRet`, `progXBT_rel`, `xnifXPBTGY` (unmerged) on
+  `DetPRBRU`/`RetsSite`. Not yet rippled: `thmPRBG_ofR`/`allCR`, `LinkArmTrapE`, `LinkArmThmPRBGT`,
+  `LinkArmProgramInitR`, `InitOkR`.
+- `LinkArmLockRetOf.lean`: `VCode.retsLow` (decidable: no `rets` register is an `x30` alias),
+  `retsLow_sound`, `armRet_of_retAgreeX`, `BaseNIX`, `callLock_zero`, **`lockRet_of`** (`LockRet κ M`
+  from `HooksKeep`, `NeedNI`, `BaseNIX`, `x30Free`, `retsLow`, `ThmPRBRL`/`DetPRBRU (M - 1)`,
+  `CallTwinCE M`, `CallLock M`, `RetOkPRB M`, `Stage2PRBZSE M`).
+- Remaining (finding, not built): the nested callee twins of `TwinNC`/`TwinCE` at the second run's
+  call states need `CallerOk` there, i.e. its memory outside `F` and its own code words at `blr`
+  lines. The backend's per-index lock exports only `StEqOutX (R.Zc d d')`: export the joint
+  invariant's `WIn (F ∪ D) d d'` (backend level, `Lk` already has it) and `GoodX` of both runs at
+  body states (RL level: `realizesJCPTP`/`TV` trace predicate exports only `.good`), then the
+  canonical call data (factor `thmPRBG_ofR`'s `hcall` block), `DetRunTwinCE` (TwinCE from the lock),
+  `CallTwinCE (M + 1)` from it on `callLock_of`'s callee entries, the induction, `InitOkRU`.
+
+**The exports, the twins, the induction (UninitZ29b, branch `agent/uninit-z27b`, #713, #732).**
+- Exports (new files, old theorems unchanged; copies of the old proofs): `RL.GoodK` (`RL.Good`
+  and the kept bytes at call lines, independent of `X`), `RL.GoodX.goodK`; `RL.realizesJCPTPK`,
+  `twoRunCTPK`, `twoRunPRTPK`, `twoRunCTNPK`, `twoRunPRTNPK` and the value copies `…VK`;
+  `StEqOutX.inter`, `stEqOutX_inter_of_mDiffIn`, `stEqOutX_inter_of_wDiff`;
+  `backend_twoRunLWNpPK`/`PVK`, `backend_twoRunLERWZNpWPK`/`PVK`, `backend_twoRunLERWZIUPK`/`PVK`,
+  **`backend_twoRunLERWZIUPF_eitherK`** (per-index lock on `R.Zc d d' ∩ (F ∪ D)`, `RL.GoodK` of
+  both runs).
+- Finding (decided conservatively): `CallTwinCE κ M` (no table premise) does not follow from the
+  two-run route: its callee CLIF run answers nested slot reads from an arbitrary `ini`, so the
+  canonical callee machine run has no CLIF counterpart. New `CallTwinCET` (the canonical callee's
+  `TableOfE` given), `CallLock.callTwinCET`, `CallTwinCE.toT`, `detTabPRBr_ofCT`; `InitOkRU`
+  (UninitZ26, `agent/uninit-z28`) takes `detTab`/`detTabR` instead of `twin`.
+- Unmerged files changed in place: `LockRet`/`CallLock` take `TableOfE` and conclude `TwinCE`
+  (second, canonical); `callLock_of` on `ThmPRBRLE`; `xnifXPBTGY`/`progXBT_rel` on `CallTwinCET`;
+  `lockRet_of` (premise `blrLow`) on `backend_twoRunLERWZIUPF_eitherK`.
+- `LinkArmDetRunTwin.lean`: `callsTo_iff_of_lockB`, `twinState_of_lockB`, `twinBaseCE_of_lockB`
+  (code image at call lines only), `callerOk_of_lock`, **`twinCE_of_lockK`**, **`canonCallTwin`**
+  (`thmPRBG_ofR`'s call data, then the nested twins by `CallTwinCET` and `TwinCE.trans`/`symm`).
+- `LinkArmDetTabE.lean`: **`detTabPRBE_of`** (the actual callee entry as the first activation of
+  `LockRet` one level down; `argsAtEntry_transfer`), `detTabPRBE_zero`.
+- `LinkArmDetInduction.lean`: `twinNC_of_twinCE`, `detRunPRBCRU_of_lockRet`, **`detInduction`**,
+  **`detPRBRU_allK`**, **`detTabPRBE_allK`**, **`detTabPRBr_allK`**, `callTwinCET_allK`,
+  `thmPRBRLE_allK`, `detRunPRBCRU_allK`. Premises: `Ok`, `CrunOk`, `Budget`, `HooksKeep`,
+  `NeedSlots`, `NeedNI`, `BaseNIX`, `BaseRetOk`, `RetCount`, and the checks `x30Free`, `retsLow`,
+  `blrLow`.
+- Remaining: `InitOkRU.of_checks` (`DeadCleanupBinaryInitRUOf.lean` on `agent/uninit-z28` after
+  its rebase on this branch), `Lsl` witnesses of the new theorems, measurements of the three
+  checks (#713), PR to the merge train.
+
+**The induction witnessed; `L.std.BaseNIX` (UninitZ30b, branch `agent/uninit-z27b`, #713).**
+- `LinkArmLockRetOf.lean`: `MachEntry.ofWithCrun` (`MachEntry` is a structure, so `L.BaseNIX` and
+  `(L.withCrun c).BaseNIX` are not defeq), `BaseNIX.withCrun`, **`BaseNIX.std`**,
+  **`OkDNX.stdBaseNIX`** (the `L.std.BaseNIX` premise of `InitOkRU.of_checks` on
+  `agent/uninit-z28`, from `L.BaseNIX` or the trusted `OkDNX`).
+- `LinkArmDetInductionWitness.lean` on `Lsl = L0.std` (`f` calls `h`, then `r`, which reads the slot
+  bytes `h` left behind): every premise of the induction holds, none vacuously. The three checks
+  (`x30Free_Lsl`, `retsLow_Lsl`, `blrLow_Lsl`, one `native_decide`), **`needNI_Lsl`** (`h`'s frame
+  has a slot region, so `NeedNI`, `BaseNIX` and the two-run route are live), `hookNIX_L0` (the
+  closed base's `pc + 4` call hook and identity TLS), `baseNIX_Lsl` by `BaseNIX.std`. Then,
+  unconditional at every depth: **`detInduction_Lsl`**, `thmPRBRLE_allK_Lsl`,
+  `detRunPRBCRU_allK_Lsl`, **`detPRBRU_allK_Lsl`**, `callTwinCET_allK_Lsl`,
+  **`detTabPRBE_allK_Lsl`**, **`detTabPRBr_allK_Lsl`**, and the chain's steps with every premise
+  discharged (`lockRet_of_Lsl`, `callLock_Lsl`, `stage2PRBZSE_Lsl`, `detTabPRBE_of_Lsl`,
+  `thmPRBRLE_allCRU_Lsl`, `canonCallTwin_LslK`, `hcallLockXP_LslK`, `progXBT_rel_LslK`,
+  `xnifXPBTGY_LslK`, `hooks_lock_base_LslK`, `hooks_lock_tls_LslK`, `detTabPRBr_ofCT_Lsl`,
+  `detPRBRU_ofC_Lsl`).
+- `BackendTwoRunEitherKWitness.lean`: `backend_twoRunLERWZIUPF_eitherK` on both artifacts, the
+  lock set inside `F` at every index before the return: `r_twoRunLERWZIUPF_eitherK_Lsl` (legacy,
+  the `…PK` chain) and `source_twoRunLERWZIUPF_eitherK` (cleanup, the `…VK` chain).
+- Audit `scripts/audit/sem1-det.lean` (32 theorems: compiler theorems standard axioms; witnesses
+  also the `native_decide` ones).
+- Measured (throwaway runner over `compileFile` and `lowerFunction`, 2026-10-28; #713 comment): 0
+  functions fail `x30Free`, `blrLow` or `retsLow` on corpus + Cranelift runtests (1,105 functions,
+  238 `blr` lines, 1,246 `rets` sites), fv-demo split CLIF (2,122 / 882 / 2,796), survey (1,329 /
+  488 / 1,573) and `examples/deps` (30,394 distinct files: 24,809 functions / 23,572 / 33,082).
+- Ported to Cranelift's frame (#743, main d727bbc4; statements change only where their originals
+  did): the `…K` copies by a 3-way merge of the originals' port (`prologueLines saves frameSize`,
+  `epiLines`, `QWA` alignment, `sP_withX`); `RL.segStart_of_qwa` (the `QWA` form of
+  `segStart_of_qw`, used by `jointSegTP`/`jointSegTV`); `LockRet`/`detTabPRBE_of`: the callee's slot
+  region below its clobber area (`frameSize - clobberBytes saves`, as `progCallPRBRLR`);
+  `lockRet_of`'s return index with `saves`; `fH_frame` against `NeedNI`'s new frame body.
+
 ## 6. Heap (separate gap, SEM2)
 
 `BaseOk.baseKeepsAllocs`/`baseNoAlloc` require base externs to allocate nothing whenever a program

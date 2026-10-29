@@ -87,9 +87,10 @@ theorem lockedCall {M : Nat} {g : Clif.Function} {F G : BitVec 64 → Prop} {ra 
     hz.1, hz.2.1, fun a ha => hz.2.2 a (hZ a (by rw [hsp'] at ha; exact ha)),
     fun a ha => hm a ha (fun hd => ha (hD a hd))⟩
 
-/-- **The second activation's call contract at its locked call states** (module doc). -/
-theorem calleeOkLockedR (hL : L.Ok) [L.CrunOk] (hκ : L.Budget κ) {M : Nat}
-    (ih : 0 < M → L.ThmPRBRL κ (M - 1)) (hdet : 0 < M → L.DetPRBR κ (M - 1))
+/-- **The second activation's call contract at its locked call states**, determinism `DetPRBRU`
+(#732; module doc). -/
+theorem calleeOkLockedRU (hL : L.Ok) [L.CrunOk] (hκ : L.Budget κ) {M : Nat}
+    (ih : 0 < M → L.ThmPRBRL κ (M - 1)) (hdet : 0 < M → L.DetPRBRU κ (M - 1))
     {g : Clif.Function} (hg : g ∈ L.P.funcs) {F G G' : BitVec 64 → Prop} {ra ra' : BitVec 64}
     {s w₀ t0 w₀' : Arm.ArmState} {D : BitVec 64 → Prop}
     (hME : L.MachEntryPR κ M g F G ra s w₀ (L.BP M g s) (L.RP M g s))
@@ -112,7 +113,7 @@ theorem calleeOkLockedR (hL : L.Ok) [L.CrunOk] (hκ : L.Budget κ) {M : Nat}
       ∀ a, ¬ F a → u.mem a = u₀.mem a := fun u hu hpc =>
     L.lockedCall rfl hME hspt hD (hQsp u hu) (hQ u hu hpc)
   have hq := L.callStPRB_q (κ := κ) (M := M) hME.entryP.entry.body.sp n
-  refine L.calleeOkXPBTGZS30R hL hκ ih hdet hg he' (fun t ht hpc => ?_) (fun u w hu hsw i info
+  refine L.calleeOkXPBTGZS30RU hL hκ ih hdet hg he' (fun t ht hpc => ?_) (fun u w hu hsw i info
     hi hS ops regs i' hops cc wh hst hasg hpi hal herr hgd hnv => ?_)
   · obtain ⟨u₀, hcs, hr, -, hd, -⟩ := hlc t ht hpc
     have hpc₀ : CallPc (L.A g).fa (L.A g).base (Arm.r .PC u₀) := by
@@ -132,9 +133,10 @@ theorem calleeOkLockedR (hL : L.Ok) [L.CrunOk] (hκ : L.Budget κ) {M : Nat}
       (by simp only [Arm.CheckSPAlignment, Arm.read_gpr] at hal ⊢; rw [← h31]; exact hal)
       (by rw [← hr .ERR (by simp)]; exact herr) hgd hnv
 
-/-- **The second activation's try-call contract at its locked call states.** -/
-theorem calleeTryOkLockedR (hL : L.Ok) [L.CrunOk] (hκ : L.Budget κ) {M : Nat}
-    (ih : 0 < M → L.ThmPRBRL κ (M - 1)) (hdet : 0 < M → L.DetPRBR κ (M - 1))
+/-- **The second activation's try-call contract at its locked call states**, determinism
+`DetPRBRU` (#732). -/
+theorem calleeTryOkLockedRU (hL : L.Ok) [L.CrunOk] (hκ : L.Budget κ) {M : Nat}
+    (ih : 0 < M → L.ThmPRBRL κ (M - 1)) (hdet : 0 < M → L.DetPRBRU κ (M - 1))
     {g : Clif.Function} (hg : g ∈ L.P.funcs) {F G G' : BitVec 64 → Prop} {ra ra' : BitVec 64}
     {s w₀ t0 w₀' : Arm.ArmState} {D : BitVec 64 → Prop}
     (hME : L.MachEntryPR κ M g F G ra s w₀ (L.BP M g s) (L.RP M g s))
@@ -157,7 +159,7 @@ theorem calleeTryOkLockedR (hL : L.Ok) [L.CrunOk] (hκ : L.Budget κ) {M : Nat}
       ∀ a, ¬ F a → u.mem a = u₀.mem a := fun u hu hpc =>
     L.lockedCall rfl hME hspt hD (hQsp u hu) (hQ u hu hpc)
   have hq := L.callStPRB_q (κ := κ) (M := M) hME.entryP.entry.body.sp n
-  refine L.calleeTryOkXPBTGZS30R hL hκ ih hdet hg he' (fun t ht hpc => ?_) (fun u w hu hsw i info
+  refine L.calleeTryOkXPBTGZS30RU hL hκ ih hdet hg he' (fun t ht hpc => ?_) (fun u w hu hsw i info
     hi hS ops regs i' hops cc wh hst hasg hpi hal herr hgd hnv => ?_)
   · obtain ⟨u₀, hcs, hr, -, hd, -⟩ := hlc t ht hpc
     have hpc₀ : CallPc (L.A g).fa (L.A g).base (Arm.r .PC u₀) := by
@@ -176,6 +178,50 @@ theorem calleeTryOkLockedR (hL : L.Ok) [L.CrunOk] (hκ : L.Budget κ) {M : Nat}
       i info hi hS ops regs i' hops cc wh hst hasg (by rw [← hr .PC (by simp)]; exact hpi)
       (by simp only [Arm.CheckSPAlignment, Arm.read_gpr] at hal ⊢; rw [← h31]; exact hal)
       (by rw [← hr .ERR (by simp)]; exact herr) hgd hnv
+
+/-- **The second activation's call contract at its locked call states** (module doc;
+`calleeOkLockedRU` with `DetPRBR.toU`). -/
+theorem calleeOkLockedR (hL : L.Ok) [L.CrunOk] (hκ : L.Budget κ) {M : Nat}
+    (ih : 0 < M → L.ThmPRBRL κ (M - 1)) (hdet : 0 < M → L.DetPRBR κ (M - 1))
+    {g : Clif.Function} (hg : g ∈ L.P.funcs) {F G G' : BitVec 64 → Prop} {ra ra' : BitVec 64}
+    {s w₀ t0 w₀' : Arm.ArmState} {D : BitVec 64 → Prop}
+    (hME : L.MachEntryPR κ M g F G ra s w₀ (L.BP M g s) (L.RP M g s))
+    (he' : L.MachEntry κ M g F G' ra' t0 w₀') (hspt : spv t0 = spv s) (hD : ∀ a, D a → F a)
+    {env : Clif.Env} {cs : Clif.State} {n : Nat}
+    (h2 : L.Stage2ZS κ M g F (L.BP M g s) (L.RP M g s) env cs (spv w₀)
+      (L.CallStPRB κ M g s w₀ n) n)
+    {Q : Arm.ArmState → Prop}
+    (hQsp : ∀ u, Q u → spOf u = spv t0 - BitVec.ofNat 64 (frameDrop (L.A g).af))
+    (hQ : ∀ u, Q u → CallPc (L.A g).fa (L.A g).base (Arm.r .PC u) →
+      LockedUpTo (ArmStepX ((L.XPBTGY κ M g F (L.BP M g s) (L.RP M g s) env cs (spv w₀)).at 0)
+        (L.hooks M) (L.A g).fa) (L.A g).fa (L.A g).base (κ M g)
+        (spv s - BitVec.ofNat 64 (frameDrop (L.A g).af)) F D s t0 n u) :
+    CalleeOkGP Q F (κ M g) G' t0 (CallAt (L.A g).fa (L.A g).base)
+      ((L.XPBTGY κ M g F (L.BP M g s) (L.RP M g s) env cs (spv w₀)).at n) (L.hooks M)
+      (L.A g).vcp.CallSite (GotV (L.A g).vcp) :=
+  L.calleeOkLockedRU hL hκ ih (fun h => DetPRBR.toU L (hdet h)) hg hME he' hspt hD h2 hQsp hQ
+
+/-- **The second activation's try-call contract at its locked call states**
+(`calleeTryOkLockedRU` with `DetPRBR.toU`). -/
+theorem calleeTryOkLockedR (hL : L.Ok) [L.CrunOk] (hκ : L.Budget κ) {M : Nat}
+    (ih : 0 < M → L.ThmPRBRL κ (M - 1)) (hdet : 0 < M → L.DetPRBR κ (M - 1))
+    {g : Clif.Function} (hg : g ∈ L.P.funcs) {F G G' : BitVec 64 → Prop} {ra ra' : BitVec 64}
+    {s w₀ t0 w₀' : Arm.ArmState} {D : BitVec 64 → Prop}
+    (hME : L.MachEntryPR κ M g F G ra s w₀ (L.BP M g s) (L.RP M g s))
+    (he' : L.MachEntry κ M g F G' ra' t0 w₀') (hspt : spv t0 = spv s) (hD : ∀ a, D a → F a)
+    {env : Clif.Env} {cs : Clif.State} {n : Nat}
+    (h2 : L.Stage2ZS κ M g F (L.BP M g s) (L.RP M g s) env cs (spv w₀)
+      (L.CallStPRB κ M g s w₀ n) n)
+    {Q : Arm.ArmState → Prop}
+    (hQsp : ∀ u, Q u → spOf u = spv t0 - BitVec.ofNat 64 (frameDrop (L.A g).af))
+    (hQ : ∀ u, Q u → CallPc (L.A g).fa (L.A g).base (Arm.r .PC u) →
+      LockedUpTo (ArmStepX ((L.XPBTGY κ M g F (L.BP M g s) (L.RP M g s) env cs (spv w₀)).at 0)
+        (L.hooks M) (L.A g).fa) (L.A g).fa (L.A g).base (κ M g)
+        (spv s - BitVec.ofNat 64 (frameDrop (L.A g).af)) F D s t0 n u) :
+    CalleeTryOkGP Q F (κ M g) G' t0 (CallAt (L.A g).fa (L.A g).base)
+      ((L.XPBTGY κ M g F (L.BP M g s) (L.RP M g s) env cs (spv w₀)).at n) (L.hooks M)
+      (L.A g).vcp.TrySite (GotV (L.A g).vcp) :=
+  L.calleeTryOkLockedRU hL hκ ih (fun h => DetPRBR.toU L (hdet h)) hg hME he' hspt hD h2 hQsp hQ
 
 end LinkSys
 
