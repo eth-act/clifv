@@ -1,3 +1,4 @@
+import FV.Backend.Proof.StockMemoryCompatibility
 import FV.Backend.Proof.StockMemoryContractWitness
 import FV.Backend.Proof.StockMemoryLoadWitness
 import FV.Backend.Proof.StockMemoryGuardedWitness
@@ -129,3 +130,6 @@ import FV.E2E.StockMemoryActivationWitness
 
 #print axioms Backend.Stock.Memory.effectsOnly_noTls
 #print axioms E2E.StockMemoryActivationWitness.default_memory_route_witness -- witness: native_decide
+
+#print axioms Backend.Stock.Memory.previous_file_exact
+#print axioms Backend.Stock.Memory.previous_file_exact_witness
