@@ -458,11 +458,12 @@ theorem stur_wzr_evs (env : Env) (s : ArmState) (hal : CheckSPAlignment s) {i : 
     (hi : (Insn.store .store32 .xzr (.unscaled .sp 0)).toArmInst env = .ok i) :
     ∀ e ∈ instEvs i s, e.addr = spOf s := by
   have e : (Insn.store .store32 .xzr (.unscaled .sp 0)).toArmInst env = .ok
-      (.LDST (.Reg_unscaled_imm { size := 2#2, VR := 0#1, opc := 0#2, imm9 := 0#9, Rn := 31#5,
-        Rt := 31#5 })) := by
+      (.LDST (.Reg_unscaled_imm
+        { size := 2#2, VR := 0#1, opc := 0#2, imm9 := 0#9, Rn := 31#5, Rt := 31#5 })) := by
     simp [csimp_rules, pure, Except.pure]; rfl
-  have e2 : (.LDST (.Reg_unscaled_imm { size := 2#2, VR := 0#1, opc := 0#2, imm9 := 0#9,
-      Rn := 31#5, Rt := 31#5 }) : ArmInst) = unscInst 2#2 0#2 0#9 31#5 31#5 := rfl
+  have e2 : (.LDST (.Reg_unscaled_imm
+      { size := 2#2, VR := 0#1, opc := 0#2, imm9 := 0#9, Rn := 31#5, Rt := 31#5 }) : ArmInst) =
+      unscInst 2#2 0#2 0#9 31#5 31#5 := rfl
   rw [e, e2, Except.ok.injEq] at hi
   subst hi
   rw [VCodeAddr.instEvs_unsc]

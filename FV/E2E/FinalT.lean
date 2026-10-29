@@ -107,7 +107,7 @@ theorem stackArgsAvoid_frameWAT {f : Clif.Function} {k : Nat} {vc vcp : VCode} {
     rw [hfs, e]
     exact Nat.le_trans (Nat.le_trans (Nat.le_add_right _ _) (le_alignTo16 _))
       (Nat.le_add_right _ _)
-  have hsp := hres.1
+  have hsp := hres.1.1
   have hfit := h.fits
   have hx : (spv s + BitVec.ofNat 64 off + BitVec.ofNat 64 j -
       (spv s - BitVec.ofNat 64 (frameDrop af))).toNat = off + j + frameDrop af := by
