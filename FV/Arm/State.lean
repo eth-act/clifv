@@ -96,6 +96,7 @@ theorem write_store_commute [DecidableEq α] (store : Store α β)
 ---- Model of the Arm machine state ----
 
 @[expose] section
+@[expose] section
 inductive StateError where
   | None                       : StateError
   | NotFound (e : String)      : StateError
@@ -109,6 +110,7 @@ inductive StateError where
   | Trap (imm16 : BitVec 16)   : StateError
 deriving DecidableEq, Repr
 end
+end
 
 -- Injective Lemmas for StateError
 attribute [state_simp_rules] StateError.NotFound.injEq
@@ -120,12 +122,14 @@ attribute [state_simp_rules] StateError.Trap.injEq
 
 -- PFlag (Process State's Flags)
 @[expose] section
+@[expose] section
 inductive PFlag where
   | N : PFlag
   | Z : PFlag
   | C : PFlag
   | V : PFlag
 deriving DecidableEq, Repr, Hashable
+end
 end
 
 @[expose] instance : ToString PFlag :=
@@ -136,6 +140,7 @@ end
     | PFlag.V => "V"⟩
 
 @[expose] section
+@[expose] section
 @[ext]
 structure PState where
   n : BitVec 1
@@ -143,6 +148,7 @@ structure PState where
   c : BitVec 1
   v : BitVec 1
 deriving DecidableEq, Repr
+end
 end
 
 @[expose] def PState.zero : PState :=
@@ -221,7 +227,7 @@ attribute [local simp] store_read_over_write_same store_read_over_write_differen
 -- General-purpose registers --
 
 -- Read the `idx`-th GPR (with idx = 31 indexing the SP).
-def read_base_gpr (idx : BitVec 5) (s : ArmState) : BitVec 64 :=
+@[expose] def read_base_gpr (idx : BitVec 5) (s : ArmState) : BitVec 64 :=
   read_store idx s.gpr
 
 -- Write `val` to the `idx`-th GPR (with idx = 31 indexing the SP).
@@ -232,7 +238,7 @@ def read_base_gpr (idx : BitVec 5) (s : ArmState) : BitVec 64 :=
 
 -- SIMD/FP Registers --
 
-def read_base_sfp (idx : BitVec 5) (s : ArmState) : BitVec 128 :=
+@[expose] def read_base_sfp (idx : BitVec 5) (s : ArmState) : BitVec 128 :=
     read_store idx s.sfp
 
 @[expose] def write_base_sfp (idx : BitVec 5) (val : BitVec 128) (s : ArmState) : ArmState :=
@@ -241,7 +247,7 @@ def read_base_sfp (idx : BitVec 5) (s : ArmState) : BitVec 128 :=
 
 -- Program Counter --
 
-def read_base_pc (s : ArmState) : BitVec 64 :=
+@[expose] def read_base_pc (s : ArmState) : BitVec 64 :=
   s.pc
 
 @[expose] def write_base_pc (val : BitVec 64) (s : ArmState) : ArmState :=
@@ -255,7 +261,7 @@ def read_base_pstate (s : ArmState) : PState :=
 def write_base_pstate (pstate : PState) (s : ArmState) : ArmState  :=
   { s with pstate := pstate }
 
-def read_base_flag (flag : PFlag) (s : ArmState) : BitVec 1 :=
+@[expose] def read_base_flag (flag : PFlag) (s : ArmState) : BitVec 1 :=
   open PFlag in
   let pstate := s.pstate
   match flag with
@@ -287,7 +293,7 @@ def fetch_inst (addr : BitVec 64) (s : ArmState) : Option (BitVec 32) :=
 
 -- Error --
 
-def read_base_error (s : ArmState) : StateError :=
+@[expose] def read_base_error (s : ArmState) : StateError :=
   s.error
 
 @[expose] def write_base_error (val : StateError) (s : ArmState) : ArmState :=
@@ -301,6 +307,7 @@ section Accessor_updater_functions
 open _root_.BitVec Arm.BitVec
 
 @[expose] section
+@[expose] section
 inductive StateField where
   | GPR    : BitVec 5 → StateField
   | SFP    : BitVec 5 → StateField
@@ -310,6 +317,7 @@ inductive StateField where
   /-- (FV addition) `TPIDR_EL0` (the EL0 thread pointer). -/
   | TPIDR  : StateField
 deriving DecidableEq, Repr, Hashable
+end
 end
 
 namespace StateField
@@ -557,7 +565,7 @@ def read_gpr (width : Nat) (idx : BitVec 5) (s : ArmState)
 
 -- Use read_gpr_zr when register 31 is mapped to the zero register ZR,
 -- instead of the default (Stack pointer).
-@[state_simp_rules]
+@[expose, state_simp_rules]
 def read_gpr_zr (width : Nat) (idx : BitVec 5) (s : ArmState)
   : BitVec width :=
   if idx ≠ 31#5 then
@@ -568,7 +576,7 @@ def read_gpr_zr (width : Nat) (idx : BitVec 5) (s : ArmState)
 -- In practice, we only ever access the low 32 bits or the full 64
 -- bits of these registers in Arm. When we write 32 bits to these
 -- registers, the upper 32 bits are zeroed out.
-@[state_simp_rules]
+@[expose, state_simp_rules]
 def write_gpr (width : Nat) (idx : BitVec 5) (val : BitVec width) (s : ArmState)
   : ArmState :=
     let val := BitVec.setWidth 64 val
@@ -576,7 +584,7 @@ def write_gpr (width : Nat) (idx : BitVec 5) (val : BitVec width) (s : ArmState)
 
 -- Use write_gpr_zr when register 31 is mapped to the zero register
 -- ZR, instead of the default (Stack pointer).
-@[state_simp_rules]
+@[expose, state_simp_rules]
 def write_gpr_zr (n : Nat) (idx : BitVec 5) (val : BitVec n) (s : ArmState)
   : ArmState :=
   if idx ≠ 31#5 then
@@ -591,35 +599,35 @@ example (n : Nat) (idx : BitVec 5) (val : BitVec n) (s : ArmState) :
   BitVec.setWidth n (BitVec.setWidth 64 val) := by
   simp [state_simp_rules, minimal_theory]
 
-@[state_simp_rules]
+@[expose, state_simp_rules]
 def read_sfp (width : Nat) (idx : BitVec 5) (s : ArmState) : BitVec width :=
   let val := r (StateField.SFP idx) s
   BitVec.setWidth width val
 
 -- Write `val` to the `idx`-th SFP, zeroing the upper bits, if
 -- applicable.
-@[state_simp_rules]
+@[expose, state_simp_rules]
 def write_sfp (n : Nat) (idx : BitVec 5) (val : BitVec n) (s : ArmState) : ArmState :=
    let val := BitVec.setWidth 128 val
    w (StateField.SFP idx) val s
 
-@[state_simp_rules]
+@[expose, state_simp_rules]
 def read_pc (s : ArmState) : BitVec 64 :=
   r StateField.PC s
 
-@[state_simp_rules]
+@[expose, state_simp_rules]
 def write_pc (v : BitVec 64) (s : ArmState) : ArmState :=
   w StateField.PC v s
 
-@[state_simp_rules]
+@[expose, state_simp_rules]
 def read_flag (flag : PFlag) (s : ArmState) : BitVec 1 :=
   r (StateField.FLAG flag) s
 
-@[state_simp_rules]
+@[expose, state_simp_rules]
 def write_flag (flag : PFlag) (val : BitVec 1) (s : ArmState) : ArmState :=
   w (StateField.FLAG flag) val s
 
-@[state_simp_rules]
+@[expose, state_simp_rules]
 def read_pstate (s : ArmState) : PState :=
   s.pstate
 
@@ -636,11 +644,11 @@ def write_pstate (pstate : PState) (s : ArmState) : ArmState :=
 def make_pstate (n z c v : BitVec 1) : PState :=
   { n, z, c, v }
 
-@[state_simp_rules]
+@[expose, state_simp_rules]
 def read_err (s : ArmState) : StateError :=
   r StateField.ERR s
 
-@[state_simp_rules]
+@[expose, state_simp_rules]
 def write_err (v : StateError) (s : ArmState) : ArmState :=
   w StateField.ERR v s
 
@@ -664,7 +672,7 @@ where
     | (addr, _) :: p, some min => if addr < min then loop p (some addr) else loop p (some min)
 
 /-- Get the largest address in a program `p`. Returns `none` if the program is empty. -/
-def Program.max? (p : Program) : Option (BitVec 64) :=
+@[expose] def Program.max? (p : Program) : Option (BitVec 64) :=
   loop p none
 where
   loop (p : Program) (max? : Option (BitVec 64)) : Option (BitVec 64) :=
@@ -674,12 +682,12 @@ where
     | (addr, _) :: p, some max => if addr > max then loop p (some addr) else loop p (some max)
 
 /-- Get the smallest address in a program `p`, given a proof that such an address exists. -/
-def Program.min (p : Program) (h : p.min?.isSome := by decide) : BitVec 64 := p.min?.get h
+@[expose] def Program.min (p : Program) (h : p.min?.isSome := by decide) : BitVec 64 := p.min?.get h
 /-- Get the smallest address in a program `p`. Panics if the program is empty -/
 def Program.min! (p : Program) : BitVec 64 := p.min?.get!
 
 /-- Get the largest address in a program `p`, given a proof that such an address exists. -/
-def Program.max (p : Program) (h : p.max?.isSome := by decide) : BitVec 64 := p.max?.get h
+@[expose] def Program.max (p : Program) (h : p.max?.isSome := by decide) : BitVec 64 := p.max?.get h
 /-- Get the largest address in a program `p`. Panics if the program is empty -/
 def Program.max! (p : Program) : BitVec 64 := p.max?.get!
 

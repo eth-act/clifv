@@ -123,7 +123,7 @@ theorem matchPat_constPrim_iff {st : σ} {ty : TypeId} {n : String} {v : V} {env
         reduceCtorEq, false_and]
 
 /-- What a successful `.term` pattern match means, by the kind of the term. -/
-def MatchTerm (p : Program) (sem : Sem V σ) (st : σ) (ty : TypeId) (t : TermId)
+@[expose] def MatchTerm (p : Program) (sem : Sem V σ) (st : σ) (ty : TypeId) (t : TermId)
     (args : List Pattern) (v : V) (env env' : Env V) : Prop :=
   match termOf p t with
   | .error _ => False
@@ -367,12 +367,12 @@ theorem evalBinds_cons_iff {n : Nat} {x : VarId} {ty : TypeId} {e : Expr}
     exact h
 
 /-- A successful call of an internal constructor, left for the callee's contract lemma. -/
-def ApplyInternal (p : Program) (sem : Sem V σ) (cfg : Config) (n : Nat) (ty : TypeId)
+@[expose] def ApplyInternal (p : Program) (sem : Sem V σ) (cfg : Config) (n : Nat) (ty : TypeId)
     (t : TermId) (vs : List V) (s : σ × Array RuleId) (v : V) (s' : σ × Array RuleId) : Prop :=
   (applyTerm p sem cfg (n + 1) ty t vs).run s = .ok (some v, s')
 
 /-- What a successful `applyTerm` means, by the kind of the term. -/
-def ApplySpec (p : Program) (sem : Sem V σ) (cfg : Config) (n : Nat) (ty : TypeId) (t : TermId)
+@[expose] def ApplySpec (p : Program) (sem : Sem V σ) (cfg : Config) (n : Nat) (ty : TypeId) (t : TermId)
     (vs : List V) (s : σ × Array RuleId) (v : V) (s' : σ × Array RuleId) : Prop :=
   match termOf p t with
   | .error _ => False

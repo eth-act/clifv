@@ -3,6 +3,24 @@ module
 import FV.Backend.Proof.LowerSeq
 public import FV.Backend.Proof.IselContract
 import FV.Arm.MinTheory
+import all FV.Arm.Decode.DPI
+import all FV.Arm.Decode.DPSFP
+import all FV.Arm.State
+import all FV.Backend.Asm
+import all FV.Backend.Encode
+import all FV.Backend.MInst
+import all FV.Backend.Proof.VCodeSem
+import all FV.Backend.RegallocOps
+import all FV.Clif.Mem
+import all FV.Clif.Print
+import all FV.Clif.Run
+import all FV.Clif.Syntax
+import all FV.Float.Round
+import all FV.Isle.Generated.Ids
+import all FV.Isle.Generated.RuleLists00
+import all FV.Isle.Generated.Terms00
+import all FV.Isle.Generated.Terms01
+import all FV.Isle.Syntax
 
 public section
 
@@ -26,10 +44,10 @@ structure VRenaming (g : Reg → Reg) (gn : Nat → Nat) : Prop where
   real : ∀ r, (∀ n c, r ≠ .vreg n c) → g r = r
 
 /-- Rename an operand's vreg. -/
-def rnOp (gn : Nat → Nat) (o : Operand) : Operand := { o with vreg := gn o.vreg }
+@[expose] def rnOp (gn : Nat → Nat) (o : Operand) : Operand := { o with vreg := gn o.vreg }
 
 /-- The operand collector of `MInst.operands`. -/
-def collectOp (s : OpSpec) (r : Reg) : StateT (Array Operand) (Except String) Reg := do
+@[expose] def collectOp (s : OpSpec) (r : Reg) : StateT (Array Operand) (Except String) Reg := do
   match r with
   | .vreg n cls => modify (·.push ⟨n, cls, s.kind, s.pos, s.con⟩); pure r
   | _ =>
@@ -37,7 +55,7 @@ def collectOp (s : OpSpec) (r : Reg) : StateT (Array Operand) (Except String) Re
     else pure r
 
 theorem operands_eq (i : MInst) :
-    i.operands = (do let (_, ops) ← (MInst.visitOperands collectOp i).run #[]; pure ops) := rfl
+    i.operands = (do let (_, ops) ← (MInst.visitOperands collectOp i).run #[]; pure ops) := by rfl
 
 variable {g : Reg → Reg} {gn : Nat → Nat}
 
@@ -68,7 +86,7 @@ abbrev OpM := StateT (Array Operand) (Except String)
 
 /-- `y` is `x` renamed: from the renamed state it computes `f` of `x`'s result and the renamed
 state (or the same error). -/
-def Sim (gn : Nat → Nat) {α β : Type} (f : α → β) (x : OpM α) (y : OpM β) : Prop :=
+@[expose] def Sim (gn : Nat → Nat) {α β : Type} (f : α → β) (x : OpM α) (y : OpM β) : Prop :=
   ∀ s, y.run (s.map (rnOp gn)) = (x.run s).map (fun p => (f p.1, p.2.map (rnOp gn)))
 
 theorem Sim.bind {α β γ δ : Type} {f : α → β} {h : γ → δ} {x : OpM α} {y : OpM β}
@@ -208,10 +226,10 @@ theorem operands_mapRegs (hg : VRenaming g gn) (i : MInst) :
   | error e => rfl
   | ok p => rfl
 
-theorem isUse_rnOp (o : Operand) : (rnOp gn o).isUse = o.isUse := rfl
-theorem isDef_rnOp (o : Operand) : (rnOp gn o).isDef = o.isDef := rfl
-theorem isEarly_rnOp (o : Operand) : (rnOp gn o).isEarly = o.isEarly := rfl
-theorem isLate_rnOp (o : Operand) : (rnOp gn o).isLate = o.isLate := rfl
+theorem isUse_rnOp (o : Operand) : (rnOp gn o).isUse = o.isUse := by rfl
+theorem isDef_rnOp (o : Operand) : (rnOp gn o).isDef = o.isDef := by rfl
+theorem isEarly_rnOp (o : Operand) : (rnOp gn o).isEarly = o.isEarly := by rfl
+theorem isLate_rnOp (o : Operand) : (rnOp gn o).isLate = o.isLate := by rfl
 
 /-! ## Straight-line runs of renamed code -/
 
@@ -220,7 +238,7 @@ variable {V W : Type}
 
 /-- `ρ₀` (original code) and `ρ` (renamed code) agree on every vreg that is written by the code
 (`D`) or whose image is not written. -/
-def Agree (gn : Nat → Nat) (D : Nat → Prop) (ρ₀ ρ : Nat → V) : Prop :=
+@[expose] def Agree (gn : Nat → Nat) (D : Nat → Prop) (ρ₀ ρ : Nat → V) : Prop :=
   ∀ n, (D n ∨ ¬ D (gn n)) → ρ₀ n = ρ (gn n)
 
 theorem Agree.writeV {D : Nat → Prop} (hD : ∀ d, D d → gn d = d) :

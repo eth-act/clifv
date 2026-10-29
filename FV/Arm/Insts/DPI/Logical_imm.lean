@@ -24,7 +24,7 @@ namespace DPI
 
 open _root_.BitVec Arm.BitVec
 
-@[state_simp_rules]
+@[expose, state_simp_rules]
 def decode_op (opc : BitVec 2) : LogicalImmType :=
   match opc with
   | 00#2 => LogicalImmType.AND
@@ -32,14 +32,14 @@ def decode_op (opc : BitVec 2) : LogicalImmType :=
   | 10#2 => LogicalImmType.EOR
   | 11#2 => LogicalImmType.ANDS
 
-def update_logical_imm_pstate (bv : BitVec n) : PState :=
+@[expose] def update_logical_imm_pstate (bv : BitVec n) : PState :=
   let N : BitVec 1 := BitVec.lsb bv (n-1)
   let Z := zero_flag_spec bv
   let C := 0#1
   let V := 0#1
   (make_pstate N Z C V)
 
-@[state_simp_rules]
+@[expose, state_simp_rules]
 def exec_logical_imm_op (op : LogicalImmType) (op1 : BitVec n) (op2 : BitVec n)
   : (BitVec n × Option PState) :=
   match op with

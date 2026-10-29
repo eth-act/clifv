@@ -105,45 +105,45 @@ structure LState where
   | VIdx.IntCC.UnsignedLessThanOrEqual => some .ls | VIdx.IntCC.UnsignedLessThan => some .lo
   | _ => none
 
-def binaryOpcode : Clif.BinaryOp → Option String
+@[expose] def binaryOpcode : Clif.BinaryOp → Option String
   | .iadd => "Iadd" | .isub => "Isub" | .imul => "Imul" | .umulhi => "Umulhi"
   | .smulhi => "Smulhi" | .band => "Band" | .bor => "Bor" | .bxor => "Bxor"
   | .ishl => "Ishl" | .ushr => "Ushr" | .sshr => "Sshr" | .rotl => "Rotl" | .rotr => "Rotr"
   | .smin => "Smin" | .smax => "Smax" | .umin => "Umin" | .umax => "Umax"
   | _ => none
 
-def unaryOpcode : Clif.UnaryOp → Option String
+@[expose] def unaryOpcode : Clif.UnaryOp → Option String
   | .ineg => "Ineg" | .bnot => "Bnot" | .clz => "Clz" | .ctz => "Ctz" | .popcnt => "Popcnt"
   | .bswap => "Bswap" | .bitrev => "Bitrev"
   | _ => none
 
 /-- The `AtomicRmwOp` variant name of a CLIF `atomic_rmw` operation. -/
-def rmwOpName : Clif.AtomicRmwOp → Option String
+@[expose] def rmwOpName : Clif.AtomicRmwOp → Option String
   | .add => some "Add" | .sub => some "Sub" | .and => some "And" | .nand => some "Nand"
   | .or => some "Or" | .xor => some "Xor" | .xchg => some "Xchg"
   | .umin => some "Umin" | .umax => some "Umax" | .smin => some "Smin" | .smax => some "Smax"
 
-def divOpcode : Clif.DivOp → String
+@[expose] def divOpcode : Clif.DivOp → String
   | .udiv => "Udiv" | .sdiv => "Sdiv" | .urem => "Urem" | .srem => "Srem"
 
-def loadOpcode : Clif.LoadOp → String
+@[expose] def loadOpcode : Clif.LoadOp → String
   | .load => "Load" | .uload8 => "Uload8" | .sload8 => "Sload8" | .uload16 => "Uload16"
   | .sload16 => "Sload16" | .uload32 => "Uload32" | .sload32 => "Sload32"
 
-def storeOpcode : Clif.StoreOp → String
+@[expose] def storeOpcode : Clif.StoreOp → String
   | .store => "Store" | .istore8 => "Istore8" | .istore16 => "Istore16"
   | .istore32 => "Istore32"
 
 /-- S11f: the `Opcode` of a two-operand float operation whose `lower` root is in the closure
 (`InstructionData::Binary`). -/
-def fBinaryOpcode : Clif.FOp → Option String
+@[expose] def fBinaryOpcode : Clif.FOp → Option String
   | .fadd => "Fadd" | .fsub => "Fsub" | .fmul => "Fmul" | .fdiv => "Fdiv" | .fmin => "Fmin"
   | .fmax => "Fmax"
   | _ => none
 
 /-- S11f: the `Opcode` of a one-operand float operation whose `lower` root is in the closure
 (`InstructionData::Unary`). -/
-def fUnaryOpcode : Clif.FOp → Option String
+@[expose] def fUnaryOpcode : Clif.FOp → Option String
   | .sqrt => "Sqrt" | .fneg => "Fneg" | .fabs => "Fabs" | .fpromote => "Fpromote"
   | .fdemote => "Fdemote" | .ceil => "Ceil" | .floor => "Floor" | .trunc => "Trunc"
   | .nearest => "Nearest"
@@ -151,7 +151,7 @@ def fUnaryOpcode : Clif.FOp → Option String
 
 /-- S11f: the controlling types at which `instData` accepts a float operation: `fpromote.f64`,
 `fdemote.f32`, the others at `f32`/`f64`. -/
-def fTyOk : Clif.FOp → Clif.Ty → Bool
+@[expose] def fTyOk : Clif.FOp → Clif.Ty → Bool
   | .fpromote, ty => ty == .f64
   | .fdemote, ty => ty == .f32
   | _, ty => ty.isFloat
@@ -159,7 +159,7 @@ def fTyOk : Clif.FOp → Clif.Ty → Bool
 /-- S11f-cvt: the `Opcode` of a float/integer conversion whose `lower` root is in the closure
 (`InstructionData::Unary`; an integer operand or an integer result, so kept apart from
 `fUnaryOpcode`'s float → float operations). -/
-def fCvtOpcode : Clif.FOp → Option String
+@[expose] def fCvtOpcode : Clif.FOp → Option String
   | .fcvtFromUint => "FcvtFromUint" | .fcvtFromSint => "FcvtFromSint"
   | .fcvtToUintSat => "FcvtToUintSat" | .fcvtToSintSat => "FcvtToSintSat"
   | _ => none
@@ -167,12 +167,12 @@ def fCvtOpcode : Clif.FOp → Option String
 /-- S11f-cvt: the controlling types at which `instData` accepts a conversion: `fcvt_from_*` at
 `f32`/`f64`, the saturating `fcvt_to_*_sat` at `i32`/`i64` (their `i8`/`i16` clamp is not
 proven). -/
-def fCvtTyOk : Clif.FOp → Clif.Ty → Bool
+@[expose] def fCvtTyOk : Clif.FOp → Clif.Ty → Bool
   | .fcvtToUintSat, ty | .fcvtToSintSat, ty => ty == .i32 || ty == .i64
   | _, ty => ty.isFloat
 
 /-- S11f: the ISLE `FloatCC` variant name of an `fcmp` condition. -/
-def floatccName : Clif.FloatCC → String
+@[expose] def floatccName : Clif.FloatCC → String
   | .eq => "Equal" | .ne => "NotEqual" | .lt => "LessThan" | .le => "LessThanOrEqual"
   | .gt => "GreaterThan" | .ge => "GreaterThanOrEqual" | .ord => "Ordered"
   | .uno => "Unordered" | .one => "OrderedNotEqual" | .ueq => "UnorderedOrEqual"
@@ -182,7 +182,7 @@ def floatccName : Clif.FloatCC → String
 /-- S11f: the `fcmp` conditions `instData` accepts: those `emit_fcmp` tests with one Arm
 condition (`fp_cond_code`). `one`/`ueq` give a `CondResult.Or` (two conditions), outside the
 proven condition shapes (`Proof.CondShape`). -/
-def fccOk : Clif.FloatCC → Bool
+@[expose] def fccOk : Clif.FloatCC → Bool
   | .one | .ueq => false
   | _ => true
 
@@ -192,16 +192,16 @@ def fccOk : Clif.FloatCC → Bool
   if ty.width < 64 then imm.toNat else imm.toInt
 
 /-- Integer types of E: `i8..i64` (not `i128`, no floats). -/
-def eTy (ty : Clif.Ty) : Bool := ty.isInt && ty != .i128
+@[expose] def eTy (ty : Clif.Ty) : Bool := ty.isInt && ty != .i128
 
 /-- Types of the values the lowering keeps in registers: the integer types of E and
 `f32`/`f64` (in a V register). Also the movement predicate of S11e4: the types at which
 `instData` accepts the data-movement instructions (`f32const`/`f64const`, `load`/`store` of
 the full width, `select`, `bitcast`); `eTy` stays the predicate of the integer operations. -/
-def valTyOk (ty : Clif.Ty) : Bool := eTy ty || ty.isFloat
+@[expose] def valTyOk (ty : Clif.Ty) : Bool := eTy ty || ty.isFloat
 
 /-- The register class of a value of type `t` (`regClass?`; `.int` where it has none). -/
-def CTy.valClass (t : CTy) : RegClass := (t.regClass?).getD .int
+@[expose] def CTy.valClass (t : CTy) : RegClass := (t.regClass?).getD .int
 
 /-- A signature with integer parameters and returns only: the remaining interim restriction of
 the typed calls (S11e5a). A `call` is typed (`f32`/`f64` parameters and returns in v0..v7,
@@ -217,11 +217,11 @@ into the integer driver model (`DriverCheck`), and a `try_call`'s returns wait f
 `system_v` (also the default of signatures without one) and `fast`, which Cranelift 0.136.1
 treats identically on aarch64 (`compute_arg_locs` and `get_regs_clobbered_by_call` only
 distinguish `tail`, `winch`, `preserve_all`, `apple_aarch64`). -/
-def aapcsConv (c : Option Clif.CallConv) : Bool :=
+@[expose] def aapcsConv (c : Option Clif.CallConv) : Bool :=
   c.isNone || c == some .systemV || c == some .fast
 
 /-- Text of an instruction for error messages. -/
-def instText (i : Clif.Inst) : String := Clif.Print.inst (fun _ => none) i
+@[expose] def instText (i : Clif.Inst) : String := Clif.Print.inst (fun _ => none) i
 
 /-- `InstructionData` of a non-terminator instruction of E (an error with the reason if the
 instruction is outside E). The float data movement of S11e4 (`valTyOk`): `f32const`/`f64const`
@@ -231,7 +231,7 @@ its `MemFlags`, as `InstructionData::LoadNoOffset`). The float arithmetic of S11
 are proven (`fBinaryOpcode`, `fUnaryOpcode`): `Binary`/`Unary` with the opcode, as Cranelift's
 `InstructionData`; `fcmp` of `f32`/`f64` at a condition of `fccOk` (`FloatCompare`). The
 conversions of S11f-cvt (`fCvtOpcode`, at `fCvtTyOk`): `Unary` with the opcode. -/
-def instData (f : Clif.Function) : Clif.Inst → Except String V
+@[expose] def instData (f : Clif.Function) : Clif.Inst → Except String V
   | .iconst ty imm =>
     if eTy ty then pure (instDataV "UnaryImm" [opcodeV "Iconst", .int (imm64OfIconst ty imm)])
     else if ty = .f32 then pure (instDataV "UnaryIeee32" [opcodeV "F32const", .int imm.toNat])
@@ -382,10 +382,12 @@ x-register placement `argLocs` (`Proof.sigArgLocs_eq`), on integer returns `retR
 (`Proof.abiRetRegs_int`). -/
 
 @[expose] section
+@[expose] section
 inductive ArgLoc where
   | reg (r : Reg)
   | stack (off : Nat)
   deriving Repr, Inhabited, BEq
+end
 end
 
 @[expose] def alignTo (n a : Nat) : Nat := (n + a - 1) / a * a
@@ -601,7 +603,7 @@ def abiTerm (f : Clif.Function) : Clif.Terminator → Clif.Terminator
 
 /-- Byte sizes of the parameters of a signature (`sigArgs`: integer `normal`/`vmctx`
 parameters up to 64 bits, `f32`/`f64`, an `i64` `sret` pointer). -/
-def sigParamBytes (s : Clif.Signature) : Except String (List Nat) := sigArgs s
+@[expose] def sigParamBytes (s : Clif.Signature) : Except String (List Nat) := sigArgs s
 
 /-- `exception_payload_regs` (`isa/aarch64/abi.rs`): x0 and x1 for `system_v` (the default),
 `tail`, `preserve_all` and `apple_aarch64` callees, none for the others. -/
@@ -673,7 +675,7 @@ fresh one. `none`: more than 8 return values. -/
 
 /-- **The `ExceptionTable` operand of a typed `try_call`** (S11e6): `exnTableOpnd` without the
 integer restriction `sigIntB` (the callee's parameters and returns may be `f32`/`f64`). -/
-def exnTableOpndC (f : Clif.Function) (et : Clif.ExnTable) :
+@[expose] def exnTableOpndC (f : Clif.Function) (et : Clif.ExnTable) :
     Except String (Clif.Signature × List (Option Nat)) := do
   let some sig := f.sigDecls.lookup et.sig | throw s!"try_call of undeclared sig{et.sig}"
   if !(sig.callConv.isNone || sig.callConv == some .systemV) then
@@ -687,7 +689,7 @@ def exnTableOpndC (f : Clif.Function) (et : Clif.ExnTable) :
 /-- **The `InstructionData` of a typed `try_call`** (S11e6): a direct `try_call`'s callee may
 take and return `f32`/`f64` (`exnTableOpndC`); a `try_call_indirect` is `tryCallData`'s
 (integer signatures, `sigIntB`). -/
-def tryCallDataC (f : Clif.Function) : Clif.Terminator → Except String V
+@[expose] def tryCallDataC (f : Clif.Function) : Clif.Terminator → Except String V
   | .tryCall fn args et => do
     let (sig, items) ← exnTableOpndC f et
     let some ext := f.extern? fn | throw s!"unknown fn{fn}"
@@ -701,7 +703,7 @@ one fresh vreg per ABI return of the return's class (`retClass`, `vregs.alloc(ty
 return registers of their classes (`retRegsC`: x0.. / v0.., at most 8 of each), then per payload
 register (`payloadRegs`: x0, x1) the vreg of the return in that register, else a fresh integer
 one. On integer signatures it is `tryRegsOf`. -/
-def tryRegsOfC (sig : Clif.Signature) (st : LState) : Option ((List Reg × List Reg) × LState) := do
+@[expose] def tryRegsOfC (sig : Clif.Signature) (st : LState) : Option ((List Reg × List Reg) × LState) := do
   let ps ← retRegsC ((sigRets sig).map retClass) 0 0
   let (rets, st) := (sigRets sig).foldl (init := ((#[] : Array Reg), st)) fun (acc, st) q =>
     let (r, st') := st.fresh (retClass q)
@@ -1420,14 +1422,14 @@ def buildCtx (f : Clif.Function) : Except String (Ctx × Array (Nat × Nat) × L
   pure (ctx, ranges, st)
 
 /-- Run the ISLE term `term` on `args`. -/
-def runTerm (ctx : Ctx) (term : String) (args : List V) (st : LState) :
+@[expose] def runTerm (ctx : Ctx) (term : String) (args : List V) (st : LState) :
     Except String (Option V × LState × List RuleId) :=
   match Isle.Interp.run program (sem ctx) {} term args st with
   | .ok r => .ok (r.value, r.state, r.trace)
   | .error e => .error s!"ISLE {term}: {repr e}"
 
 /-- The `InstructionData` of a terminator. -/
-def termData (t : Clif.Terminator) : Except String V :=
+@[expose] def termData (t : Clif.Terminator) : Except String V :=
   match t with
   | .jump _ => pure (instDataV "Jump" [opcodeV "Jump", .blockCalls [0]])
   | .brif c _ _ => pure (instDataV "Brif" [opcodeV "Brif", .value c, .blockCalls [0, 1]])

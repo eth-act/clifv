@@ -55,19 +55,19 @@ deriving instance ReflBEq, LawfulBEq for OperandSize, ALUOp, ALUOp3, MoveWideOp,
 /-! ## Canonical allocation -/
 
 /-- Canonical register of operand `k`, ignoring `reuse`. -/
-def canonBase (ops : Array Operand) (k : Nat) : Reg :=
+@[expose] def canonBase (ops : Array Operand) (k : Nat) : Reg :=
   match ops[k]? with
   | some ⟨_, _, _, _, .fixed p⟩ => p
   | some ⟨_, .float, _, _, _⟩ => .v k
   | _ => .x k
 
 /-- Canonical register of operand `k`: a `reuse j` def gets operand `j`'s register. -/
-def canonReg (ops : Array Operand) (k : Nat) : Reg :=
+@[expose] def canonReg (ops : Array Operand) (k : Nat) : Reg :=
   match ops[k]? with
   | some ⟨_, _, _, _, .reuse j⟩ => canonBase ops j
   | _ => canonBase ops k
 
-def canonRegs (ops : Array Operand) : Array Reg := ⟨(List.range ops.size).map (canonReg ops)⟩
+@[expose] def canonRegs (ops : Array Operand) : Array Reg := ⟨(List.range ops.size).map (canonReg ops)⟩
 
 theorem beq_eq_decide' {α : Type} [DecidableEq α] [BEq α] [LawfulBEq α] (a b : α) :
     (a == b) = decide (a = b) := by
@@ -77,19 +77,19 @@ theorem beq_eq_decide' {α : Type} [DecidableEq α] [BEq α] [LawfulBEq α] (a b
 theorem bitmaskEnc_false_one : bitmaskEnc? false 1 = some (0#1, 0#6, 0#6) := by rfl
 
 /-- Write a value into a register (X registers get the low 64 bits). -/
-def setReg (s : Arm.ArmState) : Reg → CV → Arm.ArmState
+@[expose] def setReg (s : Arm.ArmState) : Reg → CV → Arm.ArmState
   | .x n, v => Arm.w (.GPR (rnum n)) (lo64 v) s
   | .v n, v => Arm.w (.SFP (rnum n)) v s
   | _, _ => s
 
 /-- The world `w` with the use values in the use operands' registers `regs`. -/
-def placeUses (ops : Array Operand) (regs : Array Reg) (uses : List CV) (w : Arm.ArmState) :
+@[expose] def placeUses (ops : Array Operand) (regs : Array Reg) (uses : List CV) (w : Arm.ArmState) :
     Arm.ArmState :=
   ((((ops.zip regs).toList.filter (·.1.isUse)).map (·.2)).zip uses).foldl
     (fun s p => setReg s p.1 p.2) w
 
 /-- The values of the def operands (allocated to `regs`) in state `s`. -/
-def defVals (ops : Array Operand) (regs : Array Reg) (s : Arm.ArmState) : List CV :=
+@[expose] def defVals (ops : Array Operand) (regs : Array Reg) (s : Arm.ArmState) : List CV :=
   ((ops.zip regs).toList.filter (·.1.isDef)).map (regVal s ·.2)
 
 @[simp] theorem except_pure_eq {ε α : Type} (a : α) : (pure a : Except ε α) = .ok a := rfl
@@ -103,13 +103,13 @@ def defVals (ops : Array Operand) (regs : Array Reg) (s : Arm.ArmState) : List C
 @[simp] theorem except_map_ok {ε α β : Type} (a : α) (f : α → β) :
     (f <$> (Except.ok a : Except ε α)) = .ok (f a) := rfl
 @[simp] theorem setReg_x (s : Arm.ArmState) (n : Nat) (v : CV) :
-    setReg s (.x n) v = Arm.w (.GPR (rnum n)) (lo64 v) s := rfl
+    setReg s (.x n) v = Arm.w (.GPR (rnum n)) (lo64 v) s := by rfl
 @[simp] theorem setReg_v (s : Arm.ArmState) (n : Nat) (v : CV) :
-    setReg s (.v n) v = Arm.w (.SFP (rnum n)) v s := rfl
+    setReg s (.v n) v = Arm.w (.SFP (rnum n)) v s := by rfl
 
 /-- The address the emitter's environment `env0` gives straight-line code (it reads no label
 and no pc). -/
-def env0 : Env := ⟨0, fun _ => none⟩
+@[expose] def env0 : Env := ⟨0, fun _ => none⟩
 
 /-! ## Reading and writing state fields -/
 
@@ -247,7 +247,7 @@ theorem read_mem_bytes_sameWorld {F} {s t : Arm.ArmState} (h : SameWorld F s t) 
 /-! ## Allocation facts -/
 
 /-- What the static checks give about the register of one operand. -/
-def RegFits (o : Operand) (r : Reg) : Prop :=
+@[expose] def RegFits (o : Operand) (r : Reg) : Prop :=
   (match o.cls with
    | .int => ∃ n, r = .x n ∧ n < 29 ∧ n ≠ 16 ∧ n ≠ 17 ∧ n ≠ 18
    | .float => ∃ n, r = .v n ∧ n < 32) ∧
@@ -344,14 +344,14 @@ theorem allocOk_of_checkStatic {c : CheckCtx} {wh : String} {ops : Array Operand
 /-! ## Memory accesses -/
 
 /-- The 64-bit value of a GPR operand (`sp` is register 31 as a base, `xzr` reads 0). -/
-def regX (s : Arm.ArmState) : Reg → BitVec 64
+@[expose] def regX (s : Arm.ArmState) : Reg → BitVec 64
   | .x n => Arm.r (.GPR (rnum n)) s
   | .sp => spOf s
   | _ => 0
 
 /-- The effective address of an (unfinalised) addressing mode for an access of `bytes`
 bytes. -/
-def _root_.Backend.AMode.addr (ctx : FnCtx) (m : AMode) (bytes : Nat) (s : Arm.ArmState) : BitVec 64 :=
+@[expose] def _root_.Backend.AMode.addr (ctx : FnCtx) (m : AMode) (bytes : Nat) (s : Arm.ArmState) : BitVec 64 :=
   match m with
   | .regOffset rn off => regX s rn + BitVec.ofInt 64 off
   | .spOffset off => spOf s + BitVec.ofInt 64 off
@@ -370,7 +370,7 @@ def _root_.Backend.AMode.addr (ctx : FnCtx) (m : AMode) (bytes : Nat) (s : Arm.A
   | .incomingArg _ => 0
 
 /-- Memory accesses `(address, bytes)` of an allocated instruction in state `s`. -/
-def _root_.Backend.MInst.accesses (ctx : FnCtx) : MInst → Arm.ArmState → List (BitVec 64 × Nat)
+@[expose] def _root_.Backend.MInst.accesses (ctx : FnCtx) : MInst → Arm.ArmState → List (BitVec 64 × Nat)
   | .load op _ m _, s => [(m.addr ctx op.bytes s, op.bytes)]
   | .store op _ m _, s => [(m.addr ctx op.bytes s, op.bytes)]
   | .loadAcquire ty _ rn _, s | .storeRelease ty _ rn _, s => [(regX s rn, ty.bytes)]
@@ -378,7 +378,7 @@ def _root_.Backend.MInst.accesses (ctx : FnCtx) : MInst → Arm.ArmState → Lis
   | _, _ => []
 
 /-- Every memory access of `i` in state `s` avoids the frame addresses `F`. -/
-def AccessOk (F : BitVec 64 → Prop) (ctx : FnCtx) (i : MInst) (s : Arm.ArmState) : Prop :=
+@[expose] def AccessOk (F : BitVec 64 → Prop) (ctx : FnCtx) (i : MInst) (s : Arm.ArmState) : Prop :=
   ∀ p ∈ i.accesses ctx s, Avoids F p.2 p.1
 
 /-! ## The semantics -/
@@ -398,31 +398,31 @@ structure ExtSem where
 /-! ## Covered forms -/
 
 /-- The extend kinds of an encodable extended-register addressing mode. -/
-def extOk (e : ExtendOp) : Prop := e = .uxtw ∨ e = .uxtx ∨ e = .sxtw ∨ e = .sxtx
+@[expose] def extOk (e : ExtendOp) : Prop := e = .uxtw ∨ e = .uxtx ∨ e = .sxtw ∨ e = .sxtx
 
-instance (e : ExtendOp) : Decidable (extOk e) := by unfold extOk; infer_instance
+@[expose] instance (e : ExtendOp) : Decidable (extOk e) := by unfold extOk; infer_instance
 
 /-- The forms `csem` gives an explicit meaning (control flow, calls, symbols, `Args`/`Rets`, the
 LL/SC loops); every other form is `straightSem`. -/
-def _root_.Backend.MInst.isCtl : MInst → Bool
+@[expose] def _root_.Backend.MInst.isCtl : MInst → Bool
   | .call .. | .args .. | .rets .. | .loadExtNameGot .. | .loadExtNameNear .. | .jump ..
   | .condBr .. | .testBitAndBranch .. | .trapIf .. | .udf .. | .emitIsland .. | .jtSequence ..
   | .tryCall .. | .atomicRmwLoop .. | .atomicCasLoop .. | .elfTlsGetAddr .. => true
   | _ => false
 
 /-- `aluRRImmLogic` ops the emitter expands. -/
-def logicOpOk : ALUOp → Bool
+@[expose] def logicOpOk : ALUOp → Bool
   | .orr | .and | .andS | .eor | .orrNot | .andNot | .eorNot => true
   | _ => false
 
 /-- `aluRRImmShift` ops the emitter expands. -/
-def shiftOpOk : ALUOp → Bool
+@[expose] def shiftOpOk : ALUOp → Bool
   | .lsr | .asr | .lsl | .extr => true
   | _ => false
 
 /-- The bitmask immediate `v` (at `is64`) has an encoding (`bitmaskEnc?`) that Arm's
 `DecodeBitMasks` at width `M` decodes to `e` (with `N = 0` for a 32-bit instruction). -/
-def bitmaskOk (M : Nat) (is64 : Bool) (v : Nat) (e : BitVec M) : Bool :=
+@[expose] def bitmaskOk (M : Nat) (is64 : Bool) (v : Nat) (e : BitVec M) : Bool :=
   match bitmaskEnc? is64 v with
   | none => false
   | some (N, immr, imms) =>
@@ -433,7 +433,7 @@ def bitmaskOk (M : Nat) (is64 : Bool) (v : Nat) (e : BitVec M) : Bool :=
 /-- The logical immediate of `aluRRImmLogic op sz _ _ imm` as the emitter encodes it (the
 inverted value for `orn`/`bic`/`eon`, the low 32 bits at 32 bits) decodes to the operand
 `ispec` states. A per-instruction check (translation validation of `bitmaskEnc?`). -/
-def logicImmOk (op : ALUOp) (sz : OperandSize) (imm : ImmLogic) : Bool :=
+@[expose] def logicImmOk (op : ALUOp) (sz : OperandSize) (imm : ImmLogic) : Bool :=
   match op, sz with
   | .orrNot, .size32 | .andNot, .size32 | .eorNot, .size32 =>
     bitmaskOk 32 false (mask64 imm.invert.value % 2 ^ 32) (~~~(BitVec.ofNat 32 imm.value))
@@ -443,7 +443,7 @@ def logicImmOk (op : ALUOp) (sz : OperandSize) (imm : ImmLogic) : Bool :=
   | _, .size64 => bitmaskOk 64 true (mask64 imm.value) (BitVec.ofNat 64 imm.value)
 
 /-- The covered addressing modes of a load/store of `bytes` bytes (`amodeAddr`'s forms). -/
-def memOk (bytes : Nat) : AMode → Bool
+@[expose] def memOk (bytes : Nat) : AMode → Bool
   | .slotOffset _ | .spOffset _ | .fpOffset _ => true
   | .unscaled (.vreg _ .int) off => decide (-256 ≤ off ∧ off < 256)
   | .unsignedOffset (.vreg _ .int) off => decide (off % bytes = 0 ∧ off / bytes < 4096)
@@ -452,13 +452,13 @@ def memOk (bytes : Nat) : AMode → Bool
     decide (extOk e)
   | _ => false
 
-instance (ty : CTy) : Decidable (AtomTy ty) := by unfold AtomTy; infer_instance
+@[expose] instance (ty : CTy) : Decidable (AtomTy ty) := by unfold AtomTy; infer_instance
 
 /-- **The covered straight-line forms.** A zero-register destination is register 31 in the
 encoding, which the immediate and extended-register `add`/`sub` and the logical-immediate forms
 read as `sp` unless they set the flags: those are covered only as `adds`/`subs`/`ands`. A logical
 immediate is covered when its encoding decodes back to it (`logicImmOk`). -/
-def FormOk (_ctx : FnCtx) : MInst → Bool
+@[expose] def FormOk (_ctx : FnCtx) : MInst → Bool
   | .aluRRR _ _ (.vreg _ .int) (.vreg _ .int) (.vreg _ .int) => true
   | .aluRRR _ _ (.vreg _ .int) .xzr (.vreg _ .int) => true
   | .aluRRR _ _ .xzr (.vreg _ .int) (.vreg _ .int) => true
@@ -519,11 +519,11 @@ def FormOk (_ctx : FnCtx) : MInst → Bool
   | _ => false
 
 /-- The number of use operands. -/
-def useCount (ops : Array Operand) : Nat := (ops.toList.filter (·.isUse)).length
+@[expose] def useCount (ops : Array Operand) : Nat := (ops.toList.filter (·.isUse)).length
 
 /-- The instances on which `csem` is the Arm run of the canonical allocation: a covered form
 (`FormOk`) applied to as many values as it has use operands. -/
-def csemWF (ctx : FnCtx) (i : MInst) (uses : List CV) : Bool :=
+@[expose] def csemWF (ctx : FnCtx) (i : MInst) (uses : List CV) : Bool :=
   FormOk ctx i && match i.operands with
     | .ok ops => uses.length == useCount ops
     | .error _ => false
@@ -531,7 +531,7 @@ def csemWF (ctx : FnCtx) (i : MInst) (uses : List CV) : Bool :=
 open Classical in
 /-- A straight-line instruction: the Arm run of its canonical allocation (which must end
 without error, with the program unchanged). -/
-noncomputable def straightSem (F : BitVec 64 → Prop) (ctx : FnCtx) (i : MInst) (uses : List CV)
+@[expose] noncomputable def straightSem (F : BitVec 64 → Prop) (ctx : FnCtx) (i : MInst) (uses : List CV)
     (w : Arm.ArmState) : Option (List CV × Arm.ArmState × Ctl) :=
   match i.operands with
   | .error _ => none
@@ -549,7 +549,7 @@ noncomputable def straightSem (F : BitVec 64 → Prop) (ctx : FnCtx) (i : MInst)
       else none
 
 /-- The condition of a `CondBrKind` on the use values and the world (flags). -/
-def _root_.Backend.CondBrKind.holds (k : CondBrKind) (uses : List CV) (w : Arm.ArmState) : Bool :=
+@[expose] def _root_.Backend.CondBrKind.holds (k : CondBrKind) (uses : List CV) (w : Arm.ArmState) : Bool :=
   match k, uses with
   | .cond c, _ => Arm.ConditionHolds c.bits w
   | .zero _ sz, [a] => if sz.is64 then lo64 a == 0 else (lo64 a).setWidth 32 == 0
@@ -560,7 +560,7 @@ def _root_.Backend.CondBrKind.holds (k : CondBrKind) (uses : List CV) (w : Arm.A
 not covered by `FormOk`): `ispec`, extended by the memory forms as `MemRefines` states them
 (slot offsets at slot base `sb`), and by the scalar float loads and stores (`ldr`/`str` of an
 `s`/`d` register) as `MemRefinesFP` states them (S11e5, #238). -/
-def mspec (sb : Nat) : Sem := fun i uses w =>
+@[expose] def mspec (sb : Nat) : Sem := fun i uses w =>
   match i, uses with
   | .load op (.vreg _ .int) am _, us =>
     if op = .fpuLoad128 then none
@@ -599,7 +599,7 @@ register is 0, so the `cbnz` back edge is not taken; `docs/decisions/arm-model.m
 def is read back from its fixed register (x27); the scratch defs, whose values the
 allocated-code semantics havocs (`MInst.keptDefs`), are 0 (not the registers: `xchg` does not
 write x28, and they must not depend on the world's registers). -/
-noncomputable def loopSem (F : BitVec 64 → Prop) (ty : CTy) (a : CV) (body : List Line)
+@[expose] noncomputable def loopSem (F : BitVec 64 → Prop) (ty : CTy) (a : CV) (body : List Line)
     (regs : List Reg) (uses : List CV) (defs : List Reg) (w : Arm.ArmState) :
     Option (List CV × Arm.ArmState × Ctl) :=
   if AtomTy ty ∧ Avoids F ty.bytes (lo64 a) ∧ Arm.r .ERR w = .None then
@@ -613,7 +613,7 @@ noncomputable def loopSem (F : BitVec 64 → Prop) (ty : CTy) (a : CV) (body : L
 
 open Classical in
 /-- **The concrete instruction semantics.** -/
-noncomputable def csem (F : BitVec 64 → Prop) (ctx : FnCtx) (X : ExtSem) : ISem CV Arm.ArmState :=
+@[expose] noncomputable def csem (F : BitVec 64 → Prop) (ctx : FnCtx) (X : ExtSem) : ISem CV Arm.ArmState :=
   fun i uses w =>
   match i with
   | .call info =>
@@ -740,7 +740,7 @@ theorem csem_useVals {F : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem} {i : MI
 
 /-- The per-form obligation: the allocated instruction `mk regs`, run on `s`, corresponds to
 the canonical one run on the canonical state built from a world `w` of `s`. -/
-def Corr (F : BitVec 64 → Prop) (ctx : FnCtx) (env : Env) (ops : Array Operand)
+@[expose] def Corr (F : BitVec 64 → Prop) (ctx : FnCtx) (env : Env) (ops : Array Operand)
     (mk : Array Reg → MInst) : Prop :=
   ∀ (regs : Array Reg) (s w t' : Arm.ArmState), AllocOk ops regs → SameWorld F s w →
     Arm.CheckSPAlignment s →

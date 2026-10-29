@@ -5,6 +5,10 @@ public import FV.Backend.Proof.IselFlowCheck
 public import FV.Backend.Proof.DriverCheck
 public import FV.Backend.Proof.AbiClass
 import Std.Tactic.BVDecide.Normalize.Prop
+import all FV.Backend.Isel
+import all FV.Backend.Proof.DriverCheck
+import all FV.Isle.Syntax
+import all FV.Backend.MInst
 
 public section
 
@@ -37,10 +41,10 @@ open Backend Isle Isle.Aarch64
 /-! ## Atoms of a value -/
 
 /-- The registers of a list of register pairs. -/
-def pairRegs (ps : List (Reg × Reg)) : List Reg := ps.flatMap fun p => [p.1, p.2]
+@[expose] def pairRegs (ps : List (Reg × Reg)) : List Reg := ps.flatMap fun p => [p.1, p.2]
 
 /-- The registers inside an operand. -/
-def opRegs : Opnd → List Reg
+@[expose] def opRegs : Opnd → List Reg
   | .callArgs us => pairRegs us
   | .callRets ds => pairRegs ds
   | .callInfo c => (match c.dest with
@@ -49,7 +53,7 @@ def opRegs : Opnd → List Reg
   | _ => []
 
 /-- The CLIF values inside an operand. -/
-def opVals : Opnd → List Nat
+@[expose] def opVals : Opnd → List Nat
   | .extended x _ => [x]
   | _ => []
 
@@ -177,7 +181,7 @@ structure CtorOk (ctx : Ctx) (id : TermId) (args : List V) (st : LState) (v : V)
   tls : v.tlsIn = true → tlsInL args = true
 
 /-- `CtorOk` of every successful result of a constructor call. -/
-def CtorP (ctx : Ctx) (st : LState) (id : TermId) (args : List V) (r : ExtResult (V × LState)) :
+@[expose] def CtorP (ctx : Ctx) (st : LState) (id : TermId) (args : List V) (r : ExtResult (V × LState)) :
     Prop :=
   ∀ v st', r = .ok (v, st') → CtorOk ctx id args st v st'
 
@@ -388,7 +392,7 @@ theorem sigArgLocs_phys {s : Clif.Signature} {locs : List ArgLoc} {k : Nat}
 
 /-! ## Extern constructors -/
 
-gen_match_split externCtor_split Backend.externCtor.match_27
+gen_match_split externCtor_split Backend.externCtor.match_29
 
 theorem ctorOk_same {ctx : Ctx} {id : TermId} {args : List V} {st : LState} {v : V}
     (hr : ∀ r ∈ v.regsIn, r ∈ regsInL args ∨ (∃ x ∈ valsInL args, ctx.valueReg? x = some r) ∨
@@ -741,7 +745,7 @@ theorem externCtor_ok (ctx : Ctx) (t : Term) (args : List V) (st : LState) :
 gen_match_split externExtract_split Backend.externExtract.match_27
 
 /-- A value without registers, CLIF values, instructions or `ElfTlsGetAddr` data. -/
-def NoAtoms (v : V) : Prop := v.regsIn = [] ∧ v.valsIn = [] ∧ v.instsIn = [] ∧ v.tlsIn = false
+@[expose] def NoAtoms (v : V) : Prop := v.regsIn = [] ∧ v.valsIn = [] ∧ v.instsIn = [] ∧ v.tlsIn = false
 
 /-- `n` is an operand of the definition of a value of `v`. -/
 def ArgOfDef (ctx : Ctx) (v : V) (n : Nat) : Prop :=
@@ -772,7 +776,7 @@ structure ExtSpec (ctx : Ctx) (x : TermId) (v : V) (fs : List V) : Prop where
     info.results.head? = some r ∧ fs = [.value r]
 
 /-- `ExtSpec` of every successful result. -/
-def ExtP (ctx : Ctx) (x : TermId) (v : V) (r : ExtResult (List V)) : Prop :=
+@[expose] def ExtP (ctx : Ctx) (x : TermId) (v : V) (r : ExtResult (List V)) : Prop :=
   ∀ fs, r = .ok fs → ExtSpec ctx x v fs
 
 theorem extSpec_noAtoms {ctx : Ctx} {x : TermId} {v : V} {fs : List V} (hf : ∀ f ∈ fs, NoAtoms f)

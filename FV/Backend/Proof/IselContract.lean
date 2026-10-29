@@ -51,15 +51,15 @@ abbrev Sem := ISem CV Arm.ArmState
 
 /-- A CLIF value of type `ty` is the low `ty.width` bits of a register value; the upper bits are
 unspecified (PLAN.md §3.4). -/
-def VHolds (v : Clif.Val) (x : CV) : Prop := x.setWidth v.ty.width = v.bits
+@[expose] def VHolds (v : Clif.Val) (x : CV) : Prop := x.setWidth v.ty.width = v.bits
 
 /-- `vals` are held by `xs`, index by index. -/
-def AllHold (vals : List Clif.Val) (xs : List CV) : Prop :=
+@[expose] def AllHold (vals : List Clif.Val) (xs : List CV) : Prop :=
   vals.length = xs.length ∧ ∀ (j : Nat) v x, vals[j]? = some v → xs[j]? = some x → VHolds v x
 
 /-- `vals` are held by the first `vals.length` values of `xs` (`xs` may be longer: an `sret`
 signature's ABI returns end with the struct pointer, `sigRets`). -/
-def PrefixHold (vals : List Clif.Val) (xs : List CV) : Prop :=
+@[expose] def PrefixHold (vals : List Clif.Val) (xs : List CV) : Prop :=
   vals.length ≤ xs.length ∧ ∀ (j : Nat) v x, vals[j]? = some v → xs[j]? = some x → VHolds v x
 
 theorem AllHold.prefixHold {vals : List Clif.Val} {xs : List CV} (h : AllHold vals xs) :
@@ -91,7 +91,7 @@ abbrev MemRelTW (W : Type) := List (Clif.SlotId × Nat) → Clif.Mem → W → P
 abbrev MemRelT := MemRelTW Arm.ArmState
 
 /-- Every defined CLIF value `x` is held by vreg `x` (`buildCtx`: value `x` has vreg `x`). -/
-def ValsHeld (fr : Clif.Frame) (ρ : Nat → CV) : Prop :=
+@[expose] def ValsHeld (fr : Clif.Frame) (ρ : Nat → CV) : Prop :=
   ∀ x v, fr.regs x = some v → VHolds v (ρ x)
 
 /-! ## Straight-line VCode execution (`VStep`'s per-instruction rule) -/
@@ -100,22 +100,22 @@ section
 variable {V W : Type}
 
 /-- Use values of an instruction with operands `ops` in the vreg file `ρ`. -/
-def vuses (ops : Array Operand) (ρ : Nat → V) : List V :=
+@[expose] def vuses (ops : Array Operand) (ρ : Nat → V) : List V :=
   (ops.toList.filter Operand.isUse).map (ρ ·.vreg)
 
 /-- `VStep`'s register-file update: early defs, then late defs. -/
-def vdefUpd (ops : Array Operand) (outs : List V) (ρ : Nat → V) : Nat → V :=
+@[expose] def vdefUpd (ops : Array Operand) (outs : List V) (ρ : Nat → V) : Nat → V :=
   writeV (writeV ρ (((ops.toList.filter Operand.isDef).zip outs).filter (·.1.isEarly)))
     (((ops.toList.filter Operand.isDef).zip outs).filter (·.1.isLate))
 
 /-- Def vregs of an instruction (empty if it has no operand view). -/
-def vdefs (i : MInst) : List Nat :=
+@[expose] def vdefs (i : MInst) : List Nat :=
   match i.operands with
   | .ok ops => (ops.toList.filter Operand.isDef).map (·.vreg)
   | .error _ => []
 
 /-- Use vregs of an instruction (empty if it has no operand view). -/
-def vuseNums (i : MInst) : List Nat :=
+@[expose] def vuseNums (i : MInst) : List Nat :=
   match i.operands with
   | .ok ops => (ops.toList.filter Operand.isUse).map (·.vreg)
   | .error _ => []
@@ -127,12 +127,12 @@ inductive SeqEnd (V W : Type) where
   | stop (k : Nat) (i : MInst) (ops : Array Operand) (ρ : Nat → V) (w : W) (outs : List V)
       (w' : W) (ctl : Ctl)
 
-def SeqEnd.succ : SeqEnd V W → SeqEnd V W
+@[expose] def SeqEnd.succ : SeqEnd V W → SeqEnd V W
   | .fall ρ w => .fall ρ w
   | .stop k i ops ρ w outs w' ctl => .stop (k + 1) i ops ρ w outs w' ctl
 
 /-- Straight-line run of `ms`. -/
-def seqRun (sem : ISem V W) : List MInst → (Nat → V) → W → Option (SeqEnd V W)
+@[expose] def seqRun (sem : ISem V W) : List MInst → (Nat → V) → W → Option (SeqEnd V W)
   | [], ρ, w => some (.fall ρ w)
   | i :: ms, ρ, w =>
     match i.operands with
@@ -152,33 +152,33 @@ end
 /-! ## The value-level spec of the emitted instruction forms -/
 
 /-- The operand at an operation size: the low `sz.bits` bits of the register. -/
-def opnd (sz : OperandSize) (a : CV) : BitVec sz.bits := (lo64 a).setWidth sz.bits
+@[expose] def opnd (sz : OperandSize) (a : CV) : BitVec sz.bits := (lo64 a).setWidth sz.bits
 
 /-- A result at an operation size, zero-extended into the 64-bit register. -/
-def resX (sz : OperandSize) (r : BitVec sz.bits) : CV := ofX (r.setWidth 64)
+@[expose] def resX (sz : OperandSize) (r : BitVec sz.bits) : CV := ofX (r.setWidth 64)
 
 /-- The def outputs of an instruction with destination `rd` (a real register such as `xzr` is
 not an operand, so it has no output). -/
-def defOut (rd : Reg) (x : CV) : List CV :=
+@[expose] def defOut (rd : Reg) (x : CV) : List CV :=
   match rd with
   | .vreg .. => [x]
   | _ => []
 
 /-- The multiply-add operations (`madd`/`msub`: `c ± a * b`), at width `n`. -/
-def mulAddVal {n : Nat} (op : ALUOp3) (a b c : BitVec n) : Option (BitVec n) :=
+@[expose] def mulAddVal {n : Nat} (op : ALUOp3) (a b c : BitVec n) : Option (BitVec n) :=
   match op with
   | .mAdd => some (c + a * b)
   | .mSub => some (c - a * b)
   | _ => none
 
 /-- The operations with a shifted-register form (`add`/`sub`/logical). -/
-def aluShiftable : ALUOp → Bool
+@[expose] def aluShiftable : ALUOp → Bool
   | .add | .sub | .and | .orr | .eor | .andNot | .orrNot | .eorNot => true
   | _ => false
 
 /-- The extended-register operand (amount 0): the low 8/16/32/64 bits of the register, zero-
 or sign-extended to the operation width `n`. -/
-def extendVal (e : ExtendOp) (n : Nat) (b : CV) : BitVec n :=
+@[expose] def extendVal (e : ExtendOp) (n : Nat) (b : CV) : BitVec n :=
   match e with
   | .uxtb => ((lo64 b).setWidth 8).setWidth n
   | .uxth => ((lo64 b).setWidth 16).setWidth n
@@ -190,28 +190,28 @@ def extendVal (e : ExtendOp) (n : Nat) (b : CV) : BitVec n :=
   | .sxtx => (lo64 b).signExtend n
 
 /-- Byte `i` of a 64-bit value. -/
-def byteOf (x : BitVec 64) (i : Nat) : BitVec 8 := x.extractLsb' (8 * i) 8
+@[expose] def byteOf (x : BitVec 64) (i : Nat) : BitVec 8 := x.extractLsb' (8 * i) 8
 
 /-- `CNT Vd.8B, Vn.8B`: the population count of each byte. -/
-def cntBytes (x : BitVec 64) : BitVec 64 :=
+@[expose] def cntBytes (x : BitVec 64) : BitVec 64 :=
   (byteOf x 7).cpop ++ (byteOf x 6).cpop ++ (byteOf x 5).cpop ++ (byteOf x 4).cpop ++
     (byteOf x 3).cpop ++ (byteOf x 2).cpop ++ (byteOf x 1).cpop ++ (byteOf x 0).cpop
 
 /-- `ADDP Vd.8B, Vn.8B, Vm.8B`: sums of adjacent byte pairs of `n` (low half), then of `m`. -/
-def addpBytes (n m : BitVec 64) : BitVec 64 :=
+@[expose] def addpBytes (n m : BitVec 64) : BitVec 64 :=
   (byteOf m 6 + byteOf m 7) ++ (byteOf m 4 + byteOf m 5) ++ (byteOf m 2 + byteOf m 3) ++
     (byteOf m 0 + byteOf m 1) ++ (byteOf n 6 + byteOf n 7) ++ (byteOf n 4 + byteOf n 5) ++
     (byteOf n 2 + byteOf n 3) ++ (byteOf n 0 + byteOf n 1)
 
 /-- `ADDV Bd, Vn.8B`: the sum of the eight bytes (modulo 256), zero-extended. -/
-def addvBytes (x : BitVec 64) : BitVec 64 :=
+@[expose] def addvBytes (x : BitVec 64) : BitVec 64 :=
   (byteOf x 0 + byteOf x 1 + byteOf x 2 + byteOf x 3 + byteOf x 4 + byteOf x 5 + byteOf x 6 +
     byteOf x 7).setWidth 64
 
 /-- `MOVI Vd.<T>, #imm8` (`LSL #0`): `imm8` zero-extended into every lane of the arrangement
 (8-, 16- or 32-bit lanes), the 64-bit arrangements zeroing the upper half of the register. The
 2D arrangement is not a `movi #imm8` (0). -/
-def moviVal (sz : VectorSize) (imm8 : BitVec 8) : CV :=
+@[expose] def moviVal (sz : VectorSize) (imm8 : BitVec 8) : CV :=
   match sz with
   | .size8x8 => (BitVec.replicate 8 imm8).setWidth 128
   | .size8x16 => (BitVec.replicate 16 imm8).setWidth 128
@@ -228,7 +228,7 @@ theorem moviVal_zero (sz : VectorSize) : moviVal sz 0#8 = 0#128 := by
 /-- `UBFM`/`SBFM` at width `n` (`immr`, `imms` below `n`): for `immr ≤ imms` the field
 `x[imms:immr]` moved to bit 0, else the field `x[imms:0]` moved to bit `n - immr`; zero-extended
 (`UBFM`) or sign-extended from the field's top bit (`SBFM`), zeros below. -/
-def bfmVal {n : Nat} (op : BfmOp) (x : BitVec n) (immr imms : Nat) : BitVec n :=
+@[expose] def bfmVal {n : Nat} (op : BfmOp) (x : BitVec n) (immr imms : Nat) : BitVec n :=
   if immr ≤ imms then
     let f := (x >>> immr).setWidth (imms - immr + 1)
     match op with
@@ -241,7 +241,7 @@ def bfmVal {n : Nat} (op : BfmOp) (x : BitVec n) (immr imms : Nat) : BitVec n :=
     | .sBfm => f.signExtend n <<< (n - immr)
 
 /-- The non-flag-setting two-operand ALU operations, at width `n`. -/
-def aluVal {n : Nat} (op : ALUOp) (a b : BitVec n) : Option (BitVec n) :=
+@[expose] def aluVal {n : Nat} (op : ALUOp) (a b : BitVec n) : Option (BitVec n) :=
   match op with
   | .add => some (a + b)
   | .sub => some (a - b)
@@ -255,7 +255,7 @@ def aluVal {n : Nat} (op : ALUOp) (a b : BitVec n) : Option (BitVec n) :=
 
 /-- The shift operations (`LSLV`/`LSRV`/`ASRV`/`RORV` as `AluRRR`, `LSL`/`LSR`/`ASR`/`ROR`
 immediate as `AluRRImmShift`; `extr` is Cranelift's rotate), by `amt`, at width `n`. -/
-def shiftVal {n : Nat} (op : ALUOp) (a : BitVec n) (amt : Nat) : Option (BitVec n) :=
+@[expose] def shiftVal {n : Nat} (op : ALUOp) (a : BitVec n) (amt : Nat) : Option (BitVec n) :=
   match op with
   | .lsl => some (a <<< amt)
   | .lsr => some (a >>> amt)
@@ -265,16 +265,16 @@ def shiftVal {n : Nat} (op : ALUOp) (a : BitVec n) (amt : Nat) : Option (BitVec 
 
 /-- A register-register ALU operation (`AluRRR`): the two-operand operations, then the shifts
 by the second operand modulo the width (`exec_data_processing_shift`). -/
-def rrrVal {n : Nat} (op : ALUOp) (a b : BitVec n) : Option (BitVec n) :=
+@[expose] def rrrVal {n : Nat} (op : ALUOp) (a b : BitVec n) : Option (BitVec n) :=
   (aluVal op a b).orElse fun _ => shiftVal op a (b.toNat % n)
 
 /-- `REV16` on a 32-bit register: swap the bytes of each halfword. -/
-def rev16w (x : BitVec 32) : BitVec 32 :=
+@[expose] def rev16w (x : BitVec 32) : BitVec 32 :=
   ((x >>> 8) &&& 0x00FF00FF#32) ||| ((x <<< 8) &&& 0xFF00FF00#32)
 
 /-- The condition of a `CondBrKind` on the use values and the world's flags (`cbz`/`cbnz` test
 the low 32 or 64 bits of the register; `b.cond` tests the flags). -/
-def condBrHolds (k : CondBrKind) (uses : List CV) (w : Arm.ArmState) : Bool :=
+@[expose] def condBrHolds (k : CondBrKind) (uses : List CV) (w : Arm.ArmState) : Bool :=
   match k, uses with
   | .cond c, _ => Arm.ConditionHolds c.bits w
   | .zero _ sz, [a] => if sz.is64 then lo64 a == 0 else (lo64 a).setWidth 32 == 0
@@ -282,24 +282,24 @@ def condBrHolds (k : CondBrKind) (uses : List CV) (w : Arm.ArmState) : Bool :=
   | _, _ => false
 
 /-- The flags of `ANDS` (`TST`): `N` = sign bit, `Z` = result is zero, `C = V = 0`. -/
-def andsFlags {n : Nat} (r : BitVec n) : Arm.PState :=
+@[expose] def andsFlags {n : Nat} (r : BitVec n) : Arm.PState :=
   Arm.make_pstate (Arm.BitVec.lsb r (n - 1)) (if r = 0#n then 1#1 else 0#1) 0#1 0#1
 
 /-- `MOVZ`/`MOVN` at width `n`: `imm.bits << 16·imm.shift`, inverted for `MOVN`. -/
-def movWideVal (op : MoveWideOp) (n : Nat) (imm : MoveWideConst) : BitVec n :=
+@[expose] def movWideVal (op : MoveWideOp) (n : Nat) (imm : MoveWideConst) : BitVec n :=
   match op with
   | .movZ => BitVec.ofNat n imm.bits <<< (16 * imm.shift)
   | .movN => ~~~(BitVec.ofNat n imm.bits <<< (16 * imm.shift))
 
 /-- `MOVK` at width `n`: the 16-bit slice `imm.shift` of `a` replaced by `imm.bits`. -/
-def movKVal {n : Nat} (a : BitVec n) (imm : MoveWideConst) : BitVec n :=
+@[expose] def movKVal {n : Nat} (a : BitVec n) (imm : MoveWideConst) : BitVec n :=
   (a &&& ~~~(BitVec.ofNat n 0xFFFF <<< (16 * imm.shift))) |||
     (BitVec.ofNat n imm.bits <<< (16 * imm.shift))
 
 /-- S11f: the binary scalar FP operations of `fpuRRR` on format `f` (the Arm model's
 `exec_fp_data_processing_two_source` with `FPCR = 0`: the shared IEEE core, round to nearest
 even). -/
-@[simp] def fpu2Val (op : FPUOp2) (f : IEEE.Fmt) (a b : IEEE.Bits f) : IEEE.Bits f :=
+@[expose, simp] def fpu2Val (op : FPUOp2) (f : IEEE.Fmt) (a b : IEEE.Bits f) : IEEE.Bits f :=
   match op with
   | .add => IEEE.add f .rne a b
   | .sub => IEEE.sub f .rne a b
@@ -310,7 +310,7 @@ even). -/
 
 /-- S11f: `fpuRRR op` on 128-bit register values at single (`size32`) or double (`size64`)
 precision; the result zero-extended into the register (`write_sfp`). -/
-@[simp] def fpu2Out (op : FPUOp2) (sz : ScalarSize) (a b : CV) : Option CV :=
+@[expose, simp] def fpu2Out (op : FPUOp2) (sz : ScalarSize) (a b : CV) : Option CV :=
   match sz with
   | .size32 => some ((fpu2Val op .b32 (a.setWidth 32) (b.setWidth 32)).setWidth 128)
   | .size64 => some ((fpu2Val op .b64 (a.setWidth 64) (b.setWidth 64)).setWidth 128)
@@ -320,7 +320,7 @@ precision; the result zero-extended into the register (`write_sfp`). -/
 model's `exec_fp_data_processing_one_source`): `fabs`/`fneg`/`fsqrt` at single or double
 precision, `fcvt` single → double (`size` 32) and double → single (`size` 64); the result
 zero-extended into the register (`write_sfp`). -/
-@[simp] def fpu1Val (op : FPUOp1) (sz : ScalarSize) (a : CV) : Option CV :=
+@[expose, simp] def fpu1Val (op : FPUOp1) (sz : ScalarSize) (a : CV) : Option CV :=
   match op, sz with
   | .abs, .size32 => some ((IEEE.abs .b32 (a.setWidth 32)).setWidth 128)
   | .abs, .size64 => some ((IEEE.abs .b64 (a.setWidth 64)).setWidth 128)
@@ -334,14 +334,14 @@ zero-extended into the register (`write_sfp`). -/
 
 /-- S11f: the flags `FCMP` writes (`FPCompare`: unordered `0011`, equal `0110`, less than
 `1000`, greater than `0010`; the Arm model's `exec_fp_compare`). -/
-def fcmpFlags (c : IEEE.Cmp) : Arm.PState :=
+@[expose] def fcmpFlags (c : IEEE.Cmp) : Arm.PState :=
   let nzcv := Arm.DPSFP.fpCompareNZCV c
   Arm.make_pstate (Arm.BitVec.lsb nzcv 3) (Arm.BitVec.lsb nzcv 2) (Arm.BitVec.lsb nzcv 1)
     (Arm.BitVec.lsb nzcv 0)
 
 /-- S11f: the IEEE comparison `FCMP` performs at single (`size32`) or double (`size64`)
 precision. -/
-@[simp] def fcmpOut (sz : ScalarSize) (a b : CV) : Option IEEE.Cmp :=
+@[expose, simp] def fcmpOut (sz : ScalarSize) (a b : CV) : Option IEEE.Cmp :=
   match sz with
   | .size32 => some (IEEE.compare .b32 (a.setWidth 32) (b.setWidth 32))
   | .size64 => some (IEEE.compare .b64 (a.setWidth 64) (b.setWidth 64))
@@ -351,7 +351,7 @@ precision. -/
 a 32/64-bit signed/unsigned integer, saturating, NaN ↦ 0 (the Arm model's `exec_fp_int_cvt`:
 `FPToFixed` on the shared IEEE core); the result zero-extended into the X register
 (`X[d, intsize]`). -/
-@[simp] def fpuToIntVal (op : FpuToIntOp) (a : CV) : CV :=
+@[expose, simp] def fpuToIntVal (op : FpuToIntOp) (a : CV) : CV :=
   match op with
   | .f32ToU32 => ofX ((IEEE.toFixed .b32 (a.setWidth 32) true 32 .rz).setWidth 64)
   | .f32ToI32 => ofX ((IEEE.toFixed .b32 (a.setWidth 32) false 32 .rz).setWidth 64)
@@ -365,7 +365,7 @@ a 32/64-bit signed/unsigned integer, saturating, NaN ↦ 0 (the Arm model's `exe
 /-- S11f-cvt: `scvtf`/`ucvtf` (`intToFpu`): the low 32/64 bits of the X register as a
 signed/unsigned integer, rounded to nearest even to single/double precision (`FixedToFP`); the
 result zero-extended into the vector register (`write_sfp`). -/
-@[simp] def intToFpuVal (op : IntToFpuOp) (a : CV) : CV :=
+@[expose, simp] def intToFpuVal (op : IntToFpuOp) (a : CV) : CV :=
   match op with
   | .u32ToF32 => (IEEE.fromFixed .b32 32 ((lo64 a).setWidth 32) true .rne).setWidth 128
   | .i32ToF32 => (IEEE.fromFixed .b32 32 ((lo64 a).setWidth 32) false .rne).setWidth 128
@@ -378,7 +378,7 @@ result zero-extended into the vector register (`write_sfp`). -/
 /-- S11f: `fpuRound op` (`frintm/frintp/frintz/frintn`) on a 128-bit register value (the Arm
 model's `exec_fp_data_processing_one_source`, `FPRoundInt` with `FPCR = 0`): the operand's low 32
 or 64 bits rounded to an integral value in the same format, zero-extended into the register. -/
-@[simp] def fpuRoundOut (op : FpuRoundMode) (a : CV) : Option CV :=
+@[expose, simp] def fpuRoundOut (op : FpuRoundMode) (a : CV) : Option CV :=
   match op with
   | .minus32 => some ((IEEE.roundInt .b32 .rmi (a.setWidth 32)).setWidth 128)
   | .minus64 => some ((IEEE.roundInt .b64 .rmi (a.setWidth 64)).setWidth 128)
@@ -393,7 +393,7 @@ or 64 bits rounded to an integral value in the same format, zero-extended into t
 result zeroes the register above it (`write_sfp`). `ispec`'s fallback: a separate match, so that
 `ispec`'s own match (whose equation lemmas every `simp [ispec]` realizes, within the default
 heartbeats) keeps its size. -/
-@[simp] def ispecFP : Sem := fun i uses w =>
+@[expose, simp] def ispecFP : Sem := fun i uses w =>
   match i, uses with
   | .fpuRRR op sz rd _ _, [a, b] => (fpu2Out op sz a b).map fun r => (defOut rd r, w, .next)
   | .fpuRR op sz rd _, [a] => (fpu1Val op sz a).map fun r => (defOut rd r, w, .next)
@@ -408,7 +408,7 @@ heartbeats) keeps its size. -/
 Arm model's operations (`AddWithCarry`, `write_pstate`, `ConditionHolds`): the def values
 (in operand order) and the world after. `none`: form not specified (yet). A 32-bit operation
 reads the low 32 bits of its operands and zero-extends its result (Arm `W` registers). -/
-def ispec : Sem := fun i uses w =>
+@[expose] def ispec : Sem := fun i uses w =>
   match i, uses with
   -- flags / select / division forms (M4Cmp)
   | .aluRRImm12 .subS sz rd _ imm, [a] =>
@@ -634,23 +634,23 @@ VCode semantics gives the same def values and the same control (`ispec` only pro
 and `halt` for the trap forms), with a world that agrees with `ispec`'s outside the
 allocatable registers and the frame addresses `F` (M6's `SameWorld`). M6's `csem F ctx`
 satisfies it form by form (its characterization lemmas). -/
-def Refines (F : BitVec 64 → Prop) (isem : Sem) : Prop :=
+@[expose] def Refines (F : BitVec 64 → Prop) (isem : Sem) : Prop :=
   ∀ i us w outs w' {ctl : Ctl}, ispec i us w = some (outs, w', ctl) →
     ∃ w'', isem i us w = some (outs, w'', ctl) ∧ SameWorld F w'' w'
 
 /-- `SameWorld` without NZCV: `s` and `t` agree on every unmasked field except the flags, on
 memory outside `F`, and on the program. -/
-def SameWorldNF (F : BitVec 64 → Prop) (s t : Arm.ArmState) : Prop :=
+@[expose] def SameWorldNF (F : BitVec 64 → Prop) (s t : Arm.ArmState) : Prop :=
   (∀ f, ¬ Masked f → (∀ fl, f ≠ .FLAG fl) → Arm.r f s = Arm.r f t) ∧
     (∀ a, ¬ F a → s.mem a = t.mem a) ∧ s.program = t.program
 
 /-- The memory relation does not depend on the allocatable registers, the pc or the flags
 (which is all the non-memory instructions change). -/
-def MRStable (F : BitVec 64 → Prop) (MR : MemRelT) : Prop :=
+@[expose] def MRStable (F : BitVec 64 → Prop) (MR : MemRelT) : Prop :=
   ∀ sl cm w w', SameWorldNF F w' w → MR sl cm w → MR sl cm w'
 
 /-- The types of the E integer types `i8..i64` (`buildCtx` rejects `i128` values). -/
-def eCTys : List CTy := [.int 8, .int 16, .int 32, .int 64]
+@[expose] def eCTys : List CTy := [.int 8, .int 16, .int 32, .int 64]
 
 /-- The value types of E are in X registers. -/
 theorem valClass_of_eCTys {t : CTy} (h : t ∈ eCTys) : t.valClass = .int := by
@@ -703,7 +703,7 @@ structure CtxInv (f : Clif.Function) (ctx : Ctx) : Prop where
 /-- Instructions the rules may look through (`def_inst`): their value is a function of their
 operands (and the frame's slot bases). The float operations (S11f) are memory-independent too
 (`fcmp` is looked through by `is_nonzero_cmp`). -/
-def pureInst : Clif.Inst → Bool
+@[expose] def pureInst : Clif.Inst → Bool
   | .iconst .. | .unary .. | .binary .. | .icmp .. | .extend .. | .ireduce .. | .select ..
   | .stackAddr .. | .float .. => true
   | _ => false
@@ -712,14 +712,14 @@ def pureInst : Clif.Inst → Bool
 (`buildCtx` sets `valTy` from the declared parameter/result types). Rules dispatching on
 `value_type` (`extended_value_from_value`, `put_in_reg_zext32/sext32/zext64/sext64`, …) need
 it. -/
-def FrameTyped (ctx : Ctx) (fr : Clif.Frame) : Prop :=
+@[expose] def FrameTyped (ctx : Ctx) (fr : Clif.Frame) : Prop :=
   ∀ (x : Nat) (t : CTy) (v : Clif.Val), ctx.valueType? x = some t → fr.regs x = some v →
     CTy.ofClif v.ty = t
 
 /-- DFG consistency: a defined value whose definition is a pure instruction equals that
 instruction re-evaluated in the current frame (what `def_inst` look-through relies on), and
 the frame is typed as the context says (`FrameTyped`). -/
-def DFGCons (ctx : Ctx) (fr : Clif.Frame) : Prop :=
+@[expose] def DFGCons (ctx : Ctx) (fr : Clif.Frame) : Prop :=
   (∀ (x j : Nat) (info : IInfo) (cl : Clif.Inst) (v : Clif.Val), ctx.defInst? x = some j → ctx.insts[j]? = some info → info.clif = some cl →
     pureInst cl = true → fr.regs x = some v →
     ∃ vals, (∀ cm, Clif.evalInst fr cm cl = .ok (vals, cm)) ∧ (info.results.zip vals).lookup x = some v) ∧
@@ -731,7 +731,7 @@ def DFGCons (ctx : Ctx) (fr : Clif.Frame) : Prop :=
 semantics (as `Clif.stepCall`; a call of a function of `p` is outside the theorem), for a
 `call_indirect` the extern's at the callee address (as `Clif.stepCallIndirect`; an indirect call
 of a function of `p` is outside the theorem). -/
-def instOutcome (env : Clif.Env) (p : Clif.Program) (fr : Clif.Frame) (cm : Clif.Mem) :
+@[expose] def instOutcome (env : Clif.Env) (p : Clif.Program) (fr : Clif.Frame) (cm : Clif.Mem) :
     Clif.Inst → Clif.Res (List Clif.Val × Clif.Mem)
   | .call fn args =>
     Clif.Res.bind (do
@@ -765,7 +765,7 @@ def instOutcome (env : Clif.Env) (p : Clif.Program) (fr : Clif.Frame) (cm : Clif
   | i => Clif.evalInst fr cm i
 
 /-- Instructions whose trap the lowering makes explicit (check + trap instruction). -/
-def explicitTrapInst : Clif.Inst → Bool
+@[expose] def explicitTrapInst : Clif.Inst → Bool
   | .div .. => true
   | _ => false
 
@@ -776,7 +776,7 @@ def trapCode? : MInst → Option Clif.TrapCode
 
 /-- The result registers hold the results: one virtual register per result, a fresh vreg
 (`≥ lo`) or a defined value's vreg. -/
-def ResultsHeld (lo : Nat) (fr : Clif.Frame) (rss : List (List Reg)) (vals : List Clif.Val)
+@[expose] def ResultsHeld (lo : Nat) (fr : Clif.Frame) (rss : List (List Reg)) (vals : List Clif.Val)
     (ρ : Nat → CV) : Prop :=
   rss.length = vals.length ∧
     ∀ (j : Nat) rs v, rss[j]? = some rs → vals[j]? = some v →
@@ -784,7 +784,7 @@ def ResultsHeld (lo : Nat) (fr : Clif.Frame) (rss : List (List Reg)) (vals : Lis
 
 /-- The emitted code reads only fresh vregs (`≥ st.nextVreg`) or vregs of values defined in
 `fr`. Required on the runs that continue (an undefined operand makes CLIF `stuck`). -/
-def UsesOk (st : LState) (fr : Clif.Frame) (ms : List MInst) : Prop :=
+@[expose] def UsesOk (st : LState) (fr : Clif.Frame) (ms : List MInst) : Prop :=
   ∀ m ∈ ms, ∀ u ∈ vuseNums m, st.nextVreg ≤ u ∨ (fr.regs u).isSome
 
 /-- **`lower` on a non-terminator** (results `results`; lowering state `st` → `st'`, emitted
@@ -838,12 +838,12 @@ structure LowerTermOk {W : Type} (isem : ISem CV W) (MR : MemRelTW W) (ctx : Ctx
 /-! ## Per-rule statements and the M4 target predicate -/
 
 /-- Rule `r` is a root rule of the emitter-subset closure (`Isle.Aarch64.Closure`). -/
-def closureRoot (r : Rule) : Bool := Closure.rules.any fun c => c.isRoot && c.rule == r.id
+@[expose] def closureRoot (r : Rule) : Bool := Closure.rules.any fun c => c.isRoot && c.rule == r.id
 
 /-- The vreg of every value with a register is below the lowering state's next fresh vreg
 (`buildCtx` starts `nextVreg` above every value's vreg and lowering only increases it), so
 fresh temporaries never alias an operand. -/
-def ValsBelow (ctx : Ctx) (st : LState) : Prop :=
+@[expose] def ValsBelow (ctx : Ctx) (st : LState) : Prop :=
   ∀ (x : Nat) (r : Reg), ctx.valueReg? x = some r → x < st.nextVreg
 
 /-- **Root rule correctness (`lower`).** Whenever rule `r` matches instruction `ii` (from any
@@ -851,7 +851,7 @@ lowering state) and its right-hand side returns `out`, the instructions it appen
 correct lowering of the CLIF instruction: `out` lists the result registers and
 `LowerInstOk` holds. Stated for all fuels `≥ 1000` (the driver runs with fuel 10⁶; a rule
 needs a bounded amount, so the lemmas never need fuel monotonicity). -/
-def LowerRuleOk (isem : Sem) (MR : MemRelT) (env : Clif.Env) (cp : Clif.Program)
+@[expose] def LowerRuleOk (isem : Sem) (MR : MemRelT) (env : Clif.Env) (cp : Clif.Program)
     (p : Program) (r : Rule) : Prop :=
   ∀ (f : Clif.Function) (ctx : Ctx), CtxInv f ctx → ∀ (ii : Nat) (info : IInfo) (inst : Clif.Inst), ctx.insts[ii]? = some info → info.clif = some inst →
   ∀ (cfg : Config), cfg.checkOverlap = false →
@@ -868,12 +868,12 @@ def LowerRuleOk (isem : Sem) (MR : MemRelT) (env : Clif.Env) (cp : Clif.Program)
 1031) and `rule_lower_2518` (callee through the GOT, `loadExtNameGot` + `blr`, rule id 1032).
 They are proven under the callee contract `CallsRefine` (`CallRulesCorrect`), not in
 `LowerRulesCorrect`. -/
-def callRootRule (r : Rule) : Bool := r.id == 1031 || r.id == 1032
+@[expose] def callRootRule (r : Rule) : Bool := r.id == 1031 || r.id == 1032
 
 /-- The root rule of `lower` on `call_indirect`: `rule_lower_2529` (`blr` of the callee value's
 register, rule id 1033), proven under the indirect-call contract `IndCallsRefine`
 (`IndRulesCorrect`), not in `LowerRulesCorrect`. -/
-def indRootRule (r : Rule) : Bool := r.id == 1033
+@[expose] def indRootRule (r : Rule) : Bool := r.id == 1033
 
 /-! ### Memory (contract change #7, M4Mem)
 
@@ -889,7 +889,7 @@ values of its register operands (operand order) and the world (`sp`); `sb` is th
 stack-slot region from `sp` (M6: `FnCtx.slotBase`, M7: `Rel.slotOff`). Only the forms the
 lowering emits (int vreg operands, `simm9` / scaled `uimm12` immediates as the ISLE rules check
 them, 32-bit index extensions); `none` otherwise. As M6's `AMode.addr`. -/
-def amodeAddr (sb : Nat) (am : AMode) (bytes : Nat) (uses : List CV) (w : Arm.ArmState) :
+@[expose] def amodeAddr (sb : Nat) (am : AMode) (bytes : Nat) (uses : List CV) (w : Arm.ArmState) :
     Option (BitVec 64) :=
   match am, uses with
   | .regReg (.vreg _ .int) (.vreg _ .int), [a, b] => some (lo64 a + lo64 b)
@@ -910,21 +910,21 @@ def amodeAddr (sb : Nat) (am : AMode) (bytes : Nat) (uses : List CV) (w : Arm.Ar
   | _, _ => none
 
 /-- Sign-extending loads (`ldrsb`/`ldrsh`/`ldrsw` into an X register). -/
-def loadSigned : LoadOp → Bool
+@[expose] def loadSigned : LoadOp → Bool
   | .sload8 | .sload16 | .sload32 => true
   | _ => false
 
 /-- The 64-bit register value a load `op` from `a` leaves: the `op.bytes` bytes at `a`
 (little-endian), sign- or zero-extended. -/
-def loadVal (op : LoadOp) (a : BitVec 64) (w : Arm.ArmState) : BitVec 64 :=
+@[expose] def loadVal (op : LoadOp) (a : BitVec 64) (w : Arm.ArmState) : BitVec 64 :=
   if loadSigned op then (Arm.read_mem_bytes op.bytes a w).signExtend 64
   else (Arm.read_mem_bytes op.bytes a w).setWidth 64
 
 /-- The access types of the atomic instructions (`valid_atomic_transaction`: `i8`..`i64`). -/
-def AtomTy (ty : CTy) : Prop := ty = .int 8 ∨ ty = .int 16 ∨ ty = .int 32 ∨ ty = .int 64
+@[expose] def AtomTy (ty : CTy) : Prop := ty = .int 8 ∨ ty = .int 16 ∨ ty = .int 32 ∨ ty = .int 64
 
 /-- The CLIF operation of an `atomic_rmw` loop operation (the root rules' mapping). -/
-def _root_.Backend.AtomicRmwLoopOp.clif : AtomicRmwLoopOp → Clif.AtomicRmwOp
+@[expose] def _root_.Backend.AtomicRmwLoopOp.clif : AtomicRmwLoopOp → Clif.AtomicRmwOp
   | .add => .add | .sub => .sub | .and => .and | .nand => .nand | .xor => .xor | .or => .or
   | .smax => .smax | .smin => .smin | .umax => .umax | .umin => .umin | .xchg => .xchg
 
@@ -944,7 +944,7 @@ up to the flags (`SameWorldNF`; the scratch defs' values are unspecified). `tls_
 (agent/stack-tls-proof, one thread): the TLSDESC sequence of a linked symbol defines its
 address in the first def (the thread pointer, unspecified here, in the second) with a world
 that agrees up to the flags (the resolver may change them). -/
-def MemRefines (F : BitVec 64 → Prop) (sb : Nat) (syms : String → Option Nat) (isem : Sem) :
+@[expose] def MemRefines (F : BitVec 64 → Prop) (sb : Nat) (syms : String → Option Nat) (isem : Sem) :
     Prop :=
   (∀ (op : LoadOp) (d : Nat) (am : AMode) (fl : Clif.MemFlags) (uses : List CV)
       (w : Arm.ArmState) (a : BitVec 64),
@@ -999,7 +999,7 @@ every byte they read satisfies `Rd`. A semantics whose reads of the other bytes 
 and the memory rules hold under it when the initialised bytes of the CLIF memory satisfy `Rd`
 (`MemRuleOkR`, `InitIn`): the VCode reads only bytes its CLIF instruction reads. With `Rd` true
 it is `MemRefines` (`memRefinesR_of`, `memRefines_of_true`). -/
-def MemRefinesR (Rd : BitVec 64 → Prop) (F : BitVec 64 → Prop) (sb : Nat)
+@[expose] def MemRefinesR (Rd : BitVec 64 → Prop) (F : BitVec 64 → Prop) (sb : Nat)
     (syms : String → Option Nat) (isem : Sem) : Prop :=
   (∀ (op : LoadOp) (d : Nat) (am : AMode) (fl : Clif.MemFlags) (uses : List CV)
       (w : Arm.ArmState) (a : BitVec 64),
@@ -1072,7 +1072,7 @@ theorem memRefines_of_true {F : BitVec 64 → Prop} {sb : Nat} {syms : String �
     h.2.2.2.2.2.2.2.2⟩
 
 /-- The initialised bytes of the live allocations of `cm` satisfy `Rd`. -/
-def InitIn (Rd : BitVec 64 → Prop) (cm : Clif.Mem) : Prop :=
+@[expose] def InitIn (Rd : BitVec 64 → Prop) (cm : Clif.Mem) : Prop :=
   ∀ a, cm.valid a 1 = true → (cm.bytes a).isSome = true → Rd (BitVec.ofNat 64 a)
 
 /-- `LowerInstOk` whose run assumes that the initialised bytes of the CLIF memory satisfy `Rd`
@@ -1131,14 +1131,14 @@ atomics (agent/atomics-proof): `atomic_load` (983), `atomic_store` (984), `atomi
 never matches); `tls_value` (agent/stack-tls-proof): the `elf_gd` rule (1129) and the `macho`
 rule (1130: never matches, `tls_model` is `elf_gd`); the float loads and stores (S11e4):
 `load.f32`/`load.f64` (1047, 1048), `store` of an `f32`/`f64` value (1073, 1074). -/
-def memRootRule (r : Rule) : Bool :=
+@[expose] def memRootRule (r : Rule) : Bool :=
   r.id == 1027 || r.id == 1026 || r.id == 1093 || r.id == 815 || r.id == 824 ||
     (1041 ≤ r.id && r.id ≤ 1044) || (1052 ≤ r.id && r.id ≤ 1057) || (1064 ≤ r.id && r.id ≤ 1070) ||
     r.id == 810 || r.id == 983 || r.id == 984 || (994 ≤ r.id && r.id ≤ 1004) || r.id == 1007 ||
     r.id == 1129 || r.id == 1130 || r.id == 1047 || r.id == 1048 || r.id == 1073 || r.id == 1074
 
 /-- `LowerRuleOk` for a memory rule: additionally assumes `MemRelOk F sb syms f MR`. -/
-def MemRuleOk (F : BitVec 64 → Prop) (sb : Nat) (syms : String → Option Nat) (isem : Sem)
+@[expose] def MemRuleOk (F : BitVec 64 → Prop) (sb : Nat) (syms : String → Option Nat) (isem : Sem)
     (MR : MemRelT) (env : Clif.Env) (cp : Clif.Program) (p : Program) (r : Rule) : Prop :=
   ∀ (f : Clif.Function) (ctx : Ctx), CtxInv f ctx → MemRelOk F sb syms f MR →
   ∀ (ii : Nat) (info : IInfo) (inst : Clif.Inst), ctx.insts[ii]? = some info → info.clif = some inst →
@@ -1154,7 +1154,7 @@ def MemRuleOk (F : BitVec 64 → Prop) (sb : Nat) (syms : String → Option Nat)
 
 /-- **M4's target for the memory rules**: under `MemRefines`, every memory root rule is correct
 for every function whose memory relation is `MemRelOk`. -/
-def MemRulesCorrect (p : Program) : Prop :=
+@[expose] def MemRulesCorrect (p : Program) : Prop :=
   ∀ (F : BitVec 64 → Prop) (sb : Nat) (syms : String → Option Nat) (isem : Sem) (MR : MemRelT)
     (env : Clif.Env) (cp : Clif.Program),
     Refines F isem → MRStable F MR → MemRefines F sb syms isem →
@@ -1162,7 +1162,7 @@ def MemRulesCorrect (p : Program) : Prop :=
 
 /-- `MemRuleOk` under `MemRefinesR Rd` (guarded reads): the obligation is `LowerInstOkR Rd`
 (its run assumes the initialised CLIF bytes satisfy `Rd`). -/
-def MemRuleOkR (Rd : BitVec 64 → Prop) (F : BitVec 64 → Prop) (sb : Nat)
+@[expose] def MemRuleOkR (Rd : BitVec 64 → Prop) (F : BitVec 64 → Prop) (sb : Nat)
     (syms : String → Option Nat) (isem : Sem) (MR : MemRelT) (env : Clif.Env) (cp : Clif.Program)
     (p : Program) (r : Rule) : Prop :=
   ∀ (f : Clif.Function) (ctx : Ctx), CtxInv f ctx → MemRelOk F sb syms f MR →
@@ -1181,7 +1181,7 @@ def MemRuleOkR (Rd : BitVec 64 → Prop) (F : BitVec 64 → Prop) (sb : Nat)
 `MemRefinesR Rd`, every memory root rule is correct, for every `Rd` that holds at the
 initialised CLIF bytes: a memory rule's VCode reads only bytes its CLIF instruction reads.
 Implies `MemRulesCorrect` (`memRulesCorrect_of_R`). -/
-def MemRulesCorrectR (p : Program) : Prop :=
+@[expose] def MemRulesCorrectR (p : Program) : Prop :=
   ∀ (Rd : BitVec 64 → Prop) (F : BitVec 64 → Prop) (sb : Nat) (syms : String → Option Nat)
     (isem : Sem) (MR : MemRelT) (env : Clif.Env) (cp : Clif.Program),
     Refines F isem → MRStable F MR → MemRefinesR Rd F sb syms isem →
@@ -1200,7 +1200,7 @@ memory relation, every root rule of `lower` in the E-closure other than the call
 (`callRootRule`, see `CallRulesCorrect`; `indRootRule`, see `IndRulesCorrect`) and the memory
 rules (`memRootRule`, see `MemRulesCorrect`) is correct. This is the M4 hypothesis of M7's
 theorem (with `data_program`: `lowerInstOk_runTerm`). -/
-def LowerRulesCorrect (p : Program) : Prop :=
+@[expose] def LowerRulesCorrect (p : Program) : Prop :=
   ∀ (F : BitVec 64 → Prop) (isem : Sem) (MR : MemRelT) (env : Clif.Env) (cp : Clif.Program),
     Refines F isem → MRStable F MR →
     ∀ r ∈ p.rulesOf TId.lower, closureRoot r = true → callRootRule r = false →
@@ -1581,7 +1581,7 @@ parameter; the register-passed ones held (low bits, `AllHold`) by the argument v
 (x0.. in order, an `sret` pointer in x8), the others in the outgoing stack area
 (`StackArgsAt`). With at most 8 parameters every argument is in a register and this is
 `AllHold vals args` (`argsAt_iff_of_regs`). -/
-def ArgsAt (s : Clif.Signature) (vals : List Clif.Val) (args : List CV) (w : Arm.ArmState) :
+@[expose] def ArgsAt (s : Clif.Signature) (vals : List Clif.Val) (args : List CV) (w : Arm.ArmState) :
     Prop :=
   vals.length = s.params.length ∧ AllHold (regArgVals s vals) args ∧ StackArgsAt s vals w
 
@@ -1598,7 +1598,7 @@ first ones the extern's results (`PrefixHold`), and a world related to the exter
 same holds of a `tryCall` (the call of a `try_call`, with the exception payload registers among
 its defs after the returns), which then continues at its normal-return successor (successor
 number `ti.handlers.length`, the last). -/
-def CallsRefine (F : BitVec 64 → Prop) (env : Clif.Env) (exts : List Clif.ExtFunc) (MR : MemRelT)
+@[expose] def CallsRefine (F : BitVec 64 → Prop) (env : Clif.Env) (exts : List Clif.ExtFunc) (MR : MemRelT)
     (isem : Sem) : Prop :=
   ∃ sym : String → BitVec 64,
     (∀ (rd : Reg) (n : String) (w : Arm.ArmState), ∃ w',
@@ -1642,19 +1642,19 @@ the `out` bytes at `sp` avoid the frame addresses `F`, and writing bytes there k
 relation (no live CLIF allocation is in it, `sp` is unchanged). M7's `Rel.holds` with the
 outgoing area of the activation satisfies it (`E2E.outArgsOk_holds`); for `out = 0` it is
 vacuous. -/
-def OutArgsOk (F : BitVec 64 → Prop) (out : Nat) (MR : MemRelT) : Prop :=
+@[expose] def OutArgsOk (F : BitVec 64 → Prop) (out : Nat) (MR : MemRelT) : Prop :=
   ∀ sl cm w, MR sl cm w → out ≤ 2 ^ 64 ∧ Avoids F out (spOf w) ∧
     ∀ (k n : Nat) (y : BitVec (n * 8)), k + n ≤ out →
       MR sl cm (Arm.write_mem_bytes n (spOf w + BitVec.ofNat 64 k) y w)
 
 /-- A call of `s` passes at most `out` bytes on the stack (`stackBytes`), with a well-formed
 layout (`stackLayoutOk`). -/
-def SigStackOk (s : Clif.Signature) (out : Nat) : Prop :=
+@[expose] def SigStackOk (s : Clif.Signature) (out : Nat) : Prop :=
   stackBytes s ≤ out ∧ stackLayoutOk s = true
 
 /-- The calls (`call`) of the statements of `f` fit the outgoing area `out` (decided by
 `lowerCheck` against the VCode's outgoing area, `callsStackOkB`). -/
-def CallsStack (f : Clif.Function) (out : Nat) : Prop :=
+@[expose] def CallsStack (f : Clif.Function) (out : Nat) : Prop :=
   ∀ B ∈ f.blocks, ∀ st ∈ B.body, ∀ fn args e, st.inst = .call fn args → f.extern? fn = some e →
     SigStackOk e.sig out
 
@@ -1665,12 +1665,12 @@ def TryStack (f : Clif.Function) (out : Nat) : Prop :=
     SigStackOk e.sig out
 
 /-- Every extern `f` declares is in `exts` (the externs `CallsRefine` covers). -/
-def ExternsIn (f : Clif.Function) (exts : List Clif.ExtFunc) : Prop :=
+@[expose] def ExternsIn (f : Clif.Function) (exts : List Clif.ExtFunc) : Prop :=
   ∀ (fn : Clif.FnRef) (e : Clif.ExtFunc), f.extern? fn = some e → e ∈ exts
 
 /-- `LowerRuleOk` for a call rule: additionally assumes that the callee contract covers `f`'s
 externs (`ExternsIn f exts`) and that a call's stack arguments fit the outgoing area `outB`. -/
-def CallRuleOk (isem : Sem) (MR : MemRelT) (env : Clif.Env) (cp : Clif.Program)
+@[expose] def CallRuleOk (isem : Sem) (MR : MemRelT) (env : Clif.Env) (cp : Clif.Program)
     (exts : List Clif.ExtFunc) (outB : Nat) (p : Program) (r : Rule) : Prop :=
   ∀ (f : Clif.Function) (ctx : Ctx), CtxInv f ctx → ExternsIn f exts →
   ∀ (ii : Nat) (info : IInfo) (inst : Clif.Inst), ctx.insts[ii]? = some info → info.clif = some inst →
@@ -1688,7 +1688,7 @@ def CallRuleOk (isem : Sem) (MR : MemRelT) (env : Clif.Env) (cp : Clif.Program)
 /-- **M4's target for the call rules**: under the callee contract, the memory forms (the
 outgoing stack arguments are `spOffset` stores) and the outgoing area, the call root rules are
 correct. -/
-def CallRulesCorrect (p : Program) : Prop :=
+@[expose] def CallRulesCorrect (p : Program) : Prop :=
   ∀ (F : BitVec 64 → Prop) (isem : Sem) (MR : MemRelT) (env : Clif.Env) (cp : Clif.Program)
     (exts : List Clif.ExtFunc) (sb : Nat) (syms : String → Option Nat) (outB : Nat),
     Refines F isem → MRStable F MR → MemRefines F sb syms isem → OutArgsOk F outB MR →
@@ -1714,7 +1714,7 @@ def per ABI return of the call site's signature (`sigRets`), returns one value p
 first ones the extern's results (`PrefixHold`), and a world related to the extern's memory;
 the same of the `tryCall` of a `try_call_indirect`, which continues at its normal-return
 successor (`ti.handlers.length`). -/
-def IndCallsRefine (env : Clif.Env) (sigs : List Clif.Signature) (MR : MemRelT) (isem : Sem) :
+@[expose] def IndCallsRefine (env : Clif.Env) (sigs : List Clif.Signature) (MR : MemRelT) (isem : Sem) :
     Prop :=
   (∀ sig ∈ sigs, ∀ (n : String) g (sl : List (Clif.SlotId × Nat)) (cm : Clif.Mem)
       (w : Arm.ArmState) (a : Nat) (r : Reg) (us ds : List (Reg × Reg)) (u : CV) (args : List CV)
@@ -1741,13 +1741,13 @@ def IndCallsRefine (env : Clif.Env) (sigs : List Clif.Signature) (MR : MemRelT) 
 
 /-- The call-site signature of an indirect call `inst` of `f` is in `sigs` and passes its
 arguments in registers (at most 8 parameters; `E2E.InSubset.indSigs`). -/
-def IndSigOk (f : Clif.Function) (sigs : List Clif.Signature) (inst : Clif.Inst) : Prop :=
+@[expose] def IndSigOk (f : Clif.Function) (sigs : List Clif.Signature) (inst : Clif.Inst) : Prop :=
   ∀ sig callee args s, inst = .callIndirect sig callee args → f.sigDecls.lookup sig = some s →
     s ∈ sigs ∧ s.params.length ≤ 8
 
 /-- `LowerRuleOk` for the `call_indirect` rule: additionally assumes `IndSigOk f sigs inst`
 (the indirect-call contract covers the call site's signature). -/
-def IndRuleOk (isem : Sem) (MR : MemRelT) (env : Clif.Env) (cp : Clif.Program)
+@[expose] def IndRuleOk (isem : Sem) (MR : MemRelT) (env : Clif.Env) (cp : Clif.Program)
     (sigs : List Clif.Signature) (p : Program) (r : Rule) : Prop :=
   ∀ (f : Clif.Function) (ctx : Ctx), CtxInv f ctx →
   ∀ (ii : Nat) (info : IInfo) (inst : Clif.Inst), ctx.insts[ii]? = some info → info.clif = some inst →
@@ -1764,7 +1764,7 @@ def IndRuleOk (isem : Sem) (MR : MemRelT) (env : Clif.Env) (cp : Clif.Program)
 
 /-- **M4's target for the `call_indirect` rule**: under the indirect-call contract, it is
 correct. -/
-def IndRulesCorrect (p : Program) : Prop :=
+@[expose] def IndRulesCorrect (p : Program) : Prop :=
   ∀ (F : BitVec 64 → Prop) (isem : Sem) (MR : MemRelT) (env : Clif.Env) (cp : Clif.Program)
     (sigs : List Clif.Signature),
     Refines F isem → MRStable F MR → IndCallsRefine env sigs MR isem →
@@ -1773,7 +1773,7 @@ def IndRulesCorrect (p : Program) : Prop :=
 /-- The root rules of `lower` outside the closure (their patterns name a non-E opcode, a
 non-`i8..i64` type or a vector/float type test) never match an instruction of a context
 `buildCtx` builds. -/
-def ExcludedUnmatchable (p : Program) : Prop :=
+@[expose] def ExcludedUnmatchable (p : Program) : Prop :=
   ∀ r ∈ p.rulesOf TId.lower, closureRoot r = false →
   ∀ (f : Clif.Function) (ctx : Ctx), CtxInv f ctx → Compile.functionE f = true →
   ∀ (ii : Nat) (info : IInfo) (inst : Clif.Inst), ctx.insts[ii]? = some info → info.clif = some inst →
@@ -1784,7 +1784,7 @@ def ExcludedUnmatchable (p : Program) : Prop :=
 dispatches on the low 32 bits, and Cranelift's verifier requires an `i32` index. M7's `lowerCheck`
 decides it for every terminator (`brIdxOk`). Contract change #9: the table has fewer than `2^32`
 entries (`jump_table_size` is a `u32`; the bounds check compares 32 bits). -/
-def BrIdxTyped (ctx : Ctx) (t : Clif.Terminator) : Prop :=
+@[expose] def BrIdxTyped (ctx : Ctx) (t : Clif.Terminator) : Prop :=
   ∀ x d tbl, t = .brTable x d tbl →
     (∃ w, w ≤ 32 ∧ ctx.valueType? x = some (.int w)) ∧ tbl.length < 2 ^ 32
 
@@ -1813,7 +1813,7 @@ def BranchRuleOk (isem : Sem) (MR : MemRelT) (p : Program) (r : Rule) : Prop :=
     ∃ ms, st'.emitted = st.emitted ++ ms.toArray ∧ LowerTermOk isem MR ctx t targets st st' ms
 
 /-- M4's target for `lower_branch` (not proven yet; stated for M7). -/
-def BranchRulesCorrect (p : Program) : Prop :=
+@[expose] def BranchRulesCorrect (p : Program) : Prop :=
   ∀ (F : BitVec 64 → Prop) (isem : Sem) (MR : MemRelT),
     Refines F isem → MRStable F MR →
     ∀ r ∈ p.rulesOf TId.lower_branch, closureRoot r = true → BranchRuleOk isem MR p r
@@ -1934,7 +1934,7 @@ into `LowerTermOk` for every successful call, as `lowerInstOk_runTerm` does for 
 def termRootRule (r : Rule) : Bool := r.id == 964 || r.id == 1037
 
 /-- Terminators lowered by `lower` (the others by `lower_branch`). -/
-def retOrTrap : Clif.Terminator → Bool
+@[expose] def retOrTrap : Clif.Terminator → Bool
   | .ret _ | .trap _ => true
   | _ => false
 
@@ -1955,12 +1955,12 @@ def LowerTermRuleOk (isem : Sem) (MR : MemRelT) (p : Program) (r : Rule) : Prop 
     ∃ ms, st'.emitted = st.emitted ++ ms.toArray ∧ LowerTermOk isem MR ctx t [] st st' ms
 
 /-- **M4's target (`lower` on terminators)**: the two terminator root rules are correct. -/
-def LowerTermRulesCorrect (p : Program) : Prop :=
+@[expose] def LowerTermRulesCorrect (p : Program) : Prop :=
   ∀ (F : BitVec 64 → Prop) (isem : Sem) (MR : MemRelT), Refines F isem → MRStable F MR →
     ∀ r ∈ p.rulesOf TId.lower, termRootRule r = true → LowerTermRuleOk isem MR p r
 
 /-- The other rules of `lower` never match a `return`/`trap` terminator. -/
-def TermUnmatchable (p : Program) : Prop :=
+@[expose] def TermUnmatchable (p : Program) : Prop :=
   ∀ r ∈ p.rulesOf TId.lower, termRootRule r = false →
   ∀ (f : Clif.Function) (ctx : Ctx), CtxInv f ctx →
   ∀ (ti : Nat) (t : Clif.Terminator) (data : V), retOrTrap t = true → termData t = .ok data →
@@ -1969,7 +1969,7 @@ def TermUnmatchable (p : Program) : Prop :=
     (matchRule p (sem ctx) cfg m r [.inst ti]).run s ≠ .ok (some env', s1)
 
 /-- The root rules of `lower_branch` outside the closure never match a branch terminator. -/
-def BranchExcludedUnmatchable (p : Program) : Prop :=
+@[expose] def BranchExcludedUnmatchable (p : Program) : Prop :=
   ∀ r ∈ p.rulesOf TId.lower_branch, closureRoot r = false →
   ∀ (f : Clif.Function) (ctx : Ctx), CtxInv f ctx →
   ∀ (ti : Nat) (t : Clif.Terminator) (data : V) (targets : List Label), retOrTrap t = false →
@@ -2159,14 +2159,14 @@ structure LowerTryOk {W : Type} (isem : ISem CV W) (MR : MemRelTW W) (env : Clif
 
 /-- The root rules of `lower_branch` on `try_call`: `rule_lower_2542` (colocated callee, `bl`,
 rule id 1034) and `rule_lower_2551` (callee through the GOT, `loadExtNameGot` + `blr`, 1035). -/
-def tryRootRule (r : Rule) : Bool := r.id == 1034 || r.id == 1035
+@[expose] def tryRootRule (r : Rule) : Bool := r.id == 1034 || r.id == 1035
 
 /-- **Root rule correctness (`lower_branch` on `try_call`)**: whenever rule `r` matches the
 `try_call` at `ti` (data `tryCallData`, in a context whose `tryRegs` are `tryRegsOf`'s vregs,
 allocated from a state `lo` above every value's vreg and below the rule's start state `st`) of
 an extern whose stack arguments fit the outgoing area `outB` (`SigStackOk`, as for `call`), the
 instructions it appended satisfy `LowerTryOk` for the `try_call_info` of the targets. -/
-def TryRuleOk (isem : Sem) (MR : MemRelT) (env : Clif.Env) (cp : Clif.Program)
+@[expose] def TryRuleOk (isem : Sem) (MR : MemRelT) (env : Clif.Env) (cp : Clif.Program)
     (exts : List Clif.ExtFunc) (outB : Nat) (p : Program) (r : Rule) : Prop :=
   ∀ (f : Clif.Function) (ctx : Ctx), CtxInv f ctx → ExternsIn f exts →
   ∀ (ti : Nat) (fn : Clif.FnRef) (args : List Nat) (et : Clif.ExnTable) (data : V)
@@ -2192,7 +2192,7 @@ def TryRuleOk (isem : Sem) (MR : MemRelT) (env : Clif.Env) (cp : Clif.Program)
 /-- **M4's target for `try_call`**: under the callee contract, the memory forms (the outgoing
 stack arguments are `spOffset` stores) and the outgoing area, the two `try_call` root rules of
 `lower_branch` are correct. -/
-def TryRulesCorrect (p : Program) : Prop :=
+@[expose] def TryRulesCorrect (p : Program) : Prop :=
   ∀ (F : BitVec 64 → Prop) (isem : Sem) (MR : MemRelT) (env : Clif.Env) (cp : Clif.Program)
     (exts : List Clif.ExtFunc) (sb : Nat) (syms : String → Option Nat) (outB : Nat),
     Refines F isem → MRStable F MR → MemRefines F sb syms isem → OutArgsOk F outB MR →
@@ -2200,7 +2200,7 @@ def TryRulesCorrect (p : Program) : Prop :=
     ∀ r ∈ p.rulesOf TId.lower_branch, tryRootRule r = true → TryRuleOk isem MR env cp exts outB p r
 
 /-- The other rules of `lower_branch` never match a `try_call`. -/
-def TryUnmatchable (p : Program) : Prop :=
+@[expose] def TryUnmatchable (p : Program) : Prop :=
   ∀ r ∈ p.rulesOf TId.lower_branch, tryRootRule r = false →
   ∀ (f : Clif.Function) (ctx : Ctx), CtxInv f ctx →
   ∀ (ti : Nat) (fn : Clif.FnRef) (args : List Nat) (et : Clif.ExnTable) (data : V)
@@ -2211,12 +2211,12 @@ def TryUnmatchable (p : Program) : Prop :=
 
 /-- The root rule of `lower_branch` on `try_call_indirect`: `rule_lower_2561` (`blr` of the
 callee value's register, rule id 1036). -/
-def tryIndRootRule (r : Rule) : Bool := r.id == 1036
+@[expose] def tryIndRootRule (r : Rule) : Bool := r.id == 1036
 
 /-- **Root rule correctness (`lower_branch` on `try_call_indirect`)**, as `TryRuleOk`, for a
 call-site signature (the exception table's) in `sigs` with at most 8 parameters: the
 instructions the rule appended satisfy `LowerTryOk` for the indirect call. -/
-def TryIndRuleOk (isem : Sem) (MR : MemRelT) (env : Clif.Env) (cp : Clif.Program)
+@[expose] def TryIndRuleOk (isem : Sem) (MR : MemRelT) (env : Clif.Env) (cp : Clif.Program)
     (sigs : List Clif.Signature) (p : Program) (r : Rule) : Prop :=
   ∀ (f : Clif.Function) (ctx : Ctx), CtxInv f ctx →
   ∀ (ti : Nat) (callee : Nat) (args : List Nat) (et : Clif.ExnTable) (data : V)
@@ -2241,14 +2241,14 @@ def TryIndRuleOk (isem : Sem) (MR : MemRelT) (env : Clif.Env) (cp : Clif.Program
 
 /-- **M4's target for `try_call_indirect`**: under the indirect-call contract, its root rule
 of `lower_branch` is correct. -/
-def TryIndRulesCorrect (p : Program) : Prop :=
+@[expose] def TryIndRulesCorrect (p : Program) : Prop :=
   ∀ (F : BitVec 64 → Prop) (isem : Sem) (MR : MemRelT) (env : Clif.Env) (cp : Clif.Program)
     (sigs : List Clif.Signature),
     Refines F isem → MRStable F MR → IndCallsRefine env sigs MR isem →
     ∀ r ∈ p.rulesOf TId.lower_branch, tryIndRootRule r = true → TryIndRuleOk isem MR env cp sigs p r
 
 /-- The other rules of `lower_branch` never match a `try_call_indirect`. -/
-def TryIndUnmatchable (p : Program) : Prop :=
+@[expose] def TryIndUnmatchable (p : Program) : Prop :=
   ∀ r ∈ p.rulesOf TId.lower_branch, tryIndRootRule r = false →
   ∀ (f : Clif.Function) (ctx : Ctx), CtxInv f ctx →
   ∀ (ti : Nat) (callee : Nat) (args : List Nat) (et : Clif.ExnTable) (data : V)

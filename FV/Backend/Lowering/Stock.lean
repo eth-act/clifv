@@ -55,9 +55,11 @@ def colored (i : Clif.Inst) : Bool :=
   mustLower i || match i with | .load .. => true | _ => false
 
 @[expose] section
+@[expose] section
 inductive UseState where
   | unused | once | multiple
   deriving DecidableEq, Repr, Inhabited
+end
 end
 
 def UseState.inc : UseState → UseState
@@ -96,15 +98,18 @@ def useStates (ctx : Ctx) (args : Array (List Nat)) : Array UseState := Id.run d
   return uses
 
 @[expose] section
+@[expose] section
 structure Opportunistic where
   block : Nat
   regs : List Reg
   count : Nat
   deriving Inhabited, Repr, DecidableEq
 end
+end
 
 deriving instance DecidableEq for LState
 
+@[expose] section
 @[expose] section
 structure State where
   base : LState
@@ -120,6 +125,7 @@ structure State where
   opportunistic : Array (Option Opportunistic)
   alias : Array (Option Nat) := #[]
   deriving Inhabited, DecidableEq
+end
 end
 
 def State.mark (st : State) (v : Nat) : State :=
@@ -290,10 +296,12 @@ def buildCtx (f : Clif.Function) : Except String (Ctx × Array (Nat × Nat) × S
   pure (finishCtx ctx ranges (allocateRequests ctx.valTy.size ctx.insts.size requests))
 
 @[expose] section
+@[expose] section
 inductive Node where
   | original (block : Nat)
   | edge (pred successorIndex target : Nat)
   deriving DecidableEq, Repr, Inhabited
+end
 end
 
 def destinations : Clif.Terminator → List (Nat × List Clif.TryArg)
@@ -339,11 +347,14 @@ def blockOrder (f : Clif.Function) : Except String Order := do
   pure { nodes, successors }
 
 @[expose] section
+@[expose] section
 inductive Decision where
   | emitted | omitted | sunk | opportunistic
   deriving DecidableEq, Repr, Inhabited
 end
+end
 
+@[expose] section
 @[expose] section
 /-- A schedule entry records the call and its before/after states, including
 emissions, demands, aliases and memory color. Omitted entries make no ISLE call. -/
@@ -359,7 +370,9 @@ structure Step where
   emitted : Array MInst := #[]
   deriving Inhabited, DecidableEq
 end
+end
 
+@[expose] section
 @[expose] section
 /-- One source instruction's backward-scan transition. Branch terminators are
 scanned for their color after their separate lowering, producing no second step.
@@ -369,6 +382,7 @@ structure Scan where
   step : Option Step
   emitted : Array MInst := #[]
   deriving Inhabited, DecidableEq
+end
 end
 
 /-- A backward-scan event, including the embedding used for this block. These
@@ -384,13 +398,16 @@ structure ScanEvent where
   output : Scan
 
 @[expose] section
+@[expose] section
 structure ScanRecord where
   inst : Nat
   input : State
   output : Scan
   deriving Inhabited, DecidableEq
 end
+end
 
+@[expose] section
 @[expose] section
 /-- A complete backward scan: records remain in scan order, while `code` keeps
 each emitted chunk in forward order and puts earlier source chunks first. -/
@@ -399,6 +416,7 @@ structure BlockScan where
   records : List ScanRecord
   code : Array MInst
   deriving Inhabited, DecidableEq
+end
 end
 
 structure BlockScanEvent where

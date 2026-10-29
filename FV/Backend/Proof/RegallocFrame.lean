@@ -32,14 +32,14 @@ namespace Backend.Proof
 open Backend
 
 /-- Slot size of a frame location (int spill / x save: 8 bytes; float: 16). -/
-def slotBytes : Loc → Nat
+@[expose] def slotBytes : Loc → Nat
   | .stack _ .int => 8
   | .save (.x _) => 8
   | _ => 16
 
 /-- The value of location `l` in Arm state `s` for frame `fr`: registers by `regVal`, frame
 slots by the bytes at `sp + offset` (an 8-byte slot zero-extended). -/
-def locVal (fr : RAFrame) (s : Arm.ArmState) : Loc → CV
+@[expose] def locVal (fr : RAFrame) (s : Arm.ArmState) : Loc → CV
   | .reg r => regVal s r
   | l => match fr.offset l with
     | .ok off =>
@@ -50,7 +50,7 @@ def locVal (fr : RAFrame) (s : Arm.ArmState) : Loc → CV
 /-- The frame locations the allocated code can use: int spill slots below `spillSlots`, float
 spill slots below `spillSlots` when the code uses float slots at all (otherwise the float area
 is empty), every save slot (`offset` fails for registers without one). -/
-def Live (rf : RFunc) : Loc → Prop
+@[expose] def Live (rf : RFunc) : Loc → Prop
   | .stack k .int => k < rf.spillSlots
   | .stack k .float => k < rf.spillSlots ∧ rf.floatStack = true
   | _ => True
@@ -84,7 +84,7 @@ theorem locVal_frame_congr {fr : RAFrame} {s t : Arm.ArmState} {l : Loc} (hl : �
 
 
 /-- Locations the lowering maintains: allocatable registers and frame slots. -/
-def ValidLoc (l : Loc) : Prop := ∀ r, l = .reg r → r.allocatable = true
+@[expose] def ValidLoc (l : Loc) : Prop := ∀ r, l = .reg r → r.allocatable = true
 
 theorem exec_mov64 (ctx : FnCtx) (env : Env) {n0 n1 : Nat} (hn0 : n0 < 29) (hn1 : n1 < 29)
     (s : Arm.ArmState) :

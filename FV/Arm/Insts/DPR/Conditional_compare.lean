@@ -41,7 +41,7 @@ namespace DPR
 open _root_.BitVec Arm.BitVec
 
 /-- Shared body of the immediate and register forms. -/
-@[state_simp_rules]
+@[expose, state_simp_rules]
 def conditional_compare (sub_op : Bool) (cond : BitVec 4) (nzcv : BitVec 4)
     (operand1 operand2 : BitVec n) (s : ArmState) : ArmState :=
   let flags :=

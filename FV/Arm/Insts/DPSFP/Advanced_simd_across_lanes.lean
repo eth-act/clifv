@@ -53,7 +53,7 @@ namespace DPSFP
 open _root_.BitVec Arm.BitVec
 
 /-- Wrapping sum of elements `e .. elements-1` of `x`, added to `acc`. -/
-def addv_aux (e : Nat) (elements : Nat) (esize : Nat) (x : BitVec n) (acc : BitVec esize) :
+@[expose] def addv_aux (e : Nat) (elements : Nat) (esize : Nat) (x : BitVec n) (acc : BitVec esize) :
     BitVec esize :=
   if elements ≤ e then
     acc
@@ -61,7 +61,7 @@ def addv_aux (e : Nat) (elements : Nat) (esize : Nat) (x : BitVec n) (acc : BitV
     addv_aux (e + 1) elements esize x (acc + elem_get x e esize)
   termination_by (elements - e)
 
-@[state_simp_rules]
+@[expose, state_simp_rules]
 def exec_addv (inst : Advanced_simd_across_lanes_cls) (s : ArmState) : ArmState :=
   if (inst.size = 0b10#2 ∧ inst.Q = 0#1) ∨ inst.size = 0b11#2 then
     write_err (StateError.Illegal s!"Illegal {inst} encountered!") s
@@ -75,7 +75,7 @@ def exec_addv (inst : Advanced_simd_across_lanes_cls) (s : ArmState) : ArmState 
     s
 
 /-- Wrapping sum of the zero-extended elements `e .. elements-1` of `x`, added to `acc`. -/
-def uaddlv_aux (e : Nat) (elements : Nat) (esize : Nat) (x : BitVec n) (acc : BitVec (2 * esize)) :
+@[expose] def uaddlv_aux (e : Nat) (elements : Nat) (esize : Nat) (x : BitVec n) (acc : BitVec (2 * esize)) :
     BitVec (2 * esize) :=
   if elements ≤ e then
     acc
@@ -83,7 +83,7 @@ def uaddlv_aux (e : Nat) (elements : Nat) (esize : Nat) (x : BitVec n) (acc : Bi
     uaddlv_aux (e + 1) elements esize x (acc + zeroExtend (2 * esize) (elem_get x e esize))
   termination_by (elements - e)
 
-@[state_simp_rules]
+@[expose, state_simp_rules]
 def exec_uaddlv (inst : Advanced_simd_across_lanes_cls) (s : ArmState) : ArmState :=
   if (inst.size = 0b10#2 ∧ inst.Q = 0#1) ∨ inst.size = 0b11#2 then
     write_err (StateError.Illegal s!"Illegal {inst} encountered!") s

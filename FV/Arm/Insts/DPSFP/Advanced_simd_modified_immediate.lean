@@ -33,6 +33,7 @@ namespace DPSFP
 open _root_.BitVec Arm.BitVec
 
 @[expose] section
+@[expose] section
 inductive ImmediateOp where
   | MOVI : ImmediateOp
   | MVNI : ImmediateOp
@@ -40,11 +41,12 @@ inductive ImmediateOp where
   | BIC : ImmediateOp
 deriving DecidableEq, Repr
 end
+end
 
 instance : ToString ImmediateOp where toString a := toString (repr a)
 
 /-- The operation of an encoding; `none` for the unallocated ones. -/
-@[state_simp_rules]
+@[expose, state_simp_rules]
 def decode_immediate_op (inst : Advanced_simd_modified_immediate_cls) : Option ImmediateOp :=
   -- All UNALLOCATED cases when inst.o2 = 1
   if inst.o2 = 0b1#1 ∧ inst.cmode ++ inst.op ≠ 0b11110#5 then
@@ -66,7 +68,7 @@ def decode_immediate_op (inst : Advanced_simd_modified_immediate_cls) : Option I
     -- | case [11111]
     | _ => if inst.Q = 0#1 then none else some ImmediateOp.MOVI
 
-def AdvSIMDExpandImm (op : BitVec 1) (cmode : BitVec 4) (imm8 : BitVec 8) : BitVec 64 :=
+@[expose] def AdvSIMDExpandImm (op : BitVec 1) (cmode : BitVec 4) (imm8 : BitVec 8) : BitVec 64 :=
   let cmode_high3 := extractLsb' 1 3 cmode
   let cmode_low1 := lsb cmode 0
   match cmode_high3 with

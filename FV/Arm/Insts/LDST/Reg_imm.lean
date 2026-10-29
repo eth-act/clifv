@@ -59,6 +59,7 @@ namespace LDST
 open _root_.BitVec Arm.BitVec
 
 @[expose] section
+@[expose] section
 /-- (FV) The offset operand of a single-register load/store. -/
 inductive Reg_offset where
   /-- Unsigned 12-bit immediate, scaled by the access size ("unsigned offset"). -/
@@ -69,7 +70,9 @@ inductive Reg_offset where
   | reg    : (Rm : BitVec 5) → (option : BitVec 3) → (S : BitVec 1) → Reg_offset
 deriving DecidableEq, Repr
 end
+end
 
+@[expose] section
 @[expose] section
 structure Reg_imm_cls where
   size      : BitVec 2
@@ -82,11 +85,12 @@ structure Reg_imm_cls where
   imm       : Reg_offset
 deriving DecidableEq, Repr
 end
+end
 
 instance : ToString Reg_imm_cls where toString a := toString (repr a)
 
 /-- The byte offset added to the base register (ASL `offset`). -/
-@[state_simp_rules]
+@[expose, state_simp_rules]
 def Reg_offset.value (o : Reg_offset) (scale : Nat) (s : ArmState) : BitVec 64 :=
   match o with
   | .uimm12 imm12 => (BitVec.zeroExtend 64 imm12) <<< scale
@@ -96,7 +100,7 @@ def Reg_offset.value (o : Reg_offset) (scale : Nat) (s : ArmState) : BitVec 64 :
     --      `bits(64) offset = ExtendReg(m, extend_type, shift, 64);`
     extend_reg (read_gpr_zr 64 Rm s) (decode_reg_extend option) (if S = 1#1 then scale else 0)
 
-@[state_simp_rules]
+@[expose, state_simp_rules]
 def reg_imm_operation (inst_str : String) (op : BitVec 1) (signed : Bool)
   (wback : Bool) (postindex : Bool) (SIMD? : Bool)
   (datasize : Nat) (regsize : Nat) (Rn : BitVec 5)
@@ -128,13 +132,13 @@ def reg_imm_operation (inst_str : String) (op : BitVec 1) (signed : Bool)
     else
       s
 
-@[state_simp_rules]
+@[expose, state_simp_rules]
 def reg_imm_constrain_unpredictable (wback : Bool) (SIMD? : Bool) (Rn : BitVec 5)
   (Rt : BitVec 5) : Bool :=
   if SIMD? then false else wback ∧ Rn = Rt ∧ Rn ≠ 31#5
 
 /-- SIMD&FP forms supported by upstream LNSym (unchanged). -/
-@[state_simp_rules]
+@[expose, state_simp_rules]
 def supported_simd_reg_imm (size : BitVec 2) (opc : BitVec 2) : Bool :=
   match size, opc with
   | _, 0b00#2 => true      -- STR, 8-bit, 16-bit, 32-bit, 64-bit, SIMD&FP
@@ -227,7 +231,7 @@ def exec_reg_imm_pre_indexed
 
 /-- (FV addition) Load/store register (unscaled immediate), GPR: `LDUR*`/`STUR*`.
 (The SIMD&FP forms stay in `exec_ldstur`, as upstream.) -/
-@[state_simp_rules]
+@[expose, state_simp_rules]
 def exec_reg_unscaled_imm_gpr
   (inst : Reg_unscaled_imm_cls) (s : ArmState) : ArmState :=
   let extracted_inst : Reg_imm_cls :=
@@ -271,7 +275,7 @@ Single-threaded ASL: an exclusive load is the plain load (zero-extended, `regsiz
 (`STXR`/`STLXR` always succeed). No exclusive-monitor state: `Clif.run`'s single-thread
 semantics of the CLIF atomics match (`FV/Clif/Run.lean`), and Cranelift's LL/SC loops
 retry on failure only, which cannot happen here. -/
-@[state_simp_rules]
+@[expose, state_simp_rules]
 def exec_reg_exclusive (inst : Reg_exclusive_cls) (s : ArmState) : ArmState :=
   let scale := inst.size.toNat
   let datasize := 8 <<< scale

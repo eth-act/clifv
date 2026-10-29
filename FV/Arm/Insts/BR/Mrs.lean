@@ -28,12 +28,12 @@ public section
 namespace Arm
 
 /-- The `MRS` operands name TPIDR_EL0. -/
-@[state_simp_rules]
+@[expose, state_simp_rules]
 def Mrs_cls.isTpidrEl0 (inst : Mrs_cls) : Prop :=
   inst.o0 = 1#1 ∧ inst.op1 = 0b011#3 ∧ inst.CRn = 0b1101#4 ∧ inst.CRm = 0b0000#4 ∧
     inst.op2 = 0b010#3
 
-instance (inst : Mrs_cls) : Decidable (Mrs_cls.isTpidrEl0 inst) :=
+@[expose] instance (inst : Mrs_cls) : Decidable (Mrs_cls.isTpidrEl0 inst) :=
   inferInstanceAs (Decidable (inst.o0 = 1#1 ∧ inst.op1 = 0b011#3 ∧ inst.CRn = 0b1101#4 ∧
     inst.CRm = 0b0000#4 ∧ inst.op2 = 0b010#3))
 

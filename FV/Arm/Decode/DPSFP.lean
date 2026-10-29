@@ -21,6 +21,7 @@ open _root_.BitVec Arm.BitVec
 -- Data Processing (SIMD and FP) Instructions --
 
 @[expose] section
+@[expose] section
 structure Advanced_simd_two_reg_misc_cls where
   _fixed1 : BitVec 1 := 0b0#1      -- [31:31]
   Q       : BitVec 1               -- [30:30]
@@ -34,12 +35,14 @@ structure Advanced_simd_two_reg_misc_cls where
   Rd      : BitVec 5               --   [4:0]
 deriving DecidableEq, Repr
 end
+end
 
-instance : ToString Advanced_simd_two_reg_misc_cls where toString a := toString (repr a)
+@[expose] instance : ToString Advanced_simd_two_reg_misc_cls where toString a := toString (repr a)
 
 def Advanced_simd_two_reg_misc_cls.toBitVec32 (x : Advanced_simd_two_reg_misc_cls) : BitVec 32 :=
   x._fixed1 ++ x.Q ++ x.U ++ x._fixed2 ++ x.size ++ x._fixed3 ++ x.opcode ++ x._fixed4 ++ x.Rn ++ x.Rd
 
+@[expose] section
 @[expose] section
 structure Advanced_simd_copy_cls where
   _fixed1 : BitVec 1 := 0b0#1        -- [31:31]
@@ -54,12 +57,14 @@ structure Advanced_simd_copy_cls where
   Rd      : BitVec 5                 --   [4:0]
 deriving DecidableEq, Repr
 end
+end
 
-instance : ToString Advanced_simd_copy_cls where toString a := toString (repr a)
+@[expose] instance : ToString Advanced_simd_copy_cls where toString a := toString (repr a)
 
 def Advanced_simd_copy_cls.toBitVec32 (x : Advanced_simd_copy_cls) : BitVec 32 :=
   x._fixed1 ++ x.Q ++ x.op ++ x._fixed2 ++ x.imm5 ++ x._fixed3 ++ x.imm4 ++ x._fixed4 ++ x.Rn ++ x.Rd
 
+@[expose] section
 @[expose] section
 structure Advanced_simd_three_same_cls where
   _fixed1 : BitVec 1 := 0b0#1      -- [31:31]
@@ -75,12 +80,14 @@ structure Advanced_simd_three_same_cls where
   Rd      : BitVec 5               --   [4:0]
 deriving DecidableEq, Repr
 end
+end
 
-instance : ToString Advanced_simd_three_same_cls where toString a := toString (repr a)
+@[expose] instance : ToString Advanced_simd_three_same_cls where toString a := toString (repr a)
 
 def Advanced_simd_three_same_cls.toBitVec32 (x : Advanced_simd_three_same_cls) : BitVec 32 :=
   x._fixed1 ++ x.Q ++ x.U ++ x._fixed2 ++ x.size ++ x._fixed3 ++ x.Rm ++ x.opcode ++ x._fixed4 ++ x.Rn ++ x.Rd
 
+@[expose] section
 @[expose] section
 structure Conversion_between_FP_and_Int_cls where
   sf      : BitVec 1               -- [31:31]
@@ -96,12 +103,14 @@ structure Conversion_between_FP_and_Int_cls where
   Rd      : BitVec 5               -- [4:0]
 deriving DecidableEq, Repr
 end
+end
 
-instance : ToString Conversion_between_FP_and_Int_cls where toString a := toString (repr a)
+@[expose] instance : ToString Conversion_between_FP_and_Int_cls where toString a := toString (repr a)
 
-def Conversion_between_FP_and_Int_cls.toBitVec32 (x : Conversion_between_FP_and_Int_cls) : BitVec 32 :=
+@[expose] def Conversion_between_FP_and_Int_cls.toBitVec32 (x : Conversion_between_FP_and_Int_cls) : BitVec 32 :=
   x.sf ++ x._fixed1 ++ x.S ++ x._fixed2 ++ x.ftype ++ x._fixed3 ++ x.rmode ++ x.opcode ++ x._fixed4 ++ x.Rn ++ x.Rd
 
+@[expose] section
 @[expose] section
 /-- (FV addition) Advanced SIMD across lanes (`ADDV`, ...). -/
 structure Advanced_simd_across_lanes_cls where
@@ -117,9 +126,11 @@ structure Advanced_simd_across_lanes_cls where
   Rd      : BitVec 5               --   [4:0]
 deriving DecidableEq, Repr
 end
+end
 
-instance : ToString Advanced_simd_across_lanes_cls where toString a := toString (repr a)
+@[expose] instance : ToString Advanced_simd_across_lanes_cls where toString a := toString (repr a)
 
+@[expose] section
 @[expose] section
 /-- (FV addition) Floating-point data-processing (1 source): FMOV (register), FABS, FNEG, FSQRT,
 FCVT, FRINT* (Arm ARM C4.1 "Data Processing -- Scalar Floating-Point and Advanced SIMD"). -/
@@ -136,9 +147,11 @@ structure FP_data_processing_one_source_cls where
   Rd      : BitVec 5               --   [4:0]
 deriving DecidableEq, Repr
 end
+end
 
-instance : ToString FP_data_processing_one_source_cls where toString a := toString (repr a)
+@[expose] instance : ToString FP_data_processing_one_source_cls where toString a := toString (repr a)
 
+@[expose] section
 @[expose] section
 /-- (FV addition) Floating-point immediate: FMOV (scalar, immediate). -/
 structure FP_immediate_cls where
@@ -154,9 +167,11 @@ structure FP_immediate_cls where
   Rd      : BitVec 5               --   [4:0]
 deriving DecidableEq, Repr
 end
+end
 
-instance : ToString FP_immediate_cls where toString a := toString (repr a)
+@[expose] instance : ToString FP_immediate_cls where toString a := toString (repr a)
 
+@[expose] section
 @[expose] section
 /-- (FV addition) Floating-point conditional select: FCSEL. -/
 structure FP_conditional_select_cls where
@@ -173,9 +188,11 @@ structure FP_conditional_select_cls where
   Rd      : BitVec 5               --   [4:0]
 deriving DecidableEq, Repr
 end
+end
 
-instance : ToString FP_conditional_select_cls where toString a := toString (repr a)
+@[expose] instance : ToString FP_conditional_select_cls where toString a := toString (repr a)
 
+@[expose] section
 @[expose] section
 /-- (FV addition, ported from LNSym) Advanced SIMD modified immediate: MOVI, MVNI, ORR, BIC
 (vector, immediate), FMOV (vector, immediate). -/
@@ -198,9 +215,11 @@ structure Advanced_simd_modified_immediate_cls where
   Rd      : BitVec 5                     --   [4:0]
 deriving DecidableEq, Repr
 end
+end
 
 @[expose] instance : ToString Advanced_simd_modified_immediate_cls where toString a := toString (repr a)
 
+@[expose] section
 @[expose] section
 /-- (FV addition) Floating-point data-processing (2 source): FMUL, FDIV, FADD, FSUB, FMAX,
 FMIN, FMAXNM, FMINNM, FNMUL (scalar). -/
@@ -218,9 +237,11 @@ structure FP_data_processing_two_source_cls where
   Rd      : BitVec 5               --   [4:0]
 deriving DecidableEq, Repr
 end
+end
 
-instance : ToString FP_data_processing_two_source_cls where toString a := toString (repr a)
+@[expose] instance : ToString FP_data_processing_two_source_cls where toString a := toString (repr a)
 
+@[expose] section
 @[expose] section
 /-- (FV addition) Floating-point data-processing (3 source): FMADD, FMSUB, FNMADD, FNMSUB. -/
 structure FP_data_processing_three_source_cls where
@@ -237,9 +258,11 @@ structure FP_data_processing_three_source_cls where
   Rd      : BitVec 5               --   [4:0]
 deriving DecidableEq, Repr
 end
+end
 
 instance : ToString FP_data_processing_three_source_cls where toString a := toString (repr a)
 
+@[expose] section
 @[expose] section
 /-- (FV addition) Floating-point compare: FCMP, FCMPE (register and `#0.0`). -/
 structure FP_compare_cls where
@@ -256,9 +279,11 @@ structure FP_compare_cls where
   opcode2 : BitVec 5               --   [4:0]
 deriving DecidableEq, Repr
 end
+end
 
 instance : ToString FP_compare_cls where toString a := toString (repr a)
 
+@[expose] section
 @[expose] section
 inductive DataProcSFPInst where
   | Advanced_simd_two_reg_misc :
@@ -286,6 +311,7 @@ inductive DataProcSFPInst where
   | FP_compare :
     FP_compare_cls → DataProcSFPInst
 deriving DecidableEq, Repr
+end
 end
 
 instance : ToString DataProcSFPInst where toString a := toString (repr a)

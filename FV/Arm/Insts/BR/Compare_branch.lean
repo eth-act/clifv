@@ -33,13 +33,13 @@ open _root_.BitVec Arm.BitVec
 -- Compare_branch_inst.condition_holds are also used in control-flow
 -- analysis; see Arm/Cfg/Cfg.lean.
 
-@[state_simp_rules]
+@[expose, state_simp_rules]
 def Compare_branch_inst.branch_taken_pc (inst : Compare_branch_cls) (pc : BitVec 64) : BitVec 64 :=
   let offset := signExtend 64 (inst.imm19 ++ 0b00#2)
   let branch_taken_pc := pc + offset
   branch_taken_pc
 
-@[state_simp_rules]
+@[expose, state_simp_rules]
 def Compare_branch_inst.condition_holds (inst : Compare_branch_cls) (s : ArmState) : Bool :=
   let datasize := if inst.sf = 1#1 then 64 else 32
   let operand1 := read_gpr_zr datasize inst.Rt s

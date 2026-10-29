@@ -13,6 +13,20 @@ import FV.Arm.MinTheory
 public meta import Lean.Elab.Tactic.Basic
 public meta import Lean.Meta.Tactic.Cases
 import Lean.Declaration
+import all FV.Arm.Decode.DPSFP
+import all FV.Arm.State
+import all FV.Backend.Asm
+import all FV.Backend.Isel
+import all FV.Backend.MInst
+import all FV.Backend.Proof.VCodeSem
+import all FV.Backend.RegallocCheck
+import all FV.Clif.Parse
+import all FV.Clif.Print
+import all FV.Clif.Syntax
+import all FV.Isle.Generated.Ids
+import all FV.Isle.Generated.RuleLists00
+import all FV.Isle.Generated.Terms00
+import all FV.Isle.Interp
 
 public section
 

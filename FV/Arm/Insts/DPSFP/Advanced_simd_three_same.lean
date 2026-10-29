@@ -28,7 +28,7 @@ namespace DPSFP
 
 open _root_.BitVec Arm.BitVec
 
-def binary_vector_op_aux (e : Nat) (elems : Nat) (esize : Nat)
+@[expose] def binary_vector_op_aux (e : Nat) (elems : Nat) (esize : Nat)
   (op : BitVec esize → BitVec esize → BitVec esize)
   (x : BitVec n) (y : BitVec n) (result : BitVec n) : BitVec n :=
   if elems ≤ e then
@@ -62,12 +62,12 @@ theorem binary_vector_op_aux_of_not_lt {n} {e elems} (h : ¬(e < elems))
 /--
   Perform pairwise op on esize-bit slices of x and y
 -/
-@[state_simp_rules]
+@[expose, state_simp_rules]
 def binary_vector_op (esize : Nat) (op : BitVec esize → BitVec esize → BitVec esize)
   (x : BitVec n) (y : BitVec n) : BitVec n :=
   binary_vector_op_aux 0 (n / esize) esize op x y (BitVec.zero n)
 
-@[state_simp_rules]
+@[expose, state_simp_rules]
 def exec_binary_vector (inst : Advanced_simd_three_same_cls) (s : ArmState) : ArmState :=
   if inst.size = 0b11#2 ∧ inst.Q = 0b0#1 then
     write_err (StateError.Illegal s!"Illegal {inst} encountered!") s
@@ -82,7 +82,7 @@ def exec_binary_vector (inst : Advanced_simd_three_same_cls) (s : ArmState) : Ar
     let s := write_sfp datasize inst.Rd result s
     s
 
-@[state_simp_rules]
+@[expose, state_simp_rules]
 def decode_logical_op (U : BitVec 1) (size : BitVec 2) : SIMDThreeSameLogicalType :=
   match U, size with
   | 0#1, 0b00#2 => SIMDThreeSameLogicalType.AND
@@ -94,7 +94,7 @@ def decode_logical_op (U : BitVec 1) (size : BitVec 2) : SIMDThreeSameLogicalTyp
   | 1#1, 0b10#2 => SIMDThreeSameLogicalType.BIT
   | 1#1, 0b11#2 => SIMDThreeSameLogicalType.BIF
 
-@[state_simp_rules]
+@[expose, state_simp_rules]
 def logic_vector_op (op : SIMDThreeSameLogicalType) (opdn : BitVec n) (opdm : BitVec n) (opdd : BitVec n)
   : (BitVec n) :=
   match op with
@@ -107,7 +107,7 @@ def logic_vector_op (op : SIMDThreeSameLogicalType) (opdn : BitVec n) (opdm : Bi
   | SIMDThreeSameLogicalType.BIT => opdd ^^^ ((opdd ^^^ opdn) &&& opdm)
   | SIMDThreeSameLogicalType.BIF => opdd ^^^ ((opdd ^^^ opdn) &&& ~~~opdm)
 
-@[state_simp_rules]
+@[expose, state_simp_rules]
 def exec_logic_vector (inst : Advanced_simd_three_same_cls) (s : ArmState) : ArmState :=
   let datasize := if inst.Q = 1#1 then 128 else 64
   let operand1 := read_sfp datasize inst.Rn s
@@ -119,7 +119,7 @@ def exec_logic_vector (inst : Advanced_simd_three_same_cls) (s : ArmState) : Arm
   s
 
 /-- (FV addition) Pairwise add of adjacent elements of `concat`. -/
-def addp_aux (e : Nat) (elements : Nat) (esize : Nat) (concat : BitVec m)
+@[expose] def addp_aux (e : Nat) (elements : Nat) (esize : Nat) (concat : BitVec m)
   (result : BitVec n) : BitVec n :=
   if elements ≤ e then
     result
@@ -148,7 +148,7 @@ V[d, datasize] = result;
 ```
 Cross-checked against VeriISLE `MInst.VecRRR` (`Addp`) in
 cranelift/codegen/src/isa/aarch64/spec/vec_rrr.isle. -/
-@[state_simp_rules]
+@[expose, state_simp_rules]
 def exec_addp_vector (inst : Advanced_simd_three_same_cls) (s : ArmState) : ArmState :=
   if inst.size = 0b11#2 ∧ inst.Q = 0b0#1 then
     write_err (StateError.Illegal s!"Illegal {inst} encountered!") s

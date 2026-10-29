@@ -381,7 +381,7 @@ def Line.labelsUsed : Line → List Lbl
 
 /-- The PC-relative lines relaxation does not handle (atomic-loop / jump-table-local labels,
 `adr`, `b.al`/`b.nv`, branches with a trap code) reach their labels. -/
-def NearOk (L : List Line) : Prop :=
+@[expose] def NearOk (L : List Line) : Prop :=
   ∀ m, labelOffsets.go L 0 {} = .ok m →
     ∀ (j : Nat) (i : Insn) (tr : Option Clif.TrapCode) (t : Lbl) (reach align : Int) (o : Nat),
     L[j]? = some (.ins i tr) → i.pcRelSpec? = some (t, reach, align) → t ≠ .skip →

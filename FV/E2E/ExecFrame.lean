@@ -3,6 +3,9 @@ module
 public import FV.Arm.Exec
 import FV.Arm.MinTheory
 import FV.Arm.Attr
+import all FV.Arm.Decode.DPSFP
+import all FV.Arm.Insts.LDST.Reg_imm
+import all FV.Arm.State
 
 public section
 
@@ -136,30 +139,30 @@ namespace RegImm
 open LDST
 
 /-- `exec_reg_imm_common`'s `scale`. -/
-def scale (i : Reg_imm_cls) : Nat :=
+@[expose] def scale (i : Reg_imm_cls) : Nat :=
   if i.SIMD? then ((BitVec.lsb i.opc 1) ++ i.size).toNat else i.size.toNat
 
 /-- `exec_reg_imm_common`'s `memop` (`0`: store). -/
-def memop (i : Reg_imm_cls) : BitVec 1 :=
+@[expose] def memop (i : Reg_imm_cls) : BitVec 1 :=
   if ¬ i.SIMD? ∧ BitVec.lsb i.opc 1 = 1#1 then 1#1 else BitVec.lsb i.opc 0
 
 /-- `reg_imm_operation`'s address. -/
-def addr (i : Reg_imm_cls) (s : ArmState) : BitVec 64 :=
+@[expose] def addr (i : Reg_imm_cls) (s : ArmState) : BitVec 64 :=
   if i.postindex then read_gpr 64 i.Rn s else read_gpr 64 i.Rn s + i.imm.value (scale i) s
 
 /-- The bytes a single-register load reads. -/
 @[expose] def reads (i : Reg_imm_cls) (s : ArmState) : List (BitVec 64 × Nat) :=
   if memop i ≠ 0#1 then [(addr i s, (8 <<< scale i) / 8)] else []
 
-def ofUnsigned (i : Reg_unsigned_imm_cls) : Reg_imm_cls :=
+@[expose] def ofUnsigned (i : Reg_unsigned_imm_cls) : Reg_imm_cls :=
   { size := i.size, opc := i.opc, Rn := i.Rn, Rt := i.Rt, SIMD? := i.V = 1#1, wback := false,
     postindex := false, imm := .uimm12 i.imm12 }
 
-def ofPost (i : Reg_imm_post_indexed_cls) : Reg_imm_cls :=
+@[expose] def ofPost (i : Reg_imm_post_indexed_cls) : Reg_imm_cls :=
   { size := i.size, opc := i.opc, Rn := i.Rn, Rt := i.Rt, SIMD? := i.V = 1#1, wback := true,
     postindex := true, imm := .simm9 i.imm9 }
 
-def ofPre (i : Reg_imm_pre_indexed_cls) : Reg_imm_cls :=
+@[expose] def ofPre (i : Reg_imm_pre_indexed_cls) : Reg_imm_cls :=
   { size := i.size, opc := i.opc, Rn := i.Rn, Rt := i.Rt, SIMD? := i.V = 1#1, wback := true,
     postindex := false, imm := .simm9 i.imm9 }
 
@@ -167,7 +170,7 @@ def ofPre (i : Reg_imm_pre_indexed_cls) : Reg_imm_cls :=
   { size := i.size, opc := i.opc, Rn := i.Rn, Rt := i.Rt, SIMD? := false, wback := false,
     postindex := false, imm := .simm9 i.imm9 }
 
-def ofRegOffset (i : Reg_reg_offset_cls) : Reg_imm_cls :=
+@[expose] def ofRegOffset (i : Reg_reg_offset_cls) : Reg_imm_cls :=
   { size := i.size, opc := i.opc, Rn := i.Rn, Rt := i.Rt, SIMD? := i.V = 1#1, wback := false,
     postindex := false, imm := .reg i.Rm i.option i.S }
 
@@ -178,11 +181,11 @@ namespace RegPair
 open LDST
 
 /-- `exec_reg_pair_common`'s `scale`. -/
-def scale (i : Reg_pair_cls) : Nat :=
+@[expose] def scale (i : Reg_pair_cls) : Nat :=
   if !i.SIMD? then 2 + (BitVec.lsb i.opc 1).toNat else 2 + i.opc.toNat
 
 /-- `reg_pair_operation`'s address. -/
-def addr (i : Reg_pair_cls) (s : ArmState) : BitVec 64 :=
+@[expose] def addr (i : Reg_pair_cls) (s : ArmState) : BitVec 64 :=
   if i.postindex then read_gpr 64 i.Rn s
   else read_gpr 64 i.Rn s + (BitVec.signExtend 64 i.imm7 <<< scale i)
 
@@ -190,7 +193,7 @@ def addr (i : Reg_pair_cls) (s : ArmState) : BitVec 64 :=
 @[expose] def reads (i : Reg_pair_cls) (s : ArmState) : List (BitVec 64 × Nat) :=
   if i.L? then [(addr i s, 2 * ((8 <<< scale i) / 8))] else []
 
-def mk (wback postindex : Bool) (opc : BitVec 2) (V L : BitVec 1) (imm7 : BitVec 7)
+@[expose] def mk (wback postindex : Bool) (opc : BitVec 2) (V L : BitVec 1) (imm7 : BitVec 7)
     (Rt2 Rn Rt : BitVec 5) : Reg_pair_cls :=
   { opc := opc, SIMD? := V = 1#1, L? := L = 1#1, wback := wback, postindex := postindex,
     imm7 := imm7, Rt2 := Rt2, Rn := Rn, Rt := Rt }
@@ -205,12 +208,12 @@ end RegPair
   else []
 
 /-- The bytes an exclusive / acquire load reads (`exec_reg_exclusive`). -/
-def exclReads (i : Reg_exclusive_cls) (s : ArmState) : List (BitVec 64 × Nat) :=
+@[expose] def exclReads (i : Reg_exclusive_cls) (s : ArmState) : List (BitVec 64 × Nat) :=
   if i.L = 1#1 then [(read_gpr 64 i.Rn s, (8 <<< i.size.toNat) / 8)] else []
 
 /-- The bytes an `ldr (literal)` reads (`exec_reg_literal`): 4/8/16 bytes at `PC + offset`;
 none for PRFM and the unallocated SIMD&FP `opc = 11`. -/
-def literalReads (i : Reg_literal_cls) (s : ArmState) : List (BitVec 64 × Nat) :=
+@[expose] def literalReads (i : Reg_literal_cls) (s : ArmState) : List (BitVec 64 × Nat) :=
   let a := LDST.literal_address i.imm19 s
   if i.V = 1#1 then
     match i.opc with
@@ -228,7 +231,7 @@ open Arm E2E.ExecFrame
 /-- **The byte ranges `(address, length)` the instruction `a` reads at `s`**: the loads' (every
 single-register addressing mode, `ldp`, the exclusive / acquire loads, the literal loads);
 empty for every other instruction. -/
-def MemReads : ArmInst → ArmState → List (BitVec 64 × Nat)
+@[expose] def MemReads : ArmInst → ArmState → List (BitVec 64 × Nat)
   | .LDST (.Reg_imm_post_indexed i), s => RegImm.reads (RegImm.ofPost i) s
   | .LDST (.Reg_unsigned_imm i), s => RegImm.reads (RegImm.ofUnsigned i) s
   | .LDST (.Reg_unscaled_imm i), s =>

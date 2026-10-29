@@ -71,6 +71,7 @@ def restore (row : Row) (s : Arm.ArmState) : Option Arm.ArmState :=
     Arm.w .PC (Arm.r (.GPR 30#5) t) (Arm.w (.GPR 31#5) cfa t)
 
 @[expose] section
+@[expose] section
 /-- What the personality does for one frame in the cleanup phase. -/
 inductive Action where
   /-- Install the landing pad at this offset from the function start. -/
@@ -80,6 +81,7 @@ inductive Action where
   /-- No call-site entry: the process aborts. -/
   | terminate
   deriving DecidableEq, Repr
+end
 end
 
 /-- Rust's personality for the call at return offset − 1 `off` of a function with LSDA call-site

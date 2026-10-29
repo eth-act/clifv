@@ -60,7 +60,7 @@ private theorem opc_and_sf_constraint (x : BitVec 2) (y : BitVec 1)
   have h₁ : 3 < 2 ^ 2 := by decide
   simp only [_root_.not_and, Nat.reducePow, h₁, true_and, Nat.pow_one, Nat.zero_lt_succ, imp_self]
 
-@[state_simp_rules]
+@[expose, state_simp_rules]
 def exec_data_processing_rev
   (inst : Data_processing_one_source_cls) (s : ArmState) : ArmState :=
   let opc : BitVec 2 := extractLsb' 0 2 inst.opcode
@@ -104,7 +104,7 @@ X[d, datasize] = result;
 This is core `BitVec.reverse` (`getLsbD_reverse`), which `bv_decide` supports natively.
 Cross-checked against VeriISLE `MInst.BitRR` (`RBit`) in
 cranelift/codegen/src/isa/aarch64/spec/bit_rr.isle. -/
-@[state_simp_rules]
+@[expose, state_simp_rules]
 def exec_data_processing_rbit
   (inst : Data_processing_one_source_cls) (s : ArmState) : ArmState :=
   let datasize := 32 <<< inst.sf.toNat
@@ -129,7 +129,7 @@ integer CountLeadingSignBits(bits(N) x)
 `CountLeadingZeroBits` is core `BitVec.clz` (which yields `N` for `x = 0`, as the ASL does
 with `HighestSetBit(0) = -1`). Cross-checked against VeriISLE `MInst.BitRR` (`Clz`, `Cls`) in
 cranelift/codegen/src/isa/aarch64/spec/bit_rr.isle. -/
-@[state_simp_rules]
+@[expose, state_simp_rules]
 def exec_data_processing_clz_cls (cls : Bool)
   (inst : Data_processing_one_source_cls) (s : ArmState) : ArmState :=
   let datasize := 32 <<< inst.sf.toNat

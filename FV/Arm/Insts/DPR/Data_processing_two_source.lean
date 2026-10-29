@@ -25,7 +25,7 @@ namespace DPR
 
 open _root_.BitVec Arm.BitVec
 
-@[state_simp_rules]
+@[expose, state_simp_rules]
 def exec_data_processing_shift
   (inst : Data_processing_two_source_cls) (s : ArmState) : ArmState :=
   let datasize := 32 <<< inst.sf.toNat
@@ -52,7 +52,7 @@ Division by zero yields 0 (no trap). For SDIV, `INT_MIN / -1` yields `INT_MIN`
 divisor; `BitVec.sdiv` rounds towards zero but returns `-1`/`1` for a zero divisor per SMT-LIB,
 so the zero case is handled explicitly. Cross-checked against VeriISLE `MInst.AluRRR`
 (`UDiv`/`SDiv`) in cranelift/codegen/src/isa/aarch64/spec/alu_rrr.isle. -/
-@[state_simp_rules]
+@[expose, state_simp_rules]
 def exec_data_processing_div (unsigned : Bool)
   (inst : Data_processing_two_source_cls) (s : ArmState) : ArmState :=
   let datasize := 32 <<< inst.sf.toNat

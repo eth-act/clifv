@@ -39,7 +39,7 @@ theorem SameWorld.rfl' (s : Arm.ArmState) : SameWorld F s s :=
 
 /-- `ms` runs to completion from the vreg file `ρ`, ending in `ρ'`, from every world, with a
 world that agrees with the start outside the allocatable registers. -/
-def PRun (F : BitVec 64 → Prop) (isem : Sem) (ms : List MInst) (ρ ρ' : Nat → CV) : Prop :=
+@[expose] def PRun (F : BitVec 64 → Prop) (isem : Sem) (ms : List MInst) (ρ ρ' : Nat → CV) : Prop :=
   ∀ w, ∃ w', seqRun isem ms ρ w = some (.fall ρ' w') ∧ SameWorld F w' w
 
 theorem prun_nil (ρ : Nat → CV) : PRun F isem [] ρ ρ := fun w => ⟨w, rfl, SameWorld.rfl' w⟩

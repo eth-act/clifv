@@ -10,6 +10,17 @@ import all Init.Data.Repr
 import all Init.Prelude
 import FV.Backend.Proof.IselGeneric
 import FV.Arm.MinTheory
+import all FV.Arm.Decode.DPSFP
+import all FV.Backend.Proof.RegallocCSem
+import all FV.Backend.RegallocOps
+import all FV.Clif.Parse
+import all FV.Clif.Sem
+import all FV.Isle.Generated.Ids
+import all FV.Isle.Generated.RuleLists00
+import all FV.Isle.Generated.Terms00
+import all FV.Isle.Generated.Terms01
+import all FV.Isle.Interp
+import all FV.Isle.Syntax
 
 public section
 
@@ -106,18 +117,18 @@ theorem ldst_store (op : StoreOp) (hop : op ≠ .fpuStore128) (Rn Rt : BitVec 5)
       all_goals rfl
 
 /-- A base register of a final addressing mode. -/
-def BaseOk : Reg → Prop
+@[expose] def BaseOk : Reg → Prop
   | .sp => True
   | .x n => n ≤ 30
   | _ => False
 
 /-- An index register of a final addressing mode. -/
-def IdxOk : Reg → Prop
+@[expose] def IdxOk : Reg → Prop
   | .x n => n ≤ 30
   | _ => False
 
 /-- A final (encodable) addressing mode for an access of `bytes` bytes. -/
-def FinalAM (bytes : Nat) : AMode → Prop
+@[expose] def FinalAM (bytes : Nat) : AMode → Prop
   | .unsignedOffset rn off => BaseOk rn ∧ off % bytes = 0 ∧ off / bytes < 4096
   | .unscaled rn off => BaseOk rn ∧ -256 ≤ off ∧ off < 256
   | .regReg rn rm | .regScaled rn rm => BaseOk rn ∧ IdxOk rm
@@ -126,7 +137,7 @@ def FinalAM (bytes : Nat) : AMode → Prop
   | _ => False
 
 /-- The base register of an addressing mode. -/
-def _root_.Backend.AMode.base : AMode → Reg
+@[expose] def _root_.Backend.AMode.base : AMode → Reg
   | .unsignedOffset rn _ | .unscaled rn _ | .regReg rn _ | .regScaled rn _
   | .regScaledExtended rn _ _ | .regExtended rn _ _ | .regOffset rn _ => rn
   | _ => .sp
@@ -474,7 +485,7 @@ theorem exec_movk (env : Env) {n c i : Nat} (hn : n ≤ 30) (hc : c < 2 ^ 16) (h
 
 /-- Straight-line lines each of which encodes, advances the pc by 4, and keeps the error flag
 and the program, ending in `s'`. -/
-def StepsOk : Env → List Line → Arm.ArmState → Arm.ArmState → Prop
+@[expose] def StepsOk : Env → List Line → Arm.ArmState → Arm.ArmState → Prop
   | _, [], s, s' => s' = s
   | env, .ins i _ :: ls, s, s' => ∃ ai, i.toArmInst env = .ok ai ∧
       Arm.r .PC (Arm.exec_inst ai s) = Arm.r .PC s + 4#64 ∧
@@ -537,7 +548,7 @@ theorem steps_cons {env : Env} {i : Insn} {t : Option Clif.TrapCode} {ls : List 
     StepsOk env (.ins i t :: ls) s s' := ⟨ai, ha, hpc, he, hp, h⟩
 
 /-- The pc/`x n` shape of the states of a constant load. -/
-def pcx (s : Arm.ArmState) (n : Nat) (P X : BitVec 64) : Arm.ArmState :=
+@[expose] def pcx (s : Arm.ArmState) (n : Nat) (P X : BitVec 64) : Arm.ArmState :=
   Arm.w .PC P (Arm.w (.GPR (BitVec.ofNat 5 n)) X s)
 
 theorem pcx_step (s : Arm.ArmState) (n : Nat) (P X Y : BitVec 64) :
@@ -584,7 +595,7 @@ theorem steps_movks (n : Nat) (hn : n ≤ 30) (s : Arm.ArmState) :
     exact this
 
 /-- 16-bit chunk `i` of `v`. -/
-def chunk16 (v i : Nat) : Nat := (v / 2 ^ (16 * i)) % 2 ^ 16
+@[expose] def chunk16 (v i : Nat) : Nat := (v / 2 ^ (16 * i)) % 2 ^ 16
 
 theorem chunk_step (V i : Nat) (hi : 16 * i + 16 ≤ 64) :
     (if chunk16 V i ≠ 0 then Arm.BitVec.partInstall (16 * i) 16 (BitVec.ofNat 16 (chunk16 V i))
@@ -666,14 +677,14 @@ theorem steps_loadConst64 (env : Env) {n : Nat} (hn : n ≤ 30) (v : Nat) (s : A
 /-- The addressing modes of loads/stores the backend emits before finalisation: register
 forms with a final encoding, and stack-slot, outgoing-argument (`sp`) and incoming-argument
 (`fp`) offsets (any `Int`). -/
-def MemMode (bytes : Nat) : AMode → Prop
+@[expose] def MemMode (bytes : Nat) : AMode → Prop
   | .slotOffset _ | .spOffset _ | .fpOffset _ => True
   | m@(.unsignedOffset ..) | m@(.unscaled ..) | m@(.regReg ..) | m@(.regScaled ..)
   | m@(.regScaledExtended ..) | m@(.regExtended ..) => FinalAM bytes m
   | _ => False
 
 /-- An optional scratch write of `x16`. -/
-def x16w : Option (BitVec 64) → Arm.ArmState → Arm.ArmState
+@[expose] def x16w : Option (BitVec 64) → Arm.ArmState → Arm.ArmState
   | none, s => s
   | some c, s => Arm.w (.GPR 16#5) c s
 
@@ -1102,7 +1113,7 @@ theorem masked_x {k : Nat} (hk : k < 29 ∧ k ≠ 16 ∧ k ≠ 17 ∧ k ≠ 18) 
   simp only [Masked, BitVec.toNat_ofNat]; omega
 
 /-- The post-state of a load into `x a`. -/
-def ldPost (s : Arm.ArmState) (P : BitVec 64) (a : Nat) (V : BitVec 64) (o : Option (BitVec 64)) :
+@[expose] def ldPost (s : Arm.ArmState) (P : BitVec 64) (a : Nat) (V : BitVec 64) (o : Option (BitVec 64)) :
     Arm.ArmState :=
   Arm.w .PC P (Arm.w (.GPR (BitVec.ofNat 5 a)) V (x16w o s))
 

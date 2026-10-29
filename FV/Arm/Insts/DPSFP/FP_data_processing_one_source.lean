@@ -74,15 +74,15 @@ namespace DPSFP
 open _root_.BitVec Arm.BitVec
 
 /-- The IEEE format of `ftype` `00` (binary32) / `01` (binary64). -/
-def fpFmt (ftype : BitVec 2) : IEEE.Fmt := if ftype = 0b01#2 then .b64 else .b32
+@[expose] def fpFmt (ftype : BitVec 2) : IEEE.Fmt := if ftype = 0b01#2 then .b64 else .b32
 
 /-- `FPDecodeRounding(rmode)`: `00` RN, `01` RP, `10` RM, `11` RZ. -/
-def FPDecodeRounding (rmode : BitVec 2) : IEEE.RMode :=
+@[expose] def FPDecodeRounding (rmode : BitVec 2) : IEEE.RMode :=
   match rmode with
   | 0b00#2 => .rne | 0b01#2 => .rpi | 0b10#2 => .rmi | _ => .rz
 
 /-- `V[d, datasize] = result`, then the next instruction. -/
-@[state_simp_rules]
+@[expose, state_simp_rules]
 def fp_write_result (datasize : Nat) (Rd : BitVec 5) (result : BitVec datasize) (s : ArmState)
     : ArmState :=
   write_pc ((read_pc s) + 4#64) (write_sfp datasize Rd result s)

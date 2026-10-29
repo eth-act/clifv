@@ -48,6 +48,7 @@ starts with exactly the prologue and those stores (so the byte offsets are the c
 namespace Backend
 
 @[expose] section
+@[expose] section
 /-- The DWARF call frame instructions the backend's unwind rows use. -/
 inductive Cfi where
   /-- `DW_CFA_def_cfa_offset`. -/
@@ -57,6 +58,7 @@ inductive Cfi where
   /-- `DW_CFA_offset`: register `reg` is saved at CFA + `off`. -/
   | offset (reg : Nat) (off : Int)
   deriving Repr, BEq, DecidableEq, Inhabited
+end
 end
 
 /-- DWARF register number ("DWARF for the Arm 64-bit Architecture": x0–x30 = 0–30, sp = 31,
@@ -184,6 +186,7 @@ handler with tag 0 (`EXCEPTION_HANDLER_CLEANUP`) its landing pad and no action, 
 (`EXCEPTION_HANDLER_CATCH`) its landing pad and the catch-all action (type 0). -/
 
 @[expose] section
+@[expose] section
 /-- One entry of the LSDA's call-site table (offsets from the function start); `action` is
 the action-table offset + 1 (0 = no action: cleanup, or no landing pad). -/
 structure CallSite where
@@ -192,6 +195,7 @@ structure CallSite where
   pad : Nat
   action : Nat
   deriving Repr, BEq, DecidableEq, Inhabited
+end
 end
 
 /-- The labels after line `ln` at byte offset `off` (latest first). -/

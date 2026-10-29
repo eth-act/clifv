@@ -4,6 +4,16 @@ import FV.Backend.Proof.IselInterp
 import FV.Backend.Proof.IselAttr
 public import FV.Backend.Isel
 public meta import Lean.Meta.Tactic.Simp.BuiltinSimprocs
+import all FV.Backend.Isel
+import all FV.Backend.MInst
+import all FV.Clif.Parse
+import all FV.Clif.Print
+import all FV.Clif.Syntax
+import all FV.Isle.Generated.Ids
+import all FV.Isle.Generated.RuleLists00
+import all FV.Isle.Generated.Terms00
+import all FV.Isle.Interp
+import all FV.Isle.Syntax
 
 public section
 
@@ -164,7 +174,7 @@ theorem ctor_emit {v : V} {m : MInst} (h : MInst.ofV v = some m) :
   rw [this, h]
 
 theorem ctor_shift_mask_i8 :
-    externCtor ctx T.shift_mask [.ty (.int 8)] st = .ok (.op (.immLogic ⟨7, .size32⟩), st) := rfl
+    externCtor ctx T.shift_mask [.ty (.int 8)] st = .ok (.op (.immLogic ⟨7, .size32⟩), st) := by rfl
 
 /-- `lower_condcode` on the `IntCC` of a CLIF `icmp` (total on CLIF condition codes). -/
 @[expose] def condOf : Clif.IntCC → Cond
@@ -186,31 +196,31 @@ variable (rd rn rm : Reg)
 
 theorem ofV_aluRRR_add_32 :
     MInst.ofV (.data 58 2 [.data 59 0 [], .data 93 0 [], .reg rd, .reg rn, .reg rm]) =
-      some (.aluRRR .add .size32 rd rn rm) := rfl
+      some (.aluRRR .add .size32 rd rn rm) := by rfl
 theorem ofV_aluRRR_add_64 :
     MInst.ofV (.data 58 2 [.data 59 0 [], .data 93 1 [], .reg rd, .reg rn, .reg rm]) =
-      some (.aluRRR .add .size64 rd rn rm) := rfl
+      some (.aluRRR .add .size64 rd rn rm) := by rfl
 theorem ofV_aluRRR_subs_32 :
     MInst.ofV (.data 58 2 [.data 59 10 [], .data 93 0 [], .reg rd, .reg rn, .reg rm]) =
-      some (.aluRRR .subS .size32 rd rn rm) := rfl
+      some (.aluRRR .subS .size32 rd rn rm) := by rfl
 theorem ofV_aluRRR_subs_64 :
     MInst.ofV (.data 58 2 [.data 59 10 [], .data 93 1 [], .reg rd, .reg rn, .reg rm]) =
-      some (.aluRRR .subS .size64 rd rn rm) := rfl
+      some (.aluRRR .subS .size64 rd rn rm) := by rfl
 theorem ofV_aluRRR_lsr_32 :
     MInst.ofV (.data 58 2 [.data 59 16 [], .data 93 0 [], .reg rd, .reg rn, .reg rm]) =
-      some (.aluRRR .lsr .size32 rd rn rm) := rfl
+      some (.aluRRR .lsr .size32 rd rn rm) := by rfl
 theorem ofV_aluRRImm12_add_32 (i : Imm12) :
     MInst.ofV (.data 58 4 [.data 59 0 [], .data 93 0 [], .reg rd, .reg rn, .op (.imm12 i)]) =
-      some (.aluRRImm12 .add .size32 rd rn i) := rfl
+      some (.aluRRImm12 .add .size32 rd rn i) := by rfl
 theorem ofV_aluRRImm12_add_64 (i : Imm12) :
     MInst.ofV (.data 58 4 [.data 59 0 [], .data 93 1 [], .reg rd, .reg rn, .op (.imm12 i)]) =
-      some (.aluRRImm12 .add .size64 rd rn i) := rfl
+      some (.aluRRImm12 .add .size64 rd rn i) := by rfl
 theorem ofV_aluRRImmLogic_and_32 (i : ImmLogic) :
     MInst.ofV (.data 58 5 [.data 59 4 [], .data 93 0 [], .reg rd, .reg rn, .op (.immLogic i)]) =
-      some (.aluRRImmLogic .and .size32 rd rn i) := rfl
+      some (.aluRRImmLogic .and .size32 rd rn i) := by rfl
 theorem ofV_extend_u8_32 :
     MInst.ofV (.data 58 28 [.reg rd, .reg rn, .bool false, .int 8, .int 32]) =
-      some (.extend rd rn false 8 32) := rfl
+      some (.extend rd rn false 8 32) := by rfl
 theorem ofV_cset (c : Cond) :
     MInst.ofV (.data 58 33 [.reg rd, .data tyCond c.idx []]) = some (.cset rd c) := by
   cases c <;> rfl

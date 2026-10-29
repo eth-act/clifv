@@ -108,6 +108,7 @@ def provenSkeletonRules : List Nat :=
    1114, 1115, 1116, 1117, 1366, 1367, 1370, 1371, 1372, 1373, 1374, 1375, 1376, 1377, 1378]
 
 @[expose] section
+@[expose] section
 /-- Which exported rules may contribute candidates (`Isle.Opt.simplify`'s and
 `Isle.Opt.simplifySkeleton`'s allow-list); the other rules still run, their candidates are
 dropped. -/
@@ -119,6 +120,7 @@ inductive RuleAllow where
   /-- An explicit list of rule ids. -/
   | ids (l : List Nat)
   deriving DecidableEq, Repr, Inhabited
+end
 end
 
 def RuleAllow.pred : RuleAllow → Nat → Bool

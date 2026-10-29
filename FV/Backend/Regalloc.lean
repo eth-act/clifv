@@ -471,7 +471,7 @@ def RAResult.oracle (r : RAResult) : Except String RFunc :=
 
 /-- Lower `allocResult`: regalloc2's allocation if `checkAlloc` accepts it and `lowerRFunc`
 lowers it, else the spill allocation. -/
-def lowerAlloc (vcp : VCode) (ra : Except String RFunc) : Except String AFunc :=
+@[expose] def lowerAlloc (vcp : VCode) (ra : Except String RFunc) : Except String AFunc :=
   match ra with
   | .ok rf =>
     if (checkAlloc vcp rf).isOk then

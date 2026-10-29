@@ -42,7 +42,7 @@ theorem closureRoot_eq (r : Rule) : closureRoot r = closureRootIds.contains r.id
 /-! ## The data of an E instruction -/
 
 /-- The `InstructionData` format and opcode names of the E instructions (`instNames`). -/
-def eNamePairs : List (String × String) :=
+@[expose] def eNamePairs : List (String × String) :=
   [("UnaryImm", "Iconst"),
    ("Unary", "Ineg"), ("Unary", "Bnot"), ("Unary", "Clz"), ("Unary", "Ctz"), ("Unary", "Popcnt"),
    ("Unary", "Bswap"), ("Unary", "Bitrev"),

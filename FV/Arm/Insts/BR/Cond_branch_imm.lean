@@ -27,13 +27,13 @@ namespace BR
 
 open _root_.BitVec Arm.BitVec
 
-@[state_simp_rules]
+@[expose, state_simp_rules]
 def Cond_branch_imm_inst.branch_taken_pc
   (inst : Cond_branch_imm_cls) (pc : BitVec 64) : BitVec 64 :=
   let offset := signExtend 64 (inst.imm19 ++ 0b00#2)
   pc + offset
 
-@[state_simp_rules]
+@[expose, state_simp_rules]
 def Cond_branch_imm_inst.condition_holds
   (inst : Cond_branch_imm_cls) (s : ArmState) : Bool :=
   let Z := read_flag PFlag.Z s

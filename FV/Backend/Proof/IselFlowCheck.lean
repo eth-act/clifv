@@ -33,11 +33,13 @@ open Backend Isle Isle.Interp Isle.Aarch64
 /-! ## The abstract domain -/
 
 @[expose] section
+@[expose] section
 /-- An abstract value: flow level `f` and safety flag `s`. -/
 structure FA where
   f : Nat
   s : Bool
   deriving DecidableEq, Repr, Inhabited
+end
 end
 
 namespace FA
@@ -63,7 +65,7 @@ def leAll : List FA → List FA → Bool
 /-! ## Transfer functions -/
 
 /-- Extern extractors whose outputs hold no register, value, instruction nor MInst data. -/
-def clean0Ext : List TermId :=
+@[expose] def clean0Ext : List TermId :=
   [TId.value_type, TId.i64_from_iconst, TId.little_or_native_endian, TId.u64_from_imm64,
    TId.nonzero_u64_from_imm64, TId.imm12_from_u64, TId.i32_from_i64, TId.u8_from_u64,
    TId.single_target, TId.two_targets, TId.jump_table_targets, TId.symbol_value_data,
@@ -73,7 +75,7 @@ def clean0Ext : List TermId :=
    TId.u32_from_u64, TId.u64_low32_bits_unset]
 
 /-- Extern extractors whose outputs are CLIF values or instructions reached from input values. -/
-def valueExt : List TermId :=
+@[expose] def valueExt : List TermId :=
   [TId.def_inst, TId.maybe_uextend, TId.extended_value_from_value, TId.is_second_result,
    TId.value_list_slice, TId.value_slice_unwrap, TId.value_array_2, TId.value_array_3]
 

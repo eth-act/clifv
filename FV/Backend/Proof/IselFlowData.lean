@@ -20,7 +20,7 @@ namespace Backend.Proof.Flow
 open Backend Isle Isle.Aarch64
 
 /-- Data without registers, instructions and `ElfTlsGetAddr`, whose values satisfy `P`. -/
-def DataOk (P : Nat → Prop) (d : V) : Prop :=
+@[expose] def DataOk (P : Nat → Prop) (d : V) : Prop :=
   d.regsIn = [] ∧ d.instsIn = [] ∧ d.tlsIn = false ∧ ∀ n ∈ d.valsIn, P n
 
 /-- `DataOk` of every value of a list. -/

@@ -4,6 +4,7 @@
 usage: scripts/module-port.py [--check] [FILE_OR_DIR...]   (default: FV FVTest corpus/dsl/Corpus)
        scripts/module-port.py regen OLD_MAIN OLD_PORT       (run on a checkout of the new main)
        scripts/module-port.py unexpose [--only MODLIST]
+       scripts/module-port.py list-exposed | apply-exposed   (scripts/module-port-exposed.tsv)
        scripts/module-port.py privatize [--report FILE] [--only MODLIST] MODULE...   (built tree)
 
 Mechanical step (default): each file that does not start with `module` gets
@@ -135,10 +136,11 @@ def regen(old_main, old_port):
                         pathlib.Path(d, name).write_text(s)
                     r = subprocess.run(["git", "merge-file", "-p", f"{d}/new", f"{d}/base", f"{d}/ours"],
                                        capture_output=True, text=True)
-                new = r.stdout
                 merged += 1
                 if r.returncode:
-                    conflicts.append(p)
+                    conflicts.append(p)       # keep the mechanical port of the new version
+                else:
+                    new = r.stdout
         if new != f.read_text():
             f.write_text(new)
             n += 1
@@ -150,7 +152,58 @@ def regen(old_main, old_port):
     print(f"regen: {n} files written, fix-ups merged into {merged}, {len(conflicts)} conflicts")
     for p in conflicts:
         print("  conflict:", p)
-    return 1 if conflicts else 0
+    return 0
+
+
+EXPOSE_LIST = pathlib.Path(__file__).with_name("module-port-exposed.tsv")
+DECL_NAME = re.compile(r"^\s*(?:@\[([^\]]*)\]\s*)?(?:(?:private|protected|noncomputable|partial|unsafe|nonrec) )*def\s+(\S+)", re.M)
+
+
+def list_exposed():
+    """`file<TAB>name` of every `@[expose] def` in files that are not exposed wholesale."""
+    out = []
+    for f in files([]):
+        t = f.read_text()
+        if re.search(r"^@\[expose\] public section$", t, re.M):
+            continue
+        for m in DECL_NAME.finditer(t):
+            if m.group(1) and re.search(r"\bexpose\b", m.group(1)):
+                out.append(f"{f}\t{m.group(2)}")
+    EXPOSE_LIST.write_text("\n".join(sorted(out)) + "\n")
+    print(f"exposed: {len(out)} definitions listed in {EXPOSE_LIST.name}")
+
+
+def apply_exposed():
+    """Re-add `@[expose]` to the listed definitions (after `regen` kept a conflicting file's
+    mechanical port, or after main renamed things: missing names are reported)."""
+    want = {}
+    for line in EXPOSE_LIST.read_text().splitlines():
+        if line.strip():
+            f, n = line.split("\t")
+            want.setdefault(f, set()).add(n)
+    added = missing = 0
+    for f, names in want.items():
+        p = pathlib.Path(f)
+        if not p.exists():
+            missing += len(names)
+            continue
+        t = p.read_text()
+        for n in names:
+            m = re.search(rf"^(\s*)(@\[([^\]]*)\]\s*)?((?:(?:private|protected|noncomputable|partial|unsafe|nonrec) )*def\s+{re.escape(n)}(?=[\s:(\[{{]))", t, re.M)
+            if not m:
+                missing += 1
+                print("  missing:", f, n)
+                continue
+            if m.group(3) is not None and re.search(r"\bexpose\b", m.group(3)):
+                continue
+            if m.group(2):
+                rep = m.group(1) + m.group(2).replace("@[", "@[expose, ", 1) + m.group(4)
+            else:
+                rep = m.group(1) + "@[expose] " + m.group(4)
+            t = t[:m.start()] + rep + t[m.end():]
+            added += 1
+        p.write_text(t)
+    print(f"apply-exposed: {added} added, {missing} missing")
 
 
 def privatize(report, only=None):
@@ -223,7 +276,7 @@ def simp_attrs():
     return SIMP_ATTRS
 
 
-DEF_LINE = re.compile(r"^(\s*)@\[([^\]]*)\](\s*(?:(?:private|protected|noncomputable|partial|unsafe|nonrec) )*def\b)")
+DEF_LINE = re.compile(r"^(\s*)@\[([^\]]*)\]((?:\s*--[^\n]*\n)*\s*(?:(?:private|protected|noncomputable|partial|unsafe|nonrec) )*def\b)", re.M)
 DERIVING = re.compile(r"deriving\b[^\n]*\b(DecidableEq|BEq|Ord|Hashable|LT|LE)\b")
 
 
@@ -298,6 +351,12 @@ def main():
     args = sys.argv[1:]
     if args[:1] == ["regen"]:
         sys.exit(regen(args[1], args[2]))
+    if args[:1] == ["list-exposed"]:
+        list_exposed()
+        return
+    if args[:1] == ["apply-exposed"]:
+        apply_exposed()
+        return
     if args[:1] == ["unexpose"]:
         only = None
         if args[1:2] == ["--only"]:

@@ -47,7 +47,7 @@ def InstCalls {W : Type} (f : Clif.Function) (sem : ISem CV W) (MR : MemRelTW W)
 /-- Every terminator call `lowerFunction` makes (in a context satisfying `CtxInv` whose slot
 `ti` is `buildCtx`'s terminator placeholder, from a state above every value's vreg) satisfies
 M4's `LowerTermOk`. From M4's terminator rule statements: `termCalls_of_rules`. -/
-def TermCalls {W : Type} (sem : ISem CV W) (MR : MemRelTW W) : Prop :=
+@[expose] def TermCalls {W : Type} (sem : ISem CV W) (MR : MemRelTW W) : Prop :=
   ∀ f ctx ti t data targets out st st' tr, CtxInv f ctx → BrIdxTyped ctx t → TargetsLen t targets →
     ctx.insts[ti]? = some ⟨.op .unit, [], [], none⟩ → ValsBelow ctx st →
     termData t = .ok data → st.emitted = #[] →

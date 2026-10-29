@@ -151,7 +151,7 @@ of an inversion by `instNames` with these, the side condition by evaluation). -/
 /-- The `InstructionData` format and opcode *names* `instData` uses for an instruction. An
 `f32const`/`f64const` (`iconst` at `f32`/`f64`, format `UnaryIeee32`/`UnaryIeee64`, variant
 index 33/34) has the names of `iconst` here; `instData_names` lists it separately. -/
-def instNames : Clif.Inst → String × String
+@[expose] def instNames : Clif.Inst → String × String
   | .iconst .. => ("UnaryImm", "Iconst")
   | .unary op .. => ("Unary", (unaryOpcode op).getD "")
   | .binary op .. => ("Binary", (binaryOpcode op).getD "")

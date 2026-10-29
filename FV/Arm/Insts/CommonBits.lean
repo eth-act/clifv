@@ -29,7 +29,7 @@ This function differs from the Arm's HighestSetBit
 (https://developer.arm.com/documentation/ddi0602/2022-03/Shared-Pseudocode/Shared-Functions?lang=en#impl-shared.HighestSetBit.1)
 because it returns `n` when no set bit is found, instead of returning `-1`.
 -/
-def highest_set_bit (bv : BitVec n) : Nat :=
+@[expose] def highest_set_bit (bv : BitVec n) : Nat :=
   go (n - 1) bv where
   go (i : Nat) (bv : BitVec n) :=
     if lsb bv i = 1#1 then
@@ -45,7 +45,7 @@ This function matches Arm's LowestSetBit
 (https://developer.arm.com/documentation/ddi0602/2022-03/Shared-Pseudocode/Shared-Functions?lang=en#impl-shared.LowestSetBit.1)
 -- it returns `n` when no set bit is found.
 -/
-def lowest_set_bit (bv : BitVec n) : Nat :=
+@[expose] def lowest_set_bit (bv : BitVec n) : Nat :=
   go 0 bv where
   go (i : Nat) (bv : BitVec n) :=
     if i >= n then
@@ -57,7 +57,7 @@ def lowest_set_bit (bv : BitVec n) : Nat :=
         go (i + 1) bv
   termination_by (n - i)
 
-def invalid_bit_masks (immN : BitVec 1) (imms : BitVec 6) (immediate : Bool)
+@[expose] def invalid_bit_masks (immN : BitVec 1) (imms : BitVec 6) (immediate : Bool)
   (M : Nat) : Bool :=
   let inp := immN ++ ~~~imms
   let len := highest_set_bit inp
@@ -99,7 +99,7 @@ theorem M_divisible_by_esize_of_valid_bit_masks (immN : BitVec 1) (imms : BitVec
 --   https://kddnewton.com/2022/08/11/aarch64-bitmask-immediates.html
 -- Arm Implementation:
 --   https://developer.arm.com/documentation/ddi0602/2023-12/Shared-Pseudocode/aarch64-functions-bitmasks?lang=en#impl-aarch64.DecodeBitMasks.5
-def decode_bit_masks (immN : BitVec 1) (imms immr : BitVec 6)
+@[expose] def decode_bit_masks (immN : BitVec 1) (imms immr : BitVec 6)
                      (immediate : Bool) (M : Nat) :
                      Option (BitVec M × BitVec M) :=
   if h0 : invalid_bit_masks immN imms immediate M then none

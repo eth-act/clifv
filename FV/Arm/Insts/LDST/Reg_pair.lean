@@ -26,6 +26,7 @@ namespace LDST
 open _root_.BitVec Arm.BitVec
 
 @[expose] section
+@[expose] section
 structure Reg_pair_cls where
   opc       : BitVec 2
   SIMD?     : Bool
@@ -38,10 +39,11 @@ structure Reg_pair_cls where
   Rt        : BitVec 5
 deriving DecidableEq, Repr
 end
+end
 
 instance : ToString Reg_pair_cls where toString a := toString (repr a)
 
-@[state_simp_rules]
+@[expose, state_simp_rules]
 def reg_pair_constrain_unpredictable (wback : Bool) (inst : Reg_pair_cls) : Bool :=
   match inst.SIMD?, inst.L? with
   | false, false => wback ∧ ((inst.Rt = inst.Rn) ∨ inst.Rt2 = inst.Rn) ∧ inst.Rn ≠ 31#5
@@ -50,7 +52,7 @@ def reg_pair_constrain_unpredictable (wback : Bool) (inst : Reg_pair_cls) : Bool
   | true, false => false
   | true, true => inst.Rt = inst.Rt2
 
-@[state_simp_rules]
+@[expose, state_simp_rules]
 def reg_pair_operation (inst : Reg_pair_cls) (inst_str : String) (signed : Bool)
   (datasize : Nat) (offset : BitVec 64) (s : ArmState)
   (H1 : 8 ∣ datasize): ArmState :=

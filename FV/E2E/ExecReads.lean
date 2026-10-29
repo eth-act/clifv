@@ -33,7 +33,7 @@ namespace Backend.Proof
 open Backend E2E.ExecBytes E2E.ExecFrame
 
 /-- The loads among the backend's instructions. -/
-def _root_.Backend.Insn.loads : Insn → Bool
+@[expose] def _root_.Backend.Insn.loads : Insn → Bool
   | .load .. | .ldp .. | .ldar .. | .ldaxr .. | .ldrGotLo12 .. | .ldrTlsDescLo12 .. => true
   | .fpuLoad .. | .fpuLoadP .. | .fpuLoadLit .. => true
   -- counted as loads (as `MInst.memRd` does), although the model's SIMD&FP register-offset

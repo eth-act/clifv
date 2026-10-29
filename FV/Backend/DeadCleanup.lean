@@ -24,7 +24,7 @@ def pureNoFlags : MInst → Bool
   | _ => false
 
 /-- The shifts (`lsl`/`lsr`/`asr`, by register or immediate). -/
-@[simp] def shiftOp : ALUOp → Bool
+@[expose, simp] def shiftOp : ALUOp → Bool
   | .lsl | .lsr | .asr => true
   | _ => false
 
@@ -88,14 +88,14 @@ def cmpForm : MInst → Bool
   | .aluRRImmLogic .andS _ .xzr (.vreg ..) _ => true
   | _ => false
 
-@[simp] def isJump : MInst → Bool
+@[expose, simp] def isJump : MInst → Bool
   | .jump _ => true
   | _ => false
 
 /-- The flags are dead at the head of a retained suffix: a compare overwrites them after
 flag-free producers only, before anything reads them; or, when the block's flags are dead at
 its exit (`e`, `exitDead`), its `jump` comes first. -/
-@[simp] def flagsDead (e : Bool) : List MInst → Bool
+@[expose, simp] def flagsDead (e : Bool) : List MInst → Bool
   | [] => false
   | k :: ks => cmpForm k || (flagFree k && flagsDead e ks) || (isJump k && e)
 
@@ -103,7 +103,7 @@ its exit (`e`, `exitDead`), its `jump` comes first. -/
 compares again once its dead `cset` is gone (#552). Cranelift never lowers that `icmp`: no
 lowered instruction uses its result (`machinst/lower.rs`, `lower_clif_block`), and its
 users' rules look through it to its operands (`isa/aarch64/lower.isle`). -/
-@[simp] def dropCmp (e : Bool) (m : MInst) (kept : List MInst) : Bool :=
+@[expose, simp] def dropCmp (e : Bool) (m : MInst) (kept : List MInst) : Bool :=
   cmpForm m && (defs m).isEmpty && flagsDead e kept
 
 /-- Scan backwards; removing a dead producer does not make its inputs live. `e`: the flags are

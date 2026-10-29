@@ -46,7 +46,7 @@ open _root_.BitVec Arm.BitVec
 
 /-- `VFPExpandImm(imm8, N)` for a format with `E` exponent and `F` fraction bits
 (`N = 1 + E + F`, `E ≥ 3`, `F ≥ 4`). -/
-def VFPExpandImm (E F : Nat) (imm8 : BitVec 8) : BitVec (1 + E + F) :=
+@[expose] def VFPExpandImm (E F : Nat) (imm8 : BitVec 8) : BitVec (1 + E + F) :=
   let v := imm8.toNat
   let b6 := v / 64 % 2
   let exp : Nat := ((1 - b6) <<< (E - 1)) ||| ((b6 * (2 ^ (E - 3) - 1)) <<< 2) ||| (v / 16 % 4)

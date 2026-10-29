@@ -5,6 +5,7 @@ import FV.Backend.Proof.IselTerms
 import FV.Backend.Proof.IselExtern
 import FV.Backend.Proof.IselInterp
 import FV.Backend.Proof.IselAttr
+import all FV.Backend.MInst
 
 public section
 

@@ -18,12 +18,14 @@ public section
 namespace IEEE
 
 @[expose] section
+@[expose] section
 /-- A binary interchange format: `E` exponent bits, `F` fraction bits (width `1 + E + F`).
 Assumes `E ≥ 2` and `F ≥ 1`. -/
 structure Fmt where
   E : Nat
   F : Nat
   deriving DecidableEq, Repr
+end
 end
 
 /-- binary32 (`f32`). -/
@@ -47,25 +49,31 @@ abbrev Bits (f : Fmt) := BitVec (1 + f.E + f.F)
 @[expose] def Fmt.expOnes (f : Fmt) : Nat := 2 ^ f.E - 1
 
 @[expose] section
+@[expose] section
 /-- Rounding modes (`FPRounding`): to nearest ties to even, toward +∞, toward −∞, toward zero,
 to nearest ties away from zero. `FPCR.RMode` selects one of the first four. -/
 inductive RMode
   | rne | rpi | rmi | rz | rna
   deriving DecidableEq, Repr, Inhabited
 end
+end
 
+@[expose] section
 @[expose] section
 /-- `FPType`. -/
 inductive FPType
   | zero | denormal | nonzero | infinity | qnan | snan
   deriving DecidableEq, Repr, Inhabited
 end
+end
 
+@[expose] section
 @[expose] section
 /-- Result of `FPCompare` (`NZCV` = `0110`, `1000`, `0010`, `0011`). -/
 inductive Cmp
   | lt | eq | gt | un
   deriving DecidableEq, Repr, Inhabited
+end
 end
 
 /-- `FPType` is a NaN. -/

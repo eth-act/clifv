@@ -26,21 +26,21 @@ namespace Backend
 
 /-- The emitted code of `af` passes `layoutReadyB` (the function index only names labels in
 the assembly text, so index 0 decides it for every index: `E2E.emitPre_index`). -/
-def emitReady (af : AFunc) : Bool :=
+@[expose] def emitReady (af : AFunc) : Bool :=
   match emitFunc 0 af with
   | .ok fa => fa.layoutReadyB
   | .error _ => false
 
 /-- `lowerAlloc`, falling back to the spill allocation when the lowered function is not
 `emitReady`. -/
-def lowerAllocReady (vcp : VCode) (ra : Except String RFunc) : Except String AFunc :=
+@[expose] def lowerAllocReady (vcp : VCode) (ra : Except String RFunc) : Except String AFunc :=
   match lowerAlloc vcp ra with
   | .ok af => if emitReady af then .ok af else lowerRFunc vcp (spillAlloc vcp)
   | .error e => .error e
 
 /-- The allocator answer `lowerAllocReady` lowers: `ra` if `lowerAlloc`'s function of it is
 `emitReady`, else none (so the spill allocation). -/
-def readyAnswer (vcp : VCode) (ra : Except String RFunc) : Except String RFunc :=
+@[expose] def readyAnswer (vcp : VCode) (ra : Except String RFunc) : Except String RFunc :=
   match lowerAlloc vcp ra with
   | .ok af => if emitReady af then ra else .error "allocation not emittable (emitReady)"
   | .error e => .error e

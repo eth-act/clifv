@@ -36,11 +36,11 @@ namespace BR
 
 open _root_.BitVec Arm.BitVec
 
-@[state_simp_rules]
+@[expose, state_simp_rules]
 def Test_branch_inst.branch_taken_pc (inst : Test_branch_cls) (pc : BitVec 64) : BitVec 64 :=
   pc + signExtend 64 (inst.imm14 ++ 0b00#2)
 
-@[state_simp_rules]
+@[expose, state_simp_rules]
 def Test_branch_inst.condition_holds (inst : Test_branch_cls) (s : ArmState) : Bool :=
   let bit_pos := (inst.b5 ++ inst.b40).toNat
   let operand := read_gpr_zr 64 inst.Rt s

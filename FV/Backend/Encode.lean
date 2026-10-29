@@ -39,19 +39,19 @@ open Arm
 /-! ## Operand fields -/
 
 /-- A general-purpose register where encoding 31 means the zero register. -/
-def Reg.encZR : Reg → Except String (BitVec 5)
+@[expose] def Reg.encZR : Reg → Except String (BitVec 5)
   | .x n => if n ≤ 30 then pure (BitVec.ofNat 5 n) else throw s!"x{n} is not a register"
   | .xzr => pure 31#5
   | r => throw s!"{repr r} where a GPR or ZR is required"
 
 /-- A general-purpose register where encoding 31 means the stack pointer. -/
-def Reg.encSP : Reg → Except String (BitVec 5)
+@[expose] def Reg.encSP : Reg → Except String (BitVec 5)
   | .x n => if n ≤ 30 then pure (BitVec.ofNat 5 n) else throw s!"x{n} is not a register"
   | .sp => pure 31#5
   | r => throw s!"{repr r} where a GPR or SP is required"
 
 /-- A SIMD&FP register. -/
-def Reg.encV : Reg → Except String (BitVec 5)
+@[expose] def Reg.encV : Reg → Except String (BitVec 5)
   | .v n => if n ≤ 31 then pure (BitVec.ofNat 5 n) else throw s!"v{n} is not a register"
   | r => throw s!"{repr r} where a SIMD&FP register is required"
 
@@ -65,19 +65,19 @@ def Reg.encV : Reg → Except String (BitVec 5)
   | .uxtb => 0 | .uxth => 1 | .uxtw => 2 | .uxtx => 3
   | .sxtb => 4 | .sxth => 5 | .sxtw => 6 | .sxtx => 7
 
-def b1 (b : Bool) : BitVec 1 := if b then 1#1 else 0#1
+@[expose] def b1 (b : Bool) : BitVec 1 := if b then 1#1 else 0#1
 
 /-- `n` as an unsigned field of `w` bits, or an error. -/
-def uField (what : String) (w n : Nat) : Except String (BitVec w) :=
+@[expose] def uField (what : String) (w n : Nat) : Except String (BitVec w) :=
   if n < 2 ^ w then pure (BitVec.ofNat w n) else throw s!"{what} {n} does not fit in {w} bits"
 
 /-- `i` as a signed field of `w` bits, or an error. -/
-def sField (what : String) (w : Nat) (i : Int) : Except String (BitVec w) :=
+@[expose] def sField (what : String) (w : Nat) (i : Int) : Except String (BitVec w) :=
   if -(2 ^ (w - 1) : Int) ≤ i ∧ i < 2 ^ (w - 1) then pure (BitVec.ofInt w i)
   else throw s!"{what} {i} does not fit in {w} signed bits"
 
 /-- Rotate the `e`-bit value `x` right by `r`. -/
-def rorN (e x r : Nat) : Nat := (x >>> r) ||| ((x <<< (e - r)) % 2 ^ e)
+@[expose] def rorN (e x r : Nat) : Nat := (x >>> r) ||| ((x <<< (e - r)) % 2 ^ e)
 
 /-- `N:immr:imms` of a bitmask immediate for `value` at 32 or 64 bits: the inverse of the
 Arm ARM's `DecodeBitMasks` (shared pseudocode `aarch64/instrs/integer/bitmasks`): the value is
@@ -85,7 +85,7 @@ the replication of an `e`-bit element (smallest `e`, 2 ≤ e ≤ size) that is `
 with `0 < c < e`; then `N = (e = 64)`, `immr = r`, `imms = NOT(2e-1)<5:0> OR (c-1)`. The same
 search as Cranelift's `ImmLogic::maybe_from_u64` (`inst/imms.rs`). The encoding is unique:
 an element of twice the minimal period consists of two runs. -/
-def bitmaskEnc? (is64 : Bool) (value : Nat) : Option (BitVec 1 × BitVec 6 × BitVec 6) :=
+@[expose] def bitmaskEnc? (is64 : Bool) (value : Nat) : Option (BitVec 1 × BitVec 6 × BitVec 6) :=
   let size := if is64 then 64 else 32
   if value ≥ 2 ^ size then none else
   let rep (e : Nat) : Nat :=
@@ -351,13 +351,13 @@ the inverted short branch of a relaxed branch); other labels are the function's 
   | l => env.lbl l
 
 /-- Byte offset from the instruction to `l`. -/
-def Env.rel (env : Env) (l : Lbl) : Except String Int :=
+@[expose] def Env.rel (env : Env) (l : Lbl) : Except String Int :=
   match env.target l with
   | some t => pure ((t : Int) - env.pc)
   | none => throw s!"undefined label {repr l}"
 
 /-- `n` bytes as text (`128 MiB`, `1 MiB`, `32 KiB`). -/
-def byteSizeText (n : Nat) : String :=
+@[expose] def byteSizeText (n : Nat) : String :=
   if n % 2 ^ 20 == 0 then s!"{n / 2 ^ 20} MiB"
   else if n % 2 ^ 10 == 0 then s!"{n / 2 ^ 10} KiB" else s!"{n} bytes"
 
@@ -371,7 +371,7 @@ where they reach. A target that is still outside the field's range (±128 MiB, �
 ±1 MiB) is a compile error naming the instruction and the distance; the word is never
 truncated. `Insn.encode_inRange` (`FV/Backend/Proof/EncodeBranch.lean`) proves every encoded
 label operand is in range. -/
-def Env.pcRel (env : Env) (what : String) (bits scale : Nat) (l : Lbl) :
+@[expose] def Env.pcRel (env : Env) (what : String) (bits scale : Nat) (l : Lbl) :
     Except String (BitVec bits) := do
   let off ← env.rel l
   if off % scale != 0 then throw s!"{what} offset {off} is not a multiple of {scale}"
@@ -382,13 +382,13 @@ def Env.pcRel (env : Env) (what : String) (bits scale : Nat) (l : Lbl) :
 
 /-- `sf`, `opc`, `N` of the logical (shifted register / immediate) instructions
 (C6.2 AND, BIC, ORR, ORN, EOR, EON, ANDS, BICS: `opc` 00 and, 01 orr, 10 eor, 11 ands). -/
-def ALUOp.logic? : ALUOp → Option (BitVec 2 × BitVec 1)
+@[expose] def ALUOp.logic? : ALUOp → Option (BitVec 2 × BitVec 1)
   | .and => some (0, 0) | .andNot => some (0, 1) | .orr => some (1, 0) | .orrNot => some (1, 1)
   | .eor => some (2, 0) | .eorNot => some (2, 1) | .andS => some (3, 0)
   | _ => none
 
 /-- `op`, `S` of the add/subtract instructions (C6.2 ADD, ADDS, SUB, SUBS). -/
-def ALUOp.addSub? : ALUOp → Option (BitVec 1 × BitVec 1)
+@[expose] def ALUOp.addSub? : ALUOp → Option (BitVec 1 × BitVec 1)
   | .add => some (0, 0) | .addS => some (0, 1) | .sub => some (1, 0) | .subS => some (1, 1)
   | _ => none
 
@@ -397,7 +397,7 @@ def ALUOp.addSub? : ALUOp → Option (BitVec 1 × BitVec 1)
   | .lsl => 0 | .lsr => 1 | .asr => 2 | .ror => 3
 
 /-- `(Q, size)` of an arrangement (C7.2 `<T>` tables). -/
-def VectorSize.qsize : VectorSize → BitVec 1 × BitVec 2
+@[expose] def VectorSize.qsize : VectorSize → BitVec 1 × BitVec 2
   | .size8x8 => (0, 0) | .size8x16 => (1, 0) | .size16x4 => (0, 1) | .size16x8 => (1, 1)
   | .size32x2 => (0, 2) | .size32x4 => (1, 2) | .size64x2 => (1, 3)
 
@@ -417,7 +417,7 @@ def VectorSize.qsize : VectorSize → BitVec 1 × BitVec 2
 /-- Single-register load/store with a final addressing mode: C4.1 classes "Load/store register
 (unsigned immediate)", "(unscaled immediate)", "(register offset)", "(immediate pre-indexed)",
 "(immediate post-indexed)" (Cranelift `enc_ldst_uimm12`, `enc_ldst_simm9`, `enc_ldst_reg`). -/
-def ldstFields (size : BitVec 2) (V : BitVec 1) (opc : BitVec 2) (bytes : Nat) (Rt : BitVec 5)
+@[expose] def ldstFields (size : BitVec 2) (V : BitVec 1) (opc : BitVec 2) (bytes : Nat) (Rt : BitVec 5)
     (m : AMode) : Except String ArmInst := do
   match m with
   | .unsignedOffset rn off =>
@@ -902,11 +902,13 @@ the encoded word back as the intended instruction. -/
 /-! ## Relocations -/
 
 @[expose] section
+@[expose] section
 /-- AArch64 ELF relocation types used (AAELF64 "ELF for the Arm 64-bit Architecture", relocation codes table). -/
 inductive RelocType where
   | call26 | adrGotPage | ld64GotLo12Nc | adrPrelPgHi21 | addAbsLo12Nc
   | tlsDescAdrPage21 | tlsDescLd64Lo12 | tlsDescAddLo12 | tlsDescCall
   deriving DecidableEq, Repr, Inhabited, BEq
+end
 end
 
 /-- ELF `R_AARCH64_*` number. -/
@@ -939,6 +941,7 @@ def RelocType.isTls : RelocType → Bool
   | _ => false
 
 @[expose] section
+@[expose] section
 /-- A relocation: byte offset of the instruction, type, target symbol, RELA addend. -/
 structure Reloc where
   offset : Nat
@@ -946,6 +949,7 @@ structure Reloc where
   sym : String
   addend : Int
   deriving DecidableEq, Repr, Inhabited, BEq
+end
 end
 
 /-- The relocation an instruction needs (its immediate field is left zero). -/
@@ -977,19 +981,19 @@ structure FnBin where
 @[expose] def FnBin.size (f : FnBin) : Nat := 4 * f.words.size
 
 /-- Byte offset of line `j` of a line list: the sizes of the lines before it. -/
-def lineOffset (lines : List Line) (j : Nat) : Nat := ((lines.take j).map Line.size).sum
+@[expose] def lineOffset (lines : List Line) (j : Nat) : Nat := ((lines.take j).map Line.size).sum
 
-def Line.isLabel : Line → Bool
+@[expose] def Line.isLabel : Line → Bool
   | .label _ => true
   | _ => false
 
 /-- The code lines (instructions and jump-table words, 4 bytes each): the `k`-th one is at
 byte offset `4 * k`, and is word `k` of the function. -/
-def codeLines (lines : List Line) : List Line := lines.filter (!·.isLabel)
+@[expose] def codeLines (lines : List Line) : List Line := lines.filter (!·.isLabel)
 
 /-- The word of a code line at byte offset `pc`; jump-table words are `target - base`
 (signed 32-bit). -/
-def Line.encodeAt (lbl : Lbl → Option Nat) (pc : Nat) : Line → Except String (BitVec 32)
+@[expose] def Line.encodeAt (lbl : Lbl → Option Nat) (pc : Nat) : Line → Except String (BitVec 32)
   | .ins i _ => i.encode { pc, lbl }
   | .word t b =>
     match lbl t, lbl b with
@@ -999,7 +1003,7 @@ def Line.encodeAt (lbl : Lbl → Option Nat) (pc : Nat) : Line → Except String
 
 /-- Encode code lines, appending to `acc` (word `k` at byte offset `4 * k`); `ctx pc ln e`
 is the error message. -/
-def encodeCode (ctx : Nat → Line → String → String) (lbl : Lbl → Option Nat) :
+@[expose] def encodeCode (ctx : Nat → Line → String → String) (lbl : Lbl → Option Nat) :
     List Line → Array (BitVec 32) → Except String (Array (BitVec 32))
   | [], acc => pure acc
   | ln :: rest, acc =>
@@ -1008,13 +1012,13 @@ def encodeCode (ctx : Nat → Line → String → String) (lbl : Lbl → Option 
     | .error e => throw (ctx (4 * acc.size) ln e)
 
 /-- Relocations of code lines (at the instruction's offset). -/
-def codeRelocs (code : List Line) : List Reloc :=
+@[expose] def codeRelocs (code : List Line) : List Reloc :=
   code.zipIdx.filterMap fun (ln, k) => match ln with
     | .ins i _ => i.reloc?.map fun (type, sym, addend) => { offset := 4 * k, type, sym, addend }
     | _ => none
 
 /-- Trap sites of code lines: the offsets of the instructions that carry a trap code. -/
-def codeTraps (code : List Line) : List TrapSite :=
+@[expose] def codeTraps (code : List Line) : List TrapSite :=
   code.zipIdx.filterMap fun (ln, k) => match ln with
     | .ins _ (some c) => some ⟨4 * k, c⟩
     | _ => none
@@ -1028,7 +1032,7 @@ def codeInsns (code : List Line) : List (Nat × Insn) :=
 /-- Lay out a function: resolve labels, encode every code line at its offset, collect
 relocations and trap sites (checked against `emitFunc`'s trap table). Specification and
 proof: `FnAsm.layout_*` in `FV/Backend/Proof/EncodeLayout.lean`. -/
-def FnAsm.layout (f : FnAsm) : Except String FnBin := do
+@[expose] def FnAsm.layout (f : FnAsm) : Except String FnBin := do
   let lbls ← (labelOffsets f.lines).mapError (s!"{f.name}: " ++ ·)
   let lbl (l : Lbl) : Option Nat := lbls[l]?
   let code := codeLines f.lines.toList

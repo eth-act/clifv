@@ -28,7 +28,7 @@ namespace DPR
 
 open _root_.BitVec Arm.BitVec
 
-@[state_simp_rules]
+@[expose, state_simp_rules]
 def exec_data_processing_madd
   (inst : Data_processing_three_source_cls) (s : ArmState) : ArmState :=
   let destsize := 32 <<< inst.sf.toNat
@@ -51,7 +51,7 @@ X[d, datasize] = result<datasize-1:0>;
 ```
 Cross-checked against VeriISLE `MInst.AluRRRR` (`MSub`) in
 cranelift/codegen/src/isa/aarch64/spec/alu_rrrr.isle. -/
-@[state_simp_rules]
+@[expose, state_simp_rules]
 def exec_data_processing_msub
   (inst : Data_processing_three_source_cls) (s : ArmState) : ArmState :=
   let destsize := 32 <<< inst.sf.toNat
@@ -73,7 +73,7 @@ X[d, 64] = result<127:64>;
 (`Ra` must be `11111`; other values are unallocated encodings.)
 Cross-checked against VeriISLE `MInst.AluRRR` (`SMulH`/`UMulH`) in
 cranelift/codegen/src/isa/aarch64/spec/alu_rrr.isle. -/
-@[state_simp_rules]
+@[expose, state_simp_rules]
 def exec_data_processing_mulh (unsigned : Bool)
   (inst : Data_processing_three_source_cls) (s : ArmState) : ArmState :=
   let operand1 := read_gpr_zr 64 inst.Rn s
@@ -101,7 +101,7 @@ The product of two 32-bit integers fits in 64 bits, so `result<63:0>` is the 64-
 sum/difference of `operand3` and the product of the 64-bit (sign/zero) extensions.
 Cross-checked against VeriISLE `MInst.AluRRRR` (`SMAddL`/`UMAddL`) in
 cranelift/codegen/src/isa/aarch64/spec/alu_rrrr.isle. -/
-@[state_simp_rules]
+@[expose, state_simp_rules]
 def exec_data_processing_maddl (unsigned sub_op : Bool)
   (inst : Data_processing_three_source_cls) (s : ArmState) : ArmState :=
   let operand1 := read_gpr_zr 32 inst.Rn s

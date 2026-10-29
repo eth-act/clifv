@@ -36,6 +36,7 @@ namespace Backend
 /-! ## Labels and instructions -/
 
 @[expose] section
+@[expose] section
 /-- A function-local label. -/
 inductive Lbl where
   | block (l : Label)
@@ -49,6 +50,7 @@ inductive Lbl where
   -- `BEq` is the lawful one from `DecidableEq` (the layout proof uses `Std.HashMap` lemmas)
   deriving DecidableEq, Repr, Inhabited, Hashable
 end
+end
 
 /-- Assembly name of a label of function `k` (its index in the file). -/
 @[expose] def Lbl.name (k : Nat) : Lbl → String
@@ -58,6 +60,7 @@ end
   | .loop n => s!".L{k}_a{n}"
   | .skip => ".+8"
 
+@[expose] section
 @[expose] section
 /-- One AArch64 instruction over real registers: one line of assembly, one 4-byte word.
 Constructors follow the assembly the backend prints (including the aliases `mov`, `cset`,
@@ -206,6 +209,7 @@ inductive Insn where
   | fpuLoadLit (size : ScalarSize) (rt : Reg) (target : Lbl)
   deriving DecidableEq, Repr, Inhabited, BEq
 end
+end
 
 /-- One element of a function's code: an instruction (4 bytes, optionally a trap site), a
 jump-table word `target - base` (4 bytes of data), or a label (0 bytes). -/
@@ -223,7 +227,7 @@ inductive Line where
 
 @[expose] def OperandSize.is64 (s : OperandSize) : Bool := s == .size64
 
-def hex (n : Nat) : String := "0x" ++ String.ofList (Nat.toDigits 16 n)
+@[expose] def hex (n : Nat) : String := "0x" ++ String.ofList (Nat.toDigits 16 n)
 
 /-- `movz`/`movk` sequence for a 64-bit constant (a correct, not necessarily minimal,
 replacement of `Inst::load_constant`; used only for address offsets). -/
@@ -526,11 +530,13 @@ large sizes), then pops fp/lr and returns. It does not read `fp`: the body keeps
   [.ins (.ldp Reg.fp Reg.lr (.spPostIndexed 16)), .ins .ret]
 
 @[expose] section
+@[expose] section
 /-- A trap site: byte offset from the function start and trap code. -/
 structure TrapSite where
   offset : Nat
   code : Clif.TrapCode
   deriving DecidableEq, Repr, Inhabited
+end
 end
 
 /-- A function's final code: the line list, its size in bytes and trap table. -/
@@ -625,7 +631,7 @@ out, every relaxable branch is relaxed. With no far label the lines are unchange
     | _ => go rest (off + ln.size) m
 
 /-- Byte offsets of the labels of a line list (every label defined once, else an error). -/
-def labelOffsets (lines : Array Line) : Except String (Std.HashMap Lbl Nat) :=
+@[expose] def labelOffsets (lines : Array Line) : Except String (Std.HashMap Lbl Nat) :=
   labelOffsets.go lines.toList 0 {}
 
 /-- The label operand of a PC-relative form, its reach in bytes (`-reach ≤ target - pc <
@@ -722,7 +728,7 @@ def Reg.vnum (r : Reg) : String :=
   | .v n => toString n
   | _ => "<not-v>"
 
-def Cond.asm : Cond → String
+@[expose] def Cond.asm : Cond → String
   | .eq => "eq" | .ne => "ne" | .hs => "hs" | .lo => "lo" | .mi => "mi" | .pl => "pl"
   | .vs => "vs" | .vc => "vc" | .hi => "hi" | .ls => "ls" | .ge => "ge" | .lt => "lt"
   | .gt => "gt" | .le => "le" | .al => "al" | .nv => "nv"
@@ -739,7 +745,7 @@ def ExtendOp.asm : ExtendOp → String
 def ShiftOp.asm : ShiftOp → String
   | .lsl => "lsl" | .lsr => "lsr" | .asr => "asr" | .ror => "ror"
 
-def log2 (n : Nat) : Nat := match n with
+@[expose] def log2 (n : Nat) : Nat := match n with
   | 1 => 0 | 2 => 1 | 4 => 2 | 8 => 3 | 16 => 4 | _ => 0
 
 /-- Print a final addressing mode. -/

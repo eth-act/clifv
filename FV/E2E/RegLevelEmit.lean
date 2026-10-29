@@ -726,7 +726,7 @@ theorem emit_block {k : Nat} {af : AFunc} {fa : FnAsm} (h : emitFunc k af = .ok 
 
 /-- A line neither `fallthrough` nor branch relaxation (`relaxLine`) rewrites: an instruction
 that is neither `b` nor a conditional branch. -/
-def Line.plain : Line → Bool
+@[expose] def Line.plain : Line → Bool
   | .ins (.b _) none => false
   | .ins c none => c.condTarget?.isNone
   | .ins _ (some _) => true

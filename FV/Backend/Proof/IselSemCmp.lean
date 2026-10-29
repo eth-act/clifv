@@ -24,7 +24,7 @@ namespace Backend.Proof
 open Backend
 
 /-- `ConditionHolds` on explicit flags. -/
-def condOn (cond : BitVec 4) (ps : Arm.PState) : Bool :=
+@[expose] def condOn (cond : BitVec 4) (ps : Arm.PState) : Bool :=
   let N := ps.n
   let Z := ps.z
   let C := ps.c

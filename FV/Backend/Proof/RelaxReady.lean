@@ -45,7 +45,7 @@ def nearB.go (m : Std.HashMap Lbl Nat) : List Line → Nat → Bool
   | ln :: rest, pc => ln.nearAt m pc && go m rest (pc + ln.size)
 
 /-- Decidable `NearOk`. -/
-def nearB (L : List Line) : Bool :=
+@[expose] def nearB (L : List Line) : Bool :=
   match labelOffsets.go L 0 {} with
   | .ok m => nearB.go m L 0
   | .error _ => true

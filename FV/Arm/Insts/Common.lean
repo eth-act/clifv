@@ -238,7 +238,7 @@ theorem zero_iff_z_eq_one (x : BitVec 64) :
   extractLsb' 0 a x = BitVec.zero _
 
 /-- We need to prove why the Aligned predicate is Decidable. -/
-instance : Decidable (Aligned x a) := by
+@[expose] instance : Decidable (Aligned x a) := by
   cases a <;> simp only [Aligned] <;> infer_instance
 
 theorem Aligned_BitVecSub_64_4 {x : BitVec 64} {y : BitVec 64}
@@ -276,7 +276,7 @@ true when sp is aligned. -/
   (Aligned sp 4)
 
 /-- We need to prove why the CheckSPAlignment predicate is Decidable. -/
-instance : Decidable (CheckSPAlignment s) := by unfold CheckSPAlignment; infer_instance
+@[expose] instance : Decidable (CheckSPAlignment s) := by unfold CheckSPAlignment; infer_instance
 
 @[state_simp_rules]
 theorem CheckSPAlignment_w_different_eq (h : StateField.GPR 31#5 ≠ fld) :
@@ -334,6 +334,7 @@ theorem CheckSPAlignment_of_r_sp_aligned {s : ArmState} {value}
 ----------------------------------------------------------------------
 
 @[expose] section
+@[expose] section
 inductive ShiftType where
   | LSL : ShiftType
   | LSR : ShiftType
@@ -341,10 +342,11 @@ inductive ShiftType where
   | ROR : ShiftType
 deriving DecidableEq, Repr
 end
+end
 
 instance : ToString ShiftType where toString a := toString (repr a)
 
-@[state_simp_rules]
+@[expose, state_simp_rules]
 def decode_shift (shift : BitVec 2) : ShiftType :=
   match shift with
   | 0b00 => ShiftType.LSL
@@ -352,7 +354,7 @@ def decode_shift (shift : BitVec 2) : ShiftType :=
   | 0b10 => ShiftType.ASR
   | 0b11 => ShiftType.ROR
 
-@[state_simp_rules]
+@[expose, state_simp_rules]
 def shift_reg (bv : BitVec n) (st : ShiftType) (sa : BitVec 6)
   : BitVec n :=
   match st with
@@ -361,6 +363,7 @@ def shift_reg (bv : BitVec n) (st : ShiftType) (sa : BitVec 6)
   | ShiftType.ASR => sshiftRight bv sa.toNat
   | ShiftType.ROR => rotateRight bv sa.toNat
 
+@[expose] section
 @[expose] section
 inductive LogicalShiftedRegType where
   | AND  : LogicalShiftedRegType
@@ -373,14 +376,16 @@ inductive LogicalShiftedRegType where
   | BICS : LogicalShiftedRegType
 deriving DecidableEq, Repr
 end
+end
 
 instance : ToString LogicalShiftedRegType where toString a := toString (repr a)
 
-def zero_flag_spec (bv : BitVec n) : BitVec 1 :=
+@[expose] def zero_flag_spec (bv : BitVec n) : BitVec 1 :=
   if bv = BitVec.zero n then 1#1 else 0#1
 
 ----------------------------------------------------------------------
 
+@[expose] section
 @[expose] section
 inductive LogicalImmType where
   | AND : LogicalImmType
@@ -388,6 +393,7 @@ inductive LogicalImmType where
   | EOR : LogicalImmType
   | ANDS : LogicalImmType
 deriving DecidableEq, Repr
+end
 end
 
 instance : ToString LogicalImmType where toString a := toString (repr a)
@@ -450,6 +456,7 @@ dsimproc [state_simp_rules] reduceDecodeBitMasks (decode_bit_masks _ _ _ _ _) :=
 ----------------------------------------------------------------------
 
 @[expose] section
+@[expose] section
 inductive SIMDThreeSameLogicalType where
   | AND  : SIMDThreeSameLogicalType
   | BIC  : SIMDThreeSameLogicalType
@@ -461,12 +468,13 @@ inductive SIMDThreeSameLogicalType where
   | BIF : SIMDThreeSameLogicalType
 deriving DecidableEq, Repr
 end
+end
 
 instance : ToString SIMDThreeSameLogicalType where toString a := toString (repr a)
 
 ----------------------------------------------------------------------
 
-@[state_simp_rules]
+@[expose, state_simp_rules]
 def Vpart_read (n : BitVec 5) (part width : Nat) (s : ArmState)
   : BitVec width :=
   -- assert n >= 0 && n <= 31;
@@ -479,7 +487,7 @@ def Vpart_read (n : BitVec 5) (part width : Nat) (s : ArmState)
     extractLsb' width width $ read_sfp 128 n s
 
 
-@[state_simp_rules]
+@[expose, state_simp_rules]
 def Vpart_write (n : BitVec 5) (part width : Nat) (val : BitVec width) (s : ArmState)
   : ArmState :=
   -- assert n >= 0 && n <= 31;
@@ -497,14 +505,14 @@ def Vpart_write (n : BitVec 5) (part width : Nat) (val : BitVec width) (s : ArmS
 /-- Read the transfer register `Rt` of a load/store: `V[t]` or `X[t]`.
 (FV fix) For GPRs, register 31 is `XZR`/`WZR` here (ASL `X[t, datasize]`); upstream LNSym read
 the stack pointer. -/
-@[state_simp_rules]
+@[expose, state_simp_rules]
 def ldst_read (SIMD? : Bool) (width : Nat) (idx : BitVec 5) (s : ArmState)
   : BitVec width :=
   if SIMD? then read_sfp width idx s else read_gpr_zr width idx s
 
 /-- Write the transfer register `Rt` of a load: `V[t]` or `X[t]` (register 31 = `XZR`, the
 write is discarded; (FV fix) upstream LNSym wrote the stack pointer). -/
-@[state_simp_rules]
+@[expose, state_simp_rules]
 def ldst_write (SIMD? : Bool) (width : Nat) (idx : BitVec 5) (val : BitVec width) (s : ArmState)
   : ArmState :=
   if SIMD? then write_sfp width idx val s else write_gpr_zr width idx val s
@@ -522,6 +530,7 @@ theorem zero_lt_shift_left_pos {x n : Nat} (h : 0 < x) :
 
 -- Floating-point convert/move instruction types
 @[expose] section
+@[expose] section
 inductive FPConvOp where
   | FPConvOp_CVT_FtoI : FPConvOp
   | FPConvOp_CVT_ItoF : FPConvOp
@@ -530,11 +539,12 @@ inductive FPConvOp where
   | FPConvOp_CVT_FtoI_JS : FPConvOp
 deriving DecidableEq, Repr
 end
+end
 
 ----------------------------------------------------------------------
 
 /-- Reverse the order of `esize`-bit elements in `x`.-/
-def rev_elems (n esize : Nat) (x : BitVec n) (h₀ : esize ∣ n) (h₁ : 0 < esize) : BitVec n :=
+@[expose] def rev_elems (n esize : Nat) (x : BitVec n) (h₀ : esize ∣ n) (h₁ : 0 < esize) : BitVec n :=
   if h0 : n <= esize then
     x
   else
@@ -563,7 +573,7 @@ theorem rev_elems_base :
 /-- Divide a bv of width `datasize` into containers, each of size
 `container_size`, and within a container, reverse the order of `esize`-bit
 elements. -/
-def rev_vector (datasize container_size esize : Nat) (x : BitVec datasize)
+@[expose] def rev_vector (datasize container_size esize : Nat) (x : BitVec datasize)
   (h₀ : 0 < esize) (h₁ : esize <= container_size) (h₂ : container_size <= datasize)
   (h₃ : esize ∣ container_size) (h₄ : container_size ∣ datasize) :
   BitVec datasize :=
@@ -597,7 +607,7 @@ example : rev_vector 32 16 8 0xaabbccdd#32 (by decide)
 
 /-- Divide bv `vector` into elements, each of size `size`. This function gets
 the `e`'th element from the `vector`. -/
-@[state_simp_rules]
+@[expose, state_simp_rules]
 def elem_get (vector : BitVec n) (e : Nat) (size : Nat) : BitVec size :=
   -- assert (e+1)*size <= n
   let lo := e * size
@@ -616,15 +626,18 @@ def elem_set (vector : BitVec n) (e : Nat) (size : Nat)
 
 -- MemOp: Memory access instruction types
 @[expose] section
+@[expose] section
 inductive MemOp where
   | MemOp_LOAD : MemOp
   | MemOp_STORE : MemOp
   | MemOp_PREFETCH : MemOp
 deriving DecidableEq, Repr
 end
+end
 
 ----------------------------------------------------------------------
 
+@[expose] section
 @[expose] section
 /-- (FV addition) Register extension type.
 Ref.: Arm ARM (DDI 0487) shared pseudocode `ExtendType`. -/
@@ -632,6 +645,7 @@ inductive ExtendType where
   | UXTB | UXTH | UXTW | UXTX
   | SXTB | SXTH | SXTW | SXTX
 deriving DecidableEq, Repr
+end
 end
 
 instance : ToString ExtendType where toString a := toString (repr a)
@@ -646,14 +660,14 @@ case op of
   when '110' return ExtendType_SXTW; when '111' return ExtendType_SXTX;
 ```
 -/
-@[state_simp_rules]
+@[expose, state_simp_rules]
 def decode_reg_extend (op : BitVec 3) : ExtendType :=
   match op with
   | 0b000#3 => .UXTB | 0b001#3 => .UXTH | 0b010#3 => .UXTW | 0b011#3 => .UXTX
   | 0b100#3 => .SXTB | 0b101#3 => .SXTH | 0b110#3 => .SXTW | 0b111#3 => .SXTX
 
 /-- (FV addition) The signedness and source width selected by an `ExtendType`. -/
-@[state_simp_rules]
+@[expose, state_simp_rules]
 def ExtendType.unsigned_len (e : ExtendType) : Bool × Nat :=
   match e with
   | .UXTB => (true, 8)  | .UXTH => (true, 16)  | .UXTW => (true, 32)  | .UXTX => (true, 64)
@@ -673,7 +687,7 @@ bits(N) ExtendReg(integer reg, ExtendType exttype, integer shift, integer N)
 ```
 `Extend(x<nbits-1:0>:Zeros(shift), N, unsigned)` equals extending the low `nbits` bits of
 `val` to `N` bits and then shifting left by `shift` (the bits shifted out are beyond `N`). -/
-@[state_simp_rules]
+@[expose, state_simp_rules]
 def extend_reg (val : BitVec n) (exttype : ExtendType) (shift : Nat) : BitVec n :=
   let (unsigned, len) := exttype.unsigned_len
   let nbits := min len (n - shift)

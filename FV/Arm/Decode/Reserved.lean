@@ -19,11 +19,13 @@ section Decode
 open _root_.BitVec Arm.BitVec
 
 @[expose] section
+@[expose] section
 /-- `UDF #imm16`: bits 31:16 are all zero. -/
 structure Udf_cls where
   _fixed : BitVec 16 := 0#16 -- [31:16]
   imm16  : BitVec 16         -- [15:0]
 deriving DecidableEq, Repr
+end
 end
 
 instance : ToString Udf_cls where toString a := toString (repr a)
@@ -32,10 +34,12 @@ def Udf_cls.toBitVec32 (x : Udf_cls) : BitVec 32 :=
   x._fixed ++ x.imm16
 
 @[expose] section
+@[expose] section
 inductive ReservedInst where
   | Udf :
     Udf_cls → ReservedInst
 deriving DecidableEq, Repr
+end
 end
 
 instance : ToString ReservedInst where toString a := toString (repr a)

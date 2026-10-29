@@ -6,6 +6,7 @@ import FV.Backend.Proof.IselExtern
 import FV.Backend.Proof.IselInterp
 import FV.Backend.Proof.IselGeneric
 import FV.Arm.MinTheory
+import all FV.Backend.MInst
 
 public section
 

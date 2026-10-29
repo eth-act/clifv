@@ -192,7 +192,7 @@ def CallRuleOkP (Rd : BitVec 64 → Prop)
 
 /-- **The call rules with pinned calls**: under guarded memory forms (`MemRefinesR`: the call
 rules use only the stores) and the pinned callee contract. -/
-def CallRulesCorrectP (p : Program) : Prop :=
+@[expose] def CallRulesCorrectP (p : Program) : Prop :=
   ∀ (Rd : BitVec 64 → Prop) (Pc : String → Clif.Signature → List Clif.Val → Clif.Mem → Prop)
     (F : BitVec 64 → Prop) (isem : Sem) (MR : MemRelT) (env : Clif.Env) (cp : Clif.Program)
     (exts : List Clif.ExtFunc) (sb : Nat) (syms : String → Option Nat) (outB : Nat),
@@ -227,7 +227,7 @@ def IndRuleOkP (Rd : BitVec 64 → Prop)
       LowerInstOkP Rd Pc isem MR env cp ctx inst info.results st rss st' ms
 
 /-- **The `call_indirect` rule with pinned calls.** -/
-def IndRulesCorrectP (p : Program) : Prop :=
+@[expose] def IndRulesCorrectP (p : Program) : Prop :=
   ∀ (Rd : BitVec 64 → Prop) (Pc : String → Clif.Signature → List Clif.Val → Clif.Mem → Prop)
     (F : BitVec 64 → Prop) (isem : Sem) (MR : MemRelT) (env : Clif.Env) (cp : Clif.Program)
     (sigs : List Clif.Signature),
@@ -403,7 +403,7 @@ def TryRuleOkP (Rd : BitVec 64 → Prop)
       LowerTryOkP Rd Pc isem MR env cp ctx (.call fn args) info st st' ms
 
 /-- **The `try_call` rules with pinned calls.** -/
-def TryRulesCorrectP (p : Program) : Prop :=
+@[expose] def TryRulesCorrectP (p : Program) : Prop :=
   ∀ (Rd : BitVec 64 → Prop) (Pc : String → Clif.Signature → List Clif.Val → Clif.Mem → Prop)
     (F : BitVec 64 → Prop) (isem : Sem) (MR : MemRelT) (env : Clif.Env) (cp : Clif.Program)
     (exts : List Clif.ExtFunc) (sb : Nat) (syms : String → Option Nat) (outB : Nat),
@@ -449,7 +449,7 @@ def TryIndRuleOkP (Rd : BitVec 64 → Prop)
       LowerTryOkP Rd Pc isem MR env cp ctx (.callIndirect et.sig callee args) info st st' ms
 
 /-- **The `try_call_indirect` rule with pinned calls.** -/
-def TryIndRulesCorrectP (p : Program) : Prop :=
+@[expose] def TryIndRulesCorrectP (p : Program) : Prop :=
   ∀ (Rd : BitVec 64 → Prop) (Pc : String → Clif.Signature → List Clif.Val → Clif.Mem → Prop)
     (F : BitVec 64 → Prop) (isem : Sem) (MR : MemRelT) (env : Clif.Env) (cp : Clif.Program)
     (sigs : List Clif.Signature),

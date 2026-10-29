@@ -49,7 +49,7 @@ namespace DPSFP
 
 open _root_.BitVec Arm.BitVec
 
-@[state_simp_rules]
+@[expose, state_simp_rules]
 def fmov_general_aux (intsize : Nat) (fltsize : Nat) (op : FPConvOp)
   (part : Nat) (inst : Conversion_between_FP_and_Int_cls) (s : ArmState)
   : ArmState :=
@@ -71,7 +71,7 @@ def fmov_general_aux (intsize : Nat) (fltsize : Nat) (op : FPConvOp)
     s
   | _ => write_err (StateError.Other s!"fmov_general_aux called with non-FMOV op!") s
 
-@[state_simp_rules]
+@[expose, state_simp_rules]
 def exec_fmov_general
   (inst : Conversion_between_FP_and_Int_cls) (s : ArmState): ArmState :=
   let intsize := 32 <<< inst.sf.toNat
@@ -98,7 +98,7 @@ def exec_fmov_general
     | _ => write_err (StateError.Other s!"exec_fmov_general called with non-FMOV instructions!") s
 
 /-- (FV addition) FPConvOp_CVT_FtoI / FPConvOp_CVT_ItoF with rounding `rm` (see the header). -/
-@[state_simp_rules]
+@[expose, state_simp_rules]
 def exec_fp_int_cvt (inst : Conversion_between_FP_and_Int_cls) (toInt : Bool)
     (rm : IEEE.RMode) (s : ArmState) : ArmState :=
   if inst.ftype = 0b11#2 then

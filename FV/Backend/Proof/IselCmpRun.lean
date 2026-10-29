@@ -53,7 +53,7 @@ section
 variable {V W : Type} (sem : ISem V W)
 
 /-- `SeqEnd.succ` iterated `n` times. -/
-def SeqEnd.shift (n : Nat) : SeqEnd V W → SeqEnd V W
+@[expose] def SeqEnd.shift (n : Nat) : SeqEnd V W → SeqEnd V W
   | .fall ρ w => .fall ρ w
   | .stop k i ops ρ w outs w' ctl => .stop (k + n) i ops ρ w outs w' ctl
 

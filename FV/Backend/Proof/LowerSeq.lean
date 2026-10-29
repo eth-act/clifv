@@ -23,7 +23,7 @@ section
 variable {V W : Type}
 
 /-- The segment `ms` is at index `k0` of block `vb`. -/
-def SegAt (vb : VBlock) (k0 : Nat) (ms : List MInst) : Prop :=
+@[expose] def SegAt (vb : VBlock) (k0 : Nat) (ms : List MInst) : Prop :=
   ∀ k (h : k < ms.length), vb.insts[k0 + k]? = some ms[k]
 
 theorem SegAt.tail {vb : VBlock} {k0 : Nat} {i : MInst} {ms : List MInst}
@@ -146,7 +146,7 @@ theorem StarP.single {α : Type} {r : α → α → Prop} {P : α → Prop} {a b
     (h : r a b) : StarP r P a b := .step hp h (.refl _)
 
 /-- The configuration runs at instruction `k0 + i` of block `b`, for some `i < len`. -/
-def AtSeg (b k0 len : Nat) (c : VConf V W) : Prop :=
+@[expose] def AtSeg (b k0 len : Nat) (c : VConf V W) : Prop :=
   ∃ i < len, ∃ ρ w, c = .run ⟨b, k0 + i, ρ, w⟩
 
 theorem AtSeg.succ {b k0 len : Nat} {c : VConf V W} (h : AtSeg b (k0 + 1) len c) :

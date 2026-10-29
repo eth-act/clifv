@@ -71,6 +71,7 @@ structure Sem (V σ : Type) where
   extract : Term → V → σ → ExtResult (List V)
 
 @[expose] section
+@[expose] section
 /-- Interpretation errors (as opposed to "no rule matched" of a partial term, which is a
 `none` result). -/
 inductive Err where
@@ -86,6 +87,7 @@ inductive Err where
   /-- Ill-formed program or values (type confusion, unbound variable, arity mismatch). -/
   | malformed (msg : String)
   deriving Repr, DecidableEq, Inhabited
+end
 end
 
 structure Config where
@@ -166,7 +168,7 @@ end
 @[expose] def fire (r : RuleId) : M σ Unit := modify fun (s, tr) => (s, tr.push r)
 
 /-- The rules of one priority class starting at the head of `rs`, and the rest. -/
-def splitClass (prio : Int) : List Rule → List Rule × List Rule
+@[expose] def splitClass (prio : Int) : List Rule → List Rule × List Rule
   | [] => ([], [])
   | r :: rs =>
     if r.prio == prio then
@@ -208,7 +210,7 @@ def evalArgs : Nat → List Expr → Env V → M σ (Option (List V))
       | some vs => pure (some (v :: vs))
       | none => pure none
 /-- Evaluate `let*` bindings. -/
-def evalBinds : Nat → List (VarId × TypeId × Expr) → Env V → M σ (Option (Env V))
+@[expose] def evalBinds : Nat → List (VarId × TypeId × Expr) → Env V → M σ (Option (Env V))
   | 0, _, _ => throw .outOfFuel
   | _ + 1, [], env => pure (some env)
   | n + 1, (x, _, e) :: bs, env => do
@@ -304,7 +306,7 @@ structure RunResult (V σ : Type) where
   trace : List RuleId
 
 /-- Interpret the constructor of the term named `term` on `args` from state `st`. -/
-def Interp.run {V σ : Type} (p : Program) (sem : Sem V σ) (cfg : Config) (term : String)
+@[expose] def Interp.run {V σ : Type} (p : Program) (sem : Sem V σ) (cfg : Config) (term : String)
     (args : List V) (st : σ) : Except Err (RunResult V σ) := do
   let some t := p.termByName? term | throw (.malformed s!"unknown term {term}")
   let (v, st', tr) ← (Interp.applyTerm p sem cfg cfg.fuel t.ret t.id args).run (st, #[])

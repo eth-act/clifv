@@ -46,6 +46,7 @@ dead).
 namespace Backend
 
 @[expose] section
+@[expose] section
 /-- An instruction after allocation. `inst` holds only real registers. -/
 inductive AInst where
   | inst (m : MInst)
@@ -54,6 +55,7 @@ inductive AInst where
   /-- `mov sp, x29; ldp x29, x30, [sp], #16; ret` -/
   | epilogueRet
   deriving Repr, Inhabited, BEq
+end
 end
 
 /-- An allocated function. -/
@@ -90,7 +92,7 @@ structure Frame where
   { outgoing, vregOff := offs, size := alignTo intEnd 16 }
 
 def intScratch : List Reg := [.x 9, .x 10, .x 11, .x 12, .x 13, .x 14, .x 15]
-def floatScratch : List Reg := (List.range 16).map fun i => .v (16 + i)
+@[expose] def floatScratch : List Reg := (List.range 16).map fun i => .v (16 + i)
 
 /-- Spill load/store of a vreg's slot. -/
 @[expose] def slotLoad (cls : RegClass) (r : Reg) (off : Nat) : MInst :=

@@ -177,10 +177,10 @@ def signature (s : Signature) : String :=
   | .tryCall f args et => s!"try_call fn{f}({vs args}), {exnTable et}"
   | .tryCallIndirect c args et => s!"try_call_indirect {v c}({vs args}), {exnTable et}"
 
-def stmt (tys : ValueId → Option Ty) (s : Stmt) : String :=
+@[expose] def stmt (tys : ValueId → Option Ty) (s : Stmt) : String :=
   if s.results.isEmpty then inst tys s.inst else s!"{vs s.results} = {inst tys s.inst}"
 
-def block (tys : ValueId → Option Ty) (b : Block) : String :=
+@[expose] def block (tys : ValueId → Option Ty) (b : Block) : String :=
   let params := if b.params.isEmpty then "" else
     "(" ++ ", ".intercalate (b.params.map fun (x, t) => s!"{v x}: {t.name}") ++ ")"
   let hdr := s!"block{b.id}{params}{if b.cold then " cold" else ""}:\n"

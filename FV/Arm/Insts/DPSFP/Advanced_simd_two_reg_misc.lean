@@ -94,12 +94,12 @@ Vector instruction `REV64` that reverses the order of 1-byte elements in each
 Ref.:
 https://developer.arm.com/documentation/ddi0602/2024-06/SIMD-FP-Instructions/REV64--Reverse-elements-in-64-bit-doublew
 -/
-def vrev128_64_8 (x : BitVec 128) : BitVec 128 :=
+@[expose] def vrev128_64_8 (x : BitVec 128) : BitVec 128 :=
   rev_vector 128 64 8 x
     (by decide) (by decide) (by decide)
     (by decide) (by decide)
 
-@[state_simp_rules]
+@[expose, state_simp_rules]
 def exec_rev_vector
   (inst : Advanced_simd_two_reg_misc_cls) (s : ArmState) : ArmState :=
   open _root_.BitVec Arm.BitVec in
@@ -149,7 +149,7 @@ def exec_rev_vector
       s
 
 /-- (FV addition) Population count of each element: `BitCount` for an 8-bit element. -/
-def cnt_aux (e : Nat) (elements : Nat) (x : BitVec n) (result : BitVec n) : BitVec n :=
+@[expose] def cnt_aux (e : Nat) (elements : Nat) (x : BitVec n) (result : BitVec n) : BitVec n :=
   if elements ≤ e then
     result
   else
@@ -174,7 +174,7 @@ V[d, datasize] = result;
 `BitCount` is core `BitVec.cpop`. `V[d, 64] = x` zeroes bits 127:64 (`write_sfp`).
 Cross-checked against VeriISLE `MInst.VecMisc` (`Cnt`) in
 cranelift/codegen/src/isa/aarch64/spec/vec_misc.isle. -/
-@[state_simp_rules]
+@[expose, state_simp_rules]
 def exec_cnt (inst : Advanced_simd_two_reg_misc_cls) (s : ArmState) : ArmState :=
   if inst.size ≠ 0b00#2 then
     write_err (StateError.Illegal s!"Illegal {inst} encountered!") s

@@ -29,6 +29,7 @@ abbrev VarId := Nat
 abbrev RuleId := Nat
 
 @[expose] section
+@[expose] section
 /-- Source position: file name as in Cranelift's generated code (`src/isa/aarch64/lower.isle`,
 `<OUT_DIR>/clif_lower.isle`) and **1-based** line. (Cranelift's generated-code comments and
 `trace-log` output print 0-based lines.) -/
@@ -36,6 +37,7 @@ structure Pos where
   file : String
   line : Nat
   deriving Repr, DecidableEq, Inhabited, Hashable
+end
 end
 
 /-- S-expressions (`cranelift_isle::printer::SExpr`), used for specs and for the source form of
@@ -49,7 +51,7 @@ inductive SExpr where
 -- `deriving DecidableEq` does not support nested inductives; these instances are the
 -- structural equivalent.
 mutual
-def SExpr.decEq : (a b : SExpr) → Decidable (a = b)
+@[expose] def SExpr.decEq : (a b : SExpr) → Decidable (a = b)
   | .atom x0, .atom y0 =>
     if h0 : x0 = y0 then
       isTrue (by subst h0; rfl)
@@ -72,7 +74,7 @@ def SExpr.decEq : (a b : SExpr) → Decidable (a = b)
       isTrue (by subst h0; rfl)
   | .list _, .atom _
   | .list _, .binding _ _ => isFalse (nomatch ·)
-def SExpr.decEqList : (a b : List SExpr) → Decidable (a = b)
+@[expose] def SExpr.decEqList : (a b : List SExpr) → Decidable (a = b)
   | [], [] => isTrue rfl
   | x :: xs, y :: ys =>
     match SExpr.decEq x y with
@@ -87,19 +89,24 @@ end
 instance : DecidableEq SExpr := SExpr.decEq
 
 @[expose] section
+@[expose] section
 /-- ISLE built-in integer types. -/
 inductive IntTy where
   | u8 | u16 | u32 | u64 | u128 | usize | i8 | i16 | i32 | i64 | i128 | isize
   deriving Repr, DecidableEq, Inhabited
 end
+end
 
+@[expose] section
 @[expose] section
 /-- How the fields of a variant/struct were declared. -/
 inductive FieldsKind where
   | unit | named | tuple
   deriving Repr, DecidableEq, Inhabited
 end
+end
 
+@[expose] section
 @[expose] section
 /-- A field: name (`"0"`, `"1"`, ... for tuple fields) and type. -/
 structure Field where
@@ -107,7 +114,9 @@ structure Field where
   ty : TypeId
   deriving Repr, DecidableEq, Inhabited
 end
+end
 
+@[expose] section
 @[expose] section
 /-- An enum variant; `fullName` is the variant's term name `Enum.Variant`. -/
 structure Variant where
@@ -117,7 +126,9 @@ structure Variant where
   fields : List Field
   deriving Repr, DecidableEq, Inhabited
 end
+end
 
+@[expose] section
 @[expose] section
 inductive TypeKind where
   | bool
@@ -128,7 +139,9 @@ inductive TypeKind where
   | struct (isExtern : Bool) (fieldsKind : FieldsKind) (fields : List Field)
   deriving Repr, DecidableEq, Inhabited
 end
+end
 
+@[expose] section
 @[expose] section
 structure TypeDef where
   id : TypeId
@@ -137,7 +150,9 @@ structure TypeDef where
   pos : Option Pos
   deriving Repr, DecidableEq, Inhabited
 end
+end
 
+@[expose] section
 @[expose] section
 /-- `(decl pure multi partial rec ...)` flags. -/
 structure TermFlags where
@@ -147,7 +162,9 @@ structure TermFlags where
   isRec : Bool
   deriving Repr, DecidableEq, Inhabited
 end
+end
 
+@[expose] section
 @[expose] section
 /-- A term's constructor: internal (defined by rules) or an extern Rust function. -/
 inductive Ctor where
@@ -155,7 +172,9 @@ inductive Ctor where
   | external (fn : String)
   deriving Repr, DecidableEq, Inhabited
 end
+end
 
+@[expose] section
 @[expose] section
 /-- A term's extractor. Internal extractors are macros that `cranelift-isle` expands into rule
 patterns; `form` is the source `(extractor ...)` definition, kept for reference only. -/
@@ -164,7 +183,9 @@ inductive Extractor where
   | external (fn : String) (infallible : Bool)
   deriving Repr, DecidableEq, Inhabited
 end
+end
 
+@[expose] section
 @[expose] section
 inductive TermKind where
   /-- Variant number `variant` of the term's result type (an enum). -/
@@ -174,7 +195,9 @@ inductive TermKind where
   | decl (flags : TermFlags) (ctor : Option Ctor) (extractor : Option Extractor)
   deriving Repr, DecidableEq, Inhabited
 end
+end
 
+@[expose] section
 @[expose] section
 structure Term where
   id : TermId
@@ -184,6 +207,7 @@ structure Term where
   kind : TermKind
   pos : Pos
   deriving Repr, DecidableEq, Inhabited
+end
 end
 
 /-- Left-hand-side patterns (`sema::Pattern`). Each node carries the type of the value it
@@ -326,7 +350,7 @@ def Pattern.decEqList : (a b : List Pattern) → Decidable (a = b)
   | [], _ :: _ | _ :: _, [] => isFalse (nomatch ·)
 end
 
-instance : DecidableEq Pattern := Pattern.decEq
+@[expose] instance : DecidableEq Pattern := Pattern.decEq
 
 /-- Right-hand-side expressions (`sema::Expr`). -/
 inductive Expr where
@@ -424,7 +448,7 @@ def Expr.decEqList : (a b : List Expr) → Decidable (a = b)
       | isFalse h' => isFalse (by intro e; injection e; contradiction)
       | isTrue h' => isTrue (by subst h h'; rfl)
   | [], _ :: _ | _ :: _, [] => isFalse (nomatch ·)
-def Expr.decEqBinds : (a b : List (VarId × TypeId × Expr)) → Decidable (a = b)
+@[expose] def Expr.decEqBinds : (a b : List (VarId × TypeId × Expr)) → Decidable (a = b)
   | [], [] => isTrue rfl
   | (v, t, x) :: xs, (w, u, y) :: ys =>
     if h1 : v = w then
@@ -443,13 +467,16 @@ end
 instance : DecidableEq Expr := Expr.decEq
 
 @[expose] section
+@[expose] section
 /-- `(if-let lhs rhs)`; `(if e)` is `(if-let _ e)`. -/
 structure IfLet where
   lhs : Pattern
   rhs : Expr
   deriving Repr, DecidableEq, Inhabited
 end
+end
 
+@[expose] section
 @[expose] section
 structure Rule where
   id : RuleId
@@ -472,14 +499,18 @@ structure Rule where
   pos : Pos
   deriving Repr, DecidableEq, Inhabited
 end
+end
 
+@[expose] section
 @[expose] section
 /-- Kinds of VeriISLE spec-language definitions. -/
 inductive SpecKind where
   | spec | specMacro | model | state | form | instantiate | attr
   deriving Repr, DecidableEq, Inhabited
 end
+end
 
+@[expose] section
 @[expose] section
 /-- A spec-language definition, as its full S-expression. `name` is the term (`spec`,
 `instantiate`, `attr` on a term), rule (`attr` on a rule), macro, type (`model`), state or form
@@ -493,7 +524,9 @@ structure SpecDef where
   body : SExpr
   deriving Repr, DecidableEq, Inhabited
 end
+end
 
+@[expose] section
 @[expose] section
 /-- `(extern const $name ty)`. -/
 structure Const where
@@ -501,7 +534,9 @@ structure Const where
   ty : TypeId
   deriving Repr, DecidableEq, Inhabited
 end
+end
 
+@[expose] section
 @[expose] section
 /-- `(convert inner outer term)`. -/
 structure Converter where
@@ -509,6 +544,7 @@ structure Converter where
   outer : TypeId
   term : TermId
   deriving Repr, DecidableEq, Inhabited
+end
 end
 
 /-- Rule order for one term: descending priority, then ascending rule id (source order). -/
@@ -531,14 +567,14 @@ structure Program where
 /-- The per-term rule lists of `rules` in `ruleBefore` order (bucket by term, then sort). The
 generated `Isle.Aarch64.program` stores these lists as literals; `FVTest/Isle/Data.lean` checks
 that they equal this computation. -/
-def Program.bucketRules (nterms : Nat) (rules : Array Rule) : Array (List Rule) :=
+@[expose] def Program.bucketRules (nterms : Nat) (rules : Array Rule) : Array (List Rule) :=
   let buckets : Array (Array Rule) := rules.foldl
     (fun acc r => if r.term < acc.size then acc.modify r.term (·.push r) else acc)
     (Array.replicate nterms #[])
   buckets.map fun rs => (rs.qsort ruleBefore).toList
 
 /-- Build a program, computing the per-term rule index. -/
-def Program.build (name : String) (files : Array String) (types : Array TypeDef)
+@[expose] def Program.build (name : String) (files : Array String) (types : Array TypeDef)
     (terms : Array Term) (rules : Array Rule) (consts : Array Const)
     (converters : Array Converter) (specs : Array SpecDef) : Program :=
   { name, files, types, terms, rules, consts, converters, specs
@@ -555,13 +591,13 @@ def termName (p : Program) (t : TermId) : String :=
   | some t => t.name
   | none => s!"<term {t}>"
 
-def typeName (p : Program) (t : TypeId) : String :=
+@[expose] def typeName (p : Program) (t : TypeId) : String :=
   match p.type? t with
   | some t => t.name
   | none => s!"<type {t}>"
 
 @[expose] def termByName? (p : Program) (n : String) : Option Term := p.terms.find? (·.name == n)
-def ruleByName? (p : Program) (n : String) : Option Rule := p.rules.find? (·.name == n)
+@[expose] def ruleByName? (p : Program) (n : String) : Option Rule := p.rules.find? (·.name == n)
 
 /-- Rules of a term, in matching order. -/
 @[expose] def rulesOf (p : Program) (t : TermId) : List Rule := (p.ruleLists[t]?).getD []
@@ -604,6 +640,7 @@ end Term
 /-! ## Closure reports (`FV/Isle/Generated/Closure.lean`) -/
 
 @[expose] section
+@[expose] section
 /-- A rule in the closure of the emitter subset. `tags` are the VeriISLE tags on the rule, its
 root term and every term it mentions; `defaultExcludedBy` is their intersection with the
 `veri --default-excludes` tags (non-empty: every expansion containing this rule is skipped by
@@ -620,13 +657,17 @@ structure ClosureRule where
   lhsReasons : List String
   deriving Repr, DecidableEq, Inhabited
 end
+end
 
+@[expose] section
 @[expose] section
 inductive ClosureTermKind where
   | enumVariant | struct | decl
   deriving Repr, DecidableEq, Inhabited
 end
+end
 
+@[expose] section
 @[expose] section
 /-- A term mentioned by closure rules: its extern Rust constructor/extractor (if any), whether
 VeriISLE has a `spec` for it, whether it carries the VeriISLE `chain` attribute, and its tags. -/
@@ -640,6 +681,7 @@ structure ClosureTerm where
   chain : Bool
   tags : List String
   deriving Repr, DecidableEq, Inhabited
+end
 end
 
 end Isle

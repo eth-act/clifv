@@ -45,7 +45,7 @@ inductive AV where
   | any
 
 /-- The values an abstract value describes, in the context `ctx` of `f`. -/
-def AV.Holds (f : Clif.Function) (ctx : Ctx) : AV → V → Prop
+@[expose] def AV.Holds (f : Clif.Function) (ctx : Ctx) : AV → V → Prop
   | .inst, v => ∃ j info c, v = .inst j ∧ ctx.insts[j]? = some info ∧ info.clif = some c ∧
       instData f c = .ok info.data
   | .data, v => ∃ c, Compile.instE c = true ∧ instData f c = .ok v
@@ -56,13 +56,13 @@ def AV.Holds (f : Clif.Function) (ctx : Ctx) : AV → V → Prop
   | .any, _ => True
 
 /-- `AV.Holds` position by position (lists of the same length). -/
-def AV.HoldsAll (f : Clif.Function) (ctx : Ctx) : List AV → List V → Prop
+@[expose] def AV.HoldsAll (f : Clif.Function) (ctx : Ctx) : List AV → List V → Prop
   | [], [] => True
   | a :: as, v :: vs => a.Holds f ctx v ∧ AV.HoldsAll f ctx as vs
   | _, _ => False
 
 /-- The variant indices of the opcodes `instData` produces (the E opcodes). -/
-def eOps : List Nat :=
+@[expose] def eOps : List Nat :=
   [VIdx.Opcode.Iconst, VIdx.Opcode.Ineg, VIdx.Opcode.Bnot, VIdx.Opcode.Clz, VIdx.Opcode.Ctz,
    VIdx.Opcode.Popcnt, VIdx.Opcode.Bswap, VIdx.Opcode.Bitrev,
    VIdx.Opcode.Iadd, VIdx.Opcode.Isub, VIdx.Opcode.Imul, VIdx.Opcode.Umulhi, VIdx.Opcode.Smulhi,
@@ -85,13 +85,13 @@ def eOps : List Nat :=
 /-- The fields of the `InstructionData` of an E instruction with opcode `ko`, where the checker
 needs them (`instData`): `uextend`/`sextend` have one value, `store` a value pair, flags and
 an offset. -/
-def opShape (ko : Nat) : Option (List AV) :=
+@[expose] def opShape (ko : Nat) : Option (List AV) :=
   if ko == VIdx.Opcode.Uextend || ko == VIdx.Opcode.Sextend then some [.value]
   else if ko == VIdx.Opcode.Store then some [.values 2, .any, .any]
   else none
 
 /-- The type extractors, on a type, independently of the context (`externExtract`). -/
-def tyExtract (id : TermId) (t : CTy) : Option (ExtResult (List V)) :=
+@[expose] def tyExtract (id : TermId) (t : CTy) : Option (ExtResult (List V)) :=
   match tyPred id with
   | some pr => some (if pr t then .ok [.ty t] else .fail)
   | none =>
@@ -101,7 +101,7 @@ def tyExtract (id : TermId) (t : CTy) : Option (ExtResult (List V)) :=
     else none
 
 /-- The extractors that fail on every instruction (disabled ISA flags). -/
-def flagOff (id : TermId) : Bool :=
+@[expose] def flagOff (id : TermId) : Bool :=
   id == TId.use_lse || id == TId.use_dotprod || id == TId.use_i8mm
 
 /-- The ISLE type constant `$n` (`Sem.prim`, independent of the context). -/
@@ -192,7 +192,7 @@ end
 /-- The rule ids of the closure's root rules (`closureRoot`; `closureRoot_eq` checks the list
 against `Closure.rules`). A literal, so that the kernel check of `exclOk` over the rule list
 does not scan `Closure.rules` once per rule. -/
-def closureRootIds : List Nat :=
+@[expose] def closureRootIds : List Nat :=
   [582, 584, 585, 587, 588, 589, 590, 591, 592, 593, 594, 595, 596, 597, 598, 599,
    662, 664, 666, 668, 670, 672, 674, 676, 678, 679, 680, 682, 683, 685, 686, 688, 689, 691, 692,
    723, 724, 725, 726, 729, 730, 731, 732, 735, 736, 737, 738, 741, 742, 743, 744, 745, 746, 747,
@@ -211,7 +211,7 @@ def closureRootIds : List Nat :=
    1138, 1139, 1140]
 
 /-- A root rule of `lower` is in the closure or cannot match an instruction. -/
-def exclOk (r : Rule) : Bool :=
+@[expose] def exclOk (r : Rule) : Bool :=
   closureRootIds.contains r.id ||
     match r.args with
     | [q] => fails p .inst q

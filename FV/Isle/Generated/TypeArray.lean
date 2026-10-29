@@ -12,7 +12,7 @@ namespace Isle.Aarch64
 open Isle
 
 /-- All types, indexed by `TypeId`. -/
-@[expose] def types : Array TypeDef := #[
+def types : Array TypeDef := #[
   ty_bool, -- 0
   ty_u8, -- 1
   ty_u16, -- 2

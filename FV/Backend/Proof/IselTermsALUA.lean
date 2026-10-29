@@ -5,6 +5,16 @@ import FV.Backend.Proof.IselTerms
 import FV.Backend.Proof.IselExtern
 import FV.Backend.Proof.IselInterp
 import FV.Backend.Proof.IselAttr
+import all FV.Backend.Isel
+import all FV.Backend.MInst
+import all FV.Backend.Proof.IselRulesALU
+import all FV.Clif.Parse
+import all FV.Clif.Run
+import all FV.Clif.Syntax
+import all FV.Isle.Generated.Ids
+import all FV.Isle.Generated.RuleLists00
+import all FV.Isle.Generated.Terms00
+import all FV.Isle.Interp
 
 public section
 

@@ -1,6 +1,7 @@
 module
 
 public import FV.Backend.Proof.IselCovSem
+import all FV.Backend.MInst
 
 @[expose] public section
 

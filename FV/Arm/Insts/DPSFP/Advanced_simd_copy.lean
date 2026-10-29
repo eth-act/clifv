@@ -30,7 +30,7 @@ namespace DPSFP
 
 open _root_.BitVec Arm.BitVec
 
-def dup_aux (e : Nat) (elements : Nat) (esize : Nat)
+@[expose] def dup_aux (e : Nat) (elements : Nat) (esize : Nat)
   (element : BitVec esize) (result : BitVec datasize) : BitVec datasize :=
   if elements <= e then
     result
@@ -70,7 +70,7 @@ theorem dup_aux_0_4_32 (element : BitVec 32) (result : BitVec 128) :
       show ¬ i - 32 < 32 by omega, show ¬ i - 32 - 32 < 32 by omega,
       show i - 32 - 32 - 32 = i - 96 by omega]
 
-@[state_simp_rules]
+@[expose, state_simp_rules]
 def exec_dup_element (inst : Advanced_simd_copy_cls) (s : ArmState) : ArmState :=
   let size := lowest_set_bit inst.imm5
   if size > 3 ∨ (size = 3 ∧ inst.Q = 0) then
@@ -89,7 +89,7 @@ def exec_dup_element (inst : Advanced_simd_copy_cls) (s : ArmState) : ArmState :
     let s := write_sfp datasize inst.Rd result s
     s
 
-@[state_simp_rules]
+@[expose, state_simp_rules]
 def exec_dup_general (inst : Advanced_simd_copy_cls) (s : ArmState) : ArmState :=
   let size := lowest_set_bit inst.imm5
   if size > 3 ∨ (size = 3 ∧ inst.Q = 0) then
@@ -105,7 +105,7 @@ def exec_dup_general (inst : Advanced_simd_copy_cls) (s : ArmState) : ArmState :
     let s := write_sfp datasize inst.Rd result s
     s
 
-@[state_simp_rules]
+@[expose, state_simp_rules]
 def exec_ins_element (inst : Advanced_simd_copy_cls) (s : ArmState) : ArmState :=
   let size := lowest_set_bit inst.imm5
   if size > 3 then
@@ -124,7 +124,7 @@ def exec_ins_element (inst : Advanced_simd_copy_cls) (s : ArmState) : ArmState :
     let s := write_sfp 128 inst.Rd result s
     s
 
-@[state_simp_rules]
+@[expose, state_simp_rules]
 def exec_ins_general (inst : Advanced_simd_copy_cls) (s : ArmState) : ArmState :=
   let size := lowest_set_bit inst.imm5
   if size > 3 then
@@ -140,7 +140,7 @@ def exec_ins_general (inst : Advanced_simd_copy_cls) (s : ArmState) : ArmState :
     let s := write_sfp 128 inst.Rd result s
     s
 
-@[state_simp_rules]
+@[expose, state_simp_rules]
 def exec_smov_umov (inst : Advanced_simd_copy_cls) (s : ArmState) (signed : Bool): ArmState :=
   let size := lowest_set_bit inst.imm5
   let esize := 8 <<< size

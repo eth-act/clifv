@@ -51,6 +51,7 @@ abbrev SkeletonFn := {σ : Type} → (σ → ValueId → List Inst) → (σ → 
   Except String (List Isle.Opt.SkelSimp × List String × σ)
 
 @[expose] section
+@[expose] section
 /-- The available rule sets (`Opt.RuleSetId.fn` in `FV/Opt/Optimize.lean`). -/
 inductive RuleSetId where
   /-- Cranelift 0.136.1's `simplify` rules, exported (`Isle.Opt.program`) and run by the ISLE
@@ -59,6 +60,7 @@ inductive RuleSetId where
   /-- `Opt.HandRules.simplify`. -/
   | hand
   deriving DecidableEq, Repr, Inhabited
+end
 end
 
 def RuleSetId.name : RuleSetId → String

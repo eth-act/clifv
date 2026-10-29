@@ -14,10 +14,12 @@ namespace Backend.Stock
 def firstUserVreg : Nat := 192
 
 @[expose] section
+@[expose] section
 inductive AllocationRequest where
   | value (id : Nat)
   | exception (instruction returns payloads : Nat)
   deriving Inhabited, Repr, DecidableEq
+end
 end
 
 def AllocationRequest.count : AllocationRequest → Nat

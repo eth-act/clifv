@@ -6,6 +6,9 @@ import FV.Backend.Proof.IselInterp
 public import FV.Backend.Proof.IselData
 import FV.Backend.Proof.IselAttr
 public import Std.Do.Triple.SpecLemmas
+import all FV.Backend.MInst
+import all FV.Clif.Syntax
+import all FV.Isle.Generated.Ids
 
 public section
 

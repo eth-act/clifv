@@ -10,6 +10,20 @@ import all Init.Data.Repr
 import all Init.Prelude
 import FV.Backend.Proof.IselGeneric
 import FV.Arm.MinTheory
+import all FV.Arm.Decode.DPR
+import all FV.Arm.Decode.DPSFP
+import all FV.Arm.Decode.LDST
+import all FV.Arm.State
+import all FV.Backend.Encode
+import all FV.Backend.MInst
+import all FV.Backend.Proof.RegallocCSem
+import all FV.Backend.Proof.VCodeSem
+import all FV.Backend.RegallocOps
+import all FV.Clif.Run
+import all FV.Clif.Rust
+import all FV.Float.Basic
+import all FV.Isle.Generated.Ids
+import all FV.Isle.Interp
 
 public section
 

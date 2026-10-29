@@ -3,6 +3,24 @@ module
 public import FV.Backend.Proof.RegallocCSem
 public import FV.Backend.Proof.LowerRename
 import FV.Arm.MinTheory
+import all FV.Arm.Decode.DPI
+import all FV.Arm.Decode.DPR
+import all FV.Arm.Decode.DPSFP
+import all FV.Arm.Decode.LDST
+import all FV.Arm.State
+import all FV.Backend.Asm
+import all FV.Backend.Encode
+import all FV.Backend.MInst
+import all FV.Backend.Proof.IselContract
+import all FV.Backend.Proof.RegallocCSem
+import all FV.Backend.Proof.RegallocOperands
+import all FV.Backend.Proof.VCodeSem
+import all FV.Clif.Mem
+import all FV.Isle.Generated.Ids
+import all FV.Isle.Generated.RuleLists00
+import all FV.Isle.Generated.Terms00
+import all FV.Isle.Generated.Terms01
+import all FV.Clif.Run
 
 public section
 

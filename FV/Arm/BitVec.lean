@@ -1125,7 +1125,7 @@ def BVPatComp.toBVVar? (c : BVPatComp) : MacroM (Option (TSyntax `ident)) := do
     return some x
   | _ => return none
 
-def BVPat.getComponents (p : BVPat) : Array BVPatComp :=
+@[expose] def BVPat.getComponents (p : BVPat) : Array BVPatComp :=
   match p with
   | `(bvpat| [$comp,*]) => comp.getElems.reverse
   | _ => #[]

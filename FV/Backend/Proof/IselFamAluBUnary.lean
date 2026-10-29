@@ -8,6 +8,7 @@ import FV.Backend.Proof.IselInterp
 import FV.Backend.Proof.IselAttr
 import FV.Arm.MinTheory
 meta import Lean.Elab.Tactic.Omega.Frontend
+import all FV.Backend.MInst
 
 public section
 

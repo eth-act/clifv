@@ -39,6 +39,7 @@ namespace Backend.Proof
 open Backend
 
 @[expose] section
+@[expose] section
 /-- Control outcome of one instruction. -/
 inductive Ctl where
   /-- fall through to the next instruction of the block -/
@@ -50,6 +51,7 @@ inductive Ctl where
   /-- stop with the world (a trap) -/
   | halt
   deriving DecidableEq, Repr
+end
 end
 
 /-- Abstract instruction semantics: from the values of the use operands (in operand order)

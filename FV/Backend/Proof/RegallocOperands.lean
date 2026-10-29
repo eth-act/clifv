@@ -48,17 +48,17 @@ open Backend
 abbrev CV := BitVec 128
 
 /-- The Arm model's register number of `x n` / `v n`. -/
-def rnum (n : Nat) : BitVec 5 := BitVec.ofNat 5 n
+@[expose] def rnum (n : Nat) : BitVec 5 := BitVec.ofNat 5 n
 
 /-- The value an Arm state holds in a register location. -/
-def regVal (s : Arm.ArmState) : Reg → CV
+@[expose] def regVal (s : Arm.ArmState) : Reg → CV
   | .x n => (Arm.r (.GPR (rnum n)) s).setWidth 128
   | .v n => Arm.r (.SFP (rnum n)) s
   | _ => 0
 
 /-- The callee-preserved part of a register (AAPCS64: all of x19–x28, the low 64 bits of
 v8–v15). -/
-def ckeep : Reg → CV → CV
+@[expose] def ckeep : Reg → CV → CV
   | .v _, x => (x.setWidth 64).setWidth 128
   | _, x => x
 
@@ -66,7 +66,7 @@ def ckeep : Reg → CV → CV
 emitter temporaries x16/x17, the link register x30 (not allocatable; the prologue saves it and
 the epilogue reloads it, a `bl`/`blr` and the TLSDESC call of `tls_value` overwrite it), and the
 pc (control is matched by code position). -/
-def Masked : Arm.StateField → Prop
+@[expose] def Masked : Arm.StateField → Prop
   | .GPR i => (i.toNat < 29 ∧ i.toNat ≠ 18) ∨ i.toNat = 30
   | .SFP _ => True
   | .PC => True
@@ -74,7 +74,7 @@ def Masked : Arm.StateField → Prop
 
 /-- `s` and `t` have the same world: equal on every unmasked field and on memory outside the
 frame addresses `F`, same program. -/
-def SameWorld (F : BitVec 64 → Prop) (s t : Arm.ArmState) : Prop :=
+@[expose] def SameWorld (F : BitVec 64 → Prop) (s t : Arm.ArmState) : Prop :=
   (∀ f, ¬ Masked f → Arm.r f s = Arm.r f t) ∧ (∀ a, ¬ F a → s.mem a = t.mem a) ∧
     s.program = t.program
 
@@ -93,7 +93,7 @@ theorem SameWorld.w_left {F} {s t : Arm.ArmState} {f : Arm.StateField} {v} (hf :
 
 /-- Run the lines of an instruction expansion (straight-line: instructions only, each one
 advancing the pc by 4); `env.pc` advances by 4 per instruction. -/
-def execLines : Env → List Line → Arm.ArmState → Option Arm.ArmState
+@[expose] def execLines : Env → List Line → Arm.ArmState → Option Arm.ArmState
   | _, [], s => some s
   | env, .ins i _ :: ls, s =>
     match i.toArmInst env with
@@ -112,30 +112,30 @@ theorem execLines_one {env : Env} {i : Insn} {t : Option Clif.TrapCode} {s : Arm
 
 /-- Execute an allocated (real-register) instruction: its expansion, encoded and executed by
 the Arm model. -/
-def execMInst (ctx : FnCtx) (env : Env) (i : MInst) (s : Arm.ArmState) : Option Arm.ArmState :=
+@[expose] def execMInst (ctx : FnCtx) (env : Env) (i : MInst) (s : Arm.ArmState) : Option Arm.ArmState :=
   match i.lines ctx {} with
   | .ok (ls, _) => execLines env ls s
   | .error _ => none
 
 /-- The use values of an instruction whose operands `ops` are allocated to `regs`, in state `s`. -/
-def useVals (ops : Array Operand) (regs : Array Reg) (s : Arm.ArmState) : List CV :=
+@[expose] def useVals (ops : Array Operand) (regs : Array Reg) (s : Arm.ArmState) : List CV :=
   ((ops.zip regs).toList.filter (·.1.isUse)).map (regVal s ·.2)
 
 /-- The def operands of an instruction allocated to `regs`, paired with values `outs`. -/
-def defRegs (ops : Array Operand) (regs : Array Reg) (outs : List CV) : List ((Operand × Reg) × CV) :=
+@[expose] def defRegs (ops : Array Operand) (regs : Array Reg) (outs : List CV) : List ((Operand × Reg) × CV) :=
   ((ops.zip regs).toList.filter (·.1.isDef)).zip outs
 
 /-- The stack pointer. -/
-def spOf (s : Arm.ArmState) : BitVec 64 := Arm.r (.GPR 31#5) s
+@[expose] def spOf (s : Arm.ArmState) : BitVec 64 := Arm.r (.GPR 31#5) s
 
 /-- `s'` keeps the frame of `s`: same `sp`, same bytes at the frame addresses `F`. -/
-def FrameKeep (F : BitVec 64 → Prop) (s s' : Arm.ArmState) : Prop :=
+@[expose] def FrameKeep (F : BitVec 64 → Prop) (s s' : Arm.ArmState) : Prop :=
   spOf s' = spOf s ∧ ∀ a, F a → s'.mem a = s.mem a
 
 /-- **The operand-view obligation** for instruction `i` with control outcome `ctl` (the def
 values, world and preserved registers of the executed instruction; a `try_call`'s call has
 outcome `goto`). -/
-def OperandsSoundCtl (F : BitVec 64 → Prop) (exec : MInst → Arm.ArmState → Option Arm.ArmState)
+@[expose] def OperandsSoundCtl (F : BitVec 64 → Prop) (exec : MInst → Arm.ArmState → Option Arm.ArmState)
     (sem : ISem CV Arm.ArmState) (i : MInst) (ctl : Ctl) : Prop :=
   ∀ (c : CheckCtx) (wh : String) (ops : Array Operand) (regs : Array Reg) (i' : MInst)
     (s w : Arm.ArmState) (outs : List CV) (w' : Arm.ArmState),
@@ -220,7 +220,7 @@ theorem rnum_toNat {a : Nat} (ha : a < 32) : (rnum a).toNat = a := by
   simp [rnum, Nat.mod_eq_of_lt ha]
 
 /-- The state field of a register location. -/
-def _root_.Backend.Reg.field : Reg → Option Arm.StateField
+@[expose] def _root_.Backend.Reg.field : Reg → Option Arm.StateField
   | .x n => some (.GPR (rnum n))
   | .v n => some (.SFP (rnum n))
   | _ => none
@@ -284,16 +284,16 @@ theorem Masked_gpr {n : Nat} (h : n < 29) (h18 : n ≠ 18) : Masked (.GPR (rnum 
   simp only [Masked, rnum_toNat (by omega : n < 32)]; omega
 
 /-- Low 64 bits of a value. -/
-def lo64 (x : CV) : BitVec 64 := x.setWidth 64
+@[expose] def lo64 (x : CV) : BitVec 64 := x.setWidth 64
 
 /-- 64 bits as a value. -/
-def ofX (x : BitVec 64) : CV := x.setWidth 128
+@[expose] def ofX (x : BitVec 64) : CV := x.setWidth 128
 
 theorem lo64_regVal_x (s : Arm.ArmState) (n : Nat) : lo64 (regVal s (.x n)) = Arm.r (.GPR (rnum n)) s := by
   simp [lo64, regVal, BitVec.setWidth_setWidth_of_le]
 
 /-- `n` bytes from `a` avoid the frame addresses `F`. -/
-def Avoids (F : BitVec 64 → Prop) (n : Nat) (a : BitVec 64) : Prop :=
+@[expose] def Avoids (F : BitVec 64 → Prop) (n : Nat) (a : BitVec 64) : Prop :=
   ∀ k < n, ¬ F (a + BitVec.ofNat 64 k)
 
 

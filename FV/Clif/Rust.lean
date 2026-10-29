@@ -36,14 +36,14 @@ namespace Clif.Rust
 
 /-- Is `sub` a substring of `s`? (Nonempty `sub`: `s.splitOn sub` splits it off, so the
 single-part result means absence.) -/
-def hasSub (sub s : String) : Bool :=
+@[expose] def hasSub (sub s : String) : Bool :=
   if sub.isEmpty then true else !(s.splitOn sub == [s])
 
 /-- Does the extern name (without `%`) denote a diverging Rust entry point? Matches the
 mangled `core`/`alloc` panic and failure entry points of the corpus (`*_undef` lists):
 anything with a `panic`/`fail`/`handle_`-shaped mangled name, plus `core::fmt::Formatter`
 methods and integer `Display` impls (`…3fmt`). -/
-def isPanic (name : String) : Bool :=
+@[expose] def isPanic (name : String) : Bool :=
   hasSub "panic" name || hasSub "unwrap_failed" name || hasSub "slice_index_fail" name ||
     hasSub "len_mismatch_fail" name || hasSub "handle_alloc_error" name ||
     hasSub "handle_error" name || hasSub "Formatter" name || name.endsWith "3fmt"
@@ -52,7 +52,7 @@ def isPanic (name : String) : Bool :=
 
 /-- The mem* arguments `(dst, src, n)`, as byte addresses/counts; `none` on an arity or
 type mismatch (`stuck`). -/
-def memArgs (vals : List Val) : Option (Nat × Nat × Nat) :=
+@[expose] def memArgs (vals : List Val) : Option (Nat × Nat × Nat) :=
   match vals[0]?, vals[1]?, vals[2]? with
   | some d, some s, some n =>
     match d.as? .i64, s.as? .i64, n.as? .i64 with
@@ -64,7 +64,7 @@ def memArgs (vals : List Val) : Option (Nat × Nat × Nat) :=
 preserves each byte's initialisation state (`none` stays `none`; the `memmove` semantics
 are exact for every overlap). Both ranges must be inside one allocation and the
 destination must not be read-only. -/
-def memcopy (m : Mem) (dst src n : Nat) : Res Mem :=
+@[expose] def memcopy (m : Mem) (dst src n : Nat) : Res Mem :=
   if n == 0 then pure m else do
     Res.check (m.valid src n) s!"memcpy: source not in one allocation at {src}"
     Res.check (m.valid dst n) s!"memcpy: destination not in one allocation at {dst}"
@@ -77,7 +77,7 @@ def memcopy (m : Mem) (dst src n : Nat) : Res Mem :=
       | none => m.bytes a }
 
 /-- `memset` of `n` bytes with the low byte of `c` (the `Mem.store` checks). -/
-def memstore (m : Mem) (dst c n : Nat) : Res Mem := do
+@[expose] def memstore (m : Mem) (dst c n : Nat) : Res Mem := do
   Res.check (m.valid dst n) s!"memset: destination not in one allocation at {dst}"
   Res.check (!m.readonlyAt dst n) s!"memset: destination is read-only at {dst}"
   let c8 : BitVec 8 := BitVec.ofInt 8 c
@@ -85,7 +85,7 @@ def memstore (m : Mem) (dst c n : Nat) : Res Mem := do
 
 /-- `memcmp` of `n` bytes: bytewise unsigned; `0` when equal, `-1`/`1` at the first
 difference. `stuck` on uninitialised bytes. -/
-def memcmp (m : Mem) (a b : Nat) : Nat → Res Int
+@[expose] def memcmp (m : Mem) (a b : Nat) : Nat → Res Int
     | 0 => pure 0
     | n + 1 => do
       let x ← Res.ofOption "memcmp: read of uninitialised memory" (m.bytes a)
@@ -93,7 +93,7 @@ def memcmp (m : Mem) (a b : Nat) : Nat → Res Int
       if x != y then pure (if x < y then -1 else 1) else memcmp m (a + 1) (b + 1) n
 
 /-- The outcome of a mem* call on `(args, mem)`. -/
-def memOutcome (name : String) (args : List Val) (m : Mem) : Outcome :=
+@[expose] def memOutcome (name : String) (args : List Val) (m : Mem) : Outcome :=
   match memArgs args with
   | none => .stuck "mem*: arity or argument types"
   | some (dst, src, n) =>
@@ -129,7 +129,7 @@ what the `udiv`/`sdiv`/`urem`/`srem` opcode it replaces would trap — and `sdiv
 -1)` is `trapped int_ovf`, so `Clif.run` on the original opcode and on the legalised helper
 call agree. (Natively the runtime helper aborts on a zero divisor, like libgcc, and wraps
 on the overflow case; no run line exercises either.) -/
-def div128 (signed : Bool) (isRem : Bool) (vals : List Val) : Option (List Val × Option TrapCode) :=
+@[expose] def div128 (signed : Bool) (isRem : Bool) (vals : List Val) : Option (List Val × Option TrapCode) :=
   -- the two 128-bit operands, as (bits, unsigned interpretation, signed interpretation)
   let ops : Option ((Nat × Int) × (Nat × Int)) :=
     match vals with
@@ -181,12 +181,12 @@ def div128 (signed : Bool) (isRem : Bool) (vals : List Val) : Option (List Val �
       some (q r, none)
 
 /-- Is `name` one of the `__*ti3` helpers? -/
-def isDivHelper (name : String) : Bool :=
+@[expose] def isDivHelper (name : String) : Bool :=
   name == "__udivti3" || name == "__divti3" || name == "__umodti3" || name == "__modti3"
 
 /-- The outcome of a `__*ti3` call on `(args, mem)`: the helpers do not touch memory, so a
 return keeps `mem`. -/
-def divOutcome (name : String) (vals : List Val) (m : Mem) : Outcome :=
+@[expose] def divOutcome (name : String) (vals : List Val) (m : Mem) : Outcome :=
   let signed := name == "__divti3" || name == "__modti3"
   let isRem := name == "__umodti3" || name == "__modti3"
   match div128 signed isRem vals with
@@ -198,7 +198,7 @@ def divOutcome (name : String) (vals : List Val) (m : Mem) : Outcome :=
 byte-level semantics, and every diverging entry point ends the run. (The helpers are matched
 first: their four fixed names are not panic names, and the order makes the helper lookup
 provable without evaluating `isPanic`, `FV/Opt/Proof/LegalRust.lean`.) -/
-def env : Env where
+@[expose] def env : Env where
   extern name :=
     if isDivHelper name then
       some fun vals m => divOutcome name vals m

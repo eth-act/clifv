@@ -35,11 +35,11 @@ theorem ldst_offset16 (off : Nat) (h : off % 16 = 0) (h' : off / 16 < 4096) :
   omega
 
 /-- The machine state after storing `n` bytes `v` at `sp + off`. -/
-def stSt (s : Arm.ArmState) (off n : Nat) (v : BitVec (n * 8)) : Arm.ArmState :=
+@[expose] def stSt (s : Arm.ArmState) (off n : Nat) (v : BitVec (n * 8)) : Arm.ArmState :=
   Arm.w .PC (Arm.r .PC s + 4#64) (Arm.write_mem_bytes n (spOf s + BitVec.ofNat 64 off) v s)
 
 /-- The machine state after loading 8 bytes at `sp + off` into `x n`. -/
-def ldIntSt (s : Arm.ArmState) (off n : Nat) : Arm.ArmState :=
+@[expose] def ldIntSt (s : Arm.ArmState) (off n : Nat) : Arm.ArmState :=
   Arm.w (.GPR (rnum n)) (Arm.read_mem_bytes 8 (spOf s + BitVec.ofNat 64 off) s)
     (Arm.w .PC (Arm.r .PC s + 4#64) s)
 
@@ -148,7 +148,7 @@ theorem rsfp_cast {k : Nat} (h : 8 <<< k / 8 * 8 = 8 <<< k) (hk : k = 4) (a : Bi
   subst hk; rfl
 
 /-- The machine state after loading 16 bytes at `sp + off` into `v n`. -/
-def ldFSt (s : Arm.ArmState) (off n : Nat) : Arm.ArmState :=
+@[expose] def ldFSt (s : Arm.ArmState) (off n : Nat) : Arm.ArmState :=
   Arm.w (.SFP (rnum n)) (Arm.read_mem_bytes 16 (spOf s + BitVec.ofNat 64 off) s)
     (Arm.w .PC (Arm.r .PC s + 4#64) s)
 

@@ -39,7 +39,7 @@ namespace DPSFP
 open _root_.BitVec Arm.BitVec
 
 /-- The NZCV value of an `FPCompare` result. -/
-def fpCompareNZCV : IEEE.Cmp → BitVec 4
+@[expose] def fpCompareNZCV : IEEE.Cmp → BitVec 4
   | .un => 0b0011#4 | .eq => 0b0110#4 | .lt => 0b1000#4 | .gt => 0b0010#4
 
 @[expose, state_simp_rules]

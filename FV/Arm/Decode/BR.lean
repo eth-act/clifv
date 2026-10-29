@@ -21,6 +21,7 @@ open _root_.BitVec Arm.BitVec
 -- Branches, Exception Generating and System Instructions
 
 @[expose] section
+@[expose] section
 structure Compare_branch_cls where
   sf     : BitVec 1               -- [31:31]
   _fixed : BitVec 5 := 0b011010#5 -- [30:25]
@@ -29,9 +30,11 @@ structure Compare_branch_cls where
   Rt     : BitVec 5               --  [4:0]
 deriving DecidableEq, Repr
 end
+end
 
 instance : ToString Compare_branch_cls where toString a := toString (repr a)
 
+@[expose] section
 @[expose] section
 structure Uncond_branch_imm_cls where
   op     : BitVec 1              -- [31:31]
@@ -39,9 +42,11 @@ structure Uncond_branch_imm_cls where
   imm26  : BitVec 26             --  [25:0]
 deriving DecidableEq, Repr
 end
+end
 
 instance : ToString Uncond_branch_imm_cls where toString a := toString (repr a)
 
+@[expose] section
 @[expose] section
 structure Uncond_branch_reg_cls where
   _fixed : BitVec 7 := 0b1101011#7 -- [31:25]
@@ -55,9 +60,11 @@ structure Uncond_branch_reg_cls where
   op4    : BitVec 5                --  [4:0]
 deriving DecidableEq, Repr
 end
+end
 
-instance : ToString Uncond_branch_reg_cls where toString a := toString (repr a)
+@[expose] instance : ToString Uncond_branch_reg_cls where toString a := toString (repr a)
 
+@[expose] section
 @[expose] section
 structure Cond_branch_imm_cls where
   _fixed : BitVec 8 := 0b01010100#8 -- [31:24]
@@ -66,9 +73,11 @@ structure Cond_branch_imm_cls where
   cond   : BitVec 4                 -- [3:0]
 deriving DecidableEq, Repr
 end
+end
 
-instance : ToString Cond_branch_imm_cls where toString a := toString (repr a)
+@[expose] instance : ToString Cond_branch_imm_cls where toString a := toString (repr a)
 
+@[expose] section
 @[expose] section
 structure Hints_cls where
   _fixed1 : BitVec 20 := 0b11010101000000110010#20 -- [31:12]
@@ -77,12 +86,14 @@ structure Hints_cls where
   _fixed2 : BitVec 5 := 0b11111#5                  -- [4:0]
 deriving DecidableEq, Repr
 end
+end
 
 instance : ToString Hints_cls where toString a := toString (repr a)
 
 def Hints_cls.toBitVec32 (x : Hints_cls) : BitVec 32 :=
   x._fixed1 ++ x.CRm ++ x.op2 ++ x._fixed2
 
+@[expose] section
 @[expose] section
 /-- (FV addition) Barriers: `DMB` (the backend emits only `dmb ish`; the `11` at bits 13:12
 selects DMB over DSB/ISB, so the class is fixed to DMB). -/
@@ -93,12 +104,14 @@ structure Barrier_cls where
   _fixed2 : BitVec 5 := 0b11111#5                  -- [4:0]
 deriving DecidableEq, Repr
 end
+end
 
-instance : ToString Barrier_cls where toString a := toString (repr a)
+@[expose] instance : ToString Barrier_cls where toString a := toString (repr a)
 
 def Barrier_cls.toBitVec32 (x : Barrier_cls) : BitVec 32 :=
   x._fixed1 ++ x.CRm ++ x.op2 ++ x._fixed2
 
+@[expose] section
 @[expose] section
 /-- (FV addition) Move from system register: `MRS Xt, (op0 = 2 + o0, op1, CRn, CRm, op2)`
 (the backend emits only `mrs xt, tpidr_el0`: o0 1, op1 011, CRn 1101, CRm 0000, op2 010). -/
@@ -112,12 +125,14 @@ structure Mrs_cls where
   Rt      : BitVec 5                       -- [4:0]
 deriving DecidableEq, Repr
 end
+end
 
 instance : ToString Mrs_cls where toString a := toString (repr a)
 
 def Mrs_cls.toBitVec32 (x : Mrs_cls) : BitVec 32 :=
   x._fixed1 ++ x.o0 ++ x.op1 ++ x.CRn ++ x.CRm ++ x.op2 ++ x.Rt
 
+@[expose] section
 @[expose] section
 /-- (FV addition) Test and branch (immediate): `TBZ`, `TBNZ`. -/
 structure Test_branch_cls where
@@ -129,12 +144,14 @@ structure Test_branch_cls where
   Rt     : BitVec 5               --  [4:0]
 deriving DecidableEq, Repr
 end
+end
 
 instance : ToString Test_branch_cls where toString a := toString (repr a)
 
 def Test_branch_cls.toBitVec32 (x : Test_branch_cls) : BitVec 32 :=
   x.b5 ++ x._fixed ++ x.op ++ x.b40 ++ x.imm14 ++ x.Rt
 
+@[expose] section
 @[expose] section
 inductive BranchInst where
   | Compare_branch :
@@ -154,6 +171,7 @@ inductive BranchInst where
   | Mrs :
     Mrs_cls → BranchInst
 deriving DecidableEq, Repr
+end
 end
 
 instance : ToString BranchInst where toString a := toString (repr a)

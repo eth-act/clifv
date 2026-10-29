@@ -107,17 +107,17 @@ def fixTry : Option TryLow → List MInst → List MInst
   | none, ms => ms
 
 /-- The context `lowerFunction` lowers a terminator in (its data filled in). -/
-def termCtx (ctx : Ctx) (ti : Nat) (data : V) : Ctx :=
+@[expose] def termCtx (ctx : Ctx) (ti : Nat) (data : V) : Ctx :=
   { ctx with insts := ctx.insts.set! ti ⟨data, [], [], none⟩ }
 
 /-- The ISLE root term and arguments `lowerFunction` uses for a terminator. -/
-def termCall (t : Clif.Terminator) (ti : Nat) (targets : List Label) : String × List V :=
+@[expose] def termCall (t : Clif.Terminator) (ti : Nat) (targets : List Label) : String × List V :=
   match t with
   | .ret _ | .trap _ => ("lower", [.inst ti])
   | _ => ("lower_branch", [.inst ti, .labels targets])
 
 /-- The value operands of a CLIF instruction. -/
-def instArgs : Clif.Inst → List Clif.ValueId
+@[expose] def instArgs : Clif.Inst → List Clif.ValueId
   | .iconst .. | .stackAddr .. | .fence | .nop | .symbolValue .. | .tlsValue .. => []
   | .unary _ _ x | .bmask _ x | .extend _ _ x | .ireduce _ x | .isplit _ x
   | .load _ _ _ x _ | .atomicLoad _ _ x | .bitcast _ _ x | .trapz x _ | .trapnz x _ => [x]
@@ -227,7 +227,7 @@ abbrev TryCallF := Nat → V → List Reg × List Reg → List Label → LState 
 
 /-- The context `lowerFunction` lowers a `try_call` in: its data filled in, its return and
 payload vregs (`gen_try_call_rets`). -/
-def tryCtx (ctx : Ctx) (ti : Nat) (data : V) (trs : List Reg × List Reg) : Ctx :=
+@[expose] def tryCtx (ctx : Ctx) (ti : Nat) (data : V) (trs : List Reg × List Reg) : Ctx :=
   { termCtx ctx ti data with tryRegs := trs }
 
 /-- The driver's `try_call` call in context `ctx`. -/
@@ -599,7 +599,7 @@ structure Avail where
   entS : Std.HashSet Clif.ValueId
 
 /-- The `Avail` of block `bi` (`B`, lowered as `L`). -/
-def Avail.of (B : Clif.Block) (L : BLow) (In : Array (List Clif.ValueId)) (bi : Nat) : Avail :=
+@[expose] def Avail.of (B : Clif.Block) (L : BLow) (In : Array (List Clif.ValueId)) (bi : Nat) : Avail :=
   let ent := B.params.map (·.1) ++ In.getD bi []
   { start := L.start, body := B.body.toArray, ent, entS := Std.HashSet.ofList ent }
 

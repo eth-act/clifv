@@ -1,6 +1,12 @@
 module
 
 public import FV.E2E.RegLevelEmit
+import all FV.Backend.Asm
+import all FV.Clif.Parse
+import all FV.Clif.Print
+import all FV.Clif.Syntax
+import all FV.Isle.Generated.Ids
+import all FV.Isle.Generated.Terms01
 
 public section
 
