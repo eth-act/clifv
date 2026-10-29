@@ -3951,6 +3951,11 @@ to a far block/trap label becomes `b.!c .+8; b T` (`Lbl.skip` = `pc + 8`). The s
 `reach_rcb` runs a conditional branch in either form (1 or 2 steps), `step_skip` the inverted
 branch, `reach_cb`/`reach_b`/`jt_machine`/the `trapIf` proofs are restated on it; `Line.plain`
 now excludes every conditional branch (so plain lines are not relaxed, `relaxLines_plain`).
+*Since #553* `emitPre` is the emission plan's lines (`emitPlan`: Cranelift's block order and
+`MachBuffer`'s branch simplification, `encoder.md`), and in `Q = Qs ∨ QE` `Qs` places the
+remaining lines via the block's segment of the plan (`segX`): `relaxLines R.far (X ++ x.2.1)` (the items'
+lines but the last instruction's, then the segment's final lines), then the lines from the one
+after the segment on; `ftList`, `reach_cb`/`reach_b` are gone (`reach_jumpX`/`reach_condX`).
 
 ```lean
 theorem Backend.relaxOf_fixpoint (pre : List Line) : farTargets (relaxLines (relaxOf pre) pre) = []
@@ -4000,7 +4005,8 @@ For the spill allocation's code (`lowerRFunc vcp (spillAlloc vcp) = .ok af`):
 (labels defined once — block labels distinct from `prepare`, trap/jt/loop counters — and every
 used label defined), `emitFunc_spill_encodable` (registers from `spillAccepted`'s checker facts;
 immediates from `immsOkB`), `emitFunc_spill_near` (`NearOk`: the atomic loops and jump tables are
-blocks of ≤ 8 lines that `fallthrough` and relaxation keep together), `emitFunc_spill_size`
+blocks of ≤ 8 lines that the branch simplification — it only touches branches to block labels —
+and relaxation keep together), `emitFunc_spill_size`
 (`fa.size ≤ 8 · rfWords`), combined by `FnAsm.layoutReadyB_of` (the converse of
 `layoutReadyB_sound`) into `emitReady_spill`.
 

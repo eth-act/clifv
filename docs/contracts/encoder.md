@@ -399,8 +399,20 @@ printed `.+8`), every other label is the function's label map.
 **Branch-range policy** (PLAN.md §3.4, V6): conditional branches are relaxed, everything is
 range-checked, no word is ever truncated.
 
-* **Relaxation** (`emitFunc`, `FV/Backend/Asm.lean`): after `fallthrough` and the trap section
-  (`emitPre`), a short conditional branch to a block or trap label whose target is out of reach
+* **Emission before relaxation** (`emitPlan`/`emitPre`, `FV/Backend/Asm.lean`, since #553): the
+  blocks in Cranelift's emission order (`emitOrder`: lowering order, cold blocks last, entry
+  first), each a segment (`segsOf`: label, body, last instruction's lines). `MachBuffer`'s branch
+  simplification is emulated on their lines (`machBuf`: `MBuf.step` = one round of
+  `optimize_branches` — remove a branch to the next label, alias labels at a `b`, invert a
+  conditional over a `b`; aliasing all labels, else block labels only). The result is kept
+  (`machPlan`) only if it splits back into the segments (`splitSegs`) and `segsOk` (every
+  segment's final lines `termOk`: each branch reaches, through a label representing it
+  (`repAt`; forwarding blocks only if trusted, `segsTrust`), the successor it names, a removed one
+  falls through to it) and `padsOk` (landing pads) accept it; otherwise the unsimplified lines
+  (checked the same way; accepted whenever every branch target is a block, `segsOk_raw`). The
+  deferred trap section follows (`trapLines`).
+* **Relaxation** (`emitFunc`, `FV/Backend/Asm.lean`): on the plan's lines (`emitPre`),
+  a short conditional branch to a block or trap label whose target is out of reach
   (`b.cond`/`cbz`/`cbnz` ±1 MiB, `tbz`/`tbnz` ±32 KiB) becomes the inverted branch over an
   unconditional `b` (±128 MiB): `b.c T` ⟶ `b.!c .+8; b T`, `cbz`↔`cbnz`, `tbz`↔`tbnz`
   (`relaxLine`; Cranelift's `MachBuffer` uses veneers/islands instead). The decision is per
