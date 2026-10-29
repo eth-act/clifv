@@ -4283,7 +4283,11 @@ per test executable (all float functions): main 6264b7e3 (`compileExeT` and the 
 52 and 69 in `deps_demo` and `crates`; `attemptT` (ab76e3f0) 7, 14, 16, 16, from `OkT.sretE`
 and the integer program call sites; with `RetsX` (8507435d) 4, 6, 6, 6, all from the program
 call sites (`calleeInt`: a program callee returns `f64`; `callRegs`: a program call passes or
-reads `f64`; #742). 4 of 4 executables verified by `binary_correct_exec_provenTS`.
+reads `f64`; #742). 4 of 4 executables verified by `binary_correct_exec_provenTS`. fv-demo,
+`cargo fv test --build-std --lean-link --verified` (8507435d): both test executables written by
+`attemptT` and verified (2 of 2), 39 and 40 functions left out (`compileExeT`, #616: 52 and 53),
+by cause `callRegs/blrRegs` 28, `calleeInt` 6, `indScope/indSig` (indirect calls of program
+functions with float signatures) 8 and 9, all #742.
 
 ## Contract changes taken (byte-identical)
 
