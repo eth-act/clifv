@@ -1,6 +1,13 @@
 module
 
 public import FV.Backend.Proof.PrepareCheck
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Nat.Gcd
+import all Init.Data.Range.Basic
+import all Init.Data.Repr
+import all Init.Prelude
 
 @[expose] public section
 

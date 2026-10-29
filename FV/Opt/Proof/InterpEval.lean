@@ -2,6 +2,7 @@ module
 
 public import FV.Opt.Proof.RuleEmbed
 public import FV.Opt.Proof.RuleCtor
+public import FV.SimprocAttr
 
 @[expose] public section
 
@@ -54,14 +55,15 @@ variable {σ α β ε : Type}
 end Monad
 
 attribute [opt_monad] Bool.false_eq_true ite_true ite_false dite_true dite_false
-  List.length_cons List.length_nil Nat.zero_add Nat.reduceAdd Array.size_replicate
+  List.length_cons List.length_nil Nat.zero_add Array.size_replicate
   Array.set!_eq_setIfInBounds beq_self_eq_true Nat.lt_irrefl decide_true decide_false
-  Option.some.injEq reduceIte reduceDIte bne_self_eq_false Bool.not_false Bool.not_true
-  Bool.and_true Bool.true_and Bool.and_false Bool.false_and Nat.reduceLT Nat.reduceLeDiff
+  Option.some.injEq bne_self_eq_false Bool.not_false Bool.not_true
+  Bool.and_true Bool.true_and Bool.and_false Bool.false_and
   Array.size_setIfInBounds Array.getElem?_setIfInBounds Array.getElem?_replicate
-  Nat.reduceEqDiff List.nil_append List.cons_append List.singleton_append List.append_nil
+  List.nil_append List.cons_append List.singleton_append List.append_nil
   Option.toList_some Option.toList_none List.map_cons List.map_nil TermFlags.isMulti
   TermFlags.isPartial Term.externCtor? Term.externExtractor? Nat.lt_add_one Nat.zero_lt_succ
+builtin_simproc_attr opt_monad Nat.reduceAdd reduceIte reduceDIte Nat.reduceLT Nat.reduceLeDiff Nat.reduceEqDiff
 
 /-! ## Extern constructors -/
 

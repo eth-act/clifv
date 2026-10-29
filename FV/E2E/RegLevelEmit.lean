@@ -2,6 +2,19 @@ module
 
 public import FV.Backend.Asm
 public import FV.Backend.Regalloc
+import all Init.Data.Array.Basic
+import all Init.Data.Format.Basic
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Nat.Gcd
+import all Init.Data.Nat.Power2.Basic
+import all Init.Data.Range.Basic
+import all Init.Data.Repr
+import all Init.Prelude
+import all Std.Data.DHashMap.Basic
+import all Std.Data.DHashMap.Internal.AssocList.Basic
+import all Std.Data.DHashMap.Internal.Defs
+import all Std.Data.DHashMap.Internal.Index
+import all Std.Data.DHashMap.Raw
 
 @[expose] public section
 
@@ -497,9 +510,7 @@ theorem lowerRFunc_ok {vc : VCode} {rf : RFunc} {af : AFunc} (h : lowerRFunc vc 
         cases (RAFrame.compute vc rf).moveInsts src dst <;> rfl
       | op k allocs =>
         simp only [itemStep, bind, Except.bind]
-        generalize (Array.mapM (fun x => match x with
-          | Loc.reg r => (pure r : Except String Reg)
-          | l => throw (toString "operand in " ++ toString (repr l))) allocs) = M
+        generalize (Array.mapM _ allocs : Except String (Array Reg)) = M
         cases M with
         | error e => rfl
         | ok regs =>

@@ -16,8 +16,9 @@ public import Lean
 public import Lean.Elab.Tactic.Omega.Frontend
 public import Lean.Elab.Tactic.Omega
 public import FV.Arm.Tactics.Simp
+public meta import FV.Arm.Tactics.Attr
 
-@[expose] public section
+@[expose] public meta section
 
 namespace Arm
 

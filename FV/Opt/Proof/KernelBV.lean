@@ -3,6 +3,9 @@ module
 public import Lean
 public import Std.Tactic.BVDecide
 public import FV.Clif.Sem
+public meta import Lean.Meta.Tactic.Rewrite
+public meta import Lean.Meta.Tactic.Generalize
+public meta import Lean.Elab.Tactic.Simp
 
 @[expose] public section
 
@@ -91,7 +94,7 @@ simproc_decl reduceToNatAndMask (BitVec.toNat (_ &&& _)) := fun e => do
   return .continue
 
 /-- Boolean atoms of `e`: maximal closed `Bool`-typed subterms that are not Boolean connectives. -/
-partial def boolAtoms (e : Expr) (acc : Array Expr) : MetaM (Array Expr) := do
+meta partial def boolAtoms (e : Expr) (acc : Array Expr) : MetaM (Array Expr) := do
   let push (acc : Array Expr) (e : Expr) := if acc.contains e then acc else acc.push e
   if !e.hasLooseBVars then
     let isBool ← (do return (← whnfR (← inferType e)).isConstOf ``Bool) <|> pure false
@@ -147,7 +150,7 @@ example : ∀ i, i < 2 → i * i < 2 :=
   forall_lt_succ (P := fun i => i * i < 2) (by decide)
     (forall_lt_succ (P := fun i => i * i < 2) (by decide) forall_lt_zero)
 
-def boundedForall (P : Expr) (k : Nat) : MetaM Expr :=
+meta def boundedForall (P : Expr) (k : Nat) : MetaM Expr :=
   withLocalDeclD `i (mkConst ``Nat) fun i => do
     let h ← mkAppM ``LT.lt #[i, mkNatLit k]
     mkForallFVars #[i] (← mkArrow h (P.beta #[i]))
@@ -175,7 +178,7 @@ elab "idx_split" : tactic => do
     pure goals
   setGoals goals.toList
 
-register_option kbv.budgetScale : Nat := {
+meta register_option kbv.budgetScale : Nat := {
   defValue := 1
   descr := "multiplier of the heartbeat budgets of `kbv`'s methods and of its whole search"
 }
@@ -193,14 +196,14 @@ elab "kbv_guard " n?:(num)? t:tactic : tactic => do
     s.restore
     throwError "kbv_guard: {e.toMessageData}"
 
-def isBVEq (t : Expr) : MetaM Bool := do
+meta def isBVEq (t : Expr) : MetaM Bool := do
   let some (ty, _, _) := t.eq? | return false
   return (← whnfR ty).isAppOfArity ``BitVec 1
 
 mutual
 /-- Bit route with hypotheses: the goal (an equation of bit vectors, or `False` with a hypothesis
 `¬ a = b`) per bit, the bit-vector equations of the context at the same bit, then `bool_tauto`. -/
-partial def bitsHyps : TacticM Unit := do
+meta partial def bitsHyps : TacticM Unit := do
   let g ← getMainGoal
   let t ← g.withContext do whnfR (← instantiateMVars (← g.getType))
   if t.isAppOfArity ``Not 1 then
@@ -212,7 +215,7 @@ partial def bitsHyps : TacticM Unit := do
     catch _ => s.restore
   refute
 
-partial def bitsExt : TacticM Unit := do
+meta partial def bitsExt : TacticM Unit := do
   evalTactic (← `(tactic| apply BitVec.eq_of_getLsbD_eq))
   let (ivs, g) ← (← getMainGoal).introN 2
   let g ← g.withContext do
@@ -239,7 +242,7 @@ partial def bitsExt : TacticM Unit := do
     Bool.and_true, Bool.false_and, Bool.and_false, Nat.reduceLT, Nat.reduceGT, Nat.reduceLeDiff, decide_true, decide_false] at *))
   evalTactic (← `(tactic| bool_tauto))
 
-partial def refute : TacticM Unit := do
+meta partial def refute : TacticM Unit := do
   evalTactic (← `(tactic| exfalso))
   let g ← getMainGoal
   let hs ← g.withContext do
@@ -284,7 +287,7 @@ example : (5 % 3) * 0 = 0 := forall_lt_of (P := fun k => k * 0 = 0) (Nat.mod_lt 
   (fun k _ => Nat.mul_zero k)
 
 /-- First non-literal shift amount `t % n` (`n` a literal) of a `Nat`-amount shift in `e`. -/
-partial def findModAmount (e : Expr) : Option (Expr × Nat) :=
+meta partial def findModAmount (e : Expr) : Option (Expr × Nat) :=
   let amt? : Option Expr :=
     if e.isAppOfArity ``HShiftLeft.hShiftLeft 6 || e.isAppOfArity ``HShiftRight.hShiftRight 6 then
       some e.appArg!
@@ -512,7 +515,7 @@ example : ((0x81#8).rotateRight 3).rotateLeft 3 = 0x81#8 ∧
 
 /-- Bounds of the `toNat` of the bitwise terms of `e` (`(x &&& y).toNat ≤ x.toNat`, …), and of
 the `Nat` bitwise terms, as the facts `omega` lacks. -/
-partial def bwToNat (e : Expr) (acc : Array Expr) : Array Expr :=
+meta partial def bwToNat (e : Expr) (acc : Array Expr) : Array Expr :=
   let isBw (a : Expr) := a.isAppOfArity ``HAnd.hAnd 6 || a.isAppOfArity ``HOr.hOr 6
   let acc :=
     if e.hasLooseBVars then acc
@@ -551,7 +554,7 @@ elab "kbv_facts" : tactic => do
 
 /-- The first closed `cond`/`ite` condition of `e` without conditions inside (a `Bool`
 condition `c = true` as `c`). -/
-partial def innerCond? (e : Expr) : Option Expr :=
+meta partial def innerCond? (e : Expr) : Option Expr :=
   let here : Option Expr :=
     if e.isAppOfArity ``cond 4 || e.isAppOfArity ``ite 5 then
       let c := e.getArg! 1
@@ -572,7 +575,7 @@ partial def innerCond? (e : Expr) : Option Expr :=
 
 /-- Case split on the `cond`/`ite` conditions of the goal and the hypotheses, innermost first,
 evaluating the conditionals after each split (at most `fuel` nested splits). -/
-partial def splitConds (fuel : Nat) : TacticM Unit := do
+meta partial def splitConds (fuel : Nat) : TacticM Unit := do
   let g ← getMainGoal
   let c? ← g.withContext do
     if let some c := innerCond? (← instantiateMVars (← g.getType)) then return some c
@@ -642,7 +645,7 @@ simproc_decl reduceLitAllOnes (BitVec.ofNat _ _) := fun e => do
   return .done { expr := rhs, proof? := some pf }
 
 /-- The closed `t % n` subterms (`t` not a literal, `n` a literal) of `e`. -/
-partial def modTerms (e : Expr) (acc : Array Expr) : Array Expr :=
+meta partial def modTerms (e : Expr) (acc : Array Expr) : Array Expr :=
   let acc :=
     if !e.hasLooseBVars && e.isAppOfArity ``HMod.hMod 6 && (e.getArg! 0).isConstOf ``Nat &&
         (e.appArg!.nat? <|> e.appArg!.rawNatLit?).isSome && (e.appFn!.appArg!.nat?).isNone &&
@@ -742,7 +745,7 @@ elab "mod_split2" : tactic => do
   evalTactic (← `(tactic| idx_split))
 
 /-- A proof of `p` (in the context of `g`) by `omega` on the `toNat`s, if it finds one. -/
-def omegaProof? (g : MVarId) (p : Expr) : TacticM (Option Expr) := g.withContext do
+meta def omegaProof? (g : MVarId) (p : Expr) : TacticM (Option Expr) := g.withContext do
   let m ← mkFreshExprSyntheticOpaqueMVar p
   let s ← saveState
   try
@@ -944,7 +947,7 @@ elab "kbv_bitscha" : tactic => do
 
 /-- A goal `a = b` per bit (`kbv_bitsch`, `kbv_bitscha`), or `¬ a = b`/`False` (also a false
 `a = b`) refuted by a hypothesis `¬ c = d`, proving `c = d` per bit from the others. -/
-partial def bitschR : TacticM Unit := do
+meta partial def bitschR : TacticM Unit := do
   evalTactic (← `(tactic| intros))
   evalTactic (← `(tactic| try subst_vars))
   let g ← getMainGoal
@@ -1167,7 +1170,7 @@ macro "kbv_signmask" : tactic => `(tactic| (
 
 namespace Opt.Proof.KernelBV
 open Lean Meta Elab Tactic
-def bitwiseHead? (e : Expr) : Option Name :=
+meta def bitwiseHead? (e : Expr) : Option Name :=
   if e.isAppOfArity ``HAnd.hAnd 6 then some ``HAnd.hAnd
   else if e.isAppOfArity ``HOr.hOr 6 then some ``HOr.hOr
   else if e.isAppOfArity ``HXor.hXor 6 then some ``HXor.hXor
@@ -1175,14 +1178,14 @@ def bitwiseHead? (e : Expr) : Option Name :=
   else none
 
 /-- Leaves of a bitwise term. -/
-partial def bwLeaves (e : Expr) (acc : Array Expr) : Array Expr :=
+meta partial def bwLeaves (e : Expr) (acc : Array Expr) : Array Expr :=
   match bitwiseHead? e with
   | some ``Complement.complement => bwLeaves e.appArg! acc
   | some _ => bwLeaves e.appArg! (bwLeaves e.appFn!.appArg! acc)
   | _ => if acc.contains e then acc else acc.push e
 
 /-- Evaluate a bitwise term under an assignment of its leaves. -/
-partial def bwEval (e : Expr) (leaves : Array Expr) (asg : Nat) : Bool :=
+meta partial def bwEval (e : Expr) (leaves : Array Expr) (asg : Nat) : Bool :=
   match bitwiseHead? e with
   | some ``Complement.complement => !bwEval e.appArg! leaves asg
   | some ``HAnd.hAnd => bwEval e.appFn!.appArg! leaves asg && bwEval e.appArg! leaves asg
@@ -1193,7 +1196,7 @@ partial def bwEval (e : Expr) (leaves : Array Expr) (asg : Nat) : Bool :=
     | none => false
 
 /-- Maximal bitwise subterms of `e` (of bit-vector type `BitVec w`). -/
-partial def bwMax (e : Expr) (acc : Array Expr) : Array Expr :=
+meta partial def bwMax (e : Expr) (acc : Array Expr) : Array Expr :=
   if e.hasLooseBVars then acc else
   match bitwiseHead? e with
   | some _ => if acc.contains e then acc else acc.push e
@@ -1201,7 +1204,7 @@ partial def bwMax (e : Expr) (acc : Array Expr) : Array Expr :=
     | .app f a => bwMax a (bwMax f acc)
     | _ => acc
 
-def mintermCore (g : MVarId) : TacticM MVarId := g.withContext do
+meta def mintermCore (g : MVarId) : TacticM MVarId := g.withContext do
   let t ← instantiateMVars (← g.getType)
   let some (ty, l, r) := t.eq? | throwError "kbv_minterm: not an equation"
   let ty ← whnfR ty
@@ -1296,15 +1299,15 @@ open Lean Meta Elab Tactic
 
 /-- Heartbeat budget (raw) of a whole `kbv` search, times `kbv.budgetScale`: above the sum of its
 methods' budgets in `kbv_core` (`kbv_guard`). -/
-def searchHeartbeats : Nat := 4000000 * 1000
+meta def searchHeartbeats : Nat := 4000000 * 1000
 
-def isAtomTy (ty : Expr) : MetaM Bool := do
+meta def isAtomTy (ty : Expr) : MetaM Bool := do
   let ty ← instantiateMVars ty
   return ty.isAppOfArity ``BitVec 1 || ty.isConstOf ``Bool || ty.isConstOf ``Nat || ty.isConstOf ``Int
 
 /-- Closed `Nat` subterms that evaluate to a literal (`Ty.width .i8`, also inside instance
 arguments, where `simp` lemmas would not see through them), as that literal. -/
-def normNat (e : Expr) : MetaM Expr :=
+meta def normNat (e : Expr) : MetaM Expr :=
   Meta.transform e (pre := fun e => do
     if e.hasLooseBVars || e.hasFVar || e.hasMVar || e.isRawNatLit || e.nat?.isSome then
       return .continue
@@ -1319,7 +1322,7 @@ def normNat (e : Expr) : MetaM Expr :=
 /-- The main goal restated over its bit-vector context only (the bit-vector, `Bool`, `Nat`, `Int`
 locals, the propositions over them, the equations and comparisons at those types and their locals,
 and the locals the goal depends on), with the locals it abstracts. -/
-def bvStatement (g : MVarId) : MetaM (Expr × Array Expr) :=
+meta def bvStatement (g : MVarId) : MetaM (Expr × Array Expr) :=
   g.withContext do
     let tgt ← instantiateMVars (← g.getType)
     let lctx ← getLCtx
@@ -1364,7 +1367,7 @@ def bvStatement (g : MVarId) : MetaM (Expr × Array Expr) :=
     return (← normNat (← mkForallFVars sel tgt), sel)
 
 /-- Prove the main goal's `bvStatement` by `tac` in an empty context, and apply it. -/
-def isolate (tac : TacticM Unit) : TacticM Unit := do
+meta def isolate (tac : TacticM Unit) : TacticM Unit := do
   let g ← getMainGoal
   let (stmt, sel) ← bvStatement g
   let m ← mkFreshExprMVarAt {} {} stmt .syntheticOpaque

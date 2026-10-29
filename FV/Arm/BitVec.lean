@@ -195,81 +195,81 @@ attribute [bitvec_rules] BitVec.sub_add_cancel
 -- BitVec Simproc rules:
 -- See Lean/Meta/Tactic/Simp/BuiltinSimprocs for the built-in
 -- simprocs.
-attribute [bitvec_rules] BitVec.reduceNeg
-attribute [bitvec_rules] BitVec.reduceNot
-attribute [bitvec_rules] BitVec.reduceAbs
-attribute [bitvec_rules] BitVec.reduceAnd
-attribute [bitvec_rules] BitVec.reduceOr
-attribute [bitvec_rules] BitVec.reduceXOr
-attribute [bitvec_rules] BitVec.reduceAdd
-attribute [bitvec_rules] BitVec.reduceMul
-attribute [bitvec_rules] BitVec.reduceSub
-attribute [bitvec_rules] BitVec.reduceDiv
-attribute [bitvec_rules] BitVec.reduceMod
-attribute [bitvec_rules] BitVec.reduceUMod
-attribute [bitvec_rules] BitVec.reduceUDiv
-attribute [bitvec_rules] BitVec.reduceSMTUDiv
-attribute [bitvec_rules] BitVec.reduceSMod
-attribute [bitvec_rules] BitVec.reduceSRem
-attribute [bitvec_rules] BitVec.reduceSDiv
-attribute [bitvec_rules] BitVec.reduceSMTSDiv
-attribute [bitvec_rules] BitVec.reduceGetLsb
-attribute [bitvec_rules] BitVec.reduceGetMsb
-attribute [bitvec_rules] BitVec.reduceShiftLeft
-attribute [bitvec_rules] BitVec.reduceUShiftRight
-attribute [bitvec_rules] BitVec.reduceSShiftRight
-attribute [bitvec_rules] BitVec.reduceHShiftLeft
-attribute [bitvec_rules] BitVec.reduceHShiftLeft'
-attribute [bitvec_rules] BitVec.reduceHShiftRight
-attribute [bitvec_rules] BitVec.reduceHShiftRight'
-attribute [bitvec_rules] BitVec.reduceRotateLeft
-attribute [bitvec_rules] BitVec.reduceRotateRight
-attribute [bitvec_rules] BitVec.reduceAppend
-attribute [bitvec_rules] BitVec.reduceCast
-attribute [bitvec_rules] BitVec.reduceToNat
-attribute [bitvec_rules] BitVec.reduceToInt
-attribute [bitvec_rules] BitVec.reduceOfInt
-attribute [bitvec_rules] BitVec.reduceOfNat
-attribute [bitvec_rules] BitVec.reduceEq
-attribute [bitvec_rules] BitVec.reduceNe
-attribute [bitvec_rules] BitVec.reduceLT
-attribute [bitvec_rules] BitVec.reduceLE
-attribute [bitvec_rules] BitVec.reduceGT
-attribute [bitvec_rules] BitVec.reduceGE
-attribute [bitvec_rules] BitVec.reduceULT
-attribute [bitvec_rules] BitVec.reduceULE
-attribute [bitvec_rules] BitVec.reduceSLT
-attribute [bitvec_rules] BitVec.reduceSLE
-attribute [bitvec_rules] BitVec.reduceSetWidth'
-attribute [bitvec_rules] BitVec.reduceShiftLeftZeroExtend
-attribute [bitvec_rules] BitVec.reduceExtractLsb'
-attribute [bitvec_rules] BitVec.reduceReplicate
-attribute [bitvec_rules] BitVec.reduceSetWidth
-attribute [bitvec_rules] BitVec.reduceSignExtend
-attribute [bitvec_rules] BitVec.reduceAllOnes
-attribute [bitvec_rules] BitVec.reduceBitVecOfFin
-attribute [bitvec_rules] BitVec.reduceBitVecToFin
-attribute [bitvec_rules] BitVec.reduceShiftLeftShiftLeft
-attribute [bitvec_rules] BitVec.reduceShiftRightShiftRight
+builtin_simproc_attr bitvec_rules BitVec.reduceNeg
+builtin_simproc_attr bitvec_rules BitVec.reduceNot
+builtin_simproc_attr bitvec_rules BitVec.reduceAbs
+builtin_simproc_attr bitvec_rules BitVec.reduceAnd
+builtin_simproc_attr bitvec_rules BitVec.reduceOr
+builtin_simproc_attr bitvec_rules BitVec.reduceXOr
+builtin_simproc_attr bitvec_rules BitVec.reduceAdd
+builtin_simproc_attr bitvec_rules BitVec.reduceMul
+builtin_simproc_attr bitvec_rules BitVec.reduceSub
+builtin_simproc_attr bitvec_rules BitVec.reduceDiv
+builtin_simproc_attr bitvec_rules BitVec.reduceMod
+builtin_simproc_attr bitvec_rules BitVec.reduceUMod
+builtin_simproc_attr bitvec_rules BitVec.reduceUDiv
+builtin_simproc_attr bitvec_rules BitVec.reduceSMTUDiv
+builtin_simproc_attr bitvec_rules BitVec.reduceSMod
+builtin_simproc_attr bitvec_rules BitVec.reduceSRem
+builtin_simproc_attr bitvec_rules BitVec.reduceSDiv
+builtin_simproc_attr bitvec_rules BitVec.reduceSMTSDiv
+builtin_simproc_attr bitvec_rules BitVec.reduceGetLsb
+builtin_simproc_attr bitvec_rules BitVec.reduceGetMsb
+builtin_simproc_attr bitvec_rules BitVec.reduceShiftLeft
+builtin_simproc_attr bitvec_rules BitVec.reduceUShiftRight
+builtin_simproc_attr bitvec_rules BitVec.reduceSShiftRight
+builtin_simproc_attr bitvec_rules BitVec.reduceHShiftLeft
+builtin_simproc_attr bitvec_rules BitVec.reduceHShiftLeft'
+builtin_simproc_attr bitvec_rules BitVec.reduceHShiftRight
+builtin_simproc_attr bitvec_rules BitVec.reduceHShiftRight'
+builtin_simproc_attr bitvec_rules BitVec.reduceRotateLeft
+builtin_simproc_attr bitvec_rules BitVec.reduceRotateRight
+builtin_simproc_attr bitvec_rules BitVec.reduceAppend
+builtin_simproc_attr bitvec_rules BitVec.reduceCast
+builtin_simproc_attr bitvec_rules BitVec.reduceToNat
+builtin_simproc_attr bitvec_rules BitVec.reduceToInt
+builtin_simproc_attr bitvec_rules BitVec.reduceOfInt
+builtin_simproc_attr bitvec_rules BitVec.reduceOfNat
+builtin_simproc_attr bitvec_rules BitVec.reduceEq
+builtin_simproc_attr bitvec_rules BitVec.reduceNe
+builtin_simproc_attr bitvec_rules BitVec.reduceLT
+builtin_simproc_attr bitvec_rules BitVec.reduceLE
+builtin_simproc_attr bitvec_rules BitVec.reduceGT
+builtin_simproc_attr bitvec_rules BitVec.reduceGE
+builtin_simproc_attr bitvec_rules BitVec.reduceULT
+builtin_simproc_attr bitvec_rules BitVec.reduceULE
+builtin_simproc_attr bitvec_rules BitVec.reduceSLT
+builtin_simproc_attr bitvec_rules BitVec.reduceSLE
+builtin_simproc_attr bitvec_rules BitVec.reduceSetWidth'
+builtin_simproc_attr bitvec_rules BitVec.reduceShiftLeftZeroExtend
+builtin_simproc_attr bitvec_rules BitVec.reduceExtractLsb'
+builtin_simproc_attr bitvec_rules BitVec.reduceReplicate
+builtin_simproc_attr bitvec_rules BitVec.reduceSetWidth
+builtin_simproc_attr bitvec_rules BitVec.reduceSignExtend
+builtin_simproc_attr bitvec_rules BitVec.reduceAllOnes
+builtin_simproc_attr bitvec_rules BitVec.reduceBitVecOfFin
+builtin_simproc_attr bitvec_rules BitVec.reduceBitVecToFin
+builtin_simproc_attr bitvec_rules BitVec.reduceShiftLeftShiftLeft
+builtin_simproc_attr bitvec_rules BitVec.reduceShiftRightShiftRight
 
 -- BitVec/Nat Simproc rules
-attribute [bitvec_rules] BitVec.reduceToNat
-attribute [bitvec_rules] Nat.reduceAdd
-attribute [bitvec_rules] Nat.reduceMul
-attribute [bitvec_rules] Nat.reduceSub
-attribute [bitvec_rules] Nat.reduceDiv
-attribute [bitvec_rules] Nat.reduceMod
-attribute [bitvec_rules] Nat.reducePow
-attribute [bitvec_rules] Nat.reduceGcd
-attribute [bitvec_rules] Nat.reduceLT
-attribute [bitvec_rules] Nat.reduceGT
-attribute [bitvec_rules] Nat.reduceBEq
-attribute [bitvec_rules] Nat.reduceBNe
-attribute [bitvec_rules] Nat.reduceEqDiff
-attribute [bitvec_rules] Nat.reduceBeqDiff
-attribute [bitvec_rules] Nat.reduceBneDiff
-attribute [bitvec_rules] Nat.reduceLeDiff
-attribute [bitvec_rules] Nat.reduceSubDiff
+builtin_simproc_attr bitvec_rules BitVec.reduceToNat
+builtin_simproc_attr bitvec_rules Nat.reduceAdd
+builtin_simproc_attr bitvec_rules Nat.reduceMul
+builtin_simproc_attr bitvec_rules Nat.reduceSub
+builtin_simproc_attr bitvec_rules Nat.reduceDiv
+builtin_simproc_attr bitvec_rules Nat.reduceMod
+builtin_simproc_attr bitvec_rules Nat.reducePow
+builtin_simproc_attr bitvec_rules Nat.reduceGcd
+builtin_simproc_attr bitvec_rules Nat.reduceLT
+builtin_simproc_attr bitvec_rules Nat.reduceGT
+builtin_simproc_attr bitvec_rules Nat.reduceBEq
+builtin_simproc_attr bitvec_rules Nat.reduceBNe
+builtin_simproc_attr bitvec_rules Nat.reduceEqDiff
+builtin_simproc_attr bitvec_rules Nat.reduceBeqDiff
+builtin_simproc_attr bitvec_rules Nat.reduceBneDiff
+builtin_simproc_attr bitvec_rules Nat.reduceLeDiff
+builtin_simproc_attr bitvec_rules Nat.reduceSubDiff
 
 -- This might be a neccesary evil: it introduces a modulus,
 -- but it's also really useful.
@@ -278,7 +278,7 @@ attribute [bitvec_rules] BitVec.toNat_ofNat
 -- Some Fin lemmas useful for bitvector reasoning:
 attribute [bitvec_rules] Fin.eta
 attribute [bitvec_rules] Fin.isLt
-attribute [bitvec_rules] Fin.isValue -- To normalize Fin literals
+builtin_simproc_attr bitvec_rules Fin.isValue -- To normalize Fin literals
 
 -- Some lemmas useful for clean-up after the use of simp/ground
 -- leaves some terms exposed:
@@ -1070,6 +1070,9 @@ syntax "[" bvpat_comp,* "]" : bvpat
 
 open Lean
 
+-- The `match_bv` macro and its helpers run at elaboration time (module system: `meta`).
+meta section
+
 abbrev BVPatComp := TSyntax `bvpat_comp
 abbrev BVPat := TSyntax `bvpat
 
@@ -1183,6 +1186,8 @@ macro_rules
     let rhs ← declBVPatVars x p rhs
     result ← `(if $test then $rhs else $result)
   `(let discr := $discr; $result)
+
+end
 
 -- def test (x : BitVec 32) : BitVec 16 :=
 --   match_bv x with

@@ -3,7 +3,7 @@ module
 public import Lean
 public import FV.Backend.Isel
 
-@[expose] public section
+@[expose] public meta section
 
 /-!
 # Splitting the big matchers of the extern helpers without equation lemmas

@@ -1,6 +1,7 @@
 module
 
 public import FV.Backend.Proof.IselData
+public import FV.SimprocAttr
 
 @[expose] public section
 
@@ -57,12 +58,13 @@ variable {σ α β ε : Type}
 end Monad
 
 attribute [isel_monad] Bool.false_eq_true ite_true ite_false dite_true dite_false
-  List.length_cons List.length_nil Nat.zero_add Nat.reduceAdd Array.size_replicate
+  List.length_cons List.length_nil Nat.zero_add Array.size_replicate
   Array.set!_eq_setIfInBounds beq_self_eq_true Nat.lt_irrefl decide_true decide_false
-  Option.some.injEq reduceIte reduceDIte bne_self_eq_false Bool.not_false Bool.not_true
-  Bool.and_true Bool.true_and Bool.and_false Bool.false_and Nat.reduceLT Nat.reduceLeDiff
+  Option.some.injEq bne_self_eq_false Bool.not_false Bool.not_true
+  Bool.and_true Bool.true_and Bool.and_false Bool.false_and
   Array.size_setIfInBounds Array.getElem?_setIfInBounds Array.getElem?_replicate
-  Nat.reduceEqDiff Nat.reduceBEq Nat.reduceBNe Nat.reduceSub Nat.lt_add_one Nat.zero_lt_succ
+  Nat.lt_add_one Nat.zero_lt_succ
+builtin_simproc_attr isel_monad Nat.reduceAdd reduceIte reduceDIte Nat.reduceLT Nat.reduceLeDiff Nat.reduceEqDiff Nat.reduceBEq Nat.reduceBNe Nat.reduceSub
 
 
 set_option hygiene false in

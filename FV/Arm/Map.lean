@@ -206,7 +206,7 @@ abbrev Program := Map (BitVec 64) (BitVec 32)
 
 open Lean.ToExpr Lean Meta Simp
 
-partial def Map.findBitVecLiteral? (find_key_lit : (n : Nat) × BitVec n) (map_expr : Expr)
+meta partial def Map.findBitVecLiteral? (find_key_lit : (n : Nat) × BitVec n) (map_expr : Expr)
   : SimpM (Option ((n : Nat) × BitVec n)) := do
   -- `whnfD e` reduces `e` to its weak-head-normal form. This is an efficient operation for
   -- functions defined by structural recursion such as `Map.find?`

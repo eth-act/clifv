@@ -7,6 +7,7 @@ Author(s): Shilpi Goel
 module
 
 public import Lean
+public import FV.SimprocAttr
 
 @[expose] public section
 
@@ -19,3 +20,4 @@ register_simp_attr state_simp_rules
 register_simp_attr bitvec_rules
 -- Rules for memory lemmas
 register_simp_attr memory_rules
+

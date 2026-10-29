@@ -152,11 +152,11 @@ theorem option_get_bang_of_some [Inhabited α] (v : α) :
   Option.get! (some v) = v := rfl
 attribute [minimal_theory] Option.isNone_some
 
-attribute [minimal_theory] Fin.isValue
+builtin_simproc_attr minimal_theory Fin.isValue
 attribute [minimal_theory high] Fin.zero_eta
 attribute [minimal_theory high] Fin.mk.injEq
 
 -- attribute [minimal_theory] ↓reduceIte
-attribute [minimal_theory] reduceCtorEq
+builtin_simproc_attr minimal_theory reduceCtorEq
 
 end Arm
