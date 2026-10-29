@@ -273,7 +273,8 @@ def main():
     ap.add_argument("--dry-run", action="store_true", help="print the plan and exit")
     ap.add_argument("--only", metavar="FILE",
                     help="build only the modules listed in FILE (whitespace-separated); their "
-                         "other imports count as built (CI: earlier waves, restored from the cache)")
+                         "other imports count as built (CI: earlier waves, restored from the cache); "
+                         "any the batch check finds out of date are scheduled here too")
     ap.add_argument("--retry-failed", action="store_true",
                     help="retry a failed module once, alone (CI: wall-clock limits such as "
                          "bv_decide's SAT timeout can fail on a loaded runner)")
@@ -429,6 +430,26 @@ def main():
             return None
         return bad
 
+    def unassume(bad):
+        """--only: an import assumed built that Lake reports out of date is not in the cache (e.g.
+        an earlier shard's copy of one of its imports lost to a differing copy from another shard:
+        Lean's output is not always reproducible). Schedule it and the assumed modules importing
+        it here, instead of letting the first `lake build <M>` that needs them rebuild them
+        unscheduled (CI run 40769795369: `lake build FV.Opt.Proof.RuleAll` rebuilt 42 imports
+        side by side, swapped, and took 3 h)."""
+        stale = bad & assumed
+        if not stale:
+            return
+        redo = stale | (downstream(stale) & assumed)
+        assumed.difference_update(redo)
+        for m in redo:
+            del status[m]
+        ood.update(stale)
+        if inflight:
+            keys.update(source_keys(root, mods, imports, redo))
+        say(f"{len(stale)} imports assumed built are not in the cache; building them and "
+            f"{len(redo) - len(stale)} assumed importers here: {' '.join(sorted(stale))}")
+
     def settle(ms, what):
         """Batch-check ms: reported -> ood; unreported with no reported import -> ok. The rest
         (what="all": modules importing a reported one) stay unknown; for what="ready" (all their
@@ -439,6 +460,7 @@ def main():
         if bad is None:
             ood.update(ms)
             return
+        unassume(bad)
         unknown = downstream(bad)
         fresh = ms - bad - unknown
         for m in fresh:
@@ -738,8 +760,10 @@ def main():
                     break
                 verify_rounds += 1
                 bad = batch_check(want - assumed)
+                nassumed = len(assumed)
+                unassume(bad or set())
                 redo = {m for m in (bad or ()) if status.get(m) == "ok" and m not in assumed}
-                if not redo:
+                if not redo and len(assumed) == nassumed:
                     if bad is None:
                         say("final check inconclusive (see above)")
                     break

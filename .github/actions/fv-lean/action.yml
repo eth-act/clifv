@@ -87,10 +87,8 @@ runs:
         STAGES: ${{ runner.temp }}/lake-stages
       run: |
         mkdir -p "$LAKE_CACHE_DIR" "$STAGES"
-        n=0
-        for f in $(find "$STAGES" -name outputs.jsonl | sort); do
-          lake cache unstage "$(dirname "$f")"
-          n=$((n + 1))
-        done
-        echo "unstaged $n staging directories; cache $(du -sh "$LAKE_CACHE_DIR" | cut -f1)"
+        # where shards staged differing copies of a module (Lean's output is not always
+        # reproducible), keep the copy the most downstream work was built against
+        python3 scripts/lake-unstage.py "$STAGES"
+        echo "cache $(du -sh "$LAKE_CACHE_DIR" | cut -f1)"
         rm -rf "$STAGES"
