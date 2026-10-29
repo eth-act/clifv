@@ -79,11 +79,22 @@ the CLIF level and uses no flag reasoning:
 * A deleted statement is pure: the kept code takes no step, and its world stays
   the kept run's.
 
-Status: proved (standard axioms, `scripts/audit/skip-dead.lean`). It is not yet
-in the pipeline. The next step replaces `prune vc` by
-`prune (skipDead f vc)` for subset-E functions in the cleanup chain, and then
-removes the subsumed cleanup rules. On the `icmp`/`brif` witness
-(`skipWitness`), `cmp; cset; cmp; b.eq` becomes stock's `cmp; b.eq`.
+Status: proved (standard axioms, `scripts/audit/skip-dead.lean`) and in the pipeline. The
+production cleanup stage is `Backend.cleanupStage f vc = prune (skipStage f vc)`
+(`FV/Backend/CleanupStage.lean`). `skipStage` runs `skipDead` on functions of subset E whose
+lowering `lowerCheck` accepts and leaves every other function unchanged. The driver reuses the
+validator's verdict instead of running `lowerCheck` again (`cleanupStageChecked`,
+`lowerForAllocation_verified`). The cleanup theorems take kept-code simulations for the stage
+(`_stage`/`K` variants, audit `scripts/audit/skip-wiring.lean`); the old statements stay. On
+the `icmp`/`brif` witness (`skipWitness`), `cmp; cset; cmp; b.eq` becomes stock's `cmp; b.eq`.
+regalloc2's input (`FVTest/Backend/CraneliftInput.lean`) gives the skipped statements'
+temporaries no vreg numbers, as Cranelift never lowers them. Measured with
+`scripts/stock-crate-parity.py` against main cf89491d (#552, #557):
+
+* fv-demo: 634 → 679 byte-identical functions, .text 183,644 → 182,548 B;
+* survey subset (a_arith, d_loops_iters, f_crypto, g_u128): 677 → 732 functions,
+  267,356 → 265,996 B;
+* no function that was identical before differs now.
 
 ## Consumers and proof scope
 
