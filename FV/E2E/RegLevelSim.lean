@@ -1,5 +1,7 @@
 import FV.E2E.RegLevelMachine
+import FV.E2E.RegLevelPlan
 import FV.Backend.Proof.RegallocLayout
+import FV.Backend.Proof.AssignOk
 
 /-!
 # The register-level simulation relation (M6)
@@ -9,7 +11,9 @@ The Arm machine `ArmStepX` running the laid-out function realises the allocated 
 `c` of the activation `R`:
 
 * **position**: the pc is at line `j` of the final line list, and the lines from `j` on are the
-  `fallthrough` of the remaining items' lines (followed by the next block's label);
+  relaxation of the remaining items' lines with the block's last instruction's lines replaced by
+  its final lines in the emission plan (`Qs`); or the configuration is at the entry of a block
+  reached through forwarding blocks (a single `jump`, without machine steps, `QE`);
 * **store**: every valid location (allocatable register, spill/save slot) holds in `s` what the
   store `m` says (`locVal`);
 * **world**: `s` has the world `w` (`SameWorld (R.F)`: equal outside allocatable registers,
@@ -430,18 +434,180 @@ theorem xreg29_sw {F : BitVec 64 → Prop} {s s' w : Arm.ArmState} (h : SameWorl
 def ItemsChecked (R : RL) (vb : VBlock) (its : List RItem) : Prop :=
   ∃ (c : CheckCtx) (k : Nat) (a out : AState), c.rf = R.rf ∧ c.vc = R.vc ∧ c.runItems vb k its a = .ok out
 
-/-- **The simulation relation.** -/
+/-- **The simulation relation inside a block** (`b`, remaining items `its`, their code `code`):
+the lines of `code` but its last instruction's are `X`, those of the last instruction are the
+block's segment's (`x.1.term`, `x` = the block's segment in the emission plan, `segX`); the lines
+from `j` on are the relaxation of `X` and the segment's final lines (`x.2.1`), then the lines from
+the one after them (`x.2.2`) on; the segment passes the branch check (`SegChecked`). -/
+def Qs (R : RL) (s : Arm.ArmState) (b : Nat) (its : List RItem) (m : Loc → CV)
+    (w : Arm.ArmState) : Prop :=
+  ∃ j vb items pre code X ps1 psm ps2 x,
+    R.vc.blocks[b]? = some vb ∧ R.rf.blocks[b]? = some items ∧ items.toList = pre ++ its ∧
+    ItemsChecked R vb its ∧
+    itemsCode R.fr vb its = .ok code ∧
+    codeLinesE R.ctx R.af code.dropLast ps1 = .ok (X, psm) ∧
+    codeLinesE R.ctx R.af code.getLast?.toList psm = .ok (x.1.term, ps2) ∧
+    ps2.traps.toList <+: R.psF.traps.toList ∧
+    R.L.drop j = relaxLines R.far (X ++ x.2.1) ++ R.L.drop (rix R.far (planLines R.fa.k R.af) x.2.2) ∧
+    Arm.r .PC s = R.pcOf j ∧ StRel R s m w ∧
+    segX R.fa.k R.af b = some x ∧ SegChecked R.fa.k R.af b
+
+/-- **Entering block `b`** with store `m` and world `w` in state `s`: at its first item
+(`Qs`), or `b` forwards (`fwd?`: its items are one `op` of its only instruction, a `jump`, whose
+`b` the emission may have removed or aliased) to its successor `bx`, entered so, without a
+machine step. -/
+inductive QE (R : RL) (s : Arm.ArmState) (m : Loc → CV) (w : Arm.ArmState) : Nat → Prop
+  | std {b : Nat} {items : Array RItem} : R.rf.blocks[b]? = some items →
+      Qs R s b items.toList m w → QE R s m w b
+  | fwd {b bx : Nat} {vb vbx : VBlock} {x : Label} {items : Array RItem} {allocs : Array Loc}
+      {regs : Array Reg} {i : MInst} : R.vc.blocks[b]? = some vb →
+      R.af.fwd? vb.label = some x → R.rf.blocks[b]? = some items →
+      items.toList = [.op 0 allocs] → allocs = regs.map Loc.reg → vb.insts = #[i] →
+      i.assign regs = .ok (.jump x) → succOf R.vc b 0 = some bx →
+      R.vc.blocks[bx]? = some vbx → vbx.label = x → QE R s m w bx → QE R s m w b
+
+/-- **The simulation relation**: inside a block (`Qs`), or at the entry of a block entered
+through forwarding blocks (`QE`). -/
 def Q (R : RL) (s : Arm.ArmState) : MConf CV Arm.ArmState → Prop
   | .run ⟨b, its, m, w⟩ =>
-    ∃ j vb items pre code ls ps1 ps2 T,
-      R.vc.blocks[b]? = some vb ∧ R.rf.blocks[b]? = some items ∧ items.toList = pre ++ its ∧
-      ItemsChecked R vb its ∧
-      itemsCode R.fr vb its = .ok code ∧
-      codeLinesE R.ctx R.af code ps1 = .ok (ls, ps2) ∧
-      ps2.traps.toList <+: R.psF.traps.toList ∧
-      R.L.drop j = relaxLines R.far (ftList (ls ++ nxtOf R.af b)) ++ T ∧
-      Arm.r .PC s = R.pcOf j ∧ StRel R s m w
+    Qs R s b its m w ∨ ∃ items, R.rf.blocks[b]? = some items ∧ its = items.toList ∧ QE R s m w b
   | _ => True
+
+/-- A block entered (`QE`) has items. -/
+theorem QE.items {R : RL} {s : Arm.ArmState} {m : Loc → CV} {w : Arm.ArmState} {b : Nat}
+    (h : QE R s m w b) : ∃ items, R.rf.blocks[b]? = some items := by
+  cases h with
+  | std hit _ => exact ⟨_, hit⟩
+  | fwd _ _ hit _ _ _ _ _ _ _ _ => exact ⟨_, hit⟩
+
+/-- **`Q` at an item**: inside a block (`Qs`), or the item is the only one of a forwarding
+block (an `op` of its only instruction, a `jump` to its successor `bx`, entered by `Q`). -/
+theorem Q.cases {R : RL} {s : Arm.ArmState} {b : Nat} {it : RItem} {its : List RItem}
+    {m : Loc → CV} {w : Arm.ArmState} (h : Q R s (.run ⟨b, it :: its, m, w⟩)) :
+    Qs R s b (it :: its) m w ∨ ∃ vb allocs regs i x bx, R.vc.blocks[b]? = some vb ∧
+      it = .op 0 allocs ∧ its = [] ∧ allocs = regs.map Loc.reg ∧ vb.insts = #[i] ∧
+      i.assign regs = .ok (.jump x) ∧ succOf R.vc b 0 = some bx ∧
+      ∃ itx, R.rf.blocks[bx]? = some itx ∧ Q R s (.run ⟨bx, itx.toList, m, w⟩) := by
+  rcases h with hs | ⟨items, hit, hits, hqe⟩
+  · exact .inl hs
+  cases hqe with
+  | std hit' hq =>
+    rw [hit] at hit'
+    cases hit'
+    rw [hits]
+    exact .inl hq
+  | fwd hvb _ hit' hil hal hins hasg hsucc _ _ hq =>
+    rw [hit] at hit'
+    cases hit'
+    rw [hil] at hits
+    simp only [List.cons.injEq] at hits
+    obtain ⟨rfl, rfl⟩ := hits
+    obtain ⟨itx, hitx⟩ := hq.items
+    exact .inr ⟨_, _, _, _, _, _, hvb, rfl, rfl, hal, hins, hasg, hsucc, itx, hitx,
+      .inr ⟨itx, hitx, rfl, hq⟩⟩
+
+/-- `Q` at an item that is no `op` of instruction 0 is `Qs`. -/
+theorem Q.qs {R : RL} {s : Arm.ArmState} {b : Nat} {it : RItem} {its : List RItem}
+    {m : Loc → CV} {w : Arm.ArmState} (h : Q R s (.run ⟨b, it :: its, m, w⟩))
+    (hit : ∀ allocs, it ≠ .op 0 allocs) : Qs R s b (it :: its) m w := by
+  rcases Q.cases h with h | ⟨_, allocs, _, _, _, _, -, he, -⟩
+  · exact h
+  · exact (hit allocs he).elim
+
+/-- Every successful run of `x` ends with a value meeting `P`. -/
+def VPost {α : Type} (P : α → Prop) (x : StateT Nat (Except String) α) : Prop :=
+  ∀ s a s', x.run s = .ok (a, s') → P a
+
+theorem vpost_pure {α : Type} {P : α → Prop} {a : α} (h : P a) :
+    VPost P (pure a : StateT Nat (Except String) α) := by
+  intro s a' s' h'
+  cases h'
+  exact h
+
+theorem vpost_bind {α β : Type} {P : β → Prop} {x : StateT Nat (Except String) α}
+    {g : α → StateT Nat (Except String) β} (h : ∀ a, VPost P (g a)) : VPost P (x >>= g) := by
+  intro s b s' h'
+  rw [StateT.run_bind] at h'
+  cases hx : x.run s with
+  | error e => rw [hx] at h'; cases h'
+  | ok p => rw [hx] at h'; exact h p.1 p.2 b s' h'
+
+/-- Visiting the operands keeps the branch targets and the `Args` form. -/
+theorem visit_shape (f : OpSpec → Reg → StateT Nat (Except String) Reg) (i : MInst) :
+    VPost (fun r => r.targets = i.targets ∧ ((∃ ds, r = .args ds) → ∃ ds, i = .args ds))
+      (MInst.visitOperands f i) := by
+  cases i <;> simp only [MInst.visitOperands] <;>
+    repeat' (first
+      | exact vpost_pure ⟨rfl, fun _ => ⟨_, rfl⟩⟩
+      | exact vpost_pure ⟨rfl, fun ⟨_, h⟩ => by cases h⟩
+      | refine vpost_bind fun _ => ?_
+      | split)
+
+/-- Substituting an allocation keeps the branch targets and the `Args` form. -/
+theorem assign_shape {i i' : MInst} {regs : Array Reg} (h : i.assign regs = .ok i') :
+    i'.targets = i.targets ∧ ((∃ ds, i' = .args ds) → ∃ ds, i = .args ds) := by
+  rw [assign_eq] at h
+  simp only [bind, Except.bind] at h
+  cases hr : (MInst.visitOperands (putOp regs) i).run 0 with
+  | error e => rw [hr] at h; cases h
+  | ok p =>
+    rw [hr] at h
+    obtain ⟨i1, k⟩ := p
+    simp only at h
+    split at h
+    · cases h
+    · cases h
+      exact visit_shape _ i 0 i' k hr
+
+/-- `Q` at an `op` whose instruction branches nowhere is `Qs`. -/
+theorem Q.qs_op {R : RL} {s : Arm.ArmState} {b k : Nat} {allocs : Array Loc} {its : List RItem}
+    {m : Loc → CV} {w : Arm.ArmState} (h : Q R s (.run ⟨b, .op k allocs :: its, m, w⟩))
+    {vb : VBlock} {i : MInst} (hvb : R.vc.blocks[b]? = some vb) (hi : vb.insts[k]? = some i)
+    (ht : i.targets = []) : Qs R s b (.op k allocs :: its) m w := by
+  rcases Q.cases h with h | ⟨vb', _, regs, i', x, -, hvb', he, -, -, hins, hasg, -⟩
+  · exact h
+  · rw [hvb] at hvb'
+    cases hvb'
+    simp only [RItem.op.injEq] at he
+    obtain ⟨rfl, -⟩ := he
+    rw [hins] at hi
+    simp only [List.getElem?_toArray, List.getElem?_cons_zero, Option.some.injEq] at hi
+    subst hi
+    have := (assign_shape hasg).1
+    rw [ht] at this
+    cases this
+
+/-- `Q` at an `op` of an instruction before the block's last is `Qs`. -/
+theorem Q.qs_lt {R : RL} {s : Arm.ArmState} {b k : Nat} {allocs : Array Loc} {its : List RItem}
+    {m : Loc → CV} {w : Arm.ArmState} (h : Q R s (.run ⟨b, .op k allocs :: its, m, w⟩))
+    {vb : VBlock} (hvb : R.vc.blocks[b]? = some vb) (hk : k + 1 < vb.insts.size) :
+    Qs R s b (.op k allocs :: its) m w := by
+  rcases Q.cases h with h | ⟨vb', _, _, i', _, _, hvb', he, -, -, hins, -⟩
+  · exact h
+  · rw [hvb] at hvb'
+    cases hvb'
+    simp only [RItem.op.injEq] at he
+    obtain ⟨rfl, -⟩ := he
+    rw [hins] at hk
+    simp at hk
+
+/-- Checked items after an `op` of an instruction before the block's last are not empty. -/
+theorem ItemsChecked.tail_ne {R : RL} {vb : VBlock} {k : Nat} {allocs : Array Loc}
+    {its : List RItem} (h : ItemsChecked R vb (.op k allocs :: its)) (hk : k + 1 < vb.insts.size) :
+    its ≠ [] := by
+  obtain ⟨c, k0, a, out, -, -, hrun⟩ := h
+  obtain ⟨-, rfl, _, _, _, _, _, _, h'⟩ := runItems_op hrun
+  rintro rfl
+  have := (runItems_nil h').1
+  omega
+
+/-- Under `Q`, the remaining items are a suffix of the block's items. -/
+theorem Q.split {R : RL} {s : Arm.ArmState} {b : Nat} {its : List RItem} {m : Loc → CV}
+    {w : Arm.ArmState} (h : Q R s (.run ⟨b, its, m, w⟩)) :
+    ∃ items pre, R.rf.blocks[b]? = some items ∧ items.toList = pre ++ its := by
+  rcases h with ⟨_, _, items, pre, _, _, _, _, _, _, -, hit, hsplit, -⟩ | ⟨items, hit, rfl, -⟩
+  · exact ⟨items, pre, hit, hsplit⟩
+  · exact ⟨items, [], hit, rfl⟩
 
 end Backend.Proof
 
@@ -561,5 +727,171 @@ theorem lineOffset_drop_ins {L : List Line} {j : Nat} {ls T : List Line}
     simp only [List.length_cons]
     rw [show j + (ls.length + 1) = j + 1 + ls.length by omega, this, h1]
     omega
+
+theorem list_mapM_ok {ε α β : Type} {f : α → Except ε β} :
+    ∀ {l : List α} {l' : List β}, l.mapM f = .ok l' → l'.length = l.length ∧
+      ∀ (i : Nat) x, l[i]? = some x → ∃ y, f x = .ok y ∧ l'[i]? = some y
+  | [], l', h => by
+    simp only [List.mapM_nil, pure, Except.pure, Except.ok.injEq] at h; subst h; simp
+  | a :: l, l', h => by
+    rw [List.mapM_cons] at h
+    simp only [bind, Except.bind] at h
+    split at h
+    · cases h
+    rename_i y hy
+    split at h
+    · cases h
+    rename_i ys hys
+    simp only [pure, Except.pure, Except.ok.injEq] at h
+    subst h
+    obtain ⟨hl, hi⟩ := list_mapM_ok hys
+    refine ⟨by simp [hl], fun i x hx => ?_⟩
+    cases i with
+    | zero => simp at hx; subst hx; exact ⟨y, hy, rfl⟩
+    | succ i =>
+      simp at hx
+      obtain ⟨y', h1, h2⟩ := hi i x hx
+      exact ⟨y', h1, by simpa using h2⟩
+
+theorem array_mapM_ok {ε α β : Type} {f : α → Except ε β} {as : Array α} {bs : Array β}
+    (h : as.mapM f = .ok bs) : bs.size = as.size ∧
+      ∀ (i : Nat) x, as[i]? = some x → ∃ y, f x = .ok y ∧ bs[i]? = some y := by
+  have e := Array.toList_mapM (xs := as) (f := f)
+  rw [h] at e
+  simp only [Functor.map, Except.map] at e
+  obtain ⟨hl, hi⟩ := list_mapM_ok e.symm
+  refine ⟨by simpa using hl, fun i x hx => ?_⟩
+  obtain ⟨y, h1, h2⟩ := hi i x (by simpa using hx)
+  exact ⟨y, h1, by rw [← Array.getElem?_toList]; exact h2⟩
+
+def locReg : Loc → Except String Reg
+  | Loc.reg r => pure r
+  | l => throw (toString "operand in " ++ toString (repr l))
+
+theorem mapM_locReg : ∀ (L : List Loc) (R : List Reg), L.mapM locReg = .ok R → L = R.map .reg
+  | [], R, h => by
+    simp only [List.mapM_nil, pure, Except.pure, Except.ok.injEq] at h; subst h; rfl
+  | l :: L, R, h => by
+    rw [List.mapM_cons] at h
+    simp only [bind, Except.bind] at h
+    split at h
+    · cases h
+    rename_i r hr
+    split at h
+    · cases h
+    rename_i rs hrs
+    simp only [pure, Except.pure, Except.ok.injEq] at h
+    subst h
+    rw [mapM_locReg L rs hrs]
+    cases l <;> simp [locReg, pure, Except.pure, throw, throwThe, MonadExceptOf.throw] at hr
+    subst hr; rfl
+
+theorem arr_mapM_locReg {allocs : Array Loc} {regs : Array Reg}
+    (h : allocs.mapM locReg = .ok regs) : allocs = regs.map .reg := by
+  have e := Array.toList_mapM (xs := allocs) (f := locReg)
+  rw [h] at e
+  simp only [Functor.map, Except.map] at e
+  apply Array.toList_inj.1
+  rw [Array.toList_map]
+  exact mapM_locReg _ _ e.symm
+
+theorem itemCode_op {fr : RAFrame} {vb : VBlock} {k : Nat} {allocs : Array Loc} {c1 : List AInst}
+    (h : itemCode fr vb (.op k allocs) = .ok c1) :
+    ∃ regs i i', allocs = regs.map Loc.reg ∧ vb.insts[k]? = some i ∧ i.assign regs = .ok i' ∧
+      ((c1 = [AInst.inst i'] ∧ (∀ ds, i' ≠ .args ds) ∧ (∀ us, i' ≠ .rets us)) ∨ (∃ ds, i' = .args ds ∧ c1 = []) ∨
+        (∃ us, i' = .rets us ∧ c1 = [AInst.epilogueRet])) := by
+  unfold itemCode itemStep at h
+  dsimp only at h
+  simp only [bind, Except.bind, Functor.map, Except.map] at h
+  split at h
+  · cases h
+  rename_i arr harr
+  simp only [Except.ok.injEq] at h
+  subst h
+  split at harr
+  · cases harr
+  rename_i regs hregs
+  split at harr
+  · rename_i i hi
+    split at harr
+    · cases harr
+    rename_i i' hi'
+    refine ⟨regs, i, i', arr_mapM_locReg (by exact hregs), hi, hi', ?_⟩
+    cases i' <;> simp only [pure, Except.pure, Except.ok.injEq] at harr <;> subst harr <;> simp
+  · simp [throw, throwThe, MonadExceptOf.throw] at harr
+
+
+/-- The last instruction of a block of a VCode with a CFG is a terminator. -/
+theorem cfg_back {vc : VCode} {ss ps : Array (Array Nat)} (h : vc.cfg = .ok (ss, ps)) {b : Nat}
+    {vb : VBlock} (hvb : vc.blocks[b]? = some vb) :
+    ∃ t, vb.insts.back? = some t ∧ t.isTerminator = true := by
+  unfold VCode.cfg at h
+  simp only [bind, Except.bind] at h
+  split at h
+  · cases h
+  rename_i succs hsuccs
+  obtain ⟨-, hel⟩ := array_mapM_ok hsuccs
+  obtain ⟨ts, hts, -⟩ := hel b vb hvb
+  split at hts
+  · rename_i t ht
+    split at hts
+    · simp [throw, throwThe, MonadExceptOf.throw] at hts
+    · rename_i hterm
+      exact ⟨t, ht, by simpa using hterm⟩
+  · simp [throw, throwThe, MonadExceptOf.throw] at hts
+
+/-- A checked item list that is not empty has an `op` of the block's last instruction. -/
+theorem runItems_last {c : CheckCtx} {vb : VBlock} :
+    ∀ {its : List RItem} {k : Nat} {a out : AState}, c.runItems vb k its a = .ok out → its ≠ [] →
+      ∃ allocs, RItem.op (vb.insts.size - 1) allocs ∈ its
+  | [], _, _, _, _, hne => absurd rfl hne
+  | .move src dst :: rest, k, a, out, h, _ => by
+    obtain ⟨hk, h'⟩ := runItems_move h
+    cases rest with
+    | nil => exact absurd (runItems_nil h').1 hk
+    | cons r rest =>
+      obtain ⟨al, hm⟩ := runItems_last h' (by simp)
+      exact ⟨al, List.mem_cons_of_mem _ hm⟩
+  | .op k' allocs :: rest, k, a, out, h, _ => by
+    obtain ⟨hk, hkk, _, _, _, _, _, _, h'⟩ := runItems_op h
+    cases rest with
+    | nil =>
+      have := (runItems_nil h').1
+      exact ⟨allocs, by rw [show vb.insts.size - 1 = k' by omega]; simp⟩
+    | cons r rest =>
+      obtain ⟨al, hm⟩ := runItems_last h' (by simp)
+      exact ⟨al, List.mem_cons_of_mem _ hm⟩
+
+theorem itemsCode_mem {fr : RAFrame} {vb : VBlock} :
+    ∀ {its : List RItem} {c : List AInst} {it : RItem}, itemsCode fr vb its = .ok c → it ∈ its →
+      ∃ c1, itemCode fr vb it = .ok c1 ∧ c1 <:+: c
+  | [], _, _, _, hm => by simp at hm
+  | it' :: its, c, it, h, hm => by
+    obtain ⟨c1, c2, h1, h2, rfl⟩ := itemsCode_cons h
+    rcases List.mem_cons.1 hm with rfl | hm
+    · exact ⟨c1, h1, (List.prefix_append c1 c2).isInfix⟩
+    · obtain ⟨c', h', hi⟩ := itemsCode_mem h2 hm
+      exact ⟨c', h', hi.trans (List.suffix_append c1 c2).isInfix⟩
+
+/-- **The code of a checked item list that is not empty is not empty** (its last item is an
+`op` of the block's terminator). -/
+theorem itemsCode_ne_nil {vc : VCode} {ss ps : Array (Array Nat)} (hcfg : vc.cfg = .ok (ss, ps))
+    {b : Nat} {vb : VBlock} (hvb : vc.blocks[b]? = some vb) {cc : CheckCtx} {k : Nat}
+    {a out : AState} {its : List RItem} (hrun : cc.runItems vb k its a = .ok out) (hne : its ≠ [])
+    {fr : RAFrame} {c : List AInst} (hc : itemsCode fr vb its = .ok c) : c ≠ [] := by
+  obtain ⟨allocs, hm⟩ := runItems_last hrun hne
+  obtain ⟨t, hback, hterm⟩ := cfg_back hcfg hvb
+  obtain ⟨c1, hc1, hsub⟩ := itemsCode_mem hc hm
+  obtain ⟨regs, i, i', -, hi, hasg, hcase⟩ := itemCode_op hc1
+  rw [Array.back?_eq_getElem?, hi] at hback
+  cases hback
+  intro hcn
+  subst hcn
+  have h0 : c1 = [] := List.infix_nil.mp hsub
+  rcases hcase with ⟨rfl, -⟩ | ⟨ds, rfl, -⟩ | ⟨us, -, rfl⟩
+  · cases h0
+  · obtain ⟨ds', rfl⟩ := (assign_shape hasg).2 ⟨ds, rfl⟩
+    simp [MInst.isTerminator, MInst.isBranch, MInst.isRet] at hterm
+  · cases h0
 
 end Backend.Proof

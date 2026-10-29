@@ -262,27 +262,159 @@ theorem trap_udf_line {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {alloc
     (hq : Q R s (.run ⟨b, .op k allocs :: its, m, w⟩)) {vb : VBlock} {code : Clif.TrapCode}
     (hvb : R.vc.blocks[b]? = some vb) (hi : vb.insts[k]? = some (.udf code)) :
     TrapAt R.fb R.base code s ∧ UdfLine R.fa R.base s := by
-  obtain ⟨j0, items, pre, regs, i', c1, c2, ls1, ls2, ps1, psm, ps2, T, cc, wh, ops, rfl, hit, hsplit,
-    hasg, hc1', hops, hstat, hchk', hc2, h1, h2, htr, hdrop, hpc, hst⟩ := q_op hq hvb hi
-  obtain ⟨rfl, rfl⟩ := assign_none (fun f => rfl) hasg
-  obtain rfl : c1 = [.inst (.udf code)] := by
-    rcases hc1' with ⟨h, -, -⟩ | ⟨_, h, -⟩ | ⟨_, h, -⟩
-    · exact h
-    · cases h
-    · cases h
-  have hl1 := codeLinesE_single h1
-  simp only [MInst.lines, pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at hl1
-  obtain ⟨rfl, -⟩ := hl1
-  have hZ : ∀ n, (ls2 ++ nxtOf R.af b)[1]? ≠ some (.label (.trap n)) := by
-    intro n e
-    have hm := List.mem_of_getElem? e
-    rcases List.mem_append.1 hm with hm | hm
-    · exact codeLinesE_noTrap _ _ _ _ h2 _ hm n rfl
-    · simp only [nxtOf] at hm
-      split at hm <;> simp at hm
-  rw [ftR_plain_append _ _ _ (by simp [Line.plain]) hZ] at hdrop
-  have hj := drop_get (Z := []) (by simpa using hdrop)
-  exact ⟨trapAt_line hR hj hpc hst.err, _, _, hj, hpc⟩
+  rcases Q.cases hq with hqs | ⟨vbf, allocsf, regsf, if_, xf, bx, hvbf, he, hits, half, hins,
+    hasgf, hsuccf, itx, hitx, hqx⟩
+  rotate_left
+  · -- a forwarding block: its `jump` takes no machine step, but a `udf`'s assigned form
+    -- is no `jump`
+    rw [hvb] at hvbf
+    cases hvbf
+    simp only [RItem.op.injEq] at he
+    obtain ⟨rfl, rfl⟩ := he
+    subst hits
+    have hi1 := hi
+    rw [hins] at hi1
+    simp only [List.getElem?_toArray, List.getElem?_cons_zero, Option.some.injEq] at hi1
+    subst hi1
+    have htg := (assign_shape hasgf).1
+    simp [MInst.targets] at htg
+  rcases Nat.lt_or_ge (k + 1) vb.insts.size with hkl | hkge
+  · -- not the block's last instruction
+    obtain ⟨j0, items, pre, regs, i', c1, c2, X', ls1, ps1, psm, psm', ps2, x, cc, wh, ops',
+      -, -, -, hasg, hc1', -, -, -, -, h1, -, -, htr, hdrop, hpc, hst, -, -⟩ :=
+      q_op hR hq hvb hi hkl
+    obtain ⟨rfl, rfl⟩ := assign_none (fun f => rfl) hasg
+    obtain rfl : c1 = [.inst (.udf code)] := by
+      rcases hc1' with ⟨h, -, -⟩ | ⟨_, h, -⟩ | ⟨_, h, -⟩
+      · exact h
+      · cases h
+      · cases h
+    have hl1 := codeLinesE_single h1
+    simp only [MInst.lines, pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at hl1
+    obtain ⟨rfl, -⟩ := hl1
+    have hdrop2 : R.L.drop j0 = .ins (.udf 0xc11f) (some code) ::
+        (relaxLines R.far (X' ++ x.2.1) ++
+          R.L.drop (rix R.far (planLines R.fa.k R.af) x.2.2)) := by
+      rw [hdrop, relaxLines_cons, relaxLines_nil,
+        relaxLine_of_none (by simp [Line.relaxable?, Insn.relaxTarget?])]
+      simp
+    have hj : R.L[j0]? = some (.ins (.udf 0xc11f) (some code)) := drop_get hdrop2
+    exact ⟨trapAt_line hR hj hpc hst.err, _, _, hj, hpc⟩
+  · -- the block's last instruction
+    have hk1 : k + 1 = vb.insts.size := by
+      have hks : k < vb.insts.size := (Array.getElem?_eq_some_iff.1 hi).1
+      omega
+    obtain ⟨_, vb0, _, _, code0, _, _, _, _, _, hvb0, -, -, hchk0, hcode, -⟩ := id hqs
+    rw [hvb] at hvb0; cases hvb0
+    obtain rfl : its = [] := hchk0.tail_nil hk1
+    obtain ⟨j0, vb0, items, pre, c1, X, ps1, psm, ps2, x, hvb0, hit, hsplit, hchk, hc1, hX, hT,
+      htr, hdrop, hpc, hst, hterm⟩ := qs_term hR hqs
+    rw [hvb] at hvb0; cases hvb0
+    obtain ⟨regs, i0, i', rfl, hi0, hasg, hc1'⟩ := itemCode_op hc1
+    rw [hi] at hi0; cases hi0
+    obtain ⟨rfl, rfl⟩ := assign_none (fun f => rfl) hasg
+    obtain rfl : c1 = [.inst (.udf code)] := by
+      rcases hc1' with ⟨h, -, -⟩ | ⟨_, h, -⟩ | ⟨_, h, -⟩
+      · exact h
+      · cases h
+      · cases h
+    have hX' : codeLinesE R.ctx R.af [] ps1 = .ok (X, psm) := by
+      simpa [List.dropLast_singleton] using hX
+    have hXe : codeLinesE R.ctx R.af [] ps1 = .ok ([], ps1) := by simp [codeLinesE]
+    rw [hXe] at hX'
+    simp only [Except.ok.injEq, Prod.mk.injEq] at hX'
+    obtain ⟨hX0, hpsm0⟩ := hX'
+    subst hX0
+    subst hpsm0
+    have hT' : codeLinesE R.ctx R.af [.inst (.udf code)] ps1 = .ok (x.1.term, ps2) := by
+      simpa using hT
+    have hl1 := codeLinesE_single hT'
+    simp only [MInst.lines, pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at hl1
+    obtain ⟨hxe, -⟩ := hl1
+    have hxterm : x.1.term = [.ins (.udf 0xc11f) (some code)] := by
+      first | exact hxe.symm | exact hxe
+    -- the emitted line: the `udf` line is kept (`LineOut`)
+    obtain ⟨hlenO, hLO⟩ := termOk_kept (by simp) (by simp) (by simp) (by simp) hterm
+    have hx21L : x.2.1.length = 1 := by rw [hlenO]; simp [hxterm]
+    obtain ⟨y, hy⟩ : ∃ y, x.2.1[0]? = some y := ⟨_, List.getElem?_eq_getElem (by omega)⟩
+    have hx21 : x.2.1 = [y] := by
+      cases h21 : x.2.1 with
+      | nil => rw [h21] at hx21L; simp at hx21L
+      | cons a as =>
+        have hAs : as = [] := by
+          rw [h21] at hx21L
+          rw [List.length_cons] at hx21L
+          exact List.eq_nil_of_length_eq_zero (by omega)
+        rw [h21, hAs] at hy
+        simp only [List.getElem?_cons_zero, Option.some.injEq] at hy
+        rw [hAs, hy]
+    have hx0 : x.1.term[0]? = some (.ins (.udf 0xc11f) (some code)) := by
+      rw [hxterm]; simp
+    rcases hLO 0 _ _ hx0 hy with ⟨hyl, -⟩ | ⟨lb, l2, hxt, -, -, -⟩
+    · subst hyl
+      have hdrop2 : R.L.drop j0 = .ins (.udf 0xc11f) (some code) :: ([] ++
+          R.L.drop (rix R.far (planLines R.fa.k R.af) x.2.2)) := by
+        rw [hdrop, List.nil_append, hx21, relaxLines_cons, relaxLines_nil,
+          relaxLine_of_none (by simp [Line.relaxable?, Insn.relaxTarget?])]
+        simp
+      have hj : R.L[j0]? = some (.ins (.udf 0xc11f) (some code)) := drop_get hdrop2
+      exact ⟨trapAt_line hR hj hpc hst.err, _, _, hj, hpc⟩
+    · simp [Line.target?] at hxt
+
+/-- `trapIf_reach` with the trap site's `udf` line. -/
+private theorem trapIf_reach_line {R : RL} (hR : R.Wf) {s : Arm.ArmState} {m : Loc → CV}
+    {w : Arm.ArmState} {kk k' : CondBrKind} {code : Clif.TrapCode} {n j0 : Nat} {T : List Line}
+    {us : List CV} (hst : StRel R s m w) (hkr : KindRel m kk k' us)
+    (hholds : kk.holds us w = true)
+    (hdrop : R.L.drop j0 = relaxLine R.far (.ins (k'.insn (.trap n)) none) ++ T)
+    (hpc : Arm.r .PC s = R.pcOf j0)
+    (hn : R.psF.traps[n]? = some (.trap n, code)) :
+    ∃ nst, TrapAt R.fb R.base code (iterN R.step nst s) ∧ UdfLine R.fa R.base (iterN R.step nst s) ∧
+      ∀ i < nst, R.GoodX (iterN R.step i s) := by
+  have hbc : (∃ c, k'.insn (.trap n) = .bcond c (.trap n)) ∨
+      (∃ nz wv r, k'.insn (.trap n) = .cbz nz wv r (.trap n)) ∨
+      (∃ nz r bit, k'.insn (.trap n) = .tbz nz r bit (.trap n)) := by
+    cases k' <;> simp [CondBrKind.insn]
+  obtain ⟨nst, jl, hnst, hjt, -, -, -, hgx⟩ := reach_rcbX hR hdrop hbc (by simp) true
+    (fun env a ha => by rw [kind_brCond hst hkr _ ha, hholds])
+    (fun hct env a ha => by rw [kind_brCond_inv hst hkr _ _ hct ha, hholds])
+    (by rw [hst.prog]) hpc hst.err hst.sp
+  have hjl := hjt rfl
+  -- the final lines: the body's segments' relaxation and the trap section
+  obtain ⟨p, hp, hL0, -⟩ := emit_seg hR.emit
+  obtain ⟨p2, hplan, hps⟩ := hR.psF
+  rw [hplan] at hp
+  simp only [Except.ok.injEq] at hp
+  subst hp
+  have hL : R.L = relaxLines R.far (segLines p2.segs p2.outs) ++ trapLines R.psF := by
+    show R.fa.lines.toList = _
+    rw [hL0, show (emitFar ⟨R.fa.k, R.af.slotBase⟩ R.af) = R.far from rfl, Plan.lines,
+      relaxLines_append, relaxLines_trapLines, hps]
+  obtain ⟨hlab, hudf⟩ := trapLines_get R.psF n (.trap n, code) hn
+  have hlab' : R.L[(relaxLines R.far (segLines p2.segs p2.outs)).length + 2 * n]? =
+      some (.label (.trap n)) := by
+    rw [hL, List.getElem?_append_right (by omega)]
+    simpa using hlab
+  have hudf' : R.L[(relaxLines R.far (segLines p2.segs p2.outs)).length + 2 * n + 1]? =
+      some (.ins (.udf 0xc11f) (some code)) := by
+    rw [hL, List.getElem?_append_right (by omega)]
+    simpa [Nat.add_assoc] using hudf
+  -- the branch reaches the label's offset, which is the trap site's
+  have hoff : R.pcOf jl = R.pcOf ((relaxLines R.far (segLines p2.segs p2.outs)).length + 2 * n + 1) := by
+    have e1 := labelOffsets_label hR.lm hjl
+    have e2 := labelOffsets_label hR.lm hlab'
+    simp only [RL.pcOf]
+    rw [lineOffset_succ _ _ _ hlab']
+    simp only [RL.L] at e1 e2 ⊢
+    rw [e1] at e2
+    simp only [Option.some.injEq] at e2
+    rw [e2]; simp [Line.size]
+  have hpcF : Arm.r .PC (iterN R.step nst s) =
+      R.pcOf ((relaxLines R.far (segLines p2.segs p2.outs)).length + 2 * n + 1) := by
+    rw [hnst, Arm.r_of_w_same, hoff]
+  have herrF : Arm.r .ERR (iterN R.step nst s) = .None := by
+    rw [hnst, Arm.r_of_w_different (by simp)]; exact hst.err
+  exact ⟨nst, trapAt_line hR hudf' hpcF herrF, ⟨_, _, hudf', hpcF⟩, hgx⟩
 
 /-- `trap_trapIf` with the trap site's `udf` line. -/
 theorem trap_trapIf_line {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {allocs : Array Loc}
@@ -295,84 +427,143 @@ theorem trap_trapIf_line {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {al
     ∃ n, TrapAt R.fb R.base code (iterN R.step n s) ∧ UdfLine R.fa R.base (iterN R.step n s) ∧
       ∀ i < n, R.GoodX (iterN R.step i s) := by
   have hck := (lowerRFunc_ok hR.alloc).2.2
-  obtain ⟨j0, items, pre, regs, i', c1, c2, ls1, ls2, ps1, psm, ps2, T, cc, wh, ops', rfl, hit, hsplit,
-    hasg, hc1', hops', hstat, hchk', hc2, h1, h2, htr, hdrop, hpc, hst⟩ := q_op hq hvb hi
-  rw [hops] at hops'; cases hops'
-  have hkk : ∀ r sz, kk = .zero r sz ∨ kk = .notZero r sz → r.isVregInt = true := by
-    intro r sz hr
-    have := ctlCheck_inst hck hvb hi
-    rcases hr with rfl | rfl <;> simpa [ctlInstOk] using this
-  obtain ⟨k', rfl, hkr⟩ := kind_alloc hkk (mk := fun k => MInst.trapIf k code) rfl
-    (fun f => rfl) (fun f => rfl) hops hstat hasg m
-  obtain rfl : c1 = [.inst (.trapIf k' code)] := by
-    rcases hc1' with ⟨h, -, -⟩ | ⟨_, h, -⟩ | ⟨_, h, -⟩
-    · exact h
-    · cases h
-    · cases h
-  have hl1 := codeLinesE_single h1
-  simp only [MInst.lines, pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at hl1
-  obtain ⟨rfl, hpsm⟩ := hl1
-  -- the branch (relaxed or not) to the trap label is taken
-  have hZ : ∀ n, (ls2 ++ nxtOf R.af b)[1]? ≠ some (.label (.trap n)) := by
-    intro n e
-    have hm := List.mem_of_getElem? e
-    rcases List.mem_append.1 hm with hm | hm
-    · exact codeLinesE_noTrap _ _ _ _ h2 _ hm n rfl
-    · simp only [nxtOf] at hm
-      split at hm <;> simp at hm
-  have hdrop' : R.L.drop j0 = relaxLine R.far (.ins (k'.insn (.trap ps1.traps.size)) none) ++
-      (relaxLines R.far (ftList (ls2 ++ nxtOf R.af b)) ++ T) := by
-    rw [hdrop, List.singleton_append, ftList_kind_trap k' ps1.traps.size _ hZ, relaxLines_cons,
-      List.append_assoc]
-  have hform : (∃ c, k'.insn (.trap ps1.traps.size) = .bcond c (.trap ps1.traps.size)) ∨
-      (∃ nz w r, k'.insn (.trap ps1.traps.size) = .cbz nz w r (.trap ps1.traps.size)) ∨
-      (∃ nz r bit, k'.insn (.trap ps1.traps.size) = .tbz nz r bit (.trap ps1.traps.size)) := by
-    cases k' <;> simp [CondBrKind.insn]
-  obtain ⟨nst, jl, hnst, hjt, -, -, -, hgx⟩ := reach_rcbX hR hdrop' hform (by simp) true
-    (fun env a ha => by rw [kind_brCond hst hkr _ ha, hholds])
-    (fun hct env a ha => by rw [kind_brCond_inv hst hkr _ _ hct ha, hholds])
-    (by rw [hst.prog]) hpc hst.err hst.sp
-  have hjl := hjt rfl
-  -- the trap section entry of this trap
-  have hpre : psm.traps.toList <+: R.psF.traps.toList :=
-    (codeLinesE_traps h2).trans htr
-  have hn : R.psF.traps.toList[ps1.traps.size]? = some (.trap ps1.traps.size, code) := by
-    obtain ⟨t, ht⟩ := hpre
-    rw [← ht, ← hpsm]
-    simp
-  obtain ⟨body, psF', hb, hL, -⟩ := emit_block hR.emit
-  rw [relaxLines_append, relaxLines_trapLines,
-    show emitFar ⟨R.fa.k, R.af.slotBase⟩ R.af = R.far from rfl] at hL
-  obtain ⟨body', hb'⟩ := hR.psF
-  have hk : R.ctx = ⟨R.fa.k, R.af.slotBase⟩ := rfl
-  rw [hk, hb] at hb'
-  simp only [Except.ok.injEq, Prod.mk.injEq] at hb'
-  obtain ⟨-, rfl⟩ := hb'
-  obtain ⟨hlab, hudf⟩ := trapLines_get _ _ _ hn
-  have hlab' : R.L[(relaxLines R.far (ftList body)).length + 2 * ps1.traps.size]? = some (.label (.trap ps1.traps.size)) := by
-    simp only [RL.L, hL]; rw [List.getElem?_append_right (by omega)]; simpa using hlab
-  have hudf' : R.L[(relaxLines R.far (ftList body)).length + 2 * ps1.traps.size + 1]? =
-      some (.ins (.udf 0xc11f) (some code)) := by
-    simp only [RL.L, hL]; rw [List.getElem?_append_right (by omega)]
-    simpa [Nat.add_assoc] using hudf
-  -- the branch reaches the label's offset, which is the trap site's
-  have hoff : R.pcOf jl = R.pcOf ((relaxLines R.far (ftList body)).length + 2 * ps1.traps.size + 1) := by
-    have e1 := labelOffsets_label hR.lm hjl
-    have e2 := labelOffsets_label hR.lm hlab'
-    simp only [RL.pcOf]
-    rw [lineOffset_succ _ _ _ hlab']
-    simp only [RL.L] at e1 e2 ⊢
-    rw [e1] at e2
-    simp only [Option.some.injEq] at e2
-    rw [e2]; simp [Line.size]
-  have hpcF : Arm.r .PC (iterN R.step nst s) =
-      R.pcOf ((relaxLines R.far (ftList body)).length + 2 * ps1.traps.size + 1) := by
-    rw [hnst, Arm.r_of_w_same, hoff]
-  have herrF : Arm.r .ERR (iterN R.step nst s) = .None := by
-    rw [hnst, Arm.r_of_w_different (by simp)]; exact hst.err
-  exact ⟨nst, trapAt_line hR hudf' hpcF herrF, ⟨_, _, hudf', hpcF⟩, hgx⟩
+  rcases Q.cases hq with hqs | ⟨vbf, allocsf, regsf, if_, xf, bx, hvbf, he, hits, half, hins,
+    hasgf, hsuccf, itx, hitx, hqx⟩
+  rotate_left
+  · -- a forwarding block: its `jump` takes no machine step, but a `trapIf`'s assigned form
+    -- is no `jump`
+    rw [hvb] at hvbf
+    cases hvbf
+    simp only [RItem.op.injEq] at he
+    obtain ⟨rfl, rfl⟩ := he
+    subst hits
+    have hi1 := hi
+    rw [hins] at hi1
+    simp only [List.getElem?_toArray, List.getElem?_cons_zero, Option.some.injEq] at hi1
+    subst hi1
+    have htg := (assign_shape hasgf).1
+    simp [MInst.targets] at htg
+  rcases Nat.lt_or_ge (k + 1) vb.insts.size with hkl | hkge
+  · -- not the block's last instruction
+    obtain ⟨j0, items, pre, regs, i', c1, c2, X', ls1, ps1, psm, psm', ps2, x, cc, wh, ops'',
+      rfl, -, -, hasg, hc1', hops', hstat, -, -, h1, hX2, hT2, htr, hdrop, hpc, hst, -, -⟩ :=
+      q_op hR hq hvb hi hkl
+    rw [hops] at hops'; cases hops'
+    have hkk : ∀ r sz, kk = .zero r sz ∨ kk = .notZero r sz → r.isVregInt = true := by
+      intro r sz hr
+      have := ctlCheck_inst hck hvb hi
+      rcases hr with rfl | rfl <;> simpa [ctlInstOk] using this
+    obtain ⟨k', rfl, hkr⟩ := kind_alloc hkk (mk := fun k => MInst.trapIf k code) rfl
+      (fun f => rfl) (fun f => rfl) hops hstat hasg m
+    obtain rfl : c1 = [.inst (.trapIf k' code)] := by
+      rcases hc1' with ⟨h, -, -⟩ | ⟨_, h, -⟩ | ⟨_, h, -⟩
+      · exact h
+      · cases h
+      · cases h
+    have hl1 := codeLinesE_single h1
+    simp only [MInst.lines, pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at hl1
+    obtain ⟨rfl, hpsm⟩ := hl1
+    have hdrop' : R.L.drop j0 = relaxLine R.far (.ins (k'.insn (.trap ps1.traps.size)) none) ++
+        (relaxLines R.far (X' ++ x.2.1) ++ R.L.drop (rix R.far (planLines R.fa.k R.af) x.2.2)) := by
+      rw [hdrop, relaxLines_cons, relaxLines_nil, List.append_assoc, List.nil_append]
+    have hpre : psm.traps.toList <+: R.psF.traps.toList :=
+      (codeLinesE_traps hX2).trans ((codeLinesE_traps hT2).trans htr)
+    have hnL : R.psF.traps.toList[ps1.traps.size]? = some (.trap ps1.traps.size, code) := by
+      obtain ⟨t, ht⟩ := hpre
+      rw [← ht, ← hpsm]
+      simp
+    have hn : R.psF.traps[ps1.traps.size]? = some (.trap ps1.traps.size, code) := by
+      simpa using hnL
+    exact trapIf_reach_line hR hst hkr hholds hdrop' hpc hn
+  · -- the block's last instruction
+    have hk1 : k + 1 = vb.insts.size := by
+      have hks : k < vb.insts.size := (Array.getElem?_eq_some_iff.1 hi).1
+      omega
+    obtain ⟨_, vb0, _, _, code0, _, _, _, _, _, hvb0, -, -, hchk0, hcode, -⟩ := id hqs
+    rw [hvb] at hvb0; cases hvb0
+    obtain rfl : its = [] := hchk0.tail_nil hk1
+    obtain ⟨j0, vb0, items, pre, c1, X, ps1, psm, ps2, x, hvb0, hit, hsplit, hchk, hc1, hX, hT,
+      htr, hdrop, hpc, hst, hterm⟩ := qs_term hR hqs
+    rw [hvb] at hvb0; cases hvb0
+    obtain ⟨regs, i0, i', rfl, hi0, hasg, hc1'⟩ := itemCode_op hc1
+    rw [hi] at hi0; cases hi0
+    obtain ⟨cc, wh, i2, ops2, hi2, hops2, hstat, -⟩ := op_checked hchk
+    rw [hi] at hi2; cases hi2
+    rw [hops] at hops2; cases hops2
+    have hkk : ∀ r sz, kk = .zero r sz ∨ kk = .notZero r sz → r.isVregInt = true := by
+      intro r sz hr
+      have := ctlCheck_inst hck hvb hi
+      rcases hr with rfl | rfl <;> simpa [ctlInstOk] using this
+    obtain ⟨k', rfl, hkr⟩ := kind_alloc hkk (mk := fun k => MInst.trapIf k code) rfl
+      (fun f => rfl) (fun f => rfl) hops hstat hasg m
+    obtain rfl : c1 = [.inst (.trapIf k' code)] := by
+      rcases hc1' with ⟨h, -, -⟩ | ⟨_, h, -⟩ | ⟨_, h, -⟩
+      · exact h
+      · cases h
+      · cases h
+    have hX' : codeLinesE R.ctx R.af [] ps1 = .ok (X, psm) := by
+      simpa [List.dropLast_singleton] using hX
+    have hXe : codeLinesE R.ctx R.af [] ps1 = .ok ([], ps1) := by simp [codeLinesE]
+    rw [hXe] at hX'
+    simp only [Except.ok.injEq, Prod.mk.injEq] at hX'
+    obtain ⟨hX0, hpsm0⟩ := hX'
+    subst hX0
+    subst hpsm0
+    have hT' : codeLinesE R.ctx R.af [.inst (.trapIf k' code)] ps1 = .ok (x.1.term, ps2) := by
+      simpa using hT
+    have hl1 := codeLinesE_single hT'
+    simp only [MInst.lines, pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at hl1
+    obtain ⟨hxe, hpsm⟩ := hl1
+    have hxterm : x.1.term = [.ins (k'.insn (.trap ps1.traps.size)) none] := by
+      first | exact hxe.symm | exact hxe
+    -- the emitted `trapIf` line is kept (its target is the trap label, no block label)
+    obtain ⟨hlenO, hLO⟩ := termOk_kept (by simp) (by simp) (by simp) (by simp) hterm
+    have hx21L : x.2.1.length = 1 := by rw [hlenO]; simp [hxterm]
+    obtain ⟨y, hy⟩ : ∃ y, x.2.1[0]? = some y := ⟨_, List.getElem?_eq_getElem (by omega)⟩
+    have hx21 : x.2.1 = [y] := by
+      cases h21 : x.2.1 with
+      | nil => rw [h21] at hx21L; simp at hx21L
+      | cons a as =>
+        have hAs : as = [] := by
+          rw [h21] at hx21L
+          rw [List.length_cons] at hx21L
+          exact List.eq_nil_of_length_eq_zero (by omega)
+        rw [h21, hAs] at hy
+        simp only [List.getElem?_cons_zero, Option.some.injEq] at hy
+        rw [hAs, hy]
+    have hx0 : x.1.term[0]? = some (.ins (k'.insn (.trap ps1.traps.size)) none) := by
+      rw [hxterm]; simp
+    rcases hLO 0 _ _ hx0 hy with ⟨hyl, -⟩ | ⟨lb, l2, hxt, -, -, -⟩
+    · subst hyl
+      have hdrop' : R.L.drop j0 = relaxLine R.far (.ins (k'.insn (.trap ps1.traps.size)) none) ++
+          R.L.drop (rix R.far (planLines R.fa.k R.af) x.2.2) := by
+        rw [hdrop, List.nil_append, hx21, relaxLines_cons, relaxLines_nil, List.append_assoc,
+          List.nil_append]
+      have hpre : ps2.traps.toList <+: R.psF.traps.toList := htr
+      have hnL : R.psF.traps.toList[ps1.traps.size]? = some (.trap ps1.traps.size, code) := by
+        obtain ⟨t, ht⟩ := hpre
+        rw [← ht, ← hpsm]
+        simp
+      have hn : R.psF.traps[ps1.traps.size]? = some (.trap ps1.traps.size, code) := by
+        simpa using hnL
+      exact trapIf_reach_line hR hst hkr hholds hdrop' hpc hn
+    · cases k' <;> simp [Line.target?, CondBrKind.insn] at hxt
 
 /-! ## The trapping loops on the machine -/
+
+/-- An instruction that is no terminator is not its block's last (`cfg_back`). -/
+private theorem k_lt_of_notTerm {R : RL} (hR : R.Wf) {b k : Nat} {vb : VBlock} {i : MInst}
+    (hvb : R.vc.blocks[b]? = some vb) (hi : vb.insts[k]? = some i)
+    (ht : i.isTerminator = false) : k + 1 < vb.insts.size := by
+  obtain ⟨c, ins, _, hc, -⟩ := hR.check
+  obtain ⟨preds, hcfg⟩ := hc.cfg
+  obtain ⟨t, hb, htt⟩ := cfg_back hcfg hvb
+  have hks := (Array.getElem?_eq_some_iff.1 hi).1
+  refine Nat.lt_of_le_of_ne hks fun he => ?_
+  rw [Array.back?_eq_getElem?, ← he, Nat.add_sub_cancel, hi] at hb
+  cases hb
+  rw [ht] at htt
+  cases htt
 
 set_option maxHeartbeats 4000000 in
 /-- **`Q` at a trapping LL/SC loop item is at the loop's `ldaxr`**: the line after the loop's
@@ -407,8 +598,9 @@ theorem loop_ldaxr {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {allocs :
       obtain ⟨vd, rfl⟩ := isVregInt_iff h2
       obtain ⟨v1, rfl⟩ := isVregInt_iff h3
       obtain ⟨v2, rfl⟩ := isVregInt_iff h4
-      obtain ⟨j0, items, pre, regs, i', c1, c2, ls1, ls2, ps1, psm, ps2, T, cc, wh, ops, rfl, hit, hsplit,
-        hasg, hc1', hops, hstat, hchk', hc2, hl1, hl2, htr, hdrop, hpc, hst⟩ := q_op hq hvb hi
+      obtain ⟨j0, items, pre, regs, i', c1, c2, X', ls1, ps1, psm, psm', ps2, x, cc, wh, ops, rfl, hit, hsplit,
+        hasg, hc1', hops, hstat, hchk', hc2, hl1, hX2, hT2, htr, hdrop, hpc, hst, -, -⟩ :=
+        q_op hR hq hvb hi (k_lt_of_notTerm hR hvb hi rfl)
       have hops' : ops = #[⟨va, .int, .use, .early, .fixed (.x 25)⟩, ⟨vo, .int, .use, .early, .fixed (.x 26)⟩,
           ⟨vd, .int, .def, .late, .fixed (.x 27)⟩, ⟨v1, .int, .def, .late, .fixed (.x 24)⟩,
           ⟨v2, .int, .def, .late, .fixed (.x 28)⟩] := by
@@ -439,12 +631,30 @@ theorem loop_ldaxr {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {allocs :
       simp only [MInst.lines, bne_self_eq_false, Bool.or_false, Bool.and_false, Bool.false_eq_true,
         ite_false, pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at hl1'
       obtain ⟨rfl, rfl⟩ := hl1'
-      have hdrop' := ftList_rmw hR hty ⟨_, rfl⟩ hdrop
+      have hP : ∀ ln ∈ Line.label (.loop ps1.aloop) :: rmwLoopBody ty.bits op fl,
+          (∀ x t, ln ≠ .ins (.b x) t) ∧ ∀ c, ln = .ins c none → c.condTarget? = none := by
+        rcases hty with rfl | rfl | rfl | rfl <;> cases op <;>
+          simp (config := {decide := true}) [rmwLoopBody, rmwLoopMid, rmwLoopStored, rmwLoopSext,
+            rmwLoopCmp, CTy.bits, Insn.condTarget?]
+      have hloop : relaxLines R.far (rmwLoopLines ty.bits op fl (.loop ps1.aloop)) =
+          rmwLoopLines ty.bits op fl (.loop ps1.aloop) := by
+        refine relaxLines_loop (fun ln hln c hc => ?_)
+        rw [show rmwLoopLines ty.bits op fl (.loop ps1.aloop) = .label (.loop ps1.aloop) :: (rmwLoopBody ty.bits op fl ++
+            [.ins (.cbz true true (.x 24) (.loop ps1.aloop)) none]) from rfl] at hln
+        simp only [List.mem_cons, List.mem_append, List.mem_singleton, List.not_mem_nil, or_false] at hln
+        rcases hln with hln | hln | hln
+        · simp [hln] at hc
+        · exact .inl ((hP _ (by simp [hln])).2 c hc)
+        · subst hln
+          injection hc with h9 h10
+          subst h9
+          exact .inr ⟨_, rfl⟩
+      rw [hloop] at hdrop
       have hL0 : R.L[j0]? = some (.label (.loop ps1.aloop)) := by
-        have := congrArg (·[0]?) hdrop'
+        have := congrArg (·[0]?) hdrop
         simpa [List.getElem?_drop, rmwLoopLines] using this
       have hL1 : R.L[j0 + 1]? = some (.ins (.ldaxr ty.bits (.x 27) (.x 25)) fl.trapCode) := by
-        have := congrArg (·[1]?) hdrop'
+        have := congrArg (·[1]?) hdrop
         simpa [List.getElem?_drop, rmwLoopLines, rmwLoopBody] using this
       have hpc1 : Arm.r .PC s = R.pcOf (j0 + 1) := by rw [hpc, RL.pcOf_succ_label hL0]
       have hreg : ∀ r, r.allocatable = true → m (.reg r) = regVal s r := fun r hr =>
@@ -472,8 +682,9 @@ theorem loop_ldaxr {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {allocs :
       obtain ⟨vx, rfl⟩ := isVregInt_iff h2
       obtain ⟨vd, rfl⟩ := isVregInt_iff h3
       obtain ⟨v1, rfl⟩ := isVregInt_iff h4
-      obtain ⟨j0, items, pre, regs, i', c1, c2, ls1, ls2, ps1, psm, ps2, T, cc, wh, ops, rfl, hit, hsplit,
-        hasg, hc1', hops, hstat, hchk', hc2, hl1, hl2, htr, hdrop, hpc, hst⟩ := q_op hq hvb hi
+      obtain ⟨j0, items, pre, regs, i', c1, c2, X', ls1, ps1, psm, psm', ps2, x, cc, wh, ops, rfl, hit, hsplit,
+        hasg, hc1', hops, hstat, hchk', hc2, hl1, hX2, hT2, htr, hdrop, hpc, hst, -, -⟩ :=
+        q_op hR hq hvb hi (k_lt_of_notTerm hR hvb hi rfl)
       have hops' : ops = #[⟨va, .int, .use, .early, .fixed (.x 25)⟩, ⟨ve, .int, .use, .early, .fixed (.x 26)⟩,
           ⟨vx, .int, .use, .early, .fixed (.x 28)⟩, ⟨vd, .int, .def, .late, .fixed (.x 27)⟩,
           ⟨v1, .int, .def, .late, .fixed (.x 24)⟩] := by
@@ -505,11 +716,11 @@ theorem loop_ldaxr {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {allocs :
         ite_false, pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at hl1'
       obtain ⟨rfl, rfl⟩ := hl1'
       have hdrop' : R.L.drop j0 = casLoopLines ty.bits fl (.loop ps1.aloop) (.loop (ps1.aloop + 1)) ++
-          (relaxLines R.far (ftList (ls2 ++ nxtOf R.af b)) ++ T) := by
-        rw [hdrop, ftList_cas hty, relaxLines_append, relaxLines_loop (by
+          (relaxLines R.far (X' ++ x.2.1) ++ R.L.drop (rix R.far (planLines R.fa.k R.af) x.2.2)) := by
+        rw [hdrop, relaxLines_loop (by
           rcases hty with rfl | rfl | rfl | rfl <;>
             simp (config := {decide := true}) [casLoopLines, casLoopHead, casLoopCmp, Insn.condTarget?,
-              CTy.bits]), List.append_assoc]
+              CTy.bits])]
       have hat : ∀ q ln, (casLoopLines ty.bits fl (.loop ps1.aloop) (.loop (ps1.aloop + 1)))[q]? = some ln →
           R.L[j0 + q]? = some ln := by
         intro q ln hq
@@ -572,11 +783,11 @@ theorem regLevel_memtrap_world_value {vcp : VCode} {rf : RFunc} {af : AFunc} {fa
       ∃ n, TrapAtM mp fa fb base c (E2E.runX (ArmStepX X H fa) n s) ∧
         ∀ i < n, actGoodX vcp rf af fa fb base s X H K G gv (E2E.runX (ArmStepX X H fa) i s)) := by
   obtain ⟨lm, hlm⟩ := FnAsm.layout_labelOffsets hlayout
-  obtain ⟨body, psF, hb, -, hk⟩ := emitFunc_ok hemit
+  obtain ⟨p, hp, -, hk⟩ := emitFunc_ok hemit
   subst hk
-  let R : RL := ⟨vcp, rf, af, fa, fb, lm, base, s, X, H, psF, K, G, gv⟩
+  let R : RL := ⟨vcp, rf, af, fa, fb, lm, base, s, X, H, p.ps, K, G, gv⟩
   have hR : R.Wf := ⟨⟨cc, ins, a0, hcheck, hok⟩, halloc, hemit, hlayout, hlm, by show 4 * fb.words.size ≤ 2 ^ 64; have := hent.fits; omega, hres,
-    ⟨body, hb⟩, hent.program, hG⟩
+    ⟨p, hp, rfl⟩, hent.program, hG⟩
   obtain ⟨n0, ht0, hq0, hA0, -⟩ := q_init hR hent hbe
   have hRz0 := realizes_value_all hR hC hCT hTls hcov
   have hmk : ∀ (n1 n23 : Nat), (∀ i < n1 + n23, R.GoodX (iterN R.step i (iterN R.step n0 s))) →

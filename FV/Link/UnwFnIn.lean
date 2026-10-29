@@ -7,7 +7,7 @@ import FV.Link.DeadCleanupImage
 /-!
 # The per-function unwinding checks from the input and the remaining conditions (S10g, #404)
 
-`unwFnsB` (what `compileExeU` decides per compiled function) has six conjuncts. Four of them
+`unwFnsB` (what `compileExeU` decides per compiled function) has five conjuncts. Four of them
 follow from the input conditions and the code size, by the completeness theorems of
 `FV/Link/UnwTryIn.lean` and `FV/Link/UnwSavedIn.lean`:
 
@@ -16,11 +16,12 @@ follow from the input conditions and the code size, by the completeness theorems
 * `unwindRows`, `savedCheck`: Cranelift's prologue pushes the saved registers itself (#549), so
   they need only the code below 4 GiB (`unwindRows_complete_frame`, `savedCheck_pipe`).
 
-`unwCondsB R` collects what is left per function: the input condition `tryTablesB`, the two
-checks without a completeness proof yet (`unwCheck`, `lastCallsOk`, decided on the compiled
-code) and the code size. **`fnUnwB_of_pipe`**: on a function of
-`fnScopeB` whose cleanup pipeline succeeded, they give `fnUnwB`; **`unwFnsB_of_conds`**: on an
-input in `InScopeIn`, `unwCondsB` of the compiled functions gives `unwFnsB`.
+`unwCondsB R` collects what is left per function: the input condition `tryTablesB`, the check
+without a completeness proof yet (`unwCheck`, decided on the compiled code; `lastCallsOk` is no
+longer needed since #622) and the code size. **`fnUnwB_of_pipe`**: on
+a function of `fnScopeB` whose cleanup pipeline succeeded, they give `fnUnwB`;
+**`unwFnsB_of_conds`**: on an input in `InScopeIn`, `unwCondsB` of the compiled functions gives
+`unwFnsB`.
 -/
 
 namespace Link.EhCheck.Complete
@@ -31,7 +32,7 @@ open Backend Backend.Proof Backend.Proof.Driver E2E E2E.LinkCheck
 
 /-- **The per-function conditions left for `unwFnsB`** (see the module doc). -/
 def unwCondB (g : Clif.Function) (a : Art) : Bool :=
-  tryTablesB g && unwCheck g a.vc && lastCallsOk a.af a.fa &&
+  tryTablesB g && unwCheck g a.vc &&
     decide (4 * a.fb.words.size < 2 ^ 32)
 
 /-- `unwCondB` of every compiled function of `R`. -/
@@ -44,7 +45,7 @@ theorem fnUnwB_of_pipe {g : Clif.Function} {k : Nat} {base : BitVec 64} {o : Lea
     (hpipe : pipeCleanupT g k base o = .ok a) (hsc : fnScopeB g = true)
     (hc : unwCondB g a = true) : fnUnwB g a = true := by
   simp only [unwCondB, Bool.and_eq_true, decide_eq_true_eq] at hc
-  obtain ⟨⟨⟨ht, hu⟩, hlc⟩, hcode⟩ := hc
+  obtain ⟨⟨ht, hu⟩, hcode⟩ := hc
   obtain ⟨hl, hp, hrf, hlr, hem, hla, -, -⟩ := pipeCleanupT_spec hpipe
   obtain ⟨-, -, -, -, -, -, -, hd, hs, har, -⟩ := fnScope_parts hsc
   have hD := dominated_of hd
@@ -70,7 +71,7 @@ theorem fnUnwB_of_pipe {g : Clif.Function} {k : Nat} {base : BitVec 64} {o : Lea
   have hpads := padsNonzero_complete_input hD hS hA ht hl hp hlr hem hla hvb hit
   have hsaved : savedCheck a.vcp a.rf = true := by
     rw [hrf]; exact savedCheck_pipe hcfg' halloc
-  simp [fnUnwB, hu, hcs, hrows, hpads, hlc, hsaved, Except.toBool]
+  simp [fnUnwB, hu, hcs, hrows, hpads, hsaved, Except.toBool]
 
 /-- **`unwFnsB` from the input and the remaining conditions**: on an input in `InScopeIn`,
 `unwCondsB` of the compiled functions gives the per-function unwinding checks. -/

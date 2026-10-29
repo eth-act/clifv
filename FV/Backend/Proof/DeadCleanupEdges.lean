@@ -77,7 +77,7 @@ example : ∃ vc : VCode, ∃ a' : Nat → Nat,
   let vc : VCode := ⟨"cleanup_edge",
     #[⟨0, #[deadMvn, .jump 1], #[], #[.vreg 1 .int]⟩,
       ⟨1, #[.rets [(.vreg 0 .int, .x 0)]], #[.vreg 0 .int], #[]⟩],
-    #[.int, .int, .int], 0, 0, #[]⟩
+    #[.int, .int, .int], 0, 0, #[], #[]⟩
   have he : edgeEnv vc 0 1 (fun _ => (7 : Nat)) = some (fun _ => 7) := by
     simp [edgeEnv, vc, vregNum, List.mapM_cons, bind, Except.bind,
       pure, Except.pure, Except.toOption, Option.bind]

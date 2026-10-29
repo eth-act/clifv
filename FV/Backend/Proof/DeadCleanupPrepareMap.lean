@@ -469,7 +469,7 @@ example : ∃ vc : VCode,
     (preparedCleanup vc vc).blocks[0]!.insts.toList = [liveBic, liveReturn] ∧
     prepare (prune vc) = (prepare vc).map (preparedCleanup vc) := by
   let vc : VCode := ⟨"cleanup_prepared", #[⟨0, #[deadMvn, liveBic, liveReturn], #[], #[]⟩],
-    #[.int, .int, .int, .int], 0, 0, #[]⟩
+    #[.int, .int, .int, .int], 0, 0, #[], #[]⟩
   refine ⟨vc, ?_, prune_prepare vc⟩
   simp only [preparedCleanup, mapBlocks, vc, Array.map_singleton]
   simp [preparedCleanupBlock, eraseBlock, liveReturn, MInst.isTerminator, MInst.isBranch, MInst.isRet]

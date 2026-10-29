@@ -39,7 +39,7 @@ theorem thm_ofU (hL : L.Ok) (hU : L.OkU) [L.CrunOkX] (hκ : L.Budget κ) (hN : �
   obtain ⟨rows, hrows⟩ := hU.rows g hg
   obtain ⟨hlsda, hcie, hfde⟩ := Art.tables_eq hsites hrows
   have pipe := fun (htr : TrapsExplicitX (L.envOfX M g (spv w₀)) L.P.bare cs) =>
-    backend_correct_world_pipelineU (hL.subset g hg) hc (hU.lowerU g hg)
+    backend_correct_world_pipelineU_any (hL.subset g hg) hc (hU.lowerU g hg)
       (X := L.XU κ M g F) (XR := L.XRU κ M g F) (syms := L.syms)
       (env := L.envOfX M g (spv w₀)) (K := κ M g) (F := F) (c := spv w₀) (hL.covered g hg)
       (L.xCallsOkU hL hU hκ ih hg hWE.img hWE.room hWE.dead hWE.align)
@@ -48,7 +48,7 @@ theorem thm_ofU (hL : L.Ok) (hU : L.OkU) [L.CrunOkX] (hκ : L.Budget κ) (hN : �
       (L.xRaiseIndOkU hL hU hκ ih hg hWE.img hWE.room hWE.dead hWE.align)
       (fun d uses w hx => L.XU_excl hU.baseExcl d uses w hx)
       (fun n b hn => hL.symOk n b hn) rfl (T := (L.A g).tables) hsites hlsda hrows hcie hfde
-      (hU.pads g hg) (hU.last g hg) (hU.saved g hg) hWE.clif hWE.rel hWE.args htr fuel
+      (hU.pads g hg) (hU.saved g hg) hWE.clif hWE.rel hWE.args htr fuel
   have hAE : ∀ G ra s, L.MachEntry κ M g F G ra s w₀ →
       ActEntryU (L.A g).vcp (L.A g).rf (L.A g).af (L.A g).fa (L.A g).fb (κ M g) F G
         (L.XU κ M g F) (L.hooksU M) (L.XRU κ M g F) (L.UU M) (L.A g).base ra s w₀ :=

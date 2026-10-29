@@ -290,8 +290,8 @@ structure RL.Wf (R : RL) : Prop where
   lm : labelOffsets R.fa.lines = .ok R.lm
   fit : 4 * R.fb.words.size ≤ 2 ^ 64
   stack : StackAvail R.K R.af R.s0
-  /-- `psF` is the emitter's final state -/
-  psF : ∃ body, blocksLinesE R.ctx R.af R.af.blocks.toList {} = .ok (body, R.psF)
+  /-- `psF` is the emitter's final state (that of the emission plan) -/
+  psF : ∃ p, emitPlan R.fa.k R.af = .ok p ∧ p.ps = R.psF
   /-- the entry state holds the function's program -/
   prog0 : R.s0.program = R.fb.program R.base
   /-- the kept addresses are not in the frame or the callees' dead stack -/
@@ -653,5 +653,144 @@ theorem RL.good_execLines {R : RL} (hR : R.Wf) {ls : List Line} {j : Nat} {s s' 
   obtain ⟨hx, hx'⟩ := Insn.not_call_of_hooked (hhook x t (List.mem_of_getElem? hln))
   have hpcs' : Arm.r .PC (iterN R.step (i' + 1) s) = R.pcOf (j + i' + 1) := hpcs
   exact R.good_succ hR (j := j + i') hj hx hx' hpcs'
+
+/-- **`Qs` at an item with more items after it**, taken apart: the item's code `c1` and lines
+`ls1`, then the lines of the remaining items' code `c2` but its last instruction's (`X'`). -/
+theorem qs_split {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b : Nat} {it : RItem}
+    {its : List RItem} {m : Loc → CV} {w : Arm.ArmState} (hq : Qs R s b (it :: its) m w)
+    (hne : its ≠ []) :
+    ∃ j vb items pre c1 c2 ls1 X' ps1 psm psm' ps2 x,
+      R.vc.blocks[b]? = some vb ∧ R.rf.blocks[b]? = some items ∧
+      items.toList = pre ++ it :: its ∧ ItemsChecked R vb (it :: its) ∧
+      itemCode R.fr vb it = .ok c1 ∧ itemsCode R.fr vb its = .ok c2 ∧
+      codeLinesE R.ctx R.af c1 ps1 = .ok (ls1, psm) ∧
+      codeLinesE R.ctx R.af c2.dropLast psm = .ok (X', psm') ∧
+      codeLinesE R.ctx R.af c2.getLast?.toList psm' = .ok (x.1.term, ps2) ∧
+      ps2.traps.toList <+: R.psF.traps.toList ∧
+      R.L.drop j = relaxLines R.far ls1 ++ (relaxLines R.far (X' ++ x.2.1) ++
+        R.L.drop (rix R.far (planLines R.fa.k R.af) x.2.2)) ∧
+      Arm.r .PC s = R.pcOf j ∧ StRel R s m w ∧ segX R.fa.k R.af b = some x ∧
+      SegChecked R.fa.k R.af b := by
+  obtain ⟨j, vb, items, pre, code, X, ps1, psm', ps2, x, hvb, hit, hsplit, hchk, hcode, hX, hT,
+    htr, hdrop, hpc, hst, hx, hsc⟩ := hq
+  obtain ⟨c1, c2, hc1, hc2, rfl⟩ := itemsCode_cons hcode
+  have hc2ne : c2 ≠ [] := by
+    obtain ⟨cc, k, a, out, -, -, hrun⟩ := hchk
+    obtain ⟨c0, ins, _, hc0, -⟩ := hR.check
+    obtain ⟨preds, hcfg⟩ := hc0.cfg
+    have hrun' : ∃ k' a', cc.runItems vb k' its a' = .ok out := by
+      cases it with
+      | move src dst => exact ⟨_, _, (runItems_move hrun).2⟩
+      | op k1 al =>
+        obtain ⟨-, -, -, -, a', -, -, -, h⟩ := runItems_op hrun
+        exact ⟨_, _, h⟩
+    obtain ⟨k', a', hrun'⟩ := hrun'
+    exact itemsCode_ne_nil hcfg hvb hrun' hne hc2
+  rw [List.dropLast_append_of_ne_nil hc2ne] at hX
+  have hlast : (c1 ++ c2).getLast? = c2.getLast? := by
+    rw [List.getLast?_append, List.getLast?_eq_getLast hc2ne]
+    simp
+  rw [hlast] at hT
+  obtain ⟨ls1, X', psm, h1, h2, rfl⟩ := codeLinesE_append _ _ _ _ _ hX
+  refine ⟨j, vb, items, pre, c1, c2, ls1, X', ps1, psm, psm', ps2, x, hvb, hit, hsplit, hchk, hc1,
+    hc2, h1, h2, hT, htr, ?_, hpc, hst, hx, hsc⟩
+  rw [hdrop, List.append_assoc, relaxLines_append, List.append_assoc]
+
+/-- **`Qs` at the next item**, after the item's lines `ls1` ran. -/
+theorem qs_next {R : RL} {s : Arm.ArmState} {b : Nat} {it : RItem} {its : List RItem}
+    {m : Loc → CV} {w : Arm.ArmState} {vb : VBlock} {items : Array RItem} {pre : List RItem}
+    {c2 : List AInst} {ls1 X' : List Line} {psm psm' ps2 : PState} {x : Seg × List Line × Nat}
+    {j : Nat} (hvb : R.vc.blocks[b]? = some vb) (hit : R.rf.blocks[b]? = some items)
+    (hsplit : items.toList = pre ++ it :: its) (hchk : ItemsChecked R vb its)
+    (hc2 : itemsCode R.fr vb its = .ok c2)
+    (h2 : codeLinesE R.ctx R.af c2.dropLast psm = .ok (X', psm'))
+    (h3 : codeLinesE R.ctx R.af c2.getLast?.toList psm' = .ok (x.1.term, ps2))
+    (htr : ps2.traps.toList <+: R.psF.traps.toList)
+    (hdrop : R.L.drop j = relaxLines R.far ls1 ++ (relaxLines R.far (X' ++ x.2.1) ++
+        R.L.drop (rix R.far (planLines R.fa.k R.af) x.2.2)))
+    (hpc : Arm.r .PC s = R.pcOf (j + (relaxLines R.far ls1).length)) (hst : StRel R s m w)
+    (hx : segX R.fa.k R.af b = some x) (hsc : SegChecked R.fa.k R.af b) :
+    Q R s (.run ⟨b, its, m, w⟩) :=
+  .inl ⟨j + (relaxLines R.far ls1).length, vb, items, pre ++ [it], c2, X', psm, psm', ps2, x, hvb,
+    hit, by rw [hsplit]; simp, hchk, hc2, h2, h3, htr,
+    by rw [← List.drop_drop, hdrop, List.drop_left], hpc, hst, hx, hsc⟩
+
+theorem itemsCode_append {fr : RAFrame} {vb : VBlock} :
+    ∀ {A B : List RItem} {c : List AInst}, itemsCode fr vb (A ++ B) = .ok c →
+      ∃ ca cb, itemsCode fr vb A = .ok ca ∧ itemsCode fr vb B = .ok cb ∧ c = ca ++ cb
+  | [], B, c, h => ⟨[], c, rfl, h, rfl⟩
+  | it :: A, B, c, h => by
+    obtain ⟨c1, c2, h1, h2, rfl⟩ := itemsCode_cons h
+    obtain ⟨ca, cb, ha, hb, rfl⟩ := itemsCode_append h2
+    refine ⟨c1 ++ ca, cb, ?_, hb, by simp⟩
+    simp [itemsCode, h1, ha, bind, Except.bind, pure, Except.pure]
+
+/-- After an `op` of the block's last instruction no item is left. -/
+theorem ItemsChecked.tail_nil {R : RL} {vb : VBlock} {k : Nat} {allocs : Array Loc}
+    {its : List RItem} (h : ItemsChecked R vb (.op k allocs :: its)) (hk : k + 1 = vb.insts.size) :
+    its = [] := by
+  obtain ⟨c, k0, a, out, -, -, hrun⟩ := h
+  obtain ⟨-, rfl, _, _, _, _, _, _, h'⟩ := runItems_op hrun
+  cases its with
+  | nil => rfl
+  | cons it its =>
+    exfalso
+    cases it with
+    | move src dst => exact (runItems_move h').1 hk
+    | op k' al => exact (runItems_op h').1 hk
+
+/-- **`Qs` at the last item**, taken apart: its code `c1`, the lines of `c1` but its last
+instruction's (`X`), and the branch check's acceptance of the block's final lines for the last
+instruction (`termOk`). -/
+theorem qs_term {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b : Nat} {it : RItem} {m : Loc → CV}
+    {w : Arm.ArmState} (hq : Qs R s b [it] m w) :
+    ∃ j vb items pre c1 X ps1 psm ps2, ∃ x : Seg × List Line × Nat, R.vc.blocks[b]? = some vb ∧
+      R.rf.blocks[b]? = some items ∧ items.toList = pre ++ [it] ∧ ItemsChecked R vb [it] ∧
+      itemCode R.fr vb it = .ok c1 ∧ codeLinesE R.ctx R.af c1.dropLast ps1 = .ok (X, psm) ∧
+      codeLinesE R.ctx R.af c1.getLast?.toList psm = .ok (x.1.term, ps2) ∧
+      ps2.traps.toList <+: R.psF.traps.toList ∧
+      R.L.drop j = relaxLines R.far (X ++ x.2.1) ++
+        R.L.drop (rix R.far (planLines R.fa.k R.af) x.2.2) ∧
+      Arm.r .PC s = R.pcOf j ∧ StRel R s m w ∧
+      termOk (planRep R.fa.k R.af) (blockLabelIdx (planLines R.fa.k R.af)) c1.getLast? x.1.term
+        x.2.1 x.2.2 = true := by
+  obtain ⟨j, vb, items, pre, code, X, ps1, psm, ps2, x, hvb, hit, hsplit, hchk, hcode, hX, hT, htr,
+    hdrop, hpc, hst, hx, hsc⟩ := hq
+  obtain ⟨c1, c2, h1, h2, rfl⟩ := itemsCode_cons hcode
+  obtain rfl : c2 = [] := by simpa [itemsCode, pure, Except.pure] using h2.symm
+  rw [List.append_nil] at hX hT
+  refine ⟨j, vb, items, pre, c1, X, ps1, psm, ps2, x, hvb, hit, hsplit, hchk, h1, hX, hT, htr,
+    hdrop, hpc, hst, ?_⟩
+  -- `c1` is not empty
+  have hne : c1 ≠ [] := by
+    obtain ⟨cc, k, a, out, -, -, hrun⟩ := hchk
+    obtain ⟨c0, ins, _, hc0, -⟩ := hR.check
+    obtain ⟨preds, hcfg⟩ := hc0.cfg
+    have := itemsCode_ne_nil hcfg hvb hrun (by simp) hcode
+    simpa using this
+  obtain ⟨y, hy⟩ : ∃ y, c1.getLast? = some y := ⟨_, List.getLast?_eq_getLast hne⟩
+  -- the branch check of the block's segment
+  obtain ⟨x', hx', hok⟩ := hsc
+  rw [hx] at hx'
+  cases hx'
+  obtain ⟨p, hp, -⟩ := hR.psF
+  obtain ⟨-, hidx⟩ := segX_mem hp hx
+  unfold segTermOk at hok
+  rw [hidx] at hok
+  obtain ⟨⟨-, -, -, hbl⟩, -⟩ := lowerRFunc_ok hR.alloc
+  obtain ⟨codeF, hcF, haf⟩ := hbl b vb items hvb hit
+  rw [hsplit] at hcF
+  obtain ⟨ca, cb, -, hcb, rfl⟩ := itemsCode_append hcF
+  change itemsCode R.fr vb [it] = .ok cb at hcb
+  rw [hcode, List.append_nil] at hcb
+  cases hcb
+  rw [haf] at hok
+  rw [hy]
+  have hb : (((if b = 0 then [AInst.prologue] else []) ++ (ca ++ c1)).toArray).back? = some y := by
+    rw [Array.back?_eq_getElem?]
+    simp only [List.size_toArray, List.getElem?_toArray]
+    rw [← List.getLast?_eq_getElem?, ← List.append_assoc, List.getLast?_append, hy]
+    rfl
+  simpa [hb] using hok
 
 end Backend.Proof

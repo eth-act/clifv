@@ -491,7 +491,7 @@ def lowerRFunc (vc : VCode) (rf : RFunc) : Except String AFunc := do
   -- so the register-level proof needs no per-instruction fact that the body keeps x30
   -- (`docs/contracts/regalloc-proof.md`, M6Ctl2).
   pure { name := vc.name, frameSize := fr.total, blocks, slotBase := fr.size, frame := true,
-         saves := rf.saved }
+         saves := rf.saved, cold := vc.blocks.map vc.coldOf }
 
 /-- The allocation the backend lowers: regalloc2's (`ra`) if `checkAlloc` accepts it and
 `lowerRFunc` lowers it, else the spill allocation, which `lowerRFunc` lowers for every in-scope

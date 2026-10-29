@@ -33,7 +33,7 @@ example : ∃ vc : VCode, (∃ ss ps, vc.cfg = .ok (ss, ps)) ∧
     (preparedCleanup vc vc).blocks[0]!.insts.toList = [liveBic, liveReturn] ∧
     spillWordBound (preparedCleanup vc vc) ≤ spillWordBound vc := by
   let vb : VBlock := ⟨0, #[deadMvn, liveBic, liveReturn], #[], #[]⟩
-  let vc : VCode := ⟨"cleanup_size", #[vb], #[.int, .int, .int, .int], 0, 0, #[]⟩
+  let vc : VCode := ⟨"cleanup_size", #[vb], #[.int, .int, .int, .int], 0, 0, #[], #[]⟩
   obtain ⟨ss, ps, hc⟩ : ∃ ss ps, vc.cfg = .ok (ss, ps) := cfg_of (by
     intro i b hi
     have hn := (Array.getElem?_eq_some_iff.mp hi).1

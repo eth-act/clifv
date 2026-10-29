@@ -1340,7 +1340,20 @@ structure VCode where
   outgoing : Nat
   /-- Rules fired, in firing order (Cranelift `trace-log` order). -/
   rulesFired : Array RuleId
+  /-- Cranelift's effective coldness (`ir/function.rs` `is_effectively_cold`: a `cold` block or
+  one ending in `trap`) of the blocks the lowering creates, by label; an edge block inherits it
+  from its successor (`blockorder.rs:282-288`). `prepare`'s edge blocks are not listed:
+  `coldOf` gives them their successor's. -/
+  cold : Array Bool := #[]
   deriving Inhabited
+
+/-- The effective coldness of block `vb` (`cold`; a block not listed: its `jump` target's). -/
+def VCode.coldOf (vc : VCode) (vb : VBlock) : Bool :=
+  match vc.cold[vb.label]? with
+  | some c => c
+  | none => match vb.insts.back? with
+    | some (.jump t) => vc.cold[t]?.getD false
+    | _ => false
 
 /-- Does the VCode contain a `tryCall` (the call of a `try_call`)? -/
 def VCode.hasTryCall (vc : VCode) : Bool :=
@@ -1450,6 +1463,21 @@ def blockArgRegs (ctx : Ctx) (f : Clif.Function) (bc : Clif.BlockCall) :
   bc.args.toArray.mapM fun a => match ctx.valueReg? a with
     | some r => pure r
     | none => throw s!"unknown value v{a}"
+
+/-- Cranelift's effective coldness of CLIF block `i` (`is_effectively_cold`). -/
+def clifCold (f : Clif.Function) (i : Nat) : Bool :=
+  match f.blocks[i]? with
+  | some b => b.cold || (match b.term with | .trap _ => true | _ => false)
+  | none => false
+
+/-- The effective coldness of the lowered blocks `bs` (labels `0, 1, …` in order): a function
+block's own, an edge block's (label beyond the function's blocks) that of its `jump` target. -/
+def loweredCold (f : Clif.Function) (bs : Array VBlock) : Array Bool :=
+  bs.map fun vb =>
+    if vb.label < f.blocks.length then clifCold f vb.label
+    else match vb.insts.back? with
+      | some (.jump t) => clifCold f t
+      | _ => false
 
 /-- Lower one function to VCode. -/
 def lowerFunction (f : Clif.Function) : Except String VCode := do
@@ -1613,6 +1641,7 @@ def lowerFunction (f : Clif.Function) : Except String VCode := do
               branchArgs := vb.branchArgs.map (resolve fuel) }
   let (_, slotBytes) := slotLayout f.slots
   pure { name := f.name, blocks := (d.blocks ++ d.edges).map fixBlock, classes := d.st.classes,
-         slotBytes, outgoing := d.st.outgoing, rulesFired := d.rules }
+         slotBytes, outgoing := d.st.outgoing, rulesFired := d.rules,
+         cold := loweredCold f (d.blocks ++ d.edges) }
 
 end Backend

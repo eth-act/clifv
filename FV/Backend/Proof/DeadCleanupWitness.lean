@@ -6,7 +6,7 @@ open Backend.Proof Backend.Proof.Driver
 
 private def witnessVC : VCode :=
   ⟨"cleanup_return", #[⟨0, #[deadMvn, liveBic, liveReturn], #[], #[]⟩],
-    #[.int, .int, .int, .int], 0, 0, #[]⟩
+    #[.int, .int, .int, .int], 0, 0, #[], #[]⟩
 private def mvnOps : Array Operand :=
   #[⟨2, .int, .def, .late, .reg⟩, ⟨1, .int, .use, .early, .reg⟩]
 private def bicOps : Array Operand :=
@@ -53,7 +53,7 @@ example (w : Arm.ArmState) : ∃ vc : VCode,
     E2E.VTraps (clean vc) (mspec 0) rho0 w .intOvf := by
   let trap : MInst := .udf .intOvf
   let vc : VCode := ⟨"cleanup_trap", #[⟨0, #[deadMvn, trap], #[], #[]⟩],
-    #[.int, .int, .int], 0, 0, #[]⟩
+    #[.int, .int, .int], 0, 0, #[], #[]⟩
   have ht : ∀ vb ∈ vc.blocks.toList,
       ∃ t, vb.insts.back? = some t ∧ t.isTerminator = true := by
     intro vb hb

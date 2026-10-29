@@ -271,8 +271,32 @@ theorem RLU.stepU_q_raiseF {R : RLU} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat}
       (∀ x' d', R.AtLine s x' → ((∃ n, x' = .bl n ∧ d' = some n) ∨ (∃ r, x' = .blr r ∧ d' = none)) →
         d' = callDest info) ∧
       (∀ x', R.AtLine s (.blr x') → R.vc.DestsInt → x' ≠ .xzr) := by
-  obtain ⟨j0, items, pre, regs, i', c1, c2, ls1, ls2, ps1, psm, ps2, T, cc, wh, ops, hal, -, -, hasg,
-    -, -, hstat, -, -, -, -, -, -, -, hst⟩ := q_op hq hvb hi
+  rcases Q.cases hq with hqs | ⟨vbf, allocsf, regsf, if_, xf, bx, hvbf, he, hits, half, hins,
+    hasgf, hsuccf, itx, hitx, hqx⟩
+  rotate_left
+  · -- a forwarding block's only instruction is a `jump`, but the item's is a call
+    rw [hvb] at hvbf
+    cases hvbf
+    simp only [RItem.op.injEq] at he
+    obtain ⟨rfl, rfl⟩ := he
+    subst hits
+    have hi1 := hi
+    rw [hins] at hi1
+    simp only [List.getElem?_toArray, List.getElem?_cons_zero, Option.some.injEq] at hi1
+    subst hi1
+    rcases hik with rfl | ⟨ti, rfl⟩
+    · obtain ⟨ic, e⟩ := assign_call_form hasgf
+      cases e
+    · obtain ⟨ic, e, -⟩ := (assign_call_tryCall info regsf).2 ti (.jump xf) hasgf
+      cases e
+  obtain ⟨j0, vb0, items, pre, code, X, ps1, psm, ps2, x, hvb0, hit, hsplit, hchk, hcode, hX, hT,
+    htr, hdrop, hpc, hst, hx, hsc⟩ := hqs
+  rw [hvb] at hvb0; cases hvb0
+  obtain ⟨c1, c2, hc1, hc2, rfl⟩ := itemsCode_cons hcode
+  obtain ⟨regs, i0, i', rfl, hi0, hasg, hc1'⟩ := itemCode_op hc1
+  rw [hi] at hi0; cases hi0
+  obtain ⟨cc, wh, i2, ops, hi2, hops, hstat, -⟩ := op_checked hchk
+  rw [hi] at hi2; cases hi2
   obtain ⟨ic, hic, hdest, hasgC⟩ : ∃ ic, (i' = .call ic ∨ ∃ ti, i' = .tryCall ic ti) ∧
       callDest ic = callDest info ∧ (MInst.call info).assign regs = .ok (.call ic) := by
     rcases hik with rfl | ⟨ti, rfl⟩
@@ -282,8 +306,8 @@ theorem RLU.stepU_q_raiseF {R : RLU} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat}
       exact ⟨ic, .inr ⟨ti, rfl⟩, assign_callDest hc, hc⟩
   have hcpc : CallAt R.fa R.base (Arm.r .PC s) i' := by
     rcases hik with rfl | ⟨ti, rfl⟩
-    · exact callAt_of_q hq hvb hi call_hcall regs i' hal hasg
-    · exact callAt_of_q hq hvb hi tryCall_hcall regs i' hal hasg
+    · exact callAt_of_q hR hq hvb hi call_hcall regs i' rfl hasg
+    · exact callAt_of_q hR hq hvb hi tryCall_hcall regs i' rfl hasg
   obtain ⟨j, x, tt, hj, hx, hpc⟩ := hcpc
   have hd0 : (∃ n, x = .bl n ∧ ic.dest = .sym n) ∨ (∃ r, x = .blr r ∧ ic.dest = .reg r) := by
     obtain ⟨dest, us, ds⟩ := ic
@@ -494,7 +518,8 @@ theorem aInv_stepS {R : RL} {sem : Sem} (hR : R.Wf) {s : Arm.ArmState}
   | @move b src dst its m w =>
     intro hb hop
     subst hb
-    obtain ⟨j, vb, items, pre, -, -, -, -, -, -, hit, hsplit, -⟩ := hq
+    obtain ⟨j, vb, items, pre, -, -, -, -, -, -, -, hit, hsplit, -⟩ :=
+      Q.qs hq (fun _ h => by cases h)
     obtain ⟨hmv, hrd⟩ := ctlCheck_before hck hit hsplit hop
     have hA' := hA rfl (by obtain ⟨a, ha⟩ := hop; exact ⟨a, List.mem_cons_of_mem _ ha⟩)
     intro r hr
@@ -507,9 +532,13 @@ theorem aInv_stepS {R : RL} {sem : Sem} (hR : R.Wf) {s : Arm.ArmState}
     | next =>
       intro hb hop
       subst hb
-      obtain ⟨j, vb0, items, pre, -, -, -, -, -, -, hit, hsplit, -⟩ := hq
-      have := (ctlCheck_before hck hit hsplit hop).1
-      simp [RItem.isMove] at this
+      rcases Q.cases hq with hqs | ⟨_, _, _, _, _, _, _, _, hits, -⟩
+      · obtain ⟨j, vb0, items, pre, -, -, -, -, -, -, -, hit, hsplit, -⟩ := hqs
+        have := (ctlCheck_before hck hit hsplit hop).1
+        simp [RItem.isMove] at this
+      · subst hits
+        obtain ⟨a, ha⟩ := hop
+        cases ha
     | goto _ hs _ =>
       intro hb
       exact absurd hb (ctlCheck_succ hck hs)

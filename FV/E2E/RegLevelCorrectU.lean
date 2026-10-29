@@ -379,9 +379,15 @@ theorem regLevelCorrect_coreU {R : RLU} (hR : R.Wf) {ra : BitVec 64}
       -- the allocated code reads the VCode's uses: the same raising callee
       have hU0 := matchRun_uses hcheck hr2 (MStep.op hvb hi hops hsz hsem2 hlen2 hho hcl hn) hvb hi
         hops
-      obtain ⟨j0, items, pre, regs, i', cA, cB, ls1, ls2, ps1, psm, ps2, T', cc', wh, ops'', hal, hit,
-        hsplit, hasg, hc1', hops'', hstat, hchk', hcode2, h1', h2', htr', hdrop, hpc, hst⟩ :=
-        q_op hq2 hvb hi
+      -- a `call` branches nowhere: `Q` is `Qs`, whatever the call's position in its block
+      obtain ⟨-, vb0, items, pre, code, -, -, -, -, -, hvb0, hit, hsplit, hchk, hcode, -, -, -, -,
+        -, hst, -, -⟩ := Q.qs_op hq2 hvb hi (i := .call info) rfl
+      rw [hvb] at hvb0; cases hvb0
+      obtain ⟨c1, -, hc1, -, -⟩ := itemsCode_cons hcode
+      obtain ⟨regs, i0, i', hal, hi0, hasg, -⟩ := itemCode_op hc1
+      rw [hi] at hi0; cases hi0
+      obtain ⟨cc', wh, i2, ops'', hi2, hops'', hstat, -⟩ := op_checked hchk
+      rw [hi] at hi2; cases hi2
       rw [hops] at hops''; cases hops''
       subst hal
       have hm' : ∀ r, r.allocatable = true → m (.reg r) = regVal u r := fun r hr =>
@@ -394,7 +400,7 @@ theorem regLevelCorrect_coreU {R : RLU} (hR : R.Wf) {ra : BitVec 64}
         exact (hgot _ _ _ _).1 hsem
       -- the raising callees' contract: the unwinder's state `t` at our call
       have hsite0 : R.vc.CallSite info := ⟨b, vb, k, hvb, .inl hi⟩
-      have hcpc := callAt_of_q hq2 hvb hi call_hcall regs i' rfl hasg
+      have hcpc := callAt_of_q hR hq2 hvb hi call_hcall regs i' rfl hasg
       have hraiseU := hU.os info (.call info) hsite0 (.inl rfl) u
         (by rw [hst.sp]; exact RL.K_le hR) (fun a ha => by rw [hst.sp] at ha; exact RL.below_F ha)
         hst.gkeep cc' wh ops regs i' w1 hops hstat hasg hcpc hst.world hst.align hst.err hgg
@@ -535,13 +541,13 @@ theorem regLevelCorrect_world_atXU {vcp : VCode} {rf : RFunc} {af : AFunc} {fa :
       (frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af G s)
       (Unw.ArmStepU X H U T fa) vcp ra s (ρsel m₀) w₀ := by
   obtain ⟨lm, hlm⟩ := FnAsm.layout_labelOffsets hlayout
-  obtain ⟨body, psF, hb, -, hk⟩ := emitFunc_ok hemit
+  obtain ⟨p, hp, -, hk⟩ := emitFunc_ok hemit
   subst hk
-  have hR : (⟨⟨vcp, rf, af, fa, fb, lm, base, s, X, H, psF, K, G, gv⟩, XR, U, T⟩ : RLU).Wf :=
+  have hR : (⟨⟨vcp, rf, af, fa, fb, lm, base, s, X, H, p.ps, K, G, gv⟩, XR, U, T⟩ : RLU).Wf :=
     ⟨⟨cc, ins, a0, hcheck, hok⟩, halloc, hemit, hlayout, hlm,
-      by show 4 * fb.words.size ≤ 2 ^ 64; have := hent.fits; omega, hres, ⟨body, hb⟩,
+      by show 4 * fb.words.size ≤ 2 ^ 64; have := hent.fits; omega, hres, ⟨p, hp, rfl⟩,
       hent.program, hG⟩
-  exact regLevelCorrect_coreU hR hent hcheck hU hgot (hRz lm psF _ rfl hR) hrets hhalt hlsda
+  exact regLevelCorrect_coreU hR hent hcheck hU hgot (hRz lm p.ps _ rfl hR) hrets hhalt hlsda
     (siteAt_of_check hR hlast) hrows hcie hfde hsaved hbe ρsel hsel
 
 /-- `regLevelCorrect_world_atXU` for an `AllocChecked` allocation, for one initial vreg file of
@@ -776,20 +782,51 @@ theorem lsda_cases {af : AFunc} {fa : FnAsm} {T : Unw.FnTables}
 /-- **The raising `tryCall` case of `realizes_allU` from the tables**: `realizes_tryCall_raiseU`
 when the function has an LSDA (the emitted call-site table, `callSites`); vacuous when it has
 none (no call of the function is a `try_call`, so the call-site bridge `SiteAt` excludes a
-`tryCall` item). -/
-theorem realizesTryRaise_of_tables {R : RLU} (hR : R.Wf) {semU : Sem}
+`tryCall` item). No check on the calls of the last block (#622: `siteAt_any`). -/
+theorem realizesTryRaise_of_tables_any {R : RLU} (hR : R.Wf) {semU : Sem}
     (hU : CalleeUnwOkG R.F R.K R.G R.s0 (CallAt R.fa R.base) R.X R.XR R.U R.vc.CallSite R.gv)
     (hsemT : TryRaiseSem R.XR semU) (hgot : GotSem R.gv R.X semU) {lsda : Option (List CallSite)}
     (hsites : callSites R.af R.fa = .ok lsda) (hlsda : R.T.lsda = lsda.map (List.map (·.entry)))
-    (hpad : PadsNonzero R.af R.fa) (hlast : lastCallsOk R.af R.fa = true) :
+    (hpad : PadsNonzero R.af R.fa) :
     RealizesTryRaise R semU := by
   cases lsda with
   | some sites =>
     exact realizes_tryCall_raiseU hR hU hsemT hgot ⟨sites, callSites_ok hsites, hlsda⟩ hpad
-      (siteAt_of_check hR hlast)
+      (siteAt_any hR)
   | none =>
     intro s b k allocs its m w vb info ti ops c' obj w' hq _ hvb hi
-    obtain ⟨j, x, -, -, -, hmem⟩ := siteAt_of_check hR hlast s b k allocs its m w vb _ info
+    obtain ⟨j, x, -, -, -, hmem⟩ := siteAt_any hR s b k allocs its m w vb _ info
+      (some ti) hq hvb hi (.inr ⟨ti, rfl, rfl⟩)
+    have hn := callSites_none hsites
+    have : (some ti : Option TryInfo) ∈ R.af.calls := (List.of_mem_zip hmem).1
+    rw [List.any_eq_false] at hn
+    exact ((hn _ this) rfl).elim
+
+/-- `realizesTryRaise_of_tables_any` under the check `lastCallsOk` (statement kept for its
+callers; the check is not needed since #553/#622). -/
+theorem realizesTryRaise_of_tables {R : RLU} (hR : R.Wf) {semU : Sem}
+    (hU : CalleeUnwOkG R.F R.K R.G R.s0 (CallAt R.fa R.base) R.X R.XR R.U R.vc.CallSite R.gv)
+    (hsemT : TryRaiseSem R.XR semU) (hgot : GotSem R.gv R.X semU) {lsda : Option (List CallSite)}
+    (hsites : callSites R.af R.fa = .ok lsda) (hlsda : R.T.lsda = lsda.map (List.map (·.entry)))
+    (hpad : PadsNonzero R.af R.fa) (_hlast : lastCallsOk R.af R.fa = true) :
+    RealizesTryRaise R semU :=
+  realizesTryRaise_of_tables_any hR hU hsemT hgot hsites hlsda hpad
+
+/-- **`realizesTryRaise_of_tables_any` with the raising-call states' step facts** (trace
+`R.GoodXUF`, `realizes_tryCall_raiseUF`). -/
+theorem realizesTryRaise_of_tablesF_any {R : RLU} (hR : R.Wf) {semU : Sem}
+    (hU : CalleeUnwOkG R.F R.K R.G R.s0 (CallAt R.fa R.base) R.X R.XR R.U R.vc.CallSite R.gv)
+    (hsemT : TryRaiseSem R.XR semU) (hgot : GotSem R.gv R.X semU) {lsda : Option (List CallSite)}
+    (hsites : callSites R.af R.fa = .ok lsda) (hlsda : R.T.lsda = lsda.map (List.map (·.entry)))
+    (hpad : PadsNonzero R.af R.fa) :
+    RealizesTryRaiseP R semU R.GoodXUF := by
+  cases lsda with
+  | some sites =>
+    exact realizes_tryCall_raiseUF hR hU hsemT hgot ⟨sites, callSites_ok hsites, hlsda⟩ hpad
+      (siteAt_any hR)
+  | none =>
+    intro s b k allocs its m w vb info ti ops c' obj w' hq _ hvb hi
+    obtain ⟨j, x, -, -, -, hmem⟩ := siteAt_any hR s b k allocs its m w vb _ info
       (some ti) hq hvb hi (.inr ⟨ti, rfl, rfl⟩)
     have hn := callSites_none hsites
     have : (some ti : Option TryInfo) ∈ R.af.calls := (List.of_mem_zip hmem).1
@@ -797,25 +834,14 @@ theorem realizesTryRaise_of_tables {R : RLU} (hR : R.Wf) {semU : Sem}
     exact ((hn _ this) rfl).elim
 
 /-- **`realizesTryRaise_of_tables` with the raising-call states' step facts** (trace
-`R.GoodXUF`, `realizes_tryCall_raiseUF`). -/
+`R.GoodXUF`, `realizes_tryCall_raiseUF`); statement kept, `realizesTryRaise_of_tablesF_any`. -/
 theorem realizesTryRaise_of_tablesF {R : RLU} (hR : R.Wf) {semU : Sem}
     (hU : CalleeUnwOkG R.F R.K R.G R.s0 (CallAt R.fa R.base) R.X R.XR R.U R.vc.CallSite R.gv)
     (hsemT : TryRaiseSem R.XR semU) (hgot : GotSem R.gv R.X semU) {lsda : Option (List CallSite)}
     (hsites : callSites R.af R.fa = .ok lsda) (hlsda : R.T.lsda = lsda.map (List.map (·.entry)))
-    (hpad : PadsNonzero R.af R.fa) (hlast : lastCallsOk R.af R.fa = true) :
-    RealizesTryRaiseP R semU R.GoodXUF := by
-  cases lsda with
-  | some sites =>
-    exact realizes_tryCall_raiseUF hR hU hsemT hgot ⟨sites, callSites_ok hsites, hlsda⟩ hpad
-      (siteAt_of_check hR hlast)
-  | none =>
-    intro s b k allocs its m w vb info ti ops c' obj w' hq _ hvb hi
-    obtain ⟨j, x, -, -, -, hmem⟩ := siteAt_of_check hR hlast s b k allocs its m w vb _ info
-      (some ti) hq hvb hi (.inr ⟨ti, rfl, rfl⟩)
-    have hn := callSites_none hsites
-    have : (some ti : Option TryInfo) ∈ R.af.calls := (List.of_mem_zip hmem).1
-    rw [List.any_eq_false] at hn
-    exact ((hn _ this) rfl).elim
+    (hpad : PadsNonzero R.af R.fa) (_hlast : lastCallsOk R.af R.fa = true) :
+    RealizesTryRaiseP R semU R.GoodXUF :=
+  realizesTryRaise_of_tablesF_any hR hU hsemT hgot hsites hlsda hpad
 
 /-- The realisation of `csemU` for a compiled function's activation (no kept addresses, no GOT
 pinning): `realizes_allU` from `realizes_all` and `realizes_tryCall_raiseU`. -/

@@ -204,9 +204,10 @@ def siteEntries (labs : List (Label × Nat)) : Option TryInfo × Nat → Except 
     if handlers.isEmpty then pure [⟨ret - 1, 1, 0, 0⟩]
     else handlers.mapM (handlerEntry labs ret)
 
-/-- The calls of an allocated function in code order (`some ti` for a `tryCall`). -/
+/-- The calls of an allocated function in code order (`emitOrder`; `some ti` for a
+`tryCall`). -/
 def AFunc.calls (af : AFunc) : List (Option TryInfo) :=
-  af.blocks.toList.flatMap fun (_, code) =>
+  (emitOrder af).flatMap fun ((_, code), _) =>
     code.toList.filterMap fun
       | .inst (.call _) => some none
       | .inst (.tryCall _ ti) => some (some ti)
@@ -214,11 +215,13 @@ def AFunc.calls (af : AFunc) : List (Option TryInfo) :=
 
 /-- The call-site table of an allocated function `af` whose final code is `fa` (every `bl`/
 `blr` is a call, in code order, and `af`'s calls are in the same order), or `none` if the
-function has no `try_call` (it needs no LSDA). -/
+function has no `try_call` (it needs no LSDA). A landing pad whose label `MachBuffer` aliased
+is at the offset of the label it resolves to (`fa.alias`). -/
 def callSites (af : AFunc) (fa : FnAsm) : Except String (Option (List CallSite)) := do
   let calls := af.calls
   if !calls.any (·.isSome) then return none
   let (labs, rets) := scanLines fa.lines.toList 0 [] []
+  let labs := fa.alias.filterMap (fun (l, x) => (labs.lookup x).map (l, ·)) ++ labs
   if rets.length != calls.length then throw "LSDA: the code's calls differ from the function's"
   let sites ← (calls.zip rets).mapM (siteEntries labs)
   return some sites.flatten

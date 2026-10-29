@@ -137,7 +137,7 @@ open Backend Backend.Proof Backend.Proof.Driver E2E Backend.Proof.UnwindSemWitne
 return. -/
 def vc : VCode :=
   ⟨"cleanup_unwind", #[⟨0, #[deadMvn, .call info, liveReturn], #[], #[]⟩],
-    #[.int, .int, .int, .int], 0, 0, #[]⟩
+    #[.int, .int, .int, .int], 0, 0, #[], #[]⟩
 
 def mvnOps : Array Operand :=
   #[⟨2, .int, .def, .late, .reg⟩, ⟨1, .int, .use, .early, .reg⟩]

@@ -235,9 +235,15 @@ theorem regLevel_trapCall_core {R : RL} (hR : R.Wf) {ra : BitVec 64}
       -- the allocated code reads the VCode's uses: the same trapping callee
       have hU0 := matchRun_uses hcheck hr2 (MStep.op hvb hi hops hsz hsem2 hlen2 hho hcl hn) hvb hi
         hops
-      obtain ⟨j0, items, pre, regs, i', cA, cB, ls1, ls2, ps1, psm, ps2, T', cc', wh, ops'', hal, hit,
-        hsplit, hasg, hc1', hops'', hstat, hchk', hcode2, h1', h2', htr', hdrop, hpc, hst⟩ :=
-        q_op hq2 hvb hi
+      -- a `call` branches nowhere: `Q` is `Qs`
+      obtain ⟨-, vb0, items, pre, code, -, -, -, -, -, hvb0, hit, hsplit, hchk, hcode, -, -, -, -,
+        -, hst, -, -⟩ := Q.qs_op hq2 hvb hi (i := .call info) rfl
+      rw [hvb] at hvb0; cases hvb0
+      obtain ⟨c1, -, hc1, -, -⟩ := itemsCode_cons hcode
+      obtain ⟨regs, i0, i', hal, hi0, hasg, -⟩ := itemCode_op hc1
+      rw [hi] at hi0; cases hi0
+      obtain ⟨cc', wh, i2, ops'', hi2, hops'', hstat, -⟩ := op_checked hchk
+      rw [hi] at hi2; cases hi2
       rw [hops] at hops''; cases hops''
       subst hal
       have hm' : ∀ r, r.allocatable = true → m (.reg r) = regVal u r := fun r hr =>
@@ -248,7 +254,7 @@ theorem regLevel_trapCall_core {R : RL} (hR : R.Wf) {ra : BitVec 64}
       have hgg : gotGuard R.gv R.X info (useVals ops regs u) := by
         rw [← useVals_of_store hstat hm', hU0]
         exact (hgot _ _ _ _).1 hsem
-      have hcpc := callAt_of_q hq2 hvb hi call_hcall regs i' rfl hasg
+      have hcpc := callAt_of_q hR hq2 hvb hi call_hcall regs i' rfl hasg
       have hrun : E2E.runX R.step (n0 + n1 + n2) R.s0 = u := by
         rw [← hu, runX_eq]
         simp only [iterN_add]
@@ -293,11 +299,11 @@ theorem regLevel_trapCall_value {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : Fn
           (E2E.runX (ArmStepX X H fa) i s)) := by
   obtain ⟨cc, ins, a0, hat, hok⟩ := hcheck
   obtain ⟨lm, hlm⟩ := FnAsm.layout_labelOffsets hlayout
-  obtain ⟨body, psF, hb, -, hk⟩ := emitFunc_ok hemit
+  obtain ⟨p, hp, -, hk⟩ := emitFunc_ok hemit
   subst hk
-  let R : RL := ⟨vcp, rf, af, fa, fb, lm, base, s, X, H, psF, K, fun _ => False, fun _ _ => False⟩
+  let R : RL := ⟨vcp, rf, af, fa, fb, lm, base, s, X, H, p.ps, K, fun _ => False, fun _ _ => False⟩
   have hR : R.Wf := ⟨⟨cc, ins, a0, hat, hok⟩, halloc, hemit, hlayout, hlm,
-    by show 4 * fb.words.size ≤ 2 ^ 64; have := hent.fits; omega, hres, ⟨body, hb⟩,
+    by show 4 * fb.words.size ≤ 2 ^ 64; have := hent.fits; omega, hres, ⟨p, hp, rfl⟩,
     hent.program, fun _ h => h.elim⟩
   have hF : R.F = frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s :=
     frameWG_false K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s

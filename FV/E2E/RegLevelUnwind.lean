@@ -124,11 +124,15 @@ theorem unwind_call_restores {af : AFunc} {fa : FnAsm} {rows : List (Nat × Cfi)
 
 /-- The personality at a call the call-site table `sites` describes (`CallSitesOk`): for a
 plain call it continues unwinding; for a `try_call` whose first handler's landing pad is at
-`pad ≠ 0` it installs that landing pad. -/
+`pad ≠ 0` it installs that landing pad. (Since #553 the entry is looked up in the
+alias-extended label list, which is what `CallSitesOk`'s `entryFor` uses and what the
+conclusion states.) -/
 theorem personality_callSite {af : AFunc} {fa : FnAsm} {sites : List CallSite}
     (h : CallSitesOk af fa sites) {c : Option TryInfo} {ret : Nat}
     (hp : (c, ret) ∈ af.calls.zip (scanLines fa.lines.toList 0 [] []).2) :
-    ∃ e, entryFor (scanLines fa.lines.toList 0 [] []).1 (c, ret) = some e ∧
+    ∃ e, entryFor (fa.alias.filterMap (fun l =>
+        ((scanLines fa.lines.toList 0 [] []).1.lookup l.2).map fun x => (l.1, x)) ++
+      (scanLines fa.lines.toList 0 [] []).1) (c, ret) = some e ∧
       personality (some (sites.map (·.entry))) (ret - 1) =
         if e.pad = 0 then .continue else .install e.pad := by
   obtain ⟨hs, hl⟩ := h.2 _ hp

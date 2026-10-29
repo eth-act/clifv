@@ -7,7 +7,7 @@ import FV.Link.UnwCheckIn
 
 `lake exe lean-link` prints, per executable, how many compiled functions fail each per-function
 unwinding check `unwFnsB` decides (`unwCheck`, `callSites`, `unwindRows`, `padsNonzeroB`,
-`lastCallsOk`, `savedCheck`), the input conditions of `tryInfoOk_of_input` (`tryTablesB`) and
+`savedCheck`), the input conditions of `tryInfoOk_of_input` (`tryTablesB`) and
 `unwCheck_complete` (`tryRetsB`), and the
 functions whose `.eh_frame` entry `ehOkR` rejects (`fnEhFail`). Nothing here is a premise or a
 decision of the compiler; it measures how often the conditions of the totality argument fail on
@@ -26,7 +26,6 @@ def unwConds : List (String × (Clif.Function → Art → Bool)) :=
    ("callSites", fun _ a => (Backend.callSites a.af a.fa).toBool),
    ("unwindRows", fun _ a => (Backend.unwindRows a.af a.fa).toBool),
    ("padsNonzeroB", fun _ a => Backend.Proof.padsNonzeroB a.af a.fa),
-   ("lastCallsOk", fun _ a => Backend.Proof.lastCallsOk a.af a.fa),
    ("savedCheck", fun _ a => Backend.savedCheck a.vcp a.rf),
    ("tryTablesB", fun g _ => Link.EhCheck.Complete.tryTablesB g),
    ("tryRetsB", fun g _ => Link.EhCheck.Complete.tryRetsB g)]

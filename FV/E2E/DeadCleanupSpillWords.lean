@@ -408,9 +408,9 @@ example : ∃ vb vb' : VBlock,
     vb.insts.size = 3 ∧ vb'.insts.size = 2 ∧
     vb.branchArgs = vb'.branchArgs ∧ vb.insts.back? = vb'.insts.back? ∧
     vb'.insts.toList.Sublist vb.insts.toList ∧
-    ((spillBlockItems {} ⟨"size_witness", #[vb], #[.int, .int, .int, .int], 0, 0, #[]⟩ #[#[]] #[#[]] 0 vb').map
+    ((spillBlockItems {} ⟨"size_witness", #[vb], #[.int, .int, .int, .int], 0, 0, #[], #[]⟩ #[#[]] #[#[]] 0 vb').map
       (itemWords vb')).sum ≤
-    ((spillBlockItems {} ⟨"size_witness", #[vb], #[.int, .int, .int, .int], 0, 0, #[]⟩ #[#[]] #[#[]] 0 vb).map
+    ((spillBlockItems {} ⟨"size_witness", #[vb], #[.int, .int, .int, .int], 0, 0, #[], #[]⟩ #[#[]] #[#[]] 0 vb).map
       (itemWords vb)).sum := by
   let vb : VBlock := ⟨0, #[DeadCleanup.deadMvn, DeadCleanup.liveBic, DeadCleanup.liveReturn], #[], #[]⟩
   let vb' : VBlock := ⟨0, #[DeadCleanup.liveBic, DeadCleanup.liveReturn], #[], #[]⟩

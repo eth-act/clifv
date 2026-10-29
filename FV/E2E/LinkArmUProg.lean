@@ -158,7 +158,7 @@ theorem backend_correct_program_peakU_of (L : LinkSysU) (hL : L.Ok) (hU : L.OkU)
 /-- The premises with unwinding do not depend on the callee runs. -/
 theorem LinkSysU.OkU.withCrunX {L : LinkSysU} (hU : L.OkU) (c : Nat → Clif.State → Clif.XOutcome) :
     (L.withCrunX c).OkU :=
-  ⟨hU.envX, hU.lowerU, hU.sites, hU.rows, hU.pads, hU.last, hU.saved, hU.indScopeX, hU.baseXR,
+  ⟨hU.envX, hU.lowerU, hU.sites, hU.rows, hU.pads, hU.saved, hU.indScopeX, hU.baseXR,
     hU.baseXRI, hU.baseExcl, hU.baseRaiseExt, hU.baseUnw, hU.baseNoRaise, hU.baseKeepsPlaceU,
     hU.baseKeepsAllocsU⟩
 

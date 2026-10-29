@@ -4,252 +4,16 @@ import FV.Backend.Regalloc
 /-!
 # `emitFunc`'s code structure (M6 proof, register level)
 
-`fallthrough` (the `MachBuffer` branch simplification of `emitFunc`) is an imperative loop;
-`fallthrough_eq` characterizes it as the structural `ftList` (one `ftStep` per position), and
-`ftList_label_split` shows it never looks past a label: the code of each block is simplified
-independently, with the next block's label as the only lookahead.
+`emitFunc` lays the blocks out in `emitOrder` (cold blocks last) as segments (`segsOf`: the
+block's label, its code's lines but the last instruction's, then the last instruction's lines)
+whose last-instruction lines become the emission plan's final lines (`emitPlan`: `MachBuffer`'s
+simplification accepted by `segsOk`, or the lines themselves), then the deferred traps.
+`emit_seg` locates every block's segment in the final lines; `segAt`/`tmOf`/`otOf` name a block's
+segment, last-instruction lines and final lines.
 -/
 
 namespace Backend
 
-/-- One step of `fallthrough` at a line `ln` followed by `n1`, `n2`: the emitted lines and
-the number of input lines consumed. -/
-def ftStep (ln : Line) (n1 n2 : Option Line) : List Line × Nat :=
-  let dflt : List Line × Nat := match ln, n1 with
-    | .ins (.b x) none, some (.label l) => if x == l then ([], 1) else ([ln], 1)
-    | _, _ => ([ln], 1)
-  match ln, n1, n2 with
-  | .ins c none, some (.ins (.b e) none), some (.label l) =>
-    if c.condTarget? == some l then ([.ins (c.invertTo e) none], 2) else dflt
-  | _, _, _ => dflt
-
-theorem ftStep_pos (ln : Line) (n1 n2 : Option Line) :
-    1 ≤ (ftStep ln n1 n2).2 ∧ ((ftStep ln n1 n2).2 = 2 → n1.isSome) := by
-  unfold ftStep
-  repeat' split
-  all_goals simp_all
-
-/-- `fallthrough` as a function on the line list. -/
-def ftList : List Line → List Line
-  | [] => []
-  | ln :: rest =>
-    (ftStep ln rest[0]? rest[1]?).1 ++ ftList ((ln :: rest).drop (ftStep ln rest[0]? rest[1]?).2)
-termination_by L => L.length
-decreasing_by
-  have := ftStep_pos ln rest[0]? rest[1]?
-  simp only [List.length_drop, List.length_cons]
-  omega
-
-/-- One iteration of `fallthrough`'s loop. -/
-def ftBody (lines : Array Line) (st : Array Line × Nat) : ForInStep (Array Line × Nat) :=
-  if st.2 ≥ lines.size then .done st
-  else
-    let dflt : ForInStep (Array Line × Nat) :=
-      match lines[st.2]!, lines[st.2 + 1]? with
-      | .ins (.b x) none, some (.label l) =>
-        if x == l then .yield (st.1, st.2 + 1) else .yield (st.1.push lines[st.2]!, st.2 + 1)
-      | _, _ => .yield (st.1.push lines[st.2]!, st.2 + 1)
-    match lines[st.2]!, lines[st.2 + 1]?, lines[st.2 + 2]? with
-    | .ins c none, some (.ins (.b e) none), some (.label l) =>
-      if c.condTarget? == some l then .yield (st.1.push (.ins (c.invertTo e) none), st.2 + 2)
-      else dflt
-    | _, _, _ => dflt
-
-theorem fallthrough_eq_forIn (lines : Array Line) :
-    fallthrough lines = (forIn (m := Id) (List.range' 0 lines.size) (#[], 0)
-      (fun _ st => pure (ftBody lines st))).1 := by
-  unfold fallthrough ftBody
-  simp only [Id.run, Std.Legacy.Range.forIn_eq_forIn_range', Std.Legacy.Range.size]
-  simp
-  rfl
-
-theorem ftBody_eq {lines : Array Line} {out : Array Line} {i : Nat} (hi : i < lines.size) :
-    ftBody lines (out, i) = .yield (out ++ (ftStep lines[i]! lines[i + 1]? lines[i + 2]?).1.toArray,
-      i + (ftStep lines[i]! lines[i + 1]? lines[i + 2]?).2) := by
-  unfold ftBody ftStep
-  simp only [show ¬ (i ≥ lines.size) from by omega, ite_false]
-  generalize lines[i]! = ln
-  generalize lines[i + 1]? = n1
-  generalize lines[i + 2]? = n2
-  split
-  · split
-    · simp
-    · split
-      · split <;> simp
-      · simp
-  · split
-    · split <;> simp
-    · simp
-
-theorem ftList_cons (ln : Line) (rest : List Line) :
-    ftList (ln :: rest) = (ftStep ln rest[0]? rest[1]?).1 ++
-      ftList ((ln :: rest).drop (ftStep ln rest[0]? rest[1]?).2) := by
-  rw [ftList]
-
-theorem ftLoop (lines : Array Line) : ∀ k a (out : Array Line) i, lines.size - i ≤ k →
-    (forIn (m := Id) (List.range' a k) (out, i) (fun _ st => pure (ftBody lines st))).1 =
-      out ++ (ftList (lines.toList.drop i)).toArray := by
-  intro k
-  induction k with
-  | zero =>
-    intro a out i h
-    have : lines.toList.drop i = [] := by simp; omega
-    simp [this, ftList]; rfl
-  | succ k ih =>
-    intro a out i h
-    simp only [List.range'_succ, List.forIn_cons]
-    by_cases hi : i ≥ lines.size
-    · have : lines.toList.drop i = [] := by simp; omega
-      simp [ftBody, hi, this, ftList]; rfl
-    · obtain ⟨ln, rest, hD⟩ : ∃ ln rest, lines.toList.drop i = ln :: rest := by
-        cases h : lines.toList.drop i with
-        | nil => simp at h; omega
-        | cons ln rest => exact ⟨ln, rest, rfl⟩
-      have hj : ∀ j, lines[i + j]? = (ln :: rest)[j]? := by
-        intro j; rw [← hD, List.getElem?_drop, Array.getElem?_toList]
-      have h0 : lines[i]! = ln := by
-        have := hj 0; simp only [Nat.add_zero, List.getElem?_cons_zero] at this
-        simp [getElem!_def, this]
-      have h1 : lines[i + 1]? = rest[0]? := by simpa using hj 1
-      have h2 : lines[i + 2]? = rest[1]? := by simpa using hj 2
-      rw [ftBody_eq (by omega), h0, h1, h2]
-      have hp := ftStep_pos ln rest[0]? rest[1]?
-      have e := ih (a + 1) (out ++ (ftStep ln rest[0]? rest[1]?).1.toArray)
-        (i + (ftStep ln rest[0]? rest[1]?).2) (by omega)
-      simp only [pure, bind] at e ⊢
-      rw [e, hD, ftList_cons, ← List.drop_drop, hD]
-      simp
-
-theorem fallthrough_eq (lines : Array Line) : fallthrough lines = (ftList lines.toList).toArray := by
-  rw [fallthrough_eq_forIn, ftLoop lines lines.size 0 #[] 0 (by omega)]
-  simp
-
-/-- The step at a line followed by a label does not look further. -/
-theorem ftStep_label (ln : Line) (l : Lbl) (n2 n2' : Option Line) :
-    ftStep ln (some (.label l)) n2 = ftStep ln (some (.label l)) n2' := by
-  cases ln with
-  | ins c t => cases t <;> rfl
-  | _ => rfl
-
-theorem ftStep_two {ln : Line} {n1 n2 : Option Line} (h : (ftStep ln n1 n2).2 = 2) :
-    ∃ c e l, ln = .ins c none ∧ n1 = some (.ins (.b e) none) ∧ n2 = some (.label l) := by
-  revert h
-  unfold ftStep
-  repeat' split
-  all_goals simp_all
-
-theorem ftStep_le (ln : Line) (n1 n2 : Option Line) : (ftStep ln n1 n2).2 ≤ 2 := by
-  unfold ftStep
-  repeat' split
-  all_goals simp_all
-
-/-- **`fallthrough` splits at a label**: it never looks past the label that follows the
-lines `X`. -/
-theorem ftList_label_split (l : Lbl) (Y : List Line) :
-    ∀ X : List Line, ftList (X ++ .label l :: Y) = ftList (X ++ [.label l]) ++ ftList Y
-  | [] => by
-      simp only [List.nil_append]
-      rw [ftList_cons, ftList_cons]
-      simp [ftStep, ftList]
-  | [ln] => by
-      simp only [List.cons_append, List.nil_append]
-      rw [ftList_cons, ftList_cons]
-      simp only [List.getElem?_cons_zero, List.getElem?_cons_succ, List.getElem?_nil]
-      rw [ftStep_label ln l Y[0]? none]
-      have h2 : (ftStep ln (some (.label l)) none).2 = 1 := by
-        have h1 := ftStep_pos ln (some (.label l)) none
-        have h3 := ftStep_le ln (some (.label l)) none
-        rcases Nat.lt_or_ge (ftStep ln (some (.label l)) none).2 2 with h | h
-        · omega
-        · obtain ⟨c, e, l', -, h4, -⟩ :=
-            ftStep_two (ln := ln) (n1 := some (.label l)) (n2 := none) (by omega)
-          cases h4
-      rw [h2]
-      simp only [List.drop_succ_cons, List.drop_zero, List.append_assoc]
-      rw [ftList_cons, ftList_cons]
-      simp [ftStep, ftList]
-  | ln :: ln2 :: X' => by
-      simp only [List.cons_append]
-      rw [ftList_cons, ftList_cons]
-      have e1 : (ln2 :: (X' ++ .label l :: Y))[0]? = (ln2 :: (X' ++ [.label l]))[0]? := rfl
-      have e2 : (ln2 :: (X' ++ .label l :: Y))[1]? = (ln2 :: (X' ++ [.label l]))[1]? := by
-        cases X' <;> rfl
-      rw [e1, e2]
-      have hle := ftStep_le ln (ln2 :: (X' ++ [.label l]))[0]? (ln2 :: (X' ++ [.label l]))[1]?
-      have hpos := (ftStep_pos ln (ln2 :: (X' ++ [.label l]))[0]? (ln2 :: (X' ++ [.label l]))[1]?).1
-      generalize ftStep ln (ln2 :: (X' ++ [.label l]))[0]? (ln2 :: (X' ++ [.label l]))[1]? = st at *
-      obtain ⟨out, k⟩ := st
-      simp only at hle hpos ⊢
-      have hk : k = 1 ∨ k = 2 := by omega
-      rcases hk with rfl | rfl
-      · simp only [List.drop_succ_cons, List.drop_zero, List.append_assoc]
-        have := ftList_label_split l Y (ln2 :: X')
-        simp only [List.cons_append] at this
-        rw [this]
-      · simp only [List.drop_succ_cons, List.drop_zero, List.append_assoc]
-        rw [ftList_label_split l Y X']
-
-/-- `fallthrough` keeps a final label. -/
-theorem ftList_snoc_label (l : Lbl) : ∀ X : List Line, ∃ Z, ftList (X ++ [.label l]) = Z ++ [.label l]
-  | [] => ⟨[], by rw [List.nil_append, ftList_cons]; simp [ftStep, ftList]⟩
-  | [ln] => by
-      simp only [List.cons_append, List.nil_append]
-      rw [ftList_cons]
-      simp only [List.getElem?_cons_zero, List.getElem?_cons_succ, List.getElem?_nil]
-      have h2 : (ftStep ln (some (.label l)) none).2 = 1 := by
-        have h1 := ftStep_pos ln (some (.label l)) none
-        have h3 := ftStep_le ln (some (.label l)) none
-        rcases Nat.lt_or_ge (ftStep ln (some (.label l)) none).2 2 with h | h
-        · omega
-        · obtain ⟨c, e, l', -, h4, -⟩ :=
-            ftStep_two (ln := ln) (n1 := some (.label l)) (n2 := none) (by omega)
-          cases h4
-      rw [h2]
-      simp only [List.drop_succ_cons, List.drop_zero]
-      rw [ftList_cons]
-      exact ⟨(ftStep ln (some (.label l)) none).1, by simp [ftStep, ftList]⟩
-  | ln :: ln2 :: X' => by
-      simp only [List.cons_append]
-      rw [ftList_cons]
-      have hle := ftStep_le ln (ln2 :: (X' ++ [.label l]))[0]? (ln2 :: (X' ++ [.label l]))[1]?
-      have hpos := (ftStep_pos ln (ln2 :: (X' ++ [.label l]))[0]? (ln2 :: (X' ++ [.label l]))[1]?).1
-      generalize ftStep ln (ln2 :: (X' ++ [.label l]))[0]? (ln2 :: (X' ++ [.label l]))[1]? = st at *
-      obtain ⟨out, k⟩ := st
-      simp only at hle hpos ⊢
-      have hk : k = 1 ∨ k = 2 := by omega
-      rcases hk with rfl | rfl
-      · simp only [List.drop_succ_cons, List.drop_zero]
-        obtain ⟨Z, hZ⟩ := ftList_snoc_label l (ln2 :: X')
-        simp only [List.cons_append] at hZ
-        exact ⟨out ++ Z, by rw [hZ, List.append_assoc]⟩
-      · simp only [List.drop_succ_cons, List.drop_zero]
-        obtain ⟨Z, hZ⟩ := ftList_snoc_label l X'
-        exact ⟨out ++ Z, by rw [hZ, List.append_assoc]⟩
-
-/-! ## `emitFunc` as structural functions -/
-
-/-- The lines of one `AInst` (`emitFunc`'s inner loop body). -/
-def ainstLines (c : FnCtx) (af : AFunc) : AInst → PState → Except String (List Line × PState)
-  | .prologue, ps => pure (if af.frame then prologueLines af.saves af.frameSize else [], ps)
-  | .epilogueRet, ps => pure (if af.frame then epilogueLines af.saves af.frameSize else [.ins .ret], ps)
-  | .inst m, ps => m.lines c ps
-
-/-- The lines of a block's code. -/
-def codeLinesE (c : FnCtx) (af : AFunc) : List AInst → PState → Except String (List Line × PState)
-  | [], ps => pure ([], ps)
-  | a :: as, ps => do
-    let (l1, ps1) ← ainstLines c af a ps
-    let (l2, ps2) ← codeLinesE c af as ps1
-    pure (l1 ++ l2, ps2)
-
-/-- The lines of the blocks (each introduced by its label), before `fallthrough`. -/
-def blocksLinesE (c : FnCtx) (af : AFunc) :
-    List (Label × Array AInst) → PState → Except String (List Line × PState)
-  | [], ps => pure ([], ps)
-  | (l, code) :: bs, ps => do
-    let (l1, ps1) ← codeLinesE c af code.toList ps
-    let (l2, ps2) ← blocksLinesE c af bs ps1
-    pure (.label (.block l) :: l1 ++ l2, ps2)
 
 theorem forIn_except_yield {ε σ α : Type} (l : List α) (s : σ)
     (f : α → σ → Except ε (ForInStep σ)) (g : α → σ → Except ε σ)
@@ -262,85 +26,7 @@ theorem forIn_except_yield {ε σ α : Type} (l : List α) (s : σ)
     | error e => rfl
     | ok s' => exact ih s'
 
-theorem codeLinesE_foldl (c : FnCtx) (af : AFunc) :
-    ∀ (code : List AInst) (ps : PState) (acc : Array Line),
-      code.foldlM (fun s a => (fun r : List Line × PState => (r.2, s.2 ++ r.1.toArray)) <$>
-          ainstLines c af a s.1) (ps, acc) =
-        (fun r : List Line × PState => (r.2, acc ++ r.1.toArray)) <$> codeLinesE c af code ps
-  | [], ps, acc => by simp [codeLinesE]
-  | a :: as, ps, acc => by
-    simp only [List.foldlM_cons, codeLinesE]
-    cases ainstLines c af a ps with
-    | error e => rfl
-    | ok r =>
-      have := codeLinesE_foldl c af as r.2 (acc ++ r.1.toArray)
-      simp only [Functor.map, Except.map, bind, Except.bind] at this ⊢
-      rw [this]
-      cases codeLinesE c af as r.2 <;> simp [pure, Except.pure]
 
-theorem blocksLinesE_foldl (c : FnCtx) (af : AFunc) :
-    ∀ (bs : List (Label × Array AInst)) (ps : PState) (acc : Array Line),
-      bs.foldlM (fun s a => (fun r : List Line × PState =>
-          (r.2, s.2.push (.label (.block a.1)) ++ r.1.toArray)) <$> codeLinesE c af a.2.toList s.1)
-          (ps, acc) =
-        (fun r : List Line × PState => (r.2, acc ++ r.1.toArray)) <$> blocksLinesE c af bs ps
-  | [], ps, acc => by simp [blocksLinesE]
-  | (l, code) :: bs, ps, acc => by
-    simp only [List.foldlM_cons, blocksLinesE]
-    cases codeLinesE c af code.toList ps with
-    | error e => rfl
-    | ok r =>
-      have := blocksLinesE_foldl c af bs r.2 (acc.push (.label (.block l)) ++ r.1.toArray)
-      simp only [Functor.map, Except.map, bind, Except.bind] at this ⊢
-      rw [this]
-      cases blocksLinesE c af bs r.2 <;> simp [pure, Except.pure]
-
-theorem traps_foldl (ts : List (Lbl × Clif.TrapCode)) (acc : Array Line) :
-    forIn (m := Except String) ts acc (fun x s =>
-      Except.ok (ForInStep.yield ((s.push (Line.label x.1)).push (Line.ins (.udf 49439) (some x.2))))) =
-      .ok (acc ++ (ts.flatMap (fun p => [Line.label p.1, Line.ins (.udf 0xc11f) (some p.2)])).toArray) := by
-  induction ts generalizing acc with
-  | nil => simp; rfl
-  | cons t ts ih =>
-    simp only [List.forIn_cons]
-    have := ih ((acc.push (Line.label t.1)).push (Line.ins (.udf 49439) (some t.2)))
-    simp only [pure, Except.pure, bind, Except.bind] at this ⊢
-    rw [this]
-    simp
-
-set_option pp.proofs false in
-theorem emitPre_ok {k : Nat} {af : AFunc} {pre : Array Line} (h : emitPre k af = .ok pre) :
-    ∃ body ps, blocksLinesE ⟨k, af.slotBase⟩ af af.blocks.toList {} = .ok (body, ps) ∧
-      pre = (ftList body ++ ps.traps.toList.flatMap
-        (fun p => [Line.label p.1, Line.ins (.udf 0xc11f) (some p.2)])).toArray := by
-  unfold emitPre at h
-  simp only [← Array.forIn_toList] at h
-  rw [forIn_except_yield _ _ _ (fun (x : Label × Array AInst) (s : PState × Array Line) =>
-    (fun r : List Line × PState => (r.2, s.2.push (.label (.block x.1)) ++ r.1.toArray)) <$>
-      codeLinesE ⟨k, af.slotBase⟩ af x.2.toList s.1)] at h
-  · rw [blocksLinesE_foldl] at h
-    cases hb : blocksLinesE ⟨k, af.slotBase⟩ af af.blocks.toList {} with
-    | error e => rw [hb] at h; cases h
-    | ok r =>
-      rw [hb] at h
-      obtain ⟨body, ps⟩ := r
-      refine ⟨body, ps, rfl, ?_⟩
-      simp only [Functor.map, Except.map, bind, Except.bind, pure, Except.pure] at h
-      rw [traps_foldl] at h
-      simp only [Except.ok.injEq] at h
-      subst h
-      simp [fallthrough_eq]
-  · intro x s
-    obtain ⟨l, code⟩ := x
-    simp only
-    rw [forIn_except_yield _ _ _ (fun (a : AInst) (s : PState × Array Line) =>
-      (fun r : List Line × PState => (r.2, s.2 ++ r.1.toArray)) <$> ainstLines ⟨k, af.slotBase⟩ af a s.1)]
-    · rw [codeLinesE_foldl]
-      cases codeLinesE ⟨k, af.slotBase⟩ af code.toList s.1 <;> rfl
-    · intro a s
-      cases a <;> simp [ainstLines]
-      · cases af.frame <;> simp
-      · cases af.frame <;> simp
 /-! ## `lowerRFunc` as structural functions -/
 
 /-- `lowerRFunc`'s loop body on one item (appending to `code`). -/
@@ -594,199 +280,337 @@ theorem codeLinesE_traps {c : FnCtx} {af : AFunc} :
         rw [← h.2]
         exact (ainstLines_traps hr).trans (codeLinesE_traps hr2)
 
-theorem blocksLinesE_traps {c : FnCtx} {af : AFunc} :
-    ∀ {bs : List (Label × Array AInst)} {ps ps' : PState} {ls : List Line},
-      blocksLinesE c af bs ps = .ok (ls, ps') → ps.traps.toList <+: ps'.traps.toList
-  | [], ps, ps', ls, h => by
-    simp only [blocksLinesE, pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at h; rw [h.2]; exact List.prefix_refl _
-  | (l, code) :: bs, ps, ps', ls, h => by
-    simp only [blocksLinesE, bind, Except.bind] at h
-    split at h
-    · cases h
-    · rename_i r hr
-      split at h
-      · cases h
-      · rename_i r2 hr2
-        simp only [pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at h
-        rw [← h.2]
-        exact (codeLinesE_traps hr).trans (blocksLinesE_traps hr2)
 
-/-- Block `b` in the lines before `fallthrough`: its label, its code's lines, then the next
-block's label (or the end). -/
-theorem blocksLinesE_block {c : FnCtx} {af : AFunc} :
-    ∀ {bs : List (Label × Array AInst)} {ps psF : PState} {body : List Line} {b : Nat}
-      {l : Label} {code : Array AInst},
-      blocksLinesE c af bs ps = .ok (body, psF) → bs[b]? = some (l, code) →
-      ∃ pre ls ps1 ps2 post, body = pre ++ .label (.block l) :: (ls ++ post) ∧
-        codeLinesE c af code.toList ps1 = .ok (ls, ps2) ∧
-        ps.traps.toList <+: ps1.traps.toList ∧ ps2.traps.toList <+: psF.traps.toList ∧
-        (∀ p, bs[b + 1]? = some p → ∃ post', post = .label (.block p.1) :: post') ∧
-        (bs[b + 1]? = none → post = []) ∧ (b = 0 → pre = [])
-  | [], _, _, _, _, _, _, _, hb => by simp at hb
-  | (l0, code0) :: bs, ps, psF, body, b, l, code, h, hb => by
-    simp only [blocksLinesE, bind, Except.bind] at h
+/-! ## Segments in emission order -/
+
+/-- **`segsOf` block by block**: segment `i` is block `bs[i]`'s, its body the lines of the code
+but the last instruction and its `term` the last instruction's lines, with the emitter's states
+around them. -/
+theorem segsOf_spec {c : FnCtx} {af : AFunc} :
+    ∀ {bs : List ((Label × Array AInst) × Nat)} {ps psF : PState} {ss : List Seg},
+      segsOf c af bs ps = .ok (ss, psF) →
+      ss.length = bs.length ∧ ps.traps.toList <+: psF.traps.toList ∧
+      ∀ (i : Nat) (s : Seg), ss[i]? = some s → ∃ (code : Array AInst) (ps1 psm ps2 : PState),
+        bs[i]? = some ((s.label, code), s.idx) ∧
+        codeLinesE c af code.toList.dropLast ps1 = .ok (s.body, psm) ∧
+        codeLinesE c af code.toList.getLast?.toList psm = .ok (s.term, ps2) ∧
+        ps.traps.toList <+: ps1.traps.toList ∧ ps2.traps.toList <+: psF.traps.toList
+  | [], ps, psF, ss, h => by
+    simp only [segsOf, pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at h
+    obtain ⟨rfl, rfl⟩ := h
+    exact ⟨rfl, List.prefix_refl _, fun i s hs => by simp at hs⟩
+  | ((l, code), b) :: bs, ps, psF, ss, h => by
+    simp only [segsOf, bind, Except.bind] at h
     split at h
     · cases h
-    · rename_i r hr
-      split at h
-      · cases h
-      · rename_i r2 hr2
-        simp only [pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at h
-        obtain ⟨rfl, rfl⟩ := h
-        cases b with
-        | zero =>
-          simp only [List.getElem?_cons_zero, Option.some.injEq, Prod.mk.injEq] at hb
-          obtain ⟨rfl, rfl⟩ := hb
-          refine ⟨[], r.1, ps, r.2, r2.1, by simp, hr, List.prefix_refl _,
-            blocksLinesE_traps hr2, ?_, ?_⟩
-          · intro p hp
-            cases bs with
-            | nil => simp at hp
-            | cons p' bs =>
-              simp only [List.getElem?_cons_succ, List.getElem?_cons_zero, Option.some.injEq] at hp
-              subst hp
-              obtain ⟨l', code'⟩ := p'
-              simp only [blocksLinesE, bind, Except.bind] at hr2
-              split at hr2
-              · cases hr2
-              · split at hr2
-                · cases hr2
-                · simp only [pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at hr2
-                  exact ⟨_, by rw [← hr2]; rfl⟩
-          · refine ⟨fun hp => ?_, fun _ => rfl⟩
-            cases bs with
-            | nil =>
-              simp only [blocksLinesE, pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at hr2
-              rw [← hr2]
-            | cons _ _ => simp at hp
-        | succ b =>
-          simp only [List.getElem?_cons_succ] at hb
-          obtain ⟨pre, ls, ps1, ps2, post, hbody, hc, hp1, hp2, hn, hn', -⟩ := blocksLinesE_block hr2 hb
-          refine ⟨.label (.block l0) :: r.1 ++ pre, ls, ps1, ps2, post, ?_, hc,
-            (codeLinesE_traps hr).trans hp1, hp2, ?_, ?_, fun h => by cases h⟩
-          · rw [hbody]; simp
-          · intro p hp; exact hn p (by simpa using hp)
-          · intro hp; exact hn' (by simpa using hp)
+    rename_i r1 h1
+    split at h
+    · cases h
+    rename_i r2 h2
+    split at h
+    · cases h
+    rename_i r3 h3
+    simp only [pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at h
+    obtain ⟨rfl, rfl⟩ := h
+    obtain ⟨hl, hp, hss⟩ := segsOf_spec h3
+    have t1 := codeLinesE_traps h1
+    have t2 := codeLinesE_traps h2
+    refine ⟨by simp [hl], t1.trans (t2.trans hp), fun i s hs => ?_⟩
+    cases i with
+    | zero =>
+      simp only [List.getElem?_cons_zero, Option.some.injEq] at hs
+      subst hs
+      exact ⟨code, ps, r1.2, r2.2, rfl, h1, h2, List.prefix_refl _, hp⟩
+    | succ i =>
+      simp only [List.getElem?_cons_succ] at hs
+      obtain ⟨code', ps1, psm, ps2, hb, e1, e2, p1, p2⟩ := hss i s hs
+      exact ⟨code', ps1, psm, ps2, by simpa using hb, e1, e2, t1.trans (t2.trans p1), p2⟩
+
+/-- `emitOrder` lists every block (with its index) once. -/
+theorem emitOrder_perm (af : AFunc) : (emitOrder af).Perm af.blocks.toList.zipIdx := by
+  unfold emitOrder
+  have := List.filter_append_perm (fun x : (Label × Array AInst) × Nat =>
+    !(x.2 != 0 && af.cold[x.2]?.getD false)) af.blocks.toList.zipIdx
+  simpa using this
+
+/-- The entry block comes first in `emitOrder`. -/
+theorem emitOrder_head {af : AFunc} {e : Label × Array AInst} (h : af.blocks[0]? = some e) :
+    (emitOrder af).head? = some (e, 0) := by
+  obtain ⟨bs, hb⟩ : ∃ bs, af.blocks.toList = e :: bs := by
+    cases hl : af.blocks.toList with
+    | nil => simp [← Array.getElem?_toList, hl] at h
+    | cons e' bs =>
+      rw [← Array.getElem?_toList, hl] at h
+      simp only [List.getElem?_cons_zero, Option.some.injEq] at h
+      exact ⟨bs, by rw [h]⟩
+  unfold emitOrder
+  rw [hb]
+  simp [List.zipIdx_cons]
+
+/-- The indices of `emitOrder` are distinct. -/
+theorem emitOrder_nodup (af : AFunc) : ((emitOrder af).map (·.2)).Nodup := by
+  have hp := (emitOrder_perm af).map (·.2)
+  refine hp.nodup_iff.mpr ?_
+  have : (af.blocks.toList.zipIdx.map (·.2)) = List.range af.blocks.toList.length := by
+    rw [List.zipIdx_eq_zip_range', List.map_snd_zip (by simp), List.range_eq_range']
+  rw [this]
+  exact List.nodup_range
+
+/-- Block `b` is in `emitOrder`. -/
+theorem emitOrder_mem {af : AFunc} {b : Nat} {e : Label × Array AInst} (h : af.blocks[b]? = some e) :
+    (e, b) ∈ emitOrder af := by
+  refine (emitOrder_perm af).mem_iff.mpr ?_
+  rw [List.mem_zipIdx_iff_getElem?]
+  simpa using h
+
+/-- Every element of `emitOrder` is a block with its index. -/
+theorem emitOrder_get {af : AFunc} {x : (Label × Array AInst) × Nat} (h : x ∈ emitOrder af) :
+    af.blocks[x.2]? = some x.1 := by
+  have := (emitOrder_perm af).mem_iff.mp h
+  rw [List.mem_zipIdx_iff_getElem?] at this
+  simpa using this
+
+/-- `segsOk` pairs every segment with one final line list. -/
+theorem segsOk_length {af : AFunc} {ss : List Seg} {os : List (List Line)} {L : List Line}
+    (h : segsOk af ss os L = true) : os.length = ss.length := by
+  unfold segsOk at h
+  simp only [Bool.and_eq_true, beq_iff_eq] at h
+  exact h.1.1.symm
+
+/-- What `machPlan` accepts. -/
+theorem machPlan_spec {af : AFunc} {a : Bool} {ss : List Seg} {ps : PState} {p : Plan}
+    (h : machPlan af a ss ps = some p) :
+    p.segs = ss ∧ p.ps = ps ∧ p.outs.length = ss.length ∧ segsOk af ss p.outs p.lines = true ∧
+      (∀ x ∈ p.alias, aliasOk af p.lines x = true) ∧
+      padsOk af ((segsTrust af ss p.outs p.lines).contains ·) p.lines p.alias = true := by
+  unfold machPlan at h
+  simp only [bind, Option.bind] at h
+  split at h
+  · cases h
+  rename_i os hos
+  dsimp only at h
+  split at h
+  · rename_i hok
+    simp only [Bool.and_eq_true] at hok
+    simp only [Option.some.injEq] at h
+    subst h
+    refine ⟨rfl, rfl, segsOk_length hok.1, hok.1, fun x hx => ?_, hok.2⟩
+    simp only [List.mem_filter] at hx
+    exact hx.2
+  · cases h
+
+/-- **The emission plan**: the segments of the blocks in `emitOrder`, one final line list each,
+accepted by `segsOk`; every alias is justified (`aliasOk`). -/
+theorem emitPlan_spec {k : Nat} {af : AFunc} {p : Plan} (h : emitPlan k af = .ok p) :
+    segsOf ⟨k, af.slotBase⟩ af (emitOrder af) {} = .ok (p.segs, p.ps) ∧
+      p.outs.length = p.segs.length ∧ segsOk af p.segs p.outs p.lines = true ∧
+      ∀ x ∈ p.alias, aliasOk af p.lines x = true := by
+  unfold emitPlan at h
+  simp only [bind, Except.bind] at h
+  split at h
+  · cases h
+  rename_i r hr
+  obtain ⟨ss, ps⟩ := r
+  dsimp only at h
+  split at h
+  · rename_i p1 h1
+    simp only [pure, Except.pure, Except.ok.injEq] at h
+    subst h
+    have h1' : machPlan af true ss ps = some p1 ∨ machPlan af false ss ps = some p1 := by
+      cases e : machPlan af true ss ps with
+      | some q => rw [e] at h1; simp only [Option.orElse] at h1; exact .inl h1
+      | none => rw [e] at h1; simp only [Option.orElse] at h1; exact .inr h1
+    obtain ⟨e1, e2, e3, e4, e5, -⟩ := h1'.elim machPlan_spec machPlan_spec
+    exact ⟨by rw [e1, e2]; exact hr, by rw [e1]; exact e3, by rw [e1]; exact e4, e5⟩
+  · split at h
+    · rename_i hok
+      simp only [Bool.and_eq_true] at hok
+      simp only [pure, Except.pure, Except.ok.injEq] at h
+      subst h
+      exact ⟨hr, by simp, hok.1, fun x hx => by simp at hx⟩
+    · cases h
+
+/-- **The emission plan's landing pads** (`padsOk`): the line the call-site table names for
+each `try_call` handler represents the handler's block. -/
+theorem emitPlan_pads {k : Nat} {af : AFunc} {p : Plan} (h : emitPlan k af = .ok p) :
+    padsOk af ((segsTrust af p.segs p.outs p.lines).contains ·) p.lines p.alias = true := by
+  unfold emitPlan at h
+  simp only [bind, Except.bind] at h
+  split at h
+  · cases h
+  rename_i r hr
+  obtain ⟨ss, ps⟩ := r
+  dsimp only at h
+  split at h
+  · rename_i p1 h1
+    simp only [pure, Except.pure, Except.ok.injEq] at h
+    subst h
+    have h1' : machPlan af true ss ps = some p1 ∨ machPlan af false ss ps = some p1 := by
+      cases e : machPlan af true ss ps with
+      | some q => rw [e] at h1; simp only [Option.orElse] at h1; exact .inl h1
+      | none => rw [e] at h1; simp only [Option.orElse] at h1; exact .inr h1
+    obtain ⟨e1, -, -, -, -, e6⟩ := h1'.elim machPlan_spec machPlan_spec
+    rw [e1]
+    exact e6
+  · split at h
+    · rename_i hok
+      simp only [Bool.and_eq_true] at hok
+      simp only [pure, Except.pure, Except.ok.injEq] at h
+      subst h
+      exact hok.2
+    · cases h
+
+/-- Segment `i` in `segLines`: its label line, its body and final lines, then the next
+segments. -/
+theorem segLines_at : ∀ {ss : List Seg} {os : List (List Line)} {i : Nat} {s : Seg} {o : List Line},
+    ss[i]? = some s → os[i]? = some o →
+    ∃ A, segLines ss os =
+        A ++ .label (.block s.label) :: (s.body ++ o) ++ segLines (ss.drop (i + 1)) (os.drop (i + 1)) ∧
+      (i = 0 → A = [])
+  | [], _, _, _, _, h, _ => by simp at h
+  | _ :: _, [], _, _, _, _, h => by simp at h
+  | s0 :: ss, o0 :: os, 0, s, o, h1, h2 => by
+    simp only [List.getElem?_cons_zero, Option.some.injEq] at h1 h2
+    subst h1 h2
+    exact ⟨[], by simp [segLines], fun _ => rfl⟩
+  | s0 :: ss, o0 :: os, i + 1, s, o, h1, h2 => by
+    simp only [List.getElem?_cons_succ] at h1 h2
+    obtain ⟨A, hA, -⟩ := segLines_at h1 h2
+    refine ⟨.label (.block s0.label) :: (s0.body ++ o0) ++ A, ?_, fun h => by cases h⟩
+    simp only [segLines, hA, List.drop_succ_cons]
+    simp
 
 /-! ## The final lines, block by block -/
 
-/-- The label of the block after `b` (the lookahead of `fallthrough` at the end of `b`). -/
-def nxtOf (af : AFunc) (b : Nat) : List Line :=
-  match af.blocks[b + 1]? with
-  | some p => [.label (.block p.1)]
-  | none => []
+/-- Block `b`'s segment and final lines in the emission plan of `emitFunc k af`. -/
+def segAt (k : Nat) (af : AFunc) (b : Nat) : Option (Seg × List Line) :=
+  match emitPlan k af with
+  | .ok p => (p.segs.zip p.outs).find? (·.1.idx == b)
+  | .error _ => none
 
-/-- The trap section appended after the body. -/
-def trapLines (ts : List (Lbl × Clif.TrapCode)) : List Line :=
-  ts.flatMap (fun p => [Line.label p.1, Line.ins (.udf 0xc11f) (some p.2)])
+/-- Block `b`'s last-instruction lines. -/
+def tmOf (k : Nat) (af : AFunc) (b : Nat) : List Line := ((segAt k af b).map (·.1.term)).getD []
 
-/-- The far labels `emitFunc` relaxes the branches to (`relaxOf` of the lines before relaxation). -/
+/-- Block `b`'s final lines (its last instruction's, after branch simplification). -/
+def otOf (k : Nat) (af : AFunc) (b : Nat) : List Line := ((segAt k af b).map (·.2)).getD []
+
+/-- The far labels `emitFunc` relaxes the branches to (`relaxOf` of the plan's lines). -/
 def emitFar (c : FnCtx) (af : AFunc) : Lbl → Bool :=
-  match blocksLinesE c af af.blocks.toList {} with
-  | .ok (body, ps) => relaxOf (ftList body ++ trapLines ps.traps.toList)
+  match emitPlan c.k af with
+  | .ok p => relaxOf p.lines
   | .error _ => fun _ => false
 
 set_option pp.proofs false in
 theorem emitFunc_ok {k : Nat} {af : AFunc} {fa : FnAsm} (h : emitFunc k af = .ok fa) :
-    ∃ body ps, blocksLinesE ⟨k, af.slotBase⟩ af af.blocks.toList {} = .ok (body, ps) ∧
-      fa.lines.toList = relaxLines (emitFar ⟨k, af.slotBase⟩ af)
-        (ftList body ++ trapLines ps.traps.toList) ∧ fa.k = k := by
+    ∃ p, emitPlan k af = .ok p ∧
+      fa.lines.toList = relaxLines (emitFar ⟨k, af.slotBase⟩ af) p.lines ∧ fa.k = k := by
   unfold emitFunc at h
-  cases hp : emitPre k af with
-  | error e => rw [hp] at h; cases h
-  | ok pre =>
-    rw [hp] at h
-    obtain ⟨body, ps, hb, rfl⟩ := emitPre_ok hp
+  cases hp : emitPlan k af with
+  | error e =>
+    have : emitPre k af = .error e := by simp [emitPre, hp, Functor.map, Except.map]
+    rw [this] at h; cases h
+  | ok p =>
+    have : emitPre k af = .ok p.lines.toArray := by simp [emitPre, hp, Functor.map, Except.map]
+    rw [this] at h
     simp only [bind, Except.bind, pure, Except.pure] at h
     split at h
     · cases h
     · simp only [Except.ok.injEq] at h
       subst h
-      refine ⟨body, ps, hb, ?_, rfl⟩
-      simp [emitFar, hb, trapLines]
+      refine ⟨p, rfl, ?_, rfl⟩
+      simp [emitFar, hp]
 
-/-- **Block `b` in the final lines**: its label at line `j`, then the `fallthrough` of its code's
-lines followed by the next block's label. -/
-theorem emit_block {k : Nat} {af : AFunc} {fa : FnAsm} (h : emitFunc k af = .ok fa) :
-    ∃ body psF, blocksLinesE ⟨k, af.slotBase⟩ af af.blocks.toList {} = .ok (body, psF) ∧
-      fa.lines.toList = relaxLines (emitFar ⟨k, af.slotBase⟩ af)
-        (ftList body ++ trapLines psF.traps.toList) ∧
-      ∀ b l code, af.blocks[b]? = some (l, code) →
-        ∃ j ls ps1 ps2 R, fa.lines.toList[j]? = some (.label (.block l)) ∧
-          fa.lines.toList.drop (j + 1) =
-            relaxLines (emitFar ⟨k, af.slotBase⟩ af) (ftList (ls ++ nxtOf af b)) ++ R ∧
-          codeLinesE ⟨k, af.slotBase⟩ af code.toList ps1 = .ok (ls, ps2) ∧
-          ps2.traps.toList <+: psF.traps.toList ∧ (b = 0 → j = 0) := by
-  obtain ⟨body, psF, hb, hL', -⟩ := emitFunc_ok h
-  generalize emitFar ⟨k, af.slotBase⟩ af = F at hL' ⊢
-  refine ⟨body, psF, hb, hL', fun b l code hbc => ?_⟩
-  obtain ⟨pre, ls, ps1, ps2, post, hbody, hc, -, hp2, hn, hn', hpre0⟩ :=
-    blocksLinesE_block hb (by simpa using hbc)
-  obtain ⟨Z, hZ⟩ := ftList_snoc_label (.block l) pre
-  have hsplit := ftList_label_split (.block l) (ls ++ post) pre
-  rw [← hbody, hZ] at hsplit
-  have hpost : ∃ R0, ftList (ls ++ post) = ftList (ls ++ nxtOf af b) ++ R0 := by
-    unfold nxtOf
-    cases hb1 : af.blocks[b + 1]? with
+/-- Segment `i` of a plan is found by its block index. -/
+theorem segAt_of {k : Nat} {af : AFunc} {p : Plan} (hp : emitPlan k af = .ok p) {i : Nat}
+    {s : Seg} {o : List Line} (hs : p.segs[i]? = some s) (ho : p.outs[i]? = some o) :
+    segAt k af s.idx = some (s, o) := by
+  obtain ⟨hseg, hlen, -⟩ := emitPlan_spec hp
+  obtain ⟨hl, -, hss⟩ := segsOf_spec hseg
+  -- the indices of the segments are those of `emitOrder`, hence distinct
+  have hidx : p.segs.map (·.idx) = (emitOrder af).map (·.2) := by
+    apply List.ext_getElem?
+    intro n
+    simp only [List.getElem?_map]
+    cases hn : p.segs[n]? with
     | none =>
-      rw [hn' (by simpa using hb1)]
-      exact ⟨[], by simp⟩
-    | some p =>
-      obtain ⟨post', rfl⟩ := hn p (by simpa using hb1)
-      exact ⟨ftList post', ftList_label_split _ post' ls⟩
-  obtain ⟨R0, hR0⟩ := hpost
-  refine ⟨(relaxLines F Z).length, ls, ps1, ps2,
-    relaxLines F R0 ++ relaxLines F (trapLines psF.traps.toList), ?_, ?_, hc, hp2, fun h0 => ?_⟩
-  · rw [hL', hsplit]; simp [relaxLines, relaxLine, Line.relaxable?]
-  · rw [hL', hsplit, hR0]
+      have : (emitOrder af).length ≤ n := by
+        rw [← hl]; exact List.getElem?_eq_none_iff.mp hn
+      simp [List.getElem?_eq_none_iff.mpr this]
+    | some s' =>
+      obtain ⟨code, -, -, -, hb, -⟩ := hss n s' hn
+      simp [hb]
+  have hnd : (p.segs.map (·.idx)).Nodup := hidx ▸ emitOrder_nodup af
+  unfold segAt
+  rw [hp]
+  simp only
+  have hz : (p.segs.zip p.outs)[i]? = some (s, o) := by
+    rw [List.getElem?_zip_eq_some]; exact ⟨hs, ho⟩
+  rw [List.find?_eq_some_iff_getElem]
+  refine ⟨by simp, i, (List.getElem?_eq_some_iff.mp hz).1, by simpa using (List.getElem?_eq_some_iff.mp hz).2, ?_⟩
+  intro j hj
+  have hj' : j < p.segs.length := by
+    have := (List.getElem?_eq_some_iff.mp hz).1; simp at this; omega
+  have hjz : j < (p.segs.zip p.outs).length := by
+    have := (List.getElem?_eq_some_iff.mp hz).1; omega
+  have hi : i < p.segs.length := by
+    have := (List.getElem?_eq_some_iff.mp hz).1; simp at this; omega
+  have hsi : p.segs[i] = s := by simpa using (List.getElem?_eq_some_iff.mp hs).2
+  simp only [List.getElem_zip]
+  have hne : p.segs[j].idx ≠ s.idx := by
+    intro he
+    have := (List.Nodup.getElem_inj hnd (i := j) (j := i) (hi := by simpa using hj')
+      (hj := by simpa using hi)).mp (by simp [he, hsi])
+    omega
+  simpa using hne
+
+/-- **Block `b` in the final lines**: its label at line `j`, then the relaxation of its body and
+its final lines, then the following segments and the traps. -/
+theorem emit_seg {k : Nat} {af : AFunc} {fa : FnAsm} (h : emitFunc k af = .ok fa) :
+    ∃ p, emitPlan k af = .ok p ∧
+      fa.lines.toList = relaxLines (emitFar ⟨k, af.slotBase⟩ af) p.lines ∧
+      ∀ b l code, af.blocks[b]? = some (l, code) →
+        ∃ i s o j ps1 psm ps2, p.segs[i]? = some s ∧ p.outs[i]? = some o ∧ s.idx = b ∧
+          s.label = l ∧ segAt k af b = some (s, o) ∧
+          fa.lines.toList[j]? = some (.label (.block l)) ∧
+          fa.lines.toList.drop (j + 1) = relaxLines (emitFar ⟨k, af.slotBase⟩ af) (s.body ++ o) ++
+            relaxLines (emitFar ⟨k, af.slotBase⟩ af)
+              (segLines (p.segs.drop (i + 1)) (p.outs.drop (i + 1)) ++ trapLines p.ps) ∧
+          codeLinesE ⟨k, af.slotBase⟩ af code.toList.dropLast ps1 = .ok (s.body, psm) ∧
+          codeLinesE ⟨k, af.slotBase⟩ af code.toList.getLast?.toList psm = .ok (s.term, ps2) ∧
+          ps2.traps.toList <+: p.ps.traps.toList ∧ (b = 0 → j = 0) := by
+  obtain ⟨p, hp, hL, -⟩ := emitFunc_ok h
+  generalize hF : emitFar ⟨k, af.slotBase⟩ af = F at hL ⊢
+  refine ⟨p, hp, hL, fun b l code hbc => ?_⟩
+  obtain ⟨hseg, hlen, -⟩ := emitPlan_spec hp
+  obtain ⟨hl, -, hss⟩ := segsOf_spec hseg
+  have hm := emitOrder_mem hbc
+  obtain ⟨i, hi⟩ := List.getElem?_of_mem hm
+  have hil : i < p.segs.length := by rw [hl]; exact (List.getElem?_eq_some_iff.mp hi).1
+  obtain ⟨s, hs⟩ : ∃ s, p.segs[i]? = some s := ⟨_, List.getElem?_eq_getElem hil⟩
+  obtain ⟨o, ho⟩ : ∃ o, p.outs[i]? = some o :=
+    ⟨_, List.getElem?_eq_getElem (by rw [hlen]; exact hil)⟩
+  obtain ⟨code', ps1, psm, ps2, hb, e1, e2, -, p2⟩ := hss i s hs
+  rw [hi] at hb
+  simp only [Option.some.injEq, Prod.mk.injEq] at hb
+  obtain ⟨⟨rfl, rfl⟩, rfl⟩ := hb
+  obtain ⟨A, hA, hA0⟩ := segLines_at hs ho
+  refine ⟨i, s, o, (relaxLines F A).length, ps1, psm, ps2, hs, ho, rfl, rfl, segAt_of hp hs ho,
+    ?_, ?_, e1, e2, p2, fun h0 => ?_⟩
+  · rw [hL, Plan.lines, hA]
+    simp [relaxLines, relaxLine, Line.relaxable?]
+  · rw [hL, Plan.lines, hA]
     simp [relaxLines, relaxLine, Line.relaxable?, List.drop_append]
-  · subst h0
-    rw [hpre0 rfl, List.nil_append, ftList_cons] at hZ
-    have := congrArg List.length hZ
-    simp [ftStep, ftList] at this
-    simp [this, relaxLines]
-
-/-! ## Lines `fallthrough` leaves alone -/
-
-/-- A line neither `fallthrough` nor branch relaxation (`relaxLine`) rewrites: an instruction
-that is neither `b` nor a conditional branch. -/
-def Line.plain : Line → Bool
-  | .ins (.b _) none => false
-  | .ins c none => c.condTarget?.isNone
-  | .ins _ (some _) => true
-  | _ => false
-
-theorem Line.plain_ins {c : Insn} (h : (Line.ins c none).plain = true) : c.condTarget? = none := by
-  cases c <;> simp_all [Line.plain, Insn.condTarget?]
-
-theorem ftStep_plain {ln : Line} {n1 n2 : Option Line} (hp : ln.plain = true)
-    (h : ∀ c e l, ln = .ins c none → n1 = some (.ins (.b e) none) → n2 = some (.label l) →
-      c.condTarget? ≠ some l) :
-    ftStep ln n1 n2 = ([ln], 1) := by
-  unfold ftStep
-  repeat' split
-  all_goals simp_all [Line.plain]
-
-/-- Plain lines pass through `fallthrough` unchanged (the following code has no trap label in
-second position). -/
-theorem ftList_plain_append :
-    ∀ (P Z : List Line), (∀ ln ∈ P, ln.plain = true) → (∀ n, Z[1]? ≠ some (.label (.trap n))) →
-      ftList (P ++ Z) = P ++ ftList Z
-  | [], Z, _, _ => by simp
-  | ln :: P, Z, hP, hZ => by
-    simp only [List.cons_append]
-    rw [ftList_cons]
-    have hln := hP ln (by simp)
-    rw [ftStep_plain hln]
-    · simp only [List.drop_succ_cons, List.drop_zero, List.singleton_append]
-      rw [ftList_plain_append P Z (fun x hx => hP x (by simp [hx])) hZ]
-    · intro c e l hc h1 h2 htgt
-      subst hc
-      cases P with
-      | nil => exact absurd htgt (by rw [Line.plain_ins hln]; simp)
-      | cons x P =>
-        simp only [List.cons_append, List.getElem?_cons_zero, Option.some.injEq] at h1
-        subst h1
-        simp [Line.plain] at hP
+  · -- the entry block is the first segment
+    rw [h0] at hi hbc
+    have hh := emitOrder_head (af := af) (e := (s.label, code)) hbc
+    have hi0 : (emitOrder af)[0]? = some ((s.label, code), 0) := by
+      rw [← List.head?_eq_getElem?]; exact hh
+    have hlt := (List.getElem?_eq_some_iff.mp hi).1
+    have hlt0 := (List.getElem?_eq_some_iff.mp hi0).1
+    have e : ((emitOrder af).map (·.2))[i]'(by simpa using hlt) =
+        ((emitOrder af).map (·.2))[0]'(by simpa using hlt0) := by
+      simp [(List.getElem?_eq_some_iff.mp hi).2, (List.getElem?_eq_some_iff.mp hi0).2]
+    have : i = 0 := (List.Nodup.eq_of_getElem_eq (emitOrder_nodup af) _ _ e)
+    simp [hA0 this, relaxLines]
 
 end Backend

@@ -1,4 +1,4 @@
-import FV.E2E.RegLevelArgs
+import FV.E2E.RegLevelFwd
 
 /-!
 # Branches on the machine (M6)
@@ -274,33 +274,96 @@ theorem itemsChecked_block {R : RL} (hR : R.Wf) {t : Nat} {vb : VBlock} {items :
   cases hit'
   exact ⟨c, 0, a, out, hc.rf_eq, hc.vc_eq, hrun⟩
 
-/-- **Entering a block** (other than the entry block): at the offset of the block's label, the
-machine is at the start of the block's items. -/
+/-- **At the label line of a block** (other than the entry) whose segment was checked (it
+forwards nowhere or is trusted, `planOwn`): the machine is at the start of the block's items
+(`Qs`). -/
+theorem qs_entry {R : RL} (hR : R.Wf) {t : Nat} {vb : VBlock} {items : Array RItem} (ht : t ≠ 0)
+    (hvb : R.vc.blocks[t]? = some vb) (hit : R.rf.blocks[t]? = some items)
+    (ho : (R.af.fwd? vb.label).isNone = true ∨ planOwn R.fa.k R.af vb.label = true)
+    {s : Arm.ArmState} {m : Loc → CV} {w : Arm.ArmState} {jl : Nat}
+    (hjl : R.L[jl]? = some (.label (.block vb.label))) (hpc : Arm.r .PC s = R.pcOf jl)
+    (hst : StRel R s m w) : Qs R s t items.toList m w := by
+  obtain ⟨⟨-, -, -, hbl⟩, -⟩ := lowerRFunc_ok hR.alloc
+  obtain ⟨code, hcode, haf⟩ := hbl t vb items hvb hit
+  obtain ⟨p, hp, hL, hseg⟩ := emit_seg hR.emit
+  obtain ⟨i, sg, o, -, ps1, psm, ps2, hs, ho', hidx, hlab, -, -, -, e1, e2, hpre, -⟩ :=
+    hseg t _ _ haf
+  simp only [ht, ite_false, List.nil_append, List.toList_toArray] at e1 e2
+  obtain ⟨A, hA, hX⟩ := segX_get hp hs ho'
+  rw [hidx] at hX
+  obtain ⟨p', hp', hps⟩ := hR.psF
+  rw [hp] at hp'
+  cases hp'
+  have hPL : planLines R.fa.k R.af = p.lines := by simp [planLines, hp]
+  have hRL : R.L = relaxLines R.far p.lines := hL
+  -- the block's label line
+  have e : p.lines = (A ++ [Line.label (.block sg.label)] ++ (sg.body ++ o)) ++
+      (segLines (p.segs.drop (i + 1)) (p.outs.drop (i + 1)) ++ trapLines p.ps) := by
+    rw [hA]; simp
+  have hlbl : p.lines[A.length]? = some (.label (.block vb.label)) := by
+    rw [hA, ← hlab, List.append_assoc, List.cons_append]; exact getElem?_mid _ _ _
+  have r1 := relax_label (F := R.far) hlbl
+  rw [← hRL] at r1
+  have hj : jl = rix R.far p.lines A.length := labelOffsets_uniq hR.lm hjl r1.1
+  subst hj
+  refine ⟨rix R.far p.lines (A.length + 1), vb, items, [], code, sg.body, ps1, psm, ps2,
+    (sg, o, A.length + 1 + sg.body.length + o.length), hvb, hit, rfl,
+    itemsChecked_block hR hvb hit, hcode, e1, e2, by rw [← hps]; exact hpre, ?_, ?_, hst, hX,
+    segChecked_of hp hX (by rw [hlab]; exact ho)⟩
+  · have d1 : p.lines.drop (A.length + 1) = (sg.body ++ o) ++
+        (segLines (p.segs.drop (i + 1)) (p.outs.drop (i + 1)) ++ trapLines p.ps) := by
+      rw [e, List.append_assoc]; exact List.drop_left' (by simp)
+    have d2 : p.lines.drop (A.length + 1 + sg.body.length + o.length) =
+        segLines (p.segs.drop (i + 1)) (p.outs.drop (i + 1)) ++ trapLines p.ps := by
+      rw [e]; exact List.drop_left' (by simp; omega)
+    rw [hPL, hRL, relax_drop, relax_drop, d1, d2, relaxLines_append]
+  · rw [hpc, r1.2]
+    simp only [RL.pcOf]
+    rw [lineOffset_succ _ _ _ r1.1]
+    simp [Line.size]
+
+/-- **Entering a block** (other than the entry) at a line that represents its label (`RepL`:
+the label lines from there on include the block's own label, which it may have only if it
+forwards nowhere or is trusted, or the block forwards to a block the line represents): `QE`. -/
+theorem qe_entry {R : RL} (hR : R.Wf) {s : Arm.ArmState} {m : Loc → CV} {w : Arm.ArmState}
+    (hst : StRel R s m w) {l : Label} {jl : Nat}
+    (hrep : RepL R.af (planOwn R.fa.k R.af) R.L l jl) (hpc : Arm.r .PC s = R.pcOf jl) :
+    ∀ {t : Nat} {vb : VBlock} {items : Array RItem}, t ≠ 0 → R.vc.blocks[t]? = some vb →
+      vb.label = l → R.rf.blocks[t]? = some items → QE R s m w t := by
+  revert hpc
+  induction hrep with
+  | here ho hL =>
+    intro hpc t vb items ht hvb hl hit
+    subst hl
+    exact .std hit (qs_entry hR ht hvb hit ho hL hpc hst)
+  | @skip l j l' ho hL _ ih =>
+    intro hpc
+    refine ih ?_
+    rw [hpc]
+    simp only [RL.pcOf]
+    rw [lineOffset_succ _ _ _ hL]
+    simp [Line.size]
+  | @fwd l x j hx _ ih =>
+    intro hpc t vb items ht hvb hl hit
+    obtain ⟨b', vb', items', allocs, regs, i, bx, vbx, itx, hvb', hl', hit', -, hil, hal, hins,
+      hasg, hsucc, hvbx, hlx, hitx, hbx0⟩ := RL.fwd_block hR hx
+    obtain rfl : t = b' := RL.label_inj hR hvb hit hvb' hit' (hl.trans hl'.symm)
+    rw [hvb] at hvb'
+    cases hvb'
+    rw [hit] at hit'
+    cases hit'
+    exact .fwd hvb (by rw [hl]; exact hx) hit hil hal hins hasg hsucc hvbx hlx
+      (ih hpc hbx0 hvbx hlx hitx)
+
+/-- **Entering a block** (other than the entry) at a line that represents its label (`RepL`).
+The statement before #553 took the block's own label line; `MachBuffer`'s branch
+simplification (#553) removes or aliases a forwarding block's `b`, so a block is entered at a
+line representing it, possibly through forwarding blocks (`QE`). -/
 theorem q_entry {R : RL} (hR : R.Wf) {t : Nat} {vb : VBlock} {items : Array RItem} (ht : t ≠ 0)
     (hvb : R.vc.blocks[t]? = some vb) (hit : R.rf.blocks[t]? = some items)
     {s : Arm.ArmState} {m : Loc → CV} {w : Arm.ArmState} {jl : Nat}
-    (hjl : R.L[jl]? = some (.label (.block vb.label))) (hpc : Arm.r .PC s = R.pcOf jl)
-    (hst : StRel R s m w) : Q R s (.run ⟨t, items.toList, m, w⟩) := by
-  obtain ⟨⟨-, -, -, hbl⟩, -⟩ := lowerRFunc_ok hR.alloc
-  obtain ⟨code, hcode, haf⟩ := hbl t vb items hvb hit
-  obtain ⟨body, psF, hb, -, hblk⟩ := emit_block hR.emit
-  obtain ⟨body', hb'⟩ := hR.psF
-  have hk : R.ctx = ⟨R.fa.k, R.af.slotBase⟩ := rfl
-  rw [hk, hb] at hb'
-  simp only [Except.ok.injEq, Prod.mk.injEq] at hb'
-  obtain ⟨-, rfl⟩ := hb'
-  obtain ⟨j0, ls, ps1, ps2, T, hj0, hdrop, hls, htr, -⟩ := hblk t _ _ haf
-  simp only [ht, ite_false, List.nil_append, List.toList_toArray] at hls
-  refine ⟨j0 + 1, vb, items, [], code, ls, ps1, ps2, T, hvb, hit, rfl,
-    itemsChecked_block hR hvb hit, hcode, hls, htr, hdrop, ?_, hst⟩
-  rw [hpc]
-  simp only [RL.pcOf, RL.L]
-  rw [lineOffset_succ _ _ _ hj0]
-  have e1 := labelOffsets_label hR.lm hj0
-  have e2 := labelOffsets_label hR.lm hjl
-  rw [e1] at e2
-  simp only [Option.some.injEq] at e2
-  simp only [Line.size, Nat.add_zero, RL.L] at e2 ⊢
-  rw [e2]
+    (hrep : RepL R.af (planOwn R.fa.k R.af) R.L vb.label jl) (hpc : Arm.r .PC s = R.pcOf jl)
+    (hst : StRel R s m w) : Q R s (.run ⟨t, items.toList, m, w⟩) :=
+  .inr ⟨items, hit, rfl, qe_entry hR hst hrep hpc ht hvb rfl hit⟩
 
 end Backend.Proof

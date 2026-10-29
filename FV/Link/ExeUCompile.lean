@@ -85,7 +85,6 @@ def unwFnsFail (R : Res) : Option String :=
     else if !(Backend.callSites a.af a.fa).toBool then some s!"{g.name}: callSites"
     else if !(Backend.unwindRows a.af a.fa).toBool then some s!"{g.name}: unwindRows"
     else if !Backend.Proof.padsNonzeroB a.af a.fa then some s!"{g.name}: padsNonzeroB"
-    else if !Backend.Proof.lastCallsOk a.af a.fa then some s!"{g.name}: lastCallsOk"
     else if !Backend.savedCheck a.vcp a.rf then some s!"{g.name}: savedCheck"
     else none
 

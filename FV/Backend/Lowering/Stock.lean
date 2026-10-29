@@ -719,6 +719,7 @@ def lower (f : Clif.Function) : Except String Result := do
     scans := driver.scans
     blockScans := driver.blockScans
     code := { name := f.name, blocks, classes := st.base.classes,
-              slotBytes, outgoing := st.base.outgoing, rulesFired := driver.rules } }
+              slotBytes, outgoing := st.base.outgoing, rulesFired := driver.rules,
+              cold := loweredCold f blocks } }
 
 end Backend.Stock

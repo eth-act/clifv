@@ -171,7 +171,8 @@ theorem machU_none (h : L.Ub = Unw.UnwHooks.none) (M : Nat) (g : Clif.Function) 
 /-- **The premises of the linked program with unwinding** (`LinkSys.Ok`'s extension): the CLIF
 base with unwinding is the base's (`envX`); per function, the lowering's unwinding validator and
 the tables and checks the unwinder's model needs (`callSites`, `unwindRows`, `padsNonzeroB`,
-`lastCallsOk`, `savedCheck`); the indirect-call scope of the runs with unwinding; and the base
+`savedCheck`; since #622 no check on the calls of the last block, `siteAt_any`); the
+indirect-call scope of the runs with unwinding; and the base
 environment's raising callees: their exceptional results at the program's call sites
 (`XRaiseOk`, `XRaiseIndOk`), exclusivity with normal returns, their effect on the error field and
 the program, the machine's raising callees' contract at the base call sites (`baseUnw`: a raise
@@ -186,7 +187,6 @@ structure OkU : Prop where
   sites : ∀ g ∈ L.P.funcs, ∃ lsda, callSites (L.A g).af (L.A g).fa = .ok lsda
   rows : ∀ g ∈ L.P.funcs, ∃ rows, unwindRows (L.A g).af (L.A g).fa = .ok rows
   pads : ∀ g ∈ L.P.funcs, padsNonzeroB (L.A g).af (L.A g).fa = true
-  last : ∀ g ∈ L.P.funcs, lastCallsOk (L.A g).af (L.A g).fa = true
   saved : ∀ g ∈ L.P.funcs, savedCheck (L.A g).vcp (L.A g).rf = true
   indScopeX : ∀ g ∈ L.P.funcs, ¬ Clif.IndFree g → Clif.IndScopeX L.P L.envX L.syms
   baseXR : ∀ g ∈ L.P.funcs, ∀ F slotOff out c, XRaiseOk L.envX

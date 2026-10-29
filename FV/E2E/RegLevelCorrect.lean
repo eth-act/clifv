@@ -304,7 +304,7 @@ theorem realizes_step {R : RL} (hR : R.Wf) (hC : CalleeOkG R.F R.K R.G R.s0 (Cal
         obtain ⟨rfl, rfl, rfl⟩ := hsem
         cases hn with
         | halt => exact fin 0 _ hstep trivial nil
-      case emitIsland nb => exact fin 0 c' hstep (realizes_island hq hvb hi hstep) nil
+      case emitIsland nb => exact fin 0 c' hstep (realizes_island hR hq hvb hi hstep) nil
       case jtSequence d ts ridx t1 t2 =>
         obtain ⟨n, c'', hm, hq', ht⟩ := realizes_jt hR hq hvb hi hstep
         exact fin n c'' hm hq' ht
@@ -434,11 +434,11 @@ theorem regLevelCorrect_world_atX {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : 
         (∀ i < n, actGoodX vcp rf af fa fb base s X H K G gv (E2E.runX (ArmStepX X H fa) i s)) ∧
         ∀ m, Arm.r .ERR (E2E.runX (ArmStepX X H fa) (n + m + 1) s) ≠ .None) := by
   obtain ⟨lm, hlm⟩ := FnAsm.layout_labelOffsets hlayout
-  obtain ⟨body, psF, hb, -, hk⟩ := emitFunc_ok hemit
+  obtain ⟨p, hp, hL, hk⟩ := emitFunc_ok hemit
   subst hk
-  let R : RL := ⟨vcp, rf, af, fa, fb, lm, base, s, X, H, psF, K, G, gv⟩
+  let R : RL := ⟨vcp, rf, af, fa, fb, lm, base, s, X, H, p.ps, K, G, gv⟩
   have hR : R.Wf := ⟨⟨cc, ins, a0, hcheck, hok⟩, halloc, hemit, hlayout, hlm, by show 4 * fb.words.size ≤ 2 ^ 64; have := hent.fits; omega, hres,
-    ⟨body, hb⟩, hent.program, hG⟩
+    ⟨p, hp, rfl⟩, hent.program, hG⟩
   have hck := (lowerRFunc_ok hR.alloc).2.2
   obtain ⟨n0, ht0, hq0, hA0, hf0⟩ := q_init hR hent hbe
   obtain ⟨Rl, hSim, hinit, hkeep⟩ :=

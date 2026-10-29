@@ -216,7 +216,7 @@ example : ∃ vc : VCode, (∃ ss ps, vc.cfg = .ok (ss, ps)) ∧
   let m : MInst := .mov .size64 (.vreg 0 .int) .xzr
   let ret : MInst := .rets []
   let vb : VBlock := ⟨0, #[m, ret], #[], #[]⟩
-  let vc : VCode := ⟨"availability_cleanup", #[vb], #[.int], 0, 0, #[]⟩
+  let vc : VCode := ⟨"availability_cleanup", #[vb], #[.int], 0, 0, #[], #[]⟩
   have hm : m.operands = .ok #[⟨0, .int, .def, .late, .reg⟩] := rfl
   have hr : ret.operands = .ok #[] := rfl
   have hblock {b : Nat} {bb : VBlock} (hb : vc.blocks[b]? = some bb) : bb = vb := by
