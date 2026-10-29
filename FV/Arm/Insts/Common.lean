@@ -11,6 +11,9 @@ module
 
 public import FV.Arm.BitVec
 public import FV.Arm.State
+public import FV.Arm.Insts.CommonBits
+-- The dsimprocs below evaluate the bit-mask functions at elaboration time.
+meta import FV.Arm.Insts.CommonBits
 
 @[expose] public section
 
@@ -376,41 +379,8 @@ deriving DecidableEq, Repr
 
 instance : ToString LogicalImmType where toString a := toString (repr a)
 
-/- Find the index of the most significant set bit, if any, in `bv`.
-This function differs from the Arm's HighestSetBit
-(https://developer.arm.com/documentation/ddi0602/2022-03/Shared-Pseudocode/Shared-Functions?lang=en#impl-shared.HighestSetBit.1)
-because it returns `n` when no set bit is found, instead of returning `-1`.
--/
-def highest_set_bit (bv : BitVec n) : Nat :=
-  go (n - 1) bv where
-  go (i : Nat) (bv : BitVec n) :=
-    if lsb bv i = 1#1 then
-      i
-    else
-      if i = 0 then
-        n
-      else
-        go (i - 1) bv
-
-/- Find the index of the least significant set bit, if any, in `bv`.
-This function matches Arm's LowestSetBit
-(https://developer.arm.com/documentation/ddi0602/2022-03/Shared-Pseudocode/Shared-Functions?lang=en#impl-shared.LowestSetBit.1)
--- it returns `n` when no set bit is found.
--/
-def lowest_set_bit (bv : BitVec n) : Nat :=
-  go 0 bv where
-  go (i : Nat) (bv : BitVec n) :=
-    if i >= n then
-      n
-    else
-      if lsb bv i = 1#1 then
-        i
-      else
-        go (i + 1) bv
-  termination_by (n - i)
-
 open Lean Meta Simp in
-@[inline] def reduceFindSetBit (declName : Name) (arity : Nat)
+@[inline] meta def reduceFindSetBit (declName : Name) (arity : Nat)
     (op : {n : Nat} → BitVec n → Nat) (e : Expr) : Lean.Meta.Simp.SimpM DStep := do
   unless e.isAppOfArity declName arity do return .continue
   let some ⟨_, v⟩ ← getBitVecValue? e.appArg! | return .continue
@@ -421,24 +391,6 @@ dsimproc [state_simp_rules] reduce_highest_set_bit (highest_set_bit _) :=
 
 dsimproc [state_simp_rules] reduce_lowest_set_bit (lowest_set_bit _) :=
   reduceFindSetBit ``lowest_set_bit 2 lowest_set_bit
-
-def invalid_bit_masks (immN : BitVec 1) (imms : BitVec 6) (immediate : Bool)
-  (M : Nat) : Bool :=
-  let inp := immN ++ ~~~imms
-  let len := highest_set_bit inp
-  if len = BitVec.width inp then
-    -- If no set bit is found in `inp`, then `highest_set_bit` returns the width
-    -- of `inp`.
-    true
-  else if len < 1 ∧ M < (1 <<< len) then
-   true
-  else
-    let levels := setWidth 6 (allOnes len)
-    if immediate ∧ (imms &&& levels = levels) then
-      true
-    else
-      let esize := 1 <<< len
-      if esize * (M / esize) ≠ M then true else false
 
 open Lean Meta Simp in
 dsimproc [state_simp_rules] reduceInvalidBitMasks (invalid_bit_masks _ _ _ _) := fun e => do
@@ -458,51 +410,6 @@ dsimproc [state_simp_rules] reduceInvalidBitMasks (invalid_bit_masks _ _ _ _) :=
                     imm.expr.isTrue
                     M)
   else return .continue
-
-theorem M_divisible_by_esize_of_valid_bit_masks (immN : BitVec 1) (imms : BitVec 6)
-  (immediate : Bool) (M : Nat):
-  ¬ invalid_bit_masks immN imms immediate M →
-  let len := highest_set_bit $ immN ++ ~~~imms
-  let esize := 1 <<< len
-  esize * (M / esize) = M := by
-    unfold invalid_bit_masks
-    simp only [Nat.lt_one_iff, ite_not, Bool.not_eq_true]
-    split
-    · simp only [Nat.reduceAdd, false_implies, Bool.true_eq_false]
-    . simp_all only [Bool.ite_eq_false_distrib, ite_eq_left_iff, imp_false]
-      split
-      . simp only [Bool.true_eq_false, Nat.reduceAdd, false_implies]
-      . split
-        . simp only [Bool.true_eq_false, Nat.reduceAdd, false_implies]
-        . simp only [Nat.reduceAdd, Bool.true_eq_false, imp_false,
-            Decidable.not_not, imp_self]
-    done
-
--- Resources on Arm bitmask immediate:
---   https://developer.arm.com/documentation/dui0802/b/A64-General-Instructions/MOV--bitmask-immediate-
---   https://kddnewton.com/2022/08/11/aarch64-bitmask-immediates.html
--- Arm Implementation:
---   https://developer.arm.com/documentation/ddi0602/2023-12/Shared-Pseudocode/aarch64-functions-bitmasks?lang=en#impl-aarch64.DecodeBitMasks.5
-def decode_bit_masks (immN : BitVec 1) (imms immr : BitVec 6)
-                     (immediate : Bool) (M : Nat) :
-                     Option (BitVec M × BitVec M) :=
-  if h0 : invalid_bit_masks immN imms immediate M then none
-  else
-    let len := Option.get! $ highest_set_bit $ immN ++ ~~~imms
-    let levels := setWidth 6 (allOnes len)
-    let s := imms &&& levels
-    let r := immr &&& levels
-    let diff := s - r
-    let esize := 1 <<< len
-    let d := extractLsb' 0 len diff
-    let welem := setWidth esize (allOnes (s.toNat + 1))
-    let telem := setWidth esize (allOnes (d.toNat + 1))
-    let wmask := replicate (M/esize) $ rotateRight welem r.toNat
-    let tmask := replicate (M/esize) telem
-    have h : esize * (M / esize) = M := by
-      apply M_divisible_by_esize_of_valid_bit_masks immN imms immediate M
-      simp_all
-    some (BitVec.cast h wmask, BitVec.cast h tmask)
 
 open Lean Meta Simp in
 dsimproc [state_simp_rules] reduceDecodeBitMasks (decode_bit_masks _ _ _ _ _) :=

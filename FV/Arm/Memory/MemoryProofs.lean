@@ -6,6 +6,7 @@ Author(s): Shilpi Goel
 -- Modified by fv-compiler-rust (2026): ported to Lean v4.34.1, module prefix FV.Arm, wrapped in namespace Arm, proofs adapted to v4.34 lemma names.
 module
 
+import all FV.Arm.State
 public import FV.Arm.FromMathlib
 public import FV.Arm.State
 public import FV.Arm.Memory.Separate
