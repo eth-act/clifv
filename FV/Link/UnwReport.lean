@@ -8,7 +8,9 @@ import FV.Link.UnwCheckIn
 `lake exe lean-link` prints, per executable, how many compiled functions fail each per-function
 unwinding check `unwFnsB` decides (`unwCheck`, `callSites`, `unwindRows`, `padsNonzeroB`,
 `savedCheck`), the input conditions of `tryInfoOk_of_input` (`tryTablesB`) and
-`unwCheck_complete` (`tryRetsB`), and the
+`unwCheck_complete` (`tryRetsB`), `aliasEntryOkB` (the premise of the generic
+`padsNonzero_complete`; a theorem on the pipeline's output, `alias_ne_entry`/
+`fwd_ne_entry_input`, so this row is a cross-check expected to be 0), and the
 functions whose `.eh_frame` entry `ehOkR` rejects (`fnEhFail`). Nothing here is a premise or a
 decision of the compiler; it measures how often the conditions of the totality argument fail on
 real code.

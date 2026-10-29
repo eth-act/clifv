@@ -7,8 +7,10 @@ import FV.Link.UnwCheckIn
 `unwCondB` (`FV/Link/UnwFnIn.lean`) still lists `unwCheck`, now a theorem: `unwCheck_complete`
 (from `Dominated`, `LowerScope`, `tryTablesB` and the input condition `tryRetsB`).
 **`unwCondInB`** lists what is left per function: the input conditions `tryTablesB` and
-`tryRetsB`, `lastCallsOk` (#518) and the code size (Cranelift's frame, #549, made the saves'
-rows unconditional, so the frame conditions `saveFrameB`/`leadOkB` are gone).
+`tryRetsB` and the code size (Cranelift's frame, #549, made the saves' rows unconditional, so
+the frame conditions `saveFrameB`/`leadOkB` are gone; `lastCallsOk` is no longer needed since
+#622; since #553 `callSites` reads the emitter's aliases, and no alias resolves to the entry
+block on the pipeline's output: `fwd_ne_entry_input`).
 **`unwCondB_of_in`** gives `unwCondB` from it; **`unwCondsB_of_in`** lifts this to every
 compiled function of an input in `InScopeIn`, and **`compileExeU_total_ldCond`** is
 `compileExeU_total_ldIn` on these conditions.
@@ -20,10 +22,9 @@ set_option autoImplicit false
 
 open Backend Backend.Proof Backend.Proof.Driver E2E E2E.LinkCheck
 
-/-- **The per-function unwinding conditions left** (see the module doc; `lastCallsOk` dropped
-since #622, `aliasEntryOkB` added by #553: `callSites` reads the emitter's aliases). -/
+/-- **The per-function unwinding conditions left** (see the module doc). -/
 def unwCondInB (g : Clif.Function) (a : Art) : Bool :=
-  tryTablesB g && tryRetsB g && aliasEntryOkB a.af a.fa && decide (4 * a.fb.words.size < 2 ^ 32)
+  tryTablesB g && tryRetsB g && decide (4 * a.fb.words.size < 2 ^ 32)
 
 /-- `unwCondInB` of every compiled function of `R`. -/
 def unwCondsInB (R : Res) : Bool := (progOf R).funcs.all fun g => unwCondInB g (artOf R g)
@@ -34,11 +35,11 @@ theorem unwCondB_of_in {g : Clif.Function} {k : Nat} {base : BitVec 64} {o : Lea
     (hpipe : pipeCleanupT g k base o = .ok a) (hsc : fnScopeB g = true)
     (hc : unwCondInB g a = true) : unwCondB g a = true := by
   simp only [unwCondInB, Bool.and_eq_true, decide_eq_true_eq] at hc
-  obtain ⟨⟨⟨ht, hr⟩, hal⟩, hcode⟩ := hc
+  obtain ⟨⟨ht, hr⟩, hcode⟩ := hc
   obtain ⟨hl, -⟩ := pipeCleanupT_spec hpipe
   obtain ⟨-, -, -, -, -, -, -, hd, hs, -, -⟩ := fnScope_parts hsc
   have hu := unwCheck_complete (dominated_of hd) (lowerScope_of hs) ht hr hl
-  simp [unwCondB, ht, hu, hal, hcode]
+  simp [unwCondB, ht, hu, hcode]
 
 /-- **`unwCondsB` from `unwCondsInB`** on an input in `InScopeIn`. -/
 theorem unwCondsB_of_in {I : LinkInput} (hin : InScopeIn I = true)

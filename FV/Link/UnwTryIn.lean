@@ -5,6 +5,9 @@ import FV.Backend.Proof.SpillStep4Cfg
 import FV.Backend.Proof.DeadCleanupPrepareMap
 import FV.Backend.Proof.RelocProvEmit
 import FV.Backend.Proof.TryRegs
+import FV.E2E.EmitCondsLower
+import FV.E2E.RegLevelFwd
+import FV.Backend.Proof.IselEmitDriver
 
 /-!
 # The `try_call` handlers of the prepared code from the input (S10g, #404)
@@ -474,6 +477,92 @@ theorem tryInfoOk_of_input {f : Clif.Function} {vc vcp : VCode} (hd : Dominated 
   simp only [Option.map_some, Option.some.injEq] at he
   simp [he] at h0
 
+/-! ## No forwarding block jumps to the entry block -/
+
+/-- Equal labels of a VCode with distinct block labels are the same block. -/
+private theorem idx_of_label {bs : Array VBlock} (hnd : (bs.toList.map VBlock.label).Nodup)
+    {i j : Nat} {a b : VBlock} (ha : bs[i]? = some a) (hb : bs[j]? = some b)
+    (he : a.label = b.label) : i = j := by
+  obtain ⟨hi, rfl⟩ := Array.getElem?_eq_some_iff.mp ha
+  obtain ⟨hj, rfl⟩ := Array.getElem?_eq_some_iff.mp hb
+  have hp := List.pairwise_iff_getElem.mp hnd
+  rcases Nat.lt_trichotomy i j with h | h | h
+  · exact (hp i j (by simpa using hi) (by simpa using hj) h
+      (by simp only [List.getElem_map, Array.getElem_toList]; exact he)).elim
+  · exact h
+  · exact (hp j i (by simpa using hj) (by simpa using hi) h
+      (by simp only [List.getElem_map, Array.getElem_toList]; exact he.symm)).elim
+
+/-- **No block of the pipeline's allocated code forwards to the entry block** (`AFunc.fwd?`): a
+forwarding block's `jump` comes from the last instruction of its prepared block (only the last
+instruction has branch targets, `TargetsLast`, from the ISLE runs: `vc_emit`, `prep_emit`; the
+cleanup only deletes instructions and keeps the terminator), so its target is a successor in
+the prepared CFG (`cfg_target`), and `lowerRFunc`'s `ctlCheck` excludes the entry block as a
+successor. -/
+theorem fwd_ne_entry_input {f : Clif.Function} {vc vcp : VCode} {rf : RFunc} {af : AFunc}
+    (hs : LowerScope f) (hw : extendsWidenB f = true) (hl : lowerFunction f = .ok vc)
+    (hp : prepare (DeadCleanup.prune vc) = .ok vcp) (halloc : lowerRFunc vcp rf = .ok af)
+    {vb : VBlock} (hvb : vcp.blocks[0]? = some vb) :
+    ∀ s x, af.fwd? s = some x → x ≠ vb.label := by
+  intro s x hf hx
+  obtain ⟨raw, hraw, rfl⟩ := DeadCleanup.prune_prepare_ok_inv hp
+  have hd := prepDomain_of_lower hs hl hs.nonempty
+  have hv := prep_emit hraw hd (vc_emit (iselEmit hs hw) hs.subsetE hl)
+  have hnd := prepare_labels_nodup hraw hd
+  obtain ⟨ss, ps, hcfg⟩ := Spill.cfg_ok_of_prepare hraw hd
+  have hcfg' : (DeadCleanup.preparedCleanup vc raw).cfg = .ok (ss, ps) := by
+    rw [DeadCleanup.preparedCleanup_cfg]; exact hcfg
+  obtain ⟨i, code, hai, hi0, hcode⟩ := fwd?_spec hf
+  obtain ⟨⟨-, -, hsz, hbl⟩, -, hctl⟩ := lowerRFunc_ok halloc
+  have hi : i < af.blocks.size := (Array.getElem?_eq_some_iff.mp hai).1
+  rw [hsz, Array.size_zip] at hi
+  have hir : i < raw.blocks.size := by
+    simpa [DeadCleanup.preparedCleanup_blocks] using (Nat.lt_min.mp hi).1
+  obtain ⟨its, hits⟩ : ∃ its, rf.blocks[i]? = some its :=
+    ⟨_, Array.getElem?_eq_getElem (Nat.lt_min.mp hi).2⟩
+  have hvbi : (DeadCleanup.preparedCleanup vc raw).blocks[i]? =
+      some (DeadCleanup.preparedCleanupBlock vc raw.blocks[i]) := by
+    simp [DeadCleanup.preparedCleanup_blocks, hir]
+  obtain ⟨code', hc', ha'⟩ := hbl i _ its hvbi hits
+  rw [hai] at ha'
+  simp only [hi0, if_false, List.nil_append, Option.some.injEq, Prod.mk.injEq] at ha'
+  obtain ⟨-, rfl⟩ := ha'
+  simp only [List.toList_toArray] at hcode
+  obtain ⟨m, hm, hxm⟩ := EmitLabels.itemsCode_targets its.toList code' hc' (.jump x)
+    (by rw [hcode]; simp) x (by simp [MInst.targets])
+  -- `m` is the last instruction of the prepared block
+  have hmr : m ∈ raw.blocks[i].insts.toList :=
+    (DeadCleanup.preparedCleanupBlock_sublist vc _).subset hm
+  have htl := (hv raw.blocks[i] (Array.getElem_mem_toList hir)).2
+  obtain ⟨t, ts, hback, -, -⟩ := cfg_block hcfg (Array.getElem?_eq_getElem hir)
+  have hmt : m = t := by
+    rcases mem_of_back hback hmr with h | h
+    · rw [htl m h] at hxm; cases hxm
+    · exact h
+  subst hmt
+  have hback' : (DeadCleanup.preparedCleanupBlock vc raw.blocks[i]).insts.back? = some m := by
+    rw [(DeadCleanup.preparedCleanupBlock_interface vc _).2.2.2, hback]
+  obtain ⟨j, hj⟩ := List.mem_iff_getElem?.1 hxm
+  obtain ⟨s', vs, hsucc, hvs, hlab⟩ := cfg_target hcfg' hvbi hback' hj
+  -- the entry block is no successor (`ctlCheck`)
+  have hs0 : s' ≠ 0 := by
+    unfold ctlCheck at hctl
+    rw [hcfg'] at hctl
+    simp only [Bool.and_eq_true, Array.all_eq_true_iff_forall_mem] at hctl
+    unfold succOf at hsucc
+    rw [hcfg'] at hsucc
+    simp only [Option.bind_eq_some_iff] at hsucc
+    obtain ⟨ts', hts', hs'⟩ := hsucc
+    have := hctl.2 ts' (Array.mem_of_getElem? hts')
+    simpa using this s' (Array.mem_of_getElem? hs')
+  -- block labels are distinct, so the successor labelled like the entry is the entry
+  rw [DeadCleanup.preparedCleanup_blocks, Array.getElem?_map, Option.map_eq_some_iff] at hvs hvb
+  obtain ⟨as, has, rfl⟩ := hvs
+  obtain ⟨a0, ha0, rfl⟩ := hvb
+  refine hs0 (idx_of_label hnd has ha0 ?_)
+  rw [← (DeadCleanup.preparedCleanupBlock_interface vc as).1,
+    ← (DeadCleanup.preparedCleanupBlock_interface vc a0).1, hlab, hx]
+
 /-- **`callSites` succeeds on the pipeline's emitted code, from the input**: `callSites_complete`
 with `HandlersOk` from `tryInfoOk_of_input`. -/
 theorem callSites_complete_input {f : Clif.Function} {vc vcp : VCode} {rf : RFunc} {af : AFunc}
@@ -485,17 +574,19 @@ theorem callSites_complete_input {f : Clif.Function} {vc vcp : VCode} {rf : RFun
   callSites_complete hemit (handlersOk_of_tryInfo halloc hsize (tryInfoOk_of_input hd hs har ht hl hp))
 
 /-- **`padsNonzeroB` holds of the pipeline's emitted code, from the input**:
-`padsNonzero_complete` with `PadsOk` from `tryInfoOk_of_input` (and, since #553, no alias of the
-emitted code resolving to the entry block, `aliasEntryOkB`). -/
+`padsNonzero_complete_of` with `PadsOk` from `tryInfoOk_of_input` and, since #553 (`callSites`
+reads the emitter's aliases), no alias resolving to the entry block (`alias_ne_entry`: no block
+forwards to the entry, `fwd_ne_entry_input`, which takes `extendsWidenB` for `TargetsLast`). -/
 theorem padsNonzero_complete_input {f : Clif.Function} {vc vcp : VCode} {rf : RFunc} {af : AFunc}
     {k : Nat} {fa : FnAsm} {fb : FnBin} (hd : Dominated f) (hs : LowerScope f)
     (har : Spill.ArityOk f) (ht : tryTablesB f = true) (hl : lowerFunction f = .ok vc)
     (hp : prepare (DeadCleanup.prune vc) = .ok vcp) (halloc : lowerRFunc vcp rf = .ok af)
     (hemit : emitFunc k af = .ok fa) (hlay : fa.layout = .ok fb) {vb : VBlock}
     {items : Array RItem} (hvb : vcp.blocks[0]? = some vb) (hit : rf.blocks[0]? = some items)
-    (hal : aliasEntryOkB af fa = true) :
+    (hw : extendsWidenB f = true) :
     padsNonzeroB af fa = true :=
-  padsNonzero_complete halloc hemit hlay hvb hit
-    (padsOk_of_tryInfo halloc (tryInfoOk_of_input hd hs har ht hl hp) hvb) hal
+  padsNonzero_complete_of halloc hemit hlay hvb hit
+    (padsOk_of_tryInfo halloc (tryInfoOk_of_input hd hs har ht hl hp) hvb)
+    (alias_ne_entry halloc hemit hvb hit (fwd_ne_entry_input hs hw hl hp halloc hvb))
 
 end Link.EhCheck.Complete

@@ -32,8 +32,7 @@ open Backend Backend.Proof Backend.Proof.Driver E2E E2E.LinkCheck
 
 /-- **The per-function conditions left for `unwFnsB`** (see the module doc). -/
 def unwCondB (g : Clif.Function) (a : Art) : Bool :=
-  tryTablesB g && unwCheck g a.vc &&
-    decide (4 * a.fb.words.size < 2 ^ 32) && aliasEntryOkB a.af a.fa
+  tryTablesB g && unwCheck g a.vc && decide (4 * a.fb.words.size < 2 ^ 32)
 
 /-- `unwCondB` of every compiled function of `R`. -/
 def unwCondsB (R : Res) : Bool := (progOf R).funcs.all fun g => unwCondB g (artOf R g)
@@ -45,9 +44,9 @@ theorem fnUnwB_of_pipe {g : Clif.Function} {k : Nat} {base : BitVec 64} {o : Lea
     (hpipe : pipeCleanupT g k base o = .ok a) (hsc : fnScopeB g = true)
     (hc : unwCondB g a = true) : fnUnwB g a = true := by
   simp only [unwCondB, Bool.and_eq_true, decide_eq_true_eq] at hc
-  obtain ⟨⟨⟨ht, hu⟩, hcode⟩, hal⟩ := hc
+  obtain ⟨⟨ht, hu⟩, hcode⟩ := hc
   obtain ⟨hl, hp, hrf, hlr, hem, hla, -, -⟩ := pipeCleanupT_spec hpipe
-  obtain ⟨-, -, -, -, -, -, -, hd, hs, har, -⟩ := fnScope_parts hsc
+  obtain ⟨-, -, -, -, -, -, -, hd, hs, har, hlw, -⟩ := fnScope_parts hsc
   have hD := dominated_of hd
   have hS := lowerScope_of hs
   have hA := Spill.arityOk_of har
@@ -68,7 +67,8 @@ theorem fnUnwB_of_pipe {g : Clif.Function} {k : Nat} {base : BitVec 64} {o : Lea
     ⟨_, Array.getElem?_eq_getElem (by omega)⟩
   obtain ⟨items, hit⟩ : ∃ items, a.rf.blocks[0]? = some items :=
     ⟨_, Array.getElem?_eq_getElem (by omega)⟩
-  have hpads := padsNonzero_complete_input hD hS hA ht hl hp hlr hem hla hvb hit hal
+  have hpads := padsNonzero_complete_input hD hS hA ht hl hp hlr hem hla hvb hit
+    (lowersB_spec hlw).1
   have hsaved : savedCheck a.vcp a.rf = true := by
     rw [hrf]; exact savedCheck_pipe hcfg' halloc
   simp [fnUnwB, hu, hcs, hrows, hpads, hsaved, Except.toBool]

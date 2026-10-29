@@ -562,6 +562,21 @@ the `retN`/value arguments).
   handlers' labels are CFG successors (`cfg_spec`) and none is the entry block (`EdgesOk.entry`,
   `preds_empty`). Corollaries `callSites_complete_input`, `padsNonzero_complete_input`; witness
   `Witness.tryInfoOk_applies`/`input_applies` (`FV/Link/UnwTryInWitness.lean`, on `tc`).
+  **Landing pads through `MachBuffer`'s aliases (#553)**: `callSites`/`padsNonzeroB` resolve a
+  handler's label through the emitter's block-label aliases `fa.alias` (`siteLabs`), so a
+  handler forwarding to the entry block would get pad offset 0. The generic
+  `padsNonzero_complete` (any `vc`) therefore takes the decidable `aliasEntryOkB af fa` (no alias
+  resolves to the entry block); `padsNonzero_complete_of` takes the weaker fact that no alias of
+  another label does. On the pipeline's output that fact is a theorem: `alias_ne_entry` (every
+  alias passes `aliasOk`; line 0 of the plan is the entry label followed by the prologue, so it
+  represents only the entry and the blocks forwarding to it) with `fwd_ne_entry_input` (no
+  block forwards to the entry: a forwarding block's `jump` is its prepared block's last
+  instruction — `TargetsLast` from the ISLE runs, `vc_emit`/`prep_emit`, which needs
+  `extendsWidenB` — hence a CFG successor, and `lowerRFunc`'s `ctlCheck` excludes the entry).
+  So `padsNonzero_complete_input` takes `extendsWidenB f` (part of `fnScopeB` and of every input
+  scope) instead of a check on the compiled code, and `unwCondB`/`unwCondInB` have no alias
+  condition. Witnesses `Witness.fwd_applies`/`aliasNoEntry_applies`/`padsNonzero_of_applies`.
+  `lake exe lean-link` still reports `aliasEntryOkB` per executable (report only).
   **`unwCheck` from the input** (`FV/Link/UnwCheckIn.lean`): `unwCheck_complete` — on input in
   `Dominated`/`LowerScope` with `tryTablesB` and **`tryRetsB f`** (every `try_call` signature has
   at most two ABI returns, so the call defines x0 and x1 only, as `tryUOk` requires; decidable on
@@ -588,8 +603,8 @@ the `retN`/value arguments).
   wraps it. No frame condition is left (the former `saveFrameB`/`leadOkB` are deleted).
   Witness `Witness.savedCheck_applies`/`unwindRows_frame_applies`/`unwindRows_applies`.
   **What is left, collected** (`FV/Link/UnwFnIn.lean`): `unwCondB g a` = the input condition
-  `tryTablesB`, code below 4 GiB, and the two checks
-  without a completeness proof yet, `unwCheck` and `lastCallsOk`; `fnUnwB_of_pipe` (a function
+  `tryTablesB`, code below 4 GiB, and the check without a completeness proof here, `unwCheck`
+  (`lastCallsOk` is no longer needed since #622); `fnUnwB_of_pipe` (a function
   of `fnScopeB` whose cleanup pipeline succeeded, any allocator answer, passes `fnUnwB`) and
   `unwFnsB_of_conds` (on an `InScopeIn` input, `unwCondsB` of the compiled functions gives
   `unwFnsB`). **Totality with unwinding on `lean-ld`'s inputs** (`FV/Link/ExeULdIn.lean`):
@@ -607,7 +622,7 @@ the `retN`/value arguments).
   #479, `examples/bigframe-unwind`); Cranelift's frame pushes them under the frame record, so
   the limit is gone.
   **Without `unwCheck`** (`FV/Link/UnwCondIn.lean`): `unwCondInB g a` =
-  `tryTablesB`, `tryRetsB`, `lastCallsOk`, code below 4 GiB;
+  `tryTablesB`, `tryRetsB`, code below 4 GiB;
   `Link.EhCheck.Complete.unwCondB_of_in` (by `unwCheck_complete`),
   `unwCondsB_of_in` (`InScopeIn` lift), `Link.DeadCleanup.compileExeU_total_ldCond`; witness
   `ULdCondWitness.compileExeU_total_ldCond_witness`. Measured (debug, panic=unwind,

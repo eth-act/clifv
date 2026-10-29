@@ -228,28 +228,125 @@ def PadsOk (af : AFunc) (l0 : Label) : Prop :=
 /-- No block-label alias of the emitted code resolves to the entry block (decidable): a landing
 pad `callSites` resolves through an alias (`siteLabs`) is then at a label other than the
 entry's, at offset ≥ 8. (Since #553 `callSites` reads `MachBuffer`'s aliases `fa.alias`; an
-alias to the entry block would need a forwarding block `b <entry>`, which `prepare` excludes for
-terminators — `checkAlloc` ties the code to the terminators, but this chain does not carry it.) -/
+alias to the entry block would need a forwarding block `b <entry>`. On the pipeline's output
+there is none (`alias_ne_entry` with `fwd_ne_entry_input`, FV/Link/UnwTryIn.lean): this check is
+the premise of the generic `padsNonzero_complete` only, where `vc` is arbitrary.) -/
 def aliasEntryOkB (af : AFunc) (fa : FnAsm) : Bool :=
   fa.alias.all fun p => some p.2 != af.blocks[0]?.map (·.1)
 
+/-! ## No alias to the entry block -/
+
+/-- `relaxLine` keeps a line or makes it two instructions. -/
+private theorem relaxLine_cases (F : Lbl → Bool) (x : Line) :
+    relaxLine F x = [x] ∨ ∃ c t, relaxLine F x = [.ins c none, .ins (.b t) none] := by
+  unfold relaxLine
+  split
+  · split
+    · exact .inr ⟨_, _, rfl⟩
+    · exact .inl rfl
+  · exact .inl rfl
+
+/-- The emission plan's lines start with the entry block's label, then a line that is no label
+(the prologue's `stp`; `lines_head` through the relaxation). -/
+private theorem plan_head {vc : VCode} {rf : RFunc} {af : AFunc} {k : Nat} {fa : FnAsm}
+    (halloc : lowerRFunc vc rf = .ok af) (hemit : emitFunc k af = .ok fa) {vb : VBlock}
+    {items : Array RItem} (hvb : vc.blocks[0]? = some vb) (hit : rf.blocks[0]? = some items)
+    {p : Plan} (hp : emitPlan k af = .ok p) :
+    p.lines[0]? = some (.label (.block vb.label)) ∧ ∀ l, p.lines[1]? ≠ some (.label l) := by
+  obtain ⟨R, hR⟩ := lines_head halloc hemit hvb hit
+  obtain ⟨p', hp', hL, -⟩ := emitFunc_ok hemit
+  rw [hp] at hp'
+  cases hp'
+  rw [hL] at hR
+  generalize emitFar ⟨k, af.slotBase⟩ af = F at hR
+  cases hpl : p.lines with
+  | nil => rw [hpl] at hR; simp [relaxLines] at hR
+  | cons x0 xs =>
+    rw [hpl, relaxLines_cons] at hR
+    rcases relaxLine_cases F x0 with h0 | ⟨c, t, h0⟩
+    · rw [h0, List.singleton_append, List.cons.injEq] at hR
+      obtain ⟨rfl, hR⟩ := hR
+      refine ⟨rfl, fun l hl => ?_⟩
+      cases xs with
+      | nil => simp at hl
+      | cons x1 ys =>
+        simp only [List.getElem?_cons_succ, List.getElem?_cons_zero, Option.some.injEq] at hl
+        subst hl
+        rw [relaxLines_cons, relaxLine_label] at hR
+        simp at hR
+    · rw [h0] at hR
+      simp at hR
+
+/-- The first label line of block `e` is line 0 when `L` starts with `e`'s label. -/
+private theorem blockLabelIdx_head {L : List Line} {e : Label}
+    (h : L[0]? = some (.label (.block e))) : (blockLabelIdx L)[e]? = some 0 := by
+  cases L with
+  | nil => simp at h
+  | cons x xs =>
+    simp only [List.getElem?_cons_zero, Option.some.injEq] at h
+    subst h
+    simp [blockLabelIdx, List.zipIdx_cons]
+
+/-- Line 1, no label, represents no block. -/
+private theorem repAt_one {af : AFunc} {own : Label → Bool} {L : List Line}
+    (h1 : ∀ l, L[1]? ≠ some (.label l)) : ∀ fuel s, repAt af own L.toArray fuel s 1 = false
+  | 0, _ => by simp [repAt]
+  | fuel + 1, s => by
+    have ih := repAt_one (af := af) (own := own) h1 fuel
+    rw [repAt]
+    simp only [List.getElem?_toArray]
+    cases hL : L[1]? with
+    | none => cases af.fwd? s <;> simp [ih]
+    | some ln =>
+      cases ln with
+      | label l => exact absurd hL (h1 l)
+      | ins i t => cases af.fwd? s <;> simp [ih]
+      | word a b => cases af.fwd? s <;> simp [ih]
+
+/-- Line 0, the entry label followed by no label, represents only the entry block when no
+block forwards to the entry. -/
+private theorem repAt_zero {af : AFunc} {own : Label → Bool} {L : List Line} {e : Label}
+    (h0 : L[0]? = some (.label (.block e))) (h1 : ∀ l, L[1]? ≠ some (.label l))
+    (hfw : ∀ s x, af.fwd? s = some x → x ≠ e) :
+    ∀ fuel s, s ≠ e → repAt af own L.toArray fuel s 0 = false
+  | 0, _, _ => by simp [repAt]
+  | fuel + 1, s, hs => by
+    rw [repAt]
+    simp only [List.getElem?_toArray, h0, repAt_one h1, Bool.or_false]
+    cases hf : af.fwd? s with
+    | none => simp [Ne.symm hs]
+    | some x => simp [Ne.symm hs, repAt_zero h0 h1 hfw fuel x (hfw s x hf)]
+
+/-- **No alias of a label other than the entry's resolves to the entry block** when no block
+forwards (`AFunc.fwd?`) to the entry: every alias is justified by `aliasOk`, and line 0 of the
+plan (the entry label, followed by the prologue) represents no other block. -/
+theorem alias_ne_entry {vc : VCode} {rf : RFunc} {af : AFunc} {k : Nat} {fa : FnAsm}
+    (halloc : lowerRFunc vc rf = .ok af) (hemit : emitFunc k af = .ok fa) {vb : VBlock}
+    {items : Array RItem} (hvb : vc.blocks[0]? = some vb) (hit : rf.blocks[0]? = some items)
+    (hfw : ∀ s x, af.fwd? s = some x → x ≠ vb.label) :
+    ∀ q ∈ fa.alias, q.1 ≠ vb.label → q.2 ≠ vb.label := by
+  intro q hq hq1 hq2
+  obtain ⟨p, hp, -, -⟩ := emitFunc_ok hemit
+  rw [emitFunc_alias hemit] at hq
+  have hq' : q ∈ p.alias := by simpa [emitAlias, hp] using hq
+  have hok := (emitPlan_spec hp).2.2.2 q hq'
+  obtain ⟨h0, h1⟩ := plan_head halloc hemit hvb hit hp
+  unfold aliasOk at hok
+  rw [hq2, blockLabelIdx_head h0] at hok
+  simp only [repOn] at hok
+  rw [repAt_zero h0 h1 hfw _ _ hq1] at hok
+  cases hok
+
 /-- **`padsNonzeroB` holds for the emitted code** when every `try_call` has a handler, no
-handler's landing pad is the entry block, and no alias resolves to the entry block
-(`aliasEntryOkB`; #553: `callSites` resolves landing pads through `MachBuffer`'s aliases). -/
-theorem padsNonzero_complete {vc : VCode} {rf : RFunc} {af : AFunc} {k : Nat} {fa : FnAsm}
+handler's landing pad is the entry block, and no alias of another label resolves to the entry
+block (#553: `callSites` resolves landing pads through `MachBuffer`'s aliases). -/
+theorem padsNonzero_complete_of {vc : VCode} {rf : RFunc} {af : AFunc} {k : Nat} {fa : FnAsm}
     {fb : FnBin} (halloc : lowerRFunc vc rf = .ok af) (hemit : emitFunc k af = .ok fa)
     (hlay : fa.layout = .ok fb) {vb : VBlock} {items : Array RItem}
     (hvb : vc.blocks[0]? = some vb) (hit : rf.blocks[0]? = some items) (hp : PadsOk af vb.label)
-    (hal : aliasEntryOkB af fa = true) :
+    (hal : ∀ q ∈ fa.alias, q.1 ≠ vb.label → q.2 ≠ vb.label) :
     padsNonzeroB af fa = true := by
   obtain ⟨lm, hlm⟩ := FnAsm.layout_labelOffsets hlay
-  have hal' : ∀ p ∈ fa.alias, p.2 ≠ vb.label := by
-    obtain ⟨⟨-, -, -, hbl⟩, -⟩ := lowerRFunc_ok halloc
-    obtain ⟨code, -, haf⟩ := hbl 0 vb items hvb hit
-    intro p hpm he
-    have := List.all_eq_true.1 hal p hpm
-    rw [haf, he] at this
-    simp at this
   unfold padsNonzeroB
   rw [List.all_eq_true]
   rintro ⟨c, ret⟩ hmem
@@ -273,7 +370,7 @@ theorem padsNonzero_complete {vc : VCode} {rf : RFunc} {af : AFunc} {k : Nat} {f
         rw [hA] at hv
         cases hv
         obtain ⟨x, hxm, hxl⟩ := lookup_aliasLabs fa.alias hA
-        exact label_off_ge halloc hemit hvb hit hlm (hal' _ hxm) (scanLines_labelOffsets hlm hxl)
+        exact label_off_ge halloc hemit hvb hit hlm (hal _ hxm hl) (scanLines_labelOffsets hlm hxl)
       | none =>
         rw [hA] at hv
         exact label_off_ge halloc hemit hvb hit hlm hl (scanLines_labelOffsets hlm hv)
@@ -289,6 +386,23 @@ theorem padsNonzero_complete {vc : VCode} {rf : RFunc} {af : AFunc} {k : Nat} {f
     cases hq : entryFor (siteLabs fa) (some ti, ret) with
     | none => simp
     | some e => simpa [hq] using hE e hq
+
+/-- **`padsNonzeroB` holds for the emitted code** when every `try_call` has a handler, no
+handler's landing pad is the entry block, and no alias resolves to the entry block
+(`aliasEntryOkB`; #553: `callSites` resolves landing pads through `MachBuffer`'s aliases; on the
+pipeline's output `padsNonzero_complete_input` needs no such check). -/
+theorem padsNonzero_complete {vc : VCode} {rf : RFunc} {af : AFunc} {k : Nat} {fa : FnAsm}
+    {fb : FnBin} (halloc : lowerRFunc vc rf = .ok af) (hemit : emitFunc k af = .ok fa)
+    (hlay : fa.layout = .ok fb) {vb : VBlock} {items : Array RItem}
+    (hvb : vc.blocks[0]? = some vb) (hit : rf.blocks[0]? = some items) (hp : PadsOk af vb.label)
+    (hal : aliasEntryOkB af fa = true) :
+    padsNonzeroB af fa = true := by
+  refine padsNonzero_complete_of halloc hemit hlay hvb hit hp fun p hpm _ he => ?_
+  obtain ⟨⟨-, -, -, hbl⟩, -⟩ := lowerRFunc_ok halloc
+  obtain ⟨code, -, haf⟩ := hbl 0 vb items hvb hit
+  have := List.all_eq_true.1 hal p hpm
+  rw [haf, he] at this
+  simp at this
 
 /-! ## `unwindRows` -/
 
