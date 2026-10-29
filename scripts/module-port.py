@@ -3,7 +3,7 @@
 
 usage: scripts/module-port.py [--check] [FILE_OR_DIR...]   (default: FV FVTest corpus/dsl/Corpus)
        scripts/module-port.py regen OLD_MAIN OLD_PORT       (run on a checkout of the new main)
-       scripts/module-port.py privatize [--report FILE] [MODULE...]   (on a built ported tree)
+       scripts/module-port.py privatize [--report FILE] [--only MODLIST] MODULE...   (built tree)
 
 Mechanical step (default): each file that does not start with `module` gets
   * `module` before its first import (after leading comments),
@@ -152,8 +152,12 @@ def regen(old_main, old_port):
     return 1 if conflicts else 0
 
 
-def privatize(report):
-    """Apply the public→private import downgrades of a `lake shake` report."""
+def privatize(report, only=None):
+    """Apply a `lake shake` report to the local imports: every `public import` of a local module
+    that shake drops or re-adds as private becomes a private `import` (a dropped import stays, as
+    a private import, so the import graph only loses re-exports), and every import shake adds
+    (a module that needs something it used to see through a re-export) is added as shake says.
+    Other suggestions (narrowing `Lean`/`Std` imports) are ignored. ONLY: restrict to these files."""
     cur, rep = None, {}
     for line in report.splitlines():
         if line.endswith(".lean:") and not line.startswith(" "):
@@ -163,24 +167,43 @@ def privatize(report):
         m = re.match(r"\s+(remove|add) #\[(.*)\]$", line)
         if m and cur:
             rep[cur][m.group(1)] += [s.strip() for s in m.group(2).split(",")]
-    n_files = n_imp = 0
+    n_files = n_down = n_add = 0
     for f, r in rep.items():
+        if only is not None and pathlib.Path(f).resolve() not in only:
+            continue
         adds = set(r["add"])
-        down = []
+        path = pathlib.Path(f)
+        t = path.read_text()
+        before = t
         for imp in r["remove"]:
             mm = re.fullmatch(r"public import (\S+)", imp)
             if mm and mm.group(1).split(".")[0] in LOCAL and f"public import {mm.group(1)}" not in adds:
-                down.append(mm.group(1))
-        if not down:
-            continue
-        path = pathlib.Path(f)
-        t = path.read_text()
-        for d in down:
-            t, k = re.subn(rf"^public import {re.escape(d)}[ \t]*$", f"import {d}", t, count=1, flags=re.M)
-            n_imp += k
-        path.write_text(t)
-        n_files += 1
-    print(f"privatize: {n_imp} imports made private in {n_files} files")
+                t, k = re.subn(rf"^public import {re.escape(mm.group(1))}[ \t]*$", f"import {mm.group(1)}",
+                              t, count=1, flags=re.M)
+                n_down += k
+        def covered(a):
+            # already there (or public where shake wants it private), or under an umbrella
+            # import of the same kind (`public import Lean` covers `public import Lean.Message`)
+            kind, _, mod = a.rpartition(" ")
+            if mod.split(".")[0] == "Init":
+                return True
+            for k in {kind, "public " + kind if not kind.startswith("public") else kind}:
+                for umb in [".".join(mod.split(".")[:i]) for i in range(1, len(mod.split(".")) + 1)]:
+                    if re.search(rf"^{re.escape(k)} {re.escape(umb)}[ \t]*$", t, re.M):
+                        if umb == mod or umb in ("Lean", "Std"):
+                            return True
+            return False
+        new = [a for a in r["add"] if not covered(a)]
+        if new:
+            ls = t.split("\n")
+            last = max(i for i, l in enumerate(ls[:400]) if IMPORT.match(l) or l.startswith("import all "))
+            ls[last + 1:last + 1] = new
+            t = "\n".join(ls)
+            n_add += len(new)
+        if t != before:
+            path.write_text(t)
+            n_files += 1
+    print(f"privatize: {n_down} imports made private, {n_add} added, in {n_files} files")
 
 
 def main():
@@ -188,11 +211,19 @@ def main():
     if args[:1] == ["regen"]:
         sys.exit(regen(args[1], args[2]))
     if args[:1] == ["privatize"]:
-        if args[1:2] == ["--report"]:
-            report = pathlib.Path(args[2]).read_text()
-        else:
-            report = subprocess.run(["lake", "shake", *args[1:]], capture_output=True, text=True).stdout
-        privatize(report)
+        args, report, only = args[1:], None, None
+        while args[:1] in (["--report"], ["--only"]):
+            if args[0] == "--report":
+                report = pathlib.Path(args[1]).read_text()
+            else:
+                only = {pathlib.Path(x.replace(".", "/") + ".lean").resolve()
+                        for x in pathlib.Path(args[1]).read_text().split()}
+            args = args[2:]
+        if report is None:
+            # --force: the modules need not be the package's whole default target
+            report = subprocess.run(["lake", "shake", "--force", *args], capture_output=True,
+                                    text=True).stdout
+        privatize(report, only)
         return
     check = "--check" in args
     args = [a for a in args if a != "--check"]
