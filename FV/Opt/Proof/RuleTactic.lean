@@ -38,7 +38,7 @@ def destructStep (g : MVarId) : MetaM (Option (List MVarId)) := g.withContext do
   return none
 
 /-- Destructure until no `∃`/`∧`/`∨` hypothesis is left (at most `fuel` steps per goal). -/
-partial def destructAll (fuel : Nat) (g : MVarId) : MetaM (List MVarId) := do
+meta partial def destructAll (fuel : Nat) (g : MVarId) : MetaM (List MVarId) := do
   if fuel = 0 then return [g]
   match ← destructStep g with
   | none => return [g]
@@ -69,7 +69,7 @@ def denKey? (e : Expr) : Option (Expr × Expr) :=
 `G.typeOf st x = some t` (`GraphOk.type_val`) — add `lemma hG h₁ h₂` unless the pair (`h₁`'s
 type, the left-hand side of `h₂`) is marked `OptSeen`; then mark it. Pairs are matched on the
 syntax of `(st, x)` first, so only well-typed applications are elaborated. -/
-def addPairFacts (hG : Expr) : TacticM Bool := withMainContext do
+meta def addPairFacts (hG : Expr) : TacticM Bool := withMainContext do
   let mut added := false
   let lctx ← getLCtx
   let mut seen : Array Nat := #[]

@@ -273,7 +273,7 @@ end Backend.Proof
 open Lean Elab Tactic Meta in
 /-- Split every hypothesis that is a conjunction or an existential (and, with `ors`, a
 disjunction, into one goal per case), repeatedly. -/
-partial def iselDestructGoal (ors : Bool) (goal : MVarId) : MetaM (List MVarId) := goal.withContext do
+meta partial def iselDestructGoal (ors : Bool) (goal : MVarId) : MetaM (List MVarId) := goal.withContext do
   for ldecl in (← getLCtx) do
     if ldecl.isImplementationDetail then continue
     let ty ← whnfR (← instantiateMVars ldecl.type)
@@ -373,7 +373,7 @@ open Lean Elab Tactic Meta in
 definitions) occurring in the hypotheses unfolded and the data facts `hp.tN` of exactly the
 terms those rules mention (instead of `cases hp` and `*`, which puts ~1400 facts in the
 context and makes every inversion round slow). -/
-def iselInvLemmas (hp : Ident) (ls : Array Term) (hs : Array Ident) :
+meta def iselInvLemmas (hp : Ident) (ls : Array Term) (hs : Array Ident) :
     TacticM (Array (TSyntax `Lean.Parser.Tactic.simpLemma)) := withMainContext do
   let mut rules : Array Name := #[]
   for h in hs do
@@ -411,7 +411,7 @@ elab "isel_refute " hp:ident " at " h:ident : tactic => do
 open Lean Elab Tactic Meta in
 /-- One step of `isel_call`: apply the first contract that fits the first `ApplyInternal`
 hypothesis it fits. -/
-partial def iselCallStep (hp hc : Ident) (ls : Array Ident) : TacticM Bool := do
+meta partial def iselCallStep (hp hc : Ident) (ls : Array Ident) : TacticM Bool := do
   let goal ← getMainGoal
   for d in (← goal.getDecl).lctx do
     if d.isImplementationDetail then continue

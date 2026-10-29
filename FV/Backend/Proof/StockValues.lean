@@ -2,6 +2,12 @@ module
 
 public import FV.Backend.Proof.StockProjection
 public import FV.Backend.Proof.LowerSeq
+import all Init.Data.Array.Basic
+import all Init.Data.Format.Basic
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Nat.Gcd
+import all Init.Data.Repr
+import all Init.Prelude
 
 @[expose] public section
 
