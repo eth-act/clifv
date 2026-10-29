@@ -63,10 +63,12 @@ theorem RL.jointSegT {R R' : RL} (hR : R.Wf) (hR' : R'.Wf) (hsc : R.SameCode R')
     ∃ n d d', MStep R.vc (R.semGS Ok) ckeep R.rf c d ∧
       MStep R'.vc (R'.semGS Ok') ckeep R'.rf c' d' ∧
       MConf.ShapeEq d d' ∧
-      QWA R (iterN R.step n s) (R.nextW j ps1 T c d).1 (R.nextW j ps1 T c d).2.1
-        (R.nextW j ps1 T c d).2.2 d ∧
-      QWA R' (iterN R'.step n s') (R.nextW j ps1 T c d).1 (R.nextW j ps1 T c d).2.1
-        (R.nextW j ps1 T c d).2.2 d' ∧
+      QWA R (iterN R.step n s) (R.nextW j ps1 T c d (Arm.r .PC (iterN R.step n s))).1
+        (R.nextW j ps1 T c d (Arm.r .PC (iterN R.step n s))).2.1
+        (R.nextW j ps1 T c d (Arm.r .PC (iterN R.step n s))).2.2 d ∧
+      QWA R' (iterN R'.step n s') (R.nextW j ps1 T c d (Arm.r .PC (iterN R.step n s))).1
+        (R.nextW j ps1 T c d (Arm.r .PC (iterN R.step n s))).2.1
+        (R.nextW j ps1 T c d (Arm.r .PC (iterN R.step n s))).2.2 d' ∧
       (∀ i < n, (R.GoodX (iterN R.step i s) ∧ R.WReadsIn Ok (iterN R.step i s)) ∧
         (R'.GoodX (iterN R'.step i s') ∧ R'.WReadsIn Ok' (iterN R'.step i s'))) ∧
       countIn R.CallSt R.step s n = opCalls R.vc c ∧
@@ -82,8 +84,8 @@ theorem RL.jointSegT {R R' : RL} (hR : R.Wf) (hR' : R'.Wf) (hsc : R.SameCode R')
     hstep i _ _ ⟨s, j, ps1, T, d, n, hq, hm, hs, hi, rfl, hf⟩
       ⟨s', j, ps1, T, d', n', hq', hm', hs', hi', rfl, hf'⟩
       (ht i hi) (ht' i hi') hl
-  have hW := RL.nextW_shape hsc j ps1 T hc hd
-  rw [hW] at hqd'
+  have hW := RL.nextW_shape hsc j ps1 T hc hd (Arm.r .PC (iterN R'.step n s'))
+  rw [hW, ← hLpc n _ _ (hL n (Nat.le_refl n))] at hqd'
   exact ⟨n, d, d', hm, hm', hd, hqd, hqd', fun i hi => ⟨ht i hi, ht' i hi⟩, hcnt, hcnt',
     hs, hs', hL⟩
 

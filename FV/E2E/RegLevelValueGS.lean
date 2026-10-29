@@ -111,9 +111,11 @@ theorem QW.world_change {R : RL} {s : Arm.ArmState} {j : Nat} {ps1 : PState} {T 
     {b : Nat} {its : List RItem} {m : Loc → CV} {w w' : Arm.ArmState}
     (hq : QW R s j ps1 T (.run ⟨b, its, m, w⟩)) (hw : SameWorld R.F w w') :
     QW R s j ps1 T (.run ⟨b, its, m, w'⟩) := by
-  obtain ⟨vb, items, pre, code, ls, ps2, h1, h2, h3, h4, h5, h6, h7, h8, h9, hst⟩ := hq
-  exact ⟨vb, items, pre, code, ls, ps2, h1, h2, h3, h4, h5, h6, h7, h8, h9,
-    { hst with world := hst.world.trans hw }⟩
+  rcases hq with ⟨hT, vb, items, pre, code, Xl, psm, ps2, x, h1, h2, h3, h4, h5, h6, h7, h8, h9,
+    h10, hst, h12, h13⟩ | ⟨hT, hf, hpc, hst⟩
+  · exact .inl ⟨hT, vb, items, pre, code, Xl, psm, ps2, x, h1, h2, h3, h4, h5, h6, h7, h8, h9,
+      h10, { hst with world := hst.world.trans hw }, h12, h13⟩
+  · exact .inr ⟨hT, hf, hpc, { hst with world := hst.world.trans hw }⟩
 
 /-- `QWA` admits a change of the configuration's world within `SameWorld F` (with `AInv` at the
 new configuration). -/
@@ -155,7 +157,7 @@ theorem aInv_step_anySem {R : RL} {sem : ISem CV Arm.ArmState} (hR : R.Wf)
   | @move b src dst its m w =>
     intro hb hop
     subst hb
-    obtain ⟨j, vb, items, pre, -, -, -, -, -, -, hit, hsplit, -⟩ := hq
+    obtain ⟨items, pre, hit, hsplit⟩ := Q.split hq
     obtain ⟨hmv, hrd⟩ := ctlCheck_before hck hit hsplit hop
     have hA' := hA rfl (by obtain ⟨a, ha⟩ := hop; exact ⟨a, List.mem_cons_of_mem _ ha⟩)
     intro r hr
@@ -168,7 +170,7 @@ theorem aInv_step_anySem {R : RL} {sem : ISem CV Arm.ArmState} (hR : R.Wf)
     | next =>
       intro hb hop
       subst hb
-      obtain ⟨j, vb0, items, pre, -, -, -, -, -, -, hit, hsplit, -⟩ := hq
+      obtain ⟨items, pre, hit, hsplit⟩ := Q.split hq
       have := (ctlCheck_before hck hit hsplit hop).1
       simp [RItem.isMove] at this
     | goto _ hs _ =>
