@@ -37,7 +37,7 @@ theorem counter_f (F : BitVec 64 → Prop) : ∃ cs, initB = .ok cs ∧
     have := entryFacts.2.2.1
     simp only [frameB, Bool.and_eq_true, decide_eq_true_eq] at this
     cases h : fF.slots with
-    | nil => have := this.2; rw [h] at this; cases this
+    | nil => have := this.1.2; rw [h] at this; cases this
     | cons _ _ => rfl
   refine ⟨cs, hi, ?_⟩
   have := (L F).counter_at entryFacts.2.2.2.1 hi (placeAtB_memB F) (ms cs) E rfl 2 (by

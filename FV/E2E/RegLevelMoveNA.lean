@@ -12,11 +12,85 @@ namespace Backend.Proof
 
 open Backend E2E
 
+/-- A callee save or restore (a move into or out of a save slot) emits no code: the witness
+after it is the witness before it. -/
+theorem nextW_move_save {R : RL} {s : Arm.ArmState} {b : Nat} {src dst : Loc} {its : List RItem}
+    {m m' : Loc → CV} {w w' : Arm.ArmState} {j : Nat} {ps1 : PState} {T : List Line}
+    (hq : QW R s j ps1 T (.run ⟨b, .move src dst :: its, m, w⟩))
+    (h : src.isSave = true ∨ dst.isSave = true) :
+    R.nextW j ps1 T (.run ⟨b, .move src dst :: its, m, w⟩) (.run ⟨b, its, m', w'⟩) = (j, ps1, T) := by
+  obtain ⟨vb, items, pre, code, ls, ps2, hvb, hit, hsplit, hchk, hcode, hls, htr, hdrop,
+    hpc, hst⟩ := hq
+  obtain ⟨c1, c2, hc1, hc2, rfl⟩ := itemsCode_cons hcode
+  have hc1o := hc1
+  rw [itemCode_move] at hc1
+  have hc1' : c1 = [] := by
+    rcases h with h | h
+    · obtain ⟨r, rfl⟩ : ∃ r, src = .save r := by
+        cases src <;> simp [Loc.isSave] at h; exact ⟨_, rfl⟩
+      cases dst <;> simp only [RAFrame.moveInsts, pure, Except.pure, Except.ok.injEq] at hc1 <;>
+        first | exact hc1.symm | exact hc1
+    · obtain ⟨r, rfl⟩ : ∃ r, dst = .save r := by
+        cases dst <;> simp [Loc.isSave] at h; exact ⟨_, rfl⟩
+      simp only [RAFrame.moveInsts, pure, Except.pure, Except.ok.injEq] at hc1
+      cases src <;> exact hc1.symm
+  subst hc1'
+  have h0 : codeLinesE R.ctx R.af [] ps1 = .ok ([], ps1) := by
+    simp only [codeLinesE, pure, Except.pure]
+  rw [RL.nextW_straight, RL.straightW_eq hvb hc1o h0]
+  simp [relaxLines]
+
+/-- **A callee save at a witness**: `QW` at the same witness after the save (`q_save`). -/
+theorem qW_save {R : RL} {s : Arm.ArmState} {b : Nat} {src dst : Loc} {its : List RItem}
+    {m : Loc → CV} {w : Arm.ArmState} {j : Nat} {ps1 : PState} {T : List Line}
+    (hds : dst.isSave = true) (hq : QW R s j ps1 T (.run ⟨b, .move src dst :: its, m, w⟩)) :
+    QW R s j ps1 T (.run ⟨b, its, upd m dst (m src), w⟩) := by
+  obtain ⟨vb, items, pre, code, ls, ps2, hvb, hit, hsplit, hchk, hcode, hls, htr, hdrop,
+    hpc, hst⟩ := hq
+  obtain ⟨c1, c2, hc1, hc2, rfl⟩ := itemsCode_cons hcode
+  rw [itemCode_move] at hc1
+  obtain ⟨r, rfl⟩ : ∃ r, dst = .save r := by cases dst <;> simp [Loc.isSave] at hds; exact ⟨_, rfl⟩
+  have hc1' : c1 = [] := by
+    simp only [RAFrame.moveInsts, pure, Except.pure, Except.ok.injEq] at hc1
+    cases src <;> exact hc1.symm
+  subst hc1'
+  obtain ⟨ls1, ls2, psm, h1, h2, rfl⟩ := codeLinesE_append _ _ _ _ _ hls
+  simp only [codeLinesE, pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at h1
+  obtain ⟨rfl, rfl⟩ := h1
+  refine ⟨vb, items, pre ++ [.move src (.save r)], c2, ls2, ps2, hvb, hit,
+    by rw [hsplit]; simp, itemsChecked_move_tail hchk, hc2, h2, htr, by simpa using hdrop, hpc,
+    { hst with store := fun l hv hL => ?_ }⟩
+  have hne : l ≠ .save r := by rintro rfl; exact hL
+  simp only [upd, hne, ite_false]
+  exact hst.store l hv hL
+
+/-- **A callee restore at a witness**: `QW` at the same witness after the restore, the store
+unchanged (`q_restore`). -/
+theorem qW_restore {R : RL} {s : Arm.ArmState} {b : Nat} {src dst : Loc} {its : List RItem}
+    {m : Loc → CV} {w : Arm.ArmState} {j : Nat} {ps1 : PState} {T : List Line}
+    (hss : src.isSave = true) (hq : QW R s j ps1 T (.run ⟨b, .move src dst :: its, m, w⟩)) :
+    QW R s j ps1 T (.run ⟨b, its, m, w⟩) := by
+  obtain ⟨vb, items, pre, code, ls, ps2, hvb, hit, hsplit, hchk, hcode, hls, htr, hdrop,
+    hpc, hst⟩ := hq
+  obtain ⟨c1, c2, hc1, hc2, rfl⟩ := itemsCode_cons hcode
+  rw [itemCode_move] at hc1
+  obtain ⟨r, rfl⟩ : ∃ r, src = .save r := by cases src <;> simp [Loc.isSave] at hss; exact ⟨_, rfl⟩
+  have hc1' : c1 = [] := by
+    cases dst <;> simp only [RAFrame.moveInsts, pure, Except.pure, Except.ok.injEq] at hc1 <;>
+      first | exact hc1.symm | exact hc1
+  subst hc1'
+  obtain ⟨ls1, ls2, psm, h1, h2, rfl⟩ := codeLinesE_append _ _ _ _ _ hls
+  simp only [codeLinesE, pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at h1
+  obtain ⟨rfl, rfl⟩ := h1
+  exact ⟨vb, items, pre ++ [.move (.save r) dst], c2, ls2, ps2, hvb, hit,
+    by rw [hsplit]; simp, itemsChecked_move_tail hchk, hc2, h2, htr, by simpa using hdrop, hpc, hst⟩
+
 /-- **`realizes_moveNA` with the segment's lines** (`RL.FRFree`: the move's lines are no
 frame-record line and no `ret`). -/
 theorem realizes_moveNAF {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : Arm.ArmState} {b : Nat}
     {src dst : Loc} {its : List RItem} {m : Loc → CV} {w : Arm.ArmState} {j : Nat} {ps1 : PState}
-    {T : List Line} (hq : QW R s j ps1 T (.run ⟨b, .move src dst :: its, m, w⟩)) :
+    {T : List Line} (hq : QW R s j ps1 T (.run ⟨b, .move src dst :: its, m, w⟩))
+    (hns : src.isSave = false) :
     ∃ n, QW R (iterN R.step n s)
         (R.nextW j ps1 T (.run ⟨b, .move src dst :: its, m, w⟩)
           (.run ⟨b, its, upd m dst (m src), w⟩)).1
@@ -28,9 +102,18 @@ theorem realizes_moveNAF {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : Arm.
       (∀ i < n, R.GoodXNY Y (iterN R.step i s)) ∧
       R.SegLen j ps1 T (.run ⟨b, .move src dst :: its, m, w⟩)
         (.run ⟨b, its, upd m dst (m src), w⟩) s n ∧ R.FRFree s n := by
+  by_cases hds : dst.isSave = true
+  · have hW := nextW_move_save (m' := upd m dst (m src)) (w' := w) hq (.inr hds)
+    refine ⟨0, ?_, fun _ h => absurd h (Nat.not_lt_zero _), ⟨⟨?_, fun i h0 h => by omega⟩, ?_⟩,
+      fun _ h => absurd h (Nat.not_lt_zero _)⟩
+    · rw [hW]; exact qW_save hds hq
+    · rw [hW]; exact hq.pc
+    · rw [RL.segLen_straight_iff, ← RL.nextW_straight (m := m) (m' := upd m dst (m src)) (w := w)
+        (w' := w), hW]
+      exact ⟨fun _ => rfl, fun _ => rfl⟩
   obtain ⟨vb, items, pre, code, ls, ps2, hvb, hit, hsplit, hchk, hcode, hls, htr, hdrop,
     hpc, hst⟩ := hq
-  obtain ⟨⟨c, wh, hcm⟩, hLs, hLd, hT, hchk'⟩ := move_facts hit hsplit hchk
+  obtain ⟨⟨c, wh, hcm⟩, hLs, hLd, hT, hchk'⟩ := move_facts hit hsplit hchk hns (by simpa using hds)
   obtain ⟨c1, c2, hc1, hc2, rfl⟩ := itemsCode_cons hcode
   have hc1o := hc1
   rw [itemCode_move] at hc1
@@ -92,7 +175,8 @@ theorem realizes_moveNAF {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : Arm.
     refine ⟨move_agree hst.store hvs hLs hmo.store, hw', herr, by rw [hprog, hst.prog], hsp',
       align_of_sp (by rw [hsp', hst.sp]) hst.align, fun hframe => ?_,
       code_frameKeep hR hmo.mem hst.code,
-      fun a ha => (hmo.mem a (RL.G_not_slot hR ha)).trans (hst.gkeep a ha)⟩
+      fun a ha => (hmo.mem a (RL.G_not_slot hR ha)).trans (hst.gkeep a ha),
+      fun hf => (xreg29_sw hst.world hw').trans (hst.fp hf)⟩
     rw [← hst.fplr hframe]
     apply read_mem_bytes_congr
     intro k hk
@@ -123,7 +207,8 @@ theorem realizes_moveNAF {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : Arm.
 next witness, at its first arrival. -/
 theorem realizes_moveNA {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : Arm.ArmState} {b : Nat}
     {src dst : Loc} {its : List RItem} {m : Loc → CV} {w : Arm.ArmState} {j : Nat} {ps1 : PState}
-    {T : List Line} (hq : QW R s j ps1 T (.run ⟨b, .move src dst :: its, m, w⟩)) :
+    {T : List Line} (hq : QW R s j ps1 T (.run ⟨b, .move src dst :: its, m, w⟩))
+    (hns : src.isSave = false) :
     ∃ n, QW R (iterN R.step n s)
         (R.nextW j ps1 T (.run ⟨b, .move src dst :: its, m, w⟩)
           (.run ⟨b, its, upd m dst (m src), w⟩)).1
@@ -135,7 +220,7 @@ theorem realizes_moveNA {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : Arm.A
       (∀ i < n, R.GoodXNY Y (iterN R.step i s)) ∧
       R.SegLen j ps1 T (.run ⟨b, .move src dst :: its, m, w⟩)
         (.run ⟨b, its, upd m dst (m src), w⟩) s n :=
-  let ⟨n, h1, h2, h3, _⟩ := realizes_moveNAF hR (Y := Y) hq
+  let ⟨n, h1, h2, h3, _⟩ := realizes_moveNAF hR (Y := Y) hq hns
   ⟨n, h1, h2, h3⟩
 
 end Backend.Proof

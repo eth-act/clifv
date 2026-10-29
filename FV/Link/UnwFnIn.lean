@@ -8,19 +8,17 @@ import FV.Link.DeadCleanupImage
 # The per-function unwinding checks from the input and the remaining conditions (S10g, #404)
 
 `unwFnsB` (what `compileExeU` decides per compiled function) has six conjuncts. Four of them
-follow from the input conditions and the two frame conditions, by the completeness theorems of
+follow from the input conditions and the code size, by the completeness theorems of
 `FV/Link/UnwTryIn.lean` and `FV/Link/UnwSavedIn.lean`:
 
 * `callSites`, `padsNonzeroB`: from `fnScopeB` and `tryTablesB` (`callSites_complete_input`,
   `padsNonzero_complete_input`);
-* `unwindRows`, `savedCheck`: from the frame conditions `saveFrameB` (the save slots below
-  32 KiB) and `leadOkB` (no other callee-save store right after the saves), measured by
-  `lake exe lean-link` (`Link.DeadCleanup.unwReport`), and the code below 4 GiB
-  (`unwindRows_complete_frame`, `savedCheck_pipe`).
+* `unwindRows`, `savedCheck`: Cranelift's prologue pushes the saved registers itself (#549), so
+  they need only the code below 4 GiB (`unwindRows_complete_frame`, `savedCheck_pipe`).
 
 `unwCondsB R` collects what is left per function: the input condition `tryTablesB`, the two
 checks without a completeness proof yet (`unwCheck`, `lastCallsOk`, decided on the compiled
-code), the two frame conditions and the code size. **`fnUnwB_of_pipe`**: on a function of
+code) and the code size. **`fnUnwB_of_pipe`**: on a function of
 `fnScopeB` whose cleanup pipeline succeeded, they give `fnUnwB`; **`unwFnsB_of_conds`**: on an
 input in `InScopeIn`, `unwCondsB` of the compiled functions gives `unwFnsB`.
 -/
@@ -33,8 +31,8 @@ open Backend Backend.Proof Backend.Proof.Driver E2E E2E.LinkCheck
 
 /-- **The per-function conditions left for `unwFnsB`** (see the module doc). -/
 def unwCondB (g : Clif.Function) (a : Art) : Bool :=
-  tryTablesB g && unwCheck g a.vc && lastCallsOk a.af a.fa && saveFrameB a.vcp a.rf &&
-    leadOkB a.rf a.af && decide (4 * a.fb.words.size < 2 ^ 32)
+  tryTablesB g && unwCheck g a.vc && lastCallsOk a.af a.fa &&
+    decide (4 * a.fb.words.size < 2 ^ 32)
 
 /-- `unwCondB` of every compiled function of `R`. -/
 def unwCondsB (R : Res) : Bool := (progOf R).funcs.all fun g => unwCondB g (artOf R g)
@@ -46,7 +44,7 @@ theorem fnUnwB_of_pipe {g : Clif.Function} {k : Nat} {base : BitVec 64} {o : Lea
     (hpipe : pipeCleanupT g k base o = .ok a) (hsc : fnScopeB g = true)
     (hc : unwCondB g a = true) : fnUnwB g a = true := by
   simp only [unwCondB, Bool.and_eq_true, decide_eq_true_eq] at hc
-  obtain ⟨⟨⟨⟨⟨ht, hu⟩, hlc⟩, hframe⟩, hlead⟩, hcode⟩ := hc
+  obtain ⟨⟨⟨ht, hu⟩, hlc⟩, hcode⟩ := hc
   obtain ⟨hl, hp, hrf, hlr, hem, hla, -, -⟩ := pipeCleanupT_spec hpipe
   obtain ⟨-, -, -, -, -, -, -, hd, hs, har, -⟩ := fnScope_parts hsc
   have hD := dominated_of hd
@@ -62,21 +60,16 @@ theorem fnUnwB_of_pipe {g : Clif.Function} {k : Nat} {base : BitVec 64} {o : Lea
   have hsize : a.rf.blocks.size = a.vcp.blocks.size := by rw [hrf]; exact pipeAlloc_size hne o
   have halloc : lowerRFunc a.vcp (allocResult a.vcp (readyAnswer a.vcp (raAnswer a.vcp o))) =
       .ok a.af := hrf ▸ hlr
-  have hframe' : saveFrameB a.vcp (allocResult a.vcp (readyAnswer a.vcp (raAnswer a.vcp o))) =
-      true := hrf ▸ hframe
-  have hlead' : leadOkB (allocResult a.vcp (readyAnswer a.vcp (raAnswer a.vcp o))) a.af = true :=
-    hrf ▸ hlead
-  have hRF := savedCheckRF_pipe hcfg' halloc
   obtain ⟨l, hcs⟩ := callSites_complete_input hD hS hA ht hl hp hlr hsize hem
   obtain ⟨rows, hrows⟩ :=
-    unwindRows_complete_frame hRF halloc (hrf ▸ hsize) hne hframe' hlead' hem hla hcode
+    unwindRows_complete_frame halloc (hrf ▸ hsize) hne hem hla hcode
   obtain ⟨vb, hvb⟩ : ∃ vb, a.vcp.blocks[0]? = some vb :=
     ⟨_, Array.getElem?_eq_getElem (by omega)⟩
   obtain ⟨items, hit⟩ : ∃ items, a.rf.blocks[0]? = some items :=
     ⟨_, Array.getElem?_eq_getElem (by omega)⟩
   have hpads := padsNonzero_complete_input hD hS hA ht hl hp hlr hem hla hvb hit
   have hsaved : savedCheck a.vcp a.rf = true := by
-    rw [hrf]; exact savedCheck_pipe hcfg' hne halloc hframe' hlead'
+    rw [hrf]; exact savedCheck_pipe hcfg' halloc
   simp [fnUnwB, hu, hcs, hrows, hpads, hlc, hsaved, Except.toBool]
 
 /-- **`unwFnsB` from the input and the remaining conditions**: on an input in `InScopeIn`,

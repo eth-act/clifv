@@ -72,16 +72,16 @@ theorem regLevelCorrect_world_atCSNXT {vcp : VCode} {rf : RFunc} {af : AFunc} {f
       (ρsel (locVal R.fr (iterN R.step n0 s))) (w₀, 0) (hsel _)
   have hP0 : countIn R.CallSt R.step s n0 = 0 := countIn_zero_of fun i hi => (ht0 i hi).2
   have hRzC : Realizes R.vc R.rf (csemVI R.gv R.F R.ctx XI) ckeep (stepC R.CallSt R.step)
-      (fun p c => (Q R p.1 (c.mapW Prod.fst) ∧ AInv R (c.mapW Prod.fst)) ∧ p.2 = c.world.2 ∧
+      (fun p c => QA R p.1 (c.mapW Prod.fst) ∧ p.2 = c.world.2 ∧
         ∃ i, p = iterN (stepC R.CallSt R.step) i (iterN R.step n0 s, 0))
       (fun p => ∃ m, (Rn m).GoodX p.1) := by
     refine RealizesCP.countedRun (vc := R.vc) (rf := R.rf) (keep := ckeep)
       (sem := fun n => csemV R.gv R.F R.ctx (XI.at n))
-      (Q := fun u c => Q R u c ∧ AInv R c) (T := fun u => ∃ m, (Rn m).GoodX u) (C := R.CallSt)
+      (Q := fun u c => QA R u c) (T := fun u => ∃ m, (Rn m).GoodX u) (C := R.CallSt)
       (P := fun n u => OnCall R.step fa base s n u) (s0 := iterN R.step n0 s) (fun n => ?_)
       (onCall_of_run hP0)
-    have hq : ∀ u c, Q (Rn n) u c ∧ AInv (Rn n) c ↔ Q R u c ∧ AInv R c := fun u c =>
-      and_congr (RL.Q_withX (Rn n) (XI.at 0) u c).symm Iff.rfl
+    have hq : ∀ u c, QA (Rn n) u c ↔ QA R u c := fun u c =>
+      (RL.QA_withX (Rn n) (XI.at 0) (RL.sP_withX (hRn n) hent (XI.at 0)) u c).symm
     exact ((realizes_allC_sp (hRn n) (hC n) (fun h => hCT h n) (fun h => hTls h n) hcov).mono_T
       (T' := fun u => ∃ m, (Rn m).GoodX u) fun _ h => ⟨n, h⟩).congr_Q hq
   have hfin0 : ∀ n1 n2 n3, E2E.runX (ArmStepX (XI.at 0) H fa) (n0 + n1 + n2 + n3) s =
@@ -98,9 +98,9 @@ theorem regLevelCorrect_world_atCSNXT {vcp : VCode} {rf : RFunc} {af : AFunc} {f
     · exact trapIf_nodefs hops
   have h1 : VStep R.vc (csemVI R.gv R.F R.ctx XI) (.run ⟨b, k, ρ, w⟩) (.halt w') :=
     VStep.step hvb hi hops hsem (by rw [hdefs]; rfl) VNext.halt
-  obtain ⟨n1, c', c'', ⟨hq2, -⟩, hr2, hms, hr3, ht1, hcnt⟩ :=
-    forward_lastC (Q := fun u c => Q R u (c.mapW Prod.fst) ∧ AInv R (c.mapW Prod.fst))
-      (T := fun u => ∃ m, (Rn m).GoodX u) hSim hRzC hstar h1 hinit ⟨hq0, hA0⟩ rfl
+  obtain ⟨n1, c', c'', hq2, hr2, hms, hr3, ht1, hcnt⟩ :=
+    forward_lastC (Q := fun u c => QA R u (c.mapW Prod.fst))
+      (T := fun u => ∃ m, (Rn m).GoodX u) hSim hRzC hstar h1 hinit (.inl ⟨hq0, hA0⟩) rfl
   cases c'' with
   | run s' => obtain ⟨_, e⟩ := hSim.run hr3; cases e
   | ret vs m' w'' => cases hSim.ret hr3
@@ -112,8 +112,12 @@ theorem regLevelCorrect_world_atCSNXT {vcp : VCode} {rf : RFunc} {af : AFunc} {f
       subst hb' hk' hw'
       rw [hvb] at hvb'; cases hvb'
       rw [hi] at hi'; cases hi'
-      have hq2' : Q R (iterN R.step n1 (iterN R.step n0 s))
+      have hq2'' : QA R (iterN R.step n1 (iterN R.step n0 s))
           (.run ⟨b, .op k _ :: _, _, w.1⟩) := hq2
+      have hnr : ∀ us, i ≠ .rets us := by
+        intro us h
+        rcases hform with ⟨cd, rfl⟩ | ⟨kk, cd, rfl, -⟩ <;> cases h
+      have hq2' := (qa_op hq2'' hvb hi hnr).1
       have e0 : countIn (fun u => CallPc fa base (Arm.r .PC u)) (ArmStepX (XI.at 0) H fa) s n0 = 0 :=
         hP0
       have e1 : countIn (fun u => CallPc fa base (Arm.r .PC u)) (ArmStepX (XI.at 0) H fa)
@@ -229,16 +233,16 @@ theorem regLevelCorrect_world_value_atCSNXT {vcp : VCode} {rf : RFunc} {af : AFu
       (ρsel (locVal R.fr (iterN R.step n0 s))) (w₀, 0) (hsel _)
   have hP0 : countIn R.CallSt R.step s n0 = 0 := countIn_zero_of fun i hi => (ht0 i hi).2
   have hRzC : Realizes R.vc R.rf (valueSemVI R.gv R.F R.ctx XI) ckeep (stepC R.CallSt R.step)
-      (fun p c => (Q R p.1 (c.mapW Prod.fst) ∧ AInv R (c.mapW Prod.fst)) ∧ p.2 = c.world.2 ∧
+      (fun p c => QA R p.1 (c.mapW Prod.fst) ∧ p.2 = c.world.2 ∧
         ∃ i, p = iterN (stepC R.CallSt R.step) i (iterN R.step n0 s, 0))
       (fun p => ∃ m, (Rn m).GoodX p.1) := by
     refine RealizesCP.countedRun (vc := R.vc) (rf := R.rf) (keep := ckeep)
       (sem := fun n => valueSemV R.gv R.F R.ctx (XI.at n))
-      (Q := fun u c => Q R u c ∧ AInv R c) (T := fun u => ∃ m, (Rn m).GoodX u) (C := R.CallSt)
+      (Q := fun u c => QA R u c) (T := fun u => ∃ m, (Rn m).GoodX u) (C := R.CallSt)
       (P := fun n u => OnCall R.step fa base s n u) (s0 := iterN R.step n0 s) (fun n => ?_)
       (onCall_of_run hP0)
-    have hq : ∀ u c, Q (Rn n) u c ∧ AInv (Rn n) c ↔ Q R u c ∧ AInv R c := fun u c =>
-      and_congr (RL.Q_withX (Rn n) (XI.at 0) u c).symm Iff.rfl
+    have hq : ∀ u c, QA (Rn n) u c ↔ QA R u c := fun u c =>
+      (RL.QA_withX (Rn n) (XI.at 0) (RL.sP_withX (hRn n) hent (XI.at 0)) u c).symm
     exact ((realizes_value_allC_sp (hRn n) (hC n) (fun h => hCT h n) (fun h => hTls h n) hcov).mono_T
       (T' := fun u => ∃ m, (Rn m).GoodX u) fun _ h => ⟨n, h⟩).congr_Q hq
   have hfin0 : ∀ n1 n2 n3, E2E.runX (ArmStepX (XI.at 0) H fa) (n0 + n1 + n2 + n3) s =
@@ -255,9 +259,9 @@ theorem regLevelCorrect_world_value_atCSNXT {vcp : VCode} {rf : RFunc} {af : AFu
     · exact trapIf_nodefs hops
   have h1 : VStep R.vc (valueSemVI R.gv R.F R.ctx XI) (.run ⟨b, k, ρ, w⟩) (.halt w') :=
     VStep.step hvb hi hops hsem (by rw [hdefs]; rfl) VNext.halt
-  obtain ⟨n1, c', c'', ⟨hq2, -⟩, hr2, hms, hr3, ht1, hcnt⟩ :=
-    forward_lastC (Q := fun u c => Q R u (c.mapW Prod.fst) ∧ AInv R (c.mapW Prod.fst))
-      (T := fun u => ∃ m, (Rn m).GoodX u) hSim hRzC hstar h1 hinit ⟨hq0, hA0⟩ rfl
+  obtain ⟨n1, c', c'', hq2, hr2, hms, hr3, ht1, hcnt⟩ :=
+    forward_lastC (Q := fun u c => QA R u (c.mapW Prod.fst))
+      (T := fun u => ∃ m, (Rn m).GoodX u) hSim hRzC hstar h1 hinit (.inl ⟨hq0, hA0⟩) rfl
   cases c'' with
   | run s' => obtain ⟨_, e⟩ := hSim.run hr3; cases e
   | ret vs m' w'' => cases hSim.ret hr3
@@ -269,8 +273,12 @@ theorem regLevelCorrect_world_value_atCSNXT {vcp : VCode} {rf : RFunc} {af : AFu
       subst hb' hk' hw'
       rw [hvb] at hvb'; cases hvb'
       rw [hi] at hi'; cases hi'
-      have hq2' : Q R (iterN R.step n1 (iterN R.step n0 s))
+      have hq2'' : QA R (iterN R.step n1 (iterN R.step n0 s))
           (.run ⟨b, .op k _ :: _, _, w.1⟩) := hq2
+      have hnr : ∀ us, i ≠ .rets us := by
+        intro us h
+        rcases hform with ⟨cd, rfl⟩ | ⟨kk, cd, rfl, -⟩ <;> cases h
+      have hq2' := (qa_op hq2'' hvb hi hnr).1
       have e0 : countIn (fun u => CallPc fa base (Arm.r .PC u)) (ArmStepX (XI.at 0) H fa) s n0 = 0 :=
         hP0
       have e1 : countIn (fun u => CallPc fa base (Arm.r .PC u)) (ArmStepX (XI.at 0) H fa)

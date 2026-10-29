@@ -78,6 +78,10 @@ theorem checksPost :
     instsLB = true ∧ 3 = (vcpC.blocks[0]!).insts.size := by
   native_decide
 
+/-- The caller's moves after its call have no `ret` (as a check). -/
+theorem postMvC_noRet : (postMv (.x 0)).all (moveNoRetB (act vcpC rfC)) = true := by
+  native_decide
+
 theorem instL1 : ∃ fl, (vcpL.blocks[0]!).insts[1]? =
       some (.loadAcquire (.int 64) (.vreg 2 .int) (.vreg 0 .int) fl) ∧
     FormOk (act vcpL rfL).ctx (.loadAcquire (.int 64) (.vreg 2 .int) (.vreg 0 .int) fl) = true := by
@@ -145,28 +149,28 @@ theorem calleePath (hS : StRel RC s m w₀C) (hx0 : regVal s (.x 0) = 0) :
       Q (RLx s) (iterN (RLx s).step n0 (RLx s).s0) (.run ⟨0, rest2L, mL, w₀X s⟩) ∧
       AInv (RLx s) (.run ⟨0, rest2L, mL, w₀X s⟩) ∧
       SRun (SrcStep (RLx s)) (MConf.init (RLx s).rf (locVal (RLx s).fr
-        (iterN (RLx s).step (prologueLines (RLx s).af.frameSize).length (RLx s).s0)) (w₀X s))
+        (iterN (RLx s).step (prologueLines (RLx s).af.saves (RLx s).af.frameSize).length (RLx s).s0)) (w₀X s))
         trM (.run ⟨0, rest2L, mL, w₀X s⟩) ∧
       (∀ x ∈ trM, x = []) ∧ mL (.reg (.x 0)) = 0 := by
   have hR := wfX hS
   obtain ⟨hlat, hq, hA⟩ := q_init_lines hR (abiX hS) (bodyX s)
   have hpe := prologue_evs hR (abiX hS) hlat
   have hpr0 := linesAt_program hR hlat
-  have hnr0 := linesAt_nonRet hR hlat (noRet_prologue _)
-  generalize hP : (prologueLines (RLx s).af.frameSize).length = n0 at hpe hpr0 hnr0 hq hA ⊢
+  have hnr0 := linesAt_nonRet hR hlat (noRet_prologue _ _)
+  generalize hP : (prologueLines (RLx s).af.saves (RLx s).af.frameSize).length = n0 at hpe hpr0 hnr0 hq hA ⊢
   have hq0 := hq
   have hA0 := hA
   simp only [MConf.init] at hq0 hA0
   rw [show (RLx s).rf = rfL from rfl, checksRunL.1] at hq0 hA0
   have hnr := moves_noRet (R := RLx s) checksPost.2.2.1
   obtain ⟨n1, hq1, hA1, hp1⟩ := moves_privP hR savesL _ _ _ hq0 hA0
-    fun p hp => hnr p (by simp [hp])
+    (fun p hp => hnr p (by simp [hp])) (by simp [savesL, Loc.isSave])
   obtain ⟨m', hst, hm'⟩ := args_stepX (s := s) (spillL.map (fun p => RItem.move p.1 p.2) ++ rest2L) _
     (w₀X s)
   have hq2 := realizes_args hR hq1 hA1 vb0L argsL0.1 hst
   have hA2 := Backend.Proof.aInv_step hR hq1 hA1 hst
   obtain ⟨n2, hq3, hA3, hp2⟩ := moves_privP hR spillL rest2L _ m' hq2 hA2
-    fun p hp => hnr p (by simp [hp])
+    (fun p hp => hnr p (by simp [hp])) (by simp [spillL, Loc.isSave])
   have hsa := srcStep_of_mstep_nil (coveredX hS hx0) VCodeThread.Witness.X0_tls hq1
     (fun vb i hvb hi => by
       have h0 : (RLx s).vc.blocks[0]? = some vcpL.blocks[0]! := vb0L
@@ -411,10 +415,11 @@ theorem mc2_ret {x : ArmState} (hx : x.program = pL) (hr : IsRetL x) :
   simp only [MC2, hx, ite_true, hr]
 
 /-- **The caller's state after the callee returned** (as the caller resumes): at the return
-address, no error, its `sp`, its addresses as at the call, its program. -/
+address, no error, its `sp`, its addresses as at the call, its program, its x29 (the callee's
+epilogue restores it; the caller's `StRel.fp` needs it). -/
 def PostA (s y : ArmState) : Prop :=
   Arm.r .PC y = Arm.r .PC s + 4#64 ∧ Arm.r .ERR y = .None ∧ E2E.spv y = E2E.spv s ∧
-    (∀ a, RC.F a → y.mem a = s.mem a) ∧ y.program = pC0
+    (∀ a, RC.F a → y.mem a = s.mem a) ∧ y.program = pC0 ∧ E2E.xreg 29 y = E2E.xreg 29 s
 
 /-- **The callee's return** (`Ret` of `link_compose`): the caller's Arm state after it, the
 caller's CLIF state ready to return. -/
@@ -457,7 +462,7 @@ stepped, since its step has an event, and does not stop there). -/
 theorem mstep_ldar (hS : StRel RC s m w₀C) (hx0 : regVal s (.x 0) = 0) (env : Clif.Env)
     {mL : Loc → CV} {trM : List (List Ev)}
     (hrun : SRun (SrcStep (RLx s)) (MConf.init (RLx s).rf (locVal (RLx s).fr
-        (iterN (RLx s).step (prologueLines (RLx s).af.frameSize).length (RLx s).s0)) (w₀X s))
+        (iterN (RLx s).step (prologueLines (RLx s).af.saves (RLx s).af.frameSize).length (RLx s).s0)) (w₀X s))
         trM (.run ⟨0, rest2L, mL, w₀X s⟩))
     (hnil : ∀ x ∈ trM, x = []) :
     ∃ c', MStep (RLx s).vc (RLx s).sem ckeep (RLx s).rf (.run ⟨0, rest2L, mL, w₀X s⟩) c' := by
@@ -496,11 +501,10 @@ theorem mstep_ldar (hS : StRel RC s m w₀C) (hx0 : regVal s (.x 0) = 0) (env : 
 
 /-- **The callee after its `ldar`**: the moves, the restores and the return, every step private,
 no store exclusive, on its program, at a line other than `ret` but the last, which is at the
-`ret`; after it the caller's state as it resumes (`PostA`). -/
+`ret`; after it the caller's state as it resumes (`PostA`). From `QA` (the restores emit no
+code: they continue a return tail, `moves_privQA`). -/
 theorem calleePost (hS : StRel RC s m w₀C) {x : ArmState} {m2 : Loc → CV} {w2 : ArmState}
-    (hq : Q (RLx s) x (.run ⟨0, (postMv (.x 1)).map (fun p => RItem.move p.1 p.2) ++
-      [.op 2 #[.reg (.x 0)]], m2, w2⟩))
-    (hA : AInv (RLx s) (.run ⟨0, (postMv (.x 1)).map (fun p => RItem.move p.1 p.2) ++
+    (hqa : QA (RLx s) x (.run ⟨0, (postMv (.x 1)).map (fun p => RItem.move p.1 p.2) ++
       [.op 2 #[.reg (.x 0)]], m2, w2⟩)) :
     ∃ nP, 0 < nP ∧
       (∀ i < nP, ((∀ e ∈ stepEvs (iterN (RLx s).step i x), (RLx s).F e.addr) ∧
@@ -509,10 +513,11 @@ theorem calleePost (hS : StRel RC s m w₀C) {x : ArmState} {m2 : Loc → CV} {w
       IsRetL (iterN (RLx s).step (nP - 1) x) ∧
       PostA s (set_program (iterN (RLx s).step nP x) pC0) := by
   have hR := wfX hS
-  obtain ⟨n1, hq1, hA1, hp1⟩ := moves_privP hR (postMv (.x 1)) [.op 2 #[.reg (.x 0)]] x m2 hq hA
+  obtain ⟨n1, hqa1, hp1⟩ := moves_privQA hR (postMv (.x 1)) [.op 2 #[.reg (.x 0)]] x m2 hqa
     (fun p hp => moves_noRet (R := RLx s) checksPost.2.2.1 p (by simp [hp]))
+  obtain ⟨mt1, hq1⟩ := qa_q hqa1
   have hvb : (RLx s).vc.blocks[0]? = some vcpL.blocks[0]! := vb0L
-  obtain ⟨n2, hp2, hpc2, herr2, hsp2, hmem2, hprog2, hnr2, hn2, j, t, hj, hpcj⟩ :=
+  obtain ⟨n2, hp2, hpc2, herr2, hsp2, hmem2, hprog2, hx29, hnr2, hn2, j, t, hj, hpcj⟩ :=
     rets_privP hR (abiX hS) hq1 hvb instL2
   have hstr := q_stRel hq1
   have hshift : ∀ i, iterN (RLx s).step i (iterN (RLx s).step n1 x) =
@@ -531,7 +536,7 @@ theorem calleePost (hS : StRel RC s m w₀C) {x : ArmState} {m2 : Loc → CV} {w
   · rw [show n1 + n2 - 1 = n1 + (n2 - 1) by omega, ← hshift]
     exact ⟨j, t, hj, hpcj⟩
   · rw [← hshift]
-    refine ⟨?_, ?_, ?_, fun a ha => ?_, rfl⟩
+    refine ⟨?_, ?_, ?_, fun a ha => ?_, rfl, ?_⟩
     · rw [E2E.r_set_program, hpc2]
     · rw [E2E.r_set_program, herr2]
     · show Arm.r (.GPR 31#5) (set_program _ _) = Arm.r (.GPR 31#5) s
@@ -543,6 +548,12 @@ theorem calleePost (hS : StRel RC s m w₀C) {x : ArmState} {m2 : Loc → CV} {w
     · rw [E2E.mem_set_program, hmem2, hstr.gkeep a ha]
       show (enterL s).mem a = _
       rw [mem_enterL]
+    · show Arm.r (.GPR 29#5) (set_program _ _) = Arm.r (.GPR 29#5) s
+      rw [E2E.r_set_program]
+      show E2E.xreg 29 _ = _
+      rw [hx29]
+      show Arm.r (.GPR 29#5) (enterL s) = _
+      rw [r_enterL (by simp) (by simp)]
 
 /-- **A step of private events realizes an event-free CLIF step.** -/
 theorem realized_privStep {R : RL} {env : Clif.Env} {p : Clif.Program} {l : Lab} {L : List Lab}
@@ -631,11 +642,11 @@ theorem funReal_ld (env : Clif.Env) (hS : StRel RC s m w₀C) (hx0 : regVal s (.
     rw [h0] at hvb; cases hvb; rw [hil] at hi; cases hi
     exact ldar_form hfo
   rw [checksPost.1] at hqa hAa hsrc
-  obtain ⟨c', t1, φ, hsc, hp1, ht1, ⟨hq1, hA1⟩, -⟩ := oneEv_op1 hR hqa hAa hsrc hform
+  obtain ⟨c', t1, φ, hsc, hp1, ht1, hqa1, -⟩ := oneEv_op1 hR hqa hAa hsrc hform
     (.cons hsaR hpa trivial .nil)
   obtain rfl := PRun.det hp1 (.cons hsaR hpa trivial .nil)
   obtain ⟨m2, w2, rfl⟩ := srcStep_next (fun vb i hvb hi => (hform vb i hvb hi).ctl) hsc
-  obtain ⟨nP, hnP, hpP, hnrP, hretP, hpostP⟩ := calleePost hS hq1 hA1
+  obtain ⟨nP, hnP, hpP, hnrP, hretP, hpostP⟩ := calleePost hS hqa1
   -- the CLIF load and return
   obtain ⟨s1, d, hcl1, hcl2, hdr, hdc⟩ := cstep_ld env (bytesOf e.n e.val) (by simp [bytesOf, hen])
     (fun x hx => by simp only [bytesOf, List.mem_map] at hx; obtain ⟨_, _, rfl⟩ := hx; rfl)

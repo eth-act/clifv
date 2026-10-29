@@ -61,7 +61,7 @@ def retFa : FnAsm := { name := "ld", k := 0, lines := #[.ins .ret none], size :=
 def retFb : FnBin := retFa.layout.toOption.getD default
 
 /-- The address of the compiled `atomic_load`'s last word (a `ret`). -/
-def retBase : BitVec 64 := 0x20000#64 + BitVec.ofNat 64 (4 * 46)
+def retBase : BitVec 64 := 0x20000#64 + BitVec.ofNat 64 (4 * 28)
 
 /-- **The external's code in the link.** -/
 def idF : LFn :=
@@ -75,7 +75,7 @@ def idF : LFn :=
 def linkX : Link := ⟨[("ld", idF), ("f", callerF)]⟩
 
 theorem checksX : retFa.layout.toBool = true ∧ (labelOffsets retFa.lines).toBool = true ∧
-    retFb.words = #[0xd65f03c0#32] ∧ ldF.fb.words[46]? = some 0xd65f03c0#32 ∧
+    retFb.words = #[0xd65f03c0#32] ∧ ldF.fb.words[28]? = some 0xd65f03c0#32 ∧
     retBase.toNat + 4 * retFb.words.size ≤ 0x30000 ∧ callsInsideB idF = true := by
   native_decide -- witness: native_decide
 
@@ -341,6 +341,10 @@ theorem ext_ret {L : Link} {env : Clif.Env} {p : Clif.Program} {syms : String �
         saved := fun r hr => by rw [hregv r (.inl hr)]
         keep := fun a _ => by rw [hmemv]
         prog := by rw [hM, program_set_program, hprog]
+        fp := by
+          show Arm.r (.GPR 29#5) _ = Arm.r (.GPR 29#5) x
+          rw [hM, r_set_program, r_of_w_different (by simp),
+            Link.r_enter (by simp) (by simp)]
         mem := {
           bytes := fun a b' hv hb => by
             have hv' : m.valid a 1 = true := by

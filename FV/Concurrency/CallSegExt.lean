@@ -17,7 +17,9 @@ external's Arm code does is not proven but assumed, by the trusted **`ExtEvContr
   `x` (its frame and its callees');
 * `XRetA`: **the external's return** to the caller (AAPCS64): at the address after the `bl`,
   no model error, the caller's `sp`, the callee-saved registers (x19–x28, the low halves of
-  v8–v15) and the caller's private memory `Fr` as at the call, back on the caller's program; the
+  v8–v15), the frame pointer x29 (AAPCS64 preserves r19–r29; Cranelift's frame addresses the
+  caller's frame from it) and the caller's private memory `Fr` as at the call, back on the
+  caller's program; the
   specification's CLIF memory at its `return` agreeing with the Arm memory (`MemRel`), the
   returned values in the external's return registers `rs`;
 * **`ExtChain`**: the chain property of the external (as `CallSegOkG.ChainP` of a compiled
@@ -83,6 +85,7 @@ structure XRetA (syms : String → Option Nat) (rs : List Reg) (Fr : BitVec 64 �
   saved : ∀ r ∈ calleeSaved, ckeep r (regVal v r) = ckeep r (regVal x r)
   keep : ∀ a, Fr a → v.mem a = x.mem a
   prog : v.program = x.program
+  fp : xreg 29 v = xreg 29 x
   mem : MemRel (fun _ => False) syms s'.mem v
   rets : ∀ vals cm, Clif.step env p s' = .done vals cm → ∃ ys : List CV, PrefixHold vals ys ∧
     ∀ (j : Nat) (r : Reg) (y : CV), rs[j]? = some r → ys[j]? = some y → regVal v r = y

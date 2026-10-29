@@ -17,7 +17,7 @@ open Backend Backend.Proof LinkArmProphDetWitness LinkArmProphDetEWitness
 theorem progCallP_Lu (M : Nat) {n : String} {h : Clif.Function} (hpf : Lu.P.func? n = some h)
     (hcal : ∃ g ∈ Lu.P.funcs, Lu.Callee g h)
     (hib : ((RAFrame.compute (Lu.A h).vcp (Lu.A h).rf).intBase = 0 ∧
-      (RAFrame.compute (Lu.A h).vcp (Lu.A h).rf).size = (Lu.A h).af.frameSize) ∨ Lu.NeedNI)
+      (RAFrame.compute (Lu.A h).vcp (Lu.A h).rf).size = (Lu.A h).af.frameSize - clobberBytes (Lu.A h).af.saves) ∨ Lu.NeedNI)
     {F : BitVec 64 → Prop} (himgF : ∀ a, Lu.Img a → F a)
     {uses : List CV} {w : Arm.ArmState} (herr : Arm.r .ERR w = .None)
     (hal : (spv w).toNat % 16 = 0)

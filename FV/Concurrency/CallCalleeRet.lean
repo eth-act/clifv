@@ -13,8 +13,9 @@ pause; at a nested activation `RB.G ⊇ RA.FK` (`FrameDisj.Nested`: `RB.G = RA.F
 
 * `gkeep_of_q`: `Q` at a run configuration keeps `R.G`;
 * `RetC R ra r₀ y`: **the return contract of an activation relative to its own entry** — `y` at
-  the return address, no error, `sp` as at entry, the kept addresses `R.G` as at entry, the
-  callee-saved registers (up to `ckeep`) the checker's entry values `r₀`;
+  the return address, no error, `sp` as at entry, the kept addresses `R.G` as at entry, x29 as at
+  entry (Cranelift's epilogue reloads it with fp/lr), the callee-saved registers (up to `ckeep`)
+  the checker's entry values `r₀`;
 * **`retC_of_retEnd`**: `RetC` after the epilogue from `CallRetsEnd.RetEnd` at a `rets` pause;
 * **`resume_premises_of_retC`**: the caller's resume premises (those of
   `resume_premises_of_retEnd`, with `hmr` derived) from `RetC` of a callee whose ABI entry state
@@ -35,7 +36,7 @@ theorem gkeep_of_q {R : RL} {s : ArmState} {b : Nat} {its : List RItem} {m : Loc
 /-- **The return contract of an activation relative to its entry** (module doc). -/
 def RetC (R : RL) (ra : BitVec 64) (r₀ : Reg → CV) (y : ArmState) : Prop :=
   Arm.r .PC y = ra ∧ Arm.r .ERR y = .None ∧ spv y = spv R.s0 ∧
-    (∀ a, R.G a → y.mem a = R.s0.mem a) ∧
+    (∀ a, R.G a → y.mem a = R.s0.mem a) ∧ xreg 29 y = xreg 29 R.s0 ∧
     ∀ r ∈ calleeSaved, ckeep r (regVal y r) = ckeep r (r₀ r)
 
 /-- **`RetC` after the epilogue of a `rets` pause** (module doc). -/
@@ -44,8 +45,9 @@ theorem retC_of_retEnd {R : RL} {ra : BitVec 64} {env : Clif.Env} {p : Clif.Prog
     {s' : Clif.State} (hret : RetEnd R ra env p MR slots r₀ x s') :
     ∃ n, (∀ i < n, R.GoodX (iterN R.step i x)) ∧ RetC R ra r₀ (iterN R.step n x) := by
   obtain ⟨b, k, allocs, its, m, w, -, -, -, -, -, -, n, hq, -, -, -, -, -, -, -, hgood, hpc, herr,
-    hsp, hmem, -, hcs, -⟩ := hret
-  exact ⟨n, hgood, hpc, herr, hsp, fun a ha => by rw [hmem]; exact gkeep_of_q hq a ha, hcs⟩
+    hsp, hmem, ⟨-, hx29⟩, hcs, -⟩ := hret
+  obtain ⟨mt, hq'⟩ := qa_q hq
+  exact ⟨n, hgood, hpc, herr, hsp, fun a ha => by rw [hmem]; exact gkeep_of_q hq' a ha, hx29, hcs⟩
 
 /-- **The caller's resume premises from the callee's return contract** (module doc): the state
 `y` after the callee's return satisfies the premises of `CallRetResume.resume_layersR` other
@@ -57,7 +59,7 @@ theorem resume_premises_of_retC {RA RB : RL} (hRA : RA.Wf) (hRB : RB.Wf) {ra : B
     (hlr : xreg 30 RB.s0 = Arm.r .PC x + 4#64)
     (hm0 : ∀ a, RA.FK a → RB.s0.mem a = x.mem a) (hG : ∀ a, RA.FK a → RB.G a)
     (hr₀ : ∀ r ∈ calleeSaved, ckeep r (r₀ r) =
-      ckeep r (locVal RB.fr (iterN RB.step (prologueLines RB.af.frameSize).length RB.s0) (.reg r)))
+      ckeep r (locVal RB.fr (iterN RB.step (prologueLines RB.af.saves RB.af.frameSize).length RB.s0) (.reg r)))
     {info : CallInfo} {ops : Array Operand} {allocs : Array Loc}
     (hdef : ∀ d ∈ info.defs, ∃ q ∈ defPairs ops allocs, q.1.isLate = true ∧ q.2 = .reg d.1) :
     Arm.r .PC y = Arm.r .PC x + 4#64 ∧ Arm.r .ERR y = .None ∧ spOf y = spOf x ∧
@@ -66,8 +68,9 @@ theorem resume_premises_of_retC {RA RB : RL} (hRA : RA.Wf) (hRB : RB.Wf) {ra : B
         (∀ q ∈ defPairs ops allocs, q.1.isLate = true → q.2 ≠ l) →
         locVal RA.fr y l = locVal RA.fr x l) ∧
       (∀ c ∈ (MInst.call info).clobbers, c ∈ calleeSaved →
-        ckeep c (regVal y c) = ckeep c (regVal x c)) := by
-  obtain ⟨hpc, herr, hsp, hmem, hcs⟩ := hy
+        ckeep c (regVal y c) = ckeep c (regVal x c)) ∧
+      xreg 29 y = xreg 29 x := by
+  obtain ⟨hpc, herr, hsp, hmem, hx29, hcs⟩ := hy
   obtain ⟨he, hsp0, hra⟩ := entry_premises hRB hent hfx hlr
   have hcs' : ∀ r ∈ calleeSaved, ckeep r (regVal y r) = ckeep r (regVal x r) :=
     fun r hr => (hcs r hr).trans ((hr₀ r hr).trans (he r hr))
@@ -75,6 +78,6 @@ theorem resume_premises_of_retC {RA RB : RL} (hRA : RA.Wf) (hRB : RB.Wf) {ra : B
   have hmem' : ∀ a, RA.FK a → y.mem a = x.mem a := fun a ha =>
     (hmem a (hG a ha)).trans (hm0 a ha)
   exact ⟨hpc.trans hra, herr, hsp', hmem', hpresR_of_callee hRA hst hdef hcs' hsp' hmem',
-    hkeep_of_callee hcs'⟩
+    hkeep_of_callee hcs', hx29.trans (hfx (.GPR 29#5) (by simp) (by simp))⟩
 
 end Concurrency.ArmAllocThread

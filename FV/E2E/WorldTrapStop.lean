@@ -141,7 +141,7 @@ theorem regLevel_trapStop_core {R : RL} (hR : R.Wf) {ra : BitVec 64}
     {a0 : AState} (hcheck : CheckedAt R.vc R.rf cc ins a0) {semU : Sem}
     {XT : Option String → List CV → Arm.ArmState → Prop}
     (hgot : GotSem R.gv R.X semU)
-    (hRz : Realizes R.vc R.rf semU ckeep R.step (fun s c => Q R s c ∧ AInv R c) R.GoodX)
+    (hRz : Realizes R.vc R.rf semU ckeep R.step (QA R) R.GoodX)
     (hhalt : ∀ i uses w outs w', trapCode? i ≠ none → semU i uses w = some (outs, w', .halt) →
       csem R.F R.ctx R.X i uses w = some (outs, w', .halt))
     {w₀ : Arm.ArmState} (hbe : BodyEntryW R.F R.vc.EntryArg R.af R.s0 w₀)
@@ -170,7 +170,7 @@ theorem regLevel_trapStop_core {R : RL} (hR : R.Wf) {ra : BitVec 64}
   refine ⟨locVal R.fr (iterN R.step n0 R.s0), fun c htr => ?_, fun obj w' hu => ?_⟩
   · -- an explicit trap
     obtain ⟨b, k, ρ, w, vb, i, ops, outs, w', hstar, hvb, hi, hops, hsem, htc⟩ := htr
-    obtain ⟨n1, c1, hq1, hr1, ht1⟩ := forward hSim hRz hstar hinit ⟨hq0, hA0⟩
+    obtain ⟨n1, c1, hq1, hr1, ht1⟩ := forward hSim hRz hstar hinit (.inl ⟨hq0, hA0⟩)
     obtain ⟨hnil, hform⟩ :=
       csem_halt (hhalt _ _ _ _ _ (by rw [htc]; exact Option.some_ne_none _) hsem)
     subst hnil
@@ -180,7 +180,7 @@ theorem regLevel_trapStop_core {R : RL} (hR : R.Wf) {ra : BitVec 64}
       · exact trapIf_nodefs hops
     have h1 : VStep R.vc semU (.run ⟨b, k, ρ, w⟩) (.halt w') :=
       VStep.step hvb hi hops hsem (by rw [hdefs]; rfl) VNext.halt
-    obtain ⟨n2, c', c'', ⟨hq2, -⟩, hr2, hms, hr3, ht2⟩ :=
+    obtain ⟨n2, c', c'', hq2, hr2, hms, hr3, ht2⟩ :=
       forward_last hSim hRz h1 _ c1 _ (Nat.le_refl _) hr1 hq1
     cases c'' with
     | run s' => obtain ⟨_, e⟩ := hSim.run hr3; cases e
@@ -193,6 +193,10 @@ theorem regLevel_trapStop_core {R : RL} (hR : R.Wf) {ra : BitVec 64}
         subst hb' hk' hw'
         rw [hvb] at hvb'; cases hvb'
         rw [hi] at hi'; cases hi'
+        have hnr : ∀ us, i ≠ .rets us := by
+          intro us h
+          rcases hform with ⟨cd, rfl⟩ | ⟨kk, cd, rfl, -⟩ <;> cases h
+        have hq2 := (qa_op hq2 hvb hi hnr).1
         rcases hform with ⟨cd, rfl⟩ | ⟨kk, cd, rfl, -⟩
         · simp only [trapCode?, Option.some.injEq] at htc
           subst htc
@@ -221,10 +225,10 @@ theorem regLevel_trapStop_core {R : RL} (hR : R.Wf) {ra : BitVec 64}
               exact hstuck m
   · -- an exceptional end: a `call` whose callee traps
     obtain ⟨b, k, ρ, w1, vb, info, ops, outs, hstar, hvb, hi, hops, hraise, hsem, hlen⟩ := hu
-    obtain ⟨n1, c1, hq1, hr1, ht1⟩ := forward hSim hRz hstar hinit ⟨hq0, hA0⟩
+    obtain ⟨n1, c1, hq1, hr1, ht1⟩ := forward hSim hRz hstar hinit (.inl ⟨hq0, hA0⟩)
     have h1 : VStep R.vc semU (.run ⟨b, k, ρ, w1⟩) (.halt w') :=
       VStep.step hvb hi hops hsem hlen VNext.halt
-    obtain ⟨n2, c', c'', ⟨hq2, -⟩, hr2, hms, hr3, ht2⟩ :=
+    obtain ⟨n2, c', c'', hq2, hr2, hms, hr3, ht2⟩ :=
       forward_last hSim hRz h1 _ c1 _ (Nat.le_refl _) hr1 hq1
     obtain ⟨u, hu⟩ : ∃ u, iterN R.step n2 (iterN R.step n1 (iterN R.step n0 R.s0)) = u :=
       ⟨_, rfl⟩
@@ -242,6 +246,7 @@ theorem regLevel_trapStop_core {R : RL} (hR : R.Wf) {ra : BitVec 64}
       -- the allocated code reads the VCode's uses: the same trapping callee
       have hU0 := matchRun_uses hcheck hr2 (MStep.op hvb hi hops hsz hsem2 hlen2 hho hcl hn) hvb hi
         hops
+      have hq2 := (qa_op hq2 hvb hi (fun us h => by cases h)).1
       obtain ⟨j0, items, pre, regs, i', cA, cB, ls1, ls2, ps1, psm, ps2, T', cc', wh, ops'', hal, hit,
         hsplit, hasg, hc1', hops'', hstat, hchk', hcode2, h1', h2', htr', hdrop, hpc, hst⟩ :=
         q_op hq2 hvb hi

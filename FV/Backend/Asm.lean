@@ -498,22 +498,66 @@ where
     else if off > 0 then [.ins (.aluImm12 .add true rd rn ⟨off.toNat, false⟩)]
     else [.ins (.aluImm12 .sub true rd rn ⟨(-off).toNat, false⟩)]
 
-/-- Prologue and epilogue (frame size a multiple of 16). -/
-def prologueLines (size : Nat) : List Line :=
-  [.ins (.stp Reg.fp Reg.lr (.spPreIndexed (-16))), .ins (.mov true Reg.fp .sp)] ++
-  (if size == 0 then []
-   else match Imm12.ofNat? size with
-     | some i => [.ins (.aluImm12 .sub true .sp .sp i)]
-     | none => loadConst64 (.x 16) size ++ [.ins (.aluRRRExtend .sub true .sp .sp (.x 16) .uxtx)])
+/-! ## Prologue and epilogue (Cranelift's `gen_prologue_frame_setup`, `gen_clobber_save`,
+`gen_clobber_restore`, `gen_epilogue_frame_restore`, `isa/aarch64/abi.rs`)
 
-/-- The epilogue frees the frame by adjusting `sp` (as the prologue allocated it; `x16` holds
-large sizes), then pops fp/lr and returns. It does not read `fp`: the body keeps `sp`
-(`FrameKeep`), which is what the register-level proof tracks. -/
-def epilogueLines (size : Nat) : List Line :=
-  (if size == 0 then []
-   else match Imm12.ofNat? size with
-     | some i => [.ins (.aluImm12 .add true .sp .sp i)]
-     | none => loadConst64 (.x 16) size ++ [.ins (.aluRRRExtend .add true .sp .sp (.x 16) .uxtx)]) ++
+The callee-saved registers the function clobbers (`saves`, in `calleeSaved` order: x19–x28,
+then v8–v15, as Cranelift sorts them) are pushed right below fp/lr with `sp` pre-indexed
+stores: the int registers first (the last one alone with `str` if their number is odd, then
+the pairs from the highest down with `stp`), then the float registers' low 64 bits the same way
+(`str d`/`stp d`); then `sub sp` allocates the rest of the frame. The epilogue frees that part,
+pops the float pairs from the lowest up, the odd float, the int pairs, the odd int (`ldp`/`ldr`
+post-indexed), then fp/lr. Upward from the final `sp`, the clobber area holds the float
+registers (8 bytes each, padded to 16), then the int registers (8 bytes each, padded to 16):
+`clobberOff`. -/
+
+/-- The pairs of a register list (`chunks_exact(2)`) and the odd last one. -/
+def pairsOf : List Reg → List (Reg × Reg) × Option Reg
+  | a :: b :: rest => let (ps, o) := pairsOf rest; ((a, b) :: ps, o)
+  | [a] => ([], some a)
+  | [] => ([], none)
+
+/-- Pushes of one class (`int`: `str`/`stp` of x registers, else `str d`/`stp d`): the odd last
+register, then the pairs from the highest down. -/
+def pushLines (int : Bool) (rs : List Reg) : List Line :=
+  let (ps, o) := pairsOf rs
+  (match o with
+   | some r => [.ins (if int then .store .store64 r (.spPreIndexed (-16))
+       else .fpuStore .size64 r (.spPreIndexed (-16)))]
+   | none => []) ++
+  ps.reverse.map fun (a, b) =>
+    .ins (if int then .stp a b (.spPreIndexed (-16)) else .fpuStoreP .size64 a b (.spPreIndexed (-16)))
+
+/-- Pops of one class: the pairs from the lowest up, then the odd last register. -/
+def popLines (int : Bool) (rs : List Reg) : List Line :=
+  let (ps, o) := pairsOf rs
+  ps.map (fun (a, b) =>
+    .ins (if int then .ldp a b (.spPostIndexed 16) else .fpuLoadP .size64 a b (.spPostIndexed 16))) ++
+  (match o with
+   | some r => [.ins (if int then .load .uload64 r (.spPostIndexed 16)
+       else .fpuLoad .size64 r (.spPostIndexed 16))]
+   | none => [])
+
+/-- `sub/add sp, sp, #size` (through `x16` for sizes beyond an `imm12`; `gen_sp_reg_adjust`). -/
+def spAdjLines (sub : Bool) (size : Nat) : List Line :=
+  if size == 0 then []
+  else match Imm12.ofNat? size with
+    | some i => [.ins (.aluImm12 (if sub then .sub else .add) true .sp .sp i)]
+    | none => loadConst64 (.x 16) size ++
+        [.ins (.aluRRRExtend (if sub then .sub else .add) true .sp .sp (.x 16) .uxtx)]
+
+/-- The prologue of a frame of `size` bytes below fp/lr (clobber area included). -/
+def prologueLines (saves : List Reg) (size : Nat) : List Line :=
+  [.ins (.stp Reg.fp Reg.lr (.spPreIndexed (-16))), .ins (.mov true Reg.fp .sp)] ++
+  pushLines true (savesInt saves) ++ pushLines false (savesFloat saves) ++
+  spAdjLines true (size - clobberBytes saves)
+
+/-- The epilogue frees the fixed frame by adjusting `sp` (as the prologue allocated it; `x16`
+holds large sizes), pops the saved registers, then fp/lr, and returns. It does not read `fp`:
+the body keeps `sp` (`FrameKeep`), which is what the register-level proof tracks. -/
+def epilogueLines (saves : List Reg) (size : Nat) : List Line :=
+  spAdjLines false (size - clobberBytes saves) ++
+  popLines false (savesFloat saves) ++ popLines true (savesInt saves) ++
   [.ins (.ldp Reg.fp Reg.lr (.spPostIndexed 16)), .ins .ret]
 
 /-- A trap site: byte offset from the function start and trap code. -/
@@ -579,9 +623,9 @@ def emitPre (k : Nat) (af : AFunc) : Except String (Array Line) := do
     lines := lines.push (.label (.block l))
     for i in code do
       match i with
-      | .prologue => if af.frame then lines := lines ++ (prologueLines af.frameSize).toArray
+      | .prologue => if af.frame then lines := lines ++ (prologueLines af.saves af.frameSize).toArray
       | .epilogueRet =>
-        lines := lines ++ (if af.frame then (epilogueLines af.frameSize).toArray else #[.ins .ret])
+        lines := lines ++ (if af.frame then (epilogueLines af.saves af.frameSize).toArray else #[.ins .ret])
       | .inst m =>
         let (ls, ps') ← m.lines c ps
         ps := ps'

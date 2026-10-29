@@ -17,8 +17,8 @@ open Backend E2E
 /-- **A realisation of `sem` is one of `haltLoop c A sem`**: off the halting loops they agree;
 at a halting loop the allocated code halts (the machine is unchanged). -/
 theorem realizes_haltLoopW {R : RL} {sem₀ : Sem} {c : Clif.TrapCode} {A : BitVec 64 → Nat → Prop}
-    (hreal : Realizes R.vc R.rf sem₀ ckeep R.step (fun s c => Q R s c ∧ AInv R c) R.GoodXW) :
-    Realizes R.vc R.rf (haltLoop c A sem₀) ckeep R.step (fun s c => Q R s c ∧ AInv R c)
+    (hreal : Realizes R.vc R.rf sem₀ ckeep R.step (QA R) R.GoodXW) :
+    Realizes R.vc R.rf (haltLoop c A sem₀) ckeep R.step (QA R)
       R.GoodXW := by
   intro s c0 c' hq hm
   cases hm with
@@ -33,7 +33,7 @@ theorem realizes_haltLoopW {R : RL} {sem₀ : Sem} {c : Clif.TrapCode} {A : BitV
       simp only [Option.some.injEq, Prod.mk.injEq] at hsem
       obtain ⟨-, -, rfl⟩ := hsem
       cases hn with
-      | halt => exact ⟨0, _, hstep, ⟨trivial, trivial⟩, fun _ h => absurd h (Nat.not_lt_zero _)⟩
+      | halt => exact ⟨0, _, hstep, .inl ⟨trivial, trivial⟩, fun _ h => absurd h (Nat.not_lt_zero _)⟩
     · rw [haltLoop_of_not hh] at hsem
       obtain ⟨n, c'', hm'', hq'', ht⟩ := hreal s _ _ hq (MStep.op hvb hi hops hsz hsem hlen hho hcl hn)
       refine ⟨n, c'', mstep_congr hm'' fun b' k' allocs' its' m' w'' vb' i' ops' hc hvb' hi' hops' => ?_,

@@ -363,13 +363,13 @@ theorem ainstLines_tlsOk {c : FnCtx} {af : AFunc} {a : AInst} {ps ps' : PState} 
     simp only [ainstLines, pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at h
     obtain ⟨rfl, -⟩ := h
     split
-    · exact tlsSeqOk_of_free (prologueLines_free _)
+    · exact tlsSeqOk_of_free (prologueLines_free _ _)
     · rfl
   | epilogueRet =>
     simp only [ainstLines, pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at h
     obtain ⟨rfl, -⟩ := h
     split
-    · exact tlsSeqOk_of_free (epilogueLines_free _)
+    · exact tlsSeqOk_of_free (epilogueLines_free _ _)
     · rfl
 
 theorem codeLinesE_tlsOk {c : FnCtx} {af : AFunc} :

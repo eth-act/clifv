@@ -177,7 +177,7 @@ theorem os_tls {F : BitVec 64 → Prop} {K : Nat} {ctx : FnCtx} {X : ExtSem} {H 
       (∀ fl, f ≠ .FLAG fl) → Arm.r f (H.tls n (.x k) s1) = Arm.r f s := by
     intro f h1 h2 h3 h4 h5
     rw [hfr f h1 h2 h3 h4 h5, hs1, Arm.r_of_w_different h1]
-  refine ⟨_, hex, ⟨fun f hf => ?_, fun a ha => ?_, ?_⟩, ⟨?_, fun a hak => ?_⟩, ?_, ?_, ?_⟩
+  refine ⟨_, hex, ⟨fun f hf => ?_, fun a ha => ?_, ?_⟩, ⟨?_, fun a hak => ?_, ?_⟩, ?_, ?_, ?_⟩
   · -- the world: the flags as `X.tlsFlags` says, every other unmasked field kept
     by_cases hff : ∃ fl, f = .FLAG fl
     · obtain ⟨fl, rfl⟩ := hff
@@ -204,6 +204,10 @@ theorem os_tls {F : BitVec 64 → Prop} {K : Nat} {ctx : FnCtx} {X : ExtSem} {H 
         (Arm.StateField.GPR.inj e)) (by simp)
       (fun fl => by simp)
   · rw [hmem a hak.2, hs1]; simp [Arm.ArmState.mem_w_eq_mem]
+  · exact hkeep _ (by simp) (by simp [rnum])
+      (fun e => rnum_ne (a := 29) (b := k) (by omega) (by omega) (by omega)
+        (Arm.StateField.GPR.inj e)) (by simp)
+      (fun fl => by simp)
   · -- the defs
     intro p hp
     simp only [defRegs] at hp

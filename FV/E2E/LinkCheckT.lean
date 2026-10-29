@@ -75,7 +75,7 @@ structure FactsT (I : LinkInput) (R : Res) (g : Clif.Function) (a : Art) : Prop 
   width : ∀ p ∈ g.sig.params, p.ty.width ≤ 64
   callee : calleeB (progOf R) (fun n => I.syms.lookup n) g = true → (g.slots = [] →
     (RAFrame.compute a.vcp a.rf).size =
-      a.af.frameSize) ∧ slotFitsB g a = true
+      a.af.frameSize - clobberBytes a.af.saves) ∧ slotFitsB g a = true
   sites : allInsts a.vcp (siteB (siteOk (progOf R) g
     (indToB (fun n => I.syms.lookup n) g) a.vcp)) = true
   declSig : ∀ e ∈ g.externs.map (·.2), ∀ h, (progOf R).func? e.name = some h → e.sig = h.sig
@@ -236,7 +236,7 @@ theorem okR_soundT {I : LinkInput} {R : Res} (hR : ResOk I R) (hI : okRT I R = t
         · rfl
   have hcal : ∀ g ∈ (progOf R).funcs, ∀ h, (ofRes I R B F).Callee g h →
       (h.slots = [] → (RAFrame.compute (artOf R h).vcp (artOf R h).rf).size =
-        (artOf R h).af.frameSize) ∧ slotFitsB h (artOf R h) = true := fun g hg h hh =>
+        (artOf R h).af.frameSize - clobberBytes (artOf R h).af.saves) ∧ slotFitsB h (artOf R h) = true := fun g hg h hh =>
     (fa (hcalB g hg h hh).2).callee (hcalB g hg h hh).1
   have hpipe : ∀ g ∈ (progOf R).funcs,
       CompiledT g (artOf R g).k (artOf R g).vc (artOf R g).vcp

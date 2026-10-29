@@ -39,19 +39,38 @@ structure LFn.Static (F : LFn) : Prop where
   psF : ∃ body, blocksLinesE ⟨F.fa.k, F.af.slotBase⟩ F.af F.af.blocks.toList {} = .ok (body, F.psF)
   entryArg : ∀ r, F.vc.EntryArg r → r.isArgReg = true
 
-/-- `StRel` does not depend on the activation's hooks. -/
-theorem _root_.Backend.Proof.StRel.hooks {R : RL} (H : ArmHooks) {s : ArmState} {m : Loc → CV}
+/-- **The state after the prologue does not depend on the activation's hooks**: the prologue's
+lines are not hooked, and from the ABI entry both machines run them as `execLines`
+(`prologue_linesAt`). -/
+theorem _root_.Backend.Proof.RL.sP_hooks {R : RL} (hR : R.Wf) {ra : BitVec 64}
+    (hent : AbiCall R.fb R.base ra R.s0) (H : ArmHooks) : ({ R with H := H } : RL).sP = R.sP := by
+  have hR' : ({ R with H := H } : RL).Wf :=
+    ⟨hR.check, hR.alloc, hR.emit, hR.layout, hR.lm, hR.fit, hR.stack, hR.psF, hR.prog0, hR.gfree⟩
+  have h1 := (prologue_linesAt hR hent).run
+  have h2 := (prologue_linesAt hR' hent).run
+  exact Option.some.inj (h2.symm.trans h1)
+
+/-- `StRel` does not depend on the activation's hooks, given that the state after the prologue
+does not (`RL.sP_hooks`; `StRel.fplr` compares with the prologue's image `R.topImg`, read after
+the prologue run by `R.step`, which mentions the hooks). -/
+theorem _root_.Backend.Proof.StRel.hooks {R : RL} (H : ArmHooks)
+    (hP : ({ R with H := H } : RL).sP = R.sP) {s : ArmState} {m : Loc → CV}
     {w : ArmState} (h : StRel R s m w) : StRel { R with H := H } s m w :=
-  ⟨h.store, h.world, h.err, h.prog, h.sp, h.align, h.fplr, h.code, h.gkeep⟩
+  ⟨h.store, h.world, h.err, h.prog, h.sp, h.align, fun hf => by
+    show Arm.read_mem_bytes R.topN R.topB s =
+      Arm.read_mem_bytes R.topN R.topB ({ R with H := H } : RL).sP
+    rw [hP]; exact h.fplr hf, h.code, h.gkeep, h.fp⟩
 
 /-- **`Q` does not depend on the activation's hooks** (e.g. a function's activation on the linked
-machine and on a per-function machine). -/
-theorem _root_.Backend.Proof.Q.hooks {R : RL} (H : ArmHooks) {s : ArmState}
+machine and on a per-function machine), given that the state after the prologue does not
+(`RL.sP_hooks`; see `StRel.hooks`). -/
+theorem _root_.Backend.Proof.Q.hooks {R : RL} (H : ArmHooks)
+    (hP : ({ R with H := H } : RL).sP = R.sP) {s : ArmState}
     {c : MConf CV ArmState} (h : Q R s c) : Q { R with H := H } s c := by
   match c, h with
   | .run ⟨b, its, m, w⟩, ⟨j, vb, items, pre, code, ls, ps1, ps2, T, h1, h2, h3, h4, h5, h6, h7, h8,
       h9, hst⟩ => exact ⟨j, vb, items, pre, code, ls, ps1, ps2, T, h1, h2, h3, h4, h5, h6, h7, h8,
-      h9, hst.hooks H⟩
+      h9, hst.hooks H hP⟩
   | .ret .., _ => trivial
   | .halt _, _ => trivial
 
@@ -102,14 +121,14 @@ theorem enter_call (hL : L.Ok) {nB : String} {FB : LFn} (hB : (nB, FB) ∈ L.fns
       (∀ f, f ≠ .PC → f ≠ .GPR 30#5 → Arm.r f (enter FB x) = Arm.r f x) ∧
       xreg 30 (enter FB x) = Arm.r .PC x + 4#64 ∧ (enter FB x).mem = x.mem ∧
       Q (L.act FB (enter FB x) KB GB)
-        (iterN (L.act FB (enter FB x) KB GB).step (prologueLines FB.af.frameSize).length
+        (iterN (L.act FB (enter FB x) KB GB).step (prologueLines FB.af.saves FB.af.frameSize).length
           (enter FB x))
         (MConf.init FB.rf (locVal (L.act FB (enter FB x) KB GB).fr
-          (iterN (L.act FB (enter FB x) KB GB).step (prologueLines FB.af.frameSize).length
+          (iterN (L.act FB (enter FB x) KB GB).step (prologueLines FB.af.saves FB.af.frameSize).length
             (enter FB x))) (bodyOf FB.af (enter FB x))) ∧
       AInv (L.act FB (enter FB x) KB GB)
         (MConf.init FB.rf (locVal (L.act FB (enter FB x) KB GB).fr
-          (iterN (L.act FB (enter FB x) KB GB).step (prologueLines FB.af.frameSize).length
+          (iterN (L.act FB (enter FB x) KB GB).step (prologueLines FB.af.saves FB.af.frameSize).length
             (enter FB x))) (bodyOf FB.af (enter FB x))) := by
   have hRB : (L.act FB (enter FB x) KB GB).Wf := act_wf hFB hstB (enter_program FB x) hgB
   have hent : AbiCall FB.fb FB.base (Arm.r .PC x + 4#64) (enter FB x) := {

@@ -5,18 +5,16 @@ import FV.E2E.RegLevelFrame
 # The frame invariant at the calls of a run (S10e, #232)
 
 `Unw.FrameSaved R.af R.s0 s` (`FV/E2E/RegLevelUnwind.lean`) is what the unwinder's row needs to
-restore a frame: CFA = entry sp, the entry x29/x30 at CFA − 16/−8, each callee-save slot of
-block 0's leading `calleeSave` stores holding its register's entry value, every other
-callee-saved register holding its entry value. This file proves it at every `op` item (in
-particular every `call`/`tryCall`) of the register-level simulation of a function with a
-frame.
+restore a frame: CFA = x29 + 16 = entry sp, the entry x29/x30 at CFA − 16/−8, each register the
+prologue pushes holding its entry value in its slot, every other callee-saved register holding
+its entry value. This file proves it at every `op` item (in particular every `call`/`tryCall`) of
+the register-level simulation of a function with a frame.
 
 * `savedCheck vc rf`: a decidable check on the allocation. No edge enters block 0; outside
   block 0's leading save moves `.move (.reg r) (.save r)` (`RFunc.saveRegs`) no item writes a
   save slot or a callee-saved register the entry block does not save (`RItem.bodyOk`); the
-  saved registers are callee-saved; and block 0 of `lowerRFunc vc rf` starts (after the
-  prologue) with the `calleeSave` stores whose rows (`saveRow`) are the saved registers' DWARF
-  numbers at their save slots (`saveRowsOf`, the offsets of `RAFrame.compute`).
+  saved registers are callee-saved; and `lowerRFunc vc rf` succeeds (its prologue pushes the
+  saved registers, `saveShapeOk`).
 * `SavedInv rf keep e`: an invariant of the allocated code's configurations, for the entry
   values `e`, preserved by every `MStep vc sem keep rf` for any `sem` (`savedInv_step`,
   `savedInv_star`), true initially (`savedInv_init`; `entry_calleeSaved`/`savedInv_q_init`: the
@@ -77,34 +75,11 @@ def savedCheckRF (vc : VCode) (rf : RFunc) : Bool :=
     (bodyOf b (rf.blocks[b]?.getD #[]).toList).all (·.bodyOk rf.saveRegs)) &&
   rf.saveRegs.all (memB · calleeSaved)
 
-/-- The CFI rows (`(DWARF register, CFA offset)`) of the save slots of `rs` in frame `fr` of a
-function with frame size `fs`. -/
-def saveRowsOf (fr : RAFrame) (fs : Nat) (rs : List Reg) : Option (List (Nat × Int)) :=
-  rs.mapM fun r => do
-    let d ← r.dwarf?
-    let o ← fr.saveOff.lookup r
-    pure (d, (o : Int) - 16 - fs)
-
-/-- The lowering part of `savedCheck`: the rows of block 0's leading `calleeSave` stores of `af`
-(as `unwindRows` reads them) are those of the saved registers' slots. -/
-def savedCheckAF (vc : VCode) (rf : RFunc) (af : AFunc) : Bool :=
-  match af.blocks[0]? with
-  | some (_, code) =>
-    decide (((code.toList.drop 1).takeWhile (·.calleeSave?.isSome)).mapM (Proof.UnwindTables.saveRow af.frameSize) =
-      saveRowsOf (RAFrame.compute vc rf) af.frameSize rf.saveRegs)
-  | none => false
-
-/-- **The check of the frame invariant** on an allocation (`savedCheckRF`, and `savedCheckAF`
-on its lowering). It holds for the allocations the backend lowers (regalloc2's via
-`allocResult`, and the spill allocation) of `corpus/clif`, `corpus/clif/extrt` and
-`corpus/clif-regress`, except `large_frame`: a save slot at 32 KiB or more is stored through
-x16 (`slotStoreAt`), which is no `calleeSave?` store, so `unwindRows` describes only the saves
-before it (`savedCheckAF` fails). -/
+/-- **The check of the frame invariant** on an allocation (`savedCheckRF`, and the lowering
+succeeds). It holds for the allocations the backend lowers (regalloc2's via `allocResult`, and
+the spill allocation). -/
 def savedCheck (vc : VCode) (rf : RFunc) : Bool :=
-  savedCheckRF vc rf &&
-    match lowerRFunc vc rf with
-    | .ok af => savedCheckAF vc rf af
-    | .error _ => false
+  savedCheckRF vc rf && (lowerRFunc vc rf).toBool
 
 end Backend
 
@@ -382,59 +357,6 @@ theorem savedInv_q_init {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.
 
 /-! ## The frame at an `op` item -/
 
-/-- The low 8 bytes of a 16-byte read. -/
-theorem read8_low (a : BitVec 64) (s : Arm.ArmState) :
-    Arm.read_mem_bytes 8 a s = (Arm.read_mem_bytes 16 a s).setWidth 64 := by
-  simp only [Arm.Memory.State.read_mem_bytes_eq_mem_read_bytes]
-  apply BitVec.eq_of_getLsbD_eq
-  intro i hi
-  rw [BitVec.getLsbD_setWidth, Arm.Memory.getLsbD_read_bytes (by decide),
-    Arm.Memory.getLsbD_read_bytes (by decide)]
-  simp [hi, show i < 128 by omega]
-
-/-- The two halves of a 16-byte read. -/
-theorem read16_split {a : BitVec 64} {s : Arm.ArmState} {x y : BitVec 64}
-    (h : Arm.read_mem_bytes 16 a s = x ++ y) :
-    Arm.read_mem_bytes 8 a s = y ∧ Arm.read_mem_bytes 8 (a + 8#64) s = x := by
-  refine ⟨by
-    rw [read8_low, h]; apply BitVec.eq_of_getLsbD_eq; intro i hi
-    rw [BitVec.getLsbD_setWidth, BitVec.getLsbD_append]; simp [hi], ?_⟩
-  simp only [Arm.Memory.State.read_mem_bytes_eq_mem_read_bytes] at h ⊢
-  apply BitVec.eq_of_getLsbD_eq
-  intro i hi
-  have hb := congrArg (·.getLsbD (i + 64)) h
-  simp only [Arm.Memory.getLsbD_read_bytes (show 16 ≤ 2 ^ 64 by decide),
-    BitVec.getLsbD_append] at hb
-  rw [Arm.Memory.getLsbD_read_bytes (by decide)]
-  have h1 : (i + 64) / 8 = i / 8 + 8 := by omega
-  have h2 : (i + 64) % 8 = i % 8 := by omega
-  rw [h1, h2] at hb
-  simp only [show i + 64 < 16 * 8 by omega, decide_true, Bool.true_and,
-    show ¬ i + 64 < 64 by omega, ite_false, Nat.add_sub_cancel] at hb
-  simp only [show i < 8 * 8 by omega, decide_true, Bool.true_and]
-  rw [← hb, BitVec.ofNat_add, BitVec.add_assoc, BitVec.add_comm (BitVec.ofNat 64 8)]
-
-theorem mapM_some_mem_both {α β : Type} {f : α → Option β} :
-    ∀ {l : List α} {out : List β}, l.mapM f = some out →
-      (∀ p ∈ out, ∃ a ∈ l, f a = some p) ∧ (∀ a ∈ l, ∃ p ∈ out, f a = some p)
-  | [], out, h => by simp at h; subst h; simp
-  | a :: l, out, h => by
-    rw [List.mapM_cons] at h
-    simp only [bind, Option.bind_eq_some_iff, pure, Option.some.injEq] at h
-    obtain ⟨b, hb, bs, hbs, rfl⟩ := h
-    obtain ⟨ih1, ih2⟩ := mapM_some_mem_both hbs
-    constructor
-    · intro p hp
-      rcases List.mem_cons.1 hp with rfl | hp
-      · exact ⟨a, List.mem_cons_self, hb⟩
-      · obtain ⟨a', ha', h'⟩ := ih1 p hp
-        exact ⟨a', List.mem_cons_of_mem _ ha', h'⟩
-    · intro a' ha'
-      rcases List.mem_cons.1 ha' with rfl | ha'
-      · exact ⟨b, List.mem_cons_self, hb⟩
-      · obtain ⟨p, hp, h'⟩ := ih2 a' ha'
-        exact ⟨p, List.mem_cons_of_mem _ hp, h'⟩
-
 theorem rowLookup_mem {l : List (Nat × Int)} {k : Nat} {v : Int} (h : l.lookup k = some v) :
     (k, v) ∈ l := by
   induction l with
@@ -456,110 +378,212 @@ theorem rowLookup_ne_none {l : List (Nat × Int)} {k : Nat} {v : Int} (h : (k, v
   have := List.lookup_eq_none_iff.1 hn _ h
   simp at this
 
-theorem saveRowsOf_mem {fr : RAFrame} {fs : Nat} {rs : List Reg} {saved : List (Nat × Int)}
-    (h : saveRowsOf fr fs rs = some saved) :
-    (∀ d off, (d, off) ∈ saved → ∃ r ∈ rs, ∃ o, r.dwarf? = some d ∧ fr.saveOff.lookup r = some o ∧
-      off = (o : Int) - 16 - fs) ∧
-    (∀ r ∈ rs, ∃ d off, r.dwarf? = some d ∧ (d, off) ∈ saved) := by
-  obtain ⟨h1, h2⟩ := mapM_some_mem_both h
-  refine ⟨fun d off hm => ?_, fun r hr => ?_⟩
-  · obtain ⟨r, hr, hf⟩ := h1 _ hm
-    simp only [bind, Option.bind_eq_some_iff, pure, Option.some.injEq, Prod.mk.injEq] at hf
-    obtain ⟨d', hd, o, ho, rfl, rfl⟩ := hf
-    exact ⟨r, hr, o, hd, ho, rfl⟩
-  · obtain ⟨⟨d, off⟩, hm, hf⟩ := h2 r hr
-    simp only [bind, Option.bind_eq_some_iff, pure, Option.some.injEq, Prod.mk.injEq] at hf
-    obtain ⟨d', hd, o, -, rfl, -⟩ := hf
-    exact ⟨d', off, hd, hm⟩
+theorem mem_pushGroups {rs : List Reg} {g : List Reg} (hg : g ∈ pushGroups rs) :
+    ∀ r ∈ g, r ∈ rs := by
+  obtain ⟨hp, ho⟩ := pairsOf_mem rs
+  unfold pushGroups at hg
+  simp only [List.mem_append, List.mem_map, Option.mem_toList, List.mem_reverse] at hg
+  rcases hg with ⟨r, hr, rfl⟩ | ⟨⟨a, b⟩, hab, rfl⟩
+  · intro x hx
+    simp only [List.mem_singleton] at hx
+    subst hx
+    exact ho _ hr
+  · intro x hx
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
+    rcases hx with rfl | rfl
+    · exact (hp _ hab).1
+    · exact (hp _ hab).2
 
-/-- The address of a save slot: CFA + its row's offset is the body sp + its frame offset. -/
-theorem addr_saveRow (x : BitVec 64) (fs o : Nat) :
-    x + BitVec.ofNat 64 (fs + 16) + BitVec.ofInt 64 ((o : Int) - 16 - fs) = x + BitVec.ofNat 64 o := by
-  rw [BitVec.add_assoc]
-  congr 1
+theorem pushGroups_complete {rs : List Reg} {r : Reg} (hr : r ∈ rs) :
+    ∃ g ∈ pushGroups rs, r ∈ g := by
+  have hf := pairsOf_flat rs
+  rw [← hf] at hr
+  unfold pushGroups
+  rcases List.mem_append.1 hr with hr | hr
+  · obtain ⟨⟨a, b⟩, hab, hm⟩ := List.mem_flatMap.1 hr
+    exact ⟨[a, b], List.mem_append_right _ (List.mem_map.2 ⟨(a, b), List.mem_reverse.2 hab, rfl⟩),
+      hm⟩
+  · exact ⟨[r], List.mem_append_left _ (List.mem_map.2 ⟨r, hr, rfl⟩), List.mem_singleton_self _⟩
+
+/-- A row of the pushes: the slot of a pushed register. -/
+theorem mem_pushRows {saves : List Reg} {st d : Nat} {off : Int}
+    (h : (d, off) ∈ (pushRows saves st).map offsetPair) :
+    ∃ r, (r ∈ savesInt saves ∨ r ∈ savesFloat saves) ∧ r.dwarf? = some d ∧
+      off = (clobberOff saves r : Int) - clobberBytes saves - 16 := by
+  obtain ⟨x, hx, hxe⟩ := List.mem_map.1 h
+  simp only [pushRows, List.mem_flatMap, List.mem_filterMap, Option.map_eq_some_iff] at hx
+  obtain ⟨⟨g, i⟩, hgi, r, hr, dr, hdr, rfl⟩ := hx
+  simp only [offsetPair, Prod.mk.injEq] at hxe
+  obtain ⟨rfl, rfl⟩ := hxe
+  have hg := List.mem_of_getElem? (List.mem_zipIdx_iff_getElem?.1 hgi)
+  rcases List.mem_append.1 hg with hg | hg
+  · exact ⟨r, .inl (mem_pushGroups hg r hr), hdr, rfl⟩
+  · exact ⟨r, .inr (mem_pushGroups hg r hr), hdr, rfl⟩
+
+/-- Every pushed register has a row. -/
+theorem pushRows_complete {saves : List Reg} {st : Nat} {r : Reg}
+    (hr : r ∈ savesInt saves ∨ r ∈ savesFloat saves) {d : Nat} (hd : r.dwarf? = some d) :
+    ∃ off, (d, off) ∈ (pushRows saves st).map offsetPair := by
+  obtain ⟨g, hg, hrg⟩ : ∃ g ∈ pushGroups (savesInt saves) ++ pushGroups (savesFloat saves), r ∈ g := by
+    rcases hr with hr | hr
+    · obtain ⟨g, hg, h⟩ := pushGroups_complete hr; exact ⟨g, List.mem_append_left _ hg, h⟩
+    · obtain ⟨g, hg, h⟩ := pushGroups_complete hr; exact ⟨g, List.mem_append_right _ hg, h⟩
+  obtain ⟨i, hi⟩ := List.getElem?_of_mem hg
+  refine ⟨(clobberOff saves r : Int) - clobberBytes saves - 16, List.mem_map.2 ⟨(st + 4 * (i + 1),
+    .offset d ((clobberOff saves r : Int) - clobberBytes saves - 16)), ?_, rfl⟩⟩
+  simp only [pushRows, List.mem_flatMap, List.mem_filterMap, Option.map_eq_some_iff]
+  exact ⟨(g, i), List.mem_zipIdx_iff_getElem?.2 hi, r, hrg, d, hd, rfl⟩
+
+theorem savesIF_of {saves : List Reg} {r : Reg} (hc : r ∈ calleeSaved) (h : r ∈ saves) :
+    r ∈ savesInt saves ∨ r ∈ savesFloat saves := by
+  rcases calleeSaved_cases hc with ⟨n, rfl, -⟩ | ⟨n, rfl, -⟩
+  · exact .inl (List.mem_filter.2 ⟨h, rfl⟩)
+  · exact .inr (List.mem_filter.2 ⟨h, rfl⟩)
+
+theorem saves_of_IF {saves : List Reg} {r : Reg} (h : r ∈ savesInt saves ∨ r ∈ savesFloat saves) :
+    r ∈ saves := by
+  rcases h with h | h <;> exact (List.mem_filter.1 h).1
+
+/-- The address of a push slot: CFA + its row's offset is the bottom of the clobber area + the
+slot's `clobberOff`. -/
+theorem addr_pushRow (x : BitVec 64) (cb o : Nat) (hcb : cb < 2 ^ 62) (ho : o < 2 ^ 62) :
+    x + BitVec.ofInt 64 ((o : Int) - cb - 16) = x - BitVec.ofNat 64 (16 + cb) + BitVec.ofNat 64 o := by
   apply BitVec.eq_of_toNat_eq
-  simp only [BitVec.toNat_add, BitVec.toNat_ofNat, BitVec.toNat_ofInt]
+  simp only [BitVec.toNat_add, BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofInt]
+  have := x.isLt
   omega
+
+/-- The value the unwinder restores for a pushed register is its slot value. -/
+theorem dwarfVal_slotVal {r : Reg} {d : Nat} (hc : r ∈ calleeSaved) (hd : r.dwarf? = some d)
+    (s : Arm.ArmState) : Unw.dwarfVal s d = slotVal s r := by
+  rcases calleeSaved_cases hc with ⟨n, rfl, h1, h2⟩ | ⟨n, rfl, h1, h2⟩
+  · simp only [Reg.dwarf?, Option.some.injEq] at hd
+    subst hd
+    simp [Unw.dwarfVal, show n < 32 by omega, xreg, slotVal, rnum]
+  · simp only [Reg.dwarf?, Option.some.injEq] at hd
+    subst hd
+    simp only [Unw.dwarfVal, show ¬ 64 + n < 32 by omega, ite_false, show 64 ≤ 64 + n by omega,
+      show 64 + n < 96 by omega, and_self, ite_true, slotVal, rnum]
+    rw [show 64 + n - 64 = n by omega]
+
+/-- Every save move of a return tail is excluded: no item of a valid tail stores into a save
+slot. -/
+theorem retTailOk_noSaveDst {saved : List Reg} :
+    ∀ {D : List Reg} {L : List RItem}, retTailOk saved D L = true →
+      ∀ a r, RItem.move a (.save r) ∉ L
+  | _, [], _, _, _, h => by simp at h
+  | D, it :: rest, h, a, r, hm => by
+    unfold retTailOk at h
+    split at h
+    · rename_i r' h1 h2
+      simp only [Bool.and_eq_true] at h
+      rcases List.mem_cons.1 hm with e | hm
+      · rw [RItem.eq_restore h1 h2] at e; cases e
+      · exact retTailOk_noSaveDst h.2 a r hm
+    · simp only [Bool.and_eq_true] at h
+      rcases List.mem_cons.1 hm with e | hm
+      · subst e; simp [RItem.avoids, Loc.isSave] at h
+      · exact retTailOk_noSaveDst h.2 a r hm
+
+theorem saveSegsOk_noSaveDst {vb : VBlock} {saved : List Reg} :
+    ∀ {pend L : List RItem}, saveSegsOk vb saved pend L = true →
+      ∀ a r, RItem.move a (.save r) ∉ pend ++ L
+  | pend, [], h, a, r, hm => by
+    simp only [saveSegsOk, List.all_eq_true] at h
+    have := h _ (by simpa using hm)
+    simp [RItem.noSave, Loc.isSave] at this
+  | pend, .move x y :: L, h, a, r, hm => by
+    simp only [saveSegsOk] at h
+    exact saveSegsOk_noSaveDst h a r (by simpa using hm)
+  | pend, .op k al :: L, h, a, r, hm => by
+    simp only [saveSegsOk, Bool.and_eq_true] at h
+    obtain ⟨h1, h2⟩ := h
+    rcases List.mem_append.1 hm with hm | hm
+    · split at h1
+      · exact retTailOk_noSaveDst h1 a r hm
+      · simp only [Bool.false_eq_true, ite_false, List.all_eq_true] at h1
+        have := h1 _ hm
+        simp [RItem.noSave, Loc.isSave] at this
+    · rcases List.mem_cons.1 hm with e | hm
+      · cases e
+      · exact saveSegsOk_noSaveDst h2 a r (by simpa using hm)
+
+theorem mem_leadSaves : ∀ {l : List RItem} {r : Reg}, r ∈ RItem.leadSaves l →
+    RItem.move (.reg r) (.save r) ∈ l
+  | [], _, h => by simp [RItem.leadSaves] at h
+  | it :: l, r, h => by
+    simp only [RItem.leadSaves] at h
+    split at h
+    · rename_i r' hr'
+      rcases List.mem_cons.1 h with rfl | h
+      · rw [saveReg?_some hr']; exact List.mem_cons_self
+      · exact List.mem_cons_of_mem _ (mem_leadSaves h)
+    · simp at h
+
+/-- **The entry block saves only registers of `rf.saved`** (`saveShapeOk`: block 0 starts with
+the saves of `rf.saved`, and no later item stores into a save slot). -/
+theorem saveRegs_saved {R : RL} (hR : R.Wf) {r : Reg} (h : r ∈ R.rf.saveRegs) : r ∈ R.rf.saved := by
+  obtain ⟨hsh, -⟩ := lowerRFunc_saves hR.alloc
+  obtain ⟨vb, items, -, -, -, -, -, hvb, hit, -⟩ := entry_block hR
+  obtain ⟨h0, -⟩ := saveShapeOk_block hsh hvb hit
+  obtain ⟨htake, hseg⟩ := h0 rfl
+  simp only [RFunc.saveRegs, hit, Option.getD_some] at h
+  have hm := mem_leadSaves h
+  rw [← List.take_append_drop R.rf.saved.length items.toList] at hm
+  rcases List.mem_append.1 hm with hm | hm
+  · rw [htake] at hm
+    obtain ⟨r', hr', e⟩ := List.mem_map.1 hm
+    simp only [RItem.move.injEq, Loc.reg.injEq, Loc.save.injEq] at e
+    rw [← e.1]; exact hr'
+  · exact absurd (by simpa using hm) (saveSegsOk_noSaveDst hseg (.reg r) r)
 
 /-- **The frame invariant at a state related to an `op` item's store** (in particular at every
 `call`/`tryCall`, and at the unwinder's restored state of a raising call) of the register-level
 simulation of a function with a frame: from `StRel`, `SavedInv` for the entry state's
 callee-saved values and the check, the unwinder's `FrameSaved`. -/
-theorem frameSaved_of_stRel {R : RL} (hR : R.Wf) (hf : R.af.frame = true)
+theorem frameSaved_of_stRel {R : RL} (hR : R.Wf) {ra : BitVec 64}
+    (hent : AbiCall R.fb R.base ra R.s0) (hf : R.af.frame = true)
     (hc : savedCheck R.vc R.rf = true) {e : Reg → CV}
     (he : ∀ r ∈ calleeSaved, e r = regVal R.s0 r) {s : Arm.ArmState} {b k : Nat}
     {allocs : Array Loc} {its : List RItem} {m : Loc → CV} {w : Arm.ArmState}
     (hst : StRel R s m w)
     (hinv : SavedInv R.rf ckeep e (.run ⟨b, .op k allocs :: its, m, w⟩ : MConf CV Arm.ArmState)) :
     Unw.FrameSaved R.af R.s0 s := by
-  obtain ⟨-, hA, -, hB⟩ := hinv
-  have hls : RItem.leadSaves (.op k allocs :: its) = [] := rfl
-  rw [hls] at hB
-  have hc' := hc
-  simp only [savedCheck, hR.alloc, Bool.and_eq_true] at hc'
-  obtain ⟨hrf, haf⟩ := hc'
-  have hcs := savedCheckRF_cs hrf
+  obtain ⟨-, hA, -, -⟩ := hinv
+  obtain ⟨-, -, hsav, hsv, -, hcb, -, hst', -⟩ := RL.frame_facts hR
+  have hcbl := hsv.clobber_le
   have hreg : ∀ r ∈ calleeSaved, m (.reg r) = regVal s r := fun r hr =>
     hst.store (.reg r) (fun r' e' => by cases e'; exact calleeSaved_allocatable hr) trivial
-  have hsave : ∀ r, m (.save r) = locVal R.fr s (.save r) := fun r =>
-    hst.store (.save r) (fun _ e' => by cases e') trivial
-  have hsp : spv s + BitVec.ofNat 64 (R.af.frameSize + 16) = spv R.s0 := by
-    have h := hst.sp
-    simp only [spOf, RL.spB, frameDrop, hf, ite_true] at h
-    simp only [spv]
-    rw [h]
-    exact BitVec.sub_add_cancel _ _
-  obtain ⟨hlo, hhi⟩ := read16_split (hst.fplr hf)
-  intro lab code saved hb hsv
-  simp only [savedCheckAF, hb, decide_eq_true_eq] at haf
-  rw [haf] at hsv
-  obtain ⟨hs1, hs2⟩ := saveRowsOf_mem hsv
-  apply Unw.frameAt_frameRow hsp
+  obtain ⟨h29, h30, hsl⟩ := RL.top_bytes hR hent (hst.fplr hf)
+  have hns : ∀ r ∈ calleeSaved, r ∉ R.af.saves → r ∉ R.rf.saveRegs := fun r _ hn hm =>
+    hn (hsav ▸ saveRegs_saved hR hm)
+  have hunsaved : ∀ r ∈ calleeSaved, ∀ d, r.dwarf? = some d →
+      ((pushRows R.af.saves 8).map offsetPair).reverse.lookup d = none → r ∉ R.af.saves := by
+    intro r hc d hd hl hr
+    obtain ⟨off, hm⟩ := pushRows_complete (st := 8) (savesIF_of hc hr) hd
+    exact rowLookup_ne_none (List.mem_reverse.2 hm) hl
+  apply Unw.frameAt_frameRow
+  · rw [hst.fp hf]; exact BitVec.sub_add_cancel _ _
   · rw [show spv R.s0 + BitVec.ofInt 64 (-16) = spv R.s0 - 16#64 by
       rw [show BitVec.ofInt 64 (-16) = -16#64 by decide, BitVec.sub_eq_add_neg]]
-    exact hlo
+    exact h29
   · rw [show spv R.s0 + BitVec.ofInt 64 (-8) = spv R.s0 - 16#64 + 8#64 by
       rw [show BitVec.ofInt 64 (-8) = -8#64 by decide]; bv_omega]
-    exact hhi
+    exact h30
   · intro d off hl
-    obtain ⟨r, hr, o, hd, ho, rfl⟩ := hs1 d off (List.mem_reverse.1 (rowLookup_mem hl))
-    have hcsr := hcs r hr
-    have hBr := hB r hr (by simp)
-    rw [hsave r, he r hcsr] at hBr
-    have hoff : R.fr.offset (.save r) = .ok o := by simp [RAFrame.offset, RL.fr, ho]
-    rw [← hsp, addr_saveRow]
-    simp only [calleeSaved, List.mem_append, List.mem_map, List.mem_range] at hcsr
-    rcases hcsr with ⟨i, hi, rfl⟩ | ⟨i, hi, rfl⟩
-    · simp only [Reg.dwarf?, Option.some.injEq] at hd
-      subst hd
-      simp only [locVal, hoff, slotBytes, ite_true, ofX, regVal] at hBr
-      have h64 := congrArg (BitVec.setWidth 64) hBr
-      simp only [BitVec.setWidth_setWidth_of_le _ (show 64 ≤ 128 by decide),
-        BitVec.setWidth_eq] at h64
-      simp only [Unw.dwarfVal, Unw.ld64, show 19 + i < 32 by omega, ite_true, xreg]
-      exact h64
-    · simp only [Reg.dwarf?, Option.some.injEq] at hd
-      subst hd
-      simp only [locVal, hoff, slotBytes, show (16 : Nat) ≠ 8 by decide, ite_false,
-        regVal] at hBr
-      have hBr' : Arm.read_mem_bytes 16 (spv s + BitVec.ofNat 64 o) s = _ := hBr
-      simp only [Unw.dwarfVal, Unw.ld64, show ¬ 64 + (8 + i) < 32 by omega, ite_false,
-        show 64 ≤ 64 + (8 + i) by omega, show 64 + (8 + i) < 96 by omega, and_self, ite_true]
-      rw [read8_low, hBr', Nat.add_sub_cancel_left]
-      rfl
-  · intro n hn h29 hl
+    obtain ⟨r, hr, hd, rfl⟩ := mem_pushRows (List.mem_reverse.1 (rowLookup_mem hl))
+    have hrs := saves_of_IF hr
+    have hc := hsv.1 r hrs
+    have := clobberOff_le hsv hrs
+    rw [dwarfVal_slotVal hc hd, Unw.ld64, addr_pushRow _ _ _ (by omega) (by omega)]
+    exact hsl r hrs
+  · intro n hn h29' hl
     have hnc : Reg.x n ∈ calleeSaved := by
       simp only [calleeSavedX, List.mem_map, List.mem_range] at hn
       obtain ⟨a, ha, rfl⟩ := hn
       simp only [calleeSaved, List.mem_append, List.mem_map, List.mem_range, Reg.x.injEq]
       exact .inl ⟨a, by omega, rfl⟩
-    have hns : Reg.x n ∉ R.rf.saveRegs := by
-      intro hm
-      obtain ⟨d, off, hd, hmem⟩ := hs2 _ hm
-      simp only [Reg.dwarf?, Option.some.injEq] at hd
-      subst hd
-      exact rowLookup_ne_none (List.mem_reverse.2 hmem) hl
-    have h := hA _ hnc hns
+    have h := hA _ hnc (hns _ hnc (hunsaved _ hnc n rfl hl))
     simp only [ckeep] at h
     rw [hreg _ hnc, he _ hnc] at h
     simp only [regVal] at h
@@ -571,13 +595,7 @@ theorem frameSaved_of_stRel {R : RL} (hR : R.Wf) (hf : R.af.frame = true)
     have hnc : Reg.v n ∈ calleeSaved := by
       simp only [calleeSaved, List.mem_append, List.mem_map, List.mem_range, Reg.v.injEq]
       exact .inr ⟨n - 8, by omega, by omega⟩
-    have hns : Reg.v n ∉ R.rf.saveRegs := by
-      intro hm
-      obtain ⟨d, off, hd, hmem⟩ := hs2 _ hm
-      simp only [Reg.dwarf?, Option.some.injEq] at hd
-      subst hd
-      exact rowLookup_ne_none (List.mem_reverse.2 hmem) hl
-    have h := hA _ hnc hns
+    have h := hA _ hnc (hns _ hnc (hunsaved _ hnc (64 + n) rfl hl))
     simp only [ckeep] at h
     rw [hreg _ hnc, he _ hnc] at h
     simp only [regVal] at h
@@ -588,13 +606,14 @@ theorem frameSaved_of_stRel {R : RL} (hR : R.Wf) (hf : R.af.frame = true)
 /-- **The frame invariant at an `op` item** (in particular at every `call`/`tryCall`) of the
 register-level simulation of a function with a frame: from `Q`, `SavedInv` for the entry
 state's callee-saved values and the check, the unwinder's `FrameSaved`. -/
-theorem frameSaved_of_q {R : RL} (hR : R.Wf) (hf : R.af.frame = true)
+theorem frameSaved_of_q {R : RL} (hR : R.Wf) {ra : BitVec 64}
+    (hent : AbiCall R.fb R.base ra R.s0) (hf : R.af.frame = true)
     (hc : savedCheck R.vc R.rf = true) {e : Reg → CV}
     (he : ∀ r ∈ calleeSaved, e r = regVal R.s0 r) {s : Arm.ArmState} {b k : Nat}
     {allocs : Array Loc} {its : List RItem} {m : Loc → CV} {w : Arm.ArmState}
     (hq : Q R s (.run ⟨b, .op k allocs :: its, m, w⟩))
     (hinv : SavedInv R.rf ckeep e (.run ⟨b, .op k allocs :: its, m, w⟩ : MConf CV Arm.ArmState)) :
     Unw.FrameSaved R.af R.s0 s :=
-  frameSaved_of_stRel hR hf hc he (q_stRel hq) hinv
+  frameSaved_of_stRel hR hent hf hc he (q_stRel hq) hinv
 
 end Backend.Proof

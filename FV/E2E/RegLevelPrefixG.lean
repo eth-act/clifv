@@ -68,7 +68,7 @@ theorem regLevel_prefix_coreG {R : RL} (hR : R.Wf) {ra : BitVec 64}
     (hent : AbiCall R.fb R.base ra R.s0) {w₀ : Arm.ArmState}
     (hbe : BodyEntryW R.F R.vc.EntryArg R.af R.s0 w₀) {cc : CheckCtx} {ins : Array (Option AState)}
     {a0 : AState} (hcheck : CheckedAt R.vc R.rf cc ins a0) {sem : Nat → ISem CV Arm.ArmState}
-    (hreal : ∀ n, RealizesCP R.vc R.rf (sem n) ckeep R.step (fun s c => Q R s c ∧ AInv R c) R.Good
+    (hreal : ∀ n, RealizesCP R.vc R.rf (sem n) ckeep R.step (QA R) R.Good
       R.CallSt (OnCall R.step R.fa R.base R.s0 n))
     (ρsel : (Loc → CV) → Nat → CV)
     (hsel : ∀ m₀ : Loc → CV, Inv ckeep a0 m₀ (ρsel m₀) (fun r => m₀ (.reg r))) :
@@ -85,14 +85,14 @@ theorem regLevel_prefix_coreG {R : RL} (hR : R.Wf) {ra : BitVec 64}
   have hinit := match_init (W := Arm.ArmState × Nat) hcheck m₀ (ρsel m₀) (w₀, 0) (hsel _)
   have hP0 : countIn R.CallSt R.step R.s0 n0 = 0 := countIn_zero_of fun i hi => (ht0 i hi).2
   have hRp := RealizesCP.countedRun (vc := R.vc) (rf := R.rf) (keep := ckeep) (sem := sem)
-    (Q := fun u c => Q R u c ∧ AInv R c) (T := R.Good) (C := R.CallSt)
+    (Q := fun u c => QA R u c) (T := R.Good) (C := R.CallSt)
     (P := fun n u => OnCall R.step R.fa R.base R.s0 n u) (s0 := iterN R.step n0 R.s0) hreal
     (onCall_of_run hP0)
   refine ⟨m₀, fun b k ρ w N vb i hstar hvb hi hcall ops hops => ?_⟩
   obtain ⟨n1, c1, hz1, hr1, ht1⟩ :=
     forward hSim hRp (s := (iterN R.step n0 R.s0, 0))
       (show Star _ (VConf.init (ρsel m₀) (w₀, 0)) _ from hstar) hinit
-      ⟨⟨hq0, hA0⟩, rfl, 0, rfl⟩
+      ⟨.inl ⟨hq0, hA0⟩, rfl, 0, rfl⟩
   cases c1 with
   | ret => exact hr1.elim
   | halt => exact hr1.elim
@@ -104,7 +104,7 @@ theorem regLevel_prefix_coreG {R : RL} (hR : R.Wf) {ra : BitVec 64}
   simp only at hb1 hw1
   subst hb1 hw1
   rw [← iterN_add, iterN_stepC, Nat.zero_add] at hz2
-  obtain ⟨⟨hq, -⟩, hk2, -⟩ := hz2
+  obtain ⟨hqa, hk2, -⟩ := hz2
   simp only [MConf.world] at hk2
   have htr : ∀ j < n0 + (n1 + n2), R.Good (iterN R.step j R.s0) := by
     refine trace_add (fun j hj => (ht0 j hj).1.good) (trace_add (fun j hj => ?_) ?_)
@@ -124,8 +124,11 @@ theorem regLevel_prefix_coreG {R : RL} (hR : R.Wf) {ra : BitVec 64}
       rw [hP0, hk2]
       omega
   · obtain ⟨-, huse⟩ := match_op_uses hcheck hm2 hvb hi hops
-    have hq' := hq
-    simp only [MConf.mapW] at hq'
+    have hq'' := hqa
+    simp only [MConf.mapW] at hq''
+    have hnr : ∀ us, i ≠ .rets us := by
+      rintro us rfl; obtain ⟨info, h | ⟨ti, h⟩⟩ := hcall <;> cases h
+    have hq' := (qa_op hq'' hvb hi hnr).1
     obtain ⟨info, hci⟩ := hcall
     have hcpc : ∀ regs i', al = regs.map Loc.reg → i.assign regs = .ok i' →
         CallAt R.fa R.base (Arm.r .PC (iterN R.step (n1 + n2) (iterN R.step n0 R.s0))) i' := by
@@ -219,7 +222,7 @@ theorem regLevel_prefixCG {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAsm}
     (fun n => ((realizes_allC_sp (hRn n) (hC' n) (fun h => hCT' h n)
       (fun h => tlsOk_upTo (hTls h n)) hcov).mono_T
       (T' := R.Good) fun _ h => h.good).congr_Q fun u c =>
-        and_congr (RL.Q_withX (Rn n) (XN.at 0) u c).symm Iff.rfl) ρsel hsel
+        (RL.QA_withX (Rn n) (XN.at 0) (RL.sP_withX (hRn n) hent (XN.at 0)) u c).symm) ρsel hsel
   exact ⟨m₀, fun b k ρ w vb i hstar hvb hi hcall ops hops =>
     h b k ρ w N vb i (vstar_upTo hstar (Nat.le_refl _)) hvb hi hcall ops hops⟩
 

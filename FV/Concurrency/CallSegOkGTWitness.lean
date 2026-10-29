@@ -99,13 +99,13 @@ theorem retsX0_C : retsX0B vcpC = true := by
 theorem defsRet_L : CallDefsRet vcpL [.x 0] := by
   obtain ⟨-, -, -, -, -, -, -, h, -⟩ := checks2; exact (callDefsRetB_iff _ _).1 h
 
-theorem fs_C : callerF.af.frameSize = 224 := spC.2.2.2.2.2.2.2.1
+theorem fs_C : callerF.af.frameSize = 160 := spC.2.2.2.2.2.2.2.1
 
-theorem fs_ld : ldF.af.frameSize = 224 := spC.2.2.2.2.2.2.2.2
+theorem fs_ld : ldF.af.frameSize = 160 := spC.2.2.2.2.2.2.2.2
 
-theorem drop_C : frameDrop callerF.af = 240 := spC.2.1
+theorem drop_C : frameDrop callerF.af = 176 := spC.2.1
 
-theorem drop_ld : frameDrop ldF.af = 240 := spC.2.2.1
+theorem drop_ld : frameDrop ldF.af = 176 := spC.2.2.1
 
 /-- `pCL` has no `return_call`. -/
 theorem linkFree_CL : ∀ f : Clif.Function, f ∈ Clif.Program.funcs pCL → Clif.LinkFree f := by
@@ -294,7 +294,7 @@ def fr2 (n : String) : Option (Nat × (Clif.SlotId → Nat)) :=
   else if n = "ld" then some (frameDrop ldF.af, slotOffs ldF.af fL)
   else none
 
-/-- **The frame bound**: both frames are 224 bytes, 240 with the frame record. -/
+/-- **The frame bound**: both frames are 160 bytes, 176 with the frame record (bound 240). -/
 def Mx2 : Nat := 240
 
 theorem fr2_f : fr2 "f" = some (frameDrop callerF.af, slotOffs callerF.af fC) := by simp [fr2]

@@ -21,18 +21,19 @@ open Arm ArmThread Prog ClifThread Backend Backend.Proof Backend.Proof.Driver VC
   PrepThread AllocThread IselCheck CorrRefine ClifCStepTerm IselThread ThreadRefine
   ThreadCompose IselCall IselCallRet CallRets CallRetsAlloc ArmAllocThread E2E
 
-/-- **The return contract at a `rets` pause** (module doc). -/
+/-- **The return contract at a `rets` pause** (module doc). The relation at the `rets` is `QA`
+(in a return tail the store differs from the machine's at the restored registers). -/
 def RetEnd (RA : RL) (ra : BitVec 64) (env : Clif.Env) (p : Clif.Program) (MR : MemRelT)
     (slots : List (Clif.SlotId × Nat)) (r₀ : Reg → CV) (x : ArmState) (s' : Clif.State) : Prop :=
   ∃ b k allocs its m w vb us ops ρ vals cm n,
-    Q RA x (.run ⟨b, .op k allocs :: its, m, w⟩) ∧ RA.vc.blocks[b]? = some vb ∧
+    QA RA x (.run ⟨b, .op k allocs :: its, m, w⟩) ∧ RA.vc.blocks[b]? = some vb ∧
     vb.insts[k]? = some (.rets us) ∧ (MInst.rets us).operands = .ok ops ∧
     Clif.step env p s' = .done vals cm ∧ PrefixHold vals (vuses ops ρ) ∧ MR slots s'.mem w ∧
     cm = (s'.mem.free (slots.map (·.2))).leave ∧
     (∀ i < n, RA.GoodX (iterN RA.step i x)) ∧
     Arm.r .PC (iterN RA.step n x) = ra ∧ Arm.r .ERR (iterN RA.step n x) = .None ∧
     spv (iterN RA.step n x) = spv RA.s0 ∧ (iterN RA.step n x).mem = x.mem ∧
-    (iterN RA.step n x).program = x.program ∧
+    ((iterN RA.step n x).program = x.program ∧ xreg 29 (iterN RA.step n x) = xreg 29 RA.s0) ∧
     (∀ r ∈ calleeSaved, ckeep r (regVal (iterN RA.step n x) r) = ckeep r (r₀ r)) ∧
     ∀ (j : Nat) (v q : Reg) (y : CV), us[j]? = some (v, q) → (vuses ops ρ)[j]? = some y →
       regVal (iterN RA.step n x) q = y
@@ -49,6 +50,7 @@ theorem arm_isel_refinesCRG {RA : RL} (hR : RA.Wf) (hsc : MemScopeLSC RA)
     {L : Nat → Prop} {ss ss' : Array (Array Nat)} (H3 : PrepFacts vc RA.vc L ss ss')
     {cc : CheckCtx} {ins : Array (Option AState)} {a0 : AState}
     (hc : CheckedAt RA.vc RA.rf cc ins a0) {r₀ : Reg → CV}
+    (hr₀ : ∀ r ∈ RA.af.saves, ckeep r (r₀ r) = ckeep r (regVal RA.s0 r))
     {s : Clif.State} {cM : MState CV ArmState} {x : ArmState}
     {mon : Mon}
     (hLA : ∀ {trM : List (List Ev)} {cE : MConf CV ArmState},
@@ -139,9 +141,9 @@ theorem arm_isel_refinesCRG {RA : RL} (hR : RA.Wf) (hsc : MemScopeLSC RA)
     subst hk'
     obtain ⟨ops, hops, rfl, rfl, rfl⟩ := ret_link H3 h6 h7 h8 hvb hi h11
     obtain ⟨n, ops2, hops2, hgood, hpc, herr, hsp, hmem, hprog, hcs, hres⟩ :=
-      rets_alloc hR hent hc hrq.1 h9 hvb hi
+      rets_alloc hR hent hc hr₀ hrq h9 hvb hi
     rw [hops] at hops2; cases hops2
-    exact ⟨b, kk, allocs, its, m, _, vb, _, ops, ρ, vals, cm, n, hrq.1, hvb, hi, hops, h10, h12,
+    exact ⟨b, kk, allocs, its, m, _, vb, _, ops, ρ, vals, cm, n, hrq, hvb, hi, hops, h10, h12,
       h13, h14, hgood, hpc, herr, hsp, hmem, hprog, hcs, hres⟩
 
 
@@ -161,6 +163,7 @@ theorem arm_isel_refinesCR {RA : RL} (hR : RA.Wf) (hsc : MemScopeLSC RA)
     {L : Nat → Prop} {ss ss' : Array (Array Nat)} (H3 : PrepFacts vc RA.vc L ss ss')
     {cc : CheckCtx} {ins : Array (Option AState)} {a0 : AState}
     (hc : CheckedAt RA.vc RA.rf cc ins a0) {r₀ : Reg → CV}
+    (hr₀ : ∀ r ∈ RA.af.saves, ckeep r (r₀ r) = ckeep r (regVal RA.s0 r))
     {s : Clif.State} {vV vP : VState CV ArmState} {cM : MState CV ArmState} {x : ArmState}
     {mon : Mon}
     (hm2 : Match f ctx R gn bl A MR slots s vV)
@@ -180,7 +183,7 @@ theorem arm_isel_refinesCR {RA : RL} (hR : RA.Wf) (hsc : MemScopeLSC RA)
         (∃ tE s', PRun Policy.arm g (OkPriv RA) (x, mon) (ls.take k) tE ∧ t = .run s' ∧
           AtRetS s' ∧ (RetEnd RA ra env p MR slots r₀ tE.1 s' ∨
             ∃ cE, RelQ RA tE cE ∧ (Done RA cE ∨ AtCall RA cE)))) := by
-  exact arm_isel_refinesCRG hR hsc hgv hg hent hX hX0 H3 hc
+  exact arm_isel_refinesCRG hR hsc hgv hg hent hX hX0 H3 hc hr₀
     (fun hM => isel_alloc_refinesCR H hchk hMR hMRw hX hX0 H3 hc hm2 hm3 hm4 hM) hq hA hr
 
 /-- **All layers from the activation's entry configuration, pausing at calls and at returns
@@ -214,6 +217,7 @@ theorem arm_isel_refines_entryCR {RA : RL} (hR : RA.Wf) (hsc : MemScopeLSC RA)
     (hty : args.map (·.ty) = B0.params.map (·.2))
     (hsig : args.map (·.ty) = f.sig.params.map (·.ty))
     {m₀ : Loc → CV} {w₀ : Arm.ArmState} (hmr : MR slots cs.mem w₀)
+    (hr₀ : ∀ r ∈ RA.af.saves, ckeep r (m₀ (.reg r)) = ckeep r (regVal RA.s0 r))
     (hargs : ArgsAtEntry RA.F f.sig args w₀) {x : ArmState} {mon : Mon}
     (hq : Q RA x (MConf.init RA.rf m₀ w₀)) (hA : AInv RA (MConf.init RA.rf m₀ w₀))
     {ls : List Lab} {t' : ArmState × Mon} (hr : PRun Policy.arm g (OkPriv RA) (x, mon) ls t') :
@@ -230,7 +234,7 @@ theorem arm_isel_refines_entryCR {RA : RL} (hR : RA.Wf) (hsc : MemScopeLSC RA)
         (∃ tE s', PRun Policy.arm g (OkPriv RA) (x, mon) (ls.take k) tE ∧ t = .run s' ∧
           AtRetS s' ∧ (RetEnd RA ra env p MR slots (fun r => m₀ (.reg r)) tE.1 s' ∨
             ∃ cE, RelQ RA tE cE ∧ (Done RA cE ∨ AtCall RA cE)))) :=
-  arm_isel_refinesCRG hR hsc hgv hg hent hX hX0 H3 hc (s := cs)
+  arm_isel_refinesCRG hR hsc hgv hg hent hX hX0 H3 hc hr₀ (s := cs)
     (cM := ⟨0, RA.rf.blocks[0]!.toList, m₀, w₀⟩)
     (fun hM => isel_alloc_refines_entryCR (ρ₀ := fun _ => 0) H hchk hMR hMRw hX hX0 hMem hMRs
       hreg hB0 hcall hfunc hslots hbody hterm hregs hty hsig hmr hargs H3 hc (hm3 _ _)

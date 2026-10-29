@@ -200,7 +200,7 @@ theorem errW₀L : Arm.r .ERR w₀L = .None := by
 def fB (R : Backend.Proof.RL) (a : BitVec 64) : Bool :=
   let d := (a - (spv R.s0 - BitVec.ofNat 64 (frameDrop R.af))).toNat
   (decide (R.fr.intBase ≤ d) && decide (d < R.fr.size)) ||
-    (decide (R.af.frameSize ≤ d) && decide (d < frameDrop R.af)) ||
+    (decide (R.af.frameSize - clobberBytes R.af.saves ≤ d) && decide (d < frameDrop R.af)) ||
     R.s0.program.any (fun p => decide ((a - p.1).toNat < 4))
 
 theorem fB_of {R : Backend.Proof.RL} (hK : R.K = 0) (hG : ∀ a, ¬ R.G a) {a : BitVec 64}
@@ -571,7 +571,7 @@ theorem run_load : ∃ (n : Nat) (lsP : List Lab) (e : Ev) (t' : ArmState × Mon
   rw [show RAL.rf = rfL from rfl, e0] at hq0 hA0
   -- the saves
   obtain ⟨ls1, t1, r1, hq1, hA1, hev1⟩ := moves_fwdA wfRL (fun K => (K == .plainW) = true)
-    savesL _ _ _ none hq0 hA0 (moves_kinds checksRunL.2.1)
+    savesL _ _ _ none hq0 hA0 (moves_kinds checksRunL.2.1) (by simp [savesL, Loc.isSave])
   -- the entry `args`
   obtain ⟨m', hst, hm'⟩ := args_step (spillL.map (fun p => RItem.move p.1 p.2) ++ rest2L) _ w₀L
   have hq2 := realizes_args wfRL hq1 hA1 vb0L argsL0.1 hst
@@ -579,7 +579,7 @@ theorem run_load : ∃ (n : Nat) (lsP : List Lab) (e : Ev) (t' : ArmState × Mon
   -- the spill moves
   obtain ⟨ls2, t2, r2, hq3, -, hev2⟩ := moves_fwdA wfRL
     (fun K => (K == .plainW || K == .plainR) = true) spillL rest2L t1.1 m' t1.2 hq2 hA2
-    (moves_kinds checksRunL.2.2.1)
+    (moves_kinds checksRunL.2.2.1) (by simp [spillL, Loc.isSave])
   -- the `ldar`
   obtain ⟨j, hj, hpc, hstr⟩ := q_head hq3 rfl head_ldarL
   obtain ⟨t3, ev, r3, -, hk, hn, ha⟩ := excl_step_fwd wfRL hj rfl hstr.prog hpc hstr.err

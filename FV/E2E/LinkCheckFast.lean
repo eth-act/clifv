@@ -202,7 +202,7 @@ def linkChksWith (C : LinkCtx) (P : Clif.Program) (g : Clif.Function) (r : Excep
   [("outFits", g.externs.all (fun e => !(C.F e.2.name).isSome || outFitsB e.2.sig fr.intBase)),
    ("calleeFrame/slotFits",
      !(C.callees.contains g.name || ((C.S g.name).isSome && C.anyInd)) ||
-       ((!g.slots.isEmpty || fr.size == a.af.frameSize) && slotFitsB g a)),
+       ((!g.slots.isEmpty || fr.size == a.af.frameSize - clobberBytes a.af.saves) && slotFitsB g a)),
    ("callRegs/blrRegs", allInsts a.vcp (siteB (siteWithOk C.F P g may a.vcp))),
    ("declSig", declSigWithB C.F g),
    ("raCall/raBlr", raCallFastB C.ents g a),

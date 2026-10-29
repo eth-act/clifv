@@ -223,7 +223,8 @@ theorem realizes_rmwLoopNAF {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : A
     · simp only [Arm.r_of_w_same]
       congr 1
       omega
-    · refine stRel_after hR hst ?_ ?_ (SameWorld.w_left (by simp [Masked]) hsw1) ?_ ?_ ⟨?_, fun a ha => ?_⟩
+    · refine stRel_after hR hst ?_ ?_ (SameWorld.w_left (by simp [Masked]) hsw1) ?_ ?_
+        ⟨?_, fun a ha => ?_, ?_⟩
       · refine store_regs hst [27, 24, 28] (by simp) ?_ ?_ hfr2
         · intro n hn
           simp only [List.mem_cons, List.not_mem_nil, or_false] at hn
@@ -240,6 +241,7 @@ theorem realizes_rmwLoopNAF {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : A
       · simp only [Arm.ArmState.mem_w_eq_mem, hmem1]
         refine mem_write_mem_bytes_ne _ _ _ _ _ (fun k hk e => hav k hk ?_)
         rw [← e]; exact RL.FK_F ha
+      · exact hfr2 _ (by simp) (by simp [rnum]) (by simp)
   · rcases Nat.lt_or_ge i (rmwLoopBody ty.bits op fl).length with hi1 | hi1
     · exact hgx1 (rmwBody_tail hty op fl) (RL.good_of_sp hst.sp)
         (rmwBody_reads hty op fl _ s fun q hq => .inr (.inr ⟨hav q hq, havY q hq⟩)) i hi1
@@ -510,7 +512,8 @@ theorem realizes_casLoopNAF {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : A
         c2, ls2, ps2, hvb, hit, by rw [hsplit]; simp, hchk', hc2, hl2, htr, ?_, hpcF, ?_⟩
       · rw [← List.drop_drop, hdrop']
         exact List.drop_left' (by simp [casLoopLines, casLoopHead])
-      · refine stRel_after hR hst ?_ ?_ hswF ?_ hprogF ⟨?_, fun a ha => hmemF a (RL.FK_F ha)⟩
+      · refine stRel_after hR hst ?_ ?_ hswF ?_ hprogF
+          ⟨?_, fun a ha => hmemF a (RL.FK_F ha), ?_⟩
         · refine store_regs hst [27, 24] (by simp) ?_ ?_ hfrF
           · intro n hn
             simp only [List.mem_cons, List.not_mem_nil, or_false] at hn
@@ -522,6 +525,7 @@ theorem realizes_casLoopNAF {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : A
           simp [writeM, upd, Operand.isDef, Operand.isLate, hl]
         · rw [hfrF .ERR (by simp) (by simp) (by simp)]; exact hst.err
         · simp only [spOf]; exact hfrF _ (by simp) (by simp [rnum]) (by simp)
+        · exact hfrF _ (by simp) (by simp [rnum]) (by simp)
     · exact RL.segLen_straight_base hR (by simp [RL.Straight]) (by rw [hWs, hj7]) hb hinF
         (by rw [hitF]; exact hpcF) hposF (by omega)
     · refine RL.frFree_of hR fun i hi => ?_

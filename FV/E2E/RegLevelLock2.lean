@@ -207,8 +207,8 @@ theorem RL.jointSeg {R R' : RL} (hR : R.Wf) (hR' : R'.Wf) (hsc : R.SameCode R')
     (hTls' : R'.vc.hasTls = true → TlsOk R'.F R'.K R'.X R'.H)
     (hcov : FormsCovered R.ctx R.vc) (hcov' : FormsCovered R'.ctx R'.vc)
     {s s' : Arm.ArmState} {j : Nat} {ps1 : PState} {T : List Line}
-    {c c' e e' : MConf CV Arm.ArmState} (hq : QW R s j ps1 T c) (hq' : QW R' s' j ps1 T c')
-    (hA : AInv R c) (hA' : AInv R' c') (hP : P s) (hP' : P' s') (hc : MConf.ShapeEq c c')
+    {c c' e e' : MConf CV Arm.ArmState} (hq : QWA R s j ps1 T c) (hq' : QWA R' s' j ps1 T c')
+    (hP : P s) (hP' : P' s') (hc : MConf.ShapeEq c c')
     (he : MStep R.vc (R.semG Ok) ckeep R.rf c e) (he' : MStep R'.vc (R'.semG Ok') ckeep R'.rf c' e')
     (hsh : ∀ d d', MStep R.vc (R.semG Ok) ckeep R.rf c d →
       MStep R'.vc (R'.semG Ok') ckeep R'.rf c' d' → MConf.ShapeEq d d')
@@ -217,10 +217,10 @@ theorem RL.jointSeg {R R' : RL} (hR : R.Wf) (hR' : R'.Wf) (hsc : R.SameCode R')
     (hstep : ∀ i u u', (R.GoodX u ∧ R.WReadsIn Ok u) → (R'.GoodX u' ∧ R'.WReadsIn Ok' u') →
       Lk i u u' → Lk (i + 1) (R.step u) (R'.step u')) :
     ∃ n d d', MStep R.vc (R.semG Ok) ckeep R.rf c d ∧ MStep R'.vc (R'.semG Ok') ckeep R'.rf c' d' ∧
-      MConf.ShapeEq d d' ∧ AInv R d ∧ AInv R' d' ∧
-      QW R (iterN R.step n s) (R.nextW j ps1 T c d).1 (R.nextW j ps1 T c d).2.1
+      MConf.ShapeEq d d' ∧
+      QWA R (iterN R.step n s) (R.nextW j ps1 T c d).1 (R.nextW j ps1 T c d).2.1
         (R.nextW j ps1 T c d).2.2 d ∧
-      QW R' (iterN R'.step n s') (R.nextW j ps1 T c d).1 (R.nextW j ps1 T c d).2.1
+      QWA R' (iterN R'.step n s') (R.nextW j ps1 T c d).1 (R.nextW j ps1 T c d).2.1
         (R.nextW j ps1 T c d).2.2 d' ∧
       (∀ i < n, (R.GoodX (iterN R.step i s) ∧ R.WReadsIn Ok (iterN R.step i s)) ∧
         (R'.GoodX (iterN R'.step i s') ∧ R'.WReadsIn Ok' (iterN R'.step i s'))) ∧
@@ -228,15 +228,15 @@ theorem RL.jointSeg {R R' : RL} (hR : R.Wf) (hR' : R'.Wf) (hsc : R.SameCode R')
       countIn R'.CallSt R'.step s' n = opCalls R'.vc c' ∧
       R.SegLenA j ps1 T c d s n ∧ R'.SegLenA j ps1 T c' d' s' n ∧
       ∀ i ≤ n, Lk i (iterN R.step i s) (iterN R'.step i s') := by
-  obtain ⟨n, d, hm, -, hAd, hqd, ht, hcnt, hs⟩ := realizes_allCW hR Ok hC hT hTls hcov hq hA hP he
-  obtain ⟨n', d', hm', -, hAd', hqd', ht', hcnt', hs'⟩ :=
-    realizes_allCW hR' Ok' hC' hT' hTls' hcov' hq' hA' hP' he'
+  obtain ⟨n, d, hm, -, hqd, ht, hcnt, hs⟩ := realizes_allCW hR Ok hC hT hTls hcov hq hP he
+  obtain ⟨n', d', hm', -, hqd', ht', hcnt', hs'⟩ :=
+    realizes_allCW hR' Ok' hC' hT' hTls' hcov' hq' hP' he'
   have hd := hsh d d' hm hm'
   obtain ⟨rfl, hL⟩ := RL.seg_lock hsc hc hd hs hs' Lk hLpc h0 fun i hi hi' hl =>
     hstep i _ _ (ht i hi) (ht' i hi') hl
   have hW := RL.nextW_shape hsc j ps1 T hc hd
   rw [hW] at hqd'
-  exact ⟨n, d, d', hm, hm', hd, hAd, hAd', hqd, hqd', fun i hi => ⟨ht i hi, ht' i hi⟩, hcnt, hcnt',
+  exact ⟨n, d, d', hm, hm', hd, hqd, hqd', fun i hi => ⟨ht i hi, ht' i hi⟩, hcnt, hcnt',
     hs, hs', hL⟩
 
 end Backend.Proof

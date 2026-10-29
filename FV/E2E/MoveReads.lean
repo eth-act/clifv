@@ -282,7 +282,8 @@ theorem moveInsts_reads {vc : VCode} {rf : RFunc} (ctx : FnCtx) {c : CheckCtx} {
           simp only [stSt, spOf_write, pcx_sp]
         rw [← hsp]
         exact slotLoadAt_area ctx .float _ (fun _ => hal) htmp _
-    | stack k cl | save r =>
+    | save r => exact absurd hLd id
+    | stack k cl =>
       all_goals
         simp only [RAFrame.moveInsts, bind, Except.bind] at hmi
         split at hmi
@@ -294,9 +295,10 @@ theorem moveInsts_reads {vc : VCode} {rf : RFunc} (ctx : FnCtx) {c : CheckCtx} {
         refine ⟨_, rfl, instsReads_slotStoreAt ctx (fun e => ?_) s _⟩
         subst e
         have hal := live_align hLd hoff
-        rw [slotBytes_float (fun _ h => by cases h) hdcls] at hal
+        rw [slotBytes_float (fun _ h => by cases h) (fun _ h => by cases h) hdcls] at hal
         exact hal.1
-  | stack k cl | save r =>
+  | save r => exact absurd hLs id
+  | stack k cl =>
     all_goals
       cases dst with
       | stack _ _ | save _ => simp [Loc.isReg] at hreg
@@ -316,7 +318,7 @@ theorem moveInsts_reads {vc : VCode} {rf : RFunc} (ctx : FnCtx) {c : CheckCtx} {
           rw [slotBytes_int (fun _ h => by cases h) hcls] at hal
           exact slotLoadAt_area ctx .int _ nofun hal.2 s
         | float =>
-          rw [slotBytes_float (fun _ h => by cases h) hcls] at hal
+          rw [slotBytes_float (fun _ h => by cases h) (fun _ h => by cases h) hcls] at hal
           exact slotLoadAt_area ctx .float _ (fun _ => hal.1) hal.2 s
 
 end Backend.Proof

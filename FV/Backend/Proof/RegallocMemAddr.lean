@@ -159,7 +159,8 @@ theorem corr_loadAddr_slot (F : BitVec 64 → Prop) (ctx : FnCtx) (env : Env) (d
     (spOf s + BitVec.ofInt 64 (off + ctx.slotBase)) o
   obtain ⟨-, -, g3, -⟩ := ldPost_facts w Q (a := 0) (by omega)
     (spOf w + BitVec.ofInt 64 (off + ctx.slotBase)) oC
-  refine ⟨_, hS, ldPost_sw hw ⟨hn0.1, hn0.2.2.2⟩ (by omega) _ _ _ _, ⟨f1, fun a _ => by rw [f2]⟩,
+  refine ⟨_, hS, ldPost_sw hw ⟨hn0.1, hn0.2.2.2⟩ (by omega) _ _ _ _,
+    ⟨f1, fun a _ => by rw [f2], ldPost_x29 _ _ hn0.1 _ _⟩,
     ?_, fun r hr hnd => f4 r hr (fun e => hnd ⟨⟨d, .int, .def, .late, .reg⟩, .x n0⟩ (by simp) rfl e.symm)⟩
   simp [defVals, Operand.isDef]
   rw [f3, g3, hsp]

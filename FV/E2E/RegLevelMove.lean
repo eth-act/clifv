@@ -1,5 +1,6 @@
 import FV.E2E.RegLevelSim
 import FV.Backend.Proof.RegallocMoves
+import FV.E2E.RegLevelPush
 
 /-!
 # Moves on the machine (M6)
@@ -206,6 +207,43 @@ theorem lines_noTrap {c : FnCtx} {m : MInst} {ps ps' : PState} {ls : List Line}
           | ((repeat' (split at hln)) <;> simp at hln; done)
           | (simp [throw, throwThe, MonadExceptOf.throw] at *; done))
 
+theorem spAdjLines_isIns (sub : Bool) (size : Nat) : ∀ ln ∈ spAdjLines sub size, ∃ i t, ln = .ins i t := by
+  intro ln h
+  unfold spAdjLines at h
+  split at h
+  · simp at h
+  · split at h
+    · simp only [List.mem_singleton] at h; exact ⟨_, _, h⟩
+    · rcases List.mem_append.1 h with h | h
+      · exact loadConst64_ins _ _ _ h
+      · simp only [List.mem_singleton] at h; exact ⟨_, _, h⟩
+
+/-- The prologue's lines are instructions. -/
+theorem prologueLines_isIns (saves : List Reg) (size : Nat) :
+    ∀ ln ∈ prologueLines saves size, ∃ i t, ln = .ins i t := by
+  intro ln h
+  rw [prologueLines_eq] at h
+  simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at h
+  rcases h with (rfl | rfl) | h | h | h
+  · exact ⟨_, _, rfl⟩
+  · exact ⟨_, _, rfl⟩
+  · obtain ⟨x, rfl, -⟩ := pushLines_mem h; exact ⟨_, _, rfl⟩
+  · obtain ⟨x, rfl, -⟩ := pushLines_mem h; exact ⟨_, _, rfl⟩
+  · exact spAdjLines_isIns _ _ _ h
+
+/-- The epilogue's lines are instructions. -/
+theorem epilogueLines_isIns (saves : List Reg) (size : Nat) :
+    ∀ ln ∈ epilogueLines saves size, ∃ i t, ln = .ins i t := by
+  intro ln h
+  rw [epilogueLines_eq] at h
+  simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at h
+  rcases h with (h | h | h | rfl) | rfl
+  · exact spAdjLines_isIns _ _ _ h
+  · obtain ⟨x, rfl, -⟩ := popLines_mem h; exact ⟨_, _, rfl⟩
+  · obtain ⟨x, rfl, -⟩ := popLines_mem h; exact ⟨_, _, rfl⟩
+  · exact ⟨_, _, rfl⟩
+  · exact ⟨_, _, rfl⟩
+
 theorem codeLinesE_noTrap {c : FnCtx} {af : AFunc} :
     ∀ (code : List AInst) (ps ps' : PState) (ls : List Line),
       codeLinesE c af code ps = .ok (ls, ps') → ∀ ln ∈ ls, NoTrapLbl ln
@@ -230,32 +268,15 @@ theorem codeLinesE_noTrap {c : FnCtx} {af : AFunc} :
             simp only [ainstLines, pure, Except.pure, Except.ok.injEq] at hr
             subst hr
             intro n e; subst e
-            simp only [prologueLines] at hln
             split at hln
-            · have h1 := hln
-              simp at h1
-              obtain ⟨-, h1⟩ := h1
-              split at h1
-              · simp at h1
-              · rcases List.mem_append.1 h1 with h1 | h1
-                · obtain ⟨_, _, h⟩ := loadConst64_ins _ _ _ h1; cases h
-                · simp at h1
+            · obtain ⟨_, _, h⟩ := prologueLines_isIns _ _ _ hln; cases h
             · simp at hln
           | epilogueRet =>
             simp only [ainstLines, pure, Except.pure, Except.ok.injEq] at hr
             subst hr
             intro n e; subst e
             split at hln
-            · simp only [epilogueLines, List.mem_append] at hln
-              rcases hln with h1 | h1
-              · split at h1
-                · simp at h1
-                · split at h1
-                  · simp at h1
-                  · rcases List.mem_append.1 h1 with h1 | h1
-                    · obtain ⟨_, _, h⟩ := loadConst64_ins _ _ _ h1; cases h
-                    · simp at h1
-              · simp at h1
+            · obtain ⟨_, _, h⟩ := epilogueLines_isIns _ _ _ hln; cases h
             · simp at hln
         · exact codeLinesE_noTrap as _ _ _ hr2 ln hln
 
@@ -404,11 +425,24 @@ theorem mem_blocks_flat {rf : RFunc} {b : Nat} {items : Array RItem} {it : RItem
   simp only [Array.empty_append, Array.mem_flatten, Array.map_id_fun, id]
   exact ⟨items, Array.mem_of_getElem? hb, by simpa using hi⟩
 
-/-- A move of the checked allocated code: checked, between live locations. -/
+/-- The checker accepts what follows a move it accepts. -/
+theorem itemsChecked_move_tail {R : RL} {vb : VBlock} {src dst : Loc} {its : List RItem}
+    (hchk : ItemsChecked R vb (.move src dst :: its)) : ItemsChecked R vb its := by
+  obtain ⟨c, k, a, out, hcr, hcv, hrun⟩ := hchk
+  simp only [CheckCtx.runItems, bind, Except.bind] at hrun
+  obtain ⟨-, hrun⟩ := Except.seq_ok hrun
+  simp only [CheckCtx.stepMove, bind, Except.bind] at hrun
+  split at hrun
+  · cases hrun
+  exact ⟨c, k, _, out, hcr, hcv, hrun⟩
+
+/-- A move of the checked allocated code other than a callee save or restore: checked, between
+live locations. -/
 theorem move_facts {R : RL} {b : Nat} {vb : VBlock} {items : Array RItem} {pre its : List RItem}
     {src dst : Loc} (hit : R.rf.blocks[b]? = some items)
     (hsplit : items.toList = pre ++ .move src dst :: its)
-    (hchk : ItemsChecked R vb (.move src dst :: its)) :
+    (hchk : ItemsChecked R vb (.move src dst :: its)) (hsS : src.isSave = false)
+    (hdS : dst.isSave = false) :
     (∃ (c : CheckCtx) (wh : String), c.checkMove wh src dst = .ok ()) ∧
       Live R.rf src ∧ Live R.rf dst ∧
       (∀ a b, src = .reg (.v a) → dst = .reg (.v b) → R.rf.floatMove = true) ∧
@@ -430,7 +464,10 @@ theorem move_facts {R : RL} {b : Nat} {vb : VBlock} {items : Array RItem} {pre i
     simp only [Bool.and_eq_true] at hok
     cases l with
     | reg r => trivial
-    | save r => trivial
+    | save r =>
+      rcases hl with rfl | rfl
+      · exact absurd hsS (by simp [Loc.isSave])
+      · exact absurd hdS (by simp [Loc.isSave])
     | stack k' cl =>
       rw [hcr] at hok
       cases cl with
@@ -468,30 +505,52 @@ theorem itemCode_move (fr : RAFrame) (vb : VBlock) (src dst : Loc) :
   generalize fr.moveInsts src dst = x
   cases x <;> simp
 
-/-- The fp/lr slot lies above the frame's slot area. -/
-theorem fplr_outside {R : RL} (hR : R.Wf) (hframe : R.af.frame = true) :
-    ∀ k < 16, ∀ o, o < R.fr.size → spv R.s0 - 16#64 + BitVec.ofNat 64 k ≠ R.spB + BitVec.ofNat 64 o := by
+theorem saveShapeOk_saves {vc : VCode} {rf : RFunc} (h : saveShapeOk vc rf = true) :
+    SavesOk rf.saved := by
+  simp only [saveShapeOk, Bool.and_eq_true, beq_iff_eq] at h
+  have e := h.1
+  have hnd : calleeSaved.Nodup := by decide
+  refine ⟨fun r hr => ?_, ?_⟩
+  · rw [e] at hr; exact (List.mem_filter.1 hr).1
+  · rw [e]; exact hnd.filter _
+
+/-- The frame facts of an activation: it has a frame of `fr.total` bytes, pushes the
+allocation's saved registers into its clobber area `[total - clobberBytes, total)` above the
+CLIF slots, and fits below the entry `sp`. -/
+theorem RL.frame_facts {R : RL} (hR : R.Wf) :
+    R.af.frame = true ∧ R.af.frameSize = R.fr.total ∧ R.af.saves = R.rf.saved ∧
+      SavesOk R.af.saves ∧ R.fr.size + R.vc.slotBytes ≤ R.fr.total - clobberBytes R.af.saves ∧
+      clobberBytes R.af.saves ≤ R.fr.total ∧ R.fr.total % 16 = 0 ∧
+      R.fr.total + 16 ≤ (spv R.s0).toNat ∧ frameDrop R.af = R.fr.total + 16 := by
   obtain ⟨⟨hfs, -⟩, -⟩ := lowerRFunc_ok hR.alloc
-  have hlt' : (spv R.s0).toNat < 18446744073709551616 := (spv R.s0).isLt
-  have hle : R.fr.size ≤ R.fr.total := compute_size_le_total R.vc R.rf
+  have hframe := lowerRFunc_frame hR.alloc
+  obtain ⟨hsh, hsv⟩ := lowerRFunc_saves hR.alloc
+  have h1 := compute_saveBase R.vc R.rf
   have hst := hR.stack.frame.1
-  have hst' : R.fr.total + 16 ≤ (spv R.s0).toNat := by rw [hfs] at hst; exact hst
-  have hd : frameDrop R.af = R.fr.total + 16 := by
-    simp only [frameDrop, hframe, ite_true, hfs, RL.fr]
+  rw [hfs] at hst
+  refine ⟨hframe, hfs, hsv, hsv ▸ saveShapeOk_saves hsh, ?_, ?_, ?_, hst, ?_⟩
+  · rw [hsv]; exact h1.1
+  · rw [hsv]; simp only [RL.fr]; omega
+  · have := h1.2.2; have := clobberBytes_mod R.rf.saved; simp only [RL.fr]; omega
+  · simp only [frameDrop, hframe, ite_true, hfs, RL.fr]
+
+/-- The fp/lr slot and the clobber area lie above the frame's slot area. -/
+theorem fplr_outside {R : RL} (hR : R.Wf) (hframe : R.af.frame = true) :
+    ∀ k < R.topN, ∀ o, o < R.fr.size → R.topB + BitVec.ofNat 64 k ≠ R.spB + BitVec.ofNat 64 o := by
+  obtain ⟨-, -, -, -, hsz, hcb, -, hst', hd⟩ := RL.frame_facts hR
+  have hlt' : (spv R.s0).toNat < 18446744073709551616 := (spv R.s0).isLt
   intro k hk o ho e
   have := congrArg BitVec.toNat e
-  simp only [RL.spB, hd] at this
+  simp only [RL.spB, RL.topB, RL.topN, hd] at this hk
   have hm : (R.fr.total + 16) % 2 ^ 64 = R.fr.total + 16 := Nat.mod_eq_of_lt (by omega)
-  rw [hfs] at hst
-  simp only [RL.fr] at *
+  have hm' : (16 + clobberBytes R.af.saves) % 2 ^ 64 = 16 + clobberBytes R.af.saves := Nat.mod_eq_of_lt (by omega)
   rw [BitVec.toNat_add, BitVec.toNat_add, BitVec.toNat_sub_of_le, BitVec.toNat_sub_of_le] at this
-  · simp only [BitVec.toNat_ofNat, hm] at this
+  · simp only [BitVec.toNat_ofNat, hm, hm'] at this
     rw [Nat.mod_eq_of_lt (a := k) (by omega), Nat.mod_eq_of_lt (a := o) (by omega)] at this
-    have h1 := (spv R.s0).isLt
     rw [Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)] at this
     omega
   · simp only [BitVec.le_def, BitVec.toNat_ofNat, hm]; omega
-  · simp only [BitVec.le_def, BitVec.toNat_ofNat]; omega
+  · simp only [BitVec.le_def, BitVec.toNat_ofNat, hm']; omega
 
 /-- The code lies outside the frame's slot area. -/
 theorem code_outside {R : RL} (hR : R.Wf) {a : BitVec 64} (ha : CodeAddr R.s0 a) :

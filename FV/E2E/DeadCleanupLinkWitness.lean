@@ -26,7 +26,8 @@ theorem frame_entry_witness : ∃ vc raw vcp rf af fa fb,
     Backend.prepare vc = .ok raw ∧ vcp = preparedCleanup vc raw ∧
     lowerRFunc vcp rf = .ok af ∧ emitFunc 0 af = .ok fa ∧ fa.layout = .ok fb ∧
     entryB DeadCleanupWitness.source vcp = true ∧
-    ((!DeadCleanupWitness.source.slots.isEmpty || (RAFrame.compute vcp rf).size == af.frameSize) &&
+    ((!DeadCleanupWitness.source.slots.isEmpty ||
+      (RAFrame.compute vcp rf).size == af.frameSize - clobberBytes af.saves) &&
       slotFitsB DeadCleanupWitness.source ⟨0, vc, vcp, rf, af, fa, fb, 0⟩) = true ∧
     (prune vc).blocks[0]!.insts.size < vc.blocks[0]!.insts.size := by
   obtain ⟨hd, hs, har, vc, vcp, af, fa, fb, hc, hshr⟩ := DeadCleanupWitness.compiled_exists

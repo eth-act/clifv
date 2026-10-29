@@ -142,13 +142,13 @@ theorem cfgFC : ∃ ss ps, vcC.cfg = .ok (ss, ps) := by
   | ok r => intro _; exact ⟨r.1, r.2, rfl⟩
   | error e => intro h; cases h
 
-theorem fs_C : callerRF.af.frameSize = 240 := spC.2.2.2.2.2.2.2.1
+theorem fs_C : callerRF.af.frameSize = 176 := spC.2.2.2.2.2.2.2.1
 
-theorem fs_R : rmwF.af.frameSize = 256 := spC.2.2.2.2.2.2.2.2
+theorem fs_R : rmwF.af.frameSize = 192 := spC.2.2.2.2.2.2.2.2
 
-theorem drop_C : frameDrop callerRF.af = 256 := spC.2.1
+theorem drop_C : frameDrop callerRF.af = 192 := spC.2.1
 
-theorem drop_R : frameDrop rmwF.af = 272 := spC.2.2.1
+theorem drop_R : frameDrop rmwF.af = 208 := spC.2.2.1
 
 /-- `pCR` has no `return_call`. -/
 theorem linkFree_CR : ∀ f : Clif.Function, f ∈ Clif.Program.funcs pCR → Clif.LinkFree f := by
@@ -337,7 +337,7 @@ def frR (n : String) : Option (Nat × (Clif.SlotId → Nat)) :=
   else if n = "rmw" then some (frameDrop rmwF.af, slotOffs rmwF.af fR)
   else none
 
-/-- **The frame bound**: `atomic_rmw`'s frame, 256 bytes and the frame record. -/
+/-- **The frame bound**: `atomic_rmw`'s frame, 192 bytes and the frame record (bound 272). -/
 def MxR : Nat := 272
 
 theorem frR_f : frR "f" = some (frameDrop callerRF.af, slotOffs callerRF.af fC) := by simp [frR]
@@ -394,7 +394,7 @@ abbrev RAc : RL := linkR.act callerRF sC0 0x240 GL
 
 theorem stack_RAc : StackAvail 0x240 callerRF.af sC0 := by
   have hs := spC
-  have hfs : callerRF.af.frameSize = 240 := hs.2.2.2.2.2.2.2.1
+  have hfs : callerRF.af.frameSize = 176 := hs.2.2.2.2.2.2.2.1
   refine ⟨?_, fun a ha => ?_⟩
   · show callerRF.af.frameSize + 16 + 0x240 ≤ (E2E.spv RC.s0).toNat
     rw [spv_RC, hfs]; decide
@@ -449,14 +449,14 @@ theorem codeIn_RAc : CallSegCall.CodeIn linkR RAc := by
 /-- The addresses outside the activation's world are at or above `0x6CC0`. -/
 theorem fc_ge {a : BitVec 64} (h : RAc.F a) : 0x6CC0 ≤ a.toNat := by
   have hs := spC
-  have e : E2E.spv sC0 - BitVec.ofNat 64 (frameDrop callerRF.af) = 0x6F00#64 := by
-    rw [show E2E.spv sC0 = 0x7000#64 from spv_RC, show frameDrop callerRF.af = 256 from hs.2.1]
+  have e : E2E.spv sC0 - BitVec.ofNat 64 (frameDrop callerRF.af) = 0x6F40#64 := by
+    rw [show E2E.spv sC0 = 0x7000#64 from spv_RC, show frameDrop callerRF.af = 192 from hs.2.1]
     rfl
-  have hsz : RC.fr.size ≤ 240 := hs.2.2.2.2.2.1
-  have hfs : callerRF.af.frameSize = 240 := hs.2.2.2.2.2.2.2.1
+  have hsz : RC.fr.size ≤ 176 := hs.2.2.2.2.2.1
+  have hfs : callerRF.af.frameSize = 176 := hs.2.2.2.2.2.2.2.1
   change frameWG 0x240 RC.fr.intBase RC.fr.size callerRF.af GL sC0 a at h
   unfold frameWG frameW frameF StackBelow at h
-  rw [e, hfs, show frameDrop callerRF.af = 256 from hs.2.1] at h
+  rw [e, hfs, show frameDrop callerRF.af = 192 from hs.2.1] at h
   rcases h with ((⟨h1, h2⟩ | ⟨h1, h2⟩ | hc) | ⟨h1, h2⟩) | hG
   · generalize RC.fr.size = n at hsz h2
     bv_omega

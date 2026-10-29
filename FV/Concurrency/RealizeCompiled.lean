@@ -231,7 +231,7 @@ theorem thread_full_of_simR {env : Clif.Env} {p : Clif.Program} {RA : RL} {cs : 
     hMRw, hX, hMem, hMRs, hreg, hprep, halloc, hB0, hcall, hfunc, hslots, hbody, hterm, hregs, hty,
     hsig, hmr, hargs, hq, hA⟩ := hfront
   obtain ⟨nA, trM, cE, ψA, hnA, hs, hAr, hendQ⟩ :=
-    refines_of_itemSimQ hsim hr (show RelQ RA (s, mon) _ from ⟨hq, hA⟩)
+    refines_of_itemSimQ hsim hr (RelQ.of (t := (s, mon)) hq hA)
   have hend : nA = ls.length ∨ (Done RA cE ∧ ∃ t, RelQ RA t cE) :=
     hendQ.imp_right fun ⟨tE, _, hRE, hDE⟩ => ⟨hDE, tE, hRE⟩
   obtain ⟨k, trS, t, ψ, hk, hrun, href, hendk, hretk⟩ :=

@@ -147,13 +147,13 @@ theorem realizes_allC0 {R : RL} (hR : R.Wf) {P : Arm.ArmState → Prop}
         R.vc.TrySite R.gv)
     (hTls : R.vc.hasTls = true → TlsOk R.F R.K R.X R.H)
     (hcov : FormsCovered R.ctx R.vc) :
-    RealizesCP0 R.vc R.rf R.sem ckeep R.step (fun s c => Q R s c ∧ AInv R c)
+    RealizesCP0 R.vc R.rf R.sem ckeep R.step (QA R)
       (fun u => R.GoodX u ∧ (R.CallSt u → spOf u = R.spB)) R.CallSt P := by
   intro s c c' hqa hP h
   obtain ⟨n, c'', hm, hq', ht, hcnt⟩ := realizes_allC_sp hR hC hT hTls hcov s c c' hqa hP h
   have hsp : spOf s = R.spB := by
     cases c with
-    | run st => obtain ⟨b, its, m, w⟩ := st; exact (q_stRel hqa.1).sp
+    | run st => obtain ⟨b, its, m, w⟩ := st; obtain ⟨mt, hq⟩ := qa_q hqa; exact (q_stRel hq).sp
     | _ => cases h
   have hstart : ∀ i < n, R.CallSt (iterN R.step i s) → i = 0 := by
     intro i hi hci
@@ -165,7 +165,8 @@ theorem realizes_allC0 {R : RL} (hR : R.Wf) {P : Arm.ArmState → Prop}
       omega
     rw [hcnt] at h1
     obtain ⟨b, k, allocs, its, m, w, vb, ins, rfl, hvb, hi', hcI⟩ := opCalls_pos (vc := R.vc) h1
-    have hcs := RL.callSt_of_q_call hqa.1 hvb hi' hcI
+    have hcs := RL.callSt_of_q_call
+      (qa_op hqa hvb hi' (fun us e => by subst e; simp [MInst.isCallI] at hcI)).1 hvb hi' hcI
     have h2 := countIn_two_le hcs (Nat.pos_of_ne_zero hne) hi hci
     rw [hcnt] at h2
     simp [opCalls, hvb, hi', hcI] at h2

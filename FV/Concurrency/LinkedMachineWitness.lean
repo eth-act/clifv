@@ -90,18 +90,18 @@ theorem H_ld (s : ArmState) : link2.H.call (some "ld") s = enterL s := by
   rw [Link.H_call_some find_ld]
   rfl
 
-/-- The caller's line 24 is `bl ld` (as a check). -/
+/-- The caller's line 15 is `bl ld` (as a check). -/
 def blB : Bool :=
-  match ((act vcpC rfC).fa.lines.toList[24]? : Option Line) with
+  match ((act vcpC rfC).fa.lines.toList[15]? : Option Line) with
   | some (Line.ins (Insn.bl n) none) => n == "ld"
   | _ => false
 
 theorem blB_eq : blB = true := by native_decide
 
-theorem blC : callerF.fa.lines.toList[24]? = some (.ins (.bl "ld") none) := by
+theorem blC : callerF.fa.lines.toList[15]? = some (.ins (.bl "ld") none) := by
   have h := blB_eq
   unfold blB at h
-  show (act vcpC rfC).fa.lines.toList[24]? = _
+  show (act vcpC rfC).fa.lines.toList[15]? = _
   split at h
   · rename_i n hn
     simp only [beq_iff_eq] at h
@@ -111,7 +111,7 @@ theorem blC : callerF.fa.lines.toList[24]? = some (.ins (.bl "ld") none) := by
 
 /-- **The caller's `bl ld` enters the compiled `atomic_load`** (`Link.M_bl`). -/
 theorem M_blC {s : ArmState} (hs : s.program = RC.fb.program RC.base)
-    (hpc : Arm.r .PC s = RC.pcOf 24) : link2.M s = enterL s :=
+    (hpc : Arm.r .PC s = RC.pcOf 15) : link2.M s = enterL s :=
   Link.M_bl ok2 mem_caller blC hs hpc find_ld
 
 /-- **The callee's `ret` into the caller's code** switches back to the caller's program

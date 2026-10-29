@@ -49,12 +49,12 @@ theorem codeIn_RAX : CodeIn linkX RAX := by
       cases k with
       | zero => simpa using hk'
       | succ k => simp at hk'
-    have e : idF.base + BitVec.ofNat 64 (4 * 0) = ldF.base + BitVec.ofNat 64 (4 * 46) := by
+    have e : idF.base + BitVec.ofNat 64 (4 * 0) = ldF.base + BitVec.ofNat 64 (4 * 28) := by
       decide
     rw [e]
     rcases codeIn_RA5 "ld" ldF (.head _) with ⟨-, hb⟩ | h
     · exact absurd hb (by decide)
-    · exact h 46 _ checksX.2.2.2.1
+    · exact h 28 _ checksX.2.2.2.1
   · exact .inl ⟨rfl, rfl⟩
 
 theorem body_RAX : BodyEntryW RAX.F RAX.vc.EntryArg RAX.af RAX.s0 w₀C := body_RA5

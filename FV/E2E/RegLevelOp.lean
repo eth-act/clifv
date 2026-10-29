@@ -98,34 +98,29 @@ theorem locVal_frame_keep {fr : RAFrame} {D : Loc → Prop} {T : Prop} {sp0 : Bi
     rw [locVal_frame_eq ho, locVal_frame_eq ho, hK.1]
     have hr : ∀ n, n ≤ slotBytes l → Arm.read_mem_bytes n (spOf s + BitVec.ofNat 64 o) s' =
         Arm.read_mem_bytes n (spOf s + BitVec.ofNat 64 o) s := fun n hn =>
-      read_mem_bytes_congr n _ (fun k hk => hK.2 _ (by rw [hsp]; exact hfr.inF l o hD ho k (by omega)))
+      read_mem_bytes_congr n _ (fun k hk => hK.2.1 _ (by rw [hsp]; exact hfr.inF l o hD ho k (by omega)))
     rcases slotBytes_cases l with h | h
     · rw [if_pos h, if_pos h, hr 8 (by omega)]
     · rw [if_neg (by omega), if_neg (by omega), hr 16 (by omega)]
 
-/-- The fp/lr slot lies in the frame addresses. -/
+/-- The fp/lr slot and the clobber area lie in the frame addresses. -/
 theorem fplr_inF {R : RL} (hR : R.Wf) (hframe : R.af.frame = true) :
-    ∀ k < 16, R.FK (spv R.s0 - 16#64 + BitVec.ofNat 64 k) := by
-  obtain ⟨⟨hfs, -⟩, -⟩ := lowerRFunc_ok hR.alloc
-  have hst := hR.stack.frame.1
-  have hd : frameDrop R.af = R.fr.total + 16 := by
-    simp only [frameDrop, hframe, ite_true, hfs, RL.fr]
+    ∀ k < R.topN, R.FK (R.topB + BitVec.ofNat 64 k) := by
+  obtain ⟨-, hfs, -, -, -, hcb, -, hst, hd⟩ := RL.frame_facts hR
   intro k hk
   refine .inl ?_
-  simp only [frameF, hd]
-  rw [hfs] at hst
-  simp only [RL.fr] at *
-  have hm : (R.fr.total + 16) % 2 ^ 64 = R.fr.total + 16 := Nat.mod_eq_of_lt (by simp [RL.fr]; omega)
-  have e : (spv R.s0 - 16#64 + BitVec.ofNat 64 k -
-      (spv R.s0 - BitVec.ofNat 64 ((RAFrame.compute R.vc R.rf).total + 16))).toNat =
-      (RAFrame.compute R.vc R.rf).total + k := by
-    have : spv R.s0 - 16#64 + BitVec.ofNat 64 k - (spv R.s0 - BitVec.ofNat 64 ((RAFrame.compute R.vc R.rf).total + 16))
-        = BitVec.ofNat 64 ((RAFrame.compute R.vc R.rf).total + k) := by
+  simp only [frameF, hd, RL.topB, RL.topN] at hk ⊢
+  have hm : (R.fr.total + 16) % 2 ^ 64 = R.fr.total + 16 := Nat.mod_eq_of_lt (by omega)
+  have e : (spv R.s0 - BitVec.ofNat 64 (16 + clobberBytes R.af.saves) + BitVec.ofNat 64 k -
+      (spv R.s0 - BitVec.ofNat 64 (R.fr.total + 16))).toNat =
+      R.fr.total - clobberBytes R.af.saves + k := by
+    have : spv R.s0 - BitVec.ofNat 64 (16 + clobberBytes R.af.saves) + BitVec.ofNat 64 k -
+        (spv R.s0 - BitVec.ofNat 64 (R.fr.total + 16)) =
+        BitVec.ofNat 64 (R.fr.total - clobberBytes R.af.saves + k) := by
       apply BitVec.eq_of_toNat_eq
       have := (spv R.s0).isLt
       simp only [BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_ofNat]
-      simp only [RL.fr] at hm
-      rw [hm, Nat.mod_eq_of_lt (a := k) (by omega)]
+      rw [hm, Nat.mod_eq_of_lt (a := k) (by omega), Nat.mod_eq_of_lt (a := 16 + clobberBytes R.af.saves) (by omega)]
       omega
     rw [this, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
   rw [e, hfs]
@@ -318,8 +313,8 @@ theorem realizes_op_coreX {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {a
     have herr' : Arm.r .ERR s' = .None := by
       rw [hW.1 .ERR (by simp [Masked]), hW'.1]
     refine ⟨fun l hl hL => ?_, hW, herr', ?_, hsp', align_of_sp (by rw [hsp', hst.sp]) hst.align,
-      fun hframe => ?_, code_keep hR.prog0 hst.code fun a ha => hK.2 a (.inl (.inr (.inr ha))),
-      fun a ha => (hK.2 a (.inr ha)).trans (hst.gkeep a ha)⟩
+      fun hframe => ?_, code_keep hR.prog0 hst.code fun a ha => hK.2.1 a (.inl (.inr (.inr ha))),
+      fun a ha => (hK.2.1 a (.inr ha)).trans (hst.gkeep a ha), fun hf => hK.2.2.trans (hst.fp hf)⟩
     · cases l with
       | reg r => exact hr2 r (hl r rfl)
       | stack k' c =>
@@ -330,7 +325,7 @@ theorem realizes_op_coreX {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {a
           locVal_frame_keep hfr hst.sp hK hL (fun r h => by cases h)]
     · rw [hW.2.2, hW'.2, ← hst.world.2.2, hst.prog]
     · rw [← hst.fplr hframe]
-      exact read_mem_bytes_congr _ _ (fun k hk => hK.2 _ (fplr_inF hR hframe k hk))
+      exact read_mem_bytes_congr _ _ (fun k hk => hK.2.1 _ (fplr_inF hR hframe k hk))
 
 /-- Straight-line lines (`LinesOk`) run on the machine as `execMInst` runs them. -/
 theorem runsAs_of_linesOk {R : RL} (hR : R.Wf) {i' : MInst} {ls1 : List Line}

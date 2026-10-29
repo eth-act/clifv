@@ -28,7 +28,8 @@
 # --lean-link --verified on examples/fv-demo and examples/survey, and on examples/deps (its own
 # gate line; skipped by `loop` when no DEPSPATHS path changed since the last green run: #691,
 # #734) (cargo fv's per-executable binary check runs `cargo fv link-proof` + `lake exe
-# link-check` on every test executable).
+# link-check` on every test executable), and plain examples/compare.sh on
+# examples/bigframe-unwind (#479: unwinding through a > 32 KiB Lean frame).
 #
 # Budgets (128 GB machine, docs/TO-PROVE.md §7): scheduler GATE_BUDGET (32G), module caps up to
 # GATE_MAX_CAP (28G), single memcapped commands GATE_CAP (28G).
@@ -134,6 +135,13 @@ run_gate() { # LOGDIR CLIF DEPS; cwd: the worktree root
   else
     echo "cargo fv --lean-link --verified deps: skipped (no DEPSPATHS path changed since the last green run)"
   fi
+  # #479: a panic unwinding through a Lean-compiled frame larger than 32 KiB (plain `cargo fv`:
+  # the big function is outside the verified subset, so --verified would keep cg_clif's code)
+  rm -rf examples/bigframe-unwind/target/fv
+  env PATH="$W/rust/target/release:$PATH" FV_ROOT="$W" FV_CG_CLIF="$CG" FV_MEMCAP=12G scripts/memcap.sh \
+    examples/compare.sh examples/bigframe-unwind > "$L/native_bigframe-unwind.log" 2>&1
+  r=$?; echo "cargo fv bigframe-unwind rc=$r: $(grep -E '^SAME|DIFFERENT' "$L/native_bigframe-unwind.log" | tr '\n' ' ')"
+  { [ $r = 0 ] && grep -q '^SAME' "$L/native_bigframe-unwind.log"; } || fail=1
   echo "end $(date -Is) RESULT=$([ $fail = 0 ] && echo GREEN || echo RED)"
   } > "$L/summary.log" 2>&1
   return $fail

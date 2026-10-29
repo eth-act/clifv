@@ -103,6 +103,14 @@ macro_rules
     try have e1' := ne31_of' hn1.1
     try have e2' := ne31_of' hn2.1
     try have e3' := ne31_of' hn3.1
+    try have g0 := ne29_of hn0.1
+    try have g1 := ne29_of hn1.1
+    try have g2 := ne29_of hn2.1
+    try have g3 := ne29_of hn3.1
+    try have g0' := ne29_of' hn0.1
+    try have g1' := ne29_of' hn1.1
+    try have g2' := ne29_of' hn2.1
+    try have g3' := ne29_of' hn3.1
     try have l0 := le30_of hn0.1
     try have l1 := le30_of hn1.1
     try have l2 := le30_of hn2.1
@@ -125,11 +133,12 @@ macro_rules
     all_goals (
       refine ⟨_, rfl, ?_, ?_, ?_, ?_⟩
       · sw_tac
-      · refine ⟨?_, fun a _ => ?_⟩
+      · refine ⟨?_, fun a _ => ?_, ?_⟩
         · simp (config := {decide := true}) [csimp_rules, *]
         · first
             | (simp [csimp_rules, Arm.ArmState.mem_w_eq_mem, *]; done)
             | ((repeat' split) <;> simp [csimp_rules, Arm.ArmState.mem_w_eq_mem, *])
+        · simp (config := {decide := true}) [csimp_rules, *]
       · veq_tac
       · intro r hr hnd
         rcases allocatable_cases hr with ⟨k, rfl, hk⟩|⟨k, rfl, hk⟩

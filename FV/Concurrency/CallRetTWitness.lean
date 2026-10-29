@@ -17,11 +17,11 @@ open Arm ArmThread Backend Backend.Proof E2E ArmAllocThread CallRetsEnd CallSeg.
 
 theorem ret_T_ld {s0 : ArmState} {env : Clif.Env} {p : Clif.Program} {MR : MemRelT}
     {slots : List (Clif.SlotId × Nat)} {r₀ : Reg → CV} {x : ArmState} {s' : Clif.State}
-    (hRB : (link2.act ldF s0 0 RC.F).Wf) (hent : AbiCall ldF.fb ldF.base (RC.pcOf 24 + 4#64) s0)
-    (hret : RetEnd (link2.act ldF s0 0 RC.F) (RC.pcOf 24 + 4#64) env p MR slots r₀ x s')
+    (hRB : (link2.act ldF s0 0 RC.F).Wf) (hent : AbiCall ldF.fb ldF.base (RC.pcOf 15 + 4#64) s0)
+    (hret : RetEnd (link2.act ldF s0 0 RC.F) (RC.pcOf 15 + 4#64) env p MR slots r₀ x s')
     (hat : AtRetS s') (hcall : s'.callers = []) :
     ∃ n vals cm, 0 < n ∧ Clif.step env p s' = .done vals cm ∧
-      RetC (link2.act ldF s0 0 RC.F) (RC.pcOf 24 + 4#64) r₀
+      RetC (link2.act ldF s0 0 RC.F) (RC.pcOf 15 + 4#64) r₀
         (iterN (link2.act ldF s0 0 RC.F).step n x) := by
   obtain ⟨n, vals, cm, hn, hd, hRC, -⟩ := realizedT_ret (Bnd := fun _ => True) ok2 (nB := "ld")
     (by simp [link2]) hRB hent ra_out (nA := "f") (by simp [link2]) ra_in hret hat hcall

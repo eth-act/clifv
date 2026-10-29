@@ -97,7 +97,7 @@ theorem words_pos_of {vcp : VCode} {rf : RFunc} {af : AFunc} {k : Nat} {fa : FnA
     · simp only [Backend.nxtOf] at hm
       split at hm <;> simp at hm
   rw [List.append_assoc, ftR_plain_append _ _ _ (fun ln h => by
-    obtain ⟨_, _, _, hp⟩ := Backend.Proof.prologueLines_ins _ ln h; exact hp) hZ] at hdrop
+    obtain ⟨_, _, _, hp⟩ := Backend.Proof.prologueLines_ins _ _ ln h; exact hp) hZ] at hdrop
   have hmem : Line.ins (.stp Reg.fp Reg.lr (.spPreIndexed (-16))) ∈ fa.lines.toList := by
     apply List.mem_of_mem_drop (i := j0 + 1)
     rw [hdrop]

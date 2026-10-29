@@ -11,9 +11,10 @@ On the `%rec` executables of `FV/Link/ExeUnwindWitness.lean` (`compileExeU`) and
   executable and `%rec` (open: the premises about the base environment, the entry and the
   per-state facts `RunOkU`); `opt_exec_applies`: `compileExeOpt_correct_unwind_exec_peak_of_good`
   at the optimising compiler's executable;
-* **the frame walk computed on the file**: at `%rec`'s self-call (offset 224, return address
-  `base + 228`), libunwind's lookup in the written executable gives `%rec`'s tables, `%rec` has no
-  LSDA (Rust's personality continues), and its row at the call has a CFA rule (`sp + 272`), so the
+* **the frame walk computed on the file**: at `%rec`'s self-call (offset 152, return address
+  `base + 156`), libunwind's lookup in the written executable gives `%rec`'s tables, `%rec` has no
+  LSDA (Rust's personality continues), and its row at the call has a CFA rule (`x29 + 16`,
+  Cranelift's frame), so the
   frame of every state is unwound by its row (`frame_continues`) and phase 2 of that frame on the
   file is the model's (`frame_eq`: `Unw.unwindAt` with `%rec`'s tables at its address, the
   exception object in x0 over the restored frame); a frame whose restored return address is
@@ -88,20 +89,20 @@ theorem opt_exec_applies (B : BaseEnv) (hB : BaseOk (sys OptUnwindWitness.specO.
 /-- `%rec`'s address. -/
 theorem base_eq : (art spec.inputCleanup f).base = 0x1000000#64 := by native_decide
 
-/-- The return address of `%rec`'s self-call (its `bl` at offset 224). -/
-def ra : BitVec 64 := 0x10000e4#64
+/-- The return address of `%rec`'s self-call (its `bl` at offset 152). -/
+def ra : BitVec 64 := 0x100009c#64
 
 theorem lsda_none : (art spec.inputCleanup f).tables.lsda = none := by
   have hs : callSites (art spec.inputCleanup f).af (art spec.inputCleanup f).fa = .ok none := by
     native_decide
   simp [Art.tables, hs, Except.toOption]
 
-/-- The row of `%rec`'s frame at its self-call: CFA = `sp + 272`. -/
+/-- The row of `%rec`'s frame at its self-call: CFA = `x29 + 16`. -/
 theorem row_cfa :
-    (Unw.rowAt (art spec.inputCleanup f).tables.cie (art spec.inputCleanup f).tables.fde 227).cfaReg
-      = 31 := by
+    (Unw.rowAt (art spec.inputCleanup f).tables.cie (art spec.inputCleanup f).tables.fde 155).cfaReg
+      = 29 := by
   have hr : ((unwindRows (art spec.inputCleanup f).af (art spec.inputCleanup f).fa).toOption.map
-      fun rows => (Unw.rowAt cieInsns (insnsFrom 0 rows) 227).cfaReg) = some 31 := by
+      fun rows => (Unw.rowAt cieInsns (insnsFrom 0 rows) 155).cfaReg) = some 29 := by
     native_decide
   cases hu : unwindRows (art spec.inputCleanup f).af (art spec.inputCleanup f).fa with
   | error e => rw [hu] at hr; simp [Except.toOption] at hr
@@ -116,15 +117,15 @@ theorem lookup_ra : EhCheck.unwTables file (ra - 1).toNat =
   tables (by rw [base_eq]; decide) (by
     have := size_pos
     rw [base_eq]
-    show 16777443 < 16777216 + (art spec.inputCleanup f).fb.size
-    have : 228 ≤ (art spec.inputCleanup f).fb.size := by native_decide
+    show 16777371 < 16777216 + (art spec.inputCleanup f).fb.size
+    have : 156 ≤ (art spec.inputCleanup f).fb.size := by native_decide
     omega)
 
 /-- **The frame of `%rec`'s self-call is unwound by its row** in every state: the file's lookup
 gives `%rec`'s tables, the personality continues (no LSDA), the row has a CFA rule. -/
 theorem frame_continues (t : Arm.ArmState) : Continues file ra t := by
   refine ⟨_, _, lookup_ra, by rw [lsda_none]; rfl, ?_⟩
-  have e : (ra - 4 + 4 - 1 - BitVec.ofNat 64 (art spec.inputCleanup f).base.toNat).toNat = 227 := by
+  have e : (ra - 4 + 4 - 1 - BitVec.ofNat 64 (art spec.inputCleanup f).base.toNat).toNat = 155 := by
     rw [base_eq]; decide
   rw [e]
   simp only [Unw.restore, Unw.Row.cfa?, Unw.regVal?, row_cfa]
@@ -136,25 +137,25 @@ restored by the row. -/
 theorem frame_eq (obj : BitVec 64) (t : Arm.ArmState) :
     unwFrame file ra obj t =
       Unw.unwindAt (art spec.inputCleanup f).tables (art spec.inputCleanup f).base
-        ((art spec.inputCleanup f).base + 224#64) obj t ∧
+        ((art spec.inputCleanup f).base + 152#64) obj t ∧
     ∃ t', Unw.restore (Unw.rowAt (art spec.inputCleanup f).tables.cie
-        (art spec.inputCleanup f).tables.fde 227) t = some t' ∧
+        (art spec.inputCleanup f).tables.fde 155) t = some t' ∧
       unwFrame file ra obj t = Arm.w (.GPR 0#5) obj t' := by
   have e1 : BitVec.ofNat 64 (art spec.inputCleanup f).base.toNat = (art spec.inputCleanup f).base := by
     simp
-  have e2 : ra - 4 = (art spec.inputCleanup f).base + 224#64 := by rw [base_eq]; decide
+  have e2 : ra - 4 = (art spec.inputCleanup f).base + 152#64 := by rw [base_eq]; decide
   have h1 : unwFrame file ra obj t =
       Unw.unwindAt (art spec.inputCleanup f).tables (art spec.inputCleanup f).base
-        ((art spec.inputCleanup f).base + 224#64) obj t := by
+        ((art spec.inputCleanup f).base + 152#64) obj t := by
     simp only [unwFrame, lookup_ra, e1, e2]
   refine ⟨h1, ?_⟩
   obtain ⟨_, _, hl, -, hr⟩ := frame_continues t
   rw [lookup_ra] at hl
   simp only [Option.some.injEq, Prod.mk.injEq] at hl
   obtain ⟨rfl, rfl⟩ := hl
-  have e3 : ((art spec.inputCleanup f).base + 224#64 + 4 - 1 - (art spec.inputCleanup f).base).toNat =
-      227 := by rw [base_eq]; decide
-  have e4 : (ra - 4 + 4 - 1 - BitVec.ofNat 64 (art spec.inputCleanup f).base.toNat).toNat = 227 := by
+  have e3 : ((art spec.inputCleanup f).base + 152#64 + 4 - 1 - (art spec.inputCleanup f).base).toNat =
+      155 := by rw [base_eq]; decide
+  have e4 : (ra - 4 + 4 - 1 - BitVec.ofNat 64 (art spec.inputCleanup f).base.toNat).toNat = 155 := by
     rw [base_eq]; decide
   rw [e4] at hr
   obtain ⟨t', ht'⟩ := Option.isSome_iff_exists.1 hr

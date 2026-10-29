@@ -72,24 +72,24 @@ theorem RL.twoRunCTNP {R : RL} {t0 : Arm.ArmState} {G' : BitVec 64 → Prop} {XI
       Lk c c' i u u' → Lk c c' (i + 1) (({ R with X := XI.at 0 } : RL).step u)
         (({ R with s0 := t0, G := G', X := XI'.at 0 } : RL).step u'))
     (hend : ∀ c c' d d' i u u', K c c' → K d d' → MConf.ShapeEq d d' →
-      (∃ W : Nat × PState × List Line, QW R u W.1 W.2.1 W.2.2 d ∧
-        QW ({ R with s0 := t0, G := G' } : RL) u' W.1 W.2.1 W.2.2 d') →
+      (∃ W : Nat × PState × List Line, QWA R u W.1 W.2.1 W.2.2 d ∧
+        QWA ({ R with s0 := t0, G := G' } : RL) u' W.1 W.2.1 W.2.2 d') →
       Lk c c' i u u' → LB d d' u u')
     {PI : VConf CV (Arm.ArmState × Nat) → VConf CV (Arm.ArmState × Nat) → Prop}
     (hK : ∀ e e' x x',
       Match cc ins ckeep (fun r => locVal R.fr (iterN ({ R with X := XI.at 0 } : RL).step
-        (prologueLines R.af.frameSize).length R.s0) (.reg r)) e x →
+        (prologueLines R.af.saves R.af.frameSize).length R.s0) (.reg r)) e x →
       Match cc ins ckeep (fun r => locVal R.fr (iterN ({ R with s0 := t0, G := G', X := XI'.at 0 } :
-        RL).step (prologueLines R.af.frameSize).length t0) (.reg r)) e' x' →
+        RL).step (prologueLines R.af.saves R.af.frameSize).length t0) (.reg r)) e' x' →
       PI x x' → K (e.mapW Prod.fst) (e'.mapW Prod.fst))
     (hpro : LB
       (MConf.init R.rf (locVal R.fr (iterN ({ R with X := XI.at 0 } : RL).step
-        (prologueLines R.af.frameSize).length R.s0)) w₀)
+        (prologueLines R.af.saves R.af.frameSize).length R.s0)) w₀)
       (MConf.init R.rf (locVal R.fr (iterN ({ R with s0 := t0, G := G', X := XI'.at 0 } : RL).step
-        (prologueLines R.af.frameSize).length t0)) w₀')
-      (iterN ({ R with X := XI.at 0 } : RL).step (prologueLines R.af.frameSize).length R.s0)
+        (prologueLines R.af.saves R.af.frameSize).length t0)) w₀')
+      (iterN ({ R with X := XI.at 0 } : RL).step (prologueLines R.af.saves R.af.frameSize).length R.s0)
       (iterN ({ R with s0 := t0, G := G', X := XI'.at 0 } : RL).step
-        (prologueLines R.af.frameSize).length t0))
+        (prologueLines R.af.saves R.af.frameSize).length t0))
     {x x' y : VConf CV (Arm.ArmState × Nat)}
     (hp : Star (PStep R.vc (csemVIGS R.gv R.F R.ctx XI OkG)
       (csemVIGS R.gv ({ R with s0 := t0, G := G' } : RL).F R.ctx XI' OkG') PI)
@@ -98,28 +98,28 @@ theorem RL.twoRunCTNP {R : RL} {t0 : Arm.ArmState} {G' : BitVec 64 → Prop} {XI
     {XB : ExtSemI} {OkB : Arm.ArmState → (BitVec 64 → Prop) → Prop}
     (hy : VStep R.vc (csemVIGS R.gv R.F R.ctx XB OkB) x y) :
     ∃ N b k a its m w ρ a' its' m' w' ρ' nc nc',
-      (∀ i < (prologueLines R.af.frameSize).length,
+      (∀ i < (prologueLines R.af.saves R.af.frameSize).length,
         ({ R with X := XI.at 0 } : RL).GoodXNY (fun _ => True)
           (iterN ({ R with X := XI.at 0 } : RL).step i R.s0) ∧
         ({ R with s0 := t0, G := G', X := XI'.at 0 } : RL).GoodXNY (fun _ => True)
           (iterN ({ R with s0 := t0, G := G', X := XI'.at 0 } : RL).step i t0)) ∧
       (∀ i < N, (∃ c c' j, Lk c c' j
-        (iterN ({ R with X := XI.at 0 } : RL).step ((prologueLines R.af.frameSize).length + i) R.s0)
+        (iterN ({ R with X := XI.at 0 } : RL).step ((prologueLines R.af.saves R.af.frameSize).length + i) R.s0)
         (iterN ({ R with s0 := t0, G := G', X := XI'.at 0 } : RL).step
-          ((prologueLines R.af.frameSize).length + i) t0)) ∧
+          ((prologueLines R.af.saves R.af.frameSize).length + i) t0)) ∧
         R.Good (iterN ({ R with X := XI.at 0 } : RL).step
-          ((prologueLines R.af.frameSize).length + i) R.s0) ∧
+          ((prologueLines R.af.saves R.af.frameSize).length + i) R.s0) ∧
         ({ R with s0 := t0, G := G' } : RL).Good (iterN ({ R with s0 := t0, G := G', X := XI'.at 0 } :
-          RL).step ((prologueLines R.af.frameSize).length + i) t0)) ∧
+          RL).step ((prologueLines R.af.saves R.af.frameSize).length + i) t0)) ∧
       JR R ({ R with s0 := t0, G := G' } : RL) K LB
-        (iterN ({ R with X := XI.at 0 } : RL).step ((prologueLines R.af.frameSize).length + N) R.s0)
+        (iterN ({ R with X := XI.at 0 } : RL).step ((prologueLines R.af.saves R.af.frameSize).length + N) R.s0)
         (.run ⟨b, .op k a :: its, m, w⟩)
         (iterN ({ R with s0 := t0, G := G', X := XI'.at 0 } : RL).step
-          ((prologueLines R.af.frameSize).length + N) t0) (.run ⟨b, .op k a' :: its', m', w'⟩) ∧
+          ((prologueLines R.af.saves R.af.frameSize).length + N) t0) (.run ⟨b, .op k a' :: its', m', w'⟩) ∧
       countIn (RL.CallSt R) ({ R with X := XI.at 0 } : RL).step R.s0
-        ((prologueLines R.af.frameSize).length + N) = nc ∧
+        ((prologueLines R.af.saves R.af.frameSize).length + N) = nc ∧
       countIn (RL.CallSt R) ({ R with s0 := t0, G := G', X := XI'.at 0 } : RL).step t0
-        ((prologueLines R.af.frameSize).length + N) = nc' ∧
+        ((prologueLines R.af.saves R.af.frameSize).length + N) = nc' ∧
       x = .run ⟨b, k, ρ, (w, nc)⟩ ∧ x' = .run ⟨b, k, ρ', (w', nc')⟩ := by
   let R0 : RL := { R with X := XI.at 0 }
   let R0' : RL := { R with s0 := t0, G := G', X := XI'.at 0 }
@@ -129,32 +129,42 @@ theorem RL.twoRunCTNP {R : RL} {t0 : Arm.ArmState} {G' : BitVec 64 → Prop} {XI
   obtain ⟨n0, hn0, ht0, hq0, hA0, -⟩ := q_initNA (R := R0) (Y := fun _ => True) hR0 hent hbe
   obtain ⟨n0', hn0', ht0', hq0', hA0', -⟩ :=
     q_initNA (R := R0') (Y := fun _ => True) hR0' hent' hbe'
-  have e0 : n0 = (prologueLines R.af.frameSize).length := hn0
-  have e0' : n0' = (prologueLines R.af.frameSize).length := hn0'
+  have e0 : n0 = (prologueLines R.af.saves R.af.frameSize).length := hn0
+  have e0' : n0' = (prologueLines R.af.saves R.af.frameSize).length := hn0'
   subst e0 e0'
-  let s₁ := iterN R0.step (prologueLines R.af.frameSize).length R.s0
-  let s₁' := iterN R0'.step (prologueLines R.af.frameSize).length t0
+  let s₁ := iterN R0.step (prologueLines R.af.saves R.af.frameSize).length R.s0
+  let s₁' := iterN R0'.step (prologueLines R.af.saves R.af.frameSize).length t0
   obtain ⟨hSim, hinit⟩ := isSimulationS_match (sem := csemVIGS R.gv R.F R.ctx XI OkG)
     (keep := ckeep) hcheck (locVal R.fr s₁) ρ₀ (w₀, 0) (hsel _)
   obtain ⟨hSim', hinit'⟩ := isSimulationS_match (sem := csemVIGS R.gv R''.F R.ctx XI' OkG')
     (keep := ckeep) hcheck (locVal R.fr s₁') ρ₀ (w₀', 0) (hsel _)
   obtain ⟨hSimB, -⟩ := isSimulationS_match (sem := csemVIGS R.gv R.F R.ctx XB OkB)
     (keep := ckeep) hcheck (locVal R.fr s₁) ρ₀ (w₀, 0) (hsel _)
-  have hP0 : countIn (RL.CallSt R) R0.step R.s0 (prologueLines R.af.frameSize).length = 0 :=
+  have hP0 : countIn (RL.CallSt R) R0.step R.s0 (prologueLines R.af.saves R.af.frameSize).length = 0 :=
     countIn_zero_of fun i hi => (ht0 i hi).1.2
-  have hP0' : countIn (RL.CallSt R) R0'.step t0 (prologueLines R.af.frameSize).length = 0 :=
+  have hP0' : countIn (RL.CallSt R) R0'.step t0 (prologueLines R.af.saves R.af.frameSize).length = 0 :=
     countIn_zero_of fun i hi => (ht0' i hi).1.2
-  have hJ := RL.realizesJCPTP (R := R) (t0 := t0) (G' := G') (XI := XI) (XI' := XI') hRn hRn'
+  -- the prologue does not read the external semantics
+  have hRw : R.Wf := ⟨hR0.check, hR0.alloc, hR0.emit, hR0.layout, hR0.lm, hR0.fit, hR0.stack,
+    hR0.psF, hR0.prog0, hR0.gfree⟩
+  have hRw'' : R''.Wf := ⟨hR0'.check, hR0'.alloc, hR0'.emit, hR0'.layout, hR0'.lm, hR0'.fit,
+    hR0'.stack, hR0'.psF, hR0'.prog0, hR0'.gfree⟩
+  have hsP : ∀ n, ({ R with X := XI.at n } : RL).sP = R.sP := fun n => RL.sP_withX hRw hent (XI.at n)
+  have hsP' : ∀ n, ({ R with s0 := t0, G := G', X := XI'.at n } : RL).sP = R''.sP :=
+    fun n => RL.sP_withX hRw'' hent' (XI'.at n)
+  have hPX : R0.sP = R.sP := hsP 0
+  have hPX' : R0'.sP = R''.sP := hsP' 0
+  have hJ := RL.realizesJCPTP (R := R) (t0 := t0) (G' := G') (XI := XI) (XI' := XI') hRn hRn' hsP hsP'
     (P := fun n u => OnCall R0.step R.fa R.base R.s0 n u)
     (P' := fun n u => OnCall R0'.step R.fa R.base t0 n u) OkG OkG' hC hT hTls hC' hT' hTls' hcov
     K LB OkS OkS' hG hG' Lk hLpc hstart hstep hend
   have hsc : R0.SameCode R0' := ⟨rfl, rfl, rfl, rfl, rfl, rfl⟩
   have hW : R0'.initW = R0.initW := RL.initW_congr hsc
   have hq1 : QW R s₁ R0.initW.1 R0.initW.2.1 R0.initW.2.2
-      (MConf.init R.rf (locVal R.fr s₁) w₀) := QW.ofWithX (R := R) (X := XI.at 0) hq0
+      (MConf.init R.rf (locVal R.fr s₁) w₀) := QW.ofWithX (R := R) (X := XI.at 0) hPX hq0
   have hq1' : QW R'' s₁' R0.initW.1 R0.initW.2.1 R0.initW.2.2
       (MConf.init R.rf (locVal R.fr s₁') w₀') := by
-    have := QW.ofWithX (R := R'') (X := XI'.at 0) hq0'
+    have := QW.ofWithX (R := R'') (X := XI'.at 0) hPX' hq0'
     rw [hW] at this
     exact this
   obtain ⟨N, b, k, a, its, m, w, a', its', m', w', hjN, hcN, hcN', hrN, hrN', htN⟩ :=
@@ -163,7 +173,7 @@ theorem RL.twoRunCTNP {R : RL} {t0 : Arm.ArmState} {G' : BitVec 64 → Prop} {XI
       (semB := fun n => csemVGS R.gv R.F R.ctx (XB.at n) OkB)
       (s0 := s₁) (s0' := s₁') hJ (onCall_of_run hP0) (onCall_of_run hP0') hSim hSim' hSimB
       (hK := hK) hp hy hpix hinit hinit' hpi0 ⟨rfl, rfl⟩ rfl rfl
-      ⟨⟨R0.initW, hq1, hq1'⟩, hA0, hA0', ⟨rfl, rfl⟩,
+      ⟨⟨R0.initW, .inl ⟨hq1, hA0⟩, .inl ⟨hq1', hA0'⟩⟩, ⟨rfl, rfl⟩,
         hK _ _ _ _ hinit hinit' hpi0, hpro⟩
   obtain ⟨vs, rfl⟩ := hSim.run hrN
   obtain ⟨vs', rfl⟩ := hSim'.run hrN'
@@ -173,9 +183,9 @@ theorem RL.twoRunCTNP {R : RL} {t0 : Arm.ArmState} {G' : BitVec 64 → Prop} {XI
   obtain ⟨b2, k2, ρ2, wx2⟩ := vs'
   dsimp only at hb1 hk1 hw1 hb2 hk2 hw2
   rw [hb1, hk1, hw1, hb2, hk2, hw2]
-  have hs : ∀ j, iterN R0.step ((prologueLines R.af.frameSize).length + j) R.s0 =
+  have hs : ∀ j, iterN R0.step ((prologueLines R.af.saves R.af.frameSize).length + j) R.s0 =
       iterN R0.step j s₁ := fun j => iterN_add ..
-  have hs' : ∀ j, iterN R0'.step ((prologueLines R.af.frameSize).length + j) t0 =
+  have hs' : ∀ j, iterN R0'.step ((prologueLines R.af.saves R.af.frameSize).length + j) t0 =
       iterN R0'.step j s₁' := fun j => iterN_add ..
   refine ⟨N, b, k, a, its, m, w.1, ρ1, a', its', m', w'.1, ρ2, w.2, w'.2,
     fun i hi => ⟨ht0 i hi, ht0' i hi⟩, fun i hi => ?_, ?_, ?_, ?_, rfl, rfl⟩
@@ -225,25 +235,25 @@ theorem RL.twoRunPRTNP {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAsm} {fb 
       Lk c c' i u u' → Lk c c' (i + 1) (({ R with X := XI.at 0 } : RL).step u)
         (({ R with s0 := t0, G := G', X := XI'.at 0 } : RL).step u'))
     (hend : ∀ c c' d d' i u u', KJ c c' → KJ d d' → MConf.ShapeEq d d' →
-      (∃ W : Nat × PState × List Line, QW R u W.1 W.2.1 W.2.2 d ∧
-        QW ({ R with s0 := t0, G := G' } : RL) u' W.1 W.2.1 W.2.2 d') →
+      (∃ W : Nat × PState × List Line, QWA R u W.1 W.2.1 W.2.2 d ∧
+        QWA ({ R with s0 := t0, G := G' } : RL) u' W.1 W.2.1 W.2.2 d') →
       Lk c c' i u u' → LB d d' u u')
     {PI : VConf CV (Arm.ArmState × Nat) → VConf CV (Arm.ArmState × Nat) → Prop}
     (hK : ∀ (ckc : CheckCtx) (ins : Array (Option AState)) (a0 : AState),
       CheckedAt R.vc R.rf ckc ins a0 → ∀ e e' x x',
       Match ckc ins ckeep (fun r => locVal R.fr (iterN ({ R with X := XI.at 0 } : RL).step
-        (prologueLines R.af.frameSize).length R.s0) (.reg r)) e x →
+        (prologueLines R.af.saves R.af.frameSize).length R.s0) (.reg r)) e x →
       Match ckc ins ckeep (fun r => locVal R.fr (iterN ({ R with s0 := t0, G := G', X := XI'.at 0 } :
-        RL).step (prologueLines R.af.frameSize).length t0) (.reg r)) e' x' →
+        RL).step (prologueLines R.af.saves R.af.frameSize).length t0) (.reg r)) e' x' →
       PI x x' → KJ (e.mapW Prod.fst) (e'.mapW Prod.fst))
     (hpro : LB
       (MConf.init R.rf (locVal R.fr (iterN ({ R with X := XI.at 0 } : RL).step
-        (prologueLines R.af.frameSize).length R.s0)) w₀)
+        (prologueLines R.af.saves R.af.frameSize).length R.s0)) w₀)
       (MConf.init R.rf (locVal R.fr (iterN ({ R with s0 := t0, G := G', X := XI'.at 0 } : RL).step
-        (prologueLines R.af.frameSize).length t0)) w₀')
-      (iterN ({ R with X := XI.at 0 } : RL).step (prologueLines R.af.frameSize).length R.s0)
+        (prologueLines R.af.saves R.af.frameSize).length t0)) w₀')
+      (iterN ({ R with X := XI.at 0 } : RL).step (prologueLines R.af.saves R.af.frameSize).length R.s0)
       (iterN ({ R with s0 := t0, G := G', X := XI'.at 0 } : RL).step
-        (prologueLines R.af.frameSize).length t0))
+        (prologueLines R.af.saves R.af.frameSize).length t0))
     {x x' y : VConf CV (Arm.ArmState × Nat)}
     (hp : Star (PStep R.vc (csemVIGS R.gv R.F R.ctx XI OkG)
       (csemVIGS R.gv ({ R with s0 := t0, G := G' } : RL).F R.ctx XI' OkG') PI)
@@ -252,28 +262,28 @@ theorem RL.twoRunPRTNP {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAsm} {fb 
     {XB : ExtSemI} {OkB : Arm.ArmState → (BitVec 64 → Prop) → Prop}
     (hy : VStep R.vc (csemVIGS R.gv R.F R.ctx XB OkB) x y) :
     ∃ N b k a its m w ρ a' its' m' w' ρ' nc nc',
-      (∀ i < (prologueLines R.af.frameSize).length,
+      (∀ i < (prologueLines R.af.saves R.af.frameSize).length,
         ({ R with X := XI.at 0 } : RL).GoodXNY (fun _ => True)
           (iterN ({ R with X := XI.at 0 } : RL).step i R.s0) ∧
         ({ R with s0 := t0, G := G', X := XI'.at 0 } : RL).GoodXNY (fun _ => True)
           (iterN ({ R with s0 := t0, G := G', X := XI'.at 0 } : RL).step i t0)) ∧
       (∀ i < N, (∃ c c' j, Lk c c' j
-        (iterN ({ R with X := XI.at 0 } : RL).step ((prologueLines R.af.frameSize).length + i) R.s0)
+        (iterN ({ R with X := XI.at 0 } : RL).step ((prologueLines R.af.saves R.af.frameSize).length + i) R.s0)
         (iterN ({ R with s0 := t0, G := G', X := XI'.at 0 } : RL).step
-          ((prologueLines R.af.frameSize).length + i) t0)) ∧
+          ((prologueLines R.af.saves R.af.frameSize).length + i) t0)) ∧
         R.Good (iterN ({ R with X := XI.at 0 } : RL).step
-          ((prologueLines R.af.frameSize).length + i) R.s0) ∧
+          ((prologueLines R.af.saves R.af.frameSize).length + i) R.s0) ∧
         ({ R with s0 := t0, G := G' } : RL).Good (iterN ({ R with s0 := t0, G := G', X := XI'.at 0 } :
-          RL).step ((prologueLines R.af.frameSize).length + i) t0)) ∧
+          RL).step ((prologueLines R.af.saves R.af.frameSize).length + i) t0)) ∧
       JR R ({ R with s0 := t0, G := G' } : RL) KJ LB
-        (iterN ({ R with X := XI.at 0 } : RL).step ((prologueLines R.af.frameSize).length + N) R.s0)
+        (iterN ({ R with X := XI.at 0 } : RL).step ((prologueLines R.af.saves R.af.frameSize).length + N) R.s0)
         (.run ⟨b, .op k a :: its, m, w⟩)
         (iterN ({ R with s0 := t0, G := G', X := XI'.at 0 } : RL).step
-          ((prologueLines R.af.frameSize).length + N) t0) (.run ⟨b, .op k a' :: its', m', w'⟩) ∧
+          ((prologueLines R.af.saves R.af.frameSize).length + N) t0) (.run ⟨b, .op k a' :: its', m', w'⟩) ∧
       countIn (RL.CallSt R) ({ R with X := XI.at 0 } : RL).step R.s0
-        ((prologueLines R.af.frameSize).length + N) = nc ∧
+        ((prologueLines R.af.saves R.af.frameSize).length + N) = nc ∧
       countIn (RL.CallSt R) ({ R with s0 := t0, G := G', X := XI'.at 0 } : RL).step t0
-        ((prologueLines R.af.frameSize).length + N) = nc' ∧
+        ((prologueLines R.af.saves R.af.frameSize).length + N) = nc' ∧
       x = .run ⟨b, k, ρ, (w, nc)⟩ ∧ x' = .run ⟨b, k, ρ', (w', nc')⟩ := by
   subst hR
   obtain ⟨-, -, -, -, hk⟩ := emitFunc_ok hemit

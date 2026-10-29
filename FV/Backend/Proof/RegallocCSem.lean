@@ -185,6 +185,16 @@ theorem ne31_of {n : Nat} (h : n < 29) : (BitVec.ofNat 5 n = 31#5) = False := by
   simp only [eq_iff_iff, iff_false]; exact rnum_ne31 h
 theorem ne31_of' {n : Nat} (h : n < 29) : (31#5 = BitVec.ofNat 5 n) = False := by
   simp only [eq_iff_iff, iff_false]; exact fun e => rnum_ne31 h e.symm
+theorem ne29_of {n : Nat} (h : n < 29) : (BitVec.ofNat 5 n = 29#5) = False := by
+  simp only [eq_iff_iff, iff_false]
+  intro e
+  have := (ofNat5_eq_iff (by omega) (by decide : 29 < 32)).1 e
+  omega
+theorem ne29_of' {n : Nat} (h : n < 29) : (29#5 = BitVec.ofNat 5 n) = False := by
+  simp only [eq_iff_iff, iff_false]
+  intro e
+  have := (ofNat5_eq_iff (by decide : 29 < 32) (by omega)).1 e
+  omega
 
 /-! ## Worlds -/
 

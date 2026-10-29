@@ -2738,7 +2738,7 @@ theorem memScopeLS_of_memScopeB {R : RL} (h : MemScopeB R) : MemScopeLS R :=
 /-- **The per-item obligation of the scope with plain loads/stores, with moves**, for `μR`. -/
 theorem itemSim_ls {R : RL} (hR : R.Wf) (hsc : MemScopeLS R) :
     ItemSim Policy.arm R.step (OkPriv R) (SrcStep R) (RelQ R) (Done R) (μR R) (PrivA R) := by
-  rintro ⟨s, mon⟩ c ⟨hq, hA⟩ ls t' hr
+  rintro ⟨s, mon⟩ c hqa ls t' hr
   match c with
   | .ret vals m w => exact .inl (.inl ⟨vals, m, w, rfl⟩)
   | .halt w => exact .inl (.inr (.inl ⟨w, rfl⟩))
@@ -2750,11 +2750,13 @@ theorem itemSim_ls {R : RL} (hR : R.Wf) (hsc : MemScopeLS R) :
   | @move _ src dst its' =>
     have hng : ∀ evs c', SrcStep R (MvC b src dst its' m w) evs c' → SameB (MvC b src dst its' m w) c' :=
       fun evs c' h => sameB_step h fun _ _ _ e => by cases e
-    rcases move_op hR hq hA hr with h | h
+    rcases move_op hR hqa hr with h | h
     · exact .inr (.inl (isOut_μR hng h))
     · exact .inr (.inr (.inr h))
   | @op _ k allocs its' _ _ vb i ops _ _ hvb hi hops hevs hfoot hst =>
     have hs : SrcStep R (OpC b k allocs its' m w) _ _ := .op hvb hi hops hevs hfoot hst
+    rcases RelQ.op' hqa hs with ⟨hq, hA⟩ | ⟨rfl, vals, m', w', rfl⟩
+    case inr => exact .inr (.inl (itemSimOut_retμ hs μR_ret_lt))
     have uniq : ∀ vb' i', R.vc.blocks[b]? = some vb' → vb'.insts[k]? = some i' → i' = i :=
       fun vb' i' h1 h2 => by rw [hvb] at h1; cases h1; rw [hi] at h2; cases h2; rfl
     have hng : ¬ GotoForm i → ∀ evs c', SrcStep R (OpC b k allocs its' m w) evs c' →
@@ -2794,7 +2796,7 @@ theorem arm_alloc_refines_ls {R : RL} (hR : R.Wf) (hsc : MemScopeLS R)
       Refines (· = ·) (PrivA R) (MonPair (evTr (ls.take n))) (PrepThread.conv trS)
         (PrepThread.conv (evTr (ls.take n))) ψ ∧ (n = ls.length ∨ Done R cE) := by
   obtain ⟨n, trS, cE, ψ, hn, hs, href, hend⟩ :=
-    refines_of_itemSim (itemSim_ls hR hsc) hr ⟨hq, hA⟩
+    refines_of_itemSim (itemSim_ls hR hsc) hr (RelQ.of hq hA)
   exact ⟨n, trS, cE, ψ, hn, mtrun_of_srun hs, href, hend⟩
 
 end Concurrency.ArmAllocThread

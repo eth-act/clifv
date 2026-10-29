@@ -123,26 +123,81 @@ theorem csemVI_sub {gv : Nat → String → Prop} {F : BitVec 64 → Prop} {ctx 
 
 /-! ## The register-level theorem -/
 
-/-- `StRel` does not read the external semantics. -/
-theorem StRel.withX {R : RL} {X : ExtSem} {s : Arm.ArmState} {m : Loc → CV} {w : Arm.ArmState}
+/-- **The state after the prologue does not read the external semantics**: the prologue's lines
+are not hooked, and from the ABI entry both machines run them as `execLines` (`iterN_steps`). -/
+theorem RL.sP_withX {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb R.base ra R.s0)
+    (X : ExtSem) : ({ R with X := X } : RL).sP = R.sP := by
+  have hR' : ({ R with X := X } : RL).Wf :=
+    ⟨hR.check, hR.alloc, hR.emit, hR.layout, hR.lm, hR.fit, hR.stack, hR.psF, hR.prog0, hR.gfree⟩
+  obtain ⟨-, hfs, -, hsv, -, hcb, -, -, -⟩ := RL.frame_facts hR
+  have hst0 := hR.stack.frame
+  have hs : R.af.frameSize < 2 ^ 64 := by have := hst0.1; omega
+  obtain ⟨vb, items, code, ls, ps1, ps2, T, hvb, hit, hcode, hls, htr, hj0, hdrop⟩ := entry_block hR
+  obtain ⟨s', hsteps, -⟩ :=
+    prologue_ok (R.envOf 1) hs hsv (by rw [hfs]; exact hcb) R.s0 hent.spAligned
+  have hpc1 : Arm.r .PC R.s0 = R.pcOf 1 := by
+    rw [hent.pc]
+    simp only [RL.pcOf, RL.L] at hj0 ⊢
+    rw [lineOffset_succ _ _ _ hj0]
+    simp [lineOffset, Line.size]
+  have hins : ∀ ln ∈ prologueLines R.af.saves R.af.frameSize,
+      ∃ x, ln = .ins x none ∧ x.hooked = false :=
+    fun ln h => by obtain ⟨x, e, hh, -⟩ := prologueLines_ins _ _ ln h; exact ⟨x, e, hh⟩
+  have h1 := (iterN_steps hR hdrop hins hent.program hpc1 hent.err hsteps).1
+  have h2 := (iterN_steps (R := { R with X := X }) hR' hdrop hins hent.program hpc1 hent.err
+    hsteps).1
+  exact h2.trans h1.symm
+
+/-- `StRel` does not read the external semantics (given the state after the prologue does not,
+`RL.sP_withX`; `StRel.fplr` compares with the prologue's image `R.topImg`). -/
+theorem StRel.withX {R : RL} {X : ExtSem} (hP : ({ R with X := X } : RL).sP = R.sP)
+    {s : Arm.ArmState} {m : Loc → CV} {w : Arm.ArmState}
     (h : StRel R s m w) : StRel { R with X := X } s m w :=
-  ⟨h.store, h.world, h.err, h.prog, h.sp, h.align, h.fplr, h.code, h.gkeep⟩
+  ⟨h.store, h.world, h.err, h.prog, h.sp, h.align, fun hf => by
+    show Arm.read_mem_bytes R.topN R.topB s =
+      Arm.read_mem_bytes R.topN R.topB ({ R with X := X } : RL).sP
+    rw [hP]; exact h.fplr hf, h.code, h.gkeep, h.fp⟩
 
-theorem StRel.ofWithX {R : RL} {X : ExtSem} {s : Arm.ArmState} {m : Loc → CV} {w : Arm.ArmState}
+theorem StRel.ofWithX {R : RL} {X : ExtSem} (hP : ({ R with X := X } : RL).sP = R.sP)
+    {s : Arm.ArmState} {m : Loc → CV} {w : Arm.ArmState}
     (h : StRel { R with X := X } s m w) : StRel R s m w :=
-  ⟨h.store, h.world, h.err, h.prog, h.sp, h.align, h.fplr, h.code, h.gkeep⟩
+  ⟨h.store, h.world, h.err, h.prog, h.sp, h.align, fun hf => by
+    show Arm.read_mem_bytes R.topN R.topB s = Arm.read_mem_bytes R.topN R.topB R.sP
+    rw [← hP]; exact h.fplr hf, h.code, h.gkeep, h.fp⟩
 
-/-- **The simulation relation does not read the external semantics.** -/
-theorem RL.Q_withX (R : RL) (X : ExtSem) (s : Arm.ArmState) (c : MConf CV Arm.ArmState) :
+/-- **The simulation relation does not read the external semantics** (given the state after the
+prologue does not, `RL.sP_withX`). -/
+theorem RL.Q_withX (R : RL) (X : ExtSem) (hP : ({ R with X := X } : RL).sP = R.sP)
+    (s : Arm.ArmState) (c : MConf CV Arm.ArmState) :
     Q { R with X := X } s c ↔ Q R s c := by
   cases c with
   | run vs =>
     obtain ⟨b, its, m, w⟩ := vs
     constructor
     · rintro ⟨j, vb, items, pre, code, ls, ps1, ps2, T, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10⟩
-      exact ⟨j, vb, items, pre, code, ls, ps1, ps2, T, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10.ofWithX⟩
+      exact ⟨j, vb, items, pre, code, ls, ps1, ps2, T, h1, h2, h3, h4, h5, h6, h7, h8, h9,
+        h10.ofWithX hP⟩
     · rintro ⟨j, vb, items, pre, code, ls, ps1, ps2, T, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10⟩
-      exact ⟨j, vb, items, pre, code, ls, ps1, ps2, T, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10.withX⟩
+      exact ⟨j, vb, items, pre, code, ls, ps1, ps2, T, h1, h2, h3, h4, h5, h6, h7, h8, h9,
+        h10.withX hP⟩
+  | ret => exact Iff.rfl
+  | halt => exact Iff.rfl
+
+/-- **`QA` does not read the external semantics** (given the state after the prologue does not,
+`RL.sP_withX`). -/
+theorem RL.QA_withX (R : RL) (X : ExtSem) (hP : ({ R with X := X } : RL).sP = R.sP)
+    (s : Arm.ArmState) (c : MConf CV Arm.ArmState) :
+    QA { R with X := X } s c ↔ QA R s c := by
+  cases c with
+  | run vs =>
+    obtain ⟨b, its, m, w⟩ := vs
+    constructor
+    · rintro (⟨hq, hA⟩ | ⟨mt, D, hq, hm, ht⟩)
+      · exact .inl ⟨(RL.Q_withX R X hP s _).1 hq, hA⟩
+      · exact .inr ⟨mt, D, (RL.Q_withX R X hP s _).1 hq, hm, ht⟩
+    · rintro (⟨hq, hA⟩ | ⟨mt, D, hq, hm, ht⟩)
+      · exact .inl ⟨(RL.Q_withX R X hP s _).2 hq, hA⟩
+      · exact .inr ⟨mt, D, (RL.Q_withX R X hP s _).2 hq, hm, ht⟩
   | ret => exact Iff.rfl
   | halt => exact Iff.rfl
 
@@ -200,11 +255,11 @@ theorem regLevelCorrect_world_atI {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : 
     checkedAt_sound R.vc R.rf (csemVI R.gv R.F R.ctx XI) ckeep hcheck (locVal R.fr (iterN R.step n0 s))
       (ρsel (locVal R.fr (iterN R.step n0 s))) (w₀, 0) (hsel _)
   have hRz : Realizes R.vc R.rf (csemVI R.gv R.F R.ctx XI) ckeep R.step
-      (fun u c => Q R u (c.mapW Prod.fst) ∧ AInv R (c.mapW Prod.fst)) R.Good := by
+      (fun u c => QA R u (c.mapW Prod.fst)) R.Good := by
     refine Realizes.counted (sem := fun n => csemV R.gv R.F R.ctx (XI.at n))
-      (Q := fun u c => Q R u c ∧ AInv R c) fun n => ?_
-    have hq : ∀ u c, Q (Rn n) u c ∧ AInv (Rn n) c ↔ Q R u c ∧ AInv R c := fun u c =>
-      and_congr (RL.Q_withX (Rn n) (XI.at 0) u c).symm Iff.rfl
+      (Q := fun u c => QA R u c) fun n => ?_
+    have hq : ∀ u c, QA (Rn n) u c ↔ QA R u c := fun u c =>
+      (RL.QA_withX (Rn n) (XI.at 0) (RL.sP_withX (hRn n) hent (XI.at 0)) u c).symm
     exact ((realizes_all (hRn n) (hC n) (fun h => hCT h n) (fun h => hTls h n) hcov).mono_T
       (T' := R.Good) fun _ h => h.good).congr_Q hq
   have hfin0 : ∀ n1 n2 n3, E2E.runX (ArmStepX (XI.at 0) H fa) (n0 + n1 + n2 + n3) s =
@@ -213,7 +268,7 @@ theorem regLevelCorrect_world_atI {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : 
   refine ⟨locVal R.fr (iterN R.step n0 s), fun us vals w nc hret => ?_, fun c htr => ?_⟩
   · -- a return
     obtain ⟨b, k, ρ, w₁, vb, ops, outs, hstar, hvb, hi, hops, hvals, hsem⟩ := hret
-    obtain ⟨n1, c1, ⟨hq1, hA1⟩, hr1, ht1⟩ := forward hSim hRz hstar hinit ⟨hq0, hA0⟩
+    obtain ⟨n1, c1, hq1, hr1, ht1⟩ := forward hSim hRz hstar hinit (.inl ⟨hq0, hA0⟩)
     obtain ⟨ns, rfl⟩ := ctlCheck_rets hck hvb hi
     rw [operands_retsC] at hops
     cases hops
@@ -225,8 +280,8 @@ theorem regLevelCorrect_world_atI {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : 
       rw [hvals]
       refine VStep.step hvb hi (operands_retsC ns) (by rw [hvals] at hsem; exact hsem) ?_ (VNext.ret rfl)
       rw [List.toList_toArray, filter_isDef_retOpsC]; rfl
-    obtain ⟨n2, c', c'', ⟨hq2, -⟩, hr2, hms, hr3, ht2⟩ :=
-      forward_last hSim hRz h1 _ c1 _ (Nat.le_refl _) hr1 ⟨hq1, hA1⟩
+    obtain ⟨n2, c', c'', hq2, hr2, hms, hr3, ht2⟩ :=
+      forward_last hSim hRz h1 _ c1 _ (Nat.le_refl _) hr1 hq1
     cases c'' with
     | run s' => obtain ⟨_, e⟩ := hSim.run hr3; cases e
     | halt w'' => cases hSim.halt hr3
@@ -246,10 +301,11 @@ theorem regLevelCorrect_world_atI {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : 
         simp only [csemV, csem, Option.some.injEq, Prod.mk.injEq] at hsem3
         obtain ⟨rfl, -, -⟩ := hsem3
         rw [rets_store hlen2 rfl hho hcl] at hks
-        have hq2' : Q R (iterN R.step n2 (iterN R.step n1 (iterN R.step n0 s)))
+        have hq2' : QA R (iterN R.step n2 (iterN R.step n1 (iterN R.step n0 s)))
             (.run ⟨b, .op k _ :: _, _, w₁.1⟩) := hq2
-        have hst := q_stRel hq2'
-        obtain ⟨n3, ht3, hpc, herr, hsp, hx29, hregs, hmem, hfld, hprogF, hvalsM⟩ :=
+        obtain ⟨mt, hq2''⟩ := qa_q hq2'
+        have hst := q_stRel hq2''
+        obtain ⟨n3, ht3, hpc, herr, hsp, hx29, hregs, hsvd, hmem, hfld, hprogF, hvalsM⟩ :=
           ret_machine hR hent hq2' hvb hi
         have htr : ∀ i < n0 + n1 + n2 + n3, R.Good (E2E.runX (ArmStepX (XI.at 0) H fa) i s) := by
           intro i hi
@@ -258,9 +314,6 @@ theorem regLevelCorrect_world_atI {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : 
             (trace_add ht1 (trace_add ht2 fun j hj => (ht3 j hj).good)) i (by omega)
         have hm0 : ∀ r, locVal R.fr (iterN R.step n0 s) (.reg r) = regVal (iterN R.step n0 s) r :=
           fun _ => rfl
-        have hms : ∀ r, r.allocatable = true → _ = regVal _ r := fun r hr =>
-          hst.store (.reg r) (fun r' e => by cases e; exact hr) trivial
-        dsimp only at hms
         refine ⟨n0 + n1 + n2 + n3, ⟨?_, ?_, ?_, ?_, ?_⟩, ?_, ?_, ?_, ?_, ?_, fun i hi0 hi hpcall => ?_⟩
         rotate_right
         · exact (htr i hi).resolve_left (fun h => h hpcall)
@@ -274,24 +327,26 @@ theorem regLevelCorrect_world_atI {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : 
           by_cases h29 : a = 10
           · subst h29; exact hx29
           obtain ⟨hcs, hal⟩ := calleeSaved_x (n := 19 + a) (by omega) (by omega)
+          by_cases hsv : Reg.x (19 + a) ∈ R.af.saves
+          · exact hsvd _ hsv
           have k1 := hks _ hcs
           simp only [ckeep, hm0] at k1
-          rw [hms _ hal] at k1
           have hne : ∀ q, q < 32 → q ≠ 19 + a →
               Arm.StateField.GPR (rnum (19 + a)) ≠ .GPR (BitVec.ofNat 5 q) :=
             fun q h1 h2 e => rnum_ne (a := 19 + a) (b := q) (by omega) h1 (Ne.symm h2)
               (Arm.StateField.GPR.inj e)
-          have k2 := hregs _ hal
+          have k2 := hregs _ hal hsv
           simp only [regVal] at k1 k2
           rw [hf0 _ (by simp) (hne 29 (by omega) (by omega)) (hne 31 (by omega) (by omega))
             (hne 16 (by omega) (by omega))] at k1
           exact setWidth128_inj (k2.trans k1)
         · intro n h8 h16
           obtain ⟨hcs, hal⟩ := calleeSaved_v h8 h16
+          by_cases hsv : Reg.v n ∈ R.af.saves
+          · exact hsvd _ hsv
           have k1 := hks _ hcs
           simp only [ckeep, hm0] at k1
-          rw [hms _ hal] at k1
-          have k2 := hregs _ hal
+          have k2 := hregs _ hal hsv
           simp only [regVal] at k1 k2
           rw [hf0 _ (by simp) (by simp) (by simp) (by simp)] at k1
           show (Arm.r (.SFP (rnum n)) _).setWidth 64 = (Arm.r (.SFP (rnum n)) s).setWidth 64
@@ -315,7 +370,7 @@ theorem regLevelCorrect_world_atI {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : 
           exact hent.program.symm
   · -- a trap
     obtain ⟨b, k, ρ, w, vb, i, ops, outs, w', hstar, hvb, hi, hops, hsem, htc⟩ := htr
-    obtain ⟨n1, c1, ⟨hq1, hA1⟩, hr1, ht1⟩ := forward hSim hRz hstar hinit ⟨hq0, hA0⟩
+    obtain ⟨n1, c1, hq1, hr1, ht1⟩ := forward hSim hRz hstar hinit (.inl ⟨hq0, hA0⟩)
     obtain ⟨hsemV, -⟩ := ISem.counted_some hsem
     obtain ⟨hnil, hform⟩ := csem_halt (csemV_sub hsemV)
     subst hnil
@@ -325,8 +380,8 @@ theorem regLevelCorrect_world_atI {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : 
       · exact trapIf_nodefs hops
     have h1 : VStep R.vc (csemVI R.gv R.F R.ctx XI) (.run ⟨b, k, ρ, w⟩) (.halt w') :=
       VStep.step hvb hi hops hsem (by rw [hdefs]; rfl) VNext.halt
-    obtain ⟨n2, c', c'', ⟨hq2, -⟩, hr2, hms, hr3, -⟩ :=
-      forward_last hSim hRz h1 _ c1 _ (Nat.le_refl _) hr1 ⟨hq1, hA1⟩
+    obtain ⟨n2, c', c'', hq2, hr2, hms, hr3, -⟩ :=
+      forward_last hSim hRz h1 _ c1 _ (Nat.le_refl _) hr1 hq1
     cases c'' with
     | run s' => obtain ⟨_, e⟩ := hSim.run hr3; cases e
     | ret vs m' w'' => cases hSim.ret hr3
@@ -338,8 +393,12 @@ theorem regLevelCorrect_world_atI {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : 
         subst hb' hk' hw'
         rw [hvb] at hvb'; cases hvb'
         rw [hi] at hi'; cases hi'
-        have hq2' : Q R (iterN R.step n2 (iterN R.step n1 (iterN R.step n0 s)))
+        have hq2'' : QA R (iterN R.step n2 (iterN R.step n1 (iterN R.step n0 s)))
             (.run ⟨b, .op k _ :: _, _, w.1⟩) := hq2
+        have hnr : ∀ us, i ≠ .rets us := by
+          intro us h
+          rcases hform with ⟨cd, rfl⟩ | ⟨kk, cd, rfl, -⟩ <;> cases h
+        have hq2' := (qa_op hq2'' hvb hi hnr).1
         rcases hform with ⟨cd, rfl⟩ | ⟨kk, cd, rfl, hholds⟩
         · simp only [trapCode?, Option.some.injEq] at htc
           subst htc

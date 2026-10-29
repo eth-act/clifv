@@ -14,10 +14,11 @@ counts items, never frame offsets, so it is cheap and independent of the frame l
 * an instruction (`instWords`): the lines of its `MInst.lines` expansion — a load/store/`LoadAddr`
   with `memFinalize`'s `x16` constant (≤ 5), the LL/SC loops and the TLS sequence (≤ 7), a jump
   table (7 + its targets), the two-instruction forms (2; a `trapIf` counts its deferred `udf`), a
-  `Rets` its epilogue (7), everything else 1;
+  `Rets` its epilogue (7 besides the pops of the saved registers), everything else 1;
 * a move (`moveWords`): a slot load or store (`slotLoadAt`/`slotStoreAt`, ≤ 10 words with
-  `spAddrX16`), a register-to-register move at most two of them (20);
-* every block a prologue (7).
+  `spAddrX16`), a register-to-register move at most two of them (20); a save or a restore emits
+  nothing, its 10 words pay for its push in the prologue or its pop in the epilogue;
+* every block a prologue (7 besides the pushes).
 
 `fallthrough` only drops or merges lines and relaxation at most doubles the code
 (`emitFunc_size_le`), so the code is at most `8 · spillWordBound vcp` bytes.
@@ -37,9 +38,10 @@ def instWords : MInst → Nat
   | .rets _ => 7
   | _ => 1
 
-/-- An upper bound on the words of an `AInst`. -/
-def aInstWords : AInst → Nat
-  | .prologue | .epilogueRet => 7
+/-- An upper bound on the words of an `AInst` of a function saving `n` registers: the prologue
+and the epilogue push/pop at most one register per instruction. -/
+def aInstWords (n : Nat) : AInst → Nat
+  | .prologue | .epilogueRet => 7 + n
   | .inst m => instWords m
 
 /-- An upper bound on the words of a move (`RAFrame.moveInsts`). -/
@@ -181,17 +183,20 @@ theorem slotLoadAt_words (cls : RegClass) (r : Reg) (off : Nat) :
   unfold slotLoadAt slotLoad
   split <;> cases cls <;> simp [instWords] <;> omega
 
-theorem moveInsts_words {fr : RAFrame} {src dst : Loc} {l : List AInst}
-    (h : fr.moveInsts src dst = .ok l) : (l.map aInstWords).sum ≤ moveWords src dst := by
+theorem moveInsts_words {fr : RAFrame} {src dst : Loc} {l : List AInst} (n : Nat)
+    (h : fr.moveInsts src dst = .ok l) : (l.map (aInstWords n)).sum ≤ moveWords src dst := by
   have hs := slotStoreAt_words
   have hl := slotLoadAt_words
   have h10 : ∀ s d, 10 ≤ moveWords s d := by intro s d; unfold moveWords; split <;> omega
   unfold RAFrame.moveInsts at h
   split at h
+  all_goals first
+    | (simp only [pure, Except.pure, Except.ok.injEq] at h; subst h; simp; done)
+    | skip
   · split at h <;> simp only [pure, Except.pure, Except.ok.injEq] at h <;> subst h
     · simp [aInstWords, instWords, moveWords]
     · simp only [List.map_append, List.map_map, List.sum_append, moveWords]
-      have e : aInstWords ∘ AInst.inst = instWords := rfl
+      have e : aInstWords n ∘ AInst.inst = instWords := rfl
       rw [e]
       exact Nat.add_le_add (hs _ _ _) (hl _ _ _)
   · obtain ⟨o, -, h2⟩ := exceptBind_ok h
@@ -207,8 +212,75 @@ theorem moveInsts_words {fr : RAFrame} {src dst : Loc} {l : List AInst}
   · simp [throw, throwThe, MonadExceptOf.throw] at h
 
 
-theorem itemCode_words {fr : RAFrame} {vb : VBlock} {it : RItem} {c : List AInst}
-    (h : itemCode fr vb it = .ok c) : (c.map aInstWords).sum ≤ itemWords vb it := by
+/-- Whether an instruction is a `Rets`. -/
+def retsB : MInst → Bool
+  | .rets _ => true
+  | _ => false
+
+theorem visit_retsB {m : Type → Type} [Monad m] [LawfulMonad m] (f : OpSpec → Reg → m Reg) (i : MInst) :
+    retsB <$> MInst.visitOperands f i = (fun _ => retsB i) <$> MInst.visitOperands f i := by
+  cases i
+  case call info =>
+    obtain ⟨dest, uses, defs⟩ := info
+    cases dest <;> simp [MInst.visitOperands, retsB]
+  case tryCall info ti =>
+    obtain ⟨dest, uses, defs⟩ := info
+    cases dest <;> simp [MInst.visitOperands, retsB]
+  all_goals simp [MInst.visitOperands, retsB]
+
+theorem visit_run_retsB {f : OpSpec → Reg → StateT Nat (Except String) Reg} {i i' : MInst} {k k' : Nat}
+    (h : (MInst.visitOperands f i).run k = .ok (i', k')) : retsB i' = retsB i := by
+  have := congrArg (fun x => StateT.run x k) (visit_retsB f i)
+  simp only [StateT.run_map, h] at this
+  simpa [Functor.map, Except.map] using this
+
+/-- `MInst.assign` keeps a `Rets` a `Rets` (and anything else not one). -/
+theorem assign_rets {i : MInst} {regs : Array Reg} {us : List (Reg × Reg)}
+    (h : i.assign regs = .ok (.rets us)) : ∃ us', i = .rets us' := by
+  unfold MInst.assign at h
+  obtain ⟨⟨i', k⟩, h1, h2⟩ := exceptBind_ok h
+  have hv := visit_run_retsB h1
+  simp only at h2
+  split at h2
+  · simp [throw, throwThe, MonadExceptOf.throw, bind, Except.bind] at h2
+  · simp only [pure, Except.pure, Except.ok.injEq] at h2
+    subst h2
+    cases i <;> simp_all [retsB]
+
+/-- The restores (moves out of a save slot into their register) among `L`. -/
+def cntR (L : List RItem) : Nat := (L.filter fun it => it.restoreReg.isSome && it.isRestore).length
+
+theorem cntR_append (A B : List RItem) : cntR (A ++ B) = cntR A + cntR B := by
+  simp [cntR, List.filter_append]
+
+/-- A return tail restores every saved register. -/
+theorem retTailOk_len (saved : List Reg) : ∀ (done : List Reg) (L : List RItem),
+    retTailOk saved done L = true → saved.length ≤ done.length + cntR L
+  | done, [], h => by
+    simp only [retTailOk] at h
+    have := List.length_eq_of_beq h
+    simp [cntR]; omega
+  | done, it :: L, h => by
+    rw [retTailOk] at h
+    split at h
+    · rename_i r h1 h2
+      simp only [Bool.and_eq_true] at h
+      have := retTailOk_len saved (done ++ [r]) L h.2
+      have hc : cntR (it :: L) = cntR L + 1 := by
+        simp [cntR, List.filter_cons, h1, h2]
+      simp only [List.length_append, List.length_singleton] at this
+      omega
+    · simp only [Bool.and_eq_true] at h
+      have := retTailOk_len saved done L h.2
+      have hc : cntR L ≤ cntR (it :: L) := by
+        simp only [cntR, List.filter_cons]; split <;> simp
+      omega
+
+theorem itemCode_words {fr : RAFrame} {vb : VBlock} {it : RItem} {c : List AInst} (n : Nat)
+    (h : itemCode fr vb it = .ok c) :
+    (c.map (aInstWords n)).sum ≤ itemWords vb it + (match it with
+      | .op k _ => if (vb.insts[k]? matches some (.rets _)) then n else 0
+      | .move _ _ => 0) := by
   unfold itemCode at h
   cases it with
   | move src dst =>
@@ -218,7 +290,7 @@ theorem itemCode_words {fr : RAFrame} {vb : VBlock} {it : RItem} {c : List AInst
     | ok l =>
       simp [hm, bind, Except.bind, pure, Except.pure, Functor.map, Except.map] at h
       subst h
-      simpa [itemWords] using moveInsts_words hm
+      simpa [itemWords] using moveInsts_words n hm
   | op k allocs =>
     simp only [itemStep, bind, Except.bind] at h
     split at h
@@ -231,27 +303,100 @@ theorem itemCode_words {fr : RAFrame} {vb : VBlock} {it : RItem} {c : List AInst
       have hw := assign_words hm
       simp only [itemWords, hi]
       split at h <;> simp [pure, Except.pure, Functor.map, Except.map] at h <;> subst h
-      all_goals (rw [← hw]; simp [aInstWords, instWords])
+      · simp
+      · rename_i us
+        obtain ⟨us', rfl⟩ := assign_rets hm
+        simp [aInstWords, instWords]
+      · rw [← hw]; simp [aInstWords]
     · simp [Functor.map, Except.map] at h
 
-theorem itemsCode_words {fr : RAFrame} {vb : VBlock} :
-    ∀ {its : List RItem} {c : List AInst}, itemsCode fr vb its = .ok c →
-      (c.map aInstWords).sum ≤ (its.map (itemWords vb)).sum
-  | [], c, h => by
+/-- The code of the items `its` of a block passing `saveSegsOk` (`pend` the moves since the last
+instruction): every epilogue's pops are paid by the restores before it (10 words each). -/
+theorem itemsCode_words {fr : RAFrame} {vb : VBlock} {saved : List Reg} :
+    ∀ {pend its : List RItem} {c : List AInst}, saveSegsOk vb saved pend its = true →
+      itemsCode fr vb its = .ok c →
+      (c.map (aInstWords saved.length)).sum ≤ (its.map (itemWords vb)).sum + 10 * cntR pend
+  | _, [], c, _, h => by
     simp [itemsCode, pure, Except.pure] at h; subst h; simp
-  | it :: its, c, h => by
+  | pend, it :: its, c, hs, h => by
     simp only [itemsCode] at h
     obtain ⟨c1, h1, h⟩ := exceptBind_ok h
     obtain ⟨c2, h2, h⟩ := exceptBind_ok h
     simp only [pure, Except.pure, Except.ok.injEq] at h
     subst h
-    have := itemCode_words h1
-    have := itemsCode_words h2
-    simp only [List.map_append, List.sum_append, List.map_cons, List.sum_cons]
-    omega
+    have hc1 := itemCode_words saved.length h1
+    cases it with
+    | move a b =>
+      simp only [saveSegsOk] at hs
+      have ih := itemsCode_words hs h2
+      rw [cntR_append] at ih
+      simp only [List.map_append, List.sum_append, List.map_cons, List.sum_cons]
+      simp only [Nat.add_zero] at hc1
+      by_cases hr : ((RItem.move a b).restoreReg.isSome && (RItem.move a b).isRestore) = true
+      · -- a restore: no code, 10 words
+        obtain ⟨r, rfl⟩ : ∃ r, a = .save r := by
+          cases a <;> simp_all [RItem.restoreReg]
+        have hc0 : c1 = [] := by
+          unfold itemCode itemStep at h1
+          cases b <;> simp [RAFrame.moveInsts, bind, Except.bind, pure, Except.pure, Functor.map,
+            Except.map] at h1 <;> first | exact h1 | exact h1.symm
+        have h1' : cntR [RItem.move (.save r) b] = 1 := by simp [cntR, hr]
+        have hmw : itemWords vb (.move (.save r) b) = 10 := by
+          simp [itemWords, moveWords]
+        subst hc0
+        simp only [List.map_nil, List.sum_nil, hmw] at ih ⊢
+        rw [h1'] at ih
+        omega
+      · have h1' : cntR [RItem.move a b] = 0 := by simp [cntR, hr]
+        rw [h1'] at ih
+        omega
+    | op k allocs =>
+      simp only [saveSegsOk, Bool.and_eq_true] at hs
+      have ih := itemsCode_words hs.2 h2
+      simp only [cntR, List.filter_nil, List.length_nil, Nat.mul_zero, Nat.add_zero] at ih
+      have hpay : (if (vb.insts[k]? matches some (.rets _)) then saved.length else 0) ≤
+          10 * cntR pend := by
+        by_cases hk : (vb.insts[k]? matches some (.rets _)) = true
+        · rw [if_pos hk]
+          obtain ⟨us, hus⟩ : ∃ us, vb.insts[k]? = some (.rets us) := by
+            revert hk
+            cases vb.insts[k]? with
+            | none => simp
+            | some i => cases i <;> simp
+          simp only [hus, ite_true] at hs
+          have := retTailOk_len saved [] pend hs.1
+          simp only [List.length_nil, Nat.zero_add] at this; omega
+        · rw [if_neg hk]; exact Nat.zero_le _
+      simp only [List.map_append, List.sum_append, List.map_cons, List.sum_cons] at hc1 ⊢
+      omega
+
+/-- The saves of block 0 emit no code. -/
+theorem itemsCode_saves {fr : RAFrame} {vb : VBlock} : ∀ (rs : List Reg) (L : List RItem) {c : List AInst},
+    itemsCode fr vb (rs.map (fun r => RItem.move (.reg r) (.save r)) ++ L) = .ok c →
+    itemsCode fr vb L = .ok c
+  | [], L, c, h => by simpa using h
+  | r :: rs, L, c, h => by
+    simp only [List.map_cons, List.cons_append, itemsCode] at h
+    obtain ⟨c1, h1, h⟩ := exceptBind_ok h
+    obtain ⟨c2, h2, h⟩ := exceptBind_ok h
+    simp only [pure, Except.pure, Except.ok.injEq] at h
+    subst h
+    have hc0 : c1 = [] := by
+      unfold itemCode itemStep at h1
+      simp [RAFrame.moveInsts, bind, Except.bind, pure, Except.pure, Functor.map, Except.map] at h1
+      first | exact h1.symm | exact h1
+    subst hc0
+    simpa using itemsCode_saves rs L h2
+
+theorem saveItems_words (vb : VBlock) (rs : List Reg) :
+    ((rs.map (fun r => RItem.move (.reg r) (.save r))).map (itemWords vb)).sum = 10 * rs.length := by
+  induction rs with
+  | nil => rfl
+  | cons r rs ih => simp [itemWords, moveWords] at ih ⊢; omega
 
 /-- An upper bound on the words of an allocated function's code. -/
-def afWords (af : AFunc) : Nat := (af.blocks.toList.map fun b => (b.2.toList.map aInstWords).sum).sum
+def afWords (af : AFunc) : Nat :=
+  (af.blocks.toList.map fun b => (b.2.toList.map (aInstWords af.saves.length)).sum).sum
 
 theorem sum_map_le_of_getElem? {α β : Type} {f : α → Nat} {g : β → Nat} :
     ∀ {l1 : List α} {l2 : List β}, l1.length = l2.length →
@@ -269,7 +414,9 @@ theorem sum_map_le_of_getElem? {α β : Type} {f : α → Nat} {g : β → Nat} 
 theorem lowerRFunc_words {vc : VCode} {rf : RFunc} {af : AFunc} (h : lowerRFunc vc rf = .ok af) :
     afWords af ≤ rfWords vc rf := by
   obtain ⟨⟨-, -, hsz, hb⟩, -, -⟩ := lowerRFunc_ok h
+  obtain ⟨hsh, hsv⟩ := lowerRFunc_saves h
   unfold afWords rfWords
+  rw [hsv]
   apply sum_map_le_of_getElem?
   · simpa using hsz
   · intro i x y hx hy
@@ -278,9 +425,27 @@ theorem lowerRFunc_words {vc : VCode} {rf : RFunc} {af : AFunc} (h : lowerRFunc 
     obtain ⟨code, hc, ha⟩ := hb i vb items hy.1 hy.2
     rw [Array.getElem?_toList, ha] at hx
     cases hx
-    have := itemsCode_words hc
-    simp only [List.map_append, List.sum_append]
-    split <;> simp [aInstWords] <;> omega
+    obtain ⟨h0, h1⟩ := saveShapeOk_block hsh hy.1 hy.2
+    by_cases hi : i = 0
+    · subst hi
+      obtain ⟨htake, hseg⟩ := h0 rfl
+      have hsplit := List.take_append_drop rf.saved.length items.toList
+      rw [htake] at hsplit
+      rw [← hsplit] at hc
+      have hw := itemsCode_words hseg (itemsCode_saves _ _ hc)
+      have hW : (items.toList.map (itemWords vb)).sum =
+          10 * rf.saved.length + ((items.toList.drop rf.saved.length).map (itemWords vb)).sum := by
+        have := congrArg (fun l => (l.map (itemWords vb)).sum) hsplit
+        simp only [List.map_append, List.sum_append, saveItems_words] at this
+        omega
+      simp only [cntR, List.filter_nil, List.length_nil, Nat.mul_zero, Nat.add_zero] at hw
+      simp only [ite_true, List.toList_toArray, List.map_append, List.sum_append, List.map_cons,
+        List.map_nil, List.sum_cons, List.sum_nil, aInstWords, hW]
+      omega
+    · have hw := itemsCode_words (h1 hi) hc
+      simp only [cntR, List.filter_nil, List.length_nil, Nat.mul_zero, Nat.add_zero] at hw
+      simp only [hi, ite_false, List.toList_toArray, List.nil_append]
+      omega
 
 /-! ## The lines before relaxation (`emitPre`)
 
@@ -323,40 +488,82 @@ theorem ftList_size : ∀ (n : Nat) (L : List Line), L.length ≤ n → linesByt
     simp only [linesBytes, List.map_append, List.sum_append, List.map_cons, List.sum_cons] at *
     omega
 
-theorem prologueLines_length (n : Nat) : (prologueLines n).length ≤ 7 := by
-  have := loadConst64_length (.x 16) n
-  unfold prologueLines
-  repeat' split
-  all_goals simp
+theorem pairsOf_count : ∀ rs : List Reg,
+    (pairsOf rs).1.length + (if (pairsOf rs).2.isSome then 1 else 0) ≤ rs.length
+  | [] => by simp [pairsOf]
+  | [_] => by simp [pairsOf]
+  | a :: b :: rs => by
+    have := pairsOf_count rs
+    rcases h : pairsOf rs with ⟨ps, o⟩
+    rw [h] at this
+    simp only [pairsOf, h, List.length_cons] at this ⊢
+    omega
+
+theorem pushLines_length (int : Bool) (rs : List Reg) : (pushLines int rs).length ≤ rs.length := by
+  have := pairsOf_count rs
+  unfold pushLines
+  rcases h : pairsOf rs with ⟨ps, _ | r⟩ <;> simp_all <;> omega
+
+theorem popLines_length (int : Bool) (rs : List Reg) : (popLines int rs).length ≤ rs.length := by
+  have := pairsOf_count rs
+  unfold popLines
+  rcases h : pairsOf rs with ⟨ps, _ | r⟩ <;> simp_all <;> omega
+
+theorem spAdjLines_length (sub : Bool) (size : Nat) : (spAdjLines sub size).length ≤ 5 := by
+  have := loadConst64_length (.x 16) size
+  unfold spAdjLines
+  split
+  · simp
+  · split
+    · simp
+    · simp only [List.length_append, List.length_singleton]; omega
+
+theorem saves_split : ∀ saves : List Reg,
+    (savesInt saves).length + (savesFloat saves).length ≤ saves.length
+  | [] => by simp [savesInt, savesFloat]
+  | r :: rs => by
+    have := saves_split rs
+    cases r <;> simp_all [savesInt, savesFloat, List.filter_cons] <;> omega
+
+/-- The prologue: fp/lr, x29, at most one push per saved register, the `sp` adjustment. -/
+theorem prologueLines_length (saves : List Reg) (n : Nat) :
+    (prologueLines saves n).length ≤ 7 + saves.length := by
+  have := pushLines_length true (savesInt saves)
+  have := pushLines_length false (savesFloat saves)
+  have := spAdjLines_length true (n - clobberBytes saves)
+  have := saves_split saves
+  simp only [prologueLines, List.length_append, List.length_cons, List.length_nil]
   omega
 
-theorem epilogueLines_length (n : Nat) : (epilogueLines n).length ≤ 7 := by
-  have := loadConst64_length (.x 16) n
-  unfold epilogueLines
-  repeat' split
-  all_goals simp
+theorem epilogueLines_length (saves : List Reg) (n : Nat) :
+    (epilogueLines saves n).length ≤ 7 + saves.length := by
+  have := popLines_length true (savesInt saves)
+  have := popLines_length false (savesFloat saves)
+  have := spAdjLines_length false (n - clobberBytes saves)
+  have := saves_split saves
+  simp only [epilogueLines, List.length_append, List.length_cons, List.length_nil]
   omega
 
 theorem ainstLines_length {c : FnCtx} {af : AFunc} {a : AInst} {ps ps' : PState} {ls : List Line}
     (h : ainstLines c af a ps = .ok (ls, ps')) :
-    ls.length + ps'.traps.size ≤ aInstWords a + ps.traps.size := by
+    ls.length + ps'.traps.size ≤ aInstWords af.saves.length a + ps.traps.size := by
   cases a with
   | inst m => exact lines_length h
   | prologue =>
     simp only [ainstLines, pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at h
     obtain ⟨rfl, rfl⟩ := h
-    have := prologueLines_length af.frameSize
+    have := prologueLines_length af.saves af.frameSize
     split <;> simp [aInstWords] <;> omega
   | epilogueRet =>
     simp only [ainstLines, pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at h
     obtain ⟨rfl, rfl⟩ := h
-    have := epilogueLines_length af.frameSize
+    have := epilogueLines_length af.saves af.frameSize
     split <;> simp [aInstWords] <;> omega
 
 theorem codeLinesE_length {c : FnCtx} {af : AFunc} :
     ∀ {code : List AInst} {ps ps' : PState} {ls : List Line},
       codeLinesE c af code ps = .ok (ls, ps') →
-        ls.length + ps'.traps.size ≤ (code.map aInstWords).sum + ps.traps.size
+        ls.length + ps'.traps.size ≤ (code.map (aInstWords af.saves.length)).sum + ps.traps.size
   | [], ps, ps', ls, h => by
     simp only [codeLinesE, pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at h
     obtain ⟨rfl, rfl⟩ := h
@@ -376,7 +583,7 @@ theorem blocksLinesE_size {c : FnCtx} {af : AFunc} :
     ∀ {bs : List (Label × Array AInst)} {ps ps' : PState} {ls : List Line},
       blocksLinesE c af bs ps = .ok (ls, ps') →
         linesBytes ls + 4 * ps'.traps.size ≤
-          4 * (bs.map fun b => (b.2.toList.map aInstWords).sum).sum + 4 * ps.traps.size
+          4 * (bs.map fun b => (b.2.toList.map (aInstWords af.saves.length)).sum).sum + 4 * ps.traps.size
   | [], ps, ps', ls, h => by
     simp only [blocksLinesE, pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at h
     obtain ⟨rfl, rfl⟩ := h

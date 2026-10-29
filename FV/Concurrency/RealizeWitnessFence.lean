@@ -118,7 +118,7 @@ theorem realizes_fence : ∃ (n : Nat) (ls : List Lab) (t' : ArmState × Mon),
     rw [show RA.rf = rfF from rfl, e] at hq'
     exact hq'
   obtain ⟨ls1, t1, m1, r1, hq1, hev1⟩ := moves_fwd wfRA (· = .plainW) savesL restF _ _ none hq0
-    saves_plainW
+    saves_plainW (by simp [savesL, Loc.isSave])
   -- the `dmb ish`
   obtain ⟨j, hj, hpc, hst⟩ := q_head hq1 (x := .dmbish) (t := none) rfl head_dmb
   obtain ⟨a, ha, -, hev, hdec⟩ := stepEvs_line (X := RA.X) (H := RA.H) wfRA.layout wfRA.lm wfRA.fit

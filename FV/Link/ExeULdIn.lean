@@ -8,9 +8,9 @@ import FV.Link.UnwFnIn
 executable's unwind tables are the compiled functions' (`ehOkR`) and the per-function unwinding
 checks hold (`unwFnsB`). **`compileExeU_total_ldIn`**: under `compileExe_total_ldIn`'s premises
 (decided on `lean-ld`'s inputs) and `unwCondsB` of the compiled functions
-(`Link.EhCheck.Complete.unwFnsB_of_conds`: the input condition `tryTablesB`, the frame
-conditions `saveFrameB`/`leadOkB`, the code below 4 GiB, and the two checks without a
-completeness proof yet, `unwCheck` and `lastCallsOk`), `lean-ld` links, `compileExe` succeeds,
+(`Link.EhCheck.Complete.unwFnsB_of_conds`: the input condition `tryTablesB`, the code below
+4 GiB, and the two checks without a completeness proof yet, `unwCheck` and `lastCallsOk`),
+`lean-ld` links, `compileExe` succeeds,
 and `compileExeU` succeeds as soon as the written executable passes `ehOkR` (the tables `lean-ld`
 merged from the region object's `.eh_frame`; not yet derived from the inputs).
 -/

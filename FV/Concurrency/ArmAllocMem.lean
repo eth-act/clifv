@@ -178,7 +178,8 @@ abbrev OpC (b k : Nat) (allocs : Array Loc) (its : List RItem) (m : Loc → CV) 
     MConf CV ArmState := .run ⟨b, .op k allocs :: its, m, w⟩
 
 /-- **`ItemSim` from the instruction items**: without moves, the per-item obligation holds when
-it holds at every instruction item with a source step. -/
+it holds at every instruction item with a source step, from `Q ∧ AInv` (the `rets` of a return
+tail returns without events, `RelQ.op'`). -/
 theorem itemSim_of_op {R : RL} (hnm : NoMoves R)
     (hop : ∀ s mon b k allocs its m w evs0 c0, Q R s (OpC b k allocs its m w) →
       AInv R (OpC b k allocs its m w) → SrcStep R (OpC b k allocs its m w) evs0 c0 →
@@ -186,7 +187,7 @@ theorem itemSim_of_op {R : RL} (hnm : NoMoves R)
         OpOut R (s, mon) (OpC b k allocs its m w) ls) :
     ItemSim Policy.arm R.step (fun _ _ => True) (SrcStep R) (RelQ R) (Done R)
       (fun c => c.measure) (PrivA R) := by
-  rintro ⟨s, mon⟩ c ⟨hq, hA⟩ ls t' hr
+  rintro ⟨s, mon⟩ c hqa ls t' hr
   match c with
   | .ret vals m w => exact .inl (.inl ⟨vals, m, w, rfl⟩)
   | .halt w => exact .inl (.inr (.inl ⟨w, rfl⟩))
@@ -196,10 +197,13 @@ theorem itemSim_of_op {R : RL} (hnm : NoMoves R)
   obtain ⟨evs0, c0, hs0⟩ := hS
   cases hs0 with
   | @move _ src dst its' =>
+    obtain ⟨mt, hq⟩ := RelQ.q hqa
     obtain ⟨items, hit, hmem⟩ := q_items hq
     exact absurd (hmem _ List.mem_cons_self) (hnm b items hit src dst)
   | @op _ k allocs its' _ _ vb i ops _ _ hvb hi hops hevs hfoot hst =>
-    exact hop s mon b k allocs its' m w _ _ hq hA (.op hvb hi hops hevs hfoot hst) ls t' hr
+    rcases RelQ.op' hqa (.op hvb hi hops hevs hfoot hst) with ⟨hq, hA⟩ | ⟨rfl, vals, m', w', rfl⟩
+    · exact hop s mon b k allocs its' m w _ _ hq hA (.op hvb hi hops hevs hfoot hst) ls t' hr
+    · exact .inr (.inl (itemSimOut_ret (.op hvb hi hops hevs hfoot hst)))
 
 theorem dmbish_inst {env : Env} {a : ArmInst} (h : Insn.dmbish.toArmInst env = .ok a) (s : ArmState) :
     instEvs a s = [dmbEv] ∧ clsOf a = .dmb := by
@@ -263,7 +267,7 @@ theorem noev_opR {R : RL} (hR : R.Wf) {s : ArmState} {mon : Mon} {b k : Nat} {al
         (fun c => c.measure) (s, mon) (.run ⟨b, .op k allocs :: its', m, w⟩) ls := by
     intro c' hm hs hq' hA'
     exact ⟨0, [], c', (s, mon), fun _ => (0, 0), Nat.zero_le _, .inr (hlt c' hm), hs,
-      by rw [List.take_zero]; exact .nil, ⟨hq', hA'⟩, img_nil (by simp) _⟩
+      by rw [List.take_zero]; exact .nil, .inl ⟨hq', hA'⟩, img_nil (by simp) _⟩
   -- a step ending the function: no Arm step
   by_cases hterm : (∃ vals m' w', c0 = .ret vals m' w') ∨ ∃ w', c0 = .halt w'
   · rcases hterm with ⟨vals, m', w', rfl⟩ | ⟨w', rfl⟩ <;>
@@ -335,7 +339,7 @@ theorem noev_opR {R : RL} (hR : R.Wf) {s : ArmState} {mon : Mon} {b k : Nat} {al
     subst hs1
     refine .inr (.inl ⟨ls1.length, [], _, (s1, mon1), fun _ => (0, 0), hN,
       .inr (hlt _ (Nat.le_of_eq measure_run)), .op hvb hi hops hevs hfoot (by rw [patch_nil]; exact hm''),
-      r1, ⟨hq'', aInv_step hR hq hA hm''⟩, img_nil hev1 _⟩)
+      r1, .inl ⟨hq'', aInv_step hR hq hA hm''⟩, img_nil hev1 _⟩)
   · obtain ⟨hs', hev, -⟩ := prun_nil hr fun i hi => hnom i (by omega)
     refine .inr (.inr (.inr ⟨privW_of_nil hev, ?_⟩))
     rw [hs']
@@ -427,7 +431,7 @@ theorem fence_opR {R : RL} (hR : R.Wf) {s : ArmState} {mon : Mon} {b k : Nat} {a
   refine .inr (.inl ⟨1, [dmbEv], _, (R.step s, mon1), fun _ => (0, 0), by simp, .inl Nat.one_pos,
     .op hvb hi hops hevs hfoot (by rw [patch_dmb]; exact hm''),
     by simpa using PRun.cons hs hp trivial .nil,
-    ⟨by rw [show R.step s = s' from hit]; exact hq'', aInv_step hR hq hA hm''⟩, ?_⟩)
+    .inl ⟨by rw [show R.step s = s' from hit]; exact hq'', aInv_step hR hq hA hm''⟩, ?_⟩)
   have htr : evTr ((l :: ls'').take 1) = [[dmbEv]] := by simp [evTr, hl]
   rw [htr]
   refine ⟨fun k hk => ?_, fun k k' _ h2 => by simp at h2; omega, fun p y hy hW _ => ?_,
@@ -798,7 +802,7 @@ theorem oneEv_opR {R : RL} (hR : R.Wf) {s : ArmState} {mon : Mon} {b k : Nat} {a
   have hlen : l.evs.length ≤ 1 := by rw [hl]; exact len_instEvs a _
   refine .inr (.inl ⟨1, l.evs, _, (R.step (patch l.evs s), mon1), fun k => (0, k), by simp,
     .inl Nat.one_pos, .op hvb hi hops hfix hfoot1 hm2, by simpa using PRun.cons hs hp trivial .nil,
-    ⟨by show Q R (R.step (patch l.evs s)) _; rw [show R.step (patch l.evs s) = s2 from hit]; exact hq2,
+    .inl ⟨by show Q R (R.step (patch l.evs s)) _; rw [show R.step (patch l.evs s) = s2 from hit]; exact hq2,
       aInv_step hR hq1 (aInv_patch hA _) hm2⟩, ?_⟩)
   have htr : evTr ((l :: ls'').take 1) = [l.evs] := by simp [evTr]
   rw [htr]
@@ -1084,7 +1088,7 @@ theorem arm_alloc_refines_mem {R : RL} (hR : R.Wf) (hsc : MemScope R) (hnm : NoM
       Refines (· = ·) (PrivA R) (MonPair (evTr (ls.take n))) (PrepThread.conv trS)
         (PrepThread.conv (evTr (ls.take n))) ψ ∧ (n = ls.length ∨ Done R cE) := by
   obtain ⟨n, trS, cE, ψ, hn, hs, href, hend⟩ :=
-    refines_of_itemSim (itemSim_mem hR hsc hnm) hr ⟨hq, hA⟩
+    refines_of_itemSim (itemSim_mem hR hsc hnm) hr (RelQ.of hq hA)
   exact ⟨n, trS, cE, ψ, hn, mtrun_of_srun hs, href, hend⟩
 
 /-! ## Precise one-step runs -/

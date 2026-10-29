@@ -37,7 +37,7 @@ abbrev RA5 : RL := link2.act callerF sC0 0x200 GL
 
 theorem stack_RA5 : StackAvail 0x200 callerF.af sC0 := by
   have hs := spC
-  have hfs : callerF.af.frameSize = 224 := hs.2.2.2.2.2.2.2.1
+  have hfs : callerF.af.frameSize = 160 := hs.2.2.2.2.2.2.2.1
   refine ⟨?_, fun a ha => ?_⟩
   · show callerF.af.frameSize + 16 + 0x200 ≤ (E2E.spv RC.s0).toNat
     rw [spv_RC, hfs]; decide
@@ -70,14 +70,14 @@ theorem codeIn_RA5 : CodeIn link2 RA5 := fun n FB h => CallSegCall.Witness.codeI
 /-- The addresses outside the activation's world are at or above `0x6D10`. -/
 theorem f5_ge {a : BitVec 64} (h : RA5.F a) : 0x6D10 ≤ a.toNat := by
   have hs := spC
-  have e : E2E.spv sC0 - BitVec.ofNat 64 (frameDrop callerF.af) = 0x6F10#64 := by
-    rw [show E2E.spv sC0 = 0x7000#64 from spv_RC, show frameDrop callerF.af = 240 from hs.2.1]
+  have e : E2E.spv sC0 - BitVec.ofNat 64 (frameDrop callerF.af) = 0x6F50#64 := by
+    rw [show E2E.spv sC0 = 0x7000#64 from spv_RC, show frameDrop callerF.af = 176 from hs.2.1]
     rfl
-  have hsz : RC.fr.size ≤ 240 := hs.2.2.2.2.2.1
-  have hfs : callerF.af.frameSize = 224 := hs.2.2.2.2.2.2.2.1
+  have hsz : RC.fr.size ≤ 176 := hs.2.2.2.2.2.1
+  have hfs : callerF.af.frameSize = 160 := hs.2.2.2.2.2.2.2.1
   change frameWG 0x200 RC.fr.intBase RC.fr.size callerF.af GL sC0 a at h
   unfold frameWG frameW frameF StackBelow at h
-  rw [e, hfs, show frameDrop callerF.af = 240 from hs.2.1] at h
+  rw [e, hfs, show frameDrop callerF.af = 176 from hs.2.1] at h
   rcases h with ((⟨h1, h2⟩ | ⟨h1, h2⟩ | hc) | ⟨h1, h2⟩) | hG
   · generalize RC.fr.size = n at hsz h2
     bv_omega

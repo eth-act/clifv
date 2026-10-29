@@ -132,7 +132,7 @@ theorem frameKeep_end {a : Art} {t rs w : Arm.ArmState} {F : BitVec 64 → Prop}
     (rts : ArmRet (Arm.r .PC t + 4) (enterAt a t) rs)
     (hgk : ∀ x, (F x ∧ ¬ StackBelow D (spv w) x) → rs.mem x = (enterAt a t).mem x) :
     FrameKeep (fun x => F x ∧ ¬ StackBelow K (spOf t) x) t (Arm.set_program rs t.program) := by
-  refine ⟨?_, fun x ⟨ha, hb⟩ => ?_⟩
+  refine ⟨?_, fun x ⟨ha, hb⟩ => ?_, ?_⟩
   · show spv (Arm.set_program _ _) = spv t
     simp only [spv]; rw [r_set_program]
     have := rts.sp
@@ -141,6 +141,9 @@ theorem frameKeep_end {a : Art} {t rs w : Arm.ArmState} {F : BitVec 64 → Prop}
   · rw [mem_set_program, hgk x ⟨ha, fun hb' => hb ?_⟩, mem_enterAt]
     rw [hsp] at hb'
     exact stackBelow_mono hb' hDK
+  · rw [r_set_program]
+    exact (rts.savedX 29 (by simp [calleeSavedX]; exact ⟨10, by omega, rfl⟩)).trans
+      (r_enterAt _ _ (by simp) (by simp))
 
 /-- **The core of the operand-view obligation of a call of the function `h` of `P`** on the
 linked machine with unwinding at depth `M` (`progOsCore`'s counterpart): from a caller state `t`

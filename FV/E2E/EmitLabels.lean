@@ -519,23 +519,44 @@ theorem lines_chunk {c : FnCtx} {m : MInst} {ps ps' : PState} {ls : List Line}
 
 /-! ## Blocks -/
 
-theorem prologueLines_plain (size : Nat) : Plain (prologueLines size) := by
-  unfold prologueLines
-  refine plain_append (by simp [Plain, lineDef, Line.labelsUsed, Insn.pcRelSpec?]) ?_
+theorem spAdjLines_plain (sub : Bool) (size : Nat) : Plain (spAdjLines sub size) := by
+  unfold spAdjLines
   split
   · exact plain_nil
   · split
-    · exact plain_ins _ _ rfl
-    · exact plain_append (loadConst64_plain _ _) (plain_ins _ _ rfl)
+    · exact plain_ins _ _ (by cases sub <;> rfl)
+    · exact plain_append (loadConst64_plain _ _) (plain_ins _ _ (by cases sub <;> rfl))
 
-theorem epilogueLines_plain (size : Nat) : Plain (epilogueLines size) := by
+theorem pushLines_plain (int : Bool) (rs : List Reg) : Plain (pushLines int rs) := by
+  intro ln hl
+  simp only [pushLines, List.mem_append, List.mem_map] at hl
+  rcases hl with hl | ⟨⟨a, b⟩, -, rfl⟩
+  · split at hl
+    · simp only [List.mem_singleton] at hl; subst hl
+      cases int <;> simp [lineDef, Line.labelsUsed, Insn.pcRelSpec?]
+    · simp at hl
+  · cases int <;> simp [lineDef, Line.labelsUsed, Insn.pcRelSpec?]
+
+theorem popLines_plain (int : Bool) (rs : List Reg) : Plain (popLines int rs) := by
+  intro ln hl
+  simp only [popLines, List.mem_append, List.mem_map] at hl
+  rcases hl with ⟨⟨a, b⟩, -, rfl⟩ | hl
+  · cases int <;> simp [lineDef, Line.labelsUsed, Insn.pcRelSpec?]
+  · split at hl
+    · simp only [List.mem_singleton] at hl; subst hl
+      cases int <;> simp [lineDef, Line.labelsUsed, Insn.pcRelSpec?]
+    · simp at hl
+
+theorem prologueLines_plain (saves : List Reg) (size : Nat) : Plain (prologueLines saves size) := by
+  unfold prologueLines
+  exact plain_append (plain_append (plain_append
+    (by simp [Plain, lineDef, Line.labelsUsed, Insn.pcRelSpec?]) (pushLines_plain _ _))
+    (pushLines_plain _ _)) (spAdjLines_plain _ _)
+
+theorem epilogueLines_plain (saves : List Reg) (size : Nat) : Plain (epilogueLines saves size) := by
   unfold epilogueLines
-  refine plain_append ?_ (by simp [Plain, lineDef, Line.labelsUsed, Insn.pcRelSpec?])
-  split
-  · exact plain_nil
-  · split
-    · exact plain_ins _ _ rfl
-    · exact plain_append (loadConst64_plain _ _) (plain_ins _ _ rfl)
+  exact plain_append (plain_append (plain_append (spAdjLines_plain _ _) (popLines_plain _ _))
+    (popLines_plain _ _)) (by simp [Plain, lineDef, Line.labelsUsed, Insn.pcRelSpec?])
 
 theorem ainst_chunk {c : FnCtx} {af : AFunc} {a : AInst} {ps ps' : PState} {ls : List Line}
     {T : List Label} (h : ainstLines c af a ps = .ok (ls, ps'))
@@ -545,13 +566,13 @@ theorem ainst_chunk {c : FnCtx} {af : AFunc} {a : AInst} {ps ps' : PState} {ls :
     simp only [ainstLines, pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at h
     obtain ⟨rfl, rfl⟩ := h
     split
-    · exact plain_chunk (prologueLines_plain _)
+    · exact plain_chunk (prologueLines_plain _ _)
     · exact plain_chunk plain_nil
   | epilogueRet =>
     simp only [ainstLines, pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at h
     obtain ⟨rfl, rfl⟩ := h
     split
-    · exact plain_chunk (epilogueLines_plain _)
+    · exact plain_chunk (epilogueLines_plain _ _)
     · exact plain_chunk (plain_ins _ _ rfl)
   | inst m => exact (lines_chunk h).mono (ht m rfl)
 
@@ -726,6 +747,7 @@ theorem moveInsts_targets {fr : RAFrame} {src dst : Loc} {l : List AInst}
   intro m hm
   unfold RAFrame.moveInsts at h
   split at h
+  all_goals try (simp only [pure, Except.pure, Except.ok.injEq] at h; subst h; simp at hm; done)
   · split at h
     · simp only [pure, Except.pure, Except.ok.injEq] at h
       subst h

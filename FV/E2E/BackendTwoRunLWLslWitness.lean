@@ -89,11 +89,11 @@ theorem r_twoRunLERW_Lsl (M : Nat) {F : BitVec 64 → Prop} {c : BitVec 64} {K :
     ∀ vals cm, Clif.runLoop env Lsl.P.bare fuel cs = .returned vals cm →
       ∃ N, RetAgreeX (frameDrop (Lsl.A fR).af + K) (spv s)
         (iterN (ArmStepX Lsl.Xb (Lsl.hooks M) (Lsl.A fR).fa)
-          ((prologueLines (Lsl.A fR).af.frameSize).length + N +
-            ((spAdjLines false (Lsl.A fR).af.frameSize).length + 2)) s)
+          ((prologueLines (Lsl.A fR).af.saves (Lsl.A fR).af.frameSize).length + N +
+            ((epiLines (Lsl.A fR).af.saves (Lsl.A fR).af.frameSize).length + 1)) s)
         (iterN (ArmStepX Lsl.Xb (Lsl.hooks M) (Lsl.A fR).fa)
-          ((prologueLines (Lsl.A fR).af.frameSize).length + N +
-            ((spAdjLines false (Lsl.A fR).af.frameSize).length + 2)) s) := by
+          ((prologueLines (Lsl.A fR).af.saves (Lsl.A fR).af.frameSize).length + N +
+            ((epiLines (Lsl.A fR).af.saves (Lsl.A fR).af.frameSize).length + 1)) s) := by
   have hc := fR_compiled
   obtain ⟨lm, hlm⟩ := FnAsm.layout_labelOffsets hc.layout
   obtain ⟨body, psF, hpsF, -, hk⟩ := emitFunc_ok hc.emit

@@ -733,12 +733,12 @@ def calleeB (P : Clif.Program) (S : String → Option Nat) (g : Clif.Function) :
 /-- The slots of `g` fit in its compiled slot region (`LinkSys.Ok.slotFits`). -/
 def slotFitsB (g : Clif.Function) (a : Art) : Bool :=
   g.slots.all fun p => match (slotLayout g.slots).1.lookup p.1 with
-    | some off => decide (a.af.slotBase + off + p.2.size ≤ a.af.frameSize)
+    | some off => decide (a.af.slotBase + off + p.2.size ≤ a.af.frameSize - clobberBytes a.af.saves)
     | none => false
 
 theorem slotFitsB_sound {g : Clif.Function} {a : Art} (h : slotFitsB g a = true) :
     ∀ p ∈ g.slots, ∃ off, (slotLayout g.slots).1.lookup p.1 = some off ∧
-      a.af.slotBase + off + p.2.size ≤ a.af.frameSize := by
+      a.af.slotBase + off + p.2.size ≤ a.af.frameSize - clobberBytes a.af.saves := by
   intro p hp
   have := List.all_eq_true.mp h p hp
   revert this
@@ -832,7 +832,7 @@ def linkChks (I : LinkInput) (P : Clif.Program) (T : List (Clif.Function × Art)
   let may := indToB (fun n => I.syms.lookup n) g
   [("outFits", g.externs.all (fun e => !(P.func? e.2.name).isSome || outFitsB e.2.sig fr.intBase)),
    ("calleeFrame/slotFits",
-     !calleeB P (fun n => I.syms.lookup n) g || ((!g.slots.isEmpty || fr.size == a.af.frameSize) && slotFitsB g a)),
+     !calleeB P (fun n => I.syms.lookup n) g || ((!g.slots.isEmpty || fr.size == a.af.frameSize - clobberBytes a.af.saves) && slotFitsB g a)),
    ("callRegs/blrRegs", allInsts a.vcp (siteB (siteOk P g may a.vcp))),
    ("declSig", g.externs.all fun e => match P.func? e.2.name with
       | some h => decide (e.2.sig = h.sig)
@@ -981,7 +981,7 @@ structure Facts (I : LinkInput) (R : Res) (g : Clif.Function) (a : Art) : Prop w
   width : ∀ p ∈ g.sig.params, p.ty.width ≤ 64
   callee : calleeB (progOf R) (fun n => I.syms.lookup n) g = true → (g.slots = [] →
     (RAFrame.compute a.vcp a.rf).size =
-      a.af.frameSize) ∧ slotFitsB g a = true
+      a.af.frameSize - clobberBytes a.af.saves) ∧ slotFitsB g a = true
   sites : allInsts a.vcp (siteB (siteOk (progOf R) g
     (indToB (fun n => I.syms.lookup n) g) a.vcp)) = true
   declSig : ∀ e ∈ g.externs.map (·.2), ∀ h, (progOf R).func? e.name = some h → e.sig = h.sig
@@ -1136,7 +1136,7 @@ theorem okR_sound {I : LinkInput} {R : Res} (hR : ResOk I R) (hI : okR I R = tru
     exact .inl ⟨g, hg, e, he, by rw [hen, hname]⟩
   have hcal : ∀ g ∈ (progOf R).funcs, ∀ h, (ofRes I R B F).Callee g h →
       (h.slots = [] → (RAFrame.compute (artOf R h).vcp (artOf R h).rf).size =
-        (artOf R h).af.frameSize) ∧ slotFitsB h (artOf R h) = true := by
+        (artOf R h).af.frameSize - clobberBytes (artOf R h).af.saves) ∧ slotFitsB h (artOf R h) = true := by
     intro g hg h hh
     have hc : calleeB (progOf R) (fun n => I.syms.lookup n) h = true ∧
         h ∈ (progOf R).funcs := by

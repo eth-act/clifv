@@ -193,16 +193,16 @@ theorem fB_iv {R : Backend.Proof.RL} {x : BitVec 64} (h : fB R x = true)
     rw [he, Nat.zero_add] at hd'
     exact hd'
 
-theorem numsS : spv RAS.s0 - BitVec.ofNat 64 (frameDrop RAS.af) = 32528#64 ∧
-    max RAS.fr.size (frameDrop RAS.af) = 240 ∧ RAS.fb.words.size = 47 ∧ RAS.base = 0x10000#64 := by
+theorem numsS : spv RAS.s0 - BitVec.ofNat 64 (frameDrop RAS.af) = 32592#64 ∧
+    max RAS.fr.size (frameDrop RAS.af) = 176 ∧ RAS.fb.words.size = 29 ∧ RAS.base = 0x10000#64 := by
   native_decide
 
-theorem numsL : spv RAL.s0 - BitVec.ofNat 64 (frameDrop RAL.af) = 24336#64 ∧
-    max RAL.fr.size (frameDrop RAL.af) = 240 ∧ RAL.fb.words.size = 47 ∧ RAL.base = 0x20000#64 := by
+theorem numsL : spv RAL.s0 - BitVec.ofNat 64 (frameDrop RAL.af) = 24400#64 ∧
+    max RAL.fr.size (frameDrop RAL.af) = 176 ∧ RAL.fb.words.size = 29 ∧ RAL.base = 0x20000#64 := by
   native_decide
 
 theorem privS_or {x : BitVec 64} (h : RAS.F x) :
-    (32528 ≤ x.toNat ∧ x.toNat < 32768) ∨ (65536 ≤ x.toNat ∧ x.toNat < 65536 + 4 * 47 + 4) := by
+    (32592 ≤ x.toNat ∧ x.toNat < 32768) ∨ (65536 ≤ x.toNat ∧ x.toNat < 65536 + 4 * 29 + 4) := by
   have hb := fB_iv (fB_of rfl (fun _ h => h) h) wfRS.prog0
   obtain ⟨h1, h2, h3, h4⟩ := numsS
   rw [h1, h2, h3, h4] at hb
@@ -211,7 +211,7 @@ theorem privS_or {x : BitVec 64} (h : RAS.F x) :
   · right; bv_omega
 
 theorem privL_or {x : BitVec 64} (h : RAL.F x) :
-    (24336 ≤ x.toNat ∧ x.toNat < 24576) ∨ (131072 ≤ x.toNat ∧ x.toNat < 131072 + 4 * 47 + 4) := by
+    (24400 ≤ x.toNat ∧ x.toNat < 24576) ∨ (131072 ≤ x.toNat ∧ x.toNat < 131072 + 4 * 29 + 4) := by
   have hb := fB_iv (fB_of rfl (fun _ h => h) h) wfRL.prog0
   obtain ⟨h1, h2, h3, h4⟩ := numsL
   rw [h1, h2, h3, h4] at hb

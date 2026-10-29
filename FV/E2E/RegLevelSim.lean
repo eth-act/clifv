@@ -25,14 +25,15 @@ namespace Backend.Proof
 open Backend E2E
 
 /-- The frame addresses of the activation entered in `s` (`lo`, `hi` = the frame's `intBase`,
-`size`): the spill, save and float-move slots `[sp_body + lo, sp_body + hi)`, the padding and
-fp/lr above the CLIF slots `[sp_body + frameSize, sp_entry)` (the explicit CLIF slots in between
-belong to the world; empty without a frame), and the code words (read as data by jump tables;
-the program never accesses them). -/
+`size`): the spill and float-move slots `[sp_body + lo, sp_body + hi)`, the clobber area the
+prologue pushes the saved registers into and fp/lr above the CLIF slots
+`[sp_body + frameSize - clobberBytes, sp_entry)` (the explicit CLIF slots in between belong to
+the world; empty without a frame), and the code words (read as data by jump tables; the
+program never accesses them). -/
 def frameF (lo hi : Nat) (af : AFunc) (s : Arm.ArmState) (a : BitVec 64) : Prop :=
   (lo ≤ (a - (spv s - BitVec.ofNat 64 (frameDrop af))).toNat ∧
     (a - (spv s - BitVec.ofNat 64 (frameDrop af))).toNat < hi) ∨
-  (af.frameSize ≤ (a - (spv s - BitVec.ofNat 64 (frameDrop af))).toNat ∧
+  (af.frameSize - clobberBytes af.saves ≤ (a - (spv s - BitVec.ofNat 64 (frameDrop af))).toNat ∧
     (a - (spv s - BitVec.ofNat 64 (frameDrop af))).toNat < frameDrop af) ∨
   CodeAddr s a
 
@@ -162,7 +163,7 @@ theorem OperandsSoundCtlAtI.mono {F FK FK' : BitVec 64 → Prop} {P P' : MInst �
   intro c wh ops regs i' w outs w' hops hst hasg hp hw hal herr hsem
   obtain ⟨s', hex, hW, hK, hd, ho, hc⟩ := h c wh ops regs i' w outs w' hops hst hasg (hP i' hp) hw hal
     herr hsem
-  exact ⟨s', hex, hW, ⟨hK.1, fun a ha => hK.2 a (hFK a ha)⟩, hd, ho, hc⟩
+  exact ⟨s', hex, hW, ⟨hK.1, fun a ha => hK.2.1 a (hFK a ha), hK.2.2⟩, hd, ho, hc⟩
 
 /-- `CallSoundCtl` at the states whose memory at `G` is `s0`'s: the callee may assume that the
 addresses `G` the calling activation keeps (`RL.G`: e.g. its callers' frames and the program's
@@ -375,6 +376,18 @@ theorem sem_eq {i : MInst} (hc : ∀ info, i ≠ .call info) (ht : ∀ info ti, 
 /-- The machine. -/
 noncomputable def step : Arm.ArmState → Arm.ArmState := ArmStepX R.X R.H R.fa
 
+/-- The bytes the prologue writes below the entry `sp`: fp/lr and the clobber area. -/
+def topN : Nat := 16 + clobberBytes R.af.saves
+
+/-- The lowest of them: the bottom of the clobber area. -/
+def topB : BitVec 64 := spv R.s0 - BitVec.ofNat 64 R.topN
+
+/-- The state after the prologue. -/
+noncomputable def sP : Arm.ArmState := iterN R.step (prologueLines R.af.saves R.af.frameSize).length R.s0
+
+/-- What the prologue leaves in fp/lr and the clobber area. -/
+noncomputable def topImg : BitVec (R.topN * 8) := Arm.read_mem_bytes R.topN R.topB R.sP
+
 end RL
 
 /-- `pc` is the address after a call instruction (`bl`, `blr`) of the laid-out function `fa`
@@ -396,14 +409,22 @@ structure StRel (R : RL) (s : Arm.ArmState) (m : Loc → CV) (w : Arm.ArmState) 
   prog : s.program = R.fb.program R.base
   sp : spOf s = R.spB
   align : Arm.CheckSPAlignment s
-  /-- fp/lr as pushed by the prologue -/
-  fplr : R.af.frame = true →
-    Arm.read_mem_bytes 16 (spv R.s0 - 16#64) s = xreg 30 R.s0 ++ xreg 29 R.s0
+  /-- fp/lr and the clobber area as pushed by the prologue -/
+  fplr : R.af.frame = true → Arm.read_mem_bytes R.topN R.topB s = R.topImg
   /-- the code words are readable as data -/
   code : ∀ k w, R.fb.words[k]? = some w →
     Arm.read_mem_bytes 4 (R.base + BitVec.ofNat 64 (4 * k)) s = w
   /-- the kept addresses hold what they held at entry -/
   gkeep : ∀ a, R.G a → s.mem a = R.s0.mem a
+  /-- the frame pointer as the prologue set it: x29 = entry sp − 16 (Cranelift's unwind rows
+  define the CFA from x29; the body never writes x29, the callees keep it) -/
+  fp : R.af.frame = true → xreg 29 s = spv R.s0 - 16#64
+
+/-- x29 is part of the world: two states with the same world agree on it. -/
+theorem xreg29_sw {F : BitVec 64 → Prop} {s s' w : Arm.ArmState} (h : SameWorld F s w)
+    (h' : SameWorld F s' w) : xreg 29 s' = xreg 29 s := by
+  show Arm.r (.GPR 29#5) s' = Arm.r (.GPR 29#5) s
+  rw [h'.1 _ (by simp [Masked]), ← h.1 _ (by simp [Masked])]
 
 /-- The checker accepts the remaining items of block `vb` (from VCode index `k`). -/
 def ItemsChecked (R : RL) (vb : VBlock) (its : List RItem) : Prop :=

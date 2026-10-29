@@ -52,7 +52,7 @@ theorem store_core {F : BitVec 64 → Prop} (ctx : FnCtx) (env : Env) (op : Stor
   have hav : Avoids F op.bytes (m.addr ctx op.bytes s) := by
     have := hacc (mC.addr ctx op.bytes t, op.bytes) (by simp [MInst.accesses])
     rw [← haddr]; exact this
-  refine ⟨_, by simp only [execMInst, hl]; exact hS.exec, ?_, ⟨?_, fun a ha => ?_⟩, fun r hr => ?_⟩
+  refine ⟨_, by simp only [execMInst, hl]; exact hS.exec, ?_, ⟨?_, fun a ha => ?_, ?_⟩, fun r hr => ?_⟩
   · refine SameWorld.w_right (by simp [Masked]) (SameWorld.w_left (by simp [Masked]) ?_)
     refine SameWorld.write_mem_bytes' haddr.symm (by rw [hv_t]) (sameWorld_x16w o oC hwt)
   · simp only [spOf]
@@ -60,6 +60,7 @@ theorem store_core {F : BitVec 64 → Prop} (ctx : FnCtx) (env : Env) (op : Stor
     exact (x16w_facts o s).2.2.2.2
   · rw [Arm.ArmState.mem_w_eq_mem, mem_write_mem_bytes_ne _ _ _ _ _ (fun k hk e => hav k hk (e ▸ ha)),
       (x16w_facts o s).2.2.2.1]
+  · rw [Arm.r_of_w_different (by simp), Arm.r_of_write_mem_bytes, x16w_x29]
   · rcases allocatable_cases hr with ⟨k, rfl, hk⟩ | ⟨k, rfl, hk⟩
     · have e2 : rnum k ≠ 16#5 := rnum_ne (a := k) (b := 16) (by omega) (by omega) (by omega)
       cases o <;> simp [regVal, x16w, Arm.r_of_w_different, Arm.r_of_write_mem_bytes, e2]

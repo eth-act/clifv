@@ -102,12 +102,14 @@ theorem regVal_x01_x1 (t : Arm.ArmState) (obj : BitVec 64) :
 theorem frameKeep_x01 {F : BitVec 64 → Prop} {s t : Arm.ArmState} {obj : BitVec 64}
     (h : FrameKeep F s t) :
     FrameKeep F s (Arm.w (.GPR 1#5) 0 (Arm.w (.GPR 0#5) obj t)) := by
-  refine ⟨?_, fun a ha => ?_⟩
+  refine ⟨?_, fun a ha => ?_, ?_⟩
   · simp only [spOf]
     rw [Arm.r_of_w_different (by decide), Arm.r_of_w_different (by decide)]
     exact h.1
   · rw [Arm.mem_w_of_mem_eq rfl, Arm.mem_w_of_mem_eq rfl]
-    exact h.2 a ha
+    exact h.2.1 a ha
+  · rw [Arm.r_of_w_different (by decide), Arm.r_of_w_different (by decide)]
+    exact h.2.2
 
 theorem sameWorld_x01 {F : BitVec 64 → Prop} {t w : Arm.ArmState} {obj : BitVec 64}
     (h : SameWorld F t w) :
@@ -265,7 +267,8 @@ theorem realizes_tryCall_raiseUF {R : RLU} (hR : R.Wf) {semU : Sem}
     rcases hl with rfl | rfl <;> exact hlj.symm
   -- the machine after the install: the payload registers
   have hFK' : FrameKeep R.FK s (Arm.w (.GPR 1#5) 0 (Arm.w (.GPR 0#5) obj t)) :=
-    frameKeep_x01 ⟨hFK.1, fun a ha => hFK.2 a ⟨RL.FK_F ha, by rw [hst.sp]; exact RL.FK_not_below hR ha⟩⟩
+    frameKeep_x01 ⟨hFK.1, fun a ha => hFK.2.1 a ⟨RL.FK_F ha, by rw [hst.sp]; exact RL.FK_not_below hR ha⟩,
+      hFK.2.2⟩
   have hlenD : (payloadOuts (.call info) obj).length =
       ((ops.zip regs).toList.filter (·.1.isDef)).length := by
     rw [hlen, pairs_regs, List.filter_map, List.length_map]; rfl
@@ -338,8 +341,8 @@ theorem realizes_tryCall_raiseUF {R : RLU} (hR : R.Wf) {semU : Sem}
         (payloadOuts (.call info) obj)).filter (·.1.1.isLate))) w' := by
     refine ⟨fun l hl hL => ?_, sameWorld_x01 hW, err_x01 herrt, hprog', hsp',
       align_of_sp (by rw [hsp', hst.sp]) hst.align,
-      fun hframe => ?_, code_keep hR.prog0 hst.code fun a ha => hFK'.2 a (.inl (.inr (.inr ha))),
-      fun a ha => (hFK'.2 a (.inr ha)).trans (hst.gkeep a ha)⟩
+      fun hframe => ?_, code_keep hR.prog0 hst.code fun a ha => hFK'.2.1 a (.inl (.inr (.inr ha))),
+      fun a ha => (hFK'.2.1 a (.inr ha)).trans (hst.gkeep a ha), fun hf => hFK'.2.2.trans (hst.fp hf)⟩
     · cases l with
       | reg r => exact hr3 r (hl r rfl)
       | stack k' c =>
@@ -349,7 +352,7 @@ theorem realizes_tryCall_raiseUF {R : RLU} (hR : R.Wf) {semU : Sem}
         rw [hl3 _ (fun r h => by cases h), hst.store _ hl hL,
           locVal_frame_keep hfr hst.sp hFK' hL (fun r h => by cases h)]
     · rw [← hst.fplr hframe]
-      exact read_mem_bytes_congr _ _ (fun k hk => hFK'.2 _ (fplr_inF hR hframe k hk))
+      exact read_mem_bytes_congr _ _ (fun k hk => hFK'.2.1 _ (fplr_inF hR hframe k hk))
   refine ⟨1, _, MStep.op hvb hi hops hsz hsem hlen (HavocOuts.refl _ _ _) hc3
     (MNext.goto hk1 hsucc hitems), ?_, fun i hi => ?_⟩
   · simp only [iterN]
@@ -378,7 +381,15 @@ theorem realizes_tryCall_raiseUF {R : RLU} (hR : R.Wf) {semU : Sem}
       rw [hUr] at hr'
       cases hr'
       exact hFK.1.trans hst.sp
-    exact .inr ⟨hRX, hnext, hexit, htsp, fun x hx => ⟨hxzr x hx, hst.code⟩,
+    have htfp : ∀ x d obj' t', R.AtLine s x →
+        ((∃ n, x = .bl n ∧ d = some n) ∨ (∃ r, x = .blr r ∧ d = none)) →
+        R.U.raise d s = some (obj', t') → xreg 29 t' = spv R.s0 - 16#64 := by
+      intro x d obj' t' hx hd hr'
+      obtain rfl := hdesc x d hx hd
+      rw [hUr] at hr'
+      cases hr'
+      exact hFK.2.2.trans (hst.fp (lowerRFunc_frame hR.alloc))
+    exact .inr ⟨hRX, hnext, hexit, htsp, htfp, fun x hx => ⟨hxzr x hx, hst.code⟩,
       ⟨.tryCall info ti, info, hsite0, .inr ⟨ti, rfl⟩, by rw [hst.sp]; exact RL.K_le hR,
         fun a ha => by rw [hst.sp] at ha; exact RL.below_F ha, hst.gkeep, cc, wh, ops, regs, i', w,
         obj, _, hops, hstat, hasg, hcpc, hst.world, hst.align, hst.err, hgg, hraise⟩⟩
@@ -423,7 +434,7 @@ theorem padsNonzero_of_check {af : AFunc} {fa : FnAsm} (h : padsNonzeroB af fa =
 namespace UTryWitness
 
 open Backend.Proof.UnwindTables.Witness in
-/-- S10c's witness function (a `try_call` whose catch handler's landing pad is at offset 32)
+/-- S10c's witness function (a `try_call` whose catch handler's landing pad is at offset 28)
 passes both checks: its call-site bridge (`siteAt_of_check`) and its landing pads
 (`padsNonzero_of_check`) are discharged. -/
 theorem checks : padsNonzeroB af fa = true ∧ lastCallsOk af fa = true := by decide +kernel
@@ -433,11 +444,11 @@ theorem pads : PadsNonzero af fa := padsNonzero_of_check checks.1
 
 open Backend.Proof.UnwindTables.Witness in
 /-- The check is not vacuous there: the function's one call is a `try_call` whose entry has
-landing pad 32. -/
+landing pad 28 (32 before #479: Cranelift's frame scheme moves the code 4 bytes earlier). -/
 theorem entry :
-    af.calls.zip (scanLines fa.lines.toList 0 [] []).2 = [(some ⟨1, [.tag 1 2], false, 0⟩, 20)] ∧
-      entryFor (scanLines fa.lines.toList 0 [] []).1 (some ⟨1, [.tag 1 2], false, 0⟩, 20) =
-        some ⟨19, 1, 32, 1⟩ := by
+    af.calls.zip (scanLines fa.lines.toList 0 [] []).2 = [(some ⟨1, [.tag 1 2], false, 0⟩, 16)] ∧
+      entryFor (scanLines fa.lines.toList 0 [] []).1 (some ⟨1, [.tag 1 2], false, 0⟩, 16) =
+        some ⟨15, 1, 28, 1⟩ := by
   decide +kernel
 
 end UTryWitness

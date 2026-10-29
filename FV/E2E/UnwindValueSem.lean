@@ -355,7 +355,7 @@ theorem realizes_value_allU {R : RLU} (hR : R.Wf)
     (hU : CalleeUnwOkG R.F R.K R.G R.s0 (CallAt R.fa R.base) R.X R.XR R.U R.vc.CallSite R.gv)
     (htry : RealizesTryRaise R R.valueSemU) :
     Realizes R.vc R.rf R.valueSemU ckeep R.stepU
-      (fun s c => Q R.toRL s c ∧ AInv R.toRL c) R.GoodXU :=
+      (QA R.toRL) R.GoodXU :=
   realizes_allU hR hU (realizes_value_all hR hC hT hTls hcov)
     (fun _ _ _ h => valueSemVU_noRaise h)
     (fun _ _ _ _ _ _ h hr => by rw [valueSemVU_call_raise h hr])
@@ -372,7 +372,7 @@ theorem realizes_value_allUF {R : RLU} (hR : R.Wf)
     (hU : CalleeUnwOkG R.F R.K R.G R.s0 (CallAt R.fa R.base) R.X R.XR R.U R.vc.CallSite R.gv)
     (htry : RealizesTryRaiseP R R.valueSemU R.GoodXUF) :
     Realizes R.vc R.rf R.valueSemU ckeep R.stepU
-      (fun s c => Q R.toRL s c ∧ AInv R.toRL c) R.GoodXUF :=
+      (QA R.toRL) R.GoodXUF :=
   realizes_allUP hR (fun _ h => .inl h) hU (realizes_value_all hR hC hT hTls hcov)
     (fun _ _ _ h => valueSemVU_noRaise h)
     (fun _ _ _ _ _ _ h hr => by rw [valueSemVU_call_raise h hr])

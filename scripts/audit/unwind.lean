@@ -183,10 +183,8 @@ import FV.Backend.Proof.IselOutBoundWitness
 #print axioms Link.EhCheck.Complete.savedCheckRF_spill
 #print axioms Link.EhCheck.Complete.savedCheckRF_build
 #print axioms Link.EhCheck.Complete.savedCheckRF_pipe
-#print axioms Link.EhCheck.Complete.savedCheckAF_of
 #print axioms Link.EhCheck.Complete.savedCheck_of
 #print axioms Link.EhCheck.Complete.savedCheck_pipe
-#print axioms Link.EhCheck.Complete.saveOk_of
 #print axioms Link.EhCheck.Complete.unwindRows_complete_frame
 #print axioms Link.EhCheck.Complete.Witness.savedCheck_applies -- witness: native_decide
 #print axioms Link.EhCheck.Complete.Witness.unwindRows_frame_applies -- witness: native_decide

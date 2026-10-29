@@ -38,7 +38,7 @@ theorem realizes_valueU_backend {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : Fn
       Realizes R.vc R.rf
         (valueSemU (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s)
           ⟨fa.k, af.slotBase⟩ X XR) ckeep R.stepU
-        (fun s c => Q R.toRL s c ∧ AInv R.toRL c) R.GoodXU := by
+        (QA R.toRL) R.GoodXU := by
   intro base s lm psF R hReq hR
   subst hReq
   have hF : (⟨⟨vcp, rf, af, fa, fb, lm, base, s, X, H, psF, K, fun _ => False, fun _ _ => False⟩,

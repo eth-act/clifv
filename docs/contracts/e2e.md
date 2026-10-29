@@ -573,18 +573,18 @@ the `retN`/value arguments).
   `LowerShape.labels`); the edge into the handler's block satisfies `Cert`'s edge conditions
   (`Driver.edgeOk_succ`: `certBlock_ok`'s edge argument for every successor, not only the normal
   edge). Witness `Witness.unwCheck_applies` (`FV/Link/UnwCheckInWitness.lean`, on `tc`).
-  **`savedCheck` and `SaveOk`** (`FV/Link/UnwSavedIn.lean`): the allocation part by construction —
+  **`savedCheck`** (`FV/Link/UnwSavedIn.lean`): the allocation part by construction —
   `savedCheckRF_spill` (spill allocation), `savedCheckRF_build` (regalloc2's answer as `buildRFunc`
   reads it: the saved registers are every callee-saved register its locations mention), so
-  `savedCheckRF_pipe` for every allocator answer the pipeline lowers; the frame part
-  `savedCheckAF_of`/`savedCheck_of`/`savedCheck_pipe` and `saveOk_of`/`unwindRows_complete_frame`
-  under two decidable conditions on the artifact that are necessary for the current compiler:
-  **`saveFrameB`** (save slots below 32 KiB; `large_frame` stores through x16) and **`leadOkB`**
-  (no further callee-save store right after the saves; an allocator answer storing a
-  callee-saved register into a spill slot there passes `checkAlloc` but gives wrong rows, so
-  `savedCheckAF` rightly rejects it). Witness `Witness.savedCheck_applies`/`unwindRows_frame_applies`.
+  `savedCheckRF_pipe` for every allocator answer the pipeline lowers; `savedCheck_of`/
+  `savedCheck_pipe` add that the allocation lowers. **`unwindRows`** (`unwindRows_complete`,
+  `FV/Link/UnwFnsComplete.lean`): with Cranelift's frame (#549: `stp x29, x30` / `mov x29, sp`,
+  then the saved registers pushed below the frame record) the rows are `prologueRows ++
+  pushRows af.saves 8` for every function whose code is below 4 GiB; `unwindRows_complete_frame`
+  wraps it. No frame condition is left (the former `saveFrameB`/`leadOkB` are deleted).
+  Witness `Witness.savedCheck_applies`/`unwindRows_frame_applies`/`unwindRows_applies`.
   **What is left, collected** (`FV/Link/UnwFnIn.lean`): `unwCondB g a` = the input condition
-  `tryTablesB`, the frame conditions `saveFrameB`/`leadOkB`, code below 4 GiB, and the two checks
+  `tryTablesB`, code below 4 GiB, and the two checks
   without a completeness proof yet, `unwCheck` and `lastCallsOk`; `fnUnwB_of_pipe` (a function
   of `fnScopeB` whose cleanup pipeline succeeded, any allocator answer, passes `fnUnwB`) and
   `unwFnsB_of_conds` (on an `InScopeIn` input, `unwCondsB` of the compiled functions gives
@@ -596,23 +596,20 @@ the `retN`/value arguments).
   `Link.DeadCleanup.unwReport`; debug, panic=unwind, `--lean-link --verified`, lean-ld): fv-demo
   2 executables (461 and 903 functions, 83/173 with `try_call`), survey 18 executables (3,179
   functions, 498 with `try_call`), fv-demo `--build-std` (28,554 functions, 3,596 with
-  `try_call`) and deps' `deps_demo` (17,091 functions, 2,588 with `try_call`): `saveFrameB` 0,
-  `leadOkB` 0, `tryTablesB` 0, `unwCheck` 0, `ehOkR` 0, `lastCallsOk` 3 in deps (3 `regex`
-  functions; 5 before #484) and 1 in std (measured before #484). `saveFrameB` is a real
-  run-time limit of the current frame layout (save slots after the spill area): a function with
-  a > 32 KiB spill area stores its callee-saves through x16 without CFI rows, and a panic
-  unwinding through it does not restore them (repro on #479; stock cg_clif saves them under the
-  frame record and is not affected). Frame change tracked in #479.
+  `try_call`) and deps' `deps_demo` (17,091 functions, 2,588 with `try_call`): `tryTablesB` 0,
+  `unwCheck` 0, `ehOkR` 0, `lastCallsOk` 3 in deps (3 `regex` functions; 5 before #484) and 1 in
+  std (measured before #484). Before #549 the frame condition `saveFrameB` was a real run-time
+  limit (a > 32 KiB spill area stored the callee-saves through x16 without CFI rows; repro on
+  #479, `examples/bigframe-unwind`); Cranelift's frame pushes them under the frame record, so
+  the limit is gone.
   **Without `unwCheck`** (`FV/Link/UnwCondIn.lean`): `unwCondInB g a` =
-  `tryTablesB`, `tryRetsB`, `lastCallsOk`, `saveFrameB`, `leadOkB`, code below 4 GiB;
+  `tryTablesB`, `tryRetsB`, `lastCallsOk`, code below 4 GiB;
   `Link.EhCheck.Complete.unwCondB_of_in` (by `unwCheck_complete`),
   `unwCondsB_of_in` (`InScopeIn` lift), `Link.DeadCleanup.compileExeU_total_ldCond`; witness
   `ULdCondWitness.compileExeU_total_ldCond_witness`. Measured (debug, panic=unwind,
   `--lean-link --verified`): deps without std, 4 executables (15,200–19,845 functions,
   2,321–2,988 with `try_call`), every condition 0 (`lastCallsOk` 3 → 0 by #515); fv-demo 0.
-  Open: completeness of `lastCallsOk` (#518) and `ehOkR` on lean-ld's output (#519); `saveFrameB`
-  and `leadOkB` stay measured conditions (the stock Cranelift frame, #549, is planned to make the
-  saves' rows unconditional).
+  Open: completeness of `lastCallsOk` (#518) and `ehOkR` on lean-ld's output (#519).
   **The outgoing bound from the input** (`FV/Backend/Proof/IselOutBound*.lean`,
   `FV/Link/UnwOutIn.lean`): the input condition **`outBoundB g`** (`outBoundLe 32560`: every
   `call`/`call_indirect` statement and every `try_call`/`try_call_indirect` terminator passes at

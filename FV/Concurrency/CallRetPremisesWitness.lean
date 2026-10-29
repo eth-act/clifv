@@ -87,16 +87,18 @@ theorem rets_RC {y : ArmState} (hy : PostA sBF y) :
       ∀ {L : List Lab} {mon : Mon} {t' : ArmState × Mon}, L.length < n →
         PRun Policy.arm RC.step (OkPriv RC) (s, mon) L t' → t'.1 = iterN RC.step L.length s := by
   obtain ⟨m, -, hq, -⟩ := prefixF
-  obtain ⟨hpc, herr, hsp, hmem, hprog⟩ := hy
+  obtain ⟨hpc, herr, hsp, hmem, hprog, hfp⟩ := hy
   obtain ⟨info, hinfo⟩ := callC1
   have hstr := q_stRel hq
   rw [checksPost.2.1] at hq
-  have hq1 := resumeQ wfRC hq vb0C hinfo hpc herr hsp hmem (hprog.trans hstr.prog.symm)
+  have hq1 := resumeQ wfRC hq vb0C hinfo hpc herr hsp hmem (hprog.trans hstr.prog.symm) hfp
   have hA1 : AInv RC (.run ⟨0, (postMv (.x 0)).map (fun p => RItem.move p.1 p.2) ++
       [.op 2 #[.reg (.x 0)]], locVal RC.fr y, y⟩) := by
     intro _ ⟨a, ha⟩
     simp [postMv, RealizeCompiled.Witness.savesL] at ha
-  obtain ⟨n1, hq2, -, -⟩ := moves_privA wfRC (postMv (.x 0)) _ _ _ hq1 hA1
+  obtain ⟨n1, hqa2, -⟩ := moves_privQA wfRC (postMv (.x 0)) _ _ _ (.inl ⟨hq1, hA1⟩)
+    (moves_noRet (R := RC) postMvC_noRet)
+  obtain ⟨mt2, hq2⟩ := qa_q hqa2
   obtain ⟨n, hn0, hpc', -, -, -, -, hr⟩ :=
     realized_rets wfRC abiRC (g := RC.step) (fun _ _ _ => rfl) hq2 vb0C instC2
   exact ⟨_, n, hn0, hpc', fun hlt hp => (hr hlt hp).1⟩

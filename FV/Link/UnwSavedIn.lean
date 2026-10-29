@@ -6,23 +6,17 @@ import FV.E2E.SpillLower
 /-!
 # The frame check `savedCheck` on the allocations the pipeline lowers (S10g, #404)
 
-`savedCheck vc rf = savedCheckRF vc rf && savedCheckAF vc rf af` (`FV/E2E/RegLevelFrameSaved.lean`)
-is one of the per-function unwinding checks (`unwFnsB`). Here:
-
-* **the allocation part `savedCheckRF` by construction**: `savedCheckRF_spill` for the spill
-  allocation (`spillAlloc`: it saves every callee-saved register and writes no save slot after
-  the saves) and `savedCheckRF_build` for regalloc2's answer as the backend reads it
-  (`buildRFunc`: it saves every callee-saved register its allocation mentions, `used`, and
-  regalloc2's locations are registers and spill slots); with `ctlCheck` (which `lowerRFunc`
-  checks) for "no edge enters block 0". So `savedCheckRF_pipe`: the allocation the pipeline
-  lowers (`allocResult vcp (readyAnswer vcp (raAnswer vcp o))`) passes it, for every allocator
-  answer `o`.
-* **the frame part `savedCheckAF`** (`savedCheckAF_of`): the save moves of block 0 become one
-  `str` each at their save slots when the slots are below 32 KiB (`saveFrameB`; the
-  `large_frame` corpus test is the counterexample above), and the code after them does not
-  start with another callee-save store (`leadOkB`: an allocator answer may store a callee-saved
-  register into a spill slot right after the saves, which `checkAlloc` accepts and which
-  `savedCheckAF` rightly rejects).
+`savedCheck vc rf = savedCheckRF vc rf && (lowerRFunc vc rf).toBool`
+(`FV/E2E/RegLevelFrameSaved.lean`) is one of the per-function unwinding checks (`unwFnsB`). Here
+the allocation part `savedCheckRF` holds by construction: `savedCheckRF_spill` for the spill
+allocation (`spillAlloc`: it saves every callee-saved register and writes no save slot after
+the saves) and `savedCheckRF_build` for regalloc2's answer as the backend reads it
+(`buildRFunc`: it saves every callee-saved register its allocation mentions, `used`, and
+regalloc2's locations are registers and spill slots); with `ctlCheck` (which `lowerRFunc`
+checks) for "no edge enters block 0". So `savedCheck_pipe`: the allocation the pipeline lowers
+(`allocResult vcp (readyAnswer vcp (raAnswer vcp o))`) passes `savedCheck`, for every allocator
+answer `o`. With Cranelift's frame (#549) the prologue pushes the saved registers itself, so
+no frame condition is left (`unwindRows_complete_frame`).
 -/
 
 namespace Link.EhCheck.Complete
@@ -663,250 +657,32 @@ theorem pipeAlloc_size {vcp : VCode} (hne : vcp.blocks.size ≠ 0) (o : Lean.Jso
   · rw [h]; exact Spill.spillAlloc_size vcp
   · exact (checkAlloc_size hc).1
 
-/-! ## The frame part -/
+/-! ## `savedCheck` and `unwindRows` -/
 
-/-- A block is its leading save moves, then the rest. -/
-theorem leadSaves_split : ∀ l : List RItem,
-    l = saveMoves (RItem.leadSaves l) ++ l.dropWhile (·.saveReg?.isSome)
-  | [] => rfl
-  | it :: l => by
-    cases h : it.saveReg? with
-    | none => simp [RItem.leadSaves, h, saveMoves]
-    | some r =>
-      have e := saveReg?_some h
-      subst e
-      simp only [RItem.leadSaves, saveReg?_save, saveMoves, List.map_cons, List.cons_append,
-        List.dropWhile, Option.isSome_some]
-      exact congrArg _ (leadSaves_split l)
-
-/-- **The save slots are below 32 KiB**: every save move becomes one `str` at `[sp, #off]`. -/
-def saveFrameB (vc : VCode) (rf : RFunc) : Bool :=
-  rf.saveRegs.all fun r => match (RAFrame.compute vc rf).saveOff.lookup r with
-    | some o => decide (o < 32768)
-    | none => true
-
-/-- **The code of block 0 after the prologue and the saves' stores does not start with
-another callee-save store.** -/
-def leadOkB (rf : RFunc) (af : AFunc) : Bool :=
-  match af.blocks[0]? with
-  | some (_, code) => ((code.toList.drop (1 + rf.saveRegs.length)).head?.bind AInst.calleeSave?).isNone
-  | none => true
-
-/-- The save moves' code: one `str` per saved register at its save slot. -/
-theorem saves_code {fr : RAFrame} {vb : VBlock} :
-    ∀ (rs : List Reg) {code : List AInst}, itemsCode fr vb (saveMoves rs) = .ok code →
-      (∀ r ∈ rs, ∀ o, fr.saveOff.lookup r = some o → o < 32768) →
-      ∃ offs : List Nat, offs.length = rs.length ∧
-        (∀ (i : Nat) r o, rs[i]? = some r → offs[i]? = some o → fr.saveOff.lookup r = some o) ∧
-        code = (rs.zip offs).map fun (r, o) => AInst.inst (slotStore ((r.realClass?).getD .int) r o)
-  | [], code, h, _ => by
-    simp only [saveMoves, List.map_nil, itemsCode, pure, Except.pure, Except.ok.injEq] at h
-    subst h
-    exact ⟨[], rfl, by simp, rfl⟩
-  | r :: rs, code, h, hb => by
-    simp only [saveMoves, List.map_cons] at h
-    obtain ⟨c1, c2, h1, h2, rfl⟩ := itemsCode_cons h
-    obtain ⟨offs, hlen, hoff, rfl⟩ := saves_code rs h2 (fun r' hr' => hb r' (by simp [hr']))
-    rw [itemCode_move] at h1
-    simp only [RAFrame.moveInsts, RAFrame.offset, bind, Except.bind] at h1
-    cases hl : fr.saveOff.lookup r with
-    | none => rw [hl] at h1; cases h1
-    | some o =>
-      rw [hl] at h1
-      simp only [pure, Except.pure, Except.ok.injEq] at h1
-      subst h1
-      have ho := hb r (by simp) o hl
-      refine ⟨o :: offs, by simp [hlen], fun i r' o' hr' ho' => ?_, ?_⟩
-      · cases i with
-        | zero =>
-          simp only [List.getElem?_cons_zero, Option.some.injEq] at hr' ho'
-          subst hr' ho'; exact hl
-        | succ i => exact hoff i r' o' (by simpa using hr') (by simpa using ho')
-      · simp [slotStoreAt, ho]
-
-theorem calleeSave_slotStore {r : Reg} (hr : r ∈ calleeSaved) (o : Nat) :
-    (AInst.inst (slotStore ((r.realClass?).getD .int) r o)).calleeSave? = some (r, (o : Int)) := by
-  have hc : calleeSaved.contains r = true := List.contains_iff_mem.2 hr
-  cases h : (r.realClass?).getD RegClass.int <;> simp [slotStore, AInst.calleeSave?, hr]
-
-/-- The rows of the saves' stores are those of their slots. -/
-theorem saveRows_eq {fr : RAFrame} {fs : Nat} :
-    ∀ (rs : List Reg) (offs : List Nat), offs.length = rs.length → (∀ r ∈ rs, r ∈ calleeSaved) →
-      (∀ (i : Nat) r o, rs[i]? = some r → offs[i]? = some o → fr.saveOff.lookup r = some o) →
-      ((rs.zip offs).map fun (r, o) => AInst.inst (slotStore ((r.realClass?).getD .int) r o)).mapM
-        (UnwindTables.saveRow fs) = saveRowsOf fr fs rs
-  | [], [], _, _, _ => rfl
-  | [], _ :: _, h, _, _ => by simp at h
-  | _ :: _, [], h, _, _ => by simp at h
-  | r :: rs, o :: offs, hlen, hcs, hoff => by
-    have hr := hcs r (by simp)
-    have hl := hoff 0 r o rfl rfl
-    have ih := saveRows_eq (fs := fs) rs offs (by simpa using hlen) (fun r' h' => hcs r' (by simp [h']))
-      (fun i r' o' h1 h2 => hoff (i + 1) r' o' (by simpa using h1) (by simpa using h2))
-    obtain ⟨d, hd⟩ := calleeSave_dwarf (calleeSave_slotStore hr o)
-    simp only [List.zip_cons_cons, List.map_cons, List.mapM_cons, saveRowsOf] at ih ⊢
-    rw [ih]
-    simp only [UnwindTables.saveRow, calleeSave_slotStore hr o, Option.bind_some, hd,
-      Option.map_some, hl, bind, Option.bind, pure]
-
-/-- The saves' code: callee-save stores of the saved registers at their slots, whose rows are
-the saved registers' slots. -/
-theorem saves_code' {fr : RAFrame} {vb : VBlock} {fs : Nat} (rs : List Reg) {code : List AInst}
-    (h : itemsCode fr vb (saveMoves rs) = .ok code)
-    (hb : ∀ r ∈ rs, ∀ o, fr.saveOff.lookup r = some o → o < 32768)
-    (hcs : ∀ r ∈ rs, r ∈ calleeSaved) :
-    code.length = rs.length ∧
-      (∀ a ∈ code, ∃ (r : Reg) (o : Nat), a.calleeSave? = some (r, (o : Int)) ∧
-        fr.saveOff.lookup r = some o) ∧
-      code.mapM (UnwindTables.saveRow fs) = saveRowsOf fr fs rs := by
-  obtain ⟨offs, hlen, hoff, rfl⟩ := saves_code rs h hb
-  refine ⟨by simp [hlen], fun a ha => ?_, saveRows_eq rs offs hlen hcs hoff⟩
-  simp only [List.mem_map] at ha
-  obtain ⟨⟨r, o⟩, hp, rfl⟩ := ha
-  obtain ⟨i, hi⟩ := List.mem_iff_getElem?.1 hp
-  rw [List.getElem?_zip_eq_some] at hi
-  exact ⟨r, o, calleeSave_slotStore (hcs r (List.of_mem_zip hp).1) o, hoff i r o hi.1 hi.2⟩
-
-/-- **Block 0's leading callee-save stores** (`savesOf`, what `unwindRows` and `savedCheckAF`
-read) on an allocation passing `savedCheckRF`, with save slots below 32 KiB (`saveFrameB`) and
-no further callee-save store right after the saves' (`leadOkB`): the saves' stores, at the
-saved registers' slots, with their rows. -/
-theorem frame_saves {vc : VCode} {rf : RFunc} {af : AFunc} (hRF : savedCheckRF vc rf = true)
-    (halloc : lowerRFunc vc rf = .ok af) (hsz : rf.blocks.size = vc.blocks.size)
-    (hne : vc.blocks.size ≠ 0) (hframe : saveFrameB vc rf = true)
-    (hlead : leadOkB rf af = true) :
-    ∃ code, af.blocks[0]?.map (·.2) = some (AInst.prologue :: code).toArray ∧
-      (code.takeWhile (·.calleeSave?.isSome)).mapM (UnwindTables.saveRow af.frameSize) =
-        saveRowsOf (RAFrame.compute vc rf) af.frameSize rf.saveRegs ∧
-      ∀ a ∈ code.takeWhile (·.calleeSave?.isSome), ∃ (r : Reg) (o : Nat),
-        a.calleeSave? = some (r, (o : Int)) ∧
-        (RAFrame.compute vc rf).saveOff.lookup r = some o := by
-  obtain ⟨⟨-, -, -, hbl⟩, -⟩ := lowerRFunc_ok halloc
-  have hcs := savedCheckRF_cs hRF
-  obtain ⟨vb, hvb⟩ : ∃ vb, vc.blocks[0]? = some vb := ⟨_, Array.getElem?_eq_getElem (by omega)⟩
-  obtain ⟨items0, hit⟩ : ∃ items0, rf.blocks[0]? = some items0 :=
-    ⟨_, Array.getElem?_eq_getElem (by omega)⟩
-  obtain ⟨code, hcode, haf0⟩ := hbl 0 vb items0 hvb hit
-  simp only [ite_true] at haf0
-  have hsv : rf.saveRegs = RItem.leadSaves items0.toList := by
-    simp [RFunc.saveRegs, hit]
-  have hsplit := leadSaves_split items0.toList
-  rw [← hsv] at hsplit
-  rw [hsplit] at hcode
-  obtain ⟨cS, cR, hS, hR, rfl⟩ := itemsCode_append hcode
-  have hfb : ∀ r ∈ rf.saveRegs, ∀ o, (RAFrame.compute vc rf).saveOff.lookup r = some o → o < 32768 := by
-    intro r hr o ho
-    have := List.all_eq_true.1 hframe r hr
-    rw [ho] at this
-    simpa using this
-  obtain ⟨hlenS, hallS, hrowS⟩ := saves_code' (fs := af.frameSize) rf.saveRegs hS hfb hcs
-  have hallS' : ∀ a ∈ cS, a.calleeSave?.isSome = true := by
-    intro a ha
-    obtain ⟨r, o, h1, -⟩ := hallS a ha
-    simp [h1]
-  have hR0 : cR.takeWhile (·.calleeSave?.isSome) = [] := by
-    unfold leadOkB at hlead
-    rw [haf0] at hlead
-    simp only [List.toList_toArray, List.singleton_append] at hlead
-    rw [show 1 + rf.saveRegs.length = (AInst.prologue :: cS).length by simp [hlenS]; omega,
-      ← List.cons_append, List.drop_left] at hlead
-    cases cR with
-    | nil => rfl
-    | cons a cR =>
-      simp only [List.head?_cons, Option.bind_some, Option.isNone_iff_eq_none] at hlead
-      simp [hlead]
-  have htw : (cS ++ cR).takeWhile (·.calleeSave?.isSome) = cS := by
-    rw [List.takeWhile_append_of_pos hallS', hR0, List.append_nil]
-  refine ⟨cS ++ cR, by rw [haf0]; rfl, by rw [htw]; exact hrowS, fun a ha => ?_⟩
-  rw [htw] at ha
-  exact hallS a ha
-
-/-- **`savedCheckAF` from the frame conditions** (`frame_saves`). -/
-theorem savedCheckAF_of {vc : VCode} {rf : RFunc} {af : AFunc} (hRF : savedCheckRF vc rf = true)
-    (halloc : lowerRFunc vc rf = .ok af) (hsz : rf.blocks.size = vc.blocks.size)
-    (hne : vc.blocks.size ≠ 0) (hframe : saveFrameB vc rf = true)
-    (hlead : leadOkB rf af = true) : savedCheckAF vc rf af = true := by
-  obtain ⟨code, h0, hrow, -⟩ := frame_saves hRF halloc hsz hne hframe hlead
-  unfold savedCheckAF
-  cases h : af.blocks[0]? with
-  | none => rw [h] at h0; cases h0
-  | some p =>
-    rw [h] at h0
-    simp only [Option.map_some, Option.some.injEq] at h0
-    obtain ⟨l, c⟩ := p
-    simp only at h0
-    subst h0
-    simp only [List.toList_toArray, List.drop_one, List.tail_cons, decide_eq_true_eq]
-    exact hrow
-
-/-- **`savedCheck` from the frame conditions.** -/
+/-- **`savedCheck`** of an allocation passing `savedCheckRF` that lowers. -/
 theorem savedCheck_of {vc : VCode} {rf : RFunc} {af : AFunc} (hRF : savedCheckRF vc rf = true)
-    (halloc : lowerRFunc vc rf = .ok af) (hsz : rf.blocks.size = vc.blocks.size)
-    (hne : vc.blocks.size ≠ 0) (hframe : saveFrameB vc rf = true)
-    (hlead : leadOkB rf af = true) : savedCheck vc rf = true := by
+    (halloc : lowerRFunc vc rf = .ok af) : savedCheck vc rf = true := by
   unfold savedCheck
   rw [hRF, halloc]
-  simp only [Bool.true_and]
-  exact savedCheckAF_of hRF halloc hsz hne hframe hlead
+  rfl
 
-/-- **`savedCheck` of the allocation the pipeline lowers**, for every allocator answer `o`, from
-the frame conditions. -/
+/-- **`savedCheck` of the allocation the pipeline lowers**, for every allocator answer `o`. -/
 theorem savedCheck_pipe {vcp : VCode} {o : Lean.Json} {af : AFunc} {ss ps : Array (Array Nat)}
-    (hcfg : vcp.cfg = .ok (ss, ps)) (hne : vcp.blocks.size ≠ 0)
-    (halloc : lowerRFunc vcp (allocResult vcp (readyAnswer vcp (LinkCheck.raAnswer vcp o))) = .ok af)
-    (hframe : saveFrameB vcp (allocResult vcp (readyAnswer vcp (LinkCheck.raAnswer vcp o))) = true)
-    (hlead : leadOkB (allocResult vcp (readyAnswer vcp (LinkCheck.raAnswer vcp o))) af = true) :
+    (hcfg : vcp.cfg = .ok (ss, ps))
+    (halloc : lowerRFunc vcp (allocResult vcp (readyAnswer vcp (LinkCheck.raAnswer vcp o))) = .ok af) :
     savedCheck vcp (allocResult vcp (readyAnswer vcp (LinkCheck.raAnswer vcp o))) = true :=
-  savedCheck_of (savedCheckRF_pipe hcfg halloc) halloc (pipeAlloc_size hne o) hne hframe hlead
+  savedCheck_of (savedCheckRF_pipe hcfg halloc) halloc
 
-/-! ## `SaveOk` and `unwindRows` -/
-
-theorem save_off {vc : VCode} {rf : RFunc} {r : Reg} {o : Nat}
-    (h : (RAFrame.compute vc rf).saveOff.lookup r = some o) :
-    o % 8 = 0 ∧ o < (RAFrame.compute vc rf).total := by
-  have ho : (RAFrame.compute vc rf).offset (.save r) = .ok o := by
-    simp [RAFrame.offset, h, pure, Except.pure]
-  obtain ⟨h1, h2⟩ := live_align (vc := vc) (rf := rf) (l := .save r) trivial ho
-  have h3 := compute_size_le_total vc rf
-  have hb : slotBytes (.save r) = 8 ∨ slotBytes (.save r) = 16 := by
-    cases r <;> simp [slotBytes]
-  rcases hb with hb | hb <;> rw [hb] at h1 h2 <;> omega
-
-/-- **`SaveOk` of block 0's leading stores** from the frame conditions. -/
-theorem saveOk_of {vc : VCode} {rf : RFunc} {af : AFunc} (hRF : savedCheckRF vc rf = true)
-    (halloc : lowerRFunc vc rf = .ok af) (hsz : rf.blocks.size = vc.blocks.size)
-    (hne : vc.blocks.size ≠ 0) (hframe : saveFrameB vc rf = true)
-    (hlead : leadOkB rf af = true) : ∀ a ∈ savesOf af, SaveOk af.frameSize a := by
-  obtain ⟨code, h0, -, hall⟩ := frame_saves hRF halloc hsz hne hframe hlead
-  have hfs := (lowerRFunc_ok halloc).1.1
-  have hal : (RAFrame.compute vc rf).total % 16 = 0 := alignTo16_mod _
-  intro a ha
-  unfold savesOf at ha
-  cases h : af.blocks[0]? with
-  | none => rw [h] at h0; cases h0
-  | some p =>
-    rw [h] at h0 ha
-    simp only [Option.map_some, Option.some.injEq] at h0
-    obtain ⟨l, c⟩ := p
-    simp only at h0 ha
-    subst h0
-    simp only [List.toList_toArray, List.drop_one, List.tail_cons] at ha
-    obtain ⟨r, o, h1, h2⟩ := hall a ha
-    obtain ⟨h3, h4⟩ := save_off h2
-    refine ⟨r, o, h1, ?_, ?_⟩ <;> rw [hfs] <;> omega
-
-/-- **`unwindRows` succeeds on the emitted code from the frame conditions**
-(`unwindRows_complete` with `saveOk_of`). -/
+/-- **`unwindRows` succeeds on the emitted code** of a function with an entry block
+(`unwindRows_complete`). -/
 theorem unwindRows_complete_frame {vc : VCode} {rf : RFunc} {af : AFunc} {k : Nat} {fa : FnAsm}
-    {fb : FnBin} (hRF : savedCheckRF vc rf = true) (halloc : lowerRFunc vc rf = .ok af)
+    {fb : FnBin} (halloc : lowerRFunc vc rf = .ok af)
     (hsz : rf.blocks.size = vc.blocks.size) (hne : vc.blocks.size ≠ 0)
-    (hframe : saveFrameB vc rf = true) (hlead : leadOkB rf af = true)
     (hemit : emitFunc k af = .ok fa) (hlay : fa.layout = .ok fb)
     (hcode : 4 * fb.words.size < 2 ^ 32) : ∃ rows, unwindRows af fa = .ok rows := by
   obtain ⟨vb, hvb⟩ : ∃ vb, vc.blocks[0]? = some vb := ⟨_, Array.getElem?_eq_getElem (by omega)⟩
   obtain ⟨items0, hit⟩ : ∃ items0, rf.blocks[0]? = some items0 :=
     ⟨_, Array.getElem?_eq_getElem (by omega)⟩
-  exact unwindRows_complete halloc hemit hlay hcode hvb hit
-    (saveOk_of hRF halloc hsz hne hframe hlead)
+  exact ⟨_, unwindRows_complete halloc hemit hlay hcode hvb hit⟩
 
 end Link.EhCheck.Complete

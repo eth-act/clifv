@@ -162,7 +162,7 @@ theorem entry_static {vc : VCode} {rf : RFunc} {af : AFunc} {k : Nat} {fa : FnAs
       af.blocks[0]? = some (vb.label, (AInst.prologue :: code).toArray) ∧
       codeLinesE ⟨k, af.slotBase⟩ af code ps1 = .ok (ls, ps2) ∧
       fa.lines.toList[0]? = some (.label (.block vb.label)) ∧
-      fa.lines.toList.drop 1 = prologueLines af.frameSize ++
+      fa.lines.toList.drop 1 = prologueLines af.saves af.frameSize ++
         (relaxLines (emitFar ⟨k, af.slotBase⟩ af) (ftList (ls ++ nxtOf af 0)) ++ T) := by
   have hframe := lowerRFunc_frame halloc
   obtain ⟨⟨-, -, -, hbl⟩, -⟩ := lowerRFunc_ok halloc
@@ -178,7 +178,7 @@ theorem entry_static {vc : VCode} {rf : RFunc} {af : AFunc} {k : Nat} {fa : FnAs
   refine ⟨code, ls2, _, ps2, T, hcode, by simpa using haf, h2, hj0, ?_⟩
   show List.drop (0 + 1) fa.lines.toList = _
   rw [hdrop, List.append_assoc, ftR_plain_append _ _ _
-    (fun ln h => by obtain ⟨_, _, _, hp⟩ := prologueLines_ins _ ln h; exact hp)
+    (fun ln h => by obtain ⟨_, _, _, hp⟩ := prologueLines_ins _ _ ln h; exact hp)
     (noTrap_nextS h2), List.append_assoc]
 
 /-! ## `padsNonzeroB` -/
@@ -302,169 +302,28 @@ theorem padsNonzero_complete {vc : VCode} {rf : RFunc} {af : AFunc} {k : Nat} {f
 
 /-! ## `unwindRows` -/
 
-/-- The lines of a callee-save store (`calleeSave?`): `memFinalize`'s address lines, then the
-store. -/
-def saveLines (c : FnCtx) : AInst → List Line
-  | .inst (.store op r m fl) =>
-    match memFinalize c m op.bytes with
-    | .ok (pre, m') => pre ++ [.ins (.store op r m') fl.trapCode]
-    | .error _ => []
-  | _ => []
-
-theorem calleeSave_inst {a : AInst} {r : Reg} {o : Int} (h : a.calleeSave? = some (r, o)) :
-    ∃ op fl, a = .inst (.store op r (.spOffset o) fl) := by
-  unfold AInst.calleeSave? at h
-  split at h
-  · rename_i op r' off fl
-    split at h
-    · cases h; exact ⟨op, fl, rfl⟩
-    · cases h
-  · cases h
-
-theorem calleeSave_dwarf {a : AInst} {r : Reg} {o : Int} (h : a.calleeSave? = some (r, o)) :
-    ∃ d, r.dwarf? = some d := by
-  unfold AInst.calleeSave? at h
-  split at h
-  · split at h
-    · rename_i hc
-      cases h
-      simp only [Bool.and_eq_true] at hc
-      have hm := List.contains_iff_mem.1 hc.2
-      simp only [calleeSaved, List.mem_append, List.mem_map, List.mem_range] at hm
-      rcases hm with ⟨i, -, rfl⟩ | ⟨i, -, rfl⟩ <;> exact ⟨_, rfl⟩
-    · cases h
-  · cases h
-
-/-- A callee-save store's lines: plain instruction lines, the same in every emitter state. -/
-theorem save_lines {c : FnCtx} {af : AFunc} {a : AInst} {r : Reg} {o : Int}
-    (h : a.calleeSave? = some (r, o)) (ps : PState) :
-    ainstLines c af a ps = .ok (saveLines c a, ps) ∧
-      (∃ m, a = .inst m ∧ m.lines c {} = .ok (saveLines c a, {})) ∧
-      (∀ ln ∈ saveLines c a, ln.plain = true ∧ ∃ i t, ln = .ins i t) := by
-  obtain ⟨op, fl, rfl⟩ := calleeSave_inst h
-  have hpl : ∀ i t, (Line.ins (.store op r i) t).plain = true := by
-    intro i t; cases t <;> rfl
-  have hpre : ∀ ln ∈ (memFinalize c (.spOffset o) op.bytes).toOption.elim [] (·.1),
-      ln.plain = true ∧ ∃ i t, ln = .ins i t := by
-    intro ln hln
-    simp only [memFinalize, pure, Except.pure, Except.toOption, Option.elim] at hln
-    split at hln
-    · simp at hln
-    · split at hln
-      · simp at hln
-      · obtain ⟨i, t, rfl⟩ := loadConst64_ins _ _ _ hln
-        refine ⟨?_, _, _, rfl⟩
-        simp only [loadConst64, List.mem_cons, List.mem_filterMap] at hln
-        rcases hln with hln | ⟨j, -, hj⟩
-        · cases hln; rfl
-        · split at hj
-          · simp only [Option.some.injEq, Line.ins.injEq] at hj
-            obtain ⟨rfl, rfl⟩ := hj
-            rfl
-          · cases hj
-  obtain ⟨pre, m', hmf⟩ : ∃ pre m', memFinalize c (.spOffset o) op.bytes = .ok (pre, m') :=
-    ⟨_, _, rfl⟩
-  rw [hmf] at hpre
-  simp only [Except.toOption, Option.elim] at hpre
-  have hsl : saveLines c (.inst (.store op r (.spOffset o) fl)) =
-      pre ++ [.ins (.store op r m') fl.trapCode] := by simp [saveLines, hmf]
-  have hlines : ∀ ps, MInst.lines c (.store op r (.spOffset o) fl) ps =
-      .ok (pre ++ [.ins (.store op r m') fl.trapCode], ps) := by
-    intro ps; simp [MInst.lines, hmf, bind, Except.bind, pure, Except.pure]
-  rw [hsl]
-  refine ⟨hlines ps, ⟨_, rfl, hlines {}⟩, fun ln hln => ?_⟩
-  rcases List.mem_append.1 hln with hln | hln
-  · exact hpre ln hln
-  · simp only [List.mem_singleton] at hln; subst hln; exact ⟨hpl _ _, _, _, rfl⟩
-
-/-- The conditions `saveRows` checks of the saves: each a callee-save store whose CFA offset is
-negative and a multiple of 8. -/
-def SaveOk (fs : Nat) (a : AInst) : Prop :=
-  ∃ r o, a.calleeSave? = some (r, o) ∧ o - 16 - fs < 0 ∧ (o - 16 - fs) % 8 = 0
-
-/-- `saveRows` succeeds on callee-save stores with good CFA offsets, with the stores' lines;
-they are also the lines the emitter writes for them, in any state. -/
-theorem saveRows_ok {c : FnCtx} {af : AFunc} {fs : Nat} :
-    ∀ {saves : List AInst} (off : Nat), (∀ a ∈ saves, SaveOk fs a) →
-      (∃ rows, saveRows c fs off saves = .ok (saves.flatMap (saveLines c), rows)) ∧
-      (∀ ps, codeLinesE c af saves ps = .ok (saves.flatMap (saveLines c), ps)) ∧
-      ∀ ln ∈ saves.flatMap (saveLines c), ln.plain = true ∧ ∃ i t, ln = .ins i t
-  | [], off, _ => ⟨⟨[], rfl⟩, fun ps => rfl, by simp⟩
-  | a :: as, off, h => by
-    obtain ⟨r, o, hcs, hneg, hmod⟩ := h a (by simp)
-    obtain ⟨hl, ⟨m, rfl, hm⟩, hpl⟩ := save_lines (c := c) (af := af) hcs {}
-    obtain ⟨⟨rows, hr⟩, hc, hpl'⟩ := saveRows_ok (c := c) (af := af) (saves := as)
-      (off + 4 * (saveLines c (.inst m)).length) fun x hx => h x (List.mem_cons_of_mem _ hx)
-    obtain ⟨d, hd⟩ := calleeSave_dwarf hcs
-    refine ⟨⟨(off + 4 * (saveLines c (.inst m)).length, .offset d (o - 16 - fs)) :: rows, ?_⟩,
-      fun ps => ?_, ?_⟩
-    · simp only [saveRows, hcs, hm, hd, bind, Except.bind, pure, Except.pure]
-      rw [if_neg (by simp only [Bool.or_eq_true, decide_eq_true_eq, bne_iff_ne, ne_eq]; omega), hr]
-      simp
-    · obtain ⟨hl', -⟩ := save_lines (c := c) (af := af) hcs ps
-      simp only [codeLinesE, hl', bind, Except.bind, hc, pure, Except.pure, List.flatMap_cons]
-    · intro ln hln
-      rw [List.flatMap_cons, List.mem_append] at hln
-      rcases hln with hln | hln
-      · exact hpl ln hln
-      · exact hpl' ln hln
-
-/-- The entry block's leading callee-save stores (what `unwindRows` reads). -/
-def savesOf (af : AFunc) : List AInst :=
-  match af.blocks[0]? with
-  | some (_, code) => (code.toList.drop 1).takeWhile (·.calleeSave?.isSome)
-  | none => []
-
-/-- **`unwindRows` succeeds on the emitted code** when the entry block's leading callee-save
-stores have negative, 8-aligned CFA offsets (`SaveOk`) and the code is below 4 GiB. -/
+/-- **`unwindRows` succeeds on the emitted code** when the code is below 4 GiB: the code starts
+with the entry label and the prologue (`entry_static`), and the rows are the prologue's and the
+pushes' (`prologueRows`, `pushRows`). -/
 theorem unwindRows_complete {vc : VCode} {rf : RFunc} {af : AFunc} {k : Nat} {fa : FnAsm}
     {fb : FnBin} (halloc : lowerRFunc vc rf = .ok af) (hemit : emitFunc k af = .ok fa)
     (hlay : fa.layout = .ok fb) (hsz : 4 * fb.words.size < 2 ^ 32) {vb : VBlock}
-    {items : Array RItem} (hvb : vc.blocks[0]? = some vb) (hit : rf.blocks[0]? = some items)
-    (hs : ∀ a ∈ savesOf af, SaveOk af.frameSize a) :
-    ∃ rows, unwindRows af fa = .ok rows := by
+    {items : Array RItem} (hvb : vc.blocks[0]? = some vb) (hit : rf.blocks[0]? = some items) :
+    unwindRows af fa = .ok (prologueRows ++ pushRows af.saves 8) := by
   have hframe := lowerRFunc_frame halloc
-  obtain ⟨code, ls, ps1, ps2, T, -, haf, hcl, h0, hd⟩ := entry_static halloc hemit hvb hit
-  obtain ⟨_, _, -, -, hk⟩ := emitFunc_ok hemit
-  have hsv : savesOf af = code.takeWhile (·.calleeSave?.isSome) := by
-    simp [savesOf, haf]
-  rw [hsv] at hs
-  generalize hS : code.takeWhile (·.calleeSave?.isSome) = saves at hs
-  have hcode : code = saves ++ code.dropWhile (·.calleeSave?.isSome) := by
-    rw [← hS, List.takeWhile_append_dropWhile]
-  obtain ⟨⟨rows, hrows⟩, hcl', hpl⟩ := saveRows_ok (c := ⟨k, af.slotBase⟩) (af := af)
-    (fs := af.frameSize) (4 * (prologueLines af.frameSize).length) hs
-  rw [hcode] at hcl
-  obtain ⟨ls1, ls2, psm, h1, h2, rfl⟩ := codeLinesE_append _ _ _ _ _ hcl
-  rw [hcl'] at h1
-  simp only [Except.ok.injEq, Prod.mk.injEq] at h1
-  obtain ⟨rfl, rfl⟩ := h1
-  rw [List.append_assoc, ftR_plain_append _ _ _ (fun ln h => (hpl ln h).1) (noTrap_nextS h2)] at hd
-  -- the code starts with the prologue and the saves' lines
-  have hgot : (fa.lines.toList.drop 1).take
-      (prologueLines af.frameSize ++ saves.flatMap (saveLines ⟨k, af.slotBase⟩)).length =
-      prologueLines af.frameSize ++ saves.flatMap (saveLines ⟨k, af.slotBase⟩) := by
-    rw [hd]
-    simp only [← List.append_assoc]
-    rw [List.append_assoc (prologueLines af.frameSize ++ _), List.take_left]
-  have hins : ∀ ln ∈ prologueLines af.frameSize ++ saves.flatMap (saveLines ⟨k, af.slotBase⟩),
-      ∃ i t, ln = .ins i t := by
+  obtain ⟨code, ls, ps1, ps2, T, -, haf, -, h0, hd⟩ := entry_static halloc hemit hvb hit
+  generalize hP : prologueLines af.saves af.frameSize = P at hd
+  have hins : ∀ ln ∈ P, ∃ i t, ln = .ins i t := by
     intro ln hln
-    rcases List.mem_append.1 hln with hln | hln
-    · obtain ⟨x, rfl, -⟩ := prologueLines_ins _ ln hln; exact ⟨_, _, rfl⟩
-    · exact (hpl ln hln).2
-  -- its size bound
-  have hpre : (prologueLines af.frameSize ++ saves.flatMap (saveLines ⟨k, af.slotBase⟩)) <+:
-      fa.lines.toList.drop 1 := by
-    rw [hd]
-    simp only [← List.append_assoc]
-    rw [List.append_assoc (prologueLines af.frameSize ++ _)]
-    exact List.prefix_append _ _
+    rw [← hP] at hln
+    obtain ⟨x, rfl, -⟩ := prologueLines_ins _ _ ln hln
+    exact ⟨_, _, rfl⟩
+  have hgot : (fa.lines.toList.drop 1).take P.length = P := by
+    rw [hd, List.take_left]
+  have hpre : P <+: fa.lines.toList.drop 1 := by
+    rw [hd]; exact List.prefix_append _ _
   have hsum := layout_sum hlay
-  have hle : 4 * (prologueLines af.frameSize ++ saves.flatMap (saveLines ⟨k, af.slotBase⟩)).length
-      < 2 ^ 32 := by
-    generalize prologueLines af.frameSize ++ saves.flatMap (saveLines ⟨k, af.slotBase⟩) = A
-      at hpre hins ⊢
+  have hle : 4 * P.length < 2 ^ 32 := by
     have h1 : ∀ L : List Line, (∀ ln ∈ L, ∃ i t, ln = .ins i t) →
         (L.map Line.size).sum = 4 * L.length := by
       intro L hL
@@ -475,7 +334,7 @@ theorem unwindRows_complete {vc : VCode} {rf : RFunc} {af : AFunc} {k : Nat} {fa
         have := ih (fun y hy => hL y (by simp [hy]))
         simp only [List.map_cons, List.sum_cons, Line.size, List.length_cons]
         omega
-    have hA := h1 A hins
+    have hA := h1 P hins
     generalize fa.lines.toList = L at hpre hsum
     have e := congrArg (fun L => (L.map Line.size).sum) (List.take_append_drop 1 L)
     simp only [List.map_append, List.sum_append] at e
@@ -483,23 +342,17 @@ theorem unwindRows_complete {vc : VCode} {rf : RFunc} {af : AFunc} {k : Nat} {fa
     have h3 := congrArg (fun L => (L.map Line.size).sum) htl
     simp only [List.map_append, List.sum_append] at h3
     omega
-  have hle' : ¬ (4 * (prologueLines af.frameSize ++
-      saves.flatMap (saveLines ⟨k, af.slotBase⟩)).length ≥ 2 ^ 32) := by omega
+  have hle' : ¬ (4 * P.length ≥ 2 ^ 32) := by omega
   have h0' : fa.lines[0]? = some (.label (.block vb.label)) := by simpa using h0
-  refine ⟨prologueRows ++ frameRows af.frameSize (4 * (prologueLines af.frameSize).length) ++ rows, ?_⟩
   unfold unwindRows
   simp only [hframe, Bool.not_true, Bool.false_eq_true, ite_false, haf, bind, Except.bind]
   have hb : (some AInst.prologue != some AInst.prologue) = false := rfl
-  simp only [List.head?_cons, List.drop_succ_cons, List.drop_zero, hS, hk, hrows, hb,
-    Bool.false_eq_true, ite_false]
+  simp only [List.head?_cons, List.toList_toArray, hb, Bool.false_eq_true, ite_false, hP]
   rw [if_neg hle']
   simp only [h0', hgot]
   simp only [pure, Except.pure]
   simp
-  exact ⟨fun x hx => by obtain ⟨i, t, rfl⟩ := hins x (List.mem_append_left _ hx); rfl,
-    fun a ha x hx => by
-      obtain ⟨i, t, rfl⟩ := hins x (List.mem_append_right _ (List.mem_flatMap.2 ⟨a, ha, hx⟩))
-      simp [Line.insn?]⟩
+  exact fun x hx => by obtain ⟨i, t, rfl⟩ := hins x hx; simp [Line.insn?]
 
 /-! ## The `try_call` premises from the prepared code -/
 

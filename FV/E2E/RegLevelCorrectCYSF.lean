@@ -56,9 +56,9 @@ theorem realizes_op_nextNASF {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} (hYF 
         fun u hu env => hu regs i' ls1 hal' hasg hl1 env⟩) hW'
 
 set_option maxHeartbeats 4000000 in
-/-- **`realizes_allCWS` with the segment's lines** (`RL.FRFree`; same proof on the
+/-- **`realizes_stepCWS` with the segment's lines** (`RL.FRFree`; same proof on the
 `realizes_*NAF` cases). -/
-theorem realizes_allCWSF {R : RL} (hR : R.Wf) {P : Arm.ArmState → Prop}
+theorem realizes_stepCWSF {R : RL} (hR : R.Wf) {P : Arm.ArmState → Prop}
     (Ok : Arm.ArmState → (BitVec 64 → Prop) → Prop)
     (hC : CalleeOkGP P R.F R.K R.G R.s0 (CallAt R.fa R.base) R.X R.H R.vc.CallSite R.gv)
     (hT : R.vc.hasTryCall = true →
@@ -66,7 +66,8 @@ theorem realizes_allCWSF {R : RL} (hR : R.Wf) {P : Arm.ArmState → Prop}
     (hTls : R.vc.hasTls = true → TlsOk R.F R.K R.X R.H)
     (hcov : FormsCovered R.ctx R.vc) {s : Arm.ArmState} {j : Nat} {ps1 : PState} {T : List Line}
     {c c' : MConf CV Arm.ArmState} (hq : QW R s j ps1 T c) (hA : AInv R c) (hP : P s)
-    (hG : MStep R.vc (R.semGS Ok) ckeep R.rf c c') :
+    (hG : MStep R.vc (R.semGS Ok) ckeep R.rf c c')
+    (hns : ∀ b src dst its m w, c = .run ⟨b, .move src dst :: its, m, w⟩ → src.isSave = false) :
     ∃ n c'', MStep R.vc (R.semGS Ok) ckeep R.rf c c'' ∧ MConf.ShapeEq c'' c' ∧ AInv R c'' ∧
       QW R (iterN R.step n s) (R.nextW j ps1 T c c'').1 (R.nextW j ps1 T c c'').2.1
         (R.nextW j ps1 T c c'').2.2 c'' ∧
@@ -113,7 +114,7 @@ theorem realizes_allCWSF {R : RL} (hR : R.Wf) {P : Arm.ArmState → Prop}
   have hck := (lowerRFunc_ok hR.alloc).2.2
   cases hG with
   | move =>
-    obtain ⟨n, hq', ht, hs, hf⟩ := realizes_moveNAF (Y := fun _ => True) hR hq
+    obtain ⟨n, hq', ht, hs, hf⟩ := realizes_moveNAF (Y := fun _ => True) hR hq (hns _ _ _ _ _ _ rfl)
     exact finT n _ MStep.move hq' ht rfl hs hf
   | @op b k allocs its m w vb i ops outs outs' w' ctl m2 c' hvb hi hops hsz hsemG hlen hho hcl hn =>
     obtain ⟨hguard, hsem⟩ := RL.semGS_inv hsemG
@@ -300,5 +301,30 @@ theorem realizes_allCWSF {R : RL} (hR : R.Wf) {P : Arm.ArmState → Prop}
           exact finT n c'' hm hq' ht (hoc0 rfl)
             (toA hm (fun _ h => by cases h) (fun h => by rcases h with ⟨_, h⟩ | ⟨_, _, h⟩ <;> cases h) hs)
             hf
+
+/-- **`realizes_allCWS` with the segment's lines** (`RL.FRFree`; `realizesQWA` on
+`realizes_stepCWSF`). -/
+theorem realizes_allCWSF {R : RL} (hR : R.Wf) {P : Arm.ArmState → Prop}
+    (Ok : Arm.ArmState → (BitVec 64 → Prop) → Prop)
+    (hC : CalleeOkGP P R.F R.K R.G R.s0 (CallAt R.fa R.base) R.X R.H R.vc.CallSite R.gv)
+    (hT : R.vc.hasTryCall = true →
+      CalleeTryOkGP P R.F R.K R.G R.s0 (CallAt R.fa R.base) R.X R.H R.vc.TrySite R.gv)
+    (hTls : R.vc.hasTls = true → TlsOk R.F R.K R.X R.H)
+    (hcov : FormsCovered R.ctx R.vc) {s : Arm.ArmState} {j : Nat} {ps1 : PState} {T : List Line}
+    {c c' : MConf CV Arm.ArmState} (hq : QWA R s j ps1 T c) (hP : P s)
+    (hG : MStep R.vc (R.semGS Ok) ckeep R.rf c c') :
+    ∃ n c'', MStep R.vc (R.semGS Ok) ckeep R.rf c c'' ∧ MConf.ShapeEq c'' c' ∧
+      QWA R (iterN R.step n s) (R.nextW j ps1 T c c'').1 (R.nextW j ps1 T c c'').2.1
+        (R.nextW j ps1 T c c'').2.2 c'' ∧
+      (∀ i < n, R.GoodX (iterN R.step i s) ∧ R.WReadsIn Ok (iterN R.step i s)) ∧
+      countIn R.CallSt R.step s n = opCalls R.vc c ∧ R.SegLenA j ps1 T c c'' s n ∧
+      R.FRFree s n :=
+  realizesQWA (Tr := fun u => R.GoodX u ∧ R.WReadsIn Ok u) (Ex := R.FRFree) hR
+    (fun s => RL.frFree_zero R s) (fun _ _ _ _ _ _ _ _ _ hvb hi h => rets_mstepGS hvb hi h)
+    (fun s j ps1 T b src dst its m w hq hs =>
+      let ⟨n, h1, h2, h3, h4⟩ := realizes_moveNAF (Y := fun _ => True) hR hq hs
+      ⟨n, h1, fun i hi => ⟨(h2 i hi).1.1, fun _ => True, fun _ _ => trivial,
+        .inl fun _ => trivial, (h2 i hi).2⟩, countIn_zero_of fun i hi => (h2 i hi).1.2, h3, h4⟩)
+    (fun hq hA hns => realizes_stepCWSF hR Ok hC hT hTls hcov hq hA hP hG hns) hq hG
 
 end Backend.Proof

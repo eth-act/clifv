@@ -237,19 +237,40 @@ theorem realizes_op_nextNAS {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} (hYF :
       exact ⟨ls1, hl1, hpl, hna, hnr, (runsAs_of_linesOkNA hR hl1 hins hint).mono
         fun u hu env => hu regs i' ls1 hal' hasg hl1 env⟩) hW'
 
+/-- A `Rets` step of the reads-only guarded semantics ends the run. -/
+theorem rets_mstepGS {R : RL} {Ok : Arm.ArmState → (BitVec 64 → Prop) → Prop} {b k : Nat}
+    {a : Array Loc} {its : List RItem} {m : Loc → CV} {w : Arm.ArmState}
+    {c' : MConf CV Arm.ArmState} {vb : VBlock} {us : List (Reg × Reg)}
+    (hvb : R.vc.blocks[b]? = some vb) (hi : vb.insts[k]? = some (.rets us))
+    (h : MStep R.vc (R.semGS Ok) ckeep R.rf (.run ⟨b, .op k a :: its, m, w⟩) c') :
+    ∃ vals m' w', c' = .ret vals m' w' := by
+  cases h with
+  | op hvb' hi' hops hsz hsemG hlen hho hcl hn =>
+    rw [hvb] at hvb'; cases hvb'
+    rw [hi] at hi'; cases hi'
+    obtain ⟨-, hsem⟩ := RL.semGS_inv hsemG
+    simp only [RL.sem, csemV, csem, Option.some.injEq, Prod.mk.injEq] at hsem
+    obtain ⟨rfl, rfl, rfl⟩ := hsem
+    cases hn with
+    | ret _ => exact ⟨_, _, _, rfl⟩
+
 set_option maxHeartbeats 4000000 in
-/-- **`realizes_allCY` on the reads-only guard** (same proof; a store takes the `memRd`
+/-- **One step from `Q ∧ AInv` on the reads-only guard** that is not a callee restore
+(`realizes_allCYS`'s non-restore case; `realizes_stepCY`'s proof, a store taking the `memRd`
 alternative of `WGuardS`). -/
-theorem realizes_allCYS {R : RL} (hR : R.Wf) {P : Arm.ArmState → Prop}
+theorem realizes_stepCYS {R : RL} (hR : R.Wf) {P : Arm.ArmState → Prop}
     (Ok : Arm.ArmState → (BitVec 64 → Prop) → Prop)
     (hC : CalleeOkGP P R.F R.K R.G R.s0 (CallAt R.fa R.base) R.X R.H R.vc.CallSite R.gv)
     (hT : R.vc.hasTryCall = true →
       CalleeTryOkGP P R.F R.K R.G R.s0 (CallAt R.fa R.base) R.X R.H R.vc.TrySite R.gv)
     (hTls : R.vc.hasTls = true → TlsOk R.F R.K R.X R.H)
     (hcov : FormsCovered R.ctx R.vc) :
-    RealizesCP R.vc R.rf (R.semGS Ok) ckeep R.step (fun s c => Q R s c ∧ AInv R c)
-      (fun u => R.GoodX u ∧ R.WReadsIn Ok u) R.CallSt P := by
-  intro s c c' ⟨hq, hA⟩ hP hG
+    ∀ s c c', Q R s c → AInv R c → P s → MStep R.vc (R.semGS Ok) ckeep R.rf c c' →
+      (∀ b src dst its m w, c = .run ⟨b, .move src dst :: its, m, w⟩ → src.isSave = false) →
+      ∃ n c'', MStep R.vc (R.semGS Ok) ckeep R.rf c c'' ∧ (Q R (iterN R.step n s) c'' ∧ AInv R c'') ∧
+        (∀ i < n, R.GoodX (iterN R.step i s) ∧ R.WReadsIn Ok (iterN R.step i s)) ∧
+        countIn R.CallSt R.step s n = opCalls R.vc c := by
+  intro s c c' hq hA hP hG hns
   have lift : ∀ c'', MStep R.vc R.sem ckeep R.rf c c'' → MStep R.vc (R.semGS Ok) ckeep R.rf c c'' :=
     fun c'' h'' => MStep.guardLift h'' hG RL.semGS_le
   have fin1 : ∀ Y, (∀ a, R.F a → Y a) → ((∀ a, Y a) ∨ ∃ w, Ok w Y) →
@@ -277,7 +298,7 @@ theorem realizes_allCYS {R : RL} (hR : R.Wf) {P : Arm.ArmState → Prop}
   have hck := (lowerRFunc_ok hR.alloc).2.2
   cases hG with
   | move =>
-    obtain ⟨n, hn, ht⟩ := realizes_moveNR (Y := fun _ => True) hR hq
+    obtain ⟨n, hn, ht⟩ := realizes_moveNR (Y := fun _ => True) hR hq (hns _ _ _ _ _ _ rfl)
     exact finT n _ MStep.move hn ht rfl
   | @op b k allocs its m w vb i ops outs outs' w' ctl m2 c' hvb hi hops hsz hsemG hlen hho hcl hn =>
     obtain ⟨hguard, hsem⟩ := RL.semGS_inv hsemG
@@ -410,6 +431,23 @@ theorem realizes_allCYS {R : RL} (hR : R.Wf) {P : Arm.ArmState → Prop}
             (hTls (hasTls_of_mem hvb hi)) hq hvb hi hops hsz hsem hlen hk
           exact finT n c'' hm hq' ht (hoc0 rfl)
 
+/-- **`realizes_allCY` on the reads-only guard**: under `QA` (`realizesQA_CP` on
+`realizes_stepCYS`). -/
+theorem realizes_allCYS {R : RL} (hR : R.Wf) {P : Arm.ArmState → Prop}
+    (Ok : Arm.ArmState → (BitVec 64 → Prop) → Prop)
+    (hC : CalleeOkGP P R.F R.K R.G R.s0 (CallAt R.fa R.base) R.X R.H R.vc.CallSite R.gv)
+    (hT : R.vc.hasTryCall = true →
+      CalleeTryOkGP P R.F R.K R.G R.s0 (CallAt R.fa R.base) R.X R.H R.vc.TrySite R.gv)
+    (hTls : R.vc.hasTls = true → TlsOk R.F R.K R.X R.H)
+    (hcov : FormsCovered R.ctx R.vc) :
+    RealizesCP R.vc R.rf (R.semGS Ok) ckeep R.step (QA R)
+      (fun u => R.GoodX u ∧ R.WReadsIn Ok u) R.CallSt P :=
+  realizesQA_CP hR (realizes_stepCYS hR Ok hC hT hTls hcov)
+    (fun _ _ _ _ _ _ _ hq hs => let ⟨n, h1, h2⟩ := realizes_moveNR (Y := fun _ => True) hR hq hs
+      ⟨n, h1, fun i hi => ⟨(h2 i hi).1.1, fun _ => True, fun _ _ => trivial, .inl fun _ => trivial,
+        (h2 i hi).2⟩, countIn_zero_of fun i hi => (h2 i hi).1.2⟩)
+    (fun _ _ _ _ _ _ _ _ _ hvb hi h => rets_mstepGS hvb hi h)
+
 /-- **`realizes_allCYS` with the body `sp` at the contract's states.** -/
 theorem realizes_allC_spYS {R : RL} (hR : R.Wf) {P : Arm.ArmState → Prop}
     (Ok : Arm.ArmState → (BitVec 64 → Prop) → Prop)
@@ -420,18 +458,18 @@ theorem realizes_allC_spYS {R : RL} (hR : R.Wf) {P : Arm.ArmState → Prop}
         R.vc.TrySite R.gv)
     (hTls : R.vc.hasTls = true → TlsOk R.F R.K R.X R.H)
     (hcov : FormsCovered R.ctx R.vc) :
-    RealizesCP R.vc R.rf (R.semGS Ok) ckeep R.step (fun s c => Q R s c ∧ AInv R c)
+    RealizesCP R.vc R.rf (R.semGS Ok) ckeep R.step (QA R)
       (fun u => R.GoodX u ∧ R.WReadsIn Ok u) R.CallSt P := by
   intro s c c' hqa hP h
   have hsp : spOf s = R.spB := by
     cases c with
-    | run st => obtain ⟨b, its, m, w⟩ := st; exact (q_stRel hqa.1).sp
+    | run st => obtain ⟨b, its, m, w⟩ := st; obtain ⟨mt, hq⟩ := qa_q hqa; exact (q_stRel hq).sp
     | _ => cases h
   exact realizes_allCYS hR Ok hC hT hTls hcov s c c' hqa ⟨hP, hsp⟩ h
 
 set_option maxHeartbeats 4000000 in
-/-- **`realizes_allCW` on the reads-only guard** (same proof). -/
-theorem realizes_allCWS {R : RL} (hR : R.Wf) {P : Arm.ArmState → Prop}
+/-- **`realizes_stepCW` on the reads-only guard** (same proof). -/
+theorem realizes_stepCWS {R : RL} (hR : R.Wf) {P : Arm.ArmState → Prop}
     (Ok : Arm.ArmState → (BitVec 64 → Prop) → Prop)
     (hC : CalleeOkGP P R.F R.K R.G R.s0 (CallAt R.fa R.base) R.X R.H R.vc.CallSite R.gv)
     (hT : R.vc.hasTryCall = true →
@@ -439,7 +477,8 @@ theorem realizes_allCWS {R : RL} (hR : R.Wf) {P : Arm.ArmState → Prop}
     (hTls : R.vc.hasTls = true → TlsOk R.F R.K R.X R.H)
     (hcov : FormsCovered R.ctx R.vc) {s : Arm.ArmState} {j : Nat} {ps1 : PState} {T : List Line}
     {c c' : MConf CV Arm.ArmState} (hq : QW R s j ps1 T c) (hA : AInv R c) (hP : P s)
-    (hG : MStep R.vc (R.semGS Ok) ckeep R.rf c c') :
+    (hG : MStep R.vc (R.semGS Ok) ckeep R.rf c c')
+    (hns : ∀ b src dst its m w, c = .run ⟨b, .move src dst :: its, m, w⟩ → src.isSave = false) :
     ∃ n c'', MStep R.vc (R.semGS Ok) ckeep R.rf c c'' ∧ MConf.ShapeEq c'' c' ∧ AInv R c'' ∧
       QW R (iterN R.step n s) (R.nextW j ps1 T c c'').1 (R.nextW j ps1 T c c'').2.1
         (R.nextW j ps1 T c c'').2.2 c'' ∧
@@ -481,7 +520,7 @@ theorem realizes_allCWS {R : RL} (hR : R.Wf) {P : Arm.ArmState → Prop}
   have hck := (lowerRFunc_ok hR.alloc).2.2
   cases hG with
   | move =>
-    obtain ⟨n, hq', ht, hs⟩ := realizes_moveNA (Y := fun _ => True) hR hq
+    obtain ⟨n, hq', ht, hs⟩ := realizes_moveNA (Y := fun _ => True) hR hq (hns _ _ _ _ _ _ rfl)
     exact finT n _ MStep.move hq' ht rfl hs
   | @op b k allocs its m w vb i ops outs outs' w' ctl m2 c' hvb hi hops hsz hsemG hlen hho hcl hn =>
     obtain ⟨hguard, hsem⟩ := RL.semGS_inv hsemG
@@ -654,6 +693,35 @@ theorem realizes_allCWS {R : RL} (hR : R.Wf) {P : Arm.ArmState → Prop}
           exact finT n c'' hm hq' ht (hoc0 rfl)
             (toA hm (fun _ h => by cases h) (fun h => by rcases h with ⟨_, h⟩ | ⟨_, _, h⟩ <;> cases h) hs)
 
+/-- **`realizes_allCW` on the reads-only guard** (`realizesQWA` on `realizes_stepCWS`). -/
+theorem realizes_allCWS {R : RL} (hR : R.Wf) {P : Arm.ArmState → Prop}
+    (Ok : Arm.ArmState → (BitVec 64 → Prop) → Prop)
+    (hC : CalleeOkGP P R.F R.K R.G R.s0 (CallAt R.fa R.base) R.X R.H R.vc.CallSite R.gv)
+    (hT : R.vc.hasTryCall = true →
+      CalleeTryOkGP P R.F R.K R.G R.s0 (CallAt R.fa R.base) R.X R.H R.vc.TrySite R.gv)
+    (hTls : R.vc.hasTls = true → TlsOk R.F R.K R.X R.H)
+    (hcov : FormsCovered R.ctx R.vc) {s : Arm.ArmState} {j : Nat} {ps1 : PState} {T : List Line}
+    {c c' : MConf CV Arm.ArmState} (hq : QWA R s j ps1 T c) (hP : P s)
+    (hG : MStep R.vc (R.semGS Ok) ckeep R.rf c c') :
+    ∃ n c'', MStep R.vc (R.semGS Ok) ckeep R.rf c c'' ∧ MConf.ShapeEq c'' c' ∧
+      QWA R (iterN R.step n s) (R.nextW j ps1 T c c'').1 (R.nextW j ps1 T c c'').2.1
+        (R.nextW j ps1 T c c'').2.2 c'' ∧
+      (∀ i < n, R.GoodX (iterN R.step i s) ∧ R.WReadsIn Ok (iterN R.step i s)) ∧
+      countIn R.CallSt R.step s n = opCalls R.vc c ∧ R.SegLenA j ps1 T c c'' s n := by
+  obtain ⟨n, c'', hm, hsh, hq', ht, hc, hs, -⟩ :=
+    realizesQWA (Tr := fun u => R.GoodX u ∧ R.WReadsIn Ok u) (Ex := fun _ _ => True) hR
+      (fun _ => trivial) (fun _ _ _ _ _ _ _ _ _ hvb hi h => rets_mstepGS hvb hi h)
+      (fun s j ps1 T b src dst its m w hq hs =>
+        let ⟨n, h1, h2, h3⟩ := realizes_moveNA (Y := fun _ => True) hR hq hs
+        ⟨n, h1, fun i hi => ⟨(h2 i hi).1.1, fun _ => True, fun _ _ => trivial,
+          .inl fun _ => trivial, (h2 i hi).2⟩, countIn_zero_of fun i hi => (h2 i hi).1.2, h3,
+          trivial⟩)
+      (fun hq hA hns =>
+        let ⟨n, c'', h1, h2, h3, h4, h5, h6, h7⟩ :=
+          realizes_stepCWS hR Ok hC hT hTls hcov hq hA hP hG hns
+        ⟨n, c'', h1, h2, h3, h4, h5, h6, h7, trivial⟩) hq hG
+  exact ⟨n, c'', hm, hsh, hq', ht, hc, hs⟩
+
 /-- **`realizes_allC_spW` on the reads-only guard.** -/
 theorem realizes_allC_spWS {R : RL} (hR : R.Wf) {P : Arm.ArmState → Prop}
     (Ok : Arm.ArmState → (BitVec 64 → Prop) → Prop)
@@ -666,17 +734,18 @@ theorem realizes_allC_spWS {R : RL} (hR : R.Wf) {P : Arm.ArmState → Prop}
     (hcov : FormsCovered R.ctx R.vc) (s₀ : Arm.ArmState) (W₀ : Nat × PState × List Line)
     (c₀ : MConf CV Arm.ArmState) :
     RealizesCP R.vc R.rf (R.semGS Ok) ckeep R.step
-      (fun u c => (∃ l W, R.SegChain (fun u => R.Good u ∧ R.WReadsIn Ok u) s₀ W₀ c₀ l u W c ∧
-        QW R u W.1 W.2.1 W.2.2 c) ∧ AInv R c)
+      (fun u c => ∃ l W, R.SegChain (fun u => R.Good u ∧ R.WReadsIn Ok u) s₀ W₀ c₀ l u W c ∧
+        QWA R u W.1 W.2.1 W.2.2 c)
       (fun u => R.GoodX u ∧ R.WReadsIn Ok u) R.CallSt P := by
-  intro s c c' ⟨⟨l, W, hch, hq⟩, hA⟩ hP h
+  intro s c c' ⟨l, W, hch, hq⟩ hP h
   have hsp : spOf s = R.spB := by
     cases c with
-    | run st => obtain ⟨b, its, m, w⟩ := st; exact (q_stRel hq.q).sp
+    | run st =>
+      obtain ⟨b, its, m, w⟩ := st
+      obtain ⟨mt, hq'⟩ := qa_q hq.qa
+      exact (q_stRel hq').sp
     | _ => cases h
-  obtain ⟨n, c'', hm, -, hA', hq', ht, hcnt, hs⟩ :=
-    realizes_allCWS hR Ok hC hT hTls hcov hq hA ⟨hP, hsp⟩ h
-  exact ⟨n, c'', hm, ⟨⟨_, _, .snoc hch hs fun i hi => ⟨(ht i hi).1.good, (ht i hi).2⟩, hq'⟩, hA'⟩,
-    ht, hcnt⟩
+  obtain ⟨n, c'', hm, -, hq', ht, hcnt, hs⟩ := realizes_allCWS hR Ok hC hT hTls hcov hq ⟨hP, hsp⟩ h
+  exact ⟨n, c'', hm, ⟨_, _, .snoc hch hs fun i hi => ⟨(ht i hi).1.good, (ht i hi).2⟩, hq'⟩, ht, hcnt⟩
 
 end Backend.Proof
