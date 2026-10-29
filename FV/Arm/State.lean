@@ -12,6 +12,7 @@ import FV.Arm.Attr
 import FV.Arm.MinTheory
 meta import Lean.Elab.Tactic.Omega.Frontend
 public import Lean.ToExpr
+public meta import Lean.Meta.Tactic.Simp.BuiltinSimprocs
 
 @[expose] public section
 
