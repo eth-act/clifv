@@ -38,7 +38,8 @@ variable (L : LinkSys)
 disjuncts). -/
 def slotsNIB (g : Clif.Function) : Bool :=
   g.slots.isEmpty || (RAFrame.compute (L.A g).vcp (L.A g).rf).intBase != 0 ||
-    (RAFrame.compute (L.A g).vcp (L.A g).rf).size != (L.A g).af.frameSize
+    (RAFrame.compute (L.A g).vcp (L.A g).rf).size !=
+      (L.A g).af.frameSize - clobberBytes (L.A g).af.saves
 
 theorem needNI_of_slotsNIB (h : ∀ g ∈ L.P.funcs, L.slotsNIB g = true) :
     L.NeedSlots → L.NeedNI := by
