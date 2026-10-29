@@ -21,9 +21,10 @@ in-states (`AllocChecked`) of a covered VCode (`FormsCovered`).
 * Per form: `formOk_enc` (the straight-line forms, by inverting `MInst.assign`), `ctl_enc` (the
   control forms), `moveInsts_enc` (moves: `slotStoreAt`/`slotLoadAt`/`mov`), `aEnc_prologue`,
   `aEnc_epilogue`; memory operands through `memFinalize_enc`.
-* Emission: `blocksLinesE_enc`, then `fallthrough` (`ftList_enc`) and relaxation
-  (`relaxLines_enc`) only drop lines, invert conditional branches (`encodable_invertTo`) and add
-  `b` (`b_encodable`); the trap lines are `udf` (`trapLines_enc`).
+* Emission: `segsOf_enc`, then `MachBuffer`'s simplification (`machBuf_enc`) and relaxation
+  (`relaxLines_enc`) only drop lines, invert conditional branches (`encodable_invertTo`),
+  retarget branches (`encodable_setTarget`) and add `b` (`b_encodable`); the trap lines are `udf`
+  (`trapLines_enc`).
 -/
 
 namespace E2E
@@ -1264,29 +1265,6 @@ theorem codeLinesE_enc {c : FnCtx} {af : AFunc} : ∀ {code : List AInst} {ps ls
     · exact hA a (List.mem_cons_self ..) _ _ _ h1 i t hi
     · exact codeLinesE_enc (fun a' ha' => hA a' (List.mem_cons_of_mem _ ha')) h2 i t hi
 
-theorem blocksLinesE_enc {c : FnCtx} {af : AFunc} : ∀ {bs : List (Label × Array AInst)} {ps ls ps'},
-    (∀ x ∈ bs, ∀ a ∈ x.2.toList, AEnc c af a) → blocksLinesE c af bs ps = .ok (ls, ps') →
-    ∀ i t, Line.ins i t ∈ ls → i.encodable = true
-  | [], ps, ls, ps', _, h => by
-    simp only [blocksLinesE, pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at h
-    obtain ⟨rfl, -⟩ := h
-    intro i t hi; cases hi
-  | (l, code) :: bs, ps, ls, ps', hA, h => by
-    simp only [blocksLinesE, bind, Except.bind] at h
-    split at h
-    · cases h
-    rename_i r1 h1
-    split at h
-    · cases h
-    rename_i r2 h2
-    simp only [pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at h
-    obtain ⟨rfl, -⟩ := h
-    intro i t hi
-    simp only [List.cons_append, List.mem_cons, reduceCtorEq, false_or] at hi
-    rcases List.mem_append.mp hi with hi | hi
-    · exact codeLinesE_enc (hA _ (List.mem_cons_self ..)) h1 i t hi
-    · exact blocksLinesE_enc (fun x hx => hA x (List.mem_cons_of_mem _ hx)) h2 i t hi
-
 /-! ## Fall-through and relaxation keep encodability -/
 
 theorem encodable_invertTo {c : Insn} (h : c.encodable = true) (l : Lbl) :
@@ -1332,37 +1310,165 @@ theorem allEnc_append {L M : List Line} (h1 : AllEnc L) (h2 : AllEnc M) : AllEnc
   · exact h1 i t h
   · exact h2 i t h
 
-theorem ftStep_mem {ln : Line} {n1 n2 : Option Line} {x : Line} (hx : x ∈ (ftStep ln n1 n2).1) :
-    x = ln ∨ ∃ c e, ln = .ins c none ∧ x = .ins (c.invertTo e) none := by
-  unfold ftStep at hx
-  simp only at hx
-  repeat' split at hx
-  all_goals first
-    | (simp only [List.mem_singleton] at hx; subst hx; exact .inr ⟨_, _, rfl, rfl⟩)
-    | (simp only [List.mem_singleton] at hx; exact .inl hx)
-    | (simp at hx)
+theorem encodable_setTarget {c : Insn} (h : c.encodable = true) (l : Lbl) :
+    (c.setTarget l).encodable = true := by
+  cases c with
+  | b t => exact b_encodable l
+  | bcond cd t =>
+    rw [encodable_iff]
+    cases l <;> simp [Insn.setTarget, Insn.armFields, Env.pcRel, Env.rel, Env.target, bind,
+      Except.bind, pure, Except.pure]
+  | cbz nz w rt t =>
+    rw [encodable_iff] at h ⊢
+    obtain ⟨a, ha⟩ := h
+    cases hy : rt.encZR with
+    | error e =>
+      cases t <;> simp [Insn.armFields, hy, Env.pcRel, Env.rel, Env.target, bind, Except.bind, pure,
+        Except.pure] at ha
+    | ok y =>
+      cases l <;> simp [Insn.setTarget, Insn.armFields, hy, Env.pcRel, Env.rel, Env.target, bind,
+        Except.bind, pure, Except.pure]
+  | tbz nz rt bit t =>
+    rw [encodable_iff] at h ⊢
+    obtain ⟨a, ha⟩ := h
+    by_cases hb : 64 ≤ bit
+    · simp [Insn.armFields, hb, throw, throwThe, MonadExceptOf.throw, bind, Except.bind] at ha
+    cases hy : rt.encZR with
+    | error e =>
+      cases t <;> simp [Insn.armFields, hy, hb, Env.pcRel, Env.rel, Env.target, bind, Except.bind, pure,
+        Except.pure] at ha
+    | ok y =>
+      cases l <;> simp [Insn.setTarget, Insn.armFields, hy, hb, Env.pcRel, Env.rel, Env.target, bind,
+        Except.bind, pure, Except.pure]
+  | _ => exact h
 
-theorem ftStep_enc {ln : Line} {n1 n2 : Option Line} (h : AllEnc [ln]) :
-    AllEnc (ftStep ln n1 n2).1 := by
+theorem relabel_enc (f : Lbl → Lbl) {ln : Line} (h : AllEnc [ln]) : AllEnc [ln.relabel f] := by
   intro i t hi
-  rcases ftStep_mem hi with e | ⟨c, e', rfl, e⟩
-  · exact h i t (by rw [← e]; exact List.mem_singleton_self _)
-  · cases e
-    exact encodable_invertTo (h c none (List.mem_singleton_self _)) _
+  simp only [List.mem_singleton] at hi
+  cases ln with
+  | ins c tc =>
+    have hc := h c tc (List.mem_singleton_self _)
+    simp only [Line.relabel] at hi
+    split at hi
+    · cases hi; exact encodable_setTarget hc _
+    · cases hi; exact hc
+  | word _ _ => simp [Line.relabel] at hi
+  | label _ => simp [Line.relabel] at hi
 
-theorem ftList_enc : ∀ (n : Nat) (L : List Line), L.length ≤ n → AllEnc L → AllEnc (ftList L)
-  | _, [], _, _ => by rw [ftList]; intro i t h; cases h
-  | n, ln :: rest, hn, h => by
-    rw [ftList_cons]
-    have hpos := ftStep_pos ln rest[0]? rest[1]?
-    refine allEnc_append (ftStep_enc (fun i t hi => h i t (by simp at hi ⊢; exact .inl hi))) ?_
-    cases n with
-    | zero => simp at hn
-    | succ n =>
-      apply ftList_enc n
-      · simp only [List.length_drop, List.length_cons] at hn ⊢; omega
-      · intro i t hi
-        exact h i t (List.mem_of_mem_drop hi)
+theorem step_enc (allLabels : Bool) (m m' : MBuf) (hm : AllEnc m.out.toList)
+    (h : MBuf.step allLabels m = some m') : AllEnc m'.out.toList := by
+  obtain ⟨k, ln, t, -, -, -, hc⟩ := step_cases allLabels m m' h
+  have hE : AllEnc (m.erase k).toList := fun i t' hi => by
+    simp only [MBuf.erase, List.toList_toArray] at hi
+    exact hm i t' (List.mem_of_mem_eraseIdx hi)
+  rcases hc with ⟨ho, -⟩ | ⟨ho, -⟩ | ⟨p, c, tc, ct, hpk, hp, hct, -, ho, -⟩
+  · rw [ho]; exact hE
+  · rw [ho]; exact hm
+  · rw [ho, Array.set!, Array.toList_setIfInBounds]
+    intro i t' hi
+    rcases List.mem_or_eq_of_mem_set hi with hi | hi
+    · exact hE i t' hi
+    · cases hi
+      exact encodable_invertTo (hm c tc (by simpa using List.mem_of_getElem? (by simpa using hp))) _
+
+theorem optimize_enc (allLabels : Bool) (m : MBuf) (hm : AllEnc m.out.toList) :
+    AllEnc (MBuf.optimize allLabels m).out.toList := by
+  unfold MBuf.optimize
+  simp only [Id.run, Std.Legacy.Range.forIn_eq_forIn_range']
+  refine mbForIn_inv (P := fun m' : MBuf => AllEnc m'.out.toList) _ _ _ hm ?_
+  intro _ s hs
+  split
+  · rename_i m' h; exact step_enc _ _ _ hs h
+  · exact hs
+
+/-- **`MachBuffer`'s simplification keeps encodability**: it removes lines, inverts conditional
+branches (`encodable_invertTo`) and retargets branches (`encodable_setTarget`). -/
+theorem machBuf_enc (allLabels : Bool) (ls : List Line) (h : AllEnc ls) :
+    AllEnc (machBuf allLabels ls).1 := by
+  have hfold : ∀ (L : List Line) (m : MBuf), AllEnc L → AllEnc m.out.toList →
+      AllEnc (L.foldl (fun m ln =>
+        let m := { m with out := m.out.push ln }
+        if ln matches .label _ then m.optimize allLabels else m) m).out.toList := by
+    intro L
+    induction L with
+    | nil => intro m _ hm; exact hm
+    | cons ln L ih =>
+      intro m hL hm
+      rw [List.foldl_cons]
+      apply ih _ (fun i t hi => hL i t (List.mem_cons_of_mem _ hi))
+      have hp : AllEnc (m.out.push ln).toList := by
+        rw [Array.toList_push]
+        exact allEnc_append hm (fun i t hi => hL i t (by simp at hi; simp [hi]))
+      split
+      · exact optimize_enc _ _ hp
+      · exact hp
+  unfold machBuf
+  dsimp only
+  intro i t hi
+  obtain ⟨ln, hln, e⟩ := List.mem_map.1 hi
+  have hall := optimize_enc allLabels _ (hfold ls {} h (fun _ _ h => by simp at h))
+  exact relabel_enc _ (fun i' t' hi' => hall i' t' (by simp at hi'; rw [hi']; exact hln)) i t
+    (by rw [e]; exact List.mem_singleton_self _)
+
+/-- The segments' unsimplified lines are encodable. -/
+theorem segsOf_enc {c : FnCtx} {af : AFunc} :
+    ∀ {bs : List ((Label × Array AInst) × Nat)} {ps ps' : PState} {ss : List Seg},
+      (∀ x ∈ bs, ∀ a ∈ x.1.2.toList, AEnc c af a) → segsOf c af bs ps = .ok (ss, ps') →
+      AllEnc (segLines ss (ss.map (·.term)))
+  | [], ps, ps', ss, _, h => by
+    simp only [segsOf, pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at h
+    obtain ⟨rfl, -⟩ := h
+    intro i t hi; cases hi
+  | ((l, code), j) :: bs, ps, ps', ss, hA, h => by
+    simp only [segsOf] at h
+    obtain ⟨⟨l1, ps1⟩, h1, h⟩ := exceptBind_ok h
+    obtain ⟨⟨l2, ps2⟩, h2, h⟩ := exceptBind_ok h
+    obtain ⟨⟨l3, ps3⟩, h3, h⟩ := exceptBind_ok h
+    simp only [pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at h
+    obtain ⟨rfl, -⟩ := h
+    have hA0 := hA _ (List.mem_cons_self ..)
+    intro i t hi
+    simp only [List.map_cons, segLines, List.cons_append, List.mem_cons, reduceCtorEq, false_or,
+      List.mem_append] at hi
+    rcases hi with (hi | hi) | hi
+    · exact codeLinesE_enc (fun a ha => hA0 a ((List.dropLast_sublist _).subset ha)) h1 i t hi
+    · exact codeLinesE_enc (fun a ha => hA0 a (EmitLabels.mem_of_getLast?_toList ha)) h2 i t hi
+    · exact segsOf_enc (fun x hx => hA x (List.mem_cons_of_mem _ hx)) h3 i t hi
+
+/-- The emission plan's lines are encodable. -/
+theorem emitPlan_enc {k : Nat} {af : AFunc} {p : Plan} (h : emitPlan k af = .ok p)
+    (hA : ∀ x ∈ af.blocks.toList, ∀ a ∈ x.2.toList, AEnc ⟨k, af.slotBase⟩ af a) :
+    AllEnc (segLines p.segs p.outs) := by
+  have hz : af.blocks.toList.zipIdx.map (·.1) = af.blocks.toList := by
+    rw [List.zipIdx_eq_zip_range', List.map_fst_zip (by simp)]
+  have hraw := segsOf_enc (fun x hx a ha => hA x.1 (by
+    rw [← hz]; exact List.mem_map.2 ⟨x, (emitOrder_perm af).mem_iff.mp hx, rfl⟩) a ha)
+    (emitPlan_spec h).1
+  unfold emitPlan at h
+  simp only [bind, Except.bind] at h
+  split at h
+  · cases h
+  rename_i r hr
+  obtain ⟨ss, ps⟩ := r
+  dsimp only at h
+  split at h
+  · rename_i p1 h1
+    simp only [pure, Except.pure, Except.ok.injEq] at h
+    subst h
+    have h1' : machPlan af true ss ps = some p1 ∨ machPlan af false ss ps = some p1 := by
+      cases e : machPlan af true ss ps with
+      | some q => rw [e] at h1; simp only [Option.orElse] at h1; exact .inl h1
+      | none => rw [e] at h1; simp only [Option.orElse] at h1; exact .inr h1
+    rcases h1' with h1' | h1' <;>
+    · obtain ⟨hs, hsp⟩ := machPlan_split h1'
+      rw [hs] at hraw ⊢
+      rw [splitSegs_lines _ _ _ hsp]
+      exact machBuf_enc _ _ hraw
+  · split at h
+    · simp only [pure, Except.pure, Except.ok.injEq] at h
+      subst h
+      exact hraw
+    · cases h
 
 theorem relaxLines_enc (far : Lbl → Bool) {L : List Line} (h : AllEnc L) :
     AllEnc (relaxLines far L) := by
@@ -1392,7 +1498,7 @@ theorem relaxLines_enc (far : Lbl → Bool) {L : List Line} (h : AllEnc L) :
     rw [← hi] at hln
     exact h i t hln
 
-theorem trapLines_enc (ts : List (Lbl × Clif.TrapCode)) : AllEnc (trapLines ts) := by
+theorem trapLines_enc (ps : PState) : AllEnc (trapLines ps) := by
   intro i t hi
   simp only [trapLines, List.mem_flatMap, List.mem_cons, List.mem_singleton, Line.ins.injEq,
     reduceCtorEq, false_or, List.not_mem_nil, or_false] at hi
@@ -1508,7 +1614,7 @@ theorem emitFunc_encodable_of {cx : FnCtx} {vc : VCode} {rf : RFunc} {af : AFunc
     {fa : FnAsm} (hchk : AllocChecked vc rf) (hcov : FormsCovered cx vc) (himm : immsOkB vc = true)
     (ha : lowerRFunc vc rf = .ok af) (he : emitFunc k af = .ok fa) :
     ∀ i t, Line.ins i t ∈ fa.lines.toList → i.encodable = true := by
-  obtain ⟨body, ps, hb, hL, -⟩ := emitFunc_ok he
+  obtain ⟨p, hp, hL, -⟩ := emitFunc_ok he
   obtain ⟨⟨-, -, hsz, hblk⟩, -, hctl⟩ := lowerRFunc_ok ha
   obtain ⟨cc, hitems⟩ := allocChecked_items hchk
   have hsv : SavesOk af.saves := by
@@ -1536,8 +1642,7 @@ theorem emitFunc_encodable_of {cx : FnCtx} {vc : VCode} {rf : RFunc} {af : AFunc
     · obtain ⟨it, hit', c1, hc1, hac⟩ := mem_itemsCode hcode hax
       exact item_enc hcov himm hctl hsv hvb (hitems b vb items hvb hit it hit') hc1 a hac
   rw [hL]
-  exact relaxLines_enc _ (allEnc_append (ftList_enc _ _ (Nat.le_refl _) (blocksLinesE_enc hA hb))
-    (trapLines_enc _))
+  exact relaxLines_enc _ (allEnc_append (emitPlan_enc hp hA) (trapLines_enc _))
 
 /-- **Every instruction of the emitted spill allocation is encodable** (V6b, `Insn.encodable`:
 apart from its label operand), for in-scope input whose prepared VCode has encodable immediates

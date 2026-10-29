@@ -14,8 +14,9 @@ code-only half of the linker's check, `relocShapesB` (`FV/Link/RelocShape.lean`)
   `ldr …, :got_lo12:` (same register and symbol), `adrp` then `add …, :lo12:` (same register,
   symbol and addend), and the four-instruction TLS descriptor sequence. `SeqOk L` says `L`
   is a concatenation of such sequences and of other lines (a small automaton, `seqStep`);
-  `MInst.lines` emits whole sequences, and neither `fallthrough` nor branch relaxation (which
-  only drop or rewrite branches, outside any sequence) nor removing labels breaks them
+  `MInst.lines` emits whole sequences, and neither `MachBuffer`'s simplification nor branch
+  relaxation (which only drop, invert or rewrite branches, outside any sequence) nor removing
+  labels breaks them
   (`emitFunc_seqOk`, `seqOk_codeLines`).
 * **Layout.** Code word `k` is code line `k`, relocations are at `4 * k` of their instruction
   (`FnAsm.layout_unfold`, `mem_codeRelocs`), hence at distinct offsets; the relocated
@@ -165,50 +166,151 @@ theorem seqGo_codeLines : ∀ {L : List Line} {s s' : SeqSt}, seqGo s L = some s
 theorem seqOk_codeLines {L : List Line} (h : SeqOk L) : SeqOk (codeLines L) :=
   seqGo_codeLines h
 
-/-! ## `fallthrough` and branch relaxation -/
+/-! ## `MachBuffer`'s simplification and branch relaxation -/
 
 theorem cond_free {c : Insn} {l : Lbl} (h : c.condTarget? = some l) (e : Lbl)
     (t : Option Clif.TrapCode) :
     lnFree (.ins c t) = true ∧ lnFree (.ins (c.invertTo e) t) = true := by
   cases c <;> simp_all [Insn.condTarget?, Insn.invertTo, lnFree, Insn.seq]
 
-theorem seqGo_ftList : ∀ (n : Nat) (L : List Line) (s : SeqSt), L.length ≤ n →
-    seqGo s L = some .free → seqGo s (ftList L) = some .free
-  | _, [], _, _, h => by simpa [ftList] using h
-  | n + 1, ln :: rest, s, hn, h => by
-    rw [ftList_cons]
-    rcases ftStep_cases ln rest[0]? rest[1]? with he | ⟨x, l, rfl, h1, he⟩ | ⟨c, e, l, rfl, hc, h1, h2, he⟩
-    · rw [he]
-      simp only [List.drop_one, List.tail_cons, List.singleton_append, seqGo] at h ⊢
-      cases e : seqStep s ln with
-      | none => simp [e] at h
-      | some s1 =>
-        simp only [e, Option.bind_some] at h ⊢
-        exact seqGo_ftList n rest _ (by simp at hn; omega) h
-    · rw [he]
-      cases rest with
-      | nil => simp at h1
-      | cons y rest' =>
-        simp only [List.getElem?_cons_zero, Option.some.injEq] at h1
-        subst h1
-        obtain ⟨rfl, h'⟩ := seqGo_free_inv rfl h
-        simp only [List.drop_one, List.tail_cons, List.nil_append]
-        exact seqGo_ftList n _ _ (by simp at hn ⊢; omega) h'
-    · rw [he]
-      cases rest with
-      | nil => simp at h1
-      | cons y rest =>
-      cases rest with
-      | nil => simp at h2
-      | cons z rest' =>
-        simp only [List.getElem?_cons_zero, List.getElem?_cons_succ, Option.some.injEq] at h1 h2
-        subst h1 h2
-        obtain ⟨hc1, hc2⟩ := cond_free hc e none
-        obtain ⟨rfl, h'⟩ := seqGo_free_inv hc1 h
-        obtain ⟨-, h''⟩ := seqGo_free_inv rfl h'
-        simp only [List.drop_succ_cons, List.drop_zero, List.singleton_append]
-        rw [seqGo_free_cons hc2]
-        exact seqGo_ftList n _ _ (by simp at hn ⊢; omega) h''
+theorem seqGo_prefix {s r : SeqSt} {A B : List Line} (h : seqGo s (A ++ B) = some r) :
+    ∃ s', seqGo s A = some s' ∧ seqGo s' B = some r := by
+  rw [seqGo_append] at h
+  cases e : seqGo s A with
+  | none => simp [e] at h
+  | some s' => simp only [e, Option.bind_some] at h; exact ⟨s', rfl, h⟩
+
+/-- Removing a free line keeps the run's end. -/
+theorem seqGo_eraseIdx : ∀ (L : List Line) (k : Nat) (s r : SeqSt),
+    seqGo s L = some r → (∀ x, L[k]? = some x → lnFree x = true) →
+    seqGo s (L.eraseIdx k) = some r
+  | [], _, _, _, h, _ => h
+  | x :: L, 0, s, r, h, hx => by
+    obtain ⟨rfl, h'⟩ := seqGo_free_inv (hx x rfl) h
+    exact h'
+  | a :: L, k + 1, s, r, h, hx => by
+    simp only [seqGo] at h
+    cases e : seqStep s a with
+    | none => simp [e] at h
+    | some s1 =>
+      simp only [e, Option.bind_some] at h
+      simp only [List.eraseIdx_cons_succ, seqGo, e, Option.bind_some]
+      exact seqGo_eraseIdx L k s1 r h (fun x h'' => hx x (by simpa using h''))
+
+/-- Replacing a free line by a free line keeps the run's end. -/
+theorem seqGo_set : ∀ (L : List Line) (p : Nat) (y : Line) (s r : SeqSt),
+    seqGo s L = some r → (∀ x, L[p]? = some x → lnFree x = true) → lnFree y = true →
+    seqGo s (L.set p y) = some r
+  | [], _, _, _, _, h, _, _ => h
+  | x :: L, 0, y, s, r, h, hx, hy => by
+    obtain ⟨rfl, h'⟩ := seqGo_free_inv (hx x rfl) h
+    simp only [List.set_cons_zero]
+    rw [seqGo_free_cons hy]
+    exact h'
+  | a :: L, p + 1, y, s, r, h, hx, hy => by
+    simp only [seqGo] at h
+    cases e : seqStep s a with
+    | none => simp [e] at h
+    | some s1 =>
+      simp only [e, Option.bind_some] at h
+      simp only [List.set_cons_succ, seqGo, e, Option.bind_some]
+      exact seqGo_set L p y s1 r h (fun x h'' => hx x (by simpa using h'')) hy
+
+theorem stepLine_free {ln : Line} {t : Lbl} (h : (ln.ubr?).orElse (fun _ => ln.cbr?) = some t) :
+    lnFree ln = true := by
+  cases ln with
+  | ins i tc =>
+    cases tc with
+    | none =>
+      cases i <;> simp_all [Line.ubr?, Line.cbr?, Option.orElse, lnFree, Insn.seq,
+        Insn.condTarget?]
+    | some _ => simp [Line.ubr?, Line.cbr?, Option.orElse] at h
+  | _ => rfl
+
+theorem step_seq (allLabels : Bool) (m m' : MBuf) {r : SeqSt}
+    (hm : seqGo .free m.out.toList = some r) (h : MBuf.step allLabels m = some m') :
+    seqGo .free m'.out.toList = some r := by
+  obtain ⟨k, ln, t, hlc, hkln, ht, hc⟩ := step_cases allLabels m m' h
+  have hE : seqGo .free (m.erase k).toList = some r := by
+    simp only [MBuf.erase, List.toList_toArray]
+    refine seqGo_eraseIdx _ k _ _ hm (fun x hx => ?_)
+    simp only [Array.getElem?_toList, hkln, Option.some.injEq] at hx
+    subst hx; exact stepLine_free ht
+  rcases hc with ⟨ho, -⟩ | ⟨ho, -⟩ | ⟨p, c, tc, ct, hpk, hp, hct, -, ho, -⟩
+  · rw [ho]; exact hE
+  · rw [ho]; exact hm
+  · rw [ho, Array.set!, Array.toList_setIfInBounds]
+    have hcond : ∃ l, c.condTarget? = some l := by
+      cases tc with
+      | none =>
+        simp only [Line.cbr?] at hct
+        split at hct
+        · exact ⟨_, by assumption⟩
+        · cases hct
+      | some _ => simp [Line.cbr?] at hct
+    obtain ⟨l, hl⟩ := hcond
+    obtain ⟨h1, h2⟩ := cond_free hl t tc
+    refine seqGo_set _ p _ _ _ hE (fun x hx => ?_) h2
+    simp only [MBuf.erase, List.toList_toArray, List.getElem?_eraseIdx_of_lt hpk,
+      Array.getElem?_toList, hp, Option.some.injEq] at hx
+    subst hx
+    exact h1
+
+theorem optimize_seq (allLabels : Bool) (m : MBuf) {r : SeqSt}
+    (hm : seqGo .free m.out.toList = some r) :
+    seqGo .free (MBuf.optimize allLabels m).out.toList = some r := by
+  unfold MBuf.optimize
+  simp only [Id.run, Std.Legacy.Range.forIn_eq_forIn_range']
+  refine mbForIn_inv (P := fun m' : MBuf => seqGo .free m'.out.toList = some r) _ _ _ hm ?_
+  intro _ s hs
+  split
+  · rename_i m' h; exact step_seq _ _ _ hs h
+  · exact hs
+
+theorem seqStep_relabel (f : Lbl → Lbl) (s : SeqSt) (ln : Line) :
+    seqStep s (ln.relabel f) = seqStep s ln := by
+  cases ln with
+  | ins i tc => cases i <;> cases s <;> rfl
+  | word _ _ => cases s <;> rfl
+  | label _ => rfl
+
+theorem seqGo_relabel (f : Lbl → Lbl) : ∀ (L : List Line) (s : SeqSt),
+    seqGo s (L.map (Line.relabel f)) = seqGo s L
+  | [], _ => rfl
+  | ln :: L, s => by
+    simp only [List.map_cons, seqGo, seqStep_relabel]
+    cases seqStep s ln with
+    | none => rfl
+    | some s1 => simp only [Option.bind_some]; exact seqGo_relabel f L s1
+
+/-- **`MachBuffer`'s simplification keeps the relocated sequences whole.** -/
+theorem machBuf_seq (allLabels : Bool) (ls : List Line) (h : SeqOk ls) :
+    SeqOk (machBuf allLabels ls).1 := by
+  have hfold : ∀ (L I : List Line) (m : MBuf), seqGo .free (I ++ L) = some .free →
+      (∀ s, seqGo .free I = some s → seqGo .free m.out.toList = some s) →
+      seqGo .free (L.foldl (fun m ln =>
+        let m := { m with out := m.out.push ln }
+        if ln matches .label _ then m.optimize allLabels else m) m).out.toList = some .free := by
+    intro L
+    induction L with
+    | nil => intro I m hI hm; exact hm .free (by simpa using hI)
+    | cons ln L ih =>
+      intro I m hI hm
+      rw [List.foldl_cons]
+      apply ih (I ++ [ln]) _ (by simpa using hI)
+      intro s hs
+      obtain ⟨s0, h0, h1⟩ := seqGo_prefix (A := I) (B := [ln]) (by simpa using hs)
+      have hp : seqGo .free (m.out.push ln).toList = some s := by
+        rw [Array.toList_push, seqGo_append, hm s0 h0, Option.bind_some]
+        exact h1
+      split
+      · exact optimize_seq _ _ hp
+      · exact hp
+  unfold machBuf
+  dsimp only
+  unfold SeqOk
+  rw [seqGo_relabel]
+  exact optimize_seq _ _ (hfold ls [] {} (by simpa using h) (fun s hs => by simpa using hs))
 
 theorem seqGo_relaxLines (f : Lbl → Bool) : ∀ (L : List Line) (s : SeqSt),
     seqGo s L = some .free → seqGo s (relaxLines f L) = some .free
@@ -373,27 +475,57 @@ theorem codeLinesE_seqOk {c : FnCtx} {af : AFunc} :
         obtain ⟨rfl, -⟩ := h
         exact seqOk_append (ainstLines_seqOk hr) (codeLinesE_seqOk as _ _ _ hr2)
 
-theorem blocksLinesE_seqOk {c : FnCtx} {af : AFunc} :
-    ∀ (bs : List (Label × Array AInst)) (ps ps' : PState) (ls : List Line),
-      blocksLinesE c af bs ps = .ok (ls, ps') → SeqOk ls
-  | [], ps, ps', ls, h => by
-    simp only [blocksLinesE, pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at h
+/-- The segments' unsimplified lines are whole sequences and free lines. -/
+theorem segsOf_seqOk {c : FnCtx} {af : AFunc} :
+    ∀ (bs : List ((Label × Array AInst) × Nat)) (ps ps' : PState) (ss : List Seg),
+      segsOf c af bs ps = .ok (ss, ps') → SeqOk (segLines ss (ss.map (·.term)))
+  | [], ps, ps', ss, h => by
+    simp only [segsOf, pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at h
     obtain ⟨rfl, -⟩ := h; rfl
-  | (l, code) :: bs, ps, ps', ls, h => by
-    simp only [blocksLinesE, bind, Except.bind] at h
-    split at h
-    · cases h
-    · rename_i r hr
-      split at h
-      · cases h
-      · rename_i r2 hr2
-        simp only [pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at h
-        obtain ⟨rfl, -⟩ := h
-        unfold SeqOk
-        rw [List.cons_append, seqGo_free_cons rfl]
-        exact seqOk_append (codeLinesE_seqOk _ _ _ _ hr) (blocksLinesE_seqOk bs _ _ _ hr2)
+  | ((l, code), i) :: bs, ps, ps', ss, h => by
+    simp only [segsOf] at h
+    obtain ⟨⟨l1, ps1⟩, h1, h⟩ := E2E.exceptBind_ok h
+    obtain ⟨⟨l2, ps2⟩, h2, h⟩ := E2E.exceptBind_ok h
+    obtain ⟨⟨l3, ps3⟩, h3, h⟩ := E2E.exceptBind_ok h
+    simp only [pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at h
+    obtain ⟨rfl, -⟩ := h
+    unfold SeqOk
+    simp only [List.map_cons, segLines, List.cons_append, List.append_assoc]
+    rw [seqGo_free_cons rfl]
+    exact seqOk_append (codeLinesE_seqOk _ _ _ _ h1)
+      (seqOk_append (codeLinesE_seqOk _ _ _ _ h2) (segsOf_seqOk bs _ _ _ h3))
 
-theorem trapLines_free (ts : List (Lbl × Clif.TrapCode)) : ∀ ln ∈ trapLines ts, lnFree ln = true := by
+/-- The emission plan's lines are whole sequences and free lines. -/
+theorem emitPlan_seqOk {k : Nat} {af : AFunc} {p : Plan} (h : emitPlan k af = .ok p) :
+    SeqOk (segLines p.segs p.outs) := by
+  have hraw := segsOf_seqOk _ _ _ _ (emitPlan_spec h).1
+  unfold emitPlan at h
+  simp only [bind, Except.bind] at h
+  split at h
+  · cases h
+  rename_i r hr
+  obtain ⟨ss, ps⟩ := r
+  dsimp only at h
+  split at h
+  · rename_i p1 h1
+    simp only [pure, Except.pure, Except.ok.injEq] at h
+    subst h
+    have h1' : machPlan af true ss ps = some p1 ∨ machPlan af false ss ps = some p1 := by
+      cases e : machPlan af true ss ps with
+      | some q => rw [e] at h1; simp only [Option.orElse] at h1; exact .inl h1
+      | none => rw [e] at h1; simp only [Option.orElse] at h1; exact .inr h1
+    rcases h1' with h1' | h1' <;>
+    · obtain ⟨hs, hsp⟩ := machPlan_split h1'
+      rw [hs] at hraw ⊢
+      rw [splitSegs_lines _ _ _ hsp]
+      exact machBuf_seq _ _ hraw
+  · split at h
+    · simp only [pure, Except.pure, Except.ok.injEq] at h
+      subst h
+      exact hraw
+    · cases h
+
+theorem trapLines_free (ps : PState) : ∀ ln ∈ trapLines ps, lnFree ln = true := by
   intro ln hln
   simp only [trapLines, List.mem_flatMap, List.mem_cons, List.not_mem_nil, or_false] at hln
   obtain ⟨p, -, rfl | rfl⟩ := hln <;> rfl
@@ -401,10 +533,10 @@ theorem trapLines_free (ts : List (Lbl × Clif.TrapCode)) : ∀ ln ∈ trapLines
 /-- **`emitFunc`'s lines are whole relocated sequences and free lines.** -/
 theorem emitFunc_seqOk {k : Nat} {af : AFunc} {fa : FnAsm} (h : emitFunc k af = .ok fa) :
     SeqOk fa.lines.toList := by
-  obtain ⟨body, ps, hb, hl, -⟩ := emitFunc_ok h
+  obtain ⟨p, hp, hl, -⟩ := emitFunc_ok h
   rw [hl]
   refine seqGo_relaxLines _ _ _ (seqOk_append ?_ ?_)
-  · exact seqGo_ftList _ _ _ (Nat.le_refl _) (blocksLinesE_seqOk _ _ _ _ hb)
+  · exact emitPlan_seqOk hp
   · exact seqOk_of_free (trapLines_free _)
 
 end Backend.Proof

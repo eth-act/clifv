@@ -88,25 +88,33 @@ theorem spill_inst_cases_of {vc vcp : VCode} {af : AFunc} (hdom : Prep.PrepDomai
     · simp at hmc
 
 /-- **`emitPre` succeeds on the spill allocation** (`emitPre_spill_ok` from `prepare`'s domain,
-the covered forms and the control check). -/
+the covered forms, the control check and `branchTargetsOkB`, added with #553: `emitPlan` checks
+the branches' lines). -/
 theorem emitPre_spill_of {vc vcp : VCode} {af : AFunc} (hdom : Prep.PrepDomain vc)
     (hp : Backend.prepare vc = .ok vcp) (hcov : FormsCovered default vcp) (hctl : CtlInsts vcp)
+    (htg : branchTargetsOkB vcp = true)
     (ha : lowerRFunc vcp (spillAlloc vcp) = .ok af) : ∀ k, ∃ pre, emitPre k af = .ok pre := by
   intro k
   have hcov' : FormsCovered ⟨k, af.slotBase⟩ vcp := formsCovered_ctx hcov _
-  apply emitPre_of
-  apply blocksLinesE_total
-  intro x hx a ha' ps
-  obtain ⟨b, hb⟩ := List.mem_iff_getElem?.mp hx
-  obtain ⟨l, code⟩ := x
-  cases a with
-  | prologue => exact ⟨_, rfl⟩
-  | epilogueRet => exact ⟨_, rfl⟩
-  | inst m =>
-    obtain ⟨vb, hvb, hcase⟩ := spill_inst_cases_of hdom hp ha (by simpa using hb) ha'
-    rcases hcase with ⟨src, dst, ms, -, hmv, hmm⟩ | ⟨kk, i, regs, hi, hasg, hloc, hna, hnr⟩
-    · exact moveInsts_total _ hmv m hmm ps
-    · exact op_total (hcov' b vb kk i hvb hi) (hctl.1 b vb kk i hvb hi) hloc hasg hna hnr ps
+  obtain ⟨hlab, ht⟩ := EmitLabels.lowerRFunc_targets htg
+    (Nat.le_of_eq (E2E.spillAlloc_size vcp).symm) ha
+  refine emitPre_of ?_ ?_ ht
+  · intro x hx a ha' ps
+    obtain ⟨b, hb⟩ := List.mem_iff_getElem?.mp hx
+    obtain ⟨l, code⟩ := x
+    cases a with
+    | prologue => exact ⟨_, rfl⟩
+    | epilogueRet => exact ⟨_, rfl⟩
+    | inst m =>
+      obtain ⟨vb, hvb, hcase⟩ := spill_inst_cases_of hdom hp ha (by simpa using hb) ha'
+      rcases hcase with ⟨src, dst, ms, -, hmv, hmm⟩ | ⟨kk, i, regs, hi, hasg, hloc, hna, hnr⟩
+      · exact moveInsts_total _ hmv m hmm ps
+      · exact op_total (hcov' b vb kk i hvb hi) (hctl.1 b vb kk i hvb hi) hloc hasg hna hnr ps
+  · obtain ⟨-, vb0, -, hvb0, -⟩ := hctl
+    have := congrArg List.length hlab
+    simp only [List.length_map, Array.length_toList] at this
+    rw [this]
+    exact Array.size_pos_of_mem (Array.mem_of_getElem? hvb0)
 
 /-- **The spill allocation's code is ready** under `emitCondsB` (`emitReady_spill` from
 `prepare`'s domain, the spill allocation's acceptance, the covered forms and the control
@@ -117,7 +125,7 @@ theorem emitReady_spill_of {vc vcp : VCode} {af : AFunc} (hdom : Prep.PrepDomain
     (ha : lowerRFunc vcp (spillAlloc vcp) = .ok af) : emitReady af = true := by
   simp only [emitCondsB, Bool.and_eq_true] at hem
   obtain ⟨⟨⟨hsz, himm⟩, hna⟩, htg⟩ := hem
-  obtain ⟨pre, hpre⟩ := emitPre_spill_of hdom hp hcov hctl ha 0
+  obtain ⟨pre, hpre⟩ := emitPre_spill_of hdom hp hcov hctl htg ha 0
   obtain ⟨fa, he⟩ := emitFunc_of_emitPre hpre
   obtain ⟨hlab, hdef⟩ := emitFunc_labels_lowerRFunc (prepare_labels_nodup hp hdom) htg
     (Nat.le_of_eq (E2E.spillAlloc_size vcp).symm) ha he

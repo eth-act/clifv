@@ -55,23 +55,30 @@ theorem spill_inst_cases_cleanup {f : Clif.Function} {vc vcp : VCode} {af : AFun
 theorem emitPre_spill_cleanup_ok {p : Clif.Program} {f : Clif.Function} {vc vcp : VCode} {af : AFunc}
     (hsub : InSubset p f) (hd : dominatedB f = true) (hs : lowerScopeB f = true)
     (hl : lowerFunction f = .ok vc) (hp : Backend.prepare (prune vc) = .ok vcp)
+    (htg : branchTargetsOkB vcp = true)
     (ha : lowerRFunc vcp (spillAlloc vcp) = .ok af) : ∀ k, ∃ pre, emitPre k af = .ok pre := by
   intro k
   have hcov := formsCovered_cleanup_complete (lowerScope_of hs) hl hp ⟨k, af.slotBase⟩
-  obtain ⟨hins, -⟩ := ctlInsts_cleanup_pipeline hsub (dominated_of hd) (lowerScope_of hs) hl hp
-  apply emitPre_of
-  apply blocksLinesE_total
-  intro x hx a ha' ps
-  obtain ⟨b, hb⟩ := List.mem_iff_getElem?.mp hx
-  obtain ⟨l, code⟩ := x
-  cases a with
-  | prologue => exact ⟨_, rfl⟩
-  | epilogueRet => exact ⟨_, rfl⟩
-  | inst m =>
-    obtain ⟨vb, hvb, hcase⟩ := spill_inst_cases_cleanup hs hl hp ha (by simpa using hb) ha'
-    rcases hcase with ⟨src, dst, ms, -, hmv, hmm⟩ | ⟨kk, i, regs, hi, hasg, hloc, hna, hnr⟩
-    · exact moveInsts_total _ hmv m hmm ps
-    · exact op_total (hcov b vb kk i hvb hi) (hins b vb kk i hvb hi) hloc hasg hna hnr ps
+  obtain ⟨hins, vb0, -, hvb0, -⟩ :=
+    ctlInsts_cleanup_pipeline hsub (dominated_of hd) (lowerScope_of hs) hl hp
+  obtain ⟨hlab, ht⟩ := EmitLabels.lowerRFunc_targets htg
+    (Nat.le_of_eq (spillAlloc_size vcp).symm) ha
+  refine emitPre_of ?_ ?_ ht
+  · intro x hx a ha' ps
+    obtain ⟨b, hb⟩ := List.mem_iff_getElem?.mp hx
+    obtain ⟨l, code⟩ := x
+    cases a with
+    | prologue => exact ⟨_, rfl⟩
+    | epilogueRet => exact ⟨_, rfl⟩
+    | inst m =>
+      obtain ⟨vb, hvb, hcase⟩ := spill_inst_cases_cleanup hs hl hp ha (by simpa using hb) ha'
+      rcases hcase with ⟨src, dst, ms, -, hmv, hmm⟩ | ⟨kk, i, regs, hi, hasg, hloc, hna, hnr⟩
+      · exact moveInsts_total _ hmv m hmm ps
+      · exact op_total (hcov b vb kk i hvb hi) (hins b vb kk i hvb hi) hloc hasg hna hnr ps
+  · have := congrArg List.length hlab
+    simp only [List.length_map, Array.length_toList] at this
+    rw [this]
+    exact Array.size_pos_of_mem (Array.mem_of_getElem? hvb0)
 
 theorem emitReady_spill_cleanup {p : Clif.Program} {f : Clif.Function} {vc vcp : VCode} {af : AFunc}
     (hsub : InSubset p f) (hd : dominatedB f = true) (hs : lowerScopeB f = true)
@@ -81,7 +88,7 @@ theorem emitReady_spill_cleanup {p : Clif.Program} {f : Clif.Function} {vc vcp :
     emitReady af = true := by
   simp only [emitCondsB, Bool.and_eq_true] at hem
   obtain ⟨⟨⟨hsz, himm⟩, hna⟩, htg⟩ := hem
-  obtain ⟨pre, hpre⟩ := emitPre_spill_cleanup_ok hsub hd hs hl hp ha 0
+  obtain ⟨pre, hpre⟩ := emitPre_spill_cleanup_ok hsub hd hs hl hp htg ha 0
   obtain ⟨fa, he⟩ := emitFunc_of_emitPre hpre
   obtain ⟨hlab, hdef⟩ := emitFunc_labels_lowerRFunc
     (prepare_labels_nodup hp (prune_prepDomain

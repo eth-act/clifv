@@ -18,7 +18,9 @@ open Backend E2E
 
 /-- **The call of a `try_call` on the machine** (`realizes_tryCall`) **with its call state**:
 the segment's states satisfy `GoodX`, and exactly one of them (the first, at the `bl`/`blr`) is a
-call state. -/
+call state. (`q_entry`
+now takes a `RepL` for the successor's label, which `reach_jumpX` provides from the branch
+check's `termOk_tryCall`; the old label-line argument is gone with `ftList`.) -/
 theorem realizes_tryCallNR {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {P : Arm.ArmState → Prop}
     (hC : CalleeOkGP P R.F R.K R.G R.s0 (CallAt R.fa R.base) R.X R.H R.vc.CallSite R.gv)
     (hT : CalleeTryOkGP P R.F R.K R.G R.s0 (CallAt R.fa R.base) R.X R.H R.vc.TrySite R.gv)
@@ -40,14 +42,32 @@ theorem realizes_tryCallNR {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {P : Ar
       ∃ i0 < n, R.CallSt (iterN R.step i0 s) ∧
         ∀ i < n, i ≠ i0 → R.NoCallAt (iterN R.step i s) := by
   have hck := (lowerRFunc_ok hR.alloc).2.2
-  have hcpc := callAt_of_q hq hvb hi tryCall_hcall
-  obtain ⟨j0, vb0, items0, pre, code, ls, ps1, ps2, T, hvb0, hit, hsplit, hchk, hcode, hls, htr,
-    hdrop, hpc, hst⟩ := hq
+  have hcpc := callAt_of_q hR hq hvb hi tryCall_hcall
+  rcases Q.cases hq with hqs | ⟨vbf, allocsf, regsf, if_, xf, bx, hvbf, he, hits, half, hins, hasgf,
+    hsuccf, itx, hitx, hqx⟩
+  rotate_left
+  · -- a forwarding block: its `jump` takes no machine step, but a `try_call`'s allocated form
+    -- is no `jump`
+    rw [hvb] at hvbf
+    cases hvbf
+    simp only [RItem.op.injEq] at he
+    obtain ⟨rfl, rfl⟩ := he
+    subst hits
+    have hi1 := hi
+    rw [hins] at hi1
+    simp only [List.getElem?_toArray, List.getElem?_cons_zero, Option.some.injEq] at hi1
+    subst hi1
+    obtain ⟨ic, e, -⟩ := (assign_call_tryCall info regsf).2 ti (.jump xf) hasgf
+    cases e
+  obtain ⟨_, vb0, _, _, code, _, _, _, _, _, hvb0, -, -, hchk0, hcode, -⟩ := id hqs
   rw [hvb] at hvb0; cases hvb0
-  obtain ⟨c1, c2, hc1, hc2, rfl⟩ := itemsCode_cons hcode
+  obtain rfl : its = [] := hchk0.tail_nil hk1
+  obtain ⟨j0, vb0, items, pre, c1, X, ps1, psm, ps2, x, hvb0, hit, hsplit, hchk, hc1, hX, hTq, htr,
+    hdrop, hpc, hst, hterm⟩ := qs_term hR hqs
+  rw [hvb] at hvb0; cases hvb0
   obtain ⟨regs, i0, i', rfl, hi0, hasg, hc1'⟩ := itemCode_op hc1
   rw [hi] at hi0; cases hi0
-  obtain ⟨cc, wh, i2, ops2, hi2, hops2, hstat, hchk'⟩ := op_checked hchk
+  obtain ⟨cc, wh, i2, ops2, hi2, hops2, hstat, -⟩ := op_checked hchk
   rw [hi] at hi2; cases hi2
   rw [hops] at hops2; cases hops2
   have hm : ∀ r, r.allocatable = true → m (.reg r) = regVal s r := fun r hr =>
@@ -126,49 +146,54 @@ theorem realizes_tryCallNR {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {P : Ar
     rw [List.getElem?_append_right (by simp), List.length_map, Nat.sub_self] at hlj
     simp only [List.getElem?_cons_zero, Option.some.injEq] at hlj
     exact hlj.symm
-  -- the lines: the call, then `b continuation`
+  -- the lines: the call, then `b continuation` (the try_call's own lines, the segment's term)
   obtain rfl : c1 = [.inst (.tryCall ic ti)] := by
     rcases hc1' with ⟨h, -, -⟩ | ⟨_, h, -⟩ | ⟨_, h, -⟩
     · exact h
     · cases h
     · cases h
-  obtain ⟨ls1, ls2, psm, h1, h2, rfl⟩ := codeLinesE_append _ _ _ _ _ hls
-  have hl1 := codeLinesE_single h1
-  obtain ⟨x, hxl, hxs, hplain, hxk⟩ : ∃ x : Insn, ls1 = [.ins x, .ins (.b (.block ti.continuation))] ∧
-      (∀ s0 : Arm.ArmState, ∀ jj, R.L[jj]? = some (.ins x) → s0.program = R.fb.program R.base →
+  simp only [List.dropLast_singleton, codeLinesE, bind, Except.bind, pure, Except.pure,
+    Except.ok.injEq, Prod.mk.injEq] at hX
+  obtain ⟨rfl, rfl⟩ := hX
+  have hdrop0 : R.L.drop j0 = relaxLines R.far x.2.1 ++
+      R.L.drop (rix R.far (planLines R.fa.k R.af) x.2.2) := by simpa using hdrop
+  rw [show [AInst.inst (.tryCall ic ti)].getLast?.toList = [AInst.inst (.tryCall ic ti)] from by simp] at hTq
+  have hlT := codeLinesE_single hTq
+  obtain ⟨xI, hxterm, hxs, hplain, hxk⟩ : ∃ xI : Insn,
+      x.1.term = [.ins xI none, .ins (.b (.block ti.continuation)) none] ∧
+      (∀ s0 : Arm.ArmState, ∀ jj, R.L[jj]? = some (.ins xI) → s0.program = R.fb.program R.base →
         Arm.r .PC s0 = R.pcOf jj → R.step s0 = R.H.call
           (match ic.dest with | .sym n => some n | .reg _ => none) s0) ∧
-      (Line.ins x none).plain = true ∧ ((∃ n, x = .bl n) ∨ ∃ r, x = .blr r ∧ (R.vc.DestsInt → r ≠ .xzr)) := by
+      (Line.ins xI none).plain = true ∧
+      ((∃ n, xI = .bl n) ∨ ∃ r, xI = .blr r ∧ (R.vc.DestsInt → r ≠ .xzr)) := by
     cases hd : ic.dest with
     | sym n =>
-      simp only [MInst.lines, hd, pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at hl1
-      refine ⟨.bl n, hl1.1.symm, fun s0 jj hj hprog hpc0 => ?_, by simp [Line.plain, Insn.condTarget?],
+      simp only [MInst.lines, hd, pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at hlT
+      refine ⟨.bl n, hlT.1.symm, fun s0 jj hj hprog hpc0 => ?_, by simp [Line.plain, Insn.condTarget?],
         .inl ⟨n, rfl⟩⟩
       exact step_bl (off := 0) (r := .xzr) (rd := .xzr) (rn := .xzr) hR hj hprog hpc0
     | reg r =>
-      simp only [MInst.lines, hd, pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at hl1
-      refine ⟨.blr r, hl1.1.symm, fun s0 jj hj hprog hpc0 => ?_, by simp [Line.plain, Insn.condTarget?],
+      simp only [MInst.lines, hd, pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at hlT
+      refine ⟨.blr r, hlT.1.symm, fun s0 jj hj hprog hpc0 => ?_, by simp [Line.plain, Insn.condTarget?],
         .inr ⟨r, rfl, fun hD => callDest_ne_xzr (hD b vb k info hvb (.inr ⟨ti, hi⟩)) hstat hasg' hd⟩⟩
-      exact step_blr (off := 0) (n := "") (rd := .xzr) (rn := .xzr) hR hj hprog hpc0
-  subst hxl
-  have hZ : ∀ n, (Line.ins (.b (.block ti.continuation)) none :: (ls2 ++ nxtOf R.af b))[1]? ≠
-      some (.label (.trap n)) := by
-    intro n e
-    simp only [List.getElem?_cons_succ] at e
-    have hm := List.mem_of_getElem? e
-    rcases List.mem_append.1 hm with hm | hm
-    · exact codeLinesE_noTrap _ _ _ _ h2 _ hm n rfl
-    · simp only [nxtOf] at hm
-      split at hm <;> simp at hm
-  have hdrop' : R.L.drop j0 = Line.ins x none ::
-      (relaxLines R.far (ftList (.ins (.b (.block ti.continuation)) none :: (ls2 ++ nxtOf R.af b))) ++ T) := by
-    rw [hdrop, List.append_assoc]
-    rw [show [Line.ins x, .ins (.b (.block ti.continuation))] ++ (ls2 ++ nxtOf R.af b) =
-      [Line.ins x none] ++ (.ins (.b (.block ti.continuation)) none :: (ls2 ++ nxtOf R.af b)) from rfl,
-      ftR_plain_append _ _ _ (by simpa using hplain) hZ]
-    rfl
-  have hj0 : R.L[j0]? = some (.ins x none) := drop_get (Z := []) hdrop'
-  -- the machine: the callee, then `b continuation`
+      refine step_blr (off := 0) (n := "") (rd := .xzr) (rn := .xzr) hR hj hprog hpc0
+  -- the branch check's verdict on the final lines
+  obtain ⟨call, b0, htermL, hcase⟩ := termOk_tryCall hterm
+  rw [hxterm] at htermL
+  obtain ⟨rfl, rfl⟩ := htermL
+  obtain ⟨O, hx21O, hcaseO⟩ : ∃ O, x.2.1 = .ins xI none :: O ∧
+      ((∃ l', O = [.ins (.b l') none] ∧
+          RepLbl (planRep R.fa.k R.af) (blockLabelIdx (planLines R.fa.k R.af)) ti.continuation l') ∨
+        (O = [] ∧ planRep R.fa.k R.af ti.continuation x.2.2 = true)) := by
+    rcases hcase with ⟨l', hx21, hrl⟩ | ⟨hx21, hrn⟩
+    · refine ⟨[.ins (.b l') none], hx21.trans rfl, .inl ⟨l', rfl, hrl⟩⟩
+    · refine ⟨[], hx21.trans rfl, .inr ⟨rfl, hrn⟩⟩
+  have hj0 : R.L[j0]? = some (.ins xI none) :=
+    drop_get (Z := relaxLines R.far O) (by
+      rw [hdrop0, hx21O, relaxLines_cons,
+        relaxLine_of_none (by rcases hxk with ⟨_, rfl⟩ | ⟨_, rfl, _⟩ <;> rfl),
+        List.singleton_append])
+  -- the machine: the callee, then the branch to the successor
   have hs1 : R.step s = s' := by
     rw [hxs s j0 hj0 hst.prog hpc]
     simp only [callExec, if_pos hst.align, Option.some.injEq] at hex
@@ -178,11 +203,19 @@ theorem realizes_tryCallNR {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {P : Ar
     rw [hW.2.2, hW'.2, ← hst.world.2.2, hst.prog]
   have hpc1 : Arm.r .PC s' = R.pcOf (j0 + 1) := by
     rw [← hs1, hxs s j0 hj0 hst.prog hpc, hC.pc _ _ hst.err hst.align, hpc, pcOf_succ hj0]
-  have hdrop1 : R.L.drop (j0 + 1) =
-      relaxLines R.far (ftList (.ins (.b (.block ti.continuation)) none :: (ls2 ++ nxtOf R.af b))) ++ T := by
-    rw [← List.drop_drop, hdrop']; rfl
   have hsp' : spOf s' = R.spB := hK.1.trans hst.sp
-  obtain ⟨n, jl, hn, hjl, -, hgx⟩ := reach_bXNR (Y := Y) hR hdrop1 (by simp) hprog' hpc1 herr' hsp'
+  have hdrop1 : R.L.drop (j0 + 1) = relaxLines R.far O ++
+      R.L.drop (rix R.far (planLines R.fa.k R.af) x.2.2) := by
+    rw [← List.drop_drop, hdrop0, hx21O, relaxLines_cons,
+      relaxLine_of_none (by rcases hxk with ⟨_, rfl⟩ | ⟨_, rfl, _⟩ <;> rfl)]
+    simp
+  have hoo : (∃ l', O = [.ins (.b l') none] ∧
+        RepLbl (planRep R.fa.k R.af) (blockLabelIdx (planLines R.fa.k R.af)) vs.label l') ∨
+      (O = [] ∧ planRep R.fa.k R.af vs.label x.2.2 = true) := by
+    rcases hcaseO with ⟨l', hO, hrl⟩ | ⟨hO, hrn⟩
+    · refine .inl ⟨l', hO, by rw [hcont]; refine hrl⟩
+    · refine .inr ⟨hO, by rw [hcont]; refine hrn⟩
+  obtain ⟨n, jl, hn, hrep, -, -, hgx⟩ := reach_jumpX hR hdrop1 hoo hprog' hpc1 herr' hsp'
   refine ⟨n + 1, _, MStep.op hvb hi hops hsz hsem hlen hho hc2'
     (MNext.goto hk1 hsucc hitems), ?_, fun i hi => ?_, 0, by omega,
     RL.callSt_of_line hj0 hpc (hxk.imp id fun ⟨r, e, _⟩ => ⟨r, e⟩), fun i hi hne => ?_⟩
@@ -228,6 +261,6 @@ theorem realizes_tryCallNR {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {P : Ar
           locVal_frame_keep hfr hst.sp hK hL (fun r h => by cases h)]
     · rw [← hst.fplr hframe]
       exact read_mem_bytes_congr _ _ (fun k hk => hK.2.1 _ (fplr_inF hR hframe k hk))
-  exact q_entry hR hst0 hvs hitems (by rw [hjl, hcont]) (Arm.r_of_w_same ..) (hstr.pc _)
+  exact q_entry hR hst0 hvs hitems hrep (Arm.r_of_w_same ..) (hstr.pc _)
 
 end Backend.Proof

@@ -6,8 +6,9 @@ import FV.Link.RelocShapeProof
 `MInst.lines` emits Cranelift's `ElfTlsGetAddr` as six lines (`adrp x0, :tlsdesc:sym`,
 `ldr tmp, [x0, :tlsdesc_lo12:sym]`, `add x0, x0, :tlsdesc_lo12:sym`, `blr tmp`,
 `mrs tmp, tpidr_el0`, `add x0, x0, tmp`, with `tmp ≠ x0`), and it is the only emitter of
-`adrp …, :tlsdesc:`. Neither `fallthrough` (which only drops or rewrites branches before a label)
-nor branch relaxation (which only rewrites conditional branches) touches these lines, so every
+`adrp …, :tlsdesc:`. Neither `MachBuffer`'s simplification (which only removes branches, inverts
+a conditional branch in place and retargets) nor branch relaxation (which only rewrites
+conditional branches) touches these lines, so every
 TLSDESC `adrp` of an emitted function starts the whole sequence: `emitFunc_tlsClosed`.
 
 The proof uses a forward automaton (`tlsSeqStep`, `TlsSeqSt`): outside a sequence any line but a
@@ -236,50 +237,143 @@ theorem tlsClosed_of_go : ∀ {L : List Line} {s : TlsSeqSt}, tlsSeqGo s L = som
 
 theorem tlsClosed_of_ok {L : List Line} (h : TlsSeqOk L) : TlsClosed L := tlsClosed_of_go h
 
-/-! ## `fallthrough` and branch relaxation -/
+/-! ## `MachBuffer`'s simplification and branch relaxation -/
 
 theorem cond_plain {c : Insn} {l : Lbl} (h : c.condTarget? = some l) (e : Lbl)
     (t : Option Clif.TrapCode) :
     lnPlain (.ins c t) = true ∧ lnPlain (.ins (c.invertTo e) t) = true := by
   cases c <;> simp_all [Insn.condTarget?, Insn.invertTo, lnPlain, Insn.tlsPart]
 
-theorem tlsSeqGo_ftList : ∀ (n : Nat) (L : List Line) (s : TlsSeqSt), L.length ≤ n →
-    tlsSeqGo s L = some .free → tlsSeqGo s (ftList L) = some .free
-  | _, [], _, _, h => by simpa [ftList] using h
-  | n + 1, ln :: rest, s, hn, h => by
-    rw [ftList_cons]
-    rcases ftStep_cases ln rest[0]? rest[1]? with he | ⟨x, l, rfl, h1, he⟩ | ⟨c, e, l, rfl, hc, h1, h2, he⟩
-    · rw [he]
-      simp only [List.drop_one, List.tail_cons, List.singleton_append, tlsSeqGo] at h ⊢
-      cases e : tlsSeqStep s ln with
-      | none => simp [e] at h
-      | some s1 =>
-        simp only [e, Option.bind_some] at h ⊢
-        exact tlsSeqGo_ftList n rest _ (by simp at hn; omega) h
-    · rw [he]
-      cases rest with
-      | nil => simp at h1
-      | cons y rest' =>
-        simp only [List.getElem?_cons_zero, Option.some.injEq] at h1
-        subst h1
-        obtain ⟨rfl, h'⟩ := tlsSeqGo_free_inv rfl h
-        simp only [List.drop_one, List.tail_cons, List.nil_append]
-        exact tlsSeqGo_ftList n _ _ (by simp at hn ⊢; omega) h'
-    · rw [he]
-      cases rest with
-      | nil => simp at h1
-      | cons y rest =>
-      cases rest with
-      | nil => simp at h2
-      | cons z rest' =>
-        simp only [List.getElem?_cons_zero, List.getElem?_cons_succ, Option.some.injEq] at h1 h2
-        subst h1 h2
-        obtain ⟨hc1, hc2⟩ := cond_plain hc e none
-        obtain ⟨rfl, h'⟩ := tlsSeqGo_free_inv hc1 h
-        obtain ⟨-, h''⟩ := tlsSeqGo_free_inv rfl h'
-        simp only [List.drop_succ_cons, List.drop_zero, List.singleton_append]
-        rw [tlsSeqGo_free_cons (lnNoAdrp_of_plain hc2)]
-        exact tlsSeqGo_ftList n _ _ (by simp at hn ⊢; omega) h''
+theorem tlsSeqGo_prefix {s r : TlsSeqSt} {A B : List Line} (h : tlsSeqGo s (A ++ B) = some r) :
+    ∃ s', tlsSeqGo s A = some s' ∧ tlsSeqGo s' B = some r := by
+  rw [tlsSeqGo_append] at h
+  cases e : tlsSeqGo s A with
+  | none => simp [e] at h
+  | some s' => simp only [e, Option.bind_some] at h; exact ⟨s', rfl, h⟩
+
+/-- Removing a plain line (accepted only outside a sequence) keeps the run's end. -/
+theorem tlsSeqGo_eraseIdx : ∀ (L : List Line) (k : Nat) (s r : TlsSeqSt),
+    tlsSeqGo s L = some r → (∀ x, L[k]? = some x → lnPlain x = true) →
+    tlsSeqGo s (L.eraseIdx k) = some r
+  | [], _, _, _, h, _ => h
+  | x :: L, 0, s, r, h, hx => by
+    obtain ⟨rfl, h'⟩ := tlsSeqGo_free_inv (hx x rfl) h
+    exact h'
+  | a :: L, k + 1, s, r, h, hx => by
+    obtain ⟨s1, e, h'⟩ := tlsSeqGo_cons_inv h
+    simp only [List.eraseIdx_cons_succ, tlsSeqGo, e, Option.bind_some]
+    exact tlsSeqGo_eraseIdx L k s1 r h' (fun x h'' => hx x (by simpa using h''))
+
+/-- Replacing a plain line by a plain line keeps the run's end. -/
+theorem tlsSeqGo_set : ∀ (L : List Line) (p : Nat) (y : Line) (s r : TlsSeqSt),
+    tlsSeqGo s L = some r → (∀ x, L[p]? = some x → lnPlain x = true) → lnPlain y = true →
+    tlsSeqGo s (L.set p y) = some r
+  | [], _, _, _, _, h, _, _ => h
+  | x :: L, 0, y, s, r, h, hx, hy => by
+    obtain ⟨rfl, h'⟩ := tlsSeqGo_free_inv (hx x rfl) h
+    simp only [List.set_cons_zero]
+    rw [tlsSeqGo_free_cons (lnNoAdrp_of_plain hy)]
+    exact h'
+  | a :: L, p + 1, y, s, r, h, hx, hy => by
+    obtain ⟨s1, e, h'⟩ := tlsSeqGo_cons_inv h
+    simp only [List.set_cons_succ, tlsSeqGo, e, Option.bind_some]
+    exact tlsSeqGo_set L p y s1 r h' (fun x h'' => hx x (by simpa using h'')) hy
+
+theorem stepLine_plain {ln : Line} {t : Lbl} (h : (ln.ubr?).orElse (fun _ => ln.cbr?) = some t) :
+    lnPlain ln = true := by
+  cases ln with
+  | ins i tc =>
+    cases tc with
+    | none =>
+      cases i <;> simp_all [Line.ubr?, Line.cbr?, Option.orElse, lnPlain, Insn.tlsPart,
+        Insn.condTarget?]
+    | some _ => simp [Line.ubr?, Line.cbr?, Option.orElse] at h
+  | _ => rfl
+
+theorem step_tls (allLabels : Bool) (m m' : MBuf) {r : TlsSeqSt}
+    (hm : tlsSeqGo .free m.out.toList = some r) (h : MBuf.step allLabels m = some m') :
+    tlsSeqGo .free m'.out.toList = some r := by
+  obtain ⟨k, ln, t, hlc, hkln, ht, hc⟩ := step_cases allLabels m m' h
+  have hE : tlsSeqGo .free (m.erase k).toList = some r := by
+    simp only [MBuf.erase, List.toList_toArray]
+    refine tlsSeqGo_eraseIdx _ k _ _ hm (fun x hx => ?_)
+    simp only [Array.getElem?_toList, hkln, Option.some.injEq] at hx
+    subst hx; exact stepLine_plain ht
+  rcases hc with ⟨ho, -⟩ | ⟨ho, -⟩ | ⟨p, c, tc, ct, hpk, hp, hct, -, ho, -⟩
+  · rw [ho]; exact hE
+  · rw [ho]; exact hm
+  · rw [ho, Array.set!, Array.toList_setIfInBounds]
+    have hcond : ∃ l, c.condTarget? = some l := by
+      cases tc with
+      | none =>
+        simp only [Line.cbr?] at hct
+        split at hct
+        · exact ⟨_, by assumption⟩
+        · cases hct
+      | some _ => simp [Line.cbr?] at hct
+    obtain ⟨l, hl⟩ := hcond
+    obtain ⟨h1, h2⟩ := cond_plain hl t tc
+    refine tlsSeqGo_set _ p _ _ _ hE (fun x hx => ?_) h2
+    simp only [MBuf.erase, List.toList_toArray, List.getElem?_eraseIdx_of_lt hpk,
+      Array.getElem?_toList, hp, Option.some.injEq] at hx
+    subst hx
+    exact h1
+
+theorem optimize_tls (allLabels : Bool) (m : MBuf) {r : TlsSeqSt}
+    (hm : tlsSeqGo .free m.out.toList = some r) :
+    tlsSeqGo .free (MBuf.optimize allLabels m).out.toList = some r := by
+  unfold MBuf.optimize
+  simp only [Id.run, Std.Legacy.Range.forIn_eq_forIn_range']
+  refine mbForIn_inv (P := fun m' : MBuf => tlsSeqGo .free m'.out.toList = some r) _ _ _ hm ?_
+  intro _ s hs
+  split
+  · rename_i m' h; exact step_tls _ _ _ hs h
+  · exact hs
+
+theorem tlsSeqStep_relabel (f : Lbl → Lbl) (s : TlsSeqSt) (ln : Line) :
+    tlsSeqStep s (ln.relabel f) = tlsSeqStep s ln := by
+  cases ln with
+  | ins i tc => cases i <;> cases s <;> rfl
+  | word _ _ => cases s <;> rfl
+  | label _ => rfl
+
+theorem tlsSeqGo_relabel (f : Lbl → Lbl) : ∀ (L : List Line) (s : TlsSeqSt),
+    tlsSeqGo s (L.map (Line.relabel f)) = tlsSeqGo s L
+  | [], _ => rfl
+  | ln :: L, s => by
+    simp only [List.map_cons, tlsSeqGo, tlsSeqStep_relabel]
+    cases tlsSeqStep s ln with
+    | none => rfl
+    | some s1 => simp only [Option.bind_some]; exact tlsSeqGo_relabel f L s1
+
+/-- **`MachBuffer`'s simplification keeps the TLS sequences whole.** -/
+theorem machBuf_tls (allLabels : Bool) (ls : List Line) (h : TlsSeqOk ls) :
+    TlsSeqOk (machBuf allLabels ls).1 := by
+  have hfold : ∀ (L I : List Line) (m : MBuf), tlsSeqGo .free (I ++ L) = some .free →
+      (∀ s, tlsSeqGo .free I = some s → tlsSeqGo .free m.out.toList = some s) →
+      tlsSeqGo .free (L.foldl (fun m ln =>
+        let m := { m with out := m.out.push ln }
+        if ln matches .label _ then m.optimize allLabels else m) m).out.toList = some .free := by
+    intro L
+    induction L with
+    | nil => intro I m hI hm; exact hm .free (by simpa using hI)
+    | cons ln L ih =>
+      intro I m hI hm
+      rw [List.foldl_cons]
+      apply ih (I ++ [ln]) _ (by simpa using hI)
+      intro s hs
+      obtain ⟨s0, h0, h1⟩ := tlsSeqGo_prefix (A := I) (B := [ln]) (by simpa using hs)
+      have hp : tlsSeqGo .free (m.out.push ln).toList = some s := by
+        rw [Array.toList_push, tlsSeqGo_append, hm s0 h0, Option.bind_some]
+        exact h1
+      split
+      · exact optimize_tls _ _ hp
+      · exact hp
+  unfold machBuf
+  dsimp only
+  unfold TlsSeqOk
+  rw [tlsSeqGo_relabel]
+  exact optimize_tls _ _ (hfold ls [] {} (by simpa using h) (fun s hs => by simpa using hs))
 
 theorem tlsSeqGo_relaxLines (f : Lbl → Bool) : ∀ (L : List Line) (s : TlsSeqSt),
     tlsSeqGo s L = some .free → tlsSeqGo s (relaxLines f L) = some .free
@@ -390,25 +484,55 @@ theorem codeLinesE_tlsOk {c : FnCtx} {af : AFunc} :
         obtain ⟨rfl, -⟩ := h
         exact tlsSeqOk_append (ainstLines_tlsOk hr) (codeLinesE_tlsOk as _ _ _ hr2)
 
-theorem blocksLinesE_tlsOk {c : FnCtx} {af : AFunc} :
-    ∀ (bs : List (Label × Array AInst)) (ps ps' : PState) (ls : List Line),
-      blocksLinesE c af bs ps = .ok (ls, ps') → TlsSeqOk ls
-  | [], ps, ps', ls, h => by
-    simp only [blocksLinesE, pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at h
+/-- The segments' unsimplified lines keep the TLS sequences whole. -/
+theorem segsOf_tlsOk {c : FnCtx} {af : AFunc} :
+    ∀ (bs : List ((Label × Array AInst) × Nat)) (ps ps' : PState) (ss : List Seg),
+      segsOf c af bs ps = .ok (ss, ps') → TlsSeqOk (segLines ss (ss.map (·.term)))
+  | [], ps, ps', ss, h => by
+    simp only [segsOf, pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at h
     obtain ⟨rfl, -⟩ := h; rfl
-  | (l, code) :: bs, ps, ps', ls, h => by
-    simp only [blocksLinesE, bind, Except.bind] at h
-    split at h
+  | ((l, code), i) :: bs, ps, ps', ss, h => by
+    simp only [segsOf] at h
+    obtain ⟨⟨l1, ps1⟩, h1, h⟩ := E2E.exceptBind_ok h
+    obtain ⟨⟨l2, ps2⟩, h2, h⟩ := E2E.exceptBind_ok h
+    obtain ⟨⟨l3, ps3⟩, h3, h⟩ := E2E.exceptBind_ok h
+    simp only [pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at h
+    obtain ⟨rfl, -⟩ := h
+    unfold TlsSeqOk
+    simp only [List.map_cons, segLines, List.cons_append, List.append_assoc]
+    rw [tlsSeqGo_free_cons rfl]
+    exact tlsSeqOk_append (codeLinesE_tlsOk _ _ _ _ h1)
+      (tlsSeqOk_append (codeLinesE_tlsOk _ _ _ _ h2) (segsOf_tlsOk bs _ _ _ h3))
+
+/-- The emission plan's lines keep the TLS sequences whole. -/
+theorem emitPlan_tlsOk {k : Nat} {af : AFunc} {p : Plan} (h : emitPlan k af = .ok p) :
+    TlsSeqOk (segLines p.segs p.outs) := by
+  have hraw := segsOf_tlsOk _ _ _ _ (emitPlan_spec h).1
+  unfold emitPlan at h
+  simp only [bind, Except.bind] at h
+  split at h
+  · cases h
+  rename_i r hr
+  obtain ⟨ss, ps⟩ := r
+  dsimp only at h
+  split at h
+  · rename_i p1 h1
+    simp only [pure, Except.pure, Except.ok.injEq] at h
+    subst h
+    have h1' : machPlan af true ss ps = some p1 ∨ machPlan af false ss ps = some p1 := by
+      cases e : machPlan af true ss ps with
+      | some q => rw [e] at h1; simp only [Option.orElse] at h1; exact .inl h1
+      | none => rw [e] at h1; simp only [Option.orElse] at h1; exact .inr h1
+    rcases h1' with h1' | h1' <;>
+    · obtain ⟨hs, hsp⟩ := machPlan_split h1'
+      rw [hs] at hraw ⊢
+      rw [splitSegs_lines _ _ _ hsp]
+      exact machBuf_tls _ _ hraw
+  · split at h
+    · simp only [pure, Except.pure, Except.ok.injEq] at h
+      subst h
+      exact hraw
     · cases h
-    · rename_i r hr
-      split at h
-      · cases h
-      · rename_i r2 hr2
-        simp only [pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at h
-        obtain ⟨rfl, -⟩ := h
-        unfold TlsSeqOk
-        rw [List.cons_append, tlsSeqGo_free_cons rfl]
-        exact tlsSeqOk_append (codeLinesE_tlsOk _ _ _ _ hr) (blocksLinesE_tlsOk bs _ _ _ hr2)
 
 /-! ## `emitFunc` -/
 
@@ -416,10 +540,10 @@ theorem blocksLinesE_tlsOk {c : FnCtx} {af : AFunc} :
 sequence of `ElfTlsGetAddr`. -/
 theorem emitFunc_tlsClosed {k : Nat} {af : AFunc} {fa : FnAsm} (h : emitFunc k af = .ok fa) :
     TlsClosed fa.lines.toList := by
-  obtain ⟨body, ps, hb, hl, -⟩ := emitFunc_ok h
+  obtain ⟨p, hp, hl, -⟩ := emitFunc_ok h
   rw [hl]
   refine tlsClosed_of_go (tlsSeqGo_relaxLines _ _ _ (tlsSeqOk_append ?_ ?_))
-  · exact tlsSeqGo_ftList _ _ _ (Nat.le_refl _) (blocksLinesE_tlsOk _ _ _ _ hb)
+  · exact emitPlan_tlsOk hp
   · exact tlsSeqOk_of_free (trapLines_free _)
 
 /-! ## Non-vacuity -/

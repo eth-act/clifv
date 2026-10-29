@@ -155,7 +155,7 @@ theorem emitReady_spill {p : Clif.Program} {f : Clif.Function} {vc vcp : VCode} 
     emitReady af = true := by
   simp only [emitCondsB, Bool.and_eq_true] at hem
   obtain ⟨⟨⟨hsz, himm⟩, hna⟩, htg⟩ := hem
-  obtain ⟨pre, hpre⟩ := emitPre_spill_ok hsub hd hs hl hp ha 0
+  obtain ⟨pre, hpre⟩ := emitPre_spill_ok hsub hd hs hl hp htg ha 0
   obtain ⟨fa, he⟩ := emitFunc_of_emitPre hpre
   obtain ⟨hlab, hdef⟩ := emitFunc_spill_labels hs hl hp htg ha he
   unfold emitReady

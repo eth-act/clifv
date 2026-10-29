@@ -25,8 +25,23 @@ theorem realizes_trapIf_nextNR {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s 
     (hnh : ∀ w', c' ≠ .halt w') :
     ∃ n, Q R (iterN R.step n s) c' ∧ ∀ i < n, R.GoodXNY Y (iterN R.step i s) := by
   have hck := (lowerRFunc_ok hR.alloc).2.2
-  obtain ⟨j0, items, pre, regs, i', c1, c2, ls1, ls2, ps1, psm, ps2, T, cc, wh, ops, rfl, hit, hsplit,
-    hasg, hc1', hops, hstat, hchk', hc2, h1, h2, htr, hdrop, hpc, hst⟩ := q_op hq hvb hi
+  cases h with
+  | @op b k allocs its m w vb' i ops' outs outs' w' ctl m2 c' hvb' hi' hops' hsz hsem hlen hho hcl hn =>
+  rw [hvb] at hvb'; cases hvb'
+  rw [hi] at hi'; cases hi'
+  obtain rfl := hho.2.1 rfl
+  simp only [RL.sem, csemV, csem, Option.some.injEq, Prod.mk.injEq] at hsem
+  obtain ⟨rfl, rfl, hctl⟩ := hsem
+  cases hn with
+  | halt => exact absurd rfl (hnh _)
+  | ret h => cases h
+  | goto _ _ _ => split at hctl <;> cases hctl
+  | next hk =>
+  obtain ⟨j0, items, pre, regs, i', c1, c2, X', ls1, ps1, psm, psm', ps2, x, cc, wh, ops, rfl, hit,
+    hsplit, hasg, hc1', hops, hstat, hchk', hc2, h1, h2, h3, htr, hdrop, hpc, hst, hx, hsc⟩ :=
+    q_op hR hq hvb hi hk
+  rw [hops] at hops'
+  cases hops'
   have hkk : ∀ r sz, kk = .zero r sz ∨ kk = .notZero r sz → r.isVregInt = true := by
     intro r sz hr
     have := ctlCheck_inst hck hvb hi
@@ -41,37 +56,20 @@ theorem realizes_trapIf_nextNR {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s 
   have hl1 := codeLinesE_single h1
   simp only [MInst.lines, pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at hl1
   obtain ⟨rfl, -⟩ := hl1
-  cases h with
-  | @op b k allocs its m w vb' i ops' outs outs' w' ctl m2 c' hvb' hi' hops' hsz hsem hlen hho hcl hn =>
-  rw [hvb] at hvb'; cases hvb'
-  rw [hi] at hi'; cases hi'
-  rw [hops] at hops'; cases hops'
-  obtain rfl := hho.2.1 rfl
-  simp only [RL.sem, csemV, csem, Option.some.injEq, Prod.mk.injEq] at hsem
-  obtain ⟨rfl, rfl, hctl⟩ := hsem
-  cases hn with
-  | halt => exact absurd rfl (hnh _)
-  | ret h => cases h
-  | goto _ _ _ => split at hctl <;> cases hctl
-  | next hk =>
-  have hnot : kk.holds (((ops.zip (regs.map Loc.reg)).toList.filter (·.1.isUse)).map (m ·.2)) w = false := by
+  have hnot : kk.holds (((ops'.zip (regs.map Loc.reg)).toList.filter (·.1.isUse)).map (m ·.2)) w =
+      false := by
     split at hctl
     · cases hctl
     · rename_i hh
       simpa using hh
   rw [store_nodefs rfl hcl]
   -- the branch to the trap label is not taken
-  have hZ : ∀ n, (ls2 ++ nxtOf R.af b)[1]? ≠ some (.label (.trap n)) := by
-    intro n e
-    have hm := List.mem_of_getElem? e
-    rcases List.mem_append.1 hm with hm | hm
-    · exact codeLinesE_noTrap _ _ _ _ h2 _ hm n rfl
-    · simp only [nxtOf] at hm
-      split at hm <;> simp at hm
-  have hft := ftList_kind_trap k' ps1.traps.size (ls2 ++ nxtOf R.af b) hZ
+  have hline : relaxLines R.far [Line.ins (k'.insn (.trap ps1.traps.size))] =
+      relaxLine R.far (.ins (k'.insn (.trap ps1.traps.size))) := by simp [relaxLines]
   have hdrop' : R.L.drop j0 = relaxLine R.far (.ins (k'.insn (.trap ps1.traps.size)) none) ++
-      (relaxLines R.far (ftList (ls2 ++ nxtOf R.af b)) ++ T) := by
-    rw [hdrop, List.singleton_append, hft, relaxLines_cons, List.append_assoc]
+      (relaxLines R.far (X' ++ x.2.1) ++
+        R.L.drop (rix R.far (planLines R.fa.k R.af) x.2.2)) := by
+    rw [hdrop, hline]
   have hform : (∃ c, k'.insn (.trap ps1.traps.size) = .bcond c (.trap ps1.traps.size)) ∨
       (∃ nz w r, k'.insn (.trap ps1.traps.size) = .cbz nz w r (.trap ps1.traps.size)) ∨
       (∃ nz r bit, k'.insn (.trap ps1.traps.size) = .tbz nz r bit (.trap ps1.traps.size)) := by
@@ -82,7 +80,8 @@ theorem realizes_trapIf_nextNR {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s 
     (by rw [hst.prog]) hpc hst.err hst.sp
   refine ⟨n, ?_, hg⟩
   rw [hn]
-  exact q_next hvb hit hsplit hchk' hc2 h2 htr hdrop (by rw [List.singleton_append, hft]; rfl)
-    (by rw [Arm.r_of_w_same, hjf rfl]; simp [relaxLines]) (hst.pc _)
-
+  refine qs_next hvb hit hsplit hchk' hc2 h2 h3 htr hdrop ?_ ?_ hx hsc
+  · rw [Arm.r_of_w_same, hjf rfl]
+    simp [relaxLines]
+  · exact hst.pc _
 end Backend.Proof

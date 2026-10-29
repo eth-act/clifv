@@ -1078,15 +1078,13 @@ theorem prepare_labels_nodup {vc vcp : VCode} (hp : prepare vc = .ok vcp) (hd : 
   obtain ⟨-, -, -, -, hn2, hR, hRn, -, -, -⟩ := Prep.facts_basic hd cs0 cs2 hS
   exact Prep.lbls3 hR hn2 hRn
 
-/-- **Labels of the lowered code** for any allocation `rf` covering the blocks: with distinct
-block labels and `branchTargetsOkB`, `emitFunc`'s labels are defined once and every label operand
-names a defined label. -/
-theorem emitFunc_labels_lowerRFunc {vcp : VCode} {rf : RFunc} {af : AFunc} {k : Nat} {fa : FnAsm}
-    (hn : (vcp.blocks.toList.map VBlock.label).Nodup) (htg : branchTargetsOkB vcp = true)
-    (hrf : vcp.blocks.size ≤ rf.blocks.size)
-    (ha : lowerRFunc vcp rf = .ok af) (he : emitFunc k af = .ok fa) :
-    (∃ m, labelOffsets fa.lines = .ok m) ∧
-      (∀ ln ∈ fa.lines.toList, ∀ l ∈ ln.labelsUsed, Line.label l ∈ fa.lines.toList) := by
+/-- **The branch targets of the lowered code are its blocks' labels** (from `branchTargetsOkB`),
+and its blocks' labels are the VCode's. -/
+theorem lowerRFunc_targets {vcp : VCode} {rf : RFunc} {af : AFunc} (htg : branchTargetsOkB vcp = true)
+    (hrf : vcp.blocks.size ≤ rf.blocks.size) (ha : lowerRFunc vcp rf = .ok af) :
+    af.blocks.toList.map (·.1) = vcp.blocks.toList.map VBlock.label ∧
+      ∀ p ∈ af.blocks.toList, ∀ m, AInst.inst m ∈ p.2.toList → ∀ l ∈ m.targets,
+        l ∈ af.blocks.toList.map (·.1) := by
   obtain ⟨⟨-, -, hafs, hblk⟩, -, -⟩ := lowerRFunc_ok ha
   have hsz : af.blocks.size = vcp.blocks.size := by
     rw [hafs, Array.size_zip]; omega
@@ -1106,7 +1104,7 @@ theorem emitFunc_labels_lowerRFunc {vcp : VCode} {rf : RFunc} {af : AFunc} {k : 
       simp only [List.length_map, Array.length_toList] at h1
       simp only [List.getElem_map, Array.getElem_toList]
       rw [(hget n h1).choose_spec.2]
-  refine emitFunc_labels_of he (hlab ▸ hn) (fun p hp m hm l hl => ?_)
+  refine ⟨hlab, fun p hp m hm l hl => ?_⟩
   obtain ⟨n, hnl, rfl⟩ := List.getElem_of_mem hp
   simp only [Array.length_toList] at hnl
   obtain ⟨code, hc, hpe⟩ := hget n hnl
@@ -1124,6 +1122,18 @@ theorem emitFunc_labels_lowerRFunc {vcp : VCode} {rf : RFunc} {af : AFunc} {k : 
   simp only [Array.length_toList] at hq
   obtain ⟨j, hj, e⟩ := htg n hnv q hq l (by simpa using hli)
   exact List.mem_map.2 ⟨vcp.blocks[j], by simp, e⟩
+
+/-- **Labels of the lowered code** for any allocation `rf` covering the blocks: with distinct
+block labels and `branchTargetsOkB`, `emitFunc`'s labels are defined once and every label operand
+names a defined label. -/
+theorem emitFunc_labels_lowerRFunc {vcp : VCode} {rf : RFunc} {af : AFunc} {k : Nat} {fa : FnAsm}
+    (hn : (vcp.blocks.toList.map VBlock.label).Nodup) (htg : branchTargetsOkB vcp = true)
+    (hrf : vcp.blocks.size ≤ rf.blocks.size)
+    (ha : lowerRFunc vcp rf = .ok af) (he : emitFunc k af = .ok fa) :
+    (∃ m, labelOffsets fa.lines = .ok m) ∧
+      (∀ ln ∈ fa.lines.toList, ∀ l ∈ ln.labelsUsed, Line.label l ∈ fa.lines.toList) := by
+  obtain ⟨hlab, ht⟩ := lowerRFunc_targets htg hrf ha
+  exact emitFunc_labels_of he (hlab ▸ hn) ht
 
 theorem spillAlloc_size (vc : VCode) : (spillAlloc vc).blocks.size = vc.blocks.size := by
   unfold spillAlloc

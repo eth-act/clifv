@@ -1,6 +1,7 @@
 import FV.E2E.AllocTotal
 import FV.E2E.RegLevelOp
 import FV.Backend.Proof.FormsCoverComplete
+import FV.E2E.EmitLabels
 
 /-!
 # `emitPre` succeeds on the spill allocation (V6b)
@@ -17,7 +18,8 @@ the code, so the proof classifies these instructions (`spill_inst_cases`):
   expand whatever their registers, except the LL/SC loops and the TLS sequence, whose fixed
   registers `spillLocs` gives (their operands are int vregs by `ctlInstOk`).
 
-`emitPre_of` is the converse of `emitPre_ok`: `emitPre` succeeds when the blocks' lines do.
+`emitPre_of`: `emitPre` succeeds when every instruction expands and every branch target is a
+block label (the unsimplified lines then pass `segsOk`/`padsOk`: `segsOk_raw`, `padsOk_raw`).
 -/
 
 namespace E2E
@@ -363,65 +365,176 @@ theorem codeLinesE_total {c : FnCtx} {af : AFunc} : ∀ {code : List AInst},
     obtain ⟨⟨l2, ps2⟩, h2⟩ := codeLinesE_total (fun x hx => h x (List.mem_cons_of_mem _ hx)) ps1
     exact ⟨_, by simp only [codeLinesE, bind, Except.bind, h1, h2]; rfl⟩
 
-theorem blocksLinesE_total {c : FnCtx} {af : AFunc} : ∀ {bs : List (Label × Array AInst)},
-    (∀ x ∈ bs, ∀ a ∈ x.2.toList, ∀ ps, ∃ r, ainstLines c af a ps = .ok r) →
-      ∀ ps, ∃ r, blocksLinesE c af bs ps = .ok r
-  | [], _, ps => ⟨_, rfl⟩
-  | (l, code) :: bs, h, ps => by
-    obtain ⟨⟨l1, ps1⟩, h1⟩ := codeLinesE_total (h (l, code) (List.mem_cons_self ..)) ps
-    obtain ⟨⟨l2, ps2⟩, h2⟩ := blocksLinesE_total (fun x hx => h x (List.mem_cons_of_mem _ hx)) ps1
-    exact ⟨_, by simp only [blocksLinesE, bind, Except.bind, h1, h2]; rfl⟩
+theorem segsOf_total {c : FnCtx} {af : AFunc} : ∀ (bs : List ((Label × Array AInst) × Nat))
+    (ps : PState), (∀ x ∈ bs, ∀ a ∈ x.1.2.toList, ∀ ps, ∃ r, ainstLines c af a ps = .ok r) →
+      ∃ r, segsOf c af bs ps = .ok r
+  | [], ps, _ => ⟨_, rfl⟩
+  | ((l, code), i) :: bs, ps, h => by
+    obtain ⟨⟨l1, ps1⟩, h1⟩ := codeLinesE_total (fun a ha => h _ (List.mem_cons_self ..) a
+      ((List.dropLast_sublist _).subset ha)) ps
+    obtain ⟨⟨l2, ps2⟩, h2⟩ := codeLinesE_total (fun a ha => h _ (List.mem_cons_self ..) a
+      (EmitLabels.mem_of_getLast?_toList ha)) ps1
+    obtain ⟨⟨l3, ps3⟩, h3⟩ := segsOf_total bs ps2 (fun x hx => h x (List.mem_cons_of_mem _ hx))
+    exact ⟨_, by simp only [segsOf, bind, Except.bind, h1, h2, h3]; rfl⟩
+
+/-- The entry block comes first in `emitOrder`. -/
+theorem emitOrder_head (af : AFunc) (h : 0 < af.blocks.size) :
+    (emitOrder af).head?.map (·.2) = some 0 := by
+  obtain ⟨b0, L, hL⟩ : ∃ b0 L, af.blocks.toList = b0 :: L := by
+    cases hl : af.blocks.toList with
+    | nil => simp at hl; omega
+    | cons b0 L => exact ⟨_, _, rfl⟩
+  unfold emitOrder
+  rw [hL]
+  simp [List.zipIdx_cons]
+
+/-- A last instruction's lines are its unsimplified lines (`RawTerm`). -/
+theorem rawTerm_of {c : FnCtx} {af : AFunc} : ∀ (o : Option AInst) {t : List Line} {ps ps' : PState},
+    codeLinesE c af o.toList ps = .ok (t, ps') → RawTerm o t
+  | none, _, _, _, _ => by simp [RawTerm]
+  | some a, t, ps, ps', h => by
+    simp only [Option.toList, codeLinesE, bind, Except.bind] at h
+    cases a with
+    | prologue => simp [RawTerm]
+    | epilogueRet => simp [RawTerm]
+    | inst m =>
+      cases m <;> simp only [RawTerm] <;> try trivial
+      all_goals
+        simp only [ainstLines, MInst.lines, pure, Except.pure] at h
+        simp only [codeLinesE, pure, Except.pure, Except.ok.injEq, Prod.mk.injEq,
+          List.append_nil] at h
+        first
+        | (obtain ⟨rfl, -⟩ := h; rfl)
+        | (obtain ⟨rfl, -⟩ := h; exact ⟨_, rfl⟩)
+
+/-- A block label among a line's branch targets is a label it uses. -/
+theorem target_used {ln : Line} {l : Label} (h : ln.target? = some (.block l)) :
+    Lbl.block l ∈ ln.labelsUsed := by
+  cases ln with
+  | ins i tc => cases i <;> simp_all [Line.target?, Line.labelsUsed, Insn.pcRelSpec?]
+  | word a b => simp_all [Line.target?, Line.labelsUsed]
+  | label _ => simp [Line.target?] at h
 
 set_option pp.proofs false in
-/-- `emitPre` succeeds when the blocks' lines do (the converse of `emitPre_ok`). -/
+/-- **`emitPre` succeeds when every instruction expands** and every branch target (and
+`try_call` handler) is a block label: then the unsimplified lines pass the emission check
+(`segsOk_raw`, `padsOk_raw`), whatever `MachBuffer`'s simplification does. -/
 theorem emitPre_of {k : Nat} {af : AFunc}
-    (h : ∃ r, blocksLinesE ⟨k, af.slotBase⟩ af af.blocks.toList {} = .ok r) :
+    (htot : ∀ x ∈ af.blocks.toList, ∀ a ∈ x.2.toList, ∀ ps,
+      ∃ r, ainstLines ⟨k, af.slotBase⟩ af a ps = .ok r)
+    (hne : 0 < af.blocks.size)
+    (ht : ∀ p ∈ af.blocks.toList, ∀ m, AInst.inst m ∈ p.2.toList → ∀ l ∈ m.targets,
+      l ∈ af.blocks.toList.map (·.1)) :
     ∃ pre, emitPre k af = .ok pre := by
-  cases he : emitPre k af with
-  | ok pre => exact ⟨pre, rfl⟩
-  | error e =>
-    exfalso
-    obtain ⟨⟨body, ps⟩, hb⟩ := h
-    unfold emitPre at he
-    simp only [← Array.forIn_toList] at he
-    rw [forIn_except_yield _ _ _ (fun (x : Label × Array AInst) (s : PState × Array Line) =>
-      (fun r : List Line × PState => (r.2, s.2.push (.label (.block x.1)) ++ r.1.toArray)) <$>
-        codeLinesE ⟨k, af.slotBase⟩ af x.2.toList s.1)] at he
-    · rw [blocksLinesE_foldl, hb] at he
-      simp only [Functor.map, Except.map, bind, Except.bind, pure, Except.pure] at he
-      rw [traps_foldl] at he
-      cases he
-    · intro x s
-      obtain ⟨l, code⟩ := x
-      simp only
-      rw [forIn_except_yield _ _ _ (fun (a : AInst) (s : PState × Array Line) =>
-        (fun r : List Line × PState => (r.2, s.2 ++ r.1.toArray)) <$> ainstLines ⟨k, af.slotBase⟩ af a s.1)]
-      · rw [codeLinesE_foldl]
-        cases codeLinesE ⟨k, af.slotBase⟩ af code.toList s.1 <;> rfl
-      · intro a s
-        cases a <;> simp [ainstLines] <;> cases af.frame <;> first | rfl | simp
+  have hz : af.blocks.toList.zipIdx.map (·.1) = af.blocks.toList := by
+    rw [List.zipIdx_eq_zip_range', List.map_fst_zip (by simp)]
+  have hmemO : ∀ x ∈ emitOrder af, x.1 ∈ af.blocks.toList := fun x hx => by
+    rw [← hz]; exact List.mem_map.2 ⟨x, (emitOrder_perm af).mem_iff.mp hx, rfl⟩
+  obtain ⟨⟨ss, ps⟩, hseg⟩ := segsOf_total (c := ⟨k, af.slotBase⟩) (af := af) (emitOrder af) {}
+    (fun x hx a ha ps => htot x.1 (hmemO x hx) a ha ps)
+  obtain ⟨hl, -, hss⟩ := segsOf_spec hseg
+  -- the segments' labels are the blocks' labels
+  have hlabel : ∀ l ∈ af.blocks.toList.map (·.1), ∃ s' ∈ ss, s'.label = l := by
+    intro l hl'
+    obtain ⟨e, he, rfl⟩ := List.mem_map.1 hl'
+    obtain ⟨b, hb⟩ := List.getElem?_of_mem he
+    have hm := emitOrder_mem (af := af) (b := b) (by simpa using hb)
+    obtain ⟨i, hi⟩ := List.getElem?_of_mem hm
+    have hil : i < ss.length := by rw [hl]; exact (List.getElem?_eq_some_iff.mp hi).1
+    obtain ⟨code, -, -, -, hbi, -⟩ := hss i ss[i] (List.getElem?_eq_getElem hil)
+    rw [hi] at hbi
+    simp only [Option.some.injEq, Prod.mk.injEq] at hbi
+    exact ⟨ss[i], List.getElem_mem hil, by rw [← hbi.1.1]⟩
+  -- every segment: its block, its last instruction's raw lines
+  have hseg' : ∀ s ∈ ss, ∃ code ps1 ps2, af.blocks[s.idx]? = some (s.label, code) ∧
+      codeLinesE ⟨k, af.slotBase⟩ af code.toList.getLast?.toList ps1 = .ok (s.term, ps2) := by
+    intro s hs
+    obtain ⟨i, hi⟩ := List.getElem?_of_mem hs
+    obtain ⟨code, -, psm, ps2, hbi, -, e2, -⟩ := hss i s hi
+    exact ⟨code, psm, ps2, emitOrder_get (List.mem_of_getElem? hbi), e2⟩
+  have h0 : ss.head?.map (·.idx) = some 0 := by
+    have hh := emitOrder_head af hne
+    cases hss0 : ss with
+    | nil =>
+      rw [hss0] at hl
+      have : emitOrder af = [] := List.length_eq_zero_iff.mp hl.symm
+      rw [this] at hh; cases hh
+    | cons s0 ss' =>
+      obtain ⟨code, -, -, -, hb0, -⟩ := hss 0 s0 (by simp [hss0])
+      cases ho : emitOrder af with
+      | nil => rw [ho] at hb0; cases hb0
+      | cons x0 xs =>
+        rw [ho] at hb0 hh
+        simp only [List.getElem?_cons_zero, Option.some.injEq] at hb0
+        simp only [List.head?_cons, Option.map_some, Option.some.injEq] at hh ⊢
+        rw [← hb0] at hh
+        exact hh
+  have hraw : ∀ s ∈ ss, RawTerm (af.blocks[s.idx]?.bind (·.2.back?)) s.term := by
+    intro s hs
+    obtain ⟨code, ps1, ps2, hb, e2⟩ := hseg' s hs
+    rw [hb, Option.bind_some, Array.back?_eq_getElem?]
+    have : code[code.size - 1]? = code.toList.getLast? := by
+      rw [List.getLast?_eq_getElem?]; simp
+    rw [this]
+    exact rawTerm_of _ e2
+  have hlab : ∀ s ∈ ss, ∀ ln ∈ s.term, ∀ l, ln.target? = some (.block l) →
+      ∃ s' ∈ ss, s'.label = l := by
+    intro s hs ln hln l htl
+    obtain ⟨code, ps1, ps2, hb, e2⟩ := hseg' s hs
+    have hbm : (s.label, code) ∈ af.blocks.toList := by simpa using List.mem_of_getElem? hb
+    have hc := EmitLabels.code_chunk (T := af.blocks.toList.map (·.1)) _ _ _ _ e2
+      (fun m hm l' hl' => ht _ hbm m (EmitLabels.mem_of_getLast?_toList hm) l' hl')
+    rcases hc.uses_in (.block l) (EmitLabels.mem_uses.2 ⟨ln, hln, target_used htl⟩) with
+      hd | ⟨l', hl', e⟩ | ⟨n, e, -⟩
+    · rcases hc.defs_in _ hd with ⟨_, h, -⟩ | ⟨_, h, -⟩ | ⟨_, h, -⟩
+      · cases h
+      · cases h
+      · cases h
+    · cases e; exact hlabel _ hl'
+    · cases e
+  have hpad : ∀ b ∈ af.blocks.toList, ∀ a ∈ b.2.toList, ∀ info ti, a = .inst (.tryCall info ti) →
+      ∀ h ∈ ti.handlers, ∃ s ∈ ss, s.label = h.label := by
+    intro b hb a ha info ti e h hh
+    subst e
+    exact hlabel _ (ht b hb _ ha h.label (by simp [MInst.targets]; exact .inl ⟨h, hh, rfl⟩))
+  have hok := segsOk_raw (ps := ps) h0 hraw hlab
+  have hpok := padsOk_raw (ps := ps) h0 hraw hlab hpad
+  unfold emitPre emitPlan
+  simp only [bind, Except.bind, hseg]
+  split
+  · exact ⟨_, rfl⟩
+  · simp only [hok, hpok, Bool.and_self, ite_true, pure, Except.pure, Functor.map, Except.map]
+    exact ⟨_, rfl⟩
 
-/-- **`emitPre` succeeds on the spill allocation** of every in-scope function: every instruction
-of its code expands (`MInst.lines`). -/
+/-- **`emitPre` succeeds on the spill allocation** of every in-scope function whose prepared
+VCode branches only to its blocks (`branchTargetsOkB`, part of `emitCondsB`): every instruction
+of its code expands (`MInst.lines`) and the unsimplified lines pass the emission check.
+(Premise `htg` added with #553: `emitPlan` now checks the branches' lines, `segsOk`.) -/
 theorem emitPre_spill_ok {p : Clif.Program} {f : Clif.Function} {vc vcp : VCode} {af : AFunc}
     (hsub : InSubset p f) (hd : dominatedB f = true) (hs : lowerScopeB f = true)
     (hl : lowerFunction f = .ok vc) (hp : Backend.prepare vc = .ok vcp)
+    (htg : branchTargetsOkB vcp = true)
     (ha : lowerRFunc vcp (spillAlloc vcp) = .ok af) : ∀ k, ∃ pre, emitPre k af = .ok pre := by
   intro k
   have hcov := formsCovered_completeB hs hl hp ⟨k, af.slotBase⟩
-  obtain ⟨hins, -⟩ := ctlInsts_pipeline hsub (dominated_of hd) (lowerScope_of hs) hl hp
-  apply emitPre_of
-  apply blocksLinesE_total
-  intro x hx a ha' ps
-  obtain ⟨b, hb⟩ := List.mem_iff_getElem?.mp hx
-  obtain ⟨l, code⟩ := x
-  cases a with
-  | prologue => exact ⟨_, rfl⟩
-  | epilogueRet => exact ⟨_, rfl⟩
-  | inst m =>
-    obtain ⟨vb, hvb, hcase⟩ := spill_inst_cases hs hl hp ha (by simpa using hb) ha'
-    rcases hcase with ⟨src, dst, ms, -, hmv, hmm⟩ | ⟨kk, i, regs, hi, hasg, hloc, hna, hnr⟩
-    · exact moveInsts_total _ hmv m hmm ps
-    · exact op_total (hcov b vb kk i hvb hi) (hins b vb kk i hvb hi) hloc hasg hna hnr ps
+  obtain ⟨hins, vb0, -, hvb0, -⟩ := ctlInsts_pipeline hsub (dominated_of hd) (lowerScope_of hs) hl hp
+  obtain ⟨hlab, ht⟩ := EmitLabels.lowerRFunc_targets htg
+    (Nat.le_of_eq (spillAlloc_size vcp).symm) ha
+  refine emitPre_of ?_ ?_ ht
+  · intro x hx a ha' ps
+    obtain ⟨b, hb⟩ := List.mem_iff_getElem?.mp hx
+    obtain ⟨l, code⟩ := x
+    cases a with
+    | prologue => exact ⟨_, rfl⟩
+    | epilogueRet => exact ⟨_, rfl⟩
+    | inst m =>
+      obtain ⟨vb, hvb, hcase⟩ := spill_inst_cases hs hl hp ha (by simpa using hb) ha'
+      rcases hcase with ⟨src, dst, ms, -, hmv, hmm⟩ | ⟨kk, i, regs, hi, hasg, hloc, hna, hnr⟩
+      · exact moveInsts_total _ hmv m hmm ps
+      · exact op_total (hcov b vb kk i hvb hi) (hins b vb kk i hvb hi) hloc hasg hna hnr ps
+  · have := congrArg List.length hlab
+    simp only [List.length_map, Array.length_toList] at this
+    rw [this]
+    exact Array.size_pos_of_mem (Array.mem_of_getElem? hvb0)
 
 end E2E
