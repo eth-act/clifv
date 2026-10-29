@@ -20,6 +20,8 @@ x0 after the CLIF return values.
   `sretStableXB f = true`;
 * **`backend_correct_final_unwind_sret`**: for a function with an `sret` parameter `i` and no
   returns, a return of the run with unwinding leaves the `sret` argument `args[i]` in x0.
+* The `_any` variants of the three theorems above drop the check `lastCallsOk` (#622); the
+  theorems without the suffix are their corollaries.
 -/
 
 namespace E2E
@@ -214,9 +216,212 @@ theorem backend_correct_of_layersU_ex_abi {p : Clif.Program} {f : Clif.Function}
   | outOfFuel => trivial
 
 /-- **The backend's end-to-end theorem with unwinding and the ABI return values, for an
-`AllocChecked` allocation**: `backend_correct_final_unwind_ex` (its premises plus
+`AllocChecked` allocation**: `backend_correct_final_unwind_ex_any` (its premises plus
 `sretStableXB f`), and a return also leaves the ABI return values after the CLIF ones in x0..
-(`sretArg f args`). -/
+(`sretArg f args`). No check on the calls of the last block (#622). Non-vacuity:
+`SretReturnUnwindWitness` (through `backend_correct_final_unwind_sret`). -/
+theorem backend_correct_final_unwind_ex_abi_any {p : Clif.Program} {f : Clif.Function} {k : Nat}
+    {vc vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAsm} {fb : FnBin}
+    (hsub : InSubset p f) (hc : CompiledA f k vc vcp rf af fa fb) (hunw : unwCheck f vc = true)
+    (hS : sretStableXB f = true)
+    {X : ExtSem} {H : ArmHooks} {XR : XRaise} {U : Unw.UnwHooks} {T : Unw.FnTables}
+    {syms : String → Option Nat} {slotOff : Nat} {env : Clif.XEnv} {K : Nat}
+    (hcov : FormsCovered ⟨fa.k, af.slotBase⟩ vcp)
+    (hC : ∀ s, CalleeOk
+      (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) K X H vcp.CallSite)
+    (hCT : (∃ B ∈ f.blocks, B.term.isTry = true) → ∀ s, CalleeTryOk
+      (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) X H vcp.TrySite)
+    (hTls : hasTls f = true → ∀ s, TlsOk
+      (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) K X H)
+    (hX : ∀ s, XCallsOk env.toEnv (f.externs.map (·.2)) (fun sl cm w =>
+      Rel.holds ⟨frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s, syms,
+        slotOff, (RAFrame.compute vcp rf).intBase⟩ f sl cm w) X)
+    (hXI : ∀ s, XCallsIndOk env.toEnv (indSigs f) (fun sl cm w =>
+      Rel.holds ⟨frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s, syms,
+        slotOff, (RAFrame.compute vcp rf).intBase⟩ f sl cm w) X)
+    (hXR : ∀ s, XRaiseOk env (f.externs.map (·.2)) (fun sl cm w =>
+      Rel.holds ⟨frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s, syms,
+        slotOff, (RAFrame.compute vcp rf).intBase⟩ f sl cm w) X XR)
+    (hXRi : ∀ s, XRaiseIndOk env (indSigs f) (fun sl cm w =>
+      Rel.holds ⟨frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s, syms,
+        slotOff, (RAFrame.compute vcp rf).intBase⟩ f sl cm w) X XR)
+    (hXE : ∀ s, XRaiseExcl env (f.externs.map (·.2)) (indSigs f) (fun sl cm w =>
+      Rel.holds ⟨frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s, syms,
+        slotOff, (RAFrame.compute vcp rf).intBase⟩ f sl cm w) X XR)
+    (hsym : ∀ n b, syms n = some b → X.sym n 0 = BitVec.ofNat 64 b)
+    (hslot : af.slotBase = slotOff)
+    (hUnw : ∀ base s, CalleeUnwOkG
+      (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) K
+      (fun _ => False) s (CallAt fa base) X XR U vcp.CallSite (fun _ _ => False))
+    {lsda : Option (List CallSite)} (hsites : callSites af fa = .ok lsda)
+    (hlsda : T.lsda = lsda.map (List.map (·.entry)))
+    (hpad : padsNonzeroB af fa = true)
+    {rows : List (Nat × Cfi)} (hrows : unwindRows af fa = .ok rows) (hcie : T.cie = cieInsns)
+    (hfde : T.fde = insnsFrom 0 rows) (hsaved : savedCheck vcp rf = true)
+    {base ra : BitVec 64} {s w₀ : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State}
+    (hent : AbiEntry fb base ra s) (hres : StackAvail K af s) (hbe : BodyEntry af s w₀)
+    (hargs : ArgsIn f.sig args s) (hcs : ClifEntry f args cs)
+    (hrel : Rel.holds ⟨frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s,
+      syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f cs.frame.slots cs.mem w₀)
+    (htr : TrapsExplicitX env p cs) (fuel : Nat) :
+    ArmRefinesUAbi fb base ra (Unw.ArmStepU X H U T fa) s (sretArg f args)
+      (Clif.runLoopX env p fuel cs.toX) :=
+  backend_correct_of_layersU_ex_abi
+    (sem := fun s => csemU (frameW K (RAFrame.compute vcp rf).intBase
+      (RAFrame.compute vcp rf).size af s) ⟨fa.k, af.slotBase⟩ X XR)
+    (fun s' => iselSimU_final_abi hsub hc hunw hS (hX s') (hXI s') (hXR s') (hXRi s') (hXE s')
+      hsym hslot)
+    (fun _ => prepareCorrectU_of_check (driverSem_csemU _ _ _ _) hc.prepOk XR)
+    (regLevelCorrect_backend_exU_any hc.check hc.alloc hc.emit hc.layout hcov hC
+      (fun h => hCT (hasTry_of_hasTryCallA hc h)) (fun h => hTls (hasTls_of_vcodeA hc h)) hUnw
+      hsites hlsda hpad hrows hcie hfde hsaved)
+    hent hres hbe
+    (argsAtEntry_body (lowerRFunc_frame hc.alloc) (entryRegs_of_check hc.lowerOk) hbe hargs
+      (stackArgsAvoid_frameWA hc hres hent hargs))
+    hcs hrel htr fuel
+
+/-- **The backend's end-to-end theorem with unwinding and the ABI return values**
+(`docs/contracts/e2e.md`, "`sret`"): `backend_correct_final_unwind_any` (its premises plus
+`sretStableXB f`), and a return also leaves the ABI return values after the CLIF ones in x0..:
+for a function with an `sret` parameter and no returns, the `sret` argument in x0 (`sretArg`,
+`backend_correct_final_unwind_sret_any`). No check on the calls of the last block (#622).
+Non-vacuity: `SretReturnUnwindWitness` (through `backend_correct_final_unwind_sret`). -/
+theorem backend_correct_final_unwind_abi_any {p : Clif.Program} {f : Clif.Function} {k : Nat}
+    {vc vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAsm} {fb : FnBin}
+    (hsub : InSubset p f) (hc : Compiled f k vc vcp rf af fa fb) (hunw : unwCheck f vc = true)
+    (hS : sretStableXB f = true)
+    {X : ExtSem} {H : ArmHooks} {XR : XRaise} {U : Unw.UnwHooks} {T : Unw.FnTables}
+    {syms : String → Option Nat} {slotOff : Nat} {env : Clif.XEnv} {K : Nat}
+    (hcov : FormsCovered ⟨fa.k, af.slotBase⟩ vcp)
+    (hC : ∀ s, CalleeOk
+      (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) K X H vcp.CallSite)
+    (hCT : (∃ B ∈ f.blocks, B.term.isTry = true) → ∀ s, CalleeTryOk
+      (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) X H vcp.TrySite)
+    (hTls : hasTls f = true → ∀ s, TlsOk
+      (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) K X H)
+    (hX : ∀ s, XCallsOk env.toEnv (f.externs.map (·.2)) (fun sl cm w =>
+      Rel.holds ⟨frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s, syms,
+        slotOff, (RAFrame.compute vcp rf).intBase⟩ f sl cm w) X)
+    (hXI : ∀ s, XCallsIndOk env.toEnv (indSigs f) (fun sl cm w =>
+      Rel.holds ⟨frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s, syms,
+        slotOff, (RAFrame.compute vcp rf).intBase⟩ f sl cm w) X)
+    (hXR : ∀ s, XRaiseOk env (f.externs.map (·.2)) (fun sl cm w =>
+      Rel.holds ⟨frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s, syms,
+        slotOff, (RAFrame.compute vcp rf).intBase⟩ f sl cm w) X XR)
+    (hXRi : ∀ s, XRaiseIndOk env (indSigs f) (fun sl cm w =>
+      Rel.holds ⟨frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s, syms,
+        slotOff, (RAFrame.compute vcp rf).intBase⟩ f sl cm w) X XR)
+    (hXE : ∀ s, XRaiseExcl env (f.externs.map (·.2)) (indSigs f) (fun sl cm w =>
+      Rel.holds ⟨frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s, syms,
+        slotOff, (RAFrame.compute vcp rf).intBase⟩ f sl cm w) X XR)
+    (hsym : ∀ n b, syms n = some b → X.sym n 0 = BitVec.ofNat 64 b)
+    (hslot : af.slotBase = slotOff)
+    (hUnw : ∀ base s, CalleeUnwOkG
+      (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) K
+      (fun _ => False) s (CallAt fa base) X XR U vcp.CallSite (fun _ _ => False))
+    {lsda : Option (List CallSite)} (hsites : callSites af fa = .ok lsda)
+    (hlsda : T.lsda = lsda.map (List.map (·.entry)))
+    (hpad : padsNonzeroB af fa = true)
+    {rows : List (Nat × Cfi)} (hrows : unwindRows af fa = .ok rows) (hcie : T.cie = cieInsns)
+    (hfde : T.fde = insnsFrom 0 rows) (hsaved : savedCheck vcp rf = true)
+    {base ra : BitVec 64} {s w₀ : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State}
+    (hent : AbiEntry fb base ra s) (hres : StackAvail K af s) (hbe : BodyEntry af s w₀)
+    (hargs : ArgsIn f.sig args s) (hcs : ClifEntry f args cs)
+    (hrel : Rel.holds ⟨frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s,
+      syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f cs.frame.slots cs.mem w₀)
+    (htr : TrapsExplicitX env p cs) (fuel : Nat) :
+    ArmRefinesUAbi fb base ra (Unw.ArmStepU X H U T fa) s (sretArg f args)
+      (Clif.runLoopX env p fuel cs.toX) :=
+  backend_correct_of_layersU_ex_abi
+    (sem := fun s => csemU (frameW K (RAFrame.compute vcp rf).intBase
+      (RAFrame.compute vcp rf).size af s) ⟨fa.k, af.slotBase⟩ X XR)
+    (fun s' => iselSimU_final_abi hsub hc.toA hunw hS (hX s') (hXI s') (hXR s') (hXRi s')
+      (hXE s') hsym hslot)
+    (fun _ => prepareCorrectU_of_check (driverSem_csemU _ _ _ _) hc.prepOk XR)
+    (regLevelCorrect_backendU_any hc.check hc.alloc hc.emit hc.layout hcov hC
+      (fun h => hCT (hasTry_of_hasTryCall hc h)) (fun h => hTls (hasTls_of_vcode hc h)) hUnw
+      hsites hlsda hpad hrows hcie hfde hsaved).ex
+    hent hres hbe
+    (argsAtEntry_body (lowerRFunc_frame hc.alloc) (entryRegs_of_check hc.lowerOk) hbe hargs
+      (stackArgsAvoid_frameW hc hres hent hargs))
+    hcs hrel htr fuel
+
+/-- **The `sret` return register with unwinding**: for a function with an `sret` parameter `i`
+and no returns, under the premises of `backend_correct_final_unwind_abi_any`, a return of the CLIF
+run with unwinding is matched by an Arm return (`ArmRet`) on the machine with unwinding whose x0
+holds the `sret` argument `args[i]`, with the memory the function wrote (`MemAgree`). No check on
+the calls of the last block (#622). Non-vacuity: `SretReturnUnwindWitness` (through
+`backend_correct_final_unwind_sret`). -/
+theorem backend_correct_final_unwind_sret_any {p : Clif.Program} {f : Clif.Function} {k : Nat}
+    {vc vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAsm} {fb : FnBin}
+    (hsub : InSubset p f) (hc : Compiled f k vc vcp rf af fa fb) (hunw : unwCheck f vc = true)
+    (hS : sretStableXB f = true)
+    {i : Nat} (hi : f.sig.params.findIdx? (·.purpose == .sret) = some i)
+    (hnr : f.sig.returns = [])
+    {X : ExtSem} {H : ArmHooks} {XR : XRaise} {U : Unw.UnwHooks} {T : Unw.FnTables}
+    {syms : String → Option Nat} {slotOff : Nat} {env : Clif.XEnv} {K : Nat}
+    (hcov : FormsCovered ⟨fa.k, af.slotBase⟩ vcp)
+    (hC : ∀ s, CalleeOk
+      (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) K X H vcp.CallSite)
+    (hCT : (∃ B ∈ f.blocks, B.term.isTry = true) → ∀ s, CalleeTryOk
+      (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) X H vcp.TrySite)
+    (hTls : hasTls f = true → ∀ s, TlsOk
+      (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) K X H)
+    (hX : ∀ s, XCallsOk env.toEnv (f.externs.map (·.2)) (fun sl cm w =>
+      Rel.holds ⟨frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s, syms,
+        slotOff, (RAFrame.compute vcp rf).intBase⟩ f sl cm w) X)
+    (hXI : ∀ s, XCallsIndOk env.toEnv (indSigs f) (fun sl cm w =>
+      Rel.holds ⟨frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s, syms,
+        slotOff, (RAFrame.compute vcp rf).intBase⟩ f sl cm w) X)
+    (hXR : ∀ s, XRaiseOk env (f.externs.map (·.2)) (fun sl cm w =>
+      Rel.holds ⟨frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s, syms,
+        slotOff, (RAFrame.compute vcp rf).intBase⟩ f sl cm w) X XR)
+    (hXRi : ∀ s, XRaiseIndOk env (indSigs f) (fun sl cm w =>
+      Rel.holds ⟨frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s, syms,
+        slotOff, (RAFrame.compute vcp rf).intBase⟩ f sl cm w) X XR)
+    (hXE : ∀ s, XRaiseExcl env (f.externs.map (·.2)) (indSigs f) (fun sl cm w =>
+      Rel.holds ⟨frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s, syms,
+        slotOff, (RAFrame.compute vcp rf).intBase⟩ f sl cm w) X XR)
+    (hsym : ∀ n b, syms n = some b → X.sym n 0 = BitVec.ofNat 64 b)
+    (hslot : af.slotBase = slotOff)
+    (hUnw : ∀ base s, CalleeUnwOkG
+      (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) K
+      (fun _ => False) s (CallAt fa base) X XR U vcp.CallSite (fun _ _ => False))
+    {lsda : Option (List CallSite)} (hsites : callSites af fa = .ok lsda)
+    (hlsda : T.lsda = lsda.map (List.map (·.entry)))
+    (hpad : padsNonzeroB af fa = true)
+    {rows : List (Nat × Cfi)} (hrows : unwindRows af fa = .ok rows) (hcie : T.cie = cieInsns)
+    (hfde : T.fde = insnsFrom 0 rows) (hsaved : savedCheck vcp rf = true)
+    {base ra : BitVec 64} {s w₀ : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State}
+    (hent : AbiEntry fb base ra s) (hres : StackAvail K af s) (hbe : BodyEntry af s w₀)
+    (hargs : ArgsIn f.sig args s) (hcs : ClifEntry f args cs)
+    (hrel : Rel.holds ⟨frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s,
+      syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f cs.frame.slots cs.mem w₀)
+    (htr : TrapsExplicitX env p cs) (fuel : Nat) {vals : List Clif.Val} {cm : Clif.Mem}
+    (hrun : Clif.runLoopX env p fuel cs.toX = .returned vals cm) {v : Clif.Val}
+    (hv : args[i]? = some v) :
+    ∃ n, ArmRet ra s (runX (Unw.ArmStepU X H U T fa) n s) ∧
+      XHolds v (xreg 0 (runX (Unw.ArmStepU X H U T fa) n s)) ∧
+      MemAgree cm (runX (Unw.ArmStepU X H U T fa) n s) := by
+  obtain ⟨B0, hentB, hbody, hterm, -, -⟩ := hcs.entry
+  have hB0 : f.blocks[0]? = some B0 := by
+    simpa [Clif.Function.entry?, List.head?_eq_getElem?] using hentB
+  have hvals : vals = [] := by
+    have := runLoopX_returned_tys_entry hsub.externCalls hsub.tryExterns (noTail_of_subset hsub)
+      htr (sretStableX_of hS) hB0 hcs.callers hcs.func hbody hterm hrun
+    rw [hnr] at this
+    simpa [Clif.AbiParam.tys] using this
+  subst hvals
+  have h := backend_correct_final_unwind_abi_any hsub hc hunw hS hcov hC hCT hTls hX hXI hXR hXRi
+    hXE hsym hslot hUnw hsites hlsda hpad hrows hcie hfde hsaved hent hres hbe hargs hcs hrel
+    htr fuel
+  rw [hrun, sretArg_of_sret hi hnr, hv] at h
+  obtain ⟨n, hret, hx, hm⟩ := h
+  exact ⟨n, hret, hx 0 v (by simp), hm⟩
+
+/-! ## Under the check `lastCallsOk` (statements kept for their callers) -/
+
+/-- `backend_correct_final_unwind_ex_abi_any` under the check `lastCallsOk`. -/
 theorem backend_correct_final_unwind_ex_abi {p : Clif.Program} {f : Clif.Function} {k : Nat}
     {vc vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAsm} {fb : FnBin}
     (hsub : InSubset p f) (hc : CompiledA f k vc vcp rf af fa fb) (hunw : unwCheck f vc = true)
@@ -252,7 +457,7 @@ theorem backend_correct_final_unwind_ex_abi {p : Clif.Program} {f : Clif.Functio
       (fun _ => False) s (CallAt fa base) X XR U vcp.CallSite (fun _ _ => False))
     {lsda : Option (List CallSite)} (hsites : callSites af fa = .ok lsda)
     (hlsda : T.lsda = lsda.map (List.map (·.entry)))
-    (hpad : padsNonzeroB af fa = true) (hlast : lastCallsOk af fa = true)
+    (hpad : padsNonzeroB af fa = true) (_hlast : lastCallsOk af fa = true)
     {rows : List (Nat × Cfi)} (hrows : unwindRows af fa = .ok rows) (hcie : T.cie = cieInsns)
     (hfde : T.fde = insnsFrom 0 rows) (hsaved : savedCheck vcp rf = true)
     {base ra : BitVec 64} {s w₀ : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State}
@@ -263,25 +468,10 @@ theorem backend_correct_final_unwind_ex_abi {p : Clif.Program} {f : Clif.Functio
     (htr : TrapsExplicitX env p cs) (fuel : Nat) :
     ArmRefinesUAbi fb base ra (Unw.ArmStepU X H U T fa) s (sretArg f args)
       (Clif.runLoopX env p fuel cs.toX) :=
-  backend_correct_of_layersU_ex_abi
-    (sem := fun s => csemU (frameW K (RAFrame.compute vcp rf).intBase
-      (RAFrame.compute vcp rf).size af s) ⟨fa.k, af.slotBase⟩ X XR)
-    (fun s' => iselSimU_final_abi hsub hc hunw hS (hX s') (hXI s') (hXR s') (hXRi s') (hXE s')
-      hsym hslot)
-    (fun _ => prepareCorrectU_of_check (driverSem_csemU _ _ _ _) hc.prepOk XR)
-    (regLevelCorrect_backend_exU hc.check hc.alloc hc.emit hc.layout hcov hC
-      (fun h => hCT (hasTry_of_hasTryCallA hc h)) (fun h => hTls (hasTls_of_vcodeA hc h)) hUnw
-      hsites hlsda hpad hlast hrows hcie hfde hsaved)
-    hent hres hbe
-    (argsAtEntry_body (lowerRFunc_frame hc.alloc) (entryRegs_of_check hc.lowerOk) hbe hargs
-      (stackArgsAvoid_frameWA hc hres hent hargs))
-    hcs hrel htr fuel
+  backend_correct_final_unwind_ex_abi_any hsub hc hunw hS hcov hC hCT hTls hX hXI hXR hXRi hXE hsym
+    hslot hUnw hsites hlsda hpad hrows hcie hfde hsaved hent hres hbe hargs hcs hrel htr fuel
 
-/-- **The backend's end-to-end theorem with unwinding and the ABI return values**
-(`docs/contracts/e2e.md`, "`sret`"): `backend_correct_final_unwind` (its premises plus
-`sretStableXB f`), and a return also leaves the ABI return values after the CLIF ones in x0..:
-for a function with an `sret` parameter and no returns, the `sret` argument in x0 (`sretArg`,
-`backend_correct_final_unwind_sret`). -/
+/-- `backend_correct_final_unwind_abi_any` under the check `lastCallsOk`. -/
 theorem backend_correct_final_unwind_abi {p : Clif.Program} {f : Clif.Function} {k : Nat}
     {vc vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAsm} {fb : FnBin}
     (hsub : InSubset p f) (hc : Compiled f k vc vcp rf af fa fb) (hunw : unwCheck f vc = true)
@@ -317,7 +507,7 @@ theorem backend_correct_final_unwind_abi {p : Clif.Program} {f : Clif.Function} 
       (fun _ => False) s (CallAt fa base) X XR U vcp.CallSite (fun _ _ => False))
     {lsda : Option (List CallSite)} (hsites : callSites af fa = .ok lsda)
     (hlsda : T.lsda = lsda.map (List.map (·.entry)))
-    (hpad : padsNonzeroB af fa = true) (hlast : lastCallsOk af fa = true)
+    (hpad : padsNonzeroB af fa = true) (_hlast : lastCallsOk af fa = true)
     {rows : List (Nat × Cfi)} (hrows : unwindRows af fa = .ok rows) (hcie : T.cie = cieInsns)
     (hfde : T.fde = insnsFrom 0 rows) (hsaved : savedCheck vcp rf = true)
     {base ra : BitVec 64} {s w₀ : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State}
@@ -328,24 +518,10 @@ theorem backend_correct_final_unwind_abi {p : Clif.Program} {f : Clif.Function} 
     (htr : TrapsExplicitX env p cs) (fuel : Nat) :
     ArmRefinesUAbi fb base ra (Unw.ArmStepU X H U T fa) s (sretArg f args)
       (Clif.runLoopX env p fuel cs.toX) :=
-  backend_correct_of_layersU_ex_abi
-    (sem := fun s => csemU (frameW K (RAFrame.compute vcp rf).intBase
-      (RAFrame.compute vcp rf).size af s) ⟨fa.k, af.slotBase⟩ X XR)
-    (fun s' => iselSimU_final_abi hsub hc.toA hunw hS (hX s') (hXI s') (hXR s') (hXRi s')
-      (hXE s') hsym hslot)
-    (fun _ => prepareCorrectU_of_check (driverSem_csemU _ _ _ _) hc.prepOk XR)
-    (regLevelCorrect_backendU hc.check hc.alloc hc.emit hc.layout hcov hC
-      (fun h => hCT (hasTry_of_hasTryCall hc h)) (fun h => hTls (hasTls_of_vcode hc h)) hUnw
-      hsites hlsda hpad hlast hrows hcie hfde hsaved).ex
-    hent hres hbe
-    (argsAtEntry_body (lowerRFunc_frame hc.alloc) (entryRegs_of_check hc.lowerOk) hbe hargs
-      (stackArgsAvoid_frameW hc hres hent hargs))
-    hcs hrel htr fuel
+  backend_correct_final_unwind_abi_any hsub hc hunw hS hcov hC hCT hTls hX hXI hXR hXRi hXE hsym
+    hslot hUnw hsites hlsda hpad hrows hcie hfde hsaved hent hres hbe hargs hcs hrel htr fuel
 
-/-- **The `sret` return register with unwinding**: for a function with an `sret` parameter `i`
-and no returns, under the premises of `backend_correct_final_unwind_abi`, a return of the CLIF
-run with unwinding is matched by an Arm return (`ArmRet`) on the machine with unwinding whose x0
-holds the `sret` argument `args[i]`, with the memory the function wrote (`MemAgree`). -/
+/-- `backend_correct_final_unwind_sret_any` under the check `lastCallsOk`. -/
 theorem backend_correct_final_unwind_sret {p : Clif.Program} {f : Clif.Function} {k : Nat}
     {vc vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAsm} {fb : FnBin}
     (hsub : InSubset p f) (hc : Compiled f k vc vcp rf af fa fb) (hunw : unwCheck f vc = true)
@@ -383,7 +559,7 @@ theorem backend_correct_final_unwind_sret {p : Clif.Program} {f : Clif.Function}
       (fun _ => False) s (CallAt fa base) X XR U vcp.CallSite (fun _ _ => False))
     {lsda : Option (List CallSite)} (hsites : callSites af fa = .ok lsda)
     (hlsda : T.lsda = lsda.map (List.map (·.entry)))
-    (hpad : padsNonzeroB af fa = true) (hlast : lastCallsOk af fa = true)
+    (hpad : padsNonzeroB af fa = true) (_hlast : lastCallsOk af fa = true)
     {rows : List (Nat × Cfi)} (hrows : unwindRows af fa = .ok rows) (hcie : T.cie = cieInsns)
     (hfde : T.fde = insnsFrom 0 rows) (hsaved : savedCheck vcp rf = true)
     {base ra : BitVec 64} {s w₀ : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State}
@@ -396,21 +572,9 @@ theorem backend_correct_final_unwind_sret {p : Clif.Program} {f : Clif.Function}
     (hv : args[i]? = some v) :
     ∃ n, ArmRet ra s (runX (Unw.ArmStepU X H U T fa) n s) ∧
       XHolds v (xreg 0 (runX (Unw.ArmStepU X H U T fa) n s)) ∧
-      MemAgree cm (runX (Unw.ArmStepU X H U T fa) n s) := by
-  obtain ⟨B0, hentB, hbody, hterm, -, -⟩ := hcs.entry
-  have hB0 : f.blocks[0]? = some B0 := by
-    simpa [Clif.Function.entry?, List.head?_eq_getElem?] using hentB
-  have hvals : vals = [] := by
-    have := runLoopX_returned_tys_entry hsub.externCalls hsub.tryExterns (noTail_of_subset hsub)
-      htr (sretStableX_of hS) hB0 hcs.callers hcs.func hbody hterm hrun
-    rw [hnr] at this
-    simpa [Clif.AbiParam.tys] using this
-  subst hvals
-  have h := backend_correct_final_unwind_abi hsub hc hunw hS hcov hC hCT hTls hX hXI hXR hXRi hXE
-    hsym hslot hUnw hsites hlsda hpad hlast hrows hcie hfde hsaved hent hres hbe hargs hcs hrel
-    htr fuel
-  rw [hrun, sretArg_of_sret hi hnr, hv] at h
-  obtain ⟨n, hret, hx, hm⟩ := h
-  exact ⟨n, hret, hx 0 v (by simp), hm⟩
+      MemAgree cm (runX (Unw.ArmStepU X H U T fa) n s) :=
+  backend_correct_final_unwind_sret_any hsub hc hunw hS hi hnr hcov hC hCT hTls hX hXI hXR hXRi hXE
+    hsym hslot hUnw hsites hlsda hpad hrows hcie hfde hsaved hent hres hbe hargs hcs hrel htr fuel
+    hrun hv
 
 end E2E

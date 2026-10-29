@@ -389,14 +389,18 @@ the `retN`/value arguments).
   * the tables the unwinder reads, taken as the emitted ones: `T.lsda` from `callSites`, the CIE
     `cieInsns` and the FDE rows `unwindRows` (S10f discharges these from the linked bytes);
   * the decidable checks `savedCheck` (the callee-save slots hold the entry values at every
-    call), `lastCallsOk` (the call-site bridge), `padsNonzeroB` (landing pads at non-zero
-    offsets);
+    call) and `padsNonzeroB` (landing pads at non-zero offsets); the `_any` variants
+    (`backend_correct_final_cleanup_unwind_any`, `backend_correct_final_unwind_any`, and the
+    `_any` variants of the legal/opt/sret/linked theorems below) need no check on the calls of
+    the last block (#622: the call-site bridge `siteAt_any` holds for every block since #553);
+    the theorems without the suffix keep the former check `lastCallsOk` as a premise and are
+    their corollaries. `lean-backend` cites the `_any` theorems and no longer runs `lastCallsOk`.
   * `TrapsExplicitX` for the runs with unwinding.
 
   Trusted by design, like std: the model of the Itanium unwinder and of the personality routine
   (`FV/Unw/Model.lean`: `Unw.unwindAt`, `Unw.personality`, `Unw.restore`), and the decoding of
   the emitted tables as that model reads them. With `XRaise.none`/`Unw.UnwHooks.none` the theorem
-  specialises to the normal-return shape (`E2E.backend_correct_final_of_unwind`). `lean-backend`
+  specialises to the normal-return shape (`E2E.backend_correct_final_of_unwind_any`). `lean-backend`
   labels a function whose checks pass `compiled, verified`. A function failing a check keeps
   `compiled, verified for normal returns (…; unwinding check failed: <check>)`. So does a
   function compiled with `--opt` with unproven rule sets (no unwinding theorem composes them),
