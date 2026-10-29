@@ -400,7 +400,7 @@ theorem spillWordBound_map_mono (vc vc' : VCode) (T : VBlock → VBlock)
     obtain rfl := Option.some.inj hitems'
     simp only [List.toList_toArray]
     exact Nat.add_le_add_left (spillBlock_words_mono (spillHomes vc) (spillHomes vc')
-      vc vc' succs preds bi vb (T vb) (hargs vb).symm (hback vb).symm (hsub vb) hps hts) 7
+      vc vc' succs preds bi vb (T vb) (hargs vb).symm (hback vb).symm (hsub vb) hps hts) _
 
 /-! Joint non-vacuity with an actual deleted integer producer. The same concrete
 blocks instantiate the instruction-body and full per-block inequalities. -/
