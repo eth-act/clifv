@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
 # Continuous main gate (docs/TO-PROVE.md §7, "Gate policy"): the full gate list on origin/main.
 #
-#   scripts/main-gate.sh run LOGDIR [CLIF]   the full list on this worktree's checkout (CLIF=1, the
-#                                            default, includes clif-filetests and opt-difftest);
+#   scripts/main-gate.sh run LOGDIR [CLIF [DEPS]]
+#                                            the full list on this worktree's checkout (CLIF=1, the
+#                                            default, includes clif-filetests and opt-difftest;
+#                                            DEPS=1, the default, the examples/deps line);
 #                                            takes /tmp/clifv-heavy.lock; exit 0 iff green,
 #                                            3 when a host tool is missing (nothing run)
 #   scripts/main-gate.sh loop WORKTREE       forever: check out the newest origin/main tip in
@@ -23,9 +25,11 @@
 # lean-backend-encode-check.sh; lean-backend-filetests.sh; arm-fault-cosim.sh; clif-filetests.sh against
 # scripts/clif-filetests-baseline.txt and opt-difftest.sh (skipped by `loop` when no CLIF path
 # changed since the last green run that ran them); cargo-fv and the Rust tools; examples/compare.sh
-# --lean-link --verified on examples/fv-demo and examples/survey (cargo fv's per-executable binary
-# check runs `cargo fv link-proof` + `lake exe link-check` on every test executable), and plain
-# examples/compare.sh on examples/bigframe-unwind (#479: unwinding through a > 32 KiB Lean frame).
+# --lean-link --verified on examples/fv-demo and examples/survey, and on examples/deps (its own
+# gate line; skipped by `loop` when no DEPSPATHS path changed since the last green run: #691,
+# #734) (cargo fv's per-executable binary check runs `cargo fv link-proof` + `lake exe
+# link-check` on every test executable), and plain examples/compare.sh on
+# examples/bigframe-unwind (#479: unwinding through a > 32 KiB Lean frame).
 #
 # Budgets (128 GB machine, docs/TO-PROVE.md §7): scheduler GATE_BUDGET (32G), module caps up to
 # GATE_MAX_CAP (28G), single memcapped commands GATE_CAP (28G).
@@ -42,8 +46,11 @@ LOCK=/tmp/clifv-heavy.lock
 ISSUE=261
 REPO=eth-act/clifv
 CLIFPATHS='FV/Clif FV/Opt FV/Float FVTest/Clif FVTest/Opt scripts/clif-filetests.sh scripts/clif-filetests-baseline.txt scripts/opt-difftest.sh rust/crates/clif-oracle'
+# the paths whose changes rerun the examples/deps line (lean-link's routes and the Stock
+# production lowering it must reproduce, cargo-fv, the example itself)
+DEPSPATHS='FV/Link FVTest/Link :(glob)FV/Backend/*Production*.lean rust/crates/cargo-fv examples/deps'
 
-usage() { sed -n '2,11p' "$0" >&2; exit 2; }
+usage() { sed -n '2,16p' "$0" >&2; exit 2; }
 
 # Host tools the gates need (docs/USAGE.md, "Install"): a missing one stops the gate with exit
 # status 3 and is never recorded as a red run.
@@ -55,8 +62,8 @@ check_tools() {
   [ ${#miss[@]} = 0 ] || { echo "main-gate: missing host tools: ${miss[*]} (docs/USAGE.md, \"Install\")" >&2; return 3; }
 }
 
-run_gate() { # LOGDIR CLIF; cwd: the worktree root
-  local L=$1 CLIF=${2:-1} W fail=0 r
+run_gate() { # LOGDIR CLIF DEPS; cwd: the worktree root
+  local L=$1 CLIF=${2:-1} DEPS=${3:-1} W fail=0 r
   W=$(pwd)
   mkdir -p "$L"
   export FV_LAKE_CACHE=/home/kev/work/clifv-lake-cache
@@ -118,6 +125,16 @@ run_gate() { # LOGDIR CLIF; cwd: the worktree root
     r=$?; echo "cargo fv --lean-link --verified $ex rc=$r: $(grep -E '^SAME|DIFFERENT' "$L/native_$ex.log" | tr '\n' ' ')"
     { [ $r = 0 ] && grep -q '^SAME' "$L/native_$ex.log"; } || fail=1
   done
+  # examples/deps (#691, #734): typed and Stock-lowered functions in one executable
+  if [ "$DEPS" = 1 ]; then
+    rm -rf "examples/deps/target/fv"
+    env PATH="$W/rust/target/release:$PATH" FV_ROOT="$W" FV_CG_CLIF="$CG" FV_MEMCAP=12G scripts/memcap.sh \
+      examples/compare.sh examples/deps --lean-link --verified > "$L/native_deps.log" 2>&1
+    r=$?; echo "cargo fv --lean-link --verified deps rc=$r: $(grep -E '^SAME|DIFFERENT|binary check:' "$L/native_deps.log" | tr '\n' ' ')"
+    { [ $r = 0 ] && grep -q '^SAME' "$L/native_deps.log"; } || fail=1
+  else
+    echo "cargo fv --lean-link --verified deps: skipped (no DEPSPATHS path changed since the last green run)"
+  fi
   # #479: a panic unwinding through a Lean-compiled frame larger than 32 KiB (plain `cargo fv`:
   # the big function is outside the verified subset, so --verified would keep cg_clif's code)
   rm -rf examples/bigframe-unwind/target/fv
@@ -164,7 +181,7 @@ loop() { # WORKTREE
   while true; do
     [ -e "$GATE_DIR/stop" ] && { echo "stop $(date -Is)"; rm -f "$GATE_DIR/loop.pid"; exit 0; }
     git fetch -q origin || { sleep 300; continue; }
-    local tip last lastgreen lastclif clif s L rc res
+    local tip last lastgreen lastclif clif deps s L rc res
     tip=$(git rev-parse origin/main)
     last=$(awk -F'\t' 'END{print $1}' "$R")
     if [ "$tip" = "$last" ]; then sleep 600; continue; fi
@@ -173,11 +190,14 @@ loop() { # WORKTREE
     clif=1
     # shellcheck disable=SC2086
     if [ -n "$lastclif" ] && git diff --quiet "$lastclif" "$tip" -- $CLIFPATHS; then clif=0; fi
+    deps=1
+    # shellcheck disable=SC2086
+    if [ -n "$lastgreen" ] && git diff --quiet "$lastgreen" "$tip" -- $DEPSPATHS; then deps=0; fi
     git checkout -q --detach "$tip" || { echo "checkout of $tip failed"; sleep 600; continue; }
     s=$(git rev-parse --short=8 HEAD)
     L=$GATE_DIR/runs/$s
-    echo "run $s start $(date -Is) clif=$clif"
-    GATE_LOOP_TIP=$tip setsid flock "$LOCK" "$0" run-locked "$L" "$clif" &
+    echo "run $s start $(date -Is) clif=$clif deps=$deps"
+    GATE_LOOP_TIP=$tip setsid flock "$LOCK" "$0" run-locked "$L" "$clif" "$deps" &
     run=$!
     wait "$run"; rc=$?; run=
     [ $rc = 4 ] && { echo "run $s dropped $(date -Is): origin/main moved on or stop requested while waiting for the lock"; continue; }
@@ -204,14 +224,14 @@ watch() {
 
 mkdir -p "$GATE_DIR"
 case "${1:-}" in
-  run) [ $# -ge 2 ] || usage; flock "$LOCK" "$0" run-locked "$2" "${3:-1}" ;;
+  run) [ $# -ge 2 ] || usage; flock "$LOCK" "$0" run-locked "$2" "${3:-1}" "${4:-1}" ;;
   run-locked)
     [ $# -ge 2 ] || usage; check_tools || exit 3; cd "$(git rev-parse --show-toplevel)" || exit 1
     if [ -n "${GATE_LOOP_TIP:-}" ]; then # started by `loop`: the lock wait may have been long
       [ -e "$GATE_DIR/stop" ] && exit 4
       git fetch -q origin && [ "$(git rev-parse origin/main)" != "$GATE_LOOP_TIP" ] && exit 4
     fi
-    run_gate "$2" "${3:-1}" ;;
+    run_gate "$2" "${3:-1}" "${4:-1}" ;;
   loop)
     [ $# = 2 ] || usage
     W=$(cd "$2" && pwd) || exit 1
