@@ -131,7 +131,8 @@ theorem bundle_correct_rawT {b : Bundle} {S : LinkSpec} {file0 file : ByteArray}
 /-- **The executable compiler with the typed scope refines the frontend bundle's program,
 recursive programs included** (`bundle_correct_source_peak` for `Link.DeadCleanup.compileExeT`):
 `Link.DeadCleanup.compileExeT_correct_source_peak` composed as in `bundle_correct_sourceT`; the
-stack from the source run's call depth `d` (`Clif.DepthLe` of the units' program). -/
+stack `frameDrop + (D * d + pbMax)` (#581: the deepest activation's stack probes write up to
+`pbMax` bytes below its frame) from the source run's call depth `d` (`Clif.DepthLe` of the units' program). -/
 theorem bundle_correct_source_peakT {b : Bundle} {S : LinkSpec} {file0 file : ByteArray}
     (hb : buildSpec b = .ok S) (h : Link.DeadCleanup.compileExeT S file0 = .ok file)
     (hsrc : SrcScopeB S.inputCleanup = true)
@@ -147,7 +148,8 @@ theorem bundle_correct_source_peakT {b : Bundle} {S : LinkSpec} {file0 file : By
     {r : Arm.ArmState} {args args' : List Clif.Val} {cs cs' : Clif.State}
     (hX : (imageOf file).Intact r)
     (ho : OutsideCall S.inputCleanup (BinCheck.roByte S.inputCleanup S.data) (legalize (f.rename σ.fwd))
-      (frameDrop (art S.inputCleanup (legalize (f.rename σ.fwd))).af + S.inputCleanup.D * d) r args' cs'.mem)
+      (frameDrop (art S.inputCleanup (legalize (f.rename σ.fwd))).af +
+        (S.inputCleanup.D * d + pbMax S.inputCleanup)) r args' cs'.mem)
     (hr : ClifRun S.inputCleanup B (legalize (f.rename σ.fwd)) r args' cs')
     (hcs : ClifEntry f args cs)
     (hexp : Opt.Legal.ExpRel ((Opt.Legal.groups f.sig.params).getD []) args args')
@@ -203,7 +205,8 @@ theorem bundle_correct_raw_peakT {b : Bundle} {S : LinkSpec} {file0 file : ByteA
     {r : Arm.ArmState} {args args' : List Clif.Val} {cs cs' : Clif.State}
     (hX : (imageOf file).Intact r)
     (ho : OutsideCall S.inputCleanup (BinCheck.roByte S.inputCleanup S.data) (legalize (f.rename σ.fwd))
-      (frameDrop (art S.inputCleanup (legalize (f.rename σ.fwd))).af + S.inputCleanup.D * d) r args' cs'.mem)
+      (frameDrop (art S.inputCleanup (legalize (f.rename σ.fwd))).af +
+        (S.inputCleanup.D * d + pbMax S.inputCleanup)) r args' cs'.mem)
     (hr : ClifRun S.inputCleanup B (legalize (f.rename σ.fwd)) r args' cs')
     (hcs : ClifEntry f args cs)
     (hexp : Opt.Legal.ExpRel ((Opt.Legal.groups f.sig.params).getD []) args args')

@@ -90,7 +90,8 @@ theorem attempt_correct {S : LinkSpec} {cleanup : Bool} {file0 file : ByteArray}
 
 /-- **The executable compiler is correct for recursive programs** (L1d): `attempt_correct`
 without the call-graph premise `¬ CycleFrom`. The outside caller of `f` provides
-`frameDrop (art (input S cleanup) f).af + (input S cleanup).D * M` bytes of stack (`(input S cleanup).D`: the largest frame of
+`frameDrop (art (input S cleanup) f).af + ((input S cleanup).D * M + pbMax (input S cleanup))`
+bytes of stack (#581: `pbMax`, the stack probes of the deepest activation; `(input S cleanup).D`: the largest frame of
 the program, `LinkSpec.input`), where `M + 1` bounds the whole-program CLIF run's steps; for that
 run (returning, or trapping explicitly) the executable machine run of `file`'s own words refines
 it (`ExecRefines`). The stack is proportional to the fuel `M`, not to the run's actual peak call
@@ -101,7 +102,8 @@ theorem attempt_correct_depth {S : LinkSpec} {cleanup : Bool} {file0 file : Byte
     (M : Nat) {r : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State}
     (hX : (imageOf file).Intact r)
     (ho : OutsideCall (input S cleanup) (BinCheck.roByte (input S cleanup) S.data) f
-      (frameDrop (art (input S cleanup) f).af + (input S cleanup).D * M) r args cs.mem)
+      (frameDrop (art (input S cleanup) f).af + ((input S cleanup).D * M + pbMax (input S cleanup)))
+      r args cs.mem)
     (hr : ClifRun (input S cleanup) B f r args cs)
     (htr : TrapsExplicit (Clif.linkEnvN (prog (input S cleanup)) B.env M) (prog (input S cleanup)).bare cs) :
     ExecRefines (art (input S cleanup) f).fb (art (input S cleanup) f).base (xreg 30 r) (step (input S cleanup) B file) r
@@ -112,7 +114,8 @@ theorem attempt_correct_depth {S : LinkSpec} {cleanup : Bool} {file0 file : Byte
     (outsideAvoids_leanLink hl _ _ _ _ _) hr htr
 
 /-- **The executable compiler is correct for recursive programs, with the stack of the run's peak
-call depth** (L1d): `attempt_correct_depth` with `frameDrop (art (input S cleanup) f).af + (input S cleanup).D * d`
+call depth** (L1d): `attempt_correct_depth` with
+`frameDrop (art (input S cleanup) f).af + ((input S cleanup).D * d + pbMax (input S cleanup))` (#581)
 bytes of stack, where `d` bounds the call depth of the whole-program CLIF run (`Clif.DepthLe`:
 every state the run from `cs` reaches has at most `d` callers, i.e. at most `d + 1` live
 activations), independent of its length (at most `F + 1` steps). For that run (returning, or
@@ -126,7 +129,8 @@ theorem attempt_correct_peak {S : LinkSpec} {cleanup : Bool} {file0 file : ByteA
     (F d : Nat) {r : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State}
     (hX : (imageOf file).Intact r)
     (ho : OutsideCall (input S cleanup) (BinCheck.roByte (input S cleanup) S.data) f
-      (frameDrop (art (input S cleanup) f).af + (input S cleanup).D * d) r args cs.mem)
+      (frameDrop (art (input S cleanup) f).af + ((input S cleanup).D * d + pbMax (input S cleanup)))
+      r args cs.mem)
     (hr : ClifRun (input S cleanup) B f r args cs)
     (hd : Clif.DepthLe B.env (prog (input S cleanup)) d cs)
     (htr : TrapsExplicit (Clif.linkEnvD (prog (input S cleanup)) B.env F d) (prog (input S cleanup)).bare cs) :

@@ -8,7 +8,8 @@ import FV.E2E.TailLoopSim
 are about the input's program (after the `i128` legalisation, before the tail-loop transform),
 whose functions may `return_call` themselves: `compileExeTail_correct` (entries reaching no call
 cycle of the transformed program) and **`compileExeTail_correct_peak`** (any entry, with
-`frameDrop + D·d` bytes of stack for the **input** program's peak call depth `d`: a self
+`frameDrop + (D·d + pbMax)` bytes of stack (#581: the deepest activation's stack probes write up to
+`pbMax` bytes below its frame) for the **input** program's peak call depth `d`: a self
 `return_call` keeps the callers, so the stack does not grow per tail call). They compose
 `Link.DeadCleanup.compileExe_correct{,_peak}` on `S.tail` with the transform's refinement
 `Opt.TailLoop.TailRel.refines` (`FV/E2E/TailLoopSim.lean`). Extra premises: the externs keep the
@@ -145,7 +146,8 @@ theorem compileExeTail_correct {S : LinkSpec} {file0 file : ByteArray}
 
 /-- **The executable compiler with self tail calls as loops is correct for recursive programs,
 with the stack of the input run's peak call depth**: `compileExeTail_correct` without the call-graph
-premise; the outside caller provides `frameDrop + D * d` bytes of stack, where `d` bounds the call
+premise; the outside caller provides `frameDrop + (D * d + pbMax)` bytes of stack (#581: the
+deepest activation's stack probes write up to `pbMax` bytes below its frame), where `d` bounds the call
 depth of the **input** program's run from `cs` (`Clif.DepthLe`). A self `return_call` does not
 add a caller, in the input's run as in the loop, so the stack does not grow per tail call. -/
 theorem compileExeTail_correct_peak {S : LinkSpec} {file0 file : ByteArray}
@@ -156,7 +158,8 @@ theorem compileExeTail_correct_peak {S : LinkSpec} {file0 file : ByteArray}
     {r : Arm.ArmState} {args : List Clif.Val} {cs cs' : Clif.State}
     (hX : (imageOf file).Intact r)
     (ho : OutsideCall S.tail.inputCleanup (BinCheck.roByte S.tail.inputCleanup S.tail.data) f'
-      (frameDrop (art S.tail.inputCleanup f').af + S.tail.inputCleanup.D * d) r args cs'.mem)
+      (frameDrop (art S.tail.inputCleanup f').af + (S.tail.inputCleanup.D * d + pbMax S.tail.inputCleanup))
+      r args cs'.mem)
     (hr : ClifRun S.tail.inputCleanup B f' r args cs') (hcs : ClifEntry f args cs)
     (hsl : cs'.frame.slots = cs.frame.slots) (hmem : cs'.mem = cs.mem)
     (hsp : Opt.TailLoop.SpsOk cs) (hd : Clif.DepthLe B.env (prog S.inputCleanup) d cs) (M : Nat) :

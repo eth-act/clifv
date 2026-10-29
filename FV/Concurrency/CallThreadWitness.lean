@@ -24,7 +24,7 @@ open Arm ArmFoot ArmThread Prog ClifThread ProgE2E Backend Backend.Proof VCodeTh
 /-- **Every premise of `CompiledE`** for the compiled `atomic_load`. -/
 theorem compiledE_L (env : Clif.Env) (p : Clif.Program) : CompiledE env p RAL csL := by
   obtain ⟨-, hq, hA⟩ := q_init_lines wfRL abiRL bodyRL
-  exact ⟨wfRL, entry_premises.2.1, rfl, ⟨_, abiRL⟩, (compiled_ofL hq hA env p).front⟩
+  exact ⟨wfRL, entry_premises.2.1, rfl, ⟨_, abiRL⟩, (compiled_ofL hq hA env p).front, probeF_RL⟩
 
 /-- **`thread_compiled_entry` on the compiled `atomic_load`**, on the precise run from its ABI
 entry through its `ldar`. -/

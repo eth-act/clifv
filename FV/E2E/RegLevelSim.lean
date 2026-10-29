@@ -41,6 +41,42 @@ def frameF (lo hi : Nat) (af : AFunc) (s : Arm.ArmState) (a : BitVec 64) : Prop 
 def StackBelow (K : Nat) (sp a : BitVec 64) : Prop :=
   a.toNat < sp.toNat ∧ sp.toNat ≤ a.toNat + K
 
+/-- A probed byte of the prologue lies in the frame or the `probeBelow` bytes below it (#581). -/
+theorem probeHit_below {af : AFunc} {sp a : BitVec 64} (hr : frameDrop af + probeBelow af ≤ sp.toNat)
+    (h : probeHit af sp a = true) : StackBelow (frameDrop af + probeBelow af) sp a := by
+  have hf : af.frame = true := by simp only [probeHit, Bool.and_eq_true] at h; exact h.1
+  have hc := probeCount_le af hf
+  have hd : frameDrop af = af.frameSize + 16 := by simp [frameDrop, hf]
+  rw [hd] at hr ⊢
+  obtain ⟨-, i, hi, k, hk, e⟩ := probeHit_toNat h (by omega)
+  have : 4096 * (i + 1) ≤ 4096 * probeCount (probeTotal af.frameSize af.calls) :=
+    Nat.mul_le_mul_left _ hi
+  unfold StackBelow; omega
+
+/-- The room below `sp` holds no code. -/
+theorem StackRoom.not_below {n : Nat} {s : Arm.ArmState} (h : StackRoom n s) {a : BitVec 64}
+    (hc : CodeAddr s a) : ¬ StackBelow n (spv s) a := by
+  intro hb
+  have h2 := h.2 a hc
+  have h1 := h.1
+  have hm : n % 2 ^ 64 = n := Nat.mod_eq_of_lt (Nat.lt_of_le_of_lt h1 (spv s).isLt)
+  have e1 : (spv s - BitVec.ofNat 64 n).toNat = (spv s).toNat - n := by
+    rw [BitVec.toNat_sub_of_le (by simp only [BitVec.le_def, BitVec.toNat_ofNat, hm]; exact h1),
+      BitVec.toNat_ofNat, hm]
+  unfold StackBelow at hb
+  rw [BitVec.toNat_sub_of_le (by rw [BitVec.le_def, e1]; omega), e1] at h2
+  omega
+
+/-- The prologue's probes write no code: `StackAvail` covers them. -/
+theorem probeHit_noCode {K : Nat} {af : AFunc} {s : Arm.ArmState} (h : StackAvail K af s)
+    {a : BitVec 64} (hc : CodeAddr s a) : probeHit af (spv s) a = false := by
+  cases hp : probeHit af (spv s) a
+  · rfl
+  have hf : af.frame = true := by simp only [probeHit, Bool.and_eq_true] at hp; exact hp.1
+  have hd : frameDrop af = af.frameSize + 16 := by simp [frameDrop, hf]
+  have hr := h.probe
+  exact absurd (probeHit_below (by rw [hd]; exact hr.1) hp) (by rw [hd]; exact hr.not_below hc)
+
 /-- The addresses outside the world of the activation entered in `s` (`lo`, `hi` as in
 `frameF`): its frame addresses `frameF`, and the callees' dead stack: the `K` bytes below the
 body's `sp` (`StackBelow`), where every callee builds its frame (the saved return address and
@@ -219,15 +255,16 @@ def _root_.Backend.VCode.EntryArg (vc : VCode) (r : Reg) : Prop :=
   ∃ vb ds, vc.blocks[0]? = some vb ∧ vb.insts[0]? = some (.args ds) ∧ ∃ v, (v, r) ∈ ds
 
 /-- `BodyEntry` relative to the addresses `F` outside the world and the argument registers `A`
-the body reads: the body-entry world `w₀` agrees with the entry state `s` on the memory outside
-`F` and on the registers `A` (`BodyEntry` fixes all memory and x0–x8, v0–v7). -/
+the body reads: the body-entry world `w₀` agrees with the entry state `s` after the prologue's
+stack probes (`probeMem`) on the memory outside `F` and on the registers `A` (`BodyEntry` fixes
+all memory and x0–x8, v0–v7). -/
 structure BodyEntryW (F : BitVec 64 → Prop) (A : Reg → Prop) (af : AFunc) (s w₀ : Arm.ArmState) :
     Prop where
   sp : spv w₀ = spv s - BitVec.ofNat 64 (frameDrop af)
   fp : xreg 29 w₀ = if af.frame then spv s - 16#64 else xreg 29 s
   args : ∀ r, A r → regVal w₀ r = regVal s r
   other : ∀ f, ¬ Masked f → f ≠ .GPR 29#5 → f ≠ .GPR 31#5 → Arm.r f w₀ = Arm.r f s
-  mem : ∀ a, ¬ F a → w₀.mem a = s.mem a
+  mem : ∀ a, ¬ F a → w₀.mem a = probeMem af s a
   program : w₀.program = s.program
 
 /-- `BodyEntry` gives `BodyEntryW` for every `F` and every set of argument registers. -/
@@ -383,7 +420,7 @@ def topN : Nat := 16 + clobberBytes R.af.saves
 def topB : BitVec 64 := spv R.s0 - BitVec.ofNat 64 R.topN
 
 /-- The state after the prologue. -/
-noncomputable def sP : Arm.ArmState := iterN R.step (prologueLines R.af.saves R.af.frameSize).length R.s0
+noncomputable def sP : Arm.ArmState := iterN R.step (prologueLines R.af.saves R.af.frameSize R.af.calls).length R.s0
 
 /-- What the prologue leaves in fp/lr and the clobber area. -/
 noncomputable def topImg : BitVec (R.topN * 8) := Arm.read_mem_bytes R.topN R.topB R.sP

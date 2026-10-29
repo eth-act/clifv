@@ -45,12 +45,14 @@ theorem bodyRC : BodyEntryW RAC.F RAC.vc.EntryArg RAC.af RAC.s0 w₀C :=
 /-- **Every premise of `CompiledE`** for the compiled `atomic_rmw`. -/
 theorem compiledE_R (env : Clif.Env) (p : Clif.Program) : CompiledE env p RAR csR := by
   obtain ⟨-, hq, hA⟩ := q_init_lines wfRR abiRR bodyRR
-  exact ⟨wfRR, scopeLSR, rfl, ⟨_, abiRR⟩, (compiled_ofR hq hA env p).front⟩
+  exact ⟨wfRR, scopeLSR, rfl, ⟨_, abiRR⟩, (compiled_ofR hq hA env p).front,
+    ProbeF.of_small (by have := factsR.2.2.2.2.2.2.1; omega)⟩
 
 /-- **Every premise of `CompiledE`** for the compiled `atomic_cas`. -/
 theorem compiledE_C (env : Clif.Env) (p : Clif.Program) : CompiledE env p RAC csC := by
   obtain ⟨-, hq, hA⟩ := q_init_lines wfRC abiRC bodyRC
-  exact ⟨wfRC, scopeLSC, rfl, ⟨_, abiRC⟩, (compiled_ofC hq hA env p).front⟩
+  exact ⟨wfRC, scopeLSC, rfl, ⟨_, abiRC⟩, (compiled_ofC hq hA env p).front,
+    ProbeF.of_small (by have := factsC.2.2.2.2.2.2.1; omega)⟩
 
 /-- The machine of an activation keeps the program when its hooks do. -/
 theorem armStepX_programR (s : ArmState) : (RAR.step s).program = s.program :=

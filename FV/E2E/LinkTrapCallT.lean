@@ -119,7 +119,7 @@ theorem thmTT_of (hL : L.Ok) [hR : L.CrunOk] (hT : L.TrapsOkT) (hB : L.BaseTraps
     (X := L.X κ M g F) (syms := L.syms) (K := κ M g) (F := F) (c := spv w₀) (hL.covered g hg)
     (xCallsOk_cut (L.xCallsOk hL hκ ihR hg hWE.img hWE.room hWE.dead hWE.align))
     (xCallsIndOk_cut (L.xCallsIndOk hL hκ ihR hg hWE.img hWE.room hWE.dead hWE.align))
-    (L.xTrapsOkG hL hB hDn ih hg hWE.img)
+    (L.xTrapsOkG hL hB hκ hDn ih hg hWE.img)
     (fun n b hn => hL.symOk n b hn) rfl hWE.clif hWE.rel hWE.args htrE hrunE
     (L.hooks M) G (L.A g).base ra s hAE
   have hroom : frameDrop (L.A g).af ≤ (spv s).toNat := by
@@ -128,7 +128,7 @@ theorem thmTT_of (hL : L.Ok) [hR : L.CrunOk] (hT : L.TrapsOkT) (hB : L.BaseTraps
     by have := postTrace_of_actGoodX htrace; exact this
   have hgoodOf : (∀ m, Arm.r .ERR (runX (L.mach M g) (n + m + 1) s) ≠ .None) →
       L.RunGoodL M g s := fun hh =>
-    L.runGood_of_trace hL (fun _ => L.thmG hL hκ (M - 1)) hg hME (by exact htrace)
+    L.runGood_of_trace hL hκ (fun _ => L.thmG hL hκ (M - 1)) hg hME (by exact htrace)
       fun k _ he => Nat.lt_of_not_le fun hle => hh (k - n) (by
         rw [show n + (k - n) + 1 = k + 1 by omega]; exact he)
   rcases hcase with ⟨hat, hhalt⟩ | hct

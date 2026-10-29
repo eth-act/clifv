@@ -33,8 +33,9 @@ is `bodyOf af s`), `ArgsIn` and `StackArgsAvoid` (from `OutsideCall.args` on `r`
 run traps only explicitly) stays a premise about the CLIF run; `BaseOk` (the contracts of the code
 outside the program) stays as in `crate_correct`.
 
-`binary_correct_depth` uses `crate_correct` (a stack of `frameDrop + D * M` bytes for runs of
-depth `M`: the statement for recursive programs); `binary_correct` uses the stack bound of a
+`binary_correct_depth` uses `crate_correct` (a stack of `frameDrop + (D * M + pbMax)` bytes for
+runs of depth `M`, #581: the deepest activation's stack probes write up to `pbMax` bytes below its
+frame; the statement for recursive programs); `binary_correct` uses the stack bound of a
 non-recursive program (`FV/E2E/SemanticStackBound.lean`) and the executable's checks.
 -/
 
@@ -50,6 +51,10 @@ abbrev prog (I : SemanticStackBound.CompilerInput) : Clif.Program := progOf I.re
 
 /-- The compiled image of `f` (`SemanticStackBound.ofInput`'s `A f`). -/
 abbrev art (I : SemanticStackBound.CompilerInput) (f : Clif.Function) : Art := artOf I.results f
+
+/-- The most bytes a function's stack probes write below its body's `sp` (#581;
+`SemanticStackBound.ofInput`'s `pbMax`): the depth-`M` stack budget is `D * M + pbMax I`. -/
+abbrev pbMax (I : SemanticStackBound.CompilerInput) : Nat := pbMaxOf I.results
 
 /-- The program's code addresses (`SemanticStackBound.ofInput`'s `Img`). -/
 abbrev img (I : SemanticStackBound.CompilerInput) : BitVec 64 → Prop := ImgT (tabOf I.results)
@@ -104,14 +109,15 @@ structure OutsideCall (I : SemanticStackBound.CompilerInput) (roB : BitVec 64 �
   stackFree : ∀ a, img I a → ¬ StackBelow N (spv r) a
   /-- the arguments where AAPCS64 puts them (stack arguments outside the code) -/
   args : ArgsOut (img I) f.sig args r
-  /-- the live CLIF bytes outside the executable's read-only CLIF data (`roB`) are the
-  machine's -/
-  bytes : ∀ a b, cm.valid a 1 = true → cm.bytes a = some b → roB (BitVec.ofNat 64 a) = none →
-    Arm.read_mem (BitVec.ofNat 64 a) r = b
-  /-- the live CLIF bytes at the read-only CLIF data are the CLIF image's (a CLIF-level fact: a
-  store into read-only data is stuck) -/
+  /-- the live CLIF bytes are the machine's after `f`'s prologue stack probes (`probeMem`, #581:
+  the probes zero bytes of `f`'s frame, which can be CLIF slot bytes; the machine's own bytes for a
+  function without probes) -/
+  bytes : ∀ a b, cm.valid a 1 = true → cm.bytes a = some b →
+    probeMem (art I f).af r (BitVec.ofNat 64 a) = b
+  /-- the live CLIF bytes at the read-only CLIF data that `f`'s stack probes do not zero are the
+  CLIF image's (a CLIF-level fact: a store into read-only data is stuck) -/
   image : ∀ a b b', cm.valid a 1 = true → cm.bytes a = some b → roB (BitVec.ofNat 64 a) = some b' →
-    b = b'
+    probeHit (art I f).af (spv r) (BitVec.ofNat 64 a) = false → b = b'
   /-- the live CLIF allocations fit the address space, hold no code, and lie in the free stack
   only in `f`'s CLIF slot region -/
   valid : ∀ a n, cm.valid a n = true → a + n ≤ 2 ^ 64 ∧ ∀ k < n,
@@ -279,7 +285,8 @@ theorem not_worldF_out {I : SemanticStackBound.CompilerInput} {B : BaseEnv} {F :
 
 /-- **The per-run premises of `backend_correct_program` from the boundary contract**, for the
 model state `s = modelOf I f r`, the body-entry world `bodyOf af s`, the callees' budget `K` and
-the addresses outside the world `worldF I f K r`. -/
+the addresses outside the world `worldF I f K r`. The stack premise is the room `StackRoom` only
+(#581: `StackAvail` also asks `probeBelow ≤ K`, a fact of the budget, not of the contract). -/
 theorem premises {I : SemanticStackBound.CompilerInput} {B : BaseEnv} {f : Clif.Function} {K : Nat} {r : Arm.ArmState}
     {args : List Clif.Val} {cs : Clif.State}
     (hL : (SemanticStackBound.ofInput I B (worldF I f K r)).OkSemanticNI) (hf : f ∈ (prog I).funcs)
@@ -287,7 +294,7 @@ theorem premises {I : SemanticStackBound.CompilerInput} {B : BaseEnv} {f : Clif.
     (ho : OutsideCall I roB f (frameDrop (art I f).af + K) r args cs.mem)
     (hr : ClifRun I B f r args cs) :
     AbiEntry (art I f).fb (art I f).base (xreg 30 r) (modelOf I f r) ∧
-    StackAvail K (art I f).af (modelOf I f r) ∧
+    StackRoom ((art I f).af.frameSize + 16 + K) (modelOf I f r) ∧
     (∀ a, img I a → ¬ StackBelow (frameDrop (art I f).af + K) (spv (modelOf I f r)) a) ∧
     (∀ a, img I a → (modelOf I f r).mem a = imgMem I a) ∧
     BodyEntry (art I f).af (modelOf I f r) (bodyOf (art I f).af (modelOf I f r)) ∧
@@ -347,15 +354,12 @@ theorem premises {I : SemanticStackBound.CompilerInput} {B : BaseEnv} {f : Clif.
   · intro off v hm
     obtain ⟨-, hav, -⟩ := ho.args (.stack off) v hm
     rw [spv_modelOf]; exact hav
-  · -- the live CLIF bytes
+  · -- the live CLIF bytes (the body-entry memory is after the stack probes, #581)
     have hni := ((ho.valid a 1 hv).2 0 (by omega)).1
     simp only [Nat.add_zero] at hni
-    simp only [Arm.read_mem, mem_bodyOf]
-    rw [show Arm.read_store (BitVec.ofNat 64 a) (modelOf I f r).mem = (modelOf I f r).mem (BitVec.ofNat 64 a)
-      from rfl, mem_modelOf_not hni]
-    cases hroa : roB (BitVec.ofNat 64 a) with
-    | none => exact ho.bytes a b hv hb hroa
-    | some b' => rw [hro _ _ hroa, ho.image a b b' hv hb hroa]
+    show probeMem (art I f).af (modelOf I f r) (BitVec.ofNat 64 a) = b
+    rw [probeMem_congr (by rw [spv_modelOf]) (mem_modelOf_not hni)]
+    exact ho.bytes a b hv hb
   · obtain ⟨hfit, hk⟩ := ho.valid a n hv
     exact ⟨hfit, fun k hkn => not_worldF hL hf hN (hk k hkn).1 (hk k hkn).2⟩
   · -- the slots
@@ -394,7 +398,9 @@ theorem mach_F (I : SemanticStackBound.CompilerInput) (B : BaseEnv) (F F' : BitV
 /-! ## The binary-level theorems -/
 
 /-- **The binary-level theorem at depth `M`** (any program, recursive ones included: the stack
-premise is `frameDrop + D * M` bytes, `backend_correct_program`'s budget): for a crate input that
+premise is `frameDrop + (D * M + pbMax I)` bytes, `backend_correct_program`'s budget `K M`; #581:
+the stack probes of the deepest activation write up to `pbMax I` bytes below its frame, so the
+former `frameDrop + D * M` is too small for a program with probes): for a crate input that
 passes the checker, a function `f` of the program called by outside code that meets the boundary
 contract `OutsideCall` in the machine state `r`, the linked machine of depth `M` from the model
 state of `r` refines the whole-program CLIF run of at most `M + 1` steps from the reference entry
@@ -403,19 +409,21 @@ the base environment's contracts (`BaseOk`) and the CLIF run's explicit traps (`
 theorem binary_correct_depth {I : SemanticStackBound.CompilerInput} (hI : SemanticStackBound.okB I = true) (B : BaseEnv)
     (hB : BaseOk (sys I B)) {n : String} {f : Clif.Function} (hf : (prog I).func? n = some f)
     (M : Nat) {r : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State}
-    (ho : OutsideCall I (fun _ => none) f (frameDrop (art I f).af + I.D * M) r args cs.mem)
+    (ho : OutsideCall I (fun _ => none) f (frameDrop (art I f).af + (I.D * M + pbMax I)) r args cs.mem)
     (hr : ClifRun I B f r args cs)
     (htr : TrapsExplicit (Clif.linkEnvN (prog I) B.env M) (prog I).bare cs) :
     ArmRefines (art I f).fb (art I f).base (xreg 30 r) ((sys I B).mach M f) (modelOf I f r)
       (Clif.runLoop B.env (prog I) (M + 1) cs) := by
-  have hB' : BaseOk (SemanticStackBound.ofInput I B (worldF I f (I.D * M) r)) := baseOk_F hB
-  have himgF : ∀ a, (SemanticStackBound.ofInput I B (worldF I f (I.D * M) r)).Img a →
-      worldF I f (I.D * M) r a := fun _ h => .inr h
+  have hB' : BaseOk (SemanticStackBound.ofInput I B (worldF I f (I.D * M + pbMax I) r)) := baseOk_F hB
+  have himgF : ∀ a, (SemanticStackBound.ofInput I B (worldF I f (I.D * M + pbMax I) r)).Img a →
+      worldF I f (I.D * M + pbMax I) r a := fun _ h => .inr h
   have hL := SemanticStackBound.okB_sound hI hB' himgF
   obtain ⟨hent, hres, hgfree, himg, hbe, hargs, hsav, hrel, hpl⟩ :=
     premises hL (Clif.Program.func?_some hf).1 (fun _ _ h => by cases h) ho hr
-  rw [mach_F I B (fun _ => False) (worldF I f (I.D * M) r)]
-  exact backend_correct_program_semantic _ hL (Clif.Program.func?_some hf).1 M hent hres rfl hgfree himg hbe hargs hr.entry hsav hrel hpl htr
+  rw [mach_F I B (fun _ => False) (worldF I f (I.D * M + pbMax I) r)]
+  exact backend_correct_program_semantic _ hL (Clif.Program.func?_some hf).1 M hent
+    ⟨hres, (LinkSys.budget_K_semantic _ hL).2 M f (Clif.Program.func?_some hf).1⟩ rfl hgfree himg
+    hbe hargs hr.entry hsav hrel hpl htr
 
 /-- A contract with more stack gives one with less. -/
 theorem OutsideCall.mono {I : SemanticStackBound.CompilerInput} {roB : BitVec 64 → Option (BitVec 8)} {f : Clif.Function}

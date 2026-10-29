@@ -229,7 +229,9 @@ theorem fnOk_C {env : Clif.Env} (henv : env.extern "ld" = none) :
       subst he
       obtain ⟨-, hf, -⟩ := clifC
       rw [hf] at hp; cases hp
-      exact LinkedMachine.Witness.sig_fL }
+      exact LinkedMachine.Witness.sig_fL
+    probe := ArmAllocThread.ProbeF.of_small
+      (show callerF.af.frameSize + 16 < 4096 by rw [fs_C]; decide) }
 
 /-- **`atomic_load` is compiled** (module doc; no extern, for every environment). -/
 theorem fnOk_L {env : Clif.Env} : FnOk link2 env pCL (fun _ => none) "ld" ldF fL := by
@@ -284,7 +286,8 @@ theorem fnOk_L {env : Clif.Env} : FnOk link2 env pCL (fun _ => none) "ld" ldF fL
     dv := (callDefsVirtB_iff _).1 hdv
     uniq := fun e he => by rw [hnil] at he; cases he
     envx := hext
-    sigs := fun e he => by rw [hnil] at he; cases he }
+    sigs := fun e he => by rw [hnil] at he; cases he
+    probe := ArmAllocThread.ProbeF.of_small (show ldF.af.frameSize + 16 < 4096 by rw [fs_ld]; decide) }
 
 /-! ## The link -/
 
@@ -310,9 +313,13 @@ theorem linkOk_2 {env : Clif.Env} (henv : env.extern "ld" = none) :
     simp only [pCL, List.mem_cons, List.not_mem_nil, or_false] at hm
     rcases hm with rfl | rfl
     · rw [name_fC]
-      exact ⟨callerF, mem_caller, fnOk_C henv, fr2_f, by rw [fs_C]; decide⟩
+      exact ⟨callerF, mem_caller, fnOk_C henv, fr2_f, by
+        rw [ArmAllocThread.Witness.probeBelow_small (af := callerF.af) (by rw [fs_C]; decide), fs_C]
+        decide⟩
     · rw [name_fL]
-      exact ⟨ldF, mem_ld, fnOk_L, fr2_ld, by rw [fs_ld]; decide⟩
+      exact ⟨ldF, mem_ld, fnOk_L, fr2_ld, by
+        rw [ArmAllocThread.Witness.probeBelow_small (af := ldF.af) (by rw [fs_ld]; decide), fs_ld]
+        decide⟩
   inside := by
     intro n F h
     rcases mem_link2 h with ⟨-, rfl⟩ | ⟨-, rfl⟩

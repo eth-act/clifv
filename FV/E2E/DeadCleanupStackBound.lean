@@ -144,6 +144,8 @@ environment). -/
 theorem budget_of {I : LinkInput} (hI : okBCleanup I = true) (B : BaseEnv) (F : BitVec 64 → Prop) :
     (LinkSys.ofInputCleanup I B F).Budget ((LinkSys.ofInputCleanup I B F).hybrid (budO I) (budMax I)) := by
   refine LinkSys.budget_hybrid _ _ _ (fun h hh => (factsCleanup hI hh).depth) ?_ ?_
+    fun g hg bg hbg =>
+      E2E.StackBound.budC_probe (I := I) (R := I.resultsCleanup) (okBCleanup_names hI) hg hbg
   · intro g hg bg hbg h hcl
     have hok := budOkW_budMap (I := I) (R := I.resultsCleanup) (okBCleanup_names hI)
     have he := edgeB_of_callee hI hg hcl

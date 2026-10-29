@@ -229,7 +229,7 @@ theorem progResultBT_Lsl
       g c sl cm w)
     (hpl : Lsl.NeedSlots → Lsl.PlaceAtB cm c ini)
     (hslotb : Lsl.NeedSlots → ∀ a, Lsl.SlotByte h c a →
-      ini.bytes (ini.next + 1) a = w.mem (BitVec.ofNat 64 a))
+      ini.bytes (ini.next + 1) a = probeMem (Lsl.A h).af w (BitVec.ofNat 64 a))
     (htab : Lsl.TableOf (M - 1) h (enterAt (Lsl.A h) (Lsl.canon h args w)) (calleeIni h ini))
     (hinit : Clif.initState Lsl.P h.name vals cm = .ok cs)
     (hret : Lsl.crun M cs = .returned rvals cm') :
@@ -500,6 +500,7 @@ theorem progCallPRBRLT_Lsl
     (hal : (spv w).toNat % 16 = 0)
     (hroom : frameDrop (Lsl.A h).af + (fun M _ => Lsl.K M) (M - 1) h ≤ (spv w).toNat)
     (hdead : ∀ a, StackBelow (frameDrop (Lsl.A h).af + (fun M _ => Lsl.K M) (M - 1) h) (spv w) a → F a ∧ ¬ Lsl.Img a)
+    (hpb : probeBelow (Lsl.A h).af ≤ (fun M _ => Lsl.K M) (M - 1) h)
     {vals : List Clif.Val}
     {cm : Clif.Mem}
     {cs : Clif.State}
@@ -511,7 +512,7 @@ theorem progCallPRBRLT_Lsl
     (hsav : StackArgsAvoid F h.sig vals w)
     (hpl : Lsl.NeedSlots → Lsl.PlaceAtB cm (spv w) ini)
     (hslotb : Lsl.NeedSlots → ∀ a, Lsl.SlotByte h (spv w) a →
-      ini.bytes (ini.next + 1) a = w.mem (BitVec.ofNat 64 a))
+      ini.bytes (ini.next + 1) a = probeMem (Lsl.A h).af w (BitVec.ofNat 64 a))
     (htab : Lsl.TableOf (M - 1) h (enterAt (Lsl.A h) (Lsl.canon h uses w)) (calleeIni h ini))
     (hinit : Clif.initState Lsl.P n vals cm = .ok cs)
     (hrun : Lsl.crun M cs = .returned rvals cm') :
@@ -530,7 +531,7 @@ theorem progCallPRBRLT_Lsl
           us outs wf (enterAt (Lsl.A h) t) (runX (Lsl.mach (M - 1) h) k (enterAt (Lsl.A h) t)) ∧
         Lsl.TabUpTo (M - 1) h (enterAt (Lsl.A h) t) (calleeIni h ini).bytes (calleeIni h ini).next k
           e ∧ PostTrace (Lsl.A h).fa (Lsl.A h).af (Lsl.A h).base (Lsl.mach (M - 1) h) (enterAt (Lsl.A h) t) k) :=
-  Lsl.progCallPRBRLT Lsl_ok hM ih hdet hpf hcal himgF herr hal hroom hdead hmr hargs hsav hpl hslotb htab hinit hrun
+  Lsl.progCallPRBRLT Lsl_ok hM ih hdet hpf hcal himgF herr hal hroom hdead hpb hmr hargs hsav hpl hslotb htab hinit hrun
 
 theorem callCount_Lsl
     {M' : Nat}

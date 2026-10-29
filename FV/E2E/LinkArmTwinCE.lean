@@ -191,7 +191,7 @@ def CallTwinCE (κ : Nat → Clif.Function → Nat) (M : Nat) : Prop :=
     MemRel F L.syms cm w → ArgsAt h.sig vals uses w → StackArgsAvoid F h.sig vals w →
     (L.NeedSlots → L.PlaceAtB cm (spv w) ini) →
     (L.NeedSlots → ∀ a, L.SlotByte h (spv w) a →
-      ini.bytes (ini.next + 1) a = w.mem (BitVec.ofNat 64 a)) →
+      ini.bytes (ini.next + 1) a = probeMem (L.A h).af w (BitVec.ofNat 64 a)) →
     Clif.initState L.P n vals cm = .ok cs → L.crun M cs = .returned rvals cm' →
     ∀ t, L.CallerOk F h uses w t →
       (∀ f, Masked f → f ≠ .PC → f ≠ .GPR 30#5 → Arm.r f t = Arm.r f (L.canon h uses w)) →

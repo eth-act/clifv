@@ -39,7 +39,7 @@ theorem execRefinesU_of_outcome {fb : FnBin} {base ra : BitVec 64}
 /-- **The optimising executable compiler is correct on the exceptional edges, through the
 mid-end, on the executable's bytes, for the run's peak call depth** (given the per-state facts
 `RunOkU` of the model's run): for `compileExeOptU S file0 = .ok file`, an outside call of the
-optimised function `f'` (named `n`) in `r` with `frameDrop + D * d` bytes of stack, the linked
+optimised function `f'` (named `n`) in `r` with `frameDrop + (D * d + pbMax)` bytes of stack, the linked
 program with unwinding `L` of the optimised input with that call's world (its CLIF environment
 keeping the link-time symbols), the entry `cs` of the input's function `f` named `n` with the
 call's registers, slots and memory, and a bound `d` on the call depth of the optimised program's
@@ -52,12 +52,13 @@ theorem compileExeOpt_correct_unwind_exec_peak_of_good {S : LinkSpec} {file0 fil
     (hf' : (prog S.opt.inputCleanup).func? n = some f') (d : Nat) {r : Arm.ArmState}
     {args : List Clif.Val} {cs cs' : Clif.State} (hX : (imageOf file).Intact r)
     (ho : OutsideCall S.opt.inputCleanup (BinCheck.roByte S.opt.inputCleanup S.opt.data) f'
-      (frameDrop (art S.opt.inputCleanup f').af + S.opt.inputCleanup.D * d) r args cs'.mem)
+      (frameDrop (art S.opt.inputCleanup f').af + (S.opt.inputCleanup.D * d + pbMax S.opt.inputCleanup))
+      r args cs'.mem)
     (hr : ClifRun S.opt.inputCleanup B f' r args cs') (hcs : ClifEntry f args cs)
     (hregs : cs.frame.regs = cs'.frame.regs) (hsl : cs.frame.slots = cs'.frame.slots)
     (hmem : cs.mem = cs'.mem)
     (L : LinkSysU) (hLs : L.toLinkSys = LinkSys.ofInputCleanup S.opt.inputCleanup B
-      (worldF S.opt.inputCleanup f' (S.opt.inputCleanup.D * d) r))
+      (worldF S.opt.inputCleanup f' (S.opt.inputCleanup.D * d + pbMax S.opt.inputCleanup) r))
     (hb : BaseU L) (hNI : L.OkUNI) (hkeep : Opt.EnvKeepsSymbolsX L.envX)
     (hUS : UnwSim S.opt.inputCleanup L.Ub) (hra1 : ¬ img S.opt.inputCleanup (xreg 30 r - 1))
     (hd : Clif.DepthLeX L.envX L.P d cs'.toX)

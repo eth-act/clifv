@@ -272,7 +272,9 @@ theorem fnOk_CR {env : Clif.Env} (henv : env.extern "rmw" = none) :
       subst he
       obtain ⟨-, hf, -⟩ := clifC
       rw [hf] at hp; cases hp
-      exact hsigF }
+      exact hsigF
+    probe := ArmAllocThread.ProbeF.of_small
+      (show callerRF.af.frameSize + 16 < 4096 by rw [fs_C]; decide) }
 
 /-- **`atomic_rmw` is compiled** (no extern, for every environment). -/
 theorem fnOk_R {env : Clif.Env} : FnOk linkR env pCR (fun _ => none) "rmw" rmwF fR := by
@@ -327,7 +329,8 @@ theorem fnOk_R {env : Clif.Env} : FnOk linkR env pCR (fun _ => none) "rmw" rmwF 
     dv := (callDefsVirtB_iff _).1 hdv
     uniq := fun e he => by rw [hnil] at he; cases he
     envx := hext
-    sigs := fun e he => by rw [hnil] at he; cases he }
+    sigs := fun e he => by rw [hnil] at he; cases he
+    probe := ArmAllocThread.ProbeF.of_small (show rmwF.af.frameSize + 16 < 4096 by rw [fs_R]; decide) }
 
 /-! ## The static premises of the link -/
 
@@ -353,9 +356,13 @@ theorem linkOk_R {env : Clif.Env} (henv : env.extern "rmw" = none) :
     simp only [pCR, List.mem_cons, List.not_mem_nil, or_false] at hm
     rcases hm with rfl | rfl
     · rw [name_fC]
-      exact ⟨callerRF, mem_callerR, fnOk_CR henv, frR_f, by rw [fs_C]; decide⟩
+      exact ⟨callerRF, mem_callerR, fnOk_CR henv, frR_f, by
+        rw [ArmAllocThread.Witness.probeBelow_small (af := callerRF.af) (by rw [fs_C]; decide), fs_C]
+        decide⟩
     · rw [name_fR]
-      exact ⟨rmwF, mem_rmw, fnOk_R, frR_rmw, by rw [fs_R]; decide⟩
+      exact ⟨rmwF, mem_rmw, fnOk_R, frR_rmw, by
+        rw [ArmAllocThread.Witness.probeBelow_small (af := rmwF.af) (by rw [fs_R]; decide), fs_R]
+        decide⟩
   inside := by
     intro n F h
     rcases mem_linkR h with ⟨-, rfl⟩ | ⟨-, rfl⟩
@@ -395,7 +402,7 @@ abbrev RAc : RL := linkR.act callerRF sC0 0x240 GL
 theorem stack_RAc : StackAvail 0x240 callerRF.af sC0 := by
   have hs := spC
   have hfs : callerRF.af.frameSize = 176 := hs.2.2.2.2.2.2.2.1
-  refine ⟨?_, fun a ha => ?_⟩
+  refine ⟨⟨?_, fun a ha => ?_⟩, ArmAllocThread.Witness.probeBelow_le_small (by omega)⟩
   · show callerRF.af.frameSize + 16 + 0x240 ≤ (E2E.spv RC.s0).toNat
     rw [spv_RC, hfs]; decide
   · obtain ⟨j, hj, hd⟩ := CallSeg.WitnessCR.codeAddr_words program_RC ha

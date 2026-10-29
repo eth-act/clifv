@@ -76,15 +76,17 @@ structure Caller (I : LinkInput) (file : ByteArray) (f : Clif.Function) (r : Arm
   args : ArgsRw file f.sig args r
 
 /-- **The CLIF view of the machine state** (a choice, not an obligation of the outside code): the
-CLIF state `cs` whose run the theorems are about agrees with `r` on every live byte, its live
+CLIF state `cs` whose run the theorems are about agrees with `r` on every live byte after `f`'s
+prologue stack probes (`probeMem`, #581: the body starts after them; `r`'s own bytes for a
+function without probes), its live
 allocations fit the address space, hold no code and lie in the free stack (`N` bytes) only in `f`'s
 CLIF slot region, its symbol table is the CLIF image's (the link map, which `SymsOk` ties to the
 file's symbols), and it is a reference entry state of `f` (`ClifRun`). -/
 structure ClifView (I : LinkInput) (B : BaseEnv) (f : Clif.Function) (N : Nat) (r : Arm.ArmState)
     (args : List Clif.Val) (cs : Clif.State) : Prop where
-  /-- the live CLIF bytes are the machine's -/
+  /-- the live CLIF bytes are the machine's after `f`'s stack probes -/
   bytes : ∀ a b, cs.mem.valid a 1 = true → cs.mem.bytes a = some b →
-    Arm.read_mem (BitVec.ofNat 64 a) r = b
+    probeMem (art I f).af r (BitVec.ofNat 64 a) = b
   /-- the live CLIF allocations fit the address space, hold no code, and lie in the free stack
   only in `f`'s CLIF slot region -/
   valid : ∀ a n, cs.mem.valid a n = true → a + n ≤ 2 ^ 64 ∧ ∀ k < n,
@@ -127,15 +129,16 @@ object is the machine's (`ClifView.bytes`), which is the file's (`Image.Intact`)
 object's (`BinCheck.roByte_sound`). -/
 theorem image_of {I : LinkInput} {D : List Clif.DataObject} {file : ByteArray}
     (hbin : DeadCleanupBinCheck.BinOk I D file) {r : Arm.ArmState} (hX : (imageOf file).Intact r)
-    {cm : Clif.Mem}
-    (hb : ∀ a b, cm.valid a 1 = true → cm.bytes a = some b → Arm.read_mem (BitVec.ofNat 64 a) r = b) :
+    {f : Clif.Function} {cm : Clif.Mem}
+    (hb : ∀ a b, cm.valid a 1 = true → cm.bytes a = some b →
+      probeMem (art I f).af r (BitVec.ofNat 64 a) = b) :
     ∀ a b b', cm.valid a 1 = true → cm.bytes a = some b →
-      BinCheck.roByte I D (BitVec.ofNat 64 a) = some b' → b = b' := by
-  intro a b b' hv hby hro
+      BinCheck.roByte I D (BitVec.ofNat 64 a) = some b' →
+      probeHit (art I f).af (spv r) (BitVec.ofNat 64 a) = false → b = b' := by
+  intro a b b' hv hby hro hnp
   have hs := BinCheck.roByte_sound hbin.data hro
   have hm : r.mem (BitVec.ofNat 64 a) = b' := hX _ _ hs.2 hs.1
-  rw [← hb a b hv hby, ← hm]
-  rfl
+  rw [← hb a b hv hby, probeMem_of_not hnp, hm]
 
 /-- **The boundary contract `OutsideCall` from the loader's and the caller's contracts** and the
 CLIF view, for an input that passes the crate checker and a file that passes the binary checks. -/
@@ -151,7 +154,7 @@ theorem outsideCall_of {I : LinkInput} {D : List Clif.DataObject} {file : ByteAr
   stack := hl.stack
   stackFree := stackFree_of hI hbin hl
   args := argsOut_of hI hbin hc.args
-  bytes := fun a b hva hb _ => hv.bytes a b hva hb
+  bytes := hv.bytes
   image := image_of hbin hl.intact hv.bytes
   valid := hv.valid
   symbols := hv.symbols

@@ -90,7 +90,8 @@ theorem compileExe_correct_source_contract {S : LinkSpec} {file0 file : ByteArra
     hv.run hcs hexp hsl hmem hbnd M
 
 /-- **`compileExe_correct_source_peak` under the runtime contract** (recursive programs included):
-as `compileExe_correct_source_contract`, with `frameDrop + D·d` bytes of stack for the source run's
+as `compileExe_correct_source_contract`, with `frameDrop + (D·d + pbMax)` bytes of stack (#581: the
+deepest activation's stack probes write up to `pbMax` bytes below its frame) for the source run's
 peak call depth `d`. -/
 theorem compileExe_correct_source_peak_contract {S : LinkSpec} {file0 file : ByteArray}
     (h : compileExe S file0 = .ok file) (hsrc : SrcScopeB S.inputCleanup = true)
@@ -98,9 +99,11 @@ theorem compileExe_correct_source_peak_contract {S : LinkSpec} {file0 file : Byt
     (hf : S.inputCleanup.srcProg.func? n = some f) (d : Nat)
     {r : Arm.ArmState} {args args' : List Clif.Val} {cs cs' : Clif.State}
     (hC : EntryContract S B file (legalize f)
-      (frameDrop (art S.inputCleanup (legalize f)).af + S.inputCleanup.D * d) r args')
+      (frameDrop (art S.inputCleanup (legalize f)).af +
+        (S.inputCleanup.D * d + pbMax S.inputCleanup)) r args')
     (hv : ClifView S.inputCleanup B (legalize f)
-      (frameDrop (art S.inputCleanup (legalize f)).af + S.inputCleanup.D * d) r args' cs')
+      (frameDrop (art S.inputCleanup (legalize f)).af +
+        (S.inputCleanup.D * d + pbMax S.inputCleanup)) r args' cs')
     (hcs : ClifEntry f args cs)
     (hexp : Opt.Legal.ExpRel ((Opt.Legal.groups f.sig.params).getD []) args args')
     (hsl : cs'.frame.slots = cs.frame.slots) (hmem : cs'.mem = cs.mem)

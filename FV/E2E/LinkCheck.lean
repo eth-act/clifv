@@ -283,6 +283,15 @@ def ofRes (I : LinkInput) (R : Res) (B : BaseEnv) (F : BitVec 64 → Prop) : Lin
   raStar := BitVec.ofNat 64 I.raStar
   D := I.D
 
+/-- The most bytes the stack probes of a function of the results `R` write below its body's `sp`
+(`LinkSys.pbMax` of `ofRes`, #581; `0` for a program without probes). The depth-`M` stack budget
+of the linked system is `D * M + pbMaxOf R` (`LinkSys.K`). -/
+def pbMaxOf (R : Res) : Nat :=
+  (progOf R).funcs.foldl (fun x g => max x (probeBelow (artOf R g).af)) 0
+
+theorem pbMax_ofRes (I : LinkInput) (R : Res) (B : BaseEnv) (F : BitVec 64 → Prop) :
+    (ofRes I R B F).pbMax = pbMaxOf R := rfl
+
 /-- **`LinkSys.ofInput`**: the linked system of a crate's input. -/
 def _root_.E2E.LinkSys.ofInput (I : LinkInput) (B : BaseEnv) (F : BitVec 64 → Prop) : LinkSys :=
   ofRes I I.results B F

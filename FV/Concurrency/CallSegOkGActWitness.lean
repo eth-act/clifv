@@ -84,7 +84,9 @@ theorem statOk_C {env : Clif.Env} (henv : env.extern "ld" = none) {c : BitVec 64
       subst he
       obtain ⟨-, hf, -⟩ := clifC
       rw [hf] at hp; cases hp
-      exact LinkedMachine.Witness.sig_fL }
+      exact LinkedMachine.Witness.sig_fL
+    probe := ArmAllocThread.ProbeF.of_small (show callerF.af.frameSize + 16 < 4096 by
+      rw [show callerF.af.frameSize = 160 from spC.2.2.2.2.2.2.2.1]; decide) }
 
 /-- **Non-vacuity of `chainP_entry`**: the caller from its ABI entry, every premise holding but
 the CLIF entry state, its relation to the body-entry world `w₀C` and the arguments. -/

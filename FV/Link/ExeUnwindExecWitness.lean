@@ -36,10 +36,11 @@ about the base environment, the entry and the per-state facts of the model's run
 theorem exec_applies (B : BaseEnv) (hB : BaseOk (sys spec.inputCleanup B)) (Fu d : Nat)
     {r : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State} (hX : (imageOf file).Intact r)
     (ho : OutsideCall spec.inputCleanup (BinCheck.roByte spec.inputCleanup spec.data) f
-      (frameDrop (art spec.inputCleanup f).af + spec.inputCleanup.D * d) r args cs.mem)
+      (frameDrop (art spec.inputCleanup f).af + (spec.inputCleanup.D * d + pbMax spec.inputCleanup))
+      r args cs.mem)
     (hr : ClifRun spec.inputCleanup B f r args cs)
     (L : LinkSysU) (hLs : L.toLinkSys = LinkSys.ofInputCleanup spec.inputCleanup B
-      (worldF spec.inputCleanup f (spec.inputCleanup.D * d) r))
+      (worldF spec.inputCleanup f (spec.inputCleanup.D * d + pbMax spec.inputCleanup) r))
     (hb : BaseU L) (hNI : L.OkUNI) (hUS : UnwSim spec.inputCleanup L.Ub)
     (hra1 : ¬ img spec.inputCleanup (xreg 30 r - 1))
     (hd : Clif.DepthLeX L.envX L.P d cs.toX)
@@ -59,14 +60,16 @@ theorem opt_exec_applies (B : BaseEnv) (hB : BaseOk (sys OptUnwindWitness.specO.
     (ho : OutsideCall OptUnwindWitness.specO.opt.inputCleanup
       (BinCheck.roByte OptUnwindWitness.specO.opt.inputCleanup OptUnwindWitness.specO.opt.data)
       OptUnwindWitness.f' (frameDrop (art OptUnwindWitness.specO.opt.inputCleanup
-        OptUnwindWitness.f').af + OptUnwindWitness.specO.opt.inputCleanup.D * d) r args cs'.mem)
+        OptUnwindWitness.f').af + (OptUnwindWitness.specO.opt.inputCleanup.D * d +
+          pbMax OptUnwindWitness.specO.opt.inputCleanup)) r args cs'.mem)
     (hr : ClifRun OptUnwindWitness.specO.opt.inputCleanup B OptUnwindWitness.f' r args cs')
     (hcs : ClifEntry OptUnwindWitness.f args cs)
     (hregs : cs.frame.regs = cs'.frame.regs) (hsl : cs.frame.slots = cs'.frame.slots)
     (hmem : cs.mem = cs'.mem)
     (L : LinkSysU) (hLs : L.toLinkSys = LinkSys.ofInputCleanup
       OptUnwindWitness.specO.opt.inputCleanup B (worldF OptUnwindWitness.specO.opt.inputCleanup
-        OptUnwindWitness.f' (OptUnwindWitness.specO.opt.inputCleanup.D * d) r))
+        OptUnwindWitness.f' (OptUnwindWitness.specO.opt.inputCleanup.D * d +
+          pbMax OptUnwindWitness.specO.opt.inputCleanup) r))
     (hb : BaseU L) (hNI : L.OkUNI) (hkeep : Opt.EnvKeepsSymbolsX L.envX)
     (hUS : UnwSim OptUnwindWitness.specO.opt.inputCleanup L.Ub)
     (hra1 : ¬ img OptUnwindWitness.specO.opt.inputCleanup (xreg 30 r - 1))

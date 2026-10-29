@@ -59,8 +59,8 @@ abbrev movI : Insn := .mov true Reg.fp .sp
 /-- `ldp x29, x30, [sp], #16` -/
 abbrev ldpI : Insn := .ldp Reg.fp Reg.lr (.spPostIndexed 16)
 
-theorem prologue0 : prologueLines [] 0 = [.ins stpI, .ins movI] := by
-  rfl
+theorem prologue0 {calls : Bool} : prologueLines [] 0 calls = [.ins stpI, .ins movI] := by
+  cases calls <;> rfl
 
 theorem epilogue0 : epilogueLines [] 0 = [.ins ldpI, .ins .ret] := by
   rfl

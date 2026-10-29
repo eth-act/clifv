@@ -328,7 +328,7 @@ theorem thmPRBG_ofRU (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) {M : Nat}
         vals' cm cs' rvals' cm'' ini' hmr hargs hsav (fun hN => (hpl hN).1) (fun hN => (hpl hN).2)
         hinit hrun2 _ hcOk hmsk hrgn htabC)
       obtain ⟨Fh, G', w₀', m', hWE', hME', hra', hm'⟩ := L.actualEntry hL hM hpf ⟨g, hg, hcal⟩
-        hWE.img herrW halW hroomW hdeadW hmr hargs hsav (fun hN => (hpl hN).1)
+        hWE.img herrW halW hroomW hdeadW (hκ.2 _ h hh) hmr hargs hsav (fun hN => (hpl hN).1)
         (fun hN => (hpl hN).2) hinit hrun2 hcOk hrgn
       exact ihG hM h hh Fh vals' cs' w₀' m' rvals' cm'' (calleeIni h ini') G' _ _ hWE' hME' hra'
         htabE hm' _ _ _ _ hR' herrt

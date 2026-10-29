@@ -108,9 +108,9 @@ def factsB : Bool :=
   locB &&
   LinkWitness.isRet run && decide (LinkWitness.retVals run = [⟨.i64, 6#64⟩]) &&
   (tabOf J.results).all (fun e => decide (e.2.base.toNat + 4 * e.2.fb.words.size + 4 ≤ 2 ^ 32)) &&
-  decide (frameDrop (artOf J.results f).af + J.D * M ≤ 2 ^ 20) &&
-  decide (StackBound.stackFn J f < frameDrop (artOf J.results f).af + J.D * M) &&
-  decide (16 < frameDrop (artOf J.results f).af + J.D * M) &&
+  decide (frameDrop (artOf J.results f).af + (J.D * M + pbMaxOf J.results) ≤ 2 ^ 20) &&
+  decide (StackBound.stackFn J f < frameDrop (artOf J.results f).af + (J.D * M + pbMaxOf J.results)) &&
+  decide (16 < frameDrop (artOf J.results f).af + (J.D * M + pbMaxOf J.results)) &&
   (progOf J.results).funcs.all (fun g => !Backend.hasTls g) &&
   !StackBound.goodN J n
 
@@ -123,9 +123,9 @@ theorem facts :
     locB = true ∧ LinkWitness.isRet run = true ∧ LinkWitness.retVals run = [⟨.i64, 6#64⟩] ∧
     (tabOf J.results).all (fun e => decide (e.2.base.toNat + 4 * e.2.fb.words.size + 4 ≤ 2 ^ 32))
       = true ∧
-    frameDrop (artOf J.results f).af + J.D * M ≤ 2 ^ 20 ∧
-    StackBound.stackFn J f < frameDrop (artOf J.results f).af + J.D * M ∧
-    16 < frameDrop (artOf J.results f).af + J.D * M ∧
+    frameDrop (artOf J.results f).af + (J.D * M + pbMaxOf J.results) ≤ 2 ^ 20 ∧
+    StackBound.stackFn J f < frameDrop (artOf J.results f).af + (J.D * M + pbMaxOf J.results) ∧
+    16 < frameDrop (artOf J.results f).af + (J.D * M + pbMaxOf J.results) ∧
     (progOf J.results).funcs.all (fun g => !Backend.hasTls g) = true ∧
     StackBound.goodN J n = false := by
   have h := factsB_true
@@ -264,7 +264,7 @@ theorem compileExe_rec_witness :
     StackBound.CycleFrom (StackBound.Calls J J.results) f ∧
     BaseOk (sys J closedBase) ∧ HooksSim J closedBase ∧ (prog J).func? n = some f ∧
     (imageOf file).Intact (r sp0 (memOf file)) ∧
-    OutsideCall J (BinCheck.roByte J spec.data) f (frameDrop (art J f).af + J.D * M)
+    OutsideCall J (BinCheck.roByte J spec.data) f (frameDrop (art J f).af + (J.D * M + pbMaxOf J.results))
       (r sp0 (memOf file)) args cs.mem ∧
     ClifRun J closedBase f (r sp0 (memOf file)) args cs ∧
     TrapsExplicit (Clif.linkEnvN (prog J) closedBase.env M) (prog J).bare cs ∧
@@ -290,13 +290,15 @@ theorem compileExe_rec_witness :
 `stackFn` (which, for a recursive entry, counts no callee frame), and the same call with the
 stack pointer at `16` does not meet `OutsideCall` with it. -/
 theorem stack_needed :
-    StackBound.stackFn J f < frameDrop (art J f).af + J.D * M ∧
+    StackBound.stackFn J f < frameDrop (art J f).af + (J.D * M + pbMaxOf J.results) ∧
     ∀ (m : Arm.Memory) (roB : BitVec 64 → Option (BitVec 8)),
-      ¬ OutsideCall J roB f (frameDrop (art J f).af + J.D * M) (r 16#64 m) args cs.mem := by
+      ¬ OutsideCall J roB f (frameDrop (art J f).af + (J.D * M + pbMaxOf J.results)) (r 16#64 m) args
+        cs.mem := by
   refine ⟨facts.2.2.2.2.2.2.2.2.2.2.2.1, fun m roB h => ?_⟩
   have hs := h.stack
   rw [spv_r] at hs
-  have : 16 < frameDrop (art J f).af + J.D * M := facts.2.2.2.2.2.2.2.2.2.2.2.2.1
+  have : 16 < frameDrop (art J f).af + (J.D * M + pbMaxOf J.results) :=
+    facts.2.2.2.2.2.2.2.2.2.2.2.2.1
   simp only [BitVec.toNat_ofNat] at hs
   omega
 

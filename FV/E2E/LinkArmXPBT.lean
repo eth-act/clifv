@@ -36,7 +36,7 @@ def CondBT (κ : Nat → Clif.Function → Nat) (M : Nat) (F : BitVec 64 → Pro
   ∃ vals cm cs rvals cm' ini, MemRel F L.syms cm w ∧ ArgsAt g.sig vals uses w ∧
     StackArgsAvoid F g.sig vals w ∧
     (L.NeedSlots → L.PlaceAtB cm (spv w) ini ∧ ∀ a, L.SlotByte g (spv w) a →
-      ini.bytes (ini.next + 1) a = w.mem (BitVec.ofNat 64 a)) ∧
+      ini.bytes (ini.next + 1) a = probeMem (L.A g).af w (BitVec.ofNat 64 a)) ∧
     L.TableOf (M - 1) g (enterAt (L.A g) (L.canon g uses w)) (calleeIni g ini) ∧
     Clif.initState L.P g.name vals cm = .ok cs ∧ L.crun M cs = .returned rvals cm'
 

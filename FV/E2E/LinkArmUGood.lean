@@ -172,8 +172,8 @@ theorem blrToU (hL : L.Ok) {M : Nat} {g : Clif.Function} (hg : g ∈ L.P.funcs)
 /-- **The callee's states of a call of a function of `P` that returns or raises**
 (`LinkSys.progGoodCore` with unwinding): from the callee's CLIF run (`CondU`/`CondR` of
 `progXU`/`progXR`), the caller state compatible with the call's world (`CallerOk`) and
-`progCallUNQ` one level down. -/
-theorem progGoodCoreU (hL : L.Ok) (hU : L.OkU) [L.CrunOkX] {M : Nat}
+`progCallUNQ` one level down (with the budget `hκ`, #581: the callee's budget holds its probes). -/
+theorem progGoodCoreU (hL : L.Ok) (hU : L.OkU) [L.CrunOkX] (hκ : L.Budget κ) {M : Nat}
     (ih : 0 < M → L.ThmGU κ (M - 1)) {g h : Clif.Function} (hg : g ∈ L.P.funcs)
     (hh : h ∈ L.P.funcs) (hcallee : L.Callee g h) {F G : BitVec 64 → Prop} {s0 : Arm.ArmState}
     (himgF : ∀ a, L.Img a → F a) (himgG : ∀ a, L.Img a → G a)
@@ -206,7 +206,8 @@ theorem progGoodCoreU (hL : L.Ok) (hU : L.OkU) [L.CrunOkX] {M : Nat}
         hrun⟩, -⟩ := hcond
       obtain ⟨M', rfl⟩ : ∃ M', M = M' + 1 := ⟨M - 1, by omega⟩
       obtain ⟨_, _, _, -, -, -, -, -, hcall, -⟩ :=
-        (L.progCallUNQ hL hU (M := M') (ih hM) hpf ⟨g, hg, hcallee⟩ himgF herrw halw hroom hdead hmr
+        (L.progCallUNQ hL hU (M := M') (ih hM) hpf ⟨g, hg, hcallee⟩ himgF herrw halw hroom hdead
+          (hκ.2 _ h hh) hmr
           hargs hsav hpl hinit).1 rvals cm' hrun
       obtain ⟨_, -, -, -, hrg⟩ := hcall t hcOk
       exact hrg
@@ -218,7 +219,8 @@ theorem progGoodCoreU (hL : L.Ok) (hU : L.OkU) [L.CrunOkX] {M : Nat}
         hrun⟩ := hcond
       obtain ⟨M', rfl⟩ : ∃ M', M = M' + 1 := ⟨M - 1, by omega⟩
       obtain ⟨_, _, -, -, hcall, -⟩ :=
-        (L.progCallUNQ hL hU (M := M') (ih hM) hpf ⟨g, hg, hcallee⟩ himgF herrw halw hroom hdead hmr
+        (L.progCallUNQ hL hU (M := M') (ih hM) hpf ⟨g, hg, hcallee⟩ himgF herrw halw hroom hdead
+          (hκ.2 _ h hh) hmr
           hargs hsav hpl hinit).2 e cm' hrun
       obtain ⟨_, -, -, hrg⟩ := hcall t hcOk
       exact hrg
@@ -228,8 +230,8 @@ theorem progGoodCoreU (hL : L.Ok) (hU : L.OkU) [L.CrunOkX] {M : Nat}
 state `u` of the activation of `g` at depth `M` where the callee contract's premise holds for a
 callee that returns (`RL.CallPre`) or raises (`RLU.CallPreU`) and the machine calls `h`
 (`CallsAtU`), every state of `h`'s run entered from `u` whose step ends without error has the
-per-state facts (`progGoodCoreU`). -/
-theorem callGoodU (hL : L.Ok) (hU : L.OkU) [L.CrunOkX] {M : Nat}
+per-state facts (`progGoodCoreU`; with the budget `hκ`, #581). -/
+theorem callGoodU (hL : L.Ok) (hU : L.OkU) [L.CrunOkX] (hκ : L.Budget κ) {M : Nat}
     (ih : 0 < M → L.ThmGU κ (M - 1)) {g : Clif.Function} (hg : g ∈ L.P.funcs)
     {F G : BitVec 64 → Prop} {ra : BitVec 64} {s w₀ : Arm.ArmState}
     (he : L.MachEntry κ M g F G ra s w₀) {u : Arm.ArmState} {h : Clif.Function}
@@ -277,7 +279,7 @@ theorem callGoodU (hL : L.Ok) (hU : L.OkU) [L.CrunOkX] {M : Nat}
       (fun p hp r hr => (hloc p hp).2 r hr)
     simp only [callDest] at hx
     rw [L.XU_prog hpf, L.XRU_prog hpf, call_useVals hregs] at hx
-    exact L.progGoodCoreU hL hU ih hg hh (.inl ⟨_, hps⟩) he.imgF he.imgG he.imgS hLu hGk
+    exact L.progGoodCoreU hL hU hκ ih hg hh (.inl ⟨_, hps⟩) he.imgF he.imgG he.imgS hLu hGk
       (hL.raCall g hg _ h hps _ hcp) hsw hx
   | reg r =>
     have hreg : ∀ n, info.dest ≠ .sym n := fun n => by rw [hd]; simp
@@ -326,7 +328,7 @@ theorem callGoodU (hL : L.Ok) (hU : L.OkU) [L.CrunOkX] {M : Nat}
       simp only [List.head?_cons, Option.map_some, Option.some.injEq] at e
       exact L.got_target hL hs e
     obtain ⟨hLu, -⟩ := hregs h hh ⟨hdecl.1, hgot⟩ (by rw [← hdecl.2, List.length_map])
-    exact L.progGoodCoreU hL hU ih hg hh (.inr (.inr ⟨hh, hdecl.1.1⟩)) he.imgF he.imgG he.imgS
+    exact L.progGoodCoreU hL hU hκ ih hg hh (.inr (.inr ⟨hh, hdecl.1.1⟩)) he.imgF he.imgG he.imgS
       hLu hGk (hL.raBlr g hg _ hsite hreg h hh hdecl.1.1 _ hcp) hsw hx
 
 /-- A returning activation (`ActRet`) has returned in the sense of `RetU`. -/
@@ -375,8 +377,8 @@ theorem prog_of_good {M : Nat} {g : Clif.Function} {F G : BitVec 64 → Prop} {s
 /-- **The states of the activation of `g` at depth `M` entered in `s`** from its trace with
 unwinding (`actGoodXU` of every state before `n`), when every state before its return whose step
 ends without error is before `n` (`LinkSys.runGood_of_trace` with unwinding): its own states from
-the trace, the nested ones from the call states (`callGoodU`). -/
-theorem runGood_of_traceU (hL : L.Ok) (hU : L.OkU) [L.CrunOkX] {M : Nat}
+the trace, the nested ones from the call states (`callGoodU`; with the budget `hκ`, #581). -/
+theorem runGood_of_traceU (hL : L.Ok) (hU : L.OkU) [L.CrunOkX] (hκ : L.Budget κ) {M : Nat}
     (ih : 0 < M → L.ThmGU κ (M - 1)) {g : Clif.Function} (hg : g ∈ L.P.funcs)
     {F G : BitVec 64 → Prop} {ra : BitVec 64} {s w₀ : Arm.ArmState}
     (he : L.MachEntry κ M g F G ra s w₀) {n : Nat}
@@ -421,7 +423,7 @@ theorem runGood_of_traceU (hL : L.Ok) (hU : L.OkU) [L.CrunOkX] {M : Nat}
       rcases hcall with ⟨n, hn, -⟩ | ⟨⟨r, hr⟩, -⟩
       · exact ⟨_, by rw [← hb0]; exact hn, .inl ⟨n, rfl⟩⟩
       · exact ⟨_, by rw [← hb0]; exact hr, .inr ⟨r, rfl⟩⟩
-    exact L.callGoodU hL hU ih hg he (L.pre_of_good hsz hG hx hcx) hprog hcall _ _ _ _ hR' herrt
+    exact L.callGoodU hL hU hκ ih hg he (L.pre_of_good hsz hG hx hcx) hprog hcall _ _ _ _ hR' herrt
 
 end LinkSysU
 

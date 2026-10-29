@@ -39,7 +39,8 @@ theorem progCallP_Lu (M : Nat) {n : String} {h : Clif.Function} (hpf : Lu.P.func
   obtain ⟨hh, -⟩ := Clif.Program.func?_some hpf
   obtain ⟨us, outs, wf, -, -, -, -, -, hall, -⟩ :=
     Lu.progCallP (κ := fun M _ => Lu.K M) Lu_ok (M := M + 1) (Nat.succ_pos M) (thmPDE_LU M)
-      hpf hcal hib himgF herr hal hroom hdead hmr hargs hsav hpl hinit hrun
+      hpf hcal hib himgF herr hal hroom hdead ((Lu.budget_K Lu_ok).2 _ h hh) hmr hargs hsav hpl
+      hinit hrun
   obtain ⟨k, h1, h2⟩ := hall _ (Lu.callerOk_canon Lu_ok hh himgF uses w)
     (Lu.canon_agree (κ := fun M _ => Lu.K M) h uses w (M + 1)).1
     (Lu.canon_agree (κ := fun M _ => Lu.K M) h uses w (M + 1)).2

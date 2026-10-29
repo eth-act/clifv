@@ -12,7 +12,8 @@ need not lie below `2^64`). Their variants here, `compileExe_correct_source_nobn
   The source run enters only callees of the compiled program (`SrcBounded.callee_of_enter`).
   With program callees having stack slots (`NeedSlots`) the reference run places every
   activation's slots in its compiled frame (`ClifRun.place`), within the stack the outside caller
-  provides (`OutsideCall.stack`: `stackFn`, or `frameDrop + D * d` for call depth `d`), so they
+  provides (`OutsideCall.stack`: `stackFn`, or `frameDrop + (D * d + pbMax)` for call depth `d`;
+  #581: the deepest activation's stack probes write up to `pbMax` bytes below its frame), so they
   never wrap (`SrcBounded.bounded_placed`); without, no entered function has slots
   (`SrcBounded.bounded_slotless`). The externs keep valid ranges below `2^64` (the `i128`
   premise `EnvKeepsBounded`) and the oracle (`BaseOk.baseKeepsPlace`);
@@ -239,18 +240,21 @@ theorem srcBounded_peak {S : LinkSpec} {file0 file : ByteArray}
     {n : String} {f : Clif.Function} (hf : S.inputCleanup.srcProg.func? n = some f) (d : Nat)
     {r : Arm.ArmState} {args args' : List Clif.Val} {cs cs' : Clif.State}
     (ho : OutsideCall S.inputCleanup (BinCheck.roByte S.inputCleanup S.data) (legalize f)
-      (frameDrop (art S.inputCleanup (legalize f)).af + S.inputCleanup.D * d) r args' cs'.mem)
+      (frameDrop (art S.inputCleanup (legalize f)).af +
+        (S.inputCleanup.D * d + pbMax S.inputCleanup)) r args' cs'.mem)
     (hr : ClifRun S.inputCleanup B (legalize f) r args' cs')
     (hcs : ClifEntry f args cs) (hmem : cs'.mem = cs.mem)
     (hd : Clif.DepthLe B.env S.inputCleanup.srcProg d cs) :
     ∀ s', Opt.Legal.SReach B.env S.inputCleanup.srcProg cs s' → Opt.Legal.MemBounded s'.mem := by
   refine srcBounded_gen h hsrc B hB hlegal hsig hm hf ho hr hcs hmem
-    (fun k _ => S.inputCleanup.D * (d - k)) (fun _ => True) (by simp) trivial ?_
+    (fun k _ => S.inputCleanup.D * (d - k) + pbMax S.inputCleanup) (fun _ => True) (by simp)
+    trivial ?_
   intro k g h' _ _ _ _ hD ⟨t1, ht1, hlen⟩
   have hk : k + 1 ≤ d := hlen ▸ hd t1 (reaches_of_sreach ht1)
   refine ⟨?_, trivial⟩
   have e : d - k = (d - (k + 1)) + 1 := by omega
-  show frameDrop _ + S.inputCleanup.D * (d - (k + 1)) ≤ S.inputCleanup.D * (d - k)
+  show frameDrop _ + (S.inputCleanup.D * (d - (k + 1)) + pbMax S.inputCleanup) ≤
+    S.inputCleanup.D * (d - k) + pbMax S.inputCleanup
   rw [e, Nat.mul_succ]
   omega
 
@@ -397,7 +401,8 @@ theorem compileExe_correct_source_peak_nobnd {S : LinkSpec} {file0 file : ByteAr
     {r : Arm.ArmState} {args args' : List Clif.Val} {cs cs' : Clif.State}
     (hX : (imageOf file).Intact r)
     (ho : OutsideCall S.inputCleanup (BinCheck.roByte S.inputCleanup S.data) (legalize f)
-      (frameDrop (art S.inputCleanup (legalize f)).af + S.inputCleanup.D * d) r args' cs'.mem)
+      (frameDrop (art S.inputCleanup (legalize f)).af +
+        (S.inputCleanup.D * d + pbMax S.inputCleanup)) r args' cs'.mem)
     (hr : ClifRun S.inputCleanup B (legalize f) r args' cs')
     (hcs : ClifEntry f args cs)
     (hexp : Opt.Legal.ExpRel ((Opt.Legal.groups f.sig.params).getD []) args args')

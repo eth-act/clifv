@@ -322,7 +322,7 @@ theorem trapIn_callTrapG (hL : L.Ok) [hR : L.CrunOk] (hB : L.BaseTrapsOk) (hκ :
         rw [← huv, hd2] at hcOk
         have hTI : L.TrapIn M' h (enterAt (L.A h) u) tc := L.progCallTG hL (Nat.succ_pos M')
           (ih (Nat.succ_pos M')) hpfh ⟨g, hg, hcallee⟩
-          hWE.img herrw hal' hroom' hdead' hmemR0 hargs hsav hpl' hinit hret hDn u hcOk
+          hWE.img herrw hal' hroom' hdead' (hκ.2 _ h hh) hmemR0 hargs hsav hpl' hinit hret hDn u hcOk
         have hjunk := L.pcall_junk hL hh hTI hra
         have hhook : (L.hooks (M' + 1)).call (destOf info) u = L.pcall (M' + 1) h u := by
           rw [destOf_eq_callDest, hd1]; exact L.hooks_some hpf u
@@ -363,7 +363,7 @@ theorem trapIn_callTrapG (hL : L.Ok) [hR : L.CrunOk] (hB : L.BaseTrapsOk) (hκ :
         rw [h2] at hcOk
         have hTI : L.TrapIn M' h (enterAt (L.A h) u) tc := L.progCallTG hL (Nat.succ_pos M')
           (ih (Nat.succ_pos M')) hpfh ⟨g, hg, hcallee⟩
-          hWE.img herrw hal' hroom' hdead' hmemR0 hargs hsav hpl' hinit hret hDn u hcOk
+          hWE.img herrw hal' hroom' hdead' (hκ.2 _ h hh) hmemR0 hargs hsav hpl' hinit hret hDn u hcOk
         have hjunk := L.pcall_junk hL hh hTI hra
         have hb : (blrTarget u).bind (symCallee L.Xb L.P) = some h := by rw [htgt]; exact hs
         have hhook : (L.hooks (M' + 1)).call (destOf info) u = L.pcall (M' + 1) h u := by
@@ -450,7 +450,7 @@ theorem trapIn_callTrapG (hL : L.Ok) [hR : L.CrunOk] (hB : L.BaseTrapsOk) (hκ :
       rw [h2] at hcOk
       have hTI : L.TrapIn M' h (enterAt (L.A h) u) tc := L.progCallTG hL (Nat.succ_pos M')
         (ih (Nat.succ_pos M')) hpf ⟨g, hg, hcallee⟩
-        hWE.img herrw hal' hroom' hdead' hmemR0 hargs hsav hpl' hinit hret hDn u hcOk
+        hWE.img herrw hal' hroom' hdead' (hκ.2 _ h hh) hmemR0 hargs hsav hpl' hinit hret hDn u hcOk
       have hjunk := L.pcall_junk hL hh hTI hra
       have hb : (blrTarget u).bind (symCallee L.Xb L.P) = some h := by rw [htgt]; exact hs
       have hhook : (L.hooks (M' + 1)).call (destOf info) u = L.pcall (M' + 1) h u := by
@@ -507,7 +507,7 @@ theorem thmT_of (hL : L.Ok) [hR : L.CrunOk] (hT : L.TrapsOk) (hB : L.BaseTrapsOk
     (X := L.X κ M g F) (syms := L.syms) (K := κ M g) (F := F) (c := spv w₀) (hL.covered g hg)
     (xCallsOk_cut (L.xCallsOk hL hκ ihR hg hWE.img hWE.room hWE.dead hWE.align))
     (xCallsIndOk_cut (L.xCallsIndOk hL hκ ihR hg hWE.img hWE.room hWE.dead hWE.align))
-    (L.xTrapsOk hL hB ih hg hWE.img)
+    (L.xTrapsOk hL hB hκ ih hg hWE.img)
     (fun n b hn => hL.symOk n b hn) rfl hWE.clif hWE.rel hWE.args htrE hrunE
     (L.hooks M) G (L.A g).base ra s hAE
   have hroom : frameDrop (L.A g).af ≤ (spv s).toNat := by

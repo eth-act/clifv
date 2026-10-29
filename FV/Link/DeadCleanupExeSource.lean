@@ -15,7 +15,8 @@ compiler's theorems (`compileExe_correct`, `compileExe_correct_peak`).
 * **`compileExe_correct_source`**: an entry that reaches no call cycle (stack bound
   `DeadCleanupStackBound.stackFn`);
 * **`compileExe_correct_source_peak`**: any entry, recursive ones included, with
-  `frameDrop + D * d` bytes of stack for the source run's call depth `d`.
+  `frameDrop + (D * d + pbMax)` bytes of stack for the source run's call depth `d` (#581: with the
+  stack probes of the deepest activation).
 
 The premises are those of the baseline theorems, about the cleanup input `S.inputCleanup`.
 -/
@@ -142,7 +143,8 @@ theorem compileExe_correct_source {S : LinkSpec} {file0 file : ByteArray}
 
 /-- **The shipped executable compiler refines the original source program, recursive programs
 included** (S3, L1d): `Link.compileExe_correct_source_peak` for `Link.DeadCleanup.compileExe`.
-No call-graph premise; the outside caller of `legalize f`'s code provides `frameDrop + D * d`
+No call-graph premise; the outside caller of `legalize f`'s code provides
+`frameDrop + (D * d + pbMax)` (#581: with the stack probes of the deepest activation)
 bytes of stack, where `d` bounds the call depth of the **source** run from `cs`
 (`Clif.DepthLe`). A return of the source run is the executable's return of the results split by
 `f`'s return groups with the same memory; a trap (of a source run without load/store traps, the
@@ -157,7 +159,8 @@ theorem compileExe_correct_source_peak {S : LinkSpec} {file0 file : ByteArray}
     {r : Arm.ArmState} {args args' : List Clif.Val} {cs cs' : Clif.State}
     (hX : (imageOf file).Intact r)
     (ho : OutsideCall S.inputCleanup (BinCheck.roByte S.inputCleanup S.data) (legalize f)
-      (frameDrop (art S.inputCleanup (legalize f)).af + S.inputCleanup.D * d) r args' cs'.mem)
+      (frameDrop (art S.inputCleanup (legalize f)).af +
+        (S.inputCleanup.D * d + pbMax S.inputCleanup)) r args' cs'.mem)
     (hr : ClifRun S.inputCleanup B (legalize f) r args' cs')
     (hcs : ClifEntry f args cs)
     (hexp : Opt.Legal.ExpRel ((Opt.Legal.groups f.sig.params).getD []) args args')

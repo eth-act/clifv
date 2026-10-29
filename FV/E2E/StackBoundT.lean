@@ -35,7 +35,7 @@ theorem backend_correct_program_stackT (L : LinkSys) (hL : L.OkT) {κ : Nat → 
     ArmRefinesT (L.A f).fb (L.A f).base ra (L.mach M f) s (Clif.runLoop L.base L.P (M + 1) cs) := by
   have hd := L.frameDrop_eqT hL hf
   have hres : StackAvail b (L.A f).af s := by
-    unfold StackAvail
+    refine ⟨?_, by rw [← hb M]; exact hκ.2 M f hf⟩
     rw [show (L.A f).af.frameSize + 16 + b = frameDrop (L.A f).af + b by omega]
     refine stackRoom_of hroom fun a ha => hgfree a (hL.imgAddr f hf a ?_)
     simpa [CodeAddr, hent.program] using ha
@@ -95,6 +95,7 @@ environment). -/
 theorem budget_ofT {I : LinkInput} (hI : okBT I = true) (B : BaseEnv) (F : BitVec 64 → Prop) :
     (LinkSys.ofInput I B F).Budget ((LinkSys.ofInput I B F).hybrid (budO I) (budMax I)) := by
   refine LinkSys.budget_hybrid _ _ _ (fun h hh => (factsT hI hh).depth) ?_ ?_
+    fun g hg bg hbg => budC_probe (I := I) (R := I.results) (okB_namesT hI) hg hbg
   · intro g hg bg hbg h hcl
     have hok := budOkW_budMap (I := I) (R := I.results) (okB_namesT hI)
     have he := edgeB_of_calleeT hI hg hcl

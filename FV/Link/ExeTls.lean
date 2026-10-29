@@ -36,7 +36,7 @@ theorem compileExe_correct_tls {S : LinkSpec} {file0 file : ByteArray}
     (outsideAvoids_leanLink hl _ _ _ _ _) hr htr hL
 
 /-- **`compileExe_correct_depth` without the TLS hook** (recursive programs; the stack
-`frameDrop + D * M`). -/
+`frameDrop + (D * M + pbMax)`, #581). -/
 theorem compileExe_correct_depth_tls {S : LinkSpec} {file0 file : ByteArray}
     (h : compileExe S file0 = .ok file) (B : BaseEnv) (hB : BaseOk (sys S.input (leBase S.input B file)))
     (hHc : ∀ d m e, Sim S.input m e → Sim S.input (B.hooks.call d m) (B.hooks.call d e))
@@ -44,7 +44,7 @@ theorem compileExe_correct_depth_tls {S : LinkSpec} {file0 file : ByteArray}
     (M : Nat) {r : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State}
     (hX : (imageOf file).Intact r)
     (ho : OutsideCall S.input (BinCheck.roByte S.input S.data) f
-      (frameDrop (art S.input f).af + S.input.D * M) r args cs.mem)
+      (frameDrop (art S.input f).af + (S.input.D * M + pbMax S.input)) r args cs.mem)
     (hr : ClifRun S.input B f r args cs)
     (htr : TrapsExplicit (Clif.linkEnvN (prog S.input) B.env M) (prog S.input).bare cs)
     (hL : TlsLoader S.input B file r) :
@@ -55,7 +55,7 @@ theorem compileExe_correct_depth_tls {S : LinkSpec} {file0 file : ByteArray}
     (codeMap_leanLink hl) (binOk_leanLink hl) (gotOk_leanLink hl) B hB hHc hf M hX ho
     (outsideAvoids_leanLink hl _ _ _ _ _) hr htr hL
 
-/-- **`compileExe_correct_peak` without the TLS hook** (the stack `frameDrop + D * d` for the
+/-- **`compileExe_correct_peak` without the TLS hook** (the stack `frameDrop + (D * d + pbMax)` for the
 run's peak call depth `d`). -/
 theorem compileExe_correct_peak_tls {S : LinkSpec} {file0 file : ByteArray}
     (h : compileExe S file0 = .ok file) (B : BaseEnv) (hB : BaseOk (sys S.input (leBase S.input B file)))
@@ -64,7 +64,7 @@ theorem compileExe_correct_peak_tls {S : LinkSpec} {file0 file : ByteArray}
     (F d : Nat) {r : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State}
     (hX : (imageOf file).Intact r)
     (ho : OutsideCall S.input (BinCheck.roByte S.input S.data) f
-      (frameDrop (art S.input f).af + S.input.D * d) r args cs.mem)
+      (frameDrop (art S.input f).af + (S.input.D * d + pbMax S.input)) r args cs.mem)
     (hr : ClifRun S.input B f r args cs)
     (hd : Clif.DepthLe B.env (prog S.input) d cs)
     (htr : TrapsExplicit (Clif.linkEnvD (prog S.input) B.env F d) (prog S.input).bare cs)

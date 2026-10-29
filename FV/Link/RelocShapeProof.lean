@@ -310,13 +310,14 @@ theorem lines_seqOk {c : FnCtx} {m : MInst} {ps ps' : PState} {ls : List Line}
 
 /-! ## Prologue, epilogue, blocks, traps -/
 
-theorem prologueLines_free (saves : List Reg) (size : Nat) :
-    ∀ ln ∈ prologueLines saves size, lnFree ln = true := by
+theorem prologueLines_free {calls : Bool} (saves : List Reg) (size : Nat) :
+    ∀ ln ∈ prologueLines saves size calls, lnFree ln = true := by
   intro ln hl
   simp only [prologueLines, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hl
-  rcases hl with (((rfl | rfl) | hl) | hl) | hl
+  rcases hl with ((((rfl | rfl) | hl) | hl) | hl) | hl
   · exact rfl
   · exact rfl
+  · rcases probeLines_mem hl with rfl | rfl | ⟨_, rfl⟩ <;> exact rfl
   · obtain ⟨i, rfl, a, b, rfl | rfl⟩ := mem_pushLines hl <;> exact rfl
   · obtain ⟨i, rfl, a, b, rfl | rfl⟩ := mem_pushLines hl <;> exact rfl
   · rcases mem_spAdjLines hl with ⟨i, -, rfl⟩ | hl | rfl

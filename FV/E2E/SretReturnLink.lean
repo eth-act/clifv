@@ -159,7 +159,7 @@ theorem backend_correct_program_stack_abi (L : LinkSys) (hL : L.Ok)
       (Clif.runLoop L.base L.P (M + 1) cs) := by
   have hd := L.frameDrop_eq hL hf
   have hres : StackAvail b (L.A f).af s := by
-    unfold StackAvail
+    refine ⟨?_, by rw [← hb M]; exact hκ.2 M f hf⟩
     rw [show (L.A f).af.frameSize + 16 + b = frameDrop (L.A f).af + b by omega]
     refine stackRoom_of hroom fun a ha => hgfree a (hL.imgAddr f hf a ?_)
     simpa [CodeAddr, hent.program] using ha

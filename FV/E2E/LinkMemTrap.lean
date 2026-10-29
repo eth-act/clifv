@@ -60,7 +60,8 @@ def RunGoodLB (n M : Nat) (f : Clif.Function) (c : Arm.ArmState) : Prop :=
 
 /-- **The states of an activation's run before step `n`** from its trace (`runGood_of_trace`
 without the bound on the run's other states). -/
-theorem runGoodB_of_trace (hL : L.Ok) [L.CrunOk] {M : Nat} (ihG : 0 < M → L.ThmG κ (M - 1))
+theorem runGoodB_of_trace (hL : L.Ok) [L.CrunOk] (hκ : L.Budget κ) {M : Nat}
+    (ihG : 0 < M → L.ThmG κ (M - 1))
     {g : Clif.Function} (hg : g ∈ L.P.funcs) {F G : BitVec 64 → Prop} {ra : BitVec 64}
     {s w₀ : Arm.ArmState} (he : L.MachEntry κ M g F G ra s w₀) {n : Nat}
     (hgood : ∀ i < n, actGoodX (L.A g).vcp (L.A g).rf (L.A g).af (L.A g).fa (L.A g).fb
@@ -99,7 +100,7 @@ theorem runGoodB_of_trace (hL : L.Ok) [L.CrunOk] {M : Nat} (ihG : 0 < M → L.Th
       rcases hcall with ⟨n', hn', -⟩ | ⟨⟨r', hr'⟩, -⟩
       · rw [hins] at hn'; cases hn'; exact hG.call _ ⟨j, tt, hj, hpc⟩ (.inl ⟨n', rfl⟩)
       · rw [hins] at hr'; cases hr'; exact hG.call _ ⟨j, tt, hj, hpc⟩ (.inr ⟨r', rfl⟩)
-    exact L.callGood hL ihG hg he hpre hG.prog hcall _ _ _ _ hR' herrt
+    exact L.callGood hL hκ ihG hg he hpre hG.prog hcall _ _ _ _ hR' herrt
 
 /-- The run premise with memory traps of `P.bare` under `linkEnvR` is the one under `envOf`. -/
 theorem trapsExplicitM_envOf (hL : L.Ok) [L.CrunOk] {M : Nat} {g : Clif.Function}
@@ -225,7 +226,7 @@ theorem backend_correct_program_memtrap_core (L : LinkSys) (hL : L.Ok) [L.CrunOk
       L.calleeOk hL hκ ih hf hME,
       fun _ => L.calleeTryOk hL hκ ih hf hME,
       fun ht => L.tlsOk_hooks (hL.baseTls f hf (hasTls_of_vcode_pipeline hc ht) L.F (κ M f)), hME.body⟩
-  exact ⟨n, htrap, L.runGoodB_of_trace hL (fun _ => L.thmG hL hκ (M - 1)) hf hME hgood⟩
+  exact ⟨n, htrap, L.runGoodB_of_trace hL hκ (fun _ => L.thmG hL hκ (M - 1)) hf hME hgood⟩
 
 /-- **A memory trap of the entry function in the linked program** (the callees run at most `M`
 steps, `LinkSys.std`): a whole-program run of `f` that traps with `c` under `TrapsExplicitM` and
