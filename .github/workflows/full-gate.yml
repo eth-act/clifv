@@ -212,7 +212,9 @@ jobs:
       - name: Audit
         run: |
           mkdir -p gate-logs
-          lake build FV 2>&1 | tail -n 1
+          # restore (from lake-full) every library the audit files import: `lake env lean` builds
+          # nothing, and concurrency/floats-* import FVTest modules
+          lake build $LEAN_TARGETS 2>&1 | tail -n 1
           set -o pipefail
           python3 scripts/axiom-audit.py --log-dir gate-logs | tee gate-logs/summary.txt
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
