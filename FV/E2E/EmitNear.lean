@@ -990,6 +990,8 @@ theorem moveInsts_isLitLoad {fr : RAFrame} {src dst : Loc} {l : List AInst}
   unfold RAFrame.moveInsts at h
   simp only [bind, Except.bind, pure, Except.pure] at h
   split at h
+  · cases h; cases hm
+  · cases h; cases hm
   · split at h
     · cases h
       simp only [List.mem_singleton, AInst.inst.injEq] at hm
