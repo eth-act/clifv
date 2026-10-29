@@ -89,7 +89,7 @@ structure LState where
 @[expose] def opcodeV (name : String) : V := mkVariant tyOpcode name
 @[expose] def instDataV (fmt : String) (fs : List V) : V := mkVariant tyInstData fmt fs
 
-def intccName : Clif.IntCC → String
+@[expose] def intccName : Clif.IntCC → String
   | .eq => "Equal" | .ne => "NotEqual" | .slt => "SignedLessThan"
   | .sge => "SignedGreaterThanOrEqual" | .sgt => "SignedGreaterThan"
   | .sle => "SignedLessThanOrEqual" | .ult => "UnsignedLessThan"
@@ -97,7 +97,7 @@ def intccName : Clif.IntCC → String
   | .ule => "UnsignedLessThanOrEqual"
 
 /-- `lower_condcode`, on the variant index of an ISLE `IntCC` value. -/
-def condOfIntCC : Nat → Option Cond
+@[expose] def condOfIntCC : Nat → Option Cond
   | VIdx.IntCC.Equal => some .eq | VIdx.IntCC.NotEqual => some .ne
   | VIdx.IntCC.SignedGreaterThanOrEqual => some .ge | VIdx.IntCC.SignedGreaterThan => some .gt
   | VIdx.IntCC.SignedLessThanOrEqual => some .le | VIdx.IntCC.SignedLessThan => some .lt
@@ -188,7 +188,7 @@ def fccOk : Clif.FloatCC → Bool
 
 /-- The `Imm64` of `iconst.ty imm`: the reader masks it to the type's width
 (`InstructionData::mask_immediates`), so it is the zero-extended value as an `i64`. -/
-def imm64OfIconst (ty : Clif.Ty) (imm : BitVec ty.width) : Int :=
+@[expose] def imm64OfIconst (ty : Clif.Ty) (imm : BitVec ty.width) : Int :=
   if ty.width < 64 then imm.toNat else imm.toInt
 
 /-- Integer types of E: `i8..i64` (not `i128`, no floats). -/
@@ -730,7 +730,7 @@ terminator with `try_call_info` `info`. -/
   | some (.call c) => ms.dropLast ++ [.tryCall c info]
   | _ => ms
 
-def storeOpOfBytes : Nat → StoreOp
+@[expose] def storeOpOfBytes : Nat → StoreOp
   | 1 => .store8 | 2 => .store16 | 4 => .store32 | _ => .store64
 
 @[expose] def loadOpOfBytes : Nat → LoadOp
@@ -763,11 +763,11 @@ section Helpers
 variable (ctx : Ctx)
 
 @[expose] def Ctx.valueType? (v : Nat) : Option CTy := (ctx.valTy[v]?).join
-def Ctx.defInst? (v : Nat) : Option Nat := (ctx.valDef[v]?).join
+@[expose] def Ctx.defInst? (v : Nat) : Option Nat := (ctx.valDef[v]?).join
 @[expose] def Ctx.defClif? (v : Nat) : Option Clif.Inst := do
   let i ← ctx.defInst? v
   (← ctx.insts[i]?).clif
-def Ctx.valueReg? (v : Nat) : Option Reg := (ctx.valReg[v]?).join
+@[expose] def Ctx.valueReg? (v : Nat) : Option Reg := (ctx.valReg[v]?).join
 
 end Helpers
 
@@ -784,7 +784,7 @@ end Helpers
   | _ => i
 
 /-- Sign-extend the low `bits` bits of `i` (`sign_extend_from_width`). -/
-def sextFrom (bits : Nat) (i : Int) : Int :=
+@[expose] def sextFrom (bits : Nat) (i : Int) : Int :=
   if bits = 0 then i else
   let m := i % (2 ^ bits : Int)
   if m ≥ (2 ^ (bits - 1) : Int) then m - 2 ^ bits else m
@@ -794,7 +794,7 @@ def sextFrom (bits : Nat) (i : Int) : Int :=
 
 /-- Extern `Type → Option Type` predicates of `isle_prelude.rs` / `aarch64/lower/isle.rs`, by
 term id (no dynamic vectors exist here: `is_dynamic_vector` is false). -/
-def tyPred : TermId → Option (CTy → Bool)
+@[expose] def tyPred : TermId → Option (CTy → Bool)
   | TId.fits_in_16 => some fun t => t.bits ≤ 16
   | TId.fits_in_32 => some fun t => t.bits ≤ 32
   | TId.fits_in_64 => some fun t => t.bits ≤ 64
@@ -827,7 +827,7 @@ def tyPred : TermId → Option (CTy → Bool)
   | _ => none
 
 /-- The variant index of an `IntCC` value. -/
-def V.intcc? : V → Option Nat := V.enum? tyIntCC some
+@[expose] def V.intcc? : V → Option Nat := V.enum? tyIntCC some
 
 open Isle (ExtResult) in
 /-- Extern extractors: the input value to the term's argument values. Dispatch is on the term
@@ -948,21 +948,21 @@ id (`Isle.Aarch64.TId.*`, generated), a `Nat`-literal match. -/
 
 /-- `ASIMDFPModImm::value16` (aarch64/inst/imms.rs:830-838): the 16-bit value of an 8-bit
 encoding `0b_abcdefgh`, `0b_aBbb_cdef_gh00_0000`. -/
-def fpImmValue16 (imm : Nat) : Nat :=
+@[expose] def fpImmValue16 (imm : Nat) : Nat :=
   let b05 := imm % 64
   let b6 := (imm / 64) % 2
   let b7 := (imm / 128) % 2
   b05 * 2 ^ 6 + (b6 * 3) * 2 ^ 12 + (1 - b6) * 2 ^ 14 + b7 * 2 ^ 15
 
 /-- `ASIMDFPModImm::value32` (imms.rs:841-850): `0b_aBbb_bbbc_defg_h000 << 16`. -/
-def fpImmValue32 (imm : Nat) : Nat :=
+@[expose] def fpImmValue32 (imm : Nat) : Nat :=
   let b05 := imm % 64
   let b6 := (imm / 64) % 2
   let b7 := (imm / 128) % 2
   b05 * 2 ^ 19 + (b6 * 31) * 2 ^ 25 + (1 - b6) * 2 ^ 30 + b7 * 2 ^ 31
 
 /-- `ASIMDFPModImm::value64` (imms.rs:852-861): `0b_aBbb_bbbb_bbcd_efgh << 48`. -/
-def fpImmValue64 (imm : Nat) : Nat :=
+@[expose] def fpImmValue64 (imm : Nat) : Nat :=
   let b05 := imm % 64
   let b6 := (imm / 64) % 2
   let b7 := (imm / 128) % 2
@@ -971,7 +971,7 @@ def fpImmValue64 (imm : Nat) : Nat :=
 /-- `ASIMDFPModImm::maybe_from_u64` (imms.rs:773-823): the candidate encoding gathers bits
 `b0_5` (6 bits from the exponent's low end), `b6` and `b7` (the sign) of the value truncated to
 the size; it is the immediate when its value is the value. Other sizes: `None`. -/
-def fpModImm? (value : Nat) (s : ScalarSize) : Option ASIMDFPModImm :=
+@[expose] def fpModImm? (value : Nat) (s : ScalarSize) : Option ASIMDFPModImm :=
   match s with
   | .size16 =>
     let v := value % 2 ^ 16

@@ -70,7 +70,7 @@ end
 register with regalloc2's maximal index `VReg::MAX = 2^21 - 1`. Only the `nop` lowering
 (`invalid_reg`) produces it; the driver drops the outputs of result-less instructions, so it
 never reaches VCode. -/
-def Reg.invalid : Reg := .vreg (2 ^ 21 - 1) .int
+@[expose] def Reg.invalid : Reg := .vreg (2 ^ 21 - 1) .int
 
 /-! ## CLIF types as seen by the ISLE rules (`Type` values) -/
 
@@ -93,16 +93,16 @@ namespace CTy
 @[expose] def bits : CTy → Nat
   | .invalid => 0 | .int b => b | .float b => b | .vec lb n _ => lb * n
 /-- `Type::lane_bits`. -/
-def laneBits : CTy → Nat
+@[expose] def laneBits : CTy → Nat
   | .invalid => 0 | .int b => b | .float b => b | .vec lb _ _ => lb
-def bytes (t : CTy) : Nat := t.bits / 8
+@[expose] def bytes (t : CTy) : Nat := t.bits / 8
 @[expose] def isInt : CTy → Bool
   | .int _ => true | _ => false
 @[expose] def isFloat : CTy → Bool
   | .float _ => true | _ => false
-def isVector : CTy → Bool
+@[expose] def isVector : CTy → Bool
   | .vec .. => true | _ => false
-def laneCount : CTy → Nat
+@[expose] def laneCount : CTy → Nat
   | .vec _ n _ => n | .invalid => 0 | _ => 1
 /-- The `$NAME` type constants of the ISLE prelude that the aarch64 rules mention. -/
 def ofName? : String → Option CTy
@@ -119,7 +119,7 @@ def ofName? : String → Option CTy
   | "INVALID" => some .invalid
   | _ => none
 /-- Register class of a type (`Inst::rc_for_type`, single-register types only). -/
-def regClass? : CTy → Option RegClass
+@[expose] def regClass? : CTy → Option RegClass
   | .int b => if b ≤ 64 then some .int else none
   | .float _ => some .float
   | .vec .. => some .float
@@ -138,7 +138,7 @@ end
   | .size32 => 32 | .size64 => 64
 
 /-- `OperandSize::from_ty` / `from_bits`: 64 for 64-bit types, else 32. -/
-def OperandSize.ofBits (b : Nat) : OperandSize := if b > 32 then .size64 else .size32
+@[expose] def OperandSize.ofBits (b : Nat) : OperandSize := if b > 32 then .size64 else .size32
 
 @[expose] section
 inductive ALUOp where
@@ -579,7 +579,7 @@ end
   | .unscaled a _ | .unsignedOffset a _ | .regOffset a _ => [a]
   | _ => []
 
-def AMode.mapRegs (f : Reg → Reg) : AMode → AMode
+@[expose] def AMode.mapRegs (f : Reg → Reg) : AMode → AMode
   | .regReg a b => .regReg (f a) (f b)
   | .regScaled a b => .regScaled (f a) (f b)
   | .regScaledExtended a b e => .regScaledExtended (f a) (f b) e
@@ -760,11 +760,11 @@ def MInst.isTerm : MInst → Bool
   else none
 
 /-- Rotate the `e`-bit value `x` right by one bit. -/
-def rotr1 (e x : Nat) : Nat := x / 2 + (x % 2) * 2 ^ (e - 1)
+@[expose] def rotr1 (e x : Nat) : Nat := x / 2 + (x % 2) * 2 ^ (e - 1)
 
 /-- Is the `e`-bit element `x` a rotation of a contiguous non-empty, non-full run of ones?
 (exactly two bit transitions around the circle). -/
-def isRotatedRun (e x : Nat) : Bool :=
+@[expose] def isRotatedRun (e x : Nat) : Bool :=
   let t := Nat.xor x (rotr1 e x)
   x != 0 && x != 2 ^ e - 1 &&
     (List.range e).foldl (fun c i => if t.testBit i then c + 1 else c) 0 == 2
@@ -786,7 +786,7 @@ def ImmLogic.ofNat? (value : Nat) (size : OperandSize) : Option ImmLogic :=
   if ok then some ⟨value, size⟩ else none
 
 /-- The bits the immediate stands for at its operand size. -/
-def ImmLogic.bitsAtSize (i : ImmLogic) : Nat :=
+@[expose] def ImmLogic.bitsAtSize (i : ImmLogic) : Nat :=
   match i.size with
   | .size32 => i.value % 2 ^ 32
   | .size64 => mask64 i.value
@@ -812,7 +812,7 @@ def MoveWideConst.ofNat? (value : Nat) : Option MoveWideConst :=
   if 0 ≤ v ∧ v ≤ 4095 * scale ∧ v.toNat % scale == 0 then some v.toNat else none
 
 /-- `ShiftOpShiftImm::maybe_from_shift`. -/
-def shiftImm? (n : Nat) : Option Nat := if n ≤ 63 then some n else none
+@[expose] def shiftImm? (n : Nat) : Option Nat := if n ≤ 63 then some n else none
 
 /-! ## The interpreter's value domain -/
 
@@ -911,7 +911,7 @@ gives an opaque function, about which proofs can learn nothing). -/
   | .op a, .op b => decide (a = b)
   | _, _ => false
 /-- `V.beq` on lists. -/
-def V.beqList : List V → List V → Bool
+@[expose] def V.beqList : List V → List V → Bool
   | [], [] => true
   | a :: as, b :: bs => V.beq a b && V.beqList as bs
   | _, _ => false
@@ -993,18 +993,18 @@ abbrev tyIntToFpuOp : TypeId := TyId.IntToFpuOp
 abbrev tyFpuRoundMode : TypeId := TyId.FpuRoundMode
 
 /-- The variant name of an enum value (messages only). -/
-def V.variant? : V → Option (TypeId × String × List V)
+@[expose] def V.variant? : V → Option (TypeId × String × List V)
   | .data t k fs => ((variantNames t)[k]?).map fun n => (t, n, fs)
   | _ => none
 
 /-- Variant index and fields of a value of the enum type `ty`. -/
-def V.enumOf? (ty : TypeId) : V → Option (Nat × List V)
+@[expose] def V.enumOf? (ty : TypeId) : V → Option (Nat × List V)
   | .data t k fs => if t = ty then some (k, fs) else none
   | _ => none
 
 /-! ### Conversion to the typed view (`V → MInst`) -/
 
-def ALUOp.ofIdx? : Nat → Option ALUOp
+@[expose] def ALUOp.ofIdx? : Nat → Option ALUOp
   | VIdx.ALUOp.Add => some .add | VIdx.ALUOp.Sub => some .sub | VIdx.ALUOp.Orr => some .orr
   | VIdx.ALUOp.OrrNot => some .orrNot | VIdx.ALUOp.And => some .and
   | VIdx.ALUOp.AndS => some .andS | VIdx.ALUOp.AndNot => some .andNot
@@ -1084,79 +1084,79 @@ def BitOp.ofIdx? : Nat → Option BitOp
   | VIdx.BitOp.Rev64 => some .rev64 | _ => none
 
 /-- Decode an enum value of type `ty` through `f` on its variant index. -/
-def V.enum? (ty : TypeId) (f : Nat → Option α) (v : V) : Option α := do
+@[expose] def V.enum? (ty : TypeId) (f : Nat → Option α) (v : V) : Option α := do
   let (k, _) ← v.enumOf? ty
   f k
 
-def V.aluOp? := V.enum? tyALUOp ALUOp.ofIdx?
-def V.aluOp3? := V.enum? tyALUOp3 ALUOp3.ofIdx?
-def V.size? := V.enum? tyOperandSize OperandSize.ofIdx?
-def V.cond? := V.enum? tyCond Cond.ofIdx?
-def V.extendOp? := V.enum? tyExtendOp ExtendOp.ofIdx?
-def V.scalarSize? := V.enum? tyScalarSize ScalarSize.ofIdx?
-def V.vectorSize? := V.enum? tyVectorSize VectorSize.ofIdx?
-def V.bitOp? := V.enum? tyBitOp BitOp.ofIdx?
-def V.moveWideOp? := V.enum? tyMoveWideOp fun
+@[expose] def V.aluOp? := V.enum? tyALUOp ALUOp.ofIdx?
+@[expose] def V.aluOp3? := V.enum? tyALUOp3 ALUOp3.ofIdx?
+@[expose] def V.size? := V.enum? tyOperandSize OperandSize.ofIdx?
+@[expose] def V.cond? := V.enum? tyCond Cond.ofIdx?
+@[expose] def V.extendOp? := V.enum? tyExtendOp ExtendOp.ofIdx?
+@[expose] def V.scalarSize? := V.enum? tyScalarSize ScalarSize.ofIdx?
+@[expose] def V.vectorSize? := V.enum? tyVectorSize VectorSize.ofIdx?
+@[expose] def V.bitOp? := V.enum? tyBitOp BitOp.ofIdx?
+@[expose] def V.moveWideOp? := V.enum? tyMoveWideOp fun
   | VIdx.MoveWideOp.MovZ => some MoveWideOp.movZ | VIdx.MoveWideOp.MovN => some .movN | _ => none
-def V.bfmOp? := V.enum? tyBfmOp fun
+@[expose] def V.bfmOp? := V.enum? tyBfmOp fun
   | VIdx.BfmOp.UBfm => some BfmOp.uBfm | VIdx.BfmOp.SBfm => some .sBfm | _ => none
-def V.tbKind? := V.enum? tyTBKind fun
+@[expose] def V.tbKind? := V.enum? tyTBKind fun
   | VIdx.TestBitAndBranchKind.Z => some TestBitAndBranchKind.z
   | VIdx.TestBitAndBranchKind.NZ => some .nz | _ => none
-def V.vecMisc2? := V.enum? tyVecMisc2 fun
+@[expose] def V.vecMisc2? := V.enum? tyVecMisc2 fun
   | VIdx.VecMisc2.Cnt => some VecMisc2.cnt | _ => none
-def V.vecLanesOp? := V.enum? tyVecLanesOp fun
+@[expose] def V.vecLanesOp? := V.enum? tyVecLanesOp fun
   | VIdx.VecLanesOp.Addv => some VecLanesOp.addv | _ => none
-def V.vecALUOp? := V.enum? tyVecALUOp fun
+@[expose] def V.vecALUOp? := V.enum? tyVecALUOp fun
   | VIdx.VecALUOp.Addp => some VecALUOp.addp | _ => none
 /-- S11f: the scalar FP operation enums (constructor order = the generated ISLE types'). -/
-def V.fpuOp1? := V.enum? tyFPUOp1 fun
+@[expose] def V.fpuOp1? := V.enum? tyFPUOp1 fun
   | VIdx.FPUOp1.Abs => some FPUOp1.abs | VIdx.FPUOp1.Neg => some .neg
   | VIdx.FPUOp1.Sqrt => some .sqrt | VIdx.FPUOp1.Cvt32To64 => some .cvt32To64
   | VIdx.FPUOp1.Cvt64To32 => some .cvt64To32 | _ => none
-def V.fpuOp2? := V.enum? tyFPUOp2 fun
+@[expose] def V.fpuOp2? := V.enum? tyFPUOp2 fun
   | VIdx.FPUOp2.Add => some FPUOp2.add | VIdx.FPUOp2.Sub => some .sub
   | VIdx.FPUOp2.Mul => some .mul | VIdx.FPUOp2.Div => some .div
   | VIdx.FPUOp2.Max => some .max | VIdx.FPUOp2.Min => some .min | _ => none
-def V.fpuOp3? := V.enum? tyFPUOp3 fun
+@[expose] def V.fpuOp3? := V.enum? tyFPUOp3 fun
   | VIdx.FPUOp3.MAdd => some FPUOp3.mAdd | VIdx.FPUOp3.MSub => some .mSub
   | VIdx.FPUOp3.NMAdd => some .nMAdd | VIdx.FPUOp3.NMSub => some .nMSub | _ => none
-def V.fpuRoundMode? := V.enum? tyFpuRoundMode fun
+@[expose] def V.fpuRoundMode? := V.enum? tyFpuRoundMode fun
   | VIdx.FpuRoundMode.Minus32 => some FpuRoundMode.minus32
   | VIdx.FpuRoundMode.Minus64 => some .minus64 | VIdx.FpuRoundMode.Plus32 => some .plus32
   | VIdx.FpuRoundMode.Plus64 => some .plus64 | VIdx.FpuRoundMode.Zero32 => some .zero32
   | VIdx.FpuRoundMode.Zero64 => some .zero64 | VIdx.FpuRoundMode.Nearest32 => some .nearest32
   | VIdx.FpuRoundMode.Nearest64 => some .nearest64 | _ => none
-def V.fpuToIntOp? := V.enum? tyFpuToIntOp fun
+@[expose] def V.fpuToIntOp? := V.enum? tyFpuToIntOp fun
   | VIdx.FpuToIntOp.F32ToU32 => some FpuToIntOp.f32ToU32
   | VIdx.FpuToIntOp.F32ToI32 => some .f32ToI32 | VIdx.FpuToIntOp.F32ToU64 => some .f32ToU64
   | VIdx.FpuToIntOp.F32ToI64 => some .f32ToI64 | VIdx.FpuToIntOp.F64ToU32 => some .f64ToU32
   | VIdx.FpuToIntOp.F64ToI32 => some .f64ToI32 | VIdx.FpuToIntOp.F64ToU64 => some .f64ToU64
   | VIdx.FpuToIntOp.F64ToI64 => some .f64ToI64 | _ => none
-def V.intToFpuOp? := V.enum? tyIntToFpuOp fun
+@[expose] def V.intToFpuOp? := V.enum? tyIntToFpuOp fun
   | VIdx.IntToFpuOp.U32ToF32 => some IntToFpuOp.u32ToF32
   | VIdx.IntToFpuOp.I32ToF32 => some .i32ToF32 | VIdx.IntToFpuOp.U32ToF64 => some .u32ToF64
   | VIdx.IntToFpuOp.I32ToF64 => some .i32ToF64 | VIdx.IntToFpuOp.U64ToF32 => some .u64ToF32
   | VIdx.IntToFpuOp.I64ToF32 => some .i64ToF32 | VIdx.IntToFpuOp.U64ToF64 => some .u64ToF64
   | VIdx.IntToFpuOp.I64ToF64 => some .i64ToF64 | _ => none
 
-def V.reg? : V → Option Reg
+@[expose] def V.reg? : V → Option Reg
   | .reg r => some r
   | _ => none
 
-def V.nat? : V → Option Nat
+@[expose] def V.nat? : V → Option Nat
   | .int i => if 0 ≤ i then some i.toNat else none
   | _ => none
 
-def V.bool? : V → Option Bool
+@[expose] def V.bool? : V → Option Bool
   | .bool b => some b
   | _ => none
 
-def V.label? : V → Option Label
+@[expose] def V.label? : V → Option Label
   | .label l => some l
   | _ => none
 
-def V.labels? : V → Option (List Label)
+@[expose] def V.labels? : V → Option (List Label)
   | .labels l => some l
   | _ => none
 
@@ -1164,60 +1164,60 @@ def V.opnd? : V → Option Opnd
   | .op o => some o
   | _ => none
 
-def V.imm12? : V → Option Imm12
+@[expose] def V.imm12? : V → Option Imm12
   | .op (.imm12 i) => some i
   | _ => none
-def V.immLogic? : V → Option ImmLogic
+@[expose] def V.immLogic? : V → Option ImmLogic
   | .op (.immLogic i) => some i
   | _ => none
-def V.immShift? : V → Option Nat
+@[expose] def V.immShift? : V → Option Nat
   | .op (.immShift i) => some i
   | _ => none
-def V.uimm5? : V → Option Nat
+@[expose] def V.uimm5? : V → Option Nat
   | .op (.uimm5 i) => some i
   | _ => none
-def V.uimm6? : V → Option Nat
+@[expose] def V.uimm6? : V → Option Nat
   | .op (.uimm6 i) => some i
   | _ => none
-def V.shiftOpAndAmt? : V → Option ShiftOpAndAmt
+@[expose] def V.shiftOpAndAmt? : V → Option ShiftOpAndAmt
   | .op (.shiftOpAndAmt i) => some i
   | _ => none
-def V.moveWideConst? : V → Option MoveWideConst
+@[expose] def V.moveWideConst? : V → Option MoveWideConst
   | .op (.moveWideConst i) => some i
   | _ => none
-def V.nzcv? : V → Option NZCV
+@[expose] def V.nzcv? : V → Option NZCV
   | .op (.nzcv i) => some i
   | _ => none
-def V.memFlags? : V → Option Clif.MemFlags
+@[expose] def V.memFlags? : V → Option Clif.MemFlags
   | .op (.memFlags i) => some i
   | _ => none
-def V.trapCode? : V → Option Clif.TrapCode
+@[expose] def V.trapCode? : V → Option Clif.TrapCode
   | .op (.trapCode i) => some i
   | _ => none
-def V.callInfo? : V → Option CallInfo
+@[expose] def V.callInfo? : V → Option CallInfo
   | .op (.callInfo i) => some i
   | _ => none
-def V.extName? : V → Option String
+@[expose] def V.extName? : V → Option String
   | .op (.extName i) => some i
   | _ => none
-def V.int? : V → Option Int
+@[expose] def V.int? : V → Option Int
   | .int i => some i
   | _ => none
-def V.ty? : V → Option CTy
+@[expose] def V.ty? : V → Option CTy
   | .ty t => some t
   | _ => none
-def V.fpModImm? : V → Option ASIMDFPModImm
+@[expose] def V.fpModImm? : V → Option ASIMDFPModImm
   | .op (.fpModImm i) => some i
   | _ => none
-def V.movModImm? : V → Option ASIMDMovModImm
+@[expose] def V.movModImm? : V → Option ASIMDMovModImm
   | .op (.movModImm i) => some i
   | _ => none
 /-- `AtomicRmwLoopOp` from its ISLE value (index into `all`). -/
-def V.atomicRmwLoopOp? : V → Option AtomicRmwLoopOp
+@[expose] def V.atomicRmwLoopOp? : V → Option AtomicRmwLoopOp
   | v => (v.enumOf? tyAtomicRmwLoopOp).bind fun (k, _) => AtomicRmwLoopOp.all[k]?
 
 /-- `AMode` from its ISLE value. -/
-def V.amode? (v : V) : Option AMode := do
+@[expose] def V.amode? (v : V) : Option AMode := do
   let (k, fs) ← v.enumOf? tyAMode
   match k, fs with
   | VIdx.AMode.RegReg, [a, b] => return .regReg (← a.reg?) (← b.reg?)
@@ -1237,7 +1237,7 @@ def V.amode? (v : V) : Option AMode := do
   | _, _ => none
 
 /-- `CondBrKind` from its ISLE value. -/
-def V.condBrKind? (v : V) : Option CondBrKind := do
+@[expose] def V.condBrKind? (v : V) : Option CondBrKind := do
   let (k, fs) ← v.enumOf? tyCondBrKind
   match k, fs with
   | VIdx.CondBrKind.Zero, [r, s] => return .zero (← r.reg?) (← s.size?)
@@ -1245,13 +1245,13 @@ def V.condBrKind? (v : V) : Option CondBrKind := do
   | VIdx.CondBrKind.Cond, [c] => return .cond (← c.cond?)
   | _, _ => none
 
-def loadOpOfIdx? : Nat → Option LoadOp
+@[expose] def loadOpOfIdx? : Nat → Option LoadOp
   | VIdx.MInst.ULoad8 => some .uload8 | VIdx.MInst.SLoad8 => some .sload8
   | VIdx.MInst.ULoad16 => some .uload16 | VIdx.MInst.SLoad16 => some .sload16
   | VIdx.MInst.ULoad32 => some .uload32 | VIdx.MInst.SLoad32 => some .sload32
   | VIdx.MInst.ULoad64 => some .uload64 | _ => none
 
-def storeOpOfIdx? : Nat → Option StoreOp
+@[expose] def storeOpOfIdx? : Nat → Option StoreOp
   | VIdx.MInst.Store8 => some .store8 | VIdx.MInst.Store16 => some .store16
   | VIdx.MInst.Store32 => some .store32 | VIdx.MInst.Store64 => some .store64 | _ => none
 

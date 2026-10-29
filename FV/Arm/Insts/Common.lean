@@ -41,7 +41,7 @@ Integer addition with carry input, returning result and NZCV flags.
 Ref.:
 https://developer.arm.com/documentation/ddi0602/2024-06/Shared-Pseudocode/shared-functions-integer?lang=en#impl-shared.AddWithCarry.3
 -/
-def AddWithCarry (x : BitVec n) (y : BitVec n) (carry_in : BitVec 1) :
+@[expose] def AddWithCarry (x : BitVec n) (y : BitVec n) (carry_in : BitVec 1) :
   (BitVec n × PState) :=
   let carry_in_ext := zeroExtend (n + 1) carry_in
   let unsigned_sum :=

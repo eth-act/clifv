@@ -167,7 +167,7 @@ theorem ctor_shift_mask_i8 :
     externCtor ctx T.shift_mask [.ty (.int 8)] st = .ok (.op (.immLogic ⟨7, .size32⟩), st) := rfl
 
 /-- `lower_condcode` on the `IntCC` of a CLIF `icmp` (total on CLIF condition codes). -/
-def condOf : Clif.IntCC → Cond
+@[expose] def condOf : Clif.IntCC → Cond
   | .eq => .eq | .ne => .ne | .slt => .lt | .sge => .ge | .sgt => .gt | .sle => .le
   | .ult => .lo | .uge => .hs | .ugt => .hi | .ule => .ls
 

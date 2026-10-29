@@ -549,7 +549,7 @@ theorem w_program : (w fld v s).program = s.program := by
 -- The following functions are defined in terms of r and w, but may be
 -- simpler to use.
 
-@[state_simp_rules]
+@[expose, state_simp_rules]
 def read_gpr (width : Nat) (idx : BitVec 5) (s : ArmState)
   : BitVec width :=
     let val := r (StateField.GPR idx) s
@@ -623,7 +623,7 @@ def write_flag (flag : PFlag) (val : BitVec 1) (s : ArmState) : ArmState :=
 def read_pstate (s : ArmState) : PState :=
   s.pstate
 
-@[state_simp_rules]
+@[expose, state_simp_rules]
 def write_pstate (pstate : PState) (s : ArmState) : ArmState :=
   open StateField PFlag in
   let s := w (FLAG N) pstate.n s
@@ -632,7 +632,7 @@ def write_pstate (pstate : PState) (s : ArmState) : ArmState :=
   let s := w (FLAG V) pstate.v s
   s
 
-@[state_simp_rules]
+@[expose, state_simp_rules]
 def make_pstate (n z c v : BitVec 1) : PState :=
   { n, z, c, v }
 
