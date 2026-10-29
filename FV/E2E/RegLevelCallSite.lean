@@ -58,8 +58,9 @@ def aKey : AInst → Option CallDest
 def blockKeys (p : Label × Array AInst) : List CallDest := p.2.toList.filterMap aKey
 
 theorem isCall_eq (l : Line) : l.isCall = (l.callKey).isSome := by
-  rcases l with ⟨i, t⟩ | ⟨a, b⟩ | ⟨l⟩
+  rcases l with ⟨i, t⟩ | ⟨a, b⟩ | ⟨w⟩ | ⟨l⟩
   · cases i <;> rfl
+  · rfl
   · rfl
   · rfl
 
@@ -356,13 +357,20 @@ theorem trapLines_callKeys (ts : List (Lbl × Clif.TrapCode)) : callKeys (trapLi
   simp only [trapLines, List.mem_flatMap, List.mem_cons, List.mem_nil_iff, or_false] at hl
   obtain ⟨p, -, rfl | rfl⟩ := hl <;> rfl
 
+/-- The literal pool has no call lines (#565). -/
+theorem emitPool_callKeys (c : FnCtx) (af : AFunc) : callKeys (emitPool c af) = [] := by
+  simp only [callKeys, List.filterMap_eq_nil_iff]
+  intro ln hln
+  rcases emitPool_mem hln with ⟨w, rfl⟩ | ⟨n, rfl⟩ <;> rfl
+
 /-! ## The call lines of the final code are the function's calls, in order -/
 
 /-- **The callees of the call lines of the final code are those of `af`'s calls**, in order. -/
 theorem L_callKeys {R : RL} (hR : R.Wf) : callKeys R.L = R.af.blocks.toList.flatMap blockKeys := by
   obtain ⟨body, ps, hb, hL, -⟩ := emitFunc_ok hR.emit
   show callKeys R.fa.lines.toList = _
-  rw [hL, relaxLines_callKeys, callKeys_append, callKeys_ftList, trapLines_callKeys, List.append_nil]
+  rw [hL, callKeys_append, emitPool_callKeys, List.append_nil, relaxLines_callKeys, callKeys_append,
+    callKeys_ftList, trapLines_callKeys, List.append_nil]
   exact blocksLinesE_callKeys hb
 
 /-- Block `b'`'s label line in the final code, with the callees of the call lines before it. -/
@@ -377,10 +385,10 @@ theorem label_at {R : RL} (hR : R.Wf) {b' : Nat} {l' : Label} {code' : Array AIn
   rw [hZ] at hsplit
   generalize emitFar ⟨R.fa.k, R.af.slotBase⟩ R.af = F at hL
   have hL' : R.L = relaxLines F Z ++ (Line.label (.block l') ::
-      relaxLines F (ftList post ++ trapLines ps.traps.toList)) := by
+      (relaxLines F (ftList post ++ trapLines ps.traps.toList) ++ emitPool ⟨R.fa.k, R.af.slotBase⟩ R.af)) := by
     show R.fa.lines.toList = _
     rw [hL, hsplit, List.append_assoc, List.append_assoc, relaxLines_append, List.singleton_append,
-      relaxLines_cons, relaxLine_label, List.singleton_append]
+      relaxLines_cons, relaxLine_label, List.singleton_append, List.append_assoc, List.cons_append]
   have hZk : callKeys Z = callKeys pre := by
     have := callKeys_ftList (pre ++ [.label (.block l')])
     rw [hZ, callKeys_append, callKeys_append] at this
@@ -410,6 +418,10 @@ theorem go_absent : ∀ {L : List Line} {off : Nat} {m m' : Std.HashMap Lbl Nat}
       | zero => simp at hj
       | succ j => exact go_absent h hc j (by simpa using hj)
     | word a b =>
+      cases j with
+      | zero => simp at hj
+      | succ j => exact go_absent h hc j (by simpa using hj)
+    | data w =>
       cases j with
       | zero => simp at hj
       | succ j => exact go_absent h hc j (by simpa using hj)
@@ -447,6 +459,13 @@ theorem go_unique : ∀ {L : List Line} {off : Nat} {m m' : Std.HashMap Lbl Nat}
         | zero => simp at hq
         | succ q => exact congrArg (· + 1) (go_unique h (by simpa using hp) (by simpa using hq))
     | word a b =>
+      cases p with
+      | zero => simp at hp
+      | succ p =>
+        cases q with
+        | zero => simp at hq
+        | succ q => exact congrArg (· + 1) (go_unique h (by simpa using hp) (by simpa using hq))
+    | data w =>
       cases p with
       | zero => simp at hp
       | succ p =>

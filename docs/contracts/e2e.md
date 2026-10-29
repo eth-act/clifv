@@ -4000,7 +4000,9 @@ For the spill allocation's code (`lowerRFunc vcp (spillAlloc vcp) = .ok af`):
 (labels defined once — block labels distinct from `prepare`, trap/jt/loop counters — and every
 used label defined), `emitFunc_spill_encodable` (registers from `spillAccepted`'s checker facts;
 immediates from `immsOkB`), `emitFunc_spill_near` (`NearOk`: the atomic loops and jump tables are
-blocks of ≤ 8 lines that `fallthrough` and relaxation keep together), `emitFunc_spill_size`
+blocks of ≤ 8 lines that `fallthrough` and relaxation keep together; a literal-pool load (#565)
+reaches its entry after the body when the size condition's `poolReachB` holds: below `2 ^ 17`
+words, or no pool load), `emitFunc_spill_size`
 (`fa.size ≤ 8 · rfWords`), combined by `FnAsm.layoutReadyB_of` (the converse of
 `layoutReadyB_sound`) into `emitReady_spill`.
 
@@ -4017,7 +4019,10 @@ theorem E2E.backend_correct_final_total_emit (hsub : InSubset p f) (hd : dominat
 (frame of `allocResult vcp (readyAnswer vcp ra)`). New conditions, all decidable on the prepared
 VCode and counted by `lean-e2e-check` (1149 of 1149 pass each): `spillSizeOkB` (the size input
 condition, genuinely needed: a big enough function exceeds `b`'s 128 MiB; word bound < 2^24,
-largest corpus bound 279479), and three facts about instruction selection's output that are not
+largest corpus bound 279479; since #565 also `poolReachB`: below 2^17 words when the VCode has
+a literal-pool load, whose `ldr (literal)` reaches 1 MiB; subset E never has one,
+`noPoolB_of_formsCovered2`; Cranelift emits a constant island instead, #744), and three facts
+about instruction selection's output that are not
 yet proven from the ISLE rule data: `immsOkB` (immediates in the encoder's ranges; an indirect
 call target is an int vreg), `noAlwaysB` (no `condBr`/`trapIf` on `al`/`nv`, which relaxation
 does not handle), `branchTargetsOkB` (every branch target is a block label; `VCode.cfg` checks

@@ -236,6 +236,15 @@ access size. -/
 def cFpuMem (bytes : Nat) : List AT → Bool
   | [rd, m, _] => rd.isF && (memOkA m).1.contains bytes
   | _ => false
+/-- The literal-pool entry (`AMode.Const`, #565). -/
+def isConstA : AT → Bool
+  | .data _ k _ => k == VIdx.AMode.Const
+  | _ => false
+/-- `ldr s/d` (S11e1): a float vreg, the addressing mode covered at the access size, or the
+literal-pool entry (`AMode.Const`: the `ldr (literal)` pool load, `MInst.isPoolLoad`, #565). -/
+def cFpuLoad (bytes : Nat) : List AT → Bool
+  | [rd, m, _] => rd.isF && ((memOkA m).1.contains bytes || m.isConstA)
+  | _ => false
 /-- `fadd`… (S11f): float vregs. -/
 def cFpuRRR : List AT → Bool
   | [_, _, rd, rn, rm] => rd.isF && rn.isF && rm.isF
@@ -286,7 +295,7 @@ def covTab : List (Nat × (List AT → Bool)) :=
    (VIdx.MInst.AtomicRMWLoop, cTrue), (VIdx.MInst.AtomicCASLoop, cTrue),
    (VIdx.MInst.ElfTlsGetAddr, cTrue), (VIdx.MInst.FpuCSel32, cFpuCSel),
    (VIdx.MInst.FpuCSel64, cFpuCSel), (VIdx.MInst.FpuMoveFPImm, cFpuMoveFPImm),
-   (VIdx.MInst.FpuLoad32, cFpuMem 4), (VIdx.MInst.FpuLoad64, cFpuMem 8),
+   (VIdx.MInst.FpuLoad32, cFpuLoad 4), (VIdx.MInst.FpuLoad64, cFpuLoad 8),
    (VIdx.MInst.FpuStore32, cFpuMem 4), (VIdx.MInst.FpuStore64, cFpuMem 8),
    (VIdx.MInst.FpuRRR, cFpuRRR), (VIdx.MInst.FpuRR, cFpuRR), (VIdx.MInst.FpuCmp, cFpuCmp),
    (VIdx.MInst.VecDupImm, cVecDupImm), (VIdx.MInst.FpuRound, cFpuRound),

@@ -683,10 +683,9 @@ theorem foldl_saveRows (rows : List (Nat × Cfi)) (h8 : ∀ r ∈ rows, ∃ d o,
 
 theorem retsAfter_noCall {ln : Line} {off : Nat} {rets : List Nat} (h : ln.isCall = false) :
     retsAfter ln off rets = rets := by
-  rcases ln with ⟨i, t⟩ | ⟨t, b⟩ | ⟨l⟩
+  rcases ln with ⟨i, t⟩ | ⟨t, b⟩ | ⟨w⟩ | ⟨l⟩
   · cases i <;> first | rfl | simp [Line.isCall, Line.insn?, callInsn?] at h
-  · rfl
-  · rfl
+  all_goals rfl
 
 theorem scanLines_noCall : ∀ (pre rest : List Line) (off : Nat) (labs : List (Label × Nat))
     (rets : List Nat), (∀ l ∈ pre, l.isCall = false) →
@@ -733,6 +732,7 @@ theorem size_of_insn? : ∀ (ls : List Line), ls.all (·.insn?.isSome) = true �
     cases l with
     | ins i t => simp [Line.size, this]; omega
     | word t b => simp [Line.insn?] at h
+    | data w => simp [Line.insn?] at h
     | label l => simp [Line.insn?] at h
 
 theorem noCall_of_insn? : ∀ (got expect : List Line), got.map Line.insn? = expect.map Line.insn? →

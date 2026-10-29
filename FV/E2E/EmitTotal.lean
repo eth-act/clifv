@@ -162,7 +162,7 @@ theorem emitReady_spill {p : Clif.Program} {f : Clif.Function} {vc vcp : VCode} 
   rw [he]
   exact FnAsm.layoutReadyB_of hlab hdef
     (emitFunc_spill_encodable hsub hd hs har hl hp himm ha he)
-    (emitFunc_spill_near hna ha he) (emitFunc_spill_size hsz ha he)
+    (emitFunc_spill_near hna hsz ha he) (emitFunc_spill_size hsz ha he)
 
 set_option linter.unusedVariables false in -- the conclusion's premises are named for readability
 /-- **The backend's end-to-end theorem, total including emission and layout** (V6b): for every

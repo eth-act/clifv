@@ -360,6 +360,9 @@ def _root_.Backend.AMode.addr (ctx : FnCtx) (m : AMode) (bytes : Nat) (s : Arm.A
   | .spOffset off => spOf s + BitVec.ofInt 64 off
   | .fpOffset off => regX s (.x 29) + BitVec.ofInt 64 off
   | .slotOffset off => spOf s + BitVec.ofInt 64 (off + ctx.slotBase)
+  -- a constant-pool entry is not addressed through a register: the loads that use it are the
+  -- `LDR` (literal) expansions (`AInst.fpuLoadLit`), which never run `AMode.addr` (#565)
+  | .const _ => 0
   | .unscaled rn off => regX s rn + BitVec.ofInt 64 off
   | .unsignedOffset rn off => regX s rn + BitVec.ofNat 64 off
   | .regReg rn rm => regX s rn + regX s rm
@@ -521,6 +524,14 @@ def FormOk (_ctx : FnCtx) : MInst → Bool
   | .intToFpu _ (.vreg _ .float) (.vreg _ .int) => true
   | _ => false
 
+/-- **The literal-pool load** (#565): `ldr s/d, <entry>` of a constant-pool entry
+(`AMode.Const`) into a float vreg. Neither a control form nor a `FormOk` form (a pc-relative
+load is not the canonical run of `straightSem`): `csem` gives it `mspec`'s meaning, the entry's
+value (`poolVal`), and the register-level proof reads the entry from the function's code. -/
+def _root_.Backend.MInst.isPoolLoad : MInst → Bool
+  | .fpuLoad sz (.vreg _ .float) (.const _) _ => sz == .size32 || sz == .size64
+  | _ => false
+
 /-- The number of use operands. -/
 def useCount (ops : Array Operand) : Nat := (ops.toList.filter (·.isUse)).length
 
@@ -559,10 +570,17 @@ def _root_.Backend.CondBrKind.holds (k : CondBrKind) (uses : List CV) (w : Arm.A
   | .notZero _ sz, [a] => if sz.is64 then lo64 a != 0 else (lo64 a).setWidth 32 != 0
   | _, _ => false
 
+/-- The value a literal-pool load of `sz` (`ldr s/d, <entry>`) leaves in its def: the low
+`sz.bytes` bytes of the entry's `u64` value `v` (`VCodeConstant`), zero-extended (#565). -/
+def poolVal (sz : ScalarSize) (v : Nat) : CV := (BitVec.ofNat (sz.bytes * 8) v).setWidth 128
+
 /-- The specification fallback of `csem` (worlds with an error or a misaligned `sp`, forms
 not covered by `FormOk`): `ispec`, extended by the memory forms as `MemRefines` states them
-(slot offsets at slot base `sb`), and by the scalar float loads and stores (`ldr`/`str` of an
-`s`/`d` register) as `MemRefinesFP` states them (S11e5, #238). -/
+(slot offsets at slot base `sb`), by the scalar float loads and stores (`ldr`/`str` of an
+`s`/`d` register) as `MemRefinesFP` states them (S11e5, #238), and by the literal-pool load
+(`ldr s/d, <entry>` of `AMode.Const v`, #565): the entry's value `poolVal`, from no use and
+without reading the world (the function's code holds the entry; the register-level proof reads
+it there, `E2E.RegLevelPool`). -/
 def mspec (sb : Nat) : Sem := fun i uses w =>
   match i, uses with
   | .load op (.vreg _ .int) am _, us =>
@@ -581,6 +599,8 @@ def mspec (sb : Nat) : Sem := fun i uses w =>
     if AtomTy ty then
       some ([], Arm.write_mem_bytes ty.bytes (lo64 u) ((lo64 v).setWidth (ty.bytes * 8)) w, .next)
     else none
+  | .fpuLoad sz (.vreg _ .float) (.const v) _, [] =>
+    if sz = .size32 ∨ sz = .size64 then some ([poolVal sz v], w, .next) else none
   | .fpuLoad sz (.vreg _ .float) am _, us =>
     if sz = .size32 ∨ sz = .size64 then
       (amodeAddr sb am sz.bytes us w).map fun a =>
@@ -716,6 +736,65 @@ theorem csem_straight {F : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem} {i : M
         straightSem F ctx i uses w
       else mspec ctx.slotBase i uses w := by
   cases i <;> first | rfl | cases h
+
+/-- **`csem` of the literal-pool load** (#565): `mspec`'s, defined only on a float vreg with no
+use at 32/64 bits, where it gives the entry's value (`poolVal`), the world unchanged, `next`. -/
+theorem csem_pool_some {F : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem} {sz : ScalarSize}
+    {rd : Reg} {v : Nat} {fl : Clif.MemFlags} {us : List CV} {w : Arm.ArmState}
+    {r : List CV × Arm.ArmState × Ctl} (h : csem F ctx X (.fpuLoad sz rd (.const v) fl) us w = some r) :
+    ∃ d, rd = .vreg d .float ∧ us = [] ∧ (sz = .size32 ∨ sz = .size64) ∧
+      r = ([poolVal sz v], w, .next) := by
+  rw [csem_straight rfl] at h
+  have hwf : csemWF ctx (.fpuLoad sz rd (.const v) fl) us = false := by
+    rcases rd with ⟨d, _ | _⟩ | _ | _ | _ | _ <;> simp [csemWF, FormOk, memOk]
+  simp only [hwf, Bool.false_eq_true, false_and, ite_false] at h
+  rcases rd with ⟨d, _ | _⟩ | _ | _ | _ | _ <;> rcases us with _ | ⟨u, us⟩ <;>
+    simp [mspec, ispec, amodeAddr] at h
+  exact ⟨_, rfl, rfl, h.1, h.2.symm⟩
+
+/-- The form of a literal-pool load. -/
+theorem isPoolLoad_form {i : MInst} (h : i.isPoolLoad = true) :
+    ∃ sz d v fl, i = .fpuLoad sz (.vreg d .float) (.const v) fl ∧ (sz = .size32 ∨ sz = .size64) := by
+  unfold MInst.isPoolLoad at h
+  split at h
+  · rename_i sz d v fl
+    exact ⟨sz, d, v, fl, rfl, by simpa using h⟩
+  · cases h
+
+theorem ops_poolLoad (sz : ScalarSize) (d v : Nat) (fl : Clif.MemFlags) :
+    (MInst.fpuLoad sz (.vreg d .float) (.const v) fl).operands =
+      .ok #[⟨d, .float, .def, .late, .reg⟩] := by
+  simp [MInst.operands, MInst.visitOperands, AMode.visit, StateT.run, pure, StateT.pure,
+    Except.pure, bind, StateT.bind, Except.bind, modify, modifyGet, MonadStateOf.modifyGet,
+    StateT.modifyGet, OpSpec.def_]
+
+theorem assign_poolLoad {sz : ScalarSize} {d v : Nat} {fl : Clif.MemFlags} {regs : Array Reg}
+    {i' : MInst} (h : (MInst.fpuLoad sz (.vreg d .float) (.const v) fl).assign regs = .ok i') :
+    ∃ r, regs = #[r] ∧ i' = .fpuLoad sz r (.const v) fl := by
+  unfold MInst.assign at h
+  dsimp only at h
+  simp only [MInst.visitOperands, AMode.visit] at h
+  cases hr : regs[0]? with
+  | none =>
+    simp [hr, StateT.run, bind, StateT.bind, Except.bind, get, getThe, MonadStateOf.get, StateT.get,
+      set, StateT.set, pure, Except.pure, throw, throwThe, MonadExceptOf.throw,
+      StateT.lift, MonadLift.monadLift, Except.tryCatch] at h
+  | some r =>
+    simp [hr, StateT.run, bind, StateT.bind, Except.bind, get, getThe, MonadStateOf.get, StateT.get,
+      set, StateT.set, pure, StateT.pure, Except.pure, throw, throwThe, MonadExceptOf.throw,
+      StateT.lift, MonadLift.monadLift] at h
+    split at h
+    · rename_i hs
+      simp only [Except.ok.injEq] at h
+      refine ⟨r, ?_, h.symm⟩
+      apply Array.ext
+      · simp [← hs]
+      · intro k h1 h2
+        have : k = 0 := by simp at h2; omega
+        subst this
+        simp [Array.getElem?_eq_some_iff] at hr
+        simpa using hr.2
+    · cases h
 
 theorem len_filter_zip : ∀ (L : List Operand) (R : List Reg), L.length = R.length →
     ((L.zip R).filter (fun p => p.1.isUse)).length = (L.filter (·.isUse)).length

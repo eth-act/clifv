@@ -25,8 +25,15 @@ theorem preparedCleanup_spillSizeOkB (vc vcp : VCode)
     {succs preds : Array (Array Nat)} (hc : vcp.cfg = .ok (succs, preds))
     (hs : spillSizeOkB vcp = true) : spillSizeOkB (preparedCleanup vc vcp) = true := by
   have hm := preparedCleanup_spillWordBound_le vc vcp hc
-  have hsize : spillWordBound vcp < 2 ^ 24 := of_decide_eq_true hs
-  exact decide_eq_true (by omega)
+  have hsize : spillWordBound vcp < 2 ^ 24 := spillSizeOkB_bound hs
+  refine spillSizeOkB_of (by omega) ?_
+  have hr := spillSizeOkB_reach hs
+  simp only [poolReachB, Bool.or_eq_true, decide_eq_true_eq] at hr ⊢
+  rcases hr with h | h
+  · exact .inl (by omega)
+  · right
+    simp only [VCode.noPoolB, List.all_eq_true] at h ⊢
+    exact preparedCleanup_insts vc vcp h
 
 /-! Joint non-vacuity: valid CFG, real deletion and the transported bound. -/
 example : ∃ vc : VCode, (∃ ss ps, vc.cfg = .ok (ss, ps)) ∧

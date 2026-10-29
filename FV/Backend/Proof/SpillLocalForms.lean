@@ -104,6 +104,19 @@ theorem spillInstOk_of_formOk {ctx : FnCtx} {i : MInst} (h : FormOk ctx i = true
     | exact spillInstOk_fpuLoad (Bool.and_eq_true _ _ ▸ h).2 _ _ _
     | exact spillInstOk_fpuStore (Bool.and_eq_true _ _ ▸ h).2 _ _ _
 
+/-- The literal-pool load (#565, one late float def) meets `SpillInstOk`. -/
+theorem spillInstOk_of_poolLoad {i : MInst} (h : i.isPoolLoad = true) : SpillInstOk i := by
+  unfold MInst.isPoolLoad at h
+  split at h
+  · spill_form
+  · cases h
+
+/-- **Every non-control instruction of covered code meets `SpillInstOk`**: a covered
+straight-line form or the literal-pool load. -/
+theorem spillInstOk_of_covered {ctx : FnCtx} {i : MInst}
+    (h : FormOk ctx i = true ∨ i.isPoolLoad = true) : SpillInstOk i :=
+  h.elim spillInstOk_of_formOk spillInstOk_of_poolLoad
+
 /-! ## Control forms with fixed registers -/
 
 /-- `OpsOk` of a concrete operand array (fields by cases on its elements and indices). -/

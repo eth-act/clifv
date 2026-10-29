@@ -418,9 +418,11 @@ theorem emitFunc_tlsClosed {k : Nat} {af : AFunc} {fa : FnAsm} (h : emitFunc k a
     TlsClosed fa.lines.toList := by
   obtain ⟨body, ps, hb, hl, -⟩ := emitFunc_ok h
   rw [hl]
-  refine tlsClosed_of_go (tlsSeqGo_relaxLines _ _ _ (tlsSeqOk_append ?_ ?_))
+  refine tlsClosed_of_go (tlsSeqOk_append (tlsSeqGo_relaxLines _ _ _ (tlsSeqOk_append ?_ ?_))
+    (tlsSeqOk_of_free fun ln hln => ?_))
   · exact tlsSeqGo_ftList _ _ _ (Nat.le_refl _) (blocksLinesE_tlsOk _ _ _ _ hb)
   · exact tlsSeqOk_of_free (trapLines_free _)
+  · rcases emitPool_mem hln with ⟨w, rfl⟩ | ⟨n, rfl⟩ <;> rfl
 
 /-! ## Non-vacuity -/
 

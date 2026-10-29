@@ -50,7 +50,7 @@ theorem valIn_F {x : Nat} (hty : (ctx.valueType? x).isSome)
 
 theorem γ_c0V {v : V} (hr : v.regsIn = []) (hc : Cov.covV v = true) : γP ctx noInst AT.c0 v := by
   show γP ctx noInst (.flat 0 true) v
-  exact ⟨fun r h => (by rw [hr] at h; simp at h), fun _ => hc⟩
+  exact ⟨fun r h => (by rw [hr] at h; simp at h), fun _ => covV_of_cov hc⟩
 
 theorem γ_opAlts {name : String} {os : List Nat}
     (h : os.any (fun k => variantIdx tyOpcode name == some k) = true) :
