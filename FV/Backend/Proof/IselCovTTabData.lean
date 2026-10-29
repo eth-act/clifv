@@ -13,7 +13,7 @@ The leaf-wise kernel checks are in `IselCovTTabC*` (entries), `IselCovTTabS*` (t
 -/
 
 set_option maxRecDepth 100000
-set_option maxHeartbeats 4000000
+set_option maxHeartbeats 16000000
 set_option Elab.async false
 
 namespace Backend.Proof.CovT

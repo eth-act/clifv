@@ -79,7 +79,7 @@ rules of `lower` check; `covBranchT_ok`: every rule of `lower_branch` checks on 
 -/
 
 set_option maxRecDepth 100000
-set_option maxHeartbeats 4000000
+set_option maxHeartbeats 16000000
 set_option Elab.async false
 
 namespace Backend.Proof.CovT
