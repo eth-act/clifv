@@ -243,14 +243,54 @@ structure RL.SameCode (R R' : RL) : Prop where
   base : R'.base = R.base
   psF : R'.psF = R.psF
 
-theorem RL.entryWit_congr {R R' : RL} (h : R.SameCode R') (t : Nat) (p : BitVec 64) :
-    R'.EntryWit t p = R.EntryWit t p := by
+/-- `QEWst` depends on the code data only. -/
+theorem QEWst.congr {R R' : RL} (h : R.SameCode R') {j : Nat} {ps1 : PState} {b : Nat}
+    (hq : QEWst R j ps1 b) : QEWst R' j ps1 b := by
   obtain ⟨vc, rf, af, fa, fb, lm, base, s0, X, H, psF, K, G, gv⟩ := R
   obtain ⟨vc', rf', af', fa', fb', lm', base', s0', X', H', psF', K', G', gv'⟩ := R'
-  obtain ⟨h1, h2, h3, h4, h5, h6⟩ := h
-  dsimp only at h1 h2 h3 h4 h5 h6
-  subst h1 h2 h3 h4 h5 h6
-  rfl
+  obtain ⟨e1, e2, e3, e4, e5, e6⟩ := h
+  dsimp only at e1 e2 e3 e4 e5 e6
+  subst e1 e2 e3 e4 e5 e6
+  induction hq with
+  | std hit hq => exact .std hit hq
+  | fwd a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 _ ih =>
+    exact .fwd a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 ih
+
+theorem QEFst.congr {R R' : RL} (h : R.SameCode R') {j : Nat} {ps1 : PState} {b : Nat}
+    {its : List RItem} (hq : QEFst R j ps1 b its) : QEFst R' j ps1 b its := by
+  have hq' := hq
+  obtain ⟨vb, vbx, x, items, allocs, regs, i, bx, jl, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10,
+    a11, a12, a13, hw⟩ := hq'
+  have hw' := hw.congr h
+  obtain ⟨vc, rf, af, fa, fb, lm, base, s0, X, H, psF, K, G, gv⟩ := R
+  obtain ⟨vc', rf', af', fa', fb', lm', base', s0', X', H', psF', K', G', gv'⟩ := R'
+  obtain ⟨e1, e2, e3, e4, e5, e6⟩ := h
+  dsimp only at e1 e2 e3 e4 e5 e6
+  subst e1 e2 e3 e4 e5 e6
+  exact ⟨vb, vbx, x, items, allocs, regs, i, bx, jl, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10,
+    a11, a12, a13, hw'⟩
+
+theorem RL.SameCode.symm {R R' : RL} (h : R.SameCode R') : R'.SameCode R :=
+  ⟨h.vc.symm, h.rf.symm, h.af.symm, h.fa.symm, h.base.symm, h.psF.symm⟩
+
+theorem RL.entryWit_imp {R R' : RL} (h : R.SameCode R') {t : Nat} {p : BitVec 64}
+    {W : Nat × PState × List Line} (hw : R.EntryWit t p W) : R'.EntryWit t p W := by
+  obtain ⟨vc, rf, af, fa, fb, lm, base, s0, X, H, psF, K, G, gv⟩ := R
+  obtain ⟨vc', rf', af', fa', fb', lm', base', s0', X', H', psF', K', G', gv'⟩ := R'
+  have h' := h
+  obtain ⟨e1, e2, e3, e4, e5, e6⟩ := h'
+  dsimp only at e1 e2 e3 e4 e5 e6
+  subst e1 e2 e3 e4 e5 e6
+  obtain ⟨w1, w2, w3⟩ := hw
+  refine ⟨w1, w2, fun items hit => ?_⟩
+  rcases w3 items hit with hq | ⟨hT, hq⟩
+  · exact .inl hq
+  · exact .inr ⟨hT, hq.congr h⟩
+
+theorem RL.entryWit_congr {R R' : RL} (h : R.SameCode R') (t : Nat) (p : BitVec 64) :
+    R'.EntryWit t p = R.EntryWit t p := by
+  funext W
+  exact propext ⟨RL.entryWit_imp h.symm, RL.entryWit_imp h⟩
 
 /-- **Two activations of one compiled function choose the same entry witnesses.** -/
 theorem RL.entryW_congr {R R' : RL} (h : R.SameCode R') (t : Nat) (p : BitVec 64) :
@@ -584,26 +624,40 @@ theorem RL.emptyW_entry_iff {R : RL} {j : Nat} {ps1 : PState} {T : List Line} {b
 theorem RL.nextW_congr {R R' : RL} (h : R.SameCode R') (j : Nat) (ps1 : PState) (T : List Line)
     (c c'' : MConf CV Arm.ArmState) (p : BitVec 64) :
     R'.nextW j ps1 T c c'' p = R.nextW j ps1 T c c'' p := by
+  have hW := RL.entryW_congr h
   obtain ⟨vc, rf, af, fa, fb, lm, base, s0, X, H, psF, K, G, gv⟩ := R
   obtain ⟨vc', rf', af', fa', fb', lm', base', s0', X', H', psF', K', G', gv'⟩ := R'
   obtain ⟨h1, h2, h3, h4, h5, h6⟩ := h
   dsimp only at h1 h2 h3 h4 h5 h6
   subst h1 h2 h3 h4 h5 h6
-  rfl
+  unfold RL.nextW
+  split
+  · split
+    · rfl
+    · exact hW _ _
+  · rfl
 
 /-- **Two activations of one compiled function have the same targets.** -/
 theorem RL.tgtS_congr {R R' : RL} (h : R.SameCode R') (j : Nat) (ps1 : PState) (T : List Line)
     (c c'' : MConf CV Arm.ArmState) : R'.TgtS j ps1 T c c'' = R.TgtS j ps1 T c c'' := by
+  have hW := RL.entryWit_congr h
   obtain ⟨vc, rf, af, fa, fb, lm, base, s0, X, H, psF, K, G, gv⟩ := R
   obtain ⟨vc', rf', af', fa', fb', lm', base', s0', X', H', psF', K', G', gv'⟩ := R'
   obtain ⟨h1, h2, h3, h4, h5, h6⟩ := h
   dsimp only at h1 h2 h3 h4 h5 h6
   subst h1 h2 h3 h4 h5 h6
-  rfl
+  unfold RL.TgtS
+  split
+  · split
+    · rfl
+    · funext p; rw [hW]
+  · rfl
 
 /-- **Two activations of one compiled function have the same zero-length cases.** -/
 theorem RL.emptyW_congr {R R' : RL} (h : R.SameCode R') (j : Nat) (ps1 : PState) (T : List Line)
     (c c'' : MConf CV Arm.ArmState) : R'.EmptyW j ps1 T c c'' ↔ R.EmptyW j ps1 T c c'' := by
+  unfold RL.EmptyW
+  rw [RL.nextW_congr h]
   obtain ⟨vc, rf, af, fa, fb, lm, base, s0, X, H, psF, K, G, gv⟩ := R
   obtain ⟨vc', rf', af', fa', fb', lm', base', s0', X', H', psF', K', G', gv'⟩ := R'
   obtain ⟨h1, h2, h3, h4, h5, h6⟩ := h

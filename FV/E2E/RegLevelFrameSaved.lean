@@ -524,7 +524,7 @@ theorem mem_leadSaves : ∀ {l : List RItem} {r : Reg}, r ∈ RItem.leadSaves l 
 the saves of `rf.saved`, and no later item stores into a save slot). -/
 theorem saveRegs_saved {R : RL} (hR : R.Wf) {r : Reg} (h : r ∈ R.rf.saveRegs) : r ∈ R.rf.saved := by
   obtain ⟨hsh, -⟩ := lowerRFunc_saves hR.alloc
-  obtain ⟨vb, items, -, -, -, -, -, hvb, hit, -⟩ := entry_block hR
+  obtain ⟨vb, items, -, -, -, -, -, -, -, hvb, hit, -⟩ := entry_block hR
   obtain ⟨h0, -⟩ := saveShapeOk_block hsh hvb hit
   obtain ⟨htake, hseg⟩ := h0 rfl
   simp only [RFunc.saveRegs, hit, Option.getD_some] at h
