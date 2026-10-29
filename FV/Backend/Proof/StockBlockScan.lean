@@ -441,15 +441,17 @@ private def eventCtx : Ctx := { unusedCtx with
 
 private def eventInput : State := { unusedInput with sunk := #[true, false] }
 
-private def eventBefore : State := scanState eventInput 1
+-- Kernel-only witness data (#750): `noncomputable` so that module initialisation never evaluates
+-- `scanState eventInput 1` (its `entryColor[1]!` is `default` logically, but panics when compiled).
+private noncomputable def eventBefore : State := scanState eventInput 1
 
-private def eventOutput : BlockScan :=
+private noncomputable def eventOutput : BlockScan :=
   ⟨eventBefore,
     [⟨1, eventInput, ⟨eventBefore, none, #[]⟩⟩,
      ⟨0, eventBefore,
        ⟨eventBefore, some ⟨0, 0, .sunk, eventBefore, eventBefore, [], [], #[]⟩, #[]⟩⟩], #[]⟩
 
-private def sourceEvent : BlockScanEvent :=
+private noncomputable def sourceEvent : BlockScanEvent :=
   ⟨eventCtx, 0, 1, true, [1, 0], eventInput, eventOutput⟩
 
 private theorem sourceEvent_run :
