@@ -126,7 +126,7 @@ theorem backend_correct_final_cleanup_trapcallT {p : Clif.Program} {f : Clif.Fun
   have hB0 : f.blocks[0]? = some B0 := by
     simpa [Clif.Function.entry?, List.head?_eq_getElem?] using hentB
   have hargsE := argsAtEntry_body (lowerRFunc_frame hc.alloc) (entryRegs_of_check hc.lowerOk) hbe
-    hargs (stackArgsAvoid_frameWCleanupA hc hres hent hargs)
+    hargs (stackArgsAvoid_frameWCleanupA hc hres hent hargs) hres
   -- `prune` + `prepare`
   have hPrep := prepareCorrectU_cleanup_value hc Γ.F fctx X (xrT XT)
   rcases driver_trapStop (slots := cs.frame.slots) (ρ₀ := ρ₀) hp HD (hUs) HR

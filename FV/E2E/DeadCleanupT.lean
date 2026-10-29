@@ -116,7 +116,7 @@ theorem backend_correct_of_rules_cleanup_exT {p : Clif.Program} {f : Clif.Functi
       hT.tryUn hT.tryIndT hT.tryIndUn hRef hds hcalls hicalls hmem hFP houtB)
     (fun s' => prepareCorrect_prune (hds s') (hPure s') (hCmp s') hc.prepOk)
     hM6 hent hres hbe
-    (argsAtEntry_bodyT (lowerRFunc_frame hc.alloc) (entryRegsT_of_check hc.lowerOk) hbe hargs hargF)
+    (argsAtEntry_bodyT (lowerRFunc_frame hc.alloc) (entryRegsT_of_check hc.lowerOk) hbe hargs hargF hres)
     hcs hrel htr fuel
 
 /-- **Integer returns**: the typed dead-cleanup chain gives `ArmRefines`. -/
@@ -156,7 +156,7 @@ theorem backend_correct_of_rules_cleanup_ex_ofT {p : Clif.Program} {f : Clif.Fun
       hT.tryUn hT.tryIndT hT.tryIndUn hRef hds hcalls hicalls hmem hFP houtB)
     (fun s' => prepareCorrect_prune (hds s') (hPure s') (hCmp s') hc.prepOk)
     hM6 hent hres hbe
-    (argsAtEntry_bodyT (lowerRFunc_frame hc.alloc) (entryRegsT_of_check hc.lowerOk) hbe hargs hargF)
+    (argsAtEntry_bodyT (lowerRFunc_frame hc.alloc) (entryRegsT_of_check hc.lowerOk) hbe hargs hargF hres)
     hcs hrel htr fuel
 
 /-- The float loads/stores of the value semantics are `csem`'s (they are not pure forms). -/

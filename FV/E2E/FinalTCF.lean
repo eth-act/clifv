@@ -232,7 +232,7 @@ theorem backend_correct_of_rules_exTCF {p : Clif.Program} {f : Clif.Function} {k
       hicalls hmem hFP houtB)
     (fun s' => prepareCorrect_of_check (hds s') hc.prepOk)
     hM6 hent hres hbe
-    (argsAtEntry_bodyT (lowerRFunc_frame hc.alloc) (entryRegsTCF_of_check hc.lowerOk) hbe hargs hargF)
+    (argsAtEntry_bodyT (lowerRFunc_frame hc.alloc) (entryRegsTCF_of_check hc.lowerOk) hbe hargs hargF hres)
     hcs hrel htr fuel
 
 /-- `hasTry_of_hasTryCallAT` for `CompiledATCF`. -/
