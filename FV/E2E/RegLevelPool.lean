@@ -228,10 +228,11 @@ theorem os_poolLoad {F : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem} {i : MIn
   obtain ⟨rfl, rfl, -⟩ := he
   refine ⟨_, rfl, ?_, ?_, ?_, ?_, ?_⟩
   · exact SameWorld.w_left (by simp [Masked]) (SameWorld.w_left (by simp [Masked]) hw)
-  · refine ⟨?_, fun a _ => ?_⟩
+  · refine ⟨?_, fun a _ => ?_, ?_⟩
     · simp only [spOf]
       rw [Arm.r_of_w_different (by simp), Arm.r_of_w_different (by simp)]
     · simp [Arm.ArmState.mem_w_eq_mem]
+    · rw [Arm.r_of_w_different (by simp), Arm.r_of_w_different (by simp)]
   · intro p hp
     simp only [defRegs] at hp
     have : p = ((⟨d, .float, .def, .late, .reg⟩, .v n0), poolVal sz v) := by
