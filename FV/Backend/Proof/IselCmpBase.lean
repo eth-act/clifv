@@ -4,6 +4,7 @@ public import FV.Backend.Proof.FastSubst
 public import FV.Backend.Proof.IselCmpInv
 public import FV.Backend.Proof.IselCmpRun
 public import FV.Backend.Proof.IselFamily
+public meta import Lean.Meta.Tactic.Rename
 
 @[expose] public section
 
@@ -355,7 +356,7 @@ macro_rules
 
 open Lean Elab Tactic Meta in
 /-- The term ids a rule constant mentions (`.term _ t _` patterns and expressions). -/
-def iselRuleTermIds (rule : Name) : MetaM (Array Nat) := do
+meta def iselRuleTermIds (rule : Name) : MetaM (Array Nat) := do
   let some ci := (← getEnv).find? rule | return #[]
   let some v := ci.value? | return #[]
   let acc ← IO.mkRef (#[] : Array Nat)

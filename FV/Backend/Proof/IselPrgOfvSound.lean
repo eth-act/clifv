@@ -29,20 +29,20 @@ namespace CS
 open Lean Meta Elab Tactic
 
 /-- A constructor application or a numeral. -/
-def ctorLike (d : Lean.Expr) : MetaM Bool := do
+meta def ctorLike (d : Lean.Expr) : MetaM Bool := do
   if d.isRawNatLit then return true
   if d.isAppOfArity ``OfNat.ofNat 3 && (d.getArg! 1).isRawNatLit then return true
   isConstructorApp d
 
 /-- `e = e'` by `rfl`, for a one-step reduct `e'` of `e`. -/
-def reflTo (e e' : Lean.Expr) : MetaM Lean.Expr := do
+meta def reflTo (e e' : Lean.Expr) : MetaM Lean.Expr := do
   mkExpectedTypeHint (← mkEqRefl e) (← mkEq e e')
 
 /-- One reduction step of `e` with its proof `e = e'`: beta, zeta, a projection of a
 constructor, an `if` on a closed decided condition, a discriminant of a `match` to its
 constructor, a `match` on constructors (proved once for abstract alternatives, so the kernel never
 compares the alternatives' bodies), a definition unfolded. `none`: stuck. -/
-def stepEq (e : Lean.Expr) : MetaM (Option (Lean.Expr × Lean.Expr)) := do
+meta def stepEq (e : Lean.Expr) : MetaM (Option (Lean.Expr × Lean.Expr)) := do
   if e.isHeadBetaTarget then
     let e' := e.headBeta
     return some (e', ← reflTo e e')
@@ -107,7 +107,7 @@ def stepEq (e : Lean.Expr) : MetaM (Option (Lean.Expr × Lean.Expr)) := do
   | none => return none
 
 /-- Reduce `e` step by step (`stepEq`), with the proof `e = e'`. -/
-partial def redSafe (e pf : Lean.Expr) (fuel : Nat) : MetaM (Lean.Expr × Lean.Expr) := do
+meta partial def redSafe (e pf : Lean.Expr) (fuel : Nat) : MetaM (Lean.Expr × Lean.Expr) := do
   if fuel = 0 then return (e, pf)
   match ← stepEq e with
   | some (e', p) => redSafe e' (← mkEqTrans pf p) (fuel - 1)

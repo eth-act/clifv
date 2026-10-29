@@ -18,7 +18,7 @@ open Lean Elab Tactic Expr Meta
 
 ----------------------------------------------------------------------
 
-def introFetchDecodeLemmas (goal : MVarId) (hStep : Expr) (hProgram : Expr)
+meta def introFetchDecodeLemmas (goal : MVarId) (hStep : Expr) (hProgram : Expr)
   (hyp_prefix : String) :
   TacticM Bool := goal.withContext do
   let_expr Eq _ st_var nest ← (← inferType hStep) | return false
@@ -92,7 +92,7 @@ def introFetchDecodeLemmas (goal : MVarId) (hStep : Expr) (hProgram : Expr)
   replaceMainGoal (goal' :: other_unsolved_goals)
   return true
 
-def introFetchDecodeLemmasElab (h_step : Name) (h_program : Name) (hyp_prefix : String)
+meta def introFetchDecodeLemmasElab (h_step : Name) (h_program : Name) (hyp_prefix : String)
   : TacticM Unit :=
   withMainContext
   (do

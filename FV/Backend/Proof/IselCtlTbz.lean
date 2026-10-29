@@ -3,6 +3,16 @@ module
 public import FV.Backend.Proof.IselCtlBrif
 public import FV.Backend.Proof.IselFamALUAMul
 public import FV.Backend.Proof.IselFamALUALogic
+import all Init.Data.Format.Basic
+import all Init.Data.Int.Repr
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Nat.Gcd
+import all Init.Data.Repr
+import all Init.Data.String.Basic
+import all Init.Data.String.Defs
+import all Init.Data.String.Slice
+import all Init.Data.String.TakeDrop
+import all Init.Prelude
 
 @[expose] public section
 

@@ -17,7 +17,7 @@ namespace Arm
 open Lean Elab Tactic Expr Meta
 open _root_.BitVec Arm.BitVec
 
-def addToSimpExt (declName : Name) (simp_ext : Name) : MetaM Unit := do
+meta def addToSimpExt (declName : Name) (simp_ext : Name) : MetaM Unit := do
   let some ext ← getSimpExtension? simp_ext |
     throwError "Simp Extension [simp_ext] not found!"
   addSimpTheorem ext declName false false Lean.AttributeKind.global default
@@ -42,7 +42,7 @@ def optionArraytoArray (array : Array (Option α)) : Array α :=
 
 /- Find all declarations in the `LocalContext` whose username begins
 with `pfxUserName`. -/
-def filterDeclsWithPrefix (lctx : LocalContext) (pfxUserName : Name)
+meta def filterDeclsWithPrefix (lctx : LocalContext) (pfxUserName : Name)
   : (Array LocalDecl) :=
   optionArraytoArray
   (PersistentArray.toArray
@@ -61,7 +61,7 @@ that additionally recognizes:
 - a `BitVec.ofFin (Fin.mk _ _)` application (which is the raw normal form)
 -/
 -- TODO: should this be upstreamed to core?
-def getBitVecValue? (e : Expr) : MetaM (Option ((n : Nat) × _root_.BitVec n)) :=
+meta def getBitVecValue? (e : Expr) : MetaM (Option ((n : Nat) × _root_.BitVec n)) :=
   match_expr e with
     | _root_.BitVec.ofFin w i => OptionT.run do
       let w ← getNatValue? w
@@ -75,7 +75,7 @@ def getBitVecValue? (e : Expr) : MetaM (Option ((n : Nat) × _root_.BitVec n)) :
 /- Get the string representation of `e` if it denotes a bitvector
 literal. The bitvector's width is not represented in the resulting
 string. -/
-def getBitVecString? (e : Expr) (hex : Bool := false): MetaM (Option String) := do
+meta def getBitVecString? (e : Expr) (hex : Bool := false): MetaM (Option String) := do
   let maybe_e_literal ← Arm.getBitVecValue? e
   match maybe_e_literal with
   | some ⟨_, value⟩ =>
@@ -87,7 +87,7 @@ def getBitVecString? (e : Expr) (hex : Bool := false): MetaM (Option String) := 
   | none => return none
 
 /- Get the string representation of `e` if it denotes a `PFlag`. -/
-def getPFlagString? (e : Expr) : MetaM (Option String) := OptionT.run do
+meta def getPFlagString? (e : Expr) : MetaM (Option String) := OptionT.run do
   match_expr e with
   | Arm.PFlag.N => return "n_flag"
   | Arm.PFlag.Z => return "z_flag"
@@ -96,7 +96,7 @@ def getPFlagString? (e : Expr) : MetaM (Option String) := OptionT.run do
   | _       => panic! s!"[getPFlagString?] Unexpected expression: {e}"
 
 /- Get the string representation of `e` if it denotes a `StateField`. -/
-def getStateFieldString? (e : Expr) : MetaM (Option String) := OptionT.run do
+meta def getStateFieldString? (e : Expr) : MetaM (Option String) := OptionT.run do
   match_expr e with
   | Arm.StateField.GPR iExpr  => return ("x" ++ (← getBitVecString? iExpr))
   | Arm.StateField.SFP iExpr  => return ("q" ++ (← getBitVecString? iExpr))
@@ -109,7 +109,7 @@ def getStateFieldString? (e : Expr) : MetaM (Option String) := OptionT.run do
 /-- Given a ground term `e` of type `Nat`, fully reduce it,
 and attempt to reflect it into a meta-level `Nat`,
 returning `none` on failure -/
-partial def reflectNatLiteral? (e : Expr) : MetaM (Option Nat) := OptionT.run do
+meta partial def reflectNatLiteral? (e : Expr) : MetaM (Option Nat) := OptionT.run do
   let e' ← instantiateMVars e
   go e'
 where go (e : Expr) : MetaM (Option Nat) := do
@@ -124,7 +124,7 @@ where go (e : Expr) : MetaM (Option Nat) := do
 /-- Given a ground term `e` of type `Nat`, fully reduce it,
 and attempt to reflect it into a meta-level `Nat`,
 throwing an error on failure -/
-def reflectNatLiteral (e : Expr) : MetaM Nat := do
+meta def reflectNatLiteral (e : Expr) : MetaM Nat := do
   if e.hasFVar then
     throwError "Expected a ground term, but {e} has free variables"
   let some n ← reflectNatLiteral? e
@@ -135,7 +135,7 @@ def reflectNatLiteral (e : Expr) : MetaM Nat := do
 /-- For a concrete width `w`,
 reduce an expression `e` (of type `BitVec w`) to be of the form `?n#w`,
 and then reflect `?n` to build the meta-level bitvector -/
-def reflectBitVecLiteral (w : Nat) (e : Expr) : MetaM (_root_.BitVec w) := do
+meta def reflectBitVecLiteral (w : Nat) (e : Expr) : MetaM (_root_.BitVec w) := do
   if e.hasFVar || e.hasMVar then
     throwError "Expected a ground term, but {e} has free variables"
 
@@ -147,7 +147,7 @@ def reflectBitVecLiteral (w : Nat) (e : Expr) : MetaM (_root_.BitVec w) := do
   else
     throwError "Expected a bitvector of width {w}, but\n\t{e}\nhas width {n}"
 
-def reflectPFLag (e : Expr) : MetaM PFlag :=
+meta def reflectPFLag (e : Expr) : MetaM PFlag :=
   match_expr e with
     | Arm.PFlag.N => pure .N
     | Arm.PFlag.Z => pure .Z
@@ -158,7 +158,7 @@ def reflectPFLag (e : Expr) : MetaM PFlag :=
       throwError "Expected a `{pflag}` constructor, found:\n  {e}"
 
 /-- Reflect a concrete `StateField` -/
-def reflectStateField (e : Expr) : MetaM StateField :=
+meta def reflectStateField (e : Expr) : MetaM StateField :=
   match_expr e.consumeMData with
     | Arm.StateField.GPR x  => StateField.GPR <$> reflectBitVecLiteral _ x
     | Arm.StateField.SFP x  => StateField.SFP <$> reflectBitVecLiteral _ x
@@ -175,7 +175,7 @@ namespace SymContext
 
 /-- `h_run_type state` returns an Expr for
 `<finalState> = run <steps> <initialState>`, the expected type of `h_run` -/
-def h_run_type (finalState steps initialState : Expr) : Expr :=
+meta def h_run_type (finalState steps initialState : Expr) : Expr :=
   mkApp3 (mkConst ``Eq [1])
     (mkConst ``Arm.ArmState)
     finalState
@@ -183,7 +183,7 @@ def h_run_type (finalState steps initialState : Expr) : Expr :=
 
 /-- `h_err_type state` returns an Expr for `r .ERR <state> = .None`,
 the expected type of `h_err` -/
-def h_err_type (state : Expr) : Expr :=
+meta def h_err_type (state : Expr) : Expr :=
   mkAppN (mkConst ``Eq [1]) #[
     mkConst ``Arm.StateError,
     mkApp2 (.const ``Arm.r []) (.const ``Arm.StateField.ERR []) state,
@@ -192,12 +192,12 @@ def h_err_type (state : Expr) : Expr :=
 
 /-- `h_sp_type state` returns an Expr for `CheckSPAlignment <state>`,
 the expected type of `h_sp` -/
-def h_sp_type (state : Expr) : Expr :=
+meta def h_sp_type (state : Expr) : Expr :=
   mkApp (.const ``Arm.CheckSPAlignment []) state
 
 /-- `h_sp_type state` returns an Expr for `<state>.program = <program>`,
 the expected type of `h_program` -/
-def h_program_type (state program : Expr) : Expr :=
+meta def h_program_type (state program : Expr) : Expr :=
   mkAppN (mkConst ``Eq [1]) #[
     mkConst ``Arm.Program,
     mkApp (mkConst ``Arm.ArmState.program) state,
@@ -206,7 +206,7 @@ def h_program_type (state program : Expr) : Expr :=
 
 /-- `h_pc_type state` returns an Expr for `r .PC <state> = <address>`,
 the expected type of `h_pc` -/
-def h_pc_type (state address : Expr) : Expr :=
+meta def h_pc_type (state address : Expr) : Expr :=
   mkAppN (mkConst ``Eq [1]) #[
     mkApp (mkConst ``_root_.BitVec) (toExpr 64),
     mkApp2 (mkConst ``Arm.r) (mkConst ``Arm.StateField.PC) state,
@@ -221,18 +221,18 @@ end SymContext
 so that we can build an expression with its fvarid,
 to return a message with nice highlighting.
 If lookup fails, we return a message with the plain name, wihout highlighting -/
-def userNameToMessageData (name : Name) : MetaM MessageData := do
+meta def userNameToMessageData (name : Name) : MetaM MessageData := do
   return match (← getLCtx).findFromUserName? name with
     | some decl => m!"{Expr.fvar decl.fvarId}"
     | none      => m!"{name}"
 
-def findLocalDeclOfType? (expectedType : Expr) : MetaM (Option LocalDecl) := do
+meta def findLocalDeclOfType? (expectedType : Expr) : MetaM (Option LocalDecl) := do
     let fvarId ← findLocalDeclWithType? expectedType
     return ((← getLCtx).get! ·) <$> fvarId
     -- ^^ `findLocalDeclWithType?` only returns `FVarId`s which are present in
     --    the local context, so we can safely pass it to `get!`
 
-def findLocalDeclOfTypeOrError (expectedType : Expr) : MetaM LocalDecl := do
+meta def findLocalDeclOfTypeOrError (expectedType : Expr) : MetaM LocalDecl := do
     let some decl ← findLocalDeclOfType? expectedType
       | throwError "Failed to find a local hypothesis of type {expectedType}"
     return decl
@@ -243,7 +243,7 @@ asserts that `?concreteProgram` is indeed a constant (i.e., global definition),
 then returns the decl of the local hypothesis and the name of the program.
 
 Throws an error if no such hypothesis could. -/
-def findProgramHyp (state : Expr) : MetaM (LocalDecl × Name) := do
+meta def findProgramHyp (state : Expr) : MetaM (LocalDecl × Name) := do
   -- Try to find `h_program`, and infer `program` from it
   let program ← mkFreshExprMVar none
   let h_program_type := SymContext.h_program_type state program
@@ -259,51 +259,51 @@ def findProgramHyp (state : Expr) : MetaM (LocalDecl × Name) := do
 /-! ## Expr Builders -/
 
 /-- Return the expression for `ArmState` -/
-def mkArmState : Expr := mkConst ``Arm.ArmState
+meta def mkArmState : Expr := mkConst ``Arm.ArmState
 
 /-- Return `x = y`, given expressions `x` and `y` of type `ArmState` -/
-def mkEqArmState (x y : Expr) : Expr :=
+meta def mkEqArmState (x y : Expr) : Expr :=
   mkApp3 (.const ``Eq [1]) mkArmState x y
 
 /-- Return a proof of type `x = x`, where `x : ArmState` -/
-def mkEqReflArmState (x : Expr) : Expr :=
+meta def mkEqReflArmState (x : Expr) : Expr :=
   mkApp2 (.const ``Eq.refl [1]) mkArmState x
 
 /-- Return `x = y` given expressions `x, y : StateField <field>` -/
-def mkEqStateValue (field x y : Expr) : Expr :=
+meta def mkEqStateValue (field x y : Expr) : Expr :=
   let ty := mkApp (mkConst ``Arm.state_value) field
   mkApp3 (.const ``Eq [1]) ty x y
 
 /-- Return `r <field> <state> = <value>` -/
-def mkEqReadField (field state value : Expr) : Expr :=
+meta def mkEqReadField (field state value : Expr) : Expr :=
   let r := mkApp2 (mkConst ``Arm.r) field state
   mkEqStateValue field r value
 
 /-- If expression `e` is `r ?field ?state = ?value`, return
 `some (field, state, value)`, else return `none` -/
-def eqReadField? (e : Expr) : Option (Expr × Expr × Expr) := do
+meta def eqReadField? (e : Expr) : Option (Expr × Expr × Expr) := do
   let (_ty, lhs, value) ← e.eq?
   let_expr Arm.r field state := lhs
     | none
   some (field, state, value)
 
 /-- Return the expression for `Memory` -/
-def mkMemory : Expr := mkConst ``Arm.Memory
+meta def mkMemory : Expr := mkConst ``Arm.Memory
 
 /-- Return a proof of type `x = x`, where `x : Memory` -/
-def mkEqReflMemory (x : Expr) : Expr :=
+meta def mkEqReflMemory (x : Expr) : Expr :=
   mkApp2 (.const ``Eq.refl [1]) mkMemory x
 
 /-- Return `<x> ∈ <xs>`, given expressions `α : Type u`, `x : α`
 and `xs : List α` -/
-def mkListMem (u : Level) (α x xs : Expr) : Expr :=
+meta def mkListMem (u : Level) (α x xs : Expr) : Expr :=
   let list := mkApp (.const ``List [u]) α
   let inst := mkApp (.const ``List.instMembership [u]) α
   mkApp5 (.const ``Membership.mem [u,u]) α list inst xs x
 
 /-- Return `<f> ∈ <fs>`, given expressions `f : StateField`
 and `fs : List StateField` -/
-def mkStateFieldListMem (f fs : Expr) : Expr :=
+meta def mkStateFieldListMem (f fs : Expr) : Expr :=
   mkListMem 0 (mkConst ``Arm.StateField) f fs
 
 /-- Return a proof of type `<x> ∈ <xs>`, given expressions `α : Type u`, `x : α`
@@ -311,7 +311,7 @@ and `xs : List α`, assuming that `xs` is of the form `[x₁, x₂, ⋯, xₙ]` 
 `x` is *syntactically* equal to one of the elements `xᵢ`.
 
 Returns `none` if the proof could not be constructed  -/
-partial def mkListMemProof (u : Level) (α x xs : Expr) : Option Expr := do
+meta partial def mkListMemProof (u : Level) (α x xs : Expr) : Option Expr := do
   let_expr List.cons _α hd tl := xs | none
   if hd == x then
     mkApp3 (.const ``List.Mem.head [u]) α x tl
@@ -328,26 +328,26 @@ theorem mkNeProofOfNotMemAndMem.aux.{u}
 /-- Return a proof of type `<x> ≠ <y>`, given proofs
 `nonMemProof : <x> ∉ <xs>` and `memProof : <y> ∈ <xs>`, assuming that
 `α : Type u`, `x y : α`, and `xs : List α` -/
-@[inline] def mkNeProofOfNotMemAndMem (u : Level) (α x y xs nonMemProof memProof : Expr) :
+@[inline] meta def mkNeProofOfNotMemAndMem (u : Level) (α x y xs nonMemProof memProof : Expr) :
     Expr :=
   mkApp6 (.const ``Arm.mkNeProofOfNotMemAndMem.aux [u]) α x y xs
     nonMemProof memProof
 
 /-- Return a proof of `<x> ∉ <xs>`, given `notMemProof : <x> ∉ <y> :: xs`,
 assuming that `α : Type u`, `x y : α`, and `xs : List α` -/
-@[inline] def mkNotMemOfNotMemCons (u : Level) (α x y xs notMemProof : Expr) : Expr :=
+@[inline] meta def mkNotMemOfNotMemCons (u : Level) (α x y xs notMemProof : Expr) : Expr :=
   mkApp5 (.const ``List.not_mem_of_not_mem_cons [u]) α x y xs notMemProof
 
 /-! ## Expr Helpers -/
 
 /-- Throw an error if `e` is not of type `expectedType` -/
-def assertHasType (e expectedType : Expr) : MetaM Unit := do
+meta def assertHasType (e expectedType : Expr) : MetaM Unit := do
   let eType ← inferType e
   if !(←isDefEq eType expectedType) then
     throwError "{e} {← mkHasTypeButIsExpectedMsg eType expectedType}"
 
 /-- Throw an error if `e` is not def-eq to `expected` -/
-def assertIsDefEq (e expected : Expr) : MetaM Unit := do
+meta def assertIsDefEq (e expected : Expr) : MetaM Unit := do
   if !(←isDefEq e expected) then
     throwError "expected:\n  {expected}\nbut found:\n  {e}"
 
@@ -357,7 +357,7 @@ Rewrites with a fresh metavariable as the ambient goal.
 Fails if the rewrite produces any subgoals.
 -/
 -- source: https://github.com/leanprover-community/mathlib4/blob/b35703fe5a80f1fa74b82a2adc22f3631316a5b3/Mathlib/Lean/Expr/Basic.lean#L476-L477
-def rewrite (e eq : Expr) : MetaM Expr := do
+meta def rewrite (e eq : Expr) : MetaM Expr := do
   let ⟨_, eq', []⟩ ← (← mkFreshExprMVar none).mvarId!.rewrite e eq
     | throwError "Expr.rewrite may not produce subgoals."
   return eq'
@@ -368,7 +368,7 @@ Rewrites with a fresh metavariable as the ambient goal.
 Fails if the rewrite produces any subgoals.
 -/
 -- source: https://github.com/leanprover-community/mathlib4/blob/b35703fe5a80f1fa74b82a2adc22f3631316a5b3/Mathlib/Lean/Expr/Basic.lean#L476-L477
-def rewriteType (e eq : Expr) : MetaM Expr := do
+meta def rewriteType (e eq : Expr) : MetaM Expr := do
   mkEqMP (← rewrite (← inferType e) eq) e
 
 /-! ## Tracing helpers -/

@@ -96,14 +96,14 @@ namespace AxEffects
 section MonadicGetters
 variable {m} [Monad m] [MonadReaderOf AxEffects m]
 
-def getCurrentState       : m Expr := do return (← read).currentState
-def getInitialState       : m Expr := do return (← read).initialState
-def getNonEffectProof     : m Expr := do return (← read).nonEffectProof
-def getMemoryEffect       : m Expr := do return (← read).memoryEffects.effects
-def getMemoryEffectProof  : m Expr := do return (← read).memoryEffects.proof
-def getProgramProof       : m Expr := do return (← read).programProof
+meta def getCurrentState       : m Expr := do return (← read).currentState
+meta def getInitialState       : m Expr := do return (← read).initialState
+meta def getNonEffectProof     : m Expr := do return (← read).nonEffectProof
+meta def getMemoryEffect       : m Expr := do return (← read).memoryEffects.effects
+meta def getMemoryEffectProof  : m Expr := do return (← read).memoryEffects.proof
+meta def getProgramProof       : m Expr := do return (← read).programProof
 
-def getStackAlignmentProof? : m (Option Expr) := do
+meta def getStackAlignmentProof? : m (Option Expr) := do
   return (← read).stackAlignmentProof?
 
 variable [MonadLiftT MetaM m] in
@@ -127,7 +127,7 @@ end MonadicGetters
 /-- An initial `AxEffects` state which has no writes.
 That is, the given `state` is assigned to be both the initial and the current
 state -/
-def initial (state : Expr) : AxEffects where
+meta def initial (state : Expr) : AxEffects where
   initialState      := state
   currentState      := state
   fields            := {}
@@ -179,7 +179,7 @@ private def traceCurrentState (eff : AxEffects)
 /-- Given a `field` such that `fields ∉ eff.fields`, return a proof of
   `r field <currentState> = r field <initialState>`
 by constructing an application of `eff.nonEffectProof` -/
-partial def mkAppNonEffect (eff : AxEffects) (field : Expr) : MetaM Expr := do
+meta partial def mkAppNonEffect (eff : AxEffects) (field : Expr) : MetaM Expr := do
   let msg := m!"constructing application of non-effects proof"
   Sym.withTraceNode msg (tag := "mkAppNonEffect") <| do
     Sym.traceLargeMsg "nonEffectProof" m!"{eff.nonEffectProof}"
@@ -196,7 +196,7 @@ partial def mkAppNonEffect (eff : AxEffects) (field : Expr) : MetaM Expr := do
 
 /-- Get the value for a field, if one is stored in `eff.fields`,
 or assemble an instantiation of the non-effects proof otherwise -/
-def getField (eff : AxEffects) (fld : StateField) : MetaM FieldEffect :=
+meta def getField (eff : AxEffects) (fld : StateField) : MetaM FieldEffect :=
   withTraceNode m!"getField {fld}" (tag := "getField") <| do
     eff.traceCurrentState
 
@@ -234,7 +234,7 @@ def setFieldEffect (field : StateField) (effect : FieldEffect) : m Unit :=
 `ERR` field accordingly.
 
 This is a specialization of `setFieldEffect`. -/
-def setErrorProof (proof : Expr) : m Unit :=
+meta def setErrorProof (proof : Expr) : m Unit :=
   setFieldEffect .ERR { value := mkConst ``Arm.StateError.None, proof }
 
 end MonadicGettersAndSetters
@@ -247,7 +247,7 @@ That is, `currentState` of the returned struct will be
 and all other fields are updated accordingly.
 Note that no effort is made to preserve `currentStateEq`; it is set to `none`!
 -/
-private def update_write_mem (eff : AxEffects) (n addr val : Expr) :
+private meta def update_write_mem (eff : AxEffects) (n addr val : Expr) :
     MetaM AxEffects :=
   Sym.withTraceNode m!"processing: write_mem {n} {addr} {val} …" (tag := "updateWriteMem") <| do
 
@@ -304,7 +304,7 @@ That is, `currentState` of the returned struct will be
 and all other fields are updated accordingly.
 Note that no effort is made to preserve `currentStateEq`; it is set to `none`!
 -/
-private def update_w (eff : AxEffects) (fld val : Expr) :
+private meta def update_w (eff : AxEffects) (fld val : Expr) :
     MetaM AxEffects := do
   Sym.withTraceNode m!"processing: w {fld} {val} …" (tag := "updateWrite") <| do
   let rField ← reflectStateField fld
@@ -441,7 +441,7 @@ return an `AxEffects` where `e` is the new `currentState`.
 
 See also `updateWithExpr`, which is a wrapper around `updateWithExprAux` which adds a top-level trace node.
 -/
-private partial def updateWithExprAux (eff : AxEffects) (e : Expr) : MetaM AxEffects := do
+private meta partial def updateWithExprAux (eff : AxEffects) (e : Expr) : MetaM AxEffects := do
   match_expr e with
   | Arm.write_mem_bytes n addr val e =>
       let eff ← eff.updateWithExprAux e
@@ -458,7 +458,7 @@ private partial def updateWithExprAux (eff : AxEffects) (e : Expr) : MetaM AxEff
 /-- Given an expression `e : ArmState`,
 which is a sequence of `w`/`write_mem`s to `eff.currentState`,
 return an `AxEffects` where `e` is the new `currentState`. -/
-partial def updateWithExpr (eff : AxEffects) (e : Expr) : MetaM AxEffects := do
+meta partial def updateWithExpr (eff : AxEffects) (e : Expr) : MetaM AxEffects := do
   let msg := m!"Updating effects with writes from: {e}"
   withTraceNode msg (tag := "updateWithExpr") <|
     updateWithExprAux eff e
@@ -470,7 +470,7 @@ return an `AxEffects` where `s` is the intial state, and `e` is `currentState`.
 Note that as soon as an unsupported expression (e.g., an `if`) is encountered,
 the whole expression is taken to be the initial state,
 even if there might be more `w`/`write_mem`s in sub-expressions. -/
-def fromExpr (e : Expr) : MetaM AxEffects := do
+meta def fromExpr (e : Expr) : MetaM AxEffects := do
   let s0 ← mkFreshExprMVar mkArmState
   let eff := initial s0
   let eff ← eff.updateWithExpr e
@@ -478,7 +478,7 @@ def fromExpr (e : Expr) : MetaM AxEffects := do
 
 /-- Given a proof `eq : s = <currentState>`,
 set `s` to be the new `currentState`, and update all proofs accordingly -/
-def adjustCurrentStateWithEq (eff : AxEffects) (s eq : Expr) :
+meta def adjustCurrentStateWithEq (eff : AxEffects) (s eq : Expr) :
     MetaM AxEffects := do
   Sym.withTraceNode m!"adjustCurrentStateWithEq" (tag := "adjustCurrentStateWithEq") do
     trace[Tactic.sym] "rewriting along {eq}"
@@ -515,7 +515,7 @@ def adjustCurrentStateWithEq (eff : AxEffects) (s eq : Expr) :
 where `?s` and `?s0` are arbitrary `ArmState`s,
 return an `AxEffect` with the rhs of the equality as the current state,
 and the (non-)effects updated accordingly -/
-def updateWithEq (eff : AxEffects) (eq : Expr) : MetaM AxEffects :=
+meta def updateWithEq (eff : AxEffects) (eq : Expr) : MetaM AxEffects :=
   withTraceNode m!"Building effects with equality: {eq}"
                 (tag := "updateWithEq") <| do
     let s ← mkFreshExprMVar mkArmState
@@ -535,7 +535,7 @@ and the (non-)effects updated accordingly
 
 One can optionally pass in a proof that `?s0` has a well-aligned stack pointer.
 -/
-def fromEq (eq : Expr) (stackAlignmentProof? : Option Expr := none) :
+meta def fromEq (eq : Expr) (stackAlignmentProof? : Option Expr := none) :
     MetaM AxEffects := do
   let s0 ← mkFreshExprMVar mkArmState
   let eff := { initial s0 with stackAlignmentProof? }
@@ -550,7 +550,7 @@ in the return value.
 Generally used with `?currentProgram = <initialState>.program`, which is the
 default rhs created by `initial`,
 and `?newProgram` the constant of the concrete program. -/
-def withProgramEq (eff : AxEffects) (eq : Expr) : MetaM AxEffects := do
+meta def withProgramEq (eff : AxEffects) (eq : Expr) : MetaM AxEffects := do
   let programProof ← mkEqTrans eff.programProof eq
   return {eff with programProof}
 
@@ -565,7 +565,7 @@ If this rewrite fails, return the original effects unchanged.
 Note: throws an error when `initialState = currentState` *and*
 the field already has a value stored, as the rewrite might produce expressions
 of unexpected types. -/
-def withField (eff : AxEffects) (eq : Expr) : MetaM AxEffects := do
+meta def withField (eff : AxEffects) (eq : Expr) : MetaM AxEffects := do
   withTraceNode m!"withField {eq}" (tag := "withField") <| do
     eff.traceCurrentState
     let fieldE ← mkFreshExprMVar (mkConst ``Arm.StateField)
@@ -623,7 +623,7 @@ called for each step of the `sym_n` tactic.
 NOTE: does not necessarily validate *which* type an expression has,
 validation will still pass if types are different to those we claim in the
 docstrings -/
-def validate (eff : AxEffects) : MetaM Unit := do
+meta def validate (eff : AxEffects) : MetaM Unit := do
   Sym.withTraceNode "validating that the axiomatic effects are well-formed"
                 (tag := "validate") <| do
     eff.traceCurrentState
@@ -738,7 +738,7 @@ where
 
 /-- Return an array of `SimpTheorem`s of the proofs contained in
 the given `AxEffects` -/
-def toSimpTheorems (eff : AxEffects) : MetaM (Array SimpTheorem) := do
+meta def toSimpTheorems (eff : AxEffects) : MetaM (Array SimpTheorem) := do
   Sym.withTraceNode m!"computing SimpTheorems for (non-)effect hypotheses"
                 (tag := "toSimpTheorems") <| do
     let lctx ← getLCtx

@@ -20,7 +20,7 @@ open Lean Meta Elab Tactic
 
 /-- The locals `t : Clif.Ty` of the main goal without a hypothesis `t.isInt = true` or
 `¬t.isInt = true`. -/
-def intSplitCandidates : TacticM (List Expr) := withMainContext do
+meta def intSplitCandidates : TacticM (List Expr) := withMainContext do
   let lctx ← getLCtx
   let mut out := []
   for d in lctx do
@@ -41,7 +41,7 @@ def intSplitCandidates : TacticM (List Expr) := withMainContext do
 
 /-- `tac` on the main goal after at most `depth` nested `isInt` splits; fails if no choice of
 splits lets `tac` succeed on every case. -/
-partial def intAttempt (tac : Syntax) (depth : Nat) : TacticM Unit := do
+meta partial def intAttempt (tac : Syntax) (depth : Nat) : TacticM Unit := do
   let s ← saveState
   try
     withoutRecover (evalTactic tac)
@@ -65,7 +65,7 @@ partial def intAttempt (tac : Syntax) (depth : Nat) : TacticM Unit := do
     throw e
 
 /-- `intAttempt` with the fewest splits (up to `fuel`). -/
-def intRetry (tac : Syntax) (fuel : Nat) : TacticM Unit := do
+meta def intRetry (tac : Syntax) (fuel : Nat) : TacticM Unit := do
   let s ← saveState
   for d in List.range fuel do
     try

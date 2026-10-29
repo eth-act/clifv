@@ -40,7 +40,7 @@ def withInfoTraceNode (msg : MessageData) (k : m α)
 /-- Create a trace note that folds `header` with `(NOTE: can be large)`,
 and prints `msg` under such a trace node.
 -/
-def traceLargeMsg (header : MessageData) (msg : MessageData) : MetaM Unit :=
+meta def traceLargeMsg (header : MessageData) (msg : MessageData) : MetaM Unit :=
     withTraceNode m!"{header} (NOTE: can be large)" do
       trace[Tactic.sym] msg
 

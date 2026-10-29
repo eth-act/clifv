@@ -47,14 +47,14 @@ namespace MemoryEffects
 
 /-- An initial `MemoryEffects`, representing no memory changes to the
 initial `state` -/
-def initial (state : Expr) : MemoryEffects where
+meta def initial (state : Expr) : MemoryEffects where
   effects := state
   proof :=
     -- `rfl`
     mkEqReflMemory (mkApp (mkConst ``Arm.ArmState.mem) state)
 
 /-- Update the memory effects with a memory write -/
-def updateWriteMem (eff : MemoryEffects) (currentState : Expr)
+meta def updateWriteMem (eff : MemoryEffects) (currentState : Expr)
     (n addr val : Expr) :
     MetaM MemoryEffects := do
   let effects := mkApp4 (mkConst ``Arm.write_mem_bytes) n addr val eff.effects
@@ -68,7 +68,7 @@ def updateWriteMem (eff : MemoryEffects) (currentState : Expr)
 
 This doesn't change the actual effect, but since the `currentState` has changed,
 we need to update proofs -/
-def updateWrite (eff : MemoryEffects) (currentState : Expr)
+meta def updateWrite (eff : MemoryEffects) (currentState : Expr)
     (fld val : Expr) :
     MetaM MemoryEffects := do
   let proof := -- `mem_w_of_mem_eq ...`
@@ -78,7 +78,7 @@ def updateWrite (eff : MemoryEffects) (currentState : Expr)
 
 /-- Transport all proofs along an equality `eq : <currentState> = s`,
 so that `s` is the new `currentState` -/
-def adjustCurrentStateWithEq (eff : MemoryEffects) (eq : Expr) :
+meta def adjustCurrentStateWithEq (eff : MemoryEffects) (eq : Expr) :
     MetaM MemoryEffects := do
   let proof ← rewriteType eff.proof eq
   /- ^^ This looks scary, since it can rewrite the left-hand-side of the proof
@@ -91,12 +91,12 @@ def adjustCurrentStateWithEq (eff : MemoryEffects) (eq : Expr) :
   return { eff with proof }
 
 /-- Convert a `MemoryEffects` into a `MessageData` for logging. -/
-def toMessageData (eff : MemoryEffects) : MetaM MessageData := do
+meta def toMessageData (eff : MemoryEffects) : MetaM MessageData := do
   let out := m!"effects: {eff.effects}"
   return out
 
 /-- Trace the current state of `MemoryEffects`. -/
-def traceCurrentState (eff : MemoryEffects) : MetaM Unit := do
+meta def traceCurrentState (eff : MemoryEffects) : MetaM Unit := do
   Sym.traceLargeMsg "memoryEffects" (← eff.toMessageData)
 
 
@@ -116,7 +116,7 @@ NOTE: does not necessarily validate *which* type an expression has,
 validation will still pass if types are different to those we claim in the
 docstrings
 -/
-def validate (eff : MemoryEffects) : MetaM Unit := do
+meta def validate (eff : MemoryEffects) : MetaM Unit := do
   let msg := "validating that the axiomatic effects are well-formed"
   Sym.withTraceNode msg do
     eff.traceCurrentState

@@ -23,7 +23,7 @@ open Lean Meta Elab Tactic
 `Clif.Val` constructors (dependent unification: `⟨t, b⟩ = ⟨t', b'⟩` substitutes the type and
 the bits where they are variables; `simp`'s `Val.mk.injEq` would leave a `HEq` that `simp_all`
 loses), if any. -/
-def destructStep (g : MVarId) : MetaM (Option (List MVarId)) := g.withContext do
+meta def destructStep (g : MVarId) : MetaM (Option (List MVarId)) := g.withContext do
   for d in (← getLCtx) do
     if d.isImplementationDetail then continue
     let t ← whnfR (← instantiateMVars d.type)
@@ -61,7 +61,7 @@ a number, so that `simp_all` leaves it alone). -/
 def OptSeen (_h : Nat) : Prop := True
 
 /-- The `(state, class)` of a class-value term `den st x` (a local applied to two arguments). -/
-def denKey? (e : Expr) : Option (Expr × Expr) :=
+meta def denKey? (e : Expr) : Option (Expr × Expr) :=
   if e.getAppFn.isFVar && e.getAppNumArgs == 2 then some (e.getArg! 0, e.getArg! 1) else none
 
 /-- For every hypothesis `h₂ : den st x = some c` and every hypothesis `h₁` about the same

@@ -136,7 +136,7 @@ theorem aun_sound {a : AW} {t k : Nat} {vs : List V} (h : γ f ctx a (.data t k 
       | data t' k' fs =>
         obtain ⟨vs', he, hl⟩ := hxv
         cases he
-        generalize hbs : as.filter (fun b => match b with | .data _ k' _ => k == k' | _ => false) = bs
+        generalize hbs : as.filter _ = bs
         have hmem := filter_data_mem hbs hx rfl
         match bs, hmem with
         | [.data _ _ gs], hm =>

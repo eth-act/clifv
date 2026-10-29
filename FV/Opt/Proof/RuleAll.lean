@@ -124,7 +124,7 @@ theorem AllowedOk.skip {ok : Rule → Prop} {allow : RuleId → Bool} {r : Rule}
 
 /-- `allow` as a function, run by the compiler (decides which rules `allowed_ok%` takes; the
 kernel re-checks every skip). -/
-private unsafe def evalAllowUnsafe (allow : Lean.Expr) : TermElabM (RuleId → Bool) := do
+private meta unsafe def evalAllowUnsafe (allow : Lean.Expr) : TermElabM (RuleId → Bool) := do
   evalExpr (RuleId → Bool) (← mkArrow (Lean.mkConst ``RuleId) (Lean.mkConst ``Bool)) allow
 
 @[implemented_by evalAllowUnsafe]

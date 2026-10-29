@@ -112,10 +112,10 @@ abbrev SymReaderM := ReaderT SymContext TacticM
 
 namespace SymM
 
-def run (ctx : SymContext) (k : SymM α) : TacticM (α × SymContext) :=
+meta def run (ctx : SymContext) (k : SymM α) : TacticM (α × SymContext) :=
   StateT.run k ctx
 
-def run' (ctx : SymContext) (k : SymM α) : TacticM α :=
+meta def run' (ctx : SymContext) (k : SymM α) : TacticM α :=
   StateT.run' k ctx
 
 instance : MonadLift SymReaderM SymM where
@@ -164,7 +164,7 @@ def program : Name := c.programInfo.name
 
 /-- Find the local declaration that corresponds to a given name,
 or throw an error if no local variable of that name exists -/
-def findFromUserName (name : Name) : MetaM LocalDecl :=
+meta def findFromUserName (name : Name) : MetaM LocalDecl :=
   withInfoTraceNode m!"[findFromUserName] {name}" <| do
     let some decl := (← getLCtx).findFromUserName? name
       | throwError "Unknown local variable `{name}`"
@@ -172,7 +172,7 @@ def findFromUserName (name : Name) : MetaM LocalDecl :=
 
 /-- Find the local declaration that corresponds to `c.h_run`,
 or throw an error if no local variable of that name exists -/
-def hRunDecl : MetaM LocalDecl := do
+meta def hRunDecl : MetaM LocalDecl := do
   findFromUserName c.h_run
 
 section MonadicGetters
@@ -201,7 +201,7 @@ end
 
 /-- Convert a `SymContext` to `MessageData` for tracing.
 This is not a `ToMessageData` instance because we need access to `MetaM` -/
-def toMessageData (c : SymContext) : MetaM MessageData := do
+meta def toMessageData (c : SymContext) : MetaM MessageData := do
   let h_run ← userNameToMessageData c.h_run
 
   return m!"\{ finalState := {c.finalState},
@@ -237,11 +237,11 @@ def addSimpTheorems (c : SymContext) (simpThms : Array SimpTheorem) : SymContext
 /-! ## Creating initial contexts -/
 
 /-- Modify a `SymContext` with a monadic action `k : SymM Unit` -/
-def modify (ctxt : SymContext) (k : SymM Unit) : TacticM SymContext := do
+meta def modify (ctxt : SymContext) (k : SymM Unit) : TacticM SymContext := do
   let ((), ctxt) ← SymM.run ctxt k
   return ctxt
 
-private def initial (state : Expr) : MetaM SymContext := do
+private meta def initial (state : Expr) : MetaM SymContext := do
   /- Create an mvar for the final state -/
   let finalState ← mkFreshExprMVar mkArmState
   /- Get the default simp lemmas & simprocs for aggregation -/
@@ -295,7 +295,7 @@ with `s1` as the first new intermediate state"
       currentStateNumber := 0 })
 
 /-- Annotate any errors thrown by `k` with a local variable (and its type) -/
-private def withErrorContext (name : Name) (type? : Option Expr) (k : MetaM α) :
+private meta def withErrorContext (name : Name) (type? : Option Expr) (k : MetaM α) :
     MetaM α :=
   try k catch e =>
     let h ← userNameToMessageData name
@@ -434,7 +434,7 @@ the expected types.
 If an hypothesis `h_err : r <state> .ERR = None` is not found,
 we create a new subgoal of this type.
 -/
-def fromMainContext (state? : Option Name) : TacticM SymContext := do
+meta def fromMainContext (state? : Option Name) : TacticM SymContext := do
   let msg := m!"Building a `SymContext` from the local context"
   withTraceNode msg (tag := "fromMainContext") <| withMainContext' do
   trace[Tactic.Sym] "state? := {state?}"

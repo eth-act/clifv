@@ -36,7 +36,7 @@ open Backend Backend.Proof
 
 open Lean Meta in
 /-- Destructure every conjunction and existential hypothesis. -/
-partial def destrGoal (g : MVarId) : MetaM MVarId := g.withContext do
+meta partial def destrGoal (g : MVarId) : MetaM MVarId := g.withContext do
   for d in (← getLCtx) do
     if d.isImplementationDetail then continue
     let t ← instantiateMVars d.type
@@ -51,7 +51,7 @@ elab "destr" : tactic => liftMetaTactic fun g => do return [← destrGoal g]
 
 open Lean Meta in
 /-- Destructure every conjunction, existential and disjunction hypothesis (several goals). -/
-partial def destrAllGoal (g : MVarId) : MetaM (List MVarId) := g.withContext do
+meta partial def destrAllGoal (g : MVarId) : MetaM (List MVarId) := g.withContext do
   for d in (← getLCtx) do
     if d.isImplementationDetail then continue
     let t ← instantiateMVars d.type
@@ -66,7 +66,7 @@ elab "destr_all" : tactic => liftMetaTactic destrAllGoal
 
 open Lean Meta in
 /-- Case on every local of one of the types `names`. -/
-partial def casesTypes (names : List Name) (g : MVarId) : MetaM (List MVarId) := g.withContext do
+meta partial def casesTypes (names : List Name) (g : MVarId) : MetaM (List MVarId) := g.withContext do
   for d in (← getLCtx) do
     if d.isImplementationDetail then continue
     let t ← instantiateMVars d.type

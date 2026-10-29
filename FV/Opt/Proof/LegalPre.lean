@@ -2,6 +2,7 @@ module
 
 public import FV.Opt.Proof.LegalComplete
 public import FV.Opt.Legalize128Pre
+public meta import FV.Opt.Legalize128Pre
 
 @[expose] public section
 

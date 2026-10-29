@@ -20,7 +20,7 @@ open Elab.Tactic Elab.Term
 initialize
   Lean.registerTraceClass `Sym.reduceFetchInst
 
-def reduceFetchInst? (addr : _root_.BitVec 64) (s : Expr) :
+meta def reduceFetchInst? (addr : _root_.BitVec 64) (s : Expr) :
     MetaM (_root_.BitVec 32 × Expr) := do
   let ⟨programHyp, program⟩ ← findProgramHyp s
   let programInfo ← try ProgramInfo.lookupOrGenerate program catch err =>

@@ -26,7 +26,7 @@ attempt of the new hypothesis.
 
 The responsibility of providing a well-formed `term` lies with the
 caller of this function. -/
-def introLNSymHyp (goal : MVarId)
+meta def introLNSymHyp (goal : MVarId)
   (st_var : Expr) (name : Name) (term : Expr)
   (ctx : Simp.Context) (simprocs : Array Simp.Simprocs)
   (subst? : Bool := true) (simp_new_goal? : Bool := true) :
@@ -60,7 +60,7 @@ def gen_hyp_name (st_name : String) (suffix : String) : Name :=
 corresponding to a `StateField` value), in the expression `nest`,
 which is assumed to be a nest of updates made to the Arm state. If
 `nest` does not include an update to `field`, return none. -/
-partial def getArmStateComponentNoMem (field : Expr) (nest : Expr) : Option Expr :=
+meta partial def getArmStateComponentNoMem (field : Expr) (nest : Expr) : Option Expr :=
   match_expr nest with
   | Arm.w w_field val rest =>
     if field == w_field then

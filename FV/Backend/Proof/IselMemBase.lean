@@ -246,7 +246,7 @@ macro_rules
 
 open Lean Elab Tactic Meta in
 /-- The term ids a rule constant mentions (`.term _ t _` patterns and expressions). -/
-def memRuleTermIds (rule : Name) : MetaM (Array Nat) := do
+meta def memRuleTermIds (rule : Name) : MetaM (Array Nat) := do
   let some ci := (← getEnv).find? rule | return #[]
   let some v := ci.value? | return #[]
   let acc ← IO.mkRef (#[] : Array Nat)
@@ -262,7 +262,7 @@ def memRuleTermIds (rule : Name) : MetaM (Array Nat) := do
 open Lean Elab Tactic Meta in
 /-- The rule constants occurring in hypotheses `hs`, plus the data facts `hp.tN` of the terms
 they mention, plus `ls`. -/
-def memInvLemmas (hp : Ident) (ls : Array Lean.Term) (hs : Array Ident) :
+meta def memInvLemmas (hp : Ident) (ls : Array Lean.Term) (hs : Array Ident) :
     TacticM (Array (TSyntax `Lean.Parser.Tactic.simpLemma)) := withMainContext do
   let mut rules : Array Name := #[]
   for h in hs do

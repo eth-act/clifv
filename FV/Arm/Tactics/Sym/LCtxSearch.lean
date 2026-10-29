@@ -118,7 +118,7 @@ particular variable will not be matched for any other patterns.
 In case of overlapping patterns, the pattern which was added first will be
 tried first
 -/
-def searchLCtxFor
+meta def searchLCtxFor
     (expectedType : m Expr)
     (whenFound : LocalDecl → Expr → m LCtxSearchResult)
     (whenNotFound : Expr → m Unit := fun _ => pure ())
@@ -138,7 +138,7 @@ def searchLCtxFor
 one occurence of `expectedType`.
 
 See `searchLCtxFor` for an explanation of the arguments -/
-def searchLCtxForOnce
+meta def searchLCtxForOnce
     (expectedType : Expr)
     (whenFound : LocalDecl → Expr → m Unit)
     (whenNotFound : Expr → m Unit := fun _ => pure ())
@@ -157,7 +157,7 @@ variable [MonadLCtx m] [MonadLiftT MetaM m] [MonadLiftT TacticM m]
 namespace LCtxSearchState
 
 /-- Return `true` if `e` matches the pattern -/
-def Pattern.matches (pat : Pattern m) (e : Expr) : m Bool := do
+meta def Pattern.matches (pat : Pattern m) (e : Expr) : m Bool := do
   let mut e := e
   if pat.matchUnderBinders then
     let ⟨_, _, e'⟩ ← Meta.forallMetaTelescope e
@@ -226,13 +226,13 @@ def searchLCtx (k : SearchLCtxForM m Unit) : m Unit := do
 variable [MonadError m] in
 /-- Throw an error complaining that no variable of `expectedType` could
 be found -/
-def throwNotFound (expectedType : Expr) : m Unit :=
+meta def throwNotFound (expectedType : Expr) : m Unit :=
   throwError "Expected a local variable of type:\n  {expectedType}\n\
     but no such variable was found in the local context"
 
 /-- Add a message to the trace that we searched for, but couldn't find,
 a variable of `expectedType`, and continue execution. -/
-def traceNotFound (cls : Name) (expectedType : Expr) : m Unit :=
+meta def traceNotFound (cls : Name) (expectedType : Expr) : m Unit :=
   trace (m:=MetaM) cls fun _ =>
     m!"Unable to find a variable of type {expectedType} in the local context"
 

@@ -236,7 +236,7 @@ macro "nat_route" : tactic => `(tactic| (
 open Lean Meta Elab Tactic in
 /-- Close an equation by `rfl`/`omega`, else by congruence (to depth `d`) down to `Nat`
 equations closed by `omega`. -/
-partial def eqLeafCore (d : Nat) : TacticM Unit := do
+meta partial def eqLeafCore (d : Nat) : TacticM Unit := do
   if ← tryTactic (evalTactic (← `(tactic| first | rfl | trivial | omega))) then return
   if d = 0 then throwError m!"eq_leaf: failed{indentExpr (← getMainTarget)}"
   evalTactic (← `(tactic| congr 1))
@@ -251,7 +251,7 @@ elab "eq_leaf" : tactic => eqLeafCore 4
 open Lean Meta Elab Tactic in
 /-- Close a per-bit goal over index arithmetic: evaluate the decided conditions (`omega`), drop
 out-of-range bits, case split on the first open condition, repeat; leaves by `eqLeafCore`. -/
-partial def bitCasesCore : TacticM Unit := do
+meta partial def bitCasesCore : TacticM Unit := do
   let _ ← tryTactic (evalTactic (← `(tactic| simp (disch := omega) only [decide_eq_true,
     decide_eq_false, ite_eq_left, ite_eq_right, BitVec.getLsbD_of_ge, Bool.false_or, Bool.or_false,
     Bool.and_false, Bool.false_and, Bool.true_and, Bool.and_true, Bool.true_or, Bool.or_true,

@@ -4,6 +4,12 @@ public import FV.E2E.ExecFrame
 public import FV.Backend.Proof.RegallocMem
 public import FV.Backend.Proof.EncodeBranch
 public import FV.Backend.Proof.EncodeLayout
+import all Init.Data.Format.Basic
+import all Init.Data.Int.Repr
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Nat.Gcd
+import all Init.Data.Repr
+import all Init.Prelude
 
 @[expose] public section
 
