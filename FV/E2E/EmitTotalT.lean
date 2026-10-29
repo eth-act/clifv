@@ -96,7 +96,7 @@ theorem emitPre_spill_of {vc vcp : VCode} {af : AFunc} (hdom : Prep.PrepDomain v
     (ha : lowerRFunc vcp (spillAlloc vcp) = .ok af) : ∀ k, ∃ pre, emitPre k af = .ok pre := by
   intro k
   have hcov' : FormsCovered ⟨k, af.slotBase⟩ vcp := formsCovered_ctx hcov _
-  obtain ⟨hlab, ht⟩ := EmitLabels.lowerRFunc_targets htg
+  obtain ⟨hlab, ht⟩ := lowerRFunc_targets htg
     (Nat.le_of_eq (E2E.spillAlloc_size vcp).symm) ha
   refine emitPre_of ?_ ?_ ht
   · intro x hx a ha' ps

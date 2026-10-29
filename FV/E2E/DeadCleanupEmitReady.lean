@@ -61,7 +61,7 @@ theorem emitPre_spill_cleanup_ok {p : Clif.Program} {f : Clif.Function} {vc vcp 
   have hcov := formsCovered_cleanup_complete (lowerScope_of hs) hl hp ⟨k, af.slotBase⟩
   obtain ⟨hins, vb0, -, hvb0, -⟩ :=
     ctlInsts_cleanup_pipeline hsub (dominated_of hd) (lowerScope_of hs) hl hp
-  obtain ⟨hlab, ht⟩ := EmitLabels.lowerRFunc_targets htg
+  obtain ⟨hlab, ht⟩ := lowerRFunc_targets htg
     (Nat.le_of_eq (spillAlloc_size vcp).symm) ha
   refine emitPre_of ?_ ?_ ht
   · intro x hx a ha' ps
