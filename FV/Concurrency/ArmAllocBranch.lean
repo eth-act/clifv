@@ -155,8 +155,8 @@ theorem reach_rcbE {R : RL} (hR : R.Wf) {s : ArmState} {j0 : Nat} {bc : Insn} {t
         · exact hAT0
         · simp only [iterN]
           rw [hstep]
-          exact ⟨j0 + 1, .b t, none, hj1, (brInsn_hooked (x := .b t) (.inl ⟨t, rfl⟩)).2,
-            (brInsn_hooked (x := .b t) (.inl ⟨t, rfl⟩)).1, Arm.r_of_w_same ..⟩
+          exact ⟨j0 + 1, .b t', none, hj1, (brInsn_hooked (x := .b t') (.inl ⟨t', rfl⟩)).2,
+            (brInsn_hooked (x := .b t') (.inl ⟨t', rfl⟩)).1, Arm.r_of_w_same ..⟩
 
 /-- The state after `n` steps that changed only the pc, then `n'` more, with the steps' facts. -/
 theorem reach_thenE {R : RL} {s : ArmState} {n n' : Nat} {v v' : BitVec 64}
@@ -355,7 +355,7 @@ def RkC (R : RL) (s : ArmState) : MConf CV ArmState → Nat → Prop
   | .run ⟨b, its, _, w⟩, r => ∃ mt, QR R s b its mt w r
   | _, _ => True
 
-theorem iterN_succ' {S : Type} (f : S → S) (n : Nat) (s : S) :
+theorem iterN_succ_in {S : Type} (f : S → S) (n : Nat) (s : S) :
     iterN f (n + 1) s = iterN f n (f s) := rfl
 
 theorem fwdNext_of {R : RL} {b bx : Nat} (h : succOf R.vc b 0 = some bx) : fwdNext R b = bx := by
@@ -381,8 +381,8 @@ theorem QE.qed {R : RL} {s : ArmState} {m : Loc → CV} {w : ArmState} {b : Nat}
     have hfn := fwdNext_of hsucc
     refine ⟨d + 1, fun k hk => ?_, its, ?_, ?_⟩
     · rcases k with _ | k
-      · exact ⟨vb, x, items, allocs, regs, i, vbx, hvb, hx, hit, hil, hal, hins, hasg,
-          by rw [hfn]; exact hsucc, by rw [hfn]; exact hvbx, hlx⟩
+      · exact (⟨vb, x, items, allocs, regs, i, vbx, hvb, hx, hit, hil, hal, hins, hasg,
+          by rw [hfn]; exact hsucc, by rw [hfn]; exact hvbx, hlx⟩ : FwdE R b)
       · show FwdE R (iterN (fwdNext R) k (fwdNext R b))
         rw [hfn]; exact hall k (by omega)
     · show R.rf.blocks[iterN (fwdNext R) d (fwdNext R b)]? = some its
@@ -402,8 +402,8 @@ theorem QR.store {R : RL} {s : ArmState} {b : Nat} {its : List RItem} {mt m : Lo
     {w : ArmState} {r : Nat} (h : QR R s b its mt w r) (hst : StRel R s m w) :
     QR R s b its m w r := by
   rcases h with ⟨hq, hr⟩ | ⟨items, d, hit, hits, ⟨hall, its', hits', hq⟩, hr⟩
-  · exact .inl ⟨hq.store hst, hr⟩
-  · exact .inr ⟨items, d, hit, hits, ⟨hall, its', hits', hq.store hst⟩, hr⟩
+  · exact .inl ⟨Qs.store hq hst, hr⟩
+  · exact .inr ⟨items, d, hit, hits, ⟨hall, its', hits', Qs.store hq hst⟩, hr⟩
 
 /-- A ranked `Q` is `Q`. -/
 theorem QR.q {R : RL} {s : ArmState} {b : Nat} {its : List RItem} {m : Loc → CV}
@@ -417,7 +417,7 @@ theorem Q.qr {R : RL} {s : ArmState} {b : Nat} {its : List RItem} {m : Loc → C
     {w : ArmState} (h : Q R s (.run ⟨b, its, m, w⟩)) : ∃ r, QR R s b its m w r := by
   rcases h with hq | ⟨items, hit, hits, hqe⟩
   · exact ⟨_, .inl ⟨hq, rfl⟩⟩
-  · obtain ⟨d, hd⟩ := hqe.qed
+  · obtain ⟨d, hd⟩ := QE.qed hqe
     exact ⟨_, .inr ⟨items, d, hit, hits, hd, rfl⟩⟩
 
 theorem RkC.of_q {R : RL} {s : ArmState} {c : MConf CV ArmState} (h : Q R s c) :
@@ -443,9 +443,9 @@ theorem rk_pos (R : RL) (b n : Nat) : 0 < rk R b n := by simp only [rk]; omega
 
 theorem QR.pos {R : RL} {s : ArmState} {b : Nat} {its : List RItem} {m : Loc → CV}
     {w : ArmState} {r : Nat} (h : QR R s b its m w r) : 0 < r := by
-  rcases h with ⟨-, rfl⟩ | ⟨_, _, _, _, _, rfl⟩
+  rcases h with ⟨-, rfl⟩ | ⟨_, d, _, _, _, rfl⟩
   · exact rk_pos ..
-  · have := rk_pos R (iterN (fwdNext R) _ b) (blkSize R (iterN (fwdNext R) _ b)); omega
+  · have := rk_pos R (iterN (fwdNext R) d b) (blkSize R (iterN (fwdNext R) d b)); omega
 
 /-! ## The block labels are distinct -/
 
@@ -607,13 +607,13 @@ theorem qe_entry_rk {R : RL} (hR : R.Wf) {s : ArmState} {m : Loc → CV} {w : Ar
     have hfn := fwdNext_of hsucc
     obtain ⟨d, ⟨hall, its, hits, hqs⟩, hlt⟩ := ih hpc hbx0 hvbx hlx hitx
     have hit1 : iterN (fwdNext R) (d + 1) t = iterN (fwdNext R) d bx := by
-      rw [iterN_succ', hfn]
+      rw [iterN_succ_in, hfn]
     refine ⟨d + 1, ⟨fun k hk => ?_, its, by rw [hit1]; exact hits, by rw [hit1]; exact hqs⟩,
       by rw [hit1]; exact hlt⟩
     rcases k with _ | k
-    · exact ⟨vb, x, items, allocs, regs, i, vbx, hvb, by rw [hl]; exact hx, hit, hil, hal, hins,
-        hasg, by rw [hfn]; exact hsucc, by rw [hfn]; exact hvbx, hlx⟩
-    · rw [iterN_succ', hfn]
+    · exact (⟨vb, x, items, allocs, regs, i, vbx, hvb, by rw [hl]; exact hx, hit, hil, hal, hins,
+        hasg, by rw [hfn]; exact hsucc, by rw [hfn]; exact hvbx, hlx⟩ : FwdE R t)
+    · rw [iterN_succ_in, hfn]
       exact hall k (by omega)
 
 theorem le_sum_of_mem' : ∀ {l : List Nat} {x : Nat}, x ∈ l → x ≤ l.sum
@@ -764,12 +764,12 @@ theorem realizes_gotoE {R : RL} (hR : R.Wf) {s : ArmState} {b k : Nat} {allocs :
     · rcases d with _ | d
       · obtain ⟨-, items', hit', hqs⟩ := hqe
         change R.rf.blocks[b]? = some items' at hit'
-        rw [hit] at hit'
-        cases hit'
+        have e : items' = items := Option.some.inj (hit'.symm.trans hit)
+        rw [e] at hqs
         refine .inl ⟨by rw [hits]; exact hqs, ?_⟩
         rw [hr]
-        have hsz : items'.size = its.length + 1 := by
-          rw [← Array.length_toList, ← hits]; rfl
+        have hsz : items.size = its.length + 1 := by
+          have := congrArg List.length hits; simp at this; omega
         simp [blkSize, hit, hsz, iterN]
       · exact .inr ⟨d, items, hit, hits, hqe, hr⟩
   rcases hcase with ⟨hqs, hr⟩ | ⟨d, items, hit, hits, ⟨hall, its', hits', hqs'⟩, hr⟩
@@ -802,23 +802,22 @@ theorem realizes_gotoE {R : RL} (hR : R.Wf) {s : ArmState} {b k : Nat} {allocs :
     have hm2 : m2 = m := by
       funext l'
       refine (hcl.1 l' (by simp [MInst.clobbers])).trans ?_
-      simp [writeM]
+      simp [Proof.writeM]
     subst m2
     cases hn with
     | @goto _ st items' hk1 hsucc hitems =>
     rw [hsuccf] at hsucc
     cases hsucc
-    rw [iterN_succ'] at hits' hqs' hr
+    rw [iterN_succ_in] at hits' hqs' hr
     have hqe : QEd R s m w (fwdNext R b) d :=
       ⟨fun i hi => hall (i + 1) (by omega), its', hits', hqs'⟩
     have hqr : QR R s (fwdNext R b) items'.toList m w
         (rk R (iterN (fwdNext R) d (fwdNext R b)) (blkSize R (iterN (fwdNext R) d (fwdNext R b))) +
           d) := .inr ⟨items', d, hitems, rfl, hqe, rfl⟩
-    refine ⟨0, ?_, fun i hi => absurd hi (Nat.not_lt_zero _), fun _ => ⟨_, ?_, m, ?_⟩,
+    refine ⟨0, ?_, fun i hi => absurd hi (Nat.not_lt_zero _), fun _ => ⟨rk R (iterN (fwdNext R) d
+      (fwdNext R b)) (blkSize R (iterN (fwdNext R) d (fwdNext R b))) + d, by omega, m, hqr⟩,
       fun i hi => absurd hi (Nat.not_lt_zero _)⟩
-    · simpa [iterN, writeM] using hqr.q
-    · omega
-    · simpa [writeM] using hqr
+    simpa [iterN, Proof.writeM] using hqr.q
   obtain ⟨_, vb0, _, _, code, _, _, _, _, _, hvb0, -, -, hchk0, hcode, -⟩ := id hqs
   rw [hvb] at hvb0; cases hvb0
   obtain ⟨c1, c2, hc1, hc2, rfl⟩ := itemsCode_cons hcode
@@ -869,12 +868,12 @@ theorem realizes_gotoE {R : RL} (hR : R.Wf) {s : ArmState} {b k : Nat} {allocs :
     funext l
     refine (hcl.1 l ?_).trans ?_
     · rcases hbr with ⟨_, rfl⟩ | ⟨_, _, _, rfl⟩ | ⟨_, _, _, _, _, rfl⟩ <;> simp [MInst.clobbers]
-    · simp [writeM]
+    · simp [Proof.writeM]
   subst m2
   cases hn with
   | @goto _ st items' hk1 hsucc hitems =>
-  have hwm : writeM m ((((ops2.zip (regs.map Loc.reg)).toList.filter (·.1.isDef)).zip
-      ([] : List CV)).filter (·.1.1.isLate)) = m := by simp [writeM]
+  have hwm : Proof.writeM m ((((ops2.zip (regs.map Loc.reg)).toList.filter (·.1.isDef)).zip
+      ([] : List CV)).filter (·.1.1.isLate)) = m := by simp [Proof.writeM]
   rw [hwm]
   -- the successor's label
   have hti : t0 = i := by
@@ -1084,7 +1083,7 @@ theorem RkC.lt_of_step {R : RL} {t : ArmState × Mon} {c c' : MConf CV ArmState}
     (hm : c'.measure < c.measure) (hR' : RelQ R t c') : ∃ r', r' < r ∧ RkC R t.1 c' r' := by
   match c, c', hk, hng, hs, hm, hR' with
   | .run ⟨b, its, m, w⟩, .run ⟨b', its', m', w'⟩, ⟨mt, hk⟩, hng, hs, hm, hR' =>
-    have hb : b' = b := sameB_step hs (hng b its m w rfl) _ rfl _ rfl
+    have hb : b = b' := (sameB_step hs (hng b its m w rfl) _ rfl _ rfl).symm
     subst hb
     simp only [MConf.measure] at hm
     obtain ⟨mt', hq'⟩ := RelQ.q hR'
@@ -1097,11 +1096,12 @@ theorem RkC.lt_of_step {R : RL} {t : ArmState × Mon} {c c' : MConf CV ArmState}
       · rcases d with _ | d
         · obtain ⟨-, items', hit', -⟩ := hqe
           change R.rf.blocks[b]? = some items' at hit'
-          rw [hit] at hit'
-          cases hit'
-          refine ⟨?_, items, [], hit, hits.symm⟩
+          have e : items' = items := Option.some.inj (hit'.symm.trans hit)
+          subst e
+          refine ⟨?_, items', [], hit, hits.symm⟩
           rw [hr]
-          have hsz : items.size = its.length := by rw [← Array.length_toList, ← hits]
+          have hsz : items'.size = its.length := by
+            have := congrArg List.length hits; simp at this; omega
           simp [blkSize, hit, hsz, iterN]
         · exfalso
           obtain ⟨vbf, x, itemsf, allocsf, regsf, if_, vbx, hvbf, -, hitf, hil, -, hins, hasg, -⟩ :
@@ -1126,8 +1126,8 @@ theorem RkC.lt_of_step {R : RL} {t : ArmState × Mon} {c c' : MConf CV ArmState}
     exact ⟨rk R b its'.length, by simp only [rk]; omega, mt', .inl ⟨hqs', rfl⟩⟩
   | .run _, .ret .., ⟨mt, hk⟩, _, _, _, _ => exact ⟨0, QR.pos hk, trivial⟩
   | .run _, .halt _, ⟨mt, hk⟩, _, _, _, _ => exact ⟨0, QR.pos hk, trivial⟩
-  | .ret .., _, _, _, _, hm, _ => by simp [MConf.measure] at hm
-  | .halt _, _, _, _, _, hm, _ => by simp [MConf.measure] at hm
+  | .ret .., _, _, _, _, hm, _ => simp [MConf.measure] at hm
+  | .halt _, _, _, _, _, hm, _ => simp [MConf.measure] at hm
 
 /-- **From `MConf.measure` to the rank**, at the configurations whose steps stay in their block. -/
 theorem isOut_μR {R : RL} {ok : ArmState → Lab → Prop} {t : ArmState × Mon}
@@ -1141,7 +1141,7 @@ theorem isOut_μR {R : RL} {ok : ArmState → Lab → Prop} {t : ArmState × Mon
     obtain rfl := prun_take_zero hr1
     have hm : c'.measure < c.measure := hpos.resolve_left (Nat.lt_irrefl 0)
     obtain ⟨r', hr', hk'⟩ := RkC.lt_of_step hk hng hs hm hR1
-    exact ⟨0, evs, (c', r'), t, φ, hn, .inr hr', hs, hr1, ⟨hR1, hk'⟩, hi⟩
+    exact ⟨0, evs, (c', r'), t1, φ, hn, .inr hr', hs, hr1, ⟨hR1, hk'⟩, hi⟩
   · obtain ⟨r', hk'⟩ := RkC.of_relQ hR1
     exact ⟨n, evs, (c', r'), t1, φ, hn, .inl h0, hs, hr1, ⟨hR1, hk'⟩, hi⟩
 
