@@ -65,7 +65,7 @@ theorem invokedRetOk_sCall : InvokedRetOk envE PE sCall [extE] [] := by
   · cases hg
     cases hret
     exact ⟨fun _ _ h => h, rfl, (sigRets extE.sig).length, Nat.zero_le _,
-      fun ext hext _ _ => by simp only [List.mem_singleton] at hext; subst hext; rfl,
+      fun ext hext _ _ _ => by simp only [List.mem_singleton] at hext; subst hext; rfl,
       fun _ h => nomatch h⟩
   · cases hg
 

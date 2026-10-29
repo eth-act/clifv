@@ -13,10 +13,13 @@ keeps the symbols when every function is `IndFree`, and two declarations of an e
 
 * `BaseRetOk`: the returning base externs keep the valid addresses and the symbols;
 * `RetCount g`: for every extern name outside `P`, `g`'s declarations of it and `g`'s indirect
-  call signatures with the same number of returns have the same number of ABI return registers
-  (`sigRets`); decidable (`retCountB`, `retCountB_sound`). Measured on fv-demo: holds for all
-  551 functions (397 with slots, 13 with indirect calls); the stronger form across different
-  names fails on 3 (a base `sret` extern next to a `void` one).
+  call signatures with the same numbers of parameters and of returns have the same number of ABI
+  return registers (`sigRets`); decidable (`retCountB`, `retCountB_sound`). Only signatures with
+  as many parameters as the invocation has values can stand for it (`InvokedRetOk`), so pairs of
+  different parameter counts are not compared (#733: an `sret` `call_indirect` next to a `void`
+  outside extern). Measured on fv-demo: holds for all 551 functions (397 with slots, 13 with
+  indirect calls); the stronger form across different names fails on 3 (a base `sret` extern next
+  to a `void` one).
 
 **`retOkPRB_zero`**: `RetOkPRB κ 0` from both; **`thmPRBRL_zero_of`**: `ThmPRBRL κ 0` from both.
 -/
@@ -40,26 +43,30 @@ of `nm` and its indirect call signatures. -/
 def sigsOf (g : Clif.Function) (nm : String) : List Clif.Signature :=
   ((g.externs.map (·.2)).filter (·.name == nm)).map (·.sig) ++ indSigs g
 
-/-- The signatures agree on the number of ABI return registers per number of returns. -/
+/-- The signatures agree on the number of ABI return registers per number of parameters and of
+returns. -/
 def agreeB (l : List Clif.Signature) : Bool :=
   l.all fun s₁ => l.all fun s₂ =>
-    s₁.returns.length != s₂.returns.length || (sigRets s₁).length == (sigRets s₂).length
+    s₁.params.length != s₂.params.length || s₁.returns.length != s₂.returns.length ||
+      (sigRets s₁).length == (sigRets s₂).length
 
 /-- **Return-count agreement** of the signatures a base invocation of `g` can stand for (per
-extern name outside `P`). -/
+extern name outside `P`, per number of parameters, #733). -/
 def RetCount (g : Clif.Function) : Prop :=
   ∀ nm, L.P.func? nm = none → ∀ s₁ ∈ sigsOf g nm, ∀ s₂ ∈ sigsOf g nm,
-    s₁.returns.length = s₂.returns.length → (sigRets s₁).length = (sigRets s₂).length
+    s₁.params.length = s₂.params.length → s₁.returns.length = s₂.returns.length →
+      (sigRets s₁).length = (sigRets s₂).length
 
 def retCountB (g : Clif.Function) : Bool :=
   agreeB (indSigs g) &&
     (g.externs.map (·.2)).all fun e => (L.P.func? e.name).isSome || agreeB (sigsOf g e.name)
 
 theorem agreeB_sound {l : List Clif.Signature} (h : agreeB l = true) : ∀ s₁ ∈ l, ∀ s₂ ∈ l,
-    s₁.returns.length = s₂.returns.length → (sigRets s₁).length = (sigRets s₂).length := by
-  intro s₁ h₁ s₂ h₂ he
+    s₁.params.length = s₂.params.length → s₁.returns.length = s₂.returns.length →
+      (sigRets s₁).length = (sigRets s₂).length := by
+  intro s₁ h₁ s₂ h₂ hp he
   have := List.all_eq_true.mp (List.all_eq_true.mp h s₁ h₁) s₂ h₂
-  simpa [he] using this
+  simpa [hp, he] using this
 
 theorem retCountB_sound {g : Clif.Function} (h : L.retCountB g = true) : L.RetCount g := by
   simp only [retCountB, Bool.and_eq_true, List.all_eq_true, Bool.or_eq_true,
@@ -103,15 +110,17 @@ theorem retOkPRB_zero [L.CrunOk] (hB : L.BaseRetOk) (hC : ∀ g ∈ L.P.funcs, L
     simp [envOfB, Clif.linkEnvR, hpf]
   have hmem := sigsOf_mem (g := g) (nm := nm)
   by_cases hex : ∃ s, ((∃ ext ∈ g.externs.map (·.2), ext.name = nm ∧ s = ext.sig) ∨
-      s ∈ indSigs g) ∧ rvals.length = s.returns.length
-  · obtain ⟨s, hs, hl⟩ := hex
-    refine ⟨(sigRets s).length, hl ▸ returns_le_sigRets s, fun ext hext hnm hl' => ?_,
-      fun sig hsg _ hl' => ?_⟩
+      s ∈ indSigs g) ∧ vals'.length = s.params.length ∧ rvals.length = s.returns.length
+  · obtain ⟨s, hs, hp, hl⟩ := hex
+    refine ⟨(sigRets s).length, hl ▸ returns_le_sigRets s, fun ext hext hnm hp' hl' => ?_,
+      fun sig hsg _ hp' hl' => ?_⟩
     · exact hC g hg nm hpf ext.sig (hmem _ (.inl ⟨ext, hext, hnm, rfl⟩)) s (hmem s hs) (by omega)
-    · exact hC g hg nm hpf sig (hmem _ (.inr hsg)) s (hmem s hs) (by omega)
-  · refine ⟨rvals.length, Nat.le_refl _, fun ext hext hnm hl' => ?_, fun sig hsg _ hl' => ?_⟩
-    · exact absurd ⟨ext.sig, .inl ⟨ext, hext, hnm, rfl⟩, hl'⟩ hex
-    · exact absurd ⟨sig, .inr hsg, hl'⟩ hex
+        (by omega)
+    · exact hC g hg nm hpf sig (hmem _ (.inr hsg)) s (hmem s hs) (by omega) (by omega)
+  · refine ⟨rvals.length, Nat.le_refl _, fun ext hext hnm hp' hl' => ?_,
+      fun sig hsg _ hp' hl' => ?_⟩
+    · exact absurd ⟨ext.sig, .inl ⟨ext, hext, hnm, rfl⟩, hp', hl'⟩ hex
+    · exact absurd ⟨sig, .inr hsg, hp', hl'⟩ hex
 
 /-- **`ThmPRBRL κ 0`** under the base scope conditions. -/
 theorem thmPRBRL_zero_of (hL : L.Ok) [L.CrunOk] (hκ : L.Budget κ) (hB : L.BaseRetOk)

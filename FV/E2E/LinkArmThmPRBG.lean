@@ -153,11 +153,11 @@ def ThmPRBG (κ : Nat → Clif.Function → Nat) (M : Nat) : Prop :=
     Clif.runLoop (L.envR M g) L.P.bare fuel cs = .returned rvals cm' →
     L.RunGoodL M g s
 
-/-- **The induction step of `ThmPRBG`** (module doc), determinism `DetPRBR` (#719): from
-`thmPRBRL_ofZSER`'s premises, `ThmPRBG` one level down and the reverse table transfer
+/-- **The induction step of `ThmPRBG`** (module doc), determinism `DetPRBRU` (#719, #732): from
+`thmPRBRL_ofZSERU`'s premises, `ThmPRBG` one level down and the reverse table transfer
 `DetTabPRBr`. -/
-theorem thmPRBG_ofR (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) {M : Nat}
-    (ih : 0 < M → L.ThmPRBRL κ (M - 1)) (hdet : 0 < M → L.DetPRBR κ (M - 1))
+theorem thmPRBG_ofRU (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) {M : Nat}
+    (ih : 0 < M → L.ThmPRBRL κ (M - 1)) (hdet : 0 < M → L.DetPRBRU κ (M - 1))
     (hret : L.RetOkPRB κ M) (h2 : L.Stage2PRBZSE κ M)
     (ihG : 0 < M → L.ThmPRBG κ (M - 1)) (hdtr : 0 < M → L.DetTabPRBr κ M) :
     L.ThmPRBG κ M := by
@@ -184,13 +184,13 @@ theorem thmPRBG_ofR (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) {M : Nat}
   have hX := hX_guardRXRI (Γ := ⟨F, L.syms, (L.A g).af.slotBase,
       (RAFrame.compute (L.A g).vcp (L.A g).rf).intBase⟩) (f := g) (c := spv w₀)
     (L.XPBTI κ M g F (L.BP M g s) (L.RP M g s)) hnrc (hret g hg F vals cs w₀ ini hWE)
-  have hpc := (L.calleeOkPRBRLR hL hκ ih hdet hg he (hQ 0)).pc
+  have hpc := (L.calleeOkPRBRLRU hL hκ ih hdet hg he (hQ 0)).pc
   have hAE : ActEntryPR (L.A g).vcp (L.A g).rf (L.A g).af (L.A g).fa (L.A g).fb (κ M g) F G
       (L.XPBTGY κ M g F (L.BP M g s) (L.RP M g s) (L.envOfB M g (spv w₀)) cs (spv w₀))
       (L.hooks M) (L.A g).base ra (κ M g) (spv w₀) (L.BP M g s) (L.RP M g s) s w₀ :=
     ⟨he.abi, he.stack, he.gfree, he.hF, hME.entryP.proph, hME.reg,
-      fun n => L.calleeOkXPBTGZSR hL hκ ih hdet hg he (hQ n) (hZS n),
-      fun _ n => L.calleeTryOkXPBTGZSR hL hκ ih hdet hg he (hQ n) (hZS n),
+      fun n => L.calleeOkXPBTGZSRU hL hκ ih hdet hg he (hQ n) (hZS n),
+      fun _ n => L.calleeTryOkXPBTGZSRU hL hκ ih hdet hg he (hQ n) (hZS n),
       fun ht _ => by
         have h0 := hL.baseTls g hg (hasTls_of_vcode_pipeline hc ht) F (κ M g)
         cases M <;> exact ⟨h0.pc, h0.seq, h0.flags⟩,
@@ -225,8 +225,8 @@ theorem thmPRBG_ofR (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) {M : Nat}
         (L.hooks M) (L.A g).base ra (κ M g) (spv w₀) (L.BP M g s) (L.RP M g s) s w₀
         (callsBefore (L.mach M g) (L.A g).fa (L.A g).base s n - 1) :=
       ⟨he.abi, he.stack, he.gfree, he.hF, hME.entryP.proph, hME.reg,
-        fun k _ => L.calleeOkXPBTGZSR hL hκ ih hdet hg he (hQ k) (hZS k),
-        fun _ k _ => L.calleeTryOkXPBTGZSR hL hκ ih hdet hg he (hQ k) (hZS k),
+        fun k _ => L.calleeOkXPBTGZSRU hL hκ ih hdet hg he (hQ k) (hZS k),
+        fun _ k _ => L.calleeTryOkXPBTGZSRU hL hκ ih hdet hg he (hQ k) (hZS k),
         hpc,
         fun ht _ => by
           have h0 := hL.baseTls g hg (hasTls_of_vcode_pipeline hc ht) F (κ M g)
@@ -334,6 +334,15 @@ theorem thmPRBG_ofR (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) {M : Nat}
         htabE hm' _ _ _ _ hR' herrt
     · cases hcond
 
+/-- **The induction step of `ThmPRBG`**, determinism `DetPRBR` (`thmPRBG_ofRU`,
+`DetPRBR.toU`). -/
+theorem thmPRBG_ofR (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) {M : Nat}
+    (ih : 0 < M → L.ThmPRBRL κ (M - 1)) (hdet : 0 < M → L.DetPRBR κ (M - 1))
+    (hret : L.RetOkPRB κ M) (h2 : L.Stage2PRBZSE κ M)
+    (ihG : 0 < M → L.ThmPRBG κ (M - 1)) (hdtr : 0 < M → L.DetTabPRBr κ M) :
+    L.ThmPRBG κ M :=
+  L.thmPRBG_ofRU hL hκ ih (fun h => DetPRBR.toU L (hdet h)) hret h2 ihG hdtr
+
 /-- **The induction step of `ThmPRBG`** (`thmPRBG_ofR` with `DetPRB`). -/
 theorem thmPRBG_of (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) {M : Nat}
     (ih : 0 < M → L.ThmPRBRL κ (M - 1)) (hdet : 0 < M → L.DetPRB κ (M - 1))
@@ -385,6 +394,26 @@ theorem thmPRBG_allCR (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) (hN : L.Ne
     exact L.thmPRBG_ofR hL hκ (fun _ => by rw [Nat.add_sub_cancel]; exact ThmPRBRLE.toThmPRBRL L ihE)
       (fun _ => by rw [Nat.add_sub_cancel]; exact hdet M) hret
       (L.stage2PRBZS_ofER hL hκ hN ihE (hdet M) (hdt (M + 1)) hret)
+      (fun _ => by rw [Nat.add_sub_cancel]; exact ihM) (fun _ => hdtr (M + 1))
+
+/-- **`ThmPRBG` at every depth from the determinism premises `DetPRBRU`, `DetTabPRBE`,
+`DetTabPRBr`** (#732: `thmPRBG_allCR` with the determinism premise at the result registers of a
+`rets` site). -/
+theorem thmPRBG_allCRU (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) (hN : L.NeedSlots)
+    (hB : L.BaseRetOk) (hC : ∀ g ∈ L.P.funcs, L.RetCount g) (hdet : ∀ M, L.DetPRBRU κ M)
+    (hdt : ∀ M, L.DetTabPRBE κ M) (hdtr : ∀ M, L.DetTabPRBr κ M) (M : Nat) :
+    L.ThmPRBG κ M := by
+  induction M with
+  | zero =>
+    exact L.thmPRBG_ofRU hL hκ (fun h => absurd h (Nat.lt_irrefl 0))
+      (fun h => absurd h (Nat.lt_irrefl 0)) (L.retOkPRB_zero hB hC) (L.stage2PRBZSE_zero hL)
+      (fun h => absurd h (Nat.lt_irrefl 0)) (fun h => absurd h (Nat.lt_irrefl 0))
+  | succ M ihM =>
+    have ihE := L.thmPRBRLE_allCRU hL hκ hN hB hC hdet hdt M
+    have hret := L.retOkPRB_of (κ := κ) hL hN hB hC (M + 1)
+    exact L.thmPRBG_ofRU hL hκ (fun _ => by rw [Nat.add_sub_cancel]; exact ThmPRBRLE.toThmPRBRL L ihE)
+      (fun _ => by rw [Nat.add_sub_cancel]; exact hdet M) hret
+      (L.stage2PRBZS_ofERU hL hκ hN ihE (hdet M) (hdt (M + 1)) hret)
       (fun _ => by rw [Nat.add_sub_cancel]; exact ihM) (fun _ => hdtr (M + 1))
 
 end LinkSys

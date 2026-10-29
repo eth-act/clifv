@@ -1,6 +1,4 @@
-import FV.E2E.DeadCleanupBinaryInit
-import FV.E2E.LinkArmProgramInitR
-import FV.E2E.LinkArmTrapE
+import FV.E2E.DeadCleanupBinaryInitRU
 
 /-!
 # The binary-level theorems under the slot-byte oracle, corrected premises (SEM1 #537, #719, #716)
@@ -17,6 +15,10 @@ determinism `DetPRBR` (#719) and the call twins `CallTwinCE` (#716), from which 
   model state (`backend_correct_program_initETR`);
 * `model_init_sysSR`, **`binary_correct_exec_initR`**: `binary_correct_exec_init` under
   `InitOkR`.
+
+`InitOkR` cannot be constructed (#732: `DetPRBR` is false when the canonical return list names
+`x30`); every theorem here is a corollary of its `InitOkRU` form (`DeadCleanupBinaryInitRU`,
+`InitOkR.toU`).
 -/
 
 namespace E2E.DeadCleanupBinary
@@ -42,6 +44,12 @@ theorem InitOkR.detTabR {L : LinkSys} {κ : Nat → Clif.Function → Nat} (h : 
     (M : Nat) : L.std.DetTabPRBr κ M :=
   L.std.detTabPRBr_ofCE (h.twin M)
 
+/-- **`InitOkR` gives `InitOkRU`** (`DetPRBR.toU`; the fields hold without `NeedSlots`). -/
+theorem InitOkR.toU {L : LinkSys} {κ : Nat → Clif.Function → Nat} (h : InitOkR L κ) :
+    InitOkRU L κ :=
+  ⟨fun _ => h.baseRet, fun _ => h.retCount, fun _ M => LinkSys.DetPRBR.toU L.std (h.det M),
+    fun _ => h.detTab, fun _ => h.detTabR, fun _ => h.hooks⟩
+
 /-- **`binary_correct_init` under `InitOkR`** (module doc). -/
 theorem binary_correct_initR {I : LinkInput} {X : Image} {R : BitVec 64 → Prop}
     {roB : BitVec 64 → Option (BitVec 8)} (hbin : BinFacts I X R roB) (B : BaseEnv)
@@ -55,24 +63,8 @@ theorem binary_correct_initR {I : LinkInput} {X : Image} {R : BitVec 64 → Prop
     ArmRefines (art I f).fb (art I f).base (xreg 30 r) ((sys I B).mach M f) (modelOf I f r)
       (.returned vals cm) ∧
     (∀ a, (modelOf I f r).mem a ≠ r.mem a → R a) ∧
-    (sys I B).RunGoodL M f (modelOf I f r) := by
-  have hB' : BaseOk (sysW I B f r) := baseOk_F hB
-  have himgF : ∀ a, (sysW I B f r).Img a → worldF I f (DeadCleanupStackBound.bud I f) r a :=
-    fun _ h => .inr h
-  have hL := okBCleanup_sound hbin.ok hB' himgF
-  have hro : ∀ a b, roB a = some b → r.mem a = b := fun a b h =>
-    hX a b (hbin.data a b h).1 (hbin.data a b h).2
-  have hfm := (Clif.Program.func?_some hf).1
-  obtain ⟨hent, hres, hgfree, himg, hbe, hargs, hsav, hrel, hpl⟩ := premisesB hL hfm hro ho hr
-  have hκf := kapW_eq B hn hf r M
-  obtain ⟨hA, hG⟩ := backend_correct_program_initEXR (sysW I B f r) hL (κ := kapW I B f r)
-    (DeadCleanupStackBound.budget_of hbin.ok B (worldF I f (DeadCleanupStackBound.bud I f) r))
-    hIO.baseRet hIO.retCount hIO.det hIO.detTab hIO.detTabR hIO.hooks hfm M hent
-    (by rw [hκf]; exact hres) (by rw [hκf]; rfl) (by rw [hκf]; exact hgfree) himg hbe hargs
-    hr.entry hsav hrel (fun hN => by rw [iniOf_F]; exact hpl hN) hrun
-  refine ⟨?_, modelOf_diff hbin hX f, runGoodL_F hG⟩
-  rw [mach_F I B (fun _ => False) (worldF I f (DeadCleanupStackBound.bud I f) r)]
-  exact hA
+    (sys I B).RunGoodL M f (modelOf I f r) :=
+  binary_correct_initRU hbin B hB hn hf M hX ho hr hIO.toU hrun
 
 /-- **The binary-level theorem under the slot-byte oracle, trapping runs** (module doc): a
 trapping whole-program CLIF run whose traps are explicit, from the reference entry placed with the
@@ -88,24 +80,8 @@ theorem binary_correct_initTR {I : LinkInput} {X : Image} {R : BitVec 64 → Pro
     (hrun : Clif.runLoop B.env (prog I) (M + 1) cs = .trapped c) :
     ArmRefines (art I f).fb (art I f).base (xreg 30 r) ((sys I B).mach M f) (modelOf I f r)
       (.trapped c) ∧
-    (∀ a, (modelOf I f r).mem a ≠ r.mem a → R a) := by
-  have hB' : BaseOk (sysW I B f r) := baseOk_F hB
-  have himgF : ∀ a, (sysW I B f r).Img a → worldF I f (DeadCleanupStackBound.bud I f) r a :=
-    fun _ h => .inr h
-  have hL := okBCleanup_sound hbin.ok hB' himgF
-  have hro : ∀ a b, roB a = some b → r.mem a = b := fun a b h =>
-    hX a b (hbin.data a b h).1 (hbin.data a b h).2
-  have hfm := (Clif.Program.func?_some hf).1
-  obtain ⟨hent, hres, hgfree, himg, hbe, hargs, hsav, hrel, hpl⟩ := premisesB hL hfm hro ho hr
-  have hκf := kapW_eq B hn hf r M
-  have hA := backend_correct_program_initETR (sysW I B f r) hL (κ := kapW I B f r)
-    (DeadCleanupStackBound.budget_of hbin.ok B (worldF I f (DeadCleanupStackBound.bud I f) r))
-    hIO.baseRet hIO.retCount hIO.det hIO.detTab hIO.hooks hfm M hent
-    (by rw [hκf]; exact hres) (by rw [hκf]; rfl) (by rw [hκf]; exact hgfree) himg hbe hargs
-    hr.entry hsav hrel (fun hN => by rw [iniOf_F]; exact hpl hN) htr hrun
-  refine ⟨?_, modelOf_diff hbin hX f⟩
-  rw [mach_F I B (fun _ => False) (worldF I f (DeadCleanupStackBound.bud I f) r)]
-  exact hA
+    (∀ a, (modelOf I f r).mem a ≠ r.mem a → R a) :=
+  binary_correct_initTRU hbin B hB hn hf M hX ho hr hIO.toU htr hrun
 
 end E2E.DeadCleanupBinary
 
@@ -129,55 +105,8 @@ theorem model_init_sysSR {D : List Clif.DataObject} (hI : okBCleanup I = true)
     (hrun : Clif.runLoop B.env (prog I) (M + 1) cs = .returned vals cm) :
     ArmRefines (art I f).fb (art I f).base (xreg 30 r) ((sys I B).mach M f) (modelOf I f r)
       (.returned vals cm) ∧
-    (sysS I B f r S).RunGoodL M f (modelOf I f r) := by
-  have hB' : BaseOk (LinkSys.ofInputCleanup I B (worldF I f (DeadCleanupStackBound.bud I f) r)) :=
-    baseOk_F hB
-  have himgF : ∀ a, (LinkSys.ofInputCleanup I B (worldF I f (DeadCleanupStackBound.bud I f) r)).Img a →
-      worldF I f (DeadCleanupStackBound.bud I f) r a := fun _ h => .inr h
-  have hL0 := okBCleanup_sound hI hB' himgF
-  have hfm := (Clif.Program.func?_some hf).1
-  have hfacts := binFacts_of_checks hI hbin
-  have hro : ∀ a b, BinCheck.roByte I D a = some b → r.mem a = b := fun a b h =>
-    hX a b (hfacts.data a b h).1 (hfacts.data a b h).2
-  obtain ⟨hent, hres, hgfree, -, hbe, hargs, hsav, hrel, hpl⟩ := premisesB hL0 hfm hro ho hr
-  have hL : (sysS I B f r S).Ok := LinkSys.Ok.extImg hL0
-    (fun a ha => mem_modelOf_img ha) fun a ha => by
-      rcases ha with ha | ha
-      · exact .inr (.inl ha)
-      · exact .inr (.inr ha)
-  have hκf := kapW_eq B hn hf r M
-  obtain ⟨hd, hsb, hib, hsz⟩ := frame_facts hL0 hfm
-  have hN := ho.stack
-  have hN' : frameDrop (art I f).af + DeadCleanupStackBound.bud I f ≤ (spv r).toNat := hN
-  have hsp := (spv r).isLt
-  have hspbN : (spBody (art I f).af r).toNat = (spv r).toNat - frameDrop (art I f).af :=
-    (off_toNat 0 (spv r) _ (by omega)).2.2
-  have hspb : spv (bodyOf (art I f).af (modelOf I f r)) = spBody (art I f).af r := by
-    rw [spv_bodyOf, spv_modelOf]; rfl
-  refine (fun hAG => ⟨by rw [← mach_sysS f r S]; exact hAG.1, hAG.2⟩)
-    (backend_correct_program_initEXR (sysS I B f r S) hL (κ := kapW I B f r)
-    ((DeadCleanupStackBound.budget_of hI B (worldF I f (DeadCleanupStackBound.bud I f) r)).extImg _ _ _)
-    hIO.baseRet hIO.retCount hIO.det hIO.detTab hIO.detTabR hIO.hooks hfm M hent
-    (by rw [hκf]; exact hres) (by rw [hκf]; rfl) (fun a ha => ?_) (fun a _ => rfl) hbe hargs
-    hr.entry (fun off v hm k hk hx => ?_)
-    ⟨⟨hrel.1.bytes, fun a n hv => ?_, hrel.1.symbols⟩, hrel.2.1, hrel.2.2.1, fun j hj => ?_,
-      hrel.2.2.2.2⟩ (fun hN => by rw [iniOf_sysS]; exact hpl hN) hrun)
-  · rw [hκf]
-    rcases ha with ha | ha
-    · exact hgfree a ha
-    · rw [spv_modelOf]; exact hav.stack a ha
-  · rcases hx with hx | hx
-    · exact hsav off v hm k hk hx
-    · rw [spv_modelOf] at hx; exact hav.args off v hm k hk hx
-  · obtain ⟨hfit, hk⟩ := hrel.1.valid a n hv
-    exact ⟨hfit, fun k hkn => not_worldFS (hk k hkn) (hav.valid a n hv k hkn)⟩
-  · refine not_worldFS (hrel.2.2.2.1 j hj) fun hS => hav.stack _ hS ?_
-    change j < (RAFrame.compute (art I f).vcp (art I f).rf).intBase at hj
-    rw [hspb]
-    show StackBelow (frameDrop (art I f).af + DeadCleanupStackBound.bud I f) _ _
-    simp only [StackBelow, BitVec.toNat_add, BitVec.toNat_ofNat, hspbN]
-    rw [Nat.mod_eq_of_lt (by omega : j < 2 ^ 64), Nat.mod_eq_of_lt (by omega)]
-    omega
+    (sysS I B f r S).RunGoodL M f (modelOf I f r) :=
+  model_init_sysSRU hI hbin hB hn hf M hX ho hav hr hIO.toU hrun
 
 /-- **`binary_correct_exec_init` under `InitOkR`** (module doc): the executable machine run from
 `r` refines a returning whole-program CLIF run from the reference entry placed with the machine's
@@ -196,36 +125,7 @@ theorem binary_correct_exec_initR {D : List Clif.DataObject} (hI : okBCleanup I 
     {vals : List Clif.Val} {cm : Clif.Mem}
     (hrun : Clif.runLoop B.env (prog I) (M + 1) cs = .returned vals cm) :
     ExecRefines (art I f).fb (art I f).base (xreg 30 r) (step I B file) r
-      (E2E.DeadCleanupBinCheck.RelocAt I) (.returned vals cm) := by
-  have hn := (DeadCleanupStackBound.goodN_iff hI).2 ⟨f, hf, hc⟩
-  obtain ⟨hA, hgS⟩ := model_init_sysSR hI hbin hB hn hf M hX ho hav hr hIO hrun
-  have hG := runGoodL_of_sysS hgS
-  have hfm := (Clif.Program.func?_some hf).1
-  have hfacts := binFacts_of_checks hI hbin
-  have hro : ∀ a b, BinCheck.roByte I D a = some b → r.mem a = b := fun a b h =>
-    hX a b (hfacts.data a b h).1 (hfacts.data a b h).2
-  have hB'' : BaseOk (LinkSys.ofInputCleanup I B (worldF I f (DeadCleanupStackBound.bud I f) r)) :=
-    baseOk_F hB
-  have hL0 := okBCleanup_sound hI hB'' fun _ h => .inr h
-  obtain ⟨hent, -⟩ := premisesB hL0 hfm hro ho hr
-  have hL' := okBCleanup_sound hI (baseOk_F (F' := img I) hB) fun _ h => h
-  have hF : ∀ g ∈ (prog I).funcs, FnOk I file g := fun g hg => fnOk hI hbin hL' hg
-  have hra : ∀ k < (art I f).fb.words.size,
-      xreg 30 (modelOf I f r) ≠ (art I f).base + BitVec.ofNat 64 (4 * k) := by
-    simp only [xreg, r_modelOf]; exact hent.raOutside
-  have hreads : RunReadsN I B file M f (modelOf I f r) := fun M' g t hR he => by
-    obtain ⟨c', hRL, -⟩ := reachL_of_reachN hI hcm hF hR hfm hG (raNotSecond_top (hF f hfm) hra)
-    have hRL' : (sysS I B f r (GotSlot I file)).ReachL M f (modelOf I f r) M' g c' t :=
-      LinkSys.reachL_extImg (F := worldFS I f (DeadCleanupStackBound.bud I f) r (GotSlot I file))
-        (S := GotSlot I file) (m := (modelOf I f r).mem)
-        (E2E.DeadCleanupBinary.reachL_F (F := worldF I f (DeadCleanupStackBound.bud I f) r)
-          (F' := fun _ => False) hRL)
-    have hg := reachN_mem hR hfm
-    exact ⟨insn_of_good hI hcm hF hg (hG _ _ _ _ hRL he),
-      got_of_good hI hbin hgot hX hg (hF g hg) (hgS _ _ _ _ hRL' (by rw [mach_sysS]; exact he))⟩
-  exact exec_of_modelN hF hfm (by rw [← r_modelOf I f r]; exact hent.pc) hent.raOutside
-    (modelOf_diff hfacts hX f)
-    (runOkSN_of_n hI hcm hF hH hfm
-      (runOkN_of_good hI hcm hF (fun g hg => destsInt_of_ok hL' hg) hfm hra hG hreads)) hA
+      (E2E.DeadCleanupBinCheck.RelocAt I) (.returned vals cm) :=
+  binary_correct_exec_initRU hI hcm hbin hgot B hB hH hf hc M hX ho hav hr hIO.toU hrun
 
 end E2E.DeadCleanupExecBytes
