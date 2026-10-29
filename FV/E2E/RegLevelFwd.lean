@@ -215,8 +215,10 @@ theorem fwd?_spec {af : AFunc} {s x : Label} (h : af.fwd? s = some x) :
     · cases h
   · cases h
 
-/-- A move's code is not empty and branches nowhere. -/
+/-- A move that touches no save slot: its code is not empty and branches nowhere (callee-save
+moves emit no code, `RAFrame.moveInsts`). -/
 theorem moveInsts_shape {fr : RAFrame} {src dst : Loc} {l : List AInst}
+    (hns : (RItem.move src dst).noSave = true)
     (h : fr.moveInsts src dst = .ok l) : l ≠ [] ∧ ∀ m, AInst.inst m ∈ l → m.targets = [] := by
   have hst : ∀ cls r off, ∀ m ∈ slotStoreAt cls r off, m.targets = [] := by
     intro cls r off m hm
@@ -234,6 +236,8 @@ theorem moveInsts_shape {fr : RAFrame} {src dst : Loc} {l : List AInst}
     intro cls r off; unfold slotLoadAt; split <;> simp
   unfold RAFrame.moveInsts at h
   split at h
+  · simp [RItem.noSave, Loc.isSave] at hns
+  · simp [RItem.noSave, Loc.isSave] at hns
   · split at h
     · simp only [pure, Except.pure, Except.ok.injEq] at h
       subst h
@@ -260,10 +264,11 @@ theorem moveInsts_shape {fr : RAFrame} {src dst : Loc} {l : List AInst}
          obtain ⟨m', hm', rfl⟩ := hm
          first | exact hst _ _ _ _ hm' | exact hld _ _ _ _ hm')
 
-/-- An item's code in a block without `Args`: not empty; a `jump` comes only from an `op` whose
-instruction branches to the same block. -/
+/-- An item's code in a block without `Args` (no callee-save move): not empty; a `jump` comes
+only from an `op` whose instruction branches to the same block. -/
 theorem itemCode_jump {fr : RAFrame} {vb : VBlock} {it : RItem} {c : List AInst}
     (hna : ∀ (k : Nat) (ds : List (Reg × Reg)), vb.insts[k]? ≠ some (MInst.args ds))
+    (hns : it.noSave = true)
     (h : itemCode fr vb it = .ok c) :
     c ≠ [] ∧ ∀ x, AInst.inst (.jump x) ∈ c → ∃ k allocs regs i, it = .op k allocs ∧
       allocs = regs.map Loc.reg ∧ vb.insts[k]? = some i ∧ i.assign regs = .ok (.jump x) ∧
@@ -279,7 +284,7 @@ theorem itemCode_jump {fr : RAFrame} {vb : VBlock} {it : RItem} {c : List AInst}
         simp only [bind, Except.bind, pure, Except.pure, Functor.map, Except.map,
           Except.ok.injEq] at h
         rw [← h]; simp
-    obtain ⟨hne, htg⟩ := moveInsts_shape hm
+    obtain ⟨hne, htg⟩ := moveInsts_shape hns hm
     exact ⟨hne, fun x hx => by have := htg _ hx; simp [MInst.targets] at this⟩
   | op k allocs =>
     obtain ⟨regs, i, i', hal, hi, hasg, hc⟩ := itemCode_op h
@@ -295,18 +300,71 @@ theorem itemCode_jump {fr : RAFrame} {vb : VBlock} {it : RItem} {c : List AInst}
 
 theorem itemsCode_nil_of {fr : RAFrame} {vb : VBlock}
     (hna : ∀ (k : Nat) (ds : List (Reg × Reg)), vb.insts[k]? ≠ some (MInst.args ds)) :
-    ∀ {its : List RItem}, itemsCode fr vb its = .ok [] → its = []
-  | [], _ => rfl
-  | it :: its, h => by
+    ∀ {its : List RItem}, (∀ it ∈ its, it.noSave = true) → itemsCode fr vb its = .ok [] → its = []
+  | [], _, _ => rfl
+  | it :: its, hns, h => by
     obtain ⟨c1, c2, h1, -, he⟩ := itemsCode_cons h
-    have := (itemCode_jump hna h1).1
+    have := (itemCode_jump hna (hns it (by simp)) h1).1
     simp_all
+
+/-- `MInst.assign` keeps a `Rets` a `Rets`. -/
+private theorem assign_rets_of {us : List (Reg × Reg)} {regs : Array Reg} {i' : MInst}
+    (h : (MInst.rets us).assign regs = .ok i') : ∃ us', i' = .rets us' := by
+  unfold MInst.assign at h
+  simp only [MInst.visitOperands, StateT.run_bind, StateT.run_pure] at h
+  generalize StateT.run _ 0 = X at h
+  cases X with
+  | error e => cases h
+  | ok v =>
+    simp only [bind, Except.bind, pure, Except.pure] at h
+    split at h
+    · cases h
+    · simp only [Except.ok.injEq] at h
+      exact ⟨_, h.symm⟩
+
+/-- Items whose callee-save moves are in Cranelift's shape (`saveSegsOk`) and whose code has no
+return touch no save slot (restores only precede a `Rets`, which emits `epilogueRet`). -/
+theorem saveSegsOk_noSave {fr : RAFrame} {vb : VBlock} {saved : List Reg} :
+    ∀ {pend its : List RItem} {c : List AInst}, saveSegsOk vb saved pend its = true →
+      itemsCode fr vb its = .ok c → AInst.epilogueRet ∉ c → ∀ it ∈ pend ++ its, it.noSave = true
+  | pend, [], c, h, _, _ => by
+    simp only [saveSegsOk, List.all_eq_true] at h
+    simpa using h
+  | pend, .move a b :: rest, c, h, hc, hr => by
+    obtain ⟨c1, c2, -, h2, rfl⟩ := itemsCode_cons hc
+    simp only [saveSegsOk] at h
+    have := saveSegsOk_noSave h h2 (fun hm => hr (List.mem_append_right _ hm))
+    simpa using this
+  | pend, .op k al :: rest, c, h, hc, hr => by
+    obtain ⟨c1, c2, h1, h2, rfl⟩ := itemsCode_cons hc
+    simp only [saveSegsOk, Bool.and_eq_true] at h
+    obtain ⟨hp, hrest⟩ := h
+    have ih := saveSegsOk_noSave hrest h2 (fun hm => hr (List.mem_append_right _ hm))
+    have hpend : ∀ it ∈ pend, it.noSave = true := by
+      split at hp
+      · rename_i us hk
+        exfalso
+        obtain ⟨regs, i, i', -, hi, hasg, hcs⟩ := itemCode_op h1
+        rw [hk] at hi
+        cases hi
+        obtain ⟨us', rfl⟩ := assign_rets_of hasg
+        rcases hcs with ⟨-, -, hne⟩ | ⟨ds, he, -⟩ | ⟨_, -, rfl⟩
+        · exact hne us' rfl
+        · cases he
+        · exact hr (by simp)
+      · simpa [List.all_eq_true] using hp
+    intro it hit
+    simp only [List.mem_append, List.mem_cons] at hit
+    rcases hit with hit | rfl | hit
+    · exact hpend it hit
+    · rfl
+    · exact ih it (by simp [hit])
 
 /-- **The items of a block whose code is one `jump`** (a block without `Args`): one `op` of its
 last instruction, which branches to the jump's target. -/
 theorem items_jump {fr : RAFrame} {vb : VBlock} {cc : CheckCtx} {out : AState} {x : Label}
     (hna : ∀ (k : Nat) (ds : List (Reg × Reg)), vb.insts[k]? ≠ some (MInst.args ds))
-    {its : List RItem} {n : Nat} {a : AState}
+    {its : List RItem} {n : Nat} {a : AState} (hns : ∀ it ∈ its, it.noSave = true)
     (hrun : cc.runItems vb n its a = .ok out) (hc : itemsCode fr vb its = .ok [.inst (.jump x)]) :
     ∃ allocs regs i, its = [.op n allocs] ∧ allocs = regs.map Loc.reg ∧ vb.insts[n]? = some i ∧
       i.assign regs = .ok (.jump x) ∧ i.targets = [x] ∧ vb.insts.size = n + 1 := by
@@ -314,7 +372,7 @@ theorem items_jump {fr : RAFrame} {vb : VBlock} {cc : CheckCtx} {out : AState} {
   | nil => simp [itemsCode, pure, Except.pure] at hc
   | cons it rest =>
     obtain ⟨c1, c2, h1, h2, he⟩ := itemsCode_cons hc
-    obtain ⟨hne, hj⟩ := itemCode_jump hna h1
+    obtain ⟨hne, hj⟩ := itemCode_jump hna (hns it (by simp)) h1
     obtain ⟨rfl, rfl⟩ : c1 = [.inst (.jump x)] ∧ c2 = [] := by
       obtain ⟨a0, c1', rfl⟩ := List.exists_cons_of_ne_nil hne
       simp only [List.cons_append, List.cons.injEq] at he
@@ -322,7 +380,7 @@ theorem items_jump {fr : RAFrame} {vb : VBlock} {cc : CheckCtx} {out : AState} {
       obtain ⟨rfl, rfl⟩ := List.append_eq_nil_iff.mp he.symm
       exact ⟨rfl, rfl⟩
     obtain ⟨k, allocs, regs, i, rfl, hal, hi, hasg, htg, -⟩ := hj x (by simp)
-    obtain rfl := itemsCode_nil_of hna h2
+    obtain rfl := itemsCode_nil_of hna (fun it' h' => hns it' (by simp [h'])) h2
     have hk : k = n ∧ vb.insts.size = n + 1 := by
       obtain ⟨-, hkn, _, _, _, _, _, _, h'⟩ := runItems_op hrun
       exact ⟨hkn, (runItems_nil h').1.symm⟩
@@ -450,7 +508,11 @@ theorem RL.fwd_block {R : RL} (hR : R.Wf) {s x : Label} (h : R.af.fwd? s = some 
   obtain ⟨items', a, out, hit', hrun⟩ := hrunOf b vb hvb
   rw [hit] at hit'
   cases hit'
-  obtain ⟨allocs, regs, i, hits, hal, hi, hasg, htg, hsz1⟩ := items_jump hna hrun hc
+  have hns : ∀ it ∈ items.toList, it.noSave = true := by
+    have hsh := (saveShapeOk_block (lowerRFunc_saves hR.alloc).1 hvb hit).2 hb0
+    have := saveSegsOk_noSave hsh hc (by simp)
+    simpa using this
+  obtain ⟨allocs, regs, i, hits, hal, hi, hasg, htg, hsz1⟩ := items_jump hna hns hrun hc
   have hins : vb.insts = #[i] := by
     apply Array.ext
     · simpa using hsz1

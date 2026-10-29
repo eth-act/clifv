@@ -306,6 +306,7 @@ theorem machBuf_seq (allLabels : Bool) (ls : List Line) (h : SeqOk ls) :
       split
       · exact optimize_seq _ _ hp
       · exact hp
+  unfold SeqOk at h
   unfold machBuf
   dsimp only
   unfold SeqOk

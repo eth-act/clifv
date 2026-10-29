@@ -709,7 +709,9 @@ theorem RL.sP_steps {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb R
   obtain ⟨-, hfs, -, hsv, -, hcb, -, -, -⟩ := RL.frame_facts hR
   have hst0 := hR.stack.frame
   have hs : R.af.frameSize < 2 ^ 64 := by have := hst0.1; have := (spv R.s0).isLt; omega
-  obtain ⟨vb, items, code, ls, ps1, ps2, T, -, -, -, -, -, hj0, hdrop⟩ := entry_block hR
+  obtain ⟨vb, items, code, ps1, pl, X, psm, ps2, x, -, -, -, -, -, -, hpl0, hj0, hdrop, -, -⟩ :=
+    entry_block hR
+  subst hpl0
   obtain ⟨s', hsteps, -, -, -, -, h16, hsl⟩ :=
     prologue_ok (R.envOf 1) hs hsv (by rw [hfs]; exact hcb) R.s0 hent.spAligned
   have hpc1 : Arm.r .PC R.s0 = R.pcOf 1 := by
@@ -1173,7 +1175,11 @@ theorem restore_tail {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b : Nat} {r : Reg}
     (hq : Q R s (.run ⟨b, .move (.save r) dst :: its, m, w⟩)) :
     dst = .reg r ∧ ∃ D, TailOk R b (D ++ [r]) its := by
   obtain ⟨hsh, -⟩ := lowerRFunc_saves hR.alloc
-  obtain ⟨j, vb, items, pre, code, ls, ps1, ps2, T, hvb, hit, hsplit, -⟩ := hq
+  have hqs : Qs R s b (.move (.save r) dst :: its) m w := by
+    rcases Q.cases hq with hqs | ⟨_, _, _, _, _, _, _, e, -⟩
+    · exact hqs
+    · cases e
+  obtain ⟨j, vb, items, pre, -, -, -, -, -, -, hvb, hit, hsplit, -⟩ := hqs
   obtain ⟨h0, h1⟩ := saveShapeOk_block hsh hvb hit
   obtain ⟨pend, hseg⟩ : ∃ pend, saveSegsOk vb R.rf.saved pend (.move (.save r) dst :: its) = true := by
     by_cases hb : b = 0

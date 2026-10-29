@@ -26,6 +26,39 @@ of each block only; a branch in the middle of a block is not excluded by a lemma
 lowering).
 -/
 
+namespace Backend
+
+/-- The constructor index and the argument of a label (`compare` on `Lbl` is lexicographic on
+them; `machBuf`'s alias map is a `Std.TreeMap` over `compare`). -/
+def Lbl.key : Lbl → Nat × Nat
+  | .block l => (0, l)
+  | .trap n => (1, n)
+  | .jt n => (2, n)
+  | .loop n => (3, n)
+  | .skip => (4, 0)
+
+theorem Lbl.compare_lex :
+    (compare : Lbl → Lbl → Ordering) = compareLex (compareOn (·.key.1)) (compareOn (·.key.2)) := by
+  funext a b
+  cases a <;> cases b <;>
+    simp only [compareLex, compareOn, Lbl.key] <;>
+    first
+    | rfl
+    | (show (compare _ _).then Ordering.eq = (compare _ _).then (compare _ _)
+       simp)
+
+instance : Std.TransCmp (compare : Lbl → Lbl → Ordering) :=
+  Lbl.compare_lex ▸ inferInstance
+
+instance : Std.LawfulEqCmp (compare : Lbl → Lbl → Ordering) where
+  compare_self {a} := by rw [Lbl.compare_lex]; exact Std.ReflCmp.compare_self
+  eq_of_compare {a b} h := by
+    rw [Lbl.compare_lex] at h
+    simp only [compareLex, compareOn, Ordering.then_eq_eq, Std.compare_eq_iff_eq] at h
+    cases a <;> cases b <;> simp_all [Lbl.key]
+
+end Backend
+
 namespace E2E.EmitLabels
 
 open Backend
@@ -184,10 +217,10 @@ theorem relabel_used (f : Lbl → Lbl) (ln : Line) :
          split at hx <;> simp_all)
 
 /-- The labels at most once in the alias resolution: `res l` is `l` or an alias' target. -/
-theorem res_cases (m : MBuf) (l : Lbl) : m.res l = l ∨ ∃ k, m.alias[k]? = some (m.res l) := by
+theorem res_cases (m : MBuf) (l : Lbl) : m.res l = l ∨ ∃ k : Lbl, m.alias[k]? = some (m.res l) := by
   unfold MBuf.res
   simp only [Id.run, Std.Legacy.Range.forIn_eq_forIn_range']
-  refine mbForIn_inv (P := fun x : Lbl => x = l ∨ ∃ k, m.alias[k]? = some x) _ _ _ (.inl rfl) ?_
+  refine mbForIn_inv (P := fun x : Lbl => x = l ∨ ∃ k : Lbl, m.alias[k]? = some x) _ _ _ (.inl rfl) ?_
   intro _ s _
   split
   · rename_i l' h; exact .inr ⟨s, h⟩
@@ -197,7 +230,7 @@ theorem res_cases (m : MBuf) (l : Lbl) : m.res l = l ∨ ∃ k, m.alias[k]? = so
 used among `I`'s, aliases to labels `I` uses. -/
 def MBOk (I : List Line) (m : MBuf) : Prop :=
   defs m.out.toList = defs I ∧ (∀ x ∈ uses m.out.toList, x ∈ uses I) ∧
-    ∀ k x, m.alias[k]? = some x → x ∈ uses I
+    ∀ (k x : Lbl), m.alias[k]? = some x → x ∈ uses I
 
 theorem uses_eraseIdx : ∀ (L : List Line) (k : Nat), ∀ x ∈ uses (L.eraseIdx k), x ∈ uses L
   | [], _, x, hx => by simp at hx
@@ -236,7 +269,7 @@ theorem defs_set : ∀ (L : List Line) (p : Nat) (y : Line), lineDef y = none �
 
 theorem uses_set : ∀ (L : List Line) (p : Nat) (y : Line) (U : List Lbl),
     (∀ x ∈ uses L, x ∈ U) → (∀ x ∈ y.labelsUsed, x ∈ U) → ∀ x ∈ uses (L.set p y), x ∈ U
-  | [], _, _, _, h, _ => by simpa using h
+  | [], _, _, _, _, _, x, hx => by simp [uses] at hx
   | a :: L, 0, y, U, h, hy, x, hx => by
     rw [List.set_cons_zero, show y :: L = [y] ++ L from rfl, uses_append, List.mem_append] at hx
     rcases hx with hx | hx
@@ -253,15 +286,21 @@ theorem uses_set : ∀ (L : List Line) (p : Nat) (y : Line) (U : List Lbl),
 /-- The target of a line `MBuf.step` considers is a label it uses. -/
 theorem stepLine_used {ln : Line} {t : Lbl} (h : (ln.ubr?).orElse (fun _ => ln.cbr?) = some t) :
     t ∈ ln.labelsUsed := by
-  cases ln with
-  | ins i tc =>
-    cases tc with
-    | none =>
-      cases i <;> simp_all [Line.ubr?, Line.cbr?, Option.orElse, Insn.condTarget?,
-        Line.labelsUsed, Insn.pcRelSpec?] <;>
-        (try split at h) <;> simp_all
-    | some _ => simp [Line.ubr?, Line.cbr?, Option.orElse] at h
-  | _ => simp [Line.ubr?, Line.cbr?, Option.orElse] at h
+  unfold Line.ubr? Line.cbr? at h
+  split at h
+  · simp only [Option.orElse, Option.some.injEq] at h
+    subst h
+    simp [Line.labelsUsed, Insn.pcRelSpec?]
+  · simp only [Option.orElse] at h
+    split at h
+    · rename_i c _
+      split at h
+      · rename_i l hc
+        cases h
+        cases c <;> simp only [Insn.condTarget?] at hc <;> (try split at hc) <;>
+          simp_all [Line.labelsUsed, Insn.pcRelSpec?]
+      · cases h
+    · cases h
 
 /-- `lastCode` names a line that is no label. -/
 theorem lastCode_noLabel (out : Array Line) : ∀ (n k : Nat), lastCode out n = some k →
@@ -276,6 +315,16 @@ theorem lastCode_noLabel (out : Array Line) : ∀ (n k : Nat), lastCode out n = 
       cases ln with
       | label _ => exact lastCode_noLabel out n k h
       | _ => simp only [Option.some.injEq] at h; subst h; exact ⟨_, hx, rfl⟩
+
+theorem foldl_insert_alias (P : Lbl → Prop) (t : Lbl) (ht : P t) :
+    ∀ (L : List Lbl) (al : Std.TreeMap Lbl Lbl), (∀ k x : Lbl, al[k]? = some x → P x) →
+      ∀ k x : Lbl, (L.foldl (fun a l => a.insert l t) al)[k]? = some x → P x
+  | [], _, ha => ha
+  | a :: L, al, ha => foldl_insert_alias P t ht L (al.insert a t) (fun k x hx => by
+      rw [Std.TreeMap.getElem?_insert] at hx
+      split at hx
+      · cases hx; exact ht
+      · exact ha k x hx)
 
 theorem step_mbOk {I : List Line} (allLabels : Bool) (m m' : MBuf) (hm : MBOk I m)
     (h : MBuf.step allLabels m = some m') : MBOk I m' := by
@@ -301,20 +350,13 @@ theorem step_mbOk {I : List Line} (allLabels : Bool) (m m' : MBuf) (hm : MBOk I 
   have htU : t ∈ uses I := hlnU t (stepLine_used ht)
   simp only [hlc, hln, ht, Option.bind_eq_bind, Option.bind_some, Option.bind_none] at h
   repeat' split at h
+  all_goals (try change some _ = some _ at h)
   all_goals first
     | (simp at h; done)
     | (cases h; exact hE)
     | (cases h; exact ⟨hd, hu, ha⟩)
     | (cases h
-       refine ⟨hd, hu, fun k' x hx => ?_⟩
-       rw [List.foldl_eq_foldr_reverse] at hx
-       induction (List.reverse _) with
-       | nil => exact ha k' x hx
-       | cons a as ih =>
-         simp only [List.foldr_cons, Std.TreeMap.getElem?_insert] at hx
-         split at hx
-         · cases hx; exact htU
-         · exact ih hx)
+       exact ⟨hd, hu, foldl_insert_alias (· ∈ uses I) t htU _ _ ha⟩)
     | skip
   all_goals
     rcases hpp : lastCode m.out k with - | p
@@ -332,16 +374,12 @@ theorem step_mbOk {I : List Line} (allLabels : Bool) (m m' : MBuf) (hm : MBOk I 
     split at h
     · rename_i c tc _
       cases h
-      have hlpE : (m.erase k).toList[p]? = some lp := by
+      have hlpE : (m.erase k).toList[p]? = some (.ins c tc) := by
         simp only [MBuf.erase, List.toList_toArray, List.getElem?_eraseIdx_of_lt hpk,
           Array.getElem?_toList, hlp]
-      have hlpd : lineDef lp = none := by
-        cases lp <;> simp_all [Line.cbr?, lineDef]
-      have hlpU : ∀ x ∈ lp.labelsUsed, x ∈ uses I := fun x hx =>
-        hu x (mem_uses.2 ⟨lp, List.mem_of_getElem? (by simpa using hlp), hx⟩)
-      have hlpc : lp = .ins c tc := by
-        cases lp <;> simp_all [Line.cbr?]
-      subst hlpc
+      have hlpd : lineDef (.ins c tc) = none := rfl
+      have hlpU : ∀ x ∈ (Line.ins c tc).labelsUsed, x ∈ uses I := fun x hx =>
+        hu x (mem_uses.2 ⟨.ins c tc, List.mem_of_getElem? (by simpa using hlp), hx⟩)
       refine ⟨?_, fun x hx => ?_, ha⟩
       · show defs ((m.erase k).set! p _).toList = _
         rw [Array.set!, Array.toList_setIfInBounds,
@@ -403,7 +441,10 @@ theorem machBuf_labels (allLabels : Bool) (ls : List Line) :
     rw [List.filterMap_map]
     congr 1
     funext ln
-    cases ln <;> simp [Function.comp, Line.relabel, lineDef] <;> split <;> rfl
+    simp only [Function.comp]
+    cases ln with
+    | ins i tc => simp only [Line.relabel]; split <;> rfl
+    | _ => rfl
   · obtain ⟨ln', hln', hx'⟩ := mem_uses.1 hx
     obtain ⟨ln, hln, rfl⟩ := List.mem_map.1 hln'
     have hlnU : ∀ y ∈ ln.labelsUsed, y ∈ uses ls := fun y hy => hu y (mem_uses.2 ⟨ln, hln, hy⟩)
@@ -419,9 +460,13 @@ theorem machBuf_labels (allLabels : Bool) (ls : List Line) :
         | ins i tc =>
           have hrl : Line.relabel (fun _ => t) (.ins i tc) = .ins i tc := Line.relabel_self ht
           apply hlnU
-          have : (Line.ins i tc).relabel (MBuf.res _) = (Line.ins i tc).relabel (fun _ => t) := by
-            simp only [Line.relabel, ht, he]
-          rw [this, hrl] at hx'
+          have key : ∀ f : Lbl → Lbl, f t = t → (Line.ins i tc).relabel f = .ins i tc :=
+            fun f hf => by
+              have h2 := hrl
+              simp only [Line.relabel, ht] at h2
+              simp only [Line.relabel, ht, hf]
+              exact h2
+          rw [key _ he] at hx'
           exact hx'
       · exact ha k _ hk
 
@@ -865,7 +910,7 @@ theorem segs_chunk {c : FnCtx} {af : AFunc} {T : List Label} :
       (fun m hm l hl => ht ((l', code), i) (by simp) m ((List.dropLast_sublist _).subset hm) l hl)
     have hc2 := code_chunk (T := T) _ ps1 ps2 l2 h2
       (fun m hm l hl => ht ((l', code), i) (by simp) m (mem_of_getLast?_toList hm) l hl)
-    have hrest := segs_chunk bs ps2 ps' l3 h3 hn.2
+    have hrest := segs_chunk bs ps2 _ l3 h3 hn.2
       (fun p hp m hm l hl => ht p (by simp [hp]) m hm l hl)
     have := Chunk.append (Chunk.append (Chunk.append hlab hc1 (fun _ _ h => nomatch h)) hc2
       (fun _ _ h => nomatch h)) hrest (fun x hx => by simp at hx; subst hx; exact hn.1)
@@ -927,7 +972,8 @@ theorem emitFunc_labels_of {k : Nat} {af : AFunc} {fa : FnAsm} (he : emitFunc k 
     rw [List.zipIdx_eq_zip_range', List.map_fst_zip (by simp)]
   have hperm := (emitOrder_perm af).map (·.1.1)
   have hzl : af.blocks.toList.zipIdx.map (·.1.1) = af.blocks.toList.map (·.1) := by
-    rw [← hz, List.map_map]; rfl
+    have := congrArg (List.map Prod.fst) hz
+    rwa [List.map_map] at this
   rw [hzl] at hperm
   have hc := segs_chunk (T := af.blocks.toList.map (·.1)) _ _ _ _ hseg
     (hperm.nodup_iff.mpr hn) (fun q hq m hm l hl => by
