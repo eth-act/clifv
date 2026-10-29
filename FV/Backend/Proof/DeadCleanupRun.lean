@@ -24,25 +24,25 @@ private theorem SameEnd_succ {V W : Type} {live : List Nat} {a b : SeqEnd V W}
     (h : SameEnd live a b) : SameEnd live a.succ b.succ := by
   cases a <;> cases b <;> exact h
 
-private theorem dropCmp_vdefUpd {V : Type} {e : Bool} {m : MInst} {kept : List MInst}
-    (h : dropCmp e m kept = true) {ops : Array Operand} (hop : m.operands = .ok ops)
+private theorem dropCmp_vdefUpd {V : Type} {m : MInst} {kept : List MInst}
+    (h : dropCmp m kept = true) {ops : Array Operand} (hop : m.operands = .ok ops)
     (outs : List V) (ρ : Nat → V) : vdefUpd ops outs ρ = ρ := by
   simp only [vdefUpd, dropCmp_noDef h hop, List.zip_nil_left, List.filter_nil]
   rfl
 
 /-- `scan_run` from a cleaned world that may differ from the original one while dropped
-compares' flags wait to be overwritten by a retained compare (`FlagsPend`). Straight-line runs
-use no exit flag (`false`): a run that leaves the block ends with equal worlds. -/
+compares' flags wait to be overwritten by a retained compare (`FlagsPend`). A run that leaves
+the block ends with equal worlds. -/
 private theorem scan_run_pend {V W : Type} (sem : ISem V W)
     (hp : ∀ i us w outs w' ctl, pureForm i = true →
       sem i us w = some (outs, w', ctl) → w' = w ∧ ctl = .next)
     (hcmp : CmpOverwrite sem)
     (nregs : Nat) (ms : List MInst) (exit : List Nat)
     (hg : GotoAtEnd sem ms) {a b : Nat → V} {w wb : W} {result : SeqEnd V W}
-    (ha : Agree (scan nregs false ms exit).2 a b)
-    (hw : wb = w ∨ (flagsDead false (scan nregs false ms exit).1 = true ∧ FlagsPend sem w wb))
+    (ha : Agree (scan nregs ms exit).2 a b)
+    (hw : wb = w ∨ (flagsDead (scan nregs ms exit).1 = true ∧ FlagsPend sem w wb))
     (hr : seqRun sem ms a w = some result) :
-    ∃ result', seqRun sem (scan nregs false ms exit).1 b wb = some result' ∧
+    ∃ result', seqRun sem (scan nregs ms exit).1 b wb = some result' ∧
       SameEnd exit result result' := by
   induction ms generalizing a b w wb result with
   | nil =>
@@ -65,29 +65,29 @@ private theorem scan_run_pend {V W : Type} (sem : ISem V W)
       | some r =>
         obtain ⟨outs, w', ctl⟩ := r
         by_cases hl : outs.length = (ops.toList.filter Operand.isDef).length
-        · by_cases hd : discard i (scan nregs false ms exit).2 = true
+        · by_cases hd : discard i (scan nregs ms exit).2 = true
           · have hworld := hp i _ _ _ _ _ (discard_pure hd) hs
             obtain ⟨rfl, rfl⟩ := hworld
             simp only [scan, hd, Bool.true_or, ↓reduceIte] at ha hw ⊢
-            have hau : Agree (scan nregs false ms exit).2 (vdefUpd ops outs a) b := by
+            have hau : Agree (scan nregs ms exit).2 (vdefUpd ops outs a) b := by
               intro n hn
               exact (discard_updates_agree hd hop a outs n hn).symm.trans (ha n hn)
             simp only [seqRun, hop, hs, hl, ↓reduceIte, Option.map_eq_some_iff] at hr
             obtain ⟨r, hrun, rfl⟩ := hr
             obtain ⟨r', hrun', he⟩ := ih hgt hau hw hrun
             exact ⟨r', hrun', by cases r <;> cases r' <;> exact he⟩
-          · have hd' : discard i (scan nregs false ms exit).2 = false := by
-              cases h : discard i (scan nregs false ms exit).2 <;> simp_all
-            by_cases hdc : dropCmp false i (scan nregs false ms exit).1 = true
+          · have hd' : discard i (scan nregs ms exit).2 = false := by
+              cases h : discard i (scan nregs ms exit).2 <;> simp_all
+            by_cases hdc : dropCmp i (scan nregs ms exit).1 = true
             · obtain ⟨hc, hov⟩ := hcmp.1 _ _ _ _ _ _ (dropCmp_cmp hdc) hs
               subst hc
               simp only [scan, hd', hdc, Bool.false_or, ↓reduceIte] at ha hw ⊢
-              have hau : Agree (scan nregs false ms exit).2 (vdefUpd ops outs a) b := by
+              have hau : Agree (scan nregs ms exit).2 (vdefUpd ops outs a) b := by
                 rw [dropCmp_vdefUpd hdc hop]
                 exact ha
               simp only [seqRun, hop, hs, hl, ↓reduceIte, Option.map_eq_some_iff] at hr
               obtain ⟨r, hrun, rfl⟩ := hr
-              have hw' : wb = w' ∨ (flagsDead false (scan nregs false ms exit).1 = true ∧
+              have hw' : wb = w' ∨ (flagsDead (scan nregs ms exit).1 = true ∧
                   FlagsPend sem w' wb) := by
                 refine .inr ⟨dropCmp_dead hdc, ?_⟩
                 rcases hw with rfl | ⟨-, h0⟩
@@ -95,29 +95,28 @@ private theorem scan_run_pend {V W : Type} (sem : ISem V W)
                 · exact hov.trans h0
               obtain ⟨r', hrun', he⟩ := ih hgt hau hw' hrun
               exact ⟨r', hrun', by cases r <;> cases r' <;> exact he⟩
-            · have hdc' : dropCmp false i (scan nregs false ms exit).1 = false := by
-                cases h : dropCmp false i (scan nregs false ms exit).1 <;> simp_all
+            · have hdc' : dropCmp i (scan nregs ms exit).1 = false := by
+                cases h : dropCmp i (scan nregs ms exit).1 <;> simp_all
               simp only [scan, hd', hdc', Bool.false_or, Bool.false_eq_true, ↓reduceIte]
                 at ha hw ⊢
               have hu : vuses ops a = vuses ops b := retained_uses ha hop
-              have hau : Agree (scan nregs false ms exit).2
+              have hau : Agree (scan nregs ms exit).2
                   (vdefUpd ops outs a) (vdefUpd ops outs b) :=
                 retained_updates_agree hop ha outs hl
               -- the retained instruction runs from the cleaned world to the same values: a
               -- retained compare reaches the original world, a flag-free producer keeps both
               obtain ⟨wb', hsb, hw', hpre⟩ : ∃ wb', sem i (vuses ops b) wb = some (outs, wb', ctl) ∧
-                  (wb' = w' ∨ (ctl = .next ∧ flagsDead false (scan nregs false ms exit).1 = true ∧
+                  (wb' = w' ∨ (ctl = .next ∧ flagsDead (scan nregs ms exit).1 = true ∧
                     FlagsPend sem w' wb')) ∧ (ctl ≠ .next → wb = w) := by
                 rw [← hu]
                 rcases hw with rfl | ⟨hdead, hov⟩
                 · exact ⟨w', hs, .inl rfl, fun _ => rfl⟩
-                · rcases flagsDead_cons hdead with hK | ⟨-, hff, hdead'⟩ | ⟨-, -, -, hfalse⟩
+                · rcases flagsDead_cons hdead with hK | ⟨-, hff, hdead'⟩
                   · exact ⟨w', hov.1 i _ _ hK hs, .inl rfl,
                       fun hn => absurd (hcmp.1 _ _ _ _ _ _ hK hs).1 hn⟩
                   · obtain ⟨rfl, rfl⟩ := hp _ _ _ _ _ _ (pureForm_of_flagFree hff) hs
                     exact ⟨wb, hov.2 i _ outs .next (by simp [hff]) hs, .inr ⟨rfl, hdead', hov⟩,
                       fun hn => absurd rfl hn⟩
-                  · cases hfalse
               -- a stopping instruction is neither a compare nor flag-free: the worlds agree
               have hstop : ctl ≠ .next → wb' = w' := fun hn =>
                 hw'.resolve_right (fun h => hn h.1)
@@ -169,9 +168,9 @@ theorem scan_run {V W : Type} (sem : ISem V W)
     (hcmp : CmpOverwrite sem)
     (nregs : Nat) (ms : List MInst) (exit : List Nat)
     (hg : GotoAtEnd sem ms) {a b : Nat → V} {w : W} {result : SeqEnd V W}
-    (ha : Agree (scan nregs false ms exit).2 a b)
+    (ha : Agree (scan nregs ms exit).2 a b)
     (hr : seqRun sem ms a w = some result) :
-    ∃ result', seqRun sem (scan nregs false ms exit).1 b w = some result' ∧
+    ∃ result', seqRun sem (scan nregs ms exit).1 b w = some result' ∧
       SameEnd exit result result' :=
   scan_run_pend sem hp hcmp nregs ms exit hg ha (.inl rfl) hr
 

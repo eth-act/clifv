@@ -47,8 +47,8 @@ theorem PureSublist.findSome {α : Type} {xs ys : List MInst} (h : PureSublist x
     · simp [List.findSome?_cons, hfc _ hp, ih]
   | keep h ih => simp only [List.findSome?_cons, ih]
 
-theorem scan_pureSublist (n : Nat) (e : Bool) (ms : List MInst) (L : List Nat) :
-    PureSublist (scan n e ms L).1 ms := by
+theorem scan_pureSublist (n : Nat) (ms : List MInst) (L : List Nat) :
+    PureSublist (scan n ms L).1 ms := by
   induction ms with
   | nil => exact .nil
   | cons i ms ih =>

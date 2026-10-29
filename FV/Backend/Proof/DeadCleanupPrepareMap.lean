@@ -255,14 +255,13 @@ theorem prepare_map {T : VBlock → VBlock} (hT : BlockMap T) (vc : VCode) :
 private theorem retarget_facts {t t' : MInst} {ls : List Label}
     (h : t.setTargets ls = some t') :
     t.isTerminator = true ∧ t'.isTerminator = true ∧
-      pureForm t = false ∧ pureForm t' = false ∧ t'.operands = t.operands ∧
-      isJump t' = isJump t := by
+      pureForm t = false ∧ pureForm t' = false ∧ t'.operands = t.operands := by
   unfold MInst.setTargets at h
   split at h
   all_goals (try split at h)
   all_goals (cases h)
-  all_goals (try exact ⟨rfl, rfl, rfl, rfl, rfl, rfl⟩)
-  all_goals simp only [MInst.isTerminator, MInst.isBranch, MInst.isRet, pureForm, isJump,
+  all_goals (try exact ⟨rfl, rfl, rfl, rfl, rfl⟩)
+  all_goals simp only [MInst.isTerminator, MInst.isBranch, MInst.isRet, pureForm,
     Backend.Proof.operands_tryCall_call]
   all_goals simp [MInst.operands, MInst.visitOperands]
 
@@ -272,40 +271,40 @@ private theorem flagFree_of_pure_false {t : MInst} (h : pureForm t = false) :
   · rfl
   · rw [pureForm_of_flagFree hf] at h; cases h
 
-/-- Swapping the final non-producer, non-compare instruction for one of the same jump-ness
-keeps whether the flags are dead. -/
-private theorem flagsDead_append_swap (e : Bool) (ks : List MInst) {t t' : MInst}
+/-- Swapping the final non-producer, non-compare instruction keeps whether the flags are
+dead. -/
+private theorem flagsDead_append_swap (ks : List MInst) {t t' : MInst}
     (hp : pureForm t = false) (hp' : pureForm t' = false) (hc : cmpForm t = false)
-    (hc' : cmpForm t' = false) (hj : isJump t' = isJump t) :
-    flagsDead e (ks ++ [t']) = flagsDead e (ks ++ [t]) := by
+    (hc' : cmpForm t' = false) :
+    flagsDead (ks ++ [t']) = flagsDead (ks ++ [t]) := by
   induction ks with
   | nil =>
     simp only [List.nil_append, flagsDead, hc, hc', flagFree_of_pure_false hp,
-      flagFree_of_pure_false hp', hj, Bool.false_and, Bool.false_or, Bool.or_false]
+      flagFree_of_pure_false hp', Bool.false_and, Bool.false_or, Bool.or_false]
   | cons k ks ih => simp only [List.cons_append, flagsDead, ih]
 
 /-- Retargeting the final terminator changes only that instruction of the scan. -/
-private theorem scan_append_swap (n : Nat) (e : Bool) (L : List Nat) (xs : List MInst)
+private theorem scan_append_swap (n : Nat) (L : List Nat) (xs : List MInst)
     {t t' : MInst} (hp : pureForm t = false) (hp' : pureForm t' = false)
-    (hc : cmpForm t = false) (hc' : cmpForm t' = false) (hj : isJump t' = isJump t)
+    (hc : cmpForm t = false) (hc' : cmpForm t' = false)
     (hu : uses n t' = uses n t) (hd : defs t' = defs t) :
-    scan n e (xs ++ [t']) L =
-      ((scan n e (xs ++ [t]) L).1.dropLast ++ [t'], (scan n e (xs ++ [t]) L).2) := by
+    scan n (xs ++ [t']) L =
+      ((scan n (xs ++ [t]) L).1.dropLast ++ [t'], (scan n (xs ++ [t]) L).2) := by
   induction xs with
   | nil => simp [scan, discard, dropCmp, hp, hp', hc, hc', hu, hd]
   | cons i xs ih =>
-    obtain ⟨pre, hpre⟩ := List.getLast?_eq_some_iff.mp (scan_last n e xs t L hp)
-    have hf := flagsDead_append_swap e pre hp hp' hc hc' hj
+    obtain ⟨pre, hpre⟩ := List.getLast?_eq_some_iff.mp (scan_last n xs t L hp)
+    have hf := flagsDead_append_swap pre hp hp' hc hc'
     simp only [List.cons_append, scan, ih, hpre, List.dropLast_concat, dropCmp, hf]
     split <;> simp only [← List.cons_append, List.dropLast_concat]
 
-private def eraseBlock (n : Nat) (L : List Nat) (E : Label → Bool) (b : VBlock) : VBlock :=
+private def eraseBlock (n : Nat) (L : List Nat) (b : VBlock) : VBlock :=
   if (b.insts.back?.map MInst.isTerminator).getD false then
-    { b with insts := (scan n (E b.label) b.insts.toList L).1.toArray }
+    { b with insts := (scan n b.insts.toList L).1.toArray }
   else b
 
-private theorem eraseBlock_back (n : Nat) (L : List Nat) (E : Label → Bool) (b : VBlock) :
-    (eraseBlock n L E b).insts.back? = b.insts.back? := by
+private theorem eraseBlock_back (n : Nat) (L : List Nat) (b : VBlock) :
+    (eraseBlock n L b).insts.back? = b.insts.back? := by
   cases ht : b.insts.back? with
   | none => simp [eraseBlock, ht]
   | some t =>
@@ -318,11 +317,11 @@ private theorem eraseBlock_back (n : Nat) (L : List Nat) (E : Label → Bool) (b
         · have hf := pureForm_notTerminator hp; simp_all
       have ht' : b.insts.toList.getLast? = some t := by simpa using ht
       obtain ⟨xs, hx⟩ := List.getLast?_eq_some_iff.mp ht'
-      simpa [eraseBlock, ht, hterm, hx] using scan_last n (E b.label) xs t L hnt
+      simpa [eraseBlock, ht, hterm, hx] using scan_last n xs t L hnt
 
-private theorem eraseBlock_map (n : Nat) (L : List Nat) (E : Label → Bool) :
-    BlockMap (eraseBlock n L E) := by
-  refine ⟨rfl, ?_, ?_, ?_, eraseBlock_back n L E, ?_, ?_⟩
+private theorem eraseBlock_map (n : Nat) (L : List Nat) :
+    BlockMap (eraseBlock n L) := by
+  refine ⟨rfl, ?_, ?_, ?_, eraseBlock_back n L, ?_, ?_⟩
   · intro b; unfold eraseBlock; split <;> rfl
   · intro b; unfold eraseBlock; split <;> rfl
   · intro b; unfold eraseBlock; split <;> rfl
@@ -330,7 +329,7 @@ private theorem eraseBlock_map (n : Nat) (L : List Nat) (E : Label → Bool) :
     simp [eraseBlock, scan, discard, dropCmp, flagsDead, cmpForm, pureForm, MInst.isTerminator,
       MInst.isBranch, MInst.isRet]
   · intro b t t' ls ht hr
-    obtain ⟨hterm, hterm', hnt, hnt', hops, hj⟩ := retarget_facts hr
+    obtain ⟨hterm, hterm', hnt, hnt', hops⟩ := retarget_facts hr
     have hu : uses n t' = uses n t := by simp only [uses, hops]
     have hd : defs t' = defs t := by simp only [defs, hops]
     have hb : b.insts.toList.getLast? = some t := by simpa using ht
@@ -340,23 +339,22 @@ private theorem eraseBlock_map (n : Nat) (L : List Nat) (E : Label → Bool) :
       ite_true, Array.back?_push, hterm']
     simp only [Array.toList_push, Array.toList_pop, hx, List.dropLast_append_cons,
       List.dropLast_nil, List.append_nil,
-      scan_append_swap n (E b.label) L xs hnt hnt' (cmpForm_of_terminator hterm)
-        (cmpForm_of_terminator hterm') hj hu hd]
+      scan_append_swap n L xs hnt hnt' (cmpForm_of_terminator hterm)
+        (cmpForm_of_terminator hterm') hu hd]
     congr 1
     apply Array.toList_inj.mp
     simp [Array.toList_push, Array.toList_pop]
-    exact congrArg Prod.fst (scan_append_swap n (E b.label) L xs hnt hnt'
-      (cmpForm_of_terminator hterm) (cmpForm_of_terminator hterm') hj hu hd)
+    exact congrArg Prod.fst (scan_append_swap n L xs hnt hnt'
+      (cmpForm_of_terminator hterm) (cmpForm_of_terminator hterm') hu hd)
 
-/-- Apply the original liveness boundary and exit flags to a prepared block. -/
+/-- Apply the original liveness boundary to a prepared block. -/
 def preparedCleanupBlock (original : VCode) (b : VBlock) : VBlock :=
-  eraseBlock original.classes.size (exitLive original 0 default) (exitDead original) b
+  eraseBlock original.classes.size (exitLive original 0 default) b
 
 theorem preparedCleanupBlock_insts (vc : VCode) {b : VBlock} {t : MInst}
     (hb : b.insts.back? = some t) (ht : t.isTerminator = true) :
     (preparedCleanupBlock vc b).insts =
-      (scan vc.classes.size (exitDead vc b.label) b.insts.toList
-        (exitLive vc 0 default)).1.toArray := by
+      (scan vc.classes.size b.insts.toList (exitLive vc 0 default)).1.toArray := by
   simp [preparedCleanupBlock, eraseBlock, hb, ht]
 
 /-- All block interfaces and the surviving terminator agree with preparation's
@@ -366,29 +364,27 @@ theorem preparedCleanupBlock_interface (vc : VCode) (b : VBlock) :
     (preparedCleanupBlock vc b).params = b.params ∧
     (preparedCleanupBlock vc b).branchArgs = b.branchArgs ∧
     (preparedCleanupBlock vc b).insts.back? = b.insts.back? := by
-  have h := eraseBlock_map vc.classes.size (exitLive vc 0 default) (exitDead vc)
+  have h := eraseBlock_map vc.classes.size (exitLive vc 0 default)
   exact ⟨h.label b, h.params b, h.branchArgs b, h.back b⟩
 
 /-- Transported cleanup is a block map that preparation commutes with (`prepare_map`). Public
 for the production cleanup stage (`FV/Backend/Proof/CleanupStageFacts.lean`). -/
 theorem preparedCleanupBlock_blockMap (vc : VCode) : BlockMap (preparedCleanupBlock vc) :=
-  eraseBlock_map vc.classes.size (exitLive vc 0 default) (exitDead vc)
+  eraseBlock_map vc.classes.size (exitLive vc 0 default)
 
 /-- Transported cleanup can only delete instructions. -/
 theorem preparedCleanupBlock_sublist (vc : VCode) (b : VBlock) :
     (preparedCleanupBlock vc b).insts.toList.Sublist b.insts.toList := by
   unfold preparedCleanupBlock eraseBlock
   split
-  · simpa using scan_sublist vc.classes.size (exitDead vc b.label) b.insts.toList
-      (exitLive vc 0 default)
+  · simpa using scan_sublist vc.classes.size b.insts.toList (exitLive vc 0 default)
   · exact List.Sublist.refl _
 
 theorem preparedCleanupBlock_pureSublist (vc : VCode) (b : VBlock) :
     PureSublist (preparedCleanupBlock vc b).insts.toList b.insts.toList := by
   unfold preparedCleanupBlock eraseBlock
   split
-  · simpa using scan_pureSublist vc.classes.size (exitDead vc b.label) b.insts.toList
-      (exitLive vc 0 default)
+  · simpa using scan_pureSublist vc.classes.size b.insts.toList (exitLive vc 0 default)
   · exact PureSublist.refl _
 
 /-- Cleanup transported across preparation, using the original liveness boundary
@@ -402,7 +398,7 @@ theorem preparedCleanup_blocks (vc vcp : VCode) :
 /-- Transported cleanup keeps the prepared CFG result exactly. -/
 theorem preparedCleanup_cfg (vc vcp : VCode) :
     (preparedCleanup vc vcp).cfg = vcp.cfg :=
-  mapBlocks_cfg (eraseBlock_map vc.classes.size (exitLive vc 0 default) (exitDead vc)) vcp
+  mapBlocks_cfg (eraseBlock_map vc.classes.size (exitLive vc 0 default)) vcp
 
 /-- Preparation commutes with cleanup: it makes the same CFG decisions and
 retargets the same surviving terminators, including newly added edge blocks. -/
@@ -413,7 +409,7 @@ theorem prune_prepare (vc : VCode) :
   | ok r =>
     rcases r with ⟨ss, ps⟩
     have heq : clean vc = mapBlocks
-        (eraseBlock vc.classes.size (exitLive vc 0 default) (exitDead vc)) vc := by
+        (eraseBlock vc.classes.size (exitLive vc 0 default)) vc := by
       change { vc with blocks := (clean vc).blocks } = _
       rw [clean_blocks_map]
       unfold mapBlocks
@@ -428,7 +424,7 @@ theorem prune_prepare (vc : VCode) :
       simp [cleanBlock, eraseBlock, ht, hterm, exitLive]
     simp only [prune, hc]
     rw [heq]
-    exact prepare_map (eraseBlock_map _ _ _) vc
+    exact prepare_map (eraseBlock_map _ _) vc
 
 /-- The same successful preparation has a cleaned counterpart, with no new
 source or successful-preparation premise. -/
@@ -466,7 +462,7 @@ theorem preparedCleanup_insts (vc vcp : VCode) {P : MInst → Prop}
   unfold preparedCleanupBlock eraseBlock at hi
   split at hi
   · apply h raw hraw i
-    apply (scan_sublist _ _ _ _).subset
+    apply (scan_sublist _ _ _).subset
     simpa using hi
   · exact h raw hraw i hi
 

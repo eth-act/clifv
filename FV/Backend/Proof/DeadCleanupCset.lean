@@ -18,15 +18,15 @@ example : pureForm deadCset = true ∧ pureNoFlags deadCset = false := ⟨rfl, r
 
 /-- The `icmp` + `brif`/`select` shape: the first compare and its dead `cset` go, the second
 compare and its live reader stay. -/
-example : (scan 4 false [cmp01, deadCset, cmp01, liveCset, retCset] []).1 =
+example : (scan 4 [cmp01, deadCset, cmp01, liveCset, retCset] []).1 =
     [cmp01, liveCset, retCset] := by decide
 
 /-- A compare followed by a different compare (`cmp x0, #16` after `cmp x0, x1`). -/
-example : (scan 4 false [cmp01, cmp0, liveCset, retCset] []).1 = [cmp0, liveCset, retCset] := by
+example : (scan 4 [cmp01, cmp0, liveCset, retCset] []).1 = [cmp0, liveCset, retCset] := by
   decide
 
 /-- A compare whose flags a `cset` reads is kept; so is one whose flags reach the block end. -/
-example : (scan 4 false [cmp01, liveCset, cmp0, retCset] []).1 =
+example : (scan 4 [cmp01, liveCset, cmp0, retCset] []).1 =
     [cmp01, liveCset, cmp0, retCset] := by decide
 
 private def movA : MInst := .mov .size64 (.vreg 6 .int) (.vreg 1 .int)
@@ -38,13 +38,13 @@ private def cmpE5 : MInst := .aluRRImm12 .subS .size32 .xzr (.vreg 5 .int) ⟨45
 
 /-- A live flag-free producer between the compares (`cmp; mov; cmp; csel`): the first
 compare goes, the producer stays. -/
-example : (scan 7 false [cmp01, movA, cmp0, liveCset, ret2] []).1 =
+example : (scan 7 [cmp01, movA, cmp0, liveCset, ret2] []).1 =
     [movA, cmp0, liveCset, ret2] := by
   decide
 
 /-- The `icmp` of an `i8` (`uxtb; cmp`) whose user compares again (`uxtb; cmp; b.eq`): the first
 compare goes, and with it its extension, as in Cranelift's single `uxtb; cmp`. -/
-example : (scan 7 false [ext4, cmpE4, ext5, cmpE5, liveCset, retCset] []).1 =
+example : (scan 7 [ext4, cmpE4, ext5, cmpE5, liveCset, retCset] []).1 =
     [ext5, cmpE5, liveCset, retCset] := by decide
 
 example : ∃ vc : VCode, vc.blocks.size = 1 ∧
@@ -63,15 +63,16 @@ private def orr3 : MInst := .aluRRR .orr .size64 (.vreg 3 .int) (.vreg 1 .int) (
 private def asr6 : MInst := .aluRRImmShift .asr .size64 (.vreg 6 .int) (.vreg 1 .int) 63
 
 /-- An unused shift goes (#555: the `ishl` a shifted-operand `bor` folds). -/
-example : (scan 4 false [lslDead, orr3, retCset] []).1 = [orr3, retCset] := by decide
+example : (scan 4 [lslDead, orr3, retCset] []).1 = [orr3, retCset] := by decide
 
 /-- A live shift between two compares stays; the first compare goes (#552). -/
-example : (scan 7 false [cmp01, asr6, cmp0, liveCset, ret2] []).1 =
+example : (scan 7 [cmp01, asr6, cmp0, liveCset, ret2] []).1 =
     [asr6, cmp0, liveCset, ret2] := by decide
 
-/-- An unused compare before a `jump` to a block that compares first goes (`exitDead`); one
-whose successor reads the flags first stays. -/
-example : ∃ vc : VCode, (clean vc).blocks[0]!.insts.toList = [.jump 1] := by
+/-- Flags are tracked within a block only: an unused compare before a `jump` stays, even when
+the successor compares first (the cross-block rule never changed generated code, #608), and
+so does one whose successor reads the flags first. -/
+example : ∃ vc : VCode, (clean vc).blocks[0]!.insts.toList = [cmp01, .jump 1] := by
   refine ⟨⟨"cset_jump", #[⟨0, #[cmp01, .jump 1], #[], #[]⟩,
     ⟨1, #[cmp0, liveCset, retCset], #[], #[]⟩], #[.int, .int, .int, .int], 0, 0, #[]⟩, ?_⟩
   decide +kernel

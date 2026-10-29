@@ -74,20 +74,20 @@ private theorem readsReady_agree {nregs : Nat} {i : MInst} {live : List Nat}
 
 /-- Cleanup preserves the availability of every surviving read and agrees
 at the block boundary on the registers the next block may read. -/
-theorem scan_availability (nregs : Nat) (e : Bool) (ms : List MInst) (exit : List Nat)
-    (A B : Nat → Bool) (ha : Agree (scan nregs e ms exit).2 A B)
+theorem scan_availability (nregs : Nat) (ms : List MInst) (exit : List Nat)
+    (A B : Nat → Bool) (ha : Agree (scan nregs ms exit).2 A B)
     (hr : AvailRunReady ms A) :
-    AvailRunReady (scan nregs e ms exit).1 B ∧
+    AvailRunReady (scan nregs ms exit).1 B ∧
       Agree exit (ms.foldl (fun A i => availInst i A) A)
-        ((scan nregs e ms exit).1.foldl (fun B i => availInst i B) B) := by
+        ((scan nregs ms exit).1.foldl (fun B i => availInst i B) B) := by
   induction ms generalizing A B with
   | nil => exact ⟨trivial, ha⟩
   | cons i ms ih =>
     obtain ⟨hread, hrest⟩ := hr
     by_cases hd :
-        (discard i (scan nregs e ms exit).2 || dropCmp e i (scan nregs e ms exit).1) = true
+        (discard i (scan nregs ms exit).2 || dropCmp i (scan nregs ms exit).1) = true
     · simp only [scan, hd, ↓reduceIte] at ha ⊢
-      have hstep : Agree (scan nregs e ms exit).2 (availInst i A) B := by
+      have hstep : Agree (scan nregs ms exit).2 (availInst i A) B := by
         intro n hn
         refine Eq.trans ?_ (ha n hn)
         rcases Bool.or_eq_true_iff.mp hd with hd | hd
@@ -134,9 +134,9 @@ theorem availRunReady_iff (ms : List MInst) (A : Nat → Bool) :
 
 /-- Every intermediate live register comes from a read in the block or its
 boundary. This is the finite set used to restrict the old availability sets. -/
-theorem scan_boundary_subset {nregs : Nat} {e : Bool} {ms : List MInst} {exit : List Nat}
+theorem scan_boundary_subset {nregs : Nat} {ms : List MInst} {exit : List Nat}
     (hu : ∀ i ∈ ms, ∀ n ∈ uses nregs i, n ∈ exit) :
-    ∀ n ∈ (scan nregs e ms exit).2, n ∈ exit := by
+    ∀ n ∈ (scan nregs ms exit).2, n ∈ exit := by
   induction ms with
   | nil => exact fun _ h => h
   | cons i ms ih =>
@@ -153,17 +153,17 @@ theorem scan_boundary_subset {nregs : Nat} {e : Bool} {ms : List MInst} {exit : 
 a surviving return. No source or execution certificate is assumed. -/
 example : ∃ ms : List MInst,
     AvailRunReady ms (fun _ => false) ∧
-    Agree (scan 1 false ms []).2 (fun _ => false) (fun _ => false) ∧
-    (scan 1 false ms []).1 = [.rets []] ∧
-    AvailRunReady (scan 1 false ms []).1 (fun _ => false) := by
+    Agree (scan 1 ms []).2 (fun _ => false) (fun _ => false) ∧
+    (scan 1 ms []).1 = [.rets []] ∧
+    AvailRunReady (scan 1 ms []).1 (fun _ => false) := by
   let m : MInst := .mov .size64 (.vreg 0 .int) .xzr
   have hm : m.operands = .ok #[⟨0, .int, .def, .late, .reg⟩] := rfl
   have hr : (MInst.rets []).operands = .ok #[] := rfl
   have hav : AvailRunReady [m, .rets []] (fun _ => false) := by
     simp [AvailRunReady, ReadsReady, hm, hr]
-  have hag : Agree (scan 1 false [m, .rets []] []).2 (fun _ => false) (fun _ => false) :=
+  have hag : Agree (scan 1 [m, .rets []] []).2 (fun _ => false) (fun _ => false) :=
     fun _ _ => rfl
   exact ⟨[m, .rets []], hav, hag, by decide,
-    (scan_availability 1 false [m, .rets []] [] _ _ hag hav).1⟩
+    (scan_availability 1 [m, .rets []] [] _ _ hag hav).1⟩
 
 end Backend.DeadCleanup

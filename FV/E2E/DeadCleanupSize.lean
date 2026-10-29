@@ -24,7 +24,7 @@ private theorem clean_size (vc : VCode) (M : Nat) :
   · simp only [vcW, clean_blocks_map, Array.toList_map, List.map_map]
     apply sum_map_le'
     intro vb hb
-    have h := sum_sublist szInstW (scan_sublist vc.classes.size (exitDead vc vb.label)
+    have h := sum_sublist szInstW (scan_sublist vc.classes.size
       vb.insts.toList (exitLive vc 0 vb))
     simp only [Function.comp_def, vbW, cleanBlock, wtA, wtL, List.toList_toArray] at *
     omega
@@ -33,7 +33,7 @@ private theorem clean_size (vc : VCode) (M : Nat) :
     intro vb hb
     simpa [cleanBlock, tgA, tgL] using
       sum_sublist (fun i : MInst => i.targets.length)
-        (scan_sublist vc.classes.size (exitDead vc vb.label) vb.insts.toList (exitLive vc 0 vb))
+        (scan_sublist vc.classes.size vb.insts.toList (exitLive vc 0 vb))
 
 /-- Cleanup cannot increase any of the three measures used by the existing
 input-side size proof. -/

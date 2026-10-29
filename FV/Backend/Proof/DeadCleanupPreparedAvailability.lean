@@ -66,24 +66,21 @@ private theorem block_ready {vc vcp : VCode} {ss ps : Array (Array Nat)}
           (preparedCleanupBlock vc vb).insts.size) := by
   obtain ⟨t, _, ht, hterm, _⟩ := (Prep.cfg_spec hc).blk b vb hb
   have hscan : (preparedCleanupBlock vc vb).insts =
-      (scan vc.classes.size (exitDead vc vb.label) vb.insts.toList
-        (exitLive vc 0 default)).1.toArray :=
+      (scan vc.classes.size vb.insts.toList (exitLive vc 0 default)).1.toArray :=
     preparedCleanupBlock_insts vc ht hterm
   have hold : AvailRunReady vb.insts.toList (availStart vcp ss ps D b) := by
     apply (availRunReady_iff _ _).mpr
     intro k i ops hi hops o ho hu
     rw [Array.getElem?_toList] at hi
     exact hav.uses ss ps hc b vb k i ops hb hi hops o ho hu
-  have hstart : Agree (scan vc.classes.size (exitDead vc vb.label) vb.insts.toList
-      (exitLive vc 0 default)).2
+  have hstart : Agree (scan vc.classes.size vb.insts.toList (exitLive vc 0 default)).2
       (availStart vcp ss ps D b)
       (availStart (preparedCleanup vc vcp) ss ps (restrictedD vc D) b) := by
     intro n hn
     have hnL := scan_boundary_subset
       (hreads vb (Array.mem_toList_iff.mpr (Array.mem_of_getElem? hb))) n hn
     simp [availStart, restrictedD, hnL, preparedCleanup_entryStored]
-  have h := scan_availability vc.classes.size (exitDead vc vb.label) vb.insts.toList
-    (exitLive vc 0 default)
+  have h := scan_availability vc.classes.size vb.insts.toList (exitLive vc 0 default)
     _ _ hstart hold
   have hwhole : vb.insts.toList.take vb.insts.size = vb.insts.toList := by
     rw [← Array.length_toList, List.take_length]
