@@ -96,7 +96,12 @@ theorem q_initN {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb R.bas
     omega
   -- the frame top (and the bytes the stack probes zeroed)
   have hslot : ∀ a, (∀ k < R.topN, a ≠ R.topB + BitVec.ofNat 64 k) → s'.mem a = probeMem R.af R.s0 a :=
-    fun a ha => by rw [hm' a ha]; simp [probeMem, probeHit, hframe, spv, spOf]
+    fun a ha => by
+      rw [hm' a ha]
+      show _ = (if probeHit R.af (spv R.s0) a then 0#8 else R.s0.mem a)
+      rw [show probeHit R.af (spv R.s0) a =
+        probeHitN (probeCount (probeTotal R.af.frameSize R.af.isCaller)) (spOf R.s0) a by
+          simp only [probeHit, hframe, Bool.true_and]; rfl]
   have hmemF : ∀ a, ¬ R.F a → s'.mem a = w₀.mem a := by
     intro a ha
     rw [hslot a (fun k hk e => ha (e ▸ RL.FK_F (fplr_inF hR hframe k hk))), hbe.mem a ha]
