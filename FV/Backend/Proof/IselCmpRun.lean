@@ -267,7 +267,7 @@ open Backend Isle Isle.Interp Isle.Aarch64
 /-! ## Hoare-style runs -/
 
 /-- The code reads only vregs `≥ lo` or vregs of values defined in `fr`. -/
-def UsesLo (lo : Nat) (fr : Clif.Frame) (ms : List MInst) : Prop :=
+@[expose] def UsesLo (lo : Nat) (fr : Clif.Frame) (ms : List MInst) : Prop :=
   ∀ m ∈ ms, ∀ u ∈ vuseNums m, lo ≤ u ∨ (fr.regs u).isSome
 
 theorem UsesLo.append {lo : Nat} {fr : Clif.Frame} {ms1 ms2 : List MInst} (h1 : UsesLo lo fr ms1)

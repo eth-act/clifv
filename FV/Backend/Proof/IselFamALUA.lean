@@ -726,7 +726,7 @@ theorem holds_sub_K {ty : Clif.Ty} {sz : OperandSize} (hw : ty.width ≤ sz.bits
 
 /-- **`mi` computes `g u v` into the fresh vreg `st.nextVreg`** from the operands `x`, `y` of
 type `ty` (the per-instruction part of `lowerInstOk_one`). Term contracts conclude it. -/
-def OneInstOk (ctx : Ctx) (st : LState) (ty : Clif.Ty) (x y : Nat)
+@[expose] def OneInstOk (ctx : Ctx) (st : LState) (ty : Clif.Ty) (x y : Nat)
     (g : BitVec ty.width → BitVec ty.width → BitVec ty.width) (mi : MInst) : Prop :=
   ∃ ops, mi.operands = .ok ops ∧
     ops.toList.filter Operand.isDef = [⟨st.nextVreg, .int, .def, .late, .reg⟩] ∧

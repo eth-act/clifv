@@ -28,7 +28,7 @@ namespace Backend.Proof.Driver
 open Backend Backend.Proof
 
 /-- `t` is a `try_call` or a `try_call_indirect` with exception table `et`. -/
-def IsTryWith (t : Clif.Terminator) (et : Clif.ExnTable) : Prop :=
+@[expose] def IsTryWith (t : Clif.Terminator) (et : Clif.ExnTable) : Prop :=
   (∃ fn args, t = .tryCall fn args et) ∨ (∃ callee args, t = .tryCallIndirect callee args et)
 
 variable (f : Clif.Function) (vc : VCode) (ctx : Ctx) (st0 : LState) (R : Reg → Reg)

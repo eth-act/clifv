@@ -675,7 +675,7 @@ end
   | .zero r _ | .notZero r _ => [r]
   | .cond _ => []
 
-def CondBrKind.mapRegs (f : Reg → Reg) : CondBrKind → CondBrKind
+@[expose] def CondBrKind.mapRegs (f : Reg → Reg) : CondBrKind → CondBrKind
   | .zero r s => .zero (f r) s
   | .notZero r s => .notZero (f r) s
   | .cond c => .cond c
@@ -752,7 +752,7 @@ pairs of `call`/`args`/`rets`, which the allocator handles separately. -/
 
 /-- Apply `f` to every register occurrence (uses and defs, not the real registers of the
 fixed pairs of `call`/`args`/`rets`, whose vreg side is mapped). -/
-def MInst.mapRegs (f : Reg → Reg) : MInst → MInst
+@[expose] def MInst.mapRegs (f : Reg → Reg) : MInst → MInst
   | .aluRRR op s rd rn rm => .aluRRR op s (f rd) (f rn) (f rm)
   | .aluRRRR op s rd rn rm ra => .aluRRRR op s (f rd) (f rn) (f rm) (f ra)
   | .aluRRImm12 op s rd rn i => .aluRRImm12 op s (f rd) (f rn) i
@@ -856,7 +856,7 @@ low 32 bits, replicated) 64-bit pattern is an AArch64 bitmask immediate, i.e. a 
 of an element of size 2, 4, ..., 64 that is a rotated run of ones. This is the set of values
 VIXL's `IsImmLogical` (ported in `imms.rs`) accepts; the `N:immr:imms` encoding is computed by
 the assembler. -/
-def ImmLogic.ofNat? (value : Nat) (size : OperandSize) : Option ImmLogic :=
+@[expose] def ImmLogic.ofNat? (value : Nat) (size : OperandSize) : Option ImmLogic :=
   let v := mask64 value
   let v := match size with
     | .size32 => (v % 2 ^ 32) * 2 ^ 32 + v % 2 ^ 32
@@ -878,7 +878,7 @@ def ImmLogic.ofNat? (value : Nat) (size : OperandSize) : Option ImmLogic :=
   ⟨2 ^ 64 - 1 - mask64 i.value, i.size⟩
 
 /-- `MoveWideConst::maybe_from_u64`. -/
-def MoveWideConst.ofNat? (value : Nat) : Option MoveWideConst :=
+@[expose] def MoveWideConst.ofNat? (value : Nat) : Option MoveWideConst :=
   let value := mask64 value
   if value < 2 ^ 16 then some ⟨value, 0⟩
   else if value % 2 ^ 16 == 0 && value < 2 ^ 32 then some ⟨value / 2 ^ 16, 1⟩
@@ -1100,14 +1100,14 @@ abbrev tyFpuRoundMode : TypeId := TyId.FpuRoundMode
   | VIdx.ALUOp.Lsl => some .lsl | VIdx.ALUOp.Adc => some .adc | VIdx.ALUOp.AdcS => some .adcS
   | VIdx.ALUOp.Sbc => some .sbc | VIdx.ALUOp.SbcS => some .sbcS | _ => none
 
-def ALUOp3.ofIdx? : Nat → Option ALUOp3
+@[expose] def ALUOp3.ofIdx? : Nat → Option ALUOp3
   | VIdx.ALUOp3.MAdd => some .mAdd | VIdx.ALUOp3.MSub => some .mSub
   | VIdx.ALUOp3.UMAddL => some .uMAddL | VIdx.ALUOp3.SMAddL => some .sMAddL | _ => none
 
 @[expose] def Cond.all : List Cond :=
   [.eq, .ne, .hs, .lo, .mi, .pl, .vs, .vc, .hi, .ls, .ge, .lt, .gt, .le, .al, .nv]
 
-def Cond.name : Cond → String
+@[expose] def Cond.name : Cond → String
   | .eq => "Eq" | .ne => "Ne" | .hs => "Hs" | .lo => "Lo" | .mi => "Mi" | .pl => "Pl"
   | .vs => "Vs" | .vc => "Vc" | .hi => "Hi" | .ls => "Ls" | .ge => "Ge" | .lt => "Lt"
   | .gt => "Gt" | .le => "Le" | .al => "Al" | .nv => "Nv"
@@ -1148,7 +1148,7 @@ def ExtendOp.ofIdx? : Nat → Option ExtendOp
 def OperandSize.name : OperandSize → String
   | .size32 => "Size32" | .size64 => "Size64"
 
-def OperandSize.ofIdx? : Nat → Option OperandSize
+@[expose] def OperandSize.ofIdx? : Nat → Option OperandSize
   | VIdx.OperandSize.Size32 => some .size32 | VIdx.OperandSize.Size64 => some .size64 | _ => none
 
 def ScalarSize.ofIdx? : Nat → Option ScalarSize

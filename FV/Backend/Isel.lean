@@ -589,7 +589,7 @@ def argIdx (s : Clif.Signature) (i : Nat) : Nat := (abiArgIdx s.params 0).getD i
 /-- The value `lowerFunction` appends to every `return` of `f` (Cranelift's legalizer): for an
 `sret` signature without return values (`sigRets`: its only ABI return is the struct pointer),
 the entry block's `sret` parameter; empty for every other function. -/
-def sretRet (f : Clif.Function) : List Clif.ValueId :=
+@[expose] def sretRet (f : Clif.Function) : List Clif.ValueId :=
   if sigRets f.sig != f.sig.returns then
     match f.blocks.head?, f.sig.params.findIdx? (·.purpose == .sret) with
     | some b0, some i => (b0.params[i]?.map (·.1)).toList
@@ -597,7 +597,7 @@ def sretRet (f : Clif.Function) : List Clif.ValueId :=
   else []
 
 /-- The terminator `lowerFunction` lowers for `t`: a `return` also returns `sretRet f`. -/
-def abiTerm (f : Clif.Function) : Clif.Terminator → Clif.Terminator
+@[expose] def abiTerm (f : Clif.Function) : Clif.Terminator → Clif.Terminator
   | .ret vs => .ret (vs ++ sretRet f)
   | t => t
 
@@ -1373,7 +1373,7 @@ structure VCode where
 /-- Build the lowering context of a function: instruction table (statements, then the
 terminator, block by block), value types/definitions, and one vreg per value, of the class of
 its type (`CTy.regClass?`: `.int` for `i8..i64`, `.float` for `f32`/`f64`). -/
-def buildCtx (f : Clif.Function) : Except String (Ctx × Array (Nat × Nat) × LState) := do
+@[expose] def buildCtx (f : Clif.Function) : Except String (Ctx × Array (Nat × Nat) × LState) := do
   let sigOf (r : Nat) : Option Clif.Signature := (f.extern? r).map (·.sig)
   -- value ids and types
   let mut maxV := 0

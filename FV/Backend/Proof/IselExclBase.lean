@@ -105,7 +105,7 @@ an offset. -/
   id == TId.use_lse || id == TId.use_dotprod || id == TId.use_i8mm
 
 /-- The ISLE type constant `$n` (`Sem.prim`, independent of the context). -/
-def primTy (ty : TypeId) (n : String) : Option V :=
+@[expose] def primTy (ty : TypeId) (n : String) : Option V :=
   if ty == TyId.Type then (CTy.ofName? n).map .ty else none
 
 section
@@ -113,7 +113,7 @@ variable (p : Program)
 
 mutual
 /-- `q` cannot match any value that `a` describes. -/
-def fails (a : AV) : Pattern → Bool
+@[expose] def fails (a : AV) : Pattern → Bool
   | .bind _ _ q => fails a q
   | .and _ qs => failsAny a qs
   | .constPrim ty n =>
@@ -179,12 +179,12 @@ def fails (a : AV) : Pattern → Bool
   | _ => false
 
 /-- Some pattern of `qs` cannot match (an `and`). -/
-def failsAny (a : AV) : List Pattern → Bool
+@[expose] def failsAny (a : AV) : List Pattern → Bool
   | [] => false
   | q :: qs => fails a q || failsAny a qs
 
 /-- Some pattern of `qs` cannot match the value at its position. -/
-def failsArgs : List AV → List Pattern → Bool
+@[expose] def failsArgs : List AV → List Pattern → Bool
   | a :: as, q :: qs => fails a q || failsArgs as qs
   | _, _ => false
 end

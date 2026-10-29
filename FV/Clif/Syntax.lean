@@ -514,7 +514,7 @@ handlers first, then the normal return, `ExceptionTableData::all_branches`). -/
     | .context _ => none
 
 /-- All successors in Cranelift's order: the handlers, then the normal return. -/
-def ExnTable.dests (et : ExnTable) : List TryDest := et.handlers ++ [et.normal]
+@[expose] def ExnTable.dests (et : ExnTable) : List TryDest := et.handlers ++ [et.normal]
 
 @[expose] def TryDest.vals (d : TryDest) : List ValueId :=
   d.args.filterMap fun | .val v => some v | _ => none

@@ -28,7 +28,7 @@ open Backend
 
 /-- Run a list of instructions in sequence (at any code position: frame moves do not read
 the pc). -/
-def ExecAll (ctx : FnCtx) : List MInst → Arm.ArmState → Arm.ArmState → Prop
+@[expose] def ExecAll (ctx : FnCtx) : List MInst → Arm.ArmState → Arm.ArmState → Prop
   | [], s, s' => s' = s
   | i :: is, s, s' => ∃ t, (∀ env, execMInst ctx env i s = some t) ∧
       Arm.r .ERR t = Arm.r .ERR s ∧ t.program = s.program ∧ ExecAll ctx is t s'

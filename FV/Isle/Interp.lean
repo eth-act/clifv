@@ -148,7 +148,7 @@ mutual
       | .unmodeled w => throw (.unmodeled w)
     | _ => throw (.malformed s!"term {term.name} has no extern extractor (unexpanded pattern)")
 /-- Match every pattern against the same value (`and`). -/
-def matchAll (st : σ) : List Pattern → V → Env V → Except Err (Option (Env V))
+@[expose] def matchAll (st : σ) : List Pattern → V → Env V → Except Err (Option (Env V))
   | [], _, env => pure (some env)
   | q :: qs, v, env => do
     match ← matchPat st q v env with

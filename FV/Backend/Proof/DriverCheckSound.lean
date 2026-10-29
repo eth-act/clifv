@@ -536,7 +536,7 @@ theorem mem_flatMap_drop {α β : Type} {l : List α} {g : α → List β} {j : 
     rw [List.getElem?_drop, Nat.add_sub_cancel' hk]; exact hs
 
 /-- Statement `k`'s results are defined by instruction `start + k` (checked by `certBlockOk`). -/
-def DefsAt (ctx : Ctx) (B : Clif.Block) (start : Nat) : Prop :=
+@[expose] def DefsAt (ctx : Ctx) (B : Clif.Block) (start : Nat) : Prop :=
   ∀ k stm, B.body[k]? = some stm → ∀ r ∈ stm.results, ctx.defInst? r = some (start + k)
 
 section

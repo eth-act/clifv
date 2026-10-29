@@ -171,7 +171,7 @@ theorem rhs_805_none {x w : Nat} {imm : Imm12} (hx : ctx.valueReg? x = none)
 /-- What `imm12_from_negated_value` computes from an `iconst` of width `w` and immediate `k`:
 the `Imm12` of `-(sign-extended k)` as an unsigned 64-bit number, if the negation does not
 overflow. -/
-def negImm12? (w : Nat) (k : Int) : Option Imm12 :=
+@[expose] def negImm12? (w : Nat) (k : Int) : Option Imm12 :=
   if sextFrom w k = -(2 ^ 63 : Int) then none
   else Imm12.ofNat? (u64 ((u64 (-(sextFrom w k)) : Nat) : Int))
 

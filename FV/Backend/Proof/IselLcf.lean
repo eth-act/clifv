@@ -33,7 +33,7 @@ def slice16 (v i : Nat) : Nat := (v / 2 ^ (i * 16)) % 2 ^ 16
 def replace16 (old new sh : Nat) : Nat := old - slice16 old sh * 2 ^ (sh * 16) + new * 2 ^ (sh * 16)
 
 /-- The value `load_constant_full` materialises. -/
-def lcfValue (bits : Nat) (signExt : Bool) (extendTo : OperandSize) (value : Nat) : Nat :=
+@[expose] def lcfValue (bits : Nat) (signExt : Bool) (extendTo : OperandSize) (value : Nat) : Nat :=
   let value := mask64 value
   match extendTo, signExt with
   | .size32, true => if bits < 32 then u64 (sextFrom bits value) % 2 ^ 32 else value

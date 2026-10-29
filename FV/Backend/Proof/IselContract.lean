@@ -770,7 +770,7 @@ of a function of `p` is outside the theorem). -/
   | _ => false
 
 /-- Trap code of a trapping VCode instruction. -/
-def trapCode? : MInst → Option Clif.TrapCode
+@[expose] def trapCode? : MInst → Option Clif.TrapCode
   | .udf c | .trapIf _ c => some c
   | _ => none
 
@@ -1227,7 +1227,7 @@ value (as `buildCtx`'s value map, S11e3). -/
 def valClassOf (ctx : Ctx) (x : Nat) : RegClass := ((ctx.valueType? x).map CTy.valClass).getD .int
 
 /-- `x` is in an integer position: a type it has is one of E's integers. -/
-def IntPos (ctx : Ctx) (x : Nat) : Prop := ∀ t, ctx.valueType? x = some t → t ∈ eCTys
+@[expose] def IntPos (ctx : Ctx) (x : Nat) : Prop := ∀ t, ctx.valueType? x = some t → t ∈ eCTys
 
 /-- The operands of an instruction the CLIF verifier types as integers: every operand of an
 integer operation, the address of a memory access, the condition of a `select`, the arguments

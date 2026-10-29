@@ -29,12 +29,12 @@ open Isle Isle.Interp Isle.Aarch64
 /-! ## Extern constructors used by the if-lets -/
 
 /-- `imm_logic_from_imm64 ty k` (types narrower than 32 bits use the 32-bit encoding). -/
-def immLogicOf? (w : Nat) (k : Int) : Option ImmLogic :=
+@[expose] def immLogicOf? (w : Nat) (k : Int) : Option ImmLogic :=
   if w ≤ 32 then ImmLogic.ofNat? (u64 k) .size32
   else if w = 64 then ImmLogic.ofNat? (u64 k) .size64 else none
 
 /-- `lshl_from_imm64 ty k`: `lsl` by `k` masked to the type width, if `k < 64`. -/
-def lshlOf? (w : Nat) (k : Int) : Option ShiftOpAndAmt :=
+@[expose] def lshlOf? (w : Nat) (k : Int) : Option ShiftOpAndAmt :=
   match shiftImm? (u64 k) with
   | some s => if w ≤ 255 then some ⟨.lsl, Nat.land s (w - 1)⟩ else none
   | none => none

@@ -51,7 +51,7 @@ theorem conditionHolds_write_pstate (c : BitVec 4) (ps : Arm.PState) (w : Arm.Ar
   rfl
 
 /-- The flags of `subs a, b` (`cmp`). -/
-def cmpFlags {n : Nat} (a b : BitVec n) : Arm.PState := (Arm.AddWithCarry a (~~~b) 1#1).2
+@[expose] def cmpFlags {n : Nat} (a b : BitVec n) : Arm.PState := (Arm.AddWithCarry a (~~~b) 1#1).2
 
 /-! ### The flags of `cmpFlags`, as arithmetic facts (32 and 64 bits) -/
 

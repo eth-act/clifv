@@ -198,7 +198,7 @@ end
 
 /-- Every rule of `lower` other than the terminator rules names a format other than
 `MultiAry` (2465, `return`) and `Trap` (2473, `trap`). -/
-def lowerFmtOk (r : Rule) : Bool :=
+@[expose] def lowerFmtOk (r : Rule) : Bool :=
   termRootRule r ||
     match ruleFmt r with
     | some fT => 2447 ≤ fT && fT < 2447 + 36 && fT != 2465 && fT != 2473
