@@ -1266,7 +1266,8 @@ theorem exec_stur_wzr_sp (env : Env) (s : Arm.ArmState) (halign : Arm.CheckSPAli
       Arm.exec_inst a s = Arm.w .PC (Arm.r .PC s + 4#64) (Arm.write_mem_bytes 4 (spOf s) 0#32 s) := by
   have halign' := spAligned halign
   refine ⟨_, by simp [csimp_rules, pure, Except.pure]; rfl, ?_⟩
-  simp [csimp_rules, Arm.LDST.exec_reg_unscaled_imm, Arm.LDST.exec_reg_unscaled_imm_gpr,
+  simp (config := {decide := true}) [csimp_rules, StoreOp.fields, Arm.LDST.exec_reg_unscaled_imm,
+    Arm.LDST.exec_reg_unscaled_imm_gpr,
     Arm.LDST.exec_reg_imm_common, Arm.LDST.reg_imm_operation, Arm.LDST.Reg_offset.value,
     Arm.LDST.reg_imm_constrain_unpredictable, Arm.ldst_read, Arm.read_gpr_zr, Arm.read_gpr,
     Arm.read_pc, Arm.write_pc, Arm.BitVec.lsb, Arm.CheckSPAlignment, halign', spOf]
@@ -1288,7 +1289,10 @@ theorem write_bytes_zero_at : ∀ (n : Nat) (a : BitVec 64) (m : Arm.Memory) (b 
         have := BitVec.eq_of_toNat_eq (x := b - a) (y := 0#64) (by simpa using h); bv_omega)
       have e : (b - a).toNat = (b - (a + 1#64)).toNat + 1 := by
         have : b - (a + 1#64) = (b - a) - 1#64 := by bv_omega
-        rw [this, BitVec.toNat_sub]; have := (b - a).isLt; simp; omega
+        rw [this, BitVec.toNat_sub_of_le (x := b - a) (y := 1#64)
+          (by rw [BitVec.le_def]; exact Nat.one_le_iff_ne_zero.mpr hne),
+          show (1#64).toNat = 1 from rfl]
+        omega
       simp only [Arm.Memory.write, Arm.write_store, hba, ite_false, e]
       by_cases hl : (b - (a + 1#64)).toNat < n <;> simp [hl]
 
@@ -1302,7 +1306,6 @@ theorem probeHitB_succ (k : Nat) (base a : BitVec 64) :
     rw [show 4096 * (i + 1 + 1) = 4096 + 4096 * (i + 1) by omega, BitVec.ofNat_add]; bv_omega
   simp only [probeHitB, hr, List.range_succ_eq_map, List.any_cons, List.any_map,
     Function.comp_def]
-  rfl
 
 /-- The steps of `k` unrolled probes: `sp` lowered by `4096·k`, the 4 bytes at
 `sp - 4096·(i + 1)` zeroed for `i < k`, nothing else but the pc changed. -/
@@ -1347,9 +1350,10 @@ theorem probeSteps_ok : ∀ (k : Nat) (env : Env) (s : Arm.ArmState), (spOf s).t
         rw [show (0#32 : BitVec 32) = 0#(4 * 8) from rfl, write_bytes_zero_at, hsp1, he1]
         simp [Arm.ArmState.mem_w_eq_mem]
       rw [hmem2, probeHitB_succ]
-      by_cases h0 : (a - (spOf s - 4096#64)).toNat < 4
-      · simp [h0]
-      · simp only [h0, decide_false, Bool.false_or, ite_false]
+      cases hk : probeHitB k (spOf s - 4096#64) a <;>
+        by_cases h0 : (a - (spOf s - 4096#64)).toNat < 4 <;>
+        simp only [h0, hk, decide_true, decide_false, Bool.false_or, Bool.true_or, Bool.or_true,
+          Bool.or_false, Bool.false_eq_true, ite_true, ite_false]
 
 /-- `probeLines total` runs: `sp` unchanged, the probed bytes zeroed (`probeHitB`), nothing else
 but the pc changed. -/
@@ -1375,8 +1379,8 @@ theorem probeLines_ok (env : Env) (total : Nat) (s : Arm.ArmState) (hal : (spOf 
   · rw [he2]; simp only [spOf] at hsp1 ⊢
     simp only [Arm.r_of_w_same, Arm.r_of_w_different (show Arm.StateField.GPR 31#5 ≠ .PC by simp), hsp1,
       Imm12.value, ite_true]
-    rw [show probeCount total <<< 12 = 4096 * probeCount total by rw [Nat.shiftLeft_eq]; omega]
-    bv_omega
+    rw [show probeCount total * 4096 = 4096 * probeCount total from Nat.mul_comm _ _]
+    exact BitVec.sub_add_cancel _ _
   · rw [he2, Arm.r_of_w_different g2, Arm.r_of_w_different g1, ho1 f g1 g2]
   · rw [he2, Arm.ArmState.mem_w_eq_mem, Arm.ArmState.mem_w_eq_mem, hm1 a]
 

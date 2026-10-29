@@ -74,8 +74,9 @@ theorem probeHit_noCode {K : Nat} {af : AFunc} {s : Arm.ArmState} (h : StackAvai
   · rfl
   have hf : af.frame = true := by simp only [probeHit, Bool.and_eq_true] at hp; exact hp.1
   have hd : frameDrop af = af.frameSize + 16 := by simp [frameDrop, hf]
-  have hr := h.probe
-  exact absurd (probeHit_below (by rw [hd]; exact hr.1) hp) (by rw [hd]; exact hr.not_below hc)
+  have hr : StackRoom (af.frameSize + 16 + probeBelow af) s := h.probe
+  exact absurd (probeHit_below (by rw [hd]; exact hr.1) hp)
+    (by rw [hd]; exact StackRoom.not_below hr hc)
 
 /-- The addresses outside the world of the activation entered in `s` (`lo`, `hi` as in
 `frameF`): its frame addresses `frameF`, and the callees' dead stack: the `K` bytes below the
@@ -105,7 +106,7 @@ below it. -/
 theorem spBody_toNat {K : Nat} {af : AFunc} {s : Arm.ArmState} (hst : StackAvail K af s) :
     (spv s - BitVec.ofNat 64 (frameDrop af)).toNat = (spv s).toNat - frameDrop af ∧
       frameDrop af + K ≤ (spv s).toNat := by
-  have h1 := hst.1
+  have h1 := hst.1.1
   have h2 := frameDrop_le af
   have hlt := (spv s).isLt
   refine ⟨?_, by omega⟩
@@ -138,8 +139,8 @@ theorem frameF_not_below {K lo hi : Nat} {af : AFunc} {s : Arm.ArmState} (hst : 
         2 ^ 64 - ((spv s).toNat - frameDrop af) + a.toNat := Nat.mod_eq_of_lt (by omega)
     rw [e] at h
     omega
-  · have h := hst.2 a hc
-    have h1 := hst.1
+  · have h := hst.1.2 a hc
+    have h1 := hst.1.1
     rw [hB] at hlt hle
     have hn : (spv s - BitVec.ofNat 64 (af.frameSize + 16 + K)).toNat =
         (spv s).toNat - (af.frameSize + 16 + K) := by
