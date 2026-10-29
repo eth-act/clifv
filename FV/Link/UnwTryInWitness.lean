@@ -45,6 +45,6 @@ theorem input_applies : (∃ l, callSites af fa = .ok l) ∧ padsNonzeroB af fa 
       inputs_facts.2.2.2.1 pipe.1 pipe.2 compiled.1 inputs_facts.2.2.2.2 compiled.2.1,
     padsNonzero_complete_input inputs_facts.1 inputs_facts.2.1 inputs_facts.2.2.1
       inputs_facts.2.2.2.1 pipe.1 pipe.2 compiled.1 compiled.2.1 compiled.2.2 premises_facts.1
-      premises_facts.2.1⟩
+      premises_facts.2.1 aliasEntry_true⟩
 
 end Link.EhCheck.Complete.Witness

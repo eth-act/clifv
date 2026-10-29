@@ -80,10 +80,13 @@ theorem compiled : lowerRFunc vcp rf = .ok af ∧ emitFunc 0 af = .ok fa ∧ fa.
 theorem callSites_applies : ∃ l, callSites af fa = .ok l :=
   callSites_complete compiled.2.1 premises_facts.2.2.1
 
+/-- No alias of `tc`'s emitted code resolves to the entry block (decided). -/
+theorem aliasEntry_true : aliasEntryOkB af fa = true := by native_decide
+
 /-- **`padsNonzero_complete` applies** to `tc`. -/
 theorem padsNonzero_applies : padsNonzeroB af fa = true :=
   padsNonzero_complete compiled.1 compiled.2.1 compiled.2.2 premises_facts.1 premises_facts.2.1
-    premises_facts.2.2.2.1
+    premises_facts.2.2.2.1 aliasEntry_true
 
 /-- **`unwindRows_complete` applies** to `tc` (whose prologue pushes callee-saved registers:
 `af.saves ≠ []`). -/
@@ -105,6 +108,6 @@ theorem tryInfo_applies : (∃ l, callSites af fa = .ok l) ∧ padsNonzeroB af f
   have ht := tryInfoOk_of h.1
   exact ⟨callSites_complete compiled.2.1 (handlersOk_of_tryInfo compiled.1 h.2 ht),
     padsNonzero_complete compiled.1 compiled.2.1 compiled.2.2 premises_facts.1 premises_facts.2.1
-      (padsOk_of_tryInfo compiled.1 ht premises_facts.1)⟩
+      (padsOk_of_tryInfo compiled.1 ht premises_facts.1) aliasEntry_true⟩
 
 end Link.EhCheck.Complete.Witness

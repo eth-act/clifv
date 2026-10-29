@@ -485,15 +485,17 @@ theorem callSites_complete_input {f : Clif.Function} {vc vcp : VCode} {rf : RFun
   callSites_complete hemit (handlersOk_of_tryInfo halloc hsize (tryInfoOk_of_input hd hs har ht hl hp))
 
 /-- **`padsNonzeroB` holds of the pipeline's emitted code, from the input**:
-`padsNonzero_complete` with `PadsOk` from `tryInfoOk_of_input`. -/
+`padsNonzero_complete` with `PadsOk` from `tryInfoOk_of_input` (and, since #553, no alias of the
+emitted code resolving to the entry block, `aliasEntryOkB`). -/
 theorem padsNonzero_complete_input {f : Clif.Function} {vc vcp : VCode} {rf : RFunc} {af : AFunc}
     {k : Nat} {fa : FnAsm} {fb : FnBin} (hd : Dominated f) (hs : LowerScope f)
     (har : Spill.ArityOk f) (ht : tryTablesB f = true) (hl : lowerFunction f = .ok vc)
     (hp : prepare (DeadCleanup.prune vc) = .ok vcp) (halloc : lowerRFunc vcp rf = .ok af)
     (hemit : emitFunc k af = .ok fa) (hlay : fa.layout = .ok fb) {vb : VBlock}
-    {items : Array RItem} (hvb : vcp.blocks[0]? = some vb) (hit : rf.blocks[0]? = some items) :
+    {items : Array RItem} (hvb : vcp.blocks[0]? = some vb) (hit : rf.blocks[0]? = some items)
+    (hal : aliasEntryOkB af fa = true) :
     padsNonzeroB af fa = true :=
   padsNonzero_complete halloc hemit hlay hvb hit
-    (padsOk_of_tryInfo halloc (tryInfoOk_of_input hd hs har ht hl hp) hvb)
+    (padsOk_of_tryInfo halloc (tryInfoOk_of_input hd hs har ht hl hp) hvb) hal
 
 end Link.EhCheck.Complete

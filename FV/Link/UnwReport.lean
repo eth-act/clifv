@@ -28,7 +28,8 @@ def unwConds : List (String × (Clif.Function → Art → Bool)) :=
    ("padsNonzeroB", fun _ a => Backend.Proof.padsNonzeroB a.af a.fa),
    ("savedCheck", fun _ a => Backend.savedCheck a.vcp a.rf),
    ("tryTablesB", fun g _ => Link.EhCheck.Complete.tryTablesB g),
-   ("tryRetsB", fun g _ => Link.EhCheck.Complete.tryRetsB g)]
+   ("tryRetsB", fun g _ => Link.EhCheck.Complete.tryRetsB g),
+   ("aliasEntryOkB", fun _ a => Link.EhCheck.Complete.aliasEntryOkB a.af a.fa)]
 
 /-- The functions whose `.eh_frame` entry `ehOkR` rejects (`none`: the program-level part of
 `ehOkR` fails, with its reason). -/

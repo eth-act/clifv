@@ -20,9 +20,10 @@ set_option autoImplicit false
 
 open Backend Backend.Proof Backend.Proof.Driver E2E E2E.LinkCheck
 
-/-- **The per-function unwinding conditions left** (see the module doc). -/
+/-- **The per-function unwinding conditions left** (see the module doc; `lastCallsOk` dropped
+since #622, `aliasEntryOkB` added by #553: `callSites` reads the emitter's aliases). -/
 def unwCondInB (g : Clif.Function) (a : Art) : Bool :=
-  tryTablesB g && tryRetsB g && lastCallsOk a.af a.fa && decide (4 * a.fb.words.size < 2 ^ 32)
+  tryTablesB g && tryRetsB g && aliasEntryOkB a.af a.fa && decide (4 * a.fb.words.size < 2 ^ 32)
 
 /-- `unwCondInB` of every compiled function of `R`. -/
 def unwCondsInB (R : Res) : Bool := (progOf R).funcs.all fun g => unwCondInB g (artOf R g)
@@ -33,11 +34,11 @@ theorem unwCondB_of_in {g : Clif.Function} {k : Nat} {base : BitVec 64} {o : Lea
     (hpipe : pipeCleanupT g k base o = .ok a) (hsc : fnScopeB g = true)
     (hc : unwCondInB g a = true) : unwCondB g a = true := by
   simp only [unwCondInB, Bool.and_eq_true, decide_eq_true_eq] at hc
-  obtain ⟨⟨⟨ht, hr⟩, hlc⟩, hcode⟩ := hc
+  obtain ⟨⟨⟨ht, hr⟩, hal⟩, hcode⟩ := hc
   obtain ⟨hl, -⟩ := pipeCleanupT_spec hpipe
   obtain ⟨-, -, -, -, -, -, -, hd, hs, -, -⟩ := fnScope_parts hsc
   have hu := unwCheck_complete (dominated_of hd) (lowerScope_of hs) ht hr hl
-  simp [unwCondB, ht, hu, hlc, hcode]
+  simp [unwCondB, ht, hu, hal, hcode]
 
 /-- **`unwCondsB` from `unwCondsInB`** on an input in `InScopeIn`. -/
 theorem unwCondsB_of_in {I : LinkInput} (hin : InScopeIn I = true)

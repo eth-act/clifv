@@ -103,9 +103,11 @@ theorem callSites_complete {k : Nat} {af : AFunc} {fa : FnAsm} (he : emitFunc k 
       rw [scanLines_rets_eq]
       simp [callIdx_length, nCalls_emit he]
     simp only [hlen, bne_self_eq_false, Bool.false_eq_true, ite_false]
-    -- every call's entries succeed
+    -- every call's entries succeed (landing pads looked up in the alias-extended labels)
+    have hor : ∀ (o : Option Nat) (a : Nat), ∃ p, o.or (some a) = some p :=
+      fun o a => by cases o <;> exact ⟨_, rfl⟩
     have hent : ∀ p ∈ af.calls.zip (scanLines fa.lines.toList 0 [] []).2,
-        ∃ es, siteEntries (scanLines fa.lines.toList 0 [] []).1 p = .ok es := by
+        ∃ es, siteEntries (siteLabs fa) p = .ok es := by
       rintro ⟨c, ret⟩ hp
       have hc := (List.of_mem_zip hp).1
       simp only [siteEntries]
@@ -114,19 +116,20 @@ theorem callSites_complete {k : Nat} {af : AFunc} {fa : FnAsm} (he : emitFunc k 
       · cases c with
         | none => simp [handlersOf] at *
         | some ti =>
-          have hall : ∀ h ∈ ti.handlers, ∃ e, handlerEntry
-              (scanLines fa.lines.toList 0 [] []).1 ret h = .ok e := by
+          have hall : ∀ h ∈ ti.handlers, ∃ e, handlerEntry (siteLabs fa) ret h = .ok e := by
             intro h hmem
             obtain ⟨⟨n, l, rfl, hn⟩, b, code, hb⟩ := hh ti hc h hmem
             have hs := scanLines_lookup_isSome fa.lines.toList 0 [] [] l
               (.inr (label_mem_emit he hb))
             obtain ⟨pad, hpad⟩ := Option.isSome_iff_exists.1 hs
+            obtain ⟨pad', hpad'⟩ : ∃ p, (siteLabs fa).lookup l = some p := by
+              rw [siteLabs, Backend.Proof.lookup_append, hpad]; exact hor _ _
             simp only [TryHandler.label] at hb
             rcases Nat.le_one_iff_eq_zero_or_eq_one.1 hn with rfl | rfl <;>
-              exact ⟨_, by simp only [handlerEntry, TryHandler.label, hpad]; rfl⟩
-          exact mapM_ok_of (handlerEntry (scanLines fa.lines.toList 0 [] []).1 ret) hall
+              exact ⟨_, by simp only [handlerEntry, TryHandler.label, hpad']; rfl⟩
+          exact mapM_ok_of (handlerEntry (siteLabs fa) ret) hall
     obtain ⟨sites, hs⟩ := mapM_ok_of _ hent
-    exact ⟨some sites.flatten, by simp [hs, bind, Except.bind, pure, Except.pure]⟩
+    exact ⟨some sites.flatten, by simp [siteLabs] at hs; simp [hs, bind, Except.bind, pure, Except.pure]⟩
   · simp only [Bool.not_eq_true] at hany
     exact ⟨none, by simp [hany, pure, Except.pure]⟩
 
@@ -222,14 +225,31 @@ theorem label_off_ge {vc : VCode} {rf : RFunc} {af : AFunc} {k : Nat} {fa : FnAs
 def PadsOk (af : AFunc) (l0 : Label) : Prop :=
   ∀ ti, some ti ∈ af.calls → ti.handlers ≠ [] ∧ ∀ h ∈ ti.handlers, h.label ≠ l0
 
-/-- **`padsNonzeroB` holds for the emitted code** when every `try_call` has a handler and no
-handler's landing pad is the entry block. -/
+/-- No block-label alias of the emitted code resolves to the entry block (decidable): a landing
+pad `callSites` resolves through an alias (`siteLabs`) is then at a label other than the
+entry's, at offset ≥ 8. (Since #553 `callSites` reads `MachBuffer`'s aliases `fa.alias`; an
+alias to the entry block would need a forwarding block `b <entry>`, which `prepare` excludes for
+terminators — `checkAlloc` ties the code to the terminators, but this chain does not carry it.) -/
+def aliasEntryOkB (af : AFunc) (fa : FnAsm) : Bool :=
+  fa.alias.all fun p => some p.2 != af.blocks[0]?.map (·.1)
+
+/-- **`padsNonzeroB` holds for the emitted code** when every `try_call` has a handler, no
+handler's landing pad is the entry block, and no alias resolves to the entry block
+(`aliasEntryOkB`; #553: `callSites` resolves landing pads through `MachBuffer`'s aliases). -/
 theorem padsNonzero_complete {vc : VCode} {rf : RFunc} {af : AFunc} {k : Nat} {fa : FnAsm}
     {fb : FnBin} (halloc : lowerRFunc vc rf = .ok af) (hemit : emitFunc k af = .ok fa)
     (hlay : fa.layout = .ok fb) {vb : VBlock} {items : Array RItem}
-    (hvb : vc.blocks[0]? = some vb) (hit : rf.blocks[0]? = some items) (hp : PadsOk af vb.label) :
+    (hvb : vc.blocks[0]? = some vb) (hit : rf.blocks[0]? = some items) (hp : PadsOk af vb.label)
+    (hal : aliasEntryOkB af fa = true) :
     padsNonzeroB af fa = true := by
   obtain ⟨lm, hlm⟩ := FnAsm.layout_labelOffsets hlay
+  have hal' : ∀ p ∈ fa.alias, p.2 ≠ vb.label := by
+    obtain ⟨⟨-, -, -, hbl⟩, -⟩ := lowerRFunc_ok halloc
+    obtain ⟨code, -, haf⟩ := hbl 0 vb items hvb hit
+    intro p hpm he
+    have := List.all_eq_true.1 hal p hpm
+    rw [haf, he] at this
+    simp at this
   unfold padsNonzeroB
   rw [List.all_eq_true]
   rintro ⟨c, ret⟩ hmem
@@ -242,17 +262,31 @@ theorem padsNonzero_complete {vc : VCode} {rf : RFunc} {af : AFunc} {k : Nat} {f
       | nil => exact absurd hti hne
       | cons h hs => exact ⟨h, hs, rfl⟩
     have hl := hlab h (by rw [hh]; simp)
-    have hE : ∀ e, entryFor (scanLines fa.lines.toList 0 [] []).1 (some ti, ret) = some e →
-        e.pad ≠ 0 := by
+    -- the pad's label offset: through an alias to a non-entry label, or the handler's own
+    have h8 : ∀ v, (siteLabs fa).lookup h.label = some v → 8 ≤ v := by
+      intro v hv
+      rw [siteLabs, Backend.Proof.lookup_append] at hv
+      cases hA : (fa.alias.filterMap (fun l =>
+          ((scanLines fa.lines.toList 0 [] []).1.lookup l.2).map fun x => (l.1, x))).lookup
+          h.label with
+      | some v' =>
+        rw [hA] at hv
+        cases hv
+        obtain ⟨x, hxm, hxl⟩ := lookup_aliasLabs fa.alias hA
+        exact label_off_ge halloc hemit hvb hit hlm (hal' _ hxm) (scanLines_labelOffsets hlm hxl)
+      | none =>
+        rw [hA] at hv
+        exact label_off_ge halloc hemit hvb hit hlm hl (scanLines_labelOffsets hlm hv)
+    have hE : ∀ e, entryFor (siteLabs fa) (some ti, ret) = some e → e.pad ≠ 0 := by
       intro e he
       simp only [entryFor, handlersOf, hh, handlerEntry?] at he
-      cases hlk : (scanLines fa.lines.toList 0 [] []).1.lookup h.label with
+      cases hlk : (siteLabs fa).lookup h.label with
       | none => rw [hlk] at he; cases he
       | some v =>
-        have h8 := label_off_ge halloc hemit hvb hit hlm hl (scanLines_labelOffsets hlm hlk)
+        have h8v := h8 v hlk
         rw [hlk, Option.bind_some] at he
         split at he <;> cases he <;> simp <;> omega
-    cases hq : entryFor (scanLines fa.lines.toList 0 [] []).1 (some ti, ret) with
+    cases hq : entryFor (siteLabs fa) (some ti, ret) with
     | none => simp
     | some e => simpa [hq] using hE e hq
 
