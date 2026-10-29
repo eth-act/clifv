@@ -197,8 +197,8 @@ theorem memWrites_stur {env : Env} {a : Arm.ArmInst}
     (h : (Insn.store .store32 .xzr (.unscaled .sp 0)).toArmInst env = .ok a) (s : Arm.ArmState) :
     MemWrites a s = [(spOf s, 4)] := by
   have e : (Insn.store .store32 .xzr (.unscaled .sp 0)).toArmInst env = .ok
-      (.LDST (.Reg_unscaled_imm { size := 2#2, VR := 0#1, opc := 0#2, imm9 := 0#9, Rn := 31#5,
-        Rt := 31#5 })) := by
+      (.LDST (.Reg_unscaled_imm
+        { size := 2#2, VR := 0#1, opc := 0#2, imm9 := 0#9, Rn := 31#5, Rt := 31#5 })) := by
     simp [csimp_rules, pure, Except.pure]; rfl
   rw [e, Except.ok.injEq] at h
   subst h
@@ -247,14 +247,13 @@ theorem probeSteps_writes (env : Env) {P : BitVec 64 → Prop} : ∀ (k : Nat) (
       rw [probeHitB_succ]
       simp only at hi ⊢
       have e : (spOf s - 4096#64 + BitVec.ofNat 64 i - (spOf s - 4096#64)).toNat = i := by
-        rw [BitVec.add_sub_cancel_left]; simp; omega
+        rw [BitVec.add_comm, BitVec.add_sub_cancel, BitVec.toNat_ofNat]
+        exact Nat.mod_eq_of_lt (by omega)
       simp [e, hi]
-    · rw [List.singleton_append, show ([Line.ins (.aluImm12 .sub true .sp .sp ⟨1, true⟩) none] ++
-        [Line.ins (.store .store32 .xzr (.unscaled .sp 0)) none]) =
-        [Line.ins (.aluImm12 .sub true .sp .sp ⟨1, true⟩) none,
-          Line.ins (.store .store32 .xzr (.unscaled .sp 0)) none] from rfl, hrun2,
-        Option.some.injEq] at hs2
-      subst hs2
+    · have hs2' : execLines env [Line.ins (.aluImm12 .sub true .sp .sp ⟨1, true⟩) none,
+          Line.ins (.store .store32 .xzr (.unscaled .sp 0)) none] s = some s2 := hs2
+      rw [hrun2, Option.some.injEq] at hs2'
+      subst hs2'
       exact probeSteps_writes { env with pc := env.pc + 4 * 2 } k _
         (by rw [hsp2, ← hsp1]; exact hal1)
         (fun a h => hP a (by rw [probeHitB_succ, ← hsp2, h, Bool.or_true]))
