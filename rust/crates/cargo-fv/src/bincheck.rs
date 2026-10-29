@@ -75,12 +75,16 @@ pub fn verdict_of(out: &str, ok: bool) -> Verdict {
         ));
     }
     let recursive = field(out, "stack: ").is_some_and(|s| s.starts_with("recursive"));
-    // link-check's typed checker (`okBCleanupT`, S11e6 #615): the typed binary theorems
-    let which = match (field(out, "checker: ").is_some_and(|c| c.starts_with("typed")), recursive) {
-        (true, true) => "E2E.DeadCleanupExecBytes.binary_correct_exec_provenT (typed checker okBCleanupT; binary_correct_exec_peak_provenT for the functions whose calls reach a call cycle: their stack stays a premise)",
-        (true, false) => "E2E.DeadCleanupExecBytes.binary_correct_exec_provenT (typed checker okBCleanupT)",
-        (false, true) => "E2E.Binary.binary_correct (binary_correct_depth for the functions whose calls reach a call cycle: their stack stays a premise)",
-        (false, false) => "E2E.Binary.binary_correct",
+    // link-check's typed checkers: on the cleanup results (`okBCleanupT`, S11e6 #615) or on the
+    // Stock route's results (`okRWithTS`, #722, `Link.SemanticCompilerWith.attemptT`'s output)
+    let checker = field(out, "checker: ").unwrap_or("");
+    let which = match (checker.starts_with("typed Stock"), checker.starts_with("typed"), recursive) {
+        (true, _, true) => "E2E.SemanticExecBytes.binary_correct_exec_provenTS (typed checker okRWithTS on the Stock route's results; binary_correct_exec_peak_provenTS for the functions whose calls reach a call cycle: their stack stays a premise)",
+        (true, _, false) => "E2E.SemanticExecBytes.binary_correct_exec_provenTS (typed checker okRWithTS on the Stock route's results)",
+        (false, true, true) => "E2E.DeadCleanupExecBytes.binary_correct_exec_provenT (typed checker okBCleanupT; binary_correct_exec_peak_provenT for the functions whose calls reach a call cycle: their stack stays a premise)",
+        (false, true, false) => "E2E.DeadCleanupExecBytes.binary_correct_exec_provenT (typed checker okBCleanupT)",
+        (false, false, true) => "E2E.Binary.binary_correct (binary_correct_depth for the functions whose calls reach a call cycle: their stack stays a premise)",
+        (false, false, false) => "E2E.Binary.binary_correct",
     };
     Verdict { verified: true, summary: format!("verified: {which} holds for its {total} Lean-compiled functions{stack}") }
 }

@@ -33,6 +33,12 @@ import FVTest.E2E.FloatArithFinalTCF
 import FVTest.E2E.FloatCmpFinalTCF
 import FV.Backend.Proof.LowerContractTPF
 import FVTest.Link.FloatArithCompileExeT
+import FV.E2E.CompiledAnyTS
+import FV.E2E.SemanticPipelineCheckT
+import FV.E2E.SemanticExecTS
+import FV.Link.SemanticCompileT
+import FV.Link.SemanticExeSourceT
+import FVTest.Link.FloatStockCompileT
 
 -- S11e5 Stage C (#35): the typed scope (float data movement, float parameters and returns)
 #print axioms E2E.typedRules_program
@@ -293,3 +299,27 @@ import FVTest.Link.FloatArithCompileExeT
 #print axioms E2E.FloatArithCompileExeTWitness.world_ni_pipelineTCF_w -- witness: native_decide
 #print axioms E2E.FloatArithCompileExeTWitness.world_pipelineAnyTF_w -- witness: native_decide
 #print axioms E2E.FloatArithCompileExeTWitness.world_niX_pipelineAnyTF_w -- witness: native_decide
+
+-- #722: the typed compiler on the Stock route (attemptT; Stock artifacts of integer functions
+-- and typed artifacts in one link contract)
+#print axioms E2E.retRegsOk_of_x
+#print axioms E2E.backend_correct_world_pipelineAnyTS
+#print axioms E2E.backend_correct_world_ni_pipelineAnyTS
+#print axioms E2E.backend_correct_worldX_pipelineAnyTS
+#print axioms E2E.backend_correct_world_niX_pipelineAnyTS
+#print axioms E2E.LinkCheck.okRWithTS_soundT
+#print axioms E2E.LinkCheck.okRWithTS_eq_fast
+#print axioms E2E.SemanticStackBound.okBTS_sound
+#print axioms E2E.SemanticExecBytes.binary_correct_exec_provenTS
+#print axioms E2E.SemanticExecBytes.binary_correct_exec_depth_provenTS
+#print axioms E2E.SemanticExecBytes.binary_correct_exec_peak_provenTS
+#print axioms Link.SemanticCompilerWith.attemptT_spec
+#print axioms Link.SemanticCompilerWith.attemptT_correct
+#print axioms Link.SemanticCompilerWith.attemptT_correct_depth
+#print axioms Link.SemanticCompilerWith.attemptT_correct_peak
+#print axioms Link.SemanticCompilerWith.attemptT_correct_source
+#print axioms Link.SemanticCompilerWith.attemptT_correct_source_peak
+#print axioms E2E.FloatStockCompileTWitness.checks_true -- witness: native_decide
+#print axioms E2E.FloatStockCompileTWitness.parts -- witness: native_decide
+#print axioms E2E.FloatStockCompileTWitness.correct_applies -- witness: native_decide
+#print axioms E2E.FloatStockCompileTWitness.source_applies -- witness: native_decide

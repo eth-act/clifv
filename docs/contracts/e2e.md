@@ -2790,6 +2790,27 @@ then `link-check --dead-cleanup --prune` on the two test executables' `bin-check
 both pass (27,936 and 28,584 functions, `binary: ok`; 30 each fail the integer validators and pass
 the typed ones), where the integer checker alone failed both (`cargo fv`: 0 of 2 verified).
 
+**Typed checker on the Stock route** (#722). When `lean-link --verified` writes a typed
+executable with `Link.SemanticCompilerWith.attemptT` (the units hold Stock code, see "The typed
+scope" below), the results are the Stock route's (`R0I`, `I.resultsProductionWith lower true`),
+not `I.resultsCleanup`. `link-check` then evaluates `staticChksWithTS` (the per-function checks
+of `okRWithTS`, `FV/E2E/SemanticPipelineCheckT.lean`): per function either the Stock validator
+(`Compile.functionE`, no `sret`, `SemanticNI.check`) or the typed validators on `lowerFunction`'s
+output (`lowersToB`: `lowerFunction g = .ok vc` decided; `lowerCheckT`/`lowerCheckTCF`); an `sret`
+function is in subset E with `lowerCheck`, or every return of its code is in x0.. (`retsXB`,
+`RetsX`). It is used when these accept every function the integer validators reject and the
+executable holds `R0I`'s code (`artB`, or `lowersToB` where the Stock lowering fails), and prints
+`checker: typed Stock (okRWithTS)`; the theorem is
+`E2E.SemanticExecBytes.binary_correct_exec_provenTS` (`…_peak_provenTS` for functions whose calls
+reach a call cycle; `FV/E2E/SemanticExecTS.lean`), conclusion `ExecBytes.ExecRefinesT`, which
+`cargo fv`'s verdict names. The soundness is `okRWithTS_soundT : PreparedResults → okRWithTS →
+OkT` (no lowering equation), with the link contract's artifact field widened in place to
+`CompiledAnyTS` (`CompiledAnyT`, or `CompiledStockT`: an integer function without `sret` and the
+Stock artifact contract `CompiledSemanticNI`; `FV/E2E/CompiledAnyTS.lean`) and `OkT.sretE` to
+"subset E with the integer contract, or `RetsX`". `examples/deps`, `cargo fv test --lean-link
+--verified` (agent/float-stock1 ab76e3f0): 4 of 4 executables written by `attemptT` and verified
+by this checker (15,224, 16,724, 17,130 and 19,901 functions).
+
 **Results** (the ten crates of `crate-proofs/`, rebuilt: survey `cargo fv test --keep-temps`,
 `fv-demo` `cargo fv build --keep-temps`; all pass, no difference):
 
@@ -4238,6 +4259,35 @@ Since S11e6 (#419) the typed versions exist and `--verified` widens to the typed
 `fnScopeInTB`, `fnScopeTB` or the typed output checks `outChksT` are left out of the region
 (`lean-link`'s `exclude:` line). Witnesses: `FVTest/Link/FloatCompileExeT{Peak,Source}.lean`,
 `crate-proofs/Crates/FrontendBundleWitnessT.lean`.
+
+**Typed `--verified` on the Stock route (#722).** The units hold the code `lean-backend` wrote:
+the Stock routes (Cranelift's code) on a function without `try_call`, `lowerFunction` on the
+others and where the Stock lowering fails. `compileExeT` lowers every function with
+`lowerFunction`, so where the two differ (`stockDiffersB`, #691) its layout is not the region
+reserved. Since #722 `lean-link` then compiles the typed input with
+`Link.SemanticCompilerWith.attemptT routes[0]! (SC0.placedProductionWith routes[0]! true)`
+(`FV/Link/SemanticCompileT.lean`): the Stock route's pipeline, placement and link
+(`leanLinkProductionWith`, so the generated code is the units' and unchanged), accepted by the
+typed checks `okRWithTS` ("Typed checker on the Stock route" above). Coverage
+`attemptT_correct{,_depth,_peak}` and, on the original program in `SrcScopeB`,
+`attemptT_correct_source{,_peak}` (`FV/Link/SemanticExeSourceT.lean`), conclusion
+`ExecBytes.ExecRefinesT` (returned values by class); totality stays proven on `InScopeIn` only.
+When `attemptT` fails, `lean-link` prints the failing functions with their conditions
+(`typedStockFails`; `cargo fv` repeats lean-link's `--verified:` lines) and leaves out of the
+region only those functions when they are fewer than the typed ones and the Stock-lowered ones;
+otherwise the #730 exclusion (the smaller of the two sets) applies. Witnesses:
+`FVTest/Link/FloatStockCompileT.lean` (an integer Stock function and an `f64` function: the
+integer `attempt` fails, `attemptT` succeeds), `FVTest/Link/FloatStockSretT.lean` (an `sret`
+function outside subset E, admitted by `RetsX`). `examples/deps`, functions left out of the region
+per test executable (all float functions): main 6264b7e3 (`compileExeT` and the #730 exclusion)
+52 and 69 in `deps_demo` and `crates`; `attemptT` (ab76e3f0) 7, 14, 16, 16, from `OkT.sretE`
+and the integer program call sites; with `RetsX` (8507435d) 4, 6, 6, 6, all from the program
+call sites (`calleeInt`: a program callee returns `f64`; `callRegs`: a program call passes or
+reads `f64`; #742). 4 of 4 executables verified by `binary_correct_exec_provenTS`. fv-demo,
+`cargo fv test --build-std --lean-link --verified` (8507435d): both test executables written by
+`attemptT` and verified (2 of 2), 39 and 40 functions left out (`compileExeT`, #616: 52 and 53),
+by cause `callRegs/blrRegs` 28, `calleeInt` 6, `indScope/indSig` (indirect calls of program
+functions with float signatures) 8 and 9, all #742.
 
 ## Contract changes taken (byte-identical)
 

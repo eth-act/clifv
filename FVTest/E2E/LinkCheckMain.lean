@@ -6,6 +6,7 @@ import FV.E2E.BinCheckFast
 import FV.Link.Image
 import FV.E2E.DeadCleanupLinkCheckT
 import FV.Link.DeadCleanupCompileTFast
+import FV.E2E.SemanticPipelineCheckT
 
 open E2E E2E.LinkCheck E2E.StackBound Lean Backend E2E.Elf E2E.BinCheck
 
@@ -79,15 +80,39 @@ def main (args : List String) : IO UInt32 := do
   -- validators); then `diagR` with them (`chks = staticChks ++ linkChks`)
   let D0 := (R0I.map fun e => frameDrop (getOk e.2).af).foldl max 0
   let statI := Link.parMap (fun e => (e.1.name, staticChksSemanticNI (productionStage o.deadCleanup) { I0 with D := D0 } e.1 e.2)) R0I
+  let failI := statI.filterMap fun e => if (bad e.2).isEmpty then none else some e.1
+  -- the typed checks on the Stock route's results (#722, `Link.SemanticCompilerWith.attemptT`'s
+  -- output, typed `--verified` when the units hold Stock code): the results `R0I` with
+  -- `staticChksWithTS` (the checker `okRWithTS`: the Stock validator on an integer function, the
+  -- typed validators on `lowerFunction`'s output); used when they accept every function the
+  -- integer validators reject and the executable holds `R0I`'s code wherever it is not
+  -- `lowerFunction`'s; theorem `E2E.SemanticExecBytes.binary_correct_exec_provenTS`
+  let stockTS : Option (List (String × List (String × Bool))) :=
+    if o.deadCleanup && !failI.isEmpty then
+      let failSet : Std.HashSet String := failI.foldl (·.insert ·) {}
+      let statS := Link.parMap (fun e => (e.1.name, staticChksWithTS (productionStage o.deadCleanup)
+        { I0 with D := D0 } e.1 e.2)) R0I
+      let fixedS := (statS.filter fun e => failSet.contains e.1 && (bad e.2).isEmpty).length
+      let bytesS := match phdrs (fileRd file) with
+        | none => false
+        | some phs => (Link.parMap (fun e => match e.2 with
+            | .ok a => artB I0 (fileRd file) phs a || lowersToB e.1 a.vc
+            | .error _ => true) R0I).all id
+      if fixedS == failI.length && bytesS then some statS else none
+    else none
   -- the typed checker (S11e6, #615): when integer validators reject functions, the cleanup
   -- results `I.resultsCleanup` with the typed checks `chksWithT DeadCleanup.prune` (the checker
   -- `okBCleanupT`, which accepts integer functions too: `Link.DeadCleanup.compileExeT`'s output,
   -- typed `--verified`); used when the typed validators accept some of the rejected functions;
   -- theorem `E2E.DeadCleanupExecBytes.binary_correct_exec_provenT`. The integer results are
   -- dropped before the typed ones are computed (one result set at a time).
-  let failI := statI.filterMap fun e => if (bad e.2).isEmpty then none else some e.1
-  let (typed, R0, stat, note) :=
-    if o.deadCleanup && !failI.isEmpty then
+  let (typed, typedS, R0, stat, note) :
+      Bool × Bool × Res × List (String × List (String × Bool)) × String :=
+    match stockTS with
+    | some statS =>
+      (true, true, R0I, statS,
+        s!"  typed checks: the {failI.length} function(s) failing the integer validators pass the typed ones on the Stock route's results (okRWithTS's); the typed Stock checker is used")
+    | none => if o.deadCleanup && !failI.isEmpty then
       let failSet : Std.HashSet String := failI.foldl (·.insert ·) {}
       let probe := Link.parMap (fun (fi : FnInput) =>
         let r := I0.pipeCleanupOf fi
@@ -97,13 +122,13 @@ def main (args : List String) : IO UInt32 := do
       if fixed > 0 then
         let R0T : Res := Link.parMap (fun fi => (fi.func, I0.pipeCleanupOf fi)) I0.funcs
         let DT := (R0T.map fun e => frameDrop (getOk e.2).af).foldl max 0
-        (true, R0T, Link.parMap (fun e => (e.1.name, staticChksWithT (fun _ => DeadCleanup.prune) { I0 with D := DT } e.1 e.2)) R0T,
+        (true, false, R0T, Link.parMap (fun e => (e.1.name, staticChksWithT (fun _ => DeadCleanup.prune) { I0 with D := DT } e.1 e.2)) R0T,
           s!"  typed checks: {fixed} of the {failI.length} function(s) failing the integer validators pass the typed ones (okBCleanupT's); the typed checker is used")
-      else (false, R0I, statI, s!"  typed checks: none of the {failI.length} function(s) failing the integer validators pass the typed ones")
-    else (false, R0I, statI, "")
+      else (false, false, R0I, statI, s!"  typed checks: none of the {failI.length} function(s) failing the integer validators pass the typed ones")
+    else (false, false, R0I, statI, "")
   let nStat := (stat.filter fun e => !(bad e.2).isEmpty).length
   if !note.isEmpty then IO.println note
-  IO.println s!"  checker: {if typed then "typed (okBCleanupT)" else "integer"}"
+  IO.println s!"  checker: {if typedS then "typed Stock (okRWithTS)" else if typed then "typed (okBCleanupT)" else "integer"}"
   IO.println s!"  static checks (the validators): {nStat} function(s) fail"
   IO.println s!"  static checks done in {(← IO.monoMsNow) - t0} ms"
   let mut keep := R0
