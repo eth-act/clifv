@@ -4278,10 +4278,12 @@ region only those functions when they are fewer than the typed ones and the Stoc
 otherwise the #730 exclusion (the smaller of the two sets) applies. Witnesses:
 `FVTest/Link/FloatStockCompileT.lean` (an integer Stock function and an `f64` function: the
 integer `attempt` fails, `attemptT` succeeds), `FVTest/Link/FloatStockSretT.lean` (an `sret`
-function outside subset E, admitted by `RetsX`). `examples/deps` (ab76e3f0): functions left out
-of the region per test executable 7, 14, 16, 16, all float functions (main 6264b7e3: 52 and 69 in
-`deps_demo` and `crates`); their causes were `OkT.sretE` (now `RetsX`) and the integer program
-call sites (`calleeInt`, `callRegs`; #742).
+function outside subset E, admitted by `RetsX`). `examples/deps`, functions left out of the region
+per test executable (all float functions): main 6264b7e3 (`compileExeT` and the #730 exclusion)
+52 and 69 in `deps_demo` and `crates`; `attemptT` (ab76e3f0) 7, 14, 16, 16, from `OkT.sretE`
+and the integer program call sites; with `RetsX` (8507435d) 4, 6, 6, 6, all from the program
+call sites (`calleeInt`: a program callee returns `f64`; `callRegs`: a program call passes or
+reads `f64`; #742). 4 of 4 executables verified by `binary_correct_exec_provenTS`.
 
 ## Contract changes taken (byte-identical)
 
