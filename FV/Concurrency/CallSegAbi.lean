@@ -29,7 +29,7 @@ open Arm ArmThread Prog ClifThread Backend Backend.Proof Backend.Proof.Driver VC
 prologue pushes (it keeps the callee-saved registers): `rets_alloc`'s `hr₀`. -/
 theorem hr₀_init {RA : RL} (hR : RA.Wf) {ra : BitVec 64} (hent : AbiCall RA.fb RA.base ra RA.s0)
     {m₀ : Loc → CV} {w₀ : ArmState}
-    (hq : Q RA (iterN RA.step (prologueLines RA.af.saves RA.af.frameSize RA.af.calls).length RA.s0)
+    (hq : Q RA (iterN RA.step (prologueLines RA.af.saves RA.af.frameSize RA.af.isCaller).length RA.s0)
       (MConf.init RA.rf m₀ w₀)) :
     ∀ r ∈ RA.af.saves, ckeep r (m₀ (.reg r)) = ckeep r (regVal RA.s0 r) := by
   obtain ⟨-, -, -, hsv, -⟩ := RL.frame_facts hR
@@ -50,7 +50,7 @@ theorem prun_prologueG {RA : RL} (hR : RA.Wf) {g : ArmState → ArmState} (hg : 
     {ra : BitVec 64} (hent : AbiCall RA.fb RA.base ra RA.s0) (hpf : ProbeF RA) {mon : Mon}
     {L : List Lab}
     {t1 : ArmState × Mon} (hr : PRun Policy.arm g (OkPriv RA) (RA.s0, mon) L t1)
-    (hL : L.length ≤ (prologueLines RA.af.saves RA.af.frameSize RA.af.calls).length) :
+    (hL : L.length ≤ (prologueLines RA.af.saves RA.af.frameSize RA.af.isCaller).length) :
     t1.1 = iterN RA.step L.length RA.s0 ∧ PrivW (PrivA RA) (evTr L) ∧
       ∀ p y, evAt (evTr L) p = some y → y.k = .plainW := by
   have hlat := prologue_linesAt hR hent
@@ -108,7 +108,7 @@ theorem arm_isel_refines_abiCRNX {RA : RL} (hR : RA.Wf) (hsc : MemScopeLSC RA)
     (hsig : args.map (·.ty) = f.sig.params.map (·.ty))
     {m₀ : Loc → CV} {w₀ : Arm.ArmState} (hmr : MR slots cs.mem w₀)
     (hargs : ArgsAtEntry RA.F f.sig args w₀)
-    (hq : Q RA (iterN RA.step (prologueLines RA.af.saves RA.af.frameSize RA.af.calls).length RA.s0)
+    (hq : Q RA (iterN RA.step (prologueLines RA.af.saves RA.af.frameSize RA.af.isCaller).length RA.s0)
       (MConf.init RA.rf m₀ w₀)) (hA : AInv RA (MConf.init RA.rf m₀ w₀)) {mon : Mon}
     {ls : List Lab} {t' : ArmState × Mon} (hr : PRun Policy.arm g (OkPriv RA) (RA.s0, mon) ls t') :
     ∃ k trS t ψ, k ≤ ls.length ∧ CallCompose.XClosed (evTr (ls.take k)) ∧ CRun env p (.run cs) trS t ∧
@@ -122,7 +122,7 @@ theorem arm_isel_refines_abiCRNX {RA : RL} (hR : RA.Wf) (hsc : MemScopeLSC RA)
         (∃ tE s', PRun Policy.arm g (OkPriv RA) (RA.s0, mon) (ls.take k) tE ∧ t = .run s' ∧
           AtRetS s' ∧ RetEnd RA ra env p MR slots (fun r => m₀ (.reg r)) tE.1 s')) := by
   have hr₀ := hr₀_init hR hent hq
-  generalize hP : (prologueLines RA.af.saves RA.af.frameSize RA.af.calls).length = P at hq
+  generalize hP : (prologueLines RA.af.saves RA.af.frameSize RA.af.isCaller).length = P at hq
   have hpp : ∀ {L : List Lab} {t1 : ArmState × Mon},
       PRun Policy.arm g (OkPriv RA) (RA.s0, mon) L t1 → L.length ≤ P →
       t1.1 = iterN RA.step L.length RA.s0 ∧ PrivW (PrivA RA) (evTr L) ∧
@@ -197,7 +197,7 @@ theorem arm_isel_refines_abiCRN {RA : RL} (hR : RA.Wf) (hsc : MemScopeLSC RA)
     (hsig : args.map (·.ty) = f.sig.params.map (·.ty))
     {m₀ : Loc → CV} {w₀ : Arm.ArmState} (hmr : MR slots cs.mem w₀)
     (hargs : ArgsAtEntry RA.F f.sig args w₀)
-    (hq : Q RA (iterN RA.step (prologueLines RA.af.saves RA.af.frameSize RA.af.calls).length RA.s0)
+    (hq : Q RA (iterN RA.step (prologueLines RA.af.saves RA.af.frameSize RA.af.isCaller).length RA.s0)
       (MConf.init RA.rf m₀ w₀)) (hA : AInv RA (MConf.init RA.rf m₀ w₀)) {mon : Mon}
     {ls : List Lab} {t' : ArmState × Mon} (hr : PRun Policy.arm g (OkPriv RA) (RA.s0, mon) ls t') :
     ∃ k trS t ψ, k ≤ ls.length ∧ CRun env p (.run cs) trS t ∧

@@ -30,7 +30,7 @@ theorem probeCount_small {total : Nat} (h : total < 4096) : probeCount total = 0
 /-- A frame below 4 KiB (with its callees' 16-byte setup area) gets no stack probes, so none
 below it (#581). -/
 theorem probeBelow_small {af : AFunc} (h : af.frameSize + 16 < 4096) : E2E.probeBelow af = 0 := by
-  have ht : probeTotal af.frameSize af.calls < 4096 := by unfold probeTotal; split <;> omega
+  have ht : probeTotal af.frameSize af.isCaller < 4096 := by unfold probeTotal; split <;> omega
   simp [E2E.probeBelow, probeCount_small ht]
 
 /-- `StackAvail`'s probe budget for a frame below 4 KiB: any budget (#581). -/

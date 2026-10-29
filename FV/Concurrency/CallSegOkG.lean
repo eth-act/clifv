@@ -334,7 +334,7 @@ abbrev Act.RL (L : Link) (g : Act) : Backend.Proof.RL := L.act g.F g.s0 g.K g.G
 
 /-- The activation's callee-saved registers at its body entry (after the prologue). -/
 noncomputable def Act.r0 (L : Link) (g : Act) : Reg → CV := fun r =>
-  locVal (g.RL L).fr (iterN (g.RL L).step (prologueLines g.F.af.saves g.F.af.frameSize g.F.af.calls).length g.s0)
+  locVal (g.RL L).fr (iterN (g.RL L).step (prologueLines g.F.af.saves g.F.af.frameSize g.F.af.isCaller).length g.s0)
     (.reg r)
 
 /-- **The static facts of an activation** (module doc): the premises of the chain theorems that do
@@ -465,7 +465,7 @@ theorem chainP_entry (hS : StatOk L env p g) {cs : Clif.State} {B0 : Clif.Block}
     (hsig : args.map (·.ty) = g.f.sig.params.map (·.ty))
     {m₀ : Loc → CV} {w₀ : Arm.ArmState} (hmr : RelW g.Γ g.f g.c g.slots cs.mem w₀)
     (hargs : ArgsAtEntry (g.RL L).F g.f.sig args w₀)
-    (hq : Q (g.RL L) (iterN (g.RL L).step (prologueLines g.F.af.saves g.F.af.frameSize g.F.af.calls).length g.s0)
+    (hq : Q (g.RL L) (iterN (g.RL L).step (prologueLines g.F.af.saves g.F.af.frameSize g.F.af.isCaller).length g.s0)
       (MConf.init g.F.rf m₀ w₀)) (hA : AInv (g.RL L) (MConf.init g.F.rf m₀ w₀)) {mon : Mon} :
     ChainP L env p g (fun r => m₀ (.reg r)) (g.s0, mon) cs := fun ls t' hr => by
   obtain ⟨k, trS, t, ψ, hk, hx, hrun, href, hend⟩ := arm_isel_refines_abiCRNX hS.wf hS.scope rfl

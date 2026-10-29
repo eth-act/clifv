@@ -765,7 +765,7 @@ theorem unwindRows_frame {af : AFunc} {fa : FnAsm} {rows : List (Nat × Cfi)}
   by_cases hp : (code.toList.head? != some AInst.prologue) = true
   · simp [hp, bind, Except.bind, throw, throwThe, MonadExceptOf.throw] at h
   simp only [hp, Bool.false_eq_true, ite_false] at h
-  generalize hpro : prologueLines af.saves af.frameSize af.calls = pro at h
+  generalize hpro : prologueLines af.saves af.frameSize af.isCaller = pro at h
   by_cases hz : 4 * pro.length ≥ 2 ^ 32
   · rw [if_pos hz] at h
     simp [throw, throwThe, MonadExceptOf.throw, bind, Except.bind] at h

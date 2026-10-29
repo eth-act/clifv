@@ -228,7 +228,7 @@ theorem resume_ret_fC {env : Clif.Env} (henv : env.extern "ld" = none) (c : BitV
         xreg 30 s0B = Arm.r .PC x + 4#64 → (∀ a, RC.FK a → s0B.mem a = x.mem a) →
         (∀ r ∈ calleeSaved, ckeep r (r₀B r) = ckeep r
           (locVal (link2.act ldF s0B 0 RC.F).fr (iterN (link2.act ldF s0B 0 RC.F).step
-            (prologueLines ldF.af.saves ldF.af.frameSize ldF.af.calls).length s0B) (.reg r))) →
+            (prologueLines ldF.af.saves ldF.af.frameSize ldF.af.isCaller).length s0B) (.reg r))) →
         RetEnd (link2.act ldF s0B 0 RC.F) (RC.pcOf 15 + 4#64) env pCL (RelW ΓB fB cB) slotsB r₀B
           xB sR →
         ΓB.F = (link2.act ldF s0B 0 RC.F).F → ΓB.syms = ΓC.syms →

@@ -64,7 +64,7 @@ theorem q_initW {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb R.bas
   have hs : R.af.frameSize < 2 ^ 64 := by have := hst0.1; omega
   obtain ⟨vb, items, code, ls, ps1, ps2, T, hvb, hit, hcode, hls, htr, hj0, hdrop⟩ := entry_block hR
   obtain ⟨s', hsteps, hsp', hfp', ho', hm', -, -⟩ :=
-    prologue_ok (calls := R.af.calls) (R.envOf 1) hs hsv (by rw [hfs]; exact hcb) R.s0 hent.spAligned
+    prologue_ok (calls := R.af.isCaller) (R.envOf 1) hs hsv (by rw [hfs]; exact hcb) R.s0 hent.spAligned
   have hpc1 : Arm.r .PC R.s0 = R.pcOf 1 := by
     rw [hent.pc]
     simp only [RL.pcOf, RL.L] at hj0 ⊢
@@ -75,7 +75,7 @@ theorem q_initW {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb R.bas
     hent.program hpc1 hent.err hsteps
   obtain ⟨herr', hprog'⟩ := hsteps.err
   -- the prologue's writes: the frame top and the probed bytes, which `G` avoids
-  have hwrP : LinesWrites (R.envOf 1) (prologueLines R.af.saves R.af.frameSize R.af.calls) R.s0 (fun a => ¬ R.G a) := by
+  have hwrP : LinesWrites (R.envOf 1) (prologueLines R.af.saves R.af.frameSize R.af.isCaller) R.s0 (fun a => ¬ R.G a) := by
     refine prologue_writes _ hsv R.s0 hent.spAligned ?_ fun a hp hG => ?_
     · intro k hk
       show ¬ R.G (spv R.s0 - BitVec.ofNat 64 (16 + clobberBytes R.af.saves) + BitVec.ofNat 64 k)
@@ -87,7 +87,7 @@ theorem q_initW {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb R.bas
       simp only [probeHit, hframe, Bool.true_and] at this
       rw [show spv R.s0 = spOf R.s0 from rfl, this] at hp
       cases hp
-  refine ⟨(prologueLines R.af.saves R.af.frameSize R.af.calls).length,
+  refine ⟨(prologueLines R.af.saves R.af.frameSize R.af.isCaller).length,
     hgx (prologueLines_tail _ _) (.inl (by rw [hent.pc]; exact RL.not_postCall_base hR hent.fits))
       (linesReads_noLoads (prologueLines_noLoads _ _)) hwrP, ?_⟩
   have hsP : R.sP = s' := hiter
@@ -163,7 +163,7 @@ theorem q_initW {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb R.bas
   refine ⟨?_, ?_, hfield⟩
   · have hitems : R.rf.blocks[0]! = items := by simp [getElem!_def, hit]
     simp only [MConf.init, hitems]
-    refine ⟨1 + (prologueLines R.af.saves R.af.frameSize R.af.calls).length, vb, items, [], code, ls, ps1, ps2, T, hvb,
+    refine ⟨1 + (prologueLines R.af.saves R.af.frameSize R.af.isCaller).length, vb, items, [], code, ls, ps1, ps2, T, hvb,
       hit, rfl, itemsChecked_block hR hvb hit, hcode, hls, htr, ?_, hpc', ?_⟩
     · rw [← List.drop_drop, hdrop, List.drop_left]
     · refine ⟨fun l _ _ => rfl, ⟨fun f hf => ?_, hmemF, ?_⟩, by rw [herr', hent.err], by rw [hprog', hent.program],

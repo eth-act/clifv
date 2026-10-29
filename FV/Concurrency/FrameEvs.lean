@@ -675,13 +675,13 @@ theorem epilogue_evsIn (env : Env) {saves : List Reg} {size : Nat} (hs : size < 
 theorem prologue_fields {R : RL} (hR : R.Wf) {ra : BitVec 64}
     (hent : AbiCall R.fb R.base ra R.s0) :
     ∀ f, f ≠ .PC → f ≠ .GPR 29#5 → f ≠ .GPR 31#5 → f ≠ .GPR 16#5 →
-      Arm.r f (iterN R.step (prologueLines R.af.saves R.af.frameSize R.af.calls).length R.s0) = Arm.r f R.s0 := by
+      Arm.r f (iterN R.step (prologueLines R.af.saves R.af.frameSize R.af.isCaller).length R.s0) = Arm.r f R.s0 := by
   obtain ⟨-, hfs, -, hsv, -, hcb, -, -, -⟩ := RL.frame_facts hR
   have hst0 := hR.stack.frame
   have hs : R.af.frameSize < 2 ^ 64 := by have := hst0.1; omega
   obtain ⟨vb, items, code, ls, ps1, ps2, T, hvb, hit, hcode, hls, htr, hj0, hdrop⟩ := entry_block hR
   obtain ⟨s', hsteps, -, -, ho', -⟩ :=
-    prologue_ok (calls := R.af.calls) (R.envOf 1) hs hsv (by rw [hfs]; exact hcb) R.s0 hent.spAligned
+    prologue_ok (calls := R.af.isCaller) (R.envOf 1) hs hsv (by rw [hfs]; exact hcb) R.s0 hent.spAligned
   have hpc1 : Arm.r .PC R.s0 = R.pcOf 1 := by
     rw [hent.pc]
     simp only [RL.pcOf, RL.L] at hj0 ⊢

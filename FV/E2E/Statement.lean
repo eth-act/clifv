@@ -412,7 +412,7 @@ the prologue (`probeLines`) write: the last probe is at `sp_entry - 16 - 4096·p
 lies below the frame when the probed stack (`probeTotal`) includes the 16-byte setup area of the
 callees of a calling function (`calls`): then up to 16 bytes. -/
 def probeBelow (af : AFunc) : Nat :=
-  if af.frame then 4096 * probeCount (probeTotal af.frameSize af.calls) - af.frameSize else 0
+  if af.frame then 4096 * probeCount (probeTotal af.frameSize af.isCaller) - af.frameSize else 0
 
 /-- `a` is one of the 4 bytes zeroed by `n` stack probes below `base` (the `sp` after the frame
 setup): the probes store `wzr` at `base - 4096·(i + 1)` for `i < n` (`probeLines`). -/
@@ -425,7 +425,7 @@ def probeHitN (n : Nat) (sp a : BitVec 64) : Bool := probeHitB n (sp - 16#64) a
 
 /-- `a` is one of the bytes the stack probes of `af`'s prologue zero, for an entry `sp`. -/
 def probeHit (af : AFunc) (sp a : BitVec 64) : Bool :=
-  af.frame && probeHitN (probeCount (probeTotal af.frameSize af.calls)) sp a
+  af.frame && probeHitN (probeCount (probeTotal af.frameSize af.isCaller)) sp a
 
 /-- The memory after the stack probes of `af`'s prologue, entered in `s`: the probed bytes are
 zero, every other byte as in `s`. -/
@@ -446,7 +446,7 @@ theorem probeMem_of_frame {af : AFunc} (h : af.frame = false) (s : Arm.ArmState)
   funext fun _ => probeMem_of_not (probeHit_of_frame h _ _)
 
 /-- Without probes the memory is the entry memory. -/
-theorem probeMem_of_count {af : AFunc} (h : probeCount (probeTotal af.frameSize af.calls) = 0)
+theorem probeMem_of_count {af : AFunc} (h : probeCount (probeTotal af.frameSize af.isCaller) = 0)
     (s : Arm.ArmState) : probeMem af s = s.mem :=
   funext fun _ => probeMem_of_not (by simp [probeHit, probeHitN, probeHitB, h])
 
@@ -480,8 +480,8 @@ theorem probeHitN_toNat {n : Nat} {sp a : BitVec 64} (h : probeHitN n sp a = tru
 
 /-- A probed byte of `af`'s prologue, in numbers (`probeHitN_toNat`). -/
 theorem probeHit_toNat {af : AFunc} {sp a : BitVec 64} (h : probeHit af sp a = true)
-    (hfit : 16 + 4096 * probeCount (probeTotal af.frameSize af.calls) ≤ sp.toNat) :
-    af.frame = true ∧ ∃ i < probeCount (probeTotal af.frameSize af.calls), ∃ k < 4,
+    (hfit : 16 + 4096 * probeCount (probeTotal af.frameSize af.isCaller) ≤ sp.toNat) :
+    af.frame = true ∧ ∃ i < probeCount (probeTotal af.frameSize af.isCaller), ∃ k < 4,
       a.toNat + 16 + 4096 * (i + 1) = sp.toNat + k := by
   simp only [probeHit, Bool.and_eq_true] at h
   exact ⟨h.1, probeHitN_toNat h.2 hfit⟩
@@ -489,7 +489,7 @@ theorem probeHit_toNat {af : AFunc} {sp a : BitVec 64} (h : probeHit af sp a = t
 /-- The probes lie below `sp - 16 - 4096 + 4`, inside the frame or at most `probeBelow` bytes
 below it. -/
 theorem probeCount_le (af : AFunc) (hf : af.frame = true) :
-    4096 * probeCount (probeTotal af.frameSize af.calls) ≤ af.frameSize + probeBelow af := by
+    4096 * probeCount (probeTotal af.frameSize af.isCaller) ≤ af.frameSize + probeBelow af := by
   simp only [probeBelow, hf, ite_true]; omega
 
 /-- **Resource precondition** with a stack budget `K` for the callees: the frame (fp/lr pair and

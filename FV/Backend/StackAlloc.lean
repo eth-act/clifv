@@ -75,7 +75,7 @@ def MInst.callsOut : MInst → Bool
 
 /-- The function calls (Cranelift's `FunctionCalls` of its VCode is not `None`): the stack
 probes of its prologue cover its callees' fp/lr area too (`prologueLines`). -/
-def AFunc.calls (af : AFunc) : Bool :=
+def AFunc.isCaller (af : AFunc) : Bool :=
   af.blocks.any fun (_, code) => code.any fun | .inst m => m.callsOut | _ => false
 
 /-- The int registers of a save list (x19–x28). -/

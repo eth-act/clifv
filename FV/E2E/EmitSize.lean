@@ -565,7 +565,7 @@ theorem ainstLines_length {c : FnCtx} {af : AFunc} {a : AInst} {ps ps' : PState}
   | prologue =>
     simp only [ainstLines, pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at h
     obtain ⟨rfl, rfl⟩ := h
-    have := prologueLines_length (calls := af.calls) af.saves af.frameSize
+    have := prologueLines_length (calls := af.isCaller) af.saves af.frameSize
     split <;> simp [aInstWords] <;> omega
   | epilogueRet =>
     simp only [ainstLines, pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at h

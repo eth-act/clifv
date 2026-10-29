@@ -241,7 +241,7 @@ theorem entry_block {R : RL} (hR : R.Wf) :
       itemsCode R.fr vb items.toList = .ok code ∧ codeLinesE R.ctx R.af code ps1 = .ok (ls, ps2) ∧
       ps2.traps.toList <+: R.psF.traps.toList ∧
       R.L[0]? = some (.label (.block vb.label)) ∧
-      R.L.drop 1 = prologueLines R.af.saves R.af.frameSize R.af.calls ++ (relaxLines R.far (ftList (ls ++ nxtOf R.af 0)) ++ T) := by
+      R.L.drop 1 = prologueLines R.af.saves R.af.frameSize R.af.isCaller ++ (relaxLines R.far (ftList (ls ++ nxtOf R.af 0)) ++ T) := by
   obtain ⟨c, ins, _, hc, -⟩ := hR.check
   have h0 : 0 < R.vc.blocks.size := Nat.pos_of_ne_zero hc.nonempty
   obtain ⟨vb, hvb⟩ : ∃ vb, R.vc.blocks[0]? = some vb := ⟨_, Array.getElem?_eq_getElem h0⟩
@@ -289,7 +289,7 @@ theorem q_init {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb R.base
   have hs : R.af.frameSize < 2 ^ 64 := by have := hst0.1; omega
   obtain ⟨vb, items, code, ls, ps1, ps2, T, hvb, hit, hcode, hls, htr, hj0, hdrop⟩ := entry_block hR
   obtain ⟨s', hsteps, hsp', hfp', ho', hm', -, -⟩ :=
-    prologue_ok (calls := R.af.calls) (R.envOf 1) hs hsv (by rw [hfs]; exact hcb) R.s0 hent.spAligned
+    prologue_ok (calls := R.af.isCaller) (R.envOf 1) hs hsv (by rw [hfs]; exact hcb) R.s0 hent.spAligned
   have hpc1 : Arm.r .PC R.s0 = R.pcOf 1 := by
     rw [hent.pc]
     simp only [RL.pcOf, RL.L] at hj0 ⊢
@@ -299,7 +299,7 @@ theorem q_init {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb R.base
     (fun ln h => by obtain ⟨x, e, hh, -⟩ := prologueLines_ins _ _ ln h; exact ⟨x, e, hh⟩)
     hent.program hpc1 hent.err hsteps
   obtain ⟨herr', hprog'⟩ := hsteps.err
-  refine ⟨(prologueLines R.af.saves R.af.frameSize R.af.calls).length,
+  refine ⟨(prologueLines R.af.saves R.af.frameSize R.af.isCaller).length,
     hgx (prologueLines_tail _ _) (.inl (by rw [hent.pc]; exact RL.not_postCall_base hR hent.fits))
       (linesReads_noLoads (prologueLines_noLoads _ _)), ?_⟩
   have hsP : R.sP = s' := hiter
@@ -374,7 +374,7 @@ theorem q_init {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb R.base
   refine ⟨?_, ?_, hfield⟩
   · have hitems : R.rf.blocks[0]! = items := by simp [getElem!_def, hit]
     simp only [MConf.init, hitems]
-    refine ⟨1 + (prologueLines R.af.saves R.af.frameSize R.af.calls).length, vb, items, [], code, ls, ps1, ps2, T, hvb,
+    refine ⟨1 + (prologueLines R.af.saves R.af.frameSize R.af.isCaller).length, vb, items, [], code, ls, ps1, ps2, T, hvb,
       hit, rfl, itemsChecked_block hR hvb hit, hcode, hls, htr, ?_, hpc', ?_⟩
     · rw [← List.drop_drop, hdrop, List.drop_left]
     · refine ⟨fun l _ _ => rfl, ⟨fun f hf => ?_, hmemF, ?_⟩, by rw [herr', hent.err], by rw [hprog', hent.program],
@@ -614,7 +614,7 @@ theorem masked_of_calleeSaved {r : Reg} {f : Arm.StateField} (h : r ∈ calleeSa
 
 /-- The prologue's lines from the ABI entry reach `R.sP`. -/
 theorem RL.sP_steps {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb R.base ra R.s0) :
-    ∃ s', StepsOk (R.envOf 1) (prologueLines R.af.saves R.af.frameSize R.af.calls) R.s0 s' ∧ R.sP = s' ∧
+    ∃ s', StepsOk (R.envOf 1) (prologueLines R.af.saves R.af.frameSize R.af.isCaller) R.s0 s' ∧ R.sP = s' ∧
       Arm.read_mem_bytes 16 (spv R.s0 - 16#64) s' = xreg 30 R.s0 ++ xreg 29 R.s0 ∧
       ∀ r ∈ R.af.saves, Arm.read_mem_bytes 8 (R.topB + BitVec.ofNat 64 (clobberOff R.af.saves r)) s' =
         slotVal R.s0 r := by
@@ -623,7 +623,7 @@ theorem RL.sP_steps {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb R
   have hs : R.af.frameSize < 2 ^ 64 := by have := hst0.1; have := (spv R.s0).isLt; omega
   obtain ⟨vb, items, code, ls, ps1, ps2, T, -, -, -, -, -, hj0, hdrop⟩ := entry_block hR
   obtain ⟨s', hsteps, -, -, -, -, h16, hsl⟩ :=
-    prologue_ok (calls := R.af.calls) (R.envOf 1) hs hsv (by rw [hfs]; exact hcb) R.s0 hent.spAligned
+    prologue_ok (calls := R.af.isCaller) (R.envOf 1) hs hsv (by rw [hfs]; exact hcb) R.s0 hent.spAligned
   have hpc1 : Arm.r .PC R.s0 = R.pcOf 1 := by
     rw [hent.pc]
     simp only [RL.pcOf, RL.L] at hj0 ⊢

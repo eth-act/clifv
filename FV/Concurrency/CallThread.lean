@@ -33,7 +33,7 @@ structure CompiledE (env : Clif.Env) (p : Clif.Program) (RA : RL) (cs : Clif.Sta
   scope : MemScopeLS RA
   gv : RA.gv = fun _ _ => False
   abi : ∃ ra, AbiCall RA.fb RA.base ra RA.s0
-  front : Front env p RA cs (iterN RA.step (prologueLines RA.af.saves RA.af.frameSize RA.af.calls).length RA.s0)
+  front : Front env p RA cs (iterN RA.step (prologueLines RA.af.saves RA.af.frameSize RA.af.isCaller).length RA.s0)
   /-- the prologue's stack probes write outside the world (#581: new; holds for a frame below
   4 KiB, `ProbeF.of_small`) -/
   probe : ProbeF RA

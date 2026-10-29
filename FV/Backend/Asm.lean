@@ -688,7 +688,7 @@ def emitPre (k : Nat) (af : AFunc) : Except String (Array Line) := do
     lines := lines.push (.label (.block l))
     for i in code do
       match i with
-      | .prologue => if af.frame then lines := lines ++ (prologueLines af.saves af.frameSize af.calls).toArray
+      | .prologue => if af.frame then lines := lines ++ (prologueLines af.saves af.frameSize af.isCaller).toArray
       | .epilogueRet =>
         lines := lines ++ (if af.frame then (epilogueLines af.saves af.frameSize).toArray else #[.ins .ret])
       | .inst m =>

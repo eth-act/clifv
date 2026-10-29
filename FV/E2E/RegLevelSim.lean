@@ -49,7 +49,7 @@ theorem probeHit_below {af : AFunc} {sp a : BitVec 64} (hr : frameDrop af + prob
   have hd : frameDrop af = af.frameSize + 16 := by simp [frameDrop, hf]
   rw [hd] at hr ⊢
   obtain ⟨-, i, hi, k, hk, e⟩ := probeHit_toNat h (by omega)
-  have : 4096 * (i + 1) ≤ 4096 * probeCount (probeTotal af.frameSize af.calls) :=
+  have : 4096 * (i + 1) ≤ 4096 * probeCount (probeTotal af.frameSize af.isCaller) :=
     Nat.mul_le_mul_left _ hi
   unfold StackBelow; omega
 
@@ -420,7 +420,7 @@ def topN : Nat := 16 + clobberBytes R.af.saves
 def topB : BitVec 64 := spv R.s0 - BitVec.ofNat 64 R.topN
 
 /-- The state after the prologue. -/
-noncomputable def sP : Arm.ArmState := iterN R.step (prologueLines R.af.saves R.af.frameSize R.af.calls).length R.s0
+noncomputable def sP : Arm.ArmState := iterN R.step (prologueLines R.af.saves R.af.frameSize R.af.isCaller).length R.s0
 
 /-- What the prologue leaves in fp/lr and the clobber area. -/
 noncomputable def topImg : BitVec (R.topN * 8) := Arm.read_mem_bytes R.topN R.topB R.sP
