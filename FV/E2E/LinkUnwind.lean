@@ -163,7 +163,7 @@ theorem xCallsOk_progX
         d = none ∧ ext.colocated = false ∧ uses = ofX (X.sym ext.name 0) :: args) →
       ArgsAt ext.sig vals args w → MR sl cm w → Clif.runLimX env P s.toX = .returned rvals cm' →
       rvals.length = ext.sig.returns.length →
-      ∃ outs w', X.call d uses w = some (outs, w') ∧ outs.length = (sigRets ext.sig).length ∧
+      ∃ outs w', X.call d uses w = some (outs, w') ∧ outs.length = ext.sig.returns.length ∧
         PrefixHold rvals outs ∧ MR sl cm' w') :
     XCallsOk (Clif.linkEnvX P env).toEnv (exts.filter fun e => (P.func? e.name).isSome) MR X := by
   intro ext hin g sl cm w d uses args vals rvals cm' hg hd hargs hmr hret hrl

@@ -106,21 +106,8 @@ theorem retOkPRB_zero [L.CrunOk] (hB : L.BaseRetOk) (hC : ∀ g ∈ L.P.funcs, L
   obtain ⟨hpf, G0, hG0, hr0⟩ := L.envOfB_zero_ret' hG hr
   obtain ⟨hv, hs⟩ := hB nm G0 hG0 vals' m rvals cm' hr0
   refine ⟨hv, hs, ?_⟩
-  have hsig : (L.envOfB 0 g (spv w₀)).sigOf nm = none := by
-    simp [envOfB, Clif.linkEnvR, hpf]
-  have hmem := sigsOf_mem (g := g) (nm := nm)
-  by_cases hex : ∃ s, ((∃ ext ∈ g.externs.map (·.2), ext.name = nm ∧ s = ext.sig) ∨
-      s ∈ indSigs g) ∧ vals'.length = s.params.length ∧ rvals.length = s.returns.length
-  · obtain ⟨s, hs, hp, hl⟩ := hex
-    refine ⟨(sigRets s).length, hl ▸ returns_le_sigRets s, fun ext hext hnm hp' hl' => ?_,
-      fun sig hsg _ hp' hl' => ?_⟩
-    · exact hC g hg nm hpf ext.sig (hmem _ (.inl ⟨ext, hext, hnm, rfl⟩)) s (hmem s hs) (by omega)
-        (by omega)
-    · exact hC g hg nm hpf sig (hmem _ (.inr hsg)) s (hmem s hs) (by omega) (by omega)
-  · refine ⟨rvals.length, Nat.le_refl _, fun ext hext hnm hp' hl' => ?_,
-      fun sig hsg _ hp' hl' => ?_⟩
-    · exact absurd ⟨ext.sig, .inl ⟨ext, hext, hnm, rfl⟩, hp', hl'⟩ hex
-    · exact absurd ⟨sig, .inr hsg, hp', hl'⟩ hex
+  -- the call results are the declared returns (#587): the count is the CLIF results'
+  exact ⟨rvals.length, Nat.le_refl _, fun _ _ _ _ hl' => hl'.symm, fun _ _ _ _ hl' => hl'.symm⟩
 
 /-- **`ThmPRBRL κ 0`** under the base scope conditions. -/
 theorem thmPRBRL_zero_of (hL : L.Ok) [L.CrunOk] (hκ : L.Budget κ) (hB : L.BaseRetOk)

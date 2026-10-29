@@ -494,7 +494,7 @@ structure TryOkT (f : Clif.Function) (ctx : Ctx) (et : Clif.ExnTable) (sig : Cli
   i128 : (sig.returns.any fun x => x.ty == Clif.Ty.i128) = false
   items : items.length = et.handlers.length
   dests : ∀ k td, et.dests[k]? = some td →
-    TryDestOkT f ctx et.handlers.length (sigRets sig).length (payloadRegs sig.callConv).length k td
+    TryDestOkT f ctx et.handlers.length sig.returns.length (payloadRegs sig.callConv).length k td
 
 /-- What the driver needs of a `try_call`'s exception table, from `tryInB`, the values'
 registers and `LowerScopeT.tryRet` (typed). -/
@@ -551,7 +551,7 @@ theorem tryOk_ofT {f : Clif.Function} {ctx : Ctx} {et : Clif.ExnTable}
         have := hnargs a ha
         cases a with
         | val v => exact hval _ htdm v ha
-        | ret i => exact ⟨hkh, Nat.lt_of_lt_of_le (hret s hs i ha) (returns_le_sigRets s)⟩
+        | ret i => exact ⟨hkh, hret s hs i ha⟩
         | exn i => simp at this
 
 /-- A `try_call` terminator never fails: the ISLE run is `TryProg`'s (typed registers). -/

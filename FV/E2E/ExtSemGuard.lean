@@ -71,9 +71,9 @@ theorem _root_.Backend.Proof.ExtSem.guard_spec {X : ExtSem}
 
 /-- **The results the callee contracts accept for a call** `(d, uses, w)`: for every CLIF
 invocation of an extern of `exts` (`XCallsOk`) or, through an indirect call of a signature of
-`sigs`, of any extern (`XCallsIndOk`) that the call can stand for, `r` has one value per ABI
-return, the first ones related to the CLIF results, and a world related to the CLIF memory after
-the call. -/
+`sigs`, of any extern (`XCallsIndOk`) that the call can stand for, `r` has one value per declared
+return (#587: an `sret` callee's struct pointer is not a call result), the first ones related to
+the CLIF results, and a world related to the CLIF memory after the call. -/
 def CallPost (env : Clif.Env) (exts : List Clif.ExtFunc) (sigs : List Clif.Signature)
     (MR : MemRelT) (sym : String → Int → BitVec 64) (d : Option String) (uses : List CV)
     (w : Arm.ArmState) (r : List CV × Arm.ArmState) : Prop :=
@@ -84,7 +84,7 @@ def CallPost (env : Clif.Env) (exts : List Clif.ExtFunc) (sigs : List Clif.Signa
       d = none ∧ ext.colocated = false ∧ uses = ofX (sym ext.name 0) :: args) →
     ArgsAt ext.sig vals args w → MR sl cm w →
     g vals cm = .returned rvals cm' → rvals.length = ext.sig.returns.length →
-    r.1.length = (sigRets ext.sig).length ∧ PrefixHold rvals r.1 ∧ MR sl cm' r.2) ∧
+    r.1.length = ext.sig.returns.length ∧ PrefixHold rvals r.1 ∧ MR sl cm' r.2) ∧
   (∀ sig ∈ sigs, ∀ (n : String) g (sl : List (Clif.SlotId × Nat)) (cm : Clif.Mem) (u : CV)
     (args : List CV) (vals rvals : List Clif.Val) (cm' : Clif.Mem),
     d = none → uses = u :: args →
@@ -93,7 +93,7 @@ def CallPost (env : Clif.Env) (exts : List Clif.ExtFunc) (sigs : List Clif.Signa
     vals.length ≤ 8 → AllHold vals args → MR sl cm w →
     g vals cm = .returned rvals cm' → rvals.length = sig.returns.length →
     vals.map (·.ty) = Clif.AbiParam.tys sig.params →
-    r.1.length = (sigRets sig).length ∧ PrefixHold rvals r.1 ∧ MR sl cm' r.2)
+    r.1.length = sig.returns.length ∧ PrefixHold rvals r.1 ∧ MR sl cm' r.2)
 
 /-- **The guarded semantics meets the extern contract** when every call has an accepted
 result. -/

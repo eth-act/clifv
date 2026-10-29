@@ -219,8 +219,8 @@ theorem segRangeHyp : SegRangeHyp := by
           have := hcd d hd
           simp only [tryDefRegs, tryCtx, htrs, List.mem_append, List.mem_map, List.mem_range,
             List.mem_cons, Reg.vreg.injEq, and_true, List.mem_nil_iff, or_false] at this
-          have hmx : (sigRets T.sig).length ≤ max (sigRets T.sig).length 2 := Nat.le_max_left _ _
-          have hm2 : 2 ≤ max (sigRets T.sig).length 2 := Nat.le_max_right _ _
+          have hmx : T.sig.returns.length ≤ max T.sig.returns.length 2 := Nat.le_max_left _ _
+          have hm2 : 2 ≤ max T.sig.returns.length 2 := Nat.le_max_right _ _
           rcases this with ⟨j, hj, hjd⟩ | hjd | hjd <;> omega
       · obtain ⟨ms', hms', hsh⟩ := hC3 _ _ _ _ _ _ _ _ _ _ _ _ _ hti hph het ⟨B, hBm, rfl⟩ hdat
           hex (hN ▸ hge) hreg hc

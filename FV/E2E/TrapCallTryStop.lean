@@ -127,8 +127,8 @@ theorem term_step_try_stop (H : DriverHyp f vc ctx st0 R gn bl A sem MR env.toEn
   obtain ⟨rfl, rfl⟩ := hpc'
   have hmono : T.st1.nextVreg ≤ L.tst'.nextVreg := hlow.mono
   obtain ⟨-, hregsEq, hst1, -⟩ := tryRegsOf_spec (exnTableOpnd_cc hexn) hregs
-  have hmax1 : (sigRets T.sig).length ≤ max (sigRets T.sig).length 2 := Nat.le_max_left _ _
-  have hmax2 : 2 ≤ max (sigRets T.sig).length 2 := Nat.le_max_right _ _
+  have hmax1 : T.sig.returns.length ≤ max T.sig.returns.length 2 := Nat.le_max_left _ _
+  have hmax2 : 2 ≤ max T.sig.returns.length 2 := Nat.le_max_right _ _
   have hfix : tryFix T.info L.tst'.emitted.toList = pre' ++ [.tryCall ci' T.info] := by
     rw [hms, tryFix_append]
   let fr' := restrict s.frame (A b B.body.length)

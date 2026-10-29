@@ -64,19 +64,19 @@ theorem ctor_try_call_info_iff (st : LState) (s : Clif.Signature) (items : List 
 returns' classes (`retRegsC`), then the payload registers that are not return registers. -/
 theorem ctor_gen_try_call_rets_iffC (st : LState) (s : Clif.Signature) (v : V) (st' : LState) :
     externCtor ctx T.gen_try_call_rets [.op (.sig s)] st = .ok (v, st') ↔
-      ∃ ps, retRegsC ((sigRets s).map retClass) 0 0 = some ps ∧ ps.length = ctx.tryRegs.1.length ∧
+      ∃ ps, retRegsC (s.returns.map retClass) 0 0 = some ps ∧ ps.length = ctx.tryRegs.1.length ∧
         v = .op (.callRets (ps.zip ctx.tryRegs.1 ++
           ((payloadRegs s.callConv).zip ctx.tryRegs.2).filter fun q => !ps.contains q.1)) ∧
         st' = st := by
   have : externCtor ctx T.gen_try_call_rets [.op (.sig s)] st =
-      match retRegsC ((sigRets s).map retClass) 0 0 with
+      match retRegsC (s.returns.map retClass) 0 0 with
       | some ps =>
         if ps.length != ctx.tryRegs.1.length then .unmodeled "gen_try_call_rets: return count"
         else .ok (.op (.callRets (ps.zip ctx.tryRegs.1 ++
           ((payloadRegs s.callConv).zip ctx.tryRegs.2).filter fun q => !ps.contains q.1)), st)
       | none => .unmodeled "gen_try_call_rets: more than 8 return values" := rfl
   rw [this]
-  cases retRegsC ((sigRets s).map retClass) 0 0 with
+  cases retRegsC (s.returns.map retClass) 0 0 with
   | none => simp
   | some ps =>
     by_cases h : ps.length = ctx.tryRegs.1.length
@@ -93,15 +93,22 @@ theorem ctor_gen_try_call_rets_iffC (st : LState) (s : Clif.Signature) (v : V) (
 
 /-- **`gen_try_call_rets`** of an integer signature (`sigIntB`, as `exnTableOpnd` checks): the
 return vregs in `retRegs`' registers x0.., then the payload registers that are not return
-registers. -/
+registers. The count is the DECLARED returns (#587: an `sret` pointer is no call result, as in
+Cranelift's call site); the pre-#587 statement over `sigRets` became false for `sret` callees. -/
 theorem ctor_gen_try_call_rets_iff {s : Clif.Signature} (hs : sigIntB s = true) (st : LState)
     (v : V) (st' : LState) :
     externCtor ctx T.gen_try_call_rets [.op (.sig s)] st = .ok (v, st') ↔
-      ∃ ps, retRegs (sigRets s).length = some ps ∧ ps.length = ctx.tryRegs.1.length ∧
+      ∃ ps, retRegs s.returns.length = some ps ∧ ps.length = ctx.tryRegs.1.length ∧
         v = .op (.callRets (ps.zip ctx.tryRegs.1 ++
           ((payloadRegs s.callConv).zip ctx.tryRegs.2).filter fun q => !ps.contains q.1)) ∧
         st' = st := by
-  rw [ctor_gen_try_call_rets_iffC, sigRets_classes_int (sigIntB_iff.mp hs).2, retRegsC_int]
+  have hc : s.returns.map retClass = List.replicate s.returns.length .int := by
+    have h := List.all_eq_true.mp (sigIntB_iff.mp hs).2
+    apply List.eq_replicate_iff.mpr
+    refine ⟨by simp, fun c hc => ?_⟩
+    obtain ⟨p, hp, rfl⟩ := List.mem_map.mp hc
+    exact retClass_int (h p hp)
+  rw [ctor_gen_try_call_rets_iffC, hc, retRegsC_int]
 
 end
 
@@ -208,14 +215,14 @@ theorem try_sym_lowerTryOk {Rd F : BitVec 64 → Prop}
     {ext : Clif.ExtFunc} (hext : f.extern? fn = some ext) (hin : ext ∈ exts)
     (hso : SigStackOk ext.sig outB) {bytes : List Nat} (hb : sigParamBytes ext.sig = .ok bytes)
     {locs : List ArgLoc} {S : Nat} (hl : sigArgLocs ext.sig = .ok (locs, S)) {info : TryInfo}
-    (hrets : info.rets ≤ (sigRets ext.sig).length) {b : Nat}
-    (htr : ctx.tryRegs = ((List.range (sigRets ext.sig).length).map fun j => Reg.vreg (b + j) .int,
+    (hrets : info.rets ≤ ext.sig.returns.length) {b : Nat}
+    (htr : ctx.tryRegs = ((List.range ext.sig.returns.length).map fun j => Reg.vreg (b + j) .int,
       [.vreg b .int, .vreg (b + 1) .int]))
     {st st' : LState} (hst' : st'.nextVreg = st.nextVreg) :
     LowerTryOkP Rd Pc isem MR env cp ctx (.call fn args) info st st'
       ((stackEnts ((locs.zip args).zip bytes)).map argStore ++
         [.call ⟨.sym ext.name, retPairs (regPairsOf ((locs.zip args).zip bytes)),
-          callDefs (outDefs b (max (sigRets ext.sig).length 2))⟩]) := by
+          callDefs (outDefs b (max ext.sig.returns.length 2))⟩]) := by
   refine ⟨by omega, ⟨(stackEnts ((locs.zip args).zip bytes)).map argStore, _, rfl, ?_,
     fun d hd => ?_⟩, ?_⟩
   · intro m hm d hd
@@ -237,15 +244,15 @@ theorem try_sym_lowerTryOk {Rd F : BitVec 64 → Prop}
       obtain ⟨w1, hrun1, hmr1, hargsAt⟩ := argsAt_after_stores hMR hMem hout hso hb hl hty
         hlen.symm (fun j v x hv hx => hvh x v (hvx j x v hx hv)) hmr
       obtain ⟨sym, -, -, htry⟩ := hCR
-      have hdl : (callDefs (outDefs b (max (sigRets ext.sig).length 2))).length =
-          max (sigRets ext.sig).length 2 := by
+      have hdl : (callDefs (outDefs b (max ext.sig.returns.length 2))).length =
+          max ext.sig.returns.length 2 := by
         simp [callDefs, outDefs]
       obtain ⟨outs, w', hi, hol, hro, hmr'⟩ := htry ext hin g fr.slots cm w1 (.sym ext.name)
         (retPairs (regPairsOf ((locs.zip args).zip bytes)))
-        (callDefs (outDefs b (max (sigRets ext.sig).length 2))) info
+        (callDefs (outDefs b (max ext.sig.returns.length 2))) info
         _ _ vals rvals cm' hg (.inl ⟨rfl, rfl⟩) (by rw [hdl]; exact Nat.le_max_left _ _) hrets
         (hargsAt w1 (SameWorldNF.refl F w1)) hmr1 hpc hgo hrN
-      have hol' : outs.length = (outDefs b (max (sigRets ext.sig).length 2)).length := by
+      have hol' : outs.length = (outDefs b (max ext.sig.returns.length 2)).length := by
         rw [hol, hdl]; simp [outDefs]
       rw [tryFix_append]
       refine ⟨?_, _, _, _, _, _, outs, w',
@@ -328,9 +335,9 @@ theorem try_bl_ruleOk {p : Program} (hp : Data p) (hpT : TryData p) {Rd F : BitV
   cases hmi
   obtain ⟨-, htrs, hst1, -⟩ := tryRegsOf_spec (exnTableOpnd_cc he) htr
   rw [htrs, exnTableOpnd_cc he, tryDefs_eq _ _ hr8] at hs2
-  have hcd : ((List.range (max (sigRets ext.sig).length 2)).map fun j =>
+  have hcd : ((List.range (max ext.sig.returns.length 2)).map fun j =>
       (Reg.x j, Reg.vreg (lo.nextVreg + j) .int)) =
-      callDefs (outDefs lo.nextVreg (max (sigRets ext.sig).length 2)) := by
+      callDefs (outDefs lo.nextVreg (max ext.sig.returns.length 2)) := by
     simp [callDefs, outDefs, List.map_map, Function.comp_def]
   rw [hcd] at hs2
   simp only at hs1 hs2
@@ -348,8 +355,8 @@ theorem try_got_lowerTryOk {Rd F : BitVec 64 → Prop}
     (hso : SigStackOk ext.sig outB)
     {bytes : List Nat} (hb : sigParamBytes ext.sig = .ok bytes) {locs : List ArgLoc} {S : Nat}
     (hl : sigArgLocs ext.sig = .ok (locs, S)) {info : TryInfo}
-    (hrets : info.rets ≤ (sigRets ext.sig).length) {b : Nat}
-    (htr : ctx.tryRegs = ((List.range (sigRets ext.sig).length).map fun j => Reg.vreg (b + j) .int,
+    (hrets : info.rets ≤ ext.sig.returns.length) {b : Nat}
+    (htr : ctx.tryRegs = ((List.range ext.sig.returns.length).map fun j => Reg.vreg (b + j) .int,
       [.vreg b .int, .vreg (b + 1) .int]))
     {st st' : LState} (hargs : ∀ x ∈ args, x < st.nextVreg)
     (hst' : st'.nextVreg = st.nextVreg + 1) :
@@ -358,7 +365,7 @@ theorem try_got_lowerTryOk {Rd F : BitVec 64 → Prop}
        [.loadExtNameGot (.vreg st.nextVreg .int) ext.name,
        .call ⟨.reg (.vreg st.nextVreg .int),
         retPairs (regPairsOf ((locs.zip args).zip bytes)),
-        callDefs (outDefs b (max (sigRets ext.sig).length 2))⟩]) := by
+        callDefs (outDefs b (max ext.sig.returns.length 2))⟩]) := by
   refine ⟨by omega, ⟨(stackEnts ((locs.zip args).zip bytes)).map argStore ++
     [.loadExtNameGot (.vreg st.nextVreg .int) ext.name], _, by rw [List.append_assoc]; rfl, ?_,
     ?_⟩, ?_⟩
@@ -402,19 +409,19 @@ theorem try_got_lowerTryOk {Rd F : BitVec 64 → Prop}
         apply List.map_congr_left
         intro q hq
         exact hρ1 _ (map_zip_args (mem_args_of_regPairs (List.mem_map_of_mem hq)))
-      have hdl : (callDefs (outDefs b (max (sigRets ext.sig).length 2))).length =
-          max (sigRets ext.sig).length 2 := by
+      have hdl : (callDefs (outDefs b (max ext.sig.returns.length 2))).length =
+          max ext.sig.returns.length 2 := by
         simp [callDefs, outDefs]
       have ht1 : upd ρ t (ofX (sym ext.name)) t = ofX (sym ext.name) := by simp [upd]
       obtain ⟨outs, w', hi, hol, hro, hmr'⟩ := htry ext hin g fr.slots cm w2
         (.reg (.vreg t .int)) (retPairs (regPairsOf ((locs.zip args).zip bytes)))
-        (callDefs (outDefs b (max (sigRets ext.sig).length 2))) info
+        (callDefs (outDefs b (max ext.sig.returns.length 2))) info
         (upd ρ t (ofX (sym ext.name)) t ::
           (regPairsOf ((locs.zip args).zip bytes)).map (upd ρ t (ofX (sym ext.name)) ·.1))
         ((regPairsOf ((locs.zip args).zip bytes)).map (ρ ·.1)) vals rvals cm' hg
         (.inr ⟨_, rfl, hcol, by rw [ht1, huses]⟩) (by rw [hdl]; exact Nat.le_max_left _ _) hrets
         (hargsAt w2 hsw) hmr2 hpc hgo hrN
-      have hol' : outs.length = (outDefs b (max (sigRets ext.sig).length 2)).length := by
+      have hol' : outs.length = (outDefs b (max ext.sig.returns.length 2)).length := by
         rw [hol, hdl]; simp [outDefs]
       have hrun3 := seqRun_tryCall_reg (info := info) hi hol'
       rw [show ∀ c : CallInfo, tryFix info ((stackEnts ((locs.zip args).zip bytes)).map argStore ++
@@ -565,9 +572,9 @@ theorem try_got_ruleOk {p : Program} (hp : Data p) (hpT : TryData p) {Rd F : Bit
   obtain ⟨-, htrs, hst1, -⟩ := tryRegsOf_spec (exnTableOpnd_cc he) htr
   rw [htrs, exnTableOpnd_cc he, tryDefs_eq _ _ hr8] at hs2
   rw [show ∀ s : LState, (s.fresh .int).1 = .vreg s.nextVreg .int from fun s => rfl] at hs2 hs0
-  have hcd : ((List.range (max (sigRets ext.sig).length 2)).map fun j =>
+  have hcd : ((List.range (max ext.sig.returns.length 2)).map fun j =>
       (Reg.x j, Reg.vreg (lo.nextVreg + j) .int)) =
-      callDefs (outDefs lo.nextVreg (max (sigRets ext.sig).length 2)) := by
+      callDefs (outDefs lo.nextVreg (max ext.sig.returns.length 2)) := by
     simp [callDefs, outDefs, List.map_map, Function.comp_def]
   rw [hcd] at hs2
   simp only at hs0 hs1 hs2

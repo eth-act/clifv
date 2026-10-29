@@ -6,14 +6,14 @@ import FV.E2E.LinkArmRetOkZero
 Under `NeedSlots` (where `ThmPRBRL` needs the slot-byte machinery; without it `thmPRBRL_of_thm`
 applies) and the base scope conditions of `LinkArmRetOkZero` (`BaseRetOk`, `RetCount`), every
 returning invocation of an activation's run under `envOfB M g c` keeps the valid addresses and
-the symbols and its declarations agree on an ABI return count:
+the symbols and its declarations agree on a return count:
 
 * a base invocation: as at depth `0`;
 * a program callee `h`: its whole-program run keeps the allocations (`runLoop_allocs`, base
-  externs `Ok.baseKeepsAllocs`) and the symbols (`runLoop_symbols`, `BaseRetOk`), and every
-  declaration of `h` in `g` is `h`'s signature (`Ok.declSig`) while every indirect call
-  signature that can enter `h` matches it (`abiMatch`), so they agree on `sigRets`
-  (`sigRets_length_of_abiMatch`).
+  externs `Ok.baseKeepsAllocs`) and the symbols (`runLoop_symbols`, `BaseRetOk`).
+
+The count is the CLIF results' (the call results are the declared returns since #587, an `sret`
+callee's struct pointer is not one); `sigRets_length_of_abiMatch` stays for the ABI returns.
 
 **`retOkPRB_of`**: `RetOkPRB κ M` for every `M`.
 -/
@@ -66,19 +66,8 @@ theorem retOkPRB_of (hL : L.Ok) [hR : L.CrunOk] (hN : L.NeedSlots) (hB : L.BaseR
       Clif.linkEnvR_none hpf] at hG
     obtain ⟨hv, hs⟩ := hB nm G hG vals' m rvals cm' hr
     refine ⟨hv, hs, ?_⟩
-    have hmem := sigsOf_mem (g := g) (nm := nm)
-    by_cases hex : ∃ s, ((∃ ext ∈ g.externs.map (·.2), ext.name = nm ∧ s = ext.sig) ∨
-        s ∈ indSigs g) ∧ vals'.length = s.params.length ∧ rvals.length = s.returns.length
-    · obtain ⟨s, hs, hp, hl⟩ := hex
-      refine ⟨(sigRets s).length, hl ▸ returns_le_sigRets s, fun ext hext hnm hp' hl' => ?_,
-        fun sig hsg _ hp' hl' => ?_⟩
-      · exact hC g hg nm hpf ext.sig (hmem _ (.inl ⟨ext, hext, hnm, rfl⟩)) s (hmem s hs)
-          (by omega) (by omega)
-      · exact hC g hg nm hpf sig (hmem _ (.inr hsg)) s (hmem s hs) (by omega) (by omega)
-    · refine ⟨rvals.length, Nat.le_refl _, fun ext hext hnm hp' hl' => ?_,
-        fun sig hsg _ hp' hl' => ?_⟩
-      · exact absurd ⟨ext.sig, .inl ⟨ext, hext, hnm, rfl⟩, hp', hl'⟩ hex
-      · exact absurd ⟨sig, .inr hsg, hp', hl'⟩ hex
+    -- the call results are the declared returns (#587): the count is the CLIF results'
+    exact ⟨rvals.length, Nat.le_refl _, fun _ _ _ _ hl' => hl'.symm, fun _ _ _ _ hl' => hl'.symm⟩
   | some h =>
     -- a program callee: its whole-program run
     obtain ⟨hh, hname⟩ := Clif.Program.func?_some hpf
@@ -109,21 +98,8 @@ theorem retOkPRB_of (hL : L.Ok) [hR : L.CrunOk] (hN : L.NeedSlots) (hB : L.BaseR
           (fun n' f hf vals m₁ rv m₂ hr' => (hB n' f hf vals m₁ rv m₂ hr').2) N cs' rvals cm' hI hN'
         have hsy0 := (L.initState_memB hpf hinit hpB).2.1
         refine ⟨hv, hsy.trans hsy0, ?_⟩
-        by_cases hex : ∃ s, ((∃ ext ∈ g.externs.map (·.2), ext.name = nm ∧ s = ext.sig) ∨
-            (s ∈ indSigs g ∧ s.abiMatch h.sig = true)) ∧ rvals.length = s.returns.length
-        · obtain ⟨s, hs, hl⟩ := hex
-          have hsR : (sigRets s).length = (sigRets h.sig).length := by
-            rcases hs with ⟨ext, hext, hnm, rfl⟩ | ⟨-, hm⟩
-            · rw [hL.declSig g hg ext hext h (hnm ▸ hpf)]
-            · exact sigRets_length_of_abiMatch hm
-          refine ⟨(sigRets h.sig).length, hsR ▸ hl ▸ returns_le_sigRets s,
-            fun ext hext hnm _ _ => ?_, fun sig _ hsg _ _ => ?_⟩
-          · rw [hL.declSig g hg ext hext h (hnm ▸ hpf)]
-          · exact sigRets_length_of_abiMatch (hsg h.sig hsig)
-        · refine ⟨rvals.length, Nat.le_refl _, fun ext hext hnm _ hl' => ?_,
-            fun sig hsg hm _ hl' => ?_⟩
-          · exact absurd ⟨ext.sig, .inl ⟨ext, hext, hnm, rfl⟩, hl'⟩ hex
-          · exact absurd ⟨sig, .inr ⟨hsg, hm h.sig hsig⟩, hl'⟩ hex
+        exact ⟨rvals.length, Nat.le_refl _, fun _ _ _ _ hl' => hl'.symm,
+          fun _ _ _ _ hl' => hl'.symm⟩
     · cases hr
 
 end LinkSys

@@ -106,25 +106,33 @@ theorem progXU_ni (hL : L.Ok) (hU : L.OkU) [hR : L.CrunOkX] (hN : L.NeedNI) {M :
     (fun off v hmz j hj => by
       rw [L.mem_canon, mem_withImg, if_neg (fun hi => hsav off v hmz j hj (himgF _ hi))]
       exact LinkSys.stackArgs_bytes ha.2.2 ha'.2.2 hsp' off v hmz j hj)
-  have hsr : (sigRets h.sig).length ≤ us.length := by
-    cases hs : h.sig.params.any (·.purpose == .sret)
-    · have hce := clifEntry_initState hpf hinit
-      obtain ⟨Nr, hrunN⟩ := hR.runs (M' + 1) cs _ hrun (.inl ⟨_, _, rfl⟩)
-      have hrt := Clif.runLoopX_returned_tys hL.free Nr cs.toX rvals cm'
-        (Clif.initState_xinv hinit) hrunN
-      have hbot : cs.toX.s.bottom = h := by
-        simp [Clif.State.toX, Clif.State.bottom, hce.callers, hce.func]
-      rw [hbot] at hrt
-      have e := congrArg List.length hrt
-      simp only [List.length_map, Clif.AbiParam.tys] at e
-      rw [sigRets_of_noSret hs, ← e]
-      have := hhold.1
-      omega
-    · exact hL.sretRets h hh hs us hrs
+  have hsr : h.sig.returns.length ≤ us.length := by
+    have hce := clifEntry_initState hpf hinit
+    obtain ⟨Nr, hrunN⟩ := hR.runs (M' + 1) cs _ hrun (.inl ⟨_, _, rfl⟩)
+    have hrt := Clif.runLoopX_returned_tys hL.free Nr cs.toX rvals cm'
+      (Clif.initState_xinv hinit) hrunN
+    have hbot : cs.toX.s.bottom = h := by
+      simp [Clif.State.toX, Clif.State.bottom, hce.callers, hce.func]
+    rw [hbot] at hrt
+    have e := congrArg List.length hrt
+    simp only [List.length_map, Clif.AbiParam.tys] at e
+    rw [← e]
+    have := hhold.1
+    omega
+  have hrl : rvals.length = h.sig.returns.length := by
+    have hce := clifEntry_initState hpf hinit
+    obtain ⟨Nr, hrunN⟩ := hR.runs (M' + 1) cs _ hrun (.inl ⟨_, _, rfl⟩)
+    have hrt := Clif.runLoopX_returned_tys hL.free Nr cs.toX rvals cm'
+      (Clif.initState_xinv hinit) hrunN
+    have hbot : cs.toX.s.bottom = h := by
+      simp [Clif.State.toX, Clif.State.bottom, hce.callers, hce.func]
+    rw [hbot] at hrt
+    have e := congrArg List.length hrt
+    simpa only [List.length_map, Clif.AbiParam.tys] using e
   have hres : ∀ (u : Arm.ArmState) (kk : Nat) (Y : BitVec 64 → Prop) (G : BitVec 64 → Prop),
       ActRet (Arm.r .PC u + 4) Y G us outs wf (enterAt (L.A h) u)
         (runX (L.machU M' h) kk (enterAt (L.A h) u)) →
-      ∀ j (hj : j < (sigRets h.sig).length),
+      ∀ j (hj : j < h.sig.returns.length),
         regVal (Arm.set_program (runX (L.machU M' h) kk (enterAt (L.A h) u)) u.program)
           (.x j) = outs[j]'(by omega) := by
     intro u kk Y G hr j hj
@@ -132,7 +140,7 @@ theorem progXU_ni (hL : L.Ok) (hU : L.OkU) [hR : L.CrunOkX] (hN : L.NeedNI) {M :
     have hus_j : us[j]? = some ((us[j]'hju).1, Reg.x j) := by
       have := congrArg (·[j]?) hus
       simp only [List.getElem?_map, List.getElem?_range hju, List.getElem?_eq_getElem hju,
-        Option.map_some, Option.some.injEq] at this
+        Option.map_some, Option.some.injEq, retX_lt (by omega : j < rvals.length)] at this
       rw [List.getElem?_eq_getElem hju, ← this]
     rw [regVal_set_program, hr.regs j _ _ _ hus_j (List.getElem?_eq_getElem _)]
   refine ⟨?_, ?_⟩

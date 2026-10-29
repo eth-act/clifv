@@ -100,7 +100,7 @@ def CallsRefineP (Pc : String → Clif.Signature → List Clif.Val → Clif.Mem 
       env.extern ext.name = some g →
       (dest = .sym ext.name ∧ uses = args ∨
         ∃ r, dest = .reg r ∧ ext.colocated = false ∧ uses = ofX (sym ext.name) :: args) →
-      ds.length = (sigRets ext.sig).length →
+      ds.length = ext.sig.returns.length →
       ArgsAt ext.sig vals args w → MR sl cm w → Pc ext.name ext.sig vals cm →
       g vals cm = .returned rvals cm' → rvals.length = ext.sig.returns.length →
       ∃ outs w', isem (.call ⟨dest, us, ds⟩) uses w = some (outs, w', .next) ∧
@@ -111,7 +111,7 @@ def CallsRefineP (Pc : String → Clif.Signature → List Clif.Val → Clif.Mem 
       env.extern ext.name = some g →
       (dest = .sym ext.name ∧ uses = args ∨
         ∃ r, dest = .reg r ∧ ext.colocated = false ∧ uses = ofX (sym ext.name) :: args) →
-      (sigRets ext.sig).length ≤ ds.length → ti.rets ≤ (sigRets ext.sig).length →
+      ext.sig.returns.length ≤ ds.length → ti.rets ≤ ext.sig.returns.length →
       ArgsAt ext.sig vals args w → MR sl cm w → Pc ext.name ext.sig vals cm →
       g vals cm = .returned rvals cm' → rvals.length = ext.sig.returns.length →
       ∃ outs w', isem (.tryCall ⟨dest, us, ds⟩ ti) uses w = some (outs, w', .goto ti.handlers.length) ∧
@@ -135,7 +135,7 @@ def IndCallsRefineP (Pc : String → Clif.Signature → List Clif.Val → Clif.M
       (vals rvals : List Clif.Val) (cm' : Clif.Mem),
     env.extern n = some g → (∀ s, env.sigOf n = some s → sig.abiMatch s = true) →
     cm.symbols n = some a → lo64 u = BitVec.ofNat 64 a →
-    ds.length = (sigRets sig).length → vals.length ≤ 8 → AllHold vals args → MR sl cm w →
+    ds.length = sig.returns.length → vals.length ≤ 8 → AllHold vals args → MR sl cm w →
     Pc n sig vals cm →
     g vals cm = .returned rvals cm' → rvals.length = sig.returns.length →
     vals.map (·.ty) = Clif.AbiParam.tys sig.params →
@@ -146,7 +146,7 @@ def IndCallsRefineP (Pc : String → Clif.Signature → List Clif.Val → Clif.M
       (args : List CV) (vals rvals : List Clif.Val) (cm' : Clif.Mem),
     env.extern n = some g → (∀ s, env.sigOf n = some s → sig.abiMatch s = true) →
     cm.symbols n = some a → lo64 u = BitVec.ofNat 64 a →
-    (sigRets sig).length ≤ ds.length → ti.rets ≤ (sigRets sig).length → vals.length ≤ 8 →
+    sig.returns.length ≤ ds.length → ti.rets ≤ sig.returns.length → vals.length ≤ 8 →
     AllHold vals args → MR sl cm w →
     Pc n sig vals cm →
     g vals cm = .returned rvals cm' → rvals.length = sig.returns.length →

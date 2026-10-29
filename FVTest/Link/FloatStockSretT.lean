@@ -11,7 +11,7 @@ A program of two functions: `%stock_arithmetic_ni` (integer, the Stock route's f
 `FVTest/Link/FloatStockCompileT.lean`) and `%fs` (an `sret` function storing its `f64`
 parameter through the struct pointer, as cg_clif writes a float field of a returned struct:
 outside subset E, so the integer `sretE` case does not apply). `lowerFunction` appends the struct
-pointer to `%fs`'s return, in x0, so its code meets `RetsX` (`retsXB`); the typed checks `okBTS`
+pointer to `%fs`'s return, in x8 (#587), so its code meets `RetsX 0` (`retsXB`); the typed checks `okBTS`
 hold and `SemanticCompilerWith.attemptT` succeeds on the Stock route's placement. Decided by
 `native_decide` (witness only). `lake build FVTest.Link.FloatStockSretT`. -/
 
@@ -49,14 +49,14 @@ def file0 : ByteArray :=
 def input : SemanticStackBound.CompilerInput := SemanticCompilerWith.input lower spec true
 
 /-- The `sret` function: outside subset E, with an `sret` parameter, `lowerFunction`'s code,
-which `lowerCheckT` accepts and whose returns are in x0.. (`retsXB`). -/
+which `lowerCheckT` accepts and whose returns are in their `retX` registers (`retsXB`). -/
 def sretB : Bool :=
   input.results.any fun row => match row.2 with
     | .error _ => false
     | .ok a =>
       row.1.name == fSret.func.name && !Compile.functionE row.1 &&
         row.1.sig.params.any (·.purpose == .sret) && lowersToB row.1 a.vc &&
-        lowerCheckT row.1 a.vc && allInsts a.vc retsXB
+        lowerCheckT row.1 a.vc && allInsts a.vc (retsXB row.1.sig.returns.length)
 
 def checks : Bool :=
   input.results.length == 2 && sretB && SemanticStackBound.okBTS input &&

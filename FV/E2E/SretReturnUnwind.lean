@@ -34,7 +34,7 @@ def IselSimUAbi (sem : Sem) (XR : XRaise) (Γ : Rel) (env : Clif.XEnv) (p : Clif
     ArgsAtEntry Γ.F f.sig args w₀ → TrapsExplicitX env p cs → ∀ fuel,
     (∀ vals cm, Clif.runLoopX env p fuel cs.toX = .returned vals cm →
       ∃ us outs w, VReturns vc sem ρ₀ w₀ us outs w ∧
-        us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
+        RetPins vals us ∧ us.length = outs.length ∧
         AllHold (vals ++ sretArg f args) outs ∧ MemRel Γ.F Γ.syms cm w) ∧
     (∀ c, Clif.runLoopX env p fuel cs.toX = .trapped c → VTraps vc sem ρ₀ w₀ c) ∧
     (∀ e cm, Clif.runLoopX env p fuel cs.toX = .unwound e cm →

@@ -51,11 +51,7 @@ theorem backend_correct_of_layers_ex {p : Clif.Program} {f : Clif.Function} {vc 
     have hju : j < us.length := by have := hhold.1; omega
     obtain ⟨x, hx⟩ : ∃ x, outs[j]? = some x :=
       ⟨outs[j]'(by have := hhold.1; omega), List.getElem?_eq_getElem _⟩
-    have hp : (us[j]'hju).2 = Reg.x j := by
-      have := congrArg (fun l => l[j]?) hus
-      simp only [List.getElem?_map, List.getElem?_range hju, List.getElem?_eq_getElem hju,
-        Option.map_some] at this
-      exact Option.some.inj this
+    have hp : (us[j]'hju).2 = Reg.x j := hus.x hjv hju
     have hr := hregs j (us[j]'hju).1 (us[j]'hju).2 x (by simp [List.getElem?_eq_getElem hju]) hx
     rw [hp, regVal_x] at hr
     show VHolds v (ofX (xreg j (runX astep n s)))

@@ -101,7 +101,7 @@ theorem callPost_not_vacuous {env : Clif.Env} {exts : List Clif.ExtFunc}
     (ha : ArgsAt ext.sig vals args w) (hmr : MR sl cm w) (hret : g vals cm = .returned rvals cm')
     (hlen : rvals.length = ext.sig.returns.length) :
     ¬ ∀ r, CallPost env exts sigs MR sym d uses w r := fun hall => by
-  have := ((hall (List.replicate ((sigRets ext.sig).length + 1) (ofX 0), w)).1 ext hext g sl cm
+  have := ((hall (List.replicate (ext.sig.returns.length + 1) (ofX 0), w)).1 ext hext g sl cm
     args vals rvals cm' hg hd ha hmr hret hlen).1
   simp at this
 
@@ -115,7 +115,7 @@ theorem callPost_not_vacuous_ind {env : Clif.Env} {exts : List Clif.ExtFunc}
     (hret : g vals cm = .returned rvals cm') (hlen : rvals.length = sig.returns.length)
     (hty : vals.map (·.ty) = Clif.AbiParam.tys sig.params) :
     ¬ ∀ r, CallPost env exts sigs MR sym none (u :: args) w r := fun hall' => by
-  have := ((hall' (List.replicate ((sigRets sig).length + 1) (ofX 0), w)).2 sig hsig n g sl cm u
+  have := ((hall' (List.replicate (sig.returns.length + 1) (ofX 0), w)).2 sig hsig n g sl cm u
     args vals rvals cm' rfl rfl hg hs hu h8 hall hmr hret hlen hty).1
   simp at this
 

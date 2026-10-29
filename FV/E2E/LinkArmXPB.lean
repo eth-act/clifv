@@ -83,7 +83,7 @@ open Classical in
 noncomputable def progXB (κ : Nat → Clif.Function → Nat) (M : Nat) (F : BitVec 64 → Prop)
     (g : Clif.Function) (uses : List CV) (w : Arm.ArmState) : Option (List CV × Arm.ArmState) :=
   if L.CondB κ M F g uses w ∧ Arm.r .ERR (L.pcall M g (L.canon g uses w)) = .None then
-    some ((List.range (sigRets g.sig).length).map fun j =>
+    some ((List.range g.sig.returns.length).map fun j =>
         regVal (L.pcall M g (L.canon g uses w)) (.x j),
       L.pcall M g (L.canon g uses w))
   else none

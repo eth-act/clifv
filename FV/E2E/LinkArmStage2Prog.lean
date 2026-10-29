@@ -40,7 +40,7 @@ theorem callPost_of_answers {env : Clif.Env} {exts : List Clif.ExtFunc}
       ArgsAt ext.sig vals args w → MR sl cm w →
       G vals cm = .returned rvals cm' → rvals.length = ext.sig.returns.length →
       ∃ r, X.call d uses w = some r ∧
-        r.1.length = (sigRets ext.sig).length ∧ PrefixHold rvals r.1 ∧ MR sl cm' r.2)
+        r.1.length = ext.sig.returns.length ∧ PrefixHold rvals r.1 ∧ MR sl cm' r.2)
     (hind : ∀ sig ∈ sigs, ∀ (n : String) G (sl : List (Clif.SlotId × Nat)) (cm : Clif.Mem) (u : CV)
       (args : List CV) (vals rvals : List Clif.Val) (cm' : Clif.Mem),
       d = none → uses = u :: args →
@@ -50,7 +50,7 @@ theorem callPost_of_answers {env : Clif.Env} {exts : List Clif.ExtFunc}
       G vals cm = .returned rvals cm' → rvals.length = sig.returns.length →
       vals.map (·.ty) = Clif.AbiParam.tys sig.params →
       ∃ r, X.call d uses w = some r ∧
-        r.1.length = (sigRets sig).length ∧ PrefixHold rvals r.1 ∧ MR sl cm' r.2)
+        r.1.length = sig.returns.length ∧ PrefixHold rvals r.1 ∧ MR sl cm' r.2)
     (hnv : ¬ ∀ r, CallPost env exts sigs MR sym d uses w r) :
     ∃ x, X.call d uses w = some x ∧ CallPost env exts sigs MR sym d uses w x := by
   cases hx : X.call d uses w with

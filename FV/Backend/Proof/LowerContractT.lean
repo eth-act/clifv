@@ -331,8 +331,9 @@ theorem retRegsC_eq : ∀ (cs : List RegClass) (nx nv : Nat) (rs : List Reg),
     · cases h
 
 /-- **`lower` on `return`/`trap`, `lower_branch` on a branch, typed** (`LowerTermOk` whose
-`return` puts each returned value `x` in the next ABI return register of its context class
-`valClassOf ctx x`, `retRegsT`). -/
+`return` pins the values to the return registers of `retRegsK` over their context classes
+`valClassOf ctx x`: the first declared returns as `retRegsT` places them, an `sret` signature's
+struct pointer in x8). -/
 structure LowerTermOkT {W : Type} (isem : ISem CV W) (MR : MemRelTW W) (ctx : Ctx)
     (t : Clif.Terminator)
     (targets : List Label) (st st' : LState) (ms : List MInst) : Prop where
@@ -344,7 +345,10 @@ structure LowerTermOkT {W : Type} (isem : ISem CV W) (MR : MemRelTW W) (ctx : Ct
     | .ret xs => ∀ vals, fr.getMany xs = .ok vals → UsesOk st fr ms ∧
         ∃ k us ops ρ₁ w₁ outs w₂,
           seqRun isem ms ρ w = some (.stop k (.rets us) ops ρ₁ w₁ outs w₂ .ret) ∧
-          us.map (·.2) = retRegsT (xs.map (valClassOf ctx)) 0 0 ∧ us.length = vals.length ∧
+          us.map (·.2) = retRegsT
+              ((xs.map (valClassOf ctx)).take (xs.length - (sretRet ctx.func).length)) 0 0 ++
+            List.replicate (xs.length - (xs.length - (sretRet ctx.func).length)) (Reg.x 8) ∧
+          us.length = vals.length ∧
           AllHold vals (vuses ops ρ₁) ∧ MR fr.slots cm w₂
     | .trap c => UsesOk st fr ms ∧ ∃ k i ops ρ₁ w₁ outs w₂,
         seqRun isem ms ρ w = some (.stop k i ops ρ₁ w₁ outs w₂ .halt) ∧ trapCode? i = some c
@@ -400,7 +404,11 @@ theorem LowerTermOk.toT {W : Type} {isem : ISem CV W} {MR : MemRelTW W} {ctx : C
     refine ⟨hU, k, us, ops, ρ₁, w₁, outs, w₂, h1, ?_, h3, h4, h5⟩
     have hm : xs.map (valClassOf ctx) = List.replicate xs.length .int := by
       rw [List.eq_replicate_iff]; simp [hE]
-    rw [hm, retRegsT_int, h2, h3, getMany_length hg, List.range_eq_range']
+    rw [hm, List.take_replicate, retRegsT_int, h2, h3, getMany_length hg]
+    rw [show min (xs.length - (sretRet ctx.func).length) xs.length =
+      xs.length - (sretRet ctx.func).length from by omega]
+    rw [map_retX_ge (by omega : xs.length - (sretRet ctx.func).length ≤ xs.length)]
+    simp [List.range_eq_range']
   | _ => exact this
 
 /-- The return registers of an integer context are `x0, x1, …`. -/

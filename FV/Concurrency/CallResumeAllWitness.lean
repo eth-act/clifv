@@ -29,7 +29,7 @@ def callsB : Bool :=
         info.defs.all (fun d => match d.2 with | .vreg _ _ => true | _ => false)
     | _ => true
 
-theorem checksR : callsB = true ∧ (sigRets extF.sig).length = 1 := by native_decide
+theorem checksR : callsB = true ∧ extF.sig.returns.length = 1 := by native_decide
 
 theorem calls_fC {b k : Nat} {vb : VBlock} {info : CallInfo} (hb : RC.vc.blocks[b]? = some vb)
     (hk : vb.insts[k]? = some (.call info)) :

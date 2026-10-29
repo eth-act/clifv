@@ -210,13 +210,14 @@ def CondR (κ : Nat → Clif.Function → Nat) (M : Nat) (F : BitVec 64 → Prop
   L.CondQ κ M F g uses w fun o => ∃ e cm', o = .unwound e cm'
 
 open Classical in
-/-- A call of the function `g` of `P` at depth `M` that returns: the results (x0.., one per ABI
-return) and world of the linked machine's call of `g` from the canonical state, when `CondU`
-holds and that call returned. -/
+/-- A call of the function `g` of `P` at depth `M` that returns: the results (x0.., one per
+declared return; an `sret` function's struct pointer, returned in x8 as in Cranelift, #587, is
+not a call result) and world of the linked machine's call of `g` from the canonical state, when
+`CondU` holds and that call returned. -/
 noncomputable def progXU (κ : Nat → Clif.Function → Nat) (M : Nat) (F : BitVec 64 → Prop)
     (g : Clif.Function) (uses : List CV) (w : Arm.ArmState) : Option (List CV × Arm.ArmState) :=
   if L.CondU κ M F g uses w ∧ Arm.r .ERR (L.pcallU M g (L.canon g uses w)) = .None then
-    some ((List.range (sigRets g.sig).length).map fun j =>
+    some ((List.range g.sig.returns.length).map fun j =>
         regVal (L.pcallU M g (L.canon g uses w)) (.x j),
       L.pcallU M g (L.canon g uses w))
   else none
@@ -375,7 +376,7 @@ def ThmU (κ : Nat → Clif.Function → Nat) (M : Nat) : Prop :=
     (∀ (rvals : List Clif.Val) (cm' : Clif.Mem),
       Clif.runLoopX (L.envRX M g) L.P.bare fuel cs.toX = .returned rvals cm' →
       ∃ (us : List (Reg × Reg)) (outs : List CV) (wf : Arm.ArmState),
-        us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
+        RetPins rvals us ∧ us.length = outs.length ∧
         PrefixHold rvals outs ∧ MemRel F L.syms cm' wf ∧ (L.A g).vc.RetsSite us ∧
         (∀ G ra s, L.MachEntry κ M g F G ra s w₀ →
           ∃ n, ActRet ra F G us outs wf s (runX (L.machU M g) n s) ∧
@@ -427,7 +428,7 @@ def ThmUQ (Q : Nat → Clif.Function → Arm.ArmState → Prop) (κ : Nat → Cl
     (∀ (rvals : List Clif.Val) (cm' : Clif.Mem),
       Clif.runLoopX (L.envRX M g) L.P.bare fuel cs.toX = .returned rvals cm' →
       ∃ (us : List (Reg × Reg)) (outs : List CV) (wf : Arm.ArmState),
-        us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
+        RetPins rvals us ∧ us.length = outs.length ∧
         PrefixHold rvals outs ∧ MemRel F L.syms cm' wf ∧ (L.A g).vc.RetsSite us ∧
         (∀ G ra s, L.MachEntry κ M g F G ra s w₀ →
           ∃ n, ActRet ra F G us outs wf s (runX (L.machU M g) n s) ∧

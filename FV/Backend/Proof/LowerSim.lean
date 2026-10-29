@@ -875,7 +875,7 @@ theorem term_step_abiP (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
         Match f ctx R gn bl A MR slots s' vs') ∧
     (∀ vals cm, Clif.step env p s = .done vals cm →
       ∃ us outs w' sv, VRetFromP (TermZone vc b k) vc sem ⟨b, k, ρ, w⟩ us outs w' ∧
-        us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
+        RetPins vals us ∧ us.length = outs.length ∧
         s.frame.getMany (sretRet f) = .ok sv ∧ AllHold (vals ++ sv) outs ∧
         MR slots s.mem w' ∧ cm = (s.mem.free (slots.map (·.2))).leave) ∧
     (∀ c, Clif.step env p s = .trapped c → VTrapFromP (TermZone vc b k) vc sem ⟨b, k, ρ, w⟩ c) := by
@@ -1118,8 +1118,13 @@ theorem term_step_abiP (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
       hz, hvb, hi, hops,
       hvu.symm, by rw [← hvu]; exact hsem⟩, ?_, ?_, hvsS, hall,
       by simpa [fr', restrict, hslots] using hmr, by rw [hcm, hslots]⟩
-    · simp only [List.map_map, List.length_map]
-      exact hus
+    · have hvl : vs.length = (sretRet ctx.func).length := by
+        rw [H.shape.ctxInv.func]; exact (getMany_spec hvs0).1.symm
+      have hvl' : (sretRet (termCtx ctx (L.start + B.body.length) L.data).func).length =
+          (sretRet ctx.func).length := by simp [termCtx]
+      unfold RetPins
+      simp only [List.map_map, List.length_map, Function.comp_def]
+      rw [hus, List.length_append, hvl, hvl', Nat.add_sub_cancel]
     · simp only [List.length_map]; rw [hlen]; exact hall.1
   | trap c =>
     rw [hT] at hrun' hstep
@@ -1163,7 +1168,7 @@ theorem term_step_abi (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
         Match f ctx R gn bl A MR slots s' vs') ∧
     (∀ vals cm, Clif.step env p s = .done vals cm →
       ∃ us outs w' sv, VRetFrom vc sem ⟨b, k, ρ, w⟩ us outs w' ∧
-        us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
+        RetPins vals us ∧ us.length = outs.length ∧
         s.frame.getMany (sretRet f) = .ok sv ∧ AllHold (vals ++ sv) outs ∧
         MR slots s.mem w' ∧ cm = (s.mem.free (slots.map (·.2))).leave) ∧
     (∀ c, Clif.step env p s = .trapped c → VTrapFrom vc sem ⟨b, k, ρ, w⟩ c) := by
@@ -1184,7 +1189,7 @@ theorem term_step (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
         Match f ctx R gn bl A MR slots s' vs') ∧
     (∀ vals cm, Clif.step env p s = .done vals cm →
       ∃ us outs w', VRetFrom vc sem ⟨b, k, ρ, w⟩ us outs w' ∧
-        us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
+        RetPins vals us ∧ us.length = outs.length ∧
         PrefixHold vals outs ∧ MR slots s.mem w' ∧ cm = (s.mem.free (slots.map (·.2))).leave) ∧
     (∀ c, Clif.step env p s = .trapped c → VTrapFrom vc sem ⟨b, k, ρ, w⟩ c) := by
   obtain ⟨T1, T2, T3⟩ := term_step_abi H hm hbody hnt
@@ -1699,8 +1704,6 @@ theorem term_step_tryP (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
         exact hh
       | ret ii =>
         have hii : ii < T.sig.returns.length := hargsOk _ htam
-        have hiN : ii < (sigRets T.sig).length :=
-          Nat.lt_of_lt_of_le hii (returns_le_sigRets _)
         have hvi : regs' (f.freshValue + ii) = some rvals[ii] :=
           setMany_nodup hset (List.Pairwise.map _ (fun a b h e => h (Nat.add_left_cancel e)) List.nodup_range) ii _ _
             (by simp [List.getElem?_map, hii]) (List.getElem?_eq_getElem (by omega))
@@ -1710,7 +1713,7 @@ theorem term_step_tryP (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
         have hr : (tryCtx ctx (L.start + B.body.length) L.data T.regs).tryRegs.1[ii]? =
             some (.vreg (L.tst.nextVreg + ii) .int) := by
           show T.regs.1[ii]? = _
-          rw [hregsEq]; simp [hiN]
+          rw [hregsEq]; simp [hii]
         obtain ⟨n, hn, hvh⟩ := hrets ii _ _ hr (List.getElem?_eq_getElem (by omega))
         cases hn
         have hDi : D (L.tst.nextVreg + ii) := ⟨by omega, by omega⟩
@@ -1736,9 +1739,8 @@ theorem term_step_tryP (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
     | val v => simp [normArgReg, tryArgNum, H.shape.ren.vreg]
     | ret ii =>
       have hii : ii < T.sig.returns.length := hargsOk _ ha
-      have hiN : ii < (sigRets T.sig).length := Nat.lt_of_lt_of_le hii (returns_le_sigRets _)
       have hg : gn (L.tst.nextVreg + ii) = L.tst.nextVreg + ii := H.shape.temps _ (by omega)
-      simp [normArgReg, tryArgNum, hregsEq, hiN, H.shape.ren.vreg, hg]
+      simp [normArgReg, tryArgNum, hregsEq, hii, H.shape.ren.vreg, hg]
     | exn _ => exact absurd (hargsOk _ ha) id
   have henv2 := edgeEnv_eq (V := CV) heb hvbt (xs := xs) (ps := TB.params.map (·.1)) hebba'
     (by rw [hpt]; simp [List.map_map, Function.comp_def]) (by simp only [List.length_map]; omega)
@@ -2507,7 +2509,7 @@ variable {f : Clif.Function} {vc : VCode} {ctx : Ctx} {st0 : LState} {R : Reg �
 def RunOk (vc : VCode) (sem : ISem CV W) (MR : MemRelTW W) (slots : List (Clif.SlotId × Nat))
     (vs : VState CV W) : Clif.Outcome → Prop
   | .returned vals cm => ∃ us outs w cm0, VRetFrom vc sem vs us outs w ∧
-      us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
+      RetPins vals us ∧ us.length = outs.length ∧
       PrefixHold vals outs ∧ MR slots cm0 w ∧ cm = (cm0.free (slots.map (·.2))).leave
   | .trapped c => VTrapFrom vc sem vs c
   | .stuck _ | .outOfFuel => True
@@ -2527,7 +2529,7 @@ values at the `return`, which satisfy `Q`), all the use values held (`AllHold`).
 def RunOkAbi (vc : VCode) (sem : ISem CV W) (MR : MemRelTW W) (slots : List (Clif.SlotId × Nat))
     (Q : List Clif.Val → Prop) (vs : VState CV W) : Clif.Outcome → Prop
   | .returned vals cm => ∃ us outs w cm0 sv, VRetFrom vc sem vs us outs w ∧
-      us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
+      RetPins vals us ∧ us.length = outs.length ∧
       Q sv ∧ AllHold (vals ++ sv) outs ∧ MR slots cm0 w ∧ cm = (cm0.free (slots.map (·.2))).leave
   | .trapped c => VTrapFrom vc sem vs c
   | .stuck _ | .outOfFuel => True

@@ -60,18 +60,17 @@ def ctlAT : AT → Bool
   | a => ctlAT1 a
 
 /-- **Preconditions** of extern constructor calls: the typed ones, an `emit`ted control form
-has its shape, `gen_return` returns vregs. -/
+has its shape; no `gen_return` call (#587: `gen_return` returns an `sret` function's struct
+pointer in x8 whatever its vreg's class, and only the entry block's typing, `EntryClassOk`, makes
+that vreg an integer one: the `return` rule is checked by hand, `IselShpTRet`, so the table
+covers the other roots, which reach no `gen_return`). -/
 def apreST (id : TermId) (as : List AT) : Bool :=
   apre id as &&
   if id == TId.emit then
     match as with
     | [a] => ctlAT a
     | _ => false
-  else if id == TId.gen_return then
-    match as with
-    | [a] => (AT.deep a).1 &&& 12 == 0
-    | _ => false
-  else true
+  else id != TId.gen_return
 
 /-- The helpers emitting a control form with fresh defs, by their int-vreg operands. -/
 def ctlOracleT (t : TermId) (as : List AT) : Bool :=

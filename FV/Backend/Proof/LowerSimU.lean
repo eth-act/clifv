@@ -842,7 +842,7 @@ the memory before the frame was left. -/
 def RunOkU (vc : VCode) (sem : Sem) (XR : XRaise) (MR : MemRelT)
     (slots : List (Clif.SlotId × Nat)) (vs : VState CV Arm.ArmState) : Clif.XOutcome → Prop
   | .returned vals cm => ∃ us outs w cm0, VRetFrom vc sem vs us outs w ∧
-      us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
+      RetPins vals us ∧ us.length = outs.length ∧
       PrefixHold vals outs ∧ MR slots cm0 w ∧ cm = (cm0.free (slots.map (·.2))).leave
   | .trapped c => VTrapFrom vc sem vs c
   | .unwound e cm => ∃ obj w cm0, E2E.VUnwFrom vc sem XR vs obj w ∧ E2E.ExnRel e obj ∧

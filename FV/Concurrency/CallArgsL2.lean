@@ -58,7 +58,7 @@ theorem isel_resumeG {f : Clif.Function} {vc : VCode} {ctx : Ctx} {st0 : LState}
     {rvals : List Clif.Val} {cm' : Clif.Mem}
     (hrty : rvals.map (·.ty) = Clif.AbiParam.tys ext.sig.returns)
     {regs' : Clif.Regs} (hregs : s.frame.regs.setMany stm.results rvals = some regs')
-    {outs : List CV} {y : ArmState} (hlen : outs.length = (sigRets ext.sig).length)
+    {outs : List CV} {y : ArmState} (hlen : outs.length = ext.sig.returns.length)
     (hpre : PrefixHold rvals outs) (hmr : RelW Γ f c slots cm' y) :
     ∃ ρ', VStep vc (csem Γ.F fctx (xcallG X (ArgG X ext vals) outs y))
         (.run ⟨b, k, ρ, w⟩) (.run ⟨b, k + 1, ρ', y⟩) ∧
@@ -217,7 +217,7 @@ theorem isel_argsAt {f : Clif.Function} {vc : VCode} {ctx : Ctx} {st0 : LState}
   obtain ⟨vb, nm, us, ds, hvb, hi⟩ := match_atCall H hchk hm ⟨stm, rest, fn, args, hbody, hc⟩
   have hextf : f.extern? fn = some ext := by rw [← hm.2.1]; exact hext
   let rvals : List Clif.Val := ext.sig.returns.map fun q => ⟨q.ty, 0⟩
-  let outs : List CV := (sigRets ext.sig).map fun _ => 0
+  let outs : List CV := ext.sig.returns.map fun _ => 0
   have hrty : rvals.map (·.ty) = Clif.AbiParam.tys ext.sig.returns := by
     simp [rvals, Clif.AbiParam.tys]
   have hrl : stm.results.length = rvals.length := by
@@ -226,9 +226,9 @@ theorem isel_argsAt {f : Clif.Function} {vc : VCode} {ctx : Ctx} {st0 : LState}
     simp only [rvals, List.length_map]
     exact callResLen_of hres hB hstm hc hextf
   obtain ⟨regs', hregs⟩ := setMany_some s.frame.regs stm.results rvals hrl
-  have hlen : outs.length = (sigRets ext.sig).length := by simp [outs]
+  have hlen : outs.length = ext.sig.returns.length := by simp [outs]
   have hpre : PrefixHold rvals outs := by
-    refine ⟨by simpa [rvals, outs] using CallArity.returns_le_sigRets ext.sig, ?_⟩
+    refine ⟨by simp [rvals, outs], ?_⟩
     intro j v x hv hx
     simp only [rvals, List.getElem?_map, Option.map_eq_some_iff] at hv
     simp only [outs, List.getElem?_map, Option.map_eq_some_iff] at hx

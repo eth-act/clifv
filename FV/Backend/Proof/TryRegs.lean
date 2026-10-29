@@ -42,16 +42,16 @@ theorem retRegs_some {n : Nat} (h : n ≤ 8) : retRegs n = some ((List.range n).
 
 /-- **The vregs of a `try_call`** (payloads in x0/x1). -/
 theorem tryRegsOf_eq {sig : Clif.Signature} {st : LState}
-    (hcc : payloadRegs sig.callConv = [.x 0, .x 1]) (h8 : (sigRets sig).length ≤ 8) :
-    ∃ st1, tryRegsOf sig st = some (((List.range (sigRets sig).length).map
+    (hcc : payloadRegs sig.callConv = [.x 0, .x 1]) (h8 : sig.returns.length ≤ 8) :
+    ∃ st1, tryRegsOf sig st = some (((List.range sig.returns.length).map
         (fun j => Reg.vreg (st.nextVreg + j) .int),
         [.vreg st.nextVreg .int, .vreg (st.nextVreg + 1) .int]), st1) ∧
-      st1.nextVreg = st.nextVreg + max (sigRets sig).length 2 ∧ st1.emitted = st.emitted := by
+      st1.nextVreg = st.nextVreg + max sig.returns.length 2 ∧ st1.emitted = st.emitted := by
   have b00 : (Reg.x 0 == Reg.x 0) = true := by decide
   have b01 : (Reg.x 0 == Reg.x 1) = false := by decide
   have b10 : (Reg.x 1 == Reg.x 0) = false := by decide
   have b11 : (Reg.x 1 == Reg.x 1) = true := by decide
-  generalize hn : (sigRets sig).length = n at h8
+  generalize hn : sig.returns.length = n at h8
   obtain ⟨st', h1, h2, h3⟩ := foldl_retFresh ((List.range n).map Reg.x) #[] st
   simp only [List.length_map, List.length_range] at h1 h2
   unfold tryRegsOf
@@ -82,13 +82,13 @@ theorem tryRegsOf_eq {sig : Clif.Signature} {st : LState}
 /-- `tryRegsOf`'s results, from any successful call (payloads in x0/x1). -/
 theorem tryRegsOf_spec {sig : Clif.Signature} {st st1 : LState} {trs : List Reg × List Reg}
     (hcc : payloadRegs sig.callConv = [.x 0, .x 1]) (h : tryRegsOf sig st = some (trs, st1)) :
-    (sigRets sig).length ≤ 8 ∧
-    trs = ((List.range (sigRets sig).length).map (fun j => Reg.vreg (st.nextVreg + j) .int),
+    sig.returns.length ≤ 8 ∧
+    trs = ((List.range sig.returns.length).map (fun j => Reg.vreg (st.nextVreg + j) .int),
       [.vreg st.nextVreg .int, .vreg (st.nextVreg + 1) .int]) ∧
-    st1.nextVreg = st.nextVreg + max (sigRets sig).length 2 ∧ st1.emitted = st.emitted := by
-  have h8 : (sigRets sig).length ≤ 8 := by
+    st1.nextVreg = st.nextVreg + max sig.returns.length 2 ∧ st1.emitted = st.emitted := by
+  have h8 : sig.returns.length ≤ 8 := by
     unfold tryRegsOf at h
-    cases hr : retRegs (sigRets sig).length with
+    cases hr : retRegs sig.returns.length with
     | none => rw [hr] at h; cases h
     | some ps =>
       simp only [retRegs] at hr
@@ -142,7 +142,7 @@ theorem tryInfoOf_spec {sig : Clif.Signature} {items : List (Option Nat)} {ls : 
 
 theorem tryInfoOf_rets {sig : Clif.Signature} {items : List (Option Nat)} {ls : List Label}
     {info : TryInfo} (h : tryInfoOf sig items ls = some info) :
-    info.rets = (sigRets sig).length := by
+    info.rets = sig.returns.length := by
   unfold tryInfoOf at h
   split at h
   · cases h
