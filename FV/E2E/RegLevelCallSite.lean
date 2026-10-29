@@ -1,6 +1,7 @@
 import FV.E2E.RegLevelUnwind
 import FV.E2E.RegLevelNext
 import FV.E2E.RegLevelCall
+import FV.E2E.MachBufSize
 
 /-!
 # The call-site pair of a register-level call (S10e)
@@ -169,25 +170,6 @@ theorem callKey_of_stepLine {ln : Line}
 theorem callKey_of_cbr {ln : Line} {ct} (h : ln.cbr? = some ct) : ln.callKey = none :=
   callKey_of_stepLine (by cases hu : ln.ubr? <;> simp [Option.orElse, hu, h])
 
-/-- `lastCode` names an index before `n` holding a line. -/
-theorem lastCode_spec (out : Array Line) : ∀ (n k : Nat), lastCode out n = some k →
-    k < n ∧ ∃ ln, out[k]? = some ln
-  | 0, _, h => by simp [lastCode] at h
-  | n + 1, k, h => by
-    unfold lastCode at h
-    cases hx : out[n]? with
-    | none => simp only [hx] at h; cases h
-    | some ln =>
-      simp only [hx] at h
-      cases ln with
-      | label _ =>
-        obtain ⟨hlt, hk⟩ := lastCode_spec out n k h
-        exact ⟨by omega, hk⟩
-      | _ => simp only [Option.some.injEq] at h; subst h; exact ⟨by omega, _, hx⟩
-
-theorem lastCode_lt (out : Array Line) (k p : Nat) (h : lastCode out k = some p) : p < k :=
-  (lastCode_spec out k p h).1
-
 /-- The line at index `p < k` is untouched by erasing `k`. -/
 theorem getElem?_eraseIdx_of_lt {L : List Line} {k p : Nat} (hpk : p < k) (_hk : k ≤ L.length) :
     (L.eraseIdx k)[p]? = L[p]? :=
@@ -239,19 +221,6 @@ theorem step_callKeys (allLabels : Bool) (m m' : MBuf) (h : MBuf.step allLabels 
         Array.getElem?_toList, hlp, Option.some.injEq] at hx
       subst hx; exact callKey_of_cbr hct
     · cases h
-
-/-- An invariant of a `forIn` in `Id`. -/
-theorem mbForIn_inv {α σ : Type} (l : List α) (init : σ) (f : α → σ → Id (ForInStep σ))
-    (P : σ → Prop) (h0 : P init) (hf : ∀ a s, P s → P (f a s).run.value) :
-    P (forIn l init f).run := by
-  induction l generalizing init with
-  | nil => simpa using h0
-  | cons a l ih =>
-    rw [List.forIn_cons]
-    have := hf a init h0
-    cases hfa : f a init with
-    | done b => rw [hfa] at this; simp only [Id.run_bind]; exact this
-    | yield b => rw [hfa] at this; simp only [Id.run_bind]; exact ih b this
 
 theorem optimize_callKeys (allLabels : Bool) (m : MBuf) :
     callKeys (MBuf.optimize allLabels m).out.toList = callKeys m.out.toList := by
@@ -467,38 +436,6 @@ theorem trapLines_callKeys (ps : PState) : callKeys (trapLines ps) = [] := by
   intro l hl
   simp only [trapLines, List.mem_flatMap, List.mem_cons, List.mem_nil_iff, or_false] at hl
   obtain ⟨p, -, rfl | rfl⟩ := hl <;> rfl
-
-theorem dropWhile_eq_drop {α : Type} (p : α → Bool) (l : List α) :
-    l.dropWhile p = l.drop (l.takeWhile p).length := by
-  induction l with
-  | nil => rfl
-  | cons a l ih => by_cases hp : p a <;> simp [hp, ih]
-
-/-- `splitSegs` re-splits the lines it was given. -/
-theorem splitSegs_lines : ∀ (ss : List Seg) (L : List Line) (os : List (List Line)),
-    splitSegs ss L = some os → segLines ss os = L
-  | [], [], _, _ => rfl
-  | [], _ :: _, _, h => by simp [splitSegs] at h
-  | s :: ss, .label (.block l) :: rest, os, h => by
-    unfold splitSegs at h
-    split at h
-    · simp at h
-    · split at h
-      · simp at h
-      · rename_i hl hbody
-        simp only [bne_iff_ne, ne_eq, Decidable.not_not] at hl hbody
-        subst hl
-        rw [Option.map_eq_some_iff] at h
-        obtain ⟨os', hm, rfl⟩ := h
-        have ih := splitSegs_lines ss _ os' hm
-        simp only [segLines]
-        rw [ih, ← dropWhile_eq_drop, List.cons_append, List.append_assoc,
-          List.takeWhile_append_dropWhile]
-        conv => rhs; rw [← List.take_append_drop s.body.length rest, hbody]
-  | _ :: _, [], _, h => by simp [splitSegs] at h
-  | _ :: _, .ins _ _ :: _, _, h => by simp [splitSegs] at h
-  | _ :: _, .word _ _ :: _, _, h => by simp [splitSegs] at h
-  | _ :: _, .label (.trap _) :: _, _, h => by simp [splitSegs] at h
 
 theorem filterMap_split {α β : Type} (f : α → Option β) (X : List α) (hX : X ≠ []) :
     X.dropLast.filterMap f ++ X.getLast?.toList.filterMap f = X.filterMap f := by

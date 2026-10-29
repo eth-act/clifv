@@ -1,4 +1,5 @@
 import FV.E2E.RegLevelEmit
+import FV.E2E.MachBufSize
 import FV.Backend.Proof.RelaxLayout
 import FV.Backend.SpillAlloc
 
@@ -467,27 +468,6 @@ theorem linesBytes_drop (j : Nat) (L : List Line) : linesBytes (L.drop j) ≤ li
   simp only [linesBytes, List.map_append, List.sum_append] at this ⊢
   omega
 
-theorem ftStep_size (ln : Line) (n1 n2 : Option Line) : linesBytes (ftStep ln n1 n2).1 ≤ ln.size := by
-  unfold ftStep
-  repeat' split
-  all_goals first | (simp [linesBytes]; done) | simp [linesBytes, Line.size]
-
-theorem ftList_size : ∀ (n : Nat) (L : List Line), L.length ≤ n → linesBytes (ftList L) ≤ linesBytes L
-  | _, [], _ => by simp [ftList, linesBytes]
-  | 0, _ :: _, hl => by simp at hl
-  | n + 1, ln :: rest, hl => by
-    rw [ftList_cons]
-    have hp := (ftStep_pos ln rest[0]? rest[1]?).1
-    have hs := ftStep_size ln rest[0]? rest[1]?
-    generalize (ftStep ln rest[0]? rest[1]?) = st at hp hs
-    obtain ⟨out, k⟩ := st
-    obtain ⟨j, rfl⟩ : ∃ j, k = j + 1 := ⟨k - 1, by simp at hp; omega⟩
-    simp only [List.drop_succ_cons] at *
-    have ih := ftList_size n (rest.drop j) (by simp at hl ⊢; omega)
-    have := linesBytes_drop j rest
-    simp only [linesBytes, List.map_append, List.sum_append, List.map_cons, List.sum_cons] at *
-    omega
-
 theorem pairsOf_count : ∀ rs : List Reg,
     (pairsOf rs).1.length + (if (pairsOf rs).2.isSome then 1 else 0) ≤ rs.length
   | [] => by simp [pairsOf]
@@ -579,41 +559,79 @@ theorem codeLinesE_length {c : FnCtx} {af : AFunc} :
     simp only [List.length_append, List.map_cons, List.sum_cons] at *
     omega
 
-theorem blocksLinesE_size {c : FnCtx} {af : AFunc} :
-    ∀ {bs : List (Label × Array AInst)} {ps ps' : PState} {ls : List Line},
-      blocksLinesE c af bs ps = .ok (ls, ps') →
-        linesBytes ls + 4 * ps'.traps.size ≤
-          4 * (bs.map fun b => (b.2.toList.map (aInstWords af.saves.length)).sum).sum + 4 * ps.traps.size
-  | [], ps, ps', ls, h => by
-    simp only [blocksLinesE, pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at h
+/-- The segments' unsimplified lines (`segsOf`): at most 4 bytes per word of the blocks' code,
+the label lines being empty. -/
+theorem segsOf_size {c : FnCtx} {af : AFunc} :
+    ∀ {bs : List ((Label × Array AInst) × Nat)} {ps ps' : PState} {ss : List Seg},
+      segsOf c af bs ps = .ok (ss, ps') →
+        linesBytes (segLines ss (ss.map (·.term))) + 4 * ps'.traps.size ≤
+          4 * (bs.map fun b => (b.1.2.toList.map (aInstWords af.saves.length)).sum).sum +
+            4 * ps.traps.size
+  | [], ps, ps', ss, h => by
+    simp only [segsOf, pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at h
     obtain ⟨rfl, rfl⟩ := h
-    simp [linesBytes]
-  | (l, code) :: bs, ps, ps', ls, h => by
-    simp only [blocksLinesE] at h
+    simp [linesBytes, segLines]
+  | ((l, code), i) :: bs, ps, ps', ss, h => by
+    simp only [segsOf] at h
     obtain ⟨⟨l1, ps1⟩, h1, h⟩ := exceptBind_ok h
     obtain ⟨⟨l2, ps2⟩, h2, h⟩ := exceptBind_ok h
+    obtain ⟨⟨l3, ps3⟩, h3, h⟩ := exceptBind_ok h
     simp only [pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at h
     obtain ⟨rfl, rfl⟩ := h
-    have := codeLinesE_length h1
-    have := linesBytes_le_length l1
-    have := blocksLinesE_size h2
-    simp only [linesBytes, List.map_cons, List.map_append, List.sum_append, List.sum_cons, Line.size] at *
+    have e1 := codeLinesE_length h1
+    have e2 := codeLinesE_length h2
+    have e3 := segsOf_size h3
+    have b1 := linesBytes_le_length l1
+    have b2 := linesBytes_le_length l2
+    have hw : (code.toList.dropLast.map (aInstWords af.saves.length)).sum +
+        (code.toList.getLast?.toList.map (aInstWords af.saves.length)).sum =
+        (code.toList.map (aInstWords af.saves.length)).sum := by
+      rw [← List.sum_append, ← List.map_append]
+      rcases List.eq_nil_or_concat code.toList with e | ⟨L, b, e⟩ <;> simp [e]
+    simp only [segLines, List.map_cons, List.sum_cons, linesBytes, List.map_append,
+      List.sum_append, Line.size] at *
     omega
 
-/-- `emitPre`'s lines are at most `4 · afWords af` bytes. -/
+theorem sum_filter_not {α : Type} (p : α → Bool) (f : α → Nat) :
+    ∀ l : List α, ((l.filter (!p ·)).map f).sum + ((l.filter p).map f).sum = (l.map f).sum
+  | [] => rfl
+  | a :: l => by
+    have := sum_filter_not p f l
+    cases h : p a <;> simp [h] at this ⊢ <;> omega
+
+theorem sum_zipIdx {α : Type} (f : α → Nat) :
+    ∀ (l : List α) (n : Nat), ((l.zipIdx n).map fun x => f x.1).sum = (l.map f).sum
+  | [], _ => rfl
+  | a :: l, n => by simp [List.zipIdx_cons, sum_zipIdx f l (n + 1)]
+
+/-- `emitPre`'s lines are at most `4 · afWords af` bytes: `MachBuffer`'s simplification never
+grows the segments' lines (`emitPlan_bytes`), which the blocks' code bounds in any order. -/
 theorem emitPre_size {k : Nat} {af : AFunc} {pre : Array Line} (h : emitPre k af = .ok pre) :
     linesBytes pre.toList ≤ 4 * afWords af := by
-  obtain ⟨body, ps, hb, rfl⟩ := emitPre_ok h
-  have h1 := blocksLinesE_size hb
-  have h2 := ftList_size body.length body (Nat.le_refl _)
-  have h3 : ∀ ts : List (Lbl × Clif.TrapCode),
-      linesBytes (ts.flatMap fun p => [Line.label p.1, Line.ins (.udf 0xc11f) (some p.2)]) = 4 * ts.length := by
-    intro ts; induction ts <;> simp_all [linesBytes, Line.size]; omega
-  simp only [linesBytes, List.map_append, List.sum_append] at *
-  rw [h3, Array.length_toList]
-  simp only [afWords]
-  simp at h1
-  omega
+  cases hp : emitPlan k af with
+  | error e => simp [emitPre, hp, Functor.map, Except.map] at h
+  | ok p =>
+    simp only [emitPre, hp, Functor.map, Except.map, Except.ok.injEq] at h
+    subst h
+    obtain ⟨hseg, -⟩ := emitPlan_spec hp
+    have h1 := segsOf_size hseg
+    have h2 := emitPlan_bytes hp
+    have hord : ((emitOrder af).map fun b =>
+        (b.1.2.toList.map (aInstWords af.saves.length)).sum).sum = afWords af := by
+      unfold emitOrder afWords
+      rw [List.map_append, List.sum_append]
+      rw [sum_filter_not, sum_zipIdx (fun b : Label × Array AInst =>
+        (b.2.toList.map (aInstWords af.saves.length)).sum)]
+    have h3 : ∀ ts : List (Lbl × Clif.TrapCode),
+        linesBytes (ts.flatMap fun p => [Line.label p.1, Line.ins (.udf 0xc11f) (some p.2)]) =
+          4 * ts.length := by
+      intro ts; induction ts <;> simp_all [linesBytes, Line.size]; omega
+    simp only [List.toList_toArray, Plan.lines, trapLines]
+    simp only [linesBytes, lineBytes, List.map_append, List.sum_append] at h1 h2 h3 ⊢
+    rw [h3, Array.length_toList]
+    rw [hord] at h1
+    simp at h1
+    omega
 
 /-! ## The bound -/
 
