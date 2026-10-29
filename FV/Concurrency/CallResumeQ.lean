@@ -60,7 +60,7 @@ theorem resumeQW {R : RL} (hR : R.Wf) {s y : ArmState} {b k : Nat} {allocs : Arr
   have hj : R.L[j0]? = some (.ins xi none) := by
     have hd := hdrop
     rw [hrl] at hd
-    exact drop_get (Z := []) (by rw [hd]; rfl)
+    exact drop_get (Z := []) (by rw [hd])
   refine qs_next hvb hit hsplit hchk' hc2 h2 h3 htr hdrop ?_ ?_ hx hsc
   · rw [hrl, List.length_singleton, pcOf_succ hj, hpc, hpc0]; rfl
   · refine ⟨hst', hw', herr, hprog.trans hst.prog, hsp.trans hst.sp,
