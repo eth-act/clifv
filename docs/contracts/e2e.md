@@ -4313,8 +4313,10 @@ left out of the region (before: 4, 6, 6, 6), 4 of 4 executables verified, tests 
 `cargo fv test --build-std --lean-link --verified`: 2 of 2 verified, 17 and 18 left out (before:
 39, 40), none a float function: 10 integer functions fail `callRegs/blrRegs` at vtable `blr`s
 checked against GOT-declared callees with a different `sret` placement (#753); the other 7 (8)
-fail only the integer route's `indB:sretRets`, which `lean-link` adds to the typed failures
-(#754). `indBC`'s at most 8 parameters excludes nothing on either example.
+failed only the integer route's `indB:sretRets`, which `lean-link` added to the typed failures.
+Since #754 the typed Stock route's exclusion list is the typed failures alone (`exclusions`'
+`only`: `attemptT_correct` has no per-function input premise). `indBC`'s at most 8 parameters
+excludes nothing on either example.
 
 ## Contract changes taken (byte-identical)
 
