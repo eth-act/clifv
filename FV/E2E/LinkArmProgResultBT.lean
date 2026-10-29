@@ -150,7 +150,7 @@ theorem progResultBTR (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) {M : Nat}
       g c sl cm w)
     (hpl : L.NeedSlots → L.PlaceAtB cm c ini)
     (hslotb : L.NeedSlots → ∀ a, L.SlotByte h c a →
-      ini.bytes (ini.next + 1) a = w.mem (BitVec.ofNat 64 a))
+      ini.bytes (ini.next + 1) a = probeMem (L.A h).af w (BitVec.ofNat 64 a))
     (htab : L.TableOf (M - 1) h (enterAt (L.A h) (L.canon h args w)) (calleeIni h ini))
     (hinit : Clif.initState L.P h.name vals cm = .ok cs)
     (hret : L.crun M cs = .returned rvals cm') :
