@@ -39,6 +39,8 @@ import FV.E2E.SemanticExecTS
 import FV.Link.SemanticCompileT
 import FV.Link.SemanticExeSourceT
 import FVTest.Link.FloatStockCompileT
+import FVTest.Link.FloatLinkCallsT
+import FV.E2E.LinkGoodT
 
 -- S11e5 Stage C (#35): the typed scope (float data movement, float parameters and returns)
 #print axioms E2E.typedRules_program
@@ -323,3 +325,26 @@ import FVTest.Link.FloatStockCompileT
 #print axioms E2E.FloatStockCompileTWitness.parts -- witness: native_decide
 #print axioms E2E.FloatStockCompileTWitness.correct_applies -- witness: native_decide
 #print axioms E2E.FloatStockCompileTWitness.source_applies -- witness: native_decide
+
+-- #742: class-aware program call sites in the typed link (OkT.callRegs/blrRegs by class)
+#print axioms E2E.LinkCheck.sigRetRegs_length
+#print axioms E2E.LinkCheck.sigRetRegs_int
+#print axioms E2E.LinkCheck.siteRegsC_of_int
+#print axioms E2E.LinkCheck.callRegsC_of_int
+#print axioms E2E.LinkCheck.blrOkC_sound
+#print axioms E2E.LinkCheck.siteOkC_sound
+#print axioms E2E.LinkCheck.siteOkC_reg
+#print axioms E2E.LinkCheck.indFastBC_eq
+#print axioms E2E.LinkCheck.linkChksWithTS_of
+#print axioms E2E.RetsOkT.reg_at
+#print axioms E2E.LinkSys.IndSigMatch.sigRets_length
+#print axioms E2E.LinkSys.blrRegsC_of_int
+#print axioms E2E.LinkSys.progOsCoreT
+#print axioms E2E.LinkSys.progResultT
+#print axioms E2E.LinkSys.progX_niT
+#print axioms E2E.LinkSys.thmT
+#print axioms E2E.LinkSys.thmGT
+#print axioms E2E.backend_correct_programT
+#print axioms E2E.LinkCheck.indFactsRWithTS
+#print axioms E2E.FloatLinkCallsTWitness.checks_true -- witness: native_decide
+#print axioms E2E.FloatLinkCallsTWitness.parts -- witness: native_decide

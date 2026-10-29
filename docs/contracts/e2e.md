@@ -2807,9 +2807,10 @@ reach a call cycle; `FV/E2E/SemanticExecTS.lean`), conclusion `ExecBytes.ExecRef
 OkT` (no lowering equation), with the link contract's artifact field widened in place to
 `CompiledAnyTS` (`CompiledAnyT`, or `CompiledStockT`: an integer function without `sret` and the
 Stock artifact contract `CompiledSemanticNI`; `FV/E2E/CompiledAnyTS.lean`) and `OkT.sretE` to
-"subset E with the integer contract, or `RetsX`". `examples/deps`, `cargo fv test --lean-link
---verified` (agent/float-stock1 ab76e3f0): 4 of 4 executables written by `attemptT` and verified
-by this checker (15,224, 16,724, 17,130 and 19,901 functions).
+"subset E with the integer contract, or `RetsX`". Its link checks are the class-aware
+`linkChksTS` (#742, "Program calls by class" below; no "calleeInt" check). `examples/deps`,
+`cargo fv test --lean-link --verified` (agent/float-stock1 ab76e3f0): 4 of 4 executables written
+by `attemptT` and verified by this checker (15,224, 16,724, 17,130 and 19,901 functions).
 
 **Results** (the ten crates of `crate-proofs/`, rebuilt: survey `cargo fv test --keep-temps`,
 `fv-demo` `cargo fv build --keep-temps`; all pass, no difference):
@@ -4288,6 +4289,25 @@ reads `f64`; #742). 4 of 4 executables verified by `binary_correct_exec_provenTS
 `attemptT` and verified (2 of 2), 39 and 40 functions left out (`compileExeT`, #616: 52 and 53),
 by cause `callRegs/blrRegs` 28, `calleeInt` 6, `indScope/indSig` (indirect calls of program
 functions with float signatures) 8 and 9, all #742.
+
+**Program calls by class (#742).** A call of a function `h` of the program (`bl`, `blr` through
+the GOT or an indirect call) passes its arguments in `h`'s parameter registers by class
+(`regLocs`: x0..x7 and v0..v7) and takes `h`'s results from its ABI return registers by class,
+`E2E.LinkCheck.sigRetRegs h.sig` (Cranelift's `compute_arg_locs` on the returns: integers in
+x0.., `f32`/`f64` in v0.., the struct pointer of an `sret` signature without returns in x0;
+x0.. for integer returns, `sigRetRegs_int`). The typed link (`FV/E2E/LinkArmT.lean`) reads them
+through `LinkSys.progXT`/`LinkSys.XT` (`progX`/`X` with `sigRetRegs` in place of x0..; the
+integer link keeps `progX`), and `LinkSys.OkT` is widened in place: `callRegs`/`blrRegs` take
+vregs of either class (`argPairsC`/`callDefsC`) and defs in `sigRetRegs`
+(`(Dc.map (·.1)).take (sigRets h.sig).length = (sigRetRegs h.sig).take Dc.length`), `calleeInt`
+is gone (the callee's `RetsOkT` gives its result registers, `RetsOkT.reg_at`), and `indSig` no
+longer has the returns conjunct (an indirect call enters a function only under `IndSigMatch`,
+which gives as many ABI returns, `IndSigMatch.sigRets_length`). The integer checkers' facts give
+the new fields (`callRegsC_of_int`, `LinkSys.blrRegsC_of_int`, with their "calleeInt" check);
+`okRWithTS` checks the class-aware form directly (`linkChksTS`: `siteOkC`/`blrOkC`, `indBC`;
+`siteOkC_sound`, `blrOkC_sound`). Generated code is unchanged. Witness
+`FVTest/Link/FloatLinkCallsT.lean` (`%f`, `%h` calling `%g (f64) -> f64` by `bl` and by `blr`
+through the GOT, `f64` arguments and results in v0; `okBTS` and `attemptT` hold).
 
 ## Contract changes taken (byte-identical)
 
