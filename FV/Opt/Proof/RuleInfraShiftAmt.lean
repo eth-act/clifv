@@ -6,15 +6,18 @@ import FV.Opt.Proof.KernelBV
 Bit-vector goals of `shifts.isle` and `spaceship.isle` rules that the general `kbv` search does not
 close, decided by targeted kernel-checked rewriting (no SAT certificates, no `Lean.ofReduceBool`):
 
-* `kbv_amt`: every shift by a bit-vector amount becomes a shift by its `toNat`
-  (`BitVec.shiftLeft_eq'`, …); the amounts (masks `x &&& (2^k - 1)`, extensions, sums and
-  differences) become `Nat` arithmetic over the operands' `toNat`s; then rotations written with two
-  shifts become `rotateLeft` (`rotl_of`, `rotl_of'`, `rotateLeft_rotateLeft'`,
-  `rotateLeft_of_mod_eq_zero`), a shift right then left becomes a mask (`shr_shl_of`, `sshr_shl_of`),
-  an arithmetic shift right undoes a shift left of an extension that keeps the sign
-  (`sshr_shl_setWidth`, `sshr_shl_signExtend`), the negated sign bit is the sign mask
-  (`neg_ushiftRight_pred`), and the remaining shifts are compared by their amounts (`congr`,
-  `omega`). The amount conditions of these lemmas are discharged by `omega`.
+* `kbv_amt`: every shift by a bit-vector amount (also CLIF's `ishl`/`ushr`/`sshr`) becomes a shift
+  by its `toNat` (`BitVec.shiftLeft_eq'`, …); the amounts (masks `x &&& (2^k - 1)`, extensions,
+  sums and differences) become `Nat` arithmetic over the operands' `toNat`s; then rotations written
+  with two shifts become `rotateLeft` (`rotl_of`, `rotl_of'`, `rotateLeft_rotateLeft'`,
+  `rotateLeft_of_mod_eq_zero`), a shift right then left, or left then right, becomes a mask
+  (`shr_shl_of`, `sshr_shl_of`, `shl_shr_of`), an arithmetic shift right undoes a shift left of an
+  extension that keeps the sign (`sshr_shl_setWidth`, `sshr_shl_signExtend`) or sign-extends a
+  zero extension shifted to the top bit (`sshr_shl_setWidth_top`), the negated sign bit is the sign
+  mask (`neg_ushiftRight_pred`), a mask moves across a shift left then right (`and_shl_shr_of`),
+  two shifts left by one amount are collected (`shl_or_shl_of`), all ones stay all ones under an
+  arithmetic shift right (`allOnes_sshiftRight`), and the remaining shifts are compared by their
+  amounts (`congr`, `omega`). The amount conditions of these lemmas are discharged by `omega`.
 * `kbv_cmp`: comparisons (`slt`, `ult`, …) as `decide`s on `toInt`/`toNat`, every `if` split, each
   case closed by evaluation or `omega`. Both use only explicit `simp only` sets, so the `@[simp]`
   lemmas of the importing module do not change them.
@@ -107,6 +110,52 @@ theorem shr_shl_of {w : Nat} (x : BitVec w) {a b : Nat} (hb : b = a) :
 
 example : 0x81#8 >>> 3 <<< 3 = 0x81#8 &&& BitVec.allOnes 8 <<< 3 := shr_shl_of _ rfl
 
+/-- Clearing the high `a` bits by shifting left then right (amounts equal up to `hb`). -/
+theorem shl_shr_of {w : Nat} (x : BitVec w) {a b : Nat} (hb : b = a) :
+    x <<< a >>> b = x &&& BitVec.allOnes w >>> a := by
+  subst hb
+  apply BitVec.eq_of_getLsbD_eq
+  intro i hi
+  simp only [BitVec.getLsbD_ushiftRight, BitVec.getLsbD_shiftLeft, BitVec.getLsbD_and,
+    BitVec.getLsbD_allOnes]
+  by_cases h : b + i < w
+  · simp [h, show ¬ b + i < b by omega, show b + i - b = i by omega, show i < w by omega]
+  · simp [h]
+
+example : 0x81#8 <<< 3 >>> 3 = 0x81#8 &&& BitVec.allOnes 8 >>> 3 := shl_shr_of _ rfl
+
+/-- A mask shifted left then right by the same amount (`b = a`) moves to the other operand. -/
+theorem and_shl_shr_of {w : Nat} (x y : BitVec w) {a b : Nat} (hb : b = a) :
+    (y &&& x <<< a) >>> b = x &&& y >>> a := by
+  subst hb
+  apply BitVec.eq_of_getLsbD_eq
+  intro i hi
+  simp only [BitVec.getLsbD_ushiftRight, BitVec.getLsbD_shiftLeft, BitVec.getLsbD_and]
+  by_cases h : b + i < w
+  · simp [h, show ¬ b + i < b by omega, show b + i - b = i by omega, show i < w by omega,
+      Bool.and_comm]
+  · simp [h, BitVec.getLsbD_of_ge y (b + i) (by omega)]
+
+example : (0x0F#8 &&& 0x81#8 <<< 3) >>> 3 = 0x81#8 &&& 0x0F#8 >>> 3 := and_shl_shr_of _ _ rfl
+
+/-- Two shifts left by the same amount (`b = a`) of a disjunction's operands. -/
+theorem shl_or_shl_of {w : Nat} (x y : BitVec w) {a b : Nat} (hb : b = a) :
+    x <<< a ||| y <<< b = (x ||| y) <<< a := by
+  subst hb; exact (BitVec.shiftLeft_or_distrib ..).symm
+
+example : 0x81#8 <<< 3 ||| 0x12#8 <<< 3 = (0x81#8 ||| 0x12#8) <<< 3 := shl_or_shl_of _ _ rfl
+
+/-- An arithmetic shift right of all ones is all ones. -/
+theorem allOnes_sshiftRight {w : Nat} (n : Nat) :
+    (BitVec.allOnes w).sshiftRight n = BitVec.allOnes w := by
+  apply BitVec.eq_of_getLsbD_eq
+  intro i hi
+  simp only [BitVec.getLsbD_sshiftRight, BitVec.getLsbD_allOnes,
+    BitVec.msb_allOnes (show 0 < w by omega)]
+  by_cases h : n + i < w <;> simp [h, hi]
+
+example : (BitVec.allOnes 8).sshiftRight 3 = BitVec.allOnes 8 := allOnes_sshiftRight 3
+
 /-- `shr_shl_of` with an arithmetic shift right. -/
 theorem sshr_shl_of {w : Nat} (x : BitVec w) {a b : Nat} (hb : b = a) :
     x.sshiftRight a <<< b = x &&& BitVec.allOnes w <<< a := by
@@ -174,6 +223,31 @@ theorem sshr_shl_signExtend {v w : Nat} (x : BitVec v) {k j : Nat} (hj : j = k) 
 example : (((0x81#8).signExtend 16) <<< 8).sshiftRight 8 = (0x81#8).signExtend 16 :=
   sshr_shl_signExtend _ rfl (by decide) (by decide)
 
+/-- An arithmetic shift right of a zero extension shifted to the top bit (`v + k = w`) is the
+sign extension (`shifts.isle:50`: `sshr (ishl (uextend x) k) k` with `k = wide - narrow`). -/
+theorem sshr_shl_setWidth_top {v w : Nat} (x : BitVec v) {k j : Nat} (hj : j = k) (h : v + k = w) :
+    ((x.setWidth w) <<< k).sshiftRight j = x.signExtend w := by
+  subst hj
+  obtain rfl | hv := Nat.eq_zero_or_pos v
+  · rw [BitVec.of_length_zero (x := x)]
+    apply BitVec.eq_of_getLsbD_eq
+    intro i _
+    simp [BitVec.getLsbD_signExtend, BitVec.msb_eq_getLsbD_last]
+  apply BitVec.eq_of_getLsbD_eq
+  intro i hi
+  rw [BitVec.getLsbD_sshiftRight, BitVec.getLsbD_signExtend]
+  by_cases h1 : j + i < w
+  · have h2 : ¬ w ≤ i := by omega
+    have h3 : ¬ j + i < j := by omega
+    have h4 : i < v := by omega
+    simp [hi, h1, h2, h3, h4, show j + i - j = i by omega]
+  · have h4 : ¬ i < v := by omega
+    simp [hi, h1, h4, BitVec.msb_eq_getLsbD_last, show w - 1 < w by omega,
+      show ¬ w - 1 < j by omega, show w - 1 - j = v - 1 by omega, show v - 1 < w by omega]
+
+example : (((0x81#8).setWidth 16) <<< 8).sshiftRight 8 = (0x81#8).signExtend 16 :=
+  sshr_shl_setWidth_top _ rfl (by decide)
+
 /-- The negated sign bit (`x >>> (w - 1)`) is the sign mask (`x.sshiftRight (w - 1)`). -/
 theorem neg_ushiftRight_pred {w n : Nat} (h : n + 1 = w) (x : BitVec w) :
     -(x >>> n) = x.sshiftRight n := by
@@ -192,7 +266,7 @@ macro "amt_congr" : tactic => `(tactic| first | rfl | omega |
 /-- Shift-amount goals (see the module docstring). -/
 macro "kbv_amt" : tactic => `(tactic| (
   intros
-  (try simp only [Option.some.injEq] at *)
+  (try simp only [Option.some.injEq, Clif.Sem.ishl, Clif.Sem.ushr, Clif.Sem.sshr] at *)
   (try subst_vars)
   (try simp (disch := decide) only [Opt.Proof.KernelBV.setWidth_eq_iff_toNat, BitVec.toNat_inj] at *)
   (try subst_vars)
@@ -206,8 +280,11 @@ macro "kbv_amt" : tactic => `(tactic| (
     Opt.Proof.KernelBV.toNat_setWidth_mod, BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_ofNat,
     BitVec.toNat_setWidth, Nat.reducePow, Nat.reduceMod, Nat.reduceAdd, Nat.reduceSub] at *)
   (try simp (disch := omega) only [Opt.Proof.ShiftAmt.rotl_of, Opt.Proof.ShiftAmt.rotl_of',
-    Opt.Proof.ShiftAmt.shr_shl_of, Opt.Proof.ShiftAmt.sshr_shl_of, Opt.Proof.ShiftAmt.sshr_shl_setWidth,
-    Opt.Proof.ShiftAmt.sshr_shl_signExtend, Opt.Proof.ShiftAmt.neg_ushiftRight_pred])
+    Opt.Proof.ShiftAmt.shr_shl_of, Opt.Proof.ShiftAmt.shl_shr_of, Opt.Proof.ShiftAmt.sshr_shl_of,
+    Opt.Proof.ShiftAmt.sshr_shl_setWidth,
+    Opt.Proof.ShiftAmt.sshr_shl_signExtend, Opt.Proof.ShiftAmt.sshr_shl_setWidth_top,
+    Opt.Proof.ShiftAmt.neg_ushiftRight_pred, Opt.Proof.ShiftAmt.and_shl_shr_of,
+    Opt.Proof.ShiftAmt.shl_or_shl_of, Opt.Proof.ShiftAmt.allOnes_sshiftRight])
   (try simp only [Opt.Proof.ShiftAmt.rotateLeft_rotateLeft'])
   (try simp (disch := omega) only [Opt.Proof.ShiftAmt.rotateLeft_of_mod_eq_zero])
   all_goals amt_congr))

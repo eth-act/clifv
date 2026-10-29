@@ -262,6 +262,21 @@ macro_rules
 
 set_option linter.unusedSimpArgs false
 
+theorem width_cases_of_ne_i128 {t : Ty} (ht : t ≠ .i128) :
+    t.width = 8 ∨ t.width = 16 ∨ t.width = 32 ∨ t.width = 64 := by
+  cases t <;> simp_all [Ty.width]
+
+/-- `imm_wcases ht b…` (`ht : t ≠ .i128`): `imm_cases t b…` by width. Once `imm_pre` has
+unfolded a helper, `t` occurs in the goal only as `t.width`, so split on its four widths
+(`f32`/`f64` are the `i32`/`i64` cases: 16 cases for two types instead of `imm_cases`' 36),
+reverting the given bit vectors. -/
+syntax "imm_wcases " ident (ppSpace ident)* : tactic
+macro_rules
+  | `(tactic| imm_wcases $ht $bs*) => `(tactic| (
+    revert $bs*
+    rcases width_cases_of_ne_i128 $ht with h | h | h | h <;> rw [h] <;> clear h <;>
+      (try simp only [Nat.reducePow, Nat.reduceSub]) <;> intro $bs*))
+
 theorem toNat_beq_zero {w : Nat} (x : BitVec w) : (x.toNat == 0) = (x == 0#w) := by
   rw [Bool.eq_iff_iff]; simp only [beq_iff_eq, BitVec.toNat_eq, BitVec.toNat_ofNat, Nat.zero_mod]
 
