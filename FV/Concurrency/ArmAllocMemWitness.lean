@@ -129,43 +129,20 @@ theorem codeOk_eq {e : Except String (List AInst)} (h : codeOk e = true) :
   · rfl
   · cases h
 
-/-- The epilogue's lines. -/
-def EL : List Line := if RF.af.frame then epilogueLines RF.af.saves RF.af.frameSize else [.ins .ret none]
-
-/-- Lines starting with `dmb ish`. -/
-def headDmb : List Line → Bool
-  | .ins .dmbish none :: _ => true
-  | _ => false
-
 /-- At the entry configuration, the Arm is at the `dmb ish` line. -/
 theorem line_of_q {s : ArmState} {m₀ : Loc → CV} {w₀ : ArmState}
     (hq : Q RF s (MConf.init RF.rf m₀ w₀)) :
     ∃ j, RF.fa.lines.toList[j]? = some (.ins .dmbish none) ∧ Arm.r .PC s = RF.pcOf j ∧
       StRel RF s m₀ w₀ := by
-  obtain ⟨j, vb, items, pre, code, ls, ps1, ps2, T, hvb, -, -, -, hcode, hls, -, hdrop, hpc, hst⟩ := hq
+  have hq' : Q RF s (.run ⟨0, (RF.rf.blocks[0]!).toList, m₀, w₀⟩) := hq
+  refine q_head wfF hq' rfl (fun _ h => by cases h) ?_
+  intro vb code hvb hcode ps ls ps' hl
   simp only [RF, act, vcF] at hvb
   cases hvb
   have hc : codeOk (itemsCode RF.fr vcF.blocks[0] RF.rf.blocks[0]!.toList) = true := by native_decide
   obtain rfl : code = [.inst .fence, .epilogueRet] :=
     Except.ok.inj ((hcode.symm.trans (codeOk_eq hc)))
-  have hl : codeLinesE RF.ctx RF.af [.inst .fence, .epilogueRet] ps1 =
-      .ok ([.ins .dmbish none] ++ (EL ++ []), ps1) := rfl
-  rw [hl] at hls
-  simp only [Except.ok.injEq, Prod.mk.injEq] at hls
-  obtain ⟨rfl, -⟩ := hls
-  have hr : headDmb (relaxLines RF.far (ftList (([.ins .dmbish none] ++ (EL ++ [])) ++ nxtOf RF.af 0))) =
-    true := by native_decide
-  refine ⟨j, ?_, hpc, hst⟩
-  have := congrArg (·[0]?) hdrop
-  simp only [List.getElem?_drop, RL.L, Nat.add_zero] at this
-  rw [this]
-  revert hr
-  generalize relaxLines RF.far (ftList (([.ins .dmbish none] ++ (EL ++ [])) ++ nxtOf RF.af 0)) = X
-  intro hr
-  unfold headDmb at hr
-  split at hr
-  · rfl
-  · cases hr
+  exact codeLinesE_head_fence hl
 
 /-- **Non-vacuity of `exists_prun_line`, a precise run with a memory event**: from the
 `Q`-related state after the prologue, for every monitor, the Arm's one-step precise run through

@@ -586,7 +586,9 @@ theorem prologue_fields {R : RL} (hR : R.Wf) {ra : BitVec 64}
   obtain ⟨-, hfs, -, hsv, -, hcb, -, -, -⟩ := RL.frame_facts hR
   have hst0 := hR.stack.frame
   have hs : R.af.frameSize < 2 ^ 64 := by have := hst0.1; omega
-  obtain ⟨vb, items, code, ls, ps1, ps2, T, hvb, hit, hcode, hls, htr, hj0, hdrop⟩ := entry_block hR
+  obtain ⟨vb, items, code, ps1, pl, X, psm, ps2, x, hvb, hit, hcode, hX, hT, htr, hpl0, hj0,
+    hdrop, hx, hsc⟩ := entry_block hR
+  subst hpl0
   obtain ⟨s', hsteps, -, -, ho', -⟩ :=
     prologue_ok (R.envOf 1) hs hsv (by rw [hfs]; exact hcb) R.s0 hent.spAligned
   have hpc1 : Arm.r .PC R.s0 = R.pcOf 1 := by

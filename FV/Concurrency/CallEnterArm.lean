@@ -36,7 +36,7 @@ structure LFn.Static (F : LFn) : Prop where
   layout : F.fa.layout = .ok F.fb
   lm : labelOffsets F.fa.lines = .ok F.lm
   fit : 4 * F.fb.words.size ≤ 2 ^ 64
-  psF : ∃ body, blocksLinesE ⟨F.fa.k, F.af.slotBase⟩ F.af F.af.blocks.toList {} = .ok (body, F.psF)
+  psF : ∃ p, emitPlan F.fa.k F.af = .ok p ∧ p.ps = F.psF
   entryArg : ∀ r, F.vc.EntryArg r → r.isArgReg = true
 
 /-- **The state after the prologue does not depend on the activation's hooks**: the prologue's
@@ -61,6 +61,23 @@ theorem _root_.Backend.Proof.StRel.hooks {R : RL} (H : ArmHooks)
       Arm.read_mem_bytes R.topN R.topB ({ R with H := H } : RL).sP
     rw [hP]; exact h.fplr hf, h.code, h.gkeep, h.fp⟩
 
+/-- `Qs` does not depend on the activation's hooks (see `Q.hooks`). -/
+theorem _root_.Backend.Proof.Qs.hooks {R : RL} (H : ArmHooks)
+    (hP : ({ R with H := H } : RL).sP = R.sP) {s : ArmState} {b : Nat} {its : List RItem}
+    {m : Loc → CV} {w : ArmState} (h : Qs R s b its m w) : Qs { R with H := H } s b its m w := by
+  obtain ⟨j, vb, items, pre, code, X, ps1, psm, ps2, x, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10,
+    hst, h12, h13⟩ := h
+  exact ⟨j, vb, items, pre, code, X, ps1, psm, ps2, x, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10,
+    hst.hooks H hP, h12, h13⟩
+
+/-- `QE` does not depend on the activation's hooks (see `Q.hooks`). -/
+theorem _root_.Backend.Proof.QE.hooks {R : RL} (H : ArmHooks)
+    (hP : ({ R with H := H } : RL).sP = R.sP) {s : ArmState} {m : Loc → CV} {w : ArmState}
+    {b : Nat} (h : QE R s m w b) : QE { R with H := H } s m w b := by
+  induction h with
+  | std hit hq => exact .std hit (hq.hooks H hP)
+  | fwd a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 _ ih => exact .fwd a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 ih
+
 /-- **`Q` does not depend on the activation's hooks** (e.g. a function's activation on the linked
 machine and on a per-function machine), given that the state after the prologue does not
 (`RL.sP_hooks`; see `StRel.hooks`). -/
@@ -68,9 +85,8 @@ theorem _root_.Backend.Proof.Q.hooks {R : RL} (H : ArmHooks)
     (hP : ({ R with H := H } : RL).sP = R.sP) {s : ArmState}
     {c : MConf CV ArmState} (h : Q R s c) : Q { R with H := H } s c := by
   match c, h with
-  | .run ⟨b, its, m, w⟩, ⟨j, vb, items, pre, code, ls, ps1, ps2, T, h1, h2, h3, h4, h5, h6, h7, h8,
-      h9, hst⟩ => exact ⟨j, vb, items, pre, code, ls, ps1, ps2, T, h1, h2, h3, h4, h5, h6, h7, h8,
-      h9, hst.hooks H hP⟩
+  | .run ⟨b, its, m, w⟩, .inl h => exact .inl (h.hooks H hP)
+  | .run ⟨b, its, m, w⟩, .inr ⟨items, hit, hits, he⟩ => exact .inr ⟨items, hit, hits, he.hooks H hP⟩
   | .ret .., _ => trivial
   | .halt _, _ => trivial
 
@@ -94,8 +110,8 @@ theorem step_call (hL : L.Ok) {nA nB : String} {FA FB : LFn} (hA : (nA, FA) ∈ 
     (hd : info.dest = .sym nB) :
     L.M x = enter FB x ∧ stepEvs x = [] ∧ cls x = .plain := by
   have hst := q_stRel hq
-  obtain ⟨-, -, -, regs, i', -, -, -, -, -, -, -, -, -, -, -, hal, -, -, hasg, -⟩ :=
-    q_op hq hvb hi
+  obtain ⟨-, -, -, regs, i', -, -, -, -, -, -, -, -, -, -, -, -, hal, -, -, hasg, -⟩ :=
+    q_op hRA hq hvb hi (lt_size_of_not_term hRA hvb hi rfl)
   obtain ⟨j, xx, t, hj, hx, hpc⟩ := callAt_of_q hq hvb hi call_hcall regs i' hal hasg
   obtain ⟨ic, rfl, hsym, -⟩ := assign_call hasg
   have hicd := hsym nB hd

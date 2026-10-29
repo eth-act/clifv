@@ -1,6 +1,6 @@
 import FV.Link.ExeTotal
 import FV.Link.ImageProof
-import FV.E2E.RegLevelFrame
+import FV.Link.EntryLines
 
 /-! # The executable compiler is total on decidable input conditions (L1e)
 
@@ -79,29 +79,10 @@ theorem words_pos_of {vcp : VCode} {rf : RFunc} {af : AFunc} {k : Nat} {fa : FnA
   obtain ⟨vb, hvb⟩ : ∃ vb, vcp.blocks[0]? = some vb := ⟨_, Array.getElem?_eq_getElem h0⟩
   obtain ⟨items, hit⟩ : ∃ items, rf.blocks[0]? = some items :=
     ⟨_, Array.getElem?_eq_getElem (by rw [hc'.size]; exact h0)⟩
-  have hframe := lowerRFunc_frame hal
-  obtain ⟨⟨-, -, -, hbl⟩, -⟩ := lowerRFunc_ok hal
-  obtain ⟨code, -, haf⟩ := hbl 0 vb items hvb hit
-  obtain ⟨body, psF, -, -, hblk⟩ := emit_block hem
-  obtain ⟨j0, lsA, ps1, ps2, T, -, hdrop, hls, -, -⟩ := hblk 0 _ _ haf
-  simp only [ite_true] at hls
-  obtain ⟨ls1, ls2, psm, h1, h2, rfl⟩ := Backend.Proof.codeLinesE_append _ _ _ _ _ hls
-  simp only [codeLinesE, ainstLines, hframe, ite_true, bind, Except.bind, pure, Except.pure,
-    List.append_nil, Except.ok.injEq, Prod.mk.injEq] at h1
-  obtain ⟨rfl, rfl⟩ := h1
-  have hZ : ∀ n, (ls2 ++ Backend.nxtOf af 0)[1]? ≠ some (.label (.trap n)) := by
-    intro n e
-    have hm := List.mem_of_getElem? e
-    rcases List.mem_append.1 hm with hm | hm
-    · exact Backend.Proof.codeLinesE_noTrap _ _ _ _ h2 _ hm n rfl
-    · simp only [Backend.nxtOf] at hm
-      split at hm <;> simp at hm
-  rw [List.append_assoc, ftR_plain_append _ _ _ (fun ln h => by
-    obtain ⟨_, _, _, hp⟩ := Backend.Proof.prologueLines_ins _ _ ln h; exact hp) hZ] at hdrop
+  obtain ⟨-, -, -, -, hd⟩ := EhCheck.Complete.entry_static hal hem hvb hit
   have hmem : Line.ins (.stp Reg.fp Reg.lr (.spPreIndexed (-16))) ∈ fa.lines.toList := by
-    apply List.mem_of_mem_drop (i := j0 + 1)
-    rw [hdrop]
-    simp [prologueLines]
+    apply List.mem_of_mem_drop (i := 1)
+    exact hd.subset (by simp [prologueLines])
   have hs := Backend.Proof.layout_sum hla
   have := le_sum_of_mem (List.mem_map_of_mem (f := Line.size) hmem)
   simp only [Line.size] at this

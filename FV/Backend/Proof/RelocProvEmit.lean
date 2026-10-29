@@ -432,61 +432,152 @@ theorem codeLinesE_ok {f : Clif.Function} {c : FnCtx} {af : AFunc} :
         · exact ainstLines_ok (fun m e => hc m (by rw [← e]; exact List.mem_cons_self ..)) hr ln h1
         · exact codeLinesE_ok as _ _ _ (fun m hm => hc m (List.mem_cons_of_mem _ hm)) hr2 ln h1
 
-theorem blocksLinesE_ok {f : Clif.Function} {c : FnCtx} {af : AFunc} :
-    ∀ (bs : List (Label × Array AInst)) (ps ps' : PState) (ls : List Line),
-      (∀ x ∈ bs, CodeOk f x.2.toList) →
-      blocksLinesE c af bs ps = .ok (ls, ps') → ∀ ln ∈ ls, LnOk f ln
-  | [], ps, ps', ls, _, h => by
-    simp only [blocksLinesE, pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at h
-    obtain ⟨rfl, -⟩ := h; simp
-  | (l, code) :: bs, ps, ps', ls, hc, h => by
-    simp only [blocksLinesE, bind, Except.bind] at h
-    split at h
-    · cases h
-    · rename_i r hr
-      split at h
-      · cases h
-      · rename_i r2 hr2
-        simp only [pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at h
-        obtain ⟨rfl, -⟩ := h
-        intro ln hln
-        simp only [List.cons_append, List.mem_cons, List.mem_append] at hln
-        rcases hln with rfl | h1 | h1
-        · exact trivial
-        · exact codeLinesE_ok _ _ _ _ (hc _ (List.mem_cons_self ..)) hr ln h1
-        · exact blocksLinesE_ok bs _ _ _ (fun x hx => hc x (List.mem_cons_of_mem _ hx)) hr2 ln h1
+theorem segsOf_ok {f : Clif.Function} {c : FnCtx} {af : AFunc} :
+    ∀ {bs : List ((Label × Array AInst) × Nat)} {ps ps' : PState} {ss : List Seg},
+      (∀ x ∈ bs, CodeOk f x.1.2.toList) → segsOf c af bs ps = .ok (ss, ps') →
+      ∀ ln ∈ segLines ss (ss.map (·.term)), LnOk f ln
+  | [], ps, ps', ss, _, h => by
+    simp only [segsOf, pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at h
+    obtain ⟨rfl, -⟩ := h
+    intro ln hln; cases hln
+  | ((l, code), j) :: bs, ps, ps', ss, hc, h => by
+    simp only [segsOf] at h
+    obtain ⟨⟨l1, ps1⟩, h1, h⟩ := exceptBind_ok h
+    obtain ⟨⟨l2, ps2⟩, h2, h⟩ := exceptBind_ok h
+    obtain ⟨⟨l3, ps3⟩, h3, h⟩ := exceptBind_ok h
+    simp only [pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at h
+    obtain ⟨rfl, -⟩ := h
+    have hc0 := hc _ (List.mem_cons_self ..)
+    intro ln hln
+    simp only [List.map_cons, segLines, List.cons_append, List.mem_cons, List.mem_append] at hln
+    rcases hln with rfl | (hln | hln) | hln
+    · exact trivial
+    · exact codeLinesE_ok _ _ _ _ (fun m hm => hc0 m ((List.dropLast_sublist _).subset hm)) h1 ln hln
+    · exact codeLinesE_ok _ _ _ _
+        (fun m hm => hc0 m (EmitLabels.mem_of_getLast?_toList hm)) h2 ln hln
+    · exact segsOf_ok (fun x hx => hc x (List.mem_cons_of_mem _ hx)) h3 ln hln
 
-theorem trapLines_ok {f : Clif.Function} (ts : List (Lbl × Clif.TrapCode)) :
-    ∀ ln ∈ trapLines ts, LnOk f ln := by
+theorem trapLines_ok {f : Clif.Function} (ps : PState) :
+    ∀ ln ∈ trapLines ps, LnOk f ln := by
   intro ln hln
   simp only [trapLines, List.mem_flatMap, List.mem_cons, List.not_mem_nil, or_false] at hln
   obtain ⟨p, -, rfl | rfl⟩ := hln <;> exact trivial
 
-theorem ftList_ok {f : Clif.Function} : ∀ (n : Nat) (L : List Line), L.length ≤ n →
-    (∀ ln ∈ L, LnOk f ln) → ∀ ln ∈ ftList L, LnOk f ln
-  | _, [], _, _ => by simp [ftList]
-  | n + 1, ln :: rest, hn, h => by
-    rw [ftList_cons]
-    have hrest : ∀ k, ∀ x ∈ (ln :: rest).drop k, LnOk f x :=
-      fun k x hx => h x (List.mem_of_mem_drop hx)
-    rcases ftStep_cases ln rest[0]? rest[1]? with he | ⟨x, l, rfl, h1, he⟩ | ⟨c, e, l, rfl, hc, h1, h2, he⟩
-    · rw [he]
-      intro y hy
-      rcases List.mem_append.1 hy with hy | hy
-      · simp only [List.mem_singleton] at hy; subst hy; exact h _ (List.mem_cons_self ..)
-      · exact ftList_ok n _ (by simp at hn ⊢; omega) (hrest 1) y hy
-    · rw [he]
-      intro y hy
-      simp only [List.nil_append] at hy
-      exact ftList_ok n _ (by simp at hn ⊢; omega) (hrest 1) y hy
-    · rw [he]
-      intro y hy
-      rcases List.mem_append.1 hy with hy | hy
-      · simp only [List.mem_singleton] at hy; subst hy
-        exact insnOk_invertTo e (h _ (List.mem_cons_self ..))
-      · cases rest with
-        | nil => simp at h1
-        | cons _ _ => exact ftList_ok n _ (by simp at hn ⊢; omega) (hrest 2) y hy
+theorem insnOk_setTarget {f : Clif.Function} {c : Insn} (t : Lbl) (h : InsnOk f c) :
+    InsnOk f (c.setTarget t) := by
+  cases c <;> first | exact h | exact trivial
+
+theorem relabel_ok {f : Clif.Function} (F : Lbl → Lbl) {ln : Line} (h : LnOk f ln) :
+    LnOk f (ln.relabel F) := by
+  cases ln with
+  | ins c tc =>
+    simp only [Line.relabel]
+    split
+    · exact insnOk_setTarget _ h
+    · exact h
+  | word _ _ => exact trivial
+  | label _ => exact trivial
+
+theorem step_ok {f : Clif.Function} (allLabels : Bool) (m m' : MBuf)
+    (hm : ∀ ln ∈ m.out.toList, LnOk f ln) (h : MBuf.step allLabels m = some m') :
+    ∀ ln ∈ m'.out.toList, LnOk f ln := by
+  obtain ⟨k, ln, t, -, -, -, hc⟩ := step_cases allLabels m m' h
+  have hE : ∀ ln ∈ (m.erase k).toList, LnOk f ln := fun y hy => by
+    simp only [MBuf.erase, List.toList_toArray] at hy
+    exact hm y (List.mem_of_mem_eraseIdx hy)
+  rcases hc with ⟨ho, -⟩ | ⟨ho, -⟩ | ⟨p, c, tc, ct, hpk, hp, hct, -, ho, -⟩
+  · rw [ho]; exact hE
+  · rw [ho]; exact hm
+  · rw [ho, Array.set!, Array.toList_setIfInBounds]
+    intro y hy
+    rcases List.mem_or_eq_of_mem_set hy with hy | hy
+    · exact hE y hy
+    · subst hy
+      exact insnOk_invertTo _ (hm _ (List.mem_of_getElem?
+        (by simpa using hp : m.out.toList[p]? = some (Line.ins c tc))))
+
+theorem optimize_ok {f : Clif.Function} (allLabels : Bool) (m : MBuf)
+    (hm : ∀ ln ∈ m.out.toList, LnOk f ln) :
+    ∀ ln ∈ (MBuf.optimize allLabels m).out.toList, LnOk f ln := by
+  unfold MBuf.optimize
+  simp only [Id.run, Std.Legacy.Range.forIn_eq_forIn_range']
+  refine mbForIn_inv (P := fun m' : MBuf => ∀ ln ∈ m'.out.toList, LnOk f ln) _ _ _ hm ?_
+  intro _ s hs
+  split
+  · rename_i m' h; exact step_ok _ _ _ hs h
+  · exact hs
+
+/-- `MachBuffer`'s simplification keeps the references: it removes lines, inverts conditional
+branches and retargets branches. -/
+theorem machBuf_ok {f : Clif.Function} (allLabels : Bool) (ls : List Line)
+    (h : ∀ ln ∈ ls, LnOk f ln) : ∀ ln ∈ (machBuf allLabels ls).1, LnOk f ln := by
+  have hfold : ∀ (L : List Line) (m : MBuf), (∀ ln ∈ L, LnOk f ln) →
+      (∀ ln ∈ m.out.toList, LnOk f ln) →
+      ∀ ln ∈ (L.foldl (fun m ln =>
+        let m := { m with out := m.out.push ln }
+        if ln matches .label _ then m.optimize allLabels else m) m).out.toList, LnOk f ln := by
+    intro L
+    induction L with
+    | nil => intro m _ hm; exact hm
+    | cons ln L ih =>
+      intro m hL hm
+      rw [List.foldl_cons]
+      apply ih _ (fun y hy => hL y (List.mem_cons_of_mem _ hy))
+      have hp : ∀ y ∈ (m.out.push ln).toList, LnOk f y := by
+        rw [Array.toList_push]
+        intro y hy
+        rcases List.mem_append.1 hy with hy | hy
+        · exact hm y hy
+        · simp only [List.mem_singleton] at hy; subst hy; exact hL _ (List.mem_cons_self ..)
+      split
+      · exact optimize_ok _ _ hp
+      · exact hp
+  unfold machBuf
+  dsimp only
+  intro y hy
+  obtain ⟨ln, hln, rfl⟩ := List.mem_map.1 hy
+  exact relabel_ok _ (optimize_ok allLabels _ (hfold ls {} h (fun _ h => by simp at h)) ln hln)
+
+/-- **The emission plan's lines are `LnOk f`** when the allocated code's instructions have their
+references in `f`. -/
+theorem emitPlan_lnOk {f : Clif.Function} {k : Nat} {af : AFunc} {p : Plan}
+    (hc : ∀ x ∈ af.blocks.toList, CodeOk f x.2.toList) (h : emitPlan k af = .ok p) :
+    ∀ ln ∈ p.lines, LnOk f ln := by
+  have hz : af.blocks.toList.zipIdx.map (·.1) = af.blocks.toList := by
+    rw [List.zipIdx_eq_zip_range', List.map_fst_zip (by simp)]
+  have hraw := segsOf_ok (f := f) (fun x hx => hc x.1 (by
+    rw [← hz]; exact List.mem_map.2 ⟨x, (emitOrder_perm af).mem_iff.mp hx, rfl⟩))
+    (emitPlan_spec h).1
+  have hseg : ∀ ln ∈ segLines p.segs p.outs, LnOk f ln := by
+    unfold emitPlan at h
+    simp only [bind, Except.bind] at h
+    split at h
+    · cases h
+    rename_i r hr
+    obtain ⟨ss, ps⟩ := r
+    dsimp only at h
+    split at h
+    · rename_i p1 h1
+      simp only [pure, Except.pure, Except.ok.injEq] at h
+      subst h
+      have h1' : machPlan af true ss ps = some p1 ∨ machPlan af false ss ps = some p1 := by
+        cases e : machPlan af true ss ps with
+        | some q => rw [e] at h1; simp only [Option.orElse] at h1; exact .inl h1
+        | none => rw [e] at h1; simp only [Option.orElse] at h1; exact .inr h1
+      rcases h1' with h1' | h1' <;>
+      · obtain ⟨hs, hsp⟩ := machPlan_split h1'
+        rw [hs] at hraw ⊢
+        rw [splitSegs_lines _ _ _ hsp]
+        exact machBuf_ok _ _ hraw
+    · split at h
+      · simp only [pure, Except.pure, Except.ok.injEq] at h
+        subst h
+        exact hraw
+      · cases h
+  intro ln hln
+  rcases List.mem_append.1 hln with h1 | h1
+  · exact hseg ln h1
+  · exact trapLines_ok _ ln h1
 
 theorem relaxLines_ok {f : Clif.Function} (F : Lbl → Bool) : ∀ (L : List Line),
     (∀ ln ∈ L, LnOk f ln) → ∀ ln ∈ relaxLines F L, LnOk f ln
@@ -515,13 +606,9 @@ references in `f`. -/
 theorem emitFunc_lnOk {f : Clif.Function} {k : Nat} {af : AFunc} {fa : FnAsm}
     (hc : ∀ x ∈ af.blocks.toList, CodeOk f x.2.toList) (h : emitFunc k af = .ok fa) :
     ∀ ln ∈ fa.lines.toList, LnOk f ln := by
-  obtain ⟨body, ps, hb, hl, -⟩ := emitFunc_ok h
+  obtain ⟨p, hp, hl, -⟩ := emitFunc_ok h
   rw [hl]
-  refine relaxLines_ok _ _ ?_
-  intro ln hln
-  rcases List.mem_append.1 hln with h1 | h1
-  · exact ftList_ok _ _ (Nat.le_refl _) (blocksLinesE_ok _ _ _ _ hc hb) ln h1
-  · exact trapLines_ok _ ln h1
+  exact relaxLines_ok _ _ (emitPlan_lnOk hc hp)
 
 /-! ## Layout -/
 
