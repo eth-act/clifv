@@ -90,13 +90,13 @@ theorem ftBody_eq {lines : Array Line} {out : Array Line} {i : Nat} (hi : i < li
   generalize lines[i + 2]? = n2
   split
   · split
-    · simp
+    · simp_all
     · split
-      · split <;> simp
-      · simp
+      · split <;> simp_all
+      · simp_all
   · split
-    · split <;> simp
-    · simp
+    · split <;> simp_all
+    · simp_all
 
 theorem ftList_cons (ln : Line) (rest : List Line) :
     ftList (ln :: rest) = (ftStep ln rest[0]? rest[1]?).1 ++
@@ -361,7 +361,7 @@ theorem emitPre_ok {k : Nat} {af : AFunc} {pre : Array Line} (h : emitPre k af =
 /-! ## `lowerRFunc` as structural functions -/
 
 /-- `lowerRFunc`'s loop body on one item (appending to `code`). -/
-def itemStep (fr : RAFrame) (vb : VBlock) (code : Array AInst) : RItem → Except String (Array AInst)
+@[expose] def itemStep (fr : RAFrame) (vb : VBlock) (code : Array AInst) : RItem → Except String (Array AInst)
   | .move src dst => do
     let l ← fr.moveInsts src dst
     pure (code ++ l.toArray)

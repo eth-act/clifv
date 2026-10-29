@@ -225,7 +225,7 @@ def read_base_gpr (idx : BitVec 5) (s : ArmState) : BitVec 64 :=
   read_store idx s.gpr
 
 -- Write `val` to the `idx`-th GPR (with idx = 31 indexing the SP).
-def write_base_gpr (idx : BitVec 5) (val : BitVec 64) (s : ArmState)
+@[expose] def write_base_gpr (idx : BitVec 5) (val : BitVec 64) (s : ArmState)
   : ArmState :=
     let new_gpr := write_store idx val s.gpr
     { s with gpr := new_gpr }
@@ -235,7 +235,7 @@ def write_base_gpr (idx : BitVec 5) (val : BitVec 64) (s : ArmState)
 def read_base_sfp (idx : BitVec 5) (s : ArmState) : BitVec 128 :=
     read_store idx s.sfp
 
-def write_base_sfp (idx : BitVec 5) (val : BitVec 128) (s : ArmState) : ArmState :=
+@[expose] def write_base_sfp (idx : BitVec 5) (val : BitVec 128) (s : ArmState) : ArmState :=
    let new_sfp := write_store idx val s.sfp
    { s with sfp := new_sfp }
 
@@ -244,7 +244,7 @@ def write_base_sfp (idx : BitVec 5) (val : BitVec 128) (s : ArmState) : ArmState
 def read_base_pc (s : ArmState) : BitVec 64 :=
   s.pc
 
-def write_base_pc (val : BitVec 64) (s : ArmState) : ArmState :=
+@[expose] def write_base_pc (val : BitVec 64) (s : ArmState) : ArmState :=
   { s with pc := val }
 
 -- PState --
@@ -264,7 +264,7 @@ def read_base_flag (flag : PFlag) (s : ArmState) : BitVec 1 :=
   | C => pstate.c
   | V => pstate.v
 
-def write_base_flag (flag : PFlag) (val : BitVec 1) (s : ArmState) : ArmState :=
+@[expose] def write_base_flag (flag : PFlag) (val : BitVec 1) (s : ArmState) : ArmState :=
   open PFlag in
   let pstate := s.pstate
   let new_pstate :=
@@ -290,7 +290,7 @@ def fetch_inst (addr : BitVec 64) (s : ArmState) : Option (BitVec 32) :=
 def read_base_error (s : ArmState) : StateError :=
   s.error
 
-def write_base_error (val : StateError) (s : ArmState) : ArmState :=
+@[expose] def write_base_error (val : StateError) (s : ArmState) : ArmState :=
   { s with error := val }
 
 ----------------------------------------------------------------------
@@ -371,7 +371,7 @@ attribute [state_simp_rules] StateField.GPR.injEq
 attribute [state_simp_rules] StateField.SFP.injEq
 attribute [state_simp_rules] StateField.FLAG.injEq
 
-@[reducible]
+@[expose, reducible]
 def state_value (fld : StateField) : Type :=
   open StateField in
   match fld with
@@ -382,7 +382,7 @@ def state_value (fld : StateField) : Type :=
   | ERR     => StateError
   | TPIDR   => BitVec 64
 
-@[irreducible]
+@[expose, irreducible]
 def r (fld : StateField) (s : ArmState) : (state_value fld) :=
   open StateField in
   match fld with
@@ -444,7 +444,7 @@ def ArmState.r_FLAG_Z_eq_Z (s : ArmState) : r (StateField.FLAG PFlag.Z) s = s.Z 
 def ArmState.r_FLAG_N_eq_N (s : ArmState) : r (StateField.FLAG PFlag.N) s = s.N := rfl
 
 
-@[irreducible]
+@[expose, irreducible]
 def w (fld : StateField) (v : (state_value fld)) (s : ArmState) : ArmState :=
   open StateField in
   match fld with
@@ -734,7 +734,7 @@ However, due to layering violations with `Arm/MemoryProofs.lean`, we currently k
 We don't add the simp attribute to read/write_mem_bytes. Instead,
 we prove and export properties about their (non)interference.
 -/
-def read_mem_bytes (n : Nat) (addr : BitVec 64) (s : ArmState) : BitVec (n * 8) :=
+@[expose] def read_mem_bytes (n : Nat) (addr : BitVec 64) (s : ArmState) : BitVec (n * 8) :=
   match n with
   | 0 => 0#0
   | n' + 1 =>
@@ -743,11 +743,11 @@ def read_mem_bytes (n : Nat) (addr : BitVec 64) (s : ArmState) : BitVec (n * 8) 
     (rest ++ byte).cast (by omega)
 
 /-- We export write_mem_bytes, not write_mem. FIXME: make private. -/
-def write_mem (addr : BitVec 64) (val : BitVec 8) (s : ArmState) : ArmState :=
+@[expose] def write_mem (addr : BitVec 64) (val : BitVec 8) (s : ArmState) : ArmState :=
   let new_mem := write_store addr val s.mem
   { s with mem := new_mem }
 
-def write_mem_bytes (n : Nat) (addr : BitVec 64) (val : BitVec (n * 8)) (s : ArmState) : ArmState :=
+@[expose] def write_mem_bytes (n : Nat) (addr : BitVec 64) (val : BitVec (n * 8)) (s : ArmState) : ArmState :=
   match n with
   | 0 => s
   | n' + 1 =>
@@ -899,7 +899,7 @@ theorem ArmState.mem_w_eq_mem (fld : StateField) (v : state_value fld) (s : ArmS
 /--
 A variant of `write_mem` that directly talks about writes to memory, instead of over the entire `ArmState`
 -/
-def Memory.write (addr : BitVec 64) (val : BitVec 8) (m : Memory) : Memory :=
+@[expose] def Memory.write (addr : BitVec 64) (val : BitVec 8) (m : Memory) : Memory :=
   write_store addr val m
 
 @[state_simp_rules]
@@ -909,7 +909,7 @@ namespace Memory
 
 theorem getLsbD_read (mem : Memory) : (mem.read addr).getLsbD i = (mem addr).getLsbD i := rfl
 
-def read_bytes (n : Nat) (addr : BitVec 64) (m : Memory) : BitVec (n * 8) :=
+@[expose] def read_bytes (n : Nat) (addr : BitVec 64) (m : Memory) : BitVec (n * 8) :=
   match n with
   | 0 => 0#0
   | n' + 1 =>
@@ -1020,7 +1020,7 @@ theorem write_of_neq {m : Memory} (hix : ix ≠ addr) : m.write addr val ix = m 
   apply store_read_over_write_different
   assumption
 
-def write_bytes (n : Nat) (addr : BitVec 64)
+@[expose] def write_bytes (n : Nat) (addr : BitVec 64)
     (val : BitVec (n * 8)) (m : Memory) : Memory :=
   match n with
   | 0 => m
