@@ -136,7 +136,7 @@ theorem wf_of {vc : VCode} {rf : RFunc}
       have hp1 : p.1.toNat = 0x10000 + 4 * j := by
         rw [he]; simp only [Nat.zero_add, BitVec.toNat_add, BitVec.toNat_ofNat]; omega
       exact room_of (by omega) (by omega) (by omega) hd
-    · exact (probeBelow_small (by omega)).le
+    · exact Nat.le_of_eq (probeBelow_small (af := (act vc rf).af) (by omega))
   psF := ok_snd hps
   prog0 := entry_program _ _
   gfree := fun _ h => h.elim
@@ -232,7 +232,7 @@ theorem wf_ofAt {sp base : BitVec 64} (hsp1 : 0x1000 ≤ sp.toNat) (hsp2 : sp.to
       exact room_ofAt (by show (act vc rf).af.frameSize + 16 + 0 ≤ _; omega)
         (by show (act vc rf).af.frameSize + 16 + 0 ≤ _; omega) hsp2 hb1 hb2 (by omega)
         (by omega) hd
-    · exact (probeBelow_small (show (act vc rf).af.frameSize + 16 < 4096 by omega)).le
+    · exact Nat.le_of_eq (probeBelow_small (show (act vc rf).af.frameSize + 16 < 4096 by omega))
   psF := ok_snd hps
   prog0 := entryAt_program _ _ _
   gfree := fun _ h => h.elim
