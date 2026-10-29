@@ -223,9 +223,9 @@ theorem correct_32 : CrateStmtCleanup input "cleanup_split_29" :=
   crate_correct_cleanup okB_input _
 
 /-- **The stack bound** (`FV/E2E/DeadCleanupStackBound.lean`): the program's call graph has no cycle, and an
-activation of any of its functions uses at most 224 bytes of stack with its callees
+activation of any of its functions uses at most 160 bytes of stack with its callees
 (`DeadCleanupStackBound.stackFn_le`). -/
-theorem stack_ok : DeadCleanupStackBound.stackB input = some 224 := by native_decide
+theorem stack_ok : DeadCleanupStackBound.stackB input = some 160 := by native_decide
 
 /-- **`backend_correct_program_stack` for `codeB`**: at every fuel, with the stack bound. -/
 theorem correct_stack_0 : DeadCleanupStackBound.StackStmt input "codeB" :=
