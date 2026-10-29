@@ -10,7 +10,7 @@ public import FV.Arm.State
 public import FV.Arm.Tactics.Common
 public import FV.Arm.Tactics.Sym.ProgramInfo
 
-@[expose] public section
+@[expose] public meta section
 
 namespace Arm
 
@@ -20,7 +20,7 @@ open Elab.Tactic Elab.Term
 initialize
   Lean.registerTraceClass `Sym.reduceFetchInst
 
-meta def reduceFetchInst? (addr : _root_.BitVec 64) (s : Expr) :
+def reduceFetchInst? (addr : _root_.BitVec 64) (s : Expr) :
     MetaM (_root_.BitVec 32 × Expr) := do
   let ⟨programHyp, program⟩ ← findProgramHyp s
   let programInfo ← try ProgramInfo.lookupOrGenerate program catch err =>

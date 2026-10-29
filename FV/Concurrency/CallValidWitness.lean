@@ -2,6 +2,7 @@ module
 
 public import FV.Concurrency.CallValid
 public import FV.Concurrency.ClifThreadIWitness
+public meta import FV.Concurrency.ClifThreadIWitness
 
 @[expose] public section
 

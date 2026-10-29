@@ -3,8 +3,9 @@ module
 public import Lean
 public import FV.DSL.Check
 public meta import FV.DSL.Ty
+public meta import FV.DSL.Syntax
 
-@[expose] public section
+@[expose] public meta section
 
 /-!
 # The `flat def` command
@@ -42,7 +43,7 @@ abbrev U64 := BitVec 64
 infixl:70 " /? " => DSL.Ops.udiv
 infixl:70 " %? " => DSL.Ops.urem
 
-meta def Ty.surface : Ty → String
+def Ty.surface : Ty → String
   | .int w => s!"BitVec {w.bits}"
   | .bool => "Bool"
   | .unit => "Unit"
@@ -103,10 +104,10 @@ structure Scope where
 
 def Scope.depth (sc : Scope) : Nat := sc.vars.size
 def Scope.push (sc : Scope) (v : LVar) : Scope := { sc with vars := sc.vars.push v }
-meta def Scope.setMoved (sc : Scope) (lvl : Nat) (b : Bool) : Scope :=
+def Scope.setMoved (sc : Scope) (lvl : Nat) (b : Bool) : Scope :=
   { sc with vars := sc.vars.modify lvl fun v => { v with moved := b } }
 
-meta def Scope.lookup? (sc : Scope) (n : Name) : Option (Nat × LVar) := Id.run do
+def Scope.lookup? (sc : Scope) (n : Name) : Option (Nat × LVar) := Id.run do
   let mut i := sc.vars.size
   while i > 0 do
     i := i - 1
@@ -116,20 +117,20 @@ meta def Scope.lookup? (sc : Scope) (n : Name) : Option (Nat × LVar) := Id.run 
 def Scope.rename (sc : Scope) (lvl : Nat) (n : Name) (isMut : Bool) : Scope :=
   { sc with vars := sc.vars.modify lvl fun v => { v with name := n, isMut } }
 
-meta def tmpName (lvl : Nat) : Name := Name.mkSimple s!"_t{lvl}"
+def tmpName (lvl : Nat) : Name := Name.mkSimple s!"_t{lvl}"
 
 /-! ## Types -/
 
-meta def widthOf? : Nat → Option IntW
+def widthOf? : Nat → Option IntW
   | 8 => some .w8
   | 16 => some .w16
   | 32 => some .w32
   | 64 => some .w64
   | _ => none
 
-meta def numLit? (stx : Syntax) : Option Nat := stx.isNatLit?
+def numLit? (stx : Syntax) : Option Nat := stx.isNatLit?
 
-meta partial def parseTy (t : Term) : TermElabM Ty := do
+partial def parseTy (t : Term) : TermElabM Ty := do
   match t with
   | `(($t)) => parseTy t
   | `($a × $b) => return .prod (← parseTy a) (← parseTy b)
@@ -159,15 +160,15 @@ meta partial def parseTy (t : Term) : TermElabM Ty := do
     | _ => throwErrorAt t "flat def: unsupported type `{t}`"
   | _ => throwErrorAt t "flat def: unsupported type `{t}`"
 
-meta def num (n : Nat) : Term := Syntax.mkNumLit (toString n)
+def num (n : Nat) : Term := Syntax.mkNumLit (toString n)
 
-meta def wStx : IntW → TermElabM Term
+def wStx : IntW → TermElabM Term
   | .w8 => `(DSL.IntW.w8)
   | .w16 => `(DSL.IntW.w16)
   | .w32 => `(DSL.IntW.w32)
   | .w64 => `(DSL.IntW.w64)
 
-meta partial def tyDeep : Ty → TermElabM Term
+partial def tyDeep : Ty → TermElabM Term
   | .int w => do `(DSL.Ty.int $(← wStx w))
   | .bool => `(DSL.Ty.bool)
   | .unit => `(DSL.Ty.unit)
@@ -175,7 +176,7 @@ meta partial def tyDeep : Ty → TermElabM Term
   | .prod a b => do `(DSL.Ty.prod $(← tyDeep a) $(← tyDeep b))
   | .map k v => do `(DSL.Ty.map $(← tyDeep k) $(← tyDeep v))
 
-meta partial def tyShallow : Ty → TermElabM Term
+partial def tyShallow : Ty → TermElabM Term
   | .int w => `(BitVec $(num w.bits))
   | .bool => `(Bool)
   | .unit => `(Unit)
@@ -184,7 +185,7 @@ meta partial def tyShallow : Ty → TermElabM Term
   | .map k v => do `(DSL.Map $(← tyShallow k) $(← tyShallow v))
 
 /-- Read a `DSL.Ty` value back from a Lean expression (callee signatures). -/
-meta partial def exprToTy (e : Lean.Expr) : MetaM Ty := do
+partial def exprToTy (e : Lean.Expr) : MetaM Ty := do
   let e ← whnf e
   match e.getAppFn.constName?, e.getAppArgs with
   | some ``DSL.Ty.int, #[w] =>
@@ -205,7 +206,7 @@ meta partial def exprToTy (e : Lean.Expr) : MetaM Ty := do
   | some ``DSL.Ty.map, #[k, v] => return .map (← exprToTy k) (← exprToTy v)
   | _, _ => throwError "flat def: cannot read type {e}"
 
-meta partial def exprToTys (e : Lean.Expr) : MetaM (List Ty) := do
+partial def exprToTys (e : Lean.Expr) : MetaM (List Ty) := do
   let e ← whnf e
   match e.getAppFn.constName?, e.getAppArgs with
   | some ``List.nil, _ => return []
@@ -214,30 +215,30 @@ meta partial def exprToTys (e : Lean.Expr) : MetaM (List Ty) := do
 
 /-! ## Emission of deep and shallow terms -/
 
-meta partial def varStx : Nat → TermElabM Term
+partial def varStx : Nat → TermElabM Term
   | 0 => `(DSL.Var.zero)
   | n + 1 => do `(DSL.Var.succ $(← varStx n))
 
 /-- Deep variable for level `lvl` at context depth `d`. -/
-meta def varAt (d lvl : Nat) : TermElabM Term := varStx (d - 1 - lvl)
+def varAt (d lvl : Nat) : TermElabM Term := varStx (d - 1 - lvl)
 
-meta def ibinStx : IBin → TermElabM Term
+def ibinStx : IBin → TermElabM Term
   | .add => `(DSL.IBin.add) | .sub => `(DSL.IBin.sub) | .mul => `(DSL.IBin.mul)
   | .and => `(DSL.IBin.and) | .or => `(DSL.IBin.or) | .xor => `(DSL.IBin.xor)
   | .shl => `(DSL.IBin.shl) | .lshr => `(DSL.IBin.lshr) | .ashr => `(DSL.IBin.ashr)
 
-meta def icmpStx : ICmp → TermElabM Term
+def icmpStx : ICmp → TermElabM Term
   | .eq => `(DSL.ICmp.eq) | .ne => `(DSL.ICmp.ne) | .ult => `(DSL.ICmp.ult)
   | .ule => `(DSL.ICmp.ule) | .slt => `(DSL.ICmp.slt) | .sle => `(DSL.ICmp.sle)
 
-meta def castStx : Cast → TermElabM Term
+def castStx : Cast → TermElabM Term
   | .zext => `(DSL.Cast.zext) | .sext => `(DSL.Cast.sext) | .trunc => `(DSL.Cast.trunc)
 
-meta def iopStx : IOp → TermElabM Term
+def iopStx : IOp → TermElabM Term
   | .addC => `(DSL.IOp.addC) | .subC => `(DSL.IOp.subC) | .mulC => `(DSL.IOp.mulC)
   | .udiv => `(DSL.IOp.udiv) | .urem => `(DSL.IOp.urem)
 
-meta partial def PE.deep (d : Nat) : PE → TermElabM Term
+partial def PE.deep (d : Nat) : PE → TermElabM Term
   | .var l => do `(DSL.Expr.var $(← varAt d l))
   | .clone l => do `(DSL.Expr.clone $(← varAt d l))
   | .ilit w v => do `(DSL.Expr.ilit $(← wStx w) $(num v))
@@ -259,9 +260,9 @@ meta partial def PE.deep (d : Nat) : PE → TermElabM Term
   | .mapEmpty k v => do `(DSL.Expr.mapEmpty (k := $(← tyDeep k)) (v := $(← tyDeep v)))
   | .mapContains l k => do `(DSL.Expr.mapContains $(← varAt d l) $(← k.deep d))
 
-meta def nameAt (sc : Scope) (l : Nat) : Ident := mkIdent sc.vars[l]!.name
+def nameAt (sc : Scope) (l : Nat) : Ident := mkIdent sc.vars[l]!.name
 
-meta partial def PE.shallow (sc : Scope) : PE → TermElabM Term
+partial def PE.shallow (sc : Scope) : PE → TermElabM Term
   | .var l | .clone l => pure (nameAt sc l)
   | .ilit w v => `(($(num v) : BitVec $(num w.bits)))
   | .blit true => `(true)
@@ -300,13 +301,13 @@ meta partial def PE.shallow (sc : Scope) : PE → TermElabM Term
   | .mapEmpty k v => do `((DSL.Map.empty : DSL.Map $(← tyShallow k) $(← tyShallow v)))
   | .mapContains l k => do `((DSL.Map.contains $(nameAt sc l) $(← k.shallow sc)))
 
-meta def astIdent (fn : Name) : Ident := mkIdent (fn ++ `ast)
+def astIdent (fn : Name) : Ident := mkIdent (fn ++ `ast)
 
-meta partial def exprsDeep (d : Nat) : List PE → TermElabM Term
+partial def exprsDeep (d : Nat) : List PE → TermElabM Term
   | [] => `(DSL.Exprs.nil)
   | e :: es => do `(DSL.Exprs.cons $(← e.deep d) $(← exprsDeep d es))
 
-meta def FO.deep (d : Nat) : FO → TermElabM Term
+def FO.deep (d : Nat) : FO → TermElabM Term
   | .iop op a b => do `(DSL.Stmt.op (DSL.Op.iop $(← iopStx op) $(← a.deep d) $(← b.deep d)))
   | .vget l i => do `(DSL.Stmt.op (DSL.Op.vget $(← varAt d l) $(← i.deep d)))
   | .mapGet l k => do `(DSL.Stmt.op (DSL.Op.mapGet $(← varAt d l) $(← k.deep d)))
@@ -314,7 +315,7 @@ meta def FO.deep (d : Nat) : FO → TermElabM Term
     let a := astIdent f
     `(DSL.Stmt.call ($a).name ($a).body $(← exprsDeep d args))
 
-meta def FO.shallow (sc : Scope) : FO → TermElabM Term
+def FO.shallow (sc : Scope) : FO → TermElabM Term
   | .iop op a b => do
     let a ← a.shallow sc; let b ← b.shallow sc
     match op with
@@ -337,7 +338,7 @@ structure Pre where
   deriving Inhabited
 
 /-- Wrap `k` in the binds of `pre` (in order). `sc` is the scope *after* all binds. -/
-meta def emitPre (sc : Scope) (pre : Array Pre) (k : TermElabM Out) : TermElabM Out := do
+def emitPre (sc : Scope) (pre : Array Pre) (k : TermElabM Out) : TermElabM Out := do
   let mut out ← k
   for p in pre.reverse do
     let d := p.lvl -- depth before the bind = level of the bound variable
@@ -361,18 +362,18 @@ def lift (op : FO) (ty : Ty) : ExprM PE := do
   set { st with sc := st.sc.push { name := tmpName lvl, ty }, pre := st.pre.push ⟨op, lvl⟩ }
   return .var lvl
 
-meta def expectTy (stx : Syntax) (got : Ty) (exp : Option Ty) : ExprM Unit := do
+def expectTy (stx : Syntax) (got : Ty) (exp : Option Ty) : ExprM Unit := do
   if let some t := exp then
     unless t == got do
       throwErrorAt stx "flat def: type mismatch: expected `{t.surface}`, got `{got.surface}`"
 
-meta def needInt (stx : Syntax) (t : Ty) : ExprM IntW := do
+def needInt (stx : Syntax) (t : Ty) : ExprM IntW := do
   match t with
   | .int w => return w
   | _ => throwErrorAt stx "flat def: expected a machine integer (`BitVec n`), got `{t.surface}`"
 
 /-- An occurrence of level `l`; `move` for value positions (moves linear values). -/
-meta def touch (stx : Syntax) (l : Nat) (move : Bool) : ExprM Unit := do
+def touch (stx : Syntax) (l : Nat) (move : Bool) : ExprM Unit := do
   let sc := (← get).sc
   let v := sc.vars[l]!
   if v.moved then
@@ -382,14 +383,14 @@ meta def touch (stx : Syntax) (l : Nat) (move : Bool) : ExprM Unit := do
       throwErrorAt stx "flat def: affine rule: the loop body moves `{v.name}`, which is bound outside the loop; use `{v.name}.clone`"
     modify fun st => { st with sc := st.sc.setMoved l true }
 
-meta def isNum (stx : Syntax) : Bool := (numLit? stx).isSome
+def isNum (stx : Syntax) : Bool := (numLit? stx).isSome
 
-meta def lookupVar (x : Syntax) (n : Name) : ExprM (Nat × LVar) := do
+def lookupVar (x : Syntax) (n : Name) : ExprM (Nat × LVar) := do
   match (← get).sc.lookup? n with
   | some r => return r
   | none => throwErrorAt x "flat def: unknown variable `{n}`"
 
-meta def rejectBare (stx : Syntax) (op wrap chk : String) : ExprM α :=
+def rejectBare (stx : Syntax) (op wrap chk : String) : ExprM α :=
   throwErrorAt stx "flat def: bare `{op}` on machine integers is rejected: write `{wrap}` (wrapping) or `{chk}` (checked, throws)"
 
 /-- Split `x.f` where `x` is a local variable. -/
@@ -633,7 +634,7 @@ partial def callE (stx : Term) (f : Ident) (args : Array Term) (exp : Option Ty)
 
 end
 
-meta def runExpr (sc : Scope) (x : ExprM α) : TermElabM (α × ESt) := x.run { sc }
+def runExpr (sc : Scope) (x : ExprM α) : TermElabM (α × ESt) := x.run { sc }
 
 /-! ## Statements -/
 
@@ -643,7 +644,7 @@ inductive Mode where
   /-- Loop body or branch of a join-point `if`: falls through, yielding the carried variables. -/
   | fall (carried : List Name)
 
-private meta def getDoSeqElems (doSeq : Syntax) : List Syntax :=
+private def getDoSeqElems (doSeq : Syntax) : List Syntax :=
   if doSeq.getKind == ``Parser.Term.doSeqBracketed then
     doSeq[1].getArgs.toList.map fun arg => arg[0]
   else if doSeq.getKind == ``Parser.Term.doSeqIndent then
@@ -652,7 +653,7 @@ private meta def getDoSeqElems (doSeq : Syntax) : List Syntax :=
     []
 
 /-- Syntactic scan: variables reassigned and variables declared in a block. -/
-meta partial def scanAssigned (stx : Syntax) : StateM (Array Name × Array Name) Unit := do
+partial def scanAssigned (stx : Syntax) : StateM (Array Name × Array Name) Unit := do
   let s : TSyntax `doElem := ⟨stx⟩
   match s with
   | `(doElem| $x:ident := $_) | `(doElem| $x:ident ← $_) =>
@@ -666,7 +667,7 @@ meta partial def scanAssigned (stx : Syntax) : StateM (Array Name × Array Name)
   for c in stx.getArgs do scanAssigned c
 
 /-- Outer mutable variables assigned in `blocks`, in level order. -/
-meta def carriedVars (sc : Scope) (blocks : List Syntax) : List Name := Id.run do
+def carriedVars (sc : Scope) (blocks : List Syntax) : List Name := Id.run do
   let ((), (as, ds)) := (blocks.forM scanAssigned).run (#[], #[])
   let mut out : Array (Nat × Name) := #[]
   for n in as do
@@ -677,7 +678,7 @@ meta def carriedVars (sc : Scope) (blocks : List Syntax) : List Name := Id.run d
   return (out.qsort (·.1 < ·.1)).toList.map (·.2)
 
 /-- Does control never fall off the end of this block (`return`/`throw` on every path)? -/
-meta partial def isTerminal (elems : List Syntax) : Bool :=
+partial def isTerminal (elems : List Syntax) : Bool :=
   match elems.getLast? with
   | none => false
   | some s =>
@@ -693,7 +694,7 @@ meta partial def isTerminal (elems : List Syntax) : Bool :=
         isTerminal (getDoSeqElems els)
     | _ => false
 
-meta partial def containsReturn (stx : Syntax) : Bool :=
+partial def containsReturn (stx : Syntax) : Bool :=
   stx.getKind == ``Parser.Term.doReturn || stx.getArgs.any containsReturn
 
 def packTy (sc : Scope) (ns : List Name) : Ty :=
@@ -711,12 +712,12 @@ def packPE (sc : Scope) (ns : List Name) : PE :=
   go ns
 
 /-- The binder name for a packed value of `ns`. -/
-meta def packBinder (lvl : Nat) : List Name → Name
+def packBinder (lvl : Nat) : List Name → Name
   | [n] => n
   | _ => tmpName lvl
 
 /-- `sc` has the packed value bound at its last level; unpack it into the names `ns`. -/
-meta partial def unpack (sc : Scope) (ns : List Name) (ty : Ty) (k : Scope → TermElabM Out) :
+partial def unpack (sc : Scope) (ns : List Name) (ty : Ty) (k : Scope → TermElabM Out) :
     TermElabM Out := do
   match ns, ty with
   | [], _ | [_], _ => k sc
@@ -732,7 +733,7 @@ meta partial def unpack (sc : Scope) (ns : List Name) (ty : Ty) (k : Scope → T
     return (deep, sh)
   | _, _ => throwError "flat def: internal error in unpack"
 
-meta def parseErr (e : Term) : TermElabM Term := do
+def parseErr (e : Term) : TermElabM Term := do
   let e' ← match e with
     | `(($e)) => pure e
     | _ => pure e
@@ -751,14 +752,14 @@ meta def parseErr (e : Term) : TermElabM Term := do
     | none => bad
   | _ => bad
 
-meta def doTerm (v : TSyntax `doElem) : TermElabM Term := do
+def doTerm (v : TSyntax `doElem) : TermElabM Term := do
   match v with
   | `(doElem| $t:term) => pure t
   | _ => throwErrorAt v "flat def: expected an expression after `←`"
 
 mutual
 
-meta partial def transSeq (sc : Scope) (mode : Mode) : List Syntax → TermElabM Out
+partial def transSeq (sc : Scope) (mode : Mode) : List Syntax → TermElabM Out
   | [] => do
     match mode with
     | .tail .unit => return (← `(DSL.Stmt.ret DSL.Expr.unit), ← `(pure ()))
@@ -769,7 +770,7 @@ meta partial def transSeq (sc : Scope) (mode : Mode) : List Syntax → TermElabM
   | s :: rest => transElem sc mode s rest
 
 /-- Final value of the function (`return e`, or a trailing expression). -/
-meta partial def transReturn (sc : Scope) (mode : Mode) (e : Term) (rest : List Syntax) : TermElabM Out := do
+partial def transReturn (sc : Scope) (mode : Mode) (e : Term) (rest : List Syntax) : TermElabM Out := do
   let .tail τ := mode |
     throwErrorAt e "flat def: `return` is not allowed inside a loop body or inside an `if` whose other paths fall through"
   unless rest.isEmpty do
@@ -786,7 +787,7 @@ meta partial def transReturn (sc : Scope) (mode : Mode) (e : Term) (rest : List 
     return (← `(DSL.Stmt.ret $(← p.deep st.sc.depth)), ← `(pure $(← p.shallow st.sc)))
 
 /-- Bind `x` to the value of `e` (new variable, or reassignment when `reassign`). -/
-meta partial def transBind (sc : Scope) (mode : Mode) (x : Ident) (tyAnn : Option Term) (isMut : Bool)
+partial def transBind (sc : Scope) (mode : Mode) (x : Ident) (tyAnn : Option Term) (isMut : Bool)
     (reassign : Bool) (e : Term) (rest : List Syntax) : TermElabM Out := do
   let n := x.getId.eraseMacroScopes
   let target ← if reassign then
@@ -836,7 +837,7 @@ meta partial def transBind (sc : Scope) (mode : Mode) (x : Ident) (tyAnn : Optio
       return (deep, sh)
 
 /-- `xs := xs.set! i v` and `m := m.insert k v`. -/
-meta partial def transUpdate (sc : Scope) (mode : Mode) (l : Nat) (v : LVar) (fld : String)
+partial def transUpdate (sc : Scope) (mode : Mode) (l : Nat) (v : LVar) (fld : String)
     (a₁ a₂ : Term) (rest : List Syntax) : TermElabM Out := do
   let x := mkIdent v.name
   if v.moved then
@@ -870,7 +871,7 @@ meta partial def transUpdate (sc : Scope) (mode : Mode) (l : Nat) (v : LVar) (fl
   | _, t => throwErrorAt a₁ "flat def: `.{fld}` is not available on `{t.surface}`"
 
 /-- Bind the value of statement `s` (deep/shallow) packing `ns`, then unpack and continue. -/
-meta partial def joinThen (sc : Scope) (mode : Mode) (ns : List Name) (s : Out)
+partial def joinThen (sc : Scope) (mode : Mode) (ns : List Name) (s : Out)
     (rest : List Syntax) : TermElabM Out := do
   let ty := packTy sc ns
   let lvl := sc.depth
@@ -880,7 +881,7 @@ meta partial def joinThen (sc : Scope) (mode : Mode) (ns : List Name) (s : Out)
   return (← `(DSL.Stmt.bind $(s.1) $(k.1)), ← `($(s.2) >>= fun $(mkIdent bn) => $(k.2)))
 
 /-- An `if … then … (else if …)* (else …)?` chain; `branches` are (condition, block). -/
-meta partial def transIfChain (sc : Scope) (mode : Mode) (branches : List (Term × Syntax))
+partial def transIfChain (sc : Scope) (mode : Mode) (branches : List (Term × Syntax))
     (els : Option Syntax) (rest : List Syntax) : TermElabM Out := do
   match branches with
   | [] =>
@@ -896,7 +897,7 @@ meta partial def transIfChain (sc : Scope) (mode : Mode) (branches : List (Term 
       return (← `(DSL.Stmt.ite $(← pc.deep d) $(kt.1) $(ke.1)),
               ← `(if $(← pc.shallow st.sc) then $(kt.2) else $(ke.2)))
 
-meta partial def transIf (sc : Scope) (mode : Mode) (s : Syntax) (branches : List (Term × Syntax))
+partial def transIf (sc : Scope) (mode : Mode) (s : Syntax) (branches : List (Term × Syntax))
     (els : Option Syntax) (rest : List Syntax) : TermElabM Out := do
   let isTail := match mode with | .tail _ => true | _ => false
   let hasRet := containsReturn s
@@ -911,7 +912,7 @@ meta partial def transIf (sc : Scope) (mode : Mode) (s : Syntax) (branches : Lis
     let s ← transIfChain sc (.fall ns) branches els []
     joinThen sc mode ns s rest
 
-meta partial def transFor (sc : Scope) (mode : Mode) (s : Syntax) (i : Name) (n : Nat) (body : Syntax)
+partial def transFor (sc : Scope) (mode : Mode) (s : Syntax) (i : Name) (n : Nat) (body : Syntax)
     (rest : List Syntax) : TermElabM Out := do
   if containsReturn body then
     throwErrorAt s "flat def: `return` inside a `for` loop is not supported"
@@ -928,7 +929,7 @@ meta partial def transFor (sc : Scope) (mode : Mode) (s : Syntax) (i : Name) (n 
     (fun ($(mkIdent i) : BitVec 64) $(mkIdent accName) => $(b.2)))
   joinThen sc mode ns (deep, sh) rest
 
-meta partial def transElem (sc : Scope) (mode : Mode) (s : Syntax) (rest : List Syntax) : TermElabM Out := do
+partial def transElem (sc : Scope) (mode : Mode) (s : Syntax) (rest : List Syntax) : TermElabM Out := do
   let e : TSyntax `doElem := ⟨s⟩
   match e with
   | `(doElem| let mut $x:ident $[: $t]? := $v) => transBind sc mode x t true false v rest
@@ -979,7 +980,7 @@ end
 
 /-! ## Readable checker errors -/
 
-meta unsafe def evalCheckUnsafe (e : Lean.Expr) : TermElabM (Except String Unit) := do
+unsafe def evalCheckUnsafe (e : Lean.Expr) : TermElabM (Except String Unit) := do
   let ty := mkApp2 (mkConst ``Except [0, 0]) (mkConst ``String) (mkConst ``Unit)
   evalExpr (Except String Unit) ty e
 
@@ -1000,7 +1001,7 @@ syntax (name := flatDef) (docComment)? "flat " "def " ident (ppSpace flatBinder)
   " := " term (ppDedent(ppLine) &"proof " "by " Lean.Parser.Tactic.tacticSeq)? : command
 
 /-- Proof script for `denote_eq`: `rfl` first, then unfolding irreducible callees, then `simp`. -/
-meta def denoteEqTactic : CommandElabM (TSyntax `tactic) :=
+def denoteEqTactic : CommandElabM (TSyntax `tactic) :=
   `(tactic| first
     | exact rfl
     | (with_unfolding_all exact rfl)
@@ -1011,7 +1012,7 @@ meta def denoteEqTactic : CommandElabM (TSyntax `tactic) :=
 /-- Add `name : type` (an equation `∀ xs, lhs = rhs`) proven by `Eq.refl lhs`, checked by the
 kernel only. The kernel's definitional-equality check shares work across the let-heavy terms
 `denote` unfolds to, where `Meta.isDefEq` (`exact rfl`) can blow up exponentially. -/
-meta def addKernelRfl (name : Name) (type : Term) : CommandElabM Unit := liftTermElabM do
+def addKernelRfl (name : Name) (type : Term) : CommandElabM Unit := liftTermElabM do
   let ty ← elabTerm type (some (mkSort Level.zero))
   synthesizeSyntheticMVarsNoPostponing
   let ty ← instantiateMVars ty
@@ -1028,7 +1029,7 @@ meta def addKernelRfl (name : Name) (type : Term) : CommandElabM Unit := liftTer
   | .error e => throwError "flat def: kernel rfl failed: {e.toMessageData opts}"
 
 /-- Generated terms nest one level per statement; raise the recursion limit for them. -/
-meta def withDeepRecursion (x : CommandElabM α) : CommandElabM α :=
+def withDeepRecursion (x : CommandElabM α) : CommandElabM α :=
   withScope (fun sc => { sc with opts := maxRecDepth.set sc.opts (max 100000 (maxRecDepth.get sc.opts)) }) x
 
 @[command_elab flatDef]

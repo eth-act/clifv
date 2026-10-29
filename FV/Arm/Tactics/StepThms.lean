@@ -14,7 +14,7 @@ public import FV.Arm.Tactics.Common
 public import FV.Arm.Tactics.Simp
 public import FV.Arm.Tactics.Sym.ProgramInfo
 
-@[expose] public section
+@[expose] public meta section
 
 namespace Arm
 
@@ -45,7 +45,7 @@ initialize registerTraceClass `gen_step.debug.timing
 /-- Assuming that `rawInst` is indeed the right result, construct a proof that
   `fetch_inst addr state = some rawInst`
 given that `state.program = program` -/
-private meta def fetchLemma (state program h_program : Expr)
+private def fetchLemma (state program h_program : Expr)
     (addr : _root_.BitVec 64) (rawInst : _root_.BitVec 32) : Expr :=
   let someRawInst := toExpr (some rawInst)
   mkAppN (mkConst ``Arm.fetch_inst_eq_of_prgram_eq_of_map_find) #[
@@ -74,7 +74,7 @@ You can call `canonicalizeBitVec` after these functions to ensure you don't
 needlessly expose `BitVec` internal details -/
 -- TODO: should this canonicalize to `BitVec.ofNatLt` instead,
 --       as the current transformation loses information?
-meta partial def canonicalizeBitVec (e : Expr) : MetaM Expr := do
+partial def canonicalizeBitVec (e : Expr) : MetaM Expr := do
   match_expr e with
     | _root_.BitVec.ofFin w i =>
         let_expr Fin.mk _ x _h := i | fallback
@@ -95,7 +95,7 @@ meta partial def canonicalizeBitVec (e : Expr) : MetaM Expr := do
 /-- Given an expr `rawInst` of type `BitVec 32`,
 return an expr of type `Option ArmInst` representing what `rawInst` decodes to.
 The resulting expr is guaranteed to be def-eq to `decode_raw_inst $rawInst` -/
-meta def reduceDecodeInstExpr (rawInst : Expr) : MetaM Expr := do
+def reduceDecodeInstExpr (rawInst : Expr) : MetaM Expr := do
   let expr := mkApp (mkConst ``Arm.decode_raw_inst) rawInst
   let expr ← withTransparency .all <| reduce expr
   -- ^^ NOTE: possibly expensive reduction
@@ -117,7 +117,7 @@ return an expr of type `Option ArmInst` representing what `rawInst` decodes to.
 The resulting expr is guaranteed to be def-eq to `decode_raw_inst $rawInst`.
 
 Results are cached so that the same instruction is not reduced multiple times -/
-meta def reduceDecodeInst (rawInst : _root_.BitVec 32) : CacheM Expr :=
+def reduceDecodeInst (rawInst : _root_.BitVec 32) : CacheM Expr :=
   checkCache (rawInst) fun _ =>
     reduceDecodeInstExpr (toExpr rawInst)
 
@@ -136,7 +136,7 @@ and then a proof of this fact.
 That is, in
   `let ⟨type, value⟩ ← reduceStepi ...`
 `value` is an expr whose type is `type` -/
-meta def reduceStepi (addr : _root_.BitVec 64) : StepThmsM (Expr × Expr) := do
+def reduceStepi (addr : _root_.BitVec 64) : StepThmsM (Expr × Expr) := do
   let pi : ProgramInfo ← get
   let ⟨_, type, proof⟩ ← modifyInstInfoAt addr <| getInstSemantics fun _ => do
     let rawInst ← getRawInst

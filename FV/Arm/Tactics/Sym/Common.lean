@@ -9,7 +9,7 @@ module
 public import Lean
 public import FV.Arm.Tactics.Attr
 
-@[expose] public section
+@[expose] public meta section
 
 namespace Arm
 
@@ -24,7 +24,7 @@ variable {α : Type} {m : Type → Type} [Monad m] [MonadTrace m] [MonadLiftT IO
   [MonadAlwaysExcept ε m] [MonadLiftT BaseIO m]
 
 /-- Add a trace node with the `Tactic.sym` trace class -/
-meta def withTraceNode (msg : MessageData) (k : m α)
+def withTraceNode (msg : MessageData) (k : m α)
     (collapsed : Bool := true)
     (tag : String := "")
     : m α := do
@@ -40,7 +40,7 @@ def withInfoTraceNode (msg : MessageData) (k : m α)
 /-- Create a trace note that folds `header` with `(NOTE: can be large)`,
 and prints `msg` under such a trace node.
 -/
-meta def traceLargeMsg (header : MessageData) (msg : MessageData) : MetaM Unit :=
+def traceLargeMsg (header : MessageData) (msg : MessageData) : MetaM Unit :=
     withTraceNode m!"{header} (NOTE: can be large)" do
       trace[Tactic.sym] msg
 

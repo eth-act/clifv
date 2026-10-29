@@ -10,7 +10,7 @@ public import Lean
 public import FV.Arm.Attr
 public import FV.Arm.Tactics.Attr
 
-@[expose] public section
+@[expose] public meta section
 
 namespace Arm
 
@@ -31,7 +31,7 @@ a key that includes the state and statefield constant
 FIXME: we should suggest a PR upstream that adds `noIndexAtArgs` as
 an optional argument to `mkSimpTheorems`, so that we can control
 this properly -/
-meta def fixSimpTheoremKey (thm : SimpTheorem) : MetaM SimpTheorem := do
+def fixSimpTheoremKey (thm : SimpTheorem) : MetaM SimpTheorem := do
   let type ← inferType thm.proof
   let ⟨_, _, type⟩ ← forallMetaTelescope type
   match type.eq? with
@@ -47,7 +47,7 @@ meta def fixSimpTheoremKey (thm : SimpTheorem) : MetaM SimpTheorem := do
 
 /-- Build the `SimpTheorem`s for a local proof `e` (analogous to what `simp [e]` does),
 with the given origin. -/
-meta def mkSimpTheoremsOfExpr (origin : Origin) (e : Expr) (prio : Nat := eval_prio default) :
+def mkSimpTheoremsOfExpr (origin : Origin) (e : Expr) (prio : Nat := eval_prio default) :
     MetaM (Array SimpTheorem) :=
   mkSimpTheoremFromExpr origin #[] e (prio := prio)
 
@@ -116,7 +116,7 @@ def LNSymSimpContext
 
 /- Invoke the `simp` tactic during symbolic simulation in LNSym
 proofs. -/
-meta def LNSymSimp (goal : MVarId)
+def LNSymSimp (goal : MVarId)
    (ctx : Simp.Context) (simprocs : Array Simp.Simprocs)
   -- Provide an FVarID (i.e., a hypothesis) to simplify; when none is provided,
   -- the goal is simplified.
@@ -138,7 +138,7 @@ meta def LNSymSimp (goal : MVarId)
 Invoke `simp [..] at *` at the given goal `g` with
 simp context `ctx` and simprocs `simprocs`.
 -/
-meta def LNSymSimpAtStar (g : MVarId)
+def LNSymSimpAtStar (g : MVarId)
     (ctx : Simp.Context)
     (simprocs : Array Simp.Simprocs)
     : MetaM (Option MVarId) := do

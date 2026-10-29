@@ -12,7 +12,7 @@ public import FV.Arm.Tactics.Sym.Context
 
 public import Lean
 
-@[expose] public section
+@[expose] public meta section
 
 namespace Arm
 
@@ -24,7 +24,7 @@ open Sym (withTraceNode withInfoTraceNode)
 
 /-- A wrapper around `evalTactic` that traces the passed tactic script,
 executes those tactics, and then traces the new goal state -/
-meta def evalTacticAndTrace (tactic : TSyntax `tactic) : TacticM Unit :=
+def evalTacticAndTrace (tactic : TSyntax `tactic) : TacticM Unit :=
   withTraceNode m!"running: {tactic}" <| do
     evalTactic tactic
     trace[Tactic.sym] "new goal state:\n{← getGoals}"
@@ -54,7 +54,7 @@ section stepiTac
 to add a new local hypothesis in terms of `w` and `write_mem`
   `h_step : ?s' = w _ _ (w _ _ (... ?s))`
 -/
-meta def stepiTac (stepiEq : Expr) (hStep : Name) : SymReaderM Unit := fun ctx =>
+def stepiTac (stepiEq : Expr) (hStep : Name) : SymReaderM Unit := fun ctx =>
   withMainContext' <|
   withInfoTraceNode m!"stepiTac: {stepiEq}" (tag := "stepiTac") <| do
     let pc := String.ofList (Nat.toDigits 16 ctx.pc.toNat)
@@ -93,7 +93,7 @@ for some metavariable `?runSteps`, then create the proof obligation
 `?runSteps = _ + 1`, and attempt to close it using `whileTac`.
 Finally, we use this proof to change the type of `h_run` accordingly.
 -/
-meta def unfoldRun (whileTac : Unit → TacticM Unit) : SymReaderM Unit := do
+def unfoldRun (whileTac : Unit → TacticM Unit) : SymReaderM Unit := do
   let c ← readThe SymContext
   withTraceNode m!"unfoldRun (runSteps? := {c.runSteps?})" (tag := "unfoldRun") <|
   match c.runSteps? with
@@ -170,7 +170,7 @@ meta def unfoldRun (whileTac : Unit → TacticM Unit) : SymReaderM Unit := do
 add the relevant hypotheses to the local context, and
 store an `AxEffects` object with the newly added variables in the monad state
 -/
-meta def explodeStep (hStep : Expr) (blockSize : Nat := 1) : SymM Unit :=
+def explodeStep (hStep : Expr) (blockSize : Nat := 1) : SymM Unit :=
   withMainContext' <|
   withTraceNode m!"explodeStep {hStep}" (tag := "explodeStep") <| do
     let c ← getThe SymContext
@@ -240,7 +240,7 @@ elab "explode_step" h_step:term " at " state:term : tactic => withMainContext do
 /--
 Symbolically simulate a single step, according the the symbolic simulation
 context `c`, returning the context for the next step in simulation. -/
-meta def sym1 (whileTac : TSyntax `tactic) : SymM Unit := do
+def sym1 (whileTac : TSyntax `tactic) : SymM Unit := do
   /- `withCurrHeartbeats` sets the initial heartbeats to the current heartbeats,
   effectively resetting our heartbeat budget back to the maximum. -/
   withCurrHeartbeats <| do

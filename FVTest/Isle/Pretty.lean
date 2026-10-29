@@ -1,6 +1,7 @@
 module
 
 public import FV.Isle
+meta import FV.Isle
 
 @[expose] public section
 

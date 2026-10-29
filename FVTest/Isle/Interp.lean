@@ -1,6 +1,7 @@
 module
 
 public import FVTest.Isle.Toy
+meta import FVTest.Isle.Toy
 
 @[expose] public section
 

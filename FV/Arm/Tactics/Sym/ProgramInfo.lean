@@ -10,7 +10,7 @@ public import FV.Arm.Map
 public import FV.Arm.Tactics.Common
 public import Std
 
-@[expose] public section
+@[expose] public meta section
 
 /-!
 # ProgramInfo
@@ -87,7 +87,7 @@ def getRawInst : InstInfoT m (_root_.BitVec 32) := do
 
 /-- Return `InstInfo.decodedInst?` from the state if it is `some _`,
 or use `f` to compute the relevant expression if it is missing -/
-meta def getDecodedInst (f : Unit → InstInfoT m Expr) : InstInfoT m Expr := do
+def getDecodedInst (f : Unit → InstInfoT m Expr) : InstInfoT m Expr := do
   let info ← get
   match info.decodedInst? with
     | .value val => return val
@@ -98,7 +98,7 @@ meta def getDecodedInst (f : Unit → InstInfoT m Expr) : InstInfoT m Expr := do
 
 /-- Return `InstInfo.instSemantics?` from the state if it is `some _`,
 or use `f` to compute the relevant expressions if they are missing -/
-meta def getInstSemantics (f : Unit → InstInfoT m (Expr × Expr × Expr)) :
+def getInstSemantics (f : Unit → InstInfoT m (Expr × Expr × Expr)) :
     InstInfoT m (Expr × Expr × Expr) := do
   let info ← get
   match info.instSemantics? with
@@ -119,7 +119,7 @@ namespace ProgramInfo
 
 /-- The expression `mkConst pi.name`,
 i.e., an expression of this program referred to by name -/
-meta def expr (pi : ProgramInfo) : Expr := mkConst pi.name
+def expr (pi : ProgramInfo) : Expr := mkConst pi.name
 
 def getInstInfoAt? (pi : ProgramInfo) (addr : _root_.BitVec 64) :
     Option InstInfo :=
@@ -133,7 +133,7 @@ def getRawInstAt? (pi : ProgramInfo) (addr : _root_.BitVec 64) :
 
 /-- Given the name and defining expression of a `Program`,
 generate the basic `ProgramInfo` -/
-meta partial def generateFromExpr (name : Name) (e : Expr) : MetaM ProgramInfo := do
+partial def generateFromExpr (name : Name) (e : Expr) : MetaM ProgramInfo := do
   trace[ProgramInfo] "Generating program info for `{name}` from definition:\n\t{e}"
   let type ← inferType e
   if !(←isDefEq type (mkConst ``Arm.Program)) then
@@ -166,7 +166,7 @@ meta partial def generateFromExpr (name : Name) (e : Expr) : MetaM ProgramInfo :
 
 /-- Given the `Name` of a constant of type `Program`,
 generate the basic `ProgramInfo` -/
-meta def generateFromConstName (program : Name) : MetaM ProgramInfo := do
+def generateFromConstName (program : Name) : MetaM ProgramInfo := do
   let .defnInfo defnInfo ← getConstInfo program
     | throwError "expected a definition, but {program} is not"
   generateFromExpr program defnInfo.value
@@ -219,7 +219,7 @@ If you don't pass in an expr, the definition is found in the environment
 
 If `persist` is set to true (the default), then the newly generated program info
 will be persistently cached in the environment (see `persistToEnv`) -/
-meta def lookupOrGenerate (program : Name) (expr? : Option Expr := none)
+def lookupOrGenerate (program : Name) (expr? : Option Expr := none)
     (persist : Bool := true) :
     MetaM ProgramInfo := do
   if let some pi ← lookup? program then
@@ -246,7 +246,7 @@ variable [Monad m] [MonadEnv m] [MonadError m]
 section Run
 variable [MonadLiftT MetaM m]
 
-protected meta def run' (programName : Name) (expr? : Option Expr) (persist : Bool)
+protected def run' (programName : Name) (expr? : Option Expr) (persist : Bool)
     (k : ProgramInfoT m α) : m α := do
   let pi ← ProgramInfo.lookupOrGenerate programName expr?
   let ⟨a, pi⟩ ← StateT.run k pi
@@ -271,7 +271,7 @@ The passed expression is assumed to be the definition of the program.
 If `persist` is set to true (the default), then the program info state after
 executing `k` will be persistently cached in the environment
 (see `persistToEnv`). -/
-meta def runE (programName : Name) (expr : Expr) (k : ProgramInfoT m α)
+def runE (programName : Name) (expr : Expr) (k : ProgramInfoT m α)
     (persist : Bool := false)
      : m α :=
   ProgramInfoT.run' programName expr persist k
@@ -326,7 +326,7 @@ See `InstInfo.decodInst?` for the meaning of this field.
 
 NOTE: the computed value is only cached in the `ProgramInfoT` monad state,
 not yet in the environment. -/
-meta def getDecodedInstAt (addr : _root_.BitVec 64) (k : InstInfo → ProgramInfoT m Expr) :
+def getDecodedInstAt (addr : _root_.BitVec 64) (k : InstInfo → ProgramInfoT m Expr) :
     ProgramInfoT m Expr := do
   let info ← getInstInfoAt addr
   match info.decodedInst? with
@@ -344,7 +344,7 @@ See `InstInfo.instSemantics?` for the meaning of this field.
 
 NOTE: the computed value is only cached in the `ProgramInfoT` monad state,
 not yet in the environment. -/
-meta def getInstSemanticsAt (addr : _root_.BitVec 64)
+def getInstSemanticsAt (addr : _root_.BitVec 64)
     (k : InstInfo → ProgramInfoT m (Expr × Expr × Expr)) :
     ProgramInfoT m (Expr × Expr × Expr) := do
   let info ← getInstInfoAt addr

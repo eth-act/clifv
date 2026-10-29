@@ -6,6 +6,29 @@ public import FV.Backend.Proof.IselFlowGen
 public import FV.Backend.Proof.IselRulesALU
 public import FV.Backend.Proof.IselFamily
 public import FV.Backend.Proof.StockAliasSemantics
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Format.Basic
+import all Init.Data.Int.Repr
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Nat.Gcd
+import all Init.Data.Range.Basic
+import all Init.Data.Repr
+import all Init.Prelude
+import all Init.Data.String.Basic
+import all Init.Data.String.Defs
+import all Init.Data.Nat.Power2.Basic
+import all Init.Data.List.Basic
+import all Init.Data.Option.Basic
+import all Init.Control.Except
+import all Init.Data.Array.QSort.Basic
+import all Init.Data.List.Sort.Basic
+import all Init.Data.Array.Mem
+import all Init.Data.Array.Subarray
+import all Init.Data.Array.MapIdx
+import all Init.Data.Array.Extract
+import all Init.Data.Array.TakeDrop
+import all Init.Data.List.Impl
 
 @[expose] public section
 

@@ -1,6 +1,7 @@
 module
 
 public import FV.Backend.Isel
+meta import FV.Backend.Isel
 
 @[expose] public section
 

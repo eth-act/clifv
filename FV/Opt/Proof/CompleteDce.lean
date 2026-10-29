@@ -3,6 +3,8 @@ module
 public import FV.Opt.Proof.CheckSpec
 public import FV.Opt.Proof.SimpSim
 public import FV.Opt.Dce
+public meta import FV.Opt.Check
+public meta import FV.Opt.Dce
 
 @[expose] public section
 

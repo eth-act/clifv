@@ -1,6 +1,8 @@
 module
 
 public import FV.Opt.Optimize
+public meta import FV.Opt.HandRules
+public meta import FV.Opt.Optimize
 
 @[expose] public section
 

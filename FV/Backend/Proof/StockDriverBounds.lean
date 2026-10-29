@@ -16,6 +16,7 @@ import all Init.Data.Nat.Power2.Basic
 import all Init.Data.List.Basic
 import all Init.Data.Option.Basic
 import all Init.Control.Except
+import all Init.Data.Array.QSort.Basic
 
 @[expose] public section
 

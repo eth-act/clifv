@@ -9,8 +9,9 @@ module
 public import FV.Arm.Exec
 public import FV.Arm.Tactics.IntroHyp
 public import Lean
+public meta import FV.Arm.Tactics.Common
 
-@[expose] public section
+@[expose] public meta section
 
 namespace Arm
 
@@ -18,7 +19,7 @@ open Lean Elab Tactic Expr Meta
 
 ----------------------------------------------------------------------
 
-meta def introFetchDecodeLemmas (goal : MVarId) (hStep : Expr) (hProgram : Expr)
+def introFetchDecodeLemmas (goal : MVarId) (hStep : Expr) (hProgram : Expr)
   (hyp_prefix : String) :
   TacticM Bool := goal.withContext do
   let_expr Eq _ st_var nest ← (← inferType hStep) | return false
@@ -92,7 +93,7 @@ meta def introFetchDecodeLemmas (goal : MVarId) (hStep : Expr) (hProgram : Expr)
   replaceMainGoal (goal' :: other_unsolved_goals)
   return true
 
-meta def introFetchDecodeLemmasElab (h_step : Name) (h_program : Name) (hyp_prefix : String)
+def introFetchDecodeLemmasElab (h_step : Name) (h_program : Name) (hyp_prefix : String)
   : TacticM Unit :=
   withMainContext
   (do

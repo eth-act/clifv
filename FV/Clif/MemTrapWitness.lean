@@ -5,6 +5,8 @@ public import FV.Clif.Parse
 public meta import FV.Clif.Run
 public meta import FV.Clif.Syntax
 public meta import FV.Clif.Mem
+meta import FV.Clif.MemTrap
+meta import FV.Clif.Parse
 
 @[expose] public section
 
