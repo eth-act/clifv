@@ -106,15 +106,17 @@ theorem RL.mstep_run {R : RL} {b k : Nat} {allocs : Array Loc} {its : List RItem
 
 /-- **The items with no lines** (`args`, `emitIsland`), at a witness: no step, the next item at
 the straight witness (the same line). -/
-theorem realizes_zeroNA {R : RL} {Y : BitVec 64 → Prop} {s : Arm.ArmState} {b k : Nat}
+theorem realizes_zeroNA {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : Arm.ArmState} {b k : Nat}
     {allocs : Array Loc} {its : List RItem} {m : Loc → CV} {w : Arm.ArmState} {j : Nat}
     {ps1 : PState} {T : List Line} (hq : QW R s j ps1 T (.run ⟨b, .op k allocs :: its, m, w⟩))
     {vb : VBlock} {i : MInst} (hvb : R.vc.blocks[b]? = some vb) (hi : vb.insts[k]? = some i)
+    (hk : k + 1 < vb.insts.size)
     (hz : (∃ ds, i = .args ds) ∨ ∃ nb, i = .emitIsland nb) {m' : Loc → CV} {w' : Arm.ArmState}
     (hst : StRel R s m' w') :
     R.SegNA Y s j ps1 T (.run ⟨b, .op k allocs :: its, m, w⟩) (.run ⟨b, its, m', w'⟩) 0 := by
-  obtain ⟨items, pre, regs, i', c1, c2, ls1, ls2, psm, ps2, cc, wh, ops, hc1o, rfl, hit, hsplit,
-    hasg, hc1', hops, hstat, hchk', hc2, h1, h2, htr, hdrop, hpc, -⟩ := qW_op hq hvb hi
+  obtain ⟨rfl, items, pre, regs, i', c1, c2, X', ls1, psm, psm', ps2, x, cc, wh, ops, hc1o, rfl,
+    hit, hsplit, hasg, hc1', hops, hstat, hchk', hc2, h1, h2, h3, htr, hdrop, hpc, -, hx, hsc⟩ :=
+    qW_op hR hq hvb hi hk
   have hl : ls1 = [] ∧ psm = ps1 := by
     rcases hz with ⟨ds, rfl⟩ | ⟨nb, rfl⟩
     · obtain ⟨ds', rfl⟩ := assign_args hasg
@@ -137,16 +139,17 @@ theorem realizes_zeroNA {R : RL} {Y : BitVec 64 → Prop} {s : Arm.ArmState} {b 
   obtain ⟨rfl, hps⟩ := hl
   subst hps
   have hr0 : (relaxLines R.far ([] : List Line)).length = 0 := by simp [relaxLines]
-  have hW : R.nextW j psm T (.run ⟨b, .op k (regs.map Loc.reg) :: its, m, w⟩)
-      (.run ⟨b, its, m', w'⟩) = (j, psm, T) := by
-    rw [RL.nextW_straight, RL.straightW_eq hvb hc1o h1, hr0, Nat.add_zero]
-  have hQ := qW_next (ls1 := []) (j0 := j) hvb hit hsplit hchk' hc2 h2 htr hdrop (by simp)
-    (by rw [hr0, Nat.add_zero]; exact hpc) hst
+  have hS : R.straightW b (.op k (regs.map Loc.reg)) j psm [] = (j, psm, []) := by
+    rw [RL.straightW_eq hvb hc1o h1, hr0, Nat.add_zero]
+  have hQ := qWs_next (ls1 := []) (j := j) hvb hit hsplit hchk' hc2 h2 h3 htr hdrop
+    (by rw [hr0, Nat.add_zero]; exact hpc) hst hx hsc
   rw [hr0, Nat.add_zero] at hQ
   refine ⟨?_, fun i h => absurd h (Nat.not_lt_zero _), ⟨?_, fun i h0 h => absurd h (by omega)⟩, ?_⟩
-  · rw [hW]; exact hQ
-  · rw [hW]; exact hpc
-  · rw [RL.segLen_straight_iff, RL.straightW_eq hvb hc1o h1, hr0, Nat.add_zero]
+  · unfold RL.QWn
+    rw [RL.nextW_straight, hS]
+    exact .inl ⟨rfl, hQ⟩
+  · rw [RL.tgtS_straight, hS]; exact hpc
+  · rw [RL.segLen_straight_iff, hS]
     exact ⟨fun _ => rfl, fun _ => rfl⟩
 
 /-! ## `QA` at a witness -/
@@ -179,9 +182,10 @@ theorem QWA.qa {R : RL} {s : Arm.ArmState} {j : Nat} {ps1 : PState} {T : List Li
 
 /-- The witness after a straight step does not depend on the stores and worlds. -/
 theorem RL.nextW_straight_congr {R : RL} {j : Nat} {ps1 : PState} {T : List Line} {b : Nat}
-    {it : RItem} {its : List RItem} {m1 m2 m3 m4 : Loc → CV} {w1 w2 w3 w4 : Arm.ArmState} :
-    R.nextW j ps1 T (.run ⟨b, it :: its, m1, w1⟩) (.run ⟨b, its, m2, w2⟩) =
-      R.nextW j ps1 T (.run ⟨b, it :: its, m3, w3⟩) (.run ⟨b, its, m4, w4⟩) := by
+    {it : RItem} {its : List RItem} {m1 m2 m3 m4 : Loc → CV} {w1 w2 w3 w4 : Arm.ArmState}
+    {p : BitVec 64} :
+    R.nextW j ps1 T (.run ⟨b, it :: its, m1, w1⟩) (.run ⟨b, its, m2, w2⟩) p =
+      R.nextW j ps1 T (.run ⟨b, it :: its, m3, w3⟩) (.run ⟨b, its, m4, w4⟩) p := by
   rw [RL.nextW_straight, RL.nextW_straight]
 
 /-- The segment length of a straight step does not depend on the stores and worlds. -/
@@ -192,7 +196,7 @@ theorem RL.segLen_straight_congr {R : RL} {j : Nat} {ps1 : PState} {T : List Lin
     R.SegLen j ps1 T (.run ⟨b, it :: its, m3, w3⟩) (.run ⟨b, its, m4, w4⟩) s n := by
   obtain ⟨h1, h2⟩ := h
   refine ⟨?_, ?_⟩
-  · rw [RL.nextW_straight_congr (m3 := m1) (w3 := w1) (m4 := m2) (w4 := w2)]; exact h1
+  · rw [RL.tgtS_straight] at h1 ⊢; exact h1
   · rw [RL.segLen_straight_iff] at h2 ⊢; exact h2
 
 /-- **A callee restore at a witness takes no step**: the witness stays, at its first arrival. -/
@@ -200,12 +204,16 @@ theorem RL.segLen_restore {R : RL} {s : Arm.ArmState} {b : Nat} {r : Reg} {dst :
     {its : List RItem} {m m' : Loc → CV} {w : Arm.ArmState} {j : Nat} {ps1 : PState}
     {T : List Line} (hq : QW R s j ps1 T (.run ⟨b, .move (.save r) dst :: its, m, w⟩)) :
     R.SegLen j ps1 T (.run ⟨b, .move (.save r) dst :: its, m, w⟩) (.run ⟨b, its, m', w⟩) s 0 ∧
-      R.nextW j ps1 T (.run ⟨b, .move (.save r) dst :: its, m, w⟩) (.run ⟨b, its, m', w⟩) =
+      ∀ p, R.nextW j ps1 T (.run ⟨b, .move (.save r) dst :: its, m, w⟩) (.run ⟨b, its, m', w⟩) p =
         (j, ps1, T) := by
-  have hW := nextW_move_save (m' := m') (w' := w) hq (.inl rfl)
+  have hW : ∀ p, R.nextW j ps1 T (.run ⟨b, .move (.save r) dst :: its, m, w⟩)
+      (.run ⟨b, its, m', w⟩) p = (j, ps1, T) := fun p =>
+    nextW_move_save (m' := m') (w' := w) hq (.inl rfl)
+  have hS : R.straightW b (.move (.save r) dst) j ps1 T = (j, ps1, T) := by
+    rw [← RL.nextW_straight (m := m) (m' := m') (w := w) (w' := w) (p := 0)]; exact hW 0
   refine ⟨⟨⟨?_, fun i h0 h => by omega⟩, ?_⟩, hW⟩
-  · rw [hW]; exact hq.pc
-  · rw [RL.segLen_straight_iff, ← RL.nextW_straight (m := m) (m' := m') (w := w) (w' := w), hW]
+  · rw [RL.tgtS_straight, hS]; exact hq.pc
+  · rw [RL.segLen_straight_iff, hS]
     exact ⟨fun _ => rfl, fun _ => rfl⟩
 
 
@@ -225,34 +233,29 @@ theorem realizes_stepCW {R : RL} (hR : R.Wf) {P : Arm.ArmState → Prop}
     (hG : MStep R.vc (R.semG Ok) ckeep R.rf c c')
     (hns : ∀ b src dst its m w, c = .run ⟨b, .move src dst :: its, m, w⟩ → src.isSave = false) :
     ∃ n c'', MStep R.vc (R.semG Ok) ckeep R.rf c c'' ∧ MConf.ShapeEq c'' c' ∧ AInv R c'' ∧
-      QW R (iterN R.step n s) (R.nextW j ps1 T c c'').1 (R.nextW j ps1 T c c'').2.1
-        (R.nextW j ps1 T c c'').2.2 c'' ∧
+      R.QWn j ps1 T c c'' (iterN R.step n s) ∧
       (∀ i < n, R.GoodX (iterN R.step i s) ∧ R.WReadsIn Ok (iterN R.step i s)) ∧
       countIn R.CallSt R.step s n = opCalls R.vc c ∧ R.SegLenA j ps1 T c c'' s n := by
   have lift : ∀ c'', MStep R.vc R.sem ckeep R.rf c c'' → MStep R.vc (R.semG Ok) ckeep R.rf c c'' :=
     fun c'' h'' => MStep.guardLift h'' hG RL.semG_le
   have fin1 : ∀ Y, (∀ a, R.F a → Y a) → ((∀ a, Y a) ∨ ∃ w, Ok w Y) →
       ∀ n c'', MStep R.vc R.sem ckeep R.rf c c'' →
-      QW R (iterN R.step n s) (R.nextW j ps1 T c c'').1 (R.nextW j ps1 T c c'').2.1
-        (R.nextW j ps1 T c c'').2.2 c'' →
+      R.QWn j ps1 T c c'' (iterN R.step n s) →
       (∀ i < n, R.GoodX (iterN R.step i s) ∧ R.ReadsInY Y (iterN R.step i s)) →
       countIn R.CallSt R.step s n = opCalls R.vc c → R.SegLenA j ps1 T c c'' s n →
       ∃ n c'', MStep R.vc (R.semG Ok) ckeep R.rf c c'' ∧ MConf.ShapeEq c'' c' ∧ AInv R c'' ∧
-        QW R (iterN R.step n s) (R.nextW j ps1 T c c'').1 (R.nextW j ps1 T c c'').2.1
-          (R.nextW j ps1 T c c'').2.2 c'' ∧
+        R.QWn j ps1 T c c'' (iterN R.step n s) ∧
         (∀ i < n, R.GoodX (iterN R.step i s) ∧ R.WReadsIn Ok (iterN R.step i s)) ∧
         countIn R.CallSt R.step s n = opCalls R.vc c ∧ R.SegLenA j ps1 T c c'' s n :=
     fun Y hYF hYO n c'' hm hq' ht hc hs => ⟨n, c'', lift c'' hm, MStep.shapeEq (lift c'' hm) hG,
       aInv_step hR hq.q hA hm, hq', fun i hi => ⟨(ht i hi).1, Y, hYF, hYO, (ht i hi).2⟩, hc, hs⟩
   have fin : ∀ Y, (∀ a, R.F a → Y a) → ((∀ a, Y a) ∨ ∃ w, Ok w Y) →
       ∀ n c'', MStep R.vc R.sem ckeep R.rf c c'' →
-      QW R (iterN R.step n s) (R.nextW j ps1 T c c'').1 (R.nextW j ps1 T c c'').2.1
-        (R.nextW j ps1 T c c'').2.2 c'' →
+      R.QWn j ps1 T c c'' (iterN R.step n s) →
       (∀ i < n, R.GoodXNY Y (iterN R.step i s)) → opCalls R.vc c = 0 →
       R.SegLenA j ps1 T c c'' s n →
       ∃ n c'', MStep R.vc (R.semG Ok) ckeep R.rf c c'' ∧ MConf.ShapeEq c'' c' ∧ AInv R c'' ∧
-        QW R (iterN R.step n s) (R.nextW j ps1 T c c'').1 (R.nextW j ps1 T c c'').2.1
-          (R.nextW j ps1 T c c'').2.2 c'' ∧
+        R.QWn j ps1 T c c'' (iterN R.step n s) ∧
         (∀ i < n, R.GoodX (iterN R.step i s) ∧ R.WReadsIn Ok (iterN R.step i s)) ∧
         countIn R.CallSt R.step s n = opCalls R.vc c ∧ R.SegLenA j ps1 T c c'' s n :=
     fun Y hYF hYO n c'' hm hq' ht h0 hs => fin1 Y hYF hYO n c'' hm hq'
@@ -326,7 +329,8 @@ theorem realizes_stepCW {R : RL} (hR : R.Wf) {P : Arm.ArmState → Prop}
         cases hn with
         | next hk =>
           have hQ := realizes_args hR hq.q hA hvb hi hstep
-          obtain ⟨hq', -, hs⟩ := realizes_zeroNA (Y := fun _ => True) hq hvb hi (.inl ⟨ds, rfl⟩)
+          obtain ⟨hq', -, hs⟩ := realizes_zeroNA (Y := fun _ => True) hR hq hvb hi hk
+            (.inl ⟨ds, rfl⟩)
             (q_stRel hQ)
           exact finT 0 _ hstep hq' nil (hoc0 rfl) hs
       case rets us =>
@@ -390,8 +394,9 @@ theorem realizes_stepCW {R : RL} (hR : R.Wf) {P : Arm.ArmState → Prop}
         obtain ⟨-, -, rfl⟩ := hsem'
         cases hn with
         | next hk =>
-          have hQ := realizes_island hq.q hvb hi hstep
-          obtain ⟨hq', -, hs⟩ := realizes_zeroNA (Y := fun _ => True) hq hvb hi (.inr ⟨nb, rfl⟩)
+          have hQ := realizes_island hR hq.q hvb hi hstep
+          obtain ⟨hq', -, hs⟩ := realizes_zeroNA (Y := fun _ => True) hR hq hvb hi hk
+            (.inr ⟨nb, rfl⟩)
             (q_stRel hQ)
           exact finT 0 _ hstep hq' nil (hoc0 rfl) hs
       case jtSequence d ts ridx t1 t2 =>
@@ -447,14 +452,8 @@ theorem realizesQWA {R : RL} (hR : R.Wf) {sem : ISem CV Arm.ArmState}
     (hrets : ∀ b k a its m w c' vb us, R.vc.blocks[b]? = some vb → vb.insts[k]? = some (.rets us) →
       MStep R.vc sem ckeep R.rf (.run ⟨b, .op k a :: its, m, w⟩) c' → ∃ vals m' w', c' = .ret vals m' w')
     (hmove : ∀ s j ps1 T b src dst its m w, QW R s j ps1 T (.run ⟨b, .move src dst :: its, m, w⟩) →
-      src.isSave = false → ∃ n, QW R (iterN R.step n s)
-          (R.nextW j ps1 T (.run ⟨b, .move src dst :: its, m, w⟩)
-            (.run ⟨b, its, upd m dst (m src), w⟩)).1
-          (R.nextW j ps1 T (.run ⟨b, .move src dst :: its, m, w⟩)
-            (.run ⟨b, its, upd m dst (m src), w⟩)).2.1
-          (R.nextW j ps1 T (.run ⟨b, .move src dst :: its, m, w⟩)
-            (.run ⟨b, its, upd m dst (m src), w⟩)).2.2
-          (.run ⟨b, its, upd m dst (m src), w⟩) ∧
+      src.isSave = false → ∃ n, R.QWn j ps1 T (.run ⟨b, .move src dst :: its, m, w⟩)
+          (.run ⟨b, its, upd m dst (m src), w⟩) (iterN R.step n s) ∧
         (∀ i < n, Tr (iterN R.step i s)) ∧ countIn R.CallSt R.step s n = 0 ∧
         R.SegLen j ps1 T (.run ⟨b, .move src dst :: its, m, w⟩)
           (.run ⟨b, its, upd m dst (m src), w⟩) s n ∧ Ex s n)
@@ -462,14 +461,14 @@ theorem realizesQWA {R : RL} (hR : R.Wf) {sem : ISem CV Arm.ArmState}
     (hstep : QW R s j ps1 T c → AInv R c →
       (∀ b src dst its m w, c = .run ⟨b, .move src dst :: its, m, w⟩ → src.isSave = false) →
       ∃ n c'', MStep R.vc sem ckeep R.rf c c'' ∧ MConf.ShapeEq c'' c' ∧ AInv R c'' ∧
-        QW R (iterN R.step n s) (R.nextW j ps1 T c c'').1 (R.nextW j ps1 T c c'').2.1
-          (R.nextW j ps1 T c c'').2.2 c'' ∧
+        R.QWn j ps1 T c c'' (iterN R.step n s) ∧
         (∀ i < n, Tr (iterN R.step i s)) ∧ countIn R.CallSt R.step s n = opCalls R.vc c ∧
         R.SegLenA j ps1 T c c'' s n ∧ Ex s n)
     (hq : QWA R s j ps1 T c) (hG : MStep R.vc sem ckeep R.rf c c') :
     ∃ n c'', MStep R.vc sem ckeep R.rf c c'' ∧ MConf.ShapeEq c'' c' ∧
-      QWA R (iterN R.step n s) (R.nextW j ps1 T c c'').1 (R.nextW j ps1 T c c'').2.1
-        (R.nextW j ps1 T c c'').2.2 c'' ∧
+      QWA R (iterN R.step n s) (R.nextW j ps1 T c c'' (Arm.r .PC (iterN R.step n s))).1
+        (R.nextW j ps1 T c c'' (Arm.r .PC (iterN R.step n s))).2.1
+        (R.nextW j ps1 T c c'' (Arm.r .PC (iterN R.step n s))).2.2 c'' ∧
       (∀ i < n, Tr (iterN R.step i s)) ∧ countIn R.CallSt R.step s n = opCalls R.vc c ∧
       R.SegLenA j ps1 T c c'' s n ∧ Ex s n := by
   have nil : ∀ i < 0, Tr (iterN R.step i s) := fun _ h => absurd h (Nat.not_lt_zero _)
@@ -552,8 +551,9 @@ theorem realizes_allCW {R : RL} (hR : R.Wf) {P : Arm.ArmState → Prop}
     {c c' : MConf CV Arm.ArmState} (hq : QWA R s j ps1 T c) (hP : P s)
     (hG : MStep R.vc (R.semG Ok) ckeep R.rf c c') :
     ∃ n c'', MStep R.vc (R.semG Ok) ckeep R.rf c c'' ∧ MConf.ShapeEq c'' c' ∧
-      QWA R (iterN R.step n s) (R.nextW j ps1 T c c'').1 (R.nextW j ps1 T c c'').2.1
-        (R.nextW j ps1 T c c'').2.2 c'' ∧
+      QWA R (iterN R.step n s) (R.nextW j ps1 T c c'' (Arm.r .PC (iterN R.step n s))).1
+        (R.nextW j ps1 T c c'' (Arm.r .PC (iterN R.step n s))).2.1
+        (R.nextW j ps1 T c c'' (Arm.r .PC (iterN R.step n s))).2.2 c'' ∧
       (∀ i < n, R.GoodX (iterN R.step i s) ∧ R.WReadsIn Ok (iterN R.step i s)) ∧
       countIn R.CallSt R.step s n = opCalls R.vc c ∧ R.SegLenA j ps1 T c c'' s n := by
   obtain ⟨n, c'', hm, hsh, hq', ht, hc, hs, -⟩ :=
@@ -584,7 +584,7 @@ inductive RL.SegChain (R : RL) (Tr : Arm.ArmState → Prop) (s : Arm.ArmState)
       RL.SegChain R Tr s W c l u W1 c1 → R.SegLenA W1.1 W1.2.1 W1.2.2 c1 c2 u n →
       (∀ i < n, Tr (iterN R.step i u)) →
       RL.SegChain R Tr s W c (l ++ [(n, c2)]) (iterN R.step n u)
-        (R.nextW W1.1 W1.2.1 W1.2.2 c1 c2) c2
+        (R.nextW W1.1 W1.2.1 W1.2.2 c1 c2 (Arm.r .PC (iterN R.step n u))) c2
 
 /-- **The chain's end is its start after the sum of the segment lengths.** -/
 theorem RL.SegChain.iter {R : RL} {Tr : Arm.ArmState → Prop} {s : Arm.ArmState}
