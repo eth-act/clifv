@@ -103,14 +103,14 @@ theorem realizes_tryCallN {R : RL} (hR : R.Wf) {P : Arm.ArmState → Prop}
   have hcpcT := hcpc regs i' rfl hasg
   obtain ⟨ic, rfl, hasg'⟩ := (assign_call_tryCall info regs).2 ti i' hasg
   have hsemC : csemV R.gv R.F R.ctx R.X (.call info) (useVals ops regs s) w =
-      some (xo, w2, .next) := by
+      some (xo.take info.defs.length, w2, .next) := by
     have hg := csemV_guard_try hsemU
     simp only [csemV, hg, ↓reduceIte]
     simp [csem, hx]
   obtain ⟨s', hex, hW, hK, -, hoth, hkeep⟩ :=
     RL.callAtGP hR (hC.os R.ctx info ⟨b, vb, k, hvb, .inr ⟨ti, hi⟩⟩) hP hst.sp hst.gkeep
       (Pi := (· = .call ic)) (fun _ e => e ▸ callAt_tryCall_call hcpcT) cc wh ops regs (.call ic)
-      w xo w2 (by rw [← operands_tryCall_call info ti]; exact hops)
+      w (xo.take info.defs.length) w2 (by rw [← operands_tryCall_call info ti]; exact hops)
       (by rw [← clobbers_tryCall hcl]; exact hstat) hasg' rfl hst.world hst.align hst.err hsemC
   have hexT : callExec R.H (.tryCall ic ti) s = some s' := by
     simp only [callExec] at hex ⊢; exact hex

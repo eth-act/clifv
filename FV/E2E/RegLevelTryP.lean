@@ -42,12 +42,13 @@ theorem calleeTryP_at {Q : Arm.ArmState → Prop} {F : BitVec 64 → Prop} {K : 
   simp only [decide_eq_true_eq] at hr
   simp only [Prod.mk.injEq] at he
   obtain ⟨rfl, rfl, -⟩ := he
-  have hsemC : csemV gv F ctx X (.call info) (useVals ops regs s) w = some (xo, w2, .next) := by
+  have hsemC : csemV gv F ctx X (.call info) (useVals ops regs s) w =
+      some (xo.take info.defs.length, w2, .next) := by
     have hg := csemV_guard_try hsem
     simp only [csemV, hg, ↓reduceIte]
     simp [csem, hx]
   obtain ⟨s1, hex1, -, -, hd, -, -⟩ := hos s hQ hK hD hG c wh ops regs (.call ic) w
-    xo w2 (by rw [← operands_tryCall_call info ti]; exact hops)
+    (xo.take info.defs.length) w2 (by rw [← operands_tryCall_call info ti]; exact hops)
     (by rw [← clobbers_tryCall hcl]; exact hst) hasg' (hPc _ _ hP) hsw hal herr hsemC
   have hs1 : s1 = s' := by
     simp only [callExec, hal, ↓reduceIte, Option.some.injEq] at hex hex1
@@ -59,8 +60,11 @@ theorem calleeTryP_at {Q : Arm.ArmState → Prop} {F : BitVec 64 → Prop} {K : 
   rw [List.getElem?_take] at hj
   split at hj
   · rename_i hjn
-    rw [defRegs, List.getElem?_zip_eq_some] at hj
-    rw [List.getElem?_append_left (by omega)] at hj
+    have e : (List.take info.defs.length
+        (xo ++ List.map (fun _ => ofX 0) (List.drop xo.length info.defs)))[j]? =
+        (xo.take info.defs.length)[j]? := by
+      rw [List.getElem?_take, List.getElem?_take, List.getElem?_append_left (by omega)]
+    rw [defRegs, List.getElem?_zip_eq_some, e] at hj
     exact List.mem_of_getElem? (by rw [defRegs, List.getElem?_zip_eq_some]; exact hj)
   · cases hj
 
