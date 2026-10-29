@@ -99,7 +99,7 @@ theorem RL.retLock_rets {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.
   have hs : R.af.frameSize < 2 ^ 64 := by have := hst0.1; omega
   have hcb' : clobberBytes R.af.saves ≤ R.af.frameSize := by rw [hfs]; exact hcb
   -- `Q` at the `rets` item is `Qs` (the forwarding case would need the block to be a `jump`)
-  obtain hqs : Qs R u (RItem.op k allocs :: its) mt w := by
+  obtain hqs : Qs R u b (RItem.op k allocs :: its) mt w := by
     rcases Q.cases hq with hqs | ⟨_, _, _, i, _, _, hvb', he, -, -, hins, hasg, -, -, -, -⟩
     · exact hqs
     · exfalso
