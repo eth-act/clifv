@@ -58,7 +58,7 @@ theorem arm_alloc_refinesQ {R : RL}
   obtain ⟨n, trS, cE, ψ, hn, hs, href, hend⟩ :=
     refines_of_itemSim (ItemSim.withRel hsim) hr hrel
   exact ⟨n, trS, cE.1, ψ, hn, mtrun_of_srun (SRun.fst hs), href,
-    hend.imp_right fun ⟨hD, t, h1, -⟩ => ⟨hD, t, h1⟩⟩
+    hend.imp_right fun ⟨hD, t, h1, _⟩ => ⟨hD, t, h1⟩⟩
 
 /-- **`arm_alloc_refines_ls` ending at a related configuration.** -/
 theorem arm_alloc_refines_lsQ {R : RL} (hR : R.Wf) (hsc : MemScopeLS R)
