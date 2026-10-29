@@ -74,8 +74,36 @@ theorem realizes_rmwLoopNAF {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : A
   obtain ⟨vd, rfl⟩ := isVregInt_iff h2
   obtain ⟨v1, rfl⟩ := isVregInt_iff h3
   obtain ⟨v2, rfl⟩ := isVregInt_iff h4
-  obtain ⟨items, pre, regs, i', c1, c2, ls1, ls2, psm, ps2, cc, wh, ops, hc1o, rfl, hit, hsplit,
-    hasg, hc1', hops, hstat, hchk', hc2, hl1, hl2, htr, hdrop, hpc, hst⟩ := qW_op hq hvb hi
+  cases h with
+  | @op b k allocs its m w vb'' i opsm outs outs' w' ctl m2 c' hvb' hi' hopsm hsz' hsem hlen hho hcl hn =>
+  rw [hvb] at hvb'; cases hvb'
+  rw [hi] at hi'; cases hi'
+  -- the loop's control outcome is always `.next`, so its item is not the block's last
+  have hk : k + 1 < vb.insts.size := by
+    simp only [RL.sem, csemV, csem] at hsem
+    split at hsem
+    · split at hsem
+      · obtain ⟨-, -, -, -, hctl⟩ := loopSem_inv hsem
+        cases hn with
+        | next hk => exact hk
+        | @goto jj st items' hk1 hsucc hitems => simp at hctl
+        | ret hh => simp at hctl
+        | halt => simp at hctl
+      · split at hsem
+        · simp only [Option.some.injEq, Prod.mk.injEq] at hsem
+          have hctl := hsem.2.2.symm
+          cases hn with
+          | next hk => exact hk
+          | @goto jj st items' hk1 hsucc hitems => simp at hctl
+          | ret hh => simp at hctl
+          | halt => simp at hctl
+        · cases hsem
+    · cases hsem
+  obtain ⟨hT0, items, pre, regs, i', c1, c2, X', ls1, psm, psm', ps2, x, cc, wh, ops, hc1o, rfl,
+    hit, hsplit, hasg, hc1', hops, hstat, hchk', hc2, hl1, hX2, hT2, htr, hdrop, hpc, hst, hx,
+    hsc⟩ := qW_op hR hq hvb hi hk
+  have hoppseq : opsm = ops := Except.ok.inj (hopsm.symm.trans hops)
+  subst hoppseq
   have hops' : ops = #[⟨va, .int, .use, .early, .fixed (.x 25)⟩, ⟨vo, .int, .use, .early, .fixed (.x 26)⟩,
       ⟨vd, .int, .def, .late, .fixed (.x 27)⟩, ⟨v1, .int, .def, .late, .fixed (.x 24)⟩,
       ⟨v2, .int, .def, .late, .fixed (.x 28)⟩] := by
@@ -84,7 +112,7 @@ theorem realizes_rmwLoopNAF {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : A
         .ok #[⟨va, .int, .use, .early, .fixed (.x 25)⟩, ⟨vo, .int, .use, .early, .fixed (.x 26)⟩,
           ⟨vd, .int, .def, .late, .fixed (.x 27)⟩, ⟨v1, .int, .def, .late, .fixed (.x 24)⟩,
           ⟨v2, .int, .def, .late, .fixed (.x 28)⟩] := rfl
-    rw [e] at hops; injection hops with h; exact h.symm
+    rw [e] at hopsm; injection hopsm with h; exact h.symm
   subst hops'
   obtain ⟨hsz, hloc, -, -⟩ := checkStatic_facts hstat
   obtain ⟨q0, q1, q2, q3, q4, rfl⟩ := regs5 (by simpa using hsz.symm)
@@ -107,11 +135,6 @@ theorem realizes_rmwLoopNAF {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : A
   simp only [MInst.lines, bne_self_eq_false, Bool.or_false, Bool.and_false, Bool.false_eq_true,
     ite_false, pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at hl1'
   obtain ⟨rfl, rfl⟩ := hl1'
-  cases h with
-  | @op b k allocs its m w vb'' i ops outs outs' w' ctl m2 c' hvb' hi' hops' hsz' hsem hlen hho hcl hn =>
-  rw [hvb] at hvb'; cases hvb'
-  rw [hi] at hi'; cases hi'
-  rw [hops] at hops'; cases hops'
   have hreg : ∀ r, r.allocatable = true → m (.reg r) = regVal s r := fun r hr =>
     hst.store (.reg r) (fun r' e => by cases e; exact hr) trivial
   have hU : (((#[(⟨va, .int, .use, .early, .fixed (.x 25)⟩ : Operand),
