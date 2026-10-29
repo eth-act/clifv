@@ -304,7 +304,7 @@ theorem tab1 : LO.std.tabB M0 fF sC 0 1 = fun a => (runM 14).mem (BitVec.ofNat 6
     (hcp (by decide) machB_parts.2.2.2.2.2.2.1) hct1 (x := 1) (k := 0)
     (by rw [cb23]; simp [Clif.sumTo]) (fun _ => by rw [cb23]; simp [Clif.sumTo, callE0])
   rw [cb23, slotted_fH, ite_eq_left_of_eq_true _ _ (eq_true (by simp [Clif.sumTo]))] at e
-  rw [show M0 = 14 + 1 from rfl, e]
+  rw [show M0 = 14 + 1 from rfl, e, probeMem_of_count (af := (LO.std.A fH).af) (by decide +kernel)]
   funext a
   show (runX (LO.std.mach M0 fF) 14 sC).mem _ = _
   rw [runEq (by decide)]
@@ -316,7 +316,7 @@ theorem tab2 : LO.std.tabB M0 fF sC 0 2 = fun a => (runM 17).mem (BitVec.ofNat 6
     (by rw [cb26]; simp [Clif.sumTo, callE0])
     (fun _ => by rw [cb26]; have := callE1_ge; simp only [Clif.sumTo, callE0]; omega)
   rw [cb26, slotted_fR, ite_eq_left_of_eq_true _ _ (eq_true (by simp [Clif.sumTo, callE0]))] at e
-  rw [show M0 = 14 + 1 from rfl, e]
+  rw [show M0 = 14 + 1 from rfl, e, probeMem_of_count (af := (LO.std.A fR).af) (by decide +kernel)]
   funext a
   show (runX (LO.std.mach M0 fF) 17 sC).mem _ = _
   rw [runEq (by decide)]

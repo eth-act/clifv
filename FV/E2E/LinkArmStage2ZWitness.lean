@@ -355,7 +355,7 @@ theorem tabUpTo_call_at_Lsl
       (slotted h = 1 → ∀ a, Lsl.SlotByte h (spv (runX (Lsl.mach (M + 1) g) i s)) a →
         ini.bytes (ini.next + Clif.sumTo E
           (callsBefore (Lsl.mach (M + 1) g) (Lsl.A g).fa (Lsl.A g).base s i) + 1) a =
-          (runX (Lsl.mach (M + 1) g) i s).mem (BitVec.ofNat 64 a)) ∧
+          probeMem (Lsl.A h).af (runX (Lsl.mach (M + 1) g) i s) (BitVec.ofNat 64 a)) ∧
       slotted h ≤ E (callsBefore (Lsl.mach (M + 1) g) (Lsl.A g).fa (Lsl.A g).base s i) ∧
       ∃ N', RetOf (Lsl.A h) (runX (Lsl.mach (M + 1) g) i s)
           (runX (Lsl.mach M h) N' (enterAt (Lsl.A h) (runX (Lsl.mach (M + 1) g) i s))) ∧
