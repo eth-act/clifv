@@ -145,6 +145,14 @@ We use an abbreivation to write definitions that are about memory as `*`.
 -/
 abbrev Memory := Store (BitVec 64) (BitVec 8)
 
+-- Module system: `deriving` cannot expose a structure with private fields, so `ArmState`
+-- is declared outside the file's `@[expose]` section.
+end State
+end Arm
+end
+public section
+namespace Arm
+
 @[ext]
 structure ArmState where
   /-- General-purpose registers: register 31 is the stack pointer. -/
@@ -175,6 +183,14 @@ structure ArmState where
   -/
   private error      : StateError
 deriving Repr
+
+end Arm
+end
+@[expose] public section
+namespace Arm
+section State
+attribute [local simp] store_read_over_write_same store_read_over_write_different
+  store_write_over_write_shadow store_write_irrelevant write_store_commute
 
 def ArmState.default : ArmState := {
     gpr := fun _ => 0#64,

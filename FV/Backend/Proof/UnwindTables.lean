@@ -2,6 +2,19 @@ module
 
 public import FV.Backend.Obj
 public import FV.Unw.Dwarf
+import all Init.Data.Format.Basic
+import all Init.Data.Int.Repr
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Nat.Gcd
+import all Init.Data.Nat.Power2.Basic
+import all Init.Data.Range.Basic
+import all Init.Data.Repr
+import all Init.Prelude
+import all Std.Data.DHashMap.Basic
+import all Std.Data.DHashMap.Internal.AssocList.Basic
+import all Std.Data.DHashMap.Internal.Defs
+import all Std.Data.DHashMap.Internal.Index
+import all Std.Data.DHashMap.Raw
 
 @[expose] public section
 
