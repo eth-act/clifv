@@ -73,6 +73,6 @@ theorem dominated : Dominated function := by
     | succ tl =>
       cases tl with
       | zero => change y ∉ ([] : List Nat); simp
-      | succ tl => simp [parsOf,function] 
+      | succ tl => simp [parsOf,function]
 
 end Backend.Stock.Memory.LoadFixture

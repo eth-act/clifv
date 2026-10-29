@@ -271,3 +271,31 @@ paired instruction-zero entry, production activation and the full140 goal
 remain open. The separate register-only paired entry draft is excluded from
 this validation claim. Next finish that entry composition and connect the
 actual production value-semantics and machine consumers.
+
+## Current-main refresh (2026-10-29)
+
+The saved memory packet remains unique relative to main `c533c22a`: there is
+no mainline StockMemory source domain/paired initialized-load consumer. The
+packet is ported on `agent/stock-memory-refresh-20261029`, preserving the newer
+CraneliftInput/default allocator, frame/QA machinery, typed dispatch/placement
+shortcuts and dead-cleanup generator. Four textual conflicts were resolved by
+retaining those current-main paths and adding only memory cases. This is a
+source port, not a current validation or merge receipt.
+
+The old new-base service is inactive and its temporary receipts are gone.
+Verified3753 metadata, original corpus sources and axiom logs were recovered from
+remote archive `f95655a7d6f92c01c03ecc0fe13e024877adc4b1e77c5f2b8a3ccc0381afc360`
+into durable `.git/agent-evidence/stock-memory-20261029`. Do not count the
+interrupted52b22dc9 run as passed or relabel3753 evidence with a new source hash.
+
+Current work first checks the memory-class closure, then imports compatible CI
+cache outputs and checks paired witnesses/E2E consumers. Full per-PR author gates
+remain required. Kev's open #756 supplies the known StockBlockScan startup-panic
+fix before actual CLI integration; no duplicate witness patch is claimed here.
+
+The next concrete coverage targets are four actual survey `h_dyn_generic`
+functions: entry `nop; jump`, successor `nop; load.i32 notrap v0; return v2`.
+Their original hashes match the preserved4,543-source provenance. This is a
+measurable real-source target for extending the current bare one-block class,
+not an eligibility/byte-agreement gain already achieved. See the active refresh
+in [the delivery plan](../plans/stock-driver-incremental-delivery.md).
