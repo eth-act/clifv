@@ -42,17 +42,6 @@ which the compiler no longer produces). -/
 def RetsOkT (g : Clif.Function) (rvals : List Clif.Val) (us : List (Reg × Reg)) : Prop :=
   RetRegsOk rvals us ∧ (g.sig.params.any (·.purpose == .sret) = true → RetPins rvals us)
 
-/-- Integer returns pinned by `RetPins` (x0.., then x8) are in their classes' return registers. -/
-theorem retRegsOk_of_retPins {rvals : List Clif.Val} {us : List (Reg × Reg)}
-    (hus : RetPins rvals us)
-    (hint : ∀ v ∈ rvals, v.ty.isInt = true) (hle : rvals.length ≤ us.length) :
-    RetRegsOk rvals us := by
-  refine ⟨List.replicate (us.length - rvals.length) .int, ?_⟩
-  unfold RetPins at hus
-  rw [classes_int hint, List.replicate_append_replicate, Nat.add_sub_cancel' hle,
-    List.take_replicate, Nat.min_eq_left hle, retRegsT_int, List.length_replicate, hus,
-    map_retX_ge hle, List.range_eq_range']
-
 /-- The `j`-th returned register of a declared return is its class's return register
 (`RetRegsOk`: `retRegsT` of the returned values' classes first). -/
 theorem RetRegsOk.getElem? {rvals : List Clif.Val} {us : List (Reg × Reg)}
