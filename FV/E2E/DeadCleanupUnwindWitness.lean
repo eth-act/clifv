@@ -183,4 +183,31 @@ theorem final_applies {X0 : ExtSem} {H : ArmHooks} {syms : String → Option Nat
     (fun _ => IselSimUWitness.xRaiseOk _ _ _) (fun _ => IselSimUWitness.xRaiseIndOk _ _ _)
     hsym rfl hcs' rfl hrows rfl rfl hpad hlast hsv hent hres hbe hargs hcs hrel htr fuel
 
+/-- **`backend_correct_final_cleanup_unwind_any` applies to the compiled `try_call` function
+with raising callees** (#622), with `final_applies`'s premises minus `lastCallsOk`. -/
+theorem final_any_applies {X0 : ExtSem} {H : ArmHooks} {syms : String → Option Nat} {K : Nat}
+    (hC : ∀ s, CalleeOk
+      (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) K (Xr X0) H
+      vcp.CallSite)
+    (hCT : ∀ s, CalleeTryOk
+      (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) (Xr X0) H
+      vcp.TrySite)
+    (hsym : ∀ n b, syms n = some b → (Xr X0).sym n 0 = BitVec.ofNat 64 b)
+    {base ra : BitVec 64} {s w₀ : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State}
+    (hent : AbiEntry fb base ra s) (hres : StackAvail K af s) (hbe : BodyEntry af s w₀)
+    (hargs : ArgsIn source.sig args s) (hcs : ClifEntry source args cs)
+    (hrel : Rel.holds ⟨frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s,
+      syms, af.slotBase, (RAFrame.compute vcp rf).intBase⟩ source cs.frame.slots cs.mem w₀)
+    (htr : TrapsExplicitX IselSimUWitness.env { funcs := [] } cs) (fuel : Nat) :
+    ArmRefinesU fb base ra (Unw.ArmStepU (Xr X0) H Uw T fa) s
+      (Clif.runLoopX IselSimUWitness.env { funcs := [] } fuel cs.toX) := by
+  obtain ⟨hv, hs, ht, hc, hlU, hsv, hpad, -, hcs', -, hrows⟩ := facts
+  exact backend_correct_final_cleanup_unwind_any (InSubset.of_verifiable hv (fun _ => rfl)) hc hlU
+    (formsCovered_cleanup_complete (lowerScope_of hs) hc.lower hc.prepare _) hC (fun _ => hCT)
+    (fun h => absurd h (by rw [ht]; decide))
+    (fun base s => calleeUnwOkG_raise _ _ _ s _ X0 _ _)
+    (fun _ => xCallsOk_env _ _ _) (fun _ => xCallsIndOk_env _ _ _)
+    (fun _ => IselSimUWitness.xRaiseOk _ _ _) (fun _ => IselSimUWitness.xRaiseIndOk _ _ _)
+    hsym rfl hcs' rfl hrows rfl rfl hpad hsv hent hres hbe hargs hcs hrel htr fuel
+
 end E2E.DeadCleanupUnwindWitness

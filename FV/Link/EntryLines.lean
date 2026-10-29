@@ -85,7 +85,7 @@ theorem entry_static {vc : VCode} {rf : RFunc} {af : AFunc} {k : Nat} {fa : FnAs
   by_cases hc : code = []
   · -- only the prologue: its lines are the segment's last instruction's, kept by the check
     subst hc
-    simp only [List.dropLast_single, List.getLast?_singleton, Option.toList_some] at e1 e2
+    simp only [List.dropLast_singleton, List.getLast?_singleton, Option.toList_some] at e1 e2
     simp only [codeLinesE, pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at e1
     obtain ⟨hb0, rfl⟩ := e1
     rw [hpro] at e2
@@ -97,7 +97,7 @@ theorem entry_static {vc : VCode} {rf : RFunc} {af : AFunc} {k : Nat} {fa : FnAs
     rw [hx] at hx'
     cases hx'
     unfold segTermOk at hok
-    simp only [haf', Option.bind_some] at hok
+    simp only [hidx, haf', Option.bind_some] at hok
     have hback : (#[AInst.prologue]).back? = some AInst.prologue := rfl
     rw [show (AInst.prologue :: ([] : List AInst)).toArray = #[AInst.prologue] from rfl, hback] at hok
     obtain ⟨hlen, hlo⟩ := termOk_kept (fun _ h => by cases h) (fun _ _ _ h => by cases h)
@@ -115,11 +115,12 @@ theorem entry_static {vc : VCode} {rf : RFunc} {af : AFunc} {k : Nat} {fa : FnAs
         obtain ⟨z, hz⟩ : ∃ z, o[n]? = some z := ⟨_, List.getElem?_eq_getElem hn'⟩
         rw [hz]
         have hy : y ∈ prologueLines af.saves af.frameSize := by
-          rw [← ht]; exact List.mem_of_getElem? hn
+          rw [ht]; exact List.mem_of_getElem? hn
         rcases hlo n y z hn hz with ⟨rfl, -⟩ | ⟨l, -, hyt, -⟩
         · rfl
         · rw [prologueLines_target _ _ y hy] at hyt; cases hyt
-    rw [hb0, List.nil_append, hoe, ← ht, relaxLines_plain hpl]
+    rw [← hb0, List.nil_append, hoe, ← ht, relaxLines_plain hpl]
+    exact List.prefix_refl _
   · rw [show AInst.prologue :: code = [AInst.prologue] ++ code from rfl,
       List.dropLast_append_of_ne_nil hc] at e1
     obtain ⟨l1, X, psA, h1, -, hb⟩ := codeLinesE_append _ _ _ _ _ e1
@@ -128,6 +129,5 @@ theorem entry_static {vc : VCode} {rf : RFunc} {af : AFunc} {k : Nat} {fa : FnAs
     obtain ⟨rfl, -⟩ := h1
     rw [hb, List.append_assoc, relaxLines_append, relaxLines_plain hpl]
     exact List.prefix_append _ _
-
 
 end Link.EhCheck.Complete

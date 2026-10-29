@@ -18,7 +18,8 @@ refines `Clif.runLoopX env (P.only f)`, assuming the callees' contracts, normal
 * `armRefinesU_link`: per-function refinement for every fuel ⇒ whole-program refinement.
 * **`backend_correct_linked_unwind`**: the Arm code of `f` refines the **whole-program** run
   with unwinding `Clif.runLoopX env P fuel cs.toX`, from `backend_correct_final_unwind`'s
-  premises at `env := Clif.linkEnvX P env`, `p := P.only f`.
+  premises at `env := Clif.linkEnvX P env`, `p := P.only f`; **`backend_correct_linked_unwind_any`**
+  without the check `lastCallsOk` (#622; the former is its corollary).
 * `xCallsOk_linkX`, `xRaiseOk_linkX`, `xRaiseExcl_linkX` split the callee contracts of the linked
   environment into the base environment's (externs outside `P`) and the program functions';
   `xCallsOk_progX`, `xRaiseOk_progX`, `xRaiseExcl_progX` state the program functions' part on
@@ -206,6 +207,56 @@ theorem xRaiseIndOk_nil (env : Clif.XEnv) (MR : MemRelT) (X : ExtSem) (XR : XRai
 
 /-! ## The linked theorem with unwinding -/
 
+/-- **`backend_correct_linked_unwind` without the check on the calls of the last block** (#622;
+`backend_correct_final_unwind_any`). Non-vacuity: as `backend_correct_linked_unwind` (the
+witnesses below; its premises are among `backend_correct_linked_unwind`'s). -/
+theorem backend_correct_linked_unwind_any {P : Clif.Program} {env : Clif.XEnv}
+    {f : Clif.Function} {k : Nat} {vc vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAsm}
+    {fb : FnBin} (hP : Linkable P) (hf : f ∈ P.funcs)
+    (hsub : InSubset (P.only f) f) (hc : Compiled f k vc vcp rf af fa fb)
+    (hunw : unwCheck f vc = true)
+    {X : ExtSem} {H : ArmHooks} {XR : XRaise} {U : Unw.UnwHooks} {T : Unw.FnTables}
+    {syms : String → Option Nat} {slotOff K : Nat}
+    (hcov : FormsCovered ⟨fa.k, af.slotBase⟩ vcp)
+    (hC : ∀ s, CalleeOk
+      (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) K X H vcp.CallSite)
+    (hCT : (∃ B ∈ f.blocks, B.term.isTry = true) → ∀ s, CalleeTryOk
+      (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) X H vcp.TrySite)
+    (hTls : hasTls f = true → ∀ s, TlsOk
+      (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) K X H)
+    (hX : ∀ s, XCallsOk (Clif.linkEnvX P env).toEnv (f.externs.map (·.2)) (fun sl cm w =>
+      Rel.holds ⟨frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s, syms,
+        slotOff, (RAFrame.compute vcp rf).intBase⟩ f sl cm w) X)
+    (hXR : ∀ s, XRaiseOk (Clif.linkEnvX P env) (f.externs.map (·.2)) (fun sl cm w =>
+      Rel.holds ⟨frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s, syms,
+        slotOff, (RAFrame.compute vcp rf).intBase⟩ f sl cm w) X XR)
+    (hXE : ∀ s, XRaiseExcl (Clif.linkEnvX P env) (f.externs.map (·.2)) [] (fun sl cm w =>
+      Rel.holds ⟨frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s, syms,
+        slotOff, (RAFrame.compute vcp rf).intBase⟩ f sl cm w) X XR)
+    (hsym : ∀ n b, syms n = some b → X.sym n 0 = BitVec.ofNat 64 b)
+    (hslot : af.slotBase = slotOff)
+    (hUnw : ∀ base s, CalleeUnwOkG
+      (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) K
+      (fun _ => False) s (CallAt fa base) X XR U vcp.CallSite (fun _ _ => False))
+    {lsda : Option (List CallSite)} (hsites : callSites af fa = .ok lsda)
+    (hlsda : T.lsda = lsda.map (List.map (·.entry)))
+    (hpad : padsNonzeroB af fa = true)
+    {rows : List (Nat × Cfi)} (hrows : unwindRows af fa = .ok rows) (hcie : T.cie = cieInsns)
+    (hfde : T.fde = insnsFrom 0 rows) (hsaved : savedCheck vcp rf = true)
+    {base ra : BitVec 64} {s w₀ : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State}
+    (hent : AbiEntry fb base ra s) (hres : StackAvail K af s) (hbe : BodyEntry af s w₀)
+    (hargs : ArgsIn f.sig args s) (hcs : ClifEntry f args cs)
+    (hrel : Rel.holds ⟨frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s,
+      syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f cs.frame.slots cs.mem w₀)
+    (htr : TrapsExplicitX (Clif.linkEnvX P env) (P.only f) cs) (fuel : Nat) :
+    ArmRefinesU fb base ra (Unw.ArmStepU X H U T fa) s (Clif.runLoopX env P fuel cs.toX) := by
+  have hnil := indSigs_nil_of_indFree (hP.indFree f hf)
+  refine armRefinesU_link hP hf (xinv_entry hf hcs) (fun m => ?_) fuel
+  exact backend_correct_final_unwind_any hsub hc hunw hcov hC hCT hTls hX
+    (fun _ => by rw [hnil]; exact xCallsIndOk_nil _ _ _) hXR
+    (fun _ => by rw [hnil]; exact xRaiseIndOk_nil _ _ _ _) (fun s' => by rw [hnil]; exact hXE s')
+    hsym hslot hUnw hsites hlsda hpad hrows hcie hfde hsaved hent hres hbe hargs hcs hrel htr m
+
 /-- **The backend's end-to-end theorem with unwinding against the whole program**: for a
 function `f` of a program `P` (`Linkable`) compiled from its own file `P.only f`, the Arm run on
 the machine with unwinding refines the **whole-program** CLIF run with unwinding
@@ -216,7 +267,8 @@ the exception object in x0 and the memory agreeing. The premises are
 `backend_correct_final_unwind`'s at `env := Clif.linkEnvX P env`, `p := P.only f`: the callee
 contracts for a call of a function `g` of `P` are about `g`'s whole-program run with unwinding
 (`xCallsOk_linkX`/`xRaiseOk_linkX`/`xRaiseExcl_linkX` with `xCallsOk_progX`/`xRaiseOk_progX`/
-`xRaiseExcl_progX`); the indirect-call contracts are vacuous (`Linkable`). -/
+`xRaiseExcl_progX`); the indirect-call contracts are vacuous (`Linkable`). Statement kept for its
+callers; `backend_correct_linked_unwind_any` drops `lastCallsOk`. -/
 theorem backend_correct_linked_unwind {P : Clif.Program} {env : Clif.XEnv} {f : Clif.Function}
     {k : Nat} {vc vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAsm} {fb : FnBin}
     (hP : Linkable P) (hf : f ∈ P.funcs)
@@ -247,7 +299,7 @@ theorem backend_correct_linked_unwind {P : Clif.Program} {env : Clif.XEnv} {f : 
       (fun _ => False) s (CallAt fa base) X XR U vcp.CallSite (fun _ _ => False))
     {lsda : Option (List CallSite)} (hsites : callSites af fa = .ok lsda)
     (hlsda : T.lsda = lsda.map (List.map (·.entry)))
-    (hpad : padsNonzeroB af fa = true) (hlast : lastCallsOk af fa = true)
+    (hpad : padsNonzeroB af fa = true) (_hlast : lastCallsOk af fa = true)
     {rows : List (Nat × Cfi)} (hrows : unwindRows af fa = .ok rows) (hcie : T.cie = cieInsns)
     (hfde : T.fde = insnsFrom 0 rows) (hsaved : savedCheck vcp rf = true)
     {base ra : BitVec 64} {s w₀ : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State}
@@ -256,14 +308,9 @@ theorem backend_correct_linked_unwind {P : Clif.Program} {env : Clif.XEnv} {f : 
     (hrel : Rel.holds ⟨frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s,
       syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f cs.frame.slots cs.mem w₀)
     (htr : TrapsExplicitX (Clif.linkEnvX P env) (P.only f) cs) (fuel : Nat) :
-    ArmRefinesU fb base ra (Unw.ArmStepU X H U T fa) s (Clif.runLoopX env P fuel cs.toX) := by
-  have hnil := indSigs_nil_of_indFree (hP.indFree f hf)
-  refine armRefinesU_link hP hf (xinv_entry hf hcs) (fun m => ?_) fuel
-  exact backend_correct_final_unwind hsub hc hunw hcov hC hCT hTls hX
-    (fun _ => by rw [hnil]; exact xCallsIndOk_nil _ _ _) hXR
-    (fun _ => by rw [hnil]; exact xRaiseIndOk_nil _ _ _ _) (fun s' => by rw [hnil]; exact hXE s')
-    hsym hslot hUnw hsites hlsda hpad hlast hrows hcie hfde hsaved hent hres hbe hargs hcs hrel htr
-    m
+    ArmRefinesU fb base ra (Unw.ArmStepU X H U T fa) s (Clif.runLoopX env P fuel cs.toX) :=
+  backend_correct_linked_unwind_any hP hf hsub hc hunw hcov hC hCT hTls hX hXR hXE hsym hslot hUnw
+    hsites hlsda hpad hrows hcie hfde hsaved hent hres hbe hargs hcs hrel htr fuel
 
 /-! ## Non-vacuity
 

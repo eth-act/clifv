@@ -199,10 +199,9 @@ theorem lockRet_of (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) (hK : L.Hooks
       hME.body⟩
   have hNXF : HookNIX L.Hb L.BaseDest F := hNX hN κ M g F G₀ ra₀ s₀ w₀ he
   obtain ⟨lm, hlm⟩ := FnAsm.layout_labelOffsets hc.layout
-  obtain ⟨body, psF, hpsF, -, hk⟩ := emitFunc_ok hc.emit
-  have hpsF' : blocksLinesE ⟨(L.A g).fa.k, (L.A g).af.slotBase⟩ (L.A g).af
-      (L.A g).af.blocks.toList {} = .ok (body, psF) := by
-    rw [hk]; exact hpsF
+  obtain ⟨psF, hpsF'⟩ : ∃ psF, ∃ p, emitPlan (L.A g).fa.k (L.A g).af = .ok p ∧ p.ps = psF := by
+    obtain ⟨p, hpsF, -, hk⟩ := emitFunc_ok hc.emit
+    exact ⟨p.ps, p, hk ▸ hpsF, rfl⟩
   have hx30g : (L.A g).fa.x30Free lm = true := hx30 g hg lm hlm
   have hRF : (Backend.Proof.actRL (L.A g).vcp (L.A g).rf (L.A g).af (L.A g).fa (L.A g).fb lm
       (L.A g).base s₀ (L.XPBTGY κ M g F (L.BP M g s₀) (L.RP M g s₀) (L.envOfB M g (spv w₀)) cs
