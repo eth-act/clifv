@@ -1,4 +1,5 @@
 import FV.Concurrency.ArmAllocMove
+import FV.E2E.EmitLabels
 
 /-!
 # Precise Arm runs of compiled code, forward (T2k, #311)
@@ -187,11 +188,67 @@ theorem codeLinesE_append_of {c : FnCtx} {af : AFunc} :
     simp only [List.cons_append, codeLinesE, bind, Except.bind, hr, ih, pure, Except.pure,
       List.append_assoc]
 
+/-- A line with a block target names it among its label operands. -/
+theorem target_used {ln : Line} {l : Label} (h : ln.target? = some (.block l)) :
+    Lbl.block l ∈ ln.labelsUsed := by
+  cases ln with
+  | ins i tc => cases i <;> simp_all [Line.target?, Line.labelsUsed, Insn.pcRelSpec?]
+  | word a b => simp_all [Line.target?, Line.labelsUsed]
+  | label _ => simp [Line.target?] at h
+
+/-- **No line of an instruction without successor blocks has a block target**: by
+`lines_chunk`, every label the lines of an instruction `m` use is defined among them (never a
+block label), a block label of `m.targets` or a deferred trap; the prologue's and epilogue's
+lines use no label. In particular no emitted line carrying a trap code branches to a block. -/
+theorem ainstLines_noBlockTgt {c : FnCtx} {af : AFunc} {a : AInst} {ps ps' : Backend.PState}
+    {ls : List Line} (h : ainstLines c af a ps = .ok (ls, ps'))
+    (hT : ∀ m, a = .inst m → m.targets = []) :
+    ∀ ln ∈ ls, ∀ l, ln.target? ≠ some (.block l) := by
+  intro ln hln l ht
+  have hu := target_used ht
+  cases a with
+  | inst m =>
+    have ch := E2E.EmitLabels.lines_chunk (m := m) h
+    rw [hT m rfl] at ch
+    rcases ch.uses_in _ (E2E.EmitLabels.mem_uses.2 ⟨ln, hln, hu⟩) with hd | ⟨_, h', -⟩ | ⟨_, h', -⟩
+    · rcases ch.defs_in _ hd with ⟨_, h'', -⟩ | ⟨_, h'', -⟩ | ⟨_, h'', -⟩
+      · simp at h''
+      · cases h''
+      · cases h''
+    · simp at h'
+    · cases h'
+  | prologue =>
+    simp only [ainstLines, pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at h
+    obtain ⟨rfl, -⟩ := h
+    split at hln
+    · rw [(E2E.EmitLabels.prologueLines_plain _ _ ln hln).2] at hu; simp at hu
+    · simp at hln
+  | epilogueRet =>
+    simp only [ainstLines, pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at h
+    obtain ⟨rfl, -⟩ := h
+    split at hln
+    · rw [(E2E.EmitLabels.epilogueLines_plain _ _ ln hln).2] at hu; simp at hu
+    · simp only [List.mem_singleton] at hln; subst hln; simp [Line.target?] at ht
+
+theorem codeLinesE_single {c : FnCtx} {af : AFunc} {a : AInst} {ps ps' : Backend.PState}
+    {ls : List Line} (h : codeLinesE c af [a] ps = .ok (ls, ps')) : ainstLines c af a ps = .ok (ls, ps') := by
+  cases hr : ainstLines c af a ps with
+  | error e => simp [codeLinesE, hr, bind, Except.bind] at h
+  | ok r =>
+    obtain ⟨l1, ps1⟩ := r
+    simp [codeLinesE, hr, bind, Except.bind, pure, Except.pure] at h
+    obtain ⟨rfl, rfl⟩ := h
+    rfl
+
 /-- **At a `Q` state the first line of the remaining items' code is at the pc** (a plain
-instruction line without block target). -/
+instruction line). `hR` (every caller has it): under `Q = Qs ∨ QE` the head line can be the
+block's last instruction's, whose final form is the emission plan's (`segTermOk`), related to its
+unsimplified line through `lowerRFunc` (`hR.alloc`) and `hR.psF`. A plain head line of a last
+instruction with no block successor is kept by the branch simplification
+(`ainstLines_noBlockTgt`). -/
 theorem q_head {R : RL} (hR : R.Wf) {s : ArmState} {b : Nat} {its : List RItem} {m : Loc → CV}
     {w : ArmState} (hq : Q R s (.run ⟨b, its, m, w⟩)) {x : Insn} {t : Option Clif.TrapCode}
-    (hpl : (Line.ins x t).plain = true) (hnt : ∀ l, Line.target? (.ins x t) ≠ some (.block l))
+    (hpl : (Line.ins x t).plain = true)
     (hh : ∀ vb code, R.vc.blocks[b]? = some vb → itemsCode R.fr vb its = .ok code →
       ∀ ps ls ps', codeLinesE R.ctx R.af code ps = .ok (ls, ps') → ls.head? = some (.ins x t)) :
     ∃ j, R.fa.lines.toList[j]? = some (.ins x t) ∧ Arm.r .PC s = R.pcOf j ∧ StRel R s m w := by
@@ -317,7 +374,25 @@ theorem q_head {R : RL} (hR : R.Wf) {s : ArmState} {b : Nat} {its : List RItem} 
     | cons a r => rw [ht] at hhd; simpa using hhd
   rcases hlo 0 _ _ h0 (by rw [hz]; rfl) with ⟨rfl, -⟩ | ⟨l, -, hxt, -⟩
   · exact ⟨rest, hz⟩
-  · exact absurd hxt (hnt l)
+  · exfalso
+    have hA := codeLinesE_single hT
+    have hmem : Line.ins x t ∈ xs.1.term := List.mem_of_getElem? h0
+    by_cases hjt : ∃ d ts ri t1 t2, y = .inst (.jtSequence d ts ri t1 t2)
+    · obtain ⟨d, ts, ri, t1, t2, rfl⟩ := hjt
+      simp only [ainstLines, MInst.lines, pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at hA
+      rw [← hA.1] at h0
+      simp only [List.cons_append, List.getElem?_cons_zero, Option.some.injEq, Line.ins.injEq] at h0
+      obtain ⟨rfl, rfl⟩ := h0
+      simp [Line.plain, Insn.condTarget?] at hpl
+    refine ainstLines_noBlockTgt hA (fun m hm => ?_) _ hmem l hxt
+    subst hm
+    cases m with
+    | jump l' => exact absurd ⟨l', rfl⟩ hj
+    | condBr a b k => exact absurd ⟨a, b, k, rfl⟩ hc
+    | testBitAndBranch k a b rn bit => exact absurd ⟨k, a, b, rn, bit, rfl⟩ htb
+    | tryCall info ti => exact absurd ⟨info, ti, rfl⟩ htc
+    | jtSequence d ts ri t1 t2 => exact absurd ⟨d, ts, ri, t1, t2, rfl⟩ hjt
+    | _ => rfl
 
 /-- The lines of code starting with `fence` start with `dmb ish`. -/
 theorem codeLinesE_head_fence {ctx : FnCtx} {af : AFunc} {rest : List AInst} {ps ps' : Backend.PState}

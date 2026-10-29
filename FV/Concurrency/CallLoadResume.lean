@@ -170,7 +170,7 @@ theorem funReal_callFull (env : Clif.Env) :
       (RC.s0, none) (.run csC) := by
   obtain ⟨m, hpath, hqB, hx0⟩ := prefixF
   have hstr := q_stRel hqB
-  obtain ⟨j, hj, hpc, -⟩ := q_head wfRC hqB rfl (fun _ h => by cases h) head_blC
+  obtain ⟨j, hj, hpc, -⟩ := q_head wfRC hqB rfl head_blC
   have hsub : ∀ a, PrivA RC a → PrivA RLF a := fun a h => Or.inr h
   have hmono : ∀ {x : ArmState × Mon} {L : List Lab} {v : ArmState × Mon},
       PRun Policy.arm MC2 (OkPriv RLF) x L v → PRun Policy.arm MC2 (OkPriv RC) x L v :=

@@ -353,7 +353,7 @@ theorem run_store : ∃ (n : Nat) (lsP : List Lab) (e : Ev) (t' : ArmState × Mo
     (fun K => (K == .plainW || K == .plainR) = true) spillS rest2S t1.1 m' t1.2 hq2 hA2
     (moves_kinds checksRunS.2.2.1) (by simp [spillS, Loc.isSave])
   -- the `stlr`
-  obtain ⟨j, hj, hpc, hstr⟩ := q_head wfRS hq3 rfl (fun _ h => by cases h) head_stlrS
+  obtain ⟨j, hj, hpc, hstr⟩ := q_head wfRS hq3 rfl head_stlrS
   obtain ⟨t3, ev, r3, -, hk, hn, ha⟩ := excl_step_fwd wfRS hj rfl hstr.prog hpc hstr.err
     (lb := 0) (p := 1) (q := 0) (.inl rfl) (by omega) (by omega) (fun _ => rfl) t2.2
   simp only [show ¬ (0 : Nat) = 1 from by decide, ite_false] at hk
