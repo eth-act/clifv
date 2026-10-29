@@ -59,13 +59,13 @@ theorem regLevel_value_prefixCG {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : Fn
         CallSiteAt (frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af G s)
           K G s fa base i ((ops.toList.filter Operand.isUse).map (ρ ·.vreg)) w u := by
   obtain ⟨lm, hlm⟩ := FnAsm.layout_labelOffsets hlayout
-  obtain ⟨body, psF, hb, -, hk⟩ := emitFunc_ok hemit
+  obtain ⟨p, hp, -, hk⟩ := emitFunc_ok hemit
   subst hk
   let XN := XI.upTo N
-  let Rn : Nat → RL := fun n => ⟨vcp, rf, af, fa, fb, lm, base, s, XN.at n, H, psF, K, G, gv⟩
+  let Rn : Nat → RL := fun n => ⟨vcp, rf, af, fa, fb, lm, base, s, XN.at n, H, p.ps, K, G, gv⟩
   let R : RL := Rn 0
   have hRn : ∀ n, (Rn n).Wf := fun _ => ⟨⟨cc, ins, a0, hcheck, hok⟩, halloc, hemit, hlayout, hlm,
-    by show 4 * fb.words.size ≤ 2 ^ 64; have := hent.fits; omega, hres, ⟨body, hb⟩, hent.program, hG⟩
+    by show 4 * fb.words.size ≤ 2 ^ 64; have := hent.fits; omega, hres, ⟨p, hp, rfl⟩, hent.program, hG⟩
   have hR : R.Wf := hRn 0
   have hC' : ∀ n, CalleeOkGP (fun u => OnCall R.step fa base s n u ∧ spOf u = R.spB) R.F K G s
       (CallAt fa base) (XN.at n) H vcp.CallSite gv := fun n => by

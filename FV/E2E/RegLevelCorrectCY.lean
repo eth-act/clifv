@@ -293,7 +293,7 @@ theorem realizes_stepCY {R : RL} (hR : R.Wf) {P : Arm.ArmState → Prop}
         obtain ⟨rfl, rfl, rfl⟩ := hsem
         cases hn with
         | halt => exact finT 0 _ hstep trivial nil (hoc0 rfl)
-      case emitIsland nb => exact finT 0 c' hstep (realizes_island hq hvb hi hstep) nil (hoc0 rfl)
+      case emitIsland nb => exact finT 0 c' hstep (realizes_island hR hq hvb hi hstep) nil (hoc0 rfl)
       case jtSequence d ts ridx t1 t2 =>
         obtain ⟨n, c'', hm, hq', ht⟩ := realizes_jtNR (Y := fun _ => True) hR hq hvb hi hstep
         exact finT n c'' hm hq' ht (hoc0 rfl)

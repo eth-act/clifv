@@ -18,11 +18,20 @@ open Backend Backend.DeadCleanup
 private theorem q_world_changeC {R : RL} {s : Arm.ArmState} {b : Nat} {its : List RItem}
     {m : Loc → CV} {w w' : Arm.ArmState} (hq : Q R s (.run ⟨b, its, m, w⟩))
     (hw : SameWorld R.F w w') : Q R s (.run ⟨b, its, m, w'⟩) := by
-  obtain ⟨j, vb, items, pre, code, ls, ps1, ps2, T,
-    hb, hi, hsplit, hc, hcode, hlines, htr, hdrop, hpc, hst⟩ := hq
-  exact ⟨j, vb, items, pre, code, ls, ps1, ps2, T,
-    hb, hi, hsplit, hc, hcode, hlines, htr, hdrop, hpc,
-    { hst with world := hst.world.trans hw }⟩
+  have hqs : ∀ {b its}, Qs R s b its m w → Qs R s b its m w' := by
+    intro b its h
+    obtain ⟨j, vb, items, pre, code, X, ps1, psm, ps2, x, hb, hi, hsplit, hc, hcode, hl1, hl2,
+      htr, hdrop, hpc, hst, hx, hsc⟩ := h
+    exact ⟨j, vb, items, pre, code, X, ps1, psm, ps2, x, hb, hi, hsplit, hc, hcode, hl1, hl2,
+      htr, hdrop, hpc, { hst with world := hst.world.trans hw }, hx, hsc⟩
+  have hqe : ∀ {b}, QE R s m w b → QE R s m w' b := by
+    intro b h
+    induction h with
+    | std hit hq => exact .std hit (hqs hq)
+    | fwd h1 h2 h3 h4 h5 h6 h7 h8 h9 h10 _ ih => exact .fwd h1 h2 h3 h4 h5 h6 h7 h8 h9 h10 ih
+  rcases hq with h | ⟨items, hit, hits, h⟩
+  · exact .inl (hqs h)
+  · exact .inr ⟨items, hit, hits, hqe h⟩
 
 private theorem aInv_step_semC {R : RL} {sem : Sem} (hR : R.Wf)
     {s : Arm.ArmState} {c c' : MConf CV Arm.ArmState}
@@ -32,7 +41,7 @@ private theorem aInv_step_semC {R : RL} {sem : Sem} (hR : R.Wf)
   | @move b src dst its m w =>
     intro hb hop
     subst hb
-    obtain ⟨j, vb, items, pre, -, -, -, -, -, -, hit, hsplit, -⟩ := hq
+    obtain ⟨items, pre, hit, hsplit⟩ := Q.split hq
     obtain ⟨hmv, hrd⟩ := ctlCheck_before hck hit hsplit hop
     have hA' := hA rfl (by obtain ⟨a, ha⟩ := hop; exact ⟨a, List.mem_cons_of_mem _ ha⟩)
     intro r hr
@@ -45,7 +54,7 @@ private theorem aInv_step_semC {R : RL} {sem : Sem} (hR : R.Wf)
     | next =>
       intro hb hop
       subst hb
-      obtain ⟨j, vb0, items, pre, -, -, -, -, -, -, hit, hsplit, -⟩ := hq
+      obtain ⟨items, pre, hit, hsplit⟩ := Q.split hq
       have := (ctlCheck_before hck hit hsplit hop).1
       simp [RItem.isMove] at this
     | goto _ hs _ =>
