@@ -424,7 +424,7 @@ theorem realizes_gotoNAF {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : Arm.
     · rw [RL.emptyW_entry_iff hns]
       exact ⟨fun _ => .inl hT, fun _ => rfl⟩
   rcases hq with ⟨-, hqs⟩ | ⟨hT', -⟩
-  swap
+  rotate_left
   · exact absurd hT hT'
   obtain ⟨vb0, _, _, code, _, _, _, _, hvb0, -, -, hchk0, hcode, -⟩ := id hqs
   rw [hvb] at hvb0; cases hvb0

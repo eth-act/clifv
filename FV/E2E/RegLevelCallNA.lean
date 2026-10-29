@@ -14,17 +14,28 @@ namespace Backend.Proof
 
 open Backend E2E
 
+/-- The targets of a straight step: the line of the step's next witness (at any arrival pc). -/
+theorem RL.tgtS_of_straight {R : RL} {j : Nat} {ps1 : PState} {T : List Line}
+    {c c'' : MConf CV Arm.ArmState} (hS : RL.Straight c c'') (p : BitVec 64) :
+    R.TgtS j ps1 T c c'' = (· = R.pcOf (R.nextW j ps1 T c c'' p).1) := by
+  unfold RL.Straight at hS
+  split at hS
+  · obtain ⟨rfl, rfl⟩ := hS
+    rw [RL.tgtS_straight, RL.nextW_straight]
+  · exact hS.elim
+
 /-- **A straight segment inside its plain lines `ls1` from line `j`, ending at the line after them,
 with no step exactly for no line, has `SegLen`.** -/
 theorem RL.segLen_straight_of {R : RL} (hR : R.Wf) {j : Nat} {ps1 : PState} {T : List Line}
     {c c'' : MConf CV Arm.ArmState} {s : Arm.ArmState} {n : Nat} {ls1 : List Line}
-    (hS : RL.Straight c c'') (hW : (R.nextW j ps1 T c c'').1 = j + ls1.length)
+    (hS : RL.Straight c c'') (hW : ∀ p, (R.nextW j ps1 T c c'' p).1 = j + ls1.length)
     (hT : ∃ T', R.L.drop j = ls1 ++ T') (hpl : ∀ ln ∈ ls1, ln.plain = true)
     (hpn : Arm.r .PC (iterN R.step n s) = R.pcOf (j + ls1.length))
     (hin : R.Inside s n j (j + ls1.length)) (hn0 : n = 0 ↔ ls1 = []) :
     R.SegLen j ps1 T c c'' s n := by
   refine ⟨?_, ?_⟩
-  · rw [hW]
+  · rw [RL.tgtS_of_straight hS 0, hW]
+    refine firstArrS_singleton.mpr ?_
     rcases Nat.eq_zero_or_pos n with h0 | h0
     · subst h0
       exact ⟨hpn, fun i h0 hi => absurd hi (by omega)⟩
@@ -78,18 +89,21 @@ theorem realizes_op_coreXSW {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat}
       RunsAsSJ R exec i' ls1 Pre SegJ)
     (hW' : Arm.r .ERR w' = .None ∧ w'.program = w.program) :
     ∃ n c'' ls1, MStep R.vc R.sem ckeep R.rf (.run ⟨b, .op k allocs :: its, m, w⟩) c'' ∧
-      QW R (iterN R.step n s) (R.nextW j ps1 T (.run ⟨b, .op k allocs :: its, m, w⟩) c'').1
-        (R.nextW j ps1 T (.run ⟨b, .op k allocs :: its, m, w⟩) c'').2.1
-        (R.nextW j ps1 T (.run ⟨b, .op k allocs :: its, m, w⟩) c'').2.2 c'' ∧ SegJ ls1 j s n ∧
-      (R.nextW j ps1 T (.run ⟨b, .op k allocs :: its, m, w⟩) c'').1 = j + ls1.length ∧
+      R.QWn j ps1 T (.run ⟨b, .op k allocs :: its, m, w⟩) c'' (iterN R.step n s) ∧ SegJ ls1 j s n ∧
+      (∀ p, (R.nextW j ps1 T (.run ⟨b, .op k allocs :: its, m, w⟩) c'' p).1 = j + ls1.length) ∧
       RL.Straight (.run ⟨b, .op k allocs :: its, m, w⟩) c'' ∧
       (∃ T', R.L.drop j = ls1 ++ T') ∧ (∀ ln ∈ ls1, ln.plain = true) ∧
       Arm.r .PC (iterN R.step n s) = R.pcOf (j + ls1.length) := by
-  obtain ⟨vb0, items, pre, code, ls, ps2, hvb0, hit, hsplit, hchk, hcode, hls, htr, hdrop,
-    hpc, hst⟩ := hq
+  obtain ⟨hT0, hq'⟩ := hq.qws_lt hvb hk
+  have hne : its ≠ [] := by
+    obtain ⟨vb0, _, _, _, _, _, _, _, hvb0, -, -, hchk0, -⟩ := hq'
+    rw [hvb] at hvb0
+    cases hvb0
+    exact hchk0.tail_ne hk
+  obtain ⟨vb0, items, pre, c1, c2, lsA, X', psm, psm', ps2, x, hvb0, hit, hsplit, hchk, hc1,
+    hc2, h1, h2, h3, htr, hdrop, hpc, hst, hx, hsc⟩ := qWs_split hR hq' hne
   rw [hvb] at hvb0
   cases hvb0
-  obtain ⟨c1, c2, hc1, hc2, rfl⟩ := itemsCode_cons hcode
   have hc1o := hc1
   obtain ⟨regs, i0, i', rfl, hi0, hasg, hc1'⟩ := itemCode_op hc1
   rw [hi] at hi0
@@ -108,35 +122,25 @@ theorem realizes_op_coreXSW {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat}
   rotate_left
   · exact absurd rfl (hna ds)
   · exact absurd rfl (hnr us)
-  obtain ⟨ls1', ls2, psm, h1, h2, rfl⟩ := codeLinesE_append _ _ _ _ _ hls
   have h1' : codeLinesE R.ctx R.af [AInst.inst i'] ps1 = .ok (ls1, ps1) := by
     simp [codeLinesE, ainstLines, hl1 ps1, bind, Except.bind, pure, Except.pure]
   have hWs := RL.straightW_eq (T := T) (j := j) hvb hc1o h1'
-  rw [relaxLines_plain hpl] at hWs
   rw [h1'] at h1
   simp only [Except.ok.injEq, Prod.mk.injEq] at h1
-  obtain ⟨rfl, rfl⟩ := h1
-  have hZ : ∀ n, (ls2 ++ nxtOf R.af b)[1]? ≠ some (.label (.trap n)) := by
-    intro n e
-    have hm := List.mem_of_getElem? e
-    rcases List.mem_append.1 hm with hm | hm
-    · exact codeLinesE_noTrap _ _ _ _ h2 _ hm n rfl
-    · simp only [nxtOf] at hm
-      split at hm <;> simp at hm
-  have hdrop' : R.L.drop j = ls1 ++ (relaxLines R.far (ftList (ls2 ++ nxtOf R.af b)) ++ T) := by
-    rw [hdrop, List.append_assoc, ftR_plain_append _ _ _ hpl hZ, List.append_assoc]
+  obtain ⟨hA, hpsm⟩ := h1
+  subst hA hpsm
+  have hdrop' : R.L.drop j = ls1 ++ (relaxLines R.far (X' ++ x.2.1) ++
+      R.L.drop (rix R.far (planLines R.fa.k R.af) x.2.2)) := by
+    rw [hdrop, relaxLines_plain hpl]
   obtain ⟨nst, hiter, hpc', hgood⟩ := hruns j _ s m w s' hdrop' hst hpc hpre hex
-  have hW1 : ∀ (m' : Loc → CV) (w'' : Arm.ArmState),
-      R.nextW j ps1 T (.run ⟨b, .op k (regs.map Loc.reg) :: its, m, w⟩) (.run ⟨b, its, m', w''⟩) =
-        (j + ls1.length, ps1, T) := fun _ _ => RL.nextW_straight.trans hWs
   refine ⟨nst, _, ls1, MStep.op hvb hi hops hsz hsem hlen (HavocOuts.refl _ _ _) hc2' (MNext.next hk),
-    ?_, hgood, by rw [hW1], by simp [RL.Straight], ⟨_, hdrop'⟩, hpl, by rw [hiter, hpc']⟩
-  rw [hW1]
+    ?_, hgood, fun p => by rw [RL.nextW_straight, hWs, relaxLines_plain hpl], by simp [RL.Straight],
+    ⟨_, hdrop'⟩, hpl, by rw [hiter, hpc']⟩
+  unfold RL.QWn
+  rw [RL.nextW_straight, hWs]
   have hfr := R.frameOkK hR
-  refine ⟨vb, items, pre ++ [.op k (regs.map Loc.reg)], c2, ls2, ps2, hvb,
-    hit, by rw [hsplit]; simp, hchk', hc2, h2, htr, ?_, ?_, ?_⟩
-  · rw [← List.drop_drop, hdrop', List.drop_left]
-  · rw [hiter, hpc']
+  refine .inl ⟨hT0, qWs_next hvb hit hsplit hchk' hc2 h2 h3 htr hdrop ?_ ?_ hx hsc⟩
+  · rw [relaxLines_plain hpl, hiter, hpc']
   · rw [hiter]
     have hsp' : spOf s' = R.spB := hK.1.trans hst.sp
     have herr' : Arm.r .ERR s' = .None := by
@@ -172,9 +176,7 @@ theorem realizes_callNAF {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop}
     (hlen : outs.length = ((ops.zip allocs).toList.filter (·.1.isDef)).length)
     (hk : k + 1 < vb.insts.size) :
     ∃ n c'', MStep R.vc R.sem ckeep R.rf (.run ⟨b, .op k allocs :: its, m, w⟩) c'' ∧
-      QW R (iterN R.step n s) (R.nextW j ps1 T (.run ⟨b, .op k allocs :: its, m, w⟩) c'').1
-        (R.nextW j ps1 T (.run ⟨b, .op k allocs :: its, m, w⟩) c'').2.1
-        (R.nextW j ps1 T (.run ⟨b, .op k allocs :: its, m, w⟩) c'').2.2 c'' ∧
+      R.QWn j ps1 T (.run ⟨b, .op k allocs :: its, m, w⟩) c'' (iterN R.step n s) ∧
       (∀ i < n, R.GoodX (iterN R.step i s) ∧ R.ReadsInY Y (iterN R.step i s)) ∧
       (∃ i0 < n, R.CallSt (iterN R.step i0 s) ∧
         ∀ i < n, i ≠ i0 → R.NoCallAt (iterN R.step i s)) ∧
@@ -191,8 +193,8 @@ theorem realizes_callNAF {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop}
     obtain ⟨rfl, rfl, -⟩ := he
     exact hC.ext _ _ _ _ _ hx herr
   have hpre : R.CallPre s := by
-    obtain ⟨-, -, -, regs, i', -, -, -, -, -, -, -, -, cc, wh, ops', hal, -, -, hasg, -, hops', hstat,
-      -, -, -, -, -, -, -, hst⟩ := q_op hq' hvb hi
+    obtain ⟨-, -, -, regs, i', -, -, -, -, -, -, -, -, -, cc, wh, ops', hal, -, -, hasg, -, hops',
+      hstat, -, -, -, -, -, -, -, -, hst, -, -⟩ := q_op hR hq' hvb hi hk
     rw [hops] at hops'; cases hops'
     have hm : ∀ r, r.allocatable = true → m (.reg r) = regVal s r := fun r hr =>
       hst.store (.reg r) (fun r' e => by cases e; exact hr) trivial
@@ -200,7 +202,7 @@ theorem realizes_callNAF {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop}
     rw [hal, useVals_of_store hstat hm] at hsemU
     exact ⟨R.ctx, .call info, .next, ⟨info, ⟨b, vb, k, hvb, .inl hi⟩, .inl rfl⟩, by rw [hst.sp]; exact RL.K_le hR,
       fun a ha => by rw [hst.sp] at ha; exact RL.below_F ha, hst.gkeep, cc, wh, ops, regs, i', w,
-      outs, w', hops, hstat, hasg, callAt_of_q hq' hvb hi call_hcall regs i' hal hasg, hst.world,
+      outs, w', hops, hstat, hasg, callAt_of_q hR hq' hvb hi call_hcall regs i' hal hasg, hst.world,
       hst.align, hst.err, hsemU⟩
   have hgen : ∀ regs i', (MInst.call info).assign regs = .ok i' →
       (∃ (c : CheckCtx) (wh : String), c.checkStatic wh ops (regs.map Loc.reg)
@@ -270,7 +272,8 @@ theorem realizes_callNAF {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop}
   obtain ⟨n, c'', ls1, hms, hqn, ⟨⟨hgx, hcs⟩, hn1, hpcne⟩, hWn, hS, hT, hpl, hpn⟩ :=
     realizes_op_coreXSW hR hq hvb hi hops hsz hsem hlen hk (exec := fun _ => callExec R.H)
     (fun _ => RL.callAtGP hR (hC.os R.ctx info ⟨b, vb, k, hvb, .inl hi⟩) hP (q_stRel hq').sp
-      (q_stRel hq').gkeep fun i' ⟨regs, hal, hasg⟩ => callAt_of_q hq' hvb hi call_hcall regs i' hal hasg)
+      (q_stRel hq').gkeep fun i' ⟨regs, hal, hasg⟩ =>
+        callAt_of_q hR hq' hvb hi call_hcall regs i' hal hasg)
     hpre (fun regs i' hasg _ _ hcs => hgen regs i' hasg hcs) hW'
   subst hn1
   refine ⟨1, c'', hms, hqn, hgx, hcs, RL.segLen_straight_of hR hS hWn hT hpl hpn RL.Inside.one
@@ -298,9 +301,7 @@ theorem realizes_callNA {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop}
     (hlen : outs.length = ((ops.zip allocs).toList.filter (·.1.isDef)).length)
     (hk : k + 1 < vb.insts.size) :
     ∃ n c'', MStep R.vc R.sem ckeep R.rf (.run ⟨b, .op k allocs :: its, m, w⟩) c'' ∧
-      QW R (iterN R.step n s) (R.nextW j ps1 T (.run ⟨b, .op k allocs :: its, m, w⟩) c'').1
-        (R.nextW j ps1 T (.run ⟨b, .op k allocs :: its, m, w⟩) c'').2.1
-        (R.nextW j ps1 T (.run ⟨b, .op k allocs :: its, m, w⟩) c'').2.2 c'' ∧
+      R.QWn j ps1 T (.run ⟨b, .op k allocs :: its, m, w⟩) c'' (iterN R.step n s) ∧
       (∀ i < n, R.GoodX (iterN R.step i s) ∧ R.ReadsInY Y (iterN R.step i s)) ∧
       (∃ i0 < n, R.CallSt (iterN R.step i0 s) ∧
         ∀ i < n, i ≠ i0 → R.NoCallAt (iterN R.step i s)) ∧
