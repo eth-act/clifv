@@ -49,7 +49,7 @@ inductive Lbl where
   deriving DecidableEq, Repr, Inhabited, Hashable
 
 /-- Assembly name of a label of function `k` (its index in the file). -/
-def Lbl.name (k : Nat) : Lbl → String
+@[expose] def Lbl.name (k : Nat) : Lbl → String
   | .block l => s!".L{k}_b{l}"
   | .trap n => s!".L{k}_t{n}"
   | .jt n => s!".L{k}_jt{n}"
@@ -275,7 +275,7 @@ structure PState where
 (`OperandSize::from_ty`: 32-bit below `i64`), with the operand register extended to the access
 size for `i8`/`i16` (`sxt{b,h}` for `smin`/`smax`, whose loaded value is sign-extended first,
 `uxt{b,h}` for `umin`/`umax`). -/
-def rmwLoopCmp (op : AtomicRmwLoopOp) (bits : Nat) : Insn :=
+@[expose] def rmwLoopCmp (op : AtomicRmwLoopOp) (bits : Nat) : Insn :=
   match op, bits with
   | .smin, 8 | .smax, 8 => .aluRRRExtend .subS false .xzr (.x 27) (.x 26) .sxtb
   | .smin, 16 | .smax, 16 => .aluRRRExtend .subS false .xzr (.x 27) (.x 26) .sxth
@@ -285,7 +285,7 @@ def rmwLoopCmp (op : AtomicRmwLoopOp) (bits : Nat) : Insn :=
 
 /-- `sxt{b,h} w27, w27` before the `smin`/`smax` comparison of a subword (`Inst::Extend` to 32
 bits). -/
-def rmwLoopSext (bits : Nat) : List Insn :=
+@[expose] def rmwLoopSext (bits : Nat) : List Insn :=
   match bits with
   | 8 => [.bfm .sBfm false (.x 27) (.x 27) 0 7]
   | 16 => [.bfm .sBfm false (.x 27) (.x 27) 0 15]
@@ -294,7 +294,7 @@ def rmwLoopSext (bits : Nat) : List Insn :=
 /-- The instructions of the `atomic_rmw` loop between `ldaxr x27, [x25]` and `stlxr`: the new
 value in x28 from the old value x27 and the operand x26, at the operation size (`xchg`: none,
 it stores x26). -/
-def rmwLoopMid (op : AtomicRmwLoopOp) (bits : Nat) : List Insn :=
+@[expose] def rmwLoopMid (op : AtomicRmwLoopOp) (bits : Nat) : List Insn :=
   let w := bits == 64
   match op with
   | .xchg => []
@@ -310,16 +310,16 @@ def rmwLoopMid (op : AtomicRmwLoopOp) (bits : Nat) : List Insn :=
   | .umax => [rmwLoopCmp .umax bits, .csel (.x 28) (.x 27) (.x 26) .hi]
 
 /-- The register `stlxr` stores: the new value x28, or the operand x26 for `xchg`. -/
-def rmwLoopStored (op : AtomicRmwLoopOp) : Reg := if op == .xchg then .x 26 else .x 28
+@[expose] def rmwLoopStored (op : AtomicRmwLoopOp) : Reg := if op == .xchg then .x 26 else .x 28
 
 /-- The body of the `atomic_rmw` loop: `ldaxr x27, [x25]; …; stlxr w24, x28, [x25]`. -/
-def rmwLoopBody (bits : Nat) (op : AtomicRmwLoopOp) (fl : Clif.MemFlags) : List Line :=
+@[expose] def rmwLoopBody (bits : Nat) (op : AtomicRmwLoopOp) (fl : Clif.MemFlags) : List Line :=
   [.ins (.ldaxr bits (.x 27) (.x 25)) fl.trapCode] ++
     (rmwLoopMid op bits).map (fun i => .ins i) ++
     [.ins (.stlxr bits (.x 24) (rmwLoopStored op) (.x 25)) fl.trapCode]
 
 /-- The lines of the `atomic_rmw` loop at label `l`: `l: <body>; cbnz x24, l`. -/
-def rmwLoopLines (bits : Nat) (op : AtomicRmwLoopOp) (fl : Clif.MemFlags) (l : Lbl) : List Line :=
+@[expose] def rmwLoopLines (bits : Nat) (op : AtomicRmwLoopOp) (fl : Clif.MemFlags) (l : Lbl) : List Line :=
   .label l :: rmwLoopBody bits op fl ++ [.ins (.cbz true true (.x 24) l)]
 
 /-- The comparison of the `atomic_cas` loop: the zero-extended loaded value x27 against the
@@ -328,7 +328,7 @@ Cranelift compares all 64 bits of x26 (`cmp x27, x26`), whose upper half is unsp
 `i32` value (e.g. an `ireduce`), so a CAS whose expected value has nonzero upper register bits
 fails although the low 32 bits match (observed with `clif-native`); the backend compares
 `x27` with `w26, uxtw`. -/
-def casLoopCmp (bits : Nat) : Insn :=
+@[expose] def casLoopCmp (bits : Nat) : Insn :=
   match bits with
   | 8 => .aluRRRExtend .subS true .xzr (.x 27) (.x 26) .uxtb
   | 16 => .aluRRRExtend .subS true .xzr (.x 27) (.x 26) .uxth
@@ -336,12 +336,12 @@ def casLoopCmp (bits : Nat) : Insn :=
   | _ => .aluRRR .subS true .xzr (.x 27) (.x 26)
 
 /-- The head of the `atomic_cas` loop: `ldaxr x27, [x25]; cmp …`. -/
-def casLoopHead (bits : Nat) (fl : Clif.MemFlags) : List Line :=
+@[expose] def casLoopHead (bits : Nat) (fl : Clif.MemFlags) : List Line :=
   [.ins (.ldaxr bits (.x 27) (.x 25)) fl.trapCode, .ins (casLoopCmp bits)]
 
 /-- The lines of the `atomic_cas` loop at labels `again`, `out`:
 `again: ldaxr x27, [x25]; cmp …; b.ne out; stlxr w24, x28, [x25]; cbnz x24, again; out:`. -/
-def casLoopLines (bits : Nat) (fl : Clif.MemFlags) (again out : Lbl) : List Line :=
+@[expose] def casLoopLines (bits : Nat) (fl : Clif.MemFlags) (again out : Lbl) : List Line :=
   .label again :: casLoopHead bits fl ++
     [.ins (.bcond .ne out), .ins (.stlxr bits (.x 24) (.x 28) (.x 25)) fl.trapCode,
      .ins (.cbz true true (.x 24) again), .label out]
@@ -514,7 +514,7 @@ where
 /-- The epilogue frees the frame by adjusting `sp` (as the prologue allocated it; `x16` holds
 large sizes), then pops fp/lr and returns. It does not read `fp`: the body keeps `sp`
 (`FrameKeep`), which is what the register-level proof tracks. -/
-def epilogueLines (size : Nat) : List Line :=
+@[expose] def epilogueLines (size : Nat) : List Line :=
   (if size == 0 then []
    else match Imm12.ofNat? size with
      | some i => [.ins (.aluImm12 .add true .sp .sp i)]
@@ -609,7 +609,7 @@ of far labels only grows; when the fuel (more than the number of lines, hence of
 out, every relaxable branch is relaxed. With no far label the lines are unchanged. -/
 
 /-- Byte offsets of the labels from byte offset `off` with the labels found so far in `m`. -/
-def labelOffsets.go : List Line → Nat → Std.HashMap Lbl Nat → Except String (Std.HashMap Lbl Nat)
+@[expose] def labelOffsets.go : List Line → Nat → Std.HashMap Lbl Nat → Except String (Std.HashMap Lbl Nat)
   | [], _, m => pure m
   | ln :: rest, off, m =>
     match ln with
@@ -625,7 +625,7 @@ def labelOffsets (lines : Array Line) : Except String (Std.HashMap Lbl Nat) :=
 /-- The label operand of a PC-relative form, its reach in bytes (`-reach ≤ target - pc <
 reach`) and its alignment (Arm ARM C6.2: B `imm26:'00'`, B.cond/CBZ/CBNZ `imm19:'00'`,
 TBZ/TBNZ `imm14:'00'`, ADR `immhi:immlo`; C7.2 LDR (literal, SIMD&FP) `imm19:'00'`). -/
-def Insn.pcRelSpec? : Insn → Option (Lbl × Int × Int)
+@[expose] def Insn.pcRelSpec? : Insn → Option (Lbl × Int × Int)
   | .b t => some (t, 128 * 2 ^ 20, 4)
   | .bcond _ t | .cbz _ _ _ t => some (t, 2 ^ 20, 4)
   | .tbz _ _ _ t => some (t, 32 * 2 ^ 10, 4)
@@ -634,14 +634,14 @@ def Insn.pcRelSpec? : Insn → Option (Lbl × Int × Int)
   | _ => none
 
 /-- Whether the PC-relative operand of `i` at byte offset `pc` reaches byte offset `o`. -/
-def Insn.reaches (i : Insn) (pc o : Nat) : Bool :=
+@[expose] def Insn.reaches (i : Insn) (pc o : Nat) : Bool :=
   match i.pcRelSpec? with
   | some (_, reach, _) => decide (-reach ≤ (o : Int) - pc ∧ (o : Int) - pc < reach)
   | none => true
 
 /-- The target of a conditional branch relaxation may rewrite: a block or trap label (the
 atomic loops' and jump tables' labels are a few instructions away). -/
-def Insn.relaxTarget? (i : Insn) : Option Lbl :=
+@[expose] def Insn.relaxTarget? (i : Insn) : Option Lbl :=
   match i.condTarget? with
   | some (.block l) => some (.block l)
   | some (.trap n) => some (.trap n)
@@ -661,7 +661,7 @@ def Insn.relaxTarget? (i : Insn) : Option Lbl :=
 @[expose] def relaxLines (far : Lbl → Bool) (ls : List Line) : List Line := ls.flatMap (relaxLine far)
 
 /-- `farTargets` at byte offset `pc` with the far labels found so far in `acc`. -/
-def farTargets.go (m : Std.HashMap Lbl Nat) : List Line → Nat → List Lbl → List Lbl
+@[expose] def farTargets.go (m : Std.HashMap Lbl Nat) : List Line → Nat → List Lbl → List Lbl
   | [], _, acc => acc
   | ln :: rest, pc, acc =>
     let acc := match ln.relaxable? with
@@ -679,14 +679,14 @@ offsets `lines` is laid out at (none if a label is defined twice: `layout` rejec
   | .error _ => []
 
 /-- The far labels: iterate until every relaxable branch that is left reaches its label. -/
-def relaxFar (pre : List Line) : Nat → Std.HashSet Lbl → Lbl → Bool
+@[expose] def relaxFar (pre : List Line) : Nat → Std.HashSet Lbl → Lbl → Bool
   | 0, _ => fun _ => true
   | n + 1, far =>
     match farTargets (relaxLines (far.contains ·) pre) with
     | [] => (far.contains ·)
     | ts => relaxFar pre n (far.insertMany ts)
 
-def relaxOf (pre : List Line) : Lbl → Bool := relaxFar pre (pre.length + 1) {}
+@[expose] def relaxOf (pre : List Line) : Lbl → Bool := relaxFar pre (pre.length + 1) {}
 
 /-- Expand an allocated function (`k` = its index in the file) into its final line list
 (`emitPre`, then branch relaxation), with byte offsets of the trap sites. -/

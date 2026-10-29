@@ -49,11 +49,11 @@ namespace LDST
 open _root_.BitVec Arm.BitVec
 
 /-- The address of a literal load: `PC[] + SignExtend(imm19:'00', 64)`. -/
-@[state_simp_rules]
+@[expose, state_simp_rules]
 def literal_address (imm19 : BitVec 19) (s : ArmState) : BitVec 64 :=
   read_pc s + signExtend 64 (imm19 ++ 0b00#2)
 
-@[state_simp_rules]
+@[expose, state_simp_rules]
 def exec_reg_literal (inst : Reg_literal_cls) (s : ArmState) : ArmState :=
   let address := literal_address inst.imm19 s
   let next (s' : ArmState) : ArmState := write_pc ((read_pc s) + 4#64) s'

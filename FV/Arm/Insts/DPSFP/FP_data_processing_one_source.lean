@@ -87,7 +87,7 @@ def fp_write_result (datasize : Nat) (Rd : BitVec 5) (result : BitVec datasize) 
     : ArmState :=
   write_pc ((read_pc s) + 4#64) (write_sfp datasize Rd result s)
 
-@[state_simp_rules]
+@[expose, state_simp_rules]
 def exec_fp_data_processing_one_source
   (inst : FP_data_processing_one_source_cls) (s : ArmState) : ArmState :=
   if inst.M = 1#1 ∨ inst.S = 1#1 ∨ inst.ftype = 0b10#2 then

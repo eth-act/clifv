@@ -70,21 +70,21 @@ first occurrence. -/
 abbrev Homes := Std.HashMap (Nat × RegClass) Nat
 
 /-- The home of vreg `v` of class `c`. -/
-def spillHome (h : Homes) (v : Nat) (c : RegClass) : Loc := .stack (h.getD (v, c) 0) c
+@[expose] def spillHome (h : Homes) (v : Nat) (c : RegClass) : Loc := .stack (h.getD (v, c) 0) c
 
 /-- Scratch registers of a class, in allocation order: the caller-saved registers first, then
 the callee-saved ones (all of which the spill allocation saves). -/
-def spillPool : RegClass → List Reg
+@[expose] def spillPool : RegClass → List Reg
   | .int => (List.range 16).map .x ++ [19, 20, 21, 22, 23, 24, 25, 26, 27, 28].map .x
   | .float => (List.range 32).map .v
 
 /-- The register a block argument is copied through. -/
-def spillScratch : RegClass → Reg
+@[expose] def spillScratch : RegClass → Reg
   | .int => .x 9
   | .float => .v 16
 
 /-- The fixed registers of an instruction's operands. -/
-def fixedRegs (ops : Array Operand) : List Reg :=
+@[expose] def fixedRegs (ops : Array Operand) : List Reg :=
   ops.toList.filterMap fun o => match o.con with
     | .fixed p => some p
     | _ => none
@@ -93,7 +93,7 @@ def fixedRegs (ops : Array Operand) : List Reg :=
 non-reuse operand in a fresh register of its class (`spillPool` minus the fixed registers and the
 clobbers), then every reuse operand in its reused operand's location. Running out of registers
 gives an invalid location (`Loc.reg .sp`), which the checker rejects. -/
-def spillLocs (ops : Array Operand) (clob : List Reg) : Array Loc :=
+@[expose] def spillLocs (ops : Array Operand) (clob : List Reg) : Array Loc :=
   let avoid := fixedRegs ops ++ clob
   let free (c : RegClass) := (spillPool c).filter fun r => !avoid.contains r
   let step := fun (st : Array Loc × List Reg × List Reg) (o : Operand) =>
@@ -115,21 +115,21 @@ def spillLocs (ops : Array Operand) (clob : List Reg) : Array Loc :=
 
 /-- The defs of an instruction (with their locations) whose values the checker keeps after it
 (`MInst.keptDefs`). -/
-def keptPairs (i : MInst) (pairs : List (Operand × Loc)) : List (Operand × Loc) :=
+@[expose] def keptPairs (i : MInst) (pairs : List (Operand × Loc)) : List (Operand × Loc) :=
   let defs := pairs.filter (·.1.kind == .def)
   match i.keptDefs with
   | none => defs
   | some n => defs.take n
 
 /-- Saves of every callee-saved register (start of the entry block). -/
-def spillSaves : List RItem := calleeSaved.map fun r => .move (.reg r) (.save r)
+@[expose] def spillSaves : List RItem := calleeSaved.map fun r => .move (.reg r) (.save r)
 
 /-- Restores of every callee-saved register (before a `Rets`). -/
-def spillRestores : List RItem := calleeSaved.map fun r => .move (.save r) (.reg r)
+@[expose] def spillRestores : List RItem := calleeSaved.map fun r => .move (.save r) (.reg r)
 
 /-- The items of instruction `k` (`i`): loads of its uses, the instruction, stores of its kept
 defs (none after a terminator); restores before a `Rets`. -/
-def spillInst (h : Homes) (k : Nat) (i : MInst) : List RItem :=
+@[expose] def spillInst (h : Homes) (k : Nat) (i : MInst) : List RItem :=
   match i.operands with
   | .error _ => [.op k #[]]
   | .ok ops =>
@@ -144,12 +144,12 @@ def spillInst (h : Homes) (k : Nat) (i : MInst) : List RItem :=
     restores ++ loads ++ [.op k locs] ++ stores
 
 /-- The vreg number of a register (`0` for a real one). -/
-def Reg.homeNum : Reg → Nat
+@[expose] def Reg.homeNum : Reg → Nat
   | .vreg n _ => n
   | _ => 0
 
 /-- The vregs of a block: parameters, branch arguments, operands. -/
-def blockVregs (b : VBlock) : List (Nat × RegClass) :=
+@[expose] def blockVregs (b : VBlock) : List (Nat × RegClass) :=
   (b.params.toList ++ b.branchArgs.toList).filterMap (fun
     | .vreg n c => some (n, c)
     | _ => none) ++
@@ -158,13 +158,13 @@ def blockVregs (b : VBlock) : List (Nat × RegClass) :=
     | .error _ => []
 
 /-- The homes of a VCode's vregs (`Homes`). -/
-def spillHomes (vc : VCode) : Homes :=
+@[expose] def spillHomes (vc : VCode) : Homes :=
   vc.blocks.foldl (fun h b => (blockVregs b).foldl
     (fun h k => if h.contains k then h else h.insert k h.size) h) {}
 
 /-- The parallel copy of block `b`'s branch arguments into the parameters of its target `t`:
 arguments into temporaries, then temporaries into the parameters' homes. -/
-def spillArgMoves (h : Homes) (vb tb : VBlock) : List RItem :=
+@[expose] def spillArgMoves (h : Homes) (vb tb : VBlock) : List RItem :=
   let tmp := h.size
   let ps := (vb.branchArgs.toList.zip tb.params.toList).zipIdx
   let phase1 := ps.flatMap fun ((a, _), i) =>
@@ -180,7 +180,7 @@ def spillArgMoves (h : Homes) (vb tb : VBlock) : List RItem :=
 /-- The defs (with their locations) of block `b`'s terminator that are live on the edge to
 successor number `j` and not stored yet: a `try_call`'s results (and, on a handler edge, its
 payload), which live in their fixed registers. -/
-def termEdgeDefs (vb : VBlock) (j : Nat) : List (Operand × Loc) :=
+@[expose] def termEdgeDefs (vb : VBlock) (j : Nat) : List (Operand × Loc) :=
   match vb.insts.back? with
   | none => []
   | some i =>
@@ -195,7 +195,7 @@ def termEdgeDefs (vb : VBlock) (j : Nat) : List (Operand × Loc) :=
 
 /-- Stores at the start of block `s` of the terminator defs live on the edge from its only
 predecessor (none if `s` has several predecessors or none). -/
-def spillEntryStores (h : Homes) (vc : VCode) (succs preds : Array (Array Nat)) (s : Nat) : List RItem :=
+@[expose] def spillEntryStores (h : Homes) (vc : VCode) (succs preds : Array (Array Nat)) (s : Nat) : List RItem :=
   match preds[s]? with
   | some #[b] =>
     match vc.blocks[b]?, succs[b]? with
@@ -207,7 +207,7 @@ def spillEntryStores (h : Homes) (vc : VCode) (succs preds : Array (Array Nat)) 
   | _ => []
 
 /-- The spill allocation of a (prepared) VCode. -/
-def spillAlloc (vc : VCode) : RFunc :=
+@[expose] def spillAlloc (vc : VCode) : RFunc :=
   let (succs, preds) := match vc.cfg with
     | .ok sp => sp
     | .error _ => (#[], #[])

@@ -40,7 +40,7 @@ namespace DPI
 
 open _root_.BitVec Arm.BitVec
 
-@[state_simp_rules]
+@[expose, state_simp_rules]
 def exec_extract (inst : Extract_cls) (s : ArmState) : ArmState :=
   if inst.op21 ≠ 0b00#2 ∨ inst.o0 ≠ 0b0#1 then
     write_err (StateError.Illegal s!"Illegal {inst} encountered!") s

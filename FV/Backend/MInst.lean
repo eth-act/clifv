@@ -49,7 +49,7 @@ inductive Reg where
   | v (n : Nat)
   deriving DecidableEq, Repr, Inhabited, BEq, Hashable
 
-def Reg.isVirtual : Reg → Bool
+@[expose] def Reg.isVirtual : Reg → Bool
   | .vreg .. => true
   | _ => false
 
@@ -59,8 +59,8 @@ def Reg.isVirtual : Reg → Bool
   | .v _ => .float
   | _ => .int
 
-def Reg.fp : Reg := .x 29
-def Reg.lr : Reg := .x 30
+@[expose] def Reg.fp : Reg := .x 29
+@[expose] def Reg.lr : Reg := .x 30
 
 /-- `Reg::invalid_sentinel()` (`machinst/valueregs.rs:54`) = `VReg::invalid()`, the virtual
 register with regalloc2's maximal index `VReg::MAX = 2^21 - 1`. Only the `nop` lowering
@@ -80,11 +80,11 @@ inductive CTy where
   deriving DecidableEq, Repr, Inhabited, BEq, Hashable
 
 namespace CTy
-def ofClif : Clif.Ty → CTy
+@[expose] def ofClif : Clif.Ty → CTy
   | .i8 => .int 8 | .i16 => .int 16 | .i32 => .int 32 | .i64 => .int 64 | .i128 => .int 128
   | .f32 => .float 32 | .f64 => .float 64
 /-- `Type::bits`. -/
-def bits : CTy → Nat
+@[expose] def bits : CTy → Nat
   | .invalid => 0 | .int b => b | .float b => b | .vec lb n _ => lb * n
 /-- `Type::lane_bits`. -/
 def laneBits : CTy → Nat
@@ -126,7 +126,7 @@ inductive OperandSize where
   | size32 | size64
   deriving DecidableEq, Repr, Inhabited, BEq
 
-def OperandSize.bits : OperandSize → Nat
+@[expose] def OperandSize.bits : OperandSize → Nat
   | .size32 => 32 | .size64 => 64
 
 /-- `OperandSize::from_ty` / `from_bits`: 64 for 64-bit types, else 32. -/
@@ -184,7 +184,7 @@ structure Imm12 where
   shift12 : Bool
   deriving DecidableEq, Repr, Inhabited, BEq
 
-def Imm12.value (i : Imm12) : Nat := if i.shift12 then i.bits * 4096 else i.bits
+@[expose] def Imm12.value (i : Imm12) : Nat := if i.shift12 then i.bits * 4096 else i.bits
 
 /-- `ImmLogic`: the value (as given to `maybe_from_u64`) and the operand size it was built
 for. The `N:immr:imms` encoding is left to the assembler. -/
@@ -206,7 +206,7 @@ structure NZCV where
   v : Bool
   deriving DecidableEq, Repr, Inhabited, BEq
 
-def NZCV.bits (f : NZCV) : Nat :=
+@[expose] def NZCV.bits (f : NZCV) : Nat :=
   (if f.n then 8 else 0) + (if f.z then 4 else 0) + (if f.c then 2 else 0) + (if f.v then 1 else 0)
 
 inductive ScalarSize where
@@ -214,7 +214,7 @@ inductive ScalarSize where
   deriving DecidableEq, Repr, Inhabited, BEq
 
 /-- Bytes of a scalar of size `s`. -/
-def ScalarSize.bytes : ScalarSize → Nat
+@[expose] def ScalarSize.bytes : ScalarSize → Nat
   | .size8 => 1 | .size16 => 2 | .size32 => 4 | .size64 => 8 | .size128 => 16
 
 inductive VectorSize where
@@ -330,10 +330,10 @@ inductive StoreOp where
   deriving DecidableEq, Repr, Inhabited, BEq
 
 /-- Access size in bytes (`Inst::mem_type`), used by `mem_finalize`. -/
-def LoadOp.bytes : LoadOp → Nat
+@[expose] def LoadOp.bytes : LoadOp → Nat
   | .uload8 | .sload8 => 1 | .uload16 | .sload16 => 2 | .uload32 | .sload32 => 4
   | .uload64 => 8 | .fpuLoad128 => 16
-def StoreOp.bytes : StoreOp → Nat
+@[expose] def StoreOp.bytes : StoreOp → Nat
   | .store8 => 1 | .store16 => 2 | .store32 => 4 | .store64 => 8 | .fpuStore128 => 16
 
 /-! ## Machine instructions -/
@@ -668,10 +668,10 @@ def MInst.isTerm : MInst → Bool
 
 /-! ## Immediates (transcriptions of `imms.rs` / `args.rs`) -/
 
-def mask64 (n : Nat) : Nat := n % 2 ^ 64
+@[expose] def mask64 (n : Nat) : Nat := n % 2 ^ 64
 
 /-- `Imm12::maybe_from_u64`. -/
-def Imm12.ofNat? (val : Nat) : Option Imm12 :=
+@[expose] def Imm12.ofNat? (val : Nat) : Option Imm12 :=
   let val := mask64 val
   if val < 0x1000 then some ⟨val, false⟩
   else if val % 0x1000 == 0 && val < 0x1000000 then some ⟨val / 0x1000, true⟩
@@ -723,10 +723,10 @@ def MoveWideConst.ofNat? (value : Nat) : Option MoveWideConst :=
   else none
 
 /-- `SImm9::maybe_from_i64`. -/
-def simm9? (v : Int) : Option Int := if -256 ≤ v ∧ v ≤ 255 then some v else none
+@[expose] def simm9? (v : Int) : Option Int := if -256 ≤ v ∧ v ≤ 255 then some v else none
 
 /-- `UImm12Scaled::maybe_from_i64(value, scale_ty)` with `scale = scale_ty.bytes()`. -/
-def uimm12Scaled? (v : Int) (scale : Nat) : Option Nat :=
+@[expose] def uimm12Scaled? (v : Int) (scale : Nat) : Option Nat :=
   if 0 ≤ v ∧ v ≤ 4095 * scale ∧ v.toNat % scale == 0 then some v.toNat else none
 
 /-- `ShiftOpShiftImm::maybe_from_shift`. -/
@@ -810,7 +810,7 @@ inductive V where
 mutual
 /-- Structural equality of ISLE values (hand-written: `deriving BEq` on this nested inductive
 gives an opaque function, about which proofs can learn nothing). -/
-def V.beq : V → V → Bool
+@[expose] def V.beq : V → V → Bool
   | .int a, .int b => decide (a = b)
   | .bool a, .bool b => decide (a = b)
   | .ty a, .ty b => decide (a = b)
@@ -860,16 +860,16 @@ the backend uses is a compile error here. Values the backend builds from CLIF by
 
 open Isle.Aarch64 in
 /-- Variant names of the enum type `ty` (messages and by-name construction). -/
-def variantNames (ty : TypeId) : List String :=
+@[expose] def variantNames (ty : TypeId) : List String :=
   match program.type? ty with
   | some ⟨_, _, .enum _ vs, _⟩ => vs.map (·.name)
   | _ => []
 
 /-- Index of variant `name` of enum `ty`. -/
-def variantIdx (ty : TypeId) (name : String) : Option Nat := (variantNames ty).idxOf? name
+@[expose] def variantIdx (ty : TypeId) (name : String) : Option Nat := (variantNames ty).idxOf? name
 
 /-- Build the field-less or fielded variant `name` of the enum `ty`. -/
-def mkVariant (ty : TypeId) (name : String) (fs : List V := []) : V :=
+@[expose] def mkVariant (ty : TypeId) (name : String) (fs : List V := []) : V :=
   match variantIdx ty name with
   | some k => .data ty k fs
   | none => .op .unit   -- unreachable for the names the backend uses (`FVTest/Backend/Names.lean`)

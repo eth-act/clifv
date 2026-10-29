@@ -96,7 +96,7 @@ def exec_uaddlv (inst : Advanced_simd_across_lanes_cls) (s : ArmState) : ArmStat
     let s := write_pc ((read_pc s) + 4#64) s
     s
 
-@[state_simp_rules]
+@[expose, state_simp_rules]
 def exec_advanced_simd_across_lanes
   (inst : Advanced_simd_across_lanes_cls) (s : ArmState) : ArmState :=
   match inst.U, inst.opcode with

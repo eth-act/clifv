@@ -34,7 +34,7 @@ namespace BR
 
 open _root_.BitVec Arm.BitVec
 
-@[state_simp_rules]
+@[expose, state_simp_rules]
 def exec_hints (inst : Hints_cls) (s : ArmState) : ArmState :=
   if (inst.CRm = 0b0000#4 ∧ inst.op2 = 0b000#3) ∨     -- NOP
      (inst.CRm = 0b0010#4 ∧ inst.op2 = 0b100#3) ∨     -- CSDB

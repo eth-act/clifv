@@ -78,12 +78,12 @@ namespace Print
 @[expose] def blockCall (b : BlockCall) : String :=
   if b.args.isEmpty then s!"block{b.block}" else s!"block{b.block}({vs b.args})"
 
-def tryArg : TryArg → String
+@[expose] def tryArg : TryArg → String
   | .val x => v x
   | .ret i => s!"ret{i}"
   | .exn i => s!"exn{i}"
 
-def tryDest (d : TryDest) : String :=
+@[expose] def tryDest (d : TryDest) : String :=
   if d.args.isEmpty then s!"block{d.block}"
   else s!"block{d.block}({", ".intercalate (d.args.map tryArg)})"
 

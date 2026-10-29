@@ -16,19 +16,19 @@ Cranelift. `w`/`t` are the exponent and trailing-significand field widths (8/23,
 namespace Clif.FloatLit
 
 /-- Value of a hexadecimal digit. -/
-def hexDigit? (c : Char) : Option Nat :=
+@[expose] def hexDigit? (c : Char) : Option Nat :=
   if c.isDigit then some (c.toNat - '0'.toNat)
   else if 'a' ≤ c ∧ c ≤ 'f' then some (c.toNat - 'a'.toNat + 10)
   else if 'A' ≤ c ∧ c ≤ 'F' then some (c.toNat - 'A'.toNat + 10)
   else none
 
 /-- Hexadecimal natural number (no prefix, at least one digit). -/
-def parseHexNat? (s : String) : Option Nat :=
+@[expose] def parseHexNat? (s : String) : Option Nat :=
   if s.isEmpty then none else
   s.toList.foldlM (init := 0) fun acc c => (hexDigit? c).map (acc * 16 + ·)
 
 /-- Decimal integer with an optional sign. -/
-def parseDecInt? (s : String) : Option Int :=
+@[expose] def parseDecInt? (s : String) : Option Int :=
   let (neg, cs) := match s.toList with
     | '-' :: r => (true, r) | '+' :: r => (false, r) | r => (false, r)
   if cs.isEmpty || !cs.all Char.isDigit then none else
@@ -36,10 +36,10 @@ def parseDecInt? (s : String) : Option Int :=
   some (if neg then -(m : Int) else m)
 
 /-- Number of significant bits of `n` (`0` for `0`). -/
-def bitLen (n : Nat) : Nat := if n = 0 then 0 else Nat.log2 n + 1
+@[expose] def bitLen (n : Nat) : Nat := if n = 0 then 0 else Nat.log2 n + 1
 
 /-- The bit pattern of a float literal (`parse_float`). -/
-def parse? (s : String) (w t : Nat) : Option Nat := do
+@[expose] def parse? (s : String) (w t : Nat) : Option Nat := do
   let (sign, s2) :=
     if s.startsWith "-" then (2 ^ (t + w), (s.drop 1).toString)
     else if s.startsWith "+" then (0, (s.drop 1).toString)
@@ -93,15 +93,15 @@ def parse? (s : String) (w t : Nat) : Option Nat := do
     else none
 
 /-- Lower-case hexadecimal digits of `n`, left-padded with zeros to `k` digits. -/
-def hexPad (n k : Nat) : String :=
+@[expose] def hexPad (n k : Nat) : String :=
   let s := String.ofList (Nat.toDigits 16 n)
   String.ofList (List.replicate (k - s.length) '0') ++ s
 
 /-- Lower-case hexadecimal digits of `n` (no padding). -/
-def hex (n : Nat) : String := String.ofList (Nat.toDigits 16 n)
+@[expose] def hex (n : Nat) : String := String.ofList (Nat.toDigits 16 n)
 
 /-- The text of a float bit pattern (`format_float`). -/
-def format (bits w t : Nat) : String :=
+@[expose] def format (bits w t : Nat) : String :=
   let maxE := 2 ^ w - 1
   let tBits := bits % 2 ^ t
   let eBits := (bits / 2 ^ t) % 2 ^ w

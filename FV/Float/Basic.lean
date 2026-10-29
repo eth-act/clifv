@@ -36,13 +36,13 @@ abbrev Fmt.N (f : Fmt) : Nat := 1 + f.E + f.F
 abbrev Bits (f : Fmt) := BitVec (1 + f.E + f.F)
 
 /-- Exponent bias `2^(E-1) - 1`. -/
-def Fmt.bias (f : Fmt) : Nat := 2 ^ (f.E - 1) - 1
+@[expose] def Fmt.bias (f : Fmt) : Nat := 2 ^ (f.E - 1) - 1
 
 /-- Unbiased exponent of the smallest normal number (`minimum_exp` in `FPRoundBase`). -/
-def Fmt.minExp (f : Fmt) : Int := 1 - (f.bias : Int)
+@[expose] def Fmt.minExp (f : Fmt) : Int := 1 - (f.bias : Int)
 
 /-- The all-ones biased exponent (infinities and NaNs). -/
-def Fmt.expOnes (f : Fmt) : Nat := 2 ^ f.E - 1
+@[expose] def Fmt.expOnes (f : Fmt) : Nat := 2 ^ f.E - 1
 
 /-- Rounding modes (`FPRounding`): to nearest ties to even, toward +∞, toward −∞, toward zero,
 to nearest ties away from zero. `FPCR.RMode` selects one of the first four. -/
@@ -61,26 +61,26 @@ inductive Cmp
   deriving DecidableEq, Repr, Inhabited
 
 /-- `FPType` is a NaN. -/
-def FPType.isNaN : FPType → Bool
+@[expose] def FPType.isNaN : FPType → Bool
   | .qnan | .snan => true
   | _ => false
 
 /-- Encode `sign : bexp : frac` (fields are taken modulo their widths by the caller). -/
-def pack (f : Fmt) (sign : Bool) (bexp frac : Nat) : Bits f :=
+@[expose] def pack (f : Fmt) (sign : Bool) (bexp frac : Nat) : Bits f :=
   BitVec.ofNat _ ((if sign then 2 ^ (f.E + f.F) else 0) + bexp * 2 ^ f.F + frac)
 
 /-- The sign bit. -/
-def signOf (f : Fmt) (x : Bits f) : Bool := decide (2 ^ (f.E + f.F) ≤ x.toNat)
+@[expose] def signOf (f : Fmt) (x : Bits f) : Bool := decide (2 ^ (f.E + f.F) ≤ x.toNat)
 
 /-- The biased exponent field. -/
-def expOf (f : Fmt) (x : Bits f) : Nat := x.toNat / 2 ^ f.F % 2 ^ f.E
+@[expose] def expOf (f : Fmt) (x : Bits f) : Nat := x.toNat / 2 ^ f.F % 2 ^ f.E
 
 /-- The fraction field. -/
-def fracOf (f : Fmt) (x : Bits f) : Nat := x.toNat % 2 ^ f.F
+@[expose] def fracOf (f : Fmt) (x : Bits f) : Nat := x.toNat % 2 ^ f.F
 
 /-- `FPUnpack` (FZ = 0): the class, the sign and the exact magnitude `mant * 2^exp` of a
 zero, denormal or normal number (`mant = 0`, `exp = 0` for infinities and NaNs). -/
-def unpack (f : Fmt) (x : Bits f) : FPType × Bool × Nat × Int :=
+@[expose] def unpack (f : Fmt) (x : Bits f) : FPType × Bool × Nat × Int :=
   let sign := signOf f x
   let bexp := expOf f x
   let frac := fracOf f x
@@ -97,19 +97,19 @@ def unpack (f : Fmt) (x : Bits f) : FPType × Bool × Nat × Int :=
 @[expose] def zero (f : Fmt) (sign : Bool) : Bits f := pack f sign 0 0
 
 /-- `FPInfinity(sign)`. -/
-def infinity (f : Fmt) (sign : Bool) : Bits f := pack f sign f.expOnes 0
+@[expose] def infinity (f : Fmt) (sign : Bool) : Bits f := pack f sign f.expOnes 0
 
 /-- `FPMaxNormal(sign)`. -/
-def maxNormal (f : Fmt) (sign : Bool) : Bits f := pack f sign (f.expOnes - 1) (2 ^ f.F - 1)
+@[expose] def maxNormal (f : Fmt) (sign : Bool) : Bits f := pack f sign (f.expOnes - 1) (2 ^ f.F - 1)
 
 /-- `FPDefaultNaN` (AH = 0: positive sign, quiet bit only); `0x7FC00000` for binary32. -/
-def defaultNaN (f : Fmt) (sign : Bool := false) : Bits f :=
+@[expose] def defaultNaN (f : Fmt) (sign : Bool := false) : Bits f :=
   pack f sign f.expOnes (2 ^ (f.F - 1))
 
 /-- The class of an encoding. -/
-def typeOf (f : Fmt) (x : Bits f) : FPType := (unpack f x).1
+@[expose] def typeOf (f : Fmt) (x : Bits f) : FPType := (unpack f x).1
 
-def isNaN (f : Fmt) (x : Bits f) : Bool := (typeOf f x).isNaN
+@[expose] def isNaN (f : Fmt) (x : Bits f) : Bool := (typeOf f x).isNaN
 def isSNaN (f : Fmt) (x : Bits f) : Bool := typeOf f x = .snan
 def isQNaN (f : Fmt) (x : Bits f) : Bool := typeOf f x = .qnan
 def isInf (f : Fmt) (x : Bits f) : Bool := typeOf f x = .infinity
@@ -117,12 +117,12 @@ def isZero (f : Fmt) (x : Bits f) : Bool := typeOf f x = .zero
 
 /-- `FPProcessNaN` (DN = 0): a signalling NaN is quietened by setting the top fraction bit,
 a quiet NaN is returned unchanged. -/
-def processNaN (f : Fmt) (t : FPType) (op : Bits f) : Bits f :=
+@[expose] def processNaN (f : Fmt) (t : FPType) (op : Bits f) : Bits f :=
   if t = .snan then op ||| BitVec.ofNat _ (2 ^ (f.F - 1)) else op
 
 /-- `FPProcessNaNs`: `some` result (`done = TRUE`) iff an operand is a NaN; signalling NaNs
 first, then quiet NaNs, each in operand order. -/
-def processNaNs (f : Fmt) (t1 t2 : FPType) (op1 op2 : Bits f) : Option (Bits f) :=
+@[expose] def processNaNs (f : Fmt) (t1 t2 : FPType) (op1 op2 : Bits f) : Option (Bits f) :=
   if t1 = .snan then some (processNaN f t1 op1)
   else if t2 = .snan then some (processNaN f t2 op2)
   else if t1 = .qnan then some (processNaN f t1 op1)
@@ -130,7 +130,7 @@ def processNaNs (f : Fmt) (t1 t2 : FPType) (op1 op2 : Bits f) : Option (Bits f) 
   else none
 
 /-- `FPProcessNaNs3`. -/
-def processNaNs3 (f : Fmt) (t1 t2 t3 : FPType) (op1 op2 op3 : Bits f) : Option (Bits f) :=
+@[expose] def processNaNs3 (f : Fmt) (t1 t2 t3 : FPType) (op1 op2 op3 : Bits f) : Option (Bits f) :=
   if t1 = .snan then some (processNaN f t1 op1)
   else if t2 = .snan then some (processNaN f t2 op2)
   else if t3 = .snan then some (processNaN f t3 op3)
@@ -143,6 +143,6 @@ def processNaNs3 (f : Fmt) (t1 t2 t3 : FPType) (op1 op2 op3 : Bits f) : Option (
 @[expose] def neg (f : Fmt) (a : Bits f) : Bits f := a ^^^ BitVec.ofNat _ (2 ^ (f.E + f.F))
 
 /-- `FPAbs` (AH = 0): clear the sign bit, also of NaNs. -/
-def abs (f : Fmt) (a : Bits f) : Bits f := a &&& BitVec.ofNat _ (2 ^ (f.E + f.F) - 1)
+@[expose] def abs (f : Fmt) (a : Bits f) : Bits f := a &&& BitVec.ofNat _ (2 ^ (f.E + f.F) - 1)
 
 end IEEE

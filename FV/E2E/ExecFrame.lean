@@ -35,11 +35,11 @@ open Arm
 
 /-- `e` simulates `m` outside `R`: the same registers (incl. pc, flags, error), the same bytes
 outside `R`. -/
-def SimR (R : BitVec 64 → Prop) (m e : ArmState) : Prop :=
+@[expose] def SimR (R : BitVec 64 → Prop) (m e : ArmState) : Prop :=
   (∀ fld, r fld e = r fld m) ∧ ∀ a, ¬ R a → e.mem a = m.mem a
 
 /-- The byte ranges `(address, length)` avoid `R`. -/
-def Avoids (R : BitVec 64 → Prop) (rs : List (BitVec 64 × Nat)) : Prop :=
+@[expose] def Avoids (R : BitVec 64 → Prop) (rs : List (BitVec 64 × Nat)) : Prop :=
   ∀ p ∈ rs, ∀ k < p.2, ¬ R (p.1 + BitVec.ofNat 64 k)
 
 variable {R : BitVec 64 → Prop}
@@ -148,7 +148,7 @@ def addr (i : Reg_imm_cls) (s : ArmState) : BitVec 64 :=
   if i.postindex then read_gpr 64 i.Rn s else read_gpr 64 i.Rn s + i.imm.value (scale i) s
 
 /-- The bytes a single-register load reads. -/
-def reads (i : Reg_imm_cls) (s : ArmState) : List (BitVec 64 × Nat) :=
+@[expose] def reads (i : Reg_imm_cls) (s : ArmState) : List (BitVec 64 × Nat) :=
   if memop i ≠ 0#1 then [(addr i s, (8 <<< scale i) / 8)] else []
 
 def ofUnsigned (i : Reg_unsigned_imm_cls) : Reg_imm_cls :=
@@ -163,7 +163,7 @@ def ofPre (i : Reg_imm_pre_indexed_cls) : Reg_imm_cls :=
   { size := i.size, opc := i.opc, Rn := i.Rn, Rt := i.Rt, SIMD? := i.V = 1#1, wback := true,
     postindex := false, imm := .simm9 i.imm9 }
 
-def ofUnscaled (i : Reg_unscaled_imm_cls) : Reg_imm_cls :=
+@[expose] def ofUnscaled (i : Reg_unscaled_imm_cls) : Reg_imm_cls :=
   { size := i.size, opc := i.opc, Rn := i.Rn, Rt := i.Rt, SIMD? := false, wback := false,
     postindex := false, imm := .simm9 i.imm9 }
 
@@ -187,7 +187,7 @@ def addr (i : Reg_pair_cls) (s : ArmState) : BitVec 64 :=
   else read_gpr 64 i.Rn s + (BitVec.signExtend 64 i.imm7 <<< scale i)
 
 /-- The bytes an `ldp` reads. -/
-def reads (i : Reg_pair_cls) (s : ArmState) : List (BitVec 64 × Nat) :=
+@[expose] def reads (i : Reg_pair_cls) (s : ArmState) : List (BitVec 64 × Nat) :=
   if i.L? then [(addr i s, 2 * ((8 <<< scale i) / 8))] else []
 
 def mk (wback postindex : Bool) (opc : BitVec 2) (V L : BitVec 1) (imm7 : BitVec 7)
@@ -198,7 +198,7 @@ def mk (wback postindex : Bool) (opc : BitVec 2) (V L : BitVec 1) (imm7 : BitVec
 end RegPair
 
 /-- The bytes a SIMD&FP `ldur` reads (`exec_ldstur`). -/
-def ldsturReads (i : Reg_unscaled_imm_cls) (s : ArmState) : List (BitVec 64 × Nat) :=
+@[expose] def ldsturReads (i : Reg_unscaled_imm_cls) (s : ArmState) : List (BitVec 64 × Nat) :=
   if BitVec.getLsbD i.opc 0 then
     [(read_gpr 64 i.Rn s + BitVec.signExtend 64 i.imm9,
       (8 <<< (BitVec.extractLsb' 1 1 i.opc ++ i.size).toNat) / 8)]

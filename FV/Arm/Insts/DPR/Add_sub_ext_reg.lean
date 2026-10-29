@@ -44,7 +44,7 @@ namespace DPR
 
 open _root_.BitVec Arm.BitVec
 
-@[state_simp_rules]
+@[expose, state_simp_rules]
 def exec_add_sub_ext_reg (inst : Add_sub_ext_reg_cls) (s : ArmState) : ArmState :=
   let shift := inst.imm3.toNat
   if inst.opt ≠ 0b00#2 ∨ shift > 4 then

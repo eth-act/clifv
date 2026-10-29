@@ -55,7 +55,7 @@ def conditional_compare (sub_op : Bool) (cond : BitVec 4) (nzcv : BitVec 4)
   let s := write_pc ((read_pc s) + 4#64) s
   s
 
-@[state_simp_rules]
+@[expose, state_simp_rules]
 def exec_conditional_compare_imm (inst : Conditional_compare_imm_cls) (s : ArmState) :
     ArmState :=
   if inst.S ≠ 1#1 ∨ inst.o2 ≠ 0#1 ∨ inst.o3 ≠ 0#1 then
@@ -66,7 +66,7 @@ def exec_conditional_compare_imm (inst : Conditional_compare_imm_cls) (s : ArmSt
     let imm := zeroExtend datasize inst.imm5
     conditional_compare (inst.op = 1#1) inst.cond inst.nzcv operand1 imm s
 
-@[state_simp_rules]
+@[expose, state_simp_rules]
 def exec_conditional_compare_reg (inst : Conditional_compare_reg_cls) (s : ArmState) :
     ArmState :=
   if inst.S ≠ 1#1 ∨ inst.o2 ≠ 0#1 ∨ inst.o3 ≠ 0#1 then

@@ -396,7 +396,7 @@ abbrev lsb (x : BitVec n) (i : Nat) : BitVec 1 :=
 example : reverse 0b11101#5 = 0b10111#5 := rfl
 
 /-- Split a bit-vector `x` into sub-vectors, each of size `e`. -/
-def split (x : BitVec n) (e : Nat) (h : 0 < e): List (BitVec e) :=
+@[expose] def split (x : BitVec n) (e : Nat) (h : 0 < e): List (BitVec e) :=
   let rec splitTR (x : BitVec n) (e : Nat) (h : 0 < e)
     (i : Nat) (acc : List (BitVec e)) : List (BitVec e) :=
     match i with

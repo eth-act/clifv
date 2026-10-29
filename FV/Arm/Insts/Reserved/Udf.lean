@@ -36,7 +36,7 @@ open _root_.BitVec Arm.BitVec
 def exec_udf (inst : Udf_cls) (s : ArmState) : ArmState :=
   write_err (StateError.Trap inst.imm16) s
 
-@[state_simp_rules]
+@[expose, state_simp_rules]
 def exec_reserved (inst : ReservedInst) (s : ArmState) : ArmState :=
   match inst with
   | ReservedInst.Udf i => exec_udf i s

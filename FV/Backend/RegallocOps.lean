@@ -75,15 +75,15 @@ namespace OpSpec
 /-- `reg_use` -/
 @[expose] def use : OpSpec := ⟨.use, .early, .reg⟩
 /-- `reg_def` -/
-def def_ : OpSpec := ⟨.def, .late, .reg⟩
+@[expose] def def_ : OpSpec := ⟨.def, .late, .reg⟩
 /-- `reg_early_def` -/
-def earlyDef : OpSpec := ⟨.def, .early, .reg⟩
+@[expose] def earlyDef : OpSpec := ⟨.def, .early, .reg⟩
 /-- `reg_fixed_use` -/
-def fixedUse (p : Reg) : OpSpec := ⟨.use, .early, .fixed p⟩
+@[expose] def fixedUse (p : Reg) : OpSpec := ⟨.use, .early, .fixed p⟩
 /-- `reg_fixed_def` -/
-def fixedDef (p : Reg) : OpSpec := ⟨.def, .late, .fixed p⟩
+@[expose] def fixedDef (p : Reg) : OpSpec := ⟨.def, .late, .fixed p⟩
 /-- `reg_reuse_def` -/
-def reuseDef (i : Nat) : OpSpec := ⟨.def, .late, .reuse i⟩
+@[expose] def reuseDef (i : Nat) : OpSpec := ⟨.def, .late, .reuse i⟩
 end OpSpec
 
 /-! ## Machine environment -/
@@ -97,7 +97,7 @@ structure MachineEnv where
   deriving Repr, Inhabited
 
 /-- `create_reg_env(enable_pinned_reg = false)`, `isa/aarch64/abi.rs`. -/
-def aarch64Env : MachineEnv where
+@[expose] def aarch64Env : MachineEnv where
   preferredInt := (List.range 16).map .x
   preferredFloat := (List.range 8).map .v ++ (List.range 16).map (fun i => .v (16 + i))
   nonPreferredInt := [19, 20, 22, 23, 24, 25, 26, 27, 28, 21].map .x
@@ -113,14 +113,14 @@ def smallEnv : MachineEnv where
   nonPreferredInt := [.x 19, .x 20]
   nonPreferredFloat := [.v 8]
 
-def MachineEnv.allocatable (e : MachineEnv) : List Reg :=
+@[expose] def MachineEnv.allocatable (e : MachineEnv) : List Reg :=
   e.preferredInt ++ e.nonPreferredInt ++ e.preferredFloat ++ e.nonPreferredFloat
 
 /-- Is `r` an allocatable register of `aarch64Env`? -/
-def Reg.allocatable (r : Reg) : Bool := aarch64Env.allocatable.contains r
+@[expose] def Reg.allocatable (r : Reg) : Bool := aarch64Env.allocatable.contains r
 
 /-- The class of a real register (`x` = int, `v` = float). -/
-def Reg.realClass? : Reg → Option RegClass
+@[expose] def Reg.realClass? : Reg → Option RegClass
   | .x _ => some .int
   | .v _ => some .float
   | _ => none
@@ -130,11 +130,11 @@ x19–x28 and v8–v15 (only their low 64 bits are callee-saved; the frame saves
 @[expose] def calleeSaved : List Reg := (List.range 10).map (fun i => .x (19 + i)) ++ (List.range 8).map (fun i => .v (8 + i))
 
 /-- `DEFAULT_AAPCS_CLOBBERS`: x0–x17, v0–v31. -/
-def defaultAapcsClobbers : List Reg := (List.range 18).map .x ++ (List.range 32).map .v
+@[expose] def defaultAapcsClobbers : List Reg := (List.range 18).map .x ++ (List.range 32).map .v
 
 /-- `ALL_CLOBBERS`: x0–x28, v0–v31 (the exceptional edge of a `try_call` to a `tail` or
 `preserve_all` callee). -/
-def allClobbers : List Reg := (List.range 29).map .x ++ (List.range 32).map .v
+@[expose] def allClobbers : List Reg := (List.range 29).map .x ++ (List.range 32).map .v
 
 /-! ## Operands -/
 
@@ -142,7 +142,7 @@ section
 variable {m : Type → Type} [Monad m] (f : OpSpec → Reg → m Reg)
 
 /-- `memarg_operands`: every register of an addressing mode is a `reg_use`. -/
-def AMode.visit : AMode → m AMode
+@[expose] def AMode.visit : AMode → m AMode
   | .regReg a b => do let a ← f .use a; let b ← f .use b; pure (.regReg a b)
   | .regScaled a b => do let a ← f .use a; let b ← f .use b; pure (.regScaled a b)
   | .regScaledExtended a b e => do
@@ -153,14 +153,14 @@ def AMode.visit : AMode → m AMode
   | .regOffset a i => do pure (.regOffset (← f .use a) i)
   | am => pure am
 
-def CondBrKind.visit : CondBrKind → m CondBrKind
+@[expose] def CondBrKind.visit : CondBrKind → m CondBrKind
   | .zero r s => do pure (.zero (← f .use r) s)
   | .notZero r s => do pure (.notZero (← f .use r) s)
   | .cond c => pure (.cond c)
 
 /-- Visit the register occurrences of an instruction in `aarch64_get_operands` order, with
 their operand spec; `f` returns the register to put in their place. -/
-def MInst.visitOperands : MInst → m MInst
+@[expose] def MInst.visitOperands : MInst → m MInst
   | .aluRRR op s rd rn rm => do
     let rd ← f .def_ rd; let rn ← f .use rn; let rm ← f .use rm; pure (.aluRRR op s rd rn rm)
   | .aluRRRR op s rd rn rm ra => do
@@ -304,7 +304,7 @@ end
 
 /-- The regalloc2 operands of an instruction. A real register in an operand position is
 Cranelift's `reg_fixed_nonallocatable` (no operand) and must not be allocatable. -/
-def MInst.operands (i : MInst) : Except String (Array Operand) := do
+@[expose] def MInst.operands (i : MInst) : Except String (Array Operand) := do
   let collect (s : OpSpec) (r : Reg) : StateT (Array Operand) (Except String) Reg := do
     match r with
     | .vreg n cls => modify (·.push ⟨n, cls, s.kind, s.pos, s.con⟩); pure r
@@ -339,7 +339,7 @@ def MInst.operands (i : MInst) : Except String (Array Operand) := do
   | _ => []
 
 /-- `VCode::is_ret`: `Rets`, or a block-ending trap. -/
-def MInst.isRet : MInst → Bool
+@[expose] def MInst.isRet : MInst → Bool
   | .rets _ | .udf _ => true
   | _ => false
 

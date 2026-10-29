@@ -42,7 +42,7 @@ open _root_.BitVec Arm.BitVec
 def fpCompareNZCV : IEEE.Cmp → BitVec 4
   | .un => 0b0011#4 | .eq => 0b0110#4 | .lt => 0b1000#4 | .gt => 0b0010#4
 
-@[state_simp_rules]
+@[expose, state_simp_rules]
 def exec_fp_compare (inst : FP_compare_cls) (s : ArmState) : ArmState :=
   if inst.M = 1#1 ∨ inst.S = 1#1 ∨ inst.ftype = 0b10#2 ∨ inst.op ≠ 0b00#2 ∨
       extractLsb' 0 3 inst.opcode2 ≠ 0b000#3 then

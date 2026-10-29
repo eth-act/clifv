@@ -885,16 +885,16 @@ where
 /-- The encoding-class fields of one instruction at `env.pc`, as the decoder returns them
 (`ArmInst.norm` is the identity on `armFields`' literals; it makes the `_fixed` fields
 irrelevant by construction, so `decode_encode` needs no per-constructor case analysis). -/
-def Insn.toArmInst (env : Env) (i : Insn) : Except String ArmInst :=
+@[expose] def Insn.toArmInst (env : Env) (i : Insn) : Except String ArmInst :=
   ArmInst.norm <$> i.armFields env
 
 /-- The machine word of an instruction at `env.pc`. -/
-def Insn.encode (env : Env) (i : Insn) : Except String (BitVec 32) :=
+@[expose] def Insn.encode (env : Env) (i : Insn) : Except String (BitVec 32) :=
   armBits <$> i.toArmInst env
 
 /-- The M5 round-trip property for one instruction: the decoder of the Lean Arm model reads
 the encoded word back as the intended instruction. -/
-def Insn.decodeOk (env : Env) (i : Insn) : Bool :=
+@[expose] def Insn.decodeOk (env : Env) (i : Insn) : Bool :=
   match i.toArmInst env with
   | .ok a => decode_raw_inst (armBits a) == some a
   | .error _ => false
@@ -970,7 +970,7 @@ structure FnBin where
   insns : Array (Nat × Insn)
   deriving Inhabited
 
-def FnBin.size (f : FnBin) : Nat := 4 * f.words.size
+@[expose] def FnBin.size (f : FnBin) : Nat := 4 * f.words.size
 
 /-- Byte offset of line `j` of a line list: the sizes of the lines before it. -/
 def lineOffset (lines : List Line) (j : Nat) : Nat := ((lines.take j).map Line.size).sum

@@ -162,7 +162,7 @@ def parseMove (src dst : String) : Except String RItem := do
     | none, none => throw s!"stack-to-stack move {src} → {dst}"
   pure (.move (← parseLoc src cls) (← parseLoc dst cls))
 
-def RItem.locs : RItem → List Loc
+@[expose] def RItem.locs : RItem → List Loc
   | .op _ ls => ls.toList
   | .move a b => [a, b]
 
@@ -258,7 +258,7 @@ structure RAFrame where
 its other non-zero chunks (the chunks of `loadConst64`), `add x16, sp, x16`. x16 is not
 allocatable (`aarch64Env`; regalloc2's `MachineEnv` and `spillPool` leave out x16–x18), and it
 is outside the world (`Masked`): a move may clobber it. -/
-def spAddrX16 (off : Nat) : List MInst :=
+@[expose] def spAddrX16 (off : Nat) : List MInst :=
   let v := mask64 off
   let chunk (i : Nat) := (v / 2 ^ (16 * i)) % 2 ^ 16
   .movWide .movZ (.x 16) ⟨chunk 0, 0⟩ .size64 ::
@@ -268,14 +268,14 @@ def spAddrX16 (off : Nat) : List MInst :=
 
 /-- A slot store at `sp + off`: `[sp, #off]` (`stur` or scaled `str`, `slotStore`) below
 32 KiB, else through `x16 = sp + off` (`spAddrX16`, then `str` at `[x16]`). -/
-def slotStoreAt (cls : RegClass) (r : Reg) (off : Nat) : List MInst :=
+@[expose] def slotStoreAt (cls : RegClass) (r : Reg) (off : Nat) : List MInst :=
   if off < 32768 then [slotStore cls r off]
   else spAddrX16 off ++ [match cls with
     | .int => .store .store64 r (.unsignedOffset (.x 16) 0) trustedFlags
     | .float => .store .fpuStore128 r (.unsignedOffset (.x 16) 0) trustedFlags]
 
 /-- A slot load at `sp + off` (as `slotStoreAt`). -/
-def slotLoadAt (cls : RegClass) (r : Reg) (off : Nat) : List MInst :=
+@[expose] def slotLoadAt (cls : RegClass) (r : Reg) (off : Nat) : List MInst :=
   if off < 32768 then [slotLoad cls r off]
   else spAddrX16 off ++ [match cls with
     | .int => .load .uload64 r (.unsignedOffset (.x 16) 0) trustedFlags
@@ -293,37 +293,37 @@ def slotLoadAt (cls : RegClass) (r : Reg) (off : Nat) : List MInst :=
 
 /-- Registers of incoming arguments (AAPCS64): x0–x7, v0–v7 — and x8, the hidden
 struct-return pointer of an `sret` parameter (`Clif.sigArgLocs`). -/
-def Reg.isArgReg : Reg → Bool
+@[expose] def Reg.isArgReg : Reg → Bool
   | .x n => n ≤ 8
   | .v n => n < 8
   | _ => false
 
-def RItem.isMove : RItem → Bool
+@[expose] def RItem.isMove : RItem → Bool
   | .move .. => true
   | _ => false
 
 /-- A move into a register. -/
-def RItem.regDst : RItem → Bool
+@[expose] def RItem.regDst : RItem → Bool
   | .move _ (.reg _) => true
   | _ => false
 
-def RItem.isOp0 : RItem → Bool
+@[expose] def RItem.isOp0 : RItem → Bool
   | .op 0 _ => true
   | _ => false
 
-def Reg.isVregInt : Reg → Bool
+@[expose] def Reg.isVregInt : Reg → Bool
   | .vreg _ .int => true
   | _ => false
 
 /-- An f32/f64 vreg. -/
-def Reg.isVregFloat : Reg → Bool
+@[expose] def Reg.isVregFloat : Reg → Bool
   | .vreg _ .float => true
   | _ => false
 
 /-- The FP argument and return registers v0–v7 (AAPCS64: Cranelift's aarch64 `compute_arg_locs`
 places `f32`/`f64` parameters and returns in the next free `v` register; `Clif.sigArgLocs`,
 `retRegsC`). -/
-def Reg.isFpArgReg : Reg → Bool
+@[expose] def Reg.isFpArgReg : Reg → Bool
   | .v n => n < 8
   | _ => false
 
@@ -338,7 +338,7 @@ returned in an FP return register v0–v7. -/
   p.1.isVregInt || (p.1.isVregFloat && p.2.isFpArgReg)
 
 /-- `ctlCheck` on instruction `k` of block `b`. -/
-def ctlInstOk (b k : Nat) : MInst → Bool
+@[expose] def ctlInstOk (b k : Nat) : MInst → Bool
   | .args ds => b == 0 && k == 0 && ds.all argPairOk
   | .condBr _ _ (.zero r _) | .condBr _ _ (.notZero r _) | .trapIf (.zero r _) _
   | .trapIf (.notZero r _) _ | .testBitAndBranch _ _ _ r _ | .loadExtNameGot r _
@@ -376,7 +376,7 @@ before, `ctlCheckInt`, they had to be int vregs: `ctlCheck_of_int`). -/
    | .error _ => true)
 
 /-- `ctlInstOk` before the typed ABI (S11e5 Stage C): `Args`/`Rets` of int vregs only. -/
-def ctlInstOkInt (b k : Nat) : MInst → Bool
+@[expose] def ctlInstOkInt (b k : Nat) : MInst → Bool
   | .args ds => b == 0 && k == 0 && ds.all (fun p => p.1.isVregInt && p.2.isArgReg)
   | .rets us => us.all (·.1.isVregInt)
   | i => ctlInstOk b k i

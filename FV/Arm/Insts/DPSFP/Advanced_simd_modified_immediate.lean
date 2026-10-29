@@ -103,9 +103,8 @@ def AdvSIMDExpandImm (op : BitVec 1) (cmode : BitVec 4) (imm8 : BitVec 8) : BitV
       lsb imm8 7 ++ ~~~(lsb imm8 6) ++
         (replicate 8 $ lsb imm8 6) ++ extractLsb' 0 6 imm8 ++ BitVec.zero 48
 
-@[state_simp_rules]
 -- Assumes CheckFPAdvSIMDEnabled64();
-def exec_advanced_simd_modified_immediate
+@[expose, state_simp_rules] def exec_advanced_simd_modified_immediate
   (inst : Advanced_simd_modified_immediate_cls) (s : ArmState) : ArmState :=
   match decode_immediate_op inst with
   | none => write_err (StateError.Illegal s!"Illegal {inst} encountered!") s

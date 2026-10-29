@@ -30,7 +30,7 @@ namespace DPI
 
 open _root_.BitVec Arm.BitVec
 
-@[state_simp_rules]
+@[expose, state_simp_rules]
 def exec_bitfield (inst: Bitfield_cls) (s : ArmState) : ArmState :=
   let (err, inzero, extend) :=
     match inst.opc with

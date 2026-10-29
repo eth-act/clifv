@@ -22,7 +22,7 @@ namespace Arm
 
 namespace BR
 
-@[state_simp_rules]
+@[expose, state_simp_rules]
 def exec_barrier (inst : Barrier_cls) (s : ArmState) : ArmState :=
   write_pc ((read_pc s) + 4#64) s
 

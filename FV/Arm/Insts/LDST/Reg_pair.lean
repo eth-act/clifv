@@ -91,7 +91,7 @@ def reg_pair_operation (inst : Reg_pair_cls) (inst_str : String) (signed : Bool)
     else
       s
 
-@[state_simp_rules]
+@[expose, state_simp_rules]
 def exec_reg_pair_common (inst : Reg_pair_cls) (inst_str : String) (s : ArmState) : ArmState :=
   if -- UNDEFINED case for none-SIMD Reg Pair
      not inst.SIMD? ∧
@@ -116,7 +116,7 @@ def exec_reg_pair_common (inst : Reg_pair_cls) (inst_str : String) (s : ArmState
     let s' := write_pc ((read_pc s) + 4#64) s'
     s'
 
-@[state_simp_rules]
+@[expose, state_simp_rules]
 def exec_reg_pair_pre_indexed
   (inst : Reg_pair_pre_indexed_cls) (s : ArmState) : ArmState :=
   let extracted_inst : Reg_pair_cls :=
@@ -131,7 +131,7 @@ def exec_reg_pair_pre_indexed
       Rt := inst.Rt }
   exec_reg_pair_common extracted_inst s!"{inst}" s
 
-@[state_simp_rules]
+@[expose, state_simp_rules]
 def exec_reg_pair_post_indexed
   (inst : Reg_pair_post_indexed_cls) (s : ArmState) : ArmState :=
   let extracted_inst : Reg_pair_cls :=
@@ -146,7 +146,7 @@ def exec_reg_pair_post_indexed
       Rt := inst.Rt }
   exec_reg_pair_common extracted_inst s!"{inst}" s
 
-@[state_simp_rules]
+@[expose, state_simp_rules]
 def exec_reg_pair_signed_offset
   (inst : Reg_pair_signed_offset_cls) (s : ArmState) : ArmState :=
   let extracted_inst : Reg_pair_cls :=

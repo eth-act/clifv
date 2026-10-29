@@ -114,7 +114,7 @@ def exec_fp_int_cvt (inst : Conversion_between_FP_and_Int_cls) (toInt : Bool)
       let intval := read_gpr_zr intsize inst.Rn s
       fp_write_result f.N inst.Rd (IEEE.fromFixed f intsize intval unsigned rm) s
 
-@[state_simp_rules]
+@[expose, state_simp_rules]
 def exec_conversion_between_FP_and_Int
   (inst : Conversion_between_FP_and_Int_cls) (s : ArmState) : ArmState :=
   if inst.ftype = 0b10#2 ∧ (extractLsb' 1 2 inst.opcode) ++ inst.rmode ≠ 0b1101#4 then

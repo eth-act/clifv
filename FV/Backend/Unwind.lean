@@ -59,7 +59,7 @@ inductive Cfi where
 
 /-- DWARF register number ("DWARF for the Arm 64-bit Architecture": x0–x30 = 0–30, sp = 31,
 v0–v31 = 64–95). -/
-def Reg.dwarf? : Reg → Option Nat
+@[expose] def Reg.dwarf? : Reg → Option Nat
   | .x n => some n
   | .sp => some 31
   | .v n => some (64 + n)
@@ -191,7 +191,7 @@ structure CallSite where
   deriving Repr, BEq, DecidableEq, Inhabited
 
 /-- The labels after line `ln` at byte offset `off` (latest first). -/
-def labsAfter (ln : Line) (off : Nat) (labs : List (Label × Nat)) : List (Label × Nat) :=
+@[expose] def labsAfter (ln : Line) (off : Nat) (labs : List (Label × Nat)) : List (Label × Nat) :=
   match ln with
   | .label (.block l) => (l, off) :: labs
   | _ => labs
@@ -211,7 +211,7 @@ the lines starting at byte offset `off`. -/
     scanLines rest (off + ln.size) (labsAfter ln off labs) (retsAfter ln off rets)
 
 /-- The handlers of a call (`some ti` for a `tryCall`). -/
-def handlersOf : Option TryInfo → List TryHandler
+@[expose] def handlersOf : Option TryInfo → List TryHandler
   | some ti => ti.handlers
   | none => []
 

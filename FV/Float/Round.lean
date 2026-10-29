@@ -12,7 +12,7 @@ namespace IEEE
 
 /-- Floor square root by Newton's iteration from the overestimate `2^(log2 n / 2 + 1)`; each
 step at least halves the distance to `√n`, so `log2 n + 4` steps reach the fixed point. -/
-def isqrt (n : Nat) : Nat :=
+@[expose] def isqrt (n : Nat) : Nat :=
   if n = 0 then 0 else go (n.log2 + 4) n (2 ^ (n.log2 / 2 + 1))
 where
   go : Nat → Nat → Nat → Nat
@@ -29,7 +29,7 @@ inductive Err
 
 /-- `mant / 2^s` (`s > 0`) truncated, with the error class; `sticky` means the true value lies
 strictly between `mant` and `mant + 1` (a nonzero discarded tail below `mant`'s last bit). -/
-def truncShift (mant s : Nat) (sticky : Bool) : Nat × Err :=
+@[expose] def truncShift (mant s : Nat) (sticky : Bool) : Nat × Err :=
   let r := mant % 2 ^ s
   let half := 2 ^ (s - 1)
   (mant / 2 ^ s,
@@ -44,7 +44,7 @@ Requirement when `sticky`: `mant ≥ 2^(F+1)`, so the unknown tail lies below th
 position (callers `div` and `sqrt` provide `F + 3` bits). `mant = 0` (excluded by the ASL's
 `assert op != 0.0`) yields a signed zero. Overflow gives ∞ or the largest finite number
 depending on the mode; tiny results are rounded gradually to denormals. -/
-def round (f : Fmt) (rm : RMode) (sign : Bool) (mant : Nat) (exp : Int)
+@[expose] def round (f : Fmt) (rm : RMode) (sign : Bool) (mant : Nat) (exp : Int)
     (sticky : Bool := false) : Bits f :=
   if mant = 0 then zero f sign else
   -- `exponent`: the unbiased exponent of the value, `2^exponent ≤ |value| < 2^(exponent+1)`.
@@ -76,7 +76,7 @@ def round (f : Fmt) (rm : RMode) (sign : Bool) (mant : Nat) (exp : Int)
 
 /-- The integer rounding step of `FPRoundInt` / `FPToFixed` (fbits = 0): `RoundDown` of the
 signed value `v * 2^exp`, then the mode's increment. -/
-def roundToInt (rm : RMode) (v : Int) (exp : Int) : Int :=
+@[expose] def roundToInt (rm : RMode) (v : Int) (exp : Int) : Int :=
   if 0 ≤ exp then v * (2 ^ exp.toNat : Nat) else
   let d : Int := (2 ^ (-exp).toNat : Nat)
   let intResult := v / d          -- floor division (`Int.div` rounds toward −∞ for `d > 0`)

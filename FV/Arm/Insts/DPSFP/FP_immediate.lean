@@ -57,7 +57,7 @@ def VFPExpandImm (E F : Nat) (imm8 : BitVec 8) : BitVec (1 + E + F) :=
 example : VFPExpandImm 8 23 0x70#8 = 0x3f800000#32 := by decide
 example : VFPExpandImm 11 52 0xc0#8 = 0xbfc0000000000000#64 := by decide
 
-@[state_simp_rules]
+@[expose, state_simp_rules]
 def exec_fp_immediate (inst : FP_immediate_cls) (s : ArmState) : ArmState :=
   if inst.M = 1#1 ∨ inst.S = 1#1 ∨ inst.ftype = 0b10#2 ∨ inst.imm5 ≠ 0#5 then
     write_err (StateError.Illegal s!"Illegal {inst} encountered!") s

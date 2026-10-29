@@ -56,7 +56,7 @@ def Cond_branch_imm_inst.condition_holds
     else result
   result
 
-@[state_simp_rules]
+@[expose, state_simp_rules]
 def exec_cond_branch_imm (inst : Cond_branch_imm_cls) (s : ArmState)
   : ArmState :=
   let orig_pc := read_pc s

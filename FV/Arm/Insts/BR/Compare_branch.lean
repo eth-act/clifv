@@ -51,7 +51,7 @@ def Compare_branch_inst.condition_holds (inst : Compare_branch_cls) (s : ArmStat
     -- CBNZ
     (not operand1_is_zero)
 
-@[state_simp_rules]
+@[expose, state_simp_rules]
 def exec_compare_branch (inst : Compare_branch_cls) (s : ArmState) : ArmState :=
     let orig_pc := read_pc s
     let branch_taken := Compare_branch_inst.condition_holds inst s

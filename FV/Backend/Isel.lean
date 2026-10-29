@@ -735,7 +735,7 @@ def loadOpOfBytes : Nat → LoadOp
   | 1 => .uload8 | 2 => .uload16 | 4 => .uload32 | _ => .uload64
 
 /-- `MemFlagsData::trusted()`: `notrap aligned`. -/
-def trustedFlags : Clif.MemFlags := { trapCode := none, aligned := true }
+@[expose] def trustedFlags : Clif.MemFlags := { trapCode := none, aligned := true }
 
 /-- The load of a stack-passed value of `bytes` bytes into `r`: an integer `ldr`/`ldrb`/`ldrh`
 for an integer register, `ldr s`/`ldr d` for a float one. -/
@@ -770,7 +770,7 @@ def Ctx.valueReg? (v : Nat) : Option Reg := (ctx.valReg[v]?).join
 end Helpers
 
 /-- Keep an ISLE integer literal in the range of its ISLE type. -/
-def normInt (ty : TypeId) (i : Int) : Int :=
+@[expose] def normInt (ty : TypeId) (i : Int) : Int :=
   match (program.type? ty).map (·.kind) with
   | some (Isle.TypeKind.int t) =>
     let (w, signed) : Nat × Bool := match t with
@@ -788,7 +788,7 @@ def sextFrom (bits : Nat) (i : Int) : Int :=
   if m ≥ (2 ^ (bits - 1) : Int) then m - 2 ^ bits else m
 
 /-- `u64` view of an `i64`/`Imm64`. -/
-def u64 (i : Int) : Nat := (i % (2 ^ 64 : Int)).toNat
+@[expose] def u64 (i : Int) : Nat := (i % (2 ^ 64 : Int)).toNat
 
 /-- Extern `Type → Option Type` predicates of `isle_prelude.rs` / `aarch64/lower/isle.rs`, by
 term id (no dynamic vectors exist here: `is_dynamic_vector` is false). -/

@@ -139,7 +139,7 @@ def supported_simd_reg_imm (size : BitVec 2) (opc : BitVec 2) : Bool :=
   | 0b00#2, 0b11#2 => true -- LDR, 128-bit, SIMD&FP
   | _, _ => false -- other instructions that are not supported or illegal
 
-@[state_simp_rules]
+@[expose, state_simp_rules]
 def exec_reg_imm_common
   (inst : Reg_imm_cls) (inst_str : String) (s : ArmState) : ArmState :=
   let scale :=
@@ -178,7 +178,7 @@ def exec_reg_imm_common
     let s' := write_pc ((read_pc s) + 4#64) s'
     s'
 
-@[state_simp_rules]
+@[expose, state_simp_rules]
 def exec_reg_imm_unsigned_offset
   (inst : Reg_unsigned_imm_cls) (s : ArmState) : ArmState :=
   let extracted_inst : Reg_imm_cls :=
@@ -192,7 +192,7 @@ def exec_reg_imm_unsigned_offset
       imm       := .uimm12 inst.imm12 }
   exec_reg_imm_common extracted_inst s!"{inst}" s
 
-@[state_simp_rules]
+@[expose, state_simp_rules]
 def exec_reg_imm_post_indexed
   (inst : Reg_imm_post_indexed_cls) (s : ArmState) : ArmState :=
   let extracted_inst : Reg_imm_cls :=
@@ -207,7 +207,7 @@ def exec_reg_imm_post_indexed
   exec_reg_imm_common extracted_inst s!"{inst}" s
 
 /-- (FV addition) Load/store register (immediate pre-indexed), e.g. `str x21, [sp, #-16]!`. -/
-@[state_simp_rules]
+@[expose, state_simp_rules]
 def exec_reg_imm_pre_indexed
   (inst : Reg_imm_pre_indexed_cls) (s : ArmState) : ArmState :=
   let extracted_inst : Reg_imm_cls :=
@@ -243,7 +243,7 @@ def exec_reg_unscaled_imm_gpr
 `if option<1> == '0' then UNDEFINED;`; the SIMD&FP decode ("LDR (register, SIMD&FP)",
 "STR (register, SIMD&FP)") has `scale = UInt(opc<1>:size)`, `if scale > 4 then UNDEFINED;`,
 `shift = if S == '1' then scale else 0`, as `exec_reg_imm_common` with `SIMD? = true`. -/
-@[state_simp_rules]
+@[expose, state_simp_rules]
 def exec_reg_reg_offset
   (inst : Reg_reg_offset_cls) (s : ArmState) : ArmState :=
   if lsb inst.option 1 = 0#1 then

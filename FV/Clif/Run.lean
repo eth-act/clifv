@@ -119,7 +119,7 @@ namespace Frame
   Res.ofOption s!"use of undefined value v{x}" (fr.regs x)
 
 /-- Operand `x` at type `ty`. -/
-def getAs (fr : Frame) (x : ValueId) (ty : Ty) : Res (BitVec ty.width) := do
+@[expose] def getAs (fr : Frame) (x : ValueId) (ty : Ty) : Res (BitVec ty.width) := do
   let v ← fr.get x
   Res.ofOption s!"v{x} has type {v.ty.name}, expected {ty.name}" (v.as? ty)
 
@@ -133,7 +133,7 @@ def getAs (fr : Frame) (x : ValueId) (ty : Ty) : Res (BitVec ty.width) := do
 end Frame
 
 /-- Types of a list of ABI parameters. -/
-def AbiParam.tys (ps : List AbiParam) : List Ty := ps.map (·.ty)
+@[expose] def AbiParam.tys (ps : List AbiParam) : List Ty := ps.map (·.ty)
 
 /-- Purposes (`sret`, `vmctx`, `sarg`, normal) of a list of ABI parameters. -/
 @[expose] def AbiParam.purposes (ps : List AbiParam) : List ArgPurpose := ps.map (·.purpose)
@@ -161,12 +161,12 @@ theorem Signature.abiMatch_eq_true {d t : Signature} :
   Res.check (vs.map (·.ty) == tys) s!"{what}: type/arity mismatch"
 
 /-- Effective address `p + offset`, wrapping modulo 2^64 (p is zero-extended). -/
-def effAddr (p : Val) (offset : Int) : Nat := ((p.toNat + offset) % (2 ^ 64 : Int)).toNat
+@[expose] def effAddr (p : Val) (offset : Int) : Nat := ((p.toNat + offset) % (2 ^ 64 : Int)).toNat
 
 /-! ## Instructions -/
 
 /-- Access size in bytes and extension of a load. -/
-def LoadOp.size (ty : Ty) : LoadOp → Nat
+@[expose] def LoadOp.size (ty : Ty) : LoadOp → Nat
   | .load => ty.bytes
   | .uload8 | .sload8 => 1
   | .uload16 | .sload16 => 2
@@ -176,7 +176,7 @@ def LoadOp.size (ty : Ty) : LoadOp → Nat
   | .sload8 | .sload16 | .sload32 => true
   | _ => false
 
-def StoreOp.size (ty : Ty) : StoreOp → Nat
+@[expose] def StoreOp.size (ty : Ty) : StoreOp → Nat
   | .store => ty.bytes
   | .istore8 => 1
   | .istore16 => 2
@@ -241,7 +241,7 @@ def StoreOp.size (ty : Ty) : StoreOp → Nat
   | _, _ => bad
 
 /-- Semantics of one non-`call` instruction: its result values and the new memory. -/
-def evalInst (fr : Frame) (mem : Mem) : Inst → Res (List Val × Mem)
+@[expose] def evalInst (fr : Frame) (mem : Mem) : Inst → Res (List Val × Mem)
   | .iconst ty imm => pure ([⟨ty, imm⟩], mem)
   | .unary op ty x => do
     let a ← fr.getAs x ty
@@ -405,7 +405,7 @@ def evalInst (fr : Frame) (mem : Mem) : Inst → Res (List Val × Mem)
 
 /-- Branch to `bc` from `fr`: evaluate the arguments in the current register file, then bind
 them to the target block's parameters (parallel assignment). -/
-def enterBlock (fr : Frame) (bc : BlockCall) : Res Frame := do
+@[expose] def enterBlock (fr : Frame) (bc : BlockCall) : Res Frame := do
   let b ← Res.ofOption s!"unknown block block{bc.block}" (fr.func.block? bc.block)
   let args ← fr.getMany bc.args
   checkTys s!"arguments of block{bc.block}" args (b.params.map (·.2))
@@ -413,7 +413,7 @@ def enterBlock (fr : Frame) (bc : BlockCall) : Res Frame := do
   pure { fr with regs, body := b.body, term := b.term }
 
 /-- Stack slots from the bump allocator (fresh, uninitialised). -/
-def bumpSlots (slots : List (SlotId × StackSlot)) (mem : Mem) : List (SlotId × Nat) × Mem :=
+@[expose] def bumpSlots (slots : List (SlotId × StackSlot)) (mem : Mem) : List (SlotId × Nat) × Mem :=
   slots.foldl
     (fun (acc : List (SlotId × Nat) × Mem) (s : SlotId × StackSlot) =>
       let (base, m) := acc.2.alloc s.2.size (s.2.align.getD 1)
@@ -520,7 +520,7 @@ minus `d`, and its slots are placed at that `sp` plus `off` (`Mem.allocAt`: unin
 for an activation with slots under the slot-byte oracle `Place.init` the oracle's bytes for it,
 the oracle advanced: `initSlots`); otherwise the caller's, and the slots come from the bump
 allocator, as without the oracle. -/
-def enterSlots (f : Function) (mem : Mem) : List (SlotId × Nat) × Mem :=
+@[expose] def enterSlots (f : Function) (mem : Mem) : List (SlotId × Nat) × Mem :=
   match mem.place with
   | none => bumpSlots f.slots mem
   | some pl =>
@@ -534,7 +534,7 @@ def enterSlots (f : Function) (mem : Mem) : List (SlotId × Nat) × Mem :=
 
 /-- Start an activation of `f` on `args`: allocate its stack slots (`enterSlots`: fresh,
 uninitialised, or placed ones with the slot-byte oracle's bytes) and enter its entry block. -/
-def enterFunc (f : Function) (args : List Val) (mem : Mem) : Res (Frame × Mem) := do
+@[expose] def enterFunc (f : Function) (args : List Val) (mem : Mem) : Res (Frame × Mem) := do
   checkTys s!"arguments of %{f.name}" args (AbiParam.tys f.sig.params)
   let entry ← Res.ofOption s!"%{f.name} has no blocks" f.entry?
   let (slots, mem') := enterSlots f mem
@@ -543,7 +543,7 @@ def enterFunc (f : Function) (args : List Val) (mem : Mem) : Res (Frame × Mem) 
   pure ({ func := f, regs, slots, body := entry.body, term := entry.term }, mem')
 
 /-- Bind the results of a statement and continue with the rest of the block. -/
-def continueWith (s : State) (rest : List Stmt) (results : List ValueId) (vals : List Val)
+@[expose] def continueWith (s : State) (rest : List Stmt) (results : List ValueId) (vals : List Val)
     (mem : Mem) : StepResult :=
   match s.frame.regs.setMany results vals with
   | some regs => .next { s with frame := { s.frame with regs, body := rest }, mem }
@@ -649,7 +649,7 @@ with no function. -/
 /-- Return `vals` from the current frame (memory `mem`): free its stack slots (and leave the
 activation, `Mem.leave`), then resume the caller (binding the results of its pending call) or
 finish. -/
-def returnValues (s : State) (vals : List Val) (mem : Mem) : StepResult :=
+@[expose] def returnValues (s : State) (vals : List Val) (mem : Mem) : StepResult :=
   StepResult.ofRes (checkTys s!"return values of %{s.frame.func.name}" vals
       (AbiParam.tys s.frame.func.sig.returns)) fun _ =>
   let mem := (mem.free (s.frame.slots.map (·.2))).leave
@@ -698,7 +698,7 @@ the call's results there before its normal-return successor reads them as `retN`
 
 /-- The normal-return successor of a `try_call` as a plain block call, the `i`-th result being
 value `base + i`. -/
-def tryNormal (et : ExnTable) (base : ValueId) : Res BlockCall := do
+@[expose] def tryNormal (et : ExnTable) (base : ValueId) : Res BlockCall := do
   let args ← et.normal.args.mapM fun
     | .val v => pure v
     | .ret i => pure (base + i)
@@ -815,7 +815,7 @@ theorem runLoop_succ (env : Env) (p : Program) (fuel : Nat) (s : State) :
       | .stuck m => .stuck m := rfl
 
 /-- Initial state for calling `f` on `args` with memory `mem`. -/
-def initState (p : Program) (f : String) (args : List Val) (mem : Mem) : Res State := do
+@[expose] def initState (p : Program) (f : String) (args : List Val) (mem : Mem) : Res State := do
   let fn ← Res.ofOption s!"unknown function %{f}" (p.func? f)
   let (fr, mem') ← enterFunc fn args mem
   pure { frame := fr, callers := [], mem := mem' }

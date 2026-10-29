@@ -54,7 +54,7 @@ public section
 namespace Arm
 
 
-def exec_inst (ai : ArmInst) (s : ArmState) : ArmState :=
+@[expose] def exec_inst (ai : ArmInst) (s : ArmState) : ArmState :=
   open ArmInst in
   match ai with
   | DPI (DataProcImmInst.Add_sub_imm i) =>
@@ -158,7 +158,7 @@ def exec_inst (ai : ArmInst) (s : ArmState) : ArmState :=
     Reserved.exec_reserved i s
 
 
-def stepi (s : ArmState) : ArmState :=
+@[expose] def stepi (s : ArmState) : ArmState :=
   -- This function should be simulated away automatically because the
   -- the program will always be concrete. Even the PC can be symbolic,
   -- as long as we can establish that it points to some instruction in
@@ -180,7 +180,7 @@ def stepi (s : ArmState) : ArmState :=
           | some arm_inst => exec_inst arm_inst s)
   | _ => s
 
-def run (n : Nat) (s : ArmState) : ArmState :=
+@[expose] def run (n : Nat) (s : ArmState) : ArmState :=
   match n with
   | 0 => s
   | n' + 1 =>

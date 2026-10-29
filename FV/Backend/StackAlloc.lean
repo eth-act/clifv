@@ -91,12 +91,12 @@ def intScratch : List Reg := [.x 9, .x 10, .x 11, .x 12, .x 13, .x 14, .x 15]
 def floatScratch : List Reg := (List.range 16).map fun i => .v (16 + i)
 
 /-- Spill load/store of a vreg's slot. -/
-def slotLoad (cls : RegClass) (r : Reg) (off : Nat) : MInst :=
+@[expose] def slotLoad (cls : RegClass) (r : Reg) (off : Nat) : MInst :=
   match cls with
   | .int => .load .uload64 r (.spOffset off) trustedFlags
   | .float => .load .fpuLoad128 r (.spOffset off) trustedFlags
 
-def slotStore (cls : RegClass) (r : Reg) (off : Nat) : MInst :=
+@[expose] def slotStore (cls : RegClass) (r : Reg) (off : Nat) : MInst :=
   match cls with
   | .int => .store .store64 r (.spOffset off) trustedFlags
   | .float => .store .fpuStore128 r (.spOffset off) trustedFlags

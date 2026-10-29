@@ -138,20 +138,20 @@ namespace Mem
 @[expose] instance : Inhabited Mem := ⟨empty⟩
 
 /-- Is `[addr, addr + n)` inside one live allocation? -/
-def valid (m : Mem) (addr n : Nat) : Bool := m.allocs.any (·.contains addr n)
+@[expose] def valid (m : Mem) (addr n : Nat) : Bool := m.allocs.any (·.contains addr n)
 
 /-- Round `n` up to a multiple of `a` (`a > 0`). -/
-def alignUp (n a : Nat) : Nat := (n + a - 1) / a * a
+@[expose] def alignUp (n a : Nat) : Nat := (n + a - 1) / a * a
 
 /-- Allocate `size` fresh, uninitialised bytes aligned to `align` (at least 16). Returns the
 base address. -/
-def alloc (m : Mem) (size align : Nat) : Nat × Mem :=
+@[expose] def alloc (m : Mem) (size align : Nat) : Nat × Mem :=
   let base := alignUp m.next (max align 16)
   (base, { m with allocs := { base, size } :: m.allocs, next := base + size + 16 })
 
 /-- Allocate `[base, base + size)` at a given address, uninitialised (a stack slot the
 slot-placement oracle places). -/
-def allocAt (m : Mem) (base size : Nat) : Mem :=
+@[expose] def allocAt (m : Mem) (base size : Nat) : Mem :=
   { m with allocs := { base, size } :: m.allocs,
            bytes := fun a => if base ≤ a ∧ a < base + size then none else m.bytes a }
 
@@ -161,7 +161,7 @@ oracle, `Clif.enterSlots`). -/
   { m with bytes := fun a => if base ≤ a ∧ a < base + size then some (b a) else m.bytes a }
 
 /-- Leave an activation: the slot-placement oracle drops its stack pointer. -/
-def leave (m : Mem) : Mem :=
+@[expose] def leave (m : Mem) : Mem :=
   match m.place with
   | some pl => { m with place := some { pl with sps := pl.sps.tail } }
   | none => m
@@ -181,17 +181,17 @@ def leave (m : Mem) : Mem :=
   { m with allocs := m.allocs.filter (fun a => !bases.contains a.base) }
 
 /-- Byte `i` of an `n`-byte access in the given byte order. -/
-def byteIndex (big : Bool) (n i : Nat) : Nat := if big then n - 1 - i else i
+@[expose] def byteIndex (big : Bool) (n i : Nat) : Nat := if big then n - 1 - i else i
 
 /-- Read `n` bytes at `addr` as a `w`-bit value (`w = 8 * n`); `none` if a byte is
 uninitialised. No bounds check. -/
-def readBits (m : Mem) (big : Bool) (addr n w : Nat) : Option (BitVec w) :=
+@[expose] def readBits (m : Mem) (big : Bool) (addr n w : Nat) : Option (BitVec w) :=
   (List.range n).foldlM (init := 0) fun acc i => do
     let b ← m.bytes (addr + byteIndex big n i)
     pure (acc ||| (b.zeroExtend w <<< (8 * i)))
 
 /-- Write the low `8 * n` bits of `x` as `n` bytes at `addr`. No bounds check. -/
-def writeBits {w : Nat} (m : Mem) (big : Bool) (addr n : Nat) (x : BitVec w) : Mem :=
+@[expose] def writeBits {w : Nat} (m : Mem) (big : Bool) (addr n : Nat) (x : BitVec w) : Mem :=
   { m with bytes := fun a =>
       if addr ≤ a ∧ a < addr + n then
         some (x.extractLsb' (8 * byteIndex big n (a - addr)) 8)
@@ -200,7 +200,7 @@ def writeBits {w : Nat} (m : Mem) (big : Bool) (addr n : Nat) (x : BitVec w) : M
 /-- Bounds and alignment preconditions of an `n`-byte access with `flags`. Out of bounds
 traps with the flags' trap code (default `heap_oob`) and is `stuck` if the access is
 `notrap`; a misaligned `aligned` access is `stuck`. -/
-def checkAccess (m : Mem) (flags : MemFlags) (addr n : Nat) : Res Unit :=
+@[expose] def checkAccess (m : Mem) (flags : MemFlags) (addr n : Nat) : Res Unit :=
   if m.valid addr n then
     if flags.aligned && addr % n != 0 then .stuck s!"misaligned `aligned` access at {addr}"
     else .ok ()
@@ -216,7 +216,7 @@ def checkAccess (m : Mem) (flags : MemFlags) (addr n : Nat) : Res Unit :=
     (m.readBits (flags.endianness == some .big) addr n w)
 
 /-- Does `[addr, addr + n)` overlap a read-only allocation? -/
-def readonlyAt (m : Mem) (addr n : Nat) : Bool :=
+@[expose] def readonlyAt (m : Mem) (addr n : Nat) : Bool :=
   m.allocs.any fun a => a.readonly && a.base < addr + n && addr < a.base + a.size
 
 /-- Checked store of the low `n` bytes of `x`. A store into read-only data is `stuck`. -/
@@ -231,7 +231,7 @@ end Mem
 
 namespace Image
 
-def itemSize : DataItem → Nat
+@[expose] def itemSize : DataItem → Nat
   | .byte _ => 1
   | .addr .. => 8
 
@@ -249,7 +249,7 @@ unless `writable`. Returns each object's address. -/
     ((o.name, base) :: rest, m2)
 
 /-- Write the contents `items` at `addr`; relocations resolve through `syms`. -/
-def writeItems (syms : List (String × Nat)) (m : Mem) (addr : Nat) :
+@[expose] def writeItems (syms : List (String × Nat)) (m : Mem) (addr : Nat) :
     List DataItem → Res Mem
   | [] => .ok m
   | .byte b :: is => writeItems syms (m.writeBits false addr 1 b) (addr + 1) is

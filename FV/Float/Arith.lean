@@ -12,17 +12,17 @@ namespace IEEE
 
 /-- Round the exact signed value `m * 2^e`; an exact zero sum gets the sign the ASL gives
 it (`-0` iff rounding toward −∞). -/
-def roundSum (f : Fmt) (rm : RMode) (m : Int) (e : Int) : Bits f :=
+@[expose] def roundSum (f : Fmt) (rm : RMode) (m : Int) (e : Int) : Bits f :=
   if m = 0 then zero f (rm = .rmi) else round f rm (m < 0) m.natAbs e
 
 /-- `(-1)^s1 m1 2^e1 + (-1)^s2 m2 2^e2` exactly, as `(m, min e1 e2)`. -/
-def addExact (s1 : Bool) (m1 : Nat) (e1 : Int) (s2 : Bool) (m2 : Nat) (e2 : Int) : Int × Int :=
+@[expose] def addExact (s1 : Bool) (m1 : Nat) (e1 : Int) (s2 : Bool) (m2 : Nat) (e2 : Int) : Int × Int :=
   let e := min e1 e2
   (signed s1 (m1 * 2 ^ (e1 - e).toNat) + signed s2 (m2 * 2 ^ (e2 - e).toNat), e)
 
 /-- Order of two non-NaN unpacked operands by value (`FPUnpack` gives infinities the value
 `±2^1000000`; zeros of either sign are equal). -/
-def cmpVal (t1 : FPType) (s1 : Bool) (m1 : Nat) (e1 : Int)
+@[expose] def cmpVal (t1 : FPType) (s1 : Bool) (m1 : Nat) (e1 : Int)
     (t2 : FPType) (s2 : Bool) (m2 : Nat) (e2 : Int) : Ordering :=
   match t1 == .infinity, t2 == .infinity with
   | true, true => if s1 = s2 then .eq else if s1 then .lt else .gt
@@ -33,7 +33,7 @@ def cmpVal (t1 : FPType) (s1 : Bool) (m1 : Nat) (e1 : Int)
     if d < 0 then .lt else if d = 0 then .eq else .gt
 
 /-- `FPAdd(op1, op2, fpcr)`. -/
-def add (f : Fmt) (rm : RMode) (op1 op2 : Bits f) : Bits f :=
+@[expose] def add (f : Fmt) (rm : RMode) (op1 op2 : Bits f) : Bits f :=
   let (t1, s1, m1, e1) := unpack f op1
   let (t2, s2, m2, e2) := unpack f op2
   match processNaNs f t1 t2 op1 op2 with
@@ -50,7 +50,7 @@ def add (f : Fmt) (rm : RMode) (op1 op2 : Bits f) : Bits f :=
       roundSum f rm m e
 
 /-- `FPSub(op1, op2, fpcr)`. -/
-def sub (f : Fmt) (rm : RMode) (op1 op2 : Bits f) : Bits f :=
+@[expose] def sub (f : Fmt) (rm : RMode) (op1 op2 : Bits f) : Bits f :=
   let (t1, s1, m1, e1) := unpack f op1
   let (t2, s2, m2, e2) := unpack f op2
   match processNaNs f t1 t2 op1 op2 with
@@ -67,7 +67,7 @@ def sub (f : Fmt) (rm : RMode) (op1 op2 : Bits f) : Bits f :=
       roundSum f rm m e
 
 /-- `FPMul(op1, op2, fpcr)`. -/
-def mul (f : Fmt) (rm : RMode) (op1 op2 : Bits f) : Bits f :=
+@[expose] def mul (f : Fmt) (rm : RMode) (op1 op2 : Bits f) : Bits f :=
   let (t1, s1, m1, e1) := unpack f op1
   let (t2, s2, m2, e2) := unpack f op2
   match processNaNs f t1 t2 op1 op2 with
@@ -82,7 +82,7 @@ def mul (f : Fmt) (rm : RMode) (op1 op2 : Bits f) : Bits f :=
 
 /-- `FPDiv(op1, op2, fpcr)`. The quotient is computed with at least `F + 3` bits and a sticky
 bit for a nonzero remainder. -/
-def div (f : Fmt) (rm : RMode) (op1 op2 : Bits f) : Bits f :=
+@[expose] def div (f : Fmt) (rm : RMode) (op1 op2 : Bits f) : Bits f :=
   let (t1, s1, m1, e1) := unpack f op1
   let (t2, s2, m2, e2) := unpack f op2
   match processNaNs f t1 t2 op1 op2 with
@@ -115,7 +115,7 @@ inexact root. -/
     round f rm false r (e / 2 - (f.F + 3 : Nat)) (r * r ≠ n)
 
 /-- `FPMulAdd(addend, op1, op2, fpcr)`: `addend + op1 * op2` with a single rounding. -/
-def mulAdd (f : Fmt) (rm : RMode) (addend op1 op2 : Bits f) : Bits f :=
+@[expose] def mulAdd (f : Fmt) (rm : RMode) (addend op1 op2 : Bits f) : Bits f :=
   let (tA, sA, mA, eA) := unpack f addend
   let (t1, s1, m1, e1) := unpack f op1
   let (t2, s2, m2, e2) := unpack f op2
@@ -153,7 +153,7 @@ def mulAdd (f : Fmt) (rm : RMode) (addend op1 op2 : Bits f) : Bits f :=
     else round f rm s m e
 
 /-- `FPMin(op1, op2, fpcr)` (AH = 0, `altfp = FALSE`): NaN-propagating, `min(-0, +0) = -0`. -/
-def min (f : Fmt) (rm : RMode) (op1 op2 : Bits f) : Bits f :=
+@[expose] def min (f : Fmt) (rm : RMode) (op1 op2 : Bits f) : Bits f :=
   let (t1, s1, m1, e1) := unpack f op1
   let (t2, s2, m2, e2) := unpack f op2
   match processNaNs f t1 t2 op1 op2 with
@@ -166,7 +166,7 @@ def min (f : Fmt) (rm : RMode) (op1 op2 : Bits f) : Bits f :=
     else round f rm s m e
 
 /-- `FPCompare(op1, op2, signal_nans, fpcr)` without the exception side effect. -/
-def compare (f : Fmt) (op1 op2 : Bits f) : Cmp :=
+@[expose] def compare (f : Fmt) (op1 op2 : Bits f) : Cmp :=
   let (t1, s1, m1, e1) := unpack f op1
   let (t2, s2, m2, e2) := unpack f op2
   if t1.isNaN ∨ t2.isNaN then .un

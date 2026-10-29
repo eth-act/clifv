@@ -102,11 +102,11 @@ inductive Sym where
   deriving DecidableEq, Repr, Inhabited
 
 /-- The class of a location, if it is a location of the allocated code at all. -/
-def Loc.cls? : Loc → Option RegClass
+@[expose] def Loc.cls? : Loc → Option RegClass
   | .reg r | .save r => r.realClass?
   | .stack _ c => some c
 
-def Loc.isReg : Loc → Bool
+@[expose] def Loc.isReg : Loc → Bool
   | .reg _ => true
   | _ => false
 
@@ -163,12 +163,12 @@ theorem remove_eq (a : AState) (s : Sym) : a.remove s = a.map (·.filter (· != 
 @[expose] def define (a : AState) (l : Loc) (s : Sym) : AState := (a.remove s).put l [s]
 
 /-- `meet` on the location lists. -/
-def meetSets : List (List Sym) → List (List Sym) → List (List Sym)
+@[expose] def meetSets : List (List Sym) → List (List Sym) → List (List Sym)
   | [], _ => []
   | s :: as, bs => s.filter ((bs.headD []).contains ·) :: meetSets as bs.tail
 
 /-- Pointwise intersection (keeps the order of `a`, so `meet a b = a` iff `a ⊆ b`). -/
-def meet (a b : AState) : AState := ⟨meetSets a.toList b.toList⟩
+@[expose] def meet (a b : AState) : AState := ⟨meetSets a.toList b.toList⟩
 
 /-- `meet` as compiled. -/
 def meetArray (a b : AState) : AState :=
@@ -220,12 +220,12 @@ theorem parCopy_eq (a : AState) (params args : List Nat) : a.parCopy params args
   simp only [parCopy, mapSets_eq]
 
 /-- `le` on the location lists. -/
-def leSets : List (List Sym) → List (List Sym) → Bool
+@[expose] def leSets : List (List Sym) → List (List Sym) → Bool
   | [], _ => true
   | s :: as, bs => s.all ((bs.headD []).contains ·) && leSets as bs.tail
 
 /-- Pointwise inclusion `a ⊆ b` (every symbol `a` puts in a location, `b` puts there too). -/
-def le (a b : AState) : Bool := leSets a.toList b.toList
+@[expose] def le (a b : AState) : Bool := leSets a.toList b.toList
 
 /-- `le` as compiled. -/
 def leArray (a b : AState) : Bool :=
@@ -263,12 +263,12 @@ structure CheckCtx where
 section
 variable (c : CheckCtx)
 
-def vregNum : Reg → Except String Nat
+@[expose] def vregNum : Reg → Except String Nat
   | .vreg n _ => pure n
   | r => throw s!"{repr r} is not a virtual register"
 
 /-- Is `l` a location the allocated code may hold a value of class `cls` in? -/
-def CheckCtx.locOk (l : Loc) (cls : RegClass) : Bool :=
+@[expose] def CheckCtx.locOk (l : Loc) (cls : RegClass) : Bool :=
   l.cls? == some cls &&
   match l with
   | .reg r => r.allocatable
@@ -276,7 +276,7 @@ def CheckCtx.locOk (l : Loc) (cls : RegClass) : Bool :=
   | .save r => c.rf.saved.contains r && calleeSaved.contains r
 
 /-- The per-operand static check (location and constraint) of operand `j`. -/
-def CheckCtx.checkOperand (where_ : String) (ops : Array Operand) (allocs : Array Loc) :
+@[expose] def CheckCtx.checkOperand (where_ : String) (ops : Array Operand) (allocs : Array Loc) :
     (Operand × Loc) × Nat → Except String Unit
   | ((o, l), j) => do
     ensure (c.locOk l o.cls && !(l matches .save _)) fun _ =>
@@ -467,7 +467,7 @@ a `try_call`'s call, on its normal-return edge) leave every set. -/
   c.edgeCopy b s (c.edgeForget b s a)
 
 /-- One round over all blocks; returns the new in-states and whether any changed. -/
-def CheckCtx.round (ins : Array (Option AState)) : Except String (Array (Option AState) × Bool) := do
+@[expose] def CheckCtx.round (ins : Array (Option AState)) : Except String (Array (Option AState) × Bool) := do
   let mut ins := ins
   let mut changed := false
   for b in [0:c.vc.blocks.size] do
@@ -484,7 +484,7 @@ def CheckCtx.round (ins : Array (Option AState)) : Except String (Array (Option 
   pure (ins, changed)
 
 /-- The (untrusted) fixpoint iteration: it only proposes in-states; `verify` checks them. -/
-def CheckCtx.fixpoint (fuel : Nat) (ins : Array (Option AState)) :
+@[expose] def CheckCtx.fixpoint (fuel : Nat) (ins : Array (Option AState)) :
     Except String (Array (Option AState)) :=
   match fuel with
   | 0 => throw "checker did not reach a fixpoint (fuel exhausted)"

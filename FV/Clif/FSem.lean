@@ -38,7 +38,7 @@ def fmt? : Ty → Option Fmt
   | _ => none
 
 /-- A binary operation on the bits of a float type (`none` at other types). -/
-def lift2 (g : (f : Fmt) → IEEE.Bits f → IEEE.Bits f → IEEE.Bits f) :
+@[expose] def lift2 (g : (f : Fmt) → IEEE.Bits f → IEEE.Bits f → IEEE.Bits f) :
     (ty : Ty) → BitVec ty.width → BitVec ty.width → Option (BitVec ty.width)
   | .f32, a, b => some (g Fmt.b32 a b)
   | .f64, a, b => some (g Fmt.b64 a b)
@@ -59,7 +59,7 @@ def lift2 (g : (f : Fmt) → IEEE.Bits f → IEEE.Bits f → IEEE.Bits f) :
   | _, _, _, _ => none
 
 /-- `fcopysign x y`: `x` with the sign bit of `y`. -/
-def copysign (f : Fmt) (x y : IEEE.Bits f) : IEEE.Bits f :=
+@[expose] def copysign (f : Fmt) (x y : IEEE.Bits f) : IEEE.Bits f :=
   let s : IEEE.Bits f := BitVec.ofNat _ (2 ^ (f.E + f.F))
   (x &&& ~~~s) ||| (y &&& s)
 
@@ -89,7 +89,7 @@ def copysign (f : Fmt) (x y : IEEE.Bits f) : IEEE.Bits f :=
 @[expose] def fma (f : Fmt) (x y z : IEEE.Bits f) : IEEE.Bits f := IEEE.mulAdd f .rne z x y
 
 /-- `fcmp cc` on the comparison result (`FloatCC`, `docs/ir.md` table). -/
-def condHolds : FloatCC → Cmp → Bool
+@[expose] def condHolds : FloatCC → Cmp → Bool
   | .eq, c => c == .eq
   | .ne, c => c != .eq
   | .lt, c => c == .lt

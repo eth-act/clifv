@@ -40,7 +40,7 @@ namespace DPSFP
 
 open _root_.BitVec Arm.BitVec
 
-@[state_simp_rules]
+@[expose, state_simp_rules]
 def exec_fp_data_processing_two_source (inst : FP_data_processing_two_source_cls) (s : ArmState) :
     ArmState :=
   if inst.M = 1#1 ∨ inst.S = 1#1 ∨ inst.ftype = 0b10#2 then

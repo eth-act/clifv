@@ -32,7 +32,7 @@ def Uncond_branch_imm_inst.branch_taken_pc (inst : Uncond_branch_imm_cls) (pc : 
   let offset := signExtend 64 (inst.imm26 ++ 0b00#2)
   pc + offset
 
-@[state_simp_rules]
+@[expose, state_simp_rules]
 def exec_uncond_branch_imm (inst : Uncond_branch_imm_cls) (s : ArmState) : ArmState :=
     let orig_pc := read_pc s
     let next_pc := Uncond_branch_imm_inst.branch_taken_pc inst orig_pc

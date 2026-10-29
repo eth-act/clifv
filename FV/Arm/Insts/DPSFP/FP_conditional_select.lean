@@ -36,7 +36,7 @@ namespace DPSFP
 
 open _root_.BitVec Arm.BitVec
 
-@[state_simp_rules]
+@[expose, state_simp_rules]
 def exec_fp_conditional_select (inst : FP_conditional_select_cls) (s : ArmState) : ArmState :=
   if inst.M = 1#1 ∨ inst.S = 1#1 ∨ inst.ftype = 0b10#2 then
     write_err (StateError.Illegal s!"Illegal {inst} encountered!") s

@@ -70,7 +70,7 @@ inductive XOutcome where
   | _ => none
 
 /-- Forget unwinding: `unwound` is `stuck` (what `Clif.run` does at a callee that unwinds). -/
-def XOutcome.toOutcome : XOutcome → Outcome
+@[expose] def XOutcome.toOutcome : XOutcome → Outcome
   | .returned vals mem => .returned vals mem
   | .unwound _ _ => .stuck "callee unwound (Clif.run has no unwinding)"
   | .trapped c => .trapped c
@@ -127,7 +127,7 @@ inductive XStepResult where
   | trapped (code : TrapCode)
   | stuck (msg : String)
 
-def XStepResult.ofRes {α : Type} (r : Res α) (k : α → XStepResult) : XStepResult :=
+@[expose] def XStepResult.ofRes {α : Type} (r : Res α) (k : α → XStepResult) : XStepResult :=
   match r with
   | .ok a => k a
   | .trap c => .trapped c
@@ -136,7 +136,7 @@ def XStepResult.ofRes {α : Type} (r : Res α) (k : α → XStepResult) : XStepR
 /-! ## Raising -/
 
 /-- The first handler of `et` that catches `e`. -/
-def ExnTable.catch? (et : ExnTable) (e : Exn) : Option TryDest :=
+@[expose] def ExnTable.catch? (et : ExnTable) (e : Exn) : Option TryDest :=
   et.items.findSome? fun
     | .tag n d => if e.catches n then some d else none
     | .default d => some d
@@ -144,7 +144,7 @@ def ExnTable.catch? (et : ExnTable) (e : Exn) : Option TryDest :=
 
 /-- A handler successor of a `try_call` as a plain block call, the `i`-th payload value being
 value `base + i` (`tryNormal`'s counterpart). -/
-def tryHandler (d : TryDest) (base : ValueId) : Res BlockCall := do
+@[expose] def tryHandler (d : TryDest) (base : ValueId) : Res BlockCall := do
   let args ← d.args.mapM fun
     | .val v => pure v
     | .exn i => pure (base + i)
@@ -154,7 +154,7 @@ def tryHandler (d : TryDest) (base : ValueId) : Res BlockCall := do
 /-- Frame `fr`, suspended at (or running) a `try_call` with table `et`, resumed by exception
 `e`: `none` if no handler catches `e`; else the frame with the payload bound at
 `freshValue + i` and the pending `jump` to the handler. -/
-def catchIn (fr : Frame) (et : ExnTable) (e : Exn) : Option (Res Frame) :=
+@[expose] def catchIn (fr : Frame) (et : ExnTable) (e : Exn) : Option (Res Frame) :=
   (et.catch? e).map fun d => do
     let base := fr.func.freshValue
     let bc ← tryHandler d base
@@ -164,7 +164,7 @@ def catchIn (fr : Frame) (et : ExnTable) (e : Exn) : Option (Res Frame) :=
 
 /-- Propagate `e` out of frame `fr` (memory `mem`, the frame's slots not yet freed) into the
 suspended `callers` with their pending tables `tries`. -/
-def unwindFrom (e : Exn) : Frame → List (Frame × List ValueId) → List (Option ExnTable) → Mem →
+@[expose] def unwindFrom (e : Exn) : Frame → List (Frame × List ValueId) → List (Option ExnTable) → Mem →
     XStepResult
   | fr, [], _, mem => .unwound e ((mem.free (fr.slots.map (·.2))).leave)
   | fr, (c, _) :: cs, t :: ts, mem =>
@@ -175,7 +175,7 @@ def unwindFrom (e : Exn) : Frame → List (Frame × List ValueId) → List (Opti
   | _, _ :: _, [], _ => .stuck "unwinding: no pending table for a caller"
 
 /-- The exception table of the `try_call` the state is at, if any. -/
-def pendingOf (s : State) : Option ExnTable :=
+@[expose] def pendingOf (s : State) : Option ExnTable :=
   match s.frame.body, s.frame.term with
   | [], .tryCall _ _ et => some et
   | [], .tryCallIndirect _ _ et => some et
@@ -183,7 +183,7 @@ def pendingOf (s : State) : Option ExnTable :=
 
 /-- `e` raised by the call the running frame of `xs` is at (memory `mem`): caught by its own
 `try_call`, or propagated. -/
-def raiseIn (xs : XState) (e : Exn) (mem : Mem) : XStepResult :=
+@[expose] def raiseIn (xs : XState) (e : Exn) (mem : Mem) : XStepResult :=
   match (pendingOf xs.s).bind (catchIn xs.s.frame · e) with
   | some r => XStepResult.ofRes r fun fr => .next ⟨{ xs.s with frame := fr, mem }, xs.tries⟩
   | none => unwindFrom e xs.s.frame xs.s.callers xs.tries mem
@@ -193,7 +193,7 @@ def raiseIn (xs : XState) (e : Exn) (mem : Mem) : XStepResult :=
 Each mirrors the corresponding step of `Clif.step` up to the extern's outcome. -/
 
 /-- The extern a `call fnN(args)` of frame `fr` calls unwinds (`stepCall`). -/
-def callRaise (env : XEnv) (p : Program) (mem : Mem) (fr : Frame) (fn : FnRef)
+@[expose] def callRaise (env : XEnv) (p : Program) (mem : Mem) (fr : Frame) (fn : FnRef)
     (args : List ValueId) : Option (Exn × Mem) :=
   match (do
     let ext ← Res.ofOption s!"unknown function reference fn{fn}" (fr.func.extern? fn)
@@ -229,7 +229,7 @@ def callRaise (env : XEnv) (p : Program) (mem : Mem) (fr : Frame) (fn : FnRef)
 
 /-- A `call_indirect sigN, callee(args)` of frame `fr` calls an extern that unwinds
 (`stepCallIndirect`). -/
-def callIndRaise (env : XEnv) (p : Program) (mem : Mem) (fr : Frame) (sig : Nat)
+@[expose] def callIndRaise (env : XEnv) (p : Program) (mem : Mem) (fr : Frame) (sig : Nat)
     (callee : ValueId) (args : List ValueId) : Option (Exn × Mem) :=
   match (do
     let declared ← Res.ofOption s!"unknown signature sig{sig}" (fr.func.sigDecls.lookup sig)
@@ -244,7 +244,7 @@ def callIndRaise (env : XEnv) (p : Program) (mem : Mem) (fr : Frame) (sig : Nat)
   | _ => none
 
 /-- A `return_call fnN(args)` of frame `fr` calls an extern that unwinds (`stepReturnCall`). -/
-def returnCallRaise (env : XEnv) (p : Program) (mem : Mem) (fr : Frame) (fn : FnRef)
+@[expose] def returnCallRaise (env : XEnv) (p : Program) (mem : Mem) (fr : Frame) (fn : FnRef)
     (args : List ValueId) : Option (Exn × Mem) :=
   match (do
     let ext ← Res.ofOption s!"unknown function reference fn{fn}" (fr.func.extern? fn)
@@ -265,7 +265,7 @@ def returnCallRaise (env : XEnv) (p : Program) (mem : Mem) (fr : Frame) (fn : Fn
   | _ => none
 
 /-- A `try_call fnN(args), et` of frame `fr` calls an extern that unwinds (`stepTryCall`). -/
-def tryCallRaise (env : XEnv) (p : Program) (mem : Mem) (fr : Frame) (fn : FnRef)
+@[expose] def tryCallRaise (env : XEnv) (p : Program) (mem : Mem) (fr : Frame) (fn : FnRef)
     (args : List ValueId) (et : ExnTable) : Option (Exn × Mem) :=
   match (do
     let ext ← Res.ofOption s!"unknown function reference fn{fn}" (fr.func.extern? fn)
@@ -281,7 +281,7 @@ def tryCallRaise (env : XEnv) (p : Program) (mem : Mem) (fr : Frame) (fn : FnRef
 
 /-- A `try_call_indirect callee(args), et` of frame `fr` calls an extern that unwinds
 (`stepTryCallIndirect`). -/
-def tryCallIndRaise (env : XEnv) (p : Program) (mem : Mem) (fr : Frame) (callee : ValueId)
+@[expose] def tryCallIndRaise (env : XEnv) (p : Program) (mem : Mem) (fr : Frame) (callee : ValueId)
     (args : List ValueId) (et : ExnTable) : Option (Exn × Mem) :=
   match (do
     let sig ← Res.ofOption s!"unknown signature sig{et.sig}" (fr.func.sigDecls.lookup et.sig)
@@ -293,7 +293,7 @@ def tryCallIndRaise (env : XEnv) (p : Program) (mem : Mem) (fr : Frame) (callee 
 
 /-- The exception the current step raises, if its call reaches an extern that unwinds, with
 the extern's memory. -/
-def raiseAt? (env : XEnv) (p : Program) (s : State) : Option (Exn × Mem) :=
+@[expose] def raiseAt? (env : XEnv) (p : Program) (s : State) : Option (Exn × Mem) :=
   match s.frame.body with
   | st :: _ =>
     match st.inst with
@@ -311,7 +311,7 @@ def raiseAt? (env : XEnv) (p : Program) (s : State) : Option (Exn × Mem) :=
 
 /-- A step of `Clif.step` on `xs.s`, with the pending tables kept aligned with the callers: a
 pushed caller records its `try_call`'s table (`pendingOf`), a resumed one drops its own. -/
-def liftStep (xs : XState) : StepResult → XStepResult
+@[expose] def liftStep (xs : XState) : StepResult → XStepResult
   | .next s' =>
     .next ⟨s', if s'.callers.length = xs.s.callers.length + 1 then pendingOf xs.s :: xs.tries
       else if s'.callers.length + 1 = xs.s.callers.length then xs.tries.tail else xs.tries⟩
@@ -320,13 +320,13 @@ def liftStep (xs : XState) : StepResult → XStepResult
   | .stuck m => .stuck m
 
 /-- One small step with unwinding. -/
-def stepX (env : XEnv) (p : Program) (xs : XState) : XStepResult :=
+@[expose] def stepX (env : XEnv) (p : Program) (xs : XState) : XStepResult :=
   match raiseAt? env p xs.s with
   | some (e, mem) => raiseIn xs e mem
   | none => liftStep xs (step env.toEnv p xs.s)
 
 /-- Iterate `stepX` at most `fuel` times. -/
-def runLoopX (env : XEnv) (p : Program) : Nat → XState → XOutcome
+@[expose] def runLoopX (env : XEnv) (p : Program) : Nat → XState → XOutcome
   | 0, _ => .outOfFuel
   | fuel + 1, xs =>
     match stepX env p xs with
@@ -337,10 +337,10 @@ def runLoopX (env : XEnv) (p : Program) : Nat → XState → XOutcome
     | .stuck m => .stuck m
 
 /-- The state of `runX` for a state of `Clif.run` without suspended `try_call`s. -/
-def State.toX (s : State) : XState := ⟨s, s.callers.map fun _ => none⟩
+@[expose] def State.toX (s : State) : XState := ⟨s, s.callers.map fun _ => none⟩
 
 /-- Run `f` on `args` from memory `mem` for at most `fuel` steps (`runWith`). -/
-def runWithX (env : XEnv) (p : Program) (f : String) (args : List Val) (mem : Mem)
+@[expose] def runWithX (env : XEnv) (p : Program) (f : String) (args : List Val) (mem : Mem)
     (fuel : Nat) : XOutcome :=
   match initState p f args mem with
   | .ok s => runLoopX env p fuel s.toX
@@ -632,10 +632,10 @@ caught by `tag7`; with tag 9 nothing catches it and the run ends `unwound`. -/
 
 namespace UnwindWitness
 
-def i64p : AbiParam := { ty := .i64 }
-def sig1 : Signature := { params := [i64p], returns := [i64p] }
+@[expose] def i64p : AbiParam := { ty := .i64 }
+@[expose] def sig1 : Signature := { params := [i64p], returns := [i64p] }
 
-def mainTable : ExnTable where
+@[expose] def mainTable : ExnTable where
   sig := 0
   normal := ⟨1, [.ret 0]⟩
   items := [.tag 3 ⟨3, [.exn 0]⟩, .tag 7 ⟨2, [.exn 0]⟩]

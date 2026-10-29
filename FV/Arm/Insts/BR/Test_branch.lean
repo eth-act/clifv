@@ -46,7 +46,7 @@ def Test_branch_inst.condition_holds (inst : Test_branch_cls) (s : ArmState) : B
   let operand := read_gpr_zr 64 inst.Rt s
   lsb operand bit_pos = inst.op
 
-@[state_simp_rules]
+@[expose, state_simp_rules]
 def exec_test_branch (inst : Test_branch_cls) (s : ArmState) : ArmState :=
   let orig_pc := read_pc s
   let next_pc :=

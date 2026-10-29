@@ -33,7 +33,7 @@ namespace BR
 
 open _root_.BitVec Arm.BitVec
 
-@[state_simp_rules]
+@[expose, state_simp_rules]
 def exec_uncond_branch_reg (inst : Uncond_branch_reg_cls) (s : ArmState) : ArmState :=
     -- Only BR (opc = 0000), BLR (0001) and RET (0010) without pointer authentication.
     if not ((inst.opc = 0b0000#4 ∨ inst.opc = 0b0001#4 ∨ inst.opc = 0b0010#4) ∧

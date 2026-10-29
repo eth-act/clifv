@@ -162,7 +162,7 @@ def exec_addp_vector (inst : Advanced_simd_three_same_cls) (s : ArmState) : ArmS
     let s := write_sfp datasize inst.Rd result s
     s
 
-@[state_simp_rules]
+@[expose, state_simp_rules]
 def exec_advanced_simd_three_same
   (inst : Advanced_simd_three_same_cls) (s : ArmState) : ArmState :=
   open _root_.BitVec Arm.BitVec in

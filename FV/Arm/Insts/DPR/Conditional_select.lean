@@ -35,7 +35,7 @@ namespace DPR
 
 open _root_.BitVec Arm.BitVec
 
-@[state_simp_rules]
+@[expose, state_simp_rules]
 def exec_conditional_select (inst : Conditional_select_cls) (s : ArmState) : ArmState :=
     let datasize := if inst.sf = 1#1 then 64 else 32
     if inst.S = 1#1 ∨ lsb inst.op2 1 = 1#1 then

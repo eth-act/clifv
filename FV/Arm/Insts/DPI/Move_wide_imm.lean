@@ -25,7 +25,7 @@ namespace DPI
 
 open _root_.BitVec Arm.BitVec
 
-@[state_simp_rules]
+@[expose, state_simp_rules]
 def exec_move_wide_imm (inst : Move_wide_imm_cls) (s : ArmState) : ArmState :=
   if inst.opc = 0b01#2 then
     write_err (StateError.Illegal s!"Illegal {inst} encountered!") s

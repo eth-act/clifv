@@ -115,7 +115,7 @@ def exec_data_processing_maddl (unsigned sub_op : Bool)
   let s := write_pc ((read_pc s) + 4#64) s
   s
 
-@[state_simp_rules]
+@[expose, state_simp_rules]
 def exec_data_processing_three_source
   (inst : Data_processing_three_source_cls) (s : ArmState) : ArmState :=
   let (illegal, unimplemented) :=

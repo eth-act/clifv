@@ -111,7 +111,7 @@ theorem sleb?_sleb (n : Int) (rest : List UInt8) :
   | .offset r off => .offset r off
 
 /-- A `Cfi` the encoding round-trips: CFA offsets are multiples of the data alignment 8. -/
-def _root_.Backend.Cfi.Ok : Cfi → Prop
+@[expose] def _root_.Backend.Cfi.Ok : Cfi → Prop
   | .offset _ off => off % 8 = 0
   | _ => True
 
@@ -149,7 +149,7 @@ theorem decodeCfa1?_bytes (i : Cfi) (hi : i.Ok) (rest : List UInt8) :
       omega
 
 /-- The decoded instructions of `cfiAdvance delta`. -/
-def advInsns (delta : Nat) : List Unw.CfaInsn :=
+@[expose] def advInsns (delta : Nat) : List Unw.CfaInsn :=
   if delta / 4 = 0 then [] else [.advance (4 * (delta / 4))]
 
 theorem cfiAdvance_empty (delta : Nat) (h : delta / 4 = 0) : cfiAdvance delta = .empty := by
@@ -324,7 +324,7 @@ theorem decodeLsda?_lsdaBytes (sites : List CallSite) :
 /-! ## The call-site table describes the calls -/
 
 /-- The entry of handler `h` of a call returning to `ret`, as the personality reads it. -/
-def handlerEntry? (labs : List (Label × Nat)) (ret : Nat) (h : TryHandler) :
+@[expose] def handlerEntry? (labs : List (Label × Nat)) (ret : Nat) (h : TryHandler) :
     Option Unw.CallSiteEntry :=
   (labs.lookup h.label).bind fun pad => match h with
     | .tag 0 _ => some ⟨ret - 1, 1, pad, 0⟩

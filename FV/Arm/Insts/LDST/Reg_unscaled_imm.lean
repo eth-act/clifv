@@ -53,7 +53,7 @@ def exec_ldstur
       let s := write_pc ((read_pc s) + 4#64) s
       s
 
-@[state_simp_rules]
+@[expose, state_simp_rules]
 def exec_reg_unscaled_imm
   (inst : Reg_unscaled_imm_cls) (s : ArmState) : ArmState :=
   if inst.VR = 0b1#1 then

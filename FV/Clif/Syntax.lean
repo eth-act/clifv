@@ -39,11 +39,11 @@ namespace Ty
 @[expose] def bytes (t : Ty) : Nat := t.width / 8
 
 /-- CLIF spelling of the type. -/
-def name : Ty → String
+@[expose] def name : Ty → String
   | i8 => "i8" | i16 => "i16" | i32 => "i32" | i64 => "i64" | i128 => "i128"
   | f32 => "f32" | f64 => "f64"
 
-def ofName? : String → Option Ty
+@[expose] def ofName? : String → Option Ty
   | "i8" => some i8 | "i16" => some i16 | "i32" => some i32 | "i64" => some i64
   | "i128" => some i128 | "f32" => some f32 | "f64" => some f64 | _ => none
 
@@ -61,12 +61,12 @@ def ofWidth? : Nat → Option Ty
   | _ => none
 
 /-- The integer type of twice the width (`iconcat` result), if any. -/
-def double? : Ty → Option Ty
+@[expose] def double? : Ty → Option Ty
   | i8 => some i16 | i16 => some i32 | i32 => some i64 | i64 => some i128 | i128 => none
   | f32 | f64 => none
 
 /-- The integer type of half the width (`isplit` results), if any. -/
-def half? : Ty → Option Ty
+@[expose] def half? : Ty → Option Ty
   | i8 => none | i16 => some i8 | i32 => some i16 | i64 => some i32 | i128 => some i64
   | f32 | f64 => none
 
@@ -88,7 +88,7 @@ structure Val where
 namespace Val
 
 /-- The value of type `ty` whose two's-complement bit pattern represents `i` (mod 2^width). -/
-def ofInt (ty : Ty) (i : Int) : Val := ⟨ty, BitVec.ofInt ty.width i⟩
+@[expose] def ofInt (ty : Ty) (i : Int) : Val := ⟨ty, BitVec.ofInt ty.width i⟩
 
 /-- The value of type `ty` with bit pattern `n` (mod 2^width). -/
 @[expose] def ofNat (ty : Ty) (n : Nat) : Val := ⟨ty, BitVec.ofNat ty.width n⟩
@@ -120,11 +120,11 @@ inductive TrapCode where
 
 namespace TrapCode
 
-def name : TrapCode → String
+@[expose] def name : TrapCode → String
   | stkOvf => "stk_ovf" | heapOob => "heap_oob" | intOvf => "int_ovf"
   | intDivz => "int_divz" | badToint => "bad_toint" | user n => s!"user{n}"
 
-def ofName? (s : String) : Option TrapCode :=
+@[expose] def ofName? (s : String) : Option TrapCode :=
   match s with
   | "stk_ovf" => some stkOvf | "heap_oob" => some heapOob | "int_ovf" => some intOvf
   | "int_divz" => some intDivz | "bad_toint" => some badToint
@@ -151,7 +151,7 @@ structure MemFlags where
   endianness : Option Endianness := none
   deriving DecidableEq, Repr, Inhabited
 
-def MemFlags.notrap (f : MemFlags) : Bool := f.trapCode.isNone
+@[expose] def MemFlags.notrap (f : MemFlags) : Bool := f.trapCode.isNone
 
 /-- Integer condition codes of `icmp`. -/
 inductive IntCC where
@@ -160,13 +160,13 @@ inductive IntCC where
 
 namespace IntCC
 
-def name : IntCC → String
+@[expose] def name : IntCC → String
   | eq => "eq" | ne => "ne" | slt => "slt" | sge => "sge" | sgt => "sgt" | sle => "sle"
   | ult => "ult" | uge => "uge" | ugt => "ugt" | ule => "ule"
 
-def all : List IntCC := [eq, ne, slt, sge, sgt, sle, ult, uge, ugt, ule]
+@[expose] def all : List IntCC := [eq, ne, slt, sge, sgt, sle, ult, uge, ugt, ule]
 
-def ofName? (s : String) : Option IntCC := all.find? (·.name == s)
+@[expose] def ofName? (s : String) : Option IntCC := all.find? (·.name == s)
 
 end IntCC
 
@@ -221,14 +221,14 @@ inductive AtomicRmwOp where
 
 namespace AtomicRmwOp
 
-def name : AtomicRmwOp → String
+@[expose] def name : AtomicRmwOp → String
   | add => "add" | sub => "sub" | .and => "and" | nand => "nand" | .or => "or"
   | .xor => "xor" | xchg => "xchg" | umin => "umin" | umax => "umax" | smin => "smin"
   | smax => "smax"
 
-def all : List AtomicRmwOp := [add, sub, .and, nand, .or, .xor, xchg, umin, umax, smin, smax]
+@[expose] def all : List AtomicRmwOp := [add, sub, .and, nand, .or, .xor, xchg, umin, umax, smin, smax]
 
-def ofName? (s : String) : Option AtomicRmwOp := all.find? (·.name == s)
+@[expose] def ofName? (s : String) : Option AtomicRmwOp := all.find? (·.name == s)
 
 end AtomicRmwOp
 
@@ -239,14 +239,14 @@ inductive FloatCC where
 
 namespace FloatCC
 
-def name : FloatCC → String
+@[expose] def name : FloatCC → String
   | eq => "eq" | ne => "ne" | lt => "lt" | le => "le" | gt => "gt" | ge => "ge"
   | ord => "ord" | uno => "uno" | one => "one" | ueq => "ueq" | ult => "ult" | ule => "ule"
   | ugt => "ugt" | uge => "uge"
 
-def all : List FloatCC := [eq, ne, lt, le, gt, ge, ord, uno, one, ueq, ult, ule, ugt, uge]
+@[expose] def all : List FloatCC := [eq, ne, lt, le, gt, ge, ord, uno, one, ueq, ult, ule, ugt, uge]
 
-def ofName? (s : String) : Option FloatCC := all.find? (·.name == s)
+@[expose] def ofName? (s : String) : Option FloatCC := all.find? (·.name == s)
 
 end FloatCC
 
@@ -271,7 +271,7 @@ inductive FOp where
 namespace FOp
 
 /-- The CLIF opcode name. -/
-def name : FOp → String
+@[expose] def name : FOp → String
   | fadd => "fadd" | fsub => "fsub" | fmul => "fmul" | fdiv => "fdiv" | fmin => "fmin"
   | fmax => "fmax" | fcopysign => "fcopysign" | fneg => "fneg" | fabs => "fabs"
   | sqrt => "sqrt" | ceil => "ceil" | floor => "floor" | trunc => "trunc"
@@ -281,22 +281,22 @@ def name : FOp → String
   | fcvtFromUint => "fcvt_from_uint" | fcvtFromSint => "fcvt_from_sint"
 
 /-- Number of operands. -/
-def arity : FOp → Nat
+@[expose] def arity : FOp → Nat
   | fadd | fsub | fmul | fdiv | fmin | fmax | fcopysign | fcmp _ => 2
   | fma => 3
   | _ => 1
 
 /-- The operations without a condition code, by name (`fcmp` is parsed separately). -/
-def plain : List FOp :=
+@[expose] def plain : List FOp :=
   [fadd, fsub, fmul, fdiv, fmin, fmax, fcopysign, fneg, fabs, sqrt, ceil, floor, trunc,
     nearest, fma, fpromote, fdemote, fcvtToUint, fcvtToSint, fcvtToUintSat, fcvtToSintSat,
     fcvtFromUint, fcvtFromSint]
 
-def ofName? (s : String) : Option FOp := plain.find? (·.name == s)
+@[expose] def ofName? (s : String) : Option FOp := plain.find? (·.name == s)
 
 /-- Is `ty` the type of the operands (`true`: the same-type operations and `fcmp`) rather
 than of the result only (conversions)? -/
-def ctrlIsOperand : FOp → Bool
+@[expose] def ctrlIsOperand : FOp → Bool
   | fpromote | fdemote | fcvtToUint | fcvtToSint | fcvtToUintSat | fcvtToSintSat
   | fcvtFromUint | fcvtFromSint => false
   | _ => true
@@ -506,15 +506,15 @@ inductive CallConv where
 
 namespace CallConv
 
-def name : CallConv → String
+@[expose] def name : CallConv → String
   | fast => "fast" | tail => "tail" | systemV => "system_v"
   | windowsFastcall => "windows_fastcall" | appleAarch64 => "apple_aarch64"
   | probestack => "probestack" | winch => "winch" | preserveAll => "preserve_all"
 
-def all : List CallConv :=
+@[expose] def all : List CallConv :=
   [fast, tail, systemV, windowsFastcall, appleAarch64, probestack, winch, preserveAll]
 
-def ofName? (s : String) : Option CallConv := all.find? (·.name == s)
+@[expose] def ofName? (s : String) : Option CallConv := all.find? (·.name == s)
 
 end CallConv
 
@@ -624,11 +624,11 @@ def slot? (f : Function) (s : SlotId) : Option StackSlot := (f.slots.lookup s)
 
 @[expose] def extern? (f : Function) (r : FnRef) : Option ExtFunc := f.externs.lookup r
 
-def entry? (f : Function) : Option Block := f.blocks.head?
+@[expose] def entry? (f : Function) : Option Block := f.blocks.head?
 
 end Function
 
-def Program.func? (p : Program) (name : String) : Option Function :=
+@[expose] def Program.func? (p : Program) (name : String) : Option Function :=
   p.funcs.find? (·.name == name)
 
 /-! ## Result types -/

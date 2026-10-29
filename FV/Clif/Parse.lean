@@ -42,7 +42,7 @@ inductive ParseError where
   | .unsupported m => s!"unsupported: {m}"
   | .malformed m => s!"parse error: {m}"
 
-instance : ToString ParseError := ⟨ParseError.toString⟩
+@[expose] instance : ToString ParseError := ⟨ParseError.toString⟩
 
 namespace Parse
 
@@ -58,7 +58,7 @@ inductive Tok where
   | punct (c : Char)
   deriving Repr, BEq, Inhabited
 
-def Tok.show : Tok → String
+@[expose] def Tok.show : Tok → String
   | .word s => s | .name s => "%" ++ s | .int s => s | .arrow => "->"
   | .punct c => c.toString
 
@@ -89,7 +89,7 @@ partial def lexLine (cs : List Char) (acc : Array Tok) : Array Tok × Option Str
     else lexLine rest (acc.push (.punct c))
 
 /-- Parse an integer literal: optional sign, decimal or `0x` hex with `_` separators. -/
-def parseIntLit (s : String) : Option Int :=
+@[expose] def parseIntLit (s : String) : Option Int :=
   let cs := s.toList
   let (neg, cs) := match cs with
     | '-' :: r => (true, r)
@@ -112,7 +112,7 @@ def parseIntLit (s : String) : Option Int :=
   mag.map fun m => if neg then -(m : Int) else m
 
 /-- `pre ++ digits` ↦ the number. -/
-def numSuffix? (pre s : String) : Option Nat :=
+@[expose] def numSuffix? (pre s : String) : Option Nat :=
   if s.startsWith pre then
     let d := (s.drop pre.length).toString
     if !d.isEmpty && d.all Char.isDigit then d.toNat? else none
@@ -132,47 +132,47 @@ abbrev P := ReaderT (Array Tok) (StateT PState (Except ParseError))
 @[expose] def malformed {α : Type} (msg : String) : P α := throw (.malformed msg)
 @[expose] def unsupported {α : Type} (msg : String) : P α := throw (.unsupported msg)
 
-def peekAt (k : Nat) : P (Option Tok) := do
+@[expose] def peekAt (k : Nat) : P (Option Tok) := do
   let toks ← read
   return toks[(← get).pos + k]?
 
-def peek : P (Option Tok) := peekAt 0
+@[expose] def peek : P (Option Tok) := peekAt 0
 
 @[expose] def advance : P Unit := modify fun s => { s with pos := s.pos + 1 }
 
-def next : P Tok := do
+@[expose] def next : P Tok := do
   match ← peek with
   | some t => advance; return t
   | none => malformed "unexpected end of input"
 
-def atEnd : P Bool := return (← peek).isNone
+@[expose] def atEnd : P Bool := return (← peek).isNone
 
-def describe : P String := do
+@[expose] def describe : P String := do
   match ← peek with
   | some t => return s!"'{t.show}'"
   | none => return "end of input"
 
-def expectPunct (c : Char) : P Unit := do
+@[expose] def expectPunct (c : Char) : P Unit := do
   match ← peek with
   | some (.punct d) => if c == d then advance else malformed s!"expected '{c}', got '{d}'"
   | _ => malformed s!"expected '{c}', got {← describe}"
 
-def optPunct (c : Char) : P Bool := do
+@[expose] def optPunct (c : Char) : P Bool := do
   match ← peek with
   | some (.punct d) => if c == d then advance; return true else return false
   | _ => return false
 
-def isPunct (c : Char) : P Bool := do
+@[expose] def isPunct (c : Char) : P Bool := do
   match ← peek with
   | some (.punct d) => return c == d
   | _ => return false
 
-def expectWord (w : String) : P Unit := do
+@[expose] def expectWord (w : String) : P Unit := do
   match ← peek with
   | some (.word v) => if v == w then advance else malformed s!"expected '{w}', got '{v}'"
   | _ => malformed s!"expected '{w}', got {← describe}"
 
-def optWord (w : String) : P Bool := do
+@[expose] def optWord (w : String) : P Bool := do
   match ← peek with
   | some (.word v) => if v == w then advance; return true else return false
   | _ => return false
@@ -182,7 +182,7 @@ def optWord (w : String) : P Bool := do
   | .word w => return w
   | t => malformed s!"expected identifier, got '{t.show}'"
 
-def anyName : P String := do
+@[expose] def anyName : P String := do
   match ← next with
   | .name n => return n
   | t =>
@@ -190,7 +190,7 @@ def anyName : P String := do
     | .word w => unsupported s!"function name '{w}' (only %names)"
     | _ => malformed s!"expected %name, got '{t.show}'"
 
-def anyInt : P Int := do
+@[expose] def anyInt : P Int := do
   match ← next with
   | .int s =>
     match parseIntLit s with
@@ -201,7 +201,7 @@ def anyInt : P Int := do
 /-- The text of a float literal (`Clif.FloatLit`), reassembled from the line's tokens: the
 lexer splits `-0x1.8p-3` into `-0x1`, `.`, `8p`, `-3` and `-NaN:0x1` into `-`, `NaN`, `:`,
 `0x1`. -/
-def floatText : P String := do
+@[expose] def floatText : P String := do
   let sign ← do
     if ← optPunct '-' then pure "-" else if ← optPunct '+' then pure "+" else pure ""
   match ← next with
@@ -228,7 +228,7 @@ def floatText : P String := do
   | t => malformed s!"expected a float literal, got '{t.show}'"
 
 /-- A float literal of the float type `t`, as its bit pattern. -/
-def floatLit (t : Ty) : P (BitVec t.width) := do
+@[expose] def floatLit (t : Ty) : P (BitVec t.width) := do
   let s ← floatText
   let (w, tb) := FloatLit.fields t.width
   match FloatLit.parse? s w tb with
@@ -236,13 +236,13 @@ def floatLit (t : Ty) : P (BitVec t.width) := do
   | none => malformed s!"bad {t.name} literal '{s}'"
 
 /-- A numbered entity `preN`. -/
-def entity (pre : String) : P Nat := do
+@[expose] def entity (pre : String) : P Nat := do
   let w ← anyWord
   match numSuffix? pre w with
   | some n => return n
   | none => malformed s!"expected {pre}N, got '{w}'"
 
-def isEntity (pre : String) (t : Option Tok) : Bool :=
+@[expose] def isEntity (pre : String) (t : Option Tok) : Bool :=
   match t with
   | some (.word w) => (numSuffix? pre w).isSome
   | _ => false
@@ -258,7 +258,7 @@ def isEntity (pre : String) (t : Option Tok) : Bool :=
 @[expose] def ty : P Ty := do parseTyName (← anyWord)
 
 /-- Optional offset `+N`/`-N` (the sign is mandatory, as in the reader). -/
-def optOffset : P Int := do
+@[expose] def optOffset : P Int := do
   match ← peek with
   | some (.int s) =>
     if s.startsWith "+" || s.startsWith "-" then
@@ -273,7 +273,7 @@ def optOffset : P Int := do
 
 /-- Follow the alias map (filled for the whole function before its body is read, so
 uses may precede the alias line). The map is checked acyclic by `collectAliases`. -/
-def resolveAlias (v : ValueId) : P ValueId := do
+@[expose] def resolveAlias (v : ValueId) : P ValueId := do
   let al := (← get).aliases
   let rec go : Nat → ValueId → ValueId
     | 0, v => v
@@ -284,7 +284,7 @@ def resolveAlias (v : ValueId) : P ValueId := do
 
 /-- Pre-scan the token stream for every alias `vA -> vB` (as cranelift-reader resolves
 aliases after reading the whole function), rejecting duplicate aliases and cycles. -/
-def collectAliases : P Unit := do
+@[expose] def collectAliases : P Unit := do
   let toks ← read
   let mut al : List (ValueId × ValueId) := []
   for i in [0:toks.size] do
@@ -303,17 +303,17 @@ def collectAliases : P Unit := do
   modify fun s => { s with aliases := al }
 
 /-- A value use (aliases resolved). -/
-def value : P ValueId := do resolveAlias (← entity "v")
+@[expose] def value : P ValueId := do resolveAlias (← entity "v")
 
-def typeOf (v : ValueId) : P Ty := do
+@[expose] def typeOf (v : ValueId) : P Ty := do
   match (← get).types.lookup v with
   | some t => return t
   | none => malformed s!"cannot infer the type of v{v} (not yet defined)"
 
-def defineValue (v : ValueId) (t : Ty) : P Unit :=
+@[expose] def defineValue (v : ValueId) (t : Ty) : P Unit :=
   modify fun s => { s with types := (v, t) :: s.types }
 
-def commaSep {α : Type} (p : P α) (close : Char) : P (List α) := do
+@[expose] def commaSep {α : Type} (p : P α) (close : Char) : P (List α) := do
   if ← isPunct close then return []
   let mut out := #[← p]
   while ← optPunct ',' do
@@ -322,7 +322,7 @@ def commaSep {α : Type} (p : P α) (close : Char) : P (List α) := do
 
 /-! ## Signatures and declarations -/
 
-def abiParam : P AbiParam := do
+@[expose] def abiParam : P AbiParam := do
   let t ← ty
   let mut ext := ArgExt.none
   let mut purpose := ArgPurpose.normal
@@ -340,7 +340,7 @@ def abiParam : P AbiParam := do
     | _ => break
   return { ty := t, ext, purpose }
 
-def signature : P Signature := do
+@[expose] def signature : P Signature := do
   expectPunct '('
   let params ← commaSep abiParam ')'
   expectPunct ')'
@@ -358,7 +358,7 @@ def signature : P Signature := do
   return { params, returns, callConv }
 
 /-- Memory flags (a possibly empty sequence of flag words). -/
-def memFlags : P MemFlags := do
+@[expose] def memFlags : P MemFlags := do
   let mut f : MemFlags := {}
   repeat
     match ← peek with
@@ -375,7 +375,7 @@ def memFlags : P MemFlags := do
     | _ => break
   return f
 
-def trapCode : P TrapCode := do
+@[expose] def trapCode : P TrapCode := do
   let w ← anyWord
   match TrapCode.ofName? w with
   | some c => return c
@@ -388,7 +388,7 @@ inductive Decl where
   | extern (id : FnRef) (e : ExtFunc)
   | sigDecl (id : Nat) (s : Signature)
 
-def decl : P Decl := do
+@[expose] def decl : P Decl := do
   let t ← peek
   if isEntity "ss" t then
     let id ← entity "ss"
@@ -454,7 +454,7 @@ def decl : P Decl := do
 
 /-! ## Instructions -/
 
-def blockCall : P BlockCall := do
+@[expose] def blockCall : P BlockCall := do
   let b ← entity "block"
   if ← optPunct '(' then
     let args ← commaSep value ')'
@@ -463,7 +463,7 @@ def blockCall : P BlockCall := do
   return { block := b }
 
 /-- A `try_call` successor argument: `retN`, `exnN` or a value. -/
-def tryArg : P TryArg := do
+@[expose] def tryArg : P TryArg := do
   match ← peek with
   | some (.word w) =>
     match numSuffix? "ret" w, numSuffix? "exn" w with
@@ -472,7 +472,7 @@ def tryArg : P TryArg := do
     | _, _ => return .val (← value)
   | _ => return .val (← value)
 
-def tryDest : P TryDest := do
+@[expose] def tryDest : P TryDest := do
   let b ← entity "block"
   if ← optPunct '(' then
     let args ← commaSep tryArg ')'
@@ -481,7 +481,7 @@ def tryDest : P TryDest := do
   return { block := b }
 
 /-- `tagN: dest`, `default: dest` or `context vN`. -/
-def exnItem : P ExnItem := do
+@[expose] def exnItem : P ExnItem := do
   let w ← anyWord
   if w == "default" then
     expectPunct ':'
@@ -505,12 +505,12 @@ def exnItem : P ExnItem := do
   expectPunct ']'
   return { sig, normal, items }
 
-def unaryOp? : String → Option UnaryOp
+@[expose] def unaryOp? : String → Option UnaryOp
   | "ineg" => some .ineg | "bnot" => some .bnot | "iabs" => some .iabs | "clz" => some .clz
   | "ctz" => some .ctz | "cls" => some .cls | "popcnt" => some .popcnt
   | "bitrev" => some .bitrev | "bswap" => some .bswap | _ => none
 
-def binaryOp? : String → Option BinaryOp
+@[expose] def binaryOp? : String → Option BinaryOp
   | "iadd" => some .iadd | "isub" => some .isub | "imul" => some .imul
   | "umulhi" => some .umulhi | "smulhi" => some .smulhi
   | "band" => some .band | "bor" => some .bor | "bxor" => some .bxor
@@ -521,37 +521,37 @@ def binaryOp? : String → Option BinaryOp
   | "usub_sat" => some .usubSat | "ssub_sat" => some .ssubSat
   | _ => none
 
-def divOp? : String → Option DivOp
+@[expose] def divOp? : String → Option DivOp
   | "udiv" => some .udiv | "sdiv" => some .sdiv | "urem" => some .urem | "srem" => some .srem
   | _ => none
 
-def overflowOp? : String → Option OverflowOp
+@[expose] def overflowOp? : String → Option OverflowOp
   | "uadd_overflow" => some .uaddOverflow | "sadd_overflow" => some .saddOverflow
   | "usub_overflow" => some .usubOverflow | "ssub_overflow" => some .ssubOverflow
   | "umul_overflow" => some .umulOverflow | "smul_overflow" => some .smulOverflow
   | _ => none
 
-def carryOp? : String → Option CarryOp
+@[expose] def carryOp? : String → Option CarryOp
   | "uadd_overflow_cin" => some .uaddOverflowCin | "sadd_overflow_cin" => some .saddOverflowCin
   | "usub_overflow_bin" => some .usubOverflowBin | "ssub_overflow_bin" => some .ssubOverflowBin
   | _ => none
 
-def loadOp? : String → Option LoadOp
+@[expose] def loadOp? : String → Option LoadOp
   | "load" => some .load | "uload8" => some .uload8 | "sload8" => some .sload8
   | "uload16" => some .uload16 | "sload16" => some .sload16
   | "uload32" => some .uload32 | "sload32" => some .sload32 | _ => none
 
-def storeOp? : String → Option StoreOp
+@[expose] def storeOp? : String → Option StoreOp
   | "store" => some .store | "istore8" => some .istore8 | "istore16" => some .istore16
   | "istore32" => some .istore32 | _ => none
 
 /-- The controlling type: the explicit suffix, else the type of the typevar operand. -/
-def ctrl (explicit : Option Ty) (v : ValueId) : P Ty := do
+@[expose] def ctrl (explicit : Option Ty) (v : ValueId) : P Ty := do
   match explicit with
   | some t => return t
   | none => typeOf v
 
-def needTy (op : String) (explicit : Option Ty) : P Ty := do
+@[expose] def needTy (op : String) (explicit : Option Ty) : P Ty := do
   match explicit with
   | some t => return t
   | none => malformed s!"{op} needs a type suffix"
@@ -753,7 +753,7 @@ inductive Item where
   | none => malformed "cannot determine the result types of an instruction"
 
 /-- One body line: alias, instruction (with results) or terminator. -/
-def bodyLine : P (Option (Sum Stmt Terminator)) := do
+@[expose] def bodyLine : P (Option (Sum Stmt Terminator)) := do
   -- alias `vA -> vB`
   if isEntity "v" (← peek) && (← peekAt 1) == some .arrow then
     -- already recorded by `collectAliases`; uses resolve through the alias map
@@ -779,13 +779,13 @@ def bodyLine : P (Option (Sum Stmt Terminator)) := do
     if !results.isEmpty then malformed s!"{op} has no results"
     return some (.inr t)
 
-def blockParam : P (ValueId × Ty) := do
+@[expose] def blockParam : P (ValueId × Ty) := do
   let v ← entity "v"; expectPunct ':'
   let t ← ty
   defineValue v t
   return (v, t)
 
-def block : P Block := do
+@[expose] def block : P Block := do
   let id ← entity "block"
   let params ← if ← optPunct '(' then do
       let ps ← commaSep blockParam ')'
@@ -831,7 +831,7 @@ def block : P Block := do
 
 /-! ## Run commands -/
 
-def dataValue (t : Ty) : P Val := do
+@[expose] def dataValue (t : Ty) : P Val := do
   if t.isFloat then return ⟨t, ← floatLit t⟩
   match ← next with
   | .int s =>
@@ -840,7 +840,7 @@ def dataValue (t : Ty) : P Val := do
     | none => malformed s!"bad {t.name} value '{s}'"
   | tok => malformed s!"expected an {t.name} value, got '{tok.show}'"
 
-def dataValues (tys : List Ty) : P (List Val) := do
+@[expose] def dataValues (tys : List Ty) : P (List Val) := do
   let mut out := #[]
   let mut first := true
   for t in tys do
@@ -849,7 +849,7 @@ def dataValues (tys : List Ty) : P (List Val) := do
     out := out.push (← dataValue t)
   return out.toList
 
-def runCommand (sig : Signature) (attached : String) : P RunCommand := do
+@[expose] def runCommand (sig : Signature) (attached : String) : P RunCommand := do
   let kw ← anyWord
   let ptys := sig.params.map (·.ty)
   let rtys := sig.returns.map (·.ty)
@@ -883,7 +883,7 @@ def runCommand (sig : Signature) (attached : String) : P RunCommand := do
     else malformed "bare `print` needs a function without parameters"
 
 /-- If `text` (a comment body) is a run/print command, parse it. -/
-def runComment (sig : Signature) (attached : String) (text : String) :
+@[expose] def runComment (sig : Signature) (attached : String) (text : String) :
     Except ParseError (Option RunCommand) :=
   let trimmed := text.toList.dropWhile (fun c => c == ' ' || c == ';')
   let toks : Array Tok := (lexLine trimmed #[]).1
@@ -918,13 +918,13 @@ link-time data object (`Clif.DataObject`). An item is either an even-length stri
 digits (bytes in memory order, e.g. `deadbeef` = bytes `de ad be ef`) or `%sym[+N|-N]`
 (8-byte little-endian absolute address of data object `sym` plus the addend). -/
 
-def hexDigit? (c : Char) : Option Nat :=
+@[expose] def hexDigit? (c : Char) : Option Nat :=
   if c.isDigit then some (c.toNat - '0'.toNat)
   else if 'a' ≤ c ∧ c ≤ 'f' then some (c.toNat - 'a'.toNat + 10)
   else if 'A' ≤ c ∧ c ≤ 'F' then some (c.toNat - 'A'.toNat + 10)
   else none
 
-def hexBytes? : List Char → Option (List (BitVec 8))
+@[expose] def hexBytes? : List Char → Option (List (BitVec 8))
   | [] => some []
   | h :: l :: rest => do
     let a ← hexDigit? h
@@ -933,7 +933,7 @@ def hexBytes? : List Char → Option (List (BitVec 8))
     pure (BitVec.ofNat 8 (16 * a + b) :: r)
   | [_] => none
 
-def dataItems (w : String) : Except String (List DataItem) :=
+@[expose] def dataItems (w : String) : Except String (List DataItem) :=
   if w.startsWith "%" then
     let body := (w.drop 1).toString
     let (n, off) := match body.splitOn "+", body.splitOn "-" with
@@ -948,7 +948,7 @@ def dataItems (w : String) : Except String (List DataItem) :=
     | none => .error s!"bad data item {w} (expected hex bytes or %sym[+N])"
 
 /-- If the comment body `text` is a `data:` directive, parse it. -/
-def dataDirective (text : String) : Option (Except String DataObject) :=
+@[expose] def dataDirective (text : String) : Option (Except String DataObject) :=
   let t := (String.ofList (text.toList.dropWhile (fun c => c == ' ' || c == ';'))).trimAscii.toString
   if !t.startsWith "data:" then none else some do
     let ws := ((t.drop 5).toString.splitOn " ").filter (!·.isEmpty)
@@ -976,12 +976,12 @@ def dataDirective (text : String) : Option (Except String DataObject) :=
       pure { o with items := items.toList }
     | [] => throw "data: missing name"
 
-def isFunctionLine (l : String) : Bool :=
+@[expose] def isFunctionLine (l : String) : Bool :=
   let t := l.trimAscii.toString
   t == "function" || t.startsWith "function " || t.startsWith "function%"
 
 /-- Is this comment body a run/print command? -/
-def isRunComment (text : String) : Bool :=
+@[expose] def isRunComment (text : String) : Bool :=
   let trimmed := text.toList.dropWhile (fun c => c == ' ' || c == ';')
   let toks : Array Parse.Tok := (Parse.lexLine trimmed #[]).1
   match toks[0]? with
@@ -989,7 +989,7 @@ def isRunComment (text : String) : Bool :=
   | _ => false
 
 /-- Parse one function chunk (from its `function` line up to the next function). -/
-def parseChunk (lines : List String) : ParsedFunction := Id.run do
+@[expose] def parseChunk (lines : List String) : ParsedFunction := Id.run do
   let mut toks : Array Parse.Tok := #[]
   let mut comments : Array String := #[]
   for l in lines do
@@ -1012,7 +1012,7 @@ def parseChunk (lines : List String) : ParsedFunction := Id.run do
     return { name, func := .ok { f with runs := runs.toList }, runLines }
 
 /-- Parse a `.clif` file function by function. -/
-def parseFile (src : String) : ParsedFile := Id.run do
+@[expose] def parseFile (src : String) : ParsedFile := Id.run do
   let lines := src.splitOn "\n"
   let mut header := #[]
   let mut data : Except String (Array DataObject) := .ok #[]

@@ -510,8 +510,8 @@ def Program.build (name : String) (files : Array String) (types : Array TypeDef)
 
 namespace Program
 
-def term? (p : Program) (t : TermId) : Option Term := p.terms[t]?
-def type? (p : Program) (t : TypeId) : Option TypeDef := p.types[t]?
+@[expose] def term? (p : Program) (t : TermId) : Option Term := p.terms[t]?
+@[expose] def type? (p : Program) (t : TypeId) : Option TypeDef := p.types[t]?
 def rule? (p : Program) (r : RuleId) : Option Rule := p.rules[r]?
 
 def termName (p : Program) (t : TermId) : String :=
@@ -524,7 +524,7 @@ def typeName (p : Program) (t : TypeId) : String :=
   | some t => t.name
   | none => s!"<type {t}>"
 
-def termByName? (p : Program) (n : String) : Option Term := p.terms.find? (·.name == n)
+@[expose] def termByName? (p : Program) (n : String) : Option Term := p.terms.find? (·.name == n)
 def ruleByName? (p : Program) (n : String) : Option Rule := p.rules.find? (·.name == n)
 
 /-- Rules of a term, in matching order. -/

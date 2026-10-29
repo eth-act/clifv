@@ -39,7 +39,7 @@ instance (inst : Mrs_cls) : Decidable (Mrs_cls.isTpidrEl0 inst) :=
 
 namespace BR
 
-@[state_simp_rules]
+@[expose, state_simp_rules]
 def exec_mrs (inst : Mrs_cls) (s : ArmState) : ArmState :=
   if inst.isTpidrEl0 then
     let s := write_gpr_zr 64 inst.Rt (r StateField.TPIDR s) s

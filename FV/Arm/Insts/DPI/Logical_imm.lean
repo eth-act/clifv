@@ -74,7 +74,7 @@ https://developer.arm.com/documentation/ddi0602/2023-03/Base-Instructions/MOV--b
 https://developer.arm.com/documentation/ddi0602/2023-03/Base-Instructions/EOR--immediate---Bitwise-Exclusive-OR--immediate--?lang=en
 https://developer.arm.com/documentation/ddi0602/2023-03/Base-Instructions/AND--immediate---Bitwise-AND--immediate--?lang=en
 -/
-@[state_simp_rules]
+@[expose, state_simp_rules]
 def exec_logical_imm (inst : Logical_imm_cls) (s : ArmState) : ArmState :=
   if inst.sf = 0#1 ∧ inst.N ≠ 0#1 then
     write_err (StateError.Illegal s!"Illegal {inst} encountered!") s

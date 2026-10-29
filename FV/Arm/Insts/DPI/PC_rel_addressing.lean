@@ -23,7 +23,7 @@ namespace DPI
 
 open _root_.BitVec Arm.BitVec
 
-@[state_simp_rules]
+@[expose, state_simp_rules]
 def exec_pc_rel_addressing (inst : PC_rel_addressing_cls) (s : ArmState) : ArmState :=
   let orig_pc := read_pc s
   let imm := if inst.op = 0#1 then
