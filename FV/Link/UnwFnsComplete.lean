@@ -352,7 +352,7 @@ theorem unwindRows_complete {vc : VCode} {rf : RFunc} {af : AFunc} {k : Nat} {fa
   simp only [h0', hgot]
   simp only [pure, Except.pure]
   simp
-  exact fun x hx => by obtain ⟨i, t, rfl⟩ := hins x hx; rfl
+  exact fun x hx => by obtain ⟨i, t, rfl⟩ := hins x hx; simp [Line.insn?]
 
 /-! ## The `try_call` premises from the prepared code -/
 
