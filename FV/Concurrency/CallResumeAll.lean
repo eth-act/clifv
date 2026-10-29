@@ -172,8 +172,8 @@ theorem resume_allX {RA : RL} (hRA : RA.Wf) (hgv : RA.gv = fun _ _ => False)
   cases hvP
   subst hvV
   have hst := q_stRel hq
-  obtain ⟨-, -, -, regs2, -, -, -, -, -, -, -, -, -, cc2, wh, ops, hal2, -, -, -, -, hops, hstat,
-    -⟩ := q_op hq hvb hi
+  obtain ⟨-, -, -, regs2, -, -, -, -, -, -, -, -, -, -, cc2, wh, ops, hal2, -, -, -, -, hops, hstat,
+    -⟩ := q_op hRA hq hvb hi (ArmAllocThread.lt_size_of_not_term hRA hvb hi rfl)
   obtain ⟨regs, hal, hsz, -, -⟩ := q_regs hq hvb hi hops
   have hsz' : allocs.size = ops.size := by rw [hal, Array.size_map, hsz]
   have hv' := hvdef b vb k info hvb hi

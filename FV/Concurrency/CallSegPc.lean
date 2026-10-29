@@ -21,8 +21,9 @@ def CallsInside (F : LFn) : Prop :=
   ∀ j i t, F.fa.lines.toList[j]? = some (.ins i t) → ((∃ n, i = .bl n) ∨ (∃ r, i = .blr r)) →
     lineOffset F.fa.lines.toList j + 4 < 4 * F.fb.words.size
 
-/-- The pc of a paused `call` is at a call instruction. -/
-theorem callPc_of_pause {RA : RL} (hX0 : NoCall RA.X) {f : Clif.Function} {vc : VCode}
+/-- The pc of a paused `call` is at a call instruction. (`hRA` since #553: `callAt_of_q` and
+`q_op` read the call's line from the emission plan, `R.Wf`; every caller has it.) -/
+theorem callPc_of_pause {RA : RL} (hRA : RA.Wf) (hX0 : NoCall RA.X) {f : Clif.Function} {vc : VCode}
     {ctx : Ctx} {st0 : LState} {R : Reg → Reg} {gn : Nat → Nat} {bl : List BLow}
     {A : Nat → Nat → List Clif.ValueId} {MR : MemRelT} {env : Clif.Env} {p : Clif.Program}
     {slots : List (Clif.SlotId × Nat)}
@@ -37,9 +38,9 @@ theorem callPc_of_pause {RA : RL} (hX0 : NoCall RA.X) {f : Clif.Function} {vc : 
     (hm4 : MatchRun cc ins ckeep r₀ cM' vP') : CallPc RA.fa RA.base (Arm.r .PC x) := by
   obtain ⟨b, k, allocs, its, m, w, vb, info, rfl, -, hvb, hi, -⟩ :=
     CallResumeAll.atCall_of_pause hX0 H hchk H3 hc hP hat hm2 hm3 hm4
-  obtain ⟨-, -, -, regs, i', -, -, -, -, -, -, -, -, -, -, -, hal, -, -, hasg, -⟩ :=
-    q_op hq hvb hi
-  exact (callAt_of_q hq hvb hi call_hcall regs i' hal hasg).callPc
+  obtain ⟨-, -, -, regs, i', -, -, -, -, -, -, -, -, -, -, -, -, hal, -, -, hasg, -⟩ :=
+    q_op hRA hq hvb hi (ArmAllocThread.lt_size_of_not_term hRA hvb hi rfl)
+  exact (callAt_of_q hRA hq hvb hi call_hcall regs i' hal hasg).callPc
 
 /-- **The return address of a call is in the caller's code** (module doc). -/
 theorem ra_in {L : Link} {F : LFn} {s0 : ArmState} {K : Nat} {G : BitVec 64 → Prop}
