@@ -162,12 +162,12 @@ theorem callee_relW {L : Link} {RA : RL} (hRA : RA.Wf) (hcin : CodeIn L RA) {n :
       have hnF := (hmr.valid a 1 hv').2 0 (by omega)
       simp only [Nat.add_zero] at hnF
       -- a byte of the caller's world is not probed by the callee's prologue (#581)
-      have hnp : probeHit FB.af (spv (enter FB x)) a = false :=
+      have hnp : probeHit FB.af (spv (enter FB x)) (BitVec.ofNat 64 a) = false :=
         probeHit_of_notF (af := FB.af) (K := KB) (sp := spv (enter FB x)) (F := RA.F)
           hRB.stack.2 hB2 (fun c hc => RL.below_F (hn.region_dead hRB.stack hc)) hnF
       rw [← hmr.bytes a b hv' hb']
-      simp only [Arm.read_mem, Arm.read_store, mem_bodyOf_of_not hnp, enter_mem]
-      rw [hmem _ hnF]
+      simp only [Arm.read_mem, Arm.read_store]
+      rw [mem_bodyOf_of_not hnp, enter_mem, hmem _ hnF]
     · simp only [Clif.Alloc.contains, Bool.and_eq_true, decide_eq_true_eq] at hcy
       exact absurd ⟨hcy.1, by omega⟩ (hnot p hp)
   · simp only [Clif.Mem.valid, List.any_eq_true] at hv
