@@ -256,7 +256,7 @@ theorem okRWith_soundT (stage : Clif.Function → VCode → VCode) {I : LinkInpu
       free := fun g hg => (fa hg).free
       subset := fun g hg =>
         (fa hg).lowerOk.elim (fun h => (hinT g hg h.1).toTC.toTCF) (fun h => hinTC g hg h.1)
-      compiled := fun g hg => (hcomp g hg).1
+      compiled := fun g hg => .inl (hcomp g hg).1
       sretE := fun g hg hs => by
         obtain ⟨hE, hlc⟩ := (fa hg).sretE hs
         obtain ⟨hl, hpr, ha, he, hla, -⟩ := (fa hg).pipe
@@ -266,7 +266,7 @@ theorem okRWith_soundT (stage : Clif.Function → VCode → VCode) {I : LinkInpu
               (hinT g hg hET).abiSigs, (hinT g hg hET).indSigs⟩
           · exact ⟨hE, (hinTC g hg hETC).externCalls, (hinTC g hg hETC).tryExterns,
               (hinTC g hg hETC).abiSigs, (hinTC g hg hETC).indSigs⟩
-        refine ⟨hS, ?_⟩
+        refine .inl ⟨hS, ?_⟩
         rcases hstage with rfl | rfl
         · exact .legacy ⟨hl, hlc, hpr, (fa hg).prepOk, (fa hg).check, ha, he, hla⟩
         · exact .cleanup ⟨hl, hlc, hpr, (fa hg).prepOk, (fa hg).check, ha, he, hla⟩

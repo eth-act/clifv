@@ -1,6 +1,6 @@
 import FV.E2E.LinkArm
 import FV.E2E.CompiledEitherT
-import FV.E2E.CompiledAnyT
+import FV.E2E.CompiledAnyTS
 import FV.E2E.LinkSiteTC
 import FV.E2E.TypedRulesProg
 import FV.E2E.LinkWorldT
@@ -13,8 +13,9 @@ contract, for the typed contract `LinkSys.OkT` (names with suffix `T`; `LinkSys.
 
 * `LinkSys.OkT`: `LinkSys.Ok` with the typed subset `InSubsetT` and the typed artifact contract
   `CompiledEitherT` per function, and two fields for the program callees: an `sret` function is
-  in subset E with the integer contract (`sretE`: its returned struct pointer is in x0), and a
-  function of `P` called from `P` returns integers (`calleeInt`);
+  in subset E with the integer contract, or its artifact returns in x0.. (`sretE`, `RetsX`: its
+  returned struct pointer is in x0), and a function of `P` called from `P` returns integers
+  (`calleeInt`);
 * `LinkSys.ThmT`: `LinkSys.Thm` whose returns are in the ABI return registers of their classes
   (`RetsOkT`: `RetRegsOk`, and x0.. for an `sret` function); a call site of `P` reads an integer
   callee's results from x0.. (`RetsOkT.x_at`);
@@ -40,22 +41,6 @@ struct pointer included). -/
 def RetsOkT (g : Clif.Function) (rvals : List Clif.Val) (us : List (Reg × Reg)) : Prop :=
   RetRegsOk rvals us ∧
     (g.sig.params.any (·.purpose == .sret) = true → us.map (·.2) = (List.range us.length).map Reg.x)
-
-theorem classes_int {rvals : List Clif.Val} (hint : ∀ v ∈ rvals, v.ty.isInt = true) :
-    rvals.map (fun v => tyClass v.ty) = List.replicate rvals.length .int := by
-  rw [List.eq_replicate_iff]
-  simp only [List.length_map, List.mem_map, true_and]
-  rintro _ ⟨v, hv, rfl⟩
-  simp only [tyClass, hint v hv, ite_true]
-
-/-- Integer returns in x0.. are in their classes' return registers. -/
-theorem retRegsOk_of_x {rvals : List Clif.Val} {us : List (Reg × Reg)}
-    (hus : us.map (·.2) = (List.range us.length).map Reg.x)
-    (hint : ∀ v ∈ rvals, v.ty.isInt = true) (hle : rvals.length ≤ us.length) :
-    RetRegsOk rvals us := by
-  refine ⟨List.replicate (us.length - rvals.length) .int, ?_⟩
-  rw [classes_int hint, List.replicate_append_replicate, Nat.add_sub_cancel' hle, retRegsT_int,
-    hus, List.range_eq_range']
 
 /-- **A call site reads an integer callee's `j`-th result from x`j`**: the callee's returns
 (`RetsOkT`) of its declared (integer) return types. -/
@@ -106,12 +91,16 @@ structure OkT : Prop where
   /-- S11f (#35): the scope with the proven float operations (it was `InSubsetTC`,
   `InSubsetTC.toTCF`) -/
   subset : ∀ g ∈ L.P.funcs, InSubsetTCF L.P.bare g
-  compiled : ∀ g ∈ L.P.funcs, CompiledAnyT L.P.bare g (L.A g).k (L.A g).vc (L.A g).vcp
+  /-- #722: either typed artifact, or the Stock artifact of an integer function without `sret`
+  parameter (`CompiledAnyTS`; it was `CompiledAnyT`, its left case) -/
+  compiled : ∀ g ∈ L.P.funcs, CompiledAnyTS L.P.bare g (L.A g).k (L.A g).vc (L.A g).vcp
     (L.A g).rf (L.A g).af (L.A g).fa (L.A g).fb
-  /-- an `sret` function is in subset E, with the integer artifact contract -/
+  /-- an `sret` function is in subset E, with the integer artifact contract, or (#722) its
+  artifact's returns are in x0, x1, … (`RetsX`: the struct pointer and integer results, for any
+  typed artifact) -/
   sretE : ∀ g ∈ L.P.funcs, g.sig.params.any (·.purpose == .sret) = true →
-    InSubset L.P.bare g ∧ CompiledEither g (L.A g).k (L.A g).vc (L.A g).vcp (L.A g).rf
-      (L.A g).af (L.A g).fa (L.A g).fb
+    (InSubset L.P.bare g ∧ CompiledEither g (L.A g).k (L.A g).vc (L.A g).vcp (L.A g).rf
+      (L.A g).af (L.A g).fa (L.A g).fb) ∨ RetsX (L.A g).vc
   /-- the functions of `P` called from `P` return integers -/
   calleeInt : ∀ g ∈ L.P.funcs, ∀ h, L.Callee g h → ∀ p ∈ h.sig.returns, p.ty.isInt = true
   covered : ∀ g ∈ L.P.funcs, FormsCovered ⟨(L.A g).fa.k, (L.A g).af.slotBase⟩ (L.A g).vcp
@@ -1952,11 +1941,11 @@ theorem thm_ofT (hL : L.OkT) [L.CrunOk] (hκ : L.Budget κ) {M : Nat} (ih : 0 < 
         (L.hooks M) (L.A g).base ra s w₀' := fun G ra s w₀' hME =>
     ⟨hME.abi, hME.stack, hME.gfree, hME.hF, L.calleeOkT hL hκ ih hg hME,
       fun _ => L.calleeTryOkT hL hκ ih hg hME,
-      fun ht => L.tlsOk_hooks (hL.baseTls g hg (hasTls_of_vcode_pipelineAnyT hc ht) F (κ M g)), hME.body⟩
+      fun ht => L.tlsOk_hooks (hL.baseTls g hg (hasTls_of_vcode_pipelineAnyTS hc ht) F (κ M g)), hME.body⟩
   have hX := L.xCallsOkT hL hκ ih hg hWE.img hWE.room hWE.dead hWE.align
   have hXI := L.xCallsIndOkT hL hκ ih hg hWE.img hWE.room hWE.dead hWE.align
   -- the typed world theorem (with the proven control families)
-  have hT := backend_correct_world_ni_pipelineAnyTF (hL.subset g hg) hc typedRules_program
+  have hT := backend_correct_world_ni_pipelineAnyTS (hL.subset g hg) hc typedRules_program
     (X := L.X κ M g F) (syms := L.syms)
     (env := L.envOf M g (spv w₀)) (K := κ M g) (F := F) (c := spv w₀) (hL.covered g hg)
     hX hXI (fun n b hn => hL.symOk n b hn) rfl hWE.clif hWE.rel hWE.args
@@ -1970,29 +1959,36 @@ theorem thm_ofT (hL : L.OkT) [L.CrunOk] (hκ : L.Budget κ) {M : Nat} (ih : 0 < 
     exact hni (L.xniT hL hN ih hg hWE.img (spv w₀)) (L.xTlsT hL hN) D w₀' hrel' hsw hreg hstk
       (L.hooks M) G (L.A g).base ra s (hAE G ra s w₀' hME)
   | true =>
-    -- an `sret` function: the integer world theorem (its returns in x0..)
-    obtain ⟨hsubE, hcE⟩ := hL.sretE g hg hsr
-    have h := backend_correct_world_ni_pipeline hsubE hcE
-      (X := L.X κ M g F) (syms := L.syms)
-      (env := L.envOf M g (spv w₀)) (K := κ M g) (F := F) (c := spv w₀) (hL.covered g hg)
-      hX hXI (fun n b hn => hL.symOk n b hn) rfl hWE.clif hWE.rel hWE.args
-      (trapsExplicit_of_returned hrun') fuel
-    obtain ⟨-, -, -, -, htys, -⟩ := hT rvals cm' hrun'
-    obtain ⟨us, outs, wf, hus, hlen, hhold, hmem, hrs, hall, hni⟩ := h rvals cm' hrun'
-    have hint : ∀ v ∈ rvals, v.ty.isInt = true := by
-      intro v hv
-      have hm : v.ty ∈ Clif.AbiParam.tys g.sig.returns := htys ▸ List.mem_map_of_mem hv
-      obtain ⟨q, hq, hqt⟩ := List.mem_map.mp hm
-      have hE := hsubE.subsetE
-      simp only [Compile.functionE, Compile.sigE, Bool.and_eq_true, List.all_eq_true] at hE
-      have := hE.1.1.1.2 q hq
-      simp only [Compile.tyE, Bool.and_eq_true] at this
-      rw [← hqt]; exact this.1
-    refine ⟨us, outs, wf, ⟨retRegsOk_of_x hus hint (by have := hhold.1; omega), fun _ => hus⟩,
-      hlen, hhold, hmem, hrs, fun G ra s hME => hall (L.hooks M) G (L.A g).base ra s
-      (hAE G ra s w₀ hME), fun hN D w₀' hrel' hsw hreg hstk G ra s hME => ?_⟩
-    exact hni (L.xniT hL hN ih hg hWE.img (spv w₀)) (L.xTlsT hL hN) D w₀' hrel' hsw hreg hstk
-      (L.hooks M) G (L.A g).base ra s (hAE G ra s w₀' hME)
+    rcases hL.sretE g hg hsr with ⟨hsubE, hcE⟩ | hx
+    · -- an `sret` function in subset E: the integer world theorem (its returns in x0..)
+      have h := backend_correct_world_ni_pipeline hsubE hcE
+        (X := L.X κ M g F) (syms := L.syms)
+        (env := L.envOf M g (spv w₀)) (K := κ M g) (F := F) (c := spv w₀) (hL.covered g hg)
+        hX hXI (fun n b hn => hL.symOk n b hn) rfl hWE.clif hWE.rel hWE.args
+        (trapsExplicit_of_returned hrun') fuel
+      obtain ⟨-, -, -, -, htys, -⟩ := hT rvals cm' hrun'
+      obtain ⟨us, outs, wf, hus, hlen, hhold, hmem, hrs, hall, hni⟩ := h rvals cm' hrun'
+      have hint : ∀ v ∈ rvals, v.ty.isInt = true := by
+        intro v hv
+        have hm : v.ty ∈ Clif.AbiParam.tys g.sig.returns := htys ▸ List.mem_map_of_mem hv
+        obtain ⟨q, hq, hqt⟩ := List.mem_map.mp hm
+        have hE := hsubE.subsetE
+        simp only [Compile.functionE, Compile.sigE, Bool.and_eq_true, List.all_eq_true] at hE
+        have := hE.1.1.1.2 q hq
+        simp only [Compile.tyE, Bool.and_eq_true] at this
+        rw [← hqt]; exact this.1
+      refine ⟨us, outs, wf, ⟨retRegsOk_of_x hus hint (by have := hhold.1; omega), fun _ => hus⟩,
+        hlen, hhold, hmem, hrs, fun G ra s hME => hall (L.hooks M) G (L.A g).base ra s
+        (hAE G ra s w₀ hME), fun hN D w₀' hrel' hsw hreg hstk G ra s hME => ?_⟩
+      exact hni (L.xniT hL hN ih hg hWE.img (spv w₀)) (L.xTlsT hL hN) D w₀' hrel' hsw hreg hstk
+        (L.hooks M) G (L.A g).base ra s (hAE G ra s w₀' hME)
+    · -- #722: any `sret` function whose returns are in x0.. (`RetsX`): the typed world theorem
+      obtain ⟨us, outs, wf, hus, -, hlen, hhold, hmem, hrs, hall, hni⟩ := hT rvals cm' hrun'
+      refine ⟨us, outs, wf, ⟨hus, fun _ => hx us hrs⟩, hlen, hhold, hmem, hrs,
+        fun G ra s hME => hall (L.hooks M) G (L.A g).base ra s (hAE G ra s w₀ hME),
+        fun hN D w₀' hrel' hsw hreg hstk G ra s hME => ?_⟩
+      exact hni (L.xniT hL hN ih hg hWE.img (spv w₀)) (L.xTlsT hL hN) D w₀' hrel' hsw hreg hstk
+        (L.hooks M) G (L.A g).base ra s (hAE G ra s w₀' hME)
 
 /-- **The linking statement at every depth.** -/
 theorem thmT (hL : L.OkT) [L.CrunOk] (hκ : L.Budget κ) : ∀ M, L.ThmT κ M
@@ -2103,7 +2099,7 @@ theorem backend_correct_program_coreT (L : LinkSys) (hL : L.OkT) [L.CrunOk]
     have hJ : L.ActInv f (spv w₀) cs := ⟨hIf, hcs.callers, hpl⟩
     have hm' : Clif.runLoop (L.envOf M f (spv w₀)) L.P.bare m cs = .trapped c := by
       rw [L.runLoop_envOfT hL hf m cs hJ]; exact hm
-    have h := backend_correct_world_pipelineAnyTF (hL.subset f hf) hc typedRules_program
+    have h := backend_correct_world_pipelineAnyTS (hL.subset f hf) hc typedRules_program
       (X := L.X κ M f L.F) (syms := L.syms)
       (env := L.envOf M f (spv w₀)) (K := κ M f) (F := L.F) (c := spv w₀) (hL.covered f hf)
       (L.xCallsOkT hL hκ ih hf hL.imgF hWE.room hWE.dead hWE.align)
@@ -2113,7 +2109,7 @@ theorem backend_correct_program_coreT (L : LinkSys) (hL : L.OkT) [L.CrunOk]
     exact h.2 c hm' (L.hooks M) L.Img (L.A f).base ra s ⟨hME.abi, hME.stack, hME.gfree, hME.hF,
       L.calleeOkT hL hκ ih hf hME,
       fun _ => L.calleeTryOkT hL hκ ih hf hME,
-      fun ht => L.tlsOk_hooks (hL.baseTls f hf (hasTls_of_vcode_pipelineAnyT hc ht) L.F (κ M f)), hME.body⟩
+      fun ht => L.tlsOk_hooks (hL.baseTls f hf (hasTls_of_vcode_pipelineAnyTS hc ht) L.F (κ M f)), hME.body⟩
 
 /-- **`backend_correct_program` with a per-function stack budget** `κ` (`LinkSys.Budget`): the
 stack premises and the world's exterior `L.F` use `κ M f` (the callees' stack of the entry

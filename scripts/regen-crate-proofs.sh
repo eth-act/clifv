@@ -4,7 +4,7 @@
 # so a PR that changes generated code reruns this script and commits the result.
 #
 # usage: scripts/regen-crate-proofs.sh
-# Needs the tools of this checkout: `lake build lean-backend clif-decode link-check` and
+# Needs the tools of this checkout: `lake build lean-backend clif-decode link-check dead-cleanup-generate` and
 # `cargo build --release -p cargo-fv -p clif-data-export -p lean-regalloc` (in rust/).
 # Wrap it in scripts/memcap.sh when memory is shared.
 set -euo pipefail
@@ -48,3 +48,8 @@ exe=$(ls -t target/pipeline-t/fv/plain/aarch64-unknown-linux-musl/debug/build/fv
 CARGO_TARGET_DIR=$PWD/target/pipeline-t cargo fv link-proof --exe "$exe" || true
 "$ROOT/.lake/build/bin/link-check" target/pipeline-t/fv/link-proof \
   --input-only "$OUT/InScopeInputs/FvDemo.lean" --module InScopeInputs.FvDemo
+
+# The closed cleanup fixtures of #137 (Crates/DeadCleanupGenerated, Crates/DeadCleanupGeneratedSplit,
+# #745): compiled and written by `dead-cleanup-generate` (FVTest/Link/DeadCleanupGenerate.lean).
+cd "$ROOT"
+"$ROOT/.lake/build/bin/dead-cleanup-generate" crate-proofs/Crates

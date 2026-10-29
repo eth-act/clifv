@@ -259,12 +259,12 @@ theorem okR_soundT {I : LinkInput} {R : Res} (hR : ResOk I R) (hI : okRT I R = t
     { names := hn
       free := fun g hg => (fa hg).free
       subset := fun g hg => (hsubT g hg).toTC.toTCF
-      compiled := fun g hg => .inl ⟨hsubT g hg, .legacy (hpipe g hg).1⟩
+      compiled := fun g hg => .inl (.inl ⟨hsubT g hg, .legacy (hpipe g hg).1⟩)
       sretE := fun g hg hs => by
         obtain ⟨hE, hlc⟩ := (fa hg).sretE hs
         obtain ⟨hl, hpr, ha, he, hla, -⟩ := (fa hg).pipe
         have hT := hsubT g hg
-        exact ⟨⟨hE, hT.externCalls, hT.tryExterns, hT.abiSigs, hT.indSigs⟩,
+        exact .inl ⟨⟨hE, hT.externCalls, hT.tryExterns, hT.abiSigs, hT.indSigs⟩,
           .legacy ⟨hl, hlc, hpr, (fa hg).prepOk, (fa hg).check, ha, he, hla⟩⟩
       calleeInt := fun g hg h hh => (fa (hcalB g hg h hh).2).calleeInt (hcalB g hg h hh).1
       covered := fun g hg => (fa hg).covered
