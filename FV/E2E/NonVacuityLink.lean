@@ -1387,6 +1387,17 @@ def s0 : Arm.ArmState :=
 stp x21, x25, [sp, #-16]!; sub sp, sp, #32`). -/
 def w0 : Arm.ArmState := Arm.w (.GPR 31#5) (sp0 - 64) (Arm.w (.GPR 29#5) (sp0 - 16) s0)
 
+/-- The witness program has no stack probes (#581): every frame is below 4 KiB. -/
+theorem pbMax_L (F : BitVec 64 → Prop) : (L F).pbMax = 0 := by
+  show P.funcs.foldl (fun x g => max x (probeBelow (A g).af)) 0 = 0
+  native_decide
+
+theorem K_L (F : BitVec 64 → Prop) (M : Nat) : (L F).K M = (L F).D * M := by
+  rw [LinkSys.K, pbMax_L, Nat.add_zero]
+
+theorem probeCount_fF : probeCount (probeTotal (A fF).af.frameSize (A fF).af.isCaller) = 0 := by
+  native_decide
+
 /-- The addresses outside the world of the entry activation: its frame, its callees' stack,
 the code. -/
 def F0 : BitVec 64 → Prop :=
@@ -1912,7 +1923,7 @@ theorem backend_correct_program_witness :
     · intro h; cases h
   rw [hrun]
   refine backend_correct_program_returned (L F0) hL hfF M0 (w₀ := w0) (args := [arg]) (cs := cs0)
-    ?hent ?hres rfl ?hgfree ?himg ?hbe ?hargs ?hcs ?hsav ?hrel (fun _ => hplace) (hrun ▸ rfl)
+    ?hent ?hres (by rw [K_L]; rfl) ?hgfree ?himg ?hbe ?hargs ?hcs ?hsav ?hrel (fun _ => hplace) (hrun ▸ rfl)
   case hent =>
     refine ⟨s0_program, imgCode_of (okB_imgB) (by simp [P]) s0 (fun a ha => s0_img ha),
       by simp [s0, L, Arm.r_of_w_same], ?_, ?_, hL.raStar fF hfF, ?_, hL.fits fF hfF⟩
@@ -1921,16 +1932,19 @@ theorem backend_correct_program_witness :
     · simp [s0, xreg, Arm.r_of_w_different, Arm.r_of_w_same]
     · rw [spv_s0]; decide
   case hres =>
-    refine ⟨by simp [L, LinkSys.K, hfs, spv_s0, sp0, M0], fun a ha => ?_⟩
+    refine ⟨⟨by simp only [K_L]; simp [L, hfs, spv_s0, sp0, M0], fun a ha => ?_⟩,
+      Nat.le_trans ((L F0).probeBelow_le_pbMax hfF) (Nat.le_add_left _ _)⟩
     have hlt := codeAddr_lt hbF s0_program ha
-    simp only [L, LinkSys.K, hfs, spv_s0, sp0, M0]
+    simp only [K_L]
+    simp only [L, hfs, spv_s0, sp0, M0]
     simp only [BitVec.toNat_sub, BitVec.toNat_ofNat]
     have : (1048576 : BitVec 64).toNat = 1048576 := rfl
     omega
   case hgfree =>
     intro a ha ⟨h1, h2⟩
     have hlt := img_lt ha
-    simp only [L, LinkSys.K, hdrop, spv_s0, sp0, M0] at h1 h2
+    simp only [K_L] at h1 h2
+    simp only [L, hdrop, spv_s0, sp0, M0] at h1 h2
     simp at h2
     omega
   case himg => exact fun a ha => s0_img ha
@@ -1943,7 +1957,7 @@ theorem backend_correct_program_witness :
         Arm.r_of_w_different (gpr_ne (by omega) (by omega) (by omega : i ≠ 29))]
     · simp [w0, Arm.r_of_w_different]
     · simp only [w0]; rw [Arm.r_of_w_different h31, Arm.r_of_w_different h29]
-    · simp [w0, mem_w]
+    · simp only [w0, mem_w]; exact (probeMem_of_count probeCount_fF s0).symm
     · simp [w0, Arm.w_program]
   case hargs =>
     intro loc v hm
