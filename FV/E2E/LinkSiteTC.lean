@@ -424,4 +424,269 @@ theorem linkChksWithT_of (I : LinkInput) (P : Clif.Program) (T : List (Clif.Func
     indFastB_eq, calleeSet_contains, raCallFastB_eq, siteWithOkTC_func?]
   rfl
 
+/-! ## Class-aware program call sites (#742)
+
+A call of a function `h` of `P` passes its arguments in `h`'s parameter registers (`regLocs`:
+x0..x7 and v0..v7 by class) and takes its results from `h`'s ABI return registers by class
+(`sigRetRegs`: x0.. and v0.., as Cranelift's `compute_arg_locs` on the returns), with the call's
+uses and defs vregs of either class (`argPairsC`/`callDefsC`). -/
+
+/-- **The ABI return registers of a signature, by class** (AAPCS64, Cranelift's
+`compute_arg_locs` on the returns): integer returns in x0.., `f32`/`f64` ones in v0.. (separate
+counters, `retRegsT`); an `sret` signature without returns returns its struct pointer in x0 (its
+only ABI return, `sigRets`). -/
+def sigRetRegs (s : Clif.Signature) : List Reg :=
+  if (s.params.any (·.purpose == .sret)) && s.returns.isEmpty then [.x 0]
+  else retRegsT (s.returns.map fun p => tyClass p.ty) 0 0
+
+theorem sigRets_of_sret {s : Clif.Signature} (hs : s.params.any (·.purpose == .sret) = true) :
+    sigRets s = if s.returns.isEmpty then
+      [(s.params.find? (·.purpose == .sret)).get (List.find?_isSome.mpr (List.any_eq_true.mp hs))]
+      else s.returns := by
+  unfold sigRets
+  have hi := List.find?_isSome.mpr (List.any_eq_true.mp hs)
+  obtain ⟨p, hp⟩ := Option.isSome_iff_exists.mp hi
+  simp only [hp, Option.get_some]
+
+theorem sigRetRegs_length (s : Clif.Signature) : (sigRetRegs s).length = (sigRets s).length := by
+  unfold sigRetRegs
+  cases hs : s.params.any (·.purpose == .sret) with
+  | false =>
+    rw [sigRets_of_noSret hs]
+    simp [retRegsT_length]
+  | true =>
+    rw [sigRets_of_sret hs]
+    cases he : s.returns.isEmpty <;> simp [retRegsT_length]
+
+/-- For integer returns the ABI return registers are x0, x1, …. -/
+theorem sigRetRegs_int {s : Clif.Signature} (hint : ∀ p ∈ s.returns, p.ty.isInt = true) :
+    sigRetRegs s = (List.range (sigRets s).length).map Reg.x := by
+  have hrep : s.returns.map (fun p => tyClass p.ty) = List.replicate s.returns.length .int := by
+    refine List.eq_replicate_iff.mpr ⟨by simp, fun b hb => ?_⟩
+    obtain ⟨p, hp, rfl⟩ := List.mem_map.mp hb
+    have := hint p hp
+    unfold tyClass
+    rw [if_pos this]
+  have hx : retRegsT (s.returns.map fun p => tyClass p.ty) 0 0 =
+      (List.range s.returns.length).map Reg.x := by
+    rw [hrep, retRegsT_int, List.range_eq_range']
+  unfold sigRetRegs
+  cases hs : s.params.any (·.purpose == .sret) with
+  | false =>
+    rw [sigRets_of_noSret hs]
+    simpa using hx
+  | true =>
+    rw [sigRets_of_sret hs]
+    cases he : s.returns.isEmpty
+    · simpa using hx
+    · simp
+
+/-- The defs of a call of a function of signature `sig` take its ABI results from its return
+registers (`sigRetRegs`; the defs past them are a `try_call`'s exception payload registers). -/
+def defsOkC (sig : Clif.Signature) (ds : List (Reg × Reg)) : Bool :=
+  decide ((ds.map (·.1)).take (sigRets sig).length = (sigRetRegs sig).take ds.length)
+
+theorem retPairs_eq_argPairsC (Lu : List (Nat × Reg)) :
+    retPairs Lu = argPairsC (Lu.map fun q => (q.1, RegClass.int, q.2)) := by
+  simp [retPairs, argPairsC, List.map_map, Function.comp_def]
+
+theorem callDefs_eq_callDefsC (Ld : List (Reg × Nat)) :
+    callDefs Ld = callDefsC (Ld.map fun q => (q.1, q.2, RegClass.int)) := by
+  simp [callDefs, callDefsC, List.map_map, Function.comp_def]
+
+/-- **The integer call-site facts of a callee with integer returns are the class-aware ones**
+(integer vregs, results from x0..: `sigRetRegs` is x0.. for integer returns). -/
+theorem siteRegsC_of_int {sig : Clif.Signature} (hint : ∀ p ∈ sig.returns, p.ty.isInt = true)
+    {Lu : List (Nat × Reg)} {Ld : List (Reg × Nat)} (hLu : Lu.map (·.2) = regLocs sig)
+    (hLd : (Ld.map (·.1)).take (sigRets sig).length =
+      (List.range (min (sigRets sig).length Ld.length)).map Reg.x) :
+    (Lu.map fun q => (q.1, RegClass.int, q.2)).map (·.2.2) = regLocs sig ∧
+    ((Ld.map fun q => (q.1, q.2, RegClass.int)).map (·.1)).take (sigRets sig).length =
+      (sigRetRegs sig).take (Ld.map fun q => (q.1, q.2, RegClass.int)).length := by
+  refine ⟨by simpa [List.map_map, Function.comp_def] using hLu, ?_⟩
+  have e1 : (Ld.map fun q => (q.1, q.2, RegClass.int)).map (·.1) = Ld.map (·.1) := by
+    simp [List.map_map, Function.comp_def]
+  rw [e1, hLd, sigRetRegs_int hint, List.length_map, ← List.map_take, List.take_range,
+    Nat.min_comm]
+
+/-- `siteOkTC`'s conclusion at a `.sym` site, for a callee with integer returns, in the
+class-aware form of `LinkSys.OkT.callRegs`. -/
+theorem callRegsC_of_int {sig : Clif.Signature} (hint : ∀ p ∈ sig.returns, p.ty.isInt = true)
+    {info : CallInfo}
+    (h : ∃ n Lu Ld, info = ⟨.sym n, retPairs Lu, callDefs Ld⟩ ∧ Lu.map (·.2) = regLocs sig ∧
+      (Ld.map (·.1)).take (sigRets sig).length =
+        (List.range (min (sigRets sig).length Ld.length)).map Reg.x) :
+    ∃ n Lc Dc, info = ⟨.sym n, argPairsC Lc, callDefsC Dc⟩ ∧ Lc.map (·.2.2) = regLocs sig ∧
+      (Dc.map (·.1)).take (sigRets sig).length = (sigRetRegs sig).take Dc.length := by
+  obtain ⟨n, Lu, Ld, rfl, h1, h2⟩ := h
+  exact ⟨n, _, _, by rw [retPairs_eq_argPairsC, callDefs_eq_callDefsC], siteRegsC_of_int hint h1 h2⟩
+
+/-- **A class-aware `blr` site**: uses and defs on vregs (of either class), arguments in the
+parameter registers of every function of `P` it may enter (`may`, and at a call through the GOT,
+`got`, the GOT symbol's) with as many register parameters, and the results from that function's
+return registers (`defsOkC`). -/
+def blrOkC (P : Clif.Program) (may : Clif.Function → Bool) (got : Nat → Option String)
+    (info : CallInfo) : Bool :=
+  match info.dest with
+  | .reg (.vreg t .int) =>
+    (info.uses.all fun u => u.1.isVirtual = true) && (info.defs.all fun d => d.2.isVirtual = true) &&
+    P.funcs.all fun h => !may h ||
+      (match got t with | some n => h.name != n | none => false) ||
+      decide ((regLocs h.sig).length ≠ info.uses.length) ||
+      (decide (info.uses.map (·.2) = regLocs h.sig) && defsOkC h.sig info.defs)
+  | _ => false
+
+theorem blrOkC_sound {P : Clif.Program} {may : Clif.Function → Bool} {got : Nat → Option String}
+    {info : CallInfo} (h : blrOkC P may got info = true) :
+    ∃ t Lc Dc, info = ⟨.reg (.vreg t .int), argPairsC Lc, callDefsC Dc⟩ ∧
+      ∀ h ∈ P.funcs, may h = true → (∀ n, got t = some n → h.name = n) →
+        (regLocs h.sig).length = Lc.length →
+        Lc.map (·.2.2) = regLocs h.sig ∧
+        (Dc.map (·.1)).take (sigRets h.sig).length = (sigRetRegs h.sig).take Dc.length := by
+  obtain ⟨d, us, ds⟩ := info
+  unfold blrOkC at h
+  split at h
+  · rename_i t hd
+    simp only at hd
+    subst hd
+    simp only [Bool.and_eq_true] at h
+    obtain ⟨⟨hu, hdv⟩, hall⟩ := h
+    refine ⟨t, us.map fun u => (regVN u.1, regVC u.1, u.2), ds.map fun d => (d.1, regVN d.2, regVC d.2),
+      by rw [argPairsC_of_virtual hu, callDefsC_of_virtual hdv], fun h' hh hmay hgot hl => ?_⟩
+    simp only [List.all_eq_true, Bool.or_eq_true, Bool.not_eq_true', decide_eq_true_eq,
+      Bool.and_eq_true] at hall
+    simp only [List.map_map, Function.comp_def, List.length_map] at hl ⊢
+    rcases hall h' hh with ((h1 | h1) | h1) | ⟨h1, h2⟩
+    · rw [hmay] at h1; cases h1
+    · revert h1
+      cases hg : got t with
+      | none => simp
+      | some n => simp [hgot n hg]
+    · exact absurd hl h1
+    · exact ⟨h1, by simpa [defsOkC] using h2⟩
+  · cases h
+
+/-- **A class-aware call site**: a `bl` of a function `h` of `P` that `g` declares, uses and defs
+on vregs (of either class), arguments in `h`'s parameter registers and the results from its
+return registers (`defsOkC`); a `bl` of an extern outside `P` (the base's contract); or a `blr`
+site (`blrOkC`, with the GOT symbols of `vc`). -/
+def siteOkC (P : Clif.Program) (g : Clif.Function) (may : Clif.Function → Bool) (vc : VCode)
+    (info : CallInfo) : Bool :=
+  match info.dest with
+  | .sym n => match P.func? n with
+    | some h => g.externs.any (fun e => e.2.name == n) &&
+        (info.uses.all fun u => u.1.isVirtual = true) &&
+        (info.defs.all fun d => d.2.isVirtual = true) &&
+        decide (info.uses.map (·.2) = regLocs h.sig) && defsOkC h.sig info.defs
+    | none => true
+  | .reg _ => blrOkC P may (gotOf vc) info
+
+theorem siteOkC_sound {P : Clif.Program} {g : Clif.Function} {may : Clif.Function → Bool}
+    {vc : VCode} {info : CallInfo} (h : siteOkC P g may vc info = true) {n : String}
+    {h' : Clif.Function} (hd : info.dest = .sym n) (hf : P.func? n = some h') :
+    (∃ e ∈ g.externs, e.2.name = n) ∧ ∃ Lc Dc,
+      info = ⟨.sym n, argPairsC Lc, callDefsC Dc⟩ ∧ Lc.map (·.2.2) = regLocs h'.sig ∧
+      (Dc.map (·.1)).take (sigRets h'.sig).length = (sigRetRegs h'.sig).take Dc.length := by
+  obtain ⟨d, us, ds⟩ := info
+  simp only at hd
+  subst hd
+  unfold siteOkC at h
+  simp only [hf, Bool.and_eq_true, decide_eq_true_eq, List.any_eq_true, beq_iff_eq] at h
+  obtain ⟨⟨⟨⟨hd, hu⟩, hdv⟩, h1⟩, h2⟩ := h
+  refine ⟨hd, us.map fun u => (regVN u.1, regVC u.1, u.2), ds.map fun d => (d.1, regVN d.2, regVC d.2),
+    by rw [argPairsC_of_virtual hu, callDefsC_of_virtual hdv], ?_, ?_⟩
+  · simpa [List.map_map, Function.comp_def] using h1
+  · simpa [defsOkC, List.map_map, Function.comp_def] using h2
+
+/-- **The `blr` fact of the class-aware check**: at a `.reg` destination, `blrOkC` holds. -/
+theorem siteOkC_reg {P : Clif.Program} {g : Clif.Function} {may : Clif.Function → Bool}
+    {vc : VCode} {info : CallInfo} (h : siteOkC P g may vc info = true)
+    (hreg : ∀ n, info.dest ≠ .sym n) :
+    blrOkC P may (gotOf vc) info = true := by
+  obtain ⟨d, us, ds⟩ := info
+  unfold siteOkC at h
+  cases d with
+  | reg r => exact h
+  | sym n => exact absurd rfl (hreg n)
+
+/-- `siteOkC` with the program's functions looked up through `F`. -/
+def siteWithOkC (F : String → Option Clif.Function) (P : Clif.Program) (g : Clif.Function)
+    (may : Clif.Function → Bool) (vc : VCode) (info : CallInfo) : Bool :=
+  match info.dest with
+  | .sym n => match F n with
+    | some h => g.externs.any (fun e => e.2.name == n) &&
+        (info.uses.all fun u => u.1.isVirtual = true) &&
+        (info.defs.all fun d => d.2.isVirtual = true) &&
+        decide (info.uses.map (·.2) = regLocs h.sig) && defsOkC h.sig info.defs
+    | none => true
+  | .reg _ => blrOkC P may (gotOf vc) info
+
+theorem siteWithOkC_func? (P : Clif.Program) (g : Clif.Function) (may : Clif.Function → Bool)
+    (vc : VCode) : siteWithOkC P.func? P g may vc = siteOkC P g may vc := rfl
+
+/-- **`indB` for the class-aware link contract**: the functions of `P` that `g` may enter through
+an address with a signature one of its indirect calls matches take at most 8 register
+parameters (the returns' check `indRetsB` of `indB` is not needed: an indirect call enters a
+function only under `IndSigMatch`, which gives as many ABI returns). -/
+def indBC (P : Clif.Program) (S : String → Option Nat) (g : Clif.Function) : Bool :=
+  indFreeB g || P.funcs.all (fun h => !mayB S g h.name || !indSigB g h ||
+      (match sigParamBytes h.sig with | .ok b => decide (b.length ≤ 8) | .error _ => false))
+
+/-- `indBC P S g` with `indFreeB g`, `declB g`, `indSigs g` given. -/
+def indWithBC (P : Clif.Program) (S : String → Option Nat) (ind : Bool) (D : String → Bool)
+    (sigs : List Clif.Signature) : Bool :=
+  ind || P.funcs.all (fun h => !mayWithB S ind D h.name || !indSigWithB D sigs h ||
+      (match sigParamBytes h.sig with | .ok b => decide (b.length ≤ 8) | .error _ => false))
+
+/-- **`indBC P S g` with `g`'s facts computed once** (`indFastBC_eq`). -/
+def indFastBC (P : Clif.Program) (S : String → Option Nat) (g : Clif.Function) : Bool :=
+  let D := declSet g
+  indWithBC P S (indFreeB g) (fun n => D.contains n) (indSigs g)
+
+theorem indFastBC_eq (P : Clif.Program) (S : String → Option Nat) (g : Clif.Function) :
+    indFastBC P S g = indBC P S g := by
+  simp only [indFastBC, declSet_contains]
+  rfl
+
+/-- **The class-aware per-function link checks** (`linkChksTS`, #742): `linkChksT` with the
+class-aware call-site check `siteOkC` and `indBC`. -/
+def linkChksTS (I : LinkInput) (P : Clif.Program) (T : List (Clif.Function × Art))
+    (g : Clif.Function) (r : Except String Art) : List (String × Bool) :=
+  let a := getOk r
+  let fr := RAFrame.compute a.vcp a.rf
+  let may := indToB (fun n => I.syms.lookup n) g
+  [("outFits", g.externs.all (fun e => !(P.func? e.2.name).isSome || outFitsB e.2.sig fr.intBase)),
+   ("calleeFrame/slotFits",
+     !calleeB P (fun n => I.syms.lookup n) g || ((!g.slots.isEmpty || fr.size == a.af.frameSize - clobberBytes a.af.saves) && slotFitsB g a)),
+   ("callRegs/blrRegs", allInsts a.vcp (siteB (siteOkC P g may a.vcp))),
+   ("declSig", g.externs.all fun e => match P.func? e.2.name with
+      | some h => decide (e.2.sig = h.sig)
+      | none => true),
+   ("raCall/raBlr", raCallB T g a),
+   ("indScope/indSig", indBC P (fun n => I.syms.lookup n) g)]
+
+/-- **`linkChksWith` with the class-aware checks** (`linkChksWithTS`). -/
+def linkChksWithTS (C : LinkCtx) (P : Clif.Program) (g : Clif.Function)
+    (r : Except String Art) : List (String × Bool) :=
+  let a := getOk r
+  let fr := RAFrame.compute a.vcp a.rf
+  let Ds := declSet g
+  let sigs := indSigs g
+  let may := indToWithB C.S (indFreeB g) (fun n => Ds.contains n) sigs g
+  [("outFits", g.externs.all (fun e => !(C.F e.2.name).isSome || outFitsB e.2.sig fr.intBase)),
+   ("calleeFrame/slotFits",
+     !(C.callees.contains g.name || ((C.S g.name).isSome && C.anyInd)) ||
+       ((!g.slots.isEmpty || fr.size == a.af.frameSize - clobberBytes a.af.saves) && slotFitsB g a)),
+   ("callRegs/blrRegs", allInsts a.vcp (siteB (siteWithOkC C.F P g may a.vcp))),
+   ("declSig", declSigWithB C.F g),
+   ("raCall/raBlr", raCallFastB C.ents g a),
+   ("indScope/indSig", indFastBC P C.S g)]
+
+theorem linkChksWithTS_of (I : LinkInput) (P : Clif.Program) (T : List (Clif.Function × Art))
+    (g : Clif.Function) (r : Except String Art) :
+    linkChksWithTS (LinkCtx.of I P T) P g r = linkChksTS I P T g r := by
+  simp only [linkChksWithTS, linkChksTS, LinkCtx.of, assocMap_fun, funcMap_fun, indToWithB_declSet,
+    indFastBC_eq, calleeSet_contains, raCallFastB_eq, siteWithOkC_func?]
+  rfl
+
 end E2E.LinkCheck

@@ -7,7 +7,8 @@ import FV.E2E.LinkArmT
 the typed lowering validator `lowerCheckT`, the typed movement scope `Compile.functionET` with the
 float-store typing `Compile.storeTypedB` (`InSubsetT`), and two checks for the program callees: an
 `sret` function is in subset E and passes the integer validator (`OkT.sretE`), and a function
-of the program that may be called from it returns integers (`OkT.calleeInt`). -/
+of the program that may be called from it returns integers ("calleeInt": with the integer call
+sites it gives the class-aware `OkT.callRegs`/`OkT.blrRegs`, `callRegsC_of_int`). -/
 
 namespace E2E.LinkCheck
 open Backend Backend.Proof Backend.Proof.Driver
@@ -266,7 +267,6 @@ theorem okR_soundT {I : LinkInput} {R : Res} (hR : ResOk I R) (hI : okRT I R = t
         have hT := hsubT g hg
         exact .inl ⟨⟨hE, hT.externCalls, hT.tryExterns, hT.abiSigs, hT.indSigs⟩,
           .legacy ⟨hl, hlc, hpr, (fa hg).prepOk, (fa hg).check, ha, he, hla⟩⟩
-      calleeInt := fun g hg h hh => (fa (hcalB g hg h hh).2).calleeInt (hcalB g hg h hh).1
       covered := fun g hg => (fa hg).covered
       outFits := fun g hg e he hs i off p hl hp => ?_
       baseNoAlloc := hB.baseNoAlloc
@@ -274,8 +274,13 @@ theorem okR_soundT {I : LinkInput} {R : Res} (hR : ResOk I R) (hI : okRT I R = t
       sretRets := fun g hg hs us hr => retsB_sound (fa hg).rets hs hr
       calleeFrame := fun g hg h hh hs => (hcal g hg h hh).1 hs
       slotFits := fun g hg h hh => slotFitsB_sound (hcal g hg h hh).2
-      callRegs := fun g hg info h hs => (site g hg info h hs).2.2
+      callRegs := fun g hg info h hs =>
+        callRegsC_of_int ((fa (hcalB g hg h (.inl ⟨info, hs⟩)).2).calleeInt
+          (hcalB g hg h (.inl ⟨info, hs⟩)).1) (site g hg info h hs).2.2
       blrRegs := fun g hg info hs hreg => by
+        refine LinkSys.blrRegsC_of_int _ (fun t h hh hb =>
+          (fa (hcalB g hg h (.inr (.inr ⟨hh, hb.1.1⟩))).2).calleeInt
+            (hcalB g hg h (.inr (.inr ⟨hh, hb.1.1⟩))).1) ?_
         obtain ⟨t, Lu, Ld, heq, hall⟩ := blrOk_sound (siteOk_reg (site_sound (fa hg).sites hs) hreg)
         exact .inl ⟨t, Lu, Ld, heq, fun h hh hb hl =>
           hall h hh (indToB_of hb.1) (fun n hn => (hb.2 n (gotOf_sound hn)).symm) hl⟩
@@ -285,7 +290,7 @@ theorem okR_soundT {I : LinkInput} {R : Res} (hR : ResOk I R) (hI : okRT I R = t
           exact raOk_self (hpipe g hg).1.layout (List.all_eq_true.1 hstar _ (tab_mem hn hg)) hpc
         · exact raCallB_sound (fa hg).ra hpc _ (tab_mem hn hh) hhg
       indScope := fun g hg hnf => ⟨hB.keepSyms ⟨g, hg, hnf⟩, ?_, hB.aliasSyms ⟨g, hg, hnf⟩⟩
-      indSig := fun g hg hnf h hh hmay hm => indFactsRT hR hI hg hnf h hh (mayB_of hmay) hm
+      indSig := fun g hg hnf h hh hmay hm => (indFactsRT hR hI hg hnf h hh (mayB_of hmay) hm).1
       addrSlots := fun hN ⟨g, hg, hout⟩ ⟨g', hg', hind⟩ h hh hs => ?_
       symInj := fun h hh n hn => ?_
       declSig := fun g hg e he h hf => (fa hg).declSig e he h hf

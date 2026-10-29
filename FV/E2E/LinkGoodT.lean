@@ -14,6 +14,13 @@ namespace LinkSys
 variable (L : LinkSys)
 variable {κ : Nat → Clif.Function → Nat}
 
+/-- **The register-level activation of `g` at depth `M` in the typed link** (`actRL` with the
+class-aware external semantics `XT`, #742). -/
+noncomputable def actRLT (κ : Nat → Clif.Function → Nat) (M : Nat) (g : Clif.Function)
+    (F G : BitVec 64 → Prop) (s : Arm.ArmState) : RL :=
+  ⟨(L.A g).vcp, (L.A g).rf, (L.A g).af, (L.A g).fa, (L.A g).fb, {}, (L.A g).base, s,
+    L.XT κ M g F, L.hooks M, {}, κ M g, G, GotV (L.A g).vcp⟩
+
 /-- **`progCall`'s per-state facts**: from every caller state compatible with `w`
 (`CallerOk`), every state of the callee's run whose step ends without error has the per-state
 factsT (from `ThmG` one level down, for the callee activation `progCallT` builds). -/
@@ -342,11 +349,11 @@ theorem progGoodCoreT (hL : L.OkT) [L.CrunOk] {M : Nat} (ihG : 0 < M → L.ThmG 
     {g h : Clif.Function} (hg : g ∈ L.P.funcs) (hh : h ∈ L.P.funcs) (hcallee : L.Callee g h)
     {F G : BitVec 64 → Prop} {s0 : Arm.ArmState} (himgF : ∀ a, L.Img a → F a)
     (himgG : ∀ a, L.Img a → G a) (himgS : ∀ a, L.Img a → s0.mem a = L.imgMem a)
-    {Lu : List (Nat × Reg)} (hLu : Lu.map (·.2) = regLocs h.sig)
+    {Lc : List (Nat × RegClass × Reg)} (hLu : Lc.map (·.2.2) = regLocs h.sig)
     {t w w' : Arm.ArmState} {outs : List CV}
     (hG : ∀ a, G a → t.mem a = s0.mem a) (hra : RaOk (L.A h) (Arm.r .PC t))
     (hsw : SameWorld F t w)
-    (hx : L.progX κ M F h (Lu.map (fun q => regVal t q.2)) w = some (outs, w')) :
+    (hx : L.progXT κ M F h (Lc.map (fun q => regVal t q.2.2)) w = some (outs, w')) :
     L.RunGoodL (M - 1) h (enterAt (L.A h) t) := by
   have hpf := func?_of_mem hL.names hh
   have hib : ((RAFrame.compute (L.A h).vcp (L.A h).rf).intBase = 0 ∧
@@ -357,8 +364,8 @@ theorem progGoodCoreT (hL : L.OkT) [L.CrunOk] {M : Nat} (ihG : 0 < M → L.ThmG 
       · exact .inr ⟨g, hg, h, hcallee, .inr h1⟩
     · exact .inr ⟨g, hg, h, hcallee, .inl h0⟩
   obtain ⟨hnd, harg, -⟩ := hL.argRegs h hh
-  generalize huses : Lu.map (fun q => regVal t q.2) = uses at hx
-  unfold progX at hx
+  generalize huses : Lc.map (fun q => regVal t q.2.2) = uses at hx
+  unfold progXT at hx
   have hcond : L.Cond κ M F h uses w ∧
       Arm.r .ERR (L.pcall M h (L.canon h uses w)) = .None :=
     Classical.byContradiction fun hc => by rw [if_neg hc] at hx; cases hx
@@ -386,7 +393,7 @@ symbol (`gotGuard`). -/
 theorem blrTo_of_preT (hL : L.OkT) {M : Nat} {g : Clif.Function}
     (hg : g ∈ L.P.funcs) {F G : BitVec 64 → Prop} {ra : BitVec 64} {s w₀ : Arm.ArmState}
     (he : L.MachEntry κ M g F G ra s w₀) {u : Arm.ArmState} {h : Clif.Function}
-    (hpre : (L.actRL κ M g F G s).CallPre u) (hprog : u.program = (L.A g).fb.program (L.A g).base)
+    (hpre : (L.actRLT κ M g F G s).CallPre u) (hprog : u.program = (L.A g).fb.program (L.A g).base)
     {xr : Reg} (hx0 : insnAt (L.A g).fa (progBase u) (Arm.r .PC u) = some (.blr xr))
     (hb : (blrTarget u).bind (symCallee L.Xb L.P) = some h) :
     ∃ info tv, (L.A g).vcp.CallSite info ∧ info.dest = .reg (.vreg tv .int) ∧ L.BlrTo g tv h := by
@@ -394,9 +401,9 @@ theorem blrTo_of_preT (hL : L.OkT) {M : Nat} {g : Clif.Function}
     hasg, hP, -, -, -, hsem⟩ := hpre
   have hsite : (L.A g).vcp.CallSite info := hsite
   have hGk : ∀ a, G a → u.mem a = s.mem a := hGk
-  have hFe : (L.actRL κ M g F G s).F = F := he.hF
+  have hFe : (L.actRLT κ M g F G s).F = F := he.hF
   have hP : CallAt (L.A g).fa (L.A g).base (Arm.r .PC u) i' := hP
-  have hsem : csemV (GotV (L.A g).vcp) F ctx (L.X κ M g F) i (useVals ops regs u) w =
+  have hsem : csemV (GotV (L.A g).vcp) F ctx (L.XT κ M g F) i (useVals ops regs u) w =
       some (outs, w', ctl) := hFe ▸ hsem
   -- the plain call of the instruction
   obtain ⟨ic, hasgC, hPC, hopsC, hst', hx, hguard⟩ : ∃ ic,
@@ -404,9 +411,9 @@ theorem blrTo_of_preT (hL : L.OkT) {M : Nat} {g : Clif.Function}
       CallAt (L.A g).fa (L.A g).base (Arm.r .PC u) (.call ic) ∧
       (MInst.call info).operands = .ok ops ∧
       (∃ clob, c.checkStatic wh ops (regs.map .reg) clob = .ok ()) ∧
-      (∃ o w2, (L.X κ M g F).call (match info.dest with | .sym n => some n | .reg _ => none)
+      (∃ o w2, (L.XT κ M g F).call (match info.dest with | .sym n => some n | .reg _ => none)
         (useVals ops regs u) w = some (o, w2)) ∧
-      gotGuard (GotV (L.A g).vcp) (L.X κ M g F) info (useVals ops regs u) := by
+      gotGuard (GotV (L.A g).vcp) (L.XT κ M g F) info (useVals ops regs u) := by
     rcases hi with rfl | ⟨ti, rfl⟩
     · obtain ⟨ic, rfl⟩ := (assign_call_tryCall info regs).1 i' hasg
       have h0 := csemV_sub hsem
@@ -439,86 +446,46 @@ theorem blrTo_of_preT (hL : L.OkT) {M : Nat} {g : Clif.Function}
     rw [hins] at hx0; cases hx0
   | reg r =>
     have hreg : ∀ n, info.dest ≠ .sym n := fun n => by rw [hd]; simp
-    rcases hL.blrRegs g hg info hsite hreg with ⟨tv, Lu, Ld, rfl, hregs⟩ | ⟨tv, Lc, Dc, rfl, hno⟩
-    · rw [operands_call_reg] at hopsC
-      cases hopsC
-      obtain ⟨hsz', hloc, -, -⟩ := checkStatic_facts hst'
-      obtain ⟨r0, hregs0⟩ := callRegs_eq_reg (regs := regs) (by simpa using hsz')
-        (fun p hp r hr => (hloc p hp).2 r hr)
-      obtain ⟨n0, rfl, hn0, -⟩ : ∃ n, r0 = .x n ∧ n < 29 ∧ n ≠ 16 := by
-        have hmem : (tgtOp tv, Loc.reg r0) ∈
-            (((tgtOp tv :: (retOps Lu ++ callDefOps Ld)).toArray).zip (regs.map Loc.reg)).toList := by
-          simp [Array.toList_zip, Array.toList_map, hregs0]
-        obtain ⟨n, hn, h29, h16, -⟩ := locOk_int (hloc _ hmem).1
-        exact ⟨n, hn, h29, h16⟩
-      obtain ⟨r1, us', ds', hr1, hic⟩ := assign_call_reg hasgC
-      have h0 : regs[0]? = some (.x n0) := by
-        rw [← Array.getElem?_toList, hregs0]; rfl
-      rw [h0] at hr1
-      cases hr1
-      cases hic
-      simp only [MInst.callInsn?, Option.some.injEq] at hx'
-      subst hx'
-      have htgt : blrTarget u = some (lo64 (regVal u (.x n0))) := by
-        rw [lo64_regVal_x]
-        exact blrTarget_of hc.layout hlm hj hn0 hpc
-          (fun k wd hk => hL.imgCode g hg u (fun a ha => (hGk a (he.imgG a ha)).trans (he.imgS a ha)) k wd hk)
-      have hs : symCallee L.Xb L.P (lo64 (regVal u (.x n0))) = some h := by
-        rw [htgt] at hb; exact hb
-      have hx2 : (L.X κ M g F).call none (regVal u (.x n0) :: Lu.map (fun q => regVal u q.2)) w =
-          some (o, w2) := by
-        rw [← call_useVals_reg hregs0]; exact hx
-      rw [L.X_ind hs] at hx2
-      split at hx2
-      · rename_i hdecl
-        have hgot : ∀ n, GotV (L.A g).vcp tv n → n = h.name := by
-          intro n hn
-          have e := hguard tv n _ rfl hn (operands_call_reg tv Lu Ld) (by simp [tgtOp, Operand.isUse])
-          rw [call_useVals_reg hregs0] at e
-          simp only [List.head?_cons, Option.map_some, Option.some.injEq] at e
-          exact L.got_targetT hL hs e
-        exact ⟨_, tv, hsite, rfl, hdecl.1, hgot⟩
-      · cases hx2
-    · rw [operands_call_regC] at hopsC
-      cases hopsC
-      obtain ⟨hsz', hloc, -, -⟩ := checkStatic_facts hst'
-      obtain ⟨r0, hregs0⟩ := callRegs_eq_regC (regs := regs) (by simpa using hsz')
-        (fun p hp r hr => (hloc p hp).2 r hr)
-      obtain ⟨n0, rfl, hn0, -⟩ : ∃ n, r0 = .x n ∧ n < 29 ∧ n ≠ 16 := by
-        have hmem : (tgtOp tv, Loc.reg r0) ∈
-            (((tgtOp tv :: (retOpsC Lc ++ callDefOpsC Dc)).toArray).zip (regs.map Loc.reg)).toList := by
-          simp [Array.toList_zip, Array.toList_map, hregs0]
-        obtain ⟨n, hn, h29, h16, -⟩ := locOk_int (hloc _ hmem).1
-        exact ⟨n, hn, h29, h16⟩
-      obtain ⟨r1, us', ds', hr1, hic⟩ := assign_call_reg hasgC
-      have h0 : regs[0]? = some (.x n0) := by
-        rw [← Array.getElem?_toList, hregs0]; rfl
-      rw [h0] at hr1
-      cases hr1
-      cases hic
-      simp only [MInst.callInsn?, Option.some.injEq] at hx'
-      subst hx'
-      have htgt : blrTarget u = some (lo64 (regVal u (.x n0))) := by
-        rw [lo64_regVal_x]
-        exact blrTarget_of hc.layout hlm hj hn0 hpc
-          (fun k wd hk => hL.imgCode g hg u (fun a ha => (hGk a (he.imgG a ha)).trans (he.imgS a ha)) k wd hk)
-      have hs : symCallee L.Xb L.P (lo64 (regVal u (.x n0))) = some h := by
-        rw [htgt] at hb; exact hb
-      have hx2 : (L.X κ M g F).call none (regVal u (.x n0) :: Lc.map (fun q => regVal u q.2.2)) w =
-          some (o, w2) := by
-        rw [← call_useVals_regC hregs0]; exact hx
-      rw [L.X_ind hs] at hx2
-      split at hx2
-      · rename_i hdecl
-        have hh : h ∈ L.P.funcs := List.mem_of_find?_eq_some hs
-        have hgot : ∀ n, GotV (L.A g).vcp tv n → n = h.name := by
-          intro n hn
-          have e := hguard tv n _ rfl hn (operands_call_regC tv Lc Dc) (by simp [tgtOp, Operand.isUse])
-          rw [call_useVals_regC hregs0] at e
-          simp only [List.head?_cons, Option.map_some, Option.some.injEq] at e
-          exact L.got_targetT hL hs e
-        exact absurd ⟨hdecl.1, hgot⟩ (hno h hh)
-      · cases hx2
+    obtain ⟨tv, Lc, Dc, rfl, -⟩ := hL.blrRegs g hg info hsite hreg
+    rw [operands_call_regC] at hopsC
+    cases hopsC
+    obtain ⟨hsz', hloc, -, -⟩ := checkStatic_facts hst'
+    obtain ⟨r0, hregs0⟩ := callRegs_eq_regC (regs := regs) (by simpa using hsz')
+      (fun p hp r hr => (hloc p hp).2 r hr)
+    obtain ⟨n0, rfl, hn0, -⟩ : ∃ n, r0 = .x n ∧ n < 29 ∧ n ≠ 16 := by
+      have hmem : (tgtOp tv, Loc.reg r0) ∈
+          (((tgtOp tv :: (retOpsC Lc ++ callDefOpsC Dc)).toArray).zip (regs.map Loc.reg)).toList := by
+        simp [Array.toList_zip, Array.toList_map, hregs0]
+      obtain ⟨n, hn, h29, h16, -⟩ := locOk_int (hloc _ hmem).1
+      exact ⟨n, hn, h29, h16⟩
+    obtain ⟨r1, us', ds', hr1, hic⟩ := assign_call_reg hasgC
+    have h0 : regs[0]? = some (.x n0) := by
+      rw [← Array.getElem?_toList, hregs0]; rfl
+    rw [h0] at hr1
+    cases hr1
+    cases hic
+    simp only [MInst.callInsn?, Option.some.injEq] at hx'
+    subst hx'
+    have htgt : blrTarget u = some (lo64 (regVal u (.x n0))) := by
+      rw [lo64_regVal_x]
+      exact blrTarget_of hc.layout hlm hj hn0 hpc
+        (fun k wd hk => hL.imgCode g hg u (fun a ha => (hGk a (he.imgG a ha)).trans (he.imgS a ha)) k wd hk)
+    have hs : symCallee L.Xb L.P (lo64 (regVal u (.x n0))) = some h := by
+      rw [htgt] at hb; exact hb
+    have hx2 : (L.XT κ M g F).call none (regVal u (.x n0) :: Lc.map (fun q => regVal u q.2.2)) w =
+        some (o, w2) := by
+      rw [← call_useVals_regC hregs0]; exact hx
+    rw [L.XT_ind hs] at hx2
+    split at hx2
+    · rename_i hdecl
+      have hgot : ∀ n, GotV (L.A g).vcp tv n → n = h.name := by
+        intro n hn
+        have e := hguard tv n _ rfl hn (operands_call_regC tv Lc Dc) (by simp [tgtOp, Operand.isUse])
+        rw [call_useVals_regC hregs0] at e
+        simp only [List.head?_cons, Option.map_some, Option.some.injEq] at e
+        exact L.got_targetT hL hs e
+      exact ⟨_, tv, hsite, rfl, hdecl.1, hgot⟩
+    · cases hx2
 
 /-- **The crux: the callee's states at a call state.** At a state `u` of the activation of `g`
 at depth `M` where the callee contract's premise holds (`RL.CallPre`, which `RL.GoodX.call` gives
@@ -529,16 +496,16 @@ from `u` whose step ends without error has the per-state factsT: the premise is 
 theorem callGoodT (hL : L.OkT) [L.CrunOk] {M : Nat} (ihG : 0 < M → L.ThmG κ (M - 1)) {g : Clif.Function}
     (hg : g ∈ L.P.funcs) {F G : BitVec 64 → Prop} {ra : BitVec 64} {s w₀ : Arm.ArmState}
     (he : L.MachEntry κ M g F G ra s w₀) {u : Arm.ArmState} {h : Clif.Function}
-    (hpre : (L.actRL κ M g F G s).CallPre u) (hprog : u.program = (L.A g).fb.program (L.A g).base)
+    (hpre : (L.actRLT κ M g F G s).CallPre u) (hprog : u.program = (L.A g).fb.program (L.A g).base)
     (hcall : L.CallsAtL g u h) : L.RunGoodL (M - 1) h (enterAt (L.A h) u) := by
   obtain ⟨ctx, i, ctl, ⟨info, hsite, hi⟩, -, -, hGk, c, wh, ops, regs, i', w, outs, w', hops, hst,
     hasg, hP, hsw, -, -, hsem⟩ := hpre
   have hsite : (L.A g).vcp.CallSite info := hsite
   have hGk : ∀ a, G a → u.mem a = s.mem a := hGk
-  have hFe : (L.actRL κ M g F G s).F = F := he.hF
+  have hFe : (L.actRLT κ M g F G s).F = F := he.hF
   have hsw : SameWorld F u w := hFe ▸ hsw
   have hP : CallAt (L.A g).fa (L.A g).base (Arm.r .PC u) i' := hP
-  have hsem : csemV (GotV (L.A g).vcp) F ctx (L.X κ M g F) i (useVals ops regs u) w =
+  have hsem : csemV (GotV (L.A g).vcp) F ctx (L.XT κ M g F) i (useVals ops regs u) w =
       some (outs, w', ctl) := hFe ▸ hsem
   -- the plain call of the instruction
   obtain ⟨ic, hasgC, hPC, hopsC, hst', hx, hguard⟩ : ∃ ic,
@@ -546,9 +513,9 @@ theorem callGoodT (hL : L.OkT) [L.CrunOk] {M : Nat} (ihG : 0 < M → L.ThmG κ (
       CallAt (L.A g).fa (L.A g).base (Arm.r .PC u) (.call ic) ∧
       (MInst.call info).operands = .ok ops ∧
       (∃ clob, c.checkStatic wh ops (regs.map .reg) clob = .ok ()) ∧
-      (∃ o w2, (L.X κ M g F).call (match info.dest with | .sym n => some n | .reg _ => none)
+      (∃ o w2, (L.XT κ M g F).call (match info.dest with | .sym n => some n | .reg _ => none)
         (useVals ops regs u) w = some (o, w2)) ∧
-      gotGuard (GotV (L.A g).vcp) (L.X κ M g F) info (useVals ops regs u) := by
+      gotGuard (GotV (L.A g).vcp) (L.XT κ M g F) info (useVals ops regs u) := by
     rcases hi with rfl | ⟨ti, rfl⟩
     · obtain ⟨ic, rfl⟩ := (assign_call_tryCall info regs).1 i' hasg
       have h0 := csemV_sub hsem
@@ -585,106 +552,64 @@ theorem callGoodT (hL : L.OkT) [L.CrunOk] {M : Nat} (ihG : 0 < M → L.ThmG κ (
       · rw [hins] at hr'; cases hr'
     obtain ⟨hh, -⟩ := Clif.Program.func?_some hpf
     have hps : L.ProgSite g ⟨.sym n, us0, ds0⟩ h := ⟨hsite, n, rfl, hpf⟩
-    obtain ⟨n', Lu, Ld, hinfo, hLu, -⟩ := hL.callRegs g hg _ h hps
+    obtain ⟨n', Lc, Dc, hinfo, hLu, -⟩ := hL.callRegs g hg _ h hps
     cases hinfo
-    rw [operands_call_sym] at hopsC
+    rw [operands_call_symC] at hopsC
     cases hopsC
     obtain ⟨hsz', hloc, -, -⟩ := checkStatic_facts hst'
-    have hregs := callRegs_eq (regs := regs) (by simpa using hsz')
+    have hregs := callRegs_eqC (regs := regs) (by simpa using hsz')
       (fun p hp r hr => (hloc p hp).2 r hr)
-    have hx2 : L.progX κ M F h (Lu.map (fun q => regVal u q.2)) w = some (o, w2) := by
-      rw [← L.X_prog (κ := κ) (M := M) (g := g) hpf, ← call_useVals hregs]; exact hx
+    have hx2 : L.progXT κ M F h (Lc.map (fun q => regVal u q.2.2)) w = some (o, w2) := by
+      rw [← L.XT_prog (κ := κ) (M := M) (g := g) hpf, ← call_useValsC hregs]; exact hx
     exact L.progGoodCoreT hL ihG hg hh (.inl ⟨_, hps⟩) he.imgF he.imgG he.imgS hLu hGk
       (hL.raCall g hg _ h hps _ hcp) hsw hx2
   | reg r =>
     have hreg : ∀ n, info.dest ≠ .sym n := fun n => by rw [hd]; simp
-    rcases hL.blrRegs g hg info hsite hreg with ⟨tv, Lu, Ld, rfl, hregs⟩ | ⟨tv, Lc, Dc, rfl, hno⟩
-    · rw [operands_call_reg] at hopsC
-      cases hopsC
-      obtain ⟨hsz', hloc, -, -⟩ := checkStatic_facts hst'
-      obtain ⟨r0, hregs0⟩ := callRegs_eq_reg (regs := regs) (by simpa using hsz')
-        (fun p hp r hr => (hloc p hp).2 r hr)
-      obtain ⟨n0, rfl, hn0, -⟩ : ∃ n, r0 = .x n ∧ n < 29 ∧ n ≠ 16 := by
-        have hmem : (tgtOp tv, Loc.reg r0) ∈
-            (((tgtOp tv :: (retOps Lu ++ callDefOps Ld)).toArray).zip (regs.map Loc.reg)).toList := by
-          simp [Array.toList_zip, Array.toList_map, hregs0]
-        obtain ⟨n, hn, h29, h16, -⟩ := locOk_int (hloc _ hmem).1
-        exact ⟨n, hn, h29, h16⟩
-      obtain ⟨r1, us', ds', hr1, hic⟩ := assign_call_reg hasgC
-      have h0 : regs[0]? = some (.x n0) := by
-        rw [← Array.getElem?_toList, hregs0]; rfl
-      rw [h0] at hr1
-      cases hr1
-      cases hic
-      simp only [MInst.callInsn?, Option.some.injEq] at hx'
-      subst hx'
-      have htgt : blrTarget u = some (lo64 (regVal u (.x n0))) := by
-        rw [lo64_regVal_x]
-        exact blrTarget_of hc.layout hlm hj hn0 hpc
-          (fun k wd hk => hL.imgCode g hg u (fun a ha => (hGk a (he.imgG a ha)).trans (he.imgS a ha)) k wd hk)
-      have hs : symCallee L.Xb L.P (lo64 (regVal u (.x n0))) = some h := by
-        rcases hcall with ⟨n', hn', -⟩ | ⟨-, hb⟩
-        · rw [hins] at hn'; cases hn'
-        · rw [htgt] at hb; exact hb
-      have hx2 : (L.X κ M g F).call none (regVal u (.x n0) :: Lu.map (fun q => regVal u q.2)) w =
-          some (o, w2) := by
-        rw [← call_useVals_reg hregs0]; exact hx
-      rw [L.X_ind hs] at hx2
-      split at hx2
-      · rename_i hdecl
-        have hh : h ∈ L.P.funcs := List.mem_of_find?_eq_some hs
-        have hgot : ∀ n, GotV (L.A g).vcp tv n → n = h.name := by
-          intro n hn
-          have e := hguard tv n _ rfl hn (operands_call_reg tv Lu Ld) (by simp [tgtOp, Operand.isUse])
-          rw [call_useVals_reg hregs0] at e
-          simp only [List.head?_cons, Option.map_some, Option.some.injEq] at e
-          exact L.got_targetT hL hs e
-        obtain ⟨hLu, -⟩ := hregs h hh ⟨hdecl.1, hgot⟩ (by rw [← hdecl.2, List.length_map])
-        exact L.progGoodCoreT hL ihG hg hh (.inr (.inr ⟨hh, hdecl.1.1⟩)) he.imgF he.imgG he.imgS hLu
-          hGk (hL.raBlr g hg _ hsite hreg h hh hdecl.1.1 _ hcp) hsw hx2
-      · cases hx2
-    · rw [operands_call_regC] at hopsC
-      cases hopsC
-      obtain ⟨hsz', hloc, -, -⟩ := checkStatic_facts hst'
-      obtain ⟨r0, hregs0⟩ := callRegs_eq_regC (regs := regs) (by simpa using hsz')
-        (fun p hp r hr => (hloc p hp).2 r hr)
-      obtain ⟨n0, rfl, hn0, -⟩ : ∃ n, r0 = .x n ∧ n < 29 ∧ n ≠ 16 := by
-        have hmem : (tgtOp tv, Loc.reg r0) ∈
-            (((tgtOp tv :: (retOpsC Lc ++ callDefOpsC Dc)).toArray).zip (regs.map Loc.reg)).toList := by
-          simp [Array.toList_zip, Array.toList_map, hregs0]
-        obtain ⟨n, hn, h29, h16, -⟩ := locOk_int (hloc _ hmem).1
-        exact ⟨n, hn, h29, h16⟩
-      obtain ⟨r1, us', ds', hr1, hic⟩ := assign_call_reg hasgC
-      have h0 : regs[0]? = some (.x n0) := by
-        rw [← Array.getElem?_toList, hregs0]; rfl
-      rw [h0] at hr1
-      cases hr1
-      cases hic
-      simp only [MInst.callInsn?, Option.some.injEq] at hx'
-      subst hx'
-      have htgt : blrTarget u = some (lo64 (regVal u (.x n0))) := by
-        rw [lo64_regVal_x]
-        exact blrTarget_of hc.layout hlm hj hn0 hpc
-          (fun k wd hk => hL.imgCode g hg u (fun a ha => (hGk a (he.imgG a ha)).trans (he.imgS a ha)) k wd hk)
-      have hs : symCallee L.Xb L.P (lo64 (regVal u (.x n0))) = some h := by
-        rcases hcall with ⟨n', hn', -⟩ | ⟨-, hb⟩
-        · rw [hins] at hn'; cases hn'
-        · rw [htgt] at hb; exact hb
-      have hx2 : (L.X κ M g F).call none (regVal u (.x n0) :: Lc.map (fun q => regVal u q.2.2)) w =
-          some (o, w2) := by
-        rw [← call_useVals_regC hregs0]; exact hx
-      rw [L.X_ind hs] at hx2
-      split at hx2
-      · rename_i hdecl
-        have hh : h ∈ L.P.funcs := List.mem_of_find?_eq_some hs
-        have hgot : ∀ n, GotV (L.A g).vcp tv n → n = h.name := by
-          intro n hn
-          have e := hguard tv n _ rfl hn (operands_call_regC tv Lc Dc) (by simp [tgtOp, Operand.isUse])
-          rw [call_useVals_regC hregs0] at e
-          simp only [List.head?_cons, Option.map_some, Option.some.injEq] at e
-          exact L.got_targetT hL hs e
-        exact absurd ⟨hdecl.1, hgot⟩ (hno h hh)
-      · cases hx2
+    obtain ⟨tv, Lc, Dc, rfl, hregs⟩ := hL.blrRegs g hg info hsite hreg
+    rw [operands_call_regC] at hopsC
+    cases hopsC
+    obtain ⟨hsz', hloc, -, -⟩ := checkStatic_facts hst'
+    obtain ⟨r0, hregs0⟩ := callRegs_eq_regC (regs := regs) (by simpa using hsz')
+      (fun p hp r hr => (hloc p hp).2 r hr)
+    obtain ⟨n0, rfl, hn0, -⟩ : ∃ n, r0 = .x n ∧ n < 29 ∧ n ≠ 16 := by
+      have hmem : (tgtOp tv, Loc.reg r0) ∈
+          (((tgtOp tv :: (retOpsC Lc ++ callDefOpsC Dc)).toArray).zip (regs.map Loc.reg)).toList := by
+        simp [Array.toList_zip, Array.toList_map, hregs0]
+      obtain ⟨n, hn, h29, h16, -⟩ := locOk_int (hloc _ hmem).1
+      exact ⟨n, hn, h29, h16⟩
+    obtain ⟨r1, us', ds', hr1, hic⟩ := assign_call_reg hasgC
+    have h0 : regs[0]? = some (.x n0) := by
+      rw [← Array.getElem?_toList, hregs0]; rfl
+    rw [h0] at hr1
+    cases hr1
+    cases hic
+    simp only [MInst.callInsn?, Option.some.injEq] at hx'
+    subst hx'
+    have htgt : blrTarget u = some (lo64 (regVal u (.x n0))) := by
+      rw [lo64_regVal_x]
+      exact blrTarget_of hc.layout hlm hj hn0 hpc
+        (fun k wd hk => hL.imgCode g hg u (fun a ha => (hGk a (he.imgG a ha)).trans (he.imgS a ha)) k wd hk)
+    have hs : symCallee L.Xb L.P (lo64 (regVal u (.x n0))) = some h := by
+      rcases hcall with ⟨n', hn', -⟩ | ⟨-, hb⟩
+      · rw [hins] at hn'; cases hn'
+      · rw [htgt] at hb; exact hb
+    have hx2 : (L.XT κ M g F).call none (regVal u (.x n0) :: Lc.map (fun q => regVal u q.2.2)) w =
+        some (o, w2) := by
+      rw [← call_useVals_regC hregs0]; exact hx
+    rw [L.XT_ind hs] at hx2
+    split at hx2
+    · rename_i hdecl
+      have hh : h ∈ L.P.funcs := List.mem_of_find?_eq_some hs
+      have hgot : ∀ n, GotV (L.A g).vcp tv n → n = h.name := by
+        intro n hn
+        have e := hguard tv n _ rfl hn (operands_call_regC tv Lc Dc) (by simp [tgtOp, Operand.isUse])
+        rw [call_useVals_regC hregs0] at e
+        simp only [List.head?_cons, Option.map_some, Option.some.injEq] at e
+        exact L.got_targetT hL hs e
+      obtain ⟨hLu, -⟩ := hregs h hh ⟨hdecl.1, hgot⟩ (by rw [← hdecl.2, List.length_map])
+      exact L.progGoodCoreT hL ihG hg hh (.inr (.inr ⟨hh, hdecl.1.1⟩)) he.imgF he.imgG he.imgS hLu
+        hGk (hL.raBlr g hg _ hsite hreg h hh hdecl.1.1 _ hcp) hsw hx2
+    · cases hx2
 
 /-- **The states of the activation of `g` at depth `M` entered in `s`** from its trace (the
 register-level `GoodX` of every state before `n`), when every state before its return whose step
@@ -694,7 +619,7 @@ theorem runGood_of_traceT (hL : L.OkT) [L.CrunOk] {M : Nat} (ihG : 0 < M → L.T
     {g : Clif.Function} (hg : g ∈ L.P.funcs) {F G : BitVec 64 → Prop} {ra : BitVec 64}
     {s w₀ : Arm.ArmState} (he : L.MachEntry κ M g F G ra s w₀) {n : Nat}
     (hgood : ∀ i < n, actGoodX (L.A g).vcp (L.A g).rf (L.A g).af (L.A g).fa (L.A g).fb
-      (L.A g).base s (L.X κ M g F) (L.hooks M) (κ M g) G (GotV (L.A g).vcp)
+      (L.A g).base s (L.XT κ M g F) (L.hooks M) (κ M g) G (GotV (L.A g).vcp)
       (runX (L.mach M g) i s))
     (hbound : ∀ k, (∀ j ≤ k, ¬ RetL (L.A g) s (runX (L.mach M g) j s)) →
       Arm.r .ERR (runX (L.mach M g) (k + 1) s) = .None → k < n) :
@@ -703,9 +628,9 @@ theorem runGood_of_traceT (hL : L.OkT) [L.CrunOk] {M : Nat} (ihG : 0 < M → L.T
   cases hR with
   | act hno =>
     rename_i k
-    have hG : (L.actRL κ M g F G s).GoodX (runX (L.mach M g) k s) :=
+    have hG : (L.actRLT κ M g F G s).GoodX (runX (L.mach M g) k s) :=
       hgood k (hbound k hno (by rw [runX_add]; exact herrt))
-    refine ⟨L.X κ M g F, κ M g, G, GotV (L.A g).vcp, rfl, hG, he.imgG, he.imgS, ?_⟩
+    refine ⟨L.XT κ M g F, κ M g, G, GotV (L.A g).vcp, rfl, hG, he.imgG, he.imgS, ?_⟩
     intro xr h hx hb
     obtain ⟨x, ⟨j, tt, hj, hpc⟩, -⟩ := hG.line
     have hj' : (L.A g).fa.lines.toList[j]? = some (.ins x tt) := hj
@@ -722,7 +647,7 @@ theorem runGood_of_traceT (hL : L.OkT) [L.CrunOk] {M : Nat} (ihG : 0 < M → L.T
     exact L.blrTo_of_preT hL hg he (hG.call _ ⟨j, tt, hj, hpc⟩ (.inr ⟨xr, rfl⟩)) hG.prog hins hb
   | nest hno hcall herr1 hR' =>
     rename_i M0 k h
-    have hG : (L.actRL κ (M0 + 1) g F G s).GoodX (runX (L.mach (M0 + 1) g) k s) :=
+    have hG : (L.actRLT κ (M0 + 1) g F G s).GoodX (runX (L.mach (M0 + 1) g) k s) :=
       hgood k (hbound k hno herr1)
     obtain ⟨x, ⟨j, tt, hj, hpc⟩, -⟩ := hG.line
     have hj' : (L.A g).fa.lines.toList[j]? = some (.ins x tt) := hj
@@ -731,7 +656,7 @@ theorem runGood_of_traceT (hL : L.OkT) [L.CrunOk] {M : Nat} (ihG : 0 < M → L.T
     have hins : insnAt (L.A g).fa (progBase (runX (L.mach (M0 + 1) g) k s))
         (Arm.r .PC (runX (L.mach (M0 + 1) g) k s)) = some x := by
       rw [hpc]; exact insnAt_ofLine hc.layout hlm (by have := hL.fits g hg; omega) hG.prog hj'
-    have hpre : (L.actRL κ (M0 + 1) g F G s).CallPre (runX (L.mach (M0 + 1) g) k s) := by
+    have hpre : (L.actRLT κ (M0 + 1) g F G s).CallPre (runX (L.mach (M0 + 1) g) k s) := by
       rcases hcall with ⟨n', hn', -⟩ | ⟨⟨r', hr'⟩, -⟩
       · rw [hins] at hn'; cases hn'; exact hG.call _ ⟨j, tt, hj, hpc⟩ (.inl ⟨n', rfl⟩)
       · rw [hins] at hr'; cases hr'; exact hG.call _ ⟨j, tt, hj, hpc⟩ (.inr ⟨r', rfl⟩)
@@ -747,7 +672,7 @@ theorem thmG_ofT (hL : L.OkT) [L.CrunOk] (hκ : L.Budget κ) {M : Nat} (ih : 0 <
   have hrun' : Clif.runLoop (L.envOf M g (spv w₀)) L.P.bare fuel cs = .returned rvals cm' := by
     rw [L.runLoop_envOfT hL hg fuel cs hJ]; exact hrun
   have h := backend_correct_world_niX_pipelineAnyTS (hL.subset g hg) hc typedRules_program
-    (X := L.X κ M g F) (syms := L.syms)
+    (X := L.XT κ M g F) (syms := L.syms)
     (env := L.envOf M g (spv w₀)) (K := κ M g) (F := F) (c := spv w₀) (hL.covered g hg)
     (L.xCallsOkT hL hκ ih hg hWE.img hWE.room hWE.dead hWE.align)
     (L.xCallsIndOkT hL hκ ih hg hWE.img hWE.room hWE.dead hWE.align)
@@ -755,11 +680,11 @@ theorem thmG_ofT (hL : L.OkT) [L.CrunOk] (hκ : L.Budget κ) {M : Nat} (ih : 0 <
     (trapsExplicit_of_returned hrun') fuel
   obtain ⟨_us, _outs, _wf, -, -, -, -, -, -, hall, hni⟩ := h rvals cm' hrun'
   have hAE : ∀ G ra s w₀', L.MachEntry κ M g F G ra s w₀' →
-      ActEntry (L.A g).vcp (L.A g).rf (L.A g).af (L.A g).fa (L.A g).fb (κ M g) F G (L.X κ M g F)
+      ActEntry (L.A g).vcp (L.A g).rf (L.A g).af (L.A g).fa (L.A g).fb (κ M g) F G (L.XT κ M g F)
         (L.hooks M) (L.A g).base ra s w₀' := fun G ra s w₀' hME =>
     ⟨hME.abi, hME.stack, hME.gfree, hME.hF, L.calleeOkT hL hκ ih hg hME,
       fun _ => L.calleeTryOkT hL hκ ih hg hME,
-      fun ht => L.tlsOk_hooks (hL.baseTls g hg (hasTls_of_vcode_pipelineAnyTS hc ht) F (κ M g)), hME.body⟩
+      fun ht => L.tlsOk_hooksT (hL.baseTls g hg (hasTls_of_vcode_pipelineAnyTS hc ht) F (κ M g)), hME.body⟩
   refine ⟨fun G ra s hME => ?_, fun hN D w₀' hrel' hsw hreg hstk G ra s hME => ?_⟩
   · obtain ⟨n, hret, -, hgood⟩ := hall (L.hooks M) G (L.A g).base ra s (hAE G ra s w₀ hME)
     exact L.runGood_of_traceT hL ihG hg hME hgood fun k hno _ =>
@@ -839,7 +764,7 @@ theorem backend_correct_program_coreXT (L : LinkSys) (hL : L.OkT) [L.CrunOk]
     have hm' : Clif.runLoop (L.envOf M f (spv w₀)) L.P.bare m cs = .trapped c := by
       rw [L.runLoop_envOfT hL hf m cs hJ]; exact hm
     have h := backend_correct_worldX_pipelineAnyTS (hL.subset f hf) hc typedRules_program
-      (X := L.X κ M f L.F) (syms := L.syms)
+      (X := L.XT κ M f L.F) (syms := L.syms)
       (env := L.envOf M f (spv w₀)) (K := κ M f) (F := L.F) (c := spv w₀) (hL.covered f hf)
       (L.xCallsOkT hL hκ ih hf hL.imgF hWE.room hWE.dead hWE.align)
       (L.xCallsIndOkT hL hκ ih hf hL.imgF hWE.room hWE.dead hWE.align)
@@ -849,7 +774,7 @@ theorem backend_correct_program_coreXT (L : LinkSys) (hL : L.OkT) [L.CrunOk]
       ⟨hME.abi, hME.stack, hME.gfree, hME.hF,
         L.calleeOkT hL hκ ih hf hME,
         fun _ => L.calleeTryOkT hL hκ ih hf hME,
-        fun ht => L.tlsOk_hooks (hL.baseTls f hf (hasTls_of_vcode_pipelineAnyTS hc ht) L.F (κ M f)), hME.body⟩
+        fun ht => L.tlsOk_hooksT (hL.baseTls f hf (hasTls_of_vcode_pipelineAnyTS hc ht) L.F (κ M f)), hME.body⟩
     refine L.runGood_of_traceT hL (fun _ => L.thmGT hL hκ (M - 1)) hf hME hgood fun k _ hk => ?_
     refine Nat.lt_of_not_le fun hle => hstuck (k - n) ?_
     rw [show n + (k - n) + 1 = k + 1 by omega]
