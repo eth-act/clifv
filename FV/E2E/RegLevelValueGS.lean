@@ -198,8 +198,9 @@ theorem realizes_value_allCWSF {R : RL} (hR : R.Wf) {P : Arm.ArmState → Prop}
     ∃ n c'' d₀, MStep R.vc (R.valueSemGS Ok) ckeep R.rf c c'' ∧
       MStep R.vc (R.semGS Ok) ckeep R.rf c d₀ ∧ MConf.ShapeEq d₀ c'' ∧
       MConf.ShapeEq c'' c' ∧
-      QWA R (iterN R.step n s) (R.nextW j ps1 T c c'').1 (R.nextW j ps1 T c c'').2.1
-        (R.nextW j ps1 T c c'').2.2 c'' ∧
+      QWA R (iterN R.step n s) (R.nextW j ps1 T c c'' (Arm.r .PC (iterN R.step n s))).1
+        (R.nextW j ps1 T c c'' (Arm.r .PC (iterN R.step n s))).2.1
+        (R.nextW j ps1 T c c'' (Arm.r .PC (iterN R.step n s))).2.2 c'' ∧
       (∀ i < n, R.GoodX (iterN R.step i s) ∧ R.WReadsIn Ok (iterN R.step i s)) ∧
       countIn R.CallSt R.step s n = opCalls R.vc c ∧ R.SegLenA j ps1 T c c'' s n ∧
       R.SegLenA j ps1 T c d₀ s n ∧ R.FRFree s n := by

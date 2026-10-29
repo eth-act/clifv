@@ -415,7 +415,7 @@ theorem RL.twoRunPRTN {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAsm} {fb :
         ((prologueLines R.af.saves R.af.frameSize).length + N) = nc' ∧
       x = .run ⟨b, k, ρ, (w, nc)⟩ ∧ x' = .run ⟨b, k, ρ', (w', nc')⟩ := by
   subst hR
-  obtain ⟨-, -, -, -, hk⟩ := emitFunc_ok hemit
+  obtain ⟨-, -, -, hk⟩ := emitFunc_ok hemit
   subst hk
   obtain ⟨ckc, ins, hc⟩ := checked_of_checkAlloc hcheck
   obtain ⟨a0, hat, hle⟩ := hc.at

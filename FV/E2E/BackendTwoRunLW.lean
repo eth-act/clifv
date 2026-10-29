@@ -238,7 +238,7 @@ theorem backend_twoRunLW (hsub : InSubset p f) (hc : Compiled f k vc vcp rf af f
     subst hR
     have hF := he.hF
     subst hF
-    obtain ⟨-, -, -, -, hk⟩ := emitFunc_ok hc.emit
+    obtain ⟨-, -, -, hk⟩ := emitFunc_ok hc.emit
     subst hk
     obtain ⟨ckc, ins, hck⟩ := checked_of_checkAlloc hc.check
     obtain ⟨a0, hat, hle⟩ := hck.at
@@ -405,7 +405,7 @@ theorem backend_twoRunLERW (hsub : InSubset p f) (hc : Compiled f k vc vcp rf af
   subst hR
   have hF := he.hF
   subst hF
-  obtain ⟨-, -, -, -, hk⟩ := emitFunc_ok hc.emit
+  obtain ⟨-, -, -, hk⟩ := emitFunc_ok hc.emit
   subst hk
   obtain ⟨ckc, ins, hck⟩ := checked_of_checkAlloc hc.check
   obtain ⟨a0, hat, hle⟩ := hck.at

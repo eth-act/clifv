@@ -117,7 +117,7 @@ theorem backend_twoRunLERWZ (hsub : InSubset p f) (hc : Compiled f k vc vcp rf a
   subst hR
   have hF := he.hF
   subst hF
-  obtain ⟨-, -, -, -, hk⟩ := emitFunc_ok hc.emit
+  obtain ⟨-, -, -, hk⟩ := emitFunc_ok hc.emit
   subst hk
   obtain ⟨ckc, ins, hck⟩ := checked_of_checkAlloc hc.check
   obtain ⟨a0, hat, hle⟩ := hck.at

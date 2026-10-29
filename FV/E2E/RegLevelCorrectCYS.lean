@@ -392,7 +392,7 @@ theorem realizes_stepCYS {R : RL} (hR : R.Wf) {P : Arm.ArmState → Prop}
         obtain ⟨rfl, rfl, rfl⟩ := hsem
         cases hn with
         | halt => exact finT 0 _ hstep trivial nil (hoc0 rfl)
-      case emitIsland nb => exact finT 0 c' hstep (realizes_island hq hvb hi hstep) nil (hoc0 rfl)
+      case emitIsland nb => exact finT 0 c' hstep (realizes_island hR hq hvb hi hstep) nil (hoc0 rfl)
       case jtSequence d ts ridx t1 t2 =>
         obtain ⟨n, c'', hm, hq', ht⟩ := realizes_jtNR (Y := fun _ => True) hR hq hvb hi hstep
         exact finT n c'' hm hq' ht (hoc0 rfl)
@@ -480,34 +480,29 @@ theorem realizes_stepCWS {R : RL} (hR : R.Wf) {P : Arm.ArmState → Prop}
     (hG : MStep R.vc (R.semGS Ok) ckeep R.rf c c')
     (hns : ∀ b src dst its m w, c = .run ⟨b, .move src dst :: its, m, w⟩ → src.isSave = false) :
     ∃ n c'', MStep R.vc (R.semGS Ok) ckeep R.rf c c'' ∧ MConf.ShapeEq c'' c' ∧ AInv R c'' ∧
-      QW R (iterN R.step n s) (R.nextW j ps1 T c c'').1 (R.nextW j ps1 T c c'').2.1
-        (R.nextW j ps1 T c c'').2.2 c'' ∧
+      R.QWn j ps1 T c c'' (iterN R.step n s) ∧
       (∀ i < n, R.GoodX (iterN R.step i s) ∧ R.WReadsIn Ok (iterN R.step i s)) ∧
       countIn R.CallSt R.step s n = opCalls R.vc c ∧ R.SegLenA j ps1 T c c'' s n := by
   have lift : ∀ c'', MStep R.vc R.sem ckeep R.rf c c'' → MStep R.vc (R.semGS Ok) ckeep R.rf c c'' :=
     fun c'' h'' => MStep.guardLift h'' hG RL.semGS_le
   have fin1 : ∀ Y, (∀ a, R.F a → Y a) → ((∀ a, Y a) ∨ ∃ w, Ok w Y) →
       ∀ n c'', MStep R.vc R.sem ckeep R.rf c c'' →
-      QW R (iterN R.step n s) (R.nextW j ps1 T c c'').1 (R.nextW j ps1 T c c'').2.1
-        (R.nextW j ps1 T c c'').2.2 c'' →
+      R.QWn j ps1 T c c'' (iterN R.step n s) →
       (∀ i < n, R.GoodX (iterN R.step i s) ∧ R.ReadsInY Y (iterN R.step i s)) →
       countIn R.CallSt R.step s n = opCalls R.vc c → R.SegLenA j ps1 T c c'' s n →
       ∃ n c'', MStep R.vc (R.semGS Ok) ckeep R.rf c c'' ∧ MConf.ShapeEq c'' c' ∧ AInv R c'' ∧
-        QW R (iterN R.step n s) (R.nextW j ps1 T c c'').1 (R.nextW j ps1 T c c'').2.1
-          (R.nextW j ps1 T c c'').2.2 c'' ∧
+        R.QWn j ps1 T c c'' (iterN R.step n s) ∧
         (∀ i < n, R.GoodX (iterN R.step i s) ∧ R.WReadsIn Ok (iterN R.step i s)) ∧
         countIn R.CallSt R.step s n = opCalls R.vc c ∧ R.SegLenA j ps1 T c c'' s n :=
     fun Y hYF hYO n c'' hm hq' ht hc hs => ⟨n, c'', lift c'' hm, MStep.shapeEq (lift c'' hm) hG,
       aInv_step hR hq.q hA hm, hq', fun i hi => ⟨(ht i hi).1, Y, hYF, hYO, (ht i hi).2⟩, hc, hs⟩
   have fin : ∀ Y, (∀ a, R.F a → Y a) → ((∀ a, Y a) ∨ ∃ w, Ok w Y) →
       ∀ n c'', MStep R.vc R.sem ckeep R.rf c c'' →
-      QW R (iterN R.step n s) (R.nextW j ps1 T c c'').1 (R.nextW j ps1 T c c'').2.1
-        (R.nextW j ps1 T c c'').2.2 c'' →
+      R.QWn j ps1 T c c'' (iterN R.step n s) →
       (∀ i < n, R.GoodXNY Y (iterN R.step i s)) → opCalls R.vc c = 0 →
       R.SegLenA j ps1 T c c'' s n →
       ∃ n c'', MStep R.vc (R.semGS Ok) ckeep R.rf c c'' ∧ MConf.ShapeEq c'' c' ∧ AInv R c'' ∧
-        QW R (iterN R.step n s) (R.nextW j ps1 T c c'').1 (R.nextW j ps1 T c c'').2.1
-          (R.nextW j ps1 T c c'').2.2 c'' ∧
+        R.QWn j ps1 T c c'' (iterN R.step n s) ∧
         (∀ i < n, R.GoodX (iterN R.step i s) ∧ R.WReadsIn Ok (iterN R.step i s)) ∧
         countIn R.CallSt R.step s n = opCalls R.vc c ∧ R.SegLenA j ps1 T c c'' s n :=
     fun Y hYF hYO n c'' hm hq' ht h0 hs => fin1 Y hYF hYO n c'' hm hq'
@@ -582,7 +577,7 @@ theorem realizes_stepCWS {R : RL} (hR : R.Wf) {P : Arm.ArmState → Prop}
         cases hn with
         | next hk =>
           have hQ := realizes_args hR hq.q hA hvb hi hstep
-          obtain ⟨hq', -, hs⟩ := realizes_zeroNA (Y := fun _ => True) hq hvb hi (.inl ⟨ds, rfl⟩)
+          obtain ⟨hq', -, hs⟩ := realizes_zeroNA (Y := fun _ => True) hR hq hvb hi hk (.inl ⟨ds, rfl⟩)
             (q_stRel hQ)
           exact finT 0 _ hstep hq' nil (hoc0 rfl) hs
       case rets us =>
@@ -646,8 +641,8 @@ theorem realizes_stepCWS {R : RL} (hR : R.Wf) {P : Arm.ArmState → Prop}
         obtain ⟨-, -, rfl⟩ := hsem'
         cases hn with
         | next hk =>
-          have hQ := realizes_island hq.q hvb hi hstep
-          obtain ⟨hq', -, hs⟩ := realizes_zeroNA (Y := fun _ => True) hq hvb hi (.inr ⟨nb, rfl⟩)
+          have hQ := realizes_island hR hq.q hvb hi hstep
+          obtain ⟨hq', -, hs⟩ := realizes_zeroNA (Y := fun _ => True) hR hq hvb hi hk (.inr ⟨nb, rfl⟩)
             (q_stRel hQ)
           exact finT 0 _ hstep hq' nil (hoc0 rfl) hs
       case jtSequence d ts ridx t1 t2 =>
@@ -704,8 +699,9 @@ theorem realizes_allCWS {R : RL} (hR : R.Wf) {P : Arm.ArmState → Prop}
     {c c' : MConf CV Arm.ArmState} (hq : QWA R s j ps1 T c) (hP : P s)
     (hG : MStep R.vc (R.semGS Ok) ckeep R.rf c c') :
     ∃ n c'', MStep R.vc (R.semGS Ok) ckeep R.rf c c'' ∧ MConf.ShapeEq c'' c' ∧
-      QWA R (iterN R.step n s) (R.nextW j ps1 T c c'').1 (R.nextW j ps1 T c c'').2.1
-        (R.nextW j ps1 T c c'').2.2 c'' ∧
+      QWA R (iterN R.step n s) (R.nextW j ps1 T c c'' (Arm.r .PC (iterN R.step n s))).1
+        (R.nextW j ps1 T c c'' (Arm.r .PC (iterN R.step n s))).2.1
+        (R.nextW j ps1 T c c'' (Arm.r .PC (iterN R.step n s))).2.2 c'' ∧
       (∀ i < n, R.GoodX (iterN R.step i s) ∧ R.WReadsIn Ok (iterN R.step i s)) ∧
       countIn R.CallSt R.step s n = opCalls R.vc c ∧ R.SegLenA j ps1 T c c'' s n := by
   obtain ⟨n, c'', hm, hsh, hq', ht, hc, hs, -⟩ :=

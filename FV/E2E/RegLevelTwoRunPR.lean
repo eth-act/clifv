@@ -108,7 +108,7 @@ theorem RL.twoRunPR {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAsm} {fb : F
       Arm.r .PC (iterN ({ R with s0 := t0, G := G', X := XI'.at 0 } : RL).step
         ((prologueLines R.af.saves R.af.frameSize).length + N + R.retLen) t0) = ra' := by
   subst hR
-  obtain ⟨-, -, -, -, hk⟩ := emitFunc_ok hemit
+  obtain ⟨-, -, -, hk⟩ := emitFunc_ok hemit
   subst hk
   obtain ⟨ckc, ins, hc⟩ := checked_of_checkAlloc hcheck
   obtain ⟨a0, hat, hle⟩ := hc.at
