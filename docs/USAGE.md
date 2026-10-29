@@ -627,14 +627,17 @@ executable's bytes), so any change to generated code makes them fail. A PR that 
 code reruns `scripts/regen-crate-proofs.sh` (the survey's `cargo fv test --keep-temps`, `a_arith`
 again with `--panic-abort`, `fv-demo`'s `cargo fv build --keep-temps`, then `link-proof --prune`
 per crate into the existing files) in the same PR and commits the result, after building this
-checkout's tools (`lake build lean-backend clif-decode link-check`; `cargo build --release -p
+checkout's tools (`lake build lean-backend clif-decode link-check dead-cleanup-generate`; `cargo build --release -p
 cargo-fv -p clif-data-export -p lean-regalloc` in `rust/`). `fv-demo` currently proves 557 of its
 558 functions (`_RNxC7fv_demo12Hg2RhPxboVSE` fails `callRegs/blrRegs`, #709). The script also
 writes `Crates/InScopeInputs/{AArith,FvDemo}.lean` (for `Crates.InScopeWitness`) from `a_arith`
 and `fv-demo` built once more with `FV_PIPELINE_T=1` (`lean-backend --pipeline-t`: `pipeT`'s
 pipeline, the D0 lowering without dead cleanup or Stock routes, the compiler
 `crate_correct_inScope` covers; off by default) into `target/pipeline-t`, and `link-check
---input-only FILE --module NAME`, which writes the crate's `LinkInput` alone.
+--input-only FILE --module NAME`, which writes the crate's `LinkInput` alone. Last, it rewrites the
+closed cleanup fixtures `Crates/DeadCleanupGenerated{,Split}.lean` with `lake exe
+dead-cleanup-generate` (FVTest/Link/DeadCleanupGenerate.lean: the `cleanup_unused` fixture, 1 and
+33 copies, compiled by `Link.DeadCleanup.compileExe` and written by `leanFilesCleanup`, #745).
 
 ## Examples and results
 
