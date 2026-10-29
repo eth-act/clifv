@@ -256,8 +256,8 @@ theorem realizes_op_nextNY {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} (hYF : 
   have hpre : ∀ regs i' ls1, allocs = regs.map Loc.reg → i.assign regs = .ok i' →
       (∀ ps, i'.lines R.ctx ps = .ok (ls1, ps)) → ∀ env, LinesReads env ls1 s (R.ReadInY Y false) := by
     intro regs i' ls1 hal' hasg hl1 env
-    obtain ⟨j, vb0, items, pre, code, ls, ps1, ps2, T, hvb0, hit, hsplit, hchk, hcode, hls, htr, hdrop,
-      hpc, hst⟩ := hq
+    obtain ⟨_, _, _, _, _, _, _, _, _, _, hvb0, -, -, hchk, -, -, -, -, -, -, hst, -⟩ :=
+      Q.qs_lt hq hvb hk
     rw [hvb] at hvb0
     cases hvb0
     obtain ⟨c, wh, i2, ops2, hi2, hops2, hstat, -⟩ := op_checked hchk
