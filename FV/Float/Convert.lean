@@ -8,7 +8,7 @@ module
 import FV.Float.Arith
 public import FV.Float.Round
 
-@[expose] public section
+public section
 
 namespace IEEE
 

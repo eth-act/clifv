@@ -15,7 +15,7 @@ import FV.Arm.Insts.DPR.Data_processing_three_source
 import FV.Arm.Insts.DPR.Add_sub_ext_reg
 import FV.Arm.Insts.DPR.Conditional_compare
 
-@[expose] public section
+public section
 
 namespace Arm
 

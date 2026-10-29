@@ -6,7 +6,7 @@ public import FV.Isle.Generated.Opt.Program
 public import FV.Isle.Opt.Helpers
 public import FV.Isle.Generated.Opt.Ids
 
-@[expose] public section
+public section
 
 /-!
 # Cranelift's mid-end `simplify` rules on CLIF e-graph nodes

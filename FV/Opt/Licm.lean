@@ -2,7 +2,7 @@ module
 
 public import FV.Opt.Check
 
-@[expose] public section
+public section
 
 /-!
 # LICM: hoist loop-invariant pure nodes to the loop's pre-header position

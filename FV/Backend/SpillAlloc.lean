@@ -4,7 +4,7 @@ public import FV.Backend.RegallocCheck
 public import Std.Data.HashMap
 public import Std.Data.HashMap.Basic
 
-@[expose] public section
+public section
 
 /-!
 # The spill allocator: register allocation without regalloc2 (V4)

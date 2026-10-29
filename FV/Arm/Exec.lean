@@ -49,7 +49,7 @@ public import FV.Arm.Insts.DPI.Add_sub_imm
 import FV.Arm.MinTheory
 import FV.Arm.Attr
 
-@[expose] public section
+public section
 
 namespace Arm
 

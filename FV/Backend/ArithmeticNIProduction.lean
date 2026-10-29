@@ -4,7 +4,7 @@ import FV.Backend.ArithmeticProduction
 public import FV.Backend.Lowering.StockArithmeticNI
 public import FV.Backend.ScalarProduction
 
-@[expose] public section
+public section
 
 namespace Backend
 set_option autoImplicit false

@@ -3,7 +3,7 @@ module
 import FV.Backend.Proof.IselGeneric
 public import FV.Isle.Interp
 
-@[expose] public section
+public section
 
 /-!
 # Generic invariants of ISLE runs

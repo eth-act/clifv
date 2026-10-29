@@ -12,7 +12,7 @@ import FV.Arm.Insts.DPI.Bitfield
 import FV.Arm.Insts.DPI.Move_wide_imm
 import FV.Arm.Insts.DPI.Extract
 
-@[expose] public section
+public section
 
 namespace Arm
 

@@ -3,7 +3,7 @@ module
 import FV.Backend.StackAlloc
 public import FV.Backend.Isel
 
-@[expose] public section
+public section
 
 /-!
 # Register-allocation operands and machine environment (M6)

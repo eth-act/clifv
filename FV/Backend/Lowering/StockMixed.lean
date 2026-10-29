@@ -2,7 +2,7 @@ module
 
 public import FV.Backend.Lowering.StockArithmetic
 
-@[expose] public section
+public section
 
 namespace Backend.Stock.Mixed
 set_option autoImplicit false

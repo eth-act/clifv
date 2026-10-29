@@ -4,7 +4,7 @@ import FV.E2E.RegLevelCall
 public import FV.E2E.RegLevelGoodX
 import FV.Arm.MinTheory
 
-@[expose] public section
+public section
 
 /-!
 # `tls_value` on the machine (agent/stack-tls-proof)

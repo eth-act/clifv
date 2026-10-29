@@ -3,7 +3,7 @@ module
 public import FV.Opt.Legal
 public import FV.Clif.Unwind
 
-@[expose] public section
+public section
 
 /-!
 # The handler edges of an `i128` legalisation (S10e, #232)

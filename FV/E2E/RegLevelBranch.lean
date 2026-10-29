@@ -6,7 +6,7 @@ import FV.Backend.Proof.EncodeLayout
 public import FV.Backend.Proof.EncodeBranch
 import FV.Arm.MinTheory
 
-@[expose] public section
+public section
 
 /-!
 # Branches on the machine (M6)

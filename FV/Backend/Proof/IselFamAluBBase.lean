@@ -6,7 +6,7 @@ import FV.Backend.Proof.IselExtern
 import FV.Backend.Proof.IselInterp
 import FV.Arm.MinTheory
 
-@[expose] public section
+public section
 
 /-!
 # Family B (unary ALU, shifts, rotates): shared proof infrastructure

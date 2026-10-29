@@ -3,7 +3,7 @@ module
 import FV.Opt.Basic
 public import FV.Clif.Syntax
 
-@[expose] public section
+public section
 
 /-!
 # Cost model (Cranelift 0.136.1 `egraph/cost.rs`)

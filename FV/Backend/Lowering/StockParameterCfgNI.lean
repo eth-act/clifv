@@ -3,7 +3,7 @@ module
 public import FV.Backend.Lowering.StockConditionalForwardCfgNI
 import FV.Backend.Lowering.StockParameterCfg
 
-@[expose] public section
+public section
 
 namespace Backend.Stock.ParameterCfg
 set_option autoImplicit false

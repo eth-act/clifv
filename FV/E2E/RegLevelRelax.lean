@@ -2,7 +2,7 @@ module
 
 public import FV.E2E.RegLevelEmit
 
-@[expose] public section
+public section
 
 /-!
 # Branch relaxation on line lists (M6)

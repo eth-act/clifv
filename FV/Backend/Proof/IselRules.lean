@@ -7,7 +7,7 @@ public import FV.Backend.Proof.IselData
 import FV.Backend.Proof.IselAttr
 public import Std.Do.Triple.SpecLemmas
 
-@[expose] public section
+public section
 
 /-!
 # Rule-level evaluation lemmas (interpreter level)

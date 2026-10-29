@@ -9,7 +9,7 @@ public import FV.Backend.Proof.LowerLoopRun
 import FV.Backend.Proof.IselInterp
 import FV.Arm.MinTheory
 
-@[expose] public section
+public section
 
 /-!
 # Completeness of `lowerCheck`: `lowerFunction`'s loop

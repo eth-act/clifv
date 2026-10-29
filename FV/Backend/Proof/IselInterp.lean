@@ -7,7 +7,7 @@ public import FV.Isle.Interp
 public import Std.Tactic.BVDecide.Normalize.BitVec
 public import Std.Do.Triple.SpecLemmas
 
-@[expose] public section
+public section
 
 /-!
 # Evaluating the ISLE interpreter in proofs

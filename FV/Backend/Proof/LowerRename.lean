@@ -4,7 +4,7 @@ import FV.Backend.Proof.LowerSeq
 public import FV.Backend.Proof.IselContract
 import FV.Arm.MinTheory
 
-@[expose] public section
+public section
 
 /-!
 # Vreg renaming (M7 driver: alias resolution)

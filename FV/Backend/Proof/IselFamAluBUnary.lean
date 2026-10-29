@@ -9,7 +9,7 @@ import FV.Backend.Proof.IselAttr
 import FV.Arm.MinTheory
 meta import Lean.Elab.Tactic.Omega.Frontend
 
-@[expose] public section
+public section
 
 /-!
 # Family B: unary ALU root rules (`ineg`, `bnot`, …), forward lemmas and `LowerRuleOk`

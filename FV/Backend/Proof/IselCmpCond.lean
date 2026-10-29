@@ -13,7 +13,7 @@ import FV.Backend.Proof.IselAttr
 import FV.Arm.MinTheory
 public meta import Lean.Elab.Tactic.Basic
 
-@[expose] public section
+public section
 
 /-!
 # Conditions (`CondResult`) and their consumers (flags/select family)

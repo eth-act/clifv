@@ -9,7 +9,7 @@ import FV.Backend.Proof.IselInterp
 public import FV.Backend.Proof.PrepareComplete
 import FV.Arm.MinTheory
 
-@[expose] public section
+public section
 
 /-!
 # The VCode of `lowerFunction` is in `PrepDomain`

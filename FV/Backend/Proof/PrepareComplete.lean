@@ -9,7 +9,7 @@ import all Init.Data.Range.Basic
 import all Init.Data.Repr
 import all Init.Prelude
 
-@[expose] public section
+public section
 
 /-!
 # Completeness of the `prepare` validator (M7)

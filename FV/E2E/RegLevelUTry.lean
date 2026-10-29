@@ -31,7 +31,7 @@ import FV.Backend.Proof.IselInterp
 import FV.Backend.Proof.EncodeLayout
 import FV.Arm.MinTheory
 
-@[expose] public section
+public section
 
 /-!
 # A raising `try_call` on the machine: the landing pad (S10e, #232)

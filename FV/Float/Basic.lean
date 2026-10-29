@@ -13,7 +13,7 @@ This file: formats, `FPUnpack`, the constant encodings (`FPZero`, `FPInfinity`, 
 
 module
 
-@[expose] public section
+public section
 
 namespace IEEE
 

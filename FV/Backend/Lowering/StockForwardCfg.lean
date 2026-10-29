@@ -4,7 +4,7 @@ public import FV.Backend.Lowering.StockScalar
 import FV.Backend.StockScalarCheck
 public import FV.Backend.StockArithmeticCheck
 
-@[expose] public section
+public section
 
 namespace Backend.Stock.ForwardCfg
 set_option autoImplicit false

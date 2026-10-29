@@ -6,7 +6,7 @@ public import FV.Isle.Generated.Program
 public import FV.Isle.Generated.Ids
 public import FV.Clif.Syntax
 
-@[expose] public section
+public section
 
 /-!
 # Typed view of the aarch64 `MInst` subset (M4 backend)

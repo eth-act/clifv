@@ -15,7 +15,7 @@ public import FV.Arm.Insts.CommonBits
 public import FV.Arm.Decode.DPI
 import FV.Arm.Attr
 
-@[expose] public section
+public section
 
 namespace Arm
 

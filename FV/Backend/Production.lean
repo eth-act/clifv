@@ -3,7 +3,7 @@ module
 public import FV.Backend
 public import FV.Backend.Lowering.StockProduction
 
-@[expose] public section
+public section
 
 /-! Production rollout orchestration. Both attempts use the original inputs,
 verification flags, allocator and emission pipeline. No artifact is published here. -/

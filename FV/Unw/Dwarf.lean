@@ -1,6 +1,6 @@
 module
 
-@[expose] public section
+public section
 
 /-!
 # What the unwinder reads: DWARF call frame information and the LSDA (S10c/S10d)

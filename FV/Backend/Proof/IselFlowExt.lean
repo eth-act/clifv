@@ -6,7 +6,7 @@ public import FV.Backend.Proof.DriverCheck
 public import FV.Backend.Proof.AbiClass
 import Std.Tactic.BVDecide.Normalize.Prop
 
-@[expose] public section
+public section
 
 /-!
 # What the extern helpers do to registers, values, instructions and the lowering state

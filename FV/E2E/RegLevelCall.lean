@@ -9,7 +9,7 @@ import FV.Backend.Proof.EncodeLayout
 import FV.Arm.MinTheory
 meta import Lean.Elab.Tactic.Omega.Frontend
 
-@[expose] public section
+public section
 
 /-!
 # Calls and symbol addresses on the machine (M6)

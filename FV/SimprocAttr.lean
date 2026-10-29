@@ -6,7 +6,7 @@ public meta import Lean.Meta.Tactic.Simp.BuiltinSimprocs
 public meta import Lean.Elab.Command
 public meta import Lean.Meta.Tactic.Simp.Simproc
 
-@[expose] public section
+public section
 
 open Lean Elab Command in
 /-- `attribute [s] p₁ … pₙ` for core builtin simprocs `pᵢ` in a module: core does not mark its

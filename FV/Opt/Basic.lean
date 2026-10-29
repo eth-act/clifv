@@ -5,7 +5,7 @@ public import Std.Data.HashMap
 public import Std.Data.HashSet
 public import Std.Data.HashMap.Basic
 
-@[expose] public section
+public section
 
 /-!
 # Mid-end basics: operands, pure nodes, substitutions

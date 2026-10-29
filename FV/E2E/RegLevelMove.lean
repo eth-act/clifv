@@ -6,7 +6,7 @@ import FV.Backend.Proof.RegallocLayout
 import FV.Backend.Proof.IselGeneric
 import FV.Arm.MinTheory
 
-@[expose] public section
+public section
 
 /-!
 # Moves on the machine (M6)

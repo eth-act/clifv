@@ -2,7 +2,7 @@ module
 
 public import FV.Clif.Syntax
 
-@[expose] public section
+public section
 
 /-!
 # Byte-addressed memory with explicit allocations, and the result monad `Res`

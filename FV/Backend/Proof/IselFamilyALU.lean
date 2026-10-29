@@ -4,7 +4,7 @@ import FV.Backend.Proof.IselFamily
 import FV.Backend.Proof.IselRulesALU
 public import FV.Backend.Proof.IselContract
 
-@[expose] public section
+public section
 
 /-!
 # The two-register ALU root rules, proved with the template (`aluRR_ruleOk`)

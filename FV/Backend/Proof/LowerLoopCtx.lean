@@ -5,7 +5,7 @@ import FV.Backend.Proof.PrepareComplete
 public import FV.Backend.Proof.LowerSpec
 import FV.Arm.MinTheory
 
-@[expose] public section
+public section
 
 /-!
 # `buildCtx`, functionally

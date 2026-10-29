@@ -2,7 +2,7 @@ module
 
 public import FV.Isle.Interp
 
-@[expose] public section
+public section
 
 /-!
 # Generic lemmas about the ISLE interpreter (any program, any embedding)

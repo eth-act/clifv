@@ -18,7 +18,7 @@ import FV.Arm.Insts.DPSFP.FP_data_processing_two_source
 import FV.Arm.Insts.DPSFP.FP_data_processing_three_source
 import FV.Arm.Insts.DPSFP.FP_compare
 
-@[expose] public section
+public section
 
 namespace Arm
 

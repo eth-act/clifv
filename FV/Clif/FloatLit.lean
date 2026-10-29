@@ -1,6 +1,6 @@
 module
 
-@[expose] public section
+public section
 
 /-!
 # CLIF float literals (`Ieee32`/`Ieee64` text)

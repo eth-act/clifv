@@ -2,7 +2,7 @@ module
 
 public import FV.Clif.Run
 
-@[expose] public section
+public section
 
 /-!
 # `Clif.runX`: `Clif.run` with unwinding (S10b, `docs/plans/unwinding.md`)

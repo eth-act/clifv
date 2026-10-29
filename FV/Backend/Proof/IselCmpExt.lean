@@ -10,7 +10,7 @@ import FV.Backend.Proof.FastSubst
 import FV.Backend.Proof.IselAttr
 import FV.Arm.MinTheory
 
-@[expose] public section
+public section
 
 /-!
 # `put_in_reg_{z,s}ext{32,64}`: syntactic contracts (flags/select/div family)

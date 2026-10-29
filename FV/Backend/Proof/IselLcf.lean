@@ -5,7 +5,7 @@ import FV.Backend.Proof.IselExtern
 import FV.Backend.Proof.IselInterp
 import FV.Arm.MinTheory
 
-@[expose] public section
+public section
 
 /-!
 # `load_constant_full`: the `movz`/`movn` + `movk` sequence materialises its value

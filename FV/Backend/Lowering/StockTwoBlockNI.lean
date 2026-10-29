@@ -4,7 +4,7 @@ public import FV.Backend.Lowering.StockScalarNI
 import FV.Backend.Lowering.StockTwoBlock
 import FV.Backend.ABIReadCfg
 
-@[expose] public section
+public section
 
 namespace Backend.Stock.TwoBlock
 set_option autoImplicit false

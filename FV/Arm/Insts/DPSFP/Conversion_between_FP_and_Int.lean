@@ -38,7 +38,7 @@ import FV.Arm.BitVec
 public import FV.Arm.Insts.DPSFP.FP_data_processing_one_source
 import FV.Arm.Attr
 
-@[expose] public section
+public section
 
 namespace Arm
 

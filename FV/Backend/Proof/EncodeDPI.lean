@@ -5,7 +5,7 @@ public import FV.Backend.Encode
 import Std.Tactic.BVDecide.Normalize.Prop
 import Std.Data.DTreeMap.Internal.Operations
 
-@[expose] public section
+public section
 
 /-!
 # M5: `decode_raw_inst (armBits a) = some a.norm` for the `DPI` encoding classes

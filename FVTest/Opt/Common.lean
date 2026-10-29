@@ -4,7 +4,7 @@ import FV.Opt
 public import FV.Opt.OptimizeX
 public import FV.Clif.Parse
 
-@[expose] public section
+public section
 
 /-!
 Shared command-line handling of the mid-end drivers (`clif-opt`, `opt-difftest`, and the

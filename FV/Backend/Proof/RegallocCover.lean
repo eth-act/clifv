@@ -9,7 +9,7 @@ import FV.Backend.Proof.RegallocOS
 import FV.Backend.Proof.IselGeneric
 import FV.Arm.MinTheory
 
-@[expose] public section
+public section
 
 /-!
 # Form coverage (M6 interface between the instruction proofs and the control proofs)

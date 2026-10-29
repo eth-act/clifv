@@ -5,7 +5,7 @@ public import FV.Backend.Proof.IselFamily
 import FV.Backend.Proof.IselInterp
 import FV.Arm.MinTheory
 
-@[expose] public section
+public section
 
 /-!
 # Excluded root rules: facts about E instructions and the extractors the checker uses

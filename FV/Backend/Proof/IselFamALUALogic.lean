@@ -8,7 +8,7 @@ import FV.Backend.Proof.IselInterp
 import FV.Backend.Proof.IselGeneric
 import FV.Arm.MinTheory
 
-@[expose] public section
+public section
 
 /-!
 # Term contract of `alu_rs_imm_logic_commutative`, and the `band`/`bor`/`bxor` root rules

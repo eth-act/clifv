@@ -3,7 +3,7 @@ module
 public import FV.Backend.Proof.DriverCheckC
 public import FV.Backend.Proof.InstScopeTF
 
-@[expose] public section
+public section
 
 /-!
 # The typed lowering validator with the proven float operations (S11f, #35)

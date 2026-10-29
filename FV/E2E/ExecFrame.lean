@@ -4,7 +4,7 @@ public import FV.Arm.Exec
 import FV.Arm.MinTheory
 import FV.Arm.Attr
 
-@[expose] public section
+public section
 
 /-! # Frame property of the instruction semantics (L3 (c), D2)
 

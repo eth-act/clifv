@@ -15,7 +15,7 @@ import FV.Backend.Proof.LowerContract
 import FV.Backend.Proof.IselGeneric
 import FV.Arm.MinTheory
 
-@[expose] public section
+public section
 
 /-!
 # Completeness of `lowerCheck`: what the ISLE lowering of one instruction can produce

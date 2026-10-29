@@ -14,7 +14,7 @@ import FV.Compile.SubsetTC
 public import FV.E2E.RegLevelFrameSaved
 public import FV.E2E.RegLevelUTry
 
-@[expose] public section
+public section
 
 /-!
 `lake exe lean-backend <in.clif> <out.o|out.s> [--traps <out.json>] [--rules <out.txt>]

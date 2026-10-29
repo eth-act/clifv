@@ -3,7 +3,7 @@ module
 import FV.Opt.Basic
 public import FV.Isle.Opt.Simplify
 
-@[expose] public section
+public section
 
 /-!
 # The rewrite-rule interface

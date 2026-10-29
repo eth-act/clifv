@@ -12,7 +12,7 @@ import FV.Backend.Proof.PrepareCheck
 import FV.Compile.Subset
 import FV.Arm.MinTheory
 
-@[expose] public section
+public section
 
 /-!
 # M7: the end-to-end statement (`docs/contracts/e2e.md`)

@@ -4,7 +4,7 @@ import FV.Backend.Proof.EncodeLayout
 public import FV.Backend.Proof.Encode
 import FV.Arm.MinTheory
 
-@[expose] public section
+public section
 
 /-!
 # M5 → M7: executing a laid-out function on the Arm model

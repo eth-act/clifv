@@ -3,7 +3,7 @@ module
 import FV.Backend.Proof.IselGeneric
 public import FV.Isle.Interp
 
-@[expose] public section
+public section
 
 /-!
 # Inverse evaluation of the ISLE interpreter (flags/select/div family)

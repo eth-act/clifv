@@ -2,7 +2,7 @@ module
 
 public import FV.Isle.Syntax
 
-@[expose] public section
+public section
 
 /-!
 # A generic ISLE rule interpreter

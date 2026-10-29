@@ -5,7 +5,7 @@ import FV.Backend.Proof.IselAttr
 public import FV.Backend.Isel
 public meta import Lean.Meta.Tactic.Simp.BuiltinSimprocs
 
-@[expose] public section
+public section
 
 /-!
 # The embedding `Backend.sem` and the extern helpers used by the probe's rules

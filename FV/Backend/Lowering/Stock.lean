@@ -3,7 +3,7 @@ module
 public import FV.Backend.Lowering.StockAlloc
 public import FV.Backend.RegallocOps
 
-@[expose] public section
+public section
 
 /-!
 Stock Cranelift 0.136.1 lowering schedule (`machinst/lower.rs`). This module is

@@ -3,7 +3,7 @@ module
 public import FV.Backend.Proof.RegallocCSem
 import FV.Arm.MinTheory
 
-@[expose] public section
+public section
 
 /-!
 # Worlds of `csem` steps (M6 proof)

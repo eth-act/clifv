@@ -5,7 +5,7 @@ import FV.Backend.Proof.Encode
 import FV.Arm.MinTheory
 import Std.Data.HashMap.Lemmas
 
-@[expose] public section
+public section
 
 /-!
 # M5: layout correctness (`FnAsm.layout`)

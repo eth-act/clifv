@@ -2,7 +2,7 @@ module
 
 public import FV.Clif.Syntax
 
-@[expose] public section
+public section
 
 /-!
 # The mid-end's extern Rust helpers, in Lean

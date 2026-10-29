@@ -2,7 +2,7 @@ module
 
 public import FV.Backend.ABIReadScalar
 
-@[expose] public section
+public section
 
 namespace Backend.ABIReadDiv
 set_option autoImplicit false

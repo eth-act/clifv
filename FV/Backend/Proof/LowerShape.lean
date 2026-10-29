@@ -4,7 +4,7 @@ import FV.Backend.Proof.LowerFrame
 public import FV.Backend.Proof.LowerRename
 public import FV.Backend.Proof.DriverCheck
 
-@[expose] public section
+public section
 
 /-!
 # What `lowerFunction` builds, and the SSA certificate (M7 driver)

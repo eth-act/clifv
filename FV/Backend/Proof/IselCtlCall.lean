@@ -8,7 +8,7 @@ import FV.Backend.Proof.IselInterp
 import FV.Backend.Proof.AbiClass
 import FV.Arm.MinTheory
 
-@[expose] public section
+public section
 
 /-!
 # Family Ctl: the `call` rules

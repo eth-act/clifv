@@ -11,7 +11,7 @@ import FV.Backend.Proof.IselExtern
 import FV.Backend.Proof.IselInterp
 import FV.Arm.MinTheory
 
-@[expose] public section
+public section
 
 /-!
 # The register-level simulation with unwinding: framework (S10e, #232)

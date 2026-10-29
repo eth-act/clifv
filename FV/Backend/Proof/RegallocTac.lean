@@ -2,7 +2,7 @@ module
 
 public import FV.Backend.Proof.RegallocCSem
 
-@[expose] public section
+public section
 
 /-!
 # Tactics for the per-instruction proofs (M6 proof)

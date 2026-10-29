@@ -13,7 +13,7 @@ import FV.Backend.Proof.IselAttr
 import FV.Arm.MinTheory
 meta import Lean.Elab.Tactic.Omega.Frontend
 
-@[expose] public section
+public section
 
 /-!
 # Family B: rotate helpers (`small_rotr`, `small_rotr_imm`, `a64_rotr`, `a64_rotr_imm`)

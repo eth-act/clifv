@@ -12,7 +12,7 @@ public import Std.Tactic.BVDecide.Normalize.Prop
 public import Std.Tactic.BVDecide.Normalize.BitVec
 public import Std.Data.DTreeMap.Internal.Operations
 
-@[expose] public section
+public section
 
 namespace Arm
 

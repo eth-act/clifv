@@ -6,7 +6,7 @@ import FV.E2E.MoveReads
 import FV.E2E.RegLevelRelax
 import FV.Arm.MinTheory
 
-@[expose] public section
+public section
 
 /-!
 # The per-state facts of the M6 runs that the executable machine needs (L3 (c))

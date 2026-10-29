@@ -3,7 +3,7 @@ module
 public import FV.Backend.Proof.LowerLoopCtxT
 public import FV.Compile.SubsetTF
 
-@[expose] public section
+public section
 
 /-!
 # The supported instructions with the proven float operations (S11f, #35)

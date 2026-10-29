@@ -8,7 +8,7 @@ public import FV.Backend.Proof.IselContract
 import FV.Backend.Proof.IselGeneric
 import FV.Arm.MinTheory
 
-@[expose] public section
+public section
 
 /-!
 # Family A root rules: `LowerRuleOk` at every width i8..i64

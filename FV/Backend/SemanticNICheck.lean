@@ -17,7 +17,7 @@ import FV.Backend.ABIReadFlags
 import FV.Backend.ABIReadScalar
 import FV.Backend.ABIReadDiv
 
-@[expose] public section
+public section
 
 namespace Backend.SemanticNI
 set_option autoImplicit false

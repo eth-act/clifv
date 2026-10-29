@@ -2,7 +2,7 @@ module
 
 public import FV.Backend.RegallocCheck
 
-@[expose] public section
+public section
 
 /-!
 # Abstract semantics of VCode and of allocated code (M6 proof)

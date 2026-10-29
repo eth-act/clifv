@@ -2,7 +2,7 @@ module
 
 public import FV.Opt.Legalize128
 
-@[expose] public section
+public section
 
 /-!
 # `Opt.Legal.checkW`: the validator of `Opt.Legalize128`

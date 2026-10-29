@@ -3,7 +3,7 @@ module
 public import FV.Backend.Lowering.StockScalarAdd
 public import FV.Backend.Lowering.StockPrologueAll
 
-@[expose] public section
+public section
 
 /-! Additive scalar-add selection. The earlier D0/prologue selectors keep their
 meaning and remain the fallback for every other input or failed attempt. -/

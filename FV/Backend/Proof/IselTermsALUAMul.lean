@@ -9,7 +9,7 @@ import FV.Backend.Proof.IselInterp
 import FV.Backend.Proof.IselAttr
 import FV.Arm.MinTheory
 
-@[expose] public section
+public section
 
 /-!
 # Multiplication rules of family A: forward lemmas

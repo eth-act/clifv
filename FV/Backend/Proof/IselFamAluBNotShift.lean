@@ -14,7 +14,7 @@ import FV.Backend.Proof.FastSubst
 import FV.Backend.Proof.IselAttr
 import FV.Arm.MinTheory
 
-@[expose] public section
+public section
 
 /-!
 # Family B: `bnot_ishl` (`lower.isle:1401`)

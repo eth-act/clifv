@@ -5,7 +5,7 @@ public import FV.Backend.Proof.IselContract
 public import FV.Backend.Proof.DriverCheck
 import FV.Arm.MinTheory
 
-@[expose] public section
+public section
 
 /-!
 # The float-capable context check (S11e4)

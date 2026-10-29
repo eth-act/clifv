@@ -8,7 +8,7 @@ import FV.Backend.Proof.IselInterp
 import FV.Backend.Proof.IselAttr
 import FV.Arm.MinTheory
 
-@[expose] public section
+public section
 
 /-!
 # `alu_rs_imm_logic` (term 566) and the `band`/`bor`/`bxor`-with-`bnot` root rules: forward

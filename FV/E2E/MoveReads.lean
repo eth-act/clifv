@@ -5,7 +5,7 @@ public import FV.E2E.ExecReads
 import FV.Backend.Proof.RegallocLayout
 import FV.Arm.MinTheory
 
-@[expose] public section
+public section
 
 /-!
 # The memory reads of move code (L3 (c), D2)

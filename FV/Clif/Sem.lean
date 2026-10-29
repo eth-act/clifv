@@ -2,7 +2,7 @@ module
 
 public import FV.Clif.Syntax
 
-@[expose] public section
+public section
 
 /-!
 # Per-opcode semantics of the CLIF integer subset

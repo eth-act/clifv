@@ -2,7 +2,7 @@ module
 
 public import FV.Opt.Check
 
-@[expose] public section
+public section
 
 /-!
 # GVN: dominator-scoped hash-consing of pure nodes

@@ -8,7 +8,7 @@ public import FV.Backend.Proof.LowerContract
 import FV.Backend.Proof.IselGeneric
 import FV.Arm.MinTheory
 
-@[expose] public section
+public section
 
 /-!
 # The driver simulation: CLIF steps ↦ VCode steps (M7)

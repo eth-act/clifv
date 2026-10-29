@@ -3,7 +3,7 @@ module
 public import FV.Backend.Asm
 public import FV.Backend.RegallocOps
 
-@[expose] public section
+public section
 
 /-!
 # Unwind information (DWARF call frame information for `.eh_frame`)

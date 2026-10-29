@@ -13,7 +13,7 @@ public import FV.Arm.Memory.Separate
 import FV.Arm.Memory.SeparateProofs
 import FV.Arm.Tactics.BvOmegaBench
 
-@[expose] public section
+public section
 
 namespace Arm
 -- In this file, we have memory (non-)interference proofs.

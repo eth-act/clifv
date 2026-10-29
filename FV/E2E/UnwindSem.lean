@@ -6,7 +6,7 @@ import FV.Backend.Proof.IselInterp
 public import FV.Backend.Proof.LowerContract
 import FV.Arm.MinTheory
 
-@[expose] public section
+public section
 
 /-!
 # The instruction semantics with unwinding (S10e, #232)

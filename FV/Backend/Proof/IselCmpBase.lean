@@ -14,7 +14,7 @@ public meta import Lean.Elab.Tactic.Basic
 public meta import Lean.Meta.Tactic.Cases
 import Lean.Declaration
 
-@[expose] public section
+public section
 
 /-!
 # The backend side of inverse evaluation (flags/select/div family)

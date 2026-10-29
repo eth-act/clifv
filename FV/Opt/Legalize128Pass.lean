@@ -3,7 +3,7 @@ module
 public import FV.Opt.Legal
 public import FV.Clif.Parse
 
-@[expose] public section
+public section
 
 /-!
 # `Opt.Legalize128`: the pass

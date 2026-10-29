@@ -4,7 +4,7 @@ public import FV.Backend.Proof.LowerLoopCtxT
 import FV.Backend.Proof.DriverCheckSound
 import FV.Arm.MinTheory
 
-@[expose] public section
+public section
 
 /-!
 # The typed driver model and validator (S11e5 Stage C, slice 2)

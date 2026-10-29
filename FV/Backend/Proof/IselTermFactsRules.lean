@@ -18,7 +18,7 @@ import FV.Backend.Proof.FastSubst
 import FV.Backend.Proof.IselAttr
 import FV.Arm.MinTheory
 
-@[expose] public section
+public section
 
 /-!
 # Completeness of `lowerCheck`: the emitted code of the terminator rules

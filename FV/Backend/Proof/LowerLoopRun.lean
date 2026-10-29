@@ -12,7 +12,7 @@ import FV.Backend.Proof.DriverCheckSound
 import FV.Backend.Proof.AbiClass
 import FV.Arm.MinTheory
 
-@[expose] public section
+public section
 
 /-!
 # `lowerFunction`'s loop, simulated

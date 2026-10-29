@@ -4,7 +4,7 @@ public import FV.Backend.Proof.IselFlowTabT
 public import FV.Backend.Proof.IselExclBase
 import FV.Arm.MinTheory
 
-@[expose] public section
+public section
 
 /-!
 # The root rules of `lower` and `lower_branch` against the TLS table

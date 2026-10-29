@@ -6,7 +6,7 @@ module
 
 public import FV.Float.Round
 
-@[expose] public section
+public section
 
 namespace IEEE
 

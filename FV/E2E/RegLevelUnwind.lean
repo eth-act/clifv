@@ -7,7 +7,7 @@ import FV.Arm.Memory.MemoryProofs
 import FV.Arm.MinTheory
 import Std.Data.HashMap.Lemmas
 
-@[expose] public section
+public section
 
 /-!
 # Unwinding through the backend's frames (S10c + S10d, #230/#231)

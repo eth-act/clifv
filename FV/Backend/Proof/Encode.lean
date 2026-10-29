@@ -10,7 +10,7 @@ public import FV.Arm.Exec
 public import FV.Backend.Encode
 import FV.Arm.MinTheory
 
-@[expose] public section
+public section
 
 /-!
 # M5: the encoder is proven against the Lean Arm model's decoder

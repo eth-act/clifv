@@ -3,7 +3,7 @@ module
 public import FV.Backend.Proof.RegallocMem
 import FV.Arm.MinTheory
 
-@[expose] public section
+public section
 
 /-!
 # `Corr` for every load and store form (M6 proof)

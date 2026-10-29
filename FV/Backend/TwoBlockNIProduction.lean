@@ -3,7 +3,7 @@ module
 public import FV.Backend.ScalarNIProduction
 public import FV.Backend.Lowering.StockTwoBlockNI
 
-@[expose] public section
+public section
 
 namespace Backend
 set_option autoImplicit false

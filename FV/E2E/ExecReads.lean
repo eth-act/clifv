@@ -12,7 +12,7 @@ import all Init.Data.Repr
 import all Init.Prelude
 import FV.Arm.MinTheory
 
-@[expose] public section
+public section
 
 /-! # The memory reads of the backend's instructions (L3 (c), D2)
 

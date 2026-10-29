@@ -3,7 +3,7 @@ module
 public import FV.Backend
 public import FV.Backend.LinearScan
 
-@[expose] public section
+public section
 
 /-!
 The register allocators the command-line tools (`lean-backend`, `lean-backend-armrun`) offer:

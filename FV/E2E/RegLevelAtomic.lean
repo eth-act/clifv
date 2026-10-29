@@ -13,7 +13,7 @@ import FV.Backend.Proof.IselInterp
 import FV.Backend.Proof.EncodeLayout
 import FV.Arm.MinTheory
 
-@[expose] public section
+public section
 
 /-!
 # The LL/SC loops on the machine (M6)

@@ -10,7 +10,7 @@ import FV.Backend.Proof.FastSubst
 import FV.Backend.Proof.IselAttr
 import FV.Arm.MinTheory
 
-@[expose] public section
+public section
 
 /-!
 # `emit_icmp`: the condition of an integer comparison

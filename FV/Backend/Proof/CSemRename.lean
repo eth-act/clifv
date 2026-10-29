@@ -4,7 +4,7 @@ public import FV.Backend.Proof.RegallocCSem
 public import FV.Backend.Proof.LowerRename
 import FV.Arm.MinTheory
 
-@[expose] public section
+public section
 
 /-!
 # `ispec` and `csemWF` do not depend on vreg names

@@ -13,7 +13,7 @@ public import FV.Arm.Decode.DPSFP
 public import FV.Arm.Decode.Reserved
 public import FV.Arm.BitVec
 
-@[expose] public section
+public section
 
 namespace Arm
 

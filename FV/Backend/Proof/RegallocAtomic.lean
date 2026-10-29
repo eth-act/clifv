@@ -7,7 +7,7 @@ import FV.Backend.Proof.RegallocMemCorr
 import FV.Backend.Proof.IselGeneric
 import FV.Arm.MinTheory
 
-@[expose] public section
+public section
 
 /-!
 # `OperandsSound` for `csetm`, `dmb ish`, `ldar` and `stlr` (M6 proof)

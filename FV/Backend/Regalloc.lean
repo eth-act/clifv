@@ -7,7 +7,7 @@ public import FV.Backend.StackAlloc
 public import Lean.Data.Json.FromToJson.Basic
 public import Lean.Data.Json.Parser
 
-@[expose] public section
+public section
 
 /-!
 # regalloc2 as the backend's register allocator (M6)

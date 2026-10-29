@@ -14,7 +14,7 @@ import FV.Arm.Insts.BR.Barrier
 import FV.Arm.Insts.BR.Test_branch
 import FV.Arm.Insts.BR.Mrs
 
-@[expose] public section
+public section
 
 namespace Arm
 

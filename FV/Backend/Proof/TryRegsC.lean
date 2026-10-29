@@ -6,7 +6,7 @@ import FV.Compile.SubsetT
 public import FV.Compile.Subset
 public import FV.Backend.Isel
 
-@[expose] public section
+public section
 
 /-!
 # The typed `try_call` of the lowering on integer signatures (S11e6)

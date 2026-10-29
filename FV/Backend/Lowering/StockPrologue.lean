@@ -2,7 +2,7 @@ module
 
 public import FV.Backend.Lowering.StockD0
 
-@[expose] public section
+public section
 
 /-! Input-only shape for the next complete function class. Production selection
 is added only after the universal proofs and consumers are connected. -/

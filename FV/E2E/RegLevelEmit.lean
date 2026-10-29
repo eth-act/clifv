@@ -16,7 +16,7 @@ import all Std.Data.DHashMap.Internal.Defs
 import all Std.Data.DHashMap.Internal.Index
 import all Std.Data.DHashMap.Raw
 
-@[expose] public section
+public section
 
 /-!
 # `emitFunc`'s code structure (M6 proof, register level)

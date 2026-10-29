@@ -3,7 +3,7 @@ module
 import FV.Backend.Proof.DriverCheckSound
 public import FV.Backend.Proof.LowerShape
 
-@[expose] public section
+public section
 
 /-!
 # Completeness of `lowerCheck`: the shared definitions

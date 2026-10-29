@@ -22,7 +22,7 @@ public meta import Lean.Meta.Tactic.Simp.BuiltinSimprocs.Nat
 public import Lean.Meta.Transform
 public import Lean.Meta.LitValues
 
-@[expose] public section
+public section
 
 namespace Arm
 

@@ -10,7 +10,7 @@ import FV.Backend.Proof.EncodeLayout
 import FV.Arm.MinTheory
 import Std.Data.HashMap.Lemmas
 
-@[expose] public section
+public section
 
 /-!
 # The call-site pair of a register-level call (S10e)

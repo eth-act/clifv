@@ -2,7 +2,7 @@ module
 
 public import FV.Compile.SubsetT
 
-@[expose] public section
+public section
 
 /-!
 # Float stores store float values (S11e5 Stage C, slice 7)

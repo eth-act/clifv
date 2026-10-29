@@ -4,7 +4,7 @@ public import FV.Backend.MInst
 public import FV.Isle.Interp
 public import FV.Clif.Print
 
-@[expose] public section
+public section
 
 /-!
 # Instruction selection by interpreting Cranelift's ISLE rules (M4, unproven)

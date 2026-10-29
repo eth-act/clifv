@@ -3,7 +3,7 @@ module
 public import FV.Clif.Syntax
 public import FV.Clif.FloatLit
 
-@[expose] public section
+public section
 
 /-!
 # CLIF text printer

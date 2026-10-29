@@ -11,7 +11,7 @@ import all Init.Prelude
 import FV.Backend.Proof.IselGeneric
 import FV.Arm.MinTheory
 
-@[expose] public section
+public section
 
 /-!
 # Loads and stores on the Arm model (M6 proof)

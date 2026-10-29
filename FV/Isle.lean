@@ -7,7 +7,7 @@ public import FV.Isle.Generated.Program
 public import FV.Isle.Generated.Manifest
 public import FV.Isle.Generated.Closure
 
-@[expose] public section
+public section
 
 /-!
 # ISLE (M4 preparation)

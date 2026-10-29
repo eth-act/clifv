@@ -11,7 +11,7 @@ import FV.SimprocAttr
 meta import Lean.Meta.Tactic.Simp.Attr
 public meta import Lean.Meta.Tactic.Simp.Simproc
 
-@[expose] public section
+public section
 
 -- A minimal theory, safe for all LNSym proofs
 register_simp_attr minimal_theory

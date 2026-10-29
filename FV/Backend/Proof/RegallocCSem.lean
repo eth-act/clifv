@@ -6,7 +6,7 @@ import FV.Backend.Proof.RegallocLemmas
 import FV.Arm.MinTheory
 import Lean.Meta.Tactic.Simp.RegisterCommand
 
-@[expose] public section
+public section
 
 /-!
 # The concrete instruction semantics `csem` (M6 proof)

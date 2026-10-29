@@ -3,7 +3,7 @@ module
 public import FV.Backend.Proof.IselContract
 import FV.Arm.MinTheory
 
-@[expose] public section
+public section
 
 /-!
 # Straight-line VCode execution (M7 driver, M4 rule statements)

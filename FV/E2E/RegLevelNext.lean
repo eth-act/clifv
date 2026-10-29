@@ -7,7 +7,7 @@ public import FV.E2E.RegLevelGoodX
 import FV.E2E.RegLevelRelax
 import FV.Arm.MinTheory
 
-@[expose] public section
+public section
 
 /-!
 # Items that fall through (M6): islands, `trapIf` not taken, symbol addresses

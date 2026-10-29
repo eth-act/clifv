@@ -6,7 +6,7 @@ import FV.E2E.RegLevelArgs
 import FV.E2E.RegLevelRelax
 import FV.Arm.MinTheory
 
-@[expose] public section
+public section
 
 /-!
 # The call of a `try_call` on the machine (M6)

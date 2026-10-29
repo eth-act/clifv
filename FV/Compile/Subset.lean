@@ -2,7 +2,7 @@ module
 
 public import FV.Clif.Syntax
 
-@[expose] public section
+public section
 
 /-!
 # The emitter subset E (`clif-subset-v2`, `docs/contracts/clif-subset.md`)

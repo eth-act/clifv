@@ -15,7 +15,7 @@ import FV.Arm.Memory.MemoryProofs
 import FV.Arm.MinTheory
 meta import Lean.Elab.Tactic.Omega.Frontend
 
-@[expose] public section
+public section
 
 /-!
 # Prologue and epilogue on the machine (M6)

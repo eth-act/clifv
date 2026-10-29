@@ -7,7 +7,7 @@ import FV.Backend.Proof.IselInterp
 import FV.Backend.Proof.PrepareComplete
 import FV.Arm.MinTheory
 
-@[expose] public section
+public section
 
 /-!
 # `lowerFunction`'s block loop, simulated

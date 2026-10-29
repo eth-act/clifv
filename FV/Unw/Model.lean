@@ -6,7 +6,7 @@ import FV.Arm.Memory.MemoryProofs
 public import FV.E2E.Statement
 import FV.Arm.MinTheory
 
-@[expose] public section
+public section
 
 /-!
 # The outside contract: the DWARF unwinder and Rust's personality routine (S10d, #231)

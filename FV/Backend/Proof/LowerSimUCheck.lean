@@ -5,7 +5,7 @@ public import FV.E2E.UnwindSem
 import FV.Backend.Proof.IselInterp
 import FV.Arm.MinTheory
 
-@[expose] public section
+public section
 
 /-!
 # The lowering validator for the exceptional edges (S10e, #232)

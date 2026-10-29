@@ -7,7 +7,7 @@ public import FV.Backend.Proof.IselData
 import FV.Backend.Proof.IselAttr
 public import Std.Do.Triple.SpecLemmas
 
-@[expose] public section
+public section
 
 /-!
 # Family B: contracts of the emitting helper terms (`bit_rr`, `alu_rr_imm_shift`,

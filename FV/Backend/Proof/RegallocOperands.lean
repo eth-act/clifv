@@ -7,7 +7,7 @@ import FV.Backend.Proof.RegallocLemmas
 public import FV.Backend.Proof.VCodeSem
 import FV.Arm.MinTheory
 
-@[expose] public section
+public section
 
 /-!
 # The operand-view obligation `OperandsSound` against the Arm model (M6 proof)

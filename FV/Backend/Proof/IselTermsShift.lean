@@ -11,7 +11,7 @@ import FV.Backend.Proof.IselAttr
 import FV.Backend.Proof.IselGeneric
 import FV.Arm.MinTheory
 
-@[expose] public section
+public section
 
 /-!
 # `do_shift` (`lower.isle:1601`): contract over its four rules

@@ -6,7 +6,7 @@ public import FV.Backend.Proof.PairsC
 public import FV.E2E.RegLevelMove
 import FV.Arm.MinTheory
 
-@[expose] public section
+public section
 
 /-!
 # `Args` on the machine (M6)

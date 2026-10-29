@@ -3,7 +3,7 @@ module
 public import FV.Backend.ScalarProduction
 public import FV.Backend.StockArithmeticCheck
 
-@[expose] public section
+public section
 
 namespace Backend
 set_option autoImplicit false

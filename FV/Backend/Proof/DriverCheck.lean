@@ -6,7 +6,7 @@ public import Std.Data.HashMap.Basic
 public import Std.Data.HashSet.Basic
 public import FV.Clif.Run
 
-@[expose] public section
+public section
 
 /-!
 # The lowering validator (M7): `lowerCheck f vc`

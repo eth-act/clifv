@@ -7,7 +7,7 @@ public import FV.Backend.Proof.LowerRename
 import FV.Backend.Proof.RegallocOperands
 import FV.Arm.MinTheory
 
-@[expose] public section
+public section
 
 /-!
 # The lowering calls the driver consumes (M4's contracts at the `runTerm` level)

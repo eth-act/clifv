@@ -10,7 +10,7 @@ import FV.Backend.Proof.FastSubst
 import FV.Backend.Proof.IselAttr
 import FV.Arm.MinTheory
 
-@[expose] public section
+public section
 
 /-!
 # Family C root rules: `icmp` (2215), `uextend (icmp)` (1281)

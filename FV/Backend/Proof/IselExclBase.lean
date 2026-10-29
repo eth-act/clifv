@@ -4,7 +4,7 @@ import FV.Backend.Proof.IselFamily
 public import FV.Backend.Proof.IselExtern
 public import FV.Backend.Proof.IselContract
 
-@[expose] public section
+public section
 
 /-!
 # Excluded root rules: an abstract pattern checker

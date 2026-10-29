@@ -3,7 +3,7 @@ module
 public import FV.Backend.Lowering.StockMixedNI
 import FV.Backend.StockLogicalCheck
 
-@[expose] public section
+public section
 
 namespace Backend.Stock.Logical
 set_option autoImplicit false

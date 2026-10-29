@@ -4,7 +4,7 @@ public import FV.Clif.Sem
 public import FV.Clif.Mem
 public import FV.Clif.FSem
 
-@[expose] public section
+public section
 
 /-!
 # `Clif.run`: executable, fuel-bounded semantics

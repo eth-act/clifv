@@ -4,7 +4,7 @@ import FV.Backend.Lowering.StockConditionalRankedCfg
 public import FV.Backend.Lowering.StockScalar
 public import FV.Backend.StockArithmeticCheck
 
-@[expose] public section
+public section
 
 namespace Backend.Stock.ParameterCfg
 open Backend.Proof.Driver

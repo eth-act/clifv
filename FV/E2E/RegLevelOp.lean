@@ -4,7 +4,7 @@ public import FV.E2E.RegLevelGoodX
 import FV.E2E.RegLevelRelax
 import FV.Arm.MinTheory
 
-@[expose] public section
+public section
 
 /-!
 # Straight-line instructions on the machine (M6)

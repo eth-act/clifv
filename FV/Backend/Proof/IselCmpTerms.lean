@@ -12,7 +12,7 @@ import FV.Backend.Proof.IselGeneric
 import FV.Arm.MinTheory
 import Lean.Elab.Tactic.RCases
 
-@[expose] public section
+public section
 
 /-!
 # Contracts of the small helper terms of the compare family

@@ -10,7 +10,7 @@ import FV.Isle.Opt.Simplify
 public import FV.Opt.Validate
 public import FV.Opt.RuleAllow
 
-@[expose] public section
+public section
 
 /-!
 # `Opt.optimize`: the mid-end pipeline (unproven; `docs/contracts/midend.md`)

@@ -9,7 +9,7 @@ import FV.Backend.Proof.IselGeneric
 import FV.Arm.MinTheory
 meta import Lean.Elab.Tactic.Omega.Frontend
 
-@[expose] public section
+public section
 
 /-!
 # The frame invariant at the calls of a run (S10e, #232)

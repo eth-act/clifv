@@ -6,7 +6,7 @@ public import FV.Backend.Proof.IselContract
 import FV.Backend.Proof.IselGeneric
 import FV.Arm.MinTheory
 
-@[expose] public section
+public section
 
 /-!
 # Completeness of `lowerCheck`: the rule a driver call committed to

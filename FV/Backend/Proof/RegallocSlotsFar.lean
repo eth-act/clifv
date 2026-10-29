@@ -8,7 +8,7 @@ public import FV.Backend.Proof.RegallocMem
 import FV.Backend.Proof.IselGeneric
 import FV.Arm.MinTheory
 
-@[expose] public section
+public section
 
 /-!
 # Far slots (M6 proof)

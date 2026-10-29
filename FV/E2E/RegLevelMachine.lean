@@ -8,7 +8,7 @@ public import FV.Backend.Proof.EncodeStep
 import FV.Backend.Proof.EncodeLayout
 import FV.Arm.MinTheory
 
-@[expose] public section
+public section
 
 /-!
 # The Arm machine of the register-level theorem (M6)

@@ -3,7 +3,7 @@ module
 import FV.Backend.Proof.LowerSpec
 public import FV.Backend.Proof.DriverCheck
 
-@[expose] public section
+public section
 
 /-!
 # `lowerFunction`, restated with named loop bodies

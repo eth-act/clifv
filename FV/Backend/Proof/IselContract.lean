@@ -9,7 +9,7 @@ public import FV.Isle.Generated.Closure
 public import FV.Clif.Run
 import FV.Arm.MinTheory
 
-@[expose] public section
+public section
 
 /-!
 # The isel contract: what M4 proves about the ISLE rules, and what M7 consumes

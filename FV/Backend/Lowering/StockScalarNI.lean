@@ -5,7 +5,7 @@ import FV.Backend.StockScalarCheck
 import FV.Backend.ABIReadScalar
 import FV.Backend.ABIReadDiv
 
-@[expose] public section
+public section
 
 namespace Backend.Stock.Scalar
 set_option autoImplicit false

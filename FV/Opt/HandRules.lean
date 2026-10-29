@@ -4,7 +4,7 @@ public import FV.Opt.Rules
 public import FV.Clif.Run
 public import FV.Opt.Basic
 
-@[expose] public section
+public section
 
 /-!
 # A small hand-written rule set (stand-in for the exported Cranelift `simplify` rules)

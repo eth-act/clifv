@@ -6,7 +6,7 @@ import FV.Backend.Proof.RegallocInstsFP
 public import FV.Backend.Proof.RegallocTac
 import FV.Arm.MinTheory
 
-@[expose] public section
+public section
 
 /-!
 # `OperandsSound` for every straight-line instruction form (M6 proof)

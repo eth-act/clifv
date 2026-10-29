@@ -3,7 +3,7 @@ module
 public import FV.Compile.Subset
 public import FV.Backend.Isel
 
-@[expose] public section
+public section
 
 /-!
 # The typed movement scope (S11e5 Stage C, slice 1)

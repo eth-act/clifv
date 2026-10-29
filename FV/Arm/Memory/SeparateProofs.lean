@@ -13,7 +13,7 @@ import FV.Arm.Tactics.BvOmegaBench
 import FV.Arm.MinTheory
 import FV.Arm.Attr
 
-@[expose] public section
+public section
 
 namespace Arm
 

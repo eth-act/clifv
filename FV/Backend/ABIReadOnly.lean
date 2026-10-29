@@ -2,7 +2,7 @@ module
 
 public import FV.Backend.DeadCleanup
 
-@[expose] public section
+public section
 
 namespace Backend.ABIReadOnly
 set_option autoImplicit false

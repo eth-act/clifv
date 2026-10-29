@@ -16,7 +16,7 @@ import FV.Backend.Proof.IselInterp
 import FV.Backend.Proof.EncodeLayout
 import FV.Arm.MinTheory
 
-@[expose] public section
+public section
 
 /-!
 # The register-level theorem (M6): `RegLevelCorrect` for the backend's code

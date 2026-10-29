@@ -3,7 +3,7 @@ module
 public import FV.Backend.Lowering.StockTwoBlockEntryNI
 import FV.Backend.Lowering.StockLinearCfg
 
-@[expose] public section
+public section
 
 namespace Backend.Stock.LinearCfg
 set_option autoImplicit false

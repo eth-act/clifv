@@ -15,7 +15,7 @@ import FV.Arm.Insts.Common
 public import FV.Arm.Insts.LDST.Reg_imm
 import FV.Arm.Attr
 
-@[expose] public section
+public section
 
 namespace Arm
 

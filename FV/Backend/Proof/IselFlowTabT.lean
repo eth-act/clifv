@@ -4,7 +4,7 @@ public import FV.Backend.Proof.IselFlowCheck
 import FV.Backend.Proof.IselExcl
 import FV.Arm.MinTheory
 
-@[expose] public section
+public section
 
 /-!
 # The TLS summary table and its kernel check

@@ -12,7 +12,7 @@ import FV.Backend.Proof.AbiClass
 import FV.Backend.Proof.IselAttr
 import FV.Arm.MinTheory
 
-@[expose] public section
+public section
 
 /-!
 # Family Ctl: the `try_call` rules (the normal return)

@@ -2,7 +2,7 @@ module
 
 public import FV.Backend.Lowering.Stock
 
-@[expose] public section
+public section
 
 namespace Backend.Stock.D0
 

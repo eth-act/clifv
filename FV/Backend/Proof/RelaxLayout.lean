@@ -4,7 +4,7 @@ import FV.Backend.Proof.EncodeLayout
 public import FV.Backend.Encode
 import FV.Arm.MinTheory
 
-@[expose] public section
+public section
 
 /-!
 # M6: branch relaxation makes layout total

@@ -8,7 +8,7 @@ module
 
 import FV.Arm.BitVec
 
-@[expose] public section
+public section
 
 namespace Arm
 

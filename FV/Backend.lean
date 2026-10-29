@@ -21,7 +21,7 @@ import FV.Compile.Subset
 public import Std.Data.HashSet
 public import FV.Clif.Parse
 
-@[expose] public section
+public section
 
 /-!
 # The Lean AArch64 backend (M4–M6, unproven): CLIF → machine code

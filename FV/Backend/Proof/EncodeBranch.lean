@@ -4,7 +4,7 @@ import FV.Backend.Proof.Encode
 public import FV.Backend.Encode
 import FV.Arm.MinTheory
 
-@[expose] public section
+public section
 
 /-!
 # M5: label-relative operands and the branch-range policy

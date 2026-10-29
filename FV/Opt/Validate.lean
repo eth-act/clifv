@@ -4,7 +4,7 @@ import FV.Opt.Check
 public import FV.Opt.Simplify
 public import FV.Compile.Subset
 
-@[expose] public section
+public section
 
 /-!
 # Per-pass validators (translation validation of the passes' output)

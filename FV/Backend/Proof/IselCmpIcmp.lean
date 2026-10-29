@@ -9,7 +9,7 @@ import FV.Backend.Proof.FastSubst
 import FV.Backend.Proof.IselAttr
 import FV.Arm.MinTheory
 
-@[expose] public section
+public section
 
 /-!
 # Condition producers: `cond_result_invert`, `is_nonzero`, `emit_icmp`, `is_nonzero_cmp`

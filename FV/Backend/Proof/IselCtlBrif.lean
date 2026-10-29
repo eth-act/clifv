@@ -12,7 +12,7 @@ import FV.Backend.Proof.FastSubst
 import FV.Backend.Proof.IselAttr
 import FV.Arm.MinTheory
 
-@[expose] public section
+public section
 
 /-!
 # Family Ctl: `brif` (`lower_branch` rules 1132 `lower_brif`, 1137 `tbnz`, 1138 `tbz`)

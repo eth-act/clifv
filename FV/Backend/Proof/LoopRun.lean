@@ -8,7 +8,7 @@ import FV.Backend.Proof.IselGeneric
 import FV.Arm.MinTheory
 meta import Lean.Elab.Tactic.Omega.Frontend
 
-@[expose] public section
+public section
 
 /-!
 # Runs of the LL/SC loop bodies (M6 proof)

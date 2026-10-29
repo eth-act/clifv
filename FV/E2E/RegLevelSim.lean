@@ -8,7 +8,7 @@ public import FV.E2E.Statement
 import FV.Arm.MinTheory
 meta import Lean.Elab.Tactic.Omega.Frontend
 
-@[expose] public section
+public section
 
 /-!
 # The register-level simulation relation (M6)

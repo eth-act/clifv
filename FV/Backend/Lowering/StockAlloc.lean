@@ -3,7 +3,7 @@ module
 import FV.Backend.RegallocOps
 public import FV.Backend.Isel
 
-@[expose] public section
+public section
 
 /-! Stock's initial register allocation, separated from source color analysis.
 Requests retain layout order and exception allocation points. -/

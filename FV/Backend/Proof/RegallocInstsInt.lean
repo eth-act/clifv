@@ -6,7 +6,7 @@ public import FV.Backend.Proof.RegallocCSem
 import FV.Backend.Proof.IselGeneric
 import FV.Arm.MinTheory
 
-@[expose] public section
+public section
 
 /-!
 # `OperandsSound` for the integer instructions (M6 proof)

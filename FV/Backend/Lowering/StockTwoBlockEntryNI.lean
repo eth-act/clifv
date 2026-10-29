@@ -3,7 +3,7 @@ module
 public import FV.Backend.Lowering.StockTwoBlockNI
 import FV.Backend.Lowering.StockTwoBlockEntry
 
-@[expose] public section
+public section
 
 namespace Backend.Stock.TwoBlock.Entry
 set_option autoImplicit false

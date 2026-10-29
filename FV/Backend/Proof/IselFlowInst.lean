@@ -5,7 +5,7 @@ import FV.Backend.Proof.IselFlowData
 public import FV.Backend.Proof.IselFlowExt
 import FV.Arm.MinTheory
 
-@[expose] public section
+public section
 
 /-!
 # The two models of the abstract interpretation

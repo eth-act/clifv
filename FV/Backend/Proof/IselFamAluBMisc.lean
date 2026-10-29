@@ -9,7 +9,7 @@ import FV.Backend.Proof.IselInterp
 import FV.Backend.Proof.IselAttr
 import FV.Arm.MinTheory
 
-@[expose] public section
+public section
 
 /-!
 # Family B: `bnot_base_case` (1377), `nop` (78), `ireduce` (2146)

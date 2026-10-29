@@ -2,7 +2,7 @@ module
 
 public import FV.Backend.Isel
 
-@[expose] public section
+public section
 
 /-!
 # Typed AAPCS64 placement: the integer case is the x-register placement

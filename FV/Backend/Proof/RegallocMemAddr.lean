@@ -30,7 +30,7 @@ public import FV.Backend.Proof.RegallocMem
 import FV.Backend.Proof.IselGeneric
 import FV.Arm.MinTheory
 
-@[expose] public section
+public section
 
 /-!
 # `loadAddr` of a stack-slot offset (M6 proof)

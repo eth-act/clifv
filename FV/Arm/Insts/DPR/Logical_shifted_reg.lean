@@ -12,7 +12,7 @@ public import FV.Arm.Insts.Common
 public import FV.Arm.Decode.DPR
 import FV.Arm.Attr
 
-@[expose] public section
+public section
 
 namespace Arm
 

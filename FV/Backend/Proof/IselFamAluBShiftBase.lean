@@ -6,7 +6,7 @@ public import FV.Backend.Proof.IselFamAluBBase
 import FV.Backend.Proof.IselInterp
 import FV.Arm.MinTheory
 
-@[expose] public section
+public section
 
 /-!
 # Family B: template for the shift and rotate root rules

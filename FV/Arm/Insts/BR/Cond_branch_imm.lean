@@ -18,7 +18,7 @@ import FV.Arm.BitVec
 public import FV.Arm.Decode.BR
 import FV.Arm.Attr
 
-@[expose] public section
+public section
 
 namespace Arm
 

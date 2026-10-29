@@ -3,7 +3,7 @@ module
 public import FV.Backend.LinearCfgNIProduction
 public import FV.Backend.Lowering.StockForwardCfgNI
 
-@[expose] public section
+public section
 
 namespace Backend
 set_option autoImplicit false

@@ -15,7 +15,7 @@ import FV.Arm.MinTheory
 public import FV.Arm.Decode.DPR
 import FV.Arm.Attr
 
-@[expose] public section
+public section
 
 namespace Arm
 

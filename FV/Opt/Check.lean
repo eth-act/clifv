@@ -3,7 +3,7 @@ module
 public import FV.Opt.Cfg
 public import FV.Clif.Sem
 
-@[expose] public section
+public section
 
 /-!
 # Well-formedness: the precondition of every pass

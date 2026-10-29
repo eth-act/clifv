@@ -18,7 +18,7 @@ import FV.Backend.Proof.FastSubst
 import FV.Backend.Proof.IselAttr
 import FV.Arm.MinTheory
 
-@[expose] public section
+public section
 
 /-!
 # Family Ctl: `br_table` (`lower_branch` rule 1140)

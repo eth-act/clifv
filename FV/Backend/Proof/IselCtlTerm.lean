@@ -16,7 +16,7 @@ import FV.Backend.Proof.IselAttr
 import FV.Backend.Proof.IselGeneric
 import FV.Arm.MinTheory
 
-@[expose] public section
+public section
 
 /-!
 # Family Ctl: the `lower` rules on terminators (`trap`, `return`)

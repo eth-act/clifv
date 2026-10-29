@@ -2,7 +2,7 @@ module
 
 public import FV.Backend.Proof.RegallocState
 
-@[expose] public section
+public section
 
 /-!
 # Facts about the checker's functions (M6 proof)

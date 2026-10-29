@@ -5,7 +5,7 @@ public import FV.Backend.Proof.DriverCheckTyC
 import FV.Backend.Proof.IselInterp
 import FV.Arm.MinTheory
 
-@[expose] public section
+public section
 
 /-!
 # The exceptional-edge validator for typed `try_call`s (S11e6, #585)

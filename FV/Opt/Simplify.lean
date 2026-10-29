@@ -4,7 +4,7 @@ public import FV.Opt.Check
 public import FV.Opt.Cost
 public import FV.Opt.Rules
 
-@[expose] public section
+public section
 
 /-!
 # Simplify: rule-based rewriting of pure nodes (an acyclic e-graph, à la Cranelift)

@@ -3,7 +3,7 @@ module
 public import FV.Backend.Asm
 public import FV.Arm.Decode
 
-@[expose] public section
+public section
 
 /-!
 # Machine-code encoder (M5, proven against the Arm model's decoder)

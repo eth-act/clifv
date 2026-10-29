@@ -6,7 +6,7 @@ import FV.Backend.Proof.IselInterp
 import FV.Arm.MinTheory
 meta import Lean.Elab.Tactic.Omega.Frontend
 
-@[expose] public section
+public section
 
 /-!
 # Flag lemmas for the compare family (`icmp`, `select`, min/max, division checks)

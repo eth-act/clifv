@@ -11,7 +11,7 @@ import FV.Backend.Proof.FastSubst
 import FV.Backend.Proof.IselAttr
 import FV.Arm.MinTheory
 
-@[expose] public section
+public section
 
 /-!
 # Family B: the scalar shift root rules (`ishl`/`ushr`/`sshr`, `lower.isle:1545–1699`)

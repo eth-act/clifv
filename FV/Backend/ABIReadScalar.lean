@@ -2,7 +2,7 @@ module
 
 public import FV.Backend.ABIReadFlags
 
-@[expose] public section
+public section
 
 namespace Backend.ABIReadScalar
 set_option autoImplicit false

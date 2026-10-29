@@ -30,7 +30,7 @@ import FV.Backend.Proof.RegallocMemOS
 import FV.Backend.Proof.RegallocOS
 import FV.Arm.MinTheory
 
-@[expose] public section
+public section
 
 /-!
 # The memory reads of the covered straight-line forms (L3 (c), D2)

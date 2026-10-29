@@ -10,4 +10,4 @@ public import FV.Float.Round
 public import FV.Float.Arith
 public import FV.Float.Convert
 
-@[expose] public section
+public section

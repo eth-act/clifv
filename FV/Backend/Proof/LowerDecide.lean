@@ -8,7 +8,7 @@ public import FV.Backend.Proof.LowerSpec
 import FV.Backend.Proof.DriverCheckSound
 import FV.Arm.MinTheory
 
-@[expose] public section
+public section
 
 /-!
 # Completeness of `lowerCheck`: the input conditions, decided

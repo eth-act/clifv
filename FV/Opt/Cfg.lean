@@ -3,7 +3,7 @@ module
 public import FV.Opt.Basic
 public import Std.Data.HashSet.Basic
 
-@[expose] public section
+public section
 
 /-!
 # Control-flow graph, dominator tree, natural loops

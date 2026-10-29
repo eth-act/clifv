@@ -6,7 +6,7 @@ import FV.Backend.Proof.IselExtern
 import FV.Backend.Proof.IselInterp
 import FV.Backend.Proof.IselAttr
 
-@[expose] public section
+public section
 
 /-!
 # Forward interpreter lemmas for the two-register ALU root rules

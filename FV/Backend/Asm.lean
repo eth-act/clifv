@@ -5,7 +5,7 @@ public import Std.Data.HashMap
 public import Std.Data.HashSet
 public import Std.Data.HashSet.Basic
 
-@[expose] public section
+public section
 
 /-!
 # Final instruction list and assembly text

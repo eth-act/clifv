@@ -4,7 +4,7 @@ import FV.Backend.Isel
 import FV.Compile.Subset
 public import FV.Compile.StoreTyped
 
-@[expose] public section
+public section
 
 namespace Backend
 

@@ -10,7 +10,7 @@ public import FV.Backend.Proof.IselContract
 import FV.Backend.Proof.IselAttr
 import FV.Arm.MinTheory
 
-@[expose] public section
+public section
 
 /-!
 # Family Ctl (terminators, branches, calls): common facts

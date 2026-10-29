@@ -6,7 +6,7 @@ public import FV.Backend.RegallocPerEdgePrepareCheck
 public import FV.Backend.RegallocPerEdgeSpill
 public import FV.Backend.RegallocPerEdge
 
-@[expose] public section
+public section
 
 /-! Actual allocator adapter for per-successor VCode. Every allocation selected
 for lowering, including the spill fallback, passes the indexed checker. Existing

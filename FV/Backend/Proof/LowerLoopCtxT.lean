@@ -5,7 +5,7 @@ public import FV.Backend.Proof.DriverCheckT
 public import FV.Compile.SubsetT
 import FV.Arm.MinTheory
 
-@[expose] public section
+public section
 
 /-!
 # Typed context construction (S11e5 Stage C, slice 1)

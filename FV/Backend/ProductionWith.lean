@@ -4,7 +4,7 @@ import FV.Backend.Production
 public import FV.Backend.Lowering.StockPrologueAll
 public import FV.Backend
 
-@[expose] public section
+public section
 
 /-! Shared transactional orchestration for successive proved lowering classes. -/
 set_option autoImplicit false

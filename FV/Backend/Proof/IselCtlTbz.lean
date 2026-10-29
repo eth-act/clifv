@@ -26,7 +26,7 @@ public import FV.Backend.Proof.IselContract
 import FV.Backend.Proof.IselAttr
 import FV.Arm.MinTheory
 
-@[expose] public section
+public section
 
 /-!
 # Family Ctl: `tbnz` / `tbz` (`lower_branch` rules 1137, 1138)

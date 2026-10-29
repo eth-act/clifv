@@ -2,7 +2,7 @@ module
 
 public import FV.Backend.Proof.VCodeSem
 
-@[expose] public section
+public section
 
 /-!
 # The checker's abstract state: lemmas and the invariant `Inv` (M6 proof)

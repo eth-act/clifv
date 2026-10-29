@@ -1,6 +1,6 @@
 module
 
-@[expose] public section
+public section
 
 /-!
 # CLIF syntax (subset `clif-subset-v1`, semantics list S)

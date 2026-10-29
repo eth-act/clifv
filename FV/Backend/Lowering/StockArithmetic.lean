@@ -3,7 +3,7 @@ module
 public import FV.Backend.Lowering.StockScalarProduction
 public import FV.Backend.DeadCleanup
 
-@[expose] public section
+public section
 
 namespace Backend.Stock.Arithmetic
 set_option autoImplicit false

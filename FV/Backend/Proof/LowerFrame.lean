@@ -6,7 +6,7 @@ public import FV.Backend.Proof.IselContract
 public import FV.Backend.Proof.DriverCheck
 import FV.Arm.MinTheory
 
-@[expose] public section
+public section
 
 /-!
 # CLIF frames seen by the driver

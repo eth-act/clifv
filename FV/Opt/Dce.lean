@@ -3,7 +3,7 @@ module
 public import FV.Opt.Basic
 public import Std.Data.HashSet.Basic
 
-@[expose] public section
+public section
 
 /-!
 # DCE: delete removable statements whose results are never used

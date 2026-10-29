@@ -5,7 +5,7 @@ public import FV.Backend.Proof.RegallocFrame
 import FV.Arm.Memory.MemoryProofs
 import FV.Arm.MinTheory
 
-@[expose] public section
+public section
 
 /-!
 # Executing slot stores and loads (M6 proof)

@@ -4,7 +4,7 @@ import FV.Backend.Proof.IselFlowGen
 public import FV.Backend.Isel
 import FV.Backend.Proof.IselGeneric
 
-@[expose] public section
+public section
 
 /-!
 # An abstract interpretation of ISLE rules, and its soundness

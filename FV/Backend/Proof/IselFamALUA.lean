@@ -7,7 +7,7 @@ import FV.Backend.Proof.IselInterp
 import FV.Backend.Proof.IselGeneric
 import FV.Arm.MinTheory
 
-@[expose] public section
+public section
 
 /-!
 # Family A (binary ALU with operand look-through): generic lemmas

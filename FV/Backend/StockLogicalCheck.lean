@@ -4,7 +4,7 @@ public import FV.Backend.Lowering.StockLogical
 import FV.Backend.StockMixedCheck
 public import FV.Backend.StockArithmeticCheck
 
-@[expose] public section
+public section
 
 namespace Backend.Stock.Logical
 open Backend.Proof.Driver

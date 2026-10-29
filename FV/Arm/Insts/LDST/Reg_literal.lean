@@ -38,7 +38,7 @@ public import FV.Arm.State
 public import FV.Arm.Decode.LDST
 import FV.Arm.Attr
 
-@[expose] public section
+public section
 
 namespace Arm
 

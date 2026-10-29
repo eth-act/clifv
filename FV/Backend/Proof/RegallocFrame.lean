@@ -6,7 +6,7 @@ import FV.Arm.Memory.MemoryProofs
 public import FV.Arm.Memory.Separate
 import FV.Arm.MinTheory
 
-@[expose] public section
+public section
 
 /-!
 # Frame and move lowering (M6 proof, deliverable: edits, spills, reloads)

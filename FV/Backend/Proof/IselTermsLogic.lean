@@ -9,7 +9,7 @@ import FV.Backend.Proof.IselInterp
 import FV.Backend.Proof.IselAttr
 import FV.Arm.MinTheory
 
-@[expose] public section
+public section
 
 /-!
 # `alu_rs_imm_logic_commutative` and `alu_rs_imm_logic`: forward lemmas of their rules

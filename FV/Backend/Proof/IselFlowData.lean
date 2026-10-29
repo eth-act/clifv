@@ -5,7 +5,7 @@ import Std.Tactic.BVDecide.Normalize.Prop
 import Std.Tactic.BVDecide.Normalize.Bool
 import Std.Do.Triple.SpecLemmas
 
-@[expose] public section
+public section
 
 /-!
 # The atoms of the instruction data the driver builds

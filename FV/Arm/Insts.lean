@@ -12,7 +12,7 @@ public import FV.Arm.Insts.DPSFP.Insts
 public import FV.Arm.Insts.LDST.Insts
 public import FV.Arm.Insts.Reserved.Udf
 
-@[expose] public section
+public section
 
 namespace Arm
 

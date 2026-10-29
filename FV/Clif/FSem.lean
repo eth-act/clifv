@@ -5,7 +5,7 @@ import FV.Float
 public import FV.Float.Convert
 public import FV.Float.Arith
 
-@[expose] public section
+public section
 
 /-!
 # CLIF float semantics (`Clif.FSem`)

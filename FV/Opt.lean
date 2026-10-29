@@ -15,4 +15,4 @@ public import FV.Opt.Optimize
 public import FV.Opt.Legal
 public import FV.Opt.Legalize128Pass
 
-@[expose] public section
+public section

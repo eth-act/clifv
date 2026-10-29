@@ -10,7 +10,7 @@ import FV.Backend.Proof.IselAttr
 import FV.Backend.Proof.IselGeneric
 import FV.Arm.MinTheory
 
-@[expose] public section
+public section
 
 /-!
 # `imm` (`inst.isle:3738`): materialise a constant

@@ -6,7 +6,7 @@ import FV.Backend.Proof.RegallocLemmas
 import FV.Arm.Memory.MemoryProofs
 import FV.Arm.MinTheory
 
-@[expose] public section
+public section
 
 /-!
 # Lowering of every checked move (M6 proof)

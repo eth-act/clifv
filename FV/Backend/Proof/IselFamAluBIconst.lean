@@ -7,7 +7,7 @@ import FV.Backend.Proof.IselInterp
 import FV.Backend.Proof.IselAttr
 import FV.Arm.MinTheory
 
-@[expose] public section
+public section
 
 /-!
 # Family B: `iconst` (`lower.isle:53`): `(imm ty (ImmExtend.Zero) n)`

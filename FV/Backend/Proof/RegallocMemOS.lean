@@ -6,7 +6,7 @@ public import FV.Backend.Proof.RegallocTac
 public import FV.Backend.Proof.RegallocMem
 import FV.Arm.MinTheory
 
-@[expose] public section
+public section
 
 /-!
 # `OperandsSound` for loads and stores (M6 proof)

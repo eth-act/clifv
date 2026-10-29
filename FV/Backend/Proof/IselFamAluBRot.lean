@@ -12,7 +12,7 @@ import FV.Backend.Proof.FastSubst
 import FV.Backend.Proof.IselAttr
 import FV.Arm.MinTheory
 
-@[expose] public section
+public section
 
 /-!
 # Family B: the rotate root rules (`rotl`/`rotr`, `lower.isle:1772–1862`)

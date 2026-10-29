@@ -18,7 +18,7 @@ meta import Lean.Elab.Tactic.Omega.Frontend
 public import Std.Do.Triple.SpecLemmas
 import Std.Data.DTreeMap.Internal.Balancing
 
-@[expose] public section
+public section
 
 namespace Arm
 namespace BitVec

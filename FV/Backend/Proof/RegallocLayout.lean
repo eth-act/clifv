@@ -3,7 +3,7 @@ module
 public import FV.Backend.Proof.RegallocFrame
 import FV.Arm.MinTheory
 
-@[expose] public section
+public section
 
 /-!
 # The frame layout of `RAFrame.compute` (M6 proof)

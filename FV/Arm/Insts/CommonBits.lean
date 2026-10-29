@@ -16,7 +16,7 @@ public import FV.Arm.BitVec
 import FV.Arm.State
 import FV.Arm.MinTheory
 
-@[expose] public section
+public section
 
 namespace Arm
 

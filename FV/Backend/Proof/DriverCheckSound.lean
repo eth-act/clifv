@@ -4,7 +4,7 @@ public import FV.Backend.Proof.LowerShape
 public import Std.Data.HashSet.Lemmas
 import FV.Arm.MinTheory
 
-@[expose] public section
+public section
 
 /-!
 # Soundness of the lowering validator (M7)

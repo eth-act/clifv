@@ -2,7 +2,7 @@ module
 
 public import FV.Isle.Syntax
 
-@[expose] public section
+public section
 
 /-!
 # Printing exported rules back to ISLE text

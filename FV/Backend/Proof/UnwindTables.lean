@@ -18,7 +18,7 @@ import all Std.Data.DHashMap.Raw
 import Std.Tactic.BVDecide.Normalize.Prop
 import Std.Data.DTreeMap.Internal.Operations
 
-@[expose] public section
+public section
 
 /-!
 # The emitted unwind tables are correct by construction (S10c, #230)

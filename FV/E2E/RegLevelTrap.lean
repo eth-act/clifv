@@ -10,7 +10,7 @@ import FV.Backend.Proof.IselGeneric
 import FV.Backend.Proof.EncodeLayout
 import FV.Arm.MinTheory
 
-@[expose] public section
+public section
 
 /-!
 # Traps on the machine (M6)

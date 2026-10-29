@@ -4,7 +4,7 @@ public import FV.Backend.Proof.IselContract
 import FV.Backend.Proof.IselGeneric
 import FV.Arm.MinTheory
 
-@[expose] public section
+public section
 
 /-!
 # The call contracts with pinned calls (agent/link-widen, stage 2)

@@ -8,7 +8,7 @@ import FV.Backend.Proof.IselGeneric
 public import FV.Backend.Proof.DriverCheck
 import FV.Arm.MinTheory
 
-@[expose] public section
+public section
 
 /-!
 # Auxiliary facts for the driver simulation

@@ -1,6 +1,6 @@
 module
 
-@[expose] public section
+public section
 
 /-!
 # ISLE programs as Lean data

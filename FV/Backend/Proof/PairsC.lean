@@ -5,7 +5,7 @@ public import FV.Backend.Proof.LowerRename
 import FV.Backend.Proof.IselGeneric
 import FV.Arm.MinTheory
 
-@[expose] public section
+public section
 
 /-!
 # Class-general `Args`/`Rets` pairs (S11e5 Stage C)

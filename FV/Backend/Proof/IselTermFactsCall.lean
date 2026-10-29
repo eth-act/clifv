@@ -13,7 +13,7 @@ import FV.Backend.Proof.IselAttr
 import FV.Backend.Proof.IselGeneric
 import FV.Arm.MinTheory
 
-@[expose] public section
+public section
 
 /-!
 # Completeness of `lowerCheck`: the outgoing area of `call` and `try_call`

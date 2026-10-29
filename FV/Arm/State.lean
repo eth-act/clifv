@@ -14,7 +14,7 @@ meta import Lean.Elab.Tactic.Omega.Frontend
 public import Lean.ToExpr
 public meta import Lean.Meta.Tactic.Simp.BuiltinSimprocs
 
-@[expose] public section
+public section
 
 namespace Arm
 

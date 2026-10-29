@@ -6,7 +6,7 @@ public import FV.Backend.Proof.InstScopeTF
 import FV.Backend.Proof.DriverCheckSound
 import FV.Arm.MinTheory
 
-@[expose] public section
+public section
 
 /-!
 # Soundness of the validator with typed `try_call`s (S11e6, #419)

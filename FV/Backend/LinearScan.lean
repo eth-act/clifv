@@ -2,7 +2,7 @@ module
 
 public import FV.Backend.AllocReady
 
-@[expose] public section
+public section
 
 /-!
 # A register allocator in Lean: linear scan with lifetime holes (V4b, #57)

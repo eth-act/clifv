@@ -3,7 +3,7 @@ module
 public import FV.Backend.Regalloc
 public import FV.Backend.Proof.RelaxReady
 
-@[expose] public section
+public section
 
 /-!
 # Emission readiness of regalloc2's allocation (V6b)

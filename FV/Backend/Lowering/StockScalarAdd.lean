@@ -3,7 +3,7 @@ module
 import FV.Backend.Lowering.StockPrologueAll
 public import FV.Backend.Lowering.StockD0
 
-@[expose] public section
+public section
 
 /-! Input syntax of the next complete scalar arithmetic class. The production
 entrypoints keep their current selector until the full proof packet is ready. -/
