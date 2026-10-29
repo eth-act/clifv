@@ -458,7 +458,7 @@ theorem probeHitN_toNat {n : Nat} {sp a : BitVec 64} (h : probeHitN n sp a = tru
   simp only [probeHitN, probeHitB, List.any_eq_true, List.mem_range, decide_eq_true_eq] at h
   obtain ⟨i, hi, hk⟩ := h
   refine ⟨i, hi, _, hk, ?_⟩
-  have hmul : 4096 * (i + 1) ≤ 4096 * n := Nat.mul_le_mul_left 4096 (Nat.succ_le_of_lt hi)
+  have hmul : 4096 * (i + 1) ≤ 4096 * n := by omega
   have hle : 16 + 4096 * (i + 1) ≤ sp.toNat := by omega
   have hb : (sp - 16#64 - BitVec.ofNat 64 (4096 * (i + 1))).toNat = sp.toNat - (16 + 4096 * (i + 1)) := by
     have e : sp - 16#64 - BitVec.ofNat 64 (4096 * (i + 1)) = sp - BitVec.ofNat 64 (16 + 4096 * (i + 1)) := by
