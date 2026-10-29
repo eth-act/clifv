@@ -7,6 +7,81 @@ is unchanged: actual Stock source semantics, simulation/completeness, production
 compiler/checker/linker/generated proofs, original inputs/theorem variants/exact
 required axioms/accepted identities/successful stages.
 
+## Active refresh: 2026-10-29 (supersedes earlier next-step ordering)
+
+Baseline: main `c533c22a` (#755). The preserved October27 memory implementation
+is `3753d98a` (verified on its old base) / `52b22dc9` (interrupted new-base
+validation). Neither old receipt certifies current main. Saved source, branches
+and remote evidence remain; recovery uses durable `.git/agent-evidence/` storage
+rather than relying on `/tmp` surviving a restart.
+
+The goal remains aligned. Main still has no `StockMemory` source domain or
+paired initialized-load/return consumer. Reuse the saved memory proofs; do not
+reimplement Kev's landed allocator, frame, checker or typed-linking machinery.
+
+| Work | Current owner/state | Our boundary |
+| --- | --- | --- |
+| regalloc2 / Cranelift input numbering | Kev, landed | Reuse `CraneliftInput`; no second numbering adapter |
+| AArch64 frame / unwind / frame-aware QA | Kev, #743 landed | Adapt internal memory consumers to the new frame; preserve original public source contracts |
+| typed Stock linking / route placement / fast checks | Kev, #747/#748/#755 and earlier landed | Keep typed dispatch, exclusions, scope shortcuts and existing providers |
+| branch order / MachBuffer | Kev, #553 active | No competing branch-layout implementation; coordinate any shared Stock/code metadata changes |
+| scheduler / CI / proof speed | Parithosh, landed fixes and open #757 | Reuse results and CI cache; no independent proof-performance project |
+| Lean module system | Parithosh, #726 prototype | Do not merge or duplicate its broad header port; coordinate leaf imports/generators |
+| original-source initialized memory under Stock | Our saved packet, not landed | Complete the unique missing proofs and minimal additive production route |
+
+### Immediate delivery sequence
+
+1. Port the preserved memory packet onto current main. Keep the new compiler's
+   `pipelineT`/`allocNone`, CraneliftInput, typed linker, placement shortcuts,
+   frame-aware consumers and dead-cleanup generator. Resolve source overlap
+   explicitly in #140; no blind replacement with old adapters.
+2. Build the affected memory proof/consumer closure first, with the sole shared
+   artifact cache and published CI artifacts where compatible. This is an early
+   diagnostic pass, not a waiver of author gates. Fix actual port errors before
+   launching the full author queue. Keep one validation head fixed during each
+   healthy batch. Do not replay a completed healthy cohort without changed inputs
+   or an unresolved concern.
+3. Run current per-PR gates from TO-PROVE §§7–8: FV/FVTest/affected tools,
+   transitive axiom audit, relevant runtests/encoding, E2E identity and successful
+   stage parity, actual verified linking/examples and crate proofs. Include a
+   complete actual initialized-load PC0 paired witness, default compiler/checker/
+   linker/generated-proof consumers, both cleanup modes, actual default regalloc2
+   and retained Lean allocator execution, and full prior-pipeline retry.
+   Recover old evidence with its actual source hashes; never relabel it current.
+4. Push backups, publish and squash a substantive memory delivery after current
+   gates; notify the integrator. Remove completed expendable outputs only after
+   unique evidence is archived and verified. Do not wait for unrelated full-main
+   CI to grant author approval, and do not represent a targeted build as a full
+   build or an optional route as completeness.
+5. Use the captured two-block/nop memory function as the next concrete target.
+   Generalize the existing retained-load body and guarded/paired omission proofs,
+   then reuse existing CFG entry/edge/return composition. Keep old variants.
+   Measure eligibility, selected actual Stock route and output/relocation parity
+   on the same captured source cohort. Synthetic positive witnesses alone do
+   not establish useful real-function coverage or an agreement gain.
+6. Continue the unchanged original goal: broader addressing and memory effects,
+   atomics, calls/exceptions, remaining scalar/rule families, nonempty conditional
+   successor arguments, tables/loops, whole-driver source/block simulation and
+   original-domain Stock-only/downstream completeness. Existing fallback preserves
+   acceptance; it does not discharge any of these obligations.
+
+### Batch evidence and resources
+
+Before and after each batch, update #44 with source/base hashes, exact passing
+and failing receipts, modules, next step, worktree/cache ownership and UTC time.
+All merges are squash merges under the user's standing push/merge authorization.
+Keep the four preserved source views and one shared warm artifact cache; no new
+worktree or agent is needed for this refresh. Build budget <=16GiB, <=2 jobs,
+<=4 CPUs, OMP_NUM_THREADS=2 and OMP_THREAD_LIMIT=2; use low priority. Free-space
+target >=100GiB, hard floor >=50GiB after projected growth. CI download/staging
+is temporary and removed after verified cache import. Preserve every unpublished
+source/branch and all unique validation evidence.
+
+The interrupted October27 new-base build is not counted passed. As of refresh,
+its service is inactive, no compiler jobs are running, and temporary receipts are
+gone. Verified3753 receipts and next-source drafts are preserved on the append-only
+remote evidence branch; those remain historical evidence, not current validation.
+
 ## Current delivery: forward CFGs and conditional scalar leaves
 
 PR #633 (`ac302a8a`) activated three-block chains. PR #634
