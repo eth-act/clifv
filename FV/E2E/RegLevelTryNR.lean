@@ -19,7 +19,7 @@ open Backend E2E
 /-- **The call of a `try_call` on the machine** (`realizes_tryCall`) **with its call state**:
 the segment's states satisfy `GoodX`, and exactly one of them (the first, at the `bl`/`blr`) is a
 call state. (`q_entry`
-now takes a `RepL` for the successor's label, which `reach_jumpX` provides from the branch
+now takes a `RepL` for the successor's label, which `reach_bXNR` provides from the branch
 check's `termOk_tryCall`; the old label-line argument is gone with `ftList`.) -/
 theorem realizes_tryCallNR {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {P : Arm.ArmState → Prop}
     (hC : CalleeOkGP P R.F R.K R.G R.s0 (CallAt R.fa R.base) R.X R.H R.vc.CallSite R.gv)
@@ -215,7 +215,7 @@ theorem realizes_tryCallNR {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {P : Ar
     rcases hcaseO with ⟨l', hO, hrl⟩ | ⟨hO, hrn⟩
     · refine .inl ⟨l', hO, by rw [hcont]; refine hrl⟩
     · refine .inr ⟨hO, by rw [hcont]; refine hrn⟩
-  obtain ⟨n, jl, hn, hrep, -, -, hgx⟩ := reach_jumpX hR hdrop1 hoo hprog' hpc1 herr' hsp'
+  obtain ⟨n, jl, hn, hrep, -, hgx⟩ := reach_bXNR (Y := Y) hR hdrop1 hoo hprog' hpc1 herr' hsp'
   refine ⟨n + 1, _, MStep.op hvb hi hops hsz hsem hlen hho hc2'
     (MNext.goto hk1 hsucc hitems), ?_, fun i hi => ?_, 0, by omega,
     RL.callSt_of_line hj0 hpc (hxk.imp id fun ⟨r, e, _⟩ => ⟨r, e⟩), fun i hi hne => ?_⟩

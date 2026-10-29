@@ -6,8 +6,9 @@ import FV.E2E.RegLevelGotoNR
 
 `reach_bXNR`, `reach_rcbXNR`, `reach_cbXNR` with where their states are (`RL.SegIn`: inside the
 branch lines, which are instruction lines, and no step only when the first line is none), and
-`realizes_gotoNR` from `QW`: the block entered is reached at its chosen entry witness, at the first
-arrival.
+`realizes_gotoNR` from `QW`: the block entered is reached at its chosen entry witness at the
+arrival pc, at the first arrival at a pc entering it (no line inside the branch lines represents
+a block, `RL.entryWit_ne`).
 -/
 
 namespace Backend.Proof
@@ -49,45 +50,60 @@ theorem RL.FRFree.append {R : RL} {s : Arm.ArmState} {a b : Nat} (h : R.FRFree s
 
 /-- **`reach_bXNA` with the segment's lines** (`RL.FRFree`). -/
 theorem reach_bXNAF {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : Arm.ArmState} {j0 : Nat}
-    {x : Lbl} {Z T : List Line}
-    (hdrop : R.L.drop j0 = relaxLines R.far (ftList (.ins (.b x) none :: Z)) ++ T) (hx : x ≠ .skip)
+    {x : Label} {o : List Line} {nxt : Nat}
+    (hdrop : R.L.drop j0 = relaxLines R.far o ++ R.L.drop (rix R.far (planLines R.fa.k R.af) nxt))
+    (ho : (∃ l', o = [.ins (.b l') none] ∧
+        RepLbl (planRep R.fa.k R.af) (blockLabelIdx (planLines R.fa.k R.af)) x l') ∨
+      (o = [] ∧ planRep R.fa.k R.af x nxt = true))
     (hprog : s.program = R.fb.program R.base) (hpc : Arm.r .PC s = R.pcOf j0)
     (herr : Arm.r .ERR s = .None) (hsp : spOf s = R.spB) :
-    ∃ n jl lim, iterN R.step n s = Arm.w .PC (R.pcOf jl) s ∧ R.L[jl]? = some (.label x) ∧
+    ∃ n jl lim, iterN R.step n s = Arm.w .PC (R.pcOf jl) s ∧
+      RepL R.af (planOwn R.fa.k R.af) R.L x jl ∧
       (∀ i < n, spOf (iterN R.step i s) = spOf s) ∧ (∀ i < n, R.GoodXNY Y (iterN R.step i s)) ∧
       R.SegIn s n j0 lim ∧ n ≤ 1 ∧ R.FRFree s n := by
-  rcases ft_b x Z with ⟨Z', rfl, he⟩ | he
-  · rw [he, ft_label, relaxLines_cons, relaxLine_label, List.singleton_append] at hdrop
-    refine ⟨0, j0, j0, ?_, drop_get hdrop, fun i hi => by omega, fun i hi => by omega,
-      ⟨RL.Inside.zero, fun k h1 h2 => by omega, ?_⟩, by omega, RL.frFree_zero R s⟩
-    · simp only [iterN]; rw [← hpc, Arm.w_irrelevant]
-    · refine ⟨fun _ x' t' h => ?_, fun _ => rfl⟩
-      rw [drop_get hdrop] at h; cases h
-  · rw [he, relaxLines_cons, relaxLine_of_none rfl, List.singleton_append] at hdrop
-    obtain ⟨a, jl, ha, hjl, hstep⟩ := step_branch hR (drop_get hdrop) (.inl rfl) hx hprog hpc herr
-    have hg := RL.goodXNR_branch (Y := Y) hR (drop_get hdrop) (.inl rfl) hx hprog hpc herr hsp
-    refine ⟨1, jl, j0 + 1, ?_, hjl, fun i hi => ?_, fun i hi => ?_,
+  rcases ho with ⟨l', rfl, hl⟩ | ⟨rfl, hr⟩
+  · obtain ⟨hsk, jl, hjl, hrep⟩ := repLbl_line hR hl
+    have hj : R.L[j0]? = some (.ins (.b l') none) := by
+      have := congrArg (·[0]?) hdrop
+      rw [relaxLines_cons, relaxLine_of_none rfl] at this
+      simpa [List.getElem?_drop] using this
+    obtain ⟨a, jl', ha, hjl', hstep⟩ := step_branch hR hj (.inl rfl) hsk hprog hpc herr
+    have hg := RL.goodXNR_branch (Y := Y) hR hj (.inl rfl) hsk hprog hpc herr hsp
+    obtain rfl : jl' = jl := labelOffsets_uniq hR.lm hjl' hjl
+    refine ⟨1, jl', j0 + 1, ?_, hrep, fun i hi => ?_, fun i hi => ?_,
       ⟨RL.Inside.one, fun k h1 h2 => ?_, ⟨fun h => absurd h (by omega),
-        fun h => absurd (drop_get hdrop) (h _ _)⟩⟩, Nat.le_refl _,
-        RL.frFree_one hR (Nat.le_refl _) (drop_get hdrop) rfl hpc⟩
+        fun h => absurd hj (h _ _)⟩⟩, Nat.le_refl _,
+        RL.frFree_one hR (Nat.le_refl _) hj rfl hpc⟩
     · simp only [iterN]; rw [hstep, brCond_b ha]; rfl
     · obtain rfl : i = 0 := by omega
       rfl
     · obtain rfl : i = 0 := by omega
       exact hg
     · obtain rfl : k = j0 := by omega
-      exact ⟨_, _, drop_get hdrop⟩
+      exact ⟨_, _, hj⟩
+  · have hrep := rep_nxt hR hr
+    simp only [relaxLines, List.flatMap_nil, List.nil_append] at hdrop
+    have hj0e := drop_idx hdrop hrep.lt
+    rw [← hj0e] at hrep
+    refine ⟨0, j0, j0, by simp only [iterN]; rw [← hpc, Arm.w_irrelevant], hrep,
+      fun i hi => by omega, fun i hi => by omega,
+      ⟨RL.Inside.zero, fun k h1 h2 => by omega, ⟨fun _ => RL.not_ins_of_repL hrep, fun _ => rfl⟩⟩,
+      by omega, RL.frFree_zero R s⟩
 
 /-- `reach_bXNR` with `RL.SegIn`. -/
 theorem reach_bXNA {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : Arm.ArmState} {j0 : Nat}
-    {x : Lbl} {Z T : List Line}
-    (hdrop : R.L.drop j0 = relaxLines R.far (ftList (.ins (.b x) none :: Z)) ++ T) (hx : x ≠ .skip)
+    {x : Label} {o : List Line} {nxt : Nat}
+    (hdrop : R.L.drop j0 = relaxLines R.far o ++ R.L.drop (rix R.far (planLines R.fa.k R.af) nxt))
+    (ho : (∃ l', o = [.ins (.b l') none] ∧
+        RepLbl (planRep R.fa.k R.af) (blockLabelIdx (planLines R.fa.k R.af)) x l') ∨
+      (o = [] ∧ planRep R.fa.k R.af x nxt = true))
     (hprog : s.program = R.fb.program R.base) (hpc : Arm.r .PC s = R.pcOf j0)
     (herr : Arm.r .ERR s = .None) (hsp : spOf s = R.spB) :
-    ∃ n jl lim, iterN R.step n s = Arm.w .PC (R.pcOf jl) s ∧ R.L[jl]? = some (.label x) ∧
+    ∃ n jl lim, iterN R.step n s = Arm.w .PC (R.pcOf jl) s ∧
+      RepL R.af (planOwn R.fa.k R.af) R.L x jl ∧
       (∀ i < n, spOf (iterN R.step i s) = spOf s) ∧ (∀ i < n, R.GoodXNY Y (iterN R.step i s)) ∧
       R.SegIn s n j0 lim ∧ n ≤ 1 :=
-  let ⟨n, jl, lim, h1, h2, h3, h4, h5, h6, _⟩ := reach_bXNAF (Y := Y) hR hdrop hx hprog hpc herr hsp
+  let ⟨n, jl, lim, h1, h2, h3, h4, h5, h6, _⟩ := reach_bXNAF (Y := Y) hR hdrop ho hprog hpc herr hsp
   ⟨n, jl, lim, h1, h2, h3, h4, h5, h6⟩
 
 /-- `reach_rcbXNR` with `RL.SegIn`. -/
@@ -189,129 +205,149 @@ theorem reach_rcbXNA {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : Arm.ArmS
 
 /-- `reach_cbXNR` with `RL.SegIn`. -/
 theorem reach_cbXNAF {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : Arm.ArmState} {j0 : Nat}
-    {bc : Insn} {t e : Lbl}
-    {Z T : List Line}
-    (hdrop : R.L.drop j0 = relaxLines R.far (ftList (.ins bc none :: .ins (.b e) none :: Z)) ++ T)
-    (hbc : (∃ c, bc = .bcond c t) ∨ (∃ nz w r, bc = .cbz nz w r t) ∨ (∃ nz r bit, bc = .tbz nz r bit t))
-    (ht : t ≠ .skip) (he : e ≠ .skip)
-    (cond : Bool) (hc : ∀ env a, bc.toArmInst env = .ok a → brCond a s = cond)
-    (hc' : bc.condTarget? = some t → ∀ e' env a, (bc.invertTo e').toArmInst env = .ok a →
+    {s1 s2 : Label} {ci : Insn} {o : List Line} {nxt : Nat}
+    (hdrop : R.L.drop j0 = relaxLines R.far o ++ R.L.drop (rix R.far (planLines R.fa.k R.af) nxt))
+    (hco : CondOut (planRep R.fa.k R.af) (blockLabelIdx (planLines R.fa.k R.af)) s1 s2 ci o nxt)
+    (hci : (∃ c t, ci = .bcond c t) ∨ (∃ nz w r t, ci = .cbz nz w r t) ∨
+      (∃ nz r bit t, ci = .tbz nz r bit t))
+    (cond : Bool)
+    (hcT : ∀ l env a, (ci.setTarget l).toArmInst env = .ok a → brCond a s = cond)
+    (hcF : ci.condTarget?.isSome = true → ∀ l env a, (ci.invertTo l).toArmInst env = .ok a →
       brCond a s = !cond)
-    (hcc : bc.condTarget? = some t → ∀ env a, ((bc.invertTo e).invertTo .skip).toArmInst env = .ok a →
-      brCond a s = cond)
     (hprog : s.program = R.fb.program R.base) (hpc : Arm.r .PC s = R.pcOf j0)
     (herr : Arm.r .ERR s = .None) (hsp : spOf s = R.spB) :
     ∃ n jl lim, iterN R.step n s = Arm.w .PC (R.pcOf jl) s ∧
-      R.L[jl]? = some (.label (if cond then t else e)) ∧
+      RepL R.af (planOwn R.fa.k R.af) R.L (if cond then s1 else s2) jl ∧
       (∀ i < n, spOf (iterN R.step i s) = spOf s) ∧ (∀ i < n, R.GoodXNY Y (iterN R.step i s)) ∧
       R.SegIn s n j0 lim ∧ R.FRFree s n := by
-  have hnb : ∀ x, bc ≠ .b x := by
-    rcases hbc with ⟨c, rfl⟩ | ⟨nz, w, r, rfl⟩ | ⟨nz, r, bit, rfl⟩ <;> intro x h <;> cases h
-  have hbcf : bc.frLine = false := by
-    rcases hbc with ⟨_, rfl⟩ | ⟨_, _, _, rfl⟩ | ⟨_, _, _, rfl⟩ <;> rfl
   have hne : ∀ y t', relaxLine R.far (.ins y t') ≠ [] := fun y t' h => by
     obtain ⟨_, _, hy⟩ := relaxLine_ins_head R.far y t'
     rw [h] at hy
     cases hy
-  rcases ft_cb bc e Z hnb with ⟨L, Z', rfl, hct, hft⟩ | hft
-  · have hLt : L = t := by
-      rcases hbc with ⟨c, rfl⟩ | ⟨nz, w, r, rfl⟩ | ⟨nz, r, bit, rfl⟩ <;>
-        simp only [Insn.condTarget?] at hct
-      · split at hct <;> simp_all
-      · simp_all
-      · simp_all
-    subst hLt
-    rw [hft, ft_label, relaxLines_cons, relaxLines_cons, relaxLine_label, List.append_assoc] at hdrop
-    have hform := invertTo_form (e := e) hbc
-    have hct' : (bc.invertTo e).condTarget? = some e := by
-      rcases hbc with ⟨c, rfl⟩ | ⟨nz, w, r, rfl⟩ | ⟨nz, r, bit, rfl⟩ <;>
-        simp only [Insn.condTarget?] at hct ⊢
-      · split at hct
-        · cases hct
-        · rename_i hc0
-          simp only [Insn.invertTo, Insn.condTarget?]
-          rcases c <;> simp_all [Cond.invert]
-      · simp [Insn.invertTo, Insn.condTarget?]
-      · simp [Insn.invertTo, Insn.condTarget?]
-    obtain ⟨n, jl, hn, hjt, hjf, hsp', -, hg, hin, -⟩ := reach_rcbXNA (Y := Y) hR hdrop hform he
-      (!cond) (hc' hct e)
-      (fun _ env a ha => by rw [hcc hct env a ha, Bool.not_not]) hprog hpc herr hsp
-    refine ⟨n, jl, _, hn, ?_, hsp', hg, hin, RL.frFree_segIn hR hdrop (Nat.le_refl _) (hne _ _)
-      (frLine_relaxLine R.far fun x t' e' => by cases e'; rw [frLine_invertTo]; exact hbcf) hpc hin⟩
+  rcases hco with ⟨c, t', e', rfl, hct, rfl, hl1, hl2⟩ | ⟨c, t', rfl, hct, hc⟩ | ⟨rfl, hr1, hr2⟩
+  · -- `b.c t'; b e'`
+    obtain ⟨hsk1, jt, hjt, hrep1⟩ := repLbl_line hR hl1
+    rw [relaxLines_cons, List.append_assoc] at hdrop
+    have hbcf : (ci.setTarget t').frLine = false := by
+      rcases setTarget_form hci t' with ⟨_, h⟩ | ⟨_, _, _, h⟩ | ⟨_, _, _, h⟩ <;> rw [h] <;> rfl
+    obtain ⟨n, jl, hn, hjT, hjF, hsp1, hn1, hg, hin, -⟩ := reach_rcbXNA (Y := Y) hR hdrop
+      (setTarget_form hci t') hsk1 cond (hcT t') (fun hct' env a ha => by
+        rw [setTarget_invertTo hci] at ha
+        exact hcF (condTarget_setTarget_isSome hci hct') _ env a ha) hprog hpc herr hsp
+    have hfr0 : R.FRFree s n := RL.frFree_segIn hR hdrop (Nat.le_refl _) (hne _ _)
+      (frLine_relaxLine R.far fun x t'' e => by cases e; exact hbcf) hpc hin
     cases cond
-    · simpa using hjt rfl
-    · have hd' : R.L.drop jl = [Line.label L] ++ relaxLines R.far (ftList Z') ++ T := by
-        rw [hjf rfl, ← List.drop_drop, hdrop, List.drop_left, List.append_assoc]
-      simpa using drop_get (by simpa using hd')
-  · rw [hft, relaxLines_cons, List.append_assoc] at hdrop
-    obtain ⟨n, jl, hn, hjt, hjf, hsp', hn1, hg, hin, hn0⟩ := reach_rcbXNA (Y := Y) hR hdrop hbc ht
-      cond hc (fun hct' => hc' hct' .skip) hprog hpc herr hsp
-    cases cond
-    · obtain rfl := hn1 rfl
-      have hd1 : R.L.drop jl = relaxLines R.far (ftList (.ins (.b e) none :: Z)) ++ T := by
-        rw [hjf rfl, ← List.drop_drop, hdrop, List.drop_left]
-      have hs1 : (iterN R.step 1 s).program = R.fb.program R.base := by rw [hn, Arm.w_program, hprog]
-      obtain ⟨n', jl', lim', hn', hjl', hsp'', hg', hin', hn'1, hfr'⟩ := reach_bXNAF (Y := Y) hR hd1 he hs1
-        (by rw [hn]; exact Arm.r_of_w_same ..)
-        (by rw [hn, Arm.r_of_w_different (by simp), herr]) (by rw [hn, spOf_w_pc, hsp])
-      have hlen0 : 0 < (relaxLine R.far (.ins bc none)).length := by
-        have := relaxLines_single_ne R.far (.ins bc none)
+    · -- the fall-through `b e'`
+      obtain rfl := hn1 rfl
+      have hd1 : R.L.drop jl = relaxLines R.far [.ins (.b e') none] ++
+          R.L.drop (rix R.far (planLines R.fa.k R.af) nxt) := by
+        rw [hjF rfl, ← List.drop_drop, hdrop, List.drop_left]
+      have hs1 : (Arm.w .PC (R.pcOf jl) s).program = R.fb.program R.base := by
+        rw [Arm.w_program, hprog]
+      obtain ⟨n', jl', lim', hn', hrep', hsp', hg', hin', hn'1, hfr'⟩ := reach_bXNAF (Y := Y) hR hd1
+        (.inl ⟨e', rfl, hl2⟩) hs1 (Arm.r_of_w_same ..)
+        (by rw [Arm.r_of_w_different (by simp), herr]) (by rw [spOf_w_pc, hsp])
+      obtain ⟨hN, hS, hG⟩ := reach_then hn hn' hsp1 hsp' hg hg'
+      have hlen0 : 0 < (relaxLine R.far (.ins (ci.setTarget t') none)).length := by
+        have := relaxLines_single_ne R.far (.ins (ci.setTarget t') none)
         simp only [relaxLines, List.flatMap_cons, List.flatMap_nil, List.append_nil] at this
         omega
       have hjl_ins : 0 < n' → ∃ x t, R.L[jl]? = some (.ins x t) := fun hpos =>
         Classical.byContradiction fun hno =>
           absurd (hin'.2.2.mpr fun x t hx => hno ⟨x, t, hx⟩) (by omega)
-      have hjle : jl = j0 + (relaxLine R.far (.ins bc none)).length := hjf rfl
-      have hseg : R.SegIn s (1 + n') j0 (j0 + (relaxLine R.far (.ins bc none)).length + n') := by
+      have hjle : jl = j0 + (relaxLine R.far (.ins (ci.setTarget t') none)).length := hjF rfl
+      have hseg : R.SegIn s (1 + n') j0
+          (j0 + (relaxLine R.far (.ins (ci.setTarget t') none)).length + n') := by
         obtain ⟨x0, t0, hx0⟩ := hin.2.1 j0 (Nat.le_refl _) (by omega)
         refine ⟨fun i h0 hi => ?_, fun k h1 h2 => ?_, ⟨fun h => absurd h (by omega),
           fun h' => absurd hx0 (h' _ _)⟩⟩
         · obtain rfl : i = 1 := by omega
           obtain ⟨x1, t1, hx1⟩ := hjl_ins (by omega)
           exact ⟨jl, x1, t1, by omega, by omega, hx1, by rw [hn]; exact Arm.r_of_w_same ..⟩
-        · rcases Nat.lt_or_ge k (j0 + (relaxLine R.far (.ins bc none)).length) with hk | hk
+        · rcases Nat.lt_or_ge k (j0 + (relaxLine R.far (.ins (ci.setTarget t') none)).length) with
+            hk | hk
           · exact hin.2.1 k h1 hk
           · obtain rfl : k = jl := by omega
             exact hjl_ins (by omega)
-      have hfr0 : R.FRFree s 1 := RL.frFree_segIn hR hdrop (Nat.le_refl _) (hne _ _)
-        (frLine_relaxLine R.far fun x t' e' => by cases e'; exact hbcf) hpc hin
-      refine ⟨1 + n', jl', _, ?_, by simpa using hjl', fun i hi => ?_, fun i hi => ?_, hseg,
-        hfr0.append hfr'⟩
-      · rw [iterN_add, hn', hn, Arm.w_of_w_shadow]
-      · rcases Nat.lt_or_ge i 1 with h | h
-        · exact hsp' i h
-        · obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le h
-          rw [iterN_add, hsp'' k (by omega), hn]
-          exact spOf_w_pc _ _
-      · rcases Nat.lt_or_ge i 1 with h | h
-        · exact hg i h
-        · obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le h
-          rw [iterN_add]
-          exact hg' k (by omega)
-    · exact ⟨n, jl, _, hn, by simpa using hjt rfl, hsp', hg, hin,
-        RL.frFree_segIn hR hdrop (Nat.le_refl _) (hne _ _)
-          (frLine_relaxLine R.far fun x t' e' => by cases e'; exact hbcf) hpc hin⟩
+      refine ⟨1 + n', jl', _, hN, by simpa using hrep', hS, hG, hseg, hfr0.append ?_⟩
+      rw [hn]; exact hfr'
+    · obtain rfl : jl = jt := labelOffsets_uniq hR.lm (hjT rfl) hjt
+      exact ⟨n, jl, _, hn, by simpa using hrep1, hsp1, hg, hin, hfr0⟩
+  · -- one branch
+    rcases hc with ⟨rfl, hl1, hr2⟩ | ⟨rfl, hl2, hr1⟩
+    · obtain ⟨hsk1, jt, hjt, hrep1⟩ := repLbl_line hR hl1
+      rw [relaxLines_cons] at hdrop
+      simp only [relaxLines, List.flatMap_nil, List.append_nil] at hdrop
+      have hbcf : (ci.setTarget t').frLine = false := by
+        rcases setTarget_form hci t' with ⟨_, h⟩ | ⟨_, _, _, h⟩ | ⟨_, _, _, h⟩ <;> rw [h] <;> rfl
+      obtain ⟨n, jl, hn, hjT, hjF, hsp1, -, hg, hin, -⟩ := reach_rcbXNA (Y := Y) hR hdrop
+        (setTarget_form hci t') hsk1 cond (hcT t') (fun hct' env a ha => by
+          rw [setTarget_invertTo hci] at ha
+          exact hcF (condTarget_setTarget_isSome hci hct') _ env a ha) hprog hpc herr hsp
+      have hfr0 : R.FRFree s n := RL.frFree_segIn hR hdrop (Nat.le_refl _) (hne _ _)
+        (frLine_relaxLine R.far fun x t'' e => by cases e; exact hbcf) hpc hin
+      cases cond
+      · have hrep2 := rep_nxt hR hr2
+        have hd : R.L.drop jl = R.L.drop (rix R.far (planLines R.fa.k R.af) nxt) := by
+          rw [hjF rfl, ← List.drop_drop, hdrop, List.drop_left]
+        obtain rfl := drop_idx hd hrep2.lt
+        exact ⟨n, _, _, hn, by simpa using hrep2, hsp1, hg, hin, hfr0⟩
+      · obtain rfl : jl = jt := labelOffsets_uniq hR.lm (hjT rfl) hjt
+        exact ⟨n, jl, _, hn, by simpa using hrep1, hsp1, hg, hin, hfr0⟩
+    · obtain ⟨hsk2, jt, hjt, hrep2⟩ := repLbl_line hR hl2
+      rw [relaxLines_cons] at hdrop
+      simp only [relaxLines, List.flatMap_nil, List.append_nil] at hdrop
+      have hbcf : (ci.invertTo t').frLine = false := by
+        rcases invertTo_form' hci t' with ⟨_, h⟩ | ⟨_, _, _, h⟩ | ⟨_, _, _, h⟩ <;> rw [h] <;> rfl
+      obtain ⟨n, jl, hn, hjT, hjF, hsp1, -, hg, hin, -⟩ := reach_rcbXNA (Y := Y) hR hdrop
+        (invertTo_form' hci t') hsk2 (!cond) (hcF (condTarget_invertTo_isSome hci hct) t')
+        (fun _ env a ha => by
+          rw [invertTo_invertTo hci] at ha
+          rw [Bool.not_not]
+          exact hcT _ env a ha) hprog hpc herr hsp
+      have hfr0 : R.FRFree s n := RL.frFree_segIn hR hdrop (Nat.le_refl _) (hne _ _)
+        (frLine_relaxLine R.far fun x t'' e => by cases e; exact hbcf) hpc hin
+      cases cond
+      · obtain rfl : jl = jt := labelOffsets_uniq hR.lm (hjT rfl) hjt
+        exact ⟨n, jl, _, hn, by simpa using hrep2, hsp1, hg, hin, hfr0⟩
+      · have hrep1 := rep_nxt hR hr1
+        have hd : R.L.drop jl = R.L.drop (rix R.far (planLines R.fa.k R.af) nxt) := by
+          rw [hjF rfl, ← List.drop_drop, hdrop, List.drop_left]
+        obtain rfl := drop_idx hd hrep1.lt
+        exact ⟨n, _, _, hn, by simpa using hrep1, hsp1, hg, hin, hfr0⟩
+  · -- no lines: both successors next
+    simp only [relaxLines, List.flatMap_nil, List.nil_append] at hdrop
+    have hrep1 := rep_nxt hR hr1
+    have hrep2 := rep_nxt hR hr2
+    have hj0e := drop_idx hdrop hrep1.lt
+    rw [← hj0e] at hrep1 hrep2
+    refine ⟨0, j0, j0, by simp only [iterN]; rw [← hpc, Arm.w_irrelevant], ?_, fun i hi => by omega,
+      fun i hi => by omega,
+      ⟨RL.Inside.zero, fun k h1 h2 => by omega, ⟨fun _ => RL.not_ins_of_repL hrep1, fun _ => rfl⟩⟩,
+      RL.frFree_zero R s⟩
+    cases cond
+    · simpa using hrep2
+    · simpa using hrep1
 
 /-- `reach_cbXNR` with `RL.SegIn`. -/
 theorem reach_cbXNA {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : Arm.ArmState} {j0 : Nat}
-    {bc : Insn} {t e : Lbl}
-    {Z T : List Line}
-    (hdrop : R.L.drop j0 = relaxLines R.far (ftList (.ins bc none :: .ins (.b e) none :: Z)) ++ T)
-    (hbc : (∃ c, bc = .bcond c t) ∨ (∃ nz w r, bc = .cbz nz w r t) ∨ (∃ nz r bit, bc = .tbz nz r bit t))
-    (ht : t ≠ .skip) (he : e ≠ .skip)
-    (cond : Bool) (hc : ∀ env a, bc.toArmInst env = .ok a → brCond a s = cond)
-    (hc' : bc.condTarget? = some t → ∀ e' env a, (bc.invertTo e').toArmInst env = .ok a →
+    {s1 s2 : Label} {ci : Insn} {o : List Line} {nxt : Nat}
+    (hdrop : R.L.drop j0 = relaxLines R.far o ++ R.L.drop (rix R.far (planLines R.fa.k R.af) nxt))
+    (hco : CondOut (planRep R.fa.k R.af) (blockLabelIdx (planLines R.fa.k R.af)) s1 s2 ci o nxt)
+    (hci : (∃ c t, ci = .bcond c t) ∨ (∃ nz w r t, ci = .cbz nz w r t) ∨
+      (∃ nz r bit t, ci = .tbz nz r bit t))
+    (cond : Bool)
+    (hcT : ∀ l env a, (ci.setTarget l).toArmInst env = .ok a → brCond a s = cond)
+    (hcF : ci.condTarget?.isSome = true → ∀ l env a, (ci.invertTo l).toArmInst env = .ok a →
       brCond a s = !cond)
-    (hcc : bc.condTarget? = some t → ∀ env a, ((bc.invertTo e).invertTo .skip).toArmInst env = .ok a →
-      brCond a s = cond)
     (hprog : s.program = R.fb.program R.base) (hpc : Arm.r .PC s = R.pcOf j0)
     (herr : Arm.r .ERR s = .None) (hsp : spOf s = R.spB) :
     ∃ n jl lim, iterN R.step n s = Arm.w .PC (R.pcOf jl) s ∧
-      R.L[jl]? = some (.label (if cond then t else e)) ∧
+      RepL R.af (planOwn R.fa.k R.af) R.L (if cond then s1 else s2) jl ∧
       (∀ i < n, spOf (iterN R.step i s) = spOf s) ∧ (∀ i < n, R.GoodXNY Y (iterN R.step i s)) ∧
       R.SegIn s n j0 lim :=
   let ⟨n, jl, lim, h1, h2, h3, h4, h5, _⟩ :=
-    reach_cbXNAF (Y := Y) hR hdrop hbc ht he cond hc hc' hcc hprog hpc herr hsp
+    reach_cbXNAF (Y := Y) hR hdrop hco hci cond hcT hcF hprog hpc herr hsp
   ⟨n, jl, lim, h1, h2, h3, h4, h5⟩
 
 /-- **`realizes_gotoNA` with the segment's lines** (`RL.FRFree`). -/
@@ -326,28 +362,88 @@ theorem realizes_gotoNAF {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : Arm.
     (h : MStep R.vc R.sem ckeep R.rf (.run ⟨b, .op k allocs :: its, m, w⟩) c') :
     ∃ n, R.SegNA Y s j ps1 T (.run ⟨b, .op k allocs :: its, m, w⟩) c' n ∧ R.FRFree s n := by
   have hck := (lowerRFunc_ok hR.alloc).2.2
-  obtain ⟨vb0, items, pre, code, ls, ps2, hvb0, hit, hsplit, hchk, hcode, hls, htr, hdrop,
-    hpc, hst⟩ := hq
+  obtain ⟨c, ins, _, hc, -⟩ := hR.check
+  obtain ⟨preds, hcfg⟩ := hc.cfg
+  obtain ⟨t0, ts, hback, hss, hlab⟩ := cfg_block hcfg hvb
+  by_cases hT : T = []
+  rotate_left
+  · -- a forwarding block entered without a step: its `jump` takes no machine step
+    obtain ⟨vbf, allocsf, regsf, if_, xf, bx, itx, hvbf, he, hits, half, hins, hasgf, hsuccf, hitx,
+      ⟨itb, hitb, hilb⟩, hE, hpcj, hstj⟩ := hq.fwd hT
+    rw [hvb] at hvbf
+    cases hvbf
+    simp only [RItem.op.injEq] at he
+    obtain ⟨rfl, rfl⟩ := he
+    subst hits
+    have hi1 := hi
+    rw [hins] at hi1
+    simp only [List.getElem?_toArray, List.getElem?_cons_zero, Option.some.injEq] at hi1
+    subst hi1
+    have htg := (assign_shape hasgf).1
+    rcases hbr with ⟨l, rfl⟩ | ⟨t, e, kk, rfl⟩ | ⟨kd, t, e, rn, bit, rfl⟩
+    rotate_left
+    · simp [MInst.targets] at htg
+    · simp [MInst.targets] at htg
+    cases h with
+    | @op b k allocs its m w vb' i ops outs outs' w' ctl m2 c' hvb' hi' hops' hsz hsem hlen hho hcl
+      hn =>
+    rw [hvb] at hvb'
+    cases hvb'
+    rw [hi] at hi'
+    cases hi'
+    simp only [RL.sem, csemV, csem, Option.some.injEq, Prod.mk.injEq] at hsem
+    obtain ⟨rfl, rfl, rfl⟩ := hsem
+    obtain rfl : outs' = [] := List.eq_nil_of_length_eq_zero hho.1
+    have hm2 : m2 = m := by
+      funext l'
+      refine (hcl.1 l' (by simp [MInst.clobbers])).trans ?_
+      simp [writeM]
+    subst m2
+    cases hn with
+    | @goto _ st items' hk1 hsucc hitems =>
+    rw [hsuccf] at hsucc
+    cases hsucc
+    rw [hitx] at hitems
+    cases hitems
+    have hwm : ∀ L : List (Operand × Loc), writeM m ((L.zip ([] : List CV)).filter
+        (·.1.1.isLate)) = m := fun L => by simp [writeM]
+    rw [hwm]
+    have hns : ¬ (bx = b ∧ itx.toList = []) := by
+      rintro ⟨rfl, he⟩
+      rw [hitx] at hitb
+      cases hitb
+      rw [hilb] at he
+      cases he
+    have hE' : ∃ W, R.EntryWit bx (Arm.r .PC s) W := by rw [hpcj]; exact hE
+    refine ⟨0, ⟨?_, fun i hi => by omega, ⟨?_, fun i h0 hi => by omega⟩, ?_⟩, RL.frFree_zero R s⟩
+    · unfold RL.QWn
+      rw [RL.nextW_entry hns]
+      exact qW_entryW hitx hE' hstj
+    · rw [RL.tgtS_entry hns]
+      exact hE'
+    · rw [RL.emptyW_entry_iff hns]
+      exact ⟨fun _ => .inl hT, fun _ => rfl⟩
+  rcases hq with ⟨-, hqs⟩ | ⟨hT', -⟩
+  swap
+  · exact absurd hT hT'
+  obtain ⟨vb0, _, _, code, _, _, _, _, hvb0, -, -, hchk0, hcode, -⟩ := id hqs
   rw [hvb] at hvb0; cases hvb0
   obtain ⟨c1, c2, hc1, hc2, rfl⟩ := itemsCode_cons hcode
   obtain ⟨regs, i0, i', rfl, hi0, hasg, hc1'⟩ := itemCode_op hc1
   rw [hi] at hi0; cases hi0
-  obtain ⟨cc, wh, i2, ops2, hi2, hops2, hstat, -⟩ := op_checked hchk
+  obtain ⟨cc, wh, i2, ops2, hi2, hops2, hstat, -⟩ := op_checked hchk0
   rw [hi] at hi2; cases hi2
-  obtain ⟨ls1, ls2, psm, h1, h2, rfl⟩ := codeLinesE_append _ _ _ _ _ hls
-  obtain ⟨c, ins, _, hc, -⟩ := hR.check
-  obtain ⟨preds, hcfg⟩ := hc.cfg
-  obtain ⟨t0, ts, hback, hss, hlab⟩ := cfg_block hcfg hvb
   cases h with
   | @op b k allocs its m w vb' i ops outs outs' w' ctl m2 c' hvb' hi' hops' hsz hsem hlen hho hcl hn =>
   rw [hvb] at hvb'; cases hvb'
   rw [hi] at hi'; cases hi'
   rw [hops2] at hops'; cases hops'
+  -- the semantics: no defs, same world, `goto j`
   generalize hU : (((ops2.zip (regs.map Loc.reg)).toList.filter (·.1.isUse)).map (m ·.2)) = U at hsem
-  have hsem' : outs = [] ∧ w' = w ∧ ∃ j, ctl = .goto j ∧ (∀ l, i = .jump l → j = 0) ∧
-      (∀ t e kk, i = .condBr t e kk → j = if kk.holds U w then 0 else 1) ∧
+  have hsem' : outs = [] ∧ w' = w ∧ ∃ jt, ctl = .goto jt ∧ (∀ l, i = .jump l → jt = 0) ∧
+      (∀ t e kk, i = .condBr t e kk → jt = if kk.holds U w then 0 else 1) ∧
       (∀ kd t e rn bit, i = .testBitAndBranch kd t e rn bit →
-        ∃ a, U = [a] ∧ j = if ((lo64 a).getLsbD bit == (kd == .nz)) then 0 else 1) := by
+        ∃ a, U = [a] ∧ jt = if ((lo64 a).getLsbD bit == (kd == .nz)) then 0 else 1) := by
     rcases hbr with ⟨l, rfl⟩ | ⟨t, e, kk, rfl⟩ | ⟨kd, t, e, rn, bit, rfl⟩
     · simp only [RL.sem, csemV, csem, Option.some.injEq, Prod.mk.injEq] at hsem
       obtain ⟨rfl, rfl, rfl⟩ := hsem
@@ -375,6 +471,7 @@ theorem realizes_gotoNAF {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : Arm.
   obtain ⟨rfl, hw', jt, rfl, hj0, hjc, hjt⟩ := hsem'
   obtain rfl : outs' = [] := List.eq_nil_of_length_eq_zero hho.1
   subst w'
+  -- the store is unchanged
   have hm2 : m2 = m := by
     funext l
     refine (hcl.1 l ?_).trans ?_
@@ -386,6 +483,7 @@ theorem realizes_gotoNAF {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : Arm.
   have hwm : writeM m ((((ops2.zip (regs.map Loc.reg)).toList.filter (·.1.isDef)).zip
       ([] : List CV)).filter (·.1.1.isLate)) = m := by simp [writeM]
   rw [hwm]
+  -- the successor's label
   have hti : t0 = i := by
     rw [Array.back?_eq_getElem?, show vb.insts.size - 1 = k by omega, hi] at hback
     cases hback; rfl
@@ -394,10 +492,24 @@ theorem realizes_gotoNAF {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : Arm.
   simp only [succOf, hcfg, hss, Option.bind_some] at hsucc'
   obtain ⟨vs, hvs, hlj⟩ := hlab jt st hsucc'
   have hst0 : st ≠ 0 := ctlCheck_succ hck hsucc
+  -- the block's last item: its final lines and the branch check's verdict on them
+  obtain rfl : its = [] := hchk0.tail_nil (by omega)
+  obtain ⟨vb0, items, pre, c1', X, psm, ps2, x, hvb0, hit, hsplit, -, hc1'', hX, -, htr,
+    hdrop, hpc, hst, hterm⟩ := qWs_term hR hqs
+  rw [hvb] at hvb0; cases hvb0
+  rw [hc1] at hc1''; cases hc1''
+  have hone : ∀ a, c1 = [a] → X = [] ∧ R.L.drop j = relaxLines R.far x.2.1 ++
+      R.L.drop (rix R.far (planLines R.fa.k R.af) x.2.2) := by
+    intro a ha
+    subst ha
+    simp only [List.dropLast_singleton, codeLinesE, pure, Except.pure, Except.ok.injEq,
+      Prod.mk.injEq] at hX
+    obtain ⟨rfl, rfl⟩ := hX
+    exact ⟨rfl, by simpa using hdrop⟩
+  -- the machine reaches a line representing the successor
   have hreach : ∃ n jl lim, iterN R.step n s = Arm.w .PC (R.pcOf jl) s ∧
-      R.L[jl]? = some (.label (.block vs.label)) ∧ (∀ i < n, R.GoodXNY Y (iterN R.step i s)) ∧
+      RepL R.af (planOwn R.fa.k R.af) R.L vs.label jl ∧ (∀ i < n, R.GoodXNY Y (iterN R.step i s)) ∧
       R.SegIn s n j lim ∧ R.FRFree s n := by
-    rw [List.append_assoc] at hdrop
     rcases hbr with ⟨l, rfl⟩ | ⟨t, e, kk, rfl⟩ | ⟨kd, t, e, rn, bit, rfl⟩
     · obtain ⟨rfl, rfl⟩ := assign_none (fun f => rfl) hasg
       obtain rfl : c1 = [.inst _] := by
@@ -405,15 +517,14 @@ theorem realizes_gotoNAF {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : Arm.
         · exact h
         · cases h
         · cases h
-      have hl1 := codeLinesE_single h1
-      simp only [MInst.lines, pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at hl1
-      obtain ⟨rfl, -⟩ := hl1
+      obtain ⟨-, hd⟩ := hone _ rfl
+      simp only [List.getLast?_singleton] at hterm
       rw [hj0 l rfl] at hlj
       simp only [MInst.targets, List.getElem?_cons_zero, Option.some.injEq] at hlj
       rw [← hlj]
-      obtain ⟨n, jl, lim, hn, hjl, -, hg, hseg, -, hfr⟩ := reach_bXNAF (Y := Y) hR (by simpa using hdrop)
-        (by simp) (by rw [hst.prog]) hpc hst.err hst.sp
-      exact ⟨n, jl, lim, hn, hjl, hg, hseg, hfr⟩
+      obtain ⟨n, jl, lim, hn, hrep, -, hg, hseg, -, hfr⟩ := reach_bXNAF (Y := Y) hR hd
+        (termOk_jump hterm) (by rw [hst.prog]) hpc hst.err hst.sp
+      exact ⟨n, jl, lim, hn, hrep, hg, hseg, hfr⟩
     · have hkk : ∀ r sz, kk = .zero r sz ∨ kk = .notZero r sz → r.isVregInt = true := by
         intro r sz hr
         have := ctlCheck_inst hck hvb hi
@@ -425,29 +536,33 @@ theorem realizes_gotoNAF {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : Arm.
         · exact h
         · cases h
         · cases h
-      have hl1 := codeLinesE_single h1
-      simp only [MInst.lines, pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at hl1
-      obtain ⟨rfl, -⟩ := hl1
-      have hbc : (∃ c, k'.insn (.block t) = .bcond c (.block t)) ∨
-          (∃ nz w r, k'.insn (.block t) = .cbz nz w r (.block t)) ∨
-          (∃ nz r bit, k'.insn (.block t) = .tbz nz r bit (.block t)) := by
+      obtain ⟨-, hd⟩ := hone _ rfl
+      simp only [List.getLast?_singleton] at hterm
+      have hci : (∃ c t', k'.insn (.block t) = .bcond c t') ∨
+          (∃ nz w r t', k'.insn (.block t) = .cbz nz w r t') ∨
+          (∃ nz r bit t', k'.insn (.block t) = .tbz nz r bit t') := by
         cases k' <;> simp [CondBrKind.insn]
-      obtain ⟨n, jl, lim, hn, hjl, -, hg, hseg, hfr⟩ := reach_cbXNAF (Y := Y) hR (by simpa using hdrop)
-        hbc (by simp) (by simp)
-        (kk.holds _ w)
-        (fun env a ha => kind_brCond hst hkr _ ha)
-        (fun hct e' env a ha => kind_brCond_inv hst hkr _ _ hct ha)
-        (fun _ env a ha => kind_brCond hst hkr _ (by rwa [CondBrKind.insn_invertTo_invertTo] at ha))
+      have hset : ∀ l, (k'.insn (.block t)).setTarget l = k'.insn l := by
+        intro l; cases k' <;> rfl
+      have hct : (k'.insn (.block t)).condTarget?.isSome = true →
+          (k'.insn (.block t)).condTarget? = some (.block t) := by
+        intro h
+        cases k' <;> simp_all [CondBrKind.insn, Insn.condTarget?]
+      obtain ⟨n, jl, lim, hn, hrep, -, hg, hseg, hfr⟩ := reach_cbXNAF (Y := Y) hR hd
+        (termOk_condBr hterm) hci (kk.holds _ w)
+        (fun l env a ha => kind_brCond hst hkr l (by rwa [hset] at ha))
+        (fun hs l env a ha => kind_brCond_inv hst hkr (.block t) l (hct hs) ha)
         (by rw [hst.prog]) hpc hst.err hst.sp
       refine ⟨n, jl, lim, hn, ?_, hg, hseg, hfr⟩
-      rw [hjl, hU]
+      rw [hU] at hrep
       rw [hjc t e kk rfl] at hlj
       simp only [MInst.targets] at hlj
-      cases hcond : kk.holds U w <;> simp only [hcond] at hlj ⊢ <;> simp at hlj <;> rw [hlj] <;> simp
+      cases hcond : kk.holds U w <;> simp only [hcond] at hlj hrep <;> simp at hlj <;> rw [← hlj] <;>
+        simpa using hrep
     · obtain ⟨nr, rfl⟩ := isVregInt_iff (by simpa [ctlInstOk] using ctlCheck_inst hck hvb hi)
       obtain ⟨r', rfl, rfl⟩ := assign_one (n := nr) (sp := OpSpec.use)
-        (mk := fun r => MInst.testBitAndBranch kd t e r bit)
-        (fun f => by simp [MInst.visitOperands]) hasg
+        (mk := fun r => MInst.testBitAndBranch kd t e r bit) (fun f => by simp [MInst.visitOperands])
+        hasg
       have hops' : ops2 = #[⟨nr, .int, .use, .early, .reg⟩] := by
         have e : (MInst.testBitAndBranch kd t e (.vreg nr .int) bit).operands =
             .ok #[⟨nr, .int, .use, .early, .reg⟩] := rfl
@@ -462,28 +577,22 @@ theorem realizes_gotoNAF {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : Arm.
         · exact h
         · cases h
         · cases h
-      have hl1 := codeLinesE_single h1
-      simp only [MInst.lines, pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at hl1
-      obtain ⟨rfl, -⟩ := hl1
+      obtain ⟨-, hd⟩ := hone _ rfl
+      simp only [List.getLast?_singleton] at hterm
       have hal := ((checkStatic_facts hstat).2.1 (⟨nr, .int, .use, .early, .reg⟩, .reg (.x n'))
         (by simp)).1
       simp only [CheckCtx.locOk, Bool.and_eq_true] at hal
       have hm : m (.reg (.x n')) = (Arm.r (.GPR (rnum n')) s).setWidth 128 := by
         rw [hst.store (.reg (.x n')) (fun r e => by cases e; exact hal.2) trivial]; rfl
-      obtain ⟨n, jl, lim, hn, hjl, -, hg, hseg, hfr⟩ := reach_cbXNAF (Y := Y) hR (by simpa using hdrop)
-        (bc := .tbz (kd == .nz) (.x n') bit (.block t)) (.inr (.inr ⟨_, _, _, rfl⟩)) (by simp)
-        (by simp)
+      obtain ⟨n, jl, lim, hn, hrep, -, hg, hseg, hfr⟩ := reach_cbXNAF (Y := Y) hR hd
+        (termOk_tbz hterm) (.inr (.inr ⟨_, _, _, _, rfl⟩))
         ((Arm.r (.GPR (rnum n')) s).getLsbD bit == (kd == .nz))
-        (fun env a ha => brCond_tbz (by omega) ha s)
-        (fun _ e' env a ha => by
+        (fun l env a ha => brCond_tbz (by omega) ha s)
+        (fun _ l env a ha => by
           simp only [Insn.invertTo] at ha
           rw [brCond_tbz (by omega) ha s, beq_not_right])
-        (fun _ env a ha => by
-          simp only [Insn.invertTo, Bool.not_not] at ha
-          exact brCond_tbz (by omega) ha s)
         (by rw [hst.prog]) hpc hst.err hst.sp
       refine ⟨n, jl, lim, hn, ?_, hg, hseg, hfr⟩
-      rw [hjl]
       obtain ⟨a, hUa, hja⟩ := hjt kd t e _ bit rfl
       have ha : a = m (.reg (.x n')) := by
         rw [← hU] at hUa
@@ -493,39 +602,35 @@ theorem realizes_gotoNAF {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : Arm.
       rw [hja] at hlj
       simp only [MInst.targets, hm, lo64_regX] at hlj
       cases hcond : ((Arm.r (.GPR (rnum n')) s).getLsbD bit == (kd == .nz)) <;>
-        simp only [hcond] at hlj ⊢ <;> simp at hlj <;> rw [hlj] <;> simp
-  obtain ⟨n, jl, lim, hn, hjl, hg, hseg, hfr⟩ := hreach
-  have hns : ¬ (st = b ∧ items'.toList = its) := by
+        simp only [hcond] at hlj hrep <;> simp at hlj <;> rw [← hlj] <;> simpa using hrep
+  obtain ⟨n, jl, lim, hn, hrep, hg, hseg, hfr⟩ := hreach
+  have hns : ¬ (st = b ∧ items'.toList = []) := by
     rintro ⟨rfl, he⟩
     rw [hit] at hitems; cases hitems
     have := congrArg List.length hsplit
     rw [he] at this
     simp at this
-    omega
-  obtain ⟨hpcE, hqE⟩ := qW_entry hR hst0 hvs hitems hjl (Arm.r_of_w_same ..) (hst.pc _)
-  have hW := RL.nextW_entry (R := R) (j := j) (ps1 := ps1) (T := T)
-    (it := .op k (regs.map Loc.reg)) (m := m) (m' := m) (w := w) (w' := w) hns
+  obtain ⟨hE, hqE⟩ := qW_entry hR hst0 hvs hitems hrep (Arm.r_of_w_same ..) (hst.pc _)
   refine ⟨n, ⟨?_, hg, ?_, ?_⟩, hfr⟩
-  · rw [hW, hn]; exact hqE
-  · rw [hW]
-    have hpn : Arm.r .PC (iterN R.step n s) = R.pcOf (R.entryW st).1 := by rw [hn]; exact hpcE
+  · unfold RL.QWn
+    rw [RL.nextW_entry hns, hn]
+    exact hqE
+  · rw [RL.tgtS_entry hns]
     rcases Nat.eq_zero_or_pos n with h0 | h0
     · subst h0
-      exact ⟨hpn, fun i h0 hi => absurd hi (by omega)⟩
+      refine ⟨?_, fun i h0 hi => absurd hi (by omega)⟩
+      show ∃ W, R.EntryWit st (Arm.r .PC (iterN R.step 0 s)) W
+      rw [hn]; exact hE
     · obtain ⟨x0, t0, hx0⟩ : ∃ x t, R.L[j]? = some (.ins x t) :=
         Classical.byContradiction fun hno =>
           absurd (hseg.2.2.mpr fun x t hx => hno ⟨x, t, hx⟩) (by omega)
-      have hout : jl ≤ j ∨ lim ≤ jl := by
-        rcases Nat.lt_or_ge j jl with h1 | h1
-        · rcases Nat.lt_or_ge jl lim with h2 | h2
-          · obtain ⟨x, t, hx⟩ := hseg.2.1 jl (by omega) h2
-            rw [hjl] at hx; cases hx
-          · exact .inr h2
-        · exact .inl h1
-      exact RL.firstArr_of_inside_out hR hx0 hseg.1 hout
-        (by rw [← hpcE, Arm.r_of_w_same]) hpn
+      refine RL.firstArrS_of_inside hseg.1 (RL.entryWit_ne hR hx0 (fun k l h1 h2 e => ?_)) ?_
+      · obtain ⟨x', t', hx'⟩ := hseg.2.1 k (by omega) h2
+        rw [hx'] at e; cases e
+      · show ∃ W, R.EntryWit st (Arm.r .PC (iterN R.step n s)) W
+        rw [hn]; exact hE
   · rw [RL.emptyW_entry_iff hns]
-    exact hseg.2.2
+    exact hseg.2.2.trans ⟨fun h => .inr h, fun h => h.resolve_left fun h' => h' hT⟩
 
 /-- **Block-ending branches on the machine, at a witness** (`realizes_gotoNR`): the successor's
 items at its chosen entry witness, reached at the first arrival. -/

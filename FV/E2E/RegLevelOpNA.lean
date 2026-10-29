@@ -54,11 +54,16 @@ theorem realizes_op_coreXNAF {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : 
     (hW' : Arm.r .ERR w' = .None ∧ w'.program = w.program) :
     ∃ n c'', MStep R.vc R.sem ckeep R.rf (.run ⟨b, .op k allocs :: its, m, w⟩) c'' ∧
       R.SegNA Y s j ps1 T (.run ⟨b, .op k allocs :: its, m, w⟩) c'' n ∧ R.FRFree s n := by
-  obtain ⟨vb0, items, pre, code, ls, ps2, hvb0, hit, hsplit, hchk, hcode, hls, htr, hdrop,
-    hpc, hst⟩ := hq
+  obtain ⟨hT0, hq'⟩ := hq.qws_lt hvb hk
+  have hne : its ≠ [] := by
+    obtain ⟨vb0, _, _, _, _, _, _, _, hvb0, -, -, hchk0, -⟩ := hq'
+    rw [hvb] at hvb0
+    cases hvb0
+    exact hchk0.tail_ne hk
+  obtain ⟨vb0, items, pre, c1, c2, lsA, X', psm, psm', ps2, x, hvb0, hit, hsplit, hchk, hc1,
+    hc2, h1, h2, h3, htr, hdrop, hpc, hst, hx, hsc⟩ := qWs_split hR hq' hne
   rw [hvb] at hvb0
   cases hvb0
-  obtain ⟨c1, c2, hc1, hc2, rfl⟩ := itemsCode_cons hcode
   have hc1o := hc1
   obtain ⟨regs, i0, i', rfl, hi0, hasg, hc1'⟩ := itemCode_op hc1
   rw [hi] at hi0
@@ -77,54 +82,44 @@ theorem realizes_op_coreXNAF {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : 
   rotate_left
   · exact absurd rfl (hna ds)
   · exact absurd rfl (hnr us)
-  obtain ⟨ls1', ls2, psm, h1, h2, rfl⟩ := codeLinesE_append _ _ _ _ _ hls
   have h1' : codeLinesE R.ctx R.af [AInst.inst i'] ps1 = .ok (ls1, ps1) := by
     simp [codeLinesE, ainstLines, hl1 ps1, bind, Except.bind, pure, Except.pure]
   have hWs := RL.straightW_eq (T := T) (j := j) hvb hc1o h1'
-  rw [relaxLines_plain hpl] at hWs
   rw [h1'] at h1
   simp only [Except.ok.injEq, Prod.mk.injEq] at h1
-  obtain ⟨rfl, rfl⟩ := h1
-  have hZ : ∀ n, (ls2 ++ nxtOf R.af b)[1]? ≠ some (.label (.trap n)) := by
-    intro n e
-    have hm := List.mem_of_getElem? e
-    rcases List.mem_append.1 hm with hm | hm
-    · exact codeLinesE_noTrap _ _ _ _ h2 _ hm n rfl
-    · simp only [nxtOf] at hm
-      split at hm <;> simp at hm
-  have hdrop' : R.L.drop j = ls1 ++ (relaxLines R.far (ftList (ls2 ++ nxtOf R.af b)) ++ T) := by
-    rw [hdrop, List.append_assoc, ftR_plain_append _ _ _ hpl hZ, List.append_assoc]
+  obtain ⟨hA, hpsm⟩ := h1
+  subst hA hpsm
+  have hdrop' : R.L.drop j = ls1 ++ (relaxLines R.far (X' ++ x.2.1) ++
+      R.L.drop (rix R.far (planLines R.fa.k R.af) x.2.2)) := by
+    rw [hdrop, relaxLines_plain hpl]
   obtain ⟨nst, hiter, hpc', hgood, hin, hn0⟩ := hruns j _ s m w s' hdrop' hst hpc hpre hex
-  have hW1 : ∀ (m' : Loc → CV) (w'' : Arm.ArmState),
-      R.nextW j ps1 T (.run ⟨b, .op k (regs.map Loc.reg) :: its, m, w⟩) (.run ⟨b, its, m', w''⟩) =
-        (j + ls1.length, ps1, T) := fun _ _ => RL.nextW_straight.trans hWs
+  have hfr := R.frameOkK hR
   refine ⟨nst, _, MStep.op hvb hi hops hsz hsem hlen (HavocOuts.refl _ _ _) hc2' (MNext.next hk),
     ⟨?_, hgood, ?_, ?_⟩, ?_⟩
-  · rw [hW1]
-    have hfr := R.frameOkK hR
-    refine ⟨vb, items, pre ++ [.op k (regs.map Loc.reg)], c2, ls2, ps2, hvb,
-      hit, by rw [hsplit]; simp, hchk', hc2, h2, htr, ?_, ?_, ?_⟩
-    · rw [← List.drop_drop, hdrop', List.drop_left]
-    · rw [hiter, hpc']
-    · rw [hiter]
-      have hsp' : spOf s' = R.spB := hK.1.trans hst.sp
-      have herr' : Arm.r .ERR s' = .None := by
-        rw [hW.1 .ERR (by simp [Masked]), hW'.1]
-      refine ⟨fun l hl hL => ?_, hW, herr', ?_, hsp', align_of_sp (by rw [hsp', hst.sp]) hst.align,
-        fun hframe => ?_, code_keep hR.prog0 hst.code fun a ha => hK.2.1 a (.inl (.inr (.inr ha))),
-        fun a ha => (hK.2.1 a (.inr ha)).trans (hst.gkeep a ha), fun hf => hK.2.2.trans (hst.fp hf)⟩
-      · cases l with
-        | reg r => exact hr2 r (hl r rfl)
-        | stack k' c =>
-          rw [hl2 _ (fun r h => by cases h), hst.store _ hl hL,
-            locVal_frame_keep hfr hst.sp hK hL (fun r h => by cases h)]
-        | save r =>
-          rw [hl2 _ (fun r h => by cases h), hst.store _ hl hL,
-            locVal_frame_keep hfr hst.sp hK hL (fun r h => by cases h)]
-      · rw [hW.2.2, hW'.2, ← hst.world.2.2, hst.prog]
-      · rw [← hst.fplr hframe]
-        exact read_mem_bytes_congr _ _ (fun k hk => hK.2.1 _ (fplr_inF hR hframe k hk))
-  · rw [hW1]
+  · unfold RL.QWn
+    rw [RL.nextW_straight, hWs]
+    refine .inl ⟨hT0, qWs_next hvb hit hsplit hchk' hc2 h2 h3 htr hdrop ?_ ?_ hx hsc⟩
+    · rw [relaxLines_plain hpl, hiter, hpc']
+    rw [hiter]
+    have hsp' : spOf s' = R.spB := hK.1.trans hst.sp
+    have herr' : Arm.r .ERR s' = .None := by
+      rw [hW.1 .ERR (by simp [Masked]), hW'.1]
+    refine ⟨fun l hl hL => ?_, hW, herr', ?_, hsp', align_of_sp (by rw [hsp', hst.sp]) hst.align,
+      fun hframe => ?_, code_keep hR.prog0 hst.code fun a ha => hK.2.1 a (.inl (.inr (.inr ha))),
+      fun a ha => (hK.2.1 a (.inr ha)).trans (hst.gkeep a ha), fun hf => hK.2.2.trans (hst.fp hf)⟩
+    · cases l with
+      | reg r => exact hr2 r (hl r rfl)
+      | stack k' c =>
+        rw [hl2 _ (fun r h => by cases h), hst.store _ hl hL,
+          locVal_frame_keep hfr hst.sp hK hL (fun r h => by cases h)]
+      | save r =>
+        rw [hl2 _ (fun r h => by cases h), hst.store _ hl hL,
+          locVal_frame_keep hfr hst.sp hK hL (fun r h => by cases h)]
+    · rw [hW.2.2, hW'.2, ← hst.world.2.2, hst.prog]
+    · rw [← hst.fplr hframe]
+      exact read_mem_bytes_congr _ _ (fun k hk => hK.2.1 _ (fplr_inF hR hframe k hk))
+  · rw [RL.tgtS_straight, hWs, relaxLines_plain hpl]
+    refine firstArrS_singleton.mpr ?_
     have hpn : Arm.r .PC (iterN R.step nst s) = R.pcOf (j + ls1.length) := by rw [hiter, hpc']
     rcases Nat.eq_zero_or_pos nst with h0 | h0
     · subst h0
@@ -140,7 +135,7 @@ theorem realizes_op_coreXNAF {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : 
       cases ln with
       | ins x t => exact RL.firstArr_of_inside hR hj0 hin (Nat.le_refl _) hpn
       | _ => simp [Line.plain] at hpln
-  · rw [RL.segLen_straight_iff, hWs, hn0]
+  · rw [RL.segLen_straight_iff, hWs, relaxLines_plain hpl, hn0]
     simp
   · refine RL.frFree_inside hR hdrop' (Nat.le_refl _) (frLine_lines (hl1 ps1)) hpc (fun h0 => ?_) hin
     have hne : ls1 ≠ [] := fun he => absurd (hn0.mpr he) (by omega)
@@ -250,8 +245,8 @@ theorem realizes_op_nextNAF {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} (hYF :
   have hpre : ∀ regs i' ls1, allocs = regs.map Loc.reg → i.assign regs = .ok i' →
       (∀ ps, i'.lines R.ctx ps = .ok (ls1, ps)) → ∀ env, LinesReads env ls1 s (R.ReadInY Y false) := by
     intro regs i' ls1 hal' hasg hl1 env
-    obtain ⟨vb0, items, pre, code, ls, ps2, hvb0, hit, hsplit, hchk, hcode, hls, htr, hdrop,
-      hpc, hst⟩ := hq
+    obtain ⟨-, vb0, items, pre, code, X, psm, ps2, x, hvb0, hit, hsplit, hchk, hcode, hX, hT,
+      htr, hdrop, hpc, hst, -⟩ := hq.qws_lt hvb hk
     rw [hvb] at hvb0
     cases hvb0
     obtain ⟨c, wh, i2, ops2, hi2, hops2, hstat, -⟩ := op_checked hchk
