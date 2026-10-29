@@ -37,15 +37,18 @@ allocation of the stage's code, using the baseline source slot layout. -/
 theorem frame_stage_of_lower {g : Clif.Function} {vc vcp : VCode} {a : Art}
     (hl : lowerFunction g = .ok vc) (hp : Backend.prepare vc = .ok vcp)
     (hv : a.vcp = stagePrepared g vc vcp) (hr : lowerRFunc a.vcp a.rf = .ok a.af) :
-    ((!g.slots.isEmpty || (RAFrame.compute a.vcp a.rf).size == a.af.frameSize) &&
+    ((!g.slots.isEmpty ||
+      (RAFrame.compute a.vcp a.rf).size == a.af.frameSize - clobberBytes a.af.saves) &&
       slotFitsB g a) = true := by
   obtain ⟨hfs, hsb, -⟩ := lowerRFunc_ok hr
   obtain ⟨hfs, hsb, -⟩ := hfs
   have hsl : a.vcp.slotBytes = (slotLayout g.slots).2 := by
     rw [hv, (stagePrepared_metadata g vc vcp).2.2.1]
     exact slotBytes_of_lower hl hp
+  have hsv := (lowerRFunc_saves hr).2
   have htot : (RAFrame.compute a.vcp a.rf).total =
-      alignTo ((RAFrame.compute a.vcp a.rf).size + a.vcp.slotBytes) 16 := rfl
+      alignTo ((RAFrame.compute a.vcp a.rf).size + a.vcp.slotBytes) 16 +
+        clobberBytes a.rf.saved := rfl
   rw [Bool.and_eq_true]
   constructor
   · cases hs : g.slots with
@@ -54,7 +57,7 @@ theorem frame_stage_of_lower {g : Clif.Function} {vc vcp : VCode} {a : Art}
       have h0 : a.vcp.slotBytes = 0 := by rw [hsl, hs]; rfl
       have hm : (RAFrame.compute a.vcp a.rf).size % 16 = 0 := alignTo16_mod _
       simp only [List.isEmpty_nil, Bool.not_true, Bool.false_or, beq_iff_eq]
-      rw [hfs, htot, h0]
+      rw [hfs, htot, h0, hsv]
       unfold alignTo
       omega
   · unfold slotFitsB
@@ -62,7 +65,7 @@ theorem frame_stage_of_lower {g : Clif.Function} {vc vcp : VCode} {a : Art}
     intro p hp
     obtain ⟨off, hlk, hle⟩ := slotLayout_fits g.slots p hp
     simp only [hlk, decide_eq_true_eq]
-    rw [hfs, hsb, htot, hsl]
+    rw [hfs, hsb, htot, hsl, hsv]
     have := alignTo_ge ((RAFrame.compute a.vcp a.rf).size + (slotLayout g.slots).2) 16 (by decide)
     omega
 
