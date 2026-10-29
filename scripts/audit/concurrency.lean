@@ -129,6 +129,8 @@ import FVTest.Concurrency.LitmusFull
 #print axioms Concurrency.ArmAllocThread.Witness.wfN
 #print axioms Concurrency.ArmAllocThread.Witness.qN
 #print axioms Concurrency.ArmAllocThread.Witness.noev_premises
+-- the call-site bridge without the last-block check (#622, #553)
+#print axioms Concurrency.SiteAtAny.Witness.siteAt_any_witness
 -- layer 4b, memory items (fence, ldar, stlr)
 #print axioms Concurrency.ArmAllocThread.itemSim_of_op
 #print axioms Concurrency.ArmAllocThread.noev_op

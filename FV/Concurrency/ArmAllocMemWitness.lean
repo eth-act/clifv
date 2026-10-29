@@ -1,4 +1,4 @@
-import FV.Concurrency.ArmAllocMem
+import FV.Concurrency.ArmAllocFwd
 import FV.Concurrency.ArmAllocWitness
 
 /-!

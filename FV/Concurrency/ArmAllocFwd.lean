@@ -1,4 +1,5 @@
 import FV.Concurrency.ArmAllocMove
+import FV.E2E.EmitPreOk
 
 /-!
 # Precise Arm runs of compiled code, forward (T2k, #311)
@@ -187,8 +188,24 @@ theorem codeLinesE_append_of {c : FnCtx} {af : AFunc} :
     simp only [List.cons_append, codeLinesE, bind, Except.bind, hr, ih, pure, Except.pure,
       List.append_assoc]
 
+theorem dropLast_append_getLast?_toList {α : Type} : ∀ (l : List α), l.dropLast ++ l.getLast?.toList = l
+  | [] => rfl
+  | a :: l => by
+    rw [List.getLast?_eq_some_getLast (List.cons_ne_nil a l)]
+    exact List.dropLast_concat_getLast _
+
 /-- **At a `Q` state the first line of the remaining items' code is at the pc** (a plain
-instruction line without block target). -/
+instruction line without block target).
+
+Premises added in the #553 port. `hR` (every caller has it): under `Q = Qs ∨ QE` the head line
+can be the first line of the block's last instruction, whose final form is the emission plan's
+(`segTermOk`), related to its unsimplified line through `lowerRFunc` (`hR.alloc`) and `hR.psF`.
+`hnt`: the branch simplification may retarget a line with a block target, and a plain line can
+have one: a last `condBr` with condition `al`/`nv` emits `b.al`/`b.nv` to a block (plain:
+relaxation leaves it alone), which `condOk` lets the emission retarget to a label representing
+the block. Every other line with a block target is no plain line (no emitted line carrying a
+trap code has a block target), so `hnt` only excludes that case; callers discharge it by
+`cases` on their concrete line. -/
 theorem q_head {R : RL} (hR : R.Wf) {s : ArmState} {b : Nat} {its : List RItem} {m : Loc → CV}
     {w : ArmState} (hq : Q R s (.run ⟨b, its, m, w⟩)) {x : Insn} {t : Option Clif.TrapCode}
     (hpl : (Line.ins x t).plain = true) (hnt : ∀ l, Line.target? (.ins x t) ≠ some (.block l))
@@ -221,7 +238,7 @@ theorem q_head {R : RL} (hR : R.Wf) {s : ArmState} {b : Nat} {its : List RItem} 
     hdrop, hpc, hst, hx, hsc⟩ := hqs
   have hcl : codeLinesE R.ctx R.af code ps1 = .ok (X ++ xs.1.term, ps2) := by
     have := codeLinesE_append_of _ _ hX hT
-    rwa [List.dropLast_append_getLast?] at this
+    rwa [dropLast_append_getLast?_toList] at this
   have hhd := hh vb code hvb hcode ps1 _ ps2 hcl
   refine ⟨j, ?_, hpc, hst⟩
   -- the line at `j` is the first of the relaxed `X ++ xs.2.1`
@@ -241,10 +258,13 @@ theorem q_head {R : RL} (hR : R.Wf) {s : ArmState} {b : Nat} {its : List RItem} 
   -- the block's last instruction and the branch check of its segment
   have hne : code ≠ [] := by
     rintro rfl
-    simp [codeLinesE, pure, Except.pure] at hcl
-    obtain ⟨-, rfl, -⟩ := hcl
+    have h0 : [] ++ xs.1.term = [] := by
+      simp only [codeLinesE, pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at hcl
+      exact hcl.1.symm
+    rw [List.nil_append] at h0
+    rw [h0] at hhd
     simp at hhd
-  obtain ⟨y, hy⟩ : ∃ y, code.getLast? = some y := ⟨_, List.getLast?_eq_getLast hne⟩
+  obtain ⟨y, hy⟩ : ∃ y, code.getLast? = some y := ⟨_, List.getLast?_eq_some_getLast hne⟩
   rw [hy] at hT
   have hraw := E2E.rawTerm_of (some y) hT
   obtain ⟨x', hx', hok⟩ := hsc
@@ -258,8 +278,9 @@ theorem q_head {R : RL} (hR : R.Wf) {s : ArmState} {b : Nat} {its : List RItem} 
   obtain ⟨codeF, hcF, haf⟩ := hbl b vb items hvb hit
   rw [hsplit] at hcF
   obtain ⟨ca, cb, -, hcb, rfl⟩ := itemsCode_append hcF
-  rw [hcode] at hcb
-  cases hcb
+  have hcb' : itemsCode R.fr vb its = .ok cb := hcb
+  rw [hcode] at hcb'
+  cases hcb'
   rw [haf] at hok
   have hb : (((if b = 0 then [AInst.prologue] else []) ++ (ca ++ code)).toArray).back? = some y := by
     rw [Array.back?_eq_getElem?]
@@ -282,7 +303,7 @@ theorem q_head {R : RL} (hR : R.Wf) {s : ArmState} {b : Nat} {its : List RItem} 
     rw [hraw] at hhd
     simp only [List.head?_cons, Option.some.injEq, Line.ins.injEq] at hhd
     obtain ⟨rfl, rfl⟩ := hhd
-    cases k <;> simp [Line.plain, CondBrKind.insn, Insn.condTarget?] at hpl
+    exact absurd (by cases k <;> rfl) (hnt tl)
   by_cases htb : ∃ k tl el rn bit, y = .inst (.testBitAndBranch k tl el rn bit)
   · obtain ⟨k, tl, el, rn, bit, rfl⟩ := htb
     simp only [RawTerm] at hraw

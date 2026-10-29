@@ -607,8 +607,9 @@ theorem q_regs {R : RL} {s : ArmState} {b k : Nat} {allocs : Array Loc} {its : L
     subst hi
     obtain ⟨rfl, rfl⟩ := assign_jump hasg'
     obtain rfl : ops = #[] := by
-      simp only [MInst.operands, Except.ok.injEq] at hops
-      exact hops.symm
+      have h0 : (MInst.jump x).operands = .ok #[] := rfl
+      rw [h0] at hops
+      exact (Except.ok.inj hops).symm
     exact ⟨#[], hal', rfl, by simp, by simp [itemUses, useVals]⟩
   obtain ⟨j, vb0, items, pre, code, X, ps1, psm, ps2, x, hvb0, hit, hsplit, hchk, hcode, -⟩ := hqs
   rw [hvb] at hvb0
