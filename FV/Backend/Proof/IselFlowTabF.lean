@@ -18,7 +18,7 @@ namespace Backend.Proof.Flow
 open Isle Isle.Aarch64
 
 /-- Chunk 0 of `flowTab`. -/
-def flowTab0 : Tab :=
+@[expose] def flowTab0 : Tab :=
   [(172, [⟨0, true⟩], ⟨0, true⟩),
    (242, [⟨0, true⟩], ⟨0, true⟩),
    (243, [⟨0, true⟩], ⟨0, true⟩),
@@ -33,7 +33,7 @@ def flowTab0 : Tab :=
    (306, [⟨0, true⟩], ⟨0, true⟩)]
 
 /-- Chunk 1 of `flowTab`. -/
-def flowTab1 : Tab :=
+@[expose] def flowTab1 : Tab :=
   [(307, [⟨0, true⟩], ⟨0, true⟩),
    (310, [⟨0, true⟩], ⟨0, true⟩),
    (344, [⟨0, true⟩], ⟨0, true⟩),
@@ -48,7 +48,7 @@ def flowTab1 : Tab :=
    (376, [⟨0, true⟩, ⟨0, true⟩, ⟨0, true⟩, ⟨0, true⟩], ⟨0, true⟩)]
 
 /-- Chunk 2 of `flowTab`. -/
-def flowTab2 : Tab :=
+@[expose] def flowTab2 : Tab :=
   [(377, [⟨0, true⟩, ⟨0, true⟩, ⟨0, true⟩, ⟨0, true⟩, ⟨0, true⟩], ⟨0, true⟩),
    (379, [⟨0, true⟩, ⟨0, true⟩, ⟨0, true⟩, ⟨0, true⟩], ⟨0, true⟩),
    (380, [⟨0, true⟩, ⟨0, true⟩, ⟨0, true⟩, ⟨0, true⟩, ⟨0, true⟩], ⟨0, true⟩),
@@ -63,7 +63,7 @@ def flowTab2 : Tab :=
    (393, [⟨0, true⟩, ⟨0, true⟩, ⟨0, true⟩, ⟨0, true⟩], ⟨0, true⟩)]
 
 /-- Chunk 3 of `flowTab`. -/
-def flowTab3 : Tab :=
+@[expose] def flowTab3 : Tab :=
   [(395, [⟨0, true⟩, ⟨0, true⟩, ⟨0, true⟩], ⟨0, true⟩),
    (406, [⟨0, true⟩, ⟨0, true⟩, ⟨0, true⟩, ⟨0, true⟩], ⟨0, true⟩),
    (407, [⟨0, true⟩, ⟨0, true⟩, ⟨0, true⟩], ⟨0, true⟩),
@@ -78,7 +78,7 @@ def flowTab3 : Tab :=
    (425, [⟨0, true⟩, ⟨0, true⟩, ⟨0, true⟩], ⟨0, true⟩)]
 
 /-- Chunk 4 of `flowTab`. -/
-def flowTab4 : Tab :=
+@[expose] def flowTab4 : Tab :=
   [(426, [⟨0, true⟩], ⟨0, true⟩),
    (428, [⟨0, true⟩], ⟨0, true⟩),
    (430, [⟨0, true⟩, ⟨0, true⟩, ⟨0, true⟩, ⟨0, true⟩, ⟨0, true⟩, ⟨0, true⟩], ⟨0, true⟩),
@@ -93,7 +93,7 @@ def flowTab4 : Tab :=
    (443, [⟨0, true⟩, ⟨0, true⟩, ⟨0, true⟩, ⟨0, true⟩], ⟨0, true⟩)]
 
 /-- Chunk 5 of `flowTab`. -/
-def flowTab5 : Tab :=
+@[expose] def flowTab5 : Tab :=
   [(444, [⟨0, true⟩, ⟨0, true⟩, ⟨0, true⟩, ⟨0, true⟩], ⟨0, true⟩),
    (451, [⟨0, true⟩, ⟨0, true⟩, ⟨0, true⟩], ⟨0, true⟩),
    (452, [⟨0, true⟩, ⟨0, true⟩, ⟨0, true⟩], ⟨0, true⟩),
@@ -108,7 +108,7 @@ def flowTab5 : Tab :=
    (492, [⟨0, true⟩, ⟨0, true⟩, ⟨0, true⟩], ⟨0, true⟩)]
 
 /-- Chunk 6 of `flowTab`. -/
-def flowTab6 : Tab :=
+@[expose] def flowTab6 : Tab :=
   [(493, [⟨0, true⟩, ⟨0, true⟩, ⟨0, true⟩], ⟨0, true⟩),
    (495, [⟨0, true⟩, ⟨0, true⟩, ⟨0, true⟩], ⟨0, true⟩),
    (496, [⟨0, true⟩, ⟨0, true⟩, ⟨0, true⟩, ⟨0, true⟩], ⟨0, true⟩),
@@ -123,7 +123,7 @@ def flowTab6 : Tab :=
    (518, [⟨0, true⟩, ⟨0, true⟩], ⟨0, true⟩)]
 
 /-- Chunk 7 of `flowTab`. -/
-def flowTab7 : Tab :=
+@[expose] def flowTab7 : Tab :=
   [(520, [⟨0, true⟩, ⟨0, true⟩], ⟨0, true⟩),
    (521, [⟨0, true⟩, ⟨0, true⟩], ⟨0, true⟩),
    (522, [⟨0, true⟩, ⟨0, true⟩], ⟨0, true⟩),
@@ -138,7 +138,7 @@ def flowTab7 : Tab :=
    (535, [⟨0, true⟩, ⟨0, true⟩], ⟨0, true⟩)]
 
 /-- Chunk 8 of `flowTab`. -/
-def flowTab8 : Tab :=
+@[expose] def flowTab8 : Tab :=
   [(541, [⟨0, true⟩, ⟨0, true⟩, ⟨0, true⟩], ⟨0, true⟩),
    (542, [⟨0, true⟩, ⟨0, true⟩, ⟨0, true⟩], ⟨0, true⟩),
    (543, [⟨0, true⟩, ⟨0, true⟩, ⟨0, true⟩], ⟨0, true⟩),
@@ -153,7 +153,7 @@ def flowTab8 : Tab :=
    (561, [⟨0, true⟩, ⟨0, true⟩, ⟨0, true⟩, ⟨0, true⟩], ⟨0, true⟩)]
 
 /-- Chunk 9 of `flowTab`. -/
-def flowTab9 : Tab :=
+@[expose] def flowTab9 : Tab :=
   [(562, [⟨0, true⟩, ⟨0, true⟩], ⟨0, true⟩),
    (564, [⟨0, true⟩], ⟨0, true⟩),
    (565, [⟨0, true⟩, ⟨0, true⟩, ⟨0, true⟩, ⟨0, true⟩], ⟨0, true⟩),
@@ -168,7 +168,7 @@ def flowTab9 : Tab :=
    (577, [⟨0, true⟩, ⟨0, true⟩], ⟨0, true⟩)]
 
 /-- Chunk 10 of `flowTab`. -/
-def flowTab10 : Tab :=
+@[expose] def flowTab10 : Tab :=
   [(612, [⟨0, true⟩, ⟨0, true⟩, ⟨0, true⟩, ⟨0, true⟩, ⟨0, true⟩], ⟨0, true⟩),
    (613, [⟨0, true⟩, ⟨0, true⟩, ⟨0, true⟩, ⟨0, true⟩, ⟨0, true⟩], ⟨0, true⟩),
    (638, [⟨0, true⟩], ⟨0, true⟩),
@@ -183,7 +183,7 @@ def flowTab10 : Tab :=
    (653, [⟨0, true⟩, ⟨0, true⟩, ⟨0, true⟩, ⟨0, true⟩, ⟨0, true⟩], ⟨0, true⟩)]
 
 /-- Chunk 11 of `flowTab`. -/
-def flowTab11 : Tab :=
+@[expose] def flowTab11 : Tab :=
   [(654, [⟨0, true⟩, ⟨0, true⟩, ⟨0, true⟩, ⟨0, true⟩], ⟨0, true⟩),
    (655, [⟨0, true⟩, ⟨0, true⟩, ⟨0, true⟩], ⟨0, true⟩),
    (656, [⟨0, true⟩], ⟨0, true⟩),
@@ -198,14 +198,14 @@ def flowTab11 : Tab :=
    (710, [⟨0, true⟩, ⟨0, true⟩, ⟨0, true⟩], ⟨0, true⟩)]
 
 /-- Chunk 12 of `flowTab`. -/
-def flowTab12 : Tab :=
+@[expose] def flowTab12 : Tab :=
   [(712, [⟨0, true⟩, ⟨0, true⟩, ⟨0, true⟩], ⟨0, true⟩),
    (715, [⟨0, true⟩], ⟨0, true⟩)]
 
 /-- Chunk 13 of `flowTab`: the internal terms of the S11e4 float data-movement roots
 (`constant_f16/f32/f64`, `vec_dup_imm`, `fpu_move_fp_imm`, `output_value`, the FP loads and
 stores). -/
-def flowTab13 : Tab :=
+@[expose] def flowTab13 : Tab :=
   [(586, [⟨0, true⟩], ⟨0, true⟩),
    (587, [⟨0, true⟩], ⟨0, true⟩),
    (537, [⟨0, true⟩, ⟨0, true⟩], ⟨0, true⟩),
@@ -220,13 +220,13 @@ def flowTab13 : Tab :=
 
 /-- Chunk 14 of `flowTab`: the internal terms of the S11f float arithmetic roots (`fpu_rrr`,
 `fpu_rr`, `fpu_round`). -/
-def flowTab14 : Tab :=
+@[expose] def flowTab14 : Tab :=
   [(368, [⟨0, true⟩, ⟨0, true⟩, ⟨0, true⟩, ⟨0, true⟩], ⟨0, true⟩),
    (364, [⟨0, true⟩, ⟨0, true⟩, ⟨0, true⟩], ⟨0, true⟩),
    (408, [⟨0, true⟩, ⟨0, true⟩], ⟨0, true⟩)]
 
 /-- Chunk 15 of `flowTab`: the internal terms of the S11f-cvt conversion roots (`fpu_to_int_cvt_sat`, `fpu_to_int`, `int_to_fpu`, `signed_min`/`signed_max`). -/
-def flowTab15 : Tab :=
+@[expose] def flowTab15 : Tab :=
   [(629, [⟨0, true⟩, ⟨0, true⟩, ⟨0, true⟩, ⟨0, true⟩], ⟨0, true⟩),
    (632, [⟨0, true⟩, ⟨0, true⟩], ⟨0, true⟩),
    (633, [⟨0, true⟩, ⟨0, true⟩], ⟨0, true⟩),
@@ -234,7 +234,7 @@ def flowTab15 : Tab :=
    (631, [⟨0, true⟩], ⟨0, true⟩)]
 
 /-- The summary table. -/
-def flowTab : Tab := flowTab0 ++ flowTab1 ++ flowTab2 ++ flowTab3 ++ flowTab4 ++ flowTab5 ++ flowTab6 ++ flowTab7 ++ flowTab8 ++ flowTab9 ++ flowTab10 ++ flowTab11 ++ flowTab12 ++ flowTab13 ++ flowTab14 ++ flowTab15
+@[expose] def flowTab : Tab := flowTab0 ++ flowTab1 ++ flowTab2 ++ flowTab3 ++ flowTab4 ++ flowTab5 ++ flowTab6 ++ flowTab7 ++ flowTab8 ++ flowTab9 ++ flowTab10 ++ flowTab11 ++ flowTab12 ++ flowTab13 ++ flowTab14 ++ flowTab15
 
 set_option maxRecDepth 100000 in
 theorem flowTab0_ok :

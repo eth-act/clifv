@@ -553,7 +553,7 @@ pointer in x0, `sigRets`). -/
     (!s.params.any (·.purpose == .sret) || s.returns.isEmpty)
 
 /-- Does `f` have a `tls_value` (Cranelift's `elf_gd` TLSDESC sequence)? -/
-def hasTls (f : Clif.Function) : Bool :=
+@[expose] def hasTls (f : Clif.Function) : Bool :=
   f.blocks.any fun b => b.body.any fun st => match st.inst with
     | .tlsValue .. => true
     | _ => false

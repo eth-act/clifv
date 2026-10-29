@@ -29,7 +29,7 @@ theorem variantNames_Ishl : (variantNames 151)[103]? = some "Ishl" := rfl
 
 /-- What an instruction-emitting term contract concludes: the value is the fresh vreg, the
 state emitted one instruction `mi`, which computes `g x y` (`OneInstOk`). -/
-def LogicOut (ctx : Ctx) (st : LState) (ty : Clif.Ty) (x y : Nat)
+@[expose] def LogicOut (ctx : Ctx) (st : LState) (ty : Clif.Ty) (x y : Nat)
     (g : BitVec ty.width → BitVec ty.width → BitVec ty.width) (a : V) (st2 : LState) : Prop :=
   ∃ mi, a = .reg (.vreg st.nextVreg .int) ∧ st2 = (st.fresh .int).2.emit mi ∧
     OneInstOk ctx st ty x y g mi

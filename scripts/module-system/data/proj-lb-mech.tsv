@@ -1,0 +1,348 @@
+commit	subject	touched	iface	base_n	mech_n	priv_n	base_s	mech_s	priv_s
+63fdd773ba	Prove scalar Stock minmax and original select source transfe	0	67	0	0	0	0	0	0
+bb5b03fd31	Prove guarded Stock source-body scan refinement (#203)	0	10	0	0	0	0	0	0
+3231984128	Prove actual Stock return refinement and terminal emission (	0	26	0	0	0	0	0	0
+4a2282fb59	Prove remaining sign-extension comparison rules (R8) (#206)	1	3	6	6	6	6	6	6
+588a0b96c8	Prove and enable the remaining bitops rules (R7) (#207)	1	4	6	6	6	6	6	6
+d3296553fc	Prove and enable all remaining selects roots (R3) (#208)	1	6	6	6	6	6	6	6
+b161dac27c	Prove and enable all remaining spaceship select rules (R5) (	1	6	6	6	6	6	6	6
+bbbecb8dab	Prove remaining icmp rewrite rules (R2) (#210)	1	11	6	6	6	6	6	6
+052abdab02	Prove and enable all remaining arithmetic rules (R1) (#211)	1	8	6	6	6	6	6	6
+b83eee5e97	Prove all remaining sound shift simplification rules (R4) (#	1	7	6	6	6	6	6	6
+04e241cc83	Kernel-check the fixed proofs: no bv_decide/native_decide in	14	61	154	151	151	5999	5977	5977
+1c40098161	S6/S2/S3 (#30, #26, #27): i128 legalisation inside the sourc	0	11	0	0	0	0	0	0
+3027219089	L1d (#204): executable correctness for recursive programs (c	0	9	0	0	0	0	0	0
+4f4799f682	L1f (#217): theorems for the shipped (dead-cleanup) compiler	0	10	0	0	0	0	0	0
+45f195de28	L1e (#216): compileExe totality from decidable input conditi	0	3	0	0	0	0	0	0
+4fbc822327	T7a/T7d/T7e (#43): frontend bundle boundary, Lean-built Link	0	10	0	0	0	0	0	0
+b65a41aea4	L1e (#216): compileExe totality with relocation reach decide	0	11	0	0	0	0	0	0
+7d795a65b2	T7b/T7c (#221): cg_clif external-name tables, Lean decoding 	0	7	0	0	0	0	0	0
+f29d0c0673	V7 (#226): lowerFunction/prepare totality on input condition	0	34	0	0	0	0	0	0
+fcd97dd872	S11c (#236): IEEE core FV/Float (ASL FPAdd..FPConvert, FPCR=	5	8	5	5	5	0	0	0
+4d7ce9540e	S10b (#229): Clif.runX, CLIF with unwinding (try_call's exce	1	2	1	1	1	2	2	2
+032d576442	S1 (#25) + S2 (#26): mid-end with call_indirect/try_call (op	3	18	3	3	3	4	4	4
+88698589fe	L1g (#228) item 1: Link.compileExe checks the input-only InS	0	7	0	0	0	0	0	0
+8ca92f349e	L1g (#228) item 2: InScopeIn runs no compiler stage (addrSlo	0	4	0	0	0	0	0	0
+0ec59a028d	L1g (#228) item 3: lean-link computes the Lean compiler's la	0	3	0	0	0	0	0	0
+789152e24d	S11d (#237): Arm FP moves/loads/stores/fcsel, cosim, encoder	20	23	261	261	261	7610	7610	7610
+5fc3fe5700	B1 (#252): FV.Opt.Proof no longer imports FV.Backend (drop R	0	1	0	0	0	0	0	0
+3eaf230e1e	S11d (#237): Arm FP arithmetic/compare/convert, encoder, dec	12	15	260	260	260	7610	7610	7610
+fc4a06f39f	Stock: preserve per-successor arguments through preparation 	6	55	7	7	7	10	10	10
+5a3ad2bb0a	Prove Stock CFG preparation and retained successor records (	0	83	0	0	0	0	0	0
+8e5b0e4044	L1g (#228) item 4: kernel proofs for the LNSym bv_decide lem	2	1	245	245	245	7486	7486	7486
+778b97a569	S11b (#235): CLIF f32/f64 types, float data movement and Ins	34	69	301	301	301	8101	8101	8101
+984728d8f0	Full gate in CI: post-merge/weekly sharded build, gate jobs,	0	1	0	0	0	0	0	0
+d0f2baac1d	S11e1–S11e3 (#238): FP MInst forms, typed AAPCS64 ABI placem	34	63	267	267	267	8068	8068	8068
+f7fda7be99	S11e4 (#238): float data-movement ISLE roots in the closure,	23	39	269	269	269	8073	8073	8073
+0cf531e983	T4 (#40): encoder-driven Arm co-simulation (arm-cosim --enco	0	3	0	0	0	0	0	0
+01a6109853	L2b-3a/3b: lean-ld, a Lean static linker; writer read-back a	0	8	0	0	0	0	0	0
+c04a4b3ffd	T5 (#41): clif-fuzz random CLIF differential tests (Clif.run	0	3	0	0	0	0	0	0
+d633b3758c	S11e5 Stage C slices 1-2: typed movement scope (Compile.func	3	4	3	3	3	9	9	9
+a0f9b04ae9	V4b-1 (#273): Lean register allocator (linear scan with life	3	5	3	3	3	10	10	10
+4959908cd8	L2b-3d: cargo fv --lean-ld (executables linked by lean-ld); 	0	2	0	0	0	0	0	0
+9e72721d6e	V4b-2 (#274): Lean allocator is the default; cargo fv no lon	3	5	3	3	3	10	10	10
+dc0db2d5fe	S11e5 Stage C slice 3: typed loop simulation (loop_runT, low	2	8	89	89	89	731	731	731
+6ce3d90946	L2b-3b: symsOkB proven on lean-ld's output (symsOkB_write); 	0	3	0	0	0	0	0	0
+a553db805f	S4 (#28): stack-passed i128 arguments: expandGroups places p	1	4	7	7	7	14	14	14
+4141e4c228	L2b-3c: lean-ld's body built from relocated pieces; buildBod	0	3	0	0	0	0	0	0
+dd1d4195eb	S4 (#28): i128 uadd/sadd/usub/ssub_overflow as pure patterns	1	5	6	6	6	12	12	12
+581b78755a	V4b-3a (#275): Lean allocator validator (planOk) and proof-f	1	2	3	3	3	10	10	10
+d5ac7bdae3	S11e5 Stage C slice 3 completion: typed terminator shapes, p	0	9	0	0	0	0	0	0
+1090875b95	L2b-3e (#269): lean-ld's plan (Plan, assemble, Plan.okB); st	0	8	0	0	0	0	0	0
+d59896294f	V4b-3/V4b-4 (#275, #276): completeness of the Lean allocator	0	19	0	0	0	0	0	0
+1162cbbf78	T2a-T2c (#299-#301): Armv8 axiomatic fragment, Cranelift SC 	0	10	0	0	0	0	0	0
+aa372c9e56	M1 (#24): completeness of unreachableOk (Opt.unreachableOk_r	0	1	0	0	0	0	0	0
+3a37aa2e6b	T2d (#302): per-thread event semantics of the Arm model (foo	0	4	0	0	0	0	0	0
+7ed5fd777b	M1 (#24): DCE completeness (Opt.dce_complete) + declarative 	0	2	0	0	0	0	0	0
+a386cbab47	T2e (#303): program level — multi-threaded Clif.run, replay 	0	6	0	0	0	0	0	0
+73784c9c2d	M1 (#24): GVN completeness (Opt.gvn_complete: check + editOk	0	2	0	0	0	0	0	0
+409c6a49ab	T2f (#304): RC11 with all orderings, contract with SC fences	0	4	0	0	0	0	0	0
+f147a11349	T2f (#304): program-level chain with fences — consistentCF, 	0	6	0	0	0	0	0	0
+7b2b911e33	M1 (#24): LICM completeness (Opt.licm_complete) (#318)	1	4	6	6	6	7	7	7
+150f46c850	T2g (#305): full aarch64.cat (Armv8Full) and monotonicity (c	0	4	0	0	0	0	0	0
+aef474b531	T2h (#311) layer 0: per-thread refinement with interference 	0	3	0	0	0	0	0	0
+ea4a761085	M1 (#24): dominators, re-check, guards, optimize_complete (s	1	6	5	5	5	6	6	6
+8dba4e7b97	L2b-3d (#270): lean-ld is --lean-link's default (--rust-lld 	0	6	0	0	0	0	0	0
+e63ec13d58	Stock/isel seam: IselData imports FV.Backend.Isel and FV.Com	4	8	192	192	192	7744	7744	7744
+ed5cb86c0b	S10c (#230) + S10d (#231): unwind tables correct by construc	5	5	31	31	31	97	97	97
+820b6ae6f0	S10e (#232) + S10f (#233): per-function theorem with the exc	8	86	8	8	8	31	31	31
+6a1f7d518f	Enable proved Stock lowering for entry-parameter returns (#3	4	21	50	50	50	594	594	594
+c2c5d773e3	Allow E2E proofs to consume actual validated lowering output	0	9	0	0	0	0	0	0
+d243e19830	S4 (#28): i128 call_indirect and try_call_indirect in the le	4	20	7	7	7	14	14	14
+fd857be3f6	Carry actual Stock results through whole-program and binary 	0	7	0	0	0	0	0	0
+7954ae1f2a	Connect actual Stock outputs to image, stack and generated p	0	6	0	0	0	0	0	0
+00f686f1c1	Enable proved Stock lowering for SystemV i64 prologues (#333	4	39	4	4	4	6	6	6
+5a143135fc	Enable all six proved Stock prologue configurations in produ	3	25	3	3	3	5	5	5
+d18ba0391e	Enable proved scalar-add Stock production across six configu	4	18	4	4	4	6	6	6
+fcdaefe001	S4 (#28): x7 placement of stack-passed i128 (Cranelift's nex	3	7	7	7	7	14	14	14
+5f7350fa14	Derive pure-body scan decisions through the complete Stock d	0	7	0	0	0	0	0	0
+2fe5fa0feb	Derive arithmetic body value simulation from original source	0	2	0	0	0	0	0	0
+348fa0a8ca	Connect original arithmetic execution to actual Stock VCode 	0	8	0	0	0	0	0	0
+7a18184a86	T2h (#311): per-thread layers with interference (1, 1b, 3, 4	0	11	0	0	0	0	0	0
+5c9917ce46	Prove Stock entry values, stack loads and source-row constru	0	6	0	0	0	0	0	0
+f9e9aad1ef	Prove Stock arithmetic execution from ABI entry through retu	0	8	0	0	0	0	0	0
+4d0156407b	T2h (#311) layer 2a: VCode event addresses within MInst.acce	0	5	0	0	0	0	0	0
+fdcff8bb85	Prove direct Stock arithmetic machine and artifact consumers	0	10	0	0	0	0	0	0
+9f76d9f642	T2h (#311) layer 4b run level: ArmAllocThread.refines_of_ite	0	3	0	0	0	0	0	0
+7e88a27a3a	T2h (#311) layer 4b: segment lemmas, event-free items (arm_a	0	7	0	0	0	0	0	0
+46c6cc6587	S11e5 Stage C slice 4 (#238): mspec states the scalar float 	4	6	49	49	49	3623	3623	3623
+35ffedb03a	S11e5a (#238): typed direct call (gen_call_output/args/rets 	7	23	266	266	266	8061	8061	8061
+c35e906268	S11f part 1 (#239): eleven scalar float arithmetic roots pro	24	36	269	269	269	8073	8073	8073
+d31b9cde59	S11e5 Stage C slice 6 (#238): typed spill chain over LowerSc	0	6	0	0	0	0	0	0
+ddfeb764eb	S11e5 Stage C slice 7 (#238): typed end-to-end composition (	1	64	1	1	1	1	1	1
+08020ed34b	T1/#271: Arm model TPIDR_EL0 + mrs tpidr_el0, SMADDL/SMSUBL/	5	12	250	250	250	7513	7513	7513
+95b8710895	Activate proved raw Stock arithmetic across production consu	8	54	8	8	8	16	16	16
+ba08bcaf2a	Activate proved Stock add/sub/select functions in production	8	27	31	31	31	70	70	70
+779bc7bad8	Activate proved Stock logical functions and preserve every r	6	49	26	26	26	65	65	65
+22a05d3b94	Derive constant record receipts and compose guarded body exe	0	6	0	0	0	0	0	0
+150738a95f	Activate Stock constants through shared scalar production co	7	37	27	27	27	66	66	66
+0ce772eb10	Activate Stock NOT through existing scalar production consum	1	13	33	33	33	79	79	79
+1246b4554b	Activate Stock multiplication and fused multiply in producti	1	23	33	33	33	79	79	79
+4966cf92f6	Activate Stock shifts and fused bitfields in production (#36	2	24	36	36	36	82	82	82
+f74880a6ff	Activate Stock integer extension and reduction in production	2	21	36	36	36	82	82	82
+8442c3314c	Activate Stock unary bit operations and rotations in product	2	18	36	36	36	82	82	82
+67a42f5247	S12c (#36): co-simulate the unchecked Advanced SIMD forms (#	0	1	0	0	0	0	0	0
+e8a4e6b2ce	S12b (#36): vector value semantics (FV/Clif/Vector.lean) (#3	0	1	0	0	0	0	0	0
+80280f11c0	Activate Stock scalar popcount in production (#378)	2	14	36	36	36	82	82	82
+d8d6e05c7e	Activate Stock signed and unsigned min/max in production (#3	2	14	36	36	36	82	82	82
+e95bb8716e	S8a (#32): self tail calls as loops in the executable theore	0	6	0	0	0	0	0	0
+031df150fa	S9a (#33): per-function theorem with callee traps; S9c step 	0	6	0	0	0	0	0	0
+13138d1d31	Activate proved integer comparisons and fused comparison cas	2	24	36	36	36	82	82	82
+375b064287	S9c (#376): callee traps in the linked program (backend_corr	0	4	0	0	0	0	0	0
+d522474ca5	Activate proved high multiplication across Stock scalar cons	2	14	36	36	36	82	82	82
+1367fe66de	M1 (#24): simplify stage completeness under rule-set obligat	0	15	0	0	0	0	0	0
+c7046c3e6c	T2h (#311) layer 2: segments as forward runs (2b), segment-s	0	8	0	0	0	0	0	0
+9113a192d8	T2h (#311) layer 2e, CLIF side: CStep of the memory statemen	0	3	0	0	0	0	0	0
+b9415cfb60	T2h (#311) layer 2d: covering event of a touched byte (IselC	0	3	0	0	0	0	0	0
+4b338156e6	T2h (#311) layer 2e: the sizes of a VCode instruction's even	0	3	0	0	0	0	0	0
+87b8118f63	S9d (#377): callee traps on the executable and in the bundle	0	6	0	0	0	0	0	0
+8f5b642c54	M1 (#24): hand rules meet the simplify completeness obligati	1	6	7	7	7	12	12	12
+6628c25058	M1 (#24): completeness of the mid-end for every configuratio	2	25	7	7	7	12	12	12
+3b441a9fe7	T1 (#37): hook-free TLS — the executable runs lld's local-ex	1	8	21	21	21	518	518	518
+e3bbfd97a8	Build diet: split the seven heaviest Opt rule modules into p	0	30	0	0	0	0	0	0
+729900af1d	T2h (#311) 2e: assembly pieces of the isel layer with interf	0	18	0	0	0	0	0	0
+4324d210d3	S9b (#375): callee traps of try_call, per function (backend_	0	6	0	0	0	0	0	0
+3838594200	A2/B1 (#407): source theorems of the shipped compiler withou	0	4	0	0	0	0	0	0
+160eb52630	S10g (#404) part 1: compileExeOpt_correct_unwind{,_peak} (th	0	3	0	0	0	0	0	0
+94ecf5bff7	A3 (#412) F1: Arm memory-fault model (ArmFault.stepF) + faul	0	4	0	0	0	0	0	0
+9d3d8d2f16	A5 (#411): entry contract at the ELF level, bundle_correct_r	0	2	0	0	0	0	0	0
+dcd95f7387	T2h (#311) 4b: barrier exemption in Refines.shared (a dmb ac	0	3	0	0	0	0	0	0
+30b9867c2f	A3 (#412) F2: CLIF memory traps (MemTrapAt, memTrapInst), Tr	0	3	0	0	0	0	0	0
+e15dc91338	T2h (#311) 2e: layer 2 (isel with interference) proven: mem_	0	10	0	0	0	0	0	0
+f99e3ef237	A1a (#409): lean-ld's planner meets Plan.okB by construction	0	2	0	0	0	0	0	0
+1deafbe402	A2/B1 (#407): callee-trap source theorems without the memory	0	3	0	0	0	0	0	0
+ab2e5e2f55	S12e (#36): vector data movement via retyping + i128 legalis	0	5	0	0	0	0	0	0
+85447965f9	T2h (#311): compose the per-thread layers (isel_alloc_refine	0	3	0	0	0	0	0	0
+86a243fdf5	S9e (#408): try_call callee traps on the executable and in t	0	8	0	0	0	0	0	0
+e00e0ab604	A3 (#412) F3: lowering of trapping atomics (atomicLowered_ru	0	2	0	0	0	0	0	0
+911522eb8f	T3c/T3d (#39): --verified executables with std in P (per-exe	0	5	0	0	0	0	0	0
+cd5aa5e54f	S10g (#404) part 2: completeness of callSites, padsNonzeroB,	0	2	0	0	0	0	0	0
+8f18dff21d	A1b (#409): layout_ok — lean-ld's layout succeeds when the r	0	2	0	0	0	0	0	0
+2c25aff7db	T2h (#311) 4b: ItemSim for dmb/ldar/stlr, MemScope, arm_allo	0	3	0	0	0	0	0	0
+d8c25836bd	A2/B1 (#407): baseline-compiler source theorems without the 	0	2	0	0	0	0	0	0
+7d025d146a	A2/B1 (#407): peak-trap witness without the memory bound (ex	0	1	0	0	0	0	0	0
+a7f8d26513	S9e (#408): try_call callee-trap source theorems without the	0	3	0	0	0	0	0	0
+dda11fc75f	A5 (#411): _contract variants for the trap and _source execu	0	4	0	0	0	0	0	0
+63d9f50803	S10g (#404): HandlersOk/PadsOk of the allocation from TryInf	0	2	0	0	0	0	0	0
+66a577873b	T2k (#311): layer 4b moves (OkPriv), arm_isel_refinesE, real	0	6	0	0	0	0	0	0
+47d2a3c542	A3 (#412) F4-F7: memory traps of trapping atomics up to the 	0	9	0	0	0	0	0	0
+078546b52a	T2h (#311) 4b: CtlIndep for the encoded plain load/store for	0	2	0	0	0	0	0	0
+c559893c9f	S10g (#404): the executable-bytes machine with unwinding (st	0	4	0	0	0	0	0	0
+a0315eadbd	T2k (#311): forward precise runs (step_fwd, prun_fwd, moves_	0	5	0	0	0	0	0	0
+eb2bbb17fb	T2l (#311): wf_single wired, witness (#446)	0	2	0	0	0	0	0	0
+6f526797a9	S11 (#35) Stage C slices 5+8a: float Args/Rets in ctlCheck, 	5	23	59	59	59	641	641	641
+21f32d1aa0	S11e6 (#419) slice 1: call with f32/f64 arguments and return	0	2	0	0	0	0	0	0
+7ed76aff4c	T2 (#311) 4b: LL/SC loops (retry measure, monitor pairs, arm	0	6	0	0	0	0	0	0
+d226d10815	A1c (#409): buildBody_layout, assemble_layout_ok, relIn_relo	0	6	0	0	0	0	0	0
+3c2d560b0f	T2l (#311): Realizes on the compiled atomic_load through its	0	3	0	0	0	0	0	0
+83a8971137	A2/B1 (#407): optimising compilers' source theorems without 	0	4	0	0	0	0	0	0
+00e71a377d	T2 (#311) 4b: block-ending branches (block-rank measure, got	0	3	0	0	0	0	0	0
+70b9194c48	T2l (#311): Realizes on the compiled atomic_store through it	0	4	0	0	0	0	0	0
+5bfa6daf24	T2h (#311) 4b: plain load/store receptiveness + event equali	0	1	0	0	0	0	0	0
+c00de32709	S11 (#35) Stage C slice 8: typed link/exec layer (Link.compi	0	33	0	0	0	0	0	0
+9d1d17d3bb	T2l (#311): two compiled threads stlr/ldar through location 	0	7	0	0	0	0	0	0
+fe6b46cbfb	T2 (#311) 4b calls: linking induction (Refines.app, link_com	0	3	0	0	0	0	0	0
+549369255a	T2l (#311): CompiledB / thread_compiledB / realizes_compiled	0	1	0	0	0	0	0	0
+574406ddf2	T2h (#311) 4b: plain loads/stores on top of MemScopeB (MemSc	0	3	0	0	0	0	0	0
+3e7366fa26	T2 (#311) 4b from the ABI entry: prologue (arm_alloc_refines	0	3	0	0	0	0	0	0
+5e23a7b7ba	T2m (#311): Exec.Wf.rmw_imm over events only (Exec.ev; empty	0	4	0	0	0	0	0	0
+e05e17f9ba	T2h (#311) 4b: plain loads/stores at stack modes without the	0	2	0	0	0	0	0	0
+c133bb6051	T2m (#311): realizes_compiledLS + forward run through atomic	0	4	0	0	0	0	0	0
+c68c8207ce	A2/B1: bundle_correct_raw_unwind_src_nobnd (SrcBoundedX: mem	0	3	0	0	0	0	0	0
+922e21822e	T2 (#311) calls: compiled callee contract (thread_compiled_e	0	9	0	0	0	0	0	0
+00761a6e4c	A1 (#409): compileExe_total_ldIn — the shipped compiler's to	0	7	0	0	0	0	0	0
+5d6a4a3758	WIP T2m (#311): compiled atomic_rmw witness run (run_rmw) (#	0	1	0	0	0	0	0	0
+2e3a966e53	T2m (#311): compiled atomic_rmw witness: run_rmw, realizes_p	0	3	0	0	0	0	0	0
+c443e692e6	T2m (#311, #38): compiled atomic_cas witness (cas_fwd, cas_l	0	3	0	0	0	0	0	0
+00d737bca1	S10g (#404): RunOkU proven; compileExe_correct_unwind_exec{,	2	18	3	3	3	10	10	10
+08214bce95	S11 (#35) slice 8: pipeCleanupT_okT — dead-cleanup pipeline 	0	3	0	0	0	0	0	0
+99562b6d47	T2 (#311) calls: compiled caller → compiled atomic_load witn	0	5	0	0	0	0	0	0
+7b2da9ee83	T2j (#473): the realized prefix covers the whole run (layers	0	17	0	0	0	0	0	0
+6df63f1b0d	S10g (#404): TryInfoOk from the input; savedCheck by constru	0	4	0	0	0	0	0	0
+5ec06ff971	F8 (#443): no earlier access faults — fault-aware executable	0	33	0	0	0	0	0	0
+d9076d08f1	S11 (#35) slice 8: killFreeB on the typed scope (spillKillFr	0	6	0	0	0	0	0	0
+747410bcc3	[T2j] Layer 4b: stack offsets built in x16 (OneEvPreForm, on	0	4	0	0	0	0	0	0
+b20e1da98f	T3 (#39): lastCallsOk accepts a register move after a last-b	1	1	3	3	3	15	15	15
+f7074115b5	S11 (#35) slice 8: typing gaps of the typed input scope — se	0	4	0	0	0	0	0	0
+5a76867cd8	T2j follow-ups (#473): whole-run atomic_cas witness; compile	0	4	0	0	0	0	0	0
+4775521a7a	T2 (#473): CompiledE for compiled atomic_rmw/atomic_cas from	0	2	0	0	0	0	0	0
+ef3fd78043	S7 (#31): sret return register in x0 (backend_correct_final_	1	5	29	29	29	551	551	551
+8b127ab0aa	T2j (#473): the compiled caller's whole run through atomic_l	0	3	0	0	0	0	0	0
+c31d53644c	T2j (#473): layer 4b pausing at calls and returns (refines_o	0	3	0	0	0	0	0	0
+0a1069b995	T2j (#473): layer 2's return coverage (term_retN, SimResR/Se	0	7	0	0	0	0	0	0
+d2dfdf6b37	T2j (#473): the return covered through all layers (isel_allo	0	5	0	0	0	0	0	0
+5c1351a088	T2j (#473): a compiled caller of the compiled atomic_rmw (pr	0	2	0	0	0	0	0	0
+6a80a59537	Activate proved Stock division and remainder with real trap 	4	29	34	34	34	80	80	80
+e176e31617	Activate proved scalar-prefix division and remainder in Stoc	1	16	33	33	33	79	79	79
+548b5ce13c	S11 (#35): public typed scope (verifiableT) + Link.DeadClean	2	8	49	49	49	593	593	593
+b2dc0741ee	S11 (#35): drop lowerOutTB's killFreeB conjunct (killFreeB_o	0	3	0	0	0	0	0	0
+62153975a9	S11 (#35) slice 8: typed ISLE progress, part 1 (driver total	0	14	0	0	0	0	0	0
+0025e0cd92	S11 (#35) slice 8: typed ISLE progress, part 2 — lowerFuncti	0	5	0	0	0	0	0	0
+6422e5786c	S10g (#404): unwinding conditions measured; unwFnsB from inp	0	5	0	0	0	0	0	0
+424a2bac49	S10g (#404): lastCallsOk accepts a GOT load after a last-blo	1	1	3	3	3	15	15	15
+291ac75a24	S10g (#404): unwCheck by construction (unwCheck_complete: tr	0	4	0	0	0	0	0	0
+f8c9321198	S7d (#31 follow-up): sret return register through the dead-c	0	1	0	0	0	0	0	0
+61934c30ad	S7d: sret ABI return through the typed chain (term_stepT_abi	0	3	0	0	0	0	0	0
+4d2208be4e	S7d: sret ABI return through the linked/executable chain (co	0	4	0	0	0	0	0	0
+00286edeeb	S7d: sret ABI return over the mid-end and the i128 legalisat	0	4	0	0	0	0	0	0
+3b1538f320	S7: sret ABI return value through the unwind variant (backen	0	4	0	0	0	0	0	0
+12478ee4cd	S7d: sret ABI return through the dead-cleanup i128 legalisat	0	2	0	0	0	0	0	0
+614340fb80	T2j (#473): layer 4b on linked machines — pc invariant of th	0	8	0	0	0	0	0	0
+8f306d6ad8	S11: resClassOkB and formsCoveredB proven on fnScopeInTB2 (t	0	87	0	0	0	0	0	0
+63f4689bbf	T3d (#39): link-check scaling to the std bundle (hash maps, 	0	5	0	0	0	0	0	0
+f52b714ae4	Prove returned division retention at arbitrary source positi	0	4	0	0	0	0	0	0
+e26d373fad	S11 (#35): restore lowerOutTB's killFreeB conjunct so lowerO	0	2	0	0	0	0	0	0
+247037eddc	S11: ctlSpillB and ctlInstsB proven on fnScopeInTB2 (typed c	0	82	0	0	0	0	0	0
+7d077c91ba	T2j (#473) 2a: layer 2 pausing at calls (DriverHypT, threadC	0	10	0	0	0	0	0	0
+6e269ea4c3	S11 typed emission: Driver.iselEmitT, E2E.emitParts_lowerT/_	0	77	0	0	0	0	0	0
+ae1aa415ff	T2j (#473) 2c + 3 (part): resume after a call at every layer	0	9	0	0	0	0	0	0
+5f2f78834b	#473 (1): entry relations, all layers from the entry, layer 	0	5	0	0	0	0	0	0
+123d5ca131	#473 (1): the rets end — all layers pausing at returns with 	0	7	0	0	0	0	0	0
+9562f666d9	#473 (ii'): CLIF return pop in a linked thread (ret_pop) (#5	0	3	0	0	0	0	0	0
+5bf2eee6af	#473 (iv): frame disjointness of nested activations (FrameDi	0	3	0	0	0	0	0	0
+f87a099fc3	#473 (iv): CStepI — CLIF threads with the own-initialisation	0	3	0	0	0	0	0	0
+c2e3e8e252	#473 (iv): RefinesT — time-varying private sets, realizes_of	0	3	0	0	0	0	0	0
+1c45520967	#473 (iv): CallComposeT — RefinesT.app, RealizedT, link_comp	0	3	0	0	0	0	0	0
+d269442c01	#473 (1): caller resume premises from the callee's RetEnd (r	0	3	0	0	0	0	0	0
+aadebf2ed2	#473 (1): resume premises from the call's operands and the c	0	3	0	0	0	0	0	0
+aa216f2ac2	#473 (2): every rets end of the call layers resolved (#544)	0	8	0	0	0	0	0	0
+e6dc1acb14	#473 (3): callee entry premises (hr₀, hsp0, hra) (#545)	0	3	0	0	0	0	0	0
+66f3477647	Activate returned division at arbitrary scalar body position	1	12	33	33	33	79	79	79
+546032f034	Prove actual Stock sink exclusion for no-load contexts (#546	0	7	0	0	0	0	0	0
+a726ae0bf7	#473 (3): hmr from Q's gkeep; RetC, retC_of_retEnd, resume_p	0	3	0	0	0	0	0	0
+7b2566052d	#473 (3): caller resumed at every layer; generic linked mach	0	13	0	0	0	0	0	0
+6d8a0e845b	#473 (3): arity part of habi as a per-statement check (callA	0	4	0	0	0	0	0	0
+dbd6c21cd6	Build speed: List-recursive regalloc-checker state, one kern	3	2	202	202	202	7375	7375	7375
+0ed49916ef	#473 (2b): call arguments at the bl: call_uses_q (layers 3-4	0	5	0	0	0	0	0	0
+5742a29fbd	#473 (2b): the callee's ArgsAtEntry at a direct call (#574)	0	3	0	0	0	0	0	0
+e7bee8f6e0	#473 (4): all layers from an activation's ABI entry (arm_ise	0	3	0	0	0	0	0	0
+d094fb4d3f	#473 (4): a segment's RealizedT with masks and dirty sets (r	0	3	0	0	0	0	0	0
+f101ca69c0	#473 (4): the call end on the linked machine (Link.call_end)	0	3	0	0	0	0	0	0
+e712b41970	#473 (4): the return end on the linked machine (Link.ret_end	0	3	0	0	0	0	0	0
+3e83db1e76	#473 (2): exclusive-closed segments across calls (RefA.xClos	0	7	0	0	0	0	0	0
+82a2fb1aec	#473 (3): the valid memory across a callee's CLIF run (CallV	0	3	0	0	0	0	0	0
+71093f5e6e	#473 (4): an activation's segment lifted below its callers (	0	3	0	0	0	0	0	0
+85ea098d81	#473 (4): CallStepT (cstepS_of_cstepI, realizedT_nil/call/pr	0	3	0	0	0	0	0	0
+358373ddeb	#473 (4): CallRetT (cstepS_ret_pop, realizedT_ret); witness 	0	3	0	0	0	0	0	0
+51895b1627	#473 (4): SegOkG pieces (seg_end, chainP, ret_seg, call-segm	0	9	0	0	0	0	0	0
+4d2760cfdd	#473 call pause and resume: CodeIn, stackAvail_callee, budge	0	3	0	0	0	0	0	0
+b631528b8c	Prove general scalar division retention and source domain th	0	10	0	0	0	0	0	0
+93c8325b8f	S11f-cvt (#410): 16 float<->int conversion roots proven at C	16	20	269	269	269	8073	8073	8073
+3c76017dc5	S11f rounding: ceil/floor/trunc/nearest roots proven at CtxI	15	21	269	269	269	8073	8073	8073
+eefcce4f09	[S11] Typed size bound and emitCondsB on the typed scope: is	0	332	0	0	0	0	0	0
+8f7ff26671	S11 (#35): decider-free typed scope fnScopeInTB3 + compileEx	0	6	0	0	0	0	0	0
+7e4a94454c	S10g (#404): unwinding conditions from the input: unwCondInB	0	10	0	0	0	0	0	0
+86c2e432c5	SEM1 (#537) step 2a: counted VCode world (csemI, ExtSemI), w	0	2	0	0	0	0	0	0
+d25cfa6da3	SEM1 (#537) step 2b: call-free csemI runs are csem runs; Low	0	2	0	0	0	0	0	0
+da848ec8b4	SEM1 (#537) step 2c: one-call straight-line runs under csemI	0	2	0	0	0	0	0	0
+4d4df79b36	SEM1 (#537) step 2d: DriverSemG and terminator lowerings tra	0	2	0	0	0	0	0	0
+439ca61b41	Extend Stock production to arbitrary scalar division bodies 	1	9	33	33	33	79	79	79
+a946fbc4fa	Enable proved i8/i16 Stock scalar production lowering (#623)	3	12	36	36	36	82	82	82
+ab1abdfcde	Enable proved bmask and nop Stock production lowering (#624)	2	31	36	36	36	82	82	82
+70220733ea	Prove Stock source and body composition across CFG blocks (#	0	8	0	0	0	0	0	0
+f1ce87ea0a	Prove actual Stock original-block body and jump execution (#	0	5	0	0	0	0	0	0
+89518d29f0	Prove actual Stock jump arguments and successor parameter co	0	5	0	0	0	0	0	0
+21b0ebb2c7	Preserve inherited values through actual Stock bodies and ju	0	6	0	0	0	0	0	0
+efe8b677f6	Preserve inherited values through normal and trapping divisi	0	4	0	0	0	0	0	0
+ce83af2cb4	Enable proved Stock lowering for direct CFG return blocks (#	6	45	26	26	26	65	65	65
+b94d6cd42c	Enable proved dividing entry bodies in Stock CFG production 	5	21	25	25	25	64	64	64
+00576bd9e3	Enable complete proved scalar entry bodies in Stock CFG prod	1	20	25	25	25	64	64	64
+ac302a8a71	Activate Stock for three-block scalar CFGs (#633)	5	30	25	25	25	64	64	64
+d6218f299c	Activate arbitrary-length forward scalar Stock CFGs (#634)	5	28	25	25	25	64	64	64
+91c809f798	Prove and activate compatible conditional Stock CFGs across 	6	80	26	26	26	65	65	65
+07989b8fd7	Activate Stock conditional CFGs with ranked scalar tails (#6	5	21	25	25	25	64	64	64
+d5cc12ddee	Activate Stock for ranked CFGs with nonentry parameter branc	5	32	25	25	25	64	64	64
+1cdb86d607	SEM1 (#537) step 1: slot-byte oracle Clif.Place.init + nativ	2	18	282	282	282	8094	8094	8094
+4b0156f7be	SEM1 (#537) step 2e: overlay (a memory region overwritten by	0	2	0	0	0	0	0	0
+3dc0ca2ab4	regalloc2 as default allocator, fed Cranelift's vreg numberi	1	2	1	1	1	2	2	2
+146b6f4a43	DeadCleanup: remove dead cset as Cranelift does (#552, part 	2	3	54	54	54	113	113	113
+52ca711dfa	S11e6 (#419) slice 2a: typed try_call constructor path (retR	5	7	266	266	266	8061	8061	8061
+f0b6371e57	S11e6 (#419) slice 2c: typed try_call verified per function 	9	27	266	266	266	8061	8061	8061
+f13c70a8b3	Build speed: subst_vars with whnfR sides (FastSubst, isel pr	2	2	85	85	85	2579	2579	2579
+2dafec2e20	Skip unused statements as Cranelift does: skipDead and its d	2	5	113	113	113	1709	1709	1709
+cc973d4089	Merge train batch 13 remainder: #596 #598 #605 #607 #608 #56	12	48	269	269	269	8073	8073	8073
+806ed02d89	#473: callee entry RelW, callee activation, padding gap (Liv	0	8	0	0	0	0	0	0
+1edd0080f1	#473: the generic call theorem (segOkG, funRealT_link, reali	0	3	0	0	0	0	0	0
+7a87ee06ce	#473: realizes_call_fullT — the load-callee witness re-deriv	0	2	0	0	0	0	0	0
+d0b89de000	#473: realizes_call_rmwT — the rmw-callee witness re-derived	0	2	0	0	0	0	0	0
+e41de577ea	#649: dedupe the reachability family of CallSegOkGTFull/Call	0	2	0	0	0	0	0	0
+84d2b0737e	#649: external callees (ExtEvContractT) in the generic call 	0	7	0	0	0	0	0	0
+909b995e22	#649: end-to-end witnesses through externals (realizes_call_	0	4	0	0	0	0	0	0
+cca8c462e9	S11e6 (#419, fixes #615): typed --verified via compileExeT, 	0	10	0	0	0	0	0	0
+ec42f55fc0	S11e6 (#419): link layer for typed try_calls (OkT widened, t	0	20	0	0	0	0	0	0
+9fe405d033	S11e6 (#585): class-aware unwinding conditions for typed try	2	3	2	2	2	4	4	4
+1bfad216e1	SEM1 (#537): restore linkEnvR/N/RX_keepsPlace and LinkSysU.e	0	4	0	0	0	0	0	0
+f6be865673	Pipeline stage takes the function (prepares skipDead wiring,	0	49	0	0	0	0	0	0
+1ba9e9e83f	S11f: float arithmetic in the verified verdict (functionETCF	5	19	26	26	26	63	63	63
+e773005e90	S11f: scalar fcmp in the verified verdict (stacked on float-	4	8	26	26	26	63	63	63
+801cd4dd1b	Pair: reuse VCodeSemI's VConf.mapW / SeqEnd.mapW / SeqEnd.ma	0	1	0	0	0	0	0	0
+3bb7d3bdbb	SEM1 (#537) step 2f: prophecy-indexed canon/X (#643)	0	2	0	0	0	0	0	0
+3868751a16	SEM1 (#537) step 2h: XPI, machine-run prophecies, MachEntryP	0	2	0	0	0	0	0	0
+a8b821d5bb	SEM1 (#537) step 2i: counted register-level theorem (csemVI,	0	2	0	0	0	0	0	0
+e3db603436	SEM1 (#537) step 2j: counted run's counter = machine call co	0	2	0	0	0	0	0	0
+2750ec119b	SEM1 (#537) step 2k (part A): RL.CallSt/NoCallAt/GoodXN, cor	0	6	0	0	0	0	0	0
+b037cc2138	SEM1 (#537) step 2k part B: call-state variants realizes_cal	0	9	0	0	0	0	0	0
+85056508a7	SEM1 (#537) step 2k: realizes_allC, regLevelCorrect_world_at	0	2	0	0	0	0	0	0
+85fbfb2f9a	Merge train b15: restore the gated tree (drop duplicated okB	0	1	0	0	0	0	0	0
+8f9992408b	SEM1 (#537) step 2l: refined call contract (OnCallP, regLeve	0	2	0	0	0	0	0	0
+7e4ba6b604	S11f (#35) link: compileExeT's third branch admits functionE	0	11	0	0	0	0	0	0
+64f063ca35	SEM1 (#537) step 2m: slot-byte counter on CLIF runs (NextAdv	0	2	0	0	0	0	0	0
+5d1c366694	SEM1 (#537) step 2n: PlaceAtB, crun_nextAdv, initState_memB,	0	3	0	0	0	0	0	0
+bb7ccf50c8	SEM1 (#537) step 2o: slot-byte counter at the n-th call (#66	0	2	0	0	0	0	0	0
+9dd265d3b9	SEM1 step 2m: prophecy transfer along lock-step runs, ThmPD 	0	2	0	0	0	0	0	0
+515b029496	SEM1 (#537) steps 2n-2s: register prophecy, HookDet/OkD, two	0	22	0	0	0	0	0	0
+5b23a896af	SEM1 (#537) step 3: counted CLIF -> VCode per step (iselSim_	0	8	0	0	0	0	0	0
+2ed3f94c16	SEM1 (#537) step 3g: counted register level for the value se	0	1	0	0	0	0	0	0
+a370643b66	SEM1 (#537) steps 3g-3j: counted pipeline for both compile p	0	11	0	0	0	0	0	0
+2402657274	SEM1 (#537) step 3h: InstCallsOne/TryCallsOne proven by a ru	0	3	0	0	0	0	0	0
+6f1c3f9b08	SEM1 (#537): *_PRIC corollaries; item (b) finding + ExtSem.g	0	8	0	0	0	0	0	0
+992f8deb1e	SEM1 (#537) step 3i: GPR footprint of every Arm instruction;	0	5	0	0	0	0	0	0
+7bc62a8554	SEM1 (#537) item (b): InvokedN + uniqueness, guardI, hX_guar	0	8	0	0	0	0	0	0
+739479098f	SEM1 (#537) steps 3m-3o: x30 check, HookDetX, per-line lock-	0	6	0	0	0	0	0	0
+2eebb0531a	SEM1 (#537) item (d): counted pipeline up to call N (VCode→A	0	9	0	0	0	0	0	0
+c22a32a034	SEM1 (#537) step 3p: located reads RL.ReadsIn through realiz	0	18	0	0	0	0	0	0
+d08e8c9b28	SEM1 (#537) item (2): guarded world reads (ReadsInY, csemVIG	0	17	0	0	0	0	0	0
+cc162442a9	SEM1 (#537) #680 (3): progCallPRB, CondBT/XPBTG, calleeOkPRB	0	5	0	0	0	0	0	0
+c8ba470233	S11f (#35): lowerFunction totality on the float scope (funct	0	23	0	0	0	0	0	0
+b3d92d6734	lean-link perf: Stock routes' placement and checks without p	0	3	0	0	0	0	0	0
+0c97d9a465	Merge train b20 remainder: #688 + #693 (merged into stale st	0	21	0	0	0	0	0	0
+136f6335d2	crate-proofs: regeneration script + regenerated proofs (#709	0	1	0	0	0	0	0	0
+b23486b608	SEM1 (#537): slotted witness system, ThmPRBRL depth 0, RetOk	0	30	0	0	0	0	0	0
+d269d2c623	SEM1 (#537) #680 (3): CountPRB at every depth, thmPRBRL_allC	0	6	0	0	0	0	0	0
+a63a3cbf61	SEM1 (#537) #700 steps 1-2: prefix-closed machine table (Tab	0	3	0	0	0	0	0	0
+fce6f041b0	SEM1 (#537) #700 step 3: error-free trace up to the return (	0	3	0	0	0	0	0	0
+1c3723276b	SEM1 (#537) #700 steps 4-5: ThmPRBRLE and the machine's own 	0	7	0	0	0	0	0	0
+bece19dace	SEM1 (#537) executable level (a): per-state GoodX trace at t	0	3	0	0	0	0	0	0
+c1591fa3c7	SEM1 determinism: #695 + #696 combined (stacked; merge after	0	64	0	0	0	0	0	0
+aa0539fdd5	SEM1 (#537) executable level (b)-(c): ThmPRBG, binary/exe in	0	8	0	0	0	0	0	0
+ec83977012	SEM1 (#537, #713): prefix two-run route, backend side (backe	0	8	0	0	0	0	0	0
+7a093e1580	crate-proofs: InScopeWitness and BinaryExecTlsWitness on fre	1	7	1	1	1	2	2	2
+903a36eabb	#553 (a): Cranelift block order for prepare's edge blocks (#	2	7	228	228	228	7444	7444	7444
+7f2158f0d9	SEM1 (#537): stale-read executable witness (entry contract d	0	6	0	0	0	0	0	0
+22d27386ca	SEM1 (#537) determinism link side: TwinCE (#716), DetPRBR an	0	13	0	0	0	0	0	0
+f0cac8a9a6	lean-link --verified (#691): the typed route leaves out the 	0	1	0	0	0	0	0	0
+7671f67209	SEM1 (#537, #719, #716): InitOkR and compileExe_correct_init	0	12	0	0	0	0	0	0
+5c2170a2d6	SEM1 (#537): trap witness for compileExe_correct_initTR (1 u	0	1	0	0	0	0	0	0
+554639034f	SEM1 (#537, #713): lock up to the call state, contracts at l	0	16	0	0	0	0	0	0
+cf89491d5f	SEM1 (#537) cleanup path of the determinism step: value P-ch	0	10	0	0	0	0	0	0
+62fa93f0f4	Fix #614: no NUL in Link.Ld.gotKey's string literal; add qui	0	1	0	0	0	0	0	0

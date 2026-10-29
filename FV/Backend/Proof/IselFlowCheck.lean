@@ -196,7 +196,7 @@ def aRuleEnv (ins : List FA) (r : Rule) : Option (List FA) :=
   aIfLets p tab strict r.iflets (aPatArgs p ins r.args (List.replicate r.vars.length FA.top))
 
 /-- Rule `r` checks with inputs `ins` and output `out`. -/
-def aRule (ins : List FA) (out : FA) (r : Rule) : Bool :=
+@[expose] def aRule (ins : List FA) (out : FA) (r : Rule) : Bool :=
   match aRuleEnv p tab strict ins r with
   | some env =>
     match aExpr p tab strict r.rhs env with

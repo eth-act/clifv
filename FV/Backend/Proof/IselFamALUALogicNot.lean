@@ -28,7 +28,7 @@ open Backend Isle Isle.Interp Isle.Aarch64
 /-! ## The negated-operand logical operations -/
 
 /-- The value of the negated-second-operand logical operations (`bic`/`orn`/`eon`). -/
-def notOpVal (op : ALUOp) {w : Nat} (a b : BitVec w) : BitVec w :=
+@[expose] def notOpVal (op : ALUOp) {w : Nat} (a b : BitVec w) : BitVec w :=
   match op with
   | .andNot => a &&& ~~~b
   | .orrNot => a ||| ~~~b

@@ -1119,7 +1119,7 @@ abbrev tyFpuRoundMode : TypeId := TyId.FpuRoundMode
   | .hi => VIdx.Cond.Hi | .ls => VIdx.Cond.Ls | .ge => VIdx.Cond.Ge | .lt => VIdx.Cond.Lt
   | .gt => VIdx.Cond.Gt | .le => VIdx.Cond.Le | .al => VIdx.Cond.Al | .nv => VIdx.Cond.Nv
 
-def Cond.ofIdx? : Nat → Option Cond
+@[expose] def Cond.ofIdx? : Nat → Option Cond
   | VIdx.Cond.Eq => some .eq | VIdx.Cond.Ne => some .ne | VIdx.Cond.Hs => some .hs
   | VIdx.Cond.Lo => some .lo | VIdx.Cond.Mi => some .mi | VIdx.Cond.Pl => some .pl
   | VIdx.Cond.Vs => some .vs | VIdx.Cond.Vc => some .vc | VIdx.Cond.Hi => some .hi
@@ -1139,7 +1139,7 @@ def ExtendOp.name : ExtendOp → String
   | .uxtx => VIdx.ExtendOp.UXTX | .sxtb => VIdx.ExtendOp.SXTB | .sxth => VIdx.ExtendOp.SXTH
   | .sxtw => VIdx.ExtendOp.SXTW | .sxtx => VIdx.ExtendOp.SXTX
 
-def ExtendOp.ofIdx? : Nat → Option ExtendOp
+@[expose] def ExtendOp.ofIdx? : Nat → Option ExtendOp
   | VIdx.ExtendOp.UXTB => some .uxtb | VIdx.ExtendOp.UXTH => some .uxth
   | VIdx.ExtendOp.UXTW => some .uxtw | VIdx.ExtendOp.UXTX => some .uxtx
   | VIdx.ExtendOp.SXTB => some .sxtb | VIdx.ExtendOp.SXTH => some .sxth
@@ -1151,18 +1151,18 @@ def OperandSize.name : OperandSize → String
 @[expose] def OperandSize.ofIdx? : Nat → Option OperandSize
   | VIdx.OperandSize.Size32 => some .size32 | VIdx.OperandSize.Size64 => some .size64 | _ => none
 
-def ScalarSize.ofIdx? : Nat → Option ScalarSize
+@[expose] def ScalarSize.ofIdx? : Nat → Option ScalarSize
   | VIdx.ScalarSize.Size8 => some .size8 | VIdx.ScalarSize.Size16 => some .size16
   | VIdx.ScalarSize.Size32 => some .size32 | VIdx.ScalarSize.Size64 => some .size64
   | VIdx.ScalarSize.Size128 => some .size128 | _ => none
 
-def VectorSize.ofIdx? : Nat → Option VectorSize
+@[expose] def VectorSize.ofIdx? : Nat → Option VectorSize
   | VIdx.VectorSize.Size8x8 => some .size8x8 | VIdx.VectorSize.Size8x16 => some .size8x16
   | VIdx.VectorSize.Size16x4 => some .size16x4 | VIdx.VectorSize.Size16x8 => some .size16x8
   | VIdx.VectorSize.Size32x2 => some .size32x2 | VIdx.VectorSize.Size32x4 => some .size32x4
   | VIdx.VectorSize.Size64x2 => some .size64x2 | _ => none
 
-def BitOp.ofIdx? : Nat → Option BitOp
+@[expose] def BitOp.ofIdx? : Nat → Option BitOp
   | VIdx.BitOp.RBit => some .rbit | VIdx.BitOp.Clz => some .clz | VIdx.BitOp.Cls => some .cls
   | VIdx.BitOp.Rev16 => some .rev16 | VIdx.BitOp.Rev32 => some .rev32
   | VIdx.BitOp.Rev64 => some .rev64 | _ => none

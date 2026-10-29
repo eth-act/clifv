@@ -194,7 +194,7 @@ register-passed parameters, then a load of each stack-passed one. -/
   | none => []
 
 /-- Index in block `bi` where statement `j`'s segment starts. -/
-def pos (bi j : Nat) : Nat :=
+@[expose] def pos (bi j : Nat) : Nat :=
   (pre f R bi).length + ((List.range j).map fun j' => (seg f R bl bi j').length).sum
 
 end

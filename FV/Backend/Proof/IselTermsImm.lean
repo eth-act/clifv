@@ -518,7 +518,7 @@ theorem codeShape_one {st : LState} {m : MInst} (hd : vdefs m = [st.nextVreg])
 /-- The full 64-bit value `imm ty ext c` leaves (`load_constant_full`'s at the type's operand
 size; the `movz`/`movn`/`orr` special cases agree with it except for `i32` constants `≥ 2³²`,
 which the rules only pass for `ImmExtend.Sign`). -/
-def immVal (w : Nat) (sg : Bool) (c : Nat) : Nat := lcfValue w sg (szOf w) c
+@[expose] def immVal (w : Nat) (sg : Bool) (c : Nat) : Nat := lcfValue w sg (szOf w) c
 
 theorem lcfValue32_mod {w : Nat} (hw : w = 8 ∨ w = 16 ∨ w = 32) (sg : Bool) {c : Nat}
     (hc : c < 2 ^ 64) : lcfValue w sg .size32 c % 2 ^ w = c % 2 ^ w := by
@@ -533,7 +533,7 @@ theorem lcfValue64 (sg : Bool) {c : Nat} (hc : c < 2 ^ 64) : lcfValue 64 sg .siz
 /-- **What `imm ty ext c` produced**: a fresh vreg `d`, code with `CodeShape`, and on every run
 a 64-bit value `X` in `d` whose low `w` bits are `c`'s, and which is `immVal` except for an
 `i32` zero-extended constant `≥ 2³²`. -/
-def ImmOut (F : BitVec 64 → Prop) (isem : Sem) (w e c : Nat) (st st' : LState) (v : V) : Prop :=
+@[expose] def ImmOut (F : BitVec 64 → Prop) (isem : Sem) (w e c : Nat) (st st' : LState) (v : V) : Prop :=
   ∃ ms d, v = .reg (.vreg d .int) ∧ CodeShape st st' ms d st.nextVreg ∧
     ∀ ρ, ∃ ρ' X, PRun F isem ms ρ ρ' ∧ lo64 (ρ' d) = BitVec.ofNat 64 X ∧ X % 2 ^ w = c % 2 ^ w ∧
       (w ≠ 32 ∨ e = 0 ∨ c < 2 ^ 32 → X = immVal w (e == 0) c)

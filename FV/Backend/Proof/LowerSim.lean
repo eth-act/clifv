@@ -34,11 +34,11 @@ namespace Backend.Proof.Driver
 open Backend Backend.Proof
 
 /-- Every tracked value is held by its resolved vreg. -/
-def Held (gn : Nat → Nat) (A : List Clif.ValueId) (ρ : Nat → CV) (fr : Clif.Frame) : Prop :=
+@[expose] def Held (gn : Nat → Nat) (A : List Clif.ValueId) (ρ : Nat → CV) (fr : Clif.Frame) : Prop :=
   ∀ x ∈ A, ∃ v, fr.regs x = some v ∧ VHolds v (ρ (gn x))
 
 /-- The simulation relation. -/
-def Match (f : Clif.Function) (ctx : Ctx) (R : Reg → Reg) (gn : Nat → Nat) (bl : List BLow)
+@[expose] def Match (f : Clif.Function) (ctx : Ctx) (R : Reg → Reg) (gn : Nat → Nat) (bl : List BLow)
     (A : Nat → Nat → List Clif.ValueId) {W : Type} (MR : MemRelTW W)
     (slots : List (Clif.SlotId × Nat)) (s : Clif.State) (vs : VState CV W) : Prop :=
   s.callers = [] ∧ s.frame.func = f ∧ s.frame.slots = slots ∧ MR slots s.mem vs.w ∧
@@ -104,7 +104,7 @@ theorem VRetFromP.toVRetFrom {W : Type} {P : VConf CV W → Prop} {vc : VCode}
 
 /-- Where a terminator's code runs from: block `b` from index `k0` on (its terminator segment),
 or the `jump` of an edge block. -/
-def TermZone {W : Type} (vc : VCode) (b k0 : Nat) (c : VConf CV W) : Prop :=
+@[expose] def TermZone {W : Type} (vc : VCode) (b k0 : Nat) (c : VConf CV W) : Prop :=
   (∃ k ρ w, c = .run ⟨b, k, ρ, w⟩ ∧ k0 ≤ k) ∨
   (∃ e ρ w vb l, c = .run ⟨e, 0, ρ, w⟩ ∧ vc.blocks[e]? = some vb ∧ vb.insts = #[.jump l])
 

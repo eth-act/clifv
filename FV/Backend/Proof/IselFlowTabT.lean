@@ -18,7 +18,7 @@ namespace Backend.Proof.Flow
 open Isle Isle.Aarch64
 
 /-- Chunk 0 of `tlsTab`. -/
-def tlsTab0 : Tab :=
+@[expose] def tlsTab0 : Tab :=
   [(172, [⟨2, true⟩], ⟨2, true⟩),
    (242, [⟨2, true⟩], ⟨2, true⟩),
    (243, [⟨2, true⟩], ⟨0, true⟩),
@@ -33,7 +33,7 @@ def tlsTab0 : Tab :=
    (305, [⟨2, true⟩], ⟨0, true⟩)]
 
 /-- Chunk 1 of `tlsTab`. -/
-def tlsTab1 : Tab :=
+@[expose] def tlsTab1 : Tab :=
   [(306, [⟨0, true⟩], ⟨0, true⟩),
    (307, [⟨2, true⟩], ⟨0, true⟩),
    (310, [⟨2, true⟩], ⟨0, true⟩),
@@ -48,7 +48,7 @@ def tlsTab1 : Tab :=
    (371, [⟨0, true⟩, ⟨0, true⟩, ⟨0, true⟩], ⟨0, true⟩)]
 
 /-- Chunk 2 of `tlsTab`. -/
-def tlsTab2 : Tab :=
+@[expose] def tlsTab2 : Tab :=
   [(376, [⟨0, true⟩, ⟨0, true⟩, ⟨2, true⟩, ⟨0, true⟩], ⟨0, true⟩),
    (377, [⟨0, true⟩, ⟨0, true⟩, ⟨2, true⟩, ⟨2, true⟩, ⟨2, true⟩], ⟨0, true⟩),
    (379, [⟨0, true⟩, ⟨0, true⟩, ⟨2, true⟩, ⟨0, true⟩], ⟨2, true⟩),
@@ -63,7 +63,7 @@ def tlsTab2 : Tab :=
    (392, [⟨0, true⟩, ⟨0, true⟩], ⟨2, true⟩)]
 
 /-- Chunk 3 of `tlsTab`. -/
-def tlsTab3 : Tab :=
+@[expose] def tlsTab3 : Tab :=
   [(393, [⟨0, true⟩, ⟨2, true⟩, ⟨2, true⟩, ⟨0, true⟩], ⟨2, true⟩),
    (395, [⟨0, true⟩, ⟨0, true⟩, ⟨0, true⟩], ⟨0, true⟩),
    (406, [⟨0, true⟩, ⟨2, true⟩, ⟨2, true⟩, ⟨2, true⟩], ⟨2, true⟩),
@@ -78,7 +78,7 @@ def tlsTab3 : Tab :=
    (424, [⟨0, true⟩, ⟨2, true⟩, ⟨0, true⟩], ⟨2, true⟩)]
 
 /-- Chunk 4 of `tlsTab`. -/
-def tlsTab4 : Tab :=
+@[expose] def tlsTab4 : Tab :=
   [(425, [⟨2, true⟩, ⟨2, true⟩, ⟨2, true⟩], ⟨2, true⟩),
    (426, [⟨2, true⟩], ⟨2, true⟩),
    (428, [⟨0, true⟩], ⟨0, true⟩),
@@ -93,7 +93,7 @@ def tlsTab4 : Tab :=
    (440, [⟨0, true⟩, ⟨2, true⟩, ⟨2, true⟩, ⟨2, true⟩], ⟨0, true⟩)]
 
 /-- Chunk 5 of `tlsTab`. -/
-def tlsTab5 : Tab :=
+@[expose] def tlsTab5 : Tab :=
   [(443, [⟨0, true⟩, ⟨2, true⟩, ⟨2, true⟩, ⟨2, true⟩], ⟨0, true⟩),
    (444, [⟨0, true⟩, ⟨2, true⟩, ⟨2, true⟩, ⟨2, true⟩], ⟨0, true⟩),
    (451, [⟨0, true⟩, ⟨2, true⟩, ⟨2, true⟩], ⟨0, true⟩),
@@ -108,7 +108,7 @@ def tlsTab5 : Tab :=
    (491, [⟨0, true⟩, ⟨2, true⟩, ⟨2, true⟩], ⟨0, true⟩)]
 
 /-- Chunk 6 of `tlsTab`. -/
-def tlsTab6 : Tab :=
+@[expose] def tlsTab6 : Tab :=
   [(492, [⟨0, true⟩, ⟨2, true⟩, ⟨2, true⟩], ⟨0, true⟩),
    (493, [⟨0, true⟩, ⟨2, true⟩, ⟨2, true⟩], ⟨0, true⟩),
    (495, [⟨0, true⟩, ⟨0, true⟩, ⟨2, true⟩], ⟨0, true⟩),
@@ -123,7 +123,7 @@ def tlsTab6 : Tab :=
    (517, [⟨2, true⟩, ⟨2, true⟩], ⟨0, true⟩)]
 
 /-- Chunk 7 of `tlsTab`. -/
-def tlsTab7 : Tab :=
+@[expose] def tlsTab7 : Tab :=
   [(518, [⟨2, true⟩, ⟨2, true⟩], ⟨0, true⟩),
    (520, [⟨0, true⟩, ⟨2, true⟩], ⟨0, true⟩),
    (521, [⟨0, true⟩, ⟨2, true⟩], ⟨0, true⟩),
@@ -138,7 +138,7 @@ def tlsTab7 : Tab :=
    (534, [⟨2, true⟩, ⟨0, true⟩], ⟨0, true⟩)]
 
 /-- Chunk 8 of `tlsTab`. -/
-def tlsTab8 : Tab :=
+@[expose] def tlsTab8 : Tab :=
   [(535, [⟨2, true⟩, ⟨0, true⟩], ⟨0, true⟩),
    (541, [⟨2, true⟩, ⟨0, true⟩, ⟨2, true⟩], ⟨2, true⟩),
    (542, [⟨2, true⟩, ⟨0, true⟩, ⟨2, true⟩], ⟨2, true⟩),
@@ -153,7 +153,7 @@ def tlsTab8 : Tab :=
    (560, [⟨0, true⟩], ⟨0, true⟩)]
 
 /-- Chunk 9 of `tlsTab`. -/
-def tlsTab9 : Tab :=
+@[expose] def tlsTab9 : Tab :=
   [(561, [⟨0, true⟩, ⟨2, true⟩, ⟨2, true⟩, ⟨2, true⟩], ⟨2, true⟩),
    (562, [⟨0, true⟩, ⟨2, true⟩], ⟨2, true⟩),
    (564, [⟨2, true⟩], ⟨2, true⟩),
@@ -168,7 +168,7 @@ def tlsTab9 : Tab :=
    (576, [⟨2, true⟩, ⟨2, true⟩], ⟨2, true⟩)]
 
 /-- Chunk 10 of `tlsTab`. -/
-def tlsTab10 : Tab :=
+@[expose] def tlsTab10 : Tab :=
   [(577, [⟨2, true⟩, ⟨2, true⟩], ⟨2, true⟩),
    (612, [⟨0, true⟩, ⟨2, true⟩, ⟨2, true⟩, ⟨0, true⟩, ⟨0, true⟩], ⟨0, true⟩),
    (613, [⟨2, true⟩, ⟨2, true⟩, ⟨2, true⟩, ⟨0, true⟩, ⟨0, true⟩], ⟨0, true⟩),
@@ -183,7 +183,7 @@ def tlsTab10 : Tab :=
    (654, [⟨2, true⟩, ⟨2, true⟩, ⟨2, true⟩, ⟨2, true⟩], ⟨2, true⟩)]
 
 /-- Chunk 11 of `tlsTab`. -/
-def tlsTab11 : Tab :=
+@[expose] def tlsTab11 : Tab :=
   [(655, [⟨2, true⟩, ⟨2, true⟩, ⟨2, true⟩], ⟨2, true⟩),
    (656, [⟨2, true⟩], ⟨0, true⟩),
    (657, [⟨0, true⟩, ⟨0, true⟩], ⟨0, true⟩),
@@ -198,7 +198,7 @@ def tlsTab11 : Tab :=
    (666, [⟨0, true⟩, ⟨0, true⟩, ⟨0, true⟩, ⟨2, true⟩, ⟨0, true⟩], ⟨2, true⟩)]
 
 /-- Chunk 12 of `tlsTab`. -/
-def tlsTab12 : Tab :=
+@[expose] def tlsTab12 : Tab :=
   [(667, [⟨0, true⟩, ⟨0, true⟩, ⟨2, true⟩, ⟨0, true⟩], ⟨2, true⟩),
    (668, [⟨0, true⟩, ⟨0, true⟩, ⟨2, true⟩, ⟨0, true⟩], ⟨2, true⟩),
    (669, [⟨0, true⟩], ⟨0, true⟩),
@@ -213,7 +213,7 @@ def tlsTab12 : Tab :=
    (722, [⟨2, true⟩, ⟨0, true⟩, ⟨0, true⟩], ⟨2, true⟩)]
 
 /-- Chunk 13 of `tlsTab`: the internal terms of the S11e4 float data-movement roots. -/
-def tlsTab13 : Tab :=
+@[expose] def tlsTab13 : Tab :=
   [(586, [⟨2, true⟩], ⟨2, true⟩),
    (587, [⟨2, true⟩], ⟨2, true⟩),
    (537, [⟨2, true⟩, ⟨2, true⟩], ⟨2, true⟩),
@@ -227,13 +227,13 @@ def tlsTab13 : Tab :=
    (681, [⟨2, true⟩, ⟨2, true⟩], ⟨2, true⟩)]
 
 /-- Chunk 14 of `tlsTab`: the internal terms of the S11f float arithmetic roots. -/
-def tlsTab14 : Tab :=
+@[expose] def tlsTab14 : Tab :=
   [(368, [⟨2, true⟩, ⟨2, true⟩, ⟨2, true⟩, ⟨2, true⟩], ⟨2, true⟩),
    (364, [⟨2, true⟩, ⟨2, true⟩, ⟨2, true⟩], ⟨2, true⟩),
    (408, [⟨2, true⟩, ⟨2, true⟩], ⟨2, true⟩)]
 
 /-- Chunk 15 of `tlsTab`: the internal terms of the S11f-cvt conversion roots (`fpu_to_int_cvt_sat`, `fpu_to_int`, `int_to_fpu`, `signed_min`/`signed_max`). -/
-def tlsTab15 : Tab :=
+@[expose] def tlsTab15 : Tab :=
   [(629, [⟨2, true⟩, ⟨2, true⟩, ⟨2, true⟩, ⟨2, true⟩], ⟨2, true⟩),
    (632, [⟨2, true⟩, ⟨2, true⟩], ⟨2, true⟩),
    (633, [⟨2, true⟩, ⟨2, true⟩], ⟨2, true⟩),
@@ -241,7 +241,7 @@ def tlsTab15 : Tab :=
    (631, [⟨2, true⟩], ⟨2, true⟩)]
 
 /-- The summary table. -/
-def tlsTab : Tab := tlsTab0 ++ tlsTab1 ++ tlsTab2 ++ tlsTab3 ++ tlsTab4 ++ tlsTab5 ++ tlsTab6 ++ tlsTab7 ++ tlsTab8 ++ tlsTab9 ++ tlsTab10 ++ tlsTab11 ++ tlsTab12 ++ tlsTab13 ++ tlsTab14 ++ tlsTab15
+@[expose] def tlsTab : Tab := tlsTab0 ++ tlsTab1 ++ tlsTab2 ++ tlsTab3 ++ tlsTab4 ++ tlsTab5 ++ tlsTab6 ++ tlsTab7 ++ tlsTab8 ++ tlsTab9 ++ tlsTab10 ++ tlsTab11 ++ tlsTab12 ++ tlsTab13 ++ tlsTab14 ++ tlsTab15
 
 set_option maxRecDepth 100000 in
 theorem tlsTab0_ok :

@@ -34,7 +34,7 @@ open Backend Backend.Proof
 /-- Every `lower` call `lowerFunction` makes on a statement of `f` (from a state whose fresh
 vregs are above every value's vreg, `ValsBelow`; an indirect call's signature among `f`'s
 indirect-call signatures with register arguments, `IndSigOk`) satisfies M4's `LowerInstOk`. -/
-def InstCalls {W : Type} (f : Clif.Function) (sem : ISem CV W) (MR : MemRelTW W) (env : Clif.Env)
+@[expose] def InstCalls {W : Type} (f : Clif.Function) (sem : ISem CV W) (MR : MemRelTW W) (env : Clif.Env)
     (p : Clif.Program) :
     Prop :=
   ∀ ctx ii info inst st rss st' tr, CtxInv f ctx →
@@ -307,7 +307,7 @@ theorem termCalls_of_rules (hlt : LowerTermRulesCorrect Isle.Aarch64.program)
 context `tryCtx`, whose return/payload vregs `tryRegsOf` allocated from a state `lo` above every
 value's vreg) whose callee's stack arguments fit the outgoing area `outB` satisfies
 `LowerTryOk`. From M4's rule statements: `tryCalls_of_rules`. -/
-def TryCalls {W : Type} (f : Clif.Function) (sem : ISem CV W) (MR : MemRelTW W) (env : Clif.Env)
+@[expose] def TryCalls {W : Type} (f : Clif.Function) (sem : ISem CV W) (MR : MemRelTW W) (env : Clif.Env)
     (p : Clif.Program)
     (outB : Nat) : Prop :=
   ∀ ctx ti fn args et data sig items targets info trs lo st1 out st' tr, CtxInv f ctx →
@@ -353,7 +353,7 @@ theorem tryCalls_of_rules (htr : TryRulesCorrect Isle.Aarch64.program)
 call-site signature is in `sigs` with at most 8 parameters (in its `try_call` context, as
 `TryCalls`) satisfies `LowerTryOk` for the indirect call. From M4's rule statements:
 `tryIndCalls_of_rules`. -/
-def TryIndCalls {W : Type} (sem : ISem CV W) (MR : MemRelTW W) (env : Clif.Env) (p : Clif.Program)
+@[expose] def TryIndCalls {W : Type} (sem : ISem CV W) (MR : MemRelTW W) (env : Clif.Env) (p : Clif.Program)
     (sigs : List Clif.Signature) : Prop :=
   ∀ f ctx ti callee args et data sig items targets info trs lo st1 out st' tr, CtxInv f ctx →
     tryCallData f (.tryCallIndirect callee args et) = .ok data →

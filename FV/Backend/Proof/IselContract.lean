@@ -1660,7 +1660,7 @@ layout (`stackLayoutOk`). -/
 
 /-- The callees of the `try_call`s of `f` fit the outgoing area `out` (decided by `lowerCheck`
 with `callsStackOkB`). -/
-def TryStack (f : Clif.Function) (out : Nat) : Prop :=
+@[expose] def TryStack (f : Clif.Function) (out : Nat) : Prop :=
   ∀ B ∈ f.blocks, ∀ fn args et, B.term = .tryCall fn args et → ∀ e, f.extern? fn = some e →
     SigStackOk e.sig out
 
@@ -1791,13 +1791,13 @@ entries (`jump_table_size` is a `u32`; the bounds check compares 32 bits). -/
 /-- The driver's successor labels of a `br_table` are one per jump-table entry plus the default
 (contract change #8): the lowering dispatches on the length of the label list
 (`jump_table_size`), CLIF on the table's. M7 discharges it from `targetsOf` (`dests`). -/
-def TargetsLen (t : Clif.Terminator) (targets : List Label) : Prop :=
+@[expose] def TargetsLen (t : Clif.Terminator) (targets : List Label) : Prop :=
   ∀ x d tbl, t = .brTable x d tbl → targets.length = tbl.length + 1
 
 /-- **Root rule correctness (`lower_branch`)**, on the terminator `t` lowered in the driver's
 context `ctx` (instruction `ti` holds the terminator's data; `CtxInv`, `ValsBelow` and "the
 rules before `r` failed" as for `LowerRuleOk`), with branch targets `targets`. -/
-def BranchRuleOk (isem : Sem) (MR : MemRelT) (p : Program) (r : Rule) : Prop :=
+@[expose] def BranchRuleOk (isem : Sem) (MR : MemRelT) (p : Program) (r : Rule) : Prop :=
   ∀ (f : Clif.Function) (ctx : Ctx), CtxInv f ctx →
   ∀ (ti : Nat) (t : Clif.Terminator) (data : V) (targets : List Label), termData t = .ok data →
   ctx.insts[ti]? = some ⟨data, [], [], none⟩ → BrIdxTyped ctx t → TargetsLen t targets →
@@ -1941,7 +1941,7 @@ into `LowerTermOk` for every successful call, as `lowerInstOk_runTerm` does for 
 /-- **Root rule correctness (`lower`, terminators)**: whenever rule `r` matches the
 `return`/`trap` terminator at `ti` (the rules before it having failed) and its right-hand side
 returns, the instructions it appended are a correct lowering of the terminator. -/
-def LowerTermRuleOk (isem : Sem) (MR : MemRelT) (p : Program) (r : Rule) : Prop :=
+@[expose] def LowerTermRuleOk (isem : Sem) (MR : MemRelT) (p : Program) (r : Rule) : Prop :=
   ∀ (f : Clif.Function) (ctx : Ctx), CtxInv f ctx →
   ∀ (ti : Nat) (t : Clif.Terminator) (data : V), retOrTrap t = true → termData t = .ok data →
   ctx.insts[ti]? = some ⟨data, [], [], none⟩ →
@@ -2129,7 +2129,7 @@ the call, its results bound, the jump to the normal-return successor (`Clif.step
 (`ci = .call fn args`, resp. `.callIndirect et.sig callee args`). -/
 
 /-- The operand-view registers a `tryCall`'s defs may name: its return and payload vregs. -/
-def tryDefRegs (ctx : Ctx) : List Reg := ctx.tryRegs.1 ++ ctx.tryRegs.2
+@[expose] def tryDefRegs (ctx : Ctx) : List Reg := ctx.tryRegs.1 ++ ctx.tryRegs.2
 
 /-- **`lower_branch` on a `try_call`/`try_call_indirect`** (the call `ci`; lowering state `st`
 → `st'`, emitted code `ms`, the driver's `try_call_info` `info`): the code ends in a call whose

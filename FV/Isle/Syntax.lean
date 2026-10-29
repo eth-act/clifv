@@ -338,7 +338,7 @@ def Pattern.decEq : (a b : Pattern) → Decidable (a = b)
   | .and _ _, .constPrim _ _
   | .and _ _, .term _ _ _
   | .and _ _, .wildcard _ => isFalse (nomatch ·)
-def Pattern.decEqList : (a b : List Pattern) → Decidable (a = b)
+@[expose] def Pattern.decEqList : (a b : List Pattern) → Decidable (a = b)
   | [], [] => isTrue rfl
   | x :: xs, y :: ys =>
     match Pattern.decEq x y with
@@ -438,7 +438,7 @@ def Expr.decEq : (a b : Expr) → Decidable (a = b)
   | .«let» _ _ _, .constBool _ _
   | .«let» _ _ _, .constInt _ _
   | .«let» _ _ _, .constPrim _ _ => isFalse (nomatch ·)
-def Expr.decEqList : (a b : List Expr) → Decidable (a = b)
+@[expose] def Expr.decEqList : (a b : List Expr) → Decidable (a = b)
   | [], [] => isTrue rfl
   | x :: xs, y :: ys =>
     match Expr.decEq x y with
