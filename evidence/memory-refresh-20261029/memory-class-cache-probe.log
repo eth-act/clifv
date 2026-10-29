@@ -1,0 +1,8 @@
+⚠ [11/788] Replayed FV.Clif.Run
+warning: FV/Clif/Run.lean:475:64: `if_true` has been deprecated: Use `ite_true` instead
+✖ [43/788] Building FV.Isle.Generated.Closure
+error: target is out-of-date and needs to be rebuilt
+⚠ [319/788] Replayed FV.Opt.Proof.SemFacts
+warning: FV/Opt/Proof/SemFacts.lean:272:72: `dif_pos` has been deprecated: Use `dite_eq_left` instead
+Some required targets logged failures:
+- FV.Isle.Generated.Closure

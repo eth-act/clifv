@@ -1,0 +1,7 @@
+{
+  "utc": "2026-10-29T17:24:11.824617+00:00",
+  "status": "waiting",
+  "source_head": "dcbef5b6366bcd1d9d1924611452f4cd4230f41a",
+  "pid": 285322,
+  "purpose": "lake-serial-build.py"
+}

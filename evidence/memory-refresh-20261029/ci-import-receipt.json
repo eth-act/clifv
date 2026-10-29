@@ -1,0 +1,8 @@
+{
+  "state": "passed",
+  "artifact": 12891485845,
+  "run": 40769795369,
+  "base": "62fa93f0f46804c97a02c0de8ac9332ea51f41aa",
+  "import_log": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/ci-unstage.log",
+  "purpose": "content-addressed cache import only; not current-source validation"
+}

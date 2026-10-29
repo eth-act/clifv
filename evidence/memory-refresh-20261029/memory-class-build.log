@@ -1,0 +1,497 @@
+787 modules (0 heavy, 12 without a record); critical path 0.77 h, serial 3.12 h (recorded)
+12:57:17 want 787 modules (0 assumed built) budget=16G max_jobs=2 heavy>12G
+12:57:17 check (all) 787 modules in 0.2s: 147 up-to-date, 1 out of date, 639 wait for those
+12:57:17 start FV.Isle.Generated.Closure cap=3G running=1 avail=230.8G
+12:57:20 done FV.Isle.Generated.Closure rc=0 3s maxrss=0.6G cgpeak=0.6G built -> ok
+12:57:20 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+12:57:20 start FV.Isle cap=3G running=1 avail=231.0G
+12:57:21 done FV.Isle rc=0 1s maxrss=0.5G cgpeak=0.1G built -> ok
+12:57:21 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+12:57:21 start FV.Backend.MInst cap=3G running=1 avail=231.2G
+12:57:25 done FV.Backend.MInst rc=0 4s maxrss=0.8G cgpeak=0.4G built -> ok
+12:57:25 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+12:57:25 start FV.Backend.Isel cap=3G running=1 avail=230.6G
+12:57:28 done FV.Backend.Isel rc=0 3s maxrss=0.6G cgpeak=0.3G built -> ok
+12:57:28 check (ready) 8 modules in 0.2s: 0 up-to-date, 8 out of date, 0 wait for those
+12:57:29 start FV.Backend.Proof.IselData cap=7G running=1 avail=230.3G
+12:57:29 start FV.Backend.StackAlloc cap=3G running=2 avail=230.3G
+12:57:30 done FV.Backend.StackAlloc rc=0 1s maxrss=0.5G cgpeak=0.1G built -> ok
+12:57:30 check (ready) 2 modules in 0.2s: 0 up-to-date, 2 out of date, 0 wait for those
+12:57:30 start FV.Backend.RegallocOps cap=3G running=2 avail=230.8G
+12:57:32 done FV.Backend.RegallocOps rc=0 2s maxrss=0.6G cgpeak=0.2G built -> ok
+12:57:32 check (ready) 4 modules in 0.2s: 0 up-to-date, 4 out of date, 0 wait for those
+12:57:32 start FV.Backend.RegallocCheck cap=3G running=2 avail=230.4G
+12:57:33 done FV.Backend.RegallocCheck rc=0 1s maxrss=0.6G cgpeak=0.2G built -> ok
+12:57:33 check (ready) 2 modules in 0.1s: 0 up-to-date, 2 out of date, 0 wait for those
+12:57:33 start FV.Backend.Asm cap=3G running=2 avail=230.3G
+12:57:36 done FV.Backend.Asm rc=0 3s maxrss=0.8G cgpeak=0.3G built -> ok
+12:57:36 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+12:57:36 start FV.Backend.Proof.VCodeSem cap=3G running=2 avail=229.7G
+12:57:37 done FV.Backend.Proof.VCodeSem rc=0 1s maxrss=0.5G cgpeak=0.1G built -> ok
+12:57:37 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+12:57:38 start FV.Backend.Proof.RegallocState cap=3G running=2 avail=230.1G
+12:57:40 done FV.Backend.Proof.RegallocState rc=0 2s maxrss=0.6G cgpeak=0.2G built -> ok
+12:57:40 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+12:57:40 start FV.Backend.Encode cap=3G running=2 avail=230.0G
+12:57:43 done FV.Backend.Encode rc=0 3s maxrss=1.7G cgpeak=0.3G built -> ok
+12:57:43 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+12:57:43 start FV.Backend.Proof.RegallocLemmas cap=3G running=2 avail=229.9G
+12:57:45 done FV.Backend.Proof.RegallocLemmas rc=0 2s maxrss=0.6G cgpeak=0.2G built -> ok
+12:57:45 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+12:57:45 start FV.Backend.Proof.RegallocSound cap=3G running=2 avail=229.9G
+12:57:46 done FV.Backend.Proof.RegallocSound rc=0 1s maxrss=0.6G cgpeak=0.2G built -> ok
+12:57:46 check (ready) 2 modules in 0.2s: 0 up-to-date, 2 out of date, 0 wait for those
+12:57:46 start FV.Backend.Proof.RegallocOperands cap=3G running=2 avail=230.0G
+12:57:49 done FV.Backend.Proof.RegallocOperands rc=0 3s maxrss=1.7G cgpeak=0.4G built -> ok
+12:57:50 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+12:57:50 start FV.Backend.Proof.AbiClass cap=3G running=2 avail=229.5G
+12:57:51 done FV.Backend.Proof.AbiClass rc=0 1s maxrss=0.6G cgpeak=0.2G built -> ok
+12:57:51 start FV.Backend.Proof.DriverCheck cap=3G running=2 avail=229.8G
+12:57:52 done FV.Backend.Proof.DriverCheck rc=0 1s maxrss=0.6G cgpeak=0.2G built -> ok
+12:57:52 start FV.Backend.Proof.IselFlowCheck cap=3G running=2 avail=229.8G
+12:57:54 done FV.Backend.Proof.IselFlowCheck rc=0 2s maxrss=0.7G cgpeak=0.3G built -> ok
+12:57:54 start FV.Backend.Proof.IselFlowSplit cap=3G running=2 avail=229.7G
+12:57:56 done FV.Backend.Proof.IselFlowSplit rc=0 2s maxrss=1.6G cgpeak=0.3G built -> ok
+12:57:56 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+12:57:56 start FV.Backend.Proof.IselFlowExt cap=3G running=2 avail=229.5G
+12:58:12 done FV.Backend.Proof.IselFlowExt rc=0 16s maxrss=2.1G cgpeak=0.8G built -> ok
+12:58:12 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+12:58:12 start FV.Backend.Lowering.StockAlloc cap=3G running=2 avail=230.1G
+12:58:13 done FV.Backend.Lowering.StockAlloc rc=0 1s maxrss=0.5G cgpeak=0.1G built -> ok
+12:58:14 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+12:58:14 start FV.Backend.Lowering.Stock cap=3G running=2 avail=229.7G
+12:58:16 done FV.Backend.Lowering.Stock rc=0 2s maxrss=0.6G cgpeak=0.2G built -> ok
+12:58:16 check (ready) 3 modules in 0.2s: 0 up-to-date, 3 out of date, 0 wait for those
+12:58:16 start FV.Backend.Lowering.StockReplay cap=3G running=2 avail=230.1G
+12:58:17 done FV.Backend.Lowering.StockReplay rc=0 1s maxrss=0.5G cgpeak=0.1G built -> ok
+12:58:17 start FV.Backend.Proof.StockPolicy cap=3G running=2 avail=230.0G
+12:58:18 done FV.Backend.Proof.StockPolicy rc=0 1s maxrss=0.5G cgpeak=0.1G built -> ok
+12:58:18 check (ready) 2 modules in 0.1s: 0 up-to-date, 2 out of date, 0 wait for those
+12:58:18 start FV.Backend.Proof.StockScan cap=6G running=2 avail=230.0G
+12:58:32 done FV.Backend.Proof.StockScan rc=0 14s maxrss=4.6G cgpeak=4.2G built -> ok
+12:58:32 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+12:58:32 start FV.Backend.Proof.StockProjection cap=3G running=2 avail=229.3G
+12:58:34 done FV.Backend.Proof.StockProjection rc=0 2s maxrss=0.6G cgpeak=0.2G built -> ok
+12:58:34 start FV.Backend.Proof.StockBlockScan cap=3G running=2 avail=229.8G
+12:58:35 done FV.Backend.Proof.StockBlockScan rc=0 1s maxrss=0.6G cgpeak=0.2G built -> ok
+12:58:35 start FV.Backend.Proof.PrepareCheck cap=3G running=2 avail=229.9G
+12:58:36 done FV.Backend.Proof.PrepareCheck rc=0 1s maxrss=0.5G cgpeak=0.1G built -> ok
+12:58:37 check (ready) 1 modules in 0.1s: 0 up-to-date, 1 out of date, 0 wait for those
+12:58:37 start FV.Backend.Proof.PrepareComplete cap=3G running=2 avail=229.7G
+12:58:49 done FV.Backend.Proof.PrepareComplete rc=0 12s maxrss=0.7G cgpeak=0.4G built -> ok
+12:58:49 start FV.Backend.Proof.TryRegs cap=3G running=2 avail=229.9G
+12:58:50 done FV.Backend.Proof.TryRegs rc=0 1s maxrss=0.6G cgpeak=0.2G built -> ok
+12:58:50 start FV.Backend.Proof.IselFlowData cap=3G running=2 avail=230.0G
+12:58:52 done FV.Backend.Proof.IselFlowData rc=0 2s maxrss=1.7G cgpeak=0.3G built -> ok
+12:58:52 start FV.Compile.SubsetT cap=3G running=2 avail=230.2G
+12:58:54 done FV.Compile.SubsetT rc=0 2s maxrss=0.6G cgpeak=0.2G built -> ok
+12:58:54 check (ready) 2 modules in 0.2s: 0 up-to-date, 2 out of date, 0 wait for those
+12:58:54 start FV.Backend.Proof.TryRegsC cap=3G running=2 avail=230.2G
+12:58:55 done FV.Backend.Proof.TryRegsC rc=0 1s maxrss=0.6G cgpeak=0.2G built -> ok
+12:58:55 start FV.Backend.Proof.EncodeBase cap=3G running=2 avail=230.2G
+12:58:57 done FV.Backend.Proof.EncodeBase rc=0 2s maxrss=1.6G cgpeak=0.3G built -> ok
+12:58:57 check (ready) 6 modules in 0.2s: 0 up-to-date, 6 out of date, 0 wait for those
+12:58:57 start FV.Backend.Proof.EncodeDPSFP cap=3G running=2 avail=229.6G
+12:59:08 done FV.Backend.Proof.EncodeDPSFP rc=0 11s maxrss=2.0G cgpeak=0.7G built -> ok
+12:59:08 start FV.Backend.Proof.EncodeDPR cap=3G running=2 avail=230.1G
+12:59:16 done FV.Backend.Proof.EncodeDPR rc=0 8s maxrss=1.9G cgpeak=0.5G built -> ok
+12:59:16 start FV.Backend.Proof.EncodeLDST cap=3G running=2 avail=229.9G
+12:59:21 done FV.Backend.Proof.EncodeLDST rc=0 5s maxrss=1.8G cgpeak=0.4G built -> ok
+12:59:22 start FV.Backend.Proof.EncodeBR cap=3G running=2 avail=229.8G
+12:59:25 done FV.Backend.Proof.EncodeBR rc=0 3s maxrss=1.7G cgpeak=0.3G built -> ok
+12:59:25 start FV.Backend.Proof.EncodeDPI cap=3G running=2 avail=229.2G
+12:59:27 done FV.Backend.Proof.EncodeDPI rc=0 2s maxrss=1.7G cgpeak=0.3G built -> ok
+12:59:27 start FV.Backend.Proof.EncodeRES cap=3G running=2 avail=229.8G
+12:59:28 done FV.Backend.Proof.EncodeRES rc=0 1s maxrss=1.6G cgpeak=0.2G built -> ok
+12:59:28 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+12:59:28 start FV.Backend.Proof.Encode cap=3G running=2 avail=229.3G
+12:59:29 done FV.Backend.Proof.Encode rc=0 1s maxrss=1.6G cgpeak=0.2G built -> ok
+12:59:29 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+12:59:29 start FV.Backend.Proof.EncodeBranch cap=3G running=2 avail=229.8G
+12:59:31 done FV.Backend.Proof.EncodeBranch rc=0 2s maxrss=1.7G cgpeak=0.3G built -> ok
+12:59:31 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+12:59:31 start FV.Backend.Proof.EncodeLayout cap=3G running=2 avail=229.6G
+12:59:33 done FV.Backend.Proof.EncodeLayout rc=0 2s maxrss=1.7G cgpeak=0.3G built -> ok
+12:59:34 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+12:59:34 start FV.Backend.SpillAlloc cap=3G running=2 avail=230.0G
+12:59:35 done FV.Backend.SpillAlloc rc=0 1s maxrss=0.7G cgpeak=0.1G built -> ok
+12:59:35 check (ready) 2 modules in 0.2s: 0 up-to-date, 2 out of date, 0 wait for those
+12:59:35 start FV.Backend.Regalloc cap=3G running=2 avail=230.0G
+12:59:37 done FV.Backend.Regalloc rc=0 2s maxrss=0.7G cgpeak=0.2G built -> ok
+12:59:37 check (ready) 2 modules in 0.1s: 0 up-to-date, 2 out of date, 0 wait for those
+12:59:37 start FV.Backend.Proof.RegallocFrame cap=3G running=2 avail=229.9G
+12:59:39 done FV.Backend.Proof.RegallocFrame rc=0 2s maxrss=1.7G cgpeak=0.3G built -> ok
+12:59:39 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+12:59:39 start FV.Backend.Proof.RegallocLayout cap=3G running=2 avail=229.9G
+12:59:41 done FV.Backend.Proof.RegallocLayout rc=0 2s maxrss=1.7G cgpeak=0.3G built -> ok
+12:59:41 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+12:59:41 start FV.Compile.StoreTyped cap=3G running=2 avail=229.8G
+12:59:42 done FV.Compile.StoreTyped rc=0 1s maxrss=0.5G cgpeak=0.1G built -> ok
+12:59:43 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+12:59:43 start FV.Backend.InputScope cap=3G running=2 avail=229.9G
+12:59:44 done FV.Backend.InputScope rc=0 1s maxrss=0.5G cgpeak=0.1G built -> ok
+12:59:44 start FV.Backend.Proof.EncodeStep cap=3G running=2 avail=229.8G
+12:59:45 done FV.Backend.Proof.EncodeStep rc=0 1s maxrss=1.6G cgpeak=0.2G built -> ok
+12:59:45 start FV.Backend.Proof.RegallocSlots cap=3G running=2 avail=229.9G
+12:59:48 done FV.Backend.Proof.RegallocSlots rc=0 3s maxrss=1.7G cgpeak=0.3G built -> ok
+12:59:48 start FV.E2E.RegLevelEmit cap=3G running=2 avail=229.7G
+12:59:52 done FV.E2E.RegLevelEmit rc=0 4s maxrss=0.9G cgpeak=0.3G built -> ok
+12:59:52 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+12:59:52 start FV.Backend.Proof.RegallocFwd cap=3G running=2 avail=229.3G
+12:59:53 done FV.Backend.Proof.RegallocFwd rc=0 1s maxrss=0.6G cgpeak=0.2G built -> ok
+12:59:53 start FV.E2E.RegLevelRelax cap=3G running=2 avail=228.9G
+12:59:54 done FV.E2E.RegLevelRelax rc=0 1s maxrss=0.7G cgpeak=0.1G built -> ok
+12:59:54 start FV.Backend.Proof.IselMemArm cap=3G running=2 avail=228.9G
+12:59:56 done FV.Backend.Proof.IselMemArm rc=0 2s maxrss=1.6G cgpeak=0.2G built -> ok
+12:59:56 start FV.Backend.RegallocPerEdgePrepare cap=3G running=2 avail=229.0G
+12:59:57 done FV.Backend.RegallocPerEdgePrepare rc=0 1s maxrss=0.5G cgpeak=0.1G built -> ok
+12:59:57 check (ready) 3 modules in 0.2s: 0 up-to-date, 3 out of date, 0 wait for those
+12:59:57 start FV.Backend.Proof.PerEdgePrepareLoopFacts cap=3G running=2 avail=229.3G
+13:00:02 done FV.Backend.Proof.PerEdgePrepareLoopFacts rc=0 5s maxrss=0.6G cgpeak=0.2G built -> ok
+13:00:03 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+13:00:03 start FV.Backend.Proof.PerEdgePrepareFacts cap=3G running=2 avail=228.7G
+13:00:07 done FV.Backend.Proof.PerEdgePrepareFacts rc=0 4s maxrss=0.5G cgpeak=0.1G built -> ok
+13:00:07 start FV.Backend.Proof.PerEdgePrepareOuterFacts cap=3G running=2 avail=229.1G
+13:00:08 done FV.Backend.Proof.PerEdgePrepareOuterFacts rc=0 1s maxrss=0.6G cgpeak=0.2G built -> ok
+13:00:08 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+13:00:08 start FV.Backend.Proof.PerEdgePrepareFilterFacts cap=3G running=2 avail=229.2G
+13:00:11 done FV.Backend.Proof.PerEdgePrepareFilterFacts rc=0 3s maxrss=0.6G cgpeak=0.2G built -> ok
+13:00:11 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+13:00:11 start FV.Backend.Proof.PerEdgePrepareOrderFacts cap=3G running=2 avail=228.1G
+13:00:12 done FV.Backend.Proof.PerEdgePrepareOrderFacts rc=0 1s maxrss=0.6G cgpeak=0.1G built -> ok
+13:00:12 start FV.Backend.RegallocPerEdgePrepareCheck cap=3G running=2 avail=227.4G
+13:00:13 done FV.Backend.RegallocPerEdgePrepareCheck rc=0 1s maxrss=0.5G cgpeak=0.1G built -> ok
+13:00:13 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+13:00:13 start FV.Backend.Proof.PerEdgePrepareComplete cap=3G running=2 avail=227.0G
+13:00:15 done FV.Backend.Proof.PerEdgePrepareComplete rc=0 2s maxrss=0.6G cgpeak=0.2G built -> ok
+13:00:16 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+13:00:16 start FV.Backend.Lowering.StockD0 cap=3G running=2 avail=225.6G
+13:00:17 done FV.Backend.Lowering.StockD0 rc=0 1s maxrss=0.5G cgpeak=0.1G built -> ok
+13:00:17 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+13:00:17 start FV.Backend.Lowering.StockPrologue cap=3G running=2 avail=225.5G
+13:00:18 done FV.Backend.Lowering.StockPrologue rc=0 1s maxrss=0.5G cgpeak=0.1G built -> ok
+13:00:18 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+13:00:18 start FV.Backend.Proof.SpillLocal cap=3G running=2 avail=225.2G
+13:00:19 done FV.Backend.Proof.SpillLocal rc=0 1s maxrss=0.7G cgpeak=0.2G built -> ok
+13:00:19 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+13:00:19 start FV.Backend.Lowering.StockProduction cap=3G running=2 avail=224.8G
+13:00:20 done FV.Backend.Lowering.StockProduction rc=0 1s maxrss=0.5G cgpeak=0.1G built -> ok
+13:00:20 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+13:00:20 start FV.Backend.Proof.SpillEdgesPrep cap=3G running=2 avail=225.2G
+13:00:22 done FV.Backend.Proof.SpillEdgesPrep rc=0 2s maxrss=0.8G cgpeak=0.3G built -> ok
+13:00:22 start FV.Backend.Lowering.StockPrologueAll cap=3G running=2 avail=228.7G
+13:00:23 done FV.Backend.Proof.IselData rc=0 175s maxrss=5.8G cgpeak=5.8G built -> ok
+13:00:23 done FV.Backend.Lowering.StockPrologueAll rc=0 1s maxrss=0.5G cgpeak=0.1G built -> ok
+13:00:24 check (ready) 3 modules in 0.2s: 0 up-to-date, 3 out of date, 0 wait for those
+13:00:24 start FV.Backend.Proof.IselContract cap=6G running=1 avail=229.9G
+13:00:24 start FV.Backend.Proof.IselInterp cap=3G running=2 avail=229.8G
+13:00:25 done FV.Backend.Proof.IselInterp rc=0 1s maxrss=1.5G cgpeak=0.2G built -> ok
+13:00:25 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+13:00:25 start FV.Backend.Proof.IselExtern cap=3G running=2 avail=229.6G
+13:00:27 done FV.Backend.Proof.IselExtern rc=0 2s maxrss=1.7G cgpeak=0.3G built -> ok
+13:00:27 check (ready) 1 modules in 0.1s: 0 up-to-date, 1 out of date, 0 wait for those
+13:00:27 start FV.Backend.Proof.IselTerms cap=3G running=2 avail=229.1G
+13:00:36 done FV.Backend.Proof.IselTerms rc=0 9s maxrss=1.8G cgpeak=0.5G built -> ok
+13:00:36 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+13:00:36 start FV.Backend.Proof.IselRules cap=3G running=2 avail=226.2G
+13:00:40 done FV.Backend.Proof.IselRules rc=0 4s maxrss=1.7G cgpeak=0.4G built -> ok
+13:00:41 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+13:00:41 start FV.Backend.Proof.IselRulesALU cap=3G running=2 avail=228.1G
+13:00:47 done FV.Backend.Proof.IselRulesALU rc=0 6s maxrss=1.8G cgpeak=0.4G built -> ok
+13:00:47 check (ready) 2 modules in 0.2s: 0 up-to-date, 2 out of date, 0 wait for those
+13:00:47 start FV.Backend.Proof.IselTermsAluB cap=3G running=2 avail=225.4G
+13:01:00 done FV.Backend.Proof.IselTermsAluB rc=0 13s maxrss=1.9G cgpeak=0.6G built -> ok
+13:01:00 start FV.Backend.Proof.IselTermsALUA cap=3G running=2 avail=227.7G
+13:01:06 done FV.Backend.Proof.IselTermsALUA rc=0 6s maxrss=1.7G cgpeak=0.4G built -> ok
+13:01:06 start FV.Backend.Proof.PerEdgePrepareTotal cap=3G running=2 avail=225.3G
+13:01:07 done FV.Backend.Proof.PerEdgePrepareTotal rc=0 1s maxrss=0.6G cgpeak=0.2G built -> ok
+13:01:07 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+13:01:07 start FV.Backend.Lowering.StockScalarAdd cap=3G running=2 avail=225.2G
+13:01:08 done FV.Backend.Lowering.StockScalarAdd rc=0 1s maxrss=0.5G cgpeak=0.1G built -> ok
+13:01:08 start FV.Backend.Proof.PerEdgePrepareInputTotal cap=3G running=2 avail=225.1G
+13:01:13 done FV.Backend.Proof.PerEdgePrepareInputTotal rc=0 5s maxrss=0.7G cgpeak=0.2G built -> ok
+13:02:02 done FV.Backend.Proof.IselContract rc=0 99s maxrss=5.8G cgpeak=4.4G built -> ok
+13:02:03 check (ready) 5 modules in 0.2s: 0 up-to-date, 5 out of date, 0 wait for those
+13:02:03 start FV.Backend.Proof.IselSemCmp cap=3G running=1 avail=229.9G
+13:02:03 start FV.Backend.Proof.IselFamily cap=3G running=2 avail=229.8G
+13:02:07 done FV.Backend.Proof.IselSemCmp rc=0 4s maxrss=1.8G cgpeak=0.4G built -> ok
+13:02:07 done FV.Backend.Proof.IselFamily rc=0 4s maxrss=1.8G cgpeak=0.5G built -> ok
+13:02:07 check (ready) 6 modules in 0.2s: 0 up-to-date, 6 out of date, 0 wait for those
+13:02:07 start FV.Backend.Proof.IselCmpRun cap=3G running=1 avail=229.7G
+13:02:07 start FV.Backend.Proof.IselExclBase cap=3G running=2 avail=229.6G
+13:02:08 done FV.Backend.Proof.IselCmpRun rc=0 1s maxrss=1.6G cgpeak=0.3G built -> ok
+13:02:08 done FV.Backend.Proof.IselExclBase rc=0 1s maxrss=1.6G cgpeak=0.2G built -> ok
+13:02:08 check (ready) 2 modules in 0.2s: 0 up-to-date, 2 out of date, 0 wait for those
+13:02:08 start FV.Backend.Proof.IselCmpBase cap=3G running=1 avail=230.0G
+13:02:08 start FV.Backend.Proof.IselExclData cap=3G running=2 avail=229.9G
+13:02:11 done FV.Backend.Proof.IselCmpBase rc=0 3s maxrss=1.7G cgpeak=0.3G built -> ok
+13:02:11 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+13:02:12 start FV.Backend.Proof.IselCmpTerms cap=3G running=2 avail=229.1G
+13:02:13 done FV.Backend.Proof.IselExclData rc=0 4s maxrss=2.1G cgpeak=0.7G built -> ok
+13:02:13 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+13:02:13 start FV.Backend.Proof.IselExclSound cap=3G running=2 avail=229.5G
+13:02:18 done FV.Backend.Proof.IselCmpTerms rc=0 6s maxrss=1.9G cgpeak=0.5G built -> ok
+13:02:18 check (ready) 2 modules in 0.2s: 0 up-to-date, 2 out of date, 0 wait for those
+13:02:18 start FV.Backend.Proof.IselCmpExt cap=3G running=2 avail=228.8G
+13:02:21 done FV.Backend.Proof.IselExclSound rc=0 8s maxrss=1.7G cgpeak=0.4G built -> ok
+13:02:21 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+13:02:21 start FV.Backend.Proof.IselExcl cap=6G running=2 avail=229.2G
+13:02:25 done FV.Backend.Proof.IselCmpExt rc=0 7s maxrss=1.9G cgpeak=0.5G built -> ok
+13:02:26 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+13:02:26 start FV.Backend.Proof.IselCmpCond cap=4G running=2 avail=227.9G
+13:02:41 done FV.Backend.Proof.IselExcl rc=0 19s maxrss=5.7G cgpeak=4.3G built -> ok
+13:02:41 check (ready) 2 modules in 0.2s: 0 up-to-date, 2 out of date, 0 wait for those
+13:02:41 start FV.Backend.Proof.RegallocCSem cap=3G running=2 avail=228.2G
+13:02:45 done FV.Backend.Proof.RegallocCSem rc=0 4s maxrss=1.8G cgpeak=0.4G built -> ok
+13:02:45 check (ready) 3 modules in 0.2s: 0 up-to-date, 3 out of date, 0 wait for those
+13:02:45 start FV.Backend.Proof.IselFamAluBBase cap=3G running=2 avail=228.3G
+13:02:47 done FV.Backend.Proof.IselFamAluBBase rc=0 2s maxrss=1.7G cgpeak=0.3G built -> ok
+13:02:47 check (ready) 3 modules in 0.2s: 0 up-to-date, 3 out of date, 0 wait for those
+13:02:47 start FV.Backend.Proof.IselLcf cap=3G running=2 avail=228.0G
+13:02:49 done FV.Backend.Proof.IselCmpCond rc=0 24s maxrss=4.0G cgpeak=3.3G built -> ok
+13:02:50 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+13:02:50 start FV.Backend.Proof.IselCmpIcmp cap=4G running=2 avail=229.1G
+13:02:52 done FV.Backend.Proof.IselLcf rc=0 4s maxrss=1.9G cgpeak=0.6G built -> ok
+13:02:52 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+13:02:52 start FV.Backend.Proof.IselCovDom cap=3G running=2 avail=228.7G
+13:02:54 done FV.Backend.Proof.IselCovDom rc=0 2s maxrss=1.7G cgpeak=0.3G built -> ok
+13:02:54 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+13:02:54 start FV.Backend.Proof.IselCovSem cap=3G running=2 avail=229.0G
+13:02:56 done FV.Backend.Proof.IselCovSem rc=0 2s maxrss=1.7G cgpeak=0.3G built -> ok
+13:02:56 check (ready) 2 modules in 0.2s: 0 up-to-date, 2 out of date, 0 wait for those
+13:02:56 start FV.Backend.Proof.IselTermsImm cap=3G running=2 avail=228.7G
+13:03:15 done FV.Backend.Proof.IselTermsImm rc=0 19s maxrss=2.2G cgpeak=0.9G built -> ok
+13:03:16 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+13:03:16 start FV.Backend.Proof.IselCovForm cap=3G running=2 avail=228.5G
+13:03:27 done FV.Backend.Proof.IselCovForm rc=0 11s maxrss=2.4G cgpeak=1.1G built -> ok
+13:03:27 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+13:03:27 start FV.Backend.Proof.IselFamAluBUnary cap=3G running=2 avail=228.1G
+13:03:32 done FV.Backend.Proof.IselFamAluBUnary rc=0 5s maxrss=1.8G cgpeak=0.4G built -> ok
+13:03:32 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+13:03:32 start FV.Backend.Proof.IselFamAluBMisc cap=3G running=2 avail=228.4G
+13:03:39 done FV.Backend.Proof.IselFamAluBMisc rc=0 7s maxrss=1.9G cgpeak=0.5G built -> ok
+13:03:39 check (ready) 2 modules in 0.2s: 0 up-to-date, 2 out of date, 0 wait for those
+13:03:39 start FV.Backend.Proof.IselCovLe cap=3G running=2 avail=227.9G
+13:03:41 done FV.Backend.Proof.IselCovLe rc=0 2s maxrss=1.7G cgpeak=0.3G built -> ok
+13:03:42 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+13:03:42 start FV.Backend.Proof.IselCovCheck cap=3G running=2 avail=228.4G
+13:03:43 done FV.Backend.Proof.IselCovCheck rc=0 1s maxrss=1.7G cgpeak=0.2G built -> ok
+13:03:43 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+13:03:43 start FV.Backend.Proof.IselCovFns cap=3G running=2 avail=228.3G
+13:03:44 done FV.Backend.Proof.IselCovFns rc=0 1s maxrss=1.7G cgpeak=0.2G built -> ok
+13:03:44 check (ready) 2 modules in 0.2s: 0 up-to-date, 2 out of date, 0 wait for those
+13:03:44 start FV.Backend.Proof.IselCovTab cap=3G running=2 avail=228.1G
+13:05:28 done FV.Backend.Proof.IselCmpIcmp rc=0 159s maxrss=3.5G cgpeak=2.3G built -> ok
+13:05:28 start FV.Backend.Proof.IselFamAluBIconst cap=3G running=2 avail=228.4G
+13:05:32 done FV.Backend.Proof.IselFamAluBIconst rc=0 4s maxrss=1.8G cgpeak=0.4G built -> ok
+13:05:32 start FV.Backend.Proof.IselFamAluBShiftBase cap=3G running=2 avail=228.4G
+13:05:33 done FV.Backend.Proof.IselFamAluBShiftBase rc=0 1s maxrss=1.7G cgpeak=0.2G built -> ok
+13:05:34 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+13:05:34 start FV.Backend.Proof.IselTermsShift cap=3G running=2 avail=228.4G
+13:05:39 done FV.Backend.Proof.IselTermsShift rc=0 5s maxrss=1.8G cgpeak=0.4G built -> ok
+13:05:39 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+13:05:39 start FV.Backend.Proof.IselFamAluBShiftTerms cap=4G running=2 avail=228.1G
+13:06:03 done FV.Backend.Proof.IselFamAluBShiftTerms rc=0 24s maxrss=3.8G cgpeak=3.0G built -> ok
+13:06:03 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+13:06:03 start FV.Backend.Proof.IselFamAluBShift cap=3G running=2 avail=228.0G
+13:06:14 done FV.Backend.Proof.IselFamAluBShift rc=0 11s maxrss=2.1G cgpeak=0.7G built -> ok
+13:06:14 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+13:06:14 start FV.Backend.Proof.IselFamAluBRotTerms cap=3G running=2 avail=228.3G
+13:06:45 done FV.Backend.Proof.IselFamAluBRotTerms rc=0 31s maxrss=2.1G cgpeak=0.7G built -> ok
+13:06:46 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+13:06:46 start FV.Backend.Proof.IselFamALUA cap=4G running=2 avail=228.4G
+13:07:02 done FV.Backend.Proof.IselFamALUA rc=0 16s maxrss=3.9G cgpeak=3.1G built -> ok
+13:07:02 check (ready) 2 modules in 0.2s: 0 up-to-date, 2 out of date, 0 wait for those
+13:07:02 start FV.Backend.Proof.IselCmpEmit cap=3G running=2 avail=229.0G
+13:08:47 done FV.Backend.Proof.IselCmpEmit rc=0 105s maxrss=2.9G cgpeak=1.6G built -> ok
+13:08:47 start FV.Backend.Proof.IselFamAluBRot cap=3G running=2 avail=228.9G
+13:09:10 done FV.Backend.Proof.IselFamAluBRot rc=0 23s maxrss=2.3G cgpeak=1.0G built -> ok
+13:09:10 check (ready) 2 modules in 0.2s: 0 up-to-date, 2 out of date, 0 wait for those
+13:09:10 start FV.Backend.Proof.IselFamAluBNotShift cap=3G running=2 avail=228.9G
+13:09:19 done FV.Backend.Proof.IselFamAluBNotShift rc=0 9s maxrss=1.8G cgpeak=0.4G built -> ok
+13:09:20 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+13:09:20 start FV.Backend.Proof.IselFamAluBBfm cap=3G running=2 avail=228.6G
+13:09:31 done FV.Backend.Proof.IselFamAluBBfm rc=0 11s maxrss=2.0G cgpeak=0.6G built -> ok
+13:09:31 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+13:09:31 start FV.Backend.Proof.IselFamAluBPopcnt cap=3G running=2 avail=228.1G
+13:09:49 done FV.Backend.Proof.IselFamAluBPopcnt rc=0 18s maxrss=2.3G cgpeak=1.0G built -> ok
+13:09:49 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+13:09:49 start FV.Backend.Proof.LowerSeq cap=3G running=2 avail=228.9G
+13:09:51 done FV.Backend.Proof.LowerSeq rc=0 2s maxrss=1.7G cgpeak=0.3G built -> ok
+13:09:51 check (ready) 2 modules in 0.2s: 0 up-to-date, 2 out of date, 0 wait for those
+13:09:51 start FV.Backend.Proof.StockValues cap=3G running=2 avail=228.8G
+13:09:54 done FV.Backend.Proof.StockValues rc=0 3s maxrss=1.7G cgpeak=0.4G built -> ok
+13:09:55 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+13:09:55 start FV.Backend.Proof.IselFloatBitcast cap=3G running=2 avail=228.7G
+13:10:21 done FV.Backend.Proof.IselFloatBitcast rc=0 26s maxrss=2.4G cgpeak=0.9G built -> ok
+13:10:21 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+13:10:21 start FV.Backend.Proof.StockContext cap=3G running=2 avail=229.0G
+13:10:23 done FV.Backend.Proof.StockContext rc=0 2s maxrss=1.7G cgpeak=0.3G built -> ok
+13:10:23 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+13:10:23 start FV.Backend.Proof.StockAliasBounds cap=5G running=2 avail=229.2G
+13:10:27 done FV.Backend.Proof.StockAliasBounds rc=0 4s maxrss=4.6G cgpeak=3.1G built -> ok
+13:10:27 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+13:10:27 start FV.Backend.Proof.StockScanBounds cap=13G running=2 avail=229.3G
+13:13:14 done FV.Backend.Proof.IselCovTab rc=0 570s maxrss=2.8G cgpeak=1.4G built -> ok
+13:13:14 done FV.Backend.Proof.StockScanBounds rc=0 166s maxrss=11.6G cgpeak=10.3G built -> ok
+13:13:14 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+13:13:14 start FV.Backend.Proof.IselRulesALUA cap=3G running=1 avail=230.5G
+13:13:14 start FV.Backend.Proof.IselFloatArith cap=3G running=2 avail=230.5G
+13:13:38 done FV.Backend.Proof.IselFloatArith rc=0 24s maxrss=2.2G cgpeak=0.8G built -> ok
+13:13:38 check (ready) 1 modules in 0.1s: 0 up-to-date, 1 out of date, 0 wait for those
+13:13:38 start FV.Backend.Proof.StockAllocationFlow cap=6G running=2 avail=229.6G
+13:13:40 done FV.Backend.Proof.IselRulesALUA rc=0 26s maxrss=2.3G cgpeak=1.0G built -> ok
+13:13:41 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+13:13:41 start FV.Backend.Proof.IselFloatCmpEmit cap=6G running=2 avail=229.9G
+13:14:06 done FV.Backend.Proof.IselFloatCmpEmit rc=0 25s maxrss=2.3G cgpeak=0.9G built -> ok
+13:14:06 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+13:14:06 start FV.Backend.Proof.IselTermsLogic cap=3G running=2 avail=223.3G
+13:14:19 done FV.Backend.Proof.StockAllocationFlow rc=0 41s maxrss=5.8G cgpeak=4.4G built -> ok
+13:14:19 check (ready) 3 modules in 0.5s: 0 up-to-date, 3 out of date, 0 wait for those
+13:14:20 start FV.Backend.Proof.StockScanFrontiers cap=3G running=2 avail=226.5G
+13:14:27 done FV.Backend.Proof.StockScanFrontiers rc=0 7s maxrss=1.6G cgpeak=0.2G built -> ok
+13:14:27 check (ready) 1 modules in 0.4s: 0 up-to-date, 1 out of date, 0 wait for those
+13:14:27 start FV.Backend.Proof.StockDriverBounds cap=8G running=2 avail=226.0G
+13:14:45 done FV.Backend.Proof.IselTermsLogic rc=0 39s maxrss=3.0G cgpeak=1.8G built -> ok
+13:14:45 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+13:14:45 start FV.Backend.Proof.IselCtlBase cap=3G running=2 avail=222.8G
+13:14:49 done FV.Backend.Proof.IselCtlBase rc=0 4s maxrss=1.8G cgpeak=0.3G built -> ok
+13:14:50 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+13:14:50 start FV.Backend.Proof.IselCtlUnmatch cap=4G running=2 avail=222.0G
+13:15:04 done FV.Backend.Proof.IselCtlUnmatch rc=0 14s maxrss=4.2G cgpeak=2.8G built -> ok
+13:15:04 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+13:15:04 start FV.Backend.Proof.IselTermsLogicNot cap=3G running=2 avail=221.3G
+13:15:21 done FV.Backend.Proof.IselTermsLogicNot rc=0 17s maxrss=2.3G cgpeak=1.0G built -> ok
+13:15:21 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+13:15:21 start FV.Backend.Proof.IselCmpRoot cap=3G running=2 avail=222.5G
+13:15:26 done FV.Backend.Proof.IselCmpRoot rc=0 5s maxrss=1.9G cgpeak=0.4G built -> ok
+13:15:26 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+13:15:26 start FV.Backend.Proof.IselCtlBranch cap=3G running=2 avail=220.4G
+13:15:30 done FV.Backend.Proof.IselCtlBranch rc=0 4s maxrss=1.7G cgpeak=0.3G built -> ok
+13:15:31 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+13:15:31 start FV.Backend.Proof.IselCtlBrif cap=3G running=2 avail=220.1G
+13:16:05 done FV.Backend.Proof.IselCtlBrif rc=0 34s maxrss=2.2G cgpeak=0.8G built -> ok
+13:16:05 start FV.Backend.Proof.IselTermsALUAMul cap=3G running=2 avail=224.5G
+13:16:28 done FV.Backend.Proof.IselTermsALUAMul rc=0 23s maxrss=2.5G cgpeak=1.2G built -> ok
+13:16:28 check (ready) 2 modules in 0.2s: 0 up-to-date, 2 out of date, 0 wait for those
+13:16:28 start FV.Backend.Proof.LowerRename cap=3G running=2 avail=220.2G
+13:16:30 done FV.Backend.Proof.LowerRename rc=0 2s maxrss=1.7G cgpeak=0.3G built -> ok
+13:16:30 check (ready) 2 modules in 0.2s: 0 up-to-date, 2 out of date, 0 wait for those
+13:16:30 start FV.Backend.Proof.LowerContract cap=3G running=2 avail=220.1G
+13:16:32 done FV.Backend.Proof.LowerContract rc=0 2s maxrss=1.7G cgpeak=0.3G built -> ok
+13:16:32 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+13:16:32 start FV.Backend.Proof.LowerFrame cap=3G running=2 avail=223.4G
+13:16:34 done FV.Backend.Proof.LowerFrame rc=0 2s maxrss=1.7G cgpeak=0.3G built -> ok
+13:16:35 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+13:16:35 start FV.Backend.Proof.IselFamilyALU cap=3G running=2 avail=222.8G
+13:16:36 done FV.Backend.Proof.IselFamilyALU rc=0 1s maxrss=1.6G cgpeak=0.2G built -> ok
+13:16:36 check (ready) 2 modules in 0.2s: 0 up-to-date, 2 out of date, 0 wait for those
+13:16:36 start FV.Backend.Proof.IselFamALUALogic cap=3G running=2 avail=222.3G
+13:16:38 done FV.Backend.Proof.IselFamALUALogic rc=0 2s maxrss=1.7G cgpeak=0.3G built -> ok
+13:16:38 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+13:16:38 start FV.Backend.Proof.LowerShape cap=3G running=2 avail=221.3G
+13:16:40 done FV.Backend.Proof.LowerShape rc=0 2s maxrss=1.6G cgpeak=0.2G built -> ok
+13:16:40 check (ready) 2 modules in 0.2s: 0 up-to-date, 2 out of date, 0 wait for those
+13:16:40 start FV.Backend.Proof.DriverCheckSound cap=3G running=2 avail=220.4G
+13:16:43 done FV.Backend.Proof.DriverCheckSound rc=0 3s maxrss=1.8G cgpeak=0.4G built -> ok
+13:16:44 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+13:16:44 start FV.Backend.Proof.IselFamALUALogicNot cap=3G running=2 avail=218.7G
+13:16:46 done FV.Backend.Proof.IselFamALUALogicNot rc=0 2s maxrss=1.7G cgpeak=0.3G built -> ok
+13:16:46 start FV.Backend.Proof.IselFamALUARules cap=3G running=2 avail=218.7G
+13:16:48 done FV.Backend.Proof.IselFamALUARules rc=0 2s maxrss=1.7G cgpeak=0.3G built -> ok
+13:16:48 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+13:16:48 start FV.Backend.Proof.IselFamALUAMul cap=3G running=2 avail=218.6G
+13:16:50 done FV.Backend.Proof.IselFamALUAMul rc=0 2s maxrss=1.7G cgpeak=0.3G built -> ok
+13:16:50 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+13:16:50 start FV.Backend.Proof.LowerSpec cap=3G running=2 avail=223.1G
+13:16:51 done FV.Backend.Proof.LowerSpec rc=0 1s maxrss=1.7G cgpeak=0.2G built -> ok
+13:16:51 check (ready) 4 modules in 0.2s: 0 up-to-date, 4 out of date, 0 wait for those
+13:16:52 start FV.Backend.Proof.IselCtlTbz cap=3G running=2 avail=222.7G
+13:17:10 done FV.Backend.Proof.StockDriverBounds rc=0 163s maxrss=6.9G cgpeak=5.9G built -> ok
+13:17:10 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+13:17:10 start FV.Backend.Proof.LowerAlias cap=3G running=2 avail=223.7G
+13:17:12 done FV.Backend.Proof.LowerAlias rc=0 2s maxrss=1.7G cgpeak=0.3G built -> ok
+13:17:12 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+13:17:12 start FV.Backend.Proof.StockAliasWrites cap=11G running=2 avail=223.6G
+13:17:23 done FV.Backend.Proof.StockAliasWrites rc=0 11s maxrss=10.1G cgpeak=8.7G built -> ok
+13:17:23 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+13:17:23 start FV.Backend.Proof.StockAliasScanEntries cap=9G running=2 avail=223.3G
+13:17:55 done FV.Backend.Proof.StockAliasScanEntries rc=0 32s maxrss=7.2G cgpeak=7.7G built -> ok
+13:17:55 start FV.Backend.Proof.IselContractP cap=6G running=2 avail=222.8G
+13:18:36 done FV.Backend.Proof.IselContractP rc=0 41s maxrss=5.7G cgpeak=4.3G built -> ok
+13:18:37 start FV.Backend.Proof.LowerLoopCode cap=3G running=2 avail=224.8G
+13:18:39 done FV.Backend.Proof.LowerLoopCode rc=0 2s maxrss=1.7G cgpeak=0.3G built -> ok
+13:18:39 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+13:18:39 done FV.Backend.Proof.IselCtlTbz rc=0 107s maxrss=2.1G cgpeak=0.6G built -> ok
+13:18:39 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+13:18:39 start FV.Backend.Proof.LowerLoopCtx cap=3G running=1 avail=224.5G
+13:18:39 start FV.Backend.Proof.LowerLemmas cap=3G running=2 avail=224.5G
+13:18:41 done FV.Backend.Proof.LowerLemmas rc=0 2s maxrss=1.6G cgpeak=0.3G built -> ok
+13:18:41 check (ready) 3 modules in 0.2s: 0 up-to-date, 3 out of date, 0 wait for those
+13:18:41 start FV.Backend.Proof.IselCtlTerm cap=3G running=2 avail=224.4G
+13:18:42 done FV.Backend.Proof.LowerLoopCtx rc=0 3s maxrss=1.7G cgpeak=0.4G built -> ok
+13:18:42 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+13:18:42 start FV.Backend.Proof.StockDFG cap=3G running=2 avail=224.1G
+13:18:44 done FV.Backend.Proof.StockDFG rc=0 2s maxrss=1.7G cgpeak=0.3G built -> ok
+13:18:45 check (ready) 9 modules in 0.2s: 0 up-to-date, 9 out of date, 0 wait for those
+13:18:45 start FV.Backend.Proof.StockSourceSSA cap=3G running=2 avail=224.0G
+13:18:47 done FV.Backend.Proof.IselCtlTerm rc=0 5s maxrss=1.8G cgpeak=0.4G built -> ok
+13:18:47 done FV.Backend.Proof.StockSourceSSA rc=0 2s maxrss=1.7G cgpeak=0.2G built -> ok
+13:18:47 check (ready) 2 modules in 0.2s: 0 up-to-date, 2 out of date, 0 wait for those
+13:18:47 start FV.Backend.Proof.StockSSAScanConnection cap=10G running=1 avail=224.2G
+13:18:47 start FV.Backend.Proof.StockEdgeAliasFrame cap=5G running=2 avail=224.2G
+13:18:54 done FV.Backend.Proof.StockEdgeAliasFrame rc=0 7s maxrss=4.5G cgpeak=3.2G built -> ok
+13:18:54 start FV.Backend.Proof.StockBlockRanges cap=3G running=2 avail=215.0G
+13:18:55 done FV.Backend.Proof.StockBlockRanges rc=0 1s maxrss=1.7G cgpeak=0.2G built -> ok
+13:18:55 start FV.Backend.Proof.IselCtlCall cap=3G running=2 avail=215.7G
+13:18:57 done FV.Backend.Proof.IselCtlCall rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+13:18:57 check (ready) 2 modules in 0.2s: 0 up-to-date, 2 out of date, 0 wait for those
+13:18:57 start FV.Backend.Proof.IselCtlCallRules cap=3G running=2 avail=222.1G
+13:19:00 done FV.Backend.Proof.StockSSAScanConnection rc=0 13s maxrss=10.1G cgpeak=8.9G built -> ok
+13:19:01 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+13:19:01 start FV.Backend.Proof.StockNodeAliasConnection cap=11G running=2 avail=223.0G
+13:19:17 done FV.Backend.Proof.IselCtlCallRules rc=0 19s maxrss=2.1G cgpeak=0.7G built -> ok
+13:19:17 check (ready) 2 modules in 0.2s: 0 up-to-date, 2 out of date, 0 wait for those
+13:19:17 start FV.Backend.Proof.IselCtlBrTable cap=3G running=2 avail=215.5G
+13:19:31 done FV.Backend.Proof.IselCtlBrTable rc=0 14s maxrss=2.0G cgpeak=0.5G built -> ok
+13:19:31 start FV.Backend.Proof.IselCtlCallInd cap=3G running=2 avail=217.5G
+13:19:40 done FV.Backend.Proof.IselCtlCallInd rc=0 9s maxrss=1.8G cgpeak=0.4G built -> ok
+13:19:40 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+13:19:40 start FV.Backend.Proof.IselCtl cap=5G running=2 avail=218.9G
+13:20:16 done FV.Backend.Proof.IselCtl rc=0 36s maxrss=5.0G cgpeak=3.5G built -> ok
+13:20:16 start FV.Backend.Proof.IselCtlTry cap=3G running=2 avail=217.0G
+13:20:39 done FV.Backend.Proof.IselCtlTry rc=0 23s maxrss=1.9G cgpeak=0.5G built -> ok
+13:20:40 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+13:20:40 start FV.Backend.Proof.IselFlowTabT cap=4G running=2 avail=218.5G
+13:21:26 done FV.Backend.Proof.IselFlowTabT rc=0 46s maxrss=4.0G cgpeak=2.6G built -> ok
+13:21:26 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+13:21:26 start FV.Backend.Proof.IselFlowTabF cap=4G running=2 avail=219.1G
+13:22:10 done FV.Backend.Proof.IselFlowTabF rc=0 44s maxrss=3.9G cgpeak=2.5G built -> ok
+13:22:10 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+13:22:10 start FV.Backend.Proof.StockImm cap=3G running=2 avail=214.7G
+13:22:14 done FV.Backend.Proof.StockImm rc=0 4s maxrss=1.9G cgpeak=0.4G built -> ok
+13:22:14 check (ready) 2 modules in 0.2s: 0 up-to-date, 2 out of date, 0 wait for those
+13:22:15 start FV.Backend.Proof.IselFlowRootT cap=3G running=2 avail=214.8G
+13:22:34 done FV.Backend.Proof.StockNodeAliasConnection rc=0 213s maxrss=8.4G cgpeak=7.6G built -> ok
+13:22:34 start FV.Backend.Proof.CSemRename cap=6G running=2 avail=218.9G
+13:23:11 done FV.Backend.Proof.IselFlowRootT rc=0 56s maxrss=3.2G cgpeak=1.8G built -> ok
+13:23:11 start FV.Backend.Proof.IselTermFactsBase cap=6G running=2 avail=225.2G
+13:23:39 done FV.Backend.Proof.IselTermFactsBase rc=0 28s maxrss=5.8G cgpeak=4.3G built -> ok
+13:23:39 check (ready) 2 modules in 0.2s: 0 up-to-date, 2 out of date, 0 wait for those
+13:23:39 start FV.Backend.Proof.IselTermFactsRules cap=5G running=2 avail=223.9G
+13:25:53 done FV.Backend.Proof.IselTermFactsRules rc=0 134s maxrss=4.6G cgpeak=3.1G built -> ok
+13:25:53 start FV.Backend.Proof.StockConstantRoot cap=8G running=2 avail=220.2G
+13:26:30 done FV.Backend.Proof.CSemRename rc=0 237s maxrss=5.1G cgpeak=4.3G built -> ok
+13:26:30 start FV.Backend.Proof.IselFlowRootF cap=3G running=2 avail=222.5G
+13:27:25 done FV.Backend.Proof.IselFlowRootF rc=0 55s maxrss=3.2G cgpeak=1.8G built -> ok
+13:27:25 start FV.Backend.Proof.LogicImmComplete cap=5G running=2 avail=217.2G
+13:28:02 done FV.Backend.Proof.StockConstantRoot rc=0 128s maxrss=6.7G cgpeak=5.5G built -> ok
+13:28:02 start FV.Backend.Proof.StockSourceView cap=3G running=2 avail=219.3G
+13:28:16 done FV.Backend.Proof.StockSourceView rc=0 14s maxrss=1.9G cgpeak=0.6G built -> ok
+13:28:16 start FV.Backend.Proof.StockPatternSource cap=3G running=2 avail=216.8G
+13:28:31 done FV.Backend.Proof.StockPatternSource rc=0 15s maxrss=1.9G cgpeak=0.6G built -> ok
+13:28:31 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+13:28:31 start FV.Backend.Proof.StockSourceOrder cap=3G running=2 avail=217.4G
+13:28:33 done FV.Backend.Proof.StockSourceOrder rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+13:28:33 check (ready) 2 modules in 0.2s: 0 up-to-date, 2 out of date, 0 wait for those
+13:28:33 start FV.Backend.Proof.StockBackwardSuffixSplit cap=3G running=2 avail=217.5G

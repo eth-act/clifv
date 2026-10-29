@@ -1,0 +1,18 @@
+{
+  "utc": "2026-10-29T17:28:34.605076+00:00",
+  "head": "b5d654c5929991d1239349ccc754755f9a4bcb68",
+  "base": "c533c22a1ec1c20c7d8ca9315edb2ce7994b404e",
+  "state": "Plan refreshed, source port and compatibility theorem WRITTEN. Targeted dependencies RUNNING; no current proof/author-gate/merge pass claim.",
+  "files": {
+    "status44.md": "2b05e2a9b4b9a42e95f0684208a4c2d44ffb3ab3d3ae94ef42c6316ef2ed4f9e",
+    "continue-diagnostics.py": "57ad1d95a1dde777c4f321abd9e836866f327c822a503ac30634b27bf7f6d352",
+    "diagnostic-state.json": "e97752991f99e554b1332240786bc57c086fe95dcb2fdaf93dcab92fbd327bec",
+    "ci-import-receipt.json": "d9ec50962ca1b82d8a72b8b72a9ff3b7435039188b9f9b1a5e9c5f83048aba72",
+    "memory-class-build.log": "d2316c56d22afeab3a599ba3e0ca95dee3cf88b511fa8d881d54c5085b6aa160",
+    "memory-class-plan.log": "f6bd7bab2f441a579bb4d7109dbfc26424005ff8d7d23527ae8c92f1708cf764",
+    "memory-class-cache-probe.log": "0971d23ebff2106d6f4b833eed59d724f21b8a29959524e1c2769d49fc299c30",
+    "compatibility-probe.log": "e56b26f3df893c00e1845018b3d2b408db21491a5ca4fe8332e0612255334ec0",
+    "captured-load-candidates.json": "2a1805c2c34c135de632266f7b6372de0fa2b343c386d653a261171b3917032e",
+    "coordination140.md": "74eb5b0dbe6249d3fbb45a62f953a9e324662afbc48779e65d7144a6c46b2461"
+  }
+}
