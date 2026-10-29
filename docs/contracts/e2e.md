@@ -4307,7 +4307,14 @@ the new fields (`callRegsC_of_int`, `LinkSys.blrRegsC_of_int`, with their "calle
 `okRWithTS` checks the class-aware form directly (`linkChksTS`: `siteOkC`/`blrOkC`, `indBC`;
 `siteOkC_sound`, `blrOkC_sound`). Generated code is unchanged. Witness
 `FVTest/Link/FloatLinkCallsT.lean` (`%f`, `%h` calling `%g (f64) -> f64` by `bl` and by `blr`
-through the GOT, `f64` arguments and results in v0; `okBTS` and `attemptT` hold).
+through the GOT, `f64` arguments and results in v0; `okBTS` and `attemptT` hold). Measured
+(#748 on 719f226f): `examples/deps`, `cargo fv test --lean-link --verified`: 0, 0, 0, 0 functions
+left out of the region (before: 4, 6, 6, 6), 4 of 4 executables verified, tests pass. fv-demo,
+`cargo fv test --build-std --lean-link --verified`: 2 of 2 verified, 17 and 18 left out (before:
+39, 40), none a float function: 10 integer functions fail `callRegs/blrRegs` at vtable `blr`s
+checked against GOT-declared callees with a different `sret` placement (#753); the other 7 (8)
+fail only the integer route's `indB:sretRets`, which `lean-link` adds to the typed failures
+(#754). `indBC`'s at most 8 parameters excludes nothing on either example.
 
 ## Contract changes taken (byte-identical)
 
