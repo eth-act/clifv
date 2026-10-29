@@ -170,11 +170,13 @@ theorem Compiled.toB {env : Clif.Env} {p : Clif.Program} {RA : RL} {cs : Clif.St
   ⟨hc.wf, memScopeB_of_memScopeL (memScopeL_of_memScope hc.scope), hc.gv, hc.front⟩
 
 /-- **One compiled thread, its realized prefix the whole run or ending where the CLIF thread
-stops**, for any layer-4b scope (`hsim`, the per-item obligation of `R`'s code) whose code is
-covered (`ThreadProgress.CoveredCode`). -/
+stops**, for any layer-4b scope (`hsim`, the per-item obligation of `R`'s code, on ranked
+configurations: `ArmAllocBranch.RConf`; before #553 on configurations with a measure of the
+configuration only, which `MachBuffer`'s layout falsifies) whose code is covered
+(`ThreadProgress.CoveredCode`). -/
 theorem thread_full_of_sim {env : Clif.Env} {p : Clif.Program} {RA : RL} {cs : Clif.State}
     {s : ArmState} (hgv : RA.gv = fun _ _ => False) (hfront : Front env p RA cs s)
-    (hsim : ItemSim Policy.arm RA.step (OkPriv RA) (SrcStep RA) (RelQ RA) (Done RA) (μR RA)
+    (hsim : ItemSim Policy.arm RA.step (OkPriv RA) (SrcStepR RA) (RelQR RA) (DoneR RA) (μR RA)
       (PrivA RA)) (hcov : CoveredCode RA)
     {mon : Mon} {ls : List Lab} {t' : ArmState × Mon}
     (hr : PRun Policy.arm RA.step (OkPriv RA) (s, mon) ls t') :
@@ -215,7 +217,7 @@ theorem thread_compiledLS_full {env : Clif.Env} {p : Clif.Program} {RA : RL} {cs
 the whole run or the Arm run up to its end reaches a state related to the allocated code's end. -/
 theorem thread_full_of_simR {env : Clif.Env} {p : Clif.Program} {RA : RL} {cs : Clif.State}
     {s : ArmState} (hgv : RA.gv = fun _ _ => False) (hfront : Front env p RA cs s)
-    (hsim : ItemSim Policy.arm RA.step (OkPriv RA) (SrcStep RA) (RelQ RA) (Done RA) (μR RA)
+    (hsim : ItemSim Policy.arm RA.step (OkPriv RA) (SrcStepR RA) (RelQR RA) (DoneR RA) (μR RA)
       (PrivA RA)) (hcov : CoveredCode RA)
     {mon : Mon} {ls : List Lab} {t' : ArmState × Mon}
     (hr : PRun Policy.arm RA.step (OkPriv RA) (s, mon) ls t') :
@@ -230,13 +232,14 @@ theorem thread_full_of_simR {env : Clif.Env} {p : Clif.Program} {RA : RL} {cs : 
   obtain ⟨f, vc, ctx, st0, R, gn, bl, A, MR, slots, sb, syms, B0, args, m₀, w₀, H, hchk, hMR,
     hMRw, hX, hMem, hMRs, hreg, hprep, halloc, hB0, hcall, hfunc, hslots, hbody, hterm, hregs, hty,
     hsig, hmr, hargs, hq, hA⟩ := hfront
-  obtain ⟨nA, trM, cE, ψA, hnA, hs, hAr, hendQ⟩ :=
-    refines_of_itemSimQ hsim hr (RelQ.of (t := (s, mon)) hq hA)
-  have hend : nA = ls.length ∨ (Done RA cE ∧ ∃ t, RelQ RA t cE) :=
-    hendQ.imp_right fun ⟨tE, _, hRE, hDE⟩ => ⟨hDE, tE, hRE⟩
+  obtain ⟨r, hrel⟩ := RelQR.of (t := (s, mon)) hq hA
+  obtain ⟨nA, trM, cE, ψA, hnA, hs, hAr, hendQ⟩ := refines_of_itemSimQ hsim hr hrel
+  have hend : nA = ls.length ∨ (Done RA cE.1 ∧ ∃ t, RelQ RA t cE.1) :=
+    hendQ.imp_right fun ⟨tE, _, hRE, hDE⟩ => ⟨hDE, tE, hRE.1⟩
   obtain ⟨k, trS, t, ψ, hk, hrun, href, hendk, hretk⟩ :=
     arm_isel_refines_fullR hgv hcov H hchk hMR hMRw hX hMem hMRs hreg hprep halloc hB0
-      hcall hfunc hslots hbody hterm hregs hty hsig hmr hargs hr (mtrun_of_srun hs) hAr hend hnA
+      hcall hfunc hslots hbody hterm hregs hty hsig hmr hargs hr (mtrun_of_srun (SRun.fst hs)) hAr
+      hend hnA
   obtain ⟨st, h0, hst, hlast⟩ := crun_states hrun
   have href' : Refines Maps (PrivA RA) (MonPair (evTr (ls.take k))) trS
       (conv (evTr (ls.take k))) ψ := by
@@ -248,7 +251,7 @@ theorem thread_full_of_simR {env : Clif.Env} {p : Clif.Program} {RA : RL} {cs : 
   subst hkA
   rcases hendQ with h | ⟨tE, hrE, hRE, hDE⟩
   · exact .inl h
-  · exact .inr ⟨tE, cE, hrE, hRE, hDE⟩
+  · exact .inr ⟨tE, cE.1, hrE, hRE.1, hDE⟩
 
 /-- **One compiled thread with loops, branches and plain loads/stores, on the whole run, with the
 return covered** (`thread_full_of_simR` for `MemScopeLS`). -/

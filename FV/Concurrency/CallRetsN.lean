@@ -80,6 +80,13 @@ theorem srun_avoid_ret {R : RL} :
       subst he
       exact hP (.inr (.inr (atRets_of_srcStep_ret hs)))
 
+/-- A run stopping at the first pause, of ranked configurations, is one of the configurations. -/
+theorem SRun.fstP {R : RL} : ∀ {c c' : RConf} {tr : List (List Ev)},
+    SRun (fun c evs c' => ¬ PauseR R c ∧ SrcStepR R c evs c') c tr c' →
+      SRun (fun c evs c' => ¬ Pause R c ∧ SrcStep R c evs c') c.1 tr c'.1
+  | _, _, _, .nil => .nil
+  | _, _, _, .cons hs hr => .cons hs (SRun.fstP hr)
+
 /-- **`arm_alloc_refines_lsCL`, its allocated run stopping at the first pause**: the run does
 not end returned. -/
 theorem arm_alloc_refines_lsCLA {R : RL} (hR : R.Wf) (hsc : MemScopeLSC R)
@@ -92,11 +99,11 @@ theorem arm_alloc_refines_lsCLA {R : RL} (hR : R.Wf) (hsc : MemScopeLSC R)
       ((∀ v m w, c ≠ .ret v m w) → ∀ v m w, cE ≠ .ret v m w) ∧
       (n = ls.length ∨ ∃ tE, PRun Policy.arm g (OkPriv R) (s, mon) (ls.take n) tE ∧
         RelQ R tE cE ∧ Pause R cE) := by
+  obtain ⟨r, hrel⟩ := RelQR.of (t := (s, mon)) hq hA
   obtain ⟨n, trS, cE, ψ, hn, hs, href, hend⟩ :=
-    refines_of_itemSimQ (ItemSim.avoid (itemSim_lsCL hR hsc hg)) hr
-      (RelQ.of (t := (s, mon)) hq hA)
-  exact ⟨n, trS, cE, ψ, hn, mtrun_of_srun (SRun.mono' (fun _ _ _ h => h.2) hs), href,
-    srun_avoid_ret hs, hend⟩
+    refines_of_itemSimQ (ItemSim.avoid (itemSim_lsCL hR hsc hg)) hr hrel
+  exact ⟨n, trS, cE.1, ψ, hn, mtrun_of_srun (SRun.mono' (fun _ _ _ h => h.2) (SRun.fstP hs)),
+    href, srun_avoid_ret (SRun.fstP hs), hend.imp_right fun ⟨tE, h1, h2, h3⟩ => ⟨tE, h1, h2.1, h3⟩⟩
 
 /-- **An exclusive-closed trace's prefixes are exclusive-closed.** -/
 theorem xClosed_take {A : List (List Ev)} (h : CallCompose.XClosed A) (m : Nat) :
@@ -124,11 +131,12 @@ theorem arm_alloc_refines_lsCLAX {R : RL} (hR : R.Wf) (hsc : MemScopeLSC R)
       ((∀ v m w, c ≠ .ret v m w) → ∀ v m w, cE ≠ .ret v m w) ∧
       (n = ls.length ∨ ∃ tE, PRun Policy.arm g (OkPriv R) (s, mon) (ls.take n) tE ∧
         RelQ R tE cE ∧ Pause R cE) ∧ CallCompose.XClosed (evTr (ls.take n)) := by
+  obtain ⟨r, hrel⟩ := RelQR.of (t := (s, mon)) hq hA
   obtain ⟨n, trS, cE, ψ, hn, hs, href, hend, hx⟩ :=
-    refines_of_itemSimQX (ItemSim.avoid (itemSim_lsCL hR hsc hg)) hr
-      (RelQ.of (t := (s, mon)) hq hA)
-  exact ⟨n, trS, cE, ψ, hn, mtrun_of_srun (SRun.mono' (fun _ _ _ h => h.2) hs), href,
-    srun_avoid_ret hs, hend, hx⟩
+    refines_of_itemSimQX (ItemSim.avoid (itemSim_lsCL hR hsc hg)) hr hrel
+  exact ⟨n, trS, cE.1, ψ, hn, mtrun_of_srun (SRun.mono' (fun _ _ _ h => h.2) (SRun.fstP hs)),
+    href, srun_avoid_ret (SRun.fstP hs), hend.imp_right fun ⟨tE, h1, h2, h3⟩ => ⟨tE, h1, h2.1, h3⟩,
+    hx⟩
 
 /-! ## The VCode tail of a done `return` -/
 

@@ -43,18 +43,22 @@ theorem ItemSim.withRel {P : Policy} {f : ArmState → ArmState} {ok : ArmState 
   · exact .inr h2
 
 /-- **Layer 4b, ending at a related configuration** (`refines_of_itemSim` with
-`ItemSim.withRel`), for any scope whose per-item obligation holds. -/
+`ItemSim.withRel`), for any scope whose per-item obligation holds. The obligation is on ranked
+configurations (`ArmAllocBranch.RConf`: the statement before #553 took one with a measure of the
+configuration only, which no scope with branches meets under `MachBuffer`'s layout). -/
 theorem arm_alloc_refinesQ {R : RL}
-    (hsim : ItemSim Policy.arm R.step (OkPriv R) (SrcStep R) (RelQ R) (Done R) (μR R) (PrivA R))
+    (hsim : ItemSim Policy.arm R.step (OkPriv R) (SrcStepR R) (RelQR R) (DoneR R) (μR R) (PrivA R))
     {s : ArmState} {mon : Mon} {c : MConf CV ArmState} (hq : Q R s c) (hA : AInv R c)
     {ls : List Lab} {t' : ArmState × Mon} (hr : PRun Policy.arm R.step (OkPriv R) (s, mon) ls t') :
     ∃ n trS cE ψ, n ≤ ls.length ∧ MTRun R.vc R.rf R.sem ckeep (cEvs R.F R.ctx) c trS cE ∧
       Refines (· = ·) (PrivA R) (MonPair (evTr (ls.take n))) (PrepThread.conv trS)
         (PrepThread.conv (evTr (ls.take n))) ψ ∧
       (n = ls.length ∨ (Done R cE ∧ ∃ t, RelQ R t cE)) := by
+  obtain ⟨r, hrel⟩ := RelQR.of (t := (s, mon)) hq hA
   obtain ⟨n, trS, cE, ψ, hn, hs, href, hend⟩ :=
-    refines_of_itemSim (ItemSim.withRel hsim) hr (RelQ.of (t := (s, mon)) hq hA)
-  exact ⟨n, trS, cE, ψ, hn, mtrun_of_srun hs, href, hend⟩
+    refines_of_itemSim (ItemSim.withRel hsim) hr hrel
+  exact ⟨n, trS, cE.1, ψ, hn, mtrun_of_srun (SRun.fst hs), href,
+    hend.imp_right fun ⟨hD, t, h1, _⟩ => ⟨hD, t, h1⟩⟩
 
 /-- **`arm_alloc_refines_ls` ending at a related configuration.** -/
 theorem arm_alloc_refines_lsQ {R : RL} (hR : R.Wf) (hsc : MemScopeLS R)

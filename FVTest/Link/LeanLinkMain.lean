@@ -193,8 +193,10 @@ checks: `typedFails`), when the program-wide conditions hold (`helperFreeB`, dis
 code (outside code, as a fallback's) and runs `lean-link` on it: leaving a function out of the
 program only drops conjuncts of the other functions' per-function conditions (each quantifies
 over the program's functions), and every condition is decided again on the relinked
-executable. -/
-def exclusions (S SC : LinkSpec) (typed : Bool) (extra : List String := []) :
+executable. `only`: just `extra` (with the program-wide conditions): the typed Stock route's
+failures (`typedStockFails`), whose theorem `attemptT_correct` has none of the per-function
+conditions above as premises (#754). -/
+def exclusions (S SC : LinkSpec) (typed : Bool) (extra : List String := []) (only : Bool := false) :
     Option (List String) :=
   let srcP := S.input0.srcProg
   let P := SC.input0.prog
@@ -208,6 +210,7 @@ def exclusions (S SC : LinkSpec) (typed : Bool) (extra : List String := []) :
       fun g => if fnScopeInFailsT g = [] || fnScopeInFailsTC g = [] then [] else fnScopeInFailsT g
     else fnScopeInFails
   if !helperFreeB srcP || !Link.nodupB (P.funcs.map (·.name)) || !addrSlotsInputB P syms then none
+  else if only then some (Front.dedupFirst extra)
   else
     let src := srcP.funcs.filter fun g => !(srcFails (fun n => fmS[n]?) g).isEmpty
     let fns := (P.funcs.zip (parMap (fun g => fnFails g ++ scopeFails (fun n => fm[n]?) P syms g)
@@ -281,9 +284,9 @@ def typedStockFails (lower : Clif.Function → Except String Backend.VCode) (SP 
   (if gl.isEmpty then [] else [("<global>", gl)]) ++ rs.filter (!·.2.isEmpty)
 
 /-- Print `exclusions` (the line `cargo fv` reads). -/
-def printExclusions (exe : String) (S SC : LinkSpec) (typed : Bool) (extra : List String := []) :
-    IO Unit :=
-  match exclusions S SC typed extra with
+def printExclusions (exe : String) (S SC : LinkSpec) (typed : Bool) (extra : List String := [])
+    (only : Bool := false) : IO Unit :=
+  match exclusions S SC typed extra only with
   | some (n :: ns) => IO.eprintln s!"lean-link: {exe}: --verified: exclude: {" ".intercalate (n :: ns)}"
   | _ => pure ()
 
@@ -501,10 +504,11 @@ def main (args0 : List String) : IO UInt32 := do
         for (n, fs) in bad.take 50 do
           IO.eprintln s!"lean-link:   {n}: {fs}"
         -- leave out only the functions failing the typed checks when that set is the smallest
+        -- (only those: `attemptT_correct` has no per-function input premise, #754)
         let badFns := (bad.filter (·.1 != "<global>")).map (·.1)
         if !badFns.isEmpty && badFns.length < min typedN stockFns.length then
           IO.eprintln s!"lean-link: {exe}: --verified: typed Stock route: leaving out the {badFns.length} function(s) failing the typed checks; not written"
-          printExclusions exe S SC true badFns
+          printExclusions exe S SC true badFns (only := true)
           return 1
       let typedSmaller := typedN ≤ stockFns.length
       IO.eprintln s!"lean-link: {exe}: --verified: typed scope: {stockFns.length} function(s) compiled by the Stock lowering, which compileExeT does not reproduce (lowerFunction) {stockFns.take 3}; leaving out {if typedSmaller then s!"the {typedN} typed function(s)" else s!"those {stockFns.length}"}; not written"

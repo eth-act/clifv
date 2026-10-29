@@ -9,8 +9,8 @@ import FV.Concurrency.ArmAllocWitness
   `ArmAllocWitness.act` loads it) meets the premises of `arm_alloc_refines_br`: `R.Wf`,
   `MemScopeB` (and not `MemScopeL`: the `jump` is no memory form), and `Q ∧ AInv` at
   `MConf.init` after the prologue (`Backend.Proof.q_init`). Block 1 follows block 0, so
-  `fallthrough` drops the `jump`'s `b` (`jump_dropped`): the branch item takes no Arm step and
-  `μR` decreases (`goto_op`'s zero-step case).
+  `MachBuffer` removes the `jump`'s `b` (`jump_dropped`): the branch item takes no Arm step and
+  the rank decreases (`goto_op`'s zero-step case).
 
 The layout facts (the label map is a hash map, which the kernel does not reduce) are by
 `native_decide`.

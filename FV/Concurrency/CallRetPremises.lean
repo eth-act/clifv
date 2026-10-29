@@ -189,8 +189,8 @@ theorem hdef_of_static {c : CheckCtx} {wh : String} {info : CallInfo} {ops : Arr
   refine ⟨_, List.mem_filter.mpr ⟨hz, by simp [Operand.isDef]⟩, by simp [Operand.isLate], ?_⟩
   exact (hfix _ hz).2 d.1 rfl
 
-/-- **`hdef` at a `call` item from `Q`** (`hdef_of_static` with `RegLevelNext.q_op`'s static
-check). -/
+/-- **`hdef` at a `call` item from `Q`** (`hdef_of_static` with the item's static check,
+`op_checked`; a forwarding block's only instruction is a `jump`, no `call`). -/
 theorem hdef_of_q {R : RL} {s : Arm.ArmState} {b k : Nat} {allocs : Array Loc}
     {its : List RItem} {m : Loc → CV} {w : Arm.ArmState}
     (hq : Q R s (.run ⟨b, .op k allocs :: its, m, w⟩)) {vb : VBlock} {info : CallInfo}
@@ -198,10 +198,24 @@ theorem hdef_of_q {R : RL} {s : Arm.ArmState} {b k : Nat} {allocs : Array Loc}
     (hv : ∀ d ∈ info.defs, ∃ n c, d.2 = .vreg n c) {ops : Array Operand}
     (hops : (MInst.call info).operands = .ok ops) :
     ∀ d ∈ info.defs, ∃ q ∈ defPairs ops allocs, q.1.isLate = true ∧ q.2 = .reg d.1 := by
-  obtain ⟨-, -, -, regs, -, -, -, -, -, -, -, -, -, cc, wh, ops', rfl, -, -, -, -, hops', hstat,
-    -⟩ := q_op hq hvb hi
-  rw [hops] at hops'
-  cases hops'
+  rcases Q.cases hq with hqs | ⟨vb', allocs', regs', i', x, -, hvb', he, -, -, hins, hasg', -⟩
+  rotate_left
+  · rw [hvb] at hvb'
+    cases hvb'
+    simp only [RItem.op.injEq] at he
+    obtain ⟨rfl, rfl⟩ := he
+    rw [hins] at hi
+    simp only [List.getElem?_toArray, List.getElem?_cons_zero, Option.some.injEq] at hi
+    subst hi
+    exact absurd (ArmAllocThread.assign_jump hasg').1 (by simp)
+  obtain ⟨j, vb0, items, pre, code, X, ps1, psm, ps2, x, hvb0, hit, hsplit, hchk, -⟩ := hqs
+  rw [hvb] at hvb0
+  cases hvb0
+  obtain ⟨c, wh, i2, ops2, hi2, hops2, hstat, -⟩ := op_checked hchk
+  rw [hi] at hi2
+  cases hi2
+  rw [hops] at hops2
+  cases hops2
   exact hdef_of_static hv hops hstat
 
 /-! ## The returned values and the memory relation after the return -/

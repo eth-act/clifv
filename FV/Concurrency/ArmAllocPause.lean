@@ -197,15 +197,20 @@ def MemScopeLSC (R : RL) : Prop :=
 theorem memScopeLSC_of_ls {R : RL} (h : MemScopeLS R) : MemScopeLSC R :=
   fun b vb k i hb hi => (h b vb k i hb hi).elim .inl fun h => .inr (h.elim .inl fun h => .inr (.inl h))
 
+/-- `Pause` of a ranked configuration. -/
+abbrev PauseR (R : RL) (c : RConf) : Prop := Pause R c.1
+
 /-- **The per-item obligation of the scope with calls, pausing at calls and returns** (module
-doc; `itemSim_ls` off the pauses). -/
+doc; `itemSim_ls` off the pauses), on ranked configurations (`μR`; the statement before #553
+used a measure of the configuration only, which `MachBuffer`'s layout falsifies:
+`ArmAllocBranch` module doc). -/
 theorem itemSim_lsC {R : RL} (hR : R.Wf) (hsc : MemScopeLSC R) :
-    ItemSim Policy.arm R.step (OkPriv R) (SrcStep R) (RelQ R) (Pause R) (μR R) (PrivA R) := by
-  rintro ⟨s, mon⟩ c hqa ls t' hr
-  match c with
-  | .ret vals m w => exact .inl (.inl (.inl ⟨vals, m, w, rfl⟩))
-  | .halt w => exact .inl (.inl (.inr (.inl ⟨w, rfl⟩)))
-  | .run ⟨b, its, m, w⟩ =>
+    ItemSim Policy.arm R.step (OkPriv R) (SrcStepR R) (RelQR R) (PauseR R) (μR R) (PrivA R) := by
+  rintro ⟨s, mon⟩ ⟨c, r⟩ ⟨hqa, hk⟩ ls t' hr
+  match c, hqa, hk with
+  | .ret vals m w, _, _ => exact .inl (.inl (.inl ⟨vals, m, w, rfl⟩))
+  | .halt w, _, _ => exact .inl (.inl (.inr (.inl ⟨w, rfl⟩)))
+  | .run ⟨b, its, m, w⟩, hqa, hk =>
   by_cases hP : AtCall R (.run ⟨b, its, m, w⟩) ∨ AtRets R (.run ⟨b, its, m, w⟩)
   case pos => exact .inl (.inr hP)
   by_cases hS : ∃ evs c', SrcStep R (.run ⟨b, its, m, w⟩) evs c'
@@ -213,26 +218,17 @@ theorem itemSim_lsC {R : RL} (hR : R.Wf) (hsc : MemScopeLSC R) :
   obtain ⟨evs0, c0, hs0⟩ := hS
   cases hs0 with
   | @move _ src dst its' =>
-    have hng : ∀ evs c', SrcStep R (MvC b src dst its' m w) evs c' → SameB (MvC b src dst its' m w) c' :=
-      fun evs c' h => sameB_step h fun _ _ _ e => by cases e
     rcases move_op hR hqa hr with h | h
-    · exact .inr (.inl (isOut_μR hng h))
+    · exact .inr (.inl (isOut_μR noGotoAt_move hk h))
     · exact .inr (.inr (.inr h))
   | @op _ k allocs its' _ _ vb i ops _ _ hvb hi hops hevs hfoot hst =>
     have hs : SrcStep R (OpC b k allocs its' m w) _ _ := .op hvb hi hops hevs hfoot hst
     rcases RelQ.op' hqa hs with ⟨hq, hA⟩ | ⟨rfl, vals, m', w', rfl⟩
-    case inr => exact .inr (.inl (itemSimOut_retμ hs μR_ret_lt))
+    case inr => exact .inr (.inl (itemSimOut_retR hs (RkC.pos hk)))
     have uniq : ∀ vb' i', R.vc.blocks[b]? = some vb' → vb'.insts[k]? = some i' → i' = i :=
       fun vb' i' h1 h2 => by rw [hvb] at h1; cases h1; rw [hi] at h2; cases h2; rfl
-    have hng : ¬ GotoForm i → ∀ evs c', SrcStep R (OpC b k allocs its' m w) evs c' →
-        SameB (OpC b k allocs its' m w) c' :=
-      fun hg evs c' h => sameB_step h fun k1 allocs1 its1 e vb' i' h1 h2 => by
-        injection e with e1 e2
-        injection e1 with e3 e4
-        subst e3
-        exact uniq vb' i' h1 h2 ▸ hg
     rcases hsc b vb k i hvb hi with hl | hbr | hls | ⟨info, rfl⟩
-    · refine Or.imp_left Or.inl (opOutR_of (hng (noGoto_memFormL hl)) ?_)
+    · refine Or.imp_left Or.inl (opOutR_of (noGotoAt_op hvb hi (noGoto_memFormL hl)) hk ?_)
       rcases hl with (h | h | ⟨ty, rt, rn, fl, rfl, hfo⟩ | ⟨ty, rt, rn, fl, rfl, hfo⟩) | hl | hl
       · exact opOut_okPriv (fun ls t' hr => noev_op hR hq hA hs
           (fun vb' i' h1 h2 => uniq vb' i' h1 h2 ▸ h) hr) hr
@@ -244,9 +240,11 @@ theorem itemSim_lsC {R : RL} (hR : R.Wf) (hsc : MemScopeLSC R) :
           (fun vb' i' h1 h2 => uniq vb' i' h1 h2 ▸ stlr_form hfo) hr) hr
       · exact rmw_op hR hq hA hs (fun vb' i' h1 h2 => uniq vb' i' h1 h2 ▸ hl) hr
       · exact cas_op hR hq hA hs (fun vb' i' h1 h2 => uniq vb' i' h1 h2 ▸ hl) hr
-    · exact Or.imp_left Or.inl (goto_op hR hq hA hs (fun vb' i' h1 h2 => uniq vb' i' h1 h2 ▸ hbr) hr)
-    · exact Or.imp_left Or.inl (opOutR_of (hng (noGoto_ls hls)) (opOut_okPriv (fun ls t' hr =>
-        oneEv_op hR hq hA hs (fun vb' i' h1 h2 => uniq vb' i' h1 h2 ▸ lsForm_oneEv hls) hr) hr))
+    · exact Or.imp_left Or.inl
+        (goto_op hR hq hA hk hs (fun vb' i' h1 h2 => uniq vb' i' h1 h2 ▸ hbr) hr)
+    · exact Or.imp_left Or.inl (opOutR_of (noGotoAt_op hvb hi (noGoto_ls hls)) hk
+        (opOut_okPriv (fun ls t' hr => oneEv_op hR hq hA hs
+          (fun vb' i' h1 h2 => uniq vb' i' h1 h2 ▸ lsForm_oneEv hls) hr) hr))
     · exact absurd (.inl ⟨b, k, allocs, its', m, w, vb, info, rfl, hvb, hi⟩) hP
 
 /-- **Layer 4b of a caller, pausing at its calls and its return** (module doc): every precise
@@ -261,8 +259,10 @@ theorem arm_alloc_refines_lsC {R : RL} (hR : R.Wf) (hsc : MemScopeLSC R)
         (PrepThread.conv (evTr (ls.take n))) ψ ∧
       (n = ls.length ∨ ∃ tE, PRun Policy.arm R.step (OkPriv R) (s, mon) (ls.take n) tE ∧
         RelQ R tE cE ∧ Pause R cE) := by
+  obtain ⟨r, hrel⟩ := RelQR.of (t := (s, mon)) hq hA
   obtain ⟨n, trS, cE, ψ, hn, hs, href, hend⟩ :=
-    refines_of_itemSimQ (itemSim_lsC hR hsc) hr (RelQ.of hq hA)
-  exact ⟨n, trS, cE, ψ, hn, mtrun_of_srun hs, href, hend⟩
+    refines_of_itemSimQ (itemSim_lsC hR hsc) hr hrel
+  exact ⟨n, trS, cE.1, ψ, hn, mtrun_of_srun (SRun.fst hs), href,
+    hend.imp_right fun ⟨tE, h1, h2, h3⟩ => ⟨tE, h1, h2.1, h3⟩⟩
 
 end Concurrency.ArmAllocThread

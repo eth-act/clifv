@@ -38,8 +38,8 @@ theorem defsC1_q : ∀ d ∈ infoC1.defs, ∃ q ∈ defPairs opsC1 #[.reg (.x 0)
 theorem locsC1 : (defPairs opsC1 #[.reg (.x 0), .reg (.x 0)]).map (·.2) =
     infoC1.defs.map (fun d => Loc.reg d.1) := by
   obtain ⟨m, its, hq⟩ := qC1
-  obtain ⟨-, -, -, regs, -, -, -, -, -, -, -, -, -, cc, wh, ops', he, -, -, -, -, hops', hstat,
-    -⟩ := q_op hq vb0C callChecksC.1
+  obtain ⟨-, -, -, regs, -, -, -, -, -, -, -, -, -, -, cc, wh, ops', he, -, -, -, -, hops', hstat,
+    -⟩ := q_op wfRC hq vb0C callChecksC.1 (ArmAllocThread.lt_size_of_not_term wfRC vb0C callChecksC.1 rfl)
   rw [callChecksC.2.1] at hops'
   cases hops'
   rw [he]
@@ -60,8 +60,8 @@ theorem prefixHold_RX :
     PrefixHold [⟨.i64, (regVal yX (.x 0)).setWidth 64⟩]
       ((defPairs opsC1 #[.reg (.x 0), .reg (.x 0)]).map fun p => locVal RC.fr yX p.2) := by
   obtain ⟨m, its, hq⟩ := qC1
-  obtain ⟨-, -, -, regs, -, -, -, -, -, -, -, -, -, cc, wh, ops', he, -, -, -, -, hops', hstat,
-    -⟩ := q_op hq vb0C callChecksC.1
+  obtain ⟨-, -, -, regs, -, -, -, -, -, -, -, -, -, -, cc, wh, ops', he, -, -, -, -, hops', hstat,
+    -⟩ := q_op wfRC hq vb0C callChecksC.1 (ArmAllocThread.lt_size_of_not_term wfRC vb0C callChecksC.1 rfl)
   rw [callChecksC.2.1] at hops'
   cases hops'
   rw [he]

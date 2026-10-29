@@ -44,16 +44,46 @@ theorem MInst.lines_index (m : MInst) (k sb : Nat) (ps : PState) :
     m.lines { k, slotBase := sb } ps = m.lines { k := 0, slotBase := sb } ps := by
   cases m <;> rfl
 
+/-- The code lines do not depend on the function index. -/
+theorem codeLinesE_index (k sb : Nat) (af : AFunc) : ∀ (l : List AInst) (ps : PState),
+    codeLinesE { k, slotBase := sb } af l ps = codeLinesE { k := 0, slotBase := sb } af l ps
+  | [], _ => rfl
+  | a :: l, ps => by
+    have ha : ainstLines { k, slotBase := sb } af a ps =
+        ainstLines { k := 0, slotBase := sb } af a ps := by
+      cases a with
+      | inst m => exact MInst.lines_index m k sb ps
+      | _ => rfl
+    simp only [codeLinesE, ha, codeLinesE_index k sb af l]
+
+/-- The blocks' segments do not depend on the function index. -/
+theorem segsOf_index (k sb : Nat) (af : AFunc) :
+    ∀ (bs : List ((Label × Array AInst) × Nat)) (ps : PState),
+      segsOf { k, slotBase := sb } af bs ps = segsOf { k := 0, slotBase := sb } af bs ps
+  | [], _ => rfl
+  | ((l, code), i) :: bs, ps => by
+    simp only [segsOf, codeLinesE_index k sb af, segsOf_index k sb af bs]
+
+/-- The emission plan does not depend on the function index. -/
+theorem emitPlan_index (k : Nat) (af : AFunc) : emitPlan k af = emitPlan 0 af := by
+  unfold emitPlan
+  rw [segsOf_index]
+
 /-- `emitPre` does not depend on the function index. -/
 theorem emitPre_index (k : Nat) (af : AFunc) : emitPre k af = emitPre 0 af := by
   unfold emitPre
-  simp only [MInst.lines_index _ k]
+  rw [emitPlan_index]
+
+/-- The block-label aliases do not depend on the function index. -/
+theorem emitAlias_index (k : Nat) (af : AFunc) : emitAlias k af = emitAlias 0 af := by
+  unfold emitAlias
+  rw [emitPlan_index]
 
 /-- `emitFunc` depends on the function index only through the `k` field. -/
 theorem emitFunc_index (k : Nat) (af : AFunc) :
     emitFunc k af = (emitFunc 0 af).map fun fa => { fa with k } := by
   unfold emitFunc
-  rw [emitPre_index k af]
+  rw [emitPre_index k af, emitAlias_index k af]
   cases emitPre 0 af with
   | error e => rfl
   | ok pre =>

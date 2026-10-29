@@ -112,7 +112,7 @@ theorem step_call (hL : L.Ok) {nA nB : String} {FA FB : LFn} (hA : (nA, FA) ∈ 
   have hst := q_stRel hq
   obtain ⟨-, -, -, regs, i', -, -, -, -, -, -, -, -, -, -, -, -, hal, -, -, hasg, -⟩ :=
     q_op hRA hq hvb hi (lt_size_of_not_term hRA hvb hi rfl)
-  obtain ⟨j, xx, t, hj, hx, hpc⟩ := callAt_of_q hq hvb hi call_hcall regs i' hal hasg
+  obtain ⟨j, xx, t, hj, hx, hpc⟩ := callAt_of_q hRA hq hvb hi call_hcall regs i' hal hasg
   obtain ⟨ic, rfl, hsym, -⟩ := assign_call hasg
   have hicd := hsym nB hd
   have hxx : xx = .bl nB := by
