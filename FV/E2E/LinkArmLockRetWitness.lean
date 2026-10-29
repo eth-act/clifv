@@ -94,7 +94,7 @@ theorem xnifXPBTGY_Lsl (hN : Lsl.NeedNI) {M : Nat}
 theorem callLock_of_Lsl {M : Nat} (hM : 0 < M)
     (ih : Lsl.ThmPRBRLE (fun M _ => Lsl.K M) (M - 1))
     (hlock : Lsl.LockRet (fun M _ => Lsl.K M) (M - 1)) : Lsl.CallLock (fun M _ => Lsl.K M) M :=
-  Lsl.callLock_of Lsl_ok hM ih hlock
+  Lsl.callLock_of Lsl_ok (Lsl.budget_K Lsl_ok) hM ih hlock
 
 /-- **`hooks_lock_tls` on two distinct states** (they differ in `x30`, `Z = ∅`). -/
 theorem hooks_lock_tls_Lsl {F : BitVec 64 → Prop} (hN : HookNIX Lsl.Hb Lsl.BaseDest F) (M : Nat)
