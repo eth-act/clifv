@@ -1,4 +1,8 @@
-import FV.E2E.DeadCleanupWorldX
+module
+
+public import FV.E2E.DeadCleanupWorldX
+
+@[expose] public section
 
 namespace E2E
 open Backend Backend.Proof Backend.Proof.Driver

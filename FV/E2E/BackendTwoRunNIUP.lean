@@ -1,5 +1,9 @@
-import FV.E2E.BackendTwoRunNIU
-import FV.E2E.BackendTwoRunNZWP
+module
+
+public import FV.E2E.BackendTwoRunNIU
+public import FV.E2E.BackendTwoRunNZWP
+
+@[expose] public section
 
 /-!
 # The two-run lock by induction on the call count: the call hook told the first run's call state,

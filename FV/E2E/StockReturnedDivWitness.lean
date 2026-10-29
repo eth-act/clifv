@@ -1,4 +1,9 @@
-import FV.E2E.StockReturnedDivChecks
+module
+
+public import FV.E2E.StockReturnedDivChecks
+
+@[expose] public section
+
 namespace E2E.StockReturnedDivNIWitness
 open Backend Backend.Proof Backend.Proof.Driver Backend.Stock.D0
 set_option autoImplicit false

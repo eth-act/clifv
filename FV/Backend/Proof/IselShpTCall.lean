@@ -1,8 +1,12 @@
-import FV.Backend.Proof.IselShpTBase
-import FV.Backend.Proof.IselShpCall
-import FV.Backend.Proof.IselCtlCallTI
-import FV.Backend.Proof.LowerContractT
-import FV.Backend.Proof.IselCovTCall
+module
+
+public import FV.Backend.Proof.IselShpTBase
+public import FV.Backend.Proof.IselShpCall
+public import FV.Backend.Proof.IselCtlCallTI
+public import FV.Backend.Proof.LowerContractT
+public import FV.Backend.Proof.IselCovTCall
+
+@[expose] public section
 
 /-!
 # Control shapes of the `call` rules of `lower` over typed contexts (rules 1031, 1032, 1033)

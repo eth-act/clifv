@@ -1,4 +1,8 @@
-import FV.E2E.LinkArmStage2Zero
+module
+
+public import FV.E2E.LinkArmStage2Zero
+
+@[expose] public section
 
 /-!
 # Stage 2 for returning runs (SEM1 #537, #680 (3): `Stage2PRB` reconsidered)

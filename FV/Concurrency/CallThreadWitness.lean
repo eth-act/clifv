@@ -1,6 +1,10 @@
-import FV.Concurrency.CallThread
-import FV.Concurrency.ArmAllocEntryWitness
-import FV.Concurrency.ArmProgram
+module
+
+public import FV.Concurrency.CallThread
+public import FV.Concurrency.ArmAllocEntryWitness
+public import FV.Concurrency.ArmProgram
+
+@[expose] public section
 
 /-!
 # Non-vacuity of the thread level from the ABI entry and of the callee contract (T2h, #311)

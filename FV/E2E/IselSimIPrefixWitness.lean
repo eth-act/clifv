@@ -1,7 +1,11 @@
-import FV.E2E.IselSimIPrefix
-import FV.E2E.IselSimIWitness
-import FV.E2E.IselSimIPrefixCleanup
-import FV.E2E.BackendWorldCleanupIWitness
+module
+
+public import FV.E2E.IselSimIPrefix
+public import FV.E2E.IselSimIWitness
+public import FV.E2E.IselSimIPrefixCleanup
+public import FV.E2E.BackendWorldCleanupIWitness
+
+@[expose] public section
 
 /-!
 # Witness for the counted prefix simulation (`FV/E2E/IselSimIPrefix.lean`)

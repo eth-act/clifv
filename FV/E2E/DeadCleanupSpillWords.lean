@@ -1,5 +1,9 @@
-import FV.E2E.EmitSize
-import FV.Backend.Proof.DeadCleanupStructure
+module
+
+public import FV.E2E.EmitSize
+public import FV.Backend.Proof.DeadCleanupStructure
+
+@[expose] public section
 
 namespace E2E
 open Backend

@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockReturnRootCalls
-import FV.Backend.Proof.StockTermDataOrigin
+module
+
+public import FV.Backend.Proof.StockReturnRootCalls
+public import FV.Backend.Proof.StockTermDataOrigin
+
+@[expose] public section
 
 /-! Connect return helper execution to actual retained records, including the
 empty result binder and complete state/code. -/

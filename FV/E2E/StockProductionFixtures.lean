@@ -1,4 +1,8 @@
-import FV.Backend.Lowering.StockD0
+module
+
+public import FV.Backend.Lowering.StockD0
+
+@[expose] public section
 
 /-! Shared source fixtures for runtime tests and proof witnesses. -/
 open Backend.Stock.D0

@@ -1,5 +1,9 @@
-import FV.Backend.Proof.DeadCleanupLive
-import FV.Backend.Proof.RegallocCSemWorld
+module
+
+public import FV.Backend.Proof.DeadCleanupLive
+public import FV.Backend.Proof.RegallocCSemWorld
+
+@[expose] public section
 
 namespace Backend.DeadCleanup
 open Backend.Proof

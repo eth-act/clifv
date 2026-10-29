@@ -1,6 +1,10 @@
-import FV.E2E.StockMixedDivFixtures
-import FVTest.Backend.Lowering.StockDivProductionInput
-import FV.Clif.Print
+module
+
+public import FV.E2E.StockMixedDivFixtures
+public import FVTest.Backend.Lowering.StockDivProductionInput
+public import FV.Clif.Print
+
+@[expose] public section
 
 set_option autoImplicit false
 namespace FVTest.StockMixedDivProductionRuntime

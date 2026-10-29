@@ -1,4 +1,8 @@
-import FV.Backend.Proof.StockLogicalNotReceipts
+module
+
+public import FV.Backend.Proof.StockLogicalNotReceipts
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.LogicalNot
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

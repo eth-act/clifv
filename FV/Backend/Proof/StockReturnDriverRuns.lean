@@ -1,4 +1,8 @@
-import FV.Backend.Proof.StockReturnSourceRuns
+module
+
+public import FV.Backend.Proof.StockReturnSourceRuns
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.ReturnFixture
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

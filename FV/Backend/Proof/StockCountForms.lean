@@ -1,4 +1,9 @@
-import FV.Backend.Proof.StockCountRhs
+module
+
+public import FV.Backend.Proof.StockCountRhs
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarCount
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 def countAlloc (trailing : Bool) (w : Nat) : Nat :=

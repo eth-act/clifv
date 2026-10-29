@@ -1,4 +1,8 @@
-import FV.Backend.Proof.IselCovTForm
+module
+
+public import FV.Backend.Proof.IselCovTForm
+
+@[expose] public section
 
 /-!
 # Form coverage over float-capable contexts (typed V3): the order and the deep facts

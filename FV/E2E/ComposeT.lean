@@ -1,5 +1,9 @@
-import FV.E2E.Statement
-import FV.Backend.Proof.LowerSimT
+module
+
+public import FV.E2E.Statement
+public import FV.Backend.Proof.LowerSimT
+
+@[expose] public section
 
 /-!
 # Typed layer composition (S11e5 Stage C, slice 7)

@@ -1,6 +1,10 @@
-import FV.E2E.DeadCleanupExecFault
-import FV.E2E.DeadCleanupExecPeak
-import FV.E2E.LinkMemTrapW
+module
+
+public import FV.E2E.DeadCleanupExecFault
+public import FV.E2E.DeadCleanupExecPeak
+public import FV.E2E.LinkMemTrapW
+
+@[expose] public section
 
 /-!
 # No access before the trap faults, on the executable machine (A3, #412, slices F8c/F8d)

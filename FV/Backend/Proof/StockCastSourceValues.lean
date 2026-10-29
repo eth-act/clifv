@@ -1,4 +1,9 @@
-import FV.Backend.Proof.StockCastRecordValues
+module
+
+public import FV.Backend.Proof.StockCastRecordValues
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarCast
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 set_option maxRecDepth 20000

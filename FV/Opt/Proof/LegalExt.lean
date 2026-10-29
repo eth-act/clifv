@@ -1,4 +1,8 @@
-import FV.Opt.Proof.LegalMem
+module
+
+public import FV.Opt.Proof.LegalMem
+
+@[expose] public section
 
 /-!
 # The ABI expansion of values and the environment contracts

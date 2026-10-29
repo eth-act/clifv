@@ -1,5 +1,9 @@
-import FV.Front.RawExe
-import FV.Link.DeadCleanupExeSourceNB
+module
+
+public import FV.Front.RawExe
+public import FV.Link.DeadCleanupExeSourceNB
+
+@[expose] public section
 
 /-!
 # The frontend bundle theorems without the memory-bound premise (A2/B1)

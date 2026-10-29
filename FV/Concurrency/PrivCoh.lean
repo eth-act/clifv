@@ -1,5 +1,9 @@
-import FV.Concurrency.ThreadRefine
-import FV.Concurrency.Armv8
+module
+
+public import FV.Concurrency.ThreadRefine
+public import FV.Concurrency.Armv8
+
+@[expose] public section
 
 /-!
 # Private reads read the thread's own writes (T2h, #311)

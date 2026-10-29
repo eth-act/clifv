@@ -1,6 +1,10 @@
-import FV.Link.ProductionExeSource
-import FV.Link.ProductionExeSourceWith
-import FV.Backend.ProductionWith
+module
+
+public import FV.Link.ProductionExeSource
+public import FV.Link.ProductionExeSourceWith
+public import FV.Backend.ProductionWith
+
+@[expose] public section
 
 /-! Exact compatibility with the published production functions. These equations
 keep the old interfaces useful while new classes select the generic consumers. -/

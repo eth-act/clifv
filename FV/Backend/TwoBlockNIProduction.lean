@@ -1,5 +1,9 @@
-import FV.Backend.ScalarNIProduction
-import FV.Backend.Lowering.StockTwoBlockNI
+module
+
+public import FV.Backend.ScalarNIProduction
+public import FV.Backend.Lowering.StockTwoBlockNI
+
+@[expose] public section
 
 namespace Backend
 set_option autoImplicit false

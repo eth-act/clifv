@@ -1,6 +1,10 @@
-import FV.Backend
-import FV.Backend.Lowering.StockReplay
-import FV.Opt.Legalize128Pass
+module
+
+public import FV.Backend
+public import FV.Backend.Lowering.StockReplay
+public import FV.Opt.Legalize128Pass
+
+@[expose] public section
 
 /-!
 # Instruction-selection diagnostics

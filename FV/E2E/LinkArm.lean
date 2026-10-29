@@ -1,9 +1,13 @@
-import FV.E2E.LinkWorld
-import FV.E2E.CompiledEither
-import FV.E2E.LinkClifN
-import FV.E2E.Link
-import FV.E2E.PairDriver
-import FV.E2E.LinkPlace
+module
+
+public import FV.E2E.LinkWorld
+public import FV.E2E.CompiledEither
+public import FV.E2E.LinkClifN
+public import FV.E2E.Link
+public import FV.E2E.PairDriver
+public import FV.E2E.LinkPlace
+
+@[expose] public section
 
 /-! # Linking at the Arm level: the program's own callees run their compiled code
 

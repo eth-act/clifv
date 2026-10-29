@@ -1,6 +1,10 @@
-import FV.Link.Ld.WriteProof
-import FV.Link.Ld.Syms
-import FV.Link.ExeInput
+module
+
+public import FV.Link.Ld.WriteProof
+public import FV.Link.Ld.Syms
+public import FV.Link.ExeInput
+
+@[expose] public section
 
 /-! # `file0OkB` of the Lean linker's output (L2b stage 3b)
 

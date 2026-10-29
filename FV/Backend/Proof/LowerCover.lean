@@ -1,7 +1,11 @@
-import FV.Backend.Proof.IselCovCtor
-import FV.Backend.Proof.LowerComplete
-import FV.Backend.Proof.CSemRename
-import FV.Backend.Proof.RegallocCover
+module
+
+public import FV.Backend.Proof.IselCovCtor
+public import FV.Backend.Proof.LowerComplete
+public import FV.Backend.Proof.CSemRename
+public import FV.Backend.Proof.RegallocCover
+
+@[expose] public section
 
 /-!
 # Form coverage of the compiled function (V3, assembly)

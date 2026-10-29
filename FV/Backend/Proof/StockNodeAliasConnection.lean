@@ -1,6 +1,10 @@
-import FV.Backend.Proof.StockSSAScanConnection
-import FV.Backend.Proof.StockEdgeAliasFrame
-import FV.Backend.Proof.StockBlockRanges
+module
+
+public import FV.Backend.Proof.StockSSAScanConnection
+public import FV.Backend.Proof.StockEdgeAliasFrame
+public import FV.Backend.Proof.StockBlockRanges
+
+@[expose] public section
 
 namespace Backend.Stock.Proof
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

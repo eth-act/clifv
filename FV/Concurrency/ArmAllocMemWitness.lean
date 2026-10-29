@@ -1,5 +1,9 @@
-import FV.Concurrency.ArmAllocMem
-import FV.Concurrency.ArmAllocWitness
+module
+
+public import FV.Concurrency.ArmAllocMem
+public import FV.Concurrency.ArmAllocWitness
+
+@[expose] public section
 
 /-!
 # Non-vacuity of layer 4b for the memory scope (T2h, #311)

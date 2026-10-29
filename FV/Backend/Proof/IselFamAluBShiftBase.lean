@@ -1,5 +1,9 @@
-import FV.Backend.Proof.IselTermsImm
-import FV.Backend.Proof.IselFamAluBMisc
+module
+
+public import FV.Backend.Proof.IselTermsImm
+public import FV.Backend.Proof.IselFamAluBMisc
+
+@[expose] public section
 
 /-!
 # Family B: template for the shift and rotate root rules

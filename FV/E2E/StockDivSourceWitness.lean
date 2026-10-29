@@ -1,5 +1,10 @@
-import FV.E2E.StockDivFixtures
-import FV.E2E.CompiledSemanticNI
+module
+
+public import FV.E2E.StockDivFixtures
+public import FV.E2E.CompiledSemanticNI
+
+@[expose] public section
+
 namespace E2E.StockDivNIWitness
 open Backend.Stock.D0
 set_option autoImplicit false

@@ -1,5 +1,9 @@
-import FV.E2E.LinkArmUProgNI
-import FV.E2E.NonVacuityLink
+module
+
+public import FV.E2E.LinkArmUProgNI
+public import FV.E2E.NonVacuityLink
+
+@[expose] public section
 
 /-!
 # Non-vacuity of the whole-program theorem with unwinding and non-interference (S10f, #233)

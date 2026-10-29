@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockLinearCfgFixture
-import FV.Backend.Proof.StockLinearCfgCheck
+module
+
+public import FV.Backend.Proof.StockLinearCfgFixture
+public import FV.Backend.Proof.StockLinearCfgCheck
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.LinearCfgWitness
 open Backend.Proof Backend.Proof.Driver

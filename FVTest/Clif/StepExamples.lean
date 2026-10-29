@@ -1,4 +1,8 @@
-import FV.Clif
+module
+
+public import FV.Clif
+
+@[expose] public section
 
 /-!
 # Symbolic execution through `Clif.run`

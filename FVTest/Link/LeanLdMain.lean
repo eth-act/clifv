@@ -1,4 +1,8 @@
-import FVTest.Link.LdArgs
+module
+
+public import FVTest.Link.LdArgs
+
+@[expose] public section
 
 /-! # `lake exe lean-ld ARGS…`: the Lean static linker (L2b stage 3, `Link.Ld.link`)
 

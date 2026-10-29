@@ -1,5 +1,9 @@
-import FV.E2E.LinkArmProphDetE
-import FV.E2E.RegLevelCorrectPR
+module
+
+public import FV.E2E.LinkArmProphDetE
+public import FV.E2E.RegLevelCorrectPR
+
+@[expose] public section
 
 /-!
 # The linking statement with byte and register prophecies (SEM1 step 2v, `docs/plans/uninit.md` §5.8 (4))

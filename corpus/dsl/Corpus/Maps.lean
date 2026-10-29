@@ -1,4 +1,8 @@
-import FV.DSL
+module
+
+public import FV.DSL
+
+@[expose] public section
 
 /-! Corpus: the abstract map collection (runtime externs). -/
 

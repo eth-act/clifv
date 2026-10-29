@@ -1,6 +1,10 @@
-import FV.Backend.Proof.StockControlShape
-import FV.Backend.Proof.StockCoreScanOrigin
-import FV.Backend.Proof.StockBodyScanOrigin
+module
+
+public import FV.Backend.Proof.StockControlShape
+public import FV.Backend.Proof.StockCoreScanOrigin
+public import FV.Backend.Proof.StockBodyScanOrigin
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.Control
 open Backend.Proof Backend.Proof.Driver

@@ -1,10 +1,14 @@
-import Corpus.Arith
-import Corpus.Vectors
-import Corpus.Errors
-import Corpus.Calls
-import Corpus.Maps
-import Corpus.Big
-import Corpus.Proofs
+module
+
+public import Corpus.Arith
+public import Corpus.Vectors
+public import Corpus.Errors
+public import Corpus.Calls
+public import Corpus.Maps
+public import Corpus.Big
+public import Corpus.Proofs
+
+@[expose] public section
 
 /-! The differential-testing corpus: every program with its test vectors. -/
 

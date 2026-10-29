@@ -1,4 +1,8 @@
-import FV.DSL.Ops
+module
+
+public import FV.DSL.Ops
+
+@[expose] public section
 
 /-!
 # Deep syntax: intrinsically typed AST

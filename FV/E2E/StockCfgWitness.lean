@@ -1,7 +1,11 @@
-import FV.E2E.StockCfgReadFixture
-import FV.E2E.StockCfgNI
-import FV.Backend.Lowering.StockTwoBlockNI
-import FV.Backend.Proof.StockCfgEntryAtWitness
+module
+
+public import FV.E2E.StockCfgReadFixture
+public import FV.E2E.StockCfgNI
+public import FV.Backend.Lowering.StockTwoBlockNI
+public import FV.Backend.Proof.StockCfgEntryAtWitness
+
+@[expose] public section
 
 namespace E2E.StockCfgNIWitness
 open Backend Backend.Proof Backend.Proof.Driver Backend.Stock.Proof Backend.DeadCleanup

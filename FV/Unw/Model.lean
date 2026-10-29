@@ -1,6 +1,10 @@
-import FV.Unw.Dwarf
-import FV.E2E.RegLevelMachine
-import FV.Arm.Memory.MemoryProofs
+module
+
+public import FV.Unw.Dwarf
+public import FV.E2E.RegLevelMachine
+public import FV.Arm.Memory.MemoryProofs
+
+@[expose] public section
 
 /-!
 # The outside contract: the DWARF unwinder and Rust's personality routine (S10d, #231)

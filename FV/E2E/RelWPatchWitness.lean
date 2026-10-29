@@ -1,4 +1,8 @@
-import FV.E2E.RelWPatch
+module
+
+public import FV.E2E.RelWPatch
+
+@[expose] public section
 
 /-!
 # Witness for `relW_patchW`

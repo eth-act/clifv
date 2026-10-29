@@ -1,7 +1,11 @@
-import FV.Backend.Proof.IselCtlCallTI
-import FV.Backend.Proof.IselTermFactsCallT
-import FV.Backend.Proof.IselCtlTermTI
-import FV.Backend.Proof.DriverCheckT
+module
+
+public import FV.Backend.Proof.IselCtlCallTI
+public import FV.Backend.Proof.IselTermFactsCallT
+public import FV.Backend.Proof.IselCtlTermTI
+public import FV.Backend.Proof.DriverCheckT
+
+@[expose] public section
 
 /-!
 # Family Ctl over typed contexts: `call` with `f32`/`f64` arguments and returns (S11e5 Stage B)

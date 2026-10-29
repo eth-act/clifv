@@ -1,4 +1,8 @@
-import FV.Backend.Proof.SpillStep4Edge
+module
+
+public import FV.Backend.Proof.SpillStep4Edge
+
+@[expose] public section
 
 /-!
 # Branch arguments of the spill allocation (V4 (a), step 4)

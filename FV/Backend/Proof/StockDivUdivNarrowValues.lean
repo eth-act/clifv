@@ -1,5 +1,10 @@
-import FV.Backend.Proof.StockDivUdivWideValues
-import FV.Backend.Proof.StockDivDividendValues
+module
+
+public import FV.Backend.Proof.StockDivUdivWideValues
+public import FV.Backend.Proof.StockDivDividendValues
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarDiv
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 theorem stock_div_udiv_narrow_selected_values {f : Clif.Function} {ctx : Ctx} (inv : MappedCtxInv f ctx)

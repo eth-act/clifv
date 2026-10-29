@@ -1,4 +1,8 @@
-import FV.E2E.LinkArmProgCallPRBR
+module
+
+public import FV.E2E.LinkArmProgCallPRBR
+
+@[expose] public section
 
 /-!
 # `ThmPRBR` without program callees with slots (SEM1 #537, #680 (3), #687)

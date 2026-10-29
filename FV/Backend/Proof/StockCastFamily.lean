@@ -1,4 +1,9 @@
-import FV.Backend.Proof.StockShiftBodyRefines
+module
+
+public import FV.Backend.Proof.StockShiftBodyRefines
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.CastBody
 open Backend.Proof Backend.Proof.Driver
 set_option autoImplicit false

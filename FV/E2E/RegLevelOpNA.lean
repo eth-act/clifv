@@ -1,5 +1,9 @@
-import FV.E2E.RegLevelFRFree
-import FV.E2E.RegLevelOpNR
+module
+
+public import FV.E2E.RegLevelFRFree
+public import FV.E2E.RegLevelOpNR
+
+@[expose] public section
 
 /-!
 # Straight-line instructions, at a witness (SEM1 #537, item (3), route (a))

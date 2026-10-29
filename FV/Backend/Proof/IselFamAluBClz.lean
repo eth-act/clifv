@@ -1,4 +1,8 @@
-import FV.Backend.Proof.IselFamAluBBitrev
+module
+
+public import FV.Backend.Proof.IselFamAluBBitrev
+
+@[expose] public section
 
 /-!
 # Family B: `clz` and `ctz` root rules (`lower.isle:1951`, `1955`, `1961`, `1982`, `1986`, `1995`)

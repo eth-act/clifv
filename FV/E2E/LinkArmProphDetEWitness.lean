@@ -1,5 +1,9 @@
-import FV.E2E.LinkArmProphDetE
-import FV.E2E.LinkArmProphDetWitness
+module
+
+public import FV.E2E.LinkArmProphDetE
+public import FV.E2E.LinkArmProphDetWitness
+
+@[expose] public section
 
 /-!
 # Witnesses for entry-level prophecy determinism (`FV/E2E/LinkArmProphDetE.lean`)

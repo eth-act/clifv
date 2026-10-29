@@ -1,7 +1,11 @@
-import FV.E2E.StockArithmeticArtifact
-import FV.Backend.LinearScan
-import FV.Backend.Proof.LowerDecide
-import FV.Backend.Lowering.StockD0
+module
+
+public import FV.E2E.StockArithmeticArtifact
+public import FV.Backend.LinearScan
+public import FV.Backend.Proof.LowerDecide
+public import FV.Backend.Lowering.StockD0
+
+@[expose] public section
 
 namespace E2E.StockArithmeticArtifactWitness
 open Backend Backend.Proof Backend.Proof.Driver Backend.Stock.Proof

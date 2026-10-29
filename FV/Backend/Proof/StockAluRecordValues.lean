@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockRequestSuccess
-import FV.Backend.Proof.StockGuardedRecordValues
+module
+
+public import FV.Backend.Proof.StockRequestSuccess
+public import FV.Backend.Proof.StockGuardedRecordValues
+
+@[expose] public section
 
 /-! Selected add/subtract value transfer for actual retained Stock records. -/
 namespace Backend.Stock.Proof

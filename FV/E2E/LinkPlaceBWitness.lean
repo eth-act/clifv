@@ -1,4 +1,8 @@
-import FV.E2E.LinkPlaceB
+module
+
+public import FV.E2E.LinkPlaceB
+
+@[expose] public section
 
 /-!
 # Witnesses for the slot-byte counter on runs (`FV/E2E/LinkPlaceB.lean`)

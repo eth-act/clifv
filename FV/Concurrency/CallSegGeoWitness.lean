@@ -1,6 +1,10 @@
-import FV.Concurrency.CallSegGeo
-import FV.Concurrency.FrameDisjWitness
-import FV.Concurrency.ClifCStepWitness
+module
+
+public import FV.Concurrency.CallSegGeo
+public import FV.Concurrency.FrameDisjWitness
+public import FV.Concurrency.ClifCStepWitness
+
+@[expose] public section
 
 /-!
 # Witnesses for `CallSegGeo` (#473, `SegOkG` groundwork)

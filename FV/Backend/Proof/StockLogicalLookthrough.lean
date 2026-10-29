@@ -1,4 +1,8 @@
-import FV.Backend.Proof.StockLogicalSemantics
+module
+
+public import FV.Backend.Proof.StockLogicalSemantics
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.LogicalSemantics
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

@@ -1,9 +1,13 @@
-import FV.Clif
-import FV.Clif.Unwind
-import FV.Opt.Legalize128Pass
-import FV.Opt.ZeroSlots
-import FV.Backend.Isel
-import FVTest.Clif.OracleJson
+module
+
+public import FV.Clif
+public import FV.Clif.Unwind
+public import FV.Opt.Legalize128Pass
+public import FV.Opt.ZeroSlots
+public import FV.Backend.Isel
+public import FVTest.Clif.OracleJson
+
+@[expose] public section
 
 /-!
 # `clif-filetest`: run Cranelift `.clif` runtests through `Clif.run`

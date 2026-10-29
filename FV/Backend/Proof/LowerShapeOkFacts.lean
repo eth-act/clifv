@@ -1,5 +1,9 @@
-import FV.Backend.Proof.LowerSpec
-import FV.Backend.Proof.TryRegs
+module
+
+public import FV.Backend.Proof.LowerSpec
+public import FV.Backend.Proof.TryRegs
+
+@[expose] public section
 
 /-!
 # Completeness of `lowerCheck`: facts for `shapeOk_complete`

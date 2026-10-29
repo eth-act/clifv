@@ -1,4 +1,8 @@
-import FV.E2E.RegLevelGoto
+module
+
+public import FV.E2E.RegLevelGoto
+
+@[expose] public section
 
 /-!
 # Items that fall through (M6): islands, `trapIf` not taken, symbol addresses

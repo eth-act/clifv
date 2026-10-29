@@ -1,3 +1,7 @@
+module
+
+@[expose] public section
+
 /-! # Lean static linker: AArch64 relocations (ELF for the Arm 64-bit Architecture, §5.7)
 
 `relocVal ty r old`: the new value of the `relocWidth ty` bytes a relocation of type `ty`

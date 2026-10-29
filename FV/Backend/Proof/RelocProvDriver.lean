@@ -1,8 +1,12 @@
-import FV.Backend.Proof.RelocProvSound
-import FV.Backend.Proof.RelocProvModel
-import FV.Backend.Proof.RelocProvRoot
-import FV.Backend.Proof.RelocProvEmit
-import FV.Backend.Proof.LowerComplete
+module
+
+public import FV.Backend.Proof.RelocProvSound
+public import FV.Backend.Proof.RelocProvModel
+public import FV.Backend.Proof.RelocProvRoot
+public import FV.Backend.Proof.RelocProvEmit
+public import FV.Backend.Proof.LowerComplete
+
+@[expose] public section
 
 /-!
 # Name provenance of the ISLE lowering: the driver (L1e, #216)

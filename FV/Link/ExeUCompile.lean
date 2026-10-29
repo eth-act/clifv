@@ -1,5 +1,9 @@
-import FV.Link.UnwFns
-import FV.Link.DeadCleanupCompile
+module
+
+public import FV.Link.UnwFns
+public import FV.Link.DeadCleanupCompile
+
+@[expose] public section
 
 /-!
 # The executable compiler with the unwind tables checked (S10f)

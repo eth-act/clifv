@@ -1,6 +1,10 @@
-import FV.E2E.FinalDirect
-import FV.Backend.Proof.SpillLocalPipe
-import FV.Backend.Proof.SpillLocalState
+module
+
+public import FV.E2E.FinalDirect
+public import FV.Backend.Proof.SpillLocalPipe
+public import FV.Backend.Proof.SpillLocalState
+
+@[expose] public section
 
 /-!
 # Non-vacuity of the spill allocator's local facts (V4 (a), step 3)

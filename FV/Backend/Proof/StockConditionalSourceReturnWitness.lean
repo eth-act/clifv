@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockConditionalSourceReturn
-import FV.Backend.Proof.StockConditionalGuardedWitness
+module
+
+public import FV.Backend.Proof.StockConditionalSourceReturn
+public import FV.Backend.Proof.StockConditionalGuardedWitness
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.ConditionalValues.ReturnWitness
 open Backend.Proof Backend.Proof.Driver

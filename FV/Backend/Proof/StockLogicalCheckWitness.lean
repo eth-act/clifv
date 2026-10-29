@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockLogicalCheck
-import FV.Backend.Proof.StockLogicalSourceWitness
+module
+
+public import FV.Backend.Proof.StockLogicalCheck
+public import FV.Backend.Proof.StockLogicalSourceWitness
+
+@[expose] public section
 
 namespace Backend.Stock.Logical
 open Backend.Proof Backend.Proof.Driver Backend.Stock.Proof.LogicalSemantics

@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockForwardSourceOrder
-import FV.Backend.Proof.StockCfgTraversalDemand
+module
+
+public import FV.Backend.Proof.StockForwardSourceOrder
+public import FV.Backend.Proof.StockCfgTraversalDemand
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.ForwardSource
 open Backend.Proof Backend.Proof.Driver

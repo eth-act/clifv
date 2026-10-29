@@ -1,4 +1,8 @@
-import FV.Link.Ld.Build
+module
+
+public import FV.Link.Ld.Build
+
+@[expose] public section
 
 /-! # Lean static linker: the plan and the image (L2b stage 3e)
 

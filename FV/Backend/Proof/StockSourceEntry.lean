@@ -1,4 +1,8 @@
-import FV.Backend.Proof.StockSourceDefined
+module
+
+public import FV.Backend.Proof.StockSourceDefined
+
+@[expose] public section
 
 namespace Backend.Stock.Proof
 open Backend.Proof Backend.Proof.Driver Backend.Proof.Driver.Fix

@@ -1,4 +1,8 @@
-import FV.Backend.StockArithmeticCheck
+module
+
+public import FV.Backend.StockArithmeticCheck
+
+@[expose] public section
 
 namespace Backend.Stock.Arithmetic
 open Backend.Proof Backend.Proof.Driver

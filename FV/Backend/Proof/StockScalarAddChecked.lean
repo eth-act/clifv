@@ -1,8 +1,12 @@
-import FV.Backend.Proof.StockScalarAddCode
-import FV.Backend.Proof.StockPrologueCode
-import FV.Backend.Proof.StockDiagnosticChecker
-import FV.Backend.Proof.StockScalarAddDomain
-import FV.Backend.Proof.LowerComplete
+module
+
+public import FV.Backend.Proof.StockScalarAddCode
+public import FV.Backend.Proof.StockPrologueCode
+public import FV.Backend.Proof.StockDiagnosticChecker
+public import FV.Backend.Proof.StockScalarAddDomain
+public import FV.Backend.Proof.LowerComplete
+
+@[expose] public section
 
 set_option autoImplicit false
 namespace Backend.Stock.ScalarAdd

@@ -1,6 +1,10 @@
-import FV.Backend.Proof.TryRegs
-import FV.Backend.Proof.AbiClass
-import FV.Compile.SubsetT
+module
+
+public import FV.Backend.Proof.TryRegs
+public import FV.Backend.Proof.AbiClass
+public import FV.Compile.SubsetT
+
+@[expose] public section
 
 /-!
 # The typed `try_call` of the lowering on integer signatures (S11e6)

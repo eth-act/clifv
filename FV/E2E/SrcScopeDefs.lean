@@ -1,5 +1,9 @@
-import FV.E2E.LinkScopeDefs
-import FV.Opt.Legalize128Pre
+module
+
+public import FV.E2E.LinkScopeDefs
+public import FV.Opt.Legalize128Pre
+
+@[expose] public section
 
 /-!
 # The source domain of an input, decided (S2/S3; the definitions)

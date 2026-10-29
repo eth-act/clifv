@@ -1,4 +1,8 @@
-import FV.E2E.ActualBinCheck
+module
+
+public import FV.E2E.ActualBinCheck
+
+@[expose] public section
 
 /-! Preserve strict and fallback allocation modes, original k/j/oracle/base
 metadata and actual lowering output. No new checks or input conditions. -/

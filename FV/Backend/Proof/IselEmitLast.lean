@@ -1,8 +1,12 @@
-import FV.Backend.Proof.IselEmitFns
-import FV.Backend.Proof.IselEmitDefs
-import FV.Backend.Proof.IselCovSound
-import FV.Backend.Proof.IselShpOracle
-import FV.Backend.Proof.IselShpTotal
+module
+
+public import FV.Backend.Proof.IselEmitFns
+public import FV.Backend.Proof.IselEmitDefs
+public import FV.Backend.Proof.IselCovSound
+public import FV.Backend.Proof.IselShpOracle
+public import FV.Backend.Proof.IselShpTotal
+
+@[expose] public section
 
 /-!
 # Emission conditions of the ISLE lowering (V6c): runs ending in a branch

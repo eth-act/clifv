@@ -1,4 +1,8 @@
-import FV.E2E.BackendTwoRunLE
+module
+
+public import FV.E2E.BackendTwoRunLE
+
+@[expose] public section
 
 /-!
 # The machine lock without the segment-lines premise (SEM1 #537, `docs/plans/uninit.md` §5.9)

@@ -17,10 +17,14 @@ Author(s): Shilpi Goel
 -- Unallocated: S == '1' or op2<1> == '1'. Cross-checked against VeriISLE
 -- `MInst.CSel`/`CSNeg`/`CSet`/`CSetm` (cranelift/codegen/src/isa/aarch64/spec/conds.isle).
 
-import FV.Arm.Decode
-import FV.Arm.State
-import FV.Arm.Insts.Common
-import FV.Arm.BitVec
+module
+
+public import FV.Arm.Decode
+public import FV.Arm.State
+public import FV.Arm.Insts.Common
+public import FV.Arm.BitVec
+
+@[expose] public section
 
 namespace Arm
 

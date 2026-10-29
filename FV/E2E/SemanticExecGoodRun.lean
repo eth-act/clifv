@@ -1,6 +1,10 @@
-import FV.E2E.SemanticBinaryGood
-import FV.E2E.SemanticExecRunN
-import FV.E2E.PairLines
+module
+
+public import FV.E2E.SemanticBinaryGood
+public import FV.E2E.SemanticExecRunN
+public import FV.E2E.PairLines
+
+@[expose] public section
 
 /-! # `RunOkN` from the register-level per-state facts (L3 (c))
 

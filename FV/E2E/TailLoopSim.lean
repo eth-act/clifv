@@ -1,9 +1,13 @@
-import FV.Opt.TailLoop
-import FV.Opt.Proof.SimpDen
-import FV.Opt.Proof.SemSimX
-import FV.Opt.Proof.SimWin
-import FV.E2E.LinkPlace
-import FV.E2E.Statement
+module
+
+public import FV.Opt.TailLoop
+public import FV.Opt.Proof.SimpDen
+public import FV.Opt.Proof.SemSimX
+public import FV.Opt.Proof.SimWin
+public import FV.E2E.LinkPlace
+public import FV.E2E.Statement
+
+@[expose] public section
 
 /-! # Self tail calls as loops refine the program (S8, #32)
 

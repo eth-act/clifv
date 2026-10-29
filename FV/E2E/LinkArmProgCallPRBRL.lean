@@ -1,5 +1,9 @@
-import FV.E2E.LinkArmProgCallPRBR
-import FV.E2E.LinkArmDetPRBR
+module
+
+public import FV.E2E.LinkArmProgCallPRBR
+public import FV.E2E.LinkArmDetPRBR
+
+@[expose] public section
 
 /-!
 # `ThmPRBR` with the counter advance from the popped entry (SEM1 #537, #680 (3), #694)

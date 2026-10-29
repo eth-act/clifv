@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockTerminalDriver
-import FV.Backend.Proof.StockBodyScanOrigin
+module
+
+public import FV.Backend.Proof.StockTerminalDriver
+public import FV.Backend.Proof.StockBodyScanOrigin
+
+@[expose] public section
 
 /-! Whole-driver terminal classification. Unsunkness and mandatory emission
 are derived from actual source construction, traversal and retained scans. -/

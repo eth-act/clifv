@@ -1,5 +1,9 @@
-import FV.Link.DeadCleanupExeMemTrapWitness
-import FV.Link.DeadCleanupExeMemFault
+module
+
+public import FV.Link.DeadCleanupExeMemTrapWitness
+public import FV.Link.DeadCleanupExeMemFault
+
+@[expose] public section
 
 /-!
 # Witness: the fault-aware executable theorem applies to a compiled executable (A3, #412, F8)

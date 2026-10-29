@@ -1,5 +1,10 @@
-import FV.Backend.Proof.StockCmpNonencodableFailures
-import FV.Backend.Proof.StockCmpNarrowImmediateSourceValues
+module
+
+public import FV.Backend.Proof.StockCmpNonencodableFailures
+public import FV.Backend.Proof.StockCmpNarrowImmediateSourceValues
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarCmp
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 set_option maxRecDepth 20000

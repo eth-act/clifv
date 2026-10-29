@@ -1,5 +1,9 @@
-import FV.E2E.SizeDefs
-import FV.E2E.EmitCondsLower
+module
+
+public import FV.E2E.SizeDefs
+public import FV.E2E.EmitCondsLower
+
+@[expose] public section
 
 /-!
 # The size of `lowerFunction`'s output from the ISLE runs (V6c)

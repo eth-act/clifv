@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockEmissionSemantics
-import FV.Backend.Proof.StockDriverBounds
+module
+
+public import FV.Backend.Proof.StockEmissionSemantics
+public import FV.Backend.Proof.StockDriverBounds
+
+@[expose] public section
 
 /-! Actual emitted-scan inversion and constant-rule transfer at real backward
 scan boundaries. These discharge local semantic obligations from constructor

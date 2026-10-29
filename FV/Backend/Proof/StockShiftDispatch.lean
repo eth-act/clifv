@@ -1,5 +1,10 @@
-import FV.Backend.Proof.StockShiftRecordValues
-import FV.Backend.Proof.StockRootOpcodeMatch
+module
+
+public import FV.Backend.Proof.StockShiftRecordValues
+public import FV.Backend.Proof.StockRootOpcodeMatch
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ShiftComplete
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 open Backend.Stock.Proof.ScalarShift

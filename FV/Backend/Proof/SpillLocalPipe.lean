@@ -1,6 +1,10 @@
-import FV.Backend.Proof.SpillLocalForms
-import FV.Backend.Proof.FormsCoverComplete
-import FV.Backend.Proof.PrepareSound
+module
+
+public import FV.Backend.Proof.SpillLocalForms
+public import FV.Backend.Proof.FormsCoverComplete
+public import FV.Backend.Proof.PrepareSound
+
+@[expose] public section
 
 /-!
 # The spill allocator's local facts on the pipeline's output (V4 (a), step 3)

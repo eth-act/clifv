@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockDFG
-import FV.Backend.Proof.LowerLoopCtx
+module
+
+public import FV.Backend.Proof.StockDFG
+public import FV.Backend.Proof.LowerLoopCtx
+
+@[expose] public section
 
 /-! # The `Stock.buildCtx` float check keeps the original accepted domain (S11e3, #140)
 

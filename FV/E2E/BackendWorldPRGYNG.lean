@@ -1,5 +1,9 @@
-import FV.E2E.BackendWorldPRGYN
-import FV.E2E.RegLevelCorrectPRSNG
+module
+
+public import FV.E2E.BackendWorldPRGYN
+public import FV.E2E.RegLevelCorrectPRSNG
+
+@[expose] public section
 
 /-!
 # The pipeline theorems with the error-free trace at the return (SEM1 #537, #680 (3), #700 step 3)

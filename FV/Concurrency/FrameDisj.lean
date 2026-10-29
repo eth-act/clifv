@@ -1,4 +1,8 @@
-import FV.E2E.RegLevelMove
+module
+
+public import FV.E2E.RegLevelMove
+
+@[expose] public section
 
 /-!
 # The frames of nested activations are disjoint (#473, (iv))

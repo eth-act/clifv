@@ -1,6 +1,10 @@
-import FV.Backend.Proof.StockD0Witness
-import FV.Backend.Proof.StockD0Dispatch
-import FV.Backend.Proof.StockD0Edges
+module
+
+public import FV.Backend.Proof.StockD0Witness
+public import FV.Backend.Proof.StockD0Dispatch
+public import FV.Backend.Proof.StockD0Edges
+
+@[expose] public section
 
 namespace Backend.Stock.D0
 

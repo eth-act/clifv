@@ -1,9 +1,13 @@
-import FV.E2E.CompiledEitherT
-import FV.E2E.CompiledEitherTC
-import FV.E2E.FinalT
-import FV.E2E.DeadCleanupT
-import FV.E2E.DeadCleanupTC
-import FV.Backend.Proof.DriverCheckTyC
+module
+
+public import FV.E2E.CompiledEitherT
+public import FV.E2E.CompiledEitherTC
+public import FV.E2E.FinalT
+public import FV.E2E.DeadCleanupT
+public import FV.E2E.DeadCleanupTC
+public import FV.Backend.Proof.DriverCheckTyC
+
+@[expose] public section
 
 /-!
 # Either typed artifact, typed `try_call`s (S11e6, #419)

@@ -1,6 +1,10 @@
-import FV.E2E.LinkArmActualEntry
-import FV.E2E.LinkArmTwinCTrans
-import FV.E2E.LinkArmTwinCLock
+module
+
+public import FV.E2E.LinkArmActualEntry
+public import FV.E2E.LinkArmTwinCTrans
+public import FV.E2E.LinkArmTwinCLock
+
+@[expose] public section
 
 /-!
 # Call-restricted twins that relate the errors (SEM1 #537, #716)

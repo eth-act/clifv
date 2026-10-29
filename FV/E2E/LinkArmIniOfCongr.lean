@@ -1,4 +1,8 @@
-import FV.E2E.LinkArmIniOf
+module
+
+public import FV.E2E.LinkArmIniOf
+
+@[expose] public section
 
 /-!
 # The machine's own slot table depends only on the machine (SEM1 #537, executable level)

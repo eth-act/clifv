@@ -1,5 +1,9 @@
-import FV.Concurrency.ArmAllocLinked
-import FV.Concurrency.ArmAllocPauseWitness
+module
+
+public import FV.Concurrency.ArmAllocLinked
+public import FV.Concurrency.ArmAllocPauseWitness
+
+@[expose] public section
 
 /-!
 # Layer 4b on a linked machine: witness (T2j follow-up, #473)

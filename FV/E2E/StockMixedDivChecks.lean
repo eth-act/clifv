@@ -1,9 +1,14 @@
-import FV.E2E.StockMixedDivFixtures
-import FV.E2E.StockHighMulWitness
-import FV.Backend.Proof.StockScalarMixedDivDomain
-import FV.E2E.CompiledSemanticNI
-import FV.Backend.LinearScan
-import FV.Backend.Lowering.StockScalarNI
+module
+
+public import FV.E2E.StockMixedDivFixtures
+public import FV.E2E.StockHighMulWitness
+public import FV.Backend.Proof.StockScalarMixedDivDomain
+public import FV.E2E.CompiledSemanticNI
+public import FV.Backend.LinearScan
+public import FV.Backend.Lowering.StockScalarNI
+
+@[expose] public section
+
 namespace E2E.StockMixedDivNIWitness
 open Backend Backend.Proof Backend.Proof.Driver Backend.Stock.D0
 set_option autoImplicit false

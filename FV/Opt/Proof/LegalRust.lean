@@ -1,5 +1,9 @@
-import FV.Opt.Proof.LegalExt
-import FV.Clif.Rust
+module
+
+public import FV.Opt.Proof.LegalExt
+public import FV.Clif.Rust
+
+@[expose] public section
 
 /-!
 # The environment contracts of `Opt.Legal.check_refines` for `Clif.Rust.env`

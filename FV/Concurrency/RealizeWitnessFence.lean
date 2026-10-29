@@ -1,5 +1,9 @@
-import FV.Concurrency.RealizeWitness
-import FV.Concurrency.ArmAllocFwd
+module
+
+public import FV.Concurrency.RealizeWitness
+public import FV.Concurrency.ArmAllocFwd
+
+@[expose] public section
 
 /-!
 # `Realizes` on a run of compiled code through its `dmb` (T2k, #311)

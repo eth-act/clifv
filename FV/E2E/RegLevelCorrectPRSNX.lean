@@ -1,4 +1,8 @@
-import FV.E2E.RegLevelCorrectPRSNG
+module
+
+public import FV.E2E.RegLevelCorrectPRSNG
+
+@[expose] public section
 
 /-!
 # The per-state trace up to the return in the oracle world (SEM1 #537, executable level)

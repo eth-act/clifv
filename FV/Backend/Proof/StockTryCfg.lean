@@ -1,6 +1,10 @@
-import FV.Backend.Proof.StockBranchCfg
-import FV.Backend.Proof.StockGraphBounds
-import FV.Backend.Proof.LowerLemmas
+module
+
+public import FV.Backend.Proof.StockBranchCfg
+public import FV.Backend.Proof.StockGraphBounds
+public import FV.Backend.Proof.LowerLemmas
+
+@[expose] public section
 
 namespace Backend.Stock.Proof
 open Backend.Proof Backend.Proof.Driver

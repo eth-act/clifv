@@ -1,4 +1,8 @@
-import FV.Compile.Emit
+module
+
+public import FV.Compile.Emit
+
+@[expose] public section
 
 /-!
 # Lean model of the map runtime, argument encoding, result decoding

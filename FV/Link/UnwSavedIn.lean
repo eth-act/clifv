@@ -1,7 +1,11 @@
-import FV.Link.UnwFnsComplete
-import FV.E2E.RegLevelFrameSaved
-import FV.E2E.DeadCleanupLinkCheck
-import FV.E2E.SpillLower
+module
+
+public import FV.Link.UnwFnsComplete
+public import FV.E2E.RegLevelFrameSaved
+public import FV.E2E.DeadCleanupLinkCheck
+public import FV.E2E.SpillLower
+
+@[expose] public section
 
 /-!
 # The frame check `savedCheck` on the allocations the pipeline lowers (S10g, #404)

@@ -1,6 +1,10 @@
-import FV.Backend.Proof.StockLogicalSourceExecution
-import FV.Backend.Proof.StockPureReturnRefines
-import FV.Backend.Proof.StockArithmeticEntryRefines
+module
+
+public import FV.Backend.Proof.StockLogicalSourceExecution
+public import FV.Backend.Proof.StockPureReturnRefines
+public import FV.Backend.Proof.StockArithmeticEntryRefines
+
+@[expose] public section
 
 /-! Complete original-entry-to-return simulation for ordinary logical/mixed bodies.
 The source class extends the preserved Mixed class; the old theorems remain intact. -/

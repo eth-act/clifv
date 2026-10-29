@@ -1,6 +1,10 @@
-import FV.Backend.Proof.StockParameterJumpDomain
-import FV.Backend.Proof.StockParameterConditionalDomain
-import FV.Backend.Proof.StockParameterReturnEntry
+module
+
+public import FV.Backend.Proof.StockParameterJumpDomain
+public import FV.Backend.Proof.StockParameterConditionalDomain
+public import FV.Backend.Proof.StockParameterReturnEntry
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.ParameterCfg
 open Backend.Proof Backend.Proof.Driver Backend.Stock.Proof.ConditionalValues Backend.Stock.Proof.ForwardSource

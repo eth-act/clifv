@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockBitBodyRefines
-import FV.Backend.Proof.StockPureReturnRefines
+module
+
+public import FV.Backend.Proof.StockBitBodyRefines
+public import FV.Backend.Proof.StockPureReturnRefines
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.BitBody
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

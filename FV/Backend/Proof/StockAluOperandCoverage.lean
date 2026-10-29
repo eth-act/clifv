@@ -1,4 +1,8 @@
-import FV.Backend.Proof.StockDemandExtent
+module
+
+public import FV.Backend.Proof.StockDemandExtent
+
+@[expose] public section
 
 /-! Derive selected ALU operands from the actual guarded value invariant. -/
 namespace Backend.Stock.Proof

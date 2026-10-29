@@ -1,8 +1,12 @@
-import FV.E2E.DeadCleanupExecPeak
-import FV.E2E.DeadCleanupExecProvenT
-import FV.E2E.DeadCleanupExecGoodRunT
-import FV.E2E.DeadCleanupExecGoodReadsT
-import FV.E2E.DeadCleanupExecRunNT
+module
+
+public import FV.E2E.DeadCleanupExecPeak
+public import FV.E2E.DeadCleanupExecProvenT
+public import FV.E2E.DeadCleanupExecGoodRunT
+public import FV.E2E.DeadCleanupExecGoodReadsT
+public import FV.E2E.DeadCleanupExecRunNT
+
+@[expose] public section
 
 /-! # Typed copies of `FV.E2E.DeadCleanupExecPeak` (S11e6, #419)
 

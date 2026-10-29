@@ -1,5 +1,9 @@
-import FV.Link.ExeInput
-import FV.Link.DeadCleanupExeTotal
+module
+
+public import FV.Link.ExeInput
+public import FV.Link.DeadCleanupExeTotal
+
+@[expose] public section
 
 /-! # The shipped compiler is total on decidable input conditions (L1e)
 

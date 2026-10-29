@@ -1,6 +1,10 @@
-import FV.E2E.PairRaise
-import FV.E2E.IselSimU
-import FV.Backend.Proof.LowerSimUCheck
+module
+
+public import FV.E2E.PairRaise
+public import FV.E2E.IselSimU
+public import FV.Backend.Proof.LowerSimUCheck
+
+@[expose] public section
 
 /-!
 # Non-interference of a compiled function's VCode run with unwinding (S10f, #233)

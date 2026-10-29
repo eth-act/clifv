@@ -1,4 +1,8 @@
-import FV.Opt.Proof.RuleRestEmbed
+module
+
+public import FV.Opt.Proof.RuleRestEmbed
+
+@[expose] public section
 
 /-!
 # `opts/arithmetic.isle` (part 4): proven `simplify` rules

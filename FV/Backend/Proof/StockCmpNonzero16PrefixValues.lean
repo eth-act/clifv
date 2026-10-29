@@ -1,4 +1,9 @@
-import FV.Backend.Proof.StockCmpNonzeroNarrowCalls
+module
+
+public import FV.Backend.Proof.StockCmpNonzeroNarrowCalls
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarCmp
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 /-- Actual narrow nonzero RHS execution establishes the original16-bit value's

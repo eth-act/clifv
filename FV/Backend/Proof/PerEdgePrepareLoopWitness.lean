@@ -1,5 +1,9 @@
-import FV.Backend.Proof.PerEdgePrepareLoopFacts
-import FV.Backend.Proof.PerEdgePrepareWitness
+module
+
+public import FV.Backend.Proof.PerEdgePrepareLoopFacts
+public import FV.Backend.Proof.PerEdgePrepareWitness
+
+@[expose] public section
 
 namespace Backend.Proof.PerEdgePrepLoopWitness
 open Backend Backend.Proof.PerEdgePrep

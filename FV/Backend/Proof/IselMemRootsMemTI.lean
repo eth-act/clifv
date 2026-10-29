@@ -1,6 +1,10 @@
-import FV.Backend.Proof.IselMemRoots
-import FV.Backend.Proof.IselMemBaseTI
-import FV.Backend.Proof.IselMemSemMemTI
+module
+
+public import FV.Backend.Proof.IselMemRoots
+public import FV.Backend.Proof.IselMemBaseTI
+public import FV.Backend.Proof.IselMemSemMemTI
+
+@[expose] public section
 
 /-!
 # `IselMemRoots` over typed contexts (S11e5 Stage C, slice 7)

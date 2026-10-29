@@ -1,5 +1,9 @@
-import FV.E2E.BackendTwoRunNIU
-import FV.E2E.BackendTwoRunNIWitness
+module
+
+public import FV.E2E.BackendTwoRunNIU
+public import FV.E2E.BackendTwoRunNIWitness
+
+@[expose] public section
 
 /-!
 # Witnesses for the call-state world agreement and the lock up to the call state (SEM1 #537,

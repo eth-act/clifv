@@ -1,4 +1,9 @@
-import FV.E2E.StockPopcountFixtures
+module
+
+public import FV.E2E.StockPopcountFixtures
+
+@[expose] public section
+
 namespace E2E.StockMinMaxNIWitness
 open Backend.Stock.D0
 set_option autoImplicit false

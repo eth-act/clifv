@@ -1,7 +1,11 @@
-import FV.Backend.RegallocPerEdgePrepareCheck
-import FV.Backend.Proof.PerEdgeVCodeSem
-import FV.Backend.Proof.PrepareSound
-import FV.Backend.Proof.RegallocSound
+module
+
+public import FV.Backend.RegallocPerEdgePrepareCheck
+public import FV.Backend.Proof.PerEdgeVCodeSem
+public import FV.Backend.Proof.PrepareSound
+public import FV.Backend.Proof.RegallocSound
+
+@[expose] public section
 
 /-! Indexed preparation simulation. Structural routes retain the actual chosen
 vector in direct cases, or move that vector onto a real synthetic jump after an

@@ -1,5 +1,9 @@
-import FV.Link.ExeUnwind
-import FV.Link.EhCheckWitness
+module
+
+public import FV.Link.ExeUnwind
+public import FV.Link.EhCheckWitness
+
+@[expose] public section
 
 /-!
 # Witness: `compileExeU` succeeds and `compileExe_correct_unwind` applies (S10f)

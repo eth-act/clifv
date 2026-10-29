@@ -1,8 +1,12 @@
-import FV.Backend.Proof.StockLinearCfgShape
-import FV.Backend.Proof.StockComputedCfg
-import FV.Backend.Proof.StockEdgeCode
-import FV.Backend.Proof.StockOutgoingVectors
-import FV.Backend.Proof.PerEdgeLegacyCompatible
+module
+
+public import FV.Backend.Proof.StockLinearCfgShape
+public import FV.Backend.Proof.StockComputedCfg
+public import FV.Backend.Proof.StockEdgeCode
+public import FV.Backend.Proof.StockOutgoingVectors
+public import FV.Backend.Proof.PerEdgeLegacyCompatible
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.LinearCfg
 open Backend.Proof Backend.Proof.Driver

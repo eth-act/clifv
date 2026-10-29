@@ -1,5 +1,9 @@
-import FV.Backend.Proof.SpillEdgesLow
-import FV.Backend.Proof.LowerShapeOkT
+module
+
+public import FV.Backend.Proof.SpillEdgesLow
+public import FV.Backend.Proof.LowerShapeOkT
+
+@[expose] public section
 
 /-!
 # The CFG facts of `lowerFunction`'s VCode, typed (S11e5 Stage C, slice 3)

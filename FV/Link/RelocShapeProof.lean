@@ -1,8 +1,12 @@
-import FV.Link.RelocShape
-import FV.E2E.PairLines
-import FV.E2E.ExecWords
-import FV.Backend.Proof.EncodeLayout
-import FV.E2E.LinkCheck
+module
+
+public import FV.Link.RelocShape
+public import FV.E2E.PairLines
+public import FV.E2E.ExecWords
+public import FV.Backend.Proof.EncodeLayout
+public import FV.E2E.LinkCheck
+
+@[expose] public section
 
 /-! # The compiler's relocations have the linker's shapes (L1)
 

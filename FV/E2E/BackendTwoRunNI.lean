@@ -1,4 +1,8 @@
-import FV.E2E.BackendTwoRunNZ
+module
+
+public import FV.E2E.BackendTwoRunNZ
+
+@[expose] public section
 
 /-!
 # The two-run lock by induction on the call count (SEM1 #537, #713)

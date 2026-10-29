@@ -1,5 +1,9 @@
-import FV.Concurrency.ClifThread
-import FV.Concurrency.IselClif
+module
+
+public import FV.Concurrency.ClifThread
+public import FV.Concurrency.IselClif
+
+@[expose] public section
 
 /-!
 # The CLIF thread steps of the memory statements (T2h, #311, layer 2e groundwork)

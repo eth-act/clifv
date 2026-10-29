@@ -1,5 +1,9 @@
-import FV.Backend.Production
-import FV.E2E.ProductionPipeline
+module
+
+public import FV.Backend.Production
+public import FV.E2E.ProductionPipeline
+
+@[expose] public section
 
 set_option autoImplicit false
 namespace FVTest.StockProductionRuntime

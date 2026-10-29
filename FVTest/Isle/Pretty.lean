@@ -1,4 +1,8 @@
-import FV.Isle
+module
+
+public import FV.Isle
+
+@[expose] public section
 
 /-!
 # Exported rules printed back to ISLE text

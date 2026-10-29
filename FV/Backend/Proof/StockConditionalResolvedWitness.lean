@@ -1,4 +1,8 @@
-import FV.Backend.Proof.StockConditionalResolved
+module
+
+public import FV.Backend.Proof.StockConditionalResolved
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.ConditionalValues.ResolvedWitness
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

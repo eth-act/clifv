@@ -1,5 +1,9 @@
-import FV.Backend.SkipDead
-import FV.Backend.Proof.LowerSim
+module
+
+public import FV.Backend.SkipDead
+public import FV.Backend.Proof.LowerSim
+
+@[expose] public section
 
 /-!
 # Deleting instructions from a VCode (`deleteWith`)

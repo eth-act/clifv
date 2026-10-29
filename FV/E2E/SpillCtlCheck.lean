@@ -1,4 +1,8 @@
-import FV.E2E.SpillCtlWitness
+module
+
+public import FV.E2E.SpillCtlWitness
+
+@[expose] public section
 
 /-!
 # The instruction part of `ctlCheck` on the pipeline's output

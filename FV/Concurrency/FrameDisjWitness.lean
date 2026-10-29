@@ -1,5 +1,9 @@
-import FV.Concurrency.FrameDisj
-import FV.Concurrency.CallLoadWitness
+module
+
+public import FV.Concurrency.FrameDisj
+public import FV.Concurrency.CallLoadWitness
+
+@[expose] public section
 
 /-!
 # Witness: the compiled `atomic_load` nested in its compiled caller (#473, (iv))

@@ -1,20 +1,24 @@
-import FV.Backend.Lowering.StockParameterCfgNI
-import FV.Backend.Lowering.StockConditionalForwardCfgNI
-import FVTest.Backend.Lowering.StockTwoBlockProductionRuntime
-import FV.Backend.Lowering.StockTwoBlockNI
-import FV.Backend.Lowering.StockTwoBlockEntryNI
-import FVTest.Backend.Lowering.StockScalarTestSupport
-import FV.E2E.SemanticChecksWith
-import FV.Link.ProductionImageWith
-import FV.Link.Ld.Spec
-import FVTest.E2E.SemanticLinkProofWith
-import FV.Backend.Lowering.StockScalarNI
-import FV.E2E.StockArithmeticNIWitness
-import FV.E2E.StockGeneralDivFixtures
-import FV.Backend.LinearScan
-import FV.Clif.Print
-import FVTest.Backend.Lowering.StockNarrowProductionRuntime
-import FVTest.Backend.Lowering.StockMaskProductionRuntime
+module
+
+public import FV.Backend.Lowering.StockParameterCfgNI
+public import FV.Backend.Lowering.StockConditionalForwardCfgNI
+public import FVTest.Backend.Lowering.StockTwoBlockProductionRuntime
+public import FV.Backend.Lowering.StockTwoBlockNI
+public import FV.Backend.Lowering.StockTwoBlockEntryNI
+public import FVTest.Backend.Lowering.StockScalarTestSupport
+public import FV.E2E.SemanticChecksWith
+public import FV.Link.ProductionImageWith
+public import FV.Link.Ld.Spec
+public import FVTest.E2E.SemanticLinkProofWith
+public import FV.Backend.Lowering.StockScalarNI
+public import FV.E2E.StockArithmeticNIWitness
+public import FV.E2E.StockGeneralDivFixtures
+public import FV.Backend.LinearScan
+public import FV.Clif.Print
+public import FVTest.Backend.Lowering.StockNarrowProductionRuntime
+public import FVTest.Backend.Lowering.StockMaskProductionRuntime
+
+@[expose] public section
 
 /-! Actual Stock callback → actual byte writer → ordinary emitted Lean proofs.
 A fixed integration witness; it does not activate a production class. -/

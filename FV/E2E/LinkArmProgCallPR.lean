@@ -1,6 +1,10 @@
-import FV.E2E.LinkArmProgCallP
-import FV.E2E.LinkArmProphDetR
-import FV.E2E.LinkArmProphReg
+module
+
+public import FV.E2E.LinkArmProgCallP
+public import FV.E2E.LinkArmProphDetR
+public import FV.E2E.LinkArmProphReg
+
+@[expose] public section
 
 /-!
 # A call of a program function on `ThmPDER` (SEM1 step 2w, `docs/plans/uninit.md` §5.8 (4))

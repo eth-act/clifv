@@ -1,4 +1,8 @@
-import FV.Opt.Proof.RuleInfraConst
+module
+
+public import FV.Opt.Proof.RuleInfraConst
+
+@[expose] public section
 
 namespace Opt.Proof
 

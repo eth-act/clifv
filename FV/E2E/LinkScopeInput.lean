@@ -1,8 +1,12 @@
-import FV.E2E.LinkScopeInputDefs
-import FV.E2E.LinkScope
-import FV.E2E.SizeIn
-import FV.Backend.Proof.IselPrgDriver
-import FV.Backend.Proof.PrepareTotal
+module
+
+public import FV.E2E.LinkScopeInputDefs
+public import FV.E2E.LinkScope
+public import FV.E2E.SizeIn
+public import FV.Backend.Proof.IselPrgDriver
+public import FV.Backend.Proof.PrepareTotal
+
+@[expose] public section
 
 /-! # The input conditions without running the compiler (V7)
 

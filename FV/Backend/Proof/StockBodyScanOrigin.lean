@@ -1,4 +1,8 @@
-import FV.Backend.Proof.StockBodyScanRefines
+module
+
+public import FV.Backend.Proof.StockBodyScanRefines
+
+@[expose] public section
 
 /-! Separate the actual terminator record from the ordinary source body of a
 successful original-node scan. Every index, state and code equation is derived

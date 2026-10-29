@@ -1,13 +1,17 @@
-import FV.Backend.ABIReadScalar
-import FV.E2E.ABIReadShiftSteps
-import FV.E2E.ABIReadCastSteps
-import FV.E2E.ABIReadBitSteps
-import FV.E2E.ABIReadPopcountSteps
-import FV.E2E.ABIReadComparisonSteps
-import FV.E2E.ABIReadBooleanSteps
-import FV.E2E.ABIReadHighMulSteps
-import FV.E2E.ABIReadExtendedComparisonSteps
-import FV.E2E.ABIReadMaskSteps
+module
+
+public import FV.Backend.ABIReadScalar
+public import FV.E2E.ABIReadShiftSteps
+public import FV.E2E.ABIReadCastSteps
+public import FV.E2E.ABIReadBitSteps
+public import FV.E2E.ABIReadPopcountSteps
+public import FV.E2E.ABIReadComparisonSteps
+public import FV.E2E.ABIReadBooleanSteps
+public import FV.E2E.ABIReadHighMulSteps
+public import FV.E2E.ABIReadExtendedComparisonSteps
+public import FV.E2E.ABIReadMaskSteps
+
+@[expose] public section
 
 namespace E2E.ScalarBoundary
 open Backend Backend.Proof Backend.Proof.Driver Backend.DeadCleanup E2E.MixedFlagBoundary

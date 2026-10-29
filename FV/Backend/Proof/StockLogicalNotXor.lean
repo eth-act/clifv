@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockLogicalNotMatch
-import FV.Backend.Proof.StockBnotMatch
+module
+
+public import FV.Backend.Proof.StockLogicalNotMatch
+public import FV.Backend.Proof.StockBnotMatch
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.LogicalNot
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

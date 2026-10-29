@@ -1,6 +1,10 @@
-import FV.Clif.Sem
-import FV.Clif.Mem
-import FV.Clif.FSem
+module
+
+public import FV.Clif.Sem
+public import FV.Clif.Mem
+public import FV.Clif.FSem
+
+@[expose] public section
 
 /-!
 # `Clif.run`: executable, fuel-bounded semantics

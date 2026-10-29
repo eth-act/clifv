@@ -1,5 +1,9 @@
-import FV.Concurrency.VCodeEvents
-import FV.Backend.Proof.RegallocMemFP
+module
+
+public import FV.Concurrency.VCodeEvents
+public import FV.Backend.Proof.RegallocMemFP
+
+@[expose] public section
 
 /-!
 # The addresses of the memory events of VCode (T2h, #311, layer 2a)

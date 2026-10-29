@@ -1,4 +1,8 @@
-import FV.Backend.Proof.PerEdgePrepareLoopFacts
+module
+
+public import FV.Backend.Proof.PerEdgePrepareLoopFacts
+
+@[expose] public section
 
 /-! Outer-loop graph and selected-copy invariants for actual indexed preparation.
 All legacy preparation and runtime definitions remain unchanged. -/

@@ -1,5 +1,9 @@
-import FV.Link.DeadCleanupExeTrap
-import FV.E2E.DeadCleanupExecMemTrap
+module
+
+public import FV.Link.DeadCleanupExeTrap
+public import FV.E2E.DeadCleanupExecMemTrap
+
+@[expose] public section
 
 /-! # The shipped executable compiler with memory traps (A3, #412, slices F6/F7)
 

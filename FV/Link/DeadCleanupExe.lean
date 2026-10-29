@@ -1,6 +1,11 @@
-import FV.Link.DeadCleanupCorrect
-import FV.Link.DeadCleanupCompile
-import FV.E2E.DeadCleanupExecProven
+module
+
+public import FV.Link.DeadCleanupCorrect
+public import FV.Link.DeadCleanupCompile
+public import FV.E2E.DeadCleanupExecProven
+
+@[expose] public section
+
 namespace Link.DeadCleanup
 set_option autoImplicit false
 open E2E E2E.LinkCheck E2E.BinCheck E2E.Elf E2E.DeadCleanupBinary E2E.DeadCleanupExecBytes Backend LinkSpec

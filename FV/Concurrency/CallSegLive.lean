@@ -1,5 +1,9 @@
-import FV.Concurrency.CallSegRun
-import FV.Concurrency.CallSegEnt
+module
+
+public import FV.Concurrency.CallSegRun
+public import FV.Concurrency.CallSegEnt
+
+@[expose] public section
 
 /-!
 # The invariants of a live activation along its CLIF run (#473, `SegOkG`)

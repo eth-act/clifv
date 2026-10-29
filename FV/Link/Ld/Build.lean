@@ -1,5 +1,9 @@
-import FV.Link.Ld.Reloc
-import FV.Link.Ld.Write
+module
+
+public import FV.Link.Ld.Reloc
+public import FV.Link.Ld.Write
+
+@[expose] public section
 
 /-! # Lean static linker: the body from placed pieces (L2b stage 3c)
 

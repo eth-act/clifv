@@ -1,5 +1,9 @@
-import FV.E2E.SretReturnLegalCleanup
-import FV.E2E.SretReturnLegalWitness
+module
+
+public import FV.E2E.SretReturnLegalCleanup
+public import FV.E2E.SretReturnLegalWitness
+
+@[expose] public section
 
 /-!
 # Non-vacuity of `backend_correct_legal_cleanup_abi` (S7)

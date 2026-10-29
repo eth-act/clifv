@@ -1,5 +1,9 @@
-import FV.E2E.RegLevelTrapCall
-import FV.E2E.TrapCallTryStop
+module
+
+public import FV.E2E.RegLevelTrapCall
+public import FV.E2E.TrapCallTryStop
+
+@[expose] public section
 
 /-!
 # The register level of a `try_call`'s callee trap (S9b, #375)

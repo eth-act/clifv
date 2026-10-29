@@ -1,5 +1,9 @@
-import FV.Front.RawExeTrap
-import FV.Front.RawExeContract
+module
+
+public import FV.Front.RawExeTrap
+public import FV.Front.RawExeContract
+
+@[expose] public section
 
 /-!
 # The executable compiler refines cg_clif's program, callee traps included, under one runtime

@@ -1,5 +1,9 @@
-import FV.Link.Image
-import FV.E2E.LinkScopeFast
+module
+
+public import FV.Link.Image
+public import FV.E2E.LinkScopeFast
+
+@[expose] public section
 
 /-! # The executable compiler (L1): the definition
 

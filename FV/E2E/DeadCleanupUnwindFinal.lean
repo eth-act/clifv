@@ -1,9 +1,13 @@
-import FV.E2E.DeadCleanupUnwind
-import FV.E2E.DeadCleanupUnwindIsel
-import FV.E2E.DeadCleanupUnwindRegLevel
-import FV.E2E.IselSimU
-import FV.Backend.Proof.LowerSimUCheck
-import FV.E2E.DeadCleanupFinal
+module
+
+public import FV.E2E.DeadCleanupUnwind
+public import FV.E2E.DeadCleanupUnwindIsel
+public import FV.E2E.DeadCleanupUnwindRegLevel
+public import FV.E2E.IselSimU
+public import FV.Backend.Proof.LowerSimUCheck
+public import FV.E2E.DeadCleanupFinal
+
+@[expose] public section
 
 /-!
 # The shipped compiler's per-function theorem with unwinding (S10e, #232)

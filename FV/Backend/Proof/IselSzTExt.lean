@@ -1,6 +1,10 @@
-import FV.Backend.Proof.IselSzTDefs
-import FV.Backend.Proof.IselSzExt
-import FV.Backend.Proof.IselCovTCtor
+module
+
+public import FV.Backend.Proof.IselSzTDefs
+public import FV.Backend.Proof.IselSzExt
+public import FV.Backend.Proof.IselCovTCtor
+
+@[expose] public section
 
 /-!
 # The size of the ISLE lowering's output over float-capable contexts (typed V6c): the extern

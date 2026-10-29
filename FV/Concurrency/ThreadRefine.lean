@@ -1,4 +1,8 @@
-import FV.Concurrency.ProgramE2E
+module
+
+public import FV.Concurrency.ProgramE2E
+
+@[expose] public section
 
 /-!
 # Per-thread refinement with interference: the reduction of `Realizes` (T2h, #311, layer 0)

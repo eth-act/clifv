@@ -1,5 +1,9 @@
-import FV.Backend.LinearScan
-import FV.Backend.Proof.SpillStep4Run
+module
+
+public import FV.Backend.LinearScan
+public import FV.Backend.Proof.SpillStep4Run
+
+@[expose] public section
 
 /-!
 # Parallel moves of the Lean allocator (V4b-3/V4b-4, #275/#276)

@@ -1,5 +1,9 @@
-import FV.E2E.RegLevelCorrect
-import FV.E2E.RegLevelGoodX
+module
+
+public import FV.E2E.RegLevelCorrect
+public import FV.E2E.RegLevelGoodX
+
+@[expose] public section
 
 /-!
 # The register-level theorem with the per-state facts of the run (L3 (c))

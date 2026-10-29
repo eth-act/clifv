@@ -1,6 +1,10 @@
-import FV.Backend.Lowering.StockPrologueAll
-import FV.Backend.Proof.StockPrologueAllChecker
-import FV.Backend.Proof.StockPrologueSelect
+module
+
+public import FV.Backend.Lowering.StockPrologueAll
+public import FV.Backend.Proof.StockPrologueAllChecker
+public import FV.Backend.Proof.StockPrologueSelect
+
+@[expose] public section
 
 set_option autoImplicit false
 namespace Backend.Stock.Prologue.AllConfigurations

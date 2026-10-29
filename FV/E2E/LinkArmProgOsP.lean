@@ -1,7 +1,11 @@
-import FV.E2E.LinkArmProgCallP
-import FV.E2E.LinkArmProphReg
-import FV.E2E.RegLevelCallN
-import FV.E2E.RegLevelTryP
+module
+
+public import FV.E2E.LinkArmProgCallP
+public import FV.E2E.LinkArmProphReg
+public import FV.E2E.RegLevelCallN
+public import FV.E2E.RegLevelTryP
+
+@[expose] public section
 
 /-!
 # The call contract of call number `n` with both prophecies (SEM1 step 2s, `docs/plans/uninit.md` §5.8)

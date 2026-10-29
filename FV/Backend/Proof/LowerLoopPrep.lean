@@ -1,6 +1,10 @@
-import FV.Backend.Proof.LowerLoopSim
-import FV.Backend.Proof.IselTermFacts
-import FV.Backend.Proof.DriverCheckSound
+module
+
+public import FV.Backend.Proof.LowerLoopSim
+public import FV.Backend.Proof.IselTermFacts
+public import FV.Backend.Proof.DriverCheckSound
+
+@[expose] public section
 
 /-!
 # The VCode of `lowerFunction` is in `PrepDomain`

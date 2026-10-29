@@ -1,4 +1,8 @@
-import FV.E2E.RegLevelCorrectC
+module
+
+public import FV.E2E.RegLevelCorrectC
+
+@[expose] public section
 
 /-!
 # The register-level theorem with the refined (prophecy) call contract (SEM1 #537, step 2l)

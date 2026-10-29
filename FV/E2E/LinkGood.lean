@@ -1,5 +1,9 @@
-import FV.E2E.LinkArm
-import FV.E2E.LinkWorldX
+module
+
+public import FV.E2E.LinkArm
+public import FV.E2E.LinkWorldX
+
+@[expose] public section
 
 /-! # The per-state facts of the linked machine's runs (L3 (c))
 

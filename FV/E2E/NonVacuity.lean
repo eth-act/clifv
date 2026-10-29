@@ -1,4 +1,8 @@
-import FV.E2E.Link
+module
+
+public import FV.E2E.Link
+
+@[expose] public section
 
 /-! # Non-vacuity of the callee contracts (docs/contracts/e2e.md, "Non-vacuity")
 

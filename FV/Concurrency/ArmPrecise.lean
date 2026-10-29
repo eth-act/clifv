@@ -1,5 +1,9 @@
-import FV.Concurrency.VCodeThread
-import FV.Concurrency.ProgramE2E
+module
+
+public import FV.Concurrency.VCodeThread
+public import FV.Concurrency.ProgramE2E
+
+@[expose] public section
 
 /-!
 # Precise labels of Arm thread steps (T2h, #311)

@@ -1,7 +1,11 @@
-import FV.Opt.Proof.RuleInfraIcmp
-import FV.Opt.Proof.RuleInfraConst
-import FV.Opt.Proof.RuleSpaceshipUnsigned
-import FV.Opt.Proof.RuleSpaceshipSigned
+module
+
+public import FV.Opt.Proof.RuleInfraIcmp
+public import FV.Opt.Proof.RuleInfraConst
+public import FV.Opt.Proof.RuleSpaceshipUnsigned
+public import FV.Opt.Proof.RuleSpaceshipSigned
+
+@[expose] public section
 
 /-! Shared graph semantics of the two spaceship RHS forms. Type queries may fail;
 poison results and exceptions do not produce a returned e-class. -/

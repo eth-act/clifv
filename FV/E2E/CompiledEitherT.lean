@@ -1,5 +1,9 @@
-import FV.E2E.DeadCleanupPairT
-import FV.E2E.CompiledEither
+module
+
+public import FV.E2E.DeadCleanupPairT
+public import FV.E2E.CompiledEither
+
+@[expose] public section
 
 /-! # The typed per-state world theorems and the typed `CompiledEither` dispatch
 (S11e5 Stage C, slice 7)

@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockPureDriverUnsunk
-import FV.Backend.Proof.StockTerminalDriverWitness
+module
+
+public import FV.Backend.Proof.StockPureDriverUnsunk
+public import FV.Backend.Proof.StockTerminalDriverWitness
+
+@[expose] public section
 
 /-! Actual critical-edge and effectful runs inhabit the complete driver frame.
 These reuse the existing kernel witnesses and retain their original claims. -/

@@ -1,4 +1,8 @@
-import FV.Backend.LinearScan
+module
+
+public import FV.Backend.LinearScan
+
+@[expose] public section
 
 /-!
 # Segment arrays of the Lean allocator (V4b-3, #275)

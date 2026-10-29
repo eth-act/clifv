@@ -1,6 +1,10 @@
-import FV.Backend.Proof.StockEntryAssembly
-import FV.Backend.Proof.StockEntryArgs
-import FV.Backend.Proof.StockEntryLoads
+module
+
+public import FV.Backend.Proof.StockEntryAssembly
+public import FV.Backend.Proof.StockEntryArgs
+public import FV.Backend.Proof.StockEntryLoads
+
+@[expose] public section
 
 namespace Backend.Stock.Proof
 open Backend.Proof Backend.Proof.Driver Isle Isle.Aarch64

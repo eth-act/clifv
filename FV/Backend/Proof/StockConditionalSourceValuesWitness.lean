@@ -1,11 +1,15 @@
-import FV.Backend.Proof.StockConditionalParameterSelection
-import FV.Backend.Proof.StockConditionalNoDefs
-import FV.Backend.Proof.LowerLoopRun
-import FV.Backend.Proof.StockConditionalCallValues
-import FV.Backend.Proof.StockConditionalCallsWitness
-import FV.Backend.Proof.StockOriginalConditionPrefix
-import FV.Backend.Proof.StockConditionalSourceValues
-import FV.Backend.Proof.StockConditionalTargetsWitness
+module
+
+public import FV.Backend.Proof.StockConditionalParameterSelection
+public import FV.Backend.Proof.StockConditionalNoDefs
+public import FV.Backend.Proof.LowerLoopRun
+public import FV.Backend.Proof.StockConditionalCallValues
+public import FV.Backend.Proof.StockConditionalCallsWitness
+public import FV.Backend.Proof.StockOriginalConditionPrefix
+public import FV.Backend.Proof.StockConditionalSourceValues
+public import FV.Backend.Proof.StockConditionalTargetsWitness
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.ConditionalValues.SourceWitness
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

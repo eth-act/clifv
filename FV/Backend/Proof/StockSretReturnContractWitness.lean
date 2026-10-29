@@ -1,4 +1,8 @@
-import FV.Backend.Proof.StockBodyScanOrigin
+module
+
+public import FV.Backend.Proof.StockBodyScanOrigin
+
+@[expose] public section
 
 /-! Record the actual implicit struct-return ABI boundary before transporting
 legacy return semantics. Stock's x8 pin does not satisfy the legacy fixed x0..

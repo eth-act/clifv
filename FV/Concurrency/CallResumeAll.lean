@@ -1,7 +1,11 @@
-import FV.Concurrency.CallCalleeRet
-import FV.Concurrency.CallRetPremises
-import FV.Concurrency.CallRetsN
-import FV.E2E.RegLevelU
+module
+
+public import FV.Concurrency.CallCalleeRet
+public import FV.Concurrency.CallRetPremises
+public import FV.Concurrency.CallRetsN
+public import FV.E2E.RegLevelU
+
+@[expose] public section
 
 /-!
 # The caller's pause at a call, at every layer (#473, step (3))

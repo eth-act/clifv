@@ -1,4 +1,8 @@
-import FV.Concurrency.ArmAllocMove
+module
+
+public import FV.Concurrency.ArmAllocMove
+
+@[expose] public section
 
 /-!
 # Precise Arm runs of compiled code, forward (T2k, #311)

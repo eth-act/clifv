@@ -1,6 +1,10 @@
-import FV.Backend.Proof.PerEdgeSpillCycleFixture
-import FV.Backend.Proof.StockSpillCopyMetadata
-import FV.Backend.Proof.PerEdgeSpillEntryFixture
+module
+
+public import FV.Backend.Proof.PerEdgeSpillCycleFixture
+public import FV.Backend.Proof.StockSpillCopyMetadata
+public import FV.Backend.Proof.PerEdgeSpillEntryFixture
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.SpillCopyMetadataWitness
 open Backend.Proof Backend.Proof.Driver Backend.Proof.PerEdgeSpill Backend.Proof.Spill

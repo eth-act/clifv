@@ -1,4 +1,8 @@
-import FV.Backend.Proof.IselCmpDivRem
+module
+
+public import FV.Backend.Proof.IselCmpDivRem
+
+@[expose] public section
 
 /-!
 # Family C: `sdiv` with the overflow check (rules 1145, 1153)

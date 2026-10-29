@@ -1,5 +1,10 @@
-import FV.Backend.Proof.StockBswapSelected
-import FV.Backend.Proof.StockGuardedRecordValues
+module
+
+public import FV.Backend.Proof.StockBswapSelected
+public import FV.Backend.Proof.StockGuardedRecordValues
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarBit
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 set_option maxRecDepth 20000

@@ -1,6 +1,10 @@
-import FV.Opt.Proof.CompleteRecheck
-import FV.Opt.Proof.CompleteLicmPass
-import FV.Opt.OptimizeX
+module
+
+public import FV.Opt.Proof.CompleteRecheck
+public import FV.Opt.Proof.CompleteLicmPass
+public import FV.Opt.OptimizeX
+
+@[expose] public section
 
 /-!
 # The final guards of the mid-end (M1)

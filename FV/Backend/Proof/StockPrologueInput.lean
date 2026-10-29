@@ -1,5 +1,9 @@
-import FV.Backend.Lowering.StockPrologue
-import FV.Backend.Proof.StockPrologueSource
+module
+
+public import FV.Backend.Lowering.StockPrologue
+public import FV.Backend.Proof.StockPrologueSource
+
+@[expose] public section
 
 set_option autoImplicit false
 namespace Backend.Stock.Prologue

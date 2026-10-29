@@ -1,5 +1,9 @@
-import FV.Concurrency.CallSeg
-import FV.Concurrency.RealizeWitnessRmw
+module
+
+public import FV.Concurrency.CallSeg
+public import FV.Concurrency.RealizeWitnessRmw
+
+@[expose] public section
 
 /-!
 # A compiled caller of the compiled `atomic_rmw`: data and checks (T2h, #311, calls)

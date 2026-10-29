@@ -1,6 +1,10 @@
-import FV.Concurrency.CallSegOkGT
-import FV.Concurrency.CallSegCallWitness
-import FV.Concurrency.CallEntryRelWitness
+module
+
+public import FV.Concurrency.CallSegOkGT
+public import FV.Concurrency.CallSegCallWitness
+public import FV.Concurrency.CallEntryRelWitness
+
+@[expose] public section
 
 /-!
 # Witness: the static premises of the link of the caller and `atomic_load` (#473, steps 3 and 4)

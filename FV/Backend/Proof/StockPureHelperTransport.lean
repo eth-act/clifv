@@ -1,6 +1,10 @@
-import FV.Backend.Proof.StockProjection
-import FV.Backend.Proof.IselScopedProjection
-import FV.Backend.Proof.IselFlowGen
+module
+
+public import FV.Backend.Proof.StockProjection
+public import FV.Backend.Proof.IselScopedProjection
+public import FV.Backend.Proof.IselFlowGen
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.PureHelper
 open Isle Isle.Interp Isle.Aarch64

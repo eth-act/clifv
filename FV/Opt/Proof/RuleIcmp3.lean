@@ -1,4 +1,8 @@
-import FV.Opt.Proof.RuleIntSplit
+module
+
+public import FV.Opt.Proof.RuleIntSplit
+
+@[expose] public section
 
 /-!
 # `opts/icmp.isle` (part 3): proven `simplify` rules

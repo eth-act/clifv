@@ -1,4 +1,9 @@
-import FV.Backend.Proof.IselPrgRootTF
+module
+
+public import FV.Backend.Proof.IselPrgRootTF
+public import FVTest.ModuleHeader
+
+@[expose] public section
 
 /-!
 # Generator of the progress summary tables over the typed scope
@@ -418,7 +423,7 @@ surely returns a value within the interpreter's fuel. `f64TabF_ok`: the `f64cons
     out := out ++ s!"\ntheorem f64TabF{c}_ok : (f64Tab{c}).all f64TabFEntryOk = true := by\n  simp only [f64Tab{c}, List.all_cons, List.all_nil, Bool.and_eq_true, and_true]\n  repeat' apply And.intro\n  all_goals decide +kernel\n"
   out := out ++ "\n/-- **`f64Tab` checks under `aextTF`.** -/\ntheorem f64TabF_ok : chkTab program f64Tab aextTF actorT aidata (fun _ => none) = true := by\n  unfold chkTab\n  show (f64Tab).all f64TabFEntryOk = true\n  simp only [f64Tab, List.all_append, " ++ ", ".intercalate ((List.range nch).map fun c => s!"f64TabF{c}_ok") ++ ", Bool.and_self]\n"
   out := out ++ "\nend Backend.Proof.Prg\n"
-  IO.FS.writeFile path out
+  IO.FS.writeFile path (Gen.moduleHeader out)
   IO.println s!"wrote {path}: {tab.length} entries"
 
 open PrgGenT in
@@ -462,7 +467,7 @@ within the interpreter's fuel. -/\ndef stmtRootOkT (F : PA) : Bool :=\n  match t
     out := out ++ "\n/-- **Every statement root checks.** -/\ntheorem stmtRootsT_ok : stmtFormsT.all stmtRootOkT = true := by\n  decide +kernel\n"
     out := out ++ "\n/-- **Every terminator root checks.** -/\ntheorem termRootsT_ok : termRootsT.all termRootOkT = true := by\n  decide +kernel\n"
     out := out ++ "\nend Backend.Proof.Prg\n"
-    IO.FS.writeFile path out
+    IO.FS.writeFile path (Gen.moduleHeader out)
     IO.println s!"wrote {path}: {tab.length} entries"
     let mut fout := header "# Progress of the ISLE lowering over the typed scope: the `f64const` sub-table
 
@@ -471,6 +476,6 @@ from the roots `f64Roots` without the entry of `constant_f64` on `f64Hi` (whose 
 literal pool), and without hand-checked rules. `f64Tab_ok`: every entry checks (`chkTab`)."
     fout := fout ++ tabSrc "f64Tab" "(fun _ => none)" ftab
     fout := fout ++ "\nend Backend.Proof.Prg\n"
-    IO.FS.writeFile fpath fout
+    IO.FS.writeFile fpath (Gen.moduleHeader fout)
     IO.println s!"wrote {fpath}: {ftab.length} entries"
   | _ => pure ()

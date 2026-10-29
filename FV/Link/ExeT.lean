@@ -1,6 +1,10 @@
-import FV.Link.Exe
-import FV.E2E.ExecProvenT
-import FV.E2E.LinkScopeIntT
+module
+
+public import FV.Link.Exe
+public import FV.E2E.ExecProvenT
+public import FV.E2E.LinkScopeIntT
+
+@[expose] public section
 
 /-! # The executable compiler on the typed scope (S11e5 Stage C, slice 8)
 

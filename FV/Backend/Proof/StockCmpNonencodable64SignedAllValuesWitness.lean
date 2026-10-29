@@ -1,6 +1,10 @@
-import FV.Backend.Proof.StockCmpNonencodable64DriverRuns
-import FV.Backend.Proof.StockCmpNonencodableSourceValues
-import FV.Backend.Proof.LowerSim
+module
+
+public import FV.Backend.Proof.StockCmpNonencodable64DriverRuns
+public import FV.Backend.Proof.StockCmpNonencodableSourceValues
+public import FV.Backend.Proof.LowerSim
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.ScalarCmp.Nonencodable64SignedAllValuesWitness
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

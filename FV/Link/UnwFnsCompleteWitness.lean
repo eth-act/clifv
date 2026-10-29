@@ -1,5 +1,9 @@
-import FV.Link.UnwFnsComplete
-import FV.E2E.DeadCleanupUnwindWitness
+module
+
+public import FV.Link.UnwFnsComplete
+public import FV.E2E.DeadCleanupUnwindWitness
+
+@[expose] public section
 
 /-!
 # Witness: the completeness theorems of the unwinding checks apply (S10g, #404)

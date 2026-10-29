@@ -1,4 +1,8 @@
-import FV.Backend.Proof.IselFamAluBShiftTerms
+module
+
+public import FV.Backend.Proof.IselFamAluBShiftTerms
+
+@[expose] public section
 
 /-!
 # Family B: the scalar shift root rules (`ishl`/`ushr`/`sshr`, `lower.isle:1545–1699`)

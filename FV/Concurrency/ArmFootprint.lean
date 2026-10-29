@@ -1,4 +1,8 @@
-import FV.Arm.Exec
+module
+
+public import FV.Arm.Exec
+
+@[expose] public section
 
 /-!
 # Memory footprints of the Arm model's instructions (T2d, #302)

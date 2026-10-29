@@ -1,6 +1,10 @@
-import FV.Backend.Proof.LSRun
-import FV.Backend.Proof.LSTermFixed
-import FV.Backend.Proof.SpillStep4Edge
+module
+
+public import FV.Backend.Proof.LSRun
+public import FV.Backend.Proof.LSTermFixed
+public import FV.Backend.Proof.SpillStep4Edge
+
+@[expose] public section
 
 /-!
 # The checker accepts the Lean allocator's validated plans (V4b-3, #275): edges without arguments

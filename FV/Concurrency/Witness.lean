@@ -1,4 +1,8 @@
-import FV.Concurrency.Interleave
+module
+
+public import FV.Concurrency.Interleave
+
+@[expose] public section
 
 /-!
 # Non-vacuity witnesses for the memory-model theorems (T2, #38)

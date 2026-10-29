@@ -2,7 +2,11 @@
 Copyright (c) 2026 fv-compiler-rust contributors.
 Released under Apache 2.0 license; see third_party/NOTICE-lnsym.md.
 -/
-import FV.Arm.Exec
+module
+
+public import FV.Arm.Exec
+
+@[expose] public section
 
 /-! # The thread pointer `TPIDR_EL0` (FV addition)
 

@@ -1,5 +1,10 @@
-import FV.Backend.Proof.StockRotateMatch
-import FV.Backend.Proof.StockShiftMatch
+module
+
+public import FV.Backend.Proof.StockRotateMatch
+public import FV.Backend.Proof.StockShiftMatch
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarRotate
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 set_option maxRecDepth 20000

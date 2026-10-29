@@ -1,9 +1,13 @@
-import FV.Concurrency.CallRetT
-import FV.Concurrency.CallValid
-import FV.Concurrency.CallSegLift
-import FV.Concurrency.CallStepT
-import FV.Concurrency.CallEntryLink
-import FV.Concurrency.CallSegAbi
+module
+
+public import FV.Concurrency.CallRetT
+public import FV.Concurrency.CallValid
+public import FV.Concurrency.CallSegLift
+public import FV.Concurrency.CallStepT
+public import FV.Concurrency.CallEntryLink
+public import FV.Concurrency.CallSegAbi
+
+@[expose] public section
 
 /-!
 # `SegOkG` for compiled activations: the segment ends (#473, step (4))

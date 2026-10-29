@@ -1,5 +1,9 @@
-import FV.Backend.Proof.IselCmpSelect
-import FV.Backend.Proof.IselFamALUA
+module
+
+public import FV.Backend.Proof.IselCmpSelect
+public import FV.Backend.Proof.IselFamALUA
+
+@[expose] public section
 
 /-!
 # Family C: integer `umin`/`smin`/`umax`/`smax` (1222/1224/1226/1228)

@@ -1,5 +1,9 @@
-import FV.Concurrency.VCodeFrame
-import FV.Concurrency.VCodeThreadWitness
+module
+
+public import FV.Concurrency.VCodeFrame
+public import FV.Concurrency.VCodeThreadWitness
+
+@[expose] public section
 
 /-!
 # Non-vacuity of `VCodeAddr.cEvs_avoid` (T2h, #311, layer 2a)

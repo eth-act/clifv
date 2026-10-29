@@ -1,4 +1,9 @@
-import FV.Backend.Proof.StockBitHelper
+module
+
+public import FV.Backend.Proof.StockBitHelper
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarCount
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 set_option maxRecDepth 20000

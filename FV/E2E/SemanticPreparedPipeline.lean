@@ -1,5 +1,9 @@
-import FV.E2E.LinkSemanticNI
-import FV.E2E.SemanticPipelineCheck
+module
+
+public import FV.E2E.LinkSemanticNI
+public import FV.E2E.SemanticPipelineCheck
+
+@[expose] public section
 
 /-! Pipeline provenance for transactional production attempts. Every successful
 artifact retains the original preparation, allocation, emission and layout facts;

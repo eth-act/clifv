@@ -1,7 +1,11 @@
-import Corpus.Arith
-import Corpus.Vectors
-import Corpus.Errors
-import Corpus.Maps
+module
+
+public import Corpus.Arith
+public import Corpus.Vectors
+public import Corpus.Errors
+public import Corpus.Maps
+
+@[expose] public section
 
 /-! User-level correctness proofs about shallow definitions (never about the deep AST). -/
 

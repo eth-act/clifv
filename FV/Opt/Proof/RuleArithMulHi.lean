@@ -1,5 +1,9 @@
-import FV.Opt.Proof.RuleArithMulHiSem
-import FV.Opt.Proof.RuleInfraIcmp
+module
+
+public import FV.Opt.Proof.RuleArithMulHiSem
+public import FV.Opt.Proof.RuleInfraIcmp
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 set_option maxHeartbeats 4000000

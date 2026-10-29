@@ -1,5 +1,9 @@
-import FVTest.E2E.FloatChecksT2
-import FV.E2E.LinkScopeCtlT2
+module
+
+public import FVTest.E2E.FloatChecksT2
+public import FV.E2E.LinkScopeCtlT2
+
+@[expose] public section
 
 /-!
 # Witnesses: the control-form checks on `fnScopeInTB2` (S11 #35)

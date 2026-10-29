@@ -1,6 +1,10 @@
-import FV.E2E.LegalWideWitness
-import FV.E2E.RetypeLegal
-import FV.Opt.Proof.RetypeWitness
+module
+
+public import FV.E2E.LegalWideWitness
+public import FV.E2E.RetypeLegal
+public import FV.Opt.Proof.RetypeWitness
+
+@[expose] public section
 
 /-!
 # Non-vacuity of the retyped-data-movement theorem (S12e, #36)

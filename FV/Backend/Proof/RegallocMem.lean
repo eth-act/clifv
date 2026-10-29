@@ -1,4 +1,8 @@
-import FV.Backend.Proof.RegallocCSem
+module
+
+public import FV.Backend.Proof.RegallocCSem
+
+@[expose] public section
 
 /-!
 # Loads and stores on the Arm model (M6 proof)

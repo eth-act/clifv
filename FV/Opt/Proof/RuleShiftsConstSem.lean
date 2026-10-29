@@ -1,4 +1,8 @@
-import FV.Opt.Proof.RuleInfraConst
+module
+
+public import FV.Opt.Proof.RuleInfraConst
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 set_option maxHeartbeats 4000000

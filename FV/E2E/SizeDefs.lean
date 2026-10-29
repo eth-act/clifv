@@ -1,5 +1,9 @@
-import FV.E2E.EmitSize
-import FV.Backend.Proof.IselSzDefs
+module
+
+public import FV.E2E.EmitSize
+public import FV.Backend.Proof.IselSzDefs
+
+@[expose] public section
 
 /-!
 # The size bound from the input (V6c): measures

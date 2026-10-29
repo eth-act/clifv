@@ -1,5 +1,9 @@
-import FV.Concurrency.CallArgsL2
-import FV.Concurrency.CallArityWitness
+module
+
+public import FV.Concurrency.CallArgsL2
+public import FV.Concurrency.CallArityWitness
+
+@[expose] public section
 
 /-!
 # Witness for `CallArgsL2` (#473)

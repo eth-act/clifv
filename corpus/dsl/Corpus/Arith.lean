@@ -1,4 +1,8 @@
-import FV.DSL
+module
+
+public import FV.DSL
+
+@[expose] public section
 
 /-! Corpus: scalar arithmetic at all four widths (checked, wrapping, division, casts, bits). -/
 

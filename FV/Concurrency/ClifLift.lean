@@ -1,4 +1,8 @@
-import FV.Concurrency.ClifCStepTerm
+module
+
+public import FV.Concurrency.ClifCStepTerm
+
+@[expose] public section
 
 /-!
 # Lifting CLIF thread runs below suspended callers (T2h, #311, layer 4b)

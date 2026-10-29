@@ -1,5 +1,9 @@
-import FV.Concurrency.ClifCStep
-import FV.Backend.Proof.LowerSim
+module
+
+public import FV.Concurrency.ClifCStep
+public import FV.Backend.Proof.LowerSim
+
+@[expose] public section
 
 /-!
 # CLIF thread steps without events, CLIF thread runs (T2h, #311, layer 2e)

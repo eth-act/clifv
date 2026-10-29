@@ -1,5 +1,9 @@
-import FV.E2E.ExecReads
-import FV.ArmFault.Step
+module
+
+public import FV.E2E.ExecReads
+public import FV.ArmFault.Step
+
+@[expose] public section
 
 /-! # The memory writes of the backend's instructions (A3, #412, slice F8b)
 

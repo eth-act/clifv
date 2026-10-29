@@ -1,7 +1,11 @@
-import FV.Concurrency.CallRetPremises
-import FV.Concurrency.CallCalleeRet
-import FV.Concurrency.LinkedMachine
-import FV.E2E.LinkArm
+module
+
+public import FV.Concurrency.CallRetPremises
+public import FV.Concurrency.CallCalleeRet
+public import FV.Concurrency.LinkedMachine
+public import FV.E2E.LinkArm
+
+@[expose] public section
 
 /-!
 # The return end of a callee's segment on the linked machine (#473, step (4))

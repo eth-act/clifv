@@ -1,8 +1,11 @@
-import FV.E2E.StockLogicalExtrWitness
-import FV.Backend.Proof.StockLogicalExtrMatchedValues
-import FV.Backend.Proof.StockLogicalExtrSelectedValues
-import FV.Backend.Proof.StockLogicalExtrSourceTransfer
+module
 
+public import FV.E2E.StockLogicalExtrWitness
+public import FV.Backend.Proof.StockLogicalExtrMatchedValues
+public import FV.Backend.Proof.StockLogicalExtrSelectedValues
+public import FV.Backend.Proof.StockLogicalExtrSourceTransfer
+
+@[expose] public section
 
 namespace E2E.StockLogicalExtrWitness
 open Backend Backend.Proof Backend.Proof.Driver Backend.Stock.D0 Backend.Stock.Proof

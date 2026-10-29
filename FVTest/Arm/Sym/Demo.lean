@@ -6,9 +6,13 @@ Symbolic-simulation demos for the `FV.Arm` model with the ported LNSym `sym_n` t
 `docs/contracts/arm.md`, "Tactic API"). Both programs are straight-line code ending in `ret`,
 the shape the M3 translation validator checks.
 -/
-import FV.Arm.Exec
-import FV.Arm.Tactics.Sym
-import FV.Arm.Tactics.StepThms
+module
+
+public import FV.Arm.Exec
+public import FV.Arm.Tactics.Sym
+public import FV.Arm.Tactics.StepThms
+
+@[expose] public section
 
 namespace Arm.SymDemo
 

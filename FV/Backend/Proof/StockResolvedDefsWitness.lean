@@ -1,6 +1,10 @@
-import FV.Backend.Proof.IselTermFactsBase
-import FV.Backend.Proof.StockResolvedDefs
-import FV.Backend.Proof.IselCmpExt
+module
+
+public import FV.Backend.Proof.IselTermFactsBase
+public import FV.Backend.Proof.StockResolvedDefs
+public import FV.Backend.Proof.IselCmpExt
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.Resolved
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

@@ -1,5 +1,9 @@
-import FV.E2E.RegLevelCorrectPRS
-import FV.E2E.RegLevelCorrectPRR
+module
+
+public import FV.E2E.RegLevelCorrectPRS
+public import FV.E2E.RegLevelCorrectPRR
+
+@[expose] public section
 
 /-!
 # `RegLevelCorrectPRS` with the located reads (SEM1 #537, step 3p)

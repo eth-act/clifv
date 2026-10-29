@@ -1,4 +1,9 @@
-import FV.Backend.Proof.StockMulValues
+module
+
+public import FV.Backend.Proof.StockMulValues
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarMul.Fused
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 open Backend.Stock.Proof.ScalarMul

@@ -1,10 +1,14 @@
-import FVTest.Backend.FloatCtlT
-import FV.Backend.Proof.DriverCheckT
-import FV.Backend.Proof.IselCtlUnmatchTI
-import FV.Backend.Proof.IselCtlTermTI
-import FV.Backend.Proof.IselCtlBranchTI
-import FV.Backend.Proof.IselCtlTryTI
-import FV.Compile.TryArgClass
+module
+
+public import FVTest.Backend.FloatCtlT
+public import FV.Backend.Proof.DriverCheckT
+public import FV.Backend.Proof.IselCtlUnmatchTI
+public import FV.Backend.Proof.IselCtlTermTI
+public import FV.Backend.Proof.IselCtlBranchTI
+public import FV.Backend.Proof.IselCtlTryTI
+public import FV.Compile.TryArgClass
+
+@[expose] public section
 
 /-!
 Non-vacuity of the typed control families (S11e5 Stage C, slice 5). `buildCtx`'s contexts of

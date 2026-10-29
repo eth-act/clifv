@@ -1,6 +1,10 @@
-import FV.Backend.Proof.StockPolicy
-import FV.Backend.Proof.IselInterp
-import FV.Backend.Proof.IselGeneric
+module
+
+public import FV.Backend.Proof.StockPolicy
+public import FV.Backend.Proof.IselInterp
+public import FV.Backend.Proof.IselGeneric
+
+@[expose] public section
 
 /-! Successful eligible-source extraction followed by effect sinking identifies
 an actual single-result producer. This is an internal helper invariant for

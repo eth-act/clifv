@@ -1,6 +1,10 @@
-import FV.Backend.Proof.StockBmaskMatch
-import FV.Backend.Proof.StockBmaskSemantics
-import FV.Backend.Proof.StockFreshRecordValues
+module
+
+public import FV.Backend.Proof.StockBmaskMatch
+public import FV.Backend.Proof.StockBmaskSemantics
+public import FV.Backend.Proof.StockFreshRecordValues
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.ScalarMask
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

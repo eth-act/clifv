@@ -1,6 +1,10 @@
-import FV.Backend.Proof.IselCtl
-import FV.Backend.Proof.IselCtlBranch
-import FV.Backend.Proof.IselCtlCall
+module
+
+public import FV.Backend.Proof.IselCtl
+public import FV.Backend.Proof.IselCtlBranch
+public import FV.Backend.Proof.IselCtlCall
+
+@[expose] public section
 
 /-! Axiom audit of the control-flow family (Ctl). -/
 

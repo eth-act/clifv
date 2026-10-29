@@ -1,5 +1,9 @@
-import FV.E2E.LinkPlace
-import FV.E2E.LegalProgram
+module
+
+public import FV.E2E.LinkPlace
+public import FV.E2E.LegalProgram
+
+@[expose] public section
 
 /-! # Bounded memories of whole-program runs from a stack budget (A2/B1)
 

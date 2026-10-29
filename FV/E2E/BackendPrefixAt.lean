@@ -1,5 +1,9 @@
-import FV.E2E.PrefixRelated
-import FV.E2E.RegLevelPrefixG
+module
+
+public import FV.E2E.PrefixRelated
+public import FV.E2E.RegLevelPrefixG
+
+@[expose] public section
 
 /-!
 # The counted pipeline at call `N` itself (SEM1 #537, #680 (3), `docs/plans/uninit.md` §5.9 (P1))

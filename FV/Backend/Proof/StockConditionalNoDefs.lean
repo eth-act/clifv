@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockConditionalCallValues
-import FV.Backend.Proof.StockSelectNonzeroWideShape
+module
+
+public import FV.Backend.Proof.StockConditionalCallValues
+public import FV.Backend.Proof.StockSelectNonzeroWideShape
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.ConditionalValues
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

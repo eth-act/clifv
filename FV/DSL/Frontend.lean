@@ -1,5 +1,9 @@
-import Lean
-import FV.DSL.Check
+module
+
+public import Lean
+public import FV.DSL.Check
+
+@[expose] public section
 
 /-!
 # The `flat def` command

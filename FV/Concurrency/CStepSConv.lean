@@ -1,4 +1,8 @@
-import FV.Concurrency.CallComposeT
+module
+
+public import FV.Concurrency.CallComposeT
+
+@[expose] public section
 
 /-!
 # `CStep` runs as `CStepS` runs (#473, step (4))

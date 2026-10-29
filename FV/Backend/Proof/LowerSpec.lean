@@ -1,4 +1,8 @@
-import FV.Backend.Proof.DriverCheckSound
+module
+
+public import FV.Backend.Proof.DriverCheckSound
+
+@[expose] public section
 
 /-!
 # Completeness of `lowerCheck`: the shared definitions

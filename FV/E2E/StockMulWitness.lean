@@ -1,9 +1,13 @@
-import FV.E2E.StockMulFixtures
-import FV.E2E.StockNotWitness
-import FV.E2E.StockScalarNI
-import FV.E2E.CompiledSemanticNI
-import FV.Backend.LinearScan
-import FV.Backend.Lowering.StockD0
+module
+
+public import FV.E2E.StockMulFixtures
+public import FV.E2E.StockNotWitness
+public import FV.E2E.StockScalarNI
+public import FV.E2E.CompiledSemanticNI
+public import FV.Backend.LinearScan
+public import FV.Backend.Lowering.StockD0
+
+@[expose] public section
 
 namespace E2E.StockMulNIWitness
 open Backend Backend.Proof Backend.Proof.Driver Backend.Stock.D0

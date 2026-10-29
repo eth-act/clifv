@@ -1,5 +1,9 @@
-import FV.Opt.Proof.RuleSkelEmbed
-import FV.Opt.Proof.RuleInfraDivConst
+module
+
+public import FV.Opt.Proof.RuleSkelEmbed
+public import FV.Opt.Proof.RuleInfraDivConst
+
+@[expose] public section
 
 /-!
 # `simplify_skeleton` rules: division by a constant via magic numbers

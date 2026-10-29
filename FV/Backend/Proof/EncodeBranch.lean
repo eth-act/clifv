@@ -1,4 +1,8 @@
-import FV.Backend.Proof.Encode
+module
+
+public import FV.Backend.Proof.Encode
+
+@[expose] public section
 
 /-!
 # M5: label-relative operands and the branch-range policy

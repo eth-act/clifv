@@ -1,5 +1,9 @@
-import FV.E2E.WorldUnwindNI
-import FV.E2E.WorldUnwindWitness
+module
+
+public import FV.E2E.WorldUnwindNI
+public import FV.E2E.WorldUnwindWitness
+
+@[expose] public section
 
 /-!
 # Non-vacuity of the per-function world theorem with unwinding and non-interference (S10f, #233)

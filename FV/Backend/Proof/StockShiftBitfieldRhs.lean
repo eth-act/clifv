@@ -1,6 +1,11 @@
-import FV.Backend.Proof.StockShiftBitfieldHelper
-import FV.Backend.Proof.StockRequestSuccess
-import FV.Backend.Proof.StockShiftBitfieldMatch
+module
+
+public import FV.Backend.Proof.StockShiftBitfieldHelper
+public import FV.Backend.Proof.StockRequestSuccess
+public import FV.Backend.Proof.StockShiftBitfieldMatch
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ShiftBitfield
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 set_option autoImplicit false

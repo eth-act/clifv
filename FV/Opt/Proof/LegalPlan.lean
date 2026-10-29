@@ -1,8 +1,12 @@
-import FV.Opt.Proof.LegalExt
-import FV.Opt.Proof.LegalShift8
-import FV.Opt.Proof.LegalShift16
-import FV.Opt.Proof.LegalShift32
-import FV.Opt.Proof.LegalShift64
+module
+
+public import FV.Opt.Proof.LegalExt
+public import FV.Opt.Proof.LegalShift8
+public import FV.Opt.Proof.LegalShift16
+public import FV.Opt.Proof.LegalShift32
+public import FV.Opt.Proof.LegalShift64
+
+@[expose] public section
 
 /-!
 # A statement with a pure plan

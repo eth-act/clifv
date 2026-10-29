@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockConditionalCalls
-import FV.Backend.Proof.StockConditionalTargetsWitness
+module
+
+public import FV.Backend.Proof.StockConditionalCalls
+public import FV.Backend.Proof.StockConditionalTargetsWitness
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.ConditionalCalls
 set_option maxRecDepth 20000

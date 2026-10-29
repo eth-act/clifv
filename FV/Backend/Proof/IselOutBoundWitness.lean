@@ -1,4 +1,8 @@
-import FV.Backend.Proof.IselOutBoundRun
+module
+
+public import FV.Backend.Proof.IselOutBoundRun
+
+@[expose] public section
 
 /-!
 # Witness: `lowerFunction_outgoing_le` is tight on a call with stack arguments (S10g, #404)

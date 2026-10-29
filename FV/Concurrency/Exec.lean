@@ -1,4 +1,8 @@
-import FV.Concurrency.Rel
+module
+
+public import FV.Concurrency.Rel
+
+@[expose] public section
 
 /-!
 # Execution graphs (T2, #38)

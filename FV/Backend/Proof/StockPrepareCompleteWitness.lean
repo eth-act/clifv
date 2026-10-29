@@ -1,7 +1,11 @@
-import FV.Backend.Proof.StockPrepareComplete
-import FV.Backend.Proof.StockPreparedForwardWitness
-import FV.Backend.Proof.StockPerEdgeCriticalAllocatorWitness
-import FV.Backend.Proof.PerEdgePrepareWitness
+module
+
+public import FV.Backend.Proof.StockPrepareComplete
+public import FV.Backend.Proof.StockPreparedForwardWitness
+public import FV.Backend.Proof.StockPerEdgeCriticalAllocatorWitness
+public import FV.Backend.Proof.PerEdgePrepareWitness
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.PrepareCompleteWitness
 open Backend.Proof Backend.Proof.Driver

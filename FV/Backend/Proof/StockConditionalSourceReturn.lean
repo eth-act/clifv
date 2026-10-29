@@ -1,6 +1,10 @@
-import FV.Backend.Proof.StockConditionalGuardedLast
-import FV.Backend.Proof.StockTermAvailability
-import FV.Backend.Proof.StockArithmeticTerminalDefined
+module
+
+public import FV.Backend.Proof.StockConditionalGuardedLast
+public import FV.Backend.Proof.StockTermAvailability
+public import FV.Backend.Proof.StockArithmeticTerminalDefined
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.ConditionalValues
 open Backend.Proof Backend.Proof.Driver

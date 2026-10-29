@@ -1,78 +1,82 @@
-import FV.Opt.Proof.RuleArith
-import FV.Opt.Proof.RuleCprop
-import FV.Opt.Proof.RuleBitops1
-import FV.Opt.Proof.RuleBitops2
-import FV.Opt.Proof.RuleBitops3
-import FV.Opt.Proof.RuleBitops4
-import FV.Opt.Proof.RuleBitops5
-import FV.Opt.Proof.RuleBitops6
-import FV.Opt.Proof.RuleBitops7
-import FV.Opt.Proof.RuleIcmp1
-import FV.Opt.Proof.RuleIcmp2
-import FV.Opt.Proof.RuleIcmp3
-import FV.Opt.Proof.RuleIcmp4
-import FV.Opt.Proof.RuleIcmp5
-import FV.Opt.Proof.RuleIcmp6
-import FV.Opt.Proof.RuleIcmp7
-import FV.Opt.Proof.RuleIcmp8
-import FV.Opt.Proof.RuleSelects1
-import FV.Opt.Proof.RuleSelects2
-import FV.Opt.Proof.RuleSelects3
-import FV.Opt.Proof.RuleSelects4
-import FV.Opt.Proof.RuleSelects5
-import FV.Opt.Proof.RuleSelects6
-import FV.Opt.Proof.RuleExtends
-import FV.Opt.Proof.RuleExtends2
-import FV.Opt.Proof.RuleShifts1
-import FV.Opt.Proof.RuleShifts2
-import FV.Opt.Proof.RuleSpaceship
-import FV.Opt.Proof.RuleSpaceshipSelects
-import FV.Opt.Proof.RuleIcmp9
-import FV.Opt.Proof.RuleShifts3
-import FV.Opt.Proof.RuleShifts4
-import FV.Opt.Proof.RuleShifts5
-import FV.Opt.Proof.RuleShiftsConst
-import FV.Opt.Proof.RuleShiftsRotate
-import FV.Opt.Proof.RuleShiftsDistribution
-import FV.Opt.Proof.RuleArith2
-import FV.Opt.Proof.RuleArith3
-import FV.Opt.Proof.RuleArith4
-import FV.Opt.Proof.RuleArith5
-import FV.Opt.Proof.RuleCprop2
-import FV.Opt.Proof.RuleRemat
-import FV.Opt.Proof.RuleArith6
-import FV.Opt.Proof.RuleArith7
-import FV.Opt.Proof.RuleSelects7
-import FV.Opt.Proof.RuleBitops8
-import FV.Opt.Proof.RuleBitops9
-import FV.Opt.Proof.RuleBitops10
-import FV.Opt.Proof.RuleCprop3
-import FV.Opt.Proof.RuleCprop4
-import FV.Opt.Proof.RuleSelects8
-import FV.Opt.Proof.RuleSelects9
-import FV.Opt.Proof.RuleSelects10
-import FV.Opt.Proof.RuleSelects11
-import FV.Opt.Proof.RuleSelects12
-import FV.Opt.Proof.RuleIcmp10
-import FV.Opt.Proof.RuleIcmp12
-import FV.Opt.Proof.RuleIcmp13
-import FV.Opt.Proof.RuleIcmpIdentity
-import FV.Opt.Proof.RuleIcmpBounds
-import FV.Opt.Proof.RuleIcmpArithmetic
-import FV.Opt.Proof.RuleIcmpSelects
-import FV.Opt.Proof.RuleIcmpCompose
-import FV.Opt.Proof.RuleArith8
-import FV.Opt.Proof.RuleArithMulHi
-import FV.Opt.Proof.RuleArithOdd
-import FV.Opt.Proof.RuleArithCancel
-import FV.Opt.Proof.RuleArithProducts
-import FV.Opt.Proof.RuleSkeleton
-import FV.Opt.Proof.RuleSkeleton2
-import FV.Opt.Proof.RuleSkeleton3
-import FV.Opt.Proof.RuleSkeleton4
-import FV.Opt.Proof.RuleSkeleton5
-import FV.Opt.Proof.RuleSkeleton6
-import FV.Opt.Optimize
+module
+
+public import FV.Opt.Proof.RuleArith
+public import FV.Opt.Proof.RuleCprop
+public import FV.Opt.Proof.RuleBitops1
+public import FV.Opt.Proof.RuleBitops2
+public import FV.Opt.Proof.RuleBitops3
+public import FV.Opt.Proof.RuleBitops4
+public import FV.Opt.Proof.RuleBitops5
+public import FV.Opt.Proof.RuleBitops6
+public import FV.Opt.Proof.RuleBitops7
+public import FV.Opt.Proof.RuleIcmp1
+public import FV.Opt.Proof.RuleIcmp2
+public import FV.Opt.Proof.RuleIcmp3
+public import FV.Opt.Proof.RuleIcmp4
+public import FV.Opt.Proof.RuleIcmp5
+public import FV.Opt.Proof.RuleIcmp6
+public import FV.Opt.Proof.RuleIcmp7
+public import FV.Opt.Proof.RuleIcmp8
+public import FV.Opt.Proof.RuleSelects1
+public import FV.Opt.Proof.RuleSelects2
+public import FV.Opt.Proof.RuleSelects3
+public import FV.Opt.Proof.RuleSelects4
+public import FV.Opt.Proof.RuleSelects5
+public import FV.Opt.Proof.RuleSelects6
+public import FV.Opt.Proof.RuleExtends
+public import FV.Opt.Proof.RuleExtends2
+public import FV.Opt.Proof.RuleShifts1
+public import FV.Opt.Proof.RuleShifts2
+public import FV.Opt.Proof.RuleSpaceship
+public import FV.Opt.Proof.RuleSpaceshipSelects
+public import FV.Opt.Proof.RuleIcmp9
+public import FV.Opt.Proof.RuleShifts3
+public import FV.Opt.Proof.RuleShifts4
+public import FV.Opt.Proof.RuleShifts5
+public import FV.Opt.Proof.RuleShiftsConst
+public import FV.Opt.Proof.RuleShiftsRotate
+public import FV.Opt.Proof.RuleShiftsDistribution
+public import FV.Opt.Proof.RuleArith2
+public import FV.Opt.Proof.RuleArith3
+public import FV.Opt.Proof.RuleArith4
+public import FV.Opt.Proof.RuleArith5
+public import FV.Opt.Proof.RuleCprop2
+public import FV.Opt.Proof.RuleRemat
+public import FV.Opt.Proof.RuleArith6
+public import FV.Opt.Proof.RuleArith7
+public import FV.Opt.Proof.RuleSelects7
+public import FV.Opt.Proof.RuleBitops8
+public import FV.Opt.Proof.RuleBitops9
+public import FV.Opt.Proof.RuleBitops10
+public import FV.Opt.Proof.RuleCprop3
+public import FV.Opt.Proof.RuleCprop4
+public import FV.Opt.Proof.RuleSelects8
+public import FV.Opt.Proof.RuleSelects9
+public import FV.Opt.Proof.RuleSelects10
+public import FV.Opt.Proof.RuleSelects11
+public import FV.Opt.Proof.RuleSelects12
+public import FV.Opt.Proof.RuleIcmp10
+public import FV.Opt.Proof.RuleIcmp12
+public import FV.Opt.Proof.RuleIcmp13
+public import FV.Opt.Proof.RuleIcmpIdentity
+public import FV.Opt.Proof.RuleIcmpBounds
+public import FV.Opt.Proof.RuleIcmpArithmetic
+public import FV.Opt.Proof.RuleIcmpSelects
+public import FV.Opt.Proof.RuleIcmpCompose
+public import FV.Opt.Proof.RuleArith8
+public import FV.Opt.Proof.RuleArithMulHi
+public import FV.Opt.Proof.RuleArithOdd
+public import FV.Opt.Proof.RuleArithCancel
+public import FV.Opt.Proof.RuleArithProducts
+public import FV.Opt.Proof.RuleSkeleton
+public import FV.Opt.Proof.RuleSkeleton2
+public import FV.Opt.Proof.RuleSkeleton3
+public import FV.Opt.Proof.RuleSkeleton4
+public import FV.Opt.Proof.RuleSkeleton5
+public import FV.Opt.Proof.RuleSkeleton6
+public import FV.Opt.Optimize
+
+@[expose] public section
 
 /-!
 # The proven allow-list is sound

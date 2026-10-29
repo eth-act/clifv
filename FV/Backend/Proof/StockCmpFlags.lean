@@ -1,4 +1,9 @@
-import FV.Backend.Proof.IselSemCmp
+module
+
+public import FV.Backend.Proof.IselSemCmp
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarCmp
 open Backend.Proof Backend
 /-- Standard-kernel zero flag arithmetic for all comparison widths. -/

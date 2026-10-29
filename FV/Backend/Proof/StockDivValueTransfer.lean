@@ -1,5 +1,10 @@
-import FV.Backend.Proof.StockDivBodyValues
-import FV.Backend.Proof.StockRecordIntervals
+module
+
+public import FV.Backend.Proof.StockDivBodyValues
+public import FV.Backend.Proof.StockRecordIntervals
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarDiv
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 /-- Already-held original values survive an internal fresh fragment when their

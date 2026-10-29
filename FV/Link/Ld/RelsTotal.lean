@@ -1,4 +1,8 @@
-import FV.Link.Ld.RelocTotal
+module
+
+public import FV.Link.Ld.RelocTotal
+
+@[expose] public section
 
 /-! # Every relocation of `lean-ld`'s plan applies (A1d, #409)
 

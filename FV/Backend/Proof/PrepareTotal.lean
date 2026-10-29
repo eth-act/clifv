@@ -1,6 +1,10 @@
-import FV.Backend.Proof.PrepareTotalIsel
-import FV.Backend.Proof.SpillEdgesLow
-import FV.Backend.Proof.LowerDecide
+module
+
+public import FV.Backend.Proof.PrepareTotalIsel
+public import FV.Backend.Proof.SpillEdgesLow
+public import FV.Backend.Proof.LowerDecide
+
+@[expose] public section
 
 /-!
 # `prepare` never fails on `lowerFunction`'s VCode

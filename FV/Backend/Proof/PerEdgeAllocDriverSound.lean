@@ -1,5 +1,10 @@
-import FV.Backend.RegallocPerEdgeDriver
-import FV.Backend.Proof.PerEdgeRegallocSound
+module
+
+public import FV.Backend.RegallocPerEdgeDriver
+public import FV.Backend.Proof.PerEdgeRegallocSound
+
+@[expose] public section
+
 namespace Backend.Proof.PerEdge
 
 private theorem checkedSpillAt_ok {vc : VCode} {edges : Array (Array (Array Reg))} {rf : RFunc}

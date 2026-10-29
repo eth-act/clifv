@@ -1,6 +1,10 @@
-import FV.Opt.Proof.SimWin
-import FV.Opt.Proof.Unreachable
-import FV.Opt.OptimizeX
+module
+
+public import FV.Opt.Proof.SimWin
+public import FV.Opt.Proof.Unreachable
+public import FV.Opt.OptimizeX
+
+@[expose] public section
 
 /-!
 # `removeUnreachable` refines, `call_indirect` and `try_call` included

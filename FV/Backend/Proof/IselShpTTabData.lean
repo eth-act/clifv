@@ -1,4 +1,8 @@
-import FV.Backend.Proof.IselShpTFns
+module
+
+public import FV.Backend.Proof.IselShpTFns
+
+@[expose] public section
 
 /-!
 # Control shapes of the typed lowering (typed V4): the summary table

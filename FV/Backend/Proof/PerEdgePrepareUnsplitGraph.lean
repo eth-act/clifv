@@ -1,4 +1,8 @@
-import FV.Backend.Proof.PerEdgePrepareNoSplit
+module
+
+public import FV.Backend.Proof.PerEdgePrepareNoSplit
+
+@[expose] public section
 
 namespace Backend.Proof.PerEdgePrep
 open Backend Backend.Proof

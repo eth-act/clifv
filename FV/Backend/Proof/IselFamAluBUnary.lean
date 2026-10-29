@@ -1,4 +1,8 @@
-import FV.Backend.Proof.IselFamAluBBase
+module
+
+public import FV.Backend.Proof.IselFamAluBBase
+
+@[expose] public section
 
 /-!
 # Family B: unary ALU root rules (`ineg`, `bnot`, …), forward lemmas and `LowerRuleOk`

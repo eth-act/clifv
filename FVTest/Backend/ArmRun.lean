@@ -1,7 +1,11 @@
-import FV.Backend
-import FV.Arm
-import FVTest.Opt.Common
-import FVTest.Backend.AllocChoice
+module
+
+public import FV.Backend
+public import FV.Arm
+public import FVTest.Opt.Common
+public import FVTest.Backend.AllocChoice
+
+@[expose] public section
 
 /-!
 # Running Lean-backend code on the Lean Arm model (seed of M7's execution relation)

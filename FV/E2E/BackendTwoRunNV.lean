@@ -1,6 +1,10 @@
-import FV.E2E.BackendTwoRunN
-import FV.E2E.RegLevelTwoRunNV
-import FV.E2E.DeadCleanupPipeline
+module
+
+public import FV.E2E.BackendTwoRunN
+public import FV.E2E.RegLevelTwoRunNV
+public import FV.E2E.DeadCleanupPipeline
+
+@[expose] public section
 
 /-!
 # The machine lock with the contracts of the first `N` calls, cleanup path (SEM1 #537, #713)

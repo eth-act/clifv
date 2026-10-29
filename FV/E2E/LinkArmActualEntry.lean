@@ -1,4 +1,8 @@
-import FV.E2E.LinkArmThmPRBRLE
+module
+
+public import FV.E2E.LinkArmThmPRBRLE
+
+@[expose] public section
 
 /-!
 # The actual callee entry of a program call (SEM1 #537, executable level, `ThmPRBG`)

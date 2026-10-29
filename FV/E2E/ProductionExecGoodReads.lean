@@ -1,5 +1,9 @@
-import FV.E2E.ProductionExecGoodRun
-import FV.E2E.ProductionExecFrameSim
+module
+
+public import FV.E2E.ProductionExecGoodRun
+public import FV.E2E.ProductionExecFrameSim
+
+@[expose] public section
 
 /-! # D2 of `StepOkR` from the register-level per-state facts (L3 (c))
 

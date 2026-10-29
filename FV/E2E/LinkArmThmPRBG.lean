@@ -1,7 +1,11 @@
-import FV.E2E.LinkArmStage2E
-import FV.E2E.BackendWorldPRGYNX
-import FV.E2E.LinkGood
-import FV.E2E.LinkArmActualEntry
+module
+
+public import FV.E2E.LinkArmStage2E
+public import FV.E2E.BackendWorldPRGYNX
+public import FV.E2E.LinkGood
+public import FV.E2E.LinkArmActualEntry
+
+@[expose] public section
 
 /-!
 # The per-state facts of the linked machine under the slot-byte oracle (SEM1 #537, executable level (b))

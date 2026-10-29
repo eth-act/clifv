@@ -1,6 +1,10 @@
-import FV.Backend.Proof.IselPrgInv
-import FV.Backend.Proof.LowerTotal
-import FV.Backend.Proof.IselEmitDriver
+module
+
+public import FV.Backend.Proof.IselPrgInv
+public import FV.Backend.Proof.LowerTotal
+public import FV.Backend.Proof.IselEmitDriver
+
+@[expose] public section
 
 /-!
 # Progress of the ISLE lowering (V7): the driver's contexts

@@ -1,4 +1,9 @@
-import FV.Backend.Proof.StockAddSubSelected
+module
+
+public import FV.Backend.Proof.StockAddSubSelected
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarAddSub
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 /-- Successful actual RHS execution determines requests, output, allocation

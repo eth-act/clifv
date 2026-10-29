@@ -1,69 +1,73 @@
-import FV.Backend.Proof.IselCovTTabB
-import FV.Backend.Proof.IselCovTTabC0
-import FV.Backend.Proof.IselCovTTabC1
-import FV.Backend.Proof.IselCovTTabC2
-import FV.Backend.Proof.IselCovTTabC3
-import FV.Backend.Proof.IselCovTTabC4
-import FV.Backend.Proof.IselCovTTabC5
-import FV.Backend.Proof.IselCovTTabC6
-import FV.Backend.Proof.IselCovTTabC7
-import FV.Backend.Proof.IselCovTTabC8
-import FV.Backend.Proof.IselCovTTabC9
-import FV.Backend.Proof.IselCovTTabC10
-import FV.Backend.Proof.IselCovTTabC11
-import FV.Backend.Proof.IselCovTTabC12
-import FV.Backend.Proof.IselCovTTabS0
-import FV.Backend.Proof.IselCovTTabS1
-import FV.Backend.Proof.IselCovTTabS2
-import FV.Backend.Proof.IselCovTTabS3
-import FV.Backend.Proof.IselCovTTabS4
-import FV.Backend.Proof.IselCovTTabS5
-import FV.Backend.Proof.IselCovTTabS6
-import FV.Backend.Proof.IselCovTTabS7
-import FV.Backend.Proof.IselCovTTabS8
-import FV.Backend.Proof.IselCovTTabS9
-import FV.Backend.Proof.IselCovTTabS10
-import FV.Backend.Proof.IselCovTTabS11
-import FV.Backend.Proof.IselCovTTabS12
-import FV.Backend.Proof.IselCovTTabS13
-import FV.Backend.Proof.IselCovTTabS14
-import FV.Backend.Proof.IselCovTTabS15
-import FV.Backend.Proof.IselCovTTabS16
-import FV.Backend.Proof.IselCovTTabS17
-import FV.Backend.Proof.IselCovTTabS18
-import FV.Backend.Proof.IselCovTTabS19
-import FV.Backend.Proof.IselCovTTabS20
-import FV.Backend.Proof.IselCovTTabS21
-import FV.Backend.Proof.IselCovTTabS22
-import FV.Backend.Proof.IselCovTTabS23
-import FV.Backend.Proof.IselCovTTabS24
-import FV.Backend.Proof.IselCovTTabS25
-import FV.Backend.Proof.IselCovTTabS26
-import FV.Backend.Proof.IselCovTTabS27
-import FV.Backend.Proof.IselCovTTabS28
-import FV.Backend.Proof.IselCovTTabS29
-import FV.Backend.Proof.IselCovTTabS30
-import FV.Backend.Proof.IselCovTTabS31
-import FV.Backend.Proof.IselCovTTabS32
-import FV.Backend.Proof.IselCovTTabS33
-import FV.Backend.Proof.IselCovTTabS34
-import FV.Backend.Proof.IselCovTTabS35
-import FV.Backend.Proof.IselCovTTabS36
-import FV.Backend.Proof.IselCovTTabS37
-import FV.Backend.Proof.IselCovTTabS38
-import FV.Backend.Proof.IselCovTTabS39
-import FV.Backend.Proof.IselCovTTabS40
-import FV.Backend.Proof.IselCovTTabS41
-import FV.Backend.Proof.IselCovTTabS42
-import FV.Backend.Proof.IselCovTTabS43
-import FV.Backend.Proof.IselCovTTabS44
-import FV.Backend.Proof.IselCovTTabS45
-import FV.Backend.Proof.IselCovTTabS46
-import FV.Backend.Proof.IselCovTTabS47
-import FV.Backend.Proof.IselCovTTabS48
-import FV.Backend.Proof.IselCovTTabS49
-import FV.Backend.Proof.IselCovTTabS50
-import FV.Backend.Proof.IselCovTTabS51
+module
+
+public import FV.Backend.Proof.IselCovTTabB
+public import FV.Backend.Proof.IselCovTTabC0
+public import FV.Backend.Proof.IselCovTTabC1
+public import FV.Backend.Proof.IselCovTTabC2
+public import FV.Backend.Proof.IselCovTTabC3
+public import FV.Backend.Proof.IselCovTTabC4
+public import FV.Backend.Proof.IselCovTTabC5
+public import FV.Backend.Proof.IselCovTTabC6
+public import FV.Backend.Proof.IselCovTTabC7
+public import FV.Backend.Proof.IselCovTTabC8
+public import FV.Backend.Proof.IselCovTTabC9
+public import FV.Backend.Proof.IselCovTTabC10
+public import FV.Backend.Proof.IselCovTTabC11
+public import FV.Backend.Proof.IselCovTTabC12
+public import FV.Backend.Proof.IselCovTTabS0
+public import FV.Backend.Proof.IselCovTTabS1
+public import FV.Backend.Proof.IselCovTTabS2
+public import FV.Backend.Proof.IselCovTTabS3
+public import FV.Backend.Proof.IselCovTTabS4
+public import FV.Backend.Proof.IselCovTTabS5
+public import FV.Backend.Proof.IselCovTTabS6
+public import FV.Backend.Proof.IselCovTTabS7
+public import FV.Backend.Proof.IselCovTTabS8
+public import FV.Backend.Proof.IselCovTTabS9
+public import FV.Backend.Proof.IselCovTTabS10
+public import FV.Backend.Proof.IselCovTTabS11
+public import FV.Backend.Proof.IselCovTTabS12
+public import FV.Backend.Proof.IselCovTTabS13
+public import FV.Backend.Proof.IselCovTTabS14
+public import FV.Backend.Proof.IselCovTTabS15
+public import FV.Backend.Proof.IselCovTTabS16
+public import FV.Backend.Proof.IselCovTTabS17
+public import FV.Backend.Proof.IselCovTTabS18
+public import FV.Backend.Proof.IselCovTTabS19
+public import FV.Backend.Proof.IselCovTTabS20
+public import FV.Backend.Proof.IselCovTTabS21
+public import FV.Backend.Proof.IselCovTTabS22
+public import FV.Backend.Proof.IselCovTTabS23
+public import FV.Backend.Proof.IselCovTTabS24
+public import FV.Backend.Proof.IselCovTTabS25
+public import FV.Backend.Proof.IselCovTTabS26
+public import FV.Backend.Proof.IselCovTTabS27
+public import FV.Backend.Proof.IselCovTTabS28
+public import FV.Backend.Proof.IselCovTTabS29
+public import FV.Backend.Proof.IselCovTTabS30
+public import FV.Backend.Proof.IselCovTTabS31
+public import FV.Backend.Proof.IselCovTTabS32
+public import FV.Backend.Proof.IselCovTTabS33
+public import FV.Backend.Proof.IselCovTTabS34
+public import FV.Backend.Proof.IselCovTTabS35
+public import FV.Backend.Proof.IselCovTTabS36
+public import FV.Backend.Proof.IselCovTTabS37
+public import FV.Backend.Proof.IselCovTTabS38
+public import FV.Backend.Proof.IselCovTTabS39
+public import FV.Backend.Proof.IselCovTTabS40
+public import FV.Backend.Proof.IselCovTTabS41
+public import FV.Backend.Proof.IselCovTTabS42
+public import FV.Backend.Proof.IselCovTTabS43
+public import FV.Backend.Proof.IselCovTTabS44
+public import FV.Backend.Proof.IselCovTTabS45
+public import FV.Backend.Proof.IselCovTTabS46
+public import FV.Backend.Proof.IselCovTTabS47
+public import FV.Backend.Proof.IselCovTTabS48
+public import FV.Backend.Proof.IselCovTTabS49
+public import FV.Backend.Proof.IselCovTTabS50
+public import FV.Backend.Proof.IselCovTTabS51
+
+@[expose] public section
 
 /-!
 # Form coverage over float-capable contexts (typed V3): the table and root checks

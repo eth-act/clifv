@@ -1,5 +1,9 @@
-import FV.Backend.Encode
-import FV.Backend.Regalloc
+module
+
+public import FV.Backend.Encode
+public import FV.Backend.Regalloc
+
+@[expose] public section
 
 /-!
 # The per-instruction emission conditions (V6c)

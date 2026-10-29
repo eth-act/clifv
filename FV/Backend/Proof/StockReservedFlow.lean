@@ -1,7 +1,11 @@
-import FV.Backend.Proof.StockCtorFlow
-import FV.Backend.Proof.IselFlowInst
-import FV.Backend.Proof.IselFlowTabF
-import FV.Backend.Proof.LowerDecide
+module
+
+public import FV.Backend.Proof.StockCtorFlow
+public import FV.Backend.Proof.IselFlowInst
+public import FV.Backend.Proof.IselFlowTabF
+public import FV.Backend.Proof.LowerDecide
+
+@[expose] public section
 
 /-! Source-provenance and exact exception-reservation flow for actual stock ISLE execution. -/
 namespace Backend.Stock.Proof.ReservedFlow

@@ -1,6 +1,10 @@
-import FV.Link.Ld.Resolve
-import FV.Link.Ld.Reloc
-import FV.Link.Ld.Plan
+module
+
+public import FV.Link.Ld.Resolve
+public import FV.Link.Ld.Reloc
+public import FV.Link.Ld.Plan
+
+@[expose] public section
 
 /-! # Lean static linker: layout, synthesized sections, relocation, the image
 

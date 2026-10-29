@@ -1,5 +1,9 @@
-import FV.E2E.ExecTlsSim
-import FV.E2E.ExecProven
+module
+
+public import FV.E2E.ExecTlsSim
+public import FV.E2E.ExecProven
+
+@[expose] public section
 
 /-! # The binary theorems without the TLS hook (T1)
 

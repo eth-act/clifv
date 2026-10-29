@@ -1,9 +1,13 @@
-import FV.Backend.Proof.KillBase
-import FV.Backend.Proof.SpillEdgesLow
-import FV.Backend.Proof.SpillStep4Cfg
-import FV.Backend.Proof.SpillLocalCheck
-import FV.Backend.Proof.SpillStep4State
-import FV.Backend.Proof.IselCtlCallRules
+module
+
+public import FV.Backend.Proof.KillBase
+public import FV.Backend.Proof.SpillEdgesLow
+public import FV.Backend.Proof.SpillStep4Cfg
+public import FV.Backend.Proof.SpillLocalCheck
+public import FV.Backend.Proof.SpillStep4State
+public import FV.Backend.Proof.IselCtlCallRules
+
+@[expose] public section
 
 /-!
 # Killed vregs of `lowerFunction`'s VCode: the driver's assembly (V4, `SpillKillFree`)

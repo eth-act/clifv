@@ -1,4 +1,8 @@
-import FV.Backend.Proof.IselExclSound
+module
+
+public import FV.Backend.Proof.IselExclSound
+
+@[expose] public section
 
 /-!
 # `ExcludedUnmatchable program`

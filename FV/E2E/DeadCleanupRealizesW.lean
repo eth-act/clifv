@@ -1,5 +1,9 @@
-import FV.E2E.DeadCleanupRealizes
-import FV.E2E.RegLevelCorrectW
+module
+
+public import FV.E2E.DeadCleanupRealizes
+public import FV.E2E.RegLevelCorrectW
+
+@[expose] public section
 
 /-!
 # The value semantics' realisation with the writes (A3, #412, slice F8b)

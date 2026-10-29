@@ -1,5 +1,10 @@
-import FV.Backend.Proof.PerEdgeAllocDriverSound
-import FV.Backend.Proof.StockCriticalValuesWitness
+module
+
+public import FV.Backend.Proof.PerEdgeAllocDriverSound
+public import FV.Backend.Proof.StockCriticalValuesWitness
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.PerEdgeCriticalAllocatorWitness
 open Backend.Proof Backend.Proof.Driver
 set_option maxRecDepth 20000

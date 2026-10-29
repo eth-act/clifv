@@ -1,5 +1,9 @@
-import FV.E2E.CompiledEither
-import FV.E2E.ValidatedCleanup
+module
+
+public import FV.E2E.CompiledEither
+public import FV.E2E.ValidatedCleanup
+
+@[expose] public section
 
 /-! Additive production artifact contract: retained legacy variants plus actual
 validated Stock output in either cleanup mode. The old CompiledEither and its

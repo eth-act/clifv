@@ -1,5 +1,9 @@
-import FV.Backend.Proof.IselSzTTabData
-import FV.Backend.Proof.IselSzTChunk
+module
+
+public import FV.Backend.Proof.IselSzTTabData
+public import FV.Backend.Proof.IselSzTChunk
+
+@[expose] public section
 
 /-!
 # The size of the ISLE lowering's output over float-capable contexts (typed V6c): cost table entries, group 0

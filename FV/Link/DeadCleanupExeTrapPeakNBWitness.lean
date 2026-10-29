@@ -1,5 +1,9 @@
-import FV.Link.DeadCleanupExeTrapNBWitness
-import FV.Link.DeadCleanupExeTrapNB
+module
+
+public import FV.Link.DeadCleanupExeTrapNBWitness
+public import FV.Link.DeadCleanupExeTrapNB
+
+@[expose] public section
 
 /-!
 # Witness: the peak callee-trap source theorem without the memory bound applies (A2/B1)

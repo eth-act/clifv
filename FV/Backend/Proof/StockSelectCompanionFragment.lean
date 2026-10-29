@@ -1,5 +1,10 @@
-import FV.Backend.Proof.StockSelectBooleanCompanion
-import FV.Backend.Proof.StockSelectReplacementResolved
+module
+
+public import FV.Backend.Proof.StockSelectBooleanCompanion
+public import FV.Backend.Proof.StockSelectReplacementResolved
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarSelect
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 /-- Actual retained records start with an empty emission buffer. A boolean

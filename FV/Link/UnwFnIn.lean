@@ -1,8 +1,12 @@
-import FV.Link.UnwSavedIn
-import FV.Link.UnwTryIn
-import FV.Link.UnwFns
-import FV.E2E.LinkScopeInputCleanupT
-import FV.Link.DeadCleanupImage
+module
+
+public import FV.Link.UnwSavedIn
+public import FV.Link.UnwTryIn
+public import FV.Link.UnwFns
+public import FV.E2E.LinkScopeInputCleanupT
+public import FV.Link.DeadCleanupImage
+
+@[expose] public section
 
 /-!
 # The per-function unwinding checks from the input and the remaining conditions (S10g, #404)

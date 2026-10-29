@@ -1,4 +1,8 @@
-import FV.E2E.LinkArmStepX30
+module
+
+public import FV.E2E.LinkArmStepX30
+
+@[expose] public section
 
 /-!
 # The lines that name `x30`: the frame record and `ret` (SEM1, `docs/plans/uninit.md` §5.8 (1))

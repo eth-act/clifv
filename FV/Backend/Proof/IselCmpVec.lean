@@ -1,4 +1,8 @@
-import FV.Backend.Proof.IselCmpMinMax
+module
+
+public import FV.Backend.Proof.IselCmpMinMax
+
+@[expose] public section
 
 /-!
 # Family C: vector min/max (1233/1239/1245/1251) are vacuous in E

@@ -1,5 +1,9 @@
-import FV.E2E.RegLevelJointC
-import FV.E2E.RegLevelCorrectPRSW
+module
+
+public import FV.E2E.RegLevelJointC
+public import FV.E2E.RegLevelCorrectPRSW
+
+@[expose] public section
 
 /-!
 # Two activations of one compiled function realised jointly (SEM1 #537, item (3))

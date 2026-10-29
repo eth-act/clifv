@@ -1,11 +1,15 @@
-import FV.E2E.SpillKillFree
-import FV.Backend.Proof.KillDriverT
-import FV.Backend.Proof.KillTryDefsT
-import FV.Backend.Proof.KillAssembleT
-import FV.E2E.LinkScopeInputDefsT
-import FV.E2E.LinkScopeT
-import FV.Backend.Proof.LowerDecide
-import FV.Backend.Proof.SpillArity
+module
+
+public import FV.E2E.SpillKillFree
+public import FV.Backend.Proof.KillDriverT
+public import FV.Backend.Proof.KillTryDefsT
+public import FV.Backend.Proof.KillAssembleT
+public import FV.E2E.LinkScopeInputDefsT
+public import FV.E2E.LinkScopeT
+public import FV.Backend.Proof.LowerDecide
+public import FV.Backend.Proof.SpillArity
+
+@[expose] public section
 
 /-!
 # `killFreeB` on the typed scope, proven (S11 slice 8, totality half)

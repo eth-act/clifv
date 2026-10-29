@@ -1,7 +1,11 @@
-import FV.E2E.FinalUnwind
-import FV.E2E.SretReturn
-import FV.Backend.Proof.SretStableX
-import FV.Backend.Proof.LowerSimUAbi
+module
+
+public import FV.E2E.FinalUnwind
+public import FV.E2E.SretReturn
+public import FV.Backend.Proof.SretStableX
+public import FV.Backend.Proof.LowerSimUAbi
+
+@[expose] public section
 
 /-!
 # The `sret` return register with unwinding (S7)

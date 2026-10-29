@@ -1,8 +1,12 @@
-import FV.Backend.Proof.SpillCtlShapeT
-import FV.Backend.Proof.AbiClassRegs
-import FV.Backend.Proof.EntryClass
-import FV.Backend.Proof.LowerShapeOkT
-import FV.Backend.Proof.LowerCompleteT
+module
+
+public import FV.Backend.Proof.SpillCtlShapeT
+public import FV.Backend.Proof.AbiClassRegs
+public import FV.Backend.Proof.EntryClass
+public import FV.Backend.Proof.LowerShapeOkT
+public import FV.Backend.Proof.LowerCompleteT
+
+@[expose] public section
 
 /-!
 # `CtlSpillHyp` on the typed pipeline's output (S11 #35)

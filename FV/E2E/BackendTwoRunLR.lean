@@ -1,6 +1,10 @@
-import FV.E2E.BackendTwoRunLF
-import FV.E2E.LinkArmDetX
-import FV.E2E.LinkArmBaseNIX
+module
+
+public import FV.E2E.BackendTwoRunLF
+public import FV.E2E.LinkArmDetX
+public import FV.E2E.LinkArmBaseNIX
+
+@[expose] public section
 
 /-!
 # The return agreement from the machine lock (SEM1 #537, `docs/plans/uninit.md` §5.9)

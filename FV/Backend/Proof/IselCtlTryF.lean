@@ -1,6 +1,10 @@
-import FV.Backend.Proof.IselCtlCallF
-import FV.Backend.Proof.IselCtlTryTI
-import FV.Backend.Proof.TryRegsC
+module
+
+public import FV.Backend.Proof.IselCtlCallF
+public import FV.Backend.Proof.IselCtlTryTI
+public import FV.Backend.Proof.TryRegsC
+
+@[expose] public section
 
 /-!
 # Family Ctl over typed contexts: `try_call` with `f32`/`f64` arguments and returns (S11e6)

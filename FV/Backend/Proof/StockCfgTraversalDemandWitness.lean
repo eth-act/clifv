@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockCfgTraversalDemand
-import FV.Backend.Proof.StockCfgTraversalScansWitness
+module
+
+public import FV.Backend.Proof.StockCfgTraversalDemand
+public import FV.Backend.Proof.StockCfgTraversalScansWitness
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.CfgDemandWitness
 open Backend.Proof Backend.Proof.Driver

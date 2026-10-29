@@ -1,7 +1,11 @@
-import FV.Concurrency.IselEntry
-import FV.Concurrency.IselThreadWitnessData
-import FV.Concurrency.VCodeThreadWitness
-import FV.E2E.RegLevelFrame
+module
+
+public import FV.Concurrency.IselEntry
+public import FV.Concurrency.IselThreadWitnessData
+public import FV.Concurrency.VCodeThreadWitness
+public import FV.E2E.RegLevelFrame
+
+@[expose] public section
 
 /-!
 # Witness: layer 2 on the compiled atomics function (T2h, #311, layer 2e)

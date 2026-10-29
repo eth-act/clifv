@@ -1,4 +1,8 @@
-import FV.Backend.ABIReadDiv
+module
+
+public import FV.Backend.ABIReadDiv
+
+@[expose] public section
 
 namespace Backend.ABIReadCfg
 set_option autoImplicit false

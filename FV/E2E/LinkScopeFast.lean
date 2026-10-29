@@ -1,4 +1,8 @@
-import FV.E2E.LinkScopeInputDefs
+module
+
+public import FV.E2E.LinkScopeInputDefs
+
+@[expose] public section
 
 /-! # The program-level input conditions, evaluated with hash maps (T3d)
 

@@ -1,4 +1,8 @@
-import FV.Backend.Proof.IselTermsALUAMul
+module
+
+public import FV.Backend.Proof.IselTermsALUAMul
+
+@[expose] public section
 
 /-!
 # Extended-register operands (`extended_value_from_value`): forward lemmas

@@ -1,11 +1,15 @@
-import FV.E2E.WorldUnwindReg
-import FV.E2E.WorldUnwindGot
-import FV.E2E.DeadCleanupUnwind
-import FV.E2E.DeadCleanupUnwindIsel
-import FV.E2E.IselSimU
-import FV.Backend.Proof.LowerSimUCheck
-import FV.E2E.DeadCleanupWorld
-import FV.E2E.CompiledEither
+module
+
+public import FV.E2E.WorldUnwindReg
+public import FV.E2E.WorldUnwindGot
+public import FV.E2E.DeadCleanupUnwind
+public import FV.E2E.DeadCleanupUnwindIsel
+public import FV.E2E.IselSimU
+public import FV.Backend.Proof.LowerSimUCheck
+public import FV.E2E.DeadCleanupWorld
+public import FV.E2E.CompiledEither
+
+@[expose] public section
 
 /-!
 # The per-function world theorem with unwinding (S10f, #233)

@@ -1,7 +1,12 @@
-import FV.Backend.Proof.StockSelectObserved
-import FV.Backend.Proof.StockSelectValues
-import FV.Backend.Proof.StockCmpConditionValues
-import FV.Backend.Proof.StockDemandMono
+module
+
+public import FV.Backend.Proof.StockSelectObserved
+public import FV.Backend.Proof.StockSelectValues
+public import FV.Backend.Proof.StockCmpConditionValues
+public import FV.Backend.Proof.StockDemandMono
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarSelect
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 /-- Actual explicit-flags659 selects original source values through final

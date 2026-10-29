@@ -1,4 +1,8 @@
-import FV.Backend.Proof.StockEdgeValues
+module
+
+public import FV.Backend.Proof.StockEdgeValues
+
+@[expose] public section
 
 /-! Actual plain-jump argument collection and its final resolved register list.
 The source map is derived from successful collection, not supplied as a certificate. -/

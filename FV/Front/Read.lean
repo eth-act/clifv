@@ -1,5 +1,9 @@
-import FV.Front.Bundle
-import Lean.Data.Json
+module
+
+public import FV.Front.Bundle
+public import Lean.Data.Json
+
+@[expose] public section
 
 /-!
 # Reading a frontend bundle (`cargo fv link-proof`'s `bundle.json`, docs/contracts/frontend.md)

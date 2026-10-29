@@ -1,7 +1,11 @@
-import FV.Backend.Proof.StockCmpActualDispatch
-import FV.Backend.Proof.StockCmpNonencodable32DriverRuns
-import FV.Backend.Proof.StockCmpNonencodableSourceValues
-import FV.Backend.Proof.LowerSim
+module
+
+public import FV.Backend.Proof.StockCmpActualDispatch
+public import FV.Backend.Proof.StockCmpNonencodable32DriverRuns
+public import FV.Backend.Proof.StockCmpNonencodableSourceValues
+public import FV.Backend.Proof.LowerSim
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.ScalarCmp.ActualNonencodable32SignedAllValuesWitness
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

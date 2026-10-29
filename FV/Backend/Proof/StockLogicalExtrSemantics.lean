@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockRotateSemantics
-import FV.Backend.Proof.IselFamALUAExtr
+module
+
+public import FV.Backend.Proof.StockRotateSemantics
+public import FV.Backend.Proof.IselFamALUAExtr
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.LogicalExtr
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

@@ -1,5 +1,9 @@
-import FV.E2E.RegLevelOpReads
-import FV.E2E.ExecWrites
+module
+
+public import FV.E2E.RegLevelOpReads
+public import FV.E2E.ExecWrites
+
+@[expose] public section
 
 /-!
 # The memory writes of the covered straight-line forms (A3, #412, slice F8b)

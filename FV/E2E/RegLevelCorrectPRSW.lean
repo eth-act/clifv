@@ -1,5 +1,9 @@
-import FV.E2E.RegLevelCorrectPRSY
-import FV.E2E.RegLevelCorrectCW
+module
+
+public import FV.E2E.RegLevelCorrectPRSY
+public import FV.E2E.RegLevelCorrectCW
+
+@[expose] public section
 
 /-!
 # The activation's run cut into realised segments (SEM1 #537, item (3), route (a))

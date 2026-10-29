@@ -1,6 +1,10 @@
-import FV.E2E.RegLevelMemTrap
-import FV.E2E.RegLevelGotoW
-import FV.E2E.RegLevelWrites
+module
+
+public import FV.E2E.RegLevelMemTrap
+public import FV.E2E.RegLevelGotoW
+public import FV.E2E.RegLevelWrites
+
+@[expose] public section
 
 /-!
 # The trapping loops and the `trapIf` trap on the machine with their writes (A3, #412, slice F8b)

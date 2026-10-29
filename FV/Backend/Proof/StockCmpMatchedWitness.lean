@@ -1,4 +1,9 @@
-import FV.Backend.Proof.StockCmpMatchedImmediate
+module
+
+public import FV.Backend.Proof.StockCmpMatchedImmediate
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarCmp.MatchedWitness
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 open Backend.Stock.Proof.ScalarCmp

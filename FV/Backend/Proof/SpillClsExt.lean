@@ -1,4 +1,8 @@
-import FV.Backend.Proof.SpillClsInst
+module
+
+public import FV.Backend.Proof.SpillClsInst
+
+@[expose] public section
 
 /-!
 # Register classes through the extern constructors (V4 classes)

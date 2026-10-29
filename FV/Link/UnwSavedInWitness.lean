@@ -1,5 +1,9 @@
-import FV.Link.UnwSavedIn
-import FV.Link.UnwFnsCompleteWitness
+module
+
+public import FV.Link.UnwSavedIn
+public import FV.Link.UnwFnsCompleteWitness
+
+@[expose] public section
 
 /-!
 # Witness: `savedCheck` and `unwindRows` from the frame conditions (S10g, #404)

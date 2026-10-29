@@ -1,10 +1,14 @@
-import FV.E2E.SretReturn
-import FV.E2E.SretReturnWitness
-import FV.E2E.DeadCleanupPipeline
-import FV.E2E.DeadCleanupContracts
-import FV.E2E.DeadCleanupRegLevel
-import FV.E2E.DeadCleanupFinal
-import FV.E2E.NonVacuity
+module
+
+public import FV.E2E.SretReturn
+public import FV.E2E.SretReturnWitness
+public import FV.E2E.DeadCleanupPipeline
+public import FV.E2E.DeadCleanupContracts
+public import FV.E2E.DeadCleanupRegLevel
+public import FV.E2E.DeadCleanupFinal
+public import FV.E2E.NonVacuity
+
+@[expose] public section
 
 /-!
 # The `sret` return register through the dead-cleanup variant (S7)

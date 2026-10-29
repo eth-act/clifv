@@ -1,5 +1,9 @@
-import FV.E2E.MoveReads
-import FV.E2E.ExecWrites
+module
+
+public import FV.E2E.MoveReads
+public import FV.E2E.ExecWrites
+
+@[expose] public section
 
 /-!
 # The memory writes of move code (A3, #412, slice F8b)

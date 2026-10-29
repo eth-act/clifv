@@ -1,5 +1,9 @@
-import FV.Isle.InterpProjection
-import FV.Backend.Proof.IselGeneric
+module
+
+public import FV.Isle.InterpProjection
+public import FV.Backend.Proof.IselGeneric
+
+@[expose] public section
 
 /-!
 State projection for a constructor-closed part of an ISLE program. The program

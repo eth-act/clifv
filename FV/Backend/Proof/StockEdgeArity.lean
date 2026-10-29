@@ -1,6 +1,10 @@
-import FV.Backend.Proof.StockCriticalEdgeArity
-import FV.Backend.Proof.StockOutgoingVectors
-import FV.Backend.Proof.StockCfgTotal
+module
+
+public import FV.Backend.Proof.StockCriticalEdgeArity
+public import FV.Backend.Proof.StockOutgoingVectors
+public import FV.Backend.Proof.StockCfgTotal
+
+@[expose] public section
 
 namespace Backend.Stock.Proof
 open Backend.Proof Backend.Proof.Driver

@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockAlu
-import FV.Backend.Proof.StockDemandMono
+module
+
+public import FV.Backend.Proof.StockAlu
+public import FV.Backend.Proof.StockDemandMono
+
+@[expose] public section
 
 /-! Successful scalar requests supply their own guard and mapped-register facts. -/
 namespace Backend.Stock.Proof

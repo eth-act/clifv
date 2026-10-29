@@ -1,4 +1,9 @@
-import FV.Backend.Proof.StockBswapRhs
+module
+
+public import FV.Backend.Proof.StockBswapRhs
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarBit
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 set_option maxHeartbeats 4000000

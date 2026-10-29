@@ -1,6 +1,10 @@
-import FV.E2E.SretReturnLegal
-import FV.E2E.SretReturnWitness
-import FV.Opt.Legalize128Pass
+module
+
+public import FV.E2E.SretReturnLegal
+public import FV.E2E.SretReturnWitness
+public import FV.Opt.Legalize128Pass
+
+@[expose] public section
 
 /-!
 # Non-vacuity of `backend_correct_legal_abi` (S7)

@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockBranchRootTargets
-import FV.Backend.Proof.StockControlShape
+module
+
+public import FV.Backend.Proof.StockBranchRootTargets
+public import FV.Backend.Proof.StockControlShape
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.NamedBranchTargets
 open Backend.Proof Backend.Proof.Driver Backend.Proof.Cov Isle Isle.Interp Isle.Aarch64

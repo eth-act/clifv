@@ -1,4 +1,8 @@
-import FV.Backend.Proof.RelocProvCheck
+module
+
+public import FV.Backend.Proof.RelocProvCheck
+
+@[expose] public section
 
 /-!
 # The name-provenance summary table and its kernel check (#216)

@@ -1,6 +1,10 @@
-import FV.Backend.Proof.SpillLocalPipe
-import FV.Backend.Proof.IselCtlTry
-import FV.Backend.Proof.IselCtlBrTable
+module
+
+public import FV.Backend.Proof.SpillLocalPipe
+public import FV.Backend.Proof.IselCtlTry
+public import FV.Backend.Proof.IselCtlBrTable
+
+@[expose] public section
 
 /-!
 # The spill allocator's facts on the control forms (V4 (a), step 3: `CtlSpillHyp`)

@@ -1,4 +1,8 @@
-import FV.Backend.Proof.StockD0DispatchWitness
+module
+
+public import FV.Backend.Proof.StockD0DispatchWitness
+
+@[expose] public section
 
 namespace Backend.Stock.D0
 

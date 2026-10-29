@@ -1,4 +1,8 @@
-import FV.E2E.RegLevelDriverSem
+module
+
+public import FV.E2E.RegLevelDriverSem
+
+@[expose] public section
 
 /-!
 # A call semantics guarded by its callee contract (SEM1 item (b), `docs/plans/uninit.md` §5.9)

@@ -1,6 +1,10 @@
-import FV.Concurrency.CallEntryRel
-import FV.Concurrency.CallSegCallWitness
-import FV.Concurrency.CallEnterArmWitness
+module
+
+public import FV.Concurrency.CallEntryRel
+public import FV.Concurrency.CallSegCallWitness
+public import FV.Concurrency.CallEnterArmWitness
+
+@[expose] public section
 
 /-!
 # Witnesses for `CallEntryRel` (#473)

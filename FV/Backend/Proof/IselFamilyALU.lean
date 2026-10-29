@@ -1,5 +1,9 @@
-import FV.Backend.Proof.IselFamily
-import FV.Backend.Proof.IselRulesALU
+module
+
+public import FV.Backend.Proof.IselFamily
+public import FV.Backend.Proof.IselRulesALU
+
+@[expose] public section
 
 /-!
 # The two-register ALU root rules, proved with the template (`aluRR_ruleOk`)

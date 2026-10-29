@@ -1,5 +1,10 @@
-import FV.Backend.Proof.StockDivRemNarrowSourceValues
-import FV.Backend.Proof.StockDivRemWideSourceValues
+module
+
+public import FV.Backend.Proof.StockDivRemNarrowSourceValues
+public import FV.Backend.Proof.StockDivRemWideSourceValues
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarDiv
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 theorem stock_lower_rem_record_values {f : Clif.Function} {result : Result}

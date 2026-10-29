@@ -1,5 +1,9 @@
-import FV.Concurrency.CallRets
-import FV.Concurrency.CallLoadFull
+module
+
+public import FV.Concurrency.CallRets
+public import FV.Concurrency.CallLoadFull
+
+@[expose] public section
 
 /-!
 # Witness: the CLIF return pop in a linked thread (#473)

@@ -1,5 +1,9 @@
-import FV.E2E.LinkArmTableB
-import FV.E2E.ExtSemGuardR
+module
+
+public import FV.E2E.LinkArmTableB
+public import FV.E2E.ExtSemGuardR
+
+@[expose] public section
 
 /-!
 # Program calls under the slot-byte oracle (SEM1 #537, item (d), docs/plans/uninit.md §5.9,

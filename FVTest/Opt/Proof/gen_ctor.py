@@ -75,8 +75,12 @@ V_CTORS = {
     "blockCall": ["Clif.BlockCall"],
 }
 
-print("""import FV.Isle.Opt.Simplify
-import FV.Opt.Proof.RuleAttr
+print("""module
+
+public import FV.Isle.Opt.Simplify
+public import FV.Opt.Proof.RuleAttr
+
+@[expose] public section
 
 /-!
 # The extern constructors of `ctorPure`, one `rfl` lemma each (generated, do not edit)

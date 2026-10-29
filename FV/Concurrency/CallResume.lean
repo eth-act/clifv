@@ -1,5 +1,9 @@
-import FV.Concurrency.CallSeg
-import FV.Concurrency.ThreadProgress
+module
+
+public import FV.Concurrency.CallSeg
+public import FV.Concurrency.ThreadProgress
+
+@[expose] public section
 
 /-!
 # Resuming the caller after a compiled callee returns (T2j follow-up, #473, calls)

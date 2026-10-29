@@ -1,4 +1,8 @@
-import FV.E2E.LinkCheck
+module
+
+public import FV.E2E.LinkCheck
+
+@[expose] public section
 
 namespace E2E.LinkCheck
 open Backend Backend.Proof Backend.Proof.Driver

@@ -1,5 +1,9 @@
-import FV.Concurrency.CallEntryWitness
-import FV.Concurrency.CallRetsEnd
+module
+
+public import FV.Concurrency.CallEntryWitness
+public import FV.Concurrency.CallRetsEnd
+
+@[expose] public section
 
 /-!
 # Witness: all layers from the caller's entry, pausing at calls and returns with the return's

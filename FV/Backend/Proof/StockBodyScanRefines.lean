@@ -1,4 +1,8 @@
-import FV.Backend.Proof.StockGuardedOmission
+module
+
+public import FV.Backend.Proof.StockGuardedOmission
+
+@[expose] public section
 
 /-! Concrete ordinary-body composition for the discharged select and omission
 cases. The syntactic family partition is an internal partial-coverage boundary,

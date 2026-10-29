@@ -4,13 +4,17 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Author(s): Shilpi Goel, Alex Keizer
 -/
 -- Modified by fv-compiler-rust (2026): ported to Lean v4.34.1, module prefix FV.Arm, wrapped in namespace Arm, the in-file example moved to FVTest.Arm.Sym.StepThms.
-import Lean
-import FV.Arm.Map
-import FV.Arm.Decode
-import FV.Arm.Exec
-import FV.Arm.Tactics.Common
-import FV.Arm.Tactics.Simp
-import FV.Arm.Tactics.Sym.ProgramInfo
+module
+
+public import Lean
+public import FV.Arm.Map
+public import FV.Arm.Decode
+public import FV.Arm.Exec
+public import FV.Arm.Tactics.Common
+public import FV.Arm.Tactics.Simp
+public import FV.Arm.Tactics.Sym.ProgramInfo
+
+@[expose] public section
 
 namespace Arm
 

@@ -1,5 +1,9 @@
-import FV.E2E.LinkClif
-import FV.E2E.UnwindStatement
+module
+
+public import FV.E2E.LinkClif
+public import FV.E2E.UnwindStatement
+
+@[expose] public section
 
 /-!
 # Traps inside callees, at the CLIF level (S9a, #33)

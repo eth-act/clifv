@@ -1,6 +1,10 @@
-import FV.Backend.Proof.StockCfgTotal
-import FV.Backend.Proof.StockBranchTargetsWitness
-import FV.Backend.Proof.StockEmittedGraphWitness
+module
+
+public import FV.Backend.Proof.StockCfgTotal
+public import FV.Backend.Proof.StockBranchTargetsWitness
+public import FV.Backend.Proof.StockEmittedGraphWitness
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.CfgTotalWitness
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

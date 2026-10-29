@@ -1,7 +1,11 @@
-import FV.Backend.Proof.KillOfV
-import FV.Backend.Proof.KillCtor
-import FV.Backend.Proof.DefRuns
-import FV.Backend.Proof.DefGenDom
+module
+
+public import FV.Backend.Proof.KillOfV
+public import FV.Backend.Proof.KillCtor
+public import FV.Backend.Proof.DefRuns
+public import FV.Backend.Proof.DefGenDom
+
+@[expose] public section
 
 /-!
 # Definedness of the ISLE runs: the operands of an emitted instruction (`MInst.ofV`)

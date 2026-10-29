@@ -1,7 +1,11 @@
-import FV.E2E.BackendWorldPRB
-import FV.E2E.BackendWorldCleanupIWitness
-import FV.E2E.TrapCallClifRun
-import FV.E2E.CallPostExistsWitness
+module
+
+public import FV.E2E.BackendWorldPRB
+public import FV.E2E.BackendWorldCleanupIWitness
+public import FV.E2E.TrapCallClifRun
+public import FV.E2E.CallPostExistsWitness
+
+@[expose] public section
 
 /-!
 # Witnesses for `InvokedN` and the `*_PRB` theorems (SEM1 item (b), `docs/plans/uninit.md` §5.9)

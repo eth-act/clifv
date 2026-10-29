@@ -1,5 +1,9 @@
-import FV.E2E.BinCheck
-import FV.E2E.DeadCleanupLinkCheck
+module
+
+public import FV.E2E.BinCheck
+public import FV.E2E.DeadCleanupLinkCheck
+
+@[expose] public section
 
 namespace E2E.DeadCleanupBinCheck
 open E2E E2E.LinkCheck E2E.BinCheck Backend Elf

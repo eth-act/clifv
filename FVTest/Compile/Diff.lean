@@ -1,5 +1,9 @@
-import FV.Compile
-import FVTest.Compile.Cases
+module
+
+public import FV.Compile
+public import FVTest.Compile.Cases
+
+@[expose] public section
 
 /-!
 # `compile-diff`: `denote` vs `Clif.run (compile f)` on every corpus vector

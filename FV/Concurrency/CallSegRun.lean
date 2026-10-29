@@ -1,4 +1,8 @@
-import FV.Concurrency.CallEntryRel
+module
+
+public import FV.Concurrency.CallEntryRel
+
+@[expose] public section
 
 /-!
 # The allocations of an activation's CLIF run (#473, the frame-padding gap)

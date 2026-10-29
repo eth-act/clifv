@@ -1,4 +1,8 @@
-import FV.Clif.Parse
+module
+
+public import FV.Clif.Parse
+
+@[expose] public section
 
 /-!
 # The map runtime written in CLIF

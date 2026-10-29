@@ -1,7 +1,11 @@
-import FV.Backend.Proof.IselScopedProjection
-import FV.Backend.Proof.IselFlowGen
-import FV.Backend.Proof.StockDFG
-import FV.Backend.Proof.IselFamAluBIconst
+module
+
+public import FV.Backend.Proof.IselScopedProjection
+public import FV.Backend.Proof.IselFlowGen
+public import FV.Backend.Proof.StockDFG
+public import FV.Backend.Proof.IselFamAluBIconst
+
+@[expose] public section
 
 /-!
 Constant materialization runs through the actual stock embedding. Its reachable

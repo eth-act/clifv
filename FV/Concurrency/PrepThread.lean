@@ -1,8 +1,12 @@
-import FV.Concurrency.VCodeEvents
-import FV.Concurrency.ThreadRefine
-import FV.Backend.Proof.PrepareSound
-import FV.E2E.RegLevelDriverSem
-import FV.E2E.RegLevelCorrect
+module
+
+public import FV.Concurrency.VCodeEvents
+public import FV.Concurrency.ThreadRefine
+public import FV.Backend.Proof.PrepareSound
+public import FV.E2E.RegLevelDriverSem
+public import FV.E2E.RegLevelCorrect
+
+@[expose] public section
 
 /-!
 # `prepare` with interference (T2h, #311, layer 3)

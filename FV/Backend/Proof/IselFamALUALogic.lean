@@ -1,5 +1,9 @@
-import FV.Backend.Proof.IselTermsLogic
-import FV.Backend.Proof.IselFamilyALU
+module
+
+public import FV.Backend.Proof.IselTermsLogic
+public import FV.Backend.Proof.IselFamilyALU
+
+@[expose] public section
 
 /-!
 # Term contract of `alu_rs_imm_logic_commutative`, and the `band`/`bor`/`bxor` root rules

@@ -1,4 +1,8 @@
-import FV.E2E.ExecTls
+module
+
+public import FV.E2E.ExecTls
+
+@[expose] public section
 
 /-! # The simulation by the hook-free executable machine (T1)
 

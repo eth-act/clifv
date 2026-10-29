@@ -1,6 +1,10 @@
-import FV.Backend.Proof.SpillClsTab
-import FV.Backend.Proof.SpillClsExt
-import FV.Backend.Proof.IselCovDriver
+module
+
+public import FV.Backend.Proof.SpillClsTab
+public import FV.Backend.Proof.SpillClsExt
+public import FV.Backend.Proof.IselCovDriver
+
+@[expose] public section
 
 /-!
 # The class model of the driver's ISLE calls (V4 classes)

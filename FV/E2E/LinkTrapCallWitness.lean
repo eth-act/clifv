@@ -1,5 +1,9 @@
-import FV.E2E.LinkTrapCallInd
-import FV.E2E.DeadCleanupLinkCheck
+module
+
+public import FV.E2E.LinkTrapCallInd
+public import FV.E2E.DeadCleanupLinkCheck
+
+@[expose] public section
 
 /-!
 # Non-vacuity of the linked-program theorem with callee traps (S9c, #376)

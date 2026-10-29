@@ -1,5 +1,10 @@
-import FV.Backend.Proof.StockSelectConditionInvertShape
-import FV.Backend.Proof.StockCmpCondition
+module
+
+public import FV.Backend.Proof.StockSelectConditionInvertShape
+public import FV.Backend.Proof.StockCmpCondition
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarSelect
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 private theorem size_index {i : Nat} {sz : OperandSize}

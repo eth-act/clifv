@@ -1,5 +1,9 @@
-import FV.Front.RenameRun
-import FV.Clif.Unwind
+module
+
+public import FV.Front.RenameRun
+public import FV.Clif.Unwind
+
+@[expose] public section
 
 /-!
 # Renaming commutes with the CLIF semantics with unwinding (S10f)

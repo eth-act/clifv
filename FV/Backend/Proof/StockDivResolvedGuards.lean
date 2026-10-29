@@ -1,5 +1,10 @@
-import FV.Backend.Proof.StockDivGuardSemantics
-import FV.Backend.Proof.StockDivResolved
+module
+
+public import FV.Backend.Proof.StockDivGuardSemantics
+public import FV.Backend.Proof.StockDivResolved
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarDiv
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 /-- Final aliases preserve both actual zero-guard outcomes and the complete

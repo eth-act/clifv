@@ -1,5 +1,9 @@
-import FV.Compile
-import Corpus.All
+module
+
+public import FV.Compile
+public import Corpus.All
+
+@[expose] public section
 
 /-!
 # The emitter and the harness reduce in the kernel

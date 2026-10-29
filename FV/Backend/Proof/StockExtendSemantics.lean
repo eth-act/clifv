@@ -1,5 +1,10 @@
-import FV.Backend.Proof.StockShiftHelper
-import FV.Backend.Proof.IselFamALUAExt
+module
+
+public import FV.Backend.Proof.StockShiftHelper
+public import FV.Backend.Proof.IselFamALUAExt
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarShift
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 set_option maxRecDepth 20000

@@ -1,5 +1,9 @@
-import FV.Concurrency.SegShape
-import FV.Clif.Parse
+module
+
+public import FV.Concurrency.SegShape
+public import FV.Clif.Parse
+
+@[expose] public section
 
 /-!
 # Non-vacuity of layer 2c (T2h, #311)

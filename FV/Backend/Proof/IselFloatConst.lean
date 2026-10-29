@@ -1,5 +1,9 @@
-import FV.Backend.Proof.IselFloatBitcast
-import FV.Backend.Proof.IselCmpDiv
+module
+
+public import FV.Backend.Proof.IselFloatBitcast
+public import FV.Backend.Proof.IselCmpDiv
+
+@[expose] public section
 
 /-!
 # S11e4: `f32const`/`f64const` over float-capable contexts

@@ -1,4 +1,8 @@
-import FV.Backend.Proof.StockNoLoadDriverWitness
+module
+
+public import FV.Backend.Proof.StockNoLoadDriverWitness
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.SinkRules.BranchWitness
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

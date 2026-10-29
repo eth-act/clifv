@@ -1,7 +1,11 @@
-import FV.Backend.Proof.StockConditionalSourceReturn
-import FV.Backend.Proof.StockConditionalSuccessor
-import FV.Backend.Proof.StockSelectedRouteExecution
-import FV.Backend.Proof.StockSourceOrder
+module
+
+public import FV.Backend.Proof.StockConditionalSourceReturn
+public import FV.Backend.Proof.StockConditionalSuccessor
+public import FV.Backend.Proof.StockSelectedRouteExecution
+public import FV.Backend.Proof.StockSourceOrder
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.ConditionalValues
 open Backend.Proof Backend.Proof.Driver

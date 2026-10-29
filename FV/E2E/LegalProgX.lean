@@ -1,6 +1,10 @@
-import FV.E2E.LegalProgram
-import FV.E2E.LinkClifRevX
-import FV.Opt.Proof.LegalSimX2
+module
+
+public import FV.E2E.LegalProgram
+public import FV.E2E.LinkClifRevX
+public import FV.Opt.Proof.LegalSimX2
+
+@[expose] public section
 
 /-!
 # Whole-program refinement of the original `i128` program, with unwinding (S10f, #233)

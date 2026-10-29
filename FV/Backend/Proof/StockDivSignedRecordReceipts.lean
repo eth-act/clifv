@@ -1,4 +1,9 @@
-import FV.Backend.Proof.StockDivSignedSelected
+module
+
+public import FV.Backend.Proof.StockDivSignedSelected
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarDiv
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 /-- Every actual retained signed division record supplies its real result

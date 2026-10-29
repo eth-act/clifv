@@ -1,5 +1,9 @@
-import FV.Backend.Proof.RegallocOperands
-import FV.Clif.Run
+module
+
+public import FV.Backend.Proof.RegallocOperands
+public import FV.Clif.Run
+
+@[expose] public section
 
 /-!
 # CLIF memory ↔ Arm memory (memory family, M4Mem)

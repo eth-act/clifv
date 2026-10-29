@@ -1,4 +1,8 @@
-import FV.E2E.LinkArmCallTab
+module
+
+public import FV.E2E.LinkArmCallTab
+
+@[expose] public section
 
 /-!
 # The oracle facts of a program call before the return (SEM1 #537, #680 (3), stage 2 (P2))

@@ -1,4 +1,8 @@
-import FV.Backend.Proof.IselPrgDom
+module
+
+public import FV.Backend.Proof.IselPrgDom
+
+@[expose] public section
 
 /-!
 # Progress of the ISLE lowering (V7): soundness of the order and of the splitting

@@ -1,6 +1,10 @@
-import FV.Link.ExeUCompile
-import FV.Link.DeadCleanupExeSource
-import FV.E2E.DeadCleanupExecTrap
+module
+
+public import FV.Link.ExeUCompile
+public import FV.Link.DeadCleanupExeSource
+public import FV.E2E.DeadCleanupExecTrap
+
+@[expose] public section
 
 /-! # The shipped executable compiler with callee traps (S9d, #377)
 

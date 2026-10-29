@@ -1,5 +1,9 @@
-import FV.Backend.Proof.LowerShape
-import FV.Backend.Proof.AbiClass
+module
+
+public import FV.Backend.Proof.LowerShape
+public import FV.Backend.Proof.AbiClass
+
+@[expose] public section
 
 /-!
 # Auxiliary facts for the driver simulation

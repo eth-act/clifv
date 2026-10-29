@@ -1,5 +1,9 @@
-import FV.Backend.Proof.DeadCleanupAdapter
-import FV.E2E.RegLevelDriverSem
+module
+
+public import FV.Backend.Proof.DeadCleanupAdapter
+public import FV.E2E.RegLevelDriverSem
+
+@[expose] public section
 
 namespace Backend.DeadCleanup
 open Backend.Proof Backend.Proof.Driver

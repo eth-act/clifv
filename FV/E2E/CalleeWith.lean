@@ -1,4 +1,8 @@
-import FV.E2E.LinkCheckFast
+module
+
+public import FV.E2E.LinkCheckFast
+
+@[expose] public section
 
 /-!
 # `calleeB` with the declared names given (S11e6, #419)

@@ -1,4 +1,8 @@
-import FV.Compile.SubsetT
+module
+
+public import FV.Compile.SubsetT
+
+@[expose] public section
 
 /-!
 # Float selects select float values (S11 slice 8)

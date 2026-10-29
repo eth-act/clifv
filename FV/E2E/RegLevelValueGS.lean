@@ -1,5 +1,9 @@
-import FV.E2E.RegLevelCorrectCYSF
-import FV.E2E.DeadCleanupRealizes
+module
+
+public import FV.E2E.RegLevelCorrectCYSF
+public import FV.E2E.DeadCleanupRealizes
+
+@[expose] public section
 
 /-!
 # The guarded value semantics and its realizer with the segment's lines (SEM1 #537, cleanup path)

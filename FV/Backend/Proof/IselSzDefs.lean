@@ -1,6 +1,10 @@
-import FV.Backend.Proof.IselCovFns
-import FV.Backend.Proof.DriverCheck
-import FV.Backend.Proof.LowerShape
+module
+
+public import FV.Backend.Proof.IselCovFns
+public import FV.Backend.Proof.DriverCheck
+public import FV.Backend.Proof.LowerShape
+
+@[expose] public section
 
 /-!
 # The size of the ISLE lowering's output (V6c): weights and the cost analysis

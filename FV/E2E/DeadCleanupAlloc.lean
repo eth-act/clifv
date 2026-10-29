@@ -1,11 +1,15 @@
-import FV.E2E.AllocTotal
-import FV.E2E.DeadCleanupFinal
-import FV.E2E.DeadCleanupCover
-import FV.E2E.DeadCleanupCtl
-import FV.Backend.Proof.DeadCleanupClasses
-import FV.Backend.Proof.DeadCleanupEdgesOk
-import FV.Backend.Proof.DeadCleanupKill
-import FV.Backend.Proof.KillPrep
+module
+
+public import FV.E2E.AllocTotal
+public import FV.E2E.DeadCleanupFinal
+public import FV.E2E.DeadCleanupCover
+public import FV.E2E.DeadCleanupCtl
+public import FV.Backend.Proof.DeadCleanupClasses
+public import FV.Backend.Proof.DeadCleanupEdgesOk
+public import FV.Backend.Proof.DeadCleanupKill
+public import FV.Backend.Proof.KillPrep
+
+@[expose] public section
 
 namespace E2E
 open Backend Backend.Proof Backend.Proof.Driver Backend.Proof.Cov Backend.DeadCleanup

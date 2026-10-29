@@ -1,5 +1,9 @@
-import FV.E2E.Elf
-import FV.Link.Ld.Obj
+module
+
+public import FV.E2E.Elf
+public import FV.Link.Ld.Obj
+
+@[expose] public section
 
 /-! # Lean static linker: the ELF writer
 

@@ -1,7 +1,11 @@
-import FV.Link.DeadCleanupExeT
-import FV.Link.ExeInputReachCleanupIn
-import FV.Link.DeadCleanupCompileTFast
-import FV.E2E.DeadCleanupLinkCheckT
+module
+
+public import FV.Link.DeadCleanupExeT
+public import FV.Link.ExeInputReachCleanupIn
+public import FV.Link.DeadCleanupCompileTFast
+public import FV.E2E.DeadCleanupLinkCheckT
+
+@[expose] public section
 
 /-! # The shipped executable compiler with the typed scope (S11, #35)
 

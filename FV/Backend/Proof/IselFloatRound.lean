@@ -1,4 +1,8 @@
-import FV.Backend.Proof.IselFloatArith
+module
+
+public import FV.Backend.Proof.IselFloatArith
+
+@[expose] public section
 
 /-!
 # S11f: scalar float rounding roots (ceil/floor/trunc/nearest) over float-capable contexts

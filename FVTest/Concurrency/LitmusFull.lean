@@ -1,6 +1,10 @@
-import FV.Concurrency.Armv8Full
-import FVTest.Concurrency.Litmus
-import FV.Concurrency.Witness
+module
+
+public import FV.Concurrency.Armv8Full
+public import FVTest.Concurrency.Litmus
+public import FV.Concurrency.Witness
+
+@[expose] public section
 
 /-!
 # Litmus tests of the full Armv8 model (`aarch64.cat`, T2g #305)

@@ -1,7 +1,11 @@
-import FV.Backend.Proof.IselShpBase
-import FV.Backend.Proof.IselShpFns
-import FV.Backend.Proof.IselCovModel
-import FV.Backend.Proof.IselCtlCall
+module
+
+public import FV.Backend.Proof.IselShpBase
+public import FV.Backend.Proof.IselShpFns
+public import FV.Backend.Proof.IselCovModel
+public import FV.Backend.Proof.IselCtlCall
+
+@[expose] public section
 
 /-!
 # Control shapes of the ISLE lowering (V4): the control-form oracles

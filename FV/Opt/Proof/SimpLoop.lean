@@ -1,6 +1,10 @@
-import FV.Opt.Proof.SimpMat
-import FV.Opt.Proof.SimpFacts
-import FV.Opt.Proof.SimpSim
+module
+
+public import FV.Opt.Proof.SimpMat
+public import FV.Opt.Proof.SimpFacts
+public import FV.Opt.Proof.SimpSim
+
+@[expose] public section
 
 /-!
 # The loop invariant of the simplify pass: every run has its facts (`Opt.simplify_facts`)

@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockConstantRecordValues
-import FV.Backend.Proof.StockRootOpcodeMatch
+module
+
+public import FV.Backend.Proof.StockConstantRecordValues
+public import FV.Backend.Proof.StockRootOpcodeMatch
+
+@[expose] public section
 
 /-! Constant dispatch derived from original source data and actual first-match selection. -/
 namespace Backend.Stock.Proof.ConstantComplete

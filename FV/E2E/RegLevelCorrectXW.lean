@@ -1,9 +1,13 @@
-import FV.E2E.RegLevelCorrect
-import FV.E2E.RegLevelCorrectX
-import FV.E2E.RegLevelCorrectW
-import FV.E2E.RegLevelFrameW
-import FV.E2E.RegLevelGotoW
-import FV.E2E.RegLevelWrites
+module
+
+public import FV.E2E.RegLevelCorrect
+public import FV.E2E.RegLevelCorrectX
+public import FV.E2E.RegLevelCorrectW
+public import FV.E2E.RegLevelFrameW
+public import FV.E2E.RegLevelGotoW
+public import FV.E2E.RegLevelWrites
+
+@[expose] public section
 
 /-!
 # The register-level theorem with the per-state facts of the run and the writes (A3, #412, slice F8b)

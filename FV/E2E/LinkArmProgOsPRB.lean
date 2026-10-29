@@ -1,5 +1,9 @@
-import FV.E2E.LinkArmProgOsPR
-import FV.E2E.LinkArmXPBT
+module
+
+public import FV.E2E.LinkArmProgOsPR
+public import FV.E2E.LinkArmXPBT
+
+@[expose] public section
 
 /-!
 # The call contracts of call number `n` on `ThmPRB` (SEM1 #537 item (d), `docs/plans/uninit.md`

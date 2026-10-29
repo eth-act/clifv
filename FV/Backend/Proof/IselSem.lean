@@ -1,4 +1,8 @@
-import FV.Backend.Proof.Encode
+module
+
+public import FV.Backend.Proof.Encode
+
+@[expose] public section
 
 /-!
 # Arm meaning of allocated `MInst`s, through the actual pipeline

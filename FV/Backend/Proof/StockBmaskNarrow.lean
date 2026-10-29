@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockBmaskWide
-import FV.Backend.Proof.StockLogicalForms
+module
+
+public import FV.Backend.Proof.StockBmaskWide
+public import FV.Backend.Proof.StockLogicalForms
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.ScalarMask
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

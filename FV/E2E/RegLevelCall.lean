@@ -1,4 +1,8 @@
-import FV.E2E.RegLevelNext
+module
+
+public import FV.E2E.RegLevelNext
+
+@[expose] public section
 
 /-!
 # Calls and symbol addresses on the machine (M6)

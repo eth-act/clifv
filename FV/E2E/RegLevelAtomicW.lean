@@ -1,5 +1,9 @@
-import FV.E2E.RegLevelAtomic
-import FV.E2E.RegLevelWrites
+module
+
+public import FV.E2E.RegLevelAtomic
+public import FV.E2E.RegLevelWrites
+
+@[expose] public section
 
 /-!
 # The LL/SC loops with their writes (A3, #412, slice F8b)

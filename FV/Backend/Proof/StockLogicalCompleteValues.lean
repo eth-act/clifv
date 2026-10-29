@@ -1,6 +1,10 @@
-import FV.Backend.Proof.StockLogicalDispatch
-import FV.Backend.Proof.StockLogicalSourceTransfer
-import FV.Backend.Proof.StockLogicalExtrSourceTransfer
+module
+
+public import FV.Backend.Proof.StockLogicalDispatch
+public import FV.Backend.Proof.StockLogicalSourceTransfer
+public import FV.Backend.Proof.StockLogicalExtrSourceTransfer
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.LogicalComplete
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

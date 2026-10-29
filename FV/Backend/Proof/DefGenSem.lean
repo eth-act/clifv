@@ -1,4 +1,8 @@
-import FV.Backend.Proof.DefGenOfV
+module
+
+public import FV.Backend.Proof.DefGenOfV
+
+@[expose] public section
 
 /-!
 # Definedness of the ISLE runs: the meaning of the abstract values

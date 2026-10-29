@@ -1,5 +1,9 @@
-import FV.E2E.DeadCleanupPipeline
-import FV.E2E.LowerDirect
+module
+
+public import FV.E2E.DeadCleanupPipeline
+public import FV.E2E.LowerDirect
+
+@[expose] public section
 
 namespace E2E
 open Backend Backend.Proof Backend.Proof.Driver Backend.Proof.Prep Backend.DeadCleanup

@@ -1,5 +1,9 @@
-import FV.Backend.Proof.LowerContractT
-import FV.Backend.Proof.IselExclTF
+module
+
+public import FV.Backend.Proof.LowerContractT
+public import FV.Backend.Proof.IselExclTF
+
+@[expose] public section
 
 /-!
 # The typed statement dispatcher with the proven float operations (S11f, #35)

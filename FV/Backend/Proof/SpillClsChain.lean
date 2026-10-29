@@ -1,6 +1,10 @@
-import FV.Backend.Proof.SpillClsRun
-import FV.Backend.Proof.LowerComplete
-import FV.Backend.Proof.SpillLocal
+module
+
+public import FV.Backend.Proof.SpillClsRun
+public import FV.Backend.Proof.LowerComplete
+public import FV.Backend.Proof.SpillLocal
+
+@[expose] public section
 
 /-!
 # The lowering states along `lowerFunction`'s loop (V4 classes)

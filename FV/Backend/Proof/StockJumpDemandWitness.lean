@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockJumpEdgeParameters
-import FV.Backend.Proof.StockJumpBodyWitness
+module
+
+public import FV.Backend.Proof.StockJumpEdgeParameters
+public import FV.Backend.Proof.StockJumpBodyWitness
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.ControlWitness
 open Backend.Proof Backend.Proof.Driver

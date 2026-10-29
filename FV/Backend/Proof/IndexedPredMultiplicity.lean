@@ -1,4 +1,8 @@
-import FV.Backend.Proof.SpillStep4Cfg
+module
+
+public import FV.Backend.Proof.SpillStep4Cfg
+
+@[expose] public section
 
 namespace Backend.Proof.Spill
 open Backend Backend.Proof

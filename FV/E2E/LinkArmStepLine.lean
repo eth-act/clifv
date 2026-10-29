@@ -1,6 +1,10 @@
-import FV.E2E.LinkArmX30Check
-import FV.E2E.LinkArmStepFrameRec
-import FV.E2E.LinkGood
+module
+
+public import FV.E2E.LinkArmX30Check
+public import FV.E2E.LinkArmStepFrameRec
+public import FV.E2E.LinkGood
+
+@[expose] public section
 
 /-!
 # One step of the `x30` lock-step per line kind (SEM1, `docs/plans/uninit.md` §5.9, step 3o)

@@ -1,5 +1,9 @@
-import FV.E2E.ProductionPipeline
-import FV.Backend.Lowering.StockPrologueAll
+module
+
+public import FV.E2E.ProductionPipeline
+public import FV.Backend.Lowering.StockPrologueAll
+
+@[expose] public section
 
 /-! Lowerer-parametric transactional orchestration. Existing production APIs
 retain their definitions; successive proved classes can share the preparation,

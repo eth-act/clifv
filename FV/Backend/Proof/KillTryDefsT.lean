@@ -1,8 +1,12 @@
-import FV.Backend.Proof.KillHypT
-import FV.Backend.Proof.KillTryDefs
-import FV.Backend.Proof.IselCtlUnmatchTI
-import FV.Backend.Proof.IselCtlCallTI
-import FV.Backend.Proof.LowerShapeOkT
+module
+
+public import FV.Backend.Proof.KillHypT
+public import FV.Backend.Proof.KillTryDefs
+public import FV.Backend.Proof.IselCtlUnmatchTI
+public import FV.Backend.Proof.IselCtlCallTI
+public import FV.Backend.Proof.LowerShapeOkT
+
+@[expose] public section
 
 set_option Elab.async false
 

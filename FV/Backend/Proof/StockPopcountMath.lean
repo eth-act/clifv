@@ -1,4 +1,9 @@
-import FV.Backend.Proof.IselFamAluBPopcnt
+module
+
+public import FV.Backend.Proof.IselFamAluBPopcnt
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarPopcount
 open Backend.Proof
 open Backend

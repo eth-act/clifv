@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockCoverageTerms
-import FV.Backend.Proof.StockBlockScan
+module
+
+public import FV.Backend.Proof.StockCoverageTerms
+public import FV.Backend.Proof.StockBlockScan
+
+@[expose] public section
 
 /-! Compose the real scan transitions with the checked Stock root proofs.
 The empty-table invariant is internal proof state, not a new compiler check. -/

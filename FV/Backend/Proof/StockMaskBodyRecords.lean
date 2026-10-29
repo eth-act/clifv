@@ -1,6 +1,10 @@
-import FV.Backend.Proof.StockBmaskScanRefines
-import FV.Backend.Proof.StockZeroResultScan
-import FV.Backend.Proof.StockScalarDivBodyRecords
+module
+
+public import FV.Backend.Proof.StockBmaskScanRefines
+public import FV.Backend.Proof.StockZeroResultScan
+public import FV.Backend.Proof.StockScalarDivBodyRecords
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.MaskBody
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

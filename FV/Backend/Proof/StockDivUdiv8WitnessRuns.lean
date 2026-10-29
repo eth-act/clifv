@@ -1,4 +1,9 @@
-import FV.Backend.Proof.StockDivUdivNarrowSourceValues
+module
+
+public import FV.Backend.Proof.StockDivUdivNarrowSourceValues
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarDiv.Udiv8Witness.RunData
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 set_option maxRecDepth 20000

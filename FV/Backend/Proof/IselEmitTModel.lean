@@ -1,6 +1,10 @@
-import FV.Backend.Proof.IselEmitTChk
-import FV.Backend.Proof.IselEmitModel
-import FV.Backend.Proof.IselCovTModel
+module
+
+public import FV.Backend.Proof.IselEmitTChk
+public import FV.Backend.Proof.IselEmitModel
+public import FV.Backend.Proof.IselCovTModel
+
+@[expose] public section
 
 /-!
 # Emission conditions of the typed ISLE lowering (S11): the model

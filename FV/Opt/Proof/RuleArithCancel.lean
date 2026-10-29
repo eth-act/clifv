@@ -1,6 +1,11 @@
-import FV.Opt.Proof.RuleInfraIcmp
-import FV.Opt.Proof.RuleInfraConst
-import FV.Opt.Proof.RuleIntSplit
+module
+
+public import FV.Opt.Proof.RuleInfraIcmp
+public import FV.Opt.Proof.RuleInfraConst
+public import FV.Opt.Proof.RuleIntSplit
+
+@[expose] public section
+
 set_option maxHeartbeats 4000000
 set_option maxRecDepth 8000
 set_option Elab.async false

@@ -1,4 +1,8 @@
-import FV.Isle.Interp
+module
+
+public import FV.Isle.Interp
+
+@[expose] public section
 
 /-!
 # Soundness of multi-matching (`matchPatN`) as a relation

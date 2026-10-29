@@ -1,10 +1,14 @@
-import FV.Backend.Proof.IselCtlTerm
-import FV.Backend.Proof.IselCtlUnmatch
-import FV.Backend.Proof.IselCtlCallInd
-import FV.Backend.Proof.IselCtlBranch
-import FV.Backend.Proof.IselCtlBrif
-import FV.Backend.Proof.IselCtlTbz
-import FV.Backend.Proof.IselCtlBrTable
+module
+
+public import FV.Backend.Proof.IselCtlTerm
+public import FV.Backend.Proof.IselCtlUnmatch
+public import FV.Backend.Proof.IselCtlCallInd
+public import FV.Backend.Proof.IselCtlBranch
+public import FV.Backend.Proof.IselCtlBrif
+public import FV.Backend.Proof.IselCtlTbz
+public import FV.Backend.Proof.IselCtlBrTable
+
+@[expose] public section
 
 /-!
 # Family Ctl: the terminator/branch/call statements for the exported program

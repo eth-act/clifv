@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockSinkFrame
-import FV.Backend.Proof.StockPolicy
+module
+
+public import FV.Backend.Proof.StockSinkFrame
+public import FV.Backend.Proof.StockPolicy
+
+@[expose] public section
 
 /-! Immutable instruction colors and zero-color sink safety.
 This leaf frame retains the existing constructor-model interfaces. -/

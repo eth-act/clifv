@@ -1,5 +1,9 @@
-import FV.Front.Bundle
-import FV.Link.LayoutFacts
+module
+
+public import FV.Front.Bundle
+public import FV.Link.LayoutFacts
+
+@[expose] public section
 
 /-!
 # The Lean-built `LinkSpec` is the units' program (T7d, docs/contracts/frontend.md)

@@ -1,5 +1,9 @@
-import FV.Opt.Proof.SimpSimX
-import FV.Opt.Proof.GvnEditU
+module
+
+public import FV.Opt.Proof.SimpSimX
+public import FV.Opt.Proof.GvnEditU
+
+@[expose] public section
 
 /-!
 # The simplify validator is sound with handler edges (`Opt.simpOk_simU`, S10f #233)

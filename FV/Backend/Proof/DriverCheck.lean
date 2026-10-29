@@ -1,7 +1,11 @@
-import FV.Backend.Isel
-import FV.Compile.Subset
-import Std.Data.HashMap.Basic
-import Std.Data.HashSet.Basic
+module
+
+public import FV.Backend.Isel
+public import FV.Compile.Subset
+public import Std.Data.HashMap.Basic
+public import Std.Data.HashSet.Basic
+
+@[expose] public section
 
 /-!
 # The lowering validator (M7): `lowerCheck f vc`

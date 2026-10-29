@@ -1,4 +1,8 @@
-import FV.Backend.Proof.IselFlowCheck
+module
+
+public import FV.Backend.Proof.IselFlowCheck
+
+@[expose] public section
 
 /-!
 # The flow-level abstract interpretation with checked `emit`s (V4 classes)

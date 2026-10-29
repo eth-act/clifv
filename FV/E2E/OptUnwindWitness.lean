@@ -1,6 +1,10 @@
-import FV.E2E.OptUnwind
-import FV.E2E.LegalOptUnwind
-import FV.E2E.LegalUnwindWitness
+module
+
+public import FV.E2E.OptUnwind
+public import FV.E2E.LegalOptUnwind
+public import FV.E2E.LegalUnwindWitness
+
+@[expose] public section
 
 /-!
 # Non-vacuity of `optExe_entryX` and `backend_correct_opt_exe_cleanup_unwind` (S10f, #233)

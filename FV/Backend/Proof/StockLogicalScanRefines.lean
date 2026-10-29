@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockAddSubScanRefines
-import FV.Backend.Proof.StockLogicalCompleteValues
+module
+
+public import FV.Backend.Proof.StockAddSubScanRefines
+public import FV.Backend.Proof.StockLogicalCompleteValues
+
+@[expose] public section
 
 /-! Complete logical source transfer at the original body-scan boundary. -/
 namespace Backend.Stock.Proof

@@ -1,4 +1,8 @@
-import FV.Backend.Proof.StockAliasAvailable
+module
+
+public import FV.Backend.Proof.StockAliasAvailable
+
+@[expose] public section
 
 /-! Original inherited values remain disjoint from successor parameter writes,
 including through actual nonempty final alias paths. -/

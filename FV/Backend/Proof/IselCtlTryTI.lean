@@ -1,7 +1,11 @@
-import FV.Backend.Proof.IselCtlTryInd
-import FV.Backend.Proof.IselCtlCallTI
-import FV.Backend.Proof.IselTermFactsTy
-import FV.Backend.Proof.LowerContractTP
+module
+
+public import FV.Backend.Proof.IselCtlTryInd
+public import FV.Backend.Proof.IselCtlCallTI
+public import FV.Backend.Proof.IselTermFactsTy
+public import FV.Backend.Proof.LowerContractTP
+
+@[expose] public section
 
 /-!
 # Family Ctl over typed contexts: the `try_call` and `try_call_indirect` rules (S11e5 Stage C,

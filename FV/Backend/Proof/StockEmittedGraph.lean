@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockPrepareTotal
-import FV.Backend.Proof.StockCriticalCode
+module
+
+public import FV.Backend.Proof.StockPrepareTotal
+public import FV.Backend.Proof.StockCriticalCode
+
+@[expose] public section
 
 namespace Backend.Stock.Proof
 open Backend.Proof Backend.Proof.Driver

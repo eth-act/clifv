@@ -1,4 +1,8 @@
-import FV.Backend.Proof.IselCtlBase
+module
+
+public import FV.Backend.Proof.IselCtlBase
+
+@[expose] public section
 
 /-!
 # Family Ctl: rules that cannot match a terminator

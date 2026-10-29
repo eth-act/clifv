@@ -1,6 +1,10 @@
-import FV.E2E.SemanticExecTlsCf
-import FV.E2E.ExecTlsWords
-import FV.Arm.Tpidr
+module
+
+public import FV.E2E.SemanticExecTlsCf
+public import FV.E2E.ExecTlsWords
+public import FV.Arm.Tpidr
+
+@[expose] public section
 
 /-! # The executable's TLS words, run for real (T1)
 

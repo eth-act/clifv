@@ -1,5 +1,9 @@
-import FV.Backend.LinearScan
-import FV.Backend.Proof.PrepareComplete
+module
+
+public import FV.Backend.LinearScan
+public import FV.Backend.Proof.PrepareComplete
+
+@[expose] public section
 
 /-!
 # The Lean allocator's function view (V4b-3, #275): what `Fn.make` computes

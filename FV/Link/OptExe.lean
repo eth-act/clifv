@@ -1,6 +1,10 @@
-import FV.Link.OptFacts
-import FV.Link.ExeTotal
-import FV.Link.ExeInputReach
+module
+
+public import FV.Link.OptFacts
+public import FV.Link.ExeTotal
+public import FV.Link.ExeInputReach
+
+@[expose] public section
 
 /-! # The optimising executable compiler is correct (S1, S2, L1)
 

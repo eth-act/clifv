@@ -1,4 +1,8 @@
-import FV.E2E.DeadCleanupLinkCheck
+module
+
+public import FV.E2E.DeadCleanupLinkCheck
+
+@[expose] public section
 
 namespace E2E.LinkCheck.LoweringPipeline
 open Backend

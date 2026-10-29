@@ -1,6 +1,10 @@
-import FV.E2E.LinkScopeDefs
-import FV.E2E.SizeDefs
-import FV.Backend.Proof.IselPrgCtx
+module
+
+public import FV.E2E.LinkScopeDefs
+public import FV.E2E.SizeDefs
+public import FV.Backend.Proof.IselPrgCtx
+
+@[expose] public section
 
 /-! # The input conditions without running the compiler (V7): the definitions
 

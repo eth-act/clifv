@@ -1,10 +1,14 @@
-import FV.E2E.EmitTotalT
-import FV.E2E.DeadCleanupPreparedSize
-import FV.Backend.Proof.DeadCleanupPreparedAvailability
-import FV.Backend.Proof.DeadCleanupEdgesOk
-import FV.Backend.Proof.DeadCleanupClasses
-import FV.Backend.Proof.DeadCleanupPrepare
-import FV.Backend.Proof.DeadCleanupDeletion
+module
+
+public import FV.E2E.EmitTotalT
+public import FV.E2E.DeadCleanupPreparedSize
+public import FV.Backend.Proof.DeadCleanupPreparedAvailability
+public import FV.Backend.Proof.DeadCleanupEdgesOk
+public import FV.Backend.Proof.DeadCleanupClasses
+public import FV.Backend.Proof.DeadCleanupPrepare
+public import FV.Backend.Proof.DeadCleanupDeletion
+
+@[expose] public section
 
 /-!
 # The dead-cleanup pipeline's allocation, emission and layout on the typed scope

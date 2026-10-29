@@ -1,7 +1,11 @@
-import FV.E2E.SpillCtlCheck
-import FV.E2E.LinkScopeInputT
-import FV.Backend.Proof.SpillCtlPipeT
-import FV.Backend.Proof.SpillEdgesT
+module
+
+public import FV.E2E.SpillCtlCheck
+public import FV.E2E.LinkScopeInputT
+public import FV.Backend.Proof.SpillCtlPipeT
+public import FV.Backend.Proof.SpillEdgesT
+
+@[expose] public section
 
 /-!
 # The instruction part of `ctlCheck` on the typed pipeline's output (S11 #35)

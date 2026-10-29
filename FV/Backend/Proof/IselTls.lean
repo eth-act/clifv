@@ -1,4 +1,8 @@
-import FV.Backend.Proof.IselMemRoots
+module
+
+public import FV.Backend.Proof.IselMemRoots
+
+@[expose] public section
 
 /-!
 # `tls_value` (agent/stack-tls-proof): the root rules of `lower`

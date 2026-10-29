@@ -1,5 +1,10 @@
-import FV.Link.RelocShapeProof
-import FV.Link.DeadCleanupImage
+module
+
+public import FV.Link.RelocShapeProof
+public import FV.Link.DeadCleanupImage
+
+@[expose] public section
+
 namespace Link.DeadCleanup
 set_option autoImplicit false
 open E2E E2E.LinkCheck E2E.BinCheck E2E.Elf Backend Backend.Proof LinkSpec

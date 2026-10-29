@@ -1,4 +1,8 @@
-import FV.E2E.LinkArmRetOkZero
+module
+
+public import FV.E2E.LinkArmRetOkZero
+
+@[expose] public section
 
 /-!
 # `RetOkPRB κ M` at every depth (SEM1 #537, #680 (3))

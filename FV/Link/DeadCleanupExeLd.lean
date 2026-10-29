@@ -1,5 +1,9 @@
-import FV.Link.DeadCleanupOptExe
-import FV.Link.Ld.Spec
+module
+
+public import FV.Link.DeadCleanupOptExe
+public import FV.Link.Ld.Spec
+
+@[expose] public section
 
 /-! # The shipped executable compiler is total on `lean-ld`'s output (L2b stage 3e)
 

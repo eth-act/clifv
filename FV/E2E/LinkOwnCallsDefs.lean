@@ -1,4 +1,8 @@
-import FV.E2E.LinkCheck
+module
+
+public import FV.E2E.LinkCheck
+
+@[expose] public section
 
 /-! # The input condition of the call sites (`callRegs/blrRegs`; L2a)
 

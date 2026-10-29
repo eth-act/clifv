@@ -1,5 +1,9 @@
-import FV.Backend.Lowering.StockConditionalCfg
-import FV.Backend.Lowering.StockForwardCfg
+module
+
+public import FV.Backend.Lowering.StockConditionalCfg
+public import FV.Backend.Lowering.StockForwardCfg
+
+@[expose] public section
 
 namespace Backend.Stock.ConditionalCfg
 open Backend.Proof.Driver

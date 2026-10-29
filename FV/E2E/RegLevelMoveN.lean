@@ -1,6 +1,9 @@
-import FV.E2E.RegLevelGoodX
-import FV.E2E.RegLevelNoCall
+module
 
+public import FV.E2E.RegLevelGoodX
+public import FV.E2E.RegLevelNoCall
+
+@[expose] public section
 
 /-!
 # Moves with no call state (SEM1 #537, step 2k)

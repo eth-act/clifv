@@ -1,5 +1,9 @@
-import FVTest.E2E.FloatTotalT
-import FV.E2E.LinkScopeInputT2
+module
+
+public import FVTest.E2E.FloatTotalT
+public import FV.E2E.LinkScopeInputT2
+
+@[expose] public section
 
 /-!
 Non-vacuity of the strengthened typed input scope `fnScopeInTB2` (S11 slice 8), and the two

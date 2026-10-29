@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockConditionalValues
-import FV.Backend.Proof.StockConditionalTargetsWitness
+module
+
+public import FV.Backend.Proof.StockConditionalValues
+public import FV.Backend.Proof.StockConditionalTargetsWitness
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.ConditionalValues
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

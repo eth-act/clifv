@@ -1,5 +1,9 @@
-import FV.Backend.Proof.IselFlowCheck
-import FV.Backend.Proof.IselExcl
+module
+
+public import FV.Backend.Proof.IselFlowCheck
+public import FV.Backend.Proof.IselExcl
+
+@[expose] public section
 
 /-!
 # The TLS summary table and its kernel check

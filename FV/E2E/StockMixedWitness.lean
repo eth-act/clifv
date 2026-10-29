@@ -1,8 +1,12 @@
-import FV.E2E.StockProductionFixtures
-import FV.E2E.StockMixedNI
-import FV.E2E.CompiledSemanticNI
-import FV.Backend.LinearScan
-import FV.Backend.Lowering.StockD0
+module
+
+public import FV.E2E.StockProductionFixtures
+public import FV.E2E.StockMixedNI
+public import FV.E2E.CompiledSemanticNI
+public import FV.Backend.LinearScan
+public import FV.Backend.Lowering.StockD0
+
+@[expose] public section
 
 namespace E2E.StockMixedNIWitness
 open Backend Backend.Proof Backend.Proof.Driver Backend.Stock.D0

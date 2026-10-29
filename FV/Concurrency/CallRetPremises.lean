@@ -1,5 +1,9 @@
-import FV.Concurrency.CallRetResume
-import FV.Concurrency.CallLoadResume
+module
+
+public import FV.Concurrency.CallRetResume
+public import FV.Concurrency.CallLoadResume
+
+@[expose] public section
 
 /-!
 # The caller's resume premises from the call's operands and the callee's return (#473, step (1))

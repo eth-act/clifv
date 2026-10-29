@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockSourceEdgeDFG
-import FV.Backend.Proof.StockMaskBlockWitness
+module
+
+public import FV.Backend.Proof.StockSourceEdgeDFG
+public import FV.Backend.Proof.StockMaskBlockWitness
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.SourceSuccessorWitness
 open Backend.Proof Backend.Proof.Driver

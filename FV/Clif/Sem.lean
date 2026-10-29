@@ -1,4 +1,8 @@
-import FV.Clif.Syntax
+module
+
+public import FV.Clif.Syntax
+
+@[expose] public section
 
 /-!
 # Per-opcode semantics of the CLIF integer subset

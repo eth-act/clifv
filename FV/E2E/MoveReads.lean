@@ -1,5 +1,9 @@
-import FV.E2E.RegLevelMove
-import FV.E2E.ExecReads
+module
+
+public import FV.E2E.RegLevelMove
+public import FV.E2E.ExecReads
+
+@[expose] public section
 
 /-!
 # The memory reads of move code (L3 (c), D2)

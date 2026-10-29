@@ -1,5 +1,9 @@
-import FV.Link.ProductionImage
-import FV.E2E.ProductionPipelineWith
+module
+
+public import FV.Link.ProductionImage
+public import FV.E2E.ProductionPipelineWith
+
+@[expose] public section
 
 /-! Lowerer-parametric placement and byte writing. The retained entrypoints are
 exact specializations, so adding a class does not require a new machine model. -/

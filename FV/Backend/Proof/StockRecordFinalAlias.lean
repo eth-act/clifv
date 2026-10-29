@@ -1,8 +1,12 @@
-import FV.Backend.Proof.StockAliasSemantics
-import FV.Backend.Proof.StockTraversalAliasConnection
-import FV.Backend.Proof.StockTraversalRecordOrigin
-import FV.Backend.Proof.StockBackwardSuffixSplit
-import FV.Backend.Proof.StockCoreScanOrigin
+module
+
+public import FV.Backend.Proof.StockAliasSemantics
+public import FV.Backend.Proof.StockTraversalAliasConnection
+public import FV.Backend.Proof.StockTraversalRecordOrigin
+public import FV.Backend.Proof.StockBackwardSuffixSplit
+public import FV.Backend.Proof.StockCoreScanOrigin
+
+@[expose] public section
 
 namespace Backend.Stock.Proof
 open Backend.Proof Backend.Proof.Driver

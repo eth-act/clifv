@@ -1,6 +1,10 @@
-import FV.Backend.Proof.StockSelectedBindingFlow
-import FV.Backend.Proof.StockEmittedScan
-import FV.Backend.Proof.StockRecordFinalAlias
+module
+
+public import FV.Backend.Proof.StockSelectedBindingFlow
+public import FV.Backend.Proof.StockEmittedScan
+public import FV.Backend.Proof.StockRecordFinalAlias
+
+@[expose] public section
 
 /-! Alias origins of emitted source records retained by the actual whole driver.
 Core metadata, record transitions, allocation facts and final transport are derived. -/

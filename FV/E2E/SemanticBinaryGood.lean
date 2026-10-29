@@ -1,5 +1,9 @@
-import FV.E2E.SemanticLinkGood
-import FV.E2E.SemanticBinary
+module
+
+public import FV.E2E.SemanticLinkGood
+public import FV.E2E.SemanticBinary
+
+@[expose] public section
 
 /-! # The per-state facts of the run through the stack-bound and binary theorems (L3 (c))
 

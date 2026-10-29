@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockMulScanRefines
-import FV.Backend.Proof.StockShiftCompleteSourceTransfer
+module
+
+public import FV.Backend.Proof.StockMulScanRefines
+public import FV.Backend.Proof.StockShiftCompleteSourceTransfer
+
+@[expose] public section
 
 /-! Complete shift source transfer through the shared scalar body boundary. -/
 namespace Backend.Stock.Proof

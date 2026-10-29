@@ -1,6 +1,10 @@
-import FV.Backend.Lowering.StockLinearCfg
-import FV.Backend.Proof.StockLinearCfgDomain
-import FV.Backend.Proof.StockScalarCheck
+module
+
+public import FV.Backend.Lowering.StockLinearCfg
+public import FV.Backend.Proof.StockLinearCfgDomain
+public import FV.Backend.Proof.StockScalarCheck
+
+@[expose] public section
 
 namespace Backend.Stock.LinearCfg
 open Backend.Proof Backend.Proof.Driver Backend.Stock.Proof

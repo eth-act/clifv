@@ -1,6 +1,10 @@
-import FV.Backend
-import FV.Backend.RegallocPerEdgeDriver
-import Lean.Data.Json
+module
+
+public import FV.Backend
+public import FV.Backend.RegallocPerEdgeDriver
+public import Lean.Data.Json
+
+@[expose] public section
 
 /-!
 Explicit, fail-closed stock-filetest configuration adapter. This is an experimental

@@ -1,5 +1,9 @@
-import FV.Backend.Proof.IselFamAluBBase
-import FV.Backend.Proof.IselBaseTI
+module
+
+public import FV.Backend.Proof.IselFamAluBBase
+public import FV.Backend.Proof.IselBaseTI
+
+@[expose] public section
 
 /-!
 # `IselFamAluBBase` over typed contexts (S11e5 Stage C, slice 7)

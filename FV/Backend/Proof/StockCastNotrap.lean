@@ -1,5 +1,10 @@
-import FV.Backend.Proof.StockCastFamily
-import FV.Backend.Proof.StockShiftNotrap
+module
+
+public import FV.Backend.Proof.StockCastFamily
+public import FV.Backend.Proof.StockShiftNotrap
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.CastBody
 open Backend.Proof Backend.Proof.Driver
 set_option autoImplicit false

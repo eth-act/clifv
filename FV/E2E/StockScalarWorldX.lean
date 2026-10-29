@@ -1,8 +1,12 @@
-import FV.E2E.LinkWorld
-import FV.E2E.StockArithmeticStage
-import FV.Backend.Proof.StockScalarCheck
-import FV.E2E.DeadCleanupRegLevelX
-import FV.E2E.DeadCleanupGot
+module
+
+public import FV.E2E.LinkWorld
+public import FV.E2E.StockArithmeticStage
+public import FV.Backend.Proof.StockScalarCheck
+public import FV.E2E.DeadCleanupRegLevelX
+public import FV.E2E.DeadCleanupGot
+
+@[expose] public section
 
 namespace E2E
 open Backend Backend.Proof Backend.Proof.Driver Backend.Stock.Proof Backend.DeadCleanup

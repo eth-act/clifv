@@ -1,4 +1,8 @@
-import FV.E2E.LinkArm
+module
+
+public import FV.E2E.LinkArm
+
+@[expose] public section
 
 /-!
 # A world related to the CLIF memory after a call (SEM1 item (b), `docs/plans/uninit.md` §5.9)

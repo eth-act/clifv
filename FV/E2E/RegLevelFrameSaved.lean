@@ -1,5 +1,9 @@
-import FV.E2E.RegLevelUnwind
-import FV.E2E.RegLevelFrame
+module
+
+public import FV.E2E.RegLevelUnwind
+public import FV.E2E.RegLevelFrame
+
+@[expose] public section
 
 /-!
 # The frame invariant at the calls of a run (S10e, #232)

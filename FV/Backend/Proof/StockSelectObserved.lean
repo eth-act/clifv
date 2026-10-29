@@ -1,5 +1,10 @@
-import FV.Backend.Proof.StockSelectRequests
-import FV.Backend.Proof.StockSelectConditions
+module
+
+public import FV.Backend.Proof.StockSelectRequests
+public import FV.Backend.Proof.StockSelectConditions
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarSelect
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 set_option maxRecDepth 20000

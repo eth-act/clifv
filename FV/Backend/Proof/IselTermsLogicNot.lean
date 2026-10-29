@@ -1,4 +1,8 @@
-import FV.Backend.Proof.IselTermsLogic
+module
+
+public import FV.Backend.Proof.IselTermsLogic
+
+@[expose] public section
 
 /-!
 # `alu_rs_imm_logic` (term 566) and the `band`/`bor`/`bxor`-with-`bnot` root rules: forward

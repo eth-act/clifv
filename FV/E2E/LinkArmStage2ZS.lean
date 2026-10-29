@@ -1,4 +1,8 @@
-import FV.E2E.LinkArmStage2Z
+module
+
+public import FV.E2E.LinkArmStage2Z
+
+@[expose] public section
 
 /-!
 # Stage 2 at the call sites' own operands (SEM1 #537, #680 (3), `docs/plans/uninit.md` §5.9)

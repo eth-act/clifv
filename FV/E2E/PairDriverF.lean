@@ -1,4 +1,8 @@
-import FV.E2E.PairDriver
+module
+
+public import FV.E2E.PairDriver
+
+@[expose] public section
 
 /-!
 # Non-interference of the external semantics at the exterior only (SEM1 #537, #713)

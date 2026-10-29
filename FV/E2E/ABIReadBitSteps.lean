@@ -1,6 +1,8 @@
-import FV.E2E.ABIReadShiftSteps
+module
 
+public import FV.E2E.ABIReadShiftSteps
 
+@[expose] public section
 
 namespace E2E.BitRead
 open Backend Backend.Proof Backend.Proof.Driver E2E.MixedFlagBoundary

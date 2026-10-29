@@ -1,5 +1,9 @@
-import FV.Concurrency.ArmAllocStraight
-import FV.Concurrency.IselMemAux
+module
+
+public import FV.Concurrency.ArmAllocStraight
+public import FV.Concurrency.IselMemAux
+
+@[expose] public section
 
 /-!
 # Layer 4b for the memory items of the atomics scope (T2h, #311)

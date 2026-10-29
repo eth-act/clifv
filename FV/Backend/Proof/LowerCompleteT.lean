@@ -1,7 +1,11 @@
-import FV.Backend.Proof.LowerComplete
-import FV.Backend.Proof.LowerCertT
-import FV.Backend.Proof.LowerShapeOkT
-import FV.Backend.Proof.IselTermFactsCallT
+module
+
+public import FV.Backend.Proof.LowerComplete
+public import FV.Backend.Proof.LowerCertT
+public import FV.Backend.Proof.LowerShapeOkT
+public import FV.Backend.Proof.IselTermFactsCallT
+
+@[expose] public section
 
 /-!
 # Completeness of the typed lowering validator (S11e5 Stage C)

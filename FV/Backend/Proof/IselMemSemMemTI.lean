@@ -1,5 +1,9 @@
-import FV.Backend.Proof.IselMemSem
-import FV.Backend.Proof.IselMemBaseTI
+module
+
+public import FV.Backend.Proof.IselMemSem
+public import FV.Backend.Proof.IselMemBaseTI
+
+@[expose] public section
 
 /-!
 # `IselMemSem` over typed contexts (S11e5 Stage C, slice 7)

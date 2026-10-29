@@ -1,5 +1,9 @@
-import FV.Link.DeadCleanupExeSource
-import FV.Link.DeadCleanupExePeakT
+module
+
+public import FV.Link.DeadCleanupExeSource
+public import FV.Link.DeadCleanupExePeakT
+
+@[expose] public section
 
 /-! # The shipped executable compiler on the typed scope refines the original source program
 (S11e6, #419)

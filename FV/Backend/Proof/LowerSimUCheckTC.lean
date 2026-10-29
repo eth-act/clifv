@@ -1,5 +1,9 @@
-import FV.Backend.Proof.LowerSimUCheck
-import FV.Backend.Proof.DriverCheckTyC
+module
+
+public import FV.Backend.Proof.LowerSimUCheck
+public import FV.Backend.Proof.DriverCheckTyC
+
+@[expose] public section
 
 /-!
 # The exceptional-edge validator for typed `try_call`s (S11e6, #585)

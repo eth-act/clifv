@@ -1,7 +1,11 @@
-import FV.E2E.VerifiableT
-import FVTest.E2E.FloatFinalT
-import FVTest.Backend.FloatTryLower
-import FV.E2E.LinkCheck
+module
+
+public import FV.E2E.VerifiableT
+public import FVTest.E2E.FloatFinalT
+public import FVTest.Backend.FloatTryLower
+public import FV.E2E.LinkCheck
+
+@[expose] public section
 
 /-!
 Non-vacuity of the typed final theorem with typed `try_call`s (S11e6, #419):

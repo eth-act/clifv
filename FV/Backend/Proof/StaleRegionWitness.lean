@@ -1,4 +1,8 @@
-import FV.Backend.Proof.StaleRegion
+module
+
+public import FV.Backend.Proof.StaleRegion
+
+@[expose] public section
 
 /-!
 # Witnesses for `overlay` (`FV/Backend/Proof/StaleRegion.lean`)

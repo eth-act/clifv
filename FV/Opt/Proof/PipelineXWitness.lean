@@ -1,6 +1,10 @@
-import FV.Opt.Proof.PipelineX
-import FV.E2E.LinkClif
-import FV.Clif.Parse
+module
+
+public import FV.Opt.Proof.PipelineX
+public import FV.E2E.LinkClif
+public import FV.Clif.Parse
+
+@[expose] public section
 
 /-! # Non-vacuity of `Opt.optimizeProgramExe_refines`, and why `optimizeExe` has its guard
 

@@ -1,7 +1,11 @@
-import FV.Opt.Proof.RuleInfraIcmp
-import FV.Opt.Proof.RuleInfraConst
-import FV.Opt.Proof.RuleArithOddSem
-import FV.Opt.Proof.RuleInfraPow2
+module
+
+public import FV.Opt.Proof.RuleInfraIcmp
+public import FV.Opt.Proof.RuleInfraConst
+public import FV.Opt.Proof.RuleArithOddSem
+public import FV.Opt.Proof.RuleInfraPow2
+
+@[expose] public section
 
 /-!
 # Odd-multiplier comparison cancellation

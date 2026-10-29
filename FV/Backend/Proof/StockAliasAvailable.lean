@@ -1,4 +1,8 @@
-import FV.Backend.Proof.StockAliasTerminal
+module
+
+public import FV.Backend.Proof.StockAliasTerminal
+
+@[expose] public section
 
 /-! Availability along actual final source aliases. -/
 namespace Backend.Stock.Proof

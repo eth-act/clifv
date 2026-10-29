@@ -7,8 +7,12 @@ Author(s): Yan Peng
 -- Modified by fv-compiler-rust (2026): ported to Lean v4.34.1, module prefix FV.Arm, wrapped in
 -- namespace Arm; `Rn = 31` is XZR for every opcode (see `exec_logical_imm`).
 
-import FV.Arm.Decode
-import FV.Arm.Insts.Common
+module
+
+public import FV.Arm.Decode
+public import FV.Arm.Insts.Common
+
+@[expose] public section
 
 namespace Arm
 

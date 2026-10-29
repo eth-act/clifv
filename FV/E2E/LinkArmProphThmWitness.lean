@@ -1,5 +1,9 @@
-import FV.E2E.LinkArmProphThm
-import FV.E2E.LinkArmProphWitness
+module
+
+public import FV.E2E.LinkArmProphThm
+public import FV.E2E.LinkArmProphWitness
+
+@[expose] public section
 
 /-!
 # Witnesses for the linking statement with prophecies (`FV/E2E/LinkArmProphThm.lean`)

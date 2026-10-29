@@ -1,5 +1,9 @@
-import FV.E2E.LinkArm
-import FV.E2E.SemanticNIBoundary
+module
+
+public import FV.E2E.LinkArm
+public import FV.E2E.SemanticNIBoundary
+
+@[expose] public section
 
 /-! Additive whole-program proofs for actual validated output.
 Uses the existing LinkSys, hooks, CLIF runs, machine, depth/peak budgets and

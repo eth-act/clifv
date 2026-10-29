@@ -1,4 +1,8 @@
-import FV.Backend.Proof.RegallocCSem
+module
+
+public import FV.Backend.Proof.RegallocCSem
+
+@[expose] public section
 
 /-!
 # The VCode world with a call counter (SEM1 step 2, `docs/plans/uninit.md` §5.3)

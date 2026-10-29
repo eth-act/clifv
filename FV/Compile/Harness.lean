@@ -1,6 +1,10 @@
-import FV.Compile.Model
-import FV.Compile.Runtime
-import FV.DSL.TestCase
+module
+
+public import FV.Compile.Model
+public import FV.Compile.Runtime
+public import FV.DSL.TestCase
+
+@[expose] public section
 
 /-!
 # Test harness: `; run:` lines and scalar test wrappers for emitted corpus files

@@ -1,12 +1,16 @@
-import FV.E2E.RegLevelCorrect
-import FV.E2E.RegLevelOpW
-import FV.E2E.RegLevelAtomicW
-import FV.E2E.RegLevelCallW
-import FV.E2E.RegLevelGotoW
-import FV.E2E.RegLevelNextW
-import FV.E2E.RegLevelJTW
-import FV.E2E.RegLevelTryW
-import FV.E2E.RegLevelTlsW
+module
+
+public import FV.E2E.RegLevelCorrect
+public import FV.E2E.RegLevelOpW
+public import FV.E2E.RegLevelAtomicW
+public import FV.E2E.RegLevelCallW
+public import FV.E2E.RegLevelGotoW
+public import FV.E2E.RegLevelNextW
+public import FV.E2E.RegLevelJTW
+public import FV.E2E.RegLevelTryW
+public import FV.E2E.RegLevelTlsW
+
+@[expose] public section
 
 /-!
 # The machine realises the allocated code, with the writes (A3, #412, slice F8b)

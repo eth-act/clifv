@@ -1,5 +1,9 @@
-import FV.E2E.LinkArmBaseDetX
-import FV.E2E.LinkArmDetX
+module
+
+public import FV.E2E.LinkArmBaseDetX
+public import FV.E2E.LinkArmDetX
+
+@[expose] public section
 
 /-!
 # Base hooks that do not observe the activations' exteriors; `ThmPDERX` with equal entry `x29`

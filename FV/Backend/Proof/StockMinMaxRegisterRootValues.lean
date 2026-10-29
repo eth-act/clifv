@@ -1,5 +1,10 @@
-import FV.Backend.Proof.StockMinMaxSelectedCalls
-import FV.Backend.Proof.StockMinMaxNonconstantValues
+module
+
+public import FV.Backend.Proof.StockMinMaxSelectedCalls
+public import FV.Backend.Proof.StockMinMaxNonconstantValues
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarSelect
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 open MinMaxRegisterFixture Backend.Stock.Proof.ScalarCmp

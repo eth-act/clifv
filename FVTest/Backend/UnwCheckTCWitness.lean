@@ -1,5 +1,9 @@
-import FV.Backend.Proof.LowerSimUCheckTC
-import FVTest.Backend.FloatDriverT
+module
+
+public import FV.Backend.Proof.LowerSimUCheckTC
+public import FVTest.Backend.FloatDriverT
+
+@[expose] public section
 
 /-!
 Non-vacuity of the typed-try_call exceptional-edge validator (S11e6, #585): the compiled

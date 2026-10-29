@@ -1,5 +1,9 @@
-import FV.Link.Image
-import FV.Backend.Proof.RelocProvDefs
+module
+
+public import FV.Link.Image
+public import FV.Backend.Proof.RelocProvDefs
+
+@[expose] public section
 
 /-! Executable relocation reach checks without linker totality proofs.
 The existing predicates and theorem variants remain unchanged. Equality to

@@ -47,230 +47,234 @@ stops (`ThreadProgress.arm_isel_refines_full`, `RealizeCompiled.realizes_compile
 The fragment model is weaker than the whole `aarch64.cat` (`Armv8Full.consistent_frag`); LSE
 atomics map by the same table (`Lse.lse_maps`). Nothing here changes the Arm model of `FV/Arm`.
 -/
-import FV.Concurrency.Rel
-import FV.Concurrency.Exec
-import FV.Concurrency.Armv8
-import FV.Concurrency.ClifMM
-import FV.Concurrency.Mapping
-import FV.Concurrency.Interleave
-import FV.Concurrency.Code
-import FV.Concurrency.Witness
-import FV.Concurrency.ArmFootprint
-import FV.Concurrency.ArmThread
-import FV.Concurrency.ArmThreadWitness
-import FV.Concurrency.Program
-import FV.Concurrency.Replay
-import FV.Concurrency.ClifThread
-import FV.Concurrency.ProgramE2E
-import FV.Concurrency.ProgramWitness
-import FV.Concurrency.RC11
-import FV.Concurrency.ArmFence
-import FV.Concurrency.RC11Witness
-import FV.Concurrency.ProgramE2EF
-import FV.Concurrency.ProgramFWitness
-import FV.Concurrency.Armv8Full
-import FV.Concurrency.Lse
-import FV.Concurrency.ThreadRefine
-import FV.Concurrency.ThreadRefineWitness
-import FV.Concurrency.ArmInstFoot
-import FV.Concurrency.VCodeThread
-import FV.Concurrency.VCodeThreadWitness
-import FV.Concurrency.VCodeEvents
-import FV.Concurrency.ArmPrecise
-import FV.Concurrency.PrivCoh
-import FV.Concurrency.PrepThread
-import FV.Concurrency.AllocThread
-import FV.Concurrency.FrameMono
-import FV.Concurrency.ThreadLayerWitness
-import FV.Concurrency.VCodeAddr
-import FV.Concurrency.VCodeAddrAtomic
-import FV.Concurrency.VCodeFrame
-import FV.Concurrency.VCodeFrameWitness
-import FV.Concurrency.ArmAllocThread
-import FV.Concurrency.ArmAllocThreadWitness
-import FV.Concurrency.ArmAllocSeg
-import FV.Concurrency.ArmAllocSegWitness
-import FV.Concurrency.ArmAllocLines
-import FV.Concurrency.ArmAllocItem
-import FV.Concurrency.ArmAllocStraight
-import FV.Concurrency.ArmAllocWitness
-import FV.Concurrency.ArmAllocMem
-import FV.Concurrency.ArmAllocMemWitness
-import FV.Concurrency.ArmAllocMemLS
-import FV.Concurrency.SegRun
-import FV.Concurrency.IselVary
-import FV.Concurrency.IselFoot
-import FV.Concurrency.IselClif
-import FV.Concurrency.IselClifWitness
-import FV.Concurrency.SegShape
-import FV.Concurrency.SegShapeWitness
-import FV.Concurrency.ClifCStep
-import FV.Concurrency.ClifCStepWitness
-import FV.Concurrency.IselCover
-import FV.Concurrency.IselCoverWitness
-import FV.Concurrency.VCodeSize
-import FV.Concurrency.VCodeSizeWitness
-import FV.Concurrency.SegFoot
-import FV.Concurrency.SegFootWitness
-import FV.Concurrency.IselStep
-import FV.Concurrency.IselSeg
-import FV.Concurrency.IselCheck
-import FV.Concurrency.CorrRefine
-import FV.Concurrency.ClifCStepTerm
-import FV.Concurrency.IselThread
-import FV.Concurrency.IselMem
-import FV.Concurrency.IselMemAux
-import FV.Concurrency.IselMemAuxWitness
-import FV.Concurrency.CEvsInv
-import FV.Concurrency.CEvsInvWitness
-import FV.Concurrency.IselVar
-import FV.Concurrency.IselMemSeg
-import FV.Concurrency.IselMemHelp
-import FV.Concurrency.IselThreadWitnessData
-import FV.Concurrency.IselMemLower
-import FV.Concurrency.IselMemMain
-import FV.Concurrency.IselRefines
-import FV.Concurrency.IselEntry
-import FV.Concurrency.IselRefinesWitness
-import FV.Concurrency.ThreadCompose
-import FV.Concurrency.ThreadComposeWitness
-import FV.Concurrency.ThreadProgress
-import FV.Concurrency.MoveEvs
-import FV.Concurrency.ArmAllocMove
-import FV.Concurrency.RealizeCompiled
-import FV.Concurrency.RealizeWitness
-import FV.Concurrency.ArmAllocFwd
-import FV.Concurrency.RealizeWitnessFence
-import FV.Concurrency.RealizeExec
-import FV.Concurrency.ArmLoopRun
-import FV.Concurrency.ArmLoopSpec
-import FV.Concurrency.ArmAllocLoop
-import FV.Concurrency.ArmAllocLoopMem
-import FV.Concurrency.ArmAllocLoopWitness
-import FV.Concurrency.ArmAllocLoopFwd
-import FV.Concurrency.RealizeWitnessLoad
-import FV.Concurrency.ArmAllocBranch
-import FV.Concurrency.ArmAllocBranchWitness
-import FV.Concurrency.ArmAllocLS
-import FV.Concurrency.ArmAllocLSWitness
-import FV.Concurrency.ArmAllocLSX
-import FV.Concurrency.ArmAllocLSXWitness
-import FV.Concurrency.RealizeCompiledLSX
-import FV.Concurrency.RealizeWitnessStore
-import FV.Concurrency.RealizeWitnessMP
-import FV.Concurrency.RealizeWitnessRmw
-import FV.Concurrency.RealizeWitnessCas
-import FV.Concurrency.CallCompose
-import FV.Concurrency.CallComposeWitness
-import FV.Concurrency.ArmAllocEntry
-import FV.Concurrency.ArmAllocEntryWitness
-import FV.Concurrency.ArmProgram
-import FV.Concurrency.ClifLift
-import FV.Concurrency.CallThread
-import FV.Concurrency.CallThreadWitness
-import FV.Concurrency.CallSeg
-import FV.Concurrency.CallXClosedWitness
-import FV.Concurrency.CallLoadData
-import FV.Concurrency.CallLoadWitness
-import FV.Concurrency.RealizeWitnessCasFull
-import FV.Concurrency.CallResume
-import FV.Concurrency.CallLoadFull
-import FV.Concurrency.CallLLSCEntry
-import FV.Concurrency.CallLoadResume
-import FV.Concurrency.CallRmwData
-import FV.Concurrency.CallRmwWitness
-import FV.Concurrency.ArmAllocPause
-import FV.Concurrency.ArmAllocPauseWitness
-import FV.Concurrency.ArmAllocLinked
-import FV.Concurrency.ArmAllocLinkedWitness
-import FV.Concurrency.IselDriverT
-import FV.Concurrency.IselCall
-import FV.Concurrency.IselCallWitness
-import FV.Concurrency.IselResume
-import FV.Concurrency.CallResumeQ
-import FV.Concurrency.CallResumeLayers
-import FV.Concurrency.CallLayers
-import FV.Concurrency.CallResumeWitness
-import FV.Concurrency.IselRetT
-import FV.Concurrency.IselCallRet
-import FV.Concurrency.CallEntryWitness
-import FV.Concurrency.CallRets
-import FV.Concurrency.CallRetsAlloc
-import FV.Concurrency.CallRetsEnd
-import FV.Concurrency.CallRetsWitness
-import FV.Concurrency.CallPopWitness
-import FV.Concurrency.FrameDisj
-import FV.Concurrency.FrameDisjWitness
-import FV.Concurrency.ClifThreadI
-import FV.Concurrency.ClifThreadIWitness
-import FV.Concurrency.PrivCohT
-import FV.Concurrency.PrivCohTWitness
-import FV.Concurrency.CallComposeT
-import FV.Concurrency.CallComposeTWitness
-import FV.Concurrency.CallRetResume
-import FV.Concurrency.CallRetResumeWitness
-import FV.Concurrency.CallRetPremises
-import FV.Concurrency.CallRetPremisesWitness
-import FV.Concurrency.CallRetsN
-import FV.Concurrency.CallRetsNWitness
-import FV.Concurrency.CallEntryPremises
-import FV.Concurrency.CallEntryPremisesWitness
-import FV.Concurrency.CallCalleeRet
-import FV.Concurrency.CallCalleeRetWitness
-import FV.Concurrency.LinkedMachine
-import FV.Concurrency.LinkedMachineWitness
-import FV.Concurrency.CallResumeAll
-import FV.Concurrency.CallResumeAllWitness
-import FV.Concurrency.CallEnterArm
-import FV.Concurrency.CallEnterArmWitness
-import FV.Concurrency.CStepSConv
-import FV.Concurrency.CStepSConvWitness
-import FV.Concurrency.CallEnterClif
-import FV.Concurrency.CallEnterClifWitness
-import FV.Concurrency.CallResumeChecks
-import FV.Concurrency.CallResumeChecksWitness
-import FV.Concurrency.CallArity
-import FV.Concurrency.CallArityWitness
-import FV.Concurrency.CallArgsAt
-import FV.Concurrency.CallArgsAtWitness
-import FV.Concurrency.CallArgsL2
-import FV.Concurrency.CallArgsL2Witness
-import FV.Concurrency.CallArgsEntry
-import FV.Concurrency.CallArgsEntryWitness
-import FV.Concurrency.CallSegAbi
-import FV.Concurrency.CallSegAbiWitness
-import FV.Concurrency.CallSegT
-import FV.Concurrency.CallSegTWitness
-import FV.Concurrency.CallEntryLink
-import FV.Concurrency.CallEntryLinkWitness
-import FV.Concurrency.CallRetLink
-import FV.Concurrency.CallRetLinkWitness
-import FV.Concurrency.CallValid
-import FV.Concurrency.CallValidWitness
-import FV.Concurrency.CallSegLift
-import FV.Concurrency.CallSegLiftWitness
-import FV.Concurrency.CallStepT
-import FV.Concurrency.CallStepTWitness
-import FV.Concurrency.CallRetT
-import FV.Concurrency.CallRetTWitness
-import FV.Concurrency.CallSegGeo
-import FV.Concurrency.CallSegGeoWitness
-import FV.Concurrency.CallSegOkG
-import FV.Concurrency.CallSegOkGWitness
-import FV.Concurrency.CallSegOkGActWitness
-import FV.Concurrency.CallSegCall
-import FV.Concurrency.CallSegCallWitness
-import FV.Concurrency.CallEntryRel
-import FV.Concurrency.CallEntryRelWitness
-import FV.Concurrency.CallSegEnt
-import FV.Concurrency.CallSegRun
-import FV.Concurrency.CallSegLive
-import FV.Concurrency.CallSegPc
-import FV.Concurrency.CallSegExt
-import FV.Concurrency.CallSegOkGT
-import FV.Concurrency.CallSegOkGTWitness
-import FV.Concurrency.CallSegOkGTFull
-import FV.Concurrency.CallSegOkGTRmw
-import FV.Concurrency.CallSegOkGTExtWitness
-import FV.Concurrency.CallSegOkGTExtFull
-import FV.Concurrency.CallSegOkGTMix
+module
+
+public import FV.Concurrency.Rel
+public import FV.Concurrency.Exec
+public import FV.Concurrency.Armv8
+public import FV.Concurrency.ClifMM
+public import FV.Concurrency.Mapping
+public import FV.Concurrency.Interleave
+public import FV.Concurrency.Code
+public import FV.Concurrency.Witness
+public import FV.Concurrency.ArmFootprint
+public import FV.Concurrency.ArmThread
+public import FV.Concurrency.ArmThreadWitness
+public import FV.Concurrency.Program
+public import FV.Concurrency.Replay
+public import FV.Concurrency.ClifThread
+public import FV.Concurrency.ProgramE2E
+public import FV.Concurrency.ProgramWitness
+public import FV.Concurrency.RC11
+public import FV.Concurrency.ArmFence
+public import FV.Concurrency.RC11Witness
+public import FV.Concurrency.ProgramE2EF
+public import FV.Concurrency.ProgramFWitness
+public import FV.Concurrency.Armv8Full
+public import FV.Concurrency.Lse
+public import FV.Concurrency.ThreadRefine
+public import FV.Concurrency.ThreadRefineWitness
+public import FV.Concurrency.ArmInstFoot
+public import FV.Concurrency.VCodeThread
+public import FV.Concurrency.VCodeThreadWitness
+public import FV.Concurrency.VCodeEvents
+public import FV.Concurrency.ArmPrecise
+public import FV.Concurrency.PrivCoh
+public import FV.Concurrency.PrepThread
+public import FV.Concurrency.AllocThread
+public import FV.Concurrency.FrameMono
+public import FV.Concurrency.ThreadLayerWitness
+public import FV.Concurrency.VCodeAddr
+public import FV.Concurrency.VCodeAddrAtomic
+public import FV.Concurrency.VCodeFrame
+public import FV.Concurrency.VCodeFrameWitness
+public import FV.Concurrency.ArmAllocThread
+public import FV.Concurrency.ArmAllocThreadWitness
+public import FV.Concurrency.ArmAllocSeg
+public import FV.Concurrency.ArmAllocSegWitness
+public import FV.Concurrency.ArmAllocLines
+public import FV.Concurrency.ArmAllocItem
+public import FV.Concurrency.ArmAllocStraight
+public import FV.Concurrency.ArmAllocWitness
+public import FV.Concurrency.ArmAllocMem
+public import FV.Concurrency.ArmAllocMemWitness
+public import FV.Concurrency.ArmAllocMemLS
+public import FV.Concurrency.SegRun
+public import FV.Concurrency.IselVary
+public import FV.Concurrency.IselFoot
+public import FV.Concurrency.IselClif
+public import FV.Concurrency.IselClifWitness
+public import FV.Concurrency.SegShape
+public import FV.Concurrency.SegShapeWitness
+public import FV.Concurrency.ClifCStep
+public import FV.Concurrency.ClifCStepWitness
+public import FV.Concurrency.IselCover
+public import FV.Concurrency.IselCoverWitness
+public import FV.Concurrency.VCodeSize
+public import FV.Concurrency.VCodeSizeWitness
+public import FV.Concurrency.SegFoot
+public import FV.Concurrency.SegFootWitness
+public import FV.Concurrency.IselStep
+public import FV.Concurrency.IselSeg
+public import FV.Concurrency.IselCheck
+public import FV.Concurrency.CorrRefine
+public import FV.Concurrency.ClifCStepTerm
+public import FV.Concurrency.IselThread
+public import FV.Concurrency.IselMem
+public import FV.Concurrency.IselMemAux
+public import FV.Concurrency.IselMemAuxWitness
+public import FV.Concurrency.CEvsInv
+public import FV.Concurrency.CEvsInvWitness
+public import FV.Concurrency.IselVar
+public import FV.Concurrency.IselMemSeg
+public import FV.Concurrency.IselMemHelp
+public import FV.Concurrency.IselThreadWitnessData
+public import FV.Concurrency.IselMemLower
+public import FV.Concurrency.IselMemMain
+public import FV.Concurrency.IselRefines
+public import FV.Concurrency.IselEntry
+public import FV.Concurrency.IselRefinesWitness
+public import FV.Concurrency.ThreadCompose
+public import FV.Concurrency.ThreadComposeWitness
+public import FV.Concurrency.ThreadProgress
+public import FV.Concurrency.MoveEvs
+public import FV.Concurrency.ArmAllocMove
+public import FV.Concurrency.RealizeCompiled
+public import FV.Concurrency.RealizeWitness
+public import FV.Concurrency.ArmAllocFwd
+public import FV.Concurrency.RealizeWitnessFence
+public import FV.Concurrency.RealizeExec
+public import FV.Concurrency.ArmLoopRun
+public import FV.Concurrency.ArmLoopSpec
+public import FV.Concurrency.ArmAllocLoop
+public import FV.Concurrency.ArmAllocLoopMem
+public import FV.Concurrency.ArmAllocLoopWitness
+public import FV.Concurrency.ArmAllocLoopFwd
+public import FV.Concurrency.RealizeWitnessLoad
+public import FV.Concurrency.ArmAllocBranch
+public import FV.Concurrency.ArmAllocBranchWitness
+public import FV.Concurrency.ArmAllocLS
+public import FV.Concurrency.ArmAllocLSWitness
+public import FV.Concurrency.ArmAllocLSX
+public import FV.Concurrency.ArmAllocLSXWitness
+public import FV.Concurrency.RealizeCompiledLSX
+public import FV.Concurrency.RealizeWitnessStore
+public import FV.Concurrency.RealizeWitnessMP
+public import FV.Concurrency.RealizeWitnessRmw
+public import FV.Concurrency.RealizeWitnessCas
+public import FV.Concurrency.CallCompose
+public import FV.Concurrency.CallComposeWitness
+public import FV.Concurrency.ArmAllocEntry
+public import FV.Concurrency.ArmAllocEntryWitness
+public import FV.Concurrency.ArmProgram
+public import FV.Concurrency.ClifLift
+public import FV.Concurrency.CallThread
+public import FV.Concurrency.CallThreadWitness
+public import FV.Concurrency.CallSeg
+public import FV.Concurrency.CallXClosedWitness
+public import FV.Concurrency.CallLoadData
+public import FV.Concurrency.CallLoadWitness
+public import FV.Concurrency.RealizeWitnessCasFull
+public import FV.Concurrency.CallResume
+public import FV.Concurrency.CallLoadFull
+public import FV.Concurrency.CallLLSCEntry
+public import FV.Concurrency.CallLoadResume
+public import FV.Concurrency.CallRmwData
+public import FV.Concurrency.CallRmwWitness
+public import FV.Concurrency.ArmAllocPause
+public import FV.Concurrency.ArmAllocPauseWitness
+public import FV.Concurrency.ArmAllocLinked
+public import FV.Concurrency.ArmAllocLinkedWitness
+public import FV.Concurrency.IselDriverT
+public import FV.Concurrency.IselCall
+public import FV.Concurrency.IselCallWitness
+public import FV.Concurrency.IselResume
+public import FV.Concurrency.CallResumeQ
+public import FV.Concurrency.CallResumeLayers
+public import FV.Concurrency.CallLayers
+public import FV.Concurrency.CallResumeWitness
+public import FV.Concurrency.IselRetT
+public import FV.Concurrency.IselCallRet
+public import FV.Concurrency.CallEntryWitness
+public import FV.Concurrency.CallRets
+public import FV.Concurrency.CallRetsAlloc
+public import FV.Concurrency.CallRetsEnd
+public import FV.Concurrency.CallRetsWitness
+public import FV.Concurrency.CallPopWitness
+public import FV.Concurrency.FrameDisj
+public import FV.Concurrency.FrameDisjWitness
+public import FV.Concurrency.ClifThreadI
+public import FV.Concurrency.ClifThreadIWitness
+public import FV.Concurrency.PrivCohT
+public import FV.Concurrency.PrivCohTWitness
+public import FV.Concurrency.CallComposeT
+public import FV.Concurrency.CallComposeTWitness
+public import FV.Concurrency.CallRetResume
+public import FV.Concurrency.CallRetResumeWitness
+public import FV.Concurrency.CallRetPremises
+public import FV.Concurrency.CallRetPremisesWitness
+public import FV.Concurrency.CallRetsN
+public import FV.Concurrency.CallRetsNWitness
+public import FV.Concurrency.CallEntryPremises
+public import FV.Concurrency.CallEntryPremisesWitness
+public import FV.Concurrency.CallCalleeRet
+public import FV.Concurrency.CallCalleeRetWitness
+public import FV.Concurrency.LinkedMachine
+public import FV.Concurrency.LinkedMachineWitness
+public import FV.Concurrency.CallResumeAll
+public import FV.Concurrency.CallResumeAllWitness
+public import FV.Concurrency.CallEnterArm
+public import FV.Concurrency.CallEnterArmWitness
+public import FV.Concurrency.CStepSConv
+public import FV.Concurrency.CStepSConvWitness
+public import FV.Concurrency.CallEnterClif
+public import FV.Concurrency.CallEnterClifWitness
+public import FV.Concurrency.CallResumeChecks
+public import FV.Concurrency.CallResumeChecksWitness
+public import FV.Concurrency.CallArity
+public import FV.Concurrency.CallArityWitness
+public import FV.Concurrency.CallArgsAt
+public import FV.Concurrency.CallArgsAtWitness
+public import FV.Concurrency.CallArgsL2
+public import FV.Concurrency.CallArgsL2Witness
+public import FV.Concurrency.CallArgsEntry
+public import FV.Concurrency.CallArgsEntryWitness
+public import FV.Concurrency.CallSegAbi
+public import FV.Concurrency.CallSegAbiWitness
+public import FV.Concurrency.CallSegT
+public import FV.Concurrency.CallSegTWitness
+public import FV.Concurrency.CallEntryLink
+public import FV.Concurrency.CallEntryLinkWitness
+public import FV.Concurrency.CallRetLink
+public import FV.Concurrency.CallRetLinkWitness
+public import FV.Concurrency.CallValid
+public import FV.Concurrency.CallValidWitness
+public import FV.Concurrency.CallSegLift
+public import FV.Concurrency.CallSegLiftWitness
+public import FV.Concurrency.CallStepT
+public import FV.Concurrency.CallStepTWitness
+public import FV.Concurrency.CallRetT
+public import FV.Concurrency.CallRetTWitness
+public import FV.Concurrency.CallSegGeo
+public import FV.Concurrency.CallSegGeoWitness
+public import FV.Concurrency.CallSegOkG
+public import FV.Concurrency.CallSegOkGWitness
+public import FV.Concurrency.CallSegOkGActWitness
+public import FV.Concurrency.CallSegCall
+public import FV.Concurrency.CallSegCallWitness
+public import FV.Concurrency.CallEntryRel
+public import FV.Concurrency.CallEntryRelWitness
+public import FV.Concurrency.CallSegEnt
+public import FV.Concurrency.CallSegRun
+public import FV.Concurrency.CallSegLive
+public import FV.Concurrency.CallSegPc
+public import FV.Concurrency.CallSegExt
+public import FV.Concurrency.CallSegOkGT
+public import FV.Concurrency.CallSegOkGTWitness
+public import FV.Concurrency.CallSegOkGTFull
+public import FV.Concurrency.CallSegOkGTRmw
+public import FV.Concurrency.CallSegOkGTExtWitness
+public import FV.Concurrency.CallSegOkGTExtFull
+public import FV.Concurrency.CallSegOkGTMix
+
+@[expose] public section

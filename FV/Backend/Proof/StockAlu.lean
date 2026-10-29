@@ -1,9 +1,13 @@
-import FV.Backend.Proof.StockValues
-import FV.Backend.Proof.IselScopedProjection
-import FV.Backend.Proof.IselFlowGen
-import FV.Backend.Proof.IselRulesALU
-import FV.Backend.Proof.IselFamily
-import FV.Backend.Proof.StockAliasSemantics
+module
+
+public import FV.Backend.Proof.StockValues
+public import FV.Backend.Proof.IselScopedProjection
+public import FV.Backend.Proof.IselFlowGen
+public import FV.Backend.Proof.IselRulesALU
+public import FV.Backend.Proof.IselFamily
+public import FV.Backend.Proof.StockAliasSemantics
+
+@[expose] public section
 
 /-! Actual Stock add/subtract roots reuse the existing pure ALU helper semantics.
 Operand constructors retain mapped registers while recording selected-code demand. -/

@@ -1,6 +1,10 @@
-import FV.E2E.SretReturnT
-import FV.E2E.SretReturnWitness
-import FV.E2E.TypedRulesProg
+module
+
+public import FV.E2E.SretReturnT
+public import FV.E2E.SretReturnWitness
+public import FV.E2E.TypedRulesProg
+
+@[expose] public section
 
 /-!
 # Non-vacuity of `backend_correct_finalT_abi` / `backend_correct_finalT_sret` (S7)

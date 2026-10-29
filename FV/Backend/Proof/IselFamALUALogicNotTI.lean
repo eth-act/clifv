@@ -1,6 +1,10 @@
-import FV.Backend.Proof.IselFamALUALogicNot
-import FV.Backend.Proof.IselBaseTI
-import FV.Backend.Proof.IselFamALUATI
+module
+
+public import FV.Backend.Proof.IselFamALUALogicNot
+public import FV.Backend.Proof.IselBaseTI
+public import FV.Backend.Proof.IselFamALUATI
+
+@[expose] public section
 
 /-!
 # `IselFamALUALogicNot` over typed contexts (S11e5 Stage C, slice 7)

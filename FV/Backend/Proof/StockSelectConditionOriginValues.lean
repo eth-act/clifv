@@ -1,4 +1,9 @@
-import FV.Backend.Proof.StockSelectConditionCalls
+module
+
+public import FV.Backend.Proof.StockSelectConditionCalls
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarSelect
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 private theorem icmp_definition_values {ctx : Ctx} {fr : Clif.Frame} (dfg : DFGCons ctx fr)

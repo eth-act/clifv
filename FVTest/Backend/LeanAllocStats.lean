@@ -1,6 +1,10 @@
-import FV.Backend
-import FV.Backend.LinearScan
-import FV.Opt.Legalize128Pass
+module
+
+public import FV.Backend
+public import FV.Backend.LinearScan
+public import FV.Opt.Legalize128Pass
+
+@[expose] public section
 
 /-!
 `lake exe lean-alloc-stats [--regalloc2] [--verbose] FILE.clif...`: measure the Lean

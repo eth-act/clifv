@@ -1,9 +1,13 @@
-import FVTest.Backend.Lowering.StockScalarTestSupport
-import FV.Backend.ScalarNIProduction
-import FV.Backend.LinearScan
-import FV.E2E.StockHighMulFixtures
-import FV.E2E.StockDivFixtures
-import FV.Clif.Print
+module
+
+public import FVTest.Backend.Lowering.StockScalarTestSupport
+public import FV.Backend.ScalarNIProduction
+public import FV.Backend.LinearScan
+public import FV.E2E.StockHighMulFixtures
+public import FV.E2E.StockDivFixtures
+public import FV.Clif.Print
+
+@[expose] public section
 
 set_option autoImplicit false
 namespace FVTest.StockDivProductionRuntime

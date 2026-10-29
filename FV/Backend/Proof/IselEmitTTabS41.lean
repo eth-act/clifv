@@ -1,4 +1,8 @@
-import FV.Backend.Proof.IselEmitTTabData
+module
+
+public import FV.Backend.Proof.IselEmitTTabData
+
+@[expose] public section
 
 /-!
 # Emission conditions of the typed lowering: rules of `lower`, group 41

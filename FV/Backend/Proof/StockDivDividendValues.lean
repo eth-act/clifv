@@ -1,5 +1,10 @@
-import FV.Backend.Proof.StockDivDivisorValues
-import FV.Backend.Proof.IselCmpDivRoot
+module
+
+public import FV.Backend.Proof.StockDivDivisorValues
+public import FV.Backend.Proof.IselCmpDivRoot
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarDiv
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 private theorem ext_location {f : Clif.Function} {ctx : Ctx} (inv : MappedCtxInv f ctx)

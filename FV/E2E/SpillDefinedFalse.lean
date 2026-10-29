@@ -1,4 +1,8 @@
-import FV.E2E.SpillDefined
+module
+
+public import FV.E2E.SpillDefined
+
+@[expose] public section
 
 /-!
 # Definite assignment fails without `entryParamsB`

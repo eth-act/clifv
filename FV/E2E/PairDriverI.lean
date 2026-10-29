@@ -1,5 +1,9 @@
-import FV.E2E.PairDriver
-import FV.E2E.IselSimITry
+module
+
+public import FV.E2E.PairDriver
+public import FV.E2E.IselSimITry
+
+@[expose] public section
 
 /-!
 # Non-interference of the counted VCode run (SEM1, `docs/plans/uninit.md` §5.9)

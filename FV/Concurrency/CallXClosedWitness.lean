@@ -1,6 +1,10 @@
-import FV.Concurrency.CallSeg
-import FV.Concurrency.ThreadLayerWitness
-import FV.Concurrency.CallThreadWitness
+module
+
+public import FV.Concurrency.CallSeg
+public import FV.Concurrency.ThreadLayerWitness
+public import FV.Concurrency.CallThreadWitness
+
+@[expose] public section
 
 /-!
 # Non-vacuity of `xClosed_mon` on an LL/SC loop (T2h, #311, calls)

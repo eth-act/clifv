@@ -1,4 +1,8 @@
-import FV.Backend.Proof.IselMemNoIconst
+module
+
+public import FV.Backend.Proof.IselMemNoIconst
+
+@[expose] public section
 
 /-!
 # Memory family (M4Mem2): `amode`

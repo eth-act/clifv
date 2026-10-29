@@ -1,7 +1,11 @@
-import FV.Backend.Proof.StockCriticalValues
-import FV.Backend.Proof.StockPerEdgeValues
-import FV.Backend.Proof.StockSelectedRoutes
-import FV.Backend.Proof.IselCtlBranch
+module
+
+public import FV.Backend.Proof.StockCriticalValues
+public import FV.Backend.Proof.StockPerEdgeValues
+public import FV.Backend.Proof.StockSelectedRoutes
+public import FV.Backend.Proof.IselCtlBranch
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.CriticalValuesWitness
 open Backend.Proof Backend.Proof.Driver Backend.Proof.Driver.Fix

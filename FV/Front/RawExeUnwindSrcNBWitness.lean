@@ -1,5 +1,9 @@
-import FV.Front.RawExeUnwindSrcNB
-import FV.Front.RawExeUnwindSrcWitness
+module
+
+public import FV.Front.RawExeUnwindSrcNB
+public import FV.Front.RawExeUnwindSrcWitness
+
+@[expose] public section
 
 /-!
 # Non-vacuity of the memory bound of runs with unwinding (A2/B1, S10f)

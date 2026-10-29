@@ -1,6 +1,10 @@
-import FV.Link.ProductionImageWith
-import FV.E2E.SemanticPipelineCheck
-import FV.Link.Placed
+module
+
+public import FV.Link.ProductionImageWith
+public import FV.E2E.SemanticPipelineCheck
+public import FV.Link.Placed
+
+@[expose] public section
 
 /-! Executable transactional compilation. Correctness consumers remain in
 `SemanticCompileWith`; runtime tools use these identical data definitions. -/

@@ -40,8 +40,12 @@ Author(s): Shilpi Goel, Yan Peng
 -- Cross-checked against VeriISLE `MInst.ULoad8/16/32/64`, `SLoad8/16/32`, `Store8/16/32/64`
 -- (cranelift/codegen/src/isa/aarch64/spec/{loads,stores}.isle).
 
-import FV.Arm.Decode
-import FV.Arm.Insts.Common
+module
+
+public import FV.Arm.Decode
+public import FV.Arm.Insts.Common
+
+@[expose] public section
 
 namespace Arm
 

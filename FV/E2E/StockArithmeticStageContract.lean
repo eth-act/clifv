@@ -1,7 +1,11 @@
-import FV.Backend.Lowering.StockArithmetic
-import FV.Backend.Regalloc
-import FV.Backend.Asm
-import FV.Backend.Encode
+module
+
+public import FV.Backend.Lowering.StockArithmetic
+public import FV.Backend.Regalloc
+public import FV.Backend.Asm
+public import FV.Backend.Encode
+
+@[expose] public section
 
 /-! Checked Stock artifact contract, independent of source-class correctness proofs. -/
 namespace E2E

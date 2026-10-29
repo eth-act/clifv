@@ -1,8 +1,12 @@
-import FV.Backend.Proof.StockLogicalReturnRefines
-import FV.Backend.Proof.StockLogicalRecordWitness
-import FV.Backend.Proof.MemRefines
-import FV.Backend.Proof.RefinesCSem
-import FV.E2E.RegLevelDriverSem
+module
+
+public import FV.Backend.Proof.StockLogicalReturnRefines
+public import FV.Backend.Proof.StockLogicalRecordWitness
+public import FV.Backend.Proof.MemRefines
+public import FV.Backend.Proof.RefinesCSem
+public import FV.E2E.RegLevelDriverSem
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.LogicalBody
 open Backend.Proof Backend.Proof.Driver Isle Isle.Aarch64

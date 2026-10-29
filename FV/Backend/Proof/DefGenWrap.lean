@@ -1,5 +1,9 @@
-import FV.Backend.Proof.DefGenSound
-import FV.Backend.Proof.KillTab
+module
+
+public import FV.Backend.Proof.DefGenSound
+public import FV.Backend.Proof.KillTab
+
+@[expose] public section
 
 /-!
 # Definedness of the ISLE runs: the constructor-tree terms

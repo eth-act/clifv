@@ -1,7 +1,11 @@
-import FV.Backend.Proof.StockForwardDemand
-import FV.Backend.Proof.StockCriticalOwners
-import FV.Backend.Proof.StockCfgJumpReturnAt
-import FV.Backend.Proof.LowerLoopRun
+module
+
+public import FV.Backend.Proof.StockForwardDemand
+public import FV.Backend.Proof.StockCriticalOwners
+public import FV.Backend.Proof.StockCfgJumpReturnAt
+public import FV.Backend.Proof.LowerLoopRun
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.ForwardSource
 open Backend.Proof Backend.Proof.Driver

@@ -1,7 +1,11 @@
-import FV.Backend.Proof.SpillEdgesLowT
-import FV.Backend.Proof.LowerCompleteT
-import FV.Backend.Proof.LowerDecide
-import FVTest.Backend.FloatDriverT
+module
+
+public import FV.Backend.Proof.SpillEdgesLowT
+public import FV.Backend.Proof.LowerCompleteT
+public import FV.Backend.Proof.LowerDecide
+public import FVTest.Backend.FloatDriverT
+
+@[expose] public section
 
 /-!
 Non-vacuity of the typed terminator shapes and of the typed validator's completeness (S11e5

@@ -1,4 +1,8 @@
-import FV.Backend.Proof.EncodeLayout
+module
+
+public import FV.Backend.Proof.EncodeLayout
+
+@[expose] public section
 
 /-!
 # M6: branch relaxation makes layout total

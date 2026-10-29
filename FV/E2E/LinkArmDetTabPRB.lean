@@ -1,4 +1,8 @@
-import FV.E2E.LinkArmProgCallPRB
+module
+
+public import FV.E2E.LinkArmProgCallPRB
+
+@[expose] public section
 
 /-!
 # The second determinism fact: the callee table carries over (SEM1 #537, #680 (3) stage 2)

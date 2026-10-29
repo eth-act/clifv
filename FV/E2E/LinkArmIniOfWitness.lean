@@ -1,5 +1,9 @@
-import FV.E2E.LinkArmProgramInitE
-import FV.E2E.CountPRBNWitness
+module
+
+public import FV.E2E.LinkArmProgramInitE
+public import FV.E2E.CountPRBNWitness
+
+@[expose] public section
 
 /-!
 # Witnesses: the machine's own slot table (SEM1 #537, #700)

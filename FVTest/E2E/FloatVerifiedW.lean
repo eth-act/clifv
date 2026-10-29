@@ -1,6 +1,10 @@
-import FV.E2E.VerifiableT
-import FVTest.E2E.FloatFinalT
-import FV.E2E.LinkCheck
+module
+
+public import FV.E2E.VerifiableT
+public import FVTest.E2E.FloatFinalT
+public import FV.E2E.LinkCheck
+
+@[expose] public section
 
 /-!
 Non-vacuity of the backend's typed verified scope (S11e5 Stage C, public scope): the float

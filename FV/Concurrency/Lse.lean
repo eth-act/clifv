@@ -1,4 +1,8 @@
-import FV.Concurrency.Mapping
+module
+
+public import FV.Concurrency.Mapping
+
+@[expose] public section
 
 /-!
 # LSE atomics (`has_lse`, T2g #305)

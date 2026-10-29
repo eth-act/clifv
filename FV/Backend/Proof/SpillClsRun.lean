@@ -1,4 +1,8 @@
-import FV.Backend.Proof.SpillClsModel
+module
+
+public import FV.Backend.Proof.SpillClsModel
+
+@[expose] public section
 
 /-!
 # The class facts of the driver's ISLE calls (V4 classes)

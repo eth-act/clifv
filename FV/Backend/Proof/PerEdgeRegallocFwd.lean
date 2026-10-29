@@ -1,5 +1,9 @@
-import FV.Backend.Proof.PerEdgeRegallocSound
-import FV.Backend.Proof.RegallocFwd
+module
+
+public import FV.Backend.Proof.PerEdgeRegallocSound
+public import FV.Backend.Proof.RegallocFwd
+
+@[expose] public section
 
 /-! Forward realization of per-successor VCode executions, reusing the original
 concrete-machine Realizes and iterN interfaces. Moves still decrease the same

@@ -1,5 +1,9 @@
-import FV.E2E.WorldMemTrap
-import FV.E2E.RegLevelMemTrapWorldW
+module
+
+public import FV.E2E.WorldMemTrap
+public import FV.E2E.RegLevelMemTrapWorldW
+
+@[expose] public section
 
 /-!
 # The per-function world theorem with memory traps and the writes (A3, #412, slice F8b)

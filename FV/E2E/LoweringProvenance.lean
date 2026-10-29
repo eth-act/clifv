@@ -1,4 +1,8 @@
-import FV.E2E.LinkCheck
+module
+
+public import FV.E2E.LinkCheck
+
+@[expose] public section
 
 set_option autoImplicit false
 

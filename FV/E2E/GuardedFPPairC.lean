@@ -1,9 +1,13 @@
-import FV.E2E.PairDriver
-import FV.E2E.GuardedFP
-import FV.E2E.DeadCleanupGuardedFP
-import FV.Backend.Proof.IselCtlTryF
-import FV.Backend.Proof.LowerContractTC
-import FV.Backend.Proof.DeadCleanupAdapter
+module
+
+public import FV.E2E.PairDriver
+public import FV.E2E.GuardedFP
+public import FV.E2E.DeadCleanupGuardedFP
+public import FV.Backend.Proof.IselCtlTryF
+public import FV.Backend.Proof.LowerContractTC
+public import FV.Backend.Proof.DeadCleanupAdapter
+
+@[expose] public section
 
 /-! # The guarded lockstep with the float accesses, on pairs of worlds, typed try_calls
 

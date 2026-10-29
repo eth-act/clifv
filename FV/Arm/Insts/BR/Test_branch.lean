@@ -20,8 +20,12 @@ Released under Apache 2.0 license; see third_party/NOTICE-lnsym.md.
 --
 -- Register 31 is XZR. Only bit `bit_pos` is read, so `datasize` does not affect the result.
 
-import FV.Arm.Decode
-import FV.Arm.Insts.Common
+module
+
+public import FV.Arm.Decode
+public import FV.Arm.Insts.Common
+
+@[expose] public section
 
 namespace Arm
 

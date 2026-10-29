@@ -1,4 +1,9 @@
-import FV.Backend.Proof.DriverCheck
+module
+
+public import FV.Backend.Proof.DriverCheck
+
+@[expose] public section
+
 set_option autoImplicit false
 namespace Backend.Stock.DiagnosticChecker
 /-- Name and rule history are diagnostic; the actual checker and code are retained. -/

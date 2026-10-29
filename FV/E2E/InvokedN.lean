@@ -1,6 +1,10 @@
-import FV.E2E.IselSimI
-import FV.E2E.CallPostExists
-import FV.E2E.LinkClif
+module
+
+public import FV.E2E.IselSimI
+public import FV.E2E.CallPostExists
+public import FV.E2E.LinkClif
+
+@[expose] public section
 
 /-!
 # The invocation of call number `n` (SEM1 item (b), `docs/plans/uninit.md` §5.9)

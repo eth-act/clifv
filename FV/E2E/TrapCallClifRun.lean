@@ -1,4 +1,8 @@
-import FV.E2E.TrapCallClif
+module
+
+public import FV.E2E.TrapCallClif
+
+@[expose] public section
 
 /-!
 # Callee traps: the premise and the run with unwinding of `trapEnv` (S9a, #33)

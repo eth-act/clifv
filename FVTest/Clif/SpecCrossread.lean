@@ -1,5 +1,9 @@
-import FV.Clif
-import Std.Tactic.BVDecide
+module
+
+public import FV.Clif
+public import Std.Tactic.BVDecide
+
+@[expose] public section
 
 /-!
 # Cross-read of `Clif.Sem` against the VeriISLE CLIF specs

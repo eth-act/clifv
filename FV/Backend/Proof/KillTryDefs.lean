@@ -1,6 +1,10 @@
-import FV.Backend.Proof.KillAssemble
-import FV.Backend.Proof.KillGen
-import FV.Backend.Proof.IselShpDriver
+module
+
+public import FV.Backend.Proof.KillAssemble
+public import FV.Backend.Proof.KillGen
+public import FV.Backend.Proof.IselShpDriver
+
+@[expose] public section
 
 /-!
 # The exact defs of a `try_call`'s call (V4, `SpillKillFree`)

@@ -1,6 +1,10 @@
-import FV.E2E.SretReturnOpt
-import FV.E2E.SretReturnWitness
-import FV.Opt.OptimizeX
+module
+
+public import FV.E2E.SretReturnOpt
+public import FV.E2E.SretReturnWitness
+public import FV.Opt.OptimizeX
+
+@[expose] public section
 
 /-!
 # Non-vacuity of `backend_correct_opt_proven_abi` (S7)

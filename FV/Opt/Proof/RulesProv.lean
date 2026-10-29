@@ -1,5 +1,9 @@
-import FV.Opt.Rules
-import FV.Opt.Proof.CheckSpec
+module
+
+public import FV.Opt.Rules
+public import FV.Opt.Proof.CheckSpec
+
+@[expose] public section
 
 /-!
 # Provenance obligations of a rule set (M1, #24)

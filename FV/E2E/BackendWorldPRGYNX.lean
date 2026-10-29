@@ -1,5 +1,9 @@
-import FV.E2E.BackendWorldPRGYNG
-import FV.E2E.RegLevelCorrectPRSNX
+module
+
+public import FV.E2E.BackendWorldPRGYNG
+public import FV.E2E.RegLevelCorrectPRSNX
+
+@[expose] public section
 
 /-!
 # The pipeline theorems with the per-state trace at the return (SEM1 #537, executable level)

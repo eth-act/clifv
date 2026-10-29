@@ -1,6 +1,10 @@
-import FV.Backend.Proof.StockEntryOrder
-import FV.Backend.Proof.StockPrepareComplete
-import FV.Backend.Proof.StockBackwardSuffixSplit
+module
+
+public import FV.Backend.Proof.StockEntryOrder
+public import FV.Backend.Proof.StockPrepareComplete
+public import FV.Backend.Proof.StockBackwardSuffixSplit
+
+@[expose] public section
 
 namespace Backend.Stock.Proof
 open Backend.Proof Backend.Proof.Driver

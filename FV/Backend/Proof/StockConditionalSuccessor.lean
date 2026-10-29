@@ -1,8 +1,12 @@
-import FV.Backend.Proof.StockConditionalBodyRefines
-import FV.Backend.Proof.StockSelectedRoutes
-import FV.Backend.Proof.StockSourceEdgeDFG
-import FV.Backend.Proof.StockSourceEdges
-import FV.Backend.Proof.StockCfgTraversalDemand
+module
+
+public import FV.Backend.Proof.StockConditionalBodyRefines
+public import FV.Backend.Proof.StockSelectedRoutes
+public import FV.Backend.Proof.StockSourceEdgeDFG
+public import FV.Backend.Proof.StockSourceEdges
+public import FV.Backend.Proof.StockCfgTraversalDemand
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.ConditionalValues
 open Backend.Proof Backend.Proof.Driver Backend.Proof.Driver.Fix

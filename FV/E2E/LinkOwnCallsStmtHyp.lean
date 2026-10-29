@@ -1,4 +1,8 @@
-import FV.E2E.LinkOwnCallsStmt
+module
+
+public import FV.E2E.LinkOwnCallsStmt
+
+@[expose] public section
 
 /-!
 # `CallStmtRunHyp`: a `call`/`call_indirect` statement's `lower` run

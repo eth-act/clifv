@@ -1,6 +1,10 @@
-import FV.E2E.BackendTwoRunNI
-import FV.E2E.BackendTwoRunNZW
-import FV.E2E.LinkArmTwin
+module
+
+public import FV.E2E.BackendTwoRunNI
+public import FV.E2E.BackendTwoRunNZW
+public import FV.E2E.LinkArmTwin
+
+@[expose] public section
 
 /-!
 # The two-run lock by induction on the call count, locked up to the call state (SEM1 #537, #713)

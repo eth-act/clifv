@@ -1,5 +1,9 @@
-import FV.Backend.Proof.IselTermFactsCall
-import FV.Backend.Proof.IselCtlCallInd
+module
+
+public import FV.Backend.Proof.IselTermFactsCall
+public import FV.Backend.Proof.IselCtlCallInd
+
+@[expose] public section
 
 /-!
 # The outgoing area after a `call`/`call_indirect` rule, exactly (S10g, #404)

@@ -1,4 +1,8 @@
-import FV.Backend.RegallocOps
+module
+
+public import FV.Backend.RegallocOps
+
+@[expose] public section
 
 /-! Preparation carries actual outgoing vectors with their blocks through
 reachability, critical-edge splitting and reverse postorder. The legacy prepare

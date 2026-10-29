@@ -1,5 +1,9 @@
-import FV.Concurrency.CStepSConv
-import FV.Concurrency.ClifLift
+module
+
+public import FV.Concurrency.CStepSConv
+public import FV.Concurrency.ClifLift
+
+@[expose] public section
 
 /-!
 # The callee entry on the CLIF side (#473, step (2))

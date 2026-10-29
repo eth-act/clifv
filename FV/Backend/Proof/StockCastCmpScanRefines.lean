@@ -1,5 +1,10 @@
-import FV.Backend.Proof.StockCastCmpCompleteSourceTransfer
-import FV.Backend.Proof.StockMinMaxScanRefines
+module
+
+public import FV.Backend.Proof.StockCastCmpCompleteSourceTransfer
+public import FV.Backend.Proof.StockMinMaxScanRefines
+
+@[expose] public section
+
 namespace Backend.Stock.Proof
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 set_option autoImplicit false

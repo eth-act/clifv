@@ -1,12 +1,16 @@
-import FV.Backend.Proof.IselSzTSound
-import FV.Backend.Proof.IselSzTExt
-import FV.Backend.Proof.IselSzTTab
-import FV.Backend.Proof.IselSzCallT
-import FV.Backend.Proof.IselSzBrTableG
-import FV.Backend.Proof.IselSzDriver
-import FV.Backend.Proof.IselCovTDriver
-import FV.Backend.Proof.IselCovTFamCover
-import FV.Backend.Proof.LogicImmComplete
+module
+
+public import FV.Backend.Proof.IselSzTSound
+public import FV.Backend.Proof.IselSzTExt
+public import FV.Backend.Proof.IselSzTTab
+public import FV.Backend.Proof.IselSzCallT
+public import FV.Backend.Proof.IselSzBrTableG
+public import FV.Backend.Proof.IselSzDriver
+public import FV.Backend.Proof.IselCovTDriver
+public import FV.Backend.Proof.IselCovTFamCover
+public import FV.Backend.Proof.LogicImmComplete
+
+@[expose] public section
 
 /-!
 # The size of the ISLE lowering's output over float-capable contexts (typed V6c): the driver's

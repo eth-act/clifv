@@ -1,4 +1,8 @@
-import FV.Backend.Proof.DefRuns
+module
+
+public import FV.Backend.Proof.DefRuns
+
+@[expose] public section
 
 /-!
 # Definite assignment of `lowerFunction`'s VCode: instruction and availability facts

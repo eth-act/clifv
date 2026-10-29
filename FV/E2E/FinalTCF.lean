@@ -1,7 +1,11 @@
-import FV.E2E.FinalTC
-import FV.Backend.Proof.DriverCheckTCF
-import FV.Backend.Proof.IselNonETF
-import FV.Backend.Proof.IselLowerCvtT
+module
+
+public import FV.E2E.FinalTC
+public import FV.Backend.Proof.DriverCheckTCF
+public import FV.Backend.Proof.IselNonETF
+public import FV.Backend.Proof.IselLowerCvtT
+
+@[expose] public section
 
 /-!
 # The typed final theorem with the proven float operations (S11f, #35)

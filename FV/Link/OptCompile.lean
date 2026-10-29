@@ -1,7 +1,11 @@
-import FV.Link.Compile
-import FV.Link.DeadCleanupCompile
-import FV.Opt.OptimizeX
-import FV.Clif.Print
+module
+
+public import FV.Link.Compile
+public import FV.Link.DeadCleanupCompile
+public import FV.Opt.OptimizeX
+public import FV.Clif.Print
+
+@[expose] public section
 
 /-! # The optimising executable compiler: the definition
 

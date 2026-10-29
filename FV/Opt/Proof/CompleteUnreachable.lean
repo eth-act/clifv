@@ -1,4 +1,8 @@
-import FV.Opt.Proof.Dom
+module
+
+public import FV.Opt.Proof.Dom
+
+@[expose] public section
 
 /-!
 # Completeness of `unreachableOk` (M1)

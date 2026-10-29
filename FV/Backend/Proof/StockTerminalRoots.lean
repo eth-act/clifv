@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockSourceSinkModel
-import FV.Backend.Proof.StockCoverageRoots
+module
+
+public import FV.Backend.Proof.StockSourceSinkModel
+public import FV.Backend.Proof.StockCoverageRoots
+
+@[expose] public section
 
 /-! Source and branch roots preserve every empty-CLIF sunk bit. The chosen
 rule is classified by the same original exclusions as legacy coverage. -/

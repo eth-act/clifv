@@ -1,5 +1,9 @@
-import FV.E2E.PairDriverID
-import FV.E2E.BackendTwoRun
+module
+
+public import FV.E2E.PairDriverID
+public import FV.E2E.BackendTwoRun
+
+@[expose] public section
 
 /-!
 # The guarded paired run through prepare and the GOT guard (SEM1 #537, #699, item (1))

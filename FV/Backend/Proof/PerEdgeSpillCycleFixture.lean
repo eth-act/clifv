@@ -1,6 +1,10 @@
-import FV.Backend.Proof.PerEdgeSpillCopy
-import FV.Backend.Proof.StockCfgTotalWitness
-import FV.Backend.Proof.StockPerEdgeAllocatorWitness
+module
+
+public import FV.Backend.Proof.PerEdgeSpillCopy
+public import FV.Backend.Proof.StockCfgTotalWitness
+public import FV.Backend.Proof.StockPerEdgeAllocatorWitness
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.IndexedSpillFixture
 open Backend.Proof Backend.Proof.Driver Backend.Proof.PerEdgeSpill Backend.Proof.Spill

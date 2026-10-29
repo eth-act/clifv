@@ -1,4 +1,8 @@
-import FV.Backend.Proof.StockCfgReturnBlockAt
+module
+
+public import FV.Backend.Proof.StockCfgReturnBlockAt
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.CfgReturnAt
 open Backend.Proof Backend.Proof.Driver

@@ -1,5 +1,9 @@
-import FV.Backend.Obj
-import FV.Unw.Dwarf
+module
+
+public import FV.Backend.Obj
+public import FV.Unw.Dwarf
+
+@[expose] public section
 
 /-!
 # The emitted unwind tables are correct by construction (S10c, #230)

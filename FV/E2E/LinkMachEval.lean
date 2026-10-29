@@ -1,4 +1,8 @@
-import FV.E2E.LinkArmIniOf
+module
+
+public import FV.E2E.LinkArmIniOf
+
+@[expose] public section
 
 /-!
 # A certified evaluator of the linked machine (SEM1 #537, witnesses)

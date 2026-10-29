@@ -1,5 +1,10 @@
-import FV.Backend.Proof.StockDivRemNarrowValues
-import FV.Backend.Proof.StockGuardedRecordValues
+module
+
+public import FV.Backend.Proof.StockDivRemNarrowValues
+public import FV.Backend.Proof.StockGuardedRecordValues
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarDiv
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 private theorem scan_frontier (st : State) (i : Nat) :

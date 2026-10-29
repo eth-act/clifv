@@ -1,7 +1,11 @@
-import FV.Backend.Proof.StockAliasSemantics
-import FV.Backend.Proof.StockBlockScan
-import FV.Backend.Proof.StockOmission
-import FV.Backend.Proof.IselCmpRun
+module
+
+public import FV.Backend.Proof.StockAliasSemantics
+public import FV.Backend.Proof.StockBlockScan
+public import FV.Backend.Proof.StockOmission
+public import FV.Backend.Proof.IselCmpRun
+
+@[expose] public section
 
 /-! Semantic composition of actual backward-scan records in source execution
 order. Step obligations are internal proof obligations for selected rules and

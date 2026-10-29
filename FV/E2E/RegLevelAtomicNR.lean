@@ -1,5 +1,9 @@
-import FV.E2E.RegLevelAtomic
-import FV.E2E.RegLevelGoodXNR
+module
+
+public import FV.E2E.RegLevelAtomic
+public import FV.E2E.RegLevelGoodXNR
+
+@[expose] public section
 
 /-!
 # The LL/SC loops on the machine with no call state (SEM1 #537, step 2k)

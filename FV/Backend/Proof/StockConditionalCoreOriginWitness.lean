@@ -1,7 +1,11 @@
-import FV.Backend.Proof.StockConditionalCoreOrigin
-import FV.Backend.Proof.StockConditionalCallsWitness
-import FV.Backend.Proof.StockOriginalBlockOrigin
-import FV.Backend.Proof.StockEntryCode
+module
+
+public import FV.Backend.Proof.StockConditionalCoreOrigin
+public import FV.Backend.Proof.StockConditionalCallsWitness
+public import FV.Backend.Proof.StockOriginalBlockOrigin
+public import FV.Backend.Proof.StockEntryCode
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.ConditionalValues
 open Backend.Proof Backend.Proof.Driver

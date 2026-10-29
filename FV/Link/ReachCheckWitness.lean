@@ -1,4 +1,8 @@
-import FV.Link.ReachCheckEq
+module
+
+public import FV.Link.ReachCheckEq
+
+@[expose] public section
 
 namespace Link
 open E2E.LinkCheck

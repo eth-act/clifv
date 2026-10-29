@@ -1,5 +1,10 @@
-import FV.Backend.Proof.StockDivRemValues
-import FV.Backend.Proof.StockDivUdivValues
+module
+
+public import FV.Backend.Proof.StockDivRemValues
+public import FV.Backend.Proof.StockDivUdivValues
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarDiv
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 theorem stock_lower_div_trap_operands {f : Clif.Function} {result : Result}

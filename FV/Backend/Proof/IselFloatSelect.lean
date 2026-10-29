@@ -1,5 +1,9 @@
-import FV.Backend.Proof.IselCmpSelect
-import FV.Backend.Proof.IselFloatBitcast
+module
+
+public import FV.Backend.Proof.IselCmpSelect
+public import FV.Backend.Proof.IselFloatBitcast
+
+@[expose] public section
 
 /-!
 # S11e4: the float arm of `select` (`rule_lower_2267`, id 971) over float-capable contexts

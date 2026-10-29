@@ -1,4 +1,8 @@
-import FV.E2E.IselSimITry
+module
+
+public import FV.E2E.IselSimITry
+
+@[expose] public section
 
 /-!
 # The counted CLIF → VCode simulation of run prefixes (SEM1 item (d), `docs/plans/uninit.md` §5.9)

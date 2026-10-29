@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockRootFlow
-import FV.Backend.Proof.StockSelectedProvenance
+module
+
+public import FV.Backend.Proof.StockRootFlow
+public import FV.Backend.Proof.StockSelectedProvenance
+
+@[expose] public section
 
 /-! Output origins and source availability for the actual selected block context. -/
 namespace Backend.Stock.Proof

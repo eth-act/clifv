@@ -1,4 +1,8 @@
-import FV.Backend.Proof.DriverCheckTy
+module
+
+public import FV.Backend.Proof.DriverCheckTy
+
+@[expose] public section
 
 /-!
 # The typed lowering validator with typed `try_call`s (S11e6, #419)

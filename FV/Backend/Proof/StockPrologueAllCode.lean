@@ -1,5 +1,9 @@
-import Lean
-import FV.Backend.Proof.StockPrologueInput
+module
+
+public import Lean
+public import FV.Backend.Proof.StockPrologueInput
+
+@[expose] public section
 
 namespace Backend.Stock.Prologue.AllConfigurations
 open D0

@@ -1,4 +1,8 @@
-import FV.Backend.Proof.IselFloatBitcast
+module
+
+public import FV.Backend.Proof.IselFloatBitcast
+
+@[expose] public section
 
 /-!
 # S11f: scalar float arithmetic roots over float-capable contexts

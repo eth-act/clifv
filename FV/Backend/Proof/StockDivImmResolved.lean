@@ -1,7 +1,12 @@
-import FV.Backend.Proof.IselCmpDiv
-import FV.Backend.Proof.StockDivAliasSem
-import FV.Backend.Proof.StockDivImmValues
-import FV.Backend.Proof.StockAliasTerminal
+module
+
+public import FV.Backend.Proof.IselCmpDiv
+public import FV.Backend.Proof.StockDivAliasSem
+public import FV.Backend.Proof.StockDivImmValues
+public import FV.Backend.Proof.StockAliasTerminal
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarDiv
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 private theorem alias_fresh {aliases : Array (Option Nat)} {lo n : Nat}

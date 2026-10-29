@@ -1,4 +1,8 @@
-import FV.DSL.Map
+module
+
+public import FV.DSL.Map
+
+@[expose] public section
 
 /-!
 # DSL types, errors, and the effect monad

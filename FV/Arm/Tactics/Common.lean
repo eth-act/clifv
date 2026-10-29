@@ -5,8 +5,12 @@ Author(s): Shilpi Goel
 -/
 -- Modified by fv-compiler-rust (2026): ported to Lean v4.34.1, module prefix FV.Arm, wrapped in namespace Arm.
 
-import Lean
-import FV.Arm.Exec
+module
+
+public import Lean
+public import FV.Arm.Exec
+
+@[expose] public section
 
 namespace Arm
 

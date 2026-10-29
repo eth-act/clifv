@@ -1,6 +1,10 @@
-import FV.E2E.RegLevelCountI
-import FV.E2E.RegLevelCorrectU
-import FV.E2E.LinkArmProphThmWitness
+module
+
+public import FV.E2E.RegLevelCountI
+public import FV.E2E.RegLevelCorrectU
+public import FV.E2E.LinkArmProphThmWitness
+
+@[expose] public section
 
 /-!
 # Witnesses for the counter against the machine's calls (`FV/E2E/RegLevelCountI.lean`)

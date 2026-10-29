@@ -1,5 +1,9 @@
-import FV.Concurrency.CallRetsNWitness
-import FV.Concurrency.CallSegAbi
+module
+
+public import FV.Concurrency.CallRetsNWitness
+public import FV.Concurrency.CallSegAbi
+
+@[expose] public section
 
 /-!
 # Witness: all layers from the caller's ABI entry (#473, step (4))

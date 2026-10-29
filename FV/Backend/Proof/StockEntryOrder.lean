@@ -1,4 +1,8 @@
-import FV.Backend.Proof.StockSourceOrder
+module
+
+public import FV.Backend.Proof.StockSourceOrder
+
+@[expose] public section
 
 namespace Backend.Stock.Proof
 open Backend.Proof Backend.Proof.Driver

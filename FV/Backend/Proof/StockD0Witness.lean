@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockD0Code
-import FV.Backend.Proof.IselPrgDriver
+module
+
+public import FV.Backend.Proof.StockD0Code
+public import FV.Backend.Proof.IselPrgDriver
+
+@[expose] public section
 
 namespace Backend.Stock.D0
 set_option maxRecDepth 100000

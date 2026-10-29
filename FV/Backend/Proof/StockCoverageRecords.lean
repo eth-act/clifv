@@ -1,4 +1,8 @@
-import FV.Backend.Proof.StockCoverageDriver
+module
+
+public import FV.Backend.Proof.StockCoverageDriver
+
+@[expose] public section
 
 /-! Eliminate remembered-definition scan decisions at actual whole-driver records. -/
 namespace Backend.Stock.Proof.Coverage

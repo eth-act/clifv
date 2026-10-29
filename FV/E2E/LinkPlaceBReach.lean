@@ -1,6 +1,10 @@
-import FV.E2E.LinkPlaceBCount
-import FV.E2E.LinkArmEnvOfB
-import FV.E2E.InvokedN
+module
+
+public import FV.E2E.LinkPlaceBCount
+public import FV.E2E.LinkArmEnvOfB
+public import FV.E2E.InvokedN
+
+@[expose] public section
 
 /-! # The slot-byte counter after `k` calls of an activation (SEM1 #537, #680 (3), stage 2 (a))
 

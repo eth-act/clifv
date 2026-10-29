@@ -1,6 +1,10 @@
-import FV.Backend.Proof.IselCovDriver
-import FV.Backend.Proof.LowerCover
-import FV.Backend.Proof.LogicImmComplete
+module
+
+public import FV.Backend.Proof.IselCovDriver
+public import FV.Backend.Proof.LowerCover
+public import FV.Backend.Proof.LogicImmComplete
+
+@[expose] public section
 
 /-!
 # Form coverage without `formsCoveredB` (V3)

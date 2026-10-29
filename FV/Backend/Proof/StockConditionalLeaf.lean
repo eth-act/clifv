@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockConditionalTrapAt
-import FV.Backend.Proof.StockCfgReturnTrapAt
+module
+
+public import FV.Backend.Proof.StockConditionalTrapAt
+public import FV.Backend.Proof.StockCfgReturnTrapAt
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.ConditionalValues
 open Backend.Proof Backend.Proof.Driver

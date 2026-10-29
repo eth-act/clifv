@@ -1,4 +1,8 @@
-import FV.Opt.Proof.CompleteSimpSkel
+module
+
+public import FV.Opt.Proof.CompleteSimpSkel
+
+@[expose] public section
 
 /-!
 # Completeness of simplify: one pure statement

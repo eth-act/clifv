@@ -1,6 +1,10 @@
-import FV.Link.OptCompile
-import FV.Link.ExeSource
-import FV.E2E.OptX
+module
+
+public import FV.Link.OptCompile
+public import FV.Link.ExeSource
+public import FV.E2E.OptX
+
+@[expose] public section
 
 /-! # The optimised input of the executable compiler: what it keeps
 

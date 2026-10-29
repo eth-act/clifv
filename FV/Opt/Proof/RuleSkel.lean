@@ -1,4 +1,8 @@
-import FV.Opt.Proof.RuleBase
+module
+
+public import FV.Opt.Proof.RuleBase
+
+@[expose] public section
 
 /-!
 # Rule obligations for `simplify_skeleton`, and their lifting to `Isle.Opt.simplifySkeleton`

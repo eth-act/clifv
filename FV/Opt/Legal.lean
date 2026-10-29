@@ -1,4 +1,8 @@
-import FV.Opt.Legalize128
+module
+
+public import FV.Opt.Legalize128
+
+@[expose] public section
 
 /-!
 # `Opt.Legal.checkW`: the validator of `Opt.Legalize128`

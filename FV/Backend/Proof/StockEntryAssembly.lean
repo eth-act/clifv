@@ -1,4 +1,9 @@
-import FV.Backend.Proof.StockEntrySeed
+module
+
+public import FV.Backend.Proof.StockEntrySeed
+
+@[expose] public section
+
 namespace Backend.Stock.Proof
 open Backend.Proof Backend.Proof.Driver Isle Isle.Aarch64
 set_option autoImplicit false

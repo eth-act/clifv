@@ -1,6 +1,10 @@
-import FV.Backend.Proof.LowerTotal
-import FV.Backend.Proof.LowerLoopRunT
-import FV.Backend.Proof.AbiClass
+module
+
+public import FV.Backend.Proof.LowerTotal
+public import FV.Backend.Proof.LowerLoopRunT
+public import FV.Backend.Proof.AbiClass
+
+@[expose] public section
 
 /-!
 # Totality of the lowering: the driver on the typed scope (floats)

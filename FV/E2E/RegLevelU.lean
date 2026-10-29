@@ -1,6 +1,10 @@
-import FV.E2E.RegLevelCorrect
-import FV.E2E.UnwindSem
-import FV.E2E.RegLevelUnwind
+module
+
+public import FV.E2E.RegLevelCorrect
+public import FV.E2E.UnwindSem
+public import FV.E2E.RegLevelUnwind
+
+@[expose] public section
 
 /-!
 # The register-level simulation with unwinding: framework (S10e, #232)

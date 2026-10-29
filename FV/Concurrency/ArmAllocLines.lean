@@ -1,6 +1,10 @@
-import FV.Concurrency.ArmAllocSeg
-import FV.E2E.RegLevelMachine
-import FV.Concurrency.VCodeAddrAtomic
+module
+
+public import FV.Concurrency.ArmAllocSeg
+public import FV.E2E.RegLevelMachine
+public import FV.Concurrency.VCodeAddrAtomic
+
+@[expose] public section
 
 /-!
 # The events of the machine's steps through laid-out lines (T2h, #311, layer 4b)

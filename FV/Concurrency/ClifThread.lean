@@ -1,5 +1,9 @@
-import FV.Concurrency.Replay
-import FV.Clif.Run
+module
+
+public import FV.Concurrency.Replay
+public import FV.Clif.Run
+
+@[expose] public section
 
 /-!
 # Multi-threaded CLIF (T2e, #303)

@@ -1,5 +1,9 @@
-import FV.E2E.ABIReadOnlyMachine
-import FV.Backend.Proof.StockArithmeticCheck
+module
+
+public import FV.E2E.ABIReadOnlyMachine
+public import FV.Backend.Proof.StockArithmeticCheck
+
+@[expose] public section
 
 namespace E2E
 open Backend Backend.Proof Backend.Proof.Driver Backend.Stock.Proof Backend.DeadCleanup

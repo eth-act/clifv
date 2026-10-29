@@ -1,5 +1,9 @@
-import FV.Backend.Proof.SpillClsChain
-import FV.Backend.Proof.SpillLocalPipe
+module
+
+public import FV.Backend.Proof.SpillClsChain
+public import FV.Backend.Proof.SpillLocalPipe
+
+@[expose] public section
 
 /-!
 # `ClassesHyp`: every vreg of the pipeline's code has the class `classes` records (V4)

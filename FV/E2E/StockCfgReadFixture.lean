@@ -1,5 +1,9 @@
-import FV.Backend.ABIReadCfg
-import FV.Backend.Proof.StockInheritedFixture
+module
+
+public import FV.Backend.ABIReadCfg
+public import FV.Backend.Proof.StockInheritedFixture
+
+@[expose] public section
 
 namespace E2E.StockCfgReadFixture
 open Backend Backend.Stock.Proof

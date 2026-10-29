@@ -1,8 +1,12 @@
-import FV.E2E.EmitPreOk
-import FV.Backend.Proof.RelaxLayout
-import FV.E2E.EmitCondsDefs
-import FV.Backend.Proof.AssignOk
-import FV.Backend.EmitOk
+module
+
+public import FV.E2E.EmitPreOk
+public import FV.Backend.Proof.RelaxLayout
+public import FV.E2E.EmitCondsDefs
+public import FV.Backend.Proof.AssignOk
+public import FV.Backend.EmitOk
+
+@[expose] public section
 
 /-!
 # The near PC-relative lines of the spill path reach their labels (V6b)

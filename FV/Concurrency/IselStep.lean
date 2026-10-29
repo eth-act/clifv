@@ -1,7 +1,11 @@
-import FV.Concurrency.SegRun
-import FV.Backend.Proof.LowerSim
-import FV.Concurrency.SegShape
-import FV.Concurrency.IselDriverT
+module
+
+public import FV.Concurrency.SegRun
+public import FV.Backend.Proof.LowerSim
+public import FV.Concurrency.SegShape
+public import FV.Concurrency.IselDriverT
+
+@[expose] public section
 
 /-!
 # Counted runs and the statement step with its endpoint (T2h, #311, layer 2e)

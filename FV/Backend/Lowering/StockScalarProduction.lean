@@ -1,4 +1,8 @@
-import FV.Backend.Lowering.StockScalarAdd
+module
+
+public import FV.Backend.Lowering.StockScalarAdd
+
+@[expose] public section
 
 /-! Additive scalar-add selection. The earlier D0/prologue selectors keep their
 meaning and remain the fallback for every other input or failed attempt. -/

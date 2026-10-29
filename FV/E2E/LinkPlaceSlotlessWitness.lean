@@ -1,4 +1,8 @@
-import FV.E2E.LinkArmUAct
+module
+
+public import FV.E2E.LinkArmUAct
+
+@[expose] public section
 
 /-! Non-vacuity of the restored slotless `keepsPlace` lemmas: the empty program over the empty
 environment meets every premise. -/

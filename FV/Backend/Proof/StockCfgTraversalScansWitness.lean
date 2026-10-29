@@ -1,6 +1,10 @@
-import FV.Backend.Proof.StockCfgTraversalScans
-import FV.Backend.Proof.StockLinearCfgFixture
-import FV.Backend.Proof.StockTerminalDriverWitness
+module
+
+public import FV.Backend.Proof.StockCfgTraversalScans
+public import FV.Backend.Proof.StockLinearCfgFixture
+public import FV.Backend.Proof.StockTerminalDriverWitness
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.CfgTraceWitness
 open Backend.Proof Backend.Proof.Driver

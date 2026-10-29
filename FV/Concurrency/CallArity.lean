@@ -1,4 +1,8 @@
-import FV.Concurrency.CallResumeChecks
+module
+
+public import FV.Concurrency.CallResumeChecks
+
+@[expose] public section
 
 /-!
 # The arity part of `resume_all`'s `habi` as a check (#473, step (3))

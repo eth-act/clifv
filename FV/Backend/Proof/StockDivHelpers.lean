@@ -1,7 +1,12 @@
-import FV.Backend.Proof.StockDivPure
-import FV.Backend.Proof.IselCmpSdiv
-import FV.Backend.Proof.IselTermsALUAMul
-import FV.Backend.Proof.StockShiftHelper
+module
+
+public import FV.Backend.Proof.StockDivPure
+public import FV.Backend.Proof.IselCmpSdiv
+public import FV.Backend.Proof.IselTermsALUAMul
+public import FV.Backend.Proof.StockShiftHelper
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarDiv
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 set_option maxRecDepth 20000

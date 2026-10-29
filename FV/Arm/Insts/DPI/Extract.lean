@@ -24,8 +24,12 @@ Released under Apache 2.0 license; see third_party/NOTICE-lnsym.md.
 -- Cross-checked against VeriISLE's ASL-derived `MInst.AluRRRShift`/EXTR use in
 -- cranelift/codegen/src/isa/aarch64/spec (the `ror` immediate lowering, `Extr` alu op).
 
-import FV.Arm.Decode
-import FV.Arm.Insts.Common
+module
+
+public import FV.Arm.Decode
+public import FV.Arm.Insts.Common
+
+@[expose] public section
 
 namespace Arm
 

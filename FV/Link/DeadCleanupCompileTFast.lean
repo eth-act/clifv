@@ -1,7 +1,11 @@
-import FV.Link.DeadCleanupImage
-import FV.E2E.LinkScopeFast
-import FV.E2E.CalleeWith
-import FV.E2E.LinkOutCleanupT
+module
+
+public import FV.Link.DeadCleanupImage
+public import FV.E2E.LinkScopeFast
+public import FV.E2E.CalleeWith
+public import FV.E2E.LinkOutCleanupT
+
+@[expose] public section
 
 /-! # The typed scope's checks at the size of std (S11e6, #419)
 

@@ -1,5 +1,9 @@
-import FV.E2E.LinkArmCallTab
-import FV.E2E.LinkArmDetTabPRB
+module
+
+public import FV.E2E.LinkArmCallTab
+public import FV.E2E.LinkArmDetTabPRB
+
+@[expose] public section
 
 /-!
 # Twin runs and the table transfer, generic over the table predicate

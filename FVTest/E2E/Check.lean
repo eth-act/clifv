@@ -1,22 +1,26 @@
-import FV.Backend
-import FV.Backend.Proof.DriverCheck
-import FV.Backend.Proof.LowerDecide
-import FV.Backend.Proof.PrepareCheck
-import FV.Backend.Proof.RegallocCover
-import FV.Backend.Proof.SpillArity
-import FV.Backend.Proof.EntryParams
-import FV.Backend.Proof.SpillAvail
-import FV.Backend.Proof.RelaxReady
-import FV.E2E.EmitSize
-import FV.E2E.SizeDefs
-import FV.E2E.EmitNear
-import FV.E2E.EmitLabels
-import FV.E2E.EmitEnc
-import FV.Backend.Proof.IselEmitDefs
-import FV.Opt.Legalize128Pass
-import FVTest.Opt.Common
-import FV.E2E.LinkScopeInputDefs
-import FV.Backend.Proof.SretStable
+module
+
+public import FV.Backend
+public import FV.Backend.Proof.DriverCheck
+public import FV.Backend.Proof.LowerDecide
+public import FV.Backend.Proof.PrepareCheck
+public import FV.Backend.Proof.RegallocCover
+public import FV.Backend.Proof.SpillArity
+public import FV.Backend.Proof.EntryParams
+public import FV.Backend.Proof.SpillAvail
+public import FV.Backend.Proof.RelaxReady
+public import FV.E2E.EmitSize
+public import FV.E2E.SizeDefs
+public import FV.E2E.EmitNear
+public import FV.E2E.EmitLabels
+public import FV.E2E.EmitEnc
+public import FV.Backend.Proof.IselEmitDefs
+public import FV.Opt.Legalize128Pass
+public import FVTest.Opt.Common
+public import FV.E2E.LinkScopeInputDefs
+public import FV.Backend.Proof.SretStable
+
+@[expose] public section
 
 /-!
 # The M7 validators on real code (`lake exe lean-e2e-check [FILE.clif...]`)

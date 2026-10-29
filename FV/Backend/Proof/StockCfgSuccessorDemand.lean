@@ -1,4 +1,8 @@
-import FV.Backend.Proof.StockGuardedSuccessor
+module
+
+public import FV.Backend.Proof.StockGuardedSuccessor
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.Control
 open Backend.Proof Backend.Proof.Driver

@@ -1,5 +1,9 @@
-import FV.Backend.Proof.IselCmpVec
-import FV.Backend.Proof.IselTermsImm
+module
+
+public import FV.Backend.Proof.IselCmpVec
+public import FV.Backend.Proof.IselTermsImm
+
+@[expose] public section
 
 /-!
 # Family C: division and remainder (`udiv`/`sdiv`/`urem`/`srem`)

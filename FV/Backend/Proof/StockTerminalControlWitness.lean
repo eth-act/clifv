@@ -1,4 +1,8 @@
-import FV.Backend.Proof.StockTerminalRoots
+module
+
+public import FV.Backend.Proof.StockTerminalRoots
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.TerminalControlWitness
 open Backend.Proof Backend.Proof.Driver Backend.Proof.Cov Coverage Isle Isle.Interp Isle.Aarch64

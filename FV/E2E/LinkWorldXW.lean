@@ -1,5 +1,9 @@
-import FV.E2E.LinkWorldX
-import FV.E2E.RegLevelCorrectXW
+module
+
+public import FV.E2E.LinkWorldX
+public import FV.E2E.RegLevelCorrectXW
+
+@[expose] public section
 
 /-!
 # The per-function theorems with the per-state facts of the run and the writes (A3, #412, slice F8b)

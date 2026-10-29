@@ -1,6 +1,10 @@
-import Lean
-import FV.Backend.Proof.StockPrologueDomain
-import FV.Backend.Proof.LowerDecide
+module
+
+public import Lean
+public import FV.Backend.Proof.StockPrologueDomain
+public import FV.Backend.Proof.LowerDecide
+
+@[expose] public section
 
 namespace Backend.Stock.Prologue.AllConfigurations
 open Backend.Proof.Driver

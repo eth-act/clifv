@@ -1,6 +1,10 @@
-import FV.Backend.Proof.IselCmpRoot
-import FV.Backend.Proof.IselBaseTI
-import FV.Backend.Proof.IselFamALUATI
+module
+
+public import FV.Backend.Proof.IselCmpRoot
+public import FV.Backend.Proof.IselBaseTI
+public import FV.Backend.Proof.IselFamALUATI
+
+@[expose] public section
 
 /-!
 # `IselCmpRoot` over typed contexts (S11e5 Stage C, slice 7)

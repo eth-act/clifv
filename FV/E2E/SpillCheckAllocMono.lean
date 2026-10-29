@@ -1,4 +1,8 @@
-import FV.Backend.Proof.SpillStep4
+module
+
+public import FV.Backend.Proof.SpillStep4
+
+@[expose] public section
 
 /-!
 # Completeness of `checkAlloc` (1): monotonicity and the iteration's state invariant

@@ -1,4 +1,8 @@
-import FV.DSL
+module
+
+public import FV.DSL
+
+@[expose] public section
 
 /-! Corpus: error paths with distinct tags, early returns. -/
 

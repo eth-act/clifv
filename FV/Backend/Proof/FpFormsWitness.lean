@@ -1,5 +1,9 @@
-import FV.Backend.Proof.RegallocCover
-import FV.Backend.Proof.RefinesCSem
+module
+
+public import FV.Backend.Proof.RegallocCover
+public import FV.Backend.Proof.RefinesCSem
+
+@[expose] public section
 
 /-!
 # S11e1 witnesses: the scalar FP data-movement forms

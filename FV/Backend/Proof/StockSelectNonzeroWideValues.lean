@@ -1,5 +1,10 @@
-import FV.Backend.Proof.StockSelectNonzeroWideShape
-import FV.Backend.Proof.StockSelectZeroSourceValues
+module
+
+public import FV.Backend.Proof.StockSelectNonzeroWideShape
+public import FV.Backend.Proof.StockSelectZeroSourceValues
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarSelect
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 /-- Actual wide nonzero condition production and actual659 selection compute

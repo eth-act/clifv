@@ -1,6 +1,10 @@
-import Lean
-import Std.Tactic.BVDecide
-import FV.Clif.Sem
+module
+
+public import Lean
+public import Std.Tactic.BVDecide
+public import FV.Clif.Sem
+
+@[expose] public section
 
 /-!
 # Kernel-checked bit-vector decision (`kbv`)

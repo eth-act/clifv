@@ -1,5 +1,9 @@
-import FV.Concurrency.CallResumeLayers
-import FV.Concurrency.CallRetsEnd
+module
+
+public import FV.Concurrency.CallResumeLayers
+public import FV.Concurrency.CallRetsEnd
+
+@[expose] public section
 
 /-!
 # The caller's resume premises from the callee's preservation facts (#473, step (1))

@@ -1,8 +1,12 @@
-import FV.Clif.Run
-import FV.Clif.Print
-import FV.Clif.Parse
-import FV.Compile.Subset
-import FVTest.Clif.OracleJson
+module
+
+public import FV.Clif.Run
+public import FV.Clif.Print
+public import FV.Clif.Parse
+public import FV.Compile.Subset
+public import FVTest.Clif.OracleJson
+
+@[expose] public section
 
 /-!
 # `clif-fuzz`: random CLIF differential tests of `Clif.run` (T5, #41)

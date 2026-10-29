@@ -1,4 +1,8 @@
-import FV.Backend.Proof.IselTermsALUAMul
+module
+
+public import FV.Backend.Proof.IselTermsALUAMul
+
+@[expose] public section
 
 /-!
 # `extr_32_or_64` (`lower.isle:1501`, `:1507`): forward lemmas

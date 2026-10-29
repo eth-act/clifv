@@ -1,5 +1,9 @@
-import FV.E2E.RegLevelTrap
-import FV.Backend.Proof.IselCtlTerm
+module
+
+public import FV.E2E.RegLevelTrap
+public import FV.Backend.Proof.IselCtlTerm
+
+@[expose] public section
 
 /-!
 # Prologue and epilogue on the machine (M6)

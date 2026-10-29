@@ -1,4 +1,8 @@
-import FV.E2E.BackendTwoRunNPre
+module
+
+public import FV.E2E.BackendTwoRunNPre
+
+@[expose] public section
 
 /-!
 # The machine lock with the contracts of the first `N` calls (SEM1 #537, #713)

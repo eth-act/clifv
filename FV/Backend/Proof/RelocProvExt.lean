@@ -1,5 +1,9 @@
-import FV.Backend.Proof.RelocProvDefs
-import FV.Backend.Proof.IselFlowExt
+module
+
+public import FV.Backend.Proof.RelocProvDefs
+public import FV.Backend.Proof.IselFlowExt
+
+@[expose] public section
 
 /-!
 # Name provenance of the extern extractors (L1e, #216)

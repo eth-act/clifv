@@ -1,4 +1,9 @@
-import FV.Backend.Proof.StockArithmeticSourceRefines
+module
+
+public import FV.Backend.Proof.StockArithmeticSourceRefines
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ArithmeticBody
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 set_option autoImplicit false

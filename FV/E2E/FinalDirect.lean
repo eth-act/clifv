@@ -1,6 +1,10 @@
-import FV.E2E.Final
-import FV.E2E.LowerDirect
-import FV.Backend.Proof.FormsCoverComplete
+module
+
+public import FV.E2E.Final
+public import FV.E2E.LowerDirect
+public import FV.Backend.Proof.FormsCoverComplete
+
+@[expose] public section
 
 /-!
 # The final theorem without the lowering, `prepare` and form-coverage validators

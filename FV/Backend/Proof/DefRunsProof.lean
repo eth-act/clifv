@@ -1,7 +1,11 @@
-import FV.Backend.Proof.DefGenSoundAt
-import FV.Backend.Proof.DefGenModel
-import FV.Backend.Proof.DefGenTab
-import FV.Backend.Proof.KillDriver
+module
+
+public import FV.Backend.Proof.DefGenSoundAt
+public import FV.Backend.Proof.DefGenModel
+public import FV.Backend.Proof.DefGenTab
+public import FV.Backend.Proof.KillDriver
+
+@[expose] public section
 
 /-!
 # Definedness of the ISLE lowering: the driver's runs (`DefRunsHyp`)

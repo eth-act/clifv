@@ -1,5 +1,9 @@
-import FV.E2E.LinkArmXPB
-import FV.E2E.LinkArmProgCallPRB
+module
+
+public import FV.E2E.LinkArmXPB
+public import FV.E2E.LinkArmProgCallPRB
+
+@[expose] public section
 
 /-!
 # Program calls under the slot-byte oracle, with the callee table (SEM1 #537, item (d),

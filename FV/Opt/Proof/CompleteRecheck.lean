@@ -1,5 +1,9 @@
-import FV.Opt.Proof.CompleteLicm
-import FV.Opt.Proof.DomComplete
+module
+
+public import FV.Opt.Proof.CompleteLicm
+public import FV.Opt.Proof.DomComplete
+
+@[expose] public section
 
 /-!
 # Re-checking after `removeUnreachable` (M1)

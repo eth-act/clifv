@@ -1,6 +1,10 @@
-import FV.E2E.SpillCheckAllocFix
-import FV.E2E.AllocDirect
-import FV.Backend.Proof.EntryParams
+module
+
+public import FV.E2E.SpillCheckAllocFix
+public import FV.E2E.AllocDirect
+public import FV.Backend.Proof.EntryParams
+
+@[expose] public section
 
 /-!
 # `checkAlloc` accepts the spill allocation (L2a, family "compiled: checkAlloc")

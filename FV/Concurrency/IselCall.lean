@@ -1,4 +1,8 @@
-import FV.Concurrency.IselEntry
+module
+
+public import FV.Concurrency.IselEntry
+
+@[expose] public section
 
 /-!
 # Layer 2 pausing at calls (#473, (2a) of the generic call theorem)

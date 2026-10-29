@@ -1,5 +1,9 @@
-import FV.Concurrency.CallSegOkGTFull
-import FV.Concurrency.CallRmwWitness
+module
+
+public import FV.Concurrency.CallSegOkGTFull
+public import FV.Concurrency.CallRmwWitness
+
+@[expose] public section
 
 /-!
 # The caller of `atomic_rmw` through the generic call theorem (#473)

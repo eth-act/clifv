@@ -1,4 +1,10 @@
-import FV.Backend
+module
+
+public import FV.Backend
+public import FVTest.ModuleHeader
+
+@[expose] public section
+
 open Backend Isle Isle.Aarch64
 
 /-! Generates `FV/Backend/Proof/IselData.lean`
@@ -113,7 +119,7 @@ def main (args : List String) : IO Unit := do
   let terms := terms.qsort (· < ·)
   let internal := terms.filter fun t => (program.term? t).any (·.hasInternalCtor)
   let nrules := (internal.toList.map fun t => (program.rulesOf t).length).sum
-  IO.println (header which roots.length terms.size nrules)
+  IO.println (Gen.moduleHeader (header which roots.length terms.size nrules))
   IO.println "/-! ### Term fields (`rfl`) -/\n"
   let mut fields : Array String := #[]
   let mut proofs : Array String := #[]

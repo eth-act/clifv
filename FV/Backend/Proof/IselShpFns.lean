@@ -1,4 +1,8 @@
-import FV.Backend.Proof.IselCovFns
+module
+
+public import FV.Backend.Proof.IselCovFns
+
+@[expose] public section
 
 /-!
 # Control shapes of the ISLE lowering (V4): the transfer functions

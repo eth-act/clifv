@@ -1,6 +1,10 @@
-import FV.Backend.Proof.IselCtlTryF
-import FV.Backend.Proof.DriverCheckTyC
-import FV.Compile.SubsetTC
+module
+
+public import FV.Backend.Proof.IselCtlTryF
+public import FV.Backend.Proof.DriverCheckTyC
+public import FV.Compile.SubsetTC
+
+@[expose] public section
 
 /-!
 # The driver's typed `try_call`s from the typed rule family (S11e6, #419)

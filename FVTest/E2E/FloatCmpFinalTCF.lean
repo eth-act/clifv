@@ -1,5 +1,9 @@
-import FVTest.E2E.FloatArithFinalTCF
-import FVTest.Backend.FloatCmpCtxT
+module
+
+public import FVTest.E2E.FloatArithFinalTCF
+public import FVTest.Backend.FloatCmpCtxT
+
+@[expose] public section
 
 /-!
 Non-vacuity of the typed final theorem with the proven float operations for the scalar

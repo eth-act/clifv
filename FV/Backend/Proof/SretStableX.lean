@@ -1,5 +1,9 @@
-import FV.Backend.Proof.SretStable
-import FV.Backend.Proof.LowerSimU
+module
+
+public import FV.Backend.Proof.SretStable
+public import FV.Backend.Proof.LowerSimU
+
+@[expose] public section
 
 /-!
 # The `sret` pointer is stable along a CLIF run with unwinding (S7)

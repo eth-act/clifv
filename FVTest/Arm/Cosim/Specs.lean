@@ -7,7 +7,11 @@ encodings and random initial states (see `Harness.lean`). The forms are the inst
 Cranelift 0.136.1 emits at `opt_level=none` for the `clif-subset-v1` emitter subset (see
 `docs/contracts/arm.md`), each with all of its encoding-field variations.
 -/
-import FVTest.Arm.Cosim.Harness
+module
+
+public import FVTest.Arm.Cosim.Harness
+
+@[expose] public section
 
 namespace Arm.Cosim
 

@@ -1,5 +1,9 @@
-import FV.Backend.Proof.LowerRename
-import FV.Backend.Proof.IselFlowExt
+module
+
+public import FV.Backend.Proof.LowerRename
+public import FV.Backend.Proof.IselFlowExt
+
+@[expose] public section
 
 /-!
 # Register classes of instructions (V4 classes)

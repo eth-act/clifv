@@ -1,4 +1,8 @@
-import FV.Backend.Proof.IselBaseTI
+module
+
+public import FV.Backend.Proof.IselBaseTI
+
+@[expose] public section
 
 /-!
 # Integer memory roots over typed contexts: common facts (S11e5 Stage C, slice 7)

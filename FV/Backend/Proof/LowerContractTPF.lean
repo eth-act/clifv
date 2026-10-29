@@ -1,5 +1,9 @@
-import FV.Backend.Proof.LowerContractTP
-import FV.Backend.Proof.LowerContractTF
+module
+
+public import FV.Backend.Proof.LowerContractTP
+public import FV.Backend.Proof.LowerContractTF
+
+@[expose] public section
 
 /-!
 # The typed statement dispatcher with pinned calls and the proven float operations (S11f, #35)

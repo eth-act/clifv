@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockConditionalTargets
-import FV.Backend.Proof.IselCtlBrTable
+module
+
+public import FV.Backend.Proof.StockConditionalTargets
+public import FV.Backend.Proof.IselCtlBrTable
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.BranchHelperTargets
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64 ConditionalTargets

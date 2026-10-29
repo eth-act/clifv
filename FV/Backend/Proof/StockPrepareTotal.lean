@@ -1,6 +1,10 @@
-import FV.Backend.Proof.StockEntryGraph
-import FV.Backend.Proof.StockPrepareInputs
-import FV.Backend.Proof.PerEdgePrepareInputTotal
+module
+
+public import FV.Backend.Proof.StockEntryGraph
+public import FV.Backend.Proof.StockPrepareInputs
+public import FV.Backend.Proof.PerEdgePrepareInputTotal
+
+@[expose] public section
 
 namespace Backend.Stock.Proof
 open Backend.Proof Backend.Proof.Driver

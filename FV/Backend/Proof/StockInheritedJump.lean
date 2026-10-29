@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockInheritedBody
-import FV.Backend.Proof.StockJumpBodyRefines
+module
+
+public import FV.Backend.Proof.StockInheritedBody
+public import FV.Backend.Proof.StockJumpBodyRefines
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.Inherited
 open Backend.Proof Backend.Proof.Driver

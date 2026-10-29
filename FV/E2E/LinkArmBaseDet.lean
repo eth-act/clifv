@@ -1,4 +1,8 @@
-import FV.E2E.LinkArm
+module
+
+public import FV.E2E.LinkArm
+
+@[expose] public section
 
 /-!
 # Determinism of the base hooks on the dead stack (SEM1 step 2o, `docs/plans/uninit.md` §5.7)

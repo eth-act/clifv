@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockSourceDefined
-import FV.Backend.Proof.LowerCert
+module
+
+public import FV.Backend.Proof.StockSourceDefined
+public import FV.Backend.Proof.LowerCert
+
+@[expose] public section
 
 /-! Source definedness across actual successor entry. Parameters are defined
 by successful source argument binding; inherited available values are carried

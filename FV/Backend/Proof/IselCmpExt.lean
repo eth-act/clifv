@@ -1,4 +1,8 @@
-import FV.Backend.Proof.IselCmpTerms
+module
+
+public import FV.Backend.Proof.IselCmpTerms
+
+@[expose] public section
 
 /-!
 # `put_in_reg_{z,s}ext{32,64}`: syntactic contracts (flags/select/div family)

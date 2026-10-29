@@ -1,6 +1,10 @@
-import FV.E2E.WorldTrapCall
-import FV.E2E.DeadCleanupCover
-import FV.Backend.SpillAlloc
+module
+
+public import FV.E2E.WorldTrapCall
+public import FV.E2E.DeadCleanupCover
+public import FV.Backend.SpillAlloc
+
+@[expose] public section
 
 /-!
 # Non-vacuity of `backend_correct_final_cleanup_trapcall` (S9a, #33)

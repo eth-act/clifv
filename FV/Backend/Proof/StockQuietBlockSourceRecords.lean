@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockQuietSourceRecords
-import FV.Backend.Proof.StockBlockRanges
+module
+
+public import FV.Backend.Proof.StockQuietSourceRecords
+public import FV.Backend.Proof.StockBlockRanges
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.QuietSourceColors
 open Backend.Proof Backend.Proof.Driver

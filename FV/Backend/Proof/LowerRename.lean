@@ -1,4 +1,8 @@
-import FV.Backend.Proof.LowerSeq
+module
+
+public import FV.Backend.Proof.LowerSeq
+
+@[expose] public section
 
 /-!
 # Vreg renaming (M7 driver: alias resolution)

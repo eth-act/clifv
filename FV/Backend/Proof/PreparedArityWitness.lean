@@ -1,7 +1,11 @@
-import FV.Backend.Proof.PerEdgePrepareWitness
-import FV.Backend.Proof.StockPreparedArity
-import FV.Backend.Proof.StockSpillCopyMetadataWitness
-import FV.Backend.Proof.PerEdgeSpillJumpWitness
+module
+
+public import FV.Backend.Proof.PerEdgePrepareWitness
+public import FV.Backend.Proof.StockPreparedArity
+public import FV.Backend.Proof.StockSpillCopyMetadataWitness
+public import FV.Backend.Proof.PerEdgeSpillJumpWitness
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.PreparedArityWitness
 open Backend.Proof Backend.Proof.Driver Backend.Proof.Spill Backend.Proof.PerEdgeSpill

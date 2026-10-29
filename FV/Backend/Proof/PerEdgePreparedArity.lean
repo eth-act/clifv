@@ -1,5 +1,9 @@
-import FV.Backend.Proof.PerEdgeRouteArity
-import FV.Backend.Proof.PrepareReachability
+module
+
+public import FV.Backend.Proof.PerEdgeRouteArity
+public import FV.Backend.Proof.PrepareReachability
+
+@[expose] public section
 
 namespace Backend.Proof.PerEdgePrep
 open Backend Backend.Proof Backend.Proof.Driver Backend.Stock.Proof

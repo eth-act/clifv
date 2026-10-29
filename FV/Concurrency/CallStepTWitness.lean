@@ -1,5 +1,9 @@
-import FV.Concurrency.CallStepT
-import FV.Concurrency.ClifThreadIWitness
+module
+
+public import FV.Concurrency.CallStepT
+public import FV.Concurrency.ClifThreadIWitness
+
+@[expose] public section
 
 /-!
 # Witnesses: the event-free steps between segments (#473, step (4))

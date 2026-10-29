@@ -1,9 +1,13 @@
-import FV.Isle.Syntax
-import FV.Isle.Pretty
-import FV.Isle.Interp
-import FV.Isle.Generated.Program
-import FV.Isle.Generated.Manifest
-import FV.Isle.Generated.Closure
+module
+
+public import FV.Isle.Syntax
+public import FV.Isle.Pretty
+public import FV.Isle.Interp
+public import FV.Isle.Generated.Program
+public import FV.Isle.Generated.Manifest
+public import FV.Isle.Generated.Closure
+
+@[expose] public section
 
 /-!
 # ISLE (M4 preparation)

@@ -1,5 +1,10 @@
-import FV.Backend.Proof.IselSzTDefs
-import FV.Backend.Proof.IselCovTTabData
+module
+
+public import FV.Backend.Proof.IselSzTDefs
+public import FV.Backend.Proof.IselCovTTabData
+public import FVTest.ModuleHeader
+
+@[expose] public section
 
 /-!
 # Generator of the typed V6c cost tables (`FV/Backend/Proof/IselSzTTab*.lean`)
@@ -430,5 +435,5 @@ def main (args : List String) : IO UInt32 := do
   for (n, i, hs, ht) in heavyN do
     IO.println s!"heavy {n} f{i}: sz a={hs.a} b={hs.b} nA={hs.nA} nB={hs.nB}; tg a={ht.a} b={ht.b} nA={ht.nA} nB={ht.nB}"
   for (name, content) in renderAll src sz tg ln bn heavyN do
-    IO.FS.writeFile (path ++ "/" ++ name) content
+    IO.FS.writeFile (path ++ "/" ++ name) (Gen.moduleHeader content)
   return 0

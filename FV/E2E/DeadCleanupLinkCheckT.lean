@@ -1,10 +1,14 @@
-import FV.E2E.DeadCleanupLinkCheck
-import FV.E2E.PipelineCheckT
-import FV.E2E.LinkArmT
-import FV.E2E.LinkCheckT
-import FV.E2E.LinkCheckFast
-import FV.E2E.CalleeWith
-import FV.Link.DeadCleanupImage
+module
+
+public import FV.E2E.DeadCleanupLinkCheck
+public import FV.E2E.PipelineCheckT
+public import FV.E2E.LinkArmT
+public import FV.E2E.LinkCheckT
+public import FV.E2E.LinkCheckFast
+public import FV.E2E.CalleeWith
+public import FV.Link.DeadCleanupImage
+
+@[expose] public section
 
 /-! # Typed copies of `FV.E2E.DeadCleanupLinkCheck` (S11e5 Stage C, slice 8)
 

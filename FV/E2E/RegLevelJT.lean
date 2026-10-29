@@ -1,6 +1,10 @@
-import FV.E2E.RegLevelCall
-import FV.Backend.Proof.RegallocMem
-import FV.Backend.Proof.RegallocTac
+module
+
+public import FV.E2E.RegLevelCall
+public import FV.Backend.Proof.RegallocMem
+public import FV.Backend.Proof.RegallocTac
+
+@[expose] public section
 
 /-!
 # Jump tables on the machine (M6)

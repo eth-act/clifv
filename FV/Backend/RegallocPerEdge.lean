@@ -1,4 +1,8 @@
-import FV.Backend.RegallocCheck
+module
+
+public import FV.Backend.RegallocCheck
+
+@[expose] public section
 
 /-! Per-successor register-allocation checker. Existing checkAlloc and all its
 consumers remain unchanged until the new full simulation is established. -/

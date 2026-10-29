@@ -1,7 +1,11 @@
-import FV.Backend.Proof.StockTerminalBlocks
-import FV.Backend.Proof.StockCoverageDriver
-import FV.Backend.Proof.StockSourceOrder
-import FV.Backend.Proof.StockRecordedFlow
+module
+
+public import FV.Backend.Proof.StockTerminalBlocks
+public import FV.Backend.Proof.StockCoverageDriver
+public import FV.Backend.Proof.StockSourceOrder
+public import FV.Backend.Proof.StockRecordedFlow
+
+@[expose] public section
 
 /-! Empty remembered definitions through the actual node loop and whole Stock driver.
 Source scope is unchanged; no caller-supplied metadata or acceptance certificate. -/

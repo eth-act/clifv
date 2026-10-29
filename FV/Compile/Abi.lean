@@ -1,5 +1,9 @@
-import FV.DSL.Check
-import FV.Clif
+module
+
+public import FV.DSL.Check
+public import FV.Clif
+
+@[expose] public section
 
 /-!
 # Data layout and function ABI of compiled DSL functions

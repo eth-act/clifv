@@ -1,4 +1,8 @@
-import FV.E2E.LinkArmUClif
+module
+
+public import FV.E2E.LinkArmUClif
+
+@[expose] public section
 
 /-!
 # The run with unwinding of an activation in the linked program (S10f, #233)

@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockCastCmpMatch
-import FV.Backend.Proof.StockSourceStatementFamily
+module
+
+public import FV.Backend.Proof.StockCastCmpMatch
+public import FV.Backend.Proof.StockSourceStatementFamily
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.ScalarCmp
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

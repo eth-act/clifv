@@ -3,12 +3,16 @@ Copyright (c) 2023 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Author(s): Shilpi Goel
 -/
-import FV.Arm.Decode.DPI
-import FV.Arm.Decode.DPR
-import FV.Arm.Decode.BR
-import FV.Arm.Decode.LDST
-import FV.Arm.Decode.DPSFP
-import FV.Arm.Decode.Reserved
+module
+
+public import FV.Arm.Decode.DPI
+public import FV.Arm.Decode.DPR
+public import FV.Arm.Decode.BR
+public import FV.Arm.Decode.LDST
+public import FV.Arm.Decode.DPSFP
+public import FV.Arm.Decode.Reserved
+
+@[expose] public section
 
 namespace Arm
 

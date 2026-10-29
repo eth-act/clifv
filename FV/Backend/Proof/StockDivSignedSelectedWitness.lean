@@ -1,4 +1,9 @@
-import FV.Backend.Proof.StockDivSignedRecordReceipts
+module
+
+public import FV.Backend.Proof.StockDivSignedRecordReceipts
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarDiv.SignedSelectedWitness
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 set_option maxRecDepth 20000

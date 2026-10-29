@@ -1,8 +1,12 @@
-import FV.Concurrency.LinkedMachine
-import FV.Concurrency.ArmAllocEntry
-import FV.Concurrency.CallCalleeRet
-import FV.E2E.EmitEnc
-import FV.E2E.Binary
+module
+
+public import FV.Concurrency.LinkedMachine
+public import FV.Concurrency.ArmAllocEntry
+public import FV.Concurrency.CallCalleeRet
+public import FV.E2E.EmitEnc
+public import FV.E2E.Binary
+
+@[expose] public section
 
 /-!
 # The callee's entry on the linked machine, at the Arm level (#473, step (3))

@@ -1,13 +1,17 @@
-import FV.Backend.InputScope
-import FV.Backend.Encode
-import FV.Backend.Regalloc
-import FV.Backend.Proof.RegallocSound
-import FV.Backend.Proof.RegallocOperands
-import FV.Backend.Proof.EncodeStep
-import FV.Backend.Proof.LowerSim
-import FV.Backend.Proof.DriverCheck
-import FV.Backend.Proof.PrepareCheck
-import FV.Compile.Subset
+module
+
+public import FV.Backend.InputScope
+public import FV.Backend.Encode
+public import FV.Backend.Regalloc
+public import FV.Backend.Proof.RegallocSound
+public import FV.Backend.Proof.RegallocOperands
+public import FV.Backend.Proof.EncodeStep
+public import FV.Backend.Proof.LowerSim
+public import FV.Backend.Proof.DriverCheck
+public import FV.Backend.Proof.PrepareCheck
+public import FV.Compile.Subset
+
+@[expose] public section
 
 /-!
 # M7: the end-to-end statement (`docs/contracts/e2e.md`)

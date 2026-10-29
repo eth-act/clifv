@@ -1,6 +1,10 @@
-import FV.E2E.ABIReadFlags
-import FV.Backend.Proof.StockLogicalReturnRefines
-import FV.Backend.Proof.StockLogicalCheck
+module
+
+public import FV.E2E.ABIReadFlags
+public import FV.Backend.Proof.StockLogicalReturnRefines
+public import FV.Backend.Proof.StockLogicalCheck
+
+@[expose] public section
 
 namespace E2E
 open Backend Backend.Proof Backend.Proof.Driver Backend.Stock.Proof Backend.DeadCleanup

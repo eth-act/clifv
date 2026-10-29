@@ -1,5 +1,9 @@
-import FV.E2E.DeadCleanupLegal
-import FV.E2E.LegalDirect
+module
+
+public import FV.E2E.DeadCleanupLegal
+public import FV.E2E.LegalDirect
+
+@[expose] public section
 
 /-!
 # The widened `i128` theorems for the backend with the dead-instruction cleanup (S4)

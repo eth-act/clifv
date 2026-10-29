@@ -1,8 +1,12 @@
-import FV.Backend.Proof.StockLinearCfgFixture
-import FV.Backend.Proof.StockLinearCfgReturn
-import FV.Backend.Proof.StockLinearCfgTrap
-import FV.Backend.Proof.RefinesCSem
-import FV.E2E.RegLevelDriverSem
+module
+
+public import FV.Backend.Proof.StockLinearCfgFixture
+public import FV.Backend.Proof.StockLinearCfgReturn
+public import FV.Backend.Proof.StockLinearCfgTrap
+public import FV.Backend.Proof.RefinesCSem
+public import FV.E2E.RegLevelDriverSem
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.LinearCfgWitness
 open Backend.Proof Backend.Proof.Driver

@@ -1,4 +1,8 @@
-import FV.Clif.Syntax
+module
+
+public import FV.Clif.Syntax
+
+@[expose] public section
 
 /-!
 # The mid-end's extern Rust helpers, in Lean

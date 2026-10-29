@@ -1,6 +1,10 @@
-import FV.E2E.IselSimIPrefix
-import FV.E2E.BackendWorldI
-import FV.E2E.RegLevelPrefixC
+module
+
+public import FV.E2E.IselSimIPrefix
+public import FV.E2E.BackendWorldI
+public import FV.E2E.RegLevelPrefixC
+
+@[expose] public section
 
 /-!
 # The counted pipeline up to call `N` (SEM1 #537, item (d), docs/plans/uninit.md §5.9)

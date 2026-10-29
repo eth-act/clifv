@@ -1,6 +1,10 @@
-import FV.Backend.Proof.StockScalarContract
-import FV.Backend.Proof.StockCmpReturnRefines
-import FV.Backend.Proof.StockCmpFamily
+module
+
+public import FV.Backend.Proof.StockScalarContract
+public import FV.Backend.Proof.StockCmpReturnRefines
+public import FV.Backend.Proof.StockCmpFamily
+
+@[expose] public section
 
 namespace Backend.Stock.Scalar
 open Backend.Proof Backend.Proof.Driver Backend.Stock.Proof

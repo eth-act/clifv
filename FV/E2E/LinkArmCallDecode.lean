@@ -1,5 +1,9 @@
-import FV.E2E.LinkArmStage2ZS
-import FV.E2E.LinkTrapCallInd
+module
+
+public import FV.E2E.LinkArmStage2ZS
+public import FV.E2E.LinkTrapCallInd
+
+@[expose] public section
 
 /-!
 # The program call at a call site of the machine (SEM1 #537, #680 (3), stage 2 glue (1))

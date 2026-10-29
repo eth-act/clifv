@@ -1,5 +1,9 @@
-import FV.E2E.LinkArmStepFrameRec
-import FV.E2E.ArmGprFootWitness
+module
+
+public import FV.E2E.LinkArmStepFrameRec
+public import FV.E2E.ArmGprFootWitness
+
+@[expose] public section
 
 /-!
 # Non-vacuity of the `x30` lock-step steps

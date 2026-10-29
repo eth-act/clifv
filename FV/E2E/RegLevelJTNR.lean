@@ -1,6 +1,10 @@
-import FV.E2E.RegLevelJT
-import FV.E2E.RegLevelGotoNR
-import FV.E2E.RegLevelGoodXNR
+module
+
+public import FV.E2E.RegLevelJT
+public import FV.E2E.RegLevelGotoNR
+public import FV.E2E.RegLevelGoodXNR
+
+@[expose] public section
 
 /-!
 # Jump tables on the machine with no call state (SEM1 #537, step 2k)

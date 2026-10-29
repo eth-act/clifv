@@ -1,7 +1,11 @@
-import FV.E2E.Lockstep
-import FV.E2E.RegLevelDriverSem
-import FV.Backend.Proof.RefinesCSem
-import FV.Backend.Proof.IselContractP
+module
+
+public import FV.E2E.Lockstep
+public import FV.E2E.RegLevelDriverSem
+public import FV.Backend.Proof.RefinesCSem
+public import FV.Backend.Proof.IselContractP
+
+@[expose] public section
 
 /-! # The guarded semantics (agent/link-widen, stage 2)
 

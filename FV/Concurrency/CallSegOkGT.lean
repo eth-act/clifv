@@ -1,6 +1,10 @@
-import FV.Concurrency.CallSegPc
-import FV.Concurrency.CallSegCall
-import FV.Concurrency.CallSegExt
+module
+
+public import FV.Concurrency.CallSegPc
+public import FV.Concurrency.CallSegCall
+public import FV.Concurrency.CallSegExt
+
+@[expose] public section
 
 /-!
 # `SegOkG` for every activation of a link of compiled functions (#473, steps 3 and 4)

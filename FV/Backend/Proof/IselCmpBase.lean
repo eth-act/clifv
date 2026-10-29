@@ -1,7 +1,11 @@
-import FV.Backend.Proof.FastSubst
-import FV.Backend.Proof.IselCmpInv
-import FV.Backend.Proof.IselCmpRun
-import FV.Backend.Proof.IselFamily
+module
+
+public import FV.Backend.Proof.FastSubst
+public import FV.Backend.Proof.IselCmpInv
+public import FV.Backend.Proof.IselCmpRun
+public import FV.Backend.Proof.IselFamily
+
+@[expose] public section
 
 /-!
 # The backend side of inverse evaluation (flags/select/div family)

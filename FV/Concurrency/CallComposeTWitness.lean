@@ -1,5 +1,9 @@
-import FV.Concurrency.CallComposeT
-import FV.Concurrency.PrivCohTWitness
+module
+
+public import FV.Concurrency.CallComposeT
+public import FV.Concurrency.PrivCohTWitness
+
+@[expose] public section
 
 /-!
 # Witnesses: calls with time-varying private sets (#473, (iv))

@@ -1,5 +1,9 @@
-import FV.Concurrency.CallSegPc
-import FV.Concurrency.CallSegCall
+module
+
+public import FV.Concurrency.CallSegPc
+public import FV.Concurrency.CallSegCall
+
+@[expose] public section
 
 /-!
 # External callees of a link under their event contract (#649)

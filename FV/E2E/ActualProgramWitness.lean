@@ -1,4 +1,8 @@
-import FV.E2E.ActualPrologueWitness
+module
+
+public import FV.E2E.ActualPrologueWitness
+
+@[expose] public section
 
 /-! Dependent whole-program non-vacuity candidate. Fixed native receipts only;
 not a production selector or a universal Stock completeness proof. -/

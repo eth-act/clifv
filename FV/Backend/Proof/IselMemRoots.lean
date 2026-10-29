@@ -1,4 +1,8 @@
-import FV.Backend.Proof.IselMemSem
+module
+
+public import FV.Backend.Proof.IselMemSem
+
+@[expose] public section
 
 /-!
 # Memory family (M4Mem2): the memory root rules of `lower`

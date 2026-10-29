@@ -1,4 +1,8 @@
-import FV.Backend.Proof.IselCmpRoot
+module
+
+public import FV.Backend.Proof.IselCmpRoot
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.ScalarCmp
 open Backend.Proof Isle Isle.Interp Isle.Aarch64

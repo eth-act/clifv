@@ -1,5 +1,9 @@
-import FV.E2E.Legal
-import FV.Opt.Proof.LegalComplete
+module
+
+public import FV.E2E.Legal
+public import FV.Opt.Proof.LegalComplete
+
+@[expose] public section
 
 /-!
 # The end-to-end theorem for `i128` functions without the validator premise

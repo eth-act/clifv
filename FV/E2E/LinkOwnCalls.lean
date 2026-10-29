@@ -1,5 +1,9 @@
-import FV.E2E.LinkOwnCallsDefs
-import FV.E2E.SpillCtlCheck
+module
+
+public import FV.E2E.LinkOwnCallsDefs
+public import FV.E2E.SpillCtlCheck
+
+@[expose] public section
 
 /-! # The call sites of the compiler's own output (`callRegs/blrRegs`; L2a)
 

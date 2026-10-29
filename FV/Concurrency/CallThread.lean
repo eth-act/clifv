@@ -1,7 +1,11 @@
-import FV.Concurrency.ArmAllocEntry
-import FV.Concurrency.RealizeCompiled
-import FV.Concurrency.CallCompose
-import FV.Concurrency.ClifLift
+module
+
+public import FV.Concurrency.ArmAllocEntry
+public import FV.Concurrency.RealizeCompiled
+public import FV.Concurrency.CallCompose
+public import FV.Concurrency.ClifLift
+
+@[expose] public section
 
 /-!
 # One compiled activation from its ABI entry, as a thread (T2h, #311, calls)

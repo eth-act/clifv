@@ -1,5 +1,9 @@
-import FV.Backend.Asm
-import FV.Backend.RegallocOps
+module
+
+public import FV.Backend.Asm
+public import FV.Backend.RegallocOps
+
+@[expose] public section
 
 /-!
 # Unwind information (DWARF call frame information for `.eh_frame`)

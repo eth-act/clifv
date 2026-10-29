@@ -1,5 +1,10 @@
-import FV.Backend.Proof.StockCastCmpScanRefines
-import FV.Backend.Proof.StockCmpFamily
+module
+
+public import FV.Backend.Proof.StockCastCmpScanRefines
+public import FV.Backend.Proof.StockCmpFamily
+
+@[expose] public section
+
 namespace Backend.Stock.Proof
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 set_option autoImplicit false

@@ -1,4 +1,8 @@
-import FV.Backend.Proof.IselPrgPC
+module
+
+public import FV.Backend.Proof.IselPrgPC
+
+@[expose] public section
 
 /-!
 # Progress of the ISLE lowering (V7): the progress theorem

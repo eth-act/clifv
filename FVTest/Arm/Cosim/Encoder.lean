@@ -17,8 +17,12 @@ linker would write (a landing pad, a random page offset, a buffer offset).
 a spec when every sampled word of the form lies in the spec's sampled cube (the bits that are
 constant across the spec's samples have the same values in the form's words).
 -/
-import FVTest.Arm.Cosim.Specs
-import FV.Backend.Encode
+module
+
+public import FVTest.Arm.Cosim.Specs
+public import FV.Backend.Encode
+
+@[expose] public section
 
 namespace Arm.Cosim.Enc
 

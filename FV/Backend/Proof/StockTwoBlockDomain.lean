@@ -1,7 +1,11 @@
-import FV.Backend.Proof.StockTwoBlockReturn
-import FV.Backend.Proof.StockTwoBlockTrap
-import FV.Backend.Proof.StockTwoBlockCompatibility
-import FV.Backend.Proof.StockScalarContract
+module
+
+public import FV.Backend.Proof.StockTwoBlockReturn
+public import FV.Backend.Proof.StockTwoBlockTrap
+public import FV.Backend.Proof.StockTwoBlockCompatibility
+public import FV.Backend.Proof.StockScalarContract
+
+@[expose] public section
 
 namespace Backend.Stock.Scalar
 open Backend.Proof Backend.Proof.Driver Backend.Stock.Proof

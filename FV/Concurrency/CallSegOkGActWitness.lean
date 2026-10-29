@@ -1,9 +1,13 @@
-import FV.Concurrency.CallSegOkG
-import FV.Concurrency.CallEntryLinkWitness
-import FV.Concurrency.CallRetLinkWitness
-import FV.Concurrency.ArmAllocPauseWitness
-import FV.Concurrency.CallResumeChecksWitness
-import FV.Concurrency.CallArgsL2Witness
+module
+
+public import FV.Concurrency.CallSegOkG
+public import FV.Concurrency.CallEntryLinkWitness
+public import FV.Concurrency.CallRetLinkWitness
+public import FV.Concurrency.ArmAllocPauseWitness
+public import FV.Concurrency.CallResumeChecksWitness
+public import FV.Concurrency.CallArgsL2Witness
+
+@[expose] public section
 
 /-!
 # Witnesses for `CallSegOkG`'s activations (#473, step (4))

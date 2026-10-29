@@ -1,4 +1,8 @@
-import FV.Backend.Proof.StockCoverageRoots
+module
+
+public import FV.Backend.Proof.StockCoverageRoots
+
+@[expose] public section
 
 /-! Return/trap roots use the actual Stock state and existing format exclusions.
 These complete the named-root prerequisites for scan and whole-driver composition. -/

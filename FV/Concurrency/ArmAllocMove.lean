@@ -1,5 +1,9 @@
-import FV.Concurrency.ArmAllocMem
-import FV.Concurrency.MoveEvs
+module
+
+public import FV.Concurrency.ArmAllocMem
+public import FV.Concurrency.MoveEvs
+
+@[expose] public section
 
 /-!
 # Layer 4b with the allocation's moves (T2k, #311)

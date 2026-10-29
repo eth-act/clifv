@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockTerminalRoots
-import FV.Backend.Proof.StockSelectionReceipts
+module
+
+public import FV.Backend.Proof.StockTerminalRoots
+public import FV.Backend.Proof.StockSelectionReceipts
+
+@[expose] public section
 
 /-! A complete driver actually sinks an atomic load through its extension
 consumer, while the installed return placeholder remains unsunk. -/

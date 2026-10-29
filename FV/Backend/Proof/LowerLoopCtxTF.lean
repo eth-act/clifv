@@ -1,6 +1,10 @@
-import FV.Backend.Proof.LowerLoopCtxT
-import FV.Backend.Proof.InstScopeTF
-import FV.Compile.SubsetTFIn
+module
+
+public import FV.Backend.Proof.LowerLoopCtxT
+public import FV.Backend.Proof.InstScopeTF
+public import FV.Compile.SubsetTFIn
+
+@[expose] public section
 
 /-!
 # The lowering's input conditions over the float scope (S11f, #35)

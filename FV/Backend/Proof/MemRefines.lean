@@ -1,6 +1,10 @@
-import FV.Backend.Proof.RefinesInsts
-import FV.Backend.Proof.RegallocCover
-import FV.Backend.Proof.LoopRun
+module
+
+public import FV.Backend.Proof.RefinesInsts
+public import FV.Backend.Proof.RegallocCover
+public import FV.Backend.Proof.LoopRun
+
+@[expose] public section
 
 /-!
 # `MemRefines` for `csem` (M6 proof)

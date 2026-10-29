@@ -1,6 +1,10 @@
-import FV.E2E.LinkCheckT
-import FV.E2E.LinkScopeT
-import FV.E2E.LinkScope
+module
+
+public import FV.E2E.LinkCheckT
+public import FV.E2E.LinkScopeT
+public import FV.E2E.LinkScope
+
+@[expose] public section
 
 /-! # The typed checker on the compiler's own output (S11e5 Stage C, slice 8)
 

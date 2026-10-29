@@ -1,4 +1,8 @@
-import FV.Backend.Proof.StockSequence
+module
+
+public import FV.Backend.Proof.StockSequence
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.Sequence
 open Backend Backend.Proof

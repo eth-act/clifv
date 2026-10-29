@@ -1,5 +1,9 @@
-import FV.Backend.Proof.IselPrgCover
-import FV.Backend.Proof.IselPrgExtSoundT
+module
+
+public import FV.Backend.Proof.IselPrgCover
+public import FV.Backend.Proof.IselPrgExtSoundT
+
+@[expose] public section
 
 /-!
 # Progress of the ISLE lowering over the typed scope: the driver's roots are table roots

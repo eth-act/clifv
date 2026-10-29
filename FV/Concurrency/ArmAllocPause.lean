@@ -1,4 +1,8 @@
-import FV.Concurrency.ArmAllocLS
+module
+
+public import FV.Concurrency.ArmAllocLS
+
+@[expose] public section
 
 /-!
 # Layer 4b pausing at calls and returns (T2j follow-up, #473, calls)

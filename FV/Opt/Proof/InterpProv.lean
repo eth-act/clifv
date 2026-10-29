@@ -1,5 +1,9 @@
-import FV.Opt.Proof.InterpState
-import FV.Opt.Proof.InterpMatch
+module
+
+public import FV.Opt.Proof.InterpState
+public import FV.Opt.Proof.InterpMatch
+
+@[expose] public section
 
 /-!
 # The interpreter only passes values on

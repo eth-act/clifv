@@ -1,4 +1,8 @@
-import FV.Backend.Proof.RegallocSound
+module
+
+public import FV.Backend.Proof.RegallocSound
+
+@[expose] public section
 
 /-!
 # Forward simulation through the checker's relation (M6 proof)

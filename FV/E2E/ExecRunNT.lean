@@ -1,11 +1,15 @@
-import FV.E2E.ExecRunN
-import FV.E2E.BinCheckT
-import FV.E2E.BinaryT
-import FV.E2E.ExecBytesT
-import FV.E2E.ExecStaticT
-import FV.E2E.LinkArmT
-import FV.E2E.LinkCheckT
-import FV.E2E.StackBoundT
+module
+
+public import FV.E2E.ExecRunN
+public import FV.E2E.BinCheckT
+public import FV.E2E.BinaryT
+public import FV.E2E.ExecBytesT
+public import FV.E2E.ExecStaticT
+public import FV.E2E.LinkArmT
+public import FV.E2E.LinkCheckT
+public import FV.E2E.StackBoundT
+
+@[expose] public section
 
 /-! # Typed copies of `FV.E2E.ExecRunN` (S11e5 Stage C, slice 8)
 

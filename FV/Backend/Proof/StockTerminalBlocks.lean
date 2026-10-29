@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockTerminalScans
-import FV.Backend.Proof.StockCoverageBlock
+module
+
+public import FV.Backend.Proof.StockTerminalScans
+public import FV.Backend.Proof.StockCoverageBlock
+
+@[expose] public section
 
 /-! Actual block construction preserves unsunk source terminator placeholders,
 including branch roots, exception arguments and all retained scan endpoints. -/

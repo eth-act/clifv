@@ -1,5 +1,9 @@
-import FV.E2E.RegLevelTwoRunN
-import FV.E2E.RegLevelTwoRunTV
+module
+
+public import FV.E2E.RegLevelTwoRunN
+public import FV.E2E.RegLevelTwoRunTV
+
+@[expose] public section
 
 /-!
 # Two activations in lock-step up to a pair state, value semantics (SEM1 #537, #713, cleanup path)

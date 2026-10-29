@@ -1,6 +1,10 @@
-import FV.Backend.Proof.StockTermIndex
-import FV.Backend.Proof.StockRuleFrame
-import FV.Backend.Proof.StockPatternSink
+module
+
+public import FV.Backend.Proof.StockTermIndex
+public import FV.Backend.Proof.StockRuleFrame
+public import FV.Backend.Proof.StockPatternSink
+
+@[expose] public section
 
 /-! Exhaustive syntax boundary for the actual generated program: four complete
 matched-rule contracts cover every direct sink constructor call. -/

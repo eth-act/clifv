@@ -1,6 +1,10 @@
-import FV.Backend.Proof.StockScalarContract
-import FV.Backend.Proof.StockPopcountReturnRefines
-import FV.Backend.Proof.StockPopcountFamily
+module
+
+public import FV.Backend.Proof.StockScalarContract
+public import FV.Backend.Proof.StockPopcountReturnRefines
+public import FV.Backend.Proof.StockPopcountFamily
+
+@[expose] public section
 
 namespace Backend.Stock.Scalar
 open Backend.Proof Backend.Proof.Driver Backend.Stock.Proof

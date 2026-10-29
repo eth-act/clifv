@@ -1,7 +1,11 @@
-import FV.Backend.Proof.StockConditionalRankedCompatibility
-import FV.Backend.Proof.StockConditionalRankedSuccessor
-import FV.Backend.Proof.StockConditionalEntryPrelude
-import FV.Backend.Proof.StockScalarContract
+module
+
+public import FV.Backend.Proof.StockConditionalRankedCompatibility
+public import FV.Backend.Proof.StockConditionalRankedSuccessor
+public import FV.Backend.Proof.StockConditionalEntryPrelude
+public import FV.Backend.Proof.StockScalarContract
+
+@[expose] public section
 
 namespace Backend.Stock.ConditionalCfg
 open Backend.Proof Backend.Proof.Driver Backend.Stock.Proof Backend.Stock.Proof.ConditionalValues

@@ -1,4 +1,8 @@
-import FV.Isle
+module
+
+public import FV.Isle
+
+@[expose] public section
 
 /-!
 # The emitter-subset closure (`Isle.Aarch64.Closure`), cross-checked in Lean

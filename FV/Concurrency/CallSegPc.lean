@@ -1,4 +1,8 @@
-import FV.Concurrency.CallSegLive
+module
+
+public import FV.Concurrency.CallSegLive
+
+@[expose] public section
 
 /-!
 # Return addresses and return values at a call (#473, `SegOkG` call case)

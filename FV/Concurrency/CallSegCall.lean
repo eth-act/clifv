@@ -1,7 +1,11 @@
-import FV.Concurrency.CallEntryLink
-import FV.Concurrency.CallSegGeo
-import FV.Concurrency.CallValid
-import FV.Concurrency.CallRetLink
+module
+
+public import FV.Concurrency.CallEntryLink
+public import FV.Concurrency.CallSegGeo
+public import FV.Concurrency.CallValid
+public import FV.Concurrency.CallRetLink
+
+@[expose] public section
 
 /-!
 # The call pause of a compiled activation: entering the callee and resuming after it (#473)

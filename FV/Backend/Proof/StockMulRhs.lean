@@ -1,5 +1,10 @@
-import FV.Backend.Proof.StockMulHelper
-import FV.Backend.Proof.StockRequestSuccess
+module
+
+public import FV.Backend.Proof.StockMulHelper
+public import FV.Backend.Proof.StockRequestSuccess
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarMul
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 set_option maxRecDepth 20000

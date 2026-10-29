@@ -1,6 +1,10 @@
-import FV.Backend.Proof.PerEdgePrepareSound
-import FV.Backend.Proof.PerEdgeRegallocFwd
-import FV.Backend.Proof.PerEdgeAllocDriverSound
+module
+
+public import FV.Backend.Proof.PerEdgePrepareSound
+public import FV.Backend.Proof.PerEdgeRegallocFwd
+public import FV.Backend.Proof.PerEdgeAllocDriverSound
+
+@[expose] public section
 
 /-! Actual successful preparation and allocation compose to forward realization
 of the original indexed VCode. Checking facts are extracted from the actual

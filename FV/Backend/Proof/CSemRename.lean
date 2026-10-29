@@ -1,5 +1,9 @@
-import FV.Backend.Proof.RegallocCSem
-import FV.Backend.Proof.LowerRename
+module
+
+public import FV.Backend.Proof.RegallocCSem
+public import FV.Backend.Proof.LowerRename
+
+@[expose] public section
 
 /-!
 # `ispec` and `csemWF` do not depend on vreg names

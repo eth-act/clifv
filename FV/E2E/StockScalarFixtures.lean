@@ -1,4 +1,8 @@
-import FV.E2E.StockLogicalFixtures
+module
+
+public import FV.E2E.StockLogicalFixtures
+
+@[expose] public section
 
 namespace E2E.StockScalarNIWitness
 open Backend.Stock.D0

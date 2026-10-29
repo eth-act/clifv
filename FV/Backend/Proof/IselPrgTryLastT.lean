@@ -1,6 +1,10 @@
-import FV.Backend.Proof.IselPrgTryLast
-import FV.Backend.Proof.IselPrgCtxT
-import FV.Backend.Proof.IselCtlUnmatchTI
+module
+
+public import FV.Backend.Proof.IselPrgTryLast
+public import FV.Backend.Proof.IselPrgCtxT
+public import FV.Backend.Proof.IselCtlUnmatchTI
+
+@[expose] public section
 
 /-!
 # Progress of the ISLE lowering over the typed scope: a `try_call`'s code ends in a call

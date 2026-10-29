@@ -1,6 +1,10 @@
-import FV.Backend.Proof.SpillClasses
-import FV.Backend.Proof.SpillEdgesT
-import FV.Backend.Proof.IselFlowT
+module
+
+public import FV.Backend.Proof.SpillClasses
+public import FV.Backend.Proof.SpillEdgesT
+public import FV.Backend.Proof.IselFlowT
+
+@[expose] public section
 
 /-!
 # `ClassesHyp` over the typed scope (S11e5 Stage C, slice 6)

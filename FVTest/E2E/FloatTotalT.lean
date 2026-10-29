@@ -1,5 +1,9 @@
-import FVTest.E2E.FloatLinkT
-import FV.E2E.LinkScopeInputT
+module
+
+public import FVTest.E2E.FloatLinkT
+public import FV.E2E.LinkScopeInputT
+
+@[expose] public section
 
 /-!
 Non-vacuity of the typed input scope and the compiler's per-function totality on it (S11e5

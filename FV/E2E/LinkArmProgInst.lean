@@ -1,4 +1,8 @@
-import FV.E2E.LinkArmStage2Prog
+module
+
+public import FV.E2E.LinkArmStage2Prog
+
+@[expose] public section
 
 /-!
 # The invocation behind a related call (SEM1 #537, #680 (3), stage 2 glue)

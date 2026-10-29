@@ -1,7 +1,11 @@
-import FV.E2E.DeadCleanupPairTC
-import FV.E2E.LinkWorldTC
-import FV.E2E.RegLevelCorrectX
-import FV.E2E.DeadCleanupRegLevelX
+module
+
+public import FV.E2E.DeadCleanupPairTC
+public import FV.E2E.LinkWorldTC
+public import FV.E2E.RegLevelCorrectX
+public import FV.E2E.DeadCleanupRegLevelX
+
+@[expose] public section
 
 /-! # The per-state world theorems and the `CompiledEither` dispatch, typed `try_call`s
 (S11e6, #419)

@@ -1,5 +1,9 @@
-import FV.Backend.Proof.KillBase
-import FV.Backend.Proof.IselFlowCheck
+module
+
+public import FV.Backend.Proof.KillBase
+public import FV.Backend.Proof.IselFlowCheck
+
+@[expose] public section
 
 /-!
 # A uniform invariant of ISLE runs (V4, `SpillKillFree`)

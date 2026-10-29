@@ -1,4 +1,8 @@
-import FV.Backend.Proof.RegallocSlotsFar
+module
+
+public import FV.Backend.Proof.RegallocSlotsFar
+
+@[expose] public section
 
 /-!
 # Lowering of every checked move (M6 proof)

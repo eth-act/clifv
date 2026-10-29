@@ -1,7 +1,11 @@
-import FV.Backend.Proof.IselAtomic
-import FV.Backend.Proof.StockRootOpcode
-import FV.Backend.Proof.IselCtlUnmatch
-import FV.Clif.MemTrap
+module
+
+public import FV.Backend.Proof.IselAtomic
+public import FV.Backend.Proof.StockRootOpcode
+public import FV.Backend.Proof.IselCtlUnmatch
+public import FV.Clif.MemTrap
+
+@[expose] public section
 
 /-!
 # The lowered code of a trapping atomic (A3, #412, slice F3)

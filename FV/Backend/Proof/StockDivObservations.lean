@@ -1,5 +1,10 @@
-import FV.Backend.Proof.StockDivRhs
-import FV.Backend.Proof.StockDivSourceRequests
+module
+
+public import FV.Backend.Proof.StockDivRhs
+public import FV.Backend.Proof.StockDivSourceRequests
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarDiv
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 set_option maxRecDepth 20000

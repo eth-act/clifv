@@ -1,5 +1,10 @@
-import FV.Backend.Proof.StockCountForms
-import FV.Backend.Proof.StockBitrevSemantics
+module
+
+public import FV.Backend.Proof.StockCountForms
+public import FV.Backend.Proof.StockBitrevSemantics
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarCount
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 private theorem fresh_reg {aliases : Array (Option Nat)} {d : Nat} (bounded : aliases.size ≤ d) :

@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockCfgTraversalScans
-import FV.Backend.Proof.StockCfgJumpDemand
+module
+
+public import FV.Backend.Proof.StockCfgTraversalScans
+public import FV.Backend.Proof.StockCfgJumpDemand
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.CfgDemand
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

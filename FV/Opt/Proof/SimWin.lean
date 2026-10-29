@@ -1,6 +1,10 @@
-import FV.Opt.Proof.SemSimX
-import FV.Opt.Proof.DomInv
-import FV.Opt.Proof.SimpSim
+module
+
+public import FV.Opt.Proof.SemSimX
+public import FV.Opt.Proof.DomInv
+public import FV.Opt.Proof.SimpSim
+
+@[expose] public section
 
 /-!
 # Fresh-value windows: from pass simulations to `IsSimX`

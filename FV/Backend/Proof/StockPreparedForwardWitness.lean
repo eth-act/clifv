@@ -1,9 +1,14 @@
-import FV.Backend.Proof.PerEdgePreparedDriverSound
-import FV.Backend.Proof.PerEdgePrepareFacts
-import FV.Backend.Proof.StockPerEdgeAllocatorWitness
-import FV.Backend.Proof.StockPerEdgeM6Witness
-import FV.Backend.Proof.StockPerEdgeM6HaltWitness
-import FV.E2E.RegLevelDriverSem
+module
+
+public import FV.Backend.Proof.PerEdgePreparedDriverSound
+public import FV.Backend.Proof.PerEdgePrepareFacts
+public import FV.Backend.Proof.StockPerEdgeAllocatorWitness
+public import FV.Backend.Proof.StockPerEdgeM6Witness
+public import FV.Backend.Proof.StockPerEdgeM6HaltWitness
+public import FV.E2E.RegLevelDriverSem
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.PreparedForwardWitness
 open Backend.Proof Backend.Proof.Driver
 set_option maxRecDepth 20000

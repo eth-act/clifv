@@ -1,4 +1,8 @@
-import FV.Opt.Proof.CompleteSimpFold
+module
+
+public import FV.Opt.Proof.CompleteSimpFold
+
+@[expose] public section
 
 /-!
 # Completeness of simplify: entering a block

@@ -1,6 +1,10 @@
-import FV.Backend.Proof.RegallocSound
-import FV.Backend.Encode
-import FV.Arm.Exec
+module
+
+public import FV.Backend.Proof.RegallocSound
+public import FV.Backend.Encode
+public import FV.Arm.Exec
+
+@[expose] public section
 
 /-!
 # The operand-view obligation `OperandsSound` against the Arm model (M6 proof)

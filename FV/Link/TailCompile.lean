@@ -1,5 +1,9 @@
-import FV.Link.OptCompile
-import FV.Opt.TailLoop
+module
+
+public import FV.Link.OptCompile
+public import FV.Opt.TailLoop
+
+@[expose] public section
 
 /-! # The executable compiler with self tail calls as loops: the definition (S8, #32)
 

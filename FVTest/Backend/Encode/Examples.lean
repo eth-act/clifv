@@ -1,4 +1,8 @@
-import FV.Backend.Encode
+module
+
+public import FV.Backend.Encode
+
+@[expose] public section
 
 /-!
 # `decode (encode i) = i` on concrete instructions, checked by the kernel

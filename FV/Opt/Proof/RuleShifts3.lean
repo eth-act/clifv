@@ -1,5 +1,9 @@
-import FV.Opt.Proof.RuleShifts3P1
-import FV.Opt.Proof.RuleShifts3P2
+module
+
+public import FV.Opt.Proof.RuleShifts3P1
+public import FV.Opt.Proof.RuleShifts3P2
+
+@[expose] public section
 
 /-!
 # `opts/shifts.isle` (part 3): proven `simplify` rules

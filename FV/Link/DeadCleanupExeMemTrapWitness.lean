@@ -1,5 +1,9 @@
-import FV.Link.ExeUnwindWitness
-import FV.Link.DeadCleanupExeMemTrap
+module
+
+public import FV.Link.ExeUnwindWitness
+public import FV.Link.DeadCleanupExeMemTrap
+
+@[expose] public section
 
 /-!
 # Witness: the executable theorem with memory traps applies to a compiled executable (A3, #412)

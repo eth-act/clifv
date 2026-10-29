@@ -1,13 +1,17 @@
-import FV.Backend.Proof.StockConditionalClass
-import FV.Backend.Proof.StockConditionalBodyCalls
-import FV.Backend.Proof.StockSelectedRoutes
-import FV.Backend.Proof.StockComputedCfg
-import FV.Backend.Proof.StockGraphEdges
-import FV.Backend.Proof.StockGraphBounds
-import FV.Backend.Proof.StockEdgeCode
-import FV.Backend.Proof.StockBranchArgumentDemand
-import FV.Backend.Proof.StockOutgoingVectors
-import FV.Backend.Proof.PerEdgeLegacyCompatible
+module
+
+public import FV.Backend.Proof.StockConditionalClass
+public import FV.Backend.Proof.StockConditionalBodyCalls
+public import FV.Backend.Proof.StockSelectedRoutes
+public import FV.Backend.Proof.StockComputedCfg
+public import FV.Backend.Proof.StockGraphEdges
+public import FV.Backend.Proof.StockGraphBounds
+public import FV.Backend.Proof.StockEdgeCode
+public import FV.Backend.Proof.StockBranchArgumentDemand
+public import FV.Backend.Proof.StockOutgoingVectors
+public import FV.Backend.Proof.PerEdgeLegacyCompatible
+
+@[expose] public section
 
 namespace Backend.Stock.ConditionalCfg
 open Backend.Proof Backend.Proof.Driver Backend.Stock.Proof Backend.Stock.Proof.ConditionalValues

@@ -1,6 +1,10 @@
-import FV.E2E.LinkArmUProg
-import FV.E2E.LinkCheck
-import FV.E2E.DeadCleanupUnwindWitness
+module
+
+public import FV.E2E.LinkArmUProg
+public import FV.E2E.LinkCheck
+public import FV.E2E.DeadCleanupUnwindWitness
+
+@[expose] public section
 
 /-!
 # Non-vacuity of the whole-program theorem with unwinding (S10f, #233)

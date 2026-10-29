@@ -1,7 +1,11 @@
-import FV.Backend.Proof.IselPrgInvT
-import FV.Backend.Proof.IselPrgExtTF
-import FV.Backend.Proof.IselPrgLe
-import FV.Backend.Proof.IselFlowSplit
+module
+
+public import FV.Backend.Proof.IselPrgInvT
+public import FV.Backend.Proof.IselPrgExtTF
+public import FV.Backend.Proof.IselPrgLe
+public import FV.Backend.Proof.IselFlowSplit
+
+@[expose] public section
 
 /-!
 # Progress of the ISLE lowering over the typed scope: soundness of the extractors and of the

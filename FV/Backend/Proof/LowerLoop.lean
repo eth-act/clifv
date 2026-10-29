@@ -1,7 +1,11 @@
-import FV.Backend.Proof.LowerSpec
-import FV.Backend.Proof.PrepareComplete
-import FV.Backend.Proof.IselTermFacts
-import FV.Backend.Proof.LowerLoopPrep
+module
+
+public import FV.Backend.Proof.LowerSpec
+public import FV.Backend.Proof.PrepareComplete
+public import FV.Backend.Proof.IselTermFacts
+public import FV.Backend.Proof.LowerLoopPrep
+
+@[expose] public section
 
 /-!
 # Completeness of `lowerCheck`: `lowerFunction`'s loop

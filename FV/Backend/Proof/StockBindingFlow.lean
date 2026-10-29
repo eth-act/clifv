@@ -1,6 +1,10 @@
-import FV.Backend.Proof.StockRootFlow
-import FV.Backend.Proof.StockResults
-import FV.Backend.Proof.StockAliasWrites
+module
+
+public import FV.Backend.Proof.StockRootFlow
+public import FV.Backend.Proof.StockResults
+public import FV.Backend.Proof.StockAliasWrites
+
+@[expose] public section
 
 /-! Result binding preserves source-provenance relations on actual alias entries. -/
 namespace Backend.Stock.Proof

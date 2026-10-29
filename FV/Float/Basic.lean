@@ -11,6 +11,10 @@ This file: formats, `FPUnpack`, the constant encodings (`FPZero`, `FPInfinity`, 
 `FPDefaultNaN`), `FPProcessNaN(s)`, `FPNeg`, `FPAbs`.
 -/
 
+module
+
+@[expose] public section
+
 namespace IEEE
 
 /-- A binary interchange format: `E` exponent bits, `F` fraction bits (width `1 + E + F`).

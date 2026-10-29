@@ -1,4 +1,8 @@
-import FV.Opt.Proof.RuleInfraPow2
+module
+
+public import FV.Opt.Proof.RuleInfraPow2
+
+@[expose] public section
 
 /-!
 # Proven `simplify_skeleton` rules (part 4): `srem` by `± 2 ^ k`

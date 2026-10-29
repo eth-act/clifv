@@ -1,5 +1,9 @@
-import FV.Backend.Proof.LowerSimT
-import FV.Backend.Proof.LowerContractTC
+module
+
+public import FV.Backend.Proof.LowerSimT
+public import FV.Backend.Proof.LowerContractTC
+
+@[expose] public section
 
 /-!
 # The typed driver simulation with typed `try_call`s (S11e6, #419)

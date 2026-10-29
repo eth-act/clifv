@@ -1,6 +1,10 @@
-import FV.Backend.Proof.LowerLoopT
-import FV.Backend.Proof.LowerShapeOk
-import FV.Backend.Proof.IselTermFactsTy
+module
+
+public import FV.Backend.Proof.LowerLoopT
+public import FV.Backend.Proof.LowerShapeOk
+public import FV.Backend.Proof.IselTermFactsTy
+
+@[expose] public section
 
 /-!
 # Completeness of the typed shape check (S11e5 Stage C, slice 3)

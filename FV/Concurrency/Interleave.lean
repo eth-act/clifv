@@ -1,4 +1,8 @@
-import FV.Concurrency.Mapping
+module
+
+public import FV.Concurrency.Mapping
+
+@[expose] public section
 
 /-!
 # SC executions are interleavings (T2, #38)

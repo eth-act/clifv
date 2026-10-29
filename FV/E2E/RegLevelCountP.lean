@@ -1,4 +1,8 @@
-import FV.E2E.RegLevelCountI
+module
+
+public import FV.E2E.RegLevelCountI
+
+@[expose] public section
 
 /-!
 # The counted run with a per-index precondition (SEM1 #537, step 2k)

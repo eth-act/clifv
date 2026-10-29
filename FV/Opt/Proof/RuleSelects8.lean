@@ -1,4 +1,8 @@
-import FV.Opt.Proof.RuleInfraIcmp
+module
+
+public import FV.Opt.Proof.RuleInfraIcmp
+
+@[expose] public section
 
 /-!
 # `opts/selects.isle` (part 8): `select` of an `icmp` between -1 and 0

@@ -1,6 +1,10 @@
-import FV.Opt.Proof.KernelBV
-import FV.Opt.Proof.InterpEval
-import Std.Tactic.BVDecide
+module
+
+public import FV.Opt.Proof.KernelBV
+public import FV.Opt.Proof.InterpEval
+public import Std.Tactic.BVDecide
+
+@[expose] public section
 
 /-!
 # Helper specifications: `Imm64` arithmetic as `BitVec` operations

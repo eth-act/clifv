@@ -1,5 +1,9 @@
-import FV.E2E.Legal
-import FV.E2E.SretReturn
+module
+
+public import FV.E2E.Legal
+public import FV.E2E.SretReturn
+
+@[expose] public section
 
 /-!
 # The `sret` return register through the `i128` legalisation theorems (S7)

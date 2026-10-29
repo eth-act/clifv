@@ -1,6 +1,10 @@
-import FV.E2E.DeadCleanupUnwindFinal
-import FV.E2E.DeadCleanupUnwindWitness
-import FV.Backend.Proof.EhFrameDecode
+module
+
+public import FV.E2E.DeadCleanupUnwindFinal
+public import FV.E2E.DeadCleanupUnwindWitness
+public import FV.Backend.Proof.EhFrameDecode
+
+@[expose] public section
 
 /-!
 # The per-function theorem with unwinding, on the tables decoded from the object (S10f)

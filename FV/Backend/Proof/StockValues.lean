@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockProjection
-import FV.Backend.Proof.LowerSeq
+module
+
+public import FV.Backend.Proof.StockProjection
+public import FV.Backend.Proof.LowerSeq
+
+@[expose] public section
 
 /-!
 Value availability with explicit source-to-vreg mapping. Stock's initial vregs

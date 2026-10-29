@@ -1,10 +1,14 @@
-import FV.Backend.Proof.KillOracle
-import FV.Backend.Proof.KillCtor
-import FV.Backend.Proof.TryRegs
-import FV.Backend.Proof.LowerLoop
-import FV.Backend.Proof.DriverCheckSound
-import FV.Backend.Proof.IselShpTotal
-import FV.Backend.Proof.IselCovModel
+module
+
+public import FV.Backend.Proof.KillOracle
+public import FV.Backend.Proof.KillCtor
+public import FV.Backend.Proof.TryRegs
+public import FV.Backend.Proof.LowerLoop
+public import FV.Backend.Proof.DriverCheckSound
+public import FV.Backend.Proof.IselShpTotal
+public import FV.Backend.Proof.IselCovModel
+
+@[expose] public section
 
 set_option Elab.async false
 

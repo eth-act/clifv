@@ -1,5 +1,9 @@
-import FV.Backend.Proof.LSInst
-import FV.Backend.Proof.LSMoves
+module
+
+public import FV.Backend.Proof.LSInst
+public import FV.Backend.Proof.LSMoves
+
+@[expose] public section
 
 /-!
 # The Lean allocator's builder: structure of its output (V4b-3, #275)

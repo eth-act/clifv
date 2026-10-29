@@ -1,4 +1,8 @@
-import FV.Opt.Legalize128Pass
+module
+
+public import FV.Opt.Legalize128Pass
+
+@[expose] public section
 
 /-!
 # Completeness of `Opt.Legal.checkW` for `Opt.Legalize128`'s output

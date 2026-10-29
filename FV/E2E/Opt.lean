@@ -1,5 +1,9 @@
-import FV.E2E.Final
-import FV.Opt.Proof.Pipeline
+module
+
+public import FV.E2E.Final
+public import FV.Opt.Proof.Pipeline
+
+@[expose] public section
 
 /-! # The end-to-end theorem over the mid-end: `backend_correct_opt`
 

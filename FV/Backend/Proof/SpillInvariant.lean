@@ -1,5 +1,9 @@
-import FV.Backend.Proof.SpillLocal
-import FV.Backend.Proof.RegallocSound
+module
+
+public import FV.Backend.Proof.SpillLocal
+public import FV.Backend.Proof.RegallocSound
+
+@[expose] public section
 
 /-!
 # The spill allocation's dataflow invariant (V4 (a), step 4): the statement

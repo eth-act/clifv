@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockGraphEdges
-import FV.Backend.Proof.StockOutgoingOrigin
+module
+
+public import FV.Backend.Proof.StockGraphEdges
+public import FV.Backend.Proof.StockOutgoingOrigin
+
+@[expose] public section
 
 namespace Backend.Stock.Proof
 open Backend.Proof Backend.Proof.Driver

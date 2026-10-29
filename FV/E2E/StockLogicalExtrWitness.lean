@@ -1,8 +1,12 @@
-import FV.E2E.StockArithmeticStageContract
-import FV.Backend.Proof.LowerDecide
-import FV.Backend.Proof.RegallocCover
-import FV.Backend.LinearScan
-import FV.Backend.Lowering.StockD0
+module
+
+public import FV.E2E.StockArithmeticStageContract
+public import FV.Backend.Proof.LowerDecide
+public import FV.Backend.Proof.RegallocCover
+public import FV.Backend.LinearScan
+public import FV.Backend.Lowering.StockD0
+
+@[expose] public section
 
 namespace E2E.StockLogicalExtrWitness
 open Backend Backend.Proof Backend.Proof.Driver Backend.Stock.D0

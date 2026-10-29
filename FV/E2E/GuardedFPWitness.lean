@@ -1,4 +1,8 @@
-import FV.E2E.DeadCleanupGuardedFP
+module
+
+public import FV.E2E.DeadCleanupGuardedFP
+
+@[expose] public section
 
 /-! # Non-vacuity of the guarded lockstep with the float accesses (S11e5, Stage C slice 4)
 

@@ -1,5 +1,10 @@
-import FV.Backend.Proof.StockCmpNonzero32RhsValues
-import FV.Backend.Proof.StockExtendRequests
+module
+
+public import FV.Backend.Proof.StockCmpNonzero32RhsValues
+public import FV.Backend.Proof.StockExtendRequests
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarCmp
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 set_option maxRecDepth 20000

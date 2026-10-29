@@ -1,6 +1,10 @@
-import FV.Backend.Proof.StockBranchHelperProjection
-import FV.Backend.Proof.IselCtlBrif
-import FV.Backend.Proof.IselScopedProjection
+module
+
+public import FV.Backend.Proof.StockBranchHelperProjection
+public import FV.Backend.Proof.IselCtlBrif
+public import FV.Backend.Proof.IselScopedProjection
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.ConditionalTargets
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

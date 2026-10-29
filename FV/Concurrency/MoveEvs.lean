@@ -1,5 +1,9 @@
-import FV.E2E.MoveReads
-import FV.Concurrency.VCodeAddr
+module
+
+public import FV.E2E.MoveReads
+public import FV.Concurrency.VCodeAddr
+
+@[expose] public section
 
 /-!
 # The memory events of move code (T2k, #311, layer 4b)

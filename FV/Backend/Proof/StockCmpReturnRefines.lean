@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockCmpBodyRefines
-import FV.Backend.Proof.StockPureReturnRefines
+module
+
+public import FV.Backend.Proof.StockCmpBodyRefines
+public import FV.Backend.Proof.StockPureReturnRefines
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.CmpBody
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

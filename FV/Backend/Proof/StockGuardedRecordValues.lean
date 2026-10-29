@@ -1,4 +1,8 @@
-import FV.Backend.Proof.StockDemandMono
+module
+
+public import FV.Backend.Proof.StockDemandMono
+
+@[expose] public section
 
 /-! Source-availability-guarded value transfer for actual fresh-result records. -/
 namespace Backend.Stock.Proof

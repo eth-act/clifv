@@ -1,4 +1,8 @@
-import FV.Backend.Proof.RegallocFrame
+module
+
+public import FV.Backend.Proof.RegallocFrame
+
+@[expose] public section
 
 /-!
 # The frame layout of `RAFrame.compute` (M6 proof)

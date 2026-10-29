@@ -1,5 +1,10 @@
-import FV.Backend.Proof.StockCmpNonencodableSelection
-import FV.Backend.Proof.StockCmpRegisterTraceValues
+module
+
+public import FV.Backend.Proof.StockCmpNonencodableSelection
+public import FV.Backend.Proof.StockCmpRegisterTraceValues
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarCmp
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 /-- Actual successful emitter652 selection and condition715 execution compute

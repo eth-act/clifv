@@ -1,4 +1,8 @@
-import FV.Backend.Proof.IselFamAluBShift
+module
+
+public import FV.Backend.Proof.IselFamAluBShift
+
+@[expose] public section
 
 /-!
 # Family B: rotate helpers (`small_rotr`, `small_rotr_imm`, `a64_rotr`, `a64_rotr_imm`)

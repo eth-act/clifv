@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockLogicalBodyRefines
-import FV.Backend.Proof.StockConstantScanRefines
+module
+
+public import FV.Backend.Proof.StockLogicalBodyRefines
+public import FV.Backend.Proof.StockConstantScanRefines
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.ConstantBody
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

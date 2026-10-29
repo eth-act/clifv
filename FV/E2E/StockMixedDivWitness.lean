@@ -1,4 +1,9 @@
-import FV.E2E.StockMixedDivChecks
+module
+
+public import FV.E2E.StockMixedDivChecks
+
+@[expose] public section
+
 namespace E2E.StockMixedDivNIWitness
 open Backend Backend.Proof Backend.Proof.Driver Backend.Stock.D0
 set_option autoImplicit false

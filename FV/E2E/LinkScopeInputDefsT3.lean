@@ -1,5 +1,9 @@
-import FV.E2E.LinkScopeInputDefsT2
-import FV.Backend.Proof.IselEmitTDefs
+module
+
+public import FV.E2E.LinkScopeInputDefsT2
+public import FV.Backend.Proof.IselEmitTDefs
+
+@[expose] public section
 
 /-!
 # The typed input conditions without the run-time decider (S11, #35)

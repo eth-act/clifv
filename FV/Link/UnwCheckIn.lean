@@ -1,7 +1,11 @@
-import FV.Link.UnwTryIn
-import FV.Backend.Proof.LowerSimUCheck
-import FV.Backend.Proof.UnwTryShape
-import FV.Backend.Proof.UnwCallStmt
+module
+
+public import FV.Link.UnwTryIn
+public import FV.Backend.Proof.LowerSimUCheck
+public import FV.Backend.Proof.UnwTryShape
+public import FV.Backend.Proof.UnwCallStmt
+
+@[expose] public section
 
 /-!
 # The exceptional-edge validator from the input (S10g, #404)

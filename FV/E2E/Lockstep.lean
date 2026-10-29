@@ -1,5 +1,9 @@
-import FV.Backend.Proof.RegallocCover
-import FV.Backend.Proof.MemRefines
+module
+
+public import FV.Backend.Proof.RegallocCover
+public import FV.Backend.Proof.MemRefines
+
+@[expose] public section
 
 /-! # Lockstep of `csem` on two worlds (agent/link-widen, stage 2)
 

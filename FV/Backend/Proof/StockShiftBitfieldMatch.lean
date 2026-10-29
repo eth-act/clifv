@@ -1,6 +1,11 @@
-import FV.Backend.Proof.StockShiftBitfieldHelper
-import FV.Backend.Proof.StockShiftSourceTransfer
-import FV.Backend.Proof.StockLogicalLookthrough
+module
+
+public import FV.Backend.Proof.StockShiftBitfieldHelper
+public import FV.Backend.Proof.StockShiftSourceTransfer
+public import FV.Backend.Proof.StockLogicalLookthrough
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ShiftBitfield
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 open Backend.Stock.Proof.ScalarShift

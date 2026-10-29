@@ -1,5 +1,9 @@
-import FV.Backend.Lowering.StockLogical
-import FV.Backend.StockMixedCheck
+module
+
+public import FV.Backend.Lowering.StockLogical
+public import FV.Backend.StockMixedCheck
+
+@[expose] public section
 
 namespace Backend.Stock.Logical
 open Backend.Proof.Driver

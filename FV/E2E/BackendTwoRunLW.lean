@@ -1,4 +1,8 @@
-import FV.E2E.BackendTwoRunLR
+module
+
+public import FV.E2E.BackendTwoRunLR
+
+@[expose] public section
 
 /-!
 # The machine lock with the world-difference invariant and the call destination

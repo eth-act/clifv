@@ -1,7 +1,11 @@
-import FV.Backend.Proof.LSSpillPlanInst
-import FV.Backend.Proof.LSRun
-import FV.Backend.Proof.SpillEdgesPrep
-import FV.Backend.Proof.SpillStep4Cfg
+module
+
+public import FV.Backend.Proof.LSSpillPlanInst
+public import FV.Backend.Proof.LSRun
+public import FV.Backend.Proof.SpillEdgesPrep
+public import FV.Backend.Proof.SpillStep4Cfg
+
+@[expose] public section
 
 /-!
 # The all-spill plan passes the validator (V4b-4, #276)

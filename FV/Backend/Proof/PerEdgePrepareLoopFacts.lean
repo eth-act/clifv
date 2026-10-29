@@ -1,6 +1,10 @@
-import FV.Backend.RegallocPerEdgePrepare
-import FV.Backend.Proof.PrepareComplete
-import FV.Backend.Proof.RegallocLemmas
+module
+
+public import FV.Backend.RegallocPerEdgePrepare
+public import FV.Backend.Proof.PrepareComplete
+public import FV.Backend.Proof.RegallocLemmas
+
+@[expose] public section
 
 /-! The indexed splitting loop has the same label graph as the original loop.
 Only synthetic-block branch arguments are erased in this proof projection;

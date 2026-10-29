@@ -1,4 +1,8 @@
-import FV.Backend.Proof.IselContract
+module
+
+public import FV.Backend.Proof.IselContract
+
+@[expose] public section
 
 /-!
 # Progress of the ISLE lowering (V7): the abstract domain

@@ -1,6 +1,10 @@
-import FV.Concurrency.ArmAllocStraight
-import FV.Concurrency.ThreadLayerWitness
-import FV.E2E.Binary
+module
+
+public import FV.Concurrency.ArmAllocStraight
+public import FV.Concurrency.ThreadLayerWitness
+public import FV.E2E.Binary
+
+@[expose] public section
 
 /-!
 # Non-vacuity of layer 4b on a compiled function (T2h, #311)

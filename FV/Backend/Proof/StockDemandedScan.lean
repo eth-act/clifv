@@ -1,4 +1,8 @@
-import FV.Backend.Proof.StockDemandedUnsunk
+module
+
+public import FV.Backend.Proof.StockDemandedUnsunk
+
+@[expose] public section
 
 /-! Demand protection through real result binding, opportunistic aliases and
 complete scans. Kept separate from helper interpretation to bound elaboration. -/

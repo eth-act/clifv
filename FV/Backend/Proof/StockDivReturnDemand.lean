@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockReturnScanShape
-import FV.Backend.Proof.StockArithmeticBodyRefines
+module
+
+public import FV.Backend.Proof.StockReturnScanShape
+public import FV.Backend.Proof.StockArithmeticBodyRefines
+
+@[expose] public section
 
 /-! Derive division retention from the real return request. This uses the
 original source SSA and successful driver execution, including arbitrary

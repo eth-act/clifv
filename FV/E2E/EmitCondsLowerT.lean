@@ -1,9 +1,13 @@
-import FV.Backend.Proof.IselEmitTDefs
-import FV.Backend.Proof.LowerCompleteT
-import FV.Backend.Proof.SpillEdgesT
-import FV.Backend.Proof.DeadCleanupPrepare
-import FV.Backend.Proof.DeadCleanupPositions
-import FV.E2E.EmitCondsLower
+module
+
+public import FV.Backend.Proof.IselEmitTDefs
+public import FV.Backend.Proof.LowerCompleteT
+public import FV.Backend.Proof.SpillEdgesT
+public import FV.Backend.Proof.DeadCleanupPrepare
+public import FV.Backend.Proof.DeadCleanupPositions
+public import FV.E2E.EmitCondsLower
+
+@[expose] public section
 
 /-!
 # The emission conditions of the pipeline's output on the typed scope (S11, assembly)

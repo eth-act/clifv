@@ -1,4 +1,8 @@
-import FV.Link.EhCheck
+module
+
+public import FV.Link.EhCheck
+
+@[expose] public section
 
 /-!
 # Witness: `ehOkR` holds on an executable and `ehOkR_sound` applies (S10f)

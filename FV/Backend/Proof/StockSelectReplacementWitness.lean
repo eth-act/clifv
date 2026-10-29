@@ -1,4 +1,9 @@
-import FV.Backend.Proof.StockSelectReplacementResolved
+module
+
+public import FV.Backend.Proof.StockSelectReplacementResolved
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarSelect.ReplacementWitness
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 private def registers (k : Nat) : CV := BitVec.ofNat 128 (2^100 + if k = 1 then 7 else 9)

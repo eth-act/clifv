@@ -1,4 +1,8 @@
-import FV.Backend.Proof.StockArithmeticBodyRefines
+module
+
+public import FV.Backend.Proof.StockArithmeticBodyRefines
+
+@[expose] public section
 
 /-! Shared actual-record extraction for pure single-result source bodies. -/
 namespace Backend.Stock.Proof.PureBody

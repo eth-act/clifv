@@ -1,6 +1,11 @@
-import FV.Backend.Proof.StockMulDispatch
-import FV.Backend.Proof.StockGuardedRecordValues
-import FV.Backend.Proof.IselFamALUA
+module
+
+public import FV.Backend.Proof.StockMulDispatch
+public import FV.Backend.Proof.StockGuardedRecordValues
+public import FV.Backend.Proof.IselFamALUA
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.MulComplete
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 set_option autoImplicit false

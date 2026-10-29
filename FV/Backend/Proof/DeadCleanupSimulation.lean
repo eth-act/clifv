@@ -1,6 +1,10 @@
-import FV.Backend.Proof.DeadCleanupEdges
-import FV.Backend.Proof.IselContract
-import FV.Backend.Proof.PrepareComplete
+module
+
+public import FV.Backend.Proof.DeadCleanupEdges
+public import FV.Backend.Proof.IselContract
+public import FV.Backend.Proof.PrepareComplete
+
+@[expose] public section
 
 namespace Backend.DeadCleanup
 open Backend.Proof

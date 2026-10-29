@@ -1,4 +1,8 @@
-import FV.Backend.Proof.IselPrgCtorNoneT
+module
+
+public import FV.Backend.Proof.IselPrgCtorNoneT
+
+@[expose] public section
 
 /-!
 # Progress of the ISLE lowering over the typed scope: `actorT` is sound

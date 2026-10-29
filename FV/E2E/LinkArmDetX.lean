@@ -1,5 +1,9 @@
-import FV.E2E.LinkArmProphDetR
-import FV.E2E.LinkArmStepLine
+module
+
+public import FV.E2E.LinkArmProphDetR
+public import FV.E2E.LinkArmStepLine
+
+@[expose] public section
 
 /-!
 # The determinism clause up to the return address (SEM1 #537, item (3), issue #689)

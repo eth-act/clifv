@@ -1,6 +1,10 @@
-import FV.Backend.Proof.StockSourceView
-import FV.Backend.Proof.StockPatternSource
-import FV.Backend.Proof.IselCmpCond
+module
+
+public import FV.Backend.Proof.StockSourceView
+public import FV.Backend.Proof.StockPatternSource
+public import FV.Backend.Proof.IselCmpCond
+
+@[expose] public section
 
 /-! Overflow flags patterns are excluded by the existing source subset.
 This is a reachability prerequisite, not a proof that all whole-driver

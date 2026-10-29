@@ -1,7 +1,11 @@
-import FV.Opt.Proof.RuleBase
-import FV.Opt.Proof.RuleData
-import FV.Opt.Proof.RuleNode
-import FV.Opt.Proof.RuleTactic
+module
+
+public import FV.Opt.Proof.RuleBase
+public import FV.Opt.Proof.RuleData
+public import FV.Opt.Proof.RuleNode
+public import FV.Opt.Proof.RuleTactic
+
+@[expose] public section
 
 /-!
 # The mid-end embedding, for unfolding rule patterns

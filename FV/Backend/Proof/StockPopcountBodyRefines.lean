@@ -1,6 +1,11 @@
-import FV.Backend.Proof.StockBitBodyRefines
-import FV.Backend.Proof.StockPopcountFamily
-import FV.Backend.Proof.StockPopcountScanRefines
+module
+
+public import FV.Backend.Proof.StockBitBodyRefines
+public import FV.Backend.Proof.StockPopcountFamily
+public import FV.Backend.Proof.StockPopcountScanRefines
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.PopcountBody
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 set_option autoImplicit false

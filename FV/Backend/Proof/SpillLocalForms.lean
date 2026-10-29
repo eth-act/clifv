@@ -1,8 +1,12 @@
-import FV.Backend.Proof.SpillLocalCheck
-import FV.Backend.Proof.RegallocCover
-import FV.Backend.Proof.LowerRename
-import FV.Backend.Proof.SpillLocalState
-import FV.Backend.Proof.IselCtlTerm
+module
+
+public import FV.Backend.Proof.SpillLocalCheck
+public import FV.Backend.Proof.RegallocCover
+public import FV.Backend.Proof.LowerRename
+public import FV.Backend.Proof.SpillLocalState
+public import FV.Backend.Proof.IselCtlTerm
+
+@[expose] public section
 
 /-!
 # The instruction facts of the instruction forms the lowering emits (V4 (a), step 3)

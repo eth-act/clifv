@@ -1,4 +1,8 @@
-import FV.Compile.SubsetTF
+module
+
+public import FV.Compile.SubsetTF
+
+@[expose] public section
 
 /-!
 # The float scope of the decider-free input chain (S11f, #35)

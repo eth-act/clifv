@@ -1,10 +1,14 @@
-import FV.Backend.Proof.StockArithmeticEntryRefines
-import FV.Backend.Proof.StockPreparedSemantics
-import FV.E2E.Statement
-import FV.E2E.RegLevelCorrect
-import FV.E2E.RegLevelDriverSem
-import FV.Backend.Proof.MemRefines
-import FV.Backend.Proof.RefinesCSem
+module
+
+public import FV.Backend.Proof.StockArithmeticEntryRefines
+public import FV.Backend.Proof.StockPreparedSemantics
+public import FV.E2E.Statement
+public import FV.E2E.RegLevelCorrect
+public import FV.E2E.RegLevelDriverSem
+public import FV.Backend.Proof.MemRefines
+public import FV.Backend.Proof.RefinesCSem
+
+@[expose] public section
 
 namespace E2E
 open Backend Backend.Proof Backend.Proof.Driver Backend.Stock.Proof

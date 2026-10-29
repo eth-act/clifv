@@ -1,5 +1,9 @@
-import FV.Backend
-import FV.Backend.LinearScan
+module
+
+public import FV.Backend
+public import FV.Backend.LinearScan
+
+@[expose] public section
 
 /-!
 # regalloc2's input in Cranelift's vreg numbering (#551)

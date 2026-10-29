@@ -1,4 +1,8 @@
-import FV.E2E.LinkArmProphDet
+module
+
+public import FV.E2E.LinkArmProphDet
+
+@[expose] public section
 
 /-!
 # Prophecy determinism at the machine entry (SEM1 step 2p, `docs/plans/uninit.md` §5.8)

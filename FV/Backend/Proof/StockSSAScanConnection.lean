@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockSourceSSA
-import FV.Backend.Proof.StockAliasScanEntries
+module
+
+public import FV.Backend.Proof.StockSourceSSA
+public import FV.Backend.Proof.StockAliasScanEntries
+
+@[expose] public section
 
 namespace Backend.Stock.Proof
 open Backend.Proof Backend.Proof.Driver Isle

@@ -1,4 +1,8 @@
-import FV.Link.RelocShapeProof
+module
+
+public import FV.Link.RelocShapeProof
+
+@[expose] public section
 
 /-!
 # TLS descriptor sequences stay whole in `emitFunc`'s lines

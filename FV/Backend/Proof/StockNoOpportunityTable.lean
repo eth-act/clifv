@@ -1,6 +1,10 @@
-import FV.Backend.Proof.IselCovTab
-import FV.Backend.Proof.IselCovSound
-import FV.Backend.Proof.StockOverflowPatterns
+module
+
+public import FV.Backend.Proof.IselCovTab
+public import FV.Backend.Proof.IselCovSound
+public import FV.Backend.Proof.StockOverflowPatterns
+
+@[expose] public section
 
 /-! Reuse the existing abstract coverage summaries while forbidding
 opportunistic-def constructor calls. This is a fixed-program proof table,

@@ -1,6 +1,10 @@
-import FV.Clif.Parse
-import FV.Front.Rename
-import Std.Data.HashMap
+module
+
+public import FV.Clif.Parse
+public import FV.Front.Rename
+public import Std.Data.HashMap
+
+@[expose] public section
 
 /-!
 # cg_clif's raw dumps and their decoding (T7b, T7c, docs/contracts/frontend.md)

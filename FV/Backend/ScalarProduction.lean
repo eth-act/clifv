@@ -1,5 +1,9 @@
-import FV.Backend.ProductionWith
-import FV.Backend.Lowering.StockScalarProduction
+module
+
+public import FV.Backend.ProductionWith
+public import FV.Backend.Lowering.StockScalarProduction
+
+@[expose] public section
 
 /-! Monotone rollout of the complete scalar-add class alongside the shipped
 prologue and D0 routes, with the original whole-file retry on any failure. -/

@@ -1,4 +1,8 @@
-import FV.Backend.Proof.IselExtern
+module
+
+public import FV.Backend.Proof.IselExtern
+
+@[expose] public section
 
 /-!
 # Contracts of internal ISLE terms (per-term lemmas)

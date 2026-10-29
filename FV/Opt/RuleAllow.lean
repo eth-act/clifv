@@ -1,3 +1,7 @@
+module
+
+@[expose] public section
+
 /-!
 # The proven-rule allow-list
 

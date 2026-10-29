@@ -1,4 +1,8 @@
-import FV.Concurrency.Exec
+module
+
+public import FV.Concurrency.Exec
+
+@[expose] public section
 
 /-!
 # The Cranelift memory-model contract for CLIF (T2, #38)

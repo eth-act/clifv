@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockAluSelectedValues
-import FV.Backend.Proof.IselTermsLogic
+module
+
+public import FV.Backend.Proof.StockAluSelectedValues
+public import FV.Backend.Proof.IselTermsLogic
+
+@[expose] public section
 
 /-! Actual logical register RHS and its mapped machine value semantics. -/
 namespace Backend.Stock.Proof

@@ -1,5 +1,9 @@
-import FV.E2E.LinkClif
-import FV.Clif.Unwind
+module
+
+public import FV.E2E.LinkClif
+public import FV.Clif.Unwind
+
+@[expose] public section
 
 /-!
 # Linking at the CLIF level with unwinding (S10f, #233)

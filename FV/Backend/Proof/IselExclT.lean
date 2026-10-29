@@ -1,5 +1,9 @@
-import FV.Backend.Proof.IselExcl
-import FV.Backend.Proof.LowerLoopCtxT
+module
+
+public import FV.Backend.Proof.IselExcl
+public import FV.Backend.Proof.LowerLoopCtxT
+
+@[expose] public section
 
 /-!
 # Excluded root rules over float-capable contexts (S11e5 Stage C)

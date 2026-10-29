@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockBodyScanRefines
-import FV.Backend.Proof.StockAddSubAllSourceValues
+module
+
+public import FV.Backend.Proof.StockBodyScanRefines
+public import FV.Backend.Proof.StockAddSubAllSourceValues
+
+@[expose] public section
 
 /-! Actual add/sub record semantics composed into the ordinary-body scan relation.
 The syntactic family partition remains internal partial coverage; it is not a

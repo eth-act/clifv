@@ -1,11 +1,15 @@
-import FV.Backend.Proof.IselPrgRun
-import FV.Backend.Proof.IselPrgTab
-import FV.Backend.Proof.IselPrgCover
-import FV.Backend.Proof.IselPrgExtSound
-import FV.Backend.Proof.IselPrgCtorSound
-import FV.Backend.Proof.IselPrgHand
-import FV.Backend.Proof.IselPrgTryLast
-import FV.Backend.Proof.LowerTotal
+module
+
+public import FV.Backend.Proof.IselPrgRun
+public import FV.Backend.Proof.IselPrgTab
+public import FV.Backend.Proof.IselPrgCover
+public import FV.Backend.Proof.IselPrgExtSound
+public import FV.Backend.Proof.IselPrgCtorSound
+public import FV.Backend.Proof.IselPrgHand
+public import FV.Backend.Proof.IselPrgTryLast
+public import FV.Backend.Proof.LowerTotal
+
+@[expose] public section
 
 /-!
 # Progress of the ISLE lowering (V7): the driver's ISLE runs return

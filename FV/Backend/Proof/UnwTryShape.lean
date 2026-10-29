@@ -1,4 +1,8 @@
-import FV.Backend.Proof.KillTryDefs
+module
+
+public import FV.Backend.Proof.KillTryDefs
+
+@[expose] public section
 
 /-!
 # The exact code of a `try_call`'s rule (S10g, #404)

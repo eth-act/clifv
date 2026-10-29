@@ -1,6 +1,10 @@
-import FV.Backend.Proof.LowerLoopCtx
-import FV.Backend.Proof.IselFlow
-import FV.Backend.Proof.TryRegsC
+module
+
+public import FV.Backend.Proof.LowerLoopCtx
+public import FV.Backend.Proof.IselFlow
+public import FV.Backend.Proof.TryRegsC
+
+@[expose] public section
 
 /-!
 # `lowerFunction`'s loop, simulated

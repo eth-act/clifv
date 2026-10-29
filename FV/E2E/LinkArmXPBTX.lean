@@ -1,5 +1,9 @@
-import FV.E2E.LinkArmXPBT
-import FV.E2E.ExtSemGuardRX
+module
+
+public import FV.E2E.LinkArmXPBT
+public import FV.E2E.ExtSemGuardRX
+
+@[expose] public section
 
 /-!
 # The induction step's call semantics with program-keeping guards (SEM1 #537, #680 (3), #690)

@@ -1,5 +1,10 @@
-import FV.Backend.Proof.StockDivGeneralValues
-import FV.Backend.Proof.StockDivSafeObservations
+module
+
+public import FV.Backend.Proof.StockDivGeneralValues
+public import FV.Backend.Proof.StockDivSafeObservations
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarDiv
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 theorem stock_div_safe_sdiv_values {f : Clif.Function} {ctx : Ctx} (inv : MappedCtxInv f ctx) (wide : Bool)

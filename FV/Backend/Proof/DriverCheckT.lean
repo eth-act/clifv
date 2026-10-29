@@ -1,4 +1,8 @@
-import FV.Backend.Proof.DriverCheckSound
+module
+
+public import FV.Backend.Proof.DriverCheckSound
+
+@[expose] public section
 
 /-!
 # The float-capable context check (S11e4)

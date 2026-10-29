@@ -1,6 +1,10 @@
-import FV.Backend.Proof.LowerLoop
-import FV.Backend.Proof.LowerFix
-import Std.Data.HashSet.Lemmas
+module
+
+public import FV.Backend.Proof.LowerLoop
+public import FV.Backend.Proof.LowerFix
+public import Std.Data.HashSet.Lemmas
+
+@[expose] public section
 
 /-!
 # Completeness of `lowerCheck`: the input conditions, decided

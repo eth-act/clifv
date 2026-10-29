@@ -1,7 +1,11 @@
-import FV.E2E.RegLevelOp
-import FV.Backend.Proof.RegallocAtomic
-import FV.Backend.Proof.RegallocMemAddr
-import FV.Backend.Proof.RegallocMemFP
+module
+
+public import FV.E2E.RegLevelOp
+public import FV.Backend.Proof.RegallocAtomic
+public import FV.Backend.Proof.RegallocMemAddr
+public import FV.Backend.Proof.RegallocMemFP
+
+@[expose] public section
 
 /-!
 # Form coverage (M6 interface between the instruction proofs and the control proofs)

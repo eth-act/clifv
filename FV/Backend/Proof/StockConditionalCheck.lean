@@ -1,4 +1,8 @@
-import FV.Backend.Proof.StockConditionalDomain
+module
+
+public import FV.Backend.Proof.StockConditionalDomain
+
+@[expose] public section
 
 namespace Backend.Stock.ConditionalCfg
 open Backend.Proof Backend.Proof.Driver Backend.Stock.Proof

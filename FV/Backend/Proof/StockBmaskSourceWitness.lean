@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockBmaskSourceValues
-import FV.Backend.Proof.StockBmaskRecordWitness
+module
+
+public import FV.Backend.Proof.StockBmaskSourceValues
+public import FV.Backend.Proof.StockBmaskRecordWitness
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.ScalarMask
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

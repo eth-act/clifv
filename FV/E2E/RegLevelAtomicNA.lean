@@ -1,5 +1,9 @@
-import FV.E2E.RegLevelCallNA
-import FV.E2E.RegLevelAtomicNR
+module
+
+public import FV.E2E.RegLevelCallNA
+public import FV.E2E.RegLevelAtomicNR
+
+@[expose] public section
 
 /-!
 # Atomic loops, at a witness (SEM1 #537, item (3), route (a))

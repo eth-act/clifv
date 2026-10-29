@@ -7,8 +7,12 @@ Author(s): Yan Peng
 -- Modified by fv-compiler-rust (2026): ported to Lean v4.34.1, module prefix FV.Arm, wrapped in
 -- namespace Arm; RBIT, CLZ and CLS added (`exec_data_processing_rbit`, `..._clz_cls`).
 
-import FV.Arm.Decode
-import FV.Arm.Insts.Common
+module
+
+public import FV.Arm.Decode
+public import FV.Arm.Insts.Common
+
+@[expose] public section
 
 namespace Arm
 

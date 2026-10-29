@@ -1,5 +1,9 @@
-import FVTest.E2E.FloatTotalT
-import FV.E2E.LinkScopeInputT3
+module
+
+public import FVTest.E2E.FloatTotalT
+public import FV.E2E.LinkScopeInputT3
+
+@[expose] public section
 
 /-!
 # Witnesses: the decider-free typed scope `fnScopeInTB3` (S11 #35)

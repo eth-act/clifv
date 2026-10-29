@@ -3,6 +3,10 @@ Copyright (c) 2026 fv-compiler-rust contributors.
 Released under Apache 2.0 license.
 -/
 
+module
+
+@[expose] public section
+
 /-!
 # CLIF vector values (S12b, #36)
 

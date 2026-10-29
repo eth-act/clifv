@@ -1,7 +1,12 @@
-import FV.Backend.Proof.StockMinMaxWideShape
-import FV.Backend.Proof.StockSelectBooleanCompanion
-import FV.Backend.Proof.StockSelectReplacementResolved
-import FV.Backend.Proof.StockDemandMono
+module
+
+public import FV.Backend.Proof.StockMinMaxWideShape
+public import FV.Backend.Proof.StockSelectBooleanCompanion
+public import FV.Backend.Proof.StockSelectReplacementResolved
+public import FV.Backend.Proof.StockDemandMono
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarSelect
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 open Backend.Stock.Proof.ScalarCmp MinMaxRegisterFixture

@@ -1,5 +1,9 @@
-import FV.Backend.Regalloc
-import FV.Backend.Proof.RelaxReady
+module
+
+public import FV.Backend.Regalloc
+public import FV.Backend.Proof.RelaxReady
+
+@[expose] public section
 
 /-!
 # Emission readiness of regalloc2's allocation (V6b)

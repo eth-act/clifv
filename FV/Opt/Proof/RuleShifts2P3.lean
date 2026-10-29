@@ -1,6 +1,10 @@
-import FV.Opt.Proof.RuleExtEmbed
-import FV.Opt.Proof.RuleInfraShiftAmt
-import FV.Opt.Proof.RuleIntRetry
+module
+
+public import FV.Opt.Proof.RuleExtEmbed
+public import FV.Opt.Proof.RuleInfraShiftAmt
+public import FV.Opt.Proof.RuleIntRetry
+
+@[expose] public section
 
 /-!
 # Part 3 of 3 of `RuleShifts2.lean`

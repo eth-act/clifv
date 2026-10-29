@@ -1,5 +1,9 @@
-import FV.Backend.RegallocPerEdgePrepare
-import FV.Backend.Proof.PrepareCheck
+module
+
+public import FV.Backend.RegallocPerEdgePrepare
+public import FV.Backend.Proof.PrepareCheck
+
+@[expose] public section
 
 /-! Structural preparation relation for actual per-successor copies. This
 internal check is separate from the original check and source input conditions.

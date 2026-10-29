@@ -1,5 +1,9 @@
-import FV.E2E.RegLevelFrame
-import FV.E2E.RegLevelGoodXN
+module
+
+public import FV.E2E.RegLevelFrame
+public import FV.E2E.RegLevelGoodXN
+
+@[expose] public section
 
 /-!
 # The prologue and the return on the machine with no call state (SEM1 #537, step 2k)

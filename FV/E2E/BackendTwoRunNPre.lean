@@ -1,6 +1,10 @@
-import FV.E2E.BackendTwoRunLWZ
-import FV.E2E.RegLevelTwoRunN
-import FV.E2E.BackendPrefixI
+module
+
+public import FV.E2E.BackendTwoRunLWZ
+public import FV.E2E.RegLevelTwoRunN
+public import FV.E2E.BackendPrefixI
+
+@[expose] public section
 
 /-!
 # The prefix two-run route: the semantics of the first `N` calls (SEM1 #537, #713)

@@ -1,5 +1,10 @@
-import FV.Link.DeadCleanupImage
-import FV.Link.LayoutFacts
+module
+
+public import FV.Link.DeadCleanupImage
+public import FV.Link.LayoutFacts
+
+@[expose] public section
+
 namespace Link.DeadCleanup
 set_option autoImplicit false
 open E2E E2E.LinkCheck Backend LinkSpec

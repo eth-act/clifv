@@ -1,5 +1,9 @@
-import FV.Concurrency.ProgramE2E
-import FV.Concurrency.ArmFence
+module
+
+public import FV.Concurrency.ProgramE2E
+public import FV.Concurrency.ArmFence
+
+@[expose] public section
 
 /-!
 # The program-level statement with fences and Rust orderings (T2f, #304)

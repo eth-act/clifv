@@ -1,5 +1,9 @@
-import FV.Backend.Proof.LSFacts
-import FV.Backend.Proof.SpillLocal
+module
+
+public import FV.Backend.Proof.LSFacts
+public import FV.Backend.Proof.SpillLocal
+
+@[expose] public section
 
 /-!
 # The all-spill plan: every instruction finds its scratch registers (V4b-4, #276)

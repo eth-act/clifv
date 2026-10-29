@@ -1,6 +1,10 @@
-import FV.Concurrency.IselMemAux
-import FV.Concurrency.SegFootWitness
-import FV.Concurrency.VCodeFrameWitness
+module
+
+public import FV.Concurrency.IselMemAux
+public import FV.Concurrency.SegFootWitness
+public import FV.Concurrency.VCodeFrameWitness
+
+@[expose] public section
 
 /-!
 # Non-vacuity of `IselMemAux` (T2h, #311, layer 2e)

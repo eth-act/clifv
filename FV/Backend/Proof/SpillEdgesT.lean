@@ -1,7 +1,11 @@
-import FV.Backend.Proof.SpillEdges
-import FV.Backend.Proof.SpillEdgesLowT
-import FV.Backend.Proof.LowerCompleteT
-import FV.Compile.TryArgClass
+module
+
+public import FV.Backend.Proof.SpillEdges
+public import FV.Backend.Proof.SpillEdgesLowT
+public import FV.Backend.Proof.LowerCompleteT
+public import FV.Compile.TryArgClass
+
+@[expose] public section
 
 /-!
 # The spill allocator's CFG facts on the typed pipeline's output (S11e5 Stage C, slice 6)

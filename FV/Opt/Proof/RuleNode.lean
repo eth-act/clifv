@@ -1,4 +1,8 @@
-import FV.Opt.Proof.Sem
+module
+
+public import FV.Opt.Proof.Sem
+
+@[expose] public section
 
 /-!
 # `evalNode` of each pure node form

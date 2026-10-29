@@ -1,5 +1,9 @@
-import FV.Backend.Proof.IselCmpDiv
-import FV.Backend.Proof.IselTermsALUA
+module
+
+public import FV.Backend.Proof.IselCmpDiv
+public import FV.Backend.Proof.IselTermsALUA
+
+@[expose] public section
 
 /-!
 # Family C: division root rules

@@ -1,7 +1,11 @@
-import FV.Link.Correct
-import FV.Link.Compile
-import FV.E2E.ExecProven
-import FV.E2E.LinkScopeInput
+module
+
+public import FV.Link.Correct
+public import FV.Link.Compile
+public import FV.E2E.ExecProven
+public import FV.E2E.LinkScopeInput
+
+@[expose] public section
 
 /-! # The executable compiler is correct (L1, docs/TO-PROVE.md §1)
 

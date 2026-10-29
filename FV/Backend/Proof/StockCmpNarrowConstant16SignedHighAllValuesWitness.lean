@@ -1,6 +1,10 @@
-import FV.Backend.Proof.StockCmpNarrowConstant16SignedHighDriverRuns
-import FV.Backend.Proof.StockCmpNarrowConstantOriginalSourceValues
-import FV.Backend.Proof.LowerSim
+module
+
+public import FV.Backend.Proof.StockCmpNarrowConstant16SignedHighDriverRuns
+public import FV.Backend.Proof.StockCmpNarrowConstantOriginalSourceValues
+public import FV.Backend.Proof.LowerSim
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.ScalarCmp.NarrowConstant16SignedHighAllValuesWitness
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

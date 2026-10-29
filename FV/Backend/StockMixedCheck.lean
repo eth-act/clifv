@@ -1,5 +1,9 @@
-import FV.Backend.Lowering.StockMixed
-import FV.Backend.StockArithmeticCheck
+module
+
+public import FV.Backend.Lowering.StockMixed
+public import FV.Backend.StockArithmeticCheck
+
+@[expose] public section
 
 namespace Backend.Stock.Mixed
 open Backend.Proof.Driver

@@ -1,5 +1,9 @@
-import FV.E2E.SretReturnUnwind
-import FV.E2E.SretReturnWitness
+module
+
+public import FV.E2E.SretReturnUnwind
+public import FV.E2E.SretReturnWitness
+
+@[expose] public section
 
 /-!
 # Non-vacuity of `backend_correct_final_unwind_abi` / `backend_correct_final_unwind_sret` (S7)

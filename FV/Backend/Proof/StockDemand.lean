@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockValues
-import FV.Backend.Proof.LowerLemmas
+module
+
+public import FV.Backend.Proof.StockValues
+public import FV.Backend.Proof.LowerLemmas
+
+@[expose] public section
 
 /-!
 Register requests used by returns, calls and their ABI helpers. List requests

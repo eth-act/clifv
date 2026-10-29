@@ -1,4 +1,8 @@
-import FV.Backend.Proof.StockLogicalRecordValues
+module
+
+public import FV.Backend.Proof.StockLogicalRecordValues
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.LogicalSelected
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

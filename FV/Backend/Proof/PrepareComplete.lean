@@ -1,4 +1,8 @@
-import FV.Backend.Proof.PrepareCheck
+module
+
+public import FV.Backend.Proof.PrepareCheck
+
+@[expose] public section
 
 /-!
 # Completeness of the `prepare` validator (M7)

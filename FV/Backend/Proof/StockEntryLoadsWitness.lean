@@ -1,10 +1,15 @@
-import FV.E2E.RegLevelDriverSem
-import FV.Backend.Proof.StockEntryLoads
-import FV.Backend.Proof.StockEntryAssembly
-import FV.Backend.Proof.StockEntryPrelude
-import FV.Backend.Lowering.StockD0
-import FV.Backend.Proof.LowerDecide
-import FV.Backend.Proof.MemRefines
+module
+
+public import FV.E2E.RegLevelDriverSem
+public import FV.Backend.Proof.StockEntryLoads
+public import FV.Backend.Proof.StockEntryAssembly
+public import FV.Backend.Proof.StockEntryPrelude
+public import FV.Backend.Lowering.StockD0
+public import FV.Backend.Proof.LowerDecide
+public import FV.Backend.Proof.MemRefines
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.EntryLoadsWitness
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 set_option autoImplicit false

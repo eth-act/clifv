@@ -1,12 +1,16 @@
-import FV.E2E.LinkCheck
-import FV.E2E.LinkOwnCallsDefs
-import FV.E2E.LinkOwnFramesDefs
-import FV.E2E.EmitSize
-import FV.Backend.Proof.IselEmitDefs
-import FV.Backend.AllocReady
-import FV.Backend.Proof.LowerDecide
-import FV.Backend.Proof.SpillArity
-import FV.Backend.Proof.EntryParams
+module
+
+public import FV.E2E.LinkCheck
+public import FV.E2E.LinkOwnCallsDefs
+public import FV.E2E.LinkOwnFramesDefs
+public import FV.E2E.EmitSize
+public import FV.Backend.Proof.IselEmitDefs
+public import FV.Backend.AllocReady
+public import FV.Backend.Proof.LowerDecide
+public import FV.Backend.Proof.SpillArity
+public import FV.Backend.Proof.EntryParams
+
+@[expose] public section
 
 /-! # `okB` split: the compiler's pipeline, the input conditions, the linker's facts (L2a)
 

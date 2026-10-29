@@ -1,6 +1,10 @@
-import FV.E2E.LinkGood
-import FV.E2E.LinkArmT
-import FV.E2E.LinkSiteTC
+module
+
+public import FV.E2E.LinkGood
+public import FV.E2E.LinkArmT
+public import FV.E2E.LinkSiteTC
+
+@[expose] public section
 
 /-! # Typed copies of `FV.E2E.LinkGood` (S11e5 Stage C, slice 8)
 

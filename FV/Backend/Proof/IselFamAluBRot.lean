@@ -1,4 +1,8 @@
-import FV.Backend.Proof.IselFamAluBRotTerms
+module
+
+public import FV.Backend.Proof.IselFamAluBRotTerms
+
+@[expose] public section
 
 /-!
 # Family B: the rotate root rules (`rotl`/`rotr`, `lower.isle:1772–1862`)

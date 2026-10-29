@@ -1,5 +1,10 @@
-import FV.Link.Compile
-import FV.Link.DeadCleanupImage
+module
+
+public import FV.Link.Compile
+public import FV.Link.DeadCleanupImage
+
+@[expose] public section
+
 namespace Link.DeadCleanup
 set_option autoImplicit false
 def compileExe (S : LinkSpec) (file0 : ByteArray) : Except String ByteArray :=

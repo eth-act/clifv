@@ -1,4 +1,8 @@
-import FV.Backend.Proof.StockCriticalCode
+module
+
+public import FV.Backend.Proof.StockCriticalCode
+
+@[expose] public section
 
 /-! Actual per-successor vectors returned by whole Stock lowering.
 Traverse installation/frame facts before applying final alias resolution. -/

@@ -1,8 +1,12 @@
-import FV.Link.ProductionImageWith
-import FV.Link.Ld.Spec
-import FVTest.E2E.ProductionLinkProofWith
-import FV.Backend.Lowering.StockPrologueAll
-import FV.Clif.Print
+module
+
+public import FV.Link.ProductionImageWith
+public import FV.Link.Ld.Spec
+public import FVTest.E2E.ProductionLinkProofWith
+public import FV.Backend.Lowering.StockPrologueAll
+public import FV.Clif.Print
+
+@[expose] public section
 
 /-! Actual Stock callback → actual byte writer → ordinary emitted Lean proofs.
 A fixed integration witness; it does not activate a production class. -/

@@ -1,6 +1,10 @@
-import FV.E2E.RegLevelOp
-import FV.Backend.Proof.LowerLemmas
-import FV.Backend.Proof.PairsC
+module
+
+public import FV.E2E.RegLevelOp
+public import FV.Backend.Proof.LowerLemmas
+public import FV.Backend.Proof.PairsC
+
+@[expose] public section
 
 /-!
 # `Args` on the machine (M6)

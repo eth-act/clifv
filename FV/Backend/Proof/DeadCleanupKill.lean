@@ -1,5 +1,9 @@
-import FV.Backend.Proof.DeadCleanupPrepare
-import FV.Backend.Proof.KillPrep
+module
+
+public import FV.Backend.Proof.DeadCleanupPrepare
+public import FV.Backend.Proof.KillPrep
+
+@[expose] public section
 
 namespace Backend.DeadCleanup
 open Backend.Proof Backend.Proof.Spill

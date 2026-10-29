@@ -1,6 +1,10 @@
-import FV.E2E.OptX
-import FV.E2E.Legal
-import FV.E2E.DeadCleanupLegal
+module
+
+public import FV.E2E.OptX
+public import FV.E2E.Legal
+public import FV.E2E.DeadCleanupLegal
+
+@[expose] public section
 
 /-! # Legalisation followed by optimisation (S2)
 

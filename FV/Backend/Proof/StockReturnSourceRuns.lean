@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockReturnHelpers
-import FV.Backend.Proof.StockSourceDefined
+module
+
+public import FV.Backend.Proof.StockReturnHelpers
+public import FV.Backend.Proof.StockSourceDefined
+
+@[expose] public section
 
 /-! Execute the actual revised return helper against successful original source
 returns. Source arity and implicit reads are derived internally; return pins

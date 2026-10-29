@@ -1,5 +1,10 @@
-import FV.Backend.Proof.PerEdgeSpillEntry
-import FV.Backend.Proof.PerEdgeSpillCycleFixture
+module
+
+public import FV.Backend.Proof.PerEdgeSpillEntry
+public import FV.Backend.Proof.PerEdgeSpillCycleFixture
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.SpillJumpWitness
 open Backend.Proof Backend.Proof.Driver Backend.Proof.PerEdgeSpill Backend.Proof.Spill
 open Backend.Stock.Proof.IndexedSpillFixture

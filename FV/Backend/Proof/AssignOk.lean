@@ -1,4 +1,8 @@
-import FV.Backend.RegallocOps
+module
+
+public import FV.Backend.RegallocOps
+
+@[expose] public section
 
 /-!
 # Substituting an allocation succeeds (`MInst.assign`)

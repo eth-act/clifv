@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockTwoBlockShape
-import FV.Backend.Proof.PerEdgeLegacyCompatible
+module
+
+public import FV.Backend.Proof.StockTwoBlockShape
+public import FV.Backend.Proof.PerEdgeLegacyCompatible
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.TwoBlock
 open Backend.Proof Backend.Proof.Driver

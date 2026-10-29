@@ -1,6 +1,10 @@
-import FV.E2E.Statement
-import FV.Clif.MemTrap
-import FV.ArmFault.Step
+module
+
+public import FV.E2E.Statement
+public import FV.Clif.MemTrap
+public import FV.ArmFault.Step
+
+@[expose] public section
 
 /-!
 # The run premises and the observable of a memory trap (A3, #412, slice F2)

@@ -1,5 +1,9 @@
-import FV.Link.ExeSource
-import FV.E2E.SrcBoundedLegal
+module
+
+public import FV.Link.ExeSource
+public import FV.E2E.SrcBoundedLegal
+
+@[expose] public section
 
 /-! # The baseline compiler's source theorems without the memory-bound premise (A2/B1)
 

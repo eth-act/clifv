@@ -1,7 +1,11 @@
-import FV.E2E.LinkPlaceBLeave
-import FV.E2E.LinkCheck
-import FV.E2E.LinkArmPlaceB
-import FV.E2E.LinkPlaceBWitness
+module
+
+public import FV.E2E.LinkPlaceBLeave
+public import FV.E2E.LinkCheck
+public import FV.E2E.LinkArmPlaceB
+public import FV.E2E.LinkPlaceBWitness
+
+@[expose] public section
 
 /-!
 # A linked test system with slotted, returning program callees (SEM1 #537)

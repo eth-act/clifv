@@ -1,7 +1,11 @@
-import FV.E2E.SizeLowerT
-import FV.E2E.EmitCondsLowerT
-import FV.Backend.Proof.IselEmitTDriver
-import FV.E2E.LinkScopeInputT2
+module
+
+public import FV.E2E.SizeLowerT
+public import FV.E2E.EmitCondsLowerT
+public import FV.Backend.Proof.IselEmitTDriver
+public import FV.E2E.LinkScopeInputT2
+
+@[expose] public section
 
 /-!
 # The emission conditions on the typed scope (S11 #35)

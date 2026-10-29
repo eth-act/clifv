@@ -1,4 +1,8 @@
-import FV.E2E.LinkOwnCalls
+module
+
+public import FV.E2E.LinkOwnCalls
+
+@[expose] public section
 
 /-! # `CallShapeHyp` from the ISLE runs (`CallRunHyp`) and the GOT vregs (`GotRunHyp`)
 

@@ -1,4 +1,8 @@
-import FV.Backend.Proof.FilteredGraphIncoming
+module
+
+public import FV.Backend.Proof.FilteredGraphIncoming
+
+@[expose] public section
 
 namespace Backend.Proof.PerEdgePrep
 open Backend Backend.Proof

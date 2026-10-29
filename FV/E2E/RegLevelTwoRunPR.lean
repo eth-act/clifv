@@ -1,6 +1,10 @@
-import FV.E2E.RegLevelTwoRunW
-import FV.E2E.RegLevelCorrectPRSY
-import FV.E2E.BackendWorldI
+module
+
+public import FV.E2E.RegLevelTwoRunW
+public import FV.E2E.RegLevelCorrectPRSY
+public import FV.E2E.BackendWorldI
+
+@[expose] public section
 
 /-!
 # Two activations along a paired VCode run, at the prophecy level (SEM1 #537, item (3))

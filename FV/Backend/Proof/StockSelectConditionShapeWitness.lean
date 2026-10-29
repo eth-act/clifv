@@ -1,6 +1,11 @@
-import FV.Backend.Proof.StockSelectConditionCompanion
-import FV.Backend.Proof.StockSelectZeroConditionShape
-import FV.Backend.Proof.StockSelectScalarDriverRuns
+module
+
+public import FV.Backend.Proof.StockSelectConditionCompanion
+public import FV.Backend.Proof.StockSelectZeroConditionShape
+public import FV.Backend.Proof.StockSelectScalarDriverRuns
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarSelect.ConditionShapeWitness
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 set_option maxRecDepth 20000

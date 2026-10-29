@@ -1,4 +1,8 @@
-import FV.Backend.Proof.StockOrderGraph
+module
+
+public import FV.Backend.Proof.StockOrderGraph
+
+@[expose] public section
 
 /-! Actual synthetic-node branch collection and returned VCode placement.
 The whole traversal and final resolver determine the installed code. -/

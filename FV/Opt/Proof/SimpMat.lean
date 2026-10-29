@@ -1,4 +1,8 @@
-import FV.Opt.Proof.SimpGraph
+module
+
+public import FV.Opt.Proof.SimpGraph
+
+@[expose] public section
 
 /-!
 # Materialisation keeps the e-graph invariant (`Opt.materialize_spec`)

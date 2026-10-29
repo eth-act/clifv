@@ -1,5 +1,9 @@
-import FV.Link.Ld.PlanProof
-import FV.Link.OutsideProof
+module
+
+public import FV.Link.Ld.PlanProof
+public import FV.Link.OutsideProof
+
+@[expose] public section
 
 /-! # The CLIF data objects in `lean-ld`'s plan (L2b stage 3e, #269)
 

@@ -1,5 +1,9 @@
-import FV.Opt.Proof.RuleInfraIcmp
-import FV.Opt.Proof.RuleExtEmbed
+module
+
+public import FV.Opt.Proof.RuleInfraIcmp
+public import FV.Opt.Proof.RuleExtEmbed
+
+@[expose] public section
 
 /-!
 # Lifting matching extensions through a select

@@ -1,5 +1,10 @@
-import FV.Backend.Proof.StockMulRecordValues
-import FV.Backend.Proof.StockRootOpcodeMatch
+module
+
+public import FV.Backend.Proof.StockMulRecordValues
+public import FV.Backend.Proof.StockRootOpcodeMatch
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.MulComplete
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 set_option autoImplicit false

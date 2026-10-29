@@ -1,6 +1,10 @@
-import FV.Opt.Check
-import FV.Opt.Simplify
-import FV.Compile.Subset
+module
+
+public import FV.Opt.Check
+public import FV.Opt.Simplify
+public import FV.Compile.Subset
+
+@[expose] public section
 
 /-!
 # Per-pass validators (translation validation of the passes' output)

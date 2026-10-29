@@ -1,6 +1,10 @@
-import FV.Opt.Proof.CompleteSimpRun
-import FV.Opt.Proof.CompleteSimpHand
-import FV.Opt.Proof.CompleteOptimize
+module
+
+public import FV.Opt.Proof.CompleteSimpRun
+public import FV.Opt.Proof.CompleteSimpHand
+public import FV.Opt.Proof.CompleteOptimize
+
+@[expose] public section
 
 /-!
 # Completeness of simplify (M1, #24)

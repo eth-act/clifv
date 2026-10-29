@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockTermContract
-import FV.Backend.Proof.StockTerminalControlWitness
+module
+
+public import FV.Backend.Proof.StockTermContract
+public import FV.Backend.Proof.StockTerminalControlWitness
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.TermContractWitness
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

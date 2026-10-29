@@ -1,5 +1,9 @@
-import FV.E2E.WorldMemTrap
-import FV.E2E.LinkGood
+module
+
+public import FV.E2E.WorldMemTrap
+public import FV.E2E.LinkGood
+
+@[expose] public section
 
 /-!
 # Memory traps in the linked program (A3, #412, slice F5)

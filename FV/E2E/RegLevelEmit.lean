@@ -1,5 +1,9 @@
-import FV.Backend.Asm
-import FV.Backend.Regalloc
+module
+
+public import FV.Backend.Asm
+public import FV.Backend.Regalloc
+
+@[expose] public section
 
 /-!
 # `emitFunc`'s code structure (M6 proof, register level)

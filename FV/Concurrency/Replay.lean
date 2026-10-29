@@ -1,4 +1,8 @@
-import FV.Concurrency.Program
+module
+
+public import FV.Concurrency.Program
+
+@[expose] public section
 
 /-!
 # Replay: a sequentially consistent execution of a program is a run of the interleaving machine

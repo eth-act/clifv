@@ -1,4 +1,8 @@
-import FV.Backend.Proof.StockScalarDivBodyRecords
+module
+
+public import FV.Backend.Proof.StockScalarDivBodyRecords
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.DivBody
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

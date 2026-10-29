@@ -1,5 +1,9 @@
-import FV.Backend.Proof.DriverCheckT
-import FV.Backend.Proof.IselLowerAll
+module
+
+public import FV.Backend.Proof.DriverCheckT
+public import FV.Backend.Proof.IselLowerAll
+
+@[expose] public section
 
 /-!
 Non-vacuity of the S11f-cvt roots (#410): the context `buildCtx` makes for a function with

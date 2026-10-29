@@ -1,5 +1,9 @@
-import FV.Backend.Proof.DeadCleanupSimulation
-import FV.E2E.Statement
+module
+
+public import FV.Backend.Proof.DeadCleanupSimulation
+public import FV.E2E.Statement
+
+@[expose] public section
 
 namespace Backend.DeadCleanup
 open Backend.Proof Backend.Proof.Driver

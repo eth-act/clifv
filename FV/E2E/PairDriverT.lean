@@ -1,5 +1,9 @@
-import FV.E2E.LinkWorldT
-import FV.E2E.GuardedFPPair
+module
+
+public import FV.E2E.LinkWorldT
+public import FV.E2E.GuardedFPPair
+
+@[expose] public section
 
 /-! # Non-interference of a compiled function, typed (S11e5 Stage C, slice 7)
 

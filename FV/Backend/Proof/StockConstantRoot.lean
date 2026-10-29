@@ -1,4 +1,8 @@
-import FV.Backend.Proof.StockImm
+module
+
+public import FV.Backend.Proof.StockImm
+
+@[expose] public section
 
 /-! A concrete named constant root, with selected-rule receipts. This fixture
 executes the actual exported program at stock driver fuel. -/

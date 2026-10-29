@@ -1,6 +1,10 @@
-import FV.E2E.RegLevelU
-import FV.E2E.DeadCleanupContracts
-import FV.E2E.DeadCleanupRealizes
+module
+
+public import FV.E2E.RegLevelU
+public import FV.E2E.DeadCleanupContracts
+public import FV.E2E.DeadCleanupRealizes
+
+@[expose] public section
 
 /-!
 # The dead-cleanup value semantics with unwinding (S10e, #232)

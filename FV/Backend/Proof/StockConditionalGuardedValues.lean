@@ -1,10 +1,14 @@
-import FV.Backend.Proof.StockConditionalBodyCalls
-import FV.Backend.Proof.StockConditionalWideAllocation
-import FV.Backend.Proof.StockConditionalParameterSelection
-import FV.Backend.Proof.StockConditionalBodyRefines
-import FV.Backend.Proof.StockConditionalCoreDemand
-import FV.Backend.Proof.StockOutgoingFrame
-import FV.Backend.Proof.StockAvailableTypes
+module
+
+public import FV.Backend.Proof.StockConditionalBodyCalls
+public import FV.Backend.Proof.StockConditionalWideAllocation
+public import FV.Backend.Proof.StockConditionalParameterSelection
+public import FV.Backend.Proof.StockConditionalBodyRefines
+public import FV.Backend.Proof.StockConditionalCoreDemand
+public import FV.Backend.Proof.StockOutgoingFrame
+public import FV.Backend.Proof.StockAvailableTypes
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.ConditionalValues
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

@@ -1,9 +1,13 @@
-import FV.Backend.Proof.IselEmitModel
-import FV.Backend.Proof.IselEmitChk
-import FV.Backend.Proof.IselEmitLast
-import FV.Backend.Proof.IselEmitHand
-import FV.Backend.Proof.IselEmitTab
-import FV.Backend.Proof.IselShpDriver
+module
+
+public import FV.Backend.Proof.IselEmitModel
+public import FV.Backend.Proof.IselEmitChk
+public import FV.Backend.Proof.IselEmitLast
+public import FV.Backend.Proof.IselEmitHand
+public import FV.Backend.Proof.IselEmitTab
+public import FV.Backend.Proof.IselShpDriver
+
+@[expose] public section
 
 /-!
 # Emission conditions of the ISLE lowering (V6c): the driver's calls, `IselEmit`

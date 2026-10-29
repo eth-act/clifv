@@ -1,6 +1,10 @@
-import FV.E2E.RegLevelOp
-import FV.E2E.RegLevelWrites
-import FV.E2E.RegLevelOpWrites
+module
+
+public import FV.E2E.RegLevelOp
+public import FV.E2E.RegLevelWrites
+public import FV.E2E.RegLevelOpWrites
+
+@[expose] public section
 
 /-!
 # Straight-line forms with their writes (A3, #412, slice F8b)

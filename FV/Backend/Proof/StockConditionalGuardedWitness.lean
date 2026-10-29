@@ -1,6 +1,10 @@
-import FV.Backend.Proof.StockTermAvailability
-import FV.Backend.Proof.StockConditionalGuardedValues
-import FV.Backend.Proof.StockConditionalBodyWitness
+module
+
+public import FV.Backend.Proof.StockTermAvailability
+public import FV.Backend.Proof.StockConditionalGuardedValues
+public import FV.Backend.Proof.StockConditionalBodyWitness
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.ConditionalValues.GuardedWitness
 open Backend.Proof Backend.Proof.Driver

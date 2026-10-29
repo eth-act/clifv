@@ -1,4 +1,9 @@
-import FV.Backend.Proof.IselFamAluBRot
+module
+
+public import FV.Backend.Proof.IselFamAluBRot
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarRotate
 open Backend.Proof
 set_option maxRecDepth 20000

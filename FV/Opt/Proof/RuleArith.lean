@@ -1,8 +1,12 @@
-import FV.Opt.Proof.RuleArithP1
-import FV.Opt.Proof.RuleArithP2
-import FV.Opt.Proof.RuleArithP3
-import FV.Opt.Proof.RuleArithP4
-import FV.Opt.Proof.RuleArithP5
+module
+
+public import FV.Opt.Proof.RuleArithP1
+public import FV.Opt.Proof.RuleArithP2
+public import FV.Opt.Proof.RuleArithP3
+public import FV.Opt.Proof.RuleArithP4
+public import FV.Opt.Proof.RuleArithP5
+
+@[expose] public section
 
 /-!
 # `opts/arithmetic.isle`: proven `simplify` rules

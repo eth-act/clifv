@@ -1,6 +1,10 @@
-import FV.E2E.LinkArmProphDet
-import FV.E2E.LinkArmProphThmWitness
-import FV.E2E.LinkArmUProgWitness
+module
+
+public import FV.E2E.LinkArmProphDet
+public import FV.E2E.LinkArmProphThmWitness
+public import FV.E2E.LinkArmUProgWitness
+
+@[expose] public section
 
 /-!
 # Witnesses for prophecy determinism (`FV/E2E/LinkArmProphDet.lean`)

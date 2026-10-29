@@ -1,6 +1,10 @@
-import FV.Backend.Proof.StockReturnABI
-import FV.Backend.Proof.StockBodyScanOrigin
-import FV.Backend.Proof.LowerSim
+module
+
+public import FV.Backend.Proof.StockReturnABI
+public import FV.Backend.Proof.StockBodyScanOrigin
+public import FV.Backend.Proof.LowerSim
+
+@[expose] public section
 
 /-! Derive implicit return request arity from successful original source
 execution, the original ABI signature condition and actual Stock lowering.

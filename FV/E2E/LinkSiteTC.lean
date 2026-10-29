@@ -1,8 +1,12 @@
-import FV.E2E.LinkCheck
-import FV.E2E.LinkCheckFast
-import FV.E2E.CalleeWith
-import FV.Link.DeadCleanupImage
-import FV.Backend.Proof.IselCtlCallF
+module
+
+public import FV.E2E.LinkCheck
+public import FV.E2E.LinkCheckFast
+public import FV.E2E.CalleeWith
+public import FV.Link.DeadCleanupImage
+public import FV.Backend.Proof.IselCtlCallF
+
+@[expose] public section
 
 /-! # The call-site checks with typed `try_call`s (S11e6, #419)
 

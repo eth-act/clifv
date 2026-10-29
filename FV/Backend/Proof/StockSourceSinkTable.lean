@@ -1,4 +1,9 @@
-import FV.Backend.Proof.StockNoOpportunityTable
+module
+
+public import FV.Backend.Proof.StockNoOpportunityTable
+
+@[expose] public section
+
 namespace Backend.Stock.Proof
 open Backend.Proof Backend.Proof.Cov Isle Isle.Interp Isle.Aarch64
 attribute [local irreducible] Isle.Aarch64.program

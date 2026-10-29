@@ -1,5 +1,9 @@
-import FV.Concurrency.ArmFootprint
-import FV.Concurrency.Armv8
+module
+
+public import FV.Concurrency.ArmFootprint
+public import FV.Concurrency.Armv8
+
+@[expose] public section
 
 /-!
 # Per-thread event semantics of the Arm model (T2d, #302)

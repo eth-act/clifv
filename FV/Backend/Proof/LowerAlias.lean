@@ -1,5 +1,9 @@
-import FV.Backend.Proof.LowerSpec
-import Std.Data.HashMap.Lemmas
+module
+
+public import FV.Backend.Proof.LowerSpec
+public import Std.Data.HashMap.Lemmas
+
+@[expose] public section
 
 /-!
 # Completeness of `lowerCheck`: alias resolution

@@ -1,4 +1,9 @@
-import FV.Backend.Proof.StockCmpNarrowSourceValues
+module
+
+public import FV.Backend.Proof.StockCmpNarrowSourceValues
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarCmp.NarrowSourceWitness
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 open Backend.Stock.Proof.ScalarCmp

@@ -1,6 +1,10 @@
-import FV.Backend.Proof.StockReturnContract
-import FV.Backend.Proof.PerEdgeSeq
-import FV.Backend.Proof.PerEdgePrepareSound
+module
+
+public import FV.Backend.Proof.StockReturnContract
+public import FV.Backend.Proof.PerEdgeSeq
+public import FV.Backend.Proof.PerEdgePrepareSound
+
+@[expose] public section
 
 namespace Backend.Stock.Proof
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

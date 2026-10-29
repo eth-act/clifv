@@ -1,4 +1,8 @@
-import FV.Concurrency.IselMemMain
+module
+
+public import FV.Concurrency.IselMemMain
+
+@[expose] public section
 
 /-!
 # Layer 2: isel with interference (T2h, #311, layer 2e)

@@ -1,5 +1,10 @@
-import FV.Backend.Proof.IselSzDefs
-import FV.Backend.Proof.IselCovTab
+module
+
+public import FV.Backend.Proof.IselSzDefs
+public import FV.Backend.Proof.IselCovTab
+public import FVTest.ModuleHeader
+
+@[expose] public section
 
 /-!
 # Generator of the V6c size cost table (`FV/Backend/Proof/IselSzTab.lean`)
@@ -193,5 +198,5 @@ def main (args : List String) : IO Unit := do
   let tab ← run "weight" actorW SzGen.handStmt SzGen.handBranch
   let tgt ← run "targets" actorT [] [1140]
   match args with
-  | [path] => IO.FS.writeFile path (SzGen.render tab tgt); IO.println s!"wrote {path}"
+  | [path] => IO.FS.writeFile path (Gen.moduleHeader (SzGen.render tab tgt)); IO.println s!"wrote {path}"
   | _ => pure ()

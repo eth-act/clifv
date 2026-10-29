@@ -1,5 +1,9 @@
-import FV.E2E.RegLevelCorrectU
-import FV.E2E.UnwindValueSem
+module
+
+public import FV.E2E.RegLevelCorrectU
+public import FV.E2E.UnwindValueSem
+
+@[expose] public section
 
 /-!
 # The register level of a callee trap (S9a, #33)

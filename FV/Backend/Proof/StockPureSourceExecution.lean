@@ -1,4 +1,8 @@
-import FV.Backend.Proof.StockArithmeticBodyRefines
+module
+
+public import FV.Backend.Proof.StockArithmeticBodyRefines
+
+@[expose] public section
 
 /-! Executable original-source runs supply complete pure body steps. -/
 namespace Backend.Stock.Proof.PureBody

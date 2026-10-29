@@ -1,4 +1,9 @@
-import FV.Backend.Proof.StockSelectZeroSourceValues
+module
+
+public import FV.Backend.Proof.StockSelectZeroSourceValues
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarSelect.ZeroSourceWitness
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 private def function : Clif.Function := {

@@ -1,5 +1,9 @@
-import FV.Backend.Proof.IselTermsLogicNot
-import FV.Backend.Proof.IselFamALUALogic
+module
+
+public import FV.Backend.Proof.IselTermsLogicNot
+public import FV.Backend.Proof.IselFamALUALogic
+
+@[expose] public section
 
 /-!
 # Term contract of `alu_rs_imm_logic` (term 566), and the `band`/`bor`/`bxor`-with-`bnot` root

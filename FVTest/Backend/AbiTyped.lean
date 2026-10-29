@@ -1,4 +1,8 @@
-import FV.Backend
+module
+
+public import FV.Backend
+
+@[expose] public section
 
 /-!
 The typed AAPCS64 placement of a function's own signature (S11e3, #238), on the lowering itself.

@@ -1,4 +1,8 @@
-import FV.E2E.RegLevelTwoRun
+module
+
+public import FV.E2E.RegLevelTwoRun
+
+@[expose] public section
 
 /-!
 # Two activations along a paired VCode run, from the entries (SEM1 #537, item (3))

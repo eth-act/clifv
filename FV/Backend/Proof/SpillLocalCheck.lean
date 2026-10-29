@@ -1,4 +1,8 @@
-import FV.Backend.Proof.SpillLocal
+module
+
+public import FV.Backend.Proof.SpillLocal
+
+@[expose] public section
 
 /-!
 # The checker's static checks accept the spill allocation of one instruction

@@ -1,7 +1,11 @@
-import FV.Backend.Proof.StockPrologueAllCode
-import FV.Backend.Proof.StockDiagnosticChecker
-import FV.Backend.Proof.StockPrologueAllDomain
-import FV.Backend.Proof.LowerComplete
+module
+
+public import FV.Backend.Proof.StockPrologueAllCode
+public import FV.Backend.Proof.StockDiagnosticChecker
+public import FV.Backend.Proof.StockPrologueAllDomain
+public import FV.Backend.Proof.LowerComplete
+
+@[expose] public section
 
 set_option autoImplicit false
 namespace Backend.Stock.Prologue.AllConfigurations

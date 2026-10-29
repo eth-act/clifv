@@ -1,4 +1,8 @@
-import FV.Backend.Proof.StockConstantDispatch
+module
+
+public import FV.Backend.Proof.StockConstantDispatch
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.ConstantComplete
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

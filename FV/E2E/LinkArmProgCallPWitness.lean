@@ -1,5 +1,9 @@
-import FV.E2E.LinkArmProgCallP
-import FV.E2E.LinkArmProphDetEWitness
+module
+
+public import FV.E2E.LinkArmProgCallP
+public import FV.E2E.LinkArmProphDetEWitness
+
+@[expose] public section
 
 /-!
 # Witnesses for `progCallP` (`FV/E2E/LinkArmProgCallP.lean`)

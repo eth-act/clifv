@@ -29,7 +29,11 @@ NZCV, TPIDR_EL0 and v0–v30.
 Lean then rebuilds each initial state from the echoed init record (so label-valued registers are
 the linked addresses), runs `Arm.stepi` once, and compares every field.
 -/
-import FV.Arm.Exec
+module
+
+public import FV.Arm.Exec
+
+@[expose] public section
 
 namespace Arm.Cosim
 

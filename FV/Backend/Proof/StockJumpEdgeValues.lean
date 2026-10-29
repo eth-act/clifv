@@ -1,4 +1,8 @@
-import FV.Backend.Proof.StockEdgeCode
+module
+
+public import FV.Backend.Proof.StockEdgeCode
+
+@[expose] public section
 
 /-! Compose actual returned VCode edge fields with source successor binding.
 The direct-original jump shape is a control-flow case; source scope/dominance

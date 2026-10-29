@@ -1,5 +1,9 @@
-import FV.E2E.BinCheck
-import FV.E2E.ActualPipelineCheck
+module
+
+public import FV.E2E.BinCheck
+public import FV.E2E.ActualPipelineCheck
+
+@[expose] public section
 
 /-! Actual emitted-artifact/ELF provenance. Reuses the existing ELF parser,
 relocation, data, symbol and byte checks; the code table is the actual pipeline

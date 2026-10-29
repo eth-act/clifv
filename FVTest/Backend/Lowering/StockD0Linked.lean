@@ -1,10 +1,14 @@
-import FV.Backend
-import FV.Link.Compile
-import FV.Link.DeadCleanupCompile
-import FV.Link.Placed
-import FV.Link.Ld.Spec
-import FV.E2E.SrcScopeDefs
-import FVTest.E2E.LinkProof
+module
+
+public import FV.Backend
+public import FV.Link.Compile
+public import FV.Link.DeadCleanupCompile
+public import FV.Link.Placed
+public import FV.Link.Ld.Spec
+public import FV.E2E.SrcScopeDefs
+public import FVTest.E2E.LinkProof
+
+@[expose] public section
 
 /-! A mixed linked program in the actual first production domain: a Stock
 one-block identity and a legacy caller. The ordinary Rust identity regression

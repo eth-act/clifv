@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockDemand
-import FV.Backend.Proof.IselCtlTerm
+module
+
+public import FV.Backend.Proof.StockDemand
+public import FV.Backend.Proof.IselCtlTerm
+
+@[expose] public section
 
 /-! The actual revised Stock return constructor. Return pins follow the source
 signature, including the implicit struct pointer in x8. Legacy contracts remain

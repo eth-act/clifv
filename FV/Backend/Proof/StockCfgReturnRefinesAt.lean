@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockCfgReturnRefines
-import FV.Backend.Proof.StockPerEdgeReturnContract
+module
+
+public import FV.Backend.Proof.StockCfgReturnRefines
+public import FV.Backend.Proof.StockPerEdgeReturnContract
+
+@[expose] public section
 
 /-! Original-block return composition without a single-block input restriction.
 The previous theorem and its interfaces remain unchanged. -/

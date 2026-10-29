@@ -1,10 +1,14 @@
-import FV.E2E.LinkScopeDefs
-import FV.E2E.EmitTotalIn
-import FV.E2E.LinkOwnGotLocal
-import FV.E2E.LinkOwnSegRange
-import FV.E2E.LinkOwnFrames
-import FV.E2E.LinkOwnRetsIsel
-import FV.E2E.SpillCheckAlloc
+module
+
+public import FV.E2E.LinkScopeDefs
+public import FV.E2E.EmitTotalIn
+public import FV.E2E.LinkOwnGotLocal
+public import FV.E2E.LinkOwnSegRange
+public import FV.E2E.LinkOwnFrames
+public import FV.E2E.LinkOwnRetsIsel
+public import FV.E2E.SpillCheckAlloc
+
+@[expose] public section
 
 /-! # Linking without the checker's verdict: input conditions + own outputs + linker (L2a)
 

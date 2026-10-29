@@ -4,18 +4,21 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Author(s): Alex Keizer
 -/
 -- Modified by fv-compiler-rust (2026): ported to Lean v4.34.1, module prefix FV.Arm, wrapped in namespace Arm.
-import Lean
-import Lean.Meta
+module
 
-import FV.Arm.Exec
-import FV.Arm.Tactics.Common
-import FV.Arm.Tactics.Attr
-import FV.Arm.Tactics.Sym.Common
-import FV.Arm.Tactics.Sym.ProgramInfo
-import FV.Arm.Tactics.Sym.AxEffects
-import FV.Arm.Tactics.Sym.LCtxSearch
-import FV.Arm.Tactics.Simp
+public import Lean
+public import Lean.Meta
 
+public import FV.Arm.Exec
+public import FV.Arm.Tactics.Common
+public import FV.Arm.Tactics.Attr
+public import FV.Arm.Tactics.Sym.Common
+public import FV.Arm.Tactics.Sym.ProgramInfo
+public import FV.Arm.Tactics.Sym.AxEffects
+public import FV.Arm.Tactics.Sym.LCtxSearch
+public import FV.Arm.Tactics.Simp
+
+@[expose] public section
 
 /-!
 This files defines the `SymContext` structure,

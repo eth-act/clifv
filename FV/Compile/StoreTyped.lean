@@ -1,4 +1,8 @@
-import FV.Compile.SubsetT
+module
+
+public import FV.Compile.SubsetT
+
+@[expose] public section
 
 /-!
 # Float stores store float values (S11e5 Stage C, slice 7)

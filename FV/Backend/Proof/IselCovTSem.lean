@@ -1,5 +1,9 @@
-import FV.Backend.Proof.IselCovTDom
-import FV.Backend.Proof.IselCovSem
+module
+
+public import FV.Backend.Proof.IselCovTDom
+public import FV.Backend.Proof.IselCovSem
+
+@[expose] public section
 
 /-!
 # Form coverage over float-capable contexts (typed V3): the meaning of the abstract values

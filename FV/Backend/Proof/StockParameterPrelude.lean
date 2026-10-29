@@ -1,4 +1,8 @@
-import FV.Backend.Proof.StockConditionalBodyRefines
+module
+
+public import FV.Backend.Proof.StockConditionalBodyRefines
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.ParameterCfg
 open Backend.Proof Backend.Proof.Driver Backend.Stock.Proof.ConditionalValues

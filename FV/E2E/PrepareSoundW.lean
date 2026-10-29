@@ -1,4 +1,8 @@
-import FV.Backend.Proof.PrepareSound
+module
+
+public import FV.Backend.Proof.PrepareSound
+
+@[expose] public section
 
 /-!
 # Soundness of the `prepare` validator for any world (SEM1, `docs/plans/uninit.md` §5.9)

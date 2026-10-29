@@ -1,5 +1,9 @@
-import FV.Backend.Proof.LowerShape
-import Std.Data.HashSet.Lemmas
+module
+
+public import FV.Backend.Proof.LowerShape
+public import Std.Data.HashSet.Lemmas
+
+@[expose] public section
 
 /-!
 # Soundness of the lowering validator (M7)

@@ -1,4 +1,8 @@
-import FV.E2E.SpillCheckAllocMono
+module
+
+public import FV.E2E.SpillCheckAllocMono
+
+@[expose] public section
 
 /-!
 # Completeness of `checkAlloc` (2): the fixpoint iteration converges and is accepted

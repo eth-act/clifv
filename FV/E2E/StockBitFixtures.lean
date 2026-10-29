@@ -1,4 +1,9 @@
-import FV.E2E.StockCastFixtures
+module
+
+public import FV.E2E.StockCastFixtures
+
+@[expose] public section
+
 namespace E2E.StockBitNIWitness
 open Backend.Stock.D0
 set_option autoImplicit false

@@ -4,10 +4,14 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Author(s): Shilpi Goel
 -/
 -- Modified by fv-compiler-rust (2026): ported to Lean v4.34.1, module prefix FV.Arm, wrapped in namespace Arm, LRAT-certificate `bv_check` proofs replaced by `bv_omega`/`bv_decide`.
-import FV.Arm.State
-import FV.Arm.Memory.Separate
-import Std.Tactic.BVDecide
-import FV.Arm.Tactics.BvOmegaBench
+module
+
+public import FV.Arm.State
+public import FV.Arm.Memory.Separate
+public import Std.Tactic.BVDecide
+public import FV.Arm.Tactics.BvOmegaBench
+
+@[expose] public section
 
 namespace Arm
 

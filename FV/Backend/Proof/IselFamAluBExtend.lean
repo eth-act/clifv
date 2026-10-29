@@ -1,5 +1,9 @@
-import FV.Backend.Proof.IselFamAluBMisc
-import FV.Backend.Proof.IselTermsAluB
+module
+
+public import FV.Backend.Proof.IselFamAluBMisc
+public import FV.Backend.Proof.IselTermsAluB
+
+@[expose] public section
 
 /-!
 # Family B: `uextend` (`lower.isle:1261`) and `sextend` (`lower.isle:1315`)

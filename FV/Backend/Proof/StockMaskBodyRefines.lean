@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockMaskBodyRecords
-import FV.Backend.Proof.StockScalarDivBodyRefines
+module
+
+public import FV.Backend.Proof.StockMaskBodyRecords
+public import FV.Backend.Proof.StockScalarDivBodyRefines
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.MaskBody
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

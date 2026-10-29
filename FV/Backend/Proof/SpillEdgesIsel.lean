@@ -1,4 +1,8 @@
-import FV.Backend.Proof.IselTermFactsRules
+module
+
+public import FV.Backend.Proof.IselTermFactsRules
+
+@[expose] public section
 
 /-!
 # The last instruction of a terminator's lowering (V4, the spill allocator's CFG facts)

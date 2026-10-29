@@ -1,4 +1,8 @@
-import FV.Opt.Proof.LegalSim
+module
+
+public import FV.Opt.Proof.LegalSim
+
+@[expose] public section
 
 /-!
 # The simulation steps of `Opt.Legal.check` with stepwise target runs (S10e, #232)

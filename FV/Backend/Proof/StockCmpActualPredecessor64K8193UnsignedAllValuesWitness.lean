@@ -1,7 +1,11 @@
-import FV.Backend.Proof.StockCmpActualDispatch
-import FV.Backend.Proof.StockCmpPredecessor64K8193DriverRuns
-import FV.Backend.Proof.StockCmpPredecessorUnsignedTransfer
-import FV.Backend.Proof.LowerSim
+module
+
+public import FV.Backend.Proof.StockCmpActualDispatch
+public import FV.Backend.Proof.StockCmpPredecessor64K8193DriverRuns
+public import FV.Backend.Proof.StockCmpPredecessorUnsignedTransfer
+public import FV.Backend.Proof.LowerSim
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.ScalarCmp.ActualPredecessor64K8193UnsignedAllValuesWitness
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

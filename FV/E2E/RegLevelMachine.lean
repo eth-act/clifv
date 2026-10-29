@@ -1,7 +1,11 @@
-import FV.E2E.Statement
-import FV.E2E.RegLevelRelax
-import FV.Backend.Proof.RegallocCSem
-import FV.Backend.Proof.RegallocFwd
+module
+
+public import FV.E2E.Statement
+public import FV.E2E.RegLevelRelax
+public import FV.Backend.Proof.RegallocCSem
+public import FV.Backend.Proof.RegallocFwd
+
+@[expose] public section
 
 /-!
 # The Arm machine of the register-level theorem (M6)

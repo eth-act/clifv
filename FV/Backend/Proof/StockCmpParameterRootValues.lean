@@ -1,6 +1,11 @@
-import FV.Backend.Proof.StockCmpParameterValues
-import FV.Backend.Proof.StockCmpSelectedCalls
-import FV.Backend.Proof.StockCmpOutput
+module
+
+public import FV.Backend.Proof.StockCmpParameterValues
+public import FV.Backend.Proof.StockCmpSelectedCalls
+public import FV.Backend.Proof.StockCmpOutput
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarCmp
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 /-- Actual original first-match comparison selection derives its emitter,

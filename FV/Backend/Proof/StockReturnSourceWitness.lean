@@ -1,8 +1,12 @@
-import FV.Backend.Proof.StockReturnAutomaticSource
-import FV.Backend.Proof.StockReturnRecordSource
-import FV.Backend.Proof.StockReturnDriverRuns
-import FV.Backend.Proof.StockReturnContract
-import FV.Backend.Proof.StockReturnVCode
+module
+
+public import FV.Backend.Proof.StockReturnAutomaticSource
+public import FV.Backend.Proof.StockReturnRecordSource
+public import FV.Backend.Proof.StockReturnDriverRuns
+public import FV.Backend.Proof.StockReturnContract
+public import FV.Backend.Proof.StockReturnVCode
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.ReturnSourceWitness
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64 ReturnFixture

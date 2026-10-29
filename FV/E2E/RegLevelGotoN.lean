@@ -1,6 +1,9 @@
-import FV.E2E.RegLevelGoto
-import FV.E2E.RegLevelNoCall
+module
 
+public import FV.E2E.RegLevelGoto
+public import FV.E2E.RegLevelNoCall
+
+@[expose] public section
 
 /-!
 # Block-ending branches with no call state (SEM1 #537, step 2k)

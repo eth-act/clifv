@@ -1,6 +1,10 @@
-import FV.Link.ActualImage
-import FV.Link.ExeInput
-import FV.E2E.ProductionCheck
+module
+
+public import FV.Link.ActualImage
+public import FV.Link.ExeInput
+public import FV.E2E.ProductionCheck
+
+@[expose] public section
 
 /-! The actual transactional result table drives placement, stack depth and
 all bytes written by the existing checked image writer. -/

@@ -1,5 +1,9 @@
-import FV.E2E.DeadCleanupWorldX
-import FV.E2E.DeadCleanupRegLevelW
+module
+
+public import FV.E2E.DeadCleanupWorldX
+public import FV.E2E.DeadCleanupRegLevelW
+
+@[expose] public section
 
 /-!
 # The dead-cleanup per-function theorems with the per-state facts and the writes (A3, #412, slice F8b)

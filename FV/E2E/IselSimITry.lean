@@ -1,4 +1,8 @@
-import FV.E2E.IselSimI
+module
+
+public import FV.E2E.IselSimI
+
+@[expose] public section
 
 /-!
 # The `try_call` step of the counted CLIF → VCode simulation (SEM1, `docs/plans/uninit.md` §5.9)

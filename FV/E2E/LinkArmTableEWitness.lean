@@ -1,5 +1,9 @@
-import FV.E2E.LinkArmTableECall
-import FV.E2E.LinkSlotSysWitness
+module
+
+public import FV.E2E.LinkArmTableECall
+public import FV.E2E.LinkSlotSysWitness
+
+@[expose] public section
 
 /-!
 # Witnesses for the prefix-closed machine table (`FV/E2E/LinkArmTableE.lean`, #700)

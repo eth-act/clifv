@@ -1,5 +1,9 @@
-import FV.Link.ActualImage
-import FV.E2E.ActualCompilerModes
+module
+
+public import FV.Link.ActualImage
+public import FV.E2E.ActualCompilerModes
+
+@[expose] public section
 
 /-! Feed the actual lowering callback's results into the existing checked byte
 writer, retaining function/oracle indices, allocation mode and source names.

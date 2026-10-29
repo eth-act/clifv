@@ -1,5 +1,9 @@
-import FV.Front.RawExeTrapT
-import FV.Link.DeadCleanupExeTrapTNB
+module
+
+public import FV.Front.RawExeTrapT
+public import FV.Link.DeadCleanupExeTrapTNB
+
+@[expose] public section
 
 /-!
 # The frontend bundle theorems with callee traps (`try_call` callees included) without the

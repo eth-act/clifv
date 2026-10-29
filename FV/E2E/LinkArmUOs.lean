@@ -1,4 +1,8 @@
-import FV.E2E.LinkArmUCallNI
+module
+
+public import FV.E2E.LinkArmUCallNI
+
+@[expose] public section
 
 /-!
 # The callee contracts of the linked machine with unwinding (S10f, #233)

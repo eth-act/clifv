@@ -1,6 +1,10 @@
-import FV.E2E.LinkWorldT
-import FV.E2E.FinalTC
-import FV.E2E.FinalTCF
+module
+
+public import FV.E2E.LinkWorldT
+public import FV.E2E.FinalTC
+public import FV.E2E.FinalTCF
+
+@[expose] public section
 
 /-! # The per-function theorem with the final world, typed `try_call`s (S11e6, #419)
 

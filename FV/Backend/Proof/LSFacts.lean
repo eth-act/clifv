@@ -1,5 +1,9 @@
-import FV.Backend.Proof.LSFn
-import FV.Backend.Proof.LSSeg
+module
+
+public import FV.Backend.Proof.LSFn
+public import FV.Backend.Proof.LSSeg
+
+@[expose] public section
 
 /-!
 # The validator's conditions as facts (V4b-3, #275)

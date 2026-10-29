@@ -1,6 +1,10 @@
-import FV.Backend.Proof.StockJumpDemand
-import FV.Backend.Proof.StockPerEdgeValues
-import FV.Backend.Proof.LowerShapeOkFacts
+module
+
+public import FV.Backend.Proof.StockJumpDemand
+public import FV.Backend.Proof.StockPerEdgeValues
+public import FV.Backend.Proof.LowerShapeOkFacts
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.Control
 open Backend.Proof Backend.Proof.Driver

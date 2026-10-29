@@ -1,4 +1,8 @@
-import FV.E2E.SemanticStackBound
+module
+
+public import FV.E2E.SemanticStackBound
+
+@[expose] public section
 
 set_option autoImplicit false
 namespace E2E.SemanticChecksWith

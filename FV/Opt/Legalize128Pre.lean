@@ -1,4 +1,8 @@
-import FV.Opt.Legalize128Pass
+module
+
+public import FV.Opt.Legalize128Pass
+
+@[expose] public section
 
 /-!
 # `Opt.Legalize128`: the decidable source domain (S6)

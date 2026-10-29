@@ -1,6 +1,10 @@
-import FV.Backend.Lowering.StockConditionalRankedCfg
-import FV.Backend.Proof.StockConditionalRankedDomain
-import FV.Backend.Proof.StockScalarCheck
+module
+
+public import FV.Backend.Lowering.StockConditionalRankedCfg
+public import FV.Backend.Proof.StockConditionalRankedDomain
+public import FV.Backend.Proof.StockScalarCheck
+
+@[expose] public section
 
 namespace Backend.Stock.ConditionalCfg
 open Backend.Proof Backend.Proof.Driver Backend.Stock.Proof Backend.Stock.Proof.ConditionalValues

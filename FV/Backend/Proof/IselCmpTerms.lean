@@ -1,4 +1,8 @@
-import FV.Backend.Proof.IselCmpBase
+module
+
+public import FV.Backend.Proof.IselCmpBase
+
+@[expose] public section
 
 /-!
 # Contracts of the small helper terms of the compare family

@@ -1,5 +1,9 @@
-import FV.Link.DeadCleanupExeTrap
-import FV.E2E.DeadCleanupExecTrapT
+module
+
+public import FV.Link.DeadCleanupExeTrap
+public import FV.E2E.DeadCleanupExecTrapT
+
+@[expose] public section
 
 /-! # The shipped executable compiler with callee traps, `try_call`s included (S9e, #408)
 

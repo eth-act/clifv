@@ -1,4 +1,8 @@
-import FV.Clif.Syntax
+module
+
+public import FV.Clif.Syntax
+
+@[expose] public section
 
 /-!
 # Entry parameters (an input condition of definite assignment)

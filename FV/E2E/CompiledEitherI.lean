@@ -1,5 +1,9 @@
-import FV.E2E.BackendWorldCleanupI
-import FV.E2E.CompiledEither
+module
+
+public import FV.E2E.BackendWorldCleanupI
+public import FV.E2E.CompiledEither
+
+@[expose] public section
 
 /-!
 # The counted per-function theorem for either artifact (SEM1, `docs/plans/uninit.md` §5.9)

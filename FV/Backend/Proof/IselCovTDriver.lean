@@ -1,8 +1,12 @@
-import FV.Backend.Proof.IselCovTModel
-import FV.Backend.Proof.IselCovTTab
-import FV.Backend.Proof.IselCovTCall
-import FV.Backend.Proof.IselCovDriver
-import FV.Backend.Proof.LowerContractT
+module
+
+public import FV.Backend.Proof.IselCovTModel
+public import FV.Backend.Proof.IselCovTTab
+public import FV.Backend.Proof.IselCovTCall
+public import FV.Backend.Proof.IselCovDriver
+public import FV.Backend.Proof.LowerContractT
+
+@[expose] public section
 
 /-!
 # Form coverage over float-capable contexts (typed V3): the driver's calls

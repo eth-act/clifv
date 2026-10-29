@@ -1,4 +1,8 @@
-import FV.Opt.Proof.RuleFloatArms
+module
+
+public import FV.Opt.Proof.RuleFloatArms
+
+@[expose] public section
 
 /-!
 # `opts/icmp.isle` (part 6): proven `simplify` rules

@@ -1,5 +1,9 @@
-import FV.E2E.Guarded
-import FV.E2E.DeadCleanupContracts
+module
+
+public import FV.E2E.Guarded
+public import FV.E2E.DeadCleanupContracts
+
+@[expose] public section
 
 namespace E2E
 open Backend Backend.Proof Backend.DeadCleanup

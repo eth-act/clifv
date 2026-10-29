@@ -1,5 +1,9 @@
-import FV.E2E.RegLevelTwoRunN
-import FV.E2E.RegLevelTwoRunTP
+module
+
+public import FV.E2E.RegLevelTwoRunN
+public import FV.E2E.RegLevelTwoRunTP
+
+@[expose] public section
 
 /-!
 # Two activations in lock-step up to a pair state, the lock step told the first run's segment

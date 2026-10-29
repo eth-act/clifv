@@ -1,6 +1,10 @@
-import FV.Backend.Proof.StockJumpEntryPrelude
-import FV.Backend.Proof.StockCfgReturnEdgeAt
-import FV.Backend.Proof.StockComputedCfg
+module
+
+public import FV.Backend.Proof.StockJumpEntryPrelude
+public import FV.Backend.Proof.StockCfgReturnEdgeAt
+public import FV.Backend.Proof.StockComputedCfg
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.TwoBlock
 open Backend.Proof Backend.Proof.Driver

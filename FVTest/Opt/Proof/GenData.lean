@@ -1,6 +1,12 @@
-import FV.Isle.Opt.Simplify
-import FV.Isle.Generated.Opt.Closure
-import Std.Data.HashSet
+module
+
+public import FV.Isle.Opt.Simplify
+public import FV.Isle.Generated.Opt.Closure
+public import Std.Data.HashSet
+public import FVTest.ModuleHeader
+
+@[expose] public section
+
 open Isle Isle.Opt
 
 /-! Generates `FV/Opt/Proof/RuleData.lean`
@@ -87,7 +93,7 @@ def main : IO Unit := do
   let internal := terms.filter fun t =>
     (program.term? t).any (·.hasInternalCtor) && !rootTerms.contains t
   let nrules := (internal.toList.map fun t => (program.rulesOf t).length).sum
-  IO.println s!"import FV.Isle.Opt.Simplify
+  IO.println (Gen.moduleHeader s!"import FV.Isle.Opt.Simplify
 import FV.Opt.Proof.RuleAttr
 
 /-!
@@ -113,7 +119,7 @@ def Term.extForm (t : Term) : SExpr :=
   match t.kind with
   | .decl _ _ (some (.internal f)) => f
   | _ => default
-"
+")
   IO.println "/-! ### Term kinds (`rfl`) -/\n"
   let mut fields : Array String := #[]
   let mut facts : Array String := #[]

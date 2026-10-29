@@ -1,5 +1,9 @@
-import FV.E2E.GotFlow
-import FV.E2E.DeadCleanupRealizes
+module
+
+public import FV.E2E.GotFlow
+public import FV.E2E.DeadCleanupRealizes
+
+@[expose] public section
 
 namespace E2E
 open Backend Backend.Proof Backend.DeadCleanup

@@ -1,6 +1,10 @@
-import FV.Backend.Proof.IselCtl
-import FV.Backend.Proof.IselMemBaseTI
-import FV.Backend.Proof.LowerContractTP
+module
+
+public import FV.Backend.Proof.IselCtl
+public import FV.Backend.Proof.IselMemBaseTI
+public import FV.Backend.Proof.LowerContractTP
+
+@[expose] public section
 
 /-!
 # Family Ctl over typed contexts: the call rules (S11e5 Stage C, slice 5)

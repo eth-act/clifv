@@ -1,6 +1,10 @@
-import FV.Backend.Proof.IselShpBase
-import FV.Backend.Proof.IselCtlTryInd
-import FV.Backend.Proof.LowerContract
+module
+
+public import FV.Backend.Proof.IselShpBase
+public import FV.Backend.Proof.IselCtlTryInd
+public import FV.Backend.Proof.LowerContract
+
+@[expose] public section
 
 /-!
 # Control shapes of the `try_call` rules (V4)

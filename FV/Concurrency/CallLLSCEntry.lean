@@ -1,7 +1,11 @@
-import FV.Concurrency.CallThreadWitness
-import FV.Concurrency.CallXClosedWitness
-import FV.Concurrency.RealizeWitnessRmw
-import FV.Concurrency.RealizeWitnessCas
+module
+
+public import FV.Concurrency.CallThreadWitness
+public import FV.Concurrency.CallXClosedWitness
+public import FV.Concurrency.RealizeWitnessRmw
+public import FV.Concurrency.RealizeWitnessCas
+
+@[expose] public section
 
 /-!
 # The ABI entry and the callee contract of the compiled `atomic_rmw` and `atomic_cas` (T2h, #311, calls)

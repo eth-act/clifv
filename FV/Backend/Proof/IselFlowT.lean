@@ -1,5 +1,9 @@
-import FV.Backend.Proof.IselFlow
-import FV.Backend.Proof.IselExclT
+module
+
+public import FV.Backend.Proof.IselFlow
+public import FV.Backend.Proof.IselExclT
+
+@[expose] public section
 
 /-!
 # What the ISLE lowering of one instruction can produce, over float-capable contexts

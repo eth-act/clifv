@@ -1,4 +1,8 @@
-import FV.E2E.RegLevelReadsIn
+module
+
+public import FV.E2E.RegLevelReadsIn
+
+@[expose] public section
 
 /-!
 # Aligning the segments of two realisations (SEM1 #537, item (3), route (a))

@@ -1,4 +1,8 @@
-import FV.Concurrency.ArmThread
+module
+
+public import FV.Concurrency.ArmThread
+
+@[expose] public section
 
 /-!
 # Precise footprints of every Arm instruction (T2h, #311, layer 1)

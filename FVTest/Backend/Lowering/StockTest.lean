@@ -1,7 +1,11 @@
-import FV.Backend
-import FV.Backend.Lowering.StockReplay
-import FV.Opt.Legalize128Pass
-import FVTest.Backend.StockConfig
+module
+
+public import FV.Backend
+public import FV.Backend.Lowering.StockReplay
+public import FV.Opt.Legalize128Pass
+public import FVTest.Backend.StockConfig
+
+@[expose] public section
 
 /-! Development differential harness. Stock lowering is not yet composed with
 the lowering proof. This harness validates allocation using the existing

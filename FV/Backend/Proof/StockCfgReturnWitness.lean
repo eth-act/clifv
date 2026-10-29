@@ -1,15 +1,19 @@
-import FV.Backend.Proof.StockCfgReturnEdge
-import FV.Backend.Proof.StockInheritedJumpDefined
-import FV.Backend.Proof.StockInheritedJump
-import FV.Backend.Proof.StockInheritedFixture
-import FV.Backend.Proof.StockScalarCheck
-import FV.Backend.Proof.StockEntrySeed
-import FV.Backend.Proof.LowerShapeOkFacts
-import FV.Backend.Proof.RefinesCSem
-import FV.E2E.RegLevelDriverSem
-import FV.Backend.Proof.StockJumpDemand
-import FV.Backend.Proof.StockPerEdgeValues
-import FV.Backend.Proof.StockSourceEdgeDFG
+module
+
+public import FV.Backend.Proof.StockCfgReturnEdge
+public import FV.Backend.Proof.StockInheritedJumpDefined
+public import FV.Backend.Proof.StockInheritedJump
+public import FV.Backend.Proof.StockInheritedFixture
+public import FV.Backend.Proof.StockScalarCheck
+public import FV.Backend.Proof.StockEntrySeed
+public import FV.Backend.Proof.LowerShapeOkFacts
+public import FV.Backend.Proof.RefinesCSem
+public import FV.E2E.RegLevelDriverSem
+public import FV.Backend.Proof.StockJumpDemand
+public import FV.Backend.Proof.StockPerEdgeValues
+public import FV.Backend.Proof.StockSourceEdgeDFG
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.CfgReturnWitness
 open InheritedWitness

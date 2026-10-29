@@ -1,5 +1,9 @@
-import FV.Clif
-import Std.Data.HashMap
+module
+
+public import FV.Clif
+public import Std.Data.HashMap
+
+@[expose] public section
 
 /-!
 # `Opt.Legalize128`: rewrite `i128` away before the backend (rust-route step 5)

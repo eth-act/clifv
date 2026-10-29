@@ -1,5 +1,9 @@
-import FV.Backend.Proof.IselCovTFam
-import FV.Backend.Proof.IselCovForm
+module
+
+public import FV.Backend.Proof.IselCovTFam
+public import FV.Backend.Proof.IselCovForm
+
+@[expose] public section
 
 /-!
 # Form coverage over float-capable contexts (typed V3): `covOk` is the abstract `FormOk`

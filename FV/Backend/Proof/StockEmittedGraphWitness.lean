@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockTryCfg
-import FV.Backend.Proof.StockOrderGraphWitness
+module
+
+public import FV.Backend.Proof.StockTryCfg
+public import FV.Backend.Proof.StockOrderGraphWitness
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.EmittedGraphWitness
 open Backend.Proof Backend.Proof.Driver

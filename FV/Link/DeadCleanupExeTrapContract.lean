@@ -1,5 +1,9 @@
-import FV.Link.DeadCleanupExeTrap
-import FV.E2E.EntryContract
+module
+
+public import FV.Link.DeadCleanupExeTrap
+public import FV.E2E.EntryContract
+
+@[expose] public section
 
 /-!
 # The shipped executable compiler with callee traps, under one runtime contract (A5, #411)

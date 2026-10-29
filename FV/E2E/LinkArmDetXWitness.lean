@@ -1,7 +1,11 @@
-import FV.E2E.LinkArmDetX
-import FV.E2E.LinkArmProphDetRWitness
-import FV.E2E.LinkArmStepLineWitness
-import FV.E2E.LinkArmProphReg
+module
+
+public import FV.E2E.LinkArmDetX
+public import FV.E2E.LinkArmProphDetRWitness
+public import FV.E2E.LinkArmStepLineWitness
+public import FV.E2E.LinkArmProphReg
+
+@[expose] public section
 
 /-!
 # Witnesses for the determinism clause up to the return address (`LinkArmDetX.lean`)

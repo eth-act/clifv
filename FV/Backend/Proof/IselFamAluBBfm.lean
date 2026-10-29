@@ -1,4 +1,8 @@
-import FV.Backend.Proof.IselFamAluBNotShift
+module
+
+public import FV.Backend.Proof.IselFamAluBNotShift
+
+@[expose] public section
 
 /-!
 # Family B: `sbfm`/`ubfm` (`lower.isle:1704`/`1707`)

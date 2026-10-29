@@ -1,4 +1,8 @@
-import FV.Backend.Proof.IselShpTTabData
+module
+
+public import FV.Backend.Proof.IselShpTTabData
+
+@[expose] public section
 
 /-!
 # Control shapes of the typed lowering (typed V4): rules of `lower`, group 41

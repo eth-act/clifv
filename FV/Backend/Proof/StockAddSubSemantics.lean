@@ -1,6 +1,11 @@
-import FV.Backend.Proof.StockAddSubPure
-import FV.Backend.Proof.StockLogicalLookthrough
-import FV.Backend.Proof.IselFamALUAExt
+module
+
+public import FV.Backend.Proof.StockAddSubPure
+public import FV.Backend.Proof.StockLogicalLookthrough
+public import FV.Backend.Proof.IselFamALUAExt
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarAddSub
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 set_option maxRecDepth 20000

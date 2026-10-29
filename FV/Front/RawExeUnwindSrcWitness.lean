@@ -1,5 +1,9 @@
-import FV.Front.RawExeUnwindSrc
-import FV.E2E.LegalProgXWitness
+module
+
+public import FV.Front.RawExeUnwindSrc
+public import FV.E2E.LegalProgXWitness
+
+@[expose] public section
 
 /-!
 # Non-vacuity of `Front.raw_legal_unwind` (S10f)

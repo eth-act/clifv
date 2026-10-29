@@ -1,6 +1,10 @@
-import FV.E2E.LegalUnwind
-import FV.E2E.DeadCleanupUnwindWitness
-import FV.Opt.Legalize128Pass
+module
+
+public import FV.E2E.LegalUnwind
+public import FV.E2E.DeadCleanupUnwindWitness
+public import FV.Opt.Legalize128Pass
+
+@[expose] public section
 
 /-!
 # Non-vacuity of `check_refinesX` and `backend_correct_legal_unwind` (S10f, #233)

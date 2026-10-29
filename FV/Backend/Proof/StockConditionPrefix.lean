@@ -1,4 +1,8 @@
-import FV.Backend.Proof.StockSelectNonzeroConditionShape
+module
+
+public import FV.Backend.Proof.StockSelectNonzeroConditionShape
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.ScalarSelect
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

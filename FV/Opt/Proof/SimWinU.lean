@@ -1,5 +1,9 @@
-import FV.Opt.Proof.SimWin
-import FV.Opt.Proof.SemSimU
+module
+
+public import FV.Opt.Proof.SimWin
+public import FV.Opt.Proof.SemSimU
+
+@[expose] public section
 
 /-!
 # Fresh-value windows with handler edges (S10f, #233)

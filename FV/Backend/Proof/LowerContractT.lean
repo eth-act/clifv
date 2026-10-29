@@ -1,9 +1,13 @@
-import FV.Backend.Proof.LowerContract
-import FV.Backend.Proof.DriverCheckTy
-import FV.Backend.Proof.IselExclT
-import FV.Backend.Proof.IselTermFactsTy
-import FV.Compile.StoreTyped
-import FV.Backend.Proof.InstScopeTF
+module
+
+public import FV.Backend.Proof.LowerContract
+public import FV.Backend.Proof.DriverCheckTy
+public import FV.Backend.Proof.IselExclT
+public import FV.Backend.Proof.IselTermFactsTy
+public import FV.Compile.StoreTyped
+public import FV.Backend.Proof.InstScopeTF
+
+@[expose] public section
 
 /-!
 # The typed lowering contracts (S11e5 Stage C, slice 7)

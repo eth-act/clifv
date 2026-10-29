@@ -1,4 +1,8 @@
-import FV.E2E.CallPostExists
+module
+
+public import FV.E2E.CallPostExists
+
+@[expose] public section
 
 /-!
 # Witness for `callPost_only_exists`

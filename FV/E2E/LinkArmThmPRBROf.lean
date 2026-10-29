@@ -1,8 +1,12 @@
-import FV.E2E.LinkArmStage2Y
-import FV.E2E.BackendWorldPRGY
-import FV.E2E.LinkArmThmPRBR
-import FV.E2E.LinkArmProgCallPRBRL
-import FV.E2E.LinkPlaceBReach
+module
+
+public import FV.E2E.LinkArmStage2Y
+public import FV.E2E.BackendWorldPRGY
+public import FV.E2E.LinkArmThmPRBR
+public import FV.E2E.LinkArmProgCallPRBRL
+public import FV.E2E.LinkPlaceBReach
+
+@[expose] public section
 
 /-!
 # The induction step of `ThmPRBRL` from the pipeline (SEM1 #537, #680 (3), `thmPRBRL_of`)

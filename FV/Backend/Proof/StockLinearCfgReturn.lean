@@ -1,6 +1,10 @@
-import FV.Backend.Proof.StockLinearCfgDemand
-import FV.Backend.Proof.StockCfgJumpReturnAt
-import FV.Backend.Proof.StockJumpEntryPrelude
+module
+
+public import FV.Backend.Proof.StockLinearCfgDemand
+public import FV.Backend.Proof.StockCfgJumpReturnAt
+public import FV.Backend.Proof.StockJumpEntryPrelude
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.LinearCfg
 open Backend.Proof Backend.Proof.Driver

@@ -1,4 +1,8 @@
-import FV.Opt.Proof.CompleteSimpRules
+module
+
+public import FV.Opt.Proof.CompleteSimpRules
+
+@[expose] public section
 
 /-!
 # Completeness of simplify: skeleton statements and terminators

@@ -1,5 +1,9 @@
-import FV.Concurrency.CallLoadFull
-import FV.Concurrency.CallResumeQ
+module
+
+public import FV.Concurrency.CallLoadFull
+public import FV.Concurrency.CallResumeQ
+
+@[expose] public section
 
 /-!
 # The compiled caller's whole run through the compiled `atomic_load` (T2j follow-up, #473)

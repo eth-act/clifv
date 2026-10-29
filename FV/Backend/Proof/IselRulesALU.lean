@@ -1,4 +1,8 @@
-import FV.Backend.Proof.IselRules
+module
+
+public import FV.Backend.Proof.IselRules
+
+@[expose] public section
 
 /-!
 # Forward interpreter lemmas for the two-register ALU root rules

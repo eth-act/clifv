@@ -1,4 +1,8 @@
-import FV.Unw.EhFrame
+module
+
+public import FV.Unw.EhFrame
+
+@[expose] public section
 
 /-!
 # How the unwinder finds a function's FDE: `.eh_frame_hdr` (S10f)

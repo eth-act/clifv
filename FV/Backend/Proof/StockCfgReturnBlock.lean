@@ -1,6 +1,10 @@
-import FV.Backend.Proof.StockCfgReturnRefines
-import FV.Backend.Proof.StockOriginalBlockOrigin
-import FV.Backend.Proof.StockMaskBlockRefines
+module
+
+public import FV.Backend.Proof.StockCfgReturnRefines
+public import FV.Backend.Proof.StockOriginalBlockOrigin
+public import FV.Backend.Proof.StockMaskBlockRefines
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.CfgReturn
 open Backend.Proof Backend.Proof.Driver

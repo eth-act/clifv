@@ -1,4 +1,8 @@
-import FV.Backend.Proof.StockSourceAliasRank
+module
+
+public import FV.Backend.Proof.StockSourceAliasRank
+
+@[expose] public section
 
 /-! Locate producing scan records for aliases installed on actual source mappings. -/
 namespace Backend.Stock.Proof

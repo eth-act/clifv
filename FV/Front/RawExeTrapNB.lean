@@ -1,5 +1,9 @@
-import FV.Front.RawExeTrap
-import FV.Link.DeadCleanupExeTrapNB
+module
+
+public import FV.Front.RawExeTrap
+public import FV.Link.DeadCleanupExeTrapNB
+
+@[expose] public section
 
 /-!
 # The frontend bundle theorems with callee traps without the memory-bound premise (A2/B1)

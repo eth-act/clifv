@@ -1,7 +1,11 @@
-import FV.Backend.Proof.PerEdgePrepareOuterFacts
-import FV.Backend.Proof.PerEdgePrepareFilterFacts
-import FV.Backend.Proof.PerEdgePrepareOrderFacts
-import FV.Backend.Proof.PerEdgePrepareLoopWitness
+module
+
+public import FV.Backend.Proof.PerEdgePrepareOuterFacts
+public import FV.Backend.Proof.PerEdgePrepareFilterFacts
+public import FV.Backend.Proof.PerEdgePrepareOrderFacts
+public import FV.Backend.Proof.PerEdgePrepareLoopWitness
+
+@[expose] public section
 
 namespace Backend.Proof.PerEdgePrepOuterWitness
 open Backend Backend.Proof.PerEdgePrep

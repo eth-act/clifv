@@ -1,4 +1,8 @@
-import Lean
+module
+
+public import Lean
+
+@[expose] public section
 
 /-!
 # Simp sets for the mid-end rule proofs

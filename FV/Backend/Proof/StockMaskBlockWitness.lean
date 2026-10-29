@@ -1,10 +1,14 @@
-import FV.Backend.Proof.StockMaskBlockRefines
-import FV.Backend.Proof.StockQuietBlockWitness
-import FV.Backend.Proof.StockScalarCheck
-import FV.Backend.Proof.StockEntryPrelude
-import FV.Backend.Proof.MemRefines
-import FV.Backend.Proof.RefinesCSem
-import FV.E2E.RegLevelDriverSem
+module
+
+public import FV.Backend.Proof.StockMaskBlockRefines
+public import FV.Backend.Proof.StockQuietBlockWitness
+public import FV.Backend.Proof.StockScalarCheck
+public import FV.Backend.Proof.StockEntryPrelude
+public import FV.Backend.Proof.MemRefines
+public import FV.Backend.Proof.RefinesCSem
+public import FV.E2E.RegLevelDriverSem
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.MaskBlockWitness
 open Backend.Proof Backend.Proof.Driver

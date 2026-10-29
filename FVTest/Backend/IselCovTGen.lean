@@ -1,4 +1,9 @@
-import FV.Backend.Proof.IselCovTFns
+module
+
+public import FV.Backend.Proof.IselCovTFns
+public import FVTest.ModuleHeader
+
+@[expose] public section
 
 /-!
 # Generator of the typed V3 coverage summary table (`FV/Backend/Proof/IselCovTTab*.lean`)
@@ -466,5 +471,5 @@ def main (args : List String) : IO UInt32 := do
       (name, i, (ne + envChunk - 1) / envChunk)
   IO.println s!"heavy {heavyN}"
   for (name, content) in renderAll tab ln bn heavyN do
-    IO.FS.writeFile (path ++ "/" ++ name) content
+    IO.FS.writeFile (path ++ "/" ++ name) (Gen.moduleHeader content)
   return (if allOk && term && br then 0 else 1)

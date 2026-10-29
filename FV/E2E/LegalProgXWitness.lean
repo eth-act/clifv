@@ -1,6 +1,10 @@
-import FV.E2E.LegalProgX
-import FV.E2E.LegalUnwindWitness
-import FV.E2E.NonVacuityLegalProgram
+module
+
+public import FV.E2E.LegalProgX
+public import FV.E2E.LegalUnwindWitness
+public import FV.E2E.NonVacuityLegalProgram
+
+@[expose] public section
 
 /-!
 # Non-vacuity of `legalProg_refinesX` (S10f)

@@ -1,5 +1,9 @@
-import FV.E2E.LinkArmProph
-import FV.Backend.Proof.VCodeSemI
+module
+
+public import FV.E2E.LinkArmProph
+public import FV.Backend.Proof.VCodeSemI
+
+@[expose] public section
 
 /-!
 # The linking statement with the prophecy-indexed call contract (SEM1 step 2, `docs/plans/uninit.md` §5.4)

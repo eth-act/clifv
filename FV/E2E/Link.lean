@@ -1,5 +1,9 @@
-import FV.E2E.Final
-import FV.E2E.LinkClif
+module
+
+public import FV.E2E.Final
+public import FV.E2E.LinkClif
+
+@[expose] public section
 
 /-! # Linking: the end-to-end theorem against the whole-program CLIF semantics
 

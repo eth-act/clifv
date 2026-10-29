@@ -1,5 +1,9 @@
-import FV.Backend.Encode
-import FV.Backend.Unwind
+module
+
+public import FV.Backend.Encode
+public import FV.Backend.Unwind
+
+@[expose] public section
 
 /-!
 # ELF64 relocatable object writer (AArch64, little-endian)

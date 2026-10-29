@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockPureHelperTransport
-import FV.Backend.Proof.StockBmaskHelper
+module
+
+public import FV.Backend.Proof.StockPureHelperTransport
+public import FV.Backend.Proof.StockBmaskHelper
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.ScalarMask
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

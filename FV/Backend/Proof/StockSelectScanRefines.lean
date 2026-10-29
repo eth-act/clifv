@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockSourceDFG
-import FV.Backend.Proof.StockSelectOriginalSourceValues
+module
+
+public import FV.Backend.Proof.StockSourceDFG
+public import FV.Backend.Proof.StockSelectOriginalSourceValues
+
+@[expose] public section
 
 /-! Discharge actual select-record scan obligations, carrying the source
 position, restricted DFG, demanded values and memory/world relation together. -/

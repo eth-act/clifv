@@ -1,5 +1,9 @@
-import FV.Concurrency.CallRetLink
-import FV.Concurrency.LinkedMachineWitness
+module
+
+public import FV.Concurrency.CallRetLink
+public import FV.Concurrency.LinkedMachineWitness
+
+@[expose] public section
 
 /-!
 # Witness: the return end on the linked machine (#473, step (4))

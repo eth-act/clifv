@@ -1,4 +1,8 @@
-import FV.Concurrency.RealizeWitnessLoad
+module
+
+public import FV.Concurrency.RealizeWitnessLoad
+
+@[expose] public section
 
 /-!
 # `Realizes` on a run of compiled code through its `stlr` (T2l, #311)

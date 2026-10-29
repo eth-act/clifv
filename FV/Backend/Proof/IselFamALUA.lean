@@ -1,4 +1,8 @@
-import FV.Backend.Proof.IselFamily
+module
+
+public import FV.Backend.Proof.IselFamily
+
+@[expose] public section
 
 /-!
 # Family A (binary ALU with operand look-through): generic lemmas

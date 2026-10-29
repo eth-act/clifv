@@ -1,6 +1,10 @@
-import FV.Link.ExeT
-import FV.Link.DeadCleanupExeT
-import FVTest.Link.DeadCleanupWitness
+module
+
+public import FV.Link.ExeT
+public import FV.Link.DeadCleanupExeT
+public import FVTest.Link.DeadCleanupWitness
+
+@[expose] public section
 
 /-! Non-vacuity of the typed executable theorems (S11e5 Stage C, slice 8).
 

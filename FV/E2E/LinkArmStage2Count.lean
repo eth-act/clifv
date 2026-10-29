@@ -1,4 +1,8 @@
-import FV.E2E.LinkArmCountStep
+module
+
+public import FV.E2E.LinkArmCountStep
+
+@[expose] public section
 
 /-!
 # The oracle at a call, and one call of the count invariant (SEM1 #537, #680 (3), stage 2 glue)

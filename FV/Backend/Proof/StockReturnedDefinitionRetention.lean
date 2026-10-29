@@ -1,6 +1,10 @@
-import FV.Backend.Proof.StockDemandedScan
-import FV.Backend.Proof.StockDivReturnDemand
-import FV.Backend.Proof.StockDemandExtent
+module
+
+public import FV.Backend.Proof.StockDemandedScan
+public import FV.Backend.Proof.StockDivReturnDemand
+public import FV.Backend.Proof.StockDemandExtent
+
+@[expose] public section
 
 /-! The original return request protects a returned definition through every
 intervening scan, removing the final-instruction restriction on returned division. -/

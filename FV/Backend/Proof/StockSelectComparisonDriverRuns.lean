@@ -1,5 +1,10 @@
-import FV.Backend.Proof.StockSelectOriginalSourceValues
-import FV.Backend.Proof.StockSelectScalarDriverRuns
+module
+
+public import FV.Backend.Proof.StockSelectOriginalSourceValues
+public import FV.Backend.Proof.StockSelectScalarDriverRuns
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarSelect.ComparisonDriver
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 set_option maxRecDepth 20000

@@ -1,6 +1,10 @@
-import FV.Front.RawExeUnwindRen
-import FV.E2E.LegalProgX
-import FV.Link.DeadCleanupExeSource
+module
+
+public import FV.Front.RawExeUnwindRen
+public import FV.E2E.LegalProgX
+public import FV.Link.DeadCleanupExeSource
+
+@[expose] public section
 
 /-!
 # The exceptional edges on cg_clif's program, with `i128` (S10f)

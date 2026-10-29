@@ -1,5 +1,9 @@
-import FV.Concurrency.RealizeWitnessCas
-import FV.Concurrency.CallLoadWitness
+module
+
+public import FV.Concurrency.RealizeWitnessCas
+public import FV.Concurrency.CallLoadWitness
+
+@[expose] public section
 
 /-!
 # `atomic_cas` storing a new value: `Realizes` on the whole run (T2j follow-up, #473)

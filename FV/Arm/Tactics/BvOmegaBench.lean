@@ -9,11 +9,15 @@ This module implements `bv_omega_bench`, which writes benchmarking results of `b
 into a user-defined file. This is used for extracting out calls to `bv_omega` that are slow,
 and allows us to send bug reports to the Lean developers.
 -/
-import FV.Arm.Tactics.Attr
-import Lean
-import Lean.Elab.Tactic.Omega.Frontend
-import Lean.Elab.Tactic.Omega
-import FV.Arm.Tactics.Simp
+module
+
+public import FV.Arm.Tactics.Attr
+public import Lean
+public import Lean.Elab.Tactic.Omega.Frontend
+public import Lean.Elab.Tactic.Omega
+public import FV.Arm.Tactics.Simp
+
+@[expose] public section
 
 namespace Arm
 

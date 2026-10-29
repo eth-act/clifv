@@ -1,5 +1,9 @@
-import FV.E2E.DeadCleanupTrapCallTry
-import FV.E2E.DeadCleanupTrapCallWitness
+module
+
+public import FV.E2E.DeadCleanupTrapCallTry
+public import FV.E2E.DeadCleanupTrapCallWitness
+
+@[expose] public section
 
 /-!
 # Non-vacuity of `backend_correct_final_cleanup_trapcallT` (S9b, #375)

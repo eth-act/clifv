@@ -1,5 +1,9 @@
-import FV.E2E.LinkArmStepDet
-import FV.E2E.ArmGprFoot
+module
+
+public import FV.E2E.LinkArmStepDet
+public import FV.E2E.ArmGprFoot
+
+@[expose] public section
 
 /-!
 # One machine step from two states equal but for `x30` (SEM1, `docs/plans/uninit.md` §5.8 (1))

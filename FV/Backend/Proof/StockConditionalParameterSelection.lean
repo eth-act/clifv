@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockConditionalCalls
-import FV.Backend.Proof.StockNamedBranchTargets
+module
+
+public import FV.Backend.Proof.StockConditionalCalls
+public import FV.Backend.Proof.StockNamedBranchTargets
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.ParameterBranch
 open Backend.Proof Backend.Proof.Driver Backend.Proof.Cov Isle Isle.Interp Isle.Aarch64

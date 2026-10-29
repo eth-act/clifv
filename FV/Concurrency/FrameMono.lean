@@ -1,4 +1,8 @@
-import FV.Concurrency.PrepThread
+module
+
+public import FV.Concurrency.PrepThread
+
+@[expose] public section
 
 /-!
 # Larger frame sets give sub-semantics (T2h, #311, layer 2: finding 3)

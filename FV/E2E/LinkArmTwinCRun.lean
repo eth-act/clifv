@@ -1,5 +1,9 @@
-import FV.E2E.LinkArmTwinCLock
-import FV.E2E.BackendTwoRunNI
+module
+
+public import FV.E2E.LinkArmTwinCLock
+public import FV.E2E.BackendTwoRunNI
+
+@[expose] public section
 
 /-!
 # The two-run lock at the link, as call-restricted twins (SEM1 #537, #713)

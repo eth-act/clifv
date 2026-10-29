@@ -1,4 +1,8 @@
-import FV.Backend.Proof.IselShpBase
+module
+
+public import FV.Backend.Proof.IselShpBase
+
+@[expose] public section
 
 /-!
 # Totality of the ISLE interpreter on total expressions

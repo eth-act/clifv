@@ -1,4 +1,8 @@
-import FV.Compile.SubsetTC
+module
+
+public import FV.Compile.SubsetTC
+
+@[expose] public section
 
 /-!
 # The typed scope with the proven float operations (S11f, #35)

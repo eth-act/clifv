@@ -1,6 +1,10 @@
-import FV.Backend.Proof.IselCtlCallRules
-import FV.Backend.Proof.IselCtlUnmatch
-import FV.Backend.Proof.TryRegs
+module
+
+public import FV.Backend.Proof.IselCtlCallRules
+public import FV.Backend.Proof.IselCtlUnmatch
+public import FV.Backend.Proof.TryRegs
+
+@[expose] public section
 
 /-!
 # Family Ctl: the `try_call` rules (the normal return)

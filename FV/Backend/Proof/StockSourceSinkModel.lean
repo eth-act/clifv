@@ -1,7 +1,11 @@
-import FV.Backend.Proof.StockCoverageInvariant
-import FV.Backend.Proof.StockCoverageModel
-import FV.Backend.Proof.StockSourceSinkTable
-import FV.Backend.Proof.StockSinkFrame
+module
+
+public import FV.Backend.Proof.StockCoverageInvariant
+public import FV.Backend.Proof.StockCoverageModel
+public import FV.Backend.Proof.StockSourceSinkTable
+public import FV.Backend.Proof.StockSinkFrame
+
+@[expose] public section
 
 /-! Real source-instruction sink provenance instantiates the generic coverage
 invariant. Terminator placeholders cannot be produced as sink targets. -/

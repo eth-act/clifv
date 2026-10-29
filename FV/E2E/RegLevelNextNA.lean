@@ -1,5 +1,9 @@
-import FV.E2E.RegLevelFRFree
-import FV.E2E.RegLevelNextNR
+module
+
+public import FV.E2E.RegLevelFRFree
+public import FV.E2E.RegLevelNextNR
+
+@[expose] public section
 
 /-!
 # `trapIf` that falls through, at a witness (SEM1 #537, item (3), route (a))

@@ -1,4 +1,8 @@
-import FV.E2E.LinkArmProphThm
+module
+
+public import FV.E2E.LinkArmProphThm
+
+@[expose] public section
 
 /-!
 # Prophecy determinism: transfer of a prophecy along a lock-step run (SEM1 #537, step 2m)

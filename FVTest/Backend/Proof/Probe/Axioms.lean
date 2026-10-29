@@ -1,5 +1,9 @@
-import FV.Backend.Proof.IselProbe
-import FV.Backend.Proof.IselFamilyALU
+module
+
+public import FV.Backend.Proof.IselProbe
+public import FV.Backend.Proof.IselFamilyALU
+
+@[expose] public section
 
 /-! Axiom audit of the isel proofs (`docs/contracts/backend-proof.md`). -/
 

@@ -1,5 +1,9 @@
-import FV.Backend.Proof.LowerLoopRun
-import FV.Backend.Proof.DriverCheckTy
+module
+
+public import FV.Backend.Proof.LowerLoopRun
+public import FV.Backend.Proof.DriverCheckTy
+
+@[expose] public section
 
 /-!
 # `lowerFunction`'s statement and terminator loops, typed (S11e5 Stage C, slice 3)

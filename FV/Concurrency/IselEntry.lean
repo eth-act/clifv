@@ -1,4 +1,8 @@
-import FV.Concurrency.IselRefines
+module
+
+public import FV.Concurrency.IselRefines
+
+@[expose] public section
 
 /-!
 # Layer 2 from the function's entry (T2h, #311, layer 2e)

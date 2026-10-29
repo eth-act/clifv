@@ -1,5 +1,9 @@
-import FV.Backend.Lowering.StockScalar
-import FV.Backend.StockLogicalCheck
+module
+
+public import FV.Backend.Lowering.StockScalar
+public import FV.Backend.StockLogicalCheck
+
+@[expose] public section
 
 namespace Backend.Stock.Scalar
 open Backend.Proof.Driver

@@ -1,4 +1,8 @@
-import FV.Link.Image
+module
+
+public import FV.Link.Image
+
+@[expose] public section
 
 /-! # The checks of rust-lld's output (L2b)
 

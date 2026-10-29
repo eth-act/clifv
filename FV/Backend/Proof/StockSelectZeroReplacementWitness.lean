@@ -1,4 +1,9 @@
-import FV.Backend.Proof.StockSelectZeroReplacementResolved
+module
+
+public import FV.Backend.Proof.StockSelectZeroReplacementResolved
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarSelect.ZeroReplacementWitness
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 private def aliases : Array (Option Nat) := #[some 1,none,some 3,none,some 5,none]

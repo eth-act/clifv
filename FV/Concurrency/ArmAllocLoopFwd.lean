@@ -1,5 +1,9 @@
-import FV.Concurrency.ArmAllocLoop
-import FV.Concurrency.ArmAllocFwd
+module
+
+public import FV.Concurrency.ArmAllocLoop
+public import FV.Concurrency.ArmAllocFwd
+
+@[expose] public section
 
 /-!
 # Precise runs through the `atomic_rmw` loop, forward (T2m, #311)

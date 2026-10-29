@@ -1,4 +1,8 @@
-import FV.E2E.RegLevelCorrectP
+module
+
+public import FV.E2E.RegLevelCorrectP
+
+@[expose] public section
 
 /-!
 # The register-level theorem with the register prophecy (SEM1 #537, step 2r)

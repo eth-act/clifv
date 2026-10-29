@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockJumpDemand
-import FV.Backend.Proof.StockDemandMono
+module
+
+public import FV.Backend.Proof.StockJumpDemand
+public import FV.Backend.Proof.StockDemandMono
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.Control
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

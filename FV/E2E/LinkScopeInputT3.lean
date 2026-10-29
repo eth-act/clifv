@@ -1,9 +1,13 @@
-import FV.E2E.LinkScopeInputDefsT3
-import FV.E2E.LinkScopeCtlT2
-import FV.E2E.LinkScopeInputCleanupT
-import FV.E2E.LinkScopeIntT
-import FV.E2E.EmitCondsT
-import FV.Backend.Proof.IselPrgDriverT
+module
+
+public import FV.E2E.LinkScopeInputDefsT3
+public import FV.E2E.LinkScopeCtlT2
+public import FV.E2E.LinkScopeInputCleanupT
+public import FV.E2E.LinkScopeIntT
+public import FV.E2E.EmitCondsT
+public import FV.Backend.Proof.IselPrgDriverT
+
+@[expose] public section
 
 /-!
 # The typed input conditions without the run-time decider: the checks are theorems (S11, #35)

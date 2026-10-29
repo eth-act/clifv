@@ -1,5 +1,9 @@
-import FV.Link.OptExeUnwind
-import FV.Link.ExeUnwindExec
+module
+
+public import FV.Link.OptExeUnwind
+public import FV.Link.ExeUnwindExec
+
+@[expose] public section
 
 /-!
 # The optimising executable compiler on the exceptional edges, on the executable's bytes (S10g)

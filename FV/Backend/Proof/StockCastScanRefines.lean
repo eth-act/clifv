@@ -1,5 +1,10 @@
-import FV.Backend.Proof.StockShiftScanRefines
-import FV.Backend.Proof.StockCastCompleteSourceTransfer
+module
+
+public import FV.Backend.Proof.StockShiftScanRefines
+public import FV.Backend.Proof.StockCastCompleteSourceTransfer
+
+@[expose] public section
+
 namespace Backend.Stock.Proof
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 set_option autoImplicit false

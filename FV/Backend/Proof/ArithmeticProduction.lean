@@ -1,5 +1,9 @@
-import FV.Backend.ArithmeticProduction
-import FV.Backend.Proof.StockArithmeticCheck
+module
+
+public import FV.Backend.ArithmeticProduction
+public import FV.Backend.Proof.StockArithmeticCheck
+
+@[expose] public section
 
 namespace Backend
 set_option autoImplicit false

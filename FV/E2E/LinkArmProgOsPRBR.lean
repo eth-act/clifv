@@ -1,5 +1,9 @@
-import FV.E2E.LinkArmProgOsPRB
-import FV.E2E.LinkArmProgCallPRBR
+module
+
+public import FV.E2E.LinkArmProgOsPRB
+public import FV.E2E.LinkArmProgCallPRBR
+
+@[expose] public section
 
 /-!
 # The call contracts of call number `n` on `ThmPRBR` (SEM1 #537, #680 (3), #687)

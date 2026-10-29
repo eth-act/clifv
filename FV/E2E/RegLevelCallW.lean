@@ -1,7 +1,11 @@
-import FV.E2E.RegLevelCall
-import FV.E2E.RegLevelNextW
-import FV.E2E.RegLevelOpW
-import FV.E2E.RegLevelWrites
+module
+
+public import FV.E2E.RegLevelCall
+public import FV.E2E.RegLevelNextW
+public import FV.E2E.RegLevelOpW
+public import FV.E2E.RegLevelWrites
+
+@[expose] public section
 
 /-!
 # Calls and symbol addresses on the machine with their writes (A3, #412, slice F8b)

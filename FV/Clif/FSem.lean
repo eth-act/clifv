@@ -1,5 +1,9 @@
-import FV.Clif.Syntax
-import FV.Float
+module
+
+public import FV.Clif.Syntax
+public import FV.Float
+
+@[expose] public section
 
 /-!
 # CLIF float semantics (`Clif.FSem`)

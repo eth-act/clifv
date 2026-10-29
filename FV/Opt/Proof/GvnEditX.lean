@@ -1,4 +1,8 @@
-import FV.Opt.Proof.SimWin
+module
+
+public import FV.Opt.Proof.SimWin
+
+@[expose] public section
 
 /-!
 # The edit validator is sound, `call_indirect` and `try_call` included (`Opt.editOk_simX`)

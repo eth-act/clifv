@@ -1,6 +1,10 @@
-import FV.E2E.RegLevelEmit
-import FV.Backend.Proof.RelaxLayout
-import FV.Backend.SpillAlloc
+module
+
+public import FV.E2E.RegLevelEmit
+public import FV.Backend.Proof.RelaxLayout
+public import FV.Backend.SpillAlloc
+
+@[expose] public section
 
 /-!
 # The size of the spill allocation's code (`E2E.emitFunc_spill_size`)

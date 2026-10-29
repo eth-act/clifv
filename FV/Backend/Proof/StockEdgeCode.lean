@@ -1,6 +1,10 @@
-import FV.Backend.Proof.StockBlockCode
-import FV.Backend.Proof.StockEdgeValues
-import FV.Backend.Proof.StockBranchArgumentCode
+module
+
+public import FV.Backend.Proof.StockBlockCode
+public import FV.Backend.Proof.StockEdgeValues
+public import FV.Backend.Proof.StockBranchArgumentCode
+
+@[expose] public section
 
 /-! Actual original-node parameter fields after assembly and final resolution.
 This connects the computed source-copy relation to returned VCode metadata. -/

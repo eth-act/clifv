@@ -1,5 +1,9 @@
-import FV.Opt.Proof.LegalBase
-import FV.Clif.FloatFacts
+module
+
+public import FV.Opt.Proof.LegalBase
+public import FV.Clif.FloatFacts
+
+@[expose] public section
 
 /-!
 # `Clif.evalInst` facts for the legalisation simulation

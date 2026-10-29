@@ -1,5 +1,9 @@
-import FV.E2E.RegLevelJT
-import FV.Backend.Proof.LoopRun
+module
+
+public import FV.E2E.RegLevelJT
+public import FV.Backend.Proof.LoopRun
+
+@[expose] public section
 
 /-!
 # The LL/SC loops on the machine (M6)

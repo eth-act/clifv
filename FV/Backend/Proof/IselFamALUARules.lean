@@ -1,5 +1,9 @@
-import FV.Backend.Proof.IselRulesALUA
-import FV.Backend.Proof.IselFamilyALU
+module
+
+public import FV.Backend.Proof.IselRulesALUA
+public import FV.Backend.Proof.IselFamilyALU
+
+@[expose] public section
 
 /-!
 # Family A root rules: `LowerRuleOk` at every width i8..i64

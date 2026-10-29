@@ -1,4 +1,8 @@
-import FV.Opt.Basic
+module
+
+public import FV.Opt.Basic
+
+@[expose] public section
 
 /-!
 # Cost model (Cranelift 0.136.1 `egraph/cost.rs`)

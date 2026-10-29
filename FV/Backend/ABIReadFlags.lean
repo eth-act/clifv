@@ -1,4 +1,8 @@
-import FV.Backend.ABIReadOnly
+module
+
+public import FV.Backend.ABIReadOnly
+
+@[expose] public section
 
 namespace Backend.ABIReadFlags
 set_option autoImplicit false

@@ -1,6 +1,10 @@
-import FV.E2E.RegLevelTls
-import FV.E2E.RegLevelOpN
-import FV.E2E.RegLevelGoodXN
+module
+
+public import FV.E2E.RegLevelTls
+public import FV.E2E.RegLevelOpN
+public import FV.E2E.RegLevelGoodXN
+
+@[expose] public section
 
 /-!
 # `ElfTlsGetAddr` on the machine with no call state (SEM1 #537, step 2k)

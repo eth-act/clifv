@@ -1,5 +1,9 @@
-import FV.E2E.ActualStackBound
-import FV.E2E.ActualCompilerModes
+module
+
+public import FV.E2E.ActualStackBound
+public import FV.E2E.ActualCompilerModes
+
+@[expose] public section
 
 /-! # The binary-level theorem (M9, docs/contracts/e2e.md, "Binary level (M9)")
 

@@ -1,5 +1,9 @@
-import FV.Clif
-import Lean.Data.Json
+module
+
+public import FV.Clif
+public import Lean.Data.Json
+
+@[expose] public section
 
 /-!
 # Oracle records (`clif-oracle interp` / `clif-native` JSON lines)

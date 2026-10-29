@@ -1,5 +1,9 @@
-import FV.Concurrency.CallEntryPremises
-import FV.Concurrency.CallLoadWitness
+module
+
+public import FV.Concurrency.CallEntryPremises
+public import FV.Concurrency.CallLoadWitness
+
+@[expose] public section
 
 /-!
 # Witness: the callee's entry premises (#473, step (3))

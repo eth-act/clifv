@@ -1,5 +1,9 @@
-import FV.E2E.LinkScopeInputT3F
-import FV.E2E.LinkCheck
+module
+
+public import FV.E2E.LinkScopeInputT3F
+public import FV.E2E.LinkCheck
+
+@[expose] public section
 
 /-! Non-vacuity of the float input scope's `lowerFunction` totality (S11f, #35).
 

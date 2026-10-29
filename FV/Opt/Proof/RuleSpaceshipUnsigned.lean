@@ -1,5 +1,9 @@
-import FV.Clif.Sem
-import Lean.Elab.Tactic.Omega
+module
+
+public import FV.Clif.Sem
+public import Lean.Elab.Tactic.Omega
+
+@[expose] public section
 
 /-!
 Unsigned select forms of the spaceship operator from `spaceship.isle`.

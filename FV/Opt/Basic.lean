@@ -1,6 +1,10 @@
-import FV.Clif.Syntax
-import Std.Data.HashMap
-import Std.Data.HashSet
+module
+
+public import FV.Clif.Syntax
+public import Std.Data.HashMap
+public import Std.Data.HashSet
+
+@[expose] public section
 
 /-!
 # Mid-end basics: operands, pure nodes, substitutions

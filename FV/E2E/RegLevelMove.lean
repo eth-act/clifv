@@ -1,5 +1,9 @@
-import FV.E2E.RegLevelSim
-import FV.Backend.Proof.RegallocMoves
+module
+
+public import FV.E2E.RegLevelSim
+public import FV.Backend.Proof.RegallocMoves
+
+@[expose] public section
 
 /-!
 # Moves on the machine (M6)

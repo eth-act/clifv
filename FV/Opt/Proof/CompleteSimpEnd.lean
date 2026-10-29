@@ -1,5 +1,9 @@
-import FV.Opt.Proof.CompleteSimpStep
-import FV.Opt.Proof.CompleteSimpStart
+module
+
+public import FV.Opt.Proof.CompleteSimpStep
+public import FV.Opt.Proof.CompleteSimpStart
+
+@[expose] public section
 
 /-!
 # Completeness of simplify: the end of a block

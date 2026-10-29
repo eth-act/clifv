@@ -1,4 +1,8 @@
-import FV.Link.DeadCleanupImage
+module
+
+public import FV.Link.DeadCleanupImage
+
+@[expose] public section
 
 /-! The existing byte writer parameterized by the actual compiler result table.
 Every placement, relocation, code-map, ELF-region and outside-image check is

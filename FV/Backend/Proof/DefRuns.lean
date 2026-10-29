@@ -1,5 +1,9 @@
-import FV.Backend.Proof.KillAssemble
-import FV.Backend.Proof.SpillDefinedPaths
+module
+
+public import FV.Backend.Proof.KillAssemble
+public import FV.Backend.Proof.SpillDefinedPaths
+
+@[expose] public section
 
 /-!
 # Definedness of the ISLE lowering: the run facts (`DefRunsHyp`)

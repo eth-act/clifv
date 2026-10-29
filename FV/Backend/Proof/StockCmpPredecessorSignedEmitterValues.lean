@@ -1,5 +1,10 @@
-import FV.Backend.Proof.StockCmpPredecessorSignedSelection
-import FV.Backend.Proof.StockCmpPredecessorSignedSourceValues
+module
+
+public import FV.Backend.Proof.StockCmpPredecessorSignedSelection
+public import FV.Backend.Proof.StockCmpPredecessorSignedSourceValues
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarCmp
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 /-- Actual emitter652 and condition715 compute the original constant comparison;

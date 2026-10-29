@@ -1,5 +1,9 @@
-import FV.E2E.SrcBounded
-import FV.E2E.LinkPlaceB
+module
+
+public import FV.E2E.SrcBounded
+public import FV.E2E.LinkPlaceB
+
+@[expose] public section
 
 /-! # Bounded memories of placed runs under the slot-byte oracle (SEM1)
 

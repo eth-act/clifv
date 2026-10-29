@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockScalarGeneralDivDomain
-import FV.Backend.Proof.StockNoLoadDriverWitness
+module
+
+public import FV.Backend.Proof.StockScalarGeneralDivDomain
+public import FV.Backend.Proof.StockNoLoadDriverWitness
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.SinkRules.DriverWitness
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

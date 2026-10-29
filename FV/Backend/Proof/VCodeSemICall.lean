@@ -1,4 +1,8 @@
-import FV.Backend.Proof.VCodeSemISeq
+module
+
+public import FV.Backend.Proof.VCodeSemISeq
+
+@[expose] public section
 
 /-!
 # Straight-line runs with one call under the counted semantics (SEM1 step 2, `docs/plans/uninit.md` §5.3)

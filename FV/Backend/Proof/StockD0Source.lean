@@ -1,5 +1,9 @@
-import FV.Backend.Lowering.StockD0
-import FV.Clif.Run
+module
+
+public import FV.Backend.Lowering.StockD0
+public import FV.Clif.Run
+
+@[expose] public section
 
 namespace Backend.Stock.D0
 

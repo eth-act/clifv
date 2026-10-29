@@ -1,4 +1,8 @@
-import FV.Backend.Proof.PerEdgePrepareComplete
+module
+
+public import FV.Backend.Proof.PerEdgePrepareComplete
+
+@[expose] public section
 
 namespace Backend.Proof.PerEdgePrep
 open Backend Backend.Proof

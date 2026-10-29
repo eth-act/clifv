@@ -1,4 +1,8 @@
-import FV.Opt.Proof.RuleAuto
+module
+
+public import FV.Opt.Proof.RuleAuto
+
+@[expose] public section
 
 /-!
 # `opts/bitops.isle` (part 4): proven `simplify` rules

@@ -1,5 +1,9 @@
-import FV.Opt.Proof.UnreachableX
-import FV.Opt.Retype
+module
+
+public import FV.Opt.Proof.UnreachableX
+public import FV.Opt.Retype
+
+@[expose] public section
 
 /-!
 # The retyping refines (S12e, #36)

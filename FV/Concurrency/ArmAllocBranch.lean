@@ -1,6 +1,10 @@
-import FV.Concurrency.ArmAllocLoopMem
-import FV.E2E.RegLevelGoto
-import FV.E2E.EmitLabels
+module
+
+public import FV.Concurrency.ArmAllocLoopMem
+public import FV.E2E.RegLevelGoto
+public import FV.E2E.EmitLabels
+
+@[expose] public section
 
 /-!
 # Layer 4b with the block-ending branches (T2, #311)

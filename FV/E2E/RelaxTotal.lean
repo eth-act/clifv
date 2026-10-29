@@ -1,5 +1,9 @@
-import FV.E2E.AllocTotal
-import FV.Backend.Proof.RelaxReady
+module
+
+public import FV.E2E.AllocTotal
+public import FV.Backend.Proof.RelaxReady
+
+@[expose] public section
 
 /-!
 # Emission and layout without `he`/`hla` premises (V6)

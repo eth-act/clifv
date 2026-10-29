@@ -1,5 +1,9 @@
-import FV.Link.UnwTryIn
-import FV.Link.UnwFnsCompleteWitness
+module
+
+public import FV.Link.UnwTryIn
+public import FV.Link.UnwFnsCompleteWitness
+
+@[expose] public section
 
 /-!
 # Witness: the `try_call` handlers from the input (S10g, #404)

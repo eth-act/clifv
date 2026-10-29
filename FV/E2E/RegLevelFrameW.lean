@@ -1,6 +1,10 @@
-import FV.E2E.RegLevelFrame
-import FV.E2E.RegLevelWrites
-import FV.E2E.ExecWritesFrame
+module
+
+public import FV.E2E.RegLevelFrame
+public import FV.E2E.RegLevelWrites
+public import FV.E2E.ExecWritesFrame
+
+@[expose] public section
 
 /-!
 # The prologue and the return on the machine with their writes (A3, #412, slice F8b)

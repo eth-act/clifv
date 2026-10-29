@@ -1,4 +1,8 @@
-import FV.Backend.Proof.LowerContract
+module
+
+public import FV.Backend.Proof.LowerContract
+
+@[expose] public section
 
 /-!
 # An environment answering one step's extern invocation only (SEM1, `docs/plans/uninit.md` §5.9)

@@ -1,5 +1,9 @@
-import FV.E2E.DeadCleanupBinaryInitR
-import FV.E2E.LinkArmThmPRBGT
+module
+
+public import FV.E2E.DeadCleanupBinaryInitR
+public import FV.E2E.LinkArmThmPRBGT
+
+@[expose] public section
 
 /-!
 # The executable machine on a trapping run under the slot-byte oracle (SEM1 #537)

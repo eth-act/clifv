@@ -1,6 +1,10 @@
-import FV.E2E.RegLevelNext
-import FV.E2E.RegLevelGotoW
-import FV.E2E.RegLevelWrites
+module
+
+public import FV.E2E.RegLevelNext
+public import FV.E2E.RegLevelGotoW
+public import FV.E2E.RegLevelWrites
+
+@[expose] public section
 
 /-!
 # Items that fall through with their writes (A3, #412, slice F8b)

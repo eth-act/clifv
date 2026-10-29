@@ -1,5 +1,9 @@
-import FV.Concurrency.RealizeWitnessFence
-import FV.Concurrency.RealizeExec
+module
+
+public import FV.Concurrency.RealizeWitnessFence
+public import FV.Concurrency.RealizeExec
+
+@[expose] public section
 
 /-!
 # `Realizes` on a run of compiled code through its `ldar` (T2l, #311)

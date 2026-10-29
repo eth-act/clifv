@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockDFG
-import FV.Backend.Proof.StockProjection
+module
+
+public import FV.Backend.Proof.StockDFG
+public import FV.Backend.Proof.StockProjection
+
+@[expose] public section
 
 /-!
 A proof-only identity-register view reuses source-pattern facts from the legacy

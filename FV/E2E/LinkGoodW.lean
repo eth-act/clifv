@@ -1,6 +1,10 @@
-import FV.E2E.LinkGood
-import FV.E2E.CompiledEitherW
-import FV.E2E.RegLevelWrites
+module
+
+public import FV.E2E.LinkGood
+public import FV.E2E.CompiledEitherW
+public import FV.E2E.RegLevelWrites
+
+@[expose] public section
 
 /-! # The per-state facts with the writes on the linked machine's runs (A3, #412, slice F8c)
 

@@ -1,4 +1,8 @@
-import FV.Backend.Isel
+module
+
+public import FV.Backend.Isel
+
+@[expose] public section
 
 /-!
 # The entry block's parameter classes (S11e5 Stage C, slice 5)

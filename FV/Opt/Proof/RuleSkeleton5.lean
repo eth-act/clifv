@@ -1,4 +1,8 @@
-import FV.Opt.Proof.RuleSkeleton3
+module
+
+public import FV.Opt.Proof.RuleSkeleton3
+
+@[expose] public section
 
 /-!
 # `simplify_skeleton` rules: signed division by a constant via magic numbers

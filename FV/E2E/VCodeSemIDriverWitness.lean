@@ -1,5 +1,9 @@
-import FV.Backend.Proof.VCodeSemIDriver
-import FV.E2E.RegLevelDriverSem
+module
+
+public import FV.Backend.Proof.VCodeSemIDriver
+public import FV.E2E.RegLevelDriverSem
+
+@[expose] public section
 
 /-!
 # Witnesses for the driver facts under the counted semantics (`FV/Backend/Proof/VCodeSemIDriver.lean`)

@@ -1,8 +1,12 @@
-import FV.E2E.Binary
-import FV.E2E.ExecWords
-import FV.E2E.ExecBytes
-import FV.E2E.DeadCleanupBinary
-import FV.E2E.DeadCleanupBinCheck
+module
+
+public import FV.E2E.Binary
+public import FV.E2E.ExecWords
+public import FV.E2E.ExecBytes
+public import FV.E2E.DeadCleanupBinary
+public import FV.E2E.DeadCleanupBinCheck
+
+@[expose] public section
 
 namespace E2E.DeadCleanupExecBytes
 set_option autoImplicit false

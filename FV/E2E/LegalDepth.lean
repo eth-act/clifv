@@ -1,4 +1,8 @@
-import FV.E2E.LegalProgram
+module
+
+public import FV.E2E.LegalProgram
+
+@[expose] public section
 
 /-!
 # The `i128` legalisation keeps the call depth (S3 with L1d)

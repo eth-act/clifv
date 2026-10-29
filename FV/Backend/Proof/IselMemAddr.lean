@@ -1,6 +1,10 @@
-import FV.Backend.Proof.IselMemAmode
-import FV.Backend.Proof.IselFamALUAExt
-import FV.Backend.Proof.IselFamAluBIconst
+module
+
+public import FV.Backend.Proof.IselMemAmode
+public import FV.Backend.Proof.IselFamALUAExt
+public import FV.Backend.Proof.IselFamAluBIconst
+
+@[expose] public section
 
 /-!
 # Memory family (M4Mem2): `amode_reg_scaled`

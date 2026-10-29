@@ -1,4 +1,9 @@
-import FV.Backend.Proof.StockDivSignedSourceValues
+module
+
+public import FV.Backend.Proof.StockDivSignedSourceValues
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarDiv.SdivSafe16Witness.RunData
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 set_option maxRecDepth 20000

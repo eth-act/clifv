@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockCoreScanOrigin
-import FV.Backend.Proof.StockBranchSelection
+module
+
+public import FV.Backend.Proof.StockCoreScanOrigin
+public import FV.Backend.Proof.StockBranchSelection
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.ConditionalValues
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

@@ -1,6 +1,10 @@
-import FV.Link.ExeTotal
-import FV.Link.ImageProof
-import FV.E2E.RegLevelFrame
+module
+
+public import FV.Link.ExeTotal
+public import FV.Link.ImageProof
+public import FV.E2E.RegLevelFrame
+
+@[expose] public section
 
 /-! # The executable compiler is total on decidable input conditions (L1e)
 

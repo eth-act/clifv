@@ -1,5 +1,9 @@
-import FV.E2E.BinaryGood
-import FV.E2E.DeadCleanupBinary
+module
+
+public import FV.E2E.BinaryGood
+public import FV.E2E.DeadCleanupBinary
+
+@[expose] public section
 
 namespace E2E
 set_option autoImplicit false

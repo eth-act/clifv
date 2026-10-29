@@ -1,6 +1,10 @@
-import FV.Link.OptExeUnwindExec
-import FV.E2E.DeadCleanupExecUnwindGood
-import FV.E2E.LinkArmUProgGood
+module
+
+public import FV.Link.OptExeUnwindExec
+public import FV.E2E.DeadCleanupExecUnwindGood
+public import FV.E2E.LinkArmUProgGood
+
+@[expose] public section
 
 /-!
 # The executable compilers on the exceptional edges, on the executable's bytes, proven (S10g, #404)

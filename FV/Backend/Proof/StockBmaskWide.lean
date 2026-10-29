@@ -1,6 +1,10 @@
-import FV.Backend.Proof.StockBmaskProjection
-import FV.Backend.Proof.StockCmpWithFlags
-import FV.Backend.Proof.StockDivPure
+module
+
+public import FV.Backend.Proof.StockBmaskProjection
+public import FV.Backend.Proof.StockCmpWithFlags
+public import FV.Backend.Proof.StockDivPure
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.ScalarMask
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

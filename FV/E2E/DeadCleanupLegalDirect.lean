@@ -1,5 +1,9 @@
-import FV.E2E.LegalDirect
-import FV.E2E.DeadCleanupLegal
+module
+
+public import FV.E2E.LegalDirect
+public import FV.E2E.DeadCleanupLegal
+
+@[expose] public section
 
 namespace E2E
 open Backend Backend.Proof Backend.Proof.Driver

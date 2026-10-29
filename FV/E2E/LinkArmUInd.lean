@@ -1,5 +1,9 @@
-import FV.E2E.LinkArmUX
-import FV.E2E.WorldUnwind
+module
+
+public import FV.E2E.LinkArmUX
+public import FV.E2E.WorldUnwind
+
+@[expose] public section
 
 /-!
 # The linking statement with unwinding at every depth (S10f, #233)

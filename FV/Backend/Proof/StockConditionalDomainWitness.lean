@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockConditionalCheck
-import FV.Backend.Proof.StockConditionalSourceChecks
+module
+
+public import FV.Backend.Proof.StockConditionalCheck
+public import FV.Backend.Proof.StockConditionalSourceChecks
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.ConditionalValues
 open Backend.Proof Backend.Proof.Driver

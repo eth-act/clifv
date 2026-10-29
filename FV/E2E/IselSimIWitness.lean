@@ -1,5 +1,9 @@
-import FV.E2E.BackendWorldI
-import FV.E2E.NonVacuityLink
+module
+
+public import FV.E2E.BackendWorldI
+public import FV.E2E.NonVacuityLink
+
+@[expose] public section
 
 /-!
 # Non-vacuity of the counted CLIF → VCode simulation and pipeline (SEM1, `docs/plans/uninit.md` §5.9)

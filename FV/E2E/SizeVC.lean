@@ -1,5 +1,9 @@
-import FV.E2E.SizeDefs
-import FV.Backend.Proof.PrepareComplete
+module
+
+public import FV.E2E.SizeDefs
+public import FV.Backend.Proof.PrepareComplete
+
+@[expose] public section
 
 /-!
 # The spill allocation's words from the VCode measures (V6c)

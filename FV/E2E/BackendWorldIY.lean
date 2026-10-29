@@ -1,5 +1,9 @@
-import FV.E2E.BackendWorldIR
-import FV.E2E.RegLevelCorrectPRSY
+module
+
+public import FV.E2E.BackendWorldIR
+public import FV.E2E.RegLevelCorrectPRSY
+
+@[expose] public section
 
 /-!
 # The counted per-function theorem with guarded world reads (SEM1 #537, item (2))

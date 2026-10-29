@@ -1,5 +1,9 @@
-import FV.E2E.PreparedPipeline
-import FV.E2E.ActualCompilerModes
+module
+
+public import FV.E2E.PreparedPipeline
+public import FV.E2E.ActualCompilerModes
+
+@[expose] public section
 
 /-! A complete production pipeline attempt, retried with the retained D0/legacy
 lowering on any lowering/preparation/allocation/emission/layout error. -/

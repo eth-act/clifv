@@ -1,6 +1,10 @@
-import FV.E2E.DeadCleanupWitness
-import FV.E2E.DeadCleanupSpillCheckAlloc
-import FV.E2E.DeadCleanupPreparedSize
+module
+
+public import FV.E2E.DeadCleanupWitness
+public import FV.E2E.DeadCleanupSpillCheckAlloc
+public import FV.E2E.DeadCleanupPreparedSize
+
+@[expose] public section
 
 namespace E2E.DeadCleanupCompletenessWitness
 open Backend Backend.Proof Backend.Proof.Driver Backend.DeadCleanup

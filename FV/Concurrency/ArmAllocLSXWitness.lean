@@ -1,5 +1,9 @@
-import FV.Concurrency.ArmAllocLSX
-import FV.Concurrency.ArmAllocLSWitness
+module
+
+public import FV.Concurrency.ArmAllocLSX
+public import FV.Concurrency.ArmAllocLSWitness
+
+@[expose] public section
 
 /-!
 # Non-vacuity of layer 4b with the stack offsets built in `x16` (T2j, #473)

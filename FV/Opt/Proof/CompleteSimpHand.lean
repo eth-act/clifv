@@ -1,4 +1,8 @@
-import FV.Opt.Proof.CompleteSimpHyp
+module
+
+public import FV.Opt.Proof.CompleteSimpHyp
+
+@[expose] public section
 
 /-!
 # The hand rules pass values on (M1, #24)

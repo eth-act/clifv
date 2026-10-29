@@ -1,4 +1,8 @@
-import FV.Opt.Proof.RuleSpaceshipInfra
+module
+
+public import FV.Opt.Proof.RuleSpaceshipInfra
+
+@[expose] public section
 
 /-! Select-shaped signed and unsigned three-way comparisons. -/
 

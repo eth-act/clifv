@@ -1,7 +1,11 @@
-import FV.Backend.MixedNIProduction
-import FV.Backend.LinearScan
-import FV.E2E.StockProductionFixtures
-import FV.Clif.Print
+module
+
+public import FV.Backend.MixedNIProduction
+public import FV.Backend.LinearScan
+public import FV.E2E.StockProductionFixtures
+public import FV.Clif.Print
+
+@[expose] public section
 
 set_option autoImplicit false
 namespace FVTest.StockMixedRuntime

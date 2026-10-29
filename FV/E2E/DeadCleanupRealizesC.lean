@@ -1,5 +1,9 @@
-import FV.E2E.DeadCleanupRealizes
-import FV.E2E.RegLevelCorrectC
+module
+
+public import FV.E2E.DeadCleanupRealizes
+public import FV.E2E.RegLevelCorrectC
+
+@[expose] public section
 
 /-!
 # The value semantics' realizer with call states per segment (SEM1, `docs/plans/uninit.md` §5.9)

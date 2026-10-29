@@ -1,5 +1,9 @@
-import FV.Link.Layout
-import FV.Backend.Proof.EncodeLayout
+module
+
+public import FV.Link.Layout
+public import FV.Backend.Proof.EncodeLayout
+
+@[expose] public section
 
 /-! # Facts about the placement (L2b, `FV/Link/Layout.lean`)
 

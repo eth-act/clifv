@@ -1,5 +1,9 @@
-import FV.E2E.BackendTwoRunNZW
-import FV.E2E.BackendTwoRunNP
+module
+
+public import FV.E2E.BackendTwoRunNZW
+public import FV.E2E.BackendTwoRunNP
+
+@[expose] public section
 
 /-!
 # The per-index lock with the contracts of the first `N` calls: the call hook told the first

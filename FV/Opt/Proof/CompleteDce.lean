@@ -1,6 +1,10 @@
-import FV.Opt.Proof.CheckSpec
-import FV.Opt.Proof.SimpSim
-import FV.Opt.Dce
+module
+
+public import FV.Opt.Proof.CheckSpec
+public import FV.Opt.Proof.SimpSim
+public import FV.Opt.Dce
+
+@[expose] public section
 
 /-!
 # Completeness of the DCE stage (M1)

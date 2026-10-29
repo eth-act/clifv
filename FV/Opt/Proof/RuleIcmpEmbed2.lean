@@ -1,5 +1,9 @@
-import FV.Opt.Proof.RuleIcmpEmbed
-import FV.Opt.Proof.KernelBV
+module
+
+public import FV.Opt.Proof.RuleIcmpEmbed
+public import FV.Opt.Proof.KernelBV
+
+@[expose] public section
 
 /-!
 # Template variants for `opts/icmp.isle` (part 2): signed immediates

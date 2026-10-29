@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockLogicalNotrap
-import FV.Backend.Proof.StockLogicalRecordWitness
+module
+
+public import FV.Backend.Proof.StockLogicalNotrap
+public import FV.Backend.Proof.StockLogicalRecordWitness
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.LogicalBody
 open Backend.Proof Backend.Proof.Driver Isle Isle.Aarch64

@@ -1,4 +1,9 @@
-import FV.Backend.Proof.IselShpFns
+module
+
+public import FV.Backend.Proof.IselShpFns
+public import FVTest.ModuleHeader
+
+@[expose] public section
 
 /-!
 # Generator of the V4 control-shape summary table (`FV/Backend/Proof/IselShpTab.lean`)
@@ -293,5 +298,5 @@ def main (args : List String) : IO UInt32 := do
   let br := failR [.c0, .c0] AW.top branchRules
   IO.println s!"entries {tab.length} chkTab {ok} stmtTop {stmtTop} term {term} branch {br}"
   for (rid, msg) in s.bad.eraseDups do IO.println s!"bad rule {rid}: {msg.take 300}"
-  IO.FS.writeFile path (render tab)
+  IO.FS.writeFile path (Gen.moduleHeader (render tab))
   return (if ok && stmtTop.isEmpty && term.isEmpty && br.isEmpty then 0 else 1)

@@ -1,10 +1,14 @@
-import FV.E2E.LinkScope
-import FV.E2E.DeadCleanupLinkCheck
-import FV.E2E.DeadCleanupPreparedSize
-import FV.E2E.DeadCleanupSpillCheckAlloc
-import FV.E2E.DeadCleanupLinkCalls
-import FV.E2E.DeadCleanupLinkFrames
-import FV.E2E.DeadCleanupTotal
+module
+
+public import FV.E2E.LinkScope
+public import FV.E2E.DeadCleanupLinkCheck
+public import FV.E2E.DeadCleanupPreparedSize
+public import FV.E2E.DeadCleanupSpillCheckAlloc
+public import FV.E2E.DeadCleanupLinkCalls
+public import FV.E2E.DeadCleanupLinkFrames
+public import FV.E2E.DeadCleanupTotal
+
+@[expose] public section
 
 /-! Completeness of the cleanup pipeline under the unchanged linked-input scope.
 The linker's facts describe the actual cleaned artifacts. -/

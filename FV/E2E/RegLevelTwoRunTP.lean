@@ -1,4 +1,8 @@
-import FV.E2E.RegLevelTwoRunT
+module
+
+public import FV.E2E.RegLevelTwoRunT
+
+@[expose] public section
 
 /-!
 # Two activations in lock-step, the lock step told the first run's segment start (SEM1 #537,

@@ -1,4 +1,8 @@
-import FV.E2E.RegLevelArgs
+module
+
+public import FV.E2E.RegLevelArgs
+
+@[expose] public section
 
 /-!
 # Branches on the machine (M6)

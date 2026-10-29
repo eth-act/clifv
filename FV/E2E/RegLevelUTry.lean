@@ -1,5 +1,9 @@
-import FV.E2E.RegLevelU
-import FV.E2E.RegLevelCallSite
+module
+
+public import FV.E2E.RegLevelU
+public import FV.E2E.RegLevelCallSite
+
+@[expose] public section
 
 /-!
 # A raising `try_call` on the machine: the landing pad (S10e, #232)

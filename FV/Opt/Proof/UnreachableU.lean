@@ -1,5 +1,9 @@
-import FV.Opt.Proof.UnreachableX
-import FV.Opt.Proof.SimWinU
+module
+
+public import FV.Opt.Proof.UnreachableX
+public import FV.Opt.Proof.SimWinU
+
+@[expose] public section
 
 /-!
 # `removeUnreachable` refines with handler edges (S10f, #233)

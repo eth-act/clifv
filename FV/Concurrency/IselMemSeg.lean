@@ -1,4 +1,8 @@
-import FV.Concurrency.IselVar
+module
+
+public import FV.Concurrency.IselVar
+
+@[expose] public section
 
 /-!
 # The segment of a memory statement (T2h, #311, layer 2e)

@@ -1,5 +1,9 @@
-import FV.E2E.LinkCheck
-import FV.E2E.Elf
+module
+
+public import FV.E2E.LinkCheck
+public import FV.E2E.Elf
+
+@[expose] public section
 
 /-! # Binary checks: code bytes, data objects, GOT, symbols (M9 items 1 and 2)
 

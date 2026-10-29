@@ -1,5 +1,9 @@
-import FV.E2E.LinkArmProgOsP
-import FV.E2E.LinkArmProgCallPR
+module
+
+public import FV.E2E.LinkArmProgOsP
+public import FV.E2E.LinkArmProgCallPR
+
+@[expose] public section
 
 /-!
 # The call contracts of call number `n` on `ThmPDER` (SEM1 step 2w, `docs/plans/uninit.md` §5.8 (4))

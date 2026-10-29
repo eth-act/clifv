@@ -1,5 +1,9 @@
-import FV.Backend.Proof.PerEdgeSpillEntrySymbols
-import FV.Backend.Proof.PerEdgeSpillInst
+module
+
+public import FV.Backend.Proof.PerEdgeSpillEntrySymbols
+public import FV.Backend.Proof.PerEdgeSpillInst
+
+@[expose] public section
 
 namespace Backend.Proof.PerEdgeSpill
 open Backend Backend.Proof.Spill Backend.Stock.Proof

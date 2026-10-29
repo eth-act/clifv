@@ -1,5 +1,9 @@
-import FV.Concurrency.ThreadCompose
-import FV.Concurrency.ArmAllocLS
+module
+
+public import FV.Concurrency.ThreadCompose
+public import FV.Concurrency.ArmAllocLS
+
+@[expose] public section
 
 /-!
 # The realized prefix covers the whole run (T2j, #473)

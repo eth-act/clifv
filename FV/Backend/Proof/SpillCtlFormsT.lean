@@ -1,5 +1,9 @@
-import FV.Backend.Proof.SpillLocalForms
-import FV.Backend.Proof.PairsC
+module
+
+public import FV.Backend.Proof.SpillLocalForms
+public import FV.Backend.Proof.PairsC
+
+@[expose] public section
 
 /-!
 # The spill allocator's facts on float `Args`/`Rets` (S11e5 Stage C, slice 5)

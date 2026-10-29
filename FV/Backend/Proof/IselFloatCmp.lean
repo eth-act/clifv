@@ -1,6 +1,10 @@
-import FV.Backend.Proof.IselCmpRoot
-import FV.Backend.Proof.IselFamALUATI
-import FV.Backend.Proof.IselFloatCmpEmit
+module
+
+public import FV.Backend.Proof.IselCmpRoot
+public import FV.Backend.Proof.IselFamALUATI
+public import FV.Backend.Proof.IselFloatCmpEmit
+
+@[expose] public section
 
 /-!
 # S11f: the `fcmp` root rules

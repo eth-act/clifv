@@ -1,7 +1,11 @@
-import FV.Backend.Proof.StockAvailableValues
-import FV.Backend.Proof.StockRecordIntervals
-import FV.Backend.Proof.StockRecordFinalAlias
-import FV.Backend.Proof.StockEmittedScan
+module
+
+public import FV.Backend.Proof.StockAvailableValues
+public import FV.Backend.Proof.StockRecordIntervals
+public import FV.Backend.Proof.StockRecordFinalAlias
+public import FV.Backend.Proof.StockEmittedScan
+
+@[expose] public section
 
 /-! Constant value transfer for records retained by an actual whole-driver run.
 Final alias resolution and other-value noninterference are derived from that run. -/

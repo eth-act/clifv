@@ -1,5 +1,9 @@
-import FV.E2E.LinkGood
-import FV.E2E.LinkProduction
+module
+
+public import FV.E2E.LinkGood
+public import FV.E2E.LinkProduction
+
+@[expose] public section
 
 /-! Per-state linked execution facts for the actual production artifact contract.
 Original facts and variants remain available. -/

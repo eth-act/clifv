@@ -1,5 +1,10 @@
-import FV.Backend.Proof.StockHighMulPure
-import FV.Backend.Proof.IselTermsALUAMulN
+module
+
+public import FV.Backend.Proof.StockHighMulPure
+public import FV.Backend.Proof.IselTermsALUAMulN
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarHighMul
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 set_option maxRecDepth 20000

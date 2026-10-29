@@ -1,7 +1,12 @@
-import FV.Backend.Proof.StockCmpNonzero16PrefixValues
-import FV.Backend.Proof.StockCmpConditionValues
-import FV.Backend.Proof.StockCmpZeroHelpers
-import FV.Backend.Proof.StockDemandMono
+module
+
+public import FV.Backend.Proof.StockCmpNonzero16PrefixValues
+public import FV.Backend.Proof.StockCmpConditionValues
+public import FV.Backend.Proof.StockCmpZeroHelpers
+public import FV.Backend.Proof.StockDemandMono
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarCmp
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 /-- Actual16-bit extension-prefix and condition executions hold the original

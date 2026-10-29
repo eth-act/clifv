@@ -1,4 +1,8 @@
-import FV.Backend.Proof.IselEmitDefs
+module
+
+public import FV.Backend.Proof.IselEmitDefs
+
+@[expose] public section
 
 /-!
 # Emission conditions of the typed ISLE lowering (S11): the statements

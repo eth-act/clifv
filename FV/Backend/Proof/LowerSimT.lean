@@ -1,5 +1,9 @@
-import FV.Backend.Proof.LowerSim
-import FV.Backend.Proof.LowerContractT
+module
+
+public import FV.Backend.Proof.LowerSim
+public import FV.Backend.Proof.LowerContractT
+
+@[expose] public section
 
 /-!
 # The typed driver simulation (S11e5 Stage C, slice 7)

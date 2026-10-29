@@ -1,4 +1,8 @@
-import FV.E2E.LinkPlaceB
+module
+
+public import FV.E2E.LinkPlaceB
+
+@[expose] public section
 
 /-! # A run depends on the slot-byte table only through the entries it uses (SEM1 #537)
 

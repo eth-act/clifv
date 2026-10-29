@@ -1,5 +1,9 @@
-import FV.Opt.Proof.CompleteGvn
-import FV.Opt.Licm
+module
+
+public import FV.Opt.Proof.CompleteGvn
+public import FV.Opt.Licm
+
+@[expose] public section
 
 /-!
 # Completeness of the LICM stage: graph facts and single moves (M1)

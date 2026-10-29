@@ -1,6 +1,11 @@
-import FV.Backend.ABIReadDiv
-import FV.E2E.ABIReadDivSteps
-import FV.E2E.ABIReadScalar
+module
+
+public import FV.Backend.ABIReadDiv
+public import FV.E2E.ABIReadDivSteps
+public import FV.E2E.ABIReadScalar
+
+@[expose] public section
+
 namespace E2E.DivBoundary
 open Backend Backend.Proof Backend.Proof.Driver Backend.DeadCleanup E2E.MixedFlagBoundary
 set_option autoImplicit false

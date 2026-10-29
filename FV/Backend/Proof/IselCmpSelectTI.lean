@@ -1,5 +1,9 @@
-import FV.Backend.Proof.IselCmpSelect
-import FV.Backend.Proof.IselBaseTI
+module
+
+public import FV.Backend.Proof.IselCmpSelect
+public import FV.Backend.Proof.IselBaseTI
+
+@[expose] public section
 
 /-!
 # `IselCmpSelect` over typed contexts (S11e5 Stage C, slice 7)

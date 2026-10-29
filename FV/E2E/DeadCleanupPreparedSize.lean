@@ -1,5 +1,9 @@
-import FV.E2E.DeadCleanupSpillWords
-import FV.Backend.Proof.DeadCleanupPrepareMap
+module
+
+public import FV.E2E.DeadCleanupSpillWords
+public import FV.Backend.Proof.DeadCleanupPrepareMap
+
+@[expose] public section
 
 namespace E2E
 open Backend Backend.DeadCleanup

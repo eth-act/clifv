@@ -1,4 +1,8 @@
-import FV.Opt.Basic
+module
+
+public import FV.Opt.Basic
+
+@[expose] public section
 
 /-!
 # `Opt.Retype`: data-movement loads and stores at another type of the same width (S12e, #36)

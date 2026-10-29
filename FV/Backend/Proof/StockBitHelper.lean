@@ -1,5 +1,10 @@
-import FV.Backend.Proof.StockShiftHelper
-import FV.Backend.Proof.IselTermsAluB
+module
+
+public import FV.Backend.Proof.StockShiftHelper
+public import FV.Backend.Proof.IselTermsAluB
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarBit
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 set_option maxRecDepth 20000

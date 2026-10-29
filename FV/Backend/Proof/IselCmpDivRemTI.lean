@@ -1,8 +1,12 @@
-import FV.Backend.Proof.IselCmpDivRem
-import FV.Backend.Proof.IselBaseTI
-import FV.Backend.Proof.IselCmpDivTI
-import FV.Backend.Proof.IselCmpDivRootTI
-import FV.Backend.Proof.IselCmpEmitTI
+module
+
+public import FV.Backend.Proof.IselCmpDivRem
+public import FV.Backend.Proof.IselBaseTI
+public import FV.Backend.Proof.IselCmpDivTI
+public import FV.Backend.Proof.IselCmpDivRootTI
+public import FV.Backend.Proof.IselCmpEmitTI
+
+@[expose] public section
 
 /-!
 # `IselCmpDivRem` over typed contexts (S11e5 Stage C, slice 7)

@@ -1,6 +1,10 @@
-import FV.Backend.Proof.StockCoverageCtor
-import FV.Backend.Proof.StockCoverageOracle
-import FV.Backend.Proof.LowerDecide
+module
+
+public import FV.Backend.Proof.StockCoverageCtor
+public import FV.Backend.Proof.StockCoverageOracle
+public import FV.Backend.Proof.LowerDecide
+
+@[expose] public section
 
 /-! An inhabited model for actual Stock evaluation with the reused checked
 summaries. Remembered-state preservation is derived from helper contracts;

@@ -1,6 +1,11 @@
-import FV.Backend.Proof.StockReduceSelected
-import FV.Backend.Proof.StockRecordFinalAlias
-import FV.Backend.Proof.StockAliasTerminal
+module
+
+public import FV.Backend.Proof.StockReduceSelected
+public import FV.Backend.Proof.StockRecordFinalAlias
+public import FV.Backend.Proof.StockAliasTerminal
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarCast.Reduce
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 set_option maxRecDepth 20000

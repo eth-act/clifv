@@ -1,4 +1,8 @@
-import FV.E2E.DeadCleanupRealizes
+module
+
+public import FV.E2E.DeadCleanupRealizes
+
+@[expose] public section
 
 namespace Backend.Proof
 open Backend E2E Backend.DeadCleanup

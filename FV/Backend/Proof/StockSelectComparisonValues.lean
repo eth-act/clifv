@@ -1,9 +1,14 @@
-import FV.Backend.Proof.StockSelectComparisonCompanionValues
-import FV.Backend.Proof.StockSelectConditionReplacement
-import FV.Backend.Proof.StockSelectConditionObserved
-import FV.Backend.Proof.StockSelectCompanionFragment
-import FV.Backend.Proof.StockDemandMono
-import FV.Backend.Proof.StockDemandExtent
+module
+
+public import FV.Backend.Proof.StockSelectComparisonCompanionValues
+public import FV.Backend.Proof.StockSelectConditionReplacement
+public import FV.Backend.Proof.StockSelectConditionObserved
+public import FV.Backend.Proof.StockSelectCompanionFragment
+public import FV.Backend.Proof.StockDemandMono
+public import FV.Backend.Proof.StockDemandExtent
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarSelect
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 open Backend.Stock.Proof.ScalarCmp

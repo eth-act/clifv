@@ -1,5 +1,9 @@
-import FV.E2E.SemanticBinary
-import FV.E2E.ExecWords
+module
+
+public import FV.E2E.SemanticBinary
+public import FV.E2E.ExecWords
+
+@[expose] public section
 
 /-! # The executable's own instruction words (L3, M9 item 1b)
 

@@ -1,5 +1,9 @@
-import FV.Opt.Proof.RuleImm
-import FV.Opt.Proof.KernelBV
+module
+
+public import FV.Opt.Proof.RuleImm
+public import FV.Opt.Proof.KernelBV
+
+@[expose] public section
 
 /-!
 # The batching template: `rule_ok`

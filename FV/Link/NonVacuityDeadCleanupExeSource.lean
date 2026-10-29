@@ -1,5 +1,9 @@
-import FV.Link.DeadCleanupExeSource
-import FV.Link.NonVacuityExeSource
+module
+
+public import FV.Link.DeadCleanupExeSource
+public import FV.Link.NonVacuityExeSource
+
+@[expose] public section
 
 /-! # The shipped compiler's source theorems with the `__*ti3` helpers as the only outside code
 

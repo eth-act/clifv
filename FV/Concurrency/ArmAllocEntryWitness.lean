@@ -1,5 +1,9 @@
-import FV.Concurrency.ArmAllocEntry
-import FV.Concurrency.RealizeWitnessLoad
+module
+
+public import FV.Concurrency.ArmAllocEntry
+public import FV.Concurrency.RealizeWitnessLoad
+
+@[expose] public section
 
 /-!
 # Layer 4b from the ABI entry on the compiled `atomic_load` (T2h, #311)

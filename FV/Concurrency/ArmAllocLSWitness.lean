@@ -1,5 +1,9 @@
-import FV.Concurrency.ArmAllocLS
-import FV.Concurrency.ArmAllocWitness
+module
+
+public import FV.Concurrency.ArmAllocLS
+public import FV.Concurrency.ArmAllocWitness
+
+@[expose] public section
 
 /-!
 # Non-vacuity of layer 4b with the plain loads/stores (T2h, #311)

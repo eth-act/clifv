@@ -1,4 +1,8 @@
-import FV.E2E.WorldTrapCall
+module
+
+public import FV.E2E.WorldTrapCall
+
+@[expose] public section
 
 /-!
 # The per-function world theorem with callee traps, with the stopping state (S9c, #376)

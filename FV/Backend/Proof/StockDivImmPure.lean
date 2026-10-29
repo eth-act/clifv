@@ -1,6 +1,11 @@
-import FV.Backend.Proof.StockRotateRhs
-import FV.Backend.Proof.StockImm12Helper
-import FV.Backend.Proof.StockImm
+module
+
+public import FV.Backend.Proof.StockRotateRhs
+public import FV.Backend.Proof.StockImm12Helper
+public import FV.Backend.Proof.StockImm
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarDiv
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 set_option maxRecDepth 20000

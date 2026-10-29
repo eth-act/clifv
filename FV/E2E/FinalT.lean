@@ -1,10 +1,14 @@
-import FV.E2E.Final
-import FV.E2E.MainT
-import FV.E2E.GuardedFP
-import FV.Backend.Proof.IselFloatMem
-import FV.Backend.Proof.IselLowerAllTI
-import FV.Backend.Proof.IselNonETI
-import FV.Backend.Proof.LowerContractTP
+module
+
+public import FV.E2E.Final
+public import FV.E2E.MainT
+public import FV.E2E.GuardedFP
+public import FV.Backend.Proof.IselFloatMem
+public import FV.Backend.Proof.IselLowerAllTI
+public import FV.Backend.Proof.IselNonETI
+public import FV.Backend.Proof.LowerContractTP
+
+@[expose] public section
 
 /-! # The typed final theorem (S11e5 Stage C, slice 7)
 

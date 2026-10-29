@@ -1,7 +1,12 @@
-import FV.Backend.Proof.StockLocalSourceExecution
-import FV.Backend.Proof.StockPureNotrap
-import FV.Backend.Proof.IselCmpDiv
-import FV.Backend.Proof.LowerSim
+module
+
+public import FV.Backend.Proof.StockLocalSourceExecution
+public import FV.Backend.Proof.StockPureNotrap
+public import FV.Backend.Proof.IselCmpDiv
+public import FV.Backend.Proof.LowerSim
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.DivBody
 open Backend.Proof Backend.Proof.Driver
 set_option autoImplicit false

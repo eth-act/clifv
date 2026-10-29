@@ -1,5 +1,10 @@
-import FV.Backend.Proof.StockAliasSemantics
-import FV.Backend.Proof.SpillClsInst
+module
+
+public import FV.Backend.Proof.StockAliasSemantics
+public import FV.Backend.Proof.SpillClsInst
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarDiv
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 private theorem alias_renaming (a : Array (Option Nat)) :

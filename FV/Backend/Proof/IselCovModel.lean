@@ -1,5 +1,9 @@
-import FV.Backend.Proof.IselCovCtor
-import FV.Backend.Proof.IselCmpTerms
+module
+
+public import FV.Backend.Proof.IselCovCtor
+public import FV.Backend.Proof.IselCmpTerms
+
+@[expose] public section
 
 /-!
 # Form coverage of the ISLE lowering (V3): the model

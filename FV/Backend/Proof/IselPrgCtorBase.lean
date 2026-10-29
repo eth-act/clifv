@@ -1,4 +1,8 @@
-import FV.Backend.Proof.IselPrgOfvSound
+module
+
+public import FV.Backend.Proof.IselPrgOfvSound
+
+@[expose] public section
 
 /-!
 # Progress of the ISLE lowering (V7): facts for the soundness of `actor`

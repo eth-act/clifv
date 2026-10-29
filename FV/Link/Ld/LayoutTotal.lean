@@ -1,4 +1,8 @@
-import FV.Link.Ld.LayoutProof
+module
+
+public import FV.Link.Ld.LayoutProof
+
+@[expose] public section
 
 /-! # `lean-ld`'s planner accepts its resolved inputs (A1b, #409)
 

@@ -1,5 +1,9 @@
-import FV.Opt.Proof.DomFacts
-import FV.Opt.Proof.CompleteLicm
+module
+
+public import FV.Opt.Proof.DomFacts
+public import FV.Opt.Proof.CompleteLicm
+
+@[expose] public section
 
 /-!
 # `Cfg.dominators` computes the dominator tree (M1)

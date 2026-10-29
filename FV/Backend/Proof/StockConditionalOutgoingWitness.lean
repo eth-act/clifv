@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockOutgoingFrame
-import FV.Backend.Proof.StockConditionalBodyWitness
+module
+
+public import FV.Backend.Proof.StockOutgoingFrame
+public import FV.Backend.Proof.StockConditionalBodyWitness
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.ConditionalValues.BodyWitness
 open Backend.Proof Backend.Proof.Driver

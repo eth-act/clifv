@@ -1,4 +1,8 @@
-import FV.Backend.Proof.DefGenSound
+module
+
+public import FV.Backend.Proof.DefGenSound
+
+@[expose] public section
 
 /-!
 # Definedness of the ISLE runs: soundness of the abstract interpreter (proof)

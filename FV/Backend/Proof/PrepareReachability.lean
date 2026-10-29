@@ -1,5 +1,9 @@
-import FV.Backend.Proof.PrepareComplete
-import FV.Backend.Proof.PerEdgePrepareOrderFacts
+module
+
+public import FV.Backend.Proof.PrepareComplete
+public import FV.Backend.Proof.PerEdgePrepareOrderFacts
+
+@[expose] public section
 
 namespace Backend.Proof.Prep
 open Backend

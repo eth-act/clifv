@@ -1,7 +1,11 @@
-import FV.Opt.Proof.Sem
-import FV.Opt.Proof.InterpMatch
-import FV.Opt.Proof.InterpState
-import FV.Isle.Opt.Simplify
+module
+
+public import FV.Opt.Proof.Sem
+public import FV.Opt.Proof.InterpMatch
+public import FV.Opt.Proof.InterpState
+public import FV.Isle.Opt.Simplify
+
+@[expose] public section
 
 /-!
 # Rule obligations for `simplify`, and their lifting to `Isle.Opt.simplify`

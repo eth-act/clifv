@@ -1,4 +1,8 @@
-import FV.Opt.Proof.RuleInfraIcmp
+module
+
+public import FV.Opt.Proof.RuleInfraIcmp
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 set_option maxRecDepth 8000

@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockDriverBounds
-import FV.Backend.Proof.StockParameterShape
+module
+
+public import FV.Backend.Proof.StockDriverBounds
+public import FV.Backend.Proof.StockParameterShape
+
+@[expose] public section
 
 namespace Backend.Stock.Proof
 open Backend.Proof Backend.Proof.Driver

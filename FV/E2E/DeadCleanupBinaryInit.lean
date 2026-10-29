@@ -1,6 +1,10 @@
-import FV.E2E.DeadCleanupExecProven
-import FV.E2E.LinkArmProgramInitEX
-import FV.E2E.LinkArmIniOfCongr
+module
+
+public import FV.E2E.DeadCleanupExecProven
+public import FV.E2E.LinkArmProgramInitEX
+public import FV.E2E.LinkArmIniOfCongr
+
+@[expose] public section
 
 /-!
 # The binary-level theorems under the slot-byte oracle (SEM1 #537, executable level (c))

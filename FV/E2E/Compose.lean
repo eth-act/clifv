@@ -1,4 +1,8 @@
-import FV.E2E.Statement
+module
+
+public import FV.E2E.Statement
+
+@[expose] public section
 
 /-!
 # M7: composing the layers

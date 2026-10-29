@@ -1,7 +1,11 @@
-import FV.E2E.BackendPrefixI
-import FV.E2E.BackendWorldCleanupI
-import FV.E2E.IselSimIPrefixCleanup
-import FV.E2E.DeadCleanupRegLevelPRS
+module
+
+public import FV.E2E.BackendPrefixI
+public import FV.E2E.BackendWorldCleanupI
+public import FV.E2E.IselSimIPrefixCleanup
+public import FV.E2E.DeadCleanupRegLevelPRS
+
+@[expose] public section
 
 /-!
 # The counted pipeline up to call `N`, cleanup path (SEM1 #537, item (d), docs/plans/uninit.md §5.9)

@@ -1,4 +1,8 @@
-import FV.Arm.Exec
+module
+
+public import FV.Arm.Exec
+
+@[expose] public section
 
 /-!
 # General-purpose register footprints of the Arm instructions (SEM1, `docs/plans/uninit.md` §5.8)

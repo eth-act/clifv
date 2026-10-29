@@ -1,6 +1,10 @@
-import FV.E2E.DeadCleanupTrapCall
-import FV.E2E.TrapCallTryPrep
-import FV.E2E.RegLevelTrapCallTry
+module
+
+public import FV.E2E.DeadCleanupTrapCall
+public import FV.E2E.TrapCallTryPrep
+public import FV.E2E.RegLevelTrapCallTry
+
+@[expose] public section
 
 /-!
 # The shipped compiler's per-function theorem with callee traps, `try_call`s included (S9b, #375)

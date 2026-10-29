@@ -1,6 +1,10 @@
-import FV.Concurrency.ArmAllocLinkedWitness
-import FV.Concurrency.CallResumeWitness
-import FV.Concurrency.IselCallRet
+module
+
+public import FV.Concurrency.ArmAllocLinkedWitness
+public import FV.Concurrency.CallResumeWitness
+public import FV.Concurrency.IselCallRet
+
+@[expose] public section
 
 /-!
 # Witness: all layers from the caller's entry, pausing at calls and returns (#473, (1))

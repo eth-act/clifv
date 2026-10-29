@@ -1,4 +1,8 @@
-import FV.E2E.LinkArmUCallP
+module
+
+public import FV.E2E.LinkArmUCallP
+
+@[expose] public section
 
 /-!
 # A call of a program function on the linked machine with unwinding, with non-interference

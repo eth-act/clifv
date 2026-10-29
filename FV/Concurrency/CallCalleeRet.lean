@@ -1,4 +1,8 @@
-import FV.Concurrency.CallEntryPremises
+module
+
+public import FV.Concurrency.CallEntryPremises
+
+@[expose] public section
 
 /-!
 # The callee's return contract relative to its entry (#473, step (3))

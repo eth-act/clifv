@@ -1,5 +1,9 @@
-import FV.Backend.Proof.PerEdgePrepareTotal
-import FV.Backend.Proof.SpillEdgesPrep
+module
+
+public import FV.Backend.Proof.PerEdgePrepareTotal
+public import FV.Backend.Proof.SpillEdgesPrep
+
+@[expose] public section
 
 namespace Backend.Proof.PerEdgePrep
 open Backend Backend.Proof

@@ -1,5 +1,9 @@
-import FV.Opt.Proof.LegalPat
-import FV.Opt.Proof.KernelBV
+module
+
+public import FV.Opt.Proof.LegalPat
+public import FV.Opt.Proof.KernelBV
+
+@[expose] public section
 
 /-!
 # The canonical patterns of `Opt.Legal` compute the `i128` operations

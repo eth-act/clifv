@@ -1,5 +1,9 @@
-import FV.Backend.Proof.SpillCtlPipe
-import FV.Backend.Proof.IselCovSound
+module
+
+public import FV.Backend.Proof.SpillCtlPipe
+public import FV.Backend.Proof.IselCovSound
+
+@[expose] public section
 
 /-!
 # Control shapes of the ISLE lowering (V4): the state invariant, hand-checked rules, totality

@@ -1,5 +1,10 @@
-import FV.Backend.Proof.StockDivConstant
-import FV.Backend.Proof.StockDivImmValues
+module
+
+public import FV.Backend.Proof.StockDivConstant
+public import FV.Backend.Proof.StockDivImmValues
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarDiv
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 def SourceDivisorValues (F : BitVec 64 → Prop) (isem : Backend.Proof.Sem) (ctx : Ctx) (y e : Nat)

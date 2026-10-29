@@ -1,5 +1,10 @@
-import FV.Backend.Proof.StockSelectBooleanCompanion
-import FV.Backend.Proof.StockSelectWitness
+module
+
+public import FV.Backend.Proof.StockSelectBooleanCompanion
+public import FV.Backend.Proof.StockSelectWitness
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarSelect
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 /-- All scalar widths and every machine condition inhabit the actual660/659

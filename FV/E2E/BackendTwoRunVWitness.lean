@@ -1,7 +1,11 @@
-import FV.E2E.BackendTwoRunEither
-import FV.E2E.BackendWorldCleanupIWitness
-import FV.E2E.BackendTwoRunLWLslWitness
-import FV.E2E.BackendTwoRunLRWitness
+module
+
+public import FV.E2E.BackendTwoRunEither
+public import FV.E2E.BackendWorldCleanupIWitness
+public import FV.E2E.BackendTwoRunLWLslWitness
+public import FV.E2E.BackendTwoRunLRWitness
+
+@[expose] public section
 
 /-!
 # Witnesses for the cleanup path's paired run and two-run lock (SEM1 #537, #713)

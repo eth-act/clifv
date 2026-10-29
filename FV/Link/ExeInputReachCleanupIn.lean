@@ -1,5 +1,9 @@
-import FV.Link.ExeInputReachCleanup
-import FV.E2E.LinkScopeInput
+module
+
+public import FV.Link.ExeInputReachCleanup
+public import FV.E2E.LinkScopeInput
+
+@[expose] public section
 
 /-! # The shipped compiler is total on input conditions decided without compiling (V7)
 

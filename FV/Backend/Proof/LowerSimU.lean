@@ -1,6 +1,10 @@
-import FV.Backend.Proof.LowerSim
-import FV.Backend.Proof.LowerSimURaise
-import FV.Backend.Proof.LowerSimUCheck
+module
+
+public import FV.Backend.Proof.LowerSim
+public import FV.Backend.Proof.LowerSimURaise
+public import FV.Backend.Proof.LowerSimUCheck
+
+@[expose] public section
 
 /-!
 # The driver simulation with unwinding: CLIF `runLoopX` ↦ VCode (S10e, #232)

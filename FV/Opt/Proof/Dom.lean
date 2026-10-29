@@ -1,5 +1,9 @@
-import FV.Opt.Check
-import FV.Opt.Proof.SemSim
+module
+
+public import FV.Opt.Check
+public import FV.Opt.Proof.SemSim
+
+@[expose] public section
 
 /-!
 # Dominance: what `Opt.check` guarantees (`wfCert`), declaratively

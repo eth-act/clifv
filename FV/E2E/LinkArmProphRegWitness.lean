@@ -1,5 +1,9 @@
-import FV.E2E.LinkArmProphReg
-import FV.E2E.LinkArmProphDetWitness
+module
+
+public import FV.E2E.LinkArmProphReg
+public import FV.E2E.LinkArmProphDetWitness
+
+@[expose] public section
 
 /-!
 # Witnesses for the register prophecy (`FV/E2E/LinkArmProphReg.lean`)

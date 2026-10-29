@@ -1,4 +1,8 @@
-import FV.Backend.Proof.RegallocOperands
+module
+
+public import FV.Backend.Proof.RegallocOperands
+
+@[expose] public section
 
 /-!
 # A memory region overwritten by a prophecy (SEM1 step 2, `docs/plans/uninit.md` §5.4)

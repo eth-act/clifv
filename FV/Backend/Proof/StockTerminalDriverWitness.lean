@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockTerminalEmission
-import FV.Backend.Proof.StockTerminalSinkWitness
+module
+
+public import FV.Backend.Proof.StockTerminalEmission
+public import FV.Backend.Proof.StockTerminalSinkWitness
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.TerminalDriverWitness
 open Backend.Proof Backend.Proof.Driver Coverage Isle Isle.Interp Isle.Aarch64

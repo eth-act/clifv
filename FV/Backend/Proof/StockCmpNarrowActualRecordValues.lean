@@ -1,6 +1,11 @@
-import FV.Backend.Proof.StockCmpNarrowActualRootValues
-import FV.Backend.Proof.StockGuardedRecordValues
-import FV.Backend.Proof.StockCmpNarrowAllocation
+module
+
+public import FV.Backend.Proof.StockCmpNarrowActualRootValues
+public import FV.Backend.Proof.StockGuardedRecordValues
+public import FV.Backend.Proof.StockCmpNarrowAllocation
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarCmp
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 private theorem scan_frontier (st : State) (i : Nat) :

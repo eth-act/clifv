@@ -1,5 +1,9 @@
-import FV.Opt.Proof.CheckComplete
-import FV.Opt.Gvn
+module
+
+public import FV.Opt.Proof.CheckComplete
+public import FV.Opt.Gvn
+
+@[expose] public section
 
 /-!
 # Completeness of the GVN stage (M1)

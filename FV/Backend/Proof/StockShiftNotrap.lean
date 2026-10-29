@@ -1,5 +1,10 @@
-import FV.Backend.Proof.StockShiftBodyRefines
-import FV.Backend.Proof.StockMulNotrap
+module
+
+public import FV.Backend.Proof.StockShiftBodyRefines
+public import FV.Backend.Proof.StockMulNotrap
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ShiftBody
 open Backend.Proof Backend.Proof.Driver
 set_option autoImplicit false

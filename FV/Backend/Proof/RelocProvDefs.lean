@@ -1,5 +1,9 @@
-import FV.Backend.Encode
-import FV.Backend.Isel
+module
+
+public import FV.Backend.Encode
+public import FV.Backend.Isel
+
+@[expose] public section
 
 /-!
 # Name provenance of the compiled relocations: the definitions (L1e, #216)

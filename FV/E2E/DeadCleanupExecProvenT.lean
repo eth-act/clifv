@@ -1,30 +1,34 @@
-import FV.E2E.DeadCleanupExecProven
-import FV.E2E.DeadCleanupExecGotT
-import FV.E2E.DeadCleanupExecGoodReadsT
-import FV.E2E.ExecProvenT
-import FV.E2E.DeadCleanupBinaryT
-import FV.E2E.DeadCleanupBinCheckT
-import FV.E2E.BinCheckT
-import FV.E2E.BinaryGoodT
-import FV.E2E.BinaryT
-import FV.E2E.DeadCleanupBinaryGoodT
-import FV.E2E.DeadCleanupExecBytesT
-import FV.E2E.DeadCleanupExecGoodRunT
-import FV.E2E.DeadCleanupExecRunNT
-import FV.E2E.DeadCleanupExecStaticT
-import FV.E2E.DeadCleanupLinkCheckT
-import FV.E2E.DeadCleanupStackBoundT
-import FV.E2E.ExecBytesT
-import FV.E2E.ExecGoodReadsT
-import FV.E2E.ExecGoodRunT
-import FV.E2E.ExecGotT
-import FV.E2E.ExecRunNT
-import FV.E2E.ExecStaticT
-import FV.E2E.LinkArmT
-import FV.E2E.LinkCheckT
-import FV.E2E.LinkGoodT
-import FV.E2E.PipelineCheckT
-import FV.E2E.StackBoundT
+module
+
+public import FV.E2E.DeadCleanupExecProven
+public import FV.E2E.DeadCleanupExecGotT
+public import FV.E2E.DeadCleanupExecGoodReadsT
+public import FV.E2E.ExecProvenT
+public import FV.E2E.DeadCleanupBinaryT
+public import FV.E2E.DeadCleanupBinCheckT
+public import FV.E2E.BinCheckT
+public import FV.E2E.BinaryGoodT
+public import FV.E2E.BinaryT
+public import FV.E2E.DeadCleanupBinaryGoodT
+public import FV.E2E.DeadCleanupExecBytesT
+public import FV.E2E.DeadCleanupExecGoodRunT
+public import FV.E2E.DeadCleanupExecRunNT
+public import FV.E2E.DeadCleanupExecStaticT
+public import FV.E2E.DeadCleanupLinkCheckT
+public import FV.E2E.DeadCleanupStackBoundT
+public import FV.E2E.ExecBytesT
+public import FV.E2E.ExecGoodReadsT
+public import FV.E2E.ExecGoodRunT
+public import FV.E2E.ExecGotT
+public import FV.E2E.ExecRunNT
+public import FV.E2E.ExecStaticT
+public import FV.E2E.LinkArmT
+public import FV.E2E.LinkCheckT
+public import FV.E2E.LinkGoodT
+public import FV.E2E.PipelineCheckT
+public import FV.E2E.StackBoundT
+
+@[expose] public section
 
 /-! # Typed copies of `FV.E2E.DeadCleanupExecProven` (S11e5 Stage C, slice 8)
 

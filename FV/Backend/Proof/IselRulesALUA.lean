@@ -1,5 +1,9 @@
-import FV.Backend.Proof.IselTermsALUA
-import FV.Backend.Proof.IselFamALUA
+module
+
+public import FV.Backend.Proof.IselTermsALUA
+public import FV.Backend.Proof.IselFamALUA
+
+@[expose] public section
 
 /-!
 # Forward interpreter lemmas for the family-A root rules

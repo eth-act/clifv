@@ -1,5 +1,9 @@
-import FV.Concurrency.IselThread
-import FV.Concurrency.IselCover
+module
+
+public import FV.Concurrency.IselThread
+public import FV.Concurrency.IselCover
+
+@[expose] public section
 
 /-!
 # The segment of a memory statement (T2h, #311, layer 2e): auxiliary facts

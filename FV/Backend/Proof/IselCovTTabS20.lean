@@ -1,4 +1,8 @@
-import FV.Backend.Proof.IselCovTTabData
+module
+
+public import FV.Backend.Proof.IselCovTTabData
+
+@[expose] public section
 
 /-!
 # Form coverage over float-capable contexts (typed V3): rules of `lower`, group 20

@@ -1,5 +1,9 @@
-import FV.E2E.IselSimIPrefix
-import FV.E2E.IselSimICleanup
+module
+
+public import FV.E2E.IselSimIPrefix
+public import FV.E2E.IselSimICleanup
+
+@[expose] public section
 
 /-!
 # The counted prefix simulation on the cleanup path (SEM1 item (d), `docs/plans/uninit.md` §5.9)

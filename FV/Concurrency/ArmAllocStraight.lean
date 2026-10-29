@@ -1,4 +1,8 @@
-import FV.Concurrency.ArmAllocItem
+module
+
+public import FV.Concurrency.ArmAllocItem
+
+@[expose] public section
 
 /-!
 # Layer 4b for the items without memory events (T2h, #311)

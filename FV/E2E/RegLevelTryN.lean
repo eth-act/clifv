@@ -1,6 +1,10 @@
-import FV.E2E.RegLevelTry
-import FV.E2E.RegLevelCallN
-import FV.E2E.RegLevelGotoN
+module
+
+public import FV.E2E.RegLevelTry
+public import FV.E2E.RegLevelCallN
+public import FV.E2E.RegLevelGotoN
+
+@[expose] public section
 
 /-!
 # The call of a `try_call` on the machine with its call state (SEM1 #537, step 2k)

@@ -1,5 +1,9 @@
-import FV.E2E.RegLevelCorrectCW
-import FV.E2E.RegLevelCorrectU
+module
+
+public import FV.E2E.RegLevelCorrectCW
+public import FV.E2E.RegLevelCorrectU
+
+@[expose] public section
 
 /-!
 # Two allocated-code runs realised jointly along a pair VCode run (SEM1 #537, item (3))

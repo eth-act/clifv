@@ -1,5 +1,10 @@
-import FV.Backend.Proof.StockMulRhs
-import FV.Backend.Proof.IselFamALUAMul
+module
+
+public import FV.Backend.Proof.StockMulRhs
+public import FV.Backend.Proof.IselFamALUAMul
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarMul
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 set_option maxRecDepth 20000

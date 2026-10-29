@@ -1,5 +1,9 @@
-import FV.Concurrency.IselClif
-import FV.Concurrency.VCodeFrameWitness
+module
+
+public import FV.Concurrency.IselClif
+public import FV.Concurrency.VCodeFrameWitness
+
+@[expose] public section
 
 /-!
 # Non-vacuity of layer 2d (T2h, #311): `IselFoot`, `IselClif`

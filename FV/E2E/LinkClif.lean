@@ -1,5 +1,9 @@
-import FV.Clif.Run
-import FV.Opt.Proof.SemSim
+module
+
+public import FV.Clif.Run
+public import FV.Opt.Proof.SemSim
+
+@[expose] public section
 
 /-!
 # Linking at the CLIF level: whole-program runs as per-function runs

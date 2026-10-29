@@ -1,5 +1,9 @@
-import FV.Opt.Proof.CompleteGuards
-import FV.Opt.Proof.PipelineX
+module
+
+public import FV.Opt.Proof.CompleteGuards
+public import FV.Opt.Proof.PipelineX
+
+@[expose] public section
 
 /-!
 # Completeness of the mid-end pipeline (M1)

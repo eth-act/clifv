@@ -1,11 +1,16 @@
-import FV.Backend.Proof.MemRefines
-import FV.Backend.Proof.StockEntrySeed
-import FV.Backend.Proof.StockEntryArgs
-import FV.Backend.Proof.StockEntryPrelude
-import FV.E2E.RegLevelDriverSem
-import FV.Backend.Proof.StockArithmeticReturnRefines
-import FV.Backend.Lowering.StockScalarAdd
-import FV.Backend.Proof.LowerDecide
+module
+
+public import FV.Backend.Proof.MemRefines
+public import FV.Backend.Proof.StockEntrySeed
+public import FV.Backend.Proof.StockEntryArgs
+public import FV.Backend.Proof.StockEntryPrelude
+public import FV.E2E.RegLevelDriverSem
+public import FV.Backend.Proof.StockArithmeticReturnRefines
+public import FV.Backend.Lowering.StockScalarAdd
+public import FV.Backend.Proof.LowerDecide
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.EntrySeedWitness
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 set_option autoImplicit false

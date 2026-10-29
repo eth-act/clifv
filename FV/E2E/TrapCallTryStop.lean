@@ -1,5 +1,9 @@
-import FV.Backend.Proof.LowerSimU
-import FV.E2E.TrapCallTry
+module
+
+public import FV.Backend.Proof.LowerSimU
+public import FV.E2E.TrapCallTry
+
+@[expose] public section
 
 /-!
 # Callee traps of `try_call`s: the CLIF → VCode prefix (S9b, #375)

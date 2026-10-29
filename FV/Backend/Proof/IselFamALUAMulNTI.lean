@@ -1,7 +1,11 @@
-import FV.Backend.Proof.IselFamALUAMulN
-import FV.Backend.Proof.IselBaseTI
-import FV.Backend.Proof.IselTermsALUAMulNTI
-import FV.Backend.Proof.IselFamALUATI
+module
+
+public import FV.Backend.Proof.IselFamALUAMulN
+public import FV.Backend.Proof.IselBaseTI
+public import FV.Backend.Proof.IselTermsALUAMulNTI
+public import FV.Backend.Proof.IselFamALUATI
+
+@[expose] public section
 
 /-!
 # `IselFamALUAMulN` over typed contexts (S11e5 Stage C, slice 7)

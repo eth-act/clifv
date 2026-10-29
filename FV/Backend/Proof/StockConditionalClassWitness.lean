@@ -1,8 +1,12 @@
-import FV.Backend.Proof.StockConditionalCompatibility
-import FV.Backend.Proof.StockConditionalBodyWitness
-import FV.Backend.Proof.StockConditionalClass
-import FV.Backend.Proof.StockConditionalEmptyFixture
-import FV.Backend.Proof.StockConditionalEmptyTrapFixture
+module
+
+public import FV.Backend.Proof.StockConditionalCompatibility
+public import FV.Backend.Proof.StockConditionalBodyWitness
+public import FV.Backend.Proof.StockConditionalClass
+public import FV.Backend.Proof.StockConditionalEmptyFixture
+public import FV.Backend.Proof.StockConditionalEmptyTrapFixture
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.ConditionalValues
 open Backend.Proof Backend.Proof.Driver

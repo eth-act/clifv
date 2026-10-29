@@ -1,6 +1,10 @@
-import FV.E2E.LinkMemTrap
-import FV.E2E.LinkGoodW
-import FV.E2E.WorldMemTrapW
+module
+
+public import FV.E2E.LinkMemTrap
+public import FV.E2E.LinkGoodW
+public import FV.E2E.WorldMemTrapW
+
+@[expose] public section
 
 /-!
 # Memory traps in the linked program with the writes (A3, #412, slice F8c)

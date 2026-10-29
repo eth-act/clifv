@@ -1,4 +1,8 @@
-import FV.Backend.Isel
+module
+
+public import FV.Backend.Isel
+
+@[expose] public section
 
 /-!
 # The outgoing-area input condition (S10g, #404)

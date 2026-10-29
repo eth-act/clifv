@@ -1,5 +1,9 @@
-import FV.E2E.RegLevelCorrectC
-import FV.E2E.RegLevelCorrectIWitness
+module
+
+public import FV.E2E.RegLevelCorrectC
+public import FV.E2E.RegLevelCorrectIWitness
+
+@[expose] public section
 
 /-!
 # Witnesses for the count-indexed register-level theorem (`FV/E2E/RegLevelCorrectC.lean`)

@@ -1,5 +1,9 @@
-import FV.E2E.LinkTrapCallInd
-import FV.E2E.WorldTrapStopT
+module
+
+public import FV.E2E.LinkTrapCallInd
+public import FV.E2E.WorldTrapStopT
+
+@[expose] public section
 
 /-! # Callee traps in the linked program, `try_call`s included (S9e, #408)
 

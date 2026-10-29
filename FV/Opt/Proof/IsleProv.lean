@@ -1,6 +1,10 @@
-import FV.Opt.Proof.InterpProv
-import FV.Opt.Proof.RulesProv
-import FV.Isle.Opt.Simplify
+module
+
+public import FV.Opt.Proof.InterpProv
+public import FV.Opt.Proof.RulesProv
+public import FV.Isle.Opt.Simplify
+
+@[expose] public section
 
 /-!
 # The exported Cranelift rule sets meet the provenance obligations (M1, #24)

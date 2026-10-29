@@ -1,6 +1,10 @@
-import FV.Backend.Lowering.StockForwardCfg
-import FV.Backend.Proof.StockForwardDomain
-import FV.Backend.Proof.StockScalarCheck
+module
+
+public import FV.Backend.Lowering.StockForwardCfg
+public import FV.Backend.Proof.StockForwardDomain
+public import FV.Backend.Proof.StockScalarCheck
+
+@[expose] public section
 
 namespace Backend.Stock.ForwardCfg
 open Backend.Proof Backend.Proof.Driver Backend.Stock.Proof

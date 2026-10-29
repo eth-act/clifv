@@ -1,5 +1,10 @@
-import FV.Backend.Proof.StockDivSafeValues
-import FV.Backend.Proof.StockDivSignedSelected
+module
+
+public import FV.Backend.Proof.StockDivSafeValues
+public import FV.Backend.Proof.StockDivSignedSelected
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarDiv
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 set_option maxRecDepth 20000

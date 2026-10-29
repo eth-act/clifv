@@ -1,5 +1,10 @@
-import FV.Backend.Proof.StockDivUdivWideRecordValues
-import FV.Backend.Proof.StockUnarySourceValues
+module
+
+public import FV.Backend.Proof.StockDivUdivWideRecordValues
+public import FV.Backend.Proof.StockUnarySourceValues
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarDiv
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 theorem stock_lower_udiv_wide_available_source {f : Clif.Function} {result : Result}

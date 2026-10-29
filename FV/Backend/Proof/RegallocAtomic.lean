@@ -1,4 +1,8 @@
-import FV.Backend.Proof.RegallocMemOS
+module
+
+public import FV.Backend.Proof.RegallocMemOS
+
+@[expose] public section
 
 /-!
 # `OperandsSound` for `csetm`, `dmb ish`, `ldar` and `stlr` (M6 proof)

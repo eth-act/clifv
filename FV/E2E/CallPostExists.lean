@@ -1,6 +1,10 @@
-import FV.E2E.ExtSemGuard
-import FV.E2E.RelWPatch
-import FV.E2E.ClifEnvOnlyContracts
+module
+
+public import FV.E2E.ExtSemGuard
+public import FV.E2E.RelWPatch
+public import FV.E2E.ClifEnvOnlyContracts
+
+@[expose] public section
 
 /-!
 # Accepted call results exist at a single invocation (SEM1 item (b), `docs/plans/uninit.md` §5.9)

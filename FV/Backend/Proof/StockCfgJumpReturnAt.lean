@@ -1,8 +1,12 @@
-import FV.Backend.Proof.StockCfgDemandValues
-import FV.Backend.Proof.StockInheritedJumpDefined
-import FV.Backend.Proof.StockCfgReturnBlockAt
-import FV.Backend.Proof.LowerShapeOkFacts
-import FV.Backend.Proof.StockComputedCfg
+module
+
+public import FV.Backend.Proof.StockCfgDemandValues
+public import FV.Backend.Proof.StockInheritedJumpDefined
+public import FV.Backend.Proof.StockCfgReturnBlockAt
+public import FV.Backend.Proof.LowerShapeOkFacts
+public import FV.Backend.Proof.StockComputedCfg
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.Control
 open Backend.Proof Backend.Proof.Driver

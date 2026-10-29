@@ -1,5 +1,10 @@
-import FV.Backend.Proof.StockMinMaxNarrowSourceReads
-import FV.Backend.Proof.StockMinMaxWideSourceReads
+module
+
+public import FV.Backend.Proof.StockMinMaxNarrowSourceReads
+public import FV.Backend.Proof.StockMinMaxWideSourceReads
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarSelect
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 open MinMaxRegisterFixture Backend.Stock.Proof.ScalarCmp

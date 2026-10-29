@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockInheritedBody
-import FV.Backend.Proof.LowerDecide
+module
+
+public import FV.Backend.Proof.StockInheritedBody
+public import FV.Backend.Proof.LowerDecide
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.InheritedWitness
 open Backend.Proof Backend.Proof.Driver

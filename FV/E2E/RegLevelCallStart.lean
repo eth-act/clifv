@@ -1,4 +1,8 @@
-import FV.E2E.RegLevelCorrectPRS
+module
+
+public import FV.E2E.RegLevelCorrectPRS
+
+@[expose] public section
 
 /-!
 # Call states are segment starts (SEM1 #537, executable level; the body `sp` at call states)

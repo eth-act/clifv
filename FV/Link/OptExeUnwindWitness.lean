@@ -1,5 +1,9 @@
-import FV.Link.OptExeUnwind
-import FV.Link.ExeUnwindWitness
+module
+
+public import FV.Link.OptExeUnwind
+public import FV.Link.ExeUnwindWitness
+
+@[expose] public section
 
 /-!
 # Witness: `compileExeOptU` succeeds and `compileExeOpt_correct_unwind{,_peak}` apply (S10g, #404)

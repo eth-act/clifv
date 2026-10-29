@@ -1,13 +1,17 @@
-import FV.E2E.UnwindStatement
-import FV.Backend.Proof.IselContractP
-import FV.Backend.Proof.IselCtl
-import FV.Backend.Proof.IselCtlTry
-import FV.Backend.Proof.IselCtlTryInd
-import FV.Backend.Proof.IselLowerAll
-import FV.Backend.Proof.IselExcl
-import FV.Backend.Proof.IselAtomic
-import FV.Backend.Proof.LowerSeq
-import FV.Backend.Proof.LowerContract
+module
+
+public import FV.E2E.UnwindStatement
+public import FV.Backend.Proof.IselContractP
+public import FV.Backend.Proof.IselCtl
+public import FV.Backend.Proof.IselCtlTry
+public import FV.Backend.Proof.IselCtlTryInd
+public import FV.Backend.Proof.IselLowerAll
+public import FV.Backend.Proof.IselExcl
+public import FV.Backend.Proof.IselAtomic
+public import FV.Backend.Proof.LowerSeq
+public import FV.Backend.Proof.LowerContract
+
+@[expose] public section
 
 /-!
 # The lowered code of a raising call (S10e, #232)

@@ -1,10 +1,14 @@
-import FV.Link.UnwFnsComplete
-import FV.Backend.Proof.LowerComplete
-import FV.Backend.Proof.SpillEdges
-import FV.Backend.Proof.SpillStep4Cfg
-import FV.Backend.Proof.DeadCleanupPrepareMap
-import FV.Backend.Proof.RelocProvEmit
-import FV.Backend.Proof.TryRegs
+module
+
+public import FV.Link.UnwFnsComplete
+public import FV.Backend.Proof.LowerComplete
+public import FV.Backend.Proof.SpillEdges
+public import FV.Backend.Proof.SpillStep4Cfg
+public import FV.Backend.Proof.DeadCleanupPrepareMap
+public import FV.Backend.Proof.RelocProvEmit
+public import FV.Backend.Proof.TryRegs
+
+@[expose] public section
 
 /-!
 # The `try_call` handlers of the prepared code from the input (S10g, #404)

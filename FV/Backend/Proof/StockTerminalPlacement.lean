@@ -1,4 +1,8 @@
-import FV.Backend.Proof.StockReturnScanShape
+module
+
+public import FV.Backend.Proof.StockReturnScanShape
+
+@[expose] public section
 
 /-! Placement of actual scan code in the assembled whole-driver output.
 Entry materialization is a prefix and later reverse-traversal nodes frame

@@ -1,4 +1,8 @@
-import FV.E2E.LinkArmTwin
+module
+
+public import FV.E2E.LinkArmTwin
+
+@[expose] public section
 
 /-!
 # `DetPRB` from the determinism step, generic over the table predicates

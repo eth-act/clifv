@@ -1,4 +1,8 @@
-import FV.Backend.Proof.SpillEdgesIsel
+module
+
+public import FV.Backend.Proof.SpillEdgesIsel
+
+@[expose] public section
 
 /-!
 # The last instruction of a `return`/`trap` lowering is a terminator

@@ -1,7 +1,11 @@
-import FV.Concurrency.CallThread
-import FV.Concurrency.ArmAllocEntry
-import FV.Concurrency.ArmAllocFwd
-import FV.Concurrency.ArmProgram
+module
+
+public import FV.Concurrency.CallThread
+public import FV.Concurrency.ArmAllocEntry
+public import FV.Concurrency.ArmAllocFwd
+public import FV.Concurrency.ArmProgram
+
+@[expose] public section
 
 /-!
 # Private segments, the `bl` step and exclusive-closed runs (T2h, #311, calls)

@@ -1,4 +1,8 @@
-import FV.Opt.Proof.LegalArith
+module
+
+public import FV.Opt.Proof.LegalArith
+
+@[expose] public section
 
 /-!
 # Variable-amount `i128` shifts and rotates (`Opt.Legal.Pat.varShiftFull`)

@@ -1,6 +1,11 @@
-import FV.Backend.Proof.StockReduceSourceValues
-import FV.Backend.Proof.StockCastWitness
-import FV.Backend.Proof.LowerSim
+module
+
+public import FV.Backend.Proof.StockReduceSourceValues
+public import FV.Backend.Proof.StockCastWitness
+public import FV.Backend.Proof.LowerSim
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarCast.Reduce.Witness
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 open ScalarCast.Witness (Pair)

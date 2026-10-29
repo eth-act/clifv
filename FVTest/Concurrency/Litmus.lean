@@ -1,4 +1,8 @@
-import FV.Concurrency.Armv8
+module
+
+public import FV.Concurrency.Armv8
+
+@[expose] public section
 
 /-!
 # Litmus tests of the Armv8 fragment against herd7's verdicts (T2c, #301)

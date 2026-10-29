@@ -1,6 +1,10 @@
-import FV.E2E.RegLevelFrame
-import FV.E2E.RegLevelGoodXNR
-import FV.E2E.RegLevelSegAlign
+module
+
+public import FV.E2E.RegLevelFrame
+public import FV.E2E.RegLevelGoodXNR
+public import FV.E2E.RegLevelSegAlign
+
+@[expose] public section
 
 /-!
 # The prologue and the return on the machine with no call state (SEM1 #537, step 2k)

@@ -1,6 +1,10 @@
-import FV.E2E.LinkArmBaseDet
-import FV.E2E.LinkArmProph
-import FV.Concurrency.VCodeThread
+module
+
+public import FV.E2E.LinkArmBaseDet
+public import FV.E2E.LinkArmProph
+public import FV.Concurrency.VCodeThread
+
+@[expose] public section
 
 /-!
 # One machine step from two states equal but for unread memory (SEM1 step 2o, §5.7)

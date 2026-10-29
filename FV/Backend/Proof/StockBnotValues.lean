@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockBnotMatch
-import FV.Backend.Proof.StockSelectionReceipts
+module
+
+public import FV.Backend.Proof.StockBnotMatch
+public import FV.Backend.Proof.StockSelectionReceipts
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.Bnot
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

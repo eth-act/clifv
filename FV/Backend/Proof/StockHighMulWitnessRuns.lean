@@ -1,4 +1,9 @@
-import FV.Backend.Proof.StockHighMulSourceValues
+module
+
+public import FV.Backend.Proof.StockHighMulSourceValues
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarHighMul.Witness.RunData
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 set_option maxRecDepth 20000

@@ -1,5 +1,9 @@
-import FV.Backend
-import FV.Backend.Proof.StockD0Dispatch
+module
+
+public import FV.Backend
+public import FV.Backend.Proof.StockD0Dispatch
+
+@[expose] public section
 
 namespace Backend.Stock.D0.Compiler
 

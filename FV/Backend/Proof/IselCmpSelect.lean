@@ -1,4 +1,8 @@
-import FV.Backend.Proof.IselCmpRoot
+module
+
+public import FV.Backend.Proof.IselCmpRoot
+
+@[expose] public section
 
 /-!
 # Family C: `select` (2267) and integer min/max (1222/1224/1226/1228)

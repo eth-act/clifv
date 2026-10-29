@@ -1,4 +1,8 @@
-import FV.Link.Ld.PlanProof
+module
+
+public import FV.Link.Ld.PlanProof
+
+@[expose] public section
 
 /-! # `lean-ld`'s planner meets its plan's conditions by construction (A1a, #409)
 

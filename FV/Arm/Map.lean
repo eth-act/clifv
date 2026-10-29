@@ -4,7 +4,11 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Author(s): Leonardo de Moura
 -/
 
-import Lean
+module
+
+public import Lean
+
+@[expose] public section
 
 namespace Arm
 

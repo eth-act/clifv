@@ -1,4 +1,8 @@
-import FV.Backend.Proof.IselCtlCallRules
+module
+
+public import FV.Backend.Proof.IselCtlCallRules
+
+@[expose] public section
 
 /-!
 # Family Ctl: the `call_indirect` rule

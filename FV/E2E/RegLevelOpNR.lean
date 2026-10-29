@@ -1,7 +1,10 @@
-import FV.E2E.RegLevelGoodXNR
-import FV.E2E.RegLevelOp
-import FV.E2E.RegLevelNoCall
+module
 
+public import FV.E2E.RegLevelGoodXNR
+public import FV.E2E.RegLevelOp
+public import FV.E2E.RegLevelNoCall
+
+@[expose] public section
 
 /-!
 # Straight-line instructions with no call state (SEM1 #537, step 2k)

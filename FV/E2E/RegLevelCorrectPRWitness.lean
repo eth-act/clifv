@@ -1,5 +1,9 @@
-import FV.E2E.RegLevelCorrectPR
-import FV.E2E.LinkArmProphThmWitness
+module
+
+public import FV.E2E.RegLevelCorrectPR
+public import FV.E2E.LinkArmProphThmWitness
+
+@[expose] public section
 
 /-!
 # Witnesses for the register-prophecy reg-level theorem (`FV/E2E/RegLevelCorrectPR.lean`)

@@ -1,4 +1,8 @@
-import FV.Backend.Proof.RefinesInsts2
+module
+
+public import FV.Backend.Proof.RefinesInsts2
+
+@[expose] public section
 
 /-!
 # `Refines` of `csem` (M6 proof)

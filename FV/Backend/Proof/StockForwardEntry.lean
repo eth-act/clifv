@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockForwardTrap
-import FV.Backend.Proof.StockJumpEntryPrelude
+module
+
+public import FV.Backend.Proof.StockForwardTrap
+public import FV.Backend.Proof.StockJumpEntryPrelude
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.ForwardSource
 open Backend.Proof Backend.Proof.Driver

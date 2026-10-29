@@ -1,7 +1,11 @@
-import FV.Concurrency.CallResumeLayers
-import FV.Concurrency.CallLoadResume
-import FV.Concurrency.CallLayers
-import FV.Concurrency.IselCallWitness
+module
+
+public import FV.Concurrency.CallResumeLayers
+public import FV.Concurrency.CallLoadResume
+public import FV.Concurrency.CallLayers
+public import FV.Concurrency.IselCallWitness
+
+@[expose] public section
 
 /-!
 # Witness: the caller's layer 4 after a call's return (#473, (2c))

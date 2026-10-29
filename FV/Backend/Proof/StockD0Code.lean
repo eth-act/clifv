@@ -1,6 +1,10 @@
-import Lean
-import FV.Backend.Lowering.StockD0
-import FV.Backend.Proof.LowerLoopCode
+module
+
+public import Lean
+public import FV.Backend.Lowering.StockD0
+public import FV.Backend.Proof.LowerLoopCode
+
+@[expose] public section
 
 namespace Backend.Stock.D0
 open Backend.Proof.Driver

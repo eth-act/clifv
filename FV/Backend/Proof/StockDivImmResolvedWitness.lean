@@ -1,4 +1,9 @@
-import FV.Backend.Proof.StockDivImmResolved
+module
+
+public import FV.Backend.Proof.StockDivImmResolved
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarDiv.ImmResolvedWitness
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 set_option maxRecDepth 20000

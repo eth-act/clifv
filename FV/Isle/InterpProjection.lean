@@ -1,4 +1,8 @@
-import FV.Isle.Interp
+module
+
+public import FV.Isle.Interp
+
+@[expose] public section
 
 /-!
 State transport for the single-result ISLE interpreter. A lowering driver may

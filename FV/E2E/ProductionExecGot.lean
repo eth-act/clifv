@@ -1,4 +1,8 @@
-import FV.E2E.ProductionExecGoodRun
+module
+
+public import FV.E2E.ProductionExecGoodRun
+
+@[expose] public section
 
 /-! # D4: the GOT slots of the executable's `adrp`/`ldr` pairs (L3 (c))
 

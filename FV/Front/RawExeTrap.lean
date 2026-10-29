@@ -1,5 +1,9 @@
-import FV.Front.RawExe
-import FV.Link.DeadCleanupExeTrap
+module
+
+public import FV.Front.RawExe
+public import FV.Link.DeadCleanupExeTrap
+
+@[expose] public section
 
 /-!
 # The shipped executable compiler refines cg_clif's program, callee traps included (S9d, #377)

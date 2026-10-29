@@ -1,4 +1,8 @@
-import FV.Backend.Proof.SpillEdgesLow
+module
+
+public import FV.Backend.Proof.SpillEdgesLow
+
+@[expose] public section
 
 /-!
 # The spill allocator's CFG facts on the pipeline's output (V4, `EdgesHyp`)

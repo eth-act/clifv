@@ -1,11 +1,15 @@
-import FV.E2E.RelaxTotal
-import FV.E2E.EmitReady
-import FV.Backend.AllocReady
-import FV.E2E.EmitPreOk
-import FV.E2E.EmitEnc
-import FV.E2E.EmitLabels
-import FV.E2E.EmitNear
-import FV.E2E.EmitSize
+module
+
+public import FV.E2E.RelaxTotal
+public import FV.E2E.EmitReady
+public import FV.Backend.AllocReady
+public import FV.E2E.EmitPreOk
+public import FV.E2E.EmitEnc
+public import FV.E2E.EmitLabels
+public import FV.E2E.EmitNear
+public import FV.E2E.EmitSize
+
+@[expose] public section
 
 /-!
 # Emission and layout are total (V6b)

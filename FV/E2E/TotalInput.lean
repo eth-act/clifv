@@ -1,9 +1,13 @@
-import FV.E2E.SizeIn
-import FV.E2E.DeadCleanupSize
-import FV.Backend.Proof.DeadCleanupPrepareMap
-import FV.Backend.Proof.IselPrgDriver
-import FV.Backend.Proof.PrepareTotal
-import FV.E2E.LinkScopeInputDefs
+module
+
+public import FV.E2E.SizeIn
+public import FV.E2E.DeadCleanupSize
+public import FV.Backend.Proof.DeadCleanupPrepareMap
+public import FV.Backend.Proof.IselPrgDriver
+public import FV.Backend.Proof.PrepareTotal
+public import FV.E2E.LinkScopeInputDefs
+
+@[expose] public section
 
 /-! # The backend's end-to-end theorems, total on input conditions alone (V7)
 

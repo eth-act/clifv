@@ -1,4 +1,8 @@
-import FV.Opt.Proof.RuleBitopsEmbed
+module
+
+public import FV.Opt.Proof.RuleBitopsEmbed
+
+@[expose] public section
 
 /-!
 # `opts/bitops.isle` (part 6): proven `simplify` rules that need the bitops template variants

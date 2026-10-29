@@ -1,5 +1,9 @@
-import FV.Concurrency.IselCall
-import FV.Concurrency.IselRetT
+module
+
+public import FV.Concurrency.IselCall
+public import FV.Concurrency.IselRetT
+
+@[expose] public section
 
 /-!
 # Layer 2 pausing at calls and returns (#473, the `rets` end)

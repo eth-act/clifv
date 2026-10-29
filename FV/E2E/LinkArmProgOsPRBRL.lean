@@ -1,5 +1,9 @@
-import FV.E2E.LinkArmProgOsPRBR
-import FV.E2E.LinkArmProgCallPRBRL
+module
+
+public import FV.E2E.LinkArmProgOsPRBR
+public import FV.E2E.LinkArmProgCallPRBRL
+
+@[expose] public section
 
 /-!
 # The calls on `ThmPRBRL` (SEM1 #537, #680 (3), #694)

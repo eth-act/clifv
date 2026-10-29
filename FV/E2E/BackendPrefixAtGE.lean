@@ -1,6 +1,10 @@
-import FV.E2E.BackendPrefixAtCleanup
-import FV.E2E.RegLevelCorrectPRSNG
-import FV.E2E.LinkArmInvokedStep
+module
+
+public import FV.E2E.BackendPrefixAtCleanup
+public import FV.E2E.RegLevelCorrectPRSNG
+public import FV.E2E.LinkArmInvokedStep
+
+@[expose] public section
 
 /-!
 # The error-free trace up to a call (SEM1 #537, #680 (3), #700)

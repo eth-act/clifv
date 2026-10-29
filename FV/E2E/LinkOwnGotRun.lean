@@ -1,6 +1,10 @@
-import FV.E2E.LinkOwnCallsShape
-import FV.Backend.Proof.KillAssemble
-import FV.Backend.Proof.KillDriver
+module
+
+public import FV.E2E.LinkOwnCallsShape
+public import FV.Backend.Proof.KillAssemble
+public import FV.Backend.Proof.KillDriver
+
+@[expose] public section
 
 /-! # The GOT vreg of a direct call (`GotRunHyp`)
 

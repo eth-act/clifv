@@ -1,5 +1,9 @@
-import FV.E2E.PairDriverICleanup
-import FV.E2E.CompiledEitherI
+module
+
+public import FV.E2E.PairDriverICleanup
+public import FV.E2E.CompiledEitherI
+
+@[expose] public section
 
 /-!
 # The counted per-function theorem with non-interference (SEM1, `docs/plans/uninit.md` §5.9)

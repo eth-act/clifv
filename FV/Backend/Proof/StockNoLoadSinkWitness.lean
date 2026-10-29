@@ -1,7 +1,11 @@
-import FV.Backend.Proof.StockNoLoadSink
-import FV.Backend.Proof.StockSinkRuleRhs
-import FV.Backend.Proof.LowerDecide
-import FV.E2E.StockDivFixtures
+module
+
+public import FV.Backend.Proof.StockNoLoadSink
+public import FV.Backend.Proof.StockSinkRuleRhs
+public import FV.Backend.Proof.LowerDecide
+public import FV.E2E.StockDivFixtures
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.SinkRules.Witness
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64 Isle.Interp.RuleFrame

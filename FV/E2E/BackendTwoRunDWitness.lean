@@ -1,5 +1,9 @@
-import FV.E2E.BackendTwoRunD
-import FV.E2E.BackendTwoRunWitness
+module
+
+public import FV.E2E.BackendTwoRunD
+public import FV.E2E.BackendTwoRunWitness
+
+@[expose] public section
 
 /-!
 # Witness for the guarded pair run (SEM1 #537, #699, `BackendPairRunD.lean`, `BackendTwoRunD.lean`)

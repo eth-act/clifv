@@ -1,5 +1,9 @@
-import FV.E2E.LinkArmThmPRBROf
-import FV.E2E.LinkArmThmPRBRWitness
+module
+
+public import FV.E2E.LinkArmThmPRBROf
+public import FV.E2E.LinkArmThmPRBRWitness
+
+@[expose] public section
 
 /-!
 # Witnesses for `LinkArmStage2Y.lean` and `LinkArmThmPRBROf.lean`

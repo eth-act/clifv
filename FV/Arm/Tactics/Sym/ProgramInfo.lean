@@ -4,9 +4,13 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Author(s): Alex Keizer
 -/
 -- Modified by fv-compiler-rust (2026): ported to Lean v4.34.1, module prefix FV.Arm, wrapped in namespace Arm.
-import FV.Arm.Map
-import FV.Arm.Tactics.Common
-import Std
+module
+
+public import FV.Arm.Map
+public import FV.Arm.Tactics.Common
+public import Std
+
+@[expose] public section
 
 /-!
 # ProgramInfo

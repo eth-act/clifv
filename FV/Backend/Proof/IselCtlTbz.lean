@@ -1,6 +1,10 @@
-import FV.Backend.Proof.IselCtlBrif
-import FV.Backend.Proof.IselFamALUAMul
-import FV.Backend.Proof.IselFamALUALogic
+module
+
+public import FV.Backend.Proof.IselCtlBrif
+public import FV.Backend.Proof.IselFamALUAMul
+public import FV.Backend.Proof.IselFamALUALogic
+
+@[expose] public section
 
 /-!
 # Family Ctl: `tbnz` / `tbz` (`lower_branch` rules 1137, 1138)

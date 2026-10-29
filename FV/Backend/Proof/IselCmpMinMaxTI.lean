@@ -1,5 +1,9 @@
-import FV.Backend.Proof.IselCmpMinMax
-import FV.Backend.Proof.IselBaseTI
+module
+
+public import FV.Backend.Proof.IselCmpMinMax
+public import FV.Backend.Proof.IselBaseTI
+
+@[expose] public section
 
 /-!
 # `IselCmpMinMax` over typed contexts (S11e5 Stage C, slice 7)

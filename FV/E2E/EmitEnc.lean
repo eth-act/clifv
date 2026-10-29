@@ -1,8 +1,12 @@
-import Lean
-import FV.E2E.EmitPreOk
-import FV.E2E.EmitCondsDefs
-import FV.Backend.Proof.RelaxLayout
-import FV.Backend.EmitOk
+module
+
+public import Lean
+public import FV.E2E.EmitPreOk
+public import FV.E2E.EmitCondsDefs
+public import FV.Backend.Proof.RelaxLayout
+public import FV.Backend.EmitOk
+
+@[expose] public section
 
 /-!
 # Every instruction of the emitted spill allocation is encodable (V6b)

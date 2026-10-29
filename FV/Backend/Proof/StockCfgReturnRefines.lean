@@ -1,4 +1,8 @@
-import FV.Backend.Proof.StockPureReturnRefines
+module
+
+public import FV.Backend.Proof.StockPureReturnRefines
+
+@[expose] public section
 
 /-! Original-block return composition without a single-block input restriction.
 The previous theorem and its interfaces remain unchanged. -/

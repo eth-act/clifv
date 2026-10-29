@@ -1,4 +1,8 @@
-import FV.E2E.LinkArmUEnv
+module
+
+public import FV.E2E.LinkArmUEnv
+
+@[expose] public section
 
 /-!
 # Linking at the Arm level with unwinding: where a linked call returns or raises (S10f, #233)

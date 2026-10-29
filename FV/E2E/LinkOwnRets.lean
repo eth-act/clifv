@@ -1,6 +1,10 @@
-import FV.Backend.Proof.IselTermFacts
-import FV.E2E.SpillCtlCheck
-import FV.E2E.LinkCheck
+module
+
+public import FV.Backend.Proof.IselTermFacts
+public import FV.E2E.SpillCtlCheck
+public import FV.E2E.LinkCheck
+
+@[expose] public section
 
 /-!
 # Own-output facts of `okB`: `sretRets` and `entryRegs`

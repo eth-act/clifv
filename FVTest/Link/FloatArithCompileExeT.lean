@@ -1,10 +1,14 @@
-import FV.Link.DeadCleanupCompileT
-import FV.E2E.VerifiableT
-import FV.E2E.LinkScopeInputDefsT
-import FV.E2E.LinkScopeInputDefsTC
-import FVTest.Link.FloatExeT
-import FVTest.Link.DeadCleanupWitness
-import FVTest.E2E.FloatFinalT
+module
+
+public import FV.Link.DeadCleanupCompileT
+public import FV.E2E.VerifiableT
+public import FV.E2E.LinkScopeInputDefsT
+public import FV.E2E.LinkScopeInputDefsTC
+public import FVTest.Link.FloatExeT
+public import FVTest.Link.DeadCleanupWitness
+public import FVTest.E2E.FloatFinalT
+
+@[expose] public section
 
 /-! Non-vacuity of the link-level chain with the proven float operations (S11f, #35).
 

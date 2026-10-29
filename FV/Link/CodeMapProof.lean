@@ -1,5 +1,9 @@
-import FV.Link.LayoutFacts
-import FV.E2E.CodeMap
+module
+
+public import FV.Link.LayoutFacts
+public import FV.E2E.CodeMap
+
+@[expose] public section
 
 /-! # The code map of an alias-free placement (L1)
 

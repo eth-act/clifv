@@ -1,4 +1,8 @@
-import FV.Link.ExeLdIn
+module
+
+public import FV.Link.ExeLdIn
+
+@[expose] public section
 
 /-! # Non-vacuity of `Link.DeadCleanup.compileExe_total_ldIn` on real link inputs (A1, #409)
 

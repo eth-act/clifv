@@ -1,6 +1,10 @@
-import FV.Backend.Proof.IselMemRun
-import FV.Backend.Proof.IselTermsALUA
-import FV.Backend.Proof.IselFamALUA
+module
+
+public import FV.Backend.Proof.IselMemRun
+public import FV.Backend.Proof.IselTermsALUA
+public import FV.Backend.Proof.IselFamALUA
+
+@[expose] public section
 
 /-!
 # Memory family (M4Mem): the address helpers

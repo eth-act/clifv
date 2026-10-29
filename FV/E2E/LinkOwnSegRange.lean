@@ -1,6 +1,10 @@
-import FV.E2E.LinkOwnGotRun
-import FV.E2E.Main
-import FV.Backend.Proof.IselShpDriver
+module
+
+public import FV.E2E.LinkOwnGotRun
+public import FV.E2E.Main
+public import FV.Backend.Proof.IselShpDriver
+
+@[expose] public section
 
 /-! # The ranges of the run segments (`SegRangeHyp`)
 

@@ -1,5 +1,9 @@
-import FV.Isle.Opt.Helpers
-import FV.Clif.Sem
+module
+
+public import FV.Isle.Opt.Helpers
+public import FV.Clif.Sem
+
+@[expose] public section
 
 namespace Opt.Proof.DivConst
 

@@ -1,6 +1,10 @@
-import FV.E2E.LinkOutT
-import FV.E2E.PipelineCheckT
-import FV.E2E.DeadCleanupLinkScope
+module
+
+public import FV.E2E.LinkOutT
+public import FV.E2E.PipelineCheckT
+public import FV.E2E.DeadCleanupLinkScope
+
+@[expose] public section
 
 /-! # The typed checker on the dead-cleanup pipeline's output (S11e5 Stage C, slice 8)
 

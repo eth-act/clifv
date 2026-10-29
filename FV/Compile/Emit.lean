@@ -1,4 +1,8 @@
-import FV.Compile.Abi
+module
+
+public import FV.Compile.Abi
+
+@[expose] public section
 
 /-!
 # The DSL → CLIF emitter (`Compile.compile`)

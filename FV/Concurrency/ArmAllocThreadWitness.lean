@@ -1,5 +1,9 @@
-import FV.Concurrency.ArmAllocThread
-import FV.Concurrency.ThreadLayerWitness
+module
+
+public import FV.Concurrency.ArmAllocThread
+public import FV.Concurrency.ThreadLayerWitness
+
+@[expose] public section
 
 /-!
 # Non-vacuity of the run level of layer 4b (T2h, #311)

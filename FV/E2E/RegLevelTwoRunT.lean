@@ -1,5 +1,9 @@
-import FV.E2E.RegLevelTwoRunS
-import FV.E2E.RegLevelCorrectCYSF
+module
+
+public import FV.E2E.RegLevelTwoRunS
+public import FV.E2E.RegLevelCorrectCYSF
+
+@[expose] public section
 
 /-!
 # Two activations in lock-step, the lock step told where it is (SEM1 #537)

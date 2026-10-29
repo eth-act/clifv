@@ -1,9 +1,13 @@
-import FV.E2E.PairDriverTC
-import FV.E2E.DeadCleanupTC
-import FV.E2E.DeadCleanupT
-import FV.E2E.DeadCleanupPair
-import FV.E2E.DeadCleanupPairT
-import FV.E2E.DeadCleanupGuardedFP
+module
+
+public import FV.E2E.PairDriverTC
+public import FV.E2E.DeadCleanupTC
+public import FV.E2E.DeadCleanupT
+public import FV.E2E.DeadCleanupPair
+public import FV.E2E.DeadCleanupPairT
+public import FV.E2E.DeadCleanupGuardedFP
+
+@[expose] public section
 
 /-! # The dead-cleanup world and non-interference, typed `try_call`s (S11e6, #419)
 

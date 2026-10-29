@@ -1,5 +1,10 @@
-import FV.Backend.Proof.StockScopeRoots
-import FV.Backend.Proof.StockScopeRootsWitness
+module
+
+public import FV.Backend.Proof.StockScopeRoots
+public import FV.Backend.Proof.StockScopeRootsWitness
+
+@[expose] public section
+
 namespace Backend.Stock.Proof
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 set_option maxRecDepth 100000

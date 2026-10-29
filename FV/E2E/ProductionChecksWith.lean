@@ -1,4 +1,8 @@
-import FV.E2E.ProductionPipelineWith
+module
+
+public import FV.E2E.ProductionPipelineWith
+
+@[expose] public section
 
 set_option autoImplicit false
 namespace E2E.ProductionChecksWith

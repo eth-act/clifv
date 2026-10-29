@@ -1,5 +1,9 @@
-import FV.Concurrency.SegFoot
-import FV.Concurrency.VCodeThreadWitness
+module
+
+public import FV.Concurrency.SegFoot
+public import FV.Concurrency.VCodeThreadWitness
+
+@[expose] public section
 
 /-!
 # Non-vacuity of the footprint premises along a run (T2h, #311, layer 2e step 2)

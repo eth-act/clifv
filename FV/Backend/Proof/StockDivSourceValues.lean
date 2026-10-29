@@ -1,8 +1,13 @@
-import FV.Backend.Proof.StockDivSignedSourceTrap
-import FV.Backend.Proof.StockDivUdivWideSourceValues
-import FV.Backend.Proof.StockDivUdivNarrowSourceValues
-import FV.Backend.Proof.StockDivRemWideSourceValues
-import FV.Backend.Proof.StockDivRemNarrowSourceValues
+module
+
+public import FV.Backend.Proof.StockDivSignedSourceTrap
+public import FV.Backend.Proof.StockDivUdivWideSourceValues
+public import FV.Backend.Proof.StockDivUdivNarrowSourceValues
+public import FV.Backend.Proof.StockDivRemWideSourceValues
+public import FV.Backend.Proof.StockDivRemNarrowSourceValues
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarDiv
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 set_option autoImplicit false

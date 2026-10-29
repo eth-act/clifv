@@ -1,4 +1,8 @@
-import FV.Backend.Proof.LowerLoopRun
+module
+
+public import FV.Backend.Proof.LowerLoopRun
+
+@[expose] public section
 
 /-!
 # `lowerFunction`'s block loop, simulated

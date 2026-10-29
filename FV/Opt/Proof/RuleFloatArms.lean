@@ -1,4 +1,8 @@
-import FV.Opt.Proof.RuleIntRetry
+module
+
+public import FV.Opt.Proof.RuleIntRetry
+
+@[expose] public section
 
 /-!
 # `all_zero` at a float type

@@ -1,6 +1,11 @@
-import FV.Backend.Proof.StockSelectConditionReplacement
-import FV.Backend.Proof.StockSelectConditionObserved
-import FV.Backend.Proof.StockSelectWitness
+module
+
+public import FV.Backend.Proof.StockSelectConditionReplacement
+public import FV.Backend.Proof.StockSelectConditionObserved
+public import FV.Backend.Proof.StockSelectWitness
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarSelect.ConditionWitness
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 private def aliases : Array (Option Nat) := #[some 1,none,some 3,none,some 5,none]

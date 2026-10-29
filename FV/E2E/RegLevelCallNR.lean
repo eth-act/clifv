@@ -1,6 +1,10 @@
-import FV.E2E.RegLevelGoodXNR
-import FV.E2E.RegLevelCallN
-import FV.E2E.RegLevelOpNR
+module
+
+public import FV.E2E.RegLevelGoodXNR
+public import FV.E2E.RegLevelCallN
+public import FV.E2E.RegLevelOpNR
+
+@[expose] public section
 
 /-!
 # Calls and symbol addresses on the machine with their call states (SEM1 #537, step 2k)

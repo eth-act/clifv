@@ -1,4 +1,8 @@
-import FV.E2E.RegLevelJointRL
+module
+
+public import FV.E2E.RegLevelJointRL
+
+@[expose] public section
 
 /-!
 # The two-run induction (SEM1 #537, item (3))

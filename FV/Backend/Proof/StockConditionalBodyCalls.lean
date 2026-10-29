@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockConditionalBodyRefines
-import FV.Backend.Proof.StockConditionalParameterSelection
+module
+
+public import FV.Backend.Proof.StockConditionalBodyRefines
+public import FV.Backend.Proof.StockConditionalParameterSelection
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.ConditionalValues
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

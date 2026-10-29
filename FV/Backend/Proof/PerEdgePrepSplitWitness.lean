@@ -1,6 +1,11 @@
-import FV.Backend.Proof.PerEdgePrepareSound
-import FV.Backend.Proof.PerEdgePrepareWitness
-import FV.E2E.RegLevelDriverSem
+module
+
+public import FV.Backend.Proof.PerEdgePrepareSound
+public import FV.Backend.Proof.PerEdgePrepareWitness
+public import FV.E2E.RegLevelDriverSem
+
+@[expose] public section
+
 namespace Backend.Proof.PerEdgePrepSplitWitness
 open Backend.Proof.Driver
 set_option maxRecDepth 20000

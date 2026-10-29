@@ -1,10 +1,14 @@
-import FV.Concurrency.ThreadCompose
-import FV.Concurrency.ArmAllocMove
-import FV.Concurrency.PrivCoh
-import FV.Concurrency.ArmAllocBranch
-import FV.Concurrency.ArmAllocLS
-import FV.Concurrency.ThreadProgress
-import FV.Concurrency.ArmAllocPause
+module
+
+public import FV.Concurrency.ThreadCompose
+public import FV.Concurrency.ArmAllocMove
+public import FV.Concurrency.PrivCoh
+public import FV.Concurrency.ArmAllocBranch
+public import FV.Concurrency.ArmAllocLS
+public import FV.Concurrency.ThreadProgress
+public import FV.Concurrency.ArmAllocPause
+
+@[expose] public section
 
 /-!
 # The program-level contract for compiled code (T2k, #311)

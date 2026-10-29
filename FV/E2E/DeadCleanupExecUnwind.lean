@@ -1,6 +1,10 @@
-import FV.E2E.DeadCleanupExecTrap
-import FV.E2E.LinkArmUEnvCall
-import FV.Link.EhCheck
+module
+
+public import FV.E2E.DeadCleanupExecTrap
+public import FV.E2E.LinkArmUEnvCall
+public import FV.Link.EhCheck
+
+@[expose] public section
 
 /-!
 # The executable machine with unwinding (S10g, #404)

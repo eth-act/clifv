@@ -1,10 +1,14 @@
-import FV.Backend.Proof.IselMemFuncAddr
-import FV.Backend.Proof.IselTls
-import FV.Backend.Proof.IselCmpCond
-import FV.Backend.Proof.IselFamAluBShiftTerms
-import FV.Backend.Proof.IselCtlUnmatch
-import FV.Backend.Proof.IselCmpRoot
-import FV.Backend.Proof.IselFloatVac
+module
+
+public import FV.Backend.Proof.IselMemFuncAddr
+public import FV.Backend.Proof.IselTls
+public import FV.Backend.Proof.IselCmpCond
+public import FV.Backend.Proof.IselFamAluBShiftTerms
+public import FV.Backend.Proof.IselCtlUnmatch
+public import FV.Backend.Proof.IselCmpRoot
+public import FV.Backend.Proof.IselFloatVac
+
+@[expose] public section
 
 /-!
 # `bmask`, the atomics and `fence`

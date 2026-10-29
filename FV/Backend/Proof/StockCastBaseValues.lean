@@ -1,5 +1,10 @@
-import FV.Backend.Proof.StockShiftRootMatch
-import FV.Backend.Proof.IselFamAluBExtend
+module
+
+public import FV.Backend.Proof.StockShiftRootMatch
+public import FV.Backend.Proof.IselFamAluBExtend
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarCast
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 set_option maxRecDepth 20000

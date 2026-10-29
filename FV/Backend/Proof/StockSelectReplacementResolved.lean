@@ -1,4 +1,9 @@
-import FV.Backend.Proof.StockSelectReplacement
+module
+
+public import FV.Backend.Proof.StockSelectReplacement
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarSelect
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 /-- The consumer replacement uses the actual final resolver. Fresh destination

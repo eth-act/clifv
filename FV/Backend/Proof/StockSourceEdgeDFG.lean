@@ -1,8 +1,10 @@
-import FV.Backend.Proof.StockBodyScanOrigin
-import FV.Backend.Proof.StockSourceEdges
-import FV.Backend.Proof.StockSourceDFG
+module
 
+public import FV.Backend.Proof.StockBodyScanOrigin
+public import FV.Backend.Proof.StockSourceEdges
+public import FV.Backend.Proof.StockSourceDFG
 
+@[expose] public section
 
 namespace Backend.Stock.Proof
 open Backend.Proof Backend.Proof.Driver

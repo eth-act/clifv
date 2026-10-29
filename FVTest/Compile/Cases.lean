@@ -1,5 +1,9 @@
-import Corpus.All
-import Corpus.Emit
+module
+
+public import Corpus.All
+public import Corpus.Emit
+
+@[expose] public section
 
 /-! The emitter's differential-testing corpus: `Corpus.all` plus the emitter-owned additions
 `Corpus.emitTests` (`corpus/dsl/Corpus/Emit.lean`). -/

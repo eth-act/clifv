@@ -1,6 +1,10 @@
-import FV.Backend.Proof.DeadCleanupSem
-import FV.Backend.Proof.RefinesCSem
-import FV.Backend.Proof.MemRefines
+module
+
+public import FV.Backend.Proof.DeadCleanupSem
+public import FV.Backend.Proof.RefinesCSem
+public import FV.Backend.Proof.MemRefines
+
+@[expose] public section
 
 namespace Backend.DeadCleanup
 open Backend.Proof

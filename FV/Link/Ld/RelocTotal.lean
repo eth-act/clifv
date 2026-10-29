@@ -1,4 +1,8 @@
-import FV.Link.Ld.Places
+module
+
+public import FV.Link.Ld.Places
+
+@[expose] public section
 
 /-! # `lean-ld`'s relocations apply on inputs within bounds (A1c, #409)
 

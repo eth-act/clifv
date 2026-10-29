@@ -1,4 +1,8 @@
-import FV.Clif.Run
+module
+
+public import FV.Clif.Run
+
+@[expose] public section
 
 /-!
 # Memory-access traps of `Clif.run` (A3, #412, slice F2)

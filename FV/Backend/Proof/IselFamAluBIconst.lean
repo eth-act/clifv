@@ -1,4 +1,8 @@
-import FV.Backend.Proof.IselTermsImm
+module
+
+public import FV.Backend.Proof.IselTermsImm
+
+@[expose] public section
 
 /-!
 # Family B: `iconst` (`lower.isle:53`): `(imm ty (ImmExtend.Zero) n)`

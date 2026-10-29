@@ -1,5 +1,9 @@
-import FV.E2E.LinkOwnCallsRun
-import FV.E2E.LinkArm
+module
+
+public import FV.E2E.LinkOwnCallsRun
+public import FV.E2E.LinkArm
+
+@[expose] public section
 
 /-!
 # The operands and the code of a lowered call

@@ -1,10 +1,14 @@
-import FV.E2E.FinalDirect
-import FV.Backend.Proof.SpillInvariant
-import FV.Backend.Proof.SpillStep4
-import FV.Backend.Proof.SpillArity
-import FV.Backend.Proof.SpillEdges
-import FV.Backend.Proof.SpillClasses
-import FV.E2E.SpillCtlWitness
+module
+
+public import FV.E2E.FinalDirect
+public import FV.Backend.Proof.SpillInvariant
+public import FV.Backend.Proof.SpillStep4
+public import FV.Backend.Proof.SpillArity
+public import FV.Backend.Proof.SpillEdges
+public import FV.Backend.Proof.SpillClasses
+public import FV.E2E.SpillCtlWitness
+
+@[expose] public section
 
 /-!
 # The final theorem without the register-allocation checker premise (V4)

@@ -1,4 +1,9 @@
-import FV.Backend.Proof.StockMinMaxRegisterRuns
+module
+
+public import FV.Backend.Proof.StockMinMaxRegisterRuns
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarSelect.MinMaxRegisterWitness
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 open Backend.Stock.Proof.ScalarCmp

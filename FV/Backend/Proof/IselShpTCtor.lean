@@ -1,7 +1,11 @@
-import FV.Backend.Proof.IselShpTFns
-import FV.Backend.Proof.IselShpTBase
-import FV.Backend.Proof.IselShpCtor
-import FV.Backend.Proof.IselCovTCtor
+module
+
+public import FV.Backend.Proof.IselShpTFns
+public import FV.Backend.Proof.IselShpTBase
+public import FV.Backend.Proof.IselShpCtor
+public import FV.Backend.Proof.IselCovTCtor
+
+@[expose] public section
 
 /-!
 # Control shapes of the typed ISLE lowering: `emit`ted instructions and extern constructors

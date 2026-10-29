@@ -1,5 +1,10 @@
-import FV.Backend.Proof.StockCmpScanRefines
-import FV.Backend.Proof.StockHighMulFamily
+module
+
+public import FV.Backend.Proof.StockCmpScanRefines
+public import FV.Backend.Proof.StockHighMulFamily
+
+@[expose] public section
+
 namespace Backend.Stock.Proof
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 set_option autoImplicit false

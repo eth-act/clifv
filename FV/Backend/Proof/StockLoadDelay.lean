@@ -1,4 +1,8 @@
-import FV.Backend.Proof.StockScanSemantics
+module
+
+public import FV.Backend.Proof.StockScanSemantics
+
+@[expose] public section
 
 /-! Source-side delayed-load obligations. These compare the complete result,
 including traps and stuck outcomes. The driver must establish address and memory

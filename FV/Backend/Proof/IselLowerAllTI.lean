@@ -1,42 +1,46 @@
-import FV.Backend.Proof.IselLowerAll
-import FV.Backend.Proof.IselFloatCmpTI
-import FV.Backend.Proof.IselBaseTI
-import FV.Backend.Proof.IselAtomicTI
-import FV.Backend.Proof.IselCmpDivRemTI
-import FV.Backend.Proof.IselCmpDivRootTI
-import FV.Backend.Proof.IselCmpDivTI
-import FV.Backend.Proof.IselCmpEmitTI
-import FV.Backend.Proof.IselCmpMinMaxTI
-import FV.Backend.Proof.IselCmpRootTI
-import FV.Backend.Proof.IselCmpSdivTI
-import FV.Backend.Proof.IselCmpSelectTI
-import FV.Backend.Proof.IselCmpVecTI
-import FV.Backend.Proof.IselFamALUAExtTI
-import FV.Backend.Proof.IselFamALUAExtrTI
-import FV.Backend.Proof.IselFamALUALogicNotTI
-import FV.Backend.Proof.IselFamALUALogicTI
-import FV.Backend.Proof.IselFamALUAMulNTI
-import FV.Backend.Proof.IselFamALUAMulTI
-import FV.Backend.Proof.IselFamALUARulesTI
-import FV.Backend.Proof.IselFamALUATI
-import FV.Backend.Proof.IselFamAluBBaseTI
-import FV.Backend.Proof.IselFamAluBBfmTI
-import FV.Backend.Proof.IselFamAluBBitrevTI
-import FV.Backend.Proof.IselFamAluBBswapTI
-import FV.Backend.Proof.IselFamAluBClzTI
-import FV.Backend.Proof.IselFamAluBExtendTI
-import FV.Backend.Proof.IselFamAluBIconstTI
-import FV.Backend.Proof.IselFamAluBMiscTI
-import FV.Backend.Proof.IselFamAluBNotShiftTI
-import FV.Backend.Proof.IselFamAluBPopcntTI
-import FV.Backend.Proof.IselFamAluBRotTI
-import FV.Backend.Proof.IselFamAluBShiftBaseTI
-import FV.Backend.Proof.IselFamAluBShiftTI
-import FV.Backend.Proof.IselFamAluBShiftTermsTI
-import FV.Backend.Proof.IselFamAluBUnaryTI
-import FV.Backend.Proof.IselFamilyALUTI
-import FV.Backend.Proof.IselFamilyTI
-import FV.Backend.Proof.IselTermsShiftTI
+module
+
+public import FV.Backend.Proof.IselLowerAll
+public import FV.Backend.Proof.IselFloatCmpTI
+public import FV.Backend.Proof.IselBaseTI
+public import FV.Backend.Proof.IselAtomicTI
+public import FV.Backend.Proof.IselCmpDivRemTI
+public import FV.Backend.Proof.IselCmpDivRootTI
+public import FV.Backend.Proof.IselCmpDivTI
+public import FV.Backend.Proof.IselCmpEmitTI
+public import FV.Backend.Proof.IselCmpMinMaxTI
+public import FV.Backend.Proof.IselCmpRootTI
+public import FV.Backend.Proof.IselCmpSdivTI
+public import FV.Backend.Proof.IselCmpSelectTI
+public import FV.Backend.Proof.IselCmpVecTI
+public import FV.Backend.Proof.IselFamALUAExtTI
+public import FV.Backend.Proof.IselFamALUAExtrTI
+public import FV.Backend.Proof.IselFamALUALogicNotTI
+public import FV.Backend.Proof.IselFamALUALogicTI
+public import FV.Backend.Proof.IselFamALUAMulNTI
+public import FV.Backend.Proof.IselFamALUAMulTI
+public import FV.Backend.Proof.IselFamALUARulesTI
+public import FV.Backend.Proof.IselFamALUATI
+public import FV.Backend.Proof.IselFamAluBBaseTI
+public import FV.Backend.Proof.IselFamAluBBfmTI
+public import FV.Backend.Proof.IselFamAluBBitrevTI
+public import FV.Backend.Proof.IselFamAluBBswapTI
+public import FV.Backend.Proof.IselFamAluBClzTI
+public import FV.Backend.Proof.IselFamAluBExtendTI
+public import FV.Backend.Proof.IselFamAluBIconstTI
+public import FV.Backend.Proof.IselFamAluBMiscTI
+public import FV.Backend.Proof.IselFamAluBNotShiftTI
+public import FV.Backend.Proof.IselFamAluBPopcntTI
+public import FV.Backend.Proof.IselFamAluBRotTI
+public import FV.Backend.Proof.IselFamAluBShiftBaseTI
+public import FV.Backend.Proof.IselFamAluBShiftTI
+public import FV.Backend.Proof.IselFamAluBShiftTermsTI
+public import FV.Backend.Proof.IselFamAluBUnaryTI
+public import FV.Backend.Proof.IselFamilyALUTI
+public import FV.Backend.Proof.IselFamilyTI
+public import FV.Backend.Proof.IselTermsShiftTI
+
+@[expose] public section
 
 /-!
 # `IselLowerAll` over typed contexts (S11e5 Stage C, slice 7)

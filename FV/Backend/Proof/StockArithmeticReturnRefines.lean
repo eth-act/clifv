@@ -1,6 +1,11 @@
-import FV.Backend.Proof.StockArithmeticSourceFrame
-import FV.Backend.Proof.StockArithmeticTerminalDefined
-import FV.Backend.Proof.StockReturnVCode
+module
+
+public import FV.Backend.Proof.StockArithmeticSourceFrame
+public import FV.Backend.Proof.StockArithmeticTerminalDefined
+public import FV.Backend.Proof.StockReturnVCode
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ArithmeticBody
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 set_option autoImplicit false

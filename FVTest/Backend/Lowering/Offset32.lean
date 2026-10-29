@@ -1,4 +1,8 @@
-import FV.Backend.Isel
+module
+
+public import FV.Backend.Isel
+
+@[expose] public section
 
 /-! Regression for the raw signed Offset32 extractor and the actual exported
 ordinary-load helper pattern. Independent of the experimental stock driver. -/

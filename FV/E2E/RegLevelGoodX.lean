@@ -1,6 +1,10 @@
-import FV.E2E.RegLevelMove
-import FV.E2E.ExecReads
-import FV.E2E.MoveReads
+module
+
+public import FV.E2E.RegLevelMove
+public import FV.E2E.ExecReads
+public import FV.E2E.MoveReads
+
+@[expose] public section
 
 /-!
 # The per-state facts of the M6 runs that the executable machine needs (L3 (c))

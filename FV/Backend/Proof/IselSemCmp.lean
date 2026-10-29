@@ -1,5 +1,9 @@
-import FV.Backend.Proof.IselContract
-import FV.Backend.Proof.IselExtern
+module
+
+public import FV.Backend.Proof.IselContract
+public import FV.Backend.Proof.IselExtern
+
+@[expose] public section
 
 /-!
 # Flag lemmas for the compare family (`icmp`, `select`, min/max, division checks)

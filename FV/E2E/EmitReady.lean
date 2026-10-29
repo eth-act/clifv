@@ -1,4 +1,8 @@
-import FV.Backend.Proof.RelaxReady
+module
+
+public import FV.Backend.Proof.RelaxReady
+
+@[expose] public section
 
 /-!
 # `layoutReadyB` is complete (V6b)

@@ -1,6 +1,10 @@
-import FV.Front.RenameRunX
-import FV.Front.RawExeUnwindRen
-import FV.E2E.LinkArmUProgWitness
+module
+
+public import FV.Front.RenameRunX
+public import FV.Front.RawExeUnwindRen
+public import FV.E2E.LinkArmUProgWitness
+
+@[expose] public section
 
 /-!
 # Witness: renaming a run that unwinds (S10f)

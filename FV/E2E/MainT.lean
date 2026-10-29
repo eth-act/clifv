@@ -1,5 +1,9 @@
-import FV.E2E.Main
-import FV.E2E.ComposeT
+module
+
+public import FV.E2E.Main
+public import FV.E2E.ComposeT
+
+@[expose] public section
 
 /-!
 # Typed `backend_correct` (S11e5 Stage C, slice 7)

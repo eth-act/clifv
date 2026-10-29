@@ -1,5 +1,9 @@
-import FV.E2E.BackendTwoRunD
-import FV.E2E.RegLevelTwoRunT
+module
+
+public import FV.E2E.BackendTwoRunD
+public import FV.E2E.RegLevelTwoRunT
+
+@[expose] public section
 
 /-!
 # Two activations along one CLIF run, the lock step told where it is (SEM1 #537)

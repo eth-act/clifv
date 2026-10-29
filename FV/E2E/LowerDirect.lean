@@ -1,6 +1,10 @@
-import FV.E2E.PrepDirect
-import FV.Backend.Proof.LowerComplete
-import FV.Clif.Parse
+module
+
+public import FV.E2E.PrepDirect
+public import FV.Backend.Proof.LowerComplete
+public import FV.Clif.Parse
+
+@[expose] public section
 
 /-!
 # The end-to-end chain without the lowering and `prepare` validators

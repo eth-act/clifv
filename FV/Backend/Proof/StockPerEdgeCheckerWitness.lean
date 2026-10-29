@@ -1,5 +1,10 @@
-import FV.Backend.Proof.PerEdgeRegallocLemmas
-import FV.Backend.Proof.StockPerSuccessorWitness
+module
+
+public import FV.Backend.Proof.PerEdgeRegallocLemmas
+public import FV.Backend.Proof.StockPerSuccessorWitness
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.PerEdgeCheckerWitness
 open Backend.Proof Backend.Proof.Driver
 set_option maxRecDepth 20000

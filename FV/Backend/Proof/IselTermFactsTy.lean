@@ -1,7 +1,11 @@
-import FV.Compile.SubsetT
-import FV.Backend.Proof.IselTermFacts
-import FV.Backend.Proof.SpillEdgesIsel
-import FV.Backend.Proof.IselFlow
+module
+
+public import FV.Compile.SubsetT
+public import FV.Backend.Proof.IselTermFacts
+public import FV.Backend.Proof.SpillEdgesIsel
+public import FV.Backend.Proof.IselFlow
+
+@[expose] public section
 
 /-!
 # The emitted code of the terminator rules over float-capable contexts (S11e5 Stage C)

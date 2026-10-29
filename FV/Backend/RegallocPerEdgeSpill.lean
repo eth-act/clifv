@@ -1,5 +1,9 @@
-import FV.Backend.SpillAlloc
-import FV.Backend.RegallocPerEdge
+module
+
+public import FV.Backend.SpillAlloc
+public import FV.Backend.RegallocPerEdge
+
+@[expose] public section
 
 /-! Per-successor spill fallback. Copies for a unique predecessor run on entry,
 after terminator-result stores. Copies into shared targets run before a jump

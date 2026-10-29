@@ -1,4 +1,8 @@
-import FV.Compile.SubsetT
+module
+
+public import FV.Compile.SubsetT
+
+@[expose] public section
 
 /-!
 # The typed movement scope with typed direct `try_call`s (S11e6, #419)

@@ -1,6 +1,10 @@
-import FV.Concurrency.ArmInstFoot
-import FV.Backend.Proof.RegallocCSem
-import FV.Concurrency.Code
+module
+
+public import FV.Concurrency.ArmInstFoot
+public import FV.Backend.Proof.RegallocCSem
+public import FV.Concurrency.Code
+
+@[expose] public section
 
 /-!
 # Event semantics of VCode (T2h, #311, layer 1)

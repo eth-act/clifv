@@ -1,6 +1,10 @@
-import FV.Backend.RegallocPerEdge
-import FV.Backend.Proof.RegallocLemmas
-import FV.Backend.Proof.PerEdgeVCodeSem
+module
+
+public import FV.Backend.RegallocPerEdge
+public import FV.Backend.Proof.RegallocLemmas
+public import FV.Backend.Proof.PerEdgeVCodeSem
+
+@[expose] public section
 
 namespace Backend.Proof.PerEdge
 open Backend

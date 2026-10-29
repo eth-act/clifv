@@ -1,6 +1,10 @@
-import FV.E2E.SretReturnLegal
-import FV.E2E.SretReturnCleanup
-import FV.E2E.DeadCleanupLegal
+module
+
+public import FV.E2E.SretReturnLegal
+public import FV.E2E.SretReturnCleanup
+public import FV.E2E.DeadCleanupLegal
+
+@[expose] public section
 
 /-!
 # The `sret` return register through the dead-cleanup `i128` legalisation theorems (S7)

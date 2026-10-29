@@ -1,6 +1,10 @@
-import FV.Backend.Proof.StockScalarContract
-import FV.Backend.Proof.StockBitReturnRefines
-import FV.Backend.Proof.StockBitFamily
+module
+
+public import FV.Backend.Proof.StockScalarContract
+public import FV.Backend.Proof.StockBitReturnRefines
+public import FV.Backend.Proof.StockBitFamily
+
+@[expose] public section
 
 namespace Backend.Stock.Scalar
 open Backend.Proof Backend.Proof.Driver Backend.Stock.Proof

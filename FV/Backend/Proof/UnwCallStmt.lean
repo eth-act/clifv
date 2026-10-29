@@ -1,4 +1,8 @@
-import FV.Backend.Proof.IselTermFactsCall
+module
+
+public import FV.Backend.Proof.IselTermFactsCall
+
+@[expose] public section
 
 /-!
 # A call statement's code contains a call (S10g, #404)

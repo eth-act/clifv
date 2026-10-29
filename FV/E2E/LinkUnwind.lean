@@ -1,6 +1,10 @@
-import FV.E2E.FinalUnwind
-import FV.E2E.Link
-import FV.Clif.LinkClifX
+module
+
+public import FV.E2E.FinalUnwind
+public import FV.E2E.Link
+public import FV.Clif.LinkClifX
+
+@[expose] public section
 
 /-!
 # Linking with unwinding: the end-to-end theorem against the whole-program runs with unwinding

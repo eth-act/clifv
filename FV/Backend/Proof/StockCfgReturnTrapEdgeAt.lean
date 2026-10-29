@@ -1,6 +1,10 @@
-import FV.Backend.Proof.StockCfgReturnTrapAt
-import FV.Backend.Proof.StockCfgReturnBlockAt
-import FV.Backend.Proof.StockGuardedSuccessor
+module
+
+public import FV.Backend.Proof.StockCfgReturnTrapAt
+public import FV.Backend.Proof.StockCfgReturnBlockAt
+public import FV.Backend.Proof.StockGuardedSuccessor
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.CfgReturnAt
 open Backend.Proof Backend.Proof.Driver

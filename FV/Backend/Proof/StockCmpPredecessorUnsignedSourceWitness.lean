@@ -1,4 +1,9 @@
-import FV.Backend.Proof.StockCmpPredecessorUnsignedSourceValues
+module
+
+public import FV.Backend.Proof.StockCmpPredecessorUnsignedSourceValues
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarCmp.PredecessorUnsignedSourceWitness
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 open Backend.Stock.Proof.ScalarCmp

@@ -1,5 +1,9 @@
-import FV.E2E.BackendTwoRunN
-import FV.E2E.RegLevelTwoRunNP
+module
+
+public import FV.E2E.BackendTwoRunN
+public import FV.E2E.RegLevelTwoRunNP
+
+@[expose] public section
 
 /-!
 # The machine lock with the contracts of the first `N` calls, the call hook told the first run's

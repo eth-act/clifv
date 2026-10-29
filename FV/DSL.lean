@@ -1,8 +1,12 @@
-import FV.DSL.Map
-import FV.DSL.Ty
-import FV.DSL.Ops
-import FV.DSL.Syntax
-import FV.DSL.Denote
-import FV.DSL.Check
-import FV.DSL.TestCase
-import FV.DSL.Frontend
+module
+
+public import FV.DSL.Map
+public import FV.DSL.Ty
+public import FV.DSL.Ops
+public import FV.DSL.Syntax
+public import FV.DSL.Denote
+public import FV.DSL.Check
+public import FV.DSL.TestCase
+public import FV.DSL.Frontend
+
+@[expose] public section

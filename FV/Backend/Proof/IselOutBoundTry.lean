@@ -1,5 +1,9 @@
-import FV.Backend.Proof.IselTermFactsCall
-import FV.Backend.Proof.IselCtlTryInd
+module
+
+public import FV.Backend.Proof.IselTermFactsCall
+public import FV.Backend.Proof.IselCtlTryInd
+
+@[expose] public section
 
 /-!
 # The outgoing area after a `try_call` rule, exactly (S10g, #404)

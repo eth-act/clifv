@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockCfgTotal
-import FV.Backend.Proof.StockEdgeCode
+module
+
+public import FV.Backend.Proof.StockCfgTotal
+public import FV.Backend.Proof.StockEdgeCode
+
+@[expose] public section
 
 namespace Backend.Stock.Proof
 open Backend.Proof Backend.Proof.Driver

@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockTermContract
-import FV.Backend.Proof.StockReturnAutomaticSource
+module
+
+public import FV.Backend.Proof.StockTermContract
+public import FV.Backend.Proof.StockReturnAutomaticSource
+
+@[expose] public section
 
 /-! Consume actual retained Stock return execution at the VCode simulation
 boundary. Segment placement is an internal assembly obligation, not an input

@@ -1,5 +1,9 @@
-import FV.E2E.LinkArmTableB
-import FV.E2E.LinkArmProphDetRWitness
+module
+
+public import FV.E2E.LinkArmTableB
+public import FV.E2E.LinkArmProphDetRWitness
+
+@[expose] public section
 
 /-!
 # Witnesses for the slot-byte statement layer (`FV/E2E/LinkArmTableB.lean`)

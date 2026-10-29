@@ -1,68 +1,72 @@
-import FV.Backend.Proof.IselEmitTTabB
-import FV.Backend.Proof.IselEmitTTabC0
-import FV.Backend.Proof.IselEmitTTabC1
-import FV.Backend.Proof.IselEmitTTabC2
-import FV.Backend.Proof.IselEmitTTabC3
-import FV.Backend.Proof.IselEmitTTabC4
-import FV.Backend.Proof.IselEmitTTabC5
-import FV.Backend.Proof.IselEmitTTabC6
-import FV.Backend.Proof.IselEmitTTabC7
-import FV.Backend.Proof.IselEmitTTabC8
-import FV.Backend.Proof.IselEmitTTabC9
-import FV.Backend.Proof.IselEmitTTabC10
-import FV.Backend.Proof.IselEmitTTabC11
-import FV.Backend.Proof.IselEmitTTabS0
-import FV.Backend.Proof.IselEmitTTabS1
-import FV.Backend.Proof.IselEmitTTabS2
-import FV.Backend.Proof.IselEmitTTabS3
-import FV.Backend.Proof.IselEmitTTabS4
-import FV.Backend.Proof.IselEmitTTabS5
-import FV.Backend.Proof.IselEmitTTabS6
-import FV.Backend.Proof.IselEmitTTabS7
-import FV.Backend.Proof.IselEmitTTabS8
-import FV.Backend.Proof.IselEmitTTabS9
-import FV.Backend.Proof.IselEmitTTabS10
-import FV.Backend.Proof.IselEmitTTabS11
-import FV.Backend.Proof.IselEmitTTabS12
-import FV.Backend.Proof.IselEmitTTabS13
-import FV.Backend.Proof.IselEmitTTabS14
-import FV.Backend.Proof.IselEmitTTabS15
-import FV.Backend.Proof.IselEmitTTabS16
-import FV.Backend.Proof.IselEmitTTabS17
-import FV.Backend.Proof.IselEmitTTabS18
-import FV.Backend.Proof.IselEmitTTabS19
-import FV.Backend.Proof.IselEmitTTabS20
-import FV.Backend.Proof.IselEmitTTabS21
-import FV.Backend.Proof.IselEmitTTabS22
-import FV.Backend.Proof.IselEmitTTabS23
-import FV.Backend.Proof.IselEmitTTabS24
-import FV.Backend.Proof.IselEmitTTabS25
-import FV.Backend.Proof.IselEmitTTabS26
-import FV.Backend.Proof.IselEmitTTabS27
-import FV.Backend.Proof.IselEmitTTabS28
-import FV.Backend.Proof.IselEmitTTabS29
-import FV.Backend.Proof.IselEmitTTabS30
-import FV.Backend.Proof.IselEmitTTabS31
-import FV.Backend.Proof.IselEmitTTabS32
-import FV.Backend.Proof.IselEmitTTabS33
-import FV.Backend.Proof.IselEmitTTabS34
-import FV.Backend.Proof.IselEmitTTabS35
-import FV.Backend.Proof.IselEmitTTabS36
-import FV.Backend.Proof.IselEmitTTabS37
-import FV.Backend.Proof.IselEmitTTabS38
-import FV.Backend.Proof.IselEmitTTabS39
-import FV.Backend.Proof.IselEmitTTabS40
-import FV.Backend.Proof.IselEmitTTabS41
-import FV.Backend.Proof.IselEmitTTabS42
-import FV.Backend.Proof.IselEmitTTabS43
-import FV.Backend.Proof.IselEmitTTabS44
-import FV.Backend.Proof.IselEmitTTabS45
-import FV.Backend.Proof.IselEmitTTabS46
-import FV.Backend.Proof.IselEmitTTabS47
-import FV.Backend.Proof.IselEmitTTabS48
-import FV.Backend.Proof.IselEmitTTabS49
-import FV.Backend.Proof.IselEmitTTabS50
-import FV.Backend.Proof.IselEmitTTabS51
+module
+
+public import FV.Backend.Proof.IselEmitTTabB
+public import FV.Backend.Proof.IselEmitTTabC0
+public import FV.Backend.Proof.IselEmitTTabC1
+public import FV.Backend.Proof.IselEmitTTabC2
+public import FV.Backend.Proof.IselEmitTTabC3
+public import FV.Backend.Proof.IselEmitTTabC4
+public import FV.Backend.Proof.IselEmitTTabC5
+public import FV.Backend.Proof.IselEmitTTabC6
+public import FV.Backend.Proof.IselEmitTTabC7
+public import FV.Backend.Proof.IselEmitTTabC8
+public import FV.Backend.Proof.IselEmitTTabC9
+public import FV.Backend.Proof.IselEmitTTabC10
+public import FV.Backend.Proof.IselEmitTTabC11
+public import FV.Backend.Proof.IselEmitTTabS0
+public import FV.Backend.Proof.IselEmitTTabS1
+public import FV.Backend.Proof.IselEmitTTabS2
+public import FV.Backend.Proof.IselEmitTTabS3
+public import FV.Backend.Proof.IselEmitTTabS4
+public import FV.Backend.Proof.IselEmitTTabS5
+public import FV.Backend.Proof.IselEmitTTabS6
+public import FV.Backend.Proof.IselEmitTTabS7
+public import FV.Backend.Proof.IselEmitTTabS8
+public import FV.Backend.Proof.IselEmitTTabS9
+public import FV.Backend.Proof.IselEmitTTabS10
+public import FV.Backend.Proof.IselEmitTTabS11
+public import FV.Backend.Proof.IselEmitTTabS12
+public import FV.Backend.Proof.IselEmitTTabS13
+public import FV.Backend.Proof.IselEmitTTabS14
+public import FV.Backend.Proof.IselEmitTTabS15
+public import FV.Backend.Proof.IselEmitTTabS16
+public import FV.Backend.Proof.IselEmitTTabS17
+public import FV.Backend.Proof.IselEmitTTabS18
+public import FV.Backend.Proof.IselEmitTTabS19
+public import FV.Backend.Proof.IselEmitTTabS20
+public import FV.Backend.Proof.IselEmitTTabS21
+public import FV.Backend.Proof.IselEmitTTabS22
+public import FV.Backend.Proof.IselEmitTTabS23
+public import FV.Backend.Proof.IselEmitTTabS24
+public import FV.Backend.Proof.IselEmitTTabS25
+public import FV.Backend.Proof.IselEmitTTabS26
+public import FV.Backend.Proof.IselEmitTTabS27
+public import FV.Backend.Proof.IselEmitTTabS28
+public import FV.Backend.Proof.IselEmitTTabS29
+public import FV.Backend.Proof.IselEmitTTabS30
+public import FV.Backend.Proof.IselEmitTTabS31
+public import FV.Backend.Proof.IselEmitTTabS32
+public import FV.Backend.Proof.IselEmitTTabS33
+public import FV.Backend.Proof.IselEmitTTabS34
+public import FV.Backend.Proof.IselEmitTTabS35
+public import FV.Backend.Proof.IselEmitTTabS36
+public import FV.Backend.Proof.IselEmitTTabS37
+public import FV.Backend.Proof.IselEmitTTabS38
+public import FV.Backend.Proof.IselEmitTTabS39
+public import FV.Backend.Proof.IselEmitTTabS40
+public import FV.Backend.Proof.IselEmitTTabS41
+public import FV.Backend.Proof.IselEmitTTabS42
+public import FV.Backend.Proof.IselEmitTTabS43
+public import FV.Backend.Proof.IselEmitTTabS44
+public import FV.Backend.Proof.IselEmitTTabS45
+public import FV.Backend.Proof.IselEmitTTabS46
+public import FV.Backend.Proof.IselEmitTTabS47
+public import FV.Backend.Proof.IselEmitTTabS48
+public import FV.Backend.Proof.IselEmitTTabS49
+public import FV.Backend.Proof.IselEmitTTabS50
+public import FV.Backend.Proof.IselEmitTTabS51
+
+@[expose] public section
 
 /-!
 # Emission conditions of the typed lowering: the table and root checks

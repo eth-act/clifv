@@ -1,6 +1,10 @@
-import FV.E2E.LinkArmStage2Prog
-import FV.E2E.LinkArmTabCount
-import FV.E2E.RegLevelPrefixG
+module
+
+public import FV.E2E.LinkArmStage2Prog
+public import FV.E2E.LinkArmTabCount
+public import FV.E2E.RegLevelPrefixG
+
+@[expose] public section
 
 /-!
 # The caller's table at a call before the return (SEM1 #537, #680 (3), stage 2 (P2))

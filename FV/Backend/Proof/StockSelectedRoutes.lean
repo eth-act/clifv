@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockPerEdgeValues
-import FV.Backend.Proof.StockSelectedGraph
+module
+
+public import FV.Backend.Proof.StockPerEdgeValues
+public import FV.Backend.Proof.StockSelectedGraph
+
+@[expose] public section
 
 /-! Source-selected successor copies, deriving the lowered route internally. -/
 namespace Backend.Stock.Proof

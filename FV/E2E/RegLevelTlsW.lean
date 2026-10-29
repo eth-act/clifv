@@ -1,6 +1,10 @@
-import FV.E2E.RegLevelTls
-import FV.E2E.RegLevelOpW
-import FV.E2E.RegLevelWrites
+module
+
+public import FV.E2E.RegLevelTls
+public import FV.E2E.RegLevelOpW
+public import FV.E2E.RegLevelWrites
+
+@[expose] public section
 
 /-!
 # `ElfTlsGetAddr` on the machine with its writes (A3, #412, slice F8b)

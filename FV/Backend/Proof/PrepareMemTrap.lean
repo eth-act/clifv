@@ -1,6 +1,10 @@
-import FV.Backend.Proof.LowerSimMemTrap
-import FV.Backend.Proof.PrepareSound
-import FV.Backend.Proof.DeadCleanupPrepare
+module
+
+public import FV.Backend.Proof.LowerSimMemTrap
+public import FV.Backend.Proof.PrepareSound
+public import FV.Backend.Proof.DeadCleanupPrepare
+
+@[expose] public section
 
 /-!
 # A memory trap of the VCode run survives the cleanup and `prepare` (A3, #412, slice F4)

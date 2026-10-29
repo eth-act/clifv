@@ -1,6 +1,10 @@
-import FV.Concurrency.ArmAllocLinked
-import FV.Concurrency.CallSeg
-import FV.E2E.RegLevelFrame
+module
+
+public import FV.Concurrency.ArmAllocLinked
+public import FV.Concurrency.CallSeg
+public import FV.E2E.RegLevelFrame
+
+@[expose] public section
 
 /-!
 # The linked machine of a list of compiled functions (#473, calls)

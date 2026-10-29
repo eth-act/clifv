@@ -1,5 +1,9 @@
-import FV.Backend.Proof.SpillInvariant
-import FV.Backend.Proof.SpillEdgesPrep
+module
+
+public import FV.Backend.Proof.SpillInvariant
+public import FV.Backend.Proof.SpillEdgesPrep
+
+@[expose] public section
 
 /-!
 # The spill allocation's availability sets (V4 step 4, `SpillAvail`): reduction to `killFreeB`

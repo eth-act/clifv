@@ -1,5 +1,9 @@
-import FV.Front.Bundle
-import FV.Front.Raw
+module
+
+public import FV.Front.Bundle
+public import FV.Front.Raw
+
+@[expose] public section
 
 /-! # `lake exe clif-decode DIR STAGE OUT [--split] [--data-file F]`: cg_clif's dumps decoded
 

@@ -1,5 +1,9 @@
-import FV.E2E.DeadCleanupExecPeak
-import FV.E2E.LinkTrapCallInd
+module
+
+public import FV.E2E.DeadCleanupExecPeak
+public import FV.E2E.LinkTrapCallInd
+
+@[expose] public section
 
 /-! # Callee traps on the executable machine (S9d, #377)
 

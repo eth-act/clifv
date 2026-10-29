@@ -1,8 +1,12 @@
-import FV.E2E.FinalT
-import FV.Backend.Proof.IselCtlUnmatchTI
-import FV.Backend.Proof.IselCtlTermTI
-import FV.Backend.Proof.IselCtlBranchTI
-import FV.Backend.Proof.IselCtlTryTI
+module
+
+public import FV.E2E.FinalT
+public import FV.Backend.Proof.IselCtlUnmatchTI
+public import FV.Backend.Proof.IselCtlTermTI
+public import FV.Backend.Proof.IselCtlBranchTI
+public import FV.Backend.Proof.IselCtlTryTI
+
+@[expose] public section
 
 /-!
 # The typed control families hold for the exported program (S11e5 Stage C, slice 5)

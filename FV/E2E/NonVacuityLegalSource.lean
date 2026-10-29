@@ -1,4 +1,8 @@
-import FV.E2E.LegalSource
+module
+
+public import FV.E2E.LegalSource
+
+@[expose] public section
 
 /-! # Non-vacuity of the source domain `SrcScopeB` (S2)
 

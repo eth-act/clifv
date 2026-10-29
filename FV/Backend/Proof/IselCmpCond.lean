@@ -1,4 +1,8 @@
-import FV.Backend.Proof.IselCmpExt
+module
+
+public import FV.Backend.Proof.IselCmpExt
+
+@[expose] public section
 
 /-!
 # Conditions (`CondResult`) and their consumers (flags/select family)

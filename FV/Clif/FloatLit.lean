@@ -1,3 +1,7 @@
+module
+
+@[expose] public section
+
 /-!
 # CLIF float literals (`Ieee32`/`Ieee64` text)
 

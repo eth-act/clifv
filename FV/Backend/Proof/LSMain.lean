@@ -1,5 +1,9 @@
-import FV.Backend.Proof.LSRunMain
-import FV.Backend.Proof.SpillStep4
+module
+
+public import FV.Backend.Proof.LSRunMain
+public import FV.Backend.Proof.SpillStep4
+
+@[expose] public section
 
 /-!
 # The Lean allocator's validated plans are accepted (V4b-3, #275)

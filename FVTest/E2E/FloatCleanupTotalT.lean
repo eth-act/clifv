@@ -1,5 +1,9 @@
-import FVTest.E2E.FloatTotalT
-import FV.E2E.LinkScopeInputCleanupT
+module
+
+public import FVTest.E2E.FloatTotalT
+public import FV.E2E.LinkScopeInputCleanupT
+
+@[expose] public section
 
 /-!
 Non-vacuity of the dead-cleanup pipeline's per-function totality on the typed input scope

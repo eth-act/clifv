@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockParameterTrap
-import FV.Backend.Proof.StockJumpEntryPrelude
+module
+
+public import FV.Backend.Proof.StockParameterTrap
+public import FV.Backend.Proof.StockJumpEntryPrelude
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.ParameterCfg
 open Backend.Proof Backend.Proof.Driver Backend.Stock.Proof.ConditionalValues Backend.Stock.Proof.ForwardSource

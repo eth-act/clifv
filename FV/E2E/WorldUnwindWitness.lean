@@ -1,5 +1,9 @@
-import FV.E2E.WorldUnwind
-import FV.E2E.DeadCleanupUnwindWitness
+module
+
+public import FV.E2E.WorldUnwind
+public import FV.E2E.DeadCleanupUnwindWitness
+
+@[expose] public section
 
 /-!
 # Non-vacuity of the per-function world theorem with unwinding (S10f, #233)

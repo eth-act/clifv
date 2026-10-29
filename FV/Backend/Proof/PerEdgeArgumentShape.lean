@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockOutgoingShape
-import FV.Backend.Proof.PerEdgePrepareOrderFacts
+module
+
+public import FV.Backend.Proof.StockOutgoingShape
+public import FV.Backend.Proof.PerEdgePrepareOrderFacts
+
+@[expose] public section
 
 namespace Backend.Proof.PerEdgePrep
 open Backend Backend.Proof Backend.Stock.Proof

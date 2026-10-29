@@ -1,4 +1,8 @@
-import FV.E2E.LinkClifN
+module
+
+public import FV.E2E.LinkClifN
+
+@[expose] public section
 
 /-!
 # Unlinking: a per-function run is a whole-program run (S3)

@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockConditionalSuccessorWitness
-import FV.Backend.Proof.StockSelectedRouteExecution
+module
+
+public import FV.Backend.Proof.StockConditionalSuccessorWitness
+public import FV.Backend.Proof.StockSelectedRouteExecution
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.ConditionalValues.RouteWitness
 open Backend.Proof Backend.Proof.Driver

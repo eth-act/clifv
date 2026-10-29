@@ -1,5 +1,9 @@
-import FV.Backend.LinearCfgNIProduction
-import FV.Backend.Lowering.StockForwardCfgNI
+module
+
+public import FV.Backend.LinearCfgNIProduction
+public import FV.Backend.Lowering.StockForwardCfgNI
+
+@[expose] public section
 
 namespace Backend
 set_option autoImplicit false

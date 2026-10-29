@@ -1,5 +1,9 @@
-import FV.Link.ExeSource
-import FV.Link.ProductionExe
+module
+
+public import FV.Link.ExeSource
+public import FV.Link.ProductionExe
+
+@[expose] public section
 
 /-! Original-source and peak-depth variants for the actual production attempt.
 The legalisation/world/foreign-code assumptions match the retained variants. -/

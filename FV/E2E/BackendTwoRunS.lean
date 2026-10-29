@@ -1,5 +1,9 @@
-import FV.E2E.BackendTwoRun
-import FV.E2E.RegLevelTwoRunS
+module
+
+public import FV.E2E.BackendTwoRun
+public import FV.E2E.RegLevelTwoRunS
+
+@[expose] public section
 
 /-!
 # Two activations along one CLIF run, reads-only guard (SEM1 #537, #699)

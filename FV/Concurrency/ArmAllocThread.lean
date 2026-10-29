@@ -1,5 +1,9 @@
-import FV.Concurrency.AllocThread
-import FV.Concurrency.ArmPrecise
+module
+
+public import FV.Concurrency.AllocThread
+public import FV.Concurrency.ArmPrecise
+
+@[expose] public section
 
 /-!
 # The Arm machine against the allocated code: the run level (T2h, #311, layer 4b)

@@ -1,6 +1,10 @@
-import FV.E2E.LinkPlaceBReach
-import FV.E2E.BackendWorldPRBWitness
-import FV.E2E.LinkArmPlaceBWitness
+module
+
+public import FV.E2E.LinkPlaceBReach
+public import FV.E2E.BackendWorldPRBWitness
+public import FV.E2E.LinkArmPlaceBWitness
+
+@[expose] public section
 
 /-!
 # Witnesses for `LinkPlaceBReach.lean`

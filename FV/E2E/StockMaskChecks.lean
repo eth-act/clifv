@@ -1,5 +1,9 @@
-import FV.E2E.StockMaskFixtures
-import FV.E2E.StockNarrowChecks
+module
+
+public import FV.E2E.StockMaskFixtures
+public import FV.E2E.StockNarrowChecks
+
+@[expose] public section
 
 namespace E2E.StockMaskNIWitness
 open Backend Backend.Proof Backend.Proof.Driver Backend.Stock.D0

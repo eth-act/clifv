@@ -1,5 +1,9 @@
-import FV.Clif
-import FV.Isle
+module
+
+public import FV.Clif
+public import FV.Isle
+
+@[expose] public section
 
 /-!
 # Typed view of the aarch64 `MInst` subset (M4 backend)

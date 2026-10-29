@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockSelectedArguments
-import FV.Backend.Proof.StockDemand
+module
+
+public import FV.Backend.Proof.StockSelectedArguments
+public import FV.Backend.Proof.StockDemand
+
+@[expose] public section
 
 /-! Actual selected outgoing arguments mark every requested source value.
 The complete post-state follows from executable argument collection. -/

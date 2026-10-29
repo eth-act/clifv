@@ -1,5 +1,9 @@
-import FV.Backend.Proof.LowerCert
-import FV.Backend.Proof.IselFlowT
+module
+
+public import FV.Backend.Proof.LowerCert
+public import FV.Backend.Proof.IselFlowT
+
+@[expose] public section
 
 /-!
 # Completeness of `lowerCheckT`: the SSA availability certificate, typed scope

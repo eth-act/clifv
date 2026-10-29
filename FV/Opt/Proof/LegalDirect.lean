@@ -1,5 +1,9 @@
-import FV.Opt.Proof.LegalSim
-import FV.Opt.Proof.LegalComplete
+module
+
+public import FV.Opt.Proof.LegalSim
+public import FV.Opt.Proof.LegalComplete
+
+@[expose] public section
 
 /-!
 # The legalisation refines the original

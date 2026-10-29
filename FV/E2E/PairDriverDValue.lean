@@ -1,7 +1,11 @@
-import FV.E2E.PairDriverF
-import FV.E2E.PairDriverD
-import FV.E2E.DeadCleanupPair
-import FV.E2E.RegLevelValueGS
+module
+
+public import FV.E2E.PairDriverF
+public import FV.E2E.PairDriverD
+public import FV.E2E.DeadCleanupPair
+public import FV.E2E.RegLevelValueGS
+
+@[expose] public section
 
 /-!
 # The paired contracts of the value semantics with the reads guarded (SEM1 #537, cleanup path)

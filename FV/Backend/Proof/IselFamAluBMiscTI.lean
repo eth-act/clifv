@@ -1,6 +1,10 @@
-import FV.Backend.Proof.IselFamAluBMisc
-import FV.Backend.Proof.IselBaseTI
-import FV.Backend.Proof.IselFamAluBBaseTI
+module
+
+public import FV.Backend.Proof.IselFamAluBMisc
+public import FV.Backend.Proof.IselBaseTI
+public import FV.Backend.Proof.IselFamAluBBaseTI
+
+@[expose] public section
 
 /-!
 # `IselFamAluBMisc` over typed contexts (S11e5 Stage C, slice 7)

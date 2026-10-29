@@ -1,7 +1,11 @@
-import FV.Backend.Proof.IselFamAluBShift
-import FV.Backend.Proof.IselBaseTI
-import FV.Backend.Proof.IselFamAluBShiftBaseTI
-import FV.Backend.Proof.IselFamAluBShiftTermsTI
+module
+
+public import FV.Backend.Proof.IselFamAluBShift
+public import FV.Backend.Proof.IselBaseTI
+public import FV.Backend.Proof.IselFamAluBShiftBaseTI
+public import FV.Backend.Proof.IselFamAluBShiftTermsTI
+
+@[expose] public section
 
 /-!
 # `IselFamAluBShift` over typed contexts (S11e5 Stage C, slice 7)

@@ -1,4 +1,8 @@
-import FV.Opt.Proof.CompleteLicm
+module
+
+public import FV.Opt.Proof.CompleteLicm
+
+@[expose] public section
 
 /-!
 # Completeness of the LICM stage: the pass (M1)

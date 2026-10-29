@@ -1,4 +1,8 @@
-import FV.Backend.Proof.RegallocMemOS
+module
+
+public import FV.Backend.Proof.RegallocMemOS
+
+@[expose] public section
 
 /-!
 # Scalar SIMD&FP loads and stores on the Arm model (S11e1)

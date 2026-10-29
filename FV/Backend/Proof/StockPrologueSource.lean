@@ -1,4 +1,8 @@
-import FV.Clif.Run
+module
+
+public import FV.Clif.Run
+
+@[expose] public section
 
 set_option autoImplicit false
 namespace Clif.StockPrologueSource

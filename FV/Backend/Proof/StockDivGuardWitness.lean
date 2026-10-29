@@ -1,4 +1,9 @@
-import FV.Backend.Proof.StockDivIntmin
+module
+
+public import FV.Backend.Proof.StockDivIntmin
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarDiv
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 private theorem self_refines : Refines (fun _ => True) ispec :=

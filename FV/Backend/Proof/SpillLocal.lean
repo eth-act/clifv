@@ -1,4 +1,8 @@
-import FV.Backend.SpillAlloc
+module
+
+public import FV.Backend.SpillAlloc
+
+@[expose] public section
 
 /-!
 # The spill allocator's instruction-local facts (V4 (a), step 3)

@@ -1,7 +1,11 @@
-import FV.E2E.ClifEnvOnly
-import FV.E2E.LinkWorld
-import FV.Backend.Proof.VCodeSemIDriver
-import FV.E2E.CountedFam
+module
+
+public import FV.E2E.ClifEnvOnly
+public import FV.E2E.LinkWorld
+public import FV.Backend.Proof.VCodeSemIDriver
+public import FV.E2E.CountedFam
+
+@[expose] public section
 
 /-!
 # CLIF → counted VCode, with the callee contracts per step of the run (SEM1, `docs/plans/uninit.md` §5.9)

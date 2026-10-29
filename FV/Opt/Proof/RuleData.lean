@@ -1,5 +1,9 @@
-import FV.Isle.Opt.Simplify
-import FV.Opt.Proof.RuleAttr
+module
+
+public import FV.Isle.Opt.Simplify
+public import FV.Opt.Proof.RuleAttr
+
+@[expose] public section
 
 /-!
 # ISLE data facts for the mid-end rule proofs (generated, do not edit)

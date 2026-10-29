@@ -1,5 +1,10 @@
-import FV.Backend.Proof.StockRootOpcode
-import FV.Backend.Proof.IselCtlUnmatch
+module
+
+public import FV.Backend.Proof.StockRootOpcode
+public import FV.Backend.Proof.IselCtlUnmatch
+
+@[expose] public section
+
 namespace Backend.Stock.Proof
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 set_option maxRecDepth 20000

@@ -1,5 +1,9 @@
-import FV.Clif.LinkClifX
-import FV.E2E.LinkClifN
+module
+
+public import FV.Clif.LinkClifX
+public import FV.E2E.LinkClifN
+
+@[expose] public section
 
 /-!
 # Linking at the CLIF level with unwinding and bounded callee runs (S10f, #233)

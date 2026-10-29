@@ -1,7 +1,11 @@
-import FV.Clif.Syntax
-import FV.Isle.Interp
-import FV.Isle.Generated.Opt.Program
-import FV.Isle.Opt.Helpers
+module
+
+public import FV.Clif.Syntax
+public import FV.Isle.Interp
+public import FV.Isle.Generated.Opt.Program
+public import FV.Isle.Opt.Helpers
+
+@[expose] public section
 
 /-!
 # Cranelift's mid-end `simplify` rules on CLIF e-graph nodes

@@ -1,6 +1,10 @@
-import FV.Concurrency.CallCompose
-import FV.Concurrency.PrivCohT
-import FV.Concurrency.ClifThreadI
+module
+
+public import FV.Concurrency.CallCompose
+public import FV.Concurrency.PrivCohT
+public import FV.Concurrency.ClifThreadI
+
+@[expose] public section
 
 /-!
 # Calls with time-varying private sets (#473, (iv))

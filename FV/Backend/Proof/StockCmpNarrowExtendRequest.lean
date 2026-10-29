@@ -1,5 +1,10 @@
-import FV.Backend.Proof.StockCmpExtendBuilder
-import FV.Backend.Proof.StockShiftHelper
+module
+
+public import FV.Backend.Proof.StockCmpExtendBuilder
+public import FV.Backend.Proof.StockShiftHelper
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarCmp
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 set_option maxRecDepth 20000

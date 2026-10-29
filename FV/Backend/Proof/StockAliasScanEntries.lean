@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockAliasWrites
-import FV.Backend.Proof.StockBlockScan
+module
+
+public import FV.Backend.Proof.StockAliasWrites
+public import FV.Backend.Proof.StockBlockScan
+
+@[expose] public section
 
 namespace Backend.Stock.Proof
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

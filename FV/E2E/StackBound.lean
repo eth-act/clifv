@@ -1,4 +1,8 @@
-import FV.E2E.LinkCheck
+module
+
+public import FV.E2E.LinkCheck
+
+@[expose] public section
 
 /-! # The stack bound of the functions whose calls never reach a call cycle (M9 item 4;
 docs/contracts/e2e.md, "Binary level (M9)")

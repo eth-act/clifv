@@ -1,5 +1,9 @@
-import FV.E2E.LinkArmUProgNI
-import FV.E2E.LinkArmUIndGood
+module
+
+public import FV.E2E.LinkArmUProgNI
+public import FV.E2E.LinkArmUIndGood
+
+@[expose] public section
 
 /-!
 # The whole-program theorem with unwinding, with the per-state facts of the run (S10g, #404)

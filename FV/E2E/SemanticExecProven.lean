@@ -1,5 +1,9 @@
-import FV.E2E.SemanticExecGot
-import FV.E2E.SemanticExecGoodReads
+module
+
+public import FV.E2E.SemanticExecGot
+public import FV.E2E.SemanticExecGoodReads
+
+@[expose] public section
 
 /-! # The binary theorem with D2 and D4 from the M6 proof (L3 (c))
 

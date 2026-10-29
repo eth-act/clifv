@@ -7,8 +7,12 @@ Author(s): Shilpi Goel, Yan Peng, Nathan Wetzler
 -- namespace Arm; the `bv_decide` proofs of the flag and alignment lemmas replaced by kernel proofs
 -- (`toNat`/`toInt` arithmetic with `omega`).
 
-import FV.Arm.BitVec
-import FV.Arm.State
+module
+
+public import FV.Arm.BitVec
+public import FV.Arm.State
+
+@[expose] public section
 
 namespace Arm
 

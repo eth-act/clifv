@@ -1,5 +1,10 @@
-import FV.Backend.Proof.StockAddSubSourceValues
-import FV.Backend.Proof.StockAluSelectedValues
+module
+
+public import FV.Backend.Proof.StockAddSubSourceValues
+public import FV.Backend.Proof.StockAluSelectedValues
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarAddSub
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 set_option maxRecDepth 20000

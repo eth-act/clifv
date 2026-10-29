@@ -1,4 +1,8 @@
-import FV.E2E.ExtSemGuard
+module
+
+public import FV.E2E.ExtSemGuard
+
+@[expose] public section
 
 /-!
 # Witnesses for `FV/E2E/ExtSemGuard.lean`

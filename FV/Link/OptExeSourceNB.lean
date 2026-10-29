@@ -1,6 +1,10 @@
-import FV.Link.OptExe
-import FV.Link.OptKeepsInd
-import FV.Link.ExeSourceNB
+module
+
+public import FV.Link.OptExe
+public import FV.Link.OptKeepsInd
+public import FV.Link.ExeSourceNB
+
+@[expose] public section
 
 /-! # The optimising compiler's source theorems without the memory-bound premise (A2/B1)
 

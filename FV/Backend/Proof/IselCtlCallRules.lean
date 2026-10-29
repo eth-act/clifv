@@ -1,8 +1,12 @@
-import FV.Backend.Proof.IselCtlCall
-import FV.Backend.Proof.IselFamily
-import FV.Backend.Proof.LowerLemmas
-import FV.Arm.Memory.MemoryProofs
-import FV.Backend.Proof.IselContractP
+module
+
+public import FV.Backend.Proof.IselCtlCall
+public import FV.Backend.Proof.IselFamily
+public import FV.Backend.Proof.LowerLemmas
+public import FV.Arm.Memory.MemoryProofs
+public import FV.Backend.Proof.IselContractP
+
+@[expose] public section
 
 /-!
 # Family Ctl: the `call` rules (rule theorems)

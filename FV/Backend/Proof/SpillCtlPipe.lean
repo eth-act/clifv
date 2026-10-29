@@ -1,5 +1,9 @@
-import FV.Backend.Proof.SpillCtlForms
-import FV.Backend.Proof.LowerCertBase
+module
+
+public import FV.Backend.Proof.SpillCtlForms
+public import FV.Backend.Proof.LowerCertBase
+
+@[expose] public section
 
 /-!
 # `CtlSpillHyp` on the pipeline's output (V4 (a), step 3)

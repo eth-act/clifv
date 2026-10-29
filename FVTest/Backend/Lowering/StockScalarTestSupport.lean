@@ -1,3 +1,7 @@
+module
+
+@[expose] public section
+
 namespace FVTest.StockScalarFixture
 /-- A two-block legacy control remains outside the current pure-body class as
 new scalar opcodes are activated. It retains the native multiplication result. -/

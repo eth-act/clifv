@@ -1,5 +1,9 @@
-import FV.E2E.StackBound
-import FV.E2E.DeadCleanupLinkCheck
+module
+
+public import FV.E2E.StackBound
+public import FV.E2E.DeadCleanupLinkCheck
+
+@[expose] public section
 
 namespace E2E.DeadCleanupStackBound
 set_option autoImplicit false

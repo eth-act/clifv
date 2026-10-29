@@ -1,6 +1,10 @@
-import FV.E2E.BackendWorldPRGY
-import FV.E2E.BackendWorldPRGXWitness
-import FV.E2E.LinkArmThmPRBROf
+module
+
+public import FV.E2E.BackendWorldPRGY
+public import FV.E2E.BackendWorldPRGXWitness
+public import FV.E2E.LinkArmThmPRBROf
+
+@[expose] public section
 
 /-!
 # Witnesses for the related-call guard (#692: `FV/E2E/ExtSemGuardRY.lean`,

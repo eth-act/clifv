@@ -1,9 +1,13 @@
-import FV.Backend.Proof.LowerComplete
-import FV.Backend.Proof.LowerTotalCtx
-import FV.Backend.Proof.LowerTotalDefs
-import FV.Backend.Proof.LowerDecide
-import FV.Backend.Proof.SpillArity
-import FV.Backend.Proof.EntryParams
+module
+
+public import FV.Backend.Proof.LowerComplete
+public import FV.Backend.Proof.LowerTotalCtx
+public import FV.Backend.Proof.LowerTotalDefs
+public import FV.Backend.Proof.LowerDecide
+public import FV.Backend.Proof.SpillArity
+public import FV.Backend.Proof.EntryParams
+
+@[expose] public section
 
 /-!
 # Totality of the lowering: the driver (V7)

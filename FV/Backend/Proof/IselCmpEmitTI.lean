@@ -1,5 +1,9 @@
-import FV.Backend.Proof.IselCmpEmit
-import FV.Backend.Proof.IselBaseTI
+module
+
+public import FV.Backend.Proof.IselCmpEmit
+public import FV.Backend.Proof.IselBaseTI
+
+@[expose] public section
 
 /-!
 # `IselCmpEmit` over typed contexts (S11e5 Stage C, slice 7)

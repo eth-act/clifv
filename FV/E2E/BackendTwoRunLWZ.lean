@@ -1,4 +1,8 @@
-import FV.E2E.BackendTwoRunLW
+module
+
+public import FV.E2E.BackendTwoRunLW
+
+@[expose] public section
 
 /-!
 # The per-index lock with its set (SEM1 #537, `docs/plans/uninit.md` §5.9, determinism step)

@@ -1,6 +1,10 @@
-import FV.Backend.Proof.StockForwardEntry
-import FV.Backend.Proof.StockForwardCompatibility
-import FV.Backend.Proof.StockScalarContract
+module
+
+public import FV.Backend.Proof.StockForwardEntry
+public import FV.Backend.Proof.StockForwardCompatibility
+public import FV.Backend.Proof.StockScalarContract
+
+@[expose] public section
 
 namespace Backend.Stock.Scalar
 open Backend.Proof Backend.Proof.Driver Backend.Stock.Proof

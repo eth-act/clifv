@@ -1,5 +1,9 @@
-import FV.E2E.LinkArmStepX30
-import FV.E2E.RegLevelMemTrap
+module
+
+public import FV.E2E.LinkArmStepX30
+public import FV.E2E.RegLevelMemTrap
+
+@[expose] public section
 
 /-!
 # The compiled-code check that body lines name no `x30` (SEM1, `docs/plans/uninit.md` §5.9, step 3m)

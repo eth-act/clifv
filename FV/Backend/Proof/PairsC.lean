@@ -1,4 +1,8 @@
-import FV.Backend.Proof.LowerLemmas
+module
+
+public import FV.Backend.Proof.LowerLemmas
+
+@[expose] public section
 
 /-!
 # Class-general `Args`/`Rets` pairs (S11e5 Stage C)

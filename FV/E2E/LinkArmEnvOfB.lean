@@ -1,4 +1,8 @@
-import FV.E2E.LinkArmPlaceB
+module
+
+public import FV.E2E.LinkArmPlaceB
+
+@[expose] public section
 
 /-!
 # The activation's environment under the slot-byte oracle (SEM1 #537, #680 (3), `thmPRB_of`)

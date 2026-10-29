@@ -1,4 +1,8 @@
-import FV.Concurrency.RealizeWitnessStore
+module
+
+public import FV.Concurrency.RealizeWitnessStore
+
+@[expose] public section
 
 /-!
 # `Realizes` for two compiled threads communicating through `stlr`/`ldar` (T2l, #311)

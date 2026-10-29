@@ -1,3 +1,7 @@
+module
+
+@[expose] public section
+
 /-!
 # `DSL.Map`: the abstract finite-map collection
 

@@ -1,6 +1,10 @@
-import FV.Opt.Proof.Sem
-import FV.Opt.Proof.Dom
-import FV.Clif.FloatFacts
+module
+
+public import FV.Opt.Proof.Sem
+public import FV.Opt.Proof.Dom
+public import FV.Clif.FloatFacts
+
+@[expose] public section
 
 /-!
 # Facts about `Clif.evalInst` used by the pass proofs

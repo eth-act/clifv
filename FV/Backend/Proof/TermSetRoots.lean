@@ -1,5 +1,9 @@
-import FV.Backend.Proof.KillBase
-import FV.Backend.Proof.IselContract
+module
+
+public import FV.Backend.Proof.KillBase
+public import FV.Backend.Proof.IselContract
+
+@[expose] public section
 
 /-!
 # Root and oracle policies for the certified ISLE term sets

@@ -1,6 +1,10 @@
-import FV.Backend.Proof.StockNodeAliasConnection
-import FV.Backend.Proof.StockSourceOrder
-import FV.Backend.Proof.StockBackwardSuffixSplit
+module
+
+public import FV.Backend.Proof.StockNodeAliasConnection
+public import FV.Backend.Proof.StockSourceOrder
+public import FV.Backend.Proof.StockBackwardSuffixSplit
+
+@[expose] public section
 
 namespace Backend.Stock.Proof
 open Backend.Proof Backend.Proof.Driver

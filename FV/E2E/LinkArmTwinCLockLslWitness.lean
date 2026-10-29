@@ -1,5 +1,9 @@
-import FV.E2E.LinkArmTwinCLock
-import FV.E2E.LinkArmTwinCLslWitness
+module
+
+public import FV.E2E.LinkArmTwinCLock
+public import FV.E2E.LinkArmTwinCLslWitness
+
+@[expose] public section
 
 /-!
 # Witnesses for the lock-to-twin lemmas on `Lsl` (SEM1 #537), on pairs of distinct states

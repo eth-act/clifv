@@ -1,4 +1,8 @@
-import FV.E2E.LinkOwnCallsShapeOf
+module
+
+public import FV.E2E.LinkOwnCallsShapeOf
+
+@[expose] public section
 
 /-!
 # The ISLE call inversion of a `call`/`call_indirect` statement (`CallStmtRunHyp`)

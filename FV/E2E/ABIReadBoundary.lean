@@ -1,4 +1,8 @@
-import FV.E2E.ABIReadFlagsSteps
+module
+
+public import FV.E2E.ABIReadFlagsSteps
+
+@[expose] public section
 
 /-! Reusable execution/ABI transport from instruction-level read-boundary proofs. -/
 namespace E2E.ABIReadBoundary

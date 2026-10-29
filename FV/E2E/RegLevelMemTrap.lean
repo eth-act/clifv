@@ -1,8 +1,12 @@
-import FV.E2E.DeadCleanupRegLevel
-import FV.E2E.RegLevelAtomic
-import FV.E2E.RegLevelCorrectU
-import FV.E2E.MemTrapStatement
-import FV.Backend.Proof.PrepareMemTrap
+module
+
+public import FV.E2E.DeadCleanupRegLevel
+public import FV.E2E.RegLevelAtomic
+public import FV.E2E.RegLevelCorrectU
+public import FV.E2E.MemTrapStatement
+public import FV.Backend.Proof.PrepareMemTrap
+
+@[expose] public section
 
 /-!
 # The register level of a memory trap (A3, #412, slice F4)

@@ -1,9 +1,13 @@
-import FV.E2E.DeadCleanupBinaryGood
-import FV.E2E.DeadCleanupExecRunN
-import FV.E2E.PairLines
-import FV.E2E.ExecGoodRun
-import FV.E2E.DeadCleanupBinary
-import FV.E2E.DeadCleanupBinCheck
+module
+
+public import FV.E2E.DeadCleanupBinaryGood
+public import FV.E2E.DeadCleanupExecRunN
+public import FV.E2E.PairLines
+public import FV.E2E.ExecGoodRun
+public import FV.E2E.DeadCleanupBinary
+public import FV.E2E.DeadCleanupBinCheck
+
+@[expose] public section
 
 namespace E2E.DeadCleanupExecBytes
 set_option autoImplicit false

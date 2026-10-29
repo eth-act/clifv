@@ -1,5 +1,9 @@
-import FV.Backend.Lowering.StockArithmetic
-import FV.Backend.Proof.LowerDecide
+module
+
+public import FV.Backend.Lowering.StockArithmetic
+public import FV.Backend.Proof.LowerDecide
+
+@[expose] public section
 
 namespace Backend.Stock.Arithmetic
 open Backend.Proof.Driver

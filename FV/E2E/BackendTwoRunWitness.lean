@@ -1,5 +1,9 @@
-import FV.E2E.BackendTwoRun
-import FV.E2E.IselSimIWitness
+module
+
+public import FV.E2E.BackendTwoRun
+public import FV.E2E.IselSimIWitness
+
+@[expose] public section
 
 /-!
 # Witness for two activations along one CLIF run (SEM1 #537, item (3), `BackendTwoRun.lean`)

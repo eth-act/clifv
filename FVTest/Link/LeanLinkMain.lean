@@ -1,23 +1,27 @@
-import FV.Backend.Lowering.StockParameterCfgNI
-import FV.Link.Compile
-import FV.Link.DeadCleanupCompile
-import FV.Link.DeadCleanupCompileT3
-import FV.Link.TailCompile
-import FV.Link.OptCompile
-import FV.Link.Placed
-import FV.E2E.SrcScopeDefs
-import FV.Front.Read
-import FV.E2E.LinkScopeInputDefs
-import FV.E2E.LinkScopeInputDefsT
-import FV.E2E.LinkScopeInputDefsTC
-import FV.Link.Ld.Spec
-import FV.Link.ReachCheck
-import FV.Link.Ld.SpecTotal
-import FV.Link.Ld.RelsFast
-import FVTest.Link.LdArgs
-import FV.Link.ExeUCompile
-import FV.Link.SemanticCompileDefs
-import FV.Link.UnwReport
+module
+
+public import FV.Backend.Lowering.StockParameterCfgNI
+public import FV.Link.Compile
+public import FV.Link.DeadCleanupCompile
+public import FV.Link.DeadCleanupCompileT3
+public import FV.Link.TailCompile
+public import FV.Link.OptCompile
+public import FV.Link.Placed
+public import FV.E2E.SrcScopeDefs
+public import FV.Front.Read
+public import FV.E2E.LinkScopeInputDefs
+public import FV.E2E.LinkScopeInputDefsT
+public import FV.E2E.LinkScopeInputDefsTC
+public import FV.Link.Ld.Spec
+public import FV.Link.ReachCheck
+public import FV.Link.Ld.SpecTotal
+public import FV.Link.Ld.RelsFast
+public import FVTest.Link.LdArgs
+public import FV.Link.ExeUCompile
+public import FV.Link.SemanticCompileDefs
+public import FV.Link.UnwReport
+
+@[expose] public section
 
 /-! # `lake exe lean-link DIR [--dead-cleanup|--no-dead-cleanup] [--opt] [--verified] [--ld FILE]`:
 the executable compiler on an executable (L1, L2b)

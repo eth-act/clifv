@@ -1,4 +1,8 @@
-import FV.E2E.LinkClifN
+module
+
+public import FV.E2E.LinkClifN
+
+@[expose] public section
 
 /-! # The slot-placement oracle on whole-program runs (agent/link-widen, stage 2)
 

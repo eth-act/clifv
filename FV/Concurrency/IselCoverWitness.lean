@@ -1,5 +1,9 @@
-import FV.Concurrency.IselCover
-import FV.Concurrency.IselClifWitness
+module
+
+public import FV.Concurrency.IselCover
+public import FV.Concurrency.IselClifWitness
+
+@[expose] public section
 
 /-!
 # Non-vacuity of `IselCover` (T2h, #311)

@@ -1,7 +1,11 @@
-import FV.Backend.Proof.IselCtl
-import FV.Backend.Proof.IselTermFactsTy
-import FV.Backend.Proof.PairsC
-import FV.Backend.Proof.LowerContractT
+module
+
+public import FV.Backend.Proof.IselCtl
+public import FV.Backend.Proof.IselTermFactsTy
+public import FV.Backend.Proof.PairsC
+public import FV.Backend.Proof.LowerContractT
+
+@[expose] public section
 
 /-!
 # Family Ctl over typed contexts: the `lower` rules on terminators (S11e5 Stage C, slice 5)

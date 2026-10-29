@@ -1,4 +1,8 @@
-import FV.Concurrency.PrepThread
+module
+
+public import FV.Concurrency.PrepThread
+
+@[expose] public section
 
 /-!
 # Traces related step by step refine (T2h, #311, layer 2e)

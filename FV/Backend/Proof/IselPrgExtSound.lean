@@ -1,6 +1,10 @@
-import FV.Backend.Proof.IselPrgExt
-import FV.Backend.Proof.IselPrgInv
-import FV.Backend.Proof.IselFlowSplit
+module
+
+public import FV.Backend.Proof.IselPrgExt
+public import FV.Backend.Proof.IselPrgInv
+public import FV.Backend.Proof.IselFlowSplit
+
+@[expose] public section
 
 /-!
 # Progress of the ISLE lowering (V7): soundness of the extractors and of the instruction data

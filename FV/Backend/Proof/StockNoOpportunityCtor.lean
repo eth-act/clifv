@@ -1,4 +1,8 @@
-import FV.Backend.Proof.StockAllocationFlow
+module
+
+public import FV.Backend.Proof.StockAllocationFlow
+
+@[expose] public section
 
 /-! Constructor frame needed by the no-opportunistic-call coverage model.
 The fold proof reuses the reservation traversal from StockAllocationFlow. -/

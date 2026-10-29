@@ -1,4 +1,8 @@
-import FV.Opt.Proof.CompleteSimpHyp
+module
+
+public import FV.Opt.Proof.CompleteSimpHyp
+
+@[expose] public section
 
 /-!
 # Completeness of simplify: output views, placeable values, `materialize`

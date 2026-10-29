@@ -1,5 +1,9 @@
-import FV.Backend.Proof.IselFlowGen
-import FV.Backend.Isel
+module
+
+public import FV.Backend.Proof.IselFlowGen
+public import FV.Backend.Isel
+
+@[expose] public section
 
 /-!
 # An abstract interpretation of ISLE rules, and its soundness

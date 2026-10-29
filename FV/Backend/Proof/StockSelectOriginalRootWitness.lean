@@ -1,5 +1,10 @@
-import FV.Backend.Proof.StockOriginalSelectFixture
-import FV.Backend.Proof.StockSelectionReceipts
+module
+
+public import FV.Backend.Proof.StockOriginalSelectFixture
+public import FV.Backend.Proof.StockSelectionReceipts
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarSelect.OriginalSelectFixture
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 set_option maxRecDepth 20000

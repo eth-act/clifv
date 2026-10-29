@@ -3,11 +3,15 @@ Copyright (c) 2023 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Author(s): Shilpi Goel, Siddharth Bhat
 -/
-import Lean.Data.Format
-import FV.Arm.BitVec
-import FV.Arm.Map
-import FV.Arm.Attr
-import FV.Arm.MinTheory
+module
+
+public import Lean.Data.Format
+public import FV.Arm.BitVec
+public import FV.Arm.Map
+public import FV.Arm.Attr
+public import FV.Arm.MinTheory
+
+@[expose] public section
 
 namespace Arm
 

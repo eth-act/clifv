@@ -1,5 +1,9 @@
-import FV.Backend.Proof.KillBase
-import FV.Backend.Proof.LowerRename
+module
+
+public import FV.Backend.Proof.KillBase
+public import FV.Backend.Proof.LowerRename
+
+@[expose] public section
 
 /-!
 # The killed vregs and the uses of an emitted instruction (`MInst.ofV`)

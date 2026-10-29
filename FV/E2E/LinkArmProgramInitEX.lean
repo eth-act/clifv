@@ -1,5 +1,9 @@
-import FV.E2E.LinkArmProgramInitE
-import FV.E2E.LinkArmThmPRBG
+module
+
+public import FV.E2E.LinkArmProgramInitE
+public import FV.E2E.LinkArmThmPRBG
+
+@[expose] public section
 
 /-!
 # The linked program under the machine's own slot table, with the per-state facts (SEM1 #537, executable level (c))

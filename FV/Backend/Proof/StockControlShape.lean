@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockBranchSelection
-import FV.Backend.Proof.IselTermFactsRules
+module
+
+public import FV.Backend.Proof.StockBranchSelection
+public import FV.Backend.Proof.IselTermFactsRules
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.Control
 open Backend.Proof Backend.Proof.Driver Backend.Proof.Cov Isle Isle.Interp Isle.Aarch64

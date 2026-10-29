@@ -1,4 +1,8 @@
-import FV.Isle.Interp
+module
+
+public import FV.Isle.Interp
+
+@[expose] public section
 
 /-!
 # The interpreter only changes the embedding state through extern constructors

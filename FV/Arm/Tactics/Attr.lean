@@ -4,7 +4,11 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Author(s): Siddharth Bhat, Alex Keizer
 -/
 -- Modified by fv-compiler-rust (2026): ported to Lean v4.34.1, module prefix FV.Arm, wrapped in namespace Arm, dropped the CSE/prune_updates trace classes and options (those tactics are not ported), `bv_omega_bench` file logging is off by default.
-import Lean
+module
+
+public import Lean
+
+@[expose] public section
 
 namespace Arm
 

@@ -1,4 +1,8 @@
-import FV.Link.Ld.Layout
+module
+
+public import FV.Link.Ld.Layout
+
+@[expose] public section
 
 /-! # `lean-ld`'s command line (L2b stage 3)
 

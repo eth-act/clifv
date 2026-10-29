@@ -1,5 +1,9 @@
-import FV.Clif.Syntax
-import FV.Clif.FloatLit
+module
+
+public import FV.Clif.Syntax
+public import FV.Clif.FloatLit
+
+@[expose] public section
 
 /-!
 # CLIF text printer

@@ -1,5 +1,10 @@
-import FV.Backend.Proof.StockCastCompleteSourceTransfer
-import FV.Backend.Proof.StockCastCmpSourceValues
+module
+
+public import FV.Backend.Proof.StockCastCompleteSourceTransfer
+public import FV.Backend.Proof.StockCastCmpSourceValues
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.CastComplete
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 set_option autoImplicit false

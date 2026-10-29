@@ -1,5 +1,9 @@
-import FV.Concurrency.ProgramWitness
-import FV.Concurrency.ProgramE2EF
+module
+
+public import FV.Concurrency.ProgramWitness
+public import FV.Concurrency.ProgramE2EF
+
+@[expose] public section
 
 /-!
 # Non-vacuity of `program_correctF` and `program_correct_rust`

@@ -1,6 +1,10 @@
-import FV.Backend.ScalarProduction
-import FV.Clif.Print
-import FV.E2E.ProductionPipelineWith
+module
+
+public import FV.Backend.ScalarProduction
+public import FV.Clif.Print
+public import FV.E2E.ProductionPipelineWith
+
+@[expose] public section
 
 set_option autoImplicit false
 namespace FVTest.StockScalarRuntime

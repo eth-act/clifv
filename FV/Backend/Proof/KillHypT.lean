@@ -1,5 +1,9 @@
-import FV.Backend.Proof.KillAssemble
-import FV.Backend.Proof.LowerLoopCtxT
+module
+
+public import FV.Backend.Proof.KillAssemble
+public import FV.Backend.Proof.LowerLoopCtxT
+
+@[expose] public section
 
 /-!
 # The killed-vreg facts of the ISLE runs over the typed scope: the statements (S11 slice 8)

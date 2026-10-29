@@ -1,4 +1,8 @@
-import FV.Concurrency.CallSegOkGTFull
+module
+
+public import FV.Concurrency.CallSegOkGTFull
+
+@[expose] public section
 
 /-!
 # Witness: a compiled caller calling an external under its event contract (#649)

@@ -1,6 +1,10 @@
-import FV.Backend.Proof.StockBnotBodyRefines
-import FV.Backend.Proof.StockConstantNotrap
-import FV.Backend.Proof.StockLogicalNotrap
+module
+
+public import FV.Backend.Proof.StockBnotBodyRefines
+public import FV.Backend.Proof.StockConstantNotrap
+public import FV.Backend.Proof.StockLogicalNotrap
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.BnotBody
 open Backend.Proof Backend.Proof.Driver

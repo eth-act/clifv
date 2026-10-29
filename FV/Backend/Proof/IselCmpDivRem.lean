@@ -1,4 +1,8 @@
-import FV.Backend.Proof.IselCmpDivRoot
+module
+
+public import FV.Backend.Proof.IselCmpDivRoot
+
+@[expose] public section
 
 /-!
 # Family C: remaining division root rules (urem 32, srem, sdiv)

@@ -1,5 +1,10 @@
-import FV.Backend.Proof.StockSelectConditionCompanion
-import FV.Backend.Proof.StockSelectZeroObserved
+module
+
+public import FV.Backend.Proof.StockSelectConditionCompanion
+public import FV.Backend.Proof.StockSelectZeroObserved
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarSelect
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 private theorem decoded_size_index {i : Nat} {sz : OperandSize}

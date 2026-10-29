@@ -1,6 +1,10 @@
-import FV.Backend.Proof.IselEmitChk
-import FV.Backend.Proof.IselEmitDefs
-import FV.Backend.Proof.IselCovModel
+module
+
+public import FV.Backend.Proof.IselEmitChk
+public import FV.Backend.Proof.IselEmitDefs
+public import FV.Backend.Proof.IselCovModel
+
+@[expose] public section
 
 /-!
 # Emission conditions of the ISLE lowering (V6c): the extern helpers

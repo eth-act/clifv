@@ -1,6 +1,10 @@
-import FV.E2E.AllocTotal
-import FV.E2E.RegLevelOp
-import FV.Backend.Proof.FormsCoverComplete
+module
+
+public import FV.E2E.AllocTotal
+public import FV.E2E.RegLevelOp
+public import FV.Backend.Proof.FormsCoverComplete
+
+@[expose] public section
 
 /-!
 # `emitPre` succeeds on the spill allocation (V6b)

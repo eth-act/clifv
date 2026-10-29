@@ -1,5 +1,9 @@
-import FV.Concurrency.ClifCStep
-import FV.Concurrency.IselClifWitness
+module
+
+public import FV.Concurrency.ClifCStep
+public import FV.Concurrency.IselClifWitness
+
+@[expose] public section
 
 /-!
 # Non-vacuity of the CLIF thread steps of the memory statements (T2h, #311)

@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockParameterWitness
-import FV.Backend.Lowering.StockParameterCfgNI
+module
+
+public import FV.Backend.Proof.StockParameterWitness
+public import FV.Backend.Lowering.StockParameterCfgNI
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.ParameterCfg.Fixture
 open Backend.Proof Backend.Proof.Driver

@@ -1,4 +1,8 @@
-import FV.E2E.ABIReadTrapBoundary
+module
+
+public import FV.E2E.ABIReadTrapBoundary
+
+@[expose] public section
 
 /-! CFG-aware ABI transport and realization. A checked no-entry-predecessor
 property permits real jumps while preventing repeated physical entry reads.

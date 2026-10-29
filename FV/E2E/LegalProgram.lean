@@ -1,6 +1,10 @@
-import FV.E2E.LinkClifRev
-import FV.Opt.Proof.LegalDirect
-import FV.Opt.Proof.LegalPre
+module
+
+public import FV.E2E.LinkClifRev
+public import FV.Opt.Proof.LegalDirect
+public import FV.Opt.Proof.LegalPre
+
+@[expose] public section
 
 /-!
 # Whole-program refinement of the original `i128` program (S3)

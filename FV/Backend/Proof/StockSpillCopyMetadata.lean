@@ -1,6 +1,10 @@
-import FV.Backend.Proof.PerEdgeArgumentShape
-import FV.Backend.Proof.PerEdgeParameterShape
-import FV.Backend.Proof.PerEdgeSpillCopy
+module
+
+public import FV.Backend.Proof.PerEdgeArgumentShape
+public import FV.Backend.Proof.PerEdgeParameterShape
+public import FV.Backend.Proof.PerEdgeSpillCopy
+
+@[expose] public section
 
 namespace Backend.Stock.Proof
 open Backend.Proof Backend.Proof.Driver Backend.Proof.Spill Backend.Proof.PerEdgeSpill

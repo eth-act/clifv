@@ -1,9 +1,13 @@
-import FV.Concurrency.ArmAllocPause
-import FV.E2E.RegLevelCall
-import FV.E2E.RegLevelNext
-import FV.E2E.RegLevelGoto
-import FV.E2E.RegLevelOp
-import FV.E2E.RegLevelRelax
+module
+
+public import FV.Concurrency.ArmAllocPause
+public import FV.E2E.RegLevelCall
+public import FV.E2E.RegLevelNext
+public import FV.E2E.RegLevelGoto
+public import FV.E2E.RegLevelOp
+public import FV.E2E.RegLevelRelax
+
+@[expose] public section
 
 /-!
 # `Q` after a call's return (#473)

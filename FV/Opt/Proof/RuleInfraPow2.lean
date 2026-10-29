@@ -1,6 +1,10 @@
-import FV.Opt.Proof.RuleSkelEmbed
-import FV.Opt.Proof.RuleIntRetry
-import FV.Opt.Proof.KernelBV
+module
+
+public import FV.Opt.Proof.RuleSkelEmbed
+public import FV.Opt.Proof.RuleIntRetry
+public import FV.Opt.Proof.KernelBV
+
+@[expose] public section
 
 /-!
 # Helper specifications: powers of two (`imm64_power_of_two`, `u64_ilog2`, `*_trailing_zeros`)

@@ -1,6 +1,10 @@
-import FV.Backend.Proof.IselSzDefs
-import FV.Backend.Proof.IselShpBrTable
-import FV.Backend.Proof.IselShpTotal
+module
+
+public import FV.Backend.Proof.IselSzDefs
+public import FV.Backend.Proof.IselShpBrTable
+public import FV.Backend.Proof.IselShpTotal
+
+@[expose] public section
 
 /-!
 # The size of the ISLE lowering's output (V6c): `br_table` (`lower_branch` rule 1140)

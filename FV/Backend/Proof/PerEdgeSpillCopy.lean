@@ -1,5 +1,9 @@
-import FV.Backend.Proof.PerEdgeSpillHomes
-import FV.Backend.Proof.SpillStep4Args
+module
+
+public import FV.Backend.Proof.PerEdgeSpillHomes
+public import FV.Backend.Proof.SpillStep4Args
+
+@[expose] public section
 
 namespace Backend.Proof.PerEdgeSpill
 open Backend Backend.Proof.Spill

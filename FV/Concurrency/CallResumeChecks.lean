@@ -1,4 +1,8 @@
-import FV.Concurrency.CallResumeAll
+module
+
+public import FV.Concurrency.CallResumeAll
+
+@[expose] public section
 
 /-!
 # `resume_all`'s static premises as checks on the lowered code (#473, step (3))

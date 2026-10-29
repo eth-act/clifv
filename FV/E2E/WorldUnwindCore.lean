@@ -1,4 +1,8 @@
-import FV.E2E.RegLevelCorrectU
+module
+
+public import FV.E2E.RegLevelCorrectU
+
+@[expose] public section
 
 /-!
 # The register-level theorem with unwinding, keeping the trace (S10f, #233)

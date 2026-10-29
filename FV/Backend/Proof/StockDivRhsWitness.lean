@@ -1,4 +1,9 @@
-import FV.Backend.Proof.StockDivRhs
+module
+
+public import FV.Backend.Proof.StockDivRhs
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarDiv.RhsWitness
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 set_option maxRecDepth 20000

@@ -1,4 +1,8 @@
-import FV.E2E.LinkArmTableB
+module
+
+public import FV.E2E.LinkArmTableB
+
+@[expose] public section
 
 /-!
 # The table count of a run prefix is unique (SEM1 #537, #680 (3) stage 2)

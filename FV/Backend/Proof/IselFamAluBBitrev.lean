@@ -1,5 +1,9 @@
-import FV.Backend.Proof.IselFamAluBBase
-import FV.Backend.Proof.IselTermsAluB
+module
+
+public import FV.Backend.Proof.IselFamAluBBase
+public import FV.Backend.Proof.IselTermsAluB
+
+@[expose] public section
 
 /-!
 # Family B: `bitrev` root rules (`lower.isle:1931`, `1937`, `1946`)

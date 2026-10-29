@@ -1,4 +1,8 @@
-import FV.Opt.Proof.RuleIntSplit
+module
+
+public import FV.Opt.Proof.RuleIntSplit
+
+@[expose] public section
 
 /-!
 # `opts/cprop.isle` (part 2): proven `simplify` rules

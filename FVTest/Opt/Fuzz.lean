@@ -1,6 +1,10 @@
-import FVTest.Opt.Common
-import FV.Clif.Run
-import FV.Clif.Print
+module
+
+public import FVTest.Opt.Common
+public import FV.Clif.Run
+public import FV.Clif.Print
+
+@[expose] public section
 
 /-!
 `opt-fuzz [--seed N] [--count N] [--ext] [--out FILE.clif] [-v] [--opt-* options]`: random

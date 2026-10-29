@@ -1,5 +1,9 @@
-import FV.Backend.Proof.IselRules
-import FV.Backend.Proof.IselSem
+module
+
+public import FV.Backend.Proof.IselRules
+public import FV.Backend.Proof.IselSem
+
+@[expose] public section
 
 /-!
 # Probe: `iadd` (`iadd_base_case`, `lower.isle:86`) end to end

@@ -1,4 +1,8 @@
-import FV.Backend.Proof.IselCtlUnmatch
+module
+
+public import FV.Backend.Proof.IselCtlUnmatch
+
+@[expose] public section
 
 /-!
 # Family Ctl: the `lower_branch` rules

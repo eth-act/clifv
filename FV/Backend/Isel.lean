@@ -1,4 +1,8 @@
-import FV.Backend.MInst
+module
+
+public import FV.Backend.MInst
+
+@[expose] public section
 
 /-!
 # Instruction selection by interpreting Cranelift's ISLE rules (M4, unproven)

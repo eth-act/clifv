@@ -1,6 +1,10 @@
-import FV.Opt.Proof.RuleShiftsConstSem
-import FV.Opt.Proof.RuleInfraIcmp
-import FV.Opt.Proof.RuleIntRetry
+module
+
+public import FV.Opt.Proof.RuleShiftsConstSem
+public import FV.Opt.Proof.RuleInfraIcmp
+public import FV.Opt.Proof.RuleIntRetry
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 set_option maxHeartbeats 4000000

@@ -1,5 +1,9 @@
-import FV.Front.RawExe
-import FV.Link.ExeUnwind
+module
+
+public import FV.Front.RawExe
+public import FV.Link.ExeUnwind
+
+@[expose] public section
 
 /-!
 # The executable compiler with unwinding on cg_clif's program (S10f)

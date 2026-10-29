@@ -1,8 +1,12 @@
-import FV.Backend.Proof.LSFacts
-import FV.Backend.Proof.LSMoves
-import FV.Backend.Proof.LSTermFixed
-import FV.Backend.Proof.LSSpillPlanStruct
-import FV.Backend.Proof.SpillLocalCheck
+module
+
+public import FV.Backend.Proof.LSFacts
+public import FV.Backend.Proof.LSMoves
+public import FV.Backend.Proof.LSTermFixed
+public import FV.Backend.Proof.LSSpillPlanStruct
+public import FV.Backend.Proof.SpillLocalCheck
+
+@[expose] public section
 
 /-!
 # The Lean allocator always has a validated plan (V4b-4, #276)

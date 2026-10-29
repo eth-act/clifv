@@ -1,4 +1,8 @@
-import FV.E2E.ExecWrites
+module
+
+public import FV.E2E.ExecWrites
+
+@[expose] public section
 
 /-!
 # Faults depend only on the registers (A3, #412, slice F8c)

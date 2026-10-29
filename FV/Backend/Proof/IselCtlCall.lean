@@ -1,4 +1,8 @@
-import FV.Backend.Proof.IselCtlTerm
+module
+
+public import FV.Backend.Proof.IselCtlTerm
+
+@[expose] public section
 
 /-!
 # Family Ctl: the `call` rules

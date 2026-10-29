@@ -1,5 +1,9 @@
-import FV.E2E.LinkArmStepDet
-import FV.E2E.LinkArmBaseDetWitness
+module
+
+public import FV.E2E.LinkArmStepDet
+public import FV.E2E.LinkArmBaseDetWitness
+
+@[expose] public section
 
 /-!
 # Witnesses for the two-state step (`FV/E2E/LinkArmStepDet.lean`)

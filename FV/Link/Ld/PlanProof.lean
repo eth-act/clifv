@@ -1,6 +1,10 @@
-import FV.Link.Ld.Layout
-import FV.Link.Ld.BuildProof
-import FV.Link.Ld.File0
+module
+
+public import FV.Link.Ld.Layout
+public import FV.Link.Ld.BuildProof
+public import FV.Link.Ld.File0
+
+@[expose] public section
 
 /-! # The plan's program headers and body (L2b stage 3e)
 

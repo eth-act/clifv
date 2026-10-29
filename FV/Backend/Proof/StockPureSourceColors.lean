@@ -1,5 +1,10 @@
-import FV.Backend.Proof.StockDFG
-import FV.Backend.Lowering.StockScalarAdd
+module
+
+public import FV.Backend.Proof.StockDFG
+public import FV.Backend.Lowering.StockScalarAdd
+
+@[expose] public section
+
 namespace Backend.Stock.Proof
 open Backend.Proof Backend.Proof.Driver
 set_option maxRecDepth 4096

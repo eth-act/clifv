@@ -1,4 +1,8 @@
-import FV.E2E.LinkArmCountZero
+module
+
+public import FV.E2E.LinkArmCountZero
+
+@[expose] public section
 
 /-!
 # `RetOkPRB κ 0` from a scope condition on the base externs (SEM1 #537, #680 (3))

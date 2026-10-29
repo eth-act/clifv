@@ -1,8 +1,12 @@
-import FV.Backend.Proof.IselEmitTModel
-import FV.Backend.Proof.IselEmitTLast
-import FV.Backend.Proof.IselEmitTHand
-import FV.Backend.Proof.IselEmitTTab
-import FV.Backend.Proof.FormsCoverCompleteT
+module
+
+public import FV.Backend.Proof.IselEmitTModel
+public import FV.Backend.Proof.IselEmitTLast
+public import FV.Backend.Proof.IselEmitTHand
+public import FV.Backend.Proof.IselEmitTTab
+public import FV.Backend.Proof.FormsCoverCompleteT
+
+@[expose] public section
 
 /-!
 # Emission conditions of the typed ISLE lowering (S11): the driver's calls, `IselEmitT`

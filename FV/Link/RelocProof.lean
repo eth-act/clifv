@@ -1,4 +1,8 @@
-import FV.Link.Reloc
+module
+
+public import FV.Link.Reloc
+
+@[expose] public section
 
 /-! # The resolved words are the relocations' forms (L2b)
 

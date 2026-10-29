@@ -1,4 +1,8 @@
-import FV.Backend.Proof.StockBnotSemantics
+module
+
+public import FV.Backend.Proof.StockBnotSemantics
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.Bnot
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

@@ -1,4 +1,8 @@
-import FV.Backend.Proof.IselPrgModel
+module
+
+public import FV.Backend.Proof.IselPrgModel
+
+@[expose] public section
 
 /-!
 # Progress of the ISLE lowering (V7): the transfer functions of the extern helpers

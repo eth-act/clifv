@@ -1,6 +1,10 @@
-import FV.E2E.LinkWorld
-import FV.Concurrency.IselCheck
-import FV.Concurrency.SegShapeWitness
+module
+
+public import FV.E2E.LinkWorld
+public import FV.Concurrency.IselCheck
+public import FV.Concurrency.SegShapeWitness
+
+@[expose] public section
 
 /-!
 # A concrete driver hypothesis for layer 2 (T2h, #311, layer 2e)

@@ -1,4 +1,8 @@
-import FV.Backend.Proof.RelocProvCheck
+module
+
+public import FV.Backend.Proof.RelocProvCheck
+
+@[expose] public section
 
 /-!
 # Name provenance of the ISLE lowering: soundness of the abstract interpretation (L1e, #216)

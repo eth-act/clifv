@@ -1,5 +1,10 @@
-import FV.Backend.Proof.StockExtendSemantics
-import FV.Backend.Proof.StockRequestSuccess
+module
+
+public import FV.Backend.Proof.StockExtendSemantics
+public import FV.Backend.Proof.StockRequestSuccess
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarShift
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 set_option maxRecDepth 20000

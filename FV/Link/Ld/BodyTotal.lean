@@ -1,4 +1,8 @@
-import FV.Link.Ld.LayoutTotal
+module
+
+public import FV.Link.Ld.LayoutTotal
+
+@[expose] public section
 
 /-! # The body of `lean-ld`'s plan is built when its relocations apply (A1c, #409)
 

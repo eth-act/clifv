@@ -1,4 +1,8 @@
-import FV.Backend.Proof.IselCovFns
+module
+
+public import FV.Backend.Proof.IselCovFns
+
+@[expose] public section
 
 /-!
 # Form coverage of the ISLE lowering (V3): the summary table

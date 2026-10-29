@@ -1,3 +1,7 @@
+module
+
+@[expose] public section
+
 /-! # An ELF64 reader (M9, "binary in, binary out"; docs/contracts/e2e.md, "Binary level (M9)")
 
 The executables `cargo fv` links are static (non-PIE) little-endian AArch64 ELF64 files

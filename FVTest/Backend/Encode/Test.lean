@@ -1,6 +1,10 @@
-import FV.Backend
-import FVTest.Backend.Encode.Examples
-import FVTest.Backend.Encode.Range
+module
+
+public import FV.Backend
+public import FVTest.Backend.Encode.Examples
+public import FVTest.Backend.Encode.Range
+
+@[expose] public section
 
 /-!
 # Encoder tests (`lake exe lean-backend-encode-test`, `docs/contracts/encoder.md`)

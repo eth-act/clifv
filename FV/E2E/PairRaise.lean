@@ -1,6 +1,10 @@
-import FV.Backend.Proof.LowerSimUW
-import FV.E2E.DeadCleanupPair
-import FV.E2E.DeadCleanupUnwindIsel
+module
+
+public import FV.Backend.Proof.LowerSimUW
+public import FV.E2E.DeadCleanupPair
+public import FV.E2E.DeadCleanupUnwindIsel
+
+@[expose] public section
 
 /-!
 # The raising code on pairs of worlds (S10f, #233)

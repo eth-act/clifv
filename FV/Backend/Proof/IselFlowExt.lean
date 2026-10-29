@@ -1,7 +1,11 @@
-import FV.Backend.Proof.IselFlowSplit
-import FV.Backend.Proof.IselFlowCheck
-import FV.Backend.Proof.DriverCheck
-import FV.Backend.Proof.AbiClass
+module
+
+public import FV.Backend.Proof.IselFlowSplit
+public import FV.Backend.Proof.IselFlowCheck
+public import FV.Backend.Proof.DriverCheck
+public import FV.Backend.Proof.AbiClass
+
+@[expose] public section
 
 /-!
 # What the extern helpers do to registers, values, instructions and the lowering state

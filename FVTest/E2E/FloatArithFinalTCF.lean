@@ -1,7 +1,11 @@
-import FV.E2E.VerifiableT
-import FVTest.E2E.FloatFinalT
-import FVTest.Backend.FloatArithCtxT
-import FV.E2E.LinkCheck
+module
+
+public import FV.E2E.VerifiableT
+public import FVTest.E2E.FloatFinalT
+public import FVTest.Backend.FloatArithCtxT
+public import FV.E2E.LinkCheck
+
+@[expose] public section
 
 /-!
 Non-vacuity of the typed final theorem with the proven float operations (S11f, #35):

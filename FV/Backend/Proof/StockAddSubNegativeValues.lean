@@ -1,5 +1,10 @@
-import FV.Backend.Proof.StockAddSubNegativeMatch
-import FV.Backend.Proof.StockAddSubValues
+module
+
+public import FV.Backend.Proof.StockAddSubNegativeMatch
+public import FV.Backend.Proof.StockAddSubValues
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarAddSub
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 set_option maxRecDepth 20000

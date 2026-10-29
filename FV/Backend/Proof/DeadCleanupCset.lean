@@ -1,4 +1,8 @@
-import FV.Backend.Proof.DeadCleanupSem
+module
+
+public import FV.Backend.Proof.DeadCleanupSem
+
+@[expose] public section
 
 /-! Witnesses for #552: the cleanup removes a `cset` whose def is dead (the boolean of an
 `icmp` that the `brif` rule re-compares; Cranelift does not lower it, `machinst/lower.rs`

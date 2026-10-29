@@ -1,4 +1,8 @@
-import FV.Backend.Proof.StockReservedTerminal
+module
+
+public import FV.Backend.Proof.StockReservedTerminal
+
+@[expose] public section
 
 /-! Only actual try-call return registers can be new constructor alias targets.
 This is the target-origin ingredient for reserved-payload chain termination. -/

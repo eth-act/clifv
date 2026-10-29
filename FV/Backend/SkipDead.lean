@@ -1,5 +1,9 @@
-import FV.Backend.Proof.DriverCheck
-import FV.Backend.RegallocCheck
+module
+
+public import FV.Backend.Proof.DriverCheck
+public import FV.Backend.RegallocCheck
+
+@[expose] public section
 
 /-!
 # Unused instructions are not lowered (Cranelift's skip)

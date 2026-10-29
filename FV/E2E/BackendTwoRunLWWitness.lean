@@ -1,5 +1,9 @@
-import FV.E2E.BackendTwoRunLW
-import FV.E2E.BackendTwoRunLRWitness
+module
+
+public import FV.E2E.BackendTwoRunLW
+public import FV.E2E.BackendTwoRunLRWitness
+
+@[expose] public section
 
 /-!
 # Witnesses for the machine lock with the world-difference invariant (SEM1 #537, `BackendTwoRunLW.lean`)

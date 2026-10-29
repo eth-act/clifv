@@ -1,5 +1,9 @@
-import FV.E2E.LinkArmStage2PRBZSOf
-import FV.E2E.LinkArmRetOkPRB
+module
+
+public import FV.E2E.LinkArmStage2PRBZSOf
+public import FV.E2E.LinkArmRetOkPRB
+
+@[expose] public section
 
 /-!
 # `ThmPRBRL` at every depth (SEM1 #537, #680 (3), stage 2 glue (4))

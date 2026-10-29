@@ -1,6 +1,10 @@
-import FV.Concurrency.CallRetsN
-import FV.Concurrency.CallSeg
-import FV.Concurrency.CallResume
+module
+
+public import FV.Concurrency.CallRetsN
+public import FV.Concurrency.CallSeg
+public import FV.Concurrency.CallResume
+
+@[expose] public section
 
 /-!
 # All layers from an activation's ABI entry, pausing at calls and returns (#473, step (4))

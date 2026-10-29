@@ -1,6 +1,10 @@
-import FV.Backend.Proof.StockAluRecordValues
-import FV.Backend.Proof.StockAllocationFlow
-import FV.Backend.Proof.StockCoverageBlock
+module
+
+public import FV.Backend.Proof.StockAluRecordValues
+public import FV.Backend.Proof.StockAllocationFlow
+public import FV.Backend.Proof.StockCoverageBlock
+
+@[expose] public section
 
 /-! Fixed demand-array extent through actual Stock lowering. -/
 namespace Backend.Stock.Proof.Extent

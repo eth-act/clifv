@@ -1,4 +1,9 @@
-import FV.E2E.StockMixedDivFixtures
+module
+
+public import FV.E2E.StockMixedDivFixtures
+
+@[expose] public section
+
 namespace E2E.StockReturnedDivNIWitness
 open Backend.Stock.D0
 set_option autoImplicit false

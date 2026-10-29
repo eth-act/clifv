@@ -1,4 +1,8 @@
-import FVTest.Isle.Opt
+module
+
+public import FVTest.Isle.Opt
+
+@[expose] public section
 
 /-!
 # `simplify` against Cranelift on the CLIF corpus

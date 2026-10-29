@@ -1,4 +1,8 @@
-import FV.Backend.Proof.StockConditionalCallsWitness
+module
+
+public import FV.Backend.Proof.StockConditionalCallsWitness
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.ConditionalValues.EmptyTrapFixture
 open Backend.Proof Backend.Proof.Driver Backend.Proof.Driver.Fix

@@ -1,5 +1,9 @@
-import FV.Opt.Proof.SimpGraph
-import FV.Opt.Validate
+module
+
+public import FV.Opt.Proof.SimpGraph
+public import FV.Opt.Validate
+
+@[expose] public section
 
 /-!
 # The semantic facts of a simplify run (`Opt.SimpFacts`)

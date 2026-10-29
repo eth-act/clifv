@@ -1,7 +1,11 @@
-import FV.E2E.FinalT
-import FV.Backend.Proof.LowerCompleteT
-import FV.Backend.Proof.SpillLocalPipeT
-import FV.Backend.Proof.SpillArity
+module
+
+public import FV.E2E.FinalT
+public import FV.Backend.Proof.LowerCompleteT
+public import FV.Backend.Proof.SpillLocalPipeT
+public import FV.Backend.Proof.SpillArity
+
+@[expose] public section
 
 /-!
 # The typed final theorem without the lowering and `prepare` validators (S11e5 Stage C, slice 7)

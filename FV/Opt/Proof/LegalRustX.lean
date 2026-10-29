@@ -1,5 +1,9 @@
-import FV.Opt.Proof.LegalSimX
-import FV.Opt.Proof.LegalRust
+module
+
+public import FV.Opt.Proof.LegalSimX
+public import FV.Opt.Proof.LegalRust
+
+@[expose] public section
 
 /-!
 # The trusted Rust environment with unwinding (S10e, #232)

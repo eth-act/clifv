@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockBmaskRhs
-import FV.Backend.Proof.StockAliasSemantics
+module
+
+public import FV.Backend.Proof.StockBmaskRhs
+public import FV.Backend.Proof.StockAliasSemantics
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.ScalarMask
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

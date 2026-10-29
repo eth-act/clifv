@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockConstantRecordValues
-import FV.Backend.Proof.StockAlu
+module
+
+public import FV.Backend.Proof.StockConstantRecordValues
+public import FV.Backend.Proof.StockAlu
+
+@[expose] public section
 
 /-! Whole-run result and availability transfer shared by fresh single-result families. -/
 namespace Backend.Stock.Proof

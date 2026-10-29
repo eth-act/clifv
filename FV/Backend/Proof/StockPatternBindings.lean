@@ -1,4 +1,8 @@
-import FV.Backend.Proof.StockSinkProvenance
+module
+
+public import FV.Backend.Proof.StockSinkProvenance
+
+@[expose] public section
 
 /-! Matching preserves environment slots which are not bound by the pattern.
 This supports provenance of instruction variables used by load-sinking RHSs. -/

@@ -1,4 +1,8 @@
-import FV.Backend.Proof.IselFlowGen
+module
+
+public import FV.Backend.Proof.IselFlowGen
+
+@[expose] public section
 
 /-! A constructor frame with complete matched-rule exceptions. Syntax checks are
 internal proof obligations; callers still run the original interpreter/program. -/

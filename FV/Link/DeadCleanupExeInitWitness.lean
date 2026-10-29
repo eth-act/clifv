@@ -1,5 +1,9 @@
-import FV.Link.ExeUnwindWitness
-import FV.Link.DeadCleanupExeInit
+module
+
+public import FV.Link.ExeUnwindWitness
+public import FV.Link.DeadCleanupExeInit
+
+@[expose] public section
 
 /-!
 # Witness: the executable theorem under the slot-byte oracle applies to a compiled executable

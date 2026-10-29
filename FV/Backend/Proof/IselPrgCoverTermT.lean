@@ -1,5 +1,9 @@
-import FV.Backend.Proof.IselPrgCoverT
-import FV.Backend.Proof.IselPrgCtxT
+module
+
+public import FV.Backend.Proof.IselPrgCoverT
+public import FV.Backend.Proof.IselPrgCtxT
+
+@[expose] public section
 
 /-!
 # Progress of the ISLE lowering over the typed scope: the terminator roots

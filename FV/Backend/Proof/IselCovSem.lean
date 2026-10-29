@@ -1,4 +1,8 @@
-import FV.Backend.Proof.IselCovDom
+module
+
+public import FV.Backend.Proof.IselCovDom
+
+@[expose] public section
 
 /-!
 # Form coverage of the ISLE lowering (V3): the meaning of the abstract values

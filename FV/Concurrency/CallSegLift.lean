@@ -1,6 +1,10 @@
-import FV.Concurrency.CallSegT
-import FV.Concurrency.ClifLift
-import FV.Concurrency.CallRetsN
+module
+
+public import FV.Concurrency.CallSegT
+public import FV.Concurrency.ClifLift
+public import FV.Concurrency.CallRetsN
+
+@[expose] public section
 
 /-!
 # An activation's segment as a `RealizedT` of the thread (#473, step (4))

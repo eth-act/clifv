@@ -1,5 +1,9 @@
-import FV.Backend.Proof.VCodeDelete
-import FV.Backend.Proof.DriverCheckSound
+module
+
+public import FV.Backend.Proof.VCodeDelete
+public import FV.Backend.Proof.DriverCheckSound
+
+@[expose] public section
 
 /-!
 # The driver simulation of the VCode without unused statements (`skipDead`)

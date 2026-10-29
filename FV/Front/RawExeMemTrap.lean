@@ -1,5 +1,9 @@
-import FV.Front.RawExe
-import FV.Link.DeadCleanupExeMemTrap
+module
+
+public import FV.Front.RawExe
+public import FV.Link.DeadCleanupExeMemTrap
+
+@[expose] public section
 
 /-!
 # The shipped executable compiler refines cg_clif's program, memory traps included (A3, #412, F7)

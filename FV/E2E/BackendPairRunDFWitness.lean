@@ -1,5 +1,9 @@
-import FV.E2E.BackendPairRunDF
-import FV.E2E.BackendTwoRunNIWitness
+module
+
+public import FV.E2E.BackendPairRunDF
+public import FV.E2E.BackendTwoRunNIWitness
+
+@[expose] public section
 
 /-!
 # Witness for the paired run from non-interference at the exterior (SEM1 #537, #713,

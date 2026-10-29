@@ -1,9 +1,13 @@
-import FV.Backend.Proof.DefAssembleBase
-import FV.Backend.Proof.KillTryDefs
-import FV.Backend.Proof.KillDriver
-import FV.Backend.Proof.SpillCtlPipe
-import FV.Backend.Proof.EntryParams
-import FV.Backend.Proof.SpillDefinedArgs
+module
+
+public import FV.Backend.Proof.DefAssembleBase
+public import FV.Backend.Proof.KillTryDefs
+public import FV.Backend.Proof.KillDriver
+public import FV.Backend.Proof.SpillCtlPipe
+public import FV.Backend.Proof.EntryParams
+public import FV.Backend.Proof.SpillDefinedArgs
+
+@[expose] public section
 
 /-!
 # Definite assignment of `lowerFunction`'s VCode from the run facts

@@ -1,5 +1,9 @@
-import FV.Link.Layout
-import FV.E2E.BinCheck
+module
+
+public import FV.Link.Layout
+public import FV.E2E.BinCheck
+
+@[expose] public section
 
 /-! # Relocation of the program part (L2b)
 

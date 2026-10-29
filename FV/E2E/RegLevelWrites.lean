@@ -1,6 +1,10 @@
-import FV.E2E.RegLevelGoodX
-import FV.E2E.ExecWrites
-import FV.E2E.MoveWrites
+module
+
+public import FV.E2E.RegLevelGoodX
+public import FV.E2E.ExecWrites
+public import FV.E2E.MoveWrites
+
+@[expose] public section
 
 /-!
 # The writes of the M6 runs (A3, #412, slice F8b)

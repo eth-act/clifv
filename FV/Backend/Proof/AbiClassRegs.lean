@@ -1,7 +1,11 @@
-import FV.Backend.Proof.SpillCtlPipe
-import FV.Backend.Proof.SpillCtlFormsT
-import FV.Backend.Proof.AbiClass
-import FV.Backend.Proof.DriverCheckTy
+module
+
+public import FV.Backend.Proof.SpillCtlPipe
+public import FV.Backend.Proof.SpillCtlFormsT
+public import FV.Backend.Proof.AbiClass
+public import FV.Backend.Proof.DriverCheckTy
+
+@[expose] public section
 
 /-!
 # The registers of the typed AAPCS64 placement (S11e5 Stage C, slice 5)

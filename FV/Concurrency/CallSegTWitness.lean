@@ -1,6 +1,10 @@
-import FV.Concurrency.CallSegT
-import FV.Concurrency.PrivCohTWitness
-import FV.Concurrency.ArmAllocEntry
+module
+
+public import FV.Concurrency.CallSegT
+public import FV.Concurrency.PrivCohTWitness
+public import FV.Concurrency.ArmAllocEntry
+
+@[expose] public section
 
 /-!
 # Witnesses for `CallSegT` (#473, step (4))

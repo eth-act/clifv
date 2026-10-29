@@ -1,7 +1,11 @@
-import FV.Backend.LogicalNIProduction
-import FV.Backend.LinearScan
-import FV.E2E.StockLogicalFixtures
-import FV.Clif.Print
+module
+
+public import FV.Backend.LogicalNIProduction
+public import FV.Backend.LinearScan
+public import FV.E2E.StockLogicalFixtures
+public import FV.Clif.Print
+
+@[expose] public section
 
 set_option autoImplicit false
 namespace FVTest.StockLogicalRuntime

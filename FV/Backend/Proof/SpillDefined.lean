@@ -1,4 +1,8 @@
-import FV.Backend.Proof.SpillInvariant
+module
+
+public import FV.Backend.Proof.SpillInvariant
+
+@[expose] public section
 
 /-!
 # Definite assignment and the spill allocation's availability sets

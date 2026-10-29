@@ -1,4 +1,8 @@
-import FV.Backend.Proof.IselPrgCheck
+module
+
+public import FV.Backend.Proof.IselPrgCheck
+
+@[expose] public section
 
 /-!
 # Progress of the ISLE lowering (V7): the model obligations and the statement

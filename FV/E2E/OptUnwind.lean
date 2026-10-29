@@ -1,9 +1,13 @@
-import FV.E2E.OptX
-import FV.E2E.LegalOptX
-import FV.E2E.DeadCleanupUnwindFinal
-import FV.E2E.FinalUnwind
-import FV.Opt.Proof.PipelineU
-import FV.Opt.Proof.LegalRustX
+module
+
+public import FV.E2E.OptX
+public import FV.E2E.LegalOptX
+public import FV.E2E.DeadCleanupUnwindFinal
+public import FV.E2E.FinalUnwind
+public import FV.Opt.Proof.PipelineU
+public import FV.Opt.Proof.LegalRustX
+
+@[expose] public section
 
 /-!
 # The end-to-end theorem with unwinding over the mid-end (S10f, #233)

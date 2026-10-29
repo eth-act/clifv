@@ -1,4 +1,8 @@
-import FV.Backend.Encode
+module
+
+public import FV.Backend.Encode
+
+@[expose] public section
 
 /-!
 # M5 proof infrastructure: `decode_raw_inst ∘ armBits` per encoding class

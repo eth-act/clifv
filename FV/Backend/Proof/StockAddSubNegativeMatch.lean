@@ -1,5 +1,10 @@
-import FV.Backend.Proof.StockAddSubDispatch
-import FV.Backend.Proof.StockAddSubNegativePure
+module
+
+public import FV.Backend.Proof.StockAddSubDispatch
+public import FV.Backend.Proof.StockAddSubNegativePure
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarAddSub
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 set_option maxRecDepth 20000

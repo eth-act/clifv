@@ -1,5 +1,9 @@
-import FV.E2E.LinkArmProgramInitEX
-import FV.E2E.LinkArmTwinCE
+module
+
+public import FV.E2E.LinkArmProgramInitEX
+public import FV.E2E.LinkArmTwinCE
+
+@[expose] public section
 
 /-!
 # The linked program under the machine's own slot table, corrected determinism (SEM1 #537, #719, #716)

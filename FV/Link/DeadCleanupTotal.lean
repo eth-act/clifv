@@ -1,8 +1,13 @@
-import FV.Link.RelocShape
-import FV.E2E.SpillDefined
-import FV.Link.DeadCleanupCompile
-import FV.Link.DeadCleanupCodeMapProof
-import FV.Link.DeadCleanupOutsideProof
+module
+
+public import FV.Link.RelocShape
+public import FV.E2E.SpillDefined
+public import FV.Link.DeadCleanupCompile
+public import FV.Link.DeadCleanupCodeMapProof
+public import FV.Link.DeadCleanupOutsideProof
+
+@[expose] public section
+
 namespace Link.DeadCleanup
 set_option autoImplicit false
 open E2E E2E.LinkCheck E2E.BinCheck E2E.Elf Backend LinkSpec

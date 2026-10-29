@@ -1,4 +1,8 @@
-import FV.Concurrency.CallArgsEntry
+module
+
+public import FV.Concurrency.CallArgsEntry
+
+@[expose] public section
 
 /-!
 # The call end of a caller's segment on the linked machine (#473, step (4))

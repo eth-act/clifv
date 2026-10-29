@@ -1,9 +1,13 @@
-import FV.Link.EhCheck
-import FV.Link.Image
-import FV.Backend.Proof.LowerSimUCheck
-import FV.E2E.RegLevelUTry
-import FV.E2E.RegLevelCallSite
-import FV.E2E.RegLevelFrameSaved
+module
+
+public import FV.Link.EhCheck
+public import FV.Link.Image
+public import FV.Backend.Proof.LowerSimUCheck
+public import FV.E2E.RegLevelUTry
+public import FV.E2E.RegLevelCallSite
+public import FV.E2E.RegLevelFrameSaved
+
+@[expose] public section
 
 /-!
 # The per-function unwinding checks of the compiled functions (S10f)

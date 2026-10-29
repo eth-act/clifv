@@ -1,4 +1,8 @@
-import FV.Backend.Proof.StockValues
+module
+
+public import FV.Backend.Proof.StockValues
+
+@[expose] public section
 
 /-! Invariants of the stock driver's actual dense initial allocation. -/
 

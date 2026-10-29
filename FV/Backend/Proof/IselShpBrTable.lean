@@ -1,5 +1,9 @@
-import FV.Backend.Proof.IselShpBase
-import FV.Backend.Proof.IselCtlBrTable
+module
+
+public import FV.Backend.Proof.IselShpBase
+public import FV.Backend.Proof.IselCtlBrTable
+
+@[expose] public section
 
 /-!
 # Control shapes of the ISLE lowering (V4): `br_table` (`lower_branch` rule 1140)

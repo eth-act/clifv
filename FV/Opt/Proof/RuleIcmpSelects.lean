@@ -1,6 +1,10 @@
-import FV.Opt.Proof.RuleInfraIcmp
-import FV.Opt.Proof.RuleInfraConst
-import FV.Opt.Proof.RuleIntSplit
+module
+
+public import FV.Opt.Proof.RuleInfraIcmp
+public import FV.Opt.Proof.RuleInfraConst
+public import FV.Opt.Proof.RuleIntSplit
+
+@[expose] public section
 
 /-!
 # Comparisons of a select between distinct constants

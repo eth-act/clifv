@@ -1,5 +1,9 @@
-import FV.E2E.LinkArmU
-import FV.Clif.LinkClifXN
+module
+
+public import FV.E2E.LinkArmU
+public import FV.Clif.LinkClifXN
+
+@[expose] public section
 
 /-!
 # Linking at the Arm level with unwinding: the external semantics and the statement (S10f, #233)

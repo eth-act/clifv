@@ -4,11 +4,15 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Author(s): Shilpi Goel, Alex Keizer
 -/
 -- Modified by fv-compiler-rust (2026): ported to Lean v4.34.1, module prefix FV.Arm, wrapped in namespace Arm.
-import FV.Arm.Exec
-import FV.Arm.Tactics.FetchAndDecode
-import FV.Arm.Tactics.Sym.Context
+module
 
-import Lean
+public import FV.Arm.Exec
+public import FV.Arm.Tactics.FetchAndDecode
+public import FV.Arm.Tactics.Sym.Context
+
+public import Lean
+
+@[expose] public section
 
 namespace Arm
 

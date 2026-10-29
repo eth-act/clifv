@@ -1,6 +1,10 @@
-import FV.E2E.SpillCheckAlloc
-import FV.E2E.DeadCleanupAlloc
-import FV.Backend.Proof.DeadCleanupPreparedAvailability
+module
+
+public import FV.E2E.SpillCheckAlloc
+public import FV.E2E.DeadCleanupAlloc
+public import FV.Backend.Proof.DeadCleanupPreparedAvailability
+
+@[expose] public section
 
 namespace E2E
 open Backend Backend.Proof Backend.Proof.Driver Backend.DeadCleanup

@@ -1,4 +1,8 @@
-import FV.E2E.RegLevelPrefixC
+module
+
+public import FV.E2E.RegLevelPrefixC
+
+@[expose] public section
 
 /-!
 # The counted register level up to call `N`, with the run's trace (SEM1 #537, #680 (3) (P1))

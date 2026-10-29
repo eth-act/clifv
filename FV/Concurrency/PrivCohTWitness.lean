@@ -1,5 +1,9 @@
-import FV.Concurrency.PrivCohT
-import FV.Concurrency.ThreadRefineWitness
+module
+
+public import FV.Concurrency.PrivCohT
+public import FV.Concurrency.ThreadRefineWitness
+
+@[expose] public section
 
 /-!
 # Witnesses: time-varying private sets (#473, (iv))

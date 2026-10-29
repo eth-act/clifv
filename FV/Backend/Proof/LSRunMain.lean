@@ -1,8 +1,12 @@
-import FV.Backend.Proof.LSRunInst
-import FV.Backend.Proof.LSRunEdge
-import FV.Backend.Proof.LSRunArgs
-import FV.Backend.Proof.LSRunEntry
-import FV.Backend.Proof.SpillStep4Edge
+module
+
+public import FV.Backend.Proof.LSRunInst
+public import FV.Backend.Proof.LSRunEdge
+public import FV.Backend.Proof.LSRunArgs
+public import FV.Backend.Proof.LSRunEntry
+public import FV.Backend.Proof.SpillStep4Edge
+
+@[expose] public section
 
 /-!
 # The checker accepts the Lean allocator's validated plans (V4b-3, #275): the blocks

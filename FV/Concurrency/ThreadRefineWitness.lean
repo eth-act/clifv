@@ -1,5 +1,9 @@
-import FV.Concurrency.ThreadRefine
-import FV.Concurrency.ProgramWitness
+module
+
+public import FV.Concurrency.ThreadRefine
+public import FV.Concurrency.ProgramWitness
+
+@[expose] public section
 
 /-!
 # Non-vacuity of `ThreadRefine.realizes_of_threads`

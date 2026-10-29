@@ -1,4 +1,8 @@
-import FV.Backend.Proof.IselFlowGen
+module
+
+public import FV.Backend.Proof.IselFlowGen
+
+@[expose] public section
 
 /-!
 # Generic lemmas about the ISLE interpreter: fuel monotonicity and rule selection

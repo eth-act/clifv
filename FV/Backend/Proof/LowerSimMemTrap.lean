@@ -1,5 +1,9 @@
-import FV.Backend.Proof.IselMemTrap
-import FV.Backend.Proof.LowerSim
+module
+
+public import FV.Backend.Proof.IselMemTrap
+public import FV.Backend.Proof.LowerSim
+
+@[expose] public section
 
 /-!
 # The driver simulation of a memory trap (A3, #412, slice F3)

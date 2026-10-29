@@ -1,6 +1,10 @@
-import FV.Backend.Lowering.StockScalarProduction
-import FV.Backend.Proof.StockScalarAddChecked
-import FV.Backend.Proof.StockPrologueAllClass
+module
+
+public import FV.Backend.Lowering.StockScalarProduction
+public import FV.Backend.Proof.StockScalarAddChecked
+public import FV.Backend.Proof.StockPrologueAllClass
+
+@[expose] public section
 
 set_option autoImplicit false
 namespace Backend.Stock.ScalarAdd

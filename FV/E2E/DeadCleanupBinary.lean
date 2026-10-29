@@ -1,6 +1,10 @@
-import FV.E2E.Binary
-import FV.E2E.DeadCleanupStackBound
-import FV.E2E.DeadCleanupBinCheck
+module
+
+public import FV.E2E.Binary
+public import FV.E2E.DeadCleanupStackBound
+public import FV.E2E.DeadCleanupBinCheck
+
+@[expose] public section
 
 namespace E2E.DeadCleanupBinary
 set_option autoImplicit false

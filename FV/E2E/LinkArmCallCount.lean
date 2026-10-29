@@ -1,6 +1,10 @@
-import FV.E2E.LinkArmOracleAt
-import FV.E2E.LinkArmProgCallPRBRLT
-import FV.E2E.LinkPlaceBLeave
+module
+
+public import FV.E2E.LinkArmOracleAt
+public import FV.E2E.LinkArmProgCallPRBRLT
+public import FV.E2E.LinkPlaceBLeave
+
+@[expose] public section
 
 /-!
 # The count of a program call (SEM1 #537, #680 (3), stage 2 (P3))

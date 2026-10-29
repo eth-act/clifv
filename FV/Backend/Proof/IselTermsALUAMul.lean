@@ -1,4 +1,8 @@
-import FV.Backend.Proof.IselTermsLogicNot
+module
+
+public import FV.Backend.Proof.IselTermsLogicNot
+
+@[expose] public section
 
 /-!
 # Multiplication rules of family A: forward lemmas

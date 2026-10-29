@@ -1,4 +1,8 @@
-import FV.E2E.LinkPlace
+module
+
+public import FV.E2E.LinkPlace
+
+@[expose] public section
 
 /-! # The slot-byte oracle on whole-program runs (SEM1, `docs/plans/uninit.md` §5.5)
 

@@ -1,7 +1,11 @@
-import FV.E2E.LinkPlaceBCount
-import FV.E2E.LinkArmProphDetR
-import FV.E2E.LinkArmProphReg
-import FV.E2E.BackendWorldPRB
+module
+
+public import FV.E2E.LinkPlaceBCount
+public import FV.E2E.LinkArmProphDetR
+public import FV.E2E.LinkArmProphReg
+public import FV.E2E.BackendWorldPRB
+
+@[expose] public section
 
 /-!
 # The linking statement with the slot-byte oracle (SEM1 item (d), `docs/plans/uninit.md` §5.9)

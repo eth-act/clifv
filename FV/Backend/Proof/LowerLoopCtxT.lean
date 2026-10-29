@@ -1,6 +1,10 @@
-import FV.Backend.Proof.LowerLoopCtx
-import FV.Backend.Proof.DriverCheckT
-import FV.Compile.SubsetT
+module
+
+public import FV.Backend.Proof.LowerLoopCtx
+public import FV.Backend.Proof.DriverCheckT
+public import FV.Compile.SubsetT
+
+@[expose] public section
 
 /-!
 # Typed context construction (S11e5 Stage C, slice 1)

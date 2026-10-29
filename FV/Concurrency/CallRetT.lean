@@ -1,5 +1,9 @@
-import FV.Concurrency.CallStepT
-import FV.Concurrency.CallRetLink
+module
+
+public import FV.Concurrency.CallStepT
+public import FV.Concurrency.CallRetLink
+
+@[expose] public section
 
 /-!
 # A callee's return end as a `RealizedT` of the thread (#473, step (4))

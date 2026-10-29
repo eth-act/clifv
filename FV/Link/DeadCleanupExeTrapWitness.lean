@@ -1,5 +1,9 @@
-import FV.Link.ExeUnwindWitness
-import FV.Link.DeadCleanupExeTrap
+module
+
+public import FV.Link.ExeUnwindWitness
+public import FV.Link.DeadCleanupExeTrap
+
+@[expose] public section
 
 /-!
 # Witness: the executable theorem with callee traps applies to a compiled executable (S9d)

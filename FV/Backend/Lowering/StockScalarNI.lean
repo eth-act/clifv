@@ -1,7 +1,11 @@
-import FV.Backend.Lowering.StockLogicalNI
-import FV.Backend.StockScalarCheck
-import FV.Backend.ABIReadScalar
-import FV.Backend.ABIReadDiv
+module
+
+public import FV.Backend.Lowering.StockLogicalNI
+public import FV.Backend.StockScalarCheck
+public import FV.Backend.ABIReadScalar
+public import FV.Backend.ABIReadDiv
+
+@[expose] public section
 
 namespace Backend.Stock.Scalar
 set_option autoImplicit false

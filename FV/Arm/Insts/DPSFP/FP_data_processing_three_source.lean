@@ -24,9 +24,13 @@ Released under Apache 2.0 license; see third_party/NOTICE-lnsym.md.
 -- `FPMulAdd(addend, op1, op2)` is `IEEE.mulAdd f rm addend op1 op2` (one rounding, `.rne` with
 -- FPCR = 0). Half precision is not modelled.
 
-import FV.Arm.Decode
-import FV.Arm.Insts.Common
-import FV.Arm.Insts.DPSFP.FP_data_processing_one_source
+module
+
+public import FV.Arm.Decode
+public import FV.Arm.Insts.Common
+public import FV.Arm.Insts.DPSFP.FP_data_processing_one_source
+
+@[expose] public section
 
 namespace Arm
 

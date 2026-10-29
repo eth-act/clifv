@@ -1,8 +1,13 @@
-import FV.Backend.Proof.StockSourceEntry
-import FV.Backend.Proof.StockDFG
-import FV.Backend.Proof.StockConstantRecordValues
-import FV.Backend.Proof.StockEntryAliases
-import FV.Backend.Proof.StockSelectScanRefines
+module
+
+public import FV.Backend.Proof.StockSourceEntry
+public import FV.Backend.Proof.StockDFG
+public import FV.Backend.Proof.StockConstantRecordValues
+public import FV.Backend.Proof.StockEntryAliases
+public import FV.Backend.Proof.StockSelectScanRefines
+
+@[expose] public section
+
 namespace Backend.Stock.Proof
 open Backend.Proof Backend.Proof.Driver Isle Isle.Aarch64
 set_option autoImplicit false

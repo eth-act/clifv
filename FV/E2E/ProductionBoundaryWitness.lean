@@ -1,6 +1,10 @@
-import FV.Link.ProductionExeSource
-import FV.Link.Ld.Spec
-import FV.Backend.Proof.StockPrologueSource
+module
+
+public import FV.Link.ProductionExeSource
+public import FV.Link.Ld.Spec
+public import FV.Backend.Proof.StockPrologueSource
+
+@[expose] public section
 
 /-! Complete machine/source boundary witness for the actual production compiler.
 Fixed native checks establish concrete compiler data only. The entry argument is

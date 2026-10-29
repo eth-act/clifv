@@ -1,6 +1,10 @@
-import FV.Backend.Proof.IselEmitTFns
-import FV.Backend.Proof.IselEmitLast
-import FV.Backend.Proof.IselCovTSound
+module
+
+public import FV.Backend.Proof.IselEmitTFns
+public import FV.Backend.Proof.IselEmitLast
+public import FV.Backend.Proof.IselCovTSound
+
+@[expose] public section
 
 /-!
 # Emission conditions of the typed ISLE lowering (S11): runs ending in a branch

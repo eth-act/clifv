@@ -1,6 +1,10 @@
-import FV.Backend.Proof.StockBnotRecordValues
-import FV.Backend.Proof.StockLogicalNotXorRecord
-import FV.Backend.Proof.StockRootOpcodeMatch
+module
+
+public import FV.Backend.Proof.StockBnotRecordValues
+public import FV.Backend.Proof.StockLogicalNotXorRecord
+public import FV.Backend.Proof.StockRootOpcodeMatch
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.BnotComplete
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

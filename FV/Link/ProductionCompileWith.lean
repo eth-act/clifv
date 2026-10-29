@@ -1,5 +1,9 @@
-import FV.Link.ProductionImageWith
-import FV.Link.Placed
+module
+
+public import FV.Link.ProductionImageWith
+public import FV.Link.Placed
+
+@[expose] public section
 
 /-! Transactional executable compilation. The legacy layout and compiler are
 retained for a failed complete Stock attempt. Output records routing data only. -/

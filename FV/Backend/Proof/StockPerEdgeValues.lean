@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockOutgoingVectors
-import FV.Backend.Proof.PerEdgeVCodeSem
+module
+
+public import FV.Backend.Proof.StockOutgoingVectors
+public import FV.Backend.Proof.PerEdgeVCodeSem
+
+@[expose] public section
 
 /-! Original source binding and actual Stock per-successor copy semantics. -/
 namespace Backend.Stock.Proof

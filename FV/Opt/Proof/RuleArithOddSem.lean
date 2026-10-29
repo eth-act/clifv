@@ -1,5 +1,9 @@
-import FV.Opt.Proof.RuleInfraDivConst
-import Init.Data.Nat.Coprime
+module
+
+public import FV.Opt.Proof.RuleInfraDivConst
+public import Init.Data.Nat.Coprime
+
+@[expose] public section
 
 namespace Opt.Proof
 

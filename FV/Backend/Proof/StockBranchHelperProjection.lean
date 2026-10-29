@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockNodeCoverage
-import FV.Backend.Proof.IselScopedProjection
+module
+
+public import FV.Backend.Proof.StockNodeCoverage
+public import FV.Backend.Proof.IselScopedProjection
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.BranchHelpers
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

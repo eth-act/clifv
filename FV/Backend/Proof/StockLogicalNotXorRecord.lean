@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockLogicalNotXor
-import FV.Backend.Proof.StockDemandExtent
+module
+
+public import FV.Backend.Proof.StockLogicalNotXor
+public import FV.Backend.Proof.StockDemandExtent
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.LogicalNot
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

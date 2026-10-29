@@ -1,6 +1,10 @@
-import FV.Backend.Proof.StockParameterReturnPrelude
-import FV.Backend.Proof.StockCfgReturnTrapAt
-import FV.Backend.Proof.StockJumpEntryPrelude
+module
+
+public import FV.Backend.Proof.StockParameterReturnPrelude
+public import FV.Backend.Proof.StockCfgReturnTrapAt
+public import FV.Backend.Proof.StockJumpEntryPrelude
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.ParameterCfg
 open Backend.Proof Backend.Proof.Driver

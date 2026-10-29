@@ -1,6 +1,10 @@
-import FV.Link.ExeInputReach
-import FV.Link.OptExe
-import FV.Link.Ld.Spec
+module
+
+public import FV.Link.ExeInputReach
+public import FV.Link.OptExe
+public import FV.Link.Ld.Spec
+
+@[expose] public section
 
 /-! # The executable compiler is total on `lean-ld`'s output (L2b stage 3e)
 

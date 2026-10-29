@@ -1,4 +1,8 @@
-import FV.Backend.Proof.SpillInvariant
+module
+
+public import FV.Backend.Proof.SpillInvariant
+
+@[expose] public section
 
 /-!
 # The spill allocator's homes and argument-area facts (V4 (a), step 4)

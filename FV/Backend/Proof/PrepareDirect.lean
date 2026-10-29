@@ -1,5 +1,9 @@
-import FV.Backend.Proof.PrepareSound
-import FV.Backend.Proof.PrepareComplete
+module
+
+public import FV.Backend.Proof.PrepareSound
+public import FV.Backend.Proof.PrepareComplete
+
+@[expose] public section
 
 /-!
 # `prepare` is correct (M7, no validator)

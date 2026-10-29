@@ -1,8 +1,13 @@
-import FV.Backend.Proof.StockCastCmpRhsValues
-import FV.Backend.Proof.StockCastCmpSelection
-import FV.Backend.Proof.StockCastCmpOperands
-import FV.Backend.Proof.StockAvailableTypes
-import FV.Backend.Proof.StockGuardedRecordValues
+module
+
+public import FV.Backend.Proof.StockCastCmpRhsValues
+public import FV.Backend.Proof.StockCastCmpSelection
+public import FV.Backend.Proof.StockCastCmpOperands
+public import FV.Backend.Proof.StockAvailableTypes
+public import FV.Backend.Proof.StockGuardedRecordValues
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarCmp
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 set_option autoImplicit false

@@ -1,6 +1,10 @@
-import FV.Concurrency.CallEnterArm
-import FV.Concurrency.LinkedMachineWitness
-import FV.Concurrency.CallRetPremisesWitness
+module
+
+public import FV.Concurrency.CallEnterArm
+public import FV.Concurrency.LinkedMachineWitness
+public import FV.Concurrency.CallRetPremisesWitness
+
+@[expose] public section
 
 /-!
 # Witness: the callee entered on the linked machine (#473, step (3))

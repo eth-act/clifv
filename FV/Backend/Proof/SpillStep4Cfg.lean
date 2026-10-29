@@ -1,4 +1,8 @@
-import FV.Backend.Proof.SpillEdgesPrep
+module
+
+public import FV.Backend.Proof.SpillEdgesPrep
+
+@[expose] public section
 
 /-!
 # `VCode.cfg` facts for the spill allocator (step 4)

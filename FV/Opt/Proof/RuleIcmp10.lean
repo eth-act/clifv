@@ -1,4 +1,8 @@
-import FV.Opt.Proof.RuleInfraIcmp
+module
+
+public import FV.Opt.Proof.RuleInfraIcmp
+
+@[expose] public section
 
 /-!
 # `opts/icmp.isle` (part 10): rules whose earlier proofs ran out of memory

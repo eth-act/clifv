@@ -1,6 +1,10 @@
-import FV.Backend.Proof.StockEntryABI
-import FV.Backend.Proof.StockEntryCode
-import FV.Backend.Proof.StockCoreScanOrigin
+module
+
+public import FV.Backend.Proof.StockEntryABI
+public import FV.Backend.Proof.StockEntryCode
+public import FV.Backend.Proof.StockCoreScanOrigin
+
+@[expose] public section
 
 namespace Backend.Stock.Proof
 open Backend.Proof Backend.Proof.Driver Isle Isle.Aarch64

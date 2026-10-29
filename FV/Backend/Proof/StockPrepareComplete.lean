@@ -1,6 +1,10 @@
-import FV.Backend.Proof.PerEdgePrepareComplete
-import FV.Backend.Proof.PerEdgePrepareSound
-import FV.Backend.Proof.StockEdgeCode
+module
+
+public import FV.Backend.Proof.PerEdgePrepareComplete
+public import FV.Backend.Proof.PerEdgePrepareSound
+public import FV.Backend.Proof.StockEdgeCode
+
+@[expose] public section
 
 namespace Backend.Stock.Proof
 open Backend.Proof Backend.Proof.Driver

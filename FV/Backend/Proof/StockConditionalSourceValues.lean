@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockConditionalEmission
-import FV.Backend.Proof.StockSelectOriginalConditionValues
+module
+
+public import FV.Backend.Proof.StockConditionalEmission
+public import FV.Backend.Proof.StockSelectOriginalConditionValues
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.ConditionalValues
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

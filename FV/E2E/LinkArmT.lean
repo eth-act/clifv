@@ -1,9 +1,13 @@
-import FV.E2E.LinkArm
-import FV.E2E.CompiledEitherT
-import FV.E2E.CompiledAnyT
-import FV.E2E.LinkSiteTC
-import FV.E2E.TypedRulesProg
-import FV.E2E.LinkWorldT
+module
+
+public import FV.E2E.LinkArm
+public import FV.E2E.CompiledEitherT
+public import FV.E2E.CompiledAnyT
+public import FV.E2E.LinkSiteTC
+public import FV.E2E.TypedRulesProg
+public import FV.E2E.LinkWorldT
+
+@[expose] public section
 
 /-! # The typed link layer (S11e5 Stage C, slice 8)
 

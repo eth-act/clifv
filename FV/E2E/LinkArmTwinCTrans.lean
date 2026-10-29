@@ -1,4 +1,8 @@
-import FV.E2E.LinkArmTwinC
+module
+
+public import FV.E2E.LinkArmTwinC
+
+@[expose] public section
 
 /-!
 # Call-restricted twins compose (SEM1 #537, #713, determinism step)

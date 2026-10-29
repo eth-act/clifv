@@ -1,5 +1,9 @@
-import FV.Backend.Proof.DriverCheckSound
-import FV.E2E.UnwindSem
+module
+
+public import FV.Backend.Proof.DriverCheckSound
+public import FV.E2E.UnwindSem
+
+@[expose] public section
 
 /-!
 # The lowering validator for the exceptional edges (S10e, #232)

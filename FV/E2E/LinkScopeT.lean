@@ -1,5 +1,9 @@
-import FV.E2E.LinkScopeDefsT
-import FV.E2E.FinalDirectT
+module
+
+public import FV.E2E.LinkScopeDefsT
+public import FV.E2E.FinalDirectT
+
+@[expose] public section
 
 /-! # Soundness of the typed input conditions (S11e5 Stage C, slice 7)
 

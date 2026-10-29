@@ -1,4 +1,8 @@
-import FV.Backend.Proof.LowerSim
+module
+
+public import FV.Backend.Proof.LowerSim
+
+@[expose] public section
 
 /-!
 # The driver hypothesis without extern-only calls (T2j #473, calls at layer 2)

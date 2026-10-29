@@ -1,8 +1,13 @@
-import FV.Backend.Proof.StockCmpMatchedImmediate
-import FV.Backend.Proof.StockCmpNarrowImmediateSourceValues
-import FV.Backend.Proof.StockCmpNarrowSourceValues
-import FV.Backend.Proof.StockCmpZero8OriginalRhsValues
-import FV.Backend.Proof.StockCmpZero16OriginalRhsValues
+module
+
+public import FV.Backend.Proof.StockCmpMatchedImmediate
+public import FV.Backend.Proof.StockCmpNarrowImmediateSourceValues
+public import FV.Backend.Proof.StockCmpNarrowSourceValues
+public import FV.Backend.Proof.StockCmpZero8OriginalRhsValues
+public import FV.Backend.Proof.StockCmpZero16OriginalRhsValues
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarCmp
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 set_option maxRecDepth 20000

@@ -1,7 +1,11 @@
-import FV.Backend.Proof.StockContext
-import FV.Backend.Proof.IselFlowGen
-import FV.Backend.Proof.IselInterp
-import FV.Backend.Proof.IselData
+module
+
+public import FV.Backend.Proof.StockContext
+public import FV.Backend.Proof.IselFlowGen
+public import FV.Backend.Proof.IselInterp
+public import FV.Backend.Proof.IselData
+
+@[expose] public section
 
 /-! Preallocated exception registers bound the destinations of try-call aliases.
 These are facts of the real allocator, with no new input acceptance condition. -/

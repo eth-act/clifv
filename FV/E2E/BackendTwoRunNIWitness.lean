@@ -1,5 +1,9 @@
-import FV.E2E.BackendTwoRunNI
-import FV.E2E.BackendTwoRunLRWitness
+module
+
+public import FV.E2E.BackendTwoRunNI
+public import FV.E2E.BackendTwoRunLRWitness
+
+@[expose] public section
 
 /-!
 # Witness for the lock by induction on the call count (SEM1 #537, #713, `BackendTwoRunNI.lean`)

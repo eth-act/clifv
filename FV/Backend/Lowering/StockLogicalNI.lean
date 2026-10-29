@@ -1,5 +1,9 @@
-import FV.Backend.Lowering.StockMixedNI
-import FV.Backend.StockLogicalCheck
+module
+
+public import FV.Backend.Lowering.StockMixedNI
+public import FV.Backend.StockLogicalCheck
+
+@[expose] public section
 
 namespace Backend.Stock.Logical
 set_option autoImplicit false

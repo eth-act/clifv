@@ -1,6 +1,10 @@
-import FV.Backend.Proof.SpillCtlShapeT
-import FV.Backend.Proof.IselCovTSound
-import FV.Backend.Proof.IselShpBase
+module
+
+public import FV.Backend.Proof.SpillCtlShapeT
+public import FV.Backend.Proof.IselCovTSound
+public import FV.Backend.Proof.IselShpBase
+
+@[expose] public section
 
 /-!
 # Control shapes of the typed ISLE lowering: the state invariant, hand-checked rules

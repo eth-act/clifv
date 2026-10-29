@@ -1,4 +1,8 @@
-import FV.Backend.SemanticNICheck
+module
+
+public import FV.Backend.SemanticNICheck
+
+@[expose] public section
 
 namespace Backend.Stock.Arithmetic
 set_option autoImplicit false

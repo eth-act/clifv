@@ -1,7 +1,11 @@
-import FV.Backend.Proof.IselSzDefs
-import FV.Backend.Proof.IselShpCall
-import FV.Backend.Proof.IselShpTry
-import FV.Backend.Proof.IselShpTotal
+module
+
+public import FV.Backend.Proof.IselSzDefs
+public import FV.Backend.Proof.IselShpCall
+public import FV.Backend.Proof.IselShpTry
+public import FV.Backend.Proof.IselShpTotal
+
+@[expose] public section
 
 /-!
 # The size of the ISLE lowering's output (V6c): the `call` and `try_call` rules

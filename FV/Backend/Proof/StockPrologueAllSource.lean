@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockPrologueInput
-import FV.Clif.Run
+module
+
+public import FV.Backend.Proof.StockPrologueInput
+public import FV.Clif.Run
+
+@[expose] public section
 
 namespace Backend.Stock.Prologue.AllConfigurations.Source
 open D0

@@ -1,6 +1,10 @@
-import FV.Opt.Proof.SimpLoop
-import FV.Opt.Proof.Pipeline
-import FV.Opt.Proof.RuleAll
+module
+
+public import FV.Opt.Proof.SimpLoop
+public import FV.Opt.Proof.Pipeline
+public import FV.Opt.Proof.RuleAll
+
+@[expose] public section
 
 /-!
 # The simplify stage refines (`Opt.simplifyPassSim`)

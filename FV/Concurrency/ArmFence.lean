@@ -1,4 +1,8 @@
-import FV.Concurrency.RC11
+module
+
+public import FV.Concurrency.RC11
+
+@[expose] public section
 
 /-!
 # Cranelift's `fence` on Armv8: the contract with fences (T2f, #304)

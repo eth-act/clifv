@@ -1,125 +1,129 @@
-import FV.Backend.Proof.IselSzTTabData
-import FV.Backend.Proof.IselSzTChunk
-import FV.Backend.Proof.IselSzTTabH120
-import FV.Backend.Proof.IselSzTTabH121
-import FV.Backend.Proof.IselSzTTabH122
-import FV.Backend.Proof.IselSzTTabH123
-import FV.Backend.Proof.IselSzTTabH124
-import FV.Backend.Proof.IselSzTTabH125
-import FV.Backend.Proof.IselSzTTabH126
-import FV.Backend.Proof.IselSzTTabH127
-import FV.Backend.Proof.IselSzTTabH128
-import FV.Backend.Proof.IselSzTTabH129
-import FV.Backend.Proof.IselSzTTabH130
-import FV.Backend.Proof.IselSzTTabH131
-import FV.Backend.Proof.IselSzTTabH132
-import FV.Backend.Proof.IselSzTTabH133
-import FV.Backend.Proof.IselSzTTabH134
-import FV.Backend.Proof.IselSzTTabH135
-import FV.Backend.Proof.IselSzTTabH136
-import FV.Backend.Proof.IselSzTTabH137
-import FV.Backend.Proof.IselSzTTabH138
-import FV.Backend.Proof.IselSzTTabH139
-import FV.Backend.Proof.IselSzTTabH140
-import FV.Backend.Proof.IselSzTTabH141
-import FV.Backend.Proof.IselSzTTabH142
-import FV.Backend.Proof.IselSzTTabH143
-import FV.Backend.Proof.IselSzTTabH144
-import FV.Backend.Proof.IselSzTTabH145
-import FV.Backend.Proof.IselSzTTabH146
-import FV.Backend.Proof.IselSzTTabH147
-import FV.Backend.Proof.IselSzTTabH148
-import FV.Backend.Proof.IselSzTTabH149
-import FV.Backend.Proof.IselSzTTabH150
-import FV.Backend.Proof.IselSzTTabH151
-import FV.Backend.Proof.IselSzTTabH152
-import FV.Backend.Proof.IselSzTTabH153
-import FV.Backend.Proof.IselSzTTabH154
-import FV.Backend.Proof.IselSzTTabH155
-import FV.Backend.Proof.IselSzTTabH156
-import FV.Backend.Proof.IselSzTTabH157
-import FV.Backend.Proof.IselSzTTabH158
-import FV.Backend.Proof.IselSzTTabH159
-import FV.Backend.Proof.IselSzTTabH160
-import FV.Backend.Proof.IselSzTTabH161
-import FV.Backend.Proof.IselSzTTabH162
-import FV.Backend.Proof.IselSzTTabH163
-import FV.Backend.Proof.IselSzTTabH164
-import FV.Backend.Proof.IselSzTTabH165
-import FV.Backend.Proof.IselSzTTabH166
-import FV.Backend.Proof.IselSzTTabH167
-import FV.Backend.Proof.IselSzTTabH168
-import FV.Backend.Proof.IselSzTTabH169
-import FV.Backend.Proof.IselSzTTabH170
-import FV.Backend.Proof.IselSzTTabH171
-import FV.Backend.Proof.IselSzTTabH172
-import FV.Backend.Proof.IselSzTTabH173
-import FV.Backend.Proof.IselSzTTabH174
-import FV.Backend.Proof.IselSzTTabH175
-import FV.Backend.Proof.IselSzTTabH176
-import FV.Backend.Proof.IselSzTTabH177
-import FV.Backend.Proof.IselSzTTabH178
-import FV.Backend.Proof.IselSzTTabH179
-import FV.Backend.Proof.IselSzTTabH180
-import FV.Backend.Proof.IselSzTTabH181
-import FV.Backend.Proof.IselSzTTabH182
-import FV.Backend.Proof.IselSzTTabH183
-import FV.Backend.Proof.IselSzTTabH184
-import FV.Backend.Proof.IselSzTTabH185
-import FV.Backend.Proof.IselSzTTabH186
-import FV.Backend.Proof.IselSzTTabH187
-import FV.Backend.Proof.IselSzTTabH188
-import FV.Backend.Proof.IselSzTTabH189
-import FV.Backend.Proof.IselSzTTabH190
-import FV.Backend.Proof.IselSzTTabH191
-import FV.Backend.Proof.IselSzTTabH192
-import FV.Backend.Proof.IselSzTTabH193
-import FV.Backend.Proof.IselSzTTabH194
-import FV.Backend.Proof.IselSzTTabH195
-import FV.Backend.Proof.IselSzTTabH196
-import FV.Backend.Proof.IselSzTTabH197
-import FV.Backend.Proof.IselSzTTabH198
-import FV.Backend.Proof.IselSzTTabH199
-import FV.Backend.Proof.IselSzTTabH200
-import FV.Backend.Proof.IselSzTTabH201
-import FV.Backend.Proof.IselSzTTabH202
-import FV.Backend.Proof.IselSzTTabH203
-import FV.Backend.Proof.IselSzTTabH204
-import FV.Backend.Proof.IselSzTTabH205
-import FV.Backend.Proof.IselSzTTabH206
-import FV.Backend.Proof.IselSzTTabH207
-import FV.Backend.Proof.IselSzTTabH208
-import FV.Backend.Proof.IselSzTTabH209
-import FV.Backend.Proof.IselSzTTabH210
-import FV.Backend.Proof.IselSzTTabH211
-import FV.Backend.Proof.IselSzTTabH212
-import FV.Backend.Proof.IselSzTTabH213
-import FV.Backend.Proof.IselSzTTabH214
-import FV.Backend.Proof.IselSzTTabH215
-import FV.Backend.Proof.IselSzTTabH216
-import FV.Backend.Proof.IselSzTTabH217
-import FV.Backend.Proof.IselSzTTabH218
-import FV.Backend.Proof.IselSzTTabH219
-import FV.Backend.Proof.IselSzTTabH220
-import FV.Backend.Proof.IselSzTTabH221
-import FV.Backend.Proof.IselSzTTabH222
-import FV.Backend.Proof.IselSzTTabH223
-import FV.Backend.Proof.IselSzTTabH224
-import FV.Backend.Proof.IselSzTTabH225
-import FV.Backend.Proof.IselSzTTabH226
-import FV.Backend.Proof.IselSzTTabH227
-import FV.Backend.Proof.IselSzTTabH228
-import FV.Backend.Proof.IselSzTTabH229
-import FV.Backend.Proof.IselSzTTabH230
-import FV.Backend.Proof.IselSzTTabH231
-import FV.Backend.Proof.IselSzTTabH232
-import FV.Backend.Proof.IselSzTTabH233
-import FV.Backend.Proof.IselSzTTabH234
-import FV.Backend.Proof.IselSzTTabH235
-import FV.Backend.Proof.IselSzTTabH236
-import FV.Backend.Proof.IselSzTTabH237
-import FV.Backend.Proof.IselSzTTabH238
-import FV.Backend.Proof.IselSzTTabH239
+module
+
+public import FV.Backend.Proof.IselSzTTabData
+public import FV.Backend.Proof.IselSzTChunk
+public import FV.Backend.Proof.IselSzTTabH120
+public import FV.Backend.Proof.IselSzTTabH121
+public import FV.Backend.Proof.IselSzTTabH122
+public import FV.Backend.Proof.IselSzTTabH123
+public import FV.Backend.Proof.IselSzTTabH124
+public import FV.Backend.Proof.IselSzTTabH125
+public import FV.Backend.Proof.IselSzTTabH126
+public import FV.Backend.Proof.IselSzTTabH127
+public import FV.Backend.Proof.IselSzTTabH128
+public import FV.Backend.Proof.IselSzTTabH129
+public import FV.Backend.Proof.IselSzTTabH130
+public import FV.Backend.Proof.IselSzTTabH131
+public import FV.Backend.Proof.IselSzTTabH132
+public import FV.Backend.Proof.IselSzTTabH133
+public import FV.Backend.Proof.IselSzTTabH134
+public import FV.Backend.Proof.IselSzTTabH135
+public import FV.Backend.Proof.IselSzTTabH136
+public import FV.Backend.Proof.IselSzTTabH137
+public import FV.Backend.Proof.IselSzTTabH138
+public import FV.Backend.Proof.IselSzTTabH139
+public import FV.Backend.Proof.IselSzTTabH140
+public import FV.Backend.Proof.IselSzTTabH141
+public import FV.Backend.Proof.IselSzTTabH142
+public import FV.Backend.Proof.IselSzTTabH143
+public import FV.Backend.Proof.IselSzTTabH144
+public import FV.Backend.Proof.IselSzTTabH145
+public import FV.Backend.Proof.IselSzTTabH146
+public import FV.Backend.Proof.IselSzTTabH147
+public import FV.Backend.Proof.IselSzTTabH148
+public import FV.Backend.Proof.IselSzTTabH149
+public import FV.Backend.Proof.IselSzTTabH150
+public import FV.Backend.Proof.IselSzTTabH151
+public import FV.Backend.Proof.IselSzTTabH152
+public import FV.Backend.Proof.IselSzTTabH153
+public import FV.Backend.Proof.IselSzTTabH154
+public import FV.Backend.Proof.IselSzTTabH155
+public import FV.Backend.Proof.IselSzTTabH156
+public import FV.Backend.Proof.IselSzTTabH157
+public import FV.Backend.Proof.IselSzTTabH158
+public import FV.Backend.Proof.IselSzTTabH159
+public import FV.Backend.Proof.IselSzTTabH160
+public import FV.Backend.Proof.IselSzTTabH161
+public import FV.Backend.Proof.IselSzTTabH162
+public import FV.Backend.Proof.IselSzTTabH163
+public import FV.Backend.Proof.IselSzTTabH164
+public import FV.Backend.Proof.IselSzTTabH165
+public import FV.Backend.Proof.IselSzTTabH166
+public import FV.Backend.Proof.IselSzTTabH167
+public import FV.Backend.Proof.IselSzTTabH168
+public import FV.Backend.Proof.IselSzTTabH169
+public import FV.Backend.Proof.IselSzTTabH170
+public import FV.Backend.Proof.IselSzTTabH171
+public import FV.Backend.Proof.IselSzTTabH172
+public import FV.Backend.Proof.IselSzTTabH173
+public import FV.Backend.Proof.IselSzTTabH174
+public import FV.Backend.Proof.IselSzTTabH175
+public import FV.Backend.Proof.IselSzTTabH176
+public import FV.Backend.Proof.IselSzTTabH177
+public import FV.Backend.Proof.IselSzTTabH178
+public import FV.Backend.Proof.IselSzTTabH179
+public import FV.Backend.Proof.IselSzTTabH180
+public import FV.Backend.Proof.IselSzTTabH181
+public import FV.Backend.Proof.IselSzTTabH182
+public import FV.Backend.Proof.IselSzTTabH183
+public import FV.Backend.Proof.IselSzTTabH184
+public import FV.Backend.Proof.IselSzTTabH185
+public import FV.Backend.Proof.IselSzTTabH186
+public import FV.Backend.Proof.IselSzTTabH187
+public import FV.Backend.Proof.IselSzTTabH188
+public import FV.Backend.Proof.IselSzTTabH189
+public import FV.Backend.Proof.IselSzTTabH190
+public import FV.Backend.Proof.IselSzTTabH191
+public import FV.Backend.Proof.IselSzTTabH192
+public import FV.Backend.Proof.IselSzTTabH193
+public import FV.Backend.Proof.IselSzTTabH194
+public import FV.Backend.Proof.IselSzTTabH195
+public import FV.Backend.Proof.IselSzTTabH196
+public import FV.Backend.Proof.IselSzTTabH197
+public import FV.Backend.Proof.IselSzTTabH198
+public import FV.Backend.Proof.IselSzTTabH199
+public import FV.Backend.Proof.IselSzTTabH200
+public import FV.Backend.Proof.IselSzTTabH201
+public import FV.Backend.Proof.IselSzTTabH202
+public import FV.Backend.Proof.IselSzTTabH203
+public import FV.Backend.Proof.IselSzTTabH204
+public import FV.Backend.Proof.IselSzTTabH205
+public import FV.Backend.Proof.IselSzTTabH206
+public import FV.Backend.Proof.IselSzTTabH207
+public import FV.Backend.Proof.IselSzTTabH208
+public import FV.Backend.Proof.IselSzTTabH209
+public import FV.Backend.Proof.IselSzTTabH210
+public import FV.Backend.Proof.IselSzTTabH211
+public import FV.Backend.Proof.IselSzTTabH212
+public import FV.Backend.Proof.IselSzTTabH213
+public import FV.Backend.Proof.IselSzTTabH214
+public import FV.Backend.Proof.IselSzTTabH215
+public import FV.Backend.Proof.IselSzTTabH216
+public import FV.Backend.Proof.IselSzTTabH217
+public import FV.Backend.Proof.IselSzTTabH218
+public import FV.Backend.Proof.IselSzTTabH219
+public import FV.Backend.Proof.IselSzTTabH220
+public import FV.Backend.Proof.IselSzTTabH221
+public import FV.Backend.Proof.IselSzTTabH222
+public import FV.Backend.Proof.IselSzTTabH223
+public import FV.Backend.Proof.IselSzTTabH224
+public import FV.Backend.Proof.IselSzTTabH225
+public import FV.Backend.Proof.IselSzTTabH226
+public import FV.Backend.Proof.IselSzTTabH227
+public import FV.Backend.Proof.IselSzTTabH228
+public import FV.Backend.Proof.IselSzTTabH229
+public import FV.Backend.Proof.IselSzTTabH230
+public import FV.Backend.Proof.IselSzTTabH231
+public import FV.Backend.Proof.IselSzTTabH232
+public import FV.Backend.Proof.IselSzTTabH233
+public import FV.Backend.Proof.IselSzTTabH234
+public import FV.Backend.Proof.IselSzTTabH235
+public import FV.Backend.Proof.IselSzTTabH236
+public import FV.Backend.Proof.IselSzTTabH237
+public import FV.Backend.Proof.IselSzTTabH238
+public import FV.Backend.Proof.IselSzTTabH239
+
+@[expose] public section
 
 /-!
 # The size of the ISLE lowering's output over float-capable contexts (typed V6c): cost table entries, group 18

@@ -1,5 +1,9 @@
-import FV.Front.RawExe
-import FV.Link.DeadCleanupExeSourceT
+module
+
+public import FV.Front.RawExe
+public import FV.Link.DeadCleanupExeSourceT
+
+@[expose] public section
 
 /-!
 # The executable compiler with the typed scope refines cg_clif's program (S11e6, #419)

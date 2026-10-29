@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockConstantBodyRefines
-import FV.Backend.Proof.StockLogicalNotrap
+module
+
+public import FV.Backend.Proof.StockConstantBodyRefines
+public import FV.Backend.Proof.StockLogicalNotrap
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.ConstantBody
 open Backend.Proof Backend.Proof.Driver

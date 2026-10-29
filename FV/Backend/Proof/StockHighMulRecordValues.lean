@@ -1,5 +1,10 @@
-import FV.Backend.Proof.StockHighMulNarrowRecordValues
-import FV.Backend.Proof.StockHighMulWideRecordValues
+module
+
+public import FV.Backend.Proof.StockHighMulNarrowRecordValues
+public import FV.Backend.Proof.StockHighMulWideRecordValues
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarHighMul
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 set_option maxRecDepth 20000

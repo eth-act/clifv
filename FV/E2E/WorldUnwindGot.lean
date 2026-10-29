@@ -1,6 +1,10 @@
-import FV.E2E.GotFlow
-import FV.E2E.UnwindValueSem
-import FV.E2E.UnwindStatement
+module
+
+public import FV.E2E.GotFlow
+public import FV.E2E.UnwindValueSem
+public import FV.E2E.UnwindStatement
+
+@[expose] public section
 
 /-!
 # Calls through the GOT with unwinding (S10f, #233)

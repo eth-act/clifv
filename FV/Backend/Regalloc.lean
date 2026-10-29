@@ -1,6 +1,10 @@
-import FV.Backend.SpillAlloc
-import Lean.Data.Json
-import FV.Backend.Proof.PrepareCheck
+module
+
+public import FV.Backend.SpillAlloc
+public import Lean.Data.Json
+public import FV.Backend.Proof.PrepareCheck
+
+@[expose] public section
 
 /-!
 # regalloc2 as the backend's register allocator (M6)

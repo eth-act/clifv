@@ -1,7 +1,11 @@
-import FV.E2E.IselSimITry
-import FV.E2E.GotFlowI
-import FV.E2E.PrepareSoundW
-import FV.E2E.RegLevelCorrectPRS
+module
+
+public import FV.E2E.IselSimITry
+public import FV.E2E.GotFlowI
+public import FV.E2E.PrepareSoundW
+public import FV.E2E.RegLevelCorrectPRS
+
+@[expose] public section
 
 /-!
 # The per-function theorem with the final world, counted (SEM1, `docs/plans/uninit.md` §5.9)

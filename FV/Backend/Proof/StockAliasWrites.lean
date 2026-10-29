@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockAliasBounds
-import FV.Backend.Proof.LowerAlias
+module
+
+public import FV.Backend.Proof.StockAliasBounds
+public import FV.Backend.Proof.LowerAlias
+
+@[expose] public section
 
 /-! Alias entry preservation through the real stock interpreter. Only exception
 payload destinations can be aliased by its external constructors. Source-result

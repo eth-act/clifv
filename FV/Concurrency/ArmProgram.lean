@@ -1,4 +1,8 @@
-import FV.Concurrency.ArmFootprint
+module
+
+public import FV.Concurrency.ArmFootprint
+
+@[expose] public section
 
 /-!
 # The Arm model never changes the program (T2, #311)

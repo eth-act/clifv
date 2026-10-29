@@ -1,4 +1,8 @@
-import FV.Backend.Proof.StockPureSourceExecution
+module
+
+public import FV.Backend.Proof.StockPureSourceExecution
+
+@[expose] public section
 
 /-! Executable source runs for ordinary scalar instructions, including real division.
 This predicate governs step shape only; it makes no no-trap claim. -/

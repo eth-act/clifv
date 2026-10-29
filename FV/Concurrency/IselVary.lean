@@ -1,4 +1,8 @@
-import FV.Backend.Proof.IselMemSem
+module
+
+public import FV.Backend.Proof.IselMemSem
+
+@[expose] public section
 
 /-!
 # The accesses of a lowered statement, by variation (T2h, #311, layer 2d core)

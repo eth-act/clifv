@@ -1,7 +1,11 @@
-import FV.Backend.Proof.StockTraversalRecordOrigin
-import FV.Backend.Proof.StockCoreScanOrigin
-import FV.Backend.Proof.StockBackwardSuffixSplit
-import FV.Backend.Proof.LowerSeq
+module
+
+public import FV.Backend.Proof.StockTraversalRecordOrigin
+public import FV.Backend.Proof.StockCoreScanOrigin
+public import FV.Backend.Proof.StockBackwardSuffixSplit
+public import FV.Backend.Proof.LowerSeq
+
+@[expose] public section
 
 /-! Placement of actual scan code in the assembled whole-driver output.
 Entry materialization is a prefix and later reverse-traversal nodes frame

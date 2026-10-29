@@ -4,7 +4,11 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Author(s): Shilpi Goel
 -/
 
-import FV.Arm.Attr
+module
+
+public import FV.Arm.Attr
+
+@[expose] public section
 
 namespace Arm
 

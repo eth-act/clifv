@@ -1,8 +1,12 @@
-import FV.Backend.Proof.StockOriginalBlockOrigin
-import FV.Backend.Proof.StockJumpCode
-import FV.Backend.Proof.StockQuietBlockWitness
-import FV.Backend.Proof.StockOrdinaryCfg
-import FV.Backend.Proof.StockEntryCode
+module
+
+public import FV.Backend.Proof.StockOriginalBlockOrigin
+public import FV.Backend.Proof.StockJumpCode
+public import FV.Backend.Proof.StockQuietBlockWitness
+public import FV.Backend.Proof.StockOrdinaryCfg
+public import FV.Backend.Proof.StockEntryCode
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.ControlWitness
 open Backend.Proof Backend.Proof.Driver

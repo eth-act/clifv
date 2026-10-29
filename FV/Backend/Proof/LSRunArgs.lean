@@ -1,5 +1,9 @@
-import FV.Backend.Proof.LSRun
-import FV.Backend.Proof.SpillStep4Args
+module
+
+public import FV.Backend.Proof.LSRun
+public import FV.Backend.Proof.SpillStep4Args
+
+@[expose] public section
 
 /-!
 # The checker accepts the Lean allocator's validated plans (V4b-3, #275): branch arguments

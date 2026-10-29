@@ -1,6 +1,10 @@
-import FV.Link.Placed
-import FV.Link.ExeInput
-import FV.Link.ExeInputCleanup
+module
+
+public import FV.Link.Placed
+public import FV.Link.ExeInput
+public import FV.Link.ExeInputCleanup
+
+@[expose] public section
 
 /-! # The driver's layout is the theorems' (L1g, #228)
 

@@ -1,8 +1,13 @@
-import FV.Backend.Proof.StockCmpFlags
-import FV.Backend.Proof.IselCmpCond
-import FV.Backend.Proof.IselCmpSdiv
-import FV.Backend.Proof.IselCmpRoot
-import FV.Backend.Proof.StockAliasSemantics
+module
+
+public import FV.Backend.Proof.StockCmpFlags
+public import FV.Backend.Proof.IselCmpCond
+public import FV.Backend.Proof.IselCmpSdiv
+public import FV.Backend.Proof.IselCmpRoot
+public import FV.Backend.Proof.StockAliasSemantics
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarCmp
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 /-- Flag production followed by a boolean result uses the standard-only

@@ -1,6 +1,11 @@
-import FV.Backend.Proof.StockCriticalCode
-import FV.Backend.Proof.StockEdgeValuesWitness
-import FV.Backend.Proof.StockTerminalDriverWitness
+module
+
+public import FV.Backend.Proof.StockCriticalCode
+public import FV.Backend.Proof.StockEdgeValuesWitness
+public import FV.Backend.Proof.StockTerminalDriverWitness
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.OrderGraphWitness
 open Backend.Proof Backend.Proof.Driver
 set_option maxRecDepth 20000

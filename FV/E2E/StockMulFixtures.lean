@@ -1,4 +1,9 @@
-import FV.E2E.StockNotFixtures
+module
+
+public import FV.E2E.StockNotFixtures
+
+@[expose] public section
+
 namespace E2E.StockMulNIWitness
 open Backend.Stock.D0
 set_option autoImplicit false

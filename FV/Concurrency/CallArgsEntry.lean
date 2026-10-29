@@ -1,6 +1,10 @@
-import FV.Concurrency.CallArgsL2
-import FV.Concurrency.CallArgsAt
-import FV.Concurrency.CallEnterArm
+module
+
+public import FV.Concurrency.CallArgsL2
+public import FV.Concurrency.CallArgsAt
+public import FV.Concurrency.CallEnterArm
+
+@[expose] public section
 
 /-!
 # The callee's `ArgsAtEntry` at a direct call (#473, (2b))

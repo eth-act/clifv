@@ -1,6 +1,10 @@
-import FVTest.Backend.FloatCtlT
-import FV.Backend.Proof.LowerLoopT
-import FV.Backend.Proof.SpillEdgesLowT
+module
+
+public import FVTest.Backend.FloatCtlT
+public import FV.Backend.Proof.LowerLoopT
+public import FV.Backend.Proof.SpillEdgesLowT
+
+@[expose] public section
 
 /-!
 Non-vacuity of the typed `try_call` lowering (S11e6 slice 2b, #419): `lowerFunction` lowers a

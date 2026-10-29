@@ -1,6 +1,10 @@
-import FV.E2E.BackendWorldPRGY
-import FV.E2E.IselSimIN
-import FV.E2E.RegLevelCorrectPRSN
+module
+
+public import FV.E2E.BackendWorldPRGY
+public import FV.E2E.IselSimIN
+public import FV.E2E.RegLevelCorrectPRSN
+
+@[expose] public section
 
 /-!
 # The pipeline theorems with the call count at the return (SEM1 #537, #680 (3), `CountPRB`)

@@ -1,4 +1,8 @@
-import FV.Backend.Proof.LowerSpec
+module
+
+public import FV.Backend.Proof.LowerSpec
+
+@[expose] public section
 
 /-!
 # `lowerFunction`, restated with named loop bodies

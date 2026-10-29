@@ -1,7 +1,11 @@
-import FV.E2E.BinCheck
-import FV.E2E.CodeMap
-import FV.E2E.StackBound
-import FV.E2E.LinkCheckFast
+module
+
+public import FV.E2E.BinCheck
+public import FV.E2E.CodeMap
+public import FV.E2E.StackBound
+public import FV.E2E.LinkCheckFast
+
+@[expose] public section
 
 /-! # The code map and the stack budgets with hash maps (T3d)
 

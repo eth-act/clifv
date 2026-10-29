@@ -1,7 +1,11 @@
-import FV.E2E.LinkArmTableECall
-import FV.E2E.LinkArmThmPRBRLE
-import FV.E2E.LinkTrapCall
-import FV.Arm.ProgramKeep
+module
+
+public import FV.E2E.LinkArmTableECall
+public import FV.E2E.LinkArmThmPRBRLE
+public import FV.E2E.LinkTrapCall
+public import FV.Arm.ProgramKeep
+
+@[expose] public section
 
 /-!
 # The machine's own slot table (SEM1 #537, #680 (3), fix of #700, step 5)

@@ -1,4 +1,8 @@
-import FV.E2E.BackendTwoRunNZ
+module
+
+public import FV.E2E.BackendTwoRunNZ
+
+@[expose] public section
 
 /-!
 # The per-index lock with the contracts of the first `N` calls, the world agreement at the call

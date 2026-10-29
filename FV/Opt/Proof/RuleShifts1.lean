@@ -1,5 +1,9 @@
-import FV.Opt.Proof.RuleExtEmbed
-import FV.Opt.Proof.RuleInfraShiftAmt
+module
+
+public import FV.Opt.Proof.RuleExtEmbed
+public import FV.Opt.Proof.RuleInfraShiftAmt
+
+@[expose] public section
 
 /-!
 # `opts/shifts.isle` (part 1): proven `simplify` rules

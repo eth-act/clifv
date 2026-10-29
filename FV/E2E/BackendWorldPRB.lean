@@ -1,5 +1,9 @@
-import FV.E2E.InvokedN
-import FV.E2E.BackendWorldPRIC
+module
+
+public import FV.E2E.InvokedN
+public import FV.E2E.BackendWorldPRIC
+
+@[expose] public section
 
 /-!
 # The counted per-function theorems for guarded call semantics (SEM1 item (b), `docs/plans/uninit.md` §5.9)

@@ -1,6 +1,10 @@
-import FV.E2E.PairDriverI
-import FV.E2E.IselSimICleanup
-import FV.E2E.DeadCleanupPair
+module
+
+public import FV.E2E.PairDriverI
+public import FV.E2E.IselSimICleanup
+public import FV.E2E.DeadCleanupPair
+
+@[expose] public section
 
 /-!
 # Non-interference of the counted VCode run on the cleanup path (SEM1, `docs/plans/uninit.md` §5.9)

@@ -1,5 +1,9 @@
-import FV.Opt.Cfg
-import FV.Clif.Sem
+module
+
+public import FV.Opt.Cfg
+public import FV.Clif.Sem
+
+@[expose] public section
 
 /-!
 # Well-formedness: the precondition of every pass

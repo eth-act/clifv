@@ -1,5 +1,9 @@
-import FV.E2E.RegLevelCorrectX
-import FV.E2E.DeadCleanupRegLevel
+module
+
+public import FV.E2E.RegLevelCorrectX
+public import FV.E2E.DeadCleanupRegLevel
+
+@[expose] public section
 
 namespace Backend.Proof
 open Backend E2E

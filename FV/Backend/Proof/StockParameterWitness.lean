@@ -1,4 +1,8 @@
-import FV.Backend.Proof.StockParameterInput
+module
+
+public import FV.Backend.Proof.StockParameterInput
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.ParameterCfg.Fixture
 open Backend.Proof Backend.Proof.Driver Backend.Stock.Proof.ForwardSource Backend.Stock.Proof.ConditionalValues

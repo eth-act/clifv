@@ -1,9 +1,13 @@
-import FV.Backend.Proof.StockLogicalRecordWitness
-import FV.Backend.Proof.LowerSim
-import FV.Backend.Proof.StockLogicalCompleteValues
-import FV.Backend.Proof.StockLogicalScanRefines
-import FV.Backend.Proof.StockLogicalBodyRefines
-import FV.Backend.Proof.StockLogicalSourceExecution
+module
+
+public import FV.Backend.Proof.StockLogicalRecordWitness
+public import FV.Backend.Proof.LowerSim
+public import FV.Backend.Proof.StockLogicalCompleteValues
+public import FV.Backend.Proof.StockLogicalScanRefines
+public import FV.Backend.Proof.StockLogicalBodyRefines
+public import FV.Backend.Proof.StockLogicalSourceExecution
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.LogicalSelected
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

@@ -1,7 +1,11 @@
-import FV.Backend.Proof.LowerSpec
-import FV.Backend.Proof.LowerContract
-import FV.Backend.Proof.IselTermFactsRules
-import FV.Backend.Proof.IselTermFactsCall
+module
+
+public import FV.Backend.Proof.LowerSpec
+public import FV.Backend.Proof.LowerContract
+public import FV.Backend.Proof.IselTermFactsRules
+public import FV.Backend.Proof.IselTermFactsCall
+
+@[expose] public section
 
 /-!
 # Completeness of `lowerCheck`: terminators and calls

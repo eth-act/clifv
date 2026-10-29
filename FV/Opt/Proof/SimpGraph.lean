@@ -1,5 +1,9 @@
-import FV.Opt.Proof.SimpDen
-import FV.Opt.Simplify
+module
+
+public import FV.Opt.Proof.SimpDen
+public import FV.Opt.Simplify
+
+@[expose] public section
 
 /-!
 # The e-graph invariant of the simplify pass

@@ -1,6 +1,11 @@
-import Lean
-import FV.Backend.Lowering.StockScalarAdd
-import FV.Backend.Proof.StockPrologueCodeCore
+module
+
+public import Lean
+public import FV.Backend.Lowering.StockScalarAdd
+public import FV.Backend.Proof.StockPrologueCodeCore
+
+@[expose] public section
+
 set_option autoImplicit false
 namespace Backend.Stock.ScalarAdd
 open D0

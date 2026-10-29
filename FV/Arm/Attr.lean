@@ -4,7 +4,11 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Author(s): Shilpi Goel
 -/
 
-import Lean
+module
+
+public import Lean
+
+@[expose] public section
 
 -- A minimal theory, safe for all LNSym proofs
 register_simp_attr minimal_theory

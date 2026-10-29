@@ -1,6 +1,10 @@
-import FV.Backend.Lowering.StockTwoBlockEntry
-import FV.Backend.Proof.StockTwoBlockDomain
-import FV.Backend.Proof.StockScalarCheck
+module
+
+public import FV.Backend.Lowering.StockTwoBlockEntry
+public import FV.Backend.Proof.StockTwoBlockDomain
+public import FV.Backend.Proof.StockScalarCheck
+
+@[expose] public section
 
 namespace Backend.Stock.TwoBlock.Entry
 open Backend.Proof Backend.Proof.Driver Backend.Stock.Proof

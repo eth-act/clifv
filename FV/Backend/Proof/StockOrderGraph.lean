@@ -1,5 +1,10 @@
-import FV.Backend.Proof.StockEdgeCode
-import FV.Backend.Proof.LowerLemmas
+module
+
+public import FV.Backend.Proof.StockEdgeCode
+public import FV.Backend.Proof.LowerLemmas
+
+@[expose] public section
+
 namespace Backend.Stock.Proof
 open Backend.Proof Backend.Proof.Driver
 set_option maxRecDepth 20000

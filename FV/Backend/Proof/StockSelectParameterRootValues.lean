@@ -1,6 +1,11 @@
-import FV.Backend.Proof.StockSelectNonzeroAllocation
-import FV.Backend.Proof.StockSelectConditionCalls
-import FV.Backend.Proof.StockSelectOriginalSourceMatch
+module
+
+public import FV.Backend.Proof.StockSelectNonzeroAllocation
+public import FV.Backend.Proof.StockSelectConditionCalls
+public import FV.Backend.Proof.StockSelectOriginalSourceMatch
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarSelect
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 set_option maxRecDepth 20000

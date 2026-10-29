@@ -1,4 +1,9 @@
-import FV.Backend.Proof.StockCmpNonzero16OriginalSelection
+module
+
+public import FV.Backend.Proof.StockCmpNonzero16OriginalSelection
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarSelect
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 /-- The original16-bit condition emitter derives its real scratch extension

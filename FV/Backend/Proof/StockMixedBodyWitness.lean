@@ -1,8 +1,12 @@
-import FV.Backend.Proof.StockSourceDefined
-import FV.Backend.Proof.StockActualBodyRefines
-import FV.Backend.Proof.StockBodyScanRefines
-import FV.Backend.Proof.StockMinMaxRegisterDriverRuns
-import FV.Backend.Proof.LowerSim
+module
+
+public import FV.Backend.Proof.StockSourceDefined
+public import FV.Backend.Proof.StockActualBodyRefines
+public import FV.Backend.Proof.StockBodyScanRefines
+public import FV.Backend.Proof.StockMinMaxRegisterDriverRuns
+public import FV.Backend.Proof.LowerSim
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.MixedBodyWitness
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

@@ -1,5 +1,9 @@
-import FV.Backend.Proof.VCodeSemICall
-import FV.Backend.Proof.LowerContract
+module
+
+public import FV.Backend.Proof.VCodeSemICall
+public import FV.Backend.Proof.LowerContract
+
+@[expose] public section
 
 /-!
 # The driver facts and terminator lowerings under the counted semantics (SEM1 step 2, `docs/plans/uninit.md` §5.3)

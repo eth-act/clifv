@@ -1,4 +1,8 @@
-import FV.Backend.Proof.StockSelectScanRefines
+module
+
+public import FV.Backend.Proof.StockSelectScanRefines
+
+@[expose] public section
 
 /-! Actual omitted records preserve the same indexed, source-availability-guarded
 relation as emitted pure families. This includes real successful nontrapping

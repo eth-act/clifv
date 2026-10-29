@@ -1,5 +1,9 @@
-import FV.Backend.Proof.IselSzDefs
-import FV.Backend.Proof.IselCovTCheck
+module
+
+public import FV.Backend.Proof.IselSzDefs
+public import FV.Backend.Proof.IselCovTCheck
+
+@[expose] public section
 
 /-!
 # The size of the ISLE lowering's output over float-capable contexts (typed V6c): the cost analysis

@@ -1,4 +1,8 @@
-import FV.Concurrency.ArmFence
+module
+
+public import FV.Concurrency.ArmFence
+
+@[expose] public section
 
 /-!
 # The full Armv8 model and monotonicity (T2g, #305)

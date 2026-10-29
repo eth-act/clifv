@@ -1,4 +1,8 @@
-import FV.Backend.Proof.IselFamAluBPopcnt
+module
+
+public import FV.Backend.Proof.IselFamAluBPopcnt
+
+@[expose] public section
 
 /-!
 # S11e4: scalar `bitcast` over float-capable contexts

@@ -1,6 +1,10 @@
-import FV.Backend.Proof.StockConstantDispatch
-import FV.Backend.Proof.StockInheritedValues
-import FV.Backend.Proof.CSemRename
+module
+
+public import FV.Backend.Proof.StockConstantDispatch
+public import FV.Backend.Proof.StockInheritedValues
+public import FV.Backend.Proof.CSemRename
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.Inherited
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

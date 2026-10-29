@@ -1,5 +1,9 @@
-import FV.E2E.ProductionExecGot
-import FV.E2E.ProductionExecGoodReads
+module
+
+public import FV.E2E.ProductionExecGot
+public import FV.E2E.ProductionExecGoodReads
+
+@[expose] public section
 
 /-! # The binary theorem with D2 and D4 from the M6 proof (L3 (c))
 

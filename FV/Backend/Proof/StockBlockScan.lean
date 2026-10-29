@@ -1,4 +1,8 @@
-import FV.Backend.Proof.StockScan
+module
+
+public import FV.Backend.Proof.StockScan
+
+@[expose] public section
 
 /-!
 Complete backward-scan certificates. `ScansSpec` records every requested source

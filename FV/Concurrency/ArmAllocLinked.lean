@@ -1,5 +1,9 @@
-import FV.Concurrency.ArmAllocPause
-import FV.Concurrency.ArmProgram
+module
+
+public import FV.Concurrency.ArmAllocPause
+public import FV.Concurrency.ArmProgram
+
+@[expose] public section
 
 /-!
 # Layer 4b on a linked machine (T2j follow-up, #473, calls)

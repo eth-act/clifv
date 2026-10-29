@@ -1,9 +1,13 @@
-import FV.E2E.LinkScope
-import FV.E2E.SpillKillFree
-import FV.Backend.Proof.SpillDefinedPrep
-import FV.Backend.Proof.SpillEdgesLow
-import FV.Backend.Proof.DefAssemble
-import FV.Backend.Proof.DefRunsProof
+module
+
+public import FV.E2E.LinkScope
+public import FV.E2E.SpillKillFree
+public import FV.Backend.Proof.SpillDefinedPrep
+public import FV.Backend.Proof.SpillEdgesLow
+public import FV.Backend.Proof.DefAssemble
+public import FV.Backend.Proof.DefRunsProof
+
+@[expose] public section
 
 /-!
 # `SpillDefinedHyp` from definite assignment of `lowerFunction`'s VCode

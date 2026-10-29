@@ -1,7 +1,11 @@
-import FV.E2E.LinkArmThmPRBR
-import FV.E2E.LinkArmProgOsPRBR
-import FV.E2E.LinkArmProphDetRWitness
-import FV.E2E.LinkArmProgOsPWitness
+module
+
+public import FV.E2E.LinkArmThmPRBR
+public import FV.E2E.LinkArmProgOsPRBR
+public import FV.E2E.LinkArmProphDetRWitness
+public import FV.E2E.LinkArmProgOsPWitness
+
+@[expose] public section
 
 /-!
 # Witnesses for `ThmPRBR` and the calls on it (`FV/E2E/LinkArmThmPRBR.lean`,

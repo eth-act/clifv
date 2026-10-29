@@ -1,5 +1,9 @@
-import FV.Opt.Proof.RuleExtEmbed
-import FV.Opt.Proof.KernelBV
+module
+
+public import FV.Opt.Proof.RuleExtEmbed
+public import FV.Opt.Proof.KernelBV
+
+@[expose] public section
 
 /-!
 # `opts/bitops.isle` (part 10): LLVM-style byte-swap idioms

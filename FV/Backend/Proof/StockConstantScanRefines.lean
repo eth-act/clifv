@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockLogicalScanRefines
-import FV.Backend.Proof.StockConstantCompleteValues
+module
+
+public import FV.Backend.Proof.StockLogicalScanRefines
+public import FV.Backend.Proof.StockConstantCompleteValues
+
+@[expose] public section
 
 namespace Backend.Stock.Proof
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

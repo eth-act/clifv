@@ -1,5 +1,10 @@
-import FV.Backend.Proof.StockRootOpcodeMatch
-import FV.Backend.Proof.StockUnarySourceValues
+module
+
+public import FV.Backend.Proof.StockRootOpcodeMatch
+public import FV.Backend.Proof.StockUnarySourceValues
+
+@[expose] public section
+
 namespace Backend.Stock.Proof
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 set_option maxRecDepth 20000

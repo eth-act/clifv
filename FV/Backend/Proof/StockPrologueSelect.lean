@@ -1,6 +1,10 @@
-import FV.Backend.Lowering.StockProduction
-import FV.Backend.Proof.StockPrologueClass
-import FV.Backend.Proof.StockD0Code
+module
+
+public import FV.Backend.Lowering.StockProduction
+public import FV.Backend.Proof.StockPrologueClass
+public import FV.Backend.Proof.StockD0Code
+
+@[expose] public section
 
 set_option autoImplicit false
 namespace Backend.Stock.Production

@@ -1,5 +1,9 @@
-import FVTest.Opt.Common
-import FV.Clif.Print
+module
+
+public import FVTest.Opt.Common
+public import FV.Clif.Print
+
+@[expose] public section
 
 /-!
 `clif-opt [--opt-* options] [--stats] IN.clif [OUT.clif]`: optimise every function of a

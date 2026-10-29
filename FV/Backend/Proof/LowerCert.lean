@@ -1,8 +1,12 @@
-import FV.Backend.Proof.LowerFix
-import FV.Backend.Proof.LowerLoop
-import FV.Backend.Proof.LowerAlias
-import FV.Backend.Proof.IselFlow
-import FV.Backend.Proof.LowerCertBase
+module
+
+public import FV.Backend.Proof.LowerFix
+public import FV.Backend.Proof.LowerLoop
+public import FV.Backend.Proof.LowerAlias
+public import FV.Backend.Proof.IselFlow
+public import FV.Backend.Proof.LowerCertBase
+
+@[expose] public section
 
 /-!
 # Completeness of `lowerCheck`: the SSA availability certificate

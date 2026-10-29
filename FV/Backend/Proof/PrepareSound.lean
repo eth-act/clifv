@@ -1,6 +1,10 @@
-import FV.Backend.Proof.LowerSim
-import FV.Backend.Proof.PrepareCheck
-import FV.Backend.Proof.DriverCheckSound
+module
+
+public import FV.Backend.Proof.LowerSim
+public import FV.Backend.Proof.PrepareCheck
+public import FV.Backend.Proof.DriverCheckSound
+
+@[expose] public section
 
 /-!
 # Soundness of the `prepare` validator (M7)

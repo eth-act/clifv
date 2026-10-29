@@ -1,6 +1,10 @@
-import FV.Backend.ABIReadCfg
-import FV.E2E.ABIReadDiv
-import FV.E2E.ABIReadCfgBoundary
+module
+
+public import FV.Backend.ABIReadCfg
+public import FV.E2E.ABIReadDiv
+public import FV.E2E.ABIReadCfgBoundary
+
+@[expose] public section
 
 namespace E2E.CfgBoundary
 open Backend Backend.Proof Backend.Proof.Driver Backend.DeadCleanup E2E.MixedFlagBoundary

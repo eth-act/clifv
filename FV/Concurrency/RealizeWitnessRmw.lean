@@ -1,6 +1,10 @@
-import FV.Concurrency.RealizeWitnessLoad
-import FV.Concurrency.ArmAllocLoopFwd
-import FV.Concurrency.ArmAllocLoopWitness
+module
+
+public import FV.Concurrency.RealizeWitnessLoad
+public import FV.Concurrency.ArmAllocLoopFwd
+public import FV.Concurrency.ArmAllocLoopWitness
+
+@[expose] public section
 
 /-!
 # `Realizes` on a run of compiled code through an `atomic_rmw` loop (T2m, #311)

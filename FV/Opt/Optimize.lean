@@ -1,12 +1,16 @@
-import FV.Opt.Gvn
-import FV.Opt.Dce
-import FV.Opt.Simplify
-import FV.Opt.Licm
-import FV.Opt.HandRules
-import FV.Compile.Subset
-import FV.Isle.Opt.Simplify
-import FV.Opt.Validate
-import FV.Opt.RuleAllow
+module
+
+public import FV.Opt.Gvn
+public import FV.Opt.Dce
+public import FV.Opt.Simplify
+public import FV.Opt.Licm
+public import FV.Opt.HandRules
+public import FV.Compile.Subset
+public import FV.Isle.Opt.Simplify
+public import FV.Opt.Validate
+public import FV.Opt.RuleAllow
+
+@[expose] public section
 
 /-!
 # `Opt.optimize`: the mid-end pipeline (unproven; `docs/contracts/midend.md`)

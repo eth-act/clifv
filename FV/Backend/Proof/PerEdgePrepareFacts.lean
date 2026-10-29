@@ -1,5 +1,10 @@
-import FV.Backend.RegallocPerEdgePrepare
-import FV.Backend.Proof.RegallocLemmas
+module
+
+public import FV.Backend.RegallocPerEdgePrepare
+public import FV.Backend.Proof.RegallocLemmas
+
+@[expose] public section
+
 namespace Backend.Proof.PerEdgePrep
 open Backend Backend.Proof
 set_option maxRecDepth 20000

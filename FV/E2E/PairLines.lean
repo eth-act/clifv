@@ -1,4 +1,8 @@
-import FV.E2E.RegLevelRelax
+module
+
+public import FV.E2E.RegLevelRelax
+
+@[expose] public section
 
 /-!
 # `adrp` pairs stay adjacent in `emitFunc`'s lines

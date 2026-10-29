@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockOrdinaryCfg
-import FV.Backend.Proof.StockPrepareTotal
+module
+
+public import FV.Backend.Proof.StockOrdinaryCfg
+public import FV.Backend.Proof.StockPrepareTotal
+
+@[expose] public section
 
 namespace Backend.Stock.Proof
 open Backend.Proof Backend.Proof.Driver

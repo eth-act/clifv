@@ -1,10 +1,14 @@
-import FV.Concurrency.VCodeEvents
-import FV.Concurrency.PrivCoh
-import FV.Concurrency.ArmPrecise
-import FV.Concurrency.PrepThread
-import FV.Concurrency.AllocThread
-import FV.Concurrency.VCodeThreadWitness
-import FV.Concurrency.ThreadRefineWitness
+module
+
+public import FV.Concurrency.VCodeEvents
+public import FV.Concurrency.PrivCoh
+public import FV.Concurrency.ArmPrecise
+public import FV.Concurrency.PrepThread
+public import FV.Concurrency.AllocThread
+public import FV.Concurrency.VCodeThreadWitness
+public import FV.Concurrency.ThreadRefineWitness
+
+@[expose] public section
 
 /-!
 # Non-vacuity of the event kinds of VCode, private coherence and precise labels (T2h, #311)

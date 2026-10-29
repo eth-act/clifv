@@ -1,5 +1,9 @@
-import FV.Link.DeadCleanupExeInitSlotWitness
-import FV.Link.DeadCleanupExeInitR
+module
+
+public import FV.Link.DeadCleanupExeInitSlotWitness
+public import FV.Link.DeadCleanupExeInitR
+
+@[expose] public section
 
 /-!
 # Witness: the stale read under the corrected premises (SEM1 #537, #719, #716)

@@ -1,6 +1,10 @@
-import FV.E2E.ProductionBinaryGood
-import FV.E2E.ProductionExecRunN
-import FV.E2E.PairLines
+module
+
+public import FV.E2E.ProductionBinaryGood
+public import FV.E2E.ProductionExecRunN
+public import FV.E2E.PairLines
+
+@[expose] public section
 
 /-! # `RunOkN` from the register-level per-state facts (L3 (c))
 

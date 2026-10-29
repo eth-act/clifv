@@ -1,5 +1,9 @@
-import FV.E2E.FinalT
-import FV.E2E.DeadCleanupFinal
+module
+
+public import FV.E2E.FinalT
+public import FV.E2E.DeadCleanupFinal
+
+@[expose] public section
 
 /-!
 # The typed dead-cleanup chain (S11e5 Stage C, slice 7)

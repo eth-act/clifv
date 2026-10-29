@@ -1,5 +1,9 @@
-import FV.E2E.ABIReadOnlyCheck
-import FV.E2E.Pair
+module
+
+public import FV.E2E.ABIReadOnlyCheck
+public import FV.E2E.Pair
+
+@[expose] public section
 
 namespace E2E.ABIReadOnly
 open Backend Backend.Proof Backend.Proof.Driver Backend.DeadCleanup

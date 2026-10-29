@@ -1,5 +1,9 @@
-import FV.E2E.GotFlow
-import FV.E2E.RegLevelCorrectI
+module
+
+public import FV.E2E.GotFlow
+public import FV.E2E.RegLevelCorrectI
+
+@[expose] public section
 
 /-!
 # Calls through the GOT in the counted VCode run (SEM1, `docs/plans/uninit.md` §5.9)

@@ -1,7 +1,11 @@
-import FV.Backend.Proof.StockPerEdgeValues
-import FV.Backend.Proof.StockSourceEdgeDFG
-import FV.Backend.Proof.StockSourceEdges
-import FV.Backend.Proof.StockSelectScanRefines
+module
+
+public import FV.Backend.Proof.StockPerEdgeValues
+public import FV.Backend.Proof.StockSourceEdgeDFG
+public import FV.Backend.Proof.StockSourceEdges
+public import FV.Backend.Proof.StockSelectScanRefines
+
+@[expose] public section
 
 namespace Backend.Stock.Proof
 open Backend.Proof Backend.Proof.Driver

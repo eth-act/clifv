@@ -1,7 +1,11 @@
-import FV.Isle.Generated.Opt.Manifest
-import FV.Isle.Generated.Opt.Closure
-import FV.Clif.Parse
-import FVTest.Isle.OptToy
+module
+
+public import FV.Isle.Generated.Opt.Manifest
+public import FV.Isle.Generated.Opt.Closure
+public import FV.Clif.Parse
+public import FVTest.Isle.OptToy
+
+@[expose] public section
 
 /-!
 # The exported mid-end (`opt`) ISLE unit and `simplify`

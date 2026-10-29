@@ -1,5 +1,9 @@
-import FV.Link.DeadCleanupExeTrapWitness
-import FV.Link.DeadCleanupExeTrapT
+module
+
+public import FV.Link.DeadCleanupExeTrapWitness
+public import FV.Link.DeadCleanupExeTrapT
+
+@[expose] public section
 
 /-!
 # Witness: the executable theorem with `try_call` callee traps applies to a compiled executable (S9e)

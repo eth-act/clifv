@@ -1,5 +1,9 @@
-import FV.Backend.Proof.IselPrgDriverT
-import FV.E2E.LinkScopeT
+module
+
+public import FV.Backend.Proof.IselPrgDriverT
+public import FV.E2E.LinkScopeT
+
+@[expose] public section
 
 /-!
 Non-vacuity of the typed ISLE progress (`Prg.lowerFunction_ok_inputT`, S11 #35 slice 8): a

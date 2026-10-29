@@ -1,6 +1,10 @@
-import FV.Backend.Proof.SpillInvariant
-import FV.Backend.Proof.SpillLocalState
-import FV.Backend.Proof.RegallocLemmas
+module
+
+public import FV.Backend.Proof.SpillInvariant
+public import FV.Backend.Proof.SpillLocalState
+public import FV.Backend.Proof.RegallocLemmas
+
+@[expose] public section
 
 /-!
 # Running the checker over a spilled block (V4 (a), step 4): the machinery

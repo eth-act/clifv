@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockLinearCfgTrace
-import FV.Backend.Proof.StockCfgJumpDemand
+module
+
+public import FV.Backend.Proof.StockLinearCfgTrace
+public import FV.Backend.Proof.StockCfgJumpDemand
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.LinearCfg
 open Backend.Proof Backend.Proof.Driver

@@ -1,10 +1,14 @@
-import FV.E2E.LinkOwnCallsStmtHyp
-import FV.E2E.LinkOwnCallsTryHyp
-import FV.Backend.Proof.IselOutBoundExt
-import FV.Backend.Proof.IselOutBoundCall
-import FV.Backend.Proof.IselOutBoundTry
-import FV.Backend.Proof.LowerComplete
-import FV.Backend.Proof.IselOutBoundDefs
+module
+
+public import FV.E2E.LinkOwnCallsStmtHyp
+public import FV.E2E.LinkOwnCallsTryHyp
+public import FV.Backend.Proof.IselOutBoundExt
+public import FV.Backend.Proof.IselOutBoundCall
+public import FV.Backend.Proof.IselOutBoundTry
+public import FV.Backend.Proof.LowerComplete
+public import FV.Backend.Proof.IselOutBoundDefs
+
+@[expose] public section
 
 /-!
 # An upper bound of the outgoing area from the call signatures (S10g, #404)

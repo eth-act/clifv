@@ -1,6 +1,10 @@
-import FV.Backend.ABIReadOnly
-import FV.E2E.DeadCleanupContracts
-import FV.E2E.Lockstep
+module
+
+public import FV.Backend.ABIReadOnly
+public import FV.E2E.DeadCleanupContracts
+public import FV.E2E.Lockstep
+
+@[expose] public section
 
 namespace E2E.ABIReadOnly
 open Backend Backend.Proof Backend.Proof.Driver Backend.DeadCleanup

@@ -1,5 +1,10 @@
-import FV.Backend.Proof.StockHighMulNarrowSemantics
-import FV.Backend.Proof.StockRootOpcodeMatch
+module
+
+public import FV.Backend.Proof.StockHighMulNarrowSemantics
+public import FV.Backend.Proof.StockRootOpcodeMatch
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarHighMul
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 set_option maxRecDepth 20000

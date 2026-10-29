@@ -1,4 +1,8 @@
-import FV.E2E.RegLevelTwoRunT
+module
+
+public import FV.E2E.RegLevelTwoRunT
+
+@[expose] public section
 
 /-!
 # Two activations in lock-step up to a pair state (SEM1 #537, #713, determinism step)

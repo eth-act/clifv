@@ -1,6 +1,11 @@
-import FV.Backend.Proof.StockPopcountFamily
-import FV.Backend.Proof.StockMinMaxActualDispatch
-import FV.Backend.Proof.StockAvailableTypes
+module
+
+public import FV.Backend.Proof.StockPopcountFamily
+public import FV.Backend.Proof.StockMinMaxActualDispatch
+public import FV.Backend.Proof.StockAvailableTypes
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.MinMaxBody
 open Backend.Proof Backend.Proof.Driver
 set_option autoImplicit false

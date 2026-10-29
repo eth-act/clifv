@@ -52,9 +52,13 @@ Released under Apache 2.0 license; see third_party/NOTICE-lnsym.md.
 -- modelled. Cross-checked against VeriISLE `MInst.FpuRR`, `MInst.FpuRound`
 -- (cranelift/codegen/src/isa/aarch64/spec/{fpu_rr,fpu_round}.isle).
 
-import FV.Arm.Decode
-import FV.Arm.Insts.Common
-import FV.Float
+module
+
+public import FV.Arm.Decode
+public import FV.Arm.Insts.Common
+public import FV.Float
+
+@[expose] public section
 
 namespace Arm
 

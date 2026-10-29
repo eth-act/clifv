@@ -1,4 +1,8 @@
-import FV.Opt.Proof.KernelBV
+module
+
+public import FV.Opt.Proof.KernelBV
+
+@[expose] public section
 
 /-!
 # Shift amounts and comparisons for `kbv`: `kbv_amt`, `kbv_cmp`

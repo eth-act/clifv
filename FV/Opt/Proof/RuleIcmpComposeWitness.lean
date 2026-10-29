@@ -1,4 +1,8 @@
-import FV.Opt.Proof.RuleIcmpComposeRhs
+module
+
+public import FV.Opt.Proof.RuleIcmpComposeRhs
+
+@[expose] public section
 
 set_option maxRecDepth 8000
 set_option maxHeartbeats 4000000

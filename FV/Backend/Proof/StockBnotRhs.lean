@@ -1,6 +1,10 @@
-import FV.Backend.Proof.StockLogicalForms
-import FV.Backend.Proof.StockRequestSuccess
-import FV.Backend.Proof.IselFamAluBNotShift
+module
+
+public import FV.Backend.Proof.StockLogicalForms
+public import FV.Backend.Proof.StockRequestSuccess
+public import FV.Backend.Proof.IselFamAluBNotShift
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.Bnot
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

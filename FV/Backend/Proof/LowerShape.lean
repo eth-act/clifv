@@ -1,4 +1,8 @@
-import FV.Backend.Proof.LowerFrame
+module
+
+public import FV.Backend.Proof.LowerFrame
+
+@[expose] public section
 
 /-!
 # What `lowerFunction` builds, and the SSA certificate (M7 driver)

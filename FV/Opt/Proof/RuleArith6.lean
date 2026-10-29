@@ -1,4 +1,8 @@
-import FV.Opt.Proof.RuleInfraAbs
+module
+
+public import FV.Opt.Proof.RuleInfraAbs
+
+@[expose] public section
 
 /-!
 # `opts/arithmetic.isle` (part 6): `iabs` and `imul` of negations

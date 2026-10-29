@@ -1,5 +1,9 @@
-import FV.E2E.SemanticExecBytes
-import FV.E2E.CodeMap
+module
+
+public import FV.E2E.SemanticExecBytes
+public import FV.E2E.CodeMap
+
+@[expose] public section
 
 /-! # The static part of `RunOk` (L3)
 

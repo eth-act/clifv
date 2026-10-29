@@ -1,7 +1,11 @@
-import FV.Backend.Proof.StockD0Dispatch
-import FV.E2E.LinkArm
-import FV.Opt.Legalize128Pass
-import FV.Backend.AllocReady
+module
+
+public import FV.Backend.Proof.StockD0Dispatch
+public import FV.E2E.LinkArm
+public import FV.Opt.Legalize128Pass
+public import FV.Backend.AllocReady
+
+@[expose] public section
 
 /-! # A decidable checker for `LinkSys.Ok` (docs/contracts/e2e.md, "Crate-level instance")
 

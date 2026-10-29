@@ -1,5 +1,9 @@
-import FV.Backend.Asm
-import FV.Arm.Decode
+module
+
+public import FV.Backend.Asm
+public import FV.Arm.Decode
+
+@[expose] public section
 
 /-!
 # Machine-code encoder (M5, proven against the Arm model's decoder)

@@ -1,4 +1,8 @@
-import FV.E2E.RegLevelGoodX
+module
+
+public import FV.E2E.RegLevelGoodX
+
+@[expose] public section
 
 /-!
 # Call states of an activation's run (SEM1 #537, step 2k)

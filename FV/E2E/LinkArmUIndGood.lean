@@ -1,5 +1,9 @@
-import FV.E2E.LinkArmUIndNI
-import FV.E2E.LinkArmUGood
+module
+
+public import FV.E2E.LinkArmUIndNI
+public import FV.E2E.LinkArmUGood
+
+@[expose] public section
 
 /-!
 # The linking statement with unwinding, with the per-state facts of every activation (S10g, #404)

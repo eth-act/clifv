@@ -1,4 +1,8 @@
-import FV.E2E.RegLevelCorrectPRSN
+module
+
+public import FV.E2E.RegLevelCorrectPRSN
+
+@[expose] public section
 
 /-!
 # The error-free trace up to the return (SEM1 #537, #680 (3), #700 step 3)

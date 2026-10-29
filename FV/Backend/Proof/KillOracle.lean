@@ -1,6 +1,10 @@
-import FV.Backend.Proof.KillTab
-import FV.Backend.Proof.KillOfV
-import FV.Backend.Proof.IselShpBrTable
+module
+
+public import FV.Backend.Proof.KillTab
+public import FV.Backend.Proof.KillOfV
+public import FV.Backend.Proof.IselShpBrTable
+
+@[expose] public section
 
 /-!
 # Killed vregs of the ISLE lowering (V4, `SpillKillFree`): the oracle terms

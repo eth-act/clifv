@@ -1,5 +1,9 @@
-import FV.E2E.LinkArmUEnv
-import FV.E2E.NonVacuityLink
+module
+
+public import FV.E2E.LinkArmUEnv
+public import FV.E2E.NonVacuityLink
+
+@[expose] public section
 
 /-!
 # Non-vacuity of the external semantics with unwinding (S10f, #233)

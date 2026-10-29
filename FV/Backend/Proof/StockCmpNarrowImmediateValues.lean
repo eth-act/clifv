@@ -1,4 +1,9 @@
-import FV.Backend.Proof.StockCmpNarrowImmediateSelection
+module
+
+public import FV.Backend.Proof.StockCmpNarrowImmediateSelection
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarCmp
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 /-- Actual652 first-match and715 execution compute the original unsigned

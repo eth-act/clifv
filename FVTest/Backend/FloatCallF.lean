@@ -1,7 +1,11 @@
-import FVTest.Backend.FloatCtlRulesT
-import FV.Backend.Proof.IselCtlCallF
-import FV.Backend.Proof.SpillInstCheck
-import FV.Backend.SpillAlloc
+module
+
+public import FVTest.Backend.FloatCtlRulesT
+public import FV.Backend.Proof.IselCtlCallF
+public import FV.Backend.Proof.SpillInstCheck
+public import FV.Backend.SpillAlloc
+
+@[expose] public section
 
 /-!
 Non-vacuity of the typed `call` family with `f32`/`f64` arguments and returns (S11e6, #419):

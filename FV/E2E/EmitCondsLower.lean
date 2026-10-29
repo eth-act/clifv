@@ -1,9 +1,13 @@
-import FV.Backend.Proof.IselEmitDefs
-import FV.Backend.Proof.LowerShapeOkFacts
-import FV.Backend.Proof.SpillStep4Cfg
-import FV.E2E.EmitEnc
-import FV.E2E.EmitNear
-import FV.E2E.EmitLabels
+module
+
+public import FV.Backend.Proof.IselEmitDefs
+public import FV.Backend.Proof.LowerShapeOkFacts
+public import FV.Backend.Proof.SpillStep4Cfg
+public import FV.E2E.EmitEnc
+public import FV.E2E.EmitNear
+public import FV.E2E.EmitLabels
+
+@[expose] public section
 
 /-!
 # The emission conditions of the pipeline's output from the ISLE runs (V6c, assembly)

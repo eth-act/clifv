@@ -1,6 +1,10 @@
-import FV.Link.Total
-import FV.Link.RelocShapeProof
-import FV.E2E.LinkScopeInput
+module
+
+public import FV.Link.Total
+public import FV.Link.RelocShapeProof
+public import FV.E2E.LinkScopeInput
+
+@[expose] public section
 
 /-! # The executable compiler is total on its scope (L1)
 

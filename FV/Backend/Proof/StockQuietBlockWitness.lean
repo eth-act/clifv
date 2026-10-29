@@ -1,4 +1,8 @@
-import FV.Backend.Proof.StockQuietBlockSourceRecords
+module
+
+public import FV.Backend.Proof.StockQuietBlockSourceRecords
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.QuietBlockWitness
 open Backend.Proof Backend.Proof.Driver

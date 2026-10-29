@@ -1,6 +1,10 @@
-import FV.Backend.Proof.StockOriginalEntryPrelude
-import FV.Backend.Proof.StockJumpBodyRefines
-import FV.Backend.Proof.PerEdgeSeq
+module
+
+public import FV.Backend.Proof.StockOriginalEntryPrelude
+public import FV.Backend.Proof.StockJumpBodyRefines
+public import FV.Backend.Proof.PerEdgeSeq
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.Control
 open Backend.Proof Backend.Proof.Driver Isle Isle.Aarch64

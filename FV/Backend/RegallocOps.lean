@@ -1,4 +1,8 @@
-import FV.Backend.StackAlloc
+module
+
+public import FV.Backend.StackAlloc
+
+@[expose] public section
 
 /-!
 # Register-allocation operands and machine environment (M6)

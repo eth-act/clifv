@@ -1,7 +1,11 @@
-import FV.Backend.Proof.LowerFix
-import FV.Backend.Proof.LowerLoop
-import FV.Backend.Proof.IselFlow
-import FV.Backend.Proof.TryRegs
+module
+
+public import FV.Backend.Proof.LowerFix
+public import FV.Backend.Proof.LowerLoop
+public import FV.Backend.Proof.IselFlow
+public import FV.Backend.Proof.TryRegs
+
+@[expose] public section
 
 /-!
 # Completeness of `lowerCheck`: facts for the certificate

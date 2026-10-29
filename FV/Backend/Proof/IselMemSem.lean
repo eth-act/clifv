@@ -1,4 +1,8 @@
-import FV.Backend.Proof.IselMemHelpers
+module
+
+public import FV.Backend.Proof.IselMemHelpers
+
+@[expose] public section
 
 /-!
 # Memory family (M4Mem2): `LowerInstOk` of the memory instructions

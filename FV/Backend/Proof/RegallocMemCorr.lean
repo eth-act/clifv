@@ -1,4 +1,8 @@
-import FV.Backend.Proof.RegallocMem
+module
+
+public import FV.Backend.Proof.RegallocMem
+
+@[expose] public section
 
 /-!
 # `Corr` for every load and store form (M6 proof)

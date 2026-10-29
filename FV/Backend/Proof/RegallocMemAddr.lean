@@ -1,5 +1,9 @@
-import FV.Backend.Proof.RegallocMemCorr
-import FV.Backend.Proof.RegallocOS
+module
+
+public import FV.Backend.Proof.RegallocMemCorr
+public import FV.Backend.Proof.RegallocOS
+
+@[expose] public section
 
 /-!
 # `loadAddr` of a stack-slot offset (M6 proof)

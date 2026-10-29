@@ -1,6 +1,10 @@
-import FV.Front.BundleProof
-import FV.Front.RenameRun
-import FV.Link.DeadCleanupExeSource
+module
+
+public import FV.Front.BundleProof
+public import FV.Front.RenameRun
+public import FV.Link.DeadCleanupExeSource
+
+@[expose] public section
 
 /-!
 # The executable compiler refines the frontend bundle's program (T7e, docs/contracts/frontend.md)

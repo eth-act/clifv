@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockDFG
-import FV.Backend.Proof.LowerFix
+module
+
+public import FV.Backend.Proof.StockDFG
+public import FV.Backend.Proof.LowerFix
+
+@[expose] public section
 
 namespace Backend.Stock.Proof
 open Backend.Proof Backend.Proof.Driver Backend.Proof.Driver.Fix

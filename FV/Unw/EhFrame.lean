@@ -1,4 +1,8 @@
-import FV.Unw.Model
+module
+
+public import FV.Unw.Model
+
+@[expose] public section
 
 /-!
 # What the unwinder reads from the linked image: `.eh_frame` and `.gcc_except_table` (S10f)

@@ -1,8 +1,12 @@
-import FV.E2E.DeadCleanupExecBytes
-import FV.E2E.CodeMap
-import FV.E2E.ExecStatic
-import FV.E2E.DeadCleanupBinary
-import FV.E2E.DeadCleanupBinCheck
+module
+
+public import FV.E2E.DeadCleanupExecBytes
+public import FV.E2E.CodeMap
+public import FV.E2E.ExecStatic
+public import FV.E2E.DeadCleanupBinary
+public import FV.E2E.DeadCleanupBinCheck
+
+@[expose] public section
 
 namespace E2E.DeadCleanupExecBytes
 set_option autoImplicit false

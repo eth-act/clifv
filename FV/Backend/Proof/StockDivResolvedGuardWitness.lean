@@ -1,4 +1,9 @@
-import FV.Backend.Proof.StockDivResolvedGuards
+module
+
+public import FV.Backend.Proof.StockDivResolvedGuards
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarDiv
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 private def aliases : Array (Option Nat) := #[some 1,none,some 3,none]

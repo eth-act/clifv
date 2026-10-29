@@ -1,4 +1,8 @@
-import FV.Backend.Proof.IselRulesALU
+module
+
+public import FV.Backend.Proof.IselRulesALU
+
+@[expose] public section
 
 /-!
 # Term contracts for family A (binary ALU with operand look-through)

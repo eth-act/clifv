@@ -1,4 +1,8 @@
-import FV.Backend.Proof.DeadCleanupLive
+module
+
+public import FV.Backend.Proof.DeadCleanupLive
+
+@[expose] public section
 
 namespace Backend.DeadCleanup
 

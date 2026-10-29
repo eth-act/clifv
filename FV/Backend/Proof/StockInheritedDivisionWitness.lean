@@ -1,9 +1,13 @@
-import FV.Backend.Proof.StockInheritedMixedDivision
-import FV.Backend.Proof.StockDivUdivWideWitness
-import FV.Backend.Proof.StockEntrySeed
-import FV.Backend.Proof.LowerShapeOkFacts
-import FV.Backend.Proof.RefinesCSem
-import FV.E2E.RegLevelDriverSem
+module
+
+public import FV.Backend.Proof.StockInheritedMixedDivision
+public import FV.Backend.Proof.StockDivUdivWideWitness
+public import FV.Backend.Proof.StockEntrySeed
+public import FV.Backend.Proof.LowerShapeOkFacts
+public import FV.Backend.Proof.RefinesCSem
+public import FV.E2E.RegLevelDriverSem
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.InheritedDivisionWitness
 open Backend.Proof Backend.Proof.Driver

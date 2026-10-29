@@ -1,6 +1,10 @@
-import FV.Backend.Proof.RegallocInstsInt
-import FV.Backend.Proof.RegallocInstsZR
-import FV.Backend.Proof.RegallocInstsFP
+module
+
+public import FV.Backend.Proof.RegallocInstsInt
+public import FV.Backend.Proof.RegallocInstsZR
+public import FV.Backend.Proof.RegallocInstsFP
+
+@[expose] public section
 
 /-!
 # `OperandsSound` for every straight-line instruction form (M6 proof)

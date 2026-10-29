@@ -1,5 +1,9 @@
-import FV.Opt.Proof.CompleteSimpStmt
-import FV.Opt.Proof.CompleteGuards
+module
+
+public import FV.Opt.Proof.CompleteSimpStmt
+public import FV.Opt.Proof.CompleteGuards
+
+@[expose] public section
 
 /-!
 # Completeness of simplify: the facts recorded along the pass

@@ -1,6 +1,10 @@
-import FV.Link.ExeUnwind
-import FV.Link.DeadCleanupExePeak
-import FV.E2E.DeadCleanupExecUnwind
+module
+
+public import FV.Link.ExeUnwind
+public import FV.Link.DeadCleanupExePeak
+public import FV.E2E.DeadCleanupExecUnwind
+
+@[expose] public section
 
 /-!
 # The executable compiler on the exceptional edges, on the executable's bytes (S10g, #404)

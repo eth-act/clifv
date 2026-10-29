@@ -1,5 +1,9 @@
-import FV.Concurrency.ArmAllocLS
-import FV.Concurrency.CallCompose
+module
+
+public import FV.Concurrency.ArmAllocLS
+public import FV.Concurrency.CallCompose
+
+@[expose] public section
 
 /-!
 # Layer 4b from the ABI entry: the prologue (T2h, #311)

@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockSelectionReceipts
-import FV.Backend.Proof.IselCtl
+module
+
+public import FV.Backend.Proof.StockSelectionReceipts
+public import FV.Backend.Proof.IselCtl
+
+@[expose] public section
 
 /-! Add/subtract typed receipts derived from actual record selection. -/
 namespace Backend.Stock.Proof

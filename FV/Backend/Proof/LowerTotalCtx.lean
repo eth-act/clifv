@@ -1,4 +1,8 @@
-import FV.Backend.Proof.LowerLoopCtx
+module
+
+public import FV.Backend.Proof.LowerLoopCtx
+
+@[expose] public section
 
 /-!
 # Totality of the lowering: `buildCtx` (V7)

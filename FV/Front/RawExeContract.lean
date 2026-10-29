@@ -1,5 +1,9 @@
-import FV.Front.RawExe
-import FV.E2E.EntryContract
+module
+
+public import FV.Front.RawExe
+public import FV.E2E.EntryContract
+
+@[expose] public section
 
 /-!
 # The shipped executable compiler under one runtime contract (A5, #411)

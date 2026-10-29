@@ -11,8 +11,12 @@ Author(s): Shilpi Goel, Nevine
 --   BFM (immediate) 32- and 64-bit versions
 --        (aliased as BFC, BFI, and BFXIL)
 
-import FV.Arm.Decode
-import FV.Arm.Insts.Common
+module
+
+public import FV.Arm.Decode
+public import FV.Arm.Insts.Common
+
+@[expose] public section
 
 namespace Arm
 

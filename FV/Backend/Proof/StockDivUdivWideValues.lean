@@ -1,6 +1,11 @@
-import FV.Backend.Proof.StockDivValueTransfer
-import FV.Backend.Proof.StockDivSelected
-import FV.Backend.Proof.StockDemandMono
+module
+
+public import FV.Backend.Proof.StockDivValueTransfer
+public import FV.Backend.Proof.StockDivSelected
+public import FV.Backend.Proof.StockDemandMono
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarDiv
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 def SourceDivisionOut (F : BitVec 64 → Prop) (isem : Backend.Proof.Sem) (op : Clif.DivOp)

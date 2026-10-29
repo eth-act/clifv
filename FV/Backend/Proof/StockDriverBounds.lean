@@ -1,4 +1,8 @@
-import FV.Backend.Proof.StockScanFrontiers
+module
+
+public import FV.Backend.Proof.StockScanFrontiers
+
+@[expose] public section
 
 /-! Allocation and alias bounds through actual branch, block, and driver transitions. -/
 namespace Backend.Stock.Proof

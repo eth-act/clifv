@@ -1,5 +1,9 @@
-import FV.E2E.DeadCleanupStackBound
-import FV.E2E.ActualCompilerModes
+module
+
+public import FV.E2E.DeadCleanupStackBound
+public import FV.E2E.ActualCompilerModes
+
+@[expose] public section
 
 /-! Actual-output stack-bound adapters. Reuses the original graph,
 budget algorithm, machine semantics and successful generated-proof stages. -/

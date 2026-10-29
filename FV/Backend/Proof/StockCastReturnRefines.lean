@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockCastBodyRefines
-import FV.Backend.Proof.StockPureReturnRefines
+module
+
+public import FV.Backend.Proof.StockCastBodyRefines
+public import FV.Backend.Proof.StockPureReturnRefines
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.CastBody
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

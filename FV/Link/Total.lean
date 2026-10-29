@@ -1,8 +1,12 @@
-import FV.Link.Compile
-import FV.Link.CodeMapProof
-import FV.Link.RelocShape
-import FV.Link.OutsideProof
-import FV.E2E.SpillDefined
+module
+
+public import FV.Link.Compile
+public import FV.Link.CodeMapProof
+public import FV.Link.RelocShape
+public import FV.Link.OutsideProof
+public import FV.E2E.SpillDefined
+
+@[expose] public section
 
 /-! # The executable compiler succeeds on in-scope input (L1): `leanLink`'s side
 

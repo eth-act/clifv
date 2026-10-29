@@ -1,4 +1,8 @@
-import FV.E2E.ExecFrameSim
+module
+
+public import FV.E2E.ExecFrameSim
+
+@[expose] public section
 
 /-! # The error-guarded per-state hypothesis `RunOkN` (L3 (c))
 

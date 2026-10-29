@@ -1,4 +1,8 @@
-import FV.Backend.Proof.RegallocLayout
+module
+
+public import FV.Backend.Proof.RegallocLayout
+
+@[expose] public section
 
 /-!
 # Executing slot stores and loads (M6 proof)

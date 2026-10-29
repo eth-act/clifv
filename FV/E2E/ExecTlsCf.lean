@@ -1,5 +1,9 @@
-import FV.E2E.ExecGoodRun
-import FV.E2E.TlsLines
+module
+
+public import FV.E2E.ExecGoodRun
+public import FV.E2E.TlsLines
+
+@[expose] public section
 
 /-! # D1 of the TLS sequence from the M6 proof (T1)
 

@@ -1,9 +1,13 @@
-import FV.E2E.DeadCleanupBinCheck
-import FV.E2E.DeadCleanupStackBound
-import FV.E2E.BinCheck
-import FV.E2E.CodeMap
-import FV.E2E.StackBound
-import FV.Front.Read
+module
+
+public import FV.E2E.DeadCleanupBinCheck
+public import FV.E2E.DeadCleanupStackBound
+public import FV.E2E.BinCheck
+public import FV.E2E.CodeMap
+public import FV.E2E.StackBound
+public import FV.Front.Read
+
+@[expose] public section
 
 /-!
 # `lake exe link-check <dir> [--lean FILE --module NAME] [--entries a,b,…] [--prune]`

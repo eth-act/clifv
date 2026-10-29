@@ -1,4 +1,8 @@
-import FV.Backend.Proof.IselFamAluBBitrev
+module
+
+public import FV.Backend.Proof.IselFamAluBBitrev
+
+@[expose] public section
 
 /-!
 # Family B: `bswap` root rules (`lower.isle:2035`, `2038`, `2041`)

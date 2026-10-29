@@ -1,6 +1,10 @@
-import FV.Link.DeadCleanupExeSourceT
-import FVTest.Link.FloatExeT
-import FVTest.Link.FloatCompileExeT
+module
+
+public import FV.Link.DeadCleanupExeSourceT
+public import FVTest.Link.FloatExeT
+public import FVTest.Link.FloatCompileExeT
+
+@[expose] public section
 
 /-! Non-vacuity of the typed source theorems (S11e6, #419): the float program of
 `FVTest/Link/FloatExeT` (float data movement, float parameters and returns) is in the source

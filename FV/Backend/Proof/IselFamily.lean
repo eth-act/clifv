@@ -1,5 +1,9 @@
-import FV.Backend.Proof.IselContract
-import FV.Backend.Proof.IselRules
+module
+
+public import FV.Backend.Proof.IselContract
+public import FV.Backend.Proof.IselRules
+
+@[expose] public section
 
 /-!
 # Batching template: root rules of `lower` from "the rule matched"

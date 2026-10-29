@@ -1,4 +1,8 @@
-import FV.Opt.Proof.LegalShift
+module
+
+public import FV.Opt.Proof.LegalShift
+
+@[expose] public section
 
 /-! # Variable-amount `i128` shifts, 32-bit amount (split for build time) -/
 

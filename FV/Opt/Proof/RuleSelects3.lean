@@ -1,4 +1,8 @@
-import FV.Opt.Proof.RuleIcmpEmbed2
+module
+
+public import FV.Opt.Proof.RuleIcmpEmbed2
+
+@[expose] public section
 
 /-!
 # `opts/selects.isle` (part 3): proven `simplify` rules

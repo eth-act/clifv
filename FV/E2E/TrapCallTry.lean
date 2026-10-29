@@ -1,4 +1,8 @@
-import FV.E2E.TrapCallClifRun
+module
+
+public import FV.E2E.TrapCallClifRun
+
+@[expose] public section
 
 /-!
 # Callee traps of `try_call`/`try_call_indirect`: the CLIF side (S9b, #375)

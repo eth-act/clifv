@@ -1,5 +1,9 @@
-import FV.Concurrency.IselMemHelp
-import FV.Backend.Proof.IselAtomic
+module
+
+public import FV.Concurrency.IselMemHelp
+public import FV.Backend.Proof.IselAtomic
+
+@[expose] public section
 
 /-!
 # The memory instruction of a matched statement, on the thread's code (T2h, #311, layer 2e)

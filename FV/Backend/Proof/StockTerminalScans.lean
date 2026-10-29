@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockTerminalRoots
-import FV.Backend.Proof.StockCoverageScans
+module
+
+public import FV.Backend.Proof.StockTerminalRoots
+public import FV.Backend.Proof.StockCoverageScans
+
+@[expose] public section
 
 /-! Preserve every empty-CLIF slot through actual emissions and backward scans.
 Existing NoOpportunity discharges commit paths; no new source check is added. -/

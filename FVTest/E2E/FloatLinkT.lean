@@ -1,6 +1,10 @@
-import FVTest.E2E.FloatFinalT
-import FV.E2E.LinkScopeT
-import FV.E2E.CompiledEitherT
+module
+
+public import FVTest.E2E.FloatFinalT
+public import FV.E2E.LinkScopeT
+public import FV.E2E.CompiledEitherT
+
+@[expose] public section
 
 /-!
 Non-vacuity of the typed store typing, world/non-interference and input-scope layer (S11e5 Stage

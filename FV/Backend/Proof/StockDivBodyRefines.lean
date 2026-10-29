@@ -1,5 +1,10 @@
-import FV.Backend.Proof.StockDivReturnDemand
-import FV.Backend.Proof.StockDivScanRefines
+module
+
+public import FV.Backend.Proof.StockDivReturnDemand
+public import FV.Backend.Proof.StockDivScanRefines
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.DivBody
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 set_option autoImplicit false

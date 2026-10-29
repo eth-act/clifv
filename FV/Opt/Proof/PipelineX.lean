@@ -1,6 +1,10 @@
-import FV.Opt.Proof.SimpSimX
-import FV.Opt.Proof.UnreachableX
-import FV.Opt.Proof.SimpPass
+module
+
+public import FV.Opt.Proof.SimpSimX
+public import FV.Opt.Proof.UnreachableX
+public import FV.Opt.Proof.SimpPass
+
+@[expose] public section
 
 /-!
 # The pipeline refines, `call_indirect` and `try_call` included (`Opt.optimizeX_simX`)

@@ -1,4 +1,9 @@
-import FV.Backend.Proof.StockCmpZero32RecordValues
+module
+
+public import FV.Backend.Proof.StockCmpZero32RecordValues
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarCmp
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 /-- Actual retained comparison execution transfers the original guarded source

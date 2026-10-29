@@ -1,10 +1,14 @@
-import FV.Backend.Proof.EncodeDPI
-import FV.Backend.Proof.EncodeBR
-import FV.Backend.Proof.EncodeDPR
-import FV.Backend.Proof.EncodeDPSFP
-import FV.Backend.Proof.EncodeLDST
-import FV.Backend.Proof.EncodeRES
-import FV.Arm.Exec
+module
+
+public import FV.Backend.Proof.EncodeDPI
+public import FV.Backend.Proof.EncodeBR
+public import FV.Backend.Proof.EncodeDPR
+public import FV.Backend.Proof.EncodeDPSFP
+public import FV.Backend.Proof.EncodeLDST
+public import FV.Backend.Proof.EncodeRES
+public import FV.Arm.Exec
+
+@[expose] public section
 
 /-!
 # M5: the encoder is proven against the Lean Arm model's decoder

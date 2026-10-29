@@ -1,5 +1,9 @@
-import FV.E2E.LinkPlaceBCount
-import FV.E2E.LinkArmPlaceBWitness
+module
+
+public import FV.E2E.LinkPlaceBCount
+public import FV.E2E.LinkArmPlaceBWitness
+
+@[expose] public section
 
 /-!
 # Witnesses for `LinkPlaceBCount.lean`

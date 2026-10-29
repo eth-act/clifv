@@ -1,7 +1,11 @@
-import FV.Backend.Proof.StockConditionalCompatibility
-import FV.Backend.Proof.StockConditionalLeaf
-import FV.Backend.Proof.StockConditionalEntryPrelude
-import FV.Backend.Proof.StockScalarContract
+module
+
+public import FV.Backend.Proof.StockConditionalCompatibility
+public import FV.Backend.Proof.StockConditionalLeaf
+public import FV.Backend.Proof.StockConditionalEntryPrelude
+public import FV.Backend.Proof.StockScalarContract
+
+@[expose] public section
 
 namespace Backend.Stock.ConditionalCfg
 open Backend.Proof Backend.Proof.Driver Backend.Stock.Proof Backend.Stock.Proof.ConditionalValues

@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockTermContract
-import FV.Backend.Proof.PrepareSound
+module
+
+public import FV.Backend.Proof.StockTermContract
+public import FV.Backend.Proof.PrepareSound
+
+@[expose] public section
 
 namespace Backend.Stock.Proof
 open Backend.Proof Backend.Proof.Driver

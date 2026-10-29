@@ -1,5 +1,9 @@
-import FV.E2E.RegLevelCorrectI
-import FV.E2E.LinkArmProphThm
+module
+
+public import FV.E2E.RegLevelCorrectI
+public import FV.E2E.LinkArmProphThm
+
+@[expose] public section
 
 /-!
 # The counter of the counted run against the machine's calls (SEM1 step 2, `docs/plans/uninit.md` §5.4)

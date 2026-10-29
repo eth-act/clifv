@@ -1,5 +1,10 @@
-import FV.Backend.Proof.StockShiftBitfieldSemantics
-import FV.Backend.Proof.StockSelectionReceipts
+module
+
+public import FV.Backend.Proof.StockShiftBitfieldSemantics
+public import FV.Backend.Proof.StockSelectionReceipts
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ShiftBitfield
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 open Backend.Stock.Proof.ScalarShift

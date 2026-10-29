@@ -1,4 +1,8 @@
-import FV.Backend.Proof.StockPrologueCode
+module
+
+public import FV.Backend.Proof.StockPrologueCode
+
+@[expose] public section
 
 /-! Universal input-only selection facts for the SystemV i64 prologue class. -/
 set_option autoImplicit false

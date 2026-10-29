@@ -1,4 +1,8 @@
-import FV.Backend.Proof.PerEdgeSpillEdge
+module
+
+public import FV.Backend.Proof.PerEdgeSpillEdge
+
+@[expose] public section
 
 namespace Backend.Proof.PerEdgeSpill
 open Backend Backend.Proof.Spill

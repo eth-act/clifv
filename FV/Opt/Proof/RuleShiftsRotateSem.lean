@@ -1,4 +1,8 @@
-import FV.Opt.Proof.RuleRestEmbed
+module
+
+public import FV.Opt.Proof.RuleRestEmbed
+
+@[expose] public section
 
 set_option maxHeartbeats 4000000
 set_option maxRecDepth 8000

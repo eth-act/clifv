@@ -1,5 +1,9 @@
-import FV.Backend.Proof.IselCtlBranch
-import FV.Backend.Proof.IselCmpRoot
+module
+
+public import FV.Backend.Proof.IselCtlBranch
+public import FV.Backend.Proof.IselCmpRoot
+
+@[expose] public section
 
 /-!
 # Family Ctl: `brif` (`lower_branch` rules 1132 `lower_brif`, 1137 `tbnz`, 1138 `tbz`)

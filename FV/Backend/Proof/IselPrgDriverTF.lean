@@ -1,8 +1,12 @@
-import FV.Backend.Proof.IselPrgDriverT
-import FV.Backend.Proof.IselPrgTabTF
-import FV.Backend.Proof.IselPrgCoverTF
-import FV.Backend.Proof.IselPrgCtxTF
-import FV.Backend.Proof.LowerTotalTF
+module
+
+public import FV.Backend.Proof.IselPrgDriverT
+public import FV.Backend.Proof.IselPrgTabTF
+public import FV.Backend.Proof.IselPrgCoverTF
+public import FV.Backend.Proof.IselPrgCtxTF
+public import FV.Backend.Proof.LowerTotalTF
+
+@[expose] public section
 
 /-!
 # Progress of the ISLE lowering over the float scope: the driver's ISLE runs return (S11f, #35)

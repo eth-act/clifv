@@ -1,8 +1,12 @@
-import FV.E2E.LinkArm
-import FV.Opt.Legalize128Pass
-import FV.E2E.Legal
-import FV.E2E.LinkScope
-import FV.E2E.StackBound
+module
+
+public import FV.E2E.LinkArm
+public import FV.Opt.Legalize128Pass
+public import FV.E2E.Legal
+public import FV.E2E.LinkScope
+public import FV.E2E.StackBound
+
+@[expose] public section
 
 /-! # Non-vacuity of `backend_correct_program` (docs/contracts/e2e.md, "Non-vacuity")
 

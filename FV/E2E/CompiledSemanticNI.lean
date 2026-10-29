@@ -1,18 +1,22 @@
-import FV.Backend.Proof.StockParameterCheck
-import FV.Backend.Proof.StockConditionalRankedCheck
-import FV.E2E.StockCfgNI
-import FV.Backend.Proof.StockTwoBlockCheck
-import FV.Backend.Proof.StockTwoBlockEntryCheck
-import FV.Backend.Proof.StockLinearCfgCheck
-import FV.Backend.Proof.StockConditionalCheck
-import FV.Backend.Proof.StockForwardCheck
-import FV.E2E.CompiledSemantic
-import FV.E2E.StockArithmeticNI
-import FV.E2E.StockMixedNI
-import FV.E2E.StockLogicalNI
-import FV.E2E.StockScalarNI
-import FV.E2E.StockDivNI
-import FV.Backend.SemanticNICheck
+module
+
+public import FV.Backend.Proof.StockParameterCheck
+public import FV.Backend.Proof.StockConditionalRankedCheck
+public import FV.E2E.StockCfgNI
+public import FV.Backend.Proof.StockTwoBlockCheck
+public import FV.Backend.Proof.StockTwoBlockEntryCheck
+public import FV.Backend.Proof.StockLinearCfgCheck
+public import FV.Backend.Proof.StockConditionalCheck
+public import FV.Backend.Proof.StockForwardCheck
+public import FV.E2E.CompiledSemantic
+public import FV.E2E.StockArithmeticNI
+public import FV.E2E.StockMixedNI
+public import FV.E2E.StockLogicalNI
+public import FV.E2E.StockScalarNI
+public import FV.E2E.StockDivNI
+public import FV.Backend.SemanticNICheck
+
+@[expose] public section
 
 namespace E2E
 open Backend Backend.Proof Backend.Proof.Driver

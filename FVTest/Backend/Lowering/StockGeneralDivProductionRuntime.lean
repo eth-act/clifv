@@ -1,15 +1,19 @@
-import FVTest.Backend.Lowering.StockTwoBlockProductionRuntime
-import FVTest.Backend.Lowering.StockScalarTestSupport
-import FV.Backend.ScalarNIProduction
-import FV.Backend.LinearScan
-import FV.E2E.StockHighMulFixtures
-import FV.E2E.StockDivFixtures
-import FV.E2E.StockMixedDivFixtures
-import FV.E2E.StockGeneralDivFixtures
-import FVTest.Backend.Lowering.StockMixedDivProductionInput
-import FV.Clif.Print
-import FVTest.Backend.Lowering.StockNarrowProductionRuntime
-import FVTest.Backend.Lowering.StockMaskProductionRuntime
+module
+
+public import FVTest.Backend.Lowering.StockTwoBlockProductionRuntime
+public import FVTest.Backend.Lowering.StockScalarTestSupport
+public import FV.Backend.ScalarNIProduction
+public import FV.Backend.LinearScan
+public import FV.E2E.StockHighMulFixtures
+public import FV.E2E.StockDivFixtures
+public import FV.E2E.StockMixedDivFixtures
+public import FV.E2E.StockGeneralDivFixtures
+public import FVTest.Backend.Lowering.StockMixedDivProductionInput
+public import FV.Clif.Print
+public import FVTest.Backend.Lowering.StockNarrowProductionRuntime
+public import FVTest.Backend.Lowering.StockMaskProductionRuntime
+
+@[expose] public section
 
 set_option autoImplicit false
 namespace FVTest.StockGeneralDivProductionRuntime

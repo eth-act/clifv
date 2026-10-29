@@ -1,4 +1,8 @@
-import FV.Backend.Isel
+module
+
+public import FV.Backend.Isel
+
+@[expose] public section
 
 /-!
 # The return and payload vregs of a `try_call` (`tryRegsOf`)

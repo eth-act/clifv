@@ -1,5 +1,9 @@
-import FV.Opt.Proof.RuleRestEmbed
-import FV.Opt.Proof.KernelBV
+module
+
+public import FV.Opt.Proof.RuleRestEmbed
+public import FV.Opt.Proof.KernelBV
+
+@[expose] public section
 
 /-!
 # `opts/cprop.isle` (part 3): proven `simplify` rules (R0)

@@ -1,4 +1,8 @@
-import FV.Backend.RegallocOps
+module
+
+public import FV.Backend.RegallocOps
+
+@[expose] public section
 
 /-! Stock's initial register allocation, separated from source color analysis.
 Requests retain layout order and exception allocation points. -/

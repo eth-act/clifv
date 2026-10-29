@@ -1,4 +1,8 @@
-import FV.Backend.Proof.IselPrgRoot
+module
+
+public import FV.Backend.Proof.IselPrgRoot
+
+@[expose] public section
 
 /-!
 # Progress of the ISLE lowering over the typed scope: the transfer functions

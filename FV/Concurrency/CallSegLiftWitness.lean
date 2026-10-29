@@ -1,5 +1,9 @@
-import FV.Concurrency.CallSegLift
-import FV.Concurrency.CallSegTWitness
+module
+
+public import FV.Concurrency.CallSegLift
+public import FV.Concurrency.CallSegTWitness
+
+@[expose] public section
 
 /-!
 # Witnesses: an activation's segment lifted below a caller (#473, step (4))

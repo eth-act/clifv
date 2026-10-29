@@ -1,4 +1,8 @@
-import FV.E2E.RegLevelTwoRunW
+module
+
+public import FV.E2E.RegLevelTwoRunW
+
+@[expose] public section
 
 /-!
 # Pair steps from one run on paired worlds (SEM1 #537, item (3))

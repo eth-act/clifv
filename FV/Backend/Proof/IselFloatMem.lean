@@ -1,5 +1,9 @@
-import FV.Backend.Proof.IselMemRoots
-import FV.Backend.Proof.IselFloatBitcast
+module
+
+public import FV.Backend.Proof.IselMemRoots
+public import FV.Backend.Proof.IselFloatBitcast
+
+@[expose] public section
 
 /-!
 # S11e4: `load`/`store` of `f32`/`f64` over float-capable contexts

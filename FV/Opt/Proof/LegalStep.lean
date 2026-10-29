@@ -1,4 +1,8 @@
-import FV.Opt.Proof.LegalSem
+module
+
+public import FV.Opt.Proof.LegalSem
+
+@[expose] public section
 
 /-!
 # Register-file updates and the source invariant across a statement

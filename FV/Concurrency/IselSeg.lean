@@ -1,6 +1,10 @@
-import FV.Concurrency.IselStep
-import FV.Concurrency.IselCheck
-import FV.Concurrency.VCodeEvents
+module
+
+public import FV.Concurrency.IselStep
+public import FV.Concurrency.IselCheck
+public import FV.Concurrency.VCodeEvents
+
+@[expose] public section
 
 /-!
 # A thread walking a statement's segment; the match after patching (T2h, #311, layer 2e)

@@ -1,7 +1,11 @@
-import FV.E2E.EmitTotalIn
-import FV.E2E.SizeVC
-import FV.E2E.SizeLower
-import FV.Backend.Proof.IselSzDriver
+module
+
+public import FV.E2E.EmitTotalIn
+public import FV.E2E.SizeVC
+public import FV.E2E.SizeLower
+public import FV.Backend.Proof.IselSzDriver
+
+@[expose] public section
 
 /-!
 # The size bound from the input (V6c)

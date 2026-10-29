@@ -1,4 +1,8 @@
-import FV.DSL.Ty
+module
+
+public import FV.DSL.Ty
+
+@[expose] public section
 
 /-!
 # Shallow operations

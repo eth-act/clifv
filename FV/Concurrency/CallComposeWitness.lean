@@ -1,4 +1,8 @@
-import FV.Concurrency.CallCompose
+module
+
+public import FV.Concurrency.CallCompose
+
+@[expose] public section
 
 /-!
 # Non-vacuity of the linking induction (T2h, #311, layer 4b calls)

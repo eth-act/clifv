@@ -1,5 +1,9 @@
-import FV.E2E.RegLevelCall
-import FV.E2E.RegLevelOpN
+module
+
+public import FV.E2E.RegLevelCall
+public import FV.E2E.RegLevelOpN
+
+@[expose] public section
 
 /-!
 # Calls and symbol addresses on the machine with their call states (SEM1 #537, step 2k)

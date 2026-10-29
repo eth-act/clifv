@@ -1,5 +1,9 @@
-import FV.Backend.Proof.LSFacts
-import FV.Backend.Proof.SpillLocal
+module
+
+public import FV.Backend.Proof.LSFacts
+public import FV.Backend.Proof.SpillLocal
+
+@[expose] public section
 
 /-!
 # One instruction of the Lean allocator's builder (V4b-3, #275)

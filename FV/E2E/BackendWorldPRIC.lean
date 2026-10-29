@@ -1,6 +1,10 @@
-import FV.E2E.IselCallsOneAll
-import FV.E2E.CompiledEitherI
-import FV.E2E.BackendWorldNII
+module
+
+public import FV.E2E.IselCallsOneAll
+public import FV.E2E.CompiledEitherI
+public import FV.E2E.BackendWorldNII
+
+@[expose] public section
 
 /-!
 # The counted per-function theorems without the call-count premises (SEM1, `docs/plans/uninit.md` §5.9)

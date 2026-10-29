@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockTerminalCfg
-import FV.Backend.Proof.StockReturnSourceWitness
+module
+
+public import FV.Backend.Proof.StockTerminalCfg
+public import FV.Backend.Proof.StockReturnSourceWitness
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.ControlCfgWitness
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

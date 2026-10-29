@@ -1,6 +1,10 @@
-import FV.E2E.LinkArmLockedCallee
-import FV.E2E.LinkArmStage2GlueWitness
-import FV.E2E.BackendTwoRunNIUWitness
+module
+
+public import FV.E2E.LinkArmLockedCallee
+public import FV.E2E.LinkArmStage2GlueWitness
+public import FV.E2E.BackendTwoRunNIUWitness
+
+@[expose] public section
 
 /-!
 # Witnesses: the `DetPRBR` form of the `x30`-exempt call contracts and the second activation's

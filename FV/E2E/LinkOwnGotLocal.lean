@@ -1,6 +1,10 @@
-import FV.E2E.LinkOwnCallsStmtHyp
-import FV.E2E.LinkOwnCallsTryHyp
-import FV.E2E.LinkOwnGotRun
+module
+
+public import FV.E2E.LinkOwnCallsStmtHyp
+public import FV.E2E.LinkOwnCallsTryHyp
+public import FV.E2E.LinkOwnGotRun
+
+@[expose] public section
 
 /-!
 # `GotLocalHyp`: the GOT vreg of a direct call's run

@@ -1,10 +1,14 @@
-import FV.Backend.Proof.StockConditionalLeaf
-import FV.Backend.Proof.StockConditionalEntryPrelude
-import FV.Backend.Proof.StockConditionalReturnAt
-import FV.Backend.Proof.StockConditionalEmptyFixture
-import FV.Backend.Proof.StockCfgReturnBlockAt
-import FV.Backend.Proof.StockScalarCheck
-import FV.Backend.Proof.StockConditionalBodyWitness
+module
+
+public import FV.Backend.Proof.StockConditionalLeaf
+public import FV.Backend.Proof.StockConditionalEntryPrelude
+public import FV.Backend.Proof.StockConditionalReturnAt
+public import FV.Backend.Proof.StockConditionalEmptyFixture
+public import FV.Backend.Proof.StockCfgReturnBlockAt
+public import FV.Backend.Proof.StockScalarCheck
+public import FV.Backend.Proof.StockConditionalBodyWitness
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.ConditionalValues.ReturnAtWitness
 open Backend.Proof Backend.Proof.Driver

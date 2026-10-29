@@ -1,4 +1,8 @@
-import FV.E2E.LinkArmXPB
+module
+
+public import FV.E2E.LinkArmXPB
+
+@[expose] public section
 
 /-!
 # The pipeline theorems for the `guardR`-guarded semantics (SEM1 #537, #680 (2))

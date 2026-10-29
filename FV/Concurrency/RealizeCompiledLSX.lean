@@ -1,5 +1,9 @@
-import FV.Concurrency.RealizeCompiled
-import FV.Concurrency.ArmAllocLSX
+module
+
+public import FV.Concurrency.RealizeCompiled
+public import FV.Concurrency.ArmAllocLSX
+
+@[expose] public section
 
 /-!
 # One compiled thread with the stack offsets built in `x16` (T2j, #473)

@@ -1,9 +1,13 @@
-import FV.E2E.LinkScopeDefs
-import FV.Backend.Proof.SpillClassesT
-import FV.Backend.Proof.SpillInstCheck
-import FV.Backend.Proof.SpillAvail
-import FV.Compile.StoreTyped
-import FV.Compile.TryArgClass
+module
+
+public import FV.E2E.LinkScopeDefs
+public import FV.Backend.Proof.SpillClassesT
+public import FV.Backend.Proof.SpillInstCheck
+public import FV.Backend.Proof.SpillAvail
+public import FV.Compile.StoreTyped
+public import FV.Compile.TryArgClass
+
+@[expose] public section
 
 /-! # The typed input conditions (S11e5 Stage C, slice 7)
 

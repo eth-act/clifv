@@ -1,6 +1,10 @@
-import FV.Link.UnwFns
-import FV.E2E.EmitPreOk
-import FV.E2E.EmitLabels
+module
+
+public import FV.Link.UnwFns
+public import FV.E2E.EmitPreOk
+public import FV.E2E.EmitLabels
+
+@[expose] public section
 
 /-!
 # Completeness of the per-function unwinding checks (S10g, #404)

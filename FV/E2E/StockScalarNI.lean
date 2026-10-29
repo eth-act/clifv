@@ -1,5 +1,9 @@
-import FV.E2E.ABIReadScalar
-import FV.Backend.Proof.StockScalarCheck
+module
+
+public import FV.E2E.ABIReadScalar
+public import FV.Backend.Proof.StockScalarCheck
+
+@[expose] public section
 
 namespace E2E
 open Backend Backend.Proof Backend.Proof.Driver Backend.Stock.Proof Backend.DeadCleanup

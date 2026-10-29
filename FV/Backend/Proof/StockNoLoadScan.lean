@@ -1,4 +1,8 @@
-import FV.Backend.Proof.StockNoLoadSink
+module
+
+public import FV.Backend.Proof.StockNoLoadSink
+
+@[expose] public section
 
 /-! Complete sunk-array preservation through actual binding, opportunistic aliases
 and retained scan records, derived from the generated-program invariant. -/

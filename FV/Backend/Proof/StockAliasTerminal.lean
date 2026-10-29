@@ -1,4 +1,8 @@
-import FV.Backend.Proof.StockAliasDomain
+module
+
+public import FV.Backend.Proof.StockAliasDomain
+
+@[expose] public section
 
 /-! The actual finite-fuel final resolver reaches endpoints and respects edges.
 Combine source rank, key-domain construction and reserved payload endpoints. -/

@@ -1,4 +1,8 @@
-import FV.Backend.Proof.IselCmpCond
+module
+
+public import FV.Backend.Proof.IselCmpCond
+
+@[expose] public section
 
 /-!
 # Condition producers: `cond_result_invert`, `is_nonzero`, `emit_icmp`, `is_nonzero_cmp`

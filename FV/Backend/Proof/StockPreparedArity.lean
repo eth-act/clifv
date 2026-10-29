@@ -1,5 +1,9 @@
-import FV.Backend.Proof.PerEdgePreparedArity
-import FV.Backend.Proof.StockSpillCopyMetadata
+module
+
+public import FV.Backend.Proof.PerEdgePreparedArity
+public import FV.Backend.Proof.StockSpillCopyMetadata
+
+@[expose] public section
 
 namespace Backend.Stock.Proof
 open Backend.Proof Backend.Proof.Driver Backend.Proof.Spill Backend.Proof.PerEdgeSpill

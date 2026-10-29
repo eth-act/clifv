@@ -1,8 +1,12 @@
-import FV.E2E.LinkArmIniOfWitness
-import FV.E2E.LinkArmProgramInitEX
-import FV.E2E.LinkArmIniOfCongr
-import FV.E2E.RegLevelCallStart
-import FV.E2E.RegLevelCorrectCWitness
+module
+
+public import FV.E2E.LinkArmIniOfWitness
+public import FV.E2E.LinkArmProgramInitEX
+public import FV.E2E.LinkArmIniOfCongr
+public import FV.E2E.RegLevelCallStart
+public import FV.E2E.RegLevelCorrectCWitness
+
+@[expose] public section
 
 /-!
 # Witnesses: the per-state facts under the slot-byte oracle (SEM1 #537, executable level)

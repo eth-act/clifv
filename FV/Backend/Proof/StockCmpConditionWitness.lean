@@ -1,4 +1,9 @@
-import FV.Backend.Proof.StockCmpConditionValues
+module
+
+public import FV.Backend.Proof.StockCmpConditionValues
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarCmp
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 private def fixtureState : State := {sinkState with base := {sinkState.base with nextVreg := 4}}

@@ -1,6 +1,10 @@
-import FV.E2E.CompiledEither
-import FV.E2E.LinkWorldXW
-import FV.E2E.DeadCleanupWorldXW
+module
+
+public import FV.E2E.CompiledEither
+public import FV.E2E.LinkWorldXW
+public import FV.E2E.DeadCleanupWorldXW
+
+@[expose] public section
 
 /-!
 # The per-function pipeline theorem with the per-state facts and the writes (A3, #412, slice F8b)

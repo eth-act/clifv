@@ -1,4 +1,8 @@
-import FV.Backend.Proof.IselCmpTerms
+module
+
+public import FV.Backend.Proof.IselCmpTerms
+
+@[expose] public section
 
 /-!
 # Family Ctl (terminators, branches, calls): common facts

@@ -1,7 +1,11 @@
-import FV.Backend.Proof.SpillAvail
-import FV.Backend.Proof.PrepareSound
-import FV.Backend.Proof.SpillEdges
-import FV.Backend.Proof.SpillStep4Cfg
+module
+
+public import FV.Backend.Proof.SpillAvail
+public import FV.Backend.Proof.PrepareSound
+public import FV.Backend.Proof.SpillEdges
+public import FV.Backend.Proof.SpillStep4Cfg
+
+@[expose] public section
 
 /-!
 # `killFreeB` across `prepare` (V4 step 4, `SpillKillFree`)

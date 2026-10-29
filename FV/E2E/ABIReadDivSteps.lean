@@ -1,5 +1,10 @@
-import FV.Backend.ABIReadDiv
-import FV.E2E.ABIReadTrapBoundary
+module
+
+public import FV.Backend.ABIReadDiv
+public import FV.E2E.ABIReadTrapBoundary
+
+@[expose] public section
+
 namespace E2E.DivRead
 open Backend Backend.Proof Backend.Proof.Driver E2E.MixedFlagBoundary
 set_option autoImplicit false

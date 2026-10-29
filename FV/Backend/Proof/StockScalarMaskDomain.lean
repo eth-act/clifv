@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockScalarContract
-import FV.Backend.Proof.StockMaskBodyRefines
+module
+
+public import FV.Backend.Proof.StockScalarContract
+public import FV.Backend.Proof.StockMaskBodyRefines
+
+@[expose] public section
 
 namespace Backend.Stock.Scalar
 open Backend.Proof Backend.Proof.Driver Backend.Stock.Proof

@@ -1,4 +1,8 @@
-import FV.Backend.Proof.PrepareComplete
+module
+
+public import FV.Backend.Proof.PrepareComplete
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.ForwardRpo
 open Backend.Proof Backend.Proof.Prep

@@ -1,5 +1,9 @@
-import FVTest.E2E.FloatScopeT2
-import FV.E2E.EmitCondsT
+module
+
+public import FVTest.E2E.FloatScopeT2
+public import FV.E2E.EmitCondsT
+
+@[expose] public section
 
 /-!
 # Witnesses: the typed size and emission analyses on a float function (S11 #35)

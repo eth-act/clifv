@@ -1,4 +1,8 @@
-import FV.Opt.Proof.GvnEdit
+module
+
+public import FV.Opt.Proof.GvnEdit
+
+@[expose] public section
 
 /-!
 # The graph valuation of the simplify pass (`Opt.den`)

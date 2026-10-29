@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockScanBounds
-import FV.Backend.Proof.IselFlowExt
+module
+
+public import FV.Backend.Proof.StockScanBounds
+public import FV.Backend.Proof.IselFlowExt
+
+@[expose] public section
 
 /-! Actual stock evaluation preserves preallocated exception reservations and
 never moves the fresh-register frontier backwards. -/

@@ -1,7 +1,11 @@
-import FV.Concurrency.IselResume
-import FV.Concurrency.RealizeWitness
-import FV.Concurrency.IselRefinesWitness
-import FV.Concurrency.CallLoadData
+module
+
+public import FV.Concurrency.IselResume
+public import FV.Concurrency.RealizeWitness
+public import FV.Concurrency.IselRefinesWitness
+public import FV.Concurrency.CallLoadData
+
+@[expose] public section
 
 /-!
 # Witness: layer 2 pausing at calls (#473, (2a))

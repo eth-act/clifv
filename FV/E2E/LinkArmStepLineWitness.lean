@@ -1,4 +1,8 @@
-import FV.E2E.LinkArmStepLine
+module
+
+public import FV.E2E.LinkArmStepLine
+
+@[expose] public section
 
 /-!
 # Non-vacuity of the per-line lock-step steps (`LinkArmStepLine.lean`)

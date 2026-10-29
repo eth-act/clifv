@@ -1,4 +1,8 @@
-import FV.E2E.DeadCleanupRegLevelPRS
+module
+
+public import FV.E2E.DeadCleanupRegLevelPRS
+
+@[expose] public section
 
 /-!
 # The machine's call count at the return (SEM1 #537, #680 (3), `CountPRB` (a))

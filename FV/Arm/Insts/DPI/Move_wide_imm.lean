@@ -8,8 +8,12 @@ Author(s): Yan Peng
 -- namespace Arm; `Rd = 31` is XZR per the Arm ARM (DDI 0487) ASL `X[d, datasize]` (upstream
 -- read and wrote SP).
 
-import FV.Arm.Decode
-import FV.Arm.Insts.Common
+module
+
+public import FV.Arm.Decode
+public import FV.Arm.Insts.Common
+
+@[expose] public section
 
 namespace Arm
 

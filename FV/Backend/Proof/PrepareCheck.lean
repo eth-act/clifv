@@ -1,4 +1,8 @@
-import FV.Backend.RegallocOps
+module
+
+public import FV.Backend.RegallocOps
+
+@[expose] public section
 
 /-!
 # The `prepare` validator (M7): `prepCheck vc vcp`

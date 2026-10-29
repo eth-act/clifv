@@ -1,6 +1,11 @@
-import FV.Backend.Proof.StockBnotDispatch
-import FV.Backend.Proof.StockGuardedRecordValues
-import FV.Backend.Proof.IselFamALUALogicNot
+module
+
+public import FV.Backend.Proof.StockBnotDispatch
+public import FV.Backend.Proof.StockGuardedRecordValues
+public import FV.Backend.Proof.IselFamALUALogicNot
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.BnotComplete
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 set_option autoImplicit false

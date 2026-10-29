@@ -1,6 +1,10 @@
-import FV.E2E.RegLevelCorrectPRS
-import FV.E2E.RegLevelCorrectPWitness
-import FV.E2E.LinkArmProphReg
+module
+
+public import FV.E2E.RegLevelCorrectPRS
+public import FV.E2E.RegLevelCorrectPWitness
+public import FV.E2E.LinkArmProphReg
+
+@[expose] public section
 
 /-!
 # Witnesses for the `sp`-threaded register-prophecy theorem (`FV/E2E/RegLevelCorrectPRS.lean`)

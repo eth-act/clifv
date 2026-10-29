@@ -1,6 +1,10 @@
-import FV.E2E.DeadCleanupUnwindFinal
-import FV.E2E.RegLevelTrapCall
-import FV.E2E.TrapCallClifRun
+module
+
+public import FV.E2E.DeadCleanupUnwindFinal
+public import FV.E2E.RegLevelTrapCall
+public import FV.E2E.TrapCallClifRun
+
+@[expose] public section
 
 /-!
 # The shipped compiler's per-function theorem with callee traps (S9a, #33)

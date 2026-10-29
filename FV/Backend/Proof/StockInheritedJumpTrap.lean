@@ -1,8 +1,12 @@
-import FV.Backend.Proof.StockLocalSourceContinuation
-import FV.Backend.Proof.StockArithmeticTerminalDefined
-import FV.Backend.Proof.StockInheritedBody
-import FV.Backend.Proof.StockInheritedJumpDefined
-import FV.Backend.Proof.StockJumpBodyRefines
+module
+
+public import FV.Backend.Proof.StockLocalSourceContinuation
+public import FV.Backend.Proof.StockArithmeticTerminalDefined
+public import FV.Backend.Proof.StockInheritedBody
+public import FV.Backend.Proof.StockInheritedJumpDefined
+public import FV.Backend.Proof.StockJumpBodyRefines
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.Inherited
 open Backend.Proof Backend.Proof.Driver

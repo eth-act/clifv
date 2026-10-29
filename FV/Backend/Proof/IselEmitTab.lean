@@ -1,4 +1,8 @@
-import FV.Backend.Proof.IselEmitFns
+module
+
+public import FV.Backend.Proof.IselEmitFns
+
+@[expose] public section
 
 /-!
 # Emission conditions of the ISLE lowering (V6c): the summary table

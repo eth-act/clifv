@@ -1,6 +1,10 @@
-import FV.Concurrency.VCodeSize
-import FV.E2E.RegLevelDriverSem
-import FV.Backend.Proof.LowerCover
+module
+
+public import FV.Concurrency.VCodeSize
+public import FV.E2E.RegLevelDriverSem
+public import FV.Backend.Proof.LowerCover
+
+@[expose] public section
 
 /-!
 # Invariances of the footprint `cEvs` (T2h, #311, layer 2e)

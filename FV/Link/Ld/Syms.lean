@@ -1,5 +1,9 @@
-import FV.Link.Ld.WriteProof
-import FV.Link.Image
+module
+
+public import FV.Link.Ld.WriteProof
+public import FV.Link.Image
+
+@[expose] public section
 
 /-! # The symbol check on the Lean linker's output (L2b stage 3b)
 

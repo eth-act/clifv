@@ -1,4 +1,8 @@
-import FV.Backend.Proof.LowerSimU
+module
+
+public import FV.Backend.Proof.LowerSimU
+
+@[expose] public section
 
 /-!
 # The driver simulation with unwinding, with the ABI return values (S7)

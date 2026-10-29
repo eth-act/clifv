@@ -1,5 +1,9 @@
-import FV.E2E.Guarded
-import FV.Backend.Proof.VCodeSemISeq
+module
+
+public import FV.E2E.Guarded
+public import FV.Backend.Proof.VCodeSemISeq
+
+@[expose] public section
 
 /-! # Runs on pairs of worlds (agent/link-widen, stage 2)
 

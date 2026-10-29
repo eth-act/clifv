@@ -1,4 +1,8 @@
-import FV.Clif.Sem
+module
+
+public import FV.Clif.Sem
+
+@[expose] public section
 
 /-!
 # Signed spaceship select identities

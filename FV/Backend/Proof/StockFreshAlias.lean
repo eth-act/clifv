@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockRecordedFlow
-import FV.Backend.Proof.StockDriverBounds
+module
+
+public import FV.Backend.Proof.StockRecordedFlow
+public import FV.Backend.Proof.StockDriverBounds
+
+@[expose] public section
 
 /-! Fresh targets of actual Stock lowering are terminal in its final alias map.
 These facts discharge the fresh alternative of final recorded alias origins;

@@ -1,4 +1,8 @@
-import FV.Backend.Proof.IselGeneric
+module
+
+public import FV.Backend.Proof.IselGeneric
+
+@[expose] public section
 
 /-!
 # Generic invariants of ISLE runs

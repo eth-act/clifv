@@ -1,5 +1,9 @@
-import FV.Clif.MemTrap
-import FV.Clif.Parse
+module
+
+public import FV.Clif.MemTrap
+public import FV.Clif.Parse
+
+@[expose] public section
 
 /-!
 # Witness: an `atomic_rmw` on the null page traps `heap_oob` (A3, #412, F2)

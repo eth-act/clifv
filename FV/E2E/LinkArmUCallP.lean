@@ -1,5 +1,9 @@
-import FV.E2E.LinkArmUAct
-import FV.E2E.LinkArmUEnvCall
+module
+
+public import FV.E2E.LinkArmUAct
+public import FV.E2E.LinkArmUEnvCall
+
+@[expose] public section
 
 /-!
 # A call of a program function on the linked machine with unwinding (S10f, #233)

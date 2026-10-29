@@ -1,6 +1,10 @@
-import FV.Link.Reloc
-import FV.E2E.Elf
-import FV.E2E.CodeMap
+module
+
+public import FV.Link.Reloc
+public import FV.E2E.Elf
+public import FV.E2E.CodeMap
+
+@[expose] public section
 
 /-! # Writing the program part into the executable (L2b)
 

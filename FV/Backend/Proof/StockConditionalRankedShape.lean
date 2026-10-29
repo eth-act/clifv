@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockConditionalClass
-import FV.Backend.Proof.StockForwardReturn
+module
+
+public import FV.Backend.Proof.StockConditionalClass
+public import FV.Backend.Proof.StockForwardReturn
+
+@[expose] public section
 
 namespace Backend.Stock.ConditionalCfg
 open Backend.Proof Backend.Proof.Driver Backend.Stock.Proof

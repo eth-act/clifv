@@ -1,6 +1,10 @@
-import FV.E2E.RegLevelMemTrap
-import FV.E2E.DeadCleanupWorldX
-import FV.E2E.DeadCleanupGot
+module
+
+public import FV.E2E.RegLevelMemTrap
+public import FV.E2E.DeadCleanupWorldX
+public import FV.E2E.DeadCleanupGot
+
+@[expose] public section
 
 /-!
 # The per-function world theorem with memory traps (A3, #412, slice F4)

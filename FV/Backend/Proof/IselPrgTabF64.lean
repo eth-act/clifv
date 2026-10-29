@@ -1,4 +1,8 @@
-import FV.Backend.Proof.IselPrgRootT
+module
+
+public import FV.Backend.Proof.IselPrgRootT
+
+@[expose] public section
 
 /-!
 # Progress of the ISLE lowering over the typed scope: the `f64const` sub-table

@@ -1,5 +1,9 @@
-import FV.E2E.Pair
-import FV.E2E.LinkWorld
+module
+
+public import FV.E2E.Pair
+public import FV.E2E.LinkWorld
+
+@[expose] public section
 
 /-! # Non-interference of a compiled function (agent/link-widen, stage 2)
 

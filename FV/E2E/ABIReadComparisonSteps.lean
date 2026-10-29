@@ -1,4 +1,9 @@
-import FV.E2E.ABIReadPopcountSteps
+module
+
+public import FV.E2E.ABIReadPopcountSteps
+
+@[expose] public section
+
 namespace E2E.ComparisonRead
 open Backend Backend.Proof Backend.Proof.Driver E2E.MixedFlagBoundary
 set_option autoImplicit false

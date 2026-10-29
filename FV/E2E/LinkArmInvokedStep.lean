@@ -1,5 +1,9 @@
-import FV.E2E.LinkArmCallDecode
-import FV.E2E.LinkArmCallCount
+module
+
+public import FV.E2E.LinkArmCallDecode
+public import FV.E2E.LinkArmCallCount
+
+@[expose] public section
 
 /-!
 # The step of an invoking state, the calling states of a path, the machine's call indices

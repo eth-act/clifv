@@ -1,5 +1,9 @@
-import FV.E2E.OptProven
-import FV.E2E.SretReturn
+module
+
+public import FV.E2E.OptProven
+public import FV.E2E.SretReturn
+
+@[expose] public section
 
 /-!
 # The `sret` return register over the mid-end (S7)

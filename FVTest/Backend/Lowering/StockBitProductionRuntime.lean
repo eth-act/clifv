@@ -1,8 +1,12 @@
-import FVTest.Backend.Lowering.StockScalarTestSupport
-import FV.Backend.ScalarNIProduction
-import FV.Backend.LinearScan
-import FV.E2E.StockBitFixtures
-import FV.Clif.Print
+module
+
+public import FVTest.Backend.Lowering.StockScalarTestSupport
+public import FV.Backend.ScalarNIProduction
+public import FV.Backend.LinearScan
+public import FV.E2E.StockBitFixtures
+public import FV.Clif.Print
+
+@[expose] public section
 
 set_option autoImplicit false
 namespace FVTest.StockBitProductionRuntime

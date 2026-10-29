@@ -1,4 +1,9 @@
-import FV.Backend.Proof.StockCmpNarrowFlags
+module
+
+public import FV.Backend.Proof.StockCmpNarrowFlags
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarCmp
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 /-- A real extended compare/cset pair computes the original narrow predicate

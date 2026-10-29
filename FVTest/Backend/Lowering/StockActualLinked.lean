@@ -1,7 +1,11 @@
-import FV.Link.ActualCompilerImage
-import FV.Link.Ld.Spec
-import FVTest.E2E.ActualLinkProof
-import FV.E2E.ActualPrologueWitness
+module
+
+public import FV.Link.ActualCompilerImage
+public import FV.Link.Ld.Spec
+public import FVTest.E2E.ActualLinkProof
+public import FV.E2E.ActualPrologueWitness
+
+@[expose] public section
 
 /-! Actual Stock callback → actual byte writer → ordinary emitted Lean proofs.
 A fixed integration witness; it does not activate a production class. -/

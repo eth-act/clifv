@@ -1,5 +1,9 @@
-import FV.Concurrency.VCodeThread
-import FV.Backend.Proof.AssignOk
+module
+
+public import FV.Concurrency.VCodeThread
+public import FV.Backend.Proof.AssignOk
+
+@[expose] public section
 
 /-!
 # The kinds of the memory events of VCode (T2h, #311, layer 1b)

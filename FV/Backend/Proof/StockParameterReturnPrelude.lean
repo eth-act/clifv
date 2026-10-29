@@ -1,6 +1,10 @@
-import FV.Backend.Proof.StockOriginalEntryPrelude
-import FV.Backend.Proof.StockCfgReturnBlock
-import FV.Backend.Proof.StockReturnScanShape
+module
+
+public import FV.Backend.Proof.StockOriginalEntryPrelude
+public import FV.Backend.Proof.StockCfgReturnBlock
+public import FV.Backend.Proof.StockReturnScanShape
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.ParameterCfg
 open Backend.Proof Backend.Proof.Driver

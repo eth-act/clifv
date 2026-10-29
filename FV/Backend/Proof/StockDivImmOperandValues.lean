@@ -1,5 +1,10 @@
-import FV.Backend.Proof.StockDivImmResolved
-import FV.Backend.Proof.StockDivConstant
+module
+
+public import FV.Backend.Proof.StockDivImmResolved
+public import FV.Backend.Proof.StockDivConstant
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarDiv
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 /-- A correctly encoded source constant is a real signed/unsigned division

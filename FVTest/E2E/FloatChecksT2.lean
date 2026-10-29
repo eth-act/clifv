@@ -1,5 +1,9 @@
-import FVTest.E2E.FloatScopeT2
-import FV.E2E.LinkScopeChecksT2
+module
+
+public import FVTest.E2E.FloatScopeT2
+public import FV.E2E.LinkScopeChecksT2
+
+@[expose] public section
 
 /-!
 # Witnesses: the typed coverage checks on `fnScopeInTB2` (S11 #35)

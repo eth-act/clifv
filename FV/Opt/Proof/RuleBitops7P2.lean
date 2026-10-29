@@ -1,4 +1,8 @@
-import FV.Opt.Proof.RuleFloatArms
+module
+
+public import FV.Opt.Proof.RuleFloatArms
+
+@[expose] public section
 
 /-!
 # Part 2 of 4 of `RuleBitops7.lean`

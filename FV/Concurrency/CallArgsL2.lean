@@ -1,5 +1,9 @@
-import FV.Concurrency.CallArgsAt
-import FV.Concurrency.IselResume
+module
+
+public import FV.Concurrency.CallArgsAt
+public import FV.Concurrency.IselResume
+
+@[expose] public section
 
 /-!
 # The call's arguments at layer 2 (#473, (2b))

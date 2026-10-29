@@ -1,6 +1,10 @@
-import FV.Link.DeadCleanupCompileT
-import FVTest.Link.FloatExeT
-import FVTest.Link.DeadCleanupWitness
+module
+
+public import FV.Link.DeadCleanupCompileT
+public import FVTest.Link.FloatExeT
+public import FVTest.Link.DeadCleanupWitness
+
+@[expose] public section
 
 /-! Non-vacuity of `Link.DeadCleanup.compileExeT`'s typed-`try_call` branch (S11e6, #419): on a
 program whose single function has a direct `try_call` of an `f64`-taking/`f64`-returning extern

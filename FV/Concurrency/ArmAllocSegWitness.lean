@@ -1,5 +1,9 @@
-import FV.Concurrency.ArmAllocSeg
-import FV.Concurrency.ArmAllocThreadWitness
+module
+
+public import FV.Concurrency.ArmAllocSeg
+public import FV.Concurrency.ArmAllocThreadWitness
+
+@[expose] public section
 
 /-!
 # Non-vacuity of the segment lemmas of layer 4b (T2h, #311)

@@ -1,5 +1,9 @@
-import FV.Backend.Proof.RegallocTac
-import FV.Backend.Proof.IselFamAluBBswap
+module
+
+public import FV.Backend.Proof.RegallocTac
+public import FV.Backend.Proof.IselFamAluBBswap
+
+@[expose] public section
 
 /-!
 # `Refines` for the covered forms (M6 proof)

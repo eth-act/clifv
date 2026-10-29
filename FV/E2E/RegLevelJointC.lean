@@ -1,4 +1,8 @@
-import FV.E2E.RegLevelLock2
+module
+
+public import FV.E2E.RegLevelLock2
+
+@[expose] public section
 
 /-!
 # The joint realisation with the call count (SEM1 #537, item (3))

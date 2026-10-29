@@ -1,4 +1,8 @@
-import FV.Backend.Proof.IselCovTSem
+module
+
+public import FV.Backend.Proof.IselCovTSem
+
+@[expose] public section
 
 /-!
 # Form coverage over float-capable contexts (typed V3): instruction families

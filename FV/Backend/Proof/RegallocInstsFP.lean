@@ -1,4 +1,8 @@
-import FV.Backend.Proof.RegallocTac
+module
+
+public import FV.Backend.Proof.RegallocTac
+
+@[expose] public section
 
 /-!
 # `Corr` for the float/vector instructions (M6 proof)

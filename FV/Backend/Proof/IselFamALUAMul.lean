@@ -1,6 +1,10 @@
-import FV.Backend.Proof.IselTermsALUAMul
-import FV.Backend.Proof.IselFamALUALogicNot
-import FV.Backend.Proof.IselFamALUARules
+module
+
+public import FV.Backend.Proof.IselTermsALUAMul
+public import FV.Backend.Proof.IselFamALUALogicNot
+public import FV.Backend.Proof.IselFamALUARules
+
+@[expose] public section
 
 /-!
 # Multiplication root rules of family A: `LowerRuleOk`

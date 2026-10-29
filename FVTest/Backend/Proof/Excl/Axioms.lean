@@ -1,5 +1,9 @@
-import FV.Backend.Proof.IselExcl
-import FV.Backend.Proof.DriverCheckSound
+module
+
+public import FV.Backend.Proof.IselExcl
+public import FV.Backend.Proof.DriverCheckSound
+
+@[expose] public section
 
 /-! Axiom audit of the excluded root rules (`ExcludedUnmatchable program`). -/
 

@@ -1,5 +1,9 @@
-import FV.E2E.ProductionLinkGood
-import FV.E2E.ProductionBinary
+module
+
+public import FV.E2E.ProductionLinkGood
+public import FV.E2E.ProductionBinary
+
+@[expose] public section
 
 /-! # The per-state facts of the run through the stack-bound and binary theorems (L3 (c))
 

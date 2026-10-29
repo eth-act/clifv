@@ -1,6 +1,10 @@
-import FV.E2E.BinCheck
-import FV.E2E.LinkCheckT
-import FV.E2E.LinkArmT
+module
+
+public import FV.E2E.BinCheck
+public import FV.E2E.LinkCheckT
+public import FV.E2E.LinkArmT
+
+@[expose] public section
 
 /-! # Typed copies of `FV.E2E.BinCheck` (S11e5 Stage C, slice 8)
 

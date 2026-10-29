@@ -1,5 +1,10 @@
-import FV.Backend.Proof.StockRotateSelectedValues
-import FV.Backend.Proof.StockGuardedRecordValues
+module
+
+public import FV.Backend.Proof.StockRotateSelectedValues
+public import FV.Backend.Proof.StockGuardedRecordValues
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarRotate
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 set_option maxRecDepth 20000

@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockBodyScanOrigin
-import FV.Backend.Proof.StockCoverageBlock
+module
+
+public import FV.Backend.Proof.StockBodyScanOrigin
+public import FV.Backend.Proof.StockCoverageBlock
+
+@[expose] public section
 
 /-! Source term preparation retained across the actual node and traversal.
 This closes the data provenance omitted by the earlier origin variant. -/

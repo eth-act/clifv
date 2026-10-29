@@ -1,5 +1,9 @@
-import FV.Concurrency.CallEnterClif
-import FV.Concurrency.CallLoadWitness
+module
+
+public import FV.Concurrency.CallEnterClif
+public import FV.Concurrency.CallLoadWitness
+
+@[expose] public section
 
 /-!
 # Witness for `CallEnterClif` (#473)

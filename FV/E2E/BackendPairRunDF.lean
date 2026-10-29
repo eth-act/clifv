@@ -1,6 +1,10 @@
-import FV.E2E.PairDriverDF
-import FV.E2E.PairDriverID
-import FV.E2E.BackendPairRunD
+module
+
+public import FV.E2E.PairDriverDF
+public import FV.E2E.PairDriverID
+public import FV.E2E.BackendPairRunD
+
+@[expose] public section
 
 /-!
 # The guarded paired run from non-interference at the exterior only (SEM1 #537, #713)

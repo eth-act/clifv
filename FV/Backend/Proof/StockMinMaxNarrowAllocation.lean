@@ -1,5 +1,10 @@
-import FV.Backend.Proof.StockMinMaxNarrowShape
-import FV.Backend.Proof.StockMinMaxWideRootValues
+module
+
+public import FV.Backend.Proof.StockMinMaxNarrowShape
+public import FV.Backend.Proof.StockMinMaxWideRootValues
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarSelect
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 open MinMaxRegisterFixture Backend.Stock.Proof.ScalarCmp

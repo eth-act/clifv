@@ -1,4 +1,8 @@
-import FV.Backend.Proof.IselPrgCtorBase
+module
+
+public import FV.Backend.Proof.IselPrgCtorBase
+
+@[expose] public section
 
 /-!
 # Progress of the ISLE lowering (V7): the extern constructors' transfer function is sound

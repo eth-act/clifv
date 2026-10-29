@@ -1,5 +1,9 @@
-import Std.Data.HashMap
-import Std.Data.HashSet
+module
+
+public import Std.Data.HashMap
+public import Std.Data.HashSet
+
+@[expose] public section
 
 /-! # Lean static linker (L2b stage 3): ELF64 relocatable objects and `ar` archives
 

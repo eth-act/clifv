@@ -1,4 +1,8 @@
-import FV.Concurrency.ProgramE2E
+module
+
+public import FV.Concurrency.ProgramE2E
+
+@[expose] public section
 
 /-!
 # Non-vacuity of the program level (T2e, #303)

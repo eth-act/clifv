@@ -1,6 +1,10 @@
-import FV.E2E.Compose
-import FV.E2E.UnwindSem
-import FV.Clif.Unwind
+module
+
+public import FV.E2E.Compose
+public import FV.E2E.UnwindSem
+public import FV.Clif.Unwind
+
+@[expose] public section
 
 /-!
 # The per-function theorem with unwinding: observables, layers, conclusion (S10e, #232)

@@ -1,5 +1,10 @@
-import FV.Backend.ABIReadScalar
-import FV.E2E.ABIReadBoundary
+module
+
+public import FV.Backend.ABIReadScalar
+public import FV.E2E.ABIReadBoundary
+
+@[expose] public section
+
 namespace E2E.HighMulRead
 open Backend Backend.Proof Backend.Proof.Driver E2E.MixedFlagBoundary
 set_option autoImplicit false

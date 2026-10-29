@@ -1,7 +1,11 @@
-import FV.Backend.Proof.StockCoverageModel
-import FV.Backend.Proof.IselCovDriver
-import FV.Backend.Proof.StockConstantRoot
-import FV.Backend.Proof.StockResults
+module
+
+public import FV.Backend.Proof.StockCoverageModel
+public import FV.Backend.Proof.IselCovDriver
+public import FV.Backend.Proof.StockConstantRoot
+public import FV.Backend.Proof.StockResults
+
+@[expose] public section
 
 /-! Actual named instruction-selection roots preserve remembered definitions.
 Reuse the checked summaries and pure source-rule exclusions; no root-specific

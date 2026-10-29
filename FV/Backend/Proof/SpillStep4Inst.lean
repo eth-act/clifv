@@ -1,6 +1,10 @@
-import FV.Backend.Proof.SpillStep4Run
-import FV.Backend.Proof.SpillStep4Homes
-import FV.Backend.Proof.SpillStep4Cfg
+module
+
+public import FV.Backend.Proof.SpillStep4Run
+public import FV.Backend.Proof.SpillStep4Homes
+public import FV.Backend.Proof.SpillStep4Cfg
+
+@[expose] public section
 
 /-!
 # One spilled instruction re-establishes the availability invariant (V4 (a), step 4)

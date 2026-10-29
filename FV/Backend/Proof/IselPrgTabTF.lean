@@ -1,5 +1,9 @@
-import FV.Backend.Proof.IselPrgRootTF
-import FV.Backend.Proof.IselPrgTabF64
+module
+
+public import FV.Backend.Proof.IselPrgRootTF
+public import FV.Backend.Proof.IselPrgTabF64
+
+@[expose] public section
 
 /-!
 # Progress of the ISLE lowering over the float scope: the summary table (S11f, #35)

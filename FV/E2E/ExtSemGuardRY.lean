@@ -1,4 +1,8 @@
-import FV.E2E.ExtSemGuardRX
+module
+
+public import FV.E2E.ExtSemGuardRX
+
+@[expose] public section
 
 /-!
 # `guardR` keeping the program only at related calls (SEM1 #537, #680 (3), stage 2)

@@ -6,83 +6,87 @@ and `third_party/NOTICE-lnsym.md`.
 This file imports every module under `FV/Arm`, so `lake build FV.Arm` builds the whole model,
 its memory theory and the symbolic-simulation tactics.
 -/
-import FV.Arm.Attr
-import FV.Arm.BitVec
-import FV.Arm.Decode
-import FV.Arm.Decode.BR
-import FV.Arm.Decode.DPI
-import FV.Arm.Decode.DPR
-import FV.Arm.Decode.DPSFP
-import FV.Arm.Decode.LDST
-import FV.Arm.Decode.Reserved
-import FV.Arm.Exec
-import FV.Arm.FromMathlib
-import FV.Arm.Insts
-import FV.Arm.Insts.BR.Compare_branch
-import FV.Arm.Insts.BR.Cond_branch_imm
-import FV.Arm.Insts.BR.Hints
-import FV.Arm.Insts.BR.Insts
-import FV.Arm.Insts.BR.Mrs
-import FV.Arm.Insts.BR.Test_branch
-import FV.Arm.Insts.BR.Uncond_branch_imm
-import FV.Arm.Insts.BR.Uncond_branch_reg
-import FV.Arm.Insts.Common
-import FV.Arm.Insts.DPI.Add_sub_imm
-import FV.Arm.Insts.DPI.Bitfield
-import FV.Arm.Insts.DPI.Extract
-import FV.Arm.Insts.DPI.Insts
-import FV.Arm.Insts.DPI.Logical_imm
-import FV.Arm.Insts.DPI.Move_wide_imm
-import FV.Arm.Insts.DPI.PC_rel_addressing
-import FV.Arm.Insts.DPR.Add_sub_carry
-import FV.Arm.Insts.DPR.Add_sub_ext_reg
-import FV.Arm.Insts.DPR.Add_sub_shifted_reg
-import FV.Arm.Insts.DPR.Conditional_compare
-import FV.Arm.Insts.DPR.Conditional_select
-import FV.Arm.Insts.DPR.Data_processing_one_source
-import FV.Arm.Insts.DPR.Data_processing_three_source
-import FV.Arm.Insts.DPR.Data_processing_two_source
-import FV.Arm.Insts.DPR.Insts
-import FV.Arm.Insts.DPR.Logical_shifted_reg
-import FV.Arm.Insts.DPSFP.Advanced_simd_across_lanes
-import FV.Arm.Insts.DPSFP.Advanced_simd_modified_immediate
-import FV.Arm.Insts.DPSFP.Advanced_simd_copy
-import FV.Arm.Insts.DPSFP.Advanced_simd_three_same
-import FV.Arm.Insts.DPSFP.Advanced_simd_two_reg_misc
-import FV.Arm.Insts.DPSFP.Conversion_between_FP_and_Int
-import FV.Arm.Insts.DPSFP.FP_compare
-import FV.Arm.Insts.DPSFP.FP_conditional_select
-import FV.Arm.Insts.DPSFP.FP_data_processing_one_source
-import FV.Arm.Insts.DPSFP.FP_data_processing_three_source
-import FV.Arm.Insts.DPSFP.FP_data_processing_two_source
-import FV.Arm.Insts.DPSFP.FP_immediate
-import FV.Arm.Insts.DPSFP.Insts
-import FV.Arm.Insts.LDST.Insts
-import FV.Arm.Insts.LDST.Reg_imm
-import FV.Arm.Insts.LDST.Reg_literal
-import FV.Arm.Insts.LDST.Reg_pair
-import FV.Arm.Insts.LDST.Reg_unscaled_imm
-import FV.Arm.Insts.Reserved.Udf
-import FV.Arm.Map
-import FV.Arm.Memory.Attr
-import FV.Arm.Memory.MemoryProofs
-import FV.Arm.Memory.Separate
-import FV.Arm.Memory.SeparateProofs
-import FV.Arm.MinTheory
-import FV.Arm.State
-import FV.Arm.Tactics.Attr
-import FV.Arm.Tactics.BvOmegaBench
-import FV.Arm.Tactics.Common
-import FV.Arm.Tactics.FetchAndDecode
-import FV.Arm.Tactics.IntroHyp
-import FV.Arm.Tactics.Simp
-import FV.Arm.Tactics.StepThms
-import FV.Arm.Tactics.Sym
-import FV.Arm.Tactics.Sym.AxEffects
-import FV.Arm.Tactics.Sym.Common
-import FV.Arm.Tactics.Sym.Context
-import FV.Arm.Tactics.Sym.FetchAndDecode
-import FV.Arm.Tactics.Sym.LCtxSearch
-import FV.Arm.Tactics.Sym.MemoryEffects
-import FV.Arm.Tactics.Sym.ProgramInfo
-import FV.Arm.Tpidr
+module
+
+public import FV.Arm.Attr
+public import FV.Arm.BitVec
+public import FV.Arm.Decode
+public import FV.Arm.Decode.BR
+public import FV.Arm.Decode.DPI
+public import FV.Arm.Decode.DPR
+public import FV.Arm.Decode.DPSFP
+public import FV.Arm.Decode.LDST
+public import FV.Arm.Decode.Reserved
+public import FV.Arm.Exec
+public import FV.Arm.FromMathlib
+public import FV.Arm.Insts
+public import FV.Arm.Insts.BR.Compare_branch
+public import FV.Arm.Insts.BR.Cond_branch_imm
+public import FV.Arm.Insts.BR.Hints
+public import FV.Arm.Insts.BR.Insts
+public import FV.Arm.Insts.BR.Mrs
+public import FV.Arm.Insts.BR.Test_branch
+public import FV.Arm.Insts.BR.Uncond_branch_imm
+public import FV.Arm.Insts.BR.Uncond_branch_reg
+public import FV.Arm.Insts.Common
+public import FV.Arm.Insts.DPI.Add_sub_imm
+public import FV.Arm.Insts.DPI.Bitfield
+public import FV.Arm.Insts.DPI.Extract
+public import FV.Arm.Insts.DPI.Insts
+public import FV.Arm.Insts.DPI.Logical_imm
+public import FV.Arm.Insts.DPI.Move_wide_imm
+public import FV.Arm.Insts.DPI.PC_rel_addressing
+public import FV.Arm.Insts.DPR.Add_sub_carry
+public import FV.Arm.Insts.DPR.Add_sub_ext_reg
+public import FV.Arm.Insts.DPR.Add_sub_shifted_reg
+public import FV.Arm.Insts.DPR.Conditional_compare
+public import FV.Arm.Insts.DPR.Conditional_select
+public import FV.Arm.Insts.DPR.Data_processing_one_source
+public import FV.Arm.Insts.DPR.Data_processing_three_source
+public import FV.Arm.Insts.DPR.Data_processing_two_source
+public import FV.Arm.Insts.DPR.Insts
+public import FV.Arm.Insts.DPR.Logical_shifted_reg
+public import FV.Arm.Insts.DPSFP.Advanced_simd_across_lanes
+public import FV.Arm.Insts.DPSFP.Advanced_simd_modified_immediate
+public import FV.Arm.Insts.DPSFP.Advanced_simd_copy
+public import FV.Arm.Insts.DPSFP.Advanced_simd_three_same
+public import FV.Arm.Insts.DPSFP.Advanced_simd_two_reg_misc
+public import FV.Arm.Insts.DPSFP.Conversion_between_FP_and_Int
+public import FV.Arm.Insts.DPSFP.FP_compare
+public import FV.Arm.Insts.DPSFP.FP_conditional_select
+public import FV.Arm.Insts.DPSFP.FP_data_processing_one_source
+public import FV.Arm.Insts.DPSFP.FP_data_processing_three_source
+public import FV.Arm.Insts.DPSFP.FP_data_processing_two_source
+public import FV.Arm.Insts.DPSFP.FP_immediate
+public import FV.Arm.Insts.DPSFP.Insts
+public import FV.Arm.Insts.LDST.Insts
+public import FV.Arm.Insts.LDST.Reg_imm
+public import FV.Arm.Insts.LDST.Reg_literal
+public import FV.Arm.Insts.LDST.Reg_pair
+public import FV.Arm.Insts.LDST.Reg_unscaled_imm
+public import FV.Arm.Insts.Reserved.Udf
+public import FV.Arm.Map
+public import FV.Arm.Memory.Attr
+public import FV.Arm.Memory.MemoryProofs
+public import FV.Arm.Memory.Separate
+public import FV.Arm.Memory.SeparateProofs
+public import FV.Arm.MinTheory
+public import FV.Arm.State
+public import FV.Arm.Tactics.Attr
+public import FV.Arm.Tactics.BvOmegaBench
+public import FV.Arm.Tactics.Common
+public import FV.Arm.Tactics.FetchAndDecode
+public import FV.Arm.Tactics.IntroHyp
+public import FV.Arm.Tactics.Simp
+public import FV.Arm.Tactics.StepThms
+public import FV.Arm.Tactics.Sym
+public import FV.Arm.Tactics.Sym.AxEffects
+public import FV.Arm.Tactics.Sym.Common
+public import FV.Arm.Tactics.Sym.Context
+public import FV.Arm.Tactics.Sym.FetchAndDecode
+public import FV.Arm.Tactics.Sym.LCtxSearch
+public import FV.Arm.Tactics.Sym.MemoryEffects
+public import FV.Arm.Tactics.Sym.ProgramInfo
+public import FV.Arm.Tpidr
+
+@[expose] public section

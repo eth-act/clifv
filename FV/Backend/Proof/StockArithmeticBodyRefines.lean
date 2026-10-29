@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockPureRecordCoverage
-import FV.Backend.Proof.StockAddSubScanRefines
+module
+
+public import FV.Backend.Proof.StockPureRecordCoverage
+public import FV.Backend.Proof.StockAddSubScanRefines
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.ArithmeticBody
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

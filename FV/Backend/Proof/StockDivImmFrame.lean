@@ -1,4 +1,9 @@
-import FV.Backend.Proof.StockDivImmPure
+module
+
+public import FV.Backend.Proof.StockDivImmPure
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarDiv
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 /-- Successful real immediate materialization preserves every scheduling field,

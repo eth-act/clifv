@@ -1,4 +1,8 @@
-import FV.Backend.Proof.IselPrgExt
+module
+
+public import FV.Backend.Proof.IselPrgExt
+
+@[expose] public section
 
 /-!
 # Progress of the ISLE lowering (V7): the root forms

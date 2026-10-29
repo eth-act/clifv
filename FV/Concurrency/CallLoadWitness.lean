@@ -1,5 +1,9 @@
-import FV.Concurrency.CallLoadData
-import FV.Concurrency.CallXClosedWitness
+module
+
+public import FV.Concurrency.CallLoadData
+public import FV.Concurrency.CallXClosedWitness
+
+@[expose] public section
 
 /-!
 # A compiled caller calling the compiled `atomic_load` (T2h, #311, calls)

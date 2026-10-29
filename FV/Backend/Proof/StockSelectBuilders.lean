@@ -1,5 +1,10 @@
-import FV.Backend.Proof.StockCmpWithFlags
-import FV.Backend.Proof.IselCmpSelect
+module
+
+public import FV.Backend.Proof.StockCmpWithFlags
+public import FV.Backend.Proof.IselCmpSelect
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarSelect
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 set_option maxRecDepth 20000

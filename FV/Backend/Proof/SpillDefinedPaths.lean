@@ -1,4 +1,8 @@
-import FV.Backend.Proof.SpillDefined
+module
+
+public import FV.Backend.Proof.SpillDefined
+
+@[expose] public section
 
 /-!
 # Definedness sets from paths

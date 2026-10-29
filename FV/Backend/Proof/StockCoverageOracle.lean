@@ -1,4 +1,8 @@
-import FV.Backend.Proof.StockCoverageSound
+module
+
+public import FV.Backend.Proof.StockCoverageSound
+
+@[expose] public section
 
 /-! The existing operand-size oracle runs on actual Stock state without
 changing it. Reuses IselCovModel's two-rule argument and source-pattern transport. -/

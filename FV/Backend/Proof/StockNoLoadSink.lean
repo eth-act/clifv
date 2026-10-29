@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockSinkRuleSyntax
-import FV.Backend.Proof.StockSinkFrame
+module
+
+public import FV.Backend.Proof.StockSinkRuleSyntax
+public import FV.Backend.Proof.StockSinkFrame
+
+@[expose] public section
 
 /-! In scalar/division-only contexts every generated sinking rule is
 unmatchable. This is an internal installed-data invariant, not a new checker. -/

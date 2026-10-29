@@ -1,5 +1,9 @@
-import FV.Backend.Proof.RegallocSound
-import FV.Backend.Proof.PerEdgeRegallocLemmas
+module
+
+public import FV.Backend.Proof.RegallocSound
+public import FV.Backend.Proof.PerEdgeRegallocLemmas
+
+@[expose] public section
 
 /-!
 # Soundness of the per-successor register-allocation checker (M6)

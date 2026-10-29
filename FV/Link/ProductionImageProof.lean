@@ -1,6 +1,10 @@
-import FV.Link.ProductionImage
-import FV.Link.OutsideProof
-import FV.Link.ImageProof
+module
+
+public import FV.Link.ProductionImage
+public import FV.Link.OutsideProof
+public import FV.Link.ImageProof
+
+@[expose] public section
 
 /-! Actual-output image facts. All byte-writer checks are inherited;
 no source or layout condition is added to its successful-output theorem. -/

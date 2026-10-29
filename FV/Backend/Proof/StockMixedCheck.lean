@@ -1,5 +1,9 @@
-import FV.Backend.StockMixedCheck
-import FV.Backend.Proof.StockMixedBodyRefines
+module
+
+public import FV.Backend.StockMixedCheck
+public import FV.Backend.Proof.StockMixedBodyRefines
+
+@[expose] public section
 
 namespace Backend.Stock.Mixed
 open Backend.Proof Backend.Proof.Driver

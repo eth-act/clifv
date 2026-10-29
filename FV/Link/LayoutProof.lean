@@ -1,5 +1,9 @@
-import FV.Link.LayoutFacts
-import FV.Link.OutsideProof
+module
+
+public import FV.Link.LayoutFacts
+public import FV.Link.OutsideProof
+
+@[expose] public section
 
 /-! # The linker's facts by construction (L2b)
 

@@ -1,6 +1,11 @@
-import FV.Backend.Proof.StockCmpNarrowActualOriginalSourceValues
-import FV.Backend.Proof.StockCmpWideActualOriginalSourceValues
-import FV.Backend.Proof.StockCmpNonconstantSourceValues
+module
+
+public import FV.Backend.Proof.StockCmpNarrowActualOriginalSourceValues
+public import FV.Backend.Proof.StockCmpWideActualOriginalSourceValues
+public import FV.Backend.Proof.StockCmpNonconstantSourceValues
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarCmp
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 /-- Every original accepted scalar comparison transfers its original guarded

@@ -1,5 +1,9 @@
-import FV.Backend.Proof.DriverCheckTy
-import FV.Concurrency.Code
+module
+
+public import FV.Backend.Proof.DriverCheckTy
+public import FV.Concurrency.Code
+
+@[expose] public section
 
 /-!
 # The shape of a statement's lowered code (T2h, #311, layer 2c)

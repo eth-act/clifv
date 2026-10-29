@@ -1,4 +1,8 @@
-import FV.E2E.LinkArmTableE
+module
+
+public import FV.E2E.LinkArmTableE
+
+@[expose] public section
 
 /-!
 # A program call followed by no error returns (SEM1 #537, #680 (3), fix of #700, step 2)

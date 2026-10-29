@@ -1,4 +1,8 @@
-import FV.Backend.Proof.IselFamAluBBfm
+module
+
+public import FV.Backend.Proof.IselFamAluBBfm
+
+@[expose] public section
 
 /-!
 # Family B: `popcnt` (`lower.isle:2074–2092`)

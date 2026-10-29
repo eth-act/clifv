@@ -1,5 +1,10 @@
-import FV.E2E.CodeMap
-import FV.Link.DeadCleanupLayoutFacts
+module
+
+public import FV.E2E.CodeMap
+public import FV.Link.DeadCleanupLayoutFacts
+
+@[expose] public section
+
 namespace Link.DeadCleanup
 set_option autoImplicit false
 open E2E E2E.LinkCheck E2E.BinCheck E2E.Elf Backend LinkSpec

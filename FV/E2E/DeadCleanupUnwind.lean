@@ -1,6 +1,10 @@
-import FV.E2E.UnwindPrepare
-import FV.E2E.UnwindValueSem
-import FV.E2E.DeadCleanupPipeline
+module
+
+public import FV.E2E.UnwindPrepare
+public import FV.E2E.UnwindValueSem
+public import FV.E2E.DeadCleanupPipeline
+
+@[expose] public section
 
 /-!
 # The dead cleanup with unwinding (S10e, #232)

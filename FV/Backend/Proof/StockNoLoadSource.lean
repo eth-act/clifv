@@ -1,7 +1,11 @@
-import FV.Backend.Proof.StockNoLoadSink
-import FV.Backend.Proof.StockDFG
-import FV.Backend.Proof.IselExclData
-import FV.Backend.Proof.StockHighMulFamily
+module
+
+public import FV.Backend.Proof.StockNoLoadSink
+public import FV.Backend.Proof.StockDFG
+public import FV.Backend.Proof.IselExclData
+public import FV.Backend.Proof.StockHighMulFamily
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.SinkRules
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

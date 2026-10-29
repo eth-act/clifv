@@ -1,5 +1,9 @@
-import FV.E2E.RegLevelTryNR
-import FV.E2E.RegLevelJTNA
+module
+
+public import FV.E2E.RegLevelTryNR
+public import FV.E2E.RegLevelJTNA
+
+@[expose] public section
 
 /-!
 # The call of a `try_call` on the machine, at a witness (SEM1 #537, item (3), route (a))

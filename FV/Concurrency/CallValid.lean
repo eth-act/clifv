@@ -1,4 +1,8 @@
-import FV.E2E.LinkPlace
+module
+
+public import FV.E2E.LinkPlace
+
+@[expose] public section
 
 /-!
 # The valid memory across a callee's CLIF run (#473, step (3))

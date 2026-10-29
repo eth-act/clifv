@@ -1,6 +1,10 @@
-import FV.E2E.LinkArmTableB
-import FV.E2E.LinkArmStepX30
-import FV.E2E.LinkArmOracleAt
+module
+
+public import FV.E2E.LinkArmTableB
+public import FV.E2E.LinkArmStepX30
+public import FV.E2E.LinkArmOracleAt
+
+@[expose] public section
 
 /-!
 # The compiled-code check that no `blr` jumps through `x29`/`x30`, and the program calls of two

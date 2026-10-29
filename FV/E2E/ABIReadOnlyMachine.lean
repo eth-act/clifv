@@ -1,8 +1,12 @@
-import FV.E2E.ABIReadOnlyRealize
-import FV.E2E.StockArithmeticStage
-import FV.E2E.LinkWorld
-import FV.E2E.DeadCleanupRegLevelX
-import FV.E2E.DeadCleanupGot
+module
+
+public import FV.E2E.ABIReadOnlyRealize
+public import FV.E2E.StockArithmeticStage
+public import FV.E2E.LinkWorld
+public import FV.E2E.DeadCleanupRegLevelX
+public import FV.E2E.DeadCleanupGot
+
+@[expose] public section
 
 namespace E2E.ABIReadOnly
 open Backend Backend.Proof Backend.Proof.Driver Backend.DeadCleanup

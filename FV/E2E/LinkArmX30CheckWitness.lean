@@ -1,5 +1,9 @@
-import FV.E2E.LinkArmX30Check
-import FV.E2E.NonVacuityLink
+module
+
+public import FV.E2E.LinkArmX30Check
+public import FV.E2E.NonVacuityLink
+
+@[expose] public section
 
 /-!
 # Non-vacuity of the `x30` check

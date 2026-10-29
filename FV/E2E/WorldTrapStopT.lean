@@ -1,5 +1,9 @@
-import FV.E2E.WorldTrapStop
-import FV.E2E.DeadCleanupTrapCallTry
+module
+
+public import FV.E2E.WorldTrapStop
+public import FV.E2E.DeadCleanupTrapCallTry
+
+@[expose] public section
 
 /-!
 # The per-function world theorem with callee traps, `try_call`s included (S9e, #408)

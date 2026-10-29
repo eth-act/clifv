@@ -1,8 +1,12 @@
-import FV.Backend.Isel
-import FV.Backend.Proof.DriverCheck
-import FV.Clif.Run
-import FV.Backend.Proof.LowerRename
-import FV.Backend.Proof.RegallocOperands
+module
+
+public import FV.Backend.Isel
+public import FV.Backend.Proof.DriverCheck
+public import FV.Clif.Run
+public import FV.Backend.Proof.LowerRename
+public import FV.Backend.Proof.RegallocOperands
+
+@[expose] public section
 
 /-!
 # The lowering calls the driver consumes (M4's contracts at the `runTerm` level)

@@ -1,6 +1,10 @@
-import FV.Backend.Isel
-import FV.Compile.Subset
-import FV.Backend.Proof.IselAttr
+module
+
+public import FV.Backend.Isel
+public import FV.Compile.Subset
+public import FV.Backend.Proof.IselAttr
+
+@[expose] public section
 
 /-!
 # ISLE data facts for the isel proofs (generated, do not edit)

@@ -1,5 +1,9 @@
-import FV.Backend.Proof.IselCtlBase
-import FV.Backend.Proof.LowerLemmas
+module
+
+public import FV.Backend.Proof.IselCtlBase
+public import FV.Backend.Proof.LowerLemmas
+
+@[expose] public section
 
 /-!
 # Family Ctl: the `lower` rules on terminators (`trap`, `return`)

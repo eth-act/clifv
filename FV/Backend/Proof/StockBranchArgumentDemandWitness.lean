@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockBranchArgumentDemand
-import FV.Backend.Proof.StockPolicy
+module
+
+public import FV.Backend.Proof.StockBranchArgumentDemand
+public import FV.Backend.Proof.StockPolicy
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.BranchDemandWitness
 open Backend.Proof Backend.Proof.Driver

@@ -1,5 +1,9 @@
-import FV.Link.Compile
-import FV.Link.DeadCleanupCompile
+module
+
+public import FV.Link.Compile
+public import FV.Link.DeadCleanupCompile
+
+@[expose] public section
 
 /-! # The Lean compiler's layout, computed by the driver (L1g, #228)
 

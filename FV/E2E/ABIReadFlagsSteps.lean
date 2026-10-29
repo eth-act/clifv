@@ -1,6 +1,10 @@
-import FV.Backend.ABIReadFlags
-import FV.E2E.ABIReadOnlyMachine
-import FV.Backend.Proof.IselCmpRun
+module
+
+public import FV.Backend.ABIReadFlags
+public import FV.E2E.ABIReadOnlyMachine
+public import FV.Backend.Proof.IselCmpRun
+
+@[expose] public section
 
 namespace E2E.MixedFlagBoundary
 open Backend Backend.Proof Backend.Proof.Driver Backend.DeadCleanup

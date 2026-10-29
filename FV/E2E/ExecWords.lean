@@ -1,4 +1,8 @@
-import FV.E2E.BinCheck
+module
+
+public import FV.E2E.BinCheck
+
+@[expose] public section
 
 /-! # The resolved instruction words on the Arm model (M9)
 

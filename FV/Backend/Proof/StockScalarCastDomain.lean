@@ -1,6 +1,10 @@
-import FV.Backend.Proof.StockScalarContract
-import FV.Backend.Proof.StockCastReturnRefines
-import FV.Backend.Proof.StockCastNotrap
+module
+
+public import FV.Backend.Proof.StockScalarContract
+public import FV.Backend.Proof.StockCastReturnRefines
+public import FV.Backend.Proof.StockCastNotrap
+
+@[expose] public section
 
 namespace Backend.Stock.Scalar
 open Backend.Proof Backend.Proof.Driver Backend.Stock.Proof

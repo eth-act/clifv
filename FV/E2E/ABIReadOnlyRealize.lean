@@ -1,4 +1,8 @@
-import FV.E2E.ABIReadOnlyTransport
+module
+
+public import FV.E2E.ABIReadOnlyTransport
+
+@[expose] public section
 
 namespace E2E.ABIReadOnly
 open Backend Backend.Proof Backend.Proof.Driver Backend.DeadCleanup

@@ -1,4 +1,8 @@
-import FV.Backend.Proof.StockReturnedDivBodyRecords
+module
+
+public import FV.Backend.Proof.StockReturnedDivBodyRecords
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.DivBody
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

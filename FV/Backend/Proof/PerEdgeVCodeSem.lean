@@ -1,4 +1,8 @@
-import FV.Backend.Proof.LowerSim
+module
+
+public import FV.Backend.Proof.LowerSim
+
+@[expose] public section
 
 /-! Per-successor VCode execution. The existing single-vector semantics and
 all its theorems remain unchanged. Allocation/checker consumers must use the

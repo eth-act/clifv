@@ -1,7 +1,11 @@
-import FV.Backend.Proof.LowerSimU
-import FV.E2E.Main
-import FV.Backend.Proof.RefinesCSem
-import FV.Backend.Proof.MemRefines
+module
+
+public import FV.Backend.Proof.LowerSimU
+public import FV.E2E.Main
+public import FV.Backend.Proof.RefinesCSem
+public import FV.Backend.Proof.MemRefines
+
+@[expose] public section
 
 /-!
 # CLIF → VCode with unwinding: `IselSimU` (S10e, #232)

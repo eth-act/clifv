@@ -1,9 +1,13 @@
-import FV.E2E.LinkArmDetRunPRBCR
-import FV.E2E.LinkArmTwinCRun
-import FV.E2E.LinkArmTwinCLockLslWitness
-import FV.E2E.LinkArmStage2ZWitness
-import FV.E2E.LinkArmIniOfWitness
-import FV.E2E.LinkArmThmPRBG
+module
+
+public import FV.E2E.LinkArmDetRunPRBCR
+public import FV.E2E.LinkArmTwinCRun
+public import FV.E2E.LinkArmTwinCLockLslWitness
+public import FV.E2E.LinkArmStage2ZWitness
+public import FV.E2E.LinkArmIniOfWitness
+public import FV.E2E.LinkArmThmPRBG
+
+@[expose] public section
 
 /-!
 # Witnesses: twins relating the errors, `DetPRBR` (SEM1 #537, #716, #719)

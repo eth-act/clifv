@@ -1,8 +1,12 @@
-import FV.Backend.Proof.StockBranchHelperProjection
-import FV.Backend.Proof.StockOrderGraphWitness
-import FV.Backend.Proof.StockControlCfgWitness
-import FV.Backend.Proof.StockTermContractWitness
-import FV.Backend.Proof.StockPerEdgeCheckerWitness
+module
+
+public import FV.Backend.Proof.StockBranchHelperProjection
+public import FV.Backend.Proof.StockOrderGraphWitness
+public import FV.Backend.Proof.StockControlCfgWitness
+public import FV.Backend.Proof.StockTermContractWitness
+public import FV.Backend.Proof.StockPerEdgeCheckerWitness
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.NodeCoverageWitness
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

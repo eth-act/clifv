@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockParameterSelection
-import FV.Backend.Proof.StockParameterPrelude
+module
+
+public import FV.Backend.Proof.StockParameterSelection
+public import FV.Backend.Proof.StockParameterPrelude
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.ParameterCfg
 open Backend.Proof Backend.Proof.Driver Backend.Stock.Proof.ConditionalValues Backend.Stock.Proof.ForwardSource

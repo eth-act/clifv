@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockReturnABI
-import FV.Backend.Proof.LowerSim
+module
+
+public import FV.Backend.Proof.StockReturnABI
+public import FV.Backend.Proof.LowerSim
+
+@[expose] public section
 
 /-! ABI-aware terminator and whole-run contracts. The legacy contracts and
 their callers are retained; ordinary returns can recover their old interface.

@@ -1,5 +1,9 @@
-import FV.Backend.Proof.LSBuild
-import FV.Backend.Proof.SpillStep4State
+module
+
+public import FV.Backend.Proof.LSBuild
+public import FV.Backend.Proof.SpillStep4State
+
+@[expose] public section
 
 /-!
 # The checker accepts the Lean allocator's validated plans (V4b-3, #275): states and invariants

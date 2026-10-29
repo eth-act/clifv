@@ -1,6 +1,10 @@
-import FV.E2E.LinkTrapCall
-import FV.E2E.WorldTrapStop
-import FV.E2E.RegLevelTrapCallTry
+module
+
+public import FV.E2E.LinkTrapCall
+public import FV.E2E.WorldTrapStop
+public import FV.E2E.RegLevelTrapCallTry
+
+@[expose] public section
 
 /-! # Callee traps in the linked program: the induction and the program theorem (S9c, #376)
 

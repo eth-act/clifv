@@ -1,5 +1,9 @@
-import FV.Concurrency.CallArgsAt
-import FV.Concurrency.CallResumeChecksWitness
+module
+
+public import FV.Concurrency.CallArgsAt
+public import FV.Concurrency.CallResumeChecksWitness
+
+@[expose] public section
 
 /-!
 # Witness for `CallArgsAt` (#473)

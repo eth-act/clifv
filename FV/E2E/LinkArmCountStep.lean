@@ -1,5 +1,9 @@
-import FV.E2E.LinkArmProgInst
-import FV.E2E.LinkArmInvokedStep
+module
+
+public import FV.E2E.LinkArmProgInst
+public import FV.E2E.LinkArmInvokedStep
+
+@[expose] public section
 
 /-!
 # One step of the caller's table and of the CLIF counter (SEM1 #537, #680 (3), stage 2 glue (2))

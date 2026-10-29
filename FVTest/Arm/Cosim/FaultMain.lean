@@ -8,7 +8,11 @@ for `arm-cosim` (`ARM_COSIM_CLANG`, `ARM_COSIM_LLD`, `ARM_COSIM_QEMU`;
 `scripts/arm-fault-cosim.sh` sets them up). Prints one line per form (vectors, faults, failures)
 and the total; exits 1 if any vector fails.
 -/
-import FVTest.Arm.Cosim.Fault
+module
+
+public import FVTest.Arm.Cosim.Fault
+
+@[expose] public section
 
 open Arm.Cosim Arm.Cosim.Fault
 

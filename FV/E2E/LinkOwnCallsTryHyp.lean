@@ -1,4 +1,8 @@
-import FV.E2E.LinkOwnCallsTry
+module
+
+public import FV.E2E.LinkOwnCallsTry
+
+@[expose] public section
 
 /-!
 # `TryRunHyp`: a `try_call`'s `lower_branch` run

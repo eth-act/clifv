@@ -1,4 +1,8 @@
-import FV.E2E.PairGuardS
+module
+
+public import FV.E2E.PairGuardS
+
+@[expose] public section
 
 /-!
 # The paired contracts with the reads guarded by the difference set (SEM1 #537, #699)

@@ -1,4 +1,8 @@
-import FV.E2E.Main
+module
+
+public import FV.E2E.Main
+
+@[expose] public section
 
 set_option autoImplicit false
 

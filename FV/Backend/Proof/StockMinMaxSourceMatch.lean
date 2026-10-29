@@ -1,5 +1,10 @@
-import FV.Backend.Proof.StockMinMaxRegisterRuns
-import FV.Backend.Proof.StockRootOpcodeMatch
+module
+
+public import FV.Backend.Proof.StockMinMaxRegisterRuns
+public import FV.Backend.Proof.StockRootOpcodeMatch
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarSelect
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 open MinMaxRegisterFixture

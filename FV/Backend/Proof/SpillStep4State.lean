@@ -1,4 +1,8 @@
-import FV.Backend.Proof.SpillStep4Inst
+module
+
+public import FV.Backend.Proof.SpillStep4Inst
+
+@[expose] public section
 
 /-!
 # The in-states of the spill allocation (V4 (a), step 4)

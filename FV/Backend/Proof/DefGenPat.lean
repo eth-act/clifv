@@ -1,4 +1,8 @@
-import FV.Backend.Proof.DefGenSem
+module
+
+public import FV.Backend.Proof.DefGenSem
+
+@[expose] public section
 
 /-!
 # Definedness of the ISLE runs: soundness of the abstract patterns

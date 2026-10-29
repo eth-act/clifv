@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockShiftBitfieldValues
-import FV.Backend.Proof.StockDemandExtent
+module
+
+public import FV.Backend.Proof.StockShiftBitfieldValues
+public import FV.Backend.Proof.StockDemandExtent
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.ShiftBitfield
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

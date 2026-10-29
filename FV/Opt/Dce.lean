@@ -1,4 +1,8 @@
-import FV.Opt.Basic
+module
+
+public import FV.Opt.Basic
+
+@[expose] public section
 
 /-!
 # DCE: delete removable statements whose results are never used

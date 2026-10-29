@@ -1,4 +1,8 @@
-import FV.E2E.PipelineCheck
+module
+
+public import FV.E2E.PipelineCheck
+
+@[expose] public section
 
 namespace E2E.LinkCheck
 open Backend Backend.Proof Backend.Proof.Driver

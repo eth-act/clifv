@@ -1,6 +1,11 @@
-import FV.Backend.Proof.StockCmpRegisterValues
-import FV.Backend.Proof.StockCmpConditionValues
-import FV.Backend.Proof.StockDemandMono
+module
+
+public import FV.Backend.Proof.StockCmpRegisterValues
+public import FV.Backend.Proof.StockCmpConditionValues
+public import FV.Backend.Proof.StockDemandMono
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarCmp
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 private theorem operand_of_value {ty : Clif.Ty} (width : ty.width = 32 ∨ ty.width = 64)

@@ -1,5 +1,9 @@
-import FV.E2E.DeadCleanupWorldX
-import FV.E2E.ValidatedNoninterference
+module
+
+public import FV.E2E.DeadCleanupWorldX
+public import FV.E2E.ValidatedNoninterference
+
+@[expose] public section
 
 /-! Actual-output consumer contracts for the existing dead-cleanup stage.
 The source validator applies to actual raw output, preparation to its actual

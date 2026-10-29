@@ -1,6 +1,10 @@
-import FV.Link.Image
-import FV.Link.LayoutFacts
-import FV.E2E.DeadCleanupLinkScope
+module
+
+public import FV.Link.Image
+public import FV.Link.LayoutFacts
+public import FV.E2E.DeadCleanupLinkScope
+
+@[expose] public section
 
 /-! Cleanup executable pipeline. The legacy linker and input scope remain available. -/
 namespace Link.LinkSpec

@@ -1,4 +1,8 @@
-import FV.E2E.RegLevelBranch
+module
+
+public import FV.E2E.RegLevelBranch
+
+@[expose] public section
 
 /-!
 # Block-ending branches on the machine (M6)

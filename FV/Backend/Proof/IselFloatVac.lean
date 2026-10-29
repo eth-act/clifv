@@ -1,4 +1,8 @@
-import FV.Backend.Proof.IselExcl
+module
+
+public import FV.Backend.Proof.IselExcl
+
+@[expose] public section
 
 /-!
 # The float memory roots under `CtxInv` (S11e4, floats #35)

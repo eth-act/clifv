@@ -1,5 +1,9 @@
-import FV.E2E.IselSimIN
-import FV.E2E.BackendPrefixAtEnds
+module
+
+public import FV.E2E.IselSimIN
+public import FV.E2E.BackendPrefixAtEnds
+
+@[expose] public section
 
 /-!
 # CLIF → counted VCode with the call count at the trap (SEM1 #537, traps under the oracle)

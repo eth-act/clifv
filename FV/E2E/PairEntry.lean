@@ -1,4 +1,8 @@
-import FV.E2E.Pair
+module
+
+public import FV.E2E.Pair
+
+@[expose] public section
 
 /-!
 # The entry on paired worlds (SEM1 #537, item (3))

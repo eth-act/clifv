@@ -1,7 +1,12 @@
-import FV.Backend.Proof.StockSourceView
-import FV.Backend.Proof.StockPatternSource
-import FV.Backend.Proof.StockSelectionReceipts
-import FV.Backend.Proof.IselExcl
+module
+
+public import FV.Backend.Proof.StockSourceView
+public import FV.Backend.Proof.StockPatternSource
+public import FV.Backend.Proof.StockSelectionReceipts
+public import FV.Backend.Proof.IselExcl
+
+@[expose] public section
+
 namespace Backend.Stock.Proof
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 set_option maxRecDepth 100000

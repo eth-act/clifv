@@ -1,5 +1,9 @@
-import FV.Opt.Proof.RuleAuto
-import FV.Opt.Proof.KernelBV
+module
+
+public import FV.Opt.Proof.RuleAuto
+public import FV.Opt.Proof.KernelBV
+
+@[expose] public section
 
 /-!
 # Part 3 of 5 of `RuleArith.lean`

@@ -1,4 +1,8 @@
-import Lean
+module
+
+public import Lean
+
+@[expose] public section
 
 /-!
 # `subst_vars` without default-transparency `whnf` of the equation sides

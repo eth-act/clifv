@@ -1,11 +1,15 @@
-import FV.E2E.SemanticChecksWith
-import FV.Link.ProductionImageWith
-import FV.Link.Ld.Spec
-import FVTest.E2E.SemanticLinkProofWith
-import FV.Backend.Lowering.StockArithmeticNI
-import FV.E2E.StockArithmeticNIWitness
-import FV.Backend.LinearScan
-import FV.Clif.Print
+module
+
+public import FV.E2E.SemanticChecksWith
+public import FV.Link.ProductionImageWith
+public import FV.Link.Ld.Spec
+public import FVTest.E2E.SemanticLinkProofWith
+public import FV.Backend.Lowering.StockArithmeticNI
+public import FV.E2E.StockArithmeticNIWitness
+public import FV.Backend.LinearScan
+public import FV.Clif.Print
+
+@[expose] public section
 
 /-! Actual Stock callback → actual byte writer → ordinary emitted Lean proofs.
 A fixed integration witness; it does not activate a production class. -/

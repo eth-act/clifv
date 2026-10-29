@@ -1,6 +1,10 @@
-import FV.Backend.Proof.StockLogicalExtrSemantics
-import FV.Backend.Proof.StockLogicalExtrRhs
-import FV.Backend.Proof.StockValues
+module
+
+public import FV.Backend.Proof.StockLogicalExtrSemantics
+public import FV.Backend.Proof.StockLogicalExtrRhs
+public import FV.Backend.Proof.StockValues
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.LogicalExtr
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

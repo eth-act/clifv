@@ -1,6 +1,10 @@
-import FV.E2E.PreparedPipeline
-import FV.Backend.SemanticNICheck
-import FV.E2E.LinkCheckFast
+module
+
+public import FV.E2E.PreparedPipeline
+public import FV.Backend.SemanticNICheck
+public import FV.E2E.LinkCheckFast
+
+@[expose] public section
 
 namespace E2E.LinkCheck
 open Backend Backend.Proof Backend.Proof.Driver

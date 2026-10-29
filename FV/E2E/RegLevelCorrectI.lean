@@ -1,5 +1,9 @@
-import FV.E2E.RegLevelCorrect
-import FV.Backend.Proof.VCodeSemI
+module
+
+public import FV.E2E.RegLevelCorrect
+public import FV.Backend.Proof.VCodeSemI
+
+@[expose] public section
 
 /-!
 # The register-level theorem for the counted VCode world (SEM1 step 2, `docs/plans/uninit.md` §5.4)

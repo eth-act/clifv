@@ -1,5 +1,9 @@
-import FV.E2E.Final
-import FV.E2E.ValidatedLowering
+module
+
+public import FV.E2E.Final
+public import FV.E2E.ValidatedLowering
+
+@[expose] public section
 
 /-! Additive concrete machine consumer for actual validated lowering output.
 Old theorem variants are unchanged. Successful Stock contract witnesses for both

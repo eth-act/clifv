@@ -1,7 +1,11 @@
-import FV.Backend.Proof.StockEdgeArity
-import FV.Backend.Proof.SpillStep4Cfg
-import FV.Backend.Proof.PerEdgePrepareComplete
-import FV.Backend.Proof.PerEdgePrepareSound
+module
+
+public import FV.Backend.Proof.StockEdgeArity
+public import FV.Backend.Proof.SpillStep4Cfg
+public import FV.Backend.Proof.PerEdgePrepareComplete
+public import FV.Backend.Proof.PerEdgePrepareSound
+
+@[expose] public section
 
 namespace Backend.Proof.PerEdgePrep
 open Backend Backend.Proof Backend.Proof.Driver Backend.Proof.Spill Backend.Stock.Proof

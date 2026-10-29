@@ -1,5 +1,9 @@
-import FV.Backend.Proof.LowerContractT
-import FV.Backend.Proof.IselContractP
+module
+
+public import FV.Backend.Proof.LowerContractT
+public import FV.Backend.Proof.IselContractP
+
+@[expose] public section
 
 /-!
 # The typed lowering contracts with pinned calls (S11e5 Stage C, slice 7)

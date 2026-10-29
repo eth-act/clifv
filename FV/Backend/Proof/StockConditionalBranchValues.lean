@@ -1,8 +1,12 @@
-import FV.Backend.Proof.StockConditionalResolved
-import FV.Backend.Proof.StockOriginalConditionPrefix
-import FV.Backend.Proof.StockResolvedDefs
-import FV.Backend.Proof.StockSequenceFrame
-import FV.Backend.Proof.StockSelectCompanionFragment
+module
+
+public import FV.Backend.Proof.StockConditionalResolved
+public import FV.Backend.Proof.StockOriginalConditionPrefix
+public import FV.Backend.Proof.StockResolvedDefs
+public import FV.Backend.Proof.StockSequenceFrame
+public import FV.Backend.Proof.StockSelectCompanionFragment
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.ConditionalValues
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

@@ -1,5 +1,9 @@
-import FV.Concurrency.ArmFence
-import FV.Concurrency.Witness
+module
+
+public import FV.Concurrency.ArmFence
+public import FV.Concurrency.Witness
+
+@[expose] public section
 
 /-!
 # Non-vacuity for the strengthening and the fence contract (T2f, #304)

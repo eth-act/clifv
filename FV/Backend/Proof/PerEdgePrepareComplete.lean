@@ -1,6 +1,10 @@
-import FV.Backend.Proof.PerEdgePrepareOrderFacts
-import FV.Backend.Proof.PerEdgePrepareFacts
-import FV.Backend.RegallocPerEdgePrepareCheck
+module
+
+public import FV.Backend.Proof.PerEdgePrepareOrderFacts
+public import FV.Backend.Proof.PerEdgePrepareFacts
+public import FV.Backend.RegallocPerEdgePrepareCheck
+
+@[expose] public section
 
 namespace Backend.Proof.PerEdgePrep
 open Backend Backend.Proof Backend.Proof.Driver

@@ -1,7 +1,11 @@
-import FV.E2E.StockArithmeticArtifact
-import FV.E2E.DeadCleanupContracts
-import FV.Backend.Proof.DeadCleanupPrepare
-import FV.E2E.StockArithmeticStageContract
+module
+
+public import FV.E2E.StockArithmeticArtifact
+public import FV.E2E.DeadCleanupContracts
+public import FV.Backend.Proof.DeadCleanupPrepare
+public import FV.E2E.StockArithmeticStageContract
+
+@[expose] public section
 
 namespace E2E
 open Backend Backend.Proof Backend.Proof.Driver Backend.Stock.Proof Backend.DeadCleanup

@@ -1,4 +1,8 @@
-import FV.Front.BundleProof
+module
+
+public import FV.Front.BundleProof
+
+@[expose] public section
 
 /-!
 # The decoded units' program is cg_clif's program (T7c, docs/contracts/frontend.md)

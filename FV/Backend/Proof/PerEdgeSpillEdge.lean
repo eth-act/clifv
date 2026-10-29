@@ -1,6 +1,10 @@
-import FV.Backend.Proof.StockPreparedArity
-import FV.Backend.Proof.PerEdgeSpillEntry
-import FV.Backend.Proof.PerEdgeRegallocLemmas
+module
+
+public import FV.Backend.Proof.StockPreparedArity
+public import FV.Backend.Proof.PerEdgeSpillEntry
+public import FV.Backend.Proof.PerEdgeRegallocLemmas
+
+@[expose] public section
 
 namespace Backend.Proof.PerEdgeSpill
 open Backend Backend.Proof.Spill Backend.Stock.Proof

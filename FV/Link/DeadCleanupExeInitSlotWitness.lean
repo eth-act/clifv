@@ -1,7 +1,11 @@
-import FV.Link.DeadCleanupExeInitWitness
-import FV.E2E.LinkSlotSysWitness
-import FV.E2E.LinkMachEval
-import FV.E2E.LinkPlaceBTable
+module
+
+public import FV.Link.DeadCleanupExeInitWitness
+public import FV.E2E.LinkSlotSysWitness
+public import FV.E2E.LinkMachEval
+public import FV.E2E.LinkPlaceBTable
+
+@[expose] public section
 
 /-!
 # Witness: the executable theorem under the slot-byte oracle covers a stale read

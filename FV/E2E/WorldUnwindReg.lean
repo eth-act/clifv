@@ -1,6 +1,10 @@
-import FV.E2E.WorldUnwindCore
-import FV.E2E.LinkWorld
-import FV.E2E.UnwindValueSem
+module
+
+public import FV.E2E.WorldUnwindCore
+public import FV.E2E.LinkWorld
+public import FV.E2E.UnwindValueSem
+
+@[expose] public section
 
 /-!
 # The register-level world theorem with unwinding (S10f, #233)

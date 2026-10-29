@@ -1,6 +1,10 @@
-import FV.Backend.Proof.StockOriginalEntryPrelude
-import FV.Backend.Proof.StockConditionalBodyCalls
-import FV.Backend.Proof.StockConditionalWideAllocation
+module
+
+public import FV.Backend.Proof.StockOriginalEntryPrelude
+public import FV.Backend.Proof.StockConditionalBodyCalls
+public import FV.Backend.Proof.StockConditionalWideAllocation
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.ConditionalValues
 open Backend.Proof Backend.Proof.Driver Control

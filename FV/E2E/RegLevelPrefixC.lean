@@ -1,4 +1,8 @@
-import FV.E2E.RegLevelCorrectPRS
+module
+
+public import FV.E2E.RegLevelCorrectPRS
+
+@[expose] public section
 
 /-!
 # The counted register level up to call `N` (SEM1 #537, item (d), docs/plans/uninit.md §5.9)

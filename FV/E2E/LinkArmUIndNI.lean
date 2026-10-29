@@ -1,5 +1,9 @@
-import FV.E2E.LinkArmUInd
-import FV.E2E.WorldUnwindNI
+module
+
+public import FV.E2E.LinkArmUInd
+public import FV.E2E.WorldUnwindNI
+
+@[expose] public section
 
 /-!
 # The linking statement with unwinding with non-interference (S10f, #233)

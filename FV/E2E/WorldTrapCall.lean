@@ -1,5 +1,9 @@
-import FV.E2E.WorldUnwind
-import FV.E2E.DeadCleanupTrapCall
+module
+
+public import FV.E2E.WorldUnwind
+public import FV.E2E.DeadCleanupTrapCall
+
+@[expose] public section
 
 /-!
 # The per-function world theorem with callee traps (S9c, #376)

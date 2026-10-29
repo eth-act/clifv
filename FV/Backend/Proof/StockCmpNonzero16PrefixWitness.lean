@@ -1,4 +1,9 @@
-import FV.Backend.Proof.StockCmpNonzero16PrefixValues
+module
+
+public import FV.Backend.Proof.StockCmpNonzero16PrefixValues
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarCmp.Nonzero16PrefixWitness
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 open Backend.Stock.Proof.ScalarCmp

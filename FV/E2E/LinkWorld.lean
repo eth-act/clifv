@@ -1,4 +1,8 @@
-import FV.E2E.GotFlow
+module
+
+public import FV.E2E.GotFlow
+
+@[expose] public section
 
 /-! # The per-function theorem with the final world (for linking)
 

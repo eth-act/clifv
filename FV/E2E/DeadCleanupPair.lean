@@ -1,6 +1,10 @@
-import FV.E2E.PairDriver
-import FV.E2E.DeadCleanupWorld
-import FV.E2E.DeadCleanupGuarded
+module
+
+public import FV.E2E.PairDriver
+public import FV.E2E.DeadCleanupWorld
+public import FV.E2E.DeadCleanupGuarded
+
+@[expose] public section
 
 namespace E2E
 open Backend Backend.Proof Backend.Proof.Driver Backend.DeadCleanup

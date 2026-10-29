@@ -1,8 +1,12 @@
-import FV.Backend.Proof.IselFamAluBRot
-import FV.Backend.Proof.IselBaseTI
-import FV.Backend.Proof.IselFamAluBShiftTI
-import FV.Backend.Proof.IselFamAluBShiftBaseTI
-import FV.Backend.Proof.IselTermsShiftTI
+module
+
+public import FV.Backend.Proof.IselFamAluBRot
+public import FV.Backend.Proof.IselBaseTI
+public import FV.Backend.Proof.IselFamAluBShiftTI
+public import FV.Backend.Proof.IselFamAluBShiftBaseTI
+public import FV.Backend.Proof.IselTermsShiftTI
+
+@[expose] public section
 
 /-!
 # `IselFamAluBRot` over typed contexts (S11e5 Stage C, slice 7)

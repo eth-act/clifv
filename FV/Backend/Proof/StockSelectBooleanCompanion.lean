@@ -1,5 +1,10 @@
-import FV.Backend.Proof.StockSelectDecodedObserved
-import FV.Backend.Proof.StockCmpCondition
+module
+
+public import FV.Backend.Proof.StockSelectDecodedObserved
+public import FV.Backend.Proof.StockCmpCondition
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarSelect
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 /-- A successful actual explicit-flags select supplies a proof-only715 boolean

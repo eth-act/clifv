@@ -1,5 +1,9 @@
-import FV.E2E.LinkArmTwinCE
-import FV.E2E.LinkArmDetPRBR
+module
+
+public import FV.E2E.LinkArmTwinCE
+public import FV.E2E.LinkArmDetPRBR
+
+@[expose] public section
 
 /-!
 # The determinism step for returning CLIF runs (SEM1 #537, #719)

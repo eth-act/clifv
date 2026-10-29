@@ -1,6 +1,10 @@
-import FV.Backend.Proof.IselFamilyALU
-import FV.Backend.Proof.IselBaseTI
-import FV.Backend.Proof.IselFamilyTI
+module
+
+public import FV.Backend.Proof.IselFamilyALU
+public import FV.Backend.Proof.IselBaseTI
+public import FV.Backend.Proof.IselFamilyTI
+
+@[expose] public section
 
 /-!
 # `IselFamilyALU` over typed contexts (S11e5 Stage C, slice 7)

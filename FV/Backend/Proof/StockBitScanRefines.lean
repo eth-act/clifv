@@ -1,5 +1,10 @@
-import FV.Backend.Proof.StockCastScanRefines
-import FV.Backend.Proof.StockBitFamily
+module
+
+public import FV.Backend.Proof.StockCastScanRefines
+public import FV.Backend.Proof.StockBitFamily
+
+@[expose] public section
+
 namespace Backend.Stock.Proof
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 set_option autoImplicit false

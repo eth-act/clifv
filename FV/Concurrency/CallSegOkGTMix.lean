@@ -1,4 +1,8 @@
-import FV.Concurrency.CallSegOkGTExtFull
+module
+
+public import FV.Concurrency.CallSegOkGTExtFull
+
+@[expose] public section
 
 /-!
 # Witness: a compiled caller of a compiled callee and an external, end to end (#649)

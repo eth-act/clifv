@@ -1,6 +1,10 @@
-import FV.E2E.SizeIn
-import FV.E2E.DeadCleanupTotal
-import FV.Backend.Proof.DeadCleanupPrepare
+module
+
+public import FV.E2E.SizeIn
+public import FV.E2E.DeadCleanupTotal
+public import FV.Backend.Proof.DeadCleanupPrepare
+
+@[expose] public section
 
 namespace E2E
 open Backend Backend.Proof Backend.Proof.Driver Backend.Proof.Cov Backend.DeadCleanup

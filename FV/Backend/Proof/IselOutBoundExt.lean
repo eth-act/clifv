@@ -1,4 +1,8 @@
-import FV.Backend.Proof.IselFlowExt
+module
+
+public import FV.Backend.Proof.IselFlowExt
+
+@[expose] public section
 
 /-!
 # The outgoing area under the extern constructors (S10g, #404)

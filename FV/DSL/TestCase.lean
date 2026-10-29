@@ -1,4 +1,8 @@
-import FV.DSL.Denote
+module
+
+public import FV.DSL.Denote
+
+@[expose] public section
 
 /-!
 # Differential-testing vectors

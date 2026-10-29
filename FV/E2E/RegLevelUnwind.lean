@@ -1,5 +1,9 @@
-import FV.Unw.Model
-import FV.Backend.Proof.UnwindTables
+module
+
+public import FV.Unw.Model
+public import FV.Backend.Proof.UnwindTables
+
+@[expose] public section
 
 /-!
 # Unwinding through the backend's frames (S10c + S10d, #230/#231)

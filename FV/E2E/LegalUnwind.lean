@@ -1,6 +1,10 @@
-import FV.E2E.DeadCleanupUnwindFinal
-import FV.E2E.DeadCleanupLegal
-import FV.Opt.Proof.LegalRustX
+module
+
+public import FV.E2E.DeadCleanupUnwindFinal
+public import FV.E2E.DeadCleanupLegal
+public import FV.Opt.Proof.LegalRustX
+
+@[expose] public section
 
 /-!
 # The end-to-end theorem with unwinding for `i128` functions (S10e, #232)

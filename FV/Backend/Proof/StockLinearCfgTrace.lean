@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockTraversalRecordOrigin
-import FV.Backend.Proof.StockLinearCfgShape
+module
+
+public import FV.Backend.Proof.StockTraversalRecordOrigin
+public import FV.Backend.Proof.StockLinearCfgShape
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.LinearCfg
 open Backend.Proof Backend.Proof.Driver

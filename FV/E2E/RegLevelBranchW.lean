@@ -1,5 +1,9 @@
-import FV.E2E.RegLevelBranch
-import FV.E2E.RegLevelWrites
+module
+
+public import FV.E2E.RegLevelBranch
+public import FV.E2E.RegLevelWrites
+
+@[expose] public section
 
 /-!
 # Branches on the machine with their writes (A3, #412, slice F8b)

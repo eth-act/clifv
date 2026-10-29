@@ -1,6 +1,10 @@
-import FV.E2E.DeadCleanupPrefix
-import FV.E2E.ExtSemGuardR
-import FV.E2E.BackendWorldPRB
+module
+
+public import FV.E2E.DeadCleanupPrefix
+public import FV.E2E.ExtSemGuardR
+public import FV.E2E.BackendWorldPRB
+
+@[expose] public section
 
 /-!
 # The machine's earlier calls are the CLIF run's (SEM1 #537, item (d), docs/plans/uninit.md §5.9)

@@ -1,7 +1,11 @@
-import FV.Backend.Proof.StockComparisonPrefixWide
-import FV.Backend.Proof.StockComparisonPrefixNarrow
-import FV.Backend.Proof.StockConditionPrefix
-import FV.Backend.Proof.StockConditionalSourceValues
+module
+
+public import FV.Backend.Proof.StockComparisonPrefixWide
+public import FV.Backend.Proof.StockComparisonPrefixNarrow
+public import FV.Backend.Proof.StockConditionPrefix
+public import FV.Backend.Proof.StockConditionalSourceValues
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.ConditionalValues
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

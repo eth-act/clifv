@@ -1,4 +1,8 @@
-import FV.Backend.Proof.StockAllocationFlow
+module
+
+public import FV.Backend.Proof.StockAllocationFlow
+
+@[expose] public section
 
 /-! Every recorded scan input retains the block's initial allocation frontier. -/
 namespace Backend.Stock.Proof

@@ -1,7 +1,11 @@
-import FV.Backend.Proof.StockTwoBlockTrap
-import FV.Backend.Proof.StockScalarCheck
-import FV.Backend.Proof.RefinesCSem
-import FV.E2E.RegLevelDriverSem
+module
+
+public import FV.Backend.Proof.StockTwoBlockTrap
+public import FV.Backend.Proof.StockScalarCheck
+public import FV.Backend.Proof.RefinesCSem
+public import FV.E2E.RegLevelDriverSem
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.TwoBlockTrapWitness
 open Backend.Proof Backend.Proof.Driver

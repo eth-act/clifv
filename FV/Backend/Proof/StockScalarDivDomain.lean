@@ -1,5 +1,10 @@
-import FV.Backend.Proof.StockScalarContract
-import FV.Backend.Proof.StockDivReturnRefines
+module
+
+public import FV.Backend.Proof.StockScalarContract
+public import FV.Backend.Proof.StockDivReturnRefines
+
+@[expose] public section
+
 namespace Backend.Stock.Scalar
 open Backend.Proof Backend.Proof.Driver Backend.Stock.Proof
 set_option autoImplicit false

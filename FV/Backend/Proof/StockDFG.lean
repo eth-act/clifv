@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockContext
-import FV.Backend.Proof.LowerLoopCtx
+module
+
+public import FV.Backend.Proof.StockContext
+public import FV.Backend.Proof.LowerLoopCtx
+
+@[expose] public section
 
 /-! Transport source/DFG facts to stock's dense register context. -/
 

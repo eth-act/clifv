@@ -1,5 +1,9 @@
-import FV.Concurrency.LinkedMachine
-import FV.Concurrency.CallLoadData
+module
+
+public import FV.Concurrency.LinkedMachine
+public import FV.Concurrency.CallLoadData
+
+@[expose] public section
 
 /-!
 # The linked machine of the compiled caller and the compiled `atomic_load` (#473, calls)

@@ -1,5 +1,9 @@
-import FVTest.E2E.FloatTotalT
-import FV.E2E.SpillKillFreeT
+module
+
+public import FVTest.E2E.FloatTotalT
+public import FV.E2E.SpillKillFreeT
+
+@[expose] public section
 
 /-!
 Non-vacuity of `E2E.spillKillFreeT` / `LinkCheck.killFreeB_of_scopeT` (S11 slice 8, totality

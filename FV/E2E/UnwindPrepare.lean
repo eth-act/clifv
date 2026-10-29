@@ -1,5 +1,9 @@
-import FV.E2E.UnwindStatement
-import FV.E2E.Main
+module
+
+public import FV.E2E.UnwindStatement
+public import FV.E2E.Main
+
+@[expose] public section
 
 /-!
 # `prepare` with unwinding (S10e, #232)

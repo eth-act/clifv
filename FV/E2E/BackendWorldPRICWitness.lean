@@ -1,5 +1,9 @@
-import FV.E2E.BackendWorldPRIC
-import FV.E2E.BackendWorldCleanupIWitness
+module
+
+public import FV.E2E.BackendWorldPRIC
+public import FV.E2E.BackendWorldCleanupIWitness
+
+@[expose] public section
 
 /-!
 # Witnesses for the `*_PRIC` theorems (SEM1, `docs/plans/uninit.md` §5.9)

@@ -1,4 +1,8 @@
-import FV.Backend.Proof.StockQuietSourceRecords
+module
+
+public import FV.Backend.Proof.StockQuietSourceRecords
+
+@[expose] public section
 
 namespace Backend.Stock.Proof
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

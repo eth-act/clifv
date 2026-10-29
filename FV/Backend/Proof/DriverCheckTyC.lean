@@ -1,6 +1,10 @@
-import FV.Backend.Proof.DriverCheckC
-import FV.Backend.Proof.TryRegsC
-import FV.Backend.Proof.InstScopeTF
+module
+
+public import FV.Backend.Proof.DriverCheckC
+public import FV.Backend.Proof.TryRegsC
+public import FV.Backend.Proof.InstScopeTF
+
+@[expose] public section
 
 /-!
 # Soundness of the validator with typed `try_call`s (S11e6, #419)

@@ -1,6 +1,10 @@
-import FV.Backend.Proof.StockScan
-import FV.Backend.Proof.StockDemand
-import FV.Opt.Proof.SemFacts
+module
+
+public import FV.Backend.Proof.StockScan
+public import FV.Backend.Proof.StockDemand
+public import FV.Opt.Proof.SemFacts
+
+@[expose] public section
 
 /-!
 Semantic omission obligations. The actual stock guard permits nontrapping loads

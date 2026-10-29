@@ -1,4 +1,8 @@
-import FV.Backend.Proof.IselTermFactsBase
+module
+
+public import FV.Backend.Proof.IselTermFactsBase
+
+@[expose] public section
 
 /-!
 # Completeness of `lowerCheck`: the emitted code of the terminator rules

@@ -1,7 +1,11 @@
-import FV.Backend.Proof.IselShpTCtor
-import FV.Backend.Proof.IselShpOracle
-import FV.Backend.Proof.IselCovTModel
-import FV.Backend.Proof.IselShpTotal
+module
+
+public import FV.Backend.Proof.IselShpTCtor
+public import FV.Backend.Proof.IselShpOracle
+public import FV.Backend.Proof.IselCovTModel
+public import FV.Backend.Proof.IselShpTotal
+
+@[expose] public section
 
 /-!
 # Control shapes of the typed ISLE lowering: the oracles and the model

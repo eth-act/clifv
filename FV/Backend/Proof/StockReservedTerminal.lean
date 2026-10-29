@@ -1,4 +1,8 @@
-import FV.Backend.Proof.StockSourceTerminal
+module
+
+public import FV.Backend.Proof.StockSourceTerminal
+
+@[expose] public section
 
 /-! Initial exception return registers are disjoint from every payload destination.
 Derive reserved alias endpoints from construction, rather than a new input check. -/

@@ -1,4 +1,9 @@
-import FV.Backend.Proof.StockCmpPure
+module
+
+public import FV.Backend.Proof.StockCmpPure
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarCmp
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 /-- The real comparison output wrapper preserves complete Stock state while

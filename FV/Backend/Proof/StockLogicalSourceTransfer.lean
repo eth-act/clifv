@@ -1,7 +1,11 @@
-import FV.Backend.Proof.StockLogicalRecordValues
-import FV.Backend.Proof.StockLogicalNotRecord
-import FV.Backend.Proof.StockGuardedRecordValues
-import FV.Backend.Proof.IselFamALUA
+module
+
+public import FV.Backend.Proof.StockLogicalRecordValues
+public import FV.Backend.Proof.StockLogicalNotRecord
+public import FV.Backend.Proof.StockGuardedRecordValues
+public import FV.Backend.Proof.IselFamALUA
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.LogicalComplete
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

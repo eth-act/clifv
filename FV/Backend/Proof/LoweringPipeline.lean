@@ -1,5 +1,9 @@
-import FV.Backend
-import FV.Backend.RegallocPerEdgePrepare
+module
+
+public import FV.Backend
+public import FV.Backend.RegallocPerEdgePrepare
+
+@[expose] public section
 
 /-! Compatibility of the shared file pipeline and preservation of route payloads.
 The generic route does not establish Stock source correctness or enable it in

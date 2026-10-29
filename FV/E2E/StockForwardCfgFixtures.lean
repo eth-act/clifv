@@ -1,4 +1,8 @@
-import FV.E2E.StockLinearCfgFixtures
+module
+
+public import FV.E2E.StockLinearCfgFixtures
+
+@[expose] public section
 
 namespace E2E.StockForwardCfgNIWitness
 open Backend.Stock.D0

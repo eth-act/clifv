@@ -1,5 +1,9 @@
-import FV.Link.TailExe
-import FV.Link.Ld.Spec
+module
+
+public import FV.Link.TailExe
+public import FV.Link.Ld.Spec
+
+@[expose] public section
 
 /-! # The executable compiler with self tail calls as loops is total on `lean-ld`'s output (S8)
 

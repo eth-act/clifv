@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockScalarAddClass
-import FV.Backend.Proof.StockScalarAddSource
+module
+
+public import FV.Backend.Proof.StockScalarAddClass
+public import FV.Backend.Proof.StockScalarAddSource
+
+@[expose] public section
 
 set_option autoImplicit false
 namespace Backend.Stock.ScalarAdd

@@ -1,5 +1,9 @@
-import FV.E2E.ClifEnvOnly
-import FV.E2E.PairDriver
+module
+
+public import FV.E2E.ClifEnvOnly
+public import FV.E2E.PairDriver
+
+@[expose] public section
 
 /-!
 # The callee contracts of a restricted environment (SEM1 item (b), `docs/plans/uninit.md` §5.9)

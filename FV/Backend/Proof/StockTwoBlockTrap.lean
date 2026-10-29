@@ -1,8 +1,12 @@
-import FV.Backend.Proof.StockCfgReturnTrapEdgeAt
-import FV.Backend.Proof.StockJumpDemand
-import FV.Backend.Proof.LowerShapeOkFacts
-import FV.Backend.Proof.StockTwoBlockShape
-import FV.Backend.Proof.StockInheritedJumpTrap
+module
+
+public import FV.Backend.Proof.StockCfgReturnTrapEdgeAt
+public import FV.Backend.Proof.StockJumpDemand
+public import FV.Backend.Proof.LowerShapeOkFacts
+public import FV.Backend.Proof.StockTwoBlockShape
+public import FV.Backend.Proof.StockInheritedJumpTrap
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.TwoBlock
 open Backend.Proof Backend.Proof.Driver

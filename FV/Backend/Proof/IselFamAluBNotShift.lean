@@ -1,4 +1,8 @@
-import FV.Backend.Proof.IselFamAluBRot
+module
+
+public import FV.Backend.Proof.IselFamAluBRot
+
+@[expose] public section
 
 /-!
 # Family B: `bnot_ishl` (`lower.isle:1401`)

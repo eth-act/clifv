@@ -1,5 +1,9 @@
-import FV.Opt.Proof.GvnEditX
-import FV.Opt.Proof.SimWinU
+module
+
+public import FV.Opt.Proof.GvnEditX
+public import FV.Opt.Proof.SimWinU
+
+@[expose] public section
 
 /-!
 # The edit validator is sound with handler edges (`Opt.editOk_simU`, S10f #233)

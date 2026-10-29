@@ -1,10 +1,14 @@
-import FV.E2E.RegLevelCallN
-import FV.E2E.RegLevelTryN
-import FV.E2E.RegLevelJTN
-import FV.E2E.RegLevelAtomicN
-import FV.E2E.RegLevelTlsN
-import FV.E2E.RegLevelFrameN
-import FV.E2E.LinkArmProphThmWitness
+module
+
+public import FV.E2E.RegLevelCallN
+public import FV.E2E.RegLevelTryN
+public import FV.E2E.RegLevelJTN
+public import FV.E2E.RegLevelAtomicN
+public import FV.E2E.RegLevelTlsN
+public import FV.E2E.RegLevelFrameN
+public import FV.E2E.LinkArmProphThmWitness
+
+@[expose] public section
 
 /-!
 # Witnesses for the call-state variants, part B (SEM1 #537, step 2k)

@@ -1,5 +1,10 @@
-import FV.Backend.Proof.StockBnotBodyRefines
-import FV.Backend.Proof.StockMulScanRefines
+module
+
+public import FV.Backend.Proof.StockBnotBodyRefines
+public import FV.Backend.Proof.StockMulScanRefines
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.MulBody
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 set_option autoImplicit false

@@ -1,5 +1,10 @@
-import FV.Backend.Proof.StockCmpNarrowSelection
-import FV.Backend.Proof.StockCmpNarrowSourceValues
+module
+
+public import FV.Backend.Proof.StockCmpNarrowSelection
+public import FV.Backend.Proof.StockCmpNarrowSourceValues
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarCmp
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 /-- Actual652 selection and715 execution compute the original narrow source

@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockLogicalExtrSelectedValues
-import FV.Backend.Proof.StockDemandExtent
+module
+
+public import FV.Backend.Proof.StockLogicalExtrSelectedValues
+public import FV.Backend.Proof.StockDemandExtent
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.LogicalExtr
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

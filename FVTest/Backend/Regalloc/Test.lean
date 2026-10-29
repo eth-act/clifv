@@ -1,4 +1,8 @@
-import FV.Backend
+module
+
+public import FV.Backend
+
+@[expose] public section
 
 /-!
 # Register-allocation checker tests (`lake exe lean-backend-regalloc-test`,

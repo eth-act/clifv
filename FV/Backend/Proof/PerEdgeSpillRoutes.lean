@@ -1,5 +1,9 @@
-import FV.Backend.Proof.PerEdgeSpillCopy
-import FV.Backend.Proof.SpillStep4Cfg
+module
+
+public import FV.Backend.Proof.PerEdgeSpillCopy
+public import FV.Backend.Proof.SpillStep4Cfg
+
+@[expose] public section
 
 namespace Backend.Proof.PerEdgeSpill
 open Backend Backend.Proof.Spill

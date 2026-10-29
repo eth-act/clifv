@@ -1,6 +1,10 @@
-import FV.Backend.Proof.StockDFG
-import FV.Backend.Proof.LowerCertBase
-import FV.Backend.Proof.LowerDecide
+module
+
+public import FV.Backend.Proof.StockDFG
+public import FV.Backend.Proof.LowerCertBase
+public import FV.Backend.Proof.LowerDecide
+
+@[expose] public section
 
 set_option maxRecDepth 4096
 

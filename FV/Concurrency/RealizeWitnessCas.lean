@@ -1,4 +1,8 @@
-import FV.Concurrency.RealizeWitnessRmw
+module
+
+public import FV.Concurrency.RealizeWitnessRmw
+
+@[expose] public section
 
 /-!
 # `Realizes` on a run of compiled code through an `atomic_cas` loop (T2m, #311)

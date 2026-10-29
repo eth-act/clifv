@@ -1,5 +1,10 @@
-import FV.Backend.Proof.StockAddSubSemantics
-import FV.Backend.Proof.IselTermsALUAExt
+module
+
+public import FV.Backend.Proof.StockAddSubSemantics
+public import FV.Backend.Proof.IselTermsALUAExt
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarAddSub
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 set_option maxRecDepth 20000

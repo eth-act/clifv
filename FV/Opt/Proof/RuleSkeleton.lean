@@ -1,5 +1,9 @@
-import FV.Opt.Proof.RuleSkelEmbed
-import FV.Opt.Proof.RuleIntSplit
+module
+
+public import FV.Opt.Proof.RuleSkelEmbed
+public import FV.Opt.Proof.RuleIntSplit
+
+@[expose] public section
 
 /-!
 # Proven `simplify_skeleton` rules

@@ -1,17 +1,21 @@
-import FV.E2E.StockParameterCfgFixtures
-import FV.Backend.ParameterCfgNIProduction
-import FV.E2E.StockConditionalForwardCfgFixtures
-import FV.Backend.ConditionalForwardCfgNIProduction
-import FV.E2E.StockConditionalCfgFixtures
-import FV.Backend.ConditionalCfgNIProduction
-import FVTest.Backend.Lowering.StockScalarTestSupport
-import FV.Backend.ForwardCfgNIProduction
-import FV.Backend.LinearScan
-import FV.E2E.StockCfgFixtures
-import FV.E2E.StockEntryCfgFixtures
-import FV.E2E.StockLinearCfgFixtures
-import FV.E2E.StockForwardCfgFixtures
-import FV.Clif.Print
+module
+
+public import FV.E2E.StockParameterCfgFixtures
+public import FV.Backend.ParameterCfgNIProduction
+public import FV.E2E.StockConditionalForwardCfgFixtures
+public import FV.Backend.ConditionalForwardCfgNIProduction
+public import FV.E2E.StockConditionalCfgFixtures
+public import FV.Backend.ConditionalCfgNIProduction
+public import FVTest.Backend.Lowering.StockScalarTestSupport
+public import FV.Backend.ForwardCfgNIProduction
+public import FV.Backend.LinearScan
+public import FV.E2E.StockCfgFixtures
+public import FV.E2E.StockEntryCfgFixtures
+public import FV.E2E.StockLinearCfgFixtures
+public import FV.E2E.StockForwardCfgFixtures
+public import FV.Clif.Print
+
+@[expose] public section
 
 set_option autoImplicit false
 namespace FVTest.StockTwoBlockProductionRuntime

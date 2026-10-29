@@ -1,5 +1,9 @@
-import FV.Concurrency.ClifThreadI
-import FV.Clif.Parse
+module
+
+public import FV.Concurrency.ClifThreadI
+public import FV.Clif.Parse
+
+@[expose] public section
 
 /-!
 # Witness: a call into a callee with a stack slot under `CStepI` (#473, (iv))

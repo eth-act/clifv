@@ -1,9 +1,13 @@
-import FV.Backend.Proof.IselPrgRun
-import FV.Backend.Proof.IselPrgTabT
-import FV.Backend.Proof.IselPrgHandF64
-import FV.Backend.Proof.IselPrgCoverTermT
-import FV.Backend.Proof.IselPrgTryLastT
-import FV.Backend.Proof.LowerTotalT
+module
+
+public import FV.Backend.Proof.IselPrgRun
+public import FV.Backend.Proof.IselPrgTabT
+public import FV.Backend.Proof.IselPrgHandF64
+public import FV.Backend.Proof.IselPrgCoverTermT
+public import FV.Backend.Proof.IselPrgTryLastT
+public import FV.Backend.Proof.LowerTotalT
+
+@[expose] public section
 
 /-!
 # Progress of the ISLE lowering over the typed scope: the driver's ISLE runs return

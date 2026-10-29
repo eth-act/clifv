@@ -1,4 +1,8 @@
-import FV.Opt.Proof.LegalStep
+module
+
+public import FV.Opt.Proof.LegalStep
+
+@[expose] public section
 
 /-!
 # Memory lemmas of the split `i128` access

@@ -1,5 +1,9 @@
-import FV.Link.DeadCleanupExePeak
-import FV.Link.ExeSource
+module
+
+public import FV.Link.DeadCleanupExePeak
+public import FV.Link.ExeSource
+
+@[expose] public section
 
 /-! # The shipped executable compiler refines the original source program (S3, L1d)
 

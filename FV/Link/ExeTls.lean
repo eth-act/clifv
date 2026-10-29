@@ -1,5 +1,9 @@
-import FV.Link.Exe
-import FV.E2E.ExecTlsProven
+module
+
+public import FV.Link.Exe
+public import FV.E2E.ExecTlsProven
+
+@[expose] public section
 
 /-! # The executable compiler is correct, TLS included (T1)
 

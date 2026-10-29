@@ -1,4 +1,8 @@
-import FV.Concurrency.RealizeCompiled
+module
+
+public import FV.Concurrency.RealizeCompiled
+
+@[expose] public section
 
 /-!
 # Well-formed executions of one thread with reads (T2k, #311)

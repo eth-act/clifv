@@ -1,5 +1,9 @@
-import FV.E2E.LinkArmRetOkPRB
-import FV.E2E.LinkSlotSysWitness
+module
+
+public import FV.E2E.LinkArmRetOkPRB
+public import FV.E2E.LinkSlotSysWitness
+
+@[expose] public section
 
 /-!
 # Witnesses for depth `0` of `ThmPRBRL` (`LinkArmStage2Zero`, `LinkArmCountZero`,

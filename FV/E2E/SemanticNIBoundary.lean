@@ -1,5 +1,9 @@
-import FV.E2E.CompiledSemanticNI
-import FV.Backend.Proof.SpillCtlPipe
+module
+
+public import FV.E2E.CompiledSemanticNI
+public import FV.Backend.Proof.SpillCtlPipe
+
+@[expose] public section
 
 namespace E2E
 open Backend Backend.Proof Backend.Proof.Driver

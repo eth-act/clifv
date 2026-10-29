@@ -1,4 +1,8 @@
-import FV.Opt.Proof.GvnEditX
+module
+
+public import FV.Opt.Proof.GvnEditX
+
+@[expose] public section
 
 /-!
 # The simplify validator is sound, `call_indirect` and `try_call` included (`Opt.simpOk_simX`)

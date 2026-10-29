@@ -1,5 +1,9 @@
-import FV.Backend.Proof.SpillLocal
-import FV.Backend.Proof.PrepareComplete
+module
+
+public import FV.Backend.Proof.SpillLocal
+public import FV.Backend.Proof.PrepareComplete
+
+@[expose] public section
 
 /-!
 # The spill allocator's CFG facts across `prepare` (V4)

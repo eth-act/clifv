@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockPayloadAliasOrigins
-import FV.Backend.Proof.StockCoverageRecords
+module
+
+public import FV.Backend.Proof.StockPayloadAliasOrigins
+public import FV.Backend.Proof.StockCoverageRecords
+
+@[expose] public section
 
 /-! Reuse the existing provenance-count rank for mapped Stock source aliases.
 The rank is over source IDs, independent of their allocated register numbers. -/

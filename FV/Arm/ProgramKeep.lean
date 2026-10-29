@@ -1,4 +1,8 @@
-import FV.Arm.Exec
+module
+
+public import FV.Arm.Exec
+
+@[expose] public section
 
 /-!
 # The Arm model never changes the program

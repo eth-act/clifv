@@ -1,7 +1,11 @@
-import FV.Backend.Proof.DriverCheckT
-import FV.Backend.Proof.IselLowerAll
-import FV.Backend.Proof.IselExclT
-import FV.Backend.Proof.IselFloatCmp
+module
+
+public import FV.Backend.Proof.DriverCheckT
+public import FV.Backend.Proof.IselLowerAll
+public import FV.Backend.Proof.IselExclT
+public import FV.Backend.Proof.IselFloatCmp
+
+@[expose] public section
 
 /-!
 Non-vacuity of S11f's target `LowerRulesCorrectFC` (#35): the context `buildCtx` makes for a

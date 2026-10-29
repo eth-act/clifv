@@ -1,6 +1,10 @@
-import FV.Backend.Proof.StockConditionalBranchValues
-import FV.Backend.Proof.StockConditionalCalls
-import FV.Backend.Proof.StockDemandMono
+module
+
+public import FV.Backend.Proof.StockConditionalBranchValues
+public import FV.Backend.Proof.StockConditionalCalls
+public import FV.Backend.Proof.StockDemandMono
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.ConditionalCalls
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

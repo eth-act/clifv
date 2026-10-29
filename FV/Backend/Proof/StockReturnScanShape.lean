@@ -1,6 +1,10 @@
-import FV.Backend.Proof.StockControlShape
-import FV.Backend.Proof.StockReturnRecordCalls
-import FV.Backend.Proof.StockTerminalEmission
+module
+
+public import FV.Backend.Proof.StockControlShape
+public import FV.Backend.Proof.StockReturnRecordCalls
+public import FV.Backend.Proof.StockTerminalEmission
+
+@[expose] public section
 
 namespace Backend.Stock.Proof
 open Backend.Proof Backend.Proof.Driver

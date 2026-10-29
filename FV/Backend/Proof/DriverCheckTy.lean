@@ -1,4 +1,8 @@
-import FV.Backend.Proof.LowerLoopCtxT
+module
+
+public import FV.Backend.Proof.LowerLoopCtxT
+
+@[expose] public section
 
 /-!
 # The typed driver model and validator (S11e5 Stage C, slice 2)

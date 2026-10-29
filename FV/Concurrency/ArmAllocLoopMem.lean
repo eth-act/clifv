@@ -1,5 +1,9 @@
-import FV.Concurrency.ArmAllocMove
-import FV.Concurrency.ArmAllocLoop
+module
+
+public import FV.Concurrency.ArmAllocMove
+public import FV.Concurrency.ArmAllocLoop
+
+@[expose] public section
 
 /-!
 # Layer 4b with the LL/SC loops (T2, #311)

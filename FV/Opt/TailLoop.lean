@@ -1,4 +1,8 @@
-import FV.Clif.Run
+module
+
+public import FV.Clif.Run
+
+@[expose] public section
 
 /-! # Self tail calls as loops (S8, #32)
 

@@ -1,7 +1,11 @@
-import FV.Backend.Proof.StockSelectedFlow
-import FV.Backend.Proof.StockAliasWrites
-import FV.Backend.Proof.StockAllocationFlow
-import FV.Backend.Proof.LowerDecide
+module
+
+public import FV.Backend.Proof.StockSelectedFlow
+public import FV.Backend.Proof.StockAliasWrites
+public import FV.Backend.Proof.StockAllocationFlow
+public import FV.Backend.Proof.LowerDecide
+
+@[expose] public section
 
 /-! Selected root outputs at the real preallocated exception slot. Bounds and
 source-register separation are derived from successful stock allocation. -/

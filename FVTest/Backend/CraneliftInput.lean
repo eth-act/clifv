@@ -1,6 +1,10 @@
-import FV.Backend
-import FV.Backend.Lowering.Stock
-import FV.Backend.RegallocPerEdgeDriver
+module
+
+public import FV.Backend
+public import FV.Backend.Lowering.Stock
+public import FV.Backend.RegallocPerEdgeDriver
+
+@[expose] public section
 
 /-!
 # regalloc2's input as Cranelift builds it (#551, #586, #587)

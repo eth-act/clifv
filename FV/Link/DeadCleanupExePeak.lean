@@ -1,5 +1,9 @@
-import FV.Link.DeadCleanupExe
-import FV.E2E.DeadCleanupExecPeak
+module
+
+public import FV.Link.DeadCleanupExe
+public import FV.E2E.DeadCleanupExecPeak
+
+@[expose] public section
 
 /-! # The shipped executable compiler is correct for recursive programs (L1d)
 

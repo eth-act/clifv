@@ -1,6 +1,10 @@
-import FV.Concurrency.CStepSConv
-import FV.Concurrency.ThreadCompose
-import FV.Concurrency.RealizeCompiled
+module
+
+public import FV.Concurrency.CStepSConv
+public import FV.Concurrency.ThreadCompose
+public import FV.Concurrency.RealizeCompiled
+
+@[expose] public section
 
 /-!
 # A segment's realization with masks and dirty sets (#473, step (4))

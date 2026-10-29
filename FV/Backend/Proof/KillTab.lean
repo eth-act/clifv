@@ -1,8 +1,12 @@
-import FV.Backend.Proof.KillGen
-import FV.Backend.Proof.IselFlow
-import FV.Backend.Proof.IselShpOracle
-import FV.Backend.Proof.TermSetRoots
-import FV.Backend.Proof.TermSetData
+module
+
+public import FV.Backend.Proof.KillGen
+public import FV.Backend.Proof.IselFlow
+public import FV.Backend.Proof.IselShpOracle
+public import FV.Backend.Proof.TermSetRoots
+public import FV.Backend.Proof.TermSetData
+
+@[expose] public section
 
 /-!
 # Killed vregs of the ISLE lowering (V4, `SpillKillFree`): the rule-data facts

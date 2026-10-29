@@ -1,6 +1,10 @@
-import FV.Link.Image
-import FV.Link.RelocProof
-import FV.Link.LayoutFacts
+module
+
+public import FV.Link.Image
+public import FV.Link.RelocProof
+public import FV.Link.LayoutFacts
+
+@[expose] public section
 
 /-! # The region's bytes in the executable (L2b)
 

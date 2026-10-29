@@ -1,6 +1,10 @@
-import FV.Opt.Proof.PipelineX
-import FV.Opt.Proof.SimpSimU
-import FV.Opt.Proof.UnreachableU
+module
+
+public import FV.Opt.Proof.PipelineX
+public import FV.Opt.Proof.SimpSimU
+public import FV.Opt.Proof.UnreachableU
+
+@[expose] public section
 
 /-!
 # The pipeline refines with handler edges (`Opt.optimizeExe_simU`, S10f #233)

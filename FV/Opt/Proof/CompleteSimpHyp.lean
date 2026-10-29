@@ -1,7 +1,11 @@
-import FV.Opt.Proof.SimpLoop
-import FV.Opt.Proof.CompleteLicm
-import FV.Opt.HandRules
-import FV.Opt.Proof.RulesProv
+module
+
+public import FV.Opt.Proof.SimpLoop
+public import FV.Opt.Proof.CompleteLicm
+public import FV.Opt.HandRules
+public import FV.Opt.Proof.RulesProv
+
+@[expose] public section
 
 /-!
 # The rule-set obligations of the completeness of simplify (M1, #24)

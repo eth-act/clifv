@@ -1,4 +1,8 @@
-import FV.Concurrency.ArmThread
+module
+
+public import FV.Concurrency.ArmThread
+
+@[expose] public section
 
 /-!
 # Non-vacuity of the per-thread Arm semantics (T2d, #302)

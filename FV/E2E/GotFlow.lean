@@ -1,4 +1,8 @@
-import FV.E2E.Final
+module
+
+public import FV.E2E.Final
+
+@[expose] public section
 
 /-! # Calls through the GOT: the VCode run gives them their symbol's address
 

@@ -1,4 +1,8 @@
-import FV.Opt.Proof.RuleInfraI128
+module
+
+public import FV.Opt.Proof.RuleInfraI128
+
+@[expose] public section
 
 /-!
 # `opts/icmp.isle` (part 12): 128-bit comparisons from 64-bit halves

@@ -1,9 +1,13 @@
-import FV.Backend.Proof.StockArithmeticEntryRefines
-import FV.Backend.Proof.StockScalarAddScanWitness
-import FV.Backend.Proof.StockScalarAddSource
-import FV.Backend.Proof.MemRefines
-import FV.Backend.Proof.RefinesCSem
-import FV.E2E.RegLevelDriverSem
+module
+
+public import FV.Backend.Proof.StockArithmeticEntryRefines
+public import FV.Backend.Proof.StockScalarAddScanWitness
+public import FV.Backend.Proof.StockScalarAddSource
+public import FV.Backend.Proof.MemRefines
+public import FV.Backend.Proof.RefinesCSem
+public import FV.E2E.RegLevelDriverSem
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.ArithmeticBody
 open Backend.Proof Backend.Proof.Driver Isle Isle.Aarch64

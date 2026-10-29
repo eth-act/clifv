@@ -1,4 +1,8 @@
-import FV.Backend.Lowering.StockReplay
+module
+
+public import FV.Backend.Lowering.StockReplay
+
+@[expose] public section
 
 /-! Native stress test for block scan and replay. Run with
 `FV_MEMCAP=6G scripts/memcap.sh lake env lean --run FVTest/Backend/Lowering/ScanReplay.lean`.

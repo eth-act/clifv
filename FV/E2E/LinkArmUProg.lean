@@ -1,4 +1,8 @@
-import FV.E2E.LinkArmUInd
+module
+
+public import FV.E2E.LinkArmUInd
+
+@[expose] public section
 
 /-!
 # The whole-program theorem with unwinding (S10f, #233)

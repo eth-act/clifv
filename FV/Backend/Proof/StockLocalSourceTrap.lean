@@ -1,19 +1,21 @@
-import FV.Backend.Proof.StockScalarContract
-import FV.Backend.Proof.StockDivReturnRefines
-import FV.Backend.Proof.StockLocalSourceExecution
-import FV.Backend.Proof.StockPureNotrap
-import FV.Backend.Proof.StockScanSemantics
-import FV.Backend.Proof.IselCmpDiv
-import FV.Backend.Proof.StockDivBodyRefines
-import FV.Backend.Proof.StockHighMulBodyRefines
-import FV.Backend.Proof.StockGuardedOmission
-import FV.Backend.Proof.StockPureBodyFamilies
-import FV.Backend.Proof.StockPureSourceColors
-import FV.Backend.Proof.StockPureDriverUnsunk
-import FV.Backend.Proof.StockBlockScan
-import FV.Backend.Proof.StockScanTrapSemantics
+module
 
+public import FV.Backend.Proof.StockScalarContract
+public import FV.Backend.Proof.StockDivReturnRefines
+public import FV.Backend.Proof.StockLocalSourceExecution
+public import FV.Backend.Proof.StockPureNotrap
+public import FV.Backend.Proof.StockScanSemantics
+public import FV.Backend.Proof.IselCmpDiv
+public import FV.Backend.Proof.StockDivBodyRefines
+public import FV.Backend.Proof.StockHighMulBodyRefines
+public import FV.Backend.Proof.StockGuardedOmission
+public import FV.Backend.Proof.StockPureBodyFamilies
+public import FV.Backend.Proof.StockPureSourceColors
+public import FV.Backend.Proof.StockPureDriverUnsunk
+public import FV.Backend.Proof.StockBlockScan
+public import FV.Backend.Proof.StockScanTrapSemantics
 
+@[expose] public section
 
 /-! Extract a genuine trapped prefix from the original executable source.
 This is independent of the single-division shape and preserves original input

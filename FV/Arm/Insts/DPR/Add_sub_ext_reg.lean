@@ -29,8 +29,12 @@ Released under Apache 2.0 license; see third_party/NOTICE-lnsym.md.
 -- Cross-checked against VeriISLE `MInst.AluRRRExtend` in
 -- cranelift/codegen/src/isa/aarch64/spec/alu_rrr_extend.isle.
 
-import FV.Arm.Decode
-import FV.Arm.Insts.Common
+module
+
+public import FV.Arm.Decode
+public import FV.Arm.Insts.Common
+
+@[expose] public section
 
 namespace Arm
 

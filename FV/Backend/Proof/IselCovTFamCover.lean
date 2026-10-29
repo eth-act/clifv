@@ -1,11 +1,15 @@
-import FV.Backend.Proof.IselCovTExt
-import FV.Backend.Proof.LowerContractT
-import FV.Backend.Proof.LowerCertT
-import FV.Backend.Proof.IselPrgCtx
-import FV.Backend.Proof.LowerTotal
-import FV.Backend.Proof.LowerDecide
-import FV.Compile.SelectTyped
-import FV.Backend.Proof.IselCovTCall
+module
+
+public import FV.Backend.Proof.IselCovTExt
+public import FV.Backend.Proof.LowerContractT
+public import FV.Backend.Proof.LowerCertT
+public import FV.Backend.Proof.IselPrgCtx
+public import FV.Backend.Proof.LowerTotal
+public import FV.Backend.Proof.LowerDecide
+public import FV.Compile.SelectTyped
+public import FV.Backend.Proof.IselCovTCall
+
+@[expose] public section
 
 /-!
 # Form coverage over float-capable contexts (typed V3): the statements' families

@@ -1,4 +1,8 @@
-import FVTest.Isle.Toy
+module
+
+public import FVTest.Isle.Toy
+
+@[expose] public section
 
 /-!
 # Interpreter vs. Cranelift: which rules fire

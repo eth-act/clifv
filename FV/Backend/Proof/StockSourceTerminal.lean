@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockNodeAliasConnection
-import FV.Backend.Proof.StockFreshAlias
+module
+
+public import FV.Backend.Proof.StockNodeAliasConnection
+public import FV.Backend.Proof.StockFreshAlias
+
+@[expose] public section
 
 /-! Source registers with no statement definition remain final alias terminals.
 This includes block parameters; the construction/SSA facts discharge exclusion. -/

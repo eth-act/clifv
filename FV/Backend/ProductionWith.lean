@@ -1,5 +1,9 @@
-import FV.Backend.Production
-import FV.Backend.Lowering.StockPrologueAll
+module
+
+public import FV.Backend.Production
+public import FV.Backend.Lowering.StockPrologueAll
+
+@[expose] public section
 
 /-! Shared transactional orchestration for successive proved lowering classes. -/
 set_option autoImplicit false

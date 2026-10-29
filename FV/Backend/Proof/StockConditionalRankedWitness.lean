@@ -1,7 +1,11 @@
-import FV.Backend.Proof.StockConditionalRankedFixture
-import FV.Backend.Proof.StockConditionalRankedCheck
-import FV.Backend.Proof.RefinesCSem
-import FV.E2E.RegLevelDriverSem
+module
+
+public import FV.Backend.Proof.StockConditionalRankedFixture
+public import FV.Backend.Proof.StockConditionalRankedCheck
+public import FV.Backend.Proof.RefinesCSem
+public import FV.E2E.RegLevelDriverSem
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.ConditionalValues.RankedFixture
 open Backend.Proof Backend.Proof.Driver

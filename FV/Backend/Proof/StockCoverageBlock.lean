@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockCoverageScans
-import FV.Backend.Proof.StockBlockRanges
+module
+
+public import FV.Backend.Proof.StockCoverageScans
+public import FV.Backend.Proof.StockBlockRanges
+
+@[expose] public section
 
 /-! Derive scan metadata from actual context construction and source block ranges.
 These are internal facts of the existing driver, not accepted-input certificates. -/

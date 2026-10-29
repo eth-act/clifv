@@ -1,5 +1,9 @@
-import FV.Backend.Proof.LowerContract
-import FV.Clif.FloatFacts
+module
+
+public import FV.Backend.Proof.LowerContract
+public import FV.Clif.FloatFacts
+
+@[expose] public section
 
 /-!
 # CLIF frames seen by the driver

@@ -1,4 +1,8 @@
-import FV.Opt.Proof.CompleteSimpMat
+module
+
+public import FV.Opt.Proof.CompleteSimpMat
+
+@[expose] public section
 
 /-!
 # Completeness of simplify: the rules phase

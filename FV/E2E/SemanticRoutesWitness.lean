@@ -1,6 +1,10 @@
-import FV.E2E.SemanticLogicalCompilerWitness
-import FV.E2E.SemanticMixedCompilerWitness
-import FV.E2E.SemanticCompilerWitness
+module
+
+public import FV.E2E.SemanticLogicalCompilerWitness
+public import FV.E2E.SemanticMixedCompilerWitness
+public import FV.E2E.SemanticCompilerWitness
+
+@[expose] public section
 
 namespace E2E.SemanticRoutesWitness
 open Backend Backend.Stock.D0 Link

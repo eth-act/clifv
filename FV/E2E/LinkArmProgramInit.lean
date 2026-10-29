@@ -1,4 +1,8 @@
-import FV.E2E.LinkArmCountPRBSucc
+module
+
+public import FV.E2E.LinkArmCountPRBSucc
+
+@[expose] public section
 
 /-!
 # The linked program with the slot-byte oracle at a top-level entry (SEM1 #537, #680 (3), (e))

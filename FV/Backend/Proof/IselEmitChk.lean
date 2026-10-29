@@ -1,5 +1,9 @@
-import FV.Backend.Proof.IselEmitFns
-import FV.Backend.Proof.IselCovForm
+module
+
+public import FV.Backend.Proof.IselEmitFns
+public import FV.Backend.Proof.IselCovForm
+
+@[expose] public section
 
 /-!
 # Emission conditions of the ISLE lowering (V6c): the emission check is sound

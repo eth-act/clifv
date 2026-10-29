@@ -1,5 +1,9 @@
-import FV.Opt.Proof.CompleteUnreachable
-import FV.Opt.Simplify
+module
+
+public import FV.Opt.Proof.CompleteUnreachable
+public import FV.Opt.Simplify
+
+@[expose] public section
 
 /-!
 # A declarative specification of `Opt.checkCore` (M1)

@@ -1,9 +1,13 @@
-import FV.E2E.DeadCleanupStackBound
-import FV.E2E.StackBoundT
-import FV.E2E.DeadCleanupLinkCheckT
-import FV.E2E.LinkArmT
-import FV.E2E.LinkCheckT
-import FV.E2E.PipelineCheckT
+module
+
+public import FV.E2E.DeadCleanupStackBound
+public import FV.E2E.StackBoundT
+public import FV.E2E.DeadCleanupLinkCheckT
+public import FV.E2E.LinkArmT
+public import FV.E2E.LinkCheckT
+public import FV.E2E.PipelineCheckT
+
+@[expose] public section
 
 /-! # Typed copies of `FV.E2E.DeadCleanupStackBound` (S11e5 Stage C, slice 8)
 

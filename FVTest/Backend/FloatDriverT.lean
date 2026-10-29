@@ -1,4 +1,8 @@
-import FV.Backend.Proof.DriverCheckTy
+module
+
+public import FV.Backend.Proof.DriverCheckTy
+
+@[expose] public section
 
 /-!
 Non-vacuity of the typed movement scope and the typed driver model (S11e5 Stage C, slices 1-2):

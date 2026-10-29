@@ -1,4 +1,8 @@
-import FV.E2E.RegLevelGoodX
+module
+
+public import FV.E2E.RegLevelGoodX
+
+@[expose] public section
 
 /-!
 # Straight-line instructions on the machine (M6)

@@ -1,4 +1,9 @@
-import FV.Backend.Proof.StockShiftBitfieldRhs
+module
+
+public import FV.Backend.Proof.StockShiftBitfieldRhs
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ShiftBitfield
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 set_option autoImplicit false

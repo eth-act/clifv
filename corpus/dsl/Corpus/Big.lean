@@ -1,4 +1,8 @@
-import FV.DSL
+module
+
+public import FV.DSL
+
+@[expose] public section
 
 /-! Corpus: the largest function — the ChaCha20 block function (RFC 7539 §2.3),
 16 loop-carried `u32` variables, 80 quarter-round steps per iteration. Used to measure

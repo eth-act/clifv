@@ -1,6 +1,10 @@
-import FV.Concurrency.ThreadCompose
-import FV.Concurrency.IselRefinesWitness
-import FV.Backend.SpillAlloc
+module
+
+public import FV.Concurrency.ThreadCompose
+public import FV.Concurrency.IselRefinesWitness
+public import FV.Backend.SpillAlloc
+
+@[expose] public section
 
 /-!
 # Witnesses: composing the per-thread layers (T2h, #311)

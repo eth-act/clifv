@@ -1,4 +1,8 @@
-import FV.Backend.Proof.SpillLocalCheck
+module
+
+public import FV.Backend.Proof.SpillLocalCheck
+
+@[expose] public section
 
 /-!
 # The abstract-state effect of one spilled instruction (V4 (a), step 3)

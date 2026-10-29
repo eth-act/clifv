@@ -1,6 +1,11 @@
-import FV.Backend.Proof.StockMinMaxFamily
-import FV.Backend.Proof.StockCastCmpCompleteSourceTransfer
-import FV.Backend.Proof.StockCmpActualDispatch
+module
+
+public import FV.Backend.Proof.StockMinMaxFamily
+public import FV.Backend.Proof.StockCastCmpCompleteSourceTransfer
+public import FV.Backend.Proof.StockCmpActualDispatch
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.CmpBody
 open Backend.Proof Backend.Proof.Driver
 set_option autoImplicit false

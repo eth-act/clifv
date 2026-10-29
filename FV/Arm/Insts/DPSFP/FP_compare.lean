@@ -21,9 +21,13 @@ Released under Apache 2.0 license; see third_party/NOTICE-lnsym.md.
 -- `1000`, greater than `0010` (`IEEE.compare`); `signal_all_nans` only changes the exception
 -- flags, which are not modelled, so FCMPE = FCMP. Half precision is not modelled.
 
-import FV.Arm.Decode
-import FV.Arm.Insts.Common
-import FV.Arm.Insts.DPSFP.FP_data_processing_one_source
+module
+
+public import FV.Arm.Decode
+public import FV.Arm.Insts.Common
+public import FV.Arm.Insts.DPSFP.FP_data_processing_one_source
+
+@[expose] public section
 
 namespace Arm
 

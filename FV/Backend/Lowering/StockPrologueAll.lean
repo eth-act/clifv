@@ -1,4 +1,8 @@
-import FV.Backend.Lowering.StockProduction
+module
+
+public import FV.Backend.Lowering.StockProduction
+
+@[expose] public section
 
 /-! The six-configuration extension is additive: the published SystemV selector
 and all of its theorem interfaces retain their meaning. -/

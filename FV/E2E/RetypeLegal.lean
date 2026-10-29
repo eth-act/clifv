@@ -1,6 +1,10 @@
-import FV.E2E.LegalOptX
-import FV.E2E.LegalWideCleanup
-import FV.Opt.Proof.RetypeSim
+module
+
+public import FV.E2E.LegalOptX
+public import FV.E2E.LegalWideCleanup
+public import FV.Opt.Proof.RetypeSim
+
+@[expose] public section
 
 /-! # Retyped data movement, legalised, compiled (S12e, #36)
 

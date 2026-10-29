@@ -1,5 +1,9 @@
-import FV.Opt.Proof.RuleSkelEmbed
-import FV.Opt.Proof.KernelBV
+module
+
+public import FV.Opt.Proof.RuleSkelEmbed
+public import FV.Opt.Proof.KernelBV
+
+@[expose] public section
 
 /-!
 # Rule-proof infrastructure: `iabs` and `truthy` if-lets

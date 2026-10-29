@@ -1,4 +1,8 @@
-import FV.Backend.LinearScan
+module
+
+public import FV.Backend.LinearScan
+
+@[expose] public section
 
 /-!
 # The kept defs of a terminator are fixed (V4b-3, #275)

@@ -1,5 +1,10 @@
-import FV.Backend.Proof.StockCmpZeroRuleCalls
-import FV.Backend.Proof.StockCmpNonzero64OriginalValues
+module
+
+public import FV.Backend.Proof.StockCmpZeroRuleCalls
+public import FV.Backend.Proof.StockCmpNonzero64OriginalValues
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarCmp
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 /-- Actual inequality rule RHS and condition execution yield the original source predicate. -/

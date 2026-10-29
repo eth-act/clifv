@@ -1,5 +1,9 @@
-import FV.Link.OptExeUnwindExec
-import FV.Link.OptExeUnwindWitness
+module
+
+public import FV.Link.OptExeUnwindExec
+public import FV.Link.OptExeUnwindWitness
+
+@[expose] public section
 
 /-!
 # Witness: the executable-bytes theorems with unwinding apply (S10g, #404)

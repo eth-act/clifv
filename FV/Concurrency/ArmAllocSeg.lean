@@ -1,4 +1,8 @@
-import FV.Concurrency.ArmAllocThread
+module
+
+public import FV.Concurrency.ArmAllocThread
+
+@[expose] public section
 
 /-!
 # Precise Arm runs of straight-line segments (T2h, #311, layer 4b)

@@ -1,5 +1,9 @@
-import FV.E2E.RegLevelCorrectPR
-import FV.E2E.RegLevelCorrectCR
+module
+
+public import FV.E2E.RegLevelCorrectPR
+public import FV.E2E.RegLevelCorrectCR
+
+@[expose] public section
 
 /-!
 # `regLevelCorrect_worldPR` with the located reads (SEM1 #537, step 3p)

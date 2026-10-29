@@ -1,4 +1,8 @@
-import FV.Backend.Proof.PerEdgeVCodeSem
+module
+
+public import FV.Backend.Proof.PerEdgeVCodeSem
+
+@[expose] public section
 
 /-! Straight-line segments retain the selected per-successor semantics. The
 legacy single-vector variants remain unchanged. -/

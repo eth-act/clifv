@@ -1,5 +1,9 @@
-import FV.E2E.IselCallsOneAll
-import FV.E2E.IselSimIWitness
+module
+
+public import FV.E2E.IselCallsOneAll
+public import FV.E2E.IselSimIWitness
+
+@[expose] public section
 
 /-!
 # Non-vacuity of the call-count certificate (SEM1, `docs/plans/uninit.md` §5.9)

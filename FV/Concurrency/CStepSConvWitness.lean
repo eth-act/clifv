@@ -1,6 +1,10 @@
-import FV.Concurrency.CStepSConv
-import FV.Concurrency.CallLoadWitness
-import FV.Concurrency.ProgramWitness
+module
+
+public import FV.Concurrency.CStepSConv
+public import FV.Concurrency.CallLoadWitness
+public import FV.Concurrency.ProgramWitness
+
+@[expose] public section
 
 /-!
 # Witnesses for `CStepSConv` (#473)

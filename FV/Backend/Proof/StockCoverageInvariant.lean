@@ -1,8 +1,12 @@
-import FV.Backend.Proof.StockNoOpportunityTable
-import FV.Backend.Proof.StockNoOpportunityCtor
-import FV.Backend.Proof.IselCovModel
-import FV.Backend.Proof.IselCovClean
-import FV.Backend.Proof.StockPatternSource
+module
+
+public import FV.Backend.Proof.StockNoOpportunityTable
+public import FV.Backend.Proof.StockNoOpportunityCtor
+public import FV.Backend.Proof.IselCovModel
+public import FV.Backend.Proof.IselCovClean
+public import FV.Backend.Proof.StockPatternSource
+
+@[expose] public section
 
 /-! Predicate-parametric variant of the existing Stock coverage soundness.
 The prior fixed no-opportunity interface is retained unchanged.

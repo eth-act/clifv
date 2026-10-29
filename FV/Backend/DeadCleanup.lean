@@ -1,4 +1,8 @@
-import FV.Backend.RegallocOps
+module
+
+public import FV.Backend.RegallocOps
+
+@[expose] public section
 
 /-! Conservative dead virtual-register producer cleanup. Instruction selection
 and its validator still operate on the original VCode. This stage preserves

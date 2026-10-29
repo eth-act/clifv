@@ -1,4 +1,8 @@
-import FV.Backend.Proof.LowerSimU
+module
+
+public import FV.Backend.Proof.LowerSimU
+
+@[expose] public section
 
 /-!
 # The driver simulation with unwinding, generic in the world type (S10f, #233)

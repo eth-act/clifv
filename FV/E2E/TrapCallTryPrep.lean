@@ -1,5 +1,9 @@
-import FV.E2E.DeadCleanupUnwind
-import FV.E2E.TrapCallTryStop
+module
+
+public import FV.E2E.DeadCleanupUnwind
+public import FV.E2E.TrapCallTryStop
+
+@[expose] public section
 
 /-!
 # A raising `tryCall` through the cleanup and `prepare` (S9b, #375)

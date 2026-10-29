@@ -1,5 +1,9 @@
-import FV.Link.Ld.Build
-import FV.Link.Ld.WriteProof
+module
+
+public import FV.Link.Ld.Build
+public import FV.Link.Ld.WriteProof
+
+@[expose] public section
 
 /-! # The body's bytes are the relocated input bytes (L2b stage 3c)
 

@@ -1,7 +1,11 @@
-import FV.E2E.LinkArmXPBT
-import FV.E2E.ExtSemGuardRY
-import FV.E2E.PrefixRelated
-import FV.E2E.LinkArmProgOsPRBRL
+module
+
+public import FV.E2E.LinkArmXPBT
+public import FV.E2E.ExtSemGuardRY
+public import FV.E2E.PrefixRelated
+public import FV.E2E.LinkArmProgOsPRBRL
+
+@[expose] public section
 
 /-!
 # The call contracts of the induction step's guarded semantics (SEM1 #537, #680 (3), stage 2)

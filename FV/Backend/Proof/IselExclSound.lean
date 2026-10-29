@@ -1,4 +1,8 @@
-import FV.Backend.Proof.IselExclData
+module
+
+public import FV.Backend.Proof.IselExclData
+
+@[expose] public section
 
 /-!
 # Excluded root rules: soundness of the abstract pattern checker

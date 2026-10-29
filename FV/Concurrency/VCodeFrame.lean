@@ -1,4 +1,8 @@
-import FV.Concurrency.VCodeAddrAtomic
+module
+
+public import FV.Concurrency.VCodeAddrAtomic
+
+@[expose] public section
 
 /-!
 # The events of a successful `csem` step avoid the frame (T2h, #311, layer 2a)

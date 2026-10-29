@@ -1,5 +1,9 @@
-import FV.E2E.LinkPlaceBTable
-import FV.E2E.LinkSlotSysWitness
+module
+
+public import FV.E2E.LinkPlaceBTable
+public import FV.E2E.LinkSlotSysWitness
+
+@[expose] public section
 
 /-!
 # Witness: a run depends on the slot-byte table only through the entries it uses

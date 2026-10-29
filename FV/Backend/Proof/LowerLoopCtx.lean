@@ -1,5 +1,9 @@
-import FV.Backend.Proof.LowerLoopCode
-import FV.Backend.Proof.PrepareComplete
+module
+
+public import FV.Backend.Proof.LowerLoopCode
+public import FV.Backend.Proof.PrepareComplete
+
+@[expose] public section
 
 /-!
 # `buildCtx`, functionally

@@ -1,4 +1,8 @@
-import FV.Backend.Lowering.StockConditionalRankedCfg
+module
+
+public import FV.Backend.Lowering.StockConditionalRankedCfg
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.ConditionalValues.RankedFixture
 set_option autoImplicit false

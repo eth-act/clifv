@@ -1,7 +1,11 @@
-import FV.Unw.EhFrameHdr
-import FV.E2E.DeadCleanupBinary
-import FV.Backend.Proof.UnwindTables
-import FV.Backend.Proof.EhFrameDecode
+module
+
+public import FV.Unw.EhFrameHdr
+public import FV.E2E.DeadCleanupBinary
+public import FV.Backend.Proof.UnwindTables
+public import FV.Backend.Proof.EhFrameDecode
+
+@[expose] public section
 
 /-!
 # The linked executable's unwind tables are the compiled functions' (S10f)

@@ -1,4 +1,8 @@
-import FV.Opt.Proof.LegalPlan
+module
+
+public import FV.Opt.Proof.LegalPlan
+
+@[expose] public section
 
 /-!
 # The refinement theorem of `Opt.Legal.checkW`

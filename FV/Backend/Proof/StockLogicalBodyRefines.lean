@@ -1,6 +1,10 @@
-import FV.Backend.Proof.StockArithmeticBodyRefines
-import FV.Backend.Proof.StockLogicalScanRefines
-import FV.Backend.Proof.StockPureBodyFamilies
+module
+
+public import FV.Backend.Proof.StockArithmeticBodyRefines
+public import FV.Backend.Proof.StockLogicalScanRefines
+public import FV.Backend.Proof.StockPureBodyFamilies
+
+@[expose] public section
 
 /-! Source-syntax coverage for complete select/arithmetic/logical bodies. -/
 namespace Backend.Stock.Proof.LogicalBody

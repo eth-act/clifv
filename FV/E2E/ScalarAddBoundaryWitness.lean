@@ -1,8 +1,12 @@
-import FV.Link.ProductionExeSourceWith
-import FV.Link.Ld.Spec
-import FV.Backend.Proof.StockScalarAddSource
-import FV.Backend.Lowering.StockScalarProduction
-import FV.Clif.Print
+module
+
+public import FV.Link.ProductionExeSourceWith
+public import FV.Link.Ld.Spec
+public import FV.Backend.Proof.StockScalarAddSource
+public import FV.Backend.Lowering.StockScalarProduction
+public import FV.Clif.Print
+
+@[expose] public section
 
 /-! Complete machine/source boundary witness for the actual production compiler.
 Fixed native checks establish concrete compiler data only. The two entry arguments and their machine upper bits are

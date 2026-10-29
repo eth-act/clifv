@@ -1,4 +1,8 @@
-import FV.Front.Rename
+module
+
+public import FV.Front.Rename
+
+@[expose] public section
 
 /-!
 # A bijection of names from finitely many pairs (T7d)

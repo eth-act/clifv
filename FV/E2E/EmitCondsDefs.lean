@@ -1,5 +1,9 @@
-import FV.E2E.EmitSize
-import FV.Backend.EmitOk
+module
+
+public import FV.E2E.EmitSize
+public import FV.Backend.EmitOk
+
+@[expose] public section
 
 /-! # The decidable emission conditions on the prepared VCode (V6b, `emitCondsB`)
 

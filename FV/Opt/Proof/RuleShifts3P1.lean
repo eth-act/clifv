@@ -1,5 +1,9 @@
-import FV.Opt.Proof.RuleRestEmbed
-import FV.Opt.Proof.RuleInfraShiftAmt
+module
+
+public import FV.Opt.Proof.RuleRestEmbed
+public import FV.Opt.Proof.RuleInfraShiftAmt
+
+@[expose] public section
 
 /-!
 # Part 1 of 2 of `RuleShifts3.lean`

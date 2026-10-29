@@ -1,4 +1,9 @@
-import FV.Backend.Proof.StockDivBodyValues
+module
+
+public import FV.Backend.Proof.StockDivBodyValues
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarDiv.BodyValueWitness
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 private def aliases : Array (Option Nat) := #[some 1,none,none]

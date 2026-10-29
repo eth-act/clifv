@@ -1,7 +1,11 @@
-import FV.Backend.Proof.IselPrgHand
-import FV.Backend.Proof.IselPrgInvT
-import FV.Backend.Proof.IselFamALUATI
-import FV.Backend.Proof.IselFamALUALogic
+module
+
+public import FV.Backend.Proof.IselPrgHand
+public import FV.Backend.Proof.IselPrgInvT
+public import FV.Backend.Proof.IselFamALUATI
+public import FV.Backend.Proof.IselFamALUALogic
+
+@[expose] public section
 
 /-!
 # Progress of the ISLE lowering over the typed scope: V7's hand-checked rules

@@ -1,4 +1,8 @@
-import FV.Concurrency.IselDriverT
+module
+
+public import FV.Concurrency.IselDriverT
+
+@[expose] public section
 
 /-!
 # The terminator step on `DriverHypT` (#473, the `rets` end)

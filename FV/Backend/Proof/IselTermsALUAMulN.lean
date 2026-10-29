@@ -1,4 +1,8 @@
-import FV.Backend.Proof.IselTermsALUAExtr
+module
+
+public import FV.Backend.Proof.IselTermsALUAExtr
+
+@[expose] public section
 
 /-!
 # Narrow `smulhi`/`umulhi` (`lower.isle:1059`, `:1071`): forward lemmas

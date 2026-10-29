@@ -1,5 +1,9 @@
-import FV.E2E.BackendWorldPRG
-import FV.E2E.BackendWorldPRBWitness
+module
+
+public import FV.E2E.BackendWorldPRG
+public import FV.E2E.BackendWorldPRBWitness
+
+@[expose] public section
 
 /-!
 # Witnesses for `backend_correct_world_{cleanup,pipeline}PRG` (`FV/E2E/BackendWorldPRG.lean`)

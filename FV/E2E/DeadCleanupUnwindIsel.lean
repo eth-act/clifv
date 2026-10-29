@@ -1,5 +1,9 @@
-import FV.E2E.UnwindValueSem
-import FV.Backend.Proof.LowerSimURaise
+module
+
+public import FV.E2E.UnwindValueSem
+public import FV.Backend.Proof.LowerSimURaise
+
+@[expose] public section
 
 /-!
 # The CLIF → VCode layer with unwinding for the dead-cleanup chain (S10e, #232)

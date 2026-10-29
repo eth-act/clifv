@@ -1,6 +1,10 @@
-import FV.Backend.Proof.KillHypT
-import FV.Backend.Proof.KillDriver
-import FV.Backend.Proof.IselFlowT
+module
+
+public import FV.Backend.Proof.KillHypT
+public import FV.Backend.Proof.KillDriver
+public import FV.Backend.Proof.IselFlowT
+
+@[expose] public section
 
 set_option Elab.async false
 

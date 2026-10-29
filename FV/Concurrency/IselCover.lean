@@ -1,4 +1,8 @@
-import FV.Concurrency.IselFoot
+module
+
+public import FV.Concurrency.IselFoot
+
+@[expose] public section
 
 /-!
 # From "touched" to "covered by an event" (T2h, #311, layer 2d)

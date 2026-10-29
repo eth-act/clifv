@@ -1,5 +1,9 @@
-import FV.Backend.Proof.PerEdgeSpillBlock
-import FV.Backend.Proof.PerEdgeSpillInstFixture
+module
+
+public import FV.Backend.Proof.PerEdgeSpillBlock
+public import FV.Backend.Proof.PerEdgeSpillInstFixture
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.IndexedInstWitness
 open Backend.Proof Backend.Proof.Driver Backend.Proof.Spill Backend.Proof.PerEdgeSpill

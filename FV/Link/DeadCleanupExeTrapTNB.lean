@@ -1,5 +1,9 @@
-import FV.Link.DeadCleanupExeTrapT
-import FV.Link.DeadCleanupExeTrapNB
+module
+
+public import FV.Link.DeadCleanupExeTrapT
+public import FV.Link.DeadCleanupExeTrapNB
+
+@[expose] public section
 
 /-! # The shipped compiler's callee-trap source theorems (`try_call` callees included) without
 # the memory-bound premise (A2/B1)

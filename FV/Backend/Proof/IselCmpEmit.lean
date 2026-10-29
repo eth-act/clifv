@@ -1,5 +1,9 @@
-import FV.Backend.Proof.IselCmpIcmp
-import FV.Backend.Proof.IselFamALUA
+module
+
+public import FV.Backend.Proof.IselCmpIcmp
+public import FV.Backend.Proof.IselFamALUA
+
+@[expose] public section
 
 /-!
 # `emit_icmp`: the condition of an integer comparison

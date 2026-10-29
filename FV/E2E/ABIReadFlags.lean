@@ -1,4 +1,8 @@
-import FV.E2E.ABIReadBoundary
+module
+
+public import FV.E2E.ABIReadBoundary
+
+@[expose] public section
 
 /-! Preserved flag-boundary variants using shared execution/ABI composition. -/
 namespace E2E.MixedFlagBoundary

@@ -1,4 +1,8 @@
-import FV.Backend.Proof.EncodeBranch
+module
+
+public import FV.Backend.Proof.EncodeBranch
+
+@[expose] public section
 
 /-!
 # M5: layout correctness (`FnAsm.layout`)

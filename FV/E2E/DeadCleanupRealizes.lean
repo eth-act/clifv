@@ -1,5 +1,9 @@
-import FV.E2E.RegLevelCorrect
-import FV.Backend.Proof.DeadCleanupAdapter
+module
+
+public import FV.E2E.RegLevelCorrect
+public import FV.Backend.Proof.DeadCleanupAdapter
+
+@[expose] public section
 
 namespace Backend.Proof
 open Backend Backend.DeadCleanup

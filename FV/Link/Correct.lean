@@ -1,7 +1,11 @@
-import FV.Link.ImageProof
-import FV.Link.OutsideProof
-import FV.Link.LayoutProof
-import FV.E2E.SpillDefined
+module
+
+public import FV.Link.ImageProof
+public import FV.Link.OutsideProof
+public import FV.Link.LayoutProof
+public import FV.E2E.SpillDefined
+
+@[expose] public section
 
 /-! # The Lean linker's output is correct (L2b)
 

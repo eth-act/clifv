@@ -1,4 +1,8 @@
-import FV.Backend.Lowering.StockLogical
+module
+
+public import FV.Backend.Lowering.StockLogical
+
+@[expose] public section
 
 namespace Backend.Stock.Scalar
 set_option autoImplicit false

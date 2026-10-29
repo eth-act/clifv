@@ -1,4 +1,8 @@
-import FV.Backend.Proof.StockPerEdgeReturnContract
+module
+
+public import FV.Backend.Proof.StockPerEdgeReturnContract
+
+@[expose] public section
 
 namespace Backend.Proof
 open Backend.Proof.Driver

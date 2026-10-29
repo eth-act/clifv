@@ -1,4 +1,8 @@
-import FV.Float
+module
+
+public import FV.Float
+
+@[expose] public section
 
 /-!
 `float-difftest [--seed N] [--count N] [--rne-only]`: generates differential test cases for the

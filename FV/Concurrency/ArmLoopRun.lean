@@ -1,4 +1,8 @@
-import FV.Concurrency.ArmAllocSeg
+module
+
+public import FV.Concurrency.ArmAllocSeg
+
+@[expose] public section
 
 /-!
 # Precise Arm runs of LL/SC retry loops (T2, #311, layer 4b)

@@ -1,4 +1,8 @@
-import FV.Arm.Exec
+module
+
+public import FV.Arm.Exec
+
+@[expose] public section
 
 /-! # Frame property of the instruction semantics (L3 (c), D2)
 

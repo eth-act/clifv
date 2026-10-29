@@ -1,9 +1,13 @@
-import FV.E2E.DeadCleanupFinal
-import FV.E2E.LowerDirect
-import FV.Backend.Proof.SpillEdges
-import FV.E2E.DeadCleanupCover
-import FV.E2E.SizeDefs
-import FV.Backend.Proof.IselEmitDefs
+module
+
+public import FV.E2E.DeadCleanupFinal
+public import FV.E2E.LowerDirect
+public import FV.Backend.Proof.SpillEdges
+public import FV.E2E.DeadCleanupCover
+public import FV.E2E.SizeDefs
+public import FV.Backend.Proof.IselEmitDefs
+
+@[expose] public section
 
 namespace E2E.DeadCleanupWitness
 open Backend Backend.Proof Backend.Proof.Driver Backend.DeadCleanup

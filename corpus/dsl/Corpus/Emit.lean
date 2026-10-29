@@ -1,5 +1,9 @@
-import FV.DSL
-import Corpus.Vectors
+module
+
+public import FV.DSL
+public import Corpus.Vectors
+
+@[expose] public section
 
 /-! Corpus additions owned by the emitter (M1): constructs the base corpus does not reach —
 map clone/growth/results, calls passing the runtime context, result-buffer callees (success

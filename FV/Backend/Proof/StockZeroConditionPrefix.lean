@@ -1,7 +1,12 @@
-import FV.Backend.Proof.StockConditionPrefix
-import FV.Backend.Proof.StockSelectConditionInvertShape
-import FV.Backend.Proof.StockCmpMatchedZero
-import FV.Backend.Proof.StockCmpZero32RuleCalls
+module
+
+public import FV.Backend.Proof.StockConditionPrefix
+public import FV.Backend.Proof.StockSelectConditionInvertShape
+public import FV.Backend.Proof.StockCmpMatchedZero
+public import FV.Backend.Proof.StockCmpZero32RuleCalls
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarSelect
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 open Backend.Stock.Proof.ScalarCmp

@@ -1,4 +1,8 @@
-import FV.Backend.Proof.IselFlowTabT
+module
+
+public import FV.Backend.Proof.IselFlowTabT
+
+@[expose] public section
 
 /-!
 # The root rules of `lower` and `lower_branch` against the TLS table

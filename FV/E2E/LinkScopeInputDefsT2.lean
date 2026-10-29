@@ -1,6 +1,10 @@
-import FV.E2E.LinkScopeInputDefsT
-import FV.Compile.SelectTyped
-import FV.Backend.Proof.EntryClass
+module
+
+public import FV.E2E.LinkScopeInputDefsT
+public import FV.Compile.SelectTyped
+public import FV.Backend.Proof.EntryClass
+
+@[expose] public section
 
 /-!
 # The typed input conditions with the verifier's entry and `select` typing (S11 slice 8)

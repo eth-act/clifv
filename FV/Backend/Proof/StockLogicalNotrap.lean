@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockLogicalSourceExecution
-import FV.Backend.Proof.StockPureNotrap
+module
+
+public import FV.Backend.Proof.StockLogicalSourceExecution
+public import FV.Backend.Proof.StockPureNotrap
+
+@[expose] public section
 
 /-! Actual source outcomes for the complete ordinary logical/mixed class. -/
 namespace Backend.Stock.Proof.LogicalBody

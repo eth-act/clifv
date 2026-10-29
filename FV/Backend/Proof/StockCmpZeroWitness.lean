@@ -1,4 +1,9 @@
-import FV.Backend.Proof.StockCmpZeroValues
+module
+
+public import FV.Backend.Proof.StockCmpZeroValues
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarCmp.ZeroHelperWitness
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 open Backend.Stock.Proof.ScalarCmp

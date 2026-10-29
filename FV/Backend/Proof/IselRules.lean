@@ -1,4 +1,8 @@
-import FV.Backend.Proof.IselTerms
+module
+
+public import FV.Backend.Proof.IselTerms
+
+@[expose] public section
 
 /-!
 # Rule-level evaluation lemmas (interpreter level)

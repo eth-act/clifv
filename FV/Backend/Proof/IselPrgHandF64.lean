@@ -1,10 +1,14 @@
-import FV.Backend.Proof.IselPrgTabF64
-import FV.Backend.Proof.IselPrgHandT
-import FV.Backend.Proof.IselPrgExtSoundT
-import FV.Backend.Proof.IselPrgCtorSoundT
-import FV.Backend.Proof.IselPrgSound
-import FV.Backend.Proof.IselPrgMono
-import FV.Backend.Proof.IselFloatConst
+module
+
+public import FV.Backend.Proof.IselPrgTabF64
+public import FV.Backend.Proof.IselPrgHandT
+public import FV.Backend.Proof.IselPrgExtSoundT
+public import FV.Backend.Proof.IselPrgCtorSoundT
+public import FV.Backend.Proof.IselPrgSound
+public import FV.Backend.Proof.IselPrgMono
+public import FV.Backend.Proof.IselFloatConst
+
+@[expose] public section
 
 /-!
 # Progress of the ISLE lowering over the typed scope: the `f64const` rule

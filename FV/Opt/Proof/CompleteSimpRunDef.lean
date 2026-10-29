@@ -1,4 +1,8 @@
-import FV.Opt.Proof.CompleteSimpLoop
+module
+
+public import FV.Opt.Proof.CompleteSimpLoop
+
+@[expose] public section
 
 /-!
 # Completeness of simplify: the state at the end of the run

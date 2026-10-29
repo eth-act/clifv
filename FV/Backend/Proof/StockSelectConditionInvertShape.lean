@@ -1,5 +1,10 @@
-import FV.Backend.Proof.StockSelectNonzeroConditionShape
-import FV.Backend.Proof.StockCmpFlagInvert
+module
+
+public import FV.Backend.Proof.StockSelectNonzeroConditionShape
+public import FV.Backend.Proof.StockCmpFlagInvert
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarSelect
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 /-- Actual scalar inversion preserves the decoded condition contract, including

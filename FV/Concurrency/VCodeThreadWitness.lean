@@ -1,5 +1,9 @@
-import FV.Concurrency.VCodeThread
-import FV.Concurrency.ArmThreadWitness
+module
+
+public import FV.Concurrency.VCodeThread
+public import FV.Concurrency.ArmThreadWitness
+
+@[expose] public section
 
 /-!
 # Non-vacuity of the VCode event semantics (T2h, #311, layer 1)

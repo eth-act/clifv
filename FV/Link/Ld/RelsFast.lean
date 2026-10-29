@@ -1,4 +1,8 @@
-import FV.Link.Ld.RelsTotal
+module
+
+public import FV.Link.Ld.RelsTotal
+
+@[expose] public section
 
 /-! # `relsInB` in linear time (A1, #409)
 

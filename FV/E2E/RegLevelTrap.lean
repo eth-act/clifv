@@ -1,4 +1,8 @@
-import FV.E2E.RegLevelJT
+module
+
+public import FV.E2E.RegLevelJT
+
+@[expose] public section
 
 /-!
 # Traps on the machine (M6)

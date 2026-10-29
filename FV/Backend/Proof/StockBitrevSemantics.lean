@@ -1,4 +1,9 @@
-import FV.Backend.Proof.StockBitrevForms
+module
+
+public import FV.Backend.Proof.StockBitrevForms
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarBit
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 private theorem reverse_low {w n : Nat} (h : w ≤ n) (x : BitVec n) :

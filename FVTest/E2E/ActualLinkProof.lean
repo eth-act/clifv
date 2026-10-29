@@ -1,6 +1,10 @@
-import FVTest.E2E.LinkProof
-import FV.E2E.ActualStackBound
-import FV.E2E.ActualChunkCheck
+module
+
+public import FVTest.E2E.LinkProof
+public import FV.E2E.ActualStackBound
+public import FV.E2E.ActualChunkCheck
+
+@[expose] public section
 
 /-! Proof emitter for actual callback outputs. Original
 emitters remain unchanged, including their theorem variants and output format. -/

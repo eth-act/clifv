@@ -1,7 +1,11 @@
-import FV.E2E.PairDriverT
-import FV.E2E.DeadCleanupT
-import FV.E2E.DeadCleanupPair
-import FV.E2E.DeadCleanupGuardedFP
+module
+
+public import FV.E2E.PairDriverT
+public import FV.E2E.DeadCleanupT
+public import FV.E2E.DeadCleanupPair
+public import FV.E2E.DeadCleanupGuardedFP
+
+@[expose] public section
 
 /-! # The typed dead-cleanup world and non-interference (S11e5 Stage C, slice 7)
 

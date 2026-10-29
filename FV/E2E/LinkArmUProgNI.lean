@@ -1,5 +1,9 @@
-import FV.E2E.LinkArmUProg
-import FV.E2E.LinkArmUIndNI
+module
+
+public import FV.E2E.LinkArmUProg
+public import FV.E2E.LinkArmUIndNI
+
+@[expose] public section
 
 /-!
 # The whole-program theorem with unwinding, with non-interference (S10f, #233)

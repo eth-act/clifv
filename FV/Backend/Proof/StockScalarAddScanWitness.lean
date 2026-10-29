@@ -1,10 +1,14 @@
-import FV.Backend.Proof.StockAddSubScanRefines
-import FV.Backend.Proof.StockActualAddSubBodyRefines
-import FV.Backend.Proof.StockScalarAddWitness
-import FV.Backend.Proof.StockPureUnsunk
-import FV.Backend.Proof.StockPureDriverUnsunk
-import FV.Backend.Proof.StockPureRecordCoverage
-import FV.Backend.Proof.LowerSim
+module
+
+public import FV.Backend.Proof.StockAddSubScanRefines
+public import FV.Backend.Proof.StockActualAddSubBodyRefines
+public import FV.Backend.Proof.StockScalarAddWitness
+public import FV.Backend.Proof.StockPureUnsunk
+public import FV.Backend.Proof.StockPureDriverUnsunk
+public import FV.Backend.Proof.StockPureRecordCoverage
+public import FV.Backend.Proof.LowerSim
+
+@[expose] public section
 
 /-! Real retained-record and body non-vacuity witness for the arithmetic scan
 composition. Native checks describe this fixed compiler trace only. -/

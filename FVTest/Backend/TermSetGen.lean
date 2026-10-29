@@ -1,6 +1,11 @@
-import FV.Backend.Proof.TermSetRoots
-import FV.Backend.Proof.DefGenDom
-import Std.Data.HashSet
+module
+
+public import FV.Backend.Proof.TermSetRoots
+public import FV.Backend.Proof.DefGenDom
+public import Std.Data.HashSet
+public import FVTest.ModuleHeader
+
+@[expose] public section
 
 /-!
 # Generator of the certified ISLE term sets (`FV/Backend/Proof/TermSetData.lean`)
@@ -71,6 +76,6 @@ end TermSetGen
 def main (args : List String) : IO Unit := do
   match args with
   | [path] =>
-    IO.FS.writeFile path TermSetGen.render
+    IO.FS.writeFile path (Gen.moduleHeader TermSetGen.render)
     IO.println s!"wrote {path}"
   | _ => throw (IO.userError "usage: lake env lean --run FVTest/Backend/TermSetGen.lean OUTPUT")

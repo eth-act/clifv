@@ -1,5 +1,9 @@
-import FV.Backend.Proof.IselCovTCtor
-import FV.Backend.Proof.IselCovModel
+module
+
+public import FV.Backend.Proof.IselCovTCtor
+public import FV.Backend.Proof.IselCovModel
+
+@[expose] public section
 
 /-!
 # Form coverage over float-capable contexts (typed V3): the model

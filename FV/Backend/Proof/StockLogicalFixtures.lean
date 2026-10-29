@@ -1,4 +1,8 @@
-import FV.Backend.Proof.StockLogicalObserved
+module
+
+public import FV.Backend.Proof.StockLogicalObserved
+
+@[expose] public section
 
 /-! Shared actual logical-run fixtures; reused by helper, root and record witnesses. -/
 namespace Backend.Stock.Proof.LogicalSemantics

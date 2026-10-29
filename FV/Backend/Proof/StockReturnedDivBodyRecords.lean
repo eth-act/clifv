@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockReturnedDefinitionRetention
-import FV.Backend.Proof.StockMixedDivBodyRefines
+module
+
+public import FV.Backend.Proof.StockReturnedDefinitionRetention
+public import FV.Backend.Proof.StockMixedDivBodyRefines
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.DivBody
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

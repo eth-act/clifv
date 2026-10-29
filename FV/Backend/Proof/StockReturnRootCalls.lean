@@ -1,6 +1,10 @@
-import FV.Backend.Proof.StockReturnHelpers
-import FV.Backend.Proof.StockSelectionReceipts
-import FV.Backend.Proof.StockCoverageTerms
+module
+
+public import FV.Backend.Proof.StockReturnHelpers
+public import FV.Backend.Proof.StockSelectionReceipts
+public import FV.Backend.Proof.StockCoverageTerms
+
+@[expose] public section
 
 /-! Derive the actual selected return root and its helper execution from the
 original term-data slot. No root or helper certificate is supplied by callers. -/

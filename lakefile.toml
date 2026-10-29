@@ -8,6 +8,9 @@ defaultTargets = ["FV"]
 weakLeanArgs = ["-Dlinter.unusedSimpArgs=false", "-Dlinter.unusedVariables=false",
   "-Dlinter.unnecessarySimpa=false", "-Dlinter.unusedSectionVars=false", "-Dlinter.defProp=false",
   "-Dlinter.constructorNameAsVariable=false"]
+# Module system (scripts/module-port.py): a private declaration may be referenced from the public
+# (exposed) part of its own module, as before the port; it is then exported under its private name.
+moreLeanArgs = ["-Dbackward.privateInPublic=true"]
 
 [[lean_lib]]
 name = "FV"

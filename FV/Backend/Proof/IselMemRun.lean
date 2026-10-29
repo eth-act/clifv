@@ -1,4 +1,8 @@
-import FV.Backend.Proof.IselMemBase
+module
+
+public import FV.Backend.Proof.IselMemBase
+
+@[expose] public section
 
 /-!
 # Memory family (M4Mem): runs of address code and memory instructions

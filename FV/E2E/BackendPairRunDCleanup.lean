@@ -1,9 +1,13 @@
-import FV.E2E.PairDriverDValue
-import FV.E2E.PairDriverID
-import FV.E2E.PairDriverICleanup
-import FV.E2E.BackendPairRunD
-import FV.E2E.BackendWorldCleanupI
-import FV.E2E.DeadCleanupGot
+module
+
+public import FV.E2E.PairDriverDValue
+public import FV.E2E.PairDriverID
+public import FV.E2E.PairDriverICleanup
+public import FV.E2E.BackendPairRunD
+public import FV.E2E.BackendWorldCleanupI
+public import FV.E2E.DeadCleanupGot
+
+@[expose] public section
 
 /-!
 # The guarded paired run of the cleanup path (SEM1 #537, #713, cleanup path)

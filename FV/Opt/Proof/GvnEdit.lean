@@ -1,5 +1,9 @@
-import FV.Opt.Proof.DomInv
-import FV.Opt.Validate
+module
+
+public import FV.Opt.Proof.DomInv
+public import FV.Opt.Validate
+
+@[expose] public section
 
 /-!
 # The edit validator is sound: `editOk σ f g` ⇒ `g` simulates `f` (`Opt.editOk_sim`)

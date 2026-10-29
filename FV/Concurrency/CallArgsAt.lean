@@ -1,4 +1,8 @@
-import FV.Concurrency.CallArity
+module
+
+public import FV.Concurrency.CallArity
+
+@[expose] public section
 
 /-!
 # The call's arguments in their fixed registers at the `bl` (#473, (2b), layers 3–4b)

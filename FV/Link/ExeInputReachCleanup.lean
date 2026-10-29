@@ -1,5 +1,9 @@
-import FV.Link.ExeInputReach
-import FV.Link.ExeInputCleanup
+module
+
+public import FV.Link.ExeInputReach
+public import FV.Link.ExeInputCleanup
+
+@[expose] public section
 
 /-! # The shipped compiler is total on decidable input conditions, relocation reach included (L1e)
 

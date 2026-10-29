@@ -1,5 +1,9 @@
-import FV.E2E.LinkArmBaseDet
-import FV.E2E.LinkArmProphDetWitness
+module
+
+public import FV.E2E.LinkArmBaseDet
+public import FV.E2E.LinkArmProphDetWitness
+
+@[expose] public section
 
 /-!
 # Witnesses for deterministic base hooks (`FV/E2E/LinkArmBaseDet.lean`)

@@ -1,4 +1,8 @@
-import FV.Backend.Proof.IselCovSem
+module
+
+public import FV.Backend.Proof.IselCovSem
+
+@[expose] public section
 
 /-!
 # Form coverage of the ISLE lowering (V3): `covOk` is the abstract `FormOk`

@@ -1,6 +1,10 @@
-import FV.E2E.CompiledSemantic
-import FV.E2E.StockArithmeticArtifactWitness
-import FV.Backend.Proof.ArithmeticProduction
+module
+
+public import FV.E2E.CompiledSemantic
+public import FV.E2E.StockArithmeticArtifactWitness
+public import FV.Backend.Proof.ArithmeticProduction
+
+@[expose] public section
 
 namespace E2E.StockArithmeticStageWitness
 open Backend Backend.Proof Backend.Proof.Driver

@@ -1,4 +1,8 @@
-import FV.Backend.Proof.IselFlowExt
+module
+
+public import FV.Backend.Proof.IselFlowExt
+
+@[expose] public section
 
 /-!
 # The atoms of the instruction data the driver builds

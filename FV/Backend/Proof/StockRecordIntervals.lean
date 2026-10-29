@@ -1,4 +1,8 @@
-import FV.Backend.Proof.StockAliasAvailable
+module
+
+public import FV.Backend.Proof.StockAliasAvailable
+
+@[expose] public section
 
 /-! Actual retained record allocation intervals follow the driver traversal. -/
 namespace Backend.Stock.Proof

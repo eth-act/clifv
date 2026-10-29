@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockRuleFrame
-import FV.Backend.Proof.StockSinkFrame
+module
+
+public import FV.Backend.Proof.StockRuleFrame
+public import FV.Backend.Proof.StockSinkFrame
+
+@[expose] public section
 
 /-! State frames across the direct sink binding in generated rule RHSs. -/
 namespace Backend.Stock.Proof.SinkRules

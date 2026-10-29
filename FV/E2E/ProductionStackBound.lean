@@ -1,5 +1,9 @@
-import FV.E2E.DeadCleanupStackBound
-import FV.E2E.ProductionPipelineWith
+module
+
+public import FV.E2E.DeadCleanupStackBound
+public import FV.E2E.ProductionPipelineWith
+
+@[expose] public section
 
 /-! Actual-output stack-bound adapters. Reuses the original graph,
 budget algorithm, machine semantics and successful generated-proof stages. -/

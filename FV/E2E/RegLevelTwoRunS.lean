@@ -1,5 +1,9 @@
-import FV.E2E.RegLevelTwoRunPR
-import FV.E2E.RegLevelCorrectCYS
+module
+
+public import FV.E2E.RegLevelTwoRunPR
+public import FV.E2E.RegLevelCorrectCYS
+
+@[expose] public section
 
 /-!
 # Two activations in lock-step on the reads-only guard (SEM1 #537, #699)

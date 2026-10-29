@@ -1,5 +1,9 @@
-import FV.Backend.Proof.IselLcf
-import FV.Backend.Proof.IselTermsAluB
+module
+
+public import FV.Backend.Proof.IselLcf
+public import FV.Backend.Proof.IselTermsAluB
+
+@[expose] public section
 
 /-!
 # `imm` (`inst.isle:3738`): materialise a constant

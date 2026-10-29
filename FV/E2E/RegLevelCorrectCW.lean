@@ -1,11 +1,15 @@
-import FV.E2E.RegLevelCorrectCY
-import FV.E2E.RegLevelTryNA
-import FV.E2E.RegLevelAtomicNA
-import FV.E2E.RegLevelCallNA
-import FV.E2E.RegLevelTlsNA
-import FV.E2E.RegLevelMoveNA
-import FV.E2E.RegLevelNextNA
-import FV.E2E.RegLevelOpNA
+module
+
+public import FV.E2E.RegLevelCorrectCY
+public import FV.E2E.RegLevelTryNA
+public import FV.E2E.RegLevelAtomicNA
+public import FV.E2E.RegLevelCallNA
+public import FV.E2E.RegLevelTlsNA
+public import FV.E2E.RegLevelMoveNA
+public import FV.E2E.RegLevelNextNA
+public import FV.E2E.RegLevelOpNA
+
+@[expose] public section
 
 /-!
 # The guarded realisation at a witness (SEM1 #537, item (3), route (a))

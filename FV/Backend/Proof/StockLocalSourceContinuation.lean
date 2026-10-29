@@ -1,4 +1,8 @@
-import FV.Backend.Proof.StockLocalSourceTrap
+module
+
+public import FV.Backend.Proof.StockLocalSourceTrap
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.LocalBody
 open Backend.Proof Backend.Proof.Driver

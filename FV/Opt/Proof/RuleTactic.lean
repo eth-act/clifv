@@ -1,5 +1,9 @@
-import Lean
-import FV.Opt.Proof.KernelBV
+module
+
+public import Lean
+public import FV.Opt.Proof.KernelBV
+
+@[expose] public section
 
 /-!
 # Tactics for the rule proofs

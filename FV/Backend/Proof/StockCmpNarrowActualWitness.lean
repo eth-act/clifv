@@ -1,6 +1,11 @@
-import FV.Backend.Proof.StockCmpNarrowMatchedValues
-import FV.Backend.Proof.StockCmpNarrow8DriverRuns
-import FV.Backend.Proof.StockCmpNarrow16DriverRuns
+module
+
+public import FV.Backend.Proof.StockCmpNarrowMatchedValues
+public import FV.Backend.Proof.StockCmpNarrow8DriverRuns
+public import FV.Backend.Proof.StockCmpNarrow16DriverRuns
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarCmp.NarrowActualWitness
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 open Backend.Stock.Proof.ScalarCmp

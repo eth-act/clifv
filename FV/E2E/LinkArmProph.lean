@@ -1,5 +1,9 @@
-import FV.E2E.LinkArm
-import FV.Backend.Proof.StaleRegion
+module
+
+public import FV.E2E.LinkArm
+public import FV.Backend.Proof.StaleRegion
+
+@[expose] public section
 
 /-!
 # The prophecy-indexed call contract (SEM1 step 2, `docs/plans/uninit.md` §5.4)

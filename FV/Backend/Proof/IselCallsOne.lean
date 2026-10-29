@@ -1,8 +1,12 @@
-import FV.Backend.Proof.IselShpCall
-import FV.Backend.Proof.IselShpTry
-import FV.Backend.Proof.IselCtlUnmatch
-import FV.Backend.Proof.IselExcl
-import FV.Backend.Proof.VCodeSemICall
+module
+
+public import FV.Backend.Proof.IselShpCall
+public import FV.Backend.Proof.IselShpTry
+public import FV.Backend.Proof.IselCtlUnmatch
+public import FV.Backend.Proof.IselExcl
+public import FV.Backend.Proof.VCodeSemICall
+
+@[expose] public section
 
 /-!
 # One VCode call per CLIF call: the call counts of the ISLE lowering (SEM1, `docs/plans/uninit.md` §5.9)

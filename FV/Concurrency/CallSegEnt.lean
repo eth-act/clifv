@@ -1,4 +1,8 @@
-import FV.Concurrency.CallEntryRel
+module
+
+public import FV.Concurrency.CallEntryRel
+
+@[expose] public section
 
 /-!
 # The callee's activation at a caller's call (#473, `SegOkG` call case, item (1))

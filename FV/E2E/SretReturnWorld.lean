@@ -1,5 +1,9 @@
-import FV.E2E.CompiledEither
-import FV.E2E.SretReturn
+module
+
+public import FV.E2E.CompiledEither
+public import FV.E2E.SretReturn
+
+@[expose] public section
 
 /-!
 # The `sret` return register through the world theorems (S7, for linking)

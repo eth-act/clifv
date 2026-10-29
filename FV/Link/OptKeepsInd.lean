@@ -1,5 +1,9 @@
-import FV.Link.OptFacts
-import FV.E2E.SrcBoundedLegal
+module
+
+public import FV.Link.OptFacts
+public import FV.E2E.SrcBoundedLegal
+
+@[expose] public section
 
 /-! # The optimised input keeps the input's indirect calls: the source run enters callees of the
 optimised program (A2/B1)

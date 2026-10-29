@@ -1,6 +1,10 @@
-import FV.Backend.Proof.StockPerEdgeValues
-import FV.Backend.Proof.StockSelectedRoutes
-import FV.Backend.Proof.IselCtlBrif
+module
+
+public import FV.Backend.Proof.StockPerEdgeValues
+public import FV.Backend.Proof.StockSelectedRoutes
+public import FV.Backend.Proof.IselCtlBrif
+
+@[expose] public section
 
 /-! An accepted ordinary branching function exposes the remaining per-successor
 consumer migration. Raw Stock keeps the correct vectors in Result.edgeArgs;

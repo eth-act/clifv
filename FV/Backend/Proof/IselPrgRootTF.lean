@@ -1,5 +1,9 @@
-import FV.Backend.Proof.IselPrgRootT
-import FV.Backend.Proof.IselPrgExtTF
+module
+
+public import FV.Backend.Proof.IselPrgRootT
+public import FV.Backend.Proof.IselPrgExtTF
+
+@[expose] public section
 
 /-!
 # Progress of the ISLE lowering over the float scope: the roots (S11f, #35)

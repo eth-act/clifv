@@ -1,6 +1,10 @@
-import FV.E2E.DeadCleanupBinaryInit
-import FV.E2E.LinkArmProgramInitR
-import FV.E2E.LinkArmTrapE
+module
+
+public import FV.E2E.DeadCleanupBinaryInit
+public import FV.E2E.LinkArmProgramInitR
+public import FV.E2E.LinkArmTrapE
+
+@[expose] public section
 
 /-!
 # The binary-level theorems under the slot-byte oracle, corrected premises (SEM1 #537, #719, #716)

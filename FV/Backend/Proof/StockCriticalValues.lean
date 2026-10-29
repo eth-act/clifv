@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockCriticalCode
-import FV.Backend.Proof.StockSelectedArguments
+module
+
+public import FV.Backend.Proof.StockCriticalCode
+public import FV.Backend.Proof.StockSelectedArguments
+
+@[expose] public section
 
 /-! Actual synthetic successor copies and source successor binding. -/
 namespace Backend.Stock.Proof

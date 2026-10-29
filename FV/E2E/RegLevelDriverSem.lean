@@ -1,9 +1,13 @@
-import FV.Backend.Proof.RegallocCSem
-import FV.Backend.Proof.CSemRename
-import FV.Backend.Proof.LowerRename
-import FV.Backend.Proof.IselContract
-import FV.Backend.Proof.LowerContract
-import FV.Backend.Proof.IselCtlCall
+module
+
+public import FV.Backend.Proof.RegallocCSem
+public import FV.Backend.Proof.CSemRename
+public import FV.Backend.Proof.LowerRename
+public import FV.Backend.Proof.IselContract
+public import FV.Backend.Proof.LowerContract
+public import FV.Backend.Proof.IselCtlCall
+
+@[expose] public section
 
 /-!
 # The driver's facts about `csem` (M6: `DriverSem`, `CallsRefine`)

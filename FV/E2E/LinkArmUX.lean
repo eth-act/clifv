@@ -1,4 +1,8 @@
-import FV.E2E.LinkArmUOs
+module
+
+public import FV.E2E.LinkArmUOs
+
+@[expose] public section
 
 /-!
 # The external contracts of an activation with unwinding (S10f, #233)

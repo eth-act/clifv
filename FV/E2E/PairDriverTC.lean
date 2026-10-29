@@ -1,7 +1,11 @@
-import FV.E2E.LinkWorldTC
-import FV.E2E.GuardedFPPairC
-import FV.E2E.PairDriverT
-import FV.Backend.Proof.LowerContractTPF
+module
+
+public import FV.E2E.LinkWorldTC
+public import FV.E2E.GuardedFPPairC
+public import FV.E2E.PairDriverT
+public import FV.Backend.Proof.LowerContractTPF
+
+@[expose] public section
 
 /-! # Non-interference of a compiled function, typed `try_call`s (S11e6, #419)
 

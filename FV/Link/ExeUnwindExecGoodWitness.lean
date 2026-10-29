@@ -1,5 +1,9 @@
-import FV.Link.ExeUnwindExecGood
-import FV.Link.ExeUnwindExecWitness
+module
+
+public import FV.Link.ExeUnwindExecGood
+public import FV.Link.ExeUnwindExecWitness
+
+@[expose] public section
 
 /-!
 # Witness: the executable-bytes theorems with unwinding apply without `RunOkU` (S10g, #404)

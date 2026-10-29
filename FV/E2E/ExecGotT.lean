@@ -1,15 +1,19 @@
-import FV.E2E.ExecGot
-import FV.E2E.ExecGoodRunT
-import FV.E2E.BinCheckT
-import FV.E2E.BinaryGoodT
-import FV.E2E.BinaryT
-import FV.E2E.ExecBytesT
-import FV.E2E.ExecRunNT
-import FV.E2E.ExecStaticT
-import FV.E2E.LinkArmT
-import FV.E2E.LinkCheckT
-import FV.E2E.LinkGoodT
-import FV.E2E.StackBoundT
+module
+
+public import FV.E2E.ExecGot
+public import FV.E2E.ExecGoodRunT
+public import FV.E2E.BinCheckT
+public import FV.E2E.BinaryGoodT
+public import FV.E2E.BinaryT
+public import FV.E2E.ExecBytesT
+public import FV.E2E.ExecRunNT
+public import FV.E2E.ExecStaticT
+public import FV.E2E.LinkArmT
+public import FV.E2E.LinkCheckT
+public import FV.E2E.LinkGoodT
+public import FV.E2E.StackBoundT
+
+@[expose] public section
 
 /-! # Typed copies of `FV.E2E.ExecGot` (S11e5 Stage C, slice 8)
 

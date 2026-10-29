@@ -1,5 +1,10 @@
-import FV.Backend.Lowering.StockD0
-import Lean
+module
+
+public import FV.Backend.Lowering.StockD0
+public import Lean
+
+@[expose] public section
+
 namespace Backend.Stock.D0
 set_option maxRecDepth 20000
 set_option maxHeartbeats 30000

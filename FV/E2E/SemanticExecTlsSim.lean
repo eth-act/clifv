@@ -1,4 +1,8 @@
-import FV.E2E.SemanticExecTls
+module
+
+public import FV.E2E.SemanticExecTls
+
+@[expose] public section
 
 /-! # The simulation by the hook-free executable machine (T1)
 

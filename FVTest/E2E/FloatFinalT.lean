@@ -1,7 +1,11 @@
-import FV.E2E.FinalDirectT
-import FV.E2E.DeadCleanupT
-import FV.Backend.Proof.LowerDecide
-import FVTest.Backend.FloatDriverT
+module
+
+public import FV.E2E.FinalDirectT
+public import FV.E2E.DeadCleanupT
+public import FV.Backend.Proof.LowerDecide
+public import FVTest.Backend.FloatDriverT
+
+@[expose] public section
 
 /-!
 Non-vacuity of the typed final theorem's structural premises (S11e5 Stage C, slice 7): the

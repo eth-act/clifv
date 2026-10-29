@@ -1,4 +1,8 @@
-import FV.Opt.Proof.LegalSimX
+module
+
+public import FV.Opt.Proof.LegalSimX
+
+@[expose] public section
 
 /-!
 # The refinement theorem of `Opt.Legal.check` with unwinding, two environments (S10f, #233)

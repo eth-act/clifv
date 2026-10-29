@@ -1,4 +1,9 @@
-import FV.Backend.Proof.StockSelectZeroReplacement
+module
+
+public import FV.Backend.Proof.StockSelectZeroReplacement
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarSelect
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 /-- Zero producer/consumer replacement follows the actual final resolver,

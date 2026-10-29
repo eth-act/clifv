@@ -1,5 +1,9 @@
-import FV.Backend.Proof.IselMemRoots
-import FV.Backend.Proof.IselCtlCall
+module
+
+public import FV.Backend.Proof.IselMemRoots
+public import FV.Backend.Proof.IselCtlCall
+
+@[expose] public section
 
 /-!
 # Memory family: `func_addr` (rule id 1026)

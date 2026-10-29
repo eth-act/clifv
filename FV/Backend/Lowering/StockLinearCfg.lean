@@ -1,5 +1,9 @@
-import FV.Backend.Lowering.StockScalar
-import FV.Backend.StockScalarCheck
+module
+
+public import FV.Backend.Lowering.StockScalar
+public import FV.Backend.StockScalarCheck
+
+@[expose] public section
 
 namespace Backend.Stock.LinearCfg
 set_option autoImplicit false

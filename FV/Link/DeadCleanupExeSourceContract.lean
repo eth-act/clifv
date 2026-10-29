@@ -1,5 +1,9 @@
-import FV.Link.DeadCleanupExeSource
-import FV.E2E.EntryContract
+module
+
+public import FV.Link.DeadCleanupExeSource
+public import FV.E2E.EntryContract
+
+@[expose] public section
 
 /-!
 # The shipped executable compiler refines the original source program, under one runtime contract

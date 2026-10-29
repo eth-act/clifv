@@ -1,7 +1,11 @@
-import FV.Concurrency.IselCall
-import FV.Concurrency.IselThreadWitnessData
-import FV.E2E.Main
-import FV.E2E.LinkWorld
+module
+
+public import FV.Concurrency.IselCall
+public import FV.Concurrency.IselThreadWitnessData
+public import FV.E2E.Main
+public import FV.E2E.LinkWorld
+
+@[expose] public section
 
 /-!
 # Layer 2 resuming after a call (#473, (2c) of the generic call theorem, layer 2)

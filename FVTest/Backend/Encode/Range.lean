@@ -1,5 +1,9 @@
-import FV.Backend
-import FV.Backend.Proof.EncodeBranch
+module
+
+public import FV.Backend
+public import FV.Backend.Proof.EncodeBranch
+
+@[expose] public section
 
 /-!
 # Branch-range tests (`lake exe lean-backend-encode-test range`)

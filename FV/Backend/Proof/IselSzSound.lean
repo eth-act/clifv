@@ -1,6 +1,10 @@
-import FV.Backend.Proof.IselSzDefs
-import FV.Backend.Proof.IselCovSound
-import FV.Backend.Proof.IselGeneric
+module
+
+public import FV.Backend.Proof.IselSzDefs
+public import FV.Backend.Proof.IselCovSound
+public import FV.Backend.Proof.IselGeneric
+
+@[expose] public section
 
 /-!
 # The size of the ISLE lowering's output (V6c): soundness of the cost analysis

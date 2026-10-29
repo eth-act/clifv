@@ -1,6 +1,10 @@
-import FV.E2E.SpillLocalWitness
-import FV.Backend.Proof.SpillCtlPipe
-import FV.Backend.Proof.IselShpDriver
+module
+
+public import FV.E2E.SpillLocalWitness
+public import FV.Backend.Proof.SpillCtlPipe
+public import FV.Backend.Proof.IselShpDriver
+
+@[expose] public section
 
 /-!
 # The control part of the spill allocator's local facts: assembly, witness, counterexample

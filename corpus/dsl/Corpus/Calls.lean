@@ -1,4 +1,8 @@
-import Corpus.Errors
+module
+
+public import Corpus.Errors
+
+@[expose] public section
 
 /-! Corpus: calls between `flat def`s (nested, in loops, across modules, with contracts). -/
 

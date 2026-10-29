@@ -1,4 +1,8 @@
-import FV.Concurrency.ArmInstFoot
+module
+
+public import FV.Concurrency.ArmInstFoot
+
+@[expose] public section
 
 /-!
 # Memory faults of the Arm machine (A3, #412, slice F1; `docs/plans/memfault.md`)

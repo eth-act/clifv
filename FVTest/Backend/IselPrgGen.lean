@@ -1,4 +1,9 @@
-import FV.Backend.Proof.IselPrgRoot
+module
+
+public import FV.Backend.Proof.IselPrgRoot
+public import FVTest.ModuleHeader
+
+@[expose] public section
 
 /-!
 # Generator of the V7 progress summary table (`FV/Backend/Proof/IselPrgTab.lean`)
@@ -389,6 +394,6 @@ within the interpreter's fuel. -/\ndef stmtRootOk (F : PA) : Bool :=\n  match ta
     out := out ++ "\n/-- **Every statement root checks.** -/\ntheorem stmtRoots_ok : stmtForms.all stmtRootOk = true := by\n  decide +kernel\n"
     out := out ++ "\n/-- **Every terminator root checks.** -/\ntheorem termRoots_ok : termRoots.all termRootOk = true := by\n  decide +kernel\n"
     out := out ++ "\nend Backend.Proof.Prg\n"
-    IO.FS.writeFile path out
+    IO.FS.writeFile path (Gen.moduleHeader out)
     IO.println s!"wrote {path}: {ents.size} entries in {nch} chunks"
   | _ => pure ()

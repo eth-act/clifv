@@ -1,5 +1,9 @@
-import FV.Opt.Basic
-import FV.Isle.Opt.Simplify
+module
+
+public import FV.Opt.Basic
+public import FV.Isle.Opt.Simplify
+
+@[expose] public section
 
 /-!
 # The rewrite-rule interface

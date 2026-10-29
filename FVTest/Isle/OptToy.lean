@@ -1,4 +1,8 @@
-import FV.Isle.Opt.Simplify
+module
+
+public import FV.Isle.Opt.Simplify
+
+@[expose] public section
 
 /-!
 # A toy e-graph for testing `Isle.Opt.simplify`

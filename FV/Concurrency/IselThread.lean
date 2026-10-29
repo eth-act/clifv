@@ -1,7 +1,11 @@
-import FV.Concurrency.IselSeg
-import FV.Concurrency.CorrRefine
-import FV.Concurrency.ClifCStepTerm
-import FV.Concurrency.Mapping
+module
+
+public import FV.Concurrency.IselSeg
+public import FV.Concurrency.CorrRefine
+public import FV.Concurrency.ClifCStepTerm
+public import FV.Concurrency.Mapping
+
+@[expose] public section
 
 /-!
 # CLIF → VCode with interference: the induction (T2h, #311, layer 2e)

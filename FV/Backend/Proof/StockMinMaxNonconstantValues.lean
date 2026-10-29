@@ -1,5 +1,10 @@
-import FV.Backend.Proof.StockCmpNonconstantSelection
-import FV.Backend.Proof.StockMinMaxRegisterTraceValues
+module
+
+public import FV.Backend.Proof.StockCmpNonconstantSelection
+public import FV.Backend.Proof.StockMinMaxRegisterTraceValues
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarSelect
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 open Backend.Stock.Proof.ScalarCmp

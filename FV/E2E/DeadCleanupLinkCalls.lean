@@ -1,5 +1,9 @@
-import FV.E2E.LinkCheck
-import FV.E2E.DeadCleanupGotCheck
+module
+
+public import FV.E2E.LinkCheck
+public import FV.E2E.DeadCleanupGotCheck
+
+@[expose] public section
 
 namespace E2E.LinkCheck
 open Backend Backend.Proof Backend.DeadCleanup

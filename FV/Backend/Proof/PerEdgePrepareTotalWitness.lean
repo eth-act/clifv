@@ -1,7 +1,11 @@
-import FV.Backend.Proof.PerEdgePrepareInputTotal
-import FV.Backend.Proof.StockPrepareInputs
-import FV.Backend.Proof.StockPrepareCompleteWitness
-import FV.Backend.Proof.PerEdgePrepareWitness
+module
+
+public import FV.Backend.Proof.PerEdgePrepareInputTotal
+public import FV.Backend.Proof.StockPrepareInputs
+public import FV.Backend.Proof.StockPrepareCompleteWitness
+public import FV.Backend.Proof.PerEdgePrepareWitness
+
+@[expose] public section
 
 namespace Backend.Proof.PerEdgePrepTotalWitness
 open Backend Backend.Proof Backend.Proof.Driver Backend.Proof.PerEdgePrep

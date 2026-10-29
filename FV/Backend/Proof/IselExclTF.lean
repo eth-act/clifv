@@ -1,6 +1,10 @@
-import FV.Backend.Proof.IselExclT
-import FV.Backend.Proof.InstScopeTF
-import FV.Backend.Proof.IselFloatCmp
+module
+
+public import FV.Backend.Proof.IselExclT
+public import FV.Backend.Proof.InstScopeTF
+public import FV.Backend.Proof.IselFloatCmp
+
+@[expose] public section
 
 /-!
 # Excluded root rules with the proven float operations (S11f, #35)

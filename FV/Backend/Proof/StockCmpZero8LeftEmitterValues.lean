@@ -1,5 +1,10 @@
-import FV.Backend.Proof.StockCmpZeroLeftEmitterSelection
-import FV.Backend.Proof.StockCmpZero8RhsValues
+module
+
+public import FV.Backend.Proof.StockCmpZeroLeftEmitterSelection
+public import FV.Backend.Proof.StockCmpZero8RhsValues
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarCmp
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 theorem stock_cmp_zero8_left_eq_emitter_values {p : Program} (hp : Data p)

@@ -1,9 +1,13 @@
-import FV.Backend.Proof.StockSourceView
-import FV.Backend.Proof.StockPatternSource
-import FV.Backend.Proof.StockMappedFlow
-import FV.Backend.Proof.StockReservedFlow
-import FV.Backend.Proof.StockConstantRoot
-import FV.Backend.Proof.IselFlow
+module
+
+public import FV.Backend.Proof.StockSourceView
+public import FV.Backend.Proof.StockPatternSource
+public import FV.Backend.Proof.StockMappedFlow
+public import FV.Backend.Proof.StockReservedFlow
+public import FV.Backend.Proof.StockConstantRoot
+public import FV.Backend.Proof.IselFlow
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.MappedFlow
 attribute [local irreducible] Isle.Aarch64.program

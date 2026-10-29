@@ -1,4 +1,8 @@
-import FV.Backend.Proof.IselRulesALU
+module
+
+public import FV.Backend.Proof.IselRulesALU
+
+@[expose] public section
 
 /-!
 # Family B: contracts of the emitting helper terms (`bit_rr`, `alu_rr_imm_shift`,

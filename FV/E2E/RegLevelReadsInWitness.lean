@@ -1,6 +1,10 @@
-import FV.E2E.BackendWorldIR
-import FV.E2E.RegLevelCorrectPRSWitness
-import FV.E2E.IselSimIWitness
+module
+
+public import FV.E2E.BackendWorldIR
+public import FV.E2E.RegLevelCorrectPRSWitness
+public import FV.E2E.IselSimIWitness
+
+@[expose] public section
 
 /-!
 # Witnesses for the located reads (SEM1 #537, step 3p, `FV/E2E/RegLevelReadsIn.lean`)

@@ -1,8 +1,12 @@
-import FV.Backend.Proof.PerEdgeSpillEntry
-import FV.Backend.Proof.SpillCtlForms
-import FV.Backend.Proof.SpillArity
-import FV.Backend.Proof.StockCfgTotalWitness
-import FV.Backend.Proof.PerEdgeAllocDriverSound
+module
+
+public import FV.Backend.Proof.PerEdgeSpillEntry
+public import FV.Backend.Proof.SpillCtlForms
+public import FV.Backend.Proof.SpillArity
+public import FV.Backend.Proof.StockCfgTotalWitness
+public import FV.Backend.Proof.PerEdgeAllocDriverSound
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.SpillEntryFixture
 open Backend.Proof Backend.Proof.Driver Backend.Proof.PerEdgeSpill Backend.Proof.Spill

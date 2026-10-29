@@ -1,5 +1,9 @@
-import FV.Opt.Proof.RuleSkelEmbed
-import FV.Opt.Proof.RuleIntRetry
+module
+
+public import FV.Opt.Proof.RuleSkelEmbed
+public import FV.Opt.Proof.RuleIntRetry
+
+@[expose] public section
 
 /-!
 # Branch conditions made from leading/trailing zero counts

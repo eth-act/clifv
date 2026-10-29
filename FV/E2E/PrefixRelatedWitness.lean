@@ -1,5 +1,9 @@
-import FV.E2E.PrefixRelated
-import FV.E2E.BackendPrefixIWitness
+module
+
+public import FV.E2E.PrefixRelated
+public import FV.E2E.BackendPrefixIWitness
+
+@[expose] public section
 
 /-!
 # Witnesses for `FV/E2E/PrefixRelated.lean`

@@ -1,5 +1,9 @@
-import FV.E2E.LinkWorldX
-import FV.E2E.ValidatedFinal
+module
+
+public import FV.E2E.LinkWorldX
+public import FV.E2E.ValidatedFinal
+
+@[expose] public section
 
 set_option autoImplicit false
 

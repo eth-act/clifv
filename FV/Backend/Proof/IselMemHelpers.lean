@@ -1,4 +1,8 @@
-import FV.Backend.Proof.IselMemAmodeTop
+module
+
+public import FV.Backend.Proof.IselMemAmodeTop
+
+@[expose] public section
 
 /-!
 # Memory family (M4Mem2): the memory helper terms

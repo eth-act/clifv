@@ -1,4 +1,8 @@
-import FV.Backend.Proof.DeadCleanupCFG
+module
+
+public import FV.Backend.Proof.DeadCleanupCFG
+
+@[expose] public section
 
 namespace Backend.DeadCleanup
 open Backend.Proof

@@ -1,4 +1,8 @@
-import FV.E2E.LinkScopeDefs
+module
+
+public import FV.E2E.LinkScopeDefs
+
+@[expose] public section
 
 /-! # The program part's layout (L2b, docs/research/lean-linker.md)
 

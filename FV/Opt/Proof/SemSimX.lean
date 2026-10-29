@@ -1,4 +1,8 @@
-import FV.Opt.Proof.SemFacts
+module
+
+public import FV.Opt.Proof.SemFacts
+
+@[expose] public section
 
 /-!
 # Simulations covering `call_indirect` and `try_call`/`try_call_indirect` (S1)

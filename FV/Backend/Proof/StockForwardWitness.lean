@@ -1,6 +1,10 @@
-import FV.Backend.Proof.StockForwardCheck
-import FV.Backend.Proof.RefinesCSem
-import FV.E2E.RegLevelDriverSem
+module
+
+public import FV.Backend.Proof.StockForwardCheck
+public import FV.Backend.Proof.RefinesCSem
+public import FV.E2E.RegLevelDriverSem
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.ForwardWitness
 open Backend.Proof Backend.Proof.Driver

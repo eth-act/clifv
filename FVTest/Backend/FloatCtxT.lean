@@ -1,4 +1,8 @@
-import FV.Backend.Proof.DriverCheckT
+module
+
+public import FV.Backend.Proof.DriverCheckT
+
+@[expose] public section
 
 /-!
 Non-vacuity of the float-capable context invariant `CtxInvT` (S11e4, #238): the contexts

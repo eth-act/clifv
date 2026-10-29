@@ -1,6 +1,10 @@
-import FV.E2E.LinkScopeInputDefs
-import FV.E2E.LinkScopeDefsT
-import FV.E2E.EmitCondsDefs
+module
+
+public import FV.E2E.LinkScopeInputDefs
+public import FV.E2E.LinkScopeDefsT
+public import FV.E2E.EmitCondsDefs
+
+@[expose] public section
 
 /-! # The typed input conditions (S11e5 Stage C, slice 8): the definitions
 

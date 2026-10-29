@@ -1,4 +1,8 @@
-import FV.Opt.Proof.CompleteSimpEnd
+module
+
+public import FV.Opt.Proof.CompleteSimpEnd
+
+@[expose] public section
 
 /-!
 # Completeness of simplify: the run

@@ -1,5 +1,9 @@
-import FV.E2E.DeadCleanupExecMemTrap
-import FV.E2E.ExecFaults
+module
+
+public import FV.E2E.DeadCleanupExecMemTrap
+public import FV.E2E.ExecFaults
+
+@[expose] public section
 
 /-!
 # The executable machine with memory faults (A3, #412, slice F8d)

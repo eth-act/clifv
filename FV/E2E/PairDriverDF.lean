@@ -1,5 +1,9 @@
-import FV.E2E.PairDriverD
-import FV.E2E.PairDriverF
+module
+
+public import FV.E2E.PairDriverD
+public import FV.E2E.PairDriverF
+
+@[expose] public section
 
 /-!
 # The guarded paired contracts from non-interference at the exterior only (SEM1 #537, #713)

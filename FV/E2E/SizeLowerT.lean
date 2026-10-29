@@ -1,9 +1,13 @@
-import FV.E2E.SizeLower
-import FV.E2E.DeadCleanupSize
-import FV.Backend.Proof.IselSzTDriver
-import FV.Backend.Proof.LowerLoopT
-import FV.Backend.Proof.LowerShapeOkT
-import FV.Backend.Proof.LowerCompleteT
+module
+
+public import FV.E2E.SizeLower
+public import FV.E2E.DeadCleanupSize
+public import FV.Backend.Proof.IselSzTDriver
+public import FV.Backend.Proof.LowerLoopT
+public import FV.Backend.Proof.LowerShapeOkT
+public import FV.Backend.Proof.LowerCompleteT
+
+@[expose] public section
 
 /-!
 # The size of `lowerFunction`'s output from the ISLE runs, on every input (typed V6c)

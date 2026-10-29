@@ -1,5 +1,9 @@
-import FV.Link.Ld.LinkTotal
-import FV.Link.Ld.Spec
+module
+
+public import FV.Link.Ld.LinkTotal
+public import FV.Link.Ld.Spec
+
+@[expose] public section
 
 /-! # The link spec at `lean-ld`'s plan (A1f, #409)
 

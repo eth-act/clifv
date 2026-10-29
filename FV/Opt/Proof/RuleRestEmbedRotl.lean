@@ -1,4 +1,8 @@
-import FV.Opt.Proof.RuleRestEmbedBase
+module
+
+public import FV.Opt.Proof.RuleRestEmbedBase
+
+@[expose] public section
 
 /-! # Helper specification `imm64_rotl` (cprop fold)
 

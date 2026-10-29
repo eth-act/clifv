@@ -1,7 +1,11 @@
-import FV.Concurrency.SegShape
-import FV.Backend.Proof.DriverCheckSound
-import FV.Backend.Proof.RegallocCSem
-import FV.Concurrency.IselClif
+module
+
+public import FV.Concurrency.SegShape
+public import FV.Backend.Proof.DriverCheckSound
+public import FV.Backend.Proof.RegallocCSem
+public import FV.Concurrency.IselClif
+
+@[expose] public section
 
 /-!
 # The multi-threaded scope of the lowering, checked (T2h, #311, layer 2e)

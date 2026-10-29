@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockDFG
-import FV.Backend.Proof.StockProjection
+module
+
+public import FV.Backend.Proof.StockDFG
+public import FV.Backend.Proof.StockProjection
+
+@[expose] public section
 
 /-! Stock pattern matching depends on source/DFG fields, independently of the
 register mapping and scheduler constructors. -/

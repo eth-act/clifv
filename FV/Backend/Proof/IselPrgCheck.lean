@@ -1,4 +1,8 @@
-import FV.Backend.Proof.IselPrgDom
+module
+
+public import FV.Backend.Proof.IselPrgDom
+
+@[expose] public section
 
 /-!
 # Progress of the ISLE lowering (V7): the abstract interpreter

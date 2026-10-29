@@ -1,5 +1,9 @@
-import FV.Unw.EhFrame
-import FV.Backend.Proof.UnwindTables
+module
+
+public import FV.Unw.EhFrame
+public import FV.Backend.Proof.UnwindTables
+
+@[expose] public section
 
 /-!
 # The emitted `.eh_frame` / `.gcc_except_table` decode to the unwinder's tables (S10f)

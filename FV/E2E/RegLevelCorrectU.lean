@@ -1,7 +1,11 @@
-import FV.E2E.RegLevelUTry
-import FV.E2E.RegLevelFrameSaved
-import FV.E2E.RegLevelCallSite
-import FV.E2E.UnwindStatement
+module
+
+public import FV.E2E.RegLevelUTry
+public import FV.E2E.RegLevelFrameSaved
+public import FV.E2E.RegLevelCallSite
+public import FV.E2E.UnwindStatement
+
+@[expose] public section
 
 /-!
 # The register-level theorem with unwinding (S10e, #232)

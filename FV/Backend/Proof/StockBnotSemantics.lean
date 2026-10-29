@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockBnotRhs
-import FV.Backend.Proof.StockLogicalLookthrough
+module
+
+public import FV.Backend.Proof.StockBnotRhs
+public import FV.Backend.Proof.StockLogicalLookthrough
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.Bnot
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

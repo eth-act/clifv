@@ -1,5 +1,9 @@
-import FV.E2E.LinkScopeInputDefsT2
-import FV.E2E.LinkScopeInputT
+module
+
+public import FV.E2E.LinkScopeInputDefsT2
+public import FV.E2E.LinkScopeInputT
+
+@[expose] public section
 
 /-!
 # The typed input conditions with the verifier's entry and `select` typing: basic facts

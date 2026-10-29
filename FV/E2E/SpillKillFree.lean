@@ -1,8 +1,12 @@
-import FV.E2E.SpillAvail
-import FV.E2E.SpillCtlWitness
-import FV.Backend.Proof.KillDriver
-import FV.Backend.Proof.KillTryDefs
-import FV.Backend.Proof.KillPrep
+module
+
+public import FV.E2E.SpillAvail
+public import FV.E2E.SpillCtlWitness
+public import FV.Backend.Proof.KillDriver
+public import FV.Backend.Proof.KillTryDefs
+public import FV.Backend.Proof.KillPrep
+
+@[expose] public section
 
 /-!
 # `SpillKillFree` and `SpillAccepted` proven (V4 (a))

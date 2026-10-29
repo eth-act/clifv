@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockDFG
-import FV.Backend.Proof.StockAvailableProvenance
+module
+
+public import FV.Backend.Proof.StockDFG
+public import FV.Backend.Proof.StockAvailableProvenance
+
+@[expose] public section
 
 /-! Transport operand provenance out of the actual block scan's terminator
 and exception-register overrides. No restriction on reserved registers. -/

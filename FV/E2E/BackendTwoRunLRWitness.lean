@@ -1,6 +1,10 @@
-import FV.E2E.BackendTwoRunLR
-import FV.E2E.BackendTwoRunTWitness
-import FV.E2E.LinkArmX30CheckWitness
+module
+
+public import FV.E2E.BackendTwoRunLR
+public import FV.E2E.BackendTwoRunTWitness
+public import FV.E2E.LinkArmX30CheckWitness
+
+@[expose] public section
 
 /-!
 # Witnesses for the machine lock from the entries to the return (SEM1 #537, `BackendTwoRunLR.lean`)

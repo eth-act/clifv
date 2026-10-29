@@ -1,6 +1,10 @@
-import FV.E2E.EmitTotal
-import FV.E2E.EmitCondsLower
-import FV.Backend.Proof.IselEmitDriver
+module
+
+public import FV.E2E.EmitTotal
+public import FV.E2E.EmitCondsLower
+public import FV.Backend.Proof.IselEmitDriver
+
+@[expose] public section
 
 /-!
 # Emission conditions from the input (V6c)

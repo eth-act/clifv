@@ -5,8 +5,12 @@ Author(s): Shilpi Goel
 -/
 -- ADC, ADCS, SBC, SBCS: 32- and 64-bit versions
 
-import FV.Arm.Decode
-import FV.Arm.Insts.Common
+module
+
+public import FV.Arm.Decode
+public import FV.Arm.Insts.Common
+
+@[expose] public section
 
 namespace Arm
 

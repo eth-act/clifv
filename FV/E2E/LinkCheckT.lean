@@ -1,5 +1,9 @@
-import FV.E2E.LinkCheck
-import FV.E2E.LinkArmT
+module
+
+public import FV.E2E.LinkCheck
+public import FV.E2E.LinkArmT
+
+@[expose] public section
 
 /-! # The typed link checker (S11e5 Stage C, slice 8)
 

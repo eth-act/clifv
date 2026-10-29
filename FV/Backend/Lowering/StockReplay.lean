@@ -1,4 +1,8 @@
-import FV.Backend.Lowering.Stock
+module
+
+public import FV.Backend.Lowering.Stock
+
+@[expose] public section
 
 /-!
 Local replay of the stock driver's backward-scan transitions. Exact equality

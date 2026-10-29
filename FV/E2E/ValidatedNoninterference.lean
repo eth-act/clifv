@@ -1,5 +1,9 @@
-import FV.E2E.LinkWorldX
-import FV.E2E.ValidatedWorld
+module
+
+public import FV.E2E.LinkWorldX
+public import FV.E2E.ValidatedWorld
+
+@[expose] public section
 
 /-! Additive non-interference consumer of actual checked lowering output.
 Original statements remain unchanged; no legacy output equality is introduced.

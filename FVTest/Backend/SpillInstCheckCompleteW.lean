@@ -1,4 +1,8 @@
-import FV.Backend.Proof.SpillInstCheckComplete
+module
+
+public import FV.Backend.Proof.SpillInstCheckComplete
+
+@[expose] public section
 
 /-! Non-vacuity of the completeness of `spillInstOkB`/`ctlSpillB` (S11e5 Stage C, slice 8): a
 `Rets` of a float vreg in v0 meets `SpillInstOk` (`spillInstOk_of_spillInstOkB`, decided), so

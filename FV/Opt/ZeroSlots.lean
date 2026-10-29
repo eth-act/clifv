@@ -1,4 +1,8 @@
-import FV.Opt.Basic
+module
+
+public import FV.Opt.Basic
+
+@[expose] public section
 
 /-!
 # Zero-filled stack slots (SEM1, #537, `docs/plans/uninit.md` design B)

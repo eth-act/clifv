@@ -1,7 +1,11 @@
-import FV.E2E.IselSimICleanup
-import FV.E2E.BackendWorldI
-import FV.E2E.DeadCleanupGot
-import FV.E2E.DeadCleanupRegLevelPRS
+module
+
+public import FV.E2E.IselSimICleanup
+public import FV.E2E.BackendWorldI
+public import FV.E2E.DeadCleanupGot
+public import FV.E2E.DeadCleanupRegLevelPRS
+
+@[expose] public section
 
 /-!
 # The per-function theorem with the final world, counted, on the cleanup path (SEM1, `docs/plans/uninit.md` §5.9)

@@ -1,5 +1,9 @@
-import FV.E2E.BackendTwoRunN
-import FV.E2E.RegLevelCallStart
+module
+
+public import FV.E2E.BackendTwoRunN
+public import FV.E2E.RegLevelCallStart
+
+@[expose] public section
 
 /-!
 # The per-index lock with the contracts of the first `N` calls (SEM1 #537, #713)

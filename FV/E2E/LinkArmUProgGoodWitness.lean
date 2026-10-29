@@ -1,5 +1,9 @@
-import FV.E2E.LinkArmUProgGood
-import FV.E2E.LinkArmUProgNIWitness
+module
+
+public import FV.E2E.LinkArmUProgGood
+public import FV.E2E.LinkArmUProgNIWitness
+
+@[expose] public section
 
 /-!
 # Non-vacuity of the per-state facts of the whole-program run with unwinding (S10g, #404)

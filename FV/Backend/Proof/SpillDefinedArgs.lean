@@ -1,5 +1,9 @@
-import FV.Backend.Proof.KillAssemble
-import FV.Backend.Proof.SpillDefinedPaths
+module
+
+public import FV.Backend.Proof.KillAssemble
+public import FV.Backend.Proof.SpillDefinedPaths
+
+@[expose] public section
 
 /-!
 # Branch arguments of `lowerFunction`'s VCode (`ParamArgs`)

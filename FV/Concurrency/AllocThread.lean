@@ -1,5 +1,9 @@
-import FV.Concurrency.PrepThread
-import FV.Backend.Proof.RegallocSound
+module
+
+public import FV.Concurrency.PrepThread
+public import FV.Backend.Proof.RegallocSound
+
+@[expose] public section
 
 /-!
 # Register allocation with interference (T2h, #311, layer 4a)

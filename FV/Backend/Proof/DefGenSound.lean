@@ -1,5 +1,9 @@
-import FV.Backend.Proof.DefGenPat
-import FV.Backend.Proof.KillGen
+module
+
+public import FV.Backend.Proof.DefGenPat
+public import FV.Backend.Proof.KillGen
+
+@[expose] public section
 
 /-!
 # Definedness of the ISLE runs: soundness of the abstract interpreter

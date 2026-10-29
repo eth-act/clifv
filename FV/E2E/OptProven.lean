@@ -1,5 +1,9 @@
-import FV.E2E.Opt
-import FV.Opt.Proof.SimpPass
+module
+
+public import FV.E2E.Opt
+public import FV.Opt.Proof.SimpPass
+
+@[expose] public section
 
 /-! # The end-to-end theorem over the mid-end with the proven rule sets
 

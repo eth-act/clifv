@@ -1,6 +1,10 @@
-import FV.Concurrency.IselMem
-import FV.Concurrency.IselMemAux
-import FV.Concurrency.CEvsInv
+module
+
+public import FV.Concurrency.IselMem
+public import FV.Concurrency.IselMemAux
+public import FV.Concurrency.CEvsInv
+
+@[expose] public section
 
 /-!
 # The memory instruction's events are the CLIF access (T2h, #311, layer 2e)

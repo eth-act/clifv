@@ -1,6 +1,10 @@
-import FV.E2E.LinkArmProgOsPRBRL30
-import FV.E2E.BackendTwoRunNIU
-import FV.E2E.LinkArmBlrCheck
+module
+
+public import FV.E2E.LinkArmProgOsPRBRL30
+public import FV.E2E.BackendTwoRunNIU
+public import FV.E2E.LinkArmBlrCheck
+
+@[expose] public section
 
 /-!
 # The second activation's call contracts at its locked call states (SEM1 #537, #713)

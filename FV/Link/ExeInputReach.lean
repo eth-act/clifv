@@ -1,6 +1,10 @@
-import FV.Link.ExeInput
-import FV.Backend.Proof.RelocProvDriver
-import FV.Backend.Proof.RelocProvEmit
+module
+
+public import FV.Link.ExeInput
+public import FV.Backend.Proof.RelocProvDriver
+public import FV.Backend.Proof.RelocProvEmit
+
+@[expose] public section
 
 /-! # The executable compiler is total on decidable input conditions, relocation reach included (L1e)
 

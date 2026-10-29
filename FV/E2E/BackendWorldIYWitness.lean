@@ -1,5 +1,9 @@
-import FV.E2E.BackendWorldIY
-import FV.E2E.RegLevelReadsInWitness
+module
+
+public import FV.E2E.BackendWorldIY
+public import FV.E2E.RegLevelReadsInWitness
+
+@[expose] public section
 
 /-!
 # Witness for the guarded world reads (SEM1 #537, item (2), `FV/E2E/BackendWorldIY.lean`)

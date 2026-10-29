@@ -1,4 +1,8 @@
-import FV.Backend.Proof.IselExclBase
+module
+
+public import FV.Backend.Proof.IselExclBase
+
+@[expose] public section
 
 /-!
 # Excluded root rules: facts about E instructions and the extractors the checker uses

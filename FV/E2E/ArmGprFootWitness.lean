@@ -1,4 +1,8 @@
-import FV.E2E.ArmGprFoot
+module
+
+public import FV.E2E.ArmGprFoot
+
+@[expose] public section
 
 /-!
 # Non-vacuity of the general-purpose register footprint

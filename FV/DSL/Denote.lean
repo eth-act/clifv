@@ -1,4 +1,8 @@
-import FV.DSL.Syntax
+module
+
+public import FV.DSL.Syntax
+
+@[expose] public section
 
 /-!
 # Denotational semantics

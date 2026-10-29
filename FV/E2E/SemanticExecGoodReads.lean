@@ -1,5 +1,9 @@
-import FV.E2E.SemanticExecGoodRun
-import FV.E2E.SemanticExecFrameSim
+module
+
+public import FV.E2E.SemanticExecGoodRun
+public import FV.E2E.SemanticExecFrameSim
+
+@[expose] public section
 
 /-! # D2 of `StepOkR` from the register-level per-state facts (L3 (c))
 

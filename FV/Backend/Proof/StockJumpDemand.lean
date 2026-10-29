@@ -1,6 +1,10 @@
-import FV.Backend.Proof.StockBranchArgumentDemand
-import FV.Backend.Proof.StockJumpBodyRefines
-import FV.Backend.Proof.StockDemandExtent
+module
+
+public import FV.Backend.Proof.StockBranchArgumentDemand
+public import FV.Backend.Proof.StockJumpBodyRefines
+public import FV.Backend.Proof.StockDemandExtent
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.Control
 open Backend.Proof Backend.Proof.Driver Backend.Proof.Driver.Fix

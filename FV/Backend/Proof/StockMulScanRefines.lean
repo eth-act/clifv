@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockBnotScanRefines
-import FV.Backend.Proof.StockMulSourceTransfer
+module
+
+public import FV.Backend.Proof.StockBnotScanRefines
+public import FV.Backend.Proof.StockMulSourceTransfer
+
+@[expose] public section
 
 /-! Complete logical source transfer at the original body-scan boundary. -/
 namespace Backend.Stock.Proof

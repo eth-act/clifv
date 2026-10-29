@@ -1,9 +1,13 @@
-import FV.Backend.Proof.SpillEdgesPrep
-import FV.Backend.Proof.SpillEdgesIsel
-import FV.Backend.Proof.SpillArity
-import FV.Backend.Proof.LowerLoop
-import FV.Backend.Proof.LowerComplete
-import FV.Backend.Proof.LowerShapeOkFacts
+module
+
+public import FV.Backend.Proof.SpillEdgesPrep
+public import FV.Backend.Proof.SpillEdgesIsel
+public import FV.Backend.Proof.SpillArity
+public import FV.Backend.Proof.LowerLoop
+public import FV.Backend.Proof.LowerComplete
+public import FV.Backend.Proof.LowerShapeOkFacts
+
+@[expose] public section
 
 /-!
 # The CFG facts of `lowerFunction`'s VCode (V4)

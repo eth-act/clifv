@@ -1,5 +1,9 @@
-import FV.E2E.BackendPrefixAt
-import FV.E2E.WorldUnwindGot
+module
+
+public import FV.E2E.BackendPrefixAt
+public import FV.E2E.WorldUnwindGot
+
+@[expose] public section
 
 /-!
 # The counted pipeline at call `N` itself, cleanup path and either artifact (SEM1 #537, #680 (3))

@@ -1,4 +1,8 @@
-import FV.Backend.Proof.IselFamAluBUnary
+module
+
+public import FV.Backend.Proof.IselFamAluBUnary
+
+@[expose] public section
 
 /-!
 # Family B: `bnot_base_case` (1377), `nop` (78), `ireduce` (2146)

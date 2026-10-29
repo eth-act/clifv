@@ -1,5 +1,10 @@
-import FV.Backend.Proof.StockCmpZeroMatch
-import FV.Backend.Proof.StockCmpNonconstantSelection
+module
+
+public import FV.Backend.Proof.StockCmpZeroMatch
+public import FV.Backend.Proof.StockCmpNonconstantSelection
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarCmp
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 set_option maxRecDepth 20000

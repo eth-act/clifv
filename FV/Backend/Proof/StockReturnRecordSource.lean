@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockReturnRecordCalls
-import FV.Backend.Proof.StockReturnSourceRuns
+module
+
+public import FV.Backend.Proof.StockReturnRecordCalls
+public import FV.Backend.Proof.StockReturnSourceRuns
+
+@[expose] public section
 
 /-! Original dominance and real demand marks discharge return operand holding.
 The retained source connection derives its helper execution internally. -/

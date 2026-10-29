@@ -1,4 +1,9 @@
-import FV.E2E.StockShiftFixtures
+module
+
+public import FV.E2E.StockShiftFixtures
+
+@[expose] public section
+
 namespace E2E.StockCastNIWitness
 open Backend.Stock.D0
 set_option autoImplicit false

@@ -1,4 +1,8 @@
-import FV.Clif.Run
+module
+
+public import FV.Clif.Run
+
+@[expose] public section
 
 /-! # Facts about `Clif.evalFloat` shared by the mid-end and backend proofs -/
 

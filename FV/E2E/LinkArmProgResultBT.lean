@@ -1,4 +1,8 @@
-import FV.E2E.LinkArmStage2Base
+module
+
+public import FV.E2E.LinkArmStage2Base
+
+@[expose] public section
 
 /-!
 # The CLIF result of a program call under `CondBT` (SEM1 #537, #680 (3), stage 2)

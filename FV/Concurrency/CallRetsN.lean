@@ -1,4 +1,8 @@
-import FV.Concurrency.CallRetsEnd
+module
+
+public import FV.Concurrency.CallRetsEnd
+
+@[expose] public section
 
 /-!
 # All layers pausing at calls and returns, every `rets` end resolved (#473, step (2))

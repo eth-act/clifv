@@ -255,7 +255,7 @@ pub fn render(
 
     let mut o = String::from(header);
     o.push_str(
-        "import FV.Isle.Syntax\n\nset_option maxRecDepth 100000\n\nnamespace Isle.Opt.Closure\nopen Isle\n\n",
+        "module\n\npublic import FV.Isle.Syntax\n\n@[expose] public section\n\nset_option maxRecDepth 100000\n\nnamespace Isle.Opt.Closure\nopen Isle\n\n",
     );
     o.push_str(
         "/-! Rules and terms of the mid-end roots `simplify` / `simplify_skeleton` that can fire\n\

@@ -1,4 +1,8 @@
-import FV.Opt.Proof.RuleAuto
+module
+
+public import FV.Opt.Proof.RuleAuto
+
+@[expose] public section
 
 /-!
 # Part 1 of 2 of `RuleBitops5.lean`

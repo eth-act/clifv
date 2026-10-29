@@ -1,5 +1,9 @@
-import FV.Opt.Proof.SimpFacts
-import FV.Opt.Proof.GvnEdit
+module
+
+public import FV.Opt.Proof.SimpFacts
+public import FV.Opt.Proof.GvnEdit
+
+@[expose] public section
 
 /-!
 # The simplify validator is sound: `simpOk` and the run's facts ⇒ `g` simulates `f`

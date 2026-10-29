@@ -1,5 +1,9 @@
-import FV.Backend.Proof.RegallocCover
-import FV.E2E.ExecReads
+module
+
+public import FV.Backend.Proof.RegallocCover
+public import FV.E2E.ExecReads
+
+@[expose] public section
 
 /-!
 # The memory reads of the covered straight-line forms (L3 (c), D2)

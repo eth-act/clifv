@@ -1,5 +1,9 @@
-import FV.Front.RawExeTrap
-import FV.Link.DeadCleanupExeTrapT
+module
+
+public import FV.Front.RawExeTrap
+public import FV.Link.DeadCleanupExeTrapT
+
+@[expose] public section
 
 /-!
 # The shipped executable compiler refines cg_clif's program, callee traps of `try_call`s included (S9e, #408)

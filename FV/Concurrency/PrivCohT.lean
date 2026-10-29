@@ -1,4 +1,8 @@
-import FV.Concurrency.PrivCoh
+module
+
+public import FV.Concurrency.PrivCoh
+
+@[expose] public section
 
 /-!
 # Per-thread refinements with time-varying private sets (#473, (iv))

@@ -1,4 +1,8 @@
-import FV.E2E.RegLevelCorrectCYS
+module
+
+public import FV.E2E.RegLevelCorrectCYS
+
+@[expose] public section
 
 /-!
 # The dispatcher with the segment's lines (SEM1 #537, `docs/plans/uninit.md` §5.9, machine lock)

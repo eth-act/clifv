@@ -1,4 +1,8 @@
-import FV.Backend.RegallocOps
+module
+
+public import FV.Backend.RegallocOps
+
+@[expose] public section
 
 /-!
 # Register-allocation checker (M6, executable; proven sound: `Backend.Proof.checkAlloc_sound`)

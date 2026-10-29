@@ -1,5 +1,9 @@
-import FV.E2E.IselSimITry
-import FV.E2E.RegLevelCorrectI
+module
+
+public import FV.E2E.IselSimITry
+public import FV.E2E.RegLevelCorrectI
+
+@[expose] public section
 
 /-!
 # CLIF → counted VCode for any counted family of semantics (SEM1 #537, item (3))

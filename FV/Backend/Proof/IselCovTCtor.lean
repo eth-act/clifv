@@ -1,5 +1,9 @@
-import FV.Backend.Proof.IselCovTExt
-import FV.Backend.Proof.IselCovCtor
+module
+
+public import FV.Backend.Proof.IselCovTExt
+public import FV.Backend.Proof.IselCovCtor
+
+@[expose] public section
 
 /-!
 # Form coverage over float-capable contexts (typed V3): the extern constructors

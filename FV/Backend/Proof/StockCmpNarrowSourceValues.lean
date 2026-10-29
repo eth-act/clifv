@@ -1,6 +1,11 @@
-import FV.Backend.Proof.StockCmpNarrowRhsObserved
-import FV.Backend.Proof.StockCmpNarrowMachineValues
-import FV.Backend.Proof.StockDemandMono
+module
+
+public import FV.Backend.Proof.StockCmpNarrowRhsObserved
+public import FV.Backend.Proof.StockCmpNarrowMachineValues
+public import FV.Backend.Proof.StockDemandMono
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarCmp
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 /-- Actual narrow emitter-RHS and condition executions compute the original

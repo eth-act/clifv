@@ -1,9 +1,13 @@
-import FV.Concurrency.CallEntryLink
-import FV.Concurrency.CallArgsEntryWitness
-import FV.Concurrency.CallEnterArmWitness
-import FV.Concurrency.CallResumeAllWitness
-import FV.Concurrency.CallEntryWitness
-import FV.Concurrency.CallArgsAtWitness
+module
+
+public import FV.Concurrency.CallEntryLink
+public import FV.Concurrency.CallArgsEntryWitness
+public import FV.Concurrency.CallEnterArmWitness
+public import FV.Concurrency.CallResumeAllWitness
+public import FV.Concurrency.CallEntryWitness
+public import FV.Concurrency.CallArgsAtWitness
+
+@[expose] public section
 
 /-!
 # Witness: the call end on the linked machine (#473, step (4))

@@ -1,5 +1,9 @@
-import FV.Backend.Proof.IselCmpEmit
-import FV.Backend.Proof.IselFloatCmpEmit
+module
+
+public import FV.Backend.Proof.IselCmpEmit
+public import FV.Backend.Proof.IselFloatCmpEmit
+
+@[expose] public section
 
 /-!
 # Family C root rules: `icmp` (2215), `uextend (icmp)` (1281)

@@ -1,6 +1,10 @@
-import FV.Backend.Proof.IselPrgInv
-import FV.Backend.Proof.IselPrgMono
-import FV.Backend.Proof.IselFamALUAExtr
+module
+
+public import FV.Backend.Proof.IselPrgInv
+public import FV.Backend.Proof.IselPrgMono
+public import FV.Backend.Proof.IselFamALUAExtr
+
+@[expose] public section
 
 /-!
 # Progress of the ISLE lowering (V7): the hand-checked rules

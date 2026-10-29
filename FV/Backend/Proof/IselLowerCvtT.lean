@@ -1,5 +1,9 @@
-import FV.Backend.Proof.IselLowerAll
-import FV.Backend.Proof.LowerContractTF
+module
+
+public import FV.Backend.Proof.IselLowerAll
+public import FV.Backend.Proof.LowerContractTF
+
+@[expose] public section
 
 /-!
 # The conversion roots over float-capable contexts (S11f-cvt, #410)

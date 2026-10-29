@@ -1,7 +1,11 @@
-import FV.Concurrency.CallSegOkG
-import FV.Concurrency.CallSegLiftWitness
-import FV.Concurrency.CallLoadWitness
-import FV.Concurrency.IselCallWitness
+module
+
+public import FV.Concurrency.CallSegOkG
+public import FV.Concurrency.CallSegLiftWitness
+public import FV.Concurrency.CallLoadWitness
+public import FV.Concurrency.IselCallWitness
+
+@[expose] public section
 
 /-!
 # Witnesses for `CallSegOkG` (#473, step (4))

@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockConditionalSuccessor
-import FV.Backend.Proof.StockConditionalGuardedWitness
+module
+
+public import FV.Backend.Proof.StockConditionalSuccessor
+public import FV.Backend.Proof.StockConditionalGuardedWitness
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.ConditionalValues.SuccessorWitness
 open Backend.Proof Backend.Proof.Driver

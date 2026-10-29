@@ -1,5 +1,9 @@
-import FV.Front.RawExe
-import FV.Link.DeadCleanupExeMemFault
+module
+
+public import FV.Front.RawExe
+public import FV.Link.DeadCleanupExeMemFault
+
+@[expose] public section
 
 /-!
 # The shipped executable compiler refines cg_clif's program, memory faults included (A3, #412, slice F8d)

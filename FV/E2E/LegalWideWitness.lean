@@ -1,4 +1,8 @@
-import FV.E2E.NonVacuityLink
+module
+
+public import FV.E2E.NonVacuityLink
+
+@[expose] public section
 
 /-!
 # Non-vacuity of the widened legalisation theorem (S4, #28)

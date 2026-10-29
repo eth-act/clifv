@@ -1,5 +1,10 @@
-import FV.Backend.Proof.StockMulBodyRefines
-import FV.Backend.Proof.StockBnotNotrap
+module
+
+public import FV.Backend.Proof.StockMulBodyRefines
+public import FV.Backend.Proof.StockBnotNotrap
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.MulBody
 open Backend.Proof Backend.Proof.Driver
 set_option autoImplicit false

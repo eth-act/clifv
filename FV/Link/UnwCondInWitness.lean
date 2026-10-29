@@ -1,5 +1,9 @@
-import FV.Link.UnwCondIn
-import FV.Link.ExeULdInWitness
+module
+
+public import FV.Link.UnwCondIn
+public import FV.Link.ExeULdInWitness
+
+@[expose] public section
 
 /-! # Witness: `compileExeU_total_ldCond`'s premises hold together (S10g, #404)
 

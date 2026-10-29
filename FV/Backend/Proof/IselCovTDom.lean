@@ -1,4 +1,8 @@
-import FV.Backend.Proof.IselCovDom
+module
+
+public import FV.Backend.Proof.IselCovDom
+
+@[expose] public section
 
 /-!
 # Form coverage over float-capable contexts (typed V3): the abstract domain

@@ -1,4 +1,8 @@
-import FV.Backend.Proof.VCodeSemI
+module
+
+public import FV.Backend.Proof.VCodeSemI
+
+@[expose] public section
 
 /-!
 # Witnesses for the counted VCode semantics (`FV/Backend/Proof/VCodeSemI.lean`)

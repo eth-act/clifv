@@ -1,4 +1,9 @@
-import FV.E2E.StockBitFixtures
+module
+
+public import FV.E2E.StockBitFixtures
+
+@[expose] public section
+
 namespace E2E.StockPopcountNIWitness
 open Backend.Stock.D0
 set_option autoImplicit false

@@ -1,5 +1,9 @@
-import FV.Link.UnwCondIn
-import FV.Backend.Proof.IselOutBoundRun
+module
+
+public import FV.Link.UnwCondIn
+public import FV.Backend.Proof.IselOutBoundRun
+
+@[expose] public section
 
 /-!
 # The outgoing bound from the input (S10g, #404)

@@ -1,5 +1,9 @@
-import FV.Link.DeadCleanupCompileT
-import FVTest.Link.FloatExeT
+module
+
+public import FV.Link.DeadCleanupCompileT
+public import FVTest.Link.FloatExeT
+
+@[expose] public section
 
 /-! Non-vacuity of `Link.DeadCleanup.compileExeT` (S11, #35): on the float program of
 `FVTest/Link/FloatExeT` (outside `InScopeP`), `compileExeT` succeeds through its typed branch, so

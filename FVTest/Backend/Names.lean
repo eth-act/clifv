@@ -1,4 +1,8 @@
-import FV.Backend
+module
+
+public import FV.Backend
+
+@[expose] public section
 
 /-!
 Consistency of the backend with the exported ISLE program (`FV/Isle/Generated`). Types and

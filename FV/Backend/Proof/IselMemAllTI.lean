@@ -1,7 +1,11 @@
-import FV.Backend.Proof.IselAtomicMemTI
-import FV.Backend.Proof.IselMemRootsMemTI
-import FV.Backend.Proof.IselMemFuncAddrMemTI
-import FV.Backend.Proof.IselTlsMemTI
+module
+
+public import FV.Backend.Proof.IselAtomicMemTI
+public import FV.Backend.Proof.IselMemRootsMemTI
+public import FV.Backend.Proof.IselMemFuncAddrMemTI
+public import FV.Backend.Proof.IselTlsMemTI
+
+@[expose] public section
 
 /-!
 # M4 memory family over typed contexts (S11e5 Stage C, slice 7)

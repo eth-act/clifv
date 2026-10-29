@@ -1,6 +1,10 @@
-import FV.Backend.Proof.StockLogicalNotRecord
-import FV.Backend.Proof.StockLogicalNotXorRecord
-import FV.Backend.Proof.LowerSim
+module
+
+public import FV.Backend.Proof.StockLogicalNotRecord
+public import FV.Backend.Proof.StockLogicalNotXorRecord
+public import FV.Backend.Proof.LowerSim
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.LogicalNot.XorFusedWitness
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

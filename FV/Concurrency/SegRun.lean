@@ -1,5 +1,9 @@
-import FV.Concurrency.PrepThread
-import FV.Concurrency.VCodeThreadWitness
+module
+
+public import FV.Concurrency.PrepThread
+public import FV.Concurrency.VCodeThreadWitness
+
+@[expose] public section
 
 /-!
 # A statement's segment as a forward run (T2h, #311, layer 2b)

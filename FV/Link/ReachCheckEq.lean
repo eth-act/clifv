@@ -1,6 +1,10 @@
-import FV.Link.ReachCheck
-import FV.Link.ExeInputReach
-import FV.Link.PlacedEq
+module
+
+public import FV.Link.ReachCheck
+public import FV.Link.ExeInputReach
+public import FV.Link.PlacedEq
+
+@[expose] public section
 
 namespace Link
 open E2E E2E.LinkCheck E2E.BinCheck Backend.Proof.RelocProv

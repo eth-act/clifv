@@ -1,4 +1,8 @@
-import FV.E2E.DeadCleanupBinary
+module
+
+public import FV.E2E.DeadCleanupBinary
+
+@[expose] public section
 
 /-!
 # The entry contract at the level of the written ELF (A5, #411)

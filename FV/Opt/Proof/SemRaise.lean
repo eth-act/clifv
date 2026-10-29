@@ -1,5 +1,9 @@
-import FV.Clif.Unwind
-import FV.Opt.Proof.SemSim
+module
+
+public import FV.Clif.Unwind
+public import FV.Opt.Proof.SemSim
+
+@[expose] public section
 
 /-!
 # Raising steps by their preludes (S10f, #233)

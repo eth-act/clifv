@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockCmpZeroHelpers
-import FV.Backend.Proof.IselAtomic
+module
+
+public import FV.Backend.Proof.StockCmpZeroHelpers
+public import FV.Backend.Proof.IselAtomic
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.ScalarMask
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

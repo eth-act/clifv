@@ -1,5 +1,9 @@
-import FV.Opt.Proof.SemSimX
-import FV.Opt.Proof.SemRaise
+module
+
+public import FV.Opt.Proof.SemSimX
+public import FV.Opt.Proof.SemRaise
+
+@[expose] public section
 
 /-!
 # Simulations with unwinding: the handler edges of `try_call` (S10f, #233)

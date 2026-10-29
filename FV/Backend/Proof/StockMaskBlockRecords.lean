@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockQuietBlockSourceRecords
-import FV.Backend.Proof.StockMaskBodyRecords
+module
+
+public import FV.Backend.Proof.StockQuietBlockSourceRecords
+public import FV.Backend.Proof.StockMaskBodyRecords
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.MaskBody
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

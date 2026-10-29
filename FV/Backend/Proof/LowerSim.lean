@@ -1,5 +1,9 @@
-import FV.Backend.Proof.LowerLemmas
-import FV.Backend.Proof.TryRegs
+module
+
+public import FV.Backend.Proof.LowerLemmas
+public import FV.Backend.Proof.TryRegs
+
+@[expose] public section
 
 /-!
 # The driver simulation: CLIF steps ↦ VCode steps (M7)

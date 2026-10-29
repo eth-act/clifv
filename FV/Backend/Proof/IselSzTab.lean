@@ -1,5 +1,9 @@
-import FV.Backend.Proof.IselSzDefs
-import FV.Backend.Proof.IselCovTab
+module
+
+public import FV.Backend.Proof.IselSzDefs
+public import FV.Backend.Proof.IselCovTab
+
+@[expose] public section
 
 /-!
 # The size of the ISLE lowering's output (V6c): the cost table

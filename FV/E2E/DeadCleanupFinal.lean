@@ -1,7 +1,11 @@
-import FV.E2E.Final
-import FV.E2E.DeadCleanupPipeline
-import FV.E2E.DeadCleanupContracts
-import FV.E2E.DeadCleanupRegLevel
+module
+
+public import FV.E2E.Final
+public import FV.E2E.DeadCleanupPipeline
+public import FV.E2E.DeadCleanupContracts
+public import FV.E2E.DeadCleanupRegLevel
+
+@[expose] public section
 
 namespace E2E
 open Backend Backend.Proof Backend.Proof.Driver Backend.DeadCleanup

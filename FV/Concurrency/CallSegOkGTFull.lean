@@ -1,4 +1,8 @@
-import FV.Concurrency.CallSegOkGTWitness
+module
+
+public import FV.Concurrency.CallSegOkGTWitness
+
+@[expose] public section
 
 /-!
 # The caller of `atomic_load` through the generic call theorem (#473)

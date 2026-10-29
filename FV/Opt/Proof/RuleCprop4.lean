@@ -1,4 +1,8 @@
-import FV.Opt.Proof.RuleInfraConst
+module
+
+public import FV.Opt.Proof.RuleInfraConst
+
+@[expose] public section
 
 /-!
 # `opts/cprop.isle` (part 4): `isub x (iconst_s ty k)` to `iadd x (iconst ty (imm64_neg ty k))`

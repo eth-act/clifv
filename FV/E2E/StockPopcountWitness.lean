@@ -1,9 +1,13 @@
-import FV.E2E.StockPopcountFixtures
-import FV.E2E.StockBitWitness
-import FV.E2E.StockScalarNI
-import FV.E2E.CompiledSemanticNI
-import FV.Backend.LinearScan
-import FV.Backend.Lowering.StockD0
+module
+
+public import FV.E2E.StockPopcountFixtures
+public import FV.E2E.StockBitWitness
+public import FV.E2E.StockScalarNI
+public import FV.E2E.CompiledSemanticNI
+public import FV.Backend.LinearScan
+public import FV.Backend.Lowering.StockD0
+
+@[expose] public section
 
 set_option maxRecDepth 100000
 set_option maxHeartbeats 1000000

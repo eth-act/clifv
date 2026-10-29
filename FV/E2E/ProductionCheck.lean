@@ -1,4 +1,8 @@
-import FV.E2E.ProductionPipeline
+module
+
+public import FV.E2E.ProductionPipeline
+
+@[expose] public section
 
 set_option autoImplicit false
 namespace E2E.BinCheck

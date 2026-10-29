@@ -1,5 +1,9 @@
-import FV.E2E.RegLevelMachine
-import FV.Backend.Proof.RegallocLayout
+module
+
+public import FV.E2E.RegLevelMachine
+public import FV.Backend.Proof.RegallocLayout
+
+@[expose] public section
 
 /-!
 # The register-level simulation relation (M6)

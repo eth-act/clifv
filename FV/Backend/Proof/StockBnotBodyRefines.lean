@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockConstantBodyRefines
-import FV.Backend.Proof.StockBnotScanRefines
+module
+
+public import FV.Backend.Proof.StockConstantBodyRefines
+public import FV.Backend.Proof.StockBnotScanRefines
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.BnotBody
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockDemand
-import FV.Backend.Proof.StockFreshRecordValues
+module
+
+public import FV.Backend.Proof.StockDemand
+public import FV.Backend.Proof.StockFreshRecordValues
+
+@[expose] public section
 
 /-! Successful Stock interpreter execution never removes source-register demand. -/
 namespace Backend.Stock.Proof

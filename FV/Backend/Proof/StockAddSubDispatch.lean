@@ -1,5 +1,10 @@
-import FV.Backend.Proof.StockAddSubImmediateValues
-import FV.Backend.Proof.StockMulFusedRecordValues
+module
+
+public import FV.Backend.Proof.StockAddSubImmediateValues
+public import FV.Backend.Proof.StockMulFusedRecordValues
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarAddSub
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 set_option maxRecDepth 20000

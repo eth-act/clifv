@@ -1,8 +1,12 @@
-import FV.Concurrency.CallSegCall
-import FV.Concurrency.CallSegOkGActWitness
-import FV.Concurrency.FrameDisjWitness
-import FV.Concurrency.CallResumeAllWitness
-import FV.Concurrency.CallRetPremisesWitness
+module
+
+public import FV.Concurrency.CallSegCall
+public import FV.Concurrency.CallSegOkGActWitness
+public import FV.Concurrency.FrameDisjWitness
+public import FV.Concurrency.CallResumeAllWitness
+public import FV.Concurrency.CallRetPremisesWitness
+
+@[expose] public section
 
 /-!
 # Witnesses for `CallSegCall` (#473)

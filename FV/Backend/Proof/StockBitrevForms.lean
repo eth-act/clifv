@@ -1,4 +1,9 @@
-import FV.Backend.Proof.StockBitrevRhs
+module
+
+public import FV.Backend.Proof.StockBitrevRhs
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarBit
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 

@@ -1,6 +1,10 @@
-import FV.E2E.Opt
-import FV.E2E.DeadCleanupFinal
-import FV.Opt.Proof.PipelineX
+module
+
+public import FV.E2E.Opt
+public import FV.E2E.DeadCleanupFinal
+public import FV.Opt.Proof.PipelineX
+
+@[expose] public section
 
 /-! # The end-to-end theorem over the mid-end, indirect calls and `try_call` included (S1)
 

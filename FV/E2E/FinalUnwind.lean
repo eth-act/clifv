@@ -1,8 +1,12 @@
-import FV.E2E.Final
-import FV.E2E.IselSimU
-import FV.E2E.UnwindPrepare
-import FV.E2E.RegLevelCorrectU
-import FV.Backend.Proof.LowerSimUCheck
+module
+
+public import FV.E2E.Final
+public import FV.E2E.IselSimU
+public import FV.E2E.UnwindPrepare
+public import FV.E2E.RegLevelCorrectU
+public import FV.Backend.Proof.LowerSimUCheck
+
+@[expose] public section
 
 /-!
 # The backend's end-to-end theorem with unwinding (S10e, #232)

@@ -1,5 +1,10 @@
-import FV.Backend.Proof.StockSelectComparisonValues
-import FV.Backend.Proof.StockSelectConditionSuccess
+module
+
+public import FV.Backend.Proof.StockSelectComparisonValues
+public import FV.Backend.Proof.StockSelectConditionSuccess
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarSelect.ComparisonActualFixture
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 set_option maxRecDepth 20000

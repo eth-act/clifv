@@ -1,6 +1,10 @@
-import FVTest.E2E.LinkProof
-import FV.E2E.ProductionStackBound
-import FV.E2E.ProductionChecksWith
+module
+
+public import FVTest.E2E.LinkProof
+public import FV.E2E.ProductionStackBound
+public import FV.E2E.ProductionChecksWith
+
+@[expose] public section
 
 /-! Proof emitter for actual callback outputs. Original
 emitters remain unchanged, including their theorem variants and output format. -/

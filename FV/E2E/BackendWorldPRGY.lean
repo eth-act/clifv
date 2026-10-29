@@ -1,5 +1,9 @@
-import FV.E2E.BackendWorldPRG
-import FV.E2E.ExtSemGuardRY
+module
+
+public import FV.E2E.BackendWorldPRG
+public import FV.E2E.ExtSemGuardRY
+
+@[expose] public section
 
 /-!
 # The pipeline theorems for the `CallPostNXR`-guarded semantics (SEM1 #537, #680 (3), #692)

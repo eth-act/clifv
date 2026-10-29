@@ -1,6 +1,10 @@
-import FV.E2E.RegLevelGoodXNR
-import FV.E2E.RegLevelMemTrap
-import FV.E2E.RegLevelGotoNR
+module
+
+public import FV.E2E.RegLevelGoodXNR
+public import FV.E2E.RegLevelMemTrap
+public import FV.E2E.RegLevelGotoNR
+
+@[expose] public section
 
 /-!
 # Taken `trapIf` on the machine with no call state (SEM1 #537, step 2k)

@@ -1,4 +1,8 @@
-import FV.Concurrency.CallSegOkGTExtWitness
+module
+
+public import FV.Concurrency.CallSegOkGTExtWitness
+
+@[expose] public section
 
 /-!
 # The caller of an external through the generic call theorem, end to end (#649)

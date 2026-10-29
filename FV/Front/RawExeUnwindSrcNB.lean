@@ -1,9 +1,13 @@
-import FV.Front.RawExeUnwindSrc
-import FV.E2E.SrcBoundedX
-import FV.E2E.SrcBoundedLegal
-import FV.E2E.LinkArmUAct
-import FV.E2E.Legal
-import FV.Link.DeadCleanupExeSourceNB
+module
+
+public import FV.Front.RawExeUnwindSrc
+public import FV.E2E.SrcBoundedX
+public import FV.E2E.SrcBoundedLegal
+public import FV.E2E.LinkArmUAct
+public import FV.E2E.Legal
+public import FV.Link.DeadCleanupExeSourceNB
+
+@[expose] public section
 
 /-!
 # The exceptional edges on cg_clif's program without the memory-bound premise (A2/B1, S10f)

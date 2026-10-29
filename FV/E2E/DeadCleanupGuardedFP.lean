@@ -1,5 +1,9 @@
-import FV.E2E.DeadCleanupPair
-import FV.E2E.GuardedFPPair
+module
+
+public import FV.E2E.DeadCleanupPair
+public import FV.E2E.GuardedFPPair
+
+@[expose] public section
 
 /-! # The guarded value semantics with the float accesses (S11e5, Stage C slice 4)
 

@@ -1,6 +1,10 @@
-import FV.Opt.Proof.GvnEdit
-import FV.Opt.Proof.Unreachable
-import FV.Opt.Optimize
+module
+
+public import FV.Opt.Proof.GvnEdit
+public import FV.Opt.Proof.Unreachable
+public import FV.Opt.Optimize
+
+@[expose] public section
 
 /-!
 # The pipeline refines (`Opt.optimize_sim`)

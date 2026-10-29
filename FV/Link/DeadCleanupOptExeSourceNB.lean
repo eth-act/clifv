@@ -1,6 +1,10 @@
-import FV.Link.DeadCleanupOptExe
-import FV.Link.OptExeSourceNB
-import FV.Link.DeadCleanupExeSourceNB
+module
+
+public import FV.Link.DeadCleanupOptExe
+public import FV.Link.OptExeSourceNB
+public import FV.Link.DeadCleanupExeSourceNB
+
+@[expose] public section
 
 /-! # The shipped optimising compiler's source theorems without the memory-bound premise (A2/B1)
 

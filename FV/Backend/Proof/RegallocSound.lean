@@ -1,4 +1,8 @@
-import FV.Backend.Proof.RegallocLemmas
+module
+
+public import FV.Backend.Proof.RegallocLemmas
+
+@[expose] public section
 
 /-!
 # Soundness of the register-allocation checker (M6)

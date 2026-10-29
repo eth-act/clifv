@@ -1,4 +1,8 @@
-import FV.Backend.Proof.IselEmitTFns
+module
+
+public import FV.Backend.Proof.IselEmitTFns
+
+@[expose] public section
 
 /-!
 # Emission conditions of the typed lowering: the summary table

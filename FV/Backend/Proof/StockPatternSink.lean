@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockSinkProvenance
-import FV.Backend.Proof.StockPatternBindings
+module
+
+public import FV.Backend.Proof.StockSinkProvenance
+public import FV.Backend.Proof.StockPatternBindings
+
+@[expose] public section
 
 /-! Load-pattern sink helpers obtain their instruction targets from actual
 installed instruction data. These facts exclude trap terminator slots; they do

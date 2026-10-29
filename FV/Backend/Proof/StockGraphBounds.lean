@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockEmittedGraph
-import Init.Data.Array.MapIdx
+module
+
+public import FV.Backend.Proof.StockEmittedGraph
+public import Init.Data.Array.MapIdx
+
+@[expose] public section
 
 namespace Backend.Stock.Proof
 open Backend.Proof Backend.Proof.Driver

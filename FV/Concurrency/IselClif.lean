@@ -1,5 +1,9 @@
-import FV.Concurrency.IselFoot
-import FV.Backend.Proof.IselMemArm
+module
+
+public import FV.Concurrency.IselFoot
+public import FV.Backend.Proof.IselMemArm
+
+@[expose] public section
 
 /-!
 # The CLIF side of the variation argument (T2h, #311, layer 2d)

@@ -1,6 +1,10 @@
-import FV.Concurrency.FrameDisj
-import FV.Concurrency.ArmAllocStraight
-import FV.Concurrency.ClifCStep
+module
+
+public import FV.Concurrency.FrameDisj
+public import FV.Concurrency.ArmAllocStraight
+public import FV.Concurrency.ClifCStep
+
+@[expose] public section
 
 /-!
 # Geometry of a call segment (#473, `SegOkG` groundwork)

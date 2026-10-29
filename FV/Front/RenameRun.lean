@@ -1,4 +1,8 @@
-import FV.Front.RenameStep
+module
+
+public import FV.Front.RenameStep
+
+@[expose] public section
 
 /-!
 # Renaming commutes with the CLIF semantics (T7d)

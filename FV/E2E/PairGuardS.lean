@@ -1,4 +1,8 @@
-import FV.E2E.PairDriverIG
+module
+
+public import FV.E2E.PairDriverIG
+
+@[expose] public section
 
 /-!
 # The paired run with the reads guarded by the difference set (SEM1 #537, #699, item (1))

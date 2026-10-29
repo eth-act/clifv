@@ -1,4 +1,8 @@
-import FV.Link.Reloc
+module
+
+public import FV.Link.Reloc
+
+@[expose] public section
 
 /-! # The linker's relocation check split: shapes and ranges (L1)
 

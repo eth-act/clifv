@@ -1,5 +1,9 @@
-import FV.Backend.Proof.IselEmitCtor
-import FV.Backend.Proof.LogicImmComplete
+module
+
+public import FV.Backend.Proof.IselEmitCtor
+public import FV.Backend.Proof.LogicImmComplete
+
+@[expose] public section
 
 /-!
 # Emission conditions of the ISLE lowering (V6c): the model

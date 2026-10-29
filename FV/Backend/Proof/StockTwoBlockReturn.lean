@@ -1,7 +1,11 @@
-import FV.Backend.Proof.StockJumpDemand
-import FV.Backend.Proof.LowerShapeOkFacts
-import FV.Backend.Proof.StockTwoBlockShape
-import FV.Backend.Proof.StockInheritedJumpDefined
+module
+
+public import FV.Backend.Proof.StockJumpDemand
+public import FV.Backend.Proof.LowerShapeOkFacts
+public import FV.Backend.Proof.StockTwoBlockShape
+public import FV.Backend.Proof.StockInheritedJumpDefined
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.TwoBlock
 open Backend.Proof Backend.Proof.Driver

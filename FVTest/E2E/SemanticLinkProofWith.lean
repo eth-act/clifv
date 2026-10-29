@@ -1,5 +1,9 @@
-import FVTest.E2E.LinkProof
-import FV.E2E.SemanticPipelineCheck
+module
+
+public import FVTest.E2E.LinkProof
+public import FV.E2E.SemanticPipelineCheck
+
+@[expose] public section
 
 /-! Proof emitter for actual callback outputs. Original
 emitters remain unchanged, including their theorem variants and output format. -/

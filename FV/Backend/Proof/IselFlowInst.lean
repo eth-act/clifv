@@ -1,5 +1,9 @@
-import FV.Backend.Proof.LowerSpec
-import FV.Backend.Proof.IselFlowData
+module
+
+public import FV.Backend.Proof.LowerSpec
+public import FV.Backend.Proof.IselFlowData
+
+@[expose] public section
 
 /-!
 # The two models of the abstract interpretation

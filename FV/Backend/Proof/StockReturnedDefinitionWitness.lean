@@ -1,6 +1,10 @@
-import FV.Backend.Proof.StockReturnedDefinitionRetention
-import FV.Backend.Proof.LowerDecide
-import FV.E2E.StockDivFixtures
+module
+
+public import FV.Backend.Proof.StockReturnedDefinitionRetention
+public import FV.Backend.Proof.LowerDecide
+public import FV.E2E.StockDivFixtures
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.ReturnedDefinitionWitness
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

@@ -177,7 +177,7 @@ def load_modules(root):
         if (base / f"{name}.lean").exists():
             mods[name] = base / f"{name}.lean"
     imports = {}
-    pat = re.compile(r"^(?:public\s+|meta\s+|private\s+)*import\s+(\S+)")
+    pat = re.compile(r"^(?:public\s+|meta\s+|private\s+)*import\s+(?:all\s+)?(\S+)")
     for m, p in mods.items():
         deps = []
         for line in p.read_text(errors="replace").splitlines():

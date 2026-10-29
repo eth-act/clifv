@@ -8,7 +8,11 @@ Author(s): Shilpi Goel, Siddharth Bhat, Alex Keizer
 
 ----------------------------------------------------------------------
 
-import FV.Arm.Attr
+module
+
+public import FV.Arm.Attr
+
+@[expose] public section
 
 namespace Arm
 namespace BitVec

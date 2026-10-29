@@ -1,4 +1,8 @@
-import FV.Backend.Proof.IselCovData
+module
+
+public import FV.Backend.Proof.IselCovData
+
+@[expose] public section
 
 /-!
 # Form coverage of the ISLE lowering (V3): the extern helpers

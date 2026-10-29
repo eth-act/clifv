@@ -1,9 +1,14 @@
-import FV.E2E.StockReturnedDivFixtures
-import FV.E2E.StockHighMulWitness
-import FV.Backend.Proof.StockScalarReturnedDivDomain
-import FV.E2E.CompiledSemanticNI
-import FV.Backend.LinearScan
-import FV.Backend.Lowering.StockScalarNI
+module
+
+public import FV.E2E.StockReturnedDivFixtures
+public import FV.E2E.StockHighMulWitness
+public import FV.Backend.Proof.StockScalarReturnedDivDomain
+public import FV.E2E.CompiledSemanticNI
+public import FV.Backend.LinearScan
+public import FV.Backend.Lowering.StockScalarNI
+
+@[expose] public section
+
 namespace E2E.StockReturnedDivNIWitness
 open Backend Backend.Proof Backend.Proof.Driver Backend.Stock.D0
 set_option autoImplicit false

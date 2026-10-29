@@ -1,7 +1,11 @@
-import FV.Opt.Proof.RuleBitops7P1
-import FV.Opt.Proof.RuleBitops7P2
-import FV.Opt.Proof.RuleBitops7P3
-import FV.Opt.Proof.RuleBitops7P4
+module
+
+public import FV.Opt.Proof.RuleBitops7P1
+public import FV.Opt.Proof.RuleBitops7P2
+public import FV.Opt.Proof.RuleBitops7P3
+public import FV.Opt.Proof.RuleBitops7P4
+
+@[expose] public section
 
 /-!
 # `opts/bitops.isle` (part 7): proven `simplify` rules that need the bitops template variants

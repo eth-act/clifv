@@ -1,5 +1,9 @@
-import FV.E2E.StockLogicalExtrMatchWitness
-import FV.Backend.Proof.StockLogicalExtrMatchReceipt
+module
+
+public import FV.E2E.StockLogicalExtrMatchWitness
+public import FV.Backend.Proof.StockLogicalExtrMatchReceipt
+
+@[expose] public section
 
 namespace E2E.StockLogicalExtrWitness
 open Backend Backend.Proof Backend.Proof.Driver Backend.Stock.D0 Backend.Stock.Proof

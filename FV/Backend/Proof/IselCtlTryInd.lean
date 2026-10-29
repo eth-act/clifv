@@ -1,5 +1,9 @@
-import FV.Backend.Proof.IselCtlTry
-import FV.Backend.Proof.IselCtlCallInd
+module
+
+public import FV.Backend.Proof.IselCtlTry
+public import FV.Backend.Proof.IselCtlCallInd
+
+@[expose] public section
 
 /-!
 # Family Ctl: the `try_call_indirect` rule (the normal return)

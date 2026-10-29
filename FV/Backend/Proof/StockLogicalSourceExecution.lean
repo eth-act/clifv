@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockLogicalBodyRefines
-import FV.Backend.Proof.StockPureSourceExecution
+module
+
+public import FV.Backend.Proof.StockLogicalBodyRefines
+public import FV.Backend.Proof.StockPureSourceExecution
+
+@[expose] public section
 
 /-! Compatibility variants using the shared pure-source execution proof. -/
 namespace Backend.Stock.Proof.LogicalBody

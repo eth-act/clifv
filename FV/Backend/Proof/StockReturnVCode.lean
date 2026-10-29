@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockReturnContract
-import FV.Backend.Proof.StockBlockCode
+module
+
+public import FV.Backend.Proof.StockReturnContract
+public import FV.Backend.Proof.StockBlockCode
+
+@[expose] public section
 
 /-! Actual whole-driver assembly discharges return segment placement.
 No helper, emitted-decision, operand, or placement certificate is supplied

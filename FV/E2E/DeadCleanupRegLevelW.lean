@@ -1,6 +1,10 @@
-import FV.E2E.DeadCleanupRegLevel
-import FV.E2E.RegLevelCorrectXW
-import FV.E2E.DeadCleanupRealizesW
+module
+
+public import FV.E2E.DeadCleanupRegLevel
+public import FV.E2E.RegLevelCorrectXW
+public import FV.E2E.DeadCleanupRealizesW
+
+@[expose] public section
 
 /-!
 # The dead-cleanup register-level theorem with the per-state facts and the writes (A3, #412, slice F8b)

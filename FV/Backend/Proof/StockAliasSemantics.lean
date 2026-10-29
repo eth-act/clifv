@@ -1,8 +1,12 @@
-import FV.Backend.Proof.StockResults
-import FV.Backend.Proof.LowerAlias
-import FV.Backend.Proof.IselFamAluBIconst
-import FV.Backend.Proof.IselLcf
-import FV.Backend.Proof.CSemRename
+module
+
+public import FV.Backend.Proof.StockResults
+public import FV.Backend.Proof.LowerAlias
+public import FV.Backend.Proof.IselFamAluBIconst
+public import FV.Backend.Proof.IselLcf
+public import FV.Backend.Proof.CSemRename
+
+@[expose] public section
 
 /-! Alias-aware fragment semantics and availability for the reverse stock scan.
 The frame property uses actual writes; allocation order need not agree with

@@ -1,6 +1,10 @@
-import FV.E2E.LinkWorldX
-import FV.E2E.DeadCleanupRegLevelX
-import FV.E2E.DeadCleanupPair
+module
+
+public import FV.E2E.LinkWorldX
+public import FV.E2E.DeadCleanupRegLevelX
+public import FV.E2E.DeadCleanupPair
+
+@[expose] public section
 
 namespace E2E
 open Backend Backend.Proof Backend.Proof.Driver Backend.DeadCleanup

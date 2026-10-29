@@ -1,6 +1,10 @@
-import FV.Backend.Proof.SpillDefined
-import FV.Backend.Proof.KillPrep
-import FV.Backend.Proof.SpillEdgesPrep
+module
+
+public import FV.Backend.Proof.SpillDefined
+public import FV.Backend.Proof.KillPrep
+public import FV.Backend.Proof.SpillEdgesPrep
+
+@[expose] public section
 
 /-!
 # Definedness sets across `prepare`

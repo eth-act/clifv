@@ -1,6 +1,11 @@
-import FV.Backend.Proof.StockDivRecordReceipts
-import FV.Backend.Proof.StockDivSelectedWitness
-import FV.Backend.Proof.StockDivRemSelectedWitness
+module
+
+public import FV.Backend.Proof.StockDivRecordReceipts
+public import FV.Backend.Proof.StockDivSelectedWitness
+public import FV.Backend.Proof.StockDivRemSelectedWitness
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarDiv
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 /-- The actual retained unsigned fixtures inhabit every original premise of

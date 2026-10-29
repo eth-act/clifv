@@ -1,5 +1,9 @@
-import FV.E2E.LinkArm
-import FV.E2E.LinkPlaceB
+module
+
+public import FV.E2E.LinkArm
+public import FV.E2E.LinkPlaceB
+
+@[expose] public section
 
 /-! # The linked system's slot-placement oracle with the slot-byte oracle (SEM1)
 

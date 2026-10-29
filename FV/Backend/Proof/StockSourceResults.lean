@@ -1,4 +1,8 @@
-import FV.Backend.Proof.StockSourceEdges
+module
+
+public import FV.Backend.Proof.StockSourceEdges
+
+@[expose] public section
 
 /-! Source-definedness through successful result binding, including extern
 call continuation and restoration of an actual saved caller after a return.

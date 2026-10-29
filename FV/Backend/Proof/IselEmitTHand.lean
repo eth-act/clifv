@@ -1,8 +1,12 @@
-import FV.Backend.Proof.IselEmitTDefs
-import FV.Backend.Proof.IselEmitTFns
-import FV.Backend.Proof.IselEmitHand
-import FV.Backend.Proof.IselFamALUATI
-import FV.Backend.Proof.IselFloatBitcast
+module
+
+public import FV.Backend.Proof.IselEmitTDefs
+public import FV.Backend.Proof.IselEmitTFns
+public import FV.Backend.Proof.IselEmitHand
+public import FV.Backend.Proof.IselFamALUATI
+public import FV.Backend.Proof.IselFloatBitcast
+
+@[expose] public section
 
 /-!
 # Emission conditions of the typed ISLE lowering (S11): the hand-checked root rules

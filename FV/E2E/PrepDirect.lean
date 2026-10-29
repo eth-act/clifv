@@ -1,5 +1,9 @@
-import FV.E2E.Statement
-import FV.Backend.Proof.PrepareDirect
+module
+
+public import FV.E2E.Statement
+public import FV.Backend.Proof.PrepareDirect
+
+@[expose] public section
 
 /-!
 # The end-to-end chain without the `prepare` validator

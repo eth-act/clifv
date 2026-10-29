@@ -1,19 +1,23 @@
-import FV.E2E.DeadCleanupExecRunN
-import FV.E2E.ExecRunNT
-import FV.E2E.DeadCleanupBinaryT
-import FV.E2E.DeadCleanupBinCheckT
-import FV.E2E.BinCheckT
-import FV.E2E.BinaryT
-import FV.E2E.DeadCleanupExecBytesT
-import FV.E2E.DeadCleanupExecStaticT
-import FV.E2E.DeadCleanupLinkCheckT
-import FV.E2E.DeadCleanupStackBoundT
-import FV.E2E.ExecBytesT
-import FV.E2E.ExecStaticT
-import FV.E2E.LinkArmT
-import FV.E2E.LinkCheckT
-import FV.E2E.PipelineCheckT
-import FV.E2E.StackBoundT
+module
+
+public import FV.E2E.DeadCleanupExecRunN
+public import FV.E2E.ExecRunNT
+public import FV.E2E.DeadCleanupBinaryT
+public import FV.E2E.DeadCleanupBinCheckT
+public import FV.E2E.BinCheckT
+public import FV.E2E.BinaryT
+public import FV.E2E.DeadCleanupExecBytesT
+public import FV.E2E.DeadCleanupExecStaticT
+public import FV.E2E.DeadCleanupLinkCheckT
+public import FV.E2E.DeadCleanupStackBoundT
+public import FV.E2E.ExecBytesT
+public import FV.E2E.ExecStaticT
+public import FV.E2E.LinkArmT
+public import FV.E2E.LinkCheckT
+public import FV.E2E.PipelineCheckT
+public import FV.E2E.StackBoundT
+
+@[expose] public section
 
 /-! # Typed copies of `FV.E2E.DeadCleanupExecRunN` (S11e5 Stage C, slice 8)
 

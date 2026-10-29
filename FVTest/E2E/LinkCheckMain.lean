@@ -1,11 +1,15 @@
-import FV.E2E.ProductionPipelineWith
-import FV.Backend.Lowering.StockParameterCfgNI
-import FVTest.E2E.LinkProof
-import FVTest.E2E.SemanticLinkProofWith
-import FV.E2E.BinCheckFast
-import FV.Link.Image
-import FV.E2E.DeadCleanupLinkCheckT
-import FV.Link.DeadCleanupCompileTFast
+module
+
+public import FV.E2E.ProductionPipelineWith
+public import FV.Backend.Lowering.StockParameterCfgNI
+public import FVTest.E2E.LinkProof
+public import FVTest.E2E.SemanticLinkProofWith
+public import FV.E2E.BinCheckFast
+public import FV.Link.Image
+public import FV.E2E.DeadCleanupLinkCheckT
+public import FV.Link.DeadCleanupCompileTFast
+
+@[expose] public section
 
 open E2E E2E.LinkCheck E2E.StackBound Lean Backend E2E.Elf E2E.BinCheck
 

@@ -1,5 +1,9 @@
-import FV.Backend.Proof.IselFloatArith
-import FV.Backend.Proof.IselCmpRoot
+module
+
+public import FV.Backend.Proof.IselFloatArith
+public import FV.Backend.Proof.IselCmpRoot
+
+@[expose] public section
 
 /-!
 # S11f-cvt: float ↔ integer conversions over float-capable contexts

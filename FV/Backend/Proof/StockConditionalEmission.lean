@@ -1,4 +1,8 @@
-import FV.Backend.Proof.StockConditionalValues
+module
+
+public import FV.Backend.Proof.StockConditionalValues
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.ConditionalValues
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

@@ -1,6 +1,10 @@
-import FV.Concurrency.CallCalleeRet
-import FV.Concurrency.CallEntryPremisesWitness
-import FV.Concurrency.CallRetResumeWitness
+module
+
+public import FV.Concurrency.CallCalleeRet
+public import FV.Concurrency.CallEntryPremisesWitness
+public import FV.Concurrency.CallRetResumeWitness
+
+@[expose] public section
 
 /-!
 # Witness: the callee's return contract and the caller's resume premises (#473, step (3))

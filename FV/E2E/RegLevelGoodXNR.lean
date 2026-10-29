@@ -1,5 +1,9 @@
-import FV.E2E.RegLevelGoodXN
-import FV.E2E.RegLevelReadsIn
+module
+
+public import FV.E2E.RegLevelGoodXN
+public import FV.E2E.RegLevelReadsIn
+
+@[expose] public section
 
 /-!
 # `GoodXNR` at one line (SEM1 #537, step 3p)

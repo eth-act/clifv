@@ -1,6 +1,10 @@
-import FV.Backend.Proof.StockScalarContract
-import FV.Backend.Proof.StockMinMaxReturnRefines
-import FV.Backend.Proof.StockMinMaxFamily
+module
+
+public import FV.Backend.Proof.StockScalarContract
+public import FV.Backend.Proof.StockMinMaxReturnRefines
+public import FV.Backend.Proof.StockMinMaxFamily
+
+@[expose] public section
 
 namespace Backend.Stock.Scalar
 open Backend.Proof Backend.Proof.Driver Backend.Stock.Proof

@@ -1,7 +1,11 @@
-import FV.Backend.Proof.IselFamAluBNotShift
-import FV.Backend.Proof.IselBaseTI
-import FV.Backend.Proof.IselFamAluBBaseTI
-import FV.Backend.Proof.IselTermsShiftTI
+module
+
+public import FV.Backend.Proof.IselFamAluBNotShift
+public import FV.Backend.Proof.IselBaseTI
+public import FV.Backend.Proof.IselFamAluBBaseTI
+public import FV.Backend.Proof.IselTermsShiftTI
+
+@[expose] public section
 
 /-!
 # `IselFamAluBNotShift` over typed contexts (S11e5 Stage C, slice 7)

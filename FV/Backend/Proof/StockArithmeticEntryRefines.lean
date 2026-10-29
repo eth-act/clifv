@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockEntryPrelude
-import FV.Backend.Proof.StockArithmeticReturnRefines
+module
+
+public import FV.Backend.Proof.StockEntryPrelude
+public import FV.Backend.Proof.StockArithmeticReturnRefines
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.ArithmeticBody
 open Backend.Proof Backend.Proof.Driver Isle Isle.Aarch64

@@ -1,4 +1,8 @@
-import FV.Concurrency.IselMemAux
+module
+
+public import FV.Concurrency.IselMemAux
+
+@[expose] public section
 
 /-!
 # Per-case facts about the LL/SC loop bodies (layer 4b's retry proof, T2 #311)

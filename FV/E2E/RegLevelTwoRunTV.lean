@@ -1,5 +1,9 @@
-import FV.E2E.RegLevelTwoRunTP
-import FV.E2E.RegLevelValueGS
+module
+
+public import FV.E2E.RegLevelTwoRunTP
+public import FV.E2E.RegLevelValueGS
+
+@[expose] public section
 
 /-!
 # Two activations in lock-step, value semantics (SEM1 #537, cleanup path)

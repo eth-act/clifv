@@ -1,5 +1,9 @@
-import FV.Opt.Proof.RuleIntRetry
-import FV.Opt.Proof.RuleInfraShiftAmt
+module
+
+public import FV.Opt.Proof.RuleIntRetry
+public import FV.Opt.Proof.RuleInfraShiftAmt
+
+@[expose] public section
 
 /-!
 # `opts/shifts.isle` (part 5): proven `simplify` rules

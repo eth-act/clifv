@@ -1,5 +1,9 @@
-import FV.Backend.LogicalNIProduction
-import FV.Backend.Lowering.StockScalarNI
+module
+
+public import FV.Backend.LogicalNIProduction
+public import FV.Backend.Lowering.StockScalarNI
+
+@[expose] public section
 
 namespace Backend
 set_option autoImplicit false

@@ -1,6 +1,10 @@
-import FV.Opt.Proof.RuleRestEmbed
-import FV.Opt.Proof.KernelBV
-import FV.Opt.Proof.RuleSkel
+module
+
+public import FV.Opt.Proof.RuleRestEmbed
+public import FV.Opt.Proof.KernelBV
+public import FV.Opt.Proof.RuleSkel
+
+@[expose] public section
 
 /-!
 # The `simplify_skeleton` rule template

@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockDFG
-import FV.Backend.Proof.LowerCertBase
+module
+
+public import FV.Backend.Proof.StockDFG
+public import FV.Backend.Proof.LowerCertBase
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.ParameterCfg
 open Backend.Proof Backend.Proof.Driver Backend.Stock.Proof

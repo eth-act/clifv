@@ -1,10 +1,14 @@
-import FV.E2E.LinkScopeT
-import FV.E2E.LinkOutCleanupT
-import FV.E2E.LinkScope
-import FV.E2E.SpillKillFree
-import FV.Backend.Proof.SpillInstCheckComplete
-import FV.Backend.Proof.FormsCoverComplete
-import FV.E2E.SpillDefined
+module
+
+public import FV.E2E.LinkScopeT
+public import FV.E2E.LinkOutCleanupT
+public import FV.E2E.LinkScope
+public import FV.E2E.SpillKillFree
+public import FV.Backend.Proof.SpillInstCheckComplete
+public import FV.Backend.Proof.FormsCoverComplete
+public import FV.E2E.SpillDefined
+
+@[expose] public section
 
 /-! # The integer input conditions are typed ones (S11e5 Stage C, slice 8)
 

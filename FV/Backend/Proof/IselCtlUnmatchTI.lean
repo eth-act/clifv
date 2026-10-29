@@ -1,5 +1,9 @@
-import FV.Backend.Proof.IselCtlTryInd
-import FV.Backend.Proof.LowerContractT
+module
+
+public import FV.Backend.Proof.IselCtlTryInd
+public import FV.Backend.Proof.LowerContractT
+
+@[expose] public section
 
 /-!
 # Family Ctl over typed contexts: the unmatchability statements (S11e5 Stage C, slice 5)

@@ -1,6 +1,10 @@
-import FV.Backend.Proof.DefGenSound
-import FV.Backend.Proof.KillTab
-import FV.Backend.Proof.TermSetData
+module
+
+public import FV.Backend.Proof.DefGenSound
+public import FV.Backend.Proof.KillTab
+public import FV.Backend.Proof.TermSetData
+
+@[expose] public section
 
 /-!
 # Definedness of the ISLE runs: the decided rule tables

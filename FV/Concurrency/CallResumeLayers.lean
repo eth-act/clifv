@@ -1,5 +1,9 @@
-import FV.Concurrency.IselResume
-import FV.Concurrency.CallResumeQ
+module
+
+public import FV.Concurrency.IselResume
+public import FV.Concurrency.CallResumeQ
+
+@[expose] public section
 
 /-!
 # Layers 3, 4a and 4b resuming after a call (#473, (2c) of the generic call theorem)

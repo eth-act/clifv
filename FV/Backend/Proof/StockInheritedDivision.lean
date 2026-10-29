@@ -1,4 +1,8 @@
-import FV.Backend.Proof.StockInheritedFrame
+module
+
+public import FV.Backend.Proof.StockInheritedFrame
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.Inherited
 open Backend.Proof Backend.Proof.Driver

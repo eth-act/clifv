@@ -1,5 +1,9 @@
-import FV.E2E.ProductionPipelineWith
-import FV.E2E.CompiledSemantic
+module
+
+public import FV.E2E.ProductionPipelineWith
+public import FV.E2E.CompiledSemantic
+
+@[expose] public section
 
 namespace E2E.LinkCheck
 open Backend Backend.Proof Backend.Proof.Driver

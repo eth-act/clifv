@@ -1,8 +1,12 @@
-import FV.E2E.LinkScopeInputDefs
-import FV.E2E.LinkScopeDefsT
-import FV.E2E.EmitCondsDefs
-import FV.Compile.SubsetTF
-import FV.Backend.Proof.DriverCheckCF
+module
+
+public import FV.E2E.LinkScopeInputDefs
+public import FV.E2E.LinkScopeDefsT
+public import FV.E2E.EmitCondsDefs
+public import FV.Compile.SubsetTF
+public import FV.Backend.Proof.DriverCheckCF
+
+@[expose] public section
 
 /-! # The typed-try_call input conditions (S11e6, #419): the definitions
 

@@ -1,4 +1,8 @@
-import FV.Opt.Proof.RuleInfraAbs
+module
+
+public import FV.Opt.Proof.RuleInfraAbs
+
+@[expose] public section
 
 /-!
 # `opts/selects.isle` (part 7): `select` against 0 to `iabs`

@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockCfgReturnBlock
-import FV.Backend.Proof.StockGuardedSuccessor
+module
+
+public import FV.Backend.Proof.StockCfgReturnBlock
+public import FV.Backend.Proof.StockGuardedSuccessor
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.CfgReturn
 open Backend.Proof Backend.Proof.Driver

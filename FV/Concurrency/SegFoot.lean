@@ -1,6 +1,10 @@
-import FV.Concurrency.IselCover
-import FV.Concurrency.VCodeFrame
-import FV.E2E.Lockstep
+module
+
+public import FV.Concurrency.IselCover
+public import FV.Concurrency.VCodeFrame
+public import FV.E2E.Lockstep
+
+@[expose] public section
 
 /-!
 # The footprint premises along a run (T2h, #311, layer 2e step 2)

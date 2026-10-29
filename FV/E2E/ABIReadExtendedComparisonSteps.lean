@@ -1,5 +1,9 @@
-import FV.E2E.ABIReadBoundary
-import FV.Backend.ABIReadScalar
+module
+
+public import FV.E2E.ABIReadBoundary
+public import FV.Backend.ABIReadScalar
+
+@[expose] public section
 
 namespace E2E.ExtendedComparisonRead
 open Backend Backend.Proof Backend.Proof.Driver E2E.MixedFlagBoundary

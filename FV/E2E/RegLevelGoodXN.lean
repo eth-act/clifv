@@ -1,5 +1,9 @@
-import FV.E2E.RegLevelOp
-import FV.E2E.RegLevelNoCall
+module
+
+public import FV.E2E.RegLevelOp
+public import FV.E2E.RegLevelNoCall
+
+@[expose] public section
 
 /-!
 # `GoodXN` at one line (SEM1 #537, step 2k)

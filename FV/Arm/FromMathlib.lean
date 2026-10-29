@@ -4,6 +4,10 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 -- Modified by fv-compiler-rust (2026): ported to Lean v4.34.1, module prefix FV.Arm, wrapped in namespace Arm.
 
+module
+
+@[expose] public section
+
 namespace Arm
 
 -- This file has definitions temporarily lifted from Mathlib.

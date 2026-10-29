@@ -1,6 +1,10 @@
-import FV.Link.DeadCleanupExe
-import FV.E2E.DeadCleanupExecProvenT
-import FV.E2E.LinkScopeIntT
+module
+
+public import FV.Link.DeadCleanupExe
+public import FV.E2E.DeadCleanupExecProvenT
+public import FV.E2E.LinkScopeIntT
+
+@[expose] public section
 
 /-! # The shipped executable compiler on the typed scope (S11e5 Stage C, slice 8)
 

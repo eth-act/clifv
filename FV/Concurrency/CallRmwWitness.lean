@@ -1,7 +1,11 @@
-import FV.Concurrency.CallRmwData
-import FV.Concurrency.CallLoadWitness
-import FV.Concurrency.CallLLSCEntry
-import FV.Concurrency.CallXClosedWitness
+module
+
+public import FV.Concurrency.CallRmwData
+public import FV.Concurrency.CallLoadWitness
+public import FV.Concurrency.CallLLSCEntry
+public import FV.Concurrency.CallXClosedWitness
+
+@[expose] public section
 
 /-!
 # A compiled caller calling the compiled `atomic_rmw` (T2h, #311, calls)

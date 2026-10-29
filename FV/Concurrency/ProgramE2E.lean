@@ -1,6 +1,10 @@
-import FV.Concurrency.ClifThread
-import FV.Concurrency.ArmThread
-import FV.Concurrency.Mapping
+module
+
+public import FV.Concurrency.ClifThread
+public import FV.Concurrency.ArmThread
+public import FV.Concurrency.Mapping
+
+@[expose] public section
 
 /-!
 # The program-level statement (T2e, #303)

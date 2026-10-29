@@ -1,4 +1,8 @@
-import FV.Opt.Proof.RuleInfraIcmp
+module
+
+public import FV.Opt.Proof.RuleInfraIcmp
+
+@[expose] public section
 
 /-!
 # Signed comparison bounds in `opts/icmp.isle`

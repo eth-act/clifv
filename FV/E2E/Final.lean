@@ -1,14 +1,18 @@
-import FV.E2E.Main
-import FV.E2E.RegLevelDriverSem
-import FV.E2E.RegLevelCorrect
-import FV.Backend.Proof.IselLowerAll
-import FV.Backend.Proof.IselExcl
-import FV.Backend.Proof.IselCtl
-import FV.Backend.Proof.IselCtlUnmatch
-import FV.Backend.Proof.IselCtlTryInd
-import FV.Backend.Proof.IselAtomic
-import FV.Backend.Proof.MemRefines
-import FV.Backend.Proof.RefinesCSem
+module
+
+public import FV.E2E.Main
+public import FV.E2E.RegLevelDriverSem
+public import FV.E2E.RegLevelCorrect
+public import FV.Backend.Proof.IselLowerAll
+public import FV.Backend.Proof.IselExcl
+public import FV.Backend.Proof.IselCtl
+public import FV.Backend.Proof.IselCtlUnmatch
+public import FV.Backend.Proof.IselCtlTryInd
+public import FV.Backend.Proof.IselAtomic
+public import FV.Backend.Proof.MemRefines
+public import FV.Backend.Proof.RefinesCSem
+
+@[expose] public section
 
 /-! # `backend_correct` with every M4 obligation discharged
 

@@ -1,5 +1,9 @@
-import FV.Concurrency.CallRetResume
-import FV.Concurrency.CallResumeWitness
+module
+
+public import FV.Concurrency.CallRetResume
+public import FV.Concurrency.CallResumeWitness
+
+@[expose] public section
 
 /-!
 # Witness: the caller resumed after a callee that returns a result (#473, step (1))

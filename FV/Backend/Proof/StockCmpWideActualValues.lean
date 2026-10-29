@@ -1,11 +1,16 @@
-import FV.Backend.Proof.StockCmpMatchedPredecessor
-import FV.Backend.Proof.StockCmpNarrowMatchedValues
-import FV.Backend.Proof.StockCmpImmediateSourceValues
-import FV.Backend.Proof.StockCmpRegisterTraceValues
-import FV.Backend.Proof.StockCmpPredecessorSignedSourceValues
-import FV.Backend.Proof.StockCmpPredecessorUnsignedSourceValues
-import FV.Backend.Proof.StockCmpZero32OriginalRhsValues
-import FV.Backend.Proof.StockCmpZero64OriginalRhsValues
+module
+
+public import FV.Backend.Proof.StockCmpMatchedPredecessor
+public import FV.Backend.Proof.StockCmpNarrowMatchedValues
+public import FV.Backend.Proof.StockCmpImmediateSourceValues
+public import FV.Backend.Proof.StockCmpRegisterTraceValues
+public import FV.Backend.Proof.StockCmpPredecessorSignedSourceValues
+public import FV.Backend.Proof.StockCmpPredecessorUnsignedSourceValues
+public import FV.Backend.Proof.StockCmpZero32OriginalRhsValues
+public import FV.Backend.Proof.StockCmpZero64OriginalRhsValues
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarCmp
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 set_option maxRecDepth 20000

@@ -1,4 +1,8 @@
-import FV.Opt.Proof.RuleInfraPow2
+module
+
+public import FV.Opt.Proof.RuleInfraPow2
+
+@[expose] public section
 
 /-!
 # `opts/arithmetic.isle` (part 8): `imul` by a power of two

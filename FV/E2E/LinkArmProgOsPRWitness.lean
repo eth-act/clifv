@@ -1,6 +1,10 @@
-import FV.E2E.LinkArmProgOsPR
-import FV.E2E.LinkArmProgOsPWitness
-import FV.E2E.LinkArmProphDetRWitness
+module
+
+public import FV.E2E.LinkArmProgOsPR
+public import FV.E2E.LinkArmProgOsPWitness
+public import FV.E2E.LinkArmProphDetRWitness
+
+@[expose] public section
 
 /-!
 # Witnesses for the call contracts on `ThmPDER` (`FV/E2E/LinkArmProgOsPR.lean`)

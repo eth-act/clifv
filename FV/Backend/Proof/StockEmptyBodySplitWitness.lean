@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockReturnSourceRuns
-import FV.Backend.Proof.StockBodyScanOrigin
+module
+
+public import FV.Backend.Proof.StockReturnSourceRuns
+public import FV.Backend.Proof.StockBodyScanOrigin
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.EmptyBodySplitWitness
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

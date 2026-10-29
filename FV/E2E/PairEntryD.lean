@@ -1,5 +1,9 @@
-import FV.E2E.PairEntry
-import FV.E2E.PairGuardS
+module
+
+public import FV.E2E.PairEntry
+public import FV.E2E.PairGuardS
+
+@[expose] public section
 
 /-!
 # The entry on paired worlds, reads guarded (SEM1 #537, #699)

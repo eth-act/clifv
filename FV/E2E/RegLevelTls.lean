@@ -1,4 +1,8 @@
-import FV.E2E.RegLevelCall
+module
+
+public import FV.E2E.RegLevelCall
+
+@[expose] public section
 
 /-!
 # `tls_value` on the machine (agent/stack-tls-proof)

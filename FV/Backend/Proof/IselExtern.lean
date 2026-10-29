@@ -1,4 +1,8 @@
-import FV.Backend.Proof.IselInterp
+module
+
+public import FV.Backend.Proof.IselInterp
+
+@[expose] public section
 
 /-!
 # The embedding `Backend.sem` and the extern helpers used by the probe's rules

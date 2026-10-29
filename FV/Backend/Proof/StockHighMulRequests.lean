@@ -1,5 +1,10 @@
-import FV.Backend.Proof.StockHighMulNarrowRhs
-import FV.Backend.Proof.StockExtendRequests
+module
+
+public import FV.Backend.Proof.StockHighMulNarrowRhs
+public import FV.Backend.Proof.StockExtendRequests
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarHighMul
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 

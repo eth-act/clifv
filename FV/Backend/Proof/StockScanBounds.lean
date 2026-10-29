@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockAliasBounds
-import FV.Backend.Proof.StockBlockScan
+module
+
+public import FV.Backend.Proof.StockAliasBounds
+public import FV.Backend.Proof.StockBlockScan
+
+@[expose] public section
 
 /-! Alias caps through complete real instruction and block scans. The cap is
 supplied by the initial allocation, not a new compiler acceptance condition. -/

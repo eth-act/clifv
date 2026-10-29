@@ -1,4 +1,8 @@
-import FV.E2E.LinkClif
+module
+
+public import FV.E2E.LinkClif
+
+@[expose] public section
 
 /-!
 # Linking at the CLIF level with bounded callee runs

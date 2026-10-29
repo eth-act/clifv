@@ -1,7 +1,11 @@
-import FV.Link.OptExe
-import FV.Link.DeadCleanupOptExe
-import FV.Link.NonVacuityExeSource
-import FV.Link.NonVacuityDeadCleanupExeSource
+module
+
+public import FV.Link.OptExe
+public import FV.Link.DeadCleanupOptExe
+public import FV.Link.NonVacuityExeSource
+public import FV.Link.NonVacuityDeadCleanupExeSource
+
+@[expose] public section
 
 /-! # `compileExeOpt_correct_source` with the `__*ti3` helpers as the only outside code
 

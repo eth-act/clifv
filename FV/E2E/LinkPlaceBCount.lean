@@ -1,4 +1,8 @@
-import FV.E2E.LinkArmPlaceB
+module
+
+public import FV.E2E.LinkArmPlaceB
+
+@[expose] public section
 
 /-! # The slot-byte counter at an activation's `n`-th call (SEM1, `docs/plans/uninit.md` §5.5)
 

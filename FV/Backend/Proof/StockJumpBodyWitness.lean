@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockJumpBodyRefines
-import FV.Backend.Proof.StockMaskBlockWitness
+module
+
+public import FV.Backend.Proof.StockJumpBodyRefines
+public import FV.Backend.Proof.StockMaskBlockWitness
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.ControlWitness
 open Backend.Proof Backend.Proof.Driver

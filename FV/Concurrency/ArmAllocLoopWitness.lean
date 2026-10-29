@@ -1,5 +1,9 @@
-import FV.Concurrency.ArmAllocLoopMem
-import FV.Concurrency.ArmAllocMemWitness
+module
+
+public import FV.Concurrency.ArmAllocLoopMem
+public import FV.Concurrency.ArmAllocMemWitness
+
+@[expose] public section
 
 /-!
 # Non-vacuity of layer 4b with the LL/SC loops (T2, #311)

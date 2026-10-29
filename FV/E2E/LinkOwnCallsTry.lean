@@ -1,4 +1,8 @@
-import FV.E2E.LinkOwnCallsShapeOf
+module
+
+public import FV.E2E.LinkOwnCallsShapeOf
+
+@[expose] public section
 
 /-!
 # The `try_call` rules of `lower_branch`, with the callee and the arguments

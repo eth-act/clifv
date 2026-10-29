@@ -1,4 +1,8 @@
-import FV.Opt.Legal
+module
+
+public import FV.Opt.Legal
+
+@[expose] public section
 
 /-!
 # `Opt.Legalize128`: the pass

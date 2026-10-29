@@ -1,4 +1,8 @@
-import FV.Backend.Proof.IselShpFns
+module
+
+public import FV.Backend.Proof.IselShpFns
+
+@[expose] public section
 
 /-!
 # Control shapes of the ISLE lowering (V4): the summary table

@@ -1,4 +1,8 @@
-import FV.Backend.Proof.RegallocState
+module
+
+public import FV.Backend.Proof.RegallocState
+
+@[expose] public section
 
 /-!
 # Facts about the checker's functions (M6 proof)

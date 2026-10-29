@@ -1,10 +1,14 @@
-import FV.Backend.Proof.DefGenOracle
-import FV.Backend.Proof.DefGenWrap
-import FV.Backend.Proof.DefGenSound
-import FV.Backend.Proof.KillDriver
-import FV.Backend.Proof.IselFlowData
-import FV.Backend.Proof.IselShpTotal
-import FV.Backend.Proof.IselShpOracle
+module
+
+public import FV.Backend.Proof.DefGenOracle
+public import FV.Backend.Proof.DefGenWrap
+public import FV.Backend.Proof.DefGenSound
+public import FV.Backend.Proof.KillDriver
+public import FV.Backend.Proof.IselFlowData
+public import FV.Backend.Proof.IselShpTotal
+public import FV.Backend.Proof.IselShpOracle
+
+@[expose] public section
 
 /-!
 # Definedness of the ISLE runs: the model of the embedding (`DModel`)

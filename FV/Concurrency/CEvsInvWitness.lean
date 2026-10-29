@@ -1,5 +1,9 @@
-import FV.Concurrency.CEvsInv
-import FV.Concurrency.VCodeFrameWitness
+module
+
+public import FV.Concurrency.CEvsInv
+public import FV.Concurrency.VCodeFrameWitness
+
+@[expose] public section
 
 /-!
 # Non-vacuity of the footprint invariances (T2h, #311, layer 2e)

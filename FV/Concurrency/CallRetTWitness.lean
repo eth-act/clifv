@@ -1,5 +1,9 @@
-import FV.Concurrency.CallRetT
-import FV.Concurrency.CallRetLinkWitness
+module
+
+public import FV.Concurrency.CallRetT
+public import FV.Concurrency.CallRetLinkWitness
+
+@[expose] public section
 
 /-!
 # Witness: the callee's return end as a `RealizedT` (#473, step (4))

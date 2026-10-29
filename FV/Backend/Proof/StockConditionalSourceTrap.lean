@@ -1,4 +1,8 @@
-import FV.Backend.Proof.StockConditionalSourceReturn
+module
+
+public import FV.Backend.Proof.StockConditionalSourceReturn
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.ConditionalValues
 open Backend.Proof Backend.Proof.Driver

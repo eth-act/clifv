@@ -1,7 +1,11 @@
-import FV.Link.Exe
-import FV.Link.ProductionCompileWith
-import FV.Link.ProductionImageWithProof
-import FV.E2E.ProductionExecProven
+module
+
+public import FV.Link.Exe
+public import FV.Link.ProductionCompileWith
+public import FV.Link.ProductionImageWithProof
+public import FV.E2E.ProductionExecProven
+
+@[expose] public section
 
 /-! Closed correctness of the successful production executable attempt.
 No program-specific premise beyond the original machine/source boundary remains. -/

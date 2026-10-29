@@ -1,7 +1,11 @@
-import FV.E2E.LinkScopeChecksT2
-import FV.E2E.SpillCtlCheckT
-import FV.Backend.Proof.IselShpTDriver
-import FV.Backend.Proof.SpillInstCheckComplete
+module
+
+public import FV.E2E.LinkScopeChecksT2
+public import FV.E2E.SpillCtlCheckT
+public import FV.Backend.Proof.IselShpTDriver
+public import FV.Backend.Proof.SpillInstCheckComplete
+
+@[expose] public section
 
 /-! # The control-form run-time checks proven on the strengthened typed scope `fnScopeInTB2`
 

@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockNoLoadSink
-import FV.Backend.Proof.StockSinkRuleRhs
+module
+
+public import FV.Backend.Proof.StockNoLoadSink
+public import FV.Backend.Proof.StockSinkRuleRhs
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.SinkRules.RhsWitness
 open Backend.Proof Isle Isle.Interp Isle.Aarch64 Isle.Interp.RuleFrame

@@ -1,6 +1,11 @@
-import FV.Backend.Proof.StockPopcountBodyRefines
-import FV.Backend.Proof.StockMinMaxFamily
-import FV.Backend.Proof.StockMinMaxScanRefines
+module
+
+public import FV.Backend.Proof.StockPopcountBodyRefines
+public import FV.Backend.Proof.StockMinMaxFamily
+public import FV.Backend.Proof.StockMinMaxScanRefines
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.MinMaxBody
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 set_option autoImplicit false

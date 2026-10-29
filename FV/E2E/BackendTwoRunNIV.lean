@@ -1,6 +1,10 @@
-import FV.E2E.BackendTwoRunNIU
-import FV.E2E.BackendTwoRunNZWP
-import FV.E2E.BackendTwoRunNV
+module
+
+public import FV.E2E.BackendTwoRunNIU
+public import FV.E2E.BackendTwoRunNZWP
+public import FV.E2E.BackendTwoRunNV
+
+@[expose] public section
 
 /-!
 # The two-run lock by induction on the call count, cleanup path (SEM1 #537, #713, #729)

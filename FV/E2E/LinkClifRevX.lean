@@ -1,5 +1,9 @@
-import FV.E2E.LinkClifRev
-import FV.Clif.LinkClifXN
+module
+
+public import FV.E2E.LinkClifRev
+public import FV.Clif.LinkClifXN
+
+@[expose] public section
 
 /-!
 # Unlinking runs with unwinding (S10f, #233)

@@ -1,5 +1,9 @@
-import FV.Concurrency.CallRetsWitness
-import FV.Concurrency.CallRetsN
+module
+
+public import FV.Concurrency.CallRetsWitness
+public import FV.Concurrency.CallRetsN
+
+@[expose] public section
 
 /-!
 # Witness: all layers from the caller's entry, every `rets` end resolved (#473, step (2))

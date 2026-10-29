@@ -1,4 +1,8 @@
-import FV.Link.Ld.RelsTotal
+module
+
+public import FV.Link.Ld.RelsTotal
+
+@[expose] public section
 
 /-! # `lean-ld` links its inputs (A1e, #409)
 

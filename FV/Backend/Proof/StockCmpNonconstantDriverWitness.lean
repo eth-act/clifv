@@ -1,6 +1,10 @@
-import FV.Backend.Proof.StockCmpNonconstantDriverRuns
-import FV.Backend.Proof.StockCmpNonconstantSourceValues
-import FV.Backend.Proof.LowerSim
+module
+
+public import FV.Backend.Proof.StockCmpNonconstantDriverRuns
+public import FV.Backend.Proof.StockCmpNonconstantSourceValues
+public import FV.Backend.Proof.LowerSim
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.ScalarCmp.DefinedDriverWitness
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

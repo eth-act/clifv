@@ -1,5 +1,9 @@
-import FV.E2E.Binary
-import FV.E2E.ExecWords
+module
+
+public import FV.E2E.Binary
+public import FV.E2E.ExecWords
+
+@[expose] public section
 
 /-! # The executable's own instruction words (L3, M9 item 1b)
 

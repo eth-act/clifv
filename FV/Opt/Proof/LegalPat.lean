@@ -1,5 +1,9 @@
-import FV.Opt.Legal
-import FV.Opt.Proof.SemSim
+module
+
+public import FV.Opt.Legal
+public import FV.Opt.Proof.SemSim
+
+@[expose] public section
 
 /-!
 # Pure pattern instances (`Opt.Legal.pureOk`)

@@ -1,7 +1,11 @@
-import FV.Link.ProductionImage
-import FV.Link.Ld.Spec
-import FVTest.E2E.ProductionLinkProof
-import FV.Backend.Lowering.StockProduction
+module
+
+public import FV.Link.ProductionImage
+public import FV.Link.Ld.Spec
+public import FVTest.E2E.ProductionLinkProof
+public import FV.Backend.Lowering.StockProduction
+
+@[expose] public section
 
 /-! Actual Stock callback → actual byte writer → ordinary emitted Lean proofs.
 A fixed integration witness; it does not activate a production class. -/

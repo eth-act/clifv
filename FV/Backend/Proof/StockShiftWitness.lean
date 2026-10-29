@@ -1,4 +1,9 @@
-import FV.Backend.Proof.StockShiftWitnessInputs
+module
+
+public import FV.Backend.Proof.StockShiftWitnessInputs
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarShift.Witness
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 set_option maxRecDepth 20000

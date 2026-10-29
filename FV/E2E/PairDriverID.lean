@@ -1,5 +1,9 @@
-import FV.E2E.PairDriverD
-import FV.E2E.PairEntryD
+module
+
+public import FV.E2E.PairDriverD
+public import FV.E2E.PairEntryD
+
+@[expose] public section
 
 /-!
 # Non-interference of the counted VCode run, reads guarded (SEM1 #537, #699)

@@ -1,4 +1,9 @@
-import FV.Backend.Proof.StockCmpNonzero8Selection
+module
+
+public import FV.Backend.Proof.StockCmpNonzero8Selection
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarCmp
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 theorem stock_cmp_parameter_nonzero8_values {p : Program} (hp : Data p)

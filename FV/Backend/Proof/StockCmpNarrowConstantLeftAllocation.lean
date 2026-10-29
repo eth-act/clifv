@@ -1,8 +1,13 @@
-import FV.Backend.Proof.StockCmpNarrowConstantLeftSelection
-import FV.Backend.Proof.StockCmpNarrowRhsObserved
-import FV.Backend.Proof.StockCmpSelectedCalls
-import FV.Backend.Proof.StockCmpOutput
-import FV.Backend.Proof.StockCmpCondition
+module
+
+public import FV.Backend.Proof.StockCmpNarrowConstantLeftSelection
+public import FV.Backend.Proof.StockCmpNarrowRhsObserved
+public import FV.Backend.Proof.StockCmpSelectedCalls
+public import FV.Backend.Proof.StockCmpOutput
+public import FV.Backend.Proof.StockCmpCondition
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarCmp
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 /-- Real original narrow comparison selection allocates exactly its extension

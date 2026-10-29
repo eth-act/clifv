@@ -1,6 +1,10 @@
-import FVTest.E2E.FloatFinalT
-import FV.Backend.Proof.IselEmitTDriver
-import FV.E2E.EmitCondsLowerT
+module
+
+public import FVTest.E2E.FloatFinalT
+public import FV.Backend.Proof.IselEmitTDriver
+public import FV.E2E.EmitCondsLowerT
+
+@[expose] public section
 
 /-!
 # Witnesses: the typed emission analysis on a float function (S11 #35)

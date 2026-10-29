@@ -1,5 +1,9 @@
-import FV.Front.Exe
-import FV.Front.RawExeContract
+module
+
+public import FV.Front.Exe
+public import FV.Front.RawExeContract
+
+@[expose] public section
 
 /-!
 # The executable compiler refines the frontend bundle's program, under one runtime contract

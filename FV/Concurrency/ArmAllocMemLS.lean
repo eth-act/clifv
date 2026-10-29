@@ -1,7 +1,11 @@
-import FV.Concurrency.ArmAllocMem
-import FV.Concurrency.VCodeAddr
-import FV.Backend.Proof.RegallocMem
-import FV.Backend.Proof.RegallocMemFP
+module
+
+public import FV.Concurrency.ArmAllocMem
+public import FV.Concurrency.VCodeAddr
+public import FV.Backend.Proof.RegallocMem
+public import FV.Backend.Proof.RegallocMemFP
+
+@[expose] public section
 
 /-!
 # Layer 4b for the plain load/store items of the atomics scope (T2h, #311)

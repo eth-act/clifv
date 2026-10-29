@@ -1,5 +1,9 @@
-import FV.E2E.ExecFrame
-import FV.E2E.ExecStatic
+module
+
+public import FV.E2E.ExecFrame
+public import FV.E2E.ExecStatic
+
+@[expose] public section
 
 /-! # D2 of `RunOkD` from the memory reads (L3 (c))
 

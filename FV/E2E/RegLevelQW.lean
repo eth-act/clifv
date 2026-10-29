@@ -1,5 +1,9 @@
-import FV.E2E.RegLevelSegAlign
-import FV.E2E.RegLevelNext
+module
+
+public import FV.E2E.RegLevelSegAlign
+public import FV.E2E.RegLevelNext
+
+@[expose] public section
 
 /-!
 # `q_op`, `q_next`, `q_entry` at a witness (SEM1 #537, item (3), route (a))

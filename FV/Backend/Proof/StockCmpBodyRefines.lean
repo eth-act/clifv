@@ -1,6 +1,11 @@
-import FV.Backend.Proof.StockMinMaxBodyRefines
-import FV.Backend.Proof.StockCmpFamily
-import FV.Backend.Proof.StockCmpScanRefines
+module
+
+public import FV.Backend.Proof.StockMinMaxBodyRefines
+public import FV.Backend.Proof.StockCmpFamily
+public import FV.Backend.Proof.StockCmpScanRefines
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.CmpBody
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 set_option autoImplicit false

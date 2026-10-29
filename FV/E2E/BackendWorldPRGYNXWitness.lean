@@ -1,5 +1,9 @@
-import FV.E2E.BackendWorldPRGYNX
-import FV.E2E.BackendWorldPRGYNGWitness
+module
+
+public import FV.E2E.BackendWorldPRGYNX
+public import FV.E2E.BackendWorldPRGYNGWitness
+
+@[expose] public section
 
 /-!
 # Witness for the per-state trace at the return (`RegLevelCorrectPRSNX`, `BackendWorldPRGYNX`)

@@ -1,5 +1,9 @@
-import FV.Link.DeadCleanupExe
-import FV.E2E.SretReturnLink
+module
+
+public import FV.Link.DeadCleanupExe
+public import FV.E2E.SretReturnLink
+
+@[expose] public section
 
 /-!
 # The executable compiler with the `sret` return register (S7)

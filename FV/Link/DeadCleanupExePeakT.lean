@@ -1,6 +1,10 @@
-import FV.Link.DeadCleanupExePeak
-import FV.Link.DeadCleanupCompileT
-import FV.E2E.DeadCleanupExecPeakT
+module
+
+public import FV.Link.DeadCleanupExePeak
+public import FV.Link.DeadCleanupCompileT
+public import FV.E2E.DeadCleanupExecPeakT
+
+@[expose] public section
 
 /-! # The shipped executable compiler on the typed scope at the run's peak call depth (L1d)
 

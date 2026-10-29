@@ -1,5 +1,9 @@
-import FV.Concurrency.CallRets
-import FV.Concurrency.CallRetsAlloc
+module
+
+public import FV.Concurrency.CallRets
+public import FV.Concurrency.CallRetsAlloc
+
+@[expose] public section
 
 /-!
 # All layers pausing at calls and returns, with the return's contract (#473, (1))

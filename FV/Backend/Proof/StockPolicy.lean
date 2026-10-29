@@ -1,4 +1,8 @@
-import FV.Backend.Lowering.Stock
+module
+
+public import FV.Backend.Lowering.Stock
+
+@[expose] public section
 
 /-!
 Local safety facts for the stock lowering policy. These are the first pieces of

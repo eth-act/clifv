@@ -1,5 +1,9 @@
-import FV.Backend.Proof.VCodeSemISeq
-import FV.Backend.Proof.VCodeSemIWitness
+module
+
+public import FV.Backend.Proof.VCodeSemISeq
+public import FV.Backend.Proof.VCodeSemIWitness
+
+@[expose] public section
 
 /-!
 # Witnesses for the call-free transfer to `csemI` (`FV/Backend/Proof/VCodeSemISeq.lean`)

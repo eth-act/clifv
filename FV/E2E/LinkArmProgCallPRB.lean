@@ -1,5 +1,9 @@
-import FV.E2E.LinkArmProgCallPR
-import FV.E2E.LinkArmTableB
+module
+
+public import FV.E2E.LinkArmProgCallPR
+public import FV.E2E.LinkArmTableB
+
+@[expose] public section
 
 /-!
 # A call of a program function on `ThmPRB` (SEM1 item (d), `docs/plans/uninit.md` §5.9, #680 (3))

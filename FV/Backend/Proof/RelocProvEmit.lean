@@ -1,8 +1,12 @@
-import FV.Backend.Proof.RelocProvDefs
-import FV.E2E.EmitPreOk
-import FV.E2E.PairLines
-import FV.Backend.Proof.EncodeLayout
-import FV.Backend.Proof.DeadCleanupPrepare
+module
+
+public import FV.Backend.Proof.RelocProvDefs
+public import FV.E2E.EmitPreOk
+public import FV.E2E.PairLines
+public import FV.Backend.Proof.EncodeLayout
+public import FV.Backend.Proof.DeadCleanupPrepare
+
+@[expose] public section
 
 /-!
 # Name provenance of the compiled relocations: the backend tail (L1e, #216)

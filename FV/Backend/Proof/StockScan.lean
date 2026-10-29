@@ -1,5 +1,9 @@
-import FV.Backend.Lowering.StockReplay
-import FV.Backend.Proof.StockPolicy
+module
+
+public import FV.Backend.Lowering.StockReplay
+public import FV.Backend.Proof.StockPolicy
+
+@[expose] public section
 
 /-!
 Local replay and policy facts for backward scanning. Replay acceptance checks equality with reexecution of

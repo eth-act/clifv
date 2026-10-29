@@ -7,10 +7,14 @@ Author(s): Shilpi Goel, Yan Peng
 -- Modified by fv-compiler-rust (2026): ported to Lean v4.34.1, module prefix FV.Arm, wrapped in
 -- namespace Arm; ADDP (vector) added (`exec_addp_vector`).
 
-import FV.Arm.Decode
-import FV.Arm.State
-import FV.Arm.Insts.Common
-import FV.Arm.BitVec
+module
+
+public import FV.Arm.Decode
+public import FV.Arm.State
+public import FV.Arm.Insts.Common
+public import FV.Arm.BitVec
+
+@[expose] public section
 
 namespace Arm
 

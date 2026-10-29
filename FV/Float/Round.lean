@@ -2,7 +2,11 @@
 `FPRound` / `FPRoundBase` (FZ = 0, AHP = 0) and the integer rounding step shared by
 `FPRoundInt` and `FPToFixed`, on exact values `mant * 2^exp` (`docs/contracts/float.md`).
 -/
-import FV.Float.Basic
+module
+
+public import FV.Float.Basic
+
+@[expose] public section
 
 namespace IEEE
 

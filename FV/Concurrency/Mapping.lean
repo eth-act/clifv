@@ -1,5 +1,9 @@
-import FV.Concurrency.Armv8
-import FV.Concurrency.ClifMM
+module
+
+public import FV.Concurrency.Armv8
+public import FV.Concurrency.ClifMM
+
+@[expose] public section
 
 /-!
 # Soundness of Cranelift's atomics mapping to Armv8 (T2, #38)

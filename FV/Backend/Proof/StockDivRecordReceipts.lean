@@ -1,4 +1,9 @@
-import FV.Backend.Proof.StockDivSelected
+module
+
+public import FV.Backend.Proof.StockDivSelected
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarDiv
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 /-- A retained record of the actual successful driver supplies result binding

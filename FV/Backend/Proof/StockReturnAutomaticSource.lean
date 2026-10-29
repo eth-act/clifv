@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockTerminalEmission
-import FV.Backend.Proof.StockReturnRecordSource
+module
+
+public import FV.Backend.Proof.StockTerminalEmission
+public import FV.Backend.Proof.StockReturnRecordSource
+
+@[expose] public section
 
 /-! Original whole-driver execution supplies the return's emitted classification.
 All prior conditional source interfaces remain available unchanged. -/

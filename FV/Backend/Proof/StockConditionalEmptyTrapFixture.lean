@@ -1,4 +1,8 @@
-import FV.Backend.Proof.StockConditionalEmptyTrapSource
+module
+
+public import FV.Backend.Proof.StockConditionalEmptyTrapSource
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.ConditionalValues.EmptyTrapFixture
 open Backend.Proof Backend.Proof.Driver Backend.Proof.Driver.Fix

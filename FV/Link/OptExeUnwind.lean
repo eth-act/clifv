@@ -1,6 +1,10 @@
-import FV.Link.ExeUnwind
-import FV.Link.DeadCleanupOptExe
-import FV.E2E.OptUnwind
+module
+
+public import FV.Link.ExeUnwind
+public import FV.Link.DeadCleanupOptExe
+public import FV.E2E.OptUnwind
+
+@[expose] public section
 
 /-!
 # The optimising executable compiler on the exceptional edges (S10g, #404)

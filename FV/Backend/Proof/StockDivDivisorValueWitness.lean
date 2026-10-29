@@ -1,4 +1,9 @@
-import FV.Backend.Proof.StockDivDivisorValues
+module
+
+public import FV.Backend.Proof.StockDivDivisorValues
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarDiv.DivisorValueWitness
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 set_option maxRecDepth 20000

@@ -1,4 +1,9 @@
-import FV.Backend.Proof.StockMinMaxSourceMatch
+module
+
+public import FV.Backend.Proof.StockMinMaxSourceMatch
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarSelect
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 open MinMaxRegisterFixture

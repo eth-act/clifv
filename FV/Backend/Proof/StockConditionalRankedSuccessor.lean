@@ -1,6 +1,10 @@
-import FV.Backend.Proof.StockConditionalRankedShape
-import FV.Backend.Proof.StockConditionalLeaf
-import FV.Backend.Proof.StockForwardTrap
+module
+
+public import FV.Backend.Proof.StockConditionalRankedShape
+public import FV.Backend.Proof.StockConditionalLeaf
+public import FV.Backend.Proof.StockForwardTrap
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.ConditionalValues
 open Backend.Proof Backend.Proof.Driver Backend.Stock.Proof.ForwardSource

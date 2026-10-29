@@ -1,8 +1,12 @@
-import FV.Backend.Proof.StockZeroConditionPrefix
-import FV.Backend.Proof.StockOriginalConditionPrefix
-import FV.Backend.Proof.StockSelectComparisonCompanionWitness
-import FV.Backend.Proof.StockConditionPrefix
-import FV.Backend.Proof.StockSelectConditionShapeWitness
+module
+
+public import FV.Backend.Proof.StockZeroConditionPrefix
+public import FV.Backend.Proof.StockOriginalConditionPrefix
+public import FV.Backend.Proof.StockSelectComparisonCompanionWitness
+public import FV.Backend.Proof.StockConditionPrefix
+public import FV.Backend.Proof.StockSelectConditionShapeWitness
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.ScalarSelect
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

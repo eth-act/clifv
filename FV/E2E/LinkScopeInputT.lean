@@ -1,9 +1,13 @@
-import FV.E2E.LinkScopeInputDefsT
-import FV.E2E.LinkScopeInput
-import FV.E2E.LinkScopeT
-import FV.E2E.EmitTotalT
-import FV.E2E.SpillDefined
-import FV.E2E.SpillKillFreeT
+module
+
+public import FV.E2E.LinkScopeInputDefsT
+public import FV.E2E.LinkScopeInput
+public import FV.E2E.LinkScopeT
+public import FV.E2E.EmitTotalT
+public import FV.E2E.SpillDefined
+public import FV.E2E.SpillKillFreeT
+
+@[expose] public section
 
 /-! # The typed input conditions and the compiler's per-function totality (S11e5 Stage C, slice 8)
 

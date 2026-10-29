@@ -1,4 +1,9 @@
-import FV.Backend.Proof.StockCmpPredecessorSignedSelection
+module
+
+public import FV.Backend.Proof.StockCmpPredecessorSignedSelection
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarCmp.PredecessorSignedSelectedWitness
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 open Backend.Stock.Proof.ScalarCmp

@@ -1,5 +1,10 @@
-import FV.Backend.Proof.StockSelectOriginalConditionValues
-import FV.Backend.Proof.StockSelectOriginalSourceMatch
+module
+
+public import FV.Backend.Proof.StockSelectOriginalConditionValues
+public import FV.Backend.Proof.StockSelectOriginalSourceMatch
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarSelect
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 private theorem output_state {ctx : Ctx} {value out : V} {st next : State}

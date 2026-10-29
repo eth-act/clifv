@@ -1,6 +1,10 @@
-import FV.E2E.LoweringProvenance
-import FV.E2E.CompiledProduction
-import FV.Backend.Proof.StockD0PipelineWitness
+module
+
+public import FV.E2E.LoweringProvenance
+public import FV.E2E.CompiledProduction
+public import FV.Backend.Proof.StockD0PipelineWitness
+
+@[expose] public section
 
 set_option autoImplicit false
 

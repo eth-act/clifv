@@ -1,4 +1,8 @@
-import FV.E2E.StockConditionalForwardCfgFixtures
+module
+
+public import FV.E2E.StockConditionalForwardCfgFixtures
+
+@[expose] public section
 
 namespace E2E.StockParameterCfgNIWitness
 open Backend.Stock.D0

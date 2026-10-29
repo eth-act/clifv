@@ -1,6 +1,11 @@
-import FV.Backend.Proof.StockSelectComparisonValues
-import FV.Backend.Proof.StockSelectConditionOriginValues
-import FV.Backend.Proof.StockSelectNonzeroConditionShape
+module
+
+public import FV.Backend.Proof.StockSelectComparisonValues
+public import FV.Backend.Proof.StockSelectConditionOriginValues
+public import FV.Backend.Proof.StockSelectNonzeroConditionShape
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarSelect
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 private theorem supported_read {f : Clif.Function} {ctx : Ctx} (inv : MappedCtxInv f ctx)

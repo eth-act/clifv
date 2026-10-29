@@ -1,4 +1,8 @@
-import FV.Backend.Proof.SpillInstCheck
+module
+
+public import FV.Backend.Proof.SpillInstCheck
+
+@[expose] public section
 
 /-!
 # `spillInstOkB` is complete (S11e5 Stage C, slice 8)

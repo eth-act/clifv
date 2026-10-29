@@ -1,5 +1,9 @@
-import FV.Opt.Rules
-import FV.Clif.Run
+module
+
+public import FV.Opt.Rules
+public import FV.Clif.Run
+
+@[expose] public section
 
 /-!
 # A small hand-written rule set (stand-in for the exported Cranelift `simplify` rules)

@@ -1,5 +1,9 @@
-import FV.Backend.Proof.IselTermsALUAMulN
-import FV.Backend.Proof.IselFamALUAExtr
+module
+
+public import FV.Backend.Proof.IselTermsALUAMulN
+public import FV.Backend.Proof.IselFamALUAExtr
+
+@[expose] public section
 
 /-!
 # Narrow `smulhi`/`umulhi` root rules (1059, 1071): `LowerRuleOk` at i8/i16/i32

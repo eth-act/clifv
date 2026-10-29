@@ -1,6 +1,10 @@
-import FV.Backend.Proof.SpillClsCheck
-import FV.Backend.Proof.IselFlowRootF
-import FV.Backend.Proof.IselContract
+module
+
+public import FV.Backend.Proof.SpillClsCheck
+public import FV.Backend.Proof.IselFlowRootF
+public import FV.Backend.Proof.IselContract
+
+@[expose] public section
 
 /-!
 # The summary table of the class analysis and its kernel checks (V4 classes)

@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockArithmeticBodyRefines
-import FV.Backend.Proof.StockArithmeticEntryRefines
+module
+
+public import FV.Backend.Proof.StockArithmeticBodyRefines
+public import FV.Backend.Proof.StockArithmeticEntryRefines
+
+@[expose] public section
 
 /-! Original-source simulation for complete straight-line select/add/sub bodies. -/
 namespace Backend.Stock.Proof.MixedBody

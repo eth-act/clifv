@@ -1,4 +1,8 @@
-import FV.E2E.LinkArmDetPRBOf
+module
+
+public import FV.E2E.LinkArmDetPRBOf
+
+@[expose] public section
 
 /-!
 # Twin runs with the slot bytes compared at the calls only (SEM1 #537, `docs/plans/uninit.md`

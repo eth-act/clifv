@@ -1,7 +1,11 @@
-import FV.E2E.SpillKillFree
-import FV.E2E.SpillCheckAlloc
-import FV.E2E.LSCheckAlloc
-import FV.Backend.Proof.LSSpillPlan
+module
+
+public import FV.E2E.SpillKillFree
+public import FV.E2E.SpillCheckAlloc
+public import FV.E2E.LSCheckAlloc
+public import FV.Backend.Proof.LSSpillPlan
+
+@[expose] public section
 
 /-!
 # Completeness of the Lean allocator (V4b-4, #276)

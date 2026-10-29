@@ -1,5 +1,9 @@
-import FV.E2E.LinkArmTwinCEWitness
-import FV.E2E.LinkArmTrapE
+module
+
+public import FV.E2E.LinkArmTwinCEWitness
+public import FV.E2E.LinkArmTrapE
+
+@[expose] public section
 
 /-!
 # Witnesses: traps under the slot-byte oracle (SEM1 #537)

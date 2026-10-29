@@ -1,6 +1,10 @@
-import FV.E2E.Final
-import FV.Opt.Proof.LegalSim
-import FV.Opt.Proof.LegalRust
+module
+
+public import FV.E2E.Final
+public import FV.Opt.Proof.LegalSim
+public import FV.Opt.Proof.LegalRust
+
+@[expose] public section
 
 /-! # The end-to-end theorem for `i128` functions (`Opt.Legalize128` + `Opt.Legal.checkW`)
 

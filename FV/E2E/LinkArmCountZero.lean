@@ -1,6 +1,10 @@
-import FV.E2E.LinkArmThmPRBROf
-import FV.E2E.LinkPlaceBLeave
-import FV.E2E.LinkArmStage2Zero
+module
+
+public import FV.E2E.LinkArmThmPRBROf
+public import FV.E2E.LinkPlaceBLeave
+public import FV.E2E.LinkArmStage2Zero
+
+@[expose] public section
 
 /-!
 # The counter advance of a returning activation, and `CountPRB κ 0` (SEM1 #537, #680 (3))

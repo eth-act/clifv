@@ -1,5 +1,10 @@
-import FV.Backend.Proof.StockMulBodyRefines
-import FV.Backend.Proof.StockShiftScanRefines
+module
+
+public import FV.Backend.Proof.StockMulBodyRefines
+public import FV.Backend.Proof.StockShiftScanRefines
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ShiftBody
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 set_option autoImplicit false

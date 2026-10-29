@@ -1,4 +1,8 @@
-import FV.E2E.ABIReadBoundary
+module
+
+public import FV.E2E.ABIReadBoundary
+
+@[expose] public section
 
 /-! Trap-aware execution/ABI transport. Existing pure models and theorem variants
 remain in ABIReadBoundary; this additive model admits real terminal traps while

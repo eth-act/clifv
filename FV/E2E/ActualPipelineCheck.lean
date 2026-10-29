@@ -1,6 +1,10 @@
-import FV.E2E.PipelineCheck
-import FV.E2E.LinkProduction
-import FV.E2E.LoweringProvenance
+module
+
+public import FV.E2E.PipelineCheck
+public import FV.E2E.LinkProduction
+public import FV.E2E.LoweringProvenance
+
+@[expose] public section
 
 /-! Actual-result checker provenance. All existing checks and input/layout/base
 conditions remain; the proof uses the actual callback output in either supported

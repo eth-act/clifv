@@ -1,5 +1,9 @@
-import FV.Backend.Proof.RegallocOperands
-import FV.Backend.Proof.IselContract
+module
+
+public import FV.Backend.Proof.RegallocOperands
+public import FV.Backend.Proof.IselContract
+
+@[expose] public section
 
 /-!
 # The concrete instruction semantics `csem` (M6 proof)

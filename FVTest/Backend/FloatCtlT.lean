@@ -1,8 +1,12 @@
-import FV.Backend.Proof.LowerDecide
-import FV.Backend.Proof.LowerLoopCtxT
-import FV.E2E.RegLevelFrame
-import FV.Backend.Proof.EntryClass
-import FV.Backend.Proof.AbiClassRegs
+module
+
+public import FV.Backend.Proof.LowerDecide
+public import FV.Backend.Proof.LowerLoopCtxT
+public import FV.E2E.RegLevelFrame
+public import FV.Backend.Proof.EntryClass
+public import FV.Backend.Proof.AbiClassRegs
+
+@[expose] public section
 
 /-!
 Non-vacuity of the widened control-form check (S11e5 Stage C, slice 5): `ctlCheck` accepts

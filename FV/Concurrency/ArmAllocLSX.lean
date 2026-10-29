@@ -1,4 +1,8 @@
-import FV.Concurrency.ArmAllocLS
+module
+
+public import FV.Concurrency.ArmAllocLS
+
+@[expose] public section
 
 /-!
 # Layer 4b with the stack offsets built in `x16` (T2j, #473)

@@ -1,4 +1,8 @@
-import FV.Opt.Proof.CompleteSimpInv
+module
+
+public import FV.Opt.Proof.CompleteSimpInv
+
+@[expose] public section
 
 /-!
 # Completeness of simplify: one statement

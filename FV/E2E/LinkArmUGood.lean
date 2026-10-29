@@ -1,4 +1,8 @@
-import FV.E2E.LinkArmUCallNI
+module
+
+public import FV.E2E.LinkArmUCallNI
+
+@[expose] public section
 
 /-!
 # The per-state facts of the linked machine's runs with unwinding (S10g, #404)

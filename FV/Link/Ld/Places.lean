@@ -1,4 +1,8 @@
-import FV.Link.Ld.BodyTotal
+module
+
+public import FV.Link.Ld.BodyTotal
+
+@[expose] public section
 
 /-! # The places of `lean-ld`'s layout (A1c, #409)
 

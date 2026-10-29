@@ -1,5 +1,9 @@
-import FV.Backend.Proof.FormsCoverComplete
-import FV.Backend.Proof.DeadCleanupPrepare
+module
+
+public import FV.Backend.Proof.FormsCoverComplete
+public import FV.Backend.Proof.DeadCleanupPrepare
+
+@[expose] public section
 
 namespace Backend.Proof.Driver
 open Backend Backend.Proof Backend.Proof.Cov Backend.DeadCleanup

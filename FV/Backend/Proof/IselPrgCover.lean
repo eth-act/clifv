@@ -1,4 +1,8 @@
-import FV.Backend.Proof.IselPrgCtx
+module
+
+public import FV.Backend.Proof.IselPrgCtx
+
+@[expose] public section
 
 /-!
 # Progress of the ISLE lowering (V7): the driver's roots are table roots

@@ -1,4 +1,8 @@
-import FV.Backend.Proof.StockInheritedDivision
+module
+
+public import FV.Backend.Proof.StockInheritedDivision
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.Inherited
 open Backend.Proof Backend.Proof.Driver

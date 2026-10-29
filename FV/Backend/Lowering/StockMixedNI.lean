@@ -1,4 +1,8 @@
-import FV.Backend.Lowering.StockArithmeticNI
+module
+
+public import FV.Backend.Lowering.StockArithmeticNI
+
+@[expose] public section
 
 namespace Backend.Stock.Mixed
 set_option autoImplicit false

@@ -1,4 +1,8 @@
-import FV.Backend.Proof.IselFamAluBBase
+module
+
+public import FV.Backend.Proof.IselFamAluBBase
+
+@[expose] public section
 
 /-!
 # `load_constant_full`: the `movz`/`movn` + `movk` sequence materialises its value

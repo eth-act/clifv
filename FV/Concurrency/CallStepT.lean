@@ -1,5 +1,9 @@
-import FV.Concurrency.CallSegLift
-import FV.Concurrency.CallEnterClif
+module
+
+public import FV.Concurrency.CallSegLift
+public import FV.Concurrency.CallEnterClif
+
+@[expose] public section
 
 /-!
 # The event-free steps between segments as `RealizedT` (#473, step (4))

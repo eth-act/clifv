@@ -1,5 +1,9 @@
-import FV.E2E.BackendWorldI
-import FV.E2E.RegLevelCorrectPRSR
+module
+
+public import FV.E2E.BackendWorldI
+public import FV.E2E.RegLevelCorrectPRSR
+
+@[expose] public section
 
 /-!
 # The counted per-function theorem with the located reads (SEM1 #537, step 3p)

@@ -1,4 +1,9 @@
-import FV.Backend.Proof.IselCovFns
+module
+
+public import FV.Backend.Proof.IselCovFns
+public import FVTest.ModuleHeader
+
+@[expose] public section
 
 /-!
 # Generator of the V3 coverage summary table (`FV/Backend/Proof/IselCovTab.lean`)
@@ -302,5 +307,5 @@ def main (args : List String) : IO UInt32 := do
   let term := termRules.all (aRule program tab aext actor apre aOracle [.c0] AW.top)
   let br := branchRules.all (aRule program tab aext actor apre aOracle [.c0, .c0] AW.top)
   IO.println s!"entries {tab.length} chkTab {ok} stmt {stmt} stmtTop {stmtTop} term {term} branch {br}"
-  IO.FS.writeFile path (render tab)
+  IO.FS.writeFile path (Gen.moduleHeader (render tab))
   return (if ok && stmt && stmtTop && term && br then 0 else 1)

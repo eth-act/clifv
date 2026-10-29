@@ -1,4 +1,8 @@
-import FV.E2E.RegLevelNoCall
+module
+
+public import FV.E2E.RegLevelNoCall
+
+@[expose] public section
 
 /-!
 # Where the reads of an activation's run land (SEM1 #537, step 3p, docs/plans/uninit.md §5.9)

@@ -1,4 +1,8 @@
-import FV.E2E.LinkArmProgResultBT
+module
+
+public import FV.E2E.LinkArmProgResultBT
+
+@[expose] public section
 
 /-!
 # Stage 2 at one call, from the program callee's oracle facts (SEM1 #537, #680 (3))

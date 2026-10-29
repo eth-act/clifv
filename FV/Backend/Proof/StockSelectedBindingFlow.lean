@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockReservedScanFlow
-import FV.Backend.Proof.StockBindingFlow
+module
+
+public import FV.Backend.Proof.StockReservedScanFlow
+public import FV.Backend.Proof.StockBindingFlow
+
+@[expose] public section
 
 /-! Actual selected-context emission supplies source alias origins, even with
 nonempty exception reservations. Ordered binding is the real emitter's binder. -/

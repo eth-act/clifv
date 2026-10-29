@@ -1,6 +1,10 @@
-import FV.E2E.BackendWorldNII
-import FV.E2E.DeadCleanupWitness
-import FV.E2E.ClifEnvOnlyContracts
+module
+
+public import FV.E2E.BackendWorldNII
+public import FV.E2E.DeadCleanupWitness
+public import FV.E2E.ClifEnvOnlyContracts
+
+@[expose] public section
 
 /-!
 # Non-vacuity of the counted cleanup pipeline (SEM1, `docs/plans/uninit.md` §5.9)

@@ -1,7 +1,11 @@
-import FV.Backend.Proof.StockImm
-import FV.Backend.Proof.IselFamAluBIconst
-import FV.Backend.Proof.IselLcf
-import FV.Backend.Proof.LowerAlias
+module
+
+public import FV.Backend.Proof.StockImm
+public import FV.Backend.Proof.IselFamAluBIconst
+public import FV.Backend.Proof.IselLcf
+public import FV.Backend.Proof.LowerAlias
+
+@[expose] public section
 
 /-!
 Result binding for the stock scan. Virtual results update the actual alias array

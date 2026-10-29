@@ -1,7 +1,12 @@
-import FV.Backend.Proof.StockCmpNarrowImmediateObserved
-import FV.Backend.Proof.StockCmpNarrowMachineValues
-import FV.Backend.Proof.StockDivConstant
-import FV.Backend.Proof.StockDemandMono
+module
+
+public import FV.Backend.Proof.StockCmpNarrowImmediateObserved
+public import FV.Backend.Proof.StockCmpNarrowMachineValues
+public import FV.Backend.Proof.StockDivConstant
+public import FV.Backend.Proof.StockDemandMono
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarCmp
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 /-- Actual5134 RHS and715 executions compute the original unsigned narrow

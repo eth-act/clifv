@@ -1,4 +1,9 @@
-import FV.Backend.Proof.IselEmitFns
+module
+
+public import FV.Backend.Proof.IselEmitFns
+public import FVTest.ModuleHeader
+
+@[expose] public section
 
 /-!
 # Generator of the V6c emission summary table (`FV/Backend/Proof/IselEmitTab.lean`)
@@ -346,5 +351,5 @@ def main (args : List String) : IO UInt32 := do
   let br := ((program.rulesOf TId.lower_branch).filter fun r => okBr r == false).map (·.id)
   IO.println s!"entries {tab.length} chkTab {ok} stmt {stmt} term {term} branch {br} last {lastRules.map (·.id)}"
   for (rid, msg) in s.bad.eraseDups do IO.println s!"bad rule {rid}: {msg.take 400}"
-  IO.FS.writeFile path (render tab)
+  IO.FS.writeFile path (Gen.moduleHeader (render tab))
   return (if ok && stmt.isEmpty && term.isEmpty && br.isEmpty then 0 else 1)

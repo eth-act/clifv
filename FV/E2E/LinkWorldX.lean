@@ -1,5 +1,9 @@
-import FV.E2E.PairDriver
-import FV.E2E.RegLevelCorrectX
+module
+
+public import FV.E2E.PairDriver
+public import FV.E2E.RegLevelCorrectX
+
+@[expose] public section
 
 /-! # The per-function theorems with the per-state facts of the run (L3 (c))
 

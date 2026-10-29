@@ -1,5 +1,9 @@
-import FV.E2E.LinkGood
-import FV.E2E.DeadCleanupTrapCall
+module
+
+public import FV.E2E.LinkGood
+public import FV.E2E.DeadCleanupTrapCall
+
+@[expose] public section
 
 /-! # Callee traps in the linked program: the trap observable and its premises (S9c, #376)
 

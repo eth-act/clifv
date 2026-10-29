@@ -1,5 +1,9 @@
-import FV.Backend.Proof.IselCmpEmit
-import FV.Backend.Proof.IselFloatArith
+module
+
+public import FV.Backend.Proof.IselCmpEmit
+public import FV.Backend.Proof.IselFloatArith
+
+@[expose] public section
 
 /-!
 # S11f: `emit_fcmp`, the condition of a float comparison

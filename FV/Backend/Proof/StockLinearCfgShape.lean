@@ -1,4 +1,8 @@
-import FV.Backend.Proof.StockTwoBlockShape
+module
+
+public import FV.Backend.Proof.StockTwoBlockShape
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.LinearCfg
 open Backend.Proof Backend.Proof.Driver

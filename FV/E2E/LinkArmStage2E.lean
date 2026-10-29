@@ -1,6 +1,10 @@
-import FV.E2E.LinkArmThmPRBRLE
-import FV.E2E.BackendPrefixAtGE
-import FV.E2E.BackendWorldPRGYNG
+module
+
+public import FV.E2E.LinkArmThmPRBRLE
+public import FV.E2E.BackendPrefixAtGE
+public import FV.E2E.BackendWorldPRGYNG
+
+@[expose] public section
 
 /-!
 # Stage 2, the count and the linking statement with the prefix-closed table (SEM1 #537, #680 (3), fix of #700, step 4)

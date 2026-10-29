@@ -1,5 +1,9 @@
-import FV.Link.ExeUnwindWitness
-import FV.Link.DeadCleanupExeInitR
+module
+
+public import FV.Link.ExeUnwindWitness
+public import FV.Link.DeadCleanupExeInitR
+
+@[expose] public section
 
 /-!
 # Witness: the executable theorem under the slot-byte oracle covers a trapping run

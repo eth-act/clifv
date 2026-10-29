@@ -1,6 +1,10 @@
-import FV.Concurrency.IselEntry
-import FV.Concurrency.AllocThread
-import FV.Concurrency.ArmAllocStraight
+module
+
+public import FV.Concurrency.IselEntry
+public import FV.Concurrency.AllocThread
+public import FV.Concurrency.ArmAllocStraight
+
+@[expose] public section
 
 /-!
 # Composing the per-thread layers (T2h, #311)

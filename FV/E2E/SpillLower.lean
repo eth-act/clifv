@@ -1,9 +1,13 @@
-import FV.E2E.RegLevelEmit
-import FV.Backend.Proof.AssignOk
-import FV.Backend.Proof.SpillLocalCheck
-import FV.Backend.Proof.SpillStep4Cfg
-import FV.Backend.Proof.SpillStep4
-import FV.Backend.Proof.KillOfV
+module
+
+public import FV.E2E.RegLevelEmit
+public import FV.Backend.Proof.AssignOk
+public import FV.Backend.Proof.SpillLocalCheck
+public import FV.Backend.Proof.SpillStep4Cfg
+public import FV.Backend.Proof.SpillStep4
+public import FV.Backend.Proof.KillOfV
+
+@[expose] public section
 
 /-!
 # `lowerRFunc` lowers the spill allocation (V5)

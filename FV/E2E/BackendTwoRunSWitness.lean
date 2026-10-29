@@ -1,5 +1,9 @@
-import FV.E2E.BackendTwoRunS
-import FV.E2E.BackendTwoRunWitness
+module
+
+public import FV.E2E.BackendTwoRunS
+public import FV.E2E.BackendTwoRunWitness
+
+@[expose] public section
 
 /-!
 # Witness for the reads-only guard (SEM1 #537, #699, `BackendTwoRunS.lean`)

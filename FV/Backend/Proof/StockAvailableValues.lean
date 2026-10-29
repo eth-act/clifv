@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockAliasSemantics
-import FV.Backend.Proof.LowerCertBase
+module
+
+public import FV.Backend.Proof.StockAliasSemantics
+public import FV.Backend.Proof.LowerCertBase
+
+@[expose] public section
 
 /-! Guard the live-value relation at each source statement boundary. A frame can
 retain stale values from an earlier loop iteration; these need not be held before

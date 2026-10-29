@@ -1,5 +1,10 @@
-import FV.Backend.Proof.StockSelectZeroReplacementResolved
-import FV.Backend.Proof.StockSelectConditionCompanion
+module
+
+public import FV.Backend.Proof.StockSelectZeroReplacementResolved
+public import FV.Backend.Proof.StockSelectConditionCompanion
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarSelect
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 /-- The two actual consumer producers are interchangeable for cset-to-csel

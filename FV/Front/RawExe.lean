@@ -1,5 +1,9 @@
-import FV.Front.Exe
-import FV.Front.RawProof
+module
+
+public import FV.Front.Exe
+public import FV.Front.RawProof
+
+@[expose] public section
 
 /-!
 # The executable compiler refines cg_clif's program (T7b/T7c, docs/contracts/frontend.md)

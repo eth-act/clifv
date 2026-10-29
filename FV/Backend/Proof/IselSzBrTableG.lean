@@ -1,4 +1,8 @@
-import FV.Backend.Proof.IselSzBrTable
+module
+
+public import FV.Backend.Proof.IselSzBrTable
+
+@[expose] public section
 
 /-!
 # The size of the ISLE lowering's output (V6c): `br_table` with its sub-runs as hypotheses

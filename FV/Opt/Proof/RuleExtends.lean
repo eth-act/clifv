@@ -1,4 +1,8 @@
-import FV.Opt.Proof.RuleExtEmbed
+module
+
+public import FV.Opt.Proof.RuleExtEmbed
+
+@[expose] public section
 
 /-!
 # `opts/extends.isle`: proven `simplify` rules

@@ -1,6 +1,10 @@
-import FV.E2E.Guarded
-import FV.Backend.Proof.MemRefines
-import FV.Backend.Proof.RegallocMemFP
+module
+
+public import FV.E2E.Guarded
+public import FV.Backend.Proof.MemRefines
+public import FV.Backend.Proof.RegallocMemFP
+
+@[expose] public section
 
 /-!
 # The float accesses of the guarded semantics (S11e4, #238)

@@ -1,7 +1,11 @@
-import FV.E2E.RegLevelGoodXNR
-import FV.E2E.RegLevelNext
-import FV.E2E.RegLevelNoCall
-import FV.E2E.RegLevelGotoNR
+module
+
+public import FV.E2E.RegLevelGoodXNR
+public import FV.E2E.RegLevelNext
+public import FV.E2E.RegLevelNoCall
+public import FV.E2E.RegLevelGotoNR
+
+@[expose] public section
 
 /-!
 # `trapIf` that falls through with no call state (SEM1 #537, step 2k)

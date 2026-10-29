@@ -1,4 +1,8 @@
-import FV.E2E.DeadCleanupExecProven
+module
+
+public import FV.E2E.DeadCleanupExecProven
+
+@[expose] public section
 
 /-! # The cleanup pipeline's executable theorem at the run's peak call depth (L1d)
 

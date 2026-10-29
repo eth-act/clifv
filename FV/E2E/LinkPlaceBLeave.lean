@@ -1,4 +1,8 @@
-import FV.E2E.LinkArmProgCallPRB
+module
+
+public import FV.E2E.LinkArmProgCallPRB
+
+@[expose] public section
 
 /-!
 # The popped entry of an activation (SEM1 #537, #694)

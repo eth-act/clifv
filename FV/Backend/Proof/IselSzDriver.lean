@@ -1,10 +1,14 @@
-import FV.Backend.Proof.IselSzSound
-import FV.Backend.Proof.IselSzExt
-import FV.Backend.Proof.IselSzTab
-import FV.Backend.Proof.IselSzCall
-import FV.Backend.Proof.IselSzBrTable
-import FV.Backend.Proof.IselShpDriver
-import FV.Backend.Proof.IselCovDriver
+module
+
+public import FV.Backend.Proof.IselSzSound
+public import FV.Backend.Proof.IselSzExt
+public import FV.Backend.Proof.IselSzTab
+public import FV.Backend.Proof.IselSzCall
+public import FV.Backend.Proof.IselSzBrTable
+public import FV.Backend.Proof.IselShpDriver
+public import FV.Backend.Proof.IselCovDriver
+
+@[expose] public section
 
 /-!
 # The size of the ISLE lowering's output (V6c): the driver's calls, `IselSz`

@@ -1,7 +1,11 @@
-import FV.Backend.Proof.SpillLocalPipeT
-import FV.Backend.Proof.LowerDecide
-import FV.Backend.Proof.SpillArity
-import FVTest.Backend.FloatDriverT
+module
+
+public import FV.Backend.Proof.SpillLocalPipeT
+public import FV.Backend.Proof.LowerDecide
+public import FV.Backend.Proof.SpillArity
+public import FVTest.Backend.FloatDriverT
+
+@[expose] public section
 
 /-!
 Non-vacuity of the typed spill-allocation chain (S11e5 Stage C, slice 6): on the float-movement

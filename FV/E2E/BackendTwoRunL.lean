@@ -1,6 +1,10 @@
-import FV.E2E.BackendTwoRunT
-import FV.E2E.LinkArmStepLine
-import FV.E2E.ExecWrites
+module
+
+public import FV.E2E.BackendTwoRunT
+public import FV.E2E.LinkArmStepLine
+public import FV.E2E.ExecWrites
+
+@[expose] public section
 
 /-!
 # The machine lock of two activations (SEM1 #537, `docs/plans/uninit.md` §5.9, machine lock)

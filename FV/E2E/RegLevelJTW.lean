@@ -1,6 +1,10 @@
-import FV.E2E.RegLevelJT
-import FV.E2E.RegLevelGotoW
-import FV.E2E.RegLevelWrites
+module
+
+public import FV.E2E.RegLevelJT
+public import FV.E2E.RegLevelGotoW
+public import FV.E2E.RegLevelWrites
+
+@[expose] public section
 
 /-!
 # Jump tables on the machine with their writes (A3, #412, slice F8b)

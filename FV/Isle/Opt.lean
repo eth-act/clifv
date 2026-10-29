@@ -1,8 +1,12 @@
-import FV.Isle.Generated.Opt.Program
-import FV.Isle.Generated.Opt.Manifest
-import FV.Isle.Generated.Opt.Closure
-import FV.Isle.Opt.Helpers
-import FV.Isle.Opt.Simplify
+module
+
+public import FV.Isle.Generated.Opt.Program
+public import FV.Isle.Generated.Opt.Manifest
+public import FV.Isle.Generated.Opt.Closure
+public import FV.Isle.Opt.Helpers
+public import FV.Isle.Opt.Simplify
+
+@[expose] public section
 
 /-!
 # The mid-end ISLE unit (`opt`)

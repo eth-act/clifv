@@ -1,4 +1,9 @@
-import FV.Backend.Proof.StockCmpFlags
+module
+
+public import FV.Backend.Proof.StockCmpFlags
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarCmp
 open Backend.Proof Backend
 /-- Kernel-checked truth of the exact masked flag test used by8-bit comparisons. -/

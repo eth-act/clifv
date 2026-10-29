@@ -1,5 +1,9 @@
-import FV.E2E.ActualPipelineCheck
-import FV.Backend.Lowering.StockProduction
+module
+
+public import FV.E2E.ActualPipelineCheck
+public import FV.Backend.Lowering.StockProduction
+
+@[expose] public section
 
 /-! Pipeline provenance for transactional production attempts. Every successful
 artifact retains the original preparation, allocation, emission and layout facts;

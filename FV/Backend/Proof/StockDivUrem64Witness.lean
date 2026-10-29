@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockDivUrem64WitnessRuns
-import FV.Backend.Proof.LowerSim
+module
+
+public import FV.Backend.Proof.StockDivUrem64WitnessRuns
+public import FV.Backend.Proof.LowerSim
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.ScalarDiv.Urem64Witness
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

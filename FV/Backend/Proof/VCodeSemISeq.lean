@@ -1,4 +1,8 @@
-import FV.Backend.Proof.VCodeSemI
+module
+
+public import FV.Backend.Proof.VCodeSemI
+
+@[expose] public section
 
 /-!
 # Straight-line runs of the counted VCode semantics (SEM1 step 2, `docs/plans/uninit.md` §5.3)

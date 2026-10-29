@@ -1,6 +1,10 @@
-import FV.Backend.Proof.IselCmpRun
-import FV.Backend.Proof.StockAliasSemantics
-import FV.Backend.Proof.LowerRename
+module
+
+public import FV.Backend.Proof.IselCmpRun
+public import FV.Backend.Proof.StockAliasSemantics
+public import FV.Backend.Proof.LowerRename
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.Resolved
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

@@ -1,5 +1,9 @@
-import FV.Opt.Proof.RuleRestEmbed
-import FV.Opt.Proof.KernelBV
+module
+
+public import FV.Opt.Proof.RuleRestEmbed
+public import FV.Opt.Proof.KernelBV
+
+@[expose] public section
 
 /-!
 # 128-bit comparisons rebuilt from 64-bit halves (`icmp.isle` 254–289)

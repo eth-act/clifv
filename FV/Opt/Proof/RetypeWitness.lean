@@ -1,4 +1,8 @@
-import FV.Opt.Proof.RetypeSim
+module
+
+public import FV.Opt.Proof.RetypeSim
+
+@[expose] public section
 
 /-!
 # Non-vacuity of the retyping's refinement (S12e, #36)

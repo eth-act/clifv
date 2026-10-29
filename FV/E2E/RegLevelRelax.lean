@@ -1,4 +1,8 @@
-import FV.E2E.RegLevelEmit
+module
+
+public import FV.E2E.RegLevelEmit
+
+@[expose] public section
 
 /-!
 # Branch relaxation on line lists (M6)

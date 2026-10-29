@@ -1,5 +1,9 @@
-import FV.Backend.Proof.IselCovLe
-import FV.Backend.Proof.IselFlowGen
+module
+
+public import FV.Backend.Proof.IselCovLe
+public import FV.Backend.Proof.IselFlowGen
+
+@[expose] public section
 
 /-!
 # Form coverage of the ISLE lowering (V3): the abstract interpreter and its soundness

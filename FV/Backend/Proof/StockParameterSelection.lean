@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockParameterTerms
-import FV.Backend.Proof.StockConditionalRankedDomain
+module
+
+public import FV.Backend.Proof.StockParameterTerms
+public import FV.Backend.Proof.StockConditionalRankedDomain
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.ParameterCfg
 open Backend.Proof Backend.Proof.Driver Backend.Stock.Proof.ConditionalValues Backend.Stock.Proof.ForwardSource

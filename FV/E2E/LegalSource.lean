@@ -1,5 +1,9 @@
-import FV.E2E.LegalProgram
-import FV.E2E.SrcScopeDefs
+module
+
+public import FV.E2E.LegalProgram
+public import FV.E2E.SrcScopeDefs
+
+@[expose] public section
 
 /-!
 # The original source program of an input (S2/S3 provenance)

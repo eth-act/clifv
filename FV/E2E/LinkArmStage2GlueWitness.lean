@@ -1,7 +1,11 @@
-import FV.E2E.LinkArmThmPRBRLAll
-import FV.E2E.LinkArmStage2ZWitness
-import FV.E2E.LinkPlaceBReachWitness
-import FV.E2E.LinkArmProphThmWitness
+module
+
+public import FV.E2E.LinkArmThmPRBRLAll
+public import FV.E2E.LinkArmStage2ZWitness
+public import FV.E2E.LinkPlaceBReachWitness
+public import FV.E2E.LinkArmProphThmWitness
+
+@[expose] public section
 
 /-!
 # Witnesses for the stage-2 glue (SEM1 #537, #680 (3): `LinkArmStage2ZS`, `LinkArmCallDecode`,

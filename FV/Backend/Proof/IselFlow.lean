@@ -1,9 +1,13 @@
-import FV.Backend.Proof.LowerSpec
-import FV.Backend.Proof.IselFlowGen
-import FV.Backend.Proof.IselFlowInst
-import FV.Backend.Proof.IselFlowRootF
-import FV.Backend.Proof.IselFlowRootT
-import FV.Backend.Proof.IselCtlUnmatch
+module
+
+public import FV.Backend.Proof.LowerSpec
+public import FV.Backend.Proof.IselFlowGen
+public import FV.Backend.Proof.IselFlowInst
+public import FV.Backend.Proof.IselFlowRootF
+public import FV.Backend.Proof.IselFlowRootT
+public import FV.Backend.Proof.IselCtlUnmatch
+
+@[expose] public section
 
 /-!
 # Completeness of `lowerCheck`: what the ISLE lowering of one instruction can produce

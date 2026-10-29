@@ -1,6 +1,10 @@
-import FV.Backend.Proof.IselCovExt
-import FV.Backend.Proof.IselFlowData
-import FV.Backend.Proof.LowerLoopCtx
+module
+
+public import FV.Backend.Proof.IselCovExt
+public import FV.Backend.Proof.IselFlowData
+public import FV.Backend.Proof.LowerLoopCtx
+
+@[expose] public section
 
 /-!
 # Form coverage of the ISLE lowering (V3): the context's instruction data is clean

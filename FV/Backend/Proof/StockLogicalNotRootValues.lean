@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockLogicalNotLookthrough
-import FV.Backend.Proof.StockLogicalRootValues
+module
+
+public import FV.Backend.Proof.StockLogicalNotLookthrough
+public import FV.Backend.Proof.StockLogicalRootValues
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.LogicalNot
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

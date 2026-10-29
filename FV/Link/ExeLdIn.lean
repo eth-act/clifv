@@ -1,6 +1,10 @@
-import FV.Link.DeadCleanupExeLd
-import FV.Link.Ld.SpecTotal
-import FV.Link.Ld.RelsFast
+module
+
+public import FV.Link.DeadCleanupExeLd
+public import FV.Link.Ld.SpecTotal
+public import FV.Link.Ld.RelsFast
+
+@[expose] public section
 
 /-! # The shipped executable compiler is total on `lean-ld`'s inputs (A1, #409)
 

@@ -1,39 +1,43 @@
-import FV.Backend.Proof.IselFloatConst
-import FV.Backend.Proof.IselFloatArith
-import FV.Backend.Proof.IselFloatCvt
-import FV.Backend.Proof.IselFloatRound
-import FV.Backend.Proof.IselFloatSelect
-import FV.Backend.Proof.IselFloatCmp
-import FV.Backend.Proof.IselFamAluBIconst
-import FV.Backend.Proof.IselFamAluBMisc
-import FV.Backend.Proof.IselFamilyALU
-import FV.Backend.Proof.IselFamALUARules
-import FV.Backend.Proof.IselFamALUAExt
-import FV.Backend.Proof.IselFamALUALogic
-import FV.Backend.Proof.IselFamALUAMul
-import FV.Backend.Proof.IselFamALUAMulN
-import FV.Backend.Proof.IselFamAluBUnary
-import FV.Backend.Proof.IselCmpDivRoot
-import FV.Backend.Proof.IselCmpSdiv
-import FV.Backend.Proof.IselCmpDivRem
-import FV.Backend.Proof.IselCmpMinMax
-import FV.Backend.Proof.IselCmpVec
-import FV.Backend.Proof.IselFamAluBExtend
-import FV.Backend.Proof.IselCmpRoot
-import FV.Backend.Proof.IselFamAluBNotShift
-import FV.Backend.Proof.IselFamALUALogicNot
-import FV.Backend.Proof.IselFamALUAExtr
-import FV.Backend.Proof.IselFamAluBShift
-import FV.Backend.Proof.IselFamAluBBfm
-import FV.Backend.Proof.IselFamAluBRot
-import FV.Backend.Proof.IselFamAluBBitrev
-import FV.Backend.Proof.IselFamAluBClz
-import FV.Backend.Proof.IselFamAluBBswap
-import FV.Backend.Proof.IselFamAluBPopcnt
-import FV.Backend.Proof.IselCmpSelect
-import FV.Backend.Proof.IselCtlUnmatch
-import FV.Backend.Proof.IselExclData
-import FV.Backend.Proof.IselAtomic
+module
+
+public import FV.Backend.Proof.IselFloatConst
+public import FV.Backend.Proof.IselFloatArith
+public import FV.Backend.Proof.IselFloatCvt
+public import FV.Backend.Proof.IselFloatRound
+public import FV.Backend.Proof.IselFloatSelect
+public import FV.Backend.Proof.IselFloatCmp
+public import FV.Backend.Proof.IselFamAluBIconst
+public import FV.Backend.Proof.IselFamAluBMisc
+public import FV.Backend.Proof.IselFamilyALU
+public import FV.Backend.Proof.IselFamALUARules
+public import FV.Backend.Proof.IselFamALUAExt
+public import FV.Backend.Proof.IselFamALUALogic
+public import FV.Backend.Proof.IselFamALUAMul
+public import FV.Backend.Proof.IselFamALUAMulN
+public import FV.Backend.Proof.IselFamAluBUnary
+public import FV.Backend.Proof.IselCmpDivRoot
+public import FV.Backend.Proof.IselCmpSdiv
+public import FV.Backend.Proof.IselCmpDivRem
+public import FV.Backend.Proof.IselCmpMinMax
+public import FV.Backend.Proof.IselCmpVec
+public import FV.Backend.Proof.IselFamAluBExtend
+public import FV.Backend.Proof.IselCmpRoot
+public import FV.Backend.Proof.IselFamAluBNotShift
+public import FV.Backend.Proof.IselFamALUALogicNot
+public import FV.Backend.Proof.IselFamALUAExtr
+public import FV.Backend.Proof.IselFamAluBShift
+public import FV.Backend.Proof.IselFamAluBBfm
+public import FV.Backend.Proof.IselFamAluBRot
+public import FV.Backend.Proof.IselFamAluBBitrev
+public import FV.Backend.Proof.IselFamAluBClz
+public import FV.Backend.Proof.IselFamAluBBswap
+public import FV.Backend.Proof.IselFamAluBPopcnt
+public import FV.Backend.Proof.IselCmpSelect
+public import FV.Backend.Proof.IselCtlUnmatch
+public import FV.Backend.Proof.IselExclData
+public import FV.Backend.Proof.IselAtomic
+
+@[expose] public section
 
 /-!
 # M4: `LowerRulesCorrect program`

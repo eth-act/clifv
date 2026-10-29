@@ -1,9 +1,13 @@
-import FV.Backend.Proof.StockConditionalBodyRefines
-import FV.Backend.Proof.StockConditionalCallsWitness
-import FV.Backend.Proof.StockEntrySeed
-import FV.Backend.Proof.RefinesCSem
-import FV.Backend.Proof.MemRefines
-import FV.E2E.RegLevelDriverSem
+module
+
+public import FV.Backend.Proof.StockConditionalBodyRefines
+public import FV.Backend.Proof.StockConditionalCallsWitness
+public import FV.Backend.Proof.StockEntrySeed
+public import FV.Backend.Proof.RefinesCSem
+public import FV.Backend.Proof.MemRefines
+public import FV.E2E.RegLevelDriverSem
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.ConditionalValues.BodyWitness
 open Backend.Proof Backend.Proof.Driver

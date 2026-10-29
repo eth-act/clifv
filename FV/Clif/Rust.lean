@@ -1,4 +1,8 @@
-import FV.Clif.Run
+module
+
+public import FV.Clif.Run
+
+@[expose] public section
 
 /-!
 # Trusted Rust externs: `mem*` and panics (rust-route step 2)

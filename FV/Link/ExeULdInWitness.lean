@@ -1,5 +1,9 @@
-import FV.Link.ExeULdIn
-import FV.Link.ExeLdInWitness
+module
+
+public import FV.Link.ExeULdIn
+public import FV.Link.ExeLdInWitness
+
+@[expose] public section
 
 /-! # Witness: `compileExeU_total_ldIn`'s premises hold together (S10g, #404)
 

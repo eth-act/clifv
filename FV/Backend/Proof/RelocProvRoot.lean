@@ -1,5 +1,9 @@
-import FV.Backend.Proof.RelocProvTab
-import FV.Backend.Proof.IselFlowRootF
+module
+
+public import FV.Backend.Proof.RelocProvTab
+public import FV.Backend.Proof.IselFlowRootF
+
+@[expose] public section
 
 /-!
 # The root rules of `lower` and `lower_branch` against the name-provenance table (#216)

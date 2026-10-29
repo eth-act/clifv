@@ -1,9 +1,14 @@
-import FV.Backend.Proof.StockCastSourceValues
-import FV.Backend.Proof.StockReduceSourceValues
-import FV.Backend.Proof.StockRootOpcodeMatch
-import FV.Backend.Proof.StockSourceStatementFamily
-import FV.Backend.Proof.StockCastFamily
-import FV.Backend.Proof.IselCtlUnmatch
+module
+
+public import FV.Backend.Proof.StockCastSourceValues
+public import FV.Backend.Proof.StockReduceSourceValues
+public import FV.Backend.Proof.StockRootOpcodeMatch
+public import FV.Backend.Proof.StockSourceStatementFamily
+public import FV.Backend.Proof.StockCastFamily
+public import FV.Backend.Proof.IselCtlUnmatch
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.CastComplete
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 set_option autoImplicit false

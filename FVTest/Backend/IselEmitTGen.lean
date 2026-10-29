@@ -1,4 +1,9 @@
-import FV.Backend.Proof.IselEmitTFns
+module
+
+public import FV.Backend.Proof.IselEmitTFns
+public import FVTest.ModuleHeader
+
+@[expose] public section
 
 /-!
 # Generator of the typed emission summary table (`FV/Backend/Proof/IselEmitTTab*.lean`)
@@ -511,5 +516,5 @@ def main (args : List String) : IO UInt32 := do
       (name, i, k, (ne + k - 1) / k)
   IO.println s!"heavy {heavyN}"
   for (name, content) in renderAll tab ln bn heavyN do
-    IO.FS.writeFile (path ++ "/" ++ name) content
+    IO.FS.writeFile (path ++ "/" ++ name) (Gen.moduleHeader content)
   return (if allOk && term && br then 0 else 1)

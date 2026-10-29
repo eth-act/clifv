@@ -1,4 +1,8 @@
-import FV.E2E.RegLevelCorrectCR
+module
+
+public import FV.E2E.RegLevelCorrectCR
+
+@[expose] public section
 
 /-!
 # The counted register-level theorem with guarded world reads (SEM1 #537, item (2))

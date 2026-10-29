@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockDemandMono
-import FV.Backend.Proof.StockSinkFrame
+module
+
+public import FV.Backend.Proof.StockDemandMono
+public import FV.Backend.Proof.StockSinkFrame
+
+@[expose] public section
 
 /-! Demand protects a colored source definition across actual Stock helpers and
 nested evaluation. Unlike zero-color preservation, this also applies to division.

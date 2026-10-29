@@ -1,4 +1,8 @@
-import FV.Backend.Proof.StockMaskBlockRefines
+module
+
+public import FV.Backend.Proof.StockMaskBlockRefines
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.Inherited
 open Backend.Proof Backend.Proof.Driver

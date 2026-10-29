@@ -1,5 +1,10 @@
-import FV.Backend.Proof.StockDivRemNarrowValues
-import FV.Backend.Proof.StockDivMinimumResolved
+module
+
+public import FV.Backend.Proof.StockDivRemNarrowValues
+public import FV.Backend.Proof.StockDivMinimumResolved
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarDiv
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 private theorem fragment_unique {st next : LState} {ms ms' : List MInst}

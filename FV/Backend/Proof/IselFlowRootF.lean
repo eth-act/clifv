@@ -1,4 +1,8 @@
-import FV.Backend.Proof.IselFlowTabF
+module
+
+public import FV.Backend.Proof.IselFlowTabF
+
+@[expose] public section
 
 /-!
 # The root rules of `lower` against the flow table

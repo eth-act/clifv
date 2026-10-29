@@ -1,5 +1,9 @@
-import FV.Backend.Proof.IselCtl
-import FV.Backend.Proof.IselCtlTry
+module
+
+public import FV.Backend.Proof.IselCtl
+public import FV.Backend.Proof.IselCtlTry
+
+@[expose] public section
 
 /-!
 # Completeness of `lowerCheck`: the rule a driver call committed to

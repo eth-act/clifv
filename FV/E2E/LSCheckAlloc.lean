@@ -1,5 +1,9 @@
-import FV.E2E.SpillCheckAllocFix
-import FV.Backend.Proof.LSMain
+module
+
+public import FV.E2E.SpillCheckAllocFix
+public import FV.Backend.Proof.LSMain
+
+@[expose] public section
 
 /-!
 # `checkAlloc` accepts the Lean allocator's validated plans (V4b-3, #275)

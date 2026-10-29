@@ -1,4 +1,8 @@
-import FV.E2E.LinkCheck
+module
+
+public import FV.E2E.LinkCheck
+
+@[expose] public section
 
 /-! # Input condition of the `outFits` link check (docs/TO-PROVE.md §3, L2)
 

@@ -1,6 +1,10 @@
-import FV.Concurrency.IselCallRet
-import FV.Concurrency.CallLayers
-import FV.Concurrency.CallResume
+module
+
+public import FV.Concurrency.IselCallRet
+public import FV.Concurrency.CallLayers
+public import FV.Concurrency.CallResume
+
+@[expose] public section
 
 /-!
 # The `rets` end of an activation (#473, (1))

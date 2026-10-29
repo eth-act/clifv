@@ -1,6 +1,10 @@
-import FV.Backend.Proof.StockTryCfg
-import FV.Backend.Proof.StockReturnRecordCalls
-import FV.Backend.Proof.IselGeneric
+module
+
+public import FV.Backend.Proof.StockTryCfg
+public import FV.Backend.Proof.StockReturnRecordCalls
+public import FV.Backend.Proof.IselGeneric
+
+@[expose] public section
 
 /-! Actual selected-rule receipts from Stock named roots and retained records. -/
 namespace Backend.Stock.Proof

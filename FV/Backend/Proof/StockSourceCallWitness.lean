@@ -1,4 +1,8 @@
-import FV.Backend.Proof.StockSourceResults
+module
+
+public import FV.Backend.Proof.StockSourceResults
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.SourceCallWitness
 open Backend.Proof Backend.Proof.Driver Backend.Proof.Driver.Fix

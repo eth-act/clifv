@@ -1,6 +1,10 @@
-import FV.E2E.LinkScopeInputT2
-import FV.E2E.LinkScopeIntT
-import FV.Backend.Proof.SpillResClassT
+module
+
+public import FV.E2E.LinkScopeInputT2
+public import FV.E2E.LinkScopeIntT
+public import FV.Backend.Proof.SpillResClassT
+
+@[expose] public section
 
 /-! # Run-time checks proven on the strengthened typed scope `fnScopeInTB2`
 

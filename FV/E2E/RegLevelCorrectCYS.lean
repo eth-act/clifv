@@ -1,5 +1,9 @@
-import FV.E2E.RegLevelCorrectCW
-import FV.E2E.PairGuardS
+module
+
+public import FV.E2E.RegLevelCorrectCW
+public import FV.E2E.PairGuardS
+
+@[expose] public section
 
 /-!
 # The world-read guard on reads only (SEM1 #537, #699)

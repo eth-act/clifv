@@ -1,5 +1,9 @@
-import FV.Link.ExeULdIn
-import FV.Link.UnwCheckIn
+module
+
+public import FV.Link.ExeULdIn
+public import FV.Link.UnwCheckIn
+
+@[expose] public section
 
 /-!
 # The unwinding conditions left after `unwCheck_complete` (S10g, #404)

@@ -25,8 +25,12 @@ fault `si_addr` is a forbidden byte of an event of the faulting step, and every 
 (registers, SP, NZCV, PC, TPIDR_EL0, SIMD&FP registers, the test's buffer) agrees: on a fault the
 state before the faulting instruction, else the state after it.
 -/
-import FVTest.Arm.Cosim.Specs
-import FV.ArmFault.Step
+module
+
+public import FVTest.Arm.Cosim.Specs
+public import FV.ArmFault.Step
+
+@[expose] public section
 
 namespace Arm.Cosim.Fault
 

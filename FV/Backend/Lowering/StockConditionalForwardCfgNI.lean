@@ -1,5 +1,9 @@
-import FV.Backend.Lowering.StockConditionalCfgNI
-import FV.Backend.Lowering.StockConditionalRankedCfg
+module
+
+public import FV.Backend.Lowering.StockConditionalCfgNI
+public import FV.Backend.Lowering.StockConditionalRankedCfg
+
+@[expose] public section
 
 namespace Backend.Stock.ConditionalForwardCfg
 set_option autoImplicit false

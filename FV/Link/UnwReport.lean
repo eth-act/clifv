@@ -1,6 +1,10 @@
-import FV.Link.ExeUCompile
-import FV.Link.UnwSavedIn
-import FV.Link.UnwCheckIn
+module
+
+public import FV.Link.ExeUCompile
+public import FV.Link.UnwSavedIn
+public import FV.Link.UnwCheckIn
+
+@[expose] public section
 
 /-!
 # Measuring the unwinding conditions (S10g, #404; report only)

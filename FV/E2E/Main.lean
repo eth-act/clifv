@@ -1,9 +1,13 @@
-import FV.E2E.Compose
-import FV.Backend.Proof.DriverCheckSound
-import FV.Backend.Proof.PrepareSound
-import FV.Backend.Proof.IselMemArm
-import FV.E2E.RegLevelEmit
-import FV.Opt.Proof.SemSim
+module
+
+public import FV.E2E.Compose
+public import FV.Backend.Proof.DriverCheckSound
+public import FV.Backend.Proof.PrepareSound
+public import FV.Backend.Proof.IselMemArm
+public import FV.E2E.RegLevelEmit
+public import FV.Opt.Proof.SemSim
+
+@[expose] public section
 
 /-!
 # M7: `backend_correct`

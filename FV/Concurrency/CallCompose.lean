@@ -1,4 +1,8 @@
-import FV.Concurrency.RealizeCompiled
+module
+
+public import FV.Concurrency.RealizeCompiled
+
+@[expose] public section
 
 /-!
 # Calls: composing per-function refinements along the call (T2h, #311, layer 4b)

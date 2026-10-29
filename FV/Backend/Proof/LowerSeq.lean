@@ -1,4 +1,8 @@
-import FV.Backend.Proof.IselContract
+module
+
+public import FV.Backend.Proof.IselContract
+
+@[expose] public section
 
 /-!
 # Straight-line VCode execution (M7 driver, M4 rule statements)

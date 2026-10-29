@@ -1,4 +1,8 @@
-import FV.Opt.Proof.RuleInfraAbs
+module
+
+public import FV.Opt.Proof.RuleInfraAbs
+
+@[expose] public section
 
 /-!
 # `opts/bitops.isle` (part 8): conditions stripped by `truthy`

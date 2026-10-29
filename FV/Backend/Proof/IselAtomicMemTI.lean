@@ -1,5 +1,9 @@
-import FV.Backend.Proof.IselAtomic
-import FV.Backend.Proof.IselMemBaseTI
+module
+
+public import FV.Backend.Proof.IselAtomic
+public import FV.Backend.Proof.IselMemBaseTI
+
+@[expose] public section
 
 /-!
 # `IselAtomic` over typed contexts (S11e5 Stage C, slice 7)

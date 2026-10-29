@@ -1,9 +1,13 @@
-import FV.E2E.DeadCleanupBinCheck
-import FV.E2E.BinCheckT
-import FV.E2E.DeadCleanupLinkCheckT
-import FV.E2E.LinkArmT
-import FV.E2E.LinkCheckT
-import FV.E2E.PipelineCheckT
+module
+
+public import FV.E2E.DeadCleanupBinCheck
+public import FV.E2E.BinCheckT
+public import FV.E2E.DeadCleanupLinkCheckT
+public import FV.E2E.LinkArmT
+public import FV.E2E.LinkCheckT
+public import FV.E2E.PipelineCheckT
+
+@[expose] public section
 
 /-! # Typed copies of `FV.E2E.DeadCleanupBinCheck` (S11e5 Stage C, slice 8)
 

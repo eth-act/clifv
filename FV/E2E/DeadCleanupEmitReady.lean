@@ -1,5 +1,9 @@
-import FV.E2E.DeadCleanupAlloc
-import FV.E2E.DeadCleanupEmit
+module
+
+public import FV.E2E.DeadCleanupAlloc
+public import FV.E2E.DeadCleanupEmit
+
+@[expose] public section
 
 namespace E2E
 open Backend Backend.Proof Backend.Proof.Driver Backend.Proof.Spill Backend.DeadCleanup

@@ -1,6 +1,10 @@
-import FV.E2E.RegLevelMemTrapW
-import FV.E2E.RegLevelFrameW
-import FV.E2E.DeadCleanupRealizesW
+module
+
+public import FV.E2E.RegLevelMemTrapW
+public import FV.E2E.RegLevelFrameW
+public import FV.E2E.DeadCleanupRealizesW
+
+@[expose] public section
 
 /-!
 # The register level of the memory traps with the writes (A3, #412, slice F8b)

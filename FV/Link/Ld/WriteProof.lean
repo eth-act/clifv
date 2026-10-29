@@ -1,4 +1,8 @@
-import FV.Link.Ld.Write
+module
+
+public import FV.Link.Ld.Write
+
+@[expose] public section
 
 /-! # The ELF writer's output read back (L2b stage 3b)
 

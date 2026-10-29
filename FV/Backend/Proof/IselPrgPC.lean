@@ -1,5 +1,9 @@
-import FV.Backend.Proof.IselPrgPat
-import FV.Backend.Proof.IselPrgMono
+module
+
+public import FV.Backend.Proof.IselPrgPat
+public import FV.Backend.Proof.IselPrgMono
+
+@[expose] public section
 
 /-!
 # Progress of the ISLE lowering (V7): partial correctness of the abstract interpretation

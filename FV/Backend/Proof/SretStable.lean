@@ -1,4 +1,8 @@
-import FV.Backend.Proof.LowerSim
+module
+
+public import FV.Backend.Proof.LowerSim
+
+@[expose] public section
 
 /-!
 # The `sret` pointer is stable along a CLIF run (S7)

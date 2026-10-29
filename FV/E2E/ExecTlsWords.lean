@@ -1,4 +1,8 @@
-import FV.E2E.ExecWords
+module
+
+public import FV.E2E.ExecWords
+
+@[expose] public section
 
 /-! # lld's local-exec TLS words on the Arm model (T1)
 

@@ -1,13 +1,17 @@
-import FV.Backend.Proof.IselShpRoot
-import FV.Backend.Proof.IselShpTab
-import FV.Backend.Proof.IselShpTotal
-import FV.Backend.Proof.IselShpCtor
-import FV.Backend.Proof.IselShpOracle
-import FV.Backend.Proof.IselShpCall
-import FV.Backend.Proof.IselShpTry
-import FV.Backend.Proof.IselShpBrTable
-import FV.Backend.Proof.IselCovDriver
-import FV.Backend.Proof.LowerLoopRun
+module
+
+public import FV.Backend.Proof.IselShpRoot
+public import FV.Backend.Proof.IselShpTab
+public import FV.Backend.Proof.IselShpTotal
+public import FV.Backend.Proof.IselShpCtor
+public import FV.Backend.Proof.IselShpOracle
+public import FV.Backend.Proof.IselShpCall
+public import FV.Backend.Proof.IselShpTry
+public import FV.Backend.Proof.IselShpBrTable
+public import FV.Backend.Proof.IselCovDriver
+public import FV.Backend.Proof.LowerLoopRun
+
+@[expose] public section
 
 /-!
 # Control shapes of the ISLE lowering (V4): the driver's calls, `IselCtlHyp`

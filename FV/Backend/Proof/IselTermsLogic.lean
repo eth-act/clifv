@@ -1,4 +1,8 @@
-import FV.Backend.Proof.IselRulesALUA
+module
+
+public import FV.Backend.Proof.IselRulesALUA
+
+@[expose] public section
 
 /-!
 # `alu_rs_imm_logic_commutative` and `alu_rs_imm_logic`: forward lemmas of their rules

@@ -1,4 +1,8 @@
-import FV.Backend.Lowering.Stock
+module
+
+public import FV.Backend.Lowering.Stock
+
+@[expose] public section
 
 namespace Backend.Stock.Proof
 set_option autoImplicit false

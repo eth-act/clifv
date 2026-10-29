@@ -1,5 +1,9 @@
-import FV.E2E.LinkScopeT
-import FV.Backend.Proof.IselPrgDriverTF
+module
+
+public import FV.E2E.LinkScopeT
+public import FV.Backend.Proof.IselPrgDriverTF
+
+@[expose] public section
 
 /-!
 # The decider-free input chain over the float scope: `lowerFunction` (S11f, #35)

@@ -1,5 +1,10 @@
-import FV.Backend.Proof.StockBitHelper
-import FV.Backend.Proof.IselFamAluBBswap
+module
+
+public import FV.Backend.Proof.StockBitHelper
+public import FV.Backend.Proof.IselFamAluBBswap
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarBit
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 set_option maxRecDepth 20000

@@ -1,9 +1,13 @@
-import FV.E2E.LinkArm
-import FV.E2E.UnwindStatement
-import FV.E2E.WorldUnwindCore
-import FV.Backend.Proof.LowerSimUCheck
-import FV.Backend.Proof.LowerSimURaise
-import FV.Clif.LinkClifXN
+module
+
+public import FV.E2E.LinkArm
+public import FV.E2E.UnwindStatement
+public import FV.E2E.WorldUnwindCore
+public import FV.Backend.Proof.LowerSimUCheck
+public import FV.Backend.Proof.LowerSimURaise
+public import FV.Clif.LinkClifXN
+
+@[expose] public section
 
 /-!
 # Linking at the Arm level with unwinding: the linked machine (S10f, #233)

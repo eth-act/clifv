@@ -1,4 +1,8 @@
-import FV.Backend.Isel
+module
+
+public import FV.Backend.Isel
+
+@[expose] public section
 
 /-!
 # Stack-slot "register allocation" and frame layout (PLAN.md M4)

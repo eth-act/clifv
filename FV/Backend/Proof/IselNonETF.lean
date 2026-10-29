@@ -1,5 +1,9 @@
-import FV.Backend.Proof.IselNonETI
-import FV.Backend.Proof.LowerContractTF
+module
+
+public import FV.Backend.Proof.IselNonETI
+public import FV.Backend.Proof.LowerContractTF
+
+@[expose] public section
 
 /-!
 # The integer roots never match a non-E instruction with the proven float operations (S11f)

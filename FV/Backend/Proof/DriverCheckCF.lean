@@ -1,5 +1,9 @@
-import FV.Backend.Proof.DriverCheckC
-import FV.Backend.Proof.InstScopeTF
+module
+
+public import FV.Backend.Proof.DriverCheckC
+public import FV.Backend.Proof.InstScopeTF
+
+@[expose] public section
 
 /-!
 # The typed lowering validator with the proven float operations (S11f, #35)

@@ -1,5 +1,9 @@
-import FV.E2E.PairDriver
-import FV.E2E.GuardedFP
+module
+
+public import FV.E2E.PairDriver
+public import FV.E2E.GuardedFP
+
+@[expose] public section
 
 /-! # The guarded lockstep with the float accesses, on pairs of worlds (S11e5, Stage C slice 4)
 

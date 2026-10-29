@@ -1,6 +1,10 @@
-import FV.Backend.Proof.StockEdgeValues
-import FV.Backend.Proof.StockEdgeCode
-import FV.Backend.Proof.StockJumpEdgeValues
+module
+
+public import FV.Backend.Proof.StockEdgeValues
+public import FV.Backend.Proof.StockEdgeCode
+public import FV.Backend.Proof.StockJumpEdgeValues
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.EdgeValuesWitness
 open Backend.Proof Backend.Proof.Driver Backend.Proof.Driver.Fix

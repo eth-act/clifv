@@ -2,7 +2,11 @@
 Kernel-checked witnesses for the shared IEEE core (`FV/Float`, `docs/contracts/float.md`):
 concrete binary32/binary64 cases with known results, each evaluated by the kernel.
 -/
-import FV.Float
+module
+
+public import FV.Float
+
+@[expose] public section
 
 namespace IEEE.Witness
 open IEEE

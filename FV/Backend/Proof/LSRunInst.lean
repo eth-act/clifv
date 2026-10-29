@@ -1,4 +1,8 @@
-import FV.Backend.Proof.LSRun
+module
+
+public import FV.Backend.Proof.LSRun
+
+@[expose] public section
 
 /-!
 # The checker accepts the Lean allocator's validated plans (V4b-3, #275): one instruction

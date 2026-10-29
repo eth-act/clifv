@@ -1,6 +1,10 @@
-import FV.E2E.DeadCleanupLinkCheck
-import FV.E2E.DeadCleanupLinkFrames
-import FV.E2E.DeadCleanupWitness
+module
+
+public import FV.E2E.DeadCleanupLinkCheck
+public import FV.E2E.DeadCleanupLinkFrames
+public import FV.E2E.DeadCleanupWitness
+
+@[expose] public section
 
 namespace E2E.DeadCleanupLinkWitness
 open Backend Backend.Proof Backend.Proof.Driver Backend.DeadCleanup E2E.LinkCheck

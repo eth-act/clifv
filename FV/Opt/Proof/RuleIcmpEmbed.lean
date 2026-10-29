@@ -1,5 +1,9 @@
-import FV.Opt.Proof.RuleBitopsEmbed
-import FV.Opt.Proof.KernelBV
+module
+
+public import FV.Opt.Proof.RuleBitopsEmbed
+public import FV.Opt.Proof.KernelBV
+
+@[expose] public section
 
 /-!
 # Template variants for `opts/icmp.isle` and `opts/selects.isle`

@@ -1,4 +1,8 @@
-import FV.E2E.LinkScopeFast
+module
+
+public import FV.E2E.LinkScopeFast
+
+@[expose] public section
 
 /-! # The checker's program-level checks with hash maps (T3d)
 

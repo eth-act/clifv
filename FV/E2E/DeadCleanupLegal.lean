@@ -1,5 +1,9 @@
-import FV.E2E.Legal
-import FV.E2E.DeadCleanupFinal
+module
+
+public import FV.E2E.Legal
+public import FV.E2E.DeadCleanupFinal
+
+@[expose] public section
 
 /-! Cleanup variants with the same legalization and observable-state contracts. -/
 namespace E2E

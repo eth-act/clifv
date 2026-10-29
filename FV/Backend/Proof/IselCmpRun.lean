@@ -1,4 +1,8 @@
-import FV.Backend.Proof.IselSemCmp
+module
+
+public import FV.Backend.Proof.IselSemCmp
+
+@[expose] public section
 
 /-!
 # Straight-line runs of emitted code (flags/select/div family)

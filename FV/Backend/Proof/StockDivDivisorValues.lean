@@ -1,6 +1,11 @@
-import FV.Backend.Proof.StockDivImmOperandValues
-import FV.Backend.Proof.StockDivResolvedGuards
-import FV.Backend.Proof.StockExtendValues
+module
+
+public import FV.Backend.Proof.StockDivImmOperandValues
+public import FV.Backend.Proof.StockDivResolvedGuards
+public import FV.Backend.Proof.StockExtendValues
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarDiv
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 private theorem alias_fresh {aliases : Array (Option Nat)} {lo n : Nat}

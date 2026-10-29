@@ -15,8 +15,12 @@ Author(s): Yan Peng
 --         `use_csdb`/`use_bti`, which the pinned settings leave off.
 -- Other hints (PACIASP/AUTIASP, YIELD, WFE, ...) stay unimplemented.
 
-import FV.Arm.Decode
-import FV.Arm.Insts.Common
+module
+
+public import FV.Arm.Decode
+public import FV.Arm.Insts.Common
+
+@[expose] public section
 
 namespace Arm
 

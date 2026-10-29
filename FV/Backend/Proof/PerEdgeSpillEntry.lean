@@ -1,5 +1,9 @@
-import FV.Backend.Proof.PerEdgeSpillRoutes
-import FV.Backend.Proof.SpillStep4Edge
+module
+
+public import FV.Backend.Proof.PerEdgeSpillRoutes
+public import FV.Backend.Proof.SpillStep4Edge
+
+@[expose] public section
 
 namespace Backend.Proof.PerEdgeSpill
 open Backend Backend.Proof.Spill

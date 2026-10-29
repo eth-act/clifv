@@ -1,6 +1,10 @@
-import FV.Opt.Proof.CompleteSimpRunDef
-import FV.Opt.Proof.SimpLoop
-import FV.Opt.Proof.DomComplete
+module
+
+public import FV.Opt.Proof.CompleteSimpRunDef
+public import FV.Opt.Proof.SimpLoop
+public import FV.Opt.Proof.DomComplete
+
+@[expose] public section
 
 /-!
 # Completeness of simplify: the invariants of the run

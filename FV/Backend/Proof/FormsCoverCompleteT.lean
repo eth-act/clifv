@@ -1,7 +1,11 @@
-import FV.Backend.Proof.IselCovTDriver
-import FV.Backend.Proof.IselCovTFamCover
-import FV.Backend.Proof.FormsCoverComplete
-import FV.Backend.Proof.SpillEdgesT
+module
+
+public import FV.Backend.Proof.IselCovTDriver
+public import FV.Backend.Proof.IselCovTFamCover
+public import FV.Backend.Proof.FormsCoverComplete
+public import FV.Backend.Proof.SpillEdgesT
+
+@[expose] public section
 
 /-!
 # Form coverage without `formsCoveredB` on the typed scope (typed V3)

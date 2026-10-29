@@ -1,5 +1,9 @@
-import FV.E2E.LegalUnwind
-import FV.E2E.OptUnwind
+module
+
+public import FV.E2E.LegalUnwind
+public import FV.E2E.OptUnwind
+
+@[expose] public section
 
 /-!
 # The end-to-end theorem with unwinding for `i128` functions legalised then optimised (S10f, #233)

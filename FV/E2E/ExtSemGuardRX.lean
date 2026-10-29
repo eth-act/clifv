@@ -1,5 +1,9 @@
-import FV.E2E.ExtSemGuardR
-import FV.E2E.LinkArmXPB
+module
+
+public import FV.E2E.ExtSemGuardR
+public import FV.E2E.LinkArmXPB
+
+@[expose] public section
 
 /-!
 # `guardR` with results that keep the program (SEM1 #537, #680 (2), #690)

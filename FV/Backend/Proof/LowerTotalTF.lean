@@ -1,6 +1,10 @@
-import FV.Backend.Proof.LowerTotalT
-import FV.Backend.Proof.LowerLoopCtxTF
-import FV.Clif.FloatFacts
+module
+
+public import FV.Backend.Proof.LowerTotalT
+public import FV.Backend.Proof.LowerLoopCtxTF
+public import FV.Clif.FloatFacts
+
+@[expose] public section
 
 /-!
 # Totality of the lowering driver on the float scope (S11f, #35)

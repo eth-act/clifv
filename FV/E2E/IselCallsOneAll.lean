@@ -1,5 +1,9 @@
-import FV.E2E.BackendWorldI
-import FV.Backend.Proof.IselCallsOne
+module
+
+public import FV.E2E.BackendWorldI
+public import FV.Backend.Proof.IselCallsOne
+
+@[expose] public section
 
 /-!
 # The call-count premises of the counted simulation hold for every function (SEM1, `docs/plans/uninit.md` §5.9)

@@ -1,4 +1,8 @@
-import FV.Opt.Optimize
+module
+
+public import FV.Opt.Optimize
+
+@[expose] public section
 
 /-!
 # `Opt.optimizeX`: the mid-end with the fresh-value guard

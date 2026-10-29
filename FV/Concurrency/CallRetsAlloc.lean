@@ -1,6 +1,10 @@
-import FV.E2E.RegLevelCorrect
-import FV.Concurrency.CallResumeLayers
-import FV.E2E.PairDriver
+module
+
+public import FV.E2E.RegLevelCorrect
+public import FV.Concurrency.CallResumeLayers
+public import FV.E2E.PairDriver
+
+@[expose] public section
 
 /-!
 # The return of an allocated activation on the machine (#473, (1))

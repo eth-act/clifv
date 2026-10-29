@@ -1,4 +1,8 @@
-import FV.Backend.Proof.IselCovTFns
+module
+
+public import FV.Backend.Proof.IselCovTFns
+
+@[expose] public section
 
 /-!
 # Form coverage over float-capable contexts (typed V3): the summary table

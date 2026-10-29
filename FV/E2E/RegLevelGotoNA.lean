@@ -1,5 +1,9 @@
-import FV.E2E.RegLevelFRFree
-import FV.E2E.RegLevelGotoNR
+module
+
+public import FV.E2E.RegLevelFRFree
+public import FV.E2E.RegLevelGotoNR
+
+@[expose] public section
 
 /-!
 # Block-ending branches, at a witness (SEM1 #537, item (3), route (a))

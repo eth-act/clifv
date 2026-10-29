@@ -1,4 +1,8 @@
-import FV.E2E.ActualCompilerModes
+module
+
+public import FV.E2E.ActualCompilerModes
+
+@[expose] public section
 
 /-! Preserve sliced function and binary checks over the actual callback table. -/
 set_option autoImplicit false

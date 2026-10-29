@@ -1,4 +1,8 @@
-import FV.ArmFault.Step
+module
+
+public import FV.ArmFault.Step
+
+@[expose] public section
 
 /-!
 # Non-vacuity of the Arm fault model (A3, #412, F1)

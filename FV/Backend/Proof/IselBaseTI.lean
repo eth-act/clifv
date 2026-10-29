@@ -1,5 +1,9 @@
-import FV.Backend.Proof.IselFloatMem
-import FV.Backend.Proof.LowerContractT
+module
+
+public import FV.Backend.Proof.IselFloatMem
+public import FV.Backend.Proof.LowerContractT
+
+@[expose] public section
 
 /-!
 # Integer rules over typed contexts: the common facts (S11e5 Stage C, slice 7)

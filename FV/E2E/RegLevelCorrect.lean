@@ -1,10 +1,14 @@
-import FV.E2E.RegLevelTls
-import FV.E2E.RegLevelFrame
-import FV.E2E.RegLevelTry
-import FV.Backend.Proof.RegallocCover
-import FV.Backend.Proof.RegallocCSemWorld
-import FV.E2E.RegLevelAtomic
-import FV.E2E.RegLevelOpReads
+module
+
+public import FV.E2E.RegLevelTls
+public import FV.E2E.RegLevelFrame
+public import FV.E2E.RegLevelTry
+public import FV.Backend.Proof.RegallocCover
+public import FV.Backend.Proof.RegallocCSemWorld
+public import FV.E2E.RegLevelAtomic
+public import FV.E2E.RegLevelOpReads
+
+@[expose] public section
 
 /-!
 # The register-level theorem (M6): `RegLevelCorrect` for the backend's code

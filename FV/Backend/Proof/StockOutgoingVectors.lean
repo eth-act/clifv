@@ -1,5 +1,10 @@
-import FV.Backend.Proof.StockOutgoingOrigin
-import FV.Backend.Proof.StockSelectedArguments
+module
+
+public import FV.Backend.Proof.StockOutgoingOrigin
+public import FV.Backend.Proof.StockSelectedArguments
+
+@[expose] public section
+
 namespace Backend.Stock.Proof
 open Backend.Proof Backend.Proof.Driver
 set_option maxRecDepth 20000

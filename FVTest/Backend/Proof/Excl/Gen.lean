@@ -1,4 +1,9 @@
-import FV.Backend.Proof.IselExclBase
+module
+
+public import FV.Backend.Proof.IselExclBase
+
+@[expose] public section
+
 open Backend Backend.Proof Isle Isle.Aarch64
 
 /-! Untrusted helper for `FV/Backend/Proof/IselExclBase.lean` (run:

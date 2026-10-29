@@ -1,5 +1,9 @@
-import FVTest.Opt.Common
-import FV.Clif.Run
+module
+
+public import FVTest.Opt.Common
+public import FV.Clif.Run
+
+@[expose] public section
 
 /-!
 `opt-difftest [-v] [--rules-stats] [--opt-* options] FILE.clif...`: differential test of the

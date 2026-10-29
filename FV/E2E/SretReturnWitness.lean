@@ -1,7 +1,11 @@
-import FV.E2E.SretReturn
-import FV.E2E.NonVacuity
-import FV.Backend.SpillAlloc
-import FV.Backend.Proof.RegallocCover
+module
+
+public import FV.E2E.SretReturn
+public import FV.E2E.NonVacuity
+public import FV.Backend.SpillAlloc
+public import FV.Backend.Proof.RegallocCover
+
+@[expose] public section
 
 /-!
 # Non-vacuity of `backend_correct_final_abi` / `backend_correct_final_sret` (S7)

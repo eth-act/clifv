@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockBodyScanOrigin
-import FV.Backend.Proof.StockAddSubScanRefines
+module
+
+public import FV.Backend.Proof.StockBodyScanOrigin
+public import FV.Backend.Proof.StockAddSubScanRefines
+
+@[expose] public section
 
 /-! Instantiate ordinary-body semantic composition from the actual whole-driver
 split. The remaining syntactic family partition is explicit until every original

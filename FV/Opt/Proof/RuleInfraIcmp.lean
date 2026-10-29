@@ -1,5 +1,9 @@
-import FV.Opt.Proof.RuleIcmpEmbed2
-import FV.Opt.Proof.KernelBV
+module
+
+public import FV.Opt.Proof.RuleIcmpEmbed2
+public import FV.Opt.Proof.KernelBV
+
+@[expose] public section
 
 /-!
 # Lean templates for the icmp/selects rules that ran out of memory

@@ -1,7 +1,11 @@
-import FV.E2E.LinkArmCallCount
-import FV.E2E.BackendPrefixAtCleanup
-import FV.E2E.IselCallsOneAll
-import FV.E2E.LinkArmStage2RWitness
+module
+
+public import FV.E2E.LinkArmCallCount
+public import FV.E2E.BackendPrefixAtCleanup
+public import FV.E2E.IselCallsOneAll
+public import FV.E2E.LinkArmStage2RWitness
+
+@[expose] public section
 
 /-!
 # Witnesses for the stage-2 glue modules (SEM1 #537, #680 (3))

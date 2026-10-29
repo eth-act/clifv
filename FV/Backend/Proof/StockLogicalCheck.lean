@@ -1,5 +1,9 @@
-import FV.Backend.StockLogicalCheck
-import FV.Backend.Proof.StockLogicalBodyRefines
+module
+
+public import FV.Backend.StockLogicalCheck
+public import FV.Backend.Proof.StockLogicalBodyRefines
+
+@[expose] public section
 
 namespace Backend.Stock.Logical
 open Backend.Proof Backend.Proof.Driver

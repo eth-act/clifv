@@ -1,5 +1,9 @@
-import FV.E2E.Final
-import FV.Backend.Proof.SretStable
+module
+
+public import FV.E2E.Final
+public import FV.Backend.Proof.SretStable
+
+@[expose] public section
 
 /-!
 # The `sret` return register (S7)

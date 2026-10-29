@@ -1,5 +1,9 @@
-import FV.Link.ExeSource
-import FV.E2E.NonVacuityLegalProgram
+module
+
+public import FV.Link.ExeSource
+public import FV.E2E.NonVacuityLegalProgram
+
+@[expose] public section
 
 /-! # `compileExe_correct_source` with the `__*ti3` helpers as the only outside code
 

@@ -1,4 +1,8 @@
-import FV.Isle.Syntax
+module
+
+public import FV.Isle.Syntax
+
+@[expose] public section
 
 /-!
 # Certified ISLE term sets: literal data

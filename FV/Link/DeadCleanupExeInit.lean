@@ -1,5 +1,9 @@
-import FV.Link.DeadCleanupExe
-import FV.E2E.DeadCleanupBinaryInit
+module
+
+public import FV.Link.DeadCleanupExe
+public import FV.E2E.DeadCleanupBinaryInit
+
+@[expose] public section
 
 /-!
 # The executable compiler under the slot-byte oracle (SEM1 #537, executable level (c))

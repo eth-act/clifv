@@ -1,5 +1,9 @@
-import FV.Link.DeadCleanupExeSource
-import FV.E2E.SrcBoundedLegal
+module
+
+public import FV.Link.DeadCleanupExeSource
+public import FV.E2E.SrcBoundedLegal
+
+@[expose] public section
 
 /-! # The shipped compiler's source theorems without the memory-bound premise (A2/B1)
 

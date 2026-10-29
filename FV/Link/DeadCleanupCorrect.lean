@@ -1,7 +1,12 @@
-import FV.Link.DeadCleanupLayoutProof
-import FV.Link.ImageProof
-import FV.E2E.SpillDefined
-import FV.E2E.DeadCleanupBinCheck
+module
+
+public import FV.Link.DeadCleanupLayoutProof
+public import FV.Link.ImageProof
+public import FV.E2E.SpillDefined
+public import FV.E2E.DeadCleanupBinCheck
+
+@[expose] public section
+
 namespace Link.DeadCleanup
 set_option autoImplicit false
 open E2E E2E.LinkCheck E2E.BinCheck E2E.Elf Backend LinkSpec

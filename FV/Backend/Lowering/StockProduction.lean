@@ -1,4 +1,8 @@
-import FV.Backend.Lowering.StockPrologue
+module
+
+public import FV.Backend.Lowering.StockPrologue
+
+@[expose] public section
 
 /-! Additive rollout selector. Existing production entrypoints remain compatible
 until their actual-output consumers migrate to this selector. -/

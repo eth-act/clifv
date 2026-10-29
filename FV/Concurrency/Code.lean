@@ -1,5 +1,9 @@
-import FV.Backend.Asm
-import FV.Concurrency.Mapping
+module
+
+public import FV.Backend.Asm
+public import FV.Concurrency.Mapping
+
+@[expose] public section
 
 /-!
 # The mapping table is the table of the emitted code (T2b, #300)

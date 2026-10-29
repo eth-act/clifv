@@ -1,7 +1,11 @@
-import FV.Backend.Proof.IselEmitDefs
-import FV.Backend.Proof.IselEmitFns
-import FV.Backend.Proof.IselLowerAll
-import FV.Backend.Proof.IselShpTotal
+module
+
+public import FV.Backend.Proof.IselEmitDefs
+public import FV.Backend.Proof.IselEmitFns
+public import FV.Backend.Proof.IselLowerAll
+public import FV.Backend.Proof.IselShpTotal
+
+@[expose] public section
 
 /-!
 # Emission conditions of the ISLE lowering (V6c): the hand-checked root rules

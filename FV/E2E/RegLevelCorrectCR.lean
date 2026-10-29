@@ -1,13 +1,17 @@
-import FV.E2E.RegLevelCorrectC
-import FV.E2E.RegLevelMoveNR
-import FV.E2E.RegLevelOpNR
-import FV.E2E.RegLevelNextNR
-import FV.E2E.RegLevelCallNR
-import FV.E2E.RegLevelTryNR
-import FV.E2E.RegLevelJTNR
-import FV.E2E.RegLevelAtomicNR
-import FV.E2E.RegLevelTlsNR
-import FV.E2E.RegLevelFrameNR
+module
+
+public import FV.E2E.RegLevelCorrectC
+public import FV.E2E.RegLevelMoveNR
+public import FV.E2E.RegLevelOpNR
+public import FV.E2E.RegLevelNextNR
+public import FV.E2E.RegLevelCallNR
+public import FV.E2E.RegLevelTryNR
+public import FV.E2E.RegLevelJTNR
+public import FV.E2E.RegLevelAtomicNR
+public import FV.E2E.RegLevelTlsNR
+public import FV.E2E.RegLevelFrameNR
+
+@[expose] public section
 
 /-!
 # The counted register-level theorem with the located reads (SEM1 #537, step 3p)

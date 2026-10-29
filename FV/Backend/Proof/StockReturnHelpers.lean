@@ -1,4 +1,8 @@
-import FV.Backend.Proof.StockReturnABI
+module
+
+public import FV.Backend.Proof.StockReturnABI
+
+@[expose] public section
 
 /-! The real lower_return helper uses mapped vector requests and the revised
 Stock ABI constructor. Full scheduling state and ordered requests are retained. -/

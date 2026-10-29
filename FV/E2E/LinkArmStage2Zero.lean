@@ -1,4 +1,8 @@
-import FV.E2E.LinkArmThmPRBROf
+module
+
+public import FV.E2E.LinkArmThmPRBROf
+
+@[expose] public section
 
 /-!
 # Stage 2 at depth `0` (SEM1 #537, #680 (3), `Stage2PRB κ 0`)

@@ -1,5 +1,9 @@
-import FV.E2E.LinkArmTabCount
-import FV.E2E.LinkArmCallTab
+module
+
+public import FV.E2E.LinkArmTabCount
+public import FV.E2E.LinkArmCallTab
+
+@[expose] public section
 
 /-!
 # The prefix-closed machine table (SEM1 #537, #680 (3), fix of #700, step 1)

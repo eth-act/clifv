@@ -1,6 +1,10 @@
-import FV.Backend.StackAlloc
-import Std.Data.HashMap
-import Std.Data.HashSet
+module
+
+public import FV.Backend.StackAlloc
+public import Std.Data.HashMap
+public import Std.Data.HashSet
+
+@[expose] public section
 
 /-!
 # Final instruction list and assembly text

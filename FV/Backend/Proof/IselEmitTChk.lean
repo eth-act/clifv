@@ -1,6 +1,10 @@
-import FV.Backend.Proof.IselEmitTFns
-import FV.Backend.Proof.IselCovTForm
-import FV.Backend.Proof.IselEmitChk
+module
+
+public import FV.Backend.Proof.IselEmitTFns
+public import FV.Backend.Proof.IselCovTForm
+public import FV.Backend.Proof.IselEmitChk
+
+@[expose] public section
 
 /-!
 # Emission conditions of the typed ISLE lowering (S11): the emission check is sound

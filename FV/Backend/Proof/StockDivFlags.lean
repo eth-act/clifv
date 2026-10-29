@@ -1,5 +1,10 @@
-import FV.Backend.Proof.IselCmpSdiv
-import FV.Backend.Proof.DriverCheck
+module
+
+public import FV.Backend.Proof.IselCmpSdiv
+public import FV.Backend.Proof.DriverCheck
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarDiv
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 /-- Kernel arithmetic for the divisor-minus-one test. This new variant leaves

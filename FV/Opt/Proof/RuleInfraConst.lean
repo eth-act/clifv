@@ -1,5 +1,9 @@
-import FV.Opt.Proof.RuleRestEmbed
-import FV.Opt.Proof.KernelBV
+module
+
+public import FV.Opt.Proof.RuleRestEmbed
+public import FV.Opt.Proof.KernelBV
+
+@[expose] public section
 
 /-!
 # Constants made at a type variable (`iconst_u ty k`, `iconst_s ty k`, `iconst ty (imm64_neg ty c)`)

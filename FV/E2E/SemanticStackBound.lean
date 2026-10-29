@@ -1,5 +1,9 @@
-import FV.E2E.ProductionStackBound
-import FV.E2E.SemanticPreparedPipeline
+module
+
+public import FV.E2E.ProductionStackBound
+public import FV.E2E.SemanticPreparedPipeline
+
+@[expose] public section
 
 /-! Actual-output stack-bound adapters. Reuses the original graph,
 budget algorithm, machine semantics and successful generated-proof stages. -/

@@ -1,4 +1,8 @@
-import FV.Concurrency.CallRetResume
+module
+
+public import FV.Concurrency.CallRetResume
+
+@[expose] public section
 
 /-!
 # The callee's entry premises of the caller's resume (#473, step (3))

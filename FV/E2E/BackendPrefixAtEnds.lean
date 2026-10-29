@@ -1,4 +1,8 @@
-import FV.E2E.BackendPrefixAtGE
+module
+
+public import FV.E2E.BackendPrefixAtGE
+
+@[expose] public section
 
 /-!
 # The prefix theorems for a run that returns or traps (SEM1 #537, traps under the slot-byte oracle)

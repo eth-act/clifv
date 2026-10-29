@@ -1,4 +1,8 @@
-import FV.Backend.Proof.IselCovSem
+module
+
+public import FV.Backend.Proof.IselCovSem
+
+@[expose] public section
 
 /-!
 # Form coverage (V3): every logical immediate `ImmLogic.ofNat?` accepts is encoded

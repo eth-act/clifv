@@ -1,8 +1,12 @@
-import FV.E2E.PairDriverIG
-import FV.E2E.RegLevelPairRun
-import FV.E2E.RegLevelTwoRunPR
-import FV.E2E.GotFlowI
-import FV.E2E.PrepareSoundW
+module
+
+public import FV.E2E.PairDriverIG
+public import FV.E2E.RegLevelPairRun
+public import FV.E2E.RegLevelTwoRunPR
+public import FV.E2E.GotFlowI
+public import FV.E2E.PrepareSoundW
+
+@[expose] public section
 
 /-!
 # Two activations of a compiled function along one CLIF run (SEM1 #537, item (3))

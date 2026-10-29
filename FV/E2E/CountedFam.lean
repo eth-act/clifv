@@ -1,6 +1,10 @@
-import FV.E2E.RegLevelCorrectI
-import FV.Backend.Proof.VCodeSemICall
-import FV.Backend.Proof.DeadCleanupAdapter
+module
+
+public import FV.E2E.RegLevelCorrectI
+public import FV.Backend.Proof.VCodeSemICall
+public import FV.Backend.Proof.DeadCleanupAdapter
+
+@[expose] public section
 
 /-!
 # Counted semantics of a family (SEM1, `docs/plans/uninit.md` §5.9)

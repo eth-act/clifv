@@ -1,4 +1,9 @@
-import FV.Backend.Proof.StockCmpNarrowRhs
+module
+
+public import FV.Backend.Proof.StockCmpNarrowRhs
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarCmp
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 private def narrowFixtureCtx (half : Bool) : Ctx := {sinkCtx with

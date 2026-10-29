@@ -1,8 +1,12 @@
-import FV.E2E.CompiledProduction
-import FV.E2E.StockArithmeticWorldX
-import FV.E2E.StockMixedWorldX
-import FV.E2E.StockLogicalWorldX
-import FV.E2E.StockScalarWorldX
+module
+
+public import FV.E2E.CompiledProduction
+public import FV.E2E.StockArithmeticWorldX
+public import FV.E2E.StockMixedWorldX
+public import FV.E2E.StockLogicalWorldX
+public import FV.E2E.StockScalarWorldX
+
+@[expose] public section
 
 namespace E2E
 open Backend Backend.Proof Backend.Proof.Driver

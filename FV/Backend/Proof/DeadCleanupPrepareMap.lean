@@ -1,7 +1,11 @@
-import FV.Backend.Proof.DeadCleanupCFG
-import FV.Backend.Proof.PrepareComplete
-import FV.Backend.Proof.RegallocOperands
-import FV.Backend.Proof.DeadCleanupDeletion
+module
+
+public import FV.Backend.Proof.DeadCleanupCFG
+public import FV.Backend.Proof.PrepareComplete
+public import FV.Backend.Proof.RegallocOperands
+public import FV.Backend.Proof.DeadCleanupDeletion
+
+@[expose] public section
 
 namespace Backend.DeadCleanup
 open Backend.Proof Backend.Proof.Prep

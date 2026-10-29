@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockInheritedMixedDivision
-import FV.Backend.Proof.StockMaskBlockRefines
+module
+
+public import FV.Backend.Proof.StockInheritedMixedDivision
+public import FV.Backend.Proof.StockMaskBlockRefines
+
+@[expose] public section
 
 /-! Carry existing original entry values through the already proved scalar
 records. Every outside-interval frame comes from its existing execution proof;

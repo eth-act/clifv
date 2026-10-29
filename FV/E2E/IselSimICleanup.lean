@@ -1,5 +1,9 @@
-import FV.E2E.IselSimITry
-import FV.E2E.DeadCleanupWorld
+module
+
+public import FV.E2E.IselSimITry
+public import FV.E2E.DeadCleanupWorld
+
+@[expose] public section
 
 /-!
 # CLIF → counted VCode on the cleanup path (SEM1, `docs/plans/uninit.md` §5.9)

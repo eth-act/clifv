@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockNoLoadSource
-import FV.Backend.Proof.StockNoLoadScan
+module
+
+public import FV.Backend.Proof.StockNoLoadSource
+public import FV.Backend.Proof.StockNoLoadScan
+
+@[expose] public section
 
 /-! Sunk-array invariants through actual original/critical-edge nodes and the
 complete Stock traversal. No source admission condition or runtime certificate. -/

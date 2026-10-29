@@ -1,4 +1,8 @@
-import FV.Concurrency.Interleave
+module
+
+public import FV.Concurrency.Interleave
+
+@[expose] public section
 
 /-!
 # Programs: thread semantics, the interleaving machine, executions of traces (T2e, #303)

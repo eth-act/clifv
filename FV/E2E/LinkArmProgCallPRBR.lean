@@ -1,4 +1,8 @@
-import FV.E2E.LinkArmDetTabPRB
+module
+
+public import FV.E2E.LinkArmDetTabPRB
+
+@[expose] public section
 
 /-!
 # `ThmPRB` at entries with a return address of a linked call (SEM1 #537, #680 (3), #687)

@@ -1,5 +1,9 @@
-import FV.E2E.RegLevelCorrectP
-import FV.E2E.RegLevelCorrectCWitness
+module
+
+public import FV.E2E.RegLevelCorrectP
+public import FV.E2E.RegLevelCorrectCWitness
+
+@[expose] public section
 
 /-!
 # Witnesses for the refined call contract (`FV/E2E/RegLevelCorrectP.lean`)

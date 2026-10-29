@@ -1,5 +1,9 @@
-import FV.E2E.TypedRulesProg
-import FV.Backend.Proof.LowerSimTC
+module
+
+public import FV.E2E.TypedRulesProg
+public import FV.Backend.Proof.LowerSimTC
+
+@[expose] public section
 
 /-!
 # The typed final theorem with typed `try_call`s (S11e6, #419)

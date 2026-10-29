@@ -1,5 +1,9 @@
-import FV.Concurrency.ArmAllocMemLS
-import FV.Concurrency.ArmAllocBranch
+module
+
+public import FV.Concurrency.ArmAllocMemLS
+public import FV.Concurrency.ArmAllocBranch
+
+@[expose] public section
 
 /-!
 # Layer 4b with the plain loads/stores (T2h, #311)

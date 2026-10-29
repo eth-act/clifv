@@ -1,5 +1,9 @@
-import FV.Concurrency.ArmAllocBranch
-import FV.Concurrency.ArmAllocWitness
+module
+
+public import FV.Concurrency.ArmAllocBranch
+public import FV.Concurrency.ArmAllocWitness
+
+@[expose] public section
 
 /-!
 # Non-vacuity of layer 4b with the block-ending branches (T2, #311)

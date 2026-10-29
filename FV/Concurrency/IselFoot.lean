@@ -1,5 +1,9 @@
-import FV.Concurrency.IselVary
-import FV.Concurrency.VCodeThread
+module
+
+public import FV.Concurrency.IselVary
+public import FV.Concurrency.VCodeThread
+
+@[expose] public section
 
 /-!
 # A byte outside every event of a run is untouched (T2h, #311, layer 2d footprint)

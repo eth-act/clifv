@@ -1,8 +1,12 @@
-import FV.E2E.MainT
-import FV.E2E.FinalTC
-import FV.E2E.FinalTCF
-import FV.Backend.Proof.StockD0Dispatch
-import FV.Backend
+module
+
+public import FV.E2E.MainT
+public import FV.E2E.FinalTC
+public import FV.E2E.FinalTCF
+public import FV.Backend.Proof.StockD0Dispatch
+public import FV.Backend
+
+@[expose] public section
 
 /-! # The backend's typed verified scope (S11e5 Stage C, public scope)
 

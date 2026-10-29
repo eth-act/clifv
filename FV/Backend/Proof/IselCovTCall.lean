@@ -1,6 +1,10 @@
-import FV.Backend.Proof.IselCovCall
-import FV.Backend.Proof.IselCtlCallF
-import FV.Compile.SubsetT
+module
+
+public import FV.Backend.Proof.IselCovCall
+public import FV.Backend.Proof.IselCtlCallF
+public import FV.Compile.SubsetT
+
+@[expose] public section
 
 /-!
 # Form coverage over float-capable contexts (typed V3): the `call` rules' results

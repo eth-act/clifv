@@ -1,8 +1,12 @@
-import FV.E2E.Binary
-import FV.E2E.StackBoundT
-import FV.E2E.BinCheckT
-import FV.E2E.LinkArmT
-import FV.E2E.LinkCheckT
+module
+
+public import FV.E2E.Binary
+public import FV.E2E.StackBoundT
+public import FV.E2E.BinCheckT
+public import FV.E2E.LinkArmT
+public import FV.E2E.LinkCheckT
+
+@[expose] public section
 
 /-! # Typed copies of `FV.E2E.Binary` (S11e5 Stage C, slice 8)
 

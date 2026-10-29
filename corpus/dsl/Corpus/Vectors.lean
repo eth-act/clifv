@@ -1,4 +1,8 @@
-import FV.DSL
+module
+
+public import FV.DSL
+
+@[expose] public section
 
 /-! Corpus: loops over fixed-size vectors, checked get/set, in-place updates. -/
 

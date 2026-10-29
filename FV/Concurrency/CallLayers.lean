@@ -1,8 +1,12 @@
-import FV.Concurrency.IselCall
-import FV.Concurrency.ThreadCompose
-import FV.Concurrency.ThreadProgress
-import FV.Concurrency.RealizeCompiled
-import FV.Concurrency.ArmAllocLinked
+module
+
+public import FV.Concurrency.IselCall
+public import FV.Concurrency.ThreadCompose
+public import FV.Concurrency.ThreadProgress
+public import FV.Concurrency.RealizeCompiled
+public import FV.Concurrency.ArmAllocLinked
+
+@[expose] public section
 
 /-!
 # Layers 2, 3 and 4a from related configurations, pausing at calls (#473, (3))

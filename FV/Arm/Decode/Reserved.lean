@@ -4,7 +4,11 @@ Released under Apache 2.0 license; see third_party/NOTICE-lnsym.md.
 -/
 -- (FV addition, not in LNSym) The A64 "Reserved" encoding group (`op0 = 0`, `op1 = 0000`):
 -- only `UDF #imm16` (permanently undefined) is allocated there.
-import FV.Arm.BitVec
+module
+
+public import FV.Arm.BitVec
+
+@[expose] public section
 
 namespace Arm
 

@@ -1,6 +1,10 @@
-import FV.E2E.LinkArmThmPRBRLAll
-import FV.E2E.BackendWorldPRGYN
-import FV.E2E.LinkArmCountZero
+module
+
+public import FV.E2E.LinkArmThmPRBRLAll
+public import FV.E2E.BackendWorldPRGYN
+public import FV.E2E.LinkArmCountZero
+
+@[expose] public section
 
 /-!
 # `CountPRB` at every depth, and `ThmPRBRL` without it (SEM1 #537, #680 (3), stage 2 glue (5))

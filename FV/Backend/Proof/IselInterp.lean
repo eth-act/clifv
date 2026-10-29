@@ -1,4 +1,8 @@
-import FV.Backend.Proof.IselData
+module
+
+public import FV.Backend.Proof.IselData
+
+@[expose] public section
 
 /-!
 # Evaluating the ISLE interpreter in proofs

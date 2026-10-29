@@ -1,8 +1,13 @@
-import FV.Backend.Proof.StockRotateNarrowImmSourceValues
-import FV.Backend.Proof.StockRotateWideImmSourceValues
-import FV.Backend.Proof.StockRotateNarrowSourceValues
-import FV.Backend.Proof.StockRotateWideSourceValues
-import FV.Backend.Proof.StockRootOpcodeMatch
+module
+
+public import FV.Backend.Proof.StockRotateNarrowImmSourceValues
+public import FV.Backend.Proof.StockRotateWideImmSourceValues
+public import FV.Backend.Proof.StockRotateNarrowSourceValues
+public import FV.Backend.Proof.StockRotateWideSourceValues
+public import FV.Backend.Proof.StockRootOpcodeMatch
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarRotate
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 set_option maxRecDepth 20000

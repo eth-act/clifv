@@ -1,5 +1,9 @@
-import FV.Concurrency.SegFoot
-import FV.Concurrency.IselStep
+module
+
+public import FV.Concurrency.SegFoot
+public import FV.Concurrency.IselStep
+
+@[expose] public section
 
 /-!
 # Exact footprints, reached states and event-free runs under `csem` (T2h, #311, layer 2e)

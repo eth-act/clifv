@@ -1,5 +1,9 @@
-import FV.Concurrency.VCodeSize
-import FV.Concurrency.VCodeFrameWitness
+module
+
+public import FV.Concurrency.VCodeSize
+public import FV.Concurrency.VCodeFrameWitness
+
+@[expose] public section
 
 /-!
 # Non-vacuity of `VCodeSize` (T2h, #311)

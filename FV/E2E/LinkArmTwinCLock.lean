@@ -1,5 +1,9 @@
-import FV.E2E.LinkArmTwinC
-import FV.E2E.LinkArmBlrCheck
+module
+
+public import FV.E2E.LinkArmTwinC
+public import FV.E2E.LinkArmBlrCheck
+
+@[expose] public section
 
 /-!
 # Call-restricted twins from the machine lock (SEM1 #537, `docs/plans/uninit.md` §5.9,

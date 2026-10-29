@@ -1,5 +1,9 @@
-import FV.Backend.ConditionalForwardCfgNIProduction
-import FV.Backend.Lowering.StockParameterCfgNI
+module
+
+public import FV.Backend.ConditionalForwardCfgNIProduction
+public import FV.Backend.Lowering.StockParameterCfgNI
+
+@[expose] public section
 
 namespace Backend
 set_option autoImplicit false

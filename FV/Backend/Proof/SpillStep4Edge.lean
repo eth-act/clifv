@@ -1,4 +1,8 @@
-import FV.Backend.Proof.SpillStep4State
+module
+
+public import FV.Backend.Proof.SpillStep4State
+
+@[expose] public section
 
 /-!
 # Block entries, argument copies and edges of the spill allocation (V4 (a), step 4)

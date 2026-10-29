@@ -1,5 +1,9 @@
-import FV.E2E.RegLevelTry
-import FV.E2E.RegLevelWrites
+module
+
+public import FV.E2E.RegLevelTry
+public import FV.E2E.RegLevelWrites
+
+@[expose] public section
 
 /-!
 # `try_call` on the machine with its writes (A3, #412, slice F8b)

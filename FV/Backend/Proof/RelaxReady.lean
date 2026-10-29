@@ -1,4 +1,8 @@
-import FV.Backend.Proof.RelaxLayout
+module
+
+public import FV.Backend.Proof.RelaxLayout
+
+@[expose] public section
 
 /-!
 # M6: a decidable layout-readiness check

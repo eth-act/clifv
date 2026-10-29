@@ -1,5 +1,9 @@
-import FV.E2E.RegLevelCallNA
-import FV.E2E.RegLevelTlsNR
+module
+
+public import FV.E2E.RegLevelCallNA
+public import FV.E2E.RegLevelTlsNR
+
+@[expose] public section
 
 /-!
 # `ElfTlsGetAddr`, at a witness (SEM1 #537, item (3), route (a))

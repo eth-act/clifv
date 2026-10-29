@@ -1,5 +1,9 @@
-import FV.Backend.Proof.IselCovTSound
-import FV.Backend.Proof.IselCovFns
+module
+
+public import FV.Backend.Proof.IselCovTSound
+public import FV.Backend.Proof.IselCovFns
+
+@[expose] public section
 
 /-!
 # Form coverage over float-capable contexts (typed V3): the transfer functions

@@ -1,5 +1,9 @@
-import FV.E2E.SrcBounded
-import FV.E2E.LinkArm
+module
+
+public import FV.E2E.SrcBounded
+public import FV.E2E.LinkArm
+
+@[expose] public section
 
 /-! # The source run enters only callees of the linked legalised program (A2/B1)
 

@@ -1,4 +1,9 @@
-import FV.Backend.Proof.StockSelectNarrowComparisonShape
+module
+
+public import FV.Backend.Proof.StockSelectNarrowComparisonShape
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarSelect
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 /-- All original scalar comparison widths derive their decoded condition

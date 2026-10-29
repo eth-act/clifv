@@ -1,6 +1,10 @@
-import FV.Clif.LinkClifXN
-import FV.E2E.SrcBounded
-import FV.Opt.Proof.LegalSimX2
+module
+
+public import FV.Clif.LinkClifXN
+public import FV.E2E.SrcBounded
+public import FV.Opt.Proof.LegalSimX2
+
+@[expose] public section
 
 /-!
 # Bounded memories of whole-program runs with unwinding from a stack budget (A2/B1, S10)

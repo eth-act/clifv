@@ -1,4 +1,8 @@
-import FV.Backend.Proof.IselCovTCheck
+module
+
+public import FV.Backend.Proof.IselCovTCheck
+
+@[expose] public section
 
 /-!
 # Form coverage over float-capable contexts (typed V3): soundness of the abstract interpreter

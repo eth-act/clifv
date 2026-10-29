@@ -1,5 +1,9 @@
-import FV.Opt.Proof.RuleBitops5P1
-import FV.Opt.Proof.RuleBitops5P2
+module
+
+public import FV.Opt.Proof.RuleBitops5P1
+public import FV.Opt.Proof.RuleBitops5P2
+
+@[expose] public section
 
 /-!
 # `opts/bitops.isle` (part 5): proven `simplify` rules

@@ -1,5 +1,9 @@
-import FV.Backend.Proof.RegallocSlots
-import FV.Backend.Proof.RegallocMemAddr
+module
+
+public import FV.Backend.Proof.RegallocSlots
+public import FV.Backend.Proof.RegallocMemAddr
+
+@[expose] public section
 
 /-!
 # Far slots (M6 proof)

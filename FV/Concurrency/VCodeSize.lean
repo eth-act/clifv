@@ -1,6 +1,10 @@
-import FV.Concurrency.VCodeFrame
-import FV.Concurrency.SegShape
-import FV.Concurrency.IselCover
+module
+
+public import FV.Concurrency.VCodeFrame
+public import FV.Concurrency.SegShape
+public import FV.Concurrency.IselCover
+
+@[expose] public section
 
 /-!
 # The sizes of a VCode instruction's events (T2h, #311, layer 2e)

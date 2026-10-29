@@ -1,4 +1,8 @@
-import FV.Backend.Proof.IselTermFactsBase
+module
+
+public import FV.Backend.Proof.IselTermFactsBase
+
+@[expose] public section
 
 /-!
 # Completeness of `lowerCheck`: the outgoing area of `call` and `try_call`

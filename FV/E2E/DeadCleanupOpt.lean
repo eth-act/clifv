@@ -1,5 +1,9 @@
-import FV.E2E.Opt
-import FV.E2E.DeadCleanupFinal
+module
+
+public import FV.E2E.Opt
+public import FV.E2E.DeadCleanupFinal
+
+@[expose] public section
 
 namespace E2E
 open Backend Backend.Proof Backend.Proof.Driver

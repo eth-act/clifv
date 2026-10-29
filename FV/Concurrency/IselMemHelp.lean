@@ -1,6 +1,10 @@
-import FV.Concurrency.IselMemSeg
-import FV.Backend.Proof.IselMemSem
-import FV.Backend.Proof.IselCmpRun
+module
+
+public import FV.Concurrency.IselMemSeg
+public import FV.Backend.Proof.IselMemSem
+public import FV.Backend.Proof.IselCmpRun
+
+@[expose] public section
 
 /-!
 # Helpers for the segment of a memory statement (T2h, #311, layer 2e)

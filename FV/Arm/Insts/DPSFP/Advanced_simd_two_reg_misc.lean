@@ -8,10 +8,14 @@ Author(s): Shilpi Goel
 -- namespace Arm; CNT (vector) added (`exec_cnt`), and the upstream REV body is now
 -- `exec_rev_vector`, dispatched from `exec_advanced_simd_two_reg_misc`.
 
-import FV.Arm.Decode
-import FV.Arm.State
-import FV.Arm.Insts.Common
-import FV.Arm.BitVec
+module
+
+public import FV.Arm.Decode
+public import FV.Arm.State
+public import FV.Arm.Insts.Common
+public import FV.Arm.BitVec
+
+@[expose] public section
 
 namespace Arm
 

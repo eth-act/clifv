@@ -1,4 +1,8 @@
-import FV.Opt.Proof.LegalPat
+module
+
+public import FV.Opt.Proof.LegalPat
+
+@[expose] public section
 
 /-!
 # The legalisation relation: value images, the value relation, the source invariant

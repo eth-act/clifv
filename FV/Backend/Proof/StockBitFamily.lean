@@ -1,10 +1,15 @@
-import FV.Backend.Proof.StockUnaryDispatch
-import FV.Backend.Proof.StockCastNotrap
-import FV.Backend.Proof.StockCastFamily
-import FV.Backend.Proof.StockCountSourceValues
-import FV.Backend.Proof.StockBitrevSourceValues
-import FV.Backend.Proof.StockBswapSourceValues
-import FV.Backend.Proof.StockRotateSourceValues
+module
+
+public import FV.Backend.Proof.StockUnaryDispatch
+public import FV.Backend.Proof.StockCastNotrap
+public import FV.Backend.Proof.StockCastFamily
+public import FV.Backend.Proof.StockCountSourceValues
+public import FV.Backend.Proof.StockBitrevSourceValues
+public import FV.Backend.Proof.StockBswapSourceValues
+public import FV.Backend.Proof.StockRotateSourceValues
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.BitBody
 open Backend.Proof Backend.Proof.Driver
 set_option autoImplicit false

@@ -1,5 +1,9 @@
-import FV.Opt.Proof.RuleEmbed
-import FV.Opt.Proof.RuleCtor
+module
+
+public import FV.Opt.Proof.RuleEmbed
+public import FV.Opt.Proof.RuleCtor
+
+@[expose] public section
 
 /-!
 # Forward evaluation of rule right-hand sides

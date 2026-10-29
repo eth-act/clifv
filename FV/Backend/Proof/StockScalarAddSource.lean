@@ -1,5 +1,9 @@
-import FV.Backend.Lowering.StockScalarAdd
-import FV.Clif.Run
+module
+
+public import FV.Backend.Lowering.StockScalarAdd
+public import FV.Clif.Run
+
+@[expose] public section
 
 /-! Complete reference execution for the two-parameter scalar-add class. -/
 set_option autoImplicit false

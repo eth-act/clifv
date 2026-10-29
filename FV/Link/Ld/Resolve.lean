@@ -1,4 +1,8 @@
-import FV.Link.Ld.Obj
+module
+
+public import FV.Link.Ld.Obj
+
+@[expose] public section
 
 /-! # Lean static linker: symbol resolution, archive members, COMDAT, `--gc-sections`
 

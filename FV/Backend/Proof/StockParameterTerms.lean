@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockParameterMetadata
-import FV.Backend.Proof.StockForwardReturn
+module
+
+public import FV.Backend.Proof.StockParameterMetadata
+public import FV.Backend.Proof.StockForwardReturn
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.ParameterCfg
 open Backend.Proof Backend.Proof.Driver Backend.Stock.Proof.ForwardSource

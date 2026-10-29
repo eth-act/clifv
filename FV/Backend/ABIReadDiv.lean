@@ -1,4 +1,8 @@
-import FV.Backend.ABIReadScalar
+module
+
+public import FV.Backend.ABIReadScalar
+
+@[expose] public section
 
 namespace Backend.ABIReadDiv
 set_option autoImplicit false

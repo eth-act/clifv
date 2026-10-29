@@ -1,5 +1,9 @@
-import FV.Concurrency.ArmAllocPause
-import FV.Concurrency.CallLoadResume
+module
+
+public import FV.Concurrency.ArmAllocPause
+public import FV.Concurrency.CallLoadResume
+
+@[expose] public section
 
 /-!
 # Layer 4b pausing at calls: witness (T2j follow-up, #473)

@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockScanSemantics
-import FV.Backend.Proof.StockConstantRoot
+module
+
+public import FV.Backend.Proof.StockScanSemantics
+public import FV.Backend.Proof.StockConstantRoot
+
+@[expose] public section
 
 /-! Connect actual selected constant roots and output binding to the forward
 source/machine transfer used by backward scan composition. Final alias and

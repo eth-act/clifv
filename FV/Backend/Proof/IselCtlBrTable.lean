@@ -1,6 +1,10 @@
-import FV.Backend.Proof.IselCtlTbz
-import FV.Backend.Proof.IselCmpExt
-import FV.Backend.Proof.IselTermsImm
+module
+
+public import FV.Backend.Proof.IselCtlTbz
+public import FV.Backend.Proof.IselCmpExt
+public import FV.Backend.Proof.IselTermsImm
+
+@[expose] public section
 
 /-!
 # Family Ctl: `br_table` (`lower_branch` rule 1140)

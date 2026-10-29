@@ -1,5 +1,9 @@
-import FV.Backend.Proof.IselPrgCtxT
-import FV.Backend.Proof.LowerLoopCtxTF
+module
+
+public import FV.Backend.Proof.IselPrgCtxT
+public import FV.Backend.Proof.LowerLoopCtxTF
+
+@[expose] public section
 
 /-!
 # Progress of the ISLE lowering over the float scope: the driver's contexts (S11f, #35)

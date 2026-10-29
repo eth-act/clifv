@@ -1,4 +1,8 @@
-import FV.Concurrency.Exec
+module
+
+public import FV.Concurrency.Exec
+
+@[expose] public section
 
 /-!
 # The Armv8 axiomatic model, restricted to what Cranelift emits (T2, #38)

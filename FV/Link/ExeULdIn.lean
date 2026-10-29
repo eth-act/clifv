@@ -1,6 +1,10 @@
-import FV.Link.ExeLdIn
-import FV.Link.ExeUCompile
-import FV.Link.UnwFnIn
+module
+
+public import FV.Link.ExeLdIn
+public import FV.Link.ExeUCompile
+public import FV.Link.UnwFnIn
+
+@[expose] public section
 
 /-! # The executable compiler with unwinding on `lean-ld`'s inputs: what is left (S10g, #404)
 

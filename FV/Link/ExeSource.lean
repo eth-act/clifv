@@ -1,6 +1,10 @@
-import FV.Link.Exe
-import FV.E2E.LegalSource
-import FV.E2E.LegalDepth
+module
+
+public import FV.Link.Exe
+public import FV.E2E.LegalSource
+public import FV.E2E.LegalDepth
+
+@[expose] public section
 
 /-! # The executable compiler refines the original source program (S2, S3)
 

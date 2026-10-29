@@ -1,9 +1,13 @@
-import FV.Backend.Proof.StockForwardReturn
-import FV.Backend.Proof.StockComputedCfg
-import FV.Backend.Proof.StockGraphBounds
-import FV.Backend.Proof.StockEdgeCode
-import FV.Backend.Proof.StockOutgoingVectors
-import FV.Backend.Proof.PerEdgeLegacyCompatible
+module
+
+public import FV.Backend.Proof.StockForwardReturn
+public import FV.Backend.Proof.StockComputedCfg
+public import FV.Backend.Proof.StockGraphBounds
+public import FV.Backend.Proof.StockEdgeCode
+public import FV.Backend.Proof.StockOutgoingVectors
+public import FV.Backend.Proof.PerEdgeLegacyCompatible
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.ForwardSource
 open Backend.Proof Backend.Proof.Driver

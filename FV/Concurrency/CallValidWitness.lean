@@ -1,5 +1,9 @@
-import FV.Concurrency.CallValid
-import FV.Concurrency.ClifThreadIWitness
+module
+
+public import FV.Concurrency.CallValid
+public import FV.Concurrency.ClifThreadIWitness
+
+@[expose] public section
 
 /-!
 # Witness: the valid memory across a callee with a stack slot (#473, step (3))

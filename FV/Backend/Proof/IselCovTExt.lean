@@ -1,5 +1,9 @@
-import FV.Backend.Proof.IselCovTFns
-import FV.Backend.Proof.IselCovExt
+module
+
+public import FV.Backend.Proof.IselCovTFns
+public import FV.Backend.Proof.IselCovExt
+
+@[expose] public section
 
 /-!
 # Form coverage over float-capable contexts (typed V3): the extractors

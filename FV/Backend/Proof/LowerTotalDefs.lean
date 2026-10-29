@@ -1,4 +1,8 @@
-import FV.Backend.Proof.LowerLoopCode
+module
+
+public import FV.Backend.Proof.LowerLoopCode
+
+@[expose] public section
 
 /-!
 # Totality of the lowering: what the driver needs of the ISLE runs (V7)

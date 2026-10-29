@@ -1,5 +1,9 @@
-import FV.E2E.ABIReadFlags
-import FV.Backend.Proof.StockMixedCheck
+module
+
+public import FV.E2E.ABIReadFlags
+public import FV.Backend.Proof.StockMixedCheck
+
+@[expose] public section
 
 namespace E2E
 open Backend Backend.Proof Backend.Proof.Driver Backend.Stock.Proof Backend.DeadCleanup

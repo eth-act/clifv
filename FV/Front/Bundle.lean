@@ -1,9 +1,13 @@
-import FV.Front.Perm
-import FV.Front.Raw
-import FV.Clif.Print
-import FV.Clif.Parse
-import FV.E2E.SrcScopeDefs
-import FV.Link.Layout
+module
+
+public import FV.Front.Perm
+public import FV.Front.Raw
+public import FV.Clif.Print
+public import FV.Clif.Parse
+public import FV.E2E.SrcScopeDefs
+public import FV.Link.Layout
+
+@[expose] public section
 
 /-!
 # The frontend bundle and the Lean-built `LinkSpec` (T7b–T7d, docs/contracts/frontend.md)

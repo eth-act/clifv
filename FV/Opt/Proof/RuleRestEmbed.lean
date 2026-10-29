@@ -1,7 +1,11 @@
-import FV.Opt.Proof.RuleRestEmbedBase
-import FV.Opt.Proof.RuleRestEmbedSshr
-import FV.Opt.Proof.RuleRestEmbedRotl
-import FV.Opt.Proof.RuleRestEmbedRotr
+module
+
+public import FV.Opt.Proof.RuleRestEmbedBase
+public import FV.Opt.Proof.RuleRestEmbedSshr
+public import FV.Opt.Proof.RuleRestEmbedRotl
+public import FV.Opt.Proof.RuleRestEmbedRotr
+
+@[expose] public section
 
 /-! # Templates for the remaining `simplify` roots (RulesRest)
 

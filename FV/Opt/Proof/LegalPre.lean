@@ -1,5 +1,9 @@
-import FV.Opt.Proof.LegalComplete
-import FV.Opt.Legalize128Pre
+module
+
+public import FV.Opt.Proof.LegalComplete
+public import FV.Opt.Legalize128Pre
+
+@[expose] public section
 
 /-!
 # The decidable `Pre` of the validator's completeness (S6)

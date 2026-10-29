@@ -1,13 +1,17 @@
-import FV.E2E.RegLevelCountP
-import FV.E2E.RegLevelMoveN
-import FV.E2E.RegLevelOpN
-import FV.E2E.RegLevelNextN
-import FV.E2E.RegLevelCallN
-import FV.E2E.RegLevelTryN
-import FV.E2E.RegLevelJTN
-import FV.E2E.RegLevelAtomicN
-import FV.E2E.RegLevelTlsN
-import FV.E2E.RegLevelFrameN
+module
+
+public import FV.E2E.RegLevelCountP
+public import FV.E2E.RegLevelMoveN
+public import FV.E2E.RegLevelOpN
+public import FV.E2E.RegLevelNextN
+public import FV.E2E.RegLevelCallN
+public import FV.E2E.RegLevelTryN
+public import FV.E2E.RegLevelJTN
+public import FV.E2E.RegLevelAtomicN
+public import FV.E2E.RegLevelTlsN
+public import FV.E2E.RegLevelFrameN
+
+@[expose] public section
 
 /-!
 # The counted register-level theorem with the call contract of index `n` at call `n` only

@@ -1,6 +1,10 @@
-import FV.Backend.Proof.RelocProvCheck
-import FV.Backend.Proof.IselCovClean
-import FV.Backend.Proof.RelocProvExt
+module
+
+public import FV.Backend.Proof.RelocProvCheck
+public import FV.Backend.Proof.IselCovClean
+public import FV.Backend.Proof.RelocProvExt
+
+@[expose] public section
 
 /-!
 # Name provenance of the ISLE lowering: the model (L1e, #216)

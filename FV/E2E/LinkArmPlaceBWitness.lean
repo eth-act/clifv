@@ -1,7 +1,11 @@
-import FV.E2E.LinkArmPlaceB
-import FV.E2E.SrcBoundedB
-import FV.E2E.LinkPlaceBWitness
-import FV.E2E.LinkArmProphThmWitness
+module
+
+public import FV.E2E.LinkArmPlaceB
+public import FV.E2E.SrcBoundedB
+public import FV.E2E.LinkPlaceBWitness
+public import FV.E2E.LinkArmProphThmWitness
+
+@[expose] public section
 
 /-!
 # Witnesses for `LinkArmPlaceB.lean` and `SrcBoundedB.lean`

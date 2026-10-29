@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockLogicalForms
-import FV.Backend.Proof.IselCtl
+module
+
+public import FV.Backend.Proof.StockLogicalForms
+public import FV.Backend.Proof.IselCtl
+
+@[expose] public section
 
 /-! Typed logical-root receipts derived from actual Stock record selection. -/
 namespace Backend.Stock.Proof.LogicalSelected

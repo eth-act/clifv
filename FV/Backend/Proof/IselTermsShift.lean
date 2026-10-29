@@ -1,5 +1,9 @@
-import FV.Backend.Proof.IselFamAluBShiftBase
-import FV.Backend.Proof.IselFamAluBIconst
+module
+
+public import FV.Backend.Proof.IselFamAluBShiftBase
+public import FV.Backend.Proof.IselFamAluBIconst
+
+@[expose] public section
 
 /-!
 # `do_shift` (`lower.isle:1601`): contract over its four rules

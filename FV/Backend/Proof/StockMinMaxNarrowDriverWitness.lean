@@ -1,6 +1,10 @@
-import FV.Backend.Proof.StockMinMaxNarrowDriverRuns
-import FV.Backend.Proof.StockMinMaxActualDispatch
-import FV.Backend.Proof.LowerSim
+module
+
+public import FV.Backend.Proof.StockMinMaxNarrowDriverRuns
+public import FV.Backend.Proof.StockMinMaxActualDispatch
+public import FV.Backend.Proof.LowerSim
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.ScalarSelect.MinMaxNarrowDriverWitness
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

@@ -1,4 +1,8 @@
-import FV.Backend.Proof.StockSourceAliasRecords
+module
+
+public import FV.Backend.Proof.StockSourceAliasRecords
+
+@[expose] public section
 
 /-! Only source mappings and reserved payloads can be final alias keys. -/
 namespace Backend.Stock.Proof

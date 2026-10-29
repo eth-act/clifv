@@ -1,4 +1,8 @@
-import FV.Compile.SubsetT
+module
+
+public import FV.Compile.SubsetT
+
+@[expose] public section
 
 /-!
 # `try_call` return and payload arguments go to integer parameters (S11e5 Stage C, slice 6)

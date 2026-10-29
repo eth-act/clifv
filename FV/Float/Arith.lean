@@ -2,7 +2,11 @@
 Arithmetic of the shared float core: `FPAdd`, `FPSub`, `FPMul`, `FPDiv`, `FPSqrt`, `FPMulAdd`,
 `FPMax`, `FPMin`, `FPCompare` (`docs/contracts/float.md`). FPCR = 0 except the rounding mode.
 -/
-import FV.Float.Round
+module
+
+public import FV.Float.Round
+
+@[expose] public section
 
 namespace IEEE
 

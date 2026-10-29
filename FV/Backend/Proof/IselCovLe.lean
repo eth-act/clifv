@@ -1,4 +1,8 @@
-import FV.Backend.Proof.IselCovForm
+module
+
+public import FV.Backend.Proof.IselCovForm
+
+@[expose] public section
 
 /-!
 # Form coverage of the ISLE lowering (V3): the order and the deep facts

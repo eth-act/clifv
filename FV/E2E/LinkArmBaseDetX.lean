@@ -1,5 +1,9 @@
-import FV.E2E.LinkArmBaseDet
-import FV.E2E.LinkArmStepX30
+module
+
+public import FV.E2E.LinkArmBaseDet
+public import FV.E2E.LinkArmStepX30
+
+@[expose] public section
 
 /-!
 # Base hooks that do not observe return addresses (SEM1, `docs/plans/uninit.md` §5.9, step 3n)

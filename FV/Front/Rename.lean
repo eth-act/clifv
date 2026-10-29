@@ -1,4 +1,8 @@
-import FV.Clif.Run
+module
+
+public import FV.Clif.Run
+
+@[expose] public section
 
 /-!
 # Renaming the names of a CLIF program (T7d, docs/contracts/frontend.md)

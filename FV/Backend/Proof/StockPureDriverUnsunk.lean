@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockPureUnsunk
-import FV.Backend.Proof.StockPureSourceColors
+module
+
+public import FV.Backend.Proof.StockPureUnsunk
+public import FV.Backend.Proof.StockPureSourceColors
+
+@[expose] public section
 
 /-! Pure-slot invariants through actual original/critical-edge nodes and the
 complete Stock traversal. No source admission condition or runtime certificate. -/

@@ -1,6 +1,10 @@
-import FV.Backend.Proof.StockPureDriverUnsunk
-import FV.Backend.Proof.StockCoverageRecords
-import FV.Backend.Proof.StockBodyScanOrigin
+module
+
+public import FV.Backend.Proof.StockPureDriverUnsunk
+public import FV.Backend.Proof.StockCoverageRecords
+public import FV.Backend.Proof.StockBodyScanOrigin
+
+@[expose] public section
 
 /-! Ordinary pure source records derive their real scan decisions from the
 complete driver. No decision/family certificate is added to the input domain. -/

@@ -1,4 +1,8 @@
-import FV.E2E.RegLevelTryN
+module
+
+public import FV.E2E.RegLevelTryN
+
+@[expose] public section
 
 /-!
 # `try_call` contracts at restricted states (SEM1 #537, step 2t)

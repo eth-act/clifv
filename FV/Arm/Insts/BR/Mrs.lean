@@ -15,8 +15,12 @@ Released under Apache 2.0 license; see third_party/NOTICE-lnsym.md.
 -- (`X[31]` is XZR: the write is discarded.) Every other system register stops the machine
 -- with an `Unimplemented` error, as the unimplemented hints do.
 
-import FV.Arm.Decode
-import FV.Arm.Insts.Common
+module
+
+public import FV.Arm.Decode
+public import FV.Arm.Insts.Common
+
+@[expose] public section
 
 namespace Arm
 

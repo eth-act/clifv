@@ -66,7 +66,7 @@ def proof_order(directory, prefix="Mixed"):
             raise RuntimeError(f"cyclic generated import: {module}")
         visiting.add(module)
         path = files[module]
-        for imported in re.findall(r"^(?:(?:public|private|meta)\s+)*import\s+(\S+)", path.read_text(), re.M):
+        for imported in re.findall(r"^(?:(?:public|private|meta)\s+)*import\s+(?:all\s+)?(\S+)", path.read_text(), re.M):
             if imported.startswith("Crates."):
                 if imported not in files:
                     raise RuntimeError(f"missing generated import {imported} from {module}")

@@ -1,20 +1,24 @@
-import FV.Backend.StockScalarCheck
-import FV.Backend.Proof.StockLogicalCheck
-import FV.Backend.Proof.StockScalarConstantDomain
-import FV.Backend.Proof.StockScalarBnotDomain
-import FV.Backend.Proof.StockScalarMulDomain
-import FV.Backend.Proof.StockScalarShiftDomain
-import FV.Backend.Proof.StockScalarCastDomain
-import FV.Backend.Proof.StockScalarBitDomain
-import FV.Backend.Proof.StockScalarPopcountDomain
-import FV.Backend.Proof.StockScalarMinMaxDomain
-import FV.Backend.Proof.StockScalarCmpDomain
-import FV.Backend.Proof.StockScalarHighMulDomain
-import FV.Backend.Proof.StockScalarDivDomain
-import FV.Backend.Proof.StockScalarMixedDivDomain
-import FV.Backend.Proof.StockScalarReturnedDivDomain
-import FV.Backend.Proof.StockScalarGeneralDivDomain
-import FV.Backend.Proof.StockScalarMaskDomain
+module
+
+public import FV.Backend.StockScalarCheck
+public import FV.Backend.Proof.StockLogicalCheck
+public import FV.Backend.Proof.StockScalarConstantDomain
+public import FV.Backend.Proof.StockScalarBnotDomain
+public import FV.Backend.Proof.StockScalarMulDomain
+public import FV.Backend.Proof.StockScalarShiftDomain
+public import FV.Backend.Proof.StockScalarCastDomain
+public import FV.Backend.Proof.StockScalarBitDomain
+public import FV.Backend.Proof.StockScalarPopcountDomain
+public import FV.Backend.Proof.StockScalarMinMaxDomain
+public import FV.Backend.Proof.StockScalarCmpDomain
+public import FV.Backend.Proof.StockScalarHighMulDomain
+public import FV.Backend.Proof.StockScalarDivDomain
+public import FV.Backend.Proof.StockScalarMixedDivDomain
+public import FV.Backend.Proof.StockScalarReturnedDivDomain
+public import FV.Backend.Proof.StockScalarGeneralDivDomain
+public import FV.Backend.Proof.StockScalarMaskDomain
+
+@[expose] public section
 
 namespace Backend.Stock.Scalar
 open Backend.Proof Backend.Proof.Driver

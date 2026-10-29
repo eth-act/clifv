@@ -13,7 +13,11 @@ The forms are the hand-written ones of `Specs.lean` (default), the encoder-drive
 `Encoder.lean` (`--encoder`), or both (`--all`). `--coverage` runs nothing: it prints, per
 encoder form, the hand-written specs that cover it, and the totals.
 -/
-import FVTest.Arm.Cosim.Encoder
+module
+
+public import FVTest.Arm.Cosim.Encoder
+
+@[expose] public section
 
 open Arm.Cosim
 

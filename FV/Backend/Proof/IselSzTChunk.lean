@@ -1,4 +1,8 @@
-import FV.Backend.Proof.IselSzTDefs
+module
+
+public import FV.Backend.Proof.IselSzTDefs
+
+@[expose] public section
 
 /-!
 # The size of the ISLE lowering's output over float-capable contexts (typed V6c): chunked rule

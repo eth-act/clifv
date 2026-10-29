@@ -1,12 +1,16 @@
-import Lean
-import FV.E2E.LinkOwnFramesDefs
-import FV.Backend.Proof.LowerComplete
-import FV.Backend.Proof.LowerDecide
-import FV.Backend.Proof.DriverCheckSound
-import FV.Backend.Proof.PrepareComplete
-import FV.Backend.Proof.LowerLoopSim
-import FV.Backend.Proof.RegallocLayout
-import FV.E2E.RegLevelEmit
+module
+
+public import Lean
+public import FV.E2E.LinkOwnFramesDefs
+public import FV.Backend.Proof.LowerComplete
+public import FV.Backend.Proof.LowerDecide
+public import FV.Backend.Proof.DriverCheckSound
+public import FV.Backend.Proof.PrepareComplete
+public import FV.Backend.Proof.LowerLoopSim
+public import FV.Backend.Proof.RegallocLayout
+public import FV.E2E.RegLevelEmit
+
+@[expose] public section
 
 /-! # The frame checks of `okB`, proven for every in-scope function (docs/TO-PROVE.md §3, L2)
 

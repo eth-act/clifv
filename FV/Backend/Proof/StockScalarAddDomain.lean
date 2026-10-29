@@ -1,5 +1,10 @@
-import FV.Backend.Lowering.StockScalarAdd
-import FV.Backend.Proof.LowerDecide
+module
+
+public import FV.Backend.Lowering.StockScalarAdd
+public import FV.Backend.Proof.LowerDecide
+
+@[expose] public section
+
 set_option autoImplicit false
 namespace Backend.Stock.ScalarAdd
 open D0 Backend.Proof.Driver

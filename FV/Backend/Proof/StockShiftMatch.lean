@@ -1,5 +1,10 @@
-import FV.Backend.Proof.StockShiftRhsObserved
-import FV.Backend.Proof.StockLogicalLookthrough
+module
+
+public import FV.Backend.Proof.StockShiftRhsObserved
+public import FV.Backend.Proof.StockLogicalLookthrough
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarShift
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 set_option maxRecDepth 20000

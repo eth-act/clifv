@@ -1,4 +1,8 @@
-import FV.Isle
+module
+
+public import FV.Isle
+
+@[expose] public section
 
 /-!
 # A toy embedding for the ISLE interpreter

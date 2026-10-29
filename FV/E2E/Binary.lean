@@ -1,5 +1,9 @@
-import FV.E2E.StackBound
-import FV.E2E.BinCheck
+module
+
+public import FV.E2E.StackBound
+public import FV.E2E.BinCheck
+
+@[expose] public section
 
 /-! # The binary-level theorem (M9, docs/contracts/e2e.md, "Binary level (M9)")
 

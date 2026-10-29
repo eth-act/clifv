@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockPolicy
-import FV.Isle.InterpProjection
+module
+
+public import FV.Backend.Proof.StockPolicy
+public import FV.Isle.InterpProjection
+
+@[expose] public section
 
 /-!
 The stock scheduler changes constructors that track demand, sinking and aliases,

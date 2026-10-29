@@ -1,5 +1,9 @@
-import FV.E2E.WorldUnwind
-import FV.E2E.PairDriverU
+module
+
+public import FV.E2E.WorldUnwind
+public import FV.E2E.PairDriverU
+
+@[expose] public section
 
 /-!
 # The per-function world theorem with unwinding and non-interference (S10f, #233)

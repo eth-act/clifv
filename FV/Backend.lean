@@ -1,22 +1,26 @@
-import FV.Backend.MInst
-import FV.Backend.Isel
-import FV.Backend.InputScope
-import FV.Backend.Lowering.StockD0
-import FV.Backend.StackAlloc
-import FV.Backend.Regalloc
-import FV.Backend.AllocReady
-import FV.Backend.Asm
-import FV.Backend.Encode
-import FV.Backend.Obj
-import FV.Backend.Proof.DriverCheck
-import FV.Backend.Proof.DriverCheckTy
-import FV.Backend.Proof.DriverCheckC
-import FV.Compile.SubsetTC
-import FV.Compile.SubsetTF
-import FV.Backend.Proof.DriverCheckCF
-import FV.Backend.DeadCleanup
-import FV.Compile.Subset
-import Std.Data.HashSet
+module
+
+public import FV.Backend.MInst
+public import FV.Backend.Isel
+public import FV.Backend.InputScope
+public import FV.Backend.Lowering.StockD0
+public import FV.Backend.StackAlloc
+public import FV.Backend.Regalloc
+public import FV.Backend.AllocReady
+public import FV.Backend.Asm
+public import FV.Backend.Encode
+public import FV.Backend.Obj
+public import FV.Backend.Proof.DriverCheck
+public import FV.Backend.Proof.DriverCheckTy
+public import FV.Backend.Proof.DriverCheckC
+public import FV.Compile.SubsetTC
+public import FV.Compile.SubsetTF
+public import FV.Backend.Proof.DriverCheckCF
+public import FV.Backend.DeadCleanup
+public import FV.Compile.Subset
+public import Std.Data.HashSet
+
+@[expose] public section
 
 /-!
 # The Lean AArch64 backend (M4–M6, unproven): CLIF → machine code

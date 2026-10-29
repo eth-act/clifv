@@ -164,11 +164,18 @@ fn chunk(blocks: &[String], max_items: usize) -> Vec<std::ops::Range<usize>> {
 }
 
 fn module_header(tg: &Target, imports: &[&str]) -> String {
+    // Module system (scripts/module-port.py's form): `module`, `public import`s, and every
+    // declaration public with its body exposed.
     let mut s = tg.header();
+    s.push_str("module\n\n");
     for i in imports {
-        let _ = writeln!(s, "import {i}");
+        let _ = writeln!(s, "public import {i}");
     }
-    let _ = write!(s, "\nset_option maxRecDepth 100000\n\nnamespace {}\nopen Isle\n\n", tg.ns);
+    let _ = write!(
+        s,
+        "\n@[expose] public section\n\nset_option maxRecDepth 100000\n\nnamespace {}\nopen Isle\n\n",
+        tg.ns
+    );
     s
 }
 

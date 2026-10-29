@@ -1,4 +1,8 @@
-import FV.Opt.Optimize
+module
+
+public import FV.Opt.Optimize
+
+@[expose] public section
 
 /-!
 # The simplify stage is incomplete on duplicated `symbol_value`s (M1, #24)

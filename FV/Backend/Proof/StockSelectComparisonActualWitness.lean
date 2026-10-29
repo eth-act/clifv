@@ -1,4 +1,9 @@
-import FV.Backend.Proof.StockSelectComparisonActualFixture
+module
+
+public import FV.Backend.Proof.StockSelectComparisonActualFixture
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ScalarSelect.ComparisonActualWitness
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 /-- Every original scalar width/comparison condition and every source operand

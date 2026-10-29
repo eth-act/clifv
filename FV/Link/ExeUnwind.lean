@@ -1,6 +1,10 @@
-import FV.Link.ExeUCompile
-import FV.Link.DeadCleanupExe
-import FV.E2E.LinkArmUProgNI
+module
+
+public import FV.Link.ExeUCompile
+public import FV.Link.DeadCleanupExe
+public import FV.E2E.LinkArmUProgNI
+
+@[expose] public section
 
 /-!
 # The executable compiler is correct on the exceptional edges (S10f, #233)

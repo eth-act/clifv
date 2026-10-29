@@ -1,4 +1,9 @@
-import FV.Backend.Proof.EncodeBase
+module
+
+public import FV.Backend.Proof.EncodeBase
+
+@[expose] public section
+
 /-!
 # M5: `decode_raw_inst (armBits a) = some a.norm` for the `DPI` encoding classes
 

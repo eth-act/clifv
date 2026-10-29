@@ -1,7 +1,11 @@
-import FV.Backend.Proof.StockLinearCfgReturn
-import FV.Backend.Proof.StockLinearCfgTrap
-import FV.Backend.Proof.StockLinearCfgCompatibility
-import FV.Backend.Proof.StockScalarContract
+module
+
+public import FV.Backend.Proof.StockLinearCfgReturn
+public import FV.Backend.Proof.StockLinearCfgTrap
+public import FV.Backend.Proof.StockLinearCfgCompatibility
+public import FV.Backend.Proof.StockScalarContract
+
+@[expose] public section
 
 namespace Backend.Stock.Scalar
 open Backend.Proof Backend.Proof.Driver Backend.Stock.Proof

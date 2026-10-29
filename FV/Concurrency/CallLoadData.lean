@@ -1,5 +1,9 @@
-import FV.Concurrency.CallSeg
-import FV.Concurrency.CallThreadWitness
+module
+
+public import FV.Concurrency.CallSeg
+public import FV.Concurrency.CallThreadWitness
+
+@[expose] public section
 
 /-!
 # A compiled caller of the compiled `atomic_load`: data and checks (T2h, #311, calls)

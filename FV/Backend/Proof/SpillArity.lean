@@ -1,4 +1,8 @@
-import FV.Backend.Proof.DriverCheck
+module
+
+public import FV.Backend.Proof.DriverCheck
+
+@[expose] public section
 
 /-!
 # Branch arity (an input condition of the spill allocator's CFG facts, V4)

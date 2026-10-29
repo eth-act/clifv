@@ -1,4 +1,8 @@
-import FV.E2E.LinkArmProgCallPRB
+module
+
+public import FV.E2E.LinkArmProgCallPRB
+
+@[expose] public section
 
 /-!
 # Determinism of `ThmPRB`'s outcome for returning CLIF runs (SEM1 #537, #719)

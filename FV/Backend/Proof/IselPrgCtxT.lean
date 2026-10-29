@@ -1,7 +1,11 @@
-import FV.Backend.Proof.IselPrgCtx
-import FV.Backend.Proof.IselPrgInvT
-import FV.Backend.Proof.LowerLoopCtxT
-import FV.Backend.Proof.IselTermFactsTy
+module
+
+public import FV.Backend.Proof.IselPrgCtx
+public import FV.Backend.Proof.IselPrgInvT
+public import FV.Backend.Proof.LowerLoopCtxT
+public import FV.Backend.Proof.IselTermFactsTy
+
+@[expose] public section
 
 /-!
 # Progress of the ISLE lowering over the typed scope: the driver's contexts

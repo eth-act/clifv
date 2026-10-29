@@ -1,5 +1,9 @@
-import FV.Concurrency.CallSegCall
-import FV.Concurrency.CallSegOkG
+module
+
+public import FV.Concurrency.CallSegCall
+public import FV.Concurrency.CallSegOkG
+
+@[expose] public section
 
 /-!
 # The callee's entry memory relation (#473, `SegOkG` call case, item (1))

@@ -1,5 +1,9 @@
-import FV.E2E.RegLevelGotoNA
-import FV.E2E.RegLevelJTNR
+module
+
+public import FV.E2E.RegLevelGotoNA
+public import FV.E2E.RegLevelJTNR
+
+@[expose] public section
 
 /-!
 # Jump tables, at a witness (SEM1 #537, item (3), route (a))

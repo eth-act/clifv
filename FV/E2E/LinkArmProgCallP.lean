@@ -1,4 +1,8 @@
-import FV.E2E.LinkArmProphDetE
+module
+
+public import FV.E2E.LinkArmProphDetE
+
+@[expose] public section
 
 /-!
 # A call of a program function on prophecy determinism (SEM1 step 2q, `docs/plans/uninit.md` §5.8)

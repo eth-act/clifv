@@ -1,4 +1,8 @@
-import FV.Opt.Proof.SemFacts
+module
+
+public import FV.Opt.Proof.SemFacts
+
+@[expose] public section
 
 /-!
 # `removeUnreachable` refines (`Opt.removeUnreachable_sim`)

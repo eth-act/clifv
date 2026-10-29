@@ -1,8 +1,12 @@
-import FV.Backend.Proof.StockD0DispatchWitness
-import FV.E2E.LoweringPipeline
-import FV.E2E.LinkScopeInput
-import FV.E2E.DeadCleanupLinkScope
-import FV.E2E.SpillDefined
+module
+
+public import FV.Backend.Proof.StockD0DispatchWitness
+public import FV.E2E.LoweringPipeline
+public import FV.E2E.LinkScopeInput
+public import FV.E2E.DeadCleanupLinkScope
+public import FV.E2E.SpillDefined
+
+@[expose] public section
 
 namespace Backend.Stock.D0
 open E2E E2E.LinkCheck

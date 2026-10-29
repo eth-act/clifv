@@ -1,6 +1,10 @@
-import FV.Backend.Proof.IselSzCall
-import FV.Backend.Proof.IselCovTCall
-import FV.Backend.Proof.IselCtlUnmatchTI
+module
+
+public import FV.Backend.Proof.IselSzCall
+public import FV.Backend.Proof.IselCovTCall
+public import FV.Backend.Proof.IselCtlUnmatchTI
+
+@[expose] public section
 
 /-!
 # The size of the ISLE lowering's output over float-capable contexts (typed V6c): the `call` and

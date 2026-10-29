@@ -1,8 +1,12 @@
-import FV.E2E.ExecFrame
-import FV.E2E.DeadCleanupExecStatic
-import FV.E2E.ExecFrameSim
-import FV.E2E.DeadCleanupBinary
-import FV.E2E.DeadCleanupBinCheck
+module
+
+public import FV.E2E.ExecFrame
+public import FV.E2E.DeadCleanupExecStatic
+public import FV.E2E.ExecFrameSim
+public import FV.E2E.DeadCleanupBinary
+public import FV.E2E.DeadCleanupBinCheck
+
+@[expose] public section
 
 namespace E2E.DeadCleanupExecBytes
 set_option autoImplicit false

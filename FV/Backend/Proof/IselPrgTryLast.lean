@@ -1,6 +1,10 @@
-import FV.Backend.Proof.IselPrgInv
-import FV.Backend.Proof.IselShpTry
-import FV.Backend.Proof.IselFlow
+module
+
+public import FV.Backend.Proof.IselPrgInv
+public import FV.Backend.Proof.IselShpTry
+public import FV.Backend.Proof.IselFlow
+
+@[expose] public section
 
 /-!
 # Progress of the ISLE lowering (V7): a `try_call`'s code ends in a call

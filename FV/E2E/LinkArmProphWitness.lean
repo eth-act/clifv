@@ -1,5 +1,9 @@
-import FV.E2E.LinkArmProph
-import FV.E2E.NonVacuityLink
+module
+
+public import FV.E2E.LinkArmProph
+public import FV.E2E.NonVacuityLink
+
+@[expose] public section
 
 /-!
 # Witnesses for the prophecy-indexed call contract (`FV/E2E/LinkArmProph.lean`)

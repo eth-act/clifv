@@ -1,4 +1,8 @@
-import FV.Concurrency.ClifThread
+module
+
+public import FV.Concurrency.ClifThread
+
+@[expose] public section
 
 /-!
 # CLIF threads with stack slots: the own-initialisation mask (#473, (iv))

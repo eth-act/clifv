@@ -1,6 +1,10 @@
-import FV.E2E.BackendWorldPRGYNX
-import FV.E2E.RegLevelCorrectPRSNXT
-import FV.E2E.TrapWorldW
+module
+
+public import FV.E2E.BackendWorldPRGYNX
+public import FV.E2E.RegLevelCorrectPRSNXT
+public import FV.E2E.TrapWorldW
+
+@[expose] public section
 
 /-!
 # The pipeline's trap clause with the call count and the per-state trace (SEM1 #537)

@@ -1,7 +1,11 @@
-import FV.Backend.Proof.StockParameterSuccessor
-import FV.Backend.Proof.StockParameterReturnPrelude
-import FV.Backend.Proof.StockParameterCompatibility
-import FV.Backend.Proof.StockScalarContract
+module
+
+public import FV.Backend.Proof.StockParameterSuccessor
+public import FV.Backend.Proof.StockParameterReturnPrelude
+public import FV.Backend.Proof.StockParameterCompatibility
+public import FV.Backend.Proof.StockScalarContract
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.ParameterCfg
 open Backend.Proof Backend.Proof.Driver Backend.Stock.Proof.ConditionalValues Backend.Stock.Proof.ForwardSource

@@ -4,9 +4,13 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Author(s): Shilpi Goel, Siddharth Bhat
 -/
 -- Modified by fv-compiler-rust (2026): ported to Lean v4.34.1, module prefix FV.Arm, wrapped in namespace Arm, proofs adapted to v4.34 lemma names.
-import FV.Arm.State
-import FV.Arm.BitVec
-import FV.Arm.Tactics.BvOmegaBench
+module
+
+public import FV.Arm.State
+public import FV.Arm.BitVec
+public import FV.Arm.Tactics.BvOmegaBench
+
+@[expose] public section
 
 namespace Arm
 section Separate

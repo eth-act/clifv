@@ -1,6 +1,10 @@
-import FV.Link.OptExe
-import FV.Link.DeadCleanupExeSource
-import FV.Link.ExeInputReachCleanupIn
+module
+
+public import FV.Link.OptExe
+public import FV.Link.DeadCleanupExeSource
+public import FV.Link.ExeInputReachCleanupIn
+
+@[expose] public section
 
 /-! # The shipped optimising executable compiler is correct (S1, S2, L1)
 

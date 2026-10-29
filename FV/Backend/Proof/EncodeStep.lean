@@ -1,4 +1,8 @@
-import FV.Backend.Proof.EncodeLayout
+module
+
+public import FV.Backend.Proof.EncodeLayout
+
+@[expose] public section
 
 /-!
 # M5 → M7: executing a laid-out function on the Arm model

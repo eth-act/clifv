@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockPrepareComplete
-import FV.Backend.Proof.StockOrderGraph
+module
+
+public import FV.Backend.Proof.StockPrepareComplete
+public import FV.Backend.Proof.StockOrderGraph
+
+@[expose] public section
 
 namespace Backend.Stock.Proof
 open Backend.Proof Backend.Proof.Driver

@@ -1,4 +1,8 @@
-import FV.E2E.RegLevelDriverSem
+module
+
+public import FV.E2E.RegLevelDriverSem
+
+@[expose] public section
 
 /-!
 # The instruction semantics with unwinding (S10e, #232)

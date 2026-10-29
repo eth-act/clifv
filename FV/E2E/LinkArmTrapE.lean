@@ -1,5 +1,9 @@
-import FV.E2E.LinkArmProgramInitE
-import FV.E2E.BackendPrefixAtEnds
+module
+
+public import FV.E2E.LinkArmProgramInitE
+public import FV.E2E.BackendPrefixAtEnds
+
+@[expose] public section
 
 /-!
 # Traps under the machine's own slot table (SEM1 #537)

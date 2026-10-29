@@ -1,5 +1,9 @@
-import FV.E2E.BackendTwoRunL
-import FV.E2E.LinkArmProphDetE
+module
+
+public import FV.E2E.BackendTwoRunL
+public import FV.E2E.LinkArmProphDetE
+
+@[expose] public section
 
 /-!
 # The machine lock from the entries (SEM1 #537, `docs/plans/uninit.md` §5.9, machine lock)

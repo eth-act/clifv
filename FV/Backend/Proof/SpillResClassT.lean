@@ -1,5 +1,9 @@
-import FV.Backend.Proof.FormsCoverCompleteT
-import FV.Backend.Proof.SpillClassesT
+module
+
+public import FV.Backend.Proof.FormsCoverCompleteT
+public import FV.Backend.Proof.SpillClassesT
+
+@[expose] public section
 
 /-!
 # `ResClassOk` on the typed scope

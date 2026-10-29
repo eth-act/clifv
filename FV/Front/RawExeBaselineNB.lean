@@ -1,5 +1,9 @@
-import FV.Front.RawExe
-import FV.Link.ExeSourceNB
+module
+
+public import FV.Front.RawExe
+public import FV.Link.ExeSourceNB
+
+@[expose] public section
 
 /-!
 # The frontend bundle theorems of the baseline compiler without the memory-bound premise (A2/B1)

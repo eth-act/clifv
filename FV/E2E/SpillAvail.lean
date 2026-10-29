@@ -1,5 +1,9 @@
-import FV.E2E.AllocDirect
-import FV.Backend.Proof.SpillAvail
+module
+
+public import FV.E2E.AllocDirect
+public import FV.Backend.Proof.SpillAvail
+
+@[expose] public section
 
 /-!
 # The availability sets of the pipeline's output (V4 step 4, `SpillAvailable`)

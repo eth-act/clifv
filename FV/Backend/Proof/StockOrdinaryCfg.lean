@@ -1,6 +1,10 @@
-import FV.Backend.Proof.StockNamedBranchTargets
-import FV.Backend.Proof.StockTryCfg
-import FV.Backend.Proof.StockNodeCoverage
+module
+
+public import FV.Backend.Proof.StockNamedBranchTargets
+public import FV.Backend.Proof.StockTryCfg
+public import FV.Backend.Proof.StockNodeCoverage
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.OrdinaryCfg
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

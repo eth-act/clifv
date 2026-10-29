@@ -1,4 +1,8 @@
-import FV.Backend.Proof.IselContract
+module
+
+public import FV.Backend.Proof.IselContract
+
+@[expose] public section
 
 /-!
 # The call contracts with pinned calls (agent/link-widen, stage 2)

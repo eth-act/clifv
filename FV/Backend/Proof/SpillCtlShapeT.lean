@@ -1,9 +1,13 @@
-import FV.Backend.Proof.SpillCtlPipe
-import FV.Backend.Proof.SpillCtlFormsT
-import FV.Backend.Proof.LowerLoopCtxT
-import FV.Backend.Proof.LowerDecide
-import FV.Compile.StoreTyped
-import FV.Compile.SelectTyped
+module
+
+public import FV.Backend.Proof.SpillCtlPipe
+public import FV.Backend.Proof.SpillCtlFormsT
+public import FV.Backend.Proof.LowerLoopCtxT
+public import FV.Backend.Proof.LowerDecide
+public import FV.Compile.StoreTyped
+public import FV.Compile.SelectTyped
+
+@[expose] public section
 
 /-!
 # Control shapes of the typed lowering (S11 #35)

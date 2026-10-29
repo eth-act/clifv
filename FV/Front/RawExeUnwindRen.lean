@@ -1,5 +1,9 @@
-import FV.Front.RawExeUnwind
-import FV.Front.RenameRunX
+module
+
+public import FV.Front.RawExeUnwind
+public import FV.Front.RenameRunX
+
+@[expose] public section
 
 /-!
 # The exceptional edges on cg_clif's program, without `i128` (S10f)

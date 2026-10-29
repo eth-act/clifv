@@ -1,7 +1,12 @@
-import FV.Backend.Proof.StockShiftSourceTransfer
-import FV.Backend.Proof.StockShiftBitfieldRecordValues
-import FV.Backend.Proof.StockGuardedRecordValues
-import FV.Backend.Proof.IselFamAluBShiftBase
+module
+
+public import FV.Backend.Proof.StockShiftSourceTransfer
+public import FV.Backend.Proof.StockShiftBitfieldRecordValues
+public import FV.Backend.Proof.StockGuardedRecordValues
+public import FV.Backend.Proof.IselFamAluBShiftBase
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.ShiftComplete
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 open Backend.Stock.Proof.ScalarShift

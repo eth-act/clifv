@@ -1,7 +1,11 @@
-import FV.Backend.Proof.StockConstantScanRefines
-import FV.Backend.Proof.StockConstantBoundaryWitness
-import FV.Backend.Proof.RefinesCSem
-import FV.E2E.RegLevelDriverSem
+module
+
+public import FV.Backend.Proof.StockConstantScanRefines
+public import FV.Backend.Proof.StockConstantBoundaryWitness
+public import FV.Backend.Proof.RefinesCSem
+public import FV.E2E.RegLevelDriverSem
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.ConstantComplete
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

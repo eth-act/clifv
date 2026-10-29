@@ -1,5 +1,9 @@
-import FV.Link.UnwCheckIn
-import FV.Link.UnwTryInWitness
+module
+
+public import FV.Link.UnwCheckIn
+public import FV.Link.UnwTryInWitness
+
+@[expose] public section
 
 /-!
 # Witness: the exceptional-edge validator from the input (S10g, #404)

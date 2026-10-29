@@ -1,5 +1,9 @@
-import FV.E2E.RegLevelGoto
-import FV.E2E.RegLevelCall
+module
+
+public import FV.E2E.RegLevelGoto
+public import FV.E2E.RegLevelCall
+
+@[expose] public section
 
 /-!
 # The call of a `try_call` on the machine (M6)

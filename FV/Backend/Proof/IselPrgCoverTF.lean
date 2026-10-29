@@ -1,6 +1,10 @@
-import FV.Backend.Proof.IselPrgCoverT
-import FV.Backend.Proof.IselPrgRootTF
-import FV.Clif.FloatFacts
+module
+
+public import FV.Backend.Proof.IselPrgCoverT
+public import FV.Backend.Proof.IselPrgRootTF
+public import FV.Clif.FloatFacts
+
+@[expose] public section
 
 /-!
 # Progress of the ISLE lowering over the float scope: the statements' roots (S11f, #35)

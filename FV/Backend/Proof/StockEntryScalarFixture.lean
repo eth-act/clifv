@@ -1,4 +1,8 @@
-import FV.Backend.Proof.StockTwoBlockEntryCheck
+module
+
+public import FV.Backend.Proof.StockTwoBlockEntryCheck
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.EntryScalarWitness
 open Backend.Proof Backend.Proof.Driver

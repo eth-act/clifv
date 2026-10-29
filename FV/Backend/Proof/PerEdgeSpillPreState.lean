@@ -1,5 +1,9 @@
-import FV.Backend.Proof.PerEdgeSpillEntryGood
-import FV.Backend.Proof.PerEdgeSpillStateAt
+module
+
+public import FV.Backend.Proof.PerEdgeSpillEntryGood
+public import FV.Backend.Proof.PerEdgeSpillStateAt
+
+@[expose] public section
 
 namespace Backend.Proof.PerEdgeSpill
 open Backend Backend.Proof.Spill Backend.Stock.Proof

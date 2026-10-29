@@ -1,4 +1,8 @@
-import FV.E2E.IselSimICleanup
+module
+
+public import FV.E2E.IselSimICleanup
+
+@[expose] public section
 
 /-!
 # CLIF → counted VCode with the call count at the return (SEM1 #537, #680 (3), `CountPRB` (b))

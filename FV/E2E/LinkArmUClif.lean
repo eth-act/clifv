@@ -1,4 +1,8 @@
-import FV.E2E.LinkArmUEnv
+module
+
+public import FV.E2E.LinkArmUEnv
+
+@[expose] public section
 
 /-!
 # The CLIF runs with unwinding of a linked program: the memory facts (S10f, #233)

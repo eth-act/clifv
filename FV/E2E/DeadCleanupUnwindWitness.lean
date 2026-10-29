@@ -1,6 +1,10 @@
-import FV.E2E.DeadCleanupUnwindFinal
-import FV.E2E.DeadCleanupCover
-import FV.Backend.SpillAlloc
+module
+
+public import FV.E2E.DeadCleanupUnwindFinal
+public import FV.E2E.DeadCleanupCover
+public import FV.Backend.SpillAlloc
+
+@[expose] public section
 
 /-!
 # Non-vacuity of `backend_correct_final_cleanup_unwind` (S10e, #232)

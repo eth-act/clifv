@@ -1,9 +1,13 @@
-import FV.Backend.Proof.IselCovCall
-import FV.Backend.Proof.IselCovModel
-import FV.Backend.Proof.IselCovClean
-import FV.Backend.Proof.IselCovTab
-import FV.Backend.Proof.IselFlow
-import FV.Backend.Proof.LowerContract
+module
+
+public import FV.Backend.Proof.IselCovCall
+public import FV.Backend.Proof.IselCovModel
+public import FV.Backend.Proof.IselCovClean
+public import FV.Backend.Proof.IselCovTab
+public import FV.Backend.Proof.IselFlow
+public import FV.Backend.Proof.LowerContract
+
+@[expose] public section
 
 /-!
 # Form coverage of the ISLE lowering (V3): the driver's calls

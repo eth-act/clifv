@@ -1,6 +1,10 @@
-import FV.E2E.LinkScopeInputT
-import FV.E2E.DeadCleanupLinkScope
-import FV.E2E.DeadCleanupTotalT
+module
+
+public import FV.E2E.LinkScopeInputT
+public import FV.E2E.DeadCleanupLinkScope
+public import FV.E2E.DeadCleanupTotalT
+
+@[expose] public section
 
 /-! # The dead-cleanup pipeline's per-function totality on the typed input scope
 (S11e5 Stage C, slice 8)

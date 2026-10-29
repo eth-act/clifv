@@ -1,10 +1,14 @@
-import FV.E2E.BackendWorldPRGX
-import FV.E2E.BackendWorldPRBWitness
-import FV.E2E.LinkArmXPBTX
-import FV.E2E.LinkArmTabCount
-import FV.E2E.LinkArmThmPRBRWitness
-import FV.E2E.LinkArmTableBWitness
-import FV.E2E.LinkArmEnvOfB
+module
+
+public import FV.E2E.BackendWorldPRGX
+public import FV.E2E.BackendWorldPRBWitness
+public import FV.E2E.LinkArmXPBTX
+public import FV.E2E.LinkArmTabCount
+public import FV.E2E.LinkArmThmPRBRWitness
+public import FV.E2E.LinkArmTableBWitness
+public import FV.E2E.LinkArmEnvOfB
+
+@[expose] public section
 
 /-!
 # Witnesses for the program-keeping guard (#690) and the table count (`FV/E2E/ExtSemGuardRX.lean`,

@@ -1,6 +1,10 @@
-import FV.E2E.StackBound
-import FV.E2E.LinkCheckT
-import FV.E2E.LinkArmT
+module
+
+public import FV.E2E.StackBound
+public import FV.E2E.LinkCheckT
+public import FV.E2E.LinkArmT
+
+@[expose] public section
 
 /-! # Typed copies of `FV.E2E.StackBound` (S11e5 Stage C, slice 8)
 

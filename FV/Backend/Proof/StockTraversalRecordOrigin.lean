@@ -1,4 +1,8 @@
-import FV.Backend.Proof.StockNodeRecordOrigin
+module
+
+public import FV.Backend.Proof.StockNodeRecordOrigin
+
+@[expose] public section
 
 namespace Backend.Stock.Proof
 open Backend.Proof Backend.Proof.Driver

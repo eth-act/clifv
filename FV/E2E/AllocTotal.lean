@@ -1,6 +1,10 @@
-import FV.E2E.SpillLower
-import FV.E2E.SpillKillFree
-import FV.E2E.SpillCtlCheck
+module
+
+public import FV.E2E.SpillLower
+public import FV.E2E.SpillKillFree
+public import FV.E2E.SpillCtlCheck
+
+@[expose] public section
 
 /-!
 # The backend is total on in-scope input (V5)

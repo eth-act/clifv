@@ -1,6 +1,10 @@
-import FV.E2E.CompiledProduction
-import FV.E2E.WorldUnwindNIWitness
-import FV.E2E.DeadCleanupDirect
+module
+
+public import FV.E2E.CompiledProduction
+public import FV.E2E.WorldUnwindNIWitness
+public import FV.E2E.DeadCleanupDirect
+
+@[expose] public section
 
 /-! Positive non-vacuity witnesses for the try-call and TLS helper premises.
 These reuse real legacy compilation, preserving the old contract as an instance

@@ -1,4 +1,8 @@
-import FV.Backend.Proof.StockD0Code
+module
+
+public import FV.Backend.Proof.StockD0Code
+
+@[expose] public section
 
 namespace Backend.Stock.D0
 

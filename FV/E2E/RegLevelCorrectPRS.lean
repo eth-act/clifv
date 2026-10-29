@@ -1,4 +1,8 @@
-import FV.E2E.RegLevelCorrectPR
+module
+
+public import FV.E2E.RegLevelCorrectPR
+
+@[expose] public section
 
 /-!
 # The contract's states are at the body `sp` (SEM1 #537, step 2u, `docs/plans/uninit.md` §5.8 (b))

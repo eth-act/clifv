@@ -1,4 +1,8 @@
-import FV.Concurrency.Mapping
+module
+
+public import FV.Concurrency.Mapping
+
+@[expose] public section
 
 /-!
 # Rust/C++20 orderings and cg_clif's strengthening (T2f, #304)

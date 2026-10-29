@@ -1,4 +1,8 @@
-import FV.Backend.Proof.IselPrgExtT
+module
+
+public import FV.Backend.Proof.IselPrgExtT
+
+@[expose] public section
 
 /-!
 # Progress of the ISLE lowering over the float scope: the transfer functions (S11f, #35)

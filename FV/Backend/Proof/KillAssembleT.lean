@@ -1,11 +1,15 @@
-import FV.Backend.Proof.KillHypT
-import FV.Backend.Proof.SpillEdgesT
-import FV.Backend.Proof.SpillEdgesLowT
-import FV.Backend.Proof.LowerLoopT
-import FV.Backend.Proof.LowerLoopSimT
-import FV.Backend.Proof.LowerLoopRunT
-import FV.Backend.Proof.LowerCompleteT
-import FV.Backend.Proof.LowerShapeOkT
+module
+
+public import FV.Backend.Proof.KillHypT
+public import FV.Backend.Proof.SpillEdgesT
+public import FV.Backend.Proof.SpillEdgesLowT
+public import FV.Backend.Proof.LowerLoopT
+public import FV.Backend.Proof.LowerLoopSimT
+public import FV.Backend.Proof.LowerLoopRunT
+public import FV.Backend.Proof.LowerCompleteT
+public import FV.Backend.Proof.LowerShapeOkT
+
+@[expose] public section
 
 /-!
 # Killed vregs of `lowerFunction`'s VCode: the driver's assembly (V4, `SpillKillFree`), typed

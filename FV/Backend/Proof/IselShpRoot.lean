@@ -1,5 +1,9 @@
-import FV.Backend.Proof.IselCovSound
-import FV.Backend.Proof.IselGeneric
+module
+
+public import FV.Backend.Proof.IselCovSound
+public import FV.Backend.Proof.IselGeneric
+
+@[expose] public section
 
 /-!
 # Control shapes of the ISLE lowering (V4): root terms with hand-checked rules

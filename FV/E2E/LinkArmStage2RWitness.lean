@@ -1,6 +1,10 @@
-import FV.E2E.LinkArmStage2R
-import FV.E2E.LinkArmThmPRBRZeroWitness
-import FV.E2E.LinkPlaceBReachWitness
+module
+
+public import FV.E2E.LinkArmStage2R
+public import FV.E2E.LinkArmThmPRBRZeroWitness
+public import FV.E2E.LinkPlaceBReachWitness
+
+@[expose] public section
 
 /-!
 # Witnesses for `LinkArmStage2R.lean`

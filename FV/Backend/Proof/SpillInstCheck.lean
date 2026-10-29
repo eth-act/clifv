@@ -1,5 +1,9 @@
-import FV.Backend.Proof.SpillLocal
-import FV.Backend.Proof.RegallocCover
+module
+
+public import FV.Backend.Proof.SpillLocal
+public import FV.Backend.Proof.RegallocCover
+
+@[expose] public section
 
 /-!
 # `SpillInstOk`, decided (S11e5 Stage C, slice 6)

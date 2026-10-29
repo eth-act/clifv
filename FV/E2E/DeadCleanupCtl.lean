@@ -1,6 +1,10 @@
-import FV.E2E.SpillCtlCheck
-import FV.Backend.Proof.DeadCleanupPrepare
-import FV.Backend.Proof.DeadCleanupPositions
+module
+
+public import FV.E2E.SpillCtlCheck
+public import FV.Backend.Proof.DeadCleanupPrepare
+public import FV.Backend.Proof.DeadCleanupPositions
+
+@[expose] public section
 
 namespace E2E
 open Backend Backend.Proof Backend.Proof.Driver Backend.Proof.Spill Backend.DeadCleanup

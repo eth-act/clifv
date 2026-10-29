@@ -1,4 +1,8 @@
-import FV.Backend.Proof.StockCriticalValues
+module
+
+public import FV.Backend.Proof.StockCriticalValues
+
+@[expose] public section
 
 /-! An accepted ordinary branching function exposes the remaining per-successor
 consumer migration. Raw Stock keeps the correct vectors in Result.edgeArgs;

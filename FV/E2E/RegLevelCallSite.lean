@@ -1,6 +1,10 @@
-import FV.E2E.RegLevelUnwind
-import FV.E2E.RegLevelNext
-import FV.E2E.RegLevelCall
+module
+
+public import FV.E2E.RegLevelUnwind
+public import FV.E2E.RegLevelNext
+public import FV.E2E.RegLevelCall
+
+@[expose] public section
 
 /-!
 # The call-site pair of a register-level call (S10e)

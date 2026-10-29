@@ -1,8 +1,12 @@
-import FV.E2E.BackendPairRunDF
-import FV.E2E.BackendPairRunDCleanup
-import FV.E2E.BackendTwoRunNIV
-import FV.E2E.BackendTwoRunNIUP
-import FV.E2E.CompiledEither
+module
+
+public import FV.E2E.BackendPairRunDF
+public import FV.E2E.BackendPairRunDCleanup
+public import FV.E2E.BackendTwoRunNIV
+public import FV.E2E.BackendTwoRunNIUP
+public import FV.E2E.CompiledEither
+
+@[expose] public section
 
 /-!
 # The paired run and the two-run lock for either artifact (SEM1 #537, #713)

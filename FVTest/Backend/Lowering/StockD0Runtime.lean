@@ -1,5 +1,9 @@
-import FV.Backend
-import FV.E2E.DeadCleanupLinkCheck
+module
+
+public import FV.Backend
+public import FV.E2E.DeadCleanupLinkCheck
+
+@[expose] public section
 
 namespace FVTest.StockD0Runtime
 open Backend Backend.Stock.D0

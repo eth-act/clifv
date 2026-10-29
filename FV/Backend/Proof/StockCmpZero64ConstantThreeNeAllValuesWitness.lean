@@ -1,6 +1,10 @@
-import FV.Backend.Proof.StockCmpZero64ConstantDriverRuns
-import FV.Backend.Proof.StockCmpZero64OriginalLeftTransfer
-import FV.Backend.Proof.LowerSim
+module
+
+public import FV.Backend.Proof.StockCmpZero64ConstantDriverRuns
+public import FV.Backend.Proof.StockCmpZero64OriginalLeftTransfer
+public import FV.Backend.Proof.LowerSim
+
+@[expose] public section
 
 namespace Backend.Stock.Proof.ScalarCmp.Zero64ConstantThreeNeAllValuesWitness
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

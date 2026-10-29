@@ -1,6 +1,10 @@
-import FV.Opt.Proof.CompleteSimp
-import FV.Opt.Proof.IsleProv
-import FV.Opt.OptimizeX
+module
+
+public import FV.Opt.Proof.CompleteSimp
+public import FV.Opt.Proof.IsleProv
+public import FV.Opt.OptimizeX
+
+@[expose] public section
 
 /-!
 # Completeness of the mid-end for every configuration (M1, #24)

@@ -1,5 +1,9 @@
-import FV.Backend.Proof.IselTls
-import FV.Backend.Proof.IselMemBaseTI
+module
+
+public import FV.Backend.Proof.IselTls
+public import FV.Backend.Proof.IselMemBaseTI
+
+@[expose] public section
 
 /-!
 # `IselTls` over typed contexts (S11e5 Stage C, slice 7)

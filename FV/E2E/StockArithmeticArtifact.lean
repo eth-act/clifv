@@ -1,6 +1,10 @@
-import FV.E2E.StockArithmeticSemantics
-import FV.E2E.Main
-import FV.Backend.Proof.StockArithmeticNoTrap
+module
+
+public import FV.E2E.StockArithmeticSemantics
+public import FV.E2E.Main
+public import FV.Backend.Proof.StockArithmeticNoTrap
+
+@[expose] public section
 
 namespace E2E
 open Backend Backend.Proof Backend.Proof.Driver Backend.Stock.Proof

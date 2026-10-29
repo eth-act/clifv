@@ -1,6 +1,10 @@
-import FV.Backend.Proof.SpillCtlPipe
-import FV.Backend.Proof.SpillAvail
-import FV.Backend.Proof.IselFlowExt
+module
+
+public import FV.Backend.Proof.SpillCtlPipe
+public import FV.Backend.Proof.SpillAvail
+public import FV.Backend.Proof.IselFlowExt
+
+@[expose] public section
 
 /-!
 # Killed vregs of the ISLE lowering (V4, `SpillKillFree`): the shared definitions

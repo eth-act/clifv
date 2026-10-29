@@ -1,5 +1,9 @@
-import FV.Link.DeadCleanupCompileT
-import FV.E2E.LinkScopeInputT3
+module
+
+public import FV.Link.DeadCleanupCompileT
+public import FV.E2E.LinkScopeInputT3
+
+@[expose] public section
 
 /-! # The shipped executable compiler with the decider-free typed scope (S11, #35)
 

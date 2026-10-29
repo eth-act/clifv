@@ -1,6 +1,11 @@
-import FV.Backend.Proof.StockCastBodyRefines
-import FV.Backend.Proof.StockBitFamily
-import FV.Backend.Proof.StockBitScanRefines
+module
+
+public import FV.Backend.Proof.StockCastBodyRefines
+public import FV.Backend.Proof.StockBitFamily
+public import FV.Backend.Proof.StockBitScanRefines
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.BitBody
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 set_option autoImplicit false

@@ -1,6 +1,11 @@
-import FV.Backend.Proof.StockDivBodyRefines
-import FV.Backend.Proof.StockPureReturnRefines
-import FV.Backend.Proof.StockSingleDivSourceTrap
+module
+
+public import FV.Backend.Proof.StockDivBodyRefines
+public import FV.Backend.Proof.StockPureReturnRefines
+public import FV.Backend.Proof.StockSingleDivSourceTrap
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.DivBody
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 set_option autoImplicit false

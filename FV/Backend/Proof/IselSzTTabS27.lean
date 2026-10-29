@@ -1,4 +1,8 @@
-import FV.Backend.Proof.IselSzTTabData
+module
+
+public import FV.Backend.Proof.IselSzTTabData
+
+@[expose] public section
 
 /-!
 # The size of the ISLE lowering's output over float-capable contexts (typed V6c): rules of `lower`, group 27

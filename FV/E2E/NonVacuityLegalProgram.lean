@@ -1,6 +1,10 @@
-import FV.E2E.LegalSource
-import FV.E2E.LinkPlace
-import FV.Opt.Proof.LegalRust
+module
+
+public import FV.E2E.LegalSource
+public import FV.E2E.LinkPlace
+public import FV.Opt.Proof.LegalRust
+
+@[expose] public section
 
 /-!
 # Non-vacuity of the whole-program refinement of the original `i128` program (S3)

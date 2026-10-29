@@ -1,5 +1,9 @@
-import FV.E2E.LinkArmStage2Z
-import FV.E2E.LinkArmStage2ZS
+module
+
+public import FV.E2E.LinkArmStage2Z
+public import FV.E2E.LinkArmStage2ZS
+
+@[expose] public section
 
 /-!
 # The call contracts with the register prophecy but `x30` (SEM1 #537, #713)

@@ -1,5 +1,9 @@
-import FV.Backend.Proof.IselPrgRoot
-import FV.Backend.Proof.DriverCheck
+module
+
+public import FV.Backend.Proof.IselPrgRoot
+public import FV.Backend.Proof.DriverCheck
+
+@[expose] public section
 
 /-!
 # Progress of the ISLE lowering (V7): the context invariant

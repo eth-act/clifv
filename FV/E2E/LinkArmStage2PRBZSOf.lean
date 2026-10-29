@@ -1,6 +1,10 @@
-import FV.E2E.LinkArmStage2Count
-import FV.E2E.BackendPrefixAtCleanup
-import FV.E2E.IselCallsOneAll
+module
+
+public import FV.E2E.LinkArmStage2Count
+public import FV.E2E.BackendPrefixAtCleanup
+public import FV.E2E.IselCallsOneAll
+
+@[expose] public section
 
 /-!
 # Stage 2 at the call sites from the depth below (SEM1 #537, #680 (3), stage 2 glue (2)+(3))

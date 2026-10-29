@@ -1,6 +1,10 @@
-import FV.Backend.Proof.LowerCert
-import FV.Backend.Proof.LowerShapeOk
-import FV.Backend.Proof.LowerDecide
+module
+
+public import FV.Backend.Proof.LowerCert
+public import FV.Backend.Proof.LowerShapeOk
+public import FV.Backend.Proof.LowerDecide
+
+@[expose] public section
 
 /-!
 # Completeness of the lowering validator (V1)

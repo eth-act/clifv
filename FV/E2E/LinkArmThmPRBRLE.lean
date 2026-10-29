@@ -1,5 +1,9 @@
-import FV.E2E.LinkArmTableECall
-import FV.E2E.LinkArmCountPRBSucc
+module
+
+public import FV.E2E.LinkArmTableECall
+public import FV.E2E.LinkArmCountPRBSucc
+
+@[expose] public section
 
 /-!
 # The linking statement with the prefix-closed table (SEM1 #537, #680 (3), fix of #700, step 4)

@@ -1,5 +1,9 @@
-import FV.Backend.Proof.IselShpRoot
-import FV.Backend.Proof.IselCtl
+module
+
+public import FV.Backend.Proof.IselShpRoot
+public import FV.Backend.Proof.IselCtl
+
+@[expose] public section
 
 /-!
 # Form coverage of the ISLE lowering (V3): the integer results of the `call` rules

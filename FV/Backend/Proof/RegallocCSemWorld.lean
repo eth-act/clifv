@@ -1,4 +1,8 @@
-import FV.Backend.Proof.RegallocCSem
+module
+
+public import FV.Backend.Proof.RegallocCSem
+
+@[expose] public section
 
 /-!
 # Worlds of `csem` steps (M6 proof)

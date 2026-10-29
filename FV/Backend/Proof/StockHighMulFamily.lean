@@ -1,6 +1,11 @@
-import FV.Backend.Proof.StockCmpFamily
-import FV.Backend.Proof.StockHighMulSourceValues
-import FV.Backend.Proof.StockHighMulDispatch
+module
+
+public import FV.Backend.Proof.StockCmpFamily
+public import FV.Backend.Proof.StockHighMulSourceValues
+public import FV.Backend.Proof.StockHighMulDispatch
+
+@[expose] public section
+
 namespace Backend.Stock.Proof.HighMulBody
 open Backend.Proof Backend.Proof.Driver
 set_option autoImplicit false

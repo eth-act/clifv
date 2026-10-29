@@ -1,5 +1,9 @@
-import FV.E2E.FinalT
-import FV.E2E.LinkWorld
+module
+
+public import FV.E2E.FinalT
+public import FV.E2E.LinkWorld
+
+@[expose] public section
 
 /-! # The typed per-function theorem with the final world (S11e5 Stage C, slice 7)
 

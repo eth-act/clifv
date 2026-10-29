@@ -1,9 +1,13 @@
-import FV.Backend.Proof.IselShpTBase
-import FV.Backend.Proof.IselShpTry
-import FV.Backend.Proof.IselCtlTryTI
-import FV.Backend.Proof.LowerContractT
-import FV.Backend.Proof.IselTermFactsTy
-import FV.Backend.Proof.IselCtlUnmatchTI
+module
+
+public import FV.Backend.Proof.IselShpTBase
+public import FV.Backend.Proof.IselShpTry
+public import FV.Backend.Proof.IselCtlTryTI
+public import FV.Backend.Proof.LowerContractT
+public import FV.Backend.Proof.IselTermFactsTy
+public import FV.Backend.Proof.IselCtlUnmatchTI
+
+@[expose] public section
 
 /-!
 # Control shapes of the `try_call` rules over typed contexts (V4)

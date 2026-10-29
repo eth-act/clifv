@@ -1,7 +1,11 @@
-import FV.E2E.IselSimINT
-import FV.E2E.BackendWorldCleanupI
-import FV.E2E.GotFlowI
-import FV.E2E.PrepareSoundW
+module
+
+public import FV.E2E.IselSimINT
+public import FV.E2E.BackendWorldCleanupI
+public import FV.E2E.GotFlowI
+public import FV.E2E.PrepareSoundW
+
+@[expose] public section
 
 /-!
 # The VCode passes keep the trap's world (SEM1 #537, traps under the oracle)

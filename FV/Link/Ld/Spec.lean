@@ -1,4 +1,8 @@
-import FV.Link.Ld.Data
+module
+
+public import FV.Link.Ld.Data
+
+@[expose] public section
 
 /-! # `file0OkB` of `lean-ld`'s output from its plan (L2b stage 3e)
 

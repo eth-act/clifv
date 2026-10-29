@@ -1,4 +1,8 @@
-import FV.Opt.Proof.CompleteDce
+module
+
+public import FV.Opt.Proof.CompleteDce
+
+@[expose] public section
 
 /-!
 # `checkCore` from the certificate facts, and facts of `Cfg.build` (M1)

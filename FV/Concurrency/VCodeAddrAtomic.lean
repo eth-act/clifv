@@ -1,5 +1,9 @@
-import FV.Concurrency.VCodeAddr
-import FV.Backend.Proof.LoopRun
+module
+
+public import FV.Concurrency.VCodeAddr
+public import FV.Backend.Proof.LoopRun
+
+@[expose] public section
 
 /-!
 # The addresses of the memory events of VCode's atomics (T2h, #311, layer 2a)

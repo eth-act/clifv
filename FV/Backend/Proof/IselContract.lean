@@ -1,7 +1,11 @@
-import FV.Backend.Proof.IselGeneric
-import FV.Backend.Proof.IselData
-import FV.Backend.Proof.RegallocOperands
-import FV.Backend.Proof.AbiClass
+module
+
+public import FV.Backend.Proof.IselGeneric
+public import FV.Backend.Proof.IselData
+public import FV.Backend.Proof.RegallocOperands
+public import FV.Backend.Proof.AbiClass
+
+@[expose] public section
 
 /-!
 # The isel contract: what M4 proves about the ISLE rules, and what M7 consumes

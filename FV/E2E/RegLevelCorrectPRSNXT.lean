@@ -1,6 +1,10 @@
-import FV.E2E.RegLevelCorrectPRSNX
-import FV.E2E.RegLevelTrapN
-import FV.E2E.IselSimINT
+module
+
+public import FV.E2E.RegLevelCorrectPRSNX
+public import FV.E2E.RegLevelTrapN
+public import FV.E2E.IselSimINT
+
+@[expose] public section
 
 /-!
 # The per-state trace and the call count up to a trap in the oracle world (SEM1 #537)
