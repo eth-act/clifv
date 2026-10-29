@@ -87,7 +87,7 @@ theorem stackRC : StackAvail 0 (act vcpC rfC).af RC.s0 := by
     generalize j = J at hj' hd
     bv_omega
   · have : (act vcpC rfC).af.frameSize = 160 := hs.2.2.2.2.2.2.2.1
-    exact (ArmAllocThread.Witness.probeBelow_small (by omega)).le
+    exact ArmAllocThread.Witness.probeBelow_le_small (by omega)
 
 theorem wfRC : RC.Wf := by
   obtain ⟨-, h1, h2, h3, h4, h5, h6, -, -, h9⟩ := factsC
@@ -308,7 +308,7 @@ theorem rcF_ge {a : BitVec 64} (h : RC.F a) : 0x6F50 ≤ a.toNat := by
 theorem stackX (hS : StRel RC s m w₀C) : StackAvail 0 (act vcpL rfL).af (enterL s) := by
   have hs := spC
   have hfs : (act vcpL rfL).af.frameSize = 160 := hs.2.2.2.2.2.2.2.2
-  refine ⟨⟨?_, fun a ha => ?_⟩, (ArmAllocThread.Witness.probeBelow_small (by omega)).le⟩
+  refine ⟨⟨?_, fun a ha => ?_⟩, ArmAllocThread.Witness.probeBelow_le_small (by omega)⟩
   · rw [spv_enterL hS, hfs]; decide
   · obtain ⟨j, hj, hd⟩ := codeAddr_words (enterL_program s) ha
     rw [spv_enterL hS, hfs]

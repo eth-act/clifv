@@ -193,7 +193,7 @@ theorem stackRCM : StackAvail 0 (actW vcpM rfM).af RCM.s0 := by
     generalize j = J at hj' hd
     bv_omega
   · have : (actW vcpM rfM).af.frameSize = 176 := hs.2.2.2.2.1
-    exact (ArmAllocThread.Witness.probeBelow_small (by omega)).le
+    exact ArmAllocThread.Witness.probeBelow_le_small (by omega)
 
 theorem wfRCM : RCM.Wf := by
   obtain ⟨-, h1, h2, h3, h4, h5, h6, h9⟩ := factsM
