@@ -47,7 +47,7 @@ theorem a2_twoRunLER {F : BitVec 64 → Prop} {c : BitVec 64} {K : Nat} {args : 
   have hA2 : fA2 ∈ P.funcs := by simp [P]
   have hc := a2_compiled
   obtain ⟨lm, hlm⟩ := FnAsm.layout_labelOffsets hc.layout
-  obtain ⟨body, psF, hpsF, -, hk⟩ := emitFunc_ok hc.emit
+  obtain ⟨p, hpsF, -, hk⟩ := emitFunc_ok hc.emit
   have hx30 : (A fA2).fa.x30Free lm = true := by
     have h := List.all_eq_true.mp x30Free_all fA2 hA2
     rwa [show getOk (labelOffsets (A fA2).fa.lines) = lm by rw [hlm]; rfl] at h
@@ -56,7 +56,7 @@ theorem a2_twoRunLER {F : BitVec 64 → Prop} {c : BitVec 64} {K : Nat} {args : 
     (hL.subset fA2 hA2) hc
     a2_callsOne.1 a2_callsOne.2 (fun _ n _ => a2_xcalls _ _ _ n) (fun _ _ _ => xb_xNI)
     (fun _ => xbTls F) (fun n b h => by cases h) rfl (fun _ => 0) hce hrel hrel hargs
-    (SameWorld.refl _ _) (fun _ _ _ => rfl) (fun _ _ _ _ _ => rfl) htr fuel hlm (hk ▸ hpsF) he he
+    (SameWorld.refl _ _) (fun _ _ _ => rfl) (fun _ _ _ _ _ => rfl) htr fuel hlm ⟨p, hk ▸ hpsF, rfl⟩ he he
     rfl (hL.covered fA2 hA2) hx30
     (fun _ _ _ _ _ _ _ _ _ _ _ hl _ _ => hl) (fun _ _ _ _ _ _ _ _ _ _ _ hl _ _ _ => hl)
     ⟨fun _ _ _ _ => rfl, fun _ _ => rfl⟩ rfl vals cm hrun

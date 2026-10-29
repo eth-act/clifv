@@ -96,7 +96,7 @@ theorem r_twoRunLERW_Lsl (M : Nat) {F : BitVec 64 → Prop} {c : BitVec 64} {K :
             ((epiLines (Lsl.A fR).af.saves (Lsl.A fR).af.frameSize).length + 1)) s) := by
   have hc := fR_compiled
   obtain ⟨lm, hlm⟩ := FnAsm.layout_labelOffsets hc.layout
-  obtain ⟨body, psF, hpsF, -, hk⟩ := emitFunc_ok hc.emit
+  obtain ⟨p, hpsF, -, hk⟩ := emitFunc_ok hc.emit
   have hx30 : (Lsl.A fR).fa.x30Free lm = true := by
     have h := fR_x30Free
     rwa [show getOk (labelOffsets (Lsl.A fR).fa.lines) = lm by rw [hlm]; rfl] at h
@@ -113,7 +113,7 @@ theorem r_twoRunLERW_Lsl (M : Nat) {F : BitVec 64 → Prop} {c : BitVec 64} {K :
       (by rw [hind]; exact xCallsIndOk_nil _ _ _)⟩)
     (fun _ _ _ => by rw [hext, hind]; exact xNI_nil)
     (fun _ => lslTls F) (fun n b h => by cases h) rfl (fun _ => 0) hce hrel hrel hargs
-    (SameWorld.refl _ _) (fun _ _ _ => rfl) (fun _ _ _ _ _ => rfl) htr fuel hlm (hk ▸ hpsF) he he
+    (SameWorld.refl _ _) (fun _ _ _ => rfl) (fun _ _ _ _ _ => rfl) htr fuel hlm ⟨p, hk ▸ hpsF, rfl⟩ he he
     rfl (Lsl_ok.covered fR fR_mem) hx30
     (fun _ _ _ _ _ _ _ _ _ _ _ _ _ x d ⟨j, t, hj, _⟩ hd => by
       obtain ⟨hbl, hblr, -⟩ := noHook_line hnh hj

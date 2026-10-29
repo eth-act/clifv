@@ -233,7 +233,9 @@ theorem stEqOutX_prologueZ_le {R : RL} (hR : R.Wf) {ra : BitVec 64}
   obtain ⟨-, hfs, -, hsv, -, hcb, -, -, -⟩ := RL.frame_facts hR
   have hst0 := hR.stack.frame
   have hs : R.af.frameSize < 2 ^ 64 := by have := hst0.1; have := (spv R.s0).isLt; omega
-  obtain ⟨vb, items, code, ls, ps1, ps2, T, -, -, -, -, -, hj0, hdrop⟩ := entry_block hR
+  obtain ⟨vb, items, code, ps1, pl, Xl, psm, ps2, x, -, -, -, -, -, -, hpl0, hj0, hdrop, -, -⟩ :=
+    entry_block hR
+  subst hpl0
   obtain ⟨s', hsteps, -, -, -, -, -, -⟩ :=
     prologue_ok (R.envOf 1) hs hsv (by rw [hfs]; exact hcb) R.s0 hent.spAligned
   have hpc1 : Arm.r .PC R.s0 = R.pcOf 1 := by
@@ -343,8 +345,8 @@ theorem backend_twoRunLE (hsub : InSubset p f) (hc : Compiled f k vc vcp rf af f
       w₀'.mem (Arm.r (.GPR 29#5) w₀ + BitVec.ofInt 64 (16 + (off : Int)) + BitVec.ofNat 64 k) =
         w₀.mem (Arm.r (.GPR 29#5) w₀ + BitVec.ofInt 64 (16 + (off : Int)) + BitVec.ofNat 64 k))
     (htr : TrapsExplicit env p cs) (fuel : Nat)
-    {lm : Std.HashMap Lbl Nat} (hlm : labelOffsets fa.lines = .ok lm) {body : List Line}
-    {psF : PState} (hpsF : blocksLinesE ⟨fa.k, af.slotBase⟩ af af.blocks.toList {} = .ok (body, psF))
+    {lm : Std.HashMap Lbl Nat} (hlm : labelOffsets fa.lines = .ok lm)
+    {psF : PState} (hpsF : ∃ p, emitPlan fa.k af = .ok p ∧ p.ps = psF)
     {H : ArmHooks} {G G' : BitVec 64 → Prop}
     {base ra ra' : BitVec 64} {Kp Kp' : Nat} {cc cc' : BitVec 64} {P P' : Nat → BitVec 64 → BitVec 8}
     {Rr Rr' : Nat → Arm.ArmState} {s t0 : Arm.ArmState}
@@ -420,7 +422,7 @@ theorem backend_twoRunLE (hsub : InSubset p f) (hc : Compiled f k vc vcp rf af f
     have hW0 : ({ actRL vcp rf af fa fb lm base s XI H psF K G (GotV vcp) with X := XI.at 0 } :
         RL).Wf :=
       ⟨⟨ckc, ins, a0, hat, entryOk_of_le hle⟩, hc.alloc, hc.emit, hc.layout, hlm,
-        by show 4 * fb.words.size ≤ 2 ^ 64; have := he.abi.fits; omega, he.stack, ⟨body, hpsF⟩,
+        by show 4 * fb.words.size ≤ 2 ^ 64; have := he.abi.fits; omega, he.stack, hpsF,
         he.abi.program, he.gfree⟩
     exact (stEqOutX_prologueZ hW0 he.abi hx30 (fun k h8 h16 => RL.lrWord_Zc hW0 _ _ h8 h16)
       (stEqOutX_entryZ hW0 he.abi he'.abi he.body he'.body (fun _ h => h) hsw hag hx29

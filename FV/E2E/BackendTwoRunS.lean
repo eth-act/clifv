@@ -56,8 +56,8 @@ theorem backend_twoRunPRIYS (hsub : InSubset p f) (hc : Compiled f k vc vcp rf a
       VRetFrom vcp
         (ISem.counted fun n => pairSem (csemVGS (GotV vcp) F ⟨fa.k, af.slotBase⟩ (XI.at n) OkG))
         ⟨0, 0, ρ₀, ((w₀, w₀'), 0)⟩ us outs w)
-    {lm : Std.HashMap Lbl Nat} (hlm : labelOffsets fa.lines = .ok lm) {body : List Line}
-    {psF : PState} (hpsF : blocksLinesE ⟨fa.k, af.slotBase⟩ af af.blocks.toList {} = .ok (body, psF))
+    {lm : Std.HashMap Lbl Nat} (hlm : labelOffsets fa.lines = .ok lm)
+    {psF : PState} (hpsF : ∃ p, emitPlan fa.k af = .ok p ∧ p.ps = psF)
     {H : ArmHooks} {G G' : BitVec 64 → Prop}
     {base ra ra' : BitVec 64} {Kp Kp' : Nat} {cc cc' : BitVec 64} {P P' : Nat → BitVec 64 → BitVec 8}
     {Rr Rr' : Nat → Arm.ArmState} {s t0 : Arm.ArmState}

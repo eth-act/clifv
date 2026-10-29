@@ -35,7 +35,8 @@ def RL.SegFrom (R : RL) (P : Arm.ArmState → Prop) (c : MConf CV Arm.ArmState) 
 
 /-- **The call states of a realised segment are its start** (`realizes_allC0`'s argument, from
 the alignment `QW` at the start and the segment's call count). -/
-theorem RL.segStart_of_qw {R : RL} {s : Arm.ArmState} {j : Nat} {ps1 : PState} {T : List Line}
+theorem RL.segStart_of_qw {R : RL} (hR : R.Wf) {s : Arm.ArmState} {j : Nat} {ps1 : PState}
+    {T : List Line}
     {c : MConf CV Arm.ArmState} (hq : QW R s j ps1 T c) {n : Nat}
     (hcnt : countIn R.CallSt R.step s n = opCalls R.vc c) :
     ∀ k < n, R.CallSt (iterN R.step k s) → k = 0 := by
@@ -48,14 +49,15 @@ theorem RL.segStart_of_qw {R : RL} {s : Arm.ArmState} {j : Nat} {ps1 : PState} {
     omega
   rw [hcnt] at h1
   obtain ⟨b, k', allocs, its, m, w, vb, ins, rfl, hvb, hi', hcI⟩ := opCalls_pos (vc := R.vc) h1
-  have hcs := RL.callSt_of_q_call hq.q hvb hi' hcI
+  have hcs := RL.callSt_of_q_call hR hq.q hvb hi' hcI
   have h2 := countIn_two_le hcs (Nat.pos_of_ne_zero hne) hk hck
   rw [hcnt] at h2
   simp [opCalls, hvb, hi', hcI] at h2
 
 /-- **`RL.segStart_of_qw` from `QWA`** (the alignment `realizes_allCWSF` carries since the
 Cranelift frame, #479: `QW ∧ AInv` or a return tail). -/
-theorem RL.segStart_of_qwa {R : RL} {s : Arm.ArmState} {j : Nat} {ps1 : PState} {T : List Line}
+theorem RL.segStart_of_qwa {R : RL} (hR : R.Wf) {s : Arm.ArmState} {j : Nat} {ps1 : PState}
+    {T : List Line}
     {c : MConf CV Arm.ArmState} (hq : QWA R s j ps1 T c) {n : Nat}
     (hcnt : countIn R.CallSt R.step s n = opCalls R.vc c) :
     ∀ k < n, R.CallSt (iterN R.step k s) → k = 0 := by
@@ -68,7 +70,7 @@ theorem RL.segStart_of_qwa {R : RL} {s : Arm.ArmState} {j : Nat} {ps1 : PState} 
     omega
   rw [hcnt] at h1
   obtain ⟨b, k', allocs, its, m, w, vb, ins, rfl, hvb, hi', hcI⟩ := opCalls_pos (vc := R.vc) h1
-  have hcs := RL.callSt_of_q_call (qa_q hq.qa).choose_spec hvb hi' hcI
+  have hcs := RL.callSt_of_q_call hR (qa_q hq.qa).choose_spec hvb hi' hcI
   have h2 := countIn_two_le hcs (Nat.pos_of_ne_zero hne) hk hck
   rw [hcnt] at h2
   simp [opCalls, hvb, hi', hcI] at h2
@@ -124,7 +126,7 @@ theorem RL.jointSegTP {R R' : RL} (hR : R.Wf) (hR' : R'.Wf) (hsc : R.SameCode R'
   have hd := hsh d d' hm hm'
   obtain ⟨rfl, hL⟩ := RL.seg_lock hsc hc hd hs hs' Lk hLpc h0 fun i hi hi' hl =>
     hstep i _ _ ⟨s, j, ps1, T, d, n, hq, hm, hs, hi, rfl, hf⟩
-      ⟨s, n, hP, rfl, hi, hcnt, RL.segStart_of_qwa hq hcnt⟩
+      ⟨s, n, hP, rfl, hi, hcnt, RL.segStart_of_qwa hR hq hcnt⟩
       ⟨s', j, ps1, T, d', n', hq', hm', hs', hi', rfl, hf'⟩
       (ht i hi) (ht' i hi') hl
   have hW := RL.nextW_shape hsc j ps1 T hc hd
@@ -423,8 +425,8 @@ on `RL.twoRunCTP`). -/
 theorem RL.twoRunPRTP {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAsm} {fb : FnBin} {k : Nat}
     (hcheck : checkAlloc vcp rf = .ok ()) (halloc : lowerRFunc vcp rf = .ok af)
     (hemit : emitFunc k af = .ok fa) (hlayout : fa.layout = .ok fb)
-    {lm : Std.HashMap Lbl Nat} (hlm : labelOffsets fa.lines = .ok lm) {body : List Line}
-    {psF : PState} (hpsF : blocksLinesE ⟨fa.k, af.slotBase⟩ af af.blocks.toList {} = .ok (body, psF))
+    {lm : Std.HashMap Lbl Nat} (hlm : labelOffsets fa.lines = .ok lm)
+    {psF : PState} (hpsF : ∃ p, emitPlan fa.k af = .ok p ∧ p.ps = psF)
     {XI XI' : ExtSemI} {H : ArmHooks} {K : Nat} {F F' G G' : BitVec 64 → Prop}
     {base ra ra' : BitVec 64} {Kp Kp' : Nat} {cc cc' : BitVec 64} {P P' : Nat → BitVec 64 → BitVec 8}
     {Rr Rr' : Nat → Arm.ArmState} {s t0 w₀ w₀' : Arm.ArmState}
@@ -527,10 +529,10 @@ theorem RL.twoRunPRTP {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAsm} {fb :
   exact RL.twoRunCTP (R := actRL vcp rf af fa fb lm base s XI H psF K G (GotV vcp)) (t0 := t0)
     (G' := G') (XI := XI) (XI' := XI')
     (fun _ => ⟨⟨ckc, ins, a0, hat, entryOk_of_le hle⟩, halloc, hemit, hlayout, hlm,
-      by show 4 * fb.words.size ≤ 2 ^ 64; have := he.abi.fits; omega, he.stack, ⟨body, hpsF⟩,
+      by show 4 * fb.words.size ≤ 2 ^ 64; have := he.abi.fits; omega, he.stack, hpsF,
       he.abi.program, he.gfree⟩)
     (fun _ => ⟨⟨ckc, ins, a0, hat, entryOk_of_le hle⟩, halloc, hemit, hlayout, hlm,
-      by show 4 * fb.words.size ≤ 2 ^ 64; have := he'.abi.fits; omega, he'.stack, ⟨body, hpsF⟩,
+      by show 4 * fb.words.size ≤ 2 ^ 64; have := he'.abi.fits; omega, he'.stack, hpsF,
       he'.abi.program, he'.gfree⟩)
     hat ρ₀ (fun _ => Inv_mono hle Inv_entryState) he.abi he'.abi he.body he'.body OkG OkG'
     (fun n => (he.calls n).mono fun _ h => ⟨onCallPR_of he.proph he.regp h.1, h.2⟩)

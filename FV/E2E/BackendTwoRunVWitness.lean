@@ -178,9 +178,8 @@ theorem source_twoRunLERWZIUV :
   refine ⟨vc, vcp, af, fa, fb, hc, fun env K F c w₀ args cs hce hrel hargs htr fuel vals cm hrun
     G G' base ra ra' Kp Kp' cc cc' Pp Pp' Rr Rr' s t0 he he' hag hx29 => ?_⟩
   obtain ⟨lm, hlm⟩ := FnAsm.layout_labelOffsets hc.layout
-  obtain ⟨body, psF, hpsF, -, hk⟩ := emitFunc_ok hc.emit
-  have hpsF' : blocksLinesE ⟨fa.k, af.slotBase⟩ af af.blocks.toList {} = .ok (body, psF) := by
-    rw [hk]; exact hpsF
+  obtain ⟨p, hpsF, -, hk⟩ := emitFunc_ok hc.emit
+  have hpsF' : ∃ p', emitPlan fa.k af = .ok p' ∧ p'.ps = p.ps := ⟨p, hk ▸ hpsF, rfl⟩
   have hx30 : fa.x30Free lm = true := by
     rwa [show getOk (labelOffsets fa.lines) = lm by rw [hlm]; rfl] at hx30'
   have hnil : (locsOf source.sig).zip args = [] := by
@@ -237,9 +236,8 @@ theorem source_twoRunLERWZIUF_either :
   refine ⟨vc, vcp, af, fa, fb, .cleanup hc, fun env K F c w₀ args cs hce hrel hargs htr fuel vals cm
     hrun G G' base ra ra' Kp Kp' cc cc' Pp Pp' Rr Rr' s t0 he he' hag hx29 => ?_⟩
   obtain ⟨lm, hlm⟩ := FnAsm.layout_labelOffsets hc.layout
-  obtain ⟨body, psF, hpsF, -, hk⟩ := emitFunc_ok hc.emit
-  have hpsF' : blocksLinesE ⟨fa.k, af.slotBase⟩ af af.blocks.toList {} = .ok (body, psF) := by
-    rw [hk]; exact hpsF
+  obtain ⟨p, hpsF, -, hk⟩ := emitFunc_ok hc.emit
+  have hpsF' : ∃ p', emitPlan fa.k af = .ok p' ∧ p'.ps = p.ps := ⟨p, hk ▸ hpsF, rfl⟩
   have hx30 : fa.x30Free lm = true := by
     rwa [show getOk (labelOffsets fa.lines) = lm by rw [hlm]; rfl] at hx30'
   have hnil : (locsOf source.sig).zip args = [] := by
@@ -330,9 +328,8 @@ theorem r_twoRunLERWZIUV_Lsl (M : Nat) :
     hstk htr fuel vals cm hrun G G' base ra ra' Kp Kp' cc cc' Pp Pp' Rr Rr' s t0 he he' hag hx29 =>
     ?_⟩
   obtain ⟨lm, hlm⟩ := FnAsm.layout_labelOffsets hc.layout
-  obtain ⟨body, psF, hpsF, -, hk⟩ := emitFunc_ok hc.emit
-  have hpsF' : blocksLinesE ⟨fa.k, af.slotBase⟩ af af.blocks.toList {} = .ok (body, psF) := by
-    rw [hk]; exact hpsF
+  obtain ⟨p, hpsF, -, hk⟩ := emitFunc_ok hc.emit
+  have hpsF' : ∃ p', emitPlan fa.k af = .ok p' ∧ p'.ps = p.ps := ⟨p, hk ▸ hpsF, rfl⟩
   have hx30 : fa.x30Free lm = true := by
     rwa [show getOk (labelOffsets fa.lines) = lm by rw [hlm]; rfl] at hx30'
   obtain ⟨us, outs, w, ⟨b, kk, ρ, w₁, vb, ops, outs', hs, hvb, hkk, hops, hvals, hsem⟩, -⟩ :=
@@ -380,7 +377,7 @@ theorem r_twoRunLERWZIUF_either_Lsl (M : Nat) {F : BitVec 64 → Prop} {c : BitV
             ((epiLines (Lsl.A fR).af.saves (Lsl.A fR).af.frameSize).length + 1)) s) := by
   have hc := fR_compiled
   obtain ⟨lm, hlm⟩ := FnAsm.layout_labelOffsets hc.layout
-  obtain ⟨body, psF, hpsF, -, hk⟩ := emitFunc_ok hc.emit
+  obtain ⟨p, hpsF, -, hk⟩ := emitFunc_ok hc.emit
   have hx30 : (Lsl.A fR).fa.x30Free lm = true := by
     have h := fR_x30Free
     rwa [show getOk (labelOffsets (Lsl.A fR).fa.lines) = lm by rw [hlm]; rfl] at h
@@ -391,7 +388,7 @@ theorem r_twoRunLERWZIUF_either_Lsl (M : Nat) {F : BitVec 64 → Prop} {c : BitV
     (tryCallsOne_all fR) (fun _ _ _ => fR_xcalls _ _ _) (fun _ _ _ => fR_xnif)
     (fun _ => lslTls F) (fun n b h => by cases h) rfl (fun _ h => h.elim) (fun _ => 0) hce hrel
     hrel hargs (SameWorld.refl _ _) (fun _ _ _ => rfl) (fun _ _ _ _ _ => rfl) htr fuel hrun hlm
-    (hk ▸ hpsF) he (he'.toN 0)
+    ⟨p, hk ▸ hpsF, rfl⟩ he (he'.toN 0)
     (fun n => (he'.calls n).mono fun _ hu => hu.1)
     (fun ht n => (he'.tries ht n).mono fun _ hu => hu.1)
     rfl (Lsl_ok.covered fR fR_mem) hx30
@@ -445,9 +442,8 @@ theorem r_twoRunLERWZIUPV_Lsl (M : Nat) :
     hstk htr fuel vals cm hrun G G' base ra ra' Kp Kp' cc cc' Pp Pp' Rr Rr' s t0 he he' hag hx29 =>
     ?_⟩
   obtain ⟨lm, hlm⟩ := FnAsm.layout_labelOffsets hc.layout
-  obtain ⟨body, psF, hpsF, -, hk⟩ := emitFunc_ok hc.emit
-  have hpsF' : blocksLinesE ⟨fa.k, af.slotBase⟩ af af.blocks.toList {} = .ok (body, psF) := by
-    rw [hk]; exact hpsF
+  obtain ⟨p, hpsF, -, hk⟩ := emitFunc_ok hc.emit
+  have hpsF' : ∃ p', emitPlan fa.k af = .ok p' ∧ p'.ps = p.ps := ⟨p, hk ▸ hpsF, rfl⟩
   have hx30 : fa.x30Free lm = true := by
     rwa [show getOk (labelOffsets fa.lines) = lm by rw [hlm]; rfl] at hx30'
   obtain ⟨us, outs, w, ⟨b, kk, ρ, w₁, vb, ops, outs', hs, hvb, hkk, hops, hvals, hsem⟩, -⟩ :=
@@ -505,9 +501,8 @@ theorem source_twoRunLERWZIUPF_either :
   refine ⟨vc, vcp, af, fa, fb, .cleanup hc, fun env K F c w₀ args cs hce hrel hargs htr fuel vals cm
     hrun G G' base ra ra' Kp Kp' cc cc' Pp Pp' Rr Rr' s t0 he he' hag hx29 => ?_⟩
   obtain ⟨lm, hlm⟩ := FnAsm.layout_labelOffsets hc.layout
-  obtain ⟨body, psF, hpsF, -, hk⟩ := emitFunc_ok hc.emit
-  have hpsF' : blocksLinesE ⟨fa.k, af.slotBase⟩ af af.blocks.toList {} = .ok (body, psF) := by
-    rw [hk]; exact hpsF
+  obtain ⟨p, hpsF, -, hk⟩ := emitFunc_ok hc.emit
+  have hpsF' : ∃ p', emitPlan fa.k af = .ok p' ∧ p'.ps = p.ps := ⟨p, hk ▸ hpsF, rfl⟩
   have hx30 : fa.x30Free lm = true := by
     rwa [show getOk (labelOffsets fa.lines) = lm by rw [hlm]; rfl] at hx30'
   have hnil : (locsOf source.sig).zip args = [] := by

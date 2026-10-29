@@ -123,8 +123,8 @@ theorem regLevelCorrect_world_atCSW {vcp : VCode} {rf : RFunc} {af : AFunc} {fa 
     {a0 : AState} (hcheck : CheckedAt vcp rf cc ins a0) (hok : EntryOk a0)
     (halloc : lowerRFunc vcp rf = .ok af)
     (hemit : emitFunc k af = .ok fa) (hlayout : fa.layout = .ok fb)
-    {lm : Std.HashMap Lbl Nat} (hlm : labelOffsets fa.lines = .ok lm) {body : List Line}
-    {psF : PState} (hpsF : blocksLinesE ⟨fa.k, af.slotBase⟩ af af.blocks.toList {} = .ok (body, psF))
+    {lm : Std.HashMap Lbl Nat} (hlm : labelOffsets fa.lines = .ok lm)
+    {psF : PState} (hpsF : ∃ p, emitPlan fa.k af = .ok p ∧ p.ps = psF)
     {XI : ExtSemI} {H : ArmHooks}
     {K : Nat} {G : BitVec 64 → Prop} {gv : Nat → String → Prop}
     (Ok : Arm.ArmState → (BitVec 64 → Prop) → Prop)
@@ -171,7 +171,7 @@ theorem regLevelCorrect_world_atCSW {vcp : VCode} {rf : RFunc} {af : AFunc} {fa 
   let Rn : Nat → RL := fun n => ⟨vcp, rf, af, fa, fb, lm, base, s, XI.at n, H, psF, K, G, gv⟩
   let R : RL := Rn 0
   have hRn : ∀ n, (Rn n).Wf := fun _ => ⟨⟨cc, ins, a0, hcheck, hok⟩, halloc, hemit, hlayout, hlm,
-    by show 4 * fb.words.size ≤ 2 ^ 64; have := hent.fits; omega, hres, ⟨body, hpsF⟩, hent.program, hG⟩
+    by show 4 * fb.words.size ≤ 2 ^ 64; have := hent.fits; omega, hres, hpsF, hent.program, hG⟩
   have hR : R.Wf := hRn 0
   have hck := (lowerRFunc_ok hR.alloc).2.2
   obtain ⟨n0, hn0, ht0, hq0, hA0, -⟩ := q_initNA (Y := fun _ => True) hR hent hbe

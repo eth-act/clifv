@@ -37,8 +37,8 @@ theorem backend_twoRunLERWZNpW (hc : Compiled f k vc vcp rf af fa fb)
     (hops : (MInst.rets us).operands = .ok ops) (hvals : outs = vuses ops ρ)
     (hsem : pairDI (csemV (GotV vcp) F ⟨fa.k, af.slotBase⟩) F ⟨fa.k, af.slotBase⟩ XI (.rets us)
       outs w₁ = some (outs', w, .ret))
-    {lm : Std.HashMap Lbl Nat} (hlm : labelOffsets fa.lines = .ok lm) {body : List Line}
-    {psF : PState} (hpsF : blocksLinesE ⟨fa.k, af.slotBase⟩ af af.blocks.toList {} = .ok (body, psF))
+    {lm : Std.HashMap Lbl Nat} (hlm : labelOffsets fa.lines = .ok lm)
+    {psF : PState} (hpsF : ∃ p, emitPlan fa.k af = .ok p ∧ p.ps = psF)
     {H : ArmHooks} {G G' : BitVec 64 → Prop}
     {base ra ra' : BitVec 64} {Kp Kp' : Nat} {cc cc' : BitVec 64} {P P' : Nat → BitVec 64 → BitVec 8}
     {Rr Rr' : Nat → Arm.ArmState} {s t0 : Arm.ArmState} {N : Nat}
@@ -108,7 +108,7 @@ theorem backend_twoRunLERWZNpW (hc : Compiled f k vc vcp rf af fa fb)
     obtain ⟨a0, hat, hle⟩ := hck.at
     exact ⟨⟨ckc, ins, a0, hat, entryOk_of_le hle⟩, hc.alloc, hc.emit, hc.layout, hlm,
       by show 4 * fb.words.size ≤ 2 ^ 64; have := he.abi.fits; omega, he.stack,
-      ⟨body, hpsF⟩, he.abi.program, he.gfree⟩
+      hpsF, he.abi.program, he.gfree⟩
   have hPe : (prologueLines (actRL vcp rf af fa fb lm base s (XI.upTo N) H psF K G
       (GotV vcp)).af.saves (actRL vcp rf af fa fb lm base s (XI.upTo N) H psF K G
       (GotV vcp)).af.frameSize).length = (prologueLines af.saves af.frameSize).length := rfl
@@ -172,7 +172,7 @@ theorem backend_twoRunLERWZNpW (hc : Compiled f k vc vcp rf af fa fb)
     have hcs : (actRL vcp rf af fa fb lm base s (XI.upTo N) H psF K G (GotV vcp)).CallSt
         (iterN ({ actRL vcp rf af fa fb lm base s (XI.upTo N) H psF K G (GotV vcp) with
           X := (XI.upTo N).at 0 } : RL).step ((prologueLines af.saves af.frameSize).length + T) s) :=
-      RL.callSt_of_q_call (qa_q (QWA.qaX hqA hW0 he.abi)).choose_spec hvb hi hcI
+      RL.callSt_of_q_call hW0 (qa_q (QWA.qaX hqA hW0 he.abi)).choose_spec hvb hi hcI
     have hpcEq := hLB.1.1 .PC (by simp)
     refine ⟨T, fun i hi => ?_, hc1, hc2, hcs, ?_, fun x hFx hDx => ?_⟩
     · rw [hPe] at hi
