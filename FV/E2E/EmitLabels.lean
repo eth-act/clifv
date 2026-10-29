@@ -16,8 +16,9 @@ defined label — the first two premises of `emitFunc_layout_total`.
 The emitted lines are tracked as `Chunk`s: the labels a piece of code defines (block labels, the
 jump-table and atomic-loop labels of the counters' new range) are distinct, and every label it
 uses is defined in it, a deferred trap's (`.trap n`, pushed with its use) or a block label among
-the branch targets. `fallthrough` (`ftList`) and relaxation (`relaxLines`) keep the defined labels
-and use no new one (`ftList_spec`, `relaxLines_spec`). The block labels are distinct
+the branch targets. `MachBuffer`'s simplification (`machBuf`) and relaxation (`relaxLines`) keep
+the defined labels and use no new one (`machBuf_labels`, `emitPlan_labels`, `relaxLines_spec`).
+The block labels are distinct
 (`prepare_labels_nodup`); the allocated instructions keep the VCode's branch targets
 (`assign_targets`, `itemsCode_targets`). That every branch target of the prepared VCode is a block
 label is the decidable premise `branchTargetsOkB` (`VCode.cfg` checks it for the last instruction
@@ -161,39 +162,268 @@ theorem relaxLines_spec (far : Lbl → Bool) : ∀ L : List Line,
     · exact List.mem_append_left _ (h2 x hx)
     · exact List.mem_append_right _ (ih2 x hx)
 
-/-! ## `fallthrough` keeps the labels -/
+/-! ## `MachBuffer`'s simplification keeps the labels -/
 
-theorem ftStep_spec (ln : Line) (rest : List Line) :
-    defs (ftStep ln rest[0]? rest[1]?).1 = defs ((ln :: rest).take (ftStep ln rest[0]? rest[1]?).2) ∧
-      ∀ x ∈ uses (ftStep ln rest[0]? rest[1]?).1,
-        x ∈ uses ((ln :: rest).take (ftStep ln rest[0]? rest[1]?).2) := by
-  rcases rest with _ | ⟨a, _ | ⟨b, rest⟩⟩
-  all_goals simp only [List.getElem?_cons_zero, List.getElem?_cons_succ, List.getElem?_nil]
-  all_goals unfold ftStep
-  all_goals constructor
-  all_goals repeat' split
-  all_goals simp_all [lineDef]
-  exact fun x hx => invertTo_used _ _ none x hx
+/-- A relabelled line uses its own labels or the image of its target (another label). -/
+theorem relabel_used (f : Lbl → Lbl) (ln : Line) :
+    ∀ x ∈ (ln.relabel f).labelsUsed, x ∈ ln.labelsUsed ∨ ∃ t, ln.target? = some t ∧ x = f t := by
+  intro x hx
+  cases ln with
+  | label _ => simp [Line.relabel, Line.labelsUsed] at hx
+  | word t b =>
+    simp only [Line.relabel, Line.labelsUsed, List.mem_cons, List.not_mem_nil, or_false] at hx
+    rcases hx with rfl | rfl
+    · exact .inr ⟨t, rfl, rfl⟩
+    · exact .inl (by simp [Line.labelsUsed])
+  | ins i tc =>
+    cases i <;> simp only [Line.relabel, Line.target?, Insn.setTarget] at hx <;>
+      first
+      | exact .inl hx
+      | (refine .inr ⟨_, rfl, ?_⟩
+         simp only [Line.labelsUsed, Insn.pcRelSpec?] at hx
+         split at hx <;> simp_all)
 
-theorem ftList_spec : ∀ (n : Nat) (L : List Line), L.length ≤ n →
-    defs (ftList L) = defs L ∧ ∀ x ∈ uses (ftList L), x ∈ uses L
-  | _, [], _ => by simp [ftList]
-  | 0, _ :: _, h => by simp at h
-  | n + 1, ln :: rest, h => by
-    rw [ftList_cons]
-    obtain ⟨h1, h2⟩ := ftStep_spec ln rest
-    have hp := (ftStep_pos ln rest[0]? rest[1]?).1
-    generalize ftStep ln rest[0]? rest[1]? = st at *
-    obtain ⟨out, k⟩ := st
-    simp only at h1 h2 hp ⊢
-    obtain ⟨ih1, ih2⟩ := ftList_spec n ((ln :: rest).drop k) (by simp at h ⊢; omega)
-    have e := List.take_append_drop k (ln :: rest)
-    refine ⟨by rw [defs_append, h1, ih1, ← defs_append, e], fun x hx => ?_⟩
-    rw [← e, uses_append, List.mem_append]
-    rw [uses_append, List.mem_append] at hx
+/-- The labels at most once in the alias resolution: `res l` is `l` or an alias' target. -/
+theorem res_cases (m : MBuf) (l : Lbl) : m.res l = l ∨ ∃ k, m.alias[k]? = some (m.res l) := by
+  unfold MBuf.res
+  simp only [Id.run, Std.Legacy.Range.forIn_eq_forIn_range']
+  refine mbForIn_inv (P := fun x : Lbl => x = l ∨ ∃ k, m.alias[k]? = some x) _ _ _ (.inl rfl) ?_
+  intro _ s _
+  split
+  · rename_i l' h; exact .inr ⟨s, h⟩
+  · assumption
+
+/-- The facts `MachBuffer` keeps of the lines `I` pushed so far: the same labels defined, labels
+used among `I`'s, aliases to labels `I` uses. -/
+def MBOk (I : List Line) (m : MBuf) : Prop :=
+  defs m.out.toList = defs I ∧ (∀ x ∈ uses m.out.toList, x ∈ uses I) ∧
+    ∀ k x, m.alias[k]? = some x → x ∈ uses I
+
+theorem uses_eraseIdx : ∀ (L : List Line) (k : Nat), ∀ x ∈ uses (L.eraseIdx k), x ∈ uses L
+  | [], _, x, hx => by simp at hx
+  | a :: L, 0, x, hx => by
+    rw [List.eraseIdx_cons_zero] at hx
+    exact by rw [show a :: L = [a] ++ L from rfl, uses_append]; exact List.mem_append_right _ hx
+  | a :: L, k + 1, x, hx => by
+    rw [List.eraseIdx_cons_succ, show a :: L.eraseIdx k = [a] ++ L.eraseIdx k from rfl,
+      uses_append, List.mem_append] at hx
+    rw [show a :: L = [a] ++ L from rfl, uses_append, List.mem_append]
     rcases hx with hx | hx
-    · exact .inl (h2 x hx)
-    · exact .inr (ih2 x hx)
+    · exact .inl hx
+    · exact .inr (uses_eraseIdx L k x hx)
+
+theorem defs_eraseIdx : ∀ (L : List Line) (k : Nat), (∀ ln, L[k]? = some ln → lineDef ln = none) →
+    defs (L.eraseIdx k) = defs L
+  | [], _, _ => rfl
+  | a :: L, 0, h => by
+    have := h a rfl
+    simp [defs, List.filterMap_cons, this]
+  | a :: L, k + 1, h => by
+    have := defs_eraseIdx L k (fun ln hl => h ln (by simpa using hl))
+    simp only [List.eraseIdx_cons_succ, defs, List.filterMap_cons] at this ⊢
+    rw [this]
+
+theorem defs_set : ∀ (L : List Line) (p : Nat) (y : Line), lineDef y = none →
+    (∀ ln, L[p]? = some ln → lineDef ln = none) → defs (L.set p y) = defs L
+  | [], _, _, _, _ => rfl
+  | a :: L, 0, y, hy, h => by
+    have := h a rfl
+    simp [defs, List.filterMap_cons, this, hy]
+  | a :: L, p + 1, y, hy, h => by
+    have := defs_set L p y hy (fun ln hl => h ln (by simpa using hl))
+    simp only [List.set_cons_succ, defs, List.filterMap_cons] at this ⊢
+    rw [this]
+
+theorem uses_set : ∀ (L : List Line) (p : Nat) (y : Line) (U : List Lbl),
+    (∀ x ∈ uses L, x ∈ U) → (∀ x ∈ y.labelsUsed, x ∈ U) → ∀ x ∈ uses (L.set p y), x ∈ U
+  | [], _, _, _, h, _ => by simpa using h
+  | a :: L, 0, y, U, h, hy, x, hx => by
+    rw [List.set_cons_zero, show y :: L = [y] ++ L from rfl, uses_append, List.mem_append] at hx
+    rcases hx with hx | hx
+    · exact hy x (by simpa [uses] using hx)
+    · exact h x (by rw [show a :: L = [a] ++ L from rfl, uses_append]; exact List.mem_append_right _ hx)
+  | a :: L, p + 1, y, U, h, hy, x, hx => by
+    rw [List.set_cons_succ, show a :: L.set p y = [a] ++ L.set p y from rfl, uses_append,
+      List.mem_append] at hx
+    rcases hx with hx | hx
+    · exact h x (by rw [show a :: L = [a] ++ L from rfl, uses_append]; exact List.mem_append_left _ hx)
+    · exact uses_set L p y U (fun x' h' => h x' (by
+        rw [show a :: L = [a] ++ L from rfl, uses_append]; exact List.mem_append_right _ h')) hy x hx
+
+/-- The target of a line `MBuf.step` considers is a label it uses. -/
+theorem stepLine_used {ln : Line} {t : Lbl} (h : (ln.ubr?).orElse (fun _ => ln.cbr?) = some t) :
+    t ∈ ln.labelsUsed := by
+  cases ln with
+  | ins i tc =>
+    cases tc with
+    | none =>
+      cases i <;> simp_all [Line.ubr?, Line.cbr?, Option.orElse, Insn.condTarget?,
+        Line.labelsUsed, Insn.pcRelSpec?] <;>
+        (try split at h) <;> simp_all
+    | some _ => simp [Line.ubr?, Line.cbr?, Option.orElse] at h
+  | _ => simp [Line.ubr?, Line.cbr?, Option.orElse] at h
+
+/-- `lastCode` names a line that is no label. -/
+theorem lastCode_noLabel (out : Array Line) : ∀ (n k : Nat), lastCode out n = some k →
+    ∃ ln, out[k]? = some ln ∧ lineDef ln = none
+  | 0, _, h => by simp [lastCode] at h
+  | n + 1, k, h => by
+    unfold lastCode at h
+    cases hx : out[n]? with
+    | none => simp only [hx] at h; cases h
+    | some ln =>
+      simp only [hx] at h
+      cases ln with
+      | label _ => exact lastCode_noLabel out n k h
+      | _ => simp only [Option.some.injEq] at h; subst h; exact ⟨_, hx, rfl⟩
+
+theorem step_mbOk {I : List Line} (allLabels : Bool) (m m' : MBuf) (hm : MBOk I m)
+    (h : MBuf.step allLabels m = some m') : MBOk I m' := by
+  obtain ⟨hd, hu, ha⟩ := hm
+  unfold MBuf.step at h
+  rcases hlc : lastCode m.out m.out.size with - | k
+  · simp [hlc] at h
+  obtain ⟨-, ln, hkln⟩ := lastCode_spec m.out m.out.size k hlc
+  have hln : m.out[k]! = ln := by simp [getElem!_def, hkln]
+  have hkl' : m.out.toList[k]? = some ln := by simpa using hkln
+  have hnl : lineDef ln = none := by
+    obtain ⟨ln', h1, h2⟩ := lastCode_noLabel m.out m.out.size k hlc
+    rw [hkln] at h1; cases h1; exact h2
+  have hlnU : ∀ x ∈ ln.labelsUsed, x ∈ uses I := fun x hx =>
+    hu x (mem_uses.2 ⟨ln, List.mem_of_getElem? hkl', hx⟩)
+  have hE : MBOk I { m with out := m.erase k } :=
+    ⟨by simp only [MBuf.erase, List.toList_toArray]
+        rw [defs_eraseIdx _ k (fun ln' h' => by rw [hkl'] at h'; cases h'; exact hnl)]; exact hd,
+      fun x hx => hu x (uses_eraseIdx _ k x (by simpa [MBuf.erase] using hx)), ha⟩
+  rcases ht : (ln.ubr?).orElse (fun _ => ln.cbr?) with - | t
+  · simp only [hlc, hln, ht, Option.bind_eq_bind, Option.bind_some, Option.bind_none] at h
+    cases h
+  have htU : t ∈ uses I := hlnU t (stepLine_used ht)
+  simp only [hlc, hln, ht, Option.bind_eq_bind, Option.bind_some, Option.bind_none] at h
+  repeat' split at h
+  all_goals first
+    | (simp at h; done)
+    | (cases h; exact hE)
+    | (cases h; exact ⟨hd, hu, ha⟩)
+    | (cases h
+       refine ⟨hd, hu, fun k' x hx => ?_⟩
+       rw [List.foldl_eq_foldr_reverse] at hx
+       induction (List.reverse _) with
+       | nil => exact ha k' x hx
+       | cons a as ih =>
+         simp only [List.foldr_cons, Std.TreeMap.getElem?_insert] at hx
+         split at hx
+         · cases hx; exact htU
+         · exact ih hx)
+    | skip
+  all_goals
+    rcases hpp : lastCode m.out k with - | p
+    · simp only [hpp, Option.bind_none] at h; cases h
+    obtain ⟨hpk, lp, hlp⟩ := lastCode_spec _ _ _ hpp
+    have hlp' : m.out[p]! = lp := by simp [getElem!_def, hlp]
+    simp only [hpp, hlp', Option.bind_some] at h
+    split at h
+    · cases h; exact hE
+    rcases hct : lp.cbr? with - | ct
+    · simp only [hct, Option.bind_none] at h; cases h
+    simp only [hct, Option.bind_some] at h
+    split at h
+    · cases h
+    split at h
+    · rename_i c tc _
+      cases h
+      have hlpE : (m.erase k).toList[p]? = some lp := by
+        simp only [MBuf.erase, List.toList_toArray, List.getElem?_eraseIdx_of_lt hpk,
+          Array.getElem?_toList, hlp]
+      have hlpd : lineDef lp = none := by
+        cases lp <;> simp_all [Line.cbr?, lineDef]
+      have hlpU : ∀ x ∈ lp.labelsUsed, x ∈ uses I := fun x hx =>
+        hu x (mem_uses.2 ⟨lp, List.mem_of_getElem? (by simpa using hlp), hx⟩)
+      have hlpc : lp = .ins c tc := by
+        cases lp <;> simp_all [Line.cbr?]
+      subst hlpc
+      refine ⟨?_, fun x hx => ?_, ha⟩
+      · show defs ((m.erase k).set! p _).toList = _
+        rw [Array.set!, Array.toList_setIfInBounds,
+          defs_set _ p _ (by simp [lineDef]) (fun ln' h' => by rw [hlpE] at h'; cases h'; exact hlpd)]
+        exact hE.1
+      · have hx' : x ∈ uses (((m.erase k).toList).set p (.ins (c.invertTo t) tc)) := by
+          simpa [Array.set!, Array.toList_setIfInBounds] using hx
+        refine uses_set _ p _ (uses I) hE.2.1 (fun y hy => ?_) x hx'
+        rcases invertTo_used c t tc y hy with hy | hy
+        · exact hlpU y hy
+        · simp [Line.labelsUsed, Insn.pcRelSpec?] at hy
+          obtain ⟨-, rfl⟩ := hy
+          exact htU
+    · cases h
+
+theorem optimize_mbOk {I : List Line} (allLabels : Bool) (m : MBuf) (hm : MBOk I m) :
+    MBOk I (MBuf.optimize allLabels m) := by
+  unfold MBuf.optimize
+  simp only [Id.run, Std.Legacy.Range.forIn_eq_forIn_range']
+  refine mbForIn_inv (P := MBOk I) _ _ _ hm ?_
+  intro _ s hs
+  split
+  · rename_i m' h; exact step_mbOk _ _ _ hs h
+  · exact hs
+
+/-- **`MachBuffer`'s simplification keeps the labels**: the same labels defined, no label used
+that its input does not use. -/
+theorem machBuf_labels (allLabels : Bool) (ls : List Line) :
+    defs (machBuf allLabels ls).1 = defs ls ∧ ∀ x ∈ uses (machBuf allLabels ls).1, x ∈ uses ls := by
+  have hfold : ∀ (L : List Line) (I : List Line) (m : MBuf), MBOk I m →
+      MBOk (I ++ L) (L.foldl (fun m ln =>
+        let m := { m with out := m.out.push ln }
+        if ln matches .label _ then m.optimize allLabels else m) m) := by
+    intro L
+    induction L with
+    | nil => intro I m h; simpa using h
+    | cons ln L ih =>
+      intro I m h
+      rw [List.foldl_cons, show I ++ ln :: L = (I ++ [ln]) ++ L by simp]
+      apply ih
+      obtain ⟨hd, hu, ha⟩ := h
+      have hp : MBOk (I ++ [ln]) { m with out := m.out.push ln } := by
+        refine ⟨by simp [Array.toList_push, defs_append, hd], fun x hx => ?_, fun k x hx => ?_⟩
+        · simp only [Array.toList_push, uses_append, List.mem_append] at hx ⊢
+          rcases hx with hx | hx
+          · exact .inl (hu x hx)
+          · exact .inr hx
+        · rw [uses_append]; exact List.mem_append_left _ (ha k x hx)
+      split
+      · exact optimize_mbOk _ _ hp
+      · exact hp
+  have h0 : MBOk [] ({} : MBuf) := ⟨rfl, fun x hx => by simp [uses] at hx, fun k x hx => by simp at hx⟩
+  obtain ⟨hd, hu, ha⟩ := optimize_mbOk allLabels _ (by simpa using hfold ls [] {} h0)
+  unfold machBuf
+  dsimp only
+  refine ⟨?_, fun x hx => ?_⟩
+  · rw [← hd]
+    simp only [defs]
+    rw [List.filterMap_map]
+    congr 1
+    funext ln
+    cases ln <;> simp [Function.comp, Line.relabel, lineDef] <;> split <;> rfl
+  · obtain ⟨ln', hln', hx'⟩ := mem_uses.1 hx
+    obtain ⟨ln, hln, rfl⟩ := List.mem_map.1 hln'
+    have hlnU : ∀ y ∈ ln.labelsUsed, y ∈ uses ls := fun y hy => hu y (mem_uses.2 ⟨ln, hln, hy⟩)
+    rcases relabel_used _ ln x hx' with hx | ⟨t, ht, rfl⟩
+    · exact hlnU x hx
+    · rcases res_cases _ t with he | ⟨k, hk⟩
+      · rw [he]
+        rw [he] at hx'
+        -- the target is a label the line uses (`.skip` is not used by a relabelled line)
+        cases ln with
+        | label _ => simp [Line.target?] at ht
+        | word a b => simp only [Line.target?, Option.some.injEq] at ht; subst ht; exact hlnU _ (by simp [Line.labelsUsed])
+        | ins i tc =>
+          have hrl : Line.relabel (fun _ => t) (.ins i tc) = .ins i tc := Line.relabel_self ht
+          apply hlnU
+          have : (Line.ins i tc).relabel (MBuf.res _) = (Line.ins i tc).relabel (fun _ => t) := by
+            simp only [Line.relabel, ht, he]
+          rw [this, hrl] at hx'
+          exact hx'
+      · exact ha k _ hk
 
 /-! ## Chunks of emitted lines -/
 
@@ -604,43 +834,71 @@ theorem code_chunk {c : FnCtx} {af : AFunc} {T : List Label} :
           (code_chunk as ps1 ps2 l2 h2 fun m hm l hl => ht m (by simp [hm]) l hl)
           (fun _ h => nomatch h)
 
-theorem blocks_chunk {c : FnCtx} {af : AFunc} {T : List Label} :
-    ∀ (bs : List (Label × Array AInst)) (ps ps' : PState) (body : List Line),
-      blocksLinesE c af bs ps = .ok (body, ps') → (bs.map (·.1)).Nodup →
-      (∀ p ∈ bs, ∀ m, AInst.inst m ∈ p.2.toList → ∀ l ∈ m.targets, l ∈ T) →
-      Chunk T (bs.map (·.1)) ps body ps'
-  | [], ps, ps', body, h, _, _ => by
-    simp only [blocksLinesE, pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at h
+theorem mem_of_getLast?_toList {α : Type} {l : List α} {x : α} (h : x ∈ l.getLast?.toList) :
+    x ∈ l := by
+  rcases List.eq_nil_or_concat l with e | ⟨L, b, e⟩ <;> subst e <;> simp_all
+
+/-- The segments' unsimplified lines (`segsOf`) as a chunk defining their blocks' labels. -/
+theorem segs_chunk {c : FnCtx} {af : AFunc} {T : List Label} :
+    ∀ (bs : List ((Label × Array AInst) × Nat)) (ps ps' : PState) (ss : List Seg),
+      segsOf c af bs ps = .ok (ss, ps') → (bs.map (·.1.1)).Nodup →
+      (∀ p ∈ bs, ∀ m, AInst.inst m ∈ p.1.2.toList → ∀ l ∈ m.targets, l ∈ T) →
+      Chunk T (bs.map (·.1.1)) ps (segLines ss (ss.map (·.term))) ps'
+  | [], ps, ps', ss, h, _, _ => by
+    simp only [segsOf, pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at h
     obtain ⟨rfl, rfl⟩ := h
     exact plain_chunk plain_nil
-  | (l', code) :: bs, ps, ps', body, h, hn, ht => by
-    simp only [blocksLinesE, bind, Except.bind] at h
-    cases h1 : codeLinesE c af code.toList ps with
-    | error e => rw [h1] at h; cases h
-    | ok r =>
-      rw [h1] at h
-      obtain ⟨l1, ps1⟩ := r
-      simp only at h
-      cases h2 : blocksLinesE c af bs ps1 with
-      | error e => rw [h2] at h; cases h
-      | ok r2 =>
-        rw [h2] at h
-        obtain ⟨l2, ps2⟩ := r2
-        simp only [pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at h
-        obtain ⟨rfl, rfl⟩ := h
-        simp only [List.map_cons, List.nodup_cons] at hn
-        have hlab : Chunk T [l'] ps [.label (.block l')] ps :=
-          ⟨id, Nat.le_refl _, Nat.le_refl _, Nat.le_refl _, by simp [lineDef],
-            fun x hx => .inl ⟨l', by simp, by simpa [lineDef] using hx⟩,
-            fun x hx => by simp at hx; simp [lineDef, hx],
-            fun x hx => by simp [Line.labelsUsed] at hx⟩
-        have hcode := code_chunk (T := T) code.toList ps ps1 l1 h1
-          (fun m hm l hl => ht (l', code) (by simp) m hm l hl)
-        have hrest := blocks_chunk bs ps1 ps2 l2 h2 hn.2
-          (fun p hp m hm l hl => ht p (by simp [hp]) m hm l hl)
-        have := Chunk.append (Chunk.append hlab hcode (fun _ _ h => nomatch h)) hrest
-          (fun x hx => by simp at hx; subst hx; exact hn.1)
-        simpa using this
+  | ((l', code), i) :: bs, ps, ps', ss, h, hn, ht => by
+    simp only [segsOf] at h
+    obtain ⟨⟨l1, ps1⟩, h1, h⟩ := exceptBind_ok h
+    obtain ⟨⟨l2, ps2⟩, h2, h⟩ := exceptBind_ok h
+    obtain ⟨⟨l3, ps3⟩, h3, h⟩ := exceptBind_ok h
+    simp only [pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at h
+    obtain ⟨rfl, rfl⟩ := h
+    simp only [List.map_cons, List.nodup_cons] at hn
+    have hlab : Chunk T [l'] ps [.label (.block l')] ps :=
+      ⟨id, Nat.le_refl _, Nat.le_refl _, Nat.le_refl _, by simp [lineDef],
+        fun x hx => .inl ⟨l', by simp, by simpa [lineDef] using hx⟩,
+        fun x hx => by simp at hx; simp [lineDef, hx],
+        fun x hx => by simp [Line.labelsUsed] at hx⟩
+    have hc1 := code_chunk (T := T) _ ps ps1 l1 h1
+      (fun m hm l hl => ht ((l', code), i) (by simp) m ((List.dropLast_sublist _).subset hm) l hl)
+    have hc2 := code_chunk (T := T) _ ps1 ps2 l2 h2
+      (fun m hm l hl => ht ((l', code), i) (by simp) m (mem_of_getLast?_toList hm) l hl)
+    have hrest := segs_chunk bs ps2 ps' l3 h3 hn.2
+      (fun p hp m hm l hl => ht p (by simp [hp]) m hm l hl)
+    have := Chunk.append (Chunk.append (Chunk.append hlab hc1 (fun _ _ h => nomatch h)) hc2
+      (fun _ _ h => nomatch h)) hrest (fun x hx => by simp at hx; subst hx; exact hn.1)
+    simpa [segLines] using this
+
+/-- **The emission plan keeps the labels** of the unsimplified segments (`machBuf_labels`). -/
+theorem emitPlan_labels {k : Nat} {af : AFunc} {p : Plan} (h : emitPlan k af = .ok p) :
+    defs (segLines p.segs p.outs) = defs (segLines p.segs (p.segs.map (·.term))) ∧
+      ∀ x ∈ uses (segLines p.segs p.outs), x ∈ uses (segLines p.segs (p.segs.map (·.term))) := by
+  unfold emitPlan at h
+  simp only [bind, Except.bind] at h
+  split at h
+  · cases h
+  rename_i r hr
+  obtain ⟨ss, ps⟩ := r
+  dsimp only at h
+  split at h
+  · rename_i p1 h1
+    simp only [pure, Except.pure, Except.ok.injEq] at h
+    subst h
+    have h1' : machPlan af true ss ps = some p1 ∨ machPlan af false ss ps = some p1 := by
+      cases e : machPlan af true ss ps with
+      | some q => rw [e] at h1; simp only [Option.orElse] at h1; exact .inl h1
+      | none => rw [e] at h1; simp only [Option.orElse] at h1; exact .inr h1
+    rcases h1' with h1' | h1' <;>
+    · obtain ⟨hs, hsp⟩ := machPlan_split h1'
+      rw [hs, splitSegs_lines _ _ _ hsp]
+      exact machBuf_labels _ _
+  · split at h
+    · simp only [pure, Except.pure, Except.ok.injEq] at h
+      subst h
+      exact ⟨rfl, fun _ h => h⟩
+    · cases h
 
 /-! ## `emitFunc`'s labels -/
 
@@ -663,19 +921,26 @@ theorem emitFunc_labels_of {k : Nat} {af : AFunc} {fa : FnAsm} (he : emitFunc k 
       l ∈ af.blocks.toList.map (·.1)) :
     (∃ m, labelOffsets fa.lines = .ok m) ∧
       (∀ ln ∈ fa.lines.toList, ∀ l ∈ ln.labelsUsed, Line.label l ∈ fa.lines.toList) := by
-  obtain ⟨pre, hpre, hlines, -, -⟩ := emitFunc_unfold he
-  obtain ⟨body, ps, hb, rfl⟩ := emitPre_ok hpre
-  have hc := blocks_chunk (T := af.blocks.toList.map (·.1)) _ _ _ _ hb hn ht
-  have hT : TrapsOk ps := hc.traps (by simp [TrapsOk])
-  obtain ⟨hft1, hft2⟩ := ftList_spec _ body (Nat.le_refl _)
-  obtain ⟨htr1, htr2⟩ := trapLines_spec ps.traps.toList
-  generalize hP : (ftList body ++ ps.traps.toList.flatMap
-    fun p => [Line.label p.1, Line.ins (.udf 0xc11f) (some p.2)]) = P at hlines
-  obtain ⟨hr1, hr2⟩ := relaxLines_spec (relaxOf P) P
-  have hL : fa.lines.toList = relaxLines (relaxOf P) P := by rw [hlines, List.toList_toArray]
+  obtain ⟨p, hp, hL, -⟩ := emitFunc_ok he
+  obtain ⟨hseg, -⟩ := emitPlan_spec hp
+  have hz : af.blocks.toList.zipIdx.map (·.1) = af.blocks.toList := by
+    rw [List.zipIdx_eq_zip_range', List.map_fst_zip (by simp)]
+  have hperm := (emitOrder_perm af).map (·.1.1)
+  have hzl : af.blocks.toList.zipIdx.map (·.1.1) = af.blocks.toList.map (·.1) := by
+    rw [← hz, List.map_map]; rfl
+  rw [hzl] at hperm
+  have hc := segs_chunk (T := af.blocks.toList.map (·.1)) _ _ _ _ hseg
+    (hperm.nodup_iff.mpr hn) (fun q hq m hm l hl => by
+      have hq' : q.1 ∈ af.blocks.toList := by
+        rw [← hz]; exact List.mem_map.2 ⟨q, (emitOrder_perm af).mem_iff.mp hq, rfl⟩
+      exact ht q.1 hq' m hm l hl)
+  have hT : TrapsOk p.ps := hc.traps (by simp [TrapsOk])
+  obtain ⟨hft1, hft2⟩ := emitPlan_labels hp
+  obtain ⟨htr1, htr2⟩ := trapLines_spec p.ps.traps.toList
+  obtain ⟨hr1, hr2⟩ := relaxLines_spec (emitFar ⟨k, af.slotBase⟩ af) p.lines
   rw [← hL] at hr1 hr2
-  rw [← hP, defs_append, hft1, htr1, hT] at hr1
-  rw [← hP, uses_append, htr2, List.append_nil] at hr2
+  rw [Plan.lines, defs_append, hft1, trapLines, htr1, hT] at hr1
+  rw [Plan.lines, uses_append, trapLines, htr2, List.append_nil] at hr2
   constructor
   · refine labelOffsets_go_ok _ 0 {} ?_ (fun l _ => by simp)
     rw [hr1, List.nodup_append]
@@ -688,7 +953,7 @@ theorem emitFunc_labels_of {k : Nat} {af : AFunc} {fa : FnAsm} (he : emitFunc k 
     rw [← mem_defs, hr1, List.mem_append]
     rcases hc.uses_in l (hft2 l (hr2 l (mem_uses.2 ⟨ln, hln, hl⟩))) with h | ⟨b, hb, rfl⟩ | ⟨n, rfl, hn⟩
     · exact .inl h
-    · exact .inl (hc.blocks b hb)
+    · exact .inl (hc.blocks b (hperm.mem_iff.mpr hb))
     · exact .inr (List.mem_map.2 ⟨n, List.mem_range.2 hn, rfl⟩)
 
 /-! ## Branch targets of the allocated code -/

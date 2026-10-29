@@ -1,12 +1,14 @@
 import FV.E2E.RegLevelRelax
+import FV.E2E.EmitSize
 
 /-!
 # `adrp` pairs stay adjacent in `emitFunc`'s lines
 
 The second word of an `adrp` pair (`ldr …, :got_lo12:` / `add …, :lo12:`) is emitted only by
 `loadExtNameGot`/`loadExtNameNear`, right after its first word (`adrp`), and neither
-`fallthrough` (which only drops or rewrites branches before a label) nor branch relaxation
-(which only rewrites conditional branches) separates them: `emitFunc_pairsClosed`.
+`MachBuffer`'s branch simplification (which only removes branches, inverts a conditional branch
+in place and retargets, `machBuf_pcOk`) nor branch relaxation (which only rewrites conditional
+branches) separates them: `emitFunc_pairsClosed`.
 
 The proof uses the boolean `pcOk b L` ("every second word of `L` follows a first word; `b`: the
 line before `L` is a first word"), which is closed under `++` (`pcOk_append`).
@@ -110,52 +112,186 @@ theorem cond_noPair {c : Insn} {l : Lbl} (h : c.condTarget? = some l) (e : Lbl) 
       lnSecond (.ins (c.invertTo e) t) = false ∧ lnFirst (.ins (c.invertTo e) t) = false := by
   cases c <;> simp_all [Insn.condTarget?, Insn.invertTo, lnSecond, lnFirst, Insn.pairSecond]
 
-/-! ## `fallthrough` -/
+/-! ## `MachBuffer`'s simplification -/
 
-/-- The three outcomes of one `fallthrough` step. -/
-theorem ftStep_cases (ln : Line) (n1 n2 : Option Line) :
-    ftStep ln n1 n2 = ([ln], 1) ∨
-      (∃ x l, ln = .ins (.b x) none ∧ n1 = some (.label l) ∧ ftStep ln n1 n2 = ([], 1)) ∨
-      (∃ c e l, ln = .ins c none ∧ c.condTarget? = some l ∧ n1 = some (.ins (.b e) none) ∧
-        n2 = some (.label l) ∧ ftStep ln n1 n2 = ([.ins (c.invertTo e) none], 2)) := by
-  unfold ftStep
-  repeat' split
-  all_goals simp_all
+/-- Whether the last line of `A` (`b` for none) is a first word. -/
+def lastF (b : Bool) (A : List Line) : Bool :=
+  match A.getLast? with
+  | some a => lnFirst a
+  | none => b
 
-theorem pcOk_ftList : ∀ (n : Nat) (L : List Line) (b : Bool), L.length ≤ n →
-    pcOk b L = true → pcOk b (ftList L) = true
-  | _, [], _, _, _ => by simp [ftList, pcOk]
-  | n + 1, ln :: rest, b, hn, h => by
-    rw [ftList_cons]
-    rcases ftStep_cases ln rest[0]? rest[1]? with he | ⟨x, l, rfl, h1, he⟩ | ⟨c, e, l, rfl, hc, h1, h2, he⟩
-    · rw [he]
-      simp only [pcOk, Bool.and_eq_true] at h
-      simp only [List.drop_one, List.tail_cons, List.singleton_append, pcOk, Bool.and_eq_true]
-      exact ⟨h.1, pcOk_ftList n rest _ (by simp at hn; omega) h.2⟩
-    · rw [he]
-      cases rest with
-      | nil => simp at h1
-      | cons y rest' =>
-        simp only [List.getElem?_cons_zero, Option.some.injEq] at h1
-        subst h1
-        rw [pcOk, Bool.and_eq_true, pcOk_label] at h
-        simp only [List.drop_one, List.tail_cons, List.nil_append]
-        exact pcOk_ftList n _ b (by simp at hn ⊢; omega) h.2
-    · rw [he]
-      cases rest with
-      | nil => simp at h1
-      | cons y rest =>
-      cases rest with
-      | nil => simp at h2
-      | cons z rest' =>
-        simp only [List.getElem?_cons_zero, List.getElem?_cons_succ, Option.some.injEq] at h1 h2
-        subst h1 h2
-        obtain ⟨-, -, hs, hf⟩ := cond_noPair hc e none
-        rw [pcOk, Bool.and_eq_true, pcOk, Bool.and_eq_true, pcOk_label] at h
-        simp only [List.drop_succ_cons, List.drop_zero, List.singleton_append]
-        rw [pcOk, hs, hf]
-        simp only [Bool.not_false, Bool.true_or, Bool.true_and]
-        exact pcOk_ftList n _ _ (by simp at hn ⊢; omega) h.2.2
+theorem pcOk_snoc : ∀ (A : List Line) (b : Bool) (x : Line),
+    pcOk b (A ++ [x]) = (pcOk b A && (!lnSecond x || lastF b A))
+  | [], b, x => by simp [pcOk, lastF]
+  | a :: A, b, x => by
+    rw [List.cons_append, pcOk, pcOk, pcOk_snoc A (lnFirst a) x]
+    have : lastF (lnFirst a) A = lastF b (a :: A) := by
+      cases A with
+      | nil => simp [lastF]
+      | cons a' A' =>
+        simp only [lastF]
+        cases hz : (a' :: A').getLast? with
+        | none => simp at hz
+        | some z =>
+          rw [List.getLast?_cons_cons, hz]
+    rw [this, Bool.and_assoc]
+
+theorem pcOk_left : ∀ {A B : List Line} {b : Bool}, pcOk b (A ++ B) = true → pcOk b A = true
+  | [], _, _, _ => rfl
+  | a :: A, B, b, h => by
+    simp only [List.cons_append, pcOk, Bool.and_eq_true] at h ⊢
+    exact ⟨h.1, pcOk_left h.2⟩
+
+/-- A line that is neither word of a pair. -/
+def NoPair (ln : Line) : Prop := lnFirst ln = false ∧ lnSecond ln = false
+
+theorem pcOk_eraseIdx : ∀ (L : List Line) (k : Nat) (b : Bool), pcOk b L = true →
+    (∀ x, L[k]? = some x → NoPair x) → (∀ y, L[k + 1]? = some y → lnSecond y = false) →
+    pcOk b (L.eraseIdx k) = true
+  | [], _, _, _, _, _ => rfl
+  | x :: L, 0, b, h, hx, hy => by
+    have hx' := hx x rfl
+    simp only [pcOk, hx'.1, hx'.2, Bool.not_false, Bool.true_or, Bool.true_and] at h
+    simp only [List.eraseIdx_cons_zero]
+    cases L with
+    | nil => rfl
+    | cons y R =>
+      have hy' := hy y rfl
+      simp only [pcOk, hy', Bool.not_false, Bool.true_or, Bool.true_and] at h ⊢
+      exact h
+  | a :: L, k + 1, b, h, hx, hy => by
+    simp only [pcOk, Bool.and_eq_true, List.eraseIdx_cons_succ] at h ⊢
+    exact ⟨h.1, pcOk_eraseIdx L k _ h.2 (fun x h' => hx x (by simpa using h'))
+      (fun y h' => hy y (by simpa using h'))⟩
+
+theorem pcOk_set : ∀ (L : List Line) (p : Nat) (b : Bool) (y : Line), pcOk b L = true →
+    (∀ x, L[p]? = some x → NoPair x) → NoPair y → pcOk b (L.set p y) = true
+  | [], _, _, _, _, _, _ => rfl
+  | x :: L, 0, b, y, h, hx, hy => by
+    have hx' := hx x rfl
+    simp only [pcOk, hx'.1, hx'.2, Bool.not_false, Bool.true_or, Bool.true_and] at h
+    simp only [List.set_cons_zero, pcOk, hy.1, hy.2, Bool.not_false, Bool.true_or, Bool.true_and]
+    exact h
+  | a :: L, p + 1, b, y, h, hx, hy => by
+    simp only [pcOk, Bool.and_eq_true, List.set_cons_succ] at h ⊢
+    exact ⟨h.1, pcOk_set L p _ y h.2 (fun x h' => hx x (by simpa using h')) hy⟩
+
+theorem relabel_pair (f : Lbl → Lbl) (ln : Line) :
+    lnFirst (ln.relabel f) = lnFirst ln ∧ lnSecond (ln.relabel f) = lnSecond ln := by
+  cases ln with
+  | ins i tc => cases i <;> exact ⟨rfl, rfl⟩
+  | word _ _ => exact ⟨rfl, rfl⟩
+  | label _ => exact ⟨rfl, rfl⟩
+
+theorem pcOk_relabel (f : Lbl → Lbl) : ∀ (L : List Line) (b : Bool),
+    pcOk b (L.map (Line.relabel f)) = pcOk b L
+  | [], _ => rfl
+  | ln :: L, b => by
+    simp only [List.map_cons, pcOk, (relabel_pair f ln).1, (relabel_pair f ln).2,
+      pcOk_relabel f L]
+
+theorem stepLine_noPair {ln : Line} {t : Lbl} (h : (ln.ubr?).orElse (fun _ => ln.cbr?) = some t) :
+    NoPair ln := by
+  cases ln with
+  | ins i tc =>
+    cases tc with
+    | none =>
+      cases i <;> simp_all [Line.ubr?, Line.cbr?, Option.orElse, NoPair, lnFirst, lnSecond,
+        Insn.pairSecond, Insn.condTarget?]
+    | some _ => simp [Line.ubr?, Line.cbr?, Option.orElse] at h
+  | _ => simp [Line.ubr?, Line.cbr?, Option.orElse] at h
+
+theorem step_pcOk (allLabels : Bool) (m m' : MBuf) (hm : pcOk false m.out.toList = true)
+    (h : MBuf.step allLabels m = some m') : pcOk false m'.out.toList = true := by
+  obtain ⟨k, ln, t, hlc, hkln, ht, hc⟩ := step_cases allLabels m m' h
+  have hE : pcOk false (m.erase k).toList = true := by
+    simp only [MBuf.erase, List.toList_toArray]
+    refine pcOk_eraseIdx _ k false hm (fun x hx => ?_) (fun y hy => ?_)
+    · simp only [Array.getElem?_toList, hkln, Option.some.injEq] at hx
+      subst hx; exact stepLine_noPair ht
+    · have hlt : k + 1 < m.out.size := by
+        have := (List.getElem?_eq_some_iff.mp hy).1; simpa using this
+      obtain ⟨l, rfl⟩ := lastCode_tail m.out m.out.size k hlc (k + 1) y (by omega) hlt
+        (by simpa using hy)
+      rfl
+  rcases hc with ⟨ho, -⟩ | ⟨ho, -⟩ | ⟨p, c, tc, ct, hpk, hp, hct, -, ho, -⟩
+  · rw [ho]; exact hE
+  · rw [ho]; exact hm
+  · rw [ho, Array.set!, Array.toList_setIfInBounds]
+    have hcond : ∃ l, c.condTarget? = some l := by
+      cases tc with
+      | none =>
+        simp only [Line.cbr?] at hct
+        split at hct
+        · exact ⟨_, by assumption⟩
+        · cases hct
+      | some _ => simp [Line.cbr?] at hct
+    obtain ⟨l, hl⟩ := hcond
+    obtain ⟨h1, h2, h3, h4⟩ := cond_noPair hl t tc
+    refine pcOk_set _ p false _ hE (fun x hx => ?_) ⟨h4, h3⟩
+    simp only [MBuf.erase, List.toList_toArray, List.getElem?_eraseIdx_of_lt hpk,
+      Array.getElem?_toList, hp, Option.some.injEq] at hx
+    subst hx
+    exact ⟨h2, h1⟩
+
+theorem optimize_pcOk (allLabels : Bool) (m : MBuf) (hm : pcOk false m.out.toList = true) :
+    pcOk false (MBuf.optimize allLabels m).out.toList = true := by
+  unfold MBuf.optimize
+  simp only [Id.run, Std.Legacy.Range.forIn_eq_forIn_range']
+  refine mbForIn_inv (P := fun m' : MBuf => pcOk false m'.out.toList = true) _ _ _ hm ?_
+  intro _ s hs
+  split
+  · rename_i m' h; exact step_pcOk _ _ _ hs h
+  · exact hs
+
+/-- **`MachBuffer`'s simplification keeps the pairs adjacent.** -/
+theorem machBuf_pcOk (allLabels : Bool) (ls : List Line) (h : pcOk false ls = true) :
+    pcOk false (machBuf allLabels ls).1 = true := by
+  -- the fold: the lines pushed so far `I`, the buffer ending in `I`'s last first word
+  have hfold : ∀ (L I : List Line) (m : MBuf), pcOk false (I ++ L) = true →
+      pcOk false m.out.toList = true →
+      (∀ F, I.getLast? = some F → lnFirst F = true → m.out.toList.getLast? = some F) →
+      pcOk false (L.foldl (fun m ln =>
+        let m := { m with out := m.out.push ln }
+        if ln matches .label _ then m.optimize allLabels else m) m).out.toList = true := by
+    intro L
+    induction L with
+    | nil => intro I m _ hm _; exact hm
+    | cons ln L ih =>
+      intro I m hI hm hlast
+      rw [List.foldl_cons]
+      apply ih (I ++ [ln])
+      · simpa using hI
+      · have hI' := pcOk_left (A := I ++ [ln]) (B := L) (by simpa using hI)
+        rw [pcOk_snoc] at hI'
+        simp only [Bool.and_eq_true, Bool.or_eq_true, Bool.not_eq_true'] at hI'
+        have hp : pcOk false (m.out.push ln).toList = true := by
+          rw [Array.toList_push, pcOk_snoc]
+          simp only [Bool.and_eq_true, Bool.or_eq_true, Bool.not_eq_true']
+          refine ⟨hm, ?_⟩
+          rcases hI'.2 with hs | hf
+          · exact .inl hs
+          · refine .inr ?_
+            unfold lastF at hf ⊢
+            split at hf
+            · rename_i F hF
+              rw [hlast F hF hf]
+              exact hf
+            · cases hf
+        split
+        · exact optimize_pcOk _ _ hp
+        · exact hp
+      · intro F hF hf
+        simp only [List.getLast?_append, List.getLast?_singleton, Option.some_or,
+          Option.some.injEq] at hF
+        subst hF
+        split
+        · simp_all [lnFirst]
+        · simp [Array.toList_push]
+  unfold machBuf
+  dsimp only
+  rw [pcOk_relabel]
+  exact optimize_pcOk _ _ (hfold ls [] {} (by simpa using h) rfl (fun F hF => by simp at hF))
 
 /-! ## Branch relaxation -/
 
@@ -341,26 +477,55 @@ theorem codeLinesE_pcOk {c : FnCtx} {af : AFunc} :
         obtain ⟨rfl, -⟩ := h
         exact pcOk_append (ainstLines_pcOk hr) (codeLinesE_pcOk as _ _ _ hr2)
 
-theorem blocksLinesE_pcOk {c : FnCtx} {af : AFunc} :
-    ∀ (bs : List (Label × Array AInst)) (ps ps' : PState) (ls : List Line),
-      blocksLinesE c af bs ps = .ok (ls, ps') → pcOk false ls = true
-  | [], ps, ps', ls, h => by
-    simp only [blocksLinesE, pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at h
+/-- The segments' unsimplified lines keep the pairs adjacent. -/
+theorem segsOf_pcOk {c : FnCtx} {af : AFunc} :
+    ∀ (bs : List ((Label × Array AInst) × Nat)) (ps ps' : PState) (ss : List Seg),
+      segsOf c af bs ps = .ok (ss, ps') → pcOk false (segLines ss (ss.map (·.term))) = true
+  | [], ps, ps', ss, h => by
+    simp only [segsOf, pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at h
     obtain ⟨rfl, -⟩ := h; rfl
-  | (l, code) :: bs, ps, ps', ls, h => by
-    simp only [blocksLinesE, bind, Except.bind] at h
-    split at h
-    · cases h
-    · rename_i r hr
-      split at h
-      · cases h
-      · rename_i r2 hr2
-        simp only [pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at h
-        obtain ⟨rfl, -⟩ := h
-        rw [List.cons_append, pcOk_label]
-        exact pcOk_append (codeLinesE_pcOk _ _ _ _ hr) (blocksLinesE_pcOk bs _ _ _ hr2)
+  | ((l, code), i) :: bs, ps, ps', ss, h => by
+    simp only [segsOf] at h
+    obtain ⟨⟨l1, ps1⟩, h1, h⟩ := E2E.exceptBind_ok h
+    obtain ⟨⟨l2, ps2⟩, h2, h⟩ := E2E.exceptBind_ok h
+    obtain ⟨⟨l3, ps3⟩, h3, h⟩ := E2E.exceptBind_ok h
+    simp only [pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at h
+    obtain ⟨rfl, -⟩ := h
+    simp only [List.map_cons, segLines, List.cons_append, pcOk_label, List.append_assoc]
+    exact pcOk_append (codeLinesE_pcOk _ _ _ _ h1)
+      (pcOk_append (codeLinesE_pcOk _ _ _ _ h2) (segsOf_pcOk bs _ _ _ h3))
 
-theorem trapLines_noSecond (ts : List (Lbl × Clif.TrapCode)) : ∀ ln ∈ trapLines ts, lnSecond ln = false := by
+/-- The emission plan's lines keep the pairs adjacent. -/
+theorem emitPlan_pcOk {k : Nat} {af : AFunc} {p : Plan} (h : emitPlan k af = .ok p) :
+    pcOk false (segLines p.segs p.outs) = true := by
+  have hraw := segsOf_pcOk _ _ _ _ (emitPlan_spec h).1
+  unfold emitPlan at h
+  simp only [bind, Except.bind] at h
+  split at h
+  · cases h
+  rename_i r hr
+  obtain ⟨ss, ps⟩ := r
+  dsimp only at h
+  split at h
+  · rename_i p1 h1
+    simp only [pure, Except.pure, Except.ok.injEq] at h
+    subst h
+    have h1' : machPlan af true ss ps = some p1 ∨ machPlan af false ss ps = some p1 := by
+      cases e : machPlan af true ss ps with
+      | some q => rw [e] at h1; simp only [Option.orElse] at h1; exact .inl h1
+      | none => rw [e] at h1; simp only [Option.orElse] at h1; exact .inr h1
+    rcases h1' with h1' | h1' <;>
+    · obtain ⟨hs, hsp⟩ := machPlan_split h1'
+      rw [hs] at hraw ⊢
+      rw [splitSegs_lines _ _ _ hsp]
+      exact machBuf_pcOk _ _ hraw
+  · split at h
+    · simp only [pure, Except.pure, Except.ok.injEq] at h
+      subst h
+      exact hraw
+    · cases h
+
+theorem trapLines_noSecond (ps : PState) : ∀ ln ∈ trapLines ps, lnSecond ln = false := by
   intro ln hln
   simp only [trapLines, List.mem_flatMap, List.mem_cons, List.not_mem_nil, or_false] at hln
   obtain ⟨p, -, rfl | rfl⟩ := hln <;> rfl
@@ -371,10 +536,10 @@ theorem trapLines_noSecond (ts : List (Lbl × Clif.TrapCode)) : ∀ ln ∈ trapL
 `add …, :lo12:`) immediately follows a first word (`adrp …, :got:` / `adrp`). -/
 theorem emitFunc_pairsClosed {k : Nat} {af : AFunc} {fa : FnAsm} (h : emitFunc k af = .ok fa) :
     PairsClosed fa.lines.toList := by
-  obtain ⟨body, ps, hb, hl, -⟩ := emitFunc_ok h
+  obtain ⟨p, hp, hl, -⟩ := emitFunc_ok h
   rw [hl]
   refine pairsClosed_of_pcOk (pcOk_relaxLines _ _ _ (pcOk_append ?_ ?_))
-  · exact pcOk_ftList _ _ _ (Nat.le_refl _) (blocksLinesE_pcOk _ _ _ _ hb)
+  · exact emitPlan_pcOk hp
   · exact pcOk_of_noSecond _ (trapLines_noSecond _)
 
 end Backend.Proof

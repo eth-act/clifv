@@ -222,6 +222,76 @@ theorem machPlan_split {af : AFunc} {a : Bool} {ss : List Seg} {ps : PState} {p 
     exact ⟨rfl, hos⟩
   · cases h
 
+/-! ## The rounds of `optimize_branches`, case by case -/
+
+/-- The lines after `lastCode`'s index are labels. -/
+theorem lastCode_tail (out : Array Line) : ∀ (n k : Nat), lastCode out n = some k →
+    ∀ j x, k < j → j < n → out[j]? = some x → ∃ l, x = .label l
+  | 0, _, h => by simp [lastCode] at h
+  | n + 1, k, h => by
+    intro j x hkj hjn hx
+    unfold lastCode at h
+    cases hn : out[n]? with
+    | none => simp only [hn] at h; cases h
+    | some ln =>
+      simp only [hn] at h
+      cases ln with
+      | label l =>
+        by_cases hj : j = n
+        · subst hj; rw [hn] at hx; cases hx; exact ⟨l, rfl⟩
+        · exact lastCode_tail out n k h j x hkj (by omega) hx
+      | _ => simp only [Option.some.injEq] at h; subst h; omega
+
+/-- **One round of `optimize_branches`**: at the last code line `ln` (index `k`, only labels
+after it), a branch to `t`; the round removes `ln`, or aliases labels to `t` (lines unchanged),
+or removes the `b t` `ln` and inverts the conditional branch at `p < k` to `t`. -/
+theorem step_cases (allLabels : Bool) (m m' : MBuf) (h : MBuf.step allLabels m = some m') :
+    ∃ k ln t, lastCode m.out m.out.size = some k ∧ m.out[k]? = some ln ∧
+      (ln.ubr?).orElse (fun _ => ln.cbr?) = some t ∧
+      ((m'.out = m.erase k ∧ m'.alias = m.alias) ∨
+       (m'.out = m.out ∧ ∃ als : List Lbl, m'.alias = als.foldl (fun a l => a.insert l t) m.alias) ∨
+       (∃ p c tc ct, p < k ∧ m.out[p]? = some (.ins c tc) ∧ (Line.ins c tc).cbr? = some ct ∧
+         ln.ubr? = some t ∧ m'.out = (m.erase k).set! p (.ins (c.invertTo t) tc) ∧
+         m'.alias = m.alias)) := by
+  unfold MBuf.step at h
+  rcases hlc : lastCode m.out m.out.size with - | k
+  · simp [hlc] at h
+  obtain ⟨-, ln, hkln⟩ := lastCode_spec m.out m.out.size k hlc
+  have hln : m.out[k]! = ln := by simp [getElem!_def, hkln]
+  rcases ht : (ln.ubr?).orElse (fun _ => ln.cbr?) with - | t
+  · simp only [hlc, hln, ht, Option.bind_eq_bind, Option.bind_some, Option.bind_none] at h
+    cases h
+  refine ⟨k, ln, t, rfl, hkln, ht, ?_⟩
+  simp only [hlc, hln, ht, Option.bind_eq_bind, Option.bind_some, Option.bind_none] at h
+  repeat' split at h
+  all_goals first
+    | (simp at h; done)
+    | (cases h; exact .inl ⟨rfl, rfl⟩)
+    | (cases h; exact .inr (.inl ⟨rfl, _, rfl⟩))
+    | skip
+  all_goals
+    rcases hpp : lastCode m.out k with - | p
+    · simp only [hpp, Option.bind_none] at h; cases h
+    obtain ⟨hpk, lp, hlp⟩ := lastCode_spec _ _ _ hpp
+    have hlp' : m.out[p]! = lp := by simp [getElem!_def, hlp]
+    simp only [hpp, hlp', Option.bind_some] at h
+    split at h
+    · cases h; exact .inl ⟨rfl, rfl⟩
+    rcases hct : lp.cbr? with - | ct
+    · simp only [hct, Option.bind_none] at h; cases h
+    simp only [hct, Option.bind_some] at h
+    split at h
+    · cases h
+    split at h
+    · rename_i c tc _
+      cases h
+      refine .inr (.inr ⟨p, c, tc, ct, hpk, hlp, hct, ?_, rfl, rfl⟩)
+      rcases hu : ln.ubr? with - | u
+      · simp_all
+      · simp only [hu, Option.orElse, Option.some.injEq] at ht
+        rw [ht]
+    · cases h
+
 /-- **The emission plan's lines are at most as many bytes as the unsimplified segments'.** -/
 theorem emitPlan_bytes {k : Nat} {af : AFunc} {p : Plan} (h : emitPlan k af = .ok p) :
     lineBytes (segLines p.segs p.outs) ≤ lineBytes (segLines p.segs (p.segs.map (·.term))) := by
