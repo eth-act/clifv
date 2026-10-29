@@ -45,7 +45,7 @@ theorem noRetAt_upTo (hL : L.Ok) {M : Nat} {g : Clif.Function} (hg : g ∈ L.P.f
     (hsp : spOf (runX (L.mach M g) i s) = spv s - BitVec.ofNat 64 (frameDrop (L.A g).af))
     (herr : Arm.r .ERR (runX (L.mach M g) i s) = .None) :
     ∀ j < i + 1, ¬ L.RetAt g s (runX (L.mach M g) j s) := by
-  have hroom := hME.stack.1
+  have hroom := hME.stack.1.1
   have hfd := L.frameDrop_eq hL hg
   have hne : ∀ t, spOf t = spv s - BitVec.ofNat 64 (frameDrop (L.A g).af) → spv t ≠ spv s := by
     intro t ht e

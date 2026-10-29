@@ -123,7 +123,7 @@ theorem thmTT_of (hL : L.Ok) [hR : L.CrunOk] (hT : L.TrapsOkT) (hB : L.BaseTraps
     (fun n b hn => hL.symOk n b hn) rfl hWE.clif hWE.rel hWE.args htrE hrunE
     (L.hooks M) G (L.A g).base ra s hAE
   have hroom : frameDrop (L.A g).af ≤ (spv s).toNat := by
-    rw [L.frameDrop_eq hL hg]; have := hME.stack.1; omega
+    rw [L.frameDrop_eq hL hg]; have := hME.stack.1.1; omega
   have htr : PostTrace (L.A g).fa (L.A g).af (L.A g).base (L.mach M g) s n :=
     by have := postTrace_of_actGoodX htrace; exact this
   have hgoodOf : (∀ m, Arm.r .ERR (runX (L.mach M g) (n + m + 1) s) ≠ .None) →
