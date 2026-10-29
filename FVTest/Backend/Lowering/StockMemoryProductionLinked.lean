@@ -93,7 +93,7 @@ private def checkOne (out : System.FilePath) (cleanup fallback : Bool) : IO Unit
   let results := input.resultsProductionWith actualLower cleanup
   if !(okRSemanticNI (productionStage cleanup) input results) then
     IO.println s!"GLOBAL {bad (globalChks input (progOf results) (tabOf results))}"
-  
+
   for (fi,i) in funcs.zipIdx do
     let a ← get (input.pipeProductionWith actualLower cleanup fi)
     let selected ← get (actualLower fi.func)

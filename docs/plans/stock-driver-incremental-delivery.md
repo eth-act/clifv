@@ -1,6 +1,6 @@
 # Incremental Stock driver completion
 
-Execution plan updated 2026-10-21 after the user's efficiency review. Supersedes
+Execution plan refreshed 2026-10-29 against current main and contributor work. Supersedes
 the historical ordering/checkpoints in this file and the recovery roadmap;
 saved source and historical receipts remain preserved. Full original #140 scope
 is unchanged: actual Stock source semantics, simulation/completeness, production
@@ -41,6 +41,9 @@ reimplement Kev's landed allocator, frame, checker or typed-linking machinery.
    launching the full author queue. Keep one validation head fixed during each
    healthy batch. Do not replay a completed healthy cohort without changed inputs
    or an unresolved concern.
+   Before CLI integration, account for Kev's open #756 startup-panic fix (#750)
+   in StockBlockScan: reuse the coordinated upstream fix once available; do not
+   duplicate his witness edits or count a panic-bearing CLI run as passing.
 3. Run current per-PR gates from TO-PROVE §§7–8: FV/FVTest/affected tools,
    transitive axiom audit, relevant runtests/encoding, E2E identity and successful
    stage parity, actual verified linking/examples and crate proofs. Include a
@@ -59,6 +62,17 @@ reimplement Kev's landed allocator, frame, checker or typed-linking machinery.
    Measure eligibility, selected actual Stock route and output/relocation parity
    on the same captured source cohort. Synthetic positive witnesses alone do
    not establish useful real-function coverage or an agreement gain.
+   Refresh recovered **four actual captured functions** in survey's
+   `h_dyn_generic`: entry `nop; jump`, successor `nop; load.i32 notrap v0;
+   return v2`. One is `_RNxC13h_dyn_generic12H3GPtIT8Zs5B` in CGU
+   `29204d9a8e90`. Original file hashes were checked against the preserved
+   4,543-source provenance. These are the concrete next coverage targets;
+   current main has no proved Stock memory route for them.
+   [Captured target provenance](../research/stock-memory-captured-targets.json)
+   records their sources and exact historical byte-row matches. The two matched
+   historical rows were already byte-identical; this target closes proved-driver
+   coverage, not a promised byte-agreement gain. No byte result is inferred for
+   the other two source names absent from that saved row table.
 6. Continue the unchanged original goal: broader addressing and memory effects,
    atomics, calls/exceptions, remaining scalar/rule families, nonempty conditional
    successor arguments, tables/loops, whole-driver source/block simulation and

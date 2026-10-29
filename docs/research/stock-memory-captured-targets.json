@@ -1,0 +1,61 @@
+{
+  "purpose": "Concrete next Stock-memory source coverage targets; not a claimed route activation or agreement gain. Only exact historical function-name/CGU byte-comparison matches are recorded; missing rows establish no byte result.",
+  "provenance_source_head": "3753d98a71709cf940ead8a4ac6ece697bf23fd3",
+  "original_source_cohort": 4543,
+  "remote_evidence_commit": "fb8329f8728ee9b1f405225c468f528a3e16df33",
+  "archive_sha256": "f95655a7d6f92c01c03ecc0fe13e024877adc4b1e77c5f2b8a3ccc0381afc360",
+  "targets": [
+    {
+      "function": "_RNxC13h_dyn_generic12H3GPtIT8Zs5B",
+      "original_source_cgu": "29204d9a8e90",
+      "original_source": "/home/lee/clifv/.worktrees/stock-cfg-source-20261025/examples/survey/target/fv/plain-leanlink-verified-leanld/tmp/29204d9a8e90/split/_RNxC13h_dyn_generic12H3GPtIT8Zs5B.unopt.clif",
+      "original_source_sha256": "80ede2db6a68593e933dab5b9726facfec35534278f884c8ca091178012201b6",
+      "original_source_function": "function %_RNxC13h_dyn_generic12H3GPtIT8Zs5B(i64) -> i32 system_v {\nblock0(v0: i64):\n    nop\n    jump block1\n\nblock1:\n    nop\n    v2 = load.i32 notrap v0\n    return v2\n}\n",
+      "historical_byte_comparison_rows": [
+        {
+          "crate": "survey",
+          "cgu": "29204d9a8e90",
+          "fn": "_RNxC13h_dyn_generic12H3GPtIT8Zs5B",
+          "baseline_equal": true,
+          "candidate_equal": true,
+          "baseline_bytes": "ae77aa123a0826fd0a7893b1c95dda548c5045b0f71eb740338b6deb8a50f3f5",
+          "candidate_bytes": "ae77aa123a0826fd0a7893b1c95dda548c5045b0f71eb740338b6deb8a50f3f5"
+        }
+      ]
+    },
+    {
+      "function": "_RNxC13h_dyn_generic12HgpskFWGXXuk",
+      "original_source_cgu": "29204d9a8e90",
+      "original_source": "/home/lee/clifv/.worktrees/stock-cfg-source-20261025/examples/survey/target/fv/plain-leanlink-verified-leanld/tmp/29204d9a8e90/split/_RNxC13h_dyn_generic12HgpskFWGXXuk.unopt.clif",
+      "original_source_sha256": "ecb9944b4d8fe6be675a3efedac5708f6373e2bf4dde48f95feb6e7feee60e38",
+      "original_source_function": "function %_RNxC13h_dyn_generic12HgpskFWGXXuk(i64) -> i32 system_v {\nblock0(v0: i64):\n    nop\n    jump block1\n\nblock1:\n    nop\n    v2 = load.i32 notrap v0\n    return v2\n}\n",
+      "historical_byte_comparison_rows": [
+        {
+          "crate": "survey",
+          "cgu": "29204d9a8e90",
+          "fn": "_RNxC13h_dyn_generic12HgpskFWGXXuk",
+          "baseline_equal": true,
+          "candidate_equal": true,
+          "baseline_bytes": "ae77aa123a0826fd0a7893b1c95dda548c5045b0f71eb740338b6deb8a50f3f5",
+          "candidate_bytes": "ae77aa123a0826fd0a7893b1c95dda548c5045b0f71eb740338b6deb8a50f3f5"
+        }
+      ]
+    },
+    {
+      "function": "_RNxC13h_dyn_generic12H1XntPkRr2ei",
+      "original_source_cgu": "d026607f0214",
+      "original_source": "/home/lee/clifv/.worktrees/stock-cfg-source-20261025/examples/survey/target/fv/plain-leanlink-verified-leanld/tmp/d026607f0214/split/_RNxC13h_dyn_generic12H1XntPkRr2ei.unopt.clif",
+      "original_source_sha256": "8694301f27cafb80cf1c82f15d09da9260c9c731f1f7d962a1d90c9c9bbcca33",
+      "original_source_function": "function %_RNxC13h_dyn_generic12H1XntPkRr2ei(i64) -> i32 system_v {\nblock0(v0: i64):\n    nop\n    jump block1\n\nblock1:\n    nop\n    v2 = load.i32 notrap v0\n    return v2\n}\n",
+      "historical_byte_comparison_rows": []
+    },
+    {
+      "function": "_RNxC13h_dyn_generic12HkGTRrpKjLDv",
+      "original_source_cgu": "d026607f0214",
+      "original_source": "/home/lee/clifv/.worktrees/stock-cfg-source-20261025/examples/survey/target/fv/plain-leanlink-verified-leanld/tmp/d026607f0214/split/_RNxC13h_dyn_generic12HkGTRrpKjLDv.unopt.clif",
+      "original_source_sha256": "1939572a23fad09105e2df9f47edcd783d5fb2c626295b22dc4451a92cbb0e1d",
+      "original_source_function": "function %_RNxC13h_dyn_generic12HkGTRrpKjLDv(i64) -> i32 system_v {\nblock0(v0: i64):\n    nop\n    jump block1\n\nblock1:\n    nop\n    v2 = load.i32 notrap v0\n    return v2\n}\n",
+      "historical_byte_comparison_rows": []
+    }
+  ]
+}
