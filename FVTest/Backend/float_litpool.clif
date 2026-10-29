@@ -1,0 +1,25 @@
+test run
+target aarch64
+
+; S11e6 #565: `f64const` values with no `fmov`-immediate, zero or 32-bit form take
+; `constant_f64`'s literal-pool rule (`fpu_load64 (AMode.Const (emit_u64_le_const n))`,
+; inst.isle:4275): an `ldr dN, <label>` of a constant-pool entry placed after the function
+; body. 0x1.7b8bac710cb29p0 (bits 0x3ff7b8bac710cb29) matches none of the cheaper rules
+; (`asimd_fp_mod_imm_from_u64`, `u32_from_u64`, `u64_low32_bits_unset`, zero).
+; `scripts/lean-backend-encode-check.sh FVTest/Backend/float_litpool.clif`.
+
+function %litpool() -> f64 {
+block0:
+    v0 = f64const 0x1.7b8bac710cb29p0
+    return v0
+}
+; run: %litpool() == 0x1.7b8bac710cb29p0
+
+function %litpool_dup() -> f64 {
+block0:
+    v0 = f64const 0x1.7b8bac710cb29p0
+    v1 = f64const 0x1.7b8bac710cb29p0
+    v2 = fadd v0, v1
+    return v2
+}
+; run: %litpool_dup() == 0x1.f7175acfe21952p0

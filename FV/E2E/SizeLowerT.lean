@@ -368,23 +368,35 @@ theorem spillWordBound_cleanup_le_sizeBoundInT {f : Clif.Function} {vc vcp : VCo
 
 /-- **The size bound from the input on the typed scope**: for `f` in `Dominated` and
 `LowerScopeT` with class-checked float `store`s and `select`s and `sizeOkB f`, the prepared VCode
-meets `spillSizeOkB`. -/
+meets `spillSizeOkB` when its literal loads reach the pool (`hpool`: new with the literal pool,
+#565; the typed lowering may load an `f64` constant from the pool, and a function over 1 MiB with
+such a load is outside `spillSizeOkB`). -/
 theorem spillSizeOkB_of_sizeOkBT {f : Clif.Function} {vc vcp : VCode}
     (hdom : dominatedB f = true) (hs : LowerScopeT f) (hst : Compile.storeTypedB f = true)
     (hsel : Compile.selectTypedB f = true) (hsz : sizeOkB f = true)
-    (hl : lowerFunction f = .ok vc) (hp : Backend.prepare vc = .ok vcp) : spillSizeOkB vcp = true := by
+    (hl : lowerFunction f = .ok vc) (hp : Backend.prepare vc = .ok vcp)
+    (hpool : poolReachB vcp = true) : spillSizeOkB vcp = true := by
   have h := spillWordBound_le_sizeBoundInT (iselSzT hdom hs hst hsel) hs.externsE hl hp
   have hs : sizeBoundIn f < 2 ^ 24 := of_decide_eq_true hsz
-  exact decide_eq_true (by omega)
+  exact spillSizeOkB_of (by omega) hpool
 
 /-- `spillSizeOkB_of_sizeOkBT` through the dead-code cleanup (`prepare (prune vc)`). -/
 theorem spillSizeOkB_cleanup_of_sizeOkBT {f : Clif.Function} {vc vcp : VCode}
     (hdom : dominatedB f = true) (hs : LowerScopeT f) (hst : Compile.storeTypedB f = true)
     (hsel : Compile.selectTypedB f = true) (hsz : sizeOkB f = true)
-    (hl : lowerFunction f = .ok vc) (hp : Backend.prepare (prune vc) = .ok vcp) :
-    spillSizeOkB vcp = true := by
+    (hl : lowerFunction f = .ok vc) (hp : Backend.prepare (prune vc) = .ok vcp)
+    (hpool : poolReachB vcp = true) : spillSizeOkB vcp = true := by
   have h := spillWordBound_cleanup_le_sizeBoundInT (iselSzT hdom hs hst hsel) hs.externsE hl hp
   have hs : sizeBoundIn f < 2 ^ 24 := of_decide_eq_true hsz
-  exact decide_eq_true (by omega)
+  exact spillSizeOkB_of (by omega) hpool
+
+/-- `poolReachB` from the input bound below `2 ^ 17` words (1 MiB) on the typed scope. -/
+theorem poolReachB_of_sizeT {f : Clif.Function} {vc vcp : VCode}
+    (hdom : dominatedB f = true) (hs : LowerScopeT f) (hst : Compile.storeTypedB f = true)
+    (hsel : Compile.selectTypedB f = true) (h17 : sizeBoundIn f < 2 ^ 17)
+    (hl : lowerFunction f = .ok vc) (hp : Backend.prepare vc = .ok vcp) : poolReachB vcp = true := by
+  have h := spillWordBound_le_sizeBoundInT (iselSzT hdom hs hst hsel) hs.externsE hl hp
+  simp only [poolReachB, Bool.or_eq_true, decide_eq_true_eq]
+  exact .inl (by omega)
 
 end E2E

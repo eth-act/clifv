@@ -152,6 +152,7 @@ theorem lines_ps (c : FnCtx) (m : MInst) (ps : PState)
     | (exfalso; exact h3 _ _ _ _ _ _ _ _ rfl)
     | (exfalso; exact h4 _ _ _ _ _ _ _ rfl)
     | skip
+  case' fpuLoad s rd mem fl => cases mem
   all_goals simp only [MInst.lines]
   all_goals (repeat' split) <;> simp [bind, Except.bind, pure, Except.pure, Functor.map, Except.map, throw, throwThe, MonadExceptOf.throw]
   all_goals (cases memFinalize c _ _ <;> simp only [] <;> (try (rename_i v; rcases v with ⟨a, b⟩; cases b)) <;> rfl)

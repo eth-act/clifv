@@ -28,11 +28,13 @@ def insnAlikeB (P : Clif.Program) (i i' : Insn) : Bool :=
     | .bl n, .bl n' => (P.func? n).isSome && (P.func? n').isSome
     | _, _ => false
 
-/-- Two lines alike: alike instructions, or two data words, or two labels. -/
+/-- Two lines alike: alike instructions, or two data words, or two labels, or two equal pool
+words (`.data`, read by the literal loads, #565). -/
 def lineAlikeB (P : Clif.Program) : Line → Line → Bool
   | .ins i _, .ins i' _ => insnAlikeB P i i'
   | .word _ _, .word _ _ => true
   | .label _, .label _ => true
+  | .data w, .data w' => w == w'
   | _, _ => false
 
 /-- Two functions' lines alike line by line. -/

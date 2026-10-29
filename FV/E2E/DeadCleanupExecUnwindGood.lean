@@ -242,11 +242,14 @@ theorem stepOkU_of_good (hI : okBCleanup I = true) (hc : codeMapB I (tabOf I.res
       obtain ⟨a', ha', hd⟩ := Insn.decode_encode hw
       rw [ha] at hd
       cases hd
-      have hrd := hrdA j x tt hj hpcw hh _ a ha' p hp k hk
-      rcases hrd with hnG | ⟨j', tg, bs, hj', q, hq, he'⟩
+      have hrd := hrdA j x tt hj hpcw hh a
+        (by simpa [RL.envL, RL.L, hm, Except.toOption] using ha') p hp k hk
+      rcases hrd with hnG | ⟨j', tg, bs, hj', q, hq, he'⟩ | ⟨j', d', hj', q, hq, he'⟩
       · exact hnG (himg _ (relocAt_img hI hF hR))
       · rw [he'] at hR
         exact word_static hI hc hF hg hj' q hq hR
+      · rw [he'] at hR
+        exact data_static hI hc hF hg hj' q hq hR
     · obtain ⟨x', d, obj, t', ⟨j', tt', hj', hpc'⟩, hd, -⟩ := r0.raise
       have hx' : x' = x := by
         have h1 : insnAt (art I g).fa (art I g).base (Arm.r .PC t) = some x' := by

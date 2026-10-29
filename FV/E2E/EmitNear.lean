@@ -12,12 +12,18 @@ import FV.Backend.EmitOk
 allocation, satisfy `NearOk` (`FV/Backend/Proof/RelaxLayout.lean`): every PC-relative line that
 branch relaxation does not handle reaches its label.
 
-Those lines (`Line.nearTgt`: a label operand other than `.skip`, not `b`, and not relaxable)
-are the atomic loops' `cbnz x24, l` / `b.ne out` to `.loop` labels (`rmwLoopLines`,
-`casLoopLines`), the jump table's `adr t1, jt`, and `b.al`/`b.nv` — which `MInst.lines` produces
-only from a `condBr`/`trapIf` with an `al`/`nv` condition: `VCode.noAlwaysB` excludes them (an
-explicit decidable premise on the prepared VCode; the control-shape analysis `CtlShape` does not
-track conditions). No line carries a trap code and a label operand.
+Those lines (`Line.nearTgt`: a label operand other than `.skip`, not `b`, not relaxable and not
+a literal-pool load) are the atomic loops' `cbnz x24, l` / `b.ne out` to `.loop` labels
+(`rmwLoopLines`, `casLoopLines`), the jump table's `adr t1, jt`, and `b.al`/`b.nv` — which
+`MInst.lines` produces only from a `condBr`/`trapIf` with an `al`/`nv` condition:
+`VCode.noAlwaysB` excludes them (an explicit decidable premise on the prepared VCode; the
+control-shape analysis `CtlShape` does not track conditions). No line carries a trap code and a
+label operand.
+
+The literal-pool loads (`Line.isLit`, #565) reach their entries, laid out after the function's
+body, when the whole function is below 1 MiB, their reach (`good_nearOk`'s premise); the size
+condition `spillSizeOkB` gives that bound to a prepared VCode with a pool load
+(`emitFunc_spill_near`).
 
 The proof is a segmentation of the line list (`Good`): single lines with no near label, and
 self-contained near blocks (`NearBlk`: at most 8 lines, no `b`, none relaxable, every near
@@ -38,7 +44,9 @@ def Line.nearTgt : Line → Option Lbl
   | .ins i tr =>
     match i.pcRelSpec? with
     | some (t, _, _) =>
-      if t = .skip ∨ i.isBr = true ∨ (tr = none ∧ i.relaxTarget?.isSome = true) then none else some t
+      if t = .skip ∨ i.isBr = true ∨ (tr = none ∧ i.relaxTarget?.isSome = true) ∨
+          (Line.ins i tr).isLit = true then none
+      else some t
     | none => none
   | _ => none
 
@@ -321,32 +329,62 @@ theorem lineOffset_mono : ∀ (L : List Line) (j d : Nat),
 
 theorem nearTgt_eq {i : Insn} {tr : Option Clif.TrapCode} {t : Lbl} {reach align : Int}
     (hs : i.pcRelSpec? = some (t, reach, align)) (ht : t ≠ .skip) (hb : ∀ x, i ≠ .b x)
-    (hr : tr = none → i.relaxTarget? = none) : (Line.ins i tr).nearTgt = some t := by
+    (hr : tr = none → i.relaxTarget? = none) (hl : (Line.ins i tr).isLit = false) :
+    (Line.ins i tr).nearTgt = some t := by
   have hb' : i.isBr = false := by cases i <;> simp_all [Insn.isBr]
   simp only [Line.nearTgt, hs]
   split
   · rename_i h
     exfalso
-    rcases h with h | h | ⟨rfl, h⟩
+    rcases h with h | h | ⟨rfl, h⟩ | h
     · exact ht h
     · simp [hb'] at h
     · simp [hr rfl] at h
+    · simp [hl] at h
   · rfl
 
-theorem good_nearOk {L : List Line} (h : Good L) : NearOk L := by
+/-- The form of a literal-pool load line. -/
+theorem isLit_form {i : Insn} {tr : Option Clif.TrapCode} (h : (Line.ins i tr).isLit = true) :
+    ∃ s rd n, i = .fpuLoadLit s rd (.const n) := by
+  unfold Line.isLit at h
+  split at h
+  · rename_i heq
+    exact ⟨_, _, _, (Line.ins.inj heq).1⟩
+  · cases h
+
+/-- **`NearOk` of a segmented line list** whose literal-pool loads, if any, are in a list below
+their 1 MiB reach. -/
+theorem good_nearOk {L : List Line} (h : Good L)
+    (hlit : (L.map Line.size).sum < 2 ^ 20 ∨ L.countP Line.isLit = 0) : NearOk L := by
   intro m hm j i tr t reach align o hj hs ht hb hr ho
-  obtain ⟨j', hj', h1, h2⟩ := good_near h j _ t hj (nearTgt_eq hs ht hb hr)
-  have hl := labelOffsets_go_label hm hj'
-  rw [ho, Nat.zero_add] at hl
-  cases hl
-  obtain ⟨hr1, -, -⟩ := Insn.pcRelSpec_bounds hs
-  rcases Nat.le_total j j' with hle | hle
-  · obtain ⟨d, rfl⟩ := Nat.exists_eq_add_of_le hle
-    have := lineOffset_mono L j d
-    omega
-  · obtain ⟨d, rfl⟩ := Nat.exists_eq_add_of_le hle
-    have := lineOffset_mono L j' d
-    omega
+  cases hli : (Line.ins i tr).isLit
+  · obtain ⟨j', hj', h1, h2⟩ := good_near h j _ t hj (nearTgt_eq hs ht hb hr hli)
+    have hl := labelOffsets_go_label hm hj'
+    rw [ho, Nat.zero_add] at hl
+    cases hl
+    obtain ⟨hr1, -, -⟩ := Insn.pcRelSpec_bounds hs
+    rcases Nat.le_total j j' with hle | hle
+    · obtain ⟨d, rfl⟩ := Nat.exists_eq_add_of_le hle
+      have := lineOffset_mono L j d
+      omega
+    · obtain ⟨d, rfl⟩ := Nat.exists_eq_add_of_le hle
+      have := lineOffset_mono L j' d
+      omega
+  · -- a literal-pool load (reach 1 MiB): its line and its entry's label are in the list
+    have hmem : Line.ins i tr ∈ L := List.mem_of_getElem? hj
+    rcases hlit with hsz | h0
+    · obtain ⟨s, rd, n, rfl⟩ := isLit_form hli
+      simp only [Insn.pcRelSpec?, Option.some.injEq, Prod.mk.injEq] at hs
+      obtain ⟨rfl, rfl, -⟩ := hs
+      rcases labelOffsets_go_inv hm ho with h1 | ⟨j', -, hj'⟩
+      · simp at h1
+      · have e1 := lineOffset_le_sum L j
+        have e2 := lineOffset_le_sum L j'
+        have e3 : (2 : Nat) ^ 20 = 1048576 := rfl
+        have e4 : (2 : Int) ^ 20 = 1048576 := rfl
+        rw [e4]
+        omega
+    · exact absurd hli (by simpa using List.countP_eq_zero.1 h0 _ hmem)
 
 theorem good_of_nearOkB {ls : List Line} (h : ∀ ln ∈ ls, ln.nearOkB = true) :
     Good ls ∧ ∀ ln ∈ ls, ln.bOk = true := by
@@ -438,7 +476,8 @@ theorem nearBlk_rmw (bits : Nat) (op : AtomicRmwLoopOp) (fl : Clif.MemFlags) (n 
   have e : rmwLoopLines bits op fl (.loop n) =
       (Line.label (.loop n) :: rmwLoopBody bits op fl) ++ [.ins (.cbz true true (.x 24) (.loop n))] := rfl
   have hcbz : (Line.ins (.cbz true true (.x 24) (.loop n)) none).nearTgt = some (.loop n) := by
-    simp [Line.nearTgt, Insn.pcRelSpec?, Insn.isBr, Insn.relaxTarget?, Insn.condTarget?]
+    have hl : (Line.ins (.cbz true true (.x 24) (.loop n)) none).isLit = false := rfl
+    simp [Line.nearTgt, hl, Insn.pcRelSpec?, Insn.isBr, Insn.relaxTarget?, Insn.condTarget?]
   rw [e]
   refine ⟨by simp, ?_, ?_, ?_, ?_, Or.inr ?_⟩
   · simp [rmwLoopBody]; omega
@@ -494,6 +533,15 @@ theorem nearBlk_jt (t1 t2 : Reg) (n : Nat) :
   · simp [Line.relaxable?, Insn.relaxTarget?, Insn.condTarget?]
   · simp [Line.nearTgt, Insn.pcRelSpec?, Insn.isBr, Insn.relaxTarget?, Insn.condTarget?]
 
+/-- `EmitEnc.lines_fpuLoad_of_ne` (not imported here): the lines of an `fpuLoad` of an
+addressing mode other than a pool entry. -/
+private theorem lines_fpuLoad_ne {c : FnCtx} {sz : ScalarSize} {rt : Reg} {m : AMode}
+    {fl : Clif.MemFlags} {ps : PState} (h : ∀ cst, m ≠ .const cst) :
+    (MInst.fpuLoad sz rt m fl).lines c ps = (do
+      let (pre, mem) ← memFinalize c m sz.bytes
+      pure (pre ++ [.ins (.fpuLoad sz rt mem) fl.trapCode], ps)) := by
+  cases m <;> first | exact absurd rfl (h _) | rfl
+
 theorem lines_ok {c : FnCtx} {ps ps' : PState} {m : MInst} {ls : List Line}
     (hm : m.noAlways = true) (h : m.lines c ps = .ok (ls, ps')) :
     Good ls ∧ ∀ ln ∈ ls, ln.bOk = true := by
@@ -548,18 +596,25 @@ theorem lines_ok {c : FnCtx} {ps ps' : PState} {m : MInst} {ls : List Line}
       · exact memFinalize_nearOkB hmf ln hl
       · simp [Line.nearOkB, Line.nearTgt, Line.bOk, Insn.pcRelSpec?]
   case fpuLoad sz rd mem fl =>
-    simp only [MInst.lines] at h
-    cases hmf : memFinalize c mem sz.bytes with
-    | error e => simp [hmf, bind, Except.bind] at h
-    | ok r =>
-      obtain ⟨pre, mem'⟩ := r
-      simp [hmf, bind, Except.bind, pure, Except.pure] at h
+    by_cases hc : ∃ cst, mem = .const cst
+    · obtain ⟨cst, rfl⟩ := hc
+      simp [MInst.lines, pure, Except.pure] at h
       obtain ⟨rfl, -⟩ := h
-      refine good_of_nearOkB fun ln hl => ?_
-      simp only [List.mem_append, List.mem_singleton] at hl
-      rcases hl with hl | rfl
-      · exact memFinalize_nearOkB hmf ln hl
-      · simp [Line.nearOkB, Line.nearTgt, Line.bOk, Insn.pcRelSpec?]
+      refine good_of_nearOkB ?_
+      have hl : (Line.ins (.fpuLoadLit sz rd (.const cst)) none).isLit = true := rfl
+      simp [Line.nearOkB, Line.nearTgt, hl, Line.bOk, Insn.pcRelSpec?]
+    · rw [lines_fpuLoad_ne (fun cst e => hc ⟨cst, e⟩)] at h
+      cases hmf : memFinalize c mem sz.bytes with
+      | error e => simp [hmf, bind, Except.bind] at h
+      | ok r =>
+        obtain ⟨pre, mem'⟩ := r
+        simp [hmf, bind, Except.bind, pure, Except.pure] at h
+        obtain ⟨rfl, -⟩ := h
+        refine good_of_nearOkB fun ln hl => ?_
+        simp only [List.mem_append, List.mem_singleton] at hl
+        rcases hl with hl | rfl
+        · exact memFinalize_nearOkB hmf ln hl
+        · simp [Line.nearOkB, Line.nearTgt, Line.bOk, Insn.pcRelSpec?]
   case fpuStore sz rd mem fl =>
     simp only [MInst.lines] at h
     cases hmf : memFinalize c mem sz.bytes with
@@ -866,22 +921,132 @@ theorem moveInsts_noAlways {fr : RAFrame} {src dst : Loc} {l : List AInst}
       exact slotLoadAt_noAlways _ _ _ m (mem_map_inst hm)
   · cases h
 
+/-! ### Literal-pool loads through the allocation (`af_noLit_of`) -/
+
+theorem visit_isLitLoad {m : Type → Type} [Monad m] [LawfulMonad m]
+    (f : OpSpec → Reg → m Reg) (i : MInst) :
+    MInst.isLitLoad <$> MInst.visitOperands f i = (fun _ => i.isLitLoad) <$> MInst.visitOperands f i := by
+  cases i
+  case fpuLoad sz rd am fl =>
+    cases am <;> simp [MInst.visitOperands, AMode.visit, MInst.isLitLoad]
+  case condBr a b k =>
+    cases k <;> simp [MInst.visitOperands, CondBrKind.visit, MInst.isLitLoad]
+  case trapIf k c =>
+    cases k <;> simp [MInst.visitOperands, CondBrKind.visit, MInst.isLitLoad]
+  case call info =>
+    rcases info with ⟨dest, us, ds⟩
+    cases dest <;> simp [MInst.visitOperands, MInst.isLitLoad]
+  case tryCall info ti =>
+    rcases info with ⟨dest, us, ds⟩
+    cases dest <;> simp [MInst.visitOperands, MInst.isLitLoad]
+  all_goals simp [MInst.visitOperands, MInst.isLitLoad]
+
+theorem assign_isLitLoad {i i' : MInst} {regs : Array Reg} (h : i.assign regs = .ok i') :
+    i'.isLitLoad = i.isLitLoad := by
+  rw [Proof.assign_eq] at h
+  have e := congrArg (fun x => StateT.run x 0)
+    (visit_isLitLoad (m := StateT Nat (Except String)) (Proof.putOp regs) i)
+  simp only [StateT.run_map] at e
+  cases hr : (MInst.visitOperands (Proof.putOp regs) i).run 0 with
+  | error err => simp [hr, bind, Except.bind] at h
+  | ok p =>
+    rw [hr] at e h
+    simp only [bind, Except.bind] at h
+    split at h
+    · simp [throw, throwThe, MonadExceptOf.throw] at h
+    · simp only [pure, Except.pure, Except.ok.injEq] at h
+      subst h
+      simpa [Functor.map, Except.map] using e
+
+theorem slotStoreAt_isLitLoad (cls : RegClass) (r : Reg) (off : Nat) :
+    ∀ m ∈ slotStoreAt cls r off, m.isLitLoad = false := by
+  intro m hm
+  unfold slotStoreAt at hm
+  split at hm
+  · simp only [List.mem_singleton] at hm
+    subst hm
+    unfold slotStore
+    cases cls <;> rfl
+  · simp only [spAddrX16, List.mem_append, List.mem_cons, List.mem_map, List.not_mem_nil,
+      or_false] at hm
+    rcases hm with ((rfl | ⟨_, _, rfl⟩) | rfl) | rfl <;> (try cases cls) <;> rfl
+
+theorem slotLoadAt_isLitLoad (cls : RegClass) (r : Reg) (off : Nat) :
+    ∀ m ∈ slotLoadAt cls r off, m.isLitLoad = false := by
+  intro m hm
+  unfold slotLoadAt at hm
+  split at hm
+  · simp only [List.mem_singleton] at hm
+    subst hm
+    unfold slotLoad
+    cases cls <;> rfl
+  · simp only [spAddrX16, List.mem_append, List.mem_cons, List.mem_map, List.not_mem_nil,
+      or_false] at hm
+    rcases hm with ((rfl | ⟨_, _, rfl⟩) | rfl) | rfl <;> (try cases cls) <;> rfl
+
+theorem moveInsts_isLitLoad {fr : RAFrame} {src dst : Loc} {l : List AInst}
+    (h : fr.moveInsts src dst = .ok l) : ∀ m, AInst.inst m ∈ l → m.isLitLoad = false := by
+  intro m hm
+  unfold RAFrame.moveInsts at h
+  simp only [bind, Except.bind, pure, Except.pure] at h
+  split at h
+  · split at h
+    · cases h
+      simp only [List.mem_singleton, AInst.inst.injEq] at hm
+      subst hm
+      rfl
+    · cases h
+      rcases List.mem_append.mp (mem_map_inst hm) with h | h
+      · exact slotStoreAt_isLitLoad _ _ _ m h
+      · exact slotLoadAt_isLitLoad _ _ _ m h
+  · split at h
+    · cases h
+    · cases h
+      exact slotStoreAt_isLitLoad _ _ _ m (mem_map_inst hm)
+  · split at h
+    · cases h
+    · cases h
+      exact slotLoadAt_isLitLoad _ _ _ m (mem_map_inst hm)
+  · cases h
+
 end E2E.EmitNear
 
 namespace E2E
 
 open Backend EmitNear
 
+/-- `emitFunc` of a function without literal-pool load has no literal line (the pool lines are
+data words and labels). -/
+theorem emitFunc_lit0 {k : Nat} {af : AFunc} {fa : FnAsm} (he : emitFunc k af = .ok fa)
+    (hn : af.NoLit) : fa.lines.toList.countP Line.isLit = 0 := by
+  obtain ⟨pre, P, hp, hl, hP, -⟩ := emitFunc_pool he
+  rw [hl, List.countP_append, relaxLines_countP_isLit, emitPre_lit0 hp hn, Nat.zero_add,
+    List.countP_eq_zero]
+  intro ln hln
+  rcases hP ln hln with ⟨w, rfl⟩ | ⟨n, rfl⟩ <;> simp [Line.isLit]
+
 /-- **The near PC-relative lines reach their labels**, for an allocated function without
-`al`/`nv` branch conditions. -/
+`al`/`nv` branch conditions whose literal loads, if any, reach the pool after its body: the
+function is below 1 MiB or has no literal-pool load. (Before #565 there was no pool and no
+premise `hlit`; with the pool the statement without it is false for a function over 1 MiB with
+a literal load.) -/
 theorem emitFunc_near_of {k : Nat} {af : AFunc} {fa : FnAsm} (hna : af.NoAlways)
-    (he : emitFunc k af = .ok fa) : NearOk fa.lines.toList := by
+    (hlit : fa.size < 2 ^ 20 ∨ af.NoLit) (he : emitFunc k af = .ok fa) :
+    NearOk fa.lines.toList := by
+  have hlit' : (fa.lines.toList.map Line.size).sum < 2 ^ 20 ∨
+      fa.lines.toList.countP Line.isLit = 0 := by
+    obtain ⟨-, -, -, hs, -⟩ := emitFunc_unfold he
+    rcases hlit with h | h
+    · exact .inl (hs ▸ h)
+    · exact .inr (emitFunc_lit0 he h)
   obtain ⟨body, ps, hb, hL, -⟩ := emitFunc_ok he
   obtain ⟨g, bo⟩ := blocksLinesE_good af.blocks.toList {} ps body hna hb
-  rw [hL]
-  apply good_nearOk
-  apply good_relax
-  exact (good_ft body.length body (Nat.le_refl _) g bo).append (good_of_nearOkB (trapLines_nearOkB _)).1
+  rw [hL] at hlit' ⊢
+  refine good_nearOk ?_ hlit'
+  refine Good.append ?_ (good_of_nearOkB fun ln hln => ?_).1
+  · apply good_relax
+    exact (good_ft body.length body (Nat.le_refl _) g bo).append (good_of_nearOkB (trapLines_nearOkB _)).1
+  · rcases emitPool_mem hln with ⟨w, rfl⟩ | ⟨n, rfl⟩ <;> rfl
 
 /-- **The lowering keeps the conditions**: every instruction of `lowerRFunc vc rf` is a move's
 (no conditional branch) or the allocated form of an instruction of `vc` (same conditions). -/
@@ -921,12 +1086,60 @@ theorem af_noAlways_of {vc : VCode} {rf : RFunc} {af : AFunc} (hna : vc.noAlways
     · cases hmc
     · simp at hmc
 
+/-- **The lowering keeps the absence of literal-pool loads**: every instruction of
+`lowerRFunc vc rf` is a move's (slot loads and stores) or the allocated form of an instruction of
+`vc` (same addressing mode). -/
+theorem af_noLit_of {vc : VCode} {rf : RFunc} {af : AFunc} (hn : vc.noPoolB = true)
+    (h : lowerRFunc vc rf = .ok af) : af.NoLit := by
+  intro p hp m hm
+  obtain ⟨⟨-, -, hsz, hbl⟩, -, -⟩ := lowerRFunc_ok h
+  obtain ⟨b, hb⟩ := List.mem_iff_getElem?.mp hp
+  rw [Array.getElem?_toList] at hb
+  have hlt : b < (vc.blocks.zip rf.blocks).size := by
+    rw [← hsz]; exact (Array.getElem?_eq_some_iff.mp hb).1
+  rw [Array.size_zip] at hlt
+  obtain ⟨vb, hvb⟩ : ∃ vb, vc.blocks[b]? = some vb := ⟨_, Array.getElem?_eq_getElem (by omega)⟩
+  obtain ⟨items, hit⟩ : ∃ items, rf.blocks[b]? = some items :=
+    ⟨_, Array.getElem?_eq_getElem (by omega)⟩
+  obtain ⟨cd, hcd, hb'⟩ := hbl b vb items hvb hit
+  rw [hb] at hb'
+  cases hb'
+  have hm' : AInst.inst m ∈ cd := by
+    simp only [List.mem_append] at hm
+    rcases hm with h | h
+    · split at h <;> simp at h
+    · exact h
+  obtain ⟨it, -, c1, hc1, hmc⟩ := mem_itemsCode hcd hm'
+  cases it with
+  | move src dst => exact moveInsts_isLitLoad (itemCode_move_ok hc1) m hmc
+  | op kk allocs =>
+    obtain ⟨regs, i, i', -, hi, hasg, hcase⟩ := Backend.Proof.itemCode_op hc1
+    have hvi : i.isLitLoad = false := by
+      simp only [VCode.noPoolB, List.all_eq_true, Bool.not_eq_eq_eq_not, Bool.not_true] at hn
+      exact hn vb (List.mem_of_getElem? (by simpa using hvb)) i
+        (List.mem_of_getElem? (by simpa using hi))
+    rcases hcase with ⟨rfl, -, -⟩ | ⟨ds, -, rfl⟩ | ⟨us, -, rfl⟩
+    · simp only [List.mem_singleton, AInst.inst.injEq] at hmc
+      subst hmc
+      rw [assign_isLitLoad hasg]; exact hvi
+    · cases hmc
+    · simp at hmc
+
 /-- **The near PC-relative lines of the spill path reach their labels** (V6b): for the lowering
-`af` of the spill allocation of a prepared VCode without `al`/`nv` branch conditions, the lines
-`emitFunc` produces satisfy `NearOk`. -/
+`af` of the spill allocation of a prepared VCode without `al`/`nv` branch conditions that meets
+the size condition, the lines `emitFunc` produces satisfy `NearOk`. (`hsz` is new with the
+literal pool, #565: its `poolReachB` part gives the literal loads' reach, `emitFunc_near_of`.) -/
 theorem emitFunc_spill_near {vcp : VCode} {af : AFunc} {k : Nat} {fa : FnAsm}
-    (hna : vcp.noAlwaysB = true) (ha : lowerRFunc vcp (spillAlloc vcp) = .ok af)
-    (he : emitFunc k af = .ok fa) : NearOk fa.lines.toList :=
-  emitFunc_near_of (af_noAlways_of hna ha) he
+    (hna : vcp.noAlwaysB = true) (hsz : spillSizeOkB vcp = true)
+    (ha : lowerRFunc vcp (spillAlloc vcp) = .ok af)
+    (he : emitFunc k af = .ok fa) : NearOk fa.lines.toList := by
+  refine emitFunc_near_of (af_noAlways_of hna ha) ?_ he
+  have hr := spillSizeOkB_reach hsz
+  simp only [poolReachB, Bool.or_eq_true, decide_eq_true_eq] at hr
+  rcases hr with h | h
+  · have h1 := emitFunc_size_rf ha he
+    unfold spillWordBound at h
+    exact .inl (by omega)
+  · exact .inr (af_noLit_of h ha)
 
 end E2E

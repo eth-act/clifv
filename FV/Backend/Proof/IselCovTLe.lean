@@ -10,7 +10,7 @@ split as a type set's).
 namespace Backend.Proof.CovT
 
 open Backend Backend.Proof Backend.Proof.Flow Isle Isle.Aarch64
-open Backend.Proof.Cov (Covered covV covVL DeepRegs NumOk numOk_mono kind_cases regsIn_reg)
+open Backend.Proof.Cov (DeepRegs NumOk numOk_mono kind_cases regsIn_reg)
 
 variable {f : Clif.Function} {ctx : Ctx}
 
@@ -42,12 +42,6 @@ theorem deepRegs_mono {m m' : Nat} {v : V} (h : DeepRegs m v) (hm : m &&& m' = m
 theorem regsIn_data (t k : Nat) (vs : List V) : (V.data t k vs).regsIn = regsInL vs := by
   simp [V.regsIn]
 
-theorem covV_data (t k : Nat) (vs : List V) :
-    covV (.data t k vs) = ((t != tyMInst || (match MInst.ofV (.data t k vs) with
-      | some i => Covered i
-      | none => true)) && covVL vs) := by
-  rfl
-
 theorem regsInL_mem' {vs : List V} {r : Reg} (h : r ∈ regsInL vs) : ∃ v ∈ vs, r ∈ v.regsIn := by
   induction vs with
   | nil => cases h
@@ -56,10 +50,6 @@ theorem regsInL_mem' {vs : List V} {r : Reg} (h : r ∈ regsInL vs) : ∃ v ∈ 
     rcases h with h | h
     · exact ⟨w, List.mem_cons_self, h⟩
     · obtain ⟨v, hv, h⟩ := ih h; exact ⟨v, List.mem_cons_of_mem _ hv, h⟩
-
-theorem covVL_iff : ∀ {vs : List V}, covVL vs = true ↔ ∀ v ∈ vs, covV v = true
-  | [] => by simp [covVL]
-  | v :: vs => by simp [covVL, covVL_iff]
 
 theorem covV_of_mem {v : V} {vs : List V} (h : covVL vs = true) (hv : v ∈ vs) : covV v = true :=
   covVL_iff.mp h v hv

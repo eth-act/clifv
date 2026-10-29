@@ -2,6 +2,7 @@ import FV.E2E.EmitTotalIn
 import FV.E2E.SizeVC
 import FV.E2E.SizeLower
 import FV.Backend.Proof.IselSzDriver
+import FV.Backend.Proof.FormsCoverComplete
 
 /-!
 # The size bound from the input (V6c)
@@ -39,17 +40,49 @@ theorem spillWordBound_le_sizeBoundIn {f : Clif.Function} {vc vcp : VCode} (hI :
   unfold sizeBoundIn
   omega
 
+/-- A control form or a `FormOk` form is not a literal-pool load (#565). -/
+theorem isLitLoad_of_covered2 {i : MInst} (h : i.isCtl = true ∨ FormOk default i = true) :
+    i.isLitLoad = false := by
+  cases hl : i.isLitLoad with
+  | false => rfl
+  | true =>
+    exfalso
+    obtain ⟨sz, rd, c, fl, rfl⟩ : ∃ sz rd c fl, i = .fpuLoad sz rd (.const c) fl := by
+      unfold MInst.isLitLoad at hl
+      split at hl
+      · exact ⟨_, _, _, _, rfl⟩
+      · cases hl
+    rcases h with h | h
+    · cases h
+    · unfold FormOk at h
+      split at h <;> simp_all [memOk]
+
+/-- **Subset E has no literal-pool load**: the integer analysis's coverage is two-way
+(`Driver.FormsCovered2`, #565). -/
+theorem noPoolB_of_formsCovered2 {vcp : VCode} (h : FormsCovered2 vcp) : vcp.noPoolB = true := by
+  unfold VCode.noPoolB
+  rw [List.all_eq_true]
+  intro vb hvb
+  rw [List.all_eq_true]
+  intro i hi
+  obtain ⟨b, hb⟩ := List.mem_iff_getElem?.mp hvb
+  obtain ⟨k, hk⟩ := List.mem_iff_getElem?.mp hi
+  rw [Array.getElem?_toList] at hb hk
+  rw [isLitLoad_of_covered2 (h b vb k i hb hk)]
+  rfl
+
 /-- **The size bound from the input**: for a function in the lowering's scope (`lowerScopeB`) with
-`sizeOkB f`, the prepared VCode meets `spillSizeOkB`. -/
+`sizeOkB f`, the prepared VCode meets `spillSizeOkB` (its `poolReachB` part since subset E has no
+literal-pool load, `noPoolB_of_formsCovered2`). -/
 theorem spillSizeOkB_of_sizeOkB {f : Clif.Function} {vc vcp : VCode}
     (hs : lowerScopeB f = true) (hsz : sizeOkB f = true)
     (hl : lowerFunction f = .ok vc) (hp : Backend.prepare vc = .ok vcp) : spillSizeOkB vcp = true := by
   have hI := iselSz (lowerScope_of hs)
   have h := spillWordBound_le_sizeBoundIn hI (lowerScope_of hs).subsetE hl hp
   unfold sizeOkB at hsz
-  unfold spillSizeOkB
   have := of_decide_eq_true hsz
-  exact decide_eq_true (by omega)
+  exact spillSizeOkB_of (by omega)
+    (poolReachB_of_noPool (noPoolB_of_formsCovered2 (formsCovered2_complete (lowerScope_of hs) hl hp)))
 
 set_option linter.unusedVariables false in -- the conclusion's premises are named for readability
 /-- **The backend's end-to-end theorem, total including emission and layout, with every premise

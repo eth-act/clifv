@@ -124,7 +124,7 @@ theorem emitReady_spill_of {vc vcp : VCode} {af : AFunc} (hdom : Prep.PrepDomain
   unfold emitReady
   rw [he]
   exact FnAsm.layoutReadyB_of hlab hdef (emitFunc_encodable_of hacc hcov himm ha he)
-    (emitFunc_spill_near hna ha he) (emitFunc_spill_size hsz ha he)
+    (emitFunc_spill_near hna hsz ha he) (emitFunc_spill_size hsz ha he)
 
 /-- **`lowerAlloc` succeeds whatever the allocator answered** once the spill allocation is
 lowered (`lowerAlloc_total`'s case analysis). -/

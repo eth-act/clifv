@@ -315,15 +315,26 @@ theorem linesEnc_store {c : FnCtx} {op : StoreOp} {rt : Reg} {m : AMode} {fl : C
   split <;> rename_i hV <;> simp only [hV, ite_true, Bool.false_eq_true, ite_false] at hy <;>
     rw [hy] <;> exact ha
 
+/-- The lines of an `fpuLoad` of an addressing mode other than a pool entry: `mem_finalize`'s
+prefix, then the `ldr` (#565: `AMode.Const` is the literal load). -/
+theorem lines_fpuLoad_of_ne {c : FnCtx} {sz : ScalarSize} {rt : Reg} {m : AMode}
+    {fl : Clif.MemFlags} {ps : PState} (h : ∀ cst, m ≠ .const cst) :
+    (MInst.fpuLoad sz rt m fl).lines c ps = (do
+      let (pre, mem) ← memFinalize c m sz.bytes
+      pure (pre ++ [.ins (.fpuLoad sz rt mem) fl.trapCode], ps)) := by
+  cases m <;> first | exact absurd rfl (h _) | rfl
+
 /-- An `ldr`/`str` of an `s`/`d` register (`fpuLoad`/`fpuStore`, `opc` 01/00). -/
 theorem linesEnc_fpuMem {c : FnCtx} {sz : ScalarSize} {rt : Reg} {m : AMode} {fl : Clif.MemFlags}
     (ld : Bool) (hsz : sz = .size32 ∨ sz = .size64) (hrt : VR rt) (hm : MemOk sz.bytes m) :
     LinesEnc c (if ld then .fpuLoad sz rt m fl else .fpuStore sz rt m fl) := by
+  have hnc : ∀ cst, m ≠ .const cst := by rintro cst rfl; simp [MemOk, FinOk] at hm
   cases ld
   all_goals first
     | change LinesEnc c (.fpuStore sz rt m fl)
     | change LinesEnc c (.fpuLoad sz rt m fl)
   all_goals intro ps ls ps' hl i t hi
+  all_goals try rw [lines_fpuLoad_of_ne hnc] at hl
   all_goals simp only [MInst.lines, bind, Except.bind] at hl <;> split at hl <;>
     (try (cases hl; done)) <;>
     rename_i r hr <;>
@@ -642,6 +653,14 @@ theorem formOk_enc {c cx : FnCtx} {i i' : MInst} {ops : Array Operand} {regs : A
     | exact linesEnc_fpuCmp himm0 (by omega) (by omega)
     | exact linesEnc_fpuRound (by omega) (by omega)
 
+/-- The literal-pool load (#565): `ldr s/d, <entry>`. -/
+theorem poolLoad_enc {c : FnCtx} {i i' : MInst} {ops : Array Operand} {regs : Array Reg}
+    (h : i.isPoolLoad = true) (hops : i.operands = .ok ops) (hal : AllocOk ops regs)
+    (hasg : i.assign regs = .ok i') : LinesEnc c i' := by
+  obtain ⟨sz, d, v, fl, rfl, hsz⟩ := isPoolLoad_form h
+  inv_op
+  rcases hsz with rfl | rfl <;> exact linesEnc_one (fun _ => rfl)
+    (by enc <;> simp_all [Insn.armFields.fpOpc, pure, Except.pure])
 
 
 /-! ## Control forms -/
@@ -1486,8 +1505,9 @@ theorem item_enc {cx c : FnCtx} {af : AFunc} {vc : VCode} {rf : RFunc} {cc : Che
     have hL : LinesEnc c i' := by
       have him := immOkB_of himm hvb hi
       cases hct : i.isCtl
-      · have hf := (hcov b vb k i hvb hi).resolve_left (by simp [hct])
-        exact formOk_enc hf him hops hal hasg
+      · rcases (hcov b vb k i hvb hi).resolve_left (by simp [hct]) with hf | hp
+        · exact formOk_enc hf him hops hal hasg
+        · exact poolLoad_enc hp hops hal hasg
       · exact ctl_enc hct (ctlInstOk_of_ctlCheck hctl hvb hi) him hops hal hasg
     intro a ha
     rcases hcases with ⟨rfl, -, -⟩ | ⟨_, -, rfl⟩ | ⟨_, -, rfl⟩
@@ -1536,8 +1556,9 @@ theorem emitFunc_encodable_of {cx : FnCtx} {vc : VCode} {rf : RFunc} {af : AFunc
     · obtain ⟨it, hit', c1, hc1, hac⟩ := mem_itemsCode hcode hax
       exact item_enc hcov himm hctl hsv hvb (hitems b vb items hvb hit it hit') hc1 a hac
   rw [hL]
-  exact relaxLines_enc _ (allEnc_append (ftList_enc _ _ (Nat.le_refl _) (blocksLinesE_enc hA hb))
-    (trapLines_enc _))
+  refine allEnc_append (relaxLines_enc _ (allEnc_append (ftList_enc _ _ (Nat.le_refl _)
+    (blocksLinesE_enc hA hb)) (trapLines_enc _))) fun i t hit => ?_
+  rcases emitPool_mem hit with ⟨w, h⟩ | ⟨n, h⟩ <;> cases h
 
 /-- **Every instruction of the emitted spill allocation is encodable** (V6b, `Insn.encodable`:
 apart from its label operand), for in-scope input whose prepared VCode has encodable immediates

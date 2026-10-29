@@ -283,6 +283,15 @@ theorem ctorCls_putRegsVec {vs : List Nat} {rs : List Reg} (h : vs.mapM ctx.valu
   obtain ⟨x, hx, he⟩ := mapM_mem h r hr'
   exact .inr (.inl ⟨x, by simpa [V.valsIn] using hx, he⟩)
 
+/-- Close `CtorCls` of a constructor that returns a `VCodeConstant` (no atoms) and changes only
+the constant pool (`emit_u64_le_const`, #565). -/
+theorem ctorCls_consts {id : TermId} {args : List V} {st st' : LState} {n : Nat}
+    (hcl : st'.classes = st.classes) (hn : st'.nextVreg = st.nextVreg)
+    (he : st'.emitted = st.emitted) :
+    CtorCls ctx id args st (.op (.vcodeConst n)) st' := by
+  refine ⟨clsStep_of_eq hcl hn, fun _ r hr => ?_, ⟨[], by simp [he], fun _ _ hm => by cases hm⟩⟩
+  simp [V.regsIn, opRegs] at hr
+
 theorem ctorCls_tryRets {k : Nat} {ps : List Reg} (hps : retRegs k = some ps) (cc : Option Clif.CallConv)
     (f : Reg × Reg → Bool) :
     CtorCls ctx id args st
@@ -392,6 +401,7 @@ theorem externCtor_cls (ctx : Ctx) (t : Term) (args : List V) (st : LState) :
          simp [V.regsIn, opRegs]; exact ⟨l, hl, hrl⟩)
       | exact ctorCls_putRegsVec ‹_›
       | exact ctorCls_tryRets ‹_› _ _
+      | exact ctorCls_consts rfl rfl rfl
       | exact ctorCls_tryRetsC ‹_› _ _
 
 end Backend.Proof.Spill

@@ -68,6 +68,15 @@ theorem CtxT.ofExterns {f : Clif.Function} {ctx : Ctx} (hinv : CtxInvT f ctx)
     (hsc : InstScopeT ctx) (hx : f.externs.all (Compile.sigE ·.2.sig) = true) : CtxT f ctx :=
   ⟨hinv, hsc.toTF, callsE_of_externs hx ctx⟩
 
+/-- An instruction of `Compile.instETF` needs no literal pool (`F64PoolFreeInst`: an `f64const`
+of the typed scope is `Compile.f64PoolFree`). -/
+theorem f64PoolFreeInst_of_instETF {i : Clif.Inst} (h : Compile.instETF i = true) :
+    F64PoolFreeInst i := by
+  intro ty imm hi hty
+  subst hi hty
+  simpa [Compile.instETF, Compile.instETA, Compile.fArithET, Compile.fCvtET, Compile.fCmpET,
+    Compile.instET, Compile.instE, Compile.tyE, Compile.f64PoolFree, or_assoc] using h
+
 /-- **Integer specialization**: a subset-E context is a typed one. -/
 theorem CtxInv.toCtxT {f : Clif.Function} {ctx : Ctx} (h : CtxInv f ctx)
     (hE : Compile.functionE f = true) : CtxT f ctx := by
@@ -620,7 +629,8 @@ theorem lowerInstOk_of_rulesT (hrules : LowerRulesCorrectTI program)
     exact ⟨ms, rss, h1, h2, h3.toOk⟩
   have hmv : floatMoveRootRule r = true → ∃ ms rss, st'.emitted = st.emitted ++ ms.toArray ∧
       out = .regsVec rss ∧ LowerInstOk isem MR env cp ctx inst info.results st rss st' ms :=
-    fun hfm => (hT F isem MR env cp hR hMR).1 r hr hfm f ctx hctx.inv ii info inst hi hc trivial
+    fun hfm => (hT F isem MR env cp hR hMR).1 r hr hfm f ctx hctx.inv ii info inst hi hc
+      (f64PoolFreeInst_of_instETF (hctx.scope ii info inst hi hc))
       cfg hco m n st tr env' s1 out st' tr2 hm1 hn1 hvb hfirst hmatch heval
   have har : floatArithRootRule r = true → ∃ ms rss, st'.emitted = st.emitted ++ ms.toArray ∧
       out = .regsVec rss ∧ LowerInstOk isem MR env cp ctx inst info.results st rss st' ms :=

@@ -190,7 +190,15 @@ theorem lines_kinds (c : FnCtx) (m : MInst) (ps : PState) {ls : List Line} {ps' 
     fun h => by cases h; rfl
   have errE : ∀ {α : Type} {s : String} {b : α}, (throw s : Except String α) = .ok b → False :=
     fun h => by cases h
-  cases m <;> simp only [MInst.lines, bind, Except.bind, pure, Except.pure] at h
+  by_cases hfc : ∃ s rd n fl, m = .fpuLoad s rd (.const n) fl
+  · obtain ⟨s, rd, n, fl, rfl⟩ := hfc
+    simp only [MInst.lines, pure, Except.pure] at h
+    obtain ⟨rfl, -⟩ := Prod.mk.inj (okE h)
+    rfl
+  cases m
+  case' fpuLoad s rd mem fl => cases mem
+  all_goals try (exfalso; exact hfc ⟨_, _, _, _, rfl⟩)
+  all_goals simp only [MInst.lines, bind, Except.bind, pure, Except.pure] at h
   all_goals (repeat' split at h)
   all_goals first
     | (exfalso; apply errE; assumption)
@@ -276,6 +284,7 @@ theorem relaxable_some {ln : Line} {c : Insn} {t : Lbl} (h : ln.relaxable? = som
         cases i <;> simp [Insn.relaxTarget?, Insn.condTarget?] at ht <;>
         first | rfl | (intro l; rfl)
   | word _ _ => simp [Line.relaxable?] at h
+  | data _ => simp [Line.relaxable?] at h
   | label _ => simp [Line.relaxable?] at h
 
 /-- Branch relaxation rewrites only branches: the memory-event kinds are unchanged. -/

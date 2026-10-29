@@ -1175,10 +1175,8 @@ def externCtor (ctx : Ctx) (t : Term) (args : List V) (st : LState) : ExtResult 
   | TId.is_pic, [] => ok (.bool true)
   -- S11e4 float constants: `asimd_mov_mod_imm_zero` (aarch64/lower/isle.rs:844-846,
   -- `ASIMDMovModImm::zero`) and `asimd_fp_mod_imm_from_u64` (isle.rs:856-858,
-  -- `ASIMDFPModImm::maybe_from_u64`, a partial constructor). `emit_u64_le_const` (the literal
-  -- pool of `constant_f64`'s last rule, machinst/isle.rs:441) is not modelled: an `f64`
-  -- constant that needs the pool makes the lowering fail (`.unmodeled`), so its function
-  -- falls back.
+  -- `ASIMDFPModImm::maybe_from_u64`, a partial constructor). The literal pool of
+  -- `constant_f64`'s last rule (`emit_u64_le_const`, `mem_flags_trusted_data`) is below (#565).
   | TId.asimd_mov_mod_imm_zero, [s] => match s.scalarSize? with
     | some sz => ok (.op (.movModImm (movModImmZero sz)))
     | none => .unmodeled "asimd_mov_mod_imm_zero"
@@ -1192,6 +1190,15 @@ def externCtor (ctx : Ctx) (t : Term) (args : List V) (st : LState) : ExtResult 
     let n := 2 ^ 64 - 1 - u64 n
     let n := if ty.bits < 64 then n % 2 ^ ty.bits else n
     optOk ((MoveWideConst.ofNat? n).map (.op ∘ .moveWideConst))
+  -- `emit_u64_le_const` (machinst/isle.rs:441): the constant pool's little-endian `u64` entry of
+  -- `value`. Cranelift's `VCodeConstants` deduplicates `U64` entries by value
+  -- (`VCodeConstants::insert`), so within a function the entry is identified by its value, which
+  -- is the `VCodeConstant` the model uses (#565). The pool is emitted after the function body
+  -- (`emitFunc`: the entries the literal loads use, in first-use order, as `MachBuffer` does).
+  | TId.emit_u64_le_const, [.int n] => ok (.op (.vcodeConst (u64 n)))
+  -- `mem_flags_trusted_data` (isle_prelude.rs: `MemFlagsData::trusted()`, `notrap aligned`): the
+  -- flags of `constant_f64`'s literal-pool load (#565)
+  | TId.mem_flags_trusted_data, [] => ok (.op (.memFlags trustedFlags))
   | TId.imm_logic_from_u64, [.ty ty, .int n] =>
     if ty == .int 32 || ty == .int 64 then
       optOk ((ImmLogic.ofNat? (u64 n) (.ofBits ty.bits)).map (.op ∘ .immLogic))

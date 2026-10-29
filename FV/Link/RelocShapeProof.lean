@@ -153,6 +153,7 @@ theorem seqGo_codeLines : ∀ {L : List Line} {s s' : SeqSt}, seqGo s L = some s
         rw [codeLines_cons_label, seqGo_codeLines h']
       | ins => simp [Line.isLabel] at hl
       | word => simp [Line.isLabel] at hl
+      | data => simp [Line.isLabel] at hl
     | false =>
       rw [codeLines_cons_code hl]
       simp only [seqGo] at h ⊢
@@ -228,6 +229,7 @@ theorem seqGo_relaxLines (f : Lbl → Bool) : ∀ (L : List Line) (s : SeqSt),
     | .ins c (some tc), h => exact keep rfl
     | .label l, h => exact keep rfl
     | .word x y, h => exact keep rfl
+    | .data w, h => exact keep rfl
     | .ins c none, h =>
       rcases relaxLine_cases f c with hr | ⟨t, ht, hr⟩
       · exact keep hr
@@ -403,9 +405,10 @@ theorem emitFunc_seqOk {k : Nat} {af : AFunc} {fa : FnAsm} (h : emitFunc k af = 
     SeqOk fa.lines.toList := by
   obtain ⟨body, ps, hb, hl, -⟩ := emitFunc_ok h
   rw [hl]
-  refine seqGo_relaxLines _ _ _ (seqOk_append ?_ ?_)
+  refine seqOk_append (seqGo_relaxLines _ _ _ (seqOk_append ?_ ?_)) (seqOk_of_free fun ln hln => ?_)
   · exact seqGo_ftList _ _ _ (Nat.le_refl _) (blocksLinesE_seqOk _ _ _ _ hb)
   · exact seqOk_of_free (trapLines_free _)
+  · rcases emitPool_mem hln with ⟨w, rfl⟩ | ⟨n, rfl⟩ <;> rfl
 
 end Backend.Proof
 
@@ -605,6 +608,7 @@ theorem codeRelocs_nodup (code : List Line) : ((codeRelocs code).map (·.offset)
     obtain ⟨_, _, rfl⟩ := h
     rfl
   | word => simp at h
+  | data => simp at h
   | label => simp at h
 
 /-! ## The shapes -/

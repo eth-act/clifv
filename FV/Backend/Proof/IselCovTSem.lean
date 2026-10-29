@@ -15,13 +15,76 @@ import FV.Backend.Proof.IselCovSem
 The instruction meaning is fixed in `IselCovTFam` (an instruction of the context of a family of
 `famTab`, whose data is described by `γP ctx noInst`). The shallow lemmas (register kinds, enum
 variants) are here, for every `I` that only describes instruction references (`InstRef I`).
+
+The typed analysis has its own coverage (`Covered`, `covV`, `covVL`): the integer analysis's
+(`Cov.Covered`: `isCtl` or `FormOk`) plus the literal-pool load (`MInst.isPoolLoad`, #565), which
+only `constant_f64`'s pool rule emits. The integer analysis keeps the two-way form, so on subset E
+the lowering has no pool load (`Driver.formsCovered2_complete`). `covV_of_cov` lifts the integer
+facts.
 -/
 
 namespace Backend.Proof.CovT
 
 open Backend Backend.Proof Backend.Proof.Flow Isle Isle.Aarch64
-open Backend.Proof.Cov (Covered covV covVL DeepRegs NumOk numOk_shape numOk_mono kind_cases
-  regsIn_reg kind_int kind_float kind_xzr)
+open Backend.Proof.Cov (DeepRegs NumOk numOk_shape numOk_mono kind_cases regsIn_reg kind_int
+  kind_float kind_xzr)
+
+/-- An instruction is covered by the typed analysis: a control form, a covered straight-line form
+or the literal-pool load (#565). -/
+def Covered (i : MInst) : Bool := i.isCtl || FormOk default i || i.isPoolLoad
+
+mutual
+/-- Every `MInst` inside the value is covered (`Covered`). -/
+def covV : V → Bool
+  | .data t k fs =>
+    (t != tyMInst || (match MInst.ofV (.data t k fs) with
+      | some i => Covered i
+      | none => true)) && covVL fs
+  | _ => true
+/-- `covV` of every value of a list. -/
+def covVL : List V → Bool
+  | [] => true
+  | v :: vs => covV v && covVL vs
+end
+
+theorem covered_of_cov {i : MInst} (h : Cov.Covered i = true) : Covered i = true := by
+  unfold Cov.Covered at h
+  unfold Covered
+  rw [h]; rfl
+
+theorem covV_data (t k : Nat) (vs : List V) :
+    covV (.data t k vs) = ((t != tyMInst || (match MInst.ofV (.data t k vs) with
+      | some i => Covered i
+      | none => true)) && covVL vs) := by
+  rfl
+
+theorem covVL_iff : ∀ {vs : List V}, covVL vs = true ↔ ∀ v ∈ vs, covV v = true
+  | [] => by simp [covVL]
+  | v :: vs => by simp [covVL, covVL_iff]
+
+mutual
+/-- The integer analysis's coverage implies the typed one. -/
+theorem covV_of_cov : ∀ {v : V}, Cov.covV v = true → covV v = true
+  | .data t k fs, h => by
+    simp only [Cov.covV] at h
+    rw [covV_data]
+    simp only [Bool.and_eq_true, Bool.or_eq_true] at h ⊢
+    refine ⟨?_, covVL_of_cov h.2⟩
+    rcases h.1 with h1 | h1
+    · exact .inl h1
+    · right
+      cases hm : MInst.ofV (.data t k fs) with
+      | none => rfl
+      | some i => rw [hm] at h1; exact covered_of_cov h1
+  | .int _, _ | .bool _, _ | .ty _, _ | .inst _, _ | .value _, _ | .reg _, _ | .regs _, _
+  | .regsVec _, _ | .label _, _ | .labels _, _ | .values _, _ | .blockCalls _, _ | .op _, _ => rfl
+/-- `covV_of_cov` on a list. -/
+theorem covVL_of_cov : ∀ {vs : List V}, Cov.covVL vs = true → covVL vs = true
+  | [], _ => rfl
+  | v :: vs, h => by
+    simp only [Cov.covVL, covVL, Bool.and_eq_true] at h ⊢
+    exact ⟨covV_of_cov h.1, covVL_of_cov h.2⟩
+end
 
 /-- `x` has a type of `ts`; an untyped value (whose vreg is an int vreg) needs an integer type in
 `ts`. -/

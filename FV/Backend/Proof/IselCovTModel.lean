@@ -12,7 +12,7 @@ typed `ext_sound`/`ctor_sound`, and the `operand_size` oracle (`Cov.os_run`, at 
 namespace Backend.Proof.CovT
 
 open Backend Backend.Proof Backend.Proof.Flow Isle Isle.Interp Isle.Aarch64
-open Backend.Proof.Cov (Clean CovSince LogicImmComplete os_run)
+open Backend.Proof.Cov (Clean LogicImmComplete os_run)
 
 set_option maxRecDepth 20000
 

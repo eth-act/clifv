@@ -25,8 +25,8 @@ open Backend Backend.Proof Backend.Proof.UnwindTables E2E
 theorem callKeys_emit {k : Nat} {af : AFunc} {fa : FnAsm} (h : emitFunc k af = .ok fa) :
     callKeys fa.lines.toList = af.blocks.toList.flatMap blockKeys := by
   obtain ⟨body, ps, hb, hL, -⟩ := emitFunc_ok h
-  rw [hL, relaxLines_callKeys, callKeys_append, callKeys_ftList, trapLines_callKeys,
-    List.append_nil]
+  rw [hL, callKeys_append, emitPool_callKeys, List.append_nil, relaxLines_callKeys, callKeys_append,
+    callKeys_ftList, trapLines_callKeys, List.append_nil]
   exact blocksLinesE_callKeys hb
 
 theorem callIdx_length : ∀ L : List Line, (callIdx L).length = nCalls L

@@ -987,6 +987,7 @@ def Line.encodeAt (lbl : Lbl → Option Nat) (pc : Nat) : Line → Except String
     match lbl t, lbl b with
     | some t, some b => sField "jump-table entry" 32 ((t : Int) - b)
     | _, _ => throw "undefined label in jump table"
+  | .data w => pure (BitVec.ofNat 32 w)
   | .label _ => throw "a label has no word"
 
 /-- Encode code lines, appending to `acc` (word `k` at byte offset `4 * k`); `ctx pc ln e`

@@ -529,7 +529,9 @@ theorem evsOkAt_of_goodW (hI : okBCleanup I = true) (hF : ∀ g ∈ (prog I).fun
   rw [ha] at hd
   cases hd
   exact RL.evsOk_of_goodXW hG (fun b hb => himg b (hS b hb))
-    (fun j' tg bs hj' k hk => hcode _ (img_line hI hg hFg hj' rfl hk)) hj hpcw hh ha'
+    (fun j' tg bs hj' k hk => hcode _ (img_line hI hg hFg hj' rfl hk))
+    (fun j' d hj' k hk => hcode _ (img_line hI hg hFg hj' rfl hk)) hj hpcw hh
+    (by rw [RL.envL_of_lm hm]; exact ha')
 
 /-- The `ReachLB` states of the plain system are those of the system keeping `S`. -/
 theorem reachLB_sysSK {f0 : Clif.Function} {K : Nat} {r : Arm.ArmState} {S : BitVec 64 → Prop}

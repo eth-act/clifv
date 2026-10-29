@@ -23,7 +23,7 @@ theorem spillLocal_cleanup {p : Clif.Program} {f : Clif.Function} {vc vcp : VCod
   cases ht : i.isCtl
   · have hcov := formsCovered_cleanup_complete hs hl hp default b vb k i hb hi
     rw [ht] at hcov
-    exact Spill.spillInstOk_of_formOk (hcov.resolve_left (by simp))
+    exact Spill.spillInstOk_of_covered (hcov.resolve_left (by simp))
   · apply Spill.spillCtl_of_prepare hp hdom _ b vb k i hb hi ht
     exact prune_insts (ctlSpillHyp hsub hd hs hl)
 

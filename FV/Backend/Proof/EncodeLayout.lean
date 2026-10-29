@@ -231,6 +231,7 @@ theorem mem_codeRelocs {code : List Line} {r : Reloc} :
       obtain ⟨⟨type, sym, addend⟩, hi, rfl⟩ := hr
       exact ⟨k, i, t, hk, hi, rfl⟩
     | word => simp at hr
+    | data => simp at hr
     | label => simp at hr
   · rintro ⟨k, i, t, hk, hi, ho⟩
     refine ⟨(.ins i t, k), hk, ?_⟩
@@ -251,6 +252,7 @@ theorem mem_codeTraps {code : List Line} {s : TrapSite} :
         subst hs
         exact ⟨k, i, hk, rfl⟩
     | word => simp at hs
+    | data => simp at hs
     | label => simp at hs
   · rintro ⟨k, i, hk, ho⟩
     refine ⟨(.ins i (some s.code), k), hk, ?_⟩

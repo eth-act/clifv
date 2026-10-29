@@ -284,6 +284,8 @@ theorem scanLines_labs_go : ∀ (L : List Line) (off : Nat) (labs : List (Label 
       exact scanLines_labs_go L _ _ _ m lm h1 h2 hg l v hl
     | word a b =>
       exact scanLines_labs_go L _ _ _ m lm h1 h2 hg l v hl
+    | data w =>
+      exact scanLines_labs_go L _ _ _ m lm h1 h2 hg l v hl
 
 /-- **The landing-pad offsets of the LSDA are the label offsets of the layout**: a label offset
 `scanLines` finds (what `callSites` writes as a landing pad) is `labelOffsets`'. -/
@@ -300,10 +302,9 @@ def callIdx : List Line → List Nat
 
 theorem retsAfter_eq (ln : Line) (off : Nat) (rets : List Nat) :
     retsAfter ln off rets = if ln.isCall then (off + 4) :: rets else rets := by
-  rcases ln with ⟨i, t⟩ | ⟨a, b⟩ | ⟨l⟩
+  rcases ln with ⟨i, t⟩ | ⟨a, b⟩ | ⟨w⟩ | ⟨l⟩
   · cases i <;> rfl
-  · rfl
-  · rfl
+  all_goals rfl
 
 theorem lineOffset_cons_succ (ln : Line) (L : List Line) (j : Nat) :
     lineOffset (ln :: L) (j + 1) = ln.size + lineOffset L j := by

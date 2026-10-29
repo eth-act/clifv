@@ -7,13 +7,15 @@ import FV.Backend.Proof.RegallocCover
 # Form coverage of the compiled function (V3, assembly)
 
 `formsCovered_of_runs`: on input in `Dominated` and `LowerScope`, every instruction of
-`prepare (lowerFunction f)` is a control form or `FormOk` (`FormsCovered`), given that every ISLE
-run of the driver emits only covered instructions (`StmtCov`, `TermCov`, `TryCov`, discharged by
-the ISLE coverage proofs). The driver's own instructions (`args`, the parameter loads, `jump`s,
-the `tryCall` replacing a `try_call`'s `call`) are covered; result `mov`s never occur since a
-statement with results gets them in int vregs; the alias renaming keeps coverage
-(`covered_mapRegs`); `prepare` only retargets control instructions and adds `jump`s
-(`formsCovered_of_prepare`).
+`prepare (lowerFunction f)` is a control form or `FormOk` (`FormsCovered2`, hence
+`FormsCovered`), given that every ISLE run of the driver emits only covered instructions
+(`StmtCov`, `TermCov`, `TryCov`, discharged by the ISLE coverage proofs). The driver's own
+instructions (`args`, the parameter loads, `jump`s, the `tryCall` replacing a `try_call`'s
+`call`) are covered; result `mov`s never occur since a statement with results gets them in int
+vregs; the alias renaming keeps coverage (`covered_mapRegs`); `prepare` only retargets control
+instructions and adds `jump`s (`formsCovered_of_prepare`). The integer analysis's coverage is
+two-way (`Cov.Covered`), so the lowering of subset E has no literal-pool load
+(`formsCovered2_of_runs`, #565).
 -/
 
 namespace Backend.Proof.Driver
@@ -43,11 +45,13 @@ theorem setTargets_isCtl {i i' : MInst} {ls : List Label} (h : i.setTargets ls =
   all_goals (try split at h)
   all_goals (cases h <;> rfl)
 
-/-- `prepare` keeps form coverage: its instructions are the input's, retargeted control
-instructions, or edge blocks' `jump`s. -/
-theorem formsCovered_of_prepare {vc vcp : VCode} (h : prepare vc = .ok vcp) (hd : Prep.PrepDomain vc)
-    (hc : ∀ vb ∈ vc.blocks.toList, ∀ i ∈ vb.insts.toList, i.isCtl = true ∨ FormOk default i = true)
-    (cx : FnCtx) : FormsCovered cx vcp := by
+/-- `prepare` keeps a property every control instruction has: its instructions are the input's,
+retargeted control instructions, or edge blocks' `jump`s. -/
+theorem prepare_all {P : MInst → Prop} {vc vcp : VCode} (h : prepare vc = .ok vcp)
+    (hd : Prep.PrepDomain vc) (hctl : ∀ i, i.isCtl = true → P i)
+    (hc : ∀ vb ∈ vc.blocks.toList, ∀ i ∈ vb.insts.toList, P i) :
+    ∀ (b : Nat) (vb : VBlock) (k : Nat) (i : MInst), vcp.blocks[b]? = some vb →
+      vb.insts[k]? = some i → P i := by
   obtain ⟨ss0, ps0, ss1, ps1, ss2, ps2, next, B, E, hc0, hc1, hS, hc2, rfl⟩ := Prep.prepare_facts h
   have cs0 := Prep.cfg_spec hc0
   have cs2 : Prep.CfgSpec (B ++ E) ss2 := Prep.cfg_spec hc2
@@ -56,8 +60,37 @@ theorem formsCovered_of_prepare {vc vcp : VCode} (h : prepare vc = .ok vcp) (hd 
       (Array.mem_toList_iff.mpr (Array.mem_of_getElem? hi)) with
     ⟨vb0, hvb0, hi0⟩ | ⟨vb0, hvb0, i0, hi0, ls, hset⟩ | ⟨l, rfl⟩
   · exact hc vb0 hvb0 i hi0
-  · exact .inl (setTargets_isCtl hset)
-  · exact .inl rfl
+  · exact hctl _ (setTargets_isCtl hset)
+  · exact hctl _ rfl
+
+/-- Every instruction of `vc` is a control form or `FormOk`: the two-way coverage of the integer
+analysis, which has no literal-pool load (#565). -/
+def FormsCovered2 (vc : VCode) : Prop :=
+  ∀ (b : Nat) (vb : VBlock) (k : Nat) (i : MInst), vc.blocks[b]? = some vb → vb.insts[k]? = some i →
+    i.isCtl = true ∨ FormOk default i = true
+
+theorem formsCovered_of_2 {vc : VCode} (h : FormsCovered2 vc) (cx : FnCtx) : FormsCovered cx vc :=
+  fun b vb k i hvb hi => (h b vb k i hvb hi).elim .inl fun h => .inr (.inl h)
+
+/-- `prepare` keeps the two-way form coverage. -/
+theorem formsCovered2_of_prepare {vc vcp : VCode} (h : prepare vc = .ok vcp) (hd : Prep.PrepDomain vc)
+    (hc : ∀ vb ∈ vc.blocks.toList, ∀ i ∈ vb.insts.toList, i.isCtl = true ∨ FormOk default i = true) :
+    FormsCovered2 vcp :=
+  prepare_all h hd (fun _ h => .inl h) hc
+
+/-- `prepare` keeps form coverage: its instructions are the input's, retargeted control
+instructions, or edge blocks' `jump`s. -/
+theorem formsCovered_of_prepare {vc vcp : VCode} (h : prepare vc = .ok vcp) (hd : Prep.PrepDomain vc)
+    (hc : ∀ vb ∈ vc.blocks.toList, ∀ i ∈ vb.insts.toList, i.isCtl = true ∨ FormOk default i = true)
+    (cx : FnCtx) : FormsCovered cx vcp :=
+  formsCovered_of_2 (formsCovered2_of_prepare h hd hc) cx
+
+/-- `formsCovered_of_prepare` with the literal-pool loads (the typed analysis, #565). -/
+theorem formsCovered_of_prepareT {vc vcp : VCode} (h : prepare vc = .ok vcp) (hd : Prep.PrepDomain vc)
+    (hc : ∀ vb ∈ vc.blocks.toList, ∀ i ∈ vb.insts.toList,
+      i.isCtl = true ∨ FormOk default i = true ∨ i.isPoolLoad = true)
+    (cx : FnCtx) : FormsCovered cx vcp :=
+  prepare_all h hd (fun _ h => .inl h) hc
 
 /-! ## The ISLE runs' coverage (discharged by the ISLE coverage proofs) -/
 
@@ -101,13 +134,12 @@ theorem extraOf_nil_of_vregs {results : List Nat} {rss : List (List Reg)}
 
 /-! ## Assembly -/
 
-/-- **Form coverage of the compiled function.** Given the ISLE runs' coverage, every
+/-- **Form coverage of the compiled function** (two-way). Given the ISLE runs' coverage, every
 instruction of `prepare (lowerFunction f)` is a control form or `FormOk`. -/
-theorem formsCovered_of_runs {f : Clif.Function} {vc vcp : VCode}
+theorem formsCovered2_of_runs {f : Clif.Function} {vc vcp : VCode}
     (hs : LowerScope f) (hl : lowerFunction f = .ok vc) (hp : prepare vc = .ok vcp)
     (hrun : ∀ ctx ranges st0, buildCtx f = .ok (ctx, ranges, st0) →
-      StmtCov ctx ∧ TermCov f ctx ∧ TryCov f ctx)
-    (cx : FnCtx) : FormsCovered cx vcp := by
+      StmtCov ctx ∧ TermCov f ctx ∧ TryCov f ctx) : FormsCovered2 vcp := by
   obtain ⟨ctx, ranges, st0, bl, hb, hlb, hvb, -, -⟩ := lowerFunction_run hs.subsetE hl
   obtain ⟨hS, hT, hY⟩ := hrun ctx ranges st0 hb
   have hcf := ctxFacts_of hb
@@ -154,10 +186,19 @@ theorem formsCovered_of_runs {f : Clif.Function} {vc vcp : VCode}
           rw [hms] at hm
           exact hcov m (by simpa using hm)
       · rfl)
-  apply formsCovered_of_prepare hp (prepDomain_of_lower hs hl hs.nonempty)
+  apply formsCovered2_of_prepare hp (prepDomain_of_lower hs hl hs.nonempty)
   rw [hvb]
   intro vb hvb' i hi
   have := hall vb hvb' i hi
   simpa [Cov.Covered, Bool.or_eq_true] using this
+
+/-- **Form coverage of the compiled function.** Given the ISLE runs' coverage, every
+instruction of `prepare (lowerFunction f)` is a control form or `FormOk`. -/
+theorem formsCovered_of_runs {f : Clif.Function} {vc vcp : VCode}
+    (hs : LowerScope f) (hl : lowerFunction f = .ok vc) (hp : prepare vc = .ok vcp)
+    (hrun : ∀ ctx ranges st0, buildCtx f = .ok (ctx, ranges, st0) →
+      StmtCov ctx ∧ TermCov f ctx ∧ TryCov f ctx)
+    (cx : FnCtx) : FormsCovered cx vcp :=
+  formsCovered_of_2 (formsCovered2_of_runs hs hl hp hrun) cx
 
 end Backend.Proof.Driver

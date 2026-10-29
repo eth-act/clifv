@@ -147,6 +147,7 @@ theorem emitFunc_of_emitPre {k : Nat} {af : AFunc} {pre : Array Line}
     cases ln with
     | ins i t => cases t <;> exact ⟨_, rfl⟩
     | word => exact ⟨_, rfl⟩
+    | data => exact ⟨_, rfl⟩
     | label => exact ⟨_, rfl⟩
   · exact ⟨_, rfl⟩
 

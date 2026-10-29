@@ -58,8 +58,9 @@ theorem spillSizeOkB_cleanup_of_sizeOkB {f : Clif.Function} {vc vcp : VCode}
     spillSizeOkB vcp = true := by
   have h := spillWordBound_cleanup_le_sizeBoundIn (iselSz (lowerScope_of hs))
     (lowerScope_of hs).subsetE hl hp
-  have hs : sizeBoundIn f < 2 ^ 24 := of_decide_eq_true hsz
-  exact decide_eq_true (by omega)
+  have hb : sizeBoundIn f < 2 ^ 24 := of_decide_eq_true hsz
+  exact spillSizeOkB_of (by omega) (poolReachB_of_noPool (noPoolB_of_formsCovered2
+    (formsCovered2_cleanup_complete (lowerScope_of hs) hl hp)))
 
 /-- The cleanup pipeline retains the baseline theorem with every code bound
 on the source input, including total allocation, emission and layout. -/

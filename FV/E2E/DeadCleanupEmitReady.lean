@@ -94,6 +94,6 @@ theorem emitReady_spill_cleanup {p : Clif.Program} {f : Clif.Function} {vc vcp :
       (spillAccepted_cleanup hsub (Spill.arityOk_of har) (dominated_of hd)
         (lowerScope_of hs) hl hp)
       (formsCovered_cleanup_complete (lowerScope_of hs) hl hp default) himm ha he)
-    (emitFunc_spill_near hna ha he) (emitFunc_spill_size hsz ha he)
+    (emitFunc_spill_near hna hsz ha he) (emitFunc_spill_size hsz ha he)
 
 end E2E

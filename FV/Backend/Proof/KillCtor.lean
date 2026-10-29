@@ -566,6 +566,12 @@ theorem ctorK_callInfo {ctx : Ctx} {id : TermId} {args : List V} {st : LState} {
   ⟨Nat.le_refl _, ⟨[], by simp, by simp⟩, fun _ => rfl, fun n c h => .inl (hr _ h),
     fun n c h => .inl (hd _ h)⟩
 
+/-- `emit_u64_le_const` (#565): a constant-pool entry, no registers, nothing emitted. -/
+theorem ctorK_consts {ctx : Ctx} {id : TermId} {args : List V} {st : LState} {n : Nat} :
+    CtorK ctx id args st (.op (.vcodeConst n)) st :=
+  ⟨Nat.le_refl _, ⟨[], by simp, by simp⟩, fun _ => rfl,
+    fun n c h => by simp [V.regsK, opRegsK] at h, fun n c h => by simp [V.regsD, opRegsD] at h⟩
+
 /-- `gen_try_call_rets`: the `try_call`'s registers in call defs, physical registers. -/
 theorem ctorK_tryRets {ctx : Ctx} {id : TermId} {args : List V} {st : LState} {k : Nat}
     {ps : List Reg} (hps : retRegs k = some ps) (cc : Option Clif.CallConv)
@@ -680,6 +686,7 @@ theorem externCtor_k (ctx : Ctx) (t : Term) (args : List V) (st : LState) :
          exact ⟨l, hl, hrl⟩)
       | exact ⟨Nat.le_refl _, ⟨[], by simp, by simp⟩, fun _ => rfl,
           fun n c h => by simp [V.regsK, opRegsK] at h, fun n c _ => .inr (.inr (.inr rfl))⟩
+      | exact ctorK_consts
       | (refine ctorK_callInfo ?_ ?_ <;> intro r hr <;>
           simp_all [opRegsK, opRegsD, V.regsK, V.regsD] <;> (rcases hr with h | h <;> simp [h]))
 

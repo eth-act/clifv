@@ -19,7 +19,9 @@ input on the typed scope, so `lowerOutTB` need not run it:
   `i8` would lower to an unencodable `fmov`).
 
 The premises are `formsCovered_completeT`'s (`Dominated`, `LowerScopeT`, class-checked float
-`store`s and `select`s) with `extendsWidenB`, `bitcastWidthB` and `sizeOkB`.
+`store`s and `select`s) with `extendsWidenB`, `bitcastWidthB` and `sizeOkB`, and the literal loads'
+reach `poolReachB` of the prepared VCode (#565: the typed lowering may use the literal pool; a
+function over 1 MiB with a literal load is outside `spillSizeOkB`).
 -/
 
 namespace E2E
@@ -33,8 +35,9 @@ widen, whose `bitcast`s keep the width and which meets the size bound, the prepa
 theorem emitConds_lowerT {f : Clif.Function} {vc vcp : VCode} (hdom : dominatedB f = true)
     (hs : LowerScopeT f) (hst : Compile.storeTypedB f = true) (hsel : Compile.selectTypedB f = true)
     (hw : extendsWidenB f = true) (hbw : bitcastWidthB f = true) (hsz : sizeOkB f = true)
-    (hl : lowerFunction f = .ok vc) (hp : Backend.prepare vc = .ok vcp) : emitCondsB vcp = true := by
-  have h0 := spillSizeOkB_of_sizeOkBT hdom hs hst hsel hsz hl hp
+    (hl : lowerFunction f = .ok vc) (hp : Backend.prepare vc = .ok vcp)
+    (hpool : poolReachB vcp = true) : emitCondsB vcp = true := by
+  have h0 := spillSizeOkB_of_sizeOkBT hdom hs hst hsel hsz hl hp hpool
   obtain ⟨h1, h2, h3⟩ := emitParts_lowerT hdom hs (iselEmitT hdom hs hst hsel hw hbw) hl hp
   simp [emitCondsB, h0, h1, h2, h3]
 
@@ -43,9 +46,9 @@ theorem emitConds_lowerT {f : Clif.Function} {vc vcp : VCode} (hdom : dominatedB
 theorem emitConds_cleanup_lowerT {f : Clif.Function} {vc vcp : VCode} (hdom : dominatedB f = true)
     (hs : LowerScopeT f) (hst : Compile.storeTypedB f = true) (hsel : Compile.selectTypedB f = true)
     (hw : extendsWidenB f = true) (hbw : bitcastWidthB f = true) (hsz : sizeOkB f = true)
-    (hl : lowerFunction f = .ok vc) (hp : Backend.prepare (prune vc) = .ok vcp) :
-    emitCondsB vcp = true := by
-  have h0 := spillSizeOkB_cleanup_of_sizeOkBT hdom hs hst hsel hsz hl hp
+    (hl : lowerFunction f = .ok vc) (hp : Backend.prepare (prune vc) = .ok vcp)
+    (hpool : poolReachB vcp = true) : emitCondsB vcp = true := by
+  have h0 := spillSizeOkB_cleanup_of_sizeOkBT hdom hs hst hsel hsz hl hp hpool
   obtain ⟨h1, h2, h3⟩ := emitParts_cleanup_lowerT hdom hs (iselEmitT hdom hs hst hsel hw hbw) hl hp
   simp [emitCondsB, h0, h1, h2, h3]
 
@@ -67,17 +70,17 @@ theorem emitParts_of_T2 {g : Clif.Function} (h : fnScopeInTB2 g = true) :
 /-- **`emitCondsB` holds on `fnScopeInTB2` with `bitcastWidthB`**: of `prepare`'s output of
 `lowerFunction`'s VCode. -/
 theorem emitCondsB_of_T2 {g : Clif.Function} {vc vcp : VCode} (h : fnScopeInTB2 g = true)
-    (hbw : bitcastWidthB g = true) (hl : lowerFunction g = .ok vc) (hp : prepare vc = .ok vcp) :
-    emitCondsB vcp = true :=
+    (hbw : bitcastWidthB g = true) (hl : lowerFunction g = .ok vc) (hp : prepare vc = .ok vcp)
+    (hpool : poolReachB vcp = true) : emitCondsB vcp = true :=
   let ⟨hdom, hs, hst, hsel, hw, hsz⟩ := emitParts_of_T2 h
-  emitConds_lowerT hdom hs hst hsel hw hbw hsz hl hp
+  emitConds_lowerT hdom hs hst hsel hw hbw hsz hl hp hpool
 
 /-- **`emitCondsB` holds on `fnScopeInTB2` with `bitcastWidthB`, after the dead-code cleanup**:
 of `prepare`'s output of the `prune`d VCode. -/
 theorem emitCondsB_cleanup_of_T2 {g : Clif.Function} {vc vcp : VCode} (h : fnScopeInTB2 g = true)
     (hbw : bitcastWidthB g = true) (hl : lowerFunction g = .ok vc)
-    (hp : prepare (prune vc) = .ok vcp) : emitCondsB vcp = true :=
+    (hp : prepare (prune vc) = .ok vcp) (hpool : poolReachB vcp = true) : emitCondsB vcp = true :=
   let ⟨hdom, hs, hst, hsel, hw, hsz⟩ := emitParts_of_T2 h
-  emitConds_cleanup_lowerT hdom hs hst hsel hw hbw hsz hl hp
+  emitConds_cleanup_lowerT hdom hs hst hsel hw hbw hsz hl hp hpool
 
 end E2E.LinkCheck

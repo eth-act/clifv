@@ -97,7 +97,8 @@ def mappingSyms (placed : List (Nat × FnAsm)) : List ElfSym := Id.run do
     let mut off := 0
     for ln in f.lines do
       let d? : Option Bool := match ln with
-        | .ins .. => some false | .word .. => some true | .label _ => none
+        | .ins .. => some false | .word .. => some true | .data .. => some true
+        | .label _ => none
       if let some d := d? then
         if inData != some d then
           out := out.push { name := if d then "$d" else "$x", bind := 0, type := 0, shndx := 1,
@@ -176,9 +177,14 @@ def elfObject (funcs : List (FnAsm × FnBin)) (unwind : List (String × List (Na
   -- .text and function placement
   let mut text : ByteArray := .empty
   let mut placed : Array (Nat × FnAsm × FnBin) := #[]
+  -- a function with a literal pool is 8-aligned (Cranelift: the code's alignment is that of its
+  -- constants, `MachBuffer::finish_constants`; the object writer pads with zeros), #565
+  let hasPool (fa : FnAsm) : Bool := fa.lines.any fun | .label (.const _) => true | _ => false
   for (fa, fb) in funcs do
+    if hasPool fa && text.size % 8 != 0 then text := text ++ ⟨#[0, 0, 0, 0]⟩
     placed := placed.push (text.size, fa, fb)
     text := text ++ wordsBytes fb.words
+  let textAlign := if funcs.any (hasPool ·.1) then 8 else 4
   let eh := !unwind.isEmpty && !placed.isEmpty
   -- LSDAs (only with unwind info and a personality)
   let pers : Option String := if eh then personality else none
@@ -262,7 +268,7 @@ def elfObject (funcs : List (FnAsm × FnBin)) (unwind : List (String × List (Na
     le16 0 ++ le16 0 ++ le16 64 ++ le16 nsec ++ le16 5
   let shdrs : ByteArray :=
     shdr 0 0 0 0 0 0 0 0 0 ++
-    shdr (sh 0) 1 0x6 textOff text.size 0 0 4 0 ++
+    shdr (sh 0) 1 0x6 textOff text.size 0 0 textAlign 0 ++
     shdr (sh 1) 4 0x40 relaOff rela.size 3 1 8 24 ++
     shdr (sh 2) 2 0 symOff symtab.size 4 (1 + locals.length) 8 24 ++
     shdr (sh 3) 3 0 strOff strtab.size 0 0 1 0 ++

@@ -981,6 +981,30 @@ pool (`emit_u64_le_const` unmodelled, #565); fv-demo 32220 → 32287 verified (6
 verified); the lean-link region leaves them out per executable (82/83 functions, before 17/18)
 until the link chain is typed. `float_try.clif` is byte-identical to stock Cranelift
 (`lean-backend-encode-check.sh`: 6/6).
+
+**S11e6 (#565): the literal pool.** `constant_f64`'s last rule (`emit_u64_le_const`,
+`mem_flags_trusted_data`) is modelled: `externCtor` gives the entry's `VCodeConstant` (its `u64`
+value; Cranelift deduplicates `U64` entries by value) and `MemFlagsData::trusted()`; the load is
+`fpuLoad sz rd (.const v) fl`, emitted as the `ldr (literal)` `fpuLoadLit`, and `emitFunc`
+appends the pool after the body and the deferred traps (first-use order, 8-aligned, zero
+padding: `MachBuffer::emit_island`). The pool load is a third covered category
+(`MInst.isPoolLoad`, `FormsCovered`/`formsCoveredB` three-way; `csem` gives it the entry's value
+`poolVal`, `E2E.RegLevelPool*` realize it, its reads are the pool's `.data` lines, `RL.ReadOk`).
+Coverage split: the integer analysis keeps main's two-way `Cov.Covered`, so subset E has no pool
+load (`Driver.FormsCovered2`, `formsCovered2_complete`, `formsCovered2_cleanup_complete`,
+`E2E.noPoolB_of_formsCovered2`); the typed analysis has its own three-way `CovT.Covered`/`covV`/
+`CovSince` (`covV_of_cov` lifts the integer facts). Reach: an `ldr (literal)` reaches 1 MiB and
+the pool follows the body, so `spillSizeOkB` also requires `poolReachB` (bound below `2 ^ 17`
+words or no pool load, `VCode.noPoolB`); `emitFunc_near_of` takes the premise
+`fa.size < 2 ^ 20 ∨ af.NoLit` and `emitFunc_spill_near` the size condition. Subset E gets
+`poolReachB` from the two-way coverage (`spillSizeOkB_of_sizeOkB`, `InScopeIn` totality
+unchanged); the typed scopes check it at run time (`lowerOutTB`, `lowersTB`; `fnScopeInTB3`'s
+conjunct `poolReachInB`, which runs `lowerFunction` only above the `2 ^ 17` input bound;
+`spillSizeOkB_of_sizeOkBT`/`emitConds_lowerT`/`emitCondsB_of_T2` take `poolReachB`). A function
+over 1 MiB with a pool load falls back to cg_clif's code, where Cranelift emits a constant
+island (#744). Witnesses `FVTest/E2E/PoolLoadWitness.lean` (`%litpool`: covered, `csem`, the
+literal line and the entry's data words, `near_lit`), `E2E.formsCovered2_complete_witness`.
+
 ## 4. Known hazards
 
 - Proofs that derive a type from its width (`ty_i64_of_width`, width injectivity in

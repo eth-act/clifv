@@ -11,7 +11,7 @@ extern helpers and the oracle are the fields of `CovModel`.
 namespace Backend.Proof.CovT
 
 open Backend Backend.Proof Backend.Proof.Flow Isle Isle.Interp Isle.Aarch64
-open Backend.Proof.Cov (Covered covV covVL DeepRegs NumOk numOk_shape kind_cases regsIn_reg)
+open Backend.Proof.Cov (DeepRegs NumOk numOk_shape kind_cases regsIn_reg)
 
 variable {f : Clif.Function} {ctx : Ctx}
 

@@ -69,7 +69,7 @@ theorem spillLocalAll : SpillLocalAll := by
   cases hct : i.isCtl
   · have hcov := formsCovered_complete hs hl hp default b vb k i hvb hi
     rw [hct] at hcov
-    exact Spill.spillInstOk_of_formOk (hcov.resolve_left (by simp))
+    exact Spill.spillInstOk_of_covered (hcov.resolve_left (by simp))
   · exact Spill.spillCtl_of_prepare hp (prepDomain_of_lower hs hl hs.nonempty)
       (ctlSpillHyp hsub hd hs hl) b vb k i hvb hi hct
 

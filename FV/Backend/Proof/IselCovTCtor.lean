@@ -14,10 +14,41 @@ value's vreg has its type's class, `CtxInvT.valueReg`), the emitted instructions
 namespace Backend.Proof.CovT
 
 open Backend Backend.Proof Backend.Proof.Flow Isle Isle.Interp Isle.Aarch64
-open Backend.Proof.Cov (Covered covV covVL EmitOk CovSince emitOk_nil emit_one LCCov
+open Backend.Proof.Cov (EmitOk emitOk_nil emit_one LCCov
   loadConstantFull_cov ofNat?_value logicSize_of logicSize64_lt logicSize64_ge uimm12_of simm9_of
-  callOutput_fold callArgs_fold callArgs_mem covV_ofV kind_one clsMask_mem sem_ctor covV_data
-  regsInL_mem' covVL_iff LogicImmComplete logicSize logicSize64 clsMask)
+  callOutput_fold callArgs_fold callArgs_mem kind_one clsMask_mem sem_ctor
+  regsInL_mem' LogicImmComplete logicSize logicSize64 clsMask)
+
+/-- Every instruction emitted since `s0` is covered (`Covered`, the typed analysis's coverage). -/
+def CovSince (s0 st : LState) : Prop :=
+  ∃ ms : List MInst, st.emitted = s0.emitted ++ ms.toArray ∧ ∀ m ∈ ms, Covered m = true
+
+/-- The integer analysis's `Cov.CovSince` gives the typed one. -/
+theorem covSince_of_cov {s0 st : LState} (h : Cov.CovSince s0 st) : CovSince s0 st :=
+  let ⟨ms, h1, h2⟩ := h
+  ⟨ms, h1, fun m hm => covered_of_cov (h2 m hm)⟩
+
+theorem covSince_refl (s : LState) : CovSince s s := ⟨[], by simp, by simp⟩
+
+theorem covV_ofV {v : V} {m : MInst} (hc : covV v = true) (h : MInst.ofV v = some m) :
+    Covered m = true := by
+  cases v with
+  | data t k fs =>
+    rw [covV_data] at hc
+    simp only [Bool.and_eq_true, Bool.or_eq_true, bne_iff_ne, ne_eq] at hc
+    rcases hc.1 with h1 | h1
+    · exfalso
+      unfold MInst.ofV at h
+      obtain ⟨_, he, -⟩ := bind_some_ex h
+      simp only [V.enumOf?] at he
+      split at he
+      · contradiction
+      · cases he
+    · rw [h] at h1; exact h1
+  | _ =>
+    unfold MInst.ofV at h
+    obtain ⟨_, he, -⟩ := bind_some_ex h
+    simp [V.enumOf?] at he
 
 /-- The result of extern constructor `id` on `args`, as the typed `actor` needs it (the value
 register constructors give the value's register, of its class). -/
@@ -30,7 +61,7 @@ def CtorResT (ctx : Ctx) (id : TermId) (args : List V) (v : V) : Prop :=
     ∃ x e r, args = [.op (.extended x e)] ∧ ctx.valueReg? x = some r ∧ v = .reg r
   else if id == TId.load_constant_full then ∃ n, v = .reg (.vreg n .int)
   else if id == TId.is_sinkable_inst then False
-  else if id == TId.emit_u64_le_const then False
+  else if id == TId.emit_u64_le_const then ∃ n, v = .op (.vcodeConst n)
   else if id == TId.put_in_regs then
     ∃ x r, args = [.value x] ∧ ctx.valueReg? x = some r ∧ v = .regs [r]
   else if id == TId.put_in_regs_vec then
@@ -141,6 +172,7 @@ theorem externCtor_covT (ctx : Ctx) (t : Term) (args : List V) (st : LState) (v 
          | exact ⟨_, rfl, ofNat?_value ‹_›⟩
          | exact ⟨_, _, _, rfl, rfl, uimm12_of ‹_›⟩
          | exact ⟨_, rfl, simm9_of ‹_›⟩
+         | exact ⟨_, rfl⟩
          | exact ⟨_, _, rfl, rfl⟩
          | exact ⟨_, rfl, rfl⟩
          | exact ⟨_, _, _, _, rfl, rfl⟩
@@ -276,7 +308,7 @@ theorem sem_ctor (ctx : Ctx) : (sem ctx).ctor = externCtor ctx := rfl
 theorem emitOk_cov {id : TermId} {as : List AT} {vs : List V} (hvs : Holds2 f ctx as vs)
     (hpre : apre id as = true) {m : MInst} (h : EmitOk id vs m) : Covered m = true := by
   rcases h with h | ⟨rfl, i, rfl, hi⟩ | ⟨rfl, r, b', off, rfl, s, rss, rfl, hr⟩
-  · exact h
+  · exact covered_of_cov h
   · obtain ⟨a, rfl, ha⟩ := holds2_one hvs
     simp only [apre, beq_self_eq_true, ↓reduceIte] at hpre
     exact covV_ofV ((deep_sound a i ha).2 hpre) hi
@@ -379,7 +411,9 @@ theorem ctor_sound (hLI : LogicImmComplete) (hctx : CtxInvT f ctx) (s0 : LState)
   · rw [if_pos hsk] at hr; exact hr.elim
   rw [if_neg hsk] at hr ⊢
   by_cases hlp : (term.id == TId.emit_u64_le_const) = true
-  · rw [if_pos hlp] at hr; exact hr.elim
+  · rw [if_pos hlp] at hr ⊢
+    obtain ⟨n, rfl⟩ := hr
+    exact γ_c0 ⟨rfl, rfl⟩
   rw [if_neg hlp] at hr ⊢
   by_cases hps : (term.id == TId.put_in_regs) = true
   · rw [if_pos hps] at hr ⊢

@@ -19,17 +19,24 @@ namespace Backend.Proof.Driver
 
 open Backend Backend.Proof Backend.Proof.Cov
 
+/-- **Two-way form coverage of subset E**: on `LowerScope` input, every instruction of
+`prepare (lowerFunction f)` is a control form or `FormOk` (no literal-pool load, #565). -/
+theorem formsCovered2_complete {f : Clif.Function} {vc vcp : VCode}
+    (hs : LowerScope f) (hl : lowerFunction f = .ok vc) (hp : prepare vc = .ok vcp) :
+    FormsCovered2 vcp :=
+  formsCovered2_of_runs hs hl hp (fun ctx _ _ hb => by
+    have hctx : CtxInv f ctx := ctxOk_sound (ctxOk_complete hs hb)
+    have hcl : Cov.Clean ctx := clean_of_build hb
+    exact ⟨fun _ _ _ _ _ _ _ hi hc h => stmt_cov logicImmComplete hctx hcl hi hc h,
+      fun _ _ _ _ _ _ _ _ _ hph _ hd h => termCall_cov logicImmComplete hctx hcl hph hd h,
+      fun _ _ _ _ _ _ _ _ _ _ hph hd h => tryCall_cov logicImmComplete hctx hcl hph hd h⟩)
+
 /-- **Completeness of `formsCoveredB`**: on `LowerScope` input, `prepare (lowerFunction f)` is
 covered, for every context. -/
 theorem formsCovered_complete {f : Clif.Function} {vc vcp : VCode}
     (hs : LowerScope f) (hl : lowerFunction f = .ok vc) (hp : prepare vc = .ok vcp) (cx : FnCtx) :
     FormsCovered cx vcp :=
-  formsCovered_of_runs hs hl hp (fun ctx _ _ hb => by
-    have hctx : CtxInv f ctx := ctxOk_sound (ctxOk_complete hs hb)
-    have hcl : Cov.Clean ctx := clean_of_build hb
-    exact ⟨fun _ _ _ _ _ _ _ hi hc h => stmt_cov logicImmComplete hctx hcl hi hc h,
-      fun _ _ _ _ _ _ _ _ _ hph _ hd h => termCall_cov logicImmComplete hctx hcl hph hd h,
-      fun _ _ _ _ _ _ _ _ _ _ hph hd h => tryCall_cov logicImmComplete hctx hcl hph hd h⟩) cx
+  formsCovered_of_2 (formsCovered2_complete hs hl hp) cx
 
 /-- `formsCovered_complete` with the input condition decided. -/
 theorem formsCovered_completeB {f : Clif.Function} {vc vcp : VCode}

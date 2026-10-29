@@ -7,6 +7,7 @@ import FV.E2E.RegLevelNextW
 import FV.E2E.RegLevelJTW
 import FV.E2E.RegLevelTryW
 import FV.E2E.RegLevelTlsW
+import FV.E2E.RegLevelPoolW
 
 /-!
 # The machine realises the allocated code, with the writes (A3, #412, slice F8b)
@@ -48,8 +49,16 @@ theorem realizes_stepW {R : RL} (hR : R.Wf) (hC : CalleeOkG R.F R.K R.G R.s0 (Ca
       have hst := q_stRel hq
       rw [← hst.world.1 .ERR (by simp [Masked]), hst.err]
     cases hct : i.isCtl
-    · -- a covered straight-line form
-      have hfo := (hcov b vb k i hvb hi).resolve_left (by simp [hct])
+    · rcases (hcov b vb k i hvb hi).resolve_left (by simp [hct]) with hfo | hpl
+      rotate_left
+      · -- the literal-pool load (#565)
+        obtain ⟨sz, d, v, fl, rfl, -⟩ := isPoolLoad_form hpl
+        obtain ⟨-, rfl⟩ := pool_world hsem
+        cases hn with
+        | next hk =>
+          obtain ⟨n, c'', hm, hq', ht⟩ := realizes_poolLoadW hR hq hvb hi hpl hops hsz hsem hlen hk
+          exact fin n c'' hm hq' ht
+      -- a covered straight-line form
       obtain ⟨hOS, hL⟩ := formOk_sound (F := R.F) (X := R.X) hfo
       obtain rfl := csem_ctl hct (R.sem_csem hsem)
       cases hn with

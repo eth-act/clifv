@@ -9,8 +9,9 @@ import FV.Backend.Proof.RegallocMemFP
 `FormOk ctx i`: a decidable test that the straight-line instruction `i` (vreg operands, as
 the lowering emits it) is one of the forms whose `OperandsSound` and `LinesOk` are proven.
 `FormsCovered ctx vc`: every instruction of `vc` is a control form (`MInst.isCtl`, handled by
-the control proofs) or `FormOk`. It is decided per function (a premise `lean-e2e-check`
-checks), not required of the compiler: out-of-scope forms keep compiling.
+the control proofs), `FormOk`, or the literal-pool load (`MInst.isPoolLoad`, #565, handled by
+`E2E.RegLevelPool`). It is decided per function (a premise `lean-e2e-check` checks), not
+required of the compiler: out-of-scope forms keep compiling.
 
 `formOk_sound`: `FormOk` gives exactly the `OperandsSound`/`LinesOk` premises of
 `realizes_op_next`.
@@ -20,14 +21,14 @@ namespace Backend.Proof
 
 open Backend E2E
 
-/-- Every instruction of `vc` is a control form or a covered form. -/
+/-- Every instruction of `vc` is a control form, a covered form or the literal-pool load. -/
 def FormsCovered (ctx : FnCtx) (vc : VCode) : Prop :=
   ∀ (b : Nat) (vb : VBlock) (k : Nat) (i : MInst), vc.blocks[b]? = some vb → vb.insts[k]? = some i →
-    i.isCtl = true ∨ FormOk ctx i = true
+    i.isCtl = true ∨ FormOk ctx i = true ∨ i.isPoolLoad = true
 
 /-- The executable test. -/
 def formsCoveredB (ctx : FnCtx) (vc : VCode) : Bool :=
-  vc.blocks.all fun vb => vb.insts.all fun i => i.isCtl || FormOk ctx i
+  vc.blocks.all fun vb => vb.insts.all fun i => i.isCtl || FormOk ctx i || i.isPoolLoad
 
 theorem array_all_iff {α : Type} (a : Array α) (p : α → Bool) :
     a.all p = true ↔ ∀ (k : Nat) (x : α), a[k]? = some x → p x = true := by
@@ -46,11 +47,11 @@ theorem formsCoveredB_iff (ctx : FnCtx) (vc : VCode) :
   constructor
   · intro h b vb k i hb hi
     have := (array_all_iff _ _).1 (h b vb hb) k i hi
-    simpa [Bool.or_eq_true] using this
+    simpa [Bool.or_eq_true, or_assoc] using this
   · intro h b vb hb
     rw [array_all_iff]
     intro k i hi
-    simpa [Bool.or_eq_true] using h b vb k i hb hi
+    simpa [Bool.or_eq_true, or_assoc] using h b vb k i hb hi
 
 instance (ctx : FnCtx) (vc : VCode) : Decidable (FormsCovered ctx vc) :=
   decidable_of_iff _ (formsCoveredB_iff ctx vc)
@@ -286,10 +287,14 @@ theorem formOk_store {F : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem} {op : S
   mem_os
 
 theorem linesOk_fpuLoad (ctx : FnCtx) (sz : ScalarSize) (rd : Reg) (m : AMode) (fl : Clif.MemFlags)
-    (hm : ∀ o, m ≠ .incomingArg o) : LinesOk ctx (.fpuLoad sz rd m fl) :=
-  linesOk_mem ctx _ sz.bytes m (fun m' => .fpuLoad sz rd m') fl.trapCode hm (fun _ => rfl)
-    (fun _ => plain_trap _ rfl (fun _ h => Insn.noConfusion h) _)
-    (fun ps pre m' hf => by simp [MInst.lines, hf])
+    (hm : ∀ o, m ≠ .incomingArg o) : LinesOk ctx (.fpuLoad sz rd m fl) := by
+  by_cases hc : ∃ n, m = .const n
+  · obtain ⟨n, rfl⟩ := hc
+    exact linesOk_of_oneLine ⟨_, _, fun _ => rfl, rfl, rfl⟩
+  · exact linesOk_mem ctx _ sz.bytes m (fun m' => .fpuLoad sz rd m') fl.trapCode hm (fun _ => rfl)
+      (fun _ => plain_trap _ rfl (fun _ h => Insn.noConfusion h) _)
+      (fun ps pre m' hf => by
+        cases m <;> first | exact absurd ⟨_, rfl⟩ hc | simp [MInst.lines, hf])
 
 theorem linesOk_fpuStore (ctx : FnCtx) (sz : ScalarSize) (rd : Reg) (m : AMode) (fl : Clif.MemFlags)
     (hm : ∀ o, m ≠ .incomingArg o) : LinesOk ctx (.fpuStore sz rd m fl) :=

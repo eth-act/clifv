@@ -249,7 +249,8 @@ theorem lowerInstOkP_of_rulesT (hrules : LowerRulesCorrectTI program)
       out = .regsVec rss ∧ LowerInstOkP Rd Pc isem MR env cp ctx inst info.results st rss st' ms := by
     intro hfm
     obtain ⟨ms, rss, h1, h2, h3⟩ := (hT F isem MR env cp hR hMR).1 r hr hfm f ctx hctx.inv ii info
-      inst hi hc trivial cfg hco m n st tr env' s1 out st' tr2 hm1 hn1 hvb hfirst hmatch heval
+      inst hi hc (f64PoolFreeInst_of_instETF (hctx.scope ii info inst hi hc)) cfg hco m n st tr
+      env' s1 out st' tr2 hm1 hn1 hvb hfirst hmatch heval
     exact ⟨ms, rss, h1, h2, h3.toP⟩
   have har : floatArithRootRule r = true → ∃ ms rss, st'.emitted = st.emitted ++ ms.toArray ∧
       out = .regsVec rss ∧ LowerInstOkP Rd Pc isem MR env cp ctx inst info.results st rss st' ms := by

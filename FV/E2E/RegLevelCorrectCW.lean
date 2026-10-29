@@ -6,6 +6,7 @@ import FV.E2E.RegLevelTlsNA
 import FV.E2E.RegLevelMoveNA
 import FV.E2E.RegLevelNextNA
 import FV.E2E.RegLevelOpNA
+import FV.E2E.RegLevelPoolNA
 
 /-!
 # The guarded realisation at a witness (SEM1 #537, item (3), route (a))
@@ -288,8 +289,18 @@ theorem realizes_stepCW {R : RL} (hR : R.Wf) {P : Arm.ArmState → Prop}
     obtain ⟨Y, hYF, hOk, hwr⟩ := hguard
     have hYO : (∀ a, Y a) ∨ ∃ w, Ok w Y := .inr ⟨w, hOk⟩
     cases hct : i.isCtl
-    · -- a covered straight-line form
-      have hfo := (hcov b vb k i hvb hi).resolve_left (by simp [hct])
+    · rcases (hcov b vb k i hvb hi).resolve_left (by simp [hct]) with hfo | hpl
+      rotate_left
+      · -- the literal-pool load (#565)
+        obtain ⟨sz, d, v, fl, rfl, -⟩ := isPoolLoad_form hpl
+        obtain ⟨-, rfl⟩ := pool_world hsem
+        cases hn with
+        | next hk =>
+          obtain ⟨n, c'', hm, hq', ht, hs⟩ := realizes_poolLoadNA (Y := fun _ => True) hR hq hvb hi
+            hpl hops hsz hsem hlen hk
+          exact finT n c'' hm hq' ht (hoc0 rfl)
+            (toA hm (fun _ h => by cases h) (fun h => by rcases h with ⟨_, h⟩ | ⟨_, _, h⟩ <;> cases h) hs)
+      -- a covered straight-line form
       obtain ⟨hOS, hL⟩ := formOk_sound (F := R.F) (X := R.X) hfo
       obtain rfl := csem_ctl hct (R.sem_csem hsem)
       have hwi : i.wReads = true := by

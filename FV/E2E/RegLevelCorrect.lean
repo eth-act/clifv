@@ -5,6 +5,7 @@ import FV.Backend.Proof.RegallocCover
 import FV.Backend.Proof.RegallocCSemWorld
 import FV.E2E.RegLevelAtomic
 import FV.E2E.RegLevelOpReads
+import FV.E2E.RegLevelPool
 
 /-!
 # The register-level theorem (M6): `RegLevelCorrect` for the backend's code
@@ -63,6 +64,10 @@ theorem mspec_ctl {sb : Nat} {i : MInst} {uses : List CV} {w : Arm.ArmState} {ou
       rintro ⟨_, -, -, -, rfl⟩; exact .inl rfl
   · simp only [Option.some.injEq, Prod.mk.injEq]
     rintro ⟨-, -, rfl⟩; exact .inl rfl
+  · split
+    · simp only [Option.some.injEq, Prod.mk.injEq]
+      rintro ⟨-, -, rfl⟩; exact .inl rfl
+    · simp
   · split
     · simp only [Option.some.injEq, Prod.mk.injEq]
       rintro ⟨-, -, rfl⟩; exact .inl rfl
@@ -235,8 +240,16 @@ theorem realizes_step {R : RL} (hR : R.Wf) (hC : CalleeOkG R.F R.K R.G R.s0 (Cal
       have hst := q_stRel hq
       rw [← hst.world.1 .ERR (by simp [Masked]), hst.err]
     cases hct : i.isCtl
-    · -- a covered straight-line form
-      have hfo := (hcov b vb k i hvb hi).resolve_left (by simp [hct])
+    · rcases (hcov b vb k i hvb hi).resolve_left (by simp [hct]) with hfo | hpl
+      rotate_left
+      · -- the literal-pool load (#565)
+        obtain ⟨sz, d, v, fl, rfl, -⟩ := isPoolLoad_form hpl
+        obtain ⟨-, rfl⟩ := pool_world hsem
+        cases hn with
+        | next hk =>
+          obtain ⟨n, c'', hm, hq', ht⟩ := realizes_poolLoad hR hq hvb hi hpl hops hsz hsem hlen hk
+          exact fin n c'' hm hq' ht
+      -- a covered straight-line form
       obtain ⟨hOS, hL⟩ := formOk_sound (F := R.F) (X := R.X) hfo
       obtain rfl := csem_ctl hct (R.sem_csem hsem)
       cases hn with

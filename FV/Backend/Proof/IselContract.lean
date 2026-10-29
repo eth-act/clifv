@@ -1321,6 +1321,33 @@ theorem LowerRuleOkT.toOk {isem : Sem} {MR : MemRelT} {env : Clif.Env} {cp : Cli
   intro f ctx hctx ii info inst hi hic
   exact h f ctx hctx.toT ii info inst hi hic trivial
 
+theorem LowerRuleOkTP.mono {P Q : Clif.Inst → Prop} {isem : Sem} {MR : MemRelT} {env : Clif.Env}
+    {cp : Clif.Program} {p : Program} {r : Rule} (h : LowerRuleOkTP P isem MR env cp p r)
+    (hPQ : ∀ i, Q i → P i) : LowerRuleOkTP Q isem MR env cp p r := by
+  intro f ctx hctx ii info inst hi hic hq
+  exact h f ctx hctx ii info inst hi hic (hPQ inst hq)
+
+/-- An `f64const` whose bits need no literal pool (`Compile.f64PoolFree`: zero, an `fmov`
+immediate, below `2^32`, or zero low 32 bits). The pool's load (#565) is not proven yet, so
+`f64const`'s rule is stated for these constants, the only ones whose lowering returned before
+#565 modelled `emit_u64_le_const`. -/
+def F64PoolFreeInst (i : Clif.Inst) : Prop :=
+  ∀ ty imm, i = .iconst ty imm → ty = .f64 →
+    imm.toNat = 0 ∨ (fpModImm? imm.toNat .size64).isSome = true ∨ imm.toNat < 2 ^ 32 ∨
+      imm.toNat % 2 ^ 32 = 0
+
+/-- A subset-E context has no `f64const` (`Compile.instE`), so a rule correct on the constants
+without literal pool is correct on it. -/
+theorem LowerRuleOkTP.toOk_f64 {isem : Sem} {MR : MemRelT} {env : Clif.Env} {cp : Clif.Program}
+    {p : Program} {r : Rule} (h : LowerRuleOkTP F64PoolFreeInst isem MR env cp p r) :
+    LowerRuleOk isem MR env cp p r := by
+  intro f ctx hctx ii info inst hi hic
+  refine h f ctx hctx.toT ii info inst hi hic ?_
+  intro ty imm hinst hty
+  subst hinst hty
+  have := hctx.instE ii info _ hi hic
+  simp [Compile.instE, Compile.tyE] at this
+
 /-- **What the float memory rules need of the VCode semantics** (as `MemRefinesR` for the
 integer accesses): `ldr st/dt` through an addressing mode whose access avoids `F` and whose
 bytes satisfy `Rd` reads the `4`/`8` little-endian bytes at `amodeAddr`, zero-extended into the
@@ -1380,7 +1407,8 @@ def floatMemRootRule (r : Rule) : Bool :=
 def LowerRulesCorrectT (p : Program) : Prop :=
   ∀ (F : BitVec 64 → Prop) (isem : Sem) (MR : MemRelT) (env : Clif.Env) (cp : Clif.Program),
     Refines F isem → MRStable F MR →
-    (∀ r ∈ p.rulesOf TId.lower, floatMoveRootRule r = true → LowerRuleOkT isem MR env cp p r) ∧
+    (∀ r ∈ p.rulesOf TId.lower, floatMoveRootRule r = true →
+      LowerRuleOkTP F64PoolFreeInst isem MR env cp p r) ∧
     ∀ r ∈ p.rulesOf TId.lower, r.id = 971 →
       LowerRuleOkTP (fun i => ∃ ty c x y, i = .select ty c x y ∧ ty.isFloat = true) isem MR env cp p r
 

@@ -287,6 +287,7 @@ theorem linesEvs_kinds : ∀ (env : Env) (ls : List Line) (s : ArmState),
       · exact (instEvs_kinds ha s).trans (List.sublist_append_left _ _)
   | _, .label _ :: _, _ => List.nil_sublist _
   | _, .word _ _ :: _, _ => List.nil_sublist _
+  | _, .data _ :: _, _ => List.nil_sublist _
 
 /-- Every successful run of `x` ends with a value meeting `P`. -/
 def PutPost {α : Type} (x : StateT Nat (Except String) α) (P : α → Prop) : Prop :=

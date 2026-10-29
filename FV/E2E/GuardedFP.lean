@@ -331,7 +331,9 @@ theorem fspec_mspec {sb : Nat} {i : MInst} {us : List CV} {w : Arm.ArmState}
     {r : List CV × Arm.ArmState × Ctl} (h : fspec sb i us w = some r) : mspec sb i us w = some r := by
   unfold fspec at h
   split at h
-  · exact h
+  · rw [mspec_fpuLoad_ne sb ?_]
+    · exact h
+    · intro v e; subst e; simp [amodeAddr] at h
   · exact h
   · cases h
 
@@ -340,7 +342,9 @@ theorem fspec_eq_mspec {sb : Nat} {i : MInst} {us : List CV} {w : Arm.ArmState}
     (hg : GuardFP F Rd sb i us w) : fspec sb i us w = mspec sb i us w := by
   unfold GuardFP at hg
   split at hg
-  · rfl
+  · rw [mspec_fpuLoad_ne sb ?_]
+    · rfl
+    · intro v e; subst e; obtain ⟨-, a, ha, -⟩ := hg; simp [amodeAddr] at ha
   · rfl
   · exact hg.elim
 
@@ -355,7 +359,9 @@ theorem csem_fpuLoad (F : BitVec 64 → Prop) (ctx : FnCtx) (X : ExtSem) (sz : S
   split
   · rename_i hc
     exact straight_fpuLoad F ctx sz hsz d am fl us w a ha hav hc.2.1 hc.2.2
-  · exact ⟨w, by simp [mspec, hsz, ha], SameWorld.refl F w⟩
+  · refine ⟨w, ?_, SameWorld.refl F w⟩
+    rw [mspec_fpuLoad_ne (am := am) _ (fun v e => by subst e; simp [amodeAddr] at ha)]
+    simp [hsz, ha]
 
 /-- **A float store of `csem`** through an addressing mode whose access avoids `F` (any world). -/
 theorem csem_fpuStore (F : BitVec 64 → Prop) (ctx : FnCtx) (X : ExtSem) (sz : ScalarSize)

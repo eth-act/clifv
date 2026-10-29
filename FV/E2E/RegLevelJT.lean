@@ -359,7 +359,7 @@ theorem jt_machine {R : RL} (hR : R.Wf) {s : Arm.ArmState} {j0 : Nat} {d : Label
             (fun h => by cases h) hab3, List.mem_singleton] at hp
           subst hp
           simp only [LoadOp.bytes] at hq
-          refine .inr ⟨j1 + 6 + i, _, _, hwi, q, hq, ?_⟩
+          refine .inr (.inl ⟨j1 + 6 + i, _, _, hwi, q, hq, ?_⟩)
           simp only [RL.pcOf]
           rw [haddr, hofs, BitVec.ofNat_add]
           simp only [A, BitVec.add_assoc])

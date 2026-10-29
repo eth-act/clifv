@@ -64,8 +64,8 @@ def actorRest (id : TermId) (as : List AT) : AT :=
   else if id == TId.load_constant_full then .reg 1
   -- `is_sinkable_inst` always fails (no load sinking)
   else if id == TId.is_sinkable_inst then .bot
-  -- the literal pool (`emit_u64_le_const`) is not modelled: the lowering fails
-  else if id == TId.emit_u64_le_const then .bot
+  -- the literal pool's entry id (`emit_u64_le_const`, #565): an operand without registers
+  else if id == TId.emit_u64_le_const then .c0
   else if id == TId.put_in_regs then
     match as with
     | [.val ts] => .flat (vcls ts) true

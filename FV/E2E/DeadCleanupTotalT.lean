@@ -166,7 +166,7 @@ theorem spillLocal_cleanupTF {f : Clif.Function} {vc vcp : VCode} (hd : Dominate
   cases hct : i.isCtl
   · have hcov := preparedCleanup_formsCovered (vc := vc) hform b vb k i hvb hi
     rw [hct] at hcov
-    exact spillInstOk_of_formOk (hcov.resolve_left (by simp))
+    exact spillInstOk_of_covered (hcov.resolve_left (by simp))
   · exact spillCtl_of_prepare hp' hdom (prune_insts hctl) b vb k i hvb hi hct
 
 /-- **The spill allocator's local facts on the cleaned typed pipeline's output**

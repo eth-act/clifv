@@ -246,6 +246,14 @@ inductive TestBitAndBranchKind where
   | z | nz
   deriving DecidableEq, Repr, Inhabited, BEq
 
+/-- A constant-pool entry (`machinst/isle.rs` `VCodeConstant`, #565). Cranelift's id is a
+newtype over `u32`, and `VCodeConstants` deduplicates the `u64` entries `emit_u64_le_const`
+defines by value, so within a function an entry is identified by its value: the model's
+`VCodeConstant` is the entry's `u64` value (the pool's order and bytes are Cranelift's: the
+entries the literal loads use, in first-use order, `emitFunc`). -/
+def VCodeConstant := Nat
+deriving instance DecidableEq, Repr, Inhabited, BEq for VCodeConstant
+
 /-- Addressing modes (`AMode`). `unsignedOffset` carries the byte offset (already scaled). -/
 inductive AMode where
   | spPostIndexed (simm9 : Int)
@@ -261,6 +269,9 @@ inductive AMode where
   | fpOffset (off : Int)
   | incomingArg (off : Int)
   | slotOffset (off : Int)
+  /-- `AMode.Const c`: a constant-pool entry (`VCodeConstant`, its `u64` value; `inst.isle:1533`;
+  the `LDR`-literal loads of `constant_f64`'s pool rule and `constant_f128`, #565). -/
+  | const (c : VCodeConstant)
   deriving DecidableEq, Repr, Inhabited, BEq
 
 inductive CondBrKind where
@@ -759,6 +770,9 @@ inductive Opnd where
   | extended (value : Nat) (e : ExtendOp)
   /-- `JumpTable`: indices of the `br_table` targets. -/
   | jumpTable (n : Nat)
+  /-- `VCodeConstant`: a constant-pool entry, identified by its `u64` value (`emit_u64_le_const`,
+  #565). -/
+  | vcodeConst (n : Nat)
   | tryCallNone
   /-- `ExceptionTable`: the table's signature and item kinds (tag number, or `none` for
   `default`), in item order (`context` items are rejected when the data is built). -/
@@ -1143,6 +1157,7 @@ def V.amode? (v : V) : Option AMode := do
   | VIdx.AMode.SlotOffset, [o] => return .slotOffset (← o.int?)
   | VIdx.AMode.SPPreIndexed, [.op (.simm9 i)] => return .spPreIndexed i
   | VIdx.AMode.SPPostIndexed, [.op (.simm9 i)] => return .spPostIndexed i
+  | VIdx.AMode.Const, [.op (.vcodeConst c)] => return .const c
   | _, _ => none
 
 /-- `CondBrKind` from its ISLE value. -/

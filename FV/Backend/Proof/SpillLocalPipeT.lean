@@ -45,7 +45,7 @@ theorem spillLocalOk_of_pipelineT {f : Clif.Function} {vc vcp : VCode}
   cases hct : i.isCtl
   · have hcov := hform b vb k i hvb hi
     rw [hct] at hcov
-    exact spillInstOk_of_formOk (hcov.resolve_left (by simp))
+    exact spillInstOk_of_covered (hcov.resolve_left (by simp))
   · exact spillCtl_of_prepare hp (prepDomain_ofT hd hs hl) hctl b vb k i hvb hi hct
 
 /-- **Integer specialization**: on `LowerScope` input the typed premises are theorems

@@ -8,6 +8,7 @@ import FV.E2E.RegLevelJTN
 import FV.E2E.RegLevelAtomicN
 import FV.E2E.RegLevelTlsN
 import FV.E2E.RegLevelFrameN
+import FV.E2E.RegLevelPoolN
 
 /-!
 # The counted register-level theorem with the call contract of index `n` at call `n` only
@@ -140,8 +141,16 @@ theorem realizes_stepC {R : RL} (hR : R.Wf) {P : Arm.ArmState → Prop}
       have hst := q_stRel hq
       rw [← hst.world.1 .ERR (by simp [Masked]), hst.err]
     cases hct : i.isCtl
-    · -- a covered straight-line form
-      have hfo := (hcov b vb k i hvb hi).resolve_left (by simp [hct])
+    · rcases (hcov b vb k i hvb hi).resolve_left (by simp [hct]) with hfo | hpl
+      rotate_left
+      · -- the literal-pool load (#565)
+        obtain ⟨sz, d, v, fl, rfl, -⟩ := isPoolLoad_form hpl
+        obtain ⟨-, rfl⟩ := pool_world hsem
+        cases hn with
+        | next hk =>
+          obtain ⟨n, c'', hm, hq', ht⟩ := realizes_poolLoadN hR hq hvb hi hpl hops hsz hsem hlen hk
+          exact fin n c'' hm hq' ht (hoc0 rfl)
+      -- a covered straight-line form
       obtain ⟨hOS, hL⟩ := formOk_sound (F := R.F) (X := R.X) hfo
       obtain rfl := csem_ctl hct (R.sem_csem hsem)
       cases hn with

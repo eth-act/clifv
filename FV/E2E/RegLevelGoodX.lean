@@ -20,9 +20,11 @@ state of an activation's run before its return. The executable machine of `E2E.E
 * `got` (D4): at the `ldr` of a GOT pair the kept addresses `R.G` hold their entry bytes;
 * `blr`: a `blr` reads its target from a register other than `xzr`, and the code words are
   readable as data;
-* `reads` (D2): the memory reads (`MemReads`) of the unhooked instruction at the pc are outside
-  the kept addresses `R.G` or bytes of the function's jump tables (`RL.ReadOk`); the loads of
-  move code read the frame's slot area (`moveInsts_reads`), which `G` avoids (`RL.G_not_slot`).
+* `reads` (D2): the memory reads (`MemReads`) of the unhooked instruction at the pc, as the line's
+  encoding decodes (`RL.envL`), are outside the kept addresses `R.G` or bytes of the function's
+  data lines: its jump tables (`.word`) or its literal pool (`.data`, the entries an
+  `ldr (literal)` reads, #565) (`RL.ReadOk`); the loads of move code read the frame's slot area
+  (`moveInsts_reads`), which `G` avoids (`RL.G_not_slot`).
 -/
 
 namespace Backend.Proof
@@ -77,14 +79,30 @@ def RL.CallPre (R : RL) (u : Arm.ArmState) : Prop :=
       csemV R.gv R.F ctx R.X i (useVals ops regs u) w = some (outs, w', ctl)
 
 /-- **A byte the activation's run may read** (D2): outside the kept addresses `G`, or a byte of
-one of its data (`.word`) lines, the jump tables. -/
+one of its data lines: a `.word` (the jump tables) or a `.data` word (the literal pool, #565). -/
 def RL.ReadOk (R : RL) (a : BitVec 64) : Prop :=
-  ¬ R.G a ∨ ∃ j tg bs, R.L[j]? = some (.word tg bs) ∧ ∃ i < 4, a = R.pcOf j + BitVec.ofNat 64 i
+  ¬ R.G a ∨ (∃ j tg bs, R.L[j]? = some (.word tg bs) ∧ ∃ i < 4, a = R.pcOf j + BitVec.ofNat 64 i) ∨
+    ∃ j d, R.L[j]? = some (.data d) ∧ ∃ i < 4, a = R.pcOf j + BitVec.ofNat 64 i
 
-/-- **D2 at `u`**: the memory reads of the unhooked instruction at the pc are `ReadOk`. -/
+/-- The encoder's environment at line `j` with the label offsets the layout computes from the
+function's own lines: `R.envOf j` of a well-formed activation (`RL.envL_eq`), but not read from
+the field `R.lm`, so that the per-state facts do not depend on it (`actGoodX`). -/
+def RL.envL (R : RL) (j : Nat) : Env :=
+  ⟨lineOffset R.L j, fun l => (labelOffsets R.fa.lines).toOption.bind (·[l]?)⟩
+
+theorem RL.envL_of_lm {R : RL} {lm : Std.HashMap Lbl Nat} (hm : labelOffsets R.fa.lines = .ok lm)
+    (j : Nat) : R.envL j = ⟨lineOffset R.L j, (lm[·]?)⟩ := by
+  simp [RL.envL, hm, Except.toOption]
+
+theorem RL.envL_eq {R : RL} (hR : R.Wf) (j : Nat) : R.envL j = R.envOf j :=
+  RL.envL_of_lm hR.lm j
+
+/-- **D2 at `u`**: the memory reads of the unhooked instruction at the pc, as the line's encoding
+(`R.envL j`: its offset and the label offsets; a literal load reads relative to it, #565) decodes,
+are `ReadOk`. -/
 def RL.ReadsAt (R : RL) (u : Arm.ArmState) : Prop :=
   ∀ j x t, R.L[j]? = some (.ins x t) → Arm.r .PC u = R.pcOf j → x.hooked = false →
-    ∀ env a, x.toArmInst env = .ok a → ∀ p ∈ E2E.ExecBytes.MemReads a u, ∀ k < p.2,
+    ∀ a, x.toArmInst (R.envL j) = .ok a → ∀ p ∈ E2E.ExecBytes.MemReads a u, ∀ k < p.2,
       R.ReadOk (p.1 + BitVec.ofNat 64 k)
 
 /-- **The per-state facts of the activation's run** that the executable machine needs (module
@@ -143,17 +161,27 @@ theorem RL.atLine_iff {R : RL} (hR : R.Wf) {u : Arm.ArmState} {j : Nat} {x : Ins
     {x' : Insn} : R.AtLine u x' ↔ x' = x :=
   ⟨fun h => RL.atLine_unique hR h ⟨j, t, hj, hpc⟩, fun e => e ▸ ⟨j, t, hj, hpc⟩⟩
 
-/-- `ReadsAt` at an instruction line from the reads of its instruction. -/
-theorem RL.readsAt_of_line {R : RL} (hR : R.Wf) {u : Arm.ArmState} {j : Nat} {x : Insn}
+/-- `ReadsAt` at an instruction line from the reads of its instruction as the line's encoding
+(`R.envOf j`) decodes. -/
+theorem RL.readsAt_of_lineE {R : RL} (hR : R.Wf) {u : Arm.ArmState} {j : Nat} {x : Insn}
     {t : Option Clif.TrapCode} (hj : R.L[j]? = some (.ins x t)) (hpc : Arm.r .PC u = R.pcOf j)
-    (h : x.hooked = false → ∀ env a, x.toArmInst env = .ok a →
+    (h : x.hooked = false → ∀ a, x.toArmInst (R.envOf j) = .ok a →
       ∀ p ∈ E2E.ExecBytes.MemReads a u, ∀ k < p.2, R.ReadOk (p.1 + BitVec.ofNat 64 k)) :
     R.ReadsAt u := by
   intro j' x' t' hj' hpc' hh
   obtain rfl := RL.pcOf_inj hR hj hj' (hpc.symm.trans hpc')
   rw [hj] at hj'
   cases hj'
+  rw [RL.envL_eq hR]
   exact h hh
+
+/-- `ReadsAt` at an instruction line from the reads of its instruction. -/
+theorem RL.readsAt_of_line {R : RL} (hR : R.Wf) {u : Arm.ArmState} {j : Nat} {x : Insn}
+    {t : Option Clif.TrapCode} (hj : R.L[j]? = some (.ins x t)) (hpc : Arm.r .PC u = R.pcOf j)
+    (h : x.hooked = false → ∀ env a, x.toArmInst env = .ok a →
+      ∀ p ∈ E2E.ExecBytes.MemReads a u, ∀ k < p.2, R.ReadOk (p.1 + BitVec.ofNat 64 k)) :
+    R.ReadsAt u :=
+  RL.readsAt_of_lineE hR hj hpc fun hh => h hh _
 
 /-- `ReadsAt` at a line whose instruction is no load. -/
 theorem RL.readsAt_noLoad {R : RL} (hR : R.Wf) {u : Arm.ArmState} {j : Nat} {x : Insn}

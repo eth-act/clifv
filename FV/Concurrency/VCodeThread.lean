@@ -245,6 +245,7 @@ theorem ofoot_execLines : ∀ (env : Env) (ls : List Line) (s : ArmState),
         rw [e1, e2]; rfl
   | _, .label _ :: _, _ => ⟨trivial, fun _ _ => rfl⟩
   | _, .word _ _ :: _, _ => ⟨trivial, fun _ _ => rfl⟩
+  | _, .data _ :: _, _ => ⟨trivial, fun _ _ => rfl⟩
 
 /-! ## Register-only accessors -/
 

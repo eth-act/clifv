@@ -70,14 +70,14 @@ theorem trap_trapIfN {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {allocs
     rw [← ht, ← hpsm]
     simp
   obtain ⟨body, psF', hb, hL, -⟩ := emit_block hR.emit
-  rw [relaxLines_append, relaxLines_trapLines,
+  rw [relaxLines_append, relaxLines_trapLines, List.append_assoc,
     show emitFar ⟨R.fa.k, R.af.slotBase⟩ R.af = R.far from rfl] at hL
   obtain ⟨body', hb'⟩ := hR.psF
   have hk : R.ctx = ⟨R.fa.k, R.af.slotBase⟩ := rfl
   rw [hk, hb] at hb'
   simp only [Except.ok.injEq, Prod.mk.injEq] at hb'
   obtain ⟨-, rfl⟩ := hb'
-  obtain ⟨hlab, hudf⟩ := trapLines_get _ _ _ hn
+  obtain ⟨hlab, hudf⟩ := trapLines_get_append _ _ _ _ hn
   have hlab' : R.L[(relaxLines R.far (ftList body)).length + 2 * ps1.traps.size]? = some (.label (.trap ps1.traps.size)) := by
     simp only [RL.L, hL]; rw [List.getElem?_append_right (by omega)]; simpa using hlab
   have hudf' : R.L[(relaxLines R.far (ftList body)).length + 2 * ps1.traps.size + 1]? =
@@ -162,14 +162,14 @@ theorem trap_trapIf_lineN {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {a
     rw [← ht, ← hpsm]
     simp
   obtain ⟨body, psF', hb, hL, -⟩ := emit_block hR.emit
-  rw [relaxLines_append, relaxLines_trapLines,
+  rw [relaxLines_append, relaxLines_trapLines, List.append_assoc,
     show emitFar ⟨R.fa.k, R.af.slotBase⟩ R.af = R.far from rfl] at hL
   obtain ⟨body', hb'⟩ := hR.psF
   have hk : R.ctx = ⟨R.fa.k, R.af.slotBase⟩ := rfl
   rw [hk, hb] at hb'
   simp only [Except.ok.injEq, Prod.mk.injEq] at hb'
   obtain ⟨-, rfl⟩ := hb'
-  obtain ⟨hlab, hudf⟩ := trapLines_get _ _ _ hn
+  obtain ⟨hlab, hudf⟩ := trapLines_get_append _ _ _ _ hn
   have hlab' : R.L[(relaxLines R.far (ftList body)).length + 2 * ps1.traps.size]? = some (.label (.trap ps1.traps.size)) := by
     simp only [RL.L, hL]; rw [List.getElem?_append_right (by omega)]; simpa using hlab
   have hudf' : R.L[(relaxLines R.far (ftList body)).length + 2 * ps1.traps.size + 1]? =

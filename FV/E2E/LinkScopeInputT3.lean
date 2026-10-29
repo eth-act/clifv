@@ -11,8 +11,9 @@ import FV.Backend.Proof.IselPrgDriverT
 On `fnScopeInTB3` (`LinkScopeInputDefsT3.lean`) every run-time check of `fnScopeInTB2` holds:
 
 * `lowerOutTB_of_T3`: `lowerFunction` succeeds (`Prg.lowerFunction_ok_inputT`), `ctlSpillB` of its
-  output and, of `prepare`'s output, `emitCondsB` (`emitConds_lowerT`), `formsCoveredB`
-  (`Driver.formsCoveredB_completeT`), `killFreeB` (`killFreeB_of_scopeT`) and `ctlInstsB`;
+  output and, of `prepare`'s output, `emitCondsB` (`emitConds_lowerT`, the literal loads' reach
+  `poolReachB_of_T3`), `formsCoveredB` (`Driver.formsCoveredB_completeT`), `killFreeB`
+  (`killFreeB_of_scopeT`) and `ctlInstsB`;
 * `resClassOkB_of_T3`; hence `fnScopeInTB2_of_T3`, `fnScopeInTB_of_T3`, `inScopeInT_of_T3`.
 
 Consequences: the per-function totality `pipeT_okT3`, `pipeCleanupT_okT3` (`pipeT_okT`,
@@ -33,7 +34,7 @@ theorem fnScopeInT3_parts {g : Clif.Function} (h : fnScopeInTB3 g = true) :
     dominatedB g = true ∧ lowerScopeTB g = true ∧ Spill.arityOkB g = true ∧
     extendsWidenB g = true ∧ sizeOkB g = true ∧ driverInB g = true ∧ Prg.iselInB g = true ∧
     Spill.entryParamsB g = true ∧ entryClassOkB g = true ∧ Compile.selectTypedB g = true ∧
-    bitcastWidthB g = true := by
+    bitcastWidthB g = true ∧ poolReachInB g = true := by
   simp only [fnScopeInTB3, Bool.and_eq_true, and_assoc] at h
   exact h
 
@@ -44,11 +45,23 @@ theorem resClassOkB_of_T3 {g : Clif.Function} (h : fnScopeInTB3 g = true) :
     fnScopeInT3_parts h
   exact resClassOkB_of (Spill.resClassOk_of_lowerScopeT hd (lowerScopeT_of hs) hst hsel)
 
+/-- **The literal loads reach the pool on `fnScopeInTB3`** (#565): below `2 ^ 17` words by the
+input bound (`poolReachB_of_sizeT`), else `poolReachInB`'s run-time check. -/
+theorem poolReachB_of_T3 {g : Clif.Function} {vc vcp : VCode} (h : fnScopeInTB3 g = true)
+    (hl : lowerFunction g = .ok vc) (hp : prepare vc = .ok vcp) : poolReachB vcp = true := by
+  obtain ⟨-, hst, -, -, -, -, -, -, -, -, hd, hs, -, -, -, -, -, -, -, hsel, -, hpr⟩ :=
+    fnScopeInT3_parts h
+  simp only [poolReachInB, Bool.or_eq_true, decide_eq_true_eq] at hpr
+  rcases hpr with h17 | hn
+  · exact poolReachB_of_sizeT hd (lowerScopeT_of hs) hst hsel h17 hl hp
+  · simp only [hl, hp] at hn
+    exact poolReachB_of_noPool hn
+
 /-- **`lowerOutTB` holds on `fnScopeInTB3`**: every run-time check of the typed input scope is a
 theorem on the decided input checks. -/
 theorem lowerOutTB_of_T3 {g : Clif.Function} (h : fnScopeInTB3 g = true) : lowerOutTB g = true := by
   obtain ⟨hET, hst, htc, habi, hext, hind, -, -, -, -, hd, hs, har, hw, hsz, hdrv, hin, hent, hec,
-    hsel, hbw⟩ := fnScopeInT3_parts h
+    hsel, hbw, -⟩ := fnScopeInT3_parts h
   have hS := lowerScopeT_of hs
   obtain ⟨vc, hl⟩ := Prg.lowerFunction_ok_inputT hET habi hd hS har hent hw hdrv hin
   have ha := abiSigsOk_of_checks habi hext hind
@@ -59,7 +72,7 @@ theorem lowerOutTB_of_T3 {g : Clif.Function} (h : fnScopeInTB3 g = true) : lower
   simp only [hcs, Bool.true_and]
   split
   · rename_i vcp hp
-    rw [emitConds_lowerT hd hS hst hsel hw hbw hsz hl hp,
+    rw [emitConds_lowerT hd hS hst hsel hw hbw hsz hl hp (poolReachB_of_T3 h hl hp),
       Driver.formsCoveredB_completeT hd hS hst hsel hl hp default,
       killFreeB_of_scopeT hd hs habi hext hind har htc hl hp,
       ctlInstsB_of (ctlInsts_pipelineT CovT.iselCtlHypT hd hS hst hsel ha hE hl hp)]
@@ -106,9 +119,9 @@ theorem formsCoveredB_of_T3 {g : Clif.Function} {vc vcp : VCode} (h : fnScopeInT
 
 theorem emitCondsB_of_T3 {g : Clif.Function} {vc vcp : VCode} (h : fnScopeInTB3 g = true)
     (hl : lowerFunction g = .ok vc) (hp : prepare vc = .ok vcp) : emitCondsB vcp = true := by
-  obtain ⟨-, hst, -, -, -, -, -, -, -, -, hd, hs, -, hw, hsz, -, -, -, -, hsel, hbw⟩ :=
+  obtain ⟨-, hst, -, -, -, -, -, -, -, -, hd, hs, -, hw, hsz, -, -, -, -, hsel, hbw, -⟩ :=
     fnScopeInT3_parts h
-  exact emitConds_lowerT hd (lowerScopeT_of hs) hst hsel hw hbw hsz hl hp
+  exact emitConds_lowerT hd (lowerScopeT_of hs) hst hsel hw hbw hsz hl hp (poolReachB_of_T3 h hl hp)
 
 /-- **`lowerFunction` succeeds on `fnScopeInTB3`** (`Prg.lowerFunction_ok_inputT`). -/
 theorem lowerFunction_ok_T3 {g : Clif.Function} (h : fnScopeInTB3 g = true) :

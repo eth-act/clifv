@@ -71,5 +71,17 @@ theorem formsCovered_cleanup_complete {f : Clif.Function} {vc vcp : VCode}
       fun _ _ _ _ _ _ _ _ _ hph _ hd h => termCall_cov logicImmComplete hctx hcl hph hd h,
       fun _ _ _ _ _ _ _ _ _ _ hph hd h => tryCall_cov logicImmComplete hctx hcl hph hd h⟩))) cx
 
+/-- `formsCovered_cleanup_complete`, two-way: the cleanup's prepared VCode of subset E has no
+literal-pool load (#565). -/
+theorem formsCovered2_cleanup_complete {f : Clif.Function} {vc vcp : VCode}
+    (hs : LowerScope f) (hl : lowerFunction f = .ok vc) (hp : prepare (prune vc) = .ok vcp) :
+    FormsCovered2 vcp :=
+  formsCovered2_of_prepare hp (prune_prepDomain (prepDomain_of_lower hs hl hs.nonempty))
+    (prune_insts (lower_covered hs hl (fun ctx _ _ hb => by
+    have hctx : CtxInv f ctx := ctxOk_sound (ctxOk_complete hs hb)
+    have hcl : Cov.Clean ctx := clean_of_build hb
+    exact ⟨fun _ _ _ _ _ _ _ hi hc h => stmt_cov logicImmComplete hctx hcl hi hc h,
+      fun _ _ _ _ _ _ _ _ _ hph _ hd h => termCall_cov logicImmComplete hctx hcl hph hd h,
+      fun _ _ _ _ _ _ _ _ _ _ hph hd h => tryCall_cov logicImmComplete hctx hcl hph hd h⟩)))
 
 end Backend.Proof.Driver

@@ -658,6 +658,16 @@ theorem ctorOk_tryRetsC {ctx : Ctx} {id : TermId} {args : List V} {st : LState}
 macro "ctor_same" : tactic => `(tactic| (refine ctorOk_same ?_ ?_ ?_ ?_ <;> simp_all (config := { decide := true }) [V.regsIn, opRegs, pairRegs, V.valsIn, opVals, V.instsIn, V.tlsIn] <;> done))
 
 set_option maxHeartbeats 2000000 in
+/-- Close `CtorOk` of a constructor that returns a `VCodeConstant` (no atoms) and changes only
+the constant pool (`emit_u64_le_const`, #565). -/
+theorem ctorOk_consts {ctx : Ctx} {id : TermId} {args : List V} {st st' : LState} {n : Nat}
+    (hst' : st'.nextVreg = st.nextVreg) (hou : st'.outgoing = st.outgoing)
+    (hem : st'.emitted = st.emitted) :
+    CtorOk ctx id args st (.op (.vcodeConst n)) st' := by
+  refine ⟨by omega, by omega, ⟨[], by simp [hem], by simp⟩, fun r hr => by
+    simp [V.regsIn, opRegs] at hr, by simp [V.valsIn, opVals], by simp [V.instsIn],
+    by simp [V.tlsIn]⟩
+
 /-- **Every extern constructor** satisfies `CtorOk`. -/
 theorem externCtor_ok (ctx : Ctx) (t : Term) (args : List V) (st : LState) :
     CtorP ctx st t.id args (externCtor ctx t args st) := by
@@ -729,6 +739,7 @@ theorem externCtor_ok (ctx : Ctx) (t : Term) (args : List V) (st : LState) :
       | exact ctorOk_putRegsVec ‹_›
       | exact ctorOk_tryRets ‹_› _ _
       | exact ctorOk_tryRetsC ‹_› _ _
+      | exact ctorOk_consts rfl rfl rfl
 
 
 /-! ## Extern extractors -/

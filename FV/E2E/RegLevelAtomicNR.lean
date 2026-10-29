@@ -197,7 +197,7 @@ theorem realizes_rmwLoopNY {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : Ar
   rotate_right
   · rcases Nat.lt_or_ge i (rmwLoopBody ty.bits op fl).length with hi1 | hi1
     · exact hgx1 (rmwBody_tail hty op fl) (RL.good_of_sp hst.sp)
-        (rmwBody_reads hty op fl _ s fun q hq => .inr (.inr ⟨hav q hq, havY q hq⟩)) i hi1
+        (rmwBody_reads hty op fl _ s fun q hq => .inr (.inr (.inl ⟨hav q hq, havY q hq⟩))) i hi1
     · obtain rfl : i = (rmwLoopBody ty.bits op fl).length := by omega
       rw [hit1]
       refine RL.goodXNR_ofIns hR hLc hpcs1 rfl rfl ?_ herr1 hprog1' ?_ ?_
@@ -415,7 +415,7 @@ theorem realizes_casLoopNY {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : Ar
     hst.err hint1 hrun1
   have hgx01 : ∀ i < 2, R.GoodXNY Y (iterN R.step i s) := fun i hi =>
     hgx1 (casHead_tail _ fl) (RL.good_of_sp hst.sp)
-      (casHead_reads _ fl _ s fun q hq => .inr (.inr ⟨hav q hq, havY q hq⟩)) i
+      (casHead_reads _ fl _ s fun q hq => .inr (.inr (.inl ⟨hav q hq, havY q hq⟩))) i
       (by simp [casLoopHead]; omega)
   simp only [casLoopHead, List.length_cons, List.length_nil] at hit1 hpcs1 hgood1
   have herr1 : Arm.r .ERR s1 = .None := by

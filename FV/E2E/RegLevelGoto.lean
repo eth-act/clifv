@@ -129,6 +129,7 @@ theorem ft_b (x : Lbl) (Z : List Line) :
           simp [Insn.condTarget?]
         · simp
     | word a b => right; cases Z <;> simp
+    | data w => right; cases Z <;> simp
 theorem ft_cb (bc : Insn) (e : Lbl) (Z : List Line) (hnb : ∀ x, bc ≠ .b x) :
     (∃ L Z', Z = .label L :: Z' ∧ bc.condTarget? = some L ∧
       ftList (.ins bc none :: .ins (.b e) none :: Z) = .ins (bc.invertTo e) none :: ftList Z) ∨

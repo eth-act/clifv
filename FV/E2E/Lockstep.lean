@@ -462,6 +462,7 @@ theorem mspec_lockstep {Z : BitVec 64 → Prop} {sb : Nat} {i : MInst} (hm : i.i
   · simp [MInst.isMemAcc] at hm
   · simp [MInst.isMemAcc] at hm
   · simp [MInst.isMemAcc] at hm
+  · simp [MInst.isMemAcc] at hm
   · obtain ⟨w₁', h1, h2⟩ := ispec_lockstep hw h
     exact ⟨w₁', h1, h2⟩
 

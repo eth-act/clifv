@@ -230,13 +230,14 @@ theorem moveInsts_total (c : FnCtx) {fr : RAFrame} {src dst : Loc} {l : List AIn
   · cases h
 
 /-- **An instruction of the spill allocation expands**: an instruction `i` of the VCode that is a
-covered form or a control form meeting `ctlInstOk`, with the operand locations `spillLocs`. -/
+covered form, the literal-pool load (#565) or a control form meeting `ctlInstOk`, with the operand
+locations `spillLocs`. -/
 theorem op_total {c : FnCtx} {i i' : MInst} {regs : Array Reg} {b k : Nat}
-    (hcov : i.isCtl = true ∨ FormOk c i = true) (hctl : ctlInstOk b k i = true)
+    (hcov : i.isCtl = true ∨ FormOk c i = true ∨ i.isPoolLoad = true) (hctl : ctlInstOk b k i = true)
     (hloc : ∀ ops, i.operands = .ok ops → regs.map Loc.reg = spillLocs ops i.clobbers)
     (hasg : i.assign regs = .ok i') (hna : ∀ ds, i' ≠ .args ds) (hnr : ∀ us, i' ≠ .rets us) :
     LinesTotal c i' := by
-  rcases hcov with hc | hf
+  rcases hcov with hc | hf | hp
   · cases i
     case atomicRmwLoop ty op fl a o d s1 s2 =>
       simp only [ctlInstOk, Bool.and_eq_true] at hctl
@@ -266,6 +267,9 @@ theorem op_total {c : FnCtx} {i i' : MInst} {regs : Array Reg} {b k : Nat}
       exact assign_post hasg (ctl_post c regs hc (fun _ _ _ _ _ _ _ _ h => by cases h)
         (fun _ _ _ _ _ _ _ h => by cases h) (fun _ _ _ h => by cases h)) hna hnr
   · exact formOk_total hf hasg
+  · obtain ⟨sz, d, v, fl, rfl, -⟩ := isPoolLoad_form hp
+    obtain ⟨r, -, rfl⟩ := assign_poolLoad hasg
+    intro ps; exact ⟨_, rfl⟩
 
 /-! ## The code of the spill allocation -/
 

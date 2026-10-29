@@ -73,6 +73,35 @@ theorem word_static (hI : okB I = true) (hc : codeMapB I (tabOf I.results) = tru
   have hal := line_overlap hI hc hF hg hh hj hj' rfl rfl hk hi' (by rw [ho]; omega)
   simp [lineAlikeB] at hal
 
+/-- **The bytes of a literal-pool word of a function are no relocated bytes** (#565;
+`word_static` for a `.data` line). -/
+theorem data_static (hI : okB I = true) (hc : codeMapB I (tabOf I.results) = true)
+    (hF : ∀ g ∈ (prog I).funcs, FnOk I file g) {g : Clif.Function} (hg : g ∈ (prog I).funcs)
+    {j d : Nat} (hj : (art I g).fa.lines.toList[j]? = some (.data d)) :
+    ∀ k < 4, ¬ RelocAt I (wAt (art I g) (lineOffset (art I g).fa.lines.toList j) +
+      BitVec.ofNat 64 k) := by
+  intro k hk hR
+  obtain ⟨h, hh, rl, hrl, i', hi', he⟩ := relocAt_inv hI hR
+  obtain ⟨j', i2, t2, hj', -, ho⟩ := (FnAsm.layout_relocs (hF h hh).layout rl).1 hrl
+  have hl' := line_lt (hF h hh) hj'
+  have hfit := (hF h hh).fits
+  have hfit' := (hF g hg).fits
+  have hlw : lineOffset (art I g).fa.lines.toList j + 4 ≤ 4 * (art I g).fb.words.size := by
+    have h1 := lineOffset_succ _ j _ hj
+    have h2 := lineOffset_le_size (art I g).fa.lines.toList (j + 1)
+    rw [layout_sum (hF g hg).layout] at h2
+    simp only [Line.size] at h1
+    omega
+  have he' := congrArg BitVec.toNat he
+  rw [BitVec.toNat_add, wAt, BitVec.toNat_add, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
+    Nat.mod_eq_of_lt (by omega : k < 2 ^ 64),
+    Nat.mod_eq_of_lt (by omega : lineOffset (art I g).fa.lines.toList j < 2 ^ 64),
+    Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega), wAt, BitVec.toNat_add,
+    BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega : rl.offset + i' < 2 ^ 64),
+    Nat.mod_eq_of_lt (by omega)] at he'
+  have hal := line_overlap hI hc hF hg hh hj hj' rfl rfl hk hi' (by rw [ho]; omega)
+  simp [lineAlikeB] at hal
+
 /-- **`StepOkR.insn` (D2) from the per-state facts**: the reads of the decoded word at the pc
 avoid the relocated bytes. -/
 theorem insn_of_good (hI : okB I = true) (hc : codeMapB I (tabOf I.results) = true)
@@ -106,11 +135,14 @@ theorem insn_of_good (hI : okB I = true) (hc : codeMapB I (tabOf I.results) = tr
   rw [ha] at hd
   cases hd
   -- the register-level fact
-  have hrd := hrdA j x tt hj hpcw hh _ a ha' p hp k hk
-  rcases hrd with hnG | ⟨j', tg, bs, hj', q, hq, he⟩
+  have hrd := hrdA j x tt hj hpcw hh a
+    (by simpa [RL.envL, RL.L, hm, Except.toOption] using ha') p hp k hk
+  rcases hrd with hnG | ⟨j', tg, bs, hj', q, hq, he⟩ | ⟨j', d, hj', q, hq, he⟩
   · exact hnG (himg _ (relocAt_img hI hF hR))
   · rw [he] at hR
     exact word_static hI hc hF hg hj' q hq hR
+  · rw [he] at hR
+    exact data_static hI hc hF hg hj' q hq hR
 
 /-- **The GOT hypothesis** (D4 of `StepOkR`) at the states of `ReachN` whose step ends without
 error. -/

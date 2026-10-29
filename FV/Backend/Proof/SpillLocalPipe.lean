@@ -14,9 +14,10 @@ meets `SpillLocalOk`, given `SpillLocalHyp`, the part not proven yet:
 * `ClassesHyp`: every vreg of the prepared code has the class `classes` records;
 * `EdgesHyp`: the CFG facts `EdgesOk` of the prepared code.
 
-Proven here: every straight-line instruction (`FormOk`, by `formsCovered_complete`) meets
-`SpillInstOk` (`spillInstOk_of_formOk`), and `prepare` keeps `SpillInstOk` (retargeting changes
-neither the operands nor the clobbers; its edge blocks' `jump`s have no operands).
+Proven here: every straight-line instruction (`FormOk`, by `formsCovered_complete`) and every
+literal-pool load (`MInst.isPoolLoad`, #565) meets `SpillInstOk` (`spillInstOk_of_covered`), and
+`prepare` keeps `SpillInstOk` (retargeting changes neither the operands nor the clobbers; its edge
+blocks' `jump`s have no operands).
 -/
 
 namespace Backend.Proof.Spill
@@ -88,7 +89,7 @@ theorem spillLocalOk_of_pipeline (hyp : SpillLocalHyp) {f : Clif.Function} {vc v
   cases hct : i.isCtl
   · have hcov := formsCovered_complete hs hl hp default b vb k i hvb hi
     rw [hct] at hcov
-    exact spillInstOk_of_formOk (hcov.resolve_left (by simp))
+    exact spillInstOk_of_covered (hcov.resolve_left (by simp))
   · exact spillCtl_of_prepare hp (prepDomain_of_lower hs hl hs.nonempty) (hyp.1 f vc hd hs hl)
       b vb k i hvb hi hct
 

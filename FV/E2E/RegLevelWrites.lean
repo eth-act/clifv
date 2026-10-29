@@ -216,26 +216,32 @@ theorem realizes_moveW {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b : Nat} {src ds
 /-! ## No fault -/
 
 /-- **No fault at a state with the per-state facts and the writes**: under a memory map whose
-non-writable bytes are kept (in `G`) and whose jump-table bytes are readable, the unhooked
-instruction at the pc does not fault (`ArmFault.evsOk`): its reads are outside `G` or jump-table
-bytes (D2), its writes outside `G` (`WritesAt`). -/
+non-writable bytes are kept (in `G`) and whose jump-table and literal-pool bytes are readable, the
+unhooked instruction at the pc, as its line's encoding (`R.envL j`) decodes, does not fault
+(`ArmFault.evsOk`): its reads are outside `G` or bytes of the function's data lines (D2), its
+writes outside `G` (`WritesAt`). (The literal loads, #565, read relative to their own line, so
+the encoding environment is the line's and the pool's `.data` words must be readable.) -/
 theorem RL.evsOk_of_goodXW {R : RL} {mp : ArmFault.MemMap} {u : Arm.ArmState}
     (hg : R.GoodXW u) (hG : ∀ a, (mp a).allows .W = false → R.G a)
     (hJT : ∀ j tg bs, R.L[j]? = some (.word tg bs) → ∀ i < 4,
       (mp (R.pcOf j + BitVec.ofNat 64 i)).allows .R = true)
+    (hD : ∀ j d, R.L[j]? = some (.data d) → ∀ i < 4,
+      (mp (R.pcOf j + BitVec.ofNat 64 i)).allows .R = true)
     {j : Nat} {x : Insn} {t : Option Clif.TrapCode} (hj : R.L[j]? = some (.ins x t))
-    (hpc : Arm.r .PC u = R.pcOf j) (hx : x.hooked = false) {env : Env} {a : Arm.ArmInst}
-    (ha : x.toArmInst env = .ok a) :
+    (hpc : Arm.r .PC u = R.pcOf j) (hx : x.hooked = false) {a : Arm.ArmInst}
+    (ha : x.toArmInst (R.envL j) = .ok a) :
     ArmFault.evsOk mp (Concurrency.ArmInstFoot.instEvs a u) = true := by
   refine E2E.ExecBytes.evsOk_of (fun p hp k hk => ?_) (fun p hp k hk => ?_)
-  · rcases hg.1.reads j x t hj hpc hx env a ha p hp k hk with hnG | ⟨j', tg, bs, hj', i, hi, he⟩
+  · rcases hg.1.reads j x t hj hpc hx a ha p hp k hk with
+      hnG | ⟨j', tg, bs, hj', i, hi, he⟩ | ⟨j', d, hj', i, hi, he⟩
     · have hw : (mp (p.1 + BitVec.ofNat 64 k)).allows .W = true := by
         cases hc : (mp (p.1 + BitVec.ofNat 64 k)).allows .W
         · exact absurd (hG _ hc) hnG
         · rfl
       revert hw; cases mp (p.1 + BitVec.ofNat 64 k) <;> simp [ArmFault.Perm.allows]
     · rw [he]; exact hJT j' tg bs hj' i hi
-  · have := hg.2 j x t hj hpc hx env a ha p hp k hk
+    · rw [he]; exact hD j' d hj' i hi
+  · have := hg.2 j x t hj hpc hx _ a ha p hp k hk
     cases hc : (mp (p.1 + BitVec.ofNat 64 k)).allows .W
     · exact absurd (hG _ hc) this
     · rfl
