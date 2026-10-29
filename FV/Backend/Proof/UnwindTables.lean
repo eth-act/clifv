@@ -514,7 +514,7 @@ theorem callSites_ok {af : AFunc} {fa : FnAsm} {sites : List CallSite}
 /-! ## The CFI rows describe the frame -/
 
 /-- A call instruction (`bl`/`blr`). -/
-def callInsn? : Option Insn → Bool
+@[expose] def callInsn? : Option Insn → Bool
   | some (.bl _) | some (.blr _) => true
   | _ => false
 

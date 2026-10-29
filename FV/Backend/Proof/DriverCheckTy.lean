@@ -127,7 +127,7 @@ def succOkT (f : Clif.Function) (vc : VCode) (ctx : Ctx) (R : Reg → Reg) (B : 
         | none => false
 
 /-- The per-block facts of `LowerShapeT`. -/
-def blockOkT (f : Clif.Function) (vc : VCode) (ctx : Ctx) (st0 : LState) (R : Reg → Reg)
+@[expose] def blockOkT (f : Clif.Function) (vc : VCode) (ctx : Ctx) (st0 : LState) (R : Reg → Reg)
     (gn : Nat → Nat) (bl : List BLow) (bi : Nat) (B : Clif.Block) (L : BLow) : Bool :=
   match vc.blocks[bi]? with
   | none => false
@@ -151,7 +151,7 @@ def blockOkT (f : Clif.Function) (vc : VCode) (ctx : Ctx) (st0 : LState) (R : Re
       | none => false)
 
 /-- `LowerShapeT f vc ctx st0 (renOf gn) gn bl`, decided. -/
-def shapeOkT (f : Clif.Function) (vc : VCode) (ctx : Ctx) (st0 : LState) (gn : Nat → Nat)
+@[expose] def shapeOkT (f : Clif.Function) (vc : VCode) (ctx : Ctx) (st0 : LState) (gn : Nat → Nat)
     (bl : List BLow) : Bool :=
   (ctxOkT f ctx && instScopeOk ctx) && decide (ctx.valReg.size ≤ st0.nextVreg) &&
   f.blocks.all (fun B => B.params.all fun p => decide (gn p.1 = p.1)) &&
@@ -166,7 +166,7 @@ def shapeOkT (f : Clif.Function) (vc : VCode) (ctx : Ctx) (st0 : LState) (gn : N
 
 /-- The signature's parameter locations and byte sizes compute, one per parameter, and the
 register-passed parameters are in x0..x8 or v0..v7 (`entryOkB` with float registers). -/
-def entryOkBT (f : Clif.Function) : Bool :=
+@[expose] def entryOkBT (f : Clif.Function) : Bool :=
   (locsOf f.sig).length == f.sig.params.length &&
     (locsOf f.sig).all (fun l => match l with
       | .reg (.x n) => decide (n ≤ 8)

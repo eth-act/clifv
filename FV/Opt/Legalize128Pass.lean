@@ -156,7 +156,7 @@ def rewriteBody (C : Ctx) : List Stmt → M Unit
 /-! ## Block parameters and terminators -/
 
 /-- The parameters of the entry block (`entryParamsOk`): pads are fresh. -/
-def entryParams (C : Ctx) : List (List SlotEl) → List (ValueId × Ty) → M (List (ValueId × Ty))
+@[expose] def entryParams (C : Ctx) : List (List SlotEl) → List (ValueId × Ty) → M (List (ValueId × Ty))
   | [], [] => pure []
   | [.val p] :: gs, (v, t) :: ps =>
     if t == p.ty && C.plain v then do return (v, t) :: (← entryParams C gs ps)

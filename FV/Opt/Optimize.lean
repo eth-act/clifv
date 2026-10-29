@@ -35,7 +35,7 @@ namespace Opt
 open Clif
 
 /-- The implementation of a rule set. -/
-def RuleSetId.fn : RuleSetId → SimplifyFn
+@[expose] def RuleSetId.fn : RuleSetId → SimplifyFn
   | .cranelift => fun enodes typeOf make st v => Isle.Opt.simplify enodes typeOf make st v
   | .hand => HandRules.simplify
 

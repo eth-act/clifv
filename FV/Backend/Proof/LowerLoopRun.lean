@@ -59,7 +59,7 @@ theorem getElem!_of {α : Type} [Inhabited α] {a : Array α} {i : Nat} {x : α}
 /-! ## The recorded lowering with its end state -/
 
 /-- `lowBlocks`, also returning the final state and next edge label. -/
-def lowB (f : Clif.Function) (call : StmtCall) (tcall : TermCallF) (ycall : TryCallF) :
+@[expose] def lowB (f : Clif.Function) (call : StmtCall) (tcall : TermCallF) (ycall : TryCallF) :
     Nat → List Clif.Block → LState → Nat → Option (List BLow × LState × Nat)
   | _, [], st, nl => some ([], st, nl)
   | start, B :: Bs, st, nl =>
@@ -231,7 +231,7 @@ theorem resLoop {ctx : Ctx} (hreg : ∀ x r, ctx.valueReg? x = some r → r = .v
 /-! ## The statement loop -/
 
 /-- A statement's segment before renaming. -/
-def segOf (q : Clif.Stmt × SLow) : List MInst := q.2.st'.emitted.toList ++ extraOf q.1.results q.2.rss
+@[expose] def segOf (q : Clif.Stmt × SLow) : List MInst := q.2.st'.emitted.toList ++ extraOf q.1.results q.2.rss
 
 /-- The facts `LoopFacts.results` records, for statements `ss` lowered as `sls`. -/
 def ResOk (ss : List Clif.Stmt) (sls : List SLow) : Prop :=
@@ -409,7 +409,7 @@ theorem blockArgRegs_ok {f : Clif.Function} {ctx : Ctx}
   · cases h
 
 /-- The edge blocks of a `brif`/`br_table`'s successors `bcs` with labels `ls`. -/
-def brEdges (f : Clif.Function) (bcs : List Clif.BlockCall) (ls : List Label) : List VBlock :=
+@[expose] def brEdges (f : Clif.Function) (bcs : List Clif.BlockCall) (ls : List Label) : List VBlock :=
   (bcs.zip ls).filterMap fun (bc, l) =>
     if bc.args.isEmpty then none else (blockIdx? f bc.block).map fun tl =>
       { label := l, insts := #[.jump tl], branchArgs := (bc.args.map fun a => Reg.vreg a .int).toArray }
@@ -478,13 +478,13 @@ theorem destLoop {f : Clif.Function} {ctx : Ctx} (hreg : ∀ x r, ctx.valueReg? 
 
 /-- The edge blocks of a `try_call`'s successors `ds` with labels `ls` (return/payload vregs
 `rets`, `pays`). -/
-def tryEdges (f : Clif.Function) (ds : List Clif.TryDest) (ls : List Label) (rets pays : List Reg) :
+@[expose] def tryEdges (f : Clif.Function) (ds : List Clif.TryDest) (ls : List Label) (rets pays : List Reg) :
     List VBlock :=
   (ds.zip ls).filterMap fun (td, l) => (blockIdx? f td.block).map fun tl =>
     { label := l, insts := #[.jump tl], branchArgs := (td.args.map (tryEdgeArg rets pays)).toArray }
 
 /-- What `lowerFunction` checks of a `try_call` successor argument at position `k`. -/
-def ArgOk (ctx : Ctx) (nh nrets npays k : Nat) : Clif.TryArg → Prop
+@[expose] def ArgOk (ctx : Ctx) (nh nrets npays k : Nat) : Clif.TryArg → Prop
   | .val v => ctx.valueReg? v = some (.vreg v .int)
   | .ret i => ¬ k < nh ∧ i < nrets
   | .exn i => k ≠ nh ∧ i < npays
@@ -680,18 +680,18 @@ theorem paramsMapM_ok {ctx : Ctx} (hreg : ∀ x r, ctx.valueReg? x = some r → 
       rw [hy', ← hy, hreg _ _ hv]; simp
 
 /-- The terminator's segment of a block before renaming (`tseg id`). -/
-def tsegOf (tl : Option TryLow) (tst' : LState) : List MInst := fixTry tl tst'.emitted.toList
+@[expose] def tsegOf (tl : Option TryLow) (tst' : LState) : List MInst := fixTry tl tst'.emitted.toList
 
 /-- A block. -/
-def mkVB (l : Label) (insts : Array MInst) (params branchArgs : Array Reg) : VBlock :=
+@[expose] def mkVB (l : Label) (insts : Array MInst) (params branchArgs : Array Reg) : VBlock :=
   { label := l, insts, params, branchArgs }
 
 /-- The parameters of block `bi` (`B`). -/
-def paramsOf (bi : Nat) (B : Clif.Block) : Array Reg :=
+@[expose] def paramsOf (bi : Nat) (B : Clif.Block) : Array Reg :=
   if bi = 0 then #[] else (B.params.map fun p => Reg.vreg p.1 .int).toArray
 
 /-- The branch arguments of block `B`. -/
-def jumpArgsOf (B : Clif.Block) : Array Reg :=
+@[expose] def jumpArgsOf (B : Clif.Block) : Array Reg :=
   match B.term with
   | .jump bc => (bc.args.map fun a => Reg.vreg a .int).toArray
   | _ => #[]
@@ -769,7 +769,7 @@ theorem finishBlock_ok {ctx : Ctx} (hreg : ∀ x r, ctx.valueReg? x = some r →
     · cases h
 
 /-- The terminator data `lowerFunction` computes for `t`. -/
-def DataOk (f : Clif.Function) (t : Clif.Terminator) (data : V) : Prop :=
+@[expose] def DataOk (f : Clif.Function) (t : Clif.Terminator) (data : V) : Prop :=
   match t with
   | .tryCall .. | .tryCallIndirect .. => tryCallData f t = .ok data
   | _ => termData (abiTerm f t) = .ok data

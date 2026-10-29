@@ -68,7 +68,7 @@ def freshN : LState → Nat → LState
   | st, n + 1 => freshN (st.fresh .int).2 n
 
 /-- The output registers `gen_call_output` allocates from `st`: one fresh vreg per return. -/
-def outRegs (st : LState) (n : Nat) : List (List Reg) :=
+@[expose] def outRegs (st : LState) (n : Nat) : List (List Reg) :=
   (List.range n).map fun j => [Reg.vreg (st.nextVreg + j) .int]
 
 theorem freshN_nextVreg : ∀ (st : LState) (n : Nat), (freshN st n).nextVreg = st.nextVreg + n
@@ -519,19 +519,19 @@ theorem foldl_argStep_gen : ∀ (L : List ((ArgLoc × Reg) × Nat)) (acc : Array
 
 /-- The register-passed arguments of a call's (location, argument value, byte size) triples,
 with their argument registers. -/
-def regPairsOf (T : List ((ArgLoc × Nat) × Nat)) : List (Nat × Reg) :=
+@[expose] def regPairsOf (T : List ((ArgLoc × Nat) × Nat)) : List (Nat × Reg) :=
   T.filterMap fun q => match q.1.1 with
     | .reg p => some (q.1.2, p)
     | .stack _ => none
 
 /-- The stack-passed arguments of a call's triples: (offset, argument value, byte size). -/
-def stackEnts (T : List ((ArgLoc × Nat) × Nat)) : List (Nat × Nat × Nat) :=
+@[expose] def stackEnts (T : List ((ArgLoc × Nat) × Nat)) : List (Nat × Nat × Nat) :=
   T.filterMap fun q => match q.1.1 with
     | .stack off => some (off, q.1.2, q.2)
     | .reg _ => none
 
 /-- The store `gen_call_args` emits for a stack-passed argument (offset, value, byte size). -/
-def argStore (e : Nat × Nat × Nat) : MInst :=
+@[expose] def argStore (e : Nat × Nat × Nat) : MInst :=
   .store (storeOpOfBytes e.2.2) (.vreg e.2.1 .int) (.spOffset e.1) trustedFlags
 
 theorem zip3_map (g : Nat → Reg) : ∀ (locs : List ArgLoc) (args bytes : List Nat),

@@ -107,7 +107,7 @@ def fFmt : Clif.FOp → String
   | _ => ""
 
 /-- S11f: the opcode name of a float operation `instData` builds (`""` for the others). -/
-def fOpc : Clif.FOp → String
+@[expose] def fOpc : Clif.FOp → String
   | .fadd => "Fadd" | .fsub => "Fsub" | .fmul => "Fmul" | .fdiv => "Fdiv"
   | .fmin => "Fmin" | .fmax => "Fmax" | .sqrt => "Sqrt" | .fneg => "Fneg" | .fabs => "Fabs"
   | .fpromote => "Fpromote" | .fdemote => "Fdemote" | .ceil => "Ceil" | .floor => "Floor"

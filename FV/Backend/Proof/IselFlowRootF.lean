@@ -189,7 +189,7 @@ theorem flowRules_eq : program.rulesOf TId.lower = flowRules0 ++ flowRules1 ++ f
   rfl
 
 /-- The check of one root rule of `lower`. -/
-def flowRootOk (r : Rule) : Bool :=
+@[expose] def flowRootOk (r : Rule) : Bool :=
   !closureRootIds.contains r.id || r.id == 587 ||
     aRule program flowTab false [⟨1, true⟩] ⟨1, false⟩ r
 

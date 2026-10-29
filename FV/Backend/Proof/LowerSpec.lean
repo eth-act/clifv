@@ -34,27 +34,27 @@ open Backend Backend.Proof
 
 /-- `lowerFunction`'s alias update for result `p.1` returned in vreg `p.2` (`set_vreg_alias`,
 the array grown as needed). -/
-def aliasStep (a : Array (Option Nat)) (p : Nat × Nat) : Array (Option Nat) :=
+@[expose] def aliasStep (a : Array (Option Nat)) (p : Nat × Nat) : Array (Option Nat) :=
   let a := if a.size ≤ p.1 then a ++ Array.replicate (p.1 + 1 - a.size) none else a
   a.set! p.1 (some p.2)
 
 /-- `lowerFunction`'s alias array after recording the aliases `al` in order. -/
-def aliasArr (al : List (Nat × Nat)) : Array (Option Nat) := al.foldl aliasStep #[]
+@[expose] def aliasArr (al : List (Nat × Nat)) : Array (Option Nat) := al.foldl aliasStep #[]
 
 /-- `lowerFunction`'s final renaming of a block (`fixBlock`). -/
-def fixBlock (R : Reg → Reg) (vb : VBlock) : VBlock :=
+@[expose] def fixBlock (R : Reg → Reg) (vb : VBlock) : VBlock :=
   { vb with insts := vb.insts.map (MInst.mapRegs R), branchArgs := vb.branchArgs.map R }
 
 /-- The register `lowerFunction` passes for a `try_call` successor argument (`rets`, `pays`: the
 call's return and payload vregs). -/
-def tryEdgeArg (rets pays : List Reg) : Clif.TryArg → Reg
+@[expose] def tryEdgeArg (rets pays : List Reg) : Clif.TryArg → Reg
   | .val v => .vreg v .int
   | .ret i => rets.getD i .xzr
   | .exn i => pays.getD i .xzr
 
 /-- Block `bi` (`B`, lowered as `L`) before alias resolution: the entry's argument setup, the
 statements' segments, the terminator's segment; parameters and jump arguments. -/
-def rawBlock (f : Clif.Function) (bl : List BLow) (bi : Nat) (B : Clif.Block) : VBlock :=
+@[expose] def rawBlock (f : Clif.Function) (bl : List BLow) (bi : Nat) (B : Clif.Block) : VBlock :=
   { label := bi
     insts := (pre f id bi ++ ((List.range B.body.length).map (seg f id bl bi)).flatten ++
       tseg id bl bi).toArray
@@ -65,7 +65,7 @@ def rawBlock (f : Clif.Function) (bl : List BLow) (bi : Nat) (B : Clif.Block) : 
 
 /-- The edge blocks `lowerFunction` creates for block `B` (lowered as `L`), in label order: one
 per `try_call` successor, one per branch successor with arguments. -/
-def edgeBlocks (f : Clif.Function) (B : Clif.Block) (L : BLow) : List VBlock :=
+@[expose] def edgeBlocks (f : Clif.Function) (B : Clif.Block) (L : BLow) : List VBlock :=
   match B.term, L.tl with
   | .tryCall _ _ et, some T | .tryCallIndirect _ _ et, some T =>
     (et.dests.zip L.targets).filterMap fun (td, l) => (blockIdx? f td.block).map fun tl =>
@@ -78,7 +78,7 @@ def edgeBlocks (f : Clif.Function) (B : Clif.Block) (L : BLow) : List VBlock :=
 
 /-- The blocks of `lowerFunction f`'s VCode, from the recorded lowering `bl`: the function's
 blocks, then the edge blocks, renamed by the alias resolution. -/
-def vcBlocksOf (f : Clif.Function) (bl : List BLow) : Array VBlock :=
+@[expose] def vcBlocksOf (f : Clif.Function) (bl : List BLow) : Array VBlock :=
   let a := aliasArr (aliasOf f bl)
   let R := lowerFunction.resolve a (a.size + 1)
   ((((f.blocks.zip bl).zipIdx.map fun (p : (Clif.Block × BLow) × Nat) => rawBlock f bl p.2 p.1.1) ++
@@ -86,7 +86,7 @@ def vcBlocksOf (f : Clif.Function) (bl : List BLow) : Array VBlock :=
     (fixBlock R)).toArray
 
 /-- The outgoing area of `lowerFunction f`'s VCode: the final lowering state's. -/
-def outOf (st0 : LState) (bl : List BLow) : Nat :=
+@[expose] def outOf (st0 : LState) (bl : List BLow) : Nat :=
   (bl.getLast?.map (·.tst'.outgoing)).getD st0.outgoing
 
 /-- What `lowerFunction` checks on the way that `lowBlocks` does not record. -/
@@ -136,32 +136,32 @@ inductive Prov (ctx : Ctx) (ii : Nat) : Nat → Prop
 /-! ## The dataflow -/
 
 /-- The parameters of block `tl`. -/
-def parsOf (f : Clif.Function) (tl : Nat) : List Clif.ValueId :=
+@[expose] def parsOf (f : Clif.Function) (tl : Nat) : List Clif.ValueId :=
   match f.blocks[tl]? with
   | some B => B.params.map (·.1)
   | none => []
 
 /-- The results of the statements of block `tl`. -/
-def defsOf (f : Clif.Function) (tl : Nat) : List Clif.ValueId :=
+@[expose] def defsOf (f : Clif.Function) (tl : Nat) : List Clif.ValueId :=
   match f.blocks[tl]? with
   | some B => B.body.flatMap (·.results)
   | none => []
 
 /-- The successor block indices of block `p` (`succIds`: a `try_call`'s handlers included). -/
-def succIdx (f : Clif.Function) (p : Nat) : List Nat :=
+@[expose] def succIdx (f : Clif.Function) (p : Nat) : List Nat :=
   match f.blocks[p]? with
   | some B => (succIds B.term).filterMap (blockIdx? f)
   | none => []
 
 /-- The values of `f`: parameters and statement results, in layout order. -/
-def valueDefs (f : Clif.Function) : List Clif.ValueId :=
+@[expose] def valueDefs (f : Clif.Function) : List Clif.ValueId :=
   f.blocks.flatMap fun B => B.params.map (·.1) ++ B.body.flatMap (·.results)
 
 /-! ## The context `buildCtx` builds -/
 
 /-- The index of block `bi`'s first instruction in `buildCtx`'s table (block by block: the
 statements, then a slot for the terminator). -/
-def blockStart (f : Clif.Function) (bi : Nat) : Nat :=
+@[expose] def blockStart (f : Clif.Function) (bi : Nat) : Nat :=
   ((f.blocks.take bi).map (·.body.length + 1)).sum
 
 /-- Facts about `buildCtx f = .ok (ctx, _, st0)`. -/
@@ -212,7 +212,7 @@ inductive AliasPath (al : List (Nat × Nat)) : Nat → Nat → Prop
 /-! ## The conditions on the input -/
 
 /-- The values available at the block entries computed from `f` alone (no renaming). -/
-def availIn (f : Clif.Function) (ctx : Ctx) : Array (List Clif.ValueId) := inFix f ctx id
+@[expose] def availIn (f : Clif.Function) (ctx : Ctx) : Array (List Clif.ValueId) := inFix f ctx id
 
 /-- **Dominance** (Cranelift's verifier: SSA, every use dominated by its definition), in the
 form of the certificate: every value is defined once, every operand of a statement and of a

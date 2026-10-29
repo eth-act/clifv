@@ -240,7 +240,7 @@ theorem parCopy_eq (a : AState) (params args : List Nat) : a.parCopy params args
 @[expose] def le (a b : AState) : Bool := leSets a.toList b.toList
 
 /-- `le` as compiled. -/
-def leArray (a b : AState) : Bool :=
+@[expose] def leArray (a b : AState) : Bool :=
   (List.range a.size).all fun i => (a.getD i []).all fun s => (b.getD i []).contains s
 
 private theorem leSets_eq (as bs : List (List Sym)) :

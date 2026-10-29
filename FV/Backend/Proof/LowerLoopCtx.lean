@@ -55,21 +55,21 @@ theorem forIn_foldC {ε α β : Type} (body : α → β → Except ε (ForInStep
 /-! ## The model of `buildCtx` -/
 
 /-- `buildCtx`'s result types of a statement (`[]` where they do not compute). -/
-def tysOf (f : Clif.Function) (s : Clif.Stmt) : List Clif.Ty :=
+@[expose] def tysOf (f : Clif.Function) (s : Clif.Stmt) : List Clif.Ty :=
   (s.inst.resultTypes (fun r => (f.extern? r).map (·.sig)) (f.sigDecls.lookup ·)).getD []
 
 /-- `buildCtx`'s instruction data of a statement (`default` where it does not compute). -/
-def dataOf (f : Clif.Function) (s : Clif.Stmt) : V :=
+@[expose] def dataOf (f : Clif.Function) (s : Clif.Stmt) : V :=
   match instData f s.inst with
   | .ok d => d
   | .error _ => default
 
 /-- `buildCtx`'s table entry of a statement. -/
-def infoOf (f : Clif.Function) (s : Clif.Stmt) : IInfo :=
+@[expose] def infoOf (f : Clif.Function) (s : Clif.Stmt) : IInfo :=
   ⟨dataOf f s, s.results, (tysOf f s).map CTy.ofClif, some s.inst⟩
 
 /-- The terminator's placeholder entry. -/
-def placeholder : IInfo := ⟨.op .unit, [], [], none⟩
+@[expose] def placeholder : IInfo := ⟨.op .unit, [], [], none⟩
 
 /-- `buildCtx`'s update for result `p.1` of type `p.2` of instruction `n`. -/
 def resStepM (n : Nat) (a : Array (Option CTy) × Array (Option Nat)) (p : Nat × Clif.Ty) :

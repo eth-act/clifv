@@ -18,9 +18,9 @@ structure SpillHomesAt where
   size : Nat := 0
   deriving Inhabited
 
-def spillHomeKeyAt (v : Nat) (c : RegClass) : Nat := 2*v + match c with | .int => 0 | .float => 1
+@[expose] def spillHomeKeyAt (v : Nat) (c : RegClass) : Nat := 2*v + match c with | .int => 0 | .float => 1
 
-def SpillHomesAt.insert (h : SpillHomesAt) (v : Nat) (c : RegClass) : SpillHomesAt :=
+@[expose] def SpillHomesAt.insert (h : SpillHomesAt) (v : Nat) (c : RegClass) : SpillHomesAt :=
   let key := spillHomeKeyAt v c
   if (h.slots[key]?).join.isSome then h
   else

@@ -258,7 +258,7 @@ attribute [local simp] store_read_over_write_same store_read_over_write_differen
 def read_base_pstate (s : ArmState) : PState :=
   s.pstate
 
-def write_base_pstate (pstate : PState) (s : ArmState) : ArmState  :=
+@[expose] def write_base_pstate (pstate : PState) (s : ArmState) : ArmState  :=
   { s with pstate := pstate }
 
 @[expose] def read_base_flag (flag : PFlag) (s : ArmState) : BitVec 1 :=

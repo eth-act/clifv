@@ -84,7 +84,7 @@ theorem variantNames_Fpromote : (variantNames 151)[143]? = some "Fpromote" := rf
 theorem variantNames_Fdemote : (variantNames 151)[144]? = some "Fdemote" := rfl
 
 /-- The opcode names of the float operations `instData` builds (`fOpc`). -/
-def fArithNames : List String :=
+@[expose] def fArithNames : List String :=
   ["Fadd", "Fsub", "Fmul", "Fdiv", "Fmin", "Fmax", "Sqrt", "Fneg", "Fabs", "Fpromote", "Fdemote",
     "Ceil", "Floor", "Trunc", "Nearest"]
 

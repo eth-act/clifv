@@ -437,10 +437,10 @@ theorem vregNum_mapM (ns : List Nat) :
 /-! ## The entry `Args` -/
 
 /-- `(vreg n, p)` pairs of an `Args`. -/
-def argPairs (ns : List (Nat × Reg)) : List (Reg × Reg) := ns.map fun q => (Reg.vreg q.1 .int, q.2)
+@[expose] def argPairs (ns : List (Nat × Reg)) : List (Reg × Reg) := ns.map fun q => (Reg.vreg q.1 .int, q.2)
 
 /-- The operands of `Args (argPairs ns)`: fixed late defs. -/
-def argOps (ns : List (Nat × Reg)) : List Operand :=
+@[expose] def argOps (ns : List (Nat × Reg)) : List Operand :=
   ns.map fun q => (⟨q.1, .int, .def, .late, .fixed q.2⟩ : Operand)
 
 theorem except_ok_bind {ε α β : Type} (a : α) (f : α → Except ε β) :

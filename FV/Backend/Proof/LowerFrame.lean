@@ -23,7 +23,7 @@ namespace Backend.Proof.Driver
 open Backend Backend.Proof
 
 /-- `fr` with only the values in `A` defined. -/
-def restrict (fr : Clif.Frame) (A : List Clif.ValueId) : Clif.Frame :=
+@[expose] def restrict (fr : Clif.Frame) (A : List Clif.ValueId) : Clif.Frame :=
   { fr with regs := fun x => if x ∈ A then fr.regs x else none }
 
 theorem get_congr {fr fr' : Clif.Frame} {x : Clif.ValueId} (h : fr'.regs x = fr.regs x) :

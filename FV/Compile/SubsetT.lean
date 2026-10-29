@@ -25,7 +25,7 @@ namespace Compile
 open Clif
 
 /-- The admissible value types of the typed scope: E's integers, `f32` and `f64`. -/
-def tyM (t : Ty) : Bool := tyE t || t.isFloat
+@[expose] def tyM (t : Ty) : Bool := tyE t || t.isFloat
 
 /-- An `f64` constant `constant_f64` lowers without the literal pool (inst.isle:4264-4274: zero,
 an `fmov` immediate (`fpModImm?`), a value below `2^32` (`constant_f32`), or zero low 32 bits
@@ -63,7 +63,7 @@ theorem instETA_of_instET {i : Inst} (h : instET i = true) : instETA i = true :=
   simp [instETA, h]
 
 /-- A signature of the typed scope: parameters and returns of admissible types. -/
-def sigET (s : Signature) : Bool :=
+@[expose] def sigET (s : Signature) : Bool :=
   s.params.all (tyM ·.ty) && s.returns.all (tyM ·.ty)
 
 /-- The operands of an instruction the CLIF verifier types as integers (as
@@ -131,7 +131,7 @@ def argClassOk (df : List (ValueId × Bool)) (a : ValueId) (ty : Ty) : Bool :=
   df.all fun p => p.1 != a || p.2 == ty.isFloat
 
 /-- The successors of a branch (`jump`, `brif`, `br_table`). -/
-def blockCalls : Terminator → List BlockCall
+@[expose] def blockCalls : Terminator → List BlockCall
   | .jump bc => [bc]
   | .brif _ t e => [t, e]
   | .brTable _ d tbl => d :: tbl
@@ -140,7 +140,7 @@ def blockCalls : Terminator → List BlockCall
 /-- **Edge and return classes**: branch arguments and a `try_call`'s value arguments have the
 class of their target block's parameters, returned values the class of the signature's
 returns (the CLIF verifier's typing of block calls and `return`). -/
-def edgeClassOk (f : Function) : Bool :=
+@[expose] def edgeClassOk (f : Function) : Bool :=
   let df := defFloats f
   f.blocks.all fun b =>
     (blockCalls b.term).all (fun bc => match f.block? bc.block with

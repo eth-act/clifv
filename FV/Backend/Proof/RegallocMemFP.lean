@@ -63,7 +63,7 @@ theorem fpSz_of_beq {sz : ScalarSize} (h : (sz == .size32 || sz == .size64) = tr
   cases sz <;> simp_all [FpSz]
 
 /-- The `size` field of a 32/64-bit SIMD&FP load/store (C7.2 LDR/STR (SIMD&FP)). -/
-def fpSizeF : ScalarSize → BitVec 2
+@[expose] def fpSizeF : ScalarSize → BitVec 2
   | .size64 => 3
   | _ => 2
 

@@ -112,7 +112,7 @@ def remat (st : SState) (v : ValueId) : Bool :=
     | some (.iconst ..) => true
     | _ => false
 
-def enodes (st : SState) (v : ValueId) : List Inst :=
+@[expose] def enodes (st : SState) (v : ValueId) : List Inst :=
   ((st.defs.get? v).toList) ++ ((st.alts.get? v).getD []).filterMap st.defs.get?
 
 /-- Insert a node under a fresh value (no simplification). -/
@@ -190,7 +190,7 @@ over known values other than `v`. Any other node over graph values is recorded a
 (`SState.insertPartial`: it keeps its value, but is not simplified, not hash-consed and never a
 candidate), and a node over values outside the graph gets a fresh value with no node
 (`SState.dummy`). Candidates other than `v` must be known values of `v`'s type. -/
-def optimizeAt (rules : SimplifyFn) (allowed : Inst → Bool) : Nat → SState → ValueId → ValueId × SState
+@[expose] def optimizeAt (rules : SimplifyFn) (allowed : Inst → Bool) : Nat → SState → ValueId → ValueId × SState
   | 0, st, v => (v, st)
   | d + 1, st, v =>
     let make := fun (st : SState) (n : Inst) =>

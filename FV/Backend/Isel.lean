@@ -491,33 +491,33 @@ parameter in x8, then the stack. -/
 
 /-- The locations of the parameters of `s` (`sigArgLocs`: x0..x7, an `sret` parameter in x8,
 then the outgoing stack area; empty where `sigArgLocs` fails). -/
-def locsOf (s : Clif.Signature) : List ArgLoc :=
+@[expose] def locsOf (s : Clif.Signature) : List ArgLoc :=
   match sigArgLocs s with
   | .ok (locs, _) => locs
   | .error _ => []
 
 /-- The size of the stack-argument area of a call of `s` (`sigArgLocs`, a multiple of 16; the
 lowering's `gen_call_info` raises the outgoing area to it). -/
-def stackBytes (s : Clif.Signature) : Nat :=
+@[expose] def stackBytes (s : Clif.Signature) : Nat :=
   match sigArgLocs s with
   | .ok (_, n) => n
   | .error _ => 0
 
 /-- The (offset, byte size) of the stack-passed parameters, in parameter order. -/
-def stackSlots (locs : List ArgLoc) (bytes : List Nat) : List (Nat × Nat) :=
+@[expose] def stackSlots (locs : List ArgLoc) (bytes : List Nat) : List (Nat × Nat) :=
   (locs.zip bytes).filterMap fun q => match q.1 with
     | .stack off => some (off, q.2)
     | .reg _ => none
 
 /-- Slots in increasing, non-overlapping order, all at or above `lo` and inside `[0, S)`. -/
-def slotsOk : List (Nat × Nat) → Nat → Nat → Bool
+@[expose] def slotsOk : List (Nat × Nat) → Nat → Nat → Bool
   | [], _, _ => true
   | (off, b) :: rest, lo, S => decide (lo ≤ off ∧ off + b ≤ S) && slotsOk rest (off + b) S
 
 /-- The stack-argument layout of `s` (`sigArgLocs`) is well formed: the stack-passed parameters
 occupy non-overlapping byte ranges of the stack-argument area, in parameter order (a
 translation-validation check of `argLocs`; `lowerCheck` checks it for every call). -/
-def stackLayoutOk (s : Clif.Signature) : Bool :=
+@[expose] def stackLayoutOk (s : Clif.Signature) : Bool :=
   match sigArgLocs s, sigArgs s with
   | .ok (locs, S), .ok bytes => slotsOk (stackSlots locs bytes) 0 S
   | _, _ => false
@@ -546,7 +546,7 @@ returns in x0..x7, `f32`/`f64` ones in v0..v7 (`retRegsC` of their `retClass`). 
 parameters and returns, plus at most one `sret` parameter (an `i64`, in x8), and then no
 return values (Cranelift rejects `sret` with returns; the only ABI return is the struct
 pointer in x0, `sigRets`). -/
-def sigAbiOk (s : Clif.Signature) : Bool :=
+@[expose] def sigAbiOk (s : Clif.Signature) : Bool :=
   s.params.all (fun p => p.purpose == .normal || (p.purpose == .sret && p.ty == .i64)) &&
     s.returns.all (·.purpose == .normal) &&
     (s.params.filter (·.purpose == .sret)).length ≤ 1 &&
@@ -560,7 +560,7 @@ def hasTls (f : Clif.Function) : Bool :=
 
 /-- The call-site signatures of `f`'s indirect calls (`call_indirect sigN`, and the exception
 table's signature of a `try_call_indirect`), from `f`'s signature declarations. -/
-def indSigs (f : Clif.Function) : List Clif.Signature :=
+@[expose] def indSigs (f : Clif.Function) : List Clif.Signature :=
   f.blocks.flatMap fun b =>
     (b.body.filterMap fun st => match st.inst with
       | .callIndirect sig _ _ => f.sigDecls.lookup sig
@@ -571,20 +571,20 @@ def indSigs (f : Clif.Function) : List Clif.Signature :=
 
 /-- The indirect calls of `f` pass their arguments in registers under a signature the
 end-to-end theorem covers (`E2E.InSubset.indSigs`): at most 8 parameters, `sigAbiOk`. -/
-def indSigsOk (f : Clif.Function) : Bool :=
+@[expose] def indSigsOk (f : Clif.Function) : Bool :=
   (indSigs f).all fun s => s.params.length ≤ 8 && sigAbiOk s
 
 /-- The X-register number of each parameter of a signature whose parameters are all passed in
 registers (`sigArgLocs` with at most 8 non-`sret` parameters): an `sret` parameter in x8, the
 others in x0, x1, … in order (the `sret` parameter does not take a slot of that sequence).
 `abiArgIdx ps k`: the numbering of `ps` when the next non-`sret` parameter goes in `x k`. -/
-def abiArgIdx : List Clif.AbiParam → Nat → List Nat
+@[expose] def abiArgIdx : List Clif.AbiParam → Nat → List Nat
   | [], _ => []
   | p :: ps, k => if p.purpose == .sret then 8 :: abiArgIdx ps k else k :: abiArgIdx ps (k + 1)
 
 /-- The X register of parameter `i` of `s` (`abiArgIdx`; `i` itself past the end, so for a
 signature without `sret` parameter it is `i`). -/
-def argIdx (s : Clif.Signature) (i : Nat) : Nat := (abiArgIdx s.params 0).getD i i
+@[expose] def argIdx (s : Clif.Signature) (i : Nat) : Nat := (abiArgIdx s.params 0).getD i i
 
 /-- The value `lowerFunction` appends to every `return` of `f` (Cranelift's legalizer): for an
 `sret` signature without return values (`sigRets`: its only ABI return is the struct pointer),
@@ -720,7 +720,7 @@ one. On integer signatures it is `tryRegsOf`. -/
 value vregs): a value's register, or a return value's vreg; renamed by `R` (the alias
 resolution). An exception payload never occurs on the normal edge (`lowerFunction` rejects
 it). -/
-def normArgReg (R : Reg → Reg) (rets : List Reg) : Clif.TryArg → Reg
+@[expose] def normArgReg (R : Reg → Reg) (rets : List Reg) : Clif.TryArg → Reg
   | .val v => R (.vreg v .int)
   | .ret i => R (rets.getD i .xzr)
   | .exn _ => .xzr
@@ -1453,7 +1453,7 @@ structure DState where
   rules : Array RuleId := #[]
 
 /-- The argument vregs of a branch to `bc` (Cranelift's branch block arguments). -/
-def blockArgRegs (ctx : Ctx) (f : Clif.Function) (bc : Clif.BlockCall) :
+@[expose] def blockArgRegs (ctx : Ctx) (f : Clif.Function) (bc : Clif.BlockCall) :
     Except String (Array Reg) := do
   let some tb := f.block? bc.block | throw s!"unknown block{bc.block}"
   if tb.params.length != bc.args.length then throw s!"block{bc.block}: argument count"

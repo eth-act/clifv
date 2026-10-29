@@ -38,7 +38,7 @@ open Backend E2E
 fp/lr above the CLIF slots `[sp_body + frameSize, sp_entry)` (the explicit CLIF slots in between
 belong to the world; empty without a frame), and the code words (read as data by jump tables;
 the program never accesses them). -/
-def frameF (lo hi : Nat) (af : AFunc) (s : Arm.ArmState) (a : BitVec 64) : Prop :=
+@[expose] def frameF (lo hi : Nat) (af : AFunc) (s : Arm.ArmState) (a : BitVec 64) : Prop :=
   (lo ≤ (a - (spv s - BitVec.ofNat 64 (frameDrop af))).toNat ∧
     (a - (spv s - BitVec.ofNat 64 (frameDrop af))).toNat < hi) ∨
   (af.frameSize ≤ (a - (spv s - BitVec.ofNat 64 (frameDrop af))).toNat ∧
@@ -46,7 +46,7 @@ def frameF (lo hi : Nat) (af : AFunc) (s : Arm.ArmState) (a : BitVec 64) : Prop 
   CodeAddr s a
 
 /-- The `K` bytes below `sp` (`[sp - K, sp)`, without wrapping: `[0, sp)` when `sp < K`). -/
-def StackBelow (K : Nat) (sp a : BitVec 64) : Prop :=
+@[expose] def StackBelow (K : Nat) (sp a : BitVec 64) : Prop :=
   a.toNat < sp.toNat ∧ sp.toNat ≤ a.toNat + K
 
 /-- The addresses outside the world of the activation entered in `s` (`lo`, `hi` as in
@@ -200,7 +200,7 @@ def CallPc (fa : FnAsm) (base pc : BitVec 64) : Prop :=
     pc = base + BitVec.ofNat 64 (lineOffset fa.lines.toList j)
 
 /-- The call instruction an allocated `call`/`try_call` emits first (`bl name`, `blr reg`). -/
-def _root_.Backend.MInst.callInsn? : MInst → Option Insn
+@[expose] def _root_.Backend.MInst.callInsn? : MInst → Option Insn
   | .call info | .tryCall info _ => some (match info.dest with
     | .sym n => .bl n
     | .reg r => .blr r)
@@ -260,7 +260,7 @@ theorem _root_.E2E.BodyEntry.w {af : AFunc} {s w₀ : Arm.ArmState} (h : BodyEnt
 /-- The guard of a call of `csemV gv`: when the call's target is the vreg `t` (its first use
 operand), and `gv t n` (`t` holds the GOT entry of `n` at every call through it: `E2E.GotV`),
 the target value (the first use) is `n`'s link-time address. -/
-def gotGuard (gv : Nat → String → Prop) (X : ExtSem) (info : CallInfo) (uses : List CV) : Prop :=
+@[expose] def gotGuard (gv : Nat → String → Prop) (X : ExtSem) (info : CallInfo) (uses : List CV) : Prop :=
   ∀ t n ops, info.dest = .reg (.vreg t .int) → gv t n → (MInst.call info).operands = .ok ops →
     ((ops.toList.filter Operand.isUse).head?).map Operand.vreg = some t →
     uses.head?.map lo64 = some (X.sym n 0)
@@ -271,7 +271,7 @@ whose target vreg `t` has `gv t n` is defined only when the target value is `n`'
 (`gotGuard`); everything else is `csem`. The VCode run reaches only such calls when `gv` is the
 static GOT analysis of the code (`E2E.GotV`, `E2E.vReturns_gotV`), so the callee contract at a
 GOT site needs to hold only for the GOT symbol's callee. `gv := fun _ _ => False` is `csem`. -/
-noncomputable def csemV (gv : Nat → String → Prop) (F : BitVec 64 → Prop) (ctx : FnCtx) (X : ExtSem) :
+@[expose] noncomputable def csemV (gv : Nat → String → Prop) (F : BitVec 64 → Prop) (ctx : FnCtx) (X : ExtSem) :
     ISem CV Arm.ArmState := fun i uses w =>
   match i with
   | .call info | .tryCall info _ => if gotGuard gv X info uses then csem F ctx X i uses w else none
@@ -352,23 +352,23 @@ structure RL where
 namespace RL
 variable (R : RL)
 
-def fr : RAFrame := RAFrame.compute R.vc R.rf
-def L : List Line := R.fa.lines.toList
-def ctx : FnCtx := ⟨R.fa.k, R.af.slotBase⟩
+@[expose] def fr : RAFrame := RAFrame.compute R.vc R.rf
+@[expose] def L : List Line := R.fa.lines.toList
+@[expose] def ctx : FnCtx := ⟨R.fa.k, R.af.slotBase⟩
 /-- The far labels the emitter relaxed the branches to (`emitFar`). -/
 def far : Lbl → Bool := emitFar R.ctx R.af
 /-- `sp` in the body. -/
-def spB : BitVec 64 := spv R.s0 - BitVec.ofNat 64 (frameDrop R.af)
+@[expose] def spB : BitVec 64 := spv R.s0 - BitVec.ofNat 64 (frameDrop R.af)
 /-- The frame addresses and the kept addresses `G` (kept by every step of the body). -/
 def FK : BitVec 64 → Prop := fun a => frameF R.fr.intBase R.fr.size R.af R.s0 a ∨ R.G a
 /-- The addresses outside the world: the frame, the callees' dead stack below `spB` and `G`. -/
-def F : BitVec 64 → Prop := frameWG R.K R.fr.intBase R.fr.size R.af R.G R.s0
+@[expose] def F : BitVec 64 → Prop := frameWG R.K R.fr.intBase R.fr.size R.af R.G R.s0
 /-- Address of line `j`. -/
-def pcOf (j : Nat) : BitVec 64 := R.base + BitVec.ofNat 64 (lineOffset R.L j)
+@[expose] def pcOf (j : Nat) : BitVec 64 := R.base + BitVec.ofNat 64 (lineOffset R.L j)
 /-- The encoder's environment at line `j`. -/
-def envOf (j : Nat) : Env := ⟨lineOffset R.L j, (R.lm[·]?)⟩
+@[expose] def envOf (j : Nat) : Env := ⟨lineOffset R.L j, (R.lm[·]?)⟩
 /-- The instruction semantics of the activation (`csem`, the calls through the GOT pinned). -/
-noncomputable def sem : ISem CV Arm.ArmState := csemV R.gv R.F R.ctx R.X
+@[expose] noncomputable def sem : ISem CV Arm.ArmState := csemV R.gv R.F R.ctx R.X
 
 theorem sem_csem {i : MInst} {uses : List CV} {w : Arm.ArmState} {r : List CV × Arm.ArmState × Ctl}
     (h : R.sem i uses w = some r) : csem R.F R.ctx R.X i uses w = some r := csemV_sub h
@@ -382,7 +382,7 @@ theorem sem_eq {i : MInst} (hc : ∀ info, i ≠ .call info) (ht : ∀ info ti, 
     · exact absurd rfl (ht info ti)
 
 /-- The machine. -/
-noncomputable def step : Arm.ArmState → Arm.ArmState := ArmStepX R.X R.H R.fa
+@[expose] noncomputable def step : Arm.ArmState → Arm.ArmState := ArmStepX R.X R.H R.fa
 
 end RL
 

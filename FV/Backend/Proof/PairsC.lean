@@ -22,15 +22,15 @@ open Backend Backend.Proof.Driver
 
 /-- `(vreg n c, p)` pairs of an `Args` or a `Rets`, of either class (`argPairs`, `retPairs`: int
 vregs). -/
-def argPairsC (ns : List (Nat × RegClass × Reg)) : List (Reg × Reg) :=
+@[expose] def argPairsC (ns : List (Nat × RegClass × Reg)) : List (Reg × Reg) :=
   ns.map fun q => (Reg.vreg q.1 q.2.1, q.2.2)
 
 /-- The operands of `Args (argPairsC ns)`: fixed late defs. -/
-def argOpsC (ns : List (Nat × RegClass × Reg)) : List Operand :=
+@[expose] def argOpsC (ns : List (Nat × RegClass × Reg)) : List Operand :=
   ns.map fun q => (⟨q.1, q.2.1, .def, .late, .fixed q.2.2⟩ : Operand)
 
 /-- The operands of `Rets (argPairsC ns)`: fixed early uses. -/
-def retOpsC (ns : List (Nat × RegClass × Reg)) : List Operand :=
+@[expose] def retOpsC (ns : List (Nat × RegClass × Reg)) : List Operand :=
   ns.map fun q => (⟨q.1, q.2.1, .use, .early, .fixed q.2.2⟩ : Operand)
 
 theorem mapM_fixedDefC (ns : List (Nat × RegClass × Reg)) : ∀ (s : Array Operand),

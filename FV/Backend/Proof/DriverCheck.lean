@@ -81,7 +81,7 @@ structure BLow where
   tl : Option TryLow
 
 /-- `lowerFunction`'s `mov` for a result the rules returned in a real register. -/
-def extraOf (results : List Nat) (rss : List (List Reg)) : List MInst :=
+@[expose] def extraOf (results : List Nat) (rss : List (List Reg)) : List MInst :=
   (results.zip rss).filterMap fun (r, rs) => match rs with
     | [.vreg ..] => none
     | [out] => some (.mov .size64 (.vreg r .int) out)
@@ -102,7 +102,7 @@ def succIds : Clif.Terminator → List Clif.BlockId
 
 /-- `lowerFunction`'s replacement of the call a `try_call` rule emits last by the `tryCall`
 terminator (`tryFix`). -/
-def fixTry : Option TryLow → List MInst → List MInst
+@[expose] def fixTry : Option TryLow → List MInst → List MInst
   | some T, ms => tryFix T.info ms
   | none, ms => ms
 
@@ -147,7 +147,7 @@ variable (f : Clif.Function) (vc : VCode) (ctx : Ctx) (st0 : LState) (R : Reg �
   (gn : Nat → Nat) (bl : List BLow)
 
 /-- The VCode segment of statement `j` of block `bi`. -/
-def seg (bi j : Nat) : List MInst :=
+@[expose] def seg (bi j : Nat) : List MInst :=
   match f.blocks[bi]?, bl[bi]? with
   | some B, some L =>
     match B.body[j]?, L.sl[j]? with
@@ -157,38 +157,38 @@ def seg (bi j : Nat) : List MInst :=
 
 /-- The entry block's parameters with their locations and byte sizes (`sigArgLocs`,
 `sigParamBytes`, zipped as `lowerFunction`'s `gen_arg_setup` zips them). -/
-def entryParams (B : Clif.Block) : List (((Clif.ValueId × Clif.Ty) × ArgLoc) × Nat) :=
+@[expose] def entryParams (B : Clif.Block) : List (((Clif.ValueId × Clif.Ty) × ArgLoc) × Nat) :=
   (B.params.zip (locsOf f.sig)).zip (match sigParamBytes f.sig with | .ok b => b | .error _ => [])
 
 /-- The `Args` pair of a register-passed parameter (x0.. in order, an `sret` parameter in x8). -/
-def entryRegOf (q : ((Clif.ValueId × Clif.Ty) × ArgLoc) × Nat) : Option (Reg × Reg) :=
+@[expose] def entryRegOf (q : ((Clif.ValueId × Clif.Ty) × ArgLoc) × Nat) : Option (Reg × Reg) :=
   match q.1.2 with
   | .reg p => some (R (.vreg q.1.1.1 .int), p)
   | .stack _ => none
 
 /-- The load of a stack-passed parameter from the caller's outgoing area (`fp + 16 + off`:
 above the saved fp/lr pair). -/
-def entryLoadOf (q : ((Clif.ValueId × Clif.Ty) × ArgLoc) × Nat) : Option MInst :=
+@[expose] def entryLoadOf (q : ((Clif.ValueId × Clif.Ty) × ArgLoc) × Nat) : Option MInst :=
   match q.1.2 with
   | .stack off =>
     some (.load (loadOpOfBytes q.2) (R (.vreg q.1.1.1 .int)) (.fpOffset (16 + off)) trustedFlags)
   | .reg _ => none
 
 /-- The `Args` pairs of the register-passed parameters. -/
-def entryRegs (B : Clif.Block) : List (Reg × Reg) := (entryParams f B).filterMap (entryRegOf R)
+@[expose] def entryRegs (B : Clif.Block) : List (Reg × Reg) := (entryParams f B).filterMap (entryRegOf R)
 
 /-- The loads of the stack-passed parameters. -/
-def entryLoads (B : Clif.Block) : List MInst := (entryParams f B).filterMap (entryLoadOf R)
+@[expose] def entryLoads (B : Clif.Block) : List MInst := (entryParams f B).filterMap (entryLoadOf R)
 
 /-- The entry block's code before its statements (`gen_arg_setup`): the `Args` of the
 register-passed parameters, then a load of each stack-passed one. -/
-def pre (bi : Nat) : List MInst :=
+@[expose] def pre (bi : Nat) : List MInst :=
   match bi, f.blocks[bi]? with
   | 0, some B => .args (entryRegs f R B) :: entryLoads f R B
   | _, _ => []
 
 /-- The terminator's segment. -/
-def tseg (bi : Nat) : List MInst :=
+@[expose] def tseg (bi : Nat) : List MInst :=
   match bl[bi]? with
   | some L => (fixTry L.tl L.tst'.emitted.toList).map (·.mapRegs R)
   | none => []
@@ -202,7 +202,7 @@ end
 /-! ## Re-running the lowering calls -/
 
 /-- The result registers of a `lower` call. -/
-def regsOf : Option V → Option (List (List Reg))
+@[expose] def regsOf : Option V → Option (List (List Reg))
   | some (.regsVec rss) => some rss
   | _ => none
 
@@ -251,7 +251,7 @@ with nothing emitted (`lowerFunction`'s body loop). -/
 
 /-- Successor labels of a `brif`/`br_table` (edge blocks for arguments get fresh labels from
 `nl`, in order). -/
-def edgeTargets (f : Clif.Function) : List Clif.BlockCall → Nat → Option (List Label × Nat)
+@[expose] def edgeTargets (f : Clif.Function) : List Clif.BlockCall → Nat → Option (List Label × Nat)
   | [], nl => some ([], nl)
   | bc :: bcs, nl =>
     match blockIdx? f bc.block with
@@ -261,7 +261,7 @@ def edgeTargets (f : Clif.Function) : List Clif.BlockCall → Nat → Option (Li
       else (edgeTargets f bcs (nl + 1)).map fun (ts, nl') => (nl :: ts, nl')
 
 /-- `lowerFunction`'s successor labels of a terminator. -/
-def targetsOf (f : Clif.Function) (t : Clif.Terminator) (nl : Nat) : Option (List Label × Nat) :=
+@[expose] def targetsOf (f : Clif.Function) (t : Clif.Terminator) (nl : Nat) : Option (List Label × Nat) :=
   match t with
   | .jump bc => (blockIdx? f bc.block).map fun tl => ([tl], nl)
   | t => edgeTargets f (dests t) nl
@@ -321,7 +321,7 @@ label `nl`), as `lowerFunction` makes it. -/
 /-! ## Alias resolution -/
 
 /-- The aliases `lowerFunction` records: result `r` ↦ the vreg `out` the rules returned. -/
-def aliasOf (f : Clif.Function) (bl : List BLow) : List (Nat × Nat) :=
+@[expose] def aliasOf (f : Clif.Function) (bl : List BLow) : List (Nat × Nat) :=
   (f.blocks.zip bl).flatMap fun (B, L) => (B.body.zip L.sl).flatMap fun (stm, sl) =>
     (stm.results.zip sl.rss).filterMap fun (r, rs) => match rs with
       | [.vreg out _] => some (r, out)
@@ -382,7 +382,7 @@ parameter): what the closure condition of `Cert` requires to be available along 
   | none => []
 
 /-- `x` is (still) available at the entry of block `tl` in `inB` (`nv` values per block). -/
-def fixHas (nv : Nat) (inB : ByteArray) (tl x : Nat) : Bool := x < nv && inB.get! (tl * nv + x) != 0
+@[expose] def fixHas (nv : Nat) (inB : ByteArray) (tl x : Nat) : Bool := x < nv && inB.get! (tl * nv + x) != 0
 
 /-- The worklist loop of `inFix`: pop a pair `(tl, x)`; if `x` is still available at `tl`'s entry,
 remove it, and if it is neither a parameter nor a result of `tl` (so it also leaves the end of
@@ -390,7 +390,7 @@ remove it, and if it is neither a parameter nor a result of `tl` (so it also lea
 of `x` (the values whose definition reads it) at `tl`'s entry. Every pushed pair violates a
 constraint when pushed, so each iteration removes a pair or pops one; `fixFuel` bounds the
 iterations (`inFix_spec`). -/
-def fixLoop (nv : Nat) (pars defs : Array (Std.HashSet Nat)) (succs users : Array (List Nat)) :
+@[expose] def fixLoop (nv : Nat) (pars defs : Array (Std.HashSet Nat)) (succs users : Array (List Nat)) :
     Nat → ByteArray → List (Nat × Nat) → ByteArray
   | 0, inB, _ => inB
   | _ + 1, inB, [] => inB
@@ -406,7 +406,7 @@ def fixLoop (nv : Nat) (pars defs : Array (Std.HashSet Nat)) (succs users : Arra
 
 /-- Enough iterations for `fixLoop` from `work` (`nb * nv` pairs, each removed at most once,
 each removal pushing at most `maxPush` pairs). -/
-def fixFuel (nb nv : Nat) (succs users : Array (List Nat)) (work : List (Nat × Nat)) : Nat :=
+@[expose] def fixFuel (nb nv : Nat) (succs users : Array (List Nat)) (work : List (Nat × Nat)) : Nat :=
   let maxPush := succs.foldl (fun m s => max m s.length) 0 + users.foldl (fun m u => max m u.length) 0
   work.length + nb * nv * (maxPush + 1) + 1
 
@@ -419,7 +419,7 @@ constrains, it removes the values computed from the block's own results, e.g. cg
 cleanup blocks). Computed by a worklist over (block, value) pairs, each removed at most once
 (`fixLoop`, with enough fuel: `fixFuel`).
 Untrusted: `certOk` checks the certificate it induces. -/
-def inFix (f : Clif.Function) (ctx : Ctx) (gn : Nat → Nat) : Array (List Clif.ValueId) :=
+@[expose] def inFix (f : Clif.Function) (ctx : Ctx) (gn : Nat → Nat) : Array (List Clif.ValueId) :=
   let fb := f.blocks.toArray
   let nb := fb.size
   let nv := ctx.valDef.size
@@ -463,7 +463,7 @@ def inFix (f : Clif.Function) (ctx : Ctx) (gn : Nat → Nat) : Array (List Clif.
 
 /-- The result-type check of one instruction (`ctxOk`): a call's from its callee's declaration,
 a `call_indirect`'s from its signature declaration (`CtxInv.resTys`). -/
-def ctxResTysOk (f : Clif.Function) (info : IInfo) (i : Clif.Inst) : Bool :=
+@[expose] def ctxResTysOk (f : Clif.Function) (info : IInfo) (i : Clif.Inst) : Bool :=
   match i.resultTypes (fun r => (f.extern? r).map (·.sig)) (f.sigDecls.lookup ·) with
   | some tys => decide (info.resTys = tys.map CTy.ofClif) &&
       decide (info.results.length = tys.length)
@@ -547,7 +547,7 @@ return only). -/
     | _ => true
 
 /-- The per-block facts of `LowerShape`. -/
-def blockOk (f : Clif.Function) (vc : VCode) (ctx : Ctx) (st0 : LState) (R : Reg → Reg)
+@[expose] def blockOk (f : Clif.Function) (vc : VCode) (ctx : Ctx) (st0 : LState) (R : Reg → Reg)
     (gn : Nat → Nat) (bl : List BLow) (bi : Nat) (B : Clif.Block) (L : BLow) : Bool :=
   match vc.blocks[bi]? with
   | none => false
@@ -720,7 +720,7 @@ jump tables are `u32`-sized; contract change #9). -/
 /-- The calls (`call`) of `f`'s statements and the callees of its `try_call`s pass at most
 `out` bytes on the stack, with a well-formed stack-argument layout (`CallsStack`,
 `TryStack`). -/
-def callsStackOkB (f : Clif.Function) (out : Nat) : Bool :=
+@[expose] def callsStackOkB (f : Clif.Function) (out : Nat) : Bool :=
   (f.blocks.all fun B => B.body.all fun st => match st.inst with
     | .call fn _ => match f.extern? fn with
       | some e => decide (stackBytes e.sig ≤ out) && stackLayoutOk e.sig
@@ -734,7 +734,7 @@ def callsStackOkB (f : Clif.Function) (out : Nat) : Bool :=
 
 /-- The signature's parameter locations and byte sizes compute, one per parameter (the entry
 block's `Args` and loads, `pre`), and the register-passed parameters are in x0..x8. -/
-def entryOkB (f : Clif.Function) : Bool :=
+@[expose] def entryOkB (f : Clif.Function) : Bool :=
   (locsOf f.sig).length == f.sig.params.length &&
     (locsOf f.sig).all (fun l => match l with
       | .reg (.x n) => decide (n ≤ 8)

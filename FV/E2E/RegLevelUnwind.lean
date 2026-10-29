@@ -35,7 +35,7 @@ open Backend Backend.Proof Backend.Proof.UnwindTables E2E
 
 /-- The value of DWARF register `d` in `s` as the unwinder restores it: x0–x30 and sp, the low
 64 bits of v0–v31. -/
-def dwarfVal (s : Arm.ArmState) (d : Nat) : BitVec 64 :=
+@[expose] def dwarfVal (s : Arm.ArmState) (d : Nat) : BitVec 64 :=
   if d < 32 then xreg d s
   else if 64 ≤ d ∧ d < 96 then (Arm.r (.SFP (BitVec.ofNat 5 (d - 64))) s).setWidth 64
   else 0
@@ -166,11 +166,11 @@ theorem personality_plain {af : AFunc} {fa : FnAsm} {sites : List CallSite}
 namespace Witness
 
 /-- Any state with sp := 4096. -/
-def s0 (s : Arm.ArmState) : Arm.ArmState := Arm.w (.GPR 31#5) 4096#64 s
+@[expose] def s0 (s : Arm.ArmState) : Arm.ArmState := Arm.w (.GPR 31#5) 4096#64 s
 
 /-- The frame `t s` of a function with frame size 0 entered in `s0 s`, at a call: entry x29
 at 4080, entry x30 at 4088, sp := 4080. -/
-def t (s : Arm.ArmState) : Arm.ArmState :=
+@[expose] def t (s : Arm.ArmState) : Arm.ArmState :=
   Arm.write_mem_bytes 8 4080#64 (xreg 29 (s0 s))
     (Arm.write_mem_bytes 8 4088#64 (xreg 30 (s0 s)) (Arm.w (.GPR 31#5) 4080#64 (s0 s)))
 
@@ -300,7 +300,7 @@ theorem scanLines_labelOffsets {fa : FnAsm} {lm : Std.HashMap Lbl Nat}
 
 
 /-- The indices of the call lines (`bl`/`blr`) of `L`, in order. -/
-def callIdx : List Line → List Nat
+@[expose] def callIdx : List Line → List Nat
   | [] => []
   | ln :: L => (if ln.isCall then [0] else []) ++ (callIdx L).map (· + 1)
 

@@ -154,7 +154,7 @@ theorem toNat_setWidth_mod {m : Nat} (a : BitVec m) (n w : Nat) (h : w ∣ 2 ^ n
   rw [BitVec.toNat_setWidth, Nat.mod_mod_of_dvd _ h]
 
 /-- The integer widths `i8..i64`. -/
-def IW (w : Nat) : Prop := w = 8 ∨ w = 16 ∨ w = 32 ∨ w = 64
+@[expose] def IW (w : Nat) : Prop := w = 8 ∨ w = 16 ∨ w = 32 ∨ w = 64
 
 theorem IW.dvd {w n : Nat} (hw : IW w) (hn : 6 ≤ n) : w ∣ 2 ^ n := by
   have : w ∣ 2 ^ 6 := by rcases hw with rfl | rfl | rfl | rfl <;> decide

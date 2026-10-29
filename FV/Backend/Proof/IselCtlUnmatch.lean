@@ -159,7 +159,7 @@ theorem ruleFmt_match (hk : FmtKinds p) {r : Rule} {fT : Nat} (hq : ruleFmt r = 
   exact ruleFmt_match_k hp hq htf hkf h
 
 /-- The `InstructionData` variant of each terminator's data (`termData`). -/
-def termFmt : Clif.Terminator → Nat
+@[expose] def termFmt : Clif.Terminator → Nat
   | .jump _ => 15 | .brif .. => 5 | .brTable .. => 4 | .ret _ => 18 | .trap _ => 26
   | .returnCall .. | .tryCall .. | .tryCallIndirect .. => 0
 

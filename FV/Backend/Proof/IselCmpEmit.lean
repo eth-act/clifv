@@ -28,7 +28,7 @@ set_option maxRecDepth 20000
 /-! ## `IntCC` values -/
 
 /-- Variant index of an `IntCC` (`mkVariant tyIntCC (intccName cc)`). -/
-def ccIdx : Clif.IntCC → Nat
+@[expose] def ccIdx : Clif.IntCC → Nat
   | .eq => 0 | .ne => 1 | .sgt => 2 | .sge => 3 | .slt => 4 | .sle => 5
   | .ugt => 6 | .uge => 7 | .ult => 8 | .ule => 9
 

@@ -634,7 +634,7 @@ theorem tryRulesCorrect : TryRulesCorrect program := tryRulesCorrect_of_P tryRul
 
 /-- The root format of the rules of `lower_branch` other than the `try_call` rules is not
 `TryCall` (2474). -/
-def tryFmtOk (r : Rule) : Bool :=
+@[expose] def tryFmtOk (r : Rule) : Bool :=
   tryRootRule r ||
     match ruleFmt r with
     | some fT => 2447 ≤ fT && fT < 2447 + 36 && fT != 2474

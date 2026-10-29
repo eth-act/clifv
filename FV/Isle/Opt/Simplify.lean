@@ -88,7 +88,7 @@ inductive V where
 
 mutual
 /-- Structural equality. -/
-def V.beq : V → V → Bool
+@[expose] def V.beq : V → V → Bool
   | .int a, .int b => a == b
   | .bool a, .bool b => a == b
   | .ty a, .ty b => a == b
@@ -102,7 +102,7 @@ def V.beq : V → V → Bool
   | .blockCall a, .blockCall b => decide (a = b)
   | .jumpTable d t, .jumpTable d' t' => decide (d = d') && decide (t = t')
   | _, _ => false
-def V.beqList : List V → List V → Bool
+@[expose] def V.beqList : List V → List V → Bool
   | [], [] => true
   | a :: as, b :: bs => V.beq a b && V.beqList as bs
   | _, _ => false
@@ -131,7 +131,7 @@ structure St (σ : Type) where
 def opcode (k : Nat) : V := .data TyId.«Opcode» k []
 def idata (k : Nat) (fs : List V) : V := .data TyId.«InstructionData» k fs
 
-def ccIdx : Clif.IntCC → Nat
+@[expose] def ccIdx : Clif.IntCC → Nat
   | .eq => VIdx.«IntCC».«Equal» | .ne => VIdx.«IntCC».«NotEqual»
   | .slt => VIdx.«IntCC».«SignedLessThan» | .sge => VIdx.«IntCC».«SignedGreaterThanOrEqual»
   | .sgt => VIdx.«IntCC».«SignedGreaterThan» | .sle => VIdx.«IntCC».«SignedLessThanOrEqual»
@@ -151,7 +151,7 @@ def ccOfIdx? : Nat → Option Clif.IntCC
   | VIdx.«IntCC».«UnsignedLessThanOrEqual» => some .ule
   | _ => none
 
-def cc (c : Clif.IntCC) : V := .data TyId.«IntCC» (ccIdx c) []
+@[expose] def cc (c : Clif.IntCC) : V := .data TyId.«IntCC» (ccIdx c) []
 
 def unaryIdx : Clif.UnaryOp → Nat
   | .ineg => VIdx.«Opcode».«Ineg» | .bnot => VIdx.«Opcode».«Bnot»
@@ -628,7 +628,7 @@ def maybeUnary (st : St σ) (op : Nat) (v : V) : R (List (List V)) := do
   if hits.isEmpty then pure [[.ty (← valueType G st v), v]] else pure hits
 
 /-- Extern multi-extractors. -/
-def extractMultiFn (fn : String) (v : V) (st : St σ) : R (List (List V)) := do
+@[expose] def extractMultiFn (fn : String) (v : V) (st : St σ) : R (List (List V)) := do
   match fn with
   | "inst_data_value_etor" => pure ((← nodesOf G st v).map fun (t, d) => [.ty t, d])
   | "inst_data_value_tupled_etor" => pure ((← nodesOf G st v).map fun (t, d) => [.pair t d])
@@ -666,14 +666,14 @@ def sem : MultiSem V (St σ) where
 end
 
 /-- Interpreter configuration of `simplify` (fuel per call). -/
-def cfg : Config := { fuel := 1000000 }
+@[expose] def cfg : Config := { fuel := 1000000 }
 
 /-- Run `simplify` on the e-class `v`: the rewrite candidates (e-class, `subsume`d during this
 call) in rule order, the names of the rules that produced them (same order), and the caller's
 state after the `make` calls. `.error` only for interpreter errors (an unmodeled helper, a
 Rust panic, fuel). Candidates of rules outside `allow` (rule ids) are dropped; those rules
 still run (their `make` calls stay in the state). -/
-def simplify {σ : Type} (enodes : σ → Nat → List Clif.Inst) (typeOf : σ → Nat → Option Clif.Ty)
+@[expose] def simplify {σ : Type} (enodes : σ → Nat → List Clif.Inst) (typeOf : σ → Nat → Option Clif.Ty)
     (make : σ → Clif.Inst → Nat × σ) (st : σ) (v : Nat) (allow : RuleId → Bool := fun _ => true) :
     Except String (List (Nat × Bool) × List String × σ) :=
   let G : EGraph σ := { enodes, typeOf, make }

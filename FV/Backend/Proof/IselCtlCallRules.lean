@@ -117,10 +117,10 @@ theorem outRegs_length (st : LState) (n : Nat) : (outRegs st n).length = n := by
 /-! ## Operand view of `call` -/
 
 /-- `(preg, vreg)` pairs of a call's defs. -/
-def callDefs (D : List (Reg × Nat)) : List (Reg × Reg) := D.map fun q => (q.1, Reg.vreg q.2 .int)
+@[expose] def callDefs (D : List (Reg × Nat)) : List (Reg × Reg) := D.map fun q => (q.1, Reg.vreg q.2 .int)
 
 /-- The operands of a call's defs: fixed late defs. -/
-def callDefOps (D : List (Reg × Nat)) : List Operand :=
+@[expose] def callDefOps (D : List (Reg × Nat)) : List Operand :=
   D.map fun q => (⟨q.2, .int, .def, .late, .fixed q.1⟩ : Operand)
 
 open Driver in
@@ -281,7 +281,7 @@ theorem zip_self_ctl {α : Type} : ∀ (l : List α), l.zip l = l.map fun a => (
 def outRegs' (b n : Nat) : List (List Reg) := (List.range n).map fun j => [Reg.vreg (b + j) .int]
 
 /-- The defs of a call with `n` results: `x_j` into vreg `b + j`. -/
-def outDefs (b n : Nat) : List (Reg × Nat) := (List.range n).map fun j => (Reg.x j, b + j)
+@[expose] def outDefs (b n : Nat) : List (Reg × Nat) := (List.range n).map fun j => (Reg.x j, b + j)
 
 theorem callDefs_outDefs (b n : Nat) :
     (List.map Reg.x (List.range n)).zip (List.map (fun j => Reg.vreg (b + j) .int) (List.range n)) =
@@ -807,7 +807,7 @@ end
 /-! ## Rule 1032: `loadExtNameGot t name; blr t` -/
 
 /-- The target register operand of `blr`. -/
-def tgtOp (t : Nat) : Operand := ⟨t, .int, .use, .early, .reg⟩
+@[expose] def tgtOp (t : Nat) : Operand := ⟨t, .int, .use, .early, .reg⟩
 
 /-- The def operand of `loadExtNameGot`. -/
 def gotOp (t : Nat) : Operand := ⟨t, .int, .def, .late, .reg⟩

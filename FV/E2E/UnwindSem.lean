@@ -44,48 +44,48 @@ structure XRaise where
   raise : Option String → List CV → Arm.ArmState → Option (BitVec 64 × Arm.ArmState)
 
 /-- No callee raises. -/
-def XRaise.none : XRaise := ⟨fun _ _ _ => Option.none⟩
+@[expose] def XRaise.none : XRaise := ⟨fun _ _ _ => Option.none⟩
 
 /-- The callee descriptor of a call (`ExtSem.call`'s first argument): the symbol of `bl`, `none`
 for `blr`. -/
-def callDest (info : CallInfo) : Option String :=
+@[expose] def callDest (info : CallInfo) : Option String :=
   match info.dest with
   | .sym n => some n
   | .reg _ => none
 
 /-- The constraints of the def operands of `i`, in operand order (`[]` if its operand view
 fails). -/
-def defCons (i : MInst) : List Constraint :=
+@[expose] def defCons (i : MInst) : List Constraint :=
   match i.operands with
   | .ok ops => (ops.toList.filter Operand.isDef).map (·.con)
   | .error _ => []
 
 /-- The values a landing pad finds in the defs of the call `i` (one per def operand, in operand
 order): the exception object in x0, Rust's selector 0 in x1. -/
-def payloadOuts (i : MInst) (obj : BitVec 64) : List CV :=
+@[expose] def payloadOuts (i : MInst) (obj : BitVec 64) : List CV :=
   (defCons i).map fun c => if c = .fixed (.x 0) then ofX obj else ofX 0
 
 /-- The first handler is a `tag 0` / `tag 1` handler. -/
-def firstHandlerOk : List TryHandler → Bool
+@[expose] def firstHandlerOk : List TryHandler → Bool
   | .tag 0 _ :: _ | .tag 1 _ :: _ => true
   | _ => false
 
 /-- After unwinding, register `r` (x0 or x1: the machine has x0 := the object, x1 := 0) holds
 nothing the allocated code keeps live across the call: it is clobbered by the call or a def
 operand's fixed register. -/
-def payloadRegOk (info : CallInfo) (ti : TryInfo) (r : Reg) : Bool :=
+@[expose] def payloadRegOk (info : CallInfo) (ti : TryInfo) (r : Reg) : Bool :=
   (MInst.tryCall info ti).clobbers.contains r || (defCons (.call info)).contains (.fixed r)
 
 /-- **The `try_call` shapes whose exceptional edge is covered**: first handler `tag 0`/`tag 1`,
 callee-saved registers restored by the unwinder, every def operand fixed to x0 or x1, and each
 of x0, x1 clobbered or a def's register (`payloadRegOk`). -/
-def tryUOk (info : CallInfo) (ti : TryInfo) : Bool :=
+@[expose] def tryUOk (info : CallInfo) (ti : TryInfo) : Bool :=
   firstHandlerOk ti.handlers && !ti.clobberAll &&
     (defCons (.call info)).all (fun c => c == .fixed (.x 0) || c == .fixed (.x 1)) &&
     payloadRegOk info ti (.x 0) && payloadRegOk info ti (.x 1)
 
 /-- **The concrete instruction semantics with unwinding.** -/
-noncomputable def csemU (F : BitVec 64 → Prop) (ctx : FnCtx) (X : ExtSem) (XR : XRaise) :
+@[expose] noncomputable def csemU (F : BitVec 64 → Prop) (ctx : FnCtx) (X : ExtSem) (XR : XRaise) :
     ISem CV Arm.ArmState := fun i uses w =>
   match i with
   | .call info =>
@@ -243,11 +243,11 @@ namespace UnwindSemWitness
 
 /-- A `try_call` of `f` (x0 ← v0) with two results, a `tag 0` handler at block 1 and the
 continuation at block 2. -/
-def info : CallInfo := ⟨.sym "f", [(.vreg 0 .int, .x 0)], [(.x 0, .vreg 1 .int), (.x 1, .vreg 2 .int)]⟩
-def ti : TryInfo := { continuation := 2, handlers := [.tag 0 1], rets := 2 }
+@[expose] def info : CallInfo := ⟨.sym "f", [(.vreg 0 .int, .x 0)], [(.x 0, .vreg 1 .int), (.x 1, .vreg 2 .int)]⟩
+@[expose] def ti : TryInfo := { continuation := 2, handlers := [.tag 0 1], rets := 2 }
 
 /-- The callee raises object 77 from every world. -/
-def XR : XRaise := ⟨fun _ _ w => some (77, w)⟩
+@[expose] def XR : XRaise := ⟨fun _ _ w => some (77, w)⟩
 
 theorem tryUOk_ok : tryUOk info ti = true := by decide
 

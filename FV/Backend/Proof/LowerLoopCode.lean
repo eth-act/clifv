@@ -19,13 +19,13 @@ namespace Backend.Proof.Driver
 open Backend
 
 /-- `lowerFunction`'s `blockIdx`. -/
-def blockIdxE (f : Clif.Function) (b : Nat) : Except String Nat :=
+@[expose] def blockIdxE (f : Clif.Function) (b : Nat) : Except String Nat :=
   match f.blocks.findIdx? (·.id == b) with
   | some i => pure i
   | none => throw s!"unknown block{b}"
 
 /-- The body of the loop over a statement's results (alias or `mov`). -/
-def resBody (ctx : Ctx) (x : Nat × List Reg) (s : DState × Array MInst) :
+@[expose] def resBody (ctx : Ctx) (x : Nat × List Reg) (s : DState × Array MInst) :
     Except String (ForInStep (DState × Array MInst)) :=
   match x with
   | (r, rs) =>
@@ -45,7 +45,7 @@ def resBody (ctx : Ctx) (x : Nat × List Reg) (s : DState × Array MInst) :
     | _ => throw s!"unknown value v{r}"
 
 /-- The body of the statement loop. -/
-def stmtBody (ctx : Ctx) (i : Nat) (s : DState × Array MInst) :
+@[expose] def stmtBody (ctx : Ctx) (i : Nat) (s : DState × Array MInst) :
     Except String (ForInStep (DState × Array MInst)) := do
   let info := ctx.insts[i]!
   let (out, st, n) ← runTerm ctx "lower" [.inst i] { s.1.st with emitted := #[] }
@@ -60,7 +60,7 @@ def stmtBody (ctx : Ctx) (i : Nat) (s : DState × Array MInst) :
   | _ => throw s!"no lowering rule for {(repr info.clif).pretty.take 80}"
 
 /-- The body of the entry block's argument-setup loop. -/
-def entryBody (ctx : Ctx) (x : ((Clif.ValueId × Clif.Ty) × ArgLoc) × Nat)
+@[expose] def entryBody (ctx : Ctx) (x : ((Clif.ValueId × Clif.Ty) × ArgLoc) × Nat)
     (s : Array MInst × Array (Reg × Reg)) :
     Except String (ForInStep (Array MInst × Array (Reg × Reg))) :=
   match x with
@@ -74,12 +74,12 @@ def entryBody (ctx : Ctx) (x : ((Clif.ValueId × Clif.Ty) × ArgLoc) × Nat)
     | _ => throw s!"unknown value v{v}"
 
 /-- The state after creating an edge block jumping to `tl` with arguments `args`. -/
-def edgeD (d : DState) (tl : Label) (args : Array Reg) : DState :=
+@[expose] def edgeD (d : DState) (tl : Label) (args : Array Reg) : DState :=
   { d with nextLabel := d.nextLabel + 1,
            edges := d.edges.push { label := d.nextLabel, insts := #[MInst.jump tl], branchArgs := args } }
 
 /-- The body of the loop over a branch's successors. -/
-def destBody (f : Clif.Function) (ctx : Ctx) (bc : Clif.BlockCall) (s : DState × Array Label) :
+@[expose] def destBody (f : Clif.Function) (ctx : Ctx) (bc : Clif.BlockCall) (s : DState × Array Label) :
     Except String (ForInStep (DState × Array Label)) := do
   let tl ← blockIdxE f bc.block
   if bc.args.isEmpty = true then pure (.yield (s.1, s.2.push tl))
@@ -88,7 +88,7 @@ def destBody (f : Clif.Function) (ctx : Ctx) (bc : Clif.BlockCall) (s : DState �
     pure (.yield (edgeD s.1 tl args, s.2.push s.1.nextLabel))
 
 /-- A `try_call` successor argument. -/
-def tryArgE (ctx : Ctx) (rets pays : Array Reg) (nh k : Nat) : Clif.TryArg → Except String Reg
+@[expose] def tryArgE (ctx : Ctx) (rets pays : Array Reg) (nh k : Nat) : Clif.TryArg → Except String Reg
   | .val v => match ctx.valueReg? v with
     | some r => pure r
     | none => throw s!"unknown value v{v}"
@@ -102,7 +102,7 @@ def tryArgE (ctx : Ctx) (rets pays : Array Reg) (nh k : Nat) : Clif.TryArg → E
       | none => throw s!"try_call: exn{i} out of range"
 
 /-- The body of the loop over a `try_call`'s successors. -/
-def tryBody (f : Clif.Function) (ctx : Ctx) (rets pays : Array Reg) (nh : Nat)
+@[expose] def tryBody (f : Clif.Function) (ctx : Ctx) (rets pays : Array Reg) (nh : Nat)
     (x : Clif.TryDest × Nat) (s : DState × Array Label) :
     Except String (ForInStep (DState × Array Label)) :=
   match x with
@@ -131,11 +131,11 @@ def termArgsOf (t : Clif.Terminator) (ti : Nat) (targets : Array Label) : String
   | _ => ("lower_branch", [.inst ti, .labels targets.toList])
 
 /-- The state after a block `vb` whose terminator's lowering ended in `st` (rules `n`). -/
-def blockD (d : DState) (st : LState) (n : List Isle.RuleId) (vb : VBlock) : DState :=
+@[expose] def blockD (d : DState) (st : LState) (n : List Isle.RuleId) (vb : VBlock) : DState :=
   { d with st := { st with emitted := #[] }, rules := d.rules ++ n.toArray, blocks := d.blocks.push vb }
 
 /-- The block's parameters and the block, after the terminator's lowering (`st`, rules `n`). -/
-def paramsPart (ctx : Ctx) (b : Clif.Block) (bi : Nat) (code : Array MInst) (d : DState)
+@[expose] def paramsPart (ctx : Ctx) (b : Clif.Block) (bi : Nat) (code : Array MInst) (d : DState)
     (st : LState) (n : List Isle.RuleId) (jumpArgs : Array Reg) (emitted : Array MInst) :
     Except String (ForInStep DState) :=
   if (bi == 0) = true then
@@ -149,7 +149,7 @@ def paramsPart (ctx : Ctx) (b : Clif.Block) (bi : Nat) (code : Array MInst) (d :
                                   branchArgs := jumpArgs }))
 
 /-- The end of a block: the terminator's lowering, the block's parameters, the block. -/
-def finishBlock (ctx : Ctx) (b : Clif.Block) (bi ti : Nat) (code : Array MInst)
+@[expose] def finishBlock (ctx : Ctx) (b : Clif.Block) (bi ti : Nat) (code : Array MInst)
     (d : DState) (ctx' : Ctx) (targets : Array Label) (jumpArgs : Array Reg)
     (tryInfo : Option TryInfo) : Except String (ForInStep DState) :=
   match termArgsOf b.term ti targets with
@@ -165,7 +165,7 @@ def finishBlock (ctx : Ctx) (b : Clif.Block) (bi ti : Nat) (code : Array MInst)
         | _ => throw "try_call: the lowering does not end in a call"
 
 /-- A `try_call` terminator: return/payload vregs, edge blocks, then `finishBlock`. -/
-def tryTerm (f : Clif.Function) (ctx : Ctx) (b : Clif.Block) (bi ti : Nat) (code : Array MInst)
+@[expose] def tryTerm (f : Clif.Function) (ctx : Ctx) (b : Clif.Block) (bi ti : Nat) (code : Array MInst)
     (d : DState) (ctx' : Ctx) (et : Clif.ExnTable) : Except String (ForInStep DState) := do
   let (sig, items) ← exnTableOpndC f et
   match tryRegsOfC sig d.st with
@@ -182,11 +182,11 @@ def tryTerm (f : Clif.Function) (ctx : Ctx) (b : Clif.Block) (bi ti : Nat) (code
   | _ => throw "try_call: more than 8 return values"
 
 /-- A `return` of an `sret` signature without the struct pointer (`lowerFunction` rejects it). -/
-def sretBad (f : Clif.Function) (t : Clif.Terminator) : Bool :=
+@[expose] def sretBad (f : Clif.Function) (t : Clif.Terminator) : Bool :=
   (match t with | .ret _ => true | _ => false) && (sretRet f).isEmpty && sigRets f.sig != f.sig.returns
 
 /-- The terminator part of a block's lowering (`code`: the code so far). -/
-def termPart (f : Clif.Function) (ctx : Ctx) (b : Clif.Block) (bi stop : Nat) (code : Array MInst)
+@[expose] def termPart (f : Clif.Function) (ctx : Ctx) (b : Clif.Block) (bi stop : Nat) (code : Array MInst)
     (d : DState) (data : V) : Except String (ForInStep DState) :=
   if sretBad f b.term = true then
     throw "sret parameter is not an entry-block parameter"
@@ -204,7 +204,7 @@ def termPart (f : Clif.Function) (ctx : Ctx) (b : Clif.Block) (bi stop : Nat) (c
       finishBlock ctx b bi (stop - 1) code s.1 (termCtx ctx (stop - 1) data) s.2 #[] none
 
 /-- The block part after the argument setup: the statements, then the terminator. -/
-def bodyPart (f : Clif.Function) (ctx : Ctx) (b : Clif.Block) (bi start stop : Nat)
+@[expose] def bodyPart (f : Clif.Function) (ctx : Ctx) (b : Clif.Block) (bi start stop : Nat)
     (d : DState) (code : Array MInst) : Except String (ForInStep DState) := do
   let s ← forIn [start:stop - 1] (d, code) (stmtBody ctx)
   match b.term with
@@ -219,7 +219,7 @@ def bodyPart (f : Clif.Function) (ctx : Ctx) (b : Clif.Block) (bi start stop : N
     termPart f ctx b bi stop s.2 s.1 data
 
 /-- The body of the block loop. -/
-def blockBody (f : Clif.Function) (ctx : Ctx) (ranges : Array (Nat × Nat)) (paramBytes : List Nat)
+@[expose] def blockBody (f : Clif.Function) (ctx : Ctx) (ranges : Array (Nat × Nat)) (paramBytes : List Nat)
     (x : Clif.Block × Nat) (d : DState) : Except String (ForInStep DState) :=
   match x with
   | (b, bi) =>
@@ -233,14 +233,14 @@ def blockBody (f : Clif.Function) (ctx : Ctx) (ranges : Array (Nat × Nat)) (par
       else bodyPart f ctx b bi start stop d #[]
 
 /-- The VCode of the final loop state. -/
-def finishVC (f : Clif.Function) (d : DState) (slotBytes : Nat) : VCode :=
+@[expose] def finishVC (f : Clif.Function) (d : DState) (slotBytes : Nat) : VCode :=
   let R := lowerFunction.resolve d.alias (d.alias.size + 1)
   { name := f.name, blocks := (d.blocks ++ d.edges).map fun vb =>
       { vb with insts := vb.insts.map (MInst.mapRegs R), branchArgs := vb.branchArgs.map R },
     classes := d.st.classes, slotBytes, outgoing := d.st.outgoing, rulesFired := d.rules }
 
 /-- `lowerFunction`, restated. -/
-def lowerFunction' (f : Clif.Function) : Except String VCode :=
+@[expose] def lowerFunction' (f : Clif.Function) : Except String VCode :=
   if (!aapcsConv f.sig.callConv) = true then throw s!"calling convention {repr f.sig.callConv}"
   else do
     let paramBytes ← sigParamBytes f.sig

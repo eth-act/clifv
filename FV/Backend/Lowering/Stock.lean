@@ -16,7 +16,7 @@ namespace Backend.Stock
 
 open Isle Isle.Aarch64
 
-def instArgs : Clif.Inst → List Nat
+@[expose] def instArgs : Clif.Inst → List Nat
   | .iconst .. | .stackAddr .. | .fence | .nop | .symbolValue .. | .tlsValue ..
   | .funcAddr .. => []
   | .unary _ _ x | .bmask _ x | .extend _ _ x | .ireduce _ x | .isplit _ x
@@ -30,7 +30,7 @@ def instArgs : Clif.Inst → List Nat
   | .callIndirect _ callee args => callee :: args
   | .float _ _ args => args
 
-def termArgs : Clif.Terminator → List Nat
+@[expose] def termArgs : Clif.Terminator → List Nat
   | .jump bc => bc.args
   | .brif c t e => c :: t.args ++ e.args
   | .brTable x d tbl => x :: d.args ++ tbl.flatMap (·.args)
@@ -68,7 +68,7 @@ def UseState.inc : UseState → UseState
 /-- Exact transitive multiplicity analysis: every value can become Multiple once; every producer is expanded once,
 including producers with multiple results;
 the work budget counts each dependency edge once, including duplicate operands. -/
-def useStates (ctx : Ctx) (args : Array (List Nat)) : Array UseState := Id.run do
+@[expose] def useStates (ctx : Ctx) (args : Array (List Nat)) : Array UseState := Id.run do
   let mut uses := Array.replicate ctx.valTy.size UseState.unused
   for v in sretRet ctx.func do uses := uses.set! v .multiple
   let mut expanded := Array.replicate args.size false
@@ -141,7 +141,7 @@ def State.setAlias (st : State) (dst src : Reg) : Except String State := do
 
 /-- Match stock's UniqueUse versus Use distinction. `def_inst` itself remains
 the raw DFG extractor, as in `isle_prelude.rs`; `is_sinkable_inst` uses this filter. -/
-def source (ctx : Ctx) (st : State) (v : Nat) : Option (Nat × Bool) := do
+@[expose] def source (ctx : Ctx) (st : State) (v : Nat) : Option (Nat × Bool) := do
   let i ← ctx.defInst? v
   let c := st.entryColor[i]!
   let once := st.uses[v]! == .once
@@ -150,7 +150,7 @@ def source (ctx : Ctx) (st : State) (v : Nat) : Option (Nat × Bool) := do
     some (i, true)
   else none
 
-def externCtor (ctx : Ctx) (t : Term) (args : List V) (st : State) :
+@[expose] def externCtor (ctx : Ctx) (t : Term) (args : List V) (st : State) :
     ExtResult (V × State) :=
   let delegate (s : State) := match Backend.externCtor ctx t args s.base with
     | .ok (v, b) => .ok (v, { s with base := b })
@@ -232,7 +232,7 @@ def sem (ctx : Ctx) : Isle.Sem V State where
   ctor := externCtor ctx
   extract t v st := Backend.externExtract ctx t v st.base
 
-def runTerm (ctx : Ctx) (term : String) (args : List V) (st : State) :
+@[expose] def runTerm (ctx : Ctx) (term : String) (args : List V) (st : State) :
     Except String (Option V × State × List RuleId) :=
   match Isle.Interp.run program (sem ctx) {} term args st with
   | .ok r => .ok (r.value, r.state, r.trace)
@@ -288,7 +288,7 @@ def finishCtx (ctx : Ctx) (ranges : Array (Nat × Nat)) (allocation : Allocation
 /-- Dense layout-order allocation, including separately allocated exception
 returns and payloads at the corresponding terminator's position. Stock allocates
 integer vregs: it takes integer values only (`f32`/`f64` values are S11e5). -/
-def buildCtx (f : Clif.Function) : Except String (Ctx × Array (Nat × Nat) × State) := do
+@[expose] def buildCtx (f : Clif.Function) : Except String (Ctx × Array (Nat × Nat) × State) := do
   let (ctx, ranges, _) ← Backend.buildCtx f
   -- `toList.any` (structural, unlike `Array.any`) keeps the `rfl` witnesses over `buildCtx`
   if ctx.valTy.toList.any (fun o => o.any (·.valClass != .int)) then throw "f32/f64 value"

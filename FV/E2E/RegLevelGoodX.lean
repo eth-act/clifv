@@ -42,7 +42,7 @@ def _root_.Backend.Insn.pairFirst : Insn → Bool
   | _ => false
 
 /-- The instructions of the TLS sequence past its `ldr` (the TLS hook runs them). -/
-def _root_.Backend.Insn.tlsTail : Insn → Bool
+@[expose] def _root_.Backend.Insn.tlsTail : Insn → Bool
   | .addTlsDescLo12 .. | .blrTlsDesc .. => true
   | _ => false
 
@@ -175,7 +175,7 @@ theorem RL.readsAt_hooked {R : RL} (hR : R.Wf) {u : Arm.ArmState} {j : Nat} {x :
   RL.readsAt_of_line hR hj hpc fun h => by rw [hx] at h; cases h
 
 /-- A line without an instruction of the TLS sequence past its `ldr`. -/
-def _root_.Backend.Line.tailFree : Line → Bool
+@[expose] def _root_.Backend.Line.tailFree : Line → Bool
   | .ins i _ => !i.tlsTail
   | _ => true
 

@@ -42,7 +42,7 @@ def payVreg (ops : Array Operand) (i : Nat) : Option Nat :=
 
 /-- The register an exception edge passes for a handler argument: a value's (renamed) vreg, the
 call's def in payload register `i` for `exnN`. -/
-def exnArgReg (R : Reg → Reg) (ops : Array Operand) : Clif.TryArg → Reg
+@[expose] def exnArgReg (R : Reg → Reg) (ops : Array Operand) : Clif.TryArg → Reg
   | .val v => R (.vreg v .int)
   | .exn i => match payVreg ops i with
     | some n => R (.vreg n .int)
@@ -57,12 +57,12 @@ def exnArgOk (ops : Array Operand) : Clif.TryArg → Bool
   | .ret _ => false
 
 /-- The def operands of `ops` are late, with distinct vregs. -/
-def defsLateB (ops : Array Operand) : Bool :=
+@[expose] def defsLateB (ops : Array Operand) : Bool :=
   (ops.toList.filter Operand.isDef).all (·.isLate) &&
     decide ((ops.toList.filter Operand.isDef).map (·.vreg)).Nodup
 
 /-- `m` is no `call`. -/
-def notCallB : MInst → Bool
+@[expose] def notCallB : MInst → Bool
   | .call _ => false
   | _ => true
 
@@ -108,7 +108,7 @@ structure UnwShape (f : Clif.Function) (vc : VCode) (ctx : Ctx) (R : Reg → Reg
 /-! ## The validator -/
 
 /-- `UnwShape.calls` for one statement. -/
-def stmtCallB (stm : Clif.Stmt) (sl : SLow) : Bool :=
+@[expose] def stmtCallB (stm : Clif.Stmt) (sl : SLow) : Bool :=
   match stm.inst with
   | .call .. | .callIndirect .. => sl.st'.emitted.toList.any fun m => !notCallB m
   | _ => true

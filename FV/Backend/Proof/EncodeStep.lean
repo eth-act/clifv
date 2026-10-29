@@ -24,7 +24,7 @@ namespace Backend
 open Arm
 
 /-- `ws` at consecutive words from `base + 4k`. -/
-def wordsAt (base : BitVec 64) : Nat → List (BitVec 32) → Program
+@[expose] def wordsAt (base : BitVec 64) : Nat → List (BitVec 32) → Program
   | _, [] => []
   | k, w :: ws => (base + BitVec.ofNat 64 (4 * k), w) :: wordsAt base (k + 1) ws
 

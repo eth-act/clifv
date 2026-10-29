@@ -40,10 +40,10 @@ namespace Cfg
 
 def size (c : Cfg) : Nat := c.ids.size
 
-def reachable (c : Cfg) (b : Nat) : Bool := (c.rpoNum[b]?.join).isSome
+@[expose] def reachable (c : Cfg) (b : Nat) : Bool := (c.rpoNum[b]?.join).isSome
 
 /-- Depth-first postorder from the entry block (successors in terminator order). -/
-def postorder (succs : Array (List Nat)) : Array Nat := Id.run do
+@[expose] def postorder (succs : Array (List Nat)) : Array Nat := Id.run do
   let n := succs.size
   if n == 0 then return #[]
   let fuel := 2 * (n + succs.foldl (· + ·.length) 0) + 2

@@ -46,15 +46,15 @@ namespace FA
 /-- Least upper bound. -/
 @[expose] def join (a b : FA) : FA := ⟨max a.f b.f, a.s && b.s⟩
 /-- The order: a larger flow level, fewer guarantees. -/
-def le (a b : FA) : Bool := decide (a.f ≤ b.f) && (!b.s || a.s)
+@[expose] def le (a b : FA) : Bool := decide (a.f ≤ b.f) && (!b.s || a.s)
 /-- Anything. -/
-def top : FA := ⟨2, false⟩
+@[expose] def top : FA := ⟨2, false⟩
 /-- A clean, safe value (constants). -/
-def c0 : FA := ⟨0, true⟩
+@[expose] def c0 : FA := ⟨0, true⟩
 end FA
 
 /-- The join of a list (`c0` for none). -/
-def joinAll (as : List FA) : FA := as.foldl FA.join FA.c0
+@[expose] def joinAll (as : List FA) : FA := as.foldl FA.join FA.c0
 
 /-- Pointwise order of two lists of the same length. -/
 def leAll : List FA → List FA → Bool
@@ -80,7 +80,7 @@ def leAll : List FA → List FA → Bool
    TId.value_list_slice, TId.value_slice_unwrap, TId.value_array_2, TId.value_array_3]
 
 /-- The abstract outputs of extern extractor `id` on an input `a` (every output). -/
-def aext (id : TermId) (a : FA) : FA :=
+@[expose] def aext (id : TermId) (a : FA) : FA :=
   if (tyPred id).isSome || clean0Ext.contains id then FA.c0
   else if valueExt.contains id then ⟨if a.f ≤ 1 then 0 else 2, true⟩
   else if id == TId.inst_data_value then ⟨if a.f ≤ 1 then 0 else 2, a.s⟩
@@ -88,16 +88,16 @@ def aext (id : TermId) (a : FA) : FA :=
   else FA.top
 
 /-- Building variant `k` of type `ty`: the join of the fields, unsafe for `ElfTlsGetAddr`. -/
-def amk (ty : TypeId) (k : Nat) (as : List FA) : FA :=
+@[expose] def amk (ty : TypeId) (k : Nat) (as : List FA) : FA :=
   if ty == tyMInst && k == VIdx.MInst.ElfTlsGetAddr then { joinAll as with s := false }
   else joinAll as
 
 /-- Extern constructor `id`: the join of the arguments, except the flow of `invalid_reg`. -/
-def actor (id : TermId) (as : List FA) : FA :=
+@[expose] def actor (id : TermId) (as : List FA) : FA :=
   if id == TId.invalid_reg then ⟨2, (joinAll as).s⟩ else joinAll as
 
 /-- The precondition of an extern constructor call: with `strict`, `emit` of a safe value. -/
-def apre (strict : Bool) (id : TermId) (as : List FA) : Bool :=
+@[expose] def apre (strict : Bool) (id : TermId) (as : List FA) : Bool :=
   !strict || id != TId.emit || as.all (·.s)
 
 /-- Summary table: per internal term, the abstract inputs and output. -/
@@ -205,7 +205,7 @@ def aRule (ins : List FA) (out : FA) (r : Rule) : Bool :=
   | none => false
 
 /-- Every rule of every table term checks. -/
-def chkTab : Bool :=
+@[expose] def chkTab : Bool :=
   tab.all fun e => (p.rulesOf e.1).all (aRule p tab strict e.2.1 e.2.2)
 
 section Inv

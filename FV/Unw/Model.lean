@@ -45,19 +45,19 @@ namespace Unw
 open Backend Backend.Proof
 
 /-- The 8 bytes at `a` (little-endian). -/
-def ld64 (a : BitVec 64) (s : Arm.ArmState) : BitVec 64 := Arm.read_mem_bytes 8 a s
+@[expose] def ld64 (a : BitVec 64) (s : Arm.ArmState) : BitVec 64 := Arm.read_mem_bytes 8 a s
 
 /-- The value of DWARF register `r` (x0–x30, sp = 31) in `s`. -/
-def regVal? (s : Arm.ArmState) (r : Nat) : Option (BitVec 64) :=
+@[expose] def regVal? (s : Arm.ArmState) (r : Nat) : Option (BitVec 64) :=
   if r < 32 then some (Arm.r (.GPR (BitVec.ofNat 5 r)) s) else none
 
 /-- The CFA of `row` in state `s`. -/
-def Row.cfa? (row : Row) (s : Arm.ArmState) : Option (BitVec 64) :=
+@[expose] def Row.cfa? (row : Row) (s : Arm.ArmState) : Option (BitVec 64) :=
   (regVal? s row.cfaReg).map (· + BitVec.ofNat 64 row.cfaOff)
 
 /-- Set DWARF register `d` to the saved value `v` (x0–x30; the low 64 bits of v0–v31; other
 numbers are not restored). -/
-def setReg (d : Nat) (v : BitVec 64) (t : Arm.ArmState) : Arm.ArmState :=
+@[expose] def setReg (d : Nat) (v : BitVec 64) (t : Arm.ArmState) : Arm.ArmState :=
   if d < 31 then Arm.w (.GPR (BitVec.ofNat 5 d)) v t
   else if 64 ≤ d ∧ d < 96 then Arm.w (.SFP (BitVec.ofNat 5 (d - 64))) (v.setWidth 128) t
   else t
@@ -65,7 +65,7 @@ def setReg (d : Nat) (v : BitVec 64) (t : Arm.ArmState) : Arm.ArmState :=
 /-- Unwind the frame described by `row` (`none`: the CFA register is not x0–x30/sp). The
 saved values are read from `s`'s memory; the latest rule of a register wins (`saved` is
 latest first, so the fold applies the oldest first). -/
-def restore (row : Row) (s : Arm.ArmState) : Option Arm.ArmState :=
+@[expose] def restore (row : Row) (s : Arm.ArmState) : Option Arm.ArmState :=
   (row.cfa? s).map fun cfa =>
     let t := row.saved.foldr (fun (d, off) t => setReg d (ld64 (cfa + BitVec.ofInt 64 off) s) t) s
     Arm.w .PC (Arm.r (.GPR 30#5) t) (Arm.w (.GPR 31#5) cfa t)
@@ -86,7 +86,7 @@ end
 
 /-- Rust's personality for the call at return offset − 1 `off` of a function with LSDA call-site
 table `lsda` (`none`: the function has no LSDA, its CIE no personality). -/
-def personality : Option (List CallSiteEntry) → Nat → Action
+@[expose] def personality : Option (List CallSiteEntry) → Nat → Action
   | none, _ => .continue
   | some sites, off =>
     match lookup sites off with
@@ -102,7 +102,7 @@ structure FnTables where
   lsda : Option (List CallSiteEntry)
 
 /-- The error state of the model when the unwinder leaves it (no row, or Rust aborts). -/
-def stop (msg : String) (t : Arm.ArmState) : Arm.ArmState := Arm.w .ERR (.Other msg) t
+@[expose] def stop (msg : String) (t : Arm.ArmState) : Arm.ArmState := Arm.w .ERR (.Other msg) t
 
 /-- Phase 2 at our call at address `pc` (function start `start`) whose callee raised the
 exception object `obj`, the unwinder having restored our call's state `t`. -/
@@ -125,10 +125,10 @@ structure UnwHooks where
   raise : Option String → Arm.ArmState → Option (BitVec 64 × Arm.ArmState)
 
 /-- No callee raises. -/
-def UnwHooks.none : UnwHooks := ⟨fun _ _ => Option.none⟩
+@[expose] def UnwHooks.none : UnwHooks := ⟨fun _ _ => Option.none⟩
 
 /-- **The Arm machine with unwinding.** -/
-noncomputable def ArmStepU (X : ExtSem) (H : ArmHooks) (U : UnwHooks) (T : FnTables) (fa : FnAsm)
+@[expose] noncomputable def ArmStepU (X : ExtSem) (H : ArmHooks) (U : UnwHooks) (T : FnTables) (fa : FnAsm)
     (s : Arm.ArmState) : Arm.ArmState :=
   let pc := Arm.r .PC s
   match insnAt fa (progBase s) pc with
@@ -156,13 +156,13 @@ theorem armStepU_none (X : ExtSem) (H : ArmHooks) (T : FnTables) (fa : FnAsm) :
 /-! ## Restoring a frame -/
 
 /-- The value DWARF register `d` (a GPR) has after `restore` with CFA `cfa`, from `t`. -/
-def restoredX (row : Row) (cfa : BitVec 64) (t : Arm.ArmState) (n : Nat) : BitVec 64 :=
+@[expose] def restoredX (row : Row) (cfa : BitVec 64) (t : Arm.ArmState) (n : Nat) : BitVec 64 :=
   match row.rule n with
   | some off => ld64 (cfa + BitVec.ofInt 64 off) t
   | Option.none => E2E.xreg n t
 
 /-- The low 64 bits of `v n` after `restore` with CFA `cfa`, from `t`. -/
-def restoredV (row : Row) (cfa : BitVec 64) (t : Arm.ArmState) (n : Nat) : BitVec 64 :=
+@[expose] def restoredV (row : Row) (cfa : BitVec 64) (t : Arm.ArmState) (n : Nat) : BitVec 64 :=
   match row.rule (64 + n) with
   | some off => ld64 (cfa + BitVec.ofInt 64 off) t
   | Option.none => (Arm.r (.SFP (BitVec.ofNat 5 n)) t).setWidth 64

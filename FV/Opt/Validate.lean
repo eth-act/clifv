@@ -146,7 +146,7 @@ def σ (c : SimpCtx) : ValueId → ValueId := c.subst.step
 def fixed (c : SimpCtx) (xs : List ValueId) : Bool := xs.all fun x => !c.subst.contains x
 
 /-- The record of source statement `s`, emitted from output position `k'` on. -/
-def stmtOk (c : SimpCtx) (s : Stmt) (k' : Nat) : StmtLog → Bool
+@[expose] def stmtOk (c : SimpCtx) (s : Stmt) (k' : Nat) : StmtLog → Bool
   | .keep s' => s' == renStmt c.σ s && c.fixed s.results
   | .repl s' w out =>
     s' == renStmt c.σ s && isPure s.inst && out.all insOk &&

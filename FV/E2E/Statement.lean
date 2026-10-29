@@ -63,10 +63,10 @@ theorem XHolds_iff {v : Clif.Val} {x : BitVec 64} (h : v.ty.width ≤ 64) :
   rw [BitVec.setWidth_setWidth_of_le _ (by omega)]
 
 /-- Number of the Arm register `x n`. -/
-def xreg (n : Nat) (s : Arm.ArmState) : BitVec 64 := Arm.r (.GPR (BitVec.ofNat 5 n)) s
+@[expose] def xreg (n : Nat) (s : Arm.ArmState) : BitVec 64 := Arm.r (.GPR (BitVec.ofNat 5 n)) s
 
 /-- Arm stack pointer. -/
-def spv (s : Arm.ArmState) : BitVec 64 := Arm.r (.GPR 31#5) s
+@[expose] def spv (s : Arm.ArmState) : BitVec 64 := Arm.r (.GPR 31#5) s
 
 /-! ## The subset -/
 
@@ -233,7 +233,7 @@ structure Rel where
   out : Nat
 
 /-- Address of the stack-slot region in world `w`. -/
-def Rel.slotReg (Γ : Rel) (w : Arm.ArmState) : Nat := (spv w).toNat + Γ.slotOff
+@[expose] def Rel.slotReg (Γ : Rel) (w : Arm.ArmState) : Nat := (spv w).toNat + Γ.slotOff
 
 /-- The outgoing stack-argument area `[sp, sp + out)` of world `w` (agent/stack-tls-proof): it
 fits the address space, avoids the frame addresses `F`, and no byte of a live CLIF allocation is
@@ -429,7 +429,7 @@ theorem StackAvail.frame {K : Nat} {af : AFunc} {s : Arm.ArmState} (h : StackAva
 frame pointer `sp_entry - 16`; x0–x8 and v0–v7 (arguments; x8 is preserved by the
 prologue — for `sret` functions it carries the hidden struct-return pointer), memory, the program and every field outside
 the allocatable/temporary registers (x18, x30, flags, …) as at entry. -/
-def frameDrop (af : AFunc) : Nat := if af.frame then af.frameSize + 16 else 0
+@[expose] def frameDrop (af : AFunc) : Nat := if af.frame then af.frameSize + 16 else 0
 
 structure BodyEntry (af : AFunc) (s w₀ : Arm.ArmState) : Prop where
   sp : spv w₀ = spv s - BitVec.ofNat 64 (frameDrop af)
@@ -441,7 +441,7 @@ structure BodyEntry (af : AFunc) (s w₀ : Arm.ArmState) : Prop where
   program : w₀.program = s.program
 
 /-- Callee-saved X registers (AAPCS64: x19–x28, and the frame pointer x29). -/
-def calleeSavedX : List Nat := (List.range 11).map (19 + ·)
+@[expose] def calleeSavedX : List Nat := (List.range 11).map (19 + ·)
 
 /-- An AAPCS64 return from the activation entered in `s`: at the return address, sp and the
 callee-saved registers (x19–x29, low 64 bits of v8–v15) as at entry. -/

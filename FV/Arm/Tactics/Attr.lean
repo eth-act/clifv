@@ -59,7 +59,7 @@ def getBvOmegaBenchFilePath [Monad m] [MonadOptions m] : m String := do
 def getBvOmegaBenchIsEnabled [Monad m] [MonadOptions m] : m Bool := do
   return Tactic.bv_omega_bench.enabled.get (← getOptions)
 
-def getBvOmegaBenchMinMs [Monad m] [MonadOptions m] : m Nat := do
+@[expose] def getBvOmegaBenchMinMs [Monad m] [MonadOptions m] : m Nat := do
   return Tactic.bv_omega_bench.minMs.get (← getOptions)
 
 end Arm

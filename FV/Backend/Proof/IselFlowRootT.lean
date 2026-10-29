@@ -189,7 +189,7 @@ theorem tlsRules_eq : program.rulesOf TId.lower = tlsRules0 ++ tlsRules1 ++ tlsR
   rfl
 
 /-- The check of one root rule of `lower`. -/
-def tlsRootOk (r : Rule) : Bool :=
+@[expose] def tlsRootOk (r : Rule) : Bool :=
   !closureRootIds.contains r.id || r.id == 1129 || r.id == 1130 ||
     aRule program tlsTab true [⟨2, true⟩] FA.top r
 

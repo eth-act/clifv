@@ -100,7 +100,7 @@ def renameStmt (σ : ValueId → ValueId) (s : Stmt) : Stmt :=
   { results := s.results.map σ, inst := renameInst σ s.inst }
 
 /-- The instructions a pattern may use: pure, non-trapping, no memory, no frame lookups. -/
-def pureInst : Inst → Bool
+@[expose] def pureInst : Inst → Bool
   | .iconst .. | .unary .. | .binary .. | .icmp .. | .select .. | .extend .. | .ireduce .. =>
     true
   | _ => false
@@ -139,7 +139,7 @@ def blockDefs (f : Function) (b : Block) : List (ValueId × Option Ty × Option 
   b.params.map (fun p => (p.1, some p.2, none)) ++ b.body.flatMap (stmtDefs f)
 
 /-- Every definition of `f` (a value is defined once: `check` requires the keys distinct). -/
-def defsOf (f : Function) : List (ValueId × Option Ty × Option Inst) :=
+@[expose] def defsOf (f : Function) : List (ValueId × Option Ty × Option Inst) :=
   f.blocks.flatMap (blockDefs f)
 
 /-- The static type of a value of `f`. -/
@@ -175,11 +175,11 @@ structure Ctx where
 namespace Ctx
 
 /-- Every value of `f` is below `T0`. -/
-def T0 (C : Ctx) : Nat := maxValueId C.f
+@[expose] def T0 (C : Ctx) : Nat := maxValueId C.f
 
-def pair (C : Ctx) (v : ValueId) : Option (ValueId × ValueId) := C.cert.pairs.lookup v
+@[expose] def pair (C : Ctx) (v : ValueId) : Option (ValueId × ValueId) := C.cert.pairs.lookup v
 
-def zero (C : Ctx) : ValueId := C.cert.zero
+@[expose] def zero (C : Ctx) : ValueId := C.cert.zero
 
 def comps (C : Ctx) : List ValueId := C.cert.pairs.flatMap fun (_, a, b) => [a, b]
 
@@ -201,7 +201,7 @@ statement order is the legaliser's emission order (`Opt.Legalize128`). -/
 def S (r : ValueId) (i : Inst) : Stmt := { results := [r], inst := i }
 
 /-- `r = iconst.i64 n` (`kI64`) -/
-def K (r : ValueId) (n : Int) : Stmt := S r (.iconst .i64 (BitVec.ofInt 64 n))
+@[expose] def K (r : ValueId) (n : Int) : Stmt := S r (.iconst .i64 (BitVec.ofInt 64 n))
 
 def bin (op : BinaryOp) (t : Ty) (x y : ValueId) : Inst := .binary op t x y
 
@@ -902,7 +902,7 @@ def termOk (C : Ctx) : Terminator → List Stmt → Terminator → Bool
 
 /-- Statements `ss` and terminator `t` of `f` against statements `ts` and terminator `t'` of
 `g`. -/
-def codeOk (C : Ctx) : List Stmt → Terminator → List Stmt → Terminator → Bool
+@[expose] def codeOk (C : Ctx) : List Stmt → Terminator → List Stmt → Terminator → Bool
   | [], t, ts, t' => termOk C t ts t'
   | s :: ss, t, ts, t' =>
     match planOf C s with
@@ -928,7 +928,7 @@ def entryParamsOk (C : Ctx) : List (List SlotEl) → List (ValueId × Ty) → Li
   | _, _, _ => false
 
 /-- The parameters of a non-entry block (`blockParamsOf`). -/
-def paramsOk (C : Ctx) : List (ValueId × Ty) → List (ValueId × Ty) → Bool
+@[expose] def paramsOk (C : Ctx) : List (ValueId × Ty) → List (ValueId × Ty) → Bool
   | [], [] => true
   | (v, t) :: ps, (a, ta) :: ps' =>
     if t == .i128 then
@@ -943,7 +943,7 @@ def paramsOk (C : Ctx) : List (ValueId × Ty) → List (ValueId × Ty) → Bool
 def Ctx.zeroStmt (C : Ctx) : Stmt := S C.zero (.iconst .i64 (BitVec.ofInt 64 0))
 
 /-- A block of `f` and its rewrite. -/
-def blockOk (C : Ctx) (isEntry : Bool) (b b' : Block) : Bool :=
+@[expose] def blockOk (C : Ctx) (isEntry : Bool) (b b' : Block) : Bool :=
   b'.id == b.id && decide (b'.params.map (·.1)).Nodup &&
     if isEntry then
       match groups C.f.sig.params, b'.body with
@@ -955,7 +955,7 @@ def blockOk (C : Ctx) (isEntry : Bool) (b b' : Block) : Bool :=
 
 /-- The certificate: pair components are distinct values `≥ T0` (not values of `f`), distinct
 from the zero, and different values have disjoint pairs. -/
-def certOk (C : Ctx) : Bool :=
+@[expose] def certOk (C : Ctx) : Bool :=
   decide (C.T0 ≤ C.zero) &&
   C.cert.pairs.all (fun (_, a, b) =>
     a != b && decide (C.T0 ≤ a) && decide (C.T0 ≤ b) && a != C.zero && b != C.zero) &&
@@ -995,7 +995,7 @@ def indOldB (f : Function) : Bool :=
 /-- **The validator on its former domain** (`indOldB`): the statements about `check`
 (`check_refines`, `E2E.backend_correct_legal`, …) keep their pre-S4 meaning; `checkW` is the
 validator `lean-backend` runs. -/
-def check (f g : Function) (cert : Cert) : Bool :=
+@[expose] def check (f g : Function) (cert : Cert) : Bool :=
   checkW f g cert && indOldB f
 
 /-! ## Signatures without `i128`: the expansion is the identity -/

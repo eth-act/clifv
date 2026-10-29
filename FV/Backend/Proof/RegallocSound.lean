@@ -318,7 +318,7 @@ structure IsSimulation (R : MConf V W → VConf V W → Prop) : Prop where
     vs.b = b ∧ vs.k = k ∧ vs.w = w
 
 /-- The initial configuration of the allocated code: block 0, store `m₀`, world `w₀`. -/
-def MConf.init (m₀ : Loc → V) (w₀ : W) : MConf V W := .run ⟨0, rf.blocks[0]!.toList, m₀, w₀⟩
+@[expose] def MConf.init (m₀ : Loc → V) (w₀ : W) : MConf V W := .run ⟨0, rf.blocks[0]!.toList, m₀, w₀⟩
 
 /-- The initial configuration of the VCode: block 0, vreg file `ρ₀`, world `w₀`. -/
 def VConf.init (ρ₀ : Nat → V) (w₀ : W) : VConf V W := .run ⟨0, 0, ρ₀, w₀⟩

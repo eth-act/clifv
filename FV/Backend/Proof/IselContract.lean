@@ -662,7 +662,7 @@ lowering's integer scope (`Driver.ctxE_of`), `CtxInv.valTyE`. -/
 def CtxE (ctx : Ctx) : Prop := ∀ x t, ctx.valueType? x = some t → t ∈ eCTys
 
 /-- The address operand of a load or store (contract change #7), also of an atomic access. -/
-def memAddr? : Clif.Inst → Option Nat
+@[expose] def memAddr? : Clif.Inst → Option Nat
   | .load _ _ _ p _ | .store _ _ _ _ p _ | .atomicLoad _ _ p | .atomicStore _ _ _ p
   | .atomicRmw _ _ _ p _ | .atomicCas _ _ p _ _ => some p
   | _ => none
@@ -807,7 +807,7 @@ structure LowerInstOk {W : Type} (isem : ISem CV W) (MR : MemRelTW W) (env : Cli
 
 /-- The successor a branch takes, as an index into the driver's target list (`jump`: its
 target; `brif`: then, else; `br_table`: default, then the table). -/
-def branchIdx (fr : Clif.Frame) : Clif.Terminator → Clif.Res Nat
+@[expose] def branchIdx (fr : Clif.Frame) : Clif.Terminator → Clif.Res Nat
   | .jump _ => .ok 0
   | .brif c _ _ => Clif.Res.bind (fr.get c) fun v => .ok (if Clif.Sem.truthy v.bits then 0 else 1)
   | .brTable x _ tbl => Clif.Res.bind (fr.get x) fun v =>
@@ -1220,11 +1220,11 @@ contracts imply the `CtxInv` ones (`LowerRuleOkT.toOk`, `MemRuleOkRT.toR`). S11e
 `CtxInvT` for `buildCtx` (with the typing check) and widens the source scope. -/
 
 /-- The value types of the float-capable lowering: E's integers, `f32` and `f64`. -/
-def mCTys : List CTy := eCTys ++ [.float 32, .float 64]
+@[expose] def mCTys : List CTy := eCTys ++ [.float 32, .float 64]
 
 /-- The register class of value `x`: its type's (`CTy.valClass`), `.int` for an untyped
 value (as `buildCtx`'s value map, S11e3). -/
-def valClassOf (ctx : Ctx) (x : Nat) : RegClass := ((ctx.valueType? x).map CTy.valClass).getD .int
+@[expose] def valClassOf (ctx : Ctx) (x : Nat) : RegClass := ((ctx.valueType? x).map CTy.valClass).getD .int
 
 /-- `x` is in an integer position: a type it has is one of E's integers. -/
 @[expose] def IntPos (ctx : Ctx) (x : Nat) : Prop := ∀ t, ctx.valueType? x = some t → t ∈ eCTys
@@ -1233,7 +1233,7 @@ def valClassOf (ctx : Ctx) (x : Nat) : RegClass := ((ctx.valueType? x).map CTy.v
 integer operation, the address of a memory access, the condition of a `select`, the arguments
 of a call (calls are integer-only, `sigIntB`); not the value of a float `store`, the operands of
 a float `select` or the operand of a `bitcast`. -/
-def intArgs : Clif.Inst → List Nat
+@[expose] def intArgs : Clif.Inst → List Nat
   | .unary _ _ x | .extend _ _ x | .ireduce _ x | .bmask _ x => [x]
   | .binary _ _ x y | .div _ _ x y | .icmp _ _ x y => [x, y]
   | .load _ _ _ p _ | .atomicLoad _ _ p => [p]
@@ -1565,14 +1565,14 @@ theorem sigParamBytes_bytes {s : Clif.Signature} {bytes : List Nat}
   sigArgs_bytes hb
 
 /-- The arguments of a call of `s` passed in registers, in parameter order. -/
-def regArgVals (s : Clif.Signature) (vals : List Clif.Val) : List Clif.Val :=
+@[expose] def regArgVals (s : Clif.Signature) (vals : List Clif.Val) : List Clif.Val :=
   ((locsOf s).zip vals).filterMap fun q => match q.1 with
     | .reg _ => some q.2
     | .stack _ => none
 
 /-- The stack-passed arguments of a call of `s` are in the outgoing area at `sp` of `w`: an
 argument at location `.stack off` is the `ty.bytes` little-endian bytes at `sp + off`. -/
-def StackArgsAt (s : Clif.Signature) (vals : List Clif.Val) (w : Arm.ArmState) : Prop :=
+@[expose] def StackArgsAt (s : Clif.Signature) (vals : List Clif.Val) (w : Arm.ArmState) : Prop :=
   ∀ (off : Nat) (v : Clif.Val), (ArgLoc.stack off, v) ∈ (locsOf s).zip vals →
     (Arm.read_mem_bytes v.ty.bytes (spOf w + BitVec.ofNat 64 off) w).setWidth v.ty.width = v.bits
 
@@ -1931,7 +1931,7 @@ into `LowerTermOk` for every successful call, as `lowerInstOk_runTerm` does for 
 
 /-- The root rules of `lower` on terminators: `rule_lower_2237` (`trap`, rule id 964) and
 `rule_lower_2574` (`return`, rule id 1037). -/
-def termRootRule (r : Rule) : Bool := r.id == 964 || r.id == 1037
+@[expose] def termRootRule (r : Rule) : Bool := r.id == 964 || r.id == 1037
 
 /-- Terminators lowered by `lower` (the others by `lower_branch`). -/
 @[expose] def retOrTrap : Clif.Terminator → Bool

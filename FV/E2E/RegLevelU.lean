@@ -162,7 +162,7 @@ namespace RLU
 variable (R : RLU)
 
 /-- The instruction semantics of the activation with unwinding. -/
-noncomputable def semU : ISem CV Arm.ArmState := csemVU R.gv R.F R.ctx R.X R.XR
+@[expose] noncomputable def semU : ISem CV Arm.ArmState := csemVU R.gv R.F R.ctx R.X R.XR
 
 /-- The machine with unwinding. -/
 noncomputable def stepU : Arm.ArmState → Arm.ArmState := Unw.ArmStepU R.X R.H R.U R.T R.fa

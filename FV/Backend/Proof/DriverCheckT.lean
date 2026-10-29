@@ -29,13 +29,13 @@ theorem tyIn_sound {l : List CTy} {t : CTy} (h : tyIn l t = true) : t ∈ l := b
   rw [of_decide_eq_true he]; exact hu
 
 /-- `IntPos ctx x`, decided. -/
-def intPosOk (ctx : Ctx) (x : Nat) : Bool :=
+@[expose] def intPosOk (ctx : Ctx) (x : Nat) : Bool :=
   match ctx.valueType? x with
   | some t => tyIn eCTys t
   | none => true
 
 /-- **`CtxInvT f ctx`, decided.** -/
-def ctxOkT (f : Clif.Function) (ctx : Ctx) : Bool :=
+@[expose] def ctxOkT (f : Clif.Function) (ctx : Ctx) : Bool :=
   decide (ctx.func = f) &&
   ctx.insts.toList.all (fun info => match info.clif with
     | some i =>

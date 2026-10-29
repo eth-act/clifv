@@ -612,7 +612,7 @@ theorem operandsSound_step {F FK : BitVec 64 → Prop}
 /-! ## Calls and the calls of `try_call`s -/
 
 /-- The operand visit of a call's `CallInfo` (as `MInst.visitOperands` does it). -/
-def callVisit {m : Type → Type} [Monad m] (f : OpSpec → Reg → m Reg) (info : CallInfo) :
+@[expose] def callVisit {m : Type → Type} [Monad m] (f : OpSpec → Reg → m Reg) (info : CallInfo) :
     m CallInfo := do
   let dest ← match info.dest with
     | .reg r => do pure (CallDest.reg (← f .use r))

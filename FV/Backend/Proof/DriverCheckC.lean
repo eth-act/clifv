@@ -28,7 +28,7 @@ open Backend Backend.Proof
 
 /-- **The lowering of a terminator, typed `try_call`s** (`lowTerm` with `lowerFunction`'s typed
 helpers `tryCallDataC`, `exnTableOpndC`, `tryRegsOfC`). -/
-def lowTermC (f : Clif.Function) (tcall : TermCallF) (ycall : TryCallF) (ti : Nat)
+@[expose] def lowTermC (f : Clif.Function) (tcall : TermCallF) (ycall : TryCallF) (ti : Nat)
     (t : Clif.Terminator) (tst : LState) (nl : Nat) :
     Option (V × List Label × Option TryLow × LState × Nat) :=
   match t with
@@ -54,7 +54,7 @@ def lowTermC (f : Clif.Function) (tcall : TermCallF) (ycall : TryCallF) (ti : Na
     | _, _ => none
 
 /-- The lowering of the blocks `Bs` with typed `try_call`s (`lowBlocks` over `lowTermC`). -/
-def lowBlocksC (f : Clif.Function) (call : StmtCall) (tcall : TermCallF) (ycall : TryCallF) :
+@[expose] def lowBlocksC (f : Clif.Function) (call : StmtCall) (tcall : TermCallF) (ycall : TryCallF) :
     Nat → List Clif.Block → LState → Nat → Option (List BLow)
   | _, [], _, _ => some []
   | start, B :: Bs, st, nl =>
@@ -70,7 +70,7 @@ def lowBlocksC (f : Clif.Function) (call : StmtCall) (tcall : TermCallF) (ycall 
       | none => none
 
 /-- **The typed lowering validator with typed `try_call`s** (`lowerCheckT` over `lowBlocksC`). -/
-def lowerCheckTC (f : Clif.Function) (vc : VCode) : Bool :=
+@[expose] def lowerCheckTC (f : Clif.Function) (vc : VCode) : Bool :=
   match buildCtx f with
   | .error _ => false
   | .ok (ctx, _, st0) =>

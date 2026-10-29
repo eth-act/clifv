@@ -246,7 +246,7 @@ theorem ftList_snoc_label (l : Lbl) : ∀ X : List Line, ∃ Z, ftList (X ++ [.l
 /-! ## `emitFunc` as structural functions -/
 
 /-- The lines of one `AInst` (`emitFunc`'s inner loop body). -/
-def ainstLines (c : FnCtx) (af : AFunc) : AInst → PState → Except String (List Line × PState)
+@[expose] def ainstLines (c : FnCtx) (af : AFunc) : AInst → PState → Except String (List Line × PState)
   | .prologue, ps => pure (if af.frame then prologueLines af.frameSize else [], ps)
   | .epilogueRet, ps => pure (if af.frame then epilogueLines af.frameSize else [.ins .ret], ps)
   | .inst m, ps => m.lines c ps
@@ -378,7 +378,7 @@ theorem emitPre_ok {k : Nat} {af : AFunc} {pre : Array Line} (h : emitPre k af =
     | none => throw "missing instruction"
 
 /-- The code of one item. -/
-def itemCode (fr : RAFrame) (vb : VBlock) (it : RItem) : Except String (List AInst) :=
+@[expose] def itemCode (fr : RAFrame) (vb : VBlock) (it : RItem) : Except String (List AInst) :=
   (·.toList) <$> itemStep fr vb #[] it
 
 theorem itemStep_eq (fr : RAFrame) (vb : VBlock) (code : Array AInst) (it : RItem) :
@@ -400,7 +400,7 @@ theorem itemStep_eq (fr : RAFrame) (vb : VBlock) (code : Array AInst) (it : RIte
       · rfl
 
 /-- The code of an item list. -/
-def itemsCode (fr : RAFrame) (vb : VBlock) : List RItem → Except String (List AInst)
+@[expose] def itemsCode (fr : RAFrame) (vb : VBlock) : List RItem → Except String (List AInst)
   | [] => pure []
   | it :: its => do
     let c1 ← itemCode fr vb it
@@ -657,7 +657,7 @@ theorem blocksLinesE_block {c : FnCtx} {af : AFunc} :
   ts.flatMap (fun p => [Line.label p.1, Line.ins (.udf 0xc11f) (some p.2)])
 
 /-- The far labels `emitFunc` relaxes the branches to (`relaxOf` of the lines before relaxation). -/
-def emitFar (c : FnCtx) (af : AFunc) : Lbl → Bool :=
+@[expose] def emitFar (c : FnCtx) (af : AFunc) : Lbl → Bool :=
   match blocksLinesE c af af.blocks.toList {} with
   | .ok (body, ps) => relaxOf (ftList body ++ trapLines ps.traps.toList)
   | .error _ => fun _ => false

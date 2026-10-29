@@ -47,12 +47,12 @@ end
 namespace CTy
 
 /-- `Type::lane_type`. -/
-def laneType : CTy → CTy
+@[expose] def laneType : CTy → CTy
   | .vec lb _ f => if f then .float lb else .int lb
   | t => t
 
 /-- `Type::lane_bits`. -/
-def laneBits : CTy → Nat
+@[expose] def laneBits : CTy → Nat
   | .invalid => 0 | .int b => b | .float b => b | .vec lb _ _ => lb
 
 /-- `Type::lane_count`. -/
@@ -60,19 +60,19 @@ def laneCount : CTy → Nat
   | .vec _ n _ => n | _ => 1
 
 /-- `Type::bits`. -/
-def bits (t : CTy) : Nat := t.laneBits * t.laneCount
+@[expose] def bits (t : CTy) : Nat := t.laneBits * t.laneCount
 
 /-- `Type::is_int`: `I8 I16 I32 I64 I128`. -/
-def isInt : CTy → Bool
+@[expose] def isInt : CTy → Bool
   | .int b => b == 8 || b == 16 || b == 32 || b == 64 || b == 128
   | _ => false
 
 /-- `Type::is_float`. -/
-def isFloat : CTy → Bool
+@[expose] def isFloat : CTy → Bool
   | .float _ => true | _ => false
 
 /-- `Type::is_vector`. -/
-def isVector : CTy → Bool
+@[expose] def isVector : CTy → Bool
   | .vec .. => true | _ => false
 
 /-- `Type::half_width`: halve the lane type (`I16 → I8` .. `I128 → I64`, `F32 → F16` ..
@@ -86,7 +86,7 @@ def halfWidth? : CTy → Option CTy
   | .invalid => none
 
 /-- The `$NAME` type constants of the prelude (`I8`, `F64`, `I32X4`, `INVALID`, ...), parsed. -/
-def parseName? (s : String) : Option CTy :=
+@[expose] def parseName? (s : String) : Option CTy :=
   let scalar (c : Char) (w : String) : Option CTy :=
     match w.toNat? with
     | some b =>
@@ -116,7 +116,7 @@ def ofName? (s : String) : Option CTy :=
   | "F128" => some (.float 128)
   | _ => parseName? s
 
-def ofClif : Clif.Ty → CTy
+@[expose] def ofClif : Clif.Ty → CTy
   | .i8 => .int 8 | .i16 => .int 16 | .i32 => .int 32 | .i64 => .int 64 | .i128 => .int 128
   | .f32 => .float 32 | .f64 => .float 64
 

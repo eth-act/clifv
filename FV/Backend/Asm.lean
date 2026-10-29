@@ -733,7 +733,7 @@ def Reg.vnum (r : Reg) : String :=
   | .vs => "vs" | .vc => "vc" | .hi => "hi" | .ls => "ls" | .ge => "ge" | .lt => "lt"
   | .gt => "gt" | .le => "le" | .al => "al" | .nv => "nv"
 
-def ExtendOp.asm : ExtendOp → String
+@[expose] def ExtendOp.asm : ExtendOp → String
   | .uxtb => "uxtb" | .uxth => "uxth" | .uxtw => "uxtw" | .uxtx => "uxtx"
   | .sxtb => "sxtb" | .sxth => "sxth" | .sxtw => "sxtw" | .sxtx => "sxtx"
 

@@ -46,21 +46,21 @@ structure ArmHooks where
   tls : String → Reg → Arm.ArmState → Arm.ArmState
 
 /-- Address of the first word of the loaded program. -/
-def progBase (s : Arm.ArmState) : BitVec 64 :=
+@[expose] def progBase (s : Arm.ArmState) : BitVec 64 :=
   match s.program with
   | (a, _) :: _ => a
   | [] => 0
 
 open Classical in
 /-- The instruction of the laid-out function `fa` (loaded at `base`) at address `pc`. -/
-noncomputable def insnAt (fa : FnAsm) (base pc : BitVec 64) : Option Insn :=
+@[expose] noncomputable def insnAt (fa : FnAsm) (base pc : BitVec 64) : Option Insn :=
   if h : ∃ j i t, fa.lines.toList[j]? = some (.ins i t) ∧
       base + BitVec.ofNat 64 (lineOffset fa.lines.toList j) = pc then
     some (Classical.choose (Classical.choose_spec h))
   else none
 
 /-- One step of the Arm machine with the external hooks. -/
-noncomputable def ArmStepX (X : ExtSem) (H : ArmHooks) (fa : FnAsm) (s : Arm.ArmState) :
+@[expose] noncomputable def ArmStepX (X : ExtSem) (H : ArmHooks) (fa : FnAsm) (s : Arm.ArmState) :
     Arm.ArmState :=
   let pc := Arm.r .PC s
   match insnAt fa (progBase s) pc with
@@ -160,7 +160,7 @@ open Backend
 
 /-- Instructions the machine hooks (calls, relocated address computations, the TLSDESC
 sequence). -/
-def _root_.Backend.Insn.hooked : Insn → Bool
+@[expose] def _root_.Backend.Insn.hooked : Insn → Bool
   | .bl _ | .blr _ | .adrpGot .. | .ldrGotLo12 .. | .adrp .. | .addLo12 .. => true
   | .adrpTlsDesc .. | .ldrTlsDescLo12 .. => true
   | _ => false

@@ -967,7 +967,7 @@ theorem cfg_of {vc : VCode}
 /-! ## Labels -/
 
 /-- The blocks have distinct labels. -/
-def Lbls (V : Array VBlock) : Prop := (V.toList.map VBlock.label).Nodup
+@[expose] def Lbls (V : Array VBlock) : Prop := (V.toList.map VBlock.label).Nodup
 
 theorem lbl_inj {V : Array VBlock} (hn : Lbls V) {j k : Nat} (hj : j < V.size) (hk : k < V.size)
     (h : V[j].label = V[k].label) : j = k :=

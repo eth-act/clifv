@@ -47,7 +47,7 @@ namespace Backend.Proof
 open Backend
 
 /-- The 64-bit register value a GPR load `op` from `a` leaves. -/
-def ldX (op : LoadOp) (a : BitVec 64) (s : Arm.ArmState) : BitVec 64 :=
+@[expose] def ldX (op : LoadOp) (a : BitVec 64) (s : Arm.ArmState) : BitVec 64 :=
   match op with
   | .uload8 => (Arm.read_mem_bytes 1 a s).setWidth 64
   | .sload8 => (Arm.read_mem_bytes 1 a s).signExtend 64
@@ -563,7 +563,7 @@ theorem pcx_facts (s : Arm.ArmState) (n : Nat) (P X : BitVec 64) :
   simp [pcx, Arm.r_of_w_same, Arm.r_of_w_different, Arm.w_program]
 
 /-- `movk` lines for `(chunk, shift)` pairs. -/
-def movkLines (n : Nat) : List (Nat × Nat) → List Line
+@[expose] def movkLines (n : Nat) : List (Nat × Nat) → List Line
   | [] => []
   | (c, i) :: ks => .ins (.movk true (.x n) ⟨c, i⟩) none :: movkLines n ks
 

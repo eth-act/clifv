@@ -41,10 +41,10 @@ theorem ispec_udf (c : Clif.TrapCode) (w : Arm.ArmState) :
 /-! ## `rets` -/
 
 /-- `(vreg x, p)` pairs of a `Rets`. -/
-def retPairs (ns : List (Nat × Reg)) : List (Reg × Reg) := ns.map fun q => (Reg.vreg q.1 .int, q.2)
+@[expose] def retPairs (ns : List (Nat × Reg)) : List (Reg × Reg) := ns.map fun q => (Reg.vreg q.1 .int, q.2)
 
 /-- The operands of `Rets (retPairs ns)`: fixed early uses. -/
-def retOps (ns : List (Nat × Reg)) : List Operand :=
+@[expose] def retOps (ns : List (Nat × Reg)) : List Operand :=
   ns.map fun q => (⟨q.1, .int, .use, .early, .fixed q.2⟩ : Operand)
 
 open Driver in

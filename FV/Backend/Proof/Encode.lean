@@ -84,7 +84,7 @@ theorem Insn.decodeOk_of_encode {env : Env} {i : Insn} {w : BitVec 32}
 
 /-- The meaning of an instruction on the Arm model: execute the instruction `toArmInst`
 specifies (`.error` when the encoder rejects the operands). -/
-def Insn.sem (env : Env) (i : Insn) (s : ArmState) : Except String ArmState :=
+@[expose] def Insn.sem (env : Env) (i : Insn) (s : ArmState) : Except String ArmState :=
   (exec_inst · s) <$> i.toArmInst env
 
 /-- **Semantic link (M7).** One `stepi` on an error-free state whose program holds, at `PC`,

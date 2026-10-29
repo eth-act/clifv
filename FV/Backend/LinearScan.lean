@@ -181,7 +181,7 @@ def scratchOrder : RegClass → List Reg
       (List.range 10).map (19 + ·)).map .x
   | .float => ((List.range 16).map (16 + ·) ++ List.range 8 ++ (List.range 8).map (8 + ·)).map .v
 
-def vregOf : Reg → Option Nat
+@[expose] def vregOf : Reg → Option Nat
   | .vreg n _ => some n
   | _ => none
 
@@ -206,7 +206,7 @@ structure Fn where
   deriving Inhabited
 
 /-- Prefix sums from `a`: `starts [n₀, n₁, …] a = [a, a + n₀, a + n₀ + n₁, …]`. -/
-def starts : List Nat → Nat → List Nat
+@[expose] def starts : List Nat → Nat → List Nat
   | [], a => [a]
   | n :: ns, a => a :: starts ns (a + n)
 
@@ -418,7 +418,7 @@ structure Plan where
   deriving Inhabited
 
 /-- The linear scan (module doc), with the registers `reserved` withheld. -/
-def Fn.plan (fn : Fn) (reserved : List Reg) : Plan := Id.run do
+@[expose] def Fn.plan (fn : Fn) (reserved : List Reg) : Plan := Id.run do
   let live := fn.liveness
   let depth := loopDepth fn.succs
   let (segs, cost) := fn.segments live depth
@@ -504,7 +504,7 @@ end Plan
 def sortSegs (l : List Seg) : Array Seg := (l.mergeSort fun a b => a.s ≤ b.s).toArray
 
 /-- The segments of the vregs in each register (index `regIdx`), sorted by start. -/
-def Plan.occ (pl : Plan) : Array (Array Seg) :=
+@[expose] def Plan.occ (pl : Plan) : Array (Array Seg) :=
   ((List.range pl.reg.size).foldl (fun (acc : Array (List Seg)) v =>
     match (pl.regOf v).bind regIdx with
     | some i => acc.modify i (pl.segList v ++ ·)
@@ -613,7 +613,7 @@ structure Ctx where
   pl : Plan
   occ : Array (Array Seg)
 
-def Ctx.ofPlan (fn : Fn) (pl : Plan) : Ctx := { fn, pl, occ := pl.occ }
+@[expose] def Ctx.ofPlan (fn : Fn) (pl : Plan) : Ctx := { fn, pl, occ := pl.occ }
 
 namespace Ctx
 variable (c : Ctx)
@@ -910,12 +910,12 @@ def birthOk (v s : Nat) : Bool :=
       o.kind == .def && o.vreg == v && opSlot o == sl
 
 /-- The last global instruction of block `b`. -/
-def lastOf (b : Nat) : Nat := c.fn.start.getD (b + 1) 0 - 1
+@[expose] def lastOf (b : Nat) : Nat := c.fn.start.getD (b + 1) 0 - 1
 
 /-- `v`, live at the start of block `t`, reaches it from the predecessor `b`: a parameter of `t`
 has its argument live at `b`'s `jump` and its location reserved from the copy on; every other
 vreg is live at the end of `b`. -/
-def edgeOk (v t b : Nat) : Bool :=
+@[expose] def edgeOk (v t b : Nat) : Bool :=
   let gl := c.lastOf b
   match (c.fn.params t).idxOf? v with
   | some k =>
@@ -1005,7 +1005,7 @@ def Fn.spillPlan (fn : Fn) : Plan where
   nslots := fn.nv
 
 /-- The registers withheld from vregs in the `n`-th retry (`reserveOrder`). -/
-def reserved (n : Nat) : List Reg := (reserveOrder .int).take n ++ (reserveOrder .float).take n
+@[expose] def reserved (n : Nat) : List Reg := (reserveOrder .int).take n ++ (reserveOrder .float).take n
 
 /-- The first plan that passes the validator and builds: the linear scan, then with 2 and 4
 registers per class withheld for scratch, then the all-spill plan. -/

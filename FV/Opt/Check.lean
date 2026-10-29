@@ -41,7 +41,7 @@ structure Info where
   pureDef : Std.HashMap ValueId Inst
   deriving Inhabited
 
-def ensure (b : Bool) (msg : String) : Except String Unit :=
+@[expose] def ensure (b : Bool) (msg : String) : Except String Unit :=
   if b then pure () else throw msg
 
 /-- Operand typing of pure nodes (mirrors `Clif.evalInst`); `ty v` is the type of `v`. -/

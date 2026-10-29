@@ -110,7 +110,7 @@ theorem drop_get1 {L ls T : List Line} {j : Nat} {a b : Line} (hd : L.drop j = a
 open Classical in
 /-- The callee as the machine runs it (`bl name` / `blr`; also the call of a `try_call`), from a
 state whose `sp` is 16-byte aligned (AAPCS64; every call site of the body is). -/
-noncomputable def callExec (H : ArmHooks) : MInst → Arm.ArmState → Option Arm.ArmState
+@[expose] noncomputable def callExec (H : ArmHooks) : MInst → Arm.ArmState → Option Arm.ArmState
   | .call info, s => if Arm.CheckSPAlignment s then
       some (H.call (match info.dest with | .sym n => some n | .reg _ => none) s) else none
   | .tryCall info _, s => if Arm.CheckSPAlignment s then
