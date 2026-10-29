@@ -265,8 +265,9 @@ def stockDiffersB (lower : Clif.Function → Except String Backend.VCode) (g : C
 
 /-- On a typed input whose `Link.SemanticCompilerWith.attemptT lower SP` fails (#722): the
 functions failing the per-function checks of `okRWithTS` on the Stock route's results
-(`chksWithTS` in `okRWithTSFast`'s std-sized form), with the failing conditions, and the failing
-global checks (as `<global>`). -/
+(`chksWithTS` in `okRWithTSFast`'s std-sized form: `staticChksWithTS` and the class-aware
+`linkChksWithTS`, #742), with the failing conditions, and the failing global checks (as
+`<global>`). -/
 def typedStockFails (lower : Clif.Function → Except String Backend.VCode) (SP : LinkSpec) :
     List (String × List String) :=
   let I := SP.inputProductionWith lower true
@@ -274,14 +275,9 @@ def typedStockFails (lower : Clif.Function → Except String Backend.VCode) (SP 
   let P := progOf R
   let T := tabOf R
   let C := LinkCtx.of I P T
-  let cs := calleeSet P
-  let anyInd := P.funcs.any (!indFreeB ·)
-  let sy := assocMap I.syms
   let gl := ((globalChksWith C I P T).filter (!·.2)).map (·.1)
   let rs := parMap (fun e => (e.1.name, ((staticChksWithTS (productionStage true) I e.1 e.2 ++
-      linkChksWithT C P e.1 e.2 ++
-      [("calleeInt", !calleeWithB (fun n => cs.contains n) anyInd (fun n => sy[n]?) e.1 ||
-        e.1.sig.returns.all (·.ty.isInt))]).filter (!·.2)).map (·.1))) R
+      linkChksWithTS C P e.1 e.2).filter (!·.2)).map (·.1))) R
   (if gl.isEmpty then [] else [("<global>", gl)]) ++ rs.filter (!·.2.isEmpty)
 
 /-- Print `exclusions` (the line `cargo fv` reads). -/

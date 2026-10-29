@@ -270,7 +270,6 @@ theorem okRWith_soundT (stage : Clif.Function → VCode → VCode) {I : LinkInpu
         rcases hstage with rfl | rfl
         · exact .legacy ⟨hl, hlc, hpr, (fa hg).prepOk, (fa hg).check, ha, he, hla⟩
         · exact .cleanup ⟨hl, hlc, hpr, (fa hg).prepOk, (fa hg).check, ha, he, hla⟩
-      calleeInt := fun g hg h hh => (fa (hcalB g hg h hh).2).calleeInt (hcalB g hg h hh).1
       covered := fun g hg => (fa hg).covered
       outFits := fun g hg e he hs i off p hl hp => ?_
       baseNoAlloc := hB.baseNoAlloc
@@ -278,8 +277,13 @@ theorem okRWith_soundT (stage : Clif.Function → VCode → VCode) {I : LinkInpu
       sretRets := fun g hg hs us hr => retsB_sound (fa hg).rets hs hr
       calleeFrame := fun g hg h hh hs => (hcal g hg h hh).1 hs
       slotFits := fun g hg h hh => slotFitsB_sound (hcal g hg h hh).2
-      callRegs := fun g hg info h hs => (site g hg info h hs).2.2
+      callRegs := fun g hg info h hs =>
+        callRegsC_of_int ((fa (hcalB g hg h (.inl ⟨info, hs⟩)).2).calleeInt
+          (hcalB g hg h (.inl ⟨info, hs⟩)).1) (site g hg info h hs).2.2
       blrRegs := fun g hg info hs hreg => by
+        refine LinkSys.blrRegsC_of_int _ (fun t h hh hb =>
+          (fa (hcalB g hg h (.inr (.inr ⟨hh, hb.1.1⟩))).2).calleeInt
+            (hcalB g hg h (.inr (.inr ⟨hh, hb.1.1⟩))).1) ?_
         obtain hbl := siteOkTC_reg (site_sound (fa hg).sites hs) hreg
         rcases blrOkTC_sound hbl with ⟨t, Lu, Ld, heq, hall⟩ | ⟨t, Lc, Dc, hshape, hno⟩
         · exact .inl ⟨t, Lu, Ld, heq, fun h hh hb hl =>
@@ -292,7 +296,8 @@ theorem okRWith_soundT (stage : Clif.Function → VCode → VCode) {I : LinkInpu
           exact raOk_self (hcomp g hg).1.layout (List.all_eq_true.1 hstar _ (tab_mem hn hg)) hpc
         · exact raCallB_sound (fa hg).ra hpc _ (tab_mem hn hh) hhg
       indScope := fun g hg hnf => ⟨hB.keepSyms ⟨g, hg, hnf⟩, ?_, hB.aliasSyms ⟨g, hg, hnf⟩⟩
-      indSig := fun g hg hnf h hh hmay hm => indFactsRWithT stage hR hI hg hnf h hh (mayB_of hmay) hm
+      indSig := fun g hg hnf h hh hmay hm =>
+        (indFactsRWithT stage hR hI hg hnf h hh (mayB_of hmay) hm).1
       addrSlots := fun hN ⟨g, hg, hout⟩ ⟨g', hg', hind⟩ h hh hs => ?_
       symInj := fun h hh n hn => ?_
       declSig := fun g hg e he h hf => (fa hg).declSig e he h hf

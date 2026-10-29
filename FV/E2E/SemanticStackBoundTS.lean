@@ -47,7 +47,7 @@ theorem edgeB_of_calleeTS {I : CompilerInput} (hI : okBTS I = true) {B : BaseEnv
       exact .inl ⟨e, he, hn⟩
   rcases hc with ⟨info, hs, n, hd, hpf⟩ | ⟨e, he, hpf⟩ | hc
   · have hpf' : (progOf I.results).func? n = some h := hpf
-    obtain ⟨⟨e, he, hen⟩, -⟩ := siteOkTC_sound (site_sound (factsTS hI hg).sites hs) hd hpf'
+    obtain ⟨⟨e, he, hen⟩, -⟩ := siteOkC_sound (site_sound (factsTS hI hg).sites hs) hd hpf'
     exact hdecl e he (by rw [hen, (Clif.Program.func?_some hpf').2])
   · obtain ⟨e', he', rfl⟩ := List.mem_map.1 he
     exact hdecl e' he' (Clif.Program.func?_some (p := progOf I.results) hpf).2.symm

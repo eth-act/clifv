@@ -152,12 +152,14 @@ def main (args : List String) : IO UInt32 := do
     let gl := bad (globalChksWith C I P T)
     -- typed: `chksWithT`'s call-site checks (`linkChksT`: a `blr` that enters no function of the
     -- program may have float uses/defs, `linkChksWithT_of`) and `calleeInt` with `C`'s declared
-    -- names and indirect-call flag (`calleeWithB_eq`)
-    let tyChk := fun (g : Clif.Function) => if typed then
+    -- names and indirect-call flag (`calleeWithB_eq`); typed Stock (`okRWithTS`, #742): the
+    -- class-aware call-site checks `linkChksWithTS` (`linkChksWithTS_of`), no `calleeInt`
+    let tyChk := fun (g : Clif.Function) => if typed && !typedS then
         [("calleeInt", !calleeWithB (fun n => C.callees.contains n) C.anyInd C.S g || g.sig.returns.all (·.ty.isInt))]
       else []
     let lc := fun (e : Clif.Function × Except String Art) =>
-      if typed then linkChksWithT C P e.1 e.2 else linkChksWith C P e.1 e.2
+      if typedS then linkChksWithTS C P e.1 e.2
+      else if typed then linkChksWithT C P e.1 e.2 else linkChksWith C P e.1 e.2
     let fs := (keep.zip (Link.parMap (fun e => bad ((statM[e.1.name]?).getD [] ++ lc e ++ tyChk e.1)) keep)).filterMap fun (e, b) =>
       match b with
       | [] => none
