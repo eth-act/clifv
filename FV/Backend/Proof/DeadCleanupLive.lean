@@ -47,41 +47,34 @@ def CmpOverwrite {V W : Type} (sem : ISem V W) : Prop :=
   (∀ l us w outs w' ctl, sem (.jump l) us w = some (outs, w', ctl) →
     w' = w ∧ ∃ j, ctl = .goto j)
 
-theorem dropCmp_cmp {e : Bool} {m : MInst} {kept : List MInst} (h : dropCmp e m kept = true) :
+theorem dropCmp_cmp {m : MInst} {kept : List MInst} (h : dropCmp m kept = true) :
     cmpForm m = true := by
   simp only [dropCmp, Bool.and_eq_true] at h
   exact h.1.1
 
-theorem dropCmp_defs {e : Bool} {m : MInst} {kept : List MInst} (h : dropCmp e m kept = true) :
+theorem dropCmp_defs {m : MInst} {kept : List MInst} (h : dropCmp m kept = true) :
     defs m = [] := by
   simp only [dropCmp, Bool.and_eq_true, List.isEmpty_iff] at h
   exact h.1.2
 
 /-- The retained suffix after a dropped compare has dead flags. -/
-theorem dropCmp_dead {e : Bool} {m : MInst} {kept : List MInst} (h : dropCmp e m kept = true) :
-    flagsDead e kept = true := by
+theorem dropCmp_dead {m : MInst} {kept : List MInst} (h : dropCmp m kept = true) :
+    flagsDead kept = true := by
   simp only [dropCmp, Bool.and_eq_true] at h
   exact h.2
 
-theorem flagsDead_cons {e : Bool} {k : MInst} {ks : List MInst}
-    (h : flagsDead e (k :: ks) = true) :
-    cmpForm k = true ∨ (cmpForm k = false ∧ flagFree k = true ∧ flagsDead e ks = true) ∨
-      (cmpForm k = false ∧ flagFree k = false ∧ isJump k = true ∧ e = true) := by
+theorem flagsDead_cons {k : MInst} {ks : List MInst}
+    (h : flagsDead (k :: ks) = true) :
+    cmpForm k = true ∨ (cmpForm k = false ∧ flagFree k = true ∧ flagsDead ks = true) := by
   simp only [flagsDead, Bool.or_eq_true, Bool.and_eq_true] at h
   cases hc : cmpForm k
-  · cases hf : flagFree k
-    · rcases h with (h | h) | h
-      · rw [hc] at h; cases h
-      · rw [hf] at h; exact absurd h.1 (by simp)
-      · exact .inr (.inr ⟨rfl, rfl, h.1, h.2⟩)
-    · rcases h with (h | h) | h
-      · rw [hc] at h; cases h
-      · exact .inr (.inl ⟨rfl, rfl, h.2⟩)
-      · cases k <;> simp_all [flagFree, pureForm]
+  · rcases h with h | h
+    · rw [hc] at h; cases h
+    · exact .inr ⟨rfl, h.1, h.2⟩
   · exact .inl rfl
 
 /-- A dropped compare writes no register. -/
-theorem dropCmp_noDef {e : Bool} {m : MInst} {kept : List MInst} (h : dropCmp e m kept = true)
+theorem dropCmp_noDef {m : MInst} {kept : List MInst} (h : dropCmp m kept = true)
     {ops : Array Operand} (hop : m.operands = .ok ops) :
     ops.toList.filter Operand.isDef = [] := by
   have hd := dropCmp_defs h
@@ -93,16 +86,15 @@ theorem pureForm_of_cmp {m : MInst} (h : cmpForm m = true) : pureForm m = false 
   unfold cmpForm at h
   split at h <;> first | rfl | cases h
 
-/-- Flags dead at the head of a block's own code (no `jump` needed) stay dead at the head of
-its cleaned code, whatever the block's exit flag. -/
-theorem flagsDead_scan (nregs : Nat) (e : Bool) :
-    ∀ (ms : List MInst) (live : List Nat), flagsDead false ms = true →
-      flagsDead e (scan nregs e ms live).1 = true
+/-- Flags dead at the head of a block's own code stay dead at the head of its cleaned code. -/
+theorem flagsDead_scan (nregs : Nat) :
+    ∀ (ms : List MInst) (live : List Nat), flagsDead ms = true →
+      flagsDead (scan nregs ms live).1 = true
   | [], _, h => by simp at h
   | m :: ms, live, h => by
-    have ih := flagsDead_scan nregs e ms live
+    have ih := flagsDead_scan nregs ms live
     simp only [scan]
-    rcases flagsDead_cons h with hc | ⟨-, hf, hd⟩ | ⟨-, -, -, hfalse⟩
+    rcases flagsDead_cons h with hc | ⟨-, hf, hd⟩
     · split
       · rename_i hdrop
         rcases Bool.or_eq_true_iff.mp hdrop with hd | hd
@@ -112,7 +104,6 @@ theorem flagsDead_scan (nregs : Nat) (e : Bool) :
     · split
       · exact ih hd
       · simp [flagsDead, hf, ih hd]
-    · cases hfalse
 
 theorem retained_uses {V : Type} {nregs : Nat} {m : MInst} {live : List Nat}
     {a b : Nat → V} (h : Agree (uses nregs m ++ live.filter (fun n => !(defs m).contains n)) a b)

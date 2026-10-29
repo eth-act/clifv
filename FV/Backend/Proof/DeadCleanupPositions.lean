@@ -3,18 +3,18 @@ import FV.Backend.Proof.DeadCleanupStructure
 namespace Backend.DeadCleanup
 
 /-- The scan keeps a non-pure, non-compare first instruction first. -/
-theorem scan_head (n : Nat) (e : Bool) (i : MInst) (ms : List MInst) (live : List Nat)
+theorem scan_head (n : Nat) (i : MInst) (ms : List MInst) (live : List Nat)
     (hp : pureForm i = false) (hc : cmpForm i = false) :
-    (scan n e (i :: ms) live).1 = i :: (scan n e ms live).1 := by
+    (scan n (i :: ms) live).1 = i :: (scan n ms live).1 := by
   simp [scan, discard, dropCmp, hp, hc]
 
 /-- An exceptional instruction confined to position zero cannot move away
 from position zero when all other instructions satisfy a positional-free fact. -/
-theorem scan_positions (n : Nat) (e : Bool) (ms : List MInst) (live : List Nat)
+theorem scan_positions (n : Nat) (ms : List MInst) (live : List Nat)
     (P Q : MInst → Prop)
     (h : ∀ k i, ms[k]? = some i → P i ∨ (k = 0 ∧ Q i))
     (hQ : ∀ i, Q i → pureForm i = false) (hQc : ∀ i, Q i → cmpForm i = false) :
-    ∀ k i, (scan n e ms live).1[k]? = some i → P i ∨ (k = 0 ∧ Q i) := by
+    ∀ k i, (scan n ms live).1[k]? = some i → P i ∨ (k = 0 ∧ Q i) := by
   cases ms with
   | nil => simp [scan]
   | cons a tail =>
@@ -24,8 +24,8 @@ theorem scan_positions (n : Nat) (e : Bool) (ms : List MInst) (live : List Nat)
       rcases h (k + 1) i (by simpa using hk) with hp | ⟨hz, _⟩
       · exact hp
       · omega
-    have hkept : ∀ i ∈ (scan n e tail live).1, P i :=
-      fun i hi => htail i ((scan_sublist n e tail live).subset hi)
+    have hkept : ∀ i ∈ (scan n tail live).1, P i :=
+      fun i hi => htail i ((scan_sublist n tail live).subset hi)
     rcases h 0 a rfl with ha | ⟨_, hqa⟩
     · simp only [scan]
       split
@@ -35,7 +35,7 @@ theorem scan_positions (n : Nat) (e : Bool) (ms : List MInst) (live : List Nat)
         cases k with
         | zero => cases hi; exact .inl ha
         | succ k => exact .inl (hkept i (List.mem_of_getElem? hi))
-    · rw [scan_head n e a tail live (hQ a hqa) (hQc a hqa)]
+    · rw [scan_head n a tail live (hQ a hqa) (hQc a hqa)]
       intro k i hi
       cases k with
       | zero => cases hi; exact .inr ⟨rfl, hqa⟩
@@ -59,7 +59,7 @@ theorem dropLast_sublist_of {α : Type} {xs ys : List α} (h : xs.Sublist ys) :
       | cons c rest => simpa using ih.cons_cons a
 
 /-- A real ABI entry stays at position zero while its dead successor is removed. -/
-example : (scan 4 false [.args [], deadMvn, liveBic, liveReturn] [3]).1 =
+example : (scan 4 [.args [], deadMvn, liveBic, liveReturn] [3]).1 =
     [.args [], liveBic, liveReturn] := by decide
 
 end Backend.DeadCleanup
