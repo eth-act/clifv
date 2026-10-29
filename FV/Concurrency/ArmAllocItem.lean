@@ -86,14 +86,82 @@ theorem stRel_patch {R : RL} (hR : R.Wf) {s w : ArmState} {m : Loc → CV} (h : 
     rw [hK.2.1 a (.inr ha)]; exact h.gkeep a ha
   · exact hK.2.2.trans (h.fp hf)
 
+/-- **`Qs` survives patching both sides** with events avoiding `R.F`. -/
+theorem qs_patch {R : RL} (hR : R.Wf) {s : ArmState} {b : Nat} {its : List RItem} {m : Loc → CV}
+    {w : ArmState} (hq : Qs R s b its m w) {E : List Ev}
+    (hE : ∀ e ∈ E, Avoids R.F e.n e.addr) : Qs R (patch E s) b its m (patch E w) := by
+  obtain ⟨j, vb, items, pre, code, X, ps1, psm, ps2, x, hvb, hit, hsplit, hchk, hcode, hX, hT, htr,
+    hdrop, hpc, hst, hx, hsc⟩ := hq
+  exact ⟨j, vb, items, pre, code, X, ps1, psm, ps2, x, hvb, hit, hsplit, hchk, hcode, hX, hT, htr,
+    hdrop, by rw [patch, r_setMem]; exact hpc, stRel_patch hR hst hE, hx, hsc⟩
+
+/-- **`QE` survives patching both sides** with events avoiding `R.F`. -/
+theorem qe_patch {R : RL} (hR : R.Wf) {s : ArmState} {m : Loc → CV} {w : ArmState} {E : List Ev}
+    (hE : ∀ e ∈ E, Avoids R.F e.n e.addr) {b : Nat} (hq : QE R s m w b) :
+    QE R (patch E s) m (patch E w) b := by
+  induction hq with
+  | std hit hq => exact .std hit (qs_patch hR hq hE)
+  | fwd a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 _ ih => exact .fwd a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 ih
+
 /-- **`Q` survives patching both sides** with events avoiding `R.F`. -/
 theorem q_patch {R : RL} (hR : R.Wf) {s : ArmState} {b : Nat} {its : List RItem} {m : Loc → CV}
     {w : ArmState} (hq : Q R s (.run ⟨b, its, m, w⟩)) {E : List Ev}
     (hE : ∀ e ∈ E, Avoids R.F e.n e.addr) : Q R (patch E s) (.run ⟨b, its, m, patch E w⟩) := by
-  obtain ⟨j, vb, items, pre, code, ls, ps1, ps2, T, hvb, hit, hsplit, hchk, hcode, hls, htr, hdrop,
-    hpc, hst⟩ := hq
-  exact ⟨j, vb, items, pre, code, ls, ps1, ps2, T, hvb, hit, hsplit, hchk, hcode, hls, htr, hdrop,
-    by rw [patch, r_setMem]; exact hpc, stRel_patch hR hst hE⟩
+  rcases hq with hq | ⟨items, hit, hits, hqe⟩
+  · exact .inl (qs_patch hR hq hE)
+  · exact .inr ⟨items, hit, hits, qe_patch hR hE hqe⟩
+
+/-- An instruction that is no terminator is not the block's last (`cfg_back`). -/
+theorem lt_size_of_not_term {R : RL} (hR : R.Wf) {b k : Nat} {vb : VBlock} {i : MInst}
+    (hvb : R.vc.blocks[b]? = some vb) (hi : vb.insts[k]? = some i)
+    (ht : i.isTerminator = false) : k + 1 < vb.insts.size := by
+  obtain ⟨c, ins, _, hc, -⟩ := hR.check
+  obtain ⟨preds, hcfg⟩ := hc.cfg
+  obtain ⟨t, hback, hterm⟩ := cfg_back hcfg hvb
+  have hk : k < vb.insts.size := (Array.getElem?_eq_some_iff.1 hi).1
+  refine Nat.lt_of_le_of_ne hk fun he => ?_
+  rw [Array.back?_eq_getElem?, show vb.insts.size - 1 = k by omega, hi] at hback
+  cases hback
+  rw [ht] at hterm
+  cases hterm
+
+/-- Visiting the operands makes a `jump` only of a `jump`. -/
+theorem visit_jump (f : OpSpec → Reg → StateT Nat (Except String) Reg) (i : MInst) (x : Label) :
+    VPost (fun r => r = .jump x → i = .jump x) (MInst.visitOperands f i) := by
+  cases i <;> simp only [MInst.visitOperands] <;>
+    repeat' (first
+      | exact vpost_pure (fun h => h)
+      | exact vpost_pure (fun h => by cases h)
+      | refine vpost_bind fun _ => ?_
+      | split)
+
+/-- **An allocation that yields a `jump`** is of a `jump`, with no allocated register. -/
+theorem assign_jump {i : MInst} {regs : Array Reg} {x : Label}
+    (h : i.assign regs = .ok (.jump x)) : i = .jump x ∧ regs = #[] := by
+  have hi : i = .jump x := by
+    have h' := h
+    rw [assign_eq] at h'
+    simp only [bind, Except.bind] at h'
+    cases hr : (MInst.visitOperands (putOp regs) i).run 0 with
+    | error e => rw [hr] at h'; cases h'
+    | ok p =>
+      rw [hr] at h'
+      obtain ⟨i1, k⟩ := p
+      simp only at h'
+      split at h'
+      · cases h'
+      · cases h'
+        exact visit_jump _ i x 0 _ k hr rfl
+  subst hi
+  refine ⟨rfl, ?_⟩
+  rw [assign_eq] at h
+  have hr : (MInst.visitOperands (putOp regs) (.jump x)).run 0 = .ok (.jump x, 0) := rfl
+  simp only [bind, Except.bind, hr] at h
+  split at h
+  · cases h
+  · rename_i hk
+    simp only [bne_iff_ne, ne_eq, Decidable.not_not] at hk
+    exact Array.size_eq_zero_iff.mp hk.symm
 
 /-! ## Straight-line items with their lines -/
 
@@ -125,11 +193,16 @@ theorem realizes_op_lines {R : RL} (hR : R.Wf) {s : ArmState} {b k : Nat} {alloc
   have hOS' : ∀ env, OperandsSoundCtlAtI R.F R.FK
       (fun i' => ∃ regs, allocs = regs.map Loc.reg ∧ i.assign regs = .ok i') (execMInst R.ctx env)
       R.sem i .next s := fun env => (((hOS env).at (fun _ => RL.FK_F) s).toI _).v R.gv
-  obtain ⟨j, vb0, items, pre, code, ls, ps1, ps2, T, hvb0, hit, hsplit, hchk, hcode, hls, htr, hdrop,
-    hpc, hst⟩ := hq
+  have hq' := Q.qs_lt hq hvb hk
+  have hne : its ≠ [] := by
+    obtain ⟨_, _, _, _, _, _, _, _, _, _, hvb0, -, -, hchk0, -⟩ := hq'
+    rw [hvb] at hvb0
+    cases hvb0
+    exact hchk0.tail_ne hk
+  obtain ⟨j, vb0, items, pre, c1, c2, lsA, X', ps1, psm, psm', ps2, x, hvb0, hit, hsplit, hchk, hc1,
+    hc2, h1, h2, h3, htr, hdrop, hpc, hst, hx, hsc⟩ := qs_split hR hq' hne
   rw [hvb] at hvb0
   cases hvb0
-  obtain ⟨c1, c2, hc1, hc2, rfl⟩ := itemsCode_cons hcode
   obtain ⟨regs, i0, i', rfl, hi0, hasg, hc1'⟩ := itemCode_op hc1
   rw [hi] at hi0
   cases hi0
@@ -147,21 +220,15 @@ theorem realizes_op_lines {R : RL} (hR : R.Wf) {s : ArmState} {b k : Nat} {alloc
   rotate_left
   · exact absurd rfl (hna ds)
   · exact absurd rfl (hnr us)
-  obtain ⟨ls1', ls2, psm, h1, h2, rfl⟩ := codeLinesE_append _ _ _ _ _ hls
   have h1' : codeLinesE R.ctx R.af [AInst.inst i'] ps1 = .ok (ls1, ps1) := by
     simp [codeLinesE, ainstLines, hl1 ps1, bind, Except.bind, pure, Except.pure]
   rw [h1'] at h1
   simp only [Except.ok.injEq, Prod.mk.injEq] at h1
-  obtain ⟨rfl, rfl⟩ := h1
-  have hZ : ∀ n, (ls2 ++ nxtOf R.af b)[1]? ≠ some (.label (.trap n)) := by
-    intro n e
-    have hm := List.mem_of_getElem? e
-    rcases List.mem_append.1 hm with hm | hm
-    · exact codeLinesE_noTrap _ _ _ _ h2 _ hm n rfl
-    · simp only [nxtOf] at hm
-      split at hm <;> simp at hm
-  have hdrop' : R.L.drop j = ls1 ++ (relaxLines R.far (ftList (ls2 ++ nxtOf R.af b)) ++ T) := by
-    rw [hdrop, List.append_assoc, ftR_plain_append _ _ _ hpl hZ, List.append_assoc]
+  obtain ⟨hA, -⟩ := h1
+  rw [← hA] at hdrop
+  have hdrop' : R.L.drop j = ls1 ++ (relaxLines R.far (X' ++ x.2.1) ++
+      R.L.drop (rix R.far (planLines R.fa.k R.af) x.2.2)) := by
+    rw [hdrop, relaxLines_plain hpl]
   have hrun : execLines (R.envOf j) ls1 s = some s' := by
     simp only [execMInst, hl1] at hex; exact hex
   have hins' : ∀ ln ∈ ls1, ∃ i t, ln = .ins i t := fun ln h => by
@@ -177,9 +244,8 @@ theorem realizes_op_lines {R : RL} (hR : R.Wf) {s : ArmState} {b k : Nat} {alloc
     hint _ _ _ hst.err hrun, ⟨_, _, rfl⟩,
     MStep.op hvb hi hops hsz hsem hlen (HavocOuts.refl _ _ _) hc2' (MNext.next hk), ?_⟩
   have hfr := R.frameOkK hR
-  refine ⟨j + ls1.length, vb, items, pre ++ [.op k (regs.map Loc.reg)], c2, ls2, ps1, ps2, T, hvb,
-    hit, by rw [hsplit]; simp, hchk', hc2, h2, htr, ?_, hpc', ?_⟩
-  · rw [← List.drop_drop, hdrop', List.drop_left]
+  refine qs_next hvb hit hsplit hchk' hc2 h2 h3 htr hdrop ?_ ?_ hx hsc
+  · rw [relaxLines_plain hpl, hpc']
   · have hsp' : spOf s' = R.spB := hK.1.trans hst.sp
     have herr' : Arm.r .ERR s' = .None := by
       rw [hW.1 .ERR (by simp [Masked]), hW'.1]

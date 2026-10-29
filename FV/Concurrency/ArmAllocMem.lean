@@ -594,8 +594,23 @@ theorem q_regs {R : RL} {s : ArmState} {b k : Nat} {allocs : Array Loc} {its : L
     ∃ regs : Array Reg, allocs = regs.map Loc.reg ∧ regs.size = ops.size ∧
       (∀ p ∈ (ops.zip regs).toList, p.2.allocatable = true) ∧
       itemUses ops allocs m = useVals ops regs s := by
-  obtain ⟨j, vb0, items, pre, code, ls, ps1, ps2, T, hvb0, hit, hsplit, hchk, hcode, hls, htr, hdrop,
-    hpc, hst⟩ := hq
+  have hst := q_stRel hq
+  rcases Q.cases hq with hqs | ⟨vb', allocs', regs', i', x, -, hvb', he, -, hal', hins, hasg', -⟩
+  rotate_left
+  · -- a forwarding block: its only instruction is a `jump`, without operands
+    rw [hvb] at hvb'
+    cases hvb'
+    simp only [RItem.op.injEq] at he
+    obtain ⟨rfl, rfl⟩ := he
+    rw [hins] at hi
+    simp only [List.getElem?_toArray, List.getElem?_cons_zero, Option.some.injEq] at hi
+    subst hi
+    obtain ⟨rfl, rfl⟩ := assign_jump hasg'
+    obtain rfl : ops = #[] := by
+      simp only [MInst.operands, Except.ok.injEq] at hops
+      exact hops.symm
+    exact ⟨#[], hal', rfl, by simp, by simp [itemUses, useVals]⟩
+  obtain ⟨j, vb0, items, pre, code, X, ps1, psm, ps2, x, hvb0, hit, hsplit, hchk, hcode, -⟩ := hqs
   rw [hvb] at hvb0
   cases hvb0
   obtain ⟨c1, c2, hc1, hc2, rfl⟩ := itemsCode_cons hcode

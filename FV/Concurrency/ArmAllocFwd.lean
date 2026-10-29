@@ -164,37 +164,160 @@ theorem moves_fwd {R : RL} (hR : R.Wf) (P : AKind → Prop) {b : Nat} {w : ArmSt
       exact ⟨h1, hK p List.mem_cons_self code ls1 hc hcl _ h2⟩
     · exact hev2 l hl e he
 
+/-- `codeLinesE` of a concatenation, from its parts. -/
+theorem codeLinesE_append_of {c : FnCtx} {af : AFunc} :
+    ∀ (A B : List AInst) {ps psm ps' : Backend.PState} {l1 l2 : List Line},
+      codeLinesE c af A ps = .ok (l1, psm) → codeLinesE c af B psm = .ok (l2, ps') →
+      codeLinesE c af (A ++ B) ps = .ok (l1 ++ l2, ps')
+  | [], B, ps, psm, ps', l1, l2, h1, h2 => by
+    simp only [codeLinesE, pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at h1
+    obtain ⟨rfl, rfl⟩ := h1
+    simpa using h2
+  | a :: A, B, ps, psm, ps', l1, l2, h1, h2 => by
+    simp only [codeLinesE, bind, Except.bind] at h1
+    split at h1
+    · cases h1
+    rename_i r hr
+    split at h1
+    · cases h1
+    rename_i r2 hr2
+    simp only [pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at h1
+    obtain ⟨rfl, rfl⟩ := h1
+    have ih := codeLinesE_append_of A B hr2 h2
+    simp only [List.cons_append, codeLinesE, bind, Except.bind, hr, ih, pure, Except.pure,
+      List.append_assoc]
+
 /-- **At a `Q` state the first line of the remaining items' code is at the pc** (a plain
-instruction line). -/
-theorem q_head {R : RL} {s : ArmState} {b : Nat} {its : List RItem} {m : Loc → CV}
+instruction line without block target). -/
+theorem q_head {R : RL} (hR : R.Wf) {s : ArmState} {b : Nat} {its : List RItem} {m : Loc → CV}
     {w : ArmState} (hq : Q R s (.run ⟨b, its, m, w⟩)) {x : Insn} {t : Option Clif.TrapCode}
-    (hpl : (Line.ins x t).plain = true)
+    (hpl : (Line.ins x t).plain = true) (hnt : ∀ l, Line.target? (.ins x t) ≠ some (.block l))
     (hh : ∀ vb code, R.vc.blocks[b]? = some vb → itemsCode R.fr vb its = .ok code →
       ∀ ps ls ps', codeLinesE R.ctx R.af code ps = .ok (ls, ps') → ls.head? = some (.ins x t)) :
     ∃ j, R.fa.lines.toList[j]? = some (.ins x t) ∧ Arm.r .PC s = R.pcOf j ∧ StRel R s m w := by
-  obtain ⟨j, vb, items, pre, code, ls, ps1, ps2, T, hvb, -, -, -, hcode, hls, -, hdrop, hpc, hst⟩ :=
-    hq
-  have hhd := hh vb code hvb hcode ps1 ls ps2 hls
-  obtain ⟨rest, rfl⟩ : ∃ rest, ls = .ins x t :: rest := by
-    cases ls with
-    | nil => simp at hhd
-    | cons ln rest => simp at hhd; exact ⟨rest, by rw [hhd]⟩
-  have hZ : ∀ n, (rest ++ nxtOf R.af b)[1]? ≠ some (.label (.trap n)) := by
-    intro n e
-    have hm := List.mem_of_getElem? e
-    rcases List.mem_append.1 hm with hm | hm
-    · exact codeLinesE_noTrap _ _ _ _ hls _ (List.mem_cons_of_mem _ hm) n rfl
-    · simp only [nxtOf] at hm
-      split at hm <;> simp at hm
-  have hd : R.L.drop j = .ins x t :: (relaxLines R.far (ftList (rest ++ nxtOf R.af b)) ++ T) := by
-    rw [hdrop, show (Line.ins x t :: rest) ++ nxtOf R.af b = [.ins x t] ++ (rest ++ nxtOf R.af b)
-      by simp, ftR_plain_append _ _ _ (by simpa using hpl) hZ]
-    simp
+  -- `Q` is `Qs` here: a forwarding block's code is a `jump`, whose line is no plain line
+  have hqs : Qs R s b its m w := by
+    rcases hq with hqs | ⟨items, hit, rfl, hqe⟩
+    · exact hqs
+    cases hqe with
+    | std hit' hq' => rw [hit] at hit'; cases hit'; exact hq'
+    | @fwd _ _ vb _ lx _ allocs regs i0 hvb _ hit' hil hal hins hasg _ _ _ _ =>
+      exfalso
+      rw [hit] at hit'
+      cases hit'
+      obtain ⟨rfl, rfl⟩ := assign_jump hasg
+      have hc : itemsCode R.fr vb items.toList = .ok [.inst (.jump lx)] := by
+        rw [hil, hal]
+        simp [itemsCode, itemCode, itemStep, hins, bind, Except.bind, pure, Except.pure,
+          Functor.map, Except.map]
+        rfl
+      have hl : codeLinesE R.ctx R.af [.inst (.jump lx)] {} =
+          .ok ([.ins (.b (.block lx)) none], {}) := rfl
+      have := hh vb _ hvb hc {} _ {} hl
+      simp only [List.head?_cons, Option.some.injEq, Line.ins.injEq] at this
+      obtain ⟨rfl, rfl⟩ := this
+      simp [Line.plain] at hpl
+  obtain ⟨j, vb, items, pre, code, X, ps1, psm, ps2, xs, hvb, hit, hsplit, hchk, hcode, hX, hT, htr,
+    hdrop, hpc, hst, hx, hsc⟩ := hqs
+  have hcl : codeLinesE R.ctx R.af code ps1 = .ok (X ++ xs.1.term, ps2) := by
+    have := codeLinesE_append_of _ _ hX hT
+    rwa [List.dropLast_append_getLast?] at this
+  have hhd := hh vb code hvb hcode ps1 _ ps2 hcl
   refine ⟨j, ?_, hpc, hst⟩
-  have := congrArg (·[0]?) hd
-  simp only [List.getElem?_drop, RL.L, Nat.add_zero] at this
-  rw [this]
-  rfl
+  -- the line at `j` is the first of the relaxed `X ++ xs.2.1`
+  suffices hO : ∃ rest, X ++ xs.2.1 = .ins x t :: rest by
+    obtain ⟨rest, hr⟩ := hO
+    have := congrArg (·[0]?) hdrop
+    simp only [List.getElem?_drop, RL.L, Nat.add_zero] at this
+    rw [this, hr, show (Line.ins x t :: rest) = [Line.ins x t] ++ rest from rfl, relaxLines_append,
+      relaxLines_plain (A := [Line.ins x t]) (by simpa using hpl)]
+    rfl
+  cases X with
+  | cons y X' =>
+    simp only [List.cons_append, List.head?_cons, Option.some.injEq] at hhd
+    exact ⟨X' ++ xs.2.1, by rw [hhd]; rfl⟩
+  | nil =>
+  simp only [List.nil_append] at hhd ⊢
+  -- the block's last instruction and the branch check of its segment
+  have hne : code ≠ [] := by
+    rintro rfl
+    simp [codeLinesE, pure, Except.pure] at hcl
+    obtain ⟨-, rfl, -⟩ := hcl
+    simp at hhd
+  obtain ⟨y, hy⟩ : ∃ y, code.getLast? = some y := ⟨_, List.getLast?_eq_getLast hne⟩
+  rw [hy] at hT
+  have hraw := E2E.rawTerm_of (some y) hT
+  obtain ⟨x', hx', hok⟩ := hsc
+  rw [hx] at hx'
+  cases hx'
+  obtain ⟨p, hp, -⟩ := hR.psF
+  obtain ⟨-, hidx⟩ := segX_mem hp hx
+  unfold segTermOk at hok
+  rw [hidx] at hok
+  obtain ⟨⟨-, -, -, hbl⟩, -⟩ := lowerRFunc_ok hR.alloc
+  obtain ⟨codeF, hcF, haf⟩ := hbl b vb items hvb hit
+  rw [hsplit] at hcF
+  obtain ⟨ca, cb, -, hcb, rfl⟩ := itemsCode_append hcF
+  rw [hcode] at hcb
+  cases hcb
+  rw [haf] at hok
+  have hb : (((if b = 0 then [AInst.prologue] else []) ++ (ca ++ code)).toArray).back? = some y := by
+    rw [Array.back?_eq_getElem?]
+    simp only [List.size_toArray, List.getElem?_toArray]
+    rw [← List.getLast?_eq_getElem?, ← List.append_assoc, List.getLast?_append, hy]
+    rfl
+  have hok' : termOk (planRep R.fa.k R.af) (blockLabelIdx (planLines R.fa.k R.af)) (some y)
+      xs.1.term xs.2.1 xs.2.2 = true := by simpa [hb] using hok
+  -- the first final line is the first unsimplified one
+  by_cases hj : ∃ l, y = .inst (.jump l)
+  · obtain ⟨l, rfl⟩ := hj
+    simp only [RawTerm] at hraw
+    rw [hraw] at hhd
+    simp only [List.head?_cons, Option.some.injEq, Line.ins.injEq] at hhd
+    obtain ⟨rfl, rfl⟩ := hhd
+    simp [Line.plain] at hpl
+  by_cases hc : ∃ tl el k, y = .inst (.condBr tl el k)
+  · obtain ⟨tl, el, k, rfl⟩ := hc
+    simp only [RawTerm] at hraw
+    rw [hraw] at hhd
+    simp only [List.head?_cons, Option.some.injEq, Line.ins.injEq] at hhd
+    obtain ⟨rfl, rfl⟩ := hhd
+    cases k <;> simp [Line.plain, CondBrKind.insn, Insn.condTarget?] at hpl
+  by_cases htb : ∃ k tl el rn bit, y = .inst (.testBitAndBranch k tl el rn bit)
+  · obtain ⟨k, tl, el, rn, bit, rfl⟩ := htb
+    simp only [RawTerm] at hraw
+    rw [hraw] at hhd
+    simp only [List.head?_cons, Option.some.injEq, Line.ins.injEq] at hhd
+    obtain ⟨rfl, rfl⟩ := hhd
+    simp [Line.plain, Insn.condTarget?] at hpl
+  by_cases htc : ∃ info ti, y = .inst (.tryCall info ti)
+  · obtain ⟨info, ti, rfl⟩ := htc
+    obtain ⟨call, b0, ht, ho⟩ := termOk_tryCall hok'
+    rw [ht] at hhd
+    simp only [List.head?_cons, Option.some.injEq] at hhd
+    subst hhd
+    rcases ho with ⟨l', ho, -⟩ | ⟨ho, -⟩
+    · exact ⟨_, ho⟩
+    · exact ⟨[], ho⟩
+  obtain ⟨hlen, hlo⟩ := termOk_kept (fun l h => hj ⟨l, by cases h; rfl⟩)
+    (fun tl el k h => hc ⟨tl, el, k, by cases h; rfl⟩)
+    (fun k tl el rn bit h => htb ⟨k, tl, el, rn, bit, by cases h; rfl⟩)
+    (fun info ti h => htc ⟨info, ti, by cases h; rfl⟩) hok'
+  obtain ⟨z, rest, hz⟩ : ∃ z rest, xs.2.1 = z :: rest := by
+    cases h : xs.2.1 with
+    | nil =>
+      rw [h] at hlen
+      cases ht : xs.1.term with
+      | nil => rw [ht] at hhd; simp at hhd
+      | cons _ _ => rw [ht] at hlen; simp at hlen
+    | cons z rest => exact ⟨z, rest, rfl⟩
+  have h0 : xs.1.term[0]? = some (.ins x t) := by
+    cases ht : xs.1.term with
+    | nil => rw [ht] at hhd; simp at hhd
+    | cons a r => rw [ht] at hhd; simpa using hhd
+  rcases hlo 0 _ _ h0 (by rw [hz]; rfl) with ⟨rfl, -⟩ | ⟨l, -, hxt, -⟩
+  · exact ⟨rest, hz⟩
+  · exact absurd hxt (hnt l)
 
 /-- The lines of code starting with `fence` start with `dmb ish`. -/
 theorem codeLinesE_head_fence {ctx : FnCtx} {af : AFunc} {rest : List AInst} {ps ps' : Backend.PState}

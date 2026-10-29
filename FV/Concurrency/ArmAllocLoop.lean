@@ -756,8 +756,10 @@ theorem rmw_opR {R : RL} (hR : R.Wf) {ok : ArmState → Lab → Prop} {s : ArmSt
   obtain ⟨vd, rfl⟩ := isVregInt_iff h2
   obtain ⟨v1, rfl⟩ := isVregInt_iff h3
   obtain ⟨v2, rfl⟩ := isVregInt_iff h4
-  obtain ⟨j0, items, pre, regs, i', c1, c2, ls1, ls2, ps1, psm, ps2, T, cc, wh, ops, rfl, hit, hsplit,
-    hasg, hc1', hops, hstat, hchk', hc2, hl1, hl2, htr, hdrop, hpc, hst⟩ := q_op hq hvb hi
+  have hk0 : k + 1 < vb.insts.size := lt_size_of_not_term hR hvb hi rfl
+  obtain ⟨j0, items, pre, regs, i', c1, c2, X', ls1, ps1, psm, psm', ps2, x, cc, wh, ops, rfl, hit,
+    hsplit, hasg, hc1', hops, hstat, hchk', hc2, hl1, hX2, hT2, htr, hdrop, hpc, hst, hx, hsc⟩ :=
+    q_op hR hq hvb hi hk0
   rw [hops] at hops0
   cases hops0
   have hops' : ops = #[⟨va, .int, .use, .early, .fixed (.x 25)⟩, ⟨vo, .int, .use, .early, .fixed (.x 26)⟩,
@@ -819,13 +821,35 @@ theorem rmw_opR {R : RL} (hR : R.Wf) {ok : ArmState → Lab → Prop} {s : ArmSt
   have hn0 : 0 < ty.bytes := by rcases hty with rfl | rfl | rfl | rfl <;> decide
   have hbytes := atomTy_bytes hty
   -- the lines
-  have hdrop' := ftList_rmw hR hty ⟨_, rfl⟩ hdrop
+  have hP : ∀ ln ∈ Line.label (.loop ps1.aloop) :: rmwLoopBody ty.bits op fl,
+      (∀ x t, ln ≠ .ins (.b x) t) ∧ ∀ c, ln = .ins c none → c.condTarget? = none := by
+    rcases hty with rfl | rfl | rfl | rfl <;> cases op <;>
+      simp (config := {decide := true}) [rmwLoopBody, rmwLoopMid, rmwLoopStored, rmwLoopSext,
+        rmwLoopCmp, CTy.bits, Insn.condTarget?]
+  have hloop : relaxLines R.far (rmwLoopLines ty.bits op fl (.loop ps1.aloop)) =
+      rmwLoopLines ty.bits op fl (.loop ps1.aloop) := by
+    refine relaxLines_loop (fun ln hln c hc => ?_)
+    rw [show rmwLoopLines ty.bits op fl (.loop ps1.aloop) = .label (.loop ps1.aloop) ::
+        (rmwLoopBody ty.bits op fl ++ [.ins (.cbz true true (.x 24) (.loop ps1.aloop)) none])
+        from rfl] at hln
+    simp only [List.mem_cons, List.mem_append, List.mem_singleton, List.not_mem_nil,
+      or_false] at hln
+    rcases hln with hln | hln | hln
+    · simp [hln] at hc
+    · exact .inl ((hP _ (by simp [hln])).2 c hc)
+    · subst hln
+      injection hc with h9 h10
+      subst h9
+      exact .inr ⟨_, rfl⟩
+  have hdrop' : R.L.drop j0 = rmwLoopLines ty.bits op fl (.loop ps1.aloop) ++
+      (relaxLines R.far (X' ++ x.2.1) ++ R.L.drop (rix R.far (planLines R.fa.k R.af) x.2.2)) := by
+    rw [hdrop, hloop]
   have hL0 : R.L[j0]? = some (.label (.loop ps1.aloop)) := by
     have := congrArg (·[0]?) hdrop'
     simpa [List.getElem?_drop, rmwLoopLines] using this
   have hd1 : R.L.drop (j0 + 1) = rmwLoopBody ty.bits op fl ++
       (.ins (.cbz true true (.x 24) (.loop ps1.aloop)) none ::
-        (relaxLines R.far (ftList (ls2 ++ nxtOf R.af b)) ++ T)) := by
+        (relaxLines R.far (X' ++ x.2.1) ++ R.L.drop (rix R.far (planLines R.fa.k R.af) x.2.2))) := by
     rw [← List.drop_drop, hdrop']; simp [rmwLoopLines]
   -- the run
   have hloop := rmw_retry hR hty hd1 hL0 hst.prog hpc hst.err
@@ -1032,9 +1056,9 @@ theorem rmw_opR {R : RL} (hR : R.Wf) {ok : ArmState → Lab → Prop} {s : ArmSt
       simp [regVal, rnum, h27]
     · refine ⟨fun l _ => ?_, fun c hc => by simp [MInst.clobbers] at hc⟩
       simp [Backend.Proof.writeM, Operand.isDef, Operand.isEarly]
-    refine ⟨j0 + (rmwLoopLines ty.bits op fl (.loop ps1.aloop)).length, vb, items,
-      pre ++ [.op k (#[Reg.x 25, .x 26, .x 27, .x 24, .x 28].map Loc.reg)], c2, ls2, _, ps2, T,
-      hvb, hit, by rw [hsplit]; simp, hchk', hc2, hl2, htr, ?_, ?_, ?_⟩
+    refine .inl ⟨j0 + (rmwLoopLines ty.bits op fl (.loop ps1.aloop)).length, vb, items,
+      pre ++ [.op k (#[Reg.x 25, .x 26, .x 27, .x 24, .x 28].map Loc.reg)], c2, X', _, psm', ps2,
+      x, hvb, hit, by rw [hsplit]; simp, hchk', hc2, hX2, hT2, htr, ?_, ?_, ?_, hx, hsc⟩
     · rw [← List.drop_drop, hdrop', List.drop_left]
     · rw [← hxF, Arm.r_of_w_same]
       congr 1
@@ -1474,8 +1498,10 @@ theorem cas_opR {R : RL} (hR : R.Wf) {ok : ArmState → Lab → Prop} {s : ArmSt
   obtain ⟨vx, rfl⟩ := isVregInt_iff h2
   obtain ⟨vd, rfl⟩ := isVregInt_iff h3
   obtain ⟨v1, rfl⟩ := isVregInt_iff h4
-  obtain ⟨j0, items, pre, regs, i', c1, c2, ls1, ls2, ps1, psm, ps2, T, cc, wh, ops, rfl, hit, hsplit,
-    hasg, hc1', hops, hstat, hchk', hc2, hl1, hl2, htr, hdrop, hpc, hst⟩ := q_op hq hvb hi
+  have hk0 : k + 1 < vb.insts.size := lt_size_of_not_term hR hvb hi rfl
+  obtain ⟨j0, items, pre, regs, i', c1, c2, X', ls1, ps1, psm, psm', ps2, x, cc, wh, ops, rfl, hit,
+    hsplit, hasg, hc1', hops, hstat, hchk', hc2, hl1, hX2, hT2, htr, hdrop, hpc, hst, hx, hsc⟩ :=
+    q_op hR hq hvb hi hk0
   rw [hops] at hops0
   cases hops0
   have hops' : ops = #[⟨va, .int, .use, .early, .fixed (.x 25)⟩, ⟨ve, .int, .use, .early, .fixed (.x 26)⟩,
@@ -1544,12 +1570,15 @@ theorem cas_opR {R : RL} (hR : R.Wf) {ok : ArmState → Lab → Prop} {s : ArmSt
   have hn0 : 0 < ty.bytes := by rcases hty with rfl | rfl | rfl | rfl <;> decide
   have hbytes := atomTy_bytes hty
   -- the lines
+  have hloopCas : relaxLines R.far (casLoopLines ty.bits fl (.loop ps1.aloop)
+      (.loop (ps1.aloop + 1))) =
+      casLoopLines ty.bits fl (.loop ps1.aloop) (.loop (ps1.aloop + 1)) := relaxLines_loop (by
+    rcases hty with rfl | rfl | rfl | rfl <;>
+      simp (config := {decide := true}) [casLoopLines, casLoopHead, casLoopCmp, Insn.condTarget?,
+        CTy.bits])
   have hdrop' : R.L.drop j0 = casLoopLines ty.bits fl (.loop ps1.aloop) (.loop (ps1.aloop + 1)) ++
-      (relaxLines R.far (ftList (ls2 ++ nxtOf R.af b)) ++ T) := by
-    rw [hdrop, ftList_cas hty, relaxLines_append, relaxLines_loop (by
-      rcases hty with rfl | rfl | rfl | rfl <;>
-        simp (config := {decide := true}) [casLoopLines, casLoopHead, casLoopCmp, Insn.condTarget?,
-          CTy.bits]), List.append_assoc]
+      (relaxLines R.far (X' ++ x.2.1) ++ R.L.drop (rix R.far (planLines R.fa.k R.af) x.2.2)) := by
+    rw [hdrop, hloopCas]
   have hL0 : R.L[j0]? = some (.label (.loop ps1.aloop)) := lines_at' hdrop' 0 _ rfl
   -- the run
   have hloop := cas_retry hR hty hdrop' hst.prog hpc hst.err
@@ -1589,7 +1618,8 @@ theorem cas_opR {R : RL} (hR : R.Wf) {ok : ArmState → Lab → Prop} {s : ArmSt
         .ins (.stlxr ty.bits (.x 24) (.x 28) (.x 25)) fl.trapCode ::
         .ins (.cbz true true (.x 24) (.loop ps1.aloop)) none ::
         .label (.loop (ps1.aloop + 1)) ::
-          (relaxLines R.far (ftList (ls2 ++ nxtOf R.af b)) ++ T)) := by
+          (relaxLines R.far (X' ++ x.2.1) ++
+            R.L.drop (rix R.far (planLines R.fa.k R.af) x.2.2))) := by
     rw [← List.drop_drop, hdrop']; simp [casLoopLines, casLoopHead]
   have hmidC : ∀ y e, CasHd ty s y → SameAcc e (loopRd ty s y) → ∀ i, 0 < i → i < 3 →
       AtNonRet R (iterN R.step i (patch [e] y)) := by
@@ -1763,8 +1793,9 @@ theorem cas_opR {R : RL} (hR : R.Wf) {ok : ArmState → Lab → Prop} {s : ArmSt
         simpa using h27F
       · refine ⟨fun l _ => ?_, fun c hc => by simp [MInst.clobbers] at hc⟩
         simp [Backend.Proof.writeM, Operand.isDef, Operand.isEarly]
-      refine ⟨j0 + 7, vb, items, pre ++ [.op k (#[Reg.x 25, .x 26, .x 28, .x 27, .x 24].map Loc.reg)],
-        c2, ls2, _, ps2, T, hvb, hit, by rw [hsplit]; simp, hchk', hc2, hl2, htr, ?_, hpcF, ?_⟩
+      refine .inl ⟨j0 + 7, vb, items,
+        pre ++ [.op k (#[Reg.x 25, .x 26, .x 28, .x 27, .x 24].map Loc.reg)], c2, X', _, psm', ps2, x,
+        hvb, hit, by rw [hsplit]; simp, hchk', hc2, hX2, hT2, htr, ?_, hpcF, ?_, hx, hsc⟩
       · rw [← List.drop_drop, hdrop']
         exact List.drop_left' (by simp [casLoopLines, casLoopHead])
       · refine stRel_after hR hst ?_ ?_ hswF ?_ hprogF ⟨?_, fun a ha => hmemF a (RL.FK_F ha), ?_⟩
@@ -2090,7 +2121,8 @@ theorem cas_opR {R : RL} (hR : R.Wf) {ok : ArmState → Lab → Prop} {s : ArmSt
       have hd4 : R.L.drop (j0 + 4) = casStore ty.bits fl ++
           (.ins (.cbz true true (.x 24) (.loop ps1.aloop)) none ::
             .label (.loop (ps1.aloop + 1)) ::
-              (relaxLines R.far (ftList (ls2 ++ nxtOf R.af b)) ++ T)) := by
+              (relaxLines R.far (X' ++ x.2.1) ++
+                R.L.drop (rix R.far (planLines R.fa.k R.af) x.2.2))) := by
         rw [← List.drop_drop, hdrop']; simp [casLoopLines, casLoopHead, casStore]
       have hint3 : LinesInterOk (R.envOf (j0 + 4)) (casStore ty.bits fl) zS :=
         fun q h0 h1 => by simp [casStore] at h1; omega

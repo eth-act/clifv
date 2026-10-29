@@ -103,7 +103,7 @@ abbrev ItemSimOut (P : Policy) (f : ArmState → ArmState) (ok : ArmState → La
 theorem q_items {R : RL} {s : ArmState} {b : Nat} {its : List RItem} {m : Loc → CV}
     {w : ArmState} (hq : Q R s (.run ⟨b, its, m, w⟩)) :
     ∃ items, R.rf.blocks[b]? = some items ∧ ∀ it ∈ its, it ∈ items.toList := by
-  obtain ⟨j, vb, items, pre, code, ls, ps1, ps2, T, hvb, hit, hsplit, -⟩ := hq
+  obtain ⟨items, pre, hit, hsplit⟩ := Q.split hq
   exact ⟨items, hit, fun it h => by rw [hsplit]; exact List.mem_append_right _ h⟩
 
 theorem measure_run {b : Nat} {its : List RItem} {m : Loc → CV} {w : ArmState} :

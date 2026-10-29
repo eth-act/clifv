@@ -85,7 +85,7 @@ theorem cfgL : ∃ ss ps, vcL.cfg = .ok (ss, ps) := by
 theorem factsL : (lowerRFunc vcpL rfL).toBool = true ∧ (emitFunc 0 RAL.af).toBool = true ∧
     RAL.fa.k = 0 ∧ RAL.fa.layout.toBool = true ∧ (labelOffsets RAL.fa.lines).toBool = true ∧
     4 * RAL.fb.words.size ≤ 2 ^ 64 ∧ RAL.af.frameSize ≤ 0x100 ∧ 4 * RAL.fb.words.size ≤ 0x10000 ∧
-    (blocksLinesE RAL.ctx RAL.af RAL.af.blocks.toList {}).toBool = true := by
+    (emitPlan RAL.fa.k RAL.af).toBool = true := by
   native_decide
 
 theorem wfRL : RAL.Wf := by
@@ -581,7 +581,7 @@ theorem run_load : ∃ (n : Nat) (lsP : List Lab) (e : Ev) (t' : ArmState × Mon
     (fun K => (K == .plainW || K == .plainR) = true) spillL rest2L t1.1 m' t1.2 hq2 hA2
     (moves_kinds checksRunL.2.2.1) (by simp [spillL, Loc.isSave])
   -- the `ldar`
-  obtain ⟨j, hj, hpc, hstr⟩ := q_head hq3 rfl head_ldarL
+  obtain ⟨j, hj, hpc, hstr⟩ := q_head wfRL hq3 rfl (fun _ h => by cases h) head_ldarL
   obtain ⟨t3, ev, r3, -, hk, hn, ha⟩ := excl_step_fwd wfRL hj rfl hstr.prog hpc hstr.err
     (lb := 1) (p := 1) (q := 0) (.inr rfl) (by omega) (by omega) (fun _ => rfl) t2.2
   simp only [ite_true] at hk

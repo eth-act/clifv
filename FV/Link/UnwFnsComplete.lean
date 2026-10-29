@@ -1,6 +1,7 @@
 import FV.Link.UnwFns
 import FV.E2E.EmitPreOk
 import FV.E2E.EmitLabels
+import FV.Link.EntryLines
 
 /-!
 # Completeness of the per-function unwinding checks (S10g, #404)
@@ -21,13 +22,13 @@ open Backend Backend.Proof Backend.Proof.UnwindTables E2E
 
 /-! ## The emitted code's calls and labels -/
 
-/-- The callees of the call lines of the emitted code are those of `af`'s calls, in order. -/
+/-- The callees of the call lines of the emitted code are those of `af`'s calls, in emission
+order (`emitOrder`). -/
 theorem callKeys_emit {k : Nat} {af : AFunc} {fa : FnAsm} (h : emitFunc k af = .ok fa) :
-    callKeys fa.lines.toList = af.blocks.toList.flatMap blockKeys := by
-  obtain ⟨body, ps, hb, hL, -⟩ := emitFunc_ok h
-  rw [hL, relaxLines_callKeys, callKeys_append, callKeys_ftList, trapLines_callKeys,
-    List.append_nil]
-  exact blocksLinesE_callKeys hb
+    callKeys fa.lines.toList = (emitOrder af).flatMap (fun e => blockKeys e.1) := by
+  obtain ⟨p, hp, hL, -⟩ := emitFunc_ok h
+  rw [hL, relaxLines_callKeys]
+  exact plan_callKeys hp
 
 theorem callIdx_length : ∀ L : List Line, (callIdx L).length = nCalls L
   | [] => rfl
@@ -39,20 +40,15 @@ theorem callIdx_length : ∀ L : List Line, (callIdx L).length = nCalls L
 /-- The emitted code has one call line per call of `af`. -/
 theorem nCalls_emit {k : Nat} {af : AFunc} {fa : FnAsm} (h : emitFunc k af = .ok fa) :
     nCalls fa.lines.toList = af.calls.length := by
-  rw [nCalls_eq, callKeys_emit h, flatMap_blockKeys_length, calls_eq]
+  rw [nCalls_eq, callKeys_emit h, flatMap_keys_length, calls_eq]
 
 /-- Block `b`'s label is a line of the emitted code. -/
 theorem label_mem_emit {k : Nat} {af : AFunc} {fa : FnAsm} (h : emitFunc k af = .ok fa)
     {b : Nat} {l : Label} {code : Array AInst} (hb : af.blocks[b]? = some (l, code)) :
     Line.label (.block l) ∈ fa.lines.toList := by
-  obtain ⟨body, ps, hbl, hL, -⟩ := emitFunc_ok h
-  obtain ⟨pre, post, rfl, -⟩ := blocksLinesE_at hbl (by simpa using hb)
-  obtain ⟨Z, hZ⟩ := ftList_snoc_label (.block l) pre
-  have hsplit := ftList_label_split (.block l) post pre
-  rw [hZ] at hsplit
-  rw [hL, hsplit, List.append_assoc, List.append_assoc, relaxLines_append, List.singleton_append,
-    relaxLines_cons, relaxLine_label]
-  simp
+  obtain ⟨p, hp, hL, hseg⟩ := emit_seg h
+  obtain ⟨i, s, o, j, ps1, psm, ps2, -, -, -, -, -, hj, -⟩ := hseg b l code hb
+  exact List.mem_of_getElem? hj
 
 /-- A label line of `L` is found by `scanLines`' label list. -/
 theorem scanLines_lookup_isSome : ∀ (L : List Line) (off : Nat) (labs : List (Label × Nat))
@@ -140,47 +136,6 @@ namespace Link.EhCheck.Complete
 
 open Backend Backend.Proof Backend.Proof.UnwindTables E2E
 
-/-! ## The entry block of the emitted code -/
-
-theorem noTrap_nextS {c : FnCtx} {af : AFunc} {c2 : List AInst} {psm ps2 : PState}
-    {ls2 : List Line} {b : Nat} (h2 : codeLinesE c af c2 psm = .ok (ls2, ps2)) :
-    ∀ n, (ls2 ++ nxtOf af b)[1]? ≠ some (.label (.trap n)) := by
-  intro n e
-  have hm := List.mem_of_getElem? e
-  rcases List.mem_append.1 hm with hm | hm
-  · exact codeLinesE_noTrap _ _ _ _ h2 _ hm n rfl
-  · simp only [nxtOf] at hm
-    split at hm <;> simp at hm
-
-/-- **The entry block in the emitted code** (`RegLevelFrame.entry_block` without the
-activation): its label at line 0, then the prologue, then the `fallthrough` of its items'
-lines. -/
-theorem entry_static {vc : VCode} {rf : RFunc} {af : AFunc} {k : Nat} {fa : FnAsm}
-    (halloc : lowerRFunc vc rf = .ok af) (hemit : emitFunc k af = .ok fa) {vb : VBlock}
-    {items : Array RItem} (hvb : vc.blocks[0]? = some vb) (hit : rf.blocks[0]? = some items) :
-    ∃ code ls ps1 ps2 T, itemsCode (RAFrame.compute vc rf) vb items.toList = .ok code ∧
-      af.blocks[0]? = some (vb.label, (AInst.prologue :: code).toArray) ∧
-      codeLinesE ⟨k, af.slotBase⟩ af code ps1 = .ok (ls, ps2) ∧
-      fa.lines.toList[0]? = some (.label (.block vb.label)) ∧
-      fa.lines.toList.drop 1 = prologueLines af.saves af.frameSize ++
-        (relaxLines (emitFar ⟨k, af.slotBase⟩ af) (ftList (ls ++ nxtOf af 0)) ++ T) := by
-  have hframe := lowerRFunc_frame halloc
-  obtain ⟨⟨-, -, -, hbl⟩, -⟩ := lowerRFunc_ok halloc
-  obtain ⟨code, hcode, haf⟩ := hbl 0 vb items hvb hit
-  obtain ⟨body, psF, hb, -, hblk⟩ := emit_block hemit
-  obtain ⟨j0, lsA, ps1, ps2, T, hj0, hdrop, hls, -, hj⟩ := hblk 0 _ _ haf
-  obtain rfl := hj rfl
-  simp only [ite_true] at hls
-  obtain ⟨ls1, ls2, psm, h1, h2, rfl⟩ := codeLinesE_append _ _ _ _ _ hls
-  simp only [codeLinesE, ainstLines, hframe, ite_true, bind, Except.bind, pure, Except.pure,
-    List.append_nil, Except.ok.injEq, Prod.mk.injEq] at h1
-  obtain ⟨rfl, rfl⟩ := h1
-  refine ⟨code, ls2, _, ps2, T, hcode, by simpa using haf, h2, hj0, ?_⟩
-  show List.drop (0 + 1) fa.lines.toList = _
-  rw [hdrop, List.append_assoc, ftR_plain_append _ _ _
-    (fun ln h => by obtain ⟨_, _, _, hp⟩ := prologueLines_ins _ _ ln h; exact hp)
-    (noTrap_nextS h2), List.append_assoc]
-
 /-! ## `padsNonzeroB` -/
 
 /-- `labelOffsets` keeps the labels found so far. -/
@@ -234,7 +189,7 @@ theorem lines_head {vc : VCode} {rf : RFunc} {af : AFunc} {k : Nat} {fa : FnAsm}
     {items : Array RItem} (hvb : vc.blocks[0]? = some vb) (hit : rf.blocks[0]? = some items) :
     ∃ R, fa.lines.toList = .label (.block vb.label) ::
       .ins (.stp Reg.fp Reg.lr (.spPreIndexed (-16))) :: .ins (.mov true Reg.fp .sp) :: R := by
-  obtain ⟨code, ls, ps1, ps2, T, hcode, haf, hcl, h0, hd⟩ := entry_static halloc hemit hvb hit
+  obtain ⟨code, -, -, h0, hd⟩ := entry_static halloc hemit hvb hit
   rw [prologueLines_eq] at hd
   generalize fa.lines.toList = L at h0 hd ⊢
   cases L with
@@ -243,7 +198,8 @@ theorem lines_head {vc : VCode} {rf : RFunc} {af : AFunc} {k : Nat} {fa : FnAsm}
     simp only [List.getElem?_cons_zero, Option.some.injEq] at h0
     simp only [List.drop_succ_cons, List.drop_zero] at hd
     subst h0
-    exact ⟨_, by rw [hd]; rfl⟩
+    obtain ⟨tl, htl⟩ := hd
+    exact ⟨_, by rw [← htl]; rfl⟩
 
 /-- Every label but the entry block's is at byte offset ≥ 8 (after the prologue's
 `stp`/`mov`). -/
@@ -311,17 +267,16 @@ theorem unwindRows_complete {vc : VCode} {rf : RFunc} {af : AFunc} {k : Nat} {fa
     {items : Array RItem} (hvb : vc.blocks[0]? = some vb) (hit : rf.blocks[0]? = some items) :
     unwindRows af fa = .ok (prologueRows ++ pushRows af.saves 8) := by
   have hframe := lowerRFunc_frame halloc
-  obtain ⟨code, ls, ps1, ps2, T, -, haf, -, h0, hd⟩ := entry_static halloc hemit hvb hit
+  obtain ⟨code, -, haf, h0, hd⟩ := entry_static halloc hemit hvb hit
   generalize hP : prologueLines af.saves af.frameSize = P at hd
   have hins : ∀ ln ∈ P, ∃ i t, ln = .ins i t := by
     intro ln hln
     rw [← hP] at hln
     obtain ⟨x, rfl, -⟩ := prologueLines_ins _ _ ln hln
     exact ⟨_, _, rfl⟩
-  have hgot : (fa.lines.toList.drop 1).take P.length = P := by
-    rw [hd, List.take_left]
-  have hpre : P <+: fa.lines.toList.drop 1 := by
-    rw [hd]; exact List.prefix_append _ _
+  have hgot : (fa.lines.toList.drop 1).take P.length = P :=
+    (List.prefix_iff_eq_take.mp hd).symm
+  have hpre : P <+: fa.lines.toList.drop 1 := hd
   have hsum := layout_sum hlay
   have hle : 4 * P.length < 2 ^ 32 := by
     have h1 : ∀ L : List Line, (∀ ln ∈ L, ∃ i t, ln = .ins i t) →
@@ -416,9 +371,11 @@ theorem tryCall_of_af {vc : VCode} {rf : RFunc} {af : AFunc} (halloc : lowerRFun
     ∃ vb ∈ vc.blocks.toList, ∃ c, MInst.tryCall c ti ∈ vb.insts.toList := by
   obtain ⟨⟨-, -, hsz, hbl⟩, -⟩ := lowerRFunc_ok halloc
   rw [calls_eq, List.mem_flatMap] at h
-  obtain ⟨⟨l, code⟩, hp, hc⟩ := h
-  obtain ⟨b, hb⟩ := List.mem_iff_getElem?.1 hp
-  have hb' : af.blocks[b]? = some (l, code) := by simpa using hb
+  obtain ⟨⟨⟨l, code⟩, b⟩, hp, hc⟩ := h
+  have hb' : af.blocks[b]? = some (l, code) := by
+    have hm := (emitOrder_perm af).mem_iff.mp hp
+    rw [List.mem_zipIdx_iff_getElem?] at hm
+    simpa using hm
   have hlt : b < af.blocks.size := (Array.getElem?_eq_some_iff.1 hb').1
   rw [hsz, Array.size_zip] at hlt
   obtain ⟨vb, hvb⟩ : ∃ vb, vc.blocks[b]? = some vb :=

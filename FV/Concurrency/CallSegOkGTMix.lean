@@ -128,8 +128,7 @@ theorem factsM : (checkAlloc vcpM rfM).isOk = true ∧ (lowerRFunc vcpM rfM).toB
     (actW vcpM rfM).fa.layout.toBool = true ∧
     (labelOffsets (actW vcpM rfM).fa.lines).toBool = true ∧
     4 * (actW vcpM rfM).fb.words.size ≤ 2 ^ 64 ∧
-    (blocksLinesE (actW vcpM rfM).ctx (actW vcpM rfM).af (actW vcpM rfM).af.blocks.toList
-      {}).toBool = true := by
+    (emitPlan (actW vcpM rfM).fa.k (actW vcpM rfM).af).toBool = true := by
   native_decide -- witness: native_decide
 
 theorem allocM : checkAlloc vcpM rfM = .ok () := by

@@ -146,7 +146,7 @@ theorem cfgF : ∃ ss ps, vcF.cfg = .ok (ss, ps) := by
 theorem factsF : (lowerRFunc vcpF rfF).toBool = true ∧ (emitFunc 0 RA.af).toBool = true ∧
     RA.fa.k = 0 ∧ RA.fa.layout.toBool = true ∧ (labelOffsets RA.fa.lines).toBool = true ∧
     4 * RA.fb.words.size ≤ 2 ^ 64 ∧ RA.af.frameSize ≤ 0x100 ∧ 4 * RA.fb.words.size ≤ 0x10000 ∧
-    (blocksLinesE RA.ctx RA.af RA.af.blocks.toList {}).toBool = true := by
+    (emitPlan RA.fa.k RA.af).toBool = true := by
   native_decide
 
 theorem wfRA : RA.Wf := by

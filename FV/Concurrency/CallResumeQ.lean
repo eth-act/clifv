@@ -37,16 +37,17 @@ theorem resumeQW {R : RL} (hR : R.Wf) {s y : ArmState} {b k : Nat} {allocs : Arr
     (hst' : ∀ l, ValidLoc l → Live R.rf l → m' l = locVal R.fr y l)
     (hw' : SameWorld R.F y w') :
     Q R y (.run ⟨b, its, m', w'⟩) := by
-  obtain ⟨j0, items, pre, regs, i', c1, c2, ls1, ls2, ps1, psm, ps2, T, cc, wh, ops, -, hit, hsplit,
-    hasg, hc1', -, -, hchk', hc2, h1, h2, htr, hdrop, hpc0, hst⟩ := q_op hq hvb hi
+  obtain ⟨j0, items, pre, regs, i', c1, c2, X', ls1, ps1, psm, psm', ps2, xs, cc, wh, ops, -, hit,
+    hsplit, hasg, hc1', -, -, hchk', hc2, h1, h2, h3, htr, hdrop, hpc0, hst, hx, hsc⟩ :=
+    q_op hR hq hvb hi (lt_size_of_not_term hR hvb hi rfl)
   obtain ⟨ic, rfl⟩ := assign_call_form hasg
   obtain rfl : c1 = [.inst (.call ic)] := by
     rcases hc1' with ⟨h, -, -⟩ | ⟨_, h, -⟩ | ⟨_, h, -⟩
     · exact h
     · cases h
     · cases h
-  obtain ⟨x, hl, hx⟩ : ∃ x, (∀ ps, (MInst.call ic).lines R.ctx ps = .ok ([.ins x none], ps)) ∧
-      ((∃ n, x = .bl n) ∨ (∃ r, x = .blr r)) := by
+  obtain ⟨xi, hl, hxi⟩ : ∃ xi, (∀ ps, (MInst.call ic).lines R.ctx ps = .ok ([.ins xi none], ps)) ∧
+      ((∃ n, xi = .bl n) ∨ (∃ r, xi = .blr r)) := by
     cases hd : ic.dest with
     | sym n => exact ⟨.bl n, fun ps => by simp [MInst.lines, hd, pure, Except.pure], .inl ⟨n, rfl⟩⟩
     | reg r => exact ⟨.blr r, fun ps => by simp [MInst.lines, hd, pure, Except.pure], .inr ⟨r, rfl⟩⟩
@@ -54,16 +55,13 @@ theorem resumeQW {R : RL} (hR : R.Wf) {s y : ArmState} {b k : Nat} {allocs : Arr
   rw [hl ps1] at h1'
   simp only [Except.ok.injEq, Prod.mk.injEq] at h1'
   obtain ⟨rfl, -⟩ := h1'
-  have hft : ftList ([Line.ins x none] ++ (ls2 ++ nxtOf R.af b)) =
-      [Line.ins x none] ++ ftList (ls2 ++ nxtOf R.af b) := by
-    rw [List.singleton_append, ftList_cons, ftStep_call hx]; rfl
-  have hrl : relaxLines R.far [Line.ins x none] = [Line.ins x none] := by
-    rw [relaxLines_cons, relaxLine_of_none (by rcases hx with ⟨_, rfl⟩ | ⟨_, rfl⟩ <;> rfl)]; rfl
-  have hj : R.L[j0]? = some (.ins x none) := by
+  have hrl : relaxLines R.far [Line.ins xi none] = [Line.ins xi none] := by
+    rw [relaxLines_cons, relaxLine_of_none (by rcases hxi with ⟨_, rfl⟩ | ⟨_, rfl⟩ <;> rfl)]; rfl
+  have hj : R.L[j0]? = some (.ins xi none) := by
     have hd := hdrop
-    rw [hft, relaxLines_append, hrl] at hd
+    rw [hrl] at hd
     exact drop_get (Z := []) (by rw [hd]; rfl)
-  refine q_next hvb hit hsplit hchk' hc2 h2 htr hdrop hft ?_ ?_
+  refine qs_next hvb hit hsplit hchk' hc2 h2 h3 htr hdrop ?_ ?_ hx hsc
   · rw [hrl, List.length_singleton, pcOf_succ hj, hpc, hpc0]; rfl
   · refine ⟨hst', hw', herr, hprog.trans hst.prog, hsp.trans hst.sp,
       align_of_sp hsp hst.align, fun hframe => ?_, ?_, fun a ha => ?_,

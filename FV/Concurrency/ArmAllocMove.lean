@@ -214,7 +214,8 @@ theorem move_lines {R : RL} (hR : R.Wf) {s : ArmState} {b : Nat} {src dst : Loc}
       ∀ i < ls1.length, (∀ e ∈ stepEvs (iterN R.step i s), R.F e.addr) ∧ NoStx (iterN R.step i s) := by
   by_cases hds : dst.isSave = true
   · have hq' := q_save hds hq
-    obtain ⟨j, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, hpc, hst⟩ := hq
+    obtain ⟨j, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, hpc, hst, -⟩ :=
+      Q.qs hq (fun _ h => by cases h)
     have hmi : R.fr.moveInsts src dst = .ok [] := by
       obtain ⟨r, rfl⟩ : ∃ r, dst = .save r := by
         cases dst <;> simp [Loc.isSave] at hds; exact ⟨_, rfl⟩
@@ -223,13 +224,18 @@ theorem move_lines {R : RL} (hR : R.Wf) {s : ArmState} {b : Nat} {src dst : Loc}
       ⟨fun k ln h => by simp at h, fun x t h => by simp at h, hst.prog, by rw [hpc]; rfl, hst.err,
         fun k _ h => absurd h (Nat.not_lt_zero _), rfl⟩,
       hq', fun i hi => absurd hi (Nat.not_lt_zero _)⟩
-  obtain ⟨j, vb, items, pre, code, ls0, ps1, ps2, T, hvb, hit, hsplit, hchk, hcode, hls, htr, hdrop,
-    hpc, hst⟩ := hq
+  have hq' := Q.qs hq (fun _ h => by cases h)
+  have hne : its ≠ [] := by
+    obtain ⟨_, _, _, _, _, _, _, _, _, _, -, -, -, hchk0, -⟩ := hq'
+    obtain ⟨c, k, a, out, -, -, hrun⟩ := hchk0
+    obtain ⟨hk, h'⟩ := runItems_move hrun
+    rintro rfl
+    exact hk (runItems_nil h').1
+  obtain ⟨j, vb, items, pre, c1, c2, ls1, X', ps1, psm, psm', ps2, x, hvb, hit, hsplit, hchk, hc1,
+    hc2, h1, h2, h3, htr, hdrop, hpc, hst, hx, hsc⟩ := qs_split hR hq' hne
   obtain ⟨⟨c, wh, hcm⟩, hLs, hLd, hT, hchk'⟩ :=
     move_facts hit hsplit hchk hns (by simpa using hds)
-  obtain ⟨c1, c2, hc1, hc2, rfl⟩ := itemsCode_cons hcode
   rw [itemCode_move] at hc1
-  obtain ⟨ls1, ls2, psm, h1, h2, rfl⟩ := codeLinesE_append _ _ _ _ _ hls
   obtain ⟨hvs, -, is, s', rfl, hmi, hex, hmo⟩ := lower_move (R.frameOk hR) R.ctx hcm
     hLs hLd hT hc1 hst.world hst.sp hst.align
   obtain ⟨ls1', hcl, hlen, hins, hpl, hrun, hint, hprog, herr⟩ :=
@@ -237,15 +243,9 @@ theorem move_lines {R : RL} (hR : R.Wf) {s : ArmState} {b : Nat} {src dst : Loc}
   rw [hcl ps1] at h1
   simp only [Except.ok.injEq, Prod.mk.injEq] at h1
   obtain ⟨rfl, rfl⟩ := h1
-  have hZ : ∀ n, (ls2 ++ nxtOf R.af b)[1]? ≠ some (.label (.trap n)) := by
-    intro n e
-    have hm := List.mem_of_getElem? e
-    rcases List.mem_append.1 hm with hm | hm
-    · exact codeLinesE_noTrap _ _ _ _ h2 _ hm n rfl
-    · simp only [nxtOf] at hm
-      split at hm <;> simp at hm
-  have hdrop' : R.L.drop j = ls1' ++ (relaxLines R.far (ftList (ls2 ++ nxtOf R.af b)) ++ T) := by
-    rw [hdrop, List.append_assoc, ftR_plain_append _ _ _ hpl hZ, List.append_assoc]
+  have hdrop' : R.L.drop j = ls1' ++ (relaxLines R.far (X' ++ x.2.1) ++
+      R.L.drop (rix R.far (planLines R.fa.k R.af) x.2.2)) := by
+    rw [hdrop, relaxLines_plain hpl]
   have hat := lines_at hdrop'
   have hhook : ∀ x t, Line.ins x t ∈ ls1' → x.hooked = false := fun x t h => by
     obtain ⟨x', t', e, hh⟩ := hins _ h; cases e; exact hh
@@ -270,10 +270,9 @@ theorem move_lines {R : RL} (hR : R.Wf) {s : ArmState} {b : Nat} {src dst : Loc}
       exact hns x t (List.mem_of_getElem? hli) _ a ha rel rs rn hc
   -- the configuration and `Q` after the move
   refine ⟨j, ls1', s', _, hc1, hcl, hlat, ?_, hpriv⟩
-  · refine ⟨j + ls1'.length, vb, items, pre ++ [.move src dst], c2, ls2, ps1, ps2, T, hvb,
-      hit, by rw [hsplit]; simp, hchk', hc2, h2, htr, ?_, ?_, ?_⟩
-    · rw [← List.drop_drop, hdrop', List.drop_left]
-    · rw [execLines_pc (hrun ⟨lineOffset R.fa.lines.toList j, (R.lm[·]?)⟩), hpc]
+  · refine qs_next hvb hit hsplit hchk' hc2 h2 h3 htr hdrop ?_ ?_ hx hsc
+    · rw [relaxLines_plain hpl, execLines_pc (hrun ⟨lineOffset R.fa.lines.toList j, (R.lm[·]?)⟩),
+        hpc]
       simp only [RL.pcOf, RL.L]
       rw [lineOffset_drop_ins (by simpa [RL.L] using hdrop') (fun ln h => by
         obtain ⟨i, t, e, -⟩ := hins ln h; exact ⟨i, t, e⟩), BitVec.add_assoc]
