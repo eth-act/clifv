@@ -23,7 +23,7 @@ Output (--out): JSON {"base", "all", "planned", "estimate_s", "waves": [[{"modul
 --github-output, also appends `waveN=[0,1,...]` (shard indices for a job matrix), `planned=N` and
 `estimate=H.Hh` to $GITHUB_OUTPUT.
 """
-import argparse, collections, heapq, importlib.util, json, os, pathlib, subprocess, sys
+import argparse, collections, heapq, importlib.util, json, os, pathlib, subprocess, sys, tomllib
 
 GiB = 1024 ** 3
 HERE = pathlib.Path(__file__).resolve().parent
@@ -32,6 +32,32 @@ lsb = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(lsb)
 
 GLOBAL_INPUTS = {"lakefile.toml", "lean-toolchain", "lake-manifest.json"}
+
+
+# lean_exe keys that affect only the executable's link, not how any module is compiled
+EXE_LINK_KEYS = {"name", "root", "exeName", "supportInterpreter", "moreLinkArgs"}
+
+
+def lakefile_modules_same(root, base):
+    """True if lakefile.toml differs from `base` only in lean_exe entries that set no compile
+    options: adding an executable (most lakefile edits) leaves every module's build unchanged,
+    and its root module is planned like any other changed or added file."""
+    old = subprocess.run(["git", "show", f"{base}:lakefile.toml"], cwd=root,
+                         capture_output=True, text=True)
+    if old.returncode != 0:
+        return False
+    try:
+        a, b = tomllib.loads(old.stdout), tomllib.loads((root / "lakefile.toml").read_text())
+    except tomllib.TOMLDecodeError:
+        return False
+    exes = a.pop("lean_exe", []) + b.pop("lean_exe", [])
+    if any(set(e) - EXE_LINK_KEYS for e in exes):
+        return False
+    if a == b:
+        print(f"lakefile.toml changed since {base} only in lean_exe entries: planning changed "
+              f"modules only", file=sys.stderr)
+        return True
+    return False
 
 
 def changed_modules(root, base, libs, mods):
@@ -44,6 +70,8 @@ def changed_modules(root, base, libs, mods):
     by_path = {p.resolve(): m for m, p in mods.items()}
     out = set()
     for f in r.stdout.split():
+        if f == "lakefile.toml" and lakefile_modules_same(root, base):
+            continue
         if f in GLOBAL_INPUTS:
             print(f"{f} changed since {base}: planning everything", file=sys.stderr)
             return None
