@@ -60,16 +60,16 @@ private theorem getD_of_getElem? {α : Type} {a : Array α} {i : Nat} {x d : α}
     a.getD i d = x := by
   simp [Array.getD_eq_getD_getElem?, h]
 
-private theorem lt_of_regOf {pl : Plan} {v : Nat} {r : Reg} (h : pl.regOf v = some r) :
+private theorem lt_of_regOf {pl : LinearScan.Plan} {v : Nat} {r : Reg} (h : pl.regOf v = some r) :
     v < pl.reg.size := by
   unfold Plan.regOf Array.getD at h
   split at h
   · assumption
   · cases h
 
-private theorem has_of {g : Seg} {p : Nat} (h1 : g.s ≤ p) (h2 : p ≤ g.e) : g.has p := And.intro h1 h2
+private theorem has_of {g : LinearScan.Seg} {p : Nat} (h1 : g.s ≤ p) (h2 : p ≤ g.e) : g.has p := And.intro h1 h2
 
-private theorem disj_getD {a : Array (Array Seg)} (h : a.all disjointSorted = true) (i : Nat) :
+private theorem disj_getD {a : Array (Array LinearScan.Seg)} (h : a.all disjointSorted = true) (i : Nat) :
     disjointSorted (a.getD i #[]) = true := by
   rw [Array.all_eq_true_iff_forall_mem] at h
   unfold Array.getD
@@ -319,7 +319,7 @@ private theorem planFacts_of {vc : VCode} {c : LinearScan.Ctx} (hf : FnOk vc c.f
     have g2 := mem_occ hw hi hm'
     rw [← hc] at g1 g2
     have := (hocc i).unique g1 g2 (has_of h1 h2) (has_of h1' h2')
-    exact congrArg Seg.v this
+    exact congrArg LinearScan.Seg.v this
   · intro v w p hv hw hrv hrw hhome hcls hpv hpw
     obtain ⟨s, e, hm, h1, h2⟩ := cov_iff.mp hpv
     obtain ⟨s', e', hm', h1', h2'⟩ := cov_iff.mp hpw
@@ -328,7 +328,7 @@ private theorem planFacts_of {vc : VCode} {c : LinearScan.Ctx} (hf : FnOk vc c.f
     have hidx : homeIdx c.fn c.pl v = homeIdx c.fn c.pl w := by simp [homeIdx, hhome, hcls]
     rw [hidx] at g1
     have := (homeOcc_segsOk hs hh _).unique g1 g2 (has_of h1 h2) (has_of h1' h2')
-    exact congrArg Seg.v this
+    exact congrArg LinearScan.Seg.v this
   · intro g os hg o ho p hp
     have hg' := lt_of_getElem? hg
     obtain ⟨i, hi, hm⟩ := (claimsOk_spec hcl hg').1 o (by rw [getD_of_getElem? hg]; exact ho) p hp
@@ -338,12 +338,12 @@ private theorem planFacts_of {vc : VCode} {c : LinearScan.Ctx} (hf : FnOk vc c.f
     rw [← hc] at g1
     exact meetsOther_false (hocc i) hm _ g1 q hq1 hq2 (has_of h1 h2)
 
-theorem planFacts_of_structOk {vc : VCode} {fn : Fn} {pl : Plan} (hf : FnOk vc fn)
+theorem planFacts_of_structOk {vc : VCode} {fn : Fn} {pl : LinearScan.Plan} (hf : FnOk vc fn)
     (h : (LinearScan.Ctx.ofPlan fn pl).structOk = true) : PlanFacts vc (LinearScan.Ctx.ofPlan fn pl) :=
   planFacts_of hf rfl h
 
 /-- `x` holds no vreg other than `u` over the positions `[s, e]`. -/
-def Excl (pl : Plan) (x : Reg) (s e : Nat) (u : Option Nat) : Prop :=
+def Excl (pl : LinearScan.Plan) (x : Reg) (s e : Nat) (u : Option Nat) : Prop :=
   ∀ w, pl.regOf w = some x → ∀ q, s ≤ q → q ≤ e → pl.cov w q = true → u = some w
 
 /-- A register `regFree` reports free holds no vreg over the range and misses `taken`. -/

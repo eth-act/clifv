@@ -71,7 +71,7 @@ private theorem argMs_mem {c : LinearScan.Ctx} {b t j a p : Nat} (h1 : (c.fn.arg
   refine List.mem_filterMap.mpr ⟨(a, p), List.mem_of_getElem? (List.getElem?_zip_eq_some.mpr ⟨h1, h2⟩), ?_⟩
   simp only [hc, ↓reduceIte]
 
-private theorem scratchReg_spec {occ : Array (Array Seg)} {taken : List (Reg × Nat × Nat)}
+private theorem scratchReg_spec {occ : Array (Array LinearScan.Seg)} {taken : List (Reg × Nat × Nat)}
     {cl : RegClass} {s e : Nat} {avoid : List Reg} {r : Reg}
     (h : scratchReg occ taken cl s e avoid = some r) :
     r ∈ scratchOrder cl ∧ r ∉ avoid ∧ regFree occ taken r s e = true := by
