@@ -605,7 +605,7 @@ theorem funReal_ld (env : Clif.Env) (hS : StRel RC s m w₀C) (hx0 : regVal s (.
   simp only at hva1
   subst hva1
   -- the `ldar`
-  obtain ⟨jl, hjl, hpcl, hstrl⟩ := q_head hR hqa rfl head_ldarL
+  obtain ⟨jl, hjl, hpcl, hstrl⟩ := q_head hR hqa rfl (fun _ h => by cases h) head_ldarL
   have hnra : AtNonRet (RLx s) (iterN (RLx s).step n0 (RLx s).s0) :=
     ⟨jl, .ldar 64 (.x 1) (.x 0), some .heapOob, hjl, (fun h => by cases h), rfl, hpcl⟩
   cases hrest with

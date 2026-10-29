@@ -1,4 +1,4 @@
-import FV.Concurrency.ArmAllocMem
+import FV.Concurrency.ArmAllocFwd
 import FV.Concurrency.ArmAllocWitness
 
 /-!
@@ -135,7 +135,7 @@ theorem line_of_q {s : ArmState} {m₀ : Loc → CV} {w₀ : ArmState}
     ∃ j, RF.fa.lines.toList[j]? = some (.ins .dmbish none) ∧ Arm.r .PC s = RF.pcOf j ∧
       StRel RF s m₀ w₀ := by
   have hq' : Q RF s (.run ⟨0, (RF.rf.blocks[0]!).toList, m₀, w₀⟩) := hq
-  refine q_head wfF hq' rfl ?_
+  refine q_head wfF hq' rfl (fun _ h => by cases h) ?_
   intro vb code hvb hcode ps ls ps' hl
   simp only [RF, act, vcF] at hvb
   cases hvb

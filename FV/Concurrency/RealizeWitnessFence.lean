@@ -120,7 +120,8 @@ theorem realizes_fence : ∃ (n : Nat) (ls : List Lab) (t' : ArmState × Mon),
   obtain ⟨ls1, t1, m1, r1, hq1, hev1⟩ := moves_fwd wfRA (· = .plainW) savesL restF _ _ none hq0
     saves_plainW (by simp [savesL, Loc.isSave])
   -- the `dmb ish`
-  obtain ⟨j, hj, hpc, hst⟩ := q_head wfRA hq1 (x := .dmbish) (t := none) rfl head_dmb
+  obtain ⟨j, hj, hpc, hst⟩ := q_head wfRA hq1 (x := .dmbish) (t := none) rfl
+    (fun _ h => by cases h) head_dmb
   obtain ⟨a, ha, -, hev, hdec⟩ := stepEvs_line (X := RA.X) (H := RA.H) wfRA.layout wfRA.lm wfRA.fit
     hj rfl hst.prog hpc hst.err
   have ⟨hia, hca⟩ := dmbish_inst ha t1.1

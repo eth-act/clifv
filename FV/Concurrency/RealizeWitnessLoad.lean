@@ -581,7 +581,7 @@ theorem run_load : ∃ (n : Nat) (lsP : List Lab) (e : Ev) (t' : ArmState × Mon
     (fun K => (K == .plainW || K == .plainR) = true) spillL rest2L t1.1 m' t1.2 hq2 hA2
     (moves_kinds checksRunL.2.2.1) (by simp [spillL, Loc.isSave])
   -- the `ldar`
-  obtain ⟨j, hj, hpc, hstr⟩ := q_head wfRL hq3 rfl head_ldarL
+  obtain ⟨j, hj, hpc, hstr⟩ := q_head wfRL hq3 rfl (fun _ h => by cases h) head_ldarL
   obtain ⟨t3, ev, r3, -, hk, hn, ha⟩ := excl_step_fwd wfRL hj rfl hstr.prog hpc hstr.err
     (lb := 1) (p := 1) (q := 0) (.inr rfl) (by omega) (by omega) (fun _ => rfl) t2.2
   simp only [ite_true] at hk

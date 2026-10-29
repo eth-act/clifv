@@ -212,7 +212,7 @@ theorem prefixC : ∃ (n0 j : Nat) (m : Loc → CV),
   have hq2 := realizes_args wfRC hq1 hA1 vb0C argsC0.1 hst
   have hA2 := Backend.Proof.aInv_step wfRC hq1 hA1 hst
   obtain ⟨n2, hq3, -, hp2⟩ := moves_privA wfRC spillL restC _ m' hq2 hA2 (by simp [spillL, Loc.isSave])
-  obtain ⟨j, hj, hpc, hstr⟩ := q_head wfRC hq3 rfl head_blC
+  obtain ⟨j, hj, hpc, hstr⟩ := q_head wfRC hq3 rfl (fun _ h => by cases h) head_blC
   rw [← iterN_add, ← iterN_add, ← Nat.add_assoc] at hpc hstr
   rw [← iterN_add] at hp2
   refine ⟨n0 + n1 + n2, j, _, fun i hi => ?_, hj, hpc, hstr, ?_⟩
