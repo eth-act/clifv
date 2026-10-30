@@ -1,0 +1,23 @@
+{
+  "utc": "2026-10-30T04:14:52.304360+00:00",
+  "head": "6e4ae6f6965ad9e125f0e5eb2c1f1fe50ecebf8b",
+  "state": "Next-batch drafts UNVALIDATED and excluded from frozen6e4. All4543 original captured source hashes verified. Current6e4 author build still running, no full pass/merge/completeness claim.",
+  "files": {
+    "StockMemoryCfgJumpDefined.lean": "4dd081b925d1da51c19b6e3584b3a6bde068b5a26d62a11bd831e34d0ec6eee2",
+    "StockMemoryCfgJumpReturnAt.lean": "79d0522482bc3a83a93583df092b2cadf54690fa787ec8afeacf365f6c8a1108",
+    "StockMemoryCfgReturnRefinesAt.lean": "46735e34aa6f352480b8a142f8e5afda9431eaf725efb2553d2b864a153624c6",
+    "StockMemoryNopBody.lean": "c1df6099eedfe99c1ec98bdfaf58198f6a861d64a7f1495aceaebcea0c22cb0a",
+    "StockMemoryNopPairedBody.lean": "271454acc547c15009f1b847b04a3325f3f3898cf21e60e2f84cb2d4debb2bc1",
+    "StockMemoryNopPairedPrelude.lean": "2d8efca751b918ff823b56b6c3050f5479a463c3d595ffedb1a0dba25333534e",
+    "StockMemoryNopReturnBody.lean": "4a79641d64934a29ca632d486c37cbd612a3d3715cbedcff367776cc71f07d54",
+    "StockMemoryOmittedPairedScan.lean": "9972dd72a69976cea250788d4a5473699fed37ade084dd7035fcd10872c84c24",
+    "StockMemoryRetainedReturnSpec.lean": "886ebe28d76bf0015d1f58d132913c5c96f2b0ea331faa5f48f3723ddcfbc6e1",
+    "captured-source-provenance-current.json": "47349537f8dc87ad2f8a3fe1ad51e8dc6a5512995e76badac08ba6a32a123043",
+    "cli-native-current.py": "11069dfc4b0f7f32b4fd5ce4ae9958e579a9b0d4ae00e4f414626f8031e79410",
+    "main-reconciliation-preview-current.json": "1fb305ed738d44bbc32a8c9bc1061abb10a8b47103192f92d457c005a636a19f",
+    "memory-captured-inventory-current.lean": "d478e571954ba8490765d6969936ed03c8c5332a1fd2f0fd9f311d5d0cdd6af4",
+    "memory-captured-inventory-current.py": "812eb0ce56b1961f6efcfc578ad9bcb4b3736b557aeb6d5f0029030950e66665",
+    "next-memory-reuse-current.md": "e85b2908c2a632d28057604955ca6df19bbb3ab9386c563619136acc7df764ab",
+    "resume-current.json": "a6c97991d8edd056d282b580d9b00c7d1753d1ff64ca1bc375568b4f9a937006"
+  }
+}
