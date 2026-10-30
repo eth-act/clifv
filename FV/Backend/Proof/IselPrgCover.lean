@@ -38,7 +38,7 @@ theorem γ_instDataV {k : Nat} {n : String} {fs : List PA} {ws : List V}
 theorem γ_opcodeV {k : Nat} {n : String} (hk : variantIdx tyOpcode n = some k) :
     γ f ctx (opc k) (opcodeV n) := γ_mkVariant hk γL_nil'
 
-theorem γ_aV (hctx : CtxInv f ctx) {x : Nat} (h : (ctx.valueType? x).isSome) :
+theorem γ_aV (hctx : CtxInvW f ctx) {x : Nat} (h : (ctx.valueType? x).isSome) :
     γ f ctx aV (.value x) := by
   obtain ⟨t, ht⟩ := Option.isSome_iff_exists.mp h
   simp only [aV, γ]
@@ -73,7 +73,7 @@ theorem γ_labels {lo : Nat} {n : Option Nat} {ls : List Label} (hl : lo ≤ ls.
 theorem γ_blockCalls {bs : List Nat} : γ f ctx (.blockCalls bs.length) (.blockCalls bs) := by
   simp only [γ]; exact ⟨bs, rfl, rfl⟩
 
-theorem γ_tyCall (hctx : CtxInv f ctx) {ii : Nat} {info : IInfo} (hi : ctx.insts[ii]? = some info) :
+theorem γ_tyCall (hctx : CtxInvW f ctx) {ii : Nat} {info : IInfo} (hi : ctx.insts[ii]? = some info) :
     γ f ctx tyCall (.ty (info.resTys.head?.getD .invalid)) := by
   apply γ_ty_mem
   cases h : info.resTys with

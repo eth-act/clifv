@@ -84,16 +84,16 @@ private theorem values2_fields {ctx : Ctx} {st : LState} {qs : List Pattern} {fs
 private theorem binary_operand_reg {f : Clif.Function} {ctx : Ctx} (hP : PInv f ctx) {j : Nat}
     {info : IInfo} {op : Clif.BinaryOp} {ty : Clif.Ty} {x z : Nat} (hi : ctx.insts[j]? = some info)
     (hcl : info.clif = some (.binary op ty x z)) :
-    ctx.valueReg? x = some (.vreg x .int) ∧ ctx.valueReg? z = some (.vreg z .int) := by
+    (∃ n, ctx.valueReg? x = some (.vreg n .int)) ∧ ∃ n, ctx.valueReg? z = some (.vreg n .int) := by
   have hof := hP.clifOf j info _ hi hcl
   have hx := hP.argsTyped _ hof x (by simp [Driver.instArgs])
   have hz := hP.argsTyped _ hof z (by simp [Driver.instArgs])
   obtain ⟨tx, htx⟩ := Option.isSome_iff_exists.mp hx
   obtain ⟨tz, htz⟩ := Option.isSome_iff_exists.mp hz
-  exact ⟨hP.ctxInv.typedReg x tx htx, hP.ctxInv.typedReg z tz htz⟩
+  exact ⟨hP.ctxInv.typedSome x tx htx, hP.ctxInv.typedSome z tz htz⟩
 
 /-- The first result type of an instruction: none, or an E integer type. -/
-private theorem head_cases {f : Clif.Function} {ctx : Ctx} (hctx : CtxInv f ctx) {ii : Nat}
+private theorem head_cases {f : Clif.Function} {ctx : Ctx} (hctx : CtxInvW f ctx) {ii : Nat}
     {info : IInfo} (hi : ctx.insts[ii]? = some info) :
     info.resTys.head? = none ∨ ∃ w, info.resTys.head? = some (.int w) := by
   cases hh : info.resTys.head? with
@@ -173,24 +173,24 @@ theorem hand_1501 (hP : PInv f ctx) (hc : cfg.checkOverlap = false) {args : List
   obtain ⟨e2, hpa, hpb⟩ := values2_match_inv hp ctx hrest
   obtain ⟨j1, info1, fs1, e3, hj1, hij1, hd1, hrest1⟩ :=
     defInst_match_inv hp ctx hp.t2449 term_2449_kind hp.t2387 term_2387_kind hpa
-  obtain ⟨cl1, hcl1, hdat1⟩ := ctxInv_clif hctx hj1 hij1
+  obtain ⟨cl1, hcl1, hdat1⟩ := hctx.clif hj1 hij1
   rw [hd1] at hdat1
   obtain ⟨ty1, x, c1, rfl, -, rfl⟩ := instData_binary_inv variantNames_Ishl (cop := .ishl) rfl hdat1
   obtain ⟨e4, -, hpc1⟩ := values2_match_inv hp ctx hrest1
   obtain ⟨j2, info2, fs2, e5, hj2, hij2, hd2, -⟩ :=
     defInst_match_inv hp ctx hp.t2482 term_2482_kind hp.t2341 term_2341_kind hpc1
-  obtain ⟨cl2, hcl2, hdat2⟩ := ctxInv_clif hctx hj2 hij2
+  obtain ⟨cl2, hcl2, hdat2⟩ := hctx.clif hj2 hij2
   rw [hd2] at hdat2
   obtain ⟨ty3, k3, rfl, rfl⟩ := instData_iconst_inv hdat2
   obtain ⟨j3, info3, fs3, e6, hj3, hij3, hd3, hrest3⟩ :=
     defInst_match_inv hp ctx hp.t2449 term_2449_kind hp.t2388 term_2388_kind hpb
-  obtain ⟨cl3, hcl3, hdat3⟩ := ctxInv_clif hctx hj3 hij3
+  obtain ⟨cl3, hcl3, hdat3⟩ := hctx.clif hj3 hij3
   rw [hd3] at hdat3
   obtain ⟨ty2, y, c2, rfl, -, rfl⟩ := instData_binary_inv variantNames_Ushr (cop := .ushr) rfl hdat3
   obtain ⟨e7, -, hpc2⟩ := values2_match_inv hp ctx hrest3
   obtain ⟨j4, info4, fs4, e8, hj4, hij4, hd4, -⟩ :=
     defInst_match_inv hp ctx hp.t2482 term_2482_kind hp.t2341 term_2341_kind hpc2
-  obtain ⟨cl4, hcl4, hdat4⟩ := ctxInv_clif hctx hj4 hij4
+  obtain ⟨cl4, hcl4, hdat4⟩ := hctx.clif hj4 hij4
   rw [hd4] at hdat4
   obtain ⟨ty4, k4, rfl, rfl⟩ := instData_iconst_inv hdat4
   cases Classical.em (ExtrOk w (u64 (imm64OfIconst ty3 k3)) (u64 (imm64OfIconst ty4 k4))) with
@@ -204,8 +204,8 @@ theorem hand_1501 (hP : PInv f ctx) (hc : cfg.checkOverlap = false) {args : List
   simp only [Except.ok.injEq, Prod.mk.injEq, Option.some.injEq] at h'
   obtain ⟨rfl, rfl⟩ := h'
   obtain ⟨-, -, -, hY64, -, -⟩ := extrOk_nat (by omega) hok
-  have hrx := (binary_operand_reg hP hij1 hcl1).1
-  have hry := (binary_operand_reg hP hij3 hcl3).1
+  obtain ⟨_, hrx⟩ := (binary_operand_reg hP hij1 hcl1).1
+  obtain ⟨_, hry⟩ := (binary_operand_reg hP hij3 hcl3).1
   obtain ⟨tr'', sh, -, he'⟩ := rhs_1501 hp ctx hc st tr n' hrx hry hw hY64
   exact ⟨_, _, he', γ_regsVec1 _⟩
 
@@ -236,24 +236,24 @@ theorem hand_1507 (hP : PInv f ctx) (hc : cfg.checkOverlap = false) {args : List
   obtain ⟨e2, hpa, hpb⟩ := values2_match_inv hp ctx hrest
   obtain ⟨j1, info1, fs1, e3, hj1, hij1, hd1, hrest1⟩ :=
     defInst_match_inv hp ctx hp.t2449 term_2449_kind hp.t2388 term_2388_kind hpa
-  obtain ⟨cl1, hcl1, hdat1⟩ := ctxInv_clif hctx hj1 hij1
+  obtain ⟨cl1, hcl1, hdat1⟩ := hctx.clif hj1 hij1
   rw [hd1] at hdat1
   obtain ⟨ty1, y, c1, rfl, -, rfl⟩ := instData_binary_inv variantNames_Ushr (cop := .ushr) rfl hdat1
   obtain ⟨e4, -, hpc1⟩ := values2_match_inv hp ctx hrest1
   obtain ⟨j2, info2, fs2, e5, hj2, hij2, hd2, -⟩ :=
     defInst_match_inv hp ctx hp.t2482 term_2482_kind hp.t2341 term_2341_kind hpc1
-  obtain ⟨cl2, hcl2, hdat2⟩ := ctxInv_clif hctx hj2 hij2
+  obtain ⟨cl2, hcl2, hdat2⟩ := hctx.clif hj2 hij2
   rw [hd2] at hdat2
   obtain ⟨ty4, k4, rfl, rfl⟩ := instData_iconst_inv hdat2
   obtain ⟨j3, info3, fs3, e6, hj3, hij3, hd3, hrest3⟩ :=
     defInst_match_inv hp ctx hp.t2449 term_2449_kind hp.t2387 term_2387_kind hpb
-  obtain ⟨cl3, hcl3, hdat3⟩ := ctxInv_clif hctx hj3 hij3
+  obtain ⟨cl3, hcl3, hdat3⟩ := hctx.clif hj3 hij3
   rw [hd3] at hdat3
   obtain ⟨ty2, x, c2, rfl, -, rfl⟩ := instData_binary_inv variantNames_Ishl (cop := .ishl) rfl hdat3
   obtain ⟨e7, -, hpc2⟩ := values2_match_inv hp ctx hrest3
   obtain ⟨j4, info4, fs4, e8, hj4, hij4, hd4, -⟩ :=
     defInst_match_inv hp ctx hp.t2482 term_2482_kind hp.t2341 term_2341_kind hpc2
-  obtain ⟨cl4, hcl4, hdat4⟩ := ctxInv_clif hctx hj4 hij4
+  obtain ⟨cl4, hcl4, hdat4⟩ := hctx.clif hj4 hij4
   rw [hd4] at hdat4
   obtain ⟨ty3, k3, rfl, rfl⟩ := instData_iconst_inv hdat4
   cases Classical.em (ExtrOk w (u64 (imm64OfIconst ty3 k3)) (u64 (imm64OfIconst ty4 k4))) with
@@ -267,8 +267,8 @@ theorem hand_1507 (hP : PInv f ctx) (hc : cfg.checkOverlap = false) {args : List
   simp only [Except.ok.injEq, Prod.mk.injEq, Option.some.injEq] at h'
   obtain ⟨rfl, rfl⟩ := h'
   obtain ⟨-, -, -, hY64, -, -⟩ := extrOk_nat (by omega) hok
-  have hrx := (binary_operand_reg hP hij3 hcl3).1
-  have hry := (binary_operand_reg hP hij1 hcl1).1
+  obtain ⟨_, hrx⟩ := (binary_operand_reg hP hij3 hcl3).1
+  obtain ⟨_, hry⟩ := (binary_operand_reg hP hij1 hcl1).1
   obtain ⟨tr'', sh, -, he'⟩ := rhs_1507 hp ctx hc st tr n' hrx hry hw hY64
   exact ⟨_, _, he', γ_regsVec1 _⟩
 
