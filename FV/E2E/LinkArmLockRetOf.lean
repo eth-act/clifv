@@ -213,7 +213,7 @@ theorem lockRet_of (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) (hK : L.Hooks
       (syms := L.syms) (env := L.envOfB M g (spv w₀)) (K := κ M g) (F := F) (c := spv w₀)
       (hX_guardRXRI (L.XPBTI κ M g F (L.BP M g s₀) (L.RP M g s₀)) hnrc
         (hret g hg F vals cs w₀ ini hWE))
-      (fun _ _ hs => L.xnifXPBTGY hL hN ih hdet htw hg hWE.img _ _ hnrc hs)
+      (fun _ _ hs => L.xnifXPBTGY hL hκ hN ih hdet htw hg hWE.img _ _ hnrc hs)
       (fun _ => hL.baseTlsNI hN F) (fun n b hn => hL.symOk n b hn) rfl hD (fun _ => 0) hWE.clif
       hWE.rel hrel hWE.args hsw hreg hstk (trapsExplicit_of_returned hrun') fuel hrun' hlm hpsF'
       hAE he0
