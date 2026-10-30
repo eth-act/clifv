@@ -1,0 +1,6 @@
+18:25:04 want 150 modules (0 assumed built) budget=10G max_jobs=1 heavy>12G
+18:25:05 check (all) 150 modules in 0.2s: 149 up-to-date, 1 out of date, 0 wait for those
+18:25:05 start FV.Backend.Proof.IselCovTTabS5 cap=10G running=1 avail=206.4G
+18:28:17 done FV.Backend.Proof.IselCovTTabS5 rc=0 192s maxrss=10.5G cgpeak=9.1G built -> ok
+18:28:17 2 batch checks, 0s; 0 modules restored after another worktree built them
+18:28:17 END 150/150 ok, 1 built, wall 3.2 min

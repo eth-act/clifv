@@ -1,0 +1,13 @@
+{
+  "utc": "2026-10-30T22:25:52.391439+00:00",
+  "agreement": "worker-A granted2GiB in reply to mail507",
+  "worker_o_gib": 16,
+  "worker_a_gib": 16,
+  "project_total_gib": 32,
+  "scope": "Focused IselCovTTabS5 retry only",
+  "return_condition": "Immediately after focused retry ends",
+  "watcher": 2308748,
+  "returned_utc": "2026-10-30T22:29:34.073154+00:00",
+  "returned": true,
+  "result": "150 modules pass; S5 peak9.1GiB cgroup /10.5GiB RSS,192s"
+}

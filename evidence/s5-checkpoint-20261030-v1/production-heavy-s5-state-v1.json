@@ -1,0 +1,9 @@
+{
+  "status": "passed",
+  "utc": "2026-10-30T22:28:17.472178+00:00",
+  "worker_o_budget_gib": 18,
+  "worker_a_budget_gib": 14,
+  "temporary_loan_gib": 2,
+  "returncode": 0,
+  "loan_can_return": true
+}
