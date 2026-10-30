@@ -381,7 +381,8 @@ theorem backend_twoRunLWNpPK (hc : Compiled f k vc vcp rf af fa fb)
       h7.1, h7.2, fun i hi => ?_⟩
     generalize (prologueLines (actRL vcp rf af fa fb lm base s (XI.upTo N) H psF K G
       (GotV vcp)).af.saves (actRL vcp rf af fa fb lm base s (XI.upTo N) H psF K G
-      (GotV vcp)).af.frameSize).length = PL at hi hp0 h2 hep ⊢
+      (GotV vcp)).af.frameSize (actRL vcp rf af fa fb lm base s (XI.upTo N) H psF K G
+      (GotV vcp)).af.isCaller).length = PL at hi hp0 h2 hep ⊢
     generalize (actRL vcp rf af fa fb lm base s (XI.upTo N) H psF K G (GotV vcp)).retLen = RLn
       at hi hep
     rcases Nat.lt_or_ge i PL with h1 | h1

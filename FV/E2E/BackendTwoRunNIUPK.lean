@@ -129,10 +129,10 @@ theorem backend_twoRunLERWZIUPK (hc : Compiled f k vc vcp rf af fa fb)
       have heN := ih (by omega)
       obtain ⟨T, hlk, -, hc2, -, hcs2, hmemN⟩ := (core N heN).2 (by omega)
       have hcb : callsBefore (ArmStepX (XI.at 0) H fa) fa base t0
-          ((prologueLines af.saves af.frameSize).length + T) = N := by
+          ((prologueLines af.saves af.frameSize af.isCaller).length + T) = N := by
         rw [callsBefore_eq_countIn]; exact hc2
       have hcs : CallPc fa base (Arm.r .PC (runX (ArmStepX (XI.at 0) H fa)
-          ((prologueLines af.saves af.frameSize).length + T) t0)) := by
+          ((prologueLines af.saves af.frameSize af.isCaller).length + T) t0)) := by
         rw [runX_eq]; exact hcs2
       have hlockN : ∀ u, CallPc fa base (Arm.r .PC u) →
           OnCall (ArmStepX (XI.at 0) H fa) fa base t0 N u →
@@ -143,7 +143,7 @@ theorem backend_twoRunLERWZIUPK (hc : Compiled f k vc vcp rf af fa fb)
         have hpci : CallPc fa base (Arm.r .PC (runX (ArmStepX (XI.at 0) H fa) i t0)) := by
           rw [hu]; exact hpc
         have hge := callsBefore_le_of_callSt hi hpci hcb
-        obtain rfl : i = (prologueLines af.saves af.frameSize).length + T := by omega
+        obtain rfl : i = (prologueLines af.saves af.frameSize af.isCaller).length + T := by omega
         refine ⟨_, hu, hi, fun j hj => ?_, fun a hFa hDa => ?_⟩
         · obtain ⟨d, d', hz⟩ := hlk j (Nat.le_trans hj hle)
           refine ⟨(actRL vcp rf af fa fb lm base s (XI.upTo N) H psF K G (GotV vcp)).Zc d d', ?_,
