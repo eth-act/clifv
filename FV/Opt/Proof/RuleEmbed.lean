@@ -18,7 +18,36 @@ namespace Opt.Proof
 
 open Isle Isle.Opt Isle.Interp Clif
 
-attribute [opt_match] PatRel ArgsRel AllRel except_pure_eq_ok
+section
+variable {V σ : Type} (p : Isle.Program) (msem : MultiSem V σ) (st : σ)
+
+/-! `ArgsRel` by its four constructor cases, for `opt_match`. Its own equation lemmas end with a
+conditional catch-all (`ArgsRel.eq_3`, the two lists of different lengths) whose side conditions
+`simp` tries, and fails, to discharge on every unfolding (14–20% of the heartbeats of some rule
+modules). -/
+
+theorem ArgsRel_nil_nil (env env' : Env V) :
+    ArgsRel p msem st [] [] env env' = (env' = env) := by
+  simp only [ArgsRel]
+
+theorem ArgsRel_cons_cons (q : Pattern) (qs : List Pattern) (w : V) (ws : List V)
+    (env env' : Env V) :
+    ArgsRel p msem st (q :: qs) (w :: ws) env env' =
+      ∃ e, PatRel p msem st q w env e ∧ ArgsRel p msem st qs ws e env' := by
+  simp only [ArgsRel]
+
+theorem ArgsRel_nil_cons (w : V) (ws : List V) (env env' : Env V) :
+    ArgsRel p msem st [] (w :: ws) env env' = False := by
+  simp [ArgsRel]
+
+theorem ArgsRel_cons_nil (q : Pattern) (qs : List Pattern) (env env' : Env V) :
+    ArgsRel p msem st (q :: qs) [] env env' = False := by
+  simp [ArgsRel]
+
+end
+
+attribute [opt_match] PatRel AllRel except_pure_eq_ok ArgsRel_nil_nil ArgsRel_cons_cons
+  ArgsRel_nil_cons ArgsRel_cons_nil
 
 section
 variable {σ : Type} (G : EGraph σ)

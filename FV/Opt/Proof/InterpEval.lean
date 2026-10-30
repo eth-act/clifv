@@ -109,45 +109,50 @@ end Opt.Proof
 
 namespace Opt.Proof
 
-set_option hygiene false in
-/-- One step of `opt_eval at h`: unfold the first closed interpreter call in `h`. -/
-macro "opt_unfold " h:ident : tactic => `(tactic| first
-  | rw [Isle.Interp.evalExprN.eq_7] at $h:ident | rw [Isle.Interp.evalExprN.eq_2] at $h:ident
-  | rw [Isle.Interp.evalExprN.eq_3] at $h:ident | rw [Isle.Interp.evalExprN.eq_4] at $h:ident
-  | rw [Isle.Interp.evalExprN.eq_5] at $h:ident | rw [Isle.Interp.evalExprN.eq_6] at $h:ident
-  | rw [Isle.Interp.evalArgsN.eq_2] at $h:ident | rw [Isle.Interp.evalArgsN.eq_3] at $h:ident
-  | rw [Isle.Interp.evalBindsN.eq_2] at $h:ident | rw [Isle.Interp.evalBindsN.eq_3] at $h:ident
-  | rw [Isle.Interp.applyTermN.eq_2] at $h:ident
-  | rw [Isle.Interp.matchIfLetsN.eq_2] at $h:ident | rw [Isle.Interp.matchIfLetsN.eq_3] at $h:ident
-  | rw [Isle.Interp.applyTerm.eq_2] at $h:ident
-  | rw [Isle.Interp.selectRule.eq_3] at $h:ident | rw [Isle.Interp.selectRule.eq_2] at $h:ident
-  | rw [Isle.Interp.tryRule.eq_2] at $h:ident
-  | rw [Isle.Interp.matchRule.eq_2] at $h:ident
-  | rw [Isle.Interp.matchIfLets.eq_2] at $h:ident | rw [Isle.Interp.matchIfLets.eq_3] at $h:ident
-  | rw [Isle.Interp.evalExpr.eq_7] at $h:ident | rw [Isle.Interp.evalExpr.eq_2] at $h:ident
-  | rw [Isle.Interp.evalExpr.eq_3] at $h:ident | rw [Isle.Interp.evalExpr.eq_4] at $h:ident
-  | rw [Isle.Interp.evalExpr.eq_5] at $h:ident | rw [Isle.Interp.evalExpr.eq_6] at $h:ident
-  | rw [Isle.Interp.evalArgs.eq_2] at $h:ident | rw [Isle.Interp.evalArgs.eq_3] at $h:ident
-  | rw [Isle.Interp.evalBinds.eq_2] at $h:ident | rw [Isle.Interp.evalBinds.eq_3] at $h:ident
-  | rw [Isle.Interp.matchArgs.eq_1] at $h:ident | rw [Isle.Interp.matchArgs.eq_2] at $h:ident
-  | rw [Isle.Interp.matchPat.eq_1] at $h:ident | rw [Isle.Interp.matchPat.eq_2] at $h:ident
-  | rw [Isle.Interp.matchPat.eq_3] at $h:ident | rw [Isle.Interp.matchPat.eq_4] at $h:ident
-  | rw [Isle.Interp.matchPat.eq_5] at $h:ident | rw [Isle.Interp.matchPat.eq_6] at $h:ident
-  | rw [Isle.Interp.matchPat.eq_7] at $h:ident | rw [Isle.Interp.matchPat.eq_8] at $h:ident
-  | rw [Isle.Interp.matchPatN.eq_1] at $h:ident | rw [Isle.Interp.matchPatN.eq_2] at $h:ident
-  | rw [Isle.Interp.matchPatN.eq_3] at $h:ident | rw [Isle.Interp.matchPatN.eq_4] at $h:ident
-  | rw [Isle.Interp.matchPatN.eq_5] at $h:ident | rw [Isle.Interp.matchPatN.eq_6] at $h:ident
-  | rw [Isle.Interp.matchPatN.eq_7] at $h:ident | rw [Isle.Interp.matchPatN.eq_8] at $h:ident
-  | rw [Isle.Interp.matchArgsN.eq_1] at $h:ident | rw [Isle.Interp.matchArgsN.eq_2] at $h:ident)
+open Lean Elab Tactic in
+/-- The equation lemmas `opt_unfold` tries, in order. -/
+def optUnfoldEqns : Array Name := #[
+  ``Isle.Interp.evalExprN.eq_7, ``Isle.Interp.evalExprN.eq_2, ``Isle.Interp.evalExprN.eq_3,
+  ``Isle.Interp.evalExprN.eq_4, ``Isle.Interp.evalExprN.eq_5, ``Isle.Interp.evalExprN.eq_6,
+  ``Isle.Interp.evalArgsN.eq_2, ``Isle.Interp.evalArgsN.eq_3, ``Isle.Interp.evalBindsN.eq_2,
+  ``Isle.Interp.evalBindsN.eq_3, ``Isle.Interp.applyTermN.eq_2, ``Isle.Interp.matchIfLetsN.eq_2,
+  ``Isle.Interp.matchIfLetsN.eq_3, ``Isle.Interp.applyTerm.eq_2, ``Isle.Interp.selectRule.eq_3,
+  ``Isle.Interp.selectRule.eq_2, ``Isle.Interp.tryRule.eq_2, ``Isle.Interp.matchRule.eq_2,
+  ``Isle.Interp.matchIfLets.eq_2, ``Isle.Interp.matchIfLets.eq_3, ``Isle.Interp.evalExpr.eq_7,
+  ``Isle.Interp.evalExpr.eq_2, ``Isle.Interp.evalExpr.eq_3, ``Isle.Interp.evalExpr.eq_4,
+  ``Isle.Interp.evalExpr.eq_5, ``Isle.Interp.evalExpr.eq_6, ``Isle.Interp.evalArgs.eq_2,
+  ``Isle.Interp.evalArgs.eq_3, ``Isle.Interp.evalBinds.eq_2, ``Isle.Interp.evalBinds.eq_3,
+  ``Isle.Interp.matchArgs.eq_1, ``Isle.Interp.matchArgs.eq_2, ``Isle.Interp.matchPat.eq_1,
+  ``Isle.Interp.matchPat.eq_2, ``Isle.Interp.matchPat.eq_3, ``Isle.Interp.matchPat.eq_4,
+  ``Isle.Interp.matchPat.eq_5, ``Isle.Interp.matchPat.eq_6, ``Isle.Interp.matchPat.eq_7,
+  ``Isle.Interp.matchPat.eq_8, ``Isle.Interp.matchPatN.eq_1, ``Isle.Interp.matchPatN.eq_2,
+  ``Isle.Interp.matchPatN.eq_3, ``Isle.Interp.matchPatN.eq_4, ``Isle.Interp.matchPatN.eq_5,
+  ``Isle.Interp.matchPatN.eq_6, ``Isle.Interp.matchPatN.eq_7, ``Isle.Interp.matchPatN.eq_8,
+  ``Isle.Interp.matchArgsN.eq_1, ``Isle.Interp.matchArgsN.eq_2]
 
-/-- Normalise between steps: data/constructor facts and monad laws (separate passes). -/
+open Lean Elab Tactic in
+/-- One step of `opt_eval at h`: unfold the first closed interpreter call in `h`, by the first
+equation lemma of `optUnfoldEqns` that rewrites it. Only the lemmas of functions that occur in `h`
+are tried: a `rw` with any other fails anyway, after traversing the whole hypothesis. -/
+elab "opt_unfold " h:ident : tactic => withMainContext do
+  let used := (← instantiateMVars (← (← getFVarId h).getType)).getUsedConstants
+  for l in optUnfoldEqns do
+    unless used.contains l.getPrefix do continue
+    let s ← saveState
+    try
+      evalTactic (← `(tactic| rw [$(mkIdent l):ident] at $h:ident))
+      return
+    catch _ => s.restore
+  throwError "opt_unfold: no equation lemma rewrites {h}"
+
+/-- Normalise between steps: data/constructor facts and monad laws, in one `simp` call. Alternating
+one call per set until neither applies traversed the whole hypothesis again on every call: up to
+a third more heartbeats in `RuleExtends2` and `RuleSkeleton5`. -/
 syntax "opt_norm " ident ("[" (Lean.Parser.Tactic.simpStar <|> Lean.Parser.Tactic.simpErase <|> Lean.Parser.Tactic.simpLemma),* "]")? : tactic
 macro_rules
   | `(tactic| opt_norm $h:ident) => `(tactic| opt_norm $h [])
   | `(tactic| opt_norm $h:ident [$ts,*]) => `(tactic|
-      repeat (first
-        | simp (disch := assumption) only [opt_data, $ts,*] at $h:ident
-        | simp (disch := assumption) only [opt_monad, opt_imm, $ts,*] at $h:ident))
+      try simp (disch := assumption) only [opt_data, opt_monad, opt_imm, $ts,*] at $h:ident)
 
 /-- Evaluate the interpreter call in hypothesis `h`: alternate `opt_unfold` and `opt_norm`. -/
 syntax "opt_eval " ident ("[" (Lean.Parser.Tactic.simpStar <|> Lean.Parser.Tactic.simpErase <|> Lean.Parser.Tactic.simpLemma),* "]")? : tactic

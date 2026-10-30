@@ -38,8 +38,8 @@ macro "arr_step" : tactic => `(tactic| simp (config := {decide := true}) only
 
 /-- `rule_lhs` with `arr_step` as a last resort. -/
 macro "rule_lhs_c " hG:ident : tactic => `(tactic|
-  repeat (any_goals (first | (opt_guard lhs_step; opt_destruct; all_goals subst_vars) | opt_model $hG |
-    (lhs_step'; opt_destruct; all_goals subst_vars) | (arr_step; opt_destruct; all_goals subst_vars))))
+  repeat (any_goals (first | (opt_guard lhs_step; opt_destruct; all_goals opt_subst_vars) | opt_model $hG |
+    (lhs_step'; opt_destruct; all_goals opt_subst_vars) | (arr_step; opt_destruct; all_goals opt_subst_vars))))
 
 /-- Case on the first `G.typeOf s x` read in `h` (not already known). -/
 elab "opt_split_typeof " h:ident : tactic => withMainContext do

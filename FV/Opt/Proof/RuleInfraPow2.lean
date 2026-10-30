@@ -1006,19 +1006,17 @@ macro "pow2_disch" : tactic => `(tactic| first
   | omega
   | (simp only [Ty.width, Nat.reducePow, Nat.reduceSub, Int.reducePow]; omega))
 
-/-- `opt_norm` with `pow2_disch` and the power-of-two helper lemmas. -/
+/-- `opt_norm` with `pow2_disch` and the power-of-two helper lemmas (one `simp` call, as `opt_norm`). -/
 syntax "pow2_norm " ident ("[" (Lean.Parser.Tactic.simpStar <|> Lean.Parser.Tactic.simpErase <|> Lean.Parser.Tactic.simpLemma),* "]")? : tactic
 macro_rules
   | `(tactic| pow2_norm $h:ident) => `(tactic| pow2_norm $h [])
   | `(tactic| pow2_norm $h:ident [$ts,*]) => `(tactic|
-      repeat (first
-        | simp (disch := pow2_disch) only [opt_data, $ts,*] at $h:ident
-        | simp (disch := pow2_disch) only [opt_monad, opt_imm, BitVec.toNat_twoPow_of_lt,
+      try simp (disch := pow2_disch) only [opt_data, opt_monad, opt_imm, BitVec.toNat_twoPow_of_lt,
             pow2_ctz64, pow2_u64Ilog2, pow2_checkedSubU_ok, pow2_decide_le_true, beq_self_eq_true,
             pow2_asU64_of_lt, pow2_asI64_of_lt, pow2_band64_mask, pow2_sext_of_lt, pow2_u64Shl_one,
             pow2_checkedSubU_two_pow, pow2_decide_mask_le, pow2_asI64_mask, pow2_toInt_twoPow_lt,
             pow2_toInt_neg_twoPow, pow2_ctz64_neg, pow2_i64Shl_one, pow2_asI64_neg_asI64,
-            pow2_band64_neg, pow2_sext_neg_mask, $ts,*] at $h:ident))
+            pow2_band64_neg, pow2_sext_neg_mask, $ts,*] at $h:ident)
 
 /-- `opt_eval` with `pow2_norm`. -/
 syntax "pow2_eval " ident ("[" (Lean.Parser.Tactic.simpStar <|> Lean.Parser.Tactic.simpErase <|> Lean.Parser.Tactic.simpLemma),* "]")? : tactic
