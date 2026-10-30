@@ -76,7 +76,7 @@ theorem RetsOkT.x_at {h : Clif.Function} {rvals : List Clif.Val} {us : List (Reg
         obtain ⟨q, hq, hqt⟩ := List.mem_map.mp hm
         rw [← hqt]
         exact hint q hq
-      rw [hus.1.getElem? (by omega), classes_int hint', retRegsT_int, List.getElem?_map,
+      rw [RetRegsOk.getElem? hus.1 (by omega), classes_int hint', retRegsT_int, List.getElem?_map,
         List.getElem?_range' (by omega)]
       simp
   rw [List.getElem?_map, List.getElem?_eq_getElem hju] at hx
@@ -106,7 +106,7 @@ theorem RetsOkT.reg_at {h : Clif.Function} {rvals : List Clif.Val} {us : List (R
   have hlen : rvals.length = h.sig.returns.length := by
     have := congrArg List.length hrt
     simpa [Clif.AbiParam.tys] using this
-  rw [hus.1.getElem? (by omega), hcl, declRetRegs]
+  rw [RetRegsOk.getElem? hus.1 (by omega), hcl, declRetRegs]
 
 namespace LinkSys
 variable (L : LinkSys)
