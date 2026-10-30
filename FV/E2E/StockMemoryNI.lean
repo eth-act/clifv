@@ -1,3 +1,4 @@
+import FV.E2E.StockArithmeticStageContract
 import FV.E2E.StockMemoryMachine
 import FV.Backend.Proof.StockMemoryClass
 import FV.E2E.ABIReadOnlyMachine
