@@ -7,7 +7,7 @@ import FV.E2E.TypedRulesProg
 
 `sw` (`SretReturnWitness`) through the typed chain (`InSubset.toT`, `Compiled.toT`, the proven
 typed rule families `typedRules_program`): with the witness callees (`NonVacuity`), a return of
-a run of `sw` leaves the pointer `p` in x0.
+a run of `sw` leaves the pointer `p` in x8 (until #587: x0).
 -/
 
 namespace E2E.SretReturnWitness
@@ -28,7 +28,7 @@ theorem sw_returns_sretT :
         Clif.runLoop env { funcs := [] } fuel cs = .returned vals cm →
         ∃ n, ArmRet ra s (runX (ArmStepX (witnessX (witnessSym syms) tp)
             (witnessHooks g h (witnessSym syms) tp) fa) n s) ∧
-          XHolds p (xreg 0 (runX (ArmStepX (witnessX (witnessSym syms) tp)
+          XHolds p (xreg 8 (runX (ArmStepX (witnessX (witnessSym syms) tp)
             (witnessHooks g h (witnessSym syms) tp) fa) n s)) ∧
           MemAgree cm (runX (ArmStepX (witnessX (witnessSym syms) tp)
             (witnessHooks g h (witnessSym syms) tp) fa) n s) := by

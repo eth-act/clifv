@@ -164,7 +164,7 @@ The proof covers them as follows.
   its `_abi` copies (`FV/E2E/SretReturnCleanup.lean`: `backend_correct_final_cleanup_abi`,
   `backend_correct_final_cleanup_sret`, witness `SretReturnCleanup.sw_returns_sret_cleanup`),
   and so has the typed chain (`FV/E2E/SretReturnT.lean`: `ArmRefinesTAbi`, each value of
-  `vals ++ sretArg f args` in the return register of its class in the combined list;
+  `vals` in the return register of its class, each of `sretArg f args` in x8;
   `backend_correct_finalT_abi`, `backend_correct_finalT_sret` for an integer `sret` parameter;
   driver `term_stepT_abi`/`sim_runT_abi`/`driver_correctT_abi`, `term_stepT`/`sim_runT`/
   `driver_correctT` the corollaries; witness `SretReturnWitness.sw_returns_sretT`).
@@ -177,9 +177,9 @@ The proof covers them as follows.
   strengthened: its return branch applies `backend_correct_world_pipeline_abi` to `f` with the
   callee contracts of the unchanged linked induction (`LinkSys.thm` at depth `M - 1`), so a
   compiled callee's contract still claims only its CLIF results (a Lean-compiled caller never
-  reads x0 after an `sret` call). `sret_reach` holds for the per-activation run on `P.bare`
+  reads x8 after an `sret` call). `sret_reach` holds for the per-activation run on `P.bare`
   (no program functions, every call an extern). Witness: `Link.DeadCleanup.SretWitness
-  .exec_returns_sret` (`function %s(i64 sret)` compiled by `compileExeU`, x0 = the pointer).
+  .exec_returns_sret` (`function %s(i64 sret)` compiled by `compileExeU`, x8 = the pointer).
   Over the mid-end: `backend_correct_opt_abi`/`backend_correct_opt_proven_abi`
   (`FV/E2E/SretReturnOpt.lean`; premise `sretStableB (Opt.optimize f cfg)`, the optimiser keeps
   the signature so `sretArg` is the source's; witness `SretReturnWitness.sw_opt_abi`). Through
@@ -193,10 +193,10 @@ The proof covers them as follows.
   *With unwinding* (`agent/AbiS7d-unw`, `FV/E2E/SretReturnUnwind.lean`):
   `E2E.backend_correct_final_unwind_abi` (and `_ex_abi` for `CompiledA`) has
   `backend_correct_final_unwind`'s premises plus `sretStableXB f` and the conclusion
-  `ArmRefinesUAbi … (sretArg f args) (Clif.runLoopX …)` (returns: x0.. hold `vals ++ sretArg f
-  args`; traps and exceptions as `ArmRefinesU`, `ArmRefinesUAbi.armRefinesU`);
+  `ArmRefinesUAbi … (sretArg f args) (Clif.runLoopX …)` (returns: x0.. hold `vals`, x8 holds
+  `sretArg f args`; traps and exceptions as `ArmRefinesU`, `ArmRefinesUAbi.armRefinesU`);
   `backend_correct_final_unwind_sret`: for an `sret` parameter `i` and no returns, a returned run
-  with unwinding leaves `args[i]` in x0 (`vals = []` by `runLoopX_returned_tys_entry`). Chain:
+  with unwinding leaves `args[i]` in x8 (`vals = []` by `runLoopX_returned_tys_entry`). Chain:
   `sim_runX_abi`/`driver_correctU_abi` (`RunOkUAbi Q`, `FV/Backend/Proof/LowerSimUAbi.lean`),
   `IselSimUAbi`, `iselSimUAbi_of_driver`, `iselSimU_final_abi`,
   `backend_correct_of_layersU_ex_abi`. A caught exception continues at a `try_call`'s handler

@@ -8,7 +8,7 @@ import FV.E2E.SretReturn
 `backend_correct_legal_wide`, `backend_correct_legal` (`FV/E2E/Legal.lean`) with the premise
 `sretStableB g` on the compiled legalised function `g`: a return of the Arm code of `g` also
 leaves the ABI return values `sretArg g args'` (of `g`'s run on the ABI-split arguments `args'`)
-after the expanded CLIF results in x0.. (`ArmRefinesLegalAbi`).
+in x8 after the expanded CLIF results in x0.. (`ArmRefinesLegalAbi`; until #587: in x0.. after them).
 -/
 
 namespace E2E
@@ -38,7 +38,7 @@ theorem ArmRefinesLegalAbi.armRefinesLegal {rg : List (List Opt.Legalize128.Slot
   | outOfFuel => exact h
 
 /-- `backend_correct_legal_env_wide` with the ABI return values (`sretStableB g`): a return also leaves
-`sretArg g args'` after the expanded results in x0.. (`ArmRefinesLegalAbi`). -/
+`sretArg g args'` in x8 after the expanded results in x0.. (`ArmRefinesLegalAbi`). -/
 theorem backend_correct_legal_env_wide_abi {f g : Clif.Function} {cert : Opt.Legalize128.Cert}
     (hchk : Opt.Legal.checkW f g cert = true)
     {p p' : Clif.Program} {k : Nat} {vc vcp : VCode}
@@ -117,7 +117,7 @@ theorem backend_correct_legal_env_wide_abi {f g : Clif.Function} {cert : Opt.Leg
   | outOfFuel => trivial
 
 /-- `backend_correct_legal_env` with the ABI return values (`sretStableB g`): a return also leaves
-`sretArg g args'` after the expanded results in x0.. (`ArmRefinesLegalAbi`). -/
+`sretArg g args'` in x8 after the expanded results in x0.. (`ArmRefinesLegalAbi`). -/
 theorem backend_correct_legal_env_abi {f g : Clif.Function} {cert : Opt.Legalize128.Cert}
     (hchk : Opt.Legal.check f g cert = true)
     {p p' : Clif.Program} {k : Nat} {vc vcp : VCode}
@@ -170,7 +170,7 @@ theorem backend_correct_legal_env_abi {f g : Clif.Function} {cert : Opt.Legalize
     hslot hent hres hbe hexp hargs hcs hcs' hsl hmem hrel htrS htr fuel
 
 /-- `backend_correct_legal_wide` with the ABI return values (`sretStableB g`): a return also leaves
-`sretArg g args'` after the expanded results in x0.. (`ArmRefinesLegalAbi`). -/
+`sretArg g args'` in x8 after the expanded results in x0.. (`ArmRefinesLegalAbi`). -/
 theorem backend_correct_legal_wide_abi {f g : Clif.Function} {cert : Opt.Legalize128.Cert}
     (hchk : Opt.Legal.checkW f g cert = true)
     {p p' : Clif.Program} {k : Nat} {vc vcp : VCode}
@@ -215,7 +215,7 @@ theorem backend_correct_legal_wide_abi {f g : Clif.Function} {cert : Opt.Legaliz
     hXI hsym hslot hent hres hbe hexp hargs hcs hcs' hsl hmem hrel htrS htr fuel
 
 /-- `backend_correct_legal` with the ABI return values (`sretStableB g`): a return also leaves
-`sretArg g args'` after the expanded results in x0.. (`ArmRefinesLegalAbi`). -/
+`sretArg g args'` in x8 after the expanded results in x0.. (`ArmRefinesLegalAbi`). -/
 theorem backend_correct_legal_abi {f g : Clif.Function} {cert : Opt.Legalize128.Cert}
     (hchk : Opt.Legal.check f g cert = true)
     {p p' : Clif.Program} {k : Nat} {vc vcp : VCode}

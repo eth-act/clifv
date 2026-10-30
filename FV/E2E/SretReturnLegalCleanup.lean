@@ -15,7 +15,7 @@ namespace E2E
 open Backend Backend.Proof Backend.Proof.Driver
 
 /-- `backend_correct_legal_env_cleanup` with the ABI return values (`sretStableB g`): a return also leaves
-`sretArg g args'` after the expanded results in x0.. (`ArmRefinesLegalAbi`). -/
+`sretArg g args'` in x8 after the expanded results in x0.. (`ArmRefinesLegalAbi`). -/
 theorem backend_correct_legal_env_cleanup_abi {f g : Clif.Function} {cert : Opt.Legalize128.Cert}
     (hchk : Opt.Legal.check f g cert = true)
     {p p' : Clif.Program} {k : Nat} {vc vcp : VCode}
@@ -95,7 +95,7 @@ theorem backend_correct_legal_env_cleanup_abi {f g : Clif.Function} {cert : Opt.
   | outOfFuel => trivial
 
 /-- `backend_correct_legal_cleanup` with the ABI return values (`sretStableB g`): a return also leaves
-`sretArg g args'` after the expanded results in x0.. (`ArmRefinesLegalAbi`). -/
+`sretArg g args'` in x8 after the expanded results in x0.. (`ArmRefinesLegalAbi`). -/
 theorem backend_correct_legal_cleanup_abi {f g : Clif.Function} {cert : Opt.Legalize128.Cert}
     (hchk : Opt.Legal.check f g cert = true)
     {p p' : Clif.Program} {k : Nat} {vc vcp : VCode}

@@ -8,7 +8,7 @@ import FV.Opt.OptimizeX
 `sw` (`SretReturnWitness`) optimised by the executable compiler's mid-end configuration
 (`Opt.exeConfig`: the Cranelift rules, the proven rule set) and compiled: every premise of
 `backend_correct_opt_proven_abi` but the run's own is discharged (witness callees,
-`NonVacuity`), so a return of a run of `sw` on `[p, v]` leaves `p` in x0 after the (no) CLIF
+`NonVacuity`), so a return of a run of `sw` on `[p, v]` leaves `p` in x8 after the (no) CLIF
 results.
 -/
 
