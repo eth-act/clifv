@@ -284,6 +284,7 @@ theorem go_noLabel : ∀ (ls : List Line) (off : Nat) (m : Std.HashMap Lbl Nat),
     | label l => simp [Line.isLabel] at h
     | ins i t => simp only [labelOffsets.go]; exact go_noLabel ls _ m h.2
     | word a b => simp only [labelOffsets.go]; exact go_noLabel ls _ m h.2
+    | data w => simp only [labelOffsets.go]; exact go_noLabel ls _ m h.2
 
 theorem labelOffsets_one {lines : Array Line} (h : oneLabel lines.toList = true) :
     labelOffsets lines = .ok ((∅ : Std.HashMap Lbl Nat).insert (headLabel lines.toList) 0) := by

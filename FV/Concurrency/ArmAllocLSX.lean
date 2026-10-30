@@ -633,7 +633,9 @@ theorem fpuLoad_stackX_form {F : BitVec 64 → Prop} {ctx : FnCtx} {sz : ScalarS
   have hlines : ∀ (r0 : Reg) ps, (MInst.fpuLoad sz r0 m fl).lines ctx ps =
       .ok (loadConst64 (.x 16) (u64 o) ++
         [.ins (.fpuLoad sz r0 (.regExtended B (.x 16) .sxtx)) fl.trapCode], ps) := by
-    intro r0 ps; simp [MInst.lines, hf, bind, Except.bind, pure, Except.pure]
+    intro r0 ps
+    rcases hm with ⟨o', rfl⟩ | ⟨o', rfl⟩ | ⟨o', rfl⟩ <;>
+      simp [MInst.lines, hf, bind, Except.bind, pure, Except.pure]
   have hpl := preLines_loadConst64 (.x 16) (u64 o)
   have henv : ∀ (env env' : Env) (r0 : Reg) (mm : AMode),
       Insn.toArmInst env (.fpuLoad sz r0 mm) = Insn.toArmInst env' (.fpuLoad sz r0 mm) :=
