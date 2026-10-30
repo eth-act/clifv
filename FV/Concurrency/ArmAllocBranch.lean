@@ -264,6 +264,9 @@ theorem labelOffsets_go_nodup : ∀ {L : List Line} {off : Nat} {m0 m : Std.Hash
     | word a b =>
       simp only [labelOffsets.go] at h
       simpa [E2E.EmitLabels.lineDef] using labelOffsets_go_nodup h
+    | data w =>
+      simp only [labelOffsets.go] at h
+      simpa [E2E.EmitLabels.lineDef] using labelOffsets_go_nodup h
 
 /-- The blocks' labels are among the labels the blocks' lines define, in order. -/
 theorem blocks_defs {c : FnCtx} {af : AFunc} :
@@ -297,9 +300,9 @@ theorem af_nodup {R : RL} (hR : R.Wf) : (R.af.blocks.toList.map fun p => Lbl.blo
   obtain ⟨body, psF, hb, hL, -⟩ := emit_block hR.emit
   have hn := (labelOffsets_go_nodup (show labelOffsets.go R.fa.lines.toList 0 {} = .ok R.lm
     from hR.lm)).1
-  rw [hL, (E2E.EmitLabels.relaxLines_spec _ _).1, E2E.EmitLabels.defs_append,
-    (E2E.EmitLabels.ftList_spec _ body (Nat.le_refl _)).1] at hn
-  exact (blocks_defs _ _ _ _ hb).nodup (List.nodup_append.1 hn).1
+  rw [hL, E2E.EmitLabels.defs_append, (E2E.EmitLabels.relaxLines_spec _ _).1,
+    E2E.EmitLabels.defs_append, (E2E.EmitLabels.ftList_spec _ body (Nat.le_refl _)).1] at hn
+  exact (blocks_defs _ _ _ _ hb).nodup (List.nodup_append.1 (List.nodup_append.1 hn).1).1
 
 theorem nodup_idx {α : Type} {l : List α} (h : l.Nodup) {i j : Nat} {x : α} (hi : l[i]? = some x)
     (hj : l[j]? = some x) : i = j := by
