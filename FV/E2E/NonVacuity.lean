@@ -376,7 +376,13 @@ theorem calleeOk_of_keepsBut {F : BitVec 64 → Prop} {K : Nat} {X : ExtSem} {H 
       rw [hf f h1 h2]; exact hww.1 f hf'
     · rw [hnb a fun hb => ha (hD a hb)]; exact hww.2.1 a ha
     · rw [hp]; exact hww.2.2
-    · obtain ⟨h1, h2⟩ := hdefs p hp
+    · have hp' : p ∈ defRegs ops regs o := by
+        simp only [defRegs] at hp ⊢
+        obtain ⟨i, hi, he⟩ := List.mem_iff_getElem.1 hp
+        simp only [List.length_zip, List.length_take] at hi
+        refine List.mem_iff_getElem.2 ⟨i, by simp only [List.length_zip]; omega, ?_⟩
+        rw [← he]; simp [List.getElem_zip, List.getElem_take]
+      obtain ⟨h1, h2⟩ := hdefs p hp'
       rw [h1, h2]
       exact regVal_keep hf fun n e => by cases e; omega
     · refine regVal_keep hf fun n e => ?_
@@ -456,7 +462,7 @@ theorem xCallsOk_witness {env : Clif.Env} {exts : List Clif.ExtFunc} (MR : MemRe
   have h0 : rvals = [] := List.eq_nil_of_length_eq_zero (by rw [hrl, (hsig ext hin).2]; rfl)
   subst h0
   rw [hnoop ext hin g hg _ _ _ _ hret]
-  exact ⟨[], w, rfl, by rw [(hsig ext hin).1]; rfl, ⟨Nat.le_refl _, fun _ _ _ h => nomatch h⟩, hmr⟩
+  exact ⟨[], w, rfl, by rw [(hsig ext hin).2]; rfl, ⟨Nat.le_refl _, fun _ _ _ h => nomatch h⟩, hmr⟩
 
 /-- **The indirect-call contract holds for the witness** for call-site signatures without
 returns, in an environment whose externs keep the memory (if there is a signature). -/
@@ -470,7 +476,7 @@ theorem xCallsIndOk_witness {env : Clif.Env} {sigs : List Clif.Signature} (MR : 
   have h0 : rvals = [] := List.eq_nil_of_length_eq_zero (by rw [hrl, (hsig sig hin).2]; rfl)
   subst h0
   rw [hnoop sig hin n g hg _ _ _ _ hret]
-  exact ⟨[], w, rfl, by rw [(hsig sig hin).1]; rfl, ⟨Nat.le_refl _, fun _ _ _ h => nomatch h⟩, hmr⟩
+  exact ⟨[], w, rfl, by rw [(hsig sig hin).2]; rfl, ⟨Nat.le_refl _, fun _ _ _ h => nomatch h⟩, hmr⟩
 
 /-! ## The premises of the end-to-end theorems -/
 
@@ -708,7 +714,7 @@ theorem xCallsOk_id {env : Clif.Env} {exts : List Clif.ExtFunc} (MR : MemRelT)
         simp only [idX, hc, ↓reduceIte, Option.some.injEq, Prod.mk.injEq, and_true, List.drop_one,
           List.tail_cons]
         exact List.take_of_length_le (by omega)
-    exact ⟨args, w, hx, by rw [hl1, hr1], hall.prefixHold, hmr⟩
+    exact ⟨args, w, hx, by have := hall.1; omega, hall.prefixHold, hmr⟩
   · obtain ⟨hs0, hr0, hG⟩ := hnoop ext hin hi
     have h0 : rvals = [] := List.eq_nil_of_length_eq_zero (by rw [hrl, hr0]; rfl)
     subst h0
@@ -721,7 +727,7 @@ theorem xCallsOk_id {env : Clif.Env} {exts : List Clif.ExtFunc} (MR : MemRelT)
           simp only [List.headD_cons, lo64_ofX] at e
           exact hi (hinj _ _ hn e ▸ hn)
         simp only [idX, hc, ↓reduceIte]
-    exact ⟨[], w, hx, by rw [hs0]; rfl, ⟨Nat.le_refl _, fun _ _ _ h => nomatch h⟩, hmr⟩
+    exact ⟨[], w, hx, by rw [hr0]; rfl, ⟨Nat.le_refl _, fun _ _ _ h => nomatch h⟩, hmr⟩
 
 /-- **Non-vacuity with value-returning callees**: for a compiled function without indirect calls
 whose call sites have the witness shapes (`IdSite idf`: direct calls of `(i64) -> i64` callees
