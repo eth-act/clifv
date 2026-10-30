@@ -146,7 +146,7 @@ theorem ctor_noCall (ctx : Ctx) {term : Term} {vs : List V} {s : LState} {v : V}
   | false => rfl
   | true =>
     exfalso
-    rcases h2 m hm with hn | ⟨-, i, rfl, hi⟩ | ⟨-, rss, ps, rs, -, -, -, rfl⟩
+    rcases h2 m hm with hn | ⟨-, i, rfl, hi⟩ | ⟨-, rss, k, ps, rs, -, -, -, -, -, rfl⟩
     · cases m <;> simp_all [isCallB, MInst.isCtl]
     · have := ofV_call_cIn hi hc
       rw [hargs i (by simp)] at this
