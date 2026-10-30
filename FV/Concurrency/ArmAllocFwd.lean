@@ -56,6 +56,7 @@ theorem prun_fwd {R : RL} (hR : R.Wf) :
     exact ⟨(s', mon), .nil, rfl⟩
   | .label _ :: _, _, _, _, h, _, _ => by have := h.run; simp [execLines] at this
   | .word _ _ :: _, _, _, _, h, _, _ => by have := h.run; simp [execLines] at this
+  | .data _ :: _, _, _, _, h, _, _ => by have := h.run; simp [execLines] at this
   | .ins x t :: rest, j, s, s', h, hns, mon => by
     have hj : R.fa.lines.toList[j]? = some (.ins x t) := by simpa using h.at_ 0 _ rfl
     have hh := h.hook x t List.mem_cons_self
