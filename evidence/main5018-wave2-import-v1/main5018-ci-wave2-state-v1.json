@@ -1,0 +1,173 @@
+{
+  "status": "passed",
+  "utc": "2026-10-30T22:56:02.376040+00:00",
+  "records": [
+    {
+      "id": 13014151380,
+      "node_id": "MDg6QXJ0aWZhY3QxMzAxNDE1MTM4MA==",
+      "name": "stage-w2-0",
+      "size_in_bytes": 140406682,
+      "url": "https://api.github.com/repos/eth-act/clifv/actions/artifacts/13014151380",
+      "archive_download_url": "https://api.github.com/repos/eth-act/clifv/actions/artifacts/13014151380/zip",
+      "expired": false,
+      "digest": "sha256:5cc674db4c9baa6742f4bb8adb21834d3053e17e24aef9f435f21b8d076d8341",
+      "created_at": "2026-10-30T21:43:56Z",
+      "updated_at": "2026-10-30T21:43:56Z",
+      "expires_at": "2026-11-01T21:43:54Z",
+      "workflow_run": {
+        "id": 41055926134,
+        "repository_id": 1391033036,
+        "head_repository_id": 1391033036,
+        "head_branch": "main",
+        "head_sha": "5018b9509dc124154dbe08a5bd85862595d8eab7"
+      }
+    },
+    {
+      "id": 13016702646,
+      "node_id": "MDg6QXJ0aWZhY3QxMzAxNjcwMjY0Ng==",
+      "name": "stage-w2-1",
+      "size_in_bytes": 138611554,
+      "url": "https://api.github.com/repos/eth-act/clifv/actions/artifacts/13016702646",
+      "archive_download_url": "https://api.github.com/repos/eth-act/clifv/actions/artifacts/13016702646/zip",
+      "expired": false,
+      "digest": "sha256:8718a3a2f434520c27c12c9a392e0dcc7dfcbf1e6a7fd9e473d54457c585dcfa",
+      "created_at": "2026-10-30T22:16:10Z",
+      "updated_at": "2026-10-30T22:16:10Z",
+      "expires_at": "2026-11-01T22:16:08Z",
+      "workflow_run": {
+        "id": 41055926134,
+        "repository_id": 1391033036,
+        "head_repository_id": 1391033036,
+        "head_branch": "main",
+        "head_sha": "5018b9509dc124154dbe08a5bd85862595d8eab7"
+      }
+    },
+    {
+      "id": 13017369838,
+      "node_id": "MDg6QXJ0aWZhY3QxMzAxNzM2OTgzOA==",
+      "name": "stage-w2-2",
+      "size_in_bytes": 115052144,
+      "url": "https://api.github.com/repos/eth-act/clifv/actions/artifacts/13017369838",
+      "archive_download_url": "https://api.github.com/repos/eth-act/clifv/actions/artifacts/13017369838/zip",
+      "expired": false,
+      "digest": "sha256:a7316fe9e5883d3721bf007ec5bc0d2b8bcf1038dd025aefefea7e86d72ae525",
+      "created_at": "2026-10-30T22:34:21Z",
+      "updated_at": "2026-10-30T22:34:21Z",
+      "expires_at": "2026-11-01T22:34:19Z",
+      "workflow_run": {
+        "id": 41055926134,
+        "repository_id": 1391033036,
+        "head_repository_id": 1391033036,
+        "head_branch": "main",
+        "head_sha": "5018b9509dc124154dbe08a5bd85862595d8eab7"
+      }
+    },
+    {
+      "id": 13018826212,
+      "node_id": "MDg6QXJ0aWZhY3QxMzAxODgyNjIxMg==",
+      "name": "stage-w2-3",
+      "size_in_bytes": 135767622,
+      "url": "https://api.github.com/repos/eth-act/clifv/actions/artifacts/13018826212",
+      "archive_download_url": "https://api.github.com/repos/eth-act/clifv/actions/artifacts/13018826212/zip",
+      "expired": false,
+      "digest": "sha256:407df7ebf1ac78a97df5f960b0bbd2c0dad4756e448b904596d5996115d3ae5c",
+      "created_at": "2026-10-30T22:38:43Z",
+      "updated_at": "2026-10-30T22:38:43Z",
+      "expires_at": "2026-11-01T22:38:41Z",
+      "workflow_run": {
+        "id": 41055926134,
+        "repository_id": 1391033036,
+        "head_repository_id": 1391033036,
+        "head_branch": "main",
+        "head_sha": "5018b9509dc124154dbe08a5bd85862595d8eab7"
+      }
+    },
+    {
+      "id": 13013245463,
+      "node_id": "MDg6QXJ0aWZhY3QxMzAxMzI0NTQ2Mw==",
+      "name": "stage-w2-4",
+      "size_in_bytes": 173748223,
+      "url": "https://api.github.com/repos/eth-act/clifv/actions/artifacts/13013245463",
+      "archive_download_url": "https://api.github.com/repos/eth-act/clifv/actions/artifacts/13013245463/zip",
+      "expired": false,
+      "digest": "sha256:43e1b483cb920af85795c81f7c2e89b9a080968abbefb439e4b2e9608c6d651c",
+      "created_at": "2026-10-30T21:16:25Z",
+      "updated_at": "2026-10-30T21:16:25Z",
+      "expires_at": "2026-11-01T21:16:23Z",
+      "workflow_run": {
+        "id": 41055926134,
+        "repository_id": 1391033036,
+        "head_repository_id": 1391033036,
+        "head_branch": "main",
+        "head_sha": "5018b9509dc124154dbe08a5bd85862595d8eab7"
+      }
+    },
+    {
+      "id": 13016018299,
+      "node_id": "MDg6QXJ0aWZhY3QxMzAxNjAxODI5OQ==",
+      "name": "stage-w2-5",
+      "size_in_bytes": 135888408,
+      "url": "https://api.github.com/repos/eth-act/clifv/actions/artifacts/13016018299",
+      "archive_download_url": "https://api.github.com/repos/eth-act/clifv/actions/artifacts/13016018299/zip",
+      "expired": false,
+      "digest": "sha256:f2c0f26d351a3dc94110f5e7973c2301d2868eb4c1c024553b1fdbe3953acf19",
+      "created_at": "2026-10-30T22:11:57Z",
+      "updated_at": "2026-10-30T22:11:57Z",
+      "expires_at": "2026-11-01T22:11:55Z",
+      "workflow_run": {
+        "id": 41055926134,
+        "repository_id": 1391033036,
+        "head_repository_id": 1391033036,
+        "head_branch": "main",
+        "head_sha": "5018b9509dc124154dbe08a5bd85862595d8eab7"
+      }
+    },
+    {
+      "id": 13018352855,
+      "node_id": "MDg6QXJ0aWZhY3QxMzAxODM1Mjg1NQ==",
+      "name": "stage-w2-6",
+      "size_in_bytes": 139128086,
+      "url": "https://api.github.com/repos/eth-act/clifv/actions/artifacts/13018352855",
+      "archive_download_url": "https://api.github.com/repos/eth-act/clifv/actions/artifacts/13018352855/zip",
+      "expired": false,
+      "digest": "sha256:9e76c8939d9ef97618a5440138f68ba68bcdd2641346a7c0689edb4768e69d2e",
+      "created_at": "2026-10-30T22:48:29Z",
+      "updated_at": "2026-10-30T22:48:29Z",
+      "expires_at": "2026-11-01T22:48:26Z",
+      "workflow_run": {
+        "id": 41055926134,
+        "repository_id": 1391033036,
+        "head_repository_id": 1391033036,
+        "head_branch": "main",
+        "head_sha": "5018b9509dc124154dbe08a5bd85862595d8eab7"
+      }
+    },
+    {
+      "id": 13017660322,
+      "node_id": "MDg6QXJ0aWZhY3QxMzAxNzY2MDMyMg==",
+      "name": "stage-w2-9",
+      "size_in_bytes": 149666528,
+      "url": "https://api.github.com/repos/eth-act/clifv/actions/artifacts/13017660322",
+      "archive_download_url": "https://api.github.com/repos/eth-act/clifv/actions/artifacts/13017660322/zip",
+      "expired": false,
+      "digest": "sha256:a88a04dc328e80c8a78d6d12709fbf356352e6f03bfcb69a38abda1e70c625aa",
+      "created_at": "2026-10-30T22:25:23Z",
+      "updated_at": "2026-10-30T22:25:23Z",
+      "expires_at": "2026-11-01T22:25:21Z",
+      "workflow_run": {
+        "id": 41055926134,
+        "repository_id": 1391033036,
+        "head_repository_id": 1391033036,
+        "head_branch": "main",
+        "head_sha": "5018b9509dc124154dbe08a5bd85862595d8eab7"
+      }
+    }
+  ],
+  "additive_only": true,
+  "stage_removed": true,
+  "source_changed": false,
+  "artifact_count": 8,
+  "memory_cap": "1G",
+  "temporary_loan_requires_return": false,
+  "loan_returned_utc": "2026-10-30T22:56:10.406790+00:00"
+}
