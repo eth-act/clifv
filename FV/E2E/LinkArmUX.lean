@@ -380,7 +380,7 @@ theorem xCallsIndOkU (hL : L.Ok) (hU : L.OkU) [L.CrunOkX] (hκ : L.Budget κ)
         argsAt_regLocs hargs⟩]
       exact hx
     · rw [hol]
-      exact hsr sig hsig hm.ty hm.returns_length
+      exact hm.returns_length
 
 /-- **The raising callees' contract of an activation of `g` at depth `M`** (direct calls) under
 its environment with unwinding (`XRaiseOk` for `XRU`). -/
