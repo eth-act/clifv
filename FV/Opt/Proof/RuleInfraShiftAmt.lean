@@ -7,17 +7,19 @@ Bit-vector goals of `shifts.isle` and `spaceship.isle` rules that the general `k
 close, decided by targeted kernel-checked rewriting (no SAT certificates, no `Lean.ofReduceBool`):
 
 * `kbv_amt`: every shift by a bit-vector amount (also CLIF's `ishl`/`ushr`/`sshr`) becomes a shift
-  by its `toNat` (`BitVec.shiftLeft_eq'`, …); the amounts (masks `x &&& (2^k - 1)`, extensions,
-  sums and differences) become `Nat` arithmetic over the operands' `toNat`s; then rotations written
-  with two shifts become `rotateLeft` (`rotl_of`, `rotl_of'`, `rotateLeft_rotateLeft'`,
-  `rotateLeft_of_mod_eq_zero`), a shift right then left, or left then right, becomes a mask
-  (`shr_shl_of`, `sshr_shl_of`, `shl_shr_of`), an arithmetic shift right undoes a shift left of an
-  extension that keeps the sign (`sshr_shl_setWidth`, `sshr_shl_signExtend`) or sign-extends a
-  zero extension shifted to the top bit (`sshr_shl_setWidth_top`), the negated sign bit is the sign
-  mask (`neg_ushiftRight_pred`), a mask moves across a shift left then right (`and_shl_shr_of`),
-  two shifts left by one amount are collected (`shl_or_shl_of`), all ones stay all ones under an
-  arithmetic shift right (`allOnes_sshiftRight`), and the remaining shifts are compared by their
-  amounts (`congr`, `omega`). The amount conditions of these lemmas are discharged by `omega`.
+  by its `toNat` (`BitVec.shiftLeft_eq'`, …); two shifts in one direction become one shift by the
+  sum (`BitVec.shiftLeft_add`, `ushiftRight_ushiftRight`, `BitVec.sshiftRight_add`); the amounts
+  (masks `x &&& (2^k - 1)`, extensions, sums and differences) become `Nat` arithmetic over the
+  operands' `toNat`s; then rotations written with two shifts become `rotateLeft` (`rotl_of`,
+  `rotl_of'`, `rotateLeft_rotateLeft'`, `rotateLeft_of_mod_eq_zero`), a shift right then left, or
+  left then right, becomes a mask (`shr_shl_of`, `sshr_shl_of`, `shl_shr_of`), an arithmetic shift
+  right undoes a shift left of an extension that keeps the sign (`sshr_shl_setWidth`,
+  `sshr_shl_signExtend`) or sign-extends a zero extension shifted to the top bit
+  (`sshr_shl_setWidth_top`), the negated sign bit is the sign mask (`neg_ushiftRight_pred`), a mask
+  moves across a shift left then right (`and_shl_shr_of`), two shifts left by one amount are
+  collected (`shl_or_shl_of`), all ones stay all ones under an arithmetic shift right
+  (`allOnes_sshiftRight`), and the remaining shifts are compared by their amounts (`congr`,
+  `omega`). The amount conditions of these lemmas are discharged by `omega`.
 * `kbv_cmp`: comparisons (`slt`, `ult`, …) as `decide`s on `toInt`/`toNat`, every `if` split, each
   case closed by evaluation or `omega`. Both use only explicit `simp only` sets, so the `@[simp]`
   lemmas of the importing module do not change them.
@@ -156,6 +158,14 @@ theorem allOnes_sshiftRight {w : Nat} (n : Nat) :
 
 example : (BitVec.allOnes 8).sshiftRight 3 = BitVec.allOnes 8 := allOnes_sshiftRight 3
 
+/-- Two logical shifts right add their amounts (`BitVec.shiftLeft_add` for `>>>`). -/
+theorem ushiftRight_ushiftRight {w : Nat} (x : BitVec w) (n m : Nat) :
+    x >>> n >>> m = x >>> (n + m) := by
+  apply BitVec.eq_of_toNat_eq
+  simp only [BitVec.toNat_ushiftRight, Nat.shiftRight_add]
+
+example : 0x81#8 >>> 3 >>> 2 = 0x81#8 >>> 5 := ushiftRight_ushiftRight _ 3 2
+
 /-- `shr_shl_of` with an arithmetic shift right. -/
 theorem sshr_shl_of {w : Nat} (x : BitVec w) {a b : Nat} (hb : b = a) :
     x.sshiftRight a <<< b = x &&& BitVec.allOnes w <<< a := by
@@ -272,7 +282,8 @@ macro "kbv_amt" : tactic => `(tactic| (
   (try subst_vars)
   (try simp only [BitVec.shiftLeft_eq', BitVec.ushiftRight_eq', BitVec.sshiftRight_eq', BitVec.lt_def,
     BitVec.le_def] at *)
-  (try simp only [← BitVec.shiftLeft_add] at *)
+  (try simp only [← BitVec.shiftLeft_add, Opt.Proof.ShiftAmt.ushiftRight_ushiftRight,
+    ← BitVec.sshiftRight_add] at *)
   (try simp (disch := decide) only [Opt.Proof.KernelBV.reduceToNatAndMask, Opt.Proof.KernelBV.toNat_signExtend_mod,
     Opt.Proof.KernelBV.toNat_setWidth_mod, BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_ofNat,
     BitVec.toNat_setWidth, Nat.reducePow, Nat.reduceMod, Nat.reduceAdd, Nat.reduceSub] at *)
