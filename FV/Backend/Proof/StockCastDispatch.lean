@@ -117,6 +117,28 @@ private theorem excludes_format {p : Program} (hp : Data p) {f : Clif.Function} 
     have equal := Option.some.inj (actual.symm.trans name)
     exact safe j definition cl found original equal
 
+/-- `excludes_format` at the level of argument patterns under the baseline embedding. -/
+private theorem excludes_format_args {p : Program} (hp : Data p) {f : Clif.Function} {ctx : Ctx}
+    (inv : MappedCtxInv f ctx) (bad : String)
+    (safe : ∀ (j : Nat) (info : IInfo) (cl : Clif.Inst),ctx.insts[j]? = some info → info.clif = some cl → (instNames cl).1 ≠ bad)
+    {r : Rule} {tyPat q : Pattern} {opTerm : Nat} (look : Look)
+    (args : r.args = [.term 18 209 [tyPat,.term 152 2476 [.term 151 opTerm [],lookPattern look q]]])
+    {fT : Nat} (format : fmtD q = some fT) {tf : Term} {k : Nat}
+    (term : termOf p fT = .ok tf) (kind : tf.kind = .enumVariant k)
+    (name : (variantNames 152)[k]? = some bad)
+    {i x code : Nat} {info : IInfo}
+    (source : ctx.insts[i]? = some info) (data : info.data = .data 152 29 [.data 151 code [],.value x])
+    {st : LState} {env0 env : Isle.Interp.Env V}
+    (patterns : matchArgs p (Backend.sem ctx) st r.args [.inst i] env0 = .ok (some env)) : False := by
+  rw [args] at patterns
+  obtain ⟨e,pattern,_⟩ := matchArgs_cons_inv patterns
+  obtain ⟨e',child⟩ := unary_operand hp ctx source data pattern
+  obtain ⟨j,definition,fields,defined,found,raw⟩ := look_format hp ctx look format term kind child
+  obtain ⟨cl,original⟩ := Option.isSome_iff_exists.mp (inv.defClif x j definition defined found)
+  have actual := source_format inv found original raw
+  have equal := Option.some.inj (actual.symm.trans name)
+  exact safe j definition cl found original equal
+
 section Data
 attribute [local semireducible] Isle.Aarch64.program
 private theorem extend_data {f : Clif.Function} {ctx : Ctx} (inv : MappedCtxInv f ctx)
@@ -139,6 +161,32 @@ private theorem reduce_data {f : Clif.Function} {ctx : Ctx} (inv : MappedCtxInv 
     simp only [instData,supported,ite_true]; rfl
   exact Except.ok.inj ((inv.data i info _ source clif).symm.trans shape)
 end Data
+
+/-- In a context without `Load`/`LoadNoOffset` statements, the u/sextend-of-load look-through
+roots (1272, 1300, 1359) cannot match an extend statement's arguments under the baseline
+embedding. -/
+theorem stock_extend_load_args_fail {f : Clif.Function} {ctx : Ctx} (inv : MappedCtxInv f ctx)
+    (noLoad : ∀ (j : Nat) (info : IInfo) (cl : Clif.Inst), ctx.insts[j]? = some info → info.clif = some cl →
+      (instNames cl).1 ≠ "LoadNoOffset" ∧ (instNames cl).1 ≠ "Load")
+    (sg : Bool) {i x : Nat} {info : IInfo} {ty : Clif.Ty} (source : ctx.insts[i]? = some info)
+    (clif : info.clif = some (.extend (ScalarCast.extendOp sg) ty x))
+    {r : Rule} (hr : r = rule_lower_1272 ∨ r = rule_lower_1300 ∨ r = rule_lower_1359)
+    (st : LState) (env : Isle.Interp.Env V) :
+    matchArgs program (Backend.sem ctx) st r.args [.inst i] (Array.replicate r.vars.length none) ≠
+      .ok (some env) := by
+  have data := extend_data inv sg source clif
+  intro patterns
+  rcases hr with rfl | rfl | rfl
+  · exact excludes_format_args data_program inv "LoadNoOffset"
+      (fun j info cl found original => (noLoad j info cl found original).1)
+      (.typed 3 (.term 15 2 [.bind 14 1 (.wildcard 14)])) rfl rfl data_program.t2464 term_2464_kind
+      (by decide +kernel) source data patterns
+  · exact excludes_format_args data_program inv "Load"
+      (fun j info cl found original => (noLoad j info cl found original).2)
+      (.bound 4) rfl rfl data_program.t2463 term_2463_kind (by decide +kernel) source data patterns
+  · exact excludes_format_args data_program inv "Load"
+      (fun j info cl found original => (noLoad j info cl found original).2)
+      (.bound 4) rfl rfl data_program.t2463 term_2463_kind (by decide +kernel) source data patterns
 
 /-- The `uextend (fcmp …)` look-through root (S11f) never fires on a subset-E source: `fcmp`
 is a float instruction, outside `Compile.instE`. -/
