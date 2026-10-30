@@ -1,7 +1,7 @@
 import FV.Backend.Proof.StockCmpZero16OriginalLeftEmitterValues
 import FV.Backend.Proof.StockCmpSelectedCalls
 import FV.Backend.Proof.StockCmpOutput
-import FV.Backend.Proof.StockDivConstant
+import FV.Backend.Proof.StockDivConstantSource
 namespace Backend.Stock.Proof.ScalarCmp
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 set_option maxRecDepth 20000

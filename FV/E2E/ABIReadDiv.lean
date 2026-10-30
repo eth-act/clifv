@@ -1,3 +1,4 @@
+import FV.E2E.DivBoundaryCheck
 import FV.Backend.ABIReadDiv
 import FV.E2E.ABIReadTrapBoundary
 import FV.E2E.ABIReadDivSteps
@@ -140,8 +141,6 @@ private noncomputable def boundaryModel : ABIReadTrapBoundary.Model where
   frame := checked_step_frame
   transport := checked_step_transport
   realize := Realize.step_realize
-
-abbrev check := Backend.ABIReadDiv.check
 
 theorem return_transport {sig : Clif.Signature} {args : List Clif.Val}
     (types : args.map (·.ty) = sig.params.map (·.ty))

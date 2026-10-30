@@ -1,3 +1,4 @@
+import FV.Backend.Proof.IselCtlRuleIds
 import FV.Backend.Proof.StockRotateMatch
 import FV.Backend.Proof.StockRootOpcodeMatch
 namespace Backend.Stock.Proof.ScalarRotate

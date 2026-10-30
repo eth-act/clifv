@@ -37,9 +37,6 @@ theorem spillInstOk_setTargets {i i' : MInst} {ls : List Label} (h : i.setTarget
   obtain ⟨h1, -, -, h4⟩ := Driver.setTargets_facts h
   exact ⟨ops, h1.trans hops, clobbers_setTargets h ▸ hok, fun us e => absurd e (h4 us)⟩
 
-theorem spillInstOk_jump (l : Label) : SpillInstOk (.jump l) :=
-  ⟨#[], rfl, opsOk_simple (by simp) (by simp) (by simp) (by simp), fun _ h => by cases h⟩
-
 theorem setTargets_src_isCtl {i i' : MInst} {ls : List Label} (h : i.setTargets ls = some i') :
     i.isCtl = true := by
   unfold MInst.setTargets at h

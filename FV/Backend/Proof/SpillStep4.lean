@@ -1,6 +1,6 @@
 import FV.Backend.Proof.SpillStep4Args
 import FV.Backend.Proof.SpillEdges
-import FV.Backend.Proof.SpillLocalPipe
+import FV.Backend.Proof.SpillLocalForms
 
 /-!
 # The spill allocation's dataflow invariant (V4 (a), step 4): `spillStep4`

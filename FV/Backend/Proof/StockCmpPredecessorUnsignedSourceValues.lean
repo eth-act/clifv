@@ -1,5 +1,6 @@
 import FV.Backend.Proof.StockCmpPredecessorUnsignedEmission
-import FV.Backend.Proof.StockDivConstant
+import FV.Backend.Proof.StockDivConstantSource
+import FV.Backend.Proof.IselCmpDivRoot
 import FV.Backend.Proof.IselFamALUA
 import FV.Backend.Proof.StockCmpConditionValues
 import FV.Backend.Proof.StockDemandMono

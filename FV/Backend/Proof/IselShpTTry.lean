@@ -1,7 +1,7 @@
 import FV.Backend.Proof.IselShpTBase
 import FV.Backend.Proof.IselShpTry
 import FV.Backend.Proof.LowerContractT
-import FV.Backend.Proof.IselTermFactsTy
+import FV.Backend.Proof.IselTermIntPos
 import FV.Backend.Proof.IselCtlCallTI
 import FV.Backend.Proof.IselCtlUnmatchTI
 

@@ -1,3 +1,4 @@
+import FV.Backend.Proof.IselCmpEmit
 import FV.Backend.Proof.StockAliasSemantics
 import FV.Backend.Proof.LowerDecide
 namespace Backend.Stock.Proof.ScalarSelect.ComparisonActualFixture

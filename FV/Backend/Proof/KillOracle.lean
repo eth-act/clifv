@@ -1,4 +1,8 @@
-import FV.Backend.Proof.KillTab
+import FV.Backend.Proof.SpillLocal
+import FV.Backend.Proof.RegallocOperands
+import FV.Backend.Proof.IselCovModel
+import FV.Backend.Proof.IselShpOracle
+import FV.Backend.Proof.TermSetRoots
 import FV.Backend.Proof.KillOfV
 
 /-!

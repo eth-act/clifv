@@ -1,3 +1,4 @@
+import FV.Backend.Proof.IselFamALUA
 import FV.Backend.Proof.StockLogicalSelected
 
 namespace Backend.Stock.Proof.LogicalSelected

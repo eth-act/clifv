@@ -1,3 +1,4 @@
+import FV.Backend.Proof.KillTermIds
 import FV.Backend.Proof.KillGen
 import FV.Backend.Proof.IselFlow
 import FV.Backend.Proof.IselShpOracle
@@ -49,15 +50,6 @@ def killCallB (ty : TypeId) (t : TermId) : Bool :=
     | .enumVariant k => !(ty == tyMInst && isKVariant k)
     | _ => true
   | none => true
-
-theorem termOf_program_eq {t : TermId} {term : Term} (h : termOf program t = .ok term) :
-    program.term? t = some term := by
-  unfold termOf at h
-  split at h
-  · rename_i term' h'
-    cases h
-    exact h'
-  · cases h
 
 theorem killCall_of {ty : TypeId} {t : TermId} (h : killCallB ty t = true) : killCall ty t := by
   intro term k ht hk ⟨hty, hkv⟩
@@ -202,23 +194,6 @@ theorem lower_636_637_nomatch {f : Clif.Function} {ctx : Ctx} (hctx : CtxInv f c
     {r : Rule} (hr : r ∈ program.rulesOf TId.lower) (hid : r.id = 636 ∨ r.id = 637) :
     ∀ m s0 env s1, (matchRule program (sem ctx) {} m r [.inst ii]).run s0 ≠ .ok (some env, s1) :=
   Driver.lower_nonroot_nomatch hctx hi hc hr (by rcases hid with h | h <;> rw [h] <;> decide)
-
-/-- A run of an internal constructor that returned a value, of a term whose rules have no
-if-lets: some rule's argument match and its right-hand side, at one fuel less. -/
-theorem internal_rule {ctx : Ctx} {cfg : Config} (hc : cfg.checkOverlap = false) {t : TermId}
-    {term : Term} {flags : TermFlags} {ex : Option Extractor} (ht : termOf program t = .ok term)
-    (hk : term.kind = .decl flags (some .internal) ex) (hm : flags.isMulti = false)
-    (hil : ∀ r ∈ program.rulesOf t, r.iflets = []) {n : Nat} {ty : TypeId} {vs : List V}
-    {s : LState} {tr : Array RuleId} {v : V} {s' : LState} {tr' : Array RuleId}
-    (h : (applyTerm program (sem ctx) cfg (n + 1) ty t vs).run (s, tr) = .ok (some v, (s', tr'))) :
-    ∃ r ∈ program.rulesOf t, ∃ env tr0,
-      matchArgs program (sem ctx) s r.args vs (Array.replicate r.vars.length none) = .ok (some env) ∧
-      (evalExpr program (sem ctx) cfg n r.rhs env).run (s, tr) = .ok (some v, (s', tr0)) := by
-  obtain ⟨r, hr, m, env, s1, st, tr0, -, hmt, he, hs'⟩ := applyTerm_internal_some hc ht hk hm h
-  obtain ⟨rfl, hma⟩ := Cov.matchRule_noIfLets (hil r hr) hmt
-  simp only [Prod.mk.injEq] at hs'
-  obtain ⟨rfl, -⟩ := hs'
-  exact ⟨r, hr, env, tr0, hma, he⟩
 
 theorem ctor_invalid_reg' (ctx : Ctx) (st : LState) :
     externCtor ctx T.invalid_reg [] st = .ok (.reg .invalid, st) := rfl

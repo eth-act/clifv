@@ -1,7 +1,7 @@
 import FV.Backend.Proof.LowerContract
 import FV.Backend.Proof.DriverCheckTy
 import FV.Backend.Proof.IselExclT
-import FV.Backend.Proof.IselTermFactsTy
+import FV.Backend.Proof.IselTermIntPos
 import FV.Compile.StoreTyped
 import FV.Backend.Proof.InstScopeTF
 

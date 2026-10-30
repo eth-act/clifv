@@ -1,3 +1,4 @@
+import FV.E2E.DeadCleanupLinkScope
 import FV.Link.RelocShape
 import FV.E2E.SpillDefined
 import FV.Link.DeadCleanupCodeMapProof

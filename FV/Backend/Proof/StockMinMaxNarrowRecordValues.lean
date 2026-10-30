@@ -1,3 +1,4 @@
+import FV.Backend.Proof.StockDemandExtent
 import FV.Backend.Proof.StockMinMaxNarrowAllocation
 import FV.Backend.Proof.StockMinMaxNarrowRootValues
 import FV.Backend.Proof.StockGuardedRecordValues

@@ -1,4 +1,6 @@
-import FV.Backend.Proof.StockConstantRecordValues
+import FV.Backend.Proof.StockRecordContext
+import FV.Backend.Proof.StockAvailableValues
+import FV.Backend.Proof.StockScanSemantics
 
 /-! Source consistency across actual retained Stock statements. The proof uses
 only the original SSA/dominance and context construction facts. It covers every

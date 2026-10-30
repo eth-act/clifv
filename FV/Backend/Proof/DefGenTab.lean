@@ -1,5 +1,5 @@
 import FV.Backend.Proof.DefGenSound
-import FV.Backend.Proof.KillTab
+import FV.Backend.Proof.KillTermIds
 import FV.Backend.Proof.TermSetData
 
 /-!

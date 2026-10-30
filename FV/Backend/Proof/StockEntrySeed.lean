@@ -1,6 +1,6 @@
 import FV.Backend.Proof.StockSourceEntry
 import FV.Backend.Proof.StockDFG
-import FV.Backend.Proof.StockConstantRecordValues
+import FV.Backend.Proof.StockRecordContext
 import FV.Backend.Proof.StockEntryAliases
 import FV.Backend.Proof.StockSelectScanRefines
 namespace Backend.Stock.Proof
