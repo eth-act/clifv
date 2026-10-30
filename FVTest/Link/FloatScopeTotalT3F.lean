@@ -27,7 +27,7 @@ theorem tcb_holds : fnScopeInTCB fS = true := fnScopeInTCB_of_T3F scope3F_ok
 the float lowering validator. -/
 theorem pipeline_ok (k : Nat) (base : BitVec 64) (o : Lean.Json) :
     ∃ a, pipeCleanupT fS k base o = .ok a ∧ lowerCheckTCF fS a.vc = true :=
-  let ⟨a, ha, hc, -⟩ := pipeCleanupT_okT3F scope3F_ok k base o
+  let ⟨a, ha, hc, _⟩ := pipeCleanupT_okT3F scope3F_ok k base o
   ⟨a, ha, hc⟩
 
 end E2E.FloatScopeTotalT3FWitness

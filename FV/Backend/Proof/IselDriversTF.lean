@@ -66,11 +66,11 @@ open Backend Backend.Proof Backend.Proof.Driver
 /-- **The control-shape analysis on the float scope** (`iselCtlHypT`'s conclusion). -/
 theorem iselCtlOnF {f : Clif.Function} (hdom : dominatedB f = true) (hs : LowerScopeTF f)
     (hfa : Compile.floatArgsTyped f = true) (hst : Compile.storeTypedB f = true)
-    (hsel : Compile.selectTypedB f = true) (ha : AbiSigsOk f) : Spill.IselCtlOn f := by
+    (hsel : Compile.selectTypedB f = true) (ha : Spill.AbiSigsOk f) : Spill.IselCtlOn f := by
   intro ctx ranges st0 hb
   have hx := hs.externsE
   have hctx : CtxT f ctx := ctxT_ofF hs hb
-  have hcl : Clean ctx := Cov.clean_of_build hb
+  have hcl : Cov.Clean ctx := Cov.clean_of_build hb
   have hfam := famCover_ofF hs hfa hdom hst hsel hb
   refine ⟨fun ii info inst s out s' tr hi hc hN h => ?_,
     fun ti t data targets s out s' tr _ hph hty hB hd hN h => ?_,

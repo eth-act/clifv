@@ -123,7 +123,7 @@ theorem pipeCleanupT_okT3F {g : Clif.Function} (h : fnScopeInTB3F g = true) (k :
   have hcov := formsCovered_completeTF hd hS hfa hst hsel hl hp default
   have hk := spillKillFreeTF hD hS ha (arityOk_of har) htc hl hp
   have hci := ctlInsts_pipelineTF hd hS hfa hst hsel ha hE hl hp
-  have hrc := resClassOk_of_lowerScopeTF hD hS hfa hst hsel
+  have hrc := resClassOk_of_lowerScopeTF hd hS hfa hst hsel
   have hp' := prune_prepare_ok hp
   obtain ⟨hacc, af, ha', fa, fb, he, hla⟩ := backend_total_emit_cleanupTF hD hS (arityOk_of har)
     htc hrc hl hp (ctlSpill_of_ctlSpillB hcs) hcov hk hci hem

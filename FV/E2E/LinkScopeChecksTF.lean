@@ -68,7 +68,7 @@ open Backend Backend.Proof Backend.Proof.Driver Backend.DeadCleanup
 theorem ctlSpillB_of_TF {f : Clif.Function} {vc : VCode} (hdom : dominatedB f = true)
     (hs : LowerScopeTF f) (hfa : Compile.floatArgsTyped f = true)
     (hst : Compile.storeTypedB f = true) (hsel : Compile.selectTypedB f = true)
-    (ha : Spill.AbiSigsOk f) (hec : Spill.EntryClassOk f) (hl : lowerFunction f = .ok vc) :
+    (ha : Spill.AbiSigsOk f) (hec : EntryClassOk f) (hl : lowerFunction f = .ok vc) :
     Spill.ctlSpillB vc = true :=
   Spill.ctlSpillB_of (Spill.ctlSpillHypG_of hs.externsE (CovT.iselCtlOnF hdom hs hfa hst hsel ha)
     hdom ha hec hl)
@@ -77,7 +77,7 @@ theorem ctlSpillB_of_TF {f : Clif.Function} {vc : VCode} (hdom : dominatedB f = 
 theorem ctlInsts_pipelineTF {f : Clif.Function} {vc vcp : VCode} (hdom : dominatedB f = true)
     (hs : LowerScopeTF f) (hfa : Compile.floatArgsTyped f = true)
     (hst : Compile.storeTypedB f = true) (hsel : Compile.selectTypedB f = true)
-    (ha : Spill.AbiSigsOk f) (hec : Spill.EntryClassOk f) (hl : lowerFunction f = .ok vc)
+    (ha : Spill.AbiSigsOk f) (hec : EntryClassOk f) (hl : lowerFunction f = .ok vc)
     (hp : Backend.prepare vc = .ok vcp) : CtlInsts vcp :=
   ctlInsts_pipelineG hs.externsE (CovT.iselCtlOnF hdom hs hfa hst hsel ha)
     (Spill.prepDomain_ofTF hs hl) hdom ha hec hl hp
