@@ -2146,6 +2146,7 @@ def emitTabT23 : Tab := [
   (668, [(.flat 15 true), (.flat 15 true), (.reg 1), (.num .int 64)], (.data 46 0 [(.data 58 119 [(.data 94 0 []), (.flat 15 true), (.flat 15 true), (.reg 1), (.num .int 64)])])),
   (668, [(.flat 15 true), (.flat 15 true), (.reg 1), (.num .int 8)], (.data 46 0 [(.data 58 119 [(.data 94 0 []), (.flat 15 true), (.flat 15 true), (.reg 1), (.num .int 8)])])),
   (669, [(.flat 15 true)], (.data 46 0 [(.data 58 136 [(.flat 15 true)])])),
+  (681, [(.data 89 12 [(.flat 0 true)]), (.flat 15 true)], (.reg 2)),
   (698, [(.val [(.int 16)]), (.data 125 0 []), (.ty [(.int 16)])], (.reg 1)),
   (698, [(.val [(.int 16)]), (.data 125 0 []), (.ty [(.int 32)])], (.reg 1)),
   (698, [(.val [(.int 16)]), (.data 125 0 []), (.ty [(.int 64)])], (.reg 1)),
@@ -2202,11 +2203,11 @@ def emitTabT23 : Tab := [
   (703, [(.data 59 17 []), (.ty [(.int 32)]), (.reg 1), (.val [(.int 32)])], (.reg 1)),
   (703, [(.data 59 17 []), (.ty [(.int 32)]), (.reg 1), (.val [(.int 64)])], (.reg 1)),
   (703, [(.data 59 17 []), (.ty [(.int 32)]), (.reg 1), (.val [(.int 8)])], (.reg 1)),
-  (703, [(.data 59 17 []), (.ty [(.int 64)]), (.reg 1), (.val [(.int 16)])], (.reg 1)),
-  (703, [(.data 59 17 []), (.ty [(.int 64)]), (.reg 1), (.val [(.int 32)])], (.reg 1))]
+  (703, [(.data 59 17 []), (.ty [(.int 64)]), (.reg 1), (.val [(.int 16)])], (.reg 1))]
 
 /-- Chunk 24 of the table. -/
 def emitTabT24 : Tab := [
+  (703, [(.data 59 17 []), (.ty [(.int 64)]), (.reg 1), (.val [(.int 32)])], (.reg 1)),
   (703, [(.data 59 17 []), (.ty [(.int 64)]), (.reg 1), (.val [(.int 64)])], (.reg 1)),
   (703, [(.data 59 17 []), (.ty [(.int 64)]), (.reg 1), (.val [(.int 8)])], (.reg 1)),
   (703, [(.data 59 17 []), (.ty [(.int 8)]), (.reg 1), (.val [(.int 16)])], (.reg 1)),

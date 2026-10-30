@@ -2216,6 +2216,7 @@ def shpTabT24 : Tab := [
   (666, [(.data 94 1 []), (.flat 15 true), (.flat 15 true), (.reg 1), (.flat 15 true)], (.data 46 0 [(.data 58 119 [(.data 94 1 []), (.flat 15 true), (.flat 15 true), (.reg 1), (.flat 15 true)])])),
   (667, [(.flat 15 true), (.flat 15 true), (.reg 1), (.flat 15 true)], (.data 46 0 [(.data 58 119 [(.data 94 1 []), (.flat 15 true), (.flat 15 true), (.reg 1), (.flat 15 true)])])),
   (668, [(.flat 15 true), (.flat 15 true), (.reg 1), (.flat 15 true)], (.data 46 0 [(.data 58 119 [(.data 94 0 []), (.flat 15 true), (.flat 15 true), (.reg 1), (.flat 15 true)])])),
+  (681, [(.data 89 12 [(.flat 0 true)]), (.flat 15 true)], (.reg 2)),
   (698, [(.val [(.int 16)]), (.data 125 0 []), (.ty [(.int 16)])], (.reg 1)),
   (698, [(.val [(.int 16)]), (.data 125 0 []), (.ty [(.int 32)])], (.reg 1)),
   (698, [(.val [(.int 16)]), (.data 125 0 []), (.ty [(.int 64)])], (.reg 1)),
@@ -2292,11 +2293,11 @@ def shpTabT24 : Tab := [
   (703, [(.data 59 18 []), (.ty [(.int 64)]), (.reg 1), (.val [(.int 32)])], (.reg 1)),
   (703, [(.data 59 18 []), (.ty [(.int 64)]), (.reg 1), (.val [(.int 64)])], (.reg 1)),
   (703, [(.data 59 18 []), (.ty [(.int 64)]), (.reg 1), (.val [(.int 8)])], (.reg 1)),
-  (703, [(.data 59 18 []), (.ty [(.int 8)]), (.reg 1), (.val [(.int 16)])], (.reg 1)),
-  (703, [(.data 59 18 []), (.ty [(.int 8)]), (.reg 1), (.val [(.int 32)])], (.reg 1))]
+  (703, [(.data 59 18 []), (.ty [(.int 8)]), (.reg 1), (.val [(.int 16)])], (.reg 1))]
 
 /-- Chunk 25 of the table. -/
 def shpTabT25 : Tab := [
+  (703, [(.data 59 18 []), (.ty [(.int 8)]), (.reg 1), (.val [(.int 32)])], (.reg 1)),
   (703, [(.data 59 18 []), (.ty [(.int 8)]), (.reg 1), (.val [(.int 64)])], (.reg 1)),
   (703, [(.data 59 18 []), (.ty [(.int 8)]), (.reg 1), (.val [(.int 8)])], (.reg 1)),
   (710, [(.ty [(.int 16)]), (.reg 1), (.reg 1)], (.reg 1)),
