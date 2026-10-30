@@ -153,7 +153,7 @@ theorem progResultBTR (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) {M : Nat}
     (htab : L.TableOf (M - 1) h (enterAt (L.A h) (L.canon h args w)) (calleeIni h ini))
     (hinit : Clif.initState L.P h.name vals cm = .ok cs)
     (hret : L.crun M cs = .returned rvals cm') :
-    ∃ outs w', L.progXBT κ M F h args w = some (outs, w') ∧ outs.length = (sigRets h.sig).length ∧
+    ∃ outs w', L.progXBT κ M F h args w = some (outs, w') ∧ outs.length = h.sig.returns.length ∧
       PrefixHold rvals outs ∧
       RelW ⟨F, L.syms, (L.A g).af.slotBase, (RAFrame.compute (L.A g).vcp (L.A g).rf).intBase⟩
         g c sl cm' w' :=
