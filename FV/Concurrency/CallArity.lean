@@ -183,6 +183,7 @@ theorem resume_allAX {RA : RL} (hRA : RA.Wf) (hgv : RA.gv = fun _ _ => False)
     rw [hvb'] at hvb; cases hvb
     rw [hi'] at hi; cases hi
     refine ⟨habi_regs hdr hvb' hi', ?_, hlen⟩
+    simp only at hlen ⊢
     omega
   exact resume_allX hRA hgv hX0 H hchk hlow hind hv hnt hout0 hΓF hslot hsym H3 hc hvdef hq
     hA hP hat hm2 hm3 hm4 hpc herr hsp hmem hcs hprog hfp hus hpreB hB hval hmemB hbody hcl hext
