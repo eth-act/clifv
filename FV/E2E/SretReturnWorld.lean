@@ -333,14 +333,14 @@ theorem armRefinesAbi_of_actRet {fb : FnBin} {base ra : BitVec 64}
   have hju : j < us.length := by have := hhold.1; omega
   obtain ⟨x, hx⟩ : ∃ x, outs[j]? = some x :=
     ⟨outs[j]'(by have := hhold.1; omega), List.getElem?_eq_getElem _⟩
-  have hp : (us[j]'hju).2 = Reg.x j := by
+  have hp : (us[j]'hju).2 = retX vals.length j := by
     have := congrArg (fun l => l[j]?) hus
     simp only [List.getElem?_map, List.getElem?_range hju, List.getElem?_eq_getElem hju,
       Option.map_some] at this
     exact Option.some.inj this
   have hr := h.regs j (us[j]'hju).1 (us[j]'hju).2 x (by simp [List.getElem?_eq_getElem hju]) hx
-  rw [hp, regVal_x] at hr
-  show VHolds v (ofX (xreg j (runX astep n s)))
+  rw [hp, retX, regVal_x] at hr
+  show VHolds v (ofX (xreg (if j < vals.length then j else 8) (runX astep n s)))
   rw [hr]
   exact hhold.2 j v x hj hx
 
