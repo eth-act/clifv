@@ -1,5 +1,6 @@
 import FV.Opt.Proof.RuleRestEmbed
 import FV.Opt.Proof.KernelBV
+import FV.Opt.Proof.RuleInfraShiftAmt
 
 /-!
 # `opts/cprop.isle` (part 3): proven `simplify` rules (R0)
@@ -7,6 +8,11 @@ import FV.Opt.Proof.KernelBV
 320, 322, 324 (reassociating shifts of a constant) by `rule_auto_xr`; 375, 377, 379 (folding
 `bswap` of a constant) by `rule_auto_bswap`, with the helper specs `bswap16_spec`,
 `bswap32_spec`, `bswap64_spec` (`u64_bswap16/32/64` of a presented immediate is `Sem.bswap`).
+
+The bit-vector goals of 320–324, `x <<< a <<< b = x <<< b <<< a` and the same for `>>>` and
+`sshiftRight` (one per value type and pair of amount types), go to `kbv_amt` first
+(`RuleInfraShiftAmt.lean`: both sides become one shift by the sum of the amounts). The general
+`kbv` search closes them too, but took 25 s per goal at 16 bits.
 -/
 
 set_option linter.unusedSimpArgs false
@@ -15,6 +21,12 @@ set_option Elab.async false
 namespace Opt.Proof
 
 open Isle Isle.Opt Clif
+
+-- In this module `kbv` first tries `kbv_amt` (`RuleInfraShiftAmt.lean`) on the isolated goal, under
+-- `kbv_guard` (a failure, also a runtime exception, falls through to the general search).
+open Lean Elab Tactic in
+local elab_rules : tactic
+  | `(tactic| kbv) => Opt.Proof.KernelBV.isolate (do evalTactic (← `(tactic| kbv_guard 200000 kbv_amt)))
 
 /-! ## `u64_bswap*` as `Sem.bswap` -/
 

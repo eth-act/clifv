@@ -736,7 +736,8 @@ whole search of a goal), kernel-checked methods: `bv_normalize`
 (`decide`), case splits on `if`/`bif` conditions, `toNat`/`toInt` arithmetic with `omega`,
 minterm decomposition + `grind`, case splits on constant shift amounts, sign-mask lemmas
 (`sshiftRight` by `w-1`, `(x ||| -x).msb`), per-index bit evaluation. The shift and spaceship
-modules (`RuleShifts1`..`5`, `RuleSpaceship`) first try a targeted method on each goal
+modules (`RuleShifts1`..`5`, `RuleSpaceship`, and `RuleCprop3` for its shift reassociations)
+first try a targeted method on each goal
 (`kbv_amt`/`kbv_cmp`, `FV/Opt/Proof/RuleInfraShiftAmt.lean`, through a module-`local`
 `elab_rules` for `kbv`): shift amounts as `Nat` arithmetic, rotations as `rotateLeft`, comparison
 results by case split. Some lemmas are proved by hand instead (bswap/popcount, pow2
@@ -929,7 +930,8 @@ heaviest (`RuleBitops7`, `RuleArith`, `RuleBitops2`, `RuleBitops5`, `RuleShifts2
 each old module only imports its parts, so importers are unchanged. Standalone peaks, before → max part:
 `RuleBitops7` 19.3 → 6.1 GB, `RuleArith` 15.2 → 4.5 GB, `RuleRestEmbed` 15.8 → 8.6 GB, `RuleBitops2`
 12.7 → 5.2 GB, `RuleBitops5` 11.0 → 6.3 GB, `RuleShifts2` 9.5 → 6.1 GB; `RuleShifts3P1` (`shifts_41`)
-stays at about 10 GB. Check the log for "Build completed successfully": `memcap.sh` under `/usr/bin/time` can
+stayed at about 10 GB until `kbv_amt` learned the shift identities its goals need (LEARNINGS.md,
+"Close recurring goal shapes before the general `kbv` search"). Check the log for "Build completed successfully": `memcap.sh` under `/usr/bin/time` can
 report rc=0 for an OOM-killed build. `RuleAll` itself: 16 s, 3.6G (`LEAN_NUM_THREADS=1`; kernel
 check of the `allowed_ok%` term, ~0.3 s to build it). Its previous form (`rfl` on the
 `List.filter` of the 1281 `simplify` rules by `provenSimplifyRules.contains`, elaborated by
@@ -1253,7 +1255,10 @@ statements. `RuleBase`: `RuleSpecAt fm` / `applyMulti_genAt` (fuel-general lifti
 - `rule_rhs`: `opt_eval hev` (interpreter equations + `opt_monad` + `opt_imm`), then `split` on
   every stuck `match` (a made `icmp` reads its operand type from the graph: `toInst_icmp`,
   `none` = poison, no obligation), `opt_types` (the operand type read in a later state is the
-  value's type, `GraphOk.typeOf_eq`).
+  value's type, `GraphOk.typeOf_eq`). The skeleton `div` templates (`RuleSkeleton3`/`5`, ~500
+  steps per evaluation) use `opt_eval_head` (`RuleInfraEval.lean`): the same steps, but `simp`
+  normalises only the head computation of each `bind` and `rw` skips equation lemmas whose head
+  does not occur.
 - `rule_finish`: a matched class (`Valuation.Le` chain) or a made node (`GraphOk.make_val`,
   `opt_node` operand by operand, made operands recursively), then `rule_bits`: `val_congr`
   (not `simp`: `BitVec 8` vs `BitVec Ty.i8.width`), `ac_rfl` for AC identities (64-bit `*`

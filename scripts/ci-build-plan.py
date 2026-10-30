@@ -13,7 +13,8 @@ Waves run one after another; the shards of a wave run in parallel on separate ru
 belongs to the wave in which its earliest possible start (longest recorded-seconds import path
 within the planned set) falls. A shard of a wave builds some of the wave's sinks (modules no other
 module of the wave imports) with their imports from the same wave, so shards of one wave never
-wait for each other (an import shared by several shards is built in each). Earlier waves' modules
+wait for each other (an import shared by several shards is built in each; where Lean's output
+differs between those builds, scripts/lake-unstage.py picks one). Earlier waves' modules
 come from the earlier waves' cache artifacts. Several splits are simulated with the recorded
 per-module peaks and seconds (scripts/lake-module-peaks.tsv) and the scheduler limits CI uses
 (lake-serial-build.py --budget/--heavy/--max-jobs), and the fastest is written.

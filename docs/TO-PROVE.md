@@ -1014,7 +1014,7 @@ mid-end is complete for every configuration: `Opt.optimize_complete_cfg`, `Opt.o
   force-push main, never `git stash`, never pattern-kill processes. Temp files in `/tmp/<name>_*`.
 - Every lake/cargo command through `FV_MEMCAP=<N>G scripts/memcap.sh`; check the log for "Build
   completed successfully". The `kbv`-based rule modules (`FV.Opt.Proof.Rule*`) peak at up to about
-  10 GB (`RuleShifts3P1`, `RuleExtends2`; the former 12–19 GB modules are split into parts,
+  10 GB (`RuleExtends2`, `RuleBitops3`/`4`; the former 12–19 GB modules are split into parts,
   docs/contracts/midend.md) and take up to 34 min each; `lake build`
   (no `-j` option) runs every ready module at once and exceeds any sane cap. Without a reachable
   systemd user manager, `memcap.sh` falls back (one stderr line) to a non-root watchdog: process-tree
@@ -1122,7 +1122,10 @@ mid-end is complete for every configuration: `Opt.optimize_complete_cfg`, `Opt.o
     sources differ from the newest `lake-full` build (artifact of an earlier run on `main`) and their
     importers, split into up to 3 waves of parallel shards (`.github/workflows/full-gate-shard.yml`,
     `.github/scripts/full-gate-shard.sh`: `lake-serial-build.py --only … --retry-failed`, outputs passed
-    on as `lake cache stage` directories, 25–65 MB per shard). Then one job assembles every target
+    on as `lake cache stage` directories, 25–65 MB per shard). Lean's output is not always
+    reproducible, so shards that each built a shared import can stage differing copies:
+    `scripts/lake-unstage.py` keeps the copy the most downstream work was built against, and
+    `--only` schedules whatever later jobs find out of date. Then one job assembles every target
     and executable, and the gate jobs run: `scripts/axiom-audit.py`, crate-proofs, `lean-e2e-check`
     (`link-check` is built, it needs a `cargo fv link-proof` directory to run),
     `lean-backend-filetests.sh`, `lean-backend-encode-check.sh`, `clif-filetests.sh` against
