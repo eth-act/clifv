@@ -9,7 +9,9 @@ required axioms/accepted identities/successful stages.
 
 ## Active refresh: 2026-10-29 (supersedes earlier next-step ordering)
 
-Baseline: main `c533c22a` (#755). The preserved October27 memory implementation
+Refresh baseline: main `e14718a2` (#761), plus the exact published #756
+startup-witness fix `e1d0be7e` carried as a dependency. The earlier source-port
+diagnostic baseline was `c533c22a` (#755). The preserved October27 memory implementation
 is `3753d98a` (verified on its old base) / `52b22dc9` (interrupted new-base
 validation). Neither old receipt certifies current main. Saved source, branches
 and remote evidence remain; recovery uses durable `.git/agent-evidence/` storage
@@ -25,8 +27,8 @@ reimplement Kev's landed allocator, frame, checker or typed-linking machinery.
 | AArch64 frame / unwind / frame-aware QA | Kev, #743 landed | Adapt internal memory consumers to the new frame; preserve original public source contracts |
 | typed Stock linking / route placement / fast checks | Kev, #747/#748/#755 and earlier landed | Keep typed dispatch, exclusions, scope shortcuts and existing providers |
 | branch order / MachBuffer | Kev, #553 active | No competing branch-layout implementation; coordinate any shared Stock/code metadata changes |
-| scheduler / CI / proof speed | Parithosh, landed fixes and open #757 | Reuse results and CI cache; no independent proof-performance project |
-| Lean module system | Parithosh, #726 prototype | Do not merge or duplicate its broad header port; coordinate leaf imports/generators |
+| scheduler / CI / proof speed | Parithosh, #757/#759/#760/#761 landed; import work active | Reuse results and CI cache; no independent proof-performance project |
+| Lean module system | Parithosh, #758 parked prototype | Do not merge or duplicate its broad header port; coordinate leaf imports/generators |
 | original-source initialized memory under Stock | Our saved packet, not landed | Complete the unique missing proofs and minimal additive production route |
 
 ### Immediate delivery sequence
@@ -41,9 +43,9 @@ reimplement Kev's landed allocator, frame, checker or typed-linking machinery.
    launching the full author queue. Keep one validation head fixed during each
    healthy batch. Do not replay a completed healthy cohort without changed inputs
    or an unresolved concern.
-   Before CLI integration, account for Kev's open #756 startup-panic fix (#750)
-   in StockBlockScan: reuse the coordinated upstream fix once available; do not
-   duplicate his witness edits or count a panic-bearing CLI run as passing.
+   Before final gates, carry Kev's exact published #756 startup-panic fix
+   (#750), preserving its attribution; drop the dependency if it lands upstream.
+   Do not duplicate his witness edits or count a panic-bearing CLI run as passing.
 3. Run current per-PR gates from TO-PROVE §§7–8: FV/FVTest/affected tools,
    transitive axiom audit, relevant runtests/encoding, E2E identity and successful
    stage parity, actual verified linking/examples and crate proofs. Include a
@@ -654,3 +656,16 @@ PR #636 implements the route10 conditional entry/ranked-tail class on7170a146, w
 ## Nonentry parameter-condition CFG delivery
 
 PR #637, implementation `9f27ad6c3b13f3fd378693389e82e9cdaf616b65`, extends production through arbitrary ranked quiet scalar CFGs with original wide parameter conditions at later source blocks. [Terminal author evidence](../research/stock-parameter-cfg-production.md) records all gates; route11 retains0–10 and complete prior fallback. Conditional successor arguments remain empty. The actual paired comparison is 900→900/4543, with 0 losses. Continue broader control/per-edge obligations and actual-corpus memory/effects/calls; reuse existing memory primitives with mapped/guarded source variants and a memory-capable contract derived from ORIGINAL world premises. Preserve pure-domain variants and exact old axiom sets. Full original140 remains open: broader conditions and nonempty conditional copies, tables/loops, memory/addressing/atomics, calls/exceptions, uncovered families and original-domain whole-driver/Stock-only/downstream completeness. Fallback preserves acceptance and is not completeness.
+
+## Port diagnostic checkpoint (2026-10-30 UTC)
+
+Source checkpoint `0a5c7eb5` on c533c22a passes the complete targeted
+1711-module memory/paired/NI/compiled-consumer/linked-fixture closure and105
+memory audit roots:103 standard-only,2 existing marked fixed native witnesses.
+The old pure-only instruction theorem remains; an additive specification-boundary
+lemma handles upstream's pure-or-compare value semantics. The compatibility
+witness constructs a successful ordinary return input without reducing the
+opaque parser, and linked fixture preparation supplies its original function.
+These are targeted port checks, not full author/runtime/ELF/merge validation.
+Current main reconciliation includes Parithosh's landed proof/build improvements
+and the exact upstream #756 dependency before the final author head is frozen.
