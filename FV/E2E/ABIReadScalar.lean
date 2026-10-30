@@ -21,6 +21,7 @@ private def special : MInst → Bool
   | .aluRRImm12 op .. | .aluRRRExtend op .. => op == .subS
   | .aluRRImmLogic op .. => op == .andS
   | .aluRRR op .. | .aluRRImmShift op .. => Backend.ABIReadScalar.shiftOp op || op == .extr || op == .sMulH || op == .uMulH
+  | .aluRRRShift op .. => op == .extr
   | _ => false
 
 /-- Proof-only scalar producer specification frames original ABI reads while actual value
@@ -96,6 +97,7 @@ private theorem old_not_special {sig : Clif.Signature} {b k : Nat} {i : MInst}
   | aluRRImmShift op sz rd rn imm => cases op <;> first | rfl | cases checked
   | aluRRRExtend op sz rd rn rm e => cases op <;> first | rfl | cases checked
   | aluRRImmLogic op sz rd rn imm => cases op <;> first | rfl | cases checked
+  | aluRRRShift op sz rd rn rm sh => cases op <;> first | rfl | cases checked
   | _ => rfl
 
 private theorem shift_special {i : MInst} (checked : Backend.ABIReadScalar.shift i = true) : special i = true := by
@@ -106,6 +108,7 @@ private theorem bit_special {i : MInst} (checked : Backend.ABIReadScalar.bitProd
   | bitRR op sz rd rn => rfl
   | aluRRR op sz rd rn rm => cases op <;> first | rfl | cases checked
   | aluRRImmShift op sz rd rn imm => cases op <;> first | rfl | cases checked
+  | aluRRRShift op sz rd rn rm sh => cases op <;> first | rfl | cases checked
   | _ => cases checked
 
 private theorem popcount_special {i : MInst} (checked : Backend.ABIReadScalar.popcountProducer i = true) : special i = true := by
