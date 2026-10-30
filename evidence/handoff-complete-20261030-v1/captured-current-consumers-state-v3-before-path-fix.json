@@ -1,0 +1,6 @@
+{
+  "status": "failed",
+  "utc": "2026-10-30T22:05:30.415395+00:00",
+  "records": [],
+  "error": "AssertionError('Shared DefGenWrap did not complete successfully')"
+}

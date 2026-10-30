@@ -1,0 +1,25 @@
+{
+  "status": "passed",
+  "utc": "2026-10-30T22:05:30.359893+00:00",
+  "records": [
+    {
+      "name": "production",
+      "previous_watcher": 2044012,
+      "new_watcher": 2266652,
+      "label": "production-reverse-gates-v4",
+      "stdout": "watching 'production-reverse-gates-v4' (runner pid 2266652); output: /home/lee/clifv/.ai-coord/jobs/worker-O-20261030-174004-production-reverse-gates-v4.log\nYou will be woken when it exits, with the exit status and the last lines of the log, whether it succeeds or fails. You can end your turn now.\n",
+      "preserved_module": "FV.Backend.Proof.IselPrgTab",
+      "new_budget": "8G"
+    },
+    {
+      "name": "captured",
+      "previous_watcher": 2051023,
+      "new_watcher": 2292585,
+      "label": "captured-current-consumers-v3",
+      "stdout": "watching 'captured-current-consumers-v3' (runner pid 2292585); output: /home/lee/clifv/.ai-coord/jobs/worker-O-20261030-180530-captured-current-consumers-v3.log\nYou will be woken when it exits, with the exit status and the last lines of the log, whether it succeeds or fails. You can end your turn now.\n",
+      "preserved_module": "FV.Backend.Proof.IselPrgTabT",
+      "new_budget": "8G"
+    }
+  ],
+  "pending": []
+}
