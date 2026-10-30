@@ -1,3 +1,4 @@
+import FV.Backend.Proof.StockBlockScan
 import FV.Backend.Proof.StockTraversalRecordOrigin
 import FV.Backend.Proof.StockCoreScanOrigin
 import FV.Backend.Proof.StockBackwardSuffixSplit

@@ -1,4 +1,5 @@
 import FV.Opt.Proof.PipelineX
+import FV.Opt.Proof.GvnEditU
 import FV.Opt.Proof.SimpSimU
 import FV.Opt.Proof.UnreachableU
 

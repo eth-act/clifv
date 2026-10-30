@@ -1,5 +1,5 @@
-import FV.Concurrency.CallArgsAt
 import FV.Concurrency.IselResume
+import FV.Concurrency.CallArity
 
 /-!
 # The call's arguments at layer 2 (#473, (2b))

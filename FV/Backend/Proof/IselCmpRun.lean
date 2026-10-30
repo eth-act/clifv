@@ -1,4 +1,5 @@
-import FV.Backend.Proof.IselSemCmp
+import FV.Backend.Proof.IselContract
+import FV.Backend.Proof.IselExtern
 
 /-!
 # Straight-line runs of emitted code (flags/select/div family)

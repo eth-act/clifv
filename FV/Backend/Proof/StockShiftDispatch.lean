@@ -1,4 +1,4 @@
-import FV.Backend.Proof.StockShiftRecordValues
+import FV.Backend.Proof.StockShiftRootReceipts
 import FV.Backend.Proof.StockRootOpcodeMatch
 namespace Backend.Stock.Proof.ShiftComplete
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

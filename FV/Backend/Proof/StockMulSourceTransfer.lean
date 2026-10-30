@@ -1,3 +1,5 @@
+import FV.Backend.Proof.StockAluOperandCoverage
+import FV.Backend.Proof.StockMulRecordValues
 import FV.Backend.Proof.StockMulDispatch
 import FV.Backend.Proof.StockGuardedRecordValues
 import FV.Backend.Proof.IselFamALUA

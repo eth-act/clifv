@@ -1,5 +1,6 @@
-import FV.E2E.ActualCompilerModes
-import FV.E2E.WorldUnwindWitness
+import FV.E2E.CompiledProduction
+import FV.E2E.LoweringProvenance
+import FV.E2E.DeadCleanupUnwindWitness
 
 /-! A successful actual Stock compilation with different diagnostic history.
 This fixed non-vacuity witness does not enable a production class or replace

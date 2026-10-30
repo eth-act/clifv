@@ -1,5 +1,5 @@
-import FV.E2E.RegLevelOpNA
-import FV.E2E.RegLevelCallNR
+import FV.E2E.RegLevelFRFree
+import FV.E2E.RegLevelCallN
 
 /-!
 # Calls and symbol addresses, at a witness (SEM1 #537, item (3), route (a))

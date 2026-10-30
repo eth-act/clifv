@@ -1,5 +1,5 @@
 import FV.E2E.LinkArmLockedCallee
-import FV.E2E.LinkArmStage2GlueWitness
+import FV.E2E.LinkSlotSysWitness
 import FV.E2E.BackendTwoRunNIUWitness
 
 /-!

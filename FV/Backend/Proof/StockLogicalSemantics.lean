@@ -1,5 +1,6 @@
-import FV.Backend.Proof.StockLogicalHelper
+import FV.Backend.Proof.StockAlu
 import FV.Backend.Proof.IselFamALUALogic
+import FV.Backend.Proof.StockLogicalForms
 
 /-! Logical immediate/shift execution under mapped and alias-resolved registers. -/
 namespace Backend.Stock.Proof.LogicalSemantics

@@ -1,4 +1,5 @@
 import FV.E2E.WorldTrapCall
+import FV.Backend.Proof.LowerDecide
 import FV.E2E.DeadCleanupCover
 import FV.Backend.SpillAlloc
 

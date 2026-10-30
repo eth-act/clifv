@@ -1,3 +1,4 @@
+import FV.Backend.Proof.LowerSpec
 import FV.Backend.Proof.StockSourceOrder
 
 namespace Backend.Stock.Proof

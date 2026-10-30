@@ -1,3 +1,5 @@
+import FV.Backend.Proof.IselEmitChk
+import FV.Backend.Proof.IselCovModel
 import FV.Backend.Proof.IselEmitCtor
 import FV.Backend.Proof.LogicImmComplete
 

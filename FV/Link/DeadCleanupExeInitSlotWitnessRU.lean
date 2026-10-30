@@ -1,4 +1,4 @@
-import FV.Link.DeadCleanupExeInitSlotWitnessR
+import FV.Link.DeadCleanupExeInitSlotWitness
 import FV.Link.DeadCleanupExeInitRC
 import FV.E2E.DeadCleanupBinaryInitClosed
 

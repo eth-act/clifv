@@ -1,4 +1,4 @@
-import FV.E2E.LegalDirect
+import FV.Opt.Proof.LegalComplete
 import FV.E2E.DeadCleanupLegal
 
 namespace E2E

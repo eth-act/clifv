@@ -1,3 +1,4 @@
+import FV.Backend.RegallocOps
 import FV.Backend.Lowering.StockAlloc
 
 /-!

@@ -1,4 +1,5 @@
-import FV.Backend.Proof.IselMemAllTI
+import FV.Backend.Proof.IselMemRoots
+import FV.Backend.Proof.LowerContractT
 
 /-!
 # The integer roots never match a non-E instruction of a typed context (S11e5 Stage C, slice 7)

@@ -1,3 +1,5 @@
+import FV.Backend.Proof.StockMaskBlockRecords
+import FV.Backend.Proof.StockInheritedValues
 import FV.Backend.Proof.StockConstantFreshDefs
 
 namespace Backend.Stock.Proof.Inherited

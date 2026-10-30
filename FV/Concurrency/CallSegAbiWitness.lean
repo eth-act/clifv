@@ -1,4 +1,4 @@
-import FV.Concurrency.CallRetsNWitness
+import FV.Concurrency.CallEntryWitness
 import FV.Concurrency.CallSegAbi
 
 /-!

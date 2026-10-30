@@ -1,7 +1,8 @@
 import FV.Backend.Proof.IselDriversTF
 import FV.Backend.Proof.SpillResClassTF
 import FV.Backend.Proof.FormsCoverCompleteT
-import FV.E2E.EmitCondsT
+import FV.E2E.SizeLowerT
+import FV.E2E.EmitCondsLowerT
 import FV.E2E.SpillCtlCheckT
 import FV.E2E.LinkScopeIntT
 import FV.E2E.LinkScopeInputT3F

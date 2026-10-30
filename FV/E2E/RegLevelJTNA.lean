@@ -1,5 +1,6 @@
+import FV.E2E.RegLevelGoodXNR
 import FV.E2E.RegLevelGotoNA
-import FV.E2E.RegLevelJTNR
+import FV.E2E.RegLevelJT
 
 /-!
 # Jump tables, at a witness (SEM1 #537, item (3), route (a))

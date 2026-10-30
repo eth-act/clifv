@@ -1,5 +1,5 @@
 import FV.E2E.StockCfgReadFixture
-import FV.E2E.StockCfgNI
+import FV.E2E.ABIReadCfg
 import FV.Backend.Lowering.StockTwoBlockNI
 import FV.Backend.Proof.StockCfgEntryAtWitness
 

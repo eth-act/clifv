@@ -1,4 +1,4 @@
-import FV.Backend.Proof.StockDFG
+import FV.Backend.Proof.StockPolicy
 import FV.Backend.Proof.LowerLoopCtx
 
 /-! # The `Stock.buildCtx` float check keeps the original accepted domain (S11e3, #140)

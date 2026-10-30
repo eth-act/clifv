@@ -1,3 +1,4 @@
+import FV.Backend.Proof.StockMulFusedSemantics
 import FV.Backend.Proof.StockMulFusedMatch
 namespace Backend.Stock.Proof.ScalarMul.Fused
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

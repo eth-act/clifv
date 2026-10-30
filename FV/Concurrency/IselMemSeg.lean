@@ -1,4 +1,4 @@
-import FV.Concurrency.IselVar
+import FV.Concurrency.IselMem
 
 /-!
 # The segment of a memory statement (T2h, #311, layer 2e)

@@ -1,6 +1,6 @@
-import FV.Backend.Proof.IselCtlTbz
 import FV.Backend.Proof.IselCmpExt
 import FV.Backend.Proof.IselTermsImm
+import FV.Backend.Proof.IselCtlBrif
 
 /-!
 # Family Ctl: `br_table` (`lower_branch` rule 1140)

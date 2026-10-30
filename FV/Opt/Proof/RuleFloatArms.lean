@@ -1,4 +1,6 @@
-import FV.Opt.Proof.RuleIntRetry
+import FV.Opt.Proof.RuleRestEmbedSshr
+import FV.Opt.Proof.RuleRestEmbedRotl
+import FV.Opt.Proof.RuleRestEmbedRotr
 
 /-!
 # `all_zero` at a float type

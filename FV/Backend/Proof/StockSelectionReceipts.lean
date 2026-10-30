@@ -1,5 +1,5 @@
-import FV.Backend.Proof.StockAluOperandCoverage
 import FV.Backend.Proof.IselGeneric
+import FV.Backend.Proof.StockFreshRecordValues
 
 /-! Actual selected-rule receipts from Stock named roots and retained records. -/
 namespace Backend.Stock.Proof

@@ -1,3 +1,4 @@
+import FV.E2E.StockArithmeticStageContract
 import FV.E2E.ABIReadOnlyMachine
 import FV.Backend.Proof.StockArithmeticCheck
 

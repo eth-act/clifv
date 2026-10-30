@@ -1,4 +1,4 @@
-import FV.E2E.LinkArmUOs
+import FV.E2E.LinkArmUCallNI
 
 /-!
 # The external contracts of an activation with unwinding (S10f, #233)

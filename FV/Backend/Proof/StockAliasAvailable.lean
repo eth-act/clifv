@@ -1,3 +1,4 @@
+import FV.Backend.Proof.StockFreshAlias
 import FV.Backend.Proof.StockAliasTerminal
 
 /-! Availability along actual final source aliases. -/

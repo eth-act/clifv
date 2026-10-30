@@ -1,3 +1,5 @@
+import FV.E2E.LinkArmProgInst
+import FV.E2E.LinkArmStage2ZS
 import FV.E2E.LinkArmStage2Count
 import FV.E2E.BackendPrefixAtCleanup
 import FV.E2E.IselCallsOneAll

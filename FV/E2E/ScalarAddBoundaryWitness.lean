@@ -1,5 +1,5 @@
-import FV.Link.ProductionExeSourceWith
-import FV.Link.Ld.Spec
+import FV.Link.ProductionExeWith
+import FV.Link.Ld.Plan
 import FV.Backend.Proof.StockScalarAddSource
 import FV.Backend.Lowering.StockScalarProduction
 import FV.Clif.Print

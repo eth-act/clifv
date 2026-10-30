@@ -1,4 +1,4 @@
-import FV.Opt.Proof.CompleteSimpStmt
+import FV.Opt.Proof.CompleteSimpRules
 import FV.Opt.Proof.CompleteGuards
 
 /-!

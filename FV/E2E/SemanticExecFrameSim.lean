@@ -1,5 +1,5 @@
 import FV.E2E.ExecFrame
-import FV.E2E.SemanticExecStatic
+import FV.E2E.SemanticExecBytes
 
 /-! # D2 of `RunOkD` from the memory reads (L3 (c))
 

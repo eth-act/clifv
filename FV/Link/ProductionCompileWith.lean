@@ -1,4 +1,5 @@
 import FV.Link.ProductionImageWith
+import FV.Link.DeadCleanupCompile
 import FV.Link.Placed
 
 /-! Transactional executable compilation. The legacy layout and compiler are

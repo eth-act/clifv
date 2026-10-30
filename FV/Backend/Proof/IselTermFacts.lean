@@ -1,4 +1,3 @@
-import FV.Backend.Proof.LowerSpec
 import FV.Backend.Proof.LowerContract
 import FV.Backend.Proof.IselTermFactsRules
 import FV.Backend.Proof.IselTermFactsCall

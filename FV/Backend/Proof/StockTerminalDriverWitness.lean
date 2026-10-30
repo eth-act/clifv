@@ -1,4 +1,4 @@
-import FV.Backend.Proof.StockTerminalEmission
+import FV.Backend.Proof.StockTerminalDriver
 import FV.Backend.Proof.StockTerminalSinkWitness
 
 namespace Backend.Stock.Proof.TerminalDriverWitness

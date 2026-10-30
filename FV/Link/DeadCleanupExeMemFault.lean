@@ -1,4 +1,4 @@
-import FV.Link.DeadCleanupExeMemTrap
+import FV.Link.DeadCleanupExeSource
 import FV.E2E.DeadCleanupExecMemFault
 
 /-! # The shipped executable compiler with memory faults (A3, #412, slice F8d)

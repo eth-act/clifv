@@ -1,6 +1,6 @@
 import FV.Backend.Proof.LowerDecide
 import FV.Backend.Proof.LowerLoopCtxT
-import FV.E2E.RegLevelFrame
+import FV.E2E.RegLevelArgs
 import FV.Backend.Proof.EntryClass
 import FV.Backend.Proof.AbiClassRegs
 

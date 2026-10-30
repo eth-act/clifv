@@ -1,5 +1,6 @@
+import FV.Backend.Proof.StockDriverBounds
 import FV.Backend.Proof.StockNodeAliasConnection
-import FV.Backend.Proof.StockFreshAlias
+import FV.Backend.Proof.StockAliasSemantics
 
 /-! Source registers with no statement definition remain final alias terminals.
 This includes block parameters; the construction/SSA facts discharge exclusion. -/

@@ -1,4 +1,5 @@
-import FV.Backend.Proof.StockReturnScanShape
+import FV.Backend.Proof.StockReturnRecordCalls
+import FV.Backend.Proof.StockTerminalEmission
 import FV.Backend.Proof.StockArithmeticBodyRefines
 
 /-! Derive division retention from the real return request. This uses the

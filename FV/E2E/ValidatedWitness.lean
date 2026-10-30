@@ -1,5 +1,7 @@
-import FV.E2E.CompiledProduction
+import FV.E2E.ValidatedNoninterference
+import FV.E2E.ValidatedCleanup
 import FV.E2E.WorldUnwindNIWitness
+import FV.E2E.LowerDirect
 import FV.E2E.DeadCleanupDirect
 
 /-! Positive non-vacuity witnesses for the try-call and TLS helper premises.

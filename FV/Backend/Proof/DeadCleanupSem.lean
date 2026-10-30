@@ -1,5 +1,5 @@
 import FV.Backend.Proof.DeadCleanupLive
-import FV.Backend.Proof.RegallocCSemWorld
+import FV.Backend.Proof.RegallocCSem
 
 namespace Backend.DeadCleanup
 open Backend.Proof

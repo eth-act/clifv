@@ -1,5 +1,5 @@
 import FV.E2E.PairDriverICleanup
-import FV.E2E.CompiledEitherI
+import FV.E2E.BackendWorldCleanupI
 
 /-!
 # The counted per-function theorem with non-interference (SEM1, `docs/plans/uninit.md` §5.9)

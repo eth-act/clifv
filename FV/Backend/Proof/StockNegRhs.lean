@@ -1,5 +1,4 @@
-import FV.Backend.Proof.StockCastBaseValues
-import FV.Backend.Proof.IselFamAluBUnary
+import FV.Backend.Proof.StockRequestSuccess
 namespace Backend.Stock.Proof.Neg
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 set_option maxRecDepth 20000

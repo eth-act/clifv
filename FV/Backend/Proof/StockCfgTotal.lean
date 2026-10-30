@@ -1,3 +1,5 @@
+import FV.Backend.Proof.StockTryCfg
+import FV.Backend.Proof.StockNodeCoverage
 import FV.Backend.Proof.StockOrdinaryCfg
 import FV.Backend.Proof.StockPrepareTotal
 

@@ -1,6 +1,5 @@
 import FV.E2E.LinkArmThmPRBR
 import FV.E2E.LinkArmProgOsPRBR
-import FV.E2E.LinkArmProphDetRWitness
 import FV.E2E.LinkArmProgOsPWitness
 
 /-!

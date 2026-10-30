@@ -1,3 +1,5 @@
+import FV.Backend.Proof.StockOrderGraph
+import FV.Backend.Proof.StockEntryOrder
 import FV.Backend.Proof.StockGraphEdges
 import FV.Backend.Proof.StockOutgoingOrigin
 

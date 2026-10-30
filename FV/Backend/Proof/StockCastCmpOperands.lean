@@ -1,4 +1,5 @@
-import FV.Backend.Proof.StockCmpRootMatch
+import FV.Backend.Proof.PrepareCheck
+import FV.Backend.Proof.IselCmpRoot
 
 namespace Backend.Stock.Proof.ScalarCmp
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

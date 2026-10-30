@@ -1,9 +1,7 @@
-import FV.Backend.Proof.StockConditionalTargets
+import FV.Backend.Proof.StockCmpMachineValues
+import FV.Backend.Proof.StockBranchHelperProjection
 import FV.Backend.Proof.StockSequence
-import FV.Backend.Proof.StockSelectValues
 import FV.Backend.Proof.IselCtlBrif
-import FV.Backend.Proof.StockCmpConditionValues
-import FV.Backend.Proof.StockSelectZeroReplacement
 namespace Backend.Stock.Proof.ConditionalValues
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 open Sequence

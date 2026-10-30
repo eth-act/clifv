@@ -1,6 +1,6 @@
 import FV.Backend.Proof.StockSelectedRoutes
 import FV.Backend.Proof.StockComputedCfg
-import FV.Backend.Proof.StockPerEdgeReturnContract
+import FV.Backend.Proof.PerEdgeSeq
 
 namespace Backend.Stock.Proof
 open Backend.Proof Backend.Proof.Driver

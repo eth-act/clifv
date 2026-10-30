@@ -1,5 +1,4 @@
 import FV.Backend.Proof.IselPrgSound
-import FV.Backend.Proof.IselFlow
 
 /-!
 # Progress of the ISLE lowering (V7): a root run returns

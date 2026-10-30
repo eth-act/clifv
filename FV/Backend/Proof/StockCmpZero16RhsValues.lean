@@ -1,4 +1,5 @@
 import FV.Backend.Proof.StockCmpZero32RuleCalls
+import FV.Backend.Proof.StockCmpNonzero16Values
 import FV.Backend.Proof.StockCmpNonzero16Selection
 import FV.Backend.Proof.StockCmpEqualZero16Values
 namespace Backend.Stock.Proof.ScalarCmp

@@ -1,3 +1,7 @@
+import FV.E2E.StockArithmeticStage
+import FV.E2E.LinkWorld
+import FV.E2E.DeadCleanupRegLevelX
+import FV.E2E.DeadCleanupGot
 import FV.E2E.ABIReadFlagsSteps
 
 /-! Reusable execution/ABI transport from instruction-level read-boundary proofs. -/

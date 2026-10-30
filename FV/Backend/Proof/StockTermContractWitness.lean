@@ -1,5 +1,5 @@
 import FV.Backend.Proof.StockTermContract
-import FV.Backend.Proof.StockTerminalControlWitness
+import FV.Backend.Proof.LowerDecide
 
 namespace Backend.Stock.Proof.TermContractWitness
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

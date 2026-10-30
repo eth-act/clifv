@@ -1,3 +1,4 @@
+import FV.Backend.Proof.StockCmpNonconstantSelection
 import FV.Backend.Proof.StockCmpConstantLeftFailures
 import FV.Backend.Proof.StockExtendRequests
 namespace Backend.Stock.Proof.ScalarCmp

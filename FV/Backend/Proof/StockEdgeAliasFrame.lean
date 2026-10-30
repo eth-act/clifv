@@ -1,5 +1,5 @@
-import FV.Backend.Proof.StockDriverBounds
-import FV.Backend.Proof.StockDFG
+import FV.Backend.Proof.StockPolicy
+import FV.Backend.Proof.LowerSpec
 
 namespace Backend.Stock.Proof
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

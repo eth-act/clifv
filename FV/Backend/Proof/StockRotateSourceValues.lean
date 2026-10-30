@@ -1,3 +1,8 @@
+import FV.Backend.Proof.StockAluOperandCoverage
+import FV.Backend.Proof.StockRotateNarrowImmSourceValues
+import FV.Backend.Proof.StockRotateWideImmSourceValues
+import FV.Backend.Proof.StockRotateNarrowSourceValues
+import FV.Backend.Proof.StockRotateWideSourceValues
 import FV.Backend.Proof.StockRotateDispatch
 namespace Backend.Stock.Proof.ScalarRotate
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

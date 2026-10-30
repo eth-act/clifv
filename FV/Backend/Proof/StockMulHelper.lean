@@ -1,4 +1,7 @@
-import FV.Backend.Proof.StockAlu
+import FV.Backend.Proof.StockProjection
+import FV.Backend.Proof.IselScopedProjection
+import FV.Backend.Proof.IselFlowGen
+import FV.Backend.Proof.PrepareCheck
 import FV.Backend.Proof.IselTermsALUAMul
 namespace Backend.Stock.Proof.ScalarMul
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

@@ -1,9 +1,10 @@
+import FV.E2E.SemanticStackBound
 import FV.E2E.SemanticChecksWith
 import FV.Link.ProductionImageWith
 import FV.Link.Ld.Spec
 import FVTest.E2E.SemanticLinkProofWith
 import FV.Backend.Lowering.StockArithmeticNI
-import FV.E2E.StockArithmeticNIWitness
+import FV.E2E.StockProductionFixtures
 import FV.Backend.LinearScan
 import FV.Clif.Print
 

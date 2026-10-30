@@ -1,4 +1,4 @@
-import FV.Backend.Proof.RegallocMemCorr
+import FV.Backend.Proof.RegallocMem
 import FV.Backend.Proof.RegallocOS
 
 /-!

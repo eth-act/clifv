@@ -1,3 +1,4 @@
+import FV.Backend.Proof.StockAluSelectedValues
 import FV.Backend.Proof.StockCastBaseValues
 namespace Backend.Stock.Proof.ScalarCast.Witness
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

@@ -1,4 +1,4 @@
-import FV.Backend.Proof.StockDivImmFrame
+import FV.Backend.Proof.StockAluSelectedValues
 import FV.Backend.Proof.StockDivHelpers
 import FV.Backend.Proof.StockExtendRequests
 namespace Backend.Stock.Proof.ScalarDiv

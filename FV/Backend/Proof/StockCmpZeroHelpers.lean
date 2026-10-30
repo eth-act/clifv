@@ -1,4 +1,3 @@
-import FV.Backend.Proof.StockCmpPure
 import FV.Backend.Proof.StockRequestSuccess
 namespace Backend.Stock.Proof.ScalarCmp
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

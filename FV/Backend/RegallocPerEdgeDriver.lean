@@ -1,6 +1,7 @@
 import FV.Backend
 import FV.Backend.RegallocPerEdgePrepare
 import FV.Backend.RegallocPerEdgePrepareCheck
+import FV.Backend.RegallocPerEdge
 import FV.Backend.RegallocPerEdgeSpill
 
 /-! Actual allocator adapter for per-successor VCode. Every allocation selected

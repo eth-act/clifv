@@ -1,3 +1,4 @@
+import FV.Backend.Proof.StockHighMulNarrowSemantics
 import FV.Backend.Proof.StockHighMulSelected
 namespace Backend.Stock.Proof.ScalarHighMul
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

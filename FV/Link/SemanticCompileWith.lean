@@ -1,5 +1,4 @@
 import FV.Link.SemanticCompileDefs
-import FV.E2E.SemanticStackBound
 
 /-! Correctness of the actual transactional executable compiler. Public
 compiler definitions retain their names and are imported from the runtime owner. -/

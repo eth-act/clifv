@@ -1,4 +1,5 @@
 import FV.Backend.Proof.StockContext
+import FV.Backend.Proof.DriverCheckSound
 import FV.Backend.Proof.LowerLoopCtx
 
 /-! Transport source/DFG facts to stock's dense register context. -/

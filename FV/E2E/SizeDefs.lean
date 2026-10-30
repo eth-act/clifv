@@ -1,4 +1,3 @@
-import FV.E2E.EmitSize
 import FV.Backend.Proof.IselSzDefs
 
 /-!

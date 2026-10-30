@@ -1,6 +1,5 @@
 import FV.E2E.LinkArmStage2E
 import FV.E2E.LinkArmIniOf
-import FV.E2E.LinkArmProgramInit
 
 /-!
 # The linked program under the machine's own slot table (SEM1 #537, #680 (3), fix of #700)

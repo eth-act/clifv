@@ -1,7 +1,6 @@
+import FV.Backend.Proof.StockSourceView
+import FV.Backend.Proof.IselCmpInv
 import FV.Backend.Proof.StockNoOpportunityTable
-import FV.Backend.Proof.StockNoOpportunityCtor
-import FV.Backend.Proof.IselCovModel
-import FV.Backend.Proof.IselCovClean
 import FV.Backend.Proof.StockPatternSource
 
 /-! State-aware composition of the existing checked coverage analysis for Stock.

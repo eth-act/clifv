@@ -1,6 +1,5 @@
 import FV.E2E.OptX
 import FV.E2E.Legal
-import FV.E2E.DeadCleanupLegal
 
 /-! # Legalisation followed by optimisation (S2)
 

@@ -1,5 +1,6 @@
-import FV.Backend.Proof.StockReturnArity
 import FV.Opt.Proof.SemSim
+import FV.Backend.Proof.StockConstantRecordValues
+import FV.Backend.Proof.LowerSim
 
 /-! Source definedness is separate from optional mapped value holding. It is
 established by real activation entry and preserved by real source steps, so an

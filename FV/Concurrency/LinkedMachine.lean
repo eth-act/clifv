@@ -1,5 +1,4 @@
 import FV.Concurrency.ArmAllocLinked
-import FV.Concurrency.CallSeg
 import FV.E2E.RegLevelFrame
 
 /-!

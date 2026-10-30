@@ -1,7 +1,7 @@
+import FV.Backend.Proof.StockCfgSuccessorDemand
 import FV.Backend.Proof.StockCfgDemandValues
 import FV.Backend.Proof.StockInheritedJumpTrap
-import FV.Backend.Proof.StockCfgReturnTrapAt
-import FV.Backend.Proof.LowerShapeOkFacts
+import FV.Backend.Proof.StockPerEdgeReturnContract
 import FV.Backend.Proof.StockComputedCfg
 
 namespace Backend.Stock.Proof.Control

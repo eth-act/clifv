@@ -1,3 +1,4 @@
+import FV.Backend.Lowering.StockProduction
 import FV.E2E.PreparedPipeline
 import FV.E2E.ActualCompilerModes
 

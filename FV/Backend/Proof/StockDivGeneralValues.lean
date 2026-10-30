@@ -1,4 +1,7 @@
-import FV.Backend.Proof.StockDivRemNarrowValues
+import FV.Backend.Proof.StockDivDividendValues
+import FV.Backend.Proof.StockDivValueTransfer
+import FV.Backend.Proof.StockDivUdivWideValues
+import FV.Backend.Proof.StockDivSourceOverflow
 import FV.Backend.Proof.StockDivMinimumResolved
 namespace Backend.Stock.Proof.ScalarDiv
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

@@ -1,5 +1,5 @@
-import FV.Backend.Proof.StockCoverageSound
-import FV.Backend.Proof.LogicImmComplete
+import FV.Backend.Proof.StockSourceView
+import FV.Backend.Proof.IselCovCtor
 
 /-! Abstract constructor contracts with actual mapped source register numbers.
 This reuses IselCovCtor's case proof and result model without its identity-map premise. -/

@@ -1,4 +1,5 @@
-import FV.E2E.DeadCleanupPair
+import FV.E2E.DeadCleanupFinal
+import FV.E2E.DeadCleanupGuarded
 import FV.E2E.GuardedFPPair
 
 /-! # The guarded value semantics with the float accesses (S11e5, Stage C slice 4)

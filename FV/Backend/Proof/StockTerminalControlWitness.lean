@@ -1,3 +1,4 @@
+import FV.Backend.Proof.LowerDecide
 import FV.Backend.Proof.StockTerminalRoots
 
 namespace Backend.Stock.Proof.TerminalControlWitness

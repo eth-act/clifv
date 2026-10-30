@@ -1,6 +1,6 @@
 import FV.E2E.LinkArmXNIF
 import FV.E2E.LinkArmHCall
-import FV.E2E.LinkArmLockedCalleeWitness
+import FV.E2E.LinkSlotSysWitness
 
 /-!
 # Witnesses: `XNIF` of the guarded semantics, the lock to the return and the call hook's lock

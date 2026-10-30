@@ -1,3 +1,4 @@
+import FV.Backend.Proof.StockCmpMachineValues
 import FV.Backend.Proof.StockSelectReplacementResolved
 namespace Backend.Stock.Proof.ScalarSelect.ReplacementWitness
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

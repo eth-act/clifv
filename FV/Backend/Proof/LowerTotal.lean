@@ -1,4 +1,3 @@
-import FV.Backend.Proof.LowerComplete
 import FV.Backend.Proof.LowerTotalCtx
 import FV.Backend.Proof.LowerTotalDefs
 import FV.Backend.Proof.LowerDecide

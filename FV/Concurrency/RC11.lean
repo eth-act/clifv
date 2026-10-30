@@ -1,4 +1,4 @@
-import FV.Concurrency.Mapping
+import FV.Concurrency.ClifMM
 
 /-!
 # Rust/C++20 orderings and cg_clif's strengthening (T2f, #304)

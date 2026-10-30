@@ -1,5 +1,4 @@
 import FV.Backend
-import FV.Arm
 import FVTest.Opt.Common
 import FVTest.Backend.AllocChoice
 

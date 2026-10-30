@@ -1,4 +1,6 @@
-import FV.Compile
+import FV.Clif.Print
+import FV.Compile.Subset
+import FV.Compile.Harness
 import FVTest.Compile.Cases
 
 /-!

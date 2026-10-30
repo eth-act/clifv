@@ -1,3 +1,4 @@
+import FV.Backend.Proof.StockEdgeCode
 import FV.Backend.Proof.StockJumpBodyRefines
 import FV.Backend.Proof.StockMaskBlockWitness
 

@@ -1,4 +1,4 @@
-import FV.Backend.RegallocOps
+import FV.Backend.Isel
 
 /-! Stock's initial register allocation, separated from source color analysis.
 Requests retain layout order and exception allocation points. -/

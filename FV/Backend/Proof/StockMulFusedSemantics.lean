@@ -1,3 +1,4 @@
+import FV.Backend.Proof.IselFamALUAMul
 import FV.Backend.Proof.StockMulFusedRhs
 namespace Backend.Stock.Proof.ScalarMul.Fused
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

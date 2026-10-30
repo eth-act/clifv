@@ -1,6 +1,8 @@
 import FV.Backend.Proof.PerEdgePrepareComplete
 import FV.Backend.Proof.PerEdgePrepareSound
-import FV.Backend.Proof.StockEdgeCode
+import FV.Backend.Proof.LowerSpec
+import FV.Backend.Proof.StockSourceOrder
+import FV.Backend.Proof.IselExtern
 
 namespace Backend.Stock.Proof
 open Backend.Proof Backend.Proof.Driver

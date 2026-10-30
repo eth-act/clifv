@@ -1,4 +1,7 @@
-import FV.Backend.Proof.StockNodeCoverage
+import FV.Backend.Proof.StockProjection
+import FV.Arm.MinTheory
+import FV.Backend.Proof.PrepareCheck
+import FV.Backend.Proof.IselInterp
 import FV.Backend.Proof.IselScopedProjection
 
 namespace Backend.Stock.Proof.BranchHelpers

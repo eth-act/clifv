@@ -1,4 +1,4 @@
-import FV.Backend.Proof.StockReturnSourceRuns
+import FV.Backend.Proof.StockAliasSemantics
 
 namespace Backend.Stock.Proof.ReturnFixture
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

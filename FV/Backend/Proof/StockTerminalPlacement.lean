@@ -1,4 +1,6 @@
-import FV.Backend.Proof.StockReturnScanShape
+import FV.Backend.Proof.IselContract
+import FV.Backend.Proof.StockBackwardSuffixSplit
+import FV.Backend.Proof.IselExtern
 
 /-! Placement of actual scan code in the assembled whole-driver output.
 Entry materialization is a prefix and later reverse-traversal nodes frame

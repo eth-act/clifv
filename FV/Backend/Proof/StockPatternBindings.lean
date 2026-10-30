@@ -1,4 +1,6 @@
-import FV.Backend.Proof.StockSinkProvenance
+import FV.Backend.Proof.StockPolicy
+import FV.Backend.Proof.IselInterp
+import FV.Backend.Proof.IselGeneric
 
 /-! Matching preserves environment slots which are not bound by the pattern.
 This supports provenance of instruction variables used by load-sinking RHSs. -/

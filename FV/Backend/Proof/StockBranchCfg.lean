@@ -1,5 +1,7 @@
-import FV.Backend.Proof.StockPrepareTotal
-import FV.Backend.Proof.TryRegs
+import FV.Backend.Lowering.Stock
+import FV.Arm.MinTheory
+import FV.Backend.Proof.PrepareCheck
+import FV.Backend.Proof.IselInterp
 
 namespace Backend.Stock.Proof
 open Backend.Proof Backend.Proof.Driver

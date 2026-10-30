@@ -1,5 +1,5 @@
 import FV.E2E.StockNarrowFixtures
-import FV.E2E.CompiledSemanticNI
+import FV.E2E.ABIReadDiv
 import FV.Backend.LinearScan
 import FV.Backend.Lowering.StockScalarNI
 

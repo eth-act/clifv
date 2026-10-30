@@ -1,5 +1,6 @@
-import FV.Link.ProductionExeSource
-import FV.Link.Ld.Spec
+import FV.Opt.Proof.LegalArith
+import FV.Link.ProductionExe
+import FV.Link.Ld.Plan
 import FV.Backend.Proof.StockPrologueSource
 
 /-! Complete machine/source boundary witness for the actual production compiler.

@@ -1,4 +1,5 @@
 import FV.E2E.StockLogicalExtrWitness
+import FV.Backend.Proof.StockAluSelectedValues
 import FV.Backend.Proof.StockLogicalExtrMatch
 
 namespace E2E.StockLogicalExtrWitness

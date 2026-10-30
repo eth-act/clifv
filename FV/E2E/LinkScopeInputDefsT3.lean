@@ -1,4 +1,7 @@
-import FV.E2E.LinkScopeInputDefsT2
+import FV.E2E.LinkScopeInputDefs
+import FV.E2E.LinkScopeDefsT
+import FV.Compile.SelectTyped
+import FV.Backend.Proof.EntryClass
 import FV.Backend.Proof.IselEmitTDefs
 
 /-!

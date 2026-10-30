@@ -1,4 +1,3 @@
-import FV.Backend.Proof.StockDemand
 import FV.Backend.Proof.StockFreshRecordValues
 
 /-! Successful Stock interpreter execution never removes source-register demand. -/

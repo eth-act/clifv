@@ -1,5 +1,5 @@
+import FV.Backend.Proof.StockAluOperandCoverage
 import FV.Backend.Proof.StockAddSubRecordValues
-import FV.Backend.Proof.StockUnarySourceValues
 namespace Backend.Stock.Proof.ScalarAddSub
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 set_option maxRecDepth 20000

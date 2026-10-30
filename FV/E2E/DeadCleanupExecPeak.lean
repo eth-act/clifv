@@ -1,4 +1,5 @@
-import FV.E2E.DeadCleanupExecProven
+import FV.E2E.DeadCleanupExecGot
+import FV.E2E.DeadCleanupExecGoodReads
 
 /-! # The cleanup pipeline's executable theorem at the run's peak call depth (L1d)
 

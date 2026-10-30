@@ -1,3 +1,5 @@
+import FV.Backend.Proof.RegallocOperands
+import FV.E2E.RegLevelPush
 import FV.E2E.SizeLower
 import FV.E2E.DeadCleanupSize
 import FV.Backend.Proof.IselSzTDriver

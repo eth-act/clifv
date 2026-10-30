@@ -1,4 +1,5 @@
-import FV.Opt.Proof.LegalBase
+import FV.Opt.Legal
+import FV.Opt.Proof.SemSim
 import FV.Clif.FloatFacts
 
 /-!

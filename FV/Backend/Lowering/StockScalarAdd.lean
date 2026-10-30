@@ -1,4 +1,4 @@
-import FV.Backend.Lowering.StockPrologueAll
+import FV.Backend.Lowering.StockD0
 
 /-! Input syntax of the next complete scalar arithmetic class. The production
 entrypoints keep their current selector until the full proof packet is ready. -/

@@ -1,4 +1,4 @@
-import FV.E2E.StockScalarFixtures
+import FV.Backend.Lowering.StockD0
 
 namespace E2E.StockNotNIWitness
 open Backend.Stock.D0

@@ -1,6 +1,6 @@
-import FV.E2E.RegLevelTrap
 import FV.Backend.Proof.IselCtlTerm
 import FV.E2E.RegLevelPush
+import FV.E2E.RegLevelNext
 
 /-!
 # Prologue and epilogue on the machine (M6)

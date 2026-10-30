@@ -1,5 +1,4 @@
-import FV.Backend.Proof.StockAluOperandCoverage
-import FV.Backend.Proof.StockGuardedRecordValues
+import FV.Backend.Proof.StockConstantRecordValues
 
 /-! Source consistency across actual retained Stock statements. The proof uses
 only the original SSA/dominance and context construction facts. It covers every

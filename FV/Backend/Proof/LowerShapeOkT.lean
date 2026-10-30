@@ -1,5 +1,7 @@
+import FV.Backend.Proof.LowerLoop
 import FV.Backend.Proof.LowerLoopT
-import FV.Backend.Proof.LowerShapeOk
+import FV.Backend.Proof.LowerAlias
+import FV.Backend.Proof.LowerShapeOkFacts
 import FV.Backend.Proof.IselTermFactsTy
 import FV.Backend.Proof.LowerLoopCtxTF
 

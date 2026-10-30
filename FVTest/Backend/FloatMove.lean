@@ -1,4 +1,4 @@
-import FV.Backend
+import FV.Backend.Isel
 
 /-!
 The ISLE float data-movement roots of S11e4 (#238) on the lowering itself: `f32const`/`f64const`

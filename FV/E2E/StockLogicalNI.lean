@@ -1,3 +1,5 @@
+import FV.E2E.StockArithmeticStageContract
+import FV.E2E.ABIReadOnlyMachine
 import FV.E2E.ABIReadFlags
 import FV.Backend.Proof.StockLogicalReturnRefines
 import FV.Backend.Proof.StockLogicalCheck

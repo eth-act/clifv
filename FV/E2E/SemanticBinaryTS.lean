@@ -1,6 +1,5 @@
 import FV.E2E.SemanticBinary
 import FV.E2E.SemanticStackBoundTS
-import FV.E2E.BinaryT
 
 /-! # Typed copies of `FV.E2E.SemanticBinary` (#722)
 

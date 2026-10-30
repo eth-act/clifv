@@ -1,5 +1,7 @@
 import FV.Opt.Proof.RuleInfraIcmp
-import FV.Opt.Proof.RuleInfraConst
+import FV.Opt.Proof.RuleRestEmbedSshr
+import FV.Opt.Proof.RuleRestEmbedRotl
+import FV.Opt.Proof.RuleRestEmbedRotr
 import FV.Opt.Proof.RuleSpaceshipUnsigned
 import FV.Opt.Proof.RuleSpaceshipSigned
 

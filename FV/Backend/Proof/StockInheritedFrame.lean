@@ -1,4 +1,4 @@
-import FV.Backend.Proof.StockInheritedBody
+import FV.Backend.Proof.StockInheritedValues
 
 namespace Backend.Stock.Proof.Inherited
 open Backend.Proof Backend.Proof.Driver

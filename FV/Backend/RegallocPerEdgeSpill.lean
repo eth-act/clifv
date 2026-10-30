@@ -1,5 +1,4 @@
 import FV.Backend.SpillAlloc
-import FV.Backend.RegallocPerEdge
 
 /-! Per-successor spill fallback. Copies for a unique predecessor run on entry,
 after terminator-result stores. Copies into shared targets run before a jump

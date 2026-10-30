@@ -1,3 +1,4 @@
+import FV.Backend.Proof.StockConditionalEntryPrelude
 import FV.Backend.Proof.StockParameterSuccessor
 import FV.Backend.Proof.StockParameterReturnPrelude
 import FV.Backend.Proof.StockParameterCompatibility

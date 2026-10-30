@@ -1,5 +1,5 @@
 import FV.Link.SemanticCompileT
-import FV.Link.SemanticExeSourceT
+import FV.E2E.SrcScopeDefs
 import FV.E2E.StockProductionFixtures
 import FV.Backend.Lowering.StockArithmeticNI
 import FV.Clif.Print

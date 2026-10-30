@@ -1,5 +1,4 @@
 import FV.Backend.Proof.IselCtlBrif
-import FV.Backend.Proof.IselFamALUAMul
 import FV.Backend.Proof.IselFamALUALogic
 
 /-!

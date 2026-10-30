@@ -1,4 +1,6 @@
-import FV.E2E.Guarded
+import FV.Backend.Proof.LowerSim
+import FV.Backend.Proof.RegallocTac
+import FV.Backend.Proof.IselInterp
 import FV.Backend.Proof.VCodeSemISeq
 
 /-! # Runs on pairs of worlds (agent/link-widen, stage 2)

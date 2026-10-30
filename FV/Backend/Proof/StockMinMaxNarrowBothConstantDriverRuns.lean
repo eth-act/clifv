@@ -1,3 +1,4 @@
+import FV.Backend.Proof.StockMinMaxRegisterDriverRuns
 import FV.Backend.Proof.StockMinMaxNarrowFixtures
 namespace Backend.Stock.Proof.ScalarSelect
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

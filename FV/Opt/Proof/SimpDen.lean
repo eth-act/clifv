@@ -1,4 +1,4 @@
-import FV.Opt.Proof.GvnEdit
+import FV.Opt.Proof.SemFacts
 
 /-!
 # The graph valuation of the simplify pass (`Opt.den`)

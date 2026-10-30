@@ -1,3 +1,6 @@
+import FV.Backend.Proof.LowerSim
+import FV.Backend.Proof.LowerCert
+import FV.Backend.Proof.StockOrderGraph
 import FV.Backend.Proof.StockOutgoingVectors
 import FV.Backend.Proof.PerEdgeVCodeSem
 

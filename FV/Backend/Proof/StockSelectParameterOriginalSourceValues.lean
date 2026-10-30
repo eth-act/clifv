@@ -1,5 +1,4 @@
 import FV.Backend.Proof.StockSelectParameterRecordValues
-import FV.Backend.Proof.StockMinMaxRegisterOriginalSourceValues
 namespace Backend.Stock.Proof.ScalarSelect
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 open MinMaxRegisterFixture Backend.Stock.Proof.ScalarCmp

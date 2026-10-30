@@ -1,5 +1,5 @@
 import FV.Concurrency.ArmAllocStraight
-import FV.Concurrency.ThreadLayerWitness
+import FV.Concurrency.VCodeThreadWitness
 import FV.E2E.Binary
 
 /-!

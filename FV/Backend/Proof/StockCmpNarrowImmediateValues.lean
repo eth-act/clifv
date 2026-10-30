@@ -1,3 +1,4 @@
+import FV.Backend.Proof.StockCmpNarrowImmediateSourceValues
 import FV.Backend.Proof.StockCmpNarrowImmediateSelection
 namespace Backend.Stock.Proof.ScalarCmp
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

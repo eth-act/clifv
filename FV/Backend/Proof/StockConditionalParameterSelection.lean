@@ -1,5 +1,6 @@
+import FV.Backend.Proof.StockProjection
+import FV.Backend.Proof.IselCovForm
 import FV.Backend.Proof.StockConditionalCalls
-import FV.Backend.Proof.StockNamedBranchTargets
 
 namespace Backend.Stock.Proof.ParameterBranch
 open Backend.Proof Backend.Proof.Driver Backend.Proof.Cov Isle Isle.Interp Isle.Aarch64

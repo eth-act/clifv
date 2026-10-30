@@ -1,5 +1,5 @@
 import FV.E2E.BackendTwoRunT
-import FV.E2E.BackendTwoRunDWitness
+import FV.E2E.BackendTwoRunWitness
 
 /-!
 # Witness for the lock step told its segment position (SEM1 #537, `BackendTwoRunT.lean`)

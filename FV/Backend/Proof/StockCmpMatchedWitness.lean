@@ -1,3 +1,5 @@
+import FV.Backend.Proof.StockCmpMatchedZero
+import FV.Backend.Proof.StockCmpMatchedRegister
 import FV.Backend.Proof.StockCmpMatchedImmediate
 namespace Backend.Stock.Proof.ScalarCmp.MatchedWitness
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

@@ -30,7 +30,7 @@ Released under Apache 2.0 license; see third_party/NOTICE-lnsym.md.
 -- `X[t, n]` writes zero-extend to 64 bits and register 31 is XZR (`write_gpr_zr`); `V[t, n]`
 -- zero-extends to 128 bits (`write_sfp`). PRFM (literal) is not modelled.
 
-import FV.Arm.Decode
+import FV.Arm.Decode.LDST
 import FV.Arm.Insts.Common
 
 namespace Arm

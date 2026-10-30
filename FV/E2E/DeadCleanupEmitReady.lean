@@ -1,5 +1,9 @@
 import FV.E2E.DeadCleanupAlloc
-import FV.E2E.DeadCleanupEmit
+import FV.E2E.EmitReady
+import FV.Backend.AllocReady
+import FV.E2E.EmitEnc
+import FV.E2E.EmitLabels
+import FV.E2E.EmitNear
 
 namespace E2E
 open Backend Backend.Proof Backend.Proof.Driver Backend.Proof.Spill Backend.DeadCleanup

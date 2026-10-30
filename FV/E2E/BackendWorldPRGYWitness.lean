@@ -1,6 +1,7 @@
 import FV.E2E.BackendWorldPRGY
-import FV.E2E.BackendWorldPRGXWitness
-import FV.E2E.LinkArmThmPRBROf
+import FV.E2E.BackendWorldPRBWitness
+import FV.E2E.LinkArmProphDetWitness
+import FV.E2E.LinkArmStage2Y
 
 /-!
 # Witnesses for the related-call guard (#692: `FV/E2E/ExtSemGuardRY.lean`,

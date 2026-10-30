@@ -1,6 +1,7 @@
-import FV.Backend.Proof.StockReturnABI
-import FV.Backend.Proof.StockBodyScanOrigin
-import FV.Backend.Proof.LowerSim
+import FV.Backend.Proof.IselCtlTerm
+import FV.Backend.Proof.RegallocCSem
+import FV.Backend.Proof.StockTraversalRecordOrigin
+import FV.Backend.Proof.StockCoreScanOrigin
 
 /-! Derive implicit return request arity from successful original source
 execution, the original ABI signature condition and actual Stock lowering.

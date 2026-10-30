@@ -9,7 +9,7 @@ Author(s): Yan Peng
 -- used the SP-flavoured accessors; found by co-simulation).
 -- `dup_aux_0_4_32` is proved bitwise (`getLsbD`) instead of by `bv_decide`.
 
-import FV.Arm.Decode
+import FV.Arm.Decode.DPSFP
 import FV.Arm.Insts.Common
 import FV.Arm.BitVec
 

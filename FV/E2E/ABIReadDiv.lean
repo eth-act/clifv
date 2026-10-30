@@ -1,4 +1,5 @@
 import FV.Backend.ABIReadDiv
+import FV.E2E.ABIReadTrapBoundary
 import FV.E2E.ABIReadDivSteps
 import FV.E2E.ABIReadScalar
 namespace E2E.DivBoundary

@@ -1,4 +1,3 @@
-import FV.Backend.Proof.StockDivRecordReceipts
 import FV.Backend.Proof.StockDivSelectedWitness
 import FV.Backend.Proof.StockDivRemSelectedWitness
 namespace Backend.Stock.Proof.ScalarDiv

@@ -1,4 +1,3 @@
-import FV.Backend.Proof.StockPrepareComplete
 import FV.Backend.Proof.StockOrderGraph
 
 namespace Backend.Stock.Proof

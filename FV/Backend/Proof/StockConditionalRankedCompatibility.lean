@@ -1,6 +1,5 @@
 import FV.Backend.Proof.StockConditionalRankedShape
 import FV.Backend.Proof.StockConditionalBodyCalls
-import FV.Backend.Proof.StockSelectedRoutes
 import FV.Backend.Proof.StockComputedCfg
 import FV.Backend.Proof.StockGraphEdges
 import FV.Backend.Proof.StockGraphBounds

@@ -1,4 +1,6 @@
-import FV.Backend.Proof.StockCoreScanOrigin
+import FV.Backend.Proof.DriverCheck
+import FV.Backend.Proof.IselExtern
+import FV.Backend.Proof.RegallocCSem
 import FV.Backend.Proof.StockBranchSelection
 
 namespace Backend.Stock.Proof.ConditionalValues

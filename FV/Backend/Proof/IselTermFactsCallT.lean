@@ -1,5 +1,4 @@
 import FV.Backend.Proof.IselTermFactsCall
-import FV.Backend.Proof.IselTermFactsTy
 
 /-!
 # Completeness of `lowerCheckT`: the outgoing area of `call` and `try_call`, typed contexts

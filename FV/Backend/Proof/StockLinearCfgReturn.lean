@@ -1,3 +1,5 @@
+import FV.Backend.Proof.StockCfgReturnBlockAt
+import FV.Backend.Proof.StockLinearCfgShape
 import FV.Backend.Proof.StockLinearCfgDemand
 import FV.Backend.Proof.StockCfgJumpReturnAt
 import FV.Backend.Proof.StockJumpEntryPrelude

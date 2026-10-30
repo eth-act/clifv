@@ -1,5 +1,5 @@
 import FV.Backend.Proof.StockDivSignedObservations
-import FV.Backend.Proof.StockDivSourceOverflow
+import FV.Backend.Proof.StockDivIntmin
 namespace Backend.Stock.Proof.ScalarDiv
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 /-- Actual minimum-check preparation executes through final aliases, reflects

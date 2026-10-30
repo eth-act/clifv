@@ -1,4 +1,5 @@
-import FV.Backend.Proof.StockPrepareTotal
+import FV.Backend.Proof.StockPrepareComplete
+import FV.Backend.Proof.StockPrepareInputs
 import FV.Backend.Proof.StockCriticalCode
 
 namespace Backend.Stock.Proof

@@ -1,3 +1,4 @@
+import FV.Backend.Proof.IselCmpSelect
 import FV.Backend.Proof.IselCmpDiv
 import FV.Backend.Proof.IselTermsALUA
 

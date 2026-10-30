@@ -1,6 +1,5 @@
 import FV.Backend.Proof.StockTermContract
 import FV.Backend.Proof.StockSourceEntry
-import FV.Backend.Proof.MemRefines
 
 /-! Internal, universal source contract for reusable scalar production consumers.
 Executable class checks derive this proof once for every accepted input; callers

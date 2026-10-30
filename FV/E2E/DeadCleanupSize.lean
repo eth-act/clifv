@@ -1,4 +1,8 @@
-import FV.E2E.SizeIn
+import FV.Backend.Proof.SpillLocal
+import FV.Backend.Proof.RegallocOperands
+import FV.E2E.SizeVC
+import FV.E2E.SizeLower
+import FV.Backend.Proof.IselSzDriver
 import FV.E2E.DeadCleanupTotal
 import FV.Backend.Proof.DeadCleanupPrepare
 

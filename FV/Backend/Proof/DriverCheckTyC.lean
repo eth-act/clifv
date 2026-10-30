@@ -1,5 +1,4 @@
 import FV.Backend.Proof.DriverCheckC
-import FV.Backend.Proof.TryRegsC
 import FV.Backend.Proof.InstScopeTF
 
 /-!

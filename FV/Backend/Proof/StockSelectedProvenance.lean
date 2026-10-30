@@ -1,4 +1,5 @@
 import FV.Backend.Proof.StockDFG
+import FV.Backend.Proof.LowerDecide
 import FV.Backend.Proof.StockAvailableProvenance
 
 /-! Transport operand provenance out of the actual block scan's terminator

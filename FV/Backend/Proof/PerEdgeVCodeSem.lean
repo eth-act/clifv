@@ -1,4 +1,6 @@
-import FV.Backend.Proof.LowerSim
+import FV.Backend.Proof.IselGeneric
+import FV.Backend.Proof.VCodeSem
+import FV.Arm.MinTheory
 
 /-! Per-successor VCode execution. The existing single-vector semantics and
 all its theorems remain unchanged. Allocation/checker consumers must use the

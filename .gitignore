@@ -6,4 +6,5 @@
 /rust/target/
 /rust/crates/isle2lean/oracle/target/
 /scripts/__pycache__/
+/scripts/shake/__pycache__/
 /tools/prejit-export/target/

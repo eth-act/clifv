@@ -1,10 +1,10 @@
 import FV.E2E.DeadCleanupLinkCheck
+import FV.Link.Image
 import FV.E2E.PipelineCheckT
 import FV.E2E.LinkArmT
 import FV.E2E.LinkCheckT
 import FV.E2E.LinkCheckFast
 import FV.E2E.CalleeWith
-import FV.Link.DeadCleanupImage
 
 /-! # Typed copies of `FV.E2E.DeadCleanupLinkCheck` (S11e5 Stage C, slice 8)
 

@@ -1,4 +1,4 @@
-import FV.Backend.Proof.IselCmpVec
+import FV.Backend.Proof.IselCmpEmit
 import FV.Backend.Proof.IselTermsImm
 
 /-!

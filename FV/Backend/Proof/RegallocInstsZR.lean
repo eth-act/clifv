@@ -1,5 +1,4 @@
 import FV.Backend.Proof.RegallocTac
-import FV.Backend.Proof.EncodeLayout
 
 /-!
 # `OperandsSound` for integer forms with a zero-register operand (M6 proof)

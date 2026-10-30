@@ -1,5 +1,6 @@
 import FV.Backend.Proof.StockCmpNarrowActualAllocation
-import FV.Backend.Proof.StockCmpSelectedCalls
+import FV.Backend.Proof.StockCmpSourceMatch
+import FV.Backend.Proof.StockCmpRootMatch
 import FV.Backend.Proof.StockCmpOutput
 namespace Backend.Stock.Proof.ScalarCmp
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

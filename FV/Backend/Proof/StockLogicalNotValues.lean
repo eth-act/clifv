@@ -1,3 +1,4 @@
+import FV.Backend.Proof.StockLogicalNotReceipts
 import FV.Backend.Proof.StockLogicalNotSemantics
 
 namespace Backend.Stock.Proof.LogicalNot

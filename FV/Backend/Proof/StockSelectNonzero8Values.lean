@@ -1,3 +1,4 @@
+import FV.Backend.Proof.StockCmpNonzero8Emission
 import FV.Backend.Proof.StockCmpNonzero8OriginalSelection
 import FV.Backend.Proof.StockCmpTestFlags
 import FV.Backend.Proof.StockSelectSourceValues

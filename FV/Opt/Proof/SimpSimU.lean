@@ -1,5 +1,5 @@
 import FV.Opt.Proof.SimpSimX
-import FV.Opt.Proof.GvnEditU
+import FV.Opt.Proof.SimWinU
 
 /-!
 # The simplify validator is sound with handler edges (`Opt.simpOk_simU`, S10f #233)

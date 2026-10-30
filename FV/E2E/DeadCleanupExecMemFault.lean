@@ -1,3 +1,5 @@
+import FV.E2E.DeadCleanupExecMemTrap
+import FV.E2E.ExecFaults
 import FV.E2E.DeadCleanupExecFault
 import FV.E2E.DeadCleanupExecPeak
 import FV.E2E.LinkMemTrapW

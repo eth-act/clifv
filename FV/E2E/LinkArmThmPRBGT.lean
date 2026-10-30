@@ -1,6 +1,6 @@
 import FV.E2E.LinkArmTrapE
 import FV.E2E.BackendWorldPRGYNXT
-import FV.E2E.LinkArmProgramInitR
+import FV.E2E.LinkArmThmPRBG
 
 /-!
 # The per-state facts of a trapping run under the slot-byte oracle (SEM1 #537)

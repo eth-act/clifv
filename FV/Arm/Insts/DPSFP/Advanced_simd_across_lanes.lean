@@ -37,7 +37,7 @@ Released under Apache 2.0 license; see third_party/NOTICE-lnsym.md.
 -- Cranelift 0.136.1 lowers `popcnt` with `addv`/`addp`, not `uaddlv`; UADDLV is modelled for
 -- completeness of the popcount idioms and co-simulated with the rest.
 
-import FV.Arm.Decode
+import FV.Arm.Decode.DPSFP
 import FV.Arm.Insts.Common
 
 namespace Arm

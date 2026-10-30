@@ -1,5 +1,6 @@
 import FV.E2E.FinalT
 import FV.Backend.Proof.LowerCompleteT
+import FV.Backend.Proof.SpillInstCheck
 import FV.Backend.Proof.SpillLocalPipeT
 import FV.Backend.Proof.SpillArity
 

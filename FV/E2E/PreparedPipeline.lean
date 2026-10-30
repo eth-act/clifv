@@ -1,5 +1,5 @@
-import FV.E2E.ActualPipelineCheck
-import FV.Backend.Lowering.StockProduction
+import FV.E2E.PipelineCheck
+import FV.E2E.LinkProduction
 
 /-! Pipeline provenance for transactional production attempts. Every successful
 artifact retains the original preparation, allocation, emission and layout facts;

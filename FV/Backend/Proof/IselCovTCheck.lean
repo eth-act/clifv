@@ -1,5 +1,4 @@
-import FV.Backend.Proof.IselCovTLe
-import FV.Backend.Proof.IselCovCheck
+import FV.Backend.Proof.IselCovTDom
 
 /-!
 # Form coverage over float-capable contexts (typed V3): the abstract interpreter

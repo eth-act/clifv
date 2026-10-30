@@ -1,3 +1,4 @@
+import FV.Backend.Proof.StockSelectionReceipts
 import FV.Backend.Proof.StockReduceReceipts
 namespace Backend.Stock.Proof.ScalarCast.Reduce
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

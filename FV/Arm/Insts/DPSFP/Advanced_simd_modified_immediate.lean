@@ -13,7 +13,7 @@ Author(s): Yan Peng
 -- (shared/functions/vector/advsimdexpandimm). Cranelift emits `movi vd.2s, #0` for a zero
 -- `f32const`/`f64const` (`constant_f32`/`constant_f64`, `MInst.VecDupImm`).
 
-import FV.Arm.Decode
+import FV.Arm.Decode.DPSFP
 import FV.Arm.Insts.Common
 import FV.Arm.BitVec
 

@@ -1,4 +1,4 @@
-import FV.Backend.Proof.StockProjection
+import FV.Backend.Proof.StockPolicy
 import FV.Backend.Proof.LowerSeq
 
 /-!

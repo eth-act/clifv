@@ -1,9 +1,10 @@
-import FV.Concurrency.ArmAllocPause
 import FV.E2E.RegLevelCall
 import FV.E2E.RegLevelNext
 import FV.E2E.RegLevelGoto
 import FV.E2E.RegLevelOp
 import FV.E2E.RegLevelRelax
+import FV.Concurrency.AllocThread
+import FV.Concurrency.ArmAllocThread
 
 /-!
 # `Q` after a call's return (#473)

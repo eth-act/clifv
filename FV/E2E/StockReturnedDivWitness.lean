@@ -1,3 +1,4 @@
+import FV.E2E.StockHighMulWitness
 import FV.E2E.StockReturnedDivChecks
 namespace E2E.StockReturnedDivNIWitness
 open Backend Backend.Proof Backend.Proof.Driver Backend.Stock.D0

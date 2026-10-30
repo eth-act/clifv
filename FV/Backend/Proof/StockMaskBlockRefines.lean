@@ -1,6 +1,5 @@
 import FV.Backend.Proof.StockLocalSourceContinuation
 import FV.Backend.Proof.StockMaskBlockRecords
-import FV.Backend.Proof.StockMaskBodyRefines
 
 namespace Backend.Stock.Proof.MaskBody
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

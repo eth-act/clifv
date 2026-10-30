@@ -4,12 +4,12 @@ import FVTest.Backend.Lowering.StockTwoBlockProductionRuntime
 import FV.Backend.Lowering.StockTwoBlockNI
 import FV.Backend.Lowering.StockTwoBlockEntryNI
 import FVTest.Backend.Lowering.StockScalarTestSupport
+import FV.E2E.SemanticStackBound
 import FV.E2E.SemanticChecksWith
 import FV.Link.ProductionImageWith
 import FV.Link.Ld.Spec
 import FVTest.E2E.SemanticLinkProofWith
 import FV.Backend.Lowering.StockScalarNI
-import FV.E2E.StockArithmeticNIWitness
 import FV.E2E.StockGeneralDivFixtures
 import FV.Backend.LinearScan
 import FV.Clif.Print

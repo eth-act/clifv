@@ -1,4 +1,4 @@
-import FV.Compile.Model
+import FV.Compile.Emit
 import FV.Compile.Runtime
 import FV.DSL.TestCase
 

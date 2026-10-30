@@ -1,3 +1,4 @@
+import FV.Backend.Proof.StockAluSelectedValues
 import FV.Backend.Proof.StockHighMulNarrowRhs
 import FV.Backend.Proof.StockExtendRequests
 namespace Backend.Stock.Proof.ScalarHighMul

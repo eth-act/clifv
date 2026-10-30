@@ -1,3 +1,4 @@
+import FV.DSL.Ops
 import FV.DSL.Syntax
 
 /-!

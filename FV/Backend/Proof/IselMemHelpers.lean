@@ -1,4 +1,4 @@
-import FV.Backend.Proof.IselMemAmodeTop
+import FV.Backend.Proof.IselMemAmode
 
 /-!
 # Memory family (M4Mem2): the memory helper terms

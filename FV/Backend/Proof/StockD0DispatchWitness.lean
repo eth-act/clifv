@@ -1,5 +1,4 @@
 import FV.Backend.Proof.StockD0Witness
-import FV.Backend.Proof.StockD0Dispatch
 import FV.Backend.Proof.StockD0Edges
 
 namespace Backend.Stock.D0

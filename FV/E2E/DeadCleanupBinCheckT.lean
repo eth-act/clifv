@@ -1,5 +1,4 @@
 import FV.E2E.DeadCleanupBinCheck
-import FV.E2E.BinCheckT
 import FV.E2E.DeadCleanupLinkCheckT
 import FV.E2E.LinkArmT
 import FV.E2E.LinkCheckT

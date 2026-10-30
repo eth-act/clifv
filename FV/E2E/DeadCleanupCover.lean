@@ -1,4 +1,6 @@
-import FV.Backend.Proof.FormsCoverComplete
+import FV.Backend.Proof.IselCovDriver
+import FV.Backend.Proof.LowerCover
+import FV.Backend.Proof.LogicImmComplete
 import FV.Backend.Proof.DeadCleanupPrepare
 
 namespace Backend.Proof.Driver

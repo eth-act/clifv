@@ -1,5 +1,4 @@
 import FV.Backend.Proof.StockEntryAliases
-import FV.Backend.Proof.StockSourceEdges
 
 /-! Source successor binding and mapped/final-alias machine parallel copies.
 The semantic transfer computes register numbers from the actual context. The

@@ -1,4 +1,5 @@
 import FV.Backend.Proof.StockConditionalCheck
+import FV.Backend.Proof.StockConditionalEmptyTrapFixture
 import FV.Backend.Proof.StockConditionalSourceChecks
 
 namespace Backend.Stock.Proof.ConditionalValues

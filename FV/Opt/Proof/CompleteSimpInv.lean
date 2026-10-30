@@ -1,6 +1,6 @@
-import FV.Opt.Proof.CompleteSimpRunDef
 import FV.Opt.Proof.SimpLoop
 import FV.Opt.Proof.DomComplete
+import FV.Opt.Proof.CompleteSimpLoop
 
 /-!
 # Completeness of simplify: the invariants of the run

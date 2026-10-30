@@ -1,5 +1,4 @@
-import FV.Backend.Proof.StockCfgSuccessorDemand
-import FV.Backend.Proof.StockCfgJumpDemand
+import FV.Backend.Proof.StockJumpDemand
 
 namespace Backend.Stock.Proof.Control
 open Backend.Proof Backend.Proof.Driver Backend.Proof.Driver.Fix

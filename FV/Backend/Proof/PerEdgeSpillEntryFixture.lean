@@ -1,7 +1,7 @@
-import FV.Backend.Proof.PerEdgeSpillEntry
-import FV.Backend.Proof.SpillCtlForms
+import FV.Backend.Proof.PerEdgeSpillCopy
+import FV.Backend.Proof.LowerDecide
 import FV.Backend.Proof.SpillArity
-import FV.Backend.Proof.StockCfgTotalWitness
+import FV.Backend.Proof.StockPolicy
 import FV.Backend.Proof.PerEdgeAllocDriverSound
 
 namespace Backend.Stock.Proof.SpillEntryFixture

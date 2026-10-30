@@ -1,7 +1,7 @@
 import FV.Concurrency.CallSegCall
-import FV.Concurrency.CallSegOkGActWitness
+import FV.Concurrency.CallEntryLinkWitness
+import FV.Concurrency.CallRetLinkWitness
 import FV.Concurrency.FrameDisjWitness
-import FV.Concurrency.CallResumeAllWitness
 import FV.Concurrency.CallRetPremisesWitness
 
 /-!

@@ -1,5 +1,4 @@
 import FV.Backend.Proof.LowerLoopSimT
-import FV.Backend.Proof.LowerLoop
 
 /-!
 # The typed loop simulation (S11e5 Stage C, slice 3)

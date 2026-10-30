@@ -1,5 +1,5 @@
 import FV.E2E.BackendWorldPRGYNG
-import FV.E2E.CountPRBNWitness
+import FV.E2E.BackendWorldPRBWitness
 
 /-!
 # Witnesses for the error-free trace at the return (`RegLevelCorrectPRSNG`, `BackendWorldPRGYNG`)

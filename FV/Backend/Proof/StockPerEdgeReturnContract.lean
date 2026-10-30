@@ -1,4 +1,5 @@
-import FV.Backend.Proof.StockReturnContract
+import FV.Backend.Proof.StockTermContract
+import FV.Backend.Proof.StockReturnAutomaticSource
 import FV.Backend.Proof.PerEdgeSeq
 import FV.Backend.Proof.PerEdgePrepareSound
 

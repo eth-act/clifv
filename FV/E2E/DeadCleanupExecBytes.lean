@@ -1,6 +1,4 @@
-import FV.E2E.Binary
 import FV.E2E.ExecWords
-import FV.E2E.ExecBytes
 import FV.E2E.DeadCleanupBinary
 import FV.E2E.DeadCleanupBinCheck
 

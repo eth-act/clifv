@@ -1,5 +1,5 @@
 import FV.Backend.Proof.DefGenSound
-import FV.Backend.Proof.IselEmitLast
+import FV.Backend.Proof.IselShpTotal
 import FV.Backend.Proof.KillTab
 
 /-!

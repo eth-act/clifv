@@ -1,5 +1,6 @@
+import FV.E2E.RegLevelGoodXNR
 import FV.E2E.RegLevelCallNA
-import FV.E2E.RegLevelTlsNR
+import FV.E2E.RegLevelTls
 
 /-!
 # `ElfTlsGetAddr`, at a witness (SEM1 #537, item (3), route (a))

@@ -1,4 +1,5 @@
-import FV.Opt.Proof.CompleteSimpHyp
+import FV.Opt.Proof.SimpMat
+import FV.Opt.Proof.CompleteLicm
 
 /-!
 # Completeness of simplify: output views, placeable values, `materialize`

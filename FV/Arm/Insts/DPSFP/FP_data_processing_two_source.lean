@@ -23,7 +23,6 @@ Released under Apache 2.0 license; see third_party/NOTICE-lnsym.md.
 -- functions are the shared IEEE core's (`IEEE.add` …, `docs/contracts/float.md`). FMAXNM and
 -- FMINNM (opcode 0110/0111) and half precision are not modelled.
 
-import FV.Arm.Decode
 import FV.Arm.Insts.Common
 import FV.Arm.Insts.DPSFP.FP_data_processing_one_source
 

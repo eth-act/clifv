@@ -1,4 +1,8 @@
-import FV.Backend.Proof.StockBodyScanRefines
+import FV.Backend.Proof.StockDFG
+import FV.Backend.Proof.StockBlockScan
+import FV.Backend.Proof.StockBackwardSuffixSplit
+import FV.Backend.Proof.StockTraversalRecordOrigin
+import FV.Backend.Proof.StockCoreScanOrigin
 
 /-! Separate the actual terminator record from the ordinary source body of a
 successful original-node scan. Every index, state and code equation is derived

@@ -1,3 +1,4 @@
+import FV.Backend.Proof.StockMulRhs
 import FV.Backend.Proof.StockMulSemantics
 import FV.Backend.Proof.StockSelectionReceipts
 namespace Backend.Stock.Proof.ScalarMul

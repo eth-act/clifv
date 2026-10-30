@@ -1,4 +1,5 @@
-import FV.Backend.Proof.StockCmpMatchedImmediate
+import FV.Backend.Proof.StockSourceView
+import FV.Backend.Proof.IselCovForm
 import FV.Backend.Proof.StockCmpPredecessorSignedMatch
 import FV.Backend.Proof.StockCmpPredecessorUnsignedMatch
 namespace Backend.Stock.Proof.ScalarCmp

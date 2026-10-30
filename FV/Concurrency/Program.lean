@@ -1,4 +1,4 @@
-import FV.Concurrency.Interleave
+import FV.Concurrency.ClifMM
 
 /-!
 # Programs: thread semantics, the interleaving machine, executions of traces (T2e, #303)

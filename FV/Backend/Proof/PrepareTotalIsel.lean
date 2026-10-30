@@ -1,4 +1,6 @@
-import FV.Backend.Proof.SpillEdgesIsel
+import FV.Backend.Proof.IselCtl
+import FV.Backend.Proof.IselCtlTry
+import FV.Backend.Proof.IselTermFactsBase
 
 /-!
 # The last instruction of a `return`/`trap` lowering is a terminator

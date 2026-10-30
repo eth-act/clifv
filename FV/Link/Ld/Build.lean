@@ -1,4 +1,5 @@
 import FV.Link.Ld.Reloc
+import FV.Link.Ld.Obj
 import FV.Link.Ld.Write
 
 /-! # Lean static linker: the body from placed pieces (L2b stage 3c)

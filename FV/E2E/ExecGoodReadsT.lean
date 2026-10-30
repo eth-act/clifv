@@ -1,15 +1,8 @@
-import FV.E2E.ExecGoodReads
-import FV.E2E.ExecGoodRunT
-import FV.E2E.BinCheckT
-import FV.E2E.BinaryGoodT
-import FV.E2E.BinaryT
-import FV.E2E.ExecBytesT
-import FV.E2E.ExecRunNT
+import FV.E2E.ExecFrameSim
+import FV.E2E.ExecGoodRun
 import FV.E2E.ExecStaticT
 import FV.E2E.LinkArmT
 import FV.E2E.LinkCheckT
-import FV.E2E.LinkGoodT
-import FV.E2E.StackBoundT
 
 /-! # Typed copies of `FV.E2E.ExecGoodReads` (S11e5 Stage C, slice 8)
 

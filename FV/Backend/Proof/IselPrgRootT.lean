@@ -1,5 +1,4 @@
 import FV.Backend.Proof.IselPrgExtT
-import FV.Compile.SubsetT
 
 /-!
 # Progress of the ISLE lowering over the typed scope: the roots

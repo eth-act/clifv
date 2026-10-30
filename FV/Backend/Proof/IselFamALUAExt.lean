@@ -1,5 +1,6 @@
+import FV.Backend.Proof.IselFamALUA
 import FV.Backend.Proof.IselTermsALUAExt
-import FV.Backend.Proof.IselFamALUAMul
+import FV.Backend.Proof.IselFamilyALU
 
 /-!
 # Extended-register root rules of family A: `LowerRuleOk`

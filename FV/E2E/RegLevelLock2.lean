@@ -1,4 +1,4 @@
-import FV.E2E.RegLevelForward2
+import FV.E2E.RegLevelCorrectCW
 
 /-!
 # One segment of two activations, in lock-step (SEM1 #537, item (3))

@@ -1,5 +1,5 @@
-import FV.E2E.RegLevelCorrectPRS
-import FV.E2E.RegLevelCorrectPRR
+import FV.E2E.RegLevelCorrectPR
+import FV.E2E.RegLevelCorrectCR
 
 /-!
 # `RegLevelCorrectPRS` with the located reads (SEM1 #537, step 3p)

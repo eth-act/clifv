@@ -1,6 +1,6 @@
 import FV.Backend.Proof.StockEntryOrder
-import FV.Backend.Proof.StockPrepareComplete
 import FV.Backend.Proof.StockBackwardSuffixSplit
+import FV.Backend.Proof.IselExtern
 
 namespace Backend.Stock.Proof
 open Backend.Proof Backend.Proof.Driver

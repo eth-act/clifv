@@ -1,4 +1,6 @@
-import FV.Backend.Proof.StockCmpConditionValues
+import FV.Backend.Proof.StockCmpFlags
+import FV.Backend.Proof.IselCmpDiv
+import FV.Backend.Proof.PrepareCheck
 namespace Backend.Stock.Proof.ScalarCmp
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 private theorem right_extension {n : Nat} (width : n = 8 ∨ n = 16) (signed : Bool) (B : CV) :

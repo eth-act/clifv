@@ -1,7 +1,5 @@
 import FV.E2E.StockReturnedDivFixtures
-import FV.E2E.StockHighMulWitness
-import FV.Backend.Proof.StockScalarReturnedDivDomain
-import FV.E2E.CompiledSemanticNI
+import FV.E2E.ABIReadDiv
 import FV.Backend.LinearScan
 import FV.Backend.Lowering.StockScalarNI
 namespace E2E.StockReturnedDivNIWitness

@@ -1,3 +1,5 @@
+import FV.Backend.Proof.IselCovForm
+import FV.Backend.Proof.StockExtendRequests
 import FV.Backend.Proof.StockCmpZeroMatch
 namespace Backend.Stock.Proof.ScalarCmp
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

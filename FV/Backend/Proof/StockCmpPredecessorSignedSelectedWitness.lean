@@ -1,3 +1,4 @@
+import FV.Backend.Proof.StockAluSelectedValues
 import FV.Backend.Proof.StockCmpPredecessorSignedSelection
 namespace Backend.Stock.Proof.ScalarCmp.PredecessorSignedSelectedWitness
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

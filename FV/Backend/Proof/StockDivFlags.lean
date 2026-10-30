@@ -1,4 +1,4 @@
-import FV.Backend.Proof.IselCmpSdiv
+import FV.Backend.Proof.IselSemCmp
 import FV.Backend.Proof.DriverCheck
 namespace Backend.Stock.Proof.ScalarDiv
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

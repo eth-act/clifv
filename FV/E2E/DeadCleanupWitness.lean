@@ -1,6 +1,6 @@
-import FV.E2E.DeadCleanupFinal
-import FV.E2E.LowerDirect
-import FV.Backend.Proof.SpillEdges
+import FV.E2E.DeadCleanupPipeline
+import FV.Backend.Proof.LowerDecide
+import FV.Backend.Proof.SpillArity
 import FV.E2E.DeadCleanupCover
 import FV.E2E.SizeDefs
 import FV.Backend.Proof.IselEmitDefs

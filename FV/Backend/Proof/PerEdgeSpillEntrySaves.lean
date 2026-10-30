@@ -1,4 +1,6 @@
-import FV.Backend.Proof.PerEdgeSpillPreState
+import FV.Arm.MinTheory
+import FV.Backend.Proof.IselInterp
+import FV.Backend.Proof.PerEdgeSpillStateAt
 
 namespace Backend.Proof.PerEdgeSpill
 open Backend Backend.Proof.Spill

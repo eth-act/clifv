@@ -1,4 +1,4 @@
-import FV.Backend.Proof.IselPrgInv
+import FV.Backend.Proof.IselPrgExt
 import FV.Backend.Proof.IselPrgLe
 import FV.Backend.Proof.IselFlowSplit
 

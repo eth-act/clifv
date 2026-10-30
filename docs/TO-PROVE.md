@@ -1062,7 +1062,7 @@ mid-end is complete for every configuration: `Opt.optimize_complete_cfg`, `Opt.o
   #252, `RuleImm`'s unused import of `FV.Backend.Proof.IselCmpExt` made 99 of the 153 rule modules depend
   on all of `FV.Backend` and the Arm model.
 - The isel proofs and Stock reach the rest of the backend only through what they use: the generated
-  `FV/Backend/Proof/IselData.lean` imports `FV.Backend.Isel` and `FV.Compile.Subset`, not the
+  `FV/Backend/Proof/IselData.lean` imports `FV.Backend.Isel` and `FV.Backend.Proof.IselAttr`, not the
   `FV.Backend` umbrella (generator header in `FVTest/Backend/Proof/Probe/GenData.lean`). Changes to
   `FV.Backend.{Regalloc,SpillAlloc,AllocReady,Obj,Unwind,DeadCleanup}` or branch relaxation rebuild
   77–111 of the 1,133 Stock/DeadCleanup modules (≈2 h of recorded module time in all, was ≈12 h and

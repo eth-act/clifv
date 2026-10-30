@@ -1,5 +1,7 @@
-import FV.Backend.Proof.StockShiftRhsObserved
-import FV.Backend.Proof.StockLogicalLookthrough
+import FV.Backend.Proof.IselFamALUA
+import FV.Backend.Proof.IselFamAluBShiftTerms
+import FV.Backend.Proof.StockSourceView
+import FV.Backend.Proof.StockShiftRhs
 namespace Backend.Stock.Proof.ScalarShift
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 set_option maxRecDepth 20000

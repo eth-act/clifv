@@ -1,3 +1,4 @@
+import FV.Isle.InterpProjection
 import FV.Backend.Proof.StockContext
 import FV.Backend.Proof.IselFlowGen
 import FV.Backend.Proof.IselInterp

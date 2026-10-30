@@ -1,3 +1,5 @@
+import FV.Backend.Proof.IselCmpMinMax
+import FV.Backend.Proof.StockMinMaxRegisterValues
 import FV.Backend.Proof.StockMinMaxRegisterRuns
 namespace Backend.Stock.Proof.ScalarSelect.MinMaxRegisterWitness
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

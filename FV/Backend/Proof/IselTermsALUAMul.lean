@@ -1,4 +1,5 @@
-import FV.Backend.Proof.IselTermsLogicNot
+import FV.Backend.Proof.IselTermsALUA
+import FV.Arm.MinTheory
 
 /-!
 # Multiplication rules of family A: forward lemmas

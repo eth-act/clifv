@@ -1,6 +1,6 @@
 import FV.Backend.Proof.RegallocSlots
 import FV.Backend.Proof.RegallocMem
-import FV.Backend.Proof.IselCtlTerm
+import FV.Backend.Proof.IselInterp
 import FV.Backend.Proof.RegallocMemAddr
 import FV.E2E.ExecReads
 import FV.E2E.Statement

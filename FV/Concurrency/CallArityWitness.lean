@@ -1,5 +1,4 @@
 import FV.Concurrency.CallArity
-import FV.Concurrency.CallResumeChecksWitness
 
 /-!
 # Witness for `CallArity` (#473)

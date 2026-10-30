@@ -1,4 +1,5 @@
-import FV.Link.Ld.BodyTotal
+import FV.Backend.Proof.IselExtern
+import FV.Link.Ld.LayoutTotal
 
 /-! # The places of `lean-ld`'s layout (A1c, #409)
 

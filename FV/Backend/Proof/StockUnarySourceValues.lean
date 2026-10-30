@@ -1,3 +1,4 @@
+import FV.Backend.Proof.StockAluOperandCoverage
 import FV.Backend.Proof.StockNegSourceValues
 import FV.Backend.Proof.StockBitrevSourceValues
 import FV.Backend.Proof.StockBswapSourceValues

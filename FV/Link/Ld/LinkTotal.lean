@@ -1,3 +1,4 @@
+import FV.Link.Ld.PlanProof
 import FV.Link.Ld.RelsTotal
 
 /-! # `lean-ld` links its inputs (A1e, #409)

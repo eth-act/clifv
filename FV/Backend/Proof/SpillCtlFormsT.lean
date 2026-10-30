@@ -1,4 +1,8 @@
-import FV.Backend.Proof.SpillLocalForms
+import FV.Backend.Proof.SpillLocal
+import FV.Backend.Proof.RegallocOperands
+import FV.Backend.Proof.IselCtlTerm
+import FV.E2E.RegLevelPush
+import FV.Backend.Proof.SpillLocalState
 import FV.Backend.Proof.PairsC
 
 /-!

@@ -1,7 +1,9 @@
-import FV.Backend.Proof.StockCountMath
+import FV.Backend.Proof.IselFamAluBShiftTerms
+import FV.Backend.Proof.StockRequestSuccess
+import FV.Backend.Proof.StockLogicalForms
+import FV.Backend.Proof.StockShiftHelper
+import FV.Backend.Proof.StockBitHelper
 import FV.Backend.Proof.StockImm12Helper
-import FV.Backend.Proof.StockExtendValues
-import FV.Backend.Proof.IselFamAluBClz
 namespace Backend.Stock.Proof.ScalarCount
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 set_option maxRecDepth 20000

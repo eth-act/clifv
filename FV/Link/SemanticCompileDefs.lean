@@ -1,5 +1,6 @@
 import FV.Link.ProductionImageWith
 import FV.E2E.SemanticPipelineCheck
+import FV.Link.DeadCleanupCompile
 import FV.Link.Placed
 
 /-! Executable transactional compilation. Correctness consumers remain in

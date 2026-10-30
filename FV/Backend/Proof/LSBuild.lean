@@ -1,5 +1,5 @@
-import FV.Backend.Proof.LSInst
-import FV.Backend.Proof.LSMoves
+import FV.Backend.Proof.LSFn
+import FV.Backend.Proof.SpillLocal
 
 /-!
 # The Lean allocator's builder: structure of its output (V4b-3, #275)

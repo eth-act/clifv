@@ -1,4 +1,4 @@
-import FV.Backend.Proof.StockSourceEdges
+import FV.Backend.Proof.StockSourceDefined
 
 /-! Source-definedness through successful result binding, including extern
 call continuation and restoration of an actual saved caller after a return.

@@ -1,5 +1,4 @@
 import FV.Backend.Proof.IselTermsALUAMul
-import FV.Backend.Proof.IselFamALUALogicNot
 import FV.Backend.Proof.IselFamALUARules
 
 /-!

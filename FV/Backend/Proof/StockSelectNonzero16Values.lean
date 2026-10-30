@@ -1,4 +1,6 @@
+import FV.Backend.Proof.StockCmpNonzero16Values
 import FV.Backend.Proof.StockSelectNonzero16Shape
+import FV.Backend.Proof.StockSelectZeroObserved
 import FV.Backend.Proof.StockSelectZeroReplacementResolved
 import FV.Backend.Proof.StockSelectCompanionFragment
 namespace Backend.Stock.Proof.ScalarSelect

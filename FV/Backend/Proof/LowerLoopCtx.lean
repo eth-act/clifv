@@ -1,5 +1,4 @@
-import FV.Backend.Proof.LowerLoopCode
-import FV.Backend.Proof.PrepareComplete
+import FV.Backend.Proof.LowerSpec
 
 /-!
 # `buildCtx`, functionally

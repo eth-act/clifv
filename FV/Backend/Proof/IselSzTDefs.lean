@@ -1,4 +1,5 @@
 import FV.Backend.Proof.IselSzDefs
+import FV.Backend.Proof.IselCovTFam
 import FV.Backend.Proof.IselCovTCheck
 
 /-!

@@ -1,4 +1,3 @@
-import FV.E2E.BackendWorldPRG
 import FV.E2E.ExtSemGuardRY
 
 /-!

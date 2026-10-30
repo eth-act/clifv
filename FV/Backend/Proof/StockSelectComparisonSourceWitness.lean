@@ -1,3 +1,5 @@
+import FV.Backend.Proof.StockSelectOriginalSourceValues
+import FV.Backend.Proof.LowerSim
 import FV.Backend.Proof.StockSelectComparisonSourceSetup
 namespace Backend.Stock.Proof.ScalarSelect.ComparisonSourceWitness
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

@@ -1,4 +1,4 @@
-import FV.Backend.Proof.VCodeSemICall
+import FV.Backend.Proof.VCodeSemISeq
 import FV.Backend.Proof.LowerContract
 
 /-!

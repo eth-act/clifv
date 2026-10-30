@@ -1,5 +1,6 @@
 import FV.Unw.EhFrameHdr
-import FV.E2E.DeadCleanupBinary
+import FV.E2E.LinkCheck
+import FV.E2E.Elf
 import FV.Backend.Proof.UnwindTables
 import FV.Backend.Proof.EhFrameDecode
 

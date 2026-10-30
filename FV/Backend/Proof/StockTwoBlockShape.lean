@@ -1,6 +1,6 @@
-import FV.Backend.Proof.StockJumpEntryPrelude
-import FV.Backend.Proof.StockCfgReturnEdgeAt
-import FV.Backend.Proof.StockComputedCfg
+import FV.Backend.Lowering.Stock
+import FV.Backend.Proof.LowerCertBase
+import FV.Backend.Proof.RegallocInstsFP
 
 namespace Backend.Stock.Proof.TwoBlock
 open Backend.Proof Backend.Proof.Driver

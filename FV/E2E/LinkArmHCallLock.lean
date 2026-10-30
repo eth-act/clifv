@@ -1,6 +1,6 @@
 import FV.E2E.LinkArmHCall
-import FV.E2E.LinkArmLockedCallee
-import FV.E2E.BackendTwoRunEither
+import FV.E2E.BackendTwoRunLW
+import FV.E2E.RegLevelTwoRunTP
 
 /-!
 # The call premise of the two-run lock at the link (SEM1 #537, #713, step 4)

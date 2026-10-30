@@ -1,5 +1,4 @@
-import FV.E2E.RegLevelFrame
-import FV.E2E.RegLevelWrites
+import FV.E2E.RegLevelMove
 import FV.E2E.ExecWritesFrame
 
 /-!

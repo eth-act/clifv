@@ -1,4 +1,5 @@
-import FV.Backend.Proof.IselPrgTryLast
+import FV.Backend.Proof.RegallocOperands
+import FV.Backend.Proof.SpillLocal
 import FV.Backend.Proof.IselPrgCtxT
 import FV.Backend.Proof.IselCtlUnmatchTI
 
