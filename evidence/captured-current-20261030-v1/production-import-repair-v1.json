@@ -1,0 +1,9 @@
+{
+  "utc": "2026-10-30T20:59:24.163043+00:00",
+  "previous": "744ff76af46883b9ddb43ef8bd0d2d16c15087ac",
+  "commit": "b6cdec54ace309896038fdecbb7c47a2d991e2fe",
+  "path": "FV/E2E/StockMemoryWorldX.lean",
+  "sha256": "9e1285b8721560a1bc3742b0e600d4e3e4aec35fa3d25a921bc1d484262aac79",
+  "focused_receipt": "captured-current-proof-receipt-v4.json",
+  "canceled_previous_gate": "After DefGenWrap passed; old source had missing explicit contract import."
+}

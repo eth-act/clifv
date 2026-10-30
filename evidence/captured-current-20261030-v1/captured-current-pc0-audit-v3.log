@@ -1,0 +1,48 @@
+'Backend.Stock.Memory.stock_retained_load_return_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Memory.RetainedLoadReturnSpec.nop_records' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.StockMemory.stock_lower_omitted_paired_scan' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Memory.stock_nop_load_return_body' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.StockMemory.stock_nop_load_return_paired_body' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.OrdinaryBody.actual_ordinary_return_refines_at_block' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.Inherited.local_jump_carry_returns_defined_of_body' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.Control.jump_body_returns_at_of_body' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Memory.stock_nop_body' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.StockMemory.stock_nop_paired_body' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Memory.stock_nop_body_with_traps' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Control.stock_lower_nop_jump_body_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Memory.CapturedFixture.scope' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Memory.CapturedFixture.dominated' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Memory.CapturedFixture.lowered' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Backend.Stock.Memory.CapturedFixture.lowered_entry._native.native_decide.ax_1✝]
+'Backend.Stock.Memory.CapturedFixture.entry_tag' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Backend.Stock.Memory.CapturedFixture.lowered_entry._native.native_decide.ax_1✝]
+'Backend.Stock.Memory.CapturedFixture.nop_jump_witness' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Backend.Stock.Memory.CapturedFixture.lowered_entry._native.native_decide.ax_1✝]
+'E2E.StockMemory.stock_lower_return_record_paired_runOkAt' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.StockMemory.actual_ordinary_paired_return_refines_at_block' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'E2E.StockMemory.paired_jump_body_returns_at_of_body' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.StockMemory.stock_nop_paired_body_of_split' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.StockMemory.paired_nop_jump_body_returns_at' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Memory.CapturedFixture.source_entered' depends on axioms: [propext]
+'Backend.Stock.Memory.CapturedFixture.source_returned' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Memory.CapturedFixture.source_entry' depends on axioms: [propext, Quot.sound]
+'E2E.StockMemory.actual_nonentry_paired_load_return' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.StockMemory.original_entry_prelude_paired' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.StockMemory.stock_two_block_load_return_paired' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.StockMemory.stock_two_block_load_return_paired_function' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.StockMemoryCapturedWitness.complete_captured_paired_function_witness' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Backend.Stock.Memory.CapturedFixture.lowered_entry._native.native_decide.ax_1✝]

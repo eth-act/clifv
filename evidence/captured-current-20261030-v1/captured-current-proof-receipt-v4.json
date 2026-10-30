@@ -1,0 +1,24 @@
+{
+  "status": "passed",
+  "utc": "2026-10-30T20:58:31.228054+00:00",
+  "base": "744ff76a",
+  "pc0_roots": 30,
+  "production_roots": 18,
+  "axioms_exact": true,
+  "source_fingerprint_exact": true,
+  "records": [
+    {
+      "label": "proof-build",
+      "returncode": 0
+    },
+    {
+      "label": "pc0-audit",
+      "returncode": 0
+    },
+    {
+      "label": "production-audit",
+      "returncode": 0
+    }
+  ],
+  "recovery": "v3 build and both audits passed; finalizer used nonexistent v1 log names. This receipt verifies actual v3 logs without rerunning passed work."
+}

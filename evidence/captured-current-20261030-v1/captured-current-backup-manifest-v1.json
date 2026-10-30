@@ -1,0 +1,17 @@
+{
+  "utc": "2026-10-30T21:04:26.263100+00:00",
+  "base": "b6cdec54ace309896038fdecbb7c47a2d991e2fe",
+  "scope": "Current-base captured candidate;1472 modules and exact48-root audits pass. Consumer/native gates and landing remain pending.",
+  "files": {
+    "captured-current-candidate-v2.patch": "e7c9b080b6a818d3c4f95c5dd1ff8e26740ac0e5bdd72822f085eb4a14533025",
+    "captured-current-proof-receipt-v4.json": "f6fcbb70efb314da1cba6c4694b85daf7e650576fbb0f80f847a7357af4d3bee",
+    "captured-current-proof-source-v3.json": "06c64e111043b2bcce67c3ca0919740e5238c648962d5595296163870e914ea6",
+    "captured-current-pc0-audit-v3.log": "2be4b044871c63dfd40b34c94ff4dcbcb7fab848eae5e73d51bcbca140815493",
+    "captured-current-production-audit-v3.log": "52c3404db1d94d53c5576768a888f85d723ccef5e0df9ba43fdad1411ba12624",
+    "captured-production-ready-v1.json": "ddbbeaec393cb8c0cfc84cc32dc5b98f958104d7cd15f1938d84d5dd364d276a",
+    "production-import-repair-v1.json": "a5c87c1a308ac9b453dde5cc0cc8ce8aad28d5860133d7b22eef84da5c8ce20a",
+    "run-production-reverse-gates-v3.py": "2be9367caeaa140477e8a770e12a6deb05867c9bdbe4d599d36df90a9631b19d",
+    "run-captured-current-consumers-v2.py": "2e98d2b9f0e7d38a351f2a32382692909a91ee5816b6a608b82b66d29699491f",
+    "run-captured-real-inputs-v2.py": "db47d288bf67cec7afd285d2c047f7037bd2c523f6dc8c0a7728a683c51dcb7e"
+  }
+}
