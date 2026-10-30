@@ -1,3 +1,5 @@
+import FV.Backend.Proof.StockAluOperandCoverage
+import FV.Backend.Proof.StockDemandExtent
 import FV.Backend.Proof.StockMemorySelected
 import FV.Backend.Proof.StockMemoryRecordValues
 
