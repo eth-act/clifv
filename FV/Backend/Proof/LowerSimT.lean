@@ -906,13 +906,13 @@ theorem term_stepT_abi (H : DriverHypT f vc ctx st0 R gn bl A sem MR env p)
             List.replicate (sretRet f).length (Reg.x 8) := by
         rw [hRaw, hus, hvC,
           show (termCtx ctx (L.start + B.body.length) L.data).func = ctx.func from by
-            simp [termCtx], ← List.map_append, List.length_append, Nat.add_sub_cancel,
-          List.take_left' (l₁ := xs.map (valClassOf ctx)) (i := xs.length)
-            (by rw [List.length_map]), Nat.add_sub_cancel_left]
+            simp [termCtx], H.shape.ctxInvT.func, ← List.map_append, List.length_append,
+          Nat.add_sub_cancel, Nat.add_sub_cancel_left, List.map_append]
       rw [← hcl0, ← hclS, (getMany_spec hg0).1.symm,
         List.take_left' (l₁ := xs.map (valClassOf ctx)) (i := xs.length)
           (by rw [List.length_map]), List.length_append, List.length_map, Nat.add_sub_cancel_left]
-      exact hus'
+      rw [hus', List.take_left' (l₁ := xs.map (valClassOf ctx)) (i := xs.length)
+        (by rw [List.length_map]), List.length_map]
     · simp only [List.length_map]; rw [hlen]; exact hall.1
   | trap c =>
     rw [hT] at hrun' hstep
