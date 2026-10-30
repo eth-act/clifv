@@ -1255,7 +1255,10 @@ statements. `RuleBase`: `RuleSpecAt fm` / `applyMulti_genAt` (fuel-general lifti
 - `rule_rhs`: `opt_eval hev` (interpreter equations + `opt_monad` + `opt_imm`), then `split` on
   every stuck `match` (a made `icmp` reads its operand type from the graph: `toInst_icmp`,
   `none` = poison, no obligation), `opt_types` (the operand type read in a later state is the
-  value's type, `GraphOk.typeOf_eq`).
+  value's type, `GraphOk.typeOf_eq`). The skeleton `div` templates (`RuleSkeleton3`/`5`, ~500
+  steps per evaluation) use `opt_eval_head` (`RuleInfraEval.lean`): the same steps, but `simp`
+  normalises only the head computation of each `bind` and `rw` skips equation lemmas whose head
+  does not occur.
 - `rule_finish`: a matched class (`Valuation.Le` chain) or a made node (`GraphOk.make_val`,
   `opt_node` operand by operand, made operands recursively), then `rule_bits`: `val_congr`
   (not `simp`: `BitVec 8` vs `BitVec Ty.i8.width`), `ac_rfl` for AC identities (64-bit `*`

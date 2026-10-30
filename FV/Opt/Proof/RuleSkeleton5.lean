@@ -19,6 +19,9 @@ the evaluation prefix is shared, `sdc_eval`), and the bit-level goal is closed t
 `sdc_sign_fix` (the sign correction), `BitVec.toInt_sdiv_of_ne_or_ne` (the divisor is not `-1`)
 and `sdc_srem_of_sdiv`.
 
+The right-hand side is evaluated with `opt_eval_head` (`RuleInfraEval.lean`; each evaluation is
+~500 interpreter steps).
+
 The divisor's `toInt` appears at two widths (`Ty.i64.width` from the matched immediate, `64` in
 the magic numbers' argument); the facts about it are stated at both.
 -/
@@ -317,11 +320,11 @@ syntax "sdc_rhs" ("[" (Lean.Parser.Tactic.simpStar <|> Lean.Parser.Tactic.simpEr
 set_option hygiene false in
 macro_rules
   | `(tactic| sdc_rhs [$ts,*]) => `(tactic| (
-      try opt_eval hev [$ts,*]
+      try opt_eval_head hev [$ts,*]
       repeat' (first
-        | (rw [Isle.Interp.matchAll.eq_2] at hev; opt_eval hev [$ts,*])
-        | (rw [Isle.Interp.matchAll.eq_1] at hev; opt_eval hev [$ts,*])
-        | (split at hev <;> try opt_norm hev [$ts,*]))
+        | (rw [Isle.Interp.matchAll.eq_2] at hev; opt_eval_head hev [$ts,*])
+        | (rw [Isle.Interp.matchAll.eq_1] at hev; opt_eval_head hev [$ts,*])
+        | (split at hev <;> try opt_norm_head hev [$ts,*]))
       all_goals (try simp only [Option.map_eq_some_iff, Option.map_eq_none_iff] at *)
       opt_destruct
       all_goals subst_vars
@@ -340,10 +343,10 @@ syntax "sdc_eval" ("[" (Lean.Parser.Tactic.simpStar <|> Lean.Parser.Tactic.simpE
 set_option hygiene false in
 macro_rules
   | `(tactic| sdc_eval [$ts,*]) => `(tactic| (
-      try opt_eval hev [$ts,*]
+      try opt_eval_head hev [$ts,*]
       repeat' (first
-        | (rw [Isle.Interp.matchAll.eq_2] at hev; opt_eval hev [$ts,*])
-        | (rw [Isle.Interp.matchAll.eq_1] at hev; opt_eval hev [$ts,*]))))
+        | (rw [Isle.Interp.matchAll.eq_2] at hev; opt_eval_head hev [$ts,*])
+        | (rw [Isle.Interp.matchAll.eq_1] at hev; opt_eval_head hev [$ts,*]))))
 
 set_option hygiene false in
 /-- Phase 4 for a signed `div` replaced by the magic sequence: no trap (the divisor is neither `0`

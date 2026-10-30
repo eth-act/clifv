@@ -1,5 +1,6 @@
 import FV.Opt.Proof.RuleSkelEmbed
 import FV.Opt.Proof.RuleInfraDivConst
+import FV.Opt.Proof.RuleInfraEval
 
 /-!
 # `simplify_skeleton` rules: division by a constant via magic numbers
@@ -12,7 +13,8 @@ non-power-of-two constant with Cranelift's `div_const` sequences (`apply_div_con
 The template is `skel_auto_div_i` with three changes: the magic numbers are generalized (their
 specification is rewritten into the right-hand side's evaluation, `skel_rhs_dc`, with the
 range facts the `iconst` constructors check), the evaluation also unfolds `matchAll` (the
-`and` pattern of `u32_extract_non_zero` in `apply_div_const_magic_*_maybe_shift`), and the made
+`and` pattern of `u32_extract_non_zero` in `apply_div_const_magic_*_maybe_shift`; with
+`opt_eval_head`, `RuleInfraEval.lean`, since each evaluation is ~500 steps), and the made
 `iconst` nodes are evaluated by `rfl` (`divc_den`: their immediates have type `BitVec 64`, not
 `BitVec Ty.i64.width`, so `evalNode_iconst` does not rewrite). The bit-level goal is closed by the
 `divc_*` sequence lemmas below.
@@ -61,11 +63,11 @@ syntax "skel_rhs_dc" ("[" (Lean.Parser.Tactic.simpStar <|> Lean.Parser.Tactic.si
 set_option hygiene false in
 macro_rules
   | `(tactic| skel_rhs_dc [$ts,*]) => `(tactic| (
-      opt_eval hev [$ts,*]
+      opt_eval_head hev [$ts,*]
       repeat' (first
-        | (rw [Isle.Interp.matchAll.eq_2] at hev; opt_eval hev [$ts,*])
-        | (rw [Isle.Interp.matchAll.eq_1] at hev; opt_eval hev [$ts,*])
-        | (split at hev <;> try opt_norm hev [$ts,*]))
+        | (rw [Isle.Interp.matchAll.eq_2] at hev; opt_eval_head hev [$ts,*])
+        | (rw [Isle.Interp.matchAll.eq_1] at hev; opt_eval_head hev [$ts,*])
+        | (split at hev <;> try opt_norm_head hev [$ts,*]))
       all_goals (try simp only [Option.map_eq_some_iff, Option.map_eq_none_iff] at *)
       opt_destruct
       all_goals subst_vars
