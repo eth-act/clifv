@@ -1,3 +1,4 @@
+import FV.Backend.Proof.StockCriticalCode
 import FV.Backend.Proof.StockPerEdgeValues
 import FV.Backend.Proof.StockSelectedGraph
 

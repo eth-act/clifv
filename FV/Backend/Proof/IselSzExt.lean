@@ -1,4 +1,5 @@
 import FV.Backend.Proof.IselSzDefs
+import FV.Backend.Proof.IselCovModel
 import FV.Backend.Proof.IselEmitCtor
 
 /-!

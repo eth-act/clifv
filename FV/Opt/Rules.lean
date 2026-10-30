@@ -1,4 +1,3 @@
-import FV.Opt.Basic
 import FV.Isle.Opt.Simplify
 
 /-!

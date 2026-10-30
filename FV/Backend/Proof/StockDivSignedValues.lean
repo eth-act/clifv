@@ -1,3 +1,4 @@
+import FV.Backend.Proof.StockDivGeneralValues
 import FV.Backend.Proof.StockDivSafeValues
 import FV.Backend.Proof.StockDivSignedSelected
 namespace Backend.Stock.Proof.ScalarDiv

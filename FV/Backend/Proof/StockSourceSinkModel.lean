@@ -1,5 +1,8 @@
 import FV.Backend.Proof.StockCoverageInvariant
-import FV.Backend.Proof.StockCoverageModel
+import FV.Backend.Proof.LogicImmComplete
+import FV.Backend.Proof.StockCoverageCtor
+import FV.Backend.Proof.StockCoverageOracle
+import FV.Backend.Proof.IselFlowInst
 import FV.Backend.Proof.StockSourceSinkTable
 import FV.Backend.Proof.StockSinkFrame
 

@@ -1,4 +1,5 @@
-import FV.Backend.Proof.StockMulFusedSemantics
+import FV.Backend.Proof.StockMulValues
+import FV.Backend.Proof.StockMulFusedRhs
 namespace Backend.Stock.Proof.ScalarMul.Fused
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 open Backend.Stock.Proof.ScalarMul

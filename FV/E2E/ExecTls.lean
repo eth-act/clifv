@@ -1,5 +1,4 @@
 import FV.E2E.ExecTlsCf
-import FV.E2E.ExecTlsWords
 import FV.Arm.Tpidr
 
 /-! # The executable's TLS words, run for real (T1)

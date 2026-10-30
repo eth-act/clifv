@@ -1,4 +1,4 @@
-import FV.E2E.LinkScopeT
+import FV.E2E.LinkScopeDefsT
 import FV.Backend.Proof.IselPrgDriverTF
 
 /-!

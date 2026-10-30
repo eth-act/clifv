@@ -1,4 +1,5 @@
-import FV.E2E.LinkArmTwinCEWitness
+import FV.E2E.LinkArmTwinCE
+import FV.E2E.LinkArmIniOfWitness
 import FV.E2E.LinkArmTrapE
 
 /-!

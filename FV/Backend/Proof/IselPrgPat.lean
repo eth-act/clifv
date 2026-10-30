@@ -1,6 +1,6 @@
+import FV.Backend.Proof.IselGeneric
 import FV.Backend.Proof.IselPrgLe
 import FV.Backend.Proof.IselPrgModel
-import FV.Backend.Proof.IselFlowGen
 
 /-!
 # Progress of the ISLE lowering (V7): patterns

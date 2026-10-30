@@ -1,3 +1,4 @@
+import FV.Opt.Proof.LegalBase
 import FV.Opt.Proof.LegalExt
 import FV.Opt.Proof.LegalShift8
 import FV.Opt.Proof.LegalShift16

@@ -1,5 +1,6 @@
 import FV.Backend.LogicalNIProduction
 import FV.Backend.LinearScan
+import FV.E2E.StockProductionFixtures
 import FV.E2E.StockLogicalFixtures
 import FV.Clif.Print
 

@@ -1,3 +1,6 @@
+import FV.Backend.Proof.RegallocOperands
+import FV.Backend.Proof.SpillLocal
+import FV.Backend.Proof.SpillInstCheck
 import FV.Backend.Proof.SpillLocalPipeT
 import FV.Backend.Proof.LowerDecide
 import FV.Backend.Proof.SpillArity

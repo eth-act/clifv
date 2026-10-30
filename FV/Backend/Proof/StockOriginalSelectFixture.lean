@@ -1,5 +1,3 @@
-import FV.Backend.Proof.StockSelectOriginalSourceMatch
-import FV.Backend.Proof.StockCmpZeroHelpers
 import FV.Backend.Proof.StockMinMaxRegisterDriverRuns
 namespace Backend.Stock.Proof.ScalarSelect.OriginalSelectFixture
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

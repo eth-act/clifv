@@ -1,4 +1,5 @@
-import FV.Backend.Proof.StockCriticalCode
+import FV.Backend.Proof.StockBackwardSuffixSplit
+import FV.Backend.Proof.IselExtern
 
 /-! Actual per-successor vectors returned by whole Stock lowering.
 Traverse installation/frame facts before applying final alias resolution. -/

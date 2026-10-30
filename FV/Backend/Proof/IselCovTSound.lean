@@ -1,3 +1,5 @@
+import FV.Backend.Proof.IselExclSound
+import FV.Backend.Proof.IselCovTLe
 import FV.Backend.Proof.IselCovTCheck
 
 /-!

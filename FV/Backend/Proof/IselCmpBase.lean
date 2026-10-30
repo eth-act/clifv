@@ -1,7 +1,6 @@
-import FV.Backend.Proof.FastSubst
 import FV.Backend.Proof.IselCmpInv
-import FV.Backend.Proof.IselCmpRun
-import FV.Backend.Proof.IselFamily
+import FV.Arm.MinTheory
+import FV.Backend.Proof.IselExtern
 
 /-!
 # The backend side of inverse evaluation (flags/select/div family)

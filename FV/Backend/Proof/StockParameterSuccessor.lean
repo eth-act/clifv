@@ -1,3 +1,4 @@
+import FV.Backend.Proof.StockParameterReturn
 import FV.Backend.Proof.StockParameterTrap
 
 namespace Backend.Stock.Proof.ParameterCfg

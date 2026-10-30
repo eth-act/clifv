@@ -1,3 +1,4 @@
+import FV.Backend.Proof.StockSelectionReceipts
 import FV.Backend.Proof.StockBranchSelection
 import FV.Backend.Proof.IselTermFactsRules
 

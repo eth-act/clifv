@@ -1,5 +1,4 @@
 import FV.E2E.Elf
-import FV.Link.Ld.Obj
 
 /-! # Lean static linker: the ELF writer
 

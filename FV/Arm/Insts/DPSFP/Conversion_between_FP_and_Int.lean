@@ -30,7 +30,6 @@ Author(s): Yan Peng
 -- on the shared IEEE core (`IEEE.toFixed`, `IEEE.fromFixed`; FPCR = 0, so
 -- `FPRoundingMode(FPCR)` is round to nearest even). Half precision is not modelled.
 
-import FV.Arm.Decode
 import FV.Arm.Insts.Common
 import FV.Arm.BitVec
 import FV.Arm.Insts.DPSFP.FP_data_processing_one_source

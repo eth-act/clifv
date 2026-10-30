@@ -1,4 +1,5 @@
-import FV.Isle
+import FV.Isle.Interp
+import FV.Isle.Generated.Program
 
 /-!
 # A toy embedding for the ISLE interpreter

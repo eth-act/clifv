@@ -1,3 +1,4 @@
+import FV.Backend.Proof.RegallocInstsFP
 import FV.Backend.Proof.StockJumpDemand
 import FV.Backend.Proof.StockDemandMono
 

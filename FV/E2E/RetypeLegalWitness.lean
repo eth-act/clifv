@@ -1,4 +1,4 @@
-import FV.E2E.LegalWideWitness
+import FV.E2E.NonVacuityLink
 import FV.E2E.RetypeLegal
 import FV.Opt.Proof.RetypeWitness
 

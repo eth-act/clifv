@@ -1,4 +1,5 @@
 import FV.Backend.Proof.StockReturnHelpers
+import FV.Backend.Proof.StockReturnArity
 import FV.Backend.Proof.StockSourceDefined
 
 /-! Execute the actual revised return helper against successful original source

@@ -1,6 +1,7 @@
 import FV.Backend.Proof.PerEdgeSpillCopy
-import FV.Backend.Proof.StockCfgTotalWitness
-import FV.Backend.Proof.StockPerEdgeAllocatorWitness
+import FV.Backend.Proof.StockPolicy
+import FV.Backend.Proof.LowerDecide
+import FV.Backend.Proof.PerEdgeAllocDriverSound
 
 namespace Backend.Stock.Proof.IndexedSpillFixture
 open Backend.Proof Backend.Proof.Driver Backend.Proof.PerEdgeSpill Backend.Proof.Spill

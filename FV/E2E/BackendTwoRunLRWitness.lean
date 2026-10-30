@@ -1,5 +1,5 @@
 import FV.E2E.BackendTwoRunLR
-import FV.E2E.BackendTwoRunTWitness
+import FV.E2E.BackendTwoRunWitness
 import FV.E2E.LinkArmX30CheckWitness
 
 /-!

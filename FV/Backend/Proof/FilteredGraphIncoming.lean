@@ -1,5 +1,4 @@
 import FV.Backend.Proof.IndexedPredMultiplicity
-import FV.Backend.Proof.PerEdgePrepareFilterFacts
 
 namespace Backend.Proof.PerEdgePrep
 open Backend Backend.Proof Backend.Proof.Spill

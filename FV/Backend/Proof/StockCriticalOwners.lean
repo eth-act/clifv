@@ -1,5 +1,5 @@
 import FV.Backend.Proof.StockForwardSourceOrder
-import FV.Backend.Proof.StockGraphEdges
+import FV.Backend.Proof.StockOrderGraph
 
 namespace Backend.Stock.Proof.CriticalOwners
 open Backend.Proof Backend.Proof.Driver

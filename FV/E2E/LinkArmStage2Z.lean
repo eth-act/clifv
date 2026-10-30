@@ -1,5 +1,4 @@
 import FV.E2E.LinkArmStage2R
-import FV.E2E.BackendPrefixAt
 
 /-!
 # Stage 2 at the call's own operands (SEM1 #537, #680 (3), `docs/plans/uninit.md` §5.9)

@@ -1,4 +1,5 @@
-import FV.Backend.Proof.StockMulValues
+import FV.Backend.Proof.StockMulHelper
+import FV.Backend.Proof.StockRequestSuccess
 namespace Backend.Stock.Proof.ScalarMul.Fused
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 open Backend.Stock.Proof.ScalarMul

@@ -1,4 +1,4 @@
-import FV.Backend.Proof.PerEdgeSpillCopy
+import FV.Backend.RegallocPerEdgeSpill
 import FV.Backend.Proof.SpillStep4Cfg
 
 namespace Backend.Proof.PerEdgeSpill

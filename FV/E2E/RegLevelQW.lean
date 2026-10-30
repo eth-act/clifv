@@ -1,5 +1,6 @@
 import FV.E2E.RegLevelSegAlign
-import FV.E2E.RegLevelNext
+import FV.E2E.RegLevelOp
+import FV.E2E.RegLevelBranch
 
 /-!
 # `q_op`, `q_next`, `q_entry` at a witness (SEM1 #537, item (3), route (a))

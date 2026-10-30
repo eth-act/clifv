@@ -1,3 +1,6 @@
+import FV.Backend.Proof.IselFamAluBShiftTerms
+import FV.Backend.Proof.StockValues
+import FV.Backend.Proof.IselCtlTry
 import FV.Backend.Proof.StockPopcountPure
 namespace Backend.Stock.Proof.ScalarPopcount
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

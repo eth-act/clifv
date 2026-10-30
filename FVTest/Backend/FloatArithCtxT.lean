@@ -1,6 +1,6 @@
 import FV.Backend.Proof.DriverCheckT
-import FV.Backend.Proof.IselLowerAll
 import FV.Backend.Proof.IselExclT
+import FV.Backend.Proof.IselFloatCmp
 
 /-!
 Non-vacuity of S11f's target `LowerRulesCorrectFT` (#239): the context `buildCtx` makes for a

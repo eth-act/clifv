@@ -1,5 +1,5 @@
-import FV.Opt.Proof.RuleRestEmbed
 import FV.Opt.Proof.KernelBV
+import FV.Opt.Proof.RuleIcmpEmbed2
 
 /-!
 # 128-bit comparisons rebuilt from 64-bit halves (`icmp.isle` 254–289)

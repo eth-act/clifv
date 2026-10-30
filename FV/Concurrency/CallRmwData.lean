@@ -1,4 +1,3 @@
-import FV.Concurrency.CallSeg
 import FV.Concurrency.RealizeWitnessRmw
 
 /-!

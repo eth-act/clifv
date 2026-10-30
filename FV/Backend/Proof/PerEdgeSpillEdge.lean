@@ -1,6 +1,7 @@
-import FV.Backend.Proof.StockPreparedArity
-import FV.Backend.Proof.PerEdgeSpillEntry
-import FV.Backend.Proof.PerEdgeRegallocLemmas
+import FV.Backend.Proof.StockParameterShape
+import FV.Backend.Proof.StockBranchArgumentShape
+import FV.Backend.RegallocPerEdge
+import FV.Backend.Proof.SpillStep4Run
 
 namespace Backend.Proof.PerEdgeSpill
 open Backend Backend.Proof.Spill Backend.Stock.Proof

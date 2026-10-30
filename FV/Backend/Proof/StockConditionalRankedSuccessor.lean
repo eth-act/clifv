@@ -1,5 +1,5 @@
-import FV.Backend.Proof.StockConditionalRankedShape
-import FV.Backend.Proof.StockConditionalLeaf
+import FV.Backend.Proof.StockConditionalReturnAt
+import FV.Backend.Proof.StockConditionalTrapAt
 import FV.Backend.Proof.StockForwardTrap
 
 namespace Backend.Stock.Proof.ConditionalValues

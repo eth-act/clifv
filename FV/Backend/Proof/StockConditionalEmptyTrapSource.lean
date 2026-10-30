@@ -1,4 +1,6 @@
-import FV.Backend.Proof.StockConditionalCallsWitness
+import FV.Backend.Lowering.Stock
+import FV.Backend.Proof.PrepareCheck
+import FV.Backend.Proof.LowerFix
 
 namespace Backend.Stock.Proof.ConditionalValues.EmptyTrapFixture
 open Backend.Proof Backend.Proof.Driver Backend.Proof.Driver.Fix

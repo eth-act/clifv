@@ -1,5 +1,4 @@
-import FV.Backend.Proof.StockOrderGraph
-import FV.Backend.Proof.StockEntryGraph
+import FV.Backend.Proof.StockEdgeCode
 
 namespace Backend.Stock.Proof
 open Backend.Proof Backend.Proof.Driver

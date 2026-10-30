@@ -1,4 +1,5 @@
-import FV.E2E.SpillDefined
+import FV.E2E.LinkScope
+import FV.Backend.Proof.SpillDefined
 
 /-!
 # Definite assignment fails without `entryParamsB`

@@ -1,4 +1,6 @@
-import FV.Link.Ld.PlanProof
+import FV.Link.Ld.Layout
+import FV.Arm.MinTheory
+import FV.Backend.Proof.IselInterp
 
 /-! # `lean-ld`'s planner meets its plan's conditions by construction (A1a, #409)
 

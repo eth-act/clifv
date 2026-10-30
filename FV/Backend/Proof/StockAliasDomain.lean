@@ -1,3 +1,4 @@
+import FV.Backend.Proof.StockReservedTerminal
 import FV.Backend.Proof.StockSourceAliasRecords
 
 /-! Only source mappings and reserved payloads can be final alias keys. -/

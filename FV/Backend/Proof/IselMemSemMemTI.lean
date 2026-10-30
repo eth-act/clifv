@@ -1,5 +1,5 @@
 import FV.Backend.Proof.IselMemSem
-import FV.Backend.Proof.IselMemBaseTI
+import FV.Backend.Proof.IselFloatMem
 
 /-!
 # `IselMemSem` over typed contexts (S11e5 Stage C, slice 7)

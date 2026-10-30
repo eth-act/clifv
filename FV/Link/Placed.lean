@@ -1,5 +1,5 @@
-import FV.Link.Compile
-import FV.Link.DeadCleanupCompile
+import FV.Link.Image
+import FV.E2E.DeadCleanupLinkCheck
 
 /-! # The Lean compiler's layout, computed by the driver (L1g, #228)
 

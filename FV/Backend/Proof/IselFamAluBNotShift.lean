@@ -1,4 +1,5 @@
-import FV.Backend.Proof.IselFamAluBRot
+import FV.Backend.Proof.IselFamAluBMisc
+import FV.Backend.Proof.IselFamAluBRotTerms
 
 /-!
 # Family B: `bnot_ishl` (`lower.isle:1401`)

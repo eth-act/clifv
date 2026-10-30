@@ -1,4 +1,5 @@
-import FV.Backend.Proof.StockCoverageSound
+import FV.Backend.Proof.StockSourceView
+import FV.Backend.Proof.IselCovModel
 
 /-! The existing operand-size oracle runs on actual Stock state without
 changing it. Reuses IselCovModel's two-rule argument and source-pattern transport. -/

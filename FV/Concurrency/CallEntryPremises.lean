@@ -1,4 +1,5 @@
-import FV.Concurrency.CallRetResume
+import FV.Concurrency.AllocThread
+import FV.Concurrency.FrameEvs
 
 /-!
 # The callee's entry premises of the caller's resume (#473, step (3))

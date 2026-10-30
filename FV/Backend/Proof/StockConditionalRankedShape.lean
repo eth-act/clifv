@@ -1,4 +1,3 @@
-import FV.Backend.Proof.StockConditionalClass
 import FV.Backend.Proof.StockForwardReturn
 
 namespace Backend.Stock.ConditionalCfg

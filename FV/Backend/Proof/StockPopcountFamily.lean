@@ -1,5 +1,4 @@
 import FV.Backend.Proof.StockBitFamily
-import FV.Backend.Proof.StockPopcountSourceValues
 namespace Backend.Stock.Proof.PopcountBody
 open Backend.Proof Backend.Proof.Driver
 set_option autoImplicit false

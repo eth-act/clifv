@@ -1,3 +1,4 @@
+import FV.Backend.Proof.IselCmpSdiv
 import FV.Backend.Proof.StockDivFlags
 namespace Backend.Stock.Proof.ScalarDiv
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

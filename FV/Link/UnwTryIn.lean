@@ -3,7 +3,6 @@ import FV.Backend.Proof.LowerComplete
 import FV.Backend.Proof.SpillEdges
 import FV.Backend.Proof.SpillStep4Cfg
 import FV.Backend.Proof.DeadCleanupPrepareMap
-import FV.Backend.Proof.RelocProvEmit
 import FV.Backend.Proof.TryRegs
 
 /-!

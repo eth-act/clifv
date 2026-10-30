@@ -1,5 +1,4 @@
 import FV.Backend.Proof.StockNoLoadSink
-import FV.Backend.Proof.StockSinkRuleRhs
 import FV.Backend.Proof.LowerDecide
 import FV.E2E.StockDivFixtures
 

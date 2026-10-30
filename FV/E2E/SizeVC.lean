@@ -1,3 +1,4 @@
+import FV.E2E.EmitSize
 import FV.E2E.SizeDefs
 import FV.Backend.Proof.PrepareComplete
 

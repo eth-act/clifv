@@ -1,8 +1,8 @@
-import FV.Link.SemanticExeSourceWith
+import FV.Link.SemanticExeWith
 import FV.Backend.Lowering.StockMixedNI
-import FV.E2E.StockMixedWitness
-import FV.Link.Ld.Spec
 import FV.Clif.Print
+import FV.E2E.StockProductionFixtures
+import FV.Link.Ld.Plan
 
 namespace E2E.SemanticMixedCompilerWitness
 open Backend Backend.Proof Backend.Proof.Driver Backend.Stock.D0 E2E.LinkCheck Link

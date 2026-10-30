@@ -1,5 +1,6 @@
 import FV.E2E.ExecTlsSim
-import FV.E2E.ExecProven
+import FV.E2E.ExecGot
+import FV.E2E.ExecGoodReads
 
 /-! # The binary theorems without the TLS hook (T1)
 

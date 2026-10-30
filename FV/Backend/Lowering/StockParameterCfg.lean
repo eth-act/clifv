@@ -1,4 +1,5 @@
-import FV.Backend.Lowering.StockConditionalRankedCfg
+import FV.Backend.Lowering.StockScalar
+import FV.Backend.StockArithmeticCheck
 
 namespace Backend.Stock.ParameterCfg
 open Backend.Proof.Driver

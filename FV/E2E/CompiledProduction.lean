@@ -1,4 +1,5 @@
 import FV.E2E.CompiledEither
+import FV.E2E.ValidatedNoninterference
 import FV.E2E.ValidatedCleanup
 
 /-! Additive production artifact contract: retained legacy variants plus actual

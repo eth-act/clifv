@@ -1,5 +1,4 @@
-import FV.Backend.Proof.StockBoundaryValues
-import FV.Backend.Proof.StockEmissionSemantics
+import FV.Backend.Proof.StockAliasSemantics
 
 namespace Backend.Stock.Proof
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

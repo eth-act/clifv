@@ -1,4 +1,3 @@
-import FV.Backend.Proof.SpillInvariant
 import FV.Backend.Proof.SpillLocalState
 import FV.Backend.Proof.RegallocLemmas
 

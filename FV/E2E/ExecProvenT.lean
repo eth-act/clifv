@@ -1,4 +1,3 @@
-import FV.E2E.ExecProven
 import FV.E2E.ExecGotT
 import FV.E2E.ExecGoodReadsT
 import FV.E2E.BinCheckT

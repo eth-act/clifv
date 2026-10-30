@@ -1,3 +1,4 @@
+import FV.Backend.Proof.LowerSeq
 import FV.Backend.Proof.PerEdgeVCodeSem
 
 /-! Straight-line segments retain the selected per-successor semantics. The

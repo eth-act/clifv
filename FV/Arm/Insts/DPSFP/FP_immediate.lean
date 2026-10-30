@@ -27,7 +27,6 @@ Released under Apache 2.0 license; see third_party/NOTICE-lnsym.md.
 -- Half precision (`ftype = 11`) is not modelled. Cross-checked against VeriISLE
 -- `MInst.FpuMoveFPImm` (cranelift/codegen/src/isa/aarch64/spec/fpu_move_imm.isle).
 
-import FV.Arm.Decode
 import FV.Arm.Insts.Common
 import FV.Arm.Insts.DPSFP.FP_data_processing_one_source
 

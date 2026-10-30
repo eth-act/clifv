@@ -1,6 +1,6 @@
 import FV.Backend.Lowering.StockConditionalCfg
 import FV.Backend.Proof.StockConditionalEmptyFixture
-import FV.Backend.Proof.StockConditionalEmptyTrapFixture
+import FV.Backend.Proof.StockConditionalEmptyTrapSource
 
 namespace Backend.Stock.Proof.ConditionalValues
 open Backend.Proof Backend.Proof.Driver

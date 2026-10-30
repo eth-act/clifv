@@ -1,4 +1,5 @@
-import FV.Backend.Proof.StockCmpExtendBuilder
+import FV.Backend.Proof.StockValues
+import FV.Backend.Proof.IselCtlTry
 import FV.Backend.Proof.StockShiftHelper
 namespace Backend.Stock.Proof.ScalarCmp
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

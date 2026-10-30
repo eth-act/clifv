@@ -1,6 +1,6 @@
 import FV.E2E.LinkArmXPB
 import FV.E2E.BackendWorldPRBWitness
-import FV.E2E.LinkArmTableBWitness
+import FV.E2E.LinkArmProphDetWitness
 
 /-!
 # Witnesses for `ExtSem.guardR` and the slot-byte program calls (`FV/E2E/ExtSemGuardR.lean`,

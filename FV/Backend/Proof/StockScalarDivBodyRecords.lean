@@ -1,5 +1,5 @@
 import FV.Backend.Proof.StockNoLoadDriver
-import FV.Backend.Proof.StockReturnedDivBodyRecords
+import FV.Backend.Proof.StockMixedDivBodyRefines
 
 namespace Backend.Stock.Proof.DivBody
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

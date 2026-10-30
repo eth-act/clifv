@@ -1,5 +1,5 @@
 import FV.E2E.LinkArmProgramInitE
-import FV.E2E.CountPRBNWitness
+import FV.E2E.LinkArmThmPRBRZeroWitness
 
 /-!
 # Witnesses: the machine's own slot table (SEM1 #537, #700)

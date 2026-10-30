@@ -1,4 +1,4 @@
-import FV.DSL.Ops
+import FV.DSL.Ty
 
 /-!
 # Deep syntax: intrinsically typed AST

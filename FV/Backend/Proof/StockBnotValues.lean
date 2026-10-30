@@ -1,3 +1,4 @@
+import FV.Backend.Proof.StockBnotSemantics
 import FV.Backend.Proof.StockBnotMatch
 import FV.Backend.Proof.StockSelectionReceipts
 

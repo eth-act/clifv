@@ -1,4 +1,6 @@
 import FV.Backend.Proof.LowerSimT
+import FV.Backend.Proof.TryRegsC
+import FV.Backend.Proof.DriverCheckTyC
 import FV.Backend.Proof.LowerContractTC
 
 /-!

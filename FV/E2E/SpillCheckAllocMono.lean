@@ -1,4 +1,6 @@
-import FV.Backend.Proof.SpillStep4
+import FV.Backend.Proof.SpillStep4Inst
+import FV.Arm.MinTheory
+import FV.Backend.Proof.IselExtern
 
 /-!
 # Completeness of `checkAlloc` (1): monotonicity and the iteration's state invariant

@@ -1,3 +1,5 @@
+import FV.Backend.Proof.SpillLocal
+import FV.Backend.Proof.StockCfgTotal
 import FV.Backend.Proof.PerEdgeSpillCycleFixture
 
 namespace Backend.Stock.Proof.IndexedSpillWitness

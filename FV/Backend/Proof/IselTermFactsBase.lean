@@ -1,5 +1,4 @@
-import FV.Backend.Proof.IselCtl
-import FV.Backend.Proof.IselCtlTry
+import FV.Backend.Proof.IselContract
 
 /-!
 # Completeness of `lowerCheck`: the rule a driver call committed to

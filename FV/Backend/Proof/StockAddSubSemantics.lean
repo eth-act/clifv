@@ -1,5 +1,4 @@
-import FV.Backend.Proof.StockAddSubPure
-import FV.Backend.Proof.StockLogicalLookthrough
+import FV.Backend.Proof.StockAliasSemantics
 import FV.Backend.Proof.IselFamALUAExt
 namespace Backend.Stock.Proof.ScalarAddSub
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

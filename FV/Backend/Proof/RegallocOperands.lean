@@ -1,4 +1,4 @@
-import FV.Backend.Proof.RegallocSound
+import FV.Backend.Proof.RegallocLemmas
 import FV.Backend.Encode
 import FV.Arm.Exec
 

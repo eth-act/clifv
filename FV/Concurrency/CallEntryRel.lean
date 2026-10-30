@@ -1,5 +1,5 @@
+import FV.Concurrency.CallSegGeo
 import FV.Concurrency.CallSegCall
-import FV.Concurrency.CallSegOkG
 
 /-!
 # The callee's entry memory relation (#473, `SegOkG` call case, item (1))

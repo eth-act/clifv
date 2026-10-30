@@ -1,4 +1,7 @@
-import FV.Backend.Proof.IselPrgDriverT
+import FV.Backend.Proof.IselPrgRun
+import FV.Backend.Proof.IselPrgHandF64
+import FV.Backend.Proof.IselPrgCoverTermT
+import FV.Backend.Proof.IselPrgTryLastT
 import FV.Backend.Proof.IselPrgTabTF
 import FV.Backend.Proof.IselPrgCoverTF
 import FV.Backend.Proof.IselPrgCtxTF

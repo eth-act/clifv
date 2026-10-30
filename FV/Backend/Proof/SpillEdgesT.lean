@@ -1,6 +1,4 @@
-import FV.Backend.Proof.SpillEdges
 import FV.Backend.Proof.SpillEdgesLowT
-import FV.Backend.Proof.LowerCompleteT
 import FV.Compile.TryArgClass
 
 /-!

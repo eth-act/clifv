@@ -1,3 +1,4 @@
+import FV.Backend.Proof.StockDemandExtent
 import FV.Backend.Proof.StockReturnRecordCalls
 import FV.Backend.Proof.StockReturnSourceRuns
 

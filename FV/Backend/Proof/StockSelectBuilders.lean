@@ -1,3 +1,4 @@
+import FV.Backend.Proof.StockValues
 import FV.Backend.Proof.StockCmpWithFlags
 import FV.Backend.Proof.IselCmpSelect
 namespace Backend.Stock.Proof.ScalarSelect

@@ -1,5 +1,5 @@
 import FV.E2E.BackendWorldPRB
-import FV.E2E.BackendWorldCleanupIWitness
+import FV.E2E.DeadCleanupWitness
 import FV.E2E.TrapCallClifRun
 import FV.E2E.CallPostExistsWitness
 

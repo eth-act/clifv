@@ -1,5 +1,4 @@
 import FV.Backend.Proof.StockCfgReturnTrapAt
-import FV.Backend.Proof.StockCfgReturnBlockAt
 import FV.Backend.Proof.StockGuardedSuccessor
 
 namespace Backend.Stock.Proof.CfgReturnAt

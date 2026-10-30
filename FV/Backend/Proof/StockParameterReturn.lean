@@ -1,3 +1,6 @@
+import FV.Backend.Proof.StockForwardReturn
+import FV.Backend.Proof.StockParameterTerms
+import FV.Backend.Proof.StockConditionalReturnAt
 import FV.Backend.Proof.StockParameterSelection
 import FV.Backend.Proof.StockParameterPrelude
 

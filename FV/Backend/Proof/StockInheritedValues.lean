@@ -1,4 +1,4 @@
-import FV.Backend.Proof.StockMaskBlockRefines
+import FV.Backend.Proof.StockArithmeticBodyRefines
 
 namespace Backend.Stock.Proof.Inherited
 open Backend.Proof Backend.Proof.Driver

@@ -1,5 +1,5 @@
-import FV.Backend.Proof.StockDemand
-import FV.Backend.Proof.IselCtlTerm
+import FV.Backend.Lowering.Stock
+import FV.Backend.Proof.DriverCheck
 
 /-! The actual revised Stock return constructor. Return pins follow the source
 signature, including the implicit struct pointer in x8. Legacy contracts remain

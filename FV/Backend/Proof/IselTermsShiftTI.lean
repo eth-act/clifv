@@ -1,5 +1,4 @@
-import FV.Backend.Proof.IselTermsShift
-import FV.Backend.Proof.IselBaseTI
+import FV.Backend.Proof.IselFamAluBIconst
 
 /-!
 # `IselTermsShift` over typed contexts (S11e5 Stage C, slice 7)

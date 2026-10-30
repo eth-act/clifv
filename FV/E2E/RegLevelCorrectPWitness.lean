@@ -1,5 +1,5 @@
 import FV.E2E.RegLevelCorrectP
-import FV.E2E.RegLevelCorrectCWitness
+import FV.E2E.RegLevelCorrectIWitness
 
 /-!
 # Witnesses for the refined call contract (`FV/E2E/RegLevelCorrectP.lean`)

@@ -1,4 +1,3 @@
-import FV.Link.EhCheck
 import FV.Link.Image
 import FV.Backend.Proof.LowerSimUCheck
 import FV.E2E.RegLevelUTry

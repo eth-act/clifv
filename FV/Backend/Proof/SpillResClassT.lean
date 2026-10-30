@@ -1,4 +1,5 @@
-import FV.Backend.Proof.FormsCoverCompleteT
+import FV.Backend.Proof.IselCovTDriver
+import FV.Backend.Proof.IselCovTFamCover
 import FV.Backend.Proof.SpillClassesT
 
 /-!

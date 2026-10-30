@@ -1,5 +1,5 @@
 import FV.E2E.StockDivFixtures
-import FV.E2E.CompiledSemanticNI
+import Lean
 namespace E2E.StockDivNIWitness
 open Backend.Stock.D0
 set_option autoImplicit false

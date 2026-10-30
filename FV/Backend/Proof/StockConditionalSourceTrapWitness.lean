@@ -1,6 +1,7 @@
 import FV.Backend.Proof.StockConditionalTrapFixture
 import FV.Backend.Proof.StockConditionalSourceTrap
-import FV.Backend.Proof.StockConditionalBodyWitness
+import FV.Backend.Proof.RefinesCSem
+import FV.E2E.RegLevelDriverSem
 
 namespace Backend.Stock.Proof.ConditionalValues.TrapWitness
 open Backend.Proof Backend.Proof.Driver

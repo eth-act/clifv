@@ -1,3 +1,4 @@
+import FV.Backend.Proof.StockEntrySeed
 import FV.Backend.Proof.StockEntryABI
 import FV.Backend.Proof.StockEntryCode
 import FV.Backend.Proof.StockCoreScanOrigin

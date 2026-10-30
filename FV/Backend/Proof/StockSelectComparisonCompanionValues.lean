@@ -1,3 +1,4 @@
+import FV.Backend.Proof.StockCmpWideActualValues
 import FV.Backend.Proof.StockSelectComparisonConditionShape
 import FV.Backend.Proof.StockSelectConditionCompanion
 namespace Backend.Stock.Proof.ScalarSelect

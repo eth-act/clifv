@@ -1,6 +1,6 @@
 import FV.E2E.DeadCleanupRealizesC
 import FV.E2E.DeadCleanupRegLevel
-import FV.E2E.RegLevelCorrectPRS
+import FV.E2E.RegLevelCorrectPR
 
 /-!
 # The counted register level for the value semantics (SEM1, `docs/plans/uninit.md` §5.9)

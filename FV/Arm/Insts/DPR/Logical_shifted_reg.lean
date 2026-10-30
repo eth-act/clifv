@@ -5,7 +5,7 @@ Author(s): Yan Peng
 -/
 -- AND, BIC, ORR, ORN, EOR, EON, ANDS, BICS: 32- and 64-bit versions
 
-import FV.Arm.Decode
+import FV.Arm.Decode.DPR
 import FV.Arm.Insts.Common
 
 namespace Arm

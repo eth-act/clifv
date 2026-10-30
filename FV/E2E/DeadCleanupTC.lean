@@ -1,7 +1,7 @@
-import FV.E2E.DeadCleanupT
-import FV.E2E.FinalTC
-import FV.E2E.FinalTCF
+import FV.E2E.Final
+import FV.Backend.Proof.DeadCleanupPrepare
 import FV.Backend.Proof.DriverCheckC
+import FV.Backend.Proof.DriverCheckTCF
 
 /-!
 # The dead-cleanup chain with typed `try_call`s (S11e6, #419)

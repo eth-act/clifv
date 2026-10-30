@@ -1,5 +1,3 @@
-import FV.Opt.Proof.SimpLoop
-import FV.Opt.Proof.CompleteLicm
 import FV.Opt.HandRules
 import FV.Opt.Proof.RulesProv
 

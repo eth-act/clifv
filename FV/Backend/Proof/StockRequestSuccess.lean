@@ -1,5 +1,5 @@
 import FV.Backend.Proof.StockAlu
-import FV.Backend.Proof.StockDemandMono
+import FV.Backend.Proof.IselCtlTry
 
 /-! Successful scalar requests supply their own guard and mapped-register facts. -/
 namespace Backend.Stock.Proof

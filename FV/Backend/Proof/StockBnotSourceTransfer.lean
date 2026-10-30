@@ -1,3 +1,6 @@
+import FV.Backend.Proof.StockAluOperandCoverage
+import FV.Backend.Proof.StockBnotRecordValues
+import FV.Backend.Proof.StockLogicalNotXorRecord
 import FV.Backend.Proof.StockBnotDispatch
 import FV.Backend.Proof.StockGuardedRecordValues
 import FV.Backend.Proof.IselFamALUALogicNot

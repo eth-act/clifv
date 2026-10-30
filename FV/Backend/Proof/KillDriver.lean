@@ -1,3 +1,6 @@
+import FV.Backend.Proof.SpillLocal
+import FV.Backend.Proof.RegallocOperands
+import FV.Backend.Proof.IselFamAluBMisc
 import FV.Backend.Proof.KillOracle
 import FV.Backend.Proof.KillCtor
 import FV.Backend.Proof.TryRegs

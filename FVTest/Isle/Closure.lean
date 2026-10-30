@@ -1,4 +1,5 @@
-import FV.Isle
+import FV.Isle.Generated.Program
+import FV.Isle.Generated.Closure
 
 /-!
 # The emitter-subset closure (`Isle.Aarch64.Closure`), cross-checked in Lean

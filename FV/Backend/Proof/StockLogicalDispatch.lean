@@ -1,4 +1,4 @@
-import FV.Backend.Proof.StockLogicalRecordValues
+import FV.Backend.Proof.StockLogicalSelected
 import FV.Backend.Proof.StockRootOpcodeMatch
 
 namespace Backend.Stock.Proof.LogicalComplete

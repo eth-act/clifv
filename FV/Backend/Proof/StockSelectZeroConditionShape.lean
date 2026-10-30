@@ -1,3 +1,4 @@
+import FV.Backend.Proof.StockSelectNonzeroConditionShape
 import FV.Backend.Proof.StockSelectConditionInvertShape
 import FV.Backend.Proof.StockCmpMatchedZero
 import FV.Backend.Proof.StockCmpZero32RuleCalls

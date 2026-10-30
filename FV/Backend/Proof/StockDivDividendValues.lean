@@ -1,4 +1,4 @@
-import FV.Backend.Proof.StockDivDivisorValues
+import FV.Backend.Proof.StockExtendValues
 import FV.Backend.Proof.IselCmpDivRoot
 namespace Backend.Stock.Proof.ScalarDiv
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

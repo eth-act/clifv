@@ -11,7 +11,7 @@ Author(s): Shilpi Goel
 --                                                   -- dropped imm19<18:17>
 --   bits(datasize) operand1 = X[t, datasize];      -- register 31 is XZR (upstream: SP)
 
-import FV.Arm.Decode
+import FV.Arm.Decode.BR
 import FV.Arm.State
 import FV.Arm.Insts.Common
 import FV.Arm.BitVec

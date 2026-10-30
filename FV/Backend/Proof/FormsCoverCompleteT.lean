@@ -1,6 +1,7 @@
 import FV.Backend.Proof.IselCovTDriver
 import FV.Backend.Proof.IselCovTFamCover
 import FV.Backend.Proof.FormsCoverComplete
+import FV.Backend.Proof.LowerCompleteT
 import FV.Backend.Proof.SpillEdgesT
 
 /-!

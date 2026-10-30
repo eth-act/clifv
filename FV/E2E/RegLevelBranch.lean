@@ -1,4 +1,4 @@
-import FV.E2E.RegLevelArgs
+import FV.E2E.RegLevelGoodX
 
 /-!
 # Branches on the machine (M6)

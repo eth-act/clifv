@@ -1,5 +1,5 @@
+import FV.Concurrency.CallLoadData
 import FV.Concurrency.CallResumeChecks
-import FV.Concurrency.CallResumeAllWitness
 
 /-!
 # Witness for `CallResumeChecks` (#473)

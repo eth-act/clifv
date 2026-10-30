@@ -1,3 +1,5 @@
+import FV.Backend.Proof.IselCmpCond
+import FV.Backend.Proof.StockCmpBuilders
 import FV.Backend.Proof.StockCmpWithFlags
 namespace Backend.Stock.Proof.ScalarCmp
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

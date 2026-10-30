@@ -1,5 +1,5 @@
 import FV.E2E.LinkArmBaseDetX
-import FV.E2E.LinkArmBaseDetWitness
+import FV.E2E.LinkArmProphDetWitness
 
 /-!
 # Witnesses for base hooks that do not observe return addresses (`LinkArmBaseDetX.lean`)

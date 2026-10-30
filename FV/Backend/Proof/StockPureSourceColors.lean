@@ -1,4 +1,5 @@
-import FV.Backend.Proof.StockDFG
+import FV.Backend.Proof.StockContext
+import FV.Backend.Proof.LowerLoopCtx
 import FV.Backend.Lowering.StockScalarAdd
 namespace Backend.Stock.Proof
 open Backend.Proof Backend.Proof.Driver

@@ -1,3 +1,5 @@
+import FV.Backend.Proof.StockPolicy
+import FV.Backend.Proof.LowerDecide
 import FV.Backend.Proof.StockConditionalEmptyTrapSource
 
 namespace Backend.Stock.Proof.ConditionalValues.EmptyTrapFixture

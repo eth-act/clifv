@@ -1,3 +1,5 @@
+import FV.Backend.Proof.RegallocOperands
+import FV.Backend.Proof.PerEdgeSpillEntry
 import FV.Backend.Proof.PerEdgeSpillEdge
 
 namespace Backend.Proof.PerEdgeSpill

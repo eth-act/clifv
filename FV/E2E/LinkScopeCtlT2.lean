@@ -1,4 +1,4 @@
-import FV.E2E.LinkScopeChecksT2
+import FV.E2E.LinkScopeInputT2
 import FV.E2E.SpillCtlCheckT
 import FV.Backend.Proof.IselShpTDriver
 import FV.Backend.Proof.SpillInstCheckComplete

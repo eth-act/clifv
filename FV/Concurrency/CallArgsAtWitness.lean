@@ -1,5 +1,4 @@
 import FV.Concurrency.CallArgsAt
-import FV.Concurrency.CallResumeChecksWitness
 
 /-!
 # Witness for `CallArgsAt` (#473)

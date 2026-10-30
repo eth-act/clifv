@@ -1,3 +1,5 @@
+import FV.Backend.Proof.StockAliasSemantics
+import FV.Backend.Proof.LowerDecide
 import FV.Backend.Proof.StockBodyScanOrigin
 
 /-! Record the actual implicit struct-return ABI boundary before transporting

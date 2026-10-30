@@ -1,4 +1,4 @@
-import FV.Backend.Proof.StockInheritedBody
+import FV.Backend.Lowering.Stock
 import FV.Backend.Proof.LowerDecide
 
 namespace Backend.Stock.Proof.InheritedWitness

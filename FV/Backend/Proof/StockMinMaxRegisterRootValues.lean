@@ -1,3 +1,4 @@
+import FV.Backend.Proof.IselCmpMinMax
 import FV.Backend.Proof.StockMinMaxSelectedCalls
 import FV.Backend.Proof.StockMinMaxNonconstantValues
 namespace Backend.Stock.Proof.ScalarSelect

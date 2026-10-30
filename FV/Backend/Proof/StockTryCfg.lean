@@ -1,4 +1,5 @@
 import FV.Backend.Proof.StockBranchCfg
+import FV.Backend.Proof.StockEmittedGraph
 import FV.Backend.Proof.StockGraphBounds
 import FV.Backend.Proof.LowerLemmas
 

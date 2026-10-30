@@ -1,5 +1,6 @@
 import FV.E2E.SizeDefs
-import FV.E2E.EmitCondsLower
+import FV.Backend.Proof.LowerComplete
+import FV.Backend.Proof.LowerSim
 
 /-!
 # The size of `lowerFunction`'s output from the ISLE runs (V6c)

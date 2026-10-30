@@ -1,5 +1,5 @@
-import FV.Backend.Proof.DeadCleanupPrepare
-import FV.Backend.Proof.SpillEdges
+import FV.Backend.Proof.DeadCleanupCFG
+import FV.Backend.Proof.SpillEdgesPrep
 
 namespace Backend.DeadCleanup
 open Backend.Proof Backend.Proof.Spill

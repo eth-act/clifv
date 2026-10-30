@@ -1,4 +1,5 @@
-import FV.Concurrency.CallSegLive
+import FV.Concurrency.CallResumeAll
+import FV.Concurrency.LinkedMachine
 
 /-!
 # Return addresses and return values at a call (#473, `SegOkG` call case)

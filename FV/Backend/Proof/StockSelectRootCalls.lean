@@ -1,4 +1,5 @@
-import FV.Backend.Proof.StockMinMaxSelectedCalls
+import FV.Backend.Lowering.Stock
+import FV.Backend.Proof.IselCtlTry
 namespace Backend.Stock.Proof.ScalarSelect
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 set_option maxRecDepth 20000

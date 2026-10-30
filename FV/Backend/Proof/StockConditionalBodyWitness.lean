@@ -1,8 +1,8 @@
+import FV.Backend.Proof.StockEdgeCode
 import FV.Backend.Proof.StockConditionalBodyRefines
 import FV.Backend.Proof.StockConditionalCallsWitness
 import FV.Backend.Proof.StockEntrySeed
 import FV.Backend.Proof.RefinesCSem
-import FV.Backend.Proof.MemRefines
 import FV.E2E.RegLevelDriverSem
 
 namespace Backend.Stock.Proof.ConditionalValues.BodyWitness

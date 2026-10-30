@@ -1,4 +1,5 @@
-import FV.E2E.LinkArmUAct
+import FV.Arm.MinTheory
+import FV.E2E.LinkPlace
 
 /-! Non-vacuity of the restored slotless `keepsPlace` lemmas: the empty program over the empty
 environment meets every premise. -/

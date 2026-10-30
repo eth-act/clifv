@@ -2,7 +2,6 @@ import FV.Link.DeadCleanupCompileT
 import FV.E2E.VerifiableT
 import FV.E2E.LinkScopeInputDefsT
 import FV.E2E.LinkScopeInputDefsTC
-import FVTest.Link.FloatExeT
 import FVTest.Link.DeadCleanupWitness
 import FVTest.E2E.FloatFinalT
 

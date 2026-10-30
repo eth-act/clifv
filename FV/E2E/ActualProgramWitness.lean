@@ -1,3 +1,4 @@
+import FV.E2E.ActualCompilerModes
 import FV.E2E.ActualPrologueWitness
 
 /-! Dependent whole-program non-vacuity candidate. Fixed native receipts only;

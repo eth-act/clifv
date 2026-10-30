@@ -1,5 +1,6 @@
 import FV.E2E.SpillCtlCheck
-import FV.E2E.LinkScopeInputT
+import FV.E2E.LinkScopeInputDefsT
+import FV.E2E.EmitTotalT
 import FV.Backend.Proof.SpillCtlPipeT
 import FV.Backend.Proof.SpillEdgesT
 

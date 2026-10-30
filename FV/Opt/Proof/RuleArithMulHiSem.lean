@@ -1,4 +1,4 @@
-import FV.Opt.Proof.RuleInfraConst
+import FV.Opt.Proof.InterpEval
 
 namespace Opt.Proof
 

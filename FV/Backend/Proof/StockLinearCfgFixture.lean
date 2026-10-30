@@ -1,5 +1,5 @@
-import FV.Backend.Proof.StockLinearCfgTrace
-import FV.Backend.Proof.StockScalarCheck
+import FV.Backend.Proof.StockEdgeCode
+import FV.Backend.Proof.StockLinearCfgShape
 
 namespace Backend.Stock.Proof.LinearCfgWitness
 open Backend.Proof Backend.Proof.Driver

@@ -1,3 +1,5 @@
+import FV.Backend.Proof.StockDivSignedObservations
+import FV.Backend.Proof.StockDivSafeObservations
 import FV.Backend.Proof.StockDivSafeMatchObserved
 import FV.Backend.Proof.StockDivDispatch
 namespace Backend.Stock.Proof.ScalarDiv

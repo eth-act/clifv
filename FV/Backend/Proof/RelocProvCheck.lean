@@ -1,5 +1,4 @@
 import FV.Backend.Proof.IselFlowCheck
-import FV.Backend.Proof.RelocProvDefs
 
 /-!
 # Name provenance of the ISLE lowering: the abstract interpretation (L1e, #216)

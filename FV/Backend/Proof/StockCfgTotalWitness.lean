@@ -1,4 +1,5 @@
 import FV.Backend.Proof.StockCfgTotal
+import FV.Backend.Proof.StockNodeCoverageWitness
 import FV.Backend.Proof.StockBranchTargetsWitness
 import FV.Backend.Proof.StockEmittedGraphWitness
 

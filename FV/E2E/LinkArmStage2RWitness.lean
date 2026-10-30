@@ -1,6 +1,6 @@
 import FV.E2E.LinkArmStage2R
 import FV.E2E.LinkArmThmPRBRZeroWitness
-import FV.E2E.LinkPlaceBReachWitness
+import FV.E2E.LinkArmPlaceBWitness
 
 /-!
 # Witnesses for `LinkArmStage2R.lean`

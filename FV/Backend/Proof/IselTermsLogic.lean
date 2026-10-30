@@ -1,4 +1,5 @@
-import FV.Backend.Proof.IselRulesALUA
+import FV.Backend.Proof.IselTermsALUA
+import FV.Arm.MinTheory
 
 /-!
 # `alu_rs_imm_logic_commutative` and `alu_rs_imm_logic`: forward lemmas of their rules

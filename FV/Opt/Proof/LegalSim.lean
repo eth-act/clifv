@@ -1,3 +1,4 @@
+import FV.Opt.Proof.LegalStep
 import FV.Opt.Proof.LegalPlan
 
 /-!

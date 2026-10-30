@@ -1,3 +1,4 @@
+import FV.Backend.Proof.StockDemandExtent
 import FV.Backend.Proof.StockCmpNarrowConstantLeftRootValues
 import FV.Backend.Proof.StockGuardedRecordValues
 import FV.Backend.Proof.StockCmpNarrowConstantLeftAllocation

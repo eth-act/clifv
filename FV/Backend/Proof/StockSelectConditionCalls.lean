@@ -1,6 +1,7 @@
-import FV.Backend.Proof.StockSelectNonzero16Values
-import FV.Backend.Proof.StockSelectNonzeroWideValues
-import FV.Backend.Proof.StockSelectNonzero8Values
+import FV.Backend.Proof.IselCmpRoot
+import FV.Backend.Proof.StockSourceView
+import FV.Backend.Proof.StockPatternSource
+import FV.Backend.Proof.StockExtendRequests
 namespace Backend.Stock.Proof.ScalarSelect
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 set_option maxRecDepth 20000

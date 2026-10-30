@@ -1,6 +1,7 @@
+import FV.Backend.Proof.StockEmittedGraph
+import FV.Backend.Proof.StockGraphBounds
+import FV.Backend.Proof.StockControlShape
 import FV.Backend.Proof.StockNamedBranchTargets
-import FV.Backend.Proof.StockTryCfg
-import FV.Backend.Proof.StockNodeCoverage
 
 namespace Backend.Stock.Proof.OrdinaryCfg
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

@@ -1,3 +1,5 @@
+import FV.Backend.Proof.KillAssemble
+import FV.Backend.Proof.SpillDefinedPaths
 import FV.Backend.Proof.DefRuns
 
 /-!

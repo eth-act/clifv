@@ -1,6 +1,5 @@
 import FV.E2E.SretReturnLegal
 import FV.E2E.SretReturnCleanup
-import FV.E2E.DeadCleanupLegal
 
 /-!
 # The `sret` return register through the dead-cleanup `i128` legalisation theorems (S7)

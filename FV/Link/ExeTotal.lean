@@ -1,3 +1,4 @@
+import FV.Link.Compile
 import FV.Link.Total
 import FV.Link.RelocShapeProof
 import FV.E2E.LinkScopeInput

@@ -1,4 +1,5 @@
-import FV.Front.RawExeTrap
+import FV.Front.Exe
+import FV.Front.RawProof
 import FV.Link.DeadCleanupExeTrapNB
 
 /-!

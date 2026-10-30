@@ -5,7 +5,7 @@ Author(s): Shilpi Goel
 -/
 -- ADR, ADRP
 
-import FV.Arm.Decode
+import FV.Arm.Decode.DPI
 import FV.Arm.State
 import FV.Arm.Insts.Common
 import FV.Arm.BitVec

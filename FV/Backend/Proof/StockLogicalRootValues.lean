@@ -1,3 +1,5 @@
+import FV.Backend.Proof.StockDemandMono
+import FV.Backend.Proof.StockLogicalHelper
 import FV.Backend.Proof.StockLogicalValues
 
 namespace Backend.Stock.Proof.LogicalSelected

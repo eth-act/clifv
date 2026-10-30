@@ -1,4 +1,4 @@
-import FV.Opt.Proof.CompleteUnreachable
+import FV.Opt.Proof.Dom
 import FV.Opt.Simplify
 
 /-!

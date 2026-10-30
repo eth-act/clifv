@@ -1,4 +1,3 @@
-import FV.Backend.Proof.StockCastBaseValues
 import FV.Backend.Proof.StockCmpRootMatch
 
 namespace Backend.Stock.Proof.ScalarCmp

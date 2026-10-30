@@ -1,4 +1,4 @@
-import FV.Backend.Proof.StockBranchArgumentCode
+import FV.Backend.Proof.StockEdgeValues
 
 /-! Actual selected ordinary-branch arguments and their resolved register list.
 The source map is derived from successful collection, not supplied as a certificate. -/

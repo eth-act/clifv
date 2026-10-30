@@ -1,5 +1,6 @@
-import FV.Backend.Proof.StockSelectBooleanCompanion
-import FV.Backend.Proof.StockSelectReplacementResolved
+import FV.Backend.Proof.IselCmpSelect
+import FV.Backend.Proof.StockPolicy
+import FV.Backend.Proof.PrepareCheck
 namespace Backend.Stock.Proof.ScalarSelect
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 /-- Actual retained records start with an empty emission buffer. A boolean

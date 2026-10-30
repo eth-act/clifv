@@ -1,13 +1,13 @@
 import FVTest.Backend.Lowering.StockScalarTestSupport
+import FV.E2E.SemanticStackBound
 import FV.E2E.SemanticChecksWith
 import FV.Link.ProductionImageWith
 import FV.Link.Ld.Spec
 import FVTest.E2E.SemanticLinkProofWith
 import FV.Backend.Lowering.StockScalarNI
-import FV.E2E.StockArithmeticNIWitness
-import FV.E2E.StockReturnedDivWitness
 import FV.Backend.LinearScan
 import FV.Clif.Print
+import FV.E2E.StockReturnedDivFixtures
 
 /-! Actual Stock callback → actual byte writer → ordinary emitted Lean proofs.
 A fixed integration witness; it does not activate a production class. -/

@@ -1,5 +1,5 @@
-import FV.Backend.Proof.StockDivDividendValues
 import FV.Backend.Proof.IselCmpDivRem
+import FV.Backend.Proof.StockDivResolved
 namespace Backend.Stock.Proof.ScalarDiv
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 private theorem alias_fresh {aliases : Array (Option Nat)} {d : Nat} (bounded : aliases.size ≤ d) :

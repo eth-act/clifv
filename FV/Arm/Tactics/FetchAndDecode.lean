@@ -5,6 +5,7 @@ Author(s): Shilpi Goel, Nathan Wetzler
 -/
 -- Modified by fv-compiler-rust (2026): ported to Lean v4.34.1, module prefix FV.Arm, wrapped in namespace Arm.
 import FV.Arm.Exec
+import FV.Arm.Tactics.Common
 import FV.Arm.Tactics.IntroHyp
 import Lean
 

@@ -1,6 +1,9 @@
 import FVTest.Backend.Lowering.StockScalarTestSupport
 import FV.Backend.ScalarNIProduction
 import FV.Backend.LinearScan
+import FV.E2E.StockProductionFixtures
+import FV.E2E.StockLogicalFixtures
+import FV.E2E.StockScalarFixtures
 import FV.E2E.StockMulFixtures
 import FV.Clif.Print
 

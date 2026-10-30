@@ -1,3 +1,4 @@
+import FV.Isle.Generated.Closure
 import FVTest.Isle.Toy
 
 /-!

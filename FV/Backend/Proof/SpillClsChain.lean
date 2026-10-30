@@ -1,5 +1,6 @@
 import FV.Backend.Proof.SpillClsRun
-import FV.Backend.Proof.LowerComplete
+import FV.Backend.Proof.LowerLoopRun
+import FV.Backend.Proof.LowerAlias
 import FV.Backend.Proof.SpillLocal
 
 /-!

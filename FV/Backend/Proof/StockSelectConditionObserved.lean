@@ -1,4 +1,4 @@
-import FV.Backend.Proof.StockSelectConditionCompanion
+import FV.Backend.Proof.StockSelectDecodedObserved
 import FV.Backend.Proof.StockSelectZeroObserved
 namespace Backend.Stock.Proof.ScalarSelect
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

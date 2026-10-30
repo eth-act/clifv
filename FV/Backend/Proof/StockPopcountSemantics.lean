@@ -1,3 +1,6 @@
+import FV.Backend.Proof.StockAliasSemantics
+import FV.Backend.Proof.IselFamAluBPopcnt
+import FV.Backend.Proof.StockPopcountMath
 import FV.Backend.Proof.StockPopcountRhs
 namespace Backend.Stock.Proof.ScalarPopcount
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

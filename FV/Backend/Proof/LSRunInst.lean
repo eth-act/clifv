@@ -1,3 +1,5 @@
+import FV.Backend.Proof.LSFacts
+import FV.Backend.Proof.SpillStep4Cfg
 import FV.Backend.Proof.LSRun
 
 /-!

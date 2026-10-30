@@ -1,5 +1,6 @@
 import FV.E2E.SretReturnWorld
-import FV.E2E.DeadCleanupExecProven
+import FV.E2E.DeadCleanupExecGot
+import FV.E2E.DeadCleanupExecGoodReads
 
 /-!
 # The `sret` return register through the linked program and executable theorems (S7)

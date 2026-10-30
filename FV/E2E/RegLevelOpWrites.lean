@@ -1,4 +1,4 @@
-import FV.E2E.RegLevelOpReads
+import FV.Backend.Proof.RegallocCover
 import FV.E2E.ExecWrites
 
 /-!

@@ -5,7 +5,7 @@ Author(s): Yan Peng
 -/
 -- ADD, ADDS, SUB, SUBS (shifted registers): 32- and 64-bit versions
 
-import FV.Arm.Decode
+import FV.Arm.Decode.DPR
 import FV.Arm.Insts.Common
 
 namespace Arm

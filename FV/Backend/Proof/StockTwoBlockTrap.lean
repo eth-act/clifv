@@ -1,6 +1,8 @@
 import FV.Backend.Proof.StockCfgReturnTrapEdgeAt
 import FV.Backend.Proof.StockJumpDemand
 import FV.Backend.Proof.LowerShapeOkFacts
+import FV.Backend.Proof.StockJumpEntryPrelude
+import FV.Backend.Proof.StockComputedCfg
 import FV.Backend.Proof.StockTwoBlockShape
 import FV.Backend.Proof.StockInheritedJumpTrap
 

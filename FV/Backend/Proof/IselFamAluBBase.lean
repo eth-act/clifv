@@ -1,5 +1,4 @@
 import FV.Backend.Proof.IselFamily
-import FV.Backend.Proof.IselRulesALU
 
 /-!
 # Family B (unary ALU, shifts, rotates): shared proof infrastructure

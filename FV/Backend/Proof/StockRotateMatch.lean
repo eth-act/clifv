@@ -1,5 +1,4 @@
 import FV.Backend.Proof.StockRotateNarrowRoots
-import FV.Backend.Proof.StockSelectionReceipts
 namespace Backend.Stock.Proof.ScalarRotate
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 set_option maxRecDepth 20000

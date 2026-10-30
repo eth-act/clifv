@@ -1,5 +1,5 @@
+import FV.Backend.Proof.StockDivImmFrame
 import FV.Backend.Proof.StockDivRequests
-import FV.Backend.Proof.StockLogicalLookthrough
 namespace Backend.Stock.Proof.ScalarDiv
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 /-- A divisor's real look-through data denotes its original constant value.

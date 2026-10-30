@@ -1,5 +1,5 @@
-import FV.Backend.Proof.StockBmaskRhs
 import FV.Backend.Proof.StockAliasSemantics
+import FV.Backend.Proof.IselAtomic
 
 namespace Backend.Stock.Proof.ScalarMask
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

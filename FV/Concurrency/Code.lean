@@ -1,5 +1,5 @@
 import FV.Backend.Asm
-import FV.Concurrency.Mapping
+import FV.Concurrency.Armv8
 
 /-!
 # The mapping table is the table of the emitted code (T2b, #300)

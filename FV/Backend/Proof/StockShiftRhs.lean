@@ -1,4 +1,7 @@
-import FV.Backend.Proof.StockShiftSemantics
+import FV.Backend.Proof.StockAlu
+import FV.Backend.Proof.IselTermsShift
+import FV.Backend.Proof.StockLogicalForms
+import FV.Backend.Proof.StockShiftHelper
 namespace Backend.Stock.Proof.ScalarShift
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 set_option maxRecDepth 20000

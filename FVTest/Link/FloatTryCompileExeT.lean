@@ -1,5 +1,4 @@
 import FV.Link.DeadCleanupCompileT
-import FVTest.Link.FloatExeT
 import FVTest.Link.DeadCleanupWitness
 
 /-! Non-vacuity of `Link.DeadCleanup.compileExeT`'s typed-`try_call` branch (S11e6, #419): on a

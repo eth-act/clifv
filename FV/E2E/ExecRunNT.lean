@@ -1,11 +1,8 @@
 import FV.E2E.ExecRunN
-import FV.E2E.BinCheckT
-import FV.E2E.BinaryT
 import FV.E2E.ExecBytesT
 import FV.E2E.ExecStaticT
 import FV.E2E.LinkArmT
 import FV.E2E.LinkCheckT
-import FV.E2E.StackBoundT
 
 /-! # Typed copies of `FV.E2E.ExecRunN` (S11e5 Stage C, slice 8)
 

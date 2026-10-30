@@ -1,5 +1,5 @@
-import FV.Backend.Proof.StockAluSelectedValues
-import FV.Backend.Proof.IselTermsLogic
+import FV.Backend.Proof.StockAlu
+import FV.Backend.Proof.IselCtlTry
 
 /-! Actual logical register RHS and its mapped machine value semantics. -/
 namespace Backend.Stock.Proof

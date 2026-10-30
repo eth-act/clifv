@@ -1,5 +1,4 @@
 import Lean
-import FV.Backend.Isel
 
 /-!
 # Splitting the big matchers of the extern helpers without equation lemmas

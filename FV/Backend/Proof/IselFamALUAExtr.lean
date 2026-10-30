@@ -1,5 +1,5 @@
 import FV.Backend.Proof.IselTermsALUAExtr
-import FV.Backend.Proof.IselFamALUAExt
+import FV.Backend.Proof.IselFamALUALogic
 
 /-!
 # `extr_32_or_64` root rules (1501, 1507): `LowerRuleOk`

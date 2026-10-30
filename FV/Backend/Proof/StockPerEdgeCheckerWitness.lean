@@ -1,4 +1,5 @@
 import FV.Backend.Proof.PerEdgeRegallocLemmas
+import FV.Backend.Proof.RegallocCSem
 import FV.Backend.Proof.StockPerSuccessorWitness
 namespace Backend.Stock.Proof.PerEdgeCheckerWitness
 open Backend.Proof Backend.Proof.Driver

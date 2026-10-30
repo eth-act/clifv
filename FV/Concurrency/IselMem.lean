@@ -1,5 +1,4 @@
 import FV.Concurrency.IselThread
-import FV.Concurrency.IselCover
 
 /-!
 # The segment of a memory statement (T2h, #311, layer 2e): auxiliary facts

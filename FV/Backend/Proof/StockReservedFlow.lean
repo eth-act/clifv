@@ -1,3 +1,5 @@
+import FV.Backend.Proof.StockAllocationFlow
+import FV.Backend.Proof.StockDFG
 import FV.Backend.Proof.StockCtorFlow
 import FV.Backend.Proof.IselFlowInst
 import FV.Backend.Proof.IselFlowTabF

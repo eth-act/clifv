@@ -1,5 +1,5 @@
-import FV.Backend.Proof.StockBnotRhs
-import FV.Backend.Proof.StockLogicalLookthrough
+import FV.Backend.Proof.StockAliasSemantics
+import FV.Backend.Proof.IselFamAluBNotShift
 
 namespace Backend.Stock.Proof.Bnot
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

@@ -1,3 +1,6 @@
+import FV.Backend.Proof.PerEdgeSpillEntry
+import FV.Backend.Proof.SpillCtlForms
+import FV.Backend.Proof.StockCfgTotal
 import FV.Backend.Proof.PerEdgeSpillEntryFixture
 
 namespace Backend.Stock.Proof.SpillEntryWitness

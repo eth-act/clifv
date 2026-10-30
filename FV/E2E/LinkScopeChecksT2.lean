@@ -1,5 +1,6 @@
 import FV.E2E.LinkScopeInputT2
 import FV.E2E.LinkScopeIntT
+import FV.Backend.Proof.FormsCoverCompleteT
 import FV.Backend.Proof.SpillResClassT
 
 /-! # Run-time checks proven on the strengthened typed scope `fnScopeInTB2`

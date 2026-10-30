@@ -1,5 +1,5 @@
 import FV.Backend.Lowering.StockScalar
-import FV.Backend.StockLogicalCheck
+import FV.Backend.StockArithmeticCheck
 
 namespace Backend.Stock.Scalar
 open Backend.Proof.Driver

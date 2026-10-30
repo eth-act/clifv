@@ -1,5 +1,5 @@
 import FV.Backend.Proof.StockConditionalRootTargets
-import FV.Backend.Proof.StockNodeCoverageWitness
+import FV.Backend.Proof.StockPerEdgeCheckerWitness
 
 namespace Backend.Stock.Proof.ConditionalTargetsWitness
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

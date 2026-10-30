@@ -1,5 +1,6 @@
 import FV.E2E.DeadCleanupPipeline
-import FV.E2E.LowerDirect
+import FV.Backend.Proof.LowerDecide
+import FV.Backend.Proof.LowerComplete
 
 namespace E2E
 open Backend Backend.Proof Backend.Proof.Driver Backend.Proof.Prep Backend.DeadCleanup

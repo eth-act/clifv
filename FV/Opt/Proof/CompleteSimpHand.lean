@@ -1,4 +1,6 @@
-import FV.Opt.Proof.CompleteSimpHyp
+import FV.Opt.Proof.CompleteLicm
+import FV.Opt.HandRules
+import FV.Opt.Proof.RulesProv
 
 /-!
 # The hand rules pass values on (M1, #24)

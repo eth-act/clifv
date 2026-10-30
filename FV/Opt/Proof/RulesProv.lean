@@ -1,5 +1,5 @@
 import FV.Opt.Rules
-import FV.Opt.Proof.CheckSpec
+import FV.Opt.Simplify
 
 /-!
 # Provenance obligations of a rule set (M1, #24)

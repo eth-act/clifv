@@ -1,8 +1,8 @@
 import FV.E2E.LinkArmProgramInit
 import FV.E2E.RegLevelCorrectPRSWitness
 import FV.E2E.IselSimIWitness
-import FV.E2E.BackendWorldPRGYWitness
-import FV.E2E.LinkArmStage2GlueWitness
+import FV.E2E.BackendWorldPRBWitness
+import FV.E2E.LinkArmThmPRBRZeroWitness
 
 /-!
 # Witnesses for the call count at the return and `CountPRB` (SEM1 #537, #680 (3):

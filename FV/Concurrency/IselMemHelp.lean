@@ -1,6 +1,7 @@
-import FV.Concurrency.IselMemSeg
 import FV.Backend.Proof.IselMemSem
 import FV.Backend.Proof.IselCmpRun
+import FV.Concurrency.IselCheck
+import FV.Concurrency.IselMemAux
 
 /-!
 # Helpers for the segment of a memory statement (T2h, #311, layer 2e)

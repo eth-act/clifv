@@ -1,5 +1,4 @@
 import FV.Backend.Proof.StockLogicalObserved
-import FV.Backend.Proof.IselFamALUALogicNot
 
 namespace Backend.Stock.Proof.LogicalNot
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

@@ -1,5 +1,5 @@
-import FV.Backend.Proof.IselFloatCmp
 import FV.Backend.Proof.IselBaseTI
+import FV.Backend.Proof.IselFamALUATI
 
 /-!
 # `IselFloatCmp` over typed contexts (S11f)

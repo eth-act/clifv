@@ -1,5 +1,5 @@
 import FV.Backend.Proof.IselAtomic
-import FV.Backend.Proof.IselMemBaseTI
+import FV.Backend.Proof.IselBaseTI
 
 /-!
 # `IselAtomic` over typed contexts (S11e5 Stage C, slice 7)

@@ -1,3 +1,4 @@
+import FV.Backend.Proof.StockScopeRoots
 import FV.Backend.Proof.StockRootOpcode
 import FV.Backend.Proof.IselCtlUnmatch
 namespace Backend.Stock.Proof

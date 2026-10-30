@@ -1,3 +1,6 @@
+import FV.Backend.Proof.RegallocOperands
+import FV.E2E.RegLevelPush
+import FV.E2E.CompiledSemanticNI
 import FV.E2E.StockGeneralDivChecks
 namespace E2E.StockGeneralDivNIWitness
 open Backend Backend.Proof Backend.Proof.Driver Backend.Stock.D0

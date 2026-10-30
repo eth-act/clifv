@@ -1,3 +1,4 @@
+import FV.Backend.Proof.LowerDecide
 import FV.Backend.Proof.IselEmitTDefs
 import FV.Backend.Proof.LowerCompleteT
 import FV.Backend.Proof.SpillEdgesT

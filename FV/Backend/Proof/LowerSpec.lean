@@ -1,4 +1,4 @@
-import FV.Backend.Proof.DriverCheckSound
+import FV.Backend.Proof.LowerShape
 
 /-!
 # Completeness of `lowerCheck`: the shared definitions

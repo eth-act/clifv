@@ -1,4 +1,6 @@
-import FV.Backend.Proof.StockPureReturnRefines
+import FV.Backend.Proof.StockLocalSourceExecution
+import FV.Backend.Proof.StockArithmeticTerminalDefined
+import FV.Backend.Proof.StockReturnContract
 
 /-! Original-block return composition without a single-block input restriction.
 The previous theorem and its interfaces remain unchanged. -/

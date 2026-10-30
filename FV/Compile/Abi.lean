@@ -1,5 +1,5 @@
 import FV.DSL.Check
-import FV.Clif
+import FV.Clif.Syntax
 
 /-!
 # Data layout and function ABI of compiled DSL functions

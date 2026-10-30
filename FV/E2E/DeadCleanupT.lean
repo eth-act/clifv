@@ -1,5 +1,7 @@
 import FV.E2E.FinalT
-import FV.E2E.DeadCleanupFinal
+import FV.E2E.DeadCleanupPipeline
+import FV.E2E.DeadCleanupContracts
+import FV.E2E.DeadCleanupRegLevel
 
 /-!
 # The typed dead-cleanup chain (S11e5 Stage C, slice 7)

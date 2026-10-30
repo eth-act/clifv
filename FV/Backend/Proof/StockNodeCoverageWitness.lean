@@ -1,5 +1,7 @@
+import FV.Backend.Proof.StockEntryOrder
+import FV.Backend.Proof.StockNodeCoverage
 import FV.Backend.Proof.StockBranchHelperProjection
-import FV.Backend.Proof.StockOrderGraphWitness
+import FV.Backend.Proof.StockTerminalDriverWitness
 import FV.Backend.Proof.StockControlCfgWitness
 import FV.Backend.Proof.StockTermContractWitness
 import FV.Backend.Proof.StockPerEdgeCheckerWitness

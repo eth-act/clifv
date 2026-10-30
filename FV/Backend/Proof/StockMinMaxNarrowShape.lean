@@ -1,5 +1,9 @@
-import FV.Backend.Proof.StockMinMaxWideShape
-import FV.Backend.Proof.StockCmpNarrowActualAllocation
+import FV.Backend.Proof.StockCmpMatchedZero
+import FV.Backend.Proof.StockCmpMatchedRegister
+import FV.Backend.Proof.StockCmpMatchedImmediate
+import FV.Backend.Proof.StockCmpNarrowImmediateObserved
+import FV.Backend.Proof.StockCmpNarrowRhsObserved
+import FV.Backend.Proof.StockMinMaxRegisterRuns
 namespace Backend.Stock.Proof.ScalarSelect
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 open Backend.Stock.Proof.ScalarCmp MinMaxRegisterFixture

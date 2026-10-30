@@ -1,5 +1,4 @@
 import FV.Backend.Proof.DriverCheckT
-import FV.Backend.Proof.IselLowerAll
 import FV.Backend.Proof.IselExclT
 import FV.Backend.Proof.IselFloatCmp
 

@@ -1,6 +1,7 @@
 import FV.E2E.LinkWorld
+import FV.E2E.StockArithmeticStageContract
 import FV.E2E.StockArithmeticStage
-import FV.Backend.Proof.StockScalarCheck
+import FV.Backend.Proof.StockScalarContract
 import FV.E2E.DeadCleanupRegLevelX
 import FV.E2E.DeadCleanupGot
 

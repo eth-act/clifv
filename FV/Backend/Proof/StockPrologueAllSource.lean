@@ -1,5 +1,5 @@
-import FV.Backend.Proof.StockPrologueInput
 import FV.Clif.Run
+import FV.Backend.Lowering.StockPrologue
 
 namespace Backend.Stock.Prologue.AllConfigurations.Source
 open D0

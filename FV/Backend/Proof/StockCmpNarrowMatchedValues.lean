@@ -1,3 +1,5 @@
+import FV.Backend.Proof.StockCmpMatchedZero
+import FV.Backend.Proof.StockCmpMatchedRegister
 import FV.Backend.Proof.StockCmpMatchedImmediate
 import FV.Backend.Proof.StockCmpNarrowImmediateSourceValues
 import FV.Backend.Proof.StockCmpNarrowSourceValues

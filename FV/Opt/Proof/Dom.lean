@@ -1,5 +1,4 @@
 import FV.Opt.Check
-import FV.Opt.Proof.SemSim
 
 /-!
 # Dominance: what `Opt.check` guarantees (`wfCert`), declaratively

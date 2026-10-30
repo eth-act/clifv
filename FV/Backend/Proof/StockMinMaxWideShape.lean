@@ -1,4 +1,9 @@
-import FV.Backend.Proof.StockCmpWideActualValues
+import FV.Backend.Proof.StockCmpRegisterEmission
+import FV.Backend.Proof.StockCmpMatchedZero
+import FV.Backend.Proof.StockCmpMatchedRegister
+import FV.Backend.Proof.StockCmpMatchedImmediate
+import FV.Backend.Proof.StockCmpMatchedPredecessor
+import FV.Backend.Proof.StockCmpImmediateEmission
 import FV.Backend.Proof.StockMinMaxRegisterRuns
 import FV.Backend.Proof.StockExtendRequests
 namespace Backend.Stock.Proof.ScalarSelect

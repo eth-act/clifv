@@ -1,4 +1,6 @@
+import FV.Backend.Proof.StockEdgeCode
 import FV.Backend.Proof.StockParameterReturnPrelude
+import FV.Backend.Proof.StockCfgReturnBlockAt
 import FV.Backend.Proof.StockCfgReturnTrapAt
 import FV.Backend.Proof.StockJumpEntryPrelude
 

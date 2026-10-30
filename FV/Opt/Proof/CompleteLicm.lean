@@ -1,5 +1,4 @@
 import FV.Opt.Proof.CompleteGvn
-import FV.Opt.Licm
 
 /-!
 # Completeness of the LICM stage: graph facts and single moves (M1)

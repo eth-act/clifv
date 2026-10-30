@@ -1,4 +1,4 @@
-import FV.Backend.Proof.StockLogicalSourceExecution
+import FV.Backend.Proof.StockLogicalBodyRefines
 import FV.Backend.Proof.StockPureReturnRefines
 import FV.Backend.Proof.StockArithmeticEntryRefines
 

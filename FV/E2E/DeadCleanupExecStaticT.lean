@@ -1,17 +1,8 @@
 import FV.E2E.DeadCleanupExecStatic
-import FV.E2E.DeadCleanupExecBytesT
-import FV.E2E.ExecStaticT
-import FV.E2E.DeadCleanupBinaryT
-import FV.E2E.DeadCleanupBinCheckT
-import FV.E2E.BinCheckT
-import FV.E2E.BinaryT
 import FV.E2E.DeadCleanupLinkCheckT
-import FV.E2E.DeadCleanupStackBoundT
-import FV.E2E.ExecBytesT
 import FV.E2E.LinkArmT
 import FV.E2E.LinkCheckT
 import FV.E2E.PipelineCheckT
-import FV.E2E.StackBoundT
 
 /-! # Typed copies of `FV.E2E.DeadCleanupExecStatic` (S11e5 Stage C, slice 8)
 

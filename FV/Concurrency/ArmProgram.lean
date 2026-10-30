@@ -1,4 +1,4 @@
-import FV.Concurrency.ArmFootprint
+import FV.Arm.Exec
 
 /-!
 # The Arm model never changes the program (T2, #311)

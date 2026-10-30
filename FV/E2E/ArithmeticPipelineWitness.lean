@@ -1,6 +1,7 @@
 import FV.E2E.ArithmeticPipeline
-import FV.E2E.StockArithmeticStageWitness
 import FV.Clif.Print
+import FV.E2E.StockArithmeticArtifactWitness
+import FV.Backend.Proof.ArithmeticProduction
 
 namespace E2E.ArithmeticPipelineWitness
 open Backend Backend.Proof Backend.Proof.Driver E2E.LinkCheck

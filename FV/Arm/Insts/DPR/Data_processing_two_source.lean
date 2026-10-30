@@ -7,7 +7,7 @@ Author(s): Yan Peng
 -- Modified by fv-compiler-rust (2026): ported to Lean v4.34.1, module prefix FV.Arm, wrapped in
 -- namespace Arm; UDIV and SDIV added (`exec_data_processing_div`).
 
-import FV.Arm.Decode
+import FV.Arm.Decode.DPR
 import FV.Arm.Insts.Common
 
 namespace Arm

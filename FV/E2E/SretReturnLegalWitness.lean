@@ -1,5 +1,5 @@
 import FV.E2E.SretReturnLegal
-import FV.E2E.SretReturnWitness
+import FV.E2E.NonVacuity
 import FV.Opt.Legalize128Pass
 
 /-!

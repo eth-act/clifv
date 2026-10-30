@@ -1,5 +1,4 @@
 import FV.Opt.Proof.RuleInfraIcmp
-import FV.Opt.Proof.RuleInfraConst
 import FV.Opt.Proof.RuleArithOddSem
 import FV.Opt.Proof.RuleInfraPow2
 

@@ -1,4 +1,3 @@
-import FV.Backend.Proof.StockLocalSourceExecution
 import FV.Backend.Proof.StockPureNotrap
 import FV.Backend.Proof.IselCmpDiv
 import FV.Backend.Proof.LowerSim

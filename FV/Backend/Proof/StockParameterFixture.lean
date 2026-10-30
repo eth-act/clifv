@@ -1,6 +1,5 @@
-import FV.Backend.Proof.StockParameterCheck
-import FV.Backend.Proof.RefinesCSem
-import FV.E2E.RegLevelDriverSem
+import FV.Backend.Proof.StockForwardSourceOrder
+import FV.Backend.Proof.StockConditionalValues
 
 namespace Backend.Stock.Proof.ParameterCfg.Fixture
 open Backend.Proof Backend.Proof.Driver Backend.Stock.Proof.ForwardSource Backend.Stock.Proof.ConditionalValues

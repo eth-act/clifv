@@ -1,3 +1,4 @@
+import FV.Clif.Parse
 import FV.Opt.Legal
 
 /-!

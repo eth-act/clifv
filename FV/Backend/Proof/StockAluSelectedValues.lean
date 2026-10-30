@@ -1,3 +1,4 @@
+import FV.Backend.Proof.StockAluOperandCoverage
 import FV.Backend.Proof.StockSelectionReceipts
 import FV.Backend.Proof.IselCtl
 

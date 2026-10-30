@@ -2,7 +2,6 @@ import FV.E2E.LinkArmDetInduction
 import FV.E2E.LinkArmLockRetWitness
 import FV.E2E.LinkArmIniOfWitness
 import FV.E2E.LinkArmThmPRBRZeroWitness
-import FV.E2E.LinkArmTwinCLslWitness
 
 /-!
 # Witnesses: the determinism induction on the slotted system (SEM1 #537, #713, #732)

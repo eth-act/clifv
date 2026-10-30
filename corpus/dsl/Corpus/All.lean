@@ -4,7 +4,6 @@ import Corpus.Errors
 import Corpus.Calls
 import Corpus.Maps
 import Corpus.Big
-import Corpus.Proofs
 
 /-! The differential-testing corpus: every program with its test vectors. -/
 

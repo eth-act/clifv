@@ -1,5 +1,4 @@
 import FV.E2E.LinkScopeInputDefs
-import FV.E2E.LinkScope
 import FV.E2E.SizeIn
 import FV.Backend.Proof.IselPrgDriver
 import FV.Backend.Proof.PrepareTotal

@@ -1,4 +1,4 @@
-import FV.Opt.Basic
+import FV.Clif.Syntax
 
 /-!
 # Cost model (Cranelift 0.136.1 `egraph/cost.rs`)

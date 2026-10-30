@@ -1,4 +1,3 @@
-import FVTest.Backend.Lowering.StockScalarTestSupport
 import FV.Backend.ScalarNIProduction
 import FV.Backend.LinearScan
 import FV.E2E.StockNarrowFixtures

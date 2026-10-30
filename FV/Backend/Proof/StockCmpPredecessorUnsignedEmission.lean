@@ -1,3 +1,4 @@
+import FV.Backend.Proof.IselCmpEmit
 import FV.Backend.Proof.StockCmpBuilders
 import FV.Backend.Proof.StockDivPure
 import FV.Backend.Proof.StockRequestSuccess

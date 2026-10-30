@@ -1,5 +1,5 @@
-import FV.Backend
 import FV.Backend.Proof.DriverCheck
+import FV.Backend.DeadCleanup
 import FV.Backend.Proof.LowerDecide
 import FV.Backend.Proof.PrepareCheck
 import FV.Backend.Proof.RegallocCover
@@ -9,13 +9,11 @@ import FV.Backend.Proof.SpillAvail
 import FV.Backend.Proof.RelaxReady
 import FV.E2E.EmitSize
 import FV.E2E.SizeDefs
-import FV.E2E.EmitNear
-import FV.E2E.EmitLabels
-import FV.E2E.EmitEnc
+import FV.E2E.EmitCondsDefs
 import FV.Backend.Proof.IselEmitDefs
 import FV.Opt.Legalize128Pass
 import FVTest.Opt.Common
-import FV.E2E.LinkScopeInputDefs
+import FV.Backend.Proof.IselPrgCtx
 import FV.Backend.Proof.SretStable
 
 /-!

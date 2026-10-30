@@ -1,3 +1,6 @@
+import FV.Backend.Proof.RegallocOperands
+import FV.E2E.RegLevelPush
+import FV.Backend.Proof.KillDriver
 import FV.E2E.LinkOwnCallsStmtHyp
 import FV.E2E.LinkOwnCallsTryHyp
 import FV.Backend.Proof.IselOutBoundExt

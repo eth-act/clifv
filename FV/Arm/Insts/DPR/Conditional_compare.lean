@@ -25,7 +25,7 @@ Released under Apache 2.0 license; see third_party/NOTICE-lnsym.md.
 -- unallocated. Cross-checked against VeriISLE `MInst.CCmpImm` / `MInst.CCmp` in
 -- cranelift/codegen/src/isa/aarch64/spec/conds.isle.
 
-import FV.Arm.Decode
+import FV.Arm.Decode.DPR
 import FV.Arm.Insts.Common
 
 namespace Arm

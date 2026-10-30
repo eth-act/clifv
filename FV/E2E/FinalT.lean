@@ -3,6 +3,7 @@ import FV.E2E.MainT
 import FV.E2E.GuardedFP
 import FV.Backend.Proof.IselFloatMem
 import FV.Backend.Proof.IselLowerAllTI
+import FV.Backend.Proof.IselMemAllTI
 import FV.Backend.Proof.IselNonETI
 import FV.Backend.Proof.LowerContractTP
 

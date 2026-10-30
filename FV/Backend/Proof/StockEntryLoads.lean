@@ -1,4 +1,4 @@
-import FV.Backend.Proof.StockEntrySeed
+import FV.Backend.Proof.StockValues
 import FV.Backend.Proof.LowerSim
 namespace Backend.Stock.Proof
 open Backend.Proof Backend.Proof.Driver Isle Isle.Aarch64

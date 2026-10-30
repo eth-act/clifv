@@ -1,3 +1,4 @@
+import FV.Backend.Proof.StockSourceEntry
 import FV.Backend.Proof.StockEntryAssembly
 import FV.Backend.Proof.StockEntryArgs
 import FV.Backend.Proof.StockEntryLoads

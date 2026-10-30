@@ -1,4 +1,7 @@
+import FV.Backend.Proof.SpillLocal
+import FV.Backend.Proof.RegallocOperands
 import Lean
+import FV.E2E.SpillKillFree
 import FV.E2E.EmitPreOk
 import FV.E2E.EmitCondsDefs
 import FV.Backend.Proof.RelaxLayout

@@ -1,4 +1,5 @@
 import FV.Backend.Proof.StockAliasSemantics
+import FV.Backend.Proof.StockSSAScanConnection
 import FV.Backend.Proof.StockTraversalAliasConnection
 import FV.Backend.Proof.StockTraversalRecordOrigin
 import FV.Backend.Proof.StockBackwardSuffixSplit

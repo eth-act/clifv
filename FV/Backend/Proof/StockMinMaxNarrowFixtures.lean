@@ -1,5 +1,4 @@
-import FV.Backend.Proof.StockMinMaxActualDispatch
-import FV.Backend.Proof.StockMinMaxRegisterDriverRuns
+import FV.Backend.Proof.StockMinMaxRegisterRuns
 namespace Backend.Stock.Proof.ScalarSelect
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 open MinMaxRegisterFixture

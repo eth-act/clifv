@@ -1,6 +1,9 @@
-import FV.E2E.AllocTotal
+import FV.Backend.Proof.SpillLocal
+import FV.Backend.Proof.RegallocOperands
 import FV.E2E.RegLevelOp
 import FV.Backend.Proof.FormsCoverComplete
+import FV.E2E.SpillLower
+import FV.E2E.SpillCtlCheck
 
 /-!
 # `emitPre` succeeds on the spill allocation (V6b)

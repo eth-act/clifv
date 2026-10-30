@@ -1,6 +1,6 @@
 import FV.Backend.Proof.IselSzDefs
 import FV.Backend.Proof.IselShpCall
-import FV.Backend.Proof.IselShpTry
+import FV.Backend.Proof.IselCtlTryInd
 import FV.Backend.Proof.IselShpTotal
 
 /-!

@@ -1,4 +1,3 @@
-import FV.E2E.RegLevelCorrectX
 import FV.E2E.DeadCleanupRegLevel
 
 namespace Backend.Proof

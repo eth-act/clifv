@@ -1,4 +1,4 @@
-import FV.Opt.Proof.LegalStep
+import FV.Opt.Proof.SemSim
 
 /-!
 # Memory lemmas of the split `i128` access

@@ -1,6 +1,7 @@
 import FV.E2E.LinkScopeInputDefsT
 import FV.E2E.LinkScopeInput
 import FV.E2E.LinkScopeT
+import FV.Backend.Proof.PrepareTotalT
 import FV.E2E.EmitTotalT
 import FV.E2E.SpillDefined
 import FV.E2E.SpillKillFreeT

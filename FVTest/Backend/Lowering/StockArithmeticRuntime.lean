@@ -1,7 +1,7 @@
 import FV.Backend.ArithmeticNIProduction
 import FV.Backend.LinearScan
-import FV.E2E.StockArithmeticNIWitness
 import FV.Clif.Print
+import FV.E2E.StockProductionFixtures
 
 set_option autoImplicit false
 namespace FVTest.StockArithmeticRuntime

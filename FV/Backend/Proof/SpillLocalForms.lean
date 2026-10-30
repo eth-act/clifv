@@ -1,6 +1,6 @@
 import FV.Backend.Proof.SpillLocalCheck
-import FV.Backend.Proof.RegallocCover
 import FV.Backend.Proof.LowerRename
+import FV.E2E.RegLevelPush
 import FV.Backend.Proof.SpillLocalState
 import FV.Backend.Proof.IselCtlTerm
 

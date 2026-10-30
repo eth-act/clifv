@@ -9,7 +9,6 @@ import Lean.Meta
 
 import FV.Arm.Exec
 import FV.Arm.Tactics.Common
-import FV.Arm.Tactics.Attr
 import FV.Arm.Tactics.Sym.Common
 import FV.Arm.Tactics.Sym.ProgramInfo
 import FV.Arm.Tactics.Sym.AxEffects

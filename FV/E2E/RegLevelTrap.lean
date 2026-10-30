@@ -1,4 +1,4 @@
-import FV.E2E.RegLevelJT
+import FV.E2E.RegLevelNext
 
 /-!
 # Traps on the machine (M6)

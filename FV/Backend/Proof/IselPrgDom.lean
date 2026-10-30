@@ -1,4 +1,5 @@
-import FV.Backend.Proof.IselContract
+import FV.Backend.Isel
+import FV.Compile.Subset
 
 /-!
 # Progress of the ISLE lowering (V7): the abstract domain

@@ -1,3 +1,5 @@
+import FV.Backend.Proof.StockDemand
+import FV.Backend.Proof.IselCtlBase
 import FV.Backend.Proof.StockReturnABI
 
 /-! The real lower_return helper uses mapped vector requests and the revised

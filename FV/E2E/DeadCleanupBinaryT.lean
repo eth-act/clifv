@@ -1,8 +1,6 @@
 import FV.E2E.DeadCleanupBinary
-import FV.E2E.BinaryT
 import FV.E2E.DeadCleanupStackBoundT
 import FV.E2E.DeadCleanupBinCheckT
-import FV.E2E.BinCheckT
 import FV.E2E.DeadCleanupLinkCheckT
 import FV.E2E.LinkArmT
 import FV.E2E.LinkCheckT
