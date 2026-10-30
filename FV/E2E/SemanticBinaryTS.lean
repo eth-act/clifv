@@ -98,7 +98,7 @@ theorem not_worldF_outTS {I : SemanticStackBound.CompilerInput} {B : BaseEnv}
   · exact hx hi
 
 /-- **The per-run premises of `backend_correct_programT` from the boundary contract**
-(`premises` under `OkT`). -/
+(`premises` under `OkT`; as there the stack premise is the room `StackRoom` only, #581). -/
 theorem premisesTS {I : SemanticStackBound.CompilerInput} {B : BaseEnv} {f : Clif.Function}
     {K : Nat} {r : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State}
     (hL : (SemanticStackBound.ofInput I B (worldF I f K r)).OkT) (hf : f ∈ (prog I).funcs)
@@ -106,7 +106,7 @@ theorem premisesTS {I : SemanticStackBound.CompilerInput} {B : BaseEnv} {f : Cli
     (ho : OutsideCall I roB f (frameDrop (art I f).af + K) r args cs.mem)
     (hr : ClifRun I B f r args cs) :
     AbiEntry (art I f).fb (art I f).base (xreg 30 r) (modelOf I f r) ∧
-    StackAvail K (art I f).af (modelOf I f r) ∧
+    StackRoom ((art I f).af.frameSize + 16 + K) (modelOf I f r) ∧
     (∀ a, img I a → ¬ StackBelow (frameDrop (art I f).af + K) (spv (modelOf I f r)) a) ∧
     (∀ a, img I a → (modelOf I f r).mem a = imgMem I a) ∧
     BodyEntry (art I f).af (modelOf I f r) (bodyOf (art I f).af (modelOf I f r)) ∧
@@ -162,14 +162,12 @@ theorem premisesTS {I : SemanticStackBound.CompilerInput} {B : BaseEnv} {f : Cli
   · intro off v hm
     obtain ⟨-, hav, -⟩ := ho.args (.stack off) v hm
     rw [spv_modelOf]; exact hav
-  · have hni := ((ho.valid a 1 hv).2 0 (by omega)).1
+  · -- the live CLIF bytes (the body-entry memory is after the stack probes, #581)
+    have hni := ((ho.valid a 1 hv).2 0 (by omega)).1
     simp only [Nat.add_zero] at hni
-    simp only [Arm.read_mem, mem_bodyOf]
-    rw [show Arm.read_store (BitVec.ofNat 64 a) (modelOf I f r).mem = (modelOf I f r).mem (BitVec.ofNat 64 a)
-      from rfl, mem_modelOf_not hni]
-    cases hroa : roB (BitVec.ofNat 64 a) with
-    | none => exact ho.bytes a b hv hb hroa
-    | some b' => rw [hro _ _ hroa, ho.image a b b' hv hb hroa]
+    show probeMem (art I f).af (modelOf I f r) (BitVec.ofNat 64 a) = b
+    rw [probeMem_congr (by rw [spv_modelOf]) (mem_modelOf_not hni)]
+    exact ho.bytes a b hv hb
   · obtain ⟨hfit, hk⟩ := ho.valid a n hv
     exact ⟨hfit, fun k hkn => not_worldFTS hL hf hN (hk k hkn).1 (hk k hkn).2⟩
   · rw [Rel.slotReg, hspb]; exact hr.slots
