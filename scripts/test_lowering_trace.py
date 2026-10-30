@@ -18,7 +18,7 @@ class LoweringTraceTests(unittest.TestCase):
         if not all(p.exists() for p in (cls.trace, cls.backend, cls.allocator)):
             raise unittest.SkipTest("build lean-backend, lean-backend-lowering-trace and lean-regalloc")
 
-    def check_compilation(self, source, cleanup=True):
+    def check_compilation(self, source, cleanup=True, explicit_allocator=True):
         with tempfile.TemporaryDirectory(prefix="stock-lowering_trace-") as tmp:
             directory = Path(tmp)
             input_path = directory / "input.clif"
@@ -42,7 +42,8 @@ class LoweringTraceTests(unittest.TestCase):
 
             before, allocator = compile_at("before")
             report_path = directory / "trace.json"
-            subprocess.run([self.trace, input_path, report_path, *flags], cwd=ROOT,
+            trace_flags = flags if explicit_allocator else flags[2:]
+            subprocess.run([self.trace, input_path, report_path, *trace_flags], cwd=ROOT,
                            env=env, check=True, capture_output=True)
             report = json.loads(report_path.read_text())
             self.assertEqual(report["dead_cleanup"], cleanup)
@@ -82,6 +83,44 @@ block0(v0: i64, v1: i64):
             with self.subTest(dead_cleanup=cleanup):
                 report = self.check_compilation(source, cleanup)
                 self.assertEqual(report["legalization_accepted"], ["wide"])
+
+    def test_default_diagnostics_match_unused_argument_elimination(self):
+        source = """function %unused(i64, i64) -> i64 {
+block0(v0: i64, v1: i64):
+    v2 = iconst.i64 1
+    v3 = iadd v0, v2
+    return v3
+}
+"""
+        self.check_compilation(source, explicit_allocator=False)
+
+
+    def test_memory_production_diagnostics_match_allocator_input(self):
+        source = """function %memory(i64) -> i32 {
+block0(v0: i64):
+    v1 = load.i32 notrap v0
+    return v1
+}
+"""
+        for cleanup in (True, False):
+            with self.subTest(dead_cleanup=cleanup):
+                self.check_compilation(source, cleanup)
+
+
+    def test_memory_cfg_production_diagnostics_match_allocator_input(self):
+        source = """function %memory_cfg(i64) -> i32 {
+block0(v0: i64):
+    nop
+    jump block1
+block1:
+    nop
+    v2 = load.i32 notrap v0
+    return v2
+}
+"""
+        for cleanup in (True, False):
+            with self.subTest(dead_cleanup=cleanup):
+                self.check_compilation(source, cleanup)
 
 
 class StockLoweringTraceTests(unittest.TestCase):

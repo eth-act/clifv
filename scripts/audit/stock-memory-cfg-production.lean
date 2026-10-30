@@ -1,3 +1,5 @@
+import FV.Backend.Proof.StockMemoryCfgCompatibility
+import FV.E2E.SemanticNIBoundary
 import FV.Backend.Proof.StockMemoryCfgNotrap
 import FV.E2E.StockMemoryCfgTls
 import FV.E2E.StockMemoryCfgWorldX
@@ -24,3 +26,19 @@ import FV.E2E.StockMemoryCfgNI
 #print axioms E2E.StockMemoryCfg.fixedTlsFlags_ok
 #print axioms E2E.StockMemoryCfg.return_original_tls
 #print axioms E2E.backend_correct_worldX_stock_memory_cfg
+
+#print axioms Backend.Stock.MemoryCfg.previous_file_exact
+#print axioms Backend.Stock.MemoryCfg.previous_file_exact_witness
+#print axioms E2E.CompiledSemanticNI.of_checks
+#print axioms E2E.backend_correct_world_niX_semantic
+
+-- Executable checks add no axioms to the generic proofs above.
+#guard Backend.Stock.MemoryCfg.lowerRoutes.length == 14
+#guard match Backend.Stock.MemoryCfg.lowerValidated Backend.Stock.Memory.CapturedFixture.function,
+    Backend.Stock.lower Backend.Stock.Memory.CapturedFixture.function with
+  | .ok code, .ok result => decide (code = result.code)
+  | _, _ => false
+#guard (Backend.Stock.lower Backend.Stock.Memory.CapturedFixture.function).toOption.any
+  (fun result => Backend.SemanticNI.check Backend.Stock.Memory.CapturedFixture.function result.code)
+#guard (Backend.Stock.lower Backend.Stock.Memory.CapturedFixture.function).toOption.any
+  (fun result => Backend.Stock.MemoryCfg.check Backend.Stock.Memory.CapturedFixture.function result.code)
