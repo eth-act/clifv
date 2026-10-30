@@ -328,7 +328,7 @@ theorem stage2_answerFRU (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) {M : Na
           argsAt_regLocs hargsW⟩]
         exact hx
       · rw [hol]
-        exact hsr sig hsig hm.ty hm.returns_length
+        exact hm.returns_length
 
 /-- **Stage 2 at one call, with the invocation's facts, determinism `DetPRBR`**
 (`stage2_answerFRU` with `DetPRBR.toU`). -/
