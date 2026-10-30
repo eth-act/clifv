@@ -1,0 +1,17 @@
+{
+  "utc": "2026-10-30T03:59:55.683371+00:00",
+  "head": "6e4ae6f6965ad9e125f0e5eb2c1f1fe50ecebf8b",
+  "state": "Next-batch drafts UNVALIDATED and excluded from frozen6e4. All4543 original captured source hashes verified. Current6e4 author build still running, no full pass/merge/completeness claim.",
+  "files": {
+    "StockMemoryCfgReturnRefinesAt.lean": "46735e34aa6f352480b8a142f8e5afda9431eaf725efb2553d2b864a153624c6",
+    "StockMemoryNopPairedBody.lean": "271454acc547c15009f1b847b04a3325f3f3898cf21e60e2f84cb2d4debb2bc1",
+    "StockMemoryNopReturnBody.lean": "4a79641d64934a29ca632d486c37cbd612a3d3715cbedcff367776cc71f07d54",
+    "StockMemoryOmittedPairedScan.lean": "9972dd72a69976cea250788d4a5473699fed37ade084dd7035fcd10872c84c24",
+    "StockMemoryRetainedReturnSpec.lean": "886ebe28d76bf0015d1f58d132913c5c96f2b0ea331faa5f48f3723ddcfbc6e1",
+    "captured-source-provenance-current.json": "47349537f8dc87ad2f8a3fe1ad51e8dc6a5512995e76badac08ba6a32a123043",
+    "memory-captured-inventory-current.lean": "d478e571954ba8490765d6969936ed03c8c5332a1fd2f0fd9f311d5d0cdd6af4",
+    "memory-captured-inventory-current.py": "812eb0ce56b1961f6efcfc578ad9bcb4b3736b557aeb6d5f0029030950e66665",
+    "next-memory-reuse-current.md": "ce8a4c7cdadf9c0ee181db30708310e0b8f916d133de0bc8051a77c854bcc3da",
+    "resume-current.json": "a6c97991d8edd056d282b580d9b00c7d1753d1ff64ca1bc375568b4f9a937006"
+  }
+}
