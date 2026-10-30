@@ -19,13 +19,23 @@ theorem effectsOnly_instruction {vc : VCode} (checked : effectsOnly vc = true)
   have instruction := List.all_eq_true.mp blocks i (by simpa using Array.mem_of_getElem? inst)
   cases i <;> simp_all [Backend.Stock.Memory.effectInstruction,pureForm]
 
+/-- The checked effect whitelist also excludes the compare specifications added
+by the current cleanup semantics. The preserved pure-only variant stays above. -/
+private theorem effectsOnly_spec_instruction {vc : VCode} (checked : effectsOnly vc = true)
+    {b k : Nat} {vb : VBlock} {i : MInst}
+    (block : vc.blocks[b]? = some vb) (inst : vb.insts[k]? = some i) :
+    specForm i = false := by
+  have blocks := List.all_eq_true.mp checked vb (by simpa using Array.mem_of_getElem? block)
+  have instruction := List.all_eq_true.mp blocks i (by simpa using Array.mem_of_getElem? inst)
+  cases i <;> simp_all [Backend.Stock.Memory.effectInstruction,specForm,pureForm,cmpForm]
+
 private theorem value_step {vc : VCode} (checked : effectsOnly vc = true)
     {F : BitVec 64 → Prop} {fc : FnCtx} {X : ExtSem} {s t : VConf CV Arm.ArmState}
     (step : VStep vc (csem F fc X) s t) : VStep vc (valueSem F fc X) s t := by
   cases step with
   | step block inst operands run arity next =>
     refine .step block inst operands ?_ arity next
-    simpa only [valueSem,effectsOnly_instruction checked block inst,Bool.false_eq_true,ite_false] using run
+    simpa only [valueSem,effectsOnly_spec_instruction checked block inst,Bool.false_eq_true,ite_false] using run
 
 private theorem value_star {vc : VCode} (checked : effectsOnly vc = true)
     {F : BitVec 64 → Prop} {fc : FnCtx} {X : ExtSem} {s t : VConf CV Arm.ArmState}
@@ -44,6 +54,6 @@ theorem return_value {vc : VCode} (checked : effectsOnly vc = true)
   obtain ⟨b,k,ρ,w,vb,ops,results,path,block,inst,operands,values,run⟩ := returned
   have transferred := value_star checked path
   refine ⟨b,k,ρ,w,vb,ops,results,transferred,block,inst,operands,values,?_⟩
-  simpa only [valueSem,effectsOnly_instruction checked block inst,Bool.false_eq_true,ite_false] using run
+  simpa only [valueSem,effectsOnly_spec_instruction checked block inst,Bool.false_eq_true,ite_false] using run
 
 end E2E.StockMemory

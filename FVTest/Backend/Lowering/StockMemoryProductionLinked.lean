@@ -55,7 +55,7 @@ private def checkOne (out : System.FilePath) (cleanup fallback : Bool) : IO Unit
       let f ← match source.func with
         | .ok f => pure f
         | .error error => throw (IO.userError s!"{repr error}")
-      let expected ← get ((actualLower f).bind (fun raw => prepare (productionStage cleanup raw)))
+      let expected ← get ((actualLower f).bind (fun raw => prepare (productionStage cleanup f raw)))
       require (decide (vc = expected)) "allocator missed the actual prepared Stock artifact"
     pure (allocateLean vcs)) parsed [] cleanup
   require (production.funcs.length == 3 && production.unsupported.isEmpty && production.unverified.isEmpty &&
@@ -75,7 +75,7 @@ private def checkOne (out : System.FilePath) (cleanup fallback : Bool) : IO Unit
   let mut answers : Array Lean.Json := #[Lean.Json.null]
   for fi in funcs do
     let raw ← get (actualLower fi.func)
-    let prep ← get (prepare (productionStage cleanup raw))
+    let prep ← get (prepare (productionStage cleanup fi.func raw))
     answers := answers.push (← get (oracle prep))
   let ra := (Lean.Json.mkObj [("functions",Lean.Json.arr answers)]).compress
   funcs := funcs.map fun fi => {fi with ra}
