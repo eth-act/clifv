@@ -221,11 +221,13 @@ theorem RL.retLock_rets {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.
           (fun _ _ hb => by obtain ⟨_, _, _, rfl⟩ := hb; simp [Insn.hooked] at hhx)
         apply readsAvoid_stepiEvs
         intro a ha ev hev hdir k' hk'
-        obtain ⟨j', a', ha', hd⟩ := ht.decodeAt
+        obtain ⟨a', ha', hd⟩ := decodeAt_ofLine ht.layout ht.lm ht.fit ht.prog hj hpci
         rw [hd, Option.some.injEq] at ha
         subst ha
         have hcov := (ExecBytes.instEvs_cover hev).1 hdir
-        have hr := hgi.2 (j0 + i) x none hj hpci hhx _ a' ha' (ev.addr, ev.n) hcov k' hk'
+        have hr := hgi.2 (j0 + i) x none hj hpci hhx a'
+          (by refine (congrArg (x.toArmInst ·) ?_).trans ha'; exact RL.envL_of_lm ht.lm (j0 + i))
+          (ev.addr, ev.n) hcov k' hk'
         rw [hld] at hr
         exact RL.notZc_of_readInY hr fun _ _ => trivial
       · obtain rfl : i = (epiPops R.af.saves R.af.frameSize).length := by omega

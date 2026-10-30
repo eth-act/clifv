@@ -33,6 +33,14 @@ theorem mem_eq_of_read_mem_bytes {n : Nat} {a : BitVec 64} {s t : Arm.ArmState}
   simpa [show i * 8 + b < n * 8 by omega, show (i * 8 + b) / 8 = i by omega,
     show (i * 8 + b) % 8 = b by omega] using this
 
+/-- A jump-table or literal-pool byte is a byte of a non-label line. -/
+theorem RL.jtByte_line {R : RL} {a : BitVec 64} (h : R.JTByte a) :
+    ∃ j ln, R.fa.lines.toList[j]? = some ln ∧ ln.isLabel = false ∧
+      ∃ i < 4, a = R.pcOf j + BitVec.ofNat 64 i := by
+  rcases h with ⟨j, tg, bs, hj, i, hi, rfl⟩ | ⟨j, d, hj, i, hi, rfl⟩
+  · exact ⟨j, _, hj, rfl, i, hi, rfl⟩
+  · exact ⟨j, _, hj, rfl, i, hi, rfl⟩
+
 /-- **The jump-table bytes are equal in two states holding the code words.** -/
 theorem RL.jtByte_mem_eq {R : RL} (hR : R.Wf) {s t : Arm.ArmState}
     (hs : ∀ k w, R.fb.words[k]? = some w →
@@ -40,8 +48,8 @@ theorem RL.jtByte_mem_eq {R : RL} (hR : R.Wf) {s t : Arm.ArmState}
     (ht : ∀ k w, R.fb.words[k]? = some w →
       Arm.read_mem_bytes 4 (R.base + BitVec.ofNat 64 (4 * k)) t = w)
     {a : BitVec 64} (h : R.JTByte a) : s.mem a = t.mem a := by
-  obtain ⟨j, tg, bs, hj, i, hi, rfl⟩ := h
-  obtain ⟨hal, w, -, hw⟩ := FnAsm.layout_word hR.layout hR.lm (j := j) hj rfl
+  obtain ⟨j, ln, hj, hl, i, hi, rfl⟩ := RL.jtByte_line h
+  obtain ⟨hal, w, -, hw⟩ := FnAsm.layout_word hR.layout hR.lm (j := j) hj hl
   have e1 := hs _ w hw
   have e2 := ht _ w hw
   have hpc : R.pcOf j = R.base + BitVec.ofNat 64 (4 * (lineOffset R.fa.lines.toList j / 4)) := by
@@ -52,8 +60,8 @@ theorem RL.jtByte_mem_eq {R : RL} (hR : R.Wf) {s t : Arm.ArmState}
 /-- **A jump-table byte is a code address** of a state holding the program. -/
 theorem RL.jtByte_codeAddr {R : RL} (hR : R.Wf) {s : Arm.ArmState}
     (hp : s.program = R.fb.program R.base) {a : BitVec 64} (h : R.JTByte a) : CodeAddr s a := by
-  obtain ⟨j, tg, bs, hj, i, hi, rfl⟩ := h
-  obtain ⟨hal, w, -, hw⟩ := FnAsm.layout_word hR.layout hR.lm (j := j) hj rfl
+  obtain ⟨j, ln, hj, hl, i, hi, rfl⟩ := RL.jtByte_line h
+  obtain ⟨hal, w, -, hw⟩ := FnAsm.layout_word hR.layout hR.lm (j := j) hj hl
   have hpc : R.pcOf j = R.base + BitVec.ofNat 64 (4 * (lineOffset R.fa.lines.toList j / 4)) := by
     simp only [RL.pcOf, RL.L, Nat.mul_div_cancel' (Nat.dvd_of_mod_eq_zero hal)]
   rw [hpc]
