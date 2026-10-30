@@ -65,9 +65,10 @@ theorem retRegsOk_get {vals : List Clif.Val} {us : List (Reg × Reg)} (h : RetRe
     {j : Nat} {r : Reg} (hr : (retRegsT (vals.map fun v => tyClass v.ty) 0 0)[j]? = some r) :
     ∃ u, us[j]? = some u ∧ u.2 = r := by
   obtain ⟨cs, hcs⟩ := h
-  obtain ⟨rest, hrest⟩ := retRegsT_append (vals.map fun v => tyClass v.ty) cs 0 0
   have hj : (us.map (·.2))[j]? = some r := by
-    rw [hcs, hrest, List.getElem?_append_left (List.getElem?_eq_some_iff.mp hr).1, hr]
+    rw [hcs, List.take_left' (l₁ := vals.map fun v => tyClass v.ty) (i := vals.length)
+        (by rw [List.length_map]),
+      List.getElem?_append_left (List.getElem?_eq_some_iff.mp hr).1, hr]
   rw [List.getElem?_map] at hj
   obtain ⟨u, hu, rfl⟩ := Option.map_eq_some_iff.mp hj
   exact ⟨u, hu, rfl⟩

@@ -385,7 +385,7 @@ theorem callsRefineP_probe {exts : List Clif.ExtFunc} (hRS : RaiseSem F X XR sem
       vals' e m hg (by rcases hd with ⟨rfl, rfl⟩ | ⟨r, rfl, hcol, rfl⟩ <;> simp [callDest, *])
       hargs hmr.2 hu
     exact ⟨_, w', probe_call_of hr ⟨hex, hmr.1 ▸ hm⟩, by simp,
-      prefixHold_zero (by rw [hds]), hmr.1, hm⟩
+      prefixHold_zero (by rw [hds]; exact Nat.le_refl _), hmr.1, hm⟩
   · intro ext hin g' sl cm0 w dest us ds ti uses args vals' rvals cm' hg' hd hds hti hargs hmr hpc
       hret hrl
     obtain ⟨hn, hs, rfl, rfl⟩ := hpc
@@ -419,7 +419,7 @@ theorem indCallsRefineP_probe {sigs : List Clif.Signature} (hXRi : XRaiseIndOk e
     obtain ⟨obj, w', hr, hex, hm⟩ := hXRi sig hin n' g sl cm0 w u args vals' e m hg hsg hX hlen
       hall hmr.2 hu hty
     exact ⟨_, w', probe_call_of (ci := ⟨.reg r, us, ds⟩) hr ⟨hex, hmr.1 ▸ hm⟩, by simp,
-      prefixHold_zero (by rw [hds]), hmr.1, hm⟩
+      prefixHold_zero (by rw [hds]; exact Nat.le_refl _), hmr.1, hm⟩
   · intro sig hin n' g' sl cm0 w a r us ds ti u args vals' rvals cm' hg' hsg ha hu' hds hti hlen
       hall hmr hpc hret hrl hty
     obtain ⟨hn, hs, rfl, rfl⟩ := hpc
