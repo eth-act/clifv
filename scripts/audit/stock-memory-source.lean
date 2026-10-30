@@ -1,3 +1,16 @@
+import FV.Backend.Proof.StockMemoryAutoScan
+import FV.Backend.Proof.StockMemoryBodyFixture
+import FV.Backend.Proof.StockMemoryClass
+import FV.Backend.Proof.StockMemoryDispatch
+import FV.Backend.Proof.StockMemoryNotrap
+import FV.Backend.Proof.StockMemoryOrdinaryWitness
+import FV.Backend.Proof.StockMemoryReturnBody
+import FV.Backend.Proof.StockMemoryReturnRefines
+import FV.Backend.Proof.StockMemoryReturnSpec
+import FV.Backend.Proof.StockMemoryReturnWitness
+import FV.Backend.Proof.StockMemorySingleDomain
+import FV.Backend.Proof.StockMemorySourceExecution
+import FV.Backend.Proof.StockReturnedSourceRetention
 import FV.Backend.Proof.StockMemoryGuardedWitness
 import FV.Backend.Proof.StockMemoryInput
 import FV.Backend.Proof.StockMemoryRecordKernel
@@ -52,3 +65,25 @@ import FV.Backend.Proof.StockMemorySelection
 #print axioms Backend.Stock.Memory.stock_lower_load_source_step
 #print axioms Backend.Stock.Memory.stock_lower_load_scan_fall_refines
 #print axioms Backend.Stock.Memory.LoadFixture.guarded_load_scan_witness
+#print axioms Backend.Stock.Proof.OrdinaryBody.actual_ordinary_source_step
+#print axioms Backend.Stock.Proof.OrdinaryBody.actual_ordinary_source_execution_frame
+#print axioms Backend.Stock.Memory.LoadFixture.RecordInput.atBlock
+#print axioms Backend.Stock.Memory.LoadFixture.RecordInput.body_split
+#print axioms Backend.Stock.Memory.LoadFixture.RecordInput.body_record
+#print axioms Backend.Stock.Memory.LoadFixture.RecordInput.body_records
+#print axioms Backend.Stock.Memory.LoadFixture.ordinary_load_step_witness
+#print axioms Backend.Stock.Memory.LoadFixture.ordinary_load_body_execution_witness
+#print axioms Backend.Stock.Proof.OrdinaryBody.actual_ordinary_return_refines_at
+#print axioms Backend.Stock.Proof.OrdinaryBody.actual_ordinary_entry_return_refines_frame
+#print axioms Backend.Stock.Memory.LoadFixture.actual_load_return_block_witness
+#print axioms Backend.Stock.Memory.stock_selected_load_i32_rule
+#print axioms Backend.Stock.Memory.stock_lower_load_i32_selected_id
+#print axioms Backend.Stock.Memory.stock_lower_load_source_step_auto
+#print axioms Backend.Stock.Memory.stock_lower_load_scan_fall_refines_auto
+#print axioms Backend.Stock.Proof.stock_lower_returned_definition_emitted
+#print axioms Backend.Stock.Memory.stock_single_load_return_body
+#print axioms Backend.Stock.Proof.OrdinaryBody.ordinary_source_notrap
+#print axioms Backend.Stock.Memory.domain_of_single_load_return
+#print axioms Backend.Stock.Memory.stock_lower_source_parameter_definition
+#print axioms Backend.Stock.Memory.stock_single_load_return_spec
+#print axioms Backend.Stock.Memory.SingleClass.domain
