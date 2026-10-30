@@ -68,24 +68,7 @@ open Lean Meta Elab Tactic in
 /-- `opt_unfold h` without the `rw` attempts that cannot match (see the module docstring). The
 lemmas and their order are `opt_unfold`'s. -/
 elab "opt_unfold_head " h:ident : tactic => do
-  let lems : Array Name := #[``Isle.Interp.evalExprN.eq_7, ``Isle.Interp.evalExprN.eq_2,
-    ``Isle.Interp.evalExprN.eq_3, ``Isle.Interp.evalExprN.eq_4, ``Isle.Interp.evalExprN.eq_5,
-    ``Isle.Interp.evalExprN.eq_6, ``Isle.Interp.evalArgsN.eq_2, ``Isle.Interp.evalArgsN.eq_3,
-    ``Isle.Interp.evalBindsN.eq_2, ``Isle.Interp.evalBindsN.eq_3, ``Isle.Interp.applyTermN.eq_2,
-    ``Isle.Interp.matchIfLetsN.eq_2, ``Isle.Interp.matchIfLetsN.eq_3,
-    ``Isle.Interp.applyTerm.eq_2, ``Isle.Interp.selectRule.eq_3, ``Isle.Interp.selectRule.eq_2,
-    ``Isle.Interp.tryRule.eq_2, ``Isle.Interp.matchRule.eq_2, ``Isle.Interp.matchIfLets.eq_2,
-    ``Isle.Interp.matchIfLets.eq_3, ``Isle.Interp.evalExpr.eq_7, ``Isle.Interp.evalExpr.eq_2,
-    ``Isle.Interp.evalExpr.eq_3, ``Isle.Interp.evalExpr.eq_4, ``Isle.Interp.evalExpr.eq_5,
-    ``Isle.Interp.evalExpr.eq_6, ``Isle.Interp.evalArgs.eq_2, ``Isle.Interp.evalArgs.eq_3,
-    ``Isle.Interp.evalBinds.eq_2, ``Isle.Interp.evalBinds.eq_3, ``Isle.Interp.matchArgs.eq_1,
-    ``Isle.Interp.matchArgs.eq_2, ``Isle.Interp.matchPat.eq_1, ``Isle.Interp.matchPat.eq_2,
-    ``Isle.Interp.matchPat.eq_3, ``Isle.Interp.matchPat.eq_4, ``Isle.Interp.matchPat.eq_5,
-    ``Isle.Interp.matchPat.eq_6, ``Isle.Interp.matchPat.eq_7, ``Isle.Interp.matchPat.eq_8,
-    ``Isle.Interp.matchPatN.eq_1, ``Isle.Interp.matchPatN.eq_2, ``Isle.Interp.matchPatN.eq_3,
-    ``Isle.Interp.matchPatN.eq_4, ``Isle.Interp.matchPatN.eq_5, ``Isle.Interp.matchPatN.eq_6,
-    ``Isle.Interp.matchPatN.eq_7, ``Isle.Interp.matchPatN.eq_8, ``Isle.Interp.matchArgsN.eq_1,
-    ``Isle.Interp.matchArgsN.eq_2]
+  let lems := optUnfoldEqns
   let heads ← withMainContext do
     let e ← instantiateMVars (← getLocalDeclFromUserName h.getId).type
     pure ((optClosedHeads e).run ({}, {})).2.2

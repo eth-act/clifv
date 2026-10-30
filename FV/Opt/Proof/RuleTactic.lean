@@ -195,3 +195,75 @@ elab "opt_guard " t:tactic : tactic => do
     throwError "opt_guard: {e.toMessageData}"
 
 end Opt.Proof
+
+/-! ## `opt_subst_vars`: `subst_vars` without default-transparency `whnf`
+
+`Lean.Meta.substVars` substitutes one variable per scan of the local context and restarts; on each
+scan `subst` puts both sides of every equation into `whnf` at default transparency. In a rule proof
+the context holds the interpreter's evaluation (`hev : StateT.run (evalExprN …) … = …`), whose
+`whnf` runs the interpreter again on every scan (`ok_rule_icmp_41`: 48% of its heartbeats, in
+`rule_lhs`). These definitions are those of `FV/Backend/Proof/FastSubst.lean` (`FV.Opt` does not
+import the backend): `Lean.Meta.substVars` with the same scan order, choices and hypothesis
+handling, and `whnfR` instead of `whnf` of the equation sides. Purely syntactic versions changed
+which hypotheses `rename_i` names in `RuleSkeleton5`. -/
+
+namespace Opt.Proof.FastSubst
+
+open Lean Meta
+
+/-- `Lean.Meta.substEq` with `whnfR` instead of `whnf` of the sides. -/
+def substEq (mvarId : MVarId) (hFVarId : FVarId) : MetaM MVarId := do
+  let (hFVarId, mvarId) ← heqToEq mvarId hFVarId
+  mvarId.withContext do
+    let localDecl ← hFVarId.getDecl
+    let error {α} _ : MetaM α := throwTacticEx `subst mvarId
+      m!"invalid equality proof, it is not of the form (x = t) or (t = x){indentExpr localDecl.type}"
+    let some (_, lhs, rhs) ← matchEq? localDecl.type | error ()
+    let substReduced (newType : Expr) (symm : Bool) : MetaM MVarId := do
+      let mvarId ← mvarId.assert localDecl.userName newType (mkFVar hFVarId)
+      let (hFVarId', mvarId) ← mvarId.intro1P
+      let mvarId ← mvarId.clear hFVarId
+      return (← substCore mvarId hFVarId' (symm := symm) (tryToSkip := true)).2
+    let rhs' ← whnfR rhs
+    if rhs'.isFVar then
+      if rhs != rhs' then substReduced (← mkEq lhs rhs') true
+      else return (← substCore mvarId hFVarId (symm := true) (tryToSkip := true)).2
+    else
+      let lhs' ← whnfR lhs
+      if lhs'.isFVar then
+        if lhs != lhs' then substReduced (← mkEq lhs' rhs) false
+        else return (← substCore mvarId hFVarId (symm := false) (tryToSkip := true)).2
+      else error ()
+
+/-- `Lean.Meta.subst` with `substEq` above. -/
+partial def subst (mvarId : MVarId) (h : FVarId) : MetaM MVarId :=
+  mvarId.withContext do
+    let type ← h.getType
+    match (← matchEq? type) with
+    | some _ => substEq mvarId h
+    | none => match (← matchHEq? type) with
+      | some _ =>
+        let (h', mvarId') ← heqToEq mvarId h
+        if mvarId == mvarId' then substVar mvarId h else subst mvarId' h'
+      | none => substVar mvarId h
+
+/-- One substitution, as `Lean.Meta.substSomeVar?`. -/
+def substSomeVar? (mvarId : MVarId) : MetaM (Option MVarId) := mvarId.withContext do
+  for localDecl in (← getLCtx) do
+    if let some mvarId ← observing? (subst mvarId localDecl.fvarId) then
+      return some mvarId
+  return none
+
+/-- `Lean.Meta.substVars` with `substEq` above. -/
+partial def substVars (g : MVarId) : MetaM MVarId := do
+  match ← substSomeVar? g with
+  | some g' => substVars g'
+  | none => return g
+
+end Opt.Proof.FastSubst
+
+open Lean Elab Tactic in
+/-- `subst_vars` without default-transparency `whnf` of the equation sides
+(`Opt.Proof.FastSubst.substVars`). -/
+elab "opt_subst_vars" : tactic => do
+  replaceMainGoal [← Opt.Proof.FastSubst.substVars (← getMainGoal)]
