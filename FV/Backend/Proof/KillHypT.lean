@@ -41,7 +41,8 @@ def KillRunsHypT : Prop :=
           q.2 ∈ trs.1 ∨ q.2 ∈ trs.2)
 
 /-- **`TryDefsExact` over the typed scope**: a `try_call`'s call defines exactly its return and
-payload vregs, in order. -/
+payload vregs, in order. Over the declared returns since #587, as `TryDefsExact`: an `sret`
+callee's struct pointer gets no vreg, so the pre-#587 `sigRets` count became false for it. -/
 def TryDefsExactT : Prop :=
   ∀ (f : Clif.Function) (ctx : Ctx) (ranges : Array (Nat × Nat)) (st0 : LState),
     Dominated f → LowerScopeT f → AbiSigsOk f → buildCtx f = .ok (ctx, ranges, st0) →
@@ -51,7 +52,7 @@ def TryDefsExactT : Prop :=
       ctx.valDef.size ≤ lo.nextVreg → tryRegsOf sig lo = some (trs, st1) →
       tryCallF ctx ti data trs targets { st1 with emitted := #[] } = .ok (out, s', tr) →
       ∀ m ∈ s'.emitted.toList, ∀ c, m = .call c →
-        c.defs = callDefs (outDefs lo.nextVreg (max (sigRets sig).length 2))
+        c.defs = callDefs (outDefs lo.nextVreg (max sig.returns.length 2))
 
 /-- The typed facts give the integer ones (`LowerScope.toT`). -/
 theorem KillRunsHypT.toInt (h : KillRunsHypT) : KillRunsHyp :=
