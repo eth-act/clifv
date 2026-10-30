@@ -224,13 +224,13 @@ set_option maxRecDepth 100000 in
 /-- **A `try_call`'s code ends in a call**: a `lower_branch` run of the driver on a
 `try_call`/`try_call_indirect` at its placeholder slot `ti` (in the `try_call` context) that
 returns a value has emitted a call last. -/
-theorem tryCall_last {f : Clif.Function} {ctx : Ctx} (hP : PInv f ctx) {ti : Nat}
+theorem tryCall_last {f : Clif.Function} {ctx : Ctx} (hP : PInv f ctx) (hctx : CtxInv f ctx) {ti : Nat}
     {t : Clif.Terminator} {data : V} (hd : tryCallData f t = .ok data)
     (hi : ctx.insts[ti]? = some ⟨.op .unit, [], [], none⟩) {trs : List Reg × List Reg}
     {targets : List Label} {s : LState} {v : V} {s' : LState} {tr : List Isle.RuleId}
     (h : Driver.tryCallF ctx ti data trs targets s = .ok (some v, s', tr)) :
     ∃ c, s'.emitted.back? = some (.call c) := by
-  have hctx' : CtxInv f (tryCtx ctx ti data trs) := { ctxInv_termCtx hP.ctxInv hi data with }
+  have hctx' : CtxInv f (tryCtx ctx ti data trs) := { ctxInv_termCtx hctx hi data with }
   have hi' : (tryCtx ctx ti data trs).insts[ti]? = some ⟨data, [], [], none⟩ :=
     termCtx_insts_self hi data
   unfold tryCallF at h

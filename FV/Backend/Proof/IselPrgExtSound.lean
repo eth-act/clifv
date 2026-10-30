@@ -373,7 +373,9 @@ theorem aext_sound (hP : PInv f ctx) (term : Term) (a : PA) (outs : List (List P
       split
       · next op ty y hd =>
         obtain ⟨b, hb, hb'⟩ := hP.extNarrow op ty y (instOf_defClif hP hd)
-        have hr : (ctx.valueReg? y).isSome := by rw [hP.ctxInv.typedReg y _ hb]; rfl
+        have hr : (ctx.valueReg? y).isSome := by
+          obtain ⟨n, hn⟩ := hP.ctxInv.typedSome y _ hb
+          rw [hn]; rfl
         rw [hb]
         rcases hb' with rfl | rfl | rfl <;> cases op <;> exact concl_ok rfl (γL1 (γ_extended hr))
       · exact concl_fail rfl
