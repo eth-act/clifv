@@ -1,0 +1,10 @@
+function %_RNxC13h_dyn_generic12HkGTRrpKjLDv(i64) -> i32 system_v {
+block0(v0: i64):
+    nop 
+    jump block1
+
+block1:
+    nop 
+    v2 = load.i32 notrap v0
+    return v2
+}

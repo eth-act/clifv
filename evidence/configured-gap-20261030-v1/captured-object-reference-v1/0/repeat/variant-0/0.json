@@ -1,0 +1,22 @@
+{
+  "alignment": 4,
+  "boundary": "stock-compile-subtest",
+  "exception_call_sites": "[]",
+  "exception_table_bytes": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
+  "index": 0,
+  "jit_allocation_performed": false,
+  "name": "%_RNxC13h_dyn_generic12H3GPtIT8Zs5B",
+  "relocations": [],
+  "stack_maps": "[]",
+  "traps": [],
+  "unwind": "Some(SystemV(UnwindInfo { instructions: [(4, CfaOffset(16)), (4, Offset(29, -16)), (4, Offset(30, -8)), (8, CfaRegister(29))], len: 20 }))"
+}

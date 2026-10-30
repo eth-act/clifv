@@ -1,0 +1,346 @@
+{
+  "status": "failed",
+  "scope": "Regression for configured compiler selecting the same proved provider. Before-fix failure is expected.",
+  "rows": [
+    {
+      "cleanup": false,
+      "allocator_inputs_equal": false,
+      "default": [
+        {
+          "name": "configured_memory",
+          "entry": 0,
+          "vregs": "iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii",
+          "blocks": [
+            {
+              "insts": [
+                0,
+                2
+              ],
+              "succs": [
+                1
+              ],
+              "preds": [],
+              "params": []
+            },
+            {
+              "insts": [
+                2,
+                4
+              ],
+              "succs": [],
+              "preds": [
+                0
+              ],
+              "params": []
+            }
+          ],
+          "insts": [
+            {
+              "ops": [
+                {
+                  "v": 192,
+                  "k": "def",
+                  "p": "late",
+                  "c": "fixed:x0"
+                }
+              ],
+              "clobbers": [],
+              "kind": "other"
+            },
+            {
+              "ops": [],
+              "clobbers": [],
+              "kind": "branch",
+              "args": [
+                []
+              ]
+            },
+            {
+              "ops": [
+                {
+                  "v": 194,
+                  "k": "def",
+                  "p": "late",
+                  "c": "reg"
+                },
+                {
+                  "v": 192,
+                  "k": "use",
+                  "p": "early",
+                  "c": "reg"
+                }
+              ],
+              "clobbers": [],
+              "kind": "other"
+            },
+            {
+              "ops": [
+                {
+                  "v": 194,
+                  "k": "use",
+                  "p": "early",
+                  "c": "fixed:x0"
+                }
+              ],
+              "clobbers": [],
+              "kind": "ret"
+            }
+          ]
+        }
+      ],
+      "configured": [
+        {
+          "name": "configured_memory",
+          "entry": 0,
+          "vregs": "iiii",
+          "blocks": [
+            {
+              "insts": [
+                0,
+                2
+              ],
+              "succs": [
+                1
+              ],
+              "preds": [],
+              "params": []
+            },
+            {
+              "insts": [
+                2,
+                4
+              ],
+              "succs": [],
+              "preds": [
+                0
+              ],
+              "params": []
+            }
+          ],
+          "insts": [
+            {
+              "ops": [
+                {
+                  "v": 0,
+                  "k": "def",
+                  "p": "late",
+                  "c": "fixed:x0"
+                }
+              ],
+              "clobbers": [],
+              "kind": "other"
+            },
+            {
+              "ops": [],
+              "clobbers": [],
+              "kind": "branch",
+              "args": [
+                []
+              ]
+            },
+            {
+              "ops": [
+                {
+                  "v": 3,
+                  "k": "def",
+                  "p": "late",
+                  "c": "reg"
+                },
+                {
+                  "v": 0,
+                  "k": "use",
+                  "p": "early",
+                  "c": "reg"
+                }
+              ],
+              "clobbers": [],
+              "kind": "other"
+            },
+            {
+              "ops": [
+                {
+                  "v": 3,
+                  "k": "use",
+                  "p": "early",
+                  "c": "fixed:x0"
+                }
+              ],
+              "clobbers": [],
+              "kind": "ret"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "cleanup": true,
+      "allocator_inputs_equal": false,
+      "default": [
+        {
+          "name": "configured_memory",
+          "entry": 0,
+          "vregs": "iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii",
+          "blocks": [
+            {
+              "insts": [
+                0,
+                2
+              ],
+              "succs": [
+                1
+              ],
+              "preds": [],
+              "params": []
+            },
+            {
+              "insts": [
+                2,
+                4
+              ],
+              "succs": [],
+              "preds": [
+                0
+              ],
+              "params": []
+            }
+          ],
+          "insts": [
+            {
+              "ops": [
+                {
+                  "v": 192,
+                  "k": "def",
+                  "p": "late",
+                  "c": "fixed:x0"
+                }
+              ],
+              "clobbers": [],
+              "kind": "other"
+            },
+            {
+              "ops": [],
+              "clobbers": [],
+              "kind": "branch",
+              "args": [
+                []
+              ]
+            },
+            {
+              "ops": [
+                {
+                  "v": 194,
+                  "k": "def",
+                  "p": "late",
+                  "c": "reg"
+                },
+                {
+                  "v": 192,
+                  "k": "use",
+                  "p": "early",
+                  "c": "reg"
+                }
+              ],
+              "clobbers": [],
+              "kind": "other"
+            },
+            {
+              "ops": [
+                {
+                  "v": 194,
+                  "k": "use",
+                  "p": "early",
+                  "c": "fixed:x0"
+                }
+              ],
+              "clobbers": [],
+              "kind": "ret"
+            }
+          ]
+        }
+      ],
+      "configured": [
+        {
+          "name": "configured_memory",
+          "entry": 0,
+          "vregs": "iiii",
+          "blocks": [
+            {
+              "insts": [
+                0,
+                2
+              ],
+              "succs": [
+                1
+              ],
+              "preds": [],
+              "params": []
+            },
+            {
+              "insts": [
+                2,
+                4
+              ],
+              "succs": [],
+              "preds": [
+                0
+              ],
+              "params": []
+            }
+          ],
+          "insts": [
+            {
+              "ops": [
+                {
+                  "v": 0,
+                  "k": "def",
+                  "p": "late",
+                  "c": "fixed:x0"
+                }
+              ],
+              "clobbers": [],
+              "kind": "other"
+            },
+            {
+              "ops": [],
+              "clobbers": [],
+              "kind": "branch",
+              "args": [
+                []
+              ]
+            },
+            {
+              "ops": [
+                {
+                  "v": 3,
+                  "k": "def",
+                  "p": "late",
+                  "c": "reg"
+                },
+                {
+                  "v": 0,
+                  "k": "use",
+                  "p": "early",
+                  "c": "reg"
+                }
+              ],
+              "clobbers": [],
+              "kind": "other"
+            },
+            {
+              "ops": [
+                {
+                  "v": 3,
+                  "k": "use",
+                  "p": "early",
+                  "c": "fixed:x0"
+                }
+              ],
+              "clobbers": [],
+              "kind": "ret"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,195 @@
+{
+  "actual_ci_execution": false,
+  "commands": [
+    "compile\n"
+  ],
+  "cpu_feature_compatibility_checked": false,
+  "declared_targets": [
+    {
+      "architecture": "aarch64",
+      "isa_index": 0,
+      "lean_architecture_supported": true,
+      "target": "aarch64-unknown-unknown-elf"
+    }
+  ],
+  "functions": [
+    "%_RNxC13h_dyn_generic12HkGTRrpKjLDv"
+  ],
+  "has_run_command": false,
+  "host_address_substitution_present": false,
+  "input": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/captured-object-reference-v1/3/compile.clif",
+  "missing_required_isa": false,
+  "mode": "all-stock-binary-stages-cross-host-compile-only",
+  "target": "aarch64-unknown-linux-gnu",
+  "variants": [
+    {
+      "command": "compile\n",
+      "command_index": 0,
+      "eligible": true,
+      "error": null,
+      "feature_requirements": [],
+      "flags": [
+        {
+          "name": "regalloc_algorithm",
+          "value": "backtracking"
+        },
+        {
+          "name": "opt_level",
+          "value": "none"
+        },
+        {
+          "name": "tls_model",
+          "value": "elf_gd"
+        },
+        {
+          "name": "stack_switch_model",
+          "value": "none"
+        },
+        {
+          "name": "libcall_call_conv",
+          "value": "isa_default"
+        },
+        {
+          "name": "probestack_size_log2",
+          "value": "12"
+        },
+        {
+          "name": "probestack_strategy",
+          "value": "inline"
+        },
+        {
+          "name": "bb_padding_log2_minus_one",
+          "value": "0"
+        },
+        {
+          "name": "log2_min_function_alignment",
+          "value": "0"
+        },
+        {
+          "name": "regalloc_checker",
+          "value": "false"
+        },
+        {
+          "name": "regalloc_verbose_logs",
+          "value": "false"
+        },
+        {
+          "name": "enable_alias_analysis",
+          "value": "true"
+        },
+        {
+          "name": "enable_verifier",
+          "value": "false"
+        },
+        {
+          "name": "is_pic",
+          "value": "true"
+        },
+        {
+          "name": "use_colocated_libcalls",
+          "value": "false"
+        },
+        {
+          "name": "enable_nan_canonicalization",
+          "value": "false"
+        },
+        {
+          "name": "enable_pinned_reg",
+          "value": "false"
+        },
+        {
+          "name": "enable_llvm_abi_extensions",
+          "value": "true"
+        },
+        {
+          "name": "enable_multi_ret_implicit_sret",
+          "value": "false"
+        },
+        {
+          "name": "unwind_info",
+          "value": "true"
+        },
+        {
+          "name": "preserve_frame_pointers",
+          "value": "true"
+        },
+        {
+          "name": "machine_code_cfg_info",
+          "value": "false"
+        },
+        {
+          "name": "enable_probestack",
+          "value": "true"
+        },
+        {
+          "name": "enable_heap_access_spectre_mitigation",
+          "value": "true"
+        },
+        {
+          "name": "enable_table_access_spectre_mitigation",
+          "value": "true"
+        },
+        {
+          "name": "enable_incremental_compilation_cache_checks",
+          "value": "false"
+        },
+        {
+          "name": "enable_compact_unwind_abi",
+          "value": "false"
+        }
+      ],
+      "functions": [
+        "%_RNxC13h_dyn_generic12HkGTRrpKjLDv"
+      ],
+      "index": 0,
+      "isa_flags": [
+        {
+          "name": "has_lse",
+          "value": "false"
+        },
+        {
+          "name": "has_pauth",
+          "value": "false"
+        },
+        {
+          "name": "has_fp16",
+          "value": "false"
+        },
+        {
+          "name": "has_dotprod",
+          "value": "false"
+        },
+        {
+          "name": "has_i8mm",
+          "value": "false"
+        },
+        {
+          "name": "sign_return_address_all",
+          "value": "false"
+        },
+        {
+          "name": "sign_return_address",
+          "value": "false"
+        },
+        {
+          "name": "sign_return_address_with_bkey",
+          "value": "false"
+        },
+        {
+          "name": "use_bti",
+          "value": "false"
+        },
+        {
+          "name": "use_csdb",
+          "value": "false"
+        }
+      ],
+      "isa_index": 0,
+      "requested_target": "aarch64-unknown-unknown-elf",
+      "stage": "compile",
+      "status": "exported",
+      "stock_load": false,
+      "target": "aarch64-unknown-unknown-elf"
+    }
+  ]
+}

@@ -1,0 +1,163 @@
+{
+  "provenance": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/delivery-official-vectors-v1/files/wasm/multi-val-tons-of-results/variant-0/compilation-0/configuration-receipt.json",
+  "request": {
+    "target": "aarch64-unknown-unknown-elf",
+    "stage": "compile",
+    "schema": 1,
+    "isa_index": 1,
+    "isa_flags": [
+      {
+        "value": "false",
+        "name": "has_lse"
+      },
+      {
+        "value": "false",
+        "name": "has_pauth"
+      },
+      {
+        "value": "false",
+        "name": "has_fp16"
+      },
+      {
+        "value": "false",
+        "name": "has_dotprod"
+      },
+      {
+        "value": "false",
+        "name": "has_i8mm"
+      },
+      {
+        "value": "false",
+        "name": "sign_return_address_all"
+      },
+      {
+        "value": "false",
+        "name": "sign_return_address"
+      },
+      {
+        "value": "false",
+        "name": "sign_return_address_with_bkey"
+      },
+      {
+        "value": "false",
+        "name": "use_bti"
+      },
+      {
+        "value": "false",
+        "name": "use_csdb"
+      }
+    ],
+    "input_sha256": "d5b41548e7078262aedff3dd15cbfed6e01a6524682ea8ba7a7ea856b76a41b1",
+    "flags": [
+      {
+        "value": "backtracking",
+        "name": "regalloc_algorithm"
+      },
+      {
+        "value": "none",
+        "name": "opt_level"
+      },
+      {
+        "value": "none",
+        "name": "tls_model"
+      },
+      {
+        "value": "none",
+        "name": "stack_switch_model"
+      },
+      {
+        "value": "isa_default",
+        "name": "libcall_call_conv"
+      },
+      {
+        "value": "12",
+        "name": "probestack_size_log2"
+      },
+      {
+        "value": "outline",
+        "name": "probestack_strategy"
+      },
+      {
+        "value": "0",
+        "name": "bb_padding_log2_minus_one"
+      },
+      {
+        "value": "0",
+        "name": "log2_min_function_alignment"
+      },
+      {
+        "value": "false",
+        "name": "regalloc_checker"
+      },
+      {
+        "value": "false",
+        "name": "regalloc_verbose_logs"
+      },
+      {
+        "value": "true",
+        "name": "enable_alias_analysis"
+      },
+      {
+        "value": "true",
+        "name": "enable_verifier"
+      },
+      {
+        "value": "true",
+        "name": "is_pic"
+      },
+      {
+        "value": "false",
+        "name": "use_colocated_libcalls"
+      },
+      {
+        "value": "false",
+        "name": "enable_nan_canonicalization"
+      },
+      {
+        "value": "false",
+        "name": "enable_pinned_reg"
+      },
+      {
+        "value": "false",
+        "name": "enable_llvm_abi_extensions"
+      },
+      {
+        "value": "true",
+        "name": "enable_multi_ret_implicit_sret"
+      },
+      {
+        "value": "false",
+        "name": "unwind_info"
+      },
+      {
+        "value": "true",
+        "name": "preserve_frame_pointers"
+      },
+      {
+        "value": "true",
+        "name": "machine_code_cfg_info"
+      },
+      {
+        "value": "false",
+        "name": "enable_probestack"
+      },
+      {
+        "value": "true",
+        "name": "enable_heap_access_spectre_mitigation"
+      },
+      {
+        "value": "true",
+        "name": "enable_table_access_spectre_mitigation"
+      },
+      {
+        "value": "false",
+        "name": "enable_incremental_compilation_cache_checks"
+      },
+      {
+        "value": "false",
+        "name": "enable_compact_unwind_abi"
+      }
+    ],
+    "command_index": 0
+  }
+}

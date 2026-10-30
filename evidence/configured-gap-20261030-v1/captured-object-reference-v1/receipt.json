@@ -1,0 +1,411 @@
+{
+  "status": "passed",
+  "utc": "2026-10-30T21:29:27.581803+00:00",
+  "rows": [
+    {
+      "function": "_RNxC13h_dyn_generic12H3GPtIT8Zs5B",
+      "cleanup": false,
+      "original_path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/historical-root/home/lee/clifv/.worktrees/stock-cfg-source-20261025/examples/survey/target/fv/plain-leanlink-verified-leanld/tmp/29204d9a8e90/split/_RNxC13h_dyn_generic12H3GPtIT8Zs5B.unopt.clif",
+      "original_sha256": "80ede2db6a68593e933dab5b9726facfec35534278f884c8ca091178012201b6",
+      "wrapper_sha256": "f1fa81d3736315048b81d209adebfb33c269a37dcf6cadc1af6d7f87ad20b213",
+      "stock_bytes": "fd7bbfa9fd030091000040b9fd7bc1a8c0035fd6",
+      "lean_bytes": "fd7bbfa9fd030091000040b9fd7bc1a8c0035fd6",
+      "comparison": {
+        "bytes": {
+          "equal": true,
+          "left_size": 20,
+          "right_size": 20,
+          "left_sha256": "ae77aa123a0826fd0a7893b1c95dda548c5045b0f71eb740338b6deb8a50f3f5",
+          "right_sha256": "ae77aa123a0826fd0a7893b1c95dda548c5045b0f71eb740338b6deb8a50f3f5",
+          "first_difference": null,
+          "left_context": null,
+          "right_context": null
+        },
+        "relocations_equal": true,
+        "reference_relocations": [],
+        "lean_relocations": [],
+        "exact_code_and_relocations": true
+      },
+      "stock_metadata": {
+        "alignment": 4,
+        "boundary": "stock-compile-subtest",
+        "exception_call_sites": "[]",
+        "exception_table_bytes": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "index": 0,
+        "jit_allocation_performed": false,
+        "name": "%_RNxC13h_dyn_generic12H3GPtIT8Zs5B",
+        "relocations": [],
+        "stack_maps": "[]",
+        "traps": [],
+        "unwind": "Some(SystemV(UnwindInfo { instructions: [(4, CfaOffset(16)), (4, Offset(29, -16)), (4, Offset(30, -8)), (8, CfaRegister(29))], len: 20 }))"
+      },
+      "stock_repeatable": true,
+      "settings_contract_verified": false,
+      "compiler_source": "preserved6e4 plus2dbedd3b; existing default compiler objects"
+    },
+    {
+      "function": "_RNxC13h_dyn_generic12H3GPtIT8Zs5B",
+      "cleanup": true,
+      "original_path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/historical-root/home/lee/clifv/.worktrees/stock-cfg-source-20261025/examples/survey/target/fv/plain-leanlink-verified-leanld/tmp/29204d9a8e90/split/_RNxC13h_dyn_generic12H3GPtIT8Zs5B.unopt.clif",
+      "original_sha256": "80ede2db6a68593e933dab5b9726facfec35534278f884c8ca091178012201b6",
+      "wrapper_sha256": "f1fa81d3736315048b81d209adebfb33c269a37dcf6cadc1af6d7f87ad20b213",
+      "stock_bytes": "fd7bbfa9fd030091000040b9fd7bc1a8c0035fd6",
+      "lean_bytes": "fd7bbfa9fd030091000040b9fd7bc1a8c0035fd6",
+      "comparison": {
+        "bytes": {
+          "equal": true,
+          "left_size": 20,
+          "right_size": 20,
+          "left_sha256": "ae77aa123a0826fd0a7893b1c95dda548c5045b0f71eb740338b6deb8a50f3f5",
+          "right_sha256": "ae77aa123a0826fd0a7893b1c95dda548c5045b0f71eb740338b6deb8a50f3f5",
+          "first_difference": null,
+          "left_context": null,
+          "right_context": null
+        },
+        "relocations_equal": true,
+        "reference_relocations": [],
+        "lean_relocations": [],
+        "exact_code_and_relocations": true
+      },
+      "stock_metadata": {
+        "alignment": 4,
+        "boundary": "stock-compile-subtest",
+        "exception_call_sites": "[]",
+        "exception_table_bytes": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "index": 0,
+        "jit_allocation_performed": false,
+        "name": "%_RNxC13h_dyn_generic12H3GPtIT8Zs5B",
+        "relocations": [],
+        "stack_maps": "[]",
+        "traps": [],
+        "unwind": "Some(SystemV(UnwindInfo { instructions: [(4, CfaOffset(16)), (4, Offset(29, -16)), (4, Offset(30, -8)), (8, CfaRegister(29))], len: 20 }))"
+      },
+      "stock_repeatable": true,
+      "settings_contract_verified": false,
+      "compiler_source": "preserved6e4 plus2dbedd3b; existing default compiler objects"
+    },
+    {
+      "function": "_RNxC13h_dyn_generic12HgpskFWGXXuk",
+      "cleanup": false,
+      "original_path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/historical-root/home/lee/clifv/.worktrees/stock-cfg-source-20261025/examples/survey/target/fv/plain-leanlink-verified-leanld/tmp/29204d9a8e90/split/_RNxC13h_dyn_generic12HgpskFWGXXuk.unopt.clif",
+      "original_sha256": "ecb9944b4d8fe6be675a3efedac5708f6373e2bf4dde48f95feb6e7feee60e38",
+      "wrapper_sha256": "53c728b92872fed02d67f153262d31671c18c6ae7a208ee3658b575173a2e4ea",
+      "stock_bytes": "fd7bbfa9fd030091000040b9fd7bc1a8c0035fd6",
+      "lean_bytes": "fd7bbfa9fd030091000040b9fd7bc1a8c0035fd6",
+      "comparison": {
+        "bytes": {
+          "equal": true,
+          "left_size": 20,
+          "right_size": 20,
+          "left_sha256": "ae77aa123a0826fd0a7893b1c95dda548c5045b0f71eb740338b6deb8a50f3f5",
+          "right_sha256": "ae77aa123a0826fd0a7893b1c95dda548c5045b0f71eb740338b6deb8a50f3f5",
+          "first_difference": null,
+          "left_context": null,
+          "right_context": null
+        },
+        "relocations_equal": true,
+        "reference_relocations": [],
+        "lean_relocations": [],
+        "exact_code_and_relocations": true
+      },
+      "stock_metadata": {
+        "alignment": 4,
+        "boundary": "stock-compile-subtest",
+        "exception_call_sites": "[]",
+        "exception_table_bytes": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "index": 0,
+        "jit_allocation_performed": false,
+        "name": "%_RNxC13h_dyn_generic12HgpskFWGXXuk",
+        "relocations": [],
+        "stack_maps": "[]",
+        "traps": [],
+        "unwind": "Some(SystemV(UnwindInfo { instructions: [(4, CfaOffset(16)), (4, Offset(29, -16)), (4, Offset(30, -8)), (8, CfaRegister(29))], len: 20 }))"
+      },
+      "stock_repeatable": true,
+      "settings_contract_verified": false,
+      "compiler_source": "preserved6e4 plus2dbedd3b; existing default compiler objects"
+    },
+    {
+      "function": "_RNxC13h_dyn_generic12HgpskFWGXXuk",
+      "cleanup": true,
+      "original_path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/historical-root/home/lee/clifv/.worktrees/stock-cfg-source-20261025/examples/survey/target/fv/plain-leanlink-verified-leanld/tmp/29204d9a8e90/split/_RNxC13h_dyn_generic12HgpskFWGXXuk.unopt.clif",
+      "original_sha256": "ecb9944b4d8fe6be675a3efedac5708f6373e2bf4dde48f95feb6e7feee60e38",
+      "wrapper_sha256": "53c728b92872fed02d67f153262d31671c18c6ae7a208ee3658b575173a2e4ea",
+      "stock_bytes": "fd7bbfa9fd030091000040b9fd7bc1a8c0035fd6",
+      "lean_bytes": "fd7bbfa9fd030091000040b9fd7bc1a8c0035fd6",
+      "comparison": {
+        "bytes": {
+          "equal": true,
+          "left_size": 20,
+          "right_size": 20,
+          "left_sha256": "ae77aa123a0826fd0a7893b1c95dda548c5045b0f71eb740338b6deb8a50f3f5",
+          "right_sha256": "ae77aa123a0826fd0a7893b1c95dda548c5045b0f71eb740338b6deb8a50f3f5",
+          "first_difference": null,
+          "left_context": null,
+          "right_context": null
+        },
+        "relocations_equal": true,
+        "reference_relocations": [],
+        "lean_relocations": [],
+        "exact_code_and_relocations": true
+      },
+      "stock_metadata": {
+        "alignment": 4,
+        "boundary": "stock-compile-subtest",
+        "exception_call_sites": "[]",
+        "exception_table_bytes": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "index": 0,
+        "jit_allocation_performed": false,
+        "name": "%_RNxC13h_dyn_generic12HgpskFWGXXuk",
+        "relocations": [],
+        "stack_maps": "[]",
+        "traps": [],
+        "unwind": "Some(SystemV(UnwindInfo { instructions: [(4, CfaOffset(16)), (4, Offset(29, -16)), (4, Offset(30, -8)), (8, CfaRegister(29))], len: 20 }))"
+      },
+      "stock_repeatable": true,
+      "settings_contract_verified": false,
+      "compiler_source": "preserved6e4 plus2dbedd3b; existing default compiler objects"
+    },
+    {
+      "function": "_RNxC13h_dyn_generic12H1XntPkRr2ei",
+      "cleanup": false,
+      "original_path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/historical-root/home/lee/clifv/.worktrees/stock-cfg-source-20261025/examples/survey/target/fv/plain-leanlink-verified-leanld/tmp/d026607f0214/split/_RNxC13h_dyn_generic12H1XntPkRr2ei.unopt.clif",
+      "original_sha256": "8694301f27cafb80cf1c82f15d09da9260c9c731f1f7d962a1d90c9c9bbcca33",
+      "wrapper_sha256": "727250597ef315717ac263f1245e707d041839147f360ea53ffb8649ce88ead2",
+      "stock_bytes": "fd7bbfa9fd030091000040b9fd7bc1a8c0035fd6",
+      "lean_bytes": "fd7bbfa9fd030091000040b9fd7bc1a8c0035fd6",
+      "comparison": {
+        "bytes": {
+          "equal": true,
+          "left_size": 20,
+          "right_size": 20,
+          "left_sha256": "ae77aa123a0826fd0a7893b1c95dda548c5045b0f71eb740338b6deb8a50f3f5",
+          "right_sha256": "ae77aa123a0826fd0a7893b1c95dda548c5045b0f71eb740338b6deb8a50f3f5",
+          "first_difference": null,
+          "left_context": null,
+          "right_context": null
+        },
+        "relocations_equal": true,
+        "reference_relocations": [],
+        "lean_relocations": [],
+        "exact_code_and_relocations": true
+      },
+      "stock_metadata": {
+        "alignment": 4,
+        "boundary": "stock-compile-subtest",
+        "exception_call_sites": "[]",
+        "exception_table_bytes": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "index": 0,
+        "jit_allocation_performed": false,
+        "name": "%_RNxC13h_dyn_generic12H1XntPkRr2ei",
+        "relocations": [],
+        "stack_maps": "[]",
+        "traps": [],
+        "unwind": "Some(SystemV(UnwindInfo { instructions: [(4, CfaOffset(16)), (4, Offset(29, -16)), (4, Offset(30, -8)), (8, CfaRegister(29))], len: 20 }))"
+      },
+      "stock_repeatable": true,
+      "settings_contract_verified": false,
+      "compiler_source": "preserved6e4 plus2dbedd3b; existing default compiler objects"
+    },
+    {
+      "function": "_RNxC13h_dyn_generic12H1XntPkRr2ei",
+      "cleanup": true,
+      "original_path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/historical-root/home/lee/clifv/.worktrees/stock-cfg-source-20261025/examples/survey/target/fv/plain-leanlink-verified-leanld/tmp/d026607f0214/split/_RNxC13h_dyn_generic12H1XntPkRr2ei.unopt.clif",
+      "original_sha256": "8694301f27cafb80cf1c82f15d09da9260c9c731f1f7d962a1d90c9c9bbcca33",
+      "wrapper_sha256": "727250597ef315717ac263f1245e707d041839147f360ea53ffb8649ce88ead2",
+      "stock_bytes": "fd7bbfa9fd030091000040b9fd7bc1a8c0035fd6",
+      "lean_bytes": "fd7bbfa9fd030091000040b9fd7bc1a8c0035fd6",
+      "comparison": {
+        "bytes": {
+          "equal": true,
+          "left_size": 20,
+          "right_size": 20,
+          "left_sha256": "ae77aa123a0826fd0a7893b1c95dda548c5045b0f71eb740338b6deb8a50f3f5",
+          "right_sha256": "ae77aa123a0826fd0a7893b1c95dda548c5045b0f71eb740338b6deb8a50f3f5",
+          "first_difference": null,
+          "left_context": null,
+          "right_context": null
+        },
+        "relocations_equal": true,
+        "reference_relocations": [],
+        "lean_relocations": [],
+        "exact_code_and_relocations": true
+      },
+      "stock_metadata": {
+        "alignment": 4,
+        "boundary": "stock-compile-subtest",
+        "exception_call_sites": "[]",
+        "exception_table_bytes": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "index": 0,
+        "jit_allocation_performed": false,
+        "name": "%_RNxC13h_dyn_generic12H1XntPkRr2ei",
+        "relocations": [],
+        "stack_maps": "[]",
+        "traps": [],
+        "unwind": "Some(SystemV(UnwindInfo { instructions: [(4, CfaOffset(16)), (4, Offset(29, -16)), (4, Offset(30, -8)), (8, CfaRegister(29))], len: 20 }))"
+      },
+      "stock_repeatable": true,
+      "settings_contract_verified": false,
+      "compiler_source": "preserved6e4 plus2dbedd3b; existing default compiler objects"
+    },
+    {
+      "function": "_RNxC13h_dyn_generic12HkGTRrpKjLDv",
+      "cleanup": false,
+      "original_path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/historical-root/home/lee/clifv/.worktrees/stock-cfg-source-20261025/examples/survey/target/fv/plain-leanlink-verified-leanld/tmp/d026607f0214/split/_RNxC13h_dyn_generic12HkGTRrpKjLDv.unopt.clif",
+      "original_sha256": "1939572a23fad09105e2df9f47edcd783d5fb2c626295b22dc4451a92cbb0e1d",
+      "wrapper_sha256": "1e94a4d391823bf939fff3343689dc04c24ee737099f54714ed771ecb5eba37c",
+      "stock_bytes": "fd7bbfa9fd030091000040b9fd7bc1a8c0035fd6",
+      "lean_bytes": "fd7bbfa9fd030091000040b9fd7bc1a8c0035fd6",
+      "comparison": {
+        "bytes": {
+          "equal": true,
+          "left_size": 20,
+          "right_size": 20,
+          "left_sha256": "ae77aa123a0826fd0a7893b1c95dda548c5045b0f71eb740338b6deb8a50f3f5",
+          "right_sha256": "ae77aa123a0826fd0a7893b1c95dda548c5045b0f71eb740338b6deb8a50f3f5",
+          "first_difference": null,
+          "left_context": null,
+          "right_context": null
+        },
+        "relocations_equal": true,
+        "reference_relocations": [],
+        "lean_relocations": [],
+        "exact_code_and_relocations": true
+      },
+      "stock_metadata": {
+        "alignment": 4,
+        "boundary": "stock-compile-subtest",
+        "exception_call_sites": "[]",
+        "exception_table_bytes": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "index": 0,
+        "jit_allocation_performed": false,
+        "name": "%_RNxC13h_dyn_generic12HkGTRrpKjLDv",
+        "relocations": [],
+        "stack_maps": "[]",
+        "traps": [],
+        "unwind": "Some(SystemV(UnwindInfo { instructions: [(4, CfaOffset(16)), (4, Offset(29, -16)), (4, Offset(30, -8)), (8, CfaRegister(29))], len: 20 }))"
+      },
+      "stock_repeatable": true,
+      "settings_contract_verified": false,
+      "compiler_source": "preserved6e4 plus2dbedd3b; existing default compiler objects"
+    },
+    {
+      "function": "_RNxC13h_dyn_generic12HkGTRrpKjLDv",
+      "cleanup": true,
+      "original_path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/historical-root/home/lee/clifv/.worktrees/stock-cfg-source-20261025/examples/survey/target/fv/plain-leanlink-verified-leanld/tmp/d026607f0214/split/_RNxC13h_dyn_generic12HkGTRrpKjLDv.unopt.clif",
+      "original_sha256": "1939572a23fad09105e2df9f47edcd783d5fb2c626295b22dc4451a92cbb0e1d",
+      "wrapper_sha256": "1e94a4d391823bf939fff3343689dc04c24ee737099f54714ed771ecb5eba37c",
+      "stock_bytes": "fd7bbfa9fd030091000040b9fd7bc1a8c0035fd6",
+      "lean_bytes": "fd7bbfa9fd030091000040b9fd7bc1a8c0035fd6",
+      "comparison": {
+        "bytes": {
+          "equal": true,
+          "left_size": 20,
+          "right_size": 20,
+          "left_sha256": "ae77aa123a0826fd0a7893b1c95dda548c5045b0f71eb740338b6deb8a50f3f5",
+          "right_sha256": "ae77aa123a0826fd0a7893b1c95dda548c5045b0f71eb740338b6deb8a50f3f5",
+          "first_difference": null,
+          "left_context": null,
+          "right_context": null
+        },
+        "relocations_equal": true,
+        "reference_relocations": [],
+        "lean_relocations": [],
+        "exact_code_and_relocations": true
+      },
+      "stock_metadata": {
+        "alignment": 4,
+        "boundary": "stock-compile-subtest",
+        "exception_call_sites": "[]",
+        "exception_table_bytes": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "index": 0,
+        "jit_allocation_performed": false,
+        "name": "%_RNxC13h_dyn_generic12HkGTRrpKjLDv",
+        "relocations": [],
+        "stack_maps": "[]",
+        "traps": [],
+        "unwind": "Some(SystemV(UnwindInfo { instructions: [(4, CfaOffset(16)), (4, Offset(29, -16)), (4, Offset(30, -8)), (8, CfaRegister(29))], len: 20 }))"
+      },
+      "stock_repeatable": true,
+      "settings_contract_verified": false,
+      "compiler_source": "preserved6e4 plus2dbedd3b; existing default compiler objects"
+    }
+  ],
+  "code_and_relocations_exact": 8,
+  "cases": 8,
+  "exporter_sha256": "a2a6ac5b7ee841d122661e96754b5331ed40eb78624e615df42aa6acc08fed3e",
+  "input_adaptation": "A separate wrapper adds only test compile; original source and all original flags stay unchanged.",
+  "scope": "Raw default-production function bytes and relocations against original-settings Cranelift exports. Settings contract and full artifact equivalence are NOT established. No official-suite gain is claimed."
+}

@@ -1,0 +1,6 @@
+✖ [132/132] Building FV.Backend.Proof.IselPrgTabTF (1589s)
+trace: .> LEAN_PATH=/home/lee/clifv/.worktrees/stock-cfg-source-20261025/.lake/packages/repl/.lake/build/lib/lean:/home/lee/clifv/.worktrees/stock-cfg-source-20261025/.lake/build/lib/lean /home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean -Dlinter.unusedSimpArgs=false -Dlinter.unusedVariables=false -Dlinter.unnecessarySimpa=false -Dlinter.unusedSectionVars=false -Dlinter.defProp=false -Dlinter.constructorNameAsVariable=false /home/lee/clifv/.worktrees/stock-cfg-source-20261025/FV/Backend/Proof/IselPrgTabTF.lean -o /home/lee/clifv/.worktrees/stock-cfg-source-20261025/.lake/build/lib/lean/FV/Backend/Proof/IselPrgTabTF.olean -i /home/lee/clifv/.worktrees/stock-cfg-source-20261025/.lake/build/lib/lean/FV/Backend/Proof/IselPrgTabTF.ilean -c /home/lee/clifv/.worktrees/stock-cfg-source-20261025/.lake/build/ir/FV/Backend/Proof/IselPrgTabTF.c --setup /home/lee/clifv/.worktrees/stock-cfg-source-20261025/.lake/build/ir/FV/Backend/Proof/IselPrgTabTF.setup.json --json
+error: Lean exited with code 137
+Some required targets logged failures:
+- FV.Backend.Proof.IselPrgTabTF
+error: build failed

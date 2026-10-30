@@ -1,0 +1,12 @@
+{
+  "utc": "2026-10-30T21:43:45.346988+00:00",
+  "worker_o_total_gib": 16,
+  "worker_a_total_gib": 16,
+  "current_capture_pid": 2219236,
+  "current_capture_unit": "fvb-2051139-7-FV.Backend.Proof.IselPrgTabT.scope",
+  "current_capture_live_cap_gib": 8,
+  "previous_capture_cap_gib": 4,
+  "production_new_budget_gib": 8,
+  "capture_next_budget_gib": 8,
+  "reason": "IselPrgTabTF exited137 at4GiB: peak4294967296,oom1,oom_kill1. Preserve healthy table outputs; never repeat that4GiB attempt."
+}
