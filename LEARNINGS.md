@@ -52,6 +52,7 @@ None of these weaken what is proven: every compiler theorem still prints only `p
 - **Problem:** after `ArmState` gained a field, `stlxr_congr` in `LoopRun.lean` ran out of heartbeats even at 8M: `assumption` was unfolding the state structure.
 - **Trick:** run the tactic's `assumption` with reducible transparency.
 - **Effect:** the file compiles in about 30 s.
+- **Again in `RegallocAtomic`:** `sw_tac_c`'s `assumption` and `refine SameWorld.w_left/w_right/w_both'` fail on `SameWorld F (write_mem_bytes 8 a (x.cast h) s) (write_mem_bytes 8 a x …)` only after unfolding `write_mem_bytes` into `ArmState` literals (each projection ~616k times), before `sw_wmb_cast` applies; the cost is exponential in the byte count (4 bytes: 11 M heartbeats). With those alternatives at reducible transparency, `corr_storeRelease` 33.2 G → 0.39 G heartbeats for the module; `RegallocAtomic` 815 s / 8.3 GB (record) → 16 s / 0.4 GB (workstation).
 
 ### No `first | exact a | exact b …` over goals mentioning a big definition
 - **Problem:** in `synthTable_le` (`FV/Link/Ld/RelocTotal.lean`), `first | exact a | exact b …` over goals that mention lean-ld's planner `layPre o st g` ran out of heartbeats (over 200000): each failed `exact` tried to unify by unfolding the whole planner.

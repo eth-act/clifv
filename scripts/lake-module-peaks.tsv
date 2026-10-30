@@ -340,7 +340,7 @@ FV.Backend.Proof.PrepareSound	1742	2
 FV.Backend.Proof.RefinesCSem	2436	34
 FV.Backend.Proof.RefinesInsts	4555	98
 FV.Backend.Proof.RefinesInsts2	2707	24
-FV.Backend.Proof.RegallocAtomic	8252	815
+FV.Backend.Proof.RegallocAtomic	410	16
 FV.Backend.Proof.RegallocCSem	1735	4
 FV.Backend.Proof.RegallocCSemWorld	2026	10
 FV.Backend.Proof.RegallocCover	2515	72
