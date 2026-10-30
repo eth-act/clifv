@@ -151,7 +151,7 @@ theorem sretRet_valClass_int {f : Clif.Function} {ctx : Ctx} {ranges : Array (Na
       | some q =>
         obtain ⟨x, t⟩ := q
         simp only [hp, Option.map_some, Option.toList_some, List.mem_singleton] at hy
-        subst hy
+        rw [hy]
         obtain ⟨hil, hpi, -⟩ := List.findIdx?_eq_some_iff_getElem.mp hi
         have hB0 : f.blocks[0]? = some b0 := by rw [← List.head?_eq_getElem?]; exact hb0
         rw [(entryParams_factsT [] hd hec hb hB0).2.2 i x t _ hp (List.getElem?_eq_getElem hil),
