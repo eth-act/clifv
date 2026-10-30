@@ -145,7 +145,7 @@ theorem lower_rules_avoid : (program.rulesOf 686).all (fun r => lowerDiverging.c
     (ruleCalls r).all (fun u => !disallowed.contains u)) = true := by
   decide +kernel
 
-private theorem scoped_of_calls {r : Rule} (h : (ruleCalls r).all (fun u => !disallowed.contains u) = true) :
+theorem scoped_of_calls {r : Rule} (h : (ruleCalls r).all (fun u => !disallowed.contains u) = true) :
     RuleScoped (fun t => t ∉ disallowed) r := by
   have contains : ∀ u ∈ ruleCalls r, u ∉ disallowed := by
     intro u inside

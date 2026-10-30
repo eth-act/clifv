@@ -137,15 +137,15 @@ structure EvaluationScopedProjectsInv {V σ τ : Type} (p : Program) (sem : Sem 
   term : ∀ ty t vs, allowed t →
     ProjectsInv project inv (applyTerm p (sem.restate ctor extract) cfg n ty t vs)
       (applyTerm p sem cfg n ty t vs)
-  rule : ∀ r vs, RuleScoped allowed r ∨ ArgsFail p sem r vs →
+  rule : ∀ r vs, IfLetsScoped allowed r.iflets ∨ ArgsFail p sem r vs →
     ProjectsInv project inv (matchRule p (sem.restate ctor extract) cfg n r vs) (matchRule p sem cfg n r vs)
   iflets : ∀ ils env, IfLetsScoped allowed ils →
     ProjectsInv project inv (matchIfLets p (sem.restate ctor extract) cfg n ils env)
       (matchIfLets p sem cfg n ils env)
-  tryRule : ∀ r vs, RuleScoped allowed r ∨ ArgsFail p sem r vs →
+  tryRule : ∀ r vs, IfLetsScoped allowed r.iflets ∨ ArgsFail p sem r vs →
     ProjectsInv project inv (Interp.tryRule p (sem.restate ctor extract) cfg n r vs)
       (Interp.tryRule p sem cfg n r vs)
-  select : ∀ t rs vs, (∀ r ∈ rs, RuleScoped allowed r ∨ ArgsFail p sem r vs) →
+  select : ∀ t rs vs, (∀ r ∈ rs, IfLetsScoped allowed r.iflets ∨ ArgsFail p sem r vs) →
     ProjectsInv project inv (selectRule p (sem.restate ctor extract) cfg n t rs vs)
       (selectRule p sem cfg n t rs vs)
 
@@ -288,7 +288,8 @@ theorem evaluation_scoped_restate_inv {V σ τ : Type} (p : Program) (sem : Sem 
             split
             · exact inv_throw project inv _
             · have hrules := hscope.rules t term hs ht flags ex hk vs
-              apply inv_bind project inv (ih.select term (p.rulesOf t) vs hrules)
+              apply inv_bind project inv
+                (ih.select term (p.rulesOf t) vs (fun r hr => (hrules r hr).imp_left And.left))
               intro start trace result next tr _ hselect
               cases result with
               | none =>
@@ -317,7 +318,7 @@ theorem evaluation_scoped_restate_inv {V σ τ : Type} (p : Program) (sem : Sem 
       | none => exact inv_pure project inv _
       | some env =>
         rcases hs with hs | hfail
-        · exact ih.iflets r.iflets env hs.1
+        · exact ih.iflets r.iflets env hs
         · exfalso
           cases hm : matchArgs p sem (project st) r.args vs (Array.replicate r.vars.length none) with
           | error e => rw [hm] at hargs; cases hargs
@@ -393,7 +394,8 @@ theorem applyTerm_internal_restate_inv {V σ τ : Type} (p : Program) (sem : Sem
   dsimp only
   split
   · exact inv_throw project inv _
-  · apply inv_bind project inv (ih.select term (p.rulesOf t) vs hrules)
+  · apply inv_bind project inv
+      (ih.select term (p.rulesOf t) vs (fun r hr => (hrules r hr).imp_left And.left))
     intro start trace' result next' tr' _ hselect
     cases result with
     | none =>
@@ -409,6 +411,21 @@ theorem applyTerm_internal_restate_inv {V σ τ : Type} (p : Program) (sem : Sem
       | none => exact inv_pure project inv _
       | some v =>
         exact inv_bind_all project inv (inv_fire project inv r.id) (fun _ => inv_pure project inv _)
+
+/-- Rule selection agrees on arguments for which every candidate rule has `if-let`s in scope or
+cannot match them; the selected rule's right-hand side may be out of scope. -/
+theorem selectRule_restate_inv {V σ τ : Type} (p : Program) (sem : Sem V σ)
+    (cfg : Config) (hc : cfg.checkOverlap = false) (project : τ → σ) (inv : τ → Prop)
+    (ctor : Term → List V → τ → ExtResult (V × τ))
+    (extract : Term → V → τ → ExtResult (List V)) (allowed : TermId → Prop)
+    (hscope : ProjectionScopeInv p sem project inv ctor allowed)
+    (hextract : ∀ t v st, extract t v st = sem.extract t v (project st)) (n : Nat) (term : Term)
+    {rs : List Rule} {vs : List V}
+    (hrules : ∀ r ∈ rs, IfLetsScoped allowed r.iflets ∨ ArgsFail p sem r vs) :
+    ProjectsInv project inv (selectRule p (sem.restate ctor extract) cfg n term rs vs)
+      (selectRule p sem cfg n term rs vs) :=
+  (evaluation_scoped_restate_inv p sem cfg hc project inv ctor extract allowed hscope hextract
+    n).select term rs vs hrules
 
 /-- Every unconditional scope is a guarded scope with the trivial invariant. -/
 theorem ProjectionScope.toInv {V σ τ : Type} {p : Program} {sem : Sem V σ} {project : τ → σ}
