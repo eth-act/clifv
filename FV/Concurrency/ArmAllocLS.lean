@@ -2387,7 +2387,9 @@ theorem fpuLoad_stack_form {F : BitVec 64 → Prop} {ctx : FnCtx} {sz : ScalarSi
     intro r0; rcases hm with ⟨o, rfl⟩ | ⟨o, rfl⟩ | ⟨o, rfl⟩ <;> rfl
   have hlines : ∀ (r0 : Reg) ps, (MInst.fpuLoad sz r0 m fl).lines ctx ps =
       .ok ([.ins (.fpuLoad sz r0 m') fl.trapCode], ps) := by
-    intro r0 ps; simp [MInst.lines, hf, bind, Except.bind, pure, Except.pure]
+    intro r0 ps
+    rcases hm with ⟨o, rfl⟩ | ⟨o, rfl⟩ | ⟨o, rfl⟩ <;>
+      simp [MInst.lines, hf, bind, Except.bind, pure, Except.pure]
   have hB : ∃ B, (B = .sp ∨ B = .x 29) ∧ ((∃ o, m' = .unscaled B o) ∨ ∃ k, m' = .unsignedOffset B k) := by
     rcases hsh with (⟨o, rfl⟩ | ⟨k, rfl⟩) | ⟨o, rfl⟩ | ⟨k, rfl⟩
     · exact ⟨_, .inl rfl, .inl ⟨_, rfl⟩⟩
