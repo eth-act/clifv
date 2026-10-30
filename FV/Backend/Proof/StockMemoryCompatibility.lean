@@ -16,7 +16,7 @@ theorem previous_file_exact {m : Type → Type} [Monad m]
       compileFileParameterCfgNIWhen enabled allocate pf prior cleanup := by
   cases enabled <;> simp [compileFileMemoryNIWhen,none]
 
-/-- A nonempty, successfully parsed ordinary return program inhabits the
+/-- A nonempty ordinary return input inhabits the
 compatibility premise. The theorem holds for every allocator, not only this
 witness's choice. -/
 theorem previous_file_exact_witness :
@@ -25,10 +25,15 @@ theorem previous_file_exact_witness :
       (pf.funcs.any fun p => p.func.toOption.any eligible) = false ∧
       compileFileMemoryNIWhen (m := Id) true (fun _ => pure #[]) pf [] true =
         compileFileParameterCfgNIWhen (m := Id) true (fun _ => pure #[]) pf [] true := by
-  let pf := Clif.parseFile "function %retained(i64) -> i64 system_v {\nblock0(v0: i64):\n    return v0\n}\n"
-  have count : pf.funcs.length = 1 := by decide +kernel
-  have parsed : pf.funcs.all (·.func.isOk) = true := by decide +kernel
-  have absent : (pf.funcs.any fun p => p.func.toOption.any eligible) = false := by decide +kernel
+  let f : Clif.Function := {
+    name := "retained"
+    sig := { params := [⟨.i64,.none,.normal⟩], returns := [⟨.i64,.none,.normal⟩] }
+    blocks := [{ id := 0, params := [(0,.i64)], term := .ret [0] }] }
+  let pf : Clif.ParsedFile := {
+    header := [], funcs := [{ name := f.name, func := .ok f, runLines := 0 }] }
+  have count : pf.funcs.length = 1 := by rfl
+  have parsed : pf.funcs.all (·.func.isOk) = true := by rfl
+  have absent : (pf.funcs.any fun p => p.func.toOption.any eligible) = false := by rfl
   exact ⟨pf,count,parsed,absent,previous_file_exact true (fun _ => pure #[]) pf [] true absent⟩
 
 end Backend.Stock.Memory
