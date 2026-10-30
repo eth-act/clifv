@@ -32,10 +32,11 @@ open Backend Backend.Proof Backend.Proof.Flow Backend.Proof.Driver Isle Isle.Int
 /-! ## The driver's ISLE calls over float-capable contexts -/
 
 set_option maxRecDepth 100000 in
-/-- **A statement's lowering** keeps `ClsIs` over a float-capable context; its result (of an
-instruction with results) has registers of their classes. -/
-theorem stmt_clsT {f : Clif.Function} {ctx : Ctx} (hctx : CtxInvT f ctx) (hsc : InstScopeT ctx)
-    (hx : f.externs.all (Compile.sigE ·.2.sig) = true) (hcl : Cov.Clean ctx)
+/-- **A statement's lowering** keeps `ClsIs` over a float-capable context whose non-root `lower`
+rules never match (`LowerNoMatch`); its result (of an instruction with results) has registers of
+their classes. -/
+theorem stmt_clsG {f : Clif.Function} {ctx : Ctx} (hctx : CtxInvT f ctx) (hnm : LowerNoMatch ctx)
+    (hcl : Cov.Clean ctx)
     {ii : Nat} {info : IInfo} {inst : Clif.Inst} (hi : ctx.insts[ii]? = some info)
     (hc : info.clif = some inst) {s : LState} {out : Option V} {s' : LState} {tr : List Isle.RuleId}
     (h : runTerm ctx "lower" [.inst ii] s = .ok (out, s', tr)) (hIs : ClsIs ctx s s) :
@@ -51,7 +52,7 @@ theorem stmt_clsT {f : Clif.Function} {ctx : Ctx} (hctx : CtxInvT f ctx) (hsc : 
     have hf := List.all_eq_true.mp clsRoot_ok rl hrl
     simp only [clsRootOk, Bool.or_eq_true, Bool.not_eq_true', Bool.and_eq_true] at hf
     rcases hf with hcr | ⟨ha, -⟩
-    · exact .inr (lower_nonroot_nomatchT hctx hsc hx hi hc hrl hcr {})
+    · exact .inr (hnm ii info inst hi hc rl hrl hcr {})
     · exact .inl ha
   refine ⟨(sa.root T.lower.ret T.lower.id T.lower _ _ [⟨1, true⟩] FA.top [.inst ii] s #[] out s'
     tr' data_program.t686 term_686_kind hrulesTop (holds_inst_cls s ii) hIs happ).1, ?_⟩
@@ -64,7 +65,7 @@ theorem stmt_clsT {f : Clif.Function} {ctx : Ctx} (hctx : CtxInvT f ctx) (hsc : 
     have hop := List.all_eq_true.mp lower_ops rl hrl
     simp only [clsRootOk, Bool.or_eq_true, Bool.not_eq_true', Bool.and_eq_true, beq_iff_eq] at hf
     rcases hf with hcr | ⟨-, h587 | ha⟩
-    · exact .inr (lower_nonroot_nomatchT hctx hsc hx hi hc hrl hcr {})
+    · exact .inr (hnm ii info inst hi hc rl hrl hcr {})
     · refine .inr fun m s0 env s1 hm => hres ?_
       simp only [h587, bne_self_eq_false, Bool.false_or, Bool.and_eq_true, beq_iff_eq] at hop
       have hn := pinned_namesT hctx hi hc hop.1 kind_nullAry kind_nop (by decide) hm
@@ -78,6 +79,16 @@ theorem stmt_clsT {f : Clif.Function} {ctx : Ctx} (hctx : CtxInvT f ctx) (hsc : 
     · exact .inl ha
   exact (sa.root T.lower.ret T.lower.id T.lower _ _ [⟨1, true⟩] ⟨1, false⟩ [.inst ii] s #[] out s'
     tr' data_program.t686 term_686_kind hrules (holds_inst_cls s ii) hIs happ).2 v hout (by decide)
+
+/-- **A statement's lowering** keeps `ClsIs` over a float-capable context; its result (of an
+instruction with results) has registers of their classes. -/
+theorem stmt_clsT {f : Clif.Function} {ctx : Ctx} (hctx : CtxInvT f ctx) (hsc : InstScopeT ctx)
+    (hx : f.externs.all (Compile.sigE ·.2.sig) = true) (hcl : Cov.Clean ctx)
+    {ii : Nat} {info : IInfo} {inst : Clif.Inst} (hi : ctx.insts[ii]? = some info)
+    (hc : info.clif = some inst) {s : LState} {out : Option V} {s' : LState} {tr : List Isle.RuleId}
+    (h : runTerm ctx "lower" [.inst ii] s = .ok (out, s', tr)) (hIs : ClsIs ctx s s) :
+    ClsIs ctx s s' ∧ ∀ v, out = some v → info.results ≠ [] → GoodV s'.classes v :=
+  stmt_clsG hctx (lowerNoMatch_ofT hctx hsc hx) hcl hi hc h hIs
 
 set_option maxRecDepth 100000 in
 /-- **A terminator's lowering** keeps `ClsIs` (`termCall_cls` without a context invariant). -/
@@ -231,8 +242,8 @@ theorem edgeBlocksT_shape {f : Clif.Function} {ctx : Ctx} {B : Clif.Block} {L : 
 
 /-! ## The lowering -/
 
-/-- **`lowerFunction`'s VCode meets `ClassesOkM`** (typed scope, `ResClassOk`). -/
-theorem classesOkM_lowerT {f : Clif.Function} {vc : VCode} (hs : LowerScopeT f)
+/-- **`lowerFunction`'s VCode meets `ClassesOkM`** (float scope, `ResClassOk`). -/
+theorem classesOkM_lowerTF {f : Clif.Function} {vc : VCode} (hs : LowerScopeTF f)
     (hrc : ResClassOk f) (h : lowerFunction f = .ok vc) : ClassesOkM vc := by
   obtain ⟨ctx, ranges, st0, bl, hb, hl, hvb, -, hlf⟩ := lowerFunction_runT hs.externsE h
   obtain ⟨ctx', ranges', st0', pb, d, blk, hb', -, hI, hvc⟩ := loop_runT hs.externsE h
@@ -247,12 +258,10 @@ theorem classesOkM_lowerT {f : Clif.Function} {vc : VCode} (hs : LowerScopeT f)
     exact Option.some.inj this
   subst hblk
   have hcls : vc.classes = d.st.classes := by rw [hvc]; rfl
-  have hctx : CtxInvT f ctx := ctxInvT_of hs hb
-  have hsc : InstScopeT ctx := (ctxSpec_of hb).instScopeT hs.subsetT
-  have hx : f.externs.all (Compile.sigE ·.2.sig) = true := by
-    have h := hs.subsetT
-    simp only [Compile.functionET, Bool.and_eq_true] at h
-    exact h.1.1.1.2
+  have hctx : CtxInvT f ctx := ctxInvT_ofF hs hb
+  have hnm : LowerNoMatch ctx := fun _ _ _ hi hc _ hr hroot =>
+    lower_nonroot_nomatchTF_calls hctx ((ctxSpec_of hb).instScopeTF hs.subsetTF)
+      (callsE_of_externs hs.externsE ctx) hi hc hr hroot
   have hcl : Cov.Clean ctx := Cov.clean_of_build hb
   have hsp := ctxSpec_of hb
   have hcf := hsp.facts
@@ -296,7 +305,7 @@ theorem classesOkM_lowerT {f : Clif.Function} {vc : VCode} (hs : LowerScopeT f)
     rw [hstart bi L hL] at hrun
     have hLm := hLs L (List.mem_of_getElem? hL)
     have hslm := hLm.2.2.1 sl (List.mem_of_getElem? hsl)
-    obtain ⟨hI', hout⟩ := stmt_clsT hctx hsc hx hcl hi hic hrun (hIs sl.st hslm.1)
+    obtain ⟨hI', hout⟩ := stmt_clsG hctx hnm hcl hi hic hrun (hIs sl.st hslm.1)
     obtain ⟨ms, hms, hall⟩ := hI'.emitted
     rw [hemp L (List.mem_of_getElem? hL) sl (List.mem_of_getElem? hsl)] at hms
     refine ⟨fun m hm => ?_, fun hne => fun r hr => regCls_step hslm.2
@@ -513,6 +522,11 @@ theorem classesOkM_lowerT {f : Clif.Function} {vc : VCode} (hs : LowerScopeT f)
         have hg := hR _ hg0.1
         rw [resolve_vreg] at hg ⊢
         exact ⟨_, _, rfl, regCls_vreg.mp hg⟩
+
+/-- **`lowerFunction`'s VCode meets `ClassesOkM`** (typed scope, `ResClassOk`). -/
+theorem classesOkM_lowerT {f : Clif.Function} {vc : VCode} (hs : LowerScopeT f)
+    (hrc : ResClassOk f) (h : lowerFunction f = .ok vc) : ClassesOkM vc :=
+  classesOkM_lowerTF hs.toTF hrc h
 
 /-- **`ClassesHyp` over the typed scope**: on `Dominated`, `LowerScopeT` input whose lowering
 returns results in vregs of their types' classes (`ResClassOk`), the prepared code's vreg classes

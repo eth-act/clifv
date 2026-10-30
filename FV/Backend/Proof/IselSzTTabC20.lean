@@ -18,6 +18,364 @@ namespace Backend.Proof.CovT
 
 open Backend Backend.Proof Backend.Proof.Driver Isle Isle.Aarch64
 
+theorem tgCTabT13_len : (tgCTabT13).length ≤ 88 * 1 := by decide +kernel
+
+theorem tgCTabT13_p0 : (((tgCTabT13).drop (0 * 1)).take 1).all tgEntryOkT = true := by
+  decide +kernel
+
+theorem tgCTabT13_p1 : (((tgCTabT13).drop (1 * 1)).take 1).all tgEntryOkT = true := by
+  decide +kernel
+
+theorem tgCTabT13_p2 : (((tgCTabT13).drop (2 * 1)).take 1).all tgEntryOkT = true := by
+  decide +kernel
+
+theorem tgCTabT13_p3 : (((tgCTabT13).drop (3 * 1)).take 1).all tgEntryOkT = true := by
+  decide +kernel
+
+theorem tgCTabT13_p4 : (((tgCTabT13).drop (4 * 1)).take 1).all tgEntryOkT = true := by
+  decide +kernel
+
+theorem tgCTabT13_p5 : (((tgCTabT13).drop (5 * 1)).take 1).all tgEntryOkT = true := by
+  decide +kernel
+
+theorem tgCTabT13_p6 : (((tgCTabT13).drop (6 * 1)).take 1).all tgEntryOkT = true := by
+  decide +kernel
+
+theorem tgCTabT13_p7 : (((tgCTabT13).drop (7 * 1)).take 1).all tgEntryOkT = true := by
+  decide +kernel
+
+theorem tgCTabT13_p8 : (((tgCTabT13).drop (8 * 1)).take 1).all tgEntryOkT = true := by
+  decide +kernel
+
+theorem tgCTabT13_p9 : (((tgCTabT13).drop (9 * 1)).take 1).all tgEntryOkT = true := by
+  decide +kernel
+
+theorem tgCTabT13_p10 : (((tgCTabT13).drop (10 * 1)).take 1).all tgEntryOkT = true := by
+  decide +kernel
+
+theorem tgCTabT13_p11 : (((tgCTabT13).drop (11 * 1)).take 1).all tgEntryOkT = true := by
+  decide +kernel
+
+theorem tgCTabT13_p12 : (((tgCTabT13).drop (12 * 1)).take 1).all tgEntryOkT = true := by
+  decide +kernel
+
+theorem tgCTabT13_p13 : (((tgCTabT13).drop (13 * 1)).take 1).all tgEntryOkT = true := by
+  decide +kernel
+
+theorem tgCTabT13_p14 : (((tgCTabT13).drop (14 * 1)).take 1).all tgEntryOkT = true := by
+  decide +kernel
+
+theorem tgCTabT13_p15 : (((tgCTabT13).drop (15 * 1)).take 1).all tgEntryOkT = true := by
+  decide +kernel
+
+theorem tgCTabT13_p16 : (((tgCTabT13).drop (16 * 1)).take 1).all tgEntryOkT = true := by
+  decide +kernel
+
+theorem tgCTabT13_p17 : (((tgCTabT13).drop (17 * 1)).take 1).all tgEntryOkT = true := by
+  decide +kernel
+
+theorem tgCTabT13_p18 : (((tgCTabT13).drop (18 * 1)).take 1).all tgEntryOkT = true := by
+  decide +kernel
+
+theorem tgCTabT13_p19 : (((tgCTabT13).drop (19 * 1)).take 1).all tgEntryOkT = true := by
+  decide +kernel
+
+theorem tgCTabT13_p20 : (((tgCTabT13).drop (20 * 1)).take 1).all tgEntryOkT = true := by
+  decide +kernel
+
+theorem tgCTabT13_p21 : (((tgCTabT13).drop (21 * 1)).take 1).all tgEntryOkT = true := by
+  decide +kernel
+
+theorem tgCTabT13_p22 : (((tgCTabT13).drop (22 * 1)).take 1).all tgEntryOkT = true := by
+  decide +kernel
+
+theorem tgCTabT13_p23 : (((tgCTabT13).drop (23 * 1)).take 1).all tgEntryOkT = true := by
+  decide +kernel
+
+theorem tgCTabT13_p24 : (((tgCTabT13).drop (24 * 1)).take 1).all tgEntryOkT = true := by
+  decide +kernel
+
+theorem tgCTabT13_p25 : (((tgCTabT13).drop (25 * 1)).take 1).all tgEntryOkT = true := by
+  decide +kernel
+
+theorem tgCTabT13_p26 : (((tgCTabT13).drop (26 * 1)).take 1).all tgEntryOkT = true := by
+  decide +kernel
+
+theorem tgCTabT13_p27 : (((tgCTabT13).drop (27 * 1)).take 1).all tgEntryOkT = true := by
+  decide +kernel
+
+theorem tgCTabT13_p28 : (((tgCTabT13).drop (28 * 1)).take 1).all tgEntryOkT = true := by
+  decide +kernel
+
+theorem tgCTabT13_p29 : (((tgCTabT13).drop (29 * 1)).take 1).all tgEntryOkT = true := by
+  decide +kernel
+
+theorem tgCTabT13_p30 : (((tgCTabT13).drop (30 * 1)).take 1).all tgEntryOkT = true := by
+  decide +kernel
+
+theorem tgCTabT13_p31 : (((tgCTabT13).drop (31 * 1)).take 1).all tgEntryOkT = true := by
+  decide +kernel
+
+theorem tgCTabT13_p32 : (((tgCTabT13).drop (32 * 1)).take 1).all tgEntryOkT = true := by
+  decide +kernel
+
+theorem tgCTabT13_p33 : (((tgCTabT13).drop (33 * 1)).take 1).all tgEntryOkT = true := by
+  decide +kernel
+
+theorem tgCTabT13_p34 : (((tgCTabT13).drop (34 * 1)).take 1).all tgEntryOkT = true := by
+  decide +kernel
+
+theorem tgCTabT13_p35 : (((tgCTabT13).drop (35 * 1)).take 1).all tgEntryOkT = true := by
+  decide +kernel
+
+theorem tgCTabT13_p36 : (((tgCTabT13).drop (36 * 1)).take 1).all tgEntryOkT = true := by
+  decide +kernel
+
+theorem tgCTabT13_p37 : (((tgCTabT13).drop (37 * 1)).take 1).all tgEntryOkT = true := by
+  decide +kernel
+
+theorem tgCTabT13_p38 : (((tgCTabT13).drop (38 * 1)).take 1).all tgEntryOkT = true := by
+  decide +kernel
+
+theorem tgCTabT13_p39 : (((tgCTabT13).drop (39 * 1)).take 1).all tgEntryOkT = true := by
+  decide +kernel
+
+theorem tgCTabT13_p40 : (((tgCTabT13).drop (40 * 1)).take 1).all tgEntryOkT = true := by
+  decide +kernel
+
+theorem tgCTabT13_p41 : (((tgCTabT13).drop (41 * 1)).take 1).all tgEntryOkT = true := by
+  decide +kernel
+
+theorem tgCTabT13_p42 : (((tgCTabT13).drop (42 * 1)).take 1).all tgEntryOkT = true := by
+  decide +kernel
+
+theorem tgCTabT13_p43 : (((tgCTabT13).drop (43 * 1)).take 1).all tgEntryOkT = true := by
+  decide +kernel
+
+theorem tgCTabT13_p44 : (((tgCTabT13).drop (44 * 1)).take 1).all tgEntryOkT = true := by
+  decide +kernel
+
+theorem tgCTabT13_p45 : (((tgCTabT13).drop (45 * 1)).take 1).all tgEntryOkT = true := by
+  decide +kernel
+
+theorem tgCTabT13_p46 : (((tgCTabT13).drop (46 * 1)).take 1).all tgEntryOkT = true := by
+  decide +kernel
+
+theorem tgCTabT13_p47 : (((tgCTabT13).drop (47 * 1)).take 1).all tgEntryOkT = true := by
+  decide +kernel
+
+theorem tgCTabT13_p48 : (((tgCTabT13).drop (48 * 1)).take 1).all tgEntryOkT = true := by
+  decide +kernel
+
+theorem tgCTabT13_p49 : (((tgCTabT13).drop (49 * 1)).take 1).all tgEntryOkT = true := by
+  decide +kernel
+
+theorem tgCTabT13_p50 : (((tgCTabT13).drop (50 * 1)).take 1).all tgEntryOkT = true := by
+  decide +kernel
+
+theorem tgCTabT13_p51 : (((tgCTabT13).drop (51 * 1)).take 1).all tgEntryOkT = true := by
+  decide +kernel
+
+theorem tgCTabT13_p52 : (((tgCTabT13).drop (52 * 1)).take 1).all tgEntryOkT = true := by
+  decide +kernel
+
+theorem tgCTabT13_p53 : (((tgCTabT13).drop (53 * 1)).take 1).all tgEntryOkT = true := by
+  decide +kernel
+
+theorem tgCTabT13_p54 : (((tgCTabT13).drop (54 * 1)).take 1).all tgEntryOkT = true := by
+  decide +kernel
+
+theorem tgCTabT13_p55 : (((tgCTabT13).drop (55 * 1)).take 1).all tgEntryOkT = true := by
+  decide +kernel
+
+theorem tgCTabT13_p56 : (((tgCTabT13).drop (56 * 1)).take 1).all tgEntryOkT = true := by
+  decide +kernel
+
+theorem tgCTabT13_p57 : (((tgCTabT13).drop (57 * 1)).take 1).all tgEntryOkT = true := by
+  decide +kernel
+
+theorem tgCTabT13_p58 : (((tgCTabT13).drop (58 * 1)).take 1).all tgEntryOkT = true := by
+  decide +kernel
+
+theorem tgCTabT13_p59 : (((tgCTabT13).drop (59 * 1)).take 1).all tgEntryOkT = true := by
+  decide +kernel
+
+theorem tgCTabT13_p60 : (((tgCTabT13).drop (60 * 1)).take 1).all tgEntryOkT = true := by
+  decide +kernel
+
+theorem tgCTabT13_p61 : (((tgCTabT13).drop (61 * 1)).take 1).all tgEntryOkT = true := by
+  decide +kernel
+
+theorem tgCTabT13_p62 : (((tgCTabT13).drop (62 * 1)).take 1).all tgEntryOkT = true := by
+  decide +kernel
+
+theorem tgCTabT13_p63 : (((tgCTabT13).drop (63 * 1)).take 1).all tgEntryOkT = true := by
+  decide +kernel
+
+theorem tgCTabT13_p64 : (((tgCTabT13).drop (64 * 1)).take 1).all tgEntryOkT = true := by
+  decide +kernel
+
+theorem tgCTabT13_p65 : (((tgCTabT13).drop (65 * 1)).take 1).all tgEntryOkT = true := by
+  decide +kernel
+
+theorem tgCTabT13_p66 : (((tgCTabT13).drop (66 * 1)).take 1).all tgEntryOkT = true := by
+  decide +kernel
+
+theorem tgCTabT13_p67 : (((tgCTabT13).drop (67 * 1)).take 1).all tgEntryOkT = true := by
+  decide +kernel
+
+theorem tgCTabT13_p68 : (((tgCTabT13).drop (68 * 1)).take 1).all tgEntryOkT = true := by
+  decide +kernel
+
+theorem tgCTabT13_p69 : (((tgCTabT13).drop (69 * 1)).take 1).all tgEntryOkT = true := by
+  decide +kernel
+
+theorem tgCTabT13_p70 : (((tgCTabT13).drop (70 * 1)).take 1).all tgEntryOkT = true := by
+  decide +kernel
+
+theorem tgCTabT13_p71 : (((tgCTabT13).drop (71 * 1)).take 1).all tgEntryOkT = true := by
+  decide +kernel
+
+theorem tgCTabT13_p72 : (((tgCTabT13).drop (72 * 1)).take 1).all tgEntryOkT = true := by
+  decide +kernel
+
+theorem tgCTabT13_p73 : (((tgCTabT13).drop (73 * 1)).take 1).all tgEntryOkT = true := by
+  decide +kernel
+
+theorem tgCTabT13_p74 : (((tgCTabT13).drop (74 * 1)).take 1).all tgEntryOkT = true := by
+  decide +kernel
+
+theorem tgCTabT13_p75 : (((tgCTabT13).drop (75 * 1)).take 1).all tgEntryOkT = true := by
+  decide +kernel
+
+theorem tgCTabT13_p76 : (((tgCTabT13).drop (76 * 1)).take 1).all tgEntryOkT = true := by
+  decide +kernel
+
+theorem tgCTabT13_p77 : (((tgCTabT13).drop (77 * 1)).take 1).all tgEntryOkT = true := by
+  decide +kernel
+
+theorem tgCTabT13_p78 : (((tgCTabT13).drop (78 * 1)).take 1).all tgEntryOkT = true := by
+  decide +kernel
+
+theorem tgCTabT13_p79 : (((tgCTabT13).drop (79 * 1)).take 1).all tgEntryOkT = true := by
+  decide +kernel
+
+theorem tgCTabT13_p80 : (((tgCTabT13).drop (80 * 1)).take 1).all tgEntryOkT = true := by
+  decide +kernel
+
+theorem tgCTabT13_p81 : (((tgCTabT13).drop (81 * 1)).take 1).all tgEntryOkT = true := by
+  decide +kernel
+
+theorem tgCTabT13_p82 : (((tgCTabT13).drop (82 * 1)).take 1).all tgEntryOkT = true := by
+  decide +kernel
+
+theorem tgCTabT13_p83 : (((tgCTabT13).drop (83 * 1)).take 1).all tgEntryOkT = true := by
+  decide +kernel
+
+theorem tgCTabT13_p84 : (((tgCTabT13).drop (84 * 1)).take 1).all tgEntryOkT = true := by
+  decide +kernel
+
+theorem tgCTabT13_p85 : (((tgCTabT13).drop (85 * 1)).take 1).all tgEntryOkT = true := by
+  decide +kernel
+
+theorem tgCTabT13_p86 : (((tgCTabT13).drop (86 * 1)).take 1).all tgEntryOkT = true := by
+  decide +kernel
+
+theorem tgCTabT13_p87 : (((tgCTabT13).drop (87 * 1)).take 1).all tgEntryOkT = true := by
+  decide +kernel
+
+theorem tgCTabT13_ok : (tgCTabT13).all tgEntryOkT = true :=
+  all_of_chunks _ _ 1 88 tgCTabT13_len fun c hc => match c, hc with
+    | 0, _ => tgCTabT13_p0
+    | 1, _ => tgCTabT13_p1
+    | 2, _ => tgCTabT13_p2
+    | 3, _ => tgCTabT13_p3
+    | 4, _ => tgCTabT13_p4
+    | 5, _ => tgCTabT13_p5
+    | 6, _ => tgCTabT13_p6
+    | 7, _ => tgCTabT13_p7
+    | 8, _ => tgCTabT13_p8
+    | 9, _ => tgCTabT13_p9
+    | 10, _ => tgCTabT13_p10
+    | 11, _ => tgCTabT13_p11
+    | 12, _ => tgCTabT13_p12
+    | 13, _ => tgCTabT13_p13
+    | 14, _ => tgCTabT13_p14
+    | 15, _ => tgCTabT13_p15
+    | 16, _ => tgCTabT13_p16
+    | 17, _ => tgCTabT13_p17
+    | 18, _ => tgCTabT13_p18
+    | 19, _ => tgCTabT13_p19
+    | 20, _ => tgCTabT13_p20
+    | 21, _ => tgCTabT13_p21
+    | 22, _ => tgCTabT13_p22
+    | 23, _ => tgCTabT13_p23
+    | 24, _ => tgCTabT13_p24
+    | 25, _ => tgCTabT13_p25
+    | 26, _ => tgCTabT13_p26
+    | 27, _ => tgCTabT13_p27
+    | 28, _ => tgCTabT13_p28
+    | 29, _ => tgCTabT13_p29
+    | 30, _ => tgCTabT13_p30
+    | 31, _ => tgCTabT13_p31
+    | 32, _ => tgCTabT13_p32
+    | 33, _ => tgCTabT13_p33
+    | 34, _ => tgCTabT13_p34
+    | 35, _ => tgCTabT13_p35
+    | 36, _ => tgCTabT13_p36
+    | 37, _ => tgCTabT13_p37
+    | 38, _ => tgCTabT13_p38
+    | 39, _ => tgCTabT13_p39
+    | 40, _ => tgCTabT13_p40
+    | 41, _ => tgCTabT13_p41
+    | 42, _ => tgCTabT13_p42
+    | 43, _ => tgCTabT13_p43
+    | 44, _ => tgCTabT13_p44
+    | 45, _ => tgCTabT13_p45
+    | 46, _ => tgCTabT13_p46
+    | 47, _ => tgCTabT13_p47
+    | 48, _ => tgCTabT13_p48
+    | 49, _ => tgCTabT13_p49
+    | 50, _ => tgCTabT13_p50
+    | 51, _ => tgCTabT13_p51
+    | 52, _ => tgCTabT13_p52
+    | 53, _ => tgCTabT13_p53
+    | 54, _ => tgCTabT13_p54
+    | 55, _ => tgCTabT13_p55
+    | 56, _ => tgCTabT13_p56
+    | 57, _ => tgCTabT13_p57
+    | 58, _ => tgCTabT13_p58
+    | 59, _ => tgCTabT13_p59
+    | 60, _ => tgCTabT13_p60
+    | 61, _ => tgCTabT13_p61
+    | 62, _ => tgCTabT13_p62
+    | 63, _ => tgCTabT13_p63
+    | 64, _ => tgCTabT13_p64
+    | 65, _ => tgCTabT13_p65
+    | 66, _ => tgCTabT13_p66
+    | 67, _ => tgCTabT13_p67
+    | 68, _ => tgCTabT13_p68
+    | 69, _ => tgCTabT13_p69
+    | 70, _ => tgCTabT13_p70
+    | 71, _ => tgCTabT13_p71
+    | 72, _ => tgCTabT13_p72
+    | 73, _ => tgCTabT13_p73
+    | 74, _ => tgCTabT13_p74
+    | 75, _ => tgCTabT13_p75
+    | 76, _ => tgCTabT13_p76
+    | 77, _ => tgCTabT13_p77
+    | 78, _ => tgCTabT13_p78
+    | 79, _ => tgCTabT13_p79
+    | 80, _ => tgCTabT13_p80
+    | 81, _ => tgCTabT13_p81
+    | 82, _ => tgCTabT13_p82
+    | 83, _ => tgCTabT13_p83
+    | 84, _ => tgCTabT13_p84
+    | 85, _ => tgCTabT13_p85
+    | 86, _ => tgCTabT13_p86
+    | 87, _ => tgCTabT13_p87
+    | _ + 88, hc => absurd hc (by omega)
+
 theorem tgCTabT14_len : (tgCTabT14).length ≤ 88 * 1 := by decide +kernel
 
 theorem tgCTabT14_p0 : (((tgCTabT14).drop (0 * 1)).take 1).all tgEntryOkT = true := by
@@ -374,364 +732,6 @@ theorem tgCTabT14_ok : (tgCTabT14).all tgEntryOkT = true :=
     | 85, _ => tgCTabT14_p85
     | 86, _ => tgCTabT14_p86
     | 87, _ => tgCTabT14_p87
-    | _ + 88, hc => absurd hc (by omega)
-
-theorem tgCTabT15_len : (tgCTabT15).length ≤ 88 * 1 := by decide +kernel
-
-theorem tgCTabT15_p0 : (((tgCTabT15).drop (0 * 1)).take 1).all tgEntryOkT = true := by
-  decide +kernel
-
-theorem tgCTabT15_p1 : (((tgCTabT15).drop (1 * 1)).take 1).all tgEntryOkT = true := by
-  decide +kernel
-
-theorem tgCTabT15_p2 : (((tgCTabT15).drop (2 * 1)).take 1).all tgEntryOkT = true := by
-  decide +kernel
-
-theorem tgCTabT15_p3 : (((tgCTabT15).drop (3 * 1)).take 1).all tgEntryOkT = true := by
-  decide +kernel
-
-theorem tgCTabT15_p4 : (((tgCTabT15).drop (4 * 1)).take 1).all tgEntryOkT = true := by
-  decide +kernel
-
-theorem tgCTabT15_p5 : (((tgCTabT15).drop (5 * 1)).take 1).all tgEntryOkT = true := by
-  decide +kernel
-
-theorem tgCTabT15_p6 : (((tgCTabT15).drop (6 * 1)).take 1).all tgEntryOkT = true := by
-  decide +kernel
-
-theorem tgCTabT15_p7 : (((tgCTabT15).drop (7 * 1)).take 1).all tgEntryOkT = true := by
-  decide +kernel
-
-theorem tgCTabT15_p8 : (((tgCTabT15).drop (8 * 1)).take 1).all tgEntryOkT = true := by
-  decide +kernel
-
-theorem tgCTabT15_p9 : (((tgCTabT15).drop (9 * 1)).take 1).all tgEntryOkT = true := by
-  decide +kernel
-
-theorem tgCTabT15_p10 : (((tgCTabT15).drop (10 * 1)).take 1).all tgEntryOkT = true := by
-  decide +kernel
-
-theorem tgCTabT15_p11 : (((tgCTabT15).drop (11 * 1)).take 1).all tgEntryOkT = true := by
-  decide +kernel
-
-theorem tgCTabT15_p12 : (((tgCTabT15).drop (12 * 1)).take 1).all tgEntryOkT = true := by
-  decide +kernel
-
-theorem tgCTabT15_p13 : (((tgCTabT15).drop (13 * 1)).take 1).all tgEntryOkT = true := by
-  decide +kernel
-
-theorem tgCTabT15_p14 : (((tgCTabT15).drop (14 * 1)).take 1).all tgEntryOkT = true := by
-  decide +kernel
-
-theorem tgCTabT15_p15 : (((tgCTabT15).drop (15 * 1)).take 1).all tgEntryOkT = true := by
-  decide +kernel
-
-theorem tgCTabT15_p16 : (((tgCTabT15).drop (16 * 1)).take 1).all tgEntryOkT = true := by
-  decide +kernel
-
-theorem tgCTabT15_p17 : (((tgCTabT15).drop (17 * 1)).take 1).all tgEntryOkT = true := by
-  decide +kernel
-
-theorem tgCTabT15_p18 : (((tgCTabT15).drop (18 * 1)).take 1).all tgEntryOkT = true := by
-  decide +kernel
-
-theorem tgCTabT15_p19 : (((tgCTabT15).drop (19 * 1)).take 1).all tgEntryOkT = true := by
-  decide +kernel
-
-theorem tgCTabT15_p20 : (((tgCTabT15).drop (20 * 1)).take 1).all tgEntryOkT = true := by
-  decide +kernel
-
-theorem tgCTabT15_p21 : (((tgCTabT15).drop (21 * 1)).take 1).all tgEntryOkT = true := by
-  decide +kernel
-
-theorem tgCTabT15_p22 : (((tgCTabT15).drop (22 * 1)).take 1).all tgEntryOkT = true := by
-  decide +kernel
-
-theorem tgCTabT15_p23 : (((tgCTabT15).drop (23 * 1)).take 1).all tgEntryOkT = true := by
-  decide +kernel
-
-theorem tgCTabT15_p24 : (((tgCTabT15).drop (24 * 1)).take 1).all tgEntryOkT = true := by
-  decide +kernel
-
-theorem tgCTabT15_p25 : (((tgCTabT15).drop (25 * 1)).take 1).all tgEntryOkT = true := by
-  decide +kernel
-
-theorem tgCTabT15_p26 : (((tgCTabT15).drop (26 * 1)).take 1).all tgEntryOkT = true := by
-  decide +kernel
-
-theorem tgCTabT15_p27 : (((tgCTabT15).drop (27 * 1)).take 1).all tgEntryOkT = true := by
-  decide +kernel
-
-theorem tgCTabT15_p28 : (((tgCTabT15).drop (28 * 1)).take 1).all tgEntryOkT = true := by
-  decide +kernel
-
-theorem tgCTabT15_p29 : (((tgCTabT15).drop (29 * 1)).take 1).all tgEntryOkT = true := by
-  decide +kernel
-
-theorem tgCTabT15_p30 : (((tgCTabT15).drop (30 * 1)).take 1).all tgEntryOkT = true := by
-  decide +kernel
-
-theorem tgCTabT15_p31 : (((tgCTabT15).drop (31 * 1)).take 1).all tgEntryOkT = true := by
-  decide +kernel
-
-theorem tgCTabT15_p32 : (((tgCTabT15).drop (32 * 1)).take 1).all tgEntryOkT = true := by
-  decide +kernel
-
-theorem tgCTabT15_p33 : (((tgCTabT15).drop (33 * 1)).take 1).all tgEntryOkT = true := by
-  decide +kernel
-
-theorem tgCTabT15_p34 : (((tgCTabT15).drop (34 * 1)).take 1).all tgEntryOkT = true := by
-  decide +kernel
-
-theorem tgCTabT15_p35 : (((tgCTabT15).drop (35 * 1)).take 1).all tgEntryOkT = true := by
-  decide +kernel
-
-theorem tgCTabT15_p36 : (((tgCTabT15).drop (36 * 1)).take 1).all tgEntryOkT = true := by
-  decide +kernel
-
-theorem tgCTabT15_p37 : (((tgCTabT15).drop (37 * 1)).take 1).all tgEntryOkT = true := by
-  decide +kernel
-
-theorem tgCTabT15_p38 : (((tgCTabT15).drop (38 * 1)).take 1).all tgEntryOkT = true := by
-  decide +kernel
-
-theorem tgCTabT15_p39 : (((tgCTabT15).drop (39 * 1)).take 1).all tgEntryOkT = true := by
-  decide +kernel
-
-theorem tgCTabT15_p40 : (((tgCTabT15).drop (40 * 1)).take 1).all tgEntryOkT = true := by
-  decide +kernel
-
-theorem tgCTabT15_p41 : (((tgCTabT15).drop (41 * 1)).take 1).all tgEntryOkT = true := by
-  decide +kernel
-
-theorem tgCTabT15_p42 : (((tgCTabT15).drop (42 * 1)).take 1).all tgEntryOkT = true := by
-  decide +kernel
-
-theorem tgCTabT15_p43 : (((tgCTabT15).drop (43 * 1)).take 1).all tgEntryOkT = true := by
-  decide +kernel
-
-theorem tgCTabT15_p44 : (((tgCTabT15).drop (44 * 1)).take 1).all tgEntryOkT = true := by
-  decide +kernel
-
-theorem tgCTabT15_p45 : (((tgCTabT15).drop (45 * 1)).take 1).all tgEntryOkT = true := by
-  decide +kernel
-
-theorem tgCTabT15_p46 : (((tgCTabT15).drop (46 * 1)).take 1).all tgEntryOkT = true := by
-  decide +kernel
-
-theorem tgCTabT15_p47 : (((tgCTabT15).drop (47 * 1)).take 1).all tgEntryOkT = true := by
-  decide +kernel
-
-theorem tgCTabT15_p48 : (((tgCTabT15).drop (48 * 1)).take 1).all tgEntryOkT = true := by
-  decide +kernel
-
-theorem tgCTabT15_p49 : (((tgCTabT15).drop (49 * 1)).take 1).all tgEntryOkT = true := by
-  decide +kernel
-
-theorem tgCTabT15_p50 : (((tgCTabT15).drop (50 * 1)).take 1).all tgEntryOkT = true := by
-  decide +kernel
-
-theorem tgCTabT15_p51 : (((tgCTabT15).drop (51 * 1)).take 1).all tgEntryOkT = true := by
-  decide +kernel
-
-theorem tgCTabT15_p52 : (((tgCTabT15).drop (52 * 1)).take 1).all tgEntryOkT = true := by
-  decide +kernel
-
-theorem tgCTabT15_p53 : (((tgCTabT15).drop (53 * 1)).take 1).all tgEntryOkT = true := by
-  decide +kernel
-
-theorem tgCTabT15_p54 : (((tgCTabT15).drop (54 * 1)).take 1).all tgEntryOkT = true := by
-  decide +kernel
-
-theorem tgCTabT15_p55 : (((tgCTabT15).drop (55 * 1)).take 1).all tgEntryOkT = true := by
-  decide +kernel
-
-theorem tgCTabT15_p56 : (((tgCTabT15).drop (56 * 1)).take 1).all tgEntryOkT = true := by
-  decide +kernel
-
-theorem tgCTabT15_p57 : (((tgCTabT15).drop (57 * 1)).take 1).all tgEntryOkT = true := by
-  decide +kernel
-
-theorem tgCTabT15_p58 : (((tgCTabT15).drop (58 * 1)).take 1).all tgEntryOkT = true := by
-  decide +kernel
-
-theorem tgCTabT15_p59 : (((tgCTabT15).drop (59 * 1)).take 1).all tgEntryOkT = true := by
-  decide +kernel
-
-theorem tgCTabT15_p60 : (((tgCTabT15).drop (60 * 1)).take 1).all tgEntryOkT = true := by
-  decide +kernel
-
-theorem tgCTabT15_p61 : (((tgCTabT15).drop (61 * 1)).take 1).all tgEntryOkT = true := by
-  decide +kernel
-
-theorem tgCTabT15_p62 : (((tgCTabT15).drop (62 * 1)).take 1).all tgEntryOkT = true := by
-  decide +kernel
-
-theorem tgCTabT15_p63 : (((tgCTabT15).drop (63 * 1)).take 1).all tgEntryOkT = true := by
-  decide +kernel
-
-theorem tgCTabT15_p64 : (((tgCTabT15).drop (64 * 1)).take 1).all tgEntryOkT = true := by
-  decide +kernel
-
-theorem tgCTabT15_p65 : (((tgCTabT15).drop (65 * 1)).take 1).all tgEntryOkT = true := by
-  decide +kernel
-
-theorem tgCTabT15_p66 : (((tgCTabT15).drop (66 * 1)).take 1).all tgEntryOkT = true := by
-  decide +kernel
-
-theorem tgCTabT15_p67 : (((tgCTabT15).drop (67 * 1)).take 1).all tgEntryOkT = true := by
-  decide +kernel
-
-theorem tgCTabT15_p68 : (((tgCTabT15).drop (68 * 1)).take 1).all tgEntryOkT = true := by
-  decide +kernel
-
-theorem tgCTabT15_p69 : (((tgCTabT15).drop (69 * 1)).take 1).all tgEntryOkT = true := by
-  decide +kernel
-
-theorem tgCTabT15_p70 : (((tgCTabT15).drop (70 * 1)).take 1).all tgEntryOkT = true := by
-  decide +kernel
-
-theorem tgCTabT15_p71 : (((tgCTabT15).drop (71 * 1)).take 1).all tgEntryOkT = true := by
-  decide +kernel
-
-theorem tgCTabT15_p72 : (((tgCTabT15).drop (72 * 1)).take 1).all tgEntryOkT = true := by
-  decide +kernel
-
-theorem tgCTabT15_p73 : (((tgCTabT15).drop (73 * 1)).take 1).all tgEntryOkT = true := by
-  decide +kernel
-
-theorem tgCTabT15_p74 : (((tgCTabT15).drop (74 * 1)).take 1).all tgEntryOkT = true := by
-  decide +kernel
-
-theorem tgCTabT15_p75 : (((tgCTabT15).drop (75 * 1)).take 1).all tgEntryOkT = true := by
-  decide +kernel
-
-theorem tgCTabT15_p76 : (((tgCTabT15).drop (76 * 1)).take 1).all tgEntryOkT = true := by
-  decide +kernel
-
-theorem tgCTabT15_p77 : (((tgCTabT15).drop (77 * 1)).take 1).all tgEntryOkT = true := by
-  decide +kernel
-
-theorem tgCTabT15_p78 : (((tgCTabT15).drop (78 * 1)).take 1).all tgEntryOkT = true := by
-  decide +kernel
-
-theorem tgCTabT15_p79 : (((tgCTabT15).drop (79 * 1)).take 1).all tgEntryOkT = true := by
-  decide +kernel
-
-theorem tgCTabT15_p80 : (((tgCTabT15).drop (80 * 1)).take 1).all tgEntryOkT = true := by
-  decide +kernel
-
-theorem tgCTabT15_p81 : (((tgCTabT15).drop (81 * 1)).take 1).all tgEntryOkT = true := by
-  decide +kernel
-
-theorem tgCTabT15_p82 : (((tgCTabT15).drop (82 * 1)).take 1).all tgEntryOkT = true := by
-  decide +kernel
-
-theorem tgCTabT15_p83 : (((tgCTabT15).drop (83 * 1)).take 1).all tgEntryOkT = true := by
-  decide +kernel
-
-theorem tgCTabT15_p84 : (((tgCTabT15).drop (84 * 1)).take 1).all tgEntryOkT = true := by
-  decide +kernel
-
-theorem tgCTabT15_p85 : (((tgCTabT15).drop (85 * 1)).take 1).all tgEntryOkT = true := by
-  decide +kernel
-
-theorem tgCTabT15_p86 : (((tgCTabT15).drop (86 * 1)).take 1).all tgEntryOkT = true := by
-  decide +kernel
-
-theorem tgCTabT15_p87 : (((tgCTabT15).drop (87 * 1)).take 1).all tgEntryOkT = true := by
-  decide +kernel
-
-theorem tgCTabT15_ok : (tgCTabT15).all tgEntryOkT = true :=
-  all_of_chunks _ _ 1 88 tgCTabT15_len fun c hc => match c, hc with
-    | 0, _ => tgCTabT15_p0
-    | 1, _ => tgCTabT15_p1
-    | 2, _ => tgCTabT15_p2
-    | 3, _ => tgCTabT15_p3
-    | 4, _ => tgCTabT15_p4
-    | 5, _ => tgCTabT15_p5
-    | 6, _ => tgCTabT15_p6
-    | 7, _ => tgCTabT15_p7
-    | 8, _ => tgCTabT15_p8
-    | 9, _ => tgCTabT15_p9
-    | 10, _ => tgCTabT15_p10
-    | 11, _ => tgCTabT15_p11
-    | 12, _ => tgCTabT15_p12
-    | 13, _ => tgCTabT15_p13
-    | 14, _ => tgCTabT15_p14
-    | 15, _ => tgCTabT15_p15
-    | 16, _ => tgCTabT15_p16
-    | 17, _ => tgCTabT15_p17
-    | 18, _ => tgCTabT15_p18
-    | 19, _ => tgCTabT15_p19
-    | 20, _ => tgCTabT15_p20
-    | 21, _ => tgCTabT15_p21
-    | 22, _ => tgCTabT15_p22
-    | 23, _ => tgCTabT15_p23
-    | 24, _ => tgCTabT15_p24
-    | 25, _ => tgCTabT15_p25
-    | 26, _ => tgCTabT15_p26
-    | 27, _ => tgCTabT15_p27
-    | 28, _ => tgCTabT15_p28
-    | 29, _ => tgCTabT15_p29
-    | 30, _ => tgCTabT15_p30
-    | 31, _ => tgCTabT15_p31
-    | 32, _ => tgCTabT15_p32
-    | 33, _ => tgCTabT15_p33
-    | 34, _ => tgCTabT15_p34
-    | 35, _ => tgCTabT15_p35
-    | 36, _ => tgCTabT15_p36
-    | 37, _ => tgCTabT15_p37
-    | 38, _ => tgCTabT15_p38
-    | 39, _ => tgCTabT15_p39
-    | 40, _ => tgCTabT15_p40
-    | 41, _ => tgCTabT15_p41
-    | 42, _ => tgCTabT15_p42
-    | 43, _ => tgCTabT15_p43
-    | 44, _ => tgCTabT15_p44
-    | 45, _ => tgCTabT15_p45
-    | 46, _ => tgCTabT15_p46
-    | 47, _ => tgCTabT15_p47
-    | 48, _ => tgCTabT15_p48
-    | 49, _ => tgCTabT15_p49
-    | 50, _ => tgCTabT15_p50
-    | 51, _ => tgCTabT15_p51
-    | 52, _ => tgCTabT15_p52
-    | 53, _ => tgCTabT15_p53
-    | 54, _ => tgCTabT15_p54
-    | 55, _ => tgCTabT15_p55
-    | 56, _ => tgCTabT15_p56
-    | 57, _ => tgCTabT15_p57
-    | 58, _ => tgCTabT15_p58
-    | 59, _ => tgCTabT15_p59
-    | 60, _ => tgCTabT15_p60
-    | 61, _ => tgCTabT15_p61
-    | 62, _ => tgCTabT15_p62
-    | 63, _ => tgCTabT15_p63
-    | 64, _ => tgCTabT15_p64
-    | 65, _ => tgCTabT15_p65
-    | 66, _ => tgCTabT15_p66
-    | 67, _ => tgCTabT15_p67
-    | 68, _ => tgCTabT15_p68
-    | 69, _ => tgCTabT15_p69
-    | 70, _ => tgCTabT15_p70
-    | 71, _ => tgCTabT15_p71
-    | 72, _ => tgCTabT15_p72
-    | 73, _ => tgCTabT15_p73
-    | 74, _ => tgCTabT15_p74
-    | 75, _ => tgCTabT15_p75
-    | 76, _ => tgCTabT15_p76
-    | 77, _ => tgCTabT15_p77
-    | 78, _ => tgCTabT15_p78
-    | 79, _ => tgCTabT15_p79
-    | 80, _ => tgCTabT15_p80
-    | 81, _ => tgCTabT15_p81
-    | 82, _ => tgCTabT15_p82
-    | 83, _ => tgCTabT15_p83
-    | 84, _ => tgCTabT15_p84
-    | 85, _ => tgCTabT15_p85
-    | 86, _ => tgCTabT15_p86
-    | 87, _ => tgCTabT15_p87
     | _ + 88, hc => absurd hc (by omega)
 
 end Backend.Proof.CovT

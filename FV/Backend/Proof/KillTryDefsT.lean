@@ -286,17 +286,17 @@ theorem kd_indT {p : Program} (hp : Data p) (hpT : TryData p) (hpI : IndData p)
       rfl
 
 set_option maxRecDepth 100000 in
-/-- **`TryDefsExact` over the typed scope.** -/
-theorem tryDefsExactT : TryDefsExactT := by
+/-- **`TryDefsExact` over the float scope.** -/
+theorem tryDefsExactTF : TryDefsExactTF := by
   intro f ctx ranges st0 _ hs _ hb ti t et data sig items lo trs st1 targets out s' tr _ hph het hBt
     hd he _ htr h
   have hcT : CtxT f ctx :=
-    CtxT.ofExterns (ctxInvT_of hs hb) ((ctxSpec_of hb).instScopeT hs.subsetT) (functionET_externs hs.subsetT)
+    ⟨ctxInvT_ofF hs hb, (ctxSpec_of hb).instScopeTF hs.subsetTF, callsE_of_externs hs.externsE ctx⟩
   have hctxT' := ctxT_tryRegs (ctxT_termCtx hcT hph data) trs
   have hctx' : CtxInvT f (tryCtx ctx ti data trs) := hctxT'.inv
   have hip : TermIntPos ctx t := by
     obtain ⟨B, hB, rfl⟩ := hBt
-    exact termIntPos_of hs hb hB
+    exact termIntPos_ofF hs hb hB
   have hi : (tryCtx ctx ti data trs).insts[ti]? = some ⟨data, [], [], none⟩ :=
     termCtx_insts_self hph data
   have htr' : tryRegsOf sig lo = some ((tryCtx ctx ti data trs).tryRegs, st1) := htr
@@ -360,5 +360,8 @@ theorem tryDefsExactT : TryDefsExactT := by
       obtain ⟨o, rfl⟩ := hsome (by decide +kernel) hrhs
       exact kd_indT data_program tryData_program indData_program tryIndData_program hmap hcal hd he
         hi htr' rfl hm (by omega) hmatch hrhs
+
+/-- **`TryDefsExact` over the typed scope.** -/
+theorem tryDefsExactT : TryDefsExactT := tryDefsExactTF.toT
 
 end Backend.Proof.Kill

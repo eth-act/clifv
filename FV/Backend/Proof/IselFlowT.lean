@@ -233,11 +233,23 @@ theorem term_root_safeT {ti : Nat} (hti : ti < ctx.insts.size) {data : V}
       have := instData_ok (hctx.data _ _ _ hinfo hcc)
       exact ⟨this.2.2.1, this.2.1⟩
 
-set_option maxRecDepth 100000 in
+omit hctx in
+/-- The root rules of `lower` outside the closure never match an instruction of `ctx`
+(`lower_nonroot_nomatchT` on the typed scope, `lower_nonroot_nomatchTF_calls` on the float
+scope). -/
+def LowerNoMatch (ctx : Ctx) : Prop :=
+  ∀ (ii : Nat) (info : IInfo) (inst : Clif.Inst), ctx.insts[ii]? = some info →
+    info.clif = some inst → ∀ r ∈ program.rulesOf TId.lower, closureRootIds.contains r.id = false →
+    ∀ cfg m s0 env s1, (matchRule program (sem ctx) cfg m r [.inst ii]).run s0 ≠ .ok (some env, s1)
+
 include hsc hx in
-/-- **The result registers of a statement's lowering** (float-capable context): each is a fresh
-vreg of the call or the register of a value the instruction reaches through its operands. -/
-theorem stmt_flowT (htr : ctx.tryRegs = ([], [])) {ii : Nat} {info : IInfo} {inst : Clif.Inst}
+theorem lowerNoMatch_ofT : LowerNoMatch ctx :=
+  fun _ _ _ hi hc _ hr hroot => lower_nonroot_nomatchT hctx hsc hx hi hc hr hroot
+
+set_option maxRecDepth 100000 in
+/-- **The result registers of a statement's lowering** (`stmt_flowT` over `LowerNoMatch`). -/
+theorem stmt_flowG (hnm : LowerNoMatch ctx) (htr : ctx.tryRegs = ([], [])) {ii : Nat}
+    {info : IInfo} {inst : Clif.Inst}
     (hi : ctx.insts[ii]? = some info) (hc : info.clif = some inst) {s : LState} {out : V}
     {s' : LState} {tr : List Isle.RuleId} (h : runTerm ctx "lower" [.inst ii] s = .ok (some out, s', tr)) :
     ∀ rss, out = .regsVec rss → info.results ≠ [] → ∀ rs ∈ rss, ∀ o cls, rs = [.vreg o cls] →
@@ -254,7 +266,7 @@ theorem stmt_flowT (htr : ctx.tryRegs = ([], [])) {ii : Nat} {info : IInfo} {ins
     have hop := List.all_eq_true.mp lower_ops rl hrl
     simp only [flowRootOk, Bool.or_eq_true, Bool.not_eq_true', beq_iff_eq] at hf
     rcases hf with (hcr | h587) | ha
-    · exact .inr (lower_nonroot_nomatchT hctx hsc hx hi hc hrl hcr {})
+    · exact .inr (hnm ii info inst hi hc rl hrl hcr {})
     · refine .inr fun m s0 env s1 hm => hres ?_
       simp only [h587, bne_self_eq_false, Bool.false_or, Bool.and_eq_true, beq_iff_eq] at hop
       have hn := pinned_namesT hctx hi hc hop.1 kind_nullAry kind_nop (by decide) hm
@@ -276,10 +288,20 @@ theorem stmt_flowT (htr : ctx.tryRegs = ([], [])) {ii : Nat} {info : IInfo} {ins
   subst hout
   exact hcl.1 (.vreg o cls) (mem_regsVec hrs (by rw [hrso]; exact List.mem_singleton_self _)) o cls rfl
 
-set_option maxRecDepth 100000 in
 include hsc hx in
-/-- Only the lowering of a `tls_value` emits an `ElfTlsGetAddr` (float-capable context). -/
-theorem stmt_noTlsT {ii : Nat} {info : IInfo} {inst : Clif.Inst}
+/-- **The result registers of a statement's lowering** (float-capable context): each is a fresh
+vreg of the call or the register of a value the instruction reaches through its operands. -/
+theorem stmt_flowT (htr : ctx.tryRegs = ([], [])) {ii : Nat} {info : IInfo} {inst : Clif.Inst}
+    (hi : ctx.insts[ii]? = some info) (hc : info.clif = some inst) {s : LState} {out : V}
+    {s' : LState} {tr : List Isle.RuleId} (h : runTerm ctx "lower" [.inst ii] s = .ok (some out, s', tr)) :
+    ∀ rss, out = .regsVec rss → info.results ≠ [] → ∀ rs ∈ rss, ∀ o cls, rs = [.vreg o cls] →
+      (s.nextVreg ≤ o ∧ o < s'.nextVreg) ∨ Prov ctx ii o :=
+  stmt_flowG hctx (lowerNoMatch_ofT hctx hsc hx) htr hi hc h
+
+set_option maxRecDepth 100000 in
+/-- Only the lowering of a `tls_value` emits an `ElfTlsGetAddr` (`stmt_noTlsT` over
+`LowerNoMatch`). -/
+theorem stmt_noTlsG (hnm : LowerNoMatch ctx) {ii : Nat} {info : IInfo} {inst : Clif.Inst}
     (hi : ctx.insts[ii]? = some info) (hc : info.clif = some inst)
     (hnt : ∀ ty gv, inst ≠ .tlsValue ty gv) {s : LState} {out : Option V} {s' : LState}
     {tr : List Isle.RuleId} (h : runTerm ctx "lower" [.inst ii] s = .ok (out, s', tr)) :
@@ -296,7 +318,7 @@ theorem stmt_noTlsT {ii : Nat} {info : IInfo} {inst : Clif.Inst}
     have hop := List.all_eq_true.mp lower_ops rl hrl
     simp only [tlsRootOk, Bool.or_eq_true, Bool.not_eq_true', beq_iff_eq] at hf
     rcases hf with ((hcr | h1) | h1) | ha
-    · exact .inr (lower_nonroot_nomatchT hctx hsc hx hi hc hrl hcr {})
+    · exact .inr (hnm ii info inst hi hc rl hrl hcr {})
     all_goals try exact .inl ha
     all_goals
       refine .inr fun m s0 env s1 hm => ?_
@@ -315,6 +337,16 @@ theorem stmt_noTlsT {ii : Nat} {info : IInfo} {inst : Clif.Inst}
     tlsTab_ok 1000000).root T.lower.ret T.lower.id T.lower _ _ [⟨2, true⟩] FA.top [.inst ii] s #[]
     out s' tr' data_program.t686 term_686_kind hrules hins ⟨[], by simp, by simp⟩ happ
   exact noTls_of hIs
+
+include hsc hx in
+/-- Only the lowering of a `tls_value` emits an `ElfTlsGetAddr` (float-capable context). -/
+theorem stmt_noTlsT {ii : Nat} {info : IInfo} {inst : Clif.Inst}
+    (hi : ctx.insts[ii]? = some info) (hc : info.clif = some inst)
+    (hnt : ∀ ty gv, inst ≠ .tlsValue ty gv) {s : LState} {out : Option V} {s' : LState}
+    {tr : List Isle.RuleId} (h : runTerm ctx "lower" [.inst ii] s = .ok (out, s', tr)) :
+    ∃ ms : List MInst, s'.emitted = s.emitted ++ ms.toArray ∧
+      ∀ m ∈ ms, ∀ sym rd tmp, m ≠ .elfTlsGetAddr sym rd tmp :=
+  stmt_noTlsG hctx (lowerNoMatch_ofT hctx hsc hx) hi hc hnt h
 
 set_option maxRecDepth 100000 in
 /-- `lower_branch` from a safe terminator slot: nothing emitted is an `ElfTlsGetAddr`

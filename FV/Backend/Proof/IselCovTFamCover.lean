@@ -158,13 +158,20 @@ theorem res0 {info : IInfo} (hres : info.resTys = []) {F : Fam} (hr : CTy.invali
   rw [hres]; exact ⟨fun t ht => (by cases ht), by simpa using hr⟩
 
 set_option maxHeartbeats 4000000 in
-/-- **Every statement of a typed-scope function belongs to an instruction family.** -/
-theorem famCover_of {f : Clif.Function} {ctx : Ctx} {ranges : Array (Nat × Nat)} {st0 : LState}
-    (hs : LowerScopeT f) (hdom : dominatedB f = true) (hst : Compile.storeTypedB f = true)
+/-- **Every statement belongs to an instruction family**, for a float-capable context whose
+statements are of the typed scope (`instET`) or float operations that belong to a family (`hF`):
+`famCover_of`'s proof, for the typed scope and the float scope (`famCover_ofF`). -/
+theorem famCover_ofG {f : Clif.Function} {ctx : Ctx} {ranges : Array (Nat × Nat)} {st0 : LState}
+    (hctx : CtxInvT f ctx) (hx : f.externs.all (Compile.sigE ·.2.sig) = true)
+    (hETs : ∀ B ∈ f.blocks, ∀ s ∈ B.body,
+      Compile.instET s.inst = true ∨ ∃ op ty args, s.inst = .float op ty args)
+    (hF : ∀ (j : Nat) info op ty args, ctx.insts[j]? = some info →
+      info.clif = some (.float op ty args) →
+      ∃ (i : Nat) (F : Fam), famTab[i]? = some F ∧ FamOk ctx F info)
+    (hdom : dominatedB f = true) (hst : Compile.storeTypedB f = true)
     (hsel : Compile.selectTypedB f = true) (hb : buildCtx f = .ok (ctx, ranges, st0)) :
     FamCover ctx := by
   have sp := ctxSpec_of hb
-  have hctx : CtxInvT f ctx := ctxInvT_of hs hb
   have hd := dominated_of hdom
   intro j info c hj hc
   obtain ⟨B, hB, s, hsB, -, hcs⟩ := sp.inst_of hj hc
@@ -173,11 +180,10 @@ theorem famCover_of {f : Clif.Function} {ctx : Ctx} {ranges : Array (Nat × Nat)
   have hlen : info.results.length = info.resTys.length := by rw [hres, hlen0]; simp
   have hrv := (sp.facts.types hd.ssa).1 j info hj
   have hint := hctx.intOps j info c hj hc
-  have hET : Compile.instET c = true := by
-    have h := hs.subsetT
-    simp only [Compile.functionET, Bool.and_eq_true, List.all_eq_true] at h
-    rw [hcs]
-    exact (h.1.1.2 B hB).1.2 s hsB
+  rcases hETs B hB s hsB with hET | ⟨op, ty, args, hfl⟩
+  rotate_left
+  · rw [hfl] at hcs; subst hcs; exact hF j info op ty args hj hc
+  rw [← hcs] at hET
   have htyped : ∀ y ∈ instArgs c, (ctx.valueType? y).isSome := by
     intro y hy
     obtain ⟨bi, hbi, e⟩ := List.getElem_of_mem hB
@@ -504,7 +510,7 @@ theorem famCover_of {f : Clif.Function} {ctx : Ctx} {ranges : Array (Nat × Nat)
     simp only [pure, Except.pure, throw, throwThe, MonadExceptOf.throw, Except.ok.injEq, reduceCtorEq] at hdata
     simp only [Clif.Inst.resultTypes, hext, Option.map_some, Option.some.injEq] at htys
     subst htys
-    have hsig := List.all_eq_true.mp (externsE_of hs.subsetT) _ (Compile.lookup_mem hext)
+    have hsig := List.all_eq_true.mp hx _ (Compile.lookup_mem hext)
     simp only [Compile.sigE, Bool.and_eq_true, List.all_eq_true] at hsig
     have hrE : ∀ t ∈ info.resTys, t ∈ eCTys := by
       intro t ht
@@ -634,27 +640,36 @@ theorem famCover_of {f : Clif.Function} {ctx : Ctx} {ranges : Array (Nat × Nat)
         γ_c0V rfl rfl, trivial⟩)⟩
   | _ => simp [Compile.instET, Compile.instE] at hET
 
+/-- **Every statement of a typed-scope function belongs to an instruction family.** -/
+theorem famCover_of {f : Clif.Function} {ctx : Ctx} {ranges : Array (Nat × Nat)} {st0 : LState}
+    (hs : LowerScopeT f) (hdom : dominatedB f = true) (hst : Compile.storeTypedB f = true)
+    (hsel : Compile.selectTypedB f = true) (hb : buildCtx f = .ok (ctx, ranges, st0)) :
+    FamCover ctx := by
+  refine famCover_ofG (ctxInvT_of hs hb) (externsE_of hs.subsetT) (fun B hB s hsB => ?_)
+    (fun j info op ty args hj hc => ?_) hdom hst hsel hb
+  · have h := hs.subsetT
+    simp only [Compile.functionET, Bool.and_eq_true, List.all_eq_true] at h
+    exact .inl ((h.1.1.2 B hB).1.2 s hsB)
+  · obtain ⟨B, hB, s, hsB, -, hcs⟩ := (ctxSpec_of hb).inst_of hj hc
+    have h := hs.subsetT
+    simp only [Compile.functionET, Bool.and_eq_true, List.all_eq_true] at h
+    have := (h.1.1.2 B hB).1.2 s hsB
+    rw [← hcs] at this
+    simp [Compile.instET, Compile.instE] at this
+
 theorem famOk_nores {ctx : Ctx} {F : Fam} {data : V} (hr : CTy.invalid ∈ F.res)
     (hd : γP ctx noInst F.data data) : FamOk ctx F ⟨data, [], [], none⟩ :=
   ⟨by simpa using hr, fun x hx => by simp at hx, fun x hx => by simp at hx, hd⟩
 
 set_option maxHeartbeats 4000000 in
-/-- **A terminator of a typed-scope function belongs to a terminator family** (as the data of
-its slot: no results). -/
-theorem termFam_of {f : Clif.Function} {ctx : Ctx} {ranges : Array (Nat × Nat)} {st0 : LState}
-    (hs : LowerScopeT f) (hdom : dominatedB f = true) (hb : buildCtx f = .ok (ctx, ranges, st0))
-    {B : Clif.Block} (hB : B ∈ f.blocks) {data : V}
+/-- **A terminator belongs to a terminator family** (as the data of its slot: no results), for a
+float-capable context whose terminators' integer positions are integer values (`hops`):
+`termFam_of`'s proof, for the typed scope and the float scope. -/
+theorem termFam_ofG {f : Clif.Function} {ctx : Ctx} (hctx : CtxInvT f ctx)
+    {B : Clif.Block} {data : V}
+    (hops : ∀ x ∈ Compile.termIntOperands B.term, ValIn ctx x eCTys)
     (hd : termData (abiTerm f B.term) = .ok data ∨ tryCallData f B.term = .ok data) :
     ∃ (i : Nat) (F : Fam), famTab[i]? = some F ∧ FamOk ctx F ⟨data, [], [], none⟩ := by
-  have sp := ctxSpec_of hb
-  have hctx : CtxInvT f ctx := ctxInvT_of hs hb
-  have hops : ∀ x ∈ Compile.termIntOperands B.term, ValIn ctx x eCTys := by
-    intro x hx
-    refine valIn_E fun t ht => ?_
-    have h := hs.subsetT
-    simp only [Compile.functionET, Compile.opsTypedT, Bool.and_eq_true, List.all_eq_true] at h
-    have h2 := (h.1.2 B hB).2 x hx
-    exact sp.eCTys_of_not_floatDef ht (by simpa using h2)
   rcases hd with hd | hd
   · cases ht : B.term with
     | jump bc =>
@@ -729,6 +744,21 @@ theorem termFam_of {f : Clif.Function} {ctx : Ctx} {ranges : Array (Nat × Nat)}
           γ_c0V rfl rfl, trivial⟩)⟩
     | _ => rw [ht] at hd; simp [tryCallData, throw, throwThe, MonadExceptOf.throw] at hd
 
+/-- **A terminator of a typed-scope function belongs to a terminator family** (as the data of
+its slot: no results). -/
+theorem termFam_of {f : Clif.Function} {ctx : Ctx} {ranges : Array (Nat × Nat)} {st0 : LState}
+    (hs : LowerScopeT f) (hdom : dominatedB f = true) (hb : buildCtx f = .ok (ctx, ranges, st0))
+    {B : Clif.Block} (hB : B ∈ f.blocks) {data : V}
+    (hd : termData (abiTerm f B.term) = .ok data ∨ tryCallData f B.term = .ok data) :
+    ∃ (i : Nat) (F : Fam), famTab[i]? = some F ∧ FamOk ctx F ⟨data, [], [], none⟩ := by
+  have sp := ctxSpec_of hb
+  refine termFam_ofG (ctxInvT_of hs hb) (fun x hx => ?_) hd
+  refine valIn_E fun t ht => ?_
+  have h := hs.subsetT
+  simp only [Compile.functionET, Compile.opsTypedT, Bool.and_eq_true, List.all_eq_true] at h
+  have h2 := (h.1.2 B hB).2 x hx
+  exact sp.eCTys_of_not_floatDef ht (by simpa using h2)
+
 /-- With SSA, the results of a statement whose result types are E types are of class `int`. -/
 theorem results_int {ctx : Ctx} {info : IInfo}
     (hrv : ∀ (m : Nat) r t, info.results[m]? = some r → info.resTys[m]? = some t →
@@ -745,15 +775,15 @@ theorem results_int {ctx : Ctx} {info : IInfo}
   rcases ht with h | h | h | h <;> rw [h] <;> rfl
 
 set_option maxHeartbeats 4000000 in
-/-- **The results of a `call`/`call_indirect` of a typed-scope function are of class `int`**
-(integer externs, `sigIntB` signatures; SSA types). -/
-theorem callRes_int {f : Clif.Function} {ctx : Ctx} {ranges : Array (Nat × Nat)} {st0 : LState}
-    (hs : LowerScopeT f) (hdom : dominatedB f = true) (hb : buildCtx f = .ok (ctx, ranges, st0))
+/-- **The results of a `call`/`call_indirect` are of class `int`** in a float-capable context of a
+function with integer externs (`sigIntB` signatures; SSA types): `callRes_int`'s proof. -/
+theorem callRes_intG {f : Clif.Function} {ctx : Ctx} {ranges : Array (Nat × Nat)} {st0 : LState}
+    (hctx : CtxInvT f ctx) (hx : f.externs.all (Compile.sigE ·.2.sig) = true)
+    (hdom : dominatedB f = true) (hb : buildCtx f = .ok (ctx, ranges, st0))
     {j : Nat} {info : IInfo} {c : Clif.Inst} (hj : ctx.insts[j]? = some info)
     (hc : info.clif = some c) (hcall : Cov.CallInst c) :
     ∀ x ∈ info.results, valClassOf ctx x = .int := by
   have sp := ctxSpec_of hb
-  have hctx : CtxInvT f ctx := ctxInvT_of hs hb
   have hd := dominated_of hdom
   have hdata := hctx.data j info c hj hc
   obtain ⟨tys, htys, hres, hlen0⟩ := hctx.resTys j info c hj hc
@@ -769,7 +799,7 @@ theorem callRes_int {f : Clif.Function} {ctx : Ctx} {ranges : Array (Nat × Nat)
     rename_i ext hext
     simp only [Clif.Inst.resultTypes, hext, Option.map_some, Option.some.injEq] at htys
     subst htys
-    have hsig := List.all_eq_true.mp (externsE_of hs.subsetT) _ (Compile.lookup_mem hext)
+    have hsig := List.all_eq_true.mp hx _ (Compile.lookup_mem hext)
     simp only [Compile.sigE, Bool.and_eq_true, List.all_eq_true] at hsig
     intro t ht
     rw [hres] at ht
@@ -796,5 +826,14 @@ theorem callRes_int {f : Clif.Function} {ctx : Ctx} {ranges : Array (Nat × Nat)
     simp only [sigIntB, Bool.and_eq_true, List.all_eq_true] at hint'
     exact ofClif_int_mCTys (hint'.2 p hp) hm
   | _ => simp [Cov.CallInst] at hcall
+
+/-- **The results of a `call`/`call_indirect` of a typed-scope function are of class `int`**
+(integer externs, `sigIntB` signatures; SSA types). -/
+theorem callRes_int {f : Clif.Function} {ctx : Ctx} {ranges : Array (Nat × Nat)} {st0 : LState}
+    (hs : LowerScopeT f) (hdom : dominatedB f = true) (hb : buildCtx f = .ok (ctx, ranges, st0))
+    {j : Nat} {info : IInfo} {c : Clif.Inst} (hj : ctx.insts[j]? = some info)
+    (hc : info.clif = some c) (hcall : Cov.CallInst c) :
+    ∀ x ∈ info.results, valClassOf ctx x = .int :=
+  callRes_intG (ctxInvT_of hs hb) (externsE_of hs.subsetT) hdom hb hj hc hcall
 
 end Backend.Proof.CovT

@@ -248,6 +248,18 @@ def cFpuRR : List AT → Bool
 def cFpuCmp : List AT → Bool
   | [_, rn, rm] => rn.isF && rm.isF
   | _ => false
+/-- `frint*` (S11f, `[op, rd, rn]`): float vregs. -/
+def cFpuRound : List AT → Bool
+  | [_, rd, rn] => rd.isF && rn.isF
+  | _ => false
+/-- `fcvtzs`/`fcvtzu` (S11f-cvt, `[op, rd, rn]`): an int vreg destination, a float vreg source. -/
+def cFpuToInt : List AT → Bool
+  | [_, rd, rn] => rd.isV && rn.isF
+  | _ => false
+/-- `scvtf`/`ucvtf` (S11f-cvt, `[op, rd, rn]`): a float vreg destination, an int vreg source. -/
+def cIntToFpu : List AT → Bool
+  | [_, rd, rn] => rd.isF && rn.isV
+  | _ => false
 /-- The plain `movi` (S11e1): a float vreg, the zero immediate of the 32-bit form, no inversion. -/
 def cVecDupImm : List AT → Bool
   | [rd, .movi, .bool false, _] => rd.isF
@@ -277,7 +289,8 @@ def covTab : List (Nat × (List AT → Bool)) :=
    (VIdx.MInst.FpuLoad32, cFpuMem 4), (VIdx.MInst.FpuLoad64, cFpuMem 8),
    (VIdx.MInst.FpuStore32, cFpuMem 4), (VIdx.MInst.FpuStore64, cFpuMem 8),
    (VIdx.MInst.FpuRRR, cFpuRRR), (VIdx.MInst.FpuRR, cFpuRR), (VIdx.MInst.FpuCmp, cFpuCmp),
-   (VIdx.MInst.VecDupImm, cVecDupImm)]
+   (VIdx.MInst.VecDupImm, cVecDupImm), (VIdx.MInst.FpuRound, cFpuRound),
+   (VIdx.MInst.FpuToInt, cFpuToInt), (VIdx.MInst.IntToFpu, cIntToFpu)]
 
 /-- Integer loads and stores: the register is an int vreg, the addressing mode is covered at the
 access size. -/

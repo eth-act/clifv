@@ -518,6 +518,24 @@ so `fnScopeInTB2_of_T3`/`fnScopeInTB_of_T3`/`inScopeInT_of_T3`; the checks resta
 `FVTest/E2E/FloatScopeT3.lean`, `FVTest/Link/FloatCompileExeT3.lean`. `fnScopeInTB`,
 `fnScopeInTB2`, `compileExeT` and their theorems are unchanged.
 
+**The decider-free float scope (S11f stage 2, FloatScopeAdmit5-7).** Stage 1 (#686):
+`Compile.functionETF` (`functionET` with the proven float operations), `LowerScopeTF`,
+`lowerScopeTFB`, `Prg.lowerFunction_ok_inputTF`/`LinkCheck.lowerFunction_ok_inT3F`. Stage 2:
+the run-time checks over `LowerScopeTF` (`E2E/LinkScopeChecksTF.lean`: `ctlSpillB_of_TF`,
+`formsCoveredB_completeTF`, `ctlInsts_pipelineTF`, `emitConds_lowerTF`, `resClassOkB_of_TF`;
+the CovT form table gained `FpuRound`/`FpuToInt`/`IntToFpu`, the Cov/Sz/Shp/Emit tables cover the
+float families 31-35), `killFreeB` (`Kill.KillRunsHypP`/`TryDefsExactP` over any scope,
+`killRunsHypTF`, `tryDefsExactTF`, `killFreeB_lowerTF`, `spillKillFreeTF`), `Prep.prepare_okTF`,
+`backend_total_emit_cleanupTF`, and the completeness of the float validator
+(`Driver.lowerCheckTCF_complete`: `lowerCheck_partsTF` with `instScopeOkF`; `lowBlocksC_of_lowBlocks`;
+the flow/class/certificate analyses over `LowerNoMatch`: `stmt_flowG`, `stmt_noTlsG`, `stmt_clsG`,
+`certOk_completeTF`). New input condition `Compile.floatArgsTyped` (float operands
+float-defined). `E2E/LinkScopeTotalTF.lean`: `fnScopeInTB3F` (`fnScopeInTB3` with `lowerScopeTFB`
+and `floatArgsTyped`), `InScopeInT3F`; `lowersTCB_of_T3F` (the typed-try_call scope's run-time
+decider is a theorem), `fnScopeInTCB_of_T3F`, `pipeCleanupT_okT3F`, `resultsCleanupT_ok_inT3F`.
+Witness `FVTest/Link/FloatScopeTotalT3F.lean`. Every typed-scope theorem keeps its statement (the
+old names are the float-scope theorems at `LowerScopeT.toTF`).
+
 **Slice 8, totality half (typed input scope, FloatsTotT).** `E2E/LinkScopeInputDefsT.lean`:
 `fnScopeInTB` keeps every conjunct of `fnScopeInB` over the typed scope (`functionET`,
 `lowerScopeTB`) with `fnScopeTB`'s input checks `storeTypedB`/`tryArgClassOk`; a function outside

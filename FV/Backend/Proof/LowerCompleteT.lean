@@ -156,15 +156,28 @@ theorem notTls_stackArgLoad (r : Reg) (b : Nat) (am : AMode) :
 
 /-! ## Completeness -/
 
-/-- **Completeness of the typed lowering validator.** On input satisfying `Dominated` and the
-typed scope `LowerScopeT` (floats included), `lowerCheckT` accepts `lowerFunction`'s output. -/
-theorem lowerCheckT_complete {f : Clif.Function} {vc : VCode} (hd : Dominated f)
-    (hs : LowerScopeT f) (h : lowerFunction f = .ok vc) : lowerCheckT f vc = true := by
+/-- **The parts of the typed lowering validators, float scope.** On input satisfying `Dominated`
+and the float scope `LowerScopeTF`, `lowerFunction`'s run passes every conjunct of
+`lowerCheckT`, with a supported-instruction check `sc` that holds on `buildCtx`'s context in
+place of `instScopeOk` (`lowerCheckT_complete`: `instScopeOk`; `lowerCheckTCF_complete`:
+`instScopeOkF`). -/
+theorem lowerCheck_partsTF {f : Clif.Function} {vc : VCode} (hd : Dominated f)
+    (hs : LowerScopeTF f) (h : lowerFunction f = .ok vc) {sc : Ctx → Bool}
+    (hsc : ∀ ctx ranges st0, buildCtx f = .ok (ctx, ranges, st0) → sc ctx = true) :
+    ∃ ctx ranges st0 bl, buildCtx f = .ok (ctx, ranges, st0) ∧
+      lowBlocks f (stmtCall ctx) (termCallF ctx) (tryCallF ctx) 0 f.blocks st0
+        f.blocks.length = some bl ∧
+      (shapeOkTS (sc ctx) f vc ctx st0 (gnAt (gnTable st0.nextVreg (aliasOf f bl))) bl &&
+        certOk f ctx st0 (gnAt (gnTable st0.nextVreg (aliasOf f bl))) bl
+          (inFix f ctx (gnAt (gnTable st0.nextVreg (aliasOf f bl)))) && brIdxOk f ctx &&
+        ((f.blocks.any (·.term.isTry) || !vc.hasTryCall) && (hasTls f || !vc.hasTls)) &&
+        (callsStackOkB f vc.outgoing && entryOkBT f)) = true := by
   obtain ⟨ctx, ranges, st0, bl, hb, hl, hvb, hout, hlf⟩ := lowerFunction_runT hs.externsE h
-  obtain ⟨hu, -, hwf⟩ := alias_factsT hd hs hb hl
-  have hctx : CtxInvT f ctx := ctxInvT_of hs hb
-  have hin : InstScopeT ctx := (ctxSpec_of hb).instScopeT hs.subsetT
-  have hx := externsE_of hs.subsetT
+  obtain ⟨hu, -, hwf⟩ := alias_factsTF hd hs hb hl
+  have hctx : CtxInvT f ctx := ctxInvT_ofF hs hb
+  have hnm : LowerNoMatch ctx := fun _ _ _ hi hc _ hr hroot =>
+    lower_nonroot_nomatchTF_calls hctx ((ctxSpec_of hb).instScopeTF hs.subsetTF)
+      (callsE_of_externs hs.externsE ctx) hi hc hr hroot
   have hcf := ctxFacts_of hb
   obtain ⟨hlen, hstart⟩ := lowBlocks_start hl
   obtain ⟨-, hspec⟩ := lowBlocks_spec hl
@@ -182,10 +195,10 @@ theorem lowerCheckT_complete {f : Clif.Function} {vc : VCode} (hd : Dominated f)
     obtain ⟨info, hi, hic, -⟩ := hcf.stmt bi B j stm hB hj
     rw [hstart bi L hL]
     exact ⟨⟨info, hi, hic⟩, by rw [← hstart bi L hL]; exact hc j sl hsl⟩
-  unfold lowerCheckT
-  rw [hb]; simp only; rw [hl]
+  refine ⟨ctx, ranges, st0, bl, hb, hl, ?_⟩
   simp only [Bool.and_eq_true, Bool.or_eq_true, Bool.not_eq_true']
-  refine ⟨⟨⟨⟨shapeOkT_completeT h hs hd.ssa hb hl hu hwf, certOk_completeT hd hs hb hl⟩,
+  refine ⟨⟨⟨⟨shapeOkTS_completeI h hs hd.ssa hb (termEmitsTI_of_ctxInvT hctx) hl hu hwf
+    (hsc ctx ranges st0 hb), certOk_completeTF hd hs hb hl⟩,
     (hs.ctxFacts ctx ranges st0 hb).1⟩, ?_, ?_⟩, ?_, ?_⟩
   · -- a `tryCall` only for a function with a `try_call`
     by_cases hT : (f.blocks.any fun x => x.term.isTry) = true
@@ -232,7 +245,7 @@ theorem lowerCheckT_complete {f : Clif.Function} {vc : VCode} (hd : Dominated f)
         (fun _ _ _ _ h => nomatch h) (f := f) (ctx := ctx) (bl := bl)
         (fun bi B L j stm sl hB hL hj hsl => by
           obtain ⟨⟨info, hi, hic⟩, tr, hrun⟩ := hstm bi B L j stm sl hB hL hj hsl
-          obtain ⟨ms, hms, hno⟩ := stmt_noTlsT hctx hin hx hi hic
+          obtain ⟨ms, hms, hno⟩ := stmt_noTlsG hctx hnm hi hic
             (hnt B (List.mem_of_getElem? hB) stm (List.mem_of_getElem? hj)) hrun
           rw [hms, hemp L (List.mem_of_getElem? hL) sl (List.mem_of_getElem? hsl)]
           simpa using hno)
@@ -310,7 +323,7 @@ theorem lowerCheckT_complete {f : Clif.Function} {vc : VCode} (hd : Dominated f)
             rw [← hstart bi L hL'] at this
             exact (Array.getElem?_eq_some_iff.mp this).1
           rw [ht] at hd
-          have hip := termIntPos_of hs hb hB
+          have hip := termIntPos_ofF hs hb hB
           rw [ht] at hip
           have hlt : ctx.insts[L.start + B.body.length]? = some ctx.insts[L.start + B.body.length] :=
             Array.getElem?_eq_getElem hti
@@ -327,6 +340,16 @@ theorem lowerCheckT_complete {f : Clif.Function} {vc : VCode} (hd : Dominated f)
     obtain ⟨locs, n, hloc⟩ := hlf.entry hs.nonempty
     obtain ⟨bytes, hby⟩ := hlf.paramBytes
     exact entryOkBT_of hloc hby
+
+/-- **Completeness of the typed lowering validator.** On input satisfying `Dominated` and the
+typed scope `LowerScopeT` (floats included), `lowerCheckT` accepts `lowerFunction`'s output. -/
+theorem lowerCheckT_complete {f : Clif.Function} {vc : VCode} (hd : Dominated f)
+    (hs : LowerScopeT f) (h : lowerFunction f = .ok vc) : lowerCheckT f vc = true := by
+  obtain ⟨ctx, ranges, st0, bl, hb, hl, hok⟩ := lowerCheck_partsTF hd hs.toTF h
+    (sc := instScopeOk) fun _ _ _ hb => instScopeOk_complete ((ctxSpec_of hb).instScopeT hs.subsetT)
+  unfold lowerCheckT
+  rw [hb]; simp only; rw [hl]
+  exact hok
 
 /-- **Integer specialization**: on the integer scope `lowerCheckT` accepts `lowerFunction`'s
 output (`lowerCheckT_complete` over `LowerScope.toT`). -/

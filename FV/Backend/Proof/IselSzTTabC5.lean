@@ -120,6 +120,30 @@ import FV.Backend.Proof.IselSzTTabH116
 import FV.Backend.Proof.IselSzTTabH117
 import FV.Backend.Proof.IselSzTTabH118
 import FV.Backend.Proof.IselSzTTabH119
+import FV.Backend.Proof.IselSzTTabH120
+import FV.Backend.Proof.IselSzTTabH121
+import FV.Backend.Proof.IselSzTTabH122
+import FV.Backend.Proof.IselSzTTabH123
+import FV.Backend.Proof.IselSzTTabH124
+import FV.Backend.Proof.IselSzTTabH125
+import FV.Backend.Proof.IselSzTTabH126
+import FV.Backend.Proof.IselSzTTabH127
+import FV.Backend.Proof.IselSzTTabH128
+import FV.Backend.Proof.IselSzTTabH129
+import FV.Backend.Proof.IselSzTTabH130
+import FV.Backend.Proof.IselSzTTabH131
+import FV.Backend.Proof.IselSzTTabH132
+import FV.Backend.Proof.IselSzTTabH133
+import FV.Backend.Proof.IselSzTTabH134
+import FV.Backend.Proof.IselSzTTabH135
+import FV.Backend.Proof.IselSzTTabH136
+import FV.Backend.Proof.IselSzTTabH137
+import FV.Backend.Proof.IselSzTTabH138
+import FV.Backend.Proof.IselSzTTabH139
+import FV.Backend.Proof.IselSzTTabH140
+import FV.Backend.Proof.IselSzTTabH141
+import FV.Backend.Proof.IselSzTTabH142
+import FV.Backend.Proof.IselSzTTabH143
 
 /-!
 # The size of the ISLE lowering's output over float-capable contexts (typed V6c): cost table entries, group 5
@@ -374,575 +398,35 @@ theorem szCTabT10_p76 : (((szCTabT10).drop (76 * 1)).take 1).all szEntryOkT = tr
 theorem szCTabT10_p77 : (((szCTabT10).drop (77 * 1)).take 1).all szEntryOkT = true := by
   decide +kernel
 
-theorem szCTabT10_p78_r1 : cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.float 32)]), (.val [(.int 16)]), (.flat 15 true)] 535 rule_inst_4096 = true := by
-  refine cRuleLe_of_chunks 0 535 128 8 128 8 (by decide) szCTabT10_p78_r1_nA ?_ szCTabT10_p78_r1_s szCTabT10_p78_r1_nB ?_
-  · intro c hc
-    match c, hc with
-    | 0, _ => exact szCTabT10_p78_r1_A0
-    | 1, _ => exact szCTabT10_p78_r1_A1
-    | 2, _ => exact szCTabT10_p78_r1_A2
-    | 3, _ => exact szCTabT10_p78_r1_A3
-    | 4, _ => exact szCTabT10_p78_r1_A4
-    | 5, _ => exact szCTabT10_p78_r1_A5
-    | 6, _ => exact szCTabT10_p78_r1_A6
-    | 7, _ => exact szCTabT10_p78_r1_A7
-    | _ + 8, hc => exact absurd hc (by omega)
-  · intro c hc
-    match c, hc with
-    | 0, _ => exact szCTabT10_p78_r1_B0
-    | 1, _ => exact szCTabT10_p78_r1_B1
-    | 2, _ => exact szCTabT10_p78_r1_B2
-    | 3, _ => exact szCTabT10_p78_r1_B3
-    | 4, _ => exact szCTabT10_p78_r1_B4
-    | 5, _ => exact szCTabT10_p78_r1_B5
-    | 6, _ => exact szCTabT10_p78_r1_B6
-    | 7, _ => exact szCTabT10_p78_r1_B7
-    | _ + 8, hc => exact absurd hc (by omega)
-
-theorem szCTabT10_p78_r2 : cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.float 32)]), (.val [(.int 16)]), (.flat 15 true)] 535 rule_inst_4093 = true := by
-  refine cRuleLe_of_chunks 0 535 128 8 128 8 (by decide) szCTabT10_p78_r2_nA ?_ szCTabT10_p78_r2_s szCTabT10_p78_r2_nB ?_
-  · intro c hc
-    match c, hc with
-    | 0, _ => exact szCTabT10_p78_r2_A0
-    | 1, _ => exact szCTabT10_p78_r2_A1
-    | 2, _ => exact szCTabT10_p78_r2_A2
-    | 3, _ => exact szCTabT10_p78_r2_A3
-    | 4, _ => exact szCTabT10_p78_r2_A4
-    | 5, _ => exact szCTabT10_p78_r2_A5
-    | 6, _ => exact szCTabT10_p78_r2_A6
-    | 7, _ => exact szCTabT10_p78_r2_A7
-    | _ + 8, hc => exact absurd hc (by omega)
-  · intro c hc
-    match c, hc with
-    | 0, _ => exact szCTabT10_p78_r2_B0
-    | 1, _ => exact szCTabT10_p78_r2_B1
-    | 2, _ => exact szCTabT10_p78_r2_B2
-    | 3, _ => exact szCTabT10_p78_r2_B3
-    | 4, _ => exact szCTabT10_p78_r2_B4
-    | 5, _ => exact szCTabT10_p78_r2_B5
-    | 6, _ => exact szCTabT10_p78_r2_B6
-    | 7, _ => exact szCTabT10_p78_r2_B7
-    | _ + 8, hc => exact absurd hc (by omega)
-
 theorem szCTabT10_p78 : (((szCTabT10).drop (78 * 1)).take 1).all szEntryOkT = true := by
-  rw [show ((szCTabT10).drop (78 * 1)).take 1 = [(575, [(.ty [(.float 32)]), (.val [(.int 16)]), (.flat 15 true)], 535)] from rfl]
-  simp only [List.all_cons, List.all_nil, Bool.and_true]
-  show (program.rulesOf 575).all (cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.float 32)]), (.val [(.int 16)]), (.flat 15 true)] 535) = true
-  rw [program_rulesOf_575]
-  simp only [List.all_cons, List.all_nil, Bool.and_true, szCTabT10_p78_r0, szCTabT10_p78_r1, szCTabT10_p78_r2, szCTabT10_p78_r3, szCTabT10_p78_r4, szCTabT10_p78_r5, szCTabT10_p78_r6, szCTabT10_p78_r7, szCTabT10_p78_r8, szCTabT10_p78_r9, szCTabT10_p78_r10, Bool.and_self]
-
-theorem szCTabT10_p79_r1 : cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.float 32)]), (.val [(.int 32)]), (.flat 15 true)] 535 rule_inst_4096 = true := by
-  refine cRuleLe_of_chunks 0 535 128 8 128 8 (by decide) szCTabT10_p79_r1_nA ?_ szCTabT10_p79_r1_s szCTabT10_p79_r1_nB ?_
-  · intro c hc
-    match c, hc with
-    | 0, _ => exact szCTabT10_p79_r1_A0
-    | 1, _ => exact szCTabT10_p79_r1_A1
-    | 2, _ => exact szCTabT10_p79_r1_A2
-    | 3, _ => exact szCTabT10_p79_r1_A3
-    | 4, _ => exact szCTabT10_p79_r1_A4
-    | 5, _ => exact szCTabT10_p79_r1_A5
-    | 6, _ => exact szCTabT10_p79_r1_A6
-    | 7, _ => exact szCTabT10_p79_r1_A7
-    | _ + 8, hc => exact absurd hc (by omega)
-  · intro c hc
-    match c, hc with
-    | 0, _ => exact szCTabT10_p79_r1_B0
-    | 1, _ => exact szCTabT10_p79_r1_B1
-    | 2, _ => exact szCTabT10_p79_r1_B2
-    | 3, _ => exact szCTabT10_p79_r1_B3
-    | 4, _ => exact szCTabT10_p79_r1_B4
-    | 5, _ => exact szCTabT10_p79_r1_B5
-    | 6, _ => exact szCTabT10_p79_r1_B6
-    | 7, _ => exact szCTabT10_p79_r1_B7
-    | _ + 8, hc => exact absurd hc (by omega)
-
-theorem szCTabT10_p79_r2 : cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.float 32)]), (.val [(.int 32)]), (.flat 15 true)] 535 rule_inst_4093 = true := by
-  refine cRuleLe_of_chunks 0 535 128 8 128 8 (by decide) szCTabT10_p79_r2_nA ?_ szCTabT10_p79_r2_s szCTabT10_p79_r2_nB ?_
-  · intro c hc
-    match c, hc with
-    | 0, _ => exact szCTabT10_p79_r2_A0
-    | 1, _ => exact szCTabT10_p79_r2_A1
-    | 2, _ => exact szCTabT10_p79_r2_A2
-    | 3, _ => exact szCTabT10_p79_r2_A3
-    | 4, _ => exact szCTabT10_p79_r2_A4
-    | 5, _ => exact szCTabT10_p79_r2_A5
-    | 6, _ => exact szCTabT10_p79_r2_A6
-    | 7, _ => exact szCTabT10_p79_r2_A7
-    | _ + 8, hc => exact absurd hc (by omega)
-  · intro c hc
-    match c, hc with
-    | 0, _ => exact szCTabT10_p79_r2_B0
-    | 1, _ => exact szCTabT10_p79_r2_B1
-    | 2, _ => exact szCTabT10_p79_r2_B2
-    | 3, _ => exact szCTabT10_p79_r2_B3
-    | 4, _ => exact szCTabT10_p79_r2_B4
-    | 5, _ => exact szCTabT10_p79_r2_B5
-    | 6, _ => exact szCTabT10_p79_r2_B6
-    | 7, _ => exact szCTabT10_p79_r2_B7
-    | _ + 8, hc => exact absurd hc (by omega)
+  decide +kernel
 
 theorem szCTabT10_p79 : (((szCTabT10).drop (79 * 1)).take 1).all szEntryOkT = true := by
-  rw [show ((szCTabT10).drop (79 * 1)).take 1 = [(575, [(.ty [(.float 32)]), (.val [(.int 32)]), (.flat 15 true)], 535)] from rfl]
-  simp only [List.all_cons, List.all_nil, Bool.and_true]
-  show (program.rulesOf 575).all (cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.float 32)]), (.val [(.int 32)]), (.flat 15 true)] 535) = true
-  rw [program_rulesOf_575]
-  simp only [List.all_cons, List.all_nil, Bool.and_true, szCTabT10_p79_r0, szCTabT10_p79_r1, szCTabT10_p79_r2, szCTabT10_p79_r3, szCTabT10_p79_r4, szCTabT10_p79_r5, szCTabT10_p79_r6, szCTabT10_p79_r7, szCTabT10_p79_r8, szCTabT10_p79_r9, szCTabT10_p79_r10, Bool.and_self]
-
-theorem szCTabT10_p80_r1 : cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.float 32)]), (.val [(.int 64)]), (.flat 15 true)] 535 rule_inst_4096 = true := by
-  refine cRuleLe_of_chunks 0 535 128 8 128 8 (by decide) szCTabT10_p80_r1_nA ?_ szCTabT10_p80_r1_s szCTabT10_p80_r1_nB ?_
-  · intro c hc
-    match c, hc with
-    | 0, _ => exact szCTabT10_p80_r1_A0
-    | 1, _ => exact szCTabT10_p80_r1_A1
-    | 2, _ => exact szCTabT10_p80_r1_A2
-    | 3, _ => exact szCTabT10_p80_r1_A3
-    | 4, _ => exact szCTabT10_p80_r1_A4
-    | 5, _ => exact szCTabT10_p80_r1_A5
-    | 6, _ => exact szCTabT10_p80_r1_A6
-    | 7, _ => exact szCTabT10_p80_r1_A7
-    | _ + 8, hc => exact absurd hc (by omega)
-  · intro c hc
-    match c, hc with
-    | 0, _ => exact szCTabT10_p80_r1_B0
-    | 1, _ => exact szCTabT10_p80_r1_B1
-    | 2, _ => exact szCTabT10_p80_r1_B2
-    | 3, _ => exact szCTabT10_p80_r1_B3
-    | 4, _ => exact szCTabT10_p80_r1_B4
-    | 5, _ => exact szCTabT10_p80_r1_B5
-    | 6, _ => exact szCTabT10_p80_r1_B6
-    | 7, _ => exact szCTabT10_p80_r1_B7
-    | _ + 8, hc => exact absurd hc (by omega)
-
-theorem szCTabT10_p80_r2 : cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.float 32)]), (.val [(.int 64)]), (.flat 15 true)] 535 rule_inst_4093 = true := by
-  refine cRuleLe_of_chunks 0 535 128 8 128 8 (by decide) szCTabT10_p80_r2_nA ?_ szCTabT10_p80_r2_s szCTabT10_p80_r2_nB ?_
-  · intro c hc
-    match c, hc with
-    | 0, _ => exact szCTabT10_p80_r2_A0
-    | 1, _ => exact szCTabT10_p80_r2_A1
-    | 2, _ => exact szCTabT10_p80_r2_A2
-    | 3, _ => exact szCTabT10_p80_r2_A3
-    | 4, _ => exact szCTabT10_p80_r2_A4
-    | 5, _ => exact szCTabT10_p80_r2_A5
-    | 6, _ => exact szCTabT10_p80_r2_A6
-    | 7, _ => exact szCTabT10_p80_r2_A7
-    | _ + 8, hc => exact absurd hc (by omega)
-  · intro c hc
-    match c, hc with
-    | 0, _ => exact szCTabT10_p80_r2_B0
-    | 1, _ => exact szCTabT10_p80_r2_B1
-    | 2, _ => exact szCTabT10_p80_r2_B2
-    | 3, _ => exact szCTabT10_p80_r2_B3
-    | 4, _ => exact szCTabT10_p80_r2_B4
-    | 5, _ => exact szCTabT10_p80_r2_B5
-    | 6, _ => exact szCTabT10_p80_r2_B6
-    | 7, _ => exact szCTabT10_p80_r2_B7
-    | _ + 8, hc => exact absurd hc (by omega)
+  decide +kernel
 
 theorem szCTabT10_p80 : (((szCTabT10).drop (80 * 1)).take 1).all szEntryOkT = true := by
-  rw [show ((szCTabT10).drop (80 * 1)).take 1 = [(575, [(.ty [(.float 32)]), (.val [(.int 64)]), (.flat 15 true)], 535)] from rfl]
-  simp only [List.all_cons, List.all_nil, Bool.and_true]
-  show (program.rulesOf 575).all (cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.float 32)]), (.val [(.int 64)]), (.flat 15 true)] 535) = true
-  rw [program_rulesOf_575]
-  simp only [List.all_cons, List.all_nil, Bool.and_true, szCTabT10_p80_r0, szCTabT10_p80_r1, szCTabT10_p80_r2, szCTabT10_p80_r3, szCTabT10_p80_r4, szCTabT10_p80_r5, szCTabT10_p80_r6, szCTabT10_p80_r7, szCTabT10_p80_r8, szCTabT10_p80_r9, szCTabT10_p80_r10, Bool.and_self]
-
-theorem szCTabT10_p81_r1 : cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.float 32)]), (.val [(.int 8)]), (.flat 15 true)] 535 rule_inst_4096 = true := by
-  refine cRuleLe_of_chunks 0 535 128 8 128 8 (by decide) szCTabT10_p81_r1_nA ?_ szCTabT10_p81_r1_s szCTabT10_p81_r1_nB ?_
-  · intro c hc
-    match c, hc with
-    | 0, _ => exact szCTabT10_p81_r1_A0
-    | 1, _ => exact szCTabT10_p81_r1_A1
-    | 2, _ => exact szCTabT10_p81_r1_A2
-    | 3, _ => exact szCTabT10_p81_r1_A3
-    | 4, _ => exact szCTabT10_p81_r1_A4
-    | 5, _ => exact szCTabT10_p81_r1_A5
-    | 6, _ => exact szCTabT10_p81_r1_A6
-    | 7, _ => exact szCTabT10_p81_r1_A7
-    | _ + 8, hc => exact absurd hc (by omega)
-  · intro c hc
-    match c, hc with
-    | 0, _ => exact szCTabT10_p81_r1_B0
-    | 1, _ => exact szCTabT10_p81_r1_B1
-    | 2, _ => exact szCTabT10_p81_r1_B2
-    | 3, _ => exact szCTabT10_p81_r1_B3
-    | 4, _ => exact szCTabT10_p81_r1_B4
-    | 5, _ => exact szCTabT10_p81_r1_B5
-    | 6, _ => exact szCTabT10_p81_r1_B6
-    | 7, _ => exact szCTabT10_p81_r1_B7
-    | _ + 8, hc => exact absurd hc (by omega)
-
-theorem szCTabT10_p81_r2 : cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.float 32)]), (.val [(.int 8)]), (.flat 15 true)] 535 rule_inst_4093 = true := by
-  refine cRuleLe_of_chunks 0 535 128 8 128 8 (by decide) szCTabT10_p81_r2_nA ?_ szCTabT10_p81_r2_s szCTabT10_p81_r2_nB ?_
-  · intro c hc
-    match c, hc with
-    | 0, _ => exact szCTabT10_p81_r2_A0
-    | 1, _ => exact szCTabT10_p81_r2_A1
-    | 2, _ => exact szCTabT10_p81_r2_A2
-    | 3, _ => exact szCTabT10_p81_r2_A3
-    | 4, _ => exact szCTabT10_p81_r2_A4
-    | 5, _ => exact szCTabT10_p81_r2_A5
-    | 6, _ => exact szCTabT10_p81_r2_A6
-    | 7, _ => exact szCTabT10_p81_r2_A7
-    | _ + 8, hc => exact absurd hc (by omega)
-  · intro c hc
-    match c, hc with
-    | 0, _ => exact szCTabT10_p81_r2_B0
-    | 1, _ => exact szCTabT10_p81_r2_B1
-    | 2, _ => exact szCTabT10_p81_r2_B2
-    | 3, _ => exact szCTabT10_p81_r2_B3
-    | 4, _ => exact szCTabT10_p81_r2_B4
-    | 5, _ => exact szCTabT10_p81_r2_B5
-    | 6, _ => exact szCTabT10_p81_r2_B6
-    | 7, _ => exact szCTabT10_p81_r2_B7
-    | _ + 8, hc => exact absurd hc (by omega)
+  decide +kernel
 
 theorem szCTabT10_p81 : (((szCTabT10).drop (81 * 1)).take 1).all szEntryOkT = true := by
-  rw [show ((szCTabT10).drop (81 * 1)).take 1 = [(575, [(.ty [(.float 32)]), (.val [(.int 8)]), (.flat 15 true)], 535)] from rfl]
-  simp only [List.all_cons, List.all_nil, Bool.and_true]
-  show (program.rulesOf 575).all (cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.float 32)]), (.val [(.int 8)]), (.flat 15 true)] 535) = true
-  rw [program_rulesOf_575]
-  simp only [List.all_cons, List.all_nil, Bool.and_true, szCTabT10_p81_r0, szCTabT10_p81_r1, szCTabT10_p81_r2, szCTabT10_p81_r3, szCTabT10_p81_r4, szCTabT10_p81_r5, szCTabT10_p81_r6, szCTabT10_p81_r7, szCTabT10_p81_r8, szCTabT10_p81_r9, szCTabT10_p81_r10, Bool.and_self]
-
-theorem szCTabT10_p82_r1 : cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.float 64)]), (.val [(.int 16)]), (.flat 15 true)] 535 rule_inst_4096 = true := by
-  refine cRuleLe_of_chunks 0 535 128 8 128 8 (by decide) szCTabT10_p82_r1_nA ?_ szCTabT10_p82_r1_s szCTabT10_p82_r1_nB ?_
-  · intro c hc
-    match c, hc with
-    | 0, _ => exact szCTabT10_p82_r1_A0
-    | 1, _ => exact szCTabT10_p82_r1_A1
-    | 2, _ => exact szCTabT10_p82_r1_A2
-    | 3, _ => exact szCTabT10_p82_r1_A3
-    | 4, _ => exact szCTabT10_p82_r1_A4
-    | 5, _ => exact szCTabT10_p82_r1_A5
-    | 6, _ => exact szCTabT10_p82_r1_A6
-    | 7, _ => exact szCTabT10_p82_r1_A7
-    | _ + 8, hc => exact absurd hc (by omega)
-  · intro c hc
-    match c, hc with
-    | 0, _ => exact szCTabT10_p82_r1_B0
-    | 1, _ => exact szCTabT10_p82_r1_B1
-    | 2, _ => exact szCTabT10_p82_r1_B2
-    | 3, _ => exact szCTabT10_p82_r1_B3
-    | 4, _ => exact szCTabT10_p82_r1_B4
-    | 5, _ => exact szCTabT10_p82_r1_B5
-    | 6, _ => exact szCTabT10_p82_r1_B6
-    | 7, _ => exact szCTabT10_p82_r1_B7
-    | _ + 8, hc => exact absurd hc (by omega)
-
-theorem szCTabT10_p82_r2 : cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.float 64)]), (.val [(.int 16)]), (.flat 15 true)] 535 rule_inst_4093 = true := by
-  refine cRuleLe_of_chunks 0 535 128 8 128 8 (by decide) szCTabT10_p82_r2_nA ?_ szCTabT10_p82_r2_s szCTabT10_p82_r2_nB ?_
-  · intro c hc
-    match c, hc with
-    | 0, _ => exact szCTabT10_p82_r2_A0
-    | 1, _ => exact szCTabT10_p82_r2_A1
-    | 2, _ => exact szCTabT10_p82_r2_A2
-    | 3, _ => exact szCTabT10_p82_r2_A3
-    | 4, _ => exact szCTabT10_p82_r2_A4
-    | 5, _ => exact szCTabT10_p82_r2_A5
-    | 6, _ => exact szCTabT10_p82_r2_A6
-    | 7, _ => exact szCTabT10_p82_r2_A7
-    | _ + 8, hc => exact absurd hc (by omega)
-  · intro c hc
-    match c, hc with
-    | 0, _ => exact szCTabT10_p82_r2_B0
-    | 1, _ => exact szCTabT10_p82_r2_B1
-    | 2, _ => exact szCTabT10_p82_r2_B2
-    | 3, _ => exact szCTabT10_p82_r2_B3
-    | 4, _ => exact szCTabT10_p82_r2_B4
-    | 5, _ => exact szCTabT10_p82_r2_B5
-    | 6, _ => exact szCTabT10_p82_r2_B6
-    | 7, _ => exact szCTabT10_p82_r2_B7
-    | _ + 8, hc => exact absurd hc (by omega)
+  decide +kernel
 
 theorem szCTabT10_p82 : (((szCTabT10).drop (82 * 1)).take 1).all szEntryOkT = true := by
-  rw [show ((szCTabT10).drop (82 * 1)).take 1 = [(575, [(.ty [(.float 64)]), (.val [(.int 16)]), (.flat 15 true)], 535)] from rfl]
-  simp only [List.all_cons, List.all_nil, Bool.and_true]
-  show (program.rulesOf 575).all (cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.float 64)]), (.val [(.int 16)]), (.flat 15 true)] 535) = true
-  rw [program_rulesOf_575]
-  simp only [List.all_cons, List.all_nil, Bool.and_true, szCTabT10_p82_r0, szCTabT10_p82_r1, szCTabT10_p82_r2, szCTabT10_p82_r3, szCTabT10_p82_r4, szCTabT10_p82_r5, szCTabT10_p82_r6, szCTabT10_p82_r7, szCTabT10_p82_r8, szCTabT10_p82_r9, szCTabT10_p82_r10, Bool.and_self]
-
-theorem szCTabT10_p83_r1 : cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.float 64)]), (.val [(.int 32)]), (.flat 15 true)] 535 rule_inst_4096 = true := by
-  refine cRuleLe_of_chunks 0 535 128 8 128 8 (by decide) szCTabT10_p83_r1_nA ?_ szCTabT10_p83_r1_s szCTabT10_p83_r1_nB ?_
-  · intro c hc
-    match c, hc with
-    | 0, _ => exact szCTabT10_p83_r1_A0
-    | 1, _ => exact szCTabT10_p83_r1_A1
-    | 2, _ => exact szCTabT10_p83_r1_A2
-    | 3, _ => exact szCTabT10_p83_r1_A3
-    | 4, _ => exact szCTabT10_p83_r1_A4
-    | 5, _ => exact szCTabT10_p83_r1_A5
-    | 6, _ => exact szCTabT10_p83_r1_A6
-    | 7, _ => exact szCTabT10_p83_r1_A7
-    | _ + 8, hc => exact absurd hc (by omega)
-  · intro c hc
-    match c, hc with
-    | 0, _ => exact szCTabT10_p83_r1_B0
-    | 1, _ => exact szCTabT10_p83_r1_B1
-    | 2, _ => exact szCTabT10_p83_r1_B2
-    | 3, _ => exact szCTabT10_p83_r1_B3
-    | 4, _ => exact szCTabT10_p83_r1_B4
-    | 5, _ => exact szCTabT10_p83_r1_B5
-    | 6, _ => exact szCTabT10_p83_r1_B6
-    | 7, _ => exact szCTabT10_p83_r1_B7
-    | _ + 8, hc => exact absurd hc (by omega)
-
-theorem szCTabT10_p83_r2 : cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.float 64)]), (.val [(.int 32)]), (.flat 15 true)] 535 rule_inst_4093 = true := by
-  refine cRuleLe_of_chunks 0 535 128 8 128 8 (by decide) szCTabT10_p83_r2_nA ?_ szCTabT10_p83_r2_s szCTabT10_p83_r2_nB ?_
-  · intro c hc
-    match c, hc with
-    | 0, _ => exact szCTabT10_p83_r2_A0
-    | 1, _ => exact szCTabT10_p83_r2_A1
-    | 2, _ => exact szCTabT10_p83_r2_A2
-    | 3, _ => exact szCTabT10_p83_r2_A3
-    | 4, _ => exact szCTabT10_p83_r2_A4
-    | 5, _ => exact szCTabT10_p83_r2_A5
-    | 6, _ => exact szCTabT10_p83_r2_A6
-    | 7, _ => exact szCTabT10_p83_r2_A7
-    | _ + 8, hc => exact absurd hc (by omega)
-  · intro c hc
-    match c, hc with
-    | 0, _ => exact szCTabT10_p83_r2_B0
-    | 1, _ => exact szCTabT10_p83_r2_B1
-    | 2, _ => exact szCTabT10_p83_r2_B2
-    | 3, _ => exact szCTabT10_p83_r2_B3
-    | 4, _ => exact szCTabT10_p83_r2_B4
-    | 5, _ => exact szCTabT10_p83_r2_B5
-    | 6, _ => exact szCTabT10_p83_r2_B6
-    | 7, _ => exact szCTabT10_p83_r2_B7
-    | _ + 8, hc => exact absurd hc (by omega)
+  decide +kernel
 
 theorem szCTabT10_p83 : (((szCTabT10).drop (83 * 1)).take 1).all szEntryOkT = true := by
-  rw [show ((szCTabT10).drop (83 * 1)).take 1 = [(575, [(.ty [(.float 64)]), (.val [(.int 32)]), (.flat 15 true)], 535)] from rfl]
-  simp only [List.all_cons, List.all_nil, Bool.and_true]
-  show (program.rulesOf 575).all (cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.float 64)]), (.val [(.int 32)]), (.flat 15 true)] 535) = true
-  rw [program_rulesOf_575]
-  simp only [List.all_cons, List.all_nil, Bool.and_true, szCTabT10_p83_r0, szCTabT10_p83_r1, szCTabT10_p83_r2, szCTabT10_p83_r3, szCTabT10_p83_r4, szCTabT10_p83_r5, szCTabT10_p83_r6, szCTabT10_p83_r7, szCTabT10_p83_r8, szCTabT10_p83_r9, szCTabT10_p83_r10, Bool.and_self]
-
-theorem szCTabT10_p84_r1 : cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.float 64)]), (.val [(.int 64)]), (.flat 15 true)] 535 rule_inst_4096 = true := by
-  refine cRuleLe_of_chunks 0 535 128 8 128 8 (by decide) szCTabT10_p84_r1_nA ?_ szCTabT10_p84_r1_s szCTabT10_p84_r1_nB ?_
-  · intro c hc
-    match c, hc with
-    | 0, _ => exact szCTabT10_p84_r1_A0
-    | 1, _ => exact szCTabT10_p84_r1_A1
-    | 2, _ => exact szCTabT10_p84_r1_A2
-    | 3, _ => exact szCTabT10_p84_r1_A3
-    | 4, _ => exact szCTabT10_p84_r1_A4
-    | 5, _ => exact szCTabT10_p84_r1_A5
-    | 6, _ => exact szCTabT10_p84_r1_A6
-    | 7, _ => exact szCTabT10_p84_r1_A7
-    | _ + 8, hc => exact absurd hc (by omega)
-  · intro c hc
-    match c, hc with
-    | 0, _ => exact szCTabT10_p84_r1_B0
-    | 1, _ => exact szCTabT10_p84_r1_B1
-    | 2, _ => exact szCTabT10_p84_r1_B2
-    | 3, _ => exact szCTabT10_p84_r1_B3
-    | 4, _ => exact szCTabT10_p84_r1_B4
-    | 5, _ => exact szCTabT10_p84_r1_B5
-    | 6, _ => exact szCTabT10_p84_r1_B6
-    | 7, _ => exact szCTabT10_p84_r1_B7
-    | _ + 8, hc => exact absurd hc (by omega)
-
-theorem szCTabT10_p84_r2 : cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.float 64)]), (.val [(.int 64)]), (.flat 15 true)] 535 rule_inst_4093 = true := by
-  refine cRuleLe_of_chunks 0 535 128 8 128 8 (by decide) szCTabT10_p84_r2_nA ?_ szCTabT10_p84_r2_s szCTabT10_p84_r2_nB ?_
-  · intro c hc
-    match c, hc with
-    | 0, _ => exact szCTabT10_p84_r2_A0
-    | 1, _ => exact szCTabT10_p84_r2_A1
-    | 2, _ => exact szCTabT10_p84_r2_A2
-    | 3, _ => exact szCTabT10_p84_r2_A3
-    | 4, _ => exact szCTabT10_p84_r2_A4
-    | 5, _ => exact szCTabT10_p84_r2_A5
-    | 6, _ => exact szCTabT10_p84_r2_A6
-    | 7, _ => exact szCTabT10_p84_r2_A7
-    | _ + 8, hc => exact absurd hc (by omega)
-  · intro c hc
-    match c, hc with
-    | 0, _ => exact szCTabT10_p84_r2_B0
-    | 1, _ => exact szCTabT10_p84_r2_B1
-    | 2, _ => exact szCTabT10_p84_r2_B2
-    | 3, _ => exact szCTabT10_p84_r2_B3
-    | 4, _ => exact szCTabT10_p84_r2_B4
-    | 5, _ => exact szCTabT10_p84_r2_B5
-    | 6, _ => exact szCTabT10_p84_r2_B6
-    | 7, _ => exact szCTabT10_p84_r2_B7
-    | _ + 8, hc => exact absurd hc (by omega)
+  decide +kernel
 
 theorem szCTabT10_p84 : (((szCTabT10).drop (84 * 1)).take 1).all szEntryOkT = true := by
-  rw [show ((szCTabT10).drop (84 * 1)).take 1 = [(575, [(.ty [(.float 64)]), (.val [(.int 64)]), (.flat 15 true)], 535)] from rfl]
-  simp only [List.all_cons, List.all_nil, Bool.and_true]
-  show (program.rulesOf 575).all (cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.float 64)]), (.val [(.int 64)]), (.flat 15 true)] 535) = true
-  rw [program_rulesOf_575]
-  simp only [List.all_cons, List.all_nil, Bool.and_true, szCTabT10_p84_r0, szCTabT10_p84_r1, szCTabT10_p84_r2, szCTabT10_p84_r3, szCTabT10_p84_r4, szCTabT10_p84_r5, szCTabT10_p84_r6, szCTabT10_p84_r7, szCTabT10_p84_r8, szCTabT10_p84_r9, szCTabT10_p84_r10, Bool.and_self]
-
-theorem szCTabT10_p85_r1 : cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.float 64)]), (.val [(.int 8)]), (.flat 15 true)] 535 rule_inst_4096 = true := by
-  refine cRuleLe_of_chunks 0 535 128 8 128 8 (by decide) szCTabT10_p85_r1_nA ?_ szCTabT10_p85_r1_s szCTabT10_p85_r1_nB ?_
-  · intro c hc
-    match c, hc with
-    | 0, _ => exact szCTabT10_p85_r1_A0
-    | 1, _ => exact szCTabT10_p85_r1_A1
-    | 2, _ => exact szCTabT10_p85_r1_A2
-    | 3, _ => exact szCTabT10_p85_r1_A3
-    | 4, _ => exact szCTabT10_p85_r1_A4
-    | 5, _ => exact szCTabT10_p85_r1_A5
-    | 6, _ => exact szCTabT10_p85_r1_A6
-    | 7, _ => exact szCTabT10_p85_r1_A7
-    | _ + 8, hc => exact absurd hc (by omega)
-  · intro c hc
-    match c, hc with
-    | 0, _ => exact szCTabT10_p85_r1_B0
-    | 1, _ => exact szCTabT10_p85_r1_B1
-    | 2, _ => exact szCTabT10_p85_r1_B2
-    | 3, _ => exact szCTabT10_p85_r1_B3
-    | 4, _ => exact szCTabT10_p85_r1_B4
-    | 5, _ => exact szCTabT10_p85_r1_B5
-    | 6, _ => exact szCTabT10_p85_r1_B6
-    | 7, _ => exact szCTabT10_p85_r1_B7
-    | _ + 8, hc => exact absurd hc (by omega)
-
-theorem szCTabT10_p85_r2 : cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.float 64)]), (.val [(.int 8)]), (.flat 15 true)] 535 rule_inst_4093 = true := by
-  refine cRuleLe_of_chunks 0 535 128 8 128 8 (by decide) szCTabT10_p85_r2_nA ?_ szCTabT10_p85_r2_s szCTabT10_p85_r2_nB ?_
-  · intro c hc
-    match c, hc with
-    | 0, _ => exact szCTabT10_p85_r2_A0
-    | 1, _ => exact szCTabT10_p85_r2_A1
-    | 2, _ => exact szCTabT10_p85_r2_A2
-    | 3, _ => exact szCTabT10_p85_r2_A3
-    | 4, _ => exact szCTabT10_p85_r2_A4
-    | 5, _ => exact szCTabT10_p85_r2_A5
-    | 6, _ => exact szCTabT10_p85_r2_A6
-    | 7, _ => exact szCTabT10_p85_r2_A7
-    | _ + 8, hc => exact absurd hc (by omega)
-  · intro c hc
-    match c, hc with
-    | 0, _ => exact szCTabT10_p85_r2_B0
-    | 1, _ => exact szCTabT10_p85_r2_B1
-    | 2, _ => exact szCTabT10_p85_r2_B2
-    | 3, _ => exact szCTabT10_p85_r2_B3
-    | 4, _ => exact szCTabT10_p85_r2_B4
-    | 5, _ => exact szCTabT10_p85_r2_B5
-    | 6, _ => exact szCTabT10_p85_r2_B6
-    | 7, _ => exact szCTabT10_p85_r2_B7
-    | _ + 8, hc => exact absurd hc (by omega)
+  decide +kernel
 
 theorem szCTabT10_p85 : (((szCTabT10).drop (85 * 1)).take 1).all szEntryOkT = true := by
-  rw [show ((szCTabT10).drop (85 * 1)).take 1 = [(575, [(.ty [(.float 64)]), (.val [(.int 8)]), (.flat 15 true)], 535)] from rfl]
-  simp only [List.all_cons, List.all_nil, Bool.and_true]
-  show (program.rulesOf 575).all (cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.float 64)]), (.val [(.int 8)]), (.flat 15 true)] 535) = true
-  rw [program_rulesOf_575]
-  simp only [List.all_cons, List.all_nil, Bool.and_true, szCTabT10_p85_r0, szCTabT10_p85_r1, szCTabT10_p85_r2, szCTabT10_p85_r3, szCTabT10_p85_r4, szCTabT10_p85_r5, szCTabT10_p85_r6, szCTabT10_p85_r7, szCTabT10_p85_r8, szCTabT10_p85_r9, szCTabT10_p85_r10, Bool.and_self]
-
-theorem szCTabT10_p86_r1 : cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.int 16)]), (.val [(.int 16)]), (.flat 15 true)] 535 rule_inst_4096 = true := by
-  refine cRuleLe_of_chunks 0 535 128 8 128 8 (by decide) szCTabT10_p86_r1_nA ?_ szCTabT10_p86_r1_s szCTabT10_p86_r1_nB ?_
-  · intro c hc
-    match c, hc with
-    | 0, _ => exact szCTabT10_p86_r1_A0
-    | 1, _ => exact szCTabT10_p86_r1_A1
-    | 2, _ => exact szCTabT10_p86_r1_A2
-    | 3, _ => exact szCTabT10_p86_r1_A3
-    | 4, _ => exact szCTabT10_p86_r1_A4
-    | 5, _ => exact szCTabT10_p86_r1_A5
-    | 6, _ => exact szCTabT10_p86_r1_A6
-    | 7, _ => exact szCTabT10_p86_r1_A7
-    | _ + 8, hc => exact absurd hc (by omega)
-  · intro c hc
-    match c, hc with
-    | 0, _ => exact szCTabT10_p86_r1_B0
-    | 1, _ => exact szCTabT10_p86_r1_B1
-    | 2, _ => exact szCTabT10_p86_r1_B2
-    | 3, _ => exact szCTabT10_p86_r1_B3
-    | 4, _ => exact szCTabT10_p86_r1_B4
-    | 5, _ => exact szCTabT10_p86_r1_B5
-    | 6, _ => exact szCTabT10_p86_r1_B6
-    | 7, _ => exact szCTabT10_p86_r1_B7
-    | _ + 8, hc => exact absurd hc (by omega)
-
-theorem szCTabT10_p86_r2 : cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.int 16)]), (.val [(.int 16)]), (.flat 15 true)] 535 rule_inst_4093 = true := by
-  refine cRuleLe_of_chunks 0 535 128 8 128 8 (by decide) szCTabT10_p86_r2_nA ?_ szCTabT10_p86_r2_s szCTabT10_p86_r2_nB ?_
-  · intro c hc
-    match c, hc with
-    | 0, _ => exact szCTabT10_p86_r2_A0
-    | 1, _ => exact szCTabT10_p86_r2_A1
-    | 2, _ => exact szCTabT10_p86_r2_A2
-    | 3, _ => exact szCTabT10_p86_r2_A3
-    | 4, _ => exact szCTabT10_p86_r2_A4
-    | 5, _ => exact szCTabT10_p86_r2_A5
-    | 6, _ => exact szCTabT10_p86_r2_A6
-    | 7, _ => exact szCTabT10_p86_r2_A7
-    | _ + 8, hc => exact absurd hc (by omega)
-  · intro c hc
-    match c, hc with
-    | 0, _ => exact szCTabT10_p86_r2_B0
-    | 1, _ => exact szCTabT10_p86_r2_B1
-    | 2, _ => exact szCTabT10_p86_r2_B2
-    | 3, _ => exact szCTabT10_p86_r2_B3
-    | 4, _ => exact szCTabT10_p86_r2_B4
-    | 5, _ => exact szCTabT10_p86_r2_B5
-    | 6, _ => exact szCTabT10_p86_r2_B6
-    | 7, _ => exact szCTabT10_p86_r2_B7
-    | _ + 8, hc => exact absurd hc (by omega)
+  decide +kernel
 
 theorem szCTabT10_p86 : (((szCTabT10).drop (86 * 1)).take 1).all szEntryOkT = true := by
-  rw [show ((szCTabT10).drop (86 * 1)).take 1 = [(575, [(.ty [(.int 16)]), (.val [(.int 16)]), (.flat 15 true)], 535)] from rfl]
-  simp only [List.all_cons, List.all_nil, Bool.and_true]
-  show (program.rulesOf 575).all (cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.int 16)]), (.val [(.int 16)]), (.flat 15 true)] 535) = true
-  rw [program_rulesOf_575]
-  simp only [List.all_cons, List.all_nil, Bool.and_true, szCTabT10_p86_r0, szCTabT10_p86_r1, szCTabT10_p86_r2, szCTabT10_p86_r3, szCTabT10_p86_r4, szCTabT10_p86_r5, szCTabT10_p86_r6, szCTabT10_p86_r7, szCTabT10_p86_r8, szCTabT10_p86_r9, szCTabT10_p86_r10, Bool.and_self]
-
-theorem szCTabT10_p87_r1 : cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.int 16)]), (.val [(.int 32)]), (.flat 15 true)] 535 rule_inst_4096 = true := by
-  refine cRuleLe_of_chunks 0 535 128 8 128 8 (by decide) szCTabT10_p87_r1_nA ?_ szCTabT10_p87_r1_s szCTabT10_p87_r1_nB ?_
-  · intro c hc
-    match c, hc with
-    | 0, _ => exact szCTabT10_p87_r1_A0
-    | 1, _ => exact szCTabT10_p87_r1_A1
-    | 2, _ => exact szCTabT10_p87_r1_A2
-    | 3, _ => exact szCTabT10_p87_r1_A3
-    | 4, _ => exact szCTabT10_p87_r1_A4
-    | 5, _ => exact szCTabT10_p87_r1_A5
-    | 6, _ => exact szCTabT10_p87_r1_A6
-    | 7, _ => exact szCTabT10_p87_r1_A7
-    | _ + 8, hc => exact absurd hc (by omega)
-  · intro c hc
-    match c, hc with
-    | 0, _ => exact szCTabT10_p87_r1_B0
-    | 1, _ => exact szCTabT10_p87_r1_B1
-    | 2, _ => exact szCTabT10_p87_r1_B2
-    | 3, _ => exact szCTabT10_p87_r1_B3
-    | 4, _ => exact szCTabT10_p87_r1_B4
-    | 5, _ => exact szCTabT10_p87_r1_B5
-    | 6, _ => exact szCTabT10_p87_r1_B6
-    | 7, _ => exact szCTabT10_p87_r1_B7
-    | _ + 8, hc => exact absurd hc (by omega)
-
-theorem szCTabT10_p87_r2 : cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.int 16)]), (.val [(.int 32)]), (.flat 15 true)] 535 rule_inst_4093 = true := by
-  refine cRuleLe_of_chunks 0 535 128 8 128 8 (by decide) szCTabT10_p87_r2_nA ?_ szCTabT10_p87_r2_s szCTabT10_p87_r2_nB ?_
-  · intro c hc
-    match c, hc with
-    | 0, _ => exact szCTabT10_p87_r2_A0
-    | 1, _ => exact szCTabT10_p87_r2_A1
-    | 2, _ => exact szCTabT10_p87_r2_A2
-    | 3, _ => exact szCTabT10_p87_r2_A3
-    | 4, _ => exact szCTabT10_p87_r2_A4
-    | 5, _ => exact szCTabT10_p87_r2_A5
-    | 6, _ => exact szCTabT10_p87_r2_A6
-    | 7, _ => exact szCTabT10_p87_r2_A7
-    | _ + 8, hc => exact absurd hc (by omega)
-  · intro c hc
-    match c, hc with
-    | 0, _ => exact szCTabT10_p87_r2_B0
-    | 1, _ => exact szCTabT10_p87_r2_B1
-    | 2, _ => exact szCTabT10_p87_r2_B2
-    | 3, _ => exact szCTabT10_p87_r2_B3
-    | 4, _ => exact szCTabT10_p87_r2_B4
-    | 5, _ => exact szCTabT10_p87_r2_B5
-    | 6, _ => exact szCTabT10_p87_r2_B6
-    | 7, _ => exact szCTabT10_p87_r2_B7
-    | _ + 8, hc => exact absurd hc (by omega)
+  decide +kernel
 
 theorem szCTabT10_p87 : (((szCTabT10).drop (87 * 1)).take 1).all szEntryOkT = true := by
-  rw [show ((szCTabT10).drop (87 * 1)).take 1 = [(575, [(.ty [(.int 16)]), (.val [(.int 32)]), (.flat 15 true)], 535)] from rfl]
-  simp only [List.all_cons, List.all_nil, Bool.and_true]
-  show (program.rulesOf 575).all (cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.int 16)]), (.val [(.int 32)]), (.flat 15 true)] 535) = true
-  rw [program_rulesOf_575]
-  simp only [List.all_cons, List.all_nil, Bool.and_true, szCTabT10_p87_r0, szCTabT10_p87_r1, szCTabT10_p87_r2, szCTabT10_p87_r3, szCTabT10_p87_r4, szCTabT10_p87_r5, szCTabT10_p87_r6, szCTabT10_p87_r7, szCTabT10_p87_r8, szCTabT10_p87_r9, szCTabT10_p87_r10, Bool.and_self]
+  decide +kernel
 
 theorem szCTabT10_ok : (szCTabT10).all szEntryOkT = true :=
   all_of_chunks _ _ 1 88 szCTabT10_len fun c hc => match c, hc with
@@ -1038,803 +522,47 @@ theorem szCTabT10_ok : (szCTabT10).all szEntryOkT = true :=
 
 theorem szCTabT11_len : (szCTabT11).length ≤ 88 * 1 := by decide +kernel
 
-theorem szCTabT11_p0_r1 : cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.int 16)]), (.val [(.int 64)]), (.flat 15 true)] 535 rule_inst_4096 = true := by
-  refine cRuleLe_of_chunks 0 535 128 8 128 8 (by decide) szCTabT11_p0_r1_nA ?_ szCTabT11_p0_r1_s szCTabT11_p0_r1_nB ?_
-  · intro c hc
-    match c, hc with
-    | 0, _ => exact szCTabT11_p0_r1_A0
-    | 1, _ => exact szCTabT11_p0_r1_A1
-    | 2, _ => exact szCTabT11_p0_r1_A2
-    | 3, _ => exact szCTabT11_p0_r1_A3
-    | 4, _ => exact szCTabT11_p0_r1_A4
-    | 5, _ => exact szCTabT11_p0_r1_A5
-    | 6, _ => exact szCTabT11_p0_r1_A6
-    | 7, _ => exact szCTabT11_p0_r1_A7
-    | _ + 8, hc => exact absurd hc (by omega)
-  · intro c hc
-    match c, hc with
-    | 0, _ => exact szCTabT11_p0_r1_B0
-    | 1, _ => exact szCTabT11_p0_r1_B1
-    | 2, _ => exact szCTabT11_p0_r1_B2
-    | 3, _ => exact szCTabT11_p0_r1_B3
-    | 4, _ => exact szCTabT11_p0_r1_B4
-    | 5, _ => exact szCTabT11_p0_r1_B5
-    | 6, _ => exact szCTabT11_p0_r1_B6
-    | 7, _ => exact szCTabT11_p0_r1_B7
-    | _ + 8, hc => exact absurd hc (by omega)
-
-theorem szCTabT11_p0_r2 : cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.int 16)]), (.val [(.int 64)]), (.flat 15 true)] 535 rule_inst_4093 = true := by
-  refine cRuleLe_of_chunks 0 535 128 8 128 8 (by decide) szCTabT11_p0_r2_nA ?_ szCTabT11_p0_r2_s szCTabT11_p0_r2_nB ?_
-  · intro c hc
-    match c, hc with
-    | 0, _ => exact szCTabT11_p0_r2_A0
-    | 1, _ => exact szCTabT11_p0_r2_A1
-    | 2, _ => exact szCTabT11_p0_r2_A2
-    | 3, _ => exact szCTabT11_p0_r2_A3
-    | 4, _ => exact szCTabT11_p0_r2_A4
-    | 5, _ => exact szCTabT11_p0_r2_A5
-    | 6, _ => exact szCTabT11_p0_r2_A6
-    | 7, _ => exact szCTabT11_p0_r2_A7
-    | _ + 8, hc => exact absurd hc (by omega)
-  · intro c hc
-    match c, hc with
-    | 0, _ => exact szCTabT11_p0_r2_B0
-    | 1, _ => exact szCTabT11_p0_r2_B1
-    | 2, _ => exact szCTabT11_p0_r2_B2
-    | 3, _ => exact szCTabT11_p0_r2_B3
-    | 4, _ => exact szCTabT11_p0_r2_B4
-    | 5, _ => exact szCTabT11_p0_r2_B5
-    | 6, _ => exact szCTabT11_p0_r2_B6
-    | 7, _ => exact szCTabT11_p0_r2_B7
-    | _ + 8, hc => exact absurd hc (by omega)
-
 theorem szCTabT11_p0 : (((szCTabT11).drop (0 * 1)).take 1).all szEntryOkT = true := by
-  rw [show ((szCTabT11).drop (0 * 1)).take 1 = [(575, [(.ty [(.int 16)]), (.val [(.int 64)]), (.flat 15 true)], 535)] from rfl]
-  simp only [List.all_cons, List.all_nil, Bool.and_true]
-  show (program.rulesOf 575).all (cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.int 16)]), (.val [(.int 64)]), (.flat 15 true)] 535) = true
-  rw [program_rulesOf_575]
-  simp only [List.all_cons, List.all_nil, Bool.and_true, szCTabT11_p0_r0, szCTabT11_p0_r1, szCTabT11_p0_r2, szCTabT11_p0_r3, szCTabT11_p0_r4, szCTabT11_p0_r5, szCTabT11_p0_r6, szCTabT11_p0_r7, szCTabT11_p0_r8, szCTabT11_p0_r9, szCTabT11_p0_r10, Bool.and_self]
-
-theorem szCTabT11_p1_r1 : cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.int 16)]), (.val [(.int 8)]), (.flat 15 true)] 535 rule_inst_4096 = true := by
-  refine cRuleLe_of_chunks 0 535 128 8 128 8 (by decide) szCTabT11_p1_r1_nA ?_ szCTabT11_p1_r1_s szCTabT11_p1_r1_nB ?_
-  · intro c hc
-    match c, hc with
-    | 0, _ => exact szCTabT11_p1_r1_A0
-    | 1, _ => exact szCTabT11_p1_r1_A1
-    | 2, _ => exact szCTabT11_p1_r1_A2
-    | 3, _ => exact szCTabT11_p1_r1_A3
-    | 4, _ => exact szCTabT11_p1_r1_A4
-    | 5, _ => exact szCTabT11_p1_r1_A5
-    | 6, _ => exact szCTabT11_p1_r1_A6
-    | 7, _ => exact szCTabT11_p1_r1_A7
-    | _ + 8, hc => exact absurd hc (by omega)
-  · intro c hc
-    match c, hc with
-    | 0, _ => exact szCTabT11_p1_r1_B0
-    | 1, _ => exact szCTabT11_p1_r1_B1
-    | 2, _ => exact szCTabT11_p1_r1_B2
-    | 3, _ => exact szCTabT11_p1_r1_B3
-    | 4, _ => exact szCTabT11_p1_r1_B4
-    | 5, _ => exact szCTabT11_p1_r1_B5
-    | 6, _ => exact szCTabT11_p1_r1_B6
-    | 7, _ => exact szCTabT11_p1_r1_B7
-    | _ + 8, hc => exact absurd hc (by omega)
-
-theorem szCTabT11_p1_r2 : cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.int 16)]), (.val [(.int 8)]), (.flat 15 true)] 535 rule_inst_4093 = true := by
-  refine cRuleLe_of_chunks 0 535 128 8 128 8 (by decide) szCTabT11_p1_r2_nA ?_ szCTabT11_p1_r2_s szCTabT11_p1_r2_nB ?_
-  · intro c hc
-    match c, hc with
-    | 0, _ => exact szCTabT11_p1_r2_A0
-    | 1, _ => exact szCTabT11_p1_r2_A1
-    | 2, _ => exact szCTabT11_p1_r2_A2
-    | 3, _ => exact szCTabT11_p1_r2_A3
-    | 4, _ => exact szCTabT11_p1_r2_A4
-    | 5, _ => exact szCTabT11_p1_r2_A5
-    | 6, _ => exact szCTabT11_p1_r2_A6
-    | 7, _ => exact szCTabT11_p1_r2_A7
-    | _ + 8, hc => exact absurd hc (by omega)
-  · intro c hc
-    match c, hc with
-    | 0, _ => exact szCTabT11_p1_r2_B0
-    | 1, _ => exact szCTabT11_p1_r2_B1
-    | 2, _ => exact szCTabT11_p1_r2_B2
-    | 3, _ => exact szCTabT11_p1_r2_B3
-    | 4, _ => exact szCTabT11_p1_r2_B4
-    | 5, _ => exact szCTabT11_p1_r2_B5
-    | 6, _ => exact szCTabT11_p1_r2_B6
-    | 7, _ => exact szCTabT11_p1_r2_B7
-    | _ + 8, hc => exact absurd hc (by omega)
+  decide +kernel
 
 theorem szCTabT11_p1 : (((szCTabT11).drop (1 * 1)).take 1).all szEntryOkT = true := by
-  rw [show ((szCTabT11).drop (1 * 1)).take 1 = [(575, [(.ty [(.int 16)]), (.val [(.int 8)]), (.flat 15 true)], 535)] from rfl]
-  simp only [List.all_cons, List.all_nil, Bool.and_true]
-  show (program.rulesOf 575).all (cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.int 16)]), (.val [(.int 8)]), (.flat 15 true)] 535) = true
-  rw [program_rulesOf_575]
-  simp only [List.all_cons, List.all_nil, Bool.and_true, szCTabT11_p1_r0, szCTabT11_p1_r1, szCTabT11_p1_r2, szCTabT11_p1_r3, szCTabT11_p1_r4, szCTabT11_p1_r5, szCTabT11_p1_r6, szCTabT11_p1_r7, szCTabT11_p1_r8, szCTabT11_p1_r9, szCTabT11_p1_r10, Bool.and_self]
-
-theorem szCTabT11_p2_r1 : cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.int 32)]), (.val [(.int 16)]), (.flat 15 true)] 535 rule_inst_4096 = true := by
-  refine cRuleLe_of_chunks 0 535 128 8 128 8 (by decide) szCTabT11_p2_r1_nA ?_ szCTabT11_p2_r1_s szCTabT11_p2_r1_nB ?_
-  · intro c hc
-    match c, hc with
-    | 0, _ => exact szCTabT11_p2_r1_A0
-    | 1, _ => exact szCTabT11_p2_r1_A1
-    | 2, _ => exact szCTabT11_p2_r1_A2
-    | 3, _ => exact szCTabT11_p2_r1_A3
-    | 4, _ => exact szCTabT11_p2_r1_A4
-    | 5, _ => exact szCTabT11_p2_r1_A5
-    | 6, _ => exact szCTabT11_p2_r1_A6
-    | 7, _ => exact szCTabT11_p2_r1_A7
-    | _ + 8, hc => exact absurd hc (by omega)
-  · intro c hc
-    match c, hc with
-    | 0, _ => exact szCTabT11_p2_r1_B0
-    | 1, _ => exact szCTabT11_p2_r1_B1
-    | 2, _ => exact szCTabT11_p2_r1_B2
-    | 3, _ => exact szCTabT11_p2_r1_B3
-    | 4, _ => exact szCTabT11_p2_r1_B4
-    | 5, _ => exact szCTabT11_p2_r1_B5
-    | 6, _ => exact szCTabT11_p2_r1_B6
-    | 7, _ => exact szCTabT11_p2_r1_B7
-    | _ + 8, hc => exact absurd hc (by omega)
-
-theorem szCTabT11_p2_r2 : cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.int 32)]), (.val [(.int 16)]), (.flat 15 true)] 535 rule_inst_4093 = true := by
-  refine cRuleLe_of_chunks 0 535 128 8 128 8 (by decide) szCTabT11_p2_r2_nA ?_ szCTabT11_p2_r2_s szCTabT11_p2_r2_nB ?_
-  · intro c hc
-    match c, hc with
-    | 0, _ => exact szCTabT11_p2_r2_A0
-    | 1, _ => exact szCTabT11_p2_r2_A1
-    | 2, _ => exact szCTabT11_p2_r2_A2
-    | 3, _ => exact szCTabT11_p2_r2_A3
-    | 4, _ => exact szCTabT11_p2_r2_A4
-    | 5, _ => exact szCTabT11_p2_r2_A5
-    | 6, _ => exact szCTabT11_p2_r2_A6
-    | 7, _ => exact szCTabT11_p2_r2_A7
-    | _ + 8, hc => exact absurd hc (by omega)
-  · intro c hc
-    match c, hc with
-    | 0, _ => exact szCTabT11_p2_r2_B0
-    | 1, _ => exact szCTabT11_p2_r2_B1
-    | 2, _ => exact szCTabT11_p2_r2_B2
-    | 3, _ => exact szCTabT11_p2_r2_B3
-    | 4, _ => exact szCTabT11_p2_r2_B4
-    | 5, _ => exact szCTabT11_p2_r2_B5
-    | 6, _ => exact szCTabT11_p2_r2_B6
-    | 7, _ => exact szCTabT11_p2_r2_B7
-    | _ + 8, hc => exact absurd hc (by omega)
+  decide +kernel
 
 theorem szCTabT11_p2 : (((szCTabT11).drop (2 * 1)).take 1).all szEntryOkT = true := by
-  rw [show ((szCTabT11).drop (2 * 1)).take 1 = [(575, [(.ty [(.int 32)]), (.val [(.int 16)]), (.flat 15 true)], 535)] from rfl]
-  simp only [List.all_cons, List.all_nil, Bool.and_true]
-  show (program.rulesOf 575).all (cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.int 32)]), (.val [(.int 16)]), (.flat 15 true)] 535) = true
-  rw [program_rulesOf_575]
-  simp only [List.all_cons, List.all_nil, Bool.and_true, szCTabT11_p2_r0, szCTabT11_p2_r1, szCTabT11_p2_r2, szCTabT11_p2_r3, szCTabT11_p2_r4, szCTabT11_p2_r5, szCTabT11_p2_r6, szCTabT11_p2_r7, szCTabT11_p2_r8, szCTabT11_p2_r9, szCTabT11_p2_r10, Bool.and_self]
-
-theorem szCTabT11_p3_r1 : cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.int 32)]), (.val [(.int 32)]), (.flat 15 true)] 535 rule_inst_4096 = true := by
-  refine cRuleLe_of_chunks 0 535 128 8 128 8 (by decide) szCTabT11_p3_r1_nA ?_ szCTabT11_p3_r1_s szCTabT11_p3_r1_nB ?_
-  · intro c hc
-    match c, hc with
-    | 0, _ => exact szCTabT11_p3_r1_A0
-    | 1, _ => exact szCTabT11_p3_r1_A1
-    | 2, _ => exact szCTabT11_p3_r1_A2
-    | 3, _ => exact szCTabT11_p3_r1_A3
-    | 4, _ => exact szCTabT11_p3_r1_A4
-    | 5, _ => exact szCTabT11_p3_r1_A5
-    | 6, _ => exact szCTabT11_p3_r1_A6
-    | 7, _ => exact szCTabT11_p3_r1_A7
-    | _ + 8, hc => exact absurd hc (by omega)
-  · intro c hc
-    match c, hc with
-    | 0, _ => exact szCTabT11_p3_r1_B0
-    | 1, _ => exact szCTabT11_p3_r1_B1
-    | 2, _ => exact szCTabT11_p3_r1_B2
-    | 3, _ => exact szCTabT11_p3_r1_B3
-    | 4, _ => exact szCTabT11_p3_r1_B4
-    | 5, _ => exact szCTabT11_p3_r1_B5
-    | 6, _ => exact szCTabT11_p3_r1_B6
-    | 7, _ => exact szCTabT11_p3_r1_B7
-    | _ + 8, hc => exact absurd hc (by omega)
-
-theorem szCTabT11_p3_r2 : cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.int 32)]), (.val [(.int 32)]), (.flat 15 true)] 535 rule_inst_4093 = true := by
-  refine cRuleLe_of_chunks 0 535 128 8 128 8 (by decide) szCTabT11_p3_r2_nA ?_ szCTabT11_p3_r2_s szCTabT11_p3_r2_nB ?_
-  · intro c hc
-    match c, hc with
-    | 0, _ => exact szCTabT11_p3_r2_A0
-    | 1, _ => exact szCTabT11_p3_r2_A1
-    | 2, _ => exact szCTabT11_p3_r2_A2
-    | 3, _ => exact szCTabT11_p3_r2_A3
-    | 4, _ => exact szCTabT11_p3_r2_A4
-    | 5, _ => exact szCTabT11_p3_r2_A5
-    | 6, _ => exact szCTabT11_p3_r2_A6
-    | 7, _ => exact szCTabT11_p3_r2_A7
-    | _ + 8, hc => exact absurd hc (by omega)
-  · intro c hc
-    match c, hc with
-    | 0, _ => exact szCTabT11_p3_r2_B0
-    | 1, _ => exact szCTabT11_p3_r2_B1
-    | 2, _ => exact szCTabT11_p3_r2_B2
-    | 3, _ => exact szCTabT11_p3_r2_B3
-    | 4, _ => exact szCTabT11_p3_r2_B4
-    | 5, _ => exact szCTabT11_p3_r2_B5
-    | 6, _ => exact szCTabT11_p3_r2_B6
-    | 7, _ => exact szCTabT11_p3_r2_B7
-    | _ + 8, hc => exact absurd hc (by omega)
+  decide +kernel
 
 theorem szCTabT11_p3 : (((szCTabT11).drop (3 * 1)).take 1).all szEntryOkT = true := by
-  rw [show ((szCTabT11).drop (3 * 1)).take 1 = [(575, [(.ty [(.int 32)]), (.val [(.int 32)]), (.flat 15 true)], 535)] from rfl]
-  simp only [List.all_cons, List.all_nil, Bool.and_true]
-  show (program.rulesOf 575).all (cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.int 32)]), (.val [(.int 32)]), (.flat 15 true)] 535) = true
-  rw [program_rulesOf_575]
-  simp only [List.all_cons, List.all_nil, Bool.and_true, szCTabT11_p3_r0, szCTabT11_p3_r1, szCTabT11_p3_r2, szCTabT11_p3_r3, szCTabT11_p3_r4, szCTabT11_p3_r5, szCTabT11_p3_r6, szCTabT11_p3_r7, szCTabT11_p3_r8, szCTabT11_p3_r9, szCTabT11_p3_r10, Bool.and_self]
-
-theorem szCTabT11_p4_r1 : cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.int 32)]), (.val [(.int 64)]), (.flat 15 true)] 535 rule_inst_4096 = true := by
-  refine cRuleLe_of_chunks 0 535 128 8 128 8 (by decide) szCTabT11_p4_r1_nA ?_ szCTabT11_p4_r1_s szCTabT11_p4_r1_nB ?_
-  · intro c hc
-    match c, hc with
-    | 0, _ => exact szCTabT11_p4_r1_A0
-    | 1, _ => exact szCTabT11_p4_r1_A1
-    | 2, _ => exact szCTabT11_p4_r1_A2
-    | 3, _ => exact szCTabT11_p4_r1_A3
-    | 4, _ => exact szCTabT11_p4_r1_A4
-    | 5, _ => exact szCTabT11_p4_r1_A5
-    | 6, _ => exact szCTabT11_p4_r1_A6
-    | 7, _ => exact szCTabT11_p4_r1_A7
-    | _ + 8, hc => exact absurd hc (by omega)
-  · intro c hc
-    match c, hc with
-    | 0, _ => exact szCTabT11_p4_r1_B0
-    | 1, _ => exact szCTabT11_p4_r1_B1
-    | 2, _ => exact szCTabT11_p4_r1_B2
-    | 3, _ => exact szCTabT11_p4_r1_B3
-    | 4, _ => exact szCTabT11_p4_r1_B4
-    | 5, _ => exact szCTabT11_p4_r1_B5
-    | 6, _ => exact szCTabT11_p4_r1_B6
-    | 7, _ => exact szCTabT11_p4_r1_B7
-    | _ + 8, hc => exact absurd hc (by omega)
-
-theorem szCTabT11_p4_r2 : cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.int 32)]), (.val [(.int 64)]), (.flat 15 true)] 535 rule_inst_4093 = true := by
-  refine cRuleLe_of_chunks 0 535 128 8 128 8 (by decide) szCTabT11_p4_r2_nA ?_ szCTabT11_p4_r2_s szCTabT11_p4_r2_nB ?_
-  · intro c hc
-    match c, hc with
-    | 0, _ => exact szCTabT11_p4_r2_A0
-    | 1, _ => exact szCTabT11_p4_r2_A1
-    | 2, _ => exact szCTabT11_p4_r2_A2
-    | 3, _ => exact szCTabT11_p4_r2_A3
-    | 4, _ => exact szCTabT11_p4_r2_A4
-    | 5, _ => exact szCTabT11_p4_r2_A5
-    | 6, _ => exact szCTabT11_p4_r2_A6
-    | 7, _ => exact szCTabT11_p4_r2_A7
-    | _ + 8, hc => exact absurd hc (by omega)
-  · intro c hc
-    match c, hc with
-    | 0, _ => exact szCTabT11_p4_r2_B0
-    | 1, _ => exact szCTabT11_p4_r2_B1
-    | 2, _ => exact szCTabT11_p4_r2_B2
-    | 3, _ => exact szCTabT11_p4_r2_B3
-    | 4, _ => exact szCTabT11_p4_r2_B4
-    | 5, _ => exact szCTabT11_p4_r2_B5
-    | 6, _ => exact szCTabT11_p4_r2_B6
-    | 7, _ => exact szCTabT11_p4_r2_B7
-    | _ + 8, hc => exact absurd hc (by omega)
+  decide +kernel
 
 theorem szCTabT11_p4 : (((szCTabT11).drop (4 * 1)).take 1).all szEntryOkT = true := by
-  rw [show ((szCTabT11).drop (4 * 1)).take 1 = [(575, [(.ty [(.int 32)]), (.val [(.int 64)]), (.flat 15 true)], 535)] from rfl]
-  simp only [List.all_cons, List.all_nil, Bool.and_true]
-  show (program.rulesOf 575).all (cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.int 32)]), (.val [(.int 64)]), (.flat 15 true)] 535) = true
-  rw [program_rulesOf_575]
-  simp only [List.all_cons, List.all_nil, Bool.and_true, szCTabT11_p4_r0, szCTabT11_p4_r1, szCTabT11_p4_r2, szCTabT11_p4_r3, szCTabT11_p4_r4, szCTabT11_p4_r5, szCTabT11_p4_r6, szCTabT11_p4_r7, szCTabT11_p4_r8, szCTabT11_p4_r9, szCTabT11_p4_r10, Bool.and_self]
-
-theorem szCTabT11_p5_r1 : cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.int 32)]), (.val [(.int 8)]), (.flat 15 true)] 535 rule_inst_4096 = true := by
-  refine cRuleLe_of_chunks 0 535 128 8 128 8 (by decide) szCTabT11_p5_r1_nA ?_ szCTabT11_p5_r1_s szCTabT11_p5_r1_nB ?_
-  · intro c hc
-    match c, hc with
-    | 0, _ => exact szCTabT11_p5_r1_A0
-    | 1, _ => exact szCTabT11_p5_r1_A1
-    | 2, _ => exact szCTabT11_p5_r1_A2
-    | 3, _ => exact szCTabT11_p5_r1_A3
-    | 4, _ => exact szCTabT11_p5_r1_A4
-    | 5, _ => exact szCTabT11_p5_r1_A5
-    | 6, _ => exact szCTabT11_p5_r1_A6
-    | 7, _ => exact szCTabT11_p5_r1_A7
-    | _ + 8, hc => exact absurd hc (by omega)
-  · intro c hc
-    match c, hc with
-    | 0, _ => exact szCTabT11_p5_r1_B0
-    | 1, _ => exact szCTabT11_p5_r1_B1
-    | 2, _ => exact szCTabT11_p5_r1_B2
-    | 3, _ => exact szCTabT11_p5_r1_B3
-    | 4, _ => exact szCTabT11_p5_r1_B4
-    | 5, _ => exact szCTabT11_p5_r1_B5
-    | 6, _ => exact szCTabT11_p5_r1_B6
-    | 7, _ => exact szCTabT11_p5_r1_B7
-    | _ + 8, hc => exact absurd hc (by omega)
-
-theorem szCTabT11_p5_r2 : cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.int 32)]), (.val [(.int 8)]), (.flat 15 true)] 535 rule_inst_4093 = true := by
-  refine cRuleLe_of_chunks 0 535 128 8 128 8 (by decide) szCTabT11_p5_r2_nA ?_ szCTabT11_p5_r2_s szCTabT11_p5_r2_nB ?_
-  · intro c hc
-    match c, hc with
-    | 0, _ => exact szCTabT11_p5_r2_A0
-    | 1, _ => exact szCTabT11_p5_r2_A1
-    | 2, _ => exact szCTabT11_p5_r2_A2
-    | 3, _ => exact szCTabT11_p5_r2_A3
-    | 4, _ => exact szCTabT11_p5_r2_A4
-    | 5, _ => exact szCTabT11_p5_r2_A5
-    | 6, _ => exact szCTabT11_p5_r2_A6
-    | 7, _ => exact szCTabT11_p5_r2_A7
-    | _ + 8, hc => exact absurd hc (by omega)
-  · intro c hc
-    match c, hc with
-    | 0, _ => exact szCTabT11_p5_r2_B0
-    | 1, _ => exact szCTabT11_p5_r2_B1
-    | 2, _ => exact szCTabT11_p5_r2_B2
-    | 3, _ => exact szCTabT11_p5_r2_B3
-    | 4, _ => exact szCTabT11_p5_r2_B4
-    | 5, _ => exact szCTabT11_p5_r2_B5
-    | 6, _ => exact szCTabT11_p5_r2_B6
-    | 7, _ => exact szCTabT11_p5_r2_B7
-    | _ + 8, hc => exact absurd hc (by omega)
+  decide +kernel
 
 theorem szCTabT11_p5 : (((szCTabT11).drop (5 * 1)).take 1).all szEntryOkT = true := by
-  rw [show ((szCTabT11).drop (5 * 1)).take 1 = [(575, [(.ty [(.int 32)]), (.val [(.int 8)]), (.flat 15 true)], 535)] from rfl]
-  simp only [List.all_cons, List.all_nil, Bool.and_true]
-  show (program.rulesOf 575).all (cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.int 32)]), (.val [(.int 8)]), (.flat 15 true)] 535) = true
-  rw [program_rulesOf_575]
-  simp only [List.all_cons, List.all_nil, Bool.and_true, szCTabT11_p5_r0, szCTabT11_p5_r1, szCTabT11_p5_r2, szCTabT11_p5_r3, szCTabT11_p5_r4, szCTabT11_p5_r5, szCTabT11_p5_r6, szCTabT11_p5_r7, szCTabT11_p5_r8, szCTabT11_p5_r9, szCTabT11_p5_r10, Bool.and_self]
-
-theorem szCTabT11_p6_r1 : cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.int 64)]), (.val [(.int 16)]), (.flat 15 true)] 535 rule_inst_4096 = true := by
-  refine cRuleLe_of_chunks 0 535 128 8 128 8 (by decide) szCTabT11_p6_r1_nA ?_ szCTabT11_p6_r1_s szCTabT11_p6_r1_nB ?_
-  · intro c hc
-    match c, hc with
-    | 0, _ => exact szCTabT11_p6_r1_A0
-    | 1, _ => exact szCTabT11_p6_r1_A1
-    | 2, _ => exact szCTabT11_p6_r1_A2
-    | 3, _ => exact szCTabT11_p6_r1_A3
-    | 4, _ => exact szCTabT11_p6_r1_A4
-    | 5, _ => exact szCTabT11_p6_r1_A5
-    | 6, _ => exact szCTabT11_p6_r1_A6
-    | 7, _ => exact szCTabT11_p6_r1_A7
-    | _ + 8, hc => exact absurd hc (by omega)
-  · intro c hc
-    match c, hc with
-    | 0, _ => exact szCTabT11_p6_r1_B0
-    | 1, _ => exact szCTabT11_p6_r1_B1
-    | 2, _ => exact szCTabT11_p6_r1_B2
-    | 3, _ => exact szCTabT11_p6_r1_B3
-    | 4, _ => exact szCTabT11_p6_r1_B4
-    | 5, _ => exact szCTabT11_p6_r1_B5
-    | 6, _ => exact szCTabT11_p6_r1_B6
-    | 7, _ => exact szCTabT11_p6_r1_B7
-    | _ + 8, hc => exact absurd hc (by omega)
-
-theorem szCTabT11_p6_r2 : cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.int 64)]), (.val [(.int 16)]), (.flat 15 true)] 535 rule_inst_4093 = true := by
-  refine cRuleLe_of_chunks 0 535 128 8 128 8 (by decide) szCTabT11_p6_r2_nA ?_ szCTabT11_p6_r2_s szCTabT11_p6_r2_nB ?_
-  · intro c hc
-    match c, hc with
-    | 0, _ => exact szCTabT11_p6_r2_A0
-    | 1, _ => exact szCTabT11_p6_r2_A1
-    | 2, _ => exact szCTabT11_p6_r2_A2
-    | 3, _ => exact szCTabT11_p6_r2_A3
-    | 4, _ => exact szCTabT11_p6_r2_A4
-    | 5, _ => exact szCTabT11_p6_r2_A5
-    | 6, _ => exact szCTabT11_p6_r2_A6
-    | 7, _ => exact szCTabT11_p6_r2_A7
-    | _ + 8, hc => exact absurd hc (by omega)
-  · intro c hc
-    match c, hc with
-    | 0, _ => exact szCTabT11_p6_r2_B0
-    | 1, _ => exact szCTabT11_p6_r2_B1
-    | 2, _ => exact szCTabT11_p6_r2_B2
-    | 3, _ => exact szCTabT11_p6_r2_B3
-    | 4, _ => exact szCTabT11_p6_r2_B4
-    | 5, _ => exact szCTabT11_p6_r2_B5
-    | 6, _ => exact szCTabT11_p6_r2_B6
-    | 7, _ => exact szCTabT11_p6_r2_B7
-    | _ + 8, hc => exact absurd hc (by omega)
+  decide +kernel
 
 theorem szCTabT11_p6 : (((szCTabT11).drop (6 * 1)).take 1).all szEntryOkT = true := by
-  rw [show ((szCTabT11).drop (6 * 1)).take 1 = [(575, [(.ty [(.int 64)]), (.val [(.int 16)]), (.flat 15 true)], 535)] from rfl]
-  simp only [List.all_cons, List.all_nil, Bool.and_true]
-  show (program.rulesOf 575).all (cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.int 64)]), (.val [(.int 16)]), (.flat 15 true)] 535) = true
-  rw [program_rulesOf_575]
-  simp only [List.all_cons, List.all_nil, Bool.and_true, szCTabT11_p6_r0, szCTabT11_p6_r1, szCTabT11_p6_r2, szCTabT11_p6_r3, szCTabT11_p6_r4, szCTabT11_p6_r5, szCTabT11_p6_r6, szCTabT11_p6_r7, szCTabT11_p6_r8, szCTabT11_p6_r9, szCTabT11_p6_r10, Bool.and_self]
-
-theorem szCTabT11_p7_r1 : cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.int 64)]), (.val [(.int 32)]), (.flat 15 true)] 535 rule_inst_4096 = true := by
-  refine cRuleLe_of_chunks 0 535 128 8 128 8 (by decide) szCTabT11_p7_r1_nA ?_ szCTabT11_p7_r1_s szCTabT11_p7_r1_nB ?_
-  · intro c hc
-    match c, hc with
-    | 0, _ => exact szCTabT11_p7_r1_A0
-    | 1, _ => exact szCTabT11_p7_r1_A1
-    | 2, _ => exact szCTabT11_p7_r1_A2
-    | 3, _ => exact szCTabT11_p7_r1_A3
-    | 4, _ => exact szCTabT11_p7_r1_A4
-    | 5, _ => exact szCTabT11_p7_r1_A5
-    | 6, _ => exact szCTabT11_p7_r1_A6
-    | 7, _ => exact szCTabT11_p7_r1_A7
-    | _ + 8, hc => exact absurd hc (by omega)
-  · intro c hc
-    match c, hc with
-    | 0, _ => exact szCTabT11_p7_r1_B0
-    | 1, _ => exact szCTabT11_p7_r1_B1
-    | 2, _ => exact szCTabT11_p7_r1_B2
-    | 3, _ => exact szCTabT11_p7_r1_B3
-    | 4, _ => exact szCTabT11_p7_r1_B4
-    | 5, _ => exact szCTabT11_p7_r1_B5
-    | 6, _ => exact szCTabT11_p7_r1_B6
-    | 7, _ => exact szCTabT11_p7_r1_B7
-    | _ + 8, hc => exact absurd hc (by omega)
-
-theorem szCTabT11_p7_r2 : cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.int 64)]), (.val [(.int 32)]), (.flat 15 true)] 535 rule_inst_4093 = true := by
-  refine cRuleLe_of_chunks 0 535 128 8 128 8 (by decide) szCTabT11_p7_r2_nA ?_ szCTabT11_p7_r2_s szCTabT11_p7_r2_nB ?_
-  · intro c hc
-    match c, hc with
-    | 0, _ => exact szCTabT11_p7_r2_A0
-    | 1, _ => exact szCTabT11_p7_r2_A1
-    | 2, _ => exact szCTabT11_p7_r2_A2
-    | 3, _ => exact szCTabT11_p7_r2_A3
-    | 4, _ => exact szCTabT11_p7_r2_A4
-    | 5, _ => exact szCTabT11_p7_r2_A5
-    | 6, _ => exact szCTabT11_p7_r2_A6
-    | 7, _ => exact szCTabT11_p7_r2_A7
-    | _ + 8, hc => exact absurd hc (by omega)
-  · intro c hc
-    match c, hc with
-    | 0, _ => exact szCTabT11_p7_r2_B0
-    | 1, _ => exact szCTabT11_p7_r2_B1
-    | 2, _ => exact szCTabT11_p7_r2_B2
-    | 3, _ => exact szCTabT11_p7_r2_B3
-    | 4, _ => exact szCTabT11_p7_r2_B4
-    | 5, _ => exact szCTabT11_p7_r2_B5
-    | 6, _ => exact szCTabT11_p7_r2_B6
-    | 7, _ => exact szCTabT11_p7_r2_B7
-    | _ + 8, hc => exact absurd hc (by omega)
+  decide +kernel
 
 theorem szCTabT11_p7 : (((szCTabT11).drop (7 * 1)).take 1).all szEntryOkT = true := by
-  rw [show ((szCTabT11).drop (7 * 1)).take 1 = [(575, [(.ty [(.int 64)]), (.val [(.int 32)]), (.flat 15 true)], 535)] from rfl]
-  simp only [List.all_cons, List.all_nil, Bool.and_true]
-  show (program.rulesOf 575).all (cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.int 64)]), (.val [(.int 32)]), (.flat 15 true)] 535) = true
-  rw [program_rulesOf_575]
-  simp only [List.all_cons, List.all_nil, Bool.and_true, szCTabT11_p7_r0, szCTabT11_p7_r1, szCTabT11_p7_r2, szCTabT11_p7_r3, szCTabT11_p7_r4, szCTabT11_p7_r5, szCTabT11_p7_r6, szCTabT11_p7_r7, szCTabT11_p7_r8, szCTabT11_p7_r9, szCTabT11_p7_r10, Bool.and_self]
-
-theorem szCTabT11_p8_r1 : cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.int 64)]), (.val [(.int 64)]), (.flat 15 true)] 535 rule_inst_4096 = true := by
-  refine cRuleLe_of_chunks 0 535 128 8 128 8 (by decide) szCTabT11_p8_r1_nA ?_ szCTabT11_p8_r1_s szCTabT11_p8_r1_nB ?_
-  · intro c hc
-    match c, hc with
-    | 0, _ => exact szCTabT11_p8_r1_A0
-    | 1, _ => exact szCTabT11_p8_r1_A1
-    | 2, _ => exact szCTabT11_p8_r1_A2
-    | 3, _ => exact szCTabT11_p8_r1_A3
-    | 4, _ => exact szCTabT11_p8_r1_A4
-    | 5, _ => exact szCTabT11_p8_r1_A5
-    | 6, _ => exact szCTabT11_p8_r1_A6
-    | 7, _ => exact szCTabT11_p8_r1_A7
-    | _ + 8, hc => exact absurd hc (by omega)
-  · intro c hc
-    match c, hc with
-    | 0, _ => exact szCTabT11_p8_r1_B0
-    | 1, _ => exact szCTabT11_p8_r1_B1
-    | 2, _ => exact szCTabT11_p8_r1_B2
-    | 3, _ => exact szCTabT11_p8_r1_B3
-    | 4, _ => exact szCTabT11_p8_r1_B4
-    | 5, _ => exact szCTabT11_p8_r1_B5
-    | 6, _ => exact szCTabT11_p8_r1_B6
-    | 7, _ => exact szCTabT11_p8_r1_B7
-    | _ + 8, hc => exact absurd hc (by omega)
-
-theorem szCTabT11_p8_r2 : cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.int 64)]), (.val [(.int 64)]), (.flat 15 true)] 535 rule_inst_4093 = true := by
-  refine cRuleLe_of_chunks 0 535 128 8 128 8 (by decide) szCTabT11_p8_r2_nA ?_ szCTabT11_p8_r2_s szCTabT11_p8_r2_nB ?_
-  · intro c hc
-    match c, hc with
-    | 0, _ => exact szCTabT11_p8_r2_A0
-    | 1, _ => exact szCTabT11_p8_r2_A1
-    | 2, _ => exact szCTabT11_p8_r2_A2
-    | 3, _ => exact szCTabT11_p8_r2_A3
-    | 4, _ => exact szCTabT11_p8_r2_A4
-    | 5, _ => exact szCTabT11_p8_r2_A5
-    | 6, _ => exact szCTabT11_p8_r2_A6
-    | 7, _ => exact szCTabT11_p8_r2_A7
-    | _ + 8, hc => exact absurd hc (by omega)
-  · intro c hc
-    match c, hc with
-    | 0, _ => exact szCTabT11_p8_r2_B0
-    | 1, _ => exact szCTabT11_p8_r2_B1
-    | 2, _ => exact szCTabT11_p8_r2_B2
-    | 3, _ => exact szCTabT11_p8_r2_B3
-    | 4, _ => exact szCTabT11_p8_r2_B4
-    | 5, _ => exact szCTabT11_p8_r2_B5
-    | 6, _ => exact szCTabT11_p8_r2_B6
-    | 7, _ => exact szCTabT11_p8_r2_B7
-    | _ + 8, hc => exact absurd hc (by omega)
+  decide +kernel
 
 theorem szCTabT11_p8 : (((szCTabT11).drop (8 * 1)).take 1).all szEntryOkT = true := by
-  rw [show ((szCTabT11).drop (8 * 1)).take 1 = [(575, [(.ty [(.int 64)]), (.val [(.int 64)]), (.flat 15 true)], 535)] from rfl]
-  simp only [List.all_cons, List.all_nil, Bool.and_true]
-  show (program.rulesOf 575).all (cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.int 64)]), (.val [(.int 64)]), (.flat 15 true)] 535) = true
-  rw [program_rulesOf_575]
-  simp only [List.all_cons, List.all_nil, Bool.and_true, szCTabT11_p8_r0, szCTabT11_p8_r1, szCTabT11_p8_r2, szCTabT11_p8_r3, szCTabT11_p8_r4, szCTabT11_p8_r5, szCTabT11_p8_r6, szCTabT11_p8_r7, szCTabT11_p8_r8, szCTabT11_p8_r9, szCTabT11_p8_r10, Bool.and_self]
-
-theorem szCTabT11_p9_r1 : cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.int 64)]), (.val [(.int 8)]), (.flat 15 true)] 535 rule_inst_4096 = true := by
-  refine cRuleLe_of_chunks 0 535 128 8 128 8 (by decide) szCTabT11_p9_r1_nA ?_ szCTabT11_p9_r1_s szCTabT11_p9_r1_nB ?_
-  · intro c hc
-    match c, hc with
-    | 0, _ => exact szCTabT11_p9_r1_A0
-    | 1, _ => exact szCTabT11_p9_r1_A1
-    | 2, _ => exact szCTabT11_p9_r1_A2
-    | 3, _ => exact szCTabT11_p9_r1_A3
-    | 4, _ => exact szCTabT11_p9_r1_A4
-    | 5, _ => exact szCTabT11_p9_r1_A5
-    | 6, _ => exact szCTabT11_p9_r1_A6
-    | 7, _ => exact szCTabT11_p9_r1_A7
-    | _ + 8, hc => exact absurd hc (by omega)
-  · intro c hc
-    match c, hc with
-    | 0, _ => exact szCTabT11_p9_r1_B0
-    | 1, _ => exact szCTabT11_p9_r1_B1
-    | 2, _ => exact szCTabT11_p9_r1_B2
-    | 3, _ => exact szCTabT11_p9_r1_B3
-    | 4, _ => exact szCTabT11_p9_r1_B4
-    | 5, _ => exact szCTabT11_p9_r1_B5
-    | 6, _ => exact szCTabT11_p9_r1_B6
-    | 7, _ => exact szCTabT11_p9_r1_B7
-    | _ + 8, hc => exact absurd hc (by omega)
-
-theorem szCTabT11_p9_r2 : cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.int 64)]), (.val [(.int 8)]), (.flat 15 true)] 535 rule_inst_4093 = true := by
-  refine cRuleLe_of_chunks 0 535 128 8 128 8 (by decide) szCTabT11_p9_r2_nA ?_ szCTabT11_p9_r2_s szCTabT11_p9_r2_nB ?_
-  · intro c hc
-    match c, hc with
-    | 0, _ => exact szCTabT11_p9_r2_A0
-    | 1, _ => exact szCTabT11_p9_r2_A1
-    | 2, _ => exact szCTabT11_p9_r2_A2
-    | 3, _ => exact szCTabT11_p9_r2_A3
-    | 4, _ => exact szCTabT11_p9_r2_A4
-    | 5, _ => exact szCTabT11_p9_r2_A5
-    | 6, _ => exact szCTabT11_p9_r2_A6
-    | 7, _ => exact szCTabT11_p9_r2_A7
-    | _ + 8, hc => exact absurd hc (by omega)
-  · intro c hc
-    match c, hc with
-    | 0, _ => exact szCTabT11_p9_r2_B0
-    | 1, _ => exact szCTabT11_p9_r2_B1
-    | 2, _ => exact szCTabT11_p9_r2_B2
-    | 3, _ => exact szCTabT11_p9_r2_B3
-    | 4, _ => exact szCTabT11_p9_r2_B4
-    | 5, _ => exact szCTabT11_p9_r2_B5
-    | 6, _ => exact szCTabT11_p9_r2_B6
-    | 7, _ => exact szCTabT11_p9_r2_B7
-    | _ + 8, hc => exact absurd hc (by omega)
+  decide +kernel
 
 theorem szCTabT11_p9 : (((szCTabT11).drop (9 * 1)).take 1).all szEntryOkT = true := by
-  rw [show ((szCTabT11).drop (9 * 1)).take 1 = [(575, [(.ty [(.int 64)]), (.val [(.int 8)]), (.flat 15 true)], 535)] from rfl]
-  simp only [List.all_cons, List.all_nil, Bool.and_true]
-  show (program.rulesOf 575).all (cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.int 64)]), (.val [(.int 8)]), (.flat 15 true)] 535) = true
-  rw [program_rulesOf_575]
-  simp only [List.all_cons, List.all_nil, Bool.and_true, szCTabT11_p9_r0, szCTabT11_p9_r1, szCTabT11_p9_r2, szCTabT11_p9_r3, szCTabT11_p9_r4, szCTabT11_p9_r5, szCTabT11_p9_r6, szCTabT11_p9_r7, szCTabT11_p9_r8, szCTabT11_p9_r9, szCTabT11_p9_r10, Bool.and_self]
-
-theorem szCTabT11_p10_r1 : cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.int 8)]), (.val [(.int 16)]), (.flat 15 true)] 535 rule_inst_4096 = true := by
-  refine cRuleLe_of_chunks 0 535 128 8 128 8 (by decide) szCTabT11_p10_r1_nA ?_ szCTabT11_p10_r1_s szCTabT11_p10_r1_nB ?_
-  · intro c hc
-    match c, hc with
-    | 0, _ => exact szCTabT11_p10_r1_A0
-    | 1, _ => exact szCTabT11_p10_r1_A1
-    | 2, _ => exact szCTabT11_p10_r1_A2
-    | 3, _ => exact szCTabT11_p10_r1_A3
-    | 4, _ => exact szCTabT11_p10_r1_A4
-    | 5, _ => exact szCTabT11_p10_r1_A5
-    | 6, _ => exact szCTabT11_p10_r1_A6
-    | 7, _ => exact szCTabT11_p10_r1_A7
-    | _ + 8, hc => exact absurd hc (by omega)
-  · intro c hc
-    match c, hc with
-    | 0, _ => exact szCTabT11_p10_r1_B0
-    | 1, _ => exact szCTabT11_p10_r1_B1
-    | 2, _ => exact szCTabT11_p10_r1_B2
-    | 3, _ => exact szCTabT11_p10_r1_B3
-    | 4, _ => exact szCTabT11_p10_r1_B4
-    | 5, _ => exact szCTabT11_p10_r1_B5
-    | 6, _ => exact szCTabT11_p10_r1_B6
-    | 7, _ => exact szCTabT11_p10_r1_B7
-    | _ + 8, hc => exact absurd hc (by omega)
-
-theorem szCTabT11_p10_r2 : cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.int 8)]), (.val [(.int 16)]), (.flat 15 true)] 535 rule_inst_4093 = true := by
-  refine cRuleLe_of_chunks 0 535 128 8 128 8 (by decide) szCTabT11_p10_r2_nA ?_ szCTabT11_p10_r2_s szCTabT11_p10_r2_nB ?_
-  · intro c hc
-    match c, hc with
-    | 0, _ => exact szCTabT11_p10_r2_A0
-    | 1, _ => exact szCTabT11_p10_r2_A1
-    | 2, _ => exact szCTabT11_p10_r2_A2
-    | 3, _ => exact szCTabT11_p10_r2_A3
-    | 4, _ => exact szCTabT11_p10_r2_A4
-    | 5, _ => exact szCTabT11_p10_r2_A5
-    | 6, _ => exact szCTabT11_p10_r2_A6
-    | 7, _ => exact szCTabT11_p10_r2_A7
-    | _ + 8, hc => exact absurd hc (by omega)
-  · intro c hc
-    match c, hc with
-    | 0, _ => exact szCTabT11_p10_r2_B0
-    | 1, _ => exact szCTabT11_p10_r2_B1
-    | 2, _ => exact szCTabT11_p10_r2_B2
-    | 3, _ => exact szCTabT11_p10_r2_B3
-    | 4, _ => exact szCTabT11_p10_r2_B4
-    | 5, _ => exact szCTabT11_p10_r2_B5
-    | 6, _ => exact szCTabT11_p10_r2_B6
-    | 7, _ => exact szCTabT11_p10_r2_B7
-    | _ + 8, hc => exact absurd hc (by omega)
+  decide +kernel
 
 theorem szCTabT11_p10 : (((szCTabT11).drop (10 * 1)).take 1).all szEntryOkT = true := by
-  rw [show ((szCTabT11).drop (10 * 1)).take 1 = [(575, [(.ty [(.int 8)]), (.val [(.int 16)]), (.flat 15 true)], 535)] from rfl]
-  simp only [List.all_cons, List.all_nil, Bool.and_true]
-  show (program.rulesOf 575).all (cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.int 8)]), (.val [(.int 16)]), (.flat 15 true)] 535) = true
-  rw [program_rulesOf_575]
-  simp only [List.all_cons, List.all_nil, Bool.and_true, szCTabT11_p10_r0, szCTabT11_p10_r1, szCTabT11_p10_r2, szCTabT11_p10_r3, szCTabT11_p10_r4, szCTabT11_p10_r5, szCTabT11_p10_r6, szCTabT11_p10_r7, szCTabT11_p10_r8, szCTabT11_p10_r9, szCTabT11_p10_r10, Bool.and_self]
-
-theorem szCTabT11_p11_r1 : cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.int 8)]), (.val [(.int 32)]), (.flat 15 true)] 535 rule_inst_4096 = true := by
-  refine cRuleLe_of_chunks 0 535 128 8 128 8 (by decide) szCTabT11_p11_r1_nA ?_ szCTabT11_p11_r1_s szCTabT11_p11_r1_nB ?_
-  · intro c hc
-    match c, hc with
-    | 0, _ => exact szCTabT11_p11_r1_A0
-    | 1, _ => exact szCTabT11_p11_r1_A1
-    | 2, _ => exact szCTabT11_p11_r1_A2
-    | 3, _ => exact szCTabT11_p11_r1_A3
-    | 4, _ => exact szCTabT11_p11_r1_A4
-    | 5, _ => exact szCTabT11_p11_r1_A5
-    | 6, _ => exact szCTabT11_p11_r1_A6
-    | 7, _ => exact szCTabT11_p11_r1_A7
-    | _ + 8, hc => exact absurd hc (by omega)
-  · intro c hc
-    match c, hc with
-    | 0, _ => exact szCTabT11_p11_r1_B0
-    | 1, _ => exact szCTabT11_p11_r1_B1
-    | 2, _ => exact szCTabT11_p11_r1_B2
-    | 3, _ => exact szCTabT11_p11_r1_B3
-    | 4, _ => exact szCTabT11_p11_r1_B4
-    | 5, _ => exact szCTabT11_p11_r1_B5
-    | 6, _ => exact szCTabT11_p11_r1_B6
-    | 7, _ => exact szCTabT11_p11_r1_B7
-    | _ + 8, hc => exact absurd hc (by omega)
-
-theorem szCTabT11_p11_r2 : cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.int 8)]), (.val [(.int 32)]), (.flat 15 true)] 535 rule_inst_4093 = true := by
-  refine cRuleLe_of_chunks 0 535 128 8 128 8 (by decide) szCTabT11_p11_r2_nA ?_ szCTabT11_p11_r2_s szCTabT11_p11_r2_nB ?_
-  · intro c hc
-    match c, hc with
-    | 0, _ => exact szCTabT11_p11_r2_A0
-    | 1, _ => exact szCTabT11_p11_r2_A1
-    | 2, _ => exact szCTabT11_p11_r2_A2
-    | 3, _ => exact szCTabT11_p11_r2_A3
-    | 4, _ => exact szCTabT11_p11_r2_A4
-    | 5, _ => exact szCTabT11_p11_r2_A5
-    | 6, _ => exact szCTabT11_p11_r2_A6
-    | 7, _ => exact szCTabT11_p11_r2_A7
-    | _ + 8, hc => exact absurd hc (by omega)
-  · intro c hc
-    match c, hc with
-    | 0, _ => exact szCTabT11_p11_r2_B0
-    | 1, _ => exact szCTabT11_p11_r2_B1
-    | 2, _ => exact szCTabT11_p11_r2_B2
-    | 3, _ => exact szCTabT11_p11_r2_B3
-    | 4, _ => exact szCTabT11_p11_r2_B4
-    | 5, _ => exact szCTabT11_p11_r2_B5
-    | 6, _ => exact szCTabT11_p11_r2_B6
-    | 7, _ => exact szCTabT11_p11_r2_B7
-    | _ + 8, hc => exact absurd hc (by omega)
+  decide +kernel
 
 theorem szCTabT11_p11 : (((szCTabT11).drop (11 * 1)).take 1).all szEntryOkT = true := by
-  rw [show ((szCTabT11).drop (11 * 1)).take 1 = [(575, [(.ty [(.int 8)]), (.val [(.int 32)]), (.flat 15 true)], 535)] from rfl]
-  simp only [List.all_cons, List.all_nil, Bool.and_true]
-  show (program.rulesOf 575).all (cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.int 8)]), (.val [(.int 32)]), (.flat 15 true)] 535) = true
-  rw [program_rulesOf_575]
-  simp only [List.all_cons, List.all_nil, Bool.and_true, szCTabT11_p11_r0, szCTabT11_p11_r1, szCTabT11_p11_r2, szCTabT11_p11_r3, szCTabT11_p11_r4, szCTabT11_p11_r5, szCTabT11_p11_r6, szCTabT11_p11_r7, szCTabT11_p11_r8, szCTabT11_p11_r9, szCTabT11_p11_r10, Bool.and_self]
-
-theorem szCTabT11_p12_r1 : cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.int 8)]), (.val [(.int 64)]), (.flat 15 true)] 535 rule_inst_4096 = true := by
-  refine cRuleLe_of_chunks 0 535 128 8 128 8 (by decide) szCTabT11_p12_r1_nA ?_ szCTabT11_p12_r1_s szCTabT11_p12_r1_nB ?_
-  · intro c hc
-    match c, hc with
-    | 0, _ => exact szCTabT11_p12_r1_A0
-    | 1, _ => exact szCTabT11_p12_r1_A1
-    | 2, _ => exact szCTabT11_p12_r1_A2
-    | 3, _ => exact szCTabT11_p12_r1_A3
-    | 4, _ => exact szCTabT11_p12_r1_A4
-    | 5, _ => exact szCTabT11_p12_r1_A5
-    | 6, _ => exact szCTabT11_p12_r1_A6
-    | 7, _ => exact szCTabT11_p12_r1_A7
-    | _ + 8, hc => exact absurd hc (by omega)
-  · intro c hc
-    match c, hc with
-    | 0, _ => exact szCTabT11_p12_r1_B0
-    | 1, _ => exact szCTabT11_p12_r1_B1
-    | 2, _ => exact szCTabT11_p12_r1_B2
-    | 3, _ => exact szCTabT11_p12_r1_B3
-    | 4, _ => exact szCTabT11_p12_r1_B4
-    | 5, _ => exact szCTabT11_p12_r1_B5
-    | 6, _ => exact szCTabT11_p12_r1_B6
-    | 7, _ => exact szCTabT11_p12_r1_B7
-    | _ + 8, hc => exact absurd hc (by omega)
-
-theorem szCTabT11_p12_r2 : cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.int 8)]), (.val [(.int 64)]), (.flat 15 true)] 535 rule_inst_4093 = true := by
-  refine cRuleLe_of_chunks 0 535 128 8 128 8 (by decide) szCTabT11_p12_r2_nA ?_ szCTabT11_p12_r2_s szCTabT11_p12_r2_nB ?_
-  · intro c hc
-    match c, hc with
-    | 0, _ => exact szCTabT11_p12_r2_A0
-    | 1, _ => exact szCTabT11_p12_r2_A1
-    | 2, _ => exact szCTabT11_p12_r2_A2
-    | 3, _ => exact szCTabT11_p12_r2_A3
-    | 4, _ => exact szCTabT11_p12_r2_A4
-    | 5, _ => exact szCTabT11_p12_r2_A5
-    | 6, _ => exact szCTabT11_p12_r2_A6
-    | 7, _ => exact szCTabT11_p12_r2_A7
-    | _ + 8, hc => exact absurd hc (by omega)
-  · intro c hc
-    match c, hc with
-    | 0, _ => exact szCTabT11_p12_r2_B0
-    | 1, _ => exact szCTabT11_p12_r2_B1
-    | 2, _ => exact szCTabT11_p12_r2_B2
-    | 3, _ => exact szCTabT11_p12_r2_B3
-    | 4, _ => exact szCTabT11_p12_r2_B4
-    | 5, _ => exact szCTabT11_p12_r2_B5
-    | 6, _ => exact szCTabT11_p12_r2_B6
-    | 7, _ => exact szCTabT11_p12_r2_B7
-    | _ + 8, hc => exact absurd hc (by omega)
+  decide +kernel
 
 theorem szCTabT11_p12 : (((szCTabT11).drop (12 * 1)).take 1).all szEntryOkT = true := by
-  rw [show ((szCTabT11).drop (12 * 1)).take 1 = [(575, [(.ty [(.int 8)]), (.val [(.int 64)]), (.flat 15 true)], 535)] from rfl]
-  simp only [List.all_cons, List.all_nil, Bool.and_true]
-  show (program.rulesOf 575).all (cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.int 8)]), (.val [(.int 64)]), (.flat 15 true)] 535) = true
-  rw [program_rulesOf_575]
-  simp only [List.all_cons, List.all_nil, Bool.and_true, szCTabT11_p12_r0, szCTabT11_p12_r1, szCTabT11_p12_r2, szCTabT11_p12_r3, szCTabT11_p12_r4, szCTabT11_p12_r5, szCTabT11_p12_r6, szCTabT11_p12_r7, szCTabT11_p12_r8, szCTabT11_p12_r9, szCTabT11_p12_r10, Bool.and_self]
-
-theorem szCTabT11_p13_r1 : cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.int 8)]), (.val [(.int 8)]), (.flat 15 true)] 535 rule_inst_4096 = true := by
-  refine cRuleLe_of_chunks 0 535 128 8 128 8 (by decide) szCTabT11_p13_r1_nA ?_ szCTabT11_p13_r1_s szCTabT11_p13_r1_nB ?_
-  · intro c hc
-    match c, hc with
-    | 0, _ => exact szCTabT11_p13_r1_A0
-    | 1, _ => exact szCTabT11_p13_r1_A1
-    | 2, _ => exact szCTabT11_p13_r1_A2
-    | 3, _ => exact szCTabT11_p13_r1_A3
-    | 4, _ => exact szCTabT11_p13_r1_A4
-    | 5, _ => exact szCTabT11_p13_r1_A5
-    | 6, _ => exact szCTabT11_p13_r1_A6
-    | 7, _ => exact szCTabT11_p13_r1_A7
-    | _ + 8, hc => exact absurd hc (by omega)
-  · intro c hc
-    match c, hc with
-    | 0, _ => exact szCTabT11_p13_r1_B0
-    | 1, _ => exact szCTabT11_p13_r1_B1
-    | 2, _ => exact szCTabT11_p13_r1_B2
-    | 3, _ => exact szCTabT11_p13_r1_B3
-    | 4, _ => exact szCTabT11_p13_r1_B4
-    | 5, _ => exact szCTabT11_p13_r1_B5
-    | 6, _ => exact szCTabT11_p13_r1_B6
-    | 7, _ => exact szCTabT11_p13_r1_B7
-    | _ + 8, hc => exact absurd hc (by omega)
-
-theorem szCTabT11_p13_r2 : cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.int 8)]), (.val [(.int 8)]), (.flat 15 true)] 535 rule_inst_4093 = true := by
-  refine cRuleLe_of_chunks 0 535 128 8 128 8 (by decide) szCTabT11_p13_r2_nA ?_ szCTabT11_p13_r2_s szCTabT11_p13_r2_nB ?_
-  · intro c hc
-    match c, hc with
-    | 0, _ => exact szCTabT11_p13_r2_A0
-    | 1, _ => exact szCTabT11_p13_r2_A1
-    | 2, _ => exact szCTabT11_p13_r2_A2
-    | 3, _ => exact szCTabT11_p13_r2_A3
-    | 4, _ => exact szCTabT11_p13_r2_A4
-    | 5, _ => exact szCTabT11_p13_r2_A5
-    | 6, _ => exact szCTabT11_p13_r2_A6
-    | 7, _ => exact szCTabT11_p13_r2_A7
-    | _ + 8, hc => exact absurd hc (by omega)
-  · intro c hc
-    match c, hc with
-    | 0, _ => exact szCTabT11_p13_r2_B0
-    | 1, _ => exact szCTabT11_p13_r2_B1
-    | 2, _ => exact szCTabT11_p13_r2_B2
-    | 3, _ => exact szCTabT11_p13_r2_B3
-    | 4, _ => exact szCTabT11_p13_r2_B4
-    | 5, _ => exact szCTabT11_p13_r2_B5
-    | 6, _ => exact szCTabT11_p13_r2_B6
-    | 7, _ => exact szCTabT11_p13_r2_B7
-    | _ + 8, hc => exact absurd hc (by omega)
+  decide +kernel
 
 theorem szCTabT11_p13 : (((szCTabT11).drop (13 * 1)).take 1).all szEntryOkT = true := by
-  rw [show ((szCTabT11).drop (13 * 1)).take 1 = [(575, [(.ty [(.int 8)]), (.val [(.int 8)]), (.flat 15 true)], 535)] from rfl]
-  simp only [List.all_cons, List.all_nil, Bool.and_true]
-  show (program.rulesOf 575).all (cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.int 8)]), (.val [(.int 8)]), (.flat 15 true)] 535) = true
-  rw [program_rulesOf_575]
-  simp only [List.all_cons, List.all_nil, Bool.and_true, szCTabT11_p13_r0, szCTabT11_p13_r1, szCTabT11_p13_r2, szCTabT11_p13_r3, szCTabT11_p13_r4, szCTabT11_p13_r5, szCTabT11_p13_r6, szCTabT11_p13_r7, szCTabT11_p13_r8, szCTabT11_p13_r9, szCTabT11_p13_r10, Bool.and_self]
+  decide +kernel
 
 theorem szCTabT11_p14 : (((szCTabT11).drop (14 * 1)).take 1).all szEntryOkT = true := by
   decide +kernel
@@ -1869,77 +597,1469 @@ theorem szCTabT11_p23 : (((szCTabT11).drop (23 * 1)).take 1).all szEntryOkT = tr
 theorem szCTabT11_p24 : (((szCTabT11).drop (24 * 1)).take 1).all szEntryOkT = true := by
   decide +kernel
 
+theorem szCTabT11_p25_r1 : cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.float 32)]), (.val [(.int 16)]), (.flat 15 true)] 535 rule_inst_4096 = true := by
+  refine cRuleLe_of_chunks 0 535 128 9 128 9 (by decide) szCTabT11_p25_r1_nA ?_ szCTabT11_p25_r1_s szCTabT11_p25_r1_nB ?_
+  · intro c hc
+    match c, hc with
+    | 0, _ => exact szCTabT11_p25_r1_A0
+    | 1, _ => exact szCTabT11_p25_r1_A1
+    | 2, _ => exact szCTabT11_p25_r1_A2
+    | 3, _ => exact szCTabT11_p25_r1_A3
+    | 4, _ => exact szCTabT11_p25_r1_A4
+    | 5, _ => exact szCTabT11_p25_r1_A5
+    | 6, _ => exact szCTabT11_p25_r1_A6
+    | 7, _ => exact szCTabT11_p25_r1_A7
+    | 8, _ => exact szCTabT11_p25_r1_A8
+    | _ + 9, hc => exact absurd hc (by omega)
+  · intro c hc
+    match c, hc with
+    | 0, _ => exact szCTabT11_p25_r1_B0
+    | 1, _ => exact szCTabT11_p25_r1_B1
+    | 2, _ => exact szCTabT11_p25_r1_B2
+    | 3, _ => exact szCTabT11_p25_r1_B3
+    | 4, _ => exact szCTabT11_p25_r1_B4
+    | 5, _ => exact szCTabT11_p25_r1_B5
+    | 6, _ => exact szCTabT11_p25_r1_B6
+    | 7, _ => exact szCTabT11_p25_r1_B7
+    | 8, _ => exact szCTabT11_p25_r1_B8
+    | _ + 9, hc => exact absurd hc (by omega)
+
+theorem szCTabT11_p25_r2 : cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.float 32)]), (.val [(.int 16)]), (.flat 15 true)] 535 rule_inst_4093 = true := by
+  refine cRuleLe_of_chunks 0 535 128 9 128 9 (by decide) szCTabT11_p25_r2_nA ?_ szCTabT11_p25_r2_s szCTabT11_p25_r2_nB ?_
+  · intro c hc
+    match c, hc with
+    | 0, _ => exact szCTabT11_p25_r2_A0
+    | 1, _ => exact szCTabT11_p25_r2_A1
+    | 2, _ => exact szCTabT11_p25_r2_A2
+    | 3, _ => exact szCTabT11_p25_r2_A3
+    | 4, _ => exact szCTabT11_p25_r2_A4
+    | 5, _ => exact szCTabT11_p25_r2_A5
+    | 6, _ => exact szCTabT11_p25_r2_A6
+    | 7, _ => exact szCTabT11_p25_r2_A7
+    | 8, _ => exact szCTabT11_p25_r2_A8
+    | _ + 9, hc => exact absurd hc (by omega)
+  · intro c hc
+    match c, hc with
+    | 0, _ => exact szCTabT11_p25_r2_B0
+    | 1, _ => exact szCTabT11_p25_r2_B1
+    | 2, _ => exact szCTabT11_p25_r2_B2
+    | 3, _ => exact szCTabT11_p25_r2_B3
+    | 4, _ => exact szCTabT11_p25_r2_B4
+    | 5, _ => exact szCTabT11_p25_r2_B5
+    | 6, _ => exact szCTabT11_p25_r2_B6
+    | 7, _ => exact szCTabT11_p25_r2_B7
+    | 8, _ => exact szCTabT11_p25_r2_B8
+    | _ + 9, hc => exact absurd hc (by omega)
+
 theorem szCTabT11_p25 : (((szCTabT11).drop (25 * 1)).take 1).all szEntryOkT = true := by
-  decide +kernel
+  rw [show ((szCTabT11).drop (25 * 1)).take 1 = [(575, [(.ty [(.float 32)]), (.val [(.int 16)]), (.flat 15 true)], 535)] from rfl]
+  simp only [List.all_cons, List.all_nil, Bool.and_true]
+  show (program.rulesOf 575).all (cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.float 32)]), (.val [(.int 16)]), (.flat 15 true)] 535) = true
+  rw [program_rulesOf_575]
+  simp only [List.all_cons, List.all_nil, Bool.and_true, szCTabT11_p25_r0, szCTabT11_p25_r1, szCTabT11_p25_r2, szCTabT11_p25_r3, szCTabT11_p25_r4, szCTabT11_p25_r5, szCTabT11_p25_r6, szCTabT11_p25_r7, szCTabT11_p25_r8, szCTabT11_p25_r9, szCTabT11_p25_r10, Bool.and_self]
+
+theorem szCTabT11_p26_r1 : cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.float 32)]), (.val [(.int 32)]), (.flat 15 true)] 535 rule_inst_4096 = true := by
+  refine cRuleLe_of_chunks 0 535 128 9 128 9 (by decide) szCTabT11_p26_r1_nA ?_ szCTabT11_p26_r1_s szCTabT11_p26_r1_nB ?_
+  · intro c hc
+    match c, hc with
+    | 0, _ => exact szCTabT11_p26_r1_A0
+    | 1, _ => exact szCTabT11_p26_r1_A1
+    | 2, _ => exact szCTabT11_p26_r1_A2
+    | 3, _ => exact szCTabT11_p26_r1_A3
+    | 4, _ => exact szCTabT11_p26_r1_A4
+    | 5, _ => exact szCTabT11_p26_r1_A5
+    | 6, _ => exact szCTabT11_p26_r1_A6
+    | 7, _ => exact szCTabT11_p26_r1_A7
+    | 8, _ => exact szCTabT11_p26_r1_A8
+    | _ + 9, hc => exact absurd hc (by omega)
+  · intro c hc
+    match c, hc with
+    | 0, _ => exact szCTabT11_p26_r1_B0
+    | 1, _ => exact szCTabT11_p26_r1_B1
+    | 2, _ => exact szCTabT11_p26_r1_B2
+    | 3, _ => exact szCTabT11_p26_r1_B3
+    | 4, _ => exact szCTabT11_p26_r1_B4
+    | 5, _ => exact szCTabT11_p26_r1_B5
+    | 6, _ => exact szCTabT11_p26_r1_B6
+    | 7, _ => exact szCTabT11_p26_r1_B7
+    | 8, _ => exact szCTabT11_p26_r1_B8
+    | _ + 9, hc => exact absurd hc (by omega)
+
+theorem szCTabT11_p26_r2 : cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.float 32)]), (.val [(.int 32)]), (.flat 15 true)] 535 rule_inst_4093 = true := by
+  refine cRuleLe_of_chunks 0 535 128 9 128 9 (by decide) szCTabT11_p26_r2_nA ?_ szCTabT11_p26_r2_s szCTabT11_p26_r2_nB ?_
+  · intro c hc
+    match c, hc with
+    | 0, _ => exact szCTabT11_p26_r2_A0
+    | 1, _ => exact szCTabT11_p26_r2_A1
+    | 2, _ => exact szCTabT11_p26_r2_A2
+    | 3, _ => exact szCTabT11_p26_r2_A3
+    | 4, _ => exact szCTabT11_p26_r2_A4
+    | 5, _ => exact szCTabT11_p26_r2_A5
+    | 6, _ => exact szCTabT11_p26_r2_A6
+    | 7, _ => exact szCTabT11_p26_r2_A7
+    | 8, _ => exact szCTabT11_p26_r2_A8
+    | _ + 9, hc => exact absurd hc (by omega)
+  · intro c hc
+    match c, hc with
+    | 0, _ => exact szCTabT11_p26_r2_B0
+    | 1, _ => exact szCTabT11_p26_r2_B1
+    | 2, _ => exact szCTabT11_p26_r2_B2
+    | 3, _ => exact szCTabT11_p26_r2_B3
+    | 4, _ => exact szCTabT11_p26_r2_B4
+    | 5, _ => exact szCTabT11_p26_r2_B5
+    | 6, _ => exact szCTabT11_p26_r2_B6
+    | 7, _ => exact szCTabT11_p26_r2_B7
+    | 8, _ => exact szCTabT11_p26_r2_B8
+    | _ + 9, hc => exact absurd hc (by omega)
 
 theorem szCTabT11_p26 : (((szCTabT11).drop (26 * 1)).take 1).all szEntryOkT = true := by
-  decide +kernel
+  rw [show ((szCTabT11).drop (26 * 1)).take 1 = [(575, [(.ty [(.float 32)]), (.val [(.int 32)]), (.flat 15 true)], 535)] from rfl]
+  simp only [List.all_cons, List.all_nil, Bool.and_true]
+  show (program.rulesOf 575).all (cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.float 32)]), (.val [(.int 32)]), (.flat 15 true)] 535) = true
+  rw [program_rulesOf_575]
+  simp only [List.all_cons, List.all_nil, Bool.and_true, szCTabT11_p26_r0, szCTabT11_p26_r1, szCTabT11_p26_r2, szCTabT11_p26_r3, szCTabT11_p26_r4, szCTabT11_p26_r5, szCTabT11_p26_r6, szCTabT11_p26_r7, szCTabT11_p26_r8, szCTabT11_p26_r9, szCTabT11_p26_r10, Bool.and_self]
+
+theorem szCTabT11_p27_r1 : cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.float 32)]), (.val [(.int 64)]), (.flat 15 true)] 535 rule_inst_4096 = true := by
+  refine cRuleLe_of_chunks 0 535 128 9 128 9 (by decide) szCTabT11_p27_r1_nA ?_ szCTabT11_p27_r1_s szCTabT11_p27_r1_nB ?_
+  · intro c hc
+    match c, hc with
+    | 0, _ => exact szCTabT11_p27_r1_A0
+    | 1, _ => exact szCTabT11_p27_r1_A1
+    | 2, _ => exact szCTabT11_p27_r1_A2
+    | 3, _ => exact szCTabT11_p27_r1_A3
+    | 4, _ => exact szCTabT11_p27_r1_A4
+    | 5, _ => exact szCTabT11_p27_r1_A5
+    | 6, _ => exact szCTabT11_p27_r1_A6
+    | 7, _ => exact szCTabT11_p27_r1_A7
+    | 8, _ => exact szCTabT11_p27_r1_A8
+    | _ + 9, hc => exact absurd hc (by omega)
+  · intro c hc
+    match c, hc with
+    | 0, _ => exact szCTabT11_p27_r1_B0
+    | 1, _ => exact szCTabT11_p27_r1_B1
+    | 2, _ => exact szCTabT11_p27_r1_B2
+    | 3, _ => exact szCTabT11_p27_r1_B3
+    | 4, _ => exact szCTabT11_p27_r1_B4
+    | 5, _ => exact szCTabT11_p27_r1_B5
+    | 6, _ => exact szCTabT11_p27_r1_B6
+    | 7, _ => exact szCTabT11_p27_r1_B7
+    | 8, _ => exact szCTabT11_p27_r1_B8
+    | _ + 9, hc => exact absurd hc (by omega)
+
+theorem szCTabT11_p27_r2 : cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.float 32)]), (.val [(.int 64)]), (.flat 15 true)] 535 rule_inst_4093 = true := by
+  refine cRuleLe_of_chunks 0 535 128 9 128 9 (by decide) szCTabT11_p27_r2_nA ?_ szCTabT11_p27_r2_s szCTabT11_p27_r2_nB ?_
+  · intro c hc
+    match c, hc with
+    | 0, _ => exact szCTabT11_p27_r2_A0
+    | 1, _ => exact szCTabT11_p27_r2_A1
+    | 2, _ => exact szCTabT11_p27_r2_A2
+    | 3, _ => exact szCTabT11_p27_r2_A3
+    | 4, _ => exact szCTabT11_p27_r2_A4
+    | 5, _ => exact szCTabT11_p27_r2_A5
+    | 6, _ => exact szCTabT11_p27_r2_A6
+    | 7, _ => exact szCTabT11_p27_r2_A7
+    | 8, _ => exact szCTabT11_p27_r2_A8
+    | _ + 9, hc => exact absurd hc (by omega)
+  · intro c hc
+    match c, hc with
+    | 0, _ => exact szCTabT11_p27_r2_B0
+    | 1, _ => exact szCTabT11_p27_r2_B1
+    | 2, _ => exact szCTabT11_p27_r2_B2
+    | 3, _ => exact szCTabT11_p27_r2_B3
+    | 4, _ => exact szCTabT11_p27_r2_B4
+    | 5, _ => exact szCTabT11_p27_r2_B5
+    | 6, _ => exact szCTabT11_p27_r2_B6
+    | 7, _ => exact szCTabT11_p27_r2_B7
+    | 8, _ => exact szCTabT11_p27_r2_B8
+    | _ + 9, hc => exact absurd hc (by omega)
 
 theorem szCTabT11_p27 : (((szCTabT11).drop (27 * 1)).take 1).all szEntryOkT = true := by
-  decide +kernel
+  rw [show ((szCTabT11).drop (27 * 1)).take 1 = [(575, [(.ty [(.float 32)]), (.val [(.int 64)]), (.flat 15 true)], 535)] from rfl]
+  simp only [List.all_cons, List.all_nil, Bool.and_true]
+  show (program.rulesOf 575).all (cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.float 32)]), (.val [(.int 64)]), (.flat 15 true)] 535) = true
+  rw [program_rulesOf_575]
+  simp only [List.all_cons, List.all_nil, Bool.and_true, szCTabT11_p27_r0, szCTabT11_p27_r1, szCTabT11_p27_r2, szCTabT11_p27_r3, szCTabT11_p27_r4, szCTabT11_p27_r5, szCTabT11_p27_r6, szCTabT11_p27_r7, szCTabT11_p27_r8, szCTabT11_p27_r9, szCTabT11_p27_r10, Bool.and_self]
+
+theorem szCTabT11_p28_r1 : cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.float 32)]), (.val [(.int 8)]), (.flat 15 true)] 535 rule_inst_4096 = true := by
+  refine cRuleLe_of_chunks 0 535 128 9 128 9 (by decide) szCTabT11_p28_r1_nA ?_ szCTabT11_p28_r1_s szCTabT11_p28_r1_nB ?_
+  · intro c hc
+    match c, hc with
+    | 0, _ => exact szCTabT11_p28_r1_A0
+    | 1, _ => exact szCTabT11_p28_r1_A1
+    | 2, _ => exact szCTabT11_p28_r1_A2
+    | 3, _ => exact szCTabT11_p28_r1_A3
+    | 4, _ => exact szCTabT11_p28_r1_A4
+    | 5, _ => exact szCTabT11_p28_r1_A5
+    | 6, _ => exact szCTabT11_p28_r1_A6
+    | 7, _ => exact szCTabT11_p28_r1_A7
+    | 8, _ => exact szCTabT11_p28_r1_A8
+    | _ + 9, hc => exact absurd hc (by omega)
+  · intro c hc
+    match c, hc with
+    | 0, _ => exact szCTabT11_p28_r1_B0
+    | 1, _ => exact szCTabT11_p28_r1_B1
+    | 2, _ => exact szCTabT11_p28_r1_B2
+    | 3, _ => exact szCTabT11_p28_r1_B3
+    | 4, _ => exact szCTabT11_p28_r1_B4
+    | 5, _ => exact szCTabT11_p28_r1_B5
+    | 6, _ => exact szCTabT11_p28_r1_B6
+    | 7, _ => exact szCTabT11_p28_r1_B7
+    | 8, _ => exact szCTabT11_p28_r1_B8
+    | _ + 9, hc => exact absurd hc (by omega)
+
+theorem szCTabT11_p28_r2 : cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.float 32)]), (.val [(.int 8)]), (.flat 15 true)] 535 rule_inst_4093 = true := by
+  refine cRuleLe_of_chunks 0 535 128 9 128 9 (by decide) szCTabT11_p28_r2_nA ?_ szCTabT11_p28_r2_s szCTabT11_p28_r2_nB ?_
+  · intro c hc
+    match c, hc with
+    | 0, _ => exact szCTabT11_p28_r2_A0
+    | 1, _ => exact szCTabT11_p28_r2_A1
+    | 2, _ => exact szCTabT11_p28_r2_A2
+    | 3, _ => exact szCTabT11_p28_r2_A3
+    | 4, _ => exact szCTabT11_p28_r2_A4
+    | 5, _ => exact szCTabT11_p28_r2_A5
+    | 6, _ => exact szCTabT11_p28_r2_A6
+    | 7, _ => exact szCTabT11_p28_r2_A7
+    | 8, _ => exact szCTabT11_p28_r2_A8
+    | _ + 9, hc => exact absurd hc (by omega)
+  · intro c hc
+    match c, hc with
+    | 0, _ => exact szCTabT11_p28_r2_B0
+    | 1, _ => exact szCTabT11_p28_r2_B1
+    | 2, _ => exact szCTabT11_p28_r2_B2
+    | 3, _ => exact szCTabT11_p28_r2_B3
+    | 4, _ => exact szCTabT11_p28_r2_B4
+    | 5, _ => exact szCTabT11_p28_r2_B5
+    | 6, _ => exact szCTabT11_p28_r2_B6
+    | 7, _ => exact szCTabT11_p28_r2_B7
+    | 8, _ => exact szCTabT11_p28_r2_B8
+    | _ + 9, hc => exact absurd hc (by omega)
 
 theorem szCTabT11_p28 : (((szCTabT11).drop (28 * 1)).take 1).all szEntryOkT = true := by
-  decide +kernel
+  rw [show ((szCTabT11).drop (28 * 1)).take 1 = [(575, [(.ty [(.float 32)]), (.val [(.int 8)]), (.flat 15 true)], 535)] from rfl]
+  simp only [List.all_cons, List.all_nil, Bool.and_true]
+  show (program.rulesOf 575).all (cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.float 32)]), (.val [(.int 8)]), (.flat 15 true)] 535) = true
+  rw [program_rulesOf_575]
+  simp only [List.all_cons, List.all_nil, Bool.and_true, szCTabT11_p28_r0, szCTabT11_p28_r1, szCTabT11_p28_r2, szCTabT11_p28_r3, szCTabT11_p28_r4, szCTabT11_p28_r5, szCTabT11_p28_r6, szCTabT11_p28_r7, szCTabT11_p28_r8, szCTabT11_p28_r9, szCTabT11_p28_r10, Bool.and_self]
+
+theorem szCTabT11_p29_r1 : cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.float 64)]), (.val [(.int 16)]), (.flat 15 true)] 535 rule_inst_4096 = true := by
+  refine cRuleLe_of_chunks 0 535 128 9 128 9 (by decide) szCTabT11_p29_r1_nA ?_ szCTabT11_p29_r1_s szCTabT11_p29_r1_nB ?_
+  · intro c hc
+    match c, hc with
+    | 0, _ => exact szCTabT11_p29_r1_A0
+    | 1, _ => exact szCTabT11_p29_r1_A1
+    | 2, _ => exact szCTabT11_p29_r1_A2
+    | 3, _ => exact szCTabT11_p29_r1_A3
+    | 4, _ => exact szCTabT11_p29_r1_A4
+    | 5, _ => exact szCTabT11_p29_r1_A5
+    | 6, _ => exact szCTabT11_p29_r1_A6
+    | 7, _ => exact szCTabT11_p29_r1_A7
+    | 8, _ => exact szCTabT11_p29_r1_A8
+    | _ + 9, hc => exact absurd hc (by omega)
+  · intro c hc
+    match c, hc with
+    | 0, _ => exact szCTabT11_p29_r1_B0
+    | 1, _ => exact szCTabT11_p29_r1_B1
+    | 2, _ => exact szCTabT11_p29_r1_B2
+    | 3, _ => exact szCTabT11_p29_r1_B3
+    | 4, _ => exact szCTabT11_p29_r1_B4
+    | 5, _ => exact szCTabT11_p29_r1_B5
+    | 6, _ => exact szCTabT11_p29_r1_B6
+    | 7, _ => exact szCTabT11_p29_r1_B7
+    | 8, _ => exact szCTabT11_p29_r1_B8
+    | _ + 9, hc => exact absurd hc (by omega)
+
+theorem szCTabT11_p29_r2 : cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.float 64)]), (.val [(.int 16)]), (.flat 15 true)] 535 rule_inst_4093 = true := by
+  refine cRuleLe_of_chunks 0 535 128 9 128 9 (by decide) szCTabT11_p29_r2_nA ?_ szCTabT11_p29_r2_s szCTabT11_p29_r2_nB ?_
+  · intro c hc
+    match c, hc with
+    | 0, _ => exact szCTabT11_p29_r2_A0
+    | 1, _ => exact szCTabT11_p29_r2_A1
+    | 2, _ => exact szCTabT11_p29_r2_A2
+    | 3, _ => exact szCTabT11_p29_r2_A3
+    | 4, _ => exact szCTabT11_p29_r2_A4
+    | 5, _ => exact szCTabT11_p29_r2_A5
+    | 6, _ => exact szCTabT11_p29_r2_A6
+    | 7, _ => exact szCTabT11_p29_r2_A7
+    | 8, _ => exact szCTabT11_p29_r2_A8
+    | _ + 9, hc => exact absurd hc (by omega)
+  · intro c hc
+    match c, hc with
+    | 0, _ => exact szCTabT11_p29_r2_B0
+    | 1, _ => exact szCTabT11_p29_r2_B1
+    | 2, _ => exact szCTabT11_p29_r2_B2
+    | 3, _ => exact szCTabT11_p29_r2_B3
+    | 4, _ => exact szCTabT11_p29_r2_B4
+    | 5, _ => exact szCTabT11_p29_r2_B5
+    | 6, _ => exact szCTabT11_p29_r2_B6
+    | 7, _ => exact szCTabT11_p29_r2_B7
+    | 8, _ => exact szCTabT11_p29_r2_B8
+    | _ + 9, hc => exact absurd hc (by omega)
 
 theorem szCTabT11_p29 : (((szCTabT11).drop (29 * 1)).take 1).all szEntryOkT = true := by
-  decide +kernel
+  rw [show ((szCTabT11).drop (29 * 1)).take 1 = [(575, [(.ty [(.float 64)]), (.val [(.int 16)]), (.flat 15 true)], 535)] from rfl]
+  simp only [List.all_cons, List.all_nil, Bool.and_true]
+  show (program.rulesOf 575).all (cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.float 64)]), (.val [(.int 16)]), (.flat 15 true)] 535) = true
+  rw [program_rulesOf_575]
+  simp only [List.all_cons, List.all_nil, Bool.and_true, szCTabT11_p29_r0, szCTabT11_p29_r1, szCTabT11_p29_r2, szCTabT11_p29_r3, szCTabT11_p29_r4, szCTabT11_p29_r5, szCTabT11_p29_r6, szCTabT11_p29_r7, szCTabT11_p29_r8, szCTabT11_p29_r9, szCTabT11_p29_r10, Bool.and_self]
+
+theorem szCTabT11_p30_r1 : cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.float 64)]), (.val [(.int 32)]), (.flat 15 true)] 535 rule_inst_4096 = true := by
+  refine cRuleLe_of_chunks 0 535 128 9 128 9 (by decide) szCTabT11_p30_r1_nA ?_ szCTabT11_p30_r1_s szCTabT11_p30_r1_nB ?_
+  · intro c hc
+    match c, hc with
+    | 0, _ => exact szCTabT11_p30_r1_A0
+    | 1, _ => exact szCTabT11_p30_r1_A1
+    | 2, _ => exact szCTabT11_p30_r1_A2
+    | 3, _ => exact szCTabT11_p30_r1_A3
+    | 4, _ => exact szCTabT11_p30_r1_A4
+    | 5, _ => exact szCTabT11_p30_r1_A5
+    | 6, _ => exact szCTabT11_p30_r1_A6
+    | 7, _ => exact szCTabT11_p30_r1_A7
+    | 8, _ => exact szCTabT11_p30_r1_A8
+    | _ + 9, hc => exact absurd hc (by omega)
+  · intro c hc
+    match c, hc with
+    | 0, _ => exact szCTabT11_p30_r1_B0
+    | 1, _ => exact szCTabT11_p30_r1_B1
+    | 2, _ => exact szCTabT11_p30_r1_B2
+    | 3, _ => exact szCTabT11_p30_r1_B3
+    | 4, _ => exact szCTabT11_p30_r1_B4
+    | 5, _ => exact szCTabT11_p30_r1_B5
+    | 6, _ => exact szCTabT11_p30_r1_B6
+    | 7, _ => exact szCTabT11_p30_r1_B7
+    | 8, _ => exact szCTabT11_p30_r1_B8
+    | _ + 9, hc => exact absurd hc (by omega)
+
+theorem szCTabT11_p30_r2 : cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.float 64)]), (.val [(.int 32)]), (.flat 15 true)] 535 rule_inst_4093 = true := by
+  refine cRuleLe_of_chunks 0 535 128 9 128 9 (by decide) szCTabT11_p30_r2_nA ?_ szCTabT11_p30_r2_s szCTabT11_p30_r2_nB ?_
+  · intro c hc
+    match c, hc with
+    | 0, _ => exact szCTabT11_p30_r2_A0
+    | 1, _ => exact szCTabT11_p30_r2_A1
+    | 2, _ => exact szCTabT11_p30_r2_A2
+    | 3, _ => exact szCTabT11_p30_r2_A3
+    | 4, _ => exact szCTabT11_p30_r2_A4
+    | 5, _ => exact szCTabT11_p30_r2_A5
+    | 6, _ => exact szCTabT11_p30_r2_A6
+    | 7, _ => exact szCTabT11_p30_r2_A7
+    | 8, _ => exact szCTabT11_p30_r2_A8
+    | _ + 9, hc => exact absurd hc (by omega)
+  · intro c hc
+    match c, hc with
+    | 0, _ => exact szCTabT11_p30_r2_B0
+    | 1, _ => exact szCTabT11_p30_r2_B1
+    | 2, _ => exact szCTabT11_p30_r2_B2
+    | 3, _ => exact szCTabT11_p30_r2_B3
+    | 4, _ => exact szCTabT11_p30_r2_B4
+    | 5, _ => exact szCTabT11_p30_r2_B5
+    | 6, _ => exact szCTabT11_p30_r2_B6
+    | 7, _ => exact szCTabT11_p30_r2_B7
+    | 8, _ => exact szCTabT11_p30_r2_B8
+    | _ + 9, hc => exact absurd hc (by omega)
 
 theorem szCTabT11_p30 : (((szCTabT11).drop (30 * 1)).take 1).all szEntryOkT = true := by
-  decide +kernel
+  rw [show ((szCTabT11).drop (30 * 1)).take 1 = [(575, [(.ty [(.float 64)]), (.val [(.int 32)]), (.flat 15 true)], 535)] from rfl]
+  simp only [List.all_cons, List.all_nil, Bool.and_true]
+  show (program.rulesOf 575).all (cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.float 64)]), (.val [(.int 32)]), (.flat 15 true)] 535) = true
+  rw [program_rulesOf_575]
+  simp only [List.all_cons, List.all_nil, Bool.and_true, szCTabT11_p30_r0, szCTabT11_p30_r1, szCTabT11_p30_r2, szCTabT11_p30_r3, szCTabT11_p30_r4, szCTabT11_p30_r5, szCTabT11_p30_r6, szCTabT11_p30_r7, szCTabT11_p30_r8, szCTabT11_p30_r9, szCTabT11_p30_r10, Bool.and_self]
+
+theorem szCTabT11_p31_r1 : cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.float 64)]), (.val [(.int 64)]), (.flat 15 true)] 535 rule_inst_4096 = true := by
+  refine cRuleLe_of_chunks 0 535 128 9 128 9 (by decide) szCTabT11_p31_r1_nA ?_ szCTabT11_p31_r1_s szCTabT11_p31_r1_nB ?_
+  · intro c hc
+    match c, hc with
+    | 0, _ => exact szCTabT11_p31_r1_A0
+    | 1, _ => exact szCTabT11_p31_r1_A1
+    | 2, _ => exact szCTabT11_p31_r1_A2
+    | 3, _ => exact szCTabT11_p31_r1_A3
+    | 4, _ => exact szCTabT11_p31_r1_A4
+    | 5, _ => exact szCTabT11_p31_r1_A5
+    | 6, _ => exact szCTabT11_p31_r1_A6
+    | 7, _ => exact szCTabT11_p31_r1_A7
+    | 8, _ => exact szCTabT11_p31_r1_A8
+    | _ + 9, hc => exact absurd hc (by omega)
+  · intro c hc
+    match c, hc with
+    | 0, _ => exact szCTabT11_p31_r1_B0
+    | 1, _ => exact szCTabT11_p31_r1_B1
+    | 2, _ => exact szCTabT11_p31_r1_B2
+    | 3, _ => exact szCTabT11_p31_r1_B3
+    | 4, _ => exact szCTabT11_p31_r1_B4
+    | 5, _ => exact szCTabT11_p31_r1_B5
+    | 6, _ => exact szCTabT11_p31_r1_B6
+    | 7, _ => exact szCTabT11_p31_r1_B7
+    | 8, _ => exact szCTabT11_p31_r1_B8
+    | _ + 9, hc => exact absurd hc (by omega)
+
+theorem szCTabT11_p31_r2 : cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.float 64)]), (.val [(.int 64)]), (.flat 15 true)] 535 rule_inst_4093 = true := by
+  refine cRuleLe_of_chunks 0 535 128 9 128 9 (by decide) szCTabT11_p31_r2_nA ?_ szCTabT11_p31_r2_s szCTabT11_p31_r2_nB ?_
+  · intro c hc
+    match c, hc with
+    | 0, _ => exact szCTabT11_p31_r2_A0
+    | 1, _ => exact szCTabT11_p31_r2_A1
+    | 2, _ => exact szCTabT11_p31_r2_A2
+    | 3, _ => exact szCTabT11_p31_r2_A3
+    | 4, _ => exact szCTabT11_p31_r2_A4
+    | 5, _ => exact szCTabT11_p31_r2_A5
+    | 6, _ => exact szCTabT11_p31_r2_A6
+    | 7, _ => exact szCTabT11_p31_r2_A7
+    | 8, _ => exact szCTabT11_p31_r2_A8
+    | _ + 9, hc => exact absurd hc (by omega)
+  · intro c hc
+    match c, hc with
+    | 0, _ => exact szCTabT11_p31_r2_B0
+    | 1, _ => exact szCTabT11_p31_r2_B1
+    | 2, _ => exact szCTabT11_p31_r2_B2
+    | 3, _ => exact szCTabT11_p31_r2_B3
+    | 4, _ => exact szCTabT11_p31_r2_B4
+    | 5, _ => exact szCTabT11_p31_r2_B5
+    | 6, _ => exact szCTabT11_p31_r2_B6
+    | 7, _ => exact szCTabT11_p31_r2_B7
+    | 8, _ => exact szCTabT11_p31_r2_B8
+    | _ + 9, hc => exact absurd hc (by omega)
 
 theorem szCTabT11_p31 : (((szCTabT11).drop (31 * 1)).take 1).all szEntryOkT = true := by
-  decide +kernel
+  rw [show ((szCTabT11).drop (31 * 1)).take 1 = [(575, [(.ty [(.float 64)]), (.val [(.int 64)]), (.flat 15 true)], 535)] from rfl]
+  simp only [List.all_cons, List.all_nil, Bool.and_true]
+  show (program.rulesOf 575).all (cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.float 64)]), (.val [(.int 64)]), (.flat 15 true)] 535) = true
+  rw [program_rulesOf_575]
+  simp only [List.all_cons, List.all_nil, Bool.and_true, szCTabT11_p31_r0, szCTabT11_p31_r1, szCTabT11_p31_r2, szCTabT11_p31_r3, szCTabT11_p31_r4, szCTabT11_p31_r5, szCTabT11_p31_r6, szCTabT11_p31_r7, szCTabT11_p31_r8, szCTabT11_p31_r9, szCTabT11_p31_r10, Bool.and_self]
+
+theorem szCTabT11_p32_r1 : cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.float 64)]), (.val [(.int 8)]), (.flat 15 true)] 535 rule_inst_4096 = true := by
+  refine cRuleLe_of_chunks 0 535 128 9 128 9 (by decide) szCTabT11_p32_r1_nA ?_ szCTabT11_p32_r1_s szCTabT11_p32_r1_nB ?_
+  · intro c hc
+    match c, hc with
+    | 0, _ => exact szCTabT11_p32_r1_A0
+    | 1, _ => exact szCTabT11_p32_r1_A1
+    | 2, _ => exact szCTabT11_p32_r1_A2
+    | 3, _ => exact szCTabT11_p32_r1_A3
+    | 4, _ => exact szCTabT11_p32_r1_A4
+    | 5, _ => exact szCTabT11_p32_r1_A5
+    | 6, _ => exact szCTabT11_p32_r1_A6
+    | 7, _ => exact szCTabT11_p32_r1_A7
+    | 8, _ => exact szCTabT11_p32_r1_A8
+    | _ + 9, hc => exact absurd hc (by omega)
+  · intro c hc
+    match c, hc with
+    | 0, _ => exact szCTabT11_p32_r1_B0
+    | 1, _ => exact szCTabT11_p32_r1_B1
+    | 2, _ => exact szCTabT11_p32_r1_B2
+    | 3, _ => exact szCTabT11_p32_r1_B3
+    | 4, _ => exact szCTabT11_p32_r1_B4
+    | 5, _ => exact szCTabT11_p32_r1_B5
+    | 6, _ => exact szCTabT11_p32_r1_B6
+    | 7, _ => exact szCTabT11_p32_r1_B7
+    | 8, _ => exact szCTabT11_p32_r1_B8
+    | _ + 9, hc => exact absurd hc (by omega)
+
+theorem szCTabT11_p32_r2 : cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.float 64)]), (.val [(.int 8)]), (.flat 15 true)] 535 rule_inst_4093 = true := by
+  refine cRuleLe_of_chunks 0 535 128 9 128 9 (by decide) szCTabT11_p32_r2_nA ?_ szCTabT11_p32_r2_s szCTabT11_p32_r2_nB ?_
+  · intro c hc
+    match c, hc with
+    | 0, _ => exact szCTabT11_p32_r2_A0
+    | 1, _ => exact szCTabT11_p32_r2_A1
+    | 2, _ => exact szCTabT11_p32_r2_A2
+    | 3, _ => exact szCTabT11_p32_r2_A3
+    | 4, _ => exact szCTabT11_p32_r2_A4
+    | 5, _ => exact szCTabT11_p32_r2_A5
+    | 6, _ => exact szCTabT11_p32_r2_A6
+    | 7, _ => exact szCTabT11_p32_r2_A7
+    | 8, _ => exact szCTabT11_p32_r2_A8
+    | _ + 9, hc => exact absurd hc (by omega)
+  · intro c hc
+    match c, hc with
+    | 0, _ => exact szCTabT11_p32_r2_B0
+    | 1, _ => exact szCTabT11_p32_r2_B1
+    | 2, _ => exact szCTabT11_p32_r2_B2
+    | 3, _ => exact szCTabT11_p32_r2_B3
+    | 4, _ => exact szCTabT11_p32_r2_B4
+    | 5, _ => exact szCTabT11_p32_r2_B5
+    | 6, _ => exact szCTabT11_p32_r2_B6
+    | 7, _ => exact szCTabT11_p32_r2_B7
+    | 8, _ => exact szCTabT11_p32_r2_B8
+    | _ + 9, hc => exact absurd hc (by omega)
 
 theorem szCTabT11_p32 : (((szCTabT11).drop (32 * 1)).take 1).all szEntryOkT = true := by
-  decide +kernel
+  rw [show ((szCTabT11).drop (32 * 1)).take 1 = [(575, [(.ty [(.float 64)]), (.val [(.int 8)]), (.flat 15 true)], 535)] from rfl]
+  simp only [List.all_cons, List.all_nil, Bool.and_true]
+  show (program.rulesOf 575).all (cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.float 64)]), (.val [(.int 8)]), (.flat 15 true)] 535) = true
+  rw [program_rulesOf_575]
+  simp only [List.all_cons, List.all_nil, Bool.and_true, szCTabT11_p32_r0, szCTabT11_p32_r1, szCTabT11_p32_r2, szCTabT11_p32_r3, szCTabT11_p32_r4, szCTabT11_p32_r5, szCTabT11_p32_r6, szCTabT11_p32_r7, szCTabT11_p32_r8, szCTabT11_p32_r9, szCTabT11_p32_r10, Bool.and_self]
+
+theorem szCTabT11_p33_r1 : cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.int 16)]), (.val [(.int 16)]), (.flat 15 true)] 535 rule_inst_4096 = true := by
+  refine cRuleLe_of_chunks 0 535 128 9 128 9 (by decide) szCTabT11_p33_r1_nA ?_ szCTabT11_p33_r1_s szCTabT11_p33_r1_nB ?_
+  · intro c hc
+    match c, hc with
+    | 0, _ => exact szCTabT11_p33_r1_A0
+    | 1, _ => exact szCTabT11_p33_r1_A1
+    | 2, _ => exact szCTabT11_p33_r1_A2
+    | 3, _ => exact szCTabT11_p33_r1_A3
+    | 4, _ => exact szCTabT11_p33_r1_A4
+    | 5, _ => exact szCTabT11_p33_r1_A5
+    | 6, _ => exact szCTabT11_p33_r1_A6
+    | 7, _ => exact szCTabT11_p33_r1_A7
+    | 8, _ => exact szCTabT11_p33_r1_A8
+    | _ + 9, hc => exact absurd hc (by omega)
+  · intro c hc
+    match c, hc with
+    | 0, _ => exact szCTabT11_p33_r1_B0
+    | 1, _ => exact szCTabT11_p33_r1_B1
+    | 2, _ => exact szCTabT11_p33_r1_B2
+    | 3, _ => exact szCTabT11_p33_r1_B3
+    | 4, _ => exact szCTabT11_p33_r1_B4
+    | 5, _ => exact szCTabT11_p33_r1_B5
+    | 6, _ => exact szCTabT11_p33_r1_B6
+    | 7, _ => exact szCTabT11_p33_r1_B7
+    | 8, _ => exact szCTabT11_p33_r1_B8
+    | _ + 9, hc => exact absurd hc (by omega)
+
+theorem szCTabT11_p33_r2 : cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.int 16)]), (.val [(.int 16)]), (.flat 15 true)] 535 rule_inst_4093 = true := by
+  refine cRuleLe_of_chunks 0 535 128 9 128 9 (by decide) szCTabT11_p33_r2_nA ?_ szCTabT11_p33_r2_s szCTabT11_p33_r2_nB ?_
+  · intro c hc
+    match c, hc with
+    | 0, _ => exact szCTabT11_p33_r2_A0
+    | 1, _ => exact szCTabT11_p33_r2_A1
+    | 2, _ => exact szCTabT11_p33_r2_A2
+    | 3, _ => exact szCTabT11_p33_r2_A3
+    | 4, _ => exact szCTabT11_p33_r2_A4
+    | 5, _ => exact szCTabT11_p33_r2_A5
+    | 6, _ => exact szCTabT11_p33_r2_A6
+    | 7, _ => exact szCTabT11_p33_r2_A7
+    | 8, _ => exact szCTabT11_p33_r2_A8
+    | _ + 9, hc => exact absurd hc (by omega)
+  · intro c hc
+    match c, hc with
+    | 0, _ => exact szCTabT11_p33_r2_B0
+    | 1, _ => exact szCTabT11_p33_r2_B1
+    | 2, _ => exact szCTabT11_p33_r2_B2
+    | 3, _ => exact szCTabT11_p33_r2_B3
+    | 4, _ => exact szCTabT11_p33_r2_B4
+    | 5, _ => exact szCTabT11_p33_r2_B5
+    | 6, _ => exact szCTabT11_p33_r2_B6
+    | 7, _ => exact szCTabT11_p33_r2_B7
+    | 8, _ => exact szCTabT11_p33_r2_B8
+    | _ + 9, hc => exact absurd hc (by omega)
 
 theorem szCTabT11_p33 : (((szCTabT11).drop (33 * 1)).take 1).all szEntryOkT = true := by
-  decide +kernel
+  rw [show ((szCTabT11).drop (33 * 1)).take 1 = [(575, [(.ty [(.int 16)]), (.val [(.int 16)]), (.flat 15 true)], 535)] from rfl]
+  simp only [List.all_cons, List.all_nil, Bool.and_true]
+  show (program.rulesOf 575).all (cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.int 16)]), (.val [(.int 16)]), (.flat 15 true)] 535) = true
+  rw [program_rulesOf_575]
+  simp only [List.all_cons, List.all_nil, Bool.and_true, szCTabT11_p33_r0, szCTabT11_p33_r1, szCTabT11_p33_r2, szCTabT11_p33_r3, szCTabT11_p33_r4, szCTabT11_p33_r5, szCTabT11_p33_r6, szCTabT11_p33_r7, szCTabT11_p33_r8, szCTabT11_p33_r9, szCTabT11_p33_r10, Bool.and_self]
+
+theorem szCTabT11_p34_r1 : cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.int 16)]), (.val [(.int 32)]), (.flat 15 true)] 535 rule_inst_4096 = true := by
+  refine cRuleLe_of_chunks 0 535 128 9 128 9 (by decide) szCTabT11_p34_r1_nA ?_ szCTabT11_p34_r1_s szCTabT11_p34_r1_nB ?_
+  · intro c hc
+    match c, hc with
+    | 0, _ => exact szCTabT11_p34_r1_A0
+    | 1, _ => exact szCTabT11_p34_r1_A1
+    | 2, _ => exact szCTabT11_p34_r1_A2
+    | 3, _ => exact szCTabT11_p34_r1_A3
+    | 4, _ => exact szCTabT11_p34_r1_A4
+    | 5, _ => exact szCTabT11_p34_r1_A5
+    | 6, _ => exact szCTabT11_p34_r1_A6
+    | 7, _ => exact szCTabT11_p34_r1_A7
+    | 8, _ => exact szCTabT11_p34_r1_A8
+    | _ + 9, hc => exact absurd hc (by omega)
+  · intro c hc
+    match c, hc with
+    | 0, _ => exact szCTabT11_p34_r1_B0
+    | 1, _ => exact szCTabT11_p34_r1_B1
+    | 2, _ => exact szCTabT11_p34_r1_B2
+    | 3, _ => exact szCTabT11_p34_r1_B3
+    | 4, _ => exact szCTabT11_p34_r1_B4
+    | 5, _ => exact szCTabT11_p34_r1_B5
+    | 6, _ => exact szCTabT11_p34_r1_B6
+    | 7, _ => exact szCTabT11_p34_r1_B7
+    | 8, _ => exact szCTabT11_p34_r1_B8
+    | _ + 9, hc => exact absurd hc (by omega)
+
+theorem szCTabT11_p34_r2 : cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.int 16)]), (.val [(.int 32)]), (.flat 15 true)] 535 rule_inst_4093 = true := by
+  refine cRuleLe_of_chunks 0 535 128 9 128 9 (by decide) szCTabT11_p34_r2_nA ?_ szCTabT11_p34_r2_s szCTabT11_p34_r2_nB ?_
+  · intro c hc
+    match c, hc with
+    | 0, _ => exact szCTabT11_p34_r2_A0
+    | 1, _ => exact szCTabT11_p34_r2_A1
+    | 2, _ => exact szCTabT11_p34_r2_A2
+    | 3, _ => exact szCTabT11_p34_r2_A3
+    | 4, _ => exact szCTabT11_p34_r2_A4
+    | 5, _ => exact szCTabT11_p34_r2_A5
+    | 6, _ => exact szCTabT11_p34_r2_A6
+    | 7, _ => exact szCTabT11_p34_r2_A7
+    | 8, _ => exact szCTabT11_p34_r2_A8
+    | _ + 9, hc => exact absurd hc (by omega)
+  · intro c hc
+    match c, hc with
+    | 0, _ => exact szCTabT11_p34_r2_B0
+    | 1, _ => exact szCTabT11_p34_r2_B1
+    | 2, _ => exact szCTabT11_p34_r2_B2
+    | 3, _ => exact szCTabT11_p34_r2_B3
+    | 4, _ => exact szCTabT11_p34_r2_B4
+    | 5, _ => exact szCTabT11_p34_r2_B5
+    | 6, _ => exact szCTabT11_p34_r2_B6
+    | 7, _ => exact szCTabT11_p34_r2_B7
+    | 8, _ => exact szCTabT11_p34_r2_B8
+    | _ + 9, hc => exact absurd hc (by omega)
 
 theorem szCTabT11_p34 : (((szCTabT11).drop (34 * 1)).take 1).all szEntryOkT = true := by
-  decide +kernel
+  rw [show ((szCTabT11).drop (34 * 1)).take 1 = [(575, [(.ty [(.int 16)]), (.val [(.int 32)]), (.flat 15 true)], 535)] from rfl]
+  simp only [List.all_cons, List.all_nil, Bool.and_true]
+  show (program.rulesOf 575).all (cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.int 16)]), (.val [(.int 32)]), (.flat 15 true)] 535) = true
+  rw [program_rulesOf_575]
+  simp only [List.all_cons, List.all_nil, Bool.and_true, szCTabT11_p34_r0, szCTabT11_p34_r1, szCTabT11_p34_r2, szCTabT11_p34_r3, szCTabT11_p34_r4, szCTabT11_p34_r5, szCTabT11_p34_r6, szCTabT11_p34_r7, szCTabT11_p34_r8, szCTabT11_p34_r9, szCTabT11_p34_r10, Bool.and_self]
+
+theorem szCTabT11_p35_r1 : cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.int 16)]), (.val [(.int 64)]), (.flat 15 true)] 535 rule_inst_4096 = true := by
+  refine cRuleLe_of_chunks 0 535 128 9 128 9 (by decide) szCTabT11_p35_r1_nA ?_ szCTabT11_p35_r1_s szCTabT11_p35_r1_nB ?_
+  · intro c hc
+    match c, hc with
+    | 0, _ => exact szCTabT11_p35_r1_A0
+    | 1, _ => exact szCTabT11_p35_r1_A1
+    | 2, _ => exact szCTabT11_p35_r1_A2
+    | 3, _ => exact szCTabT11_p35_r1_A3
+    | 4, _ => exact szCTabT11_p35_r1_A4
+    | 5, _ => exact szCTabT11_p35_r1_A5
+    | 6, _ => exact szCTabT11_p35_r1_A6
+    | 7, _ => exact szCTabT11_p35_r1_A7
+    | 8, _ => exact szCTabT11_p35_r1_A8
+    | _ + 9, hc => exact absurd hc (by omega)
+  · intro c hc
+    match c, hc with
+    | 0, _ => exact szCTabT11_p35_r1_B0
+    | 1, _ => exact szCTabT11_p35_r1_B1
+    | 2, _ => exact szCTabT11_p35_r1_B2
+    | 3, _ => exact szCTabT11_p35_r1_B3
+    | 4, _ => exact szCTabT11_p35_r1_B4
+    | 5, _ => exact szCTabT11_p35_r1_B5
+    | 6, _ => exact szCTabT11_p35_r1_B6
+    | 7, _ => exact szCTabT11_p35_r1_B7
+    | 8, _ => exact szCTabT11_p35_r1_B8
+    | _ + 9, hc => exact absurd hc (by omega)
+
+theorem szCTabT11_p35_r2 : cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.int 16)]), (.val [(.int 64)]), (.flat 15 true)] 535 rule_inst_4093 = true := by
+  refine cRuleLe_of_chunks 0 535 128 9 128 9 (by decide) szCTabT11_p35_r2_nA ?_ szCTabT11_p35_r2_s szCTabT11_p35_r2_nB ?_
+  · intro c hc
+    match c, hc with
+    | 0, _ => exact szCTabT11_p35_r2_A0
+    | 1, _ => exact szCTabT11_p35_r2_A1
+    | 2, _ => exact szCTabT11_p35_r2_A2
+    | 3, _ => exact szCTabT11_p35_r2_A3
+    | 4, _ => exact szCTabT11_p35_r2_A4
+    | 5, _ => exact szCTabT11_p35_r2_A5
+    | 6, _ => exact szCTabT11_p35_r2_A6
+    | 7, _ => exact szCTabT11_p35_r2_A7
+    | 8, _ => exact szCTabT11_p35_r2_A8
+    | _ + 9, hc => exact absurd hc (by omega)
+  · intro c hc
+    match c, hc with
+    | 0, _ => exact szCTabT11_p35_r2_B0
+    | 1, _ => exact szCTabT11_p35_r2_B1
+    | 2, _ => exact szCTabT11_p35_r2_B2
+    | 3, _ => exact szCTabT11_p35_r2_B3
+    | 4, _ => exact szCTabT11_p35_r2_B4
+    | 5, _ => exact szCTabT11_p35_r2_B5
+    | 6, _ => exact szCTabT11_p35_r2_B6
+    | 7, _ => exact szCTabT11_p35_r2_B7
+    | 8, _ => exact szCTabT11_p35_r2_B8
+    | _ + 9, hc => exact absurd hc (by omega)
 
 theorem szCTabT11_p35 : (((szCTabT11).drop (35 * 1)).take 1).all szEntryOkT = true := by
-  decide +kernel
+  rw [show ((szCTabT11).drop (35 * 1)).take 1 = [(575, [(.ty [(.int 16)]), (.val [(.int 64)]), (.flat 15 true)], 535)] from rfl]
+  simp only [List.all_cons, List.all_nil, Bool.and_true]
+  show (program.rulesOf 575).all (cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.int 16)]), (.val [(.int 64)]), (.flat 15 true)] 535) = true
+  rw [program_rulesOf_575]
+  simp only [List.all_cons, List.all_nil, Bool.and_true, szCTabT11_p35_r0, szCTabT11_p35_r1, szCTabT11_p35_r2, szCTabT11_p35_r3, szCTabT11_p35_r4, szCTabT11_p35_r5, szCTabT11_p35_r6, szCTabT11_p35_r7, szCTabT11_p35_r8, szCTabT11_p35_r9, szCTabT11_p35_r10, Bool.and_self]
+
+theorem szCTabT11_p36_r1 : cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.int 16)]), (.val [(.int 8)]), (.flat 15 true)] 535 rule_inst_4096 = true := by
+  refine cRuleLe_of_chunks 0 535 128 9 128 9 (by decide) szCTabT11_p36_r1_nA ?_ szCTabT11_p36_r1_s szCTabT11_p36_r1_nB ?_
+  · intro c hc
+    match c, hc with
+    | 0, _ => exact szCTabT11_p36_r1_A0
+    | 1, _ => exact szCTabT11_p36_r1_A1
+    | 2, _ => exact szCTabT11_p36_r1_A2
+    | 3, _ => exact szCTabT11_p36_r1_A3
+    | 4, _ => exact szCTabT11_p36_r1_A4
+    | 5, _ => exact szCTabT11_p36_r1_A5
+    | 6, _ => exact szCTabT11_p36_r1_A6
+    | 7, _ => exact szCTabT11_p36_r1_A7
+    | 8, _ => exact szCTabT11_p36_r1_A8
+    | _ + 9, hc => exact absurd hc (by omega)
+  · intro c hc
+    match c, hc with
+    | 0, _ => exact szCTabT11_p36_r1_B0
+    | 1, _ => exact szCTabT11_p36_r1_B1
+    | 2, _ => exact szCTabT11_p36_r1_B2
+    | 3, _ => exact szCTabT11_p36_r1_B3
+    | 4, _ => exact szCTabT11_p36_r1_B4
+    | 5, _ => exact szCTabT11_p36_r1_B5
+    | 6, _ => exact szCTabT11_p36_r1_B6
+    | 7, _ => exact szCTabT11_p36_r1_B7
+    | 8, _ => exact szCTabT11_p36_r1_B8
+    | _ + 9, hc => exact absurd hc (by omega)
+
+theorem szCTabT11_p36_r2 : cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.int 16)]), (.val [(.int 8)]), (.flat 15 true)] 535 rule_inst_4093 = true := by
+  refine cRuleLe_of_chunks 0 535 128 9 128 9 (by decide) szCTabT11_p36_r2_nA ?_ szCTabT11_p36_r2_s szCTabT11_p36_r2_nB ?_
+  · intro c hc
+    match c, hc with
+    | 0, _ => exact szCTabT11_p36_r2_A0
+    | 1, _ => exact szCTabT11_p36_r2_A1
+    | 2, _ => exact szCTabT11_p36_r2_A2
+    | 3, _ => exact szCTabT11_p36_r2_A3
+    | 4, _ => exact szCTabT11_p36_r2_A4
+    | 5, _ => exact szCTabT11_p36_r2_A5
+    | 6, _ => exact szCTabT11_p36_r2_A6
+    | 7, _ => exact szCTabT11_p36_r2_A7
+    | 8, _ => exact szCTabT11_p36_r2_A8
+    | _ + 9, hc => exact absurd hc (by omega)
+  · intro c hc
+    match c, hc with
+    | 0, _ => exact szCTabT11_p36_r2_B0
+    | 1, _ => exact szCTabT11_p36_r2_B1
+    | 2, _ => exact szCTabT11_p36_r2_B2
+    | 3, _ => exact szCTabT11_p36_r2_B3
+    | 4, _ => exact szCTabT11_p36_r2_B4
+    | 5, _ => exact szCTabT11_p36_r2_B5
+    | 6, _ => exact szCTabT11_p36_r2_B6
+    | 7, _ => exact szCTabT11_p36_r2_B7
+    | 8, _ => exact szCTabT11_p36_r2_B8
+    | _ + 9, hc => exact absurd hc (by omega)
 
 theorem szCTabT11_p36 : (((szCTabT11).drop (36 * 1)).take 1).all szEntryOkT = true := by
-  decide +kernel
+  rw [show ((szCTabT11).drop (36 * 1)).take 1 = [(575, [(.ty [(.int 16)]), (.val [(.int 8)]), (.flat 15 true)], 535)] from rfl]
+  simp only [List.all_cons, List.all_nil, Bool.and_true]
+  show (program.rulesOf 575).all (cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.int 16)]), (.val [(.int 8)]), (.flat 15 true)] 535) = true
+  rw [program_rulesOf_575]
+  simp only [List.all_cons, List.all_nil, Bool.and_true, szCTabT11_p36_r0, szCTabT11_p36_r1, szCTabT11_p36_r2, szCTabT11_p36_r3, szCTabT11_p36_r4, szCTabT11_p36_r5, szCTabT11_p36_r6, szCTabT11_p36_r7, szCTabT11_p36_r8, szCTabT11_p36_r9, szCTabT11_p36_r10, Bool.and_self]
+
+theorem szCTabT11_p37_r1 : cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.int 32)]), (.val [(.int 16)]), (.flat 15 true)] 535 rule_inst_4096 = true := by
+  refine cRuleLe_of_chunks 0 535 128 9 128 9 (by decide) szCTabT11_p37_r1_nA ?_ szCTabT11_p37_r1_s szCTabT11_p37_r1_nB ?_
+  · intro c hc
+    match c, hc with
+    | 0, _ => exact szCTabT11_p37_r1_A0
+    | 1, _ => exact szCTabT11_p37_r1_A1
+    | 2, _ => exact szCTabT11_p37_r1_A2
+    | 3, _ => exact szCTabT11_p37_r1_A3
+    | 4, _ => exact szCTabT11_p37_r1_A4
+    | 5, _ => exact szCTabT11_p37_r1_A5
+    | 6, _ => exact szCTabT11_p37_r1_A6
+    | 7, _ => exact szCTabT11_p37_r1_A7
+    | 8, _ => exact szCTabT11_p37_r1_A8
+    | _ + 9, hc => exact absurd hc (by omega)
+  · intro c hc
+    match c, hc with
+    | 0, _ => exact szCTabT11_p37_r1_B0
+    | 1, _ => exact szCTabT11_p37_r1_B1
+    | 2, _ => exact szCTabT11_p37_r1_B2
+    | 3, _ => exact szCTabT11_p37_r1_B3
+    | 4, _ => exact szCTabT11_p37_r1_B4
+    | 5, _ => exact szCTabT11_p37_r1_B5
+    | 6, _ => exact szCTabT11_p37_r1_B6
+    | 7, _ => exact szCTabT11_p37_r1_B7
+    | 8, _ => exact szCTabT11_p37_r1_B8
+    | _ + 9, hc => exact absurd hc (by omega)
+
+theorem szCTabT11_p37_r2 : cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.int 32)]), (.val [(.int 16)]), (.flat 15 true)] 535 rule_inst_4093 = true := by
+  refine cRuleLe_of_chunks 0 535 128 9 128 9 (by decide) szCTabT11_p37_r2_nA ?_ szCTabT11_p37_r2_s szCTabT11_p37_r2_nB ?_
+  · intro c hc
+    match c, hc with
+    | 0, _ => exact szCTabT11_p37_r2_A0
+    | 1, _ => exact szCTabT11_p37_r2_A1
+    | 2, _ => exact szCTabT11_p37_r2_A2
+    | 3, _ => exact szCTabT11_p37_r2_A3
+    | 4, _ => exact szCTabT11_p37_r2_A4
+    | 5, _ => exact szCTabT11_p37_r2_A5
+    | 6, _ => exact szCTabT11_p37_r2_A6
+    | 7, _ => exact szCTabT11_p37_r2_A7
+    | 8, _ => exact szCTabT11_p37_r2_A8
+    | _ + 9, hc => exact absurd hc (by omega)
+  · intro c hc
+    match c, hc with
+    | 0, _ => exact szCTabT11_p37_r2_B0
+    | 1, _ => exact szCTabT11_p37_r2_B1
+    | 2, _ => exact szCTabT11_p37_r2_B2
+    | 3, _ => exact szCTabT11_p37_r2_B3
+    | 4, _ => exact szCTabT11_p37_r2_B4
+    | 5, _ => exact szCTabT11_p37_r2_B5
+    | 6, _ => exact szCTabT11_p37_r2_B6
+    | 7, _ => exact szCTabT11_p37_r2_B7
+    | 8, _ => exact szCTabT11_p37_r2_B8
+    | _ + 9, hc => exact absurd hc (by omega)
 
 theorem szCTabT11_p37 : (((szCTabT11).drop (37 * 1)).take 1).all szEntryOkT = true := by
-  decide +kernel
+  rw [show ((szCTabT11).drop (37 * 1)).take 1 = [(575, [(.ty [(.int 32)]), (.val [(.int 16)]), (.flat 15 true)], 535)] from rfl]
+  simp only [List.all_cons, List.all_nil, Bool.and_true]
+  show (program.rulesOf 575).all (cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.int 32)]), (.val [(.int 16)]), (.flat 15 true)] 535) = true
+  rw [program_rulesOf_575]
+  simp only [List.all_cons, List.all_nil, Bool.and_true, szCTabT11_p37_r0, szCTabT11_p37_r1, szCTabT11_p37_r2, szCTabT11_p37_r3, szCTabT11_p37_r4, szCTabT11_p37_r5, szCTabT11_p37_r6, szCTabT11_p37_r7, szCTabT11_p37_r8, szCTabT11_p37_r9, szCTabT11_p37_r10, Bool.and_self]
+
+theorem szCTabT11_p38_r1 : cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.int 32)]), (.val [(.int 32)]), (.flat 15 true)] 535 rule_inst_4096 = true := by
+  refine cRuleLe_of_chunks 0 535 128 9 128 9 (by decide) szCTabT11_p38_r1_nA ?_ szCTabT11_p38_r1_s szCTabT11_p38_r1_nB ?_
+  · intro c hc
+    match c, hc with
+    | 0, _ => exact szCTabT11_p38_r1_A0
+    | 1, _ => exact szCTabT11_p38_r1_A1
+    | 2, _ => exact szCTabT11_p38_r1_A2
+    | 3, _ => exact szCTabT11_p38_r1_A3
+    | 4, _ => exact szCTabT11_p38_r1_A4
+    | 5, _ => exact szCTabT11_p38_r1_A5
+    | 6, _ => exact szCTabT11_p38_r1_A6
+    | 7, _ => exact szCTabT11_p38_r1_A7
+    | 8, _ => exact szCTabT11_p38_r1_A8
+    | _ + 9, hc => exact absurd hc (by omega)
+  · intro c hc
+    match c, hc with
+    | 0, _ => exact szCTabT11_p38_r1_B0
+    | 1, _ => exact szCTabT11_p38_r1_B1
+    | 2, _ => exact szCTabT11_p38_r1_B2
+    | 3, _ => exact szCTabT11_p38_r1_B3
+    | 4, _ => exact szCTabT11_p38_r1_B4
+    | 5, _ => exact szCTabT11_p38_r1_B5
+    | 6, _ => exact szCTabT11_p38_r1_B6
+    | 7, _ => exact szCTabT11_p38_r1_B7
+    | 8, _ => exact szCTabT11_p38_r1_B8
+    | _ + 9, hc => exact absurd hc (by omega)
+
+theorem szCTabT11_p38_r2 : cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.int 32)]), (.val [(.int 32)]), (.flat 15 true)] 535 rule_inst_4093 = true := by
+  refine cRuleLe_of_chunks 0 535 128 9 128 9 (by decide) szCTabT11_p38_r2_nA ?_ szCTabT11_p38_r2_s szCTabT11_p38_r2_nB ?_
+  · intro c hc
+    match c, hc with
+    | 0, _ => exact szCTabT11_p38_r2_A0
+    | 1, _ => exact szCTabT11_p38_r2_A1
+    | 2, _ => exact szCTabT11_p38_r2_A2
+    | 3, _ => exact szCTabT11_p38_r2_A3
+    | 4, _ => exact szCTabT11_p38_r2_A4
+    | 5, _ => exact szCTabT11_p38_r2_A5
+    | 6, _ => exact szCTabT11_p38_r2_A6
+    | 7, _ => exact szCTabT11_p38_r2_A7
+    | 8, _ => exact szCTabT11_p38_r2_A8
+    | _ + 9, hc => exact absurd hc (by omega)
+  · intro c hc
+    match c, hc with
+    | 0, _ => exact szCTabT11_p38_r2_B0
+    | 1, _ => exact szCTabT11_p38_r2_B1
+    | 2, _ => exact szCTabT11_p38_r2_B2
+    | 3, _ => exact szCTabT11_p38_r2_B3
+    | 4, _ => exact szCTabT11_p38_r2_B4
+    | 5, _ => exact szCTabT11_p38_r2_B5
+    | 6, _ => exact szCTabT11_p38_r2_B6
+    | 7, _ => exact szCTabT11_p38_r2_B7
+    | 8, _ => exact szCTabT11_p38_r2_B8
+    | _ + 9, hc => exact absurd hc (by omega)
 
 theorem szCTabT11_p38 : (((szCTabT11).drop (38 * 1)).take 1).all szEntryOkT = true := by
-  decide +kernel
+  rw [show ((szCTabT11).drop (38 * 1)).take 1 = [(575, [(.ty [(.int 32)]), (.val [(.int 32)]), (.flat 15 true)], 535)] from rfl]
+  simp only [List.all_cons, List.all_nil, Bool.and_true]
+  show (program.rulesOf 575).all (cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.int 32)]), (.val [(.int 32)]), (.flat 15 true)] 535) = true
+  rw [program_rulesOf_575]
+  simp only [List.all_cons, List.all_nil, Bool.and_true, szCTabT11_p38_r0, szCTabT11_p38_r1, szCTabT11_p38_r2, szCTabT11_p38_r3, szCTabT11_p38_r4, szCTabT11_p38_r5, szCTabT11_p38_r6, szCTabT11_p38_r7, szCTabT11_p38_r8, szCTabT11_p38_r9, szCTabT11_p38_r10, Bool.and_self]
+
+theorem szCTabT11_p39_r1 : cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.int 32)]), (.val [(.int 64)]), (.flat 15 true)] 535 rule_inst_4096 = true := by
+  refine cRuleLe_of_chunks 0 535 128 9 128 9 (by decide) szCTabT11_p39_r1_nA ?_ szCTabT11_p39_r1_s szCTabT11_p39_r1_nB ?_
+  · intro c hc
+    match c, hc with
+    | 0, _ => exact szCTabT11_p39_r1_A0
+    | 1, _ => exact szCTabT11_p39_r1_A1
+    | 2, _ => exact szCTabT11_p39_r1_A2
+    | 3, _ => exact szCTabT11_p39_r1_A3
+    | 4, _ => exact szCTabT11_p39_r1_A4
+    | 5, _ => exact szCTabT11_p39_r1_A5
+    | 6, _ => exact szCTabT11_p39_r1_A6
+    | 7, _ => exact szCTabT11_p39_r1_A7
+    | 8, _ => exact szCTabT11_p39_r1_A8
+    | _ + 9, hc => exact absurd hc (by omega)
+  · intro c hc
+    match c, hc with
+    | 0, _ => exact szCTabT11_p39_r1_B0
+    | 1, _ => exact szCTabT11_p39_r1_B1
+    | 2, _ => exact szCTabT11_p39_r1_B2
+    | 3, _ => exact szCTabT11_p39_r1_B3
+    | 4, _ => exact szCTabT11_p39_r1_B4
+    | 5, _ => exact szCTabT11_p39_r1_B5
+    | 6, _ => exact szCTabT11_p39_r1_B6
+    | 7, _ => exact szCTabT11_p39_r1_B7
+    | 8, _ => exact szCTabT11_p39_r1_B8
+    | _ + 9, hc => exact absurd hc (by omega)
+
+theorem szCTabT11_p39_r2 : cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.int 32)]), (.val [(.int 64)]), (.flat 15 true)] 535 rule_inst_4093 = true := by
+  refine cRuleLe_of_chunks 0 535 128 9 128 9 (by decide) szCTabT11_p39_r2_nA ?_ szCTabT11_p39_r2_s szCTabT11_p39_r2_nB ?_
+  · intro c hc
+    match c, hc with
+    | 0, _ => exact szCTabT11_p39_r2_A0
+    | 1, _ => exact szCTabT11_p39_r2_A1
+    | 2, _ => exact szCTabT11_p39_r2_A2
+    | 3, _ => exact szCTabT11_p39_r2_A3
+    | 4, _ => exact szCTabT11_p39_r2_A4
+    | 5, _ => exact szCTabT11_p39_r2_A5
+    | 6, _ => exact szCTabT11_p39_r2_A6
+    | 7, _ => exact szCTabT11_p39_r2_A7
+    | 8, _ => exact szCTabT11_p39_r2_A8
+    | _ + 9, hc => exact absurd hc (by omega)
+  · intro c hc
+    match c, hc with
+    | 0, _ => exact szCTabT11_p39_r2_B0
+    | 1, _ => exact szCTabT11_p39_r2_B1
+    | 2, _ => exact szCTabT11_p39_r2_B2
+    | 3, _ => exact szCTabT11_p39_r2_B3
+    | 4, _ => exact szCTabT11_p39_r2_B4
+    | 5, _ => exact szCTabT11_p39_r2_B5
+    | 6, _ => exact szCTabT11_p39_r2_B6
+    | 7, _ => exact szCTabT11_p39_r2_B7
+    | 8, _ => exact szCTabT11_p39_r2_B8
+    | _ + 9, hc => exact absurd hc (by omega)
 
 theorem szCTabT11_p39 : (((szCTabT11).drop (39 * 1)).take 1).all szEntryOkT = true := by
-  decide +kernel
+  rw [show ((szCTabT11).drop (39 * 1)).take 1 = [(575, [(.ty [(.int 32)]), (.val [(.int 64)]), (.flat 15 true)], 535)] from rfl]
+  simp only [List.all_cons, List.all_nil, Bool.and_true]
+  show (program.rulesOf 575).all (cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.int 32)]), (.val [(.int 64)]), (.flat 15 true)] 535) = true
+  rw [program_rulesOf_575]
+  simp only [List.all_cons, List.all_nil, Bool.and_true, szCTabT11_p39_r0, szCTabT11_p39_r1, szCTabT11_p39_r2, szCTabT11_p39_r3, szCTabT11_p39_r4, szCTabT11_p39_r5, szCTabT11_p39_r6, szCTabT11_p39_r7, szCTabT11_p39_r8, szCTabT11_p39_r9, szCTabT11_p39_r10, Bool.and_self]
+
+theorem szCTabT11_p40_r1 : cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.int 32)]), (.val [(.int 8)]), (.flat 15 true)] 535 rule_inst_4096 = true := by
+  refine cRuleLe_of_chunks 0 535 128 9 128 9 (by decide) szCTabT11_p40_r1_nA ?_ szCTabT11_p40_r1_s szCTabT11_p40_r1_nB ?_
+  · intro c hc
+    match c, hc with
+    | 0, _ => exact szCTabT11_p40_r1_A0
+    | 1, _ => exact szCTabT11_p40_r1_A1
+    | 2, _ => exact szCTabT11_p40_r1_A2
+    | 3, _ => exact szCTabT11_p40_r1_A3
+    | 4, _ => exact szCTabT11_p40_r1_A4
+    | 5, _ => exact szCTabT11_p40_r1_A5
+    | 6, _ => exact szCTabT11_p40_r1_A6
+    | 7, _ => exact szCTabT11_p40_r1_A7
+    | 8, _ => exact szCTabT11_p40_r1_A8
+    | _ + 9, hc => exact absurd hc (by omega)
+  · intro c hc
+    match c, hc with
+    | 0, _ => exact szCTabT11_p40_r1_B0
+    | 1, _ => exact szCTabT11_p40_r1_B1
+    | 2, _ => exact szCTabT11_p40_r1_B2
+    | 3, _ => exact szCTabT11_p40_r1_B3
+    | 4, _ => exact szCTabT11_p40_r1_B4
+    | 5, _ => exact szCTabT11_p40_r1_B5
+    | 6, _ => exact szCTabT11_p40_r1_B6
+    | 7, _ => exact szCTabT11_p40_r1_B7
+    | 8, _ => exact szCTabT11_p40_r1_B8
+    | _ + 9, hc => exact absurd hc (by omega)
+
+theorem szCTabT11_p40_r2 : cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.int 32)]), (.val [(.int 8)]), (.flat 15 true)] 535 rule_inst_4093 = true := by
+  refine cRuleLe_of_chunks 0 535 128 9 128 9 (by decide) szCTabT11_p40_r2_nA ?_ szCTabT11_p40_r2_s szCTabT11_p40_r2_nB ?_
+  · intro c hc
+    match c, hc with
+    | 0, _ => exact szCTabT11_p40_r2_A0
+    | 1, _ => exact szCTabT11_p40_r2_A1
+    | 2, _ => exact szCTabT11_p40_r2_A2
+    | 3, _ => exact szCTabT11_p40_r2_A3
+    | 4, _ => exact szCTabT11_p40_r2_A4
+    | 5, _ => exact szCTabT11_p40_r2_A5
+    | 6, _ => exact szCTabT11_p40_r2_A6
+    | 7, _ => exact szCTabT11_p40_r2_A7
+    | 8, _ => exact szCTabT11_p40_r2_A8
+    | _ + 9, hc => exact absurd hc (by omega)
+  · intro c hc
+    match c, hc with
+    | 0, _ => exact szCTabT11_p40_r2_B0
+    | 1, _ => exact szCTabT11_p40_r2_B1
+    | 2, _ => exact szCTabT11_p40_r2_B2
+    | 3, _ => exact szCTabT11_p40_r2_B3
+    | 4, _ => exact szCTabT11_p40_r2_B4
+    | 5, _ => exact szCTabT11_p40_r2_B5
+    | 6, _ => exact szCTabT11_p40_r2_B6
+    | 7, _ => exact szCTabT11_p40_r2_B7
+    | 8, _ => exact szCTabT11_p40_r2_B8
+    | _ + 9, hc => exact absurd hc (by omega)
 
 theorem szCTabT11_p40 : (((szCTabT11).drop (40 * 1)).take 1).all szEntryOkT = true := by
-  decide +kernel
+  rw [show ((szCTabT11).drop (40 * 1)).take 1 = [(575, [(.ty [(.int 32)]), (.val [(.int 8)]), (.flat 15 true)], 535)] from rfl]
+  simp only [List.all_cons, List.all_nil, Bool.and_true]
+  show (program.rulesOf 575).all (cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.int 32)]), (.val [(.int 8)]), (.flat 15 true)] 535) = true
+  rw [program_rulesOf_575]
+  simp only [List.all_cons, List.all_nil, Bool.and_true, szCTabT11_p40_r0, szCTabT11_p40_r1, szCTabT11_p40_r2, szCTabT11_p40_r3, szCTabT11_p40_r4, szCTabT11_p40_r5, szCTabT11_p40_r6, szCTabT11_p40_r7, szCTabT11_p40_r8, szCTabT11_p40_r9, szCTabT11_p40_r10, Bool.and_self]
+
+theorem szCTabT11_p41_r1 : cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.int 64)]), (.val [(.int 16)]), (.flat 15 true)] 535 rule_inst_4096 = true := by
+  refine cRuleLe_of_chunks 0 535 128 9 128 9 (by decide) szCTabT11_p41_r1_nA ?_ szCTabT11_p41_r1_s szCTabT11_p41_r1_nB ?_
+  · intro c hc
+    match c, hc with
+    | 0, _ => exact szCTabT11_p41_r1_A0
+    | 1, _ => exact szCTabT11_p41_r1_A1
+    | 2, _ => exact szCTabT11_p41_r1_A2
+    | 3, _ => exact szCTabT11_p41_r1_A3
+    | 4, _ => exact szCTabT11_p41_r1_A4
+    | 5, _ => exact szCTabT11_p41_r1_A5
+    | 6, _ => exact szCTabT11_p41_r1_A6
+    | 7, _ => exact szCTabT11_p41_r1_A7
+    | 8, _ => exact szCTabT11_p41_r1_A8
+    | _ + 9, hc => exact absurd hc (by omega)
+  · intro c hc
+    match c, hc with
+    | 0, _ => exact szCTabT11_p41_r1_B0
+    | 1, _ => exact szCTabT11_p41_r1_B1
+    | 2, _ => exact szCTabT11_p41_r1_B2
+    | 3, _ => exact szCTabT11_p41_r1_B3
+    | 4, _ => exact szCTabT11_p41_r1_B4
+    | 5, _ => exact szCTabT11_p41_r1_B5
+    | 6, _ => exact szCTabT11_p41_r1_B6
+    | 7, _ => exact szCTabT11_p41_r1_B7
+    | 8, _ => exact szCTabT11_p41_r1_B8
+    | _ + 9, hc => exact absurd hc (by omega)
+
+theorem szCTabT11_p41_r2 : cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.int 64)]), (.val [(.int 16)]), (.flat 15 true)] 535 rule_inst_4093 = true := by
+  refine cRuleLe_of_chunks 0 535 128 9 128 9 (by decide) szCTabT11_p41_r2_nA ?_ szCTabT11_p41_r2_s szCTabT11_p41_r2_nB ?_
+  · intro c hc
+    match c, hc with
+    | 0, _ => exact szCTabT11_p41_r2_A0
+    | 1, _ => exact szCTabT11_p41_r2_A1
+    | 2, _ => exact szCTabT11_p41_r2_A2
+    | 3, _ => exact szCTabT11_p41_r2_A3
+    | 4, _ => exact szCTabT11_p41_r2_A4
+    | 5, _ => exact szCTabT11_p41_r2_A5
+    | 6, _ => exact szCTabT11_p41_r2_A6
+    | 7, _ => exact szCTabT11_p41_r2_A7
+    | 8, _ => exact szCTabT11_p41_r2_A8
+    | _ + 9, hc => exact absurd hc (by omega)
+  · intro c hc
+    match c, hc with
+    | 0, _ => exact szCTabT11_p41_r2_B0
+    | 1, _ => exact szCTabT11_p41_r2_B1
+    | 2, _ => exact szCTabT11_p41_r2_B2
+    | 3, _ => exact szCTabT11_p41_r2_B3
+    | 4, _ => exact szCTabT11_p41_r2_B4
+    | 5, _ => exact szCTabT11_p41_r2_B5
+    | 6, _ => exact szCTabT11_p41_r2_B6
+    | 7, _ => exact szCTabT11_p41_r2_B7
+    | 8, _ => exact szCTabT11_p41_r2_B8
+    | _ + 9, hc => exact absurd hc (by omega)
 
 theorem szCTabT11_p41 : (((szCTabT11).drop (41 * 1)).take 1).all szEntryOkT = true := by
-  decide +kernel
+  rw [show ((szCTabT11).drop (41 * 1)).take 1 = [(575, [(.ty [(.int 64)]), (.val [(.int 16)]), (.flat 15 true)], 535)] from rfl]
+  simp only [List.all_cons, List.all_nil, Bool.and_true]
+  show (program.rulesOf 575).all (cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.int 64)]), (.val [(.int 16)]), (.flat 15 true)] 535) = true
+  rw [program_rulesOf_575]
+  simp only [List.all_cons, List.all_nil, Bool.and_true, szCTabT11_p41_r0, szCTabT11_p41_r1, szCTabT11_p41_r2, szCTabT11_p41_r3, szCTabT11_p41_r4, szCTabT11_p41_r5, szCTabT11_p41_r6, szCTabT11_p41_r7, szCTabT11_p41_r8, szCTabT11_p41_r9, szCTabT11_p41_r10, Bool.and_self]
+
+theorem szCTabT11_p42_r1 : cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.int 64)]), (.val [(.int 32)]), (.flat 15 true)] 535 rule_inst_4096 = true := by
+  refine cRuleLe_of_chunks 0 535 128 9 128 9 (by decide) szCTabT11_p42_r1_nA ?_ szCTabT11_p42_r1_s szCTabT11_p42_r1_nB ?_
+  · intro c hc
+    match c, hc with
+    | 0, _ => exact szCTabT11_p42_r1_A0
+    | 1, _ => exact szCTabT11_p42_r1_A1
+    | 2, _ => exact szCTabT11_p42_r1_A2
+    | 3, _ => exact szCTabT11_p42_r1_A3
+    | 4, _ => exact szCTabT11_p42_r1_A4
+    | 5, _ => exact szCTabT11_p42_r1_A5
+    | 6, _ => exact szCTabT11_p42_r1_A6
+    | 7, _ => exact szCTabT11_p42_r1_A7
+    | 8, _ => exact szCTabT11_p42_r1_A8
+    | _ + 9, hc => exact absurd hc (by omega)
+  · intro c hc
+    match c, hc with
+    | 0, _ => exact szCTabT11_p42_r1_B0
+    | 1, _ => exact szCTabT11_p42_r1_B1
+    | 2, _ => exact szCTabT11_p42_r1_B2
+    | 3, _ => exact szCTabT11_p42_r1_B3
+    | 4, _ => exact szCTabT11_p42_r1_B4
+    | 5, _ => exact szCTabT11_p42_r1_B5
+    | 6, _ => exact szCTabT11_p42_r1_B6
+    | 7, _ => exact szCTabT11_p42_r1_B7
+    | 8, _ => exact szCTabT11_p42_r1_B8
+    | _ + 9, hc => exact absurd hc (by omega)
+
+theorem szCTabT11_p42_r2 : cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.int 64)]), (.val [(.int 32)]), (.flat 15 true)] 535 rule_inst_4093 = true := by
+  refine cRuleLe_of_chunks 0 535 128 9 128 9 (by decide) szCTabT11_p42_r2_nA ?_ szCTabT11_p42_r2_s szCTabT11_p42_r2_nB ?_
+  · intro c hc
+    match c, hc with
+    | 0, _ => exact szCTabT11_p42_r2_A0
+    | 1, _ => exact szCTabT11_p42_r2_A1
+    | 2, _ => exact szCTabT11_p42_r2_A2
+    | 3, _ => exact szCTabT11_p42_r2_A3
+    | 4, _ => exact szCTabT11_p42_r2_A4
+    | 5, _ => exact szCTabT11_p42_r2_A5
+    | 6, _ => exact szCTabT11_p42_r2_A6
+    | 7, _ => exact szCTabT11_p42_r2_A7
+    | 8, _ => exact szCTabT11_p42_r2_A8
+    | _ + 9, hc => exact absurd hc (by omega)
+  · intro c hc
+    match c, hc with
+    | 0, _ => exact szCTabT11_p42_r2_B0
+    | 1, _ => exact szCTabT11_p42_r2_B1
+    | 2, _ => exact szCTabT11_p42_r2_B2
+    | 3, _ => exact szCTabT11_p42_r2_B3
+    | 4, _ => exact szCTabT11_p42_r2_B4
+    | 5, _ => exact szCTabT11_p42_r2_B5
+    | 6, _ => exact szCTabT11_p42_r2_B6
+    | 7, _ => exact szCTabT11_p42_r2_B7
+    | 8, _ => exact szCTabT11_p42_r2_B8
+    | _ + 9, hc => exact absurd hc (by omega)
 
 theorem szCTabT11_p42 : (((szCTabT11).drop (42 * 1)).take 1).all szEntryOkT = true := by
-  decide +kernel
+  rw [show ((szCTabT11).drop (42 * 1)).take 1 = [(575, [(.ty [(.int 64)]), (.val [(.int 32)]), (.flat 15 true)], 535)] from rfl]
+  simp only [List.all_cons, List.all_nil, Bool.and_true]
+  show (program.rulesOf 575).all (cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.int 64)]), (.val [(.int 32)]), (.flat 15 true)] 535) = true
+  rw [program_rulesOf_575]
+  simp only [List.all_cons, List.all_nil, Bool.and_true, szCTabT11_p42_r0, szCTabT11_p42_r1, szCTabT11_p42_r2, szCTabT11_p42_r3, szCTabT11_p42_r4, szCTabT11_p42_r5, szCTabT11_p42_r6, szCTabT11_p42_r7, szCTabT11_p42_r8, szCTabT11_p42_r9, szCTabT11_p42_r10, Bool.and_self]
+
+theorem szCTabT11_p43_r1 : cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.int 64)]), (.val [(.int 64)]), (.flat 15 true)] 535 rule_inst_4096 = true := by
+  refine cRuleLe_of_chunks 0 535 128 9 128 9 (by decide) szCTabT11_p43_r1_nA ?_ szCTabT11_p43_r1_s szCTabT11_p43_r1_nB ?_
+  · intro c hc
+    match c, hc with
+    | 0, _ => exact szCTabT11_p43_r1_A0
+    | 1, _ => exact szCTabT11_p43_r1_A1
+    | 2, _ => exact szCTabT11_p43_r1_A2
+    | 3, _ => exact szCTabT11_p43_r1_A3
+    | 4, _ => exact szCTabT11_p43_r1_A4
+    | 5, _ => exact szCTabT11_p43_r1_A5
+    | 6, _ => exact szCTabT11_p43_r1_A6
+    | 7, _ => exact szCTabT11_p43_r1_A7
+    | 8, _ => exact szCTabT11_p43_r1_A8
+    | _ + 9, hc => exact absurd hc (by omega)
+  · intro c hc
+    match c, hc with
+    | 0, _ => exact szCTabT11_p43_r1_B0
+    | 1, _ => exact szCTabT11_p43_r1_B1
+    | 2, _ => exact szCTabT11_p43_r1_B2
+    | 3, _ => exact szCTabT11_p43_r1_B3
+    | 4, _ => exact szCTabT11_p43_r1_B4
+    | 5, _ => exact szCTabT11_p43_r1_B5
+    | 6, _ => exact szCTabT11_p43_r1_B6
+    | 7, _ => exact szCTabT11_p43_r1_B7
+    | 8, _ => exact szCTabT11_p43_r1_B8
+    | _ + 9, hc => exact absurd hc (by omega)
+
+theorem szCTabT11_p43_r2 : cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.int 64)]), (.val [(.int 64)]), (.flat 15 true)] 535 rule_inst_4093 = true := by
+  refine cRuleLe_of_chunks 0 535 128 9 128 9 (by decide) szCTabT11_p43_r2_nA ?_ szCTabT11_p43_r2_s szCTabT11_p43_r2_nB ?_
+  · intro c hc
+    match c, hc with
+    | 0, _ => exact szCTabT11_p43_r2_A0
+    | 1, _ => exact szCTabT11_p43_r2_A1
+    | 2, _ => exact szCTabT11_p43_r2_A2
+    | 3, _ => exact szCTabT11_p43_r2_A3
+    | 4, _ => exact szCTabT11_p43_r2_A4
+    | 5, _ => exact szCTabT11_p43_r2_A5
+    | 6, _ => exact szCTabT11_p43_r2_A6
+    | 7, _ => exact szCTabT11_p43_r2_A7
+    | 8, _ => exact szCTabT11_p43_r2_A8
+    | _ + 9, hc => exact absurd hc (by omega)
+  · intro c hc
+    match c, hc with
+    | 0, _ => exact szCTabT11_p43_r2_B0
+    | 1, _ => exact szCTabT11_p43_r2_B1
+    | 2, _ => exact szCTabT11_p43_r2_B2
+    | 3, _ => exact szCTabT11_p43_r2_B3
+    | 4, _ => exact szCTabT11_p43_r2_B4
+    | 5, _ => exact szCTabT11_p43_r2_B5
+    | 6, _ => exact szCTabT11_p43_r2_B6
+    | 7, _ => exact szCTabT11_p43_r2_B7
+    | 8, _ => exact szCTabT11_p43_r2_B8
+    | _ + 9, hc => exact absurd hc (by omega)
 
 theorem szCTabT11_p43 : (((szCTabT11).drop (43 * 1)).take 1).all szEntryOkT = true := by
-  decide +kernel
+  rw [show ((szCTabT11).drop (43 * 1)).take 1 = [(575, [(.ty [(.int 64)]), (.val [(.int 64)]), (.flat 15 true)], 535)] from rfl]
+  simp only [List.all_cons, List.all_nil, Bool.and_true]
+  show (program.rulesOf 575).all (cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.int 64)]), (.val [(.int 64)]), (.flat 15 true)] 535) = true
+  rw [program_rulesOf_575]
+  simp only [List.all_cons, List.all_nil, Bool.and_true, szCTabT11_p43_r0, szCTabT11_p43_r1, szCTabT11_p43_r2, szCTabT11_p43_r3, szCTabT11_p43_r4, szCTabT11_p43_r5, szCTabT11_p43_r6, szCTabT11_p43_r7, szCTabT11_p43_r8, szCTabT11_p43_r9, szCTabT11_p43_r10, Bool.and_self]
+
+theorem szCTabT11_p44_r1 : cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.int 64)]), (.val [(.int 8)]), (.flat 15 true)] 535 rule_inst_4096 = true := by
+  refine cRuleLe_of_chunks 0 535 128 9 128 9 (by decide) szCTabT11_p44_r1_nA ?_ szCTabT11_p44_r1_s szCTabT11_p44_r1_nB ?_
+  · intro c hc
+    match c, hc with
+    | 0, _ => exact szCTabT11_p44_r1_A0
+    | 1, _ => exact szCTabT11_p44_r1_A1
+    | 2, _ => exact szCTabT11_p44_r1_A2
+    | 3, _ => exact szCTabT11_p44_r1_A3
+    | 4, _ => exact szCTabT11_p44_r1_A4
+    | 5, _ => exact szCTabT11_p44_r1_A5
+    | 6, _ => exact szCTabT11_p44_r1_A6
+    | 7, _ => exact szCTabT11_p44_r1_A7
+    | 8, _ => exact szCTabT11_p44_r1_A8
+    | _ + 9, hc => exact absurd hc (by omega)
+  · intro c hc
+    match c, hc with
+    | 0, _ => exact szCTabT11_p44_r1_B0
+    | 1, _ => exact szCTabT11_p44_r1_B1
+    | 2, _ => exact szCTabT11_p44_r1_B2
+    | 3, _ => exact szCTabT11_p44_r1_B3
+    | 4, _ => exact szCTabT11_p44_r1_B4
+    | 5, _ => exact szCTabT11_p44_r1_B5
+    | 6, _ => exact szCTabT11_p44_r1_B6
+    | 7, _ => exact szCTabT11_p44_r1_B7
+    | 8, _ => exact szCTabT11_p44_r1_B8
+    | _ + 9, hc => exact absurd hc (by omega)
+
+theorem szCTabT11_p44_r2 : cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.int 64)]), (.val [(.int 8)]), (.flat 15 true)] 535 rule_inst_4093 = true := by
+  refine cRuleLe_of_chunks 0 535 128 9 128 9 (by decide) szCTabT11_p44_r2_nA ?_ szCTabT11_p44_r2_s szCTabT11_p44_r2_nB ?_
+  · intro c hc
+    match c, hc with
+    | 0, _ => exact szCTabT11_p44_r2_A0
+    | 1, _ => exact szCTabT11_p44_r2_A1
+    | 2, _ => exact szCTabT11_p44_r2_A2
+    | 3, _ => exact szCTabT11_p44_r2_A3
+    | 4, _ => exact szCTabT11_p44_r2_A4
+    | 5, _ => exact szCTabT11_p44_r2_A5
+    | 6, _ => exact szCTabT11_p44_r2_A6
+    | 7, _ => exact szCTabT11_p44_r2_A7
+    | 8, _ => exact szCTabT11_p44_r2_A8
+    | _ + 9, hc => exact absurd hc (by omega)
+  · intro c hc
+    match c, hc with
+    | 0, _ => exact szCTabT11_p44_r2_B0
+    | 1, _ => exact szCTabT11_p44_r2_B1
+    | 2, _ => exact szCTabT11_p44_r2_B2
+    | 3, _ => exact szCTabT11_p44_r2_B3
+    | 4, _ => exact szCTabT11_p44_r2_B4
+    | 5, _ => exact szCTabT11_p44_r2_B5
+    | 6, _ => exact szCTabT11_p44_r2_B6
+    | 7, _ => exact szCTabT11_p44_r2_B7
+    | 8, _ => exact szCTabT11_p44_r2_B8
+    | _ + 9, hc => exact absurd hc (by omega)
 
 theorem szCTabT11_p44 : (((szCTabT11).drop (44 * 1)).take 1).all szEntryOkT = true := by
-  decide +kernel
+  rw [show ((szCTabT11).drop (44 * 1)).take 1 = [(575, [(.ty [(.int 64)]), (.val [(.int 8)]), (.flat 15 true)], 535)] from rfl]
+  simp only [List.all_cons, List.all_nil, Bool.and_true]
+  show (program.rulesOf 575).all (cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.int 64)]), (.val [(.int 8)]), (.flat 15 true)] 535) = true
+  rw [program_rulesOf_575]
+  simp only [List.all_cons, List.all_nil, Bool.and_true, szCTabT11_p44_r0, szCTabT11_p44_r1, szCTabT11_p44_r2, szCTabT11_p44_r3, szCTabT11_p44_r4, szCTabT11_p44_r5, szCTabT11_p44_r6, szCTabT11_p44_r7, szCTabT11_p44_r8, szCTabT11_p44_r9, szCTabT11_p44_r10, Bool.and_self]
+
+theorem szCTabT11_p45_r1 : cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.int 8)]), (.val [(.int 16)]), (.flat 15 true)] 535 rule_inst_4096 = true := by
+  refine cRuleLe_of_chunks 0 535 128 9 128 9 (by decide) szCTabT11_p45_r1_nA ?_ szCTabT11_p45_r1_s szCTabT11_p45_r1_nB ?_
+  · intro c hc
+    match c, hc with
+    | 0, _ => exact szCTabT11_p45_r1_A0
+    | 1, _ => exact szCTabT11_p45_r1_A1
+    | 2, _ => exact szCTabT11_p45_r1_A2
+    | 3, _ => exact szCTabT11_p45_r1_A3
+    | 4, _ => exact szCTabT11_p45_r1_A4
+    | 5, _ => exact szCTabT11_p45_r1_A5
+    | 6, _ => exact szCTabT11_p45_r1_A6
+    | 7, _ => exact szCTabT11_p45_r1_A7
+    | 8, _ => exact szCTabT11_p45_r1_A8
+    | _ + 9, hc => exact absurd hc (by omega)
+  · intro c hc
+    match c, hc with
+    | 0, _ => exact szCTabT11_p45_r1_B0
+    | 1, _ => exact szCTabT11_p45_r1_B1
+    | 2, _ => exact szCTabT11_p45_r1_B2
+    | 3, _ => exact szCTabT11_p45_r1_B3
+    | 4, _ => exact szCTabT11_p45_r1_B4
+    | 5, _ => exact szCTabT11_p45_r1_B5
+    | 6, _ => exact szCTabT11_p45_r1_B6
+    | 7, _ => exact szCTabT11_p45_r1_B7
+    | 8, _ => exact szCTabT11_p45_r1_B8
+    | _ + 9, hc => exact absurd hc (by omega)
+
+theorem szCTabT11_p45_r2 : cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.int 8)]), (.val [(.int 16)]), (.flat 15 true)] 535 rule_inst_4093 = true := by
+  refine cRuleLe_of_chunks 0 535 128 9 128 9 (by decide) szCTabT11_p45_r2_nA ?_ szCTabT11_p45_r2_s szCTabT11_p45_r2_nB ?_
+  · intro c hc
+    match c, hc with
+    | 0, _ => exact szCTabT11_p45_r2_A0
+    | 1, _ => exact szCTabT11_p45_r2_A1
+    | 2, _ => exact szCTabT11_p45_r2_A2
+    | 3, _ => exact szCTabT11_p45_r2_A3
+    | 4, _ => exact szCTabT11_p45_r2_A4
+    | 5, _ => exact szCTabT11_p45_r2_A5
+    | 6, _ => exact szCTabT11_p45_r2_A6
+    | 7, _ => exact szCTabT11_p45_r2_A7
+    | 8, _ => exact szCTabT11_p45_r2_A8
+    | _ + 9, hc => exact absurd hc (by omega)
+  · intro c hc
+    match c, hc with
+    | 0, _ => exact szCTabT11_p45_r2_B0
+    | 1, _ => exact szCTabT11_p45_r2_B1
+    | 2, _ => exact szCTabT11_p45_r2_B2
+    | 3, _ => exact szCTabT11_p45_r2_B3
+    | 4, _ => exact szCTabT11_p45_r2_B4
+    | 5, _ => exact szCTabT11_p45_r2_B5
+    | 6, _ => exact szCTabT11_p45_r2_B6
+    | 7, _ => exact szCTabT11_p45_r2_B7
+    | 8, _ => exact szCTabT11_p45_r2_B8
+    | _ + 9, hc => exact absurd hc (by omega)
 
 theorem szCTabT11_p45 : (((szCTabT11).drop (45 * 1)).take 1).all szEntryOkT = true := by
-  decide +kernel
+  rw [show ((szCTabT11).drop (45 * 1)).take 1 = [(575, [(.ty [(.int 8)]), (.val [(.int 16)]), (.flat 15 true)], 535)] from rfl]
+  simp only [List.all_cons, List.all_nil, Bool.and_true]
+  show (program.rulesOf 575).all (cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.int 8)]), (.val [(.int 16)]), (.flat 15 true)] 535) = true
+  rw [program_rulesOf_575]
+  simp only [List.all_cons, List.all_nil, Bool.and_true, szCTabT11_p45_r0, szCTabT11_p45_r1, szCTabT11_p45_r2, szCTabT11_p45_r3, szCTabT11_p45_r4, szCTabT11_p45_r5, szCTabT11_p45_r6, szCTabT11_p45_r7, szCTabT11_p45_r8, szCTabT11_p45_r9, szCTabT11_p45_r10, Bool.and_self]
+
+theorem szCTabT11_p46_r1 : cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.int 8)]), (.val [(.int 32)]), (.flat 15 true)] 535 rule_inst_4096 = true := by
+  refine cRuleLe_of_chunks 0 535 128 9 128 9 (by decide) szCTabT11_p46_r1_nA ?_ szCTabT11_p46_r1_s szCTabT11_p46_r1_nB ?_
+  · intro c hc
+    match c, hc with
+    | 0, _ => exact szCTabT11_p46_r1_A0
+    | 1, _ => exact szCTabT11_p46_r1_A1
+    | 2, _ => exact szCTabT11_p46_r1_A2
+    | 3, _ => exact szCTabT11_p46_r1_A3
+    | 4, _ => exact szCTabT11_p46_r1_A4
+    | 5, _ => exact szCTabT11_p46_r1_A5
+    | 6, _ => exact szCTabT11_p46_r1_A6
+    | 7, _ => exact szCTabT11_p46_r1_A7
+    | 8, _ => exact szCTabT11_p46_r1_A8
+    | _ + 9, hc => exact absurd hc (by omega)
+  · intro c hc
+    match c, hc with
+    | 0, _ => exact szCTabT11_p46_r1_B0
+    | 1, _ => exact szCTabT11_p46_r1_B1
+    | 2, _ => exact szCTabT11_p46_r1_B2
+    | 3, _ => exact szCTabT11_p46_r1_B3
+    | 4, _ => exact szCTabT11_p46_r1_B4
+    | 5, _ => exact szCTabT11_p46_r1_B5
+    | 6, _ => exact szCTabT11_p46_r1_B6
+    | 7, _ => exact szCTabT11_p46_r1_B7
+    | 8, _ => exact szCTabT11_p46_r1_B8
+    | _ + 9, hc => exact absurd hc (by omega)
+
+theorem szCTabT11_p46_r2 : cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.int 8)]), (.val [(.int 32)]), (.flat 15 true)] 535 rule_inst_4093 = true := by
+  refine cRuleLe_of_chunks 0 535 128 9 128 9 (by decide) szCTabT11_p46_r2_nA ?_ szCTabT11_p46_r2_s szCTabT11_p46_r2_nB ?_
+  · intro c hc
+    match c, hc with
+    | 0, _ => exact szCTabT11_p46_r2_A0
+    | 1, _ => exact szCTabT11_p46_r2_A1
+    | 2, _ => exact szCTabT11_p46_r2_A2
+    | 3, _ => exact szCTabT11_p46_r2_A3
+    | 4, _ => exact szCTabT11_p46_r2_A4
+    | 5, _ => exact szCTabT11_p46_r2_A5
+    | 6, _ => exact szCTabT11_p46_r2_A6
+    | 7, _ => exact szCTabT11_p46_r2_A7
+    | 8, _ => exact szCTabT11_p46_r2_A8
+    | _ + 9, hc => exact absurd hc (by omega)
+  · intro c hc
+    match c, hc with
+    | 0, _ => exact szCTabT11_p46_r2_B0
+    | 1, _ => exact szCTabT11_p46_r2_B1
+    | 2, _ => exact szCTabT11_p46_r2_B2
+    | 3, _ => exact szCTabT11_p46_r2_B3
+    | 4, _ => exact szCTabT11_p46_r2_B4
+    | 5, _ => exact szCTabT11_p46_r2_B5
+    | 6, _ => exact szCTabT11_p46_r2_B6
+    | 7, _ => exact szCTabT11_p46_r2_B7
+    | 8, _ => exact szCTabT11_p46_r2_B8
+    | _ + 9, hc => exact absurd hc (by omega)
 
 theorem szCTabT11_p46 : (((szCTabT11).drop (46 * 1)).take 1).all szEntryOkT = true := by
-  decide +kernel
+  rw [show ((szCTabT11).drop (46 * 1)).take 1 = [(575, [(.ty [(.int 8)]), (.val [(.int 32)]), (.flat 15 true)], 535)] from rfl]
+  simp only [List.all_cons, List.all_nil, Bool.and_true]
+  show (program.rulesOf 575).all (cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.int 8)]), (.val [(.int 32)]), (.flat 15 true)] 535) = true
+  rw [program_rulesOf_575]
+  simp only [List.all_cons, List.all_nil, Bool.and_true, szCTabT11_p46_r0, szCTabT11_p46_r1, szCTabT11_p46_r2, szCTabT11_p46_r3, szCTabT11_p46_r4, szCTabT11_p46_r5, szCTabT11_p46_r6, szCTabT11_p46_r7, szCTabT11_p46_r8, szCTabT11_p46_r9, szCTabT11_p46_r10, Bool.and_self]
+
+theorem szCTabT11_p47_r1 : cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.int 8)]), (.val [(.int 64)]), (.flat 15 true)] 535 rule_inst_4096 = true := by
+  refine cRuleLe_of_chunks 0 535 128 9 128 9 (by decide) szCTabT11_p47_r1_nA ?_ szCTabT11_p47_r1_s szCTabT11_p47_r1_nB ?_
+  · intro c hc
+    match c, hc with
+    | 0, _ => exact szCTabT11_p47_r1_A0
+    | 1, _ => exact szCTabT11_p47_r1_A1
+    | 2, _ => exact szCTabT11_p47_r1_A2
+    | 3, _ => exact szCTabT11_p47_r1_A3
+    | 4, _ => exact szCTabT11_p47_r1_A4
+    | 5, _ => exact szCTabT11_p47_r1_A5
+    | 6, _ => exact szCTabT11_p47_r1_A6
+    | 7, _ => exact szCTabT11_p47_r1_A7
+    | 8, _ => exact szCTabT11_p47_r1_A8
+    | _ + 9, hc => exact absurd hc (by omega)
+  · intro c hc
+    match c, hc with
+    | 0, _ => exact szCTabT11_p47_r1_B0
+    | 1, _ => exact szCTabT11_p47_r1_B1
+    | 2, _ => exact szCTabT11_p47_r1_B2
+    | 3, _ => exact szCTabT11_p47_r1_B3
+    | 4, _ => exact szCTabT11_p47_r1_B4
+    | 5, _ => exact szCTabT11_p47_r1_B5
+    | 6, _ => exact szCTabT11_p47_r1_B6
+    | 7, _ => exact szCTabT11_p47_r1_B7
+    | 8, _ => exact szCTabT11_p47_r1_B8
+    | _ + 9, hc => exact absurd hc (by omega)
+
+theorem szCTabT11_p47_r2 : cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.int 8)]), (.val [(.int 64)]), (.flat 15 true)] 535 rule_inst_4093 = true := by
+  refine cRuleLe_of_chunks 0 535 128 9 128 9 (by decide) szCTabT11_p47_r2_nA ?_ szCTabT11_p47_r2_s szCTabT11_p47_r2_nB ?_
+  · intro c hc
+    match c, hc with
+    | 0, _ => exact szCTabT11_p47_r2_A0
+    | 1, _ => exact szCTabT11_p47_r2_A1
+    | 2, _ => exact szCTabT11_p47_r2_A2
+    | 3, _ => exact szCTabT11_p47_r2_A3
+    | 4, _ => exact szCTabT11_p47_r2_A4
+    | 5, _ => exact szCTabT11_p47_r2_A5
+    | 6, _ => exact szCTabT11_p47_r2_A6
+    | 7, _ => exact szCTabT11_p47_r2_A7
+    | 8, _ => exact szCTabT11_p47_r2_A8
+    | _ + 9, hc => exact absurd hc (by omega)
+  · intro c hc
+    match c, hc with
+    | 0, _ => exact szCTabT11_p47_r2_B0
+    | 1, _ => exact szCTabT11_p47_r2_B1
+    | 2, _ => exact szCTabT11_p47_r2_B2
+    | 3, _ => exact szCTabT11_p47_r2_B3
+    | 4, _ => exact szCTabT11_p47_r2_B4
+    | 5, _ => exact szCTabT11_p47_r2_B5
+    | 6, _ => exact szCTabT11_p47_r2_B6
+    | 7, _ => exact szCTabT11_p47_r2_B7
+    | 8, _ => exact szCTabT11_p47_r2_B8
+    | _ + 9, hc => exact absurd hc (by omega)
 
 theorem szCTabT11_p47 : (((szCTabT11).drop (47 * 1)).take 1).all szEntryOkT = true := by
-  decide +kernel
+  rw [show ((szCTabT11).drop (47 * 1)).take 1 = [(575, [(.ty [(.int 8)]), (.val [(.int 64)]), (.flat 15 true)], 535)] from rfl]
+  simp only [List.all_cons, List.all_nil, Bool.and_true]
+  show (program.rulesOf 575).all (cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.int 8)]), (.val [(.int 64)]), (.flat 15 true)] 535) = true
+  rw [program_rulesOf_575]
+  simp only [List.all_cons, List.all_nil, Bool.and_true, szCTabT11_p47_r0, szCTabT11_p47_r1, szCTabT11_p47_r2, szCTabT11_p47_r3, szCTabT11_p47_r4, szCTabT11_p47_r5, szCTabT11_p47_r6, szCTabT11_p47_r7, szCTabT11_p47_r8, szCTabT11_p47_r9, szCTabT11_p47_r10, Bool.and_self]
+
+theorem szCTabT11_p48_r1 : cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.int 8)]), (.val [(.int 8)]), (.flat 15 true)] 535 rule_inst_4096 = true := by
+  refine cRuleLe_of_chunks 0 535 128 9 128 9 (by decide) szCTabT11_p48_r1_nA ?_ szCTabT11_p48_r1_s szCTabT11_p48_r1_nB ?_
+  · intro c hc
+    match c, hc with
+    | 0, _ => exact szCTabT11_p48_r1_A0
+    | 1, _ => exact szCTabT11_p48_r1_A1
+    | 2, _ => exact szCTabT11_p48_r1_A2
+    | 3, _ => exact szCTabT11_p48_r1_A3
+    | 4, _ => exact szCTabT11_p48_r1_A4
+    | 5, _ => exact szCTabT11_p48_r1_A5
+    | 6, _ => exact szCTabT11_p48_r1_A6
+    | 7, _ => exact szCTabT11_p48_r1_A7
+    | 8, _ => exact szCTabT11_p48_r1_A8
+    | _ + 9, hc => exact absurd hc (by omega)
+  · intro c hc
+    match c, hc with
+    | 0, _ => exact szCTabT11_p48_r1_B0
+    | 1, _ => exact szCTabT11_p48_r1_B1
+    | 2, _ => exact szCTabT11_p48_r1_B2
+    | 3, _ => exact szCTabT11_p48_r1_B3
+    | 4, _ => exact szCTabT11_p48_r1_B4
+    | 5, _ => exact szCTabT11_p48_r1_B5
+    | 6, _ => exact szCTabT11_p48_r1_B6
+    | 7, _ => exact szCTabT11_p48_r1_B7
+    | 8, _ => exact szCTabT11_p48_r1_B8
+    | _ + 9, hc => exact absurd hc (by omega)
+
+theorem szCTabT11_p48_r2 : cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.int 8)]), (.val [(.int 8)]), (.flat 15 true)] 535 rule_inst_4093 = true := by
+  refine cRuleLe_of_chunks 0 535 128 9 128 9 (by decide) szCTabT11_p48_r2_nA ?_ szCTabT11_p48_r2_s szCTabT11_p48_r2_nB ?_
+  · intro c hc
+    match c, hc with
+    | 0, _ => exact szCTabT11_p48_r2_A0
+    | 1, _ => exact szCTabT11_p48_r2_A1
+    | 2, _ => exact szCTabT11_p48_r2_A2
+    | 3, _ => exact szCTabT11_p48_r2_A3
+    | 4, _ => exact szCTabT11_p48_r2_A4
+    | 5, _ => exact szCTabT11_p48_r2_A5
+    | 6, _ => exact szCTabT11_p48_r2_A6
+    | 7, _ => exact szCTabT11_p48_r2_A7
+    | 8, _ => exact szCTabT11_p48_r2_A8
+    | _ + 9, hc => exact absurd hc (by omega)
+  · intro c hc
+    match c, hc with
+    | 0, _ => exact szCTabT11_p48_r2_B0
+    | 1, _ => exact szCTabT11_p48_r2_B1
+    | 2, _ => exact szCTabT11_p48_r2_B2
+    | 3, _ => exact szCTabT11_p48_r2_B3
+    | 4, _ => exact szCTabT11_p48_r2_B4
+    | 5, _ => exact szCTabT11_p48_r2_B5
+    | 6, _ => exact szCTabT11_p48_r2_B6
+    | 7, _ => exact szCTabT11_p48_r2_B7
+    | 8, _ => exact szCTabT11_p48_r2_B8
+    | _ + 9, hc => exact absurd hc (by omega)
 
 theorem szCTabT11_p48 : (((szCTabT11).drop (48 * 1)).take 1).all szEntryOkT = true := by
-  decide +kernel
+  rw [show ((szCTabT11).drop (48 * 1)).take 1 = [(575, [(.ty [(.int 8)]), (.val [(.int 8)]), (.flat 15 true)], 535)] from rfl]
+  simp only [List.all_cons, List.all_nil, Bool.and_true]
+  show (program.rulesOf 575).all (cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [(.ty [(.int 8)]), (.val [(.int 8)]), (.flat 15 true)] 535) = true
+  rw [program_rulesOf_575]
+  simp only [List.all_cons, List.all_nil, Bool.and_true, szCTabT11_p48_r0, szCTabT11_p48_r1, szCTabT11_p48_r2, szCTabT11_p48_r3, szCTabT11_p48_r4, szCTabT11_p48_r5, szCTabT11_p48_r6, szCTabT11_p48_r7, szCTabT11_p48_r8, szCTabT11_p48_r9, szCTabT11_p48_r10, Bool.and_self]
 
 theorem szCTabT11_p49 : (((szCTabT11).drop (49 * 1)).take 1).all szEntryOkT = true := by
   decide +kernel

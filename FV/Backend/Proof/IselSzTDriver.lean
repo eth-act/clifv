@@ -107,8 +107,7 @@ theorem cov_saT (hctx : CtxInvT f ctx) (hcl : Clean ctx) (hfam : FamCover ctx) (
 theorem brIdx_fam {F : Fam} (hF : F ∈ famTab) {a x b : V}
     (h : γP ctx noInst F.data (.data 152 4 [a, x, b])) : ∃ idx, x = .value idx ∧ ValIn ctx idx eCTys := by
   simp only [famTab, List.mem_cons, List.not_mem_nil, or_false] at hF
-  rcases hF with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
-    rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+  repeat' obtain rfl | hF := hF
   all_goals
     obtain ⟨vs, he, hl⟩ := h
     simp only [V.data.injEq] at he

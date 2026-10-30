@@ -10,7 +10,7 @@ Every rule of every entry of these chunks checks.
 -/
 
 set_option maxRecDepth 100000
-set_option maxHeartbeats 4000000
+set_option maxHeartbeats 16000000
 set_option Elab.async false
 
 namespace Backend.Proof.CovT
@@ -19,6 +19,11 @@ open Backend Backend.Proof Isle Isle.Aarch64
 
 theorem shpTabT24_ok : (shpTabT24).all shpEntryOkT = true := by
   simp only [shpTabT24, List.all_cons, List.all_nil, Bool.and_eq_true, and_true]
+  repeat' apply And.intro
+  all_goals decide +kernel
+
+theorem shpTabT25_ok : (shpTabT25).all shpEntryOkT = true := by
+  simp only [shpTabT25, List.all_cons, List.all_nil, Bool.and_eq_true, and_true]
   repeat' apply And.intro
   all_goals decide +kernel
 

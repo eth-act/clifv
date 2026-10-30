@@ -250,8 +250,9 @@ theorem LowT.raw_tgt {x : Nat} {B : Clif.Block} {L : BLow} (hB : f.blocks[x]? = 
     exact ⟨e, he, rfl⟩
 
 /-- **A typed edge block** jumps to a non-entry block whose parameters its arguments (vregs, of
-any class) match. -/
-theorem LowT.edge_facts (hs : LowerScopeT f) {bi : Nat} {B : Clif.Block} {L : BLow}
+any class) match, for input whose entry block has no predecessor (`LowerScopeT.noEntryPred`). -/
+theorem LowT.edge_factsG
+    (hne : ∀ B ∈ f.blocks, ∀ b ∈ succIds B.term, blockIdx? f b ≠ some 0) {bi : Nat} {B : Clif.Block} {L : BLow}
     (hB : f.blocks[bi]? = some B) (hL : bl[bi]? = some L) {e : VBlock} (he : e ∈ edgeBlocksT f ctx B L) :
     ∃ tl TB, e.insts = #[.jump tl] ∧ e.params = #[] ∧ f.blocks[tl]? = some TB ∧ tl ≠ 0 ∧
       TB.params.length = e.branchArgs.size ∧ ∀ a ∈ e.branchArgs.toList, ∃ v c, a = .vreg v c := by
@@ -277,7 +278,7 @@ theorem LowT.edge_facts (hs : LowerScopeT f) {bi : Nat} {B : Clif.Block} {L : BL
       obtain rfl : tb = TB := Option.some.inj (htb.symm.trans hTB)
       refine ⟨tl, tb, rfl, rfl, hTBi, fun h0 => ?_, by simp [hlen (by simpa using ha)], ?_⟩
       · subst h0
-        exact hs.noEntryPred B hBm p.1.block (by rw [succIds_of ht]; exact List.mem_map_of_mem hbc) htl
+        exact hne B hBm p.1.block (by rw [succIds_of ht]; exact List.mem_map_of_mem hbc) htl
       · intro a hm
         simp only [List.mem_map] at hm
         obtain ⟨v, -, rfl⟩ := hm
@@ -300,7 +301,7 @@ theorem LowT.edge_facts (hs : LowerScopeT f) {bi : Nat} {B : Clif.Block} {L : BL
     obtain ⟨-, hregs', -⟩ := tryRegsOf_spec (exnTableOpnd_cc hexn) hregs
     refine ⟨tl, tb, rfl, rfl, hTBi, fun h0 => ?_, by simp [hlen], ?_⟩
     · subst h0
-      exact hs.noEntryPred B hBm p.1.block
+      exact hne B hBm p.1.block
         (by rw [succIds_try het]; exact List.mem_map_of_mem (List.mem_of_getElem? hdk)) htl
     · intro a hm
       simp only [List.mem_map] at hm
@@ -323,10 +324,20 @@ theorem LowT.edge_facts (hs : LowerScopeT f) {bi : Nat} {B : Clif.Block} {L : BL
         · exact ⟨_, _, rfl⟩
         · exact ⟨_, _, rfl⟩
 
-/-- **The terminator of CLIF block `x`'s typed code** (typed scope): a `jump` for a `jump`, a
-branch to the recorded labels otherwise (none for `return`/`trap`), the `tryCall` for a
-`try_call` (`Low.raw_back` over float-capable contexts). -/
-theorem LowT.raw_back (hs : LowerScopeT f) (hbt : ∀ B ∈ f.blocks, BrIdxTyped ctx B.term) {x : Nat}
+/-- **A typed edge block** jumps to a non-entry block whose parameters its arguments (vregs, of
+any class) match. -/
+theorem LowT.edge_facts (hs : LowerScopeT f) {bi : Nat} {B : Clif.Block} {L : BLow}
+    (hB : f.blocks[bi]? = some B) (hL : bl[bi]? = some L) {e : VBlock} (he : e ∈ edgeBlocksT f ctx B L) :
+    ∃ tl TB, e.insts = #[.jump tl] ∧ e.params = #[] ∧ f.blocks[tl]? = some TB ∧ tl ≠ 0 ∧
+      TB.params.length = e.branchArgs.size ∧ ∀ a ∈ e.branchArgs.toList, ∃ v c, a = .vreg v c :=
+  H.edge_factsG hs.noEntryPred hB hL he
+
+/-- **The terminator of CLIF block `x`'s typed code** (a float-capable context whose
+terminators' integer operands are integers): a `jump` for a `jump`, a branch to the recorded
+labels otherwise (none for `return`/`trap`), the `tryCall` for a `try_call` (`Low.raw_back`
+over float-capable contexts). -/
+theorem LowT.raw_backG (hctx : CtxInvT f ctx) (hipB : ∀ B ∈ f.blocks, TermIntPos ctx B.term)
+    (hbt : ∀ B ∈ f.blocks, BrIdxTyped ctx B.term) {x : Nat}
     {B : Clif.Block} {L : BLow} (hB : f.blocks[x]? = some B) (hL : bl[x]? = some L) :
     ∃ t, (fixBlock RR (rawBlockT f ctx bl x B)).insts.back? = some t ∧
       (∀ bc, B.term = .jump bc → ∃ tl, t = .jump tl ∧ L.targets = [tl]) ∧
@@ -334,8 +345,7 @@ theorem LowT.raw_back (hs : LowerScopeT f) (hbt : ∀ B ∈ f.blocks, BrIdxTyped
       (∀ et, IsTryWith B.term et → ∃ c ti, t = .tryCall c ti ∧ t.targets = L.targets) := by
   obtain ⟨ranges, hb⟩ := H.hb
   have sp := ctxSpec_of hb
-  have hctx : CtxInvT f ctx := ctxInvT_of hs hb
-  have hip := termIntPos_of hs hb (List.mem_of_getElem? hB)
+  have hip := hipB B (List.mem_of_getElem? hB)
   obtain ⟨-, -, hem, nl0, nl1, hlt⟩ := (lowBlocks_spec H.hbl).2 x B L hB hL
   have hst : L.start = blockStart f x := (lowBlocks_start H.hbl).2 x L hL
   have hph := sp.facts.term x B hB
@@ -432,6 +442,18 @@ theorem LowT.raw_back (hs : LowerScopeT f) (hbt : ∀ B ∈ f.blocks, BrIdxTyped
     refine ⟨_, raw_backT_of hL hfix, fun bc h => ?_, fun h => absurd (isTry_of het) (by rw [h]; simp),
       fun et' _ => ⟨_, T.info, rfl, by rw [targets_mapRegs]; exact tryInfo_targets hinfo c⟩⟩
     rcases het with ⟨_, _, h'⟩ | ⟨_, _, h'⟩ <;> rw [h'] at h <;> cases h
+
+/-- **The terminator of CLIF block `x`'s typed code** (typed scope): a `jump` for a `jump`, a
+branch to the recorded labels otherwise (none for `return`/`trap`), the `tryCall` for a
+`try_call` (`Low.raw_back` over float-capable contexts). -/
+theorem LowT.raw_back (hs : LowerScopeT f) (hbt : ∀ B ∈ f.blocks, BrIdxTyped ctx B.term) {x : Nat}
+    {B : Clif.Block} {L : BLow} (hB : f.blocks[x]? = some B) (hL : bl[x]? = some L) :
+    ∃ t, (fixBlock RR (rawBlockT f ctx bl x B)).insts.back? = some t ∧
+      (∀ bc, B.term = .jump bc → ∃ tl, t = .jump tl ∧ L.targets = [tl]) ∧
+      (B.term.isTry = false → t.targets = L.targets ∧ ∀ c ti, t ≠ .tryCall c ti) ∧
+      (∀ et, IsTryWith B.term et → ∃ c ti, t = .tryCall c ti ∧ t.targets = L.targets) := by
+  obtain ⟨ranges, hb⟩ := H.hb
+  exact H.raw_backG (ctxInvT_of hs hb) (fun B' hB' => termIntPos_of hs hb hB') hbt hB hL
 
 end
 
