@@ -188,3 +188,8 @@ root = "FVTest.Link.DeadCleanupGenerate"
 [[lean_exe]]
 name = "stock-memory-linked"
 root = "FVTest.Backend.Lowering.StockMemoryProductionLinked"
+
+[[require]]
+name = "repl"
+git = "https://github.com/leanprover-community/repl.git"
+rev = "v4.34.0"
