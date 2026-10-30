@@ -1,3 +1,4 @@
+import FV.Backend.Proof.StockNoOpportunityTable
 import FV.Backend.Proof.StockNoOpportunityCtor
 import FV.Backend.Proof.IselCovClean
 import FV.Backend.Proof.StockCoverageSound

@@ -1,3 +1,4 @@
+import FV.Backend.Proof.IselTermIntPos
 import FV.Compile.SubsetT
 import FV.Backend.Proof.IselTermFacts
 import FV.Backend.Proof.SpillEdgesIsel
@@ -30,11 +31,6 @@ namespace Backend.Proof
 open Backend Isle Isle.Interp Isle.Aarch64
 
 set_option maxRecDepth 20000
-
-/-- The operands of terminator `t` in integer positions (a `brif` condition, a `br_table`
-index, a `try_call`'s callee and arguments) are in integer positions of `ctx`. -/
-def TermIntPos (ctx : Ctx) (t : Clif.Terminator) : Prop :=
-  ∀ x ∈ Compile.termIntOperands t, IntPos ctx x
 
 /-- On an integer context every terminator operand is in an integer position. -/
 theorem CtxInv.termIntPos {f : Clif.Function} {ctx : Ctx} (h : CtxInv f ctx) (t : Clif.Terminator) :

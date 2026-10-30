@@ -20,31 +20,30 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 def load(path, strip_private=False):
     """name -> (module, kind, type hash, value hash, axioms). With strip_private, private names
     (`_private.<module>.0.x`) are keyed by `x` (so that moving them is not a rename); private
-    names that collide that way keep their full name."""
-    rows, seen = {}, {}
+    names that several modules declare keep their full name."""
+    rows = {}
     lines = [line.rstrip("\n").split("\t") for line in open(path)]
-    count = {}
-    for _, name, *_ in lines:
+    count, short = {}, {}
+    for mod, name, *_ in lines:
         count[name] = count.get(name, 0) + 1
+        mo = re.match(r"_private\.(.*?)\.0\.(.*)$", name)
+        if mo:
+            short.setdefault(mo.group(2), set()).add(mod)
     for mod, name, kind, th, vh, ax in lines:
         # a name declared in several modules that no module imports together: keyed per module
         key = name if count[name] == 1 else f"{name} @{mod}"
-        if strip_private and name.startswith("_private."):
-            mo = re.match(r"_private\.(.*?)\.0\.(.*)$", name)
-            if mo:
-                key = "private " + mo.group(2)
-                if key in seen:
-                    rows[name] = (mod, kind, th, vh, ax)
-                    continue
-                seen[key] = name
+        mo = re.match(r"_private\.(.*?)\.0\.(.*)$", name)
+        if strip_private and mo and len(short[mo.group(2)]) == 1:
+            key = "private " + mo.group(2)
         rows[key] = (mod, kind, th, vh, ax)
     return rows
 
 
 # Auxiliary constants Lean generates on demand (equation lemmas, unfolding lemmas, match
 # splitters and their equations, congruence lemmas) in whichever module first needs them: an
-# import change can move them or create them in another module.
-AUX = re.compile(r"\.(eq_\d+|eq_def|eq_unfold|splitter|congr_simp|congr_eq_\d+|fun_cases|induct)(\b|$)")
+# import change can move them or create them in another module. And `noConfusion`/
+# `noConfusionType` of an inductive, whose universe parameter's hygienic name names the module.
+AUX = re.compile(r"\.(eq_\d+|eq_def|eq_unfold|splitter|congr_simp|congr_eq_\d+|fun_cases|induct|noConfusion|noConfusionType)(\b|$)")
 
 
 def main():

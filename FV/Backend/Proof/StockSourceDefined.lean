@@ -1,5 +1,7 @@
 import FV.Opt.Proof.SemSim
-import FV.Backend.Proof.StockConstantRecordValues
+import FV.Backend.Proof.StockRecordContext
+import FV.Backend.Proof.StockAvailableValues
+import FV.Backend.Proof.StockScanSemantics
 import FV.Backend.Proof.LowerSim
 
 /-! Source definedness is separate from optional mapped value holding. It is

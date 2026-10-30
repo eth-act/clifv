@@ -1,3 +1,4 @@
+import FV.Backend.Proof.IselFamALUALogic
 import FV.Backend.Proof.IselFamAluBBfm
 import FV.Backend.Proof.StockShiftRootValues
 namespace Backend.Stock.Proof.ShiftBitfield

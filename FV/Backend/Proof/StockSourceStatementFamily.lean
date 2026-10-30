@@ -1,4 +1,5 @@
-import FV.Backend.Proof.StockConstantRecordValues
+import FV.Backend.Proof.StockRecordContext
+import FV.Backend.Proof.StockDFG
 
 namespace Backend.Stock.Proof
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

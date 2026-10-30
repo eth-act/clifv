@@ -1,3 +1,4 @@
+import FV.Backend.Proof.IselExtern
 import FV.Backend.Proof.PerEdgeRegallocSound
 import FV.Backend.Proof.RegallocCSem
 import FV.Backend.Lowering.Stock

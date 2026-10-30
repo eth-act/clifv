@@ -1,7 +1,8 @@
 import FV.E2E.LinkOwnCallsShape
 import FV.Backend.Proof.TermSetRoots
 import FV.Backend.Proof.TermSetData
-import FV.Backend.Proof.KillTab
+import FV.Backend.Proof.KillTermIds
+import FV.Backend.Proof.KillGen
 
 /-!
 # The ISLE call inversion per run (`CallRunHyp`): runs that emit no call

@@ -1,3 +1,4 @@
+import FV.E2E.DeadCleanupLinkScope
 import FV.Link.DeadCleanupLayoutProof
 import FV.Link.ImageProof
 import FV.E2E.SpillDefined

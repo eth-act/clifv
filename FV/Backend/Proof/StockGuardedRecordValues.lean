@@ -1,3 +1,5 @@
+import FV.Backend.Proof.StockAvailableValues
+import FV.Backend.Proof.StockRecordIntervals
 import FV.Backend.Proof.StockDemandMono
 
 /-! Source-availability-guarded value transfer for actual fresh-result records. -/

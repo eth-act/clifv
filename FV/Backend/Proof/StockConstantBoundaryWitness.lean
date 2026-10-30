@@ -1,4 +1,7 @@
-import FV.Backend.Proof.StockConstantRecordValues
+import FV.Backend.Proof.StockRecordContext
+import FV.Backend.Proof.LowerCertBase
+import FV.Backend.Proof.LowerDecide
+import FV.Backend.Proof.StockScanSemantics
 
 namespace Backend.Stock.Proof
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

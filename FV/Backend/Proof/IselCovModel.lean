@@ -196,3 +196,26 @@ def covModel (hLI : LogicImmComplete) {f : Clif.Function} {ctx : Ctx} (hctx : Ct
     (covModel hLI hctx hcl s0).Is = CovSince s0 := rfl
 
 end Backend.Proof.Cov
+
+namespace Backend.Proof.Kill
+
+open Backend Backend.Proof Isle Isle.Interp Isle.Aarch64
+
+/-- A run of an internal constructor that returned a value, of a term whose rules have no
+if-lets: some rule's argument match and its right-hand side, at one fuel less. -/
+theorem internal_rule {ctx : Ctx} {cfg : Config} (hc : cfg.checkOverlap = false) {t : TermId}
+    {term : Term} {flags : TermFlags} {ex : Option Extractor} (ht : termOf program t = .ok term)
+    (hk : term.kind = .decl flags (some .internal) ex) (hm : flags.isMulti = false)
+    (hil : ∀ r ∈ program.rulesOf t, r.iflets = []) {n : Nat} {ty : TypeId} {vs : List V}
+    {s : LState} {tr : Array RuleId} {v : V} {s' : LState} {tr' : Array RuleId}
+    (h : (applyTerm program (sem ctx) cfg (n + 1) ty t vs).run (s, tr) = .ok (some v, (s', tr'))) :
+    ∃ r ∈ program.rulesOf t, ∃ env tr0,
+      matchArgs program (sem ctx) s r.args vs (Array.replicate r.vars.length none) = .ok (some env) ∧
+      (evalExpr program (sem ctx) cfg n r.rhs env).run (s, tr) = .ok (some v, (s', tr0)) := by
+  obtain ⟨r, hr, m, env, s1, st, tr0, -, hmt, he, hs'⟩ := applyTerm_internal_some hc ht hk hm h
+  obtain ⟨rfl, hma⟩ := Cov.matchRule_noIfLets (hil r hr) hmt
+  simp only [Prod.mk.injEq] at hs'
+  obtain ⟨rfl, -⟩ := hs'
+  exact ⟨r, hr, env, tr0, hma, he⟩
+
+end Backend.Proof.Kill

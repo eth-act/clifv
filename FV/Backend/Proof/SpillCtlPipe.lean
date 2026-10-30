@@ -1,3 +1,6 @@
+import FV.Backend.Proof.SpillLocal
+import FV.Backend.Proof.RegallocOperands
+import FV.Backend.Proof.LowerCover
 import FV.Backend.Proof.SpillCtlForms
 import FV.Backend.Proof.LowerCertBase
 

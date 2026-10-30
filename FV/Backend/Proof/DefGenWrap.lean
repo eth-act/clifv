@@ -1,5 +1,6 @@
 import FV.Backend.Proof.DefGenSem
-import FV.Backend.Proof.KillTab
+import FV.Backend.Proof.KillTermIds
+import FV.Backend.Proof.KillGen
 
 /-!
 # Definedness of the ISLE runs: the constructor-tree terms

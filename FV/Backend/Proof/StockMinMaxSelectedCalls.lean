@@ -1,3 +1,4 @@
+import FV.Backend.Proof.IselCmpEmit
 import FV.Backend.Proof.StockMinMaxSourceMatch
 namespace Backend.Stock.Proof.ScalarSelect
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

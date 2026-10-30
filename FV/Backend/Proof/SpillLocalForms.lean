@@ -193,4 +193,7 @@ theorem spillInstOk_rets {ns : List (Nat × Reg)} (hr : ∀ q ∈ ns, ∃ k, k <
     obtain ⟨k, hk, he⟩ := hr q hq
     exact ⟨q.2, rfl, he ▸ (x_alloc k hk).2⟩
 
+theorem spillInstOk_jump (l : Label) : SpillInstOk (.jump l) :=
+  ⟨#[], rfl, opsOk_simple (by simp) (by simp) (by simp) (by simp), fun _ h => by cases h⟩
+
 end Backend.Proof.Spill

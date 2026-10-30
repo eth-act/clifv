@@ -1,4 +1,4 @@
-import FV.Backend.Proof.IselCtl
+import FV.Backend.Proof.IselCtlRuleIds
 import FV.Backend.Proof.IselTermFactsTy
 import FV.Backend.Proof.PairsC
 import FV.Backend.Proof.LowerContractT

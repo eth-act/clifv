@@ -146,4 +146,14 @@ theorem baseOk_closedCleanup {I : LinkInput} {F : BitVec 64 → Prop}
     BaseOk (LinkSys.ofInputCleanup I closedBase F) :=
   baseOk_closedR htls
 
+/-- The cleanup results of the typed pipeline (`pipeCleanupT`) of every function. -/
+def LinkInput.resultsCleanupT (I : LinkInput) : Res :=
+  I.funcs.map fun fi => (fi.func, pipeCleanupT fi.func fi.k
+    (BitVec.ofNat 64 (I.baseOf fi.func.name)) (raJ fi.ra fi.j))
+
+theorem LinkInput.resultsCleanup_fallback {I : LinkInput} (h : I.fallback = true) :
+    I.resultsCleanup = I.resultsCleanupT := by
+  simp only [LinkInput.resultsCleanup, LinkInput.resultsCleanupT, LinkInput.pipeCleanupOf,
+    h, Bool.cond_true]
+
 end E2E.LinkCheck

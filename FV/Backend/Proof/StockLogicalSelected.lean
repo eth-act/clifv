@@ -1,4 +1,5 @@
-import FV.Backend.Proof.IselCtl
+import FV.Backend.Proof.IselCtlRuleIds
+import FV.Backend.Proof.StockConstantRecordValues
 import FV.Backend.Proof.StockSelectionReceipts
 
 /-! Typed logical-root receipts derived from actual Stock record selection. -/
