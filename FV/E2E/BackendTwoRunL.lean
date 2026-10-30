@@ -30,9 +30,11 @@ namespace E2E
 
 open Backend Backend.Proof Backend.Proof.Driver
 
-/-- **A byte of a jump table** (a `.word` line) of the activation's code. -/
+/-- **A byte of a jump table or of a literal-pool word** (a `.word` or `.data` line, #565) of the
+activation's code: both are code words, read but never written by the body. -/
 def _root_.Backend.Proof.RL.JTByte (R : RL) (a : BitVec 64) : Prop :=
-  ∃ j tg bs, R.L[j]? = some (.word tg bs) ∧ ∃ i < 4, a = R.pcOf j + BitVec.ofNat 64 i
+  (∃ j tg bs, R.L[j]? = some (.word tg bs) ∧ ∃ i < 4, a = R.pcOf j + BitVec.ofNat 64 i) ∨
+    ∃ j d, R.L[j]? = some (.data d) ∧ ∃ i < 4, a = R.pcOf j + BitVec.ofNat 64 i
 
 /-- **The bytes where the worlds of two configurations differ** (everything when one is no run
 configuration). -/
@@ -75,12 +77,13 @@ theorem RL.notZc_of_readInY {R : RL} {Y : BitVec 64 → Prop} {c c' : MConf CV A
     {a : BitVec 64} (h : R.ReadInY Y false a) (hY : ∀ b, MConf.WDiff c c' b → Y b) :
     ¬ R.Zc c c' a := by
   rintro ⟨hfr, hjt, -, hFD⟩
-  rcases h with hj | hf | ⟨hF, hYa⟩
-  · exact hjt hj
+  rcases h with hj | hf | ⟨hF, hYa⟩ | hd
+  · exact hjt (.inl hj)
   · exact hfr hf
   · rcases hFD with h1 | h1
     · exact hF h1
     · exact hYa (hY _ h1)
+  · exact hjt (.inr hd)
 
 theorem insn_hooked_cases {x : Insn} (h : x.hooked = true) :
     (∃ n, x = .bl n) ∨ (∃ r, x = .blr r) ∨ (∃ rd n, x = .adrpGot rd n) ∨
@@ -464,12 +467,14 @@ theorem backend_twoRunL (hsub : InSubset p f) (hc : Compiled f k vc vcp rf af fa
         intro hk
         apply readsAvoid_stepiEvs
         intro a ha ev hev hdir k hk'
-        obtain ⟨j', a', ha', hd⟩ := ht.decodeAt
+        obtain ⟨a', ha', hd⟩ := decodeAt_ofLine ht.layout ht.lm ht.fit ht.prog hj hpc
         rw [hd, Option.some.injEq] at ha
         subst ha
         have hcov := (ExecBytes.instEvs_cover hev).1 hdir
         obtain ⟨Y, -, hYO, hrd⟩ := hwr
-        have hr := hrd j x tc hj hpc hk _ a' ha' (ev.addr, ev.n) hcov k hk'
+        have hr := hrd j x tc hj hpc hk a'
+          (by refine (congrArg (x.toArmInst ·) ?_).trans ha'; exact RL.envL_of_lm ht.lm j)
+          (ev.addr, ev.n) hcov k hk'
         rw [hld] at hr
         refine RL.notZc_of_readInY hr fun b hb => ?_
         rcases hYO with hall | ⟨_, -, hYD⟩
