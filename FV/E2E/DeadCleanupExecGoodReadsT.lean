@@ -147,7 +147,8 @@ theorem insn_of_goodT (hI : okBCleanupT I = true) (hc : codeMapB I (tabOf I.resu
   cases hd
   -- the register-level fact
   have hrd := hrdA j x tt hj hpcw hh a
-    (by simpa [RL.envL, RL.L, hm, Except.toOption] using ha') p hp k hk
+    (by simpa [RL.envL, RL.L, show (sys I B).A g = art I g from rfl, hm, Except.toOption] using ha')
+    p hp k hk
   rcases hrd with hnG | ⟨j', tg, bs, hj', q, hq, he⟩ | ⟨j', d, hj', q, hq, he⟩
   · exact hnG (himg _ (relocAt_imgT hI hF hR))
   · rw [he] at hR
