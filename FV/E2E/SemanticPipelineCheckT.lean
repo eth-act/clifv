@@ -330,8 +330,19 @@ theorem okRWithTS_soundT (stage : Clif.Function → VCode → VCode) {I : LinkIn
     · rcases hstage with rfl | rfl
       · exact ⟨.inl (.inr (.legacy ⟨hl, hlowTC, hpr, (fa hg).prepOk, (fa hg).check, ha, he,
           hla⟩)), hb⟩
-      · exact ⟨.inl (.inr (.cleanup ⟨hl, hlowTC, hpr, (fa hg).prepOk, (fa hg).check, ha, he,
-          hla⟩)), hb⟩
+      · -- As in `PipelineCheckT`: the skip runs only on subset-E functions accepted by
+        -- `lowerCheck` (typed branch); elsewhere the stage is `prune vc`.
+        cases hk : (Compile.functionE g && lowerCheck g (artOf R g).vc)
+        · have hst : cleanupStage g (artOf R g).vc = DeadCleanup.prune (artOf R g).vc := by
+            simp only [cleanupStage, skipStage, hk, Bool.false_eq_true, ↓reduceIte]
+          have hpo := (fa hg).prepOk
+          rw [hst] at hpr hpo
+          exact ⟨.inl (.inr (.cleanup ⟨hl, hlowTC, hpr, hpo, (fa hg).check, ha, he, hla⟩)), hb⟩
+        · rw [Bool.and_eq_true] at hk
+          obtain ⟨hE, hlc⟩ := hk
+          exact ⟨.inl (.inl ⟨hinT g hg (Compile.functionET_of_functionE hE),
+            .cleanup ⟨hl, lowerCheckT_of_lowerCheck hlc, hpr, (fa hg).prepOk, (fa hg).check, ha,
+              he, hla⟩⟩), hb⟩
   refine
     { names := hn
       free := fun g hg => (fa hg).free
