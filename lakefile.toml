@@ -184,3 +184,17 @@ root = "FVTest.Backend.Lowering.StockGeneralDivProductionLinked"
 [[lean_exe]]
 name = "dead-cleanup-generate"
 root = "FVTest.Link.DeadCleanupGenerate"
+
+[[lean_exe]]
+name = "stock-memory-linked"
+root = "FVTest.Backend.Lowering.StockMemoryProductionLinked"
+
+
+[[require]]
+name = "repl"
+git = "https://github.com/leanprover-community/repl.git"
+rev = "v4.34.0"
+
+[[lean_exe]]
+name = "stock-memory-retained"
+root = "FVTest.Backend.Lowering.StockMemoryRetainedRuntime"

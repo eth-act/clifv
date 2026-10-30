@@ -192,7 +192,7 @@ def main():
                 run(f"link-check-{label}-{mode}", ["lake", "env", str(view / ".lake/build/bin/link-check"),
                     str(source), "--lean", str(proof), "--module", proof.stem, *flags])
                 if label == "retained" and mode == "Plain":
-                    selected = re.search(r"Backend\.Stock\.(?:Scalar|ParameterCfg|ConditionalForwardCfg|ConditionalCfg|ForwardCfg|LinearCfg|TwoBlock(?:\.Entry)?)\.lowerWithRoutes \[(.*?)\]", proof.read_text(), re.S)
+                    selected = re.search(r"Backend\.Stock\.(?:Scalar|Memory|ParameterCfg|ConditionalForwardCfg|ConditionalCfg|ForwardCfg|LinearCfg|TwoBlock(?:\.Entry)?)\.lowerWithRoutes \[(.*?)\]", proof.read_text(), re.S)
                     assert selected and re.search(r",\s*" + ("0" if options.kind in ("cfg", "cfgentry", "cfgscalarentry", "cfglinear", "cfgforward", "cfgconditional", "cfgconditionalforward", "cfgparameter") else "[1-4]") + r"\)", selected.group(1)), "explicit retained reconstruction route was not exercised"
                 env["LEAN_PATH"] = str(generated) + ":" + leanpath
                 run(f"cli-proof-{label}-{mode}", ["lean", "--root=" + str(generated),

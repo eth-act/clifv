@@ -95,6 +95,18 @@ block0(v0: i64, v1: i64):
         self.check_compilation(source, explicit_allocator=False)
 
 
+    def test_memory_production_diagnostics_match_allocator_input(self):
+        source = """function %memory(i64) -> i32 {
+block0(v0: i64):
+    v1 = load.i32 notrap v0
+    return v1
+}
+"""
+        for cleanup in (True, False):
+            with self.subTest(dead_cleanup=cleanup):
+                self.check_compilation(source, cleanup)
+
+
 class StockLoweringTraceTests(unittest.TestCase):
     def test_logging_preserves_stock_bytes_and_metadata(self):
         exporter = ROOT / "tools/prejit-export/target/debug/prejit-export"
