@@ -376,7 +376,7 @@ theorem szCTabT24_ok : (szCTabT24).all szEntryOkT = true :=
     | 87, _ => szCTabT24_p87
     | _ + 88, hc => absurd hc (by omega)
 
-theorem szCTabT25_len : (szCTabT25).length ≤ 32 * 1 := by decide +kernel
+theorem szCTabT25_len : (szCTabT25).length ≤ 88 * 1 := by decide +kernel
 
 theorem szCTabT25_p0 : (((szCTabT25).drop (0 * 1)).take 1).all szEntryOkT = true := by
   decide +kernel
@@ -474,8 +474,176 @@ theorem szCTabT25_p30 : (((szCTabT25).drop (30 * 1)).take 1).all szEntryOkT = tr
 theorem szCTabT25_p31 : (((szCTabT25).drop (31 * 1)).take 1).all szEntryOkT = true := by
   decide +kernel
 
+theorem szCTabT25_p32 : (((szCTabT25).drop (32 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT25_p33 : (((szCTabT25).drop (33 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT25_p34 : (((szCTabT25).drop (34 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT25_p35 : (((szCTabT25).drop (35 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT25_p36 : (((szCTabT25).drop (36 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT25_p37 : (((szCTabT25).drop (37 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT25_p38 : (((szCTabT25).drop (38 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT25_p39 : (((szCTabT25).drop (39 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT25_p40 : (((szCTabT25).drop (40 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT25_p41 : (((szCTabT25).drop (41 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT25_p42 : (((szCTabT25).drop (42 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT25_p43 : (((szCTabT25).drop (43 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT25_p44 : (((szCTabT25).drop (44 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT25_p45 : (((szCTabT25).drop (45 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT25_p46 : (((szCTabT25).drop (46 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT25_p47 : (((szCTabT25).drop (47 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT25_p48 : (((szCTabT25).drop (48 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT25_p49 : (((szCTabT25).drop (49 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT25_p50 : (((szCTabT25).drop (50 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT25_p51 : (((szCTabT25).drop (51 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT25_p52 : (((szCTabT25).drop (52 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT25_p53 : (((szCTabT25).drop (53 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT25_p54 : (((szCTabT25).drop (54 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT25_p55 : (((szCTabT25).drop (55 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT25_p56 : (((szCTabT25).drop (56 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT25_p57 : (((szCTabT25).drop (57 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT25_p58 : (((szCTabT25).drop (58 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT25_p59 : (((szCTabT25).drop (59 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT25_p60 : (((szCTabT25).drop (60 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT25_p61 : (((szCTabT25).drop (61 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT25_p62 : (((szCTabT25).drop (62 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT25_p63 : (((szCTabT25).drop (63 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT25_p64 : (((szCTabT25).drop (64 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT25_p65 : (((szCTabT25).drop (65 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT25_p66 : (((szCTabT25).drop (66 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT25_p67 : (((szCTabT25).drop (67 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT25_p68 : (((szCTabT25).drop (68 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT25_p69 : (((szCTabT25).drop (69 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT25_p70 : (((szCTabT25).drop (70 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT25_p71 : (((szCTabT25).drop (71 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT25_p72 : (((szCTabT25).drop (72 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT25_p73 : (((szCTabT25).drop (73 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT25_p74 : (((szCTabT25).drop (74 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT25_p75 : (((szCTabT25).drop (75 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT25_p76 : (((szCTabT25).drop (76 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT25_p77 : (((szCTabT25).drop (77 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT25_p78 : (((szCTabT25).drop (78 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT25_p79 : (((szCTabT25).drop (79 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT25_p80 : (((szCTabT25).drop (80 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT25_p81 : (((szCTabT25).drop (81 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT25_p82 : (((szCTabT25).drop (82 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT25_p83 : (((szCTabT25).drop (83 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT25_p84 : (((szCTabT25).drop (84 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT25_p85 : (((szCTabT25).drop (85 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT25_p86 : (((szCTabT25).drop (86 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
+theorem szCTabT25_p87 : (((szCTabT25).drop (87 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
 theorem szCTabT25_ok : (szCTabT25).all szEntryOkT = true :=
-  all_of_chunks _ _ 1 32 szCTabT25_len fun c hc => match c, hc with
+  all_of_chunks _ _ 1 88 szCTabT25_len fun c hc => match c, hc with
     | 0, _ => szCTabT25_p0
     | 1, _ => szCTabT25_p1
     | 2, _ => szCTabT25_p2
@@ -508,6 +676,62 @@ theorem szCTabT25_ok : (szCTabT25).all szEntryOkT = true :=
     | 29, _ => szCTabT25_p29
     | 30, _ => szCTabT25_p30
     | 31, _ => szCTabT25_p31
-    | _ + 32, hc => absurd hc (by omega)
+    | 32, _ => szCTabT25_p32
+    | 33, _ => szCTabT25_p33
+    | 34, _ => szCTabT25_p34
+    | 35, _ => szCTabT25_p35
+    | 36, _ => szCTabT25_p36
+    | 37, _ => szCTabT25_p37
+    | 38, _ => szCTabT25_p38
+    | 39, _ => szCTabT25_p39
+    | 40, _ => szCTabT25_p40
+    | 41, _ => szCTabT25_p41
+    | 42, _ => szCTabT25_p42
+    | 43, _ => szCTabT25_p43
+    | 44, _ => szCTabT25_p44
+    | 45, _ => szCTabT25_p45
+    | 46, _ => szCTabT25_p46
+    | 47, _ => szCTabT25_p47
+    | 48, _ => szCTabT25_p48
+    | 49, _ => szCTabT25_p49
+    | 50, _ => szCTabT25_p50
+    | 51, _ => szCTabT25_p51
+    | 52, _ => szCTabT25_p52
+    | 53, _ => szCTabT25_p53
+    | 54, _ => szCTabT25_p54
+    | 55, _ => szCTabT25_p55
+    | 56, _ => szCTabT25_p56
+    | 57, _ => szCTabT25_p57
+    | 58, _ => szCTabT25_p58
+    | 59, _ => szCTabT25_p59
+    | 60, _ => szCTabT25_p60
+    | 61, _ => szCTabT25_p61
+    | 62, _ => szCTabT25_p62
+    | 63, _ => szCTabT25_p63
+    | 64, _ => szCTabT25_p64
+    | 65, _ => szCTabT25_p65
+    | 66, _ => szCTabT25_p66
+    | 67, _ => szCTabT25_p67
+    | 68, _ => szCTabT25_p68
+    | 69, _ => szCTabT25_p69
+    | 70, _ => szCTabT25_p70
+    | 71, _ => szCTabT25_p71
+    | 72, _ => szCTabT25_p72
+    | 73, _ => szCTabT25_p73
+    | 74, _ => szCTabT25_p74
+    | 75, _ => szCTabT25_p75
+    | 76, _ => szCTabT25_p76
+    | 77, _ => szCTabT25_p77
+    | 78, _ => szCTabT25_p78
+    | 79, _ => szCTabT25_p79
+    | 80, _ => szCTabT25_p80
+    | 81, _ => szCTabT25_p81
+    | 82, _ => szCTabT25_p82
+    | 83, _ => szCTabT25_p83
+    | 84, _ => szCTabT25_p84
+    | 85, _ => szCTabT25_p85
+    | 86, _ => szCTabT25_p86
+    | 87, _ => szCTabT25_p87
+    | _ + 88, hc => absurd hc (by omega)
 
 end Backend.Proof.CovT

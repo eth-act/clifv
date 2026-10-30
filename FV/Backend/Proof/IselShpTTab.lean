@@ -78,7 +78,7 @@ other than the hand-checked ones (`shpHandIds`) checks on every family; `shpTerm
 -/
 
 set_option maxRecDepth 100000
-set_option maxHeartbeats 4000000
+set_option maxHeartbeats 16000000
 set_option Elab.async false
 
 namespace Backend.Proof.CovT
@@ -89,7 +89,7 @@ open Backend Backend.Proof Isle Isle.Aarch64
 theorem shpTabT_ok : chkTab program shpTabT aext actor apreST aOracleST = true := by
   unfold chkTab
   show (shpTabT).all shpEntryOkT = true
-  simp only [shpTabT, List.all_append, shpTabT0_ok, shpTabT1_ok, shpTabT2_ok, shpTabT3_ok, shpTabT4_ok, shpTabT5_ok, shpTabT6_ok, shpTabT7_ok, shpTabT8_ok, shpTabT9_ok, shpTabT10_ok, shpTabT11_ok, shpTabT12_ok, shpTabT13_ok, shpTabT14_ok, shpTabT15_ok, shpTabT16_ok, shpTabT17_ok, shpTabT18_ok, shpTabT19_ok, shpTabT20_ok, shpTabT21_ok, shpTabT22_ok, shpTabT23_ok, shpTabT24_ok, Bool.and_self]
+  simp only [shpTabT, List.all_append, shpTabT0_ok, shpTabT1_ok, shpTabT2_ok, shpTabT3_ok, shpTabT4_ok, shpTabT5_ok, shpTabT6_ok, shpTabT7_ok, shpTabT8_ok, shpTabT9_ok, shpTabT10_ok, shpTabT11_ok, shpTabT12_ok, shpTabT13_ok, shpTabT14_ok, shpTabT15_ok, shpTabT16_ok, shpTabT17_ok, shpTabT18_ok, shpTabT19_ok, shpTabT20_ok, shpTabT21_ok, shpTabT22_ok, shpTabT23_ok, shpTabT24_ok, shpTabT25_ok, Bool.and_self]
 
 /-- **Every rule of `lower` checks on every family** (`shpStmtOkT`). -/
 theorem shpStmtT_ok : (program.rulesOf TId.lower).all shpStmtOkT = true := by

@@ -12,6 +12,7 @@ import FV.Backend.Proof.IselCovTTabC9
 import FV.Backend.Proof.IselCovTTabC10
 import FV.Backend.Proof.IselCovTTabC11
 import FV.Backend.Proof.IselCovTTabC12
+import FV.Backend.Proof.IselCovTTabC13
 import FV.Backend.Proof.IselCovTTabS0
 import FV.Backend.Proof.IselCovTTabS1
 import FV.Backend.Proof.IselCovTTabS2
@@ -78,7 +79,7 @@ rules of `lower` check; `covBranchT_ok`: every rule of `lower_branch` checks on 
 -/
 
 set_option maxRecDepth 100000
-set_option maxHeartbeats 4000000
+set_option maxHeartbeats 16000000
 set_option Elab.async false
 
 namespace Backend.Proof.CovT
@@ -89,7 +90,7 @@ open Backend Backend.Proof Isle Isle.Aarch64
 theorem covTabT_ok : chkTab program covTabT aext actor apre aOracle = true := by
   unfold chkTab
   show (covTabT).all covEntryOkT = true
-  simp only [covTabT, List.all_append, covTabT0_ok, covTabT1_ok, covTabT2_ok, covTabT3_ok, covTabT4_ok, covTabT5_ok, covTabT6_ok, covTabT7_ok, covTabT8_ok, covTabT9_ok, covTabT10_ok, covTabT11_ok, covTabT12_ok, covTabT13_ok, covTabT14_ok, covTabT15_ok, covTabT16_ok, covTabT17_ok, covTabT18_ok, covTabT19_ok, covTabT20_ok, covTabT21_ok, covTabT22_ok, covTabT23_ok, covTabT24_ok, covTabT25_ok, Bool.and_self]
+  simp only [covTabT, List.all_append, covTabT0_ok, covTabT1_ok, covTabT2_ok, covTabT3_ok, covTabT4_ok, covTabT5_ok, covTabT6_ok, covTabT7_ok, covTabT8_ok, covTabT9_ok, covTabT10_ok, covTabT11_ok, covTabT12_ok, covTabT13_ok, covTabT14_ok, covTabT15_ok, covTabT16_ok, covTabT17_ok, covTabT18_ok, covTabT19_ok, covTabT20_ok, covTabT21_ok, covTabT22_ok, covTabT23_ok, covTabT24_ok, covTabT25_ok, covTabT26_ok, Bool.and_self]
 
 /-- **Every rule of `lower` checks on every family** (`stmtOkT`). -/
 theorem covStmtT_ok : (program.rulesOf TId.lower).all stmtOkT = true := by

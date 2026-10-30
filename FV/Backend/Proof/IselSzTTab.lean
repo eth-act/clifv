@@ -25,6 +25,7 @@ import FV.Backend.Proof.IselSzTTabC22
 import FV.Backend.Proof.IselSzTTabC23
 import FV.Backend.Proof.IselSzTTabC24
 import FV.Backend.Proof.IselSzTTabC25
+import FV.Backend.Proof.IselSzTTabC26
 import FV.Backend.Proof.IselSzTTabS0
 import FV.Backend.Proof.IselSzTTabS1
 import FV.Backend.Proof.IselSzTTabS2
@@ -103,13 +104,13 @@ open Backend Backend.Proof Backend.Proof.Driver Isle Isle.Aarch64
 theorem szCTabT_ok : chkCost program covTabT actorW szCTabT aext actor apre aOracle = true := by
   unfold chkCost
   show (szCTabT).all szEntryOkT = true
-  simp only [szCTabT, List.all_append, szCTabT0_ok, szCTabT1_ok, szCTabT2_ok, szCTabT3_ok, szCTabT4_ok, szCTabT5_ok, szCTabT6_ok, szCTabT7_ok, szCTabT8_ok, szCTabT9_ok, szCTabT10_ok, szCTabT11_ok, szCTabT12_ok, szCTabT13_ok, szCTabT14_ok, szCTabT15_ok, szCTabT16_ok, szCTabT17_ok, szCTabT18_ok, szCTabT19_ok, szCTabT20_ok, szCTabT21_ok, szCTabT22_ok, szCTabT23_ok, szCTabT24_ok, szCTabT25_ok, Bool.and_self]
+  simp only [szCTabT, List.all_append, szCTabT0_ok, szCTabT1_ok, szCTabT2_ok, szCTabT3_ok, szCTabT4_ok, szCTabT5_ok, szCTabT6_ok, szCTabT7_ok, szCTabT8_ok, szCTabT9_ok, szCTabT10_ok, szCTabT11_ok, szCTabT12_ok, szCTabT13_ok, szCTabT14_ok, szCTabT15_ok, szCTabT16_ok, szCTabT17_ok, szCTabT18_ok, szCTabT19_ok, szCTabT20_ok, szCTabT21_ok, szCTabT22_ok, szCTabT23_ok, szCTabT24_ok, szCTabT25_ok, szCTabT26_ok, Bool.and_self]
 
 /-- **Every rule of every entry of `tgCTabT` checks.** -/
 theorem tgCTabT_ok : chkCost program covTabT actorT tgCTabT aext actor apre aOracle = true := by
   unfold chkCost
   show (tgCTabT).all tgEntryOkT = true
-  simp only [tgCTabT, List.all_append, tgCTabT0_ok, tgCTabT1_ok, tgCTabT2_ok, tgCTabT3_ok, tgCTabT4_ok, tgCTabT5_ok, tgCTabT6_ok, tgCTabT7_ok, tgCTabT8_ok, tgCTabT9_ok, tgCTabT10_ok, tgCTabT11_ok, tgCTabT12_ok, tgCTabT13_ok, tgCTabT14_ok, tgCTabT15_ok, tgCTabT16_ok, tgCTabT17_ok, tgCTabT18_ok, tgCTabT19_ok, tgCTabT20_ok, tgCTabT21_ok, tgCTabT22_ok, tgCTabT23_ok, tgCTabT24_ok, tgCTabT25_ok, Bool.and_self]
+  simp only [tgCTabT, List.all_append, tgCTabT0_ok, tgCTabT1_ok, tgCTabT2_ok, tgCTabT3_ok, tgCTabT4_ok, tgCTabT5_ok, tgCTabT6_ok, tgCTabT7_ok, tgCTabT8_ok, tgCTabT9_ok, tgCTabT10_ok, tgCTabT11_ok, tgCTabT12_ok, tgCTabT13_ok, tgCTabT14_ok, tgCTabT15_ok, tgCTabT16_ok, tgCTabT17_ok, tgCTabT18_ok, tgCTabT19_ok, tgCTabT20_ok, tgCTabT21_ok, tgCTabT22_ok, tgCTabT23_ok, tgCTabT24_ok, tgCTabT25_ok, tgCTabT26_ok, Bool.and_self]
 
 /-- **Every rule of `lower` passes `szStmtOkT`.** -/
 theorem szStmtT_ok : (program.rulesOf TId.lower).all szStmtOkT = true := by

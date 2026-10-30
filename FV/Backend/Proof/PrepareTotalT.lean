@@ -133,16 +133,18 @@ variable {f : Clif.Function} {vc : VCode} {ctx : Ctx} {st0 : LState} {bl : List 
   {RR : Reg → Reg} (H : LowT f vc ctx st0 bl RR)
 include H
 
-/-- **CLIF block `x`'s typed code ends in a terminator** (`raw_term` over `LowT`). -/
-theorem raw_termT (hs : LowerScopeT f) (hbt : ∀ B ∈ f.blocks, BrIdxTyped ctx B.term) {x : Nat}
+/-- **CLIF block `x`'s typed code ends in a terminator** (`raw_term` over `LowT`, float scope). -/
+theorem raw_termTF (hs : LowerScopeTF f) (hbt : ∀ B ∈ f.blocks, BrIdxTyped ctx B.term) {x : Nat}
     {B : Clif.Block} {L : BLow} (hB : f.blocks[x]? = some B) (hL : bl[x]? = some L) :
     ∃ t, (fixBlock RR (rawBlockT f ctx bl x B)).insts.back? = some t ∧ t.isTerminator = true := by
-  obtain ⟨t, hb', hjump, hnt, htry⟩ := H.raw_back hs hbt hB hL
+  obtain ⟨ranges0, hb0⟩ := H.hb
+  obtain ⟨t, hb', hjump, hnt, htry⟩ :=
+    H.raw_backG (ctxInvT_ofF hs hb0) (fun B' hB' => termIntPos_ofF hs hb0 hB') hbt hB hL
   obtain ⟨-, -, hem, nl0, nl1, hlt⟩ := (lowBlocks_spec H.hbl).2 x B L hB hL
   rcases try_or B.term with ht | ⟨et, het⟩
   · obtain ⟨ranges, hb⟩ := H.hb
     have sp := ctxSpec_of hb
-    have hctx : CtxInvT f ctx := ctxInvT_of hs hb
+    have hctx : CtxInvT f ctx := ctxInvT_ofF hs hb
     have hst : L.start = blockStart f x := (lowBlocks_start H.hbl).2 x L hL
     have hph := sp.facts.term x B hB
     rw [← hst] at hph
@@ -209,24 +211,24 @@ theorem raw_termT (hs : LowerScopeT f) (hbt : ∀ B ∈ f.blocks, BrIdxTyped ctx
   · obtain ⟨c, ti, rfl, -⟩ := htry et het
     exact ⟨_, hb', rfl⟩
 
+/-- **CLIF block `x`'s typed code ends in a terminator** (`raw_term` over `LowT`). -/
+theorem raw_termT (hs : LowerScopeT f) (hbt : ∀ B ∈ f.blocks, BrIdxTyped ctx B.term) {x : Nat}
+    {B : Clif.Block} {L : BLow} (hB : f.blocks[x]? = some B) (hL : bl[x]? = some L) :
+    ∃ t, (fixBlock RR (rawBlockT f ctx bl x B)).insts.back? = some t ∧ t.isTerminator = true :=
+  raw_termTF H hs.toTF hbt hB hL
+
 end lowT
 
-/-- **`lowerFunction`'s VCode meets `PrepIn`** on `Dominated`, `LowerScopeT` input
-(`prepIn_of_lower` over the typed scope). -/
-theorem prepIn_of_lowerT {f : Clif.Function} {vc : VCode} (hd : Dominated f) (hs : LowerScopeT f)
+/-- **`lowerFunction`'s VCode meets `PrepIn`** on `LowerScopeTF` input (`prepIn_of_lower` over
+the float scope). -/
+theorem prepIn_of_lowerTF {f : Clif.Function} {vc : VCode} (hs : LowerScopeTF f)
     (h : lowerFunction f = .ok vc) : PrepIn vc := by
   obtain ⟨ctx, st0, bl, RR, H⟩ := lowT_of hs.externsE h
-  have hbt : ∀ B ∈ f.blocks, BrIdxTyped ctx B.term := by
-    obtain ⟨ctx', st0', R', gn', bl', A', hshape, -, hbt'⟩ :=
-      loweringT_of_check (lowerCheckT_complete hd hs h)
-    obtain ⟨ranges', hb'⟩ := hshape.hctx
-    obtain ⟨ranges, hb⟩ := H.hb
-    rw [hb] at hb'
-    cases hb'
-    exact hbt'
+  obtain ⟨ranges, hb⟩ := H.hb
+  have hbt : ∀ B ∈ f.blocks, BrIdxTyped ctx B.term := brIdx_of_ok (hs.ctxFacts ctx ranges st0 hb).1
   have hn : 0 < f.blocks.length := List.length_pos_iff.mpr hs.nonempty
   obtain ⟨B0, hB0⟩ : ∃ B0, f.blocks[0]? = some B0 := ⟨_, List.getElem?_eq_getElem hn⟩
-  have dom := prepDomain_ofT hd hs h
+  have dom := prepDomain_ofTF hs h
   -- a block's label is its index
   have tgt : ∀ (l : Nat) (vb : VBlock), vc.blocks[l]? = some vb → l ≠ 0 →
       ∃ k, lab vc.blocks l = some k ∧ k ≠ 0 := by
@@ -242,8 +244,9 @@ theorem prepIn_of_lowerT {f : Clif.Function} {vc : VCode} (hd : Dominated f) (hs
     cases hvb
     rfl
   rcases H.cases hvb with ⟨B, L, -, hB, hL, rfl⟩ | ⟨bi, B, L, e, hB, hL, he, -, -, rfl⟩
-  · obtain ⟨t, hb', -, hnt, htry⟩ := H.raw_back hs hbt hB hL
-    obtain ⟨t2, hb2, hterm⟩ := raw_termT H hs hbt hB hL
+  · obtain ⟨t, hb', -, hnt, htry⟩ :=
+      H.raw_backG (ctxInvT_ofF hs hb) (fun B' hB' => termIntPos_ofF hs hb hB') hbt hB hL
+    obtain ⟨t2, hb2, hterm⟩ := raw_termTF H hs hbt hB hL
     rw [hb'] at hb2
     cases hb2
     refine ⟨t, hb', hterm, fun l hl => ?_⟩
@@ -265,11 +268,23 @@ theorem prepIn_of_lowerT {f : Clif.Function} {vc : VCode} (hd : Dominated f) (hs
       rw [htg] at hl
       obtain ⟨e, he, hel⟩ := ((H.raw_tgt hB hL).2 et het).2 l hl
       exact viaE e he hel
-  · obtain ⟨tl, TB, hins, -, hTB, htl0, -⟩ := H.edge_facts hs hB hL he
+  · obtain ⟨tl, TB, hins, -, hTB, htl0, -⟩ := H.edge_factsG hs.noEntryPred hB hL he
     refine ⟨.jump tl, by simp [fixBlock, hins]; rfl, rfl, fun l hl => ?_⟩
     simp only [MInst.targets, List.mem_singleton] at hl
     subst hl
     exact tgt _ _ (H.raw_at hTB) htl0
+
+/-- **`lowerFunction`'s VCode meets `PrepIn`** on `Dominated`, `LowerScopeT` input
+(`prepIn_of_lower` over the typed scope). -/
+theorem prepIn_of_lowerT {f : Clif.Function} {vc : VCode} (_hd : Dominated f) (hs : LowerScopeT f)
+    (h : lowerFunction f = .ok vc) : PrepIn vc :=
+  prepIn_of_lowerTF hs.toTF h
+
+/-- **`prepare` never fails on `lowerFunction`'s output** for input in the float scope
+(`LowerScopeTF`). -/
+theorem prepare_okTF {f : Clif.Function} {vc : VCode} (hs : LowerScopeTF f)
+    (hl : lowerFunction f = .ok vc) : ∃ vcp, prepare vc = .ok vcp :=
+  prepare_ok_of (prepIn_of_lowerTF hs hl)
 
 /-- **`prepare` never fails on `lowerFunction`'s output** for input in the typed scope
 (`Dominated`, `LowerScopeT`). -/

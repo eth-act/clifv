@@ -60,19 +60,20 @@ theorem vcBlocksOfT_get {f : Clif.Function} {ctx : Ctx} {bl : List BLow} {b : Na
     have : 0 < (f.blocks.zip bl).length := List.length_pos_of_mem hp
     exact ⟨by omega, p.1, p.2, vb0, he, rfl⟩
 
-/-- **The control forms of the typed `lowerFunction`'s output**, with `Args` only at block 0,
-instruction 0, and block 0 starting with `Args`. -/
-theorem vc_ctlT (hI : IselCtlHypT) {f : Clif.Function} {vc : VCode}
-    (hdom : dominatedB f = true) (hs : LowerScopeT f) (hst : Compile.storeTypedB f = true)
-    (hsel : Compile.selectTypedB f = true) (ha : AbiSigsOk f) (hec : EntryClassOk f)
-    (hl : lowerFunction f = .ok vc) :
+/-- **The control forms of the typed `lowerFunction`'s output** from the typed ISLE inversion of
+the function (`IselCtlOn`; integer externs, a VCode in `prepare`'s domain), with `Args` only at
+block 0, instruction 0, and block 0 starting with `Args`: `vc_ctlT`'s proof. -/
+theorem vc_ctlG {f : Clif.Function} {vc : VCode}
+    (hx : f.externs.all (Compile.sigE ·.2.sig) = true) (hIf : Spill.IselCtlOn f)
+    (hpd : Prep.PrepDomain vc) (hdom : dominatedB f = true) (ha : AbiSigsOk f)
+    (hec : EntryClassOk f) (hl : lowerFunction f = .ok vc) :
     (∀ b vb k i, vc.blocks[b]? = some vb → vb.insts[k]? = some i →
       CtlNA i ∨ (b = 0 ∧ k = 0 ∧ ArgsOkT i)) ∧
     ∃ vb0 ds, vc.blocks[0]? = some vb0 ∧ vb0.insts[0]? = some (.args ds) := by
   have hd := dominated_of hdom
-  have hne := (prepDomain_ofT hd hs hl).nonempty
-  obtain ⟨ctx, ranges, st0, bl, hb, hlb, hvb, -, -⟩ := lowerFunction_runT hs.externsE hl
-  obtain ⟨hS, hT, hY⟩ := hI f ctx ranges st0 hdom hs hst hsel ha hb
+  have hne := hpd.nonempty
+  obtain ⟨ctx, ranges, st0, bl, hb, hlb, hvb, -, -⟩ := lowerFunction_runT hx hl
+  obtain ⟨hS, hT, hY⟩ := hIf ctx ranges st0 hb
   have hcf := ctxFacts_of hb
   obtain ⟨-, hstart⟩ := lowBlocks_start hlb
   obtain ⟨-, hspec⟩ := lowBlocks_spec hlb
@@ -226,6 +227,18 @@ theorem vc_ctlT (hI : IselCtlHypT) {f : Clif.Function} {vc : VCode}
       exact hl'
     · exact absurd h0 (Nat.lt_irrefl 0)
 
+/-- **The control forms of the typed `lowerFunction`'s output**, with `Args` only at block 0,
+instruction 0, and block 0 starting with `Args`. -/
+theorem vc_ctlT (hI : IselCtlHypT) {f : Clif.Function} {vc : VCode}
+    (hdom : dominatedB f = true) (hs : LowerScopeT f) (hst : Compile.storeTypedB f = true)
+    (hsel : Compile.selectTypedB f = true) (ha : AbiSigsOk f) (hec : EntryClassOk f)
+    (hl : lowerFunction f = .ok vc) :
+    (∀ b vb k i, vc.blocks[b]? = some vb → vb.insts[k]? = some i →
+      CtlNA i ∨ (b = 0 ∧ k = 0 ∧ ArgsOkT i)) ∧
+    ∃ vb0 ds, vc.blocks[0]? = some vb0 ∧ vb0.insts[0]? = some (.args ds) :=
+  vc_ctlG hs.externsE (hI.on hdom hs hst hsel ha) (prepDomain_ofT (dominated_of hdom) hs hl) hdom
+    ha hec hl
+
 /-- `prepare` keeps the facts of `vc_ctlT` (`prep_ctl` with class-compatible `Args`). -/
 theorem prep_ctlT {vc vcp : VCode} (hp : prepare vc = .ok vcp) (hd : Prep.PrepDomain vc)
     (hv : ∀ b vb k i, vc.blocks[b]? = some vb → vb.insts[k]? = some i →
@@ -288,19 +301,28 @@ theorem prep_ctlT {vc vcp : VCode} (hp : prepare vc = .ok vcp) (hd : Prep.PrepDo
     subst hm
     exact .inl (ctlNA_jump l)
 
+/-- **The instruction part of `ctlCheck` on the typed pipeline's output** from the typed ISLE
+inversion of the function (`IselCtlOn`): `ctlInsts_pipelineT`'s proof. -/
+theorem ctlInsts_pipelineG {f : Clif.Function} {vc vcp : VCode}
+    (hx : f.externs.all (Compile.sigE ·.2.sig) = true) (hIf : Spill.IselCtlOn f)
+    (hpd : Prep.PrepDomain vc) (hdom : dominatedB f = true) (ha : AbiSigsOk f)
+    (hec : EntryClassOk f) (hl : lowerFunction f = .ok vc) (hp : Backend.prepare vc = .ok vcp) :
+    CtlInsts vcp := by
+  obtain ⟨hv, h0⟩ := vc_ctlG hx hIf hpd hdom ha hec hl
+  refine ⟨fun b vb k i hvb hi => ?_, prep_entry hp hpd h0⟩
+  rcases prep_ctlT hp hpd hv b vb k i hvb hi with hc | ⟨rfl, rfl, ds, rfl, hds⟩
+  · exact hc.2 b k
+  · simpa [ctlInstOk] using hds
+
 /-- **The instruction part of `ctlCheck` on the typed pipeline's output**: every instruction of
 the prepared VCode meets `ctlInstOk` at its position, and block 0 starts with an `Args` and has
 at least two instructions. -/
 theorem ctlInsts_pipelineT (hI : IselCtlHypT) {f : Clif.Function} {vc vcp : VCode}
     (hdom : dominatedB f = true) (hs : LowerScopeT f) (hst : Compile.storeTypedB f = true)
     (hsel : Compile.selectTypedB f = true) (ha : AbiSigsOk f) (hec : EntryClassOk f)
-    (hl : lowerFunction f = .ok vc) (hp : Backend.prepare vc = .ok vcp) : CtlInsts vcp := by
-  obtain ⟨hv, h0⟩ := vc_ctlT hI hdom hs hst hsel ha hec hl
-  have hpd := prepDomain_ofT (dominated_of hdom) hs hl
-  refine ⟨fun b vb k i hvb hi => ?_, prep_entry hp hpd h0⟩
-  rcases prep_ctlT hp hpd hv b vb k i hvb hi with hc | ⟨rfl, rfl, ds, rfl, hds⟩
-  · exact hc.2 b k
-  · simpa [ctlInstOk] using hds
+    (hl : lowerFunction f = .ok vc) (hp : Backend.prepare vc = .ok vcp) : CtlInsts vcp :=
+  ctlInsts_pipelineG hs.externsE (hI.on hdom hs hst hsel ha)
+    (prepDomain_ofT (dominated_of hdom) hs hl) hdom ha hec hl hp
 
 /-- **Completeness of `ctlInstsB`.** -/
 theorem ctlInstsB_of {vc : VCode} (h : CtlInsts vc) : LinkCheck.ctlInstsB vc = true := by

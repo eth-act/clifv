@@ -145,7 +145,25 @@ def famTab : List Fam := [
     .valsAll eCTys, .c0, .c0]⟩,
   -- 30: `try_call_indirect` (integer callee and arguments)
   ⟨noRes, [], idata VIdx.InstructionData.TryCallIndirect [opAlts [VIdx.Opcode.TryCallIndirect],
-    .valsAll eCTys, .c0]⟩]
+    .valsAll eCTys, .c0]⟩,
+  -- the S11f float operations of `Compile.instETF` (appended: the indices above are unchanged)
+  -- 31: two-operand float arithmetic
+  ⟨fCTys, fCTys, idata VIdx.InstructionData.Binary [opAlts [VIdx.Opcode.Fadd, VIdx.Opcode.Fsub,
+    VIdx.Opcode.Fmul, VIdx.Opcode.Fdiv, VIdx.Opcode.Fmin, VIdx.Opcode.Fmax], .vals [fCTys, fCTys]]⟩,
+  -- 32: one-operand float arithmetic and rounding
+  ⟨fCTys, fCTys, idata VIdx.InstructionData.Unary [opAlts [VIdx.Opcode.Sqrt, VIdx.Opcode.Fneg,
+    VIdx.Opcode.Fabs, VIdx.Opcode.Ceil, VIdx.Opcode.Floor, VIdx.Opcode.Trunc, VIdx.Opcode.Nearest,
+    VIdx.Opcode.Fpromote, VIdx.Opcode.Fdemote], vF]⟩,
+  -- 33: `fcvt_from_{u,s}int` (an integer operand)
+  ⟨fCTys, fCTys, idata VIdx.InstructionData.Unary [opAlts [VIdx.Opcode.FcvtFromUint,
+    VIdx.Opcode.FcvtFromSint], vE]⟩,
+  -- 34: `fcvt_to_{u,s}int_sat` to `i32`/`i64` (a float operand)
+  ⟨[.int 32, .int 64], [.int 32, .int 64], idata VIdx.InstructionData.Unary
+    [opAlts [VIdx.Opcode.FcvtToUintSat, VIdx.Opcode.FcvtToSintSat], vF]⟩,
+  -- 35: `fcmp` of two floats at a condition of `fccOk` (not `one` 7, `ueq` 9); an `i8` result
+  ⟨[.int 8], [.int 8], idata VIdx.InstructionData.FloatCompare [opAlts [VIdx.Opcode.Fcmp],
+    .vals [fCTys, fCTys],
+    .alts ([0, 1, 2, 3, 4, 5, 6, 8, 10, 11, 12, 13].map fun k => .data TyId.FloatCC k [])]⟩]
 
 /-- A family describes an instruction entry of the context: the type `inst_data_value` gives,
 the types of the results, the data. -/

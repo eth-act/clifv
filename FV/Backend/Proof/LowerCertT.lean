@@ -1,5 +1,7 @@
 import FV.Backend.Proof.LowerCert
 import FV.Backend.Proof.IselFlowT
+import FV.Backend.Proof.IselExclTF
+import FV.Backend.Proof.LowerLoopCtxTF
 
 /-!
 # Completeness of `lowerCheckT`: the SSA availability certificate, typed scope
@@ -8,7 +10,9 @@ import FV.Backend.Proof.IselFlowT
 `lowerFunction` records are well founded (`alias_factsT`: an alias target is a fresh vreg of
 the statement or a value its instruction reaches through its operands, now by the typed flow
 analysis `stmt_flowT`), and the certificate conditions hold (`certOk_completeT`). The proofs
-are `LowerCert`'s; only the flow fact of an alias changes (`alias_srcT`).
+are `LowerCert`'s; only the flow fact of an alias changes (`alias_srcT`). The section's lemmas
+hold over the float scope `LowerScopeTF` (`alias_factsTF`, `certOk_completeTF`; the typed scope
+gives it, `LowerScopeT.toTF`).
 -/
 
 namespace Backend.Proof.Driver
@@ -24,7 +28,7 @@ theorem externsE_of (h : Compile.functionET f = true) : f.externs.all (Compile.s
 
 section
 variable {ctx : Ctx} {ranges : Array (Nat × Nat)} {st0 : LState} {bl : List BLow}
-  (hd : Dominated f) (hsc : LowerScopeT f) (hb : buildCtx f = .ok (ctx, ranges, st0))
+  (hd : Dominated f) (hsc : LowerScopeTF f) (hb : buildCtx f = .ok (ctx, ranges, st0))
   (hl : lowBlocks f (stmtCall ctx) (termCallF ctx) (tryCallF ctx) 0 f.blocks st0
       f.blocks.length = some bl)
 include hd hsc hb hl
@@ -44,10 +48,12 @@ theorem alias_srcT {r o : Nat} (h : (r, o) ∈ aliasOf f bl) :
   obtain ⟨tr, hrun⟩ := hcall j sl hsl
   rw [(lowBlocks_start hl).2 bi L hL] at hrun
   obtain ⟨info, hi, hc, hres⟩ := hF.stmt bi B j stm hB hs
-  have hctx := ctxInvT_of hsc hb
-  have hin := (ctxSpec_of hb).instScopeT hsc.subsetT
+  have hctx := ctxInvT_ofF hsc hb
+  have hnm : LowerNoMatch ctx := fun _ _ _ hi hc _ hr hroot =>
+    lower_nonroot_nomatchTF_calls hctx ((ctxSpec_of hb).instScopeTF hsc.subsetTF)
+      (callsE_of_externs hsc.externsE ctx) hi hc hr hroot
   exact ⟨bi, B, L, j, stm, sl, hB, hL, hs, hsl, hr,
-    stmt_flowT hctx hin (externsE_of hsc.subsetT) hF.tryRegs hi hc hrun sl.rss rfl
+    stmt_flowG hctx hnm hF.tryRegs hi hc hrun sl.rss rfl
     (by rw [hres]; exact List.ne_nil_of_mem hr) rs hrs o c hrs'⟩
 
 /-- `alias_factsT` under the section's hypotheses: unique keys below the first temporary, well
@@ -377,6 +383,17 @@ theorem certBlock_okT {bi : Nat} {B : Clif.Block} {L : BLow} (hB : f.blocks[bi]?
 
 end
 
+/-- **The recorded aliases of a float-scope lowering** have unique keys, below the first
+temporary, and are well founded (`alias_facts` over `LowerScopeTF`). -/
+theorem alias_factsTF (hd : Dominated f) (hs : LowerScopeTF f) {ctx : Ctx}
+    {ranges : Array (Nat × Nat)} {st0 : LState} {bl : List BLow}
+    (hb : buildCtx f = .ok (ctx, ranges, st0))
+    (hl : lowBlocks f (stmtCall ctx) (termCallF ctx) (tryCallF ctx) 0 f.blocks st0
+      f.blocks.length = some bl) :
+    ((aliasOf f bl).map (·.1)).Nodup ∧ (∀ p ∈ aliasOf f bl, p.1 < st0.nextVreg) ∧
+      AliasWF (aliasOf f bl) :=
+  alias_factsT' hd hs hb hl
+
 /-- **The recorded aliases of a typed-scope lowering** have unique keys, below the first
 temporary, and are well founded (`alias_facts` over `LowerScopeT`). -/
 theorem alias_factsT (hd : Dominated f) (hs : LowerScopeT f) {ctx : Ctx}
@@ -386,10 +403,10 @@ theorem alias_factsT (hd : Dominated f) (hs : LowerScopeT f) {ctx : Ctx}
       f.blocks.length = some bl) :
     ((aliasOf f bl).map (·.1)).Nodup ∧ (∀ p ∈ aliasOf f bl, p.1 < st0.nextVreg) ∧
       AliasWF (aliasOf f bl) :=
-  alias_factsT' hd hs hb hl
+  alias_factsT' hd hs.toTF hb hl
 
-/-- **The certificate part of `lowerCheckT`** (typed scope). -/
-theorem certOk_completeT (hd : Dominated f) (hs : LowerScopeT f) {ctx : Ctx}
+/-- **The certificate part of `lowerCheckTCF`** (float scope). -/
+theorem certOk_completeTF (hd : Dominated f) (hs : LowerScopeTF f) {ctx : Ctx}
     {ranges : Array (Nat × Nat)} {st0 : LState} {bl : List BLow}
     (hb : buildCtx f = .ok (ctx, ranges, st0))
     (hl : lowBlocks f (stmtCall ctx) (termCallF ctx) (tryCallF ctx) 0 f.blocks st0
@@ -436,5 +453,19 @@ theorem certOk_completeT (hd : Dominated f) (hs : LowerScopeT f) {ctx : Ctx}
     · rfl
   · simp only [List.all_eq_true, decide_eq_true_eq]
     exact (hF.types hssa).2
+
+end Backend.Proof.Driver
+
+namespace Backend.Proof.Driver
+
+/-- **The certificate part of `lowerCheckT`** (typed scope). -/
+theorem certOk_completeT {f : Clif.Function} (hd : Dominated f) (hs : LowerScopeT f) {ctx : Ctx}
+    {ranges : Array (Nat × Nat)} {st0 : LState} {bl : List BLow}
+    (hb : buildCtx f = .ok (ctx, ranges, st0))
+    (hl : lowBlocks f (stmtCall ctx) (termCallF ctx) (tryCallF ctx) 0 f.blocks st0
+      f.blocks.length = some bl) :
+    certOk f ctx st0 (gnAt (gnTable st0.nextVreg (aliasOf f bl))) bl
+      (inFix f ctx (gnAt (gnTable st0.nextVreg (aliasOf f bl)))) = true :=
+  certOk_completeTF hd hs.toTF hb hl
 
 end Backend.Proof.Driver

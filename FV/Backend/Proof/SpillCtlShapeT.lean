@@ -129,4 +129,28 @@ def IselCtlHypT : Prop :=
       tryCallF ctx ti data trs targets { st1 with emitted := #[] } = .ok (out, s', tr) →
       CtlSinceT ctx.valDef.size { st1 with emitted := #[] } s')
 
+/-- **The typed ISLE inversion of one function** (`IselCtlHypT`'s conclusion for `f`): every ISLE
+run of the driver in `buildCtx f`'s context emits only control forms of the typed shapes. -/
+def IselCtlOn (f : Clif.Function) : Prop :=
+  ∀ (ctx : Ctx) (ranges : Array (Nat × Nat)) (st0 : LState), buildCtx f = .ok (ctx, ranges, st0) →
+    (∀ ii info inst s out s' tr, ctx.insts[ii]? = some info → info.clif = some inst →
+      ctx.valDef.size ≤ s.nextVreg →
+      runTerm ctx "lower" [.inst ii] s = .ok (out, s', tr) → CtlSinceT ctx.valDef.size s s') ∧
+    (∀ ti t data targets s out s' tr, ti < ctx.insts.size →
+      ctx.insts[ti]? = some ⟨.op .unit, [], [], none⟩ → t.isTry = false → (∃ B ∈ f.blocks, B.term = t) →
+      termData (abiTerm f t) = .ok data → ctx.valDef.size ≤ s.nextVreg →
+      termCallF ctx ti data t targets s = .ok (out, s', tr) → CtlSinceT ctx.valDef.size s s') ∧
+    (∀ ti t et data sig items lo trs st1 targets out s' tr, ti < ctx.insts.size →
+      ctx.insts[ti]? = some ⟨.op .unit, [], [], none⟩ → IsTryWith t et → (∃ B ∈ f.blocks, B.term = t) →
+      tryCallData f t = .ok data → exnTableOpnd f et = .ok (sig, items) →
+      ctx.valDef.size ≤ lo.nextVreg → tryRegsOf sig lo = some (trs, st1) →
+      tryCallF ctx ti data trs targets { st1 with emitted := #[] } = .ok (out, s', tr) →
+      CtlSinceT ctx.valDef.size { st1 with emitted := #[] } s')
+
+/-- `IselCtlHypT` gives `IselCtlOn` of a typed-scope function. -/
+theorem IselCtlHypT.on (hI : IselCtlHypT) {f : Clif.Function} (hdom : dominatedB f = true)
+    (hs : LowerScopeT f) (hst : Compile.storeTypedB f = true) (hsel : Compile.selectTypedB f = true)
+    (ha : AbiSigsOk f) : IselCtlOn f :=
+  fun ctx ranges st0 hb => hI f ctx ranges st0 hdom hs hst hsel ha hb
+
 end Backend.Proof.Spill

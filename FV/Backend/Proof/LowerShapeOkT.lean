@@ -1,6 +1,7 @@
 import FV.Backend.Proof.LowerLoopT
 import FV.Backend.Proof.LowerShapeOk
 import FV.Backend.Proof.IselTermFactsTy
+import FV.Backend.Proof.LowerLoopCtxTF
 
 /-!
 # Completeness of the typed shape check (S11e5 Stage C, slice 3)
@@ -59,6 +60,18 @@ theorem termIntPos_of (hs : LowerScopeT f) {ctx : Ctx} {ranges : Array (Nat × N
   have hT := hs.subsetT
   simp only [Compile.functionET, Compile.opsTypedT, Bool.and_eq_true, List.all_eq_true] at hT
   have := (hT.1.2 B hB).2 x hx
+  simp [hfd] at this
+
+/-- The integer operands of a float-scope function's terminators are in integer positions of
+`buildCtx`'s context (`Compile.opsTypedTF`). -/
+theorem termIntPos_ofF (hs : LowerScopeTF f) {ctx : Ctx} {ranges : Array (Nat × Nat)}
+    {st0 : LState} (hb : buildCtx f = .ok (ctx, ranges, st0)) {B : Clif.Block}
+    (hB : B ∈ f.blocks) : TermIntPos ctx B.term := by
+  intro x hx t ht
+  refine (ctxSpec_of hb).eCTys_of_not_floatDef ht fun hfd => ?_
+  have hO := (functionETF_parts hs.subsetTF).2.2.2.1
+  simp only [Compile.opsTypedTF, Bool.and_eq_true, List.all_eq_true] at hO
+  have := (hO B hB).2 x hx
   simp [hfd] at this
 
 /-! ## Renaming the typed recorded code -/
@@ -186,15 +199,35 @@ theorem edgesT_labels (ctx : Ctx) (ps : List (Clif.Block × BLow)) :
 
 /-! ## The shape -/
 
-/-- **The shape part of `lowerCheckT`** (typed scope, SSA, well-founded aliases, terminator
-rules that emit code on terminators with integer-position operands). -/
-theorem shapeOkT_completeI (h : lowerFunction f = .ok vc) (hs : LowerScopeT f)
+/-- `shapeOkT` with the supported-instruction check `sc` (`shapeOkT`: `instScopeOk ctx`;
+`shapeOkTF`: `instScopeOkF ctx`). -/
+def shapeOkTS (sc : Bool) (f : Clif.Function) (vc : VCode) (ctx : Ctx) (st0 : LState)
+    (gn : Nat → Nat) (bl : List BLow) : Bool :=
+  (ctxOkT f ctx && sc) && decide (ctx.valReg.size ≤ st0.nextVreg) &&
+  f.blocks.all (fun B => B.params.all fun p => decide (gn p.1 = p.1)) &&
+  decide (bl.length = f.blocks.length) && decide (f.blocks.length ≤ vc.blocks.size) &&
+  (List.range vc.blocks.size).all (fun l => match vc.blocks[l]? with
+    | some vb => decide (vb.label = l)
+    | none => true) &&
+  ((List.range f.blocks.length).all fun bi => match f.blocks[bi]?, bl[bi]? with
+    | some B, some L => blockOkT f vc ctx st0 (renOf gn) gn bl bi B L
+    | _, _ => false) &&
+  decide (st0.nextVreg ≤ f.freshValue)
+
+theorem shapeOkT_eq_S {ctx : Ctx} {st0 : LState} {gn : Nat → Nat} {bl : List BLow} :
+    shapeOkT f vc ctx st0 gn bl = shapeOkTS (instScopeOk ctx) f vc ctx st0 gn bl := rfl
+
+/-- **The shape part of the typed validators** over the float scope, for any supported-instruction
+check `sc` that holds (SSA, well-founded aliases, terminator rules that emit code on terminators
+with integer-position operands). -/
+theorem shapeOkTS_completeI (h : lowerFunction f = .ok vc) (hs : LowerScopeTF f)
     (hssa : (valueDefs f).Nodup) {ctx : Ctx} {ranges : Array (Nat × Nat)} {st0 : LState}
     {bl : List BLow} (hb : buildCtx f = .ok (ctx, ranges, st0)) (hte : TermEmitsTI f ctx)
     (hl : lowBlocks f (stmtCall ctx) (termCallF ctx) (tryCallF ctx) 0 f.blocks st0
       f.blocks.length = some bl)
-    (hu : ((aliasOf f bl).map (·.1)).Nodup) (hwf : AliasWF (aliasOf f bl)) :
-    shapeOkT f vc ctx st0 (gnAt (gnTable st0.nextVreg (aliasOf f bl))) bl = true := by
+    (hu : ((aliasOf f bl).map (·.1)).Nodup) (hwf : AliasWF (aliasOf f bl)) {sc : Bool}
+    (hsc : sc = true) :
+    shapeOkTS sc f vc ctx st0 (gnAt (gnTable st0.nextVreg (aliasOf f bl))) bl = true := by
   -- the run
   obtain ⟨ctx', ranges', st0', bl', hb', hl', hvc, -, hlf⟩ := lowerFunction_runT hs.externsE h
   rw [hb] at hb'
@@ -205,8 +238,8 @@ theorem shapeOkT_completeI (h : lowerFunction f = .ok vc) (hs : LowerScopeT f)
   have hcf := ctxFacts_of hb
   obtain ⟨hlen, hlb⟩ := lowBlocks_spec hl
   obtain ⟨-, hstart⟩ := lowBlocks_start hl
-  have hctxok := ctxOkT_of hs hb
-  have hscope := instScopeOk_complete ((ctxSpec_of hb).instScopeT hs.subsetT)
+  have hctxok := ctxOkT_complete (ctxInvT_ofF hs hb)
+  have hscope := hsc
   -- the alias resolution
   have hk : ∀ p ∈ aliasOf f bl, p.1 < st0.nextVreg := by
     intro p hp
@@ -309,7 +342,7 @@ theorem shapeOkT_completeI (h : lowerFunction f = .ok vc) (hs : LowerScopeT f)
         have hbt := brIdx_of_ok (hs.ctxFacts ctx ranges st0 hb).1 B hBmem
         have hti : L.start + B.body.length < ctx.insts.size :=
           (Array.getElem?_eq_some_iff.mp hph).1
-        have hlt' := hte hti hph ht hd htg hvb hbt (termIntPos_of hs hb hBmem) hrun
+        have hlt' := hte hti hph ht hd htg hvb hbt (termIntPos_ofF hs hb hBmem) hrun
         intro hnil
         have := Array.length_toList (xs := L.tst'.emitted)
         rw [hnil] at this
@@ -447,7 +480,7 @@ theorem shapeOkT_completeI (h : lowerFunction f = .ok vc) (hs : LowerScopeT f)
       cases t <;> simp
     · rw [hph]; rfl
   -- the function
-  simp only [shapeOkT, Bool.and_eq_true, decide_eq_true_eq]
+  simp only [shapeOkTS, Bool.and_eq_true, decide_eq_true_eq]
   refine ⟨⟨⟨⟨⟨⟨⟨⟨hctxok, hscope⟩, ?_⟩, ?_⟩, hlen⟩, ?_⟩, ?_⟩, ?_⟩, ?_⟩
   · obtain ⟨h1, h2, -⟩ := hcf.size
     omega
@@ -480,6 +513,18 @@ theorem shapeOkT_completeI (h : lowerFunction f = .ok vc) (hs : LowerScopeT f)
     exact hblock bi B L hB hL
   · rw [buildCtx_fresh hb]
     exact Nat.le_refl _
+
+/-- **The shape part of `lowerCheckT`** (typed scope, SSA, well-founded aliases, terminator
+rules that emit code on terminators with integer-position operands). -/
+theorem shapeOkT_completeI (h : lowerFunction f = .ok vc) (hs : LowerScopeT f)
+    (hssa : (valueDefs f).Nodup) {ctx : Ctx} {ranges : Array (Nat × Nat)} {st0 : LState}
+    {bl : List BLow} (hb : buildCtx f = .ok (ctx, ranges, st0)) (hte : TermEmitsTI f ctx)
+    (hl : lowBlocks f (stmtCall ctx) (termCallF ctx) (tryCallF ctx) 0 f.blocks st0
+      f.blocks.length = some bl)
+    (hu : ((aliasOf f bl).map (·.1)).Nodup) (hwf : AliasWF (aliasOf f bl)) :
+    shapeOkT f vc ctx st0 (gnAt (gnTable st0.nextVreg (aliasOf f bl))) bl = true :=
+  shapeOkTS_completeI h hs.toTF hssa hb hte hl hu hwf
+    (instScopeOk_complete ((ctxSpec_of hb).instScopeT hs.subsetT))
 
 /-- **The shape part of `lowerCheckT`** (typed scope, SSA, well-founded aliases, terminator
 rules that emit code). -/

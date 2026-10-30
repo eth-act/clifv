@@ -206,4 +206,18 @@ theorem emitParts_cleanup_lowerT {f : Clif.Function} {vc vcp : VCode} (hdom : do
   have hd := prune_prepDomain (Spill.prepDomain_ofT (dominated_of hdom) hs hl)
   exact emitParts_of hp hd (prep_emit hp hd (prune_emitT (vc_emitT hI hs.externsE hl)))
 
+/-- **`emitParts_lowerT` on the float scope** (`LowerScopeTF`). -/
+theorem emitParts_lowerTF {f : Clif.Function} {vc vcp : VCode} (hs : LowerScopeTF f)
+    (hI : IselEmitT f) (hl : lowerFunction f = .ok vc) (hp : Backend.prepare vc = .ok vcp) :
+    immsOkB vcp = true ∧ vcp.noAlwaysB = true ∧ branchTargetsOkB vcp = true := by
+  have hd := Spill.prepDomain_ofTF hs hl
+  exact emitParts_of hp hd (prep_emit hp hd (vc_emitT hI hs.externsE hl))
+
+/-- **`emitParts_cleanup_lowerT` on the float scope** (`LowerScopeTF`). -/
+theorem emitParts_cleanup_lowerTF {f : Clif.Function} {vc vcp : VCode} (hs : LowerScopeTF f)
+    (hI : IselEmitT f) (hl : lowerFunction f = .ok vc) (hp : Backend.prepare (prune vc) = .ok vcp) :
+    immsOkB vcp = true ∧ vcp.noAlwaysB = true ∧ branchTargetsOkB vcp = true := by
+  have hd := prune_prepDomain (Spill.prepDomain_ofTF hs hl)
+  exact emitParts_of hp hd (prep_emit hp hd (prune_emitT (vc_emitT hI hs.externsE hl)))
+
 end E2E
