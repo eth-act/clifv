@@ -291,15 +291,19 @@ theorem unwCheck_complete {f : Clif.Function} {vc : VCode} (hd : Dominated f) (h
       obtain ⟨hs0, hhs⟩ := tryInfoOf_head hinfo
       have hhead : T.info.handlers.head? = some (.tag n0 nl0) := by rw [hhs]; rfl
       have hclob := tryInfoOf_clob hinfo (exnTableOpnd_conv hexn)
-      -- the call's defs
-      have hn2 : (sigRets T.sig).length ≤ 2 :=
-        tryRets_of hr hBmem het (Backend.exnTableOpnd_sig hexn)
+      -- the call's defs (over the declared returns, #587; the check bounds `sigRets`, which is
+      -- at least as long)
+      have hn2 : T.sig.returns.length ≤ 2 := by
+        have h := tryRets_of hr hBmem het (Backend.exnTableOpnd_sig hexn)
+        rcases sigRets_cases T.sig with e | ⟨e0, -⟩
+        · rw [← e]; exact h
+        · rw [e0]; exact Nat.zero_le _
       have hD2 := outDefs_two L.tst.nextVreg _ hn2
       obtain ⟨ops, hops, hdefs⟩ := tryCall_ops (L := Lp)
-        (D := outDefs L.tst.nextVreg (max (sigRets T.sig).length 2)) hdst
+        (D := outDefs L.tst.nextVreg (max T.sig.returns.length 2)) hdst
       rw [hD2] at hdefs
       have hdc : defCons (.call ⟨dst, retPairs Lp,
-          callDefs (outDefs L.tst.nextVreg (max (sigRets T.sig).length 2))⟩) =
+          callDefs (outDefs L.tst.nextVreg (max T.sig.returns.length 2))⟩) =
           [.fixed (.x 0), .fixed (.x 1)] := by
         unfold defCons; rw [hops]; simp only [hdefs]; rfl
       have hpay : ∀ i, i < 2 → payVreg ops i = some (L.tst.nextVreg + i) := by
