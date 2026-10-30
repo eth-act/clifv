@@ -1,0 +1,140 @@
+test_configured_compiler_uses_the_default_provider (configured_provider.StockConfiguredProviderTests.test_configured_compiler_uses_the_default_provider) ... 
+  test_configured_compiler_uses_the_default_provider (configured_provider.StockConfiguredProviderTests.test_configured_compiler_uses_the_default_provider) (source='function %memory_cfg(i64) -> i32 {', cleanup=False) ... FAIL
+  test_configured_compiler_uses_the_default_provider (configured_provider.StockConfiguredProviderTests.test_configured_compiler_uses_the_default_provider) (source='function %memory_cfg(i64) -> i32 {', cleanup=True) ... FAIL
+  test_configured_compiler_uses_the_default_provider (configured_provider.StockConfiguredProviderTests.test_configured_compiler_uses_the_default_provider) (source='function %memory(i64) -> i32 {', cleanup=False) ... FAIL
+  test_configured_compiler_uses_the_default_provider (configured_provider.StockConfiguredProviderTests.test_configured_compiler_uses_the_default_provider) (source='function %memory(i64) -> i32 {', cleanup=True) ... FAIL
+  test_configured_compiler_uses_the_default_provider (configured_provider.StockConfiguredProviderTests.test_configured_compiler_uses_the_default_provider) (source='function %retained(i64) -> i64 {', cleanup=False) ... FAIL
+  test_configured_compiler_uses_the_default_provider (configured_provider.StockConfiguredProviderTests.test_configured_compiler_uses_the_default_provider) (source='function %retained(i64) -> i64 {', cleanup=True) ... FAIL
+test_typed_pipeline_keeps_its_existing_provider (configured_provider.StockConfiguredProviderTests.test_typed_pipeline_keeps_its_existing_provider) ... FAIL
+test_unsupported_settings_remain_rejected_before_allocation (configured_provider.StockConfiguredProviderTests.test_unsupported_settings_remain_rejected_before_allocation) ... ok
+
+======================================================================
+FAIL: test_configured_compiler_uses_the_default_provider (configured_provider.StockConfiguredProviderTests.test_configured_compiler_uses_the_default_provider) (source='function %memory_cfg(i64) -> i32 {', cleanup=False)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/test_stock_configured_provider.next.py", line 88, in test_configured_compiler_uses_the_default_provider
+    self.check_provider(source, cleanup)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/test_stock_configured_provider.next.py", line 82, in check_provider
+    self.assertEqual(actual, expected)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: [{'na[40 chars]'iiii', 'blocks': [{'insts': [0, 2], 'succs': [491 chars]'}]}] != [{'na[40 chars]'iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii[690 chars]'}]}]
+
+First differing element 0:
+{'nam[39 chars]'iiii', 'blocks': [{'insts': [0, 2], 'succs': [490 chars]t'}]}
+{'nam[39 chars]'iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii[689 chars]t'}]}
+
+Diff is 1880 characters long. Set self.maxDiff to None to see it.
+
+======================================================================
+FAIL: test_configured_compiler_uses_the_default_provider (configured_provider.StockConfiguredProviderTests.test_configured_compiler_uses_the_default_provider) (source='function %memory_cfg(i64) -> i32 {', cleanup=True)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/test_stock_configured_provider.next.py", line 88, in test_configured_compiler_uses_the_default_provider
+    self.check_provider(source, cleanup)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/test_stock_configured_provider.next.py", line 82, in check_provider
+    self.assertEqual(actual, expected)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: [{'na[40 chars]'iiii', 'blocks': [{'insts': [0, 2], 'succs': [491 chars]'}]}] != [{'na[40 chars]'iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii[690 chars]'}]}]
+
+First differing element 0:
+{'nam[39 chars]'iiii', 'blocks': [{'insts': [0, 2], 'succs': [490 chars]t'}]}
+{'nam[39 chars]'iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii[689 chars]t'}]}
+
+Diff is 1880 characters long. Set self.maxDiff to None to see it.
+
+======================================================================
+FAIL: test_configured_compiler_uses_the_default_provider (configured_provider.StockConfiguredProviderTests.test_configured_compiler_uses_the_default_provider) (source='function %memory(i64) -> i32 {', cleanup=False)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/test_stock_configured_provider.next.py", line 88, in test_configured_compiler_uses_the_default_provider
+    self.check_provider(source, cleanup)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/test_stock_configured_provider.next.py", line 82, in check_provider
+    self.assertEqual(actual, expected)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: [{'na[36 chars]'iiii', 'blocks': [{'insts': [0, 3], 'succs': [369 chars]'}]}] != [{'na[36 chars]'iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii[568 chars]'}]}]
+
+First differing element 0:
+{'nam[35 chars]'iiii', 'blocks': [{'insts': [0, 3], 'succs': [368 chars]t'}]}
+{'nam[35 chars]'iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii[567 chars]t'}]}
+
+Diff is 1725 characters long. Set self.maxDiff to None to see it.
+
+======================================================================
+FAIL: test_configured_compiler_uses_the_default_provider (configured_provider.StockConfiguredProviderTests.test_configured_compiler_uses_the_default_provider) (source='function %memory(i64) -> i32 {', cleanup=True)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/test_stock_configured_provider.next.py", line 88, in test_configured_compiler_uses_the_default_provider
+    self.check_provider(source, cleanup)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/test_stock_configured_provider.next.py", line 82, in check_provider
+    self.assertEqual(actual, expected)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: [{'na[36 chars]'iiii', 'blocks': [{'insts': [0, 3], 'succs': [369 chars]'}]}] != [{'na[36 chars]'iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii[568 chars]'}]}]
+
+First differing element 0:
+{'nam[35 chars]'iiii', 'blocks': [{'insts': [0, 3], 'succs': [368 chars]t'}]}
+{'nam[35 chars]'iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii[567 chars]t'}]}
+
+Diff is 1725 characters long. Set self.maxDiff to None to see it.
+
+======================================================================
+FAIL: test_configured_compiler_uses_the_default_provider (configured_provider.StockConfiguredProviderTests.test_configured_compiler_uses_the_default_provider) (source='function %retained(i64) -> i64 {', cleanup=False)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/test_stock_configured_provider.next.py", line 88, in test_configured_compiler_uses_the_default_provider
+    self.check_provider(source, cleanup)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/test_stock_configured_provider.next.py", line 82, in check_provider
+    self.assertEqual(actual, expected)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: [{'na[35 chars]': 'i', 'blocks': [{'insts': [0, 2], 'succs': [230 chars]'}]}] != [{'na[35 chars]': 'iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii[426 chars]'}]}]
+
+First differing element 0:
+{'nam[34 chars]': 'i', 'blocks': [{'insts': [0, 2], 'succs': [229 chars]t'}]}
+{'nam[34 chars]': 'iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii[425 chars]t'}]}
+
+Diff is 1087 characters long. Set self.maxDiff to None to see it.
+
+======================================================================
+FAIL: test_configured_compiler_uses_the_default_provider (configured_provider.StockConfiguredProviderTests.test_configured_compiler_uses_the_default_provider) (source='function %retained(i64) -> i64 {', cleanup=True)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/test_stock_configured_provider.next.py", line 88, in test_configured_compiler_uses_the_default_provider
+    self.check_provider(source, cleanup)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/test_stock_configured_provider.next.py", line 82, in check_provider
+    self.assertEqual(actual, expected)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: [{'na[35 chars]': 'i', 'blocks': [{'insts': [0, 2], 'succs': [230 chars]'}]}] != [{'na[35 chars]': 'iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii[426 chars]'}]}]
+
+First differing element 0:
+{'nam[34 chars]': 'i', 'blocks': [{'insts': [0, 2], 'succs': [229 chars]t'}]}
+{'nam[34 chars]': 'iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii[425 chars]t'}]}
+
+Diff is 1087 characters long. Set self.maxDiff to None to see it.
+
+======================================================================
+FAIL: test_typed_pipeline_keeps_its_existing_provider (configured_provider.StockConfiguredProviderTests.test_typed_pipeline_keeps_its_existing_provider)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/test_stock_configured_provider.next.py", line 91, in test_typed_pipeline_keeps_its_existing_provider
+    self.check_provider(MEMORY_CFG, cleanup=False, typed=True)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/test_stock_configured_provider.next.py", line 82, in check_provider
+    self.assertEqual(actual, expected)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: [{'na[40 chars]'iiii', 'blocks': [{'insts': [0, 2], 'succs': [491 chars]'}]}] != [{'na[40 chars]'iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii[690 chars]'}]}]
+
+First differing element 0:
+{'nam[39 chars]'iiii', 'blocks': [{'insts': [0, 2], 'succs': [490 chars]t'}]}
+{'nam[39 chars]'iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii[689 chars]t'}]}
+
+Diff is 1880 characters long. Set self.maxDiff to None to see it.
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.623s
+
+FAILED (failures=7)

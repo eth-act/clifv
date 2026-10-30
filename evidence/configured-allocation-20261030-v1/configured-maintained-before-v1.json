@@ -1,0 +1,15 @@
+{
+  "utc": "2026-10-30T22:13:11.132510+00:00",
+  "tests": 3,
+  "failures": [
+    "test_configured_compiler_uses_the_default_provider (configured_provider.StockConfiguredProviderTests.test_configured_compiler_uses_the_default_provider) (source='function %memory_cfg(i64) -> i32 {', cleanup=False)",
+    "test_configured_compiler_uses_the_default_provider (configured_provider.StockConfiguredProviderTests.test_configured_compiler_uses_the_default_provider) (source='function %memory_cfg(i64) -> i32 {', cleanup=True)",
+    "test_configured_compiler_uses_the_default_provider (configured_provider.StockConfiguredProviderTests.test_configured_compiler_uses_the_default_provider) (source='function %memory(i64) -> i32 {', cleanup=False)",
+    "test_configured_compiler_uses_the_default_provider (configured_provider.StockConfiguredProviderTests.test_configured_compiler_uses_the_default_provider) (source='function %memory(i64) -> i32 {', cleanup=True)",
+    "test_configured_compiler_uses_the_default_provider (configured_provider.StockConfiguredProviderTests.test_configured_compiler_uses_the_default_provider) (source='function %retained(i64) -> i64 {', cleanup=False)",
+    "test_configured_compiler_uses_the_default_provider (configured_provider.StockConfiguredProviderTests.test_configured_compiler_uses_the_default_provider) (source='function %retained(i64) -> i64 {', cleanup=True)",
+    "test_typed_pipeline_keeps_its_existing_provider (configured_provider.StockConfiguredProviderTests.test_typed_pipeline_keeps_its_existing_provider)"
+  ],
+  "errors": [],
+  "scope": "Before-fix maintained test draft, run against the existing preserved-base compiler. Provider differences are expected failures; typed mode and early settings rejection should pass."
+}

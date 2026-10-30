@@ -1,0 +1,3 @@
+Follow-up on the configured compiler boundary: the maintained regression found a second difference. The default caller uses `CraneliftInput.shape` and checked allocation readback. `StockConfig.allocate` calls `Allocator.run` directly. This also explains the typed-mode allocator difference.
+
+The small adapter batch will add `StockConfig.allocateWith`, retain the existing `allocate` signature, and pass the default caller's allocation callback. `StockConfig.configure`, `allocateAt`, settings policy and experimental annotations stay unchanged. This adds `FVTest/Backend/StockConfig.lean` to the implementation boundary; it does not change the register allocator or the active frozen sources.
