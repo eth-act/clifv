@@ -233,9 +233,10 @@ theorem indFactsRWithTS (stage : Clif.Function → VCode → VCode) {I : LinkInp
 /-- **The typed checks on any pipeline's results establish the typed link contract** (#722):
 `okRWith_soundT` for results whose later stages are the compiler's (`PreparedResults`; no
 lowering equation), each function's artifact being either typed one or the Stock artifact of an
-integer function (`CompiledAnyTS`). -/
+integer function (`CompiledAnyTS`). (The cleanup alternative of `hstage` was
+`fun _ => DeadCleanup.prune`; the compiler's cleanup stage is now `cleanupStage`, #552.) -/
 theorem okRWithTS_soundT (stage : Clif.Function → VCode → VCode) {I : LinkInput} {R : Res}
-    (hstage : stage = (fun _ => id) ∨ stage = (fun _ => DeadCleanup.prune))
+    (hstage : stage = (fun _ => id) ∨ stage = cleanupStage)
     (hR : PreparedResults stage I R)
     (hI : okRWithTS stage I R = true) {B : BaseEnv}
     {F : BitVec 64 → Prop} (hB : BaseOk (ofRes I R B F)) (hF : ∀ a, (ofRes I R B F).Img a → F a) :
