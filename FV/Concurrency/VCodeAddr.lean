@@ -753,7 +753,14 @@ theorem fpuLoad_lines_evs (ctx : FnCtx) (env : Env) (sz : ScalarSize) (hsz : FpS
     (halign : CheckSPAlignment s) {ls : List Line} {ps : Backend.PState}
     (hl : MInst.lines ctx (.fpuLoad sz (.v d) m fl) {} = .ok (ls, ps)) :
     At .plainR (m.addr ctx sz.bytes s) sz.bytes (linesEvs env ls s) := by
-  simp only [MInst.lines, bind, Except.bind] at hl
+  -- `MemMode` excludes the literal-pool form `.const` (#565), so the generic arm applies.
+  have hnc : ∀ cst, m ≠ .const cst := by rintro cst rfl; exact hm
+  have hlin : (MInst.fpuLoad sz (.v d) m fl).lines ctx {} = (do
+      let (pre, mem) ← memFinalize ctx m sz.bytes
+      pure (pre ++ [.ins (.fpuLoad sz (.v d) mem) fl.trapCode], ({} : Backend.PState))) := by
+    cases m <;> first | exact absurd rfl (hnc _) | rfl
+  rw [hlin] at hl
+  simp only [bind, Except.bind] at hl
   split at hl
   · cases hl
   · rename_i v hf
