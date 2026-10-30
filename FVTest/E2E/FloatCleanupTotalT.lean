@@ -53,7 +53,7 @@ theorem backend_total_emit_cleanupT_w (ra : Except String RFunc) :
 /-- **Witness**: the cleanup pipeline compiles `fW`, for every allocator answer. -/
 theorem pipeCleanupT_okT_w (o : Lean.Json) :
     ∃ a, pipeCleanupT fW 0 0 o = .ok a ∧ lowerCheckT fW a.vc = true ∧
-      prepCheck (prune a.vc) a.vcp = true ∧ AllocChecked a.vcp a.rf ∧
+      prepCheck (cleanupStage fW a.vc) a.vcp = true ∧ AllocChecked a.vcp a.rf ∧
       FormsCovered ⟨a.fa.k, a.af.slotBase⟩ a.vcp :=
   pipeCleanupT_okT fnScopeInTB_w 0 0 o
 
