@@ -70,10 +70,10 @@ macro "lhs_step'" : tactic => `(tactic| simp (disch := assumption) only [opt_mat
   forall_apply_eq_imp_iff, forall_eq_apply_imp_iff, Nat.reduceEqDiff, eq_iff_iff, iff_false,
   iff_true, true_iff, false_iff, not_true_eq_false, not_false_eq_true] at *)
 
-/-- Phase 2: the left-hand side to a fixpoint. -/
+/-- Phase 2: the left-hand side to a fixpoint (`opt_subst_vars`: no `whnf` of the evaluation). -/
 macro "rule_lhs " hG:ident : tactic => `(tactic|
-  repeat (any_goals (first | (opt_guard lhs_step; opt_destruct; all_goals subst_vars) | opt_model $hG |
-    (lhs_step'; opt_destruct; all_goals subst_vars))))
+  repeat (any_goals (first | (opt_guard lhs_step; opt_destruct; all_goals opt_subst_vars) | opt_model $hG |
+    (lhs_step'; opt_destruct; all_goals opt_subst_vars))))
 
 set_option hygiene false in
 /-- Phase 1. -/

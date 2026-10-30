@@ -1,3 +1,4 @@
+import FV.Backend.Proof.StockSelectScanRefines
 import FV.Backend.Proof.StockMemorySourceValues
 
 namespace Backend.Stock.Memory

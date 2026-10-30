@@ -46,6 +46,11 @@ Every alternative runs under `kbv_guard` (it must close the goal; runtime except
 a fresh heartbeat budget: 20M by default, more for the case-splitting methods), without error
 recovery; the whole search is bounded by `searchHeartbeats`. The option `kbv.budgetScale`
 multiplies all these budgets.
+
+A search's heartbeats are not counted in the enclosing declaration's `maxHeartbeats` (`isolate`
+resets the counter), so a proof can stay under its limit while its searches take an hour
+(`ok_rule_icmp_84`: 2.6 G heartbeats charged, 93 G done). `-Dkbv.reportHeartbeats=<N>` prints every
+search above `N` thousand heartbeats to standard error, failed ones included.
 -/
 
 
@@ -1290,6 +1295,13 @@ macro "kbv_core" : tactic => `(tactic| (
 namespace Opt.Proof.KernelBV
 open Lean Meta Elab Tactic
 
+register_option kbv.reportHeartbeats : Nat := {
+  defValue := 0
+  descr := "if positive, print every `kbv` search that used at least this many thousand \
+    heartbeats to standard error, with its position, declaration and outcome (the searches run \
+    on their own budget, so their cost is not counted in the declaration's `maxHeartbeats`)"
+}
+
 /-- Heartbeat budget (raw) of a whole `kbv` search, times `kbv.budgetScale`: above the sum of its
 methods' budgets in `kbv_core` (`kbv_guard`). -/
 def searchHeartbeats : Nat := 4000000 * 1000
@@ -1369,12 +1381,28 @@ def isolate (tac : TacticM Unit) : TacticM Unit := do
   -- thousands of searches, whose info trees (tens of MB each) would otherwise be kept until the
   -- end of the declaration. Error recovery is off: a failing method fails (instead of logging
   -- its error and admitting the goal), so that the search goes on with the next one.
+  -- `kbv.reportHeartbeats`: the cost of the search, printed (not logged: a `first` that backtracks
+  -- over a failed alternative also drops its messages) before the counter is reset.
+  let threshold := kbv.reportHeartbeats.get (← getOptions) * 1000
+  let report (outcome : String) (used : Nat) : TacticM Unit := do
+    if threshold > 0 && used ≥ threshold then
+      let pos := (← getFileMap).toPosition ((← getRef).getPos?.getD 0)
+      let decl := (← Term.getDeclName?).getD .anonymous
+      IO.eprintln s!"kbv: {← getFileName}:{pos.line}:{pos.column}: {decl}: {outcome}, \
+        {used / 1000} thousand heartbeats"
   let hb0 ← IO.getNumHeartbeats
-  let gs ← try
-      withTheReader Core.Context (fun ctx => { ctx with
+  let gs ← tryCatchRuntimeEx
+      (withTheReader Core.Context (fun ctx => { ctx with
           maxHeartbeats := searchHeartbeats * kbv.budgetScale.get ctx.options }) <|
-        withCurrHeartbeats <| withEnableInfoTree false <| Tactic.run m.mvarId! (withoutRecover tac)
-    finally IO.setNumHeartbeats hb0
+        withCurrHeartbeats <| withEnableInfoTree false <| Tactic.run m.mvarId! (withoutRecover tac))
+      fun e => do
+        let used := (← IO.getNumHeartbeats) - hb0
+        IO.setNumHeartbeats hb0
+        report "failed" used
+        throw e
+  let used := (← IO.getNumHeartbeats) - hb0
+  IO.setNumHeartbeats hb0
+  report (if gs.isEmpty then "closed" else "failed (unsolved goals)") used
   unless gs.isEmpty do throwError "kbv: unsolved goals"
   g.assign (mkAppN (← instantiateMVars m) sel)
   replaceMainGoal []

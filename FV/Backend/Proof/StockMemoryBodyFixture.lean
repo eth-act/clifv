@@ -1,3 +1,4 @@
+import FV.Backend.Proof.StockBodyScanOrigin
 import FV.Backend.Proof.StockMemoryRecordWitness
 
 namespace Backend.Stock.Memory.LoadFixture
