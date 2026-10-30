@@ -210,7 +210,7 @@ def branchRules : List Rule := program.rulesOf TId.lower_branch
 
 def roots : List (List AT × List Rule) :=
   ((List.range famTab.length).map fun i =>
-    ([.inst [i]], stmtRules.filter fun r => !shpHandIds.contains r.id)) ++
+    ([.inst [i]], stmtRules.filter fun r => !shpHandIds.contains r.id && r.id != 1037)) ++
     ((List.range famTab.length).map fun i =>
       ([.inst [i], .c0], branchRules.filter fun r => !shpHandIds.contains r.id)) ++
     [([.c0], termRules)]
@@ -241,10 +241,11 @@ def okDefs : String := "/-- `chkTab`'s test of one entry. -/
 abbrev shpEntryOkT (e : TermId × List AT × AT) : Bool :=
   (program.rulesOf e.1).all (aRule program shpTabT aext actor apreST aOracleST e.2.1 e.2.2)
 
-/-- The test of one rule of `lower`: a hand-checked one (`shpHandIds`), or it checks on every
-family. -/
+/-- The test of one rule of `lower`: a hand-checked one (`shpHandIds`), the `return` rule (1037,
+which matches no statement, `lower_ret_stmt_nomatch`; it reaches `gen_return`, outside `apreST`),
+or it checks on every family. -/
 def shpStmtOkT (r : Rule) : Bool :=
-  Cov.shpHandIds.contains r.id || (List.range famTab.length).all fun i =>
+  Cov.shpHandIds.contains r.id || r.id == 1037 || (List.range famTab.length).all fun i =>
     aRule program shpTabT aext actor apreST aOracleST [.inst [i]] AT.top r
 
 /-- The test of one rule of `lower_branch`: a hand-checked one, or it checks on every family. -/
@@ -431,7 +432,7 @@ def main (args : List String) : IO UInt32 := do
             | some a => IO.println s!"    rhs {awLit a}"
   let mut allOk := ok
   for i in List.range famTab.length do
-    let topBad := stmtRules.filter fun r => !isHand r && !aRule program tab aext actor apreST aOracleST [.inst [i]] AT.top r
+    let topBad := stmtRules.filter fun r => !isHand r && r.id != 1037 && !aRule program tab aext actor apreST aOracleST [.inst [i]] AT.top r
     if !topBad.isEmpty then allOk := false
     IO.println s!"family {i}: top-fail {topBad.map (·.id)}"
   let termBad := termRules.filter fun r => !aRule program tab aext actor apreST aOracleST [.c0] AT.top r

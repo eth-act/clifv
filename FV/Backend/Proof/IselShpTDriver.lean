@@ -198,6 +198,49 @@ theorem hand_modelT {ctx : Ctx} {N : Nat} {vs : List V} {rl : Rule} (h : HandOkT
 
 /-! ## The driver's calls -/
 
+/-- No statement has the `return` opcode. -/
+theorem instNames_return {c : Clif.Inst} (h : (instNames c).2 = "Return") : False := by
+  cases c <;> simp only [instNames] at h <;>
+    first
+    | (rename_i op _ _; cases op <;> simp [unaryOpcode] at h)
+    | (rename_i op _ _ _; cases op <;> simp [binaryOpcode, divOpcode] at h)
+    | (rename_i op _ _ _ _; cases op <;> simp [loadOpcode] at h)
+    | (rename_i op _ _ _ _ _; cases op <;> simp [storeOpcode] at h)
+    | (rename_i op _ _; cases op <;> simp at h)
+    | simp at h
+
+set_option maxRecDepth 100000 in
+/-- The `return` rule of `lower` (1037) pins `MultiAry`/`Return`. -/
+theorem lower_ret_root : (program.rulesOf TId.lower).all (fun r =>
+    r.id != 1037 || rootOp r == some (2465, 2291)) = true := by
+  rw [show TId.lower = 686 from rfl, data_program.r686]
+  decide +kernel
+
+theorem kind_multiAry : (match termOf program 2465 with
+    | .ok t => t.kind == .enumVariant VIdx.InstructionData.MultiAry | .error _ => false) = true := by
+  decide +kernel
+
+theorem kind_return : (match termOf program 2291 with
+    | .ok t => t.kind == .enumVariant VIdx.Opcode.Return | .error _ => false) = true := by
+  decide +kernel
+
+set_option maxRecDepth 20000 in
+theorem variantNames_Return : (variantNames 151)[VIdx.Opcode.Return]? = some "Return" := rfl
+
+set_option maxRecDepth 100000 in
+/-- **The `return` rule of `lower` (1037) matches no statement** (#587: the shape table leaves it
+out of the statement roots, as it reaches `gen_return`, outside `apreST`). -/
+theorem lower_ret_stmt_nomatch (hctx : CtxInvT f ctx) {ii : Nat} {info : IInfo}
+    {inst : Clif.Inst} (hi : ctx.insts[ii]? = some info) (hc : info.clif = some inst)
+    {r : Rule} (hr : r ∈ program.rulesOf TId.lower) (hid : r.id = 1037) :
+    ∀ m s0 env s1, (matchRule program (sem ctx) {} m r [.inst ii]).run s0 ≠ .ok (some env, s1) := by
+  intro m s0 env s1 h
+  have hq := List.all_eq_true.mp lower_ret_root r hr
+  simp only [hid, bne_self_eq_false, Bool.false_or, beq_iff_eq] at hq
+  have hn := pinned_namesT hctx hi hc hq kind_multiAry kind_return (by decide) h
+  rw [variantNames_Return] at hn
+  exact instNames_return (Option.some.inj hn).symm
+
 set_option maxRecDepth 100000 in
 /-- **A statement's lowering emits control forms of their typed shapes.** Integer externs (`hx`):
 since #609 `CtxT` only records the integer `call` callees (`CtxT.calls`). -/
@@ -222,9 +265,10 @@ theorem stmt_shpT (hctx : CtxT f ctx) (hx : f.externs.all (Compile.sigE ·.2.sig
     unfold shpStmtOkT at hs
     have hid := List.all_eq_true.mp lower_hand_ids rl hrl
     simp only [Bool.or_eq_true] at hs
-    rcases hs with hh | hs
+    rcases hs with (hh | h37) | hs
     · simp only [hh, Bool.not_true, Bool.false_or, Bool.or_eq_true, beq_iff_eq] at hid
       exact .inr (.inr ⟨hrl, or_assoc.mp hid⟩)
+    · exact .inr (.inl (lower_ret_stmt_nomatch hctx.inv hi hc hrl (beq_iff_eq.mp h37)))
     · exact .inl (List.all_eq_true.mp hs i (List.mem_range.mpr (famTab_lt hF)))
   exact (root_handT (md := shpModelT logicImmComplete hctx.inv hcl hfam ctx.valDef.size s) rfl
     (shp_soundT hctx.inv hcl hfam _ s rfl)
