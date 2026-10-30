@@ -1,3 +1,4 @@
+import FV.E2E.StockMemoryCapturedPairedWitness
 import FV.E2E.StockMemoryPairedNopJump
 import FV.Backend.Proof.StockMemoryRetainedReturnSpec
 import FV.E2E.StockMemoryOmittedPairedScan
@@ -37,3 +38,12 @@ import FV.E2E.StockMemoryPairedJump
 
 #print axioms E2E.StockMemory.stock_nop_paired_body_of_split
 #print axioms E2E.StockMemory.paired_nop_jump_body_returns_at
+
+#print axioms Backend.Stock.Memory.CapturedFixture.source_entered
+#print axioms Backend.Stock.Memory.CapturedFixture.source_returned
+#print axioms Backend.Stock.Memory.CapturedFixture.source_entry
+#print axioms E2E.StockMemory.actual_nonentry_paired_load_return
+#print axioms E2E.StockMemory.original_entry_prelude_paired
+#print axioms E2E.StockMemory.stock_two_block_load_return_paired
+#print axioms E2E.StockMemory.stock_two_block_load_return_paired_function
+#print axioms E2E.StockMemoryCapturedWitness.complete_captured_paired_function_witness
