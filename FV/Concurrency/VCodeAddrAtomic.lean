@@ -78,6 +78,7 @@ theorem linesEvs_exec : ∀ {env : Env} {A : List Line} (B : List Line) {s s1 : 
     · cases h
   | _, .label _ :: _, _, _, _, h, _ => by simp [execLines] at h
   | _, .word _ _ :: _, _, _, _, h, _ => by simp [execLines] at h
+  | _, .data _ :: _, _, _, _, h, _ => by simp [execLines] at h
 
 theorem execLines_append : ∀ {env : Env} (A B : List Line) (s : ArmState),
     execLines env (A ++ B) s =
@@ -95,6 +96,7 @@ theorem execLines_append : ∀ {env : Env} (A B : List Line) (s : ArmState),
     · rfl
   | _, .label _ :: _, _, _ => by simp [execLines]
   | _, .word _ _ :: _, _, _ => by simp [execLines]
+  | _, .data _ :: _, _, _ => by simp [execLines]
 
 /-- The first line of a run. -/
 theorem exec_cons {env : Env} {i : Insn} {tc : Option Clif.TrapCode} {ls : List Line}
