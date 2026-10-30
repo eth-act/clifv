@@ -56,6 +56,10 @@ theorem isLitLoad_of_covered2 {i : MInst} (h : i.isCtl = true ∨ FormOk default
     · cases h
     · unfold FormOk at h
       split at h <;> simp_all [memOk]
+      -- the float `fpuLoad` arm: its addressing modes exclude `AMode.const`
+      all_goals
+        obtain ⟨-, -, rfl, -⟩ := ‹_ ∧ _ ∧ AMode.const _ = _ ∧ _›
+        simp at h
 
 /-- **Subset E has no literal-pool load**: the integer analysis's coverage is two-way
 (`Driver.FormsCovered2`, #565). -/
