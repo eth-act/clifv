@@ -1,3 +1,4 @@
+import FV.Backend.Proof.StockLogicalNotLookthrough
 import FV.Backend.Proof.StockLogicalNotRootValues
 
 namespace Backend.Stock.Proof.LogicalNot

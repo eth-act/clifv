@@ -1,3 +1,5 @@
+import FV.Backend.Proof.StockLogicalSemantics
+import FV.Backend.Proof.StockLogicalObserved
 import FV.Backend.Proof.StockLogicalFixtures
 
 namespace Backend.Stock.Proof.LogicalSemantics

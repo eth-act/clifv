@@ -1,4 +1,6 @@
-import FV.Backend.Proof.IselCmpExt
+import FV.Backend.Proof.IselSemCmp
+import FV.Backend.Proof.IselCmpRun
+import FV.Backend.Proof.IselCmpTerms
 
 /-!
 # Conditions (`CondResult`) and their consumers (flags/select family)

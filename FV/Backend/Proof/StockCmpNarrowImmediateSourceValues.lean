@@ -1,6 +1,7 @@
+import FV.Backend.Proof.StockExtendSemantics
 import FV.Backend.Proof.StockCmpNarrowImmediateObserved
 import FV.Backend.Proof.StockCmpNarrowMachineValues
-import FV.Backend.Proof.StockDivConstant
+import FV.Backend.Proof.StockDivConstantSource
 import FV.Backend.Proof.StockDemandMono
 namespace Backend.Stock.Proof.ScalarCmp
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

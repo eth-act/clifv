@@ -1,7 +1,6 @@
 import FV.E2E.DeadCleanupExecUnwind
 import FV.E2E.DeadCleanupExecGoodReads
 import FV.E2E.DeadCleanupExecGot
-import FV.E2E.LinkArmUGood
 
 /-!
 # The per-state facts of the executable machine with unwinding, from the register level (S10g, #404)

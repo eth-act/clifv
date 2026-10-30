@@ -1,5 +1,6 @@
 import FV.Backend.Proof.IselShpBase
-import FV.Backend.Proof.IselCtl
+import FV.Backend.Proof.IselCtlRuleIds
+import FV.Backend.Proof.IselCtlCallInd
 
 /-!
 # Control shapes of the `call` rules of `lower` (`HandOk` of rules 1031, 1032, 1033)

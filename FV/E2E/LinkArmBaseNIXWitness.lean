@@ -1,6 +1,5 @@
 import FV.E2E.LinkArmBaseNIX
-import FV.E2E.LinkArmBaseDetXWitness
-import FV.E2E.LinkArmProphDetRWitness
+import FV.E2E.LinkArmProphDetWitness
 
 /-!
 # Witnesses for `LinkArmBaseNIX.lean` (#704, #705)

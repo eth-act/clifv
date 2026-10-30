@@ -1,4 +1,5 @@
-import FV.E2E.DeadCleanupBinaryInitR
+import FV.E2E.DeadCleanupExecGot
+import FV.E2E.LinkArmIniOf
 
 /-!
 # The oracle route's scope conditions with no code outside the program (SEM1 #537)

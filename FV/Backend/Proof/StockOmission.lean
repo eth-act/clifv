@@ -1,5 +1,6 @@
 import FV.Backend.Proof.StockScan
-import FV.Backend.Proof.StockDemand
+import FV.Backend.Proof.StockValues
+import FV.Backend.Proof.LowerLemmas
 import FV.Opt.Proof.SemFacts
 
 /-!

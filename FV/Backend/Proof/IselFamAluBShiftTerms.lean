@@ -1,5 +1,6 @@
+import FV.Backend.Proof.IselFamAluBShiftBase
 import FV.Backend.Proof.IselTermsShift
-import FV.Backend.Proof.IselCmpExt
+import FV.Backend.Proof.IselCmpTerms
 
 /-!
 # Family B: inverse contracts of the emitting helpers the shift rules call

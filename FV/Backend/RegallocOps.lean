@@ -1,4 +1,4 @@
-import FV.Backend.StackAlloc
+import FV.Backend.Isel
 
 /-!
 # Register-allocation operands and machine environment (M6)

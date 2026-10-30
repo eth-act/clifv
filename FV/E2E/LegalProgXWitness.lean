@@ -1,6 +1,6 @@
 import FV.E2E.LegalProgX
-import FV.E2E.LegalUnwindWitness
-import FV.E2E.NonVacuityLegalProgram
+import FV.Opt.Proof.LegalRustX
+import FV.E2E.LegalSource
 
 /-!
 # Non-vacuity of `legalProg_refinesX` (S10f)

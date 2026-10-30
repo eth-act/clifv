@@ -1,4 +1,5 @@
 import FV.Backend.Proof.IselGeneric
+import FV.Compile.Subset
 import FV.Backend.Proof.IselData
 import FV.Backend.Proof.RegallocOperands
 import FV.Backend.Proof.AbiClass

@@ -1,4 +1,5 @@
-import FV.E2E.RegLevelCorrectPRSR
+import FV.E2E.RegLevelCorrectPR
+import FV.E2E.RegLevelFrameNR
 import FV.E2E.RegLevelCorrectCY
 
 /-!

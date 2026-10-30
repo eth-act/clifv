@@ -1,3 +1,5 @@
+import FV.Backend.Proof.IselCmpMinMax
+import FV.Backend.Proof.StockCmpNarrowMatchedValues
 import FV.Backend.Proof.StockMinMaxNarrowShape
 import FV.Backend.Proof.StockSelectBooleanCompanion
 import FV.Backend.Proof.StockSelectReplacementResolved

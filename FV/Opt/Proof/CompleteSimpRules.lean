@@ -1,3 +1,4 @@
+import FV.Opt.Proof.CompleteSimpHyp
 import FV.Opt.Proof.CompleteSimpMat
 
 /-!

@@ -1,6 +1,6 @@
 import FV.Backend.Proof.SpillLocalCheck
-import FV.Backend.Proof.RegallocCover
 import FV.Backend.Proof.LowerRename
+import FV.E2E.RegLevelPush
 import FV.Backend.Proof.SpillLocalState
 import FV.Backend.Proof.IselCtlTerm
 
@@ -192,5 +192,8 @@ theorem spillInstOk_rets {ns : List (Nat × Reg)} (hr : ∀ q ∈ ns, ∃ k, k <
     obtain ⟨q, hq, rfl⟩ := mem o ho
     obtain ⟨k, hk, he⟩ := hr q hq
     exact ⟨q.2, rfl, he ▸ (x_alloc k hk).2⟩
+
+theorem spillInstOk_jump (l : Label) : SpillInstOk (.jump l) :=
+  ⟨#[], rfl, opsOk_simple (by simp) (by simp) (by simp) (by simp), fun _ h => by cases h⟩
 
 end Backend.Proof.Spill

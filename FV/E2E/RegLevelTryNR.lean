@@ -1,6 +1,4 @@
-import FV.E2E.RegLevelGoodXNR
 import FV.E2E.RegLevelTryN
-import FV.E2E.RegLevelCallNR
 import FV.E2E.RegLevelGotoNR
 
 /-!

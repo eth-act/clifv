@@ -1,3 +1,4 @@
+import FV.Backend.Proof.StockDemandExtent
 import FV.Backend.Proof.StockReduceRecord
 namespace Backend.Stock.Proof.ScalarCast.Reduce
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

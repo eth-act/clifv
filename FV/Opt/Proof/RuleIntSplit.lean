@@ -1,4 +1,4 @@
-import FV.Opt.Proof.RuleRestEmbed
+import FV.Opt.Proof.RuleRestEmbedBase
 
 /-!
 # Splitting type variables on `isInt`

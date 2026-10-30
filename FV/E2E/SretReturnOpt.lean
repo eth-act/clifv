@@ -1,4 +1,5 @@
-import FV.E2E.OptProven
+import FV.E2E.Opt
+import FV.Opt.Proof.SimpPass
 import FV.E2E.SretReturn
 
 /-!

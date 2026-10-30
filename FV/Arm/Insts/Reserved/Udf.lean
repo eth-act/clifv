@@ -16,7 +16,7 @@ Released under Apache 2.0 license; see third_party/NOTICE-lnsym.md.
 -- CLIF `trap` / trap-guarded check to `udf #0xc11f` (`Inst::TRAP_OPCODE`); the trap code itself
 -- is only in Cranelift's side table, so `imm16` does not identify it.
 
-import FV.Arm.Decode
+import FV.Arm.Decode.Reserved
 import FV.Arm.Insts.Common
 
 namespace Arm

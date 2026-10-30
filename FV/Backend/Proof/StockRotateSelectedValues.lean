@@ -1,3 +1,5 @@
+import FV.Backend.Proof.StockSelectionReceipts
+import FV.Backend.Proof.StockExtendRequests
 import FV.Backend.Proof.StockRotateImmediateMatch
 namespace Backend.Stock.Proof.ScalarRotate
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

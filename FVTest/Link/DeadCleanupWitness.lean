@@ -1,5 +1,4 @@
 import FV.Link.DeadCleanupExe
-import FV.Link.DeadCleanupExeTotal
 
 /-! Closed executable witness: the baseline and cleanup pipelines both link the
 same nonempty source. Only the pure unused producer is removed. -/

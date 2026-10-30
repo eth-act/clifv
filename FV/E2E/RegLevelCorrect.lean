@@ -1,4 +1,5 @@
 import FV.E2E.RegLevelTls
+import FV.E2E.RegLevelTrap
 import FV.E2E.RegLevelFrame
 import FV.E2E.RegLevelTry
 import FV.Backend.Proof.RegallocCover

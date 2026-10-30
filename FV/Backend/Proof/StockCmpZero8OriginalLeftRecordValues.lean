@@ -1,3 +1,4 @@
+import FV.Backend.Proof.StockDemandExtent
 import FV.Backend.Proof.StockCmpZero8OriginalLeftRootValues
 import FV.Backend.Proof.StockGuardedRecordValues
 namespace Backend.Stock.Proof.ScalarCmp

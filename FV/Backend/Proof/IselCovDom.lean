@@ -1,6 +1,6 @@
 import FV.Backend.Proof.RegallocCSem
-import FV.Backend.Proof.IselFlowExt
-import FV.Backend.Proof.IselExcl
+import FV.Backend.Proof.IselFlowCheck
+import FV.Backend.Proof.IselExclBase
 
 /-!
 # Form coverage of the ISLE lowering (V3): the abstract domain

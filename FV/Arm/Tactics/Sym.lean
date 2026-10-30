@@ -5,7 +5,6 @@ Author(s): Shilpi Goel, Alex Keizer
 -/
 -- Modified by fv-compiler-rust (2026): ported to Lean v4.34.1, module prefix FV.Arm, wrapped in namespace Arm.
 import FV.Arm.Exec
-import FV.Arm.Tactics.FetchAndDecode
 import FV.Arm.Tactics.Sym.Context
 
 import Lean

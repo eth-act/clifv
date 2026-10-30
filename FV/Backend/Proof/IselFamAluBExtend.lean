@@ -1,4 +1,5 @@
-import FV.Backend.Proof.IselFamAluBMisc
+import FV.Backend.Proof.IselRulesALU
+import FV.Backend.Proof.IselFamAluBBase
 import FV.Backend.Proof.IselTermsAluB
 
 /-!

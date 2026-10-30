@@ -1,4 +1,11 @@
-import FV.E2E.RegLevelCorrectCR
+import FV.E2E.RegLevelCorrectC
+import FV.E2E.RegLevelMoveNR
+import FV.E2E.RegLevelNextNR
+import FV.E2E.RegLevelCallNR
+import FV.E2E.RegLevelTryNR
+import FV.E2E.RegLevelJTNR
+import FV.E2E.RegLevelAtomicNR
+import FV.E2E.RegLevelTlsNR
 
 /-!
 # The counted register-level theorem with guarded world reads (SEM1 #537, item (2))

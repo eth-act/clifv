@@ -7,7 +7,6 @@ Author(s): Alex Keizer
 
 import FV.Arm.State
 import FV.Arm.Tactics.Common
-import FV.Arm.Tactics.Attr
 import FV.Arm.Tactics.Simp
 import FV.Arm.Tactics.Sym.Common
 import FV.Arm.Tactics.Sym.MemoryEffects

@@ -1,3 +1,4 @@
+import FV.Link.DeadCleanupCompile
 import FV.Link.DeadCleanupTotal
 import FV.Link.DeadCleanupRelocShapeProof
 namespace Link.DeadCleanup

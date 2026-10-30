@@ -1,6 +1,7 @@
 import FV.Backend.Proof.IselExclT
 import FV.Backend.Proof.InstScopeTF
-import FV.Backend.Proof.IselFloatCmp
+import FV.Backend.Proof.IselFloatCmpEmit
+import FV.Backend.Proof.IselCtlTry
 
 /-!
 # Excluded root rules with the proven float operations (S11f, #35)

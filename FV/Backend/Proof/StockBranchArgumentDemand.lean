@@ -1,5 +1,5 @@
-import FV.Backend.Proof.StockSelectedArguments
-import FV.Backend.Proof.StockDemand
+import FV.Backend.Lowering.Stock
+import FV.Backend.Proof.IselCtlCall
 
 /-! Actual selected outgoing arguments mark every requested source value.
 The complete post-state follows from executable argument collection. -/

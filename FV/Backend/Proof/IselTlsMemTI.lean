@@ -1,5 +1,5 @@
 import FV.Backend.Proof.IselTls
-import FV.Backend.Proof.IselMemBaseTI
+import FV.Backend.Proof.LowerContractT
 
 /-!
 # `IselTls` over typed contexts (S11e5 Stage C, slice 7)

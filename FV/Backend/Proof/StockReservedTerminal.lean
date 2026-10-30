@@ -1,4 +1,6 @@
-import FV.Backend.Proof.StockSourceTerminal
+import FV.Backend.Proof.StockDriverBounds
+import FV.Backend.Proof.StockNodeAliasConnection
+import FV.Backend.Proof.StockAliasSemantics
 
 /-! Initial exception return registers are disjoint from every payload destination.
 Derive reserved alias endpoints from construction, rather than a new input check. -/

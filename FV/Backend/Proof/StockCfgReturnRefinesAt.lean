@@ -1,4 +1,5 @@
-import FV.Backend.Proof.StockCfgReturnRefines
+import FV.Backend.Proof.StockLocalSourceExecution
+import FV.Backend.Proof.StockArithmeticTerminalDefined
 import FV.Backend.Proof.StockPerEdgeReturnContract
 
 /-! Original-block return composition without a single-block input restriction.

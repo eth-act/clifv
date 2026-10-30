@@ -1,3 +1,5 @@
+import FV.Backend.Proof.IselCmpEmit
+import FV.Backend.Proof.StockCmpExtendBuilder
 import FV.Backend.Proof.StockCmpNarrowExtendRequest
 import FV.Backend.Proof.StockCmpNarrowExtendOp
 namespace Backend.Stock.Proof.ScalarCmp

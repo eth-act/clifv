@@ -1,4 +1,4 @@
-import FV.DSL
+import FV.DSL.Frontend
 
 /-! Negative tests: programs outside the `flat def` fragment are rejected with readable errors,
 and hand-written deep ASTs violating the affine/fragment rules fail `FlatFn.checkB`. -/

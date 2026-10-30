@@ -1,7 +1,6 @@
 import FV.E2E.EmitTotal
 import FV.E2E.EmitCondsDefs
 import FV.Backend.Proof.SpillLocalPipeT
-import FV.Backend.Proof.PrepareTotalT
 
 /-!
 # Allocation, emission and layout are total on the typed scope (S11e5 Stage C, slice 8)

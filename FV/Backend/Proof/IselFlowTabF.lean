@@ -1,5 +1,5 @@
 import FV.Backend.Proof.IselFlowCheck
-import FV.Backend.Proof.IselExcl
+import FV.Arm.MinTheory
 
 /-!
 # The flow summary table and its kernel check

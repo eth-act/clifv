@@ -1,5 +1,5 @@
-import FV.Backend.Proof.StockCmpZeroHelpers
-import FV.Backend.Proof.IselAtomic
+import FV.Backend.Proof.StockPolicy
+import FV.Backend.Proof.IselCtlTry
 
 namespace Backend.Stock.Proof.ScalarMask
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

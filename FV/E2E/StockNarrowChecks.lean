@@ -1,5 +1,6 @@
 import FV.E2E.StockNarrowFixtures
-import FV.E2E.CompiledSemanticNI
+import FV.E2E.DivBoundaryCheck
+import FV.Backend.Proof.RegallocCover
 import FV.Backend.LinearScan
 import FV.Backend.Lowering.StockScalarNI
 

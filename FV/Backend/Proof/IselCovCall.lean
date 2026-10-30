@@ -1,5 +1,6 @@
-import FV.Backend.Proof.IselShpRoot
-import FV.Backend.Proof.IselCtl
+import FV.Backend.Proof.IselCovSound
+import FV.Backend.Proof.IselCtlRuleIds
+import FV.Backend.Proof.IselCtlCallInd
 
 /-!
 # Form coverage of the ISLE lowering (V3): the integer results of the `call` rules

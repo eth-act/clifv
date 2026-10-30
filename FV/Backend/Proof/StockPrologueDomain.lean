@@ -1,5 +1,5 @@
 import Lean
-import FV.Backend.Proof.StockPrologueInput
+import FV.Backend.Lowering.StockPrologue
 import FV.Backend.Proof.LowerDecide
 
 set_option autoImplicit false

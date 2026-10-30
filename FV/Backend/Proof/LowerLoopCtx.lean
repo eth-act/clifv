@@ -1,5 +1,4 @@
-import FV.Backend.Proof.LowerLoopCode
-import FV.Backend.Proof.PrepareComplete
+import FV.Backend.Proof.LowerSpec
 
 /-!
 # `buildCtx`, functionally
@@ -969,5 +968,11 @@ theorem ctxOk_of {f : Clif.Function} (hs : LowerScope f) {ctx : Ctx} {ranges : A
     have hget : ctx.insts[ii]? = some info := by
       rw [← Array.getElem?_toList, List.getElem?_eq_getElem hii, e]
     split <;> (try rfl) <;> (rename_i h; exact decide_eq_true (haddr ii info _ _ hget h rfl))
+
+/-- What `buildCtx` builds. (Here rather than in `LowerLoop`, so that its users need not wait for
+the loop simulation.) -/
+theorem ctxFacts_of {f : Clif.Function} {ctx : Ctx} {ranges : Array (Nat × Nat)} {st0 : LState}
+    (hb : buildCtx f = .ok (ctx, ranges, st0)) : CtxFacts f ctx st0 :=
+  (ctxSpec_of hb).facts
 
 end Backend.Proof.Driver

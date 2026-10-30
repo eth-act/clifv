@@ -1,3 +1,4 @@
+import FV.Link.Ld.BodyTotal
 import FV.Link.Ld.Places
 
 /-! # `lean-ld`'s relocations apply on inputs within bounds (A1c, #409)

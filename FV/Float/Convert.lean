@@ -3,7 +3,7 @@ Conversions of the shared float core: `FPRoundInt`, `FPConvert` (with `FPConvert
 `FPToFixed`, `FixedToFP` (fbits = 0), and the exact truncation used by CLIF's trapping
 `fcvt_to_{u,s}int` range checks (`docs/contracts/float.md`).
 -/
-import FV.Float.Arith
+import FV.Float.Round
 
 namespace IEEE
 

@@ -8,7 +8,6 @@ Author(s): Yan Peng
 -- namespace Arm; the GPR forms (LDUR/LDURB/LDURH/LDURSB/LDURSH/LDURSW/STUR/STURB/STURH) are
 -- dispatched to `exec_reg_unscaled_imm_gpr` (FV/Arm/Insts/LDST/Reg_imm.lean).
 
-import FV.Arm.Decode
 import FV.Arm.Insts.Common
 import FV.Arm.Insts.LDST.Reg_imm
 

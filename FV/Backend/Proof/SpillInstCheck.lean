@@ -1,5 +1,5 @@
 import FV.Backend.Proof.SpillLocal
-import FV.Backend.Proof.RegallocCover
+import FV.E2E.RegLevelPush
 
 /-!
 # `SpillInstOk`, decided (S11e5 Stage C, slice 6)

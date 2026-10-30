@@ -1,3 +1,4 @@
+import FV.E2E.StockHighMulWitness
 import FV.E2E.StockMixedDivChecks
 namespace E2E.StockMixedDivNIWitness
 open Backend Backend.Proof Backend.Proof.Driver Backend.Stock.D0

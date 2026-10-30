@@ -9,7 +9,7 @@ Author(s): Shilpi Goel
 -- namespace Arm. Offset fixed to the Arm ARM (DDI 0487) "B"/"BL" ASL
 -- `SignExtend(imm26:'00', 64)` (upstream `SignExtend(imm26 << 2)` dropped imm26<25:24>).
 
-import FV.Arm.Decode
+import FV.Arm.Decode.BR
 import FV.Arm.State
 import FV.Arm.Insts.Common
 import FV.Arm.BitVec

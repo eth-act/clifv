@@ -1,5 +1,5 @@
 import FV.E2E.LinkMemTrap
-import FV.E2E.DeadCleanupExecTrap
+import FV.E2E.DeadCleanupExecPeak
 
 /-!
 # Memory traps on the executable machine (A3, #412, slice F6)

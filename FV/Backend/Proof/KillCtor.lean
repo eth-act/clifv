@@ -1,6 +1,6 @@
 import FV.Backend.Proof.KillOfV
 import FV.Backend.Proof.IselCovClean
-import FV.Backend.Proof.LowerLoop
+import FV.Backend.Proof.LowerLoopCtx
 
 /-!
 # The killed-vreg invariant of the ISLE interpreter: constants, data, extern helpers

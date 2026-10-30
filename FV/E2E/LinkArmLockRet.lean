@@ -1,4 +1,4 @@
-import FV.E2E.LinkArmDetRunPRBCR
+import FV.E2E.LinkArmTwinCE
 import FV.E2E.LinkArmDetX
 import FV.E2E.LinkArmProgCallPRBRL
 

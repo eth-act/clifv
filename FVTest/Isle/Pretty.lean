@@ -1,4 +1,5 @@
-import FV.Isle
+import FV.Isle.Pretty
+import FV.Isle.Generated.Program
 
 /-!
 # Exported rules printed back to ISLE text

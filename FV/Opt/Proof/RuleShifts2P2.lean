@@ -1,5 +1,8 @@
 import FV.Opt.Proof.RuleExtEmbed
 import FV.Opt.Proof.RuleInfraShiftAmt
+import FV.Opt.Proof.RuleRestEmbedSshr
+import FV.Opt.Proof.RuleRestEmbedRotl
+import FV.Opt.Proof.RuleRestEmbedRotr
 import FV.Opt.Proof.RuleIntRetry
 
 /-!

@@ -1,5 +1,6 @@
 import FV.E2E.RegLevelSegAlign
-import FV.E2E.RegLevelNext
+import FV.E2E.RegLevelOp
+import FV.E2E.RegLevelBranch
 
 /-!
 # `QW` taken apart and put together (SEM1 #537, item (3), route (a))

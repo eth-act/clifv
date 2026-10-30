@@ -1,4 +1,4 @@
-import FV.E2E.LinkArmProphDet
+import FV.E2E.LinkArmProphThm
 
 /-!
 # The register prophecy (SEM1 step 2n, `docs/plans/uninit.md` §5.7)

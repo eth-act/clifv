@@ -1,6 +1,6 @@
 import FV.Backend.Proof.RegallocOperands
 import FV.Backend.Regalloc
-import FV.Arm.Memory.MemoryProofs
+import FV.Arm.Memory.Separate
 
 /-!
 # Frame and move lowering (M6 proof, deliverable: edits, spills, reloads)

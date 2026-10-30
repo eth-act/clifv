@@ -1,6 +1,6 @@
 import FV.Backend.Proof.StockCmpWideActualValues
 import FV.Backend.Proof.StockCmpNarrowActualAllocation
-import FV.Backend.Proof.StockCmpSelectedCalls
+import FV.Backend.Proof.StockCmpRootMatch
 import FV.Backend.Proof.StockCmpOutput
 import FV.Backend.Proof.StockSelectComparisonConditionShape
 import FV.Backend.Proof.StockSelectCompanionFragment

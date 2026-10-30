@@ -1,3 +1,5 @@
+import FV.Backend.Proof.IselCtlRuleIds
+import FV.Backend.Proof.StockRequestSuccess
 import FV.Backend.Proof.StockPopcountSemantics
 import FV.Backend.Proof.StockRootOpcodeMatch
 namespace Backend.Stock.Proof.ScalarPopcount

@@ -1,4 +1,4 @@
-import FV.E2E.ExecFrameSim
+import FV.E2E.ExecStatic
 
 /-! # The error-guarded per-state hypothesis `RunOkN` (L3 (c))
 

@@ -1,4 +1,7 @@
-import FV.Backend.Proof.StockShiftHelper
+import FV.Backend.Proof.StockProjection
+import FV.Backend.Proof.IselScopedProjection
+import FV.Backend.Proof.IselFlowGen
+import FV.Backend.Proof.PrepareCheck
 import FV.Backend.Proof.IselTermsAluB
 import FV.Backend.Proof.IselFamAluBBfm
 namespace Backend.Stock.Proof.ShiftBitfield

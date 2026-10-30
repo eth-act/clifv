@@ -1,5 +1,5 @@
 import Lean
-import FV.Backend.Proof.StockPrologueDomain
+import FV.Backend.Lowering.StockPrologue
 import FV.Backend.Proof.LowerDecide
 
 namespace Backend.Stock.Prologue.AllConfigurations

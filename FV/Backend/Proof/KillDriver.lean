@@ -1,3 +1,7 @@
+import FV.Backend.Proof.KillTab
+import FV.Backend.Proof.SpillLocal
+import FV.Backend.Proof.RegallocOperands
+import FV.Backend.Proof.IselFamAluBMisc
 import FV.Backend.Proof.KillOracle
 import FV.Backend.Proof.KillCtor
 import FV.Backend.Proof.TryRegs
@@ -111,23 +115,6 @@ theorem noBrT : ∀ t ∈ killTabS, t ∈ killTabB → t ∉ killOracles → ∀
   have := h rl hrl
   simp [hm] at this
 
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 4000000 in
-set_option cbv.maxSteps 4000000 in
-theorem termIds_ok : (List.range program.terms.size).all
-    (fun i => (program.term? i).all (·.id == i)) = true := by
-  decide_cbv
-
-/-- A term of the program has its index as id. -/
-theorem termOf_id_eq {t : TermId} {term : Term} (h : termOf program t = .ok term) : term.id = t := by
-  have ht := termOf_program_eq h
-  have hlt : t < program.terms.size := by
-    unfold Program.term? at ht
-    exact (Array.getElem?_eq_some_iff.mp ht).1
-  have := List.all_eq_true.mp termIds_ok t (List.mem_range.mpr hlt)
-  rw [ht] at this
-  simpa using this
 
 theorem isKVariant_zero : isKVariant 0 = false := by decide
 

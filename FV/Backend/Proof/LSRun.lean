@@ -1,3 +1,5 @@
+import FV.Backend.Proof.LSInst
+import FV.Backend.Proof.LSMoves
 import FV.Backend.Proof.LSBuild
 import FV.Backend.Proof.SpillStep4State
 

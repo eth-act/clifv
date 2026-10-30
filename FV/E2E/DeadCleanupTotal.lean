@@ -1,3 +1,8 @@
+import FV.Backend.Proof.SpillLocal
+import FV.Backend.Proof.RegallocOperands
+import FV.E2E.DeadCleanupFinal
+import FV.E2E.EmitTotal
+import FV.E2E.DeadCleanupEmit
 import FV.E2E.DeadCleanupEmitReady
 import FV.E2E.DeadCleanupDirect
 

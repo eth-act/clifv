@@ -1,4 +1,6 @@
-import FV.Backend.Proof.StockLogicalNotValues
+import FV.Backend.Proof.IselFamALUALogicNot
+import FV.Backend.Proof.StockSourceView
+import FV.Backend.Proof.IselCovForm
 
 namespace Backend.Stock.Proof.LogicalNot
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

@@ -1,3 +1,4 @@
+import FV.Backend.Proof.StockAluOperandCoverage
 import FV.Backend.Proof.StockLogicalExtrRecord
 import FV.Backend.Proof.StockGuardedRecordValues
 import FV.Backend.Proof.IselFamALUA

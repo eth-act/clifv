@@ -1,4 +1,5 @@
 import FV.Backend.Proof.StockBmaskProjection
+import FV.Backend.Proof.StockCmpBuilders
 import FV.Backend.Proof.StockCmpWithFlags
 import FV.Backend.Proof.StockDivPure
 

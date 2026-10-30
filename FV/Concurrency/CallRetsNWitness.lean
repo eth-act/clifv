@@ -1,5 +1,6 @@
-import FV.Concurrency.CallRetsWitness
+import FV.Concurrency.CallEntryWitness
 import FV.Concurrency.CallRetsN
+import FV.Concurrency.CallSegAbi
 
 /-!
 # Witness: all layers from the caller's entry, every `rets` end resolved (#473, step (2))

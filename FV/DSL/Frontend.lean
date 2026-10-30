@@ -1,4 +1,5 @@
 import Lean
+import FV.DSL.Denote
 import FV.DSL.Check
 
 /-!

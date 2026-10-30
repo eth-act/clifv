@@ -1,3 +1,4 @@
+import FV.Backend.Proof.StockHighMulSemantics
 import FV.Backend.Proof.StockHighMulDispatch
 import FV.Backend.Proof.StockHighMulRequests
 namespace Backend.Stock.Proof.ScalarHighMul

@@ -1,7 +1,10 @@
+import FV.E2E.Statement
+import FV.E2E.RegLevelEmit
 import FV.E2E.RegLevelMachine
 import FV.E2E.RegLevelPlan
 import FV.Backend.Proof.RegallocLayout
 import FV.Backend.Proof.AssignOk
+import FV.Backend.Proof.RegallocFrame
 
 /-!
 # The register-level simulation relation (M6)

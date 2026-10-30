@@ -1,4 +1,4 @@
-import FV.DSL.Denote
+import FV.DSL.Syntax
 
 /-!
 # Fragment checker and the affine rule

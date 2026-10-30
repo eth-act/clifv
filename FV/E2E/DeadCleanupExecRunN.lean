@@ -1,7 +1,6 @@
-import FV.E2E.DeadCleanupExecFrameSim
-import FV.E2E.ExecRunN
 import FV.E2E.DeadCleanupBinary
 import FV.E2E.DeadCleanupBinCheck
+import FV.E2E.DeadCleanupExecStatic
 
 namespace E2E.DeadCleanupExecBytes
 set_option autoImplicit false

@@ -1,3 +1,4 @@
+import FV.Opt.Proof.RuleIntRetry
 import FV.Opt.Proof.RuleFloatArms
 
 /-!

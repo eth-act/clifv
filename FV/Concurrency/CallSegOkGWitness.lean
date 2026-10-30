@@ -1,6 +1,6 @@
 import FV.Concurrency.CallSegOkG
-import FV.Concurrency.CallSegLiftWitness
 import FV.Concurrency.CallLoadWitness
+import FV.Concurrency.CallSegTWitness
 import FV.Concurrency.IselCallWitness
 
 /-!

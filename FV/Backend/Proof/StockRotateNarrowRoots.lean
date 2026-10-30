@@ -1,3 +1,4 @@
+import FV.Backend.Proof.StockRotateRhs
 import FV.Backend.Proof.StockRotateNarrowRhs
 namespace Backend.Stock.Proof.ScalarRotate
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

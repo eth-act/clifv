@@ -1,6 +1,6 @@
 import FV.Concurrency.RealizeCompiled
-import FV.Concurrency.ArmAllocMemWitness
-import FV.Concurrency.ThreadComposeWitness
+import FV.Concurrency.ArmAllocWitness
+import FV.Concurrency.IselRefinesWitness
 
 /-!
 # Non-vacuity of `realizes_compiled` on compiled code (T2k, #311)

@@ -1,4 +1,7 @@
-import FV.Backend.Proof.StockSelectNonzeroConditionShape
+import FV.Backend.Proof.StockCmpNonzero8Emission
+import FV.Backend.Proof.StockCmpNonzero8OriginalSelection
+import FV.Backend.Proof.StockSelectNonzero16Shape
+import FV.Backend.Proof.StockSelectNonzeroWideShape
 
 namespace Backend.Stock.Proof.ScalarSelect
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

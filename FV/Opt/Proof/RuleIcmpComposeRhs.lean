@@ -1,5 +1,7 @@
 import FV.Opt.Proof.RuleIcmpComposeEval
-import FV.Opt.Proof.RuleInfraConst
+import FV.Opt.Proof.RuleRestEmbedSshr
+import FV.Opt.Proof.RuleRestEmbedRotl
+import FV.Opt.Proof.RuleRestEmbedRotr
 
 set_option linter.unusedSimpArgs false
 set_option maxRecDepth 8000

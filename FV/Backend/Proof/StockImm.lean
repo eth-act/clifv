@@ -1,5 +1,6 @@
 import FV.Backend.Proof.IselScopedProjection
 import FV.Backend.Proof.IselFlowGen
+import FV.Backend.Proof.StockProjection
 import FV.Backend.Proof.StockDFG
 import FV.Backend.Proof.IselFamAluBIconst
 

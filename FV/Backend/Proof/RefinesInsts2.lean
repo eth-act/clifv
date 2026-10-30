@@ -1,6 +1,5 @@
 import FV.Backend.Proof.RefinesInsts
 import FV.Backend.Proof.RegallocInstsFP
-import FV.Backend.Proof.EncodeLayout
 
 /-!
 # `Refines` for the remaining covered forms (M6 proof)

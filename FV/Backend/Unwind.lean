@@ -1,5 +1,4 @@
 import FV.Backend.Asm
-import FV.Backend.RegallocOps
 
 /-!
 # Unwind information (DWARF call frame information for `.eh_frame`)

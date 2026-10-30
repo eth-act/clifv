@@ -1,4 +1,5 @@
-import FV.Backend.Proof.StockExtendValues
+import FV.Backend.Proof.StockValues
+import FV.Backend.Proof.IselInterp
 namespace Backend.Stock.Proof.ScalarShift
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 set_option maxRecDepth 20000

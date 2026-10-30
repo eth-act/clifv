@@ -1,3 +1,4 @@
+import FV.Opt.Legal
 import FV.Opt.Proof.LegalMem
 
 /-!

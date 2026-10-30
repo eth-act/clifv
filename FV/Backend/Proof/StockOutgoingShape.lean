@@ -1,3 +1,5 @@
+import FV.Backend.Proof.StockDriverBounds
+import FV.Backend.Proof.LowerAlias
 import FV.Backend.Proof.StockBranchArgumentShape
 
 namespace Backend.Stock.Proof

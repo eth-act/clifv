@@ -1,6 +1,6 @@
 import FV.E2E.LinkArmTwinC
 import FV.E2E.LinkArmBlrCheck
-import FV.E2E.BackendTwoRunLWLslWitness
+import FV.E2E.LinkSlotSysWitness
 
 /-!
 # Witnesses for the `blr` check and the call-restricted twins on `Lsl` (SEM1 #537)

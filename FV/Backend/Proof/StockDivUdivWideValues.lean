@@ -1,4 +1,5 @@
-import FV.Backend.Proof.StockDivValueTransfer
+import FV.Backend.Proof.StockDivDivisorValues
+import FV.Backend.Proof.StockDivBodyValues
 import FV.Backend.Proof.StockDivSelected
 import FV.Backend.Proof.StockDemandMono
 namespace Backend.Stock.Proof.ScalarDiv

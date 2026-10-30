@@ -1,5 +1,5 @@
+import FV.Backend.Proof.StockBranchSelection
 import FV.Backend.Proof.StockBranchHelperTargets
-import FV.Backend.Proof.StockConditionalRootTargets
 
 namespace Backend.Stock.Proof.BranchRootTargets
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

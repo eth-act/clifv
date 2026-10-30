@@ -1,4 +1,5 @@
-import FV.Backend.Proof.StockConditionalCallsWitness
+import FV.Backend.Proof.StockPolicy
+import FV.Backend.Proof.LowerDecide
 
 namespace Backend.Stock.Proof.ConditionalValues.EmptyFixture
 open Backend.Proof Backend.Proof.Driver Backend.Proof.Driver.Fix

@@ -1,4 +1,4 @@
-import FVTest.E2E.FloatTotalT
+import FVTest.E2E.FloatLinkT
 import FV.E2E.LinkScopeInputT2
 
 /-!

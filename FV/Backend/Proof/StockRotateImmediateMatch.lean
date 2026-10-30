@@ -1,5 +1,8 @@
+import FV.Backend.Proof.IselFamALUA
+import FV.Backend.Proof.StockSourceView
+import FV.Backend.Proof.IselCovForm
+import FV.Backend.Proof.StockRequestSuccess
 import FV.Backend.Proof.StockRotateMatch
-import FV.Backend.Proof.StockShiftMatch
 namespace Backend.Stock.Proof.ScalarRotate
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 set_option maxRecDepth 20000

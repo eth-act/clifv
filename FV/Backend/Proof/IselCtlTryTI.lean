@@ -1,6 +1,6 @@
 import FV.Backend.Proof.IselCtlTryInd
 import FV.Backend.Proof.IselCtlCallTI
-import FV.Backend.Proof.IselTermFactsTy
+import FV.Backend.Proof.IselTermIntPos
 import FV.Backend.Proof.LowerContractTP
 
 /-!

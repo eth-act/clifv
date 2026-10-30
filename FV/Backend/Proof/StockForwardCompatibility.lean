@@ -1,3 +1,4 @@
+import FV.Backend.Proof.StockGraphEdges
 import FV.Backend.Proof.StockForwardReturn
 import FV.Backend.Proof.StockComputedCfg
 import FV.Backend.Proof.StockGraphBounds

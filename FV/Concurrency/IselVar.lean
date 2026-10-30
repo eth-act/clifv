@@ -1,6 +1,6 @@
 import FV.Concurrency.IselMem
 import FV.Concurrency.IselMemAux
-import FV.Concurrency.CEvsInv
+import FV.Concurrency.VCodeSize
 
 /-!
 # The memory instruction's events are the CLIF access (T2h, #311, layer 2e)

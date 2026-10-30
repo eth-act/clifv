@@ -1,9 +1,5 @@
 import FV.E2E.RegLevelCallN
 import FV.E2E.RegLevelTryN
-import FV.E2E.RegLevelJTN
-import FV.E2E.RegLevelAtomicN
-import FV.E2E.RegLevelTlsN
-import FV.E2E.RegLevelFrameN
 import FV.E2E.LinkArmProphThmWitness
 
 /-!

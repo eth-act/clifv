@@ -1,4 +1,10 @@
-import FV.Backend.Proof.StockCmpWideActualValues
+import FV.Backend.Proof.StockCmpRegisterEmission
+import FV.Backend.Proof.StockCmpPredecessorSignedEmission
+import FV.Backend.Proof.StockCmpMatchedRegister
+import FV.Backend.Proof.StockCmpMatchedImmediate
+import FV.Backend.Proof.StockCmpPredecessorUnsignedEmission
+import FV.Backend.Proof.StockCmpMatchedPredecessor
+import FV.Backend.Proof.StockCmpImmediateEmission
 import FV.Backend.Proof.StockMinMaxRegisterRuns
 import FV.Backend.Proof.StockExtendRequests
 import FV.Backend.Proof.StockSelectZeroConditionShape

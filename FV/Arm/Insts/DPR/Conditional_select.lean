@@ -17,7 +17,7 @@ Author(s): Shilpi Goel
 -- Unallocated: S == '1' or op2<1> == '1'. Cross-checked against VeriISLE
 -- `MInst.CSel`/`CSNeg`/`CSet`/`CSetm` (cranelift/codegen/src/isa/aarch64/spec/conds.isle).
 
-import FV.Arm.Decode
+import FV.Arm.Decode.DPR
 import FV.Arm.State
 import FV.Arm.Insts.Common
 import FV.Arm.BitVec

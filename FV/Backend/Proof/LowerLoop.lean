@@ -19,11 +19,6 @@ open Backend Backend.Proof Backend.Proof.Prep
 
 variable {f : Clif.Function} {vc : VCode}
 
-/-- What `buildCtx` builds. -/
-theorem ctxFacts_of {ctx : Ctx} {ranges : Array (Nat × Nat)} {st0 : LState}
-    (hb : buildCtx f = .ok (ctx, ranges, st0)) : CtxFacts f ctx st0 :=
-  (ctxSpec_of hb).facts
-
 /-- The recorded lowering has one entry per block, starting at the block's first instruction. -/
 theorem lowBlocks_start {call : StmtCall} {tcall : TermCallF} {ycall : TryCallF} {st : LState}
     {nl : Nat} {bl : List BLow} (hl : lowBlocks f call tcall ycall 0 f.blocks st nl = some bl) :

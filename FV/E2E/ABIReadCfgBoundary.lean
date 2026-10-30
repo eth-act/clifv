@@ -1,4 +1,8 @@
-import FV.E2E.ABIReadTrapBoundary
+import FV.E2E.StockArithmeticStage
+import FV.E2E.LinkWorld
+import FV.E2E.DeadCleanupRegLevelX
+import FV.E2E.DeadCleanupGot
+import FV.E2E.ABIReadFlagsSteps
 
 /-! CFG-aware ABI transport and realization. A checked no-entry-predecessor
 property permits real jumps while preventing repeated physical entry reads.

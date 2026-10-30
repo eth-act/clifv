@@ -1,6 +1,6 @@
 import FV.Backend.Proof.PerEdgePrepareWitness
 import FV.Backend.Proof.StockPreparedArity
-import FV.Backend.Proof.StockSpillCopyMetadataWitness
+import FV.Backend.Proof.PerEdgeSpillEntryFixture
 import FV.Backend.Proof.PerEdgeSpillJumpWitness
 
 namespace Backend.Stock.Proof.PreparedArityWitness

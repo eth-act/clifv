@@ -1,6 +1,7 @@
 import FV.Opt.TailLoop
 import FV.Opt.Proof.SimpDen
 import FV.Opt.Proof.SemSimX
+import FV.Opt.Proof.SimpSim
 import FV.Opt.Proof.SimWin
 import FV.E2E.LinkPlace
 import FV.E2E.Statement

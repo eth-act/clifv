@@ -1,5 +1,4 @@
 import FV.Backend.Proof.RegallocTac
-import FV.Backend.Proof.EncodeLayout
 
 /-!
 # `OperandsSound` for the integer instructions (M6 proof)

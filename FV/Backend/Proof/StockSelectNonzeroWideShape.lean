@@ -1,5 +1,6 @@
-import FV.Backend.Proof.StockCmpNonzero32OriginalValues
-import FV.Backend.Proof.StockCmpNonzero64OriginalValues
+import FV.Backend.Proof.StockCmpNonzero32RhsValues
+import FV.Backend.Proof.StockCmpNonzero32OriginalSelection
+import FV.Backend.Proof.StockCmpNonzero64OriginalSelection
 namespace Backend.Stock.Proof.ScalarSelect
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 /-- Actual original32/64 nonzero emitters derive the mapped condition and its

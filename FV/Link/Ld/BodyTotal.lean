@@ -1,4 +1,5 @@
-import FV.Link.Ld.LayoutTotal
+import FV.Link.Ld.BuildProof
+import FV.Link.Ld.LayoutProof
 
 /-! # The body of `lean-ld`'s plan is built when its relocations apply (A1c, #409)
 

@@ -1,6 +1,6 @@
 import FV.Concurrency.CallResumeAll
-import FV.Concurrency.CallRetsNWitness
 import FV.Concurrency.IselCallWitness
+import FV.Concurrency.CallEntryWitness
 
 /-!
 # Witness: the caller resumed at every layer (#473, step (3))

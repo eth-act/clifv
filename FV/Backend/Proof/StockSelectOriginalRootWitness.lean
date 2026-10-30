@@ -1,3 +1,4 @@
+import FV.Backend.Proof.StockSelectOriginalSourceMatch
 import FV.Backend.Proof.StockOriginalSelectFixture
 import FV.Backend.Proof.StockSelectionReceipts
 namespace Backend.Stock.Proof.ScalarSelect.OriginalSelectFixture

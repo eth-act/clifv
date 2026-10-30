@@ -1,7 +1,5 @@
 import FV.Backend.Proof.IselCmpTerms
-import FV.Backend.Proof.IselTermsImm
 import FV.Backend.Proof.IselCtlCall
-import FV.Backend.Proof.IselMemArm
 
 /-!
 # Memory family (M4Mem): extern helpers and the inversion tactic

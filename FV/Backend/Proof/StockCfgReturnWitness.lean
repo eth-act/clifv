@@ -1,6 +1,5 @@
 import FV.Backend.Proof.StockCfgReturnEdge
 import FV.Backend.Proof.StockInheritedJumpDefined
-import FV.Backend.Proof.StockInheritedJump
 import FV.Backend.Proof.StockInheritedFixture
 import FV.Backend.Proof.StockScalarCheck
 import FV.Backend.Proof.StockEntrySeed

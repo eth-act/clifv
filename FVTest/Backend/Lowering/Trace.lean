@@ -1,12 +1,14 @@
 import FV.Backend
 import FV.Backend.Lowering.StockReplay
+import FV.Backend.ParameterCfgNIProduction
 import FV.Opt.Legalize128Pass
+import FVTest.Backend.CraneliftInput
 
 /-!
 # Instruction-selection diagnostics
 
 `lean-backend-lowering-trace INPUT.clif OUTPUT.json` records initial value registers,
-raw selected VCode, fired rules, cleanup output and the prepared allocator input. It does not allocate or
+raw selected VCode, fired rules, cleanup output and the default regalloc2 input. It does not allocate or
 emit code and does not change the compiler's lowering/checking path. Give it the
 stock-effective Lean input from a settings-matched comparison to inspect that case.
 
@@ -107,13 +109,15 @@ def stockSnapshot (f : Clif.Function) : Except String Json := do
     ("edge_args", toJson (r.edgeArgs.map fun args => args.map fun rs => rs.map regJson)),
     ("allocator_input", allocator)]
 
-def snapshot (f : Clif.Function) (stockSchedule : Bool) (deadCleanup : Bool := true) : Except String Json := do
+def snapshot (f : Clif.Function) (stockSchedule : Bool) (deadCleanup : Bool := true)
+    (routes : Bool := true) (verify : Bool := true) : Except String Json := do
   let (ctx, ranges, initial) ← buildCtx f
   let selected ← lowerFunction f
-  let allocationSelected := if deadCleanup then DeadCleanup.prune selected else selected
+  let allocationSelected ← if routes then lowerForAllocationParameterCfgNI f verify deadCleanup
+    else lowerForAllocation f verify deadCleanup
   let prepared ← prepare allocationSelected
   let replay ← replayJson f ctx initial
-  let allocator ← match Json.parse (← vcodeJson prepared) with
+  let allocator ← match Json.parse (← vcodeJson (CraneliftInput.shape (some f) deadCleanup prepared).code) with
     | .ok j => pure j
     | .error e => throw s!"invalid allocator JSON: {e}"
   let values := ctx.valReg.toList.zipIdx |>.filterMap fun (r, value) =>
@@ -137,9 +141,13 @@ def snapshot (f : Clif.Function) (stockSchedule : Bool) (deadCleanup : Bool := t
 def run (input output : String) (stockSchedule : Bool := false) (deadCleanup : Bool := true) : IO UInt32 := do
   let source ← IO.FS.readFile input
   let legalized := Opt.Legalize128.parsedFile128 (Clif.parseFile source)
+  let routes := !(legalized.file.funcs.any fun p => p.func.toOption.any fun f => f.blocks.any (·.term.isTry))
   let rows := legalized.file.funcs.map fun parsed =>
     let result := match parsed.func with
-      | .ok f => snapshot f stockSchedule deadCleanup
+      | .ok f =>
+        let verify := ((unverifiedReason? f).isSome ||
+          (legalized.unverified.lookup parsed.name).isSome || (overBudget? f).isSome).not
+        snapshot f stockSchedule deadCleanup routes verify
       | .error e => .error e.toString
     match result with
     | .ok report => Json.mkObj [
@@ -158,17 +166,22 @@ def run (input output : String) (stockSchedule : Bool := false) (deadCleanup : B
 
 end LoweringTrace
 
+private def traceOptions : List String → Bool → Bool → Except String (Bool × Bool)
+  | [], stock, cleanup => pure (stock, cleanup)
+  | "--regalloc" :: "regalloc2" :: rest, stock, cleanup => traceOptions rest stock cleanup
+  | "--stock-schedule" :: rest, _, cleanup => traceOptions rest true cleanup
+  | "--dead-cleanup" :: rest, stock, _ => traceOptions rest stock true
+  | "--no-dead-cleanup" :: rest, stock, _ => traceOptions rest stock false
+  | _, _, _ => throw "unknown lowering-trace option (allocator diagnostics support regalloc2)"
+
 def main (args : List String) : IO UInt32 := do
   match args with
   | input :: output :: flags =>
-    if flags.all (fun f => ["--stock-schedule", "--dead-cleanup", "--no-dead-cleanup"].contains f) then
-      let cleanup := flags.foldl (fun mode flag =>
-        if flag == "--dead-cleanup" then true
-        else if flag == "--no-dead-cleanup" then false else mode) true
-      LoweringTrace.run input output (flags.contains "--stock-schedule") cleanup
-    else
-      IO.eprintln "unknown lowering-trace option"
+    match traceOptions flags false true with
+    | .ok (stock, cleanup) => LoweringTrace.run input output stock cleanup
+    | .error error =>
+      IO.eprintln error
       return 2
   | _ =>
-    IO.eprintln "usage: lean-backend-lowering-trace INPUT.clif OUTPUT.json [--stock-schedule] [--dead-cleanup|--no-dead-cleanup]"
+    IO.eprintln "usage: lean-backend-lowering-trace INPUT.clif OUTPUT.json [--regalloc regalloc2] [--stock-schedule] [--dead-cleanup|--no-dead-cleanup]"
     return 2

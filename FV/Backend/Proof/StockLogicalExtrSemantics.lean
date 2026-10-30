@@ -1,4 +1,4 @@
-import FV.Backend.Proof.StockRotateSemantics
+import FV.Backend.Proof.StockAliasSemantics
 import FV.Backend.Proof.IselFamALUAExtr
 
 namespace Backend.Stock.Proof.LogicalExtr

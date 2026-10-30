@@ -1,3 +1,5 @@
+import FV.Backend.Proof.StockShiftSemantics
+import FV.Backend.Proof.StockShiftRhsObserved
 import FV.Backend.Proof.StockShiftMatch
 namespace Backend.Stock.Proof.ScalarShift
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

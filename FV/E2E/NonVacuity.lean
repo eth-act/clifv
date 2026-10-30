@@ -1,4 +1,4 @@
-import FV.E2E.Link
+import FV.E2E.Final
 
 /-! # Non-vacuity of the callee contracts (docs/contracts/e2e.md, "Non-vacuity")
 

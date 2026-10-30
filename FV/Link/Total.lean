@@ -1,4 +1,3 @@
-import FV.Link.Compile
 import FV.Link.CodeMapProof
 import FV.Link.RelocShape
 import FV.Link.OutsideProof

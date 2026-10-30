@@ -1,3 +1,4 @@
+import FV.Backend.Proof.StockCfgTotal
 import FV.Backend.Proof.StockParameterShape
 import FV.Backend.Proof.PerEdgePrepareOrderFacts
 

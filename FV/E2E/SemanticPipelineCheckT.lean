@@ -1,5 +1,5 @@
-import FV.E2E.DeadCleanupLinkCheckT
-import FV.E2E.SemanticPipelineCheck
+import FV.Link.Image
+import FV.E2E.LinkArmT
 import FV.E2E.PreparedPipeline
 
 /-! # The typed checks on any pipeline's results (#722)

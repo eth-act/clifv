@@ -1,5 +1,4 @@
 import FV.Backend.Proof.IselCtlTryF
-import FV.Backend.Proof.DriverCheckTyC
 import FV.Compile.SubsetTC
 
 /-!

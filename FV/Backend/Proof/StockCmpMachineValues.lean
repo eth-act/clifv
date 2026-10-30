@@ -1,7 +1,7 @@
 import FV.Backend.Proof.StockCmpFlags
 import FV.Backend.Proof.IselCmpCond
-import FV.Backend.Proof.IselCmpSdiv
 import FV.Backend.Proof.IselCmpRoot
+import FV.Backend.Proof.IselCmpDiv
 import FV.Backend.Proof.StockAliasSemantics
 namespace Backend.Stock.Proof.ScalarCmp
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

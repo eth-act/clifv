@@ -1,6 +1,7 @@
 import FV.Backend.Proof.DefGenSound
-import FV.Backend.Proof.IselEmitLast
-import FV.Backend.Proof.KillTab
+import FV.Backend.Proof.IselShpTotal
+import FV.Backend.Proof.IselCovModel
+import FV.Backend.Proof.IselShpOracle
 
 /-!
 # Definedness of the ISLE runs: the oracle terms

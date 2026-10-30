@@ -1,5 +1,5 @@
 import Lean
-import FV.Backend.Proof.StockPrologueInput
+import FV.Backend.Lowering.StockPrologue
 
 namespace Backend.Stock.Prologue.AllConfigurations
 open D0

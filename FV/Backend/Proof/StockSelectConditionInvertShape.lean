@@ -1,4 +1,5 @@
-import FV.Backend.Proof.StockSelectNonzeroConditionShape
+import FV.Backend.Proof.IselCmpIcmp
+import FV.Backend.Proof.StockCmpZeroHelpers
 import FV.Backend.Proof.StockCmpFlagInvert
 namespace Backend.Stock.Proof.ScalarSelect
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

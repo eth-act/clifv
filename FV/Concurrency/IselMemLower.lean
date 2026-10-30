@@ -1,3 +1,6 @@
+import FV.Backend.Proof.LowerCover
+import FV.Concurrency.IselVar
+import FV.Concurrency.IselMemSeg
 import FV.Concurrency.IselMemHelp
 import FV.Backend.Proof.IselAtomic
 

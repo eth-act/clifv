@@ -1,4 +1,5 @@
 import FV.Backend.RegallocPerEdgePrepare
+import FV.Backend.Proof.RegallocOperands
 import FV.Backend.Proof.PerEdgeVCodeSem
 namespace Backend.Proof.PerEdgePrepareWitness
 set_option maxRecDepth 20000

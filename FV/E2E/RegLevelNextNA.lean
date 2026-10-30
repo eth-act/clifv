@@ -1,5 +1,7 @@
+import FV.E2E.RegLevelNext
+import FV.E2E.RegLevelQW
 import FV.E2E.RegLevelFRFree
-import FV.E2E.RegLevelNextNR
+import FV.E2E.RegLevelGotoNR
 
 /-!
 # `trapIf` that falls through, at a witness (SEM1 #537, item (3), route (a))

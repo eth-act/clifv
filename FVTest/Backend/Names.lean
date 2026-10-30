@@ -1,4 +1,4 @@
-import FV.Backend
+import FV.Backend.Isel
 
 /-!
 Consistency of the backend with the exported ISLE program (`FV/Isle/Generated`). Types and

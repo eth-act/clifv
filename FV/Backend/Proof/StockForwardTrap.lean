@@ -1,4 +1,5 @@
 import FV.Backend.Proof.StockForwardReturn
+import FV.Backend.Proof.StockCfgReturnTrapAt
 import FV.Backend.Proof.StockCfgJumpTrapAt
 
 namespace Backend.Stock.Proof.ForwardSource

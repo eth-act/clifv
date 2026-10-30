@@ -1,4 +1,6 @@
-import FV.Concurrency.CallResumeAll
+import FV.Arm.MinTheory
+import FV.Backend.Proof.IselExtern
+import FV.Backend.Proof.SpillLocal
 
 /-!
 # `resume_all`'s static premises as checks on the lowered code (#473, step (3))

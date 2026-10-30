@@ -1,5 +1,5 @@
 import FV.Backend.Proof.IselMemFuncAddr
-import FV.Backend.Proof.IselMemBaseTI
+import FV.Backend.Proof.LowerContractT
 
 /-!
 # `IselMemFuncAddr` over typed contexts (S11e5 Stage C, slice 7)

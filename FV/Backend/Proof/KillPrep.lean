@@ -1,6 +1,6 @@
 import FV.Backend.Proof.SpillAvail
 import FV.Backend.Proof.PrepareSound
-import FV.Backend.Proof.SpillEdges
+import FV.Backend.Proof.SpillEdgesLow
 import FV.Backend.Proof.SpillStep4Cfg
 
 /-!

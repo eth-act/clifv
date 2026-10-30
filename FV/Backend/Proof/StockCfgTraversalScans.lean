@@ -1,3 +1,4 @@
+import FV.Backend.Proof.StockEdgeCode
 import FV.Backend.Proof.StockLinearCfgTrace
 import FV.Backend.Proof.StockSourceOrder
 

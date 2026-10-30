@@ -1,7 +1,6 @@
 import FV.E2E.StockMixedDivFixtures
-import FV.E2E.StockHighMulWitness
-import FV.Backend.Proof.StockScalarMixedDivDomain
-import FV.E2E.CompiledSemanticNI
+import FV.E2E.DivBoundaryCheck
+import FV.Backend.Proof.RegallocCover
 import FV.Backend.LinearScan
 import FV.Backend.Lowering.StockScalarNI
 namespace E2E.StockMixedDivNIWitness

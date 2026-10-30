@@ -1,5 +1,4 @@
 import FV.Backend.Proof.StockD0DispatchWitness
-import FV.E2E.LoweringPipeline
 import FV.E2E.LinkScopeInput
 import FV.E2E.DeadCleanupLinkScope
 import FV.E2E.SpillDefined

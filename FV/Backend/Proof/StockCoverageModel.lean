@@ -1,3 +1,8 @@
+import FV.Backend.Proof.StockNoOpportunityTable
+import FV.Backend.Proof.StockNoOpportunityCtor
+import FV.Backend.Proof.IselCovClean
+import FV.Backend.Proof.StockCoverageSound
+import FV.Backend.Proof.LogicImmComplete
 import FV.Backend.Proof.StockCoverageCtor
 import FV.Backend.Proof.StockCoverageOracle
 import FV.Backend.Proof.LowerDecide

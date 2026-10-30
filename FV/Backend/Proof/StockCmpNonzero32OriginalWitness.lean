@@ -1,3 +1,4 @@
+import FV.Backend.Proof.LowerDecide
 import FV.Backend.Proof.StockCmpNonzero32OriginalSelection
 namespace Backend.Stock.Proof.ScalarCmp.Nonzero32OriginalWitness
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

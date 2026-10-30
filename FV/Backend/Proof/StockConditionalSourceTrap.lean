@@ -1,4 +1,5 @@
-import FV.Backend.Proof.StockConditionalSourceReturn
+import FV.Backend.Proof.StockConditionalGuardedLast
+import FV.Backend.Proof.StockTermAvailability
 
 namespace Backend.Stock.Proof.ConditionalValues
 open Backend.Proof Backend.Proof.Driver

@@ -1,5 +1,8 @@
+import FV.Backend.Proof.IselCmpExt
+import FV.Backend.Proof.IselFamALUA
+import FV.Backend.Proof.StockCountMath
+import FV.Backend.Proof.StockCountRhs
 import FV.Backend.Proof.StockCountForms
-import FV.Backend.Proof.StockBitrevSemantics
 namespace Backend.Stock.Proof.ScalarCount
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 private theorem fresh_reg {aliases : Array (Option Nat)} {d : Nat} (bounded : aliases.size ≤ d) :

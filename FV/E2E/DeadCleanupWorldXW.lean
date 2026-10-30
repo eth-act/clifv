@@ -1,4 +1,4 @@
-import FV.E2E.DeadCleanupWorldX
+import FV.E2E.DeadCleanupPair
 import FV.E2E.DeadCleanupRegLevelW
 
 /-!

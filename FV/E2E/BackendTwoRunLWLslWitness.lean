@@ -1,6 +1,5 @@
 import FV.E2E.BackendTwoRunLW
 import FV.E2E.LinkSlotSysWitness
-import FV.E2E.NonVacuityLink
 
 /-!
 # The machine lock on the slot system `Lsl` (SEM1 #537, `BackendTwoRunLW.lean`, item (5))

@@ -1,5 +1,7 @@
+import FV.E2E.StockArithmeticStageContract
+import FV.E2E.ABIReadOnlyMachine
 import FV.E2E.ABIReadCfg
-import FV.Backend.Proof.StockScalarCheck
+import FV.Backend.Proof.StockScalarContract
 
 namespace E2E
 open Backend Backend.Proof Backend.Proof.Driver Backend.Stock.Proof Backend.DeadCleanup

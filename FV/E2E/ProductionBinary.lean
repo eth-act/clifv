@@ -1,5 +1,4 @@
 import FV.E2E.ProductionStackBound
-import FV.E2E.ProductionCheck
 import FV.E2E.ProductionChecksWith
 
 /-! # The binary-level theorem (M9, docs/contracts/e2e.md, "Binary level (M9)")

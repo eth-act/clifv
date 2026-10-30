@@ -1,5 +1,5 @@
 import FV.E2E.DeadCleanupUnwindFinal
-import FV.E2E.DeadCleanupLegal
+import FV.E2E.Legal
 import FV.Opt.Proof.LegalRustX
 
 /-!

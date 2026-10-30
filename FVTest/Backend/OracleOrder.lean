@@ -1,5 +1,7 @@
-import FV.Backend
-import FV.Backend.LinearScan
+import FV.Backend.Lowering.Stock
+import FV.Backend.Regalloc
+import Lean
+import FV.Backend.DeadCleanup
 
 /-!
 # regalloc2's input in Cranelift's vreg numbering (#551)

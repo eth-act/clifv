@@ -1,5 +1,5 @@
 import FV.Backend.Lowering.StockScalar
-import FV.Backend.StockScalarCheck
+import FV.Backend.StockArithmeticCheck
 
 namespace Backend.Stock.LinearCfg
 set_option autoImplicit false

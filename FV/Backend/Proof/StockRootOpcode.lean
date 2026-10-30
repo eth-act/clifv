@@ -1,4 +1,4 @@
-import FV.Backend.Proof.StockScopeRoots
+import FV.Backend.Proof.IselExclData
 namespace Backend.Stock.Proof
 open Backend.Proof Isle Isle.Interp Isle.Aarch64
 set_option maxRecDepth 100000

@@ -1,3 +1,4 @@
+import FV.Backend.Lowering.StockPrologueAll
 import FV.Backend.Lowering.StockScalarAdd
 
 /-! Additive scalar-add selection. The earlier D0/prologue selectors keep their

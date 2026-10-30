@@ -1,5 +1,6 @@
-import FV.E2E.AllocTotal
-import FV.E2E.DeadCleanupFinal
+import FV.E2E.SpillLower
+import FV.Backend.Proof.KillDriver
+import FV.Backend.Proof.KillTryDefs
 import FV.E2E.DeadCleanupCover
 import FV.E2E.DeadCleanupCtl
 import FV.Backend.Proof.DeadCleanupClasses

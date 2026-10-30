@@ -1,6 +1,6 @@
 import FV.Concurrency.CallArgsL2
 import FV.Concurrency.CallArgsAt
-import FV.Concurrency.CallEnterArm
+import FV.Concurrency.LinkedMachine
 
 /-!
 # The callee's `ArgsAtEntry` at a direct call (#473, (2b))

@@ -1,4 +1,6 @@
-import FV.Backend.Proof.StockParameterKernel
+import FV.Backend.Lowering.StockConditionalRankedCfg
+import FV.Backend.Proof.StockParameterCheck
+import FV.Backend.Proof.StockParameterFixture
 
 namespace Backend.Stock.Proof.ParameterCfg.Fixture
 open Backend.Proof Backend.Proof.Driver Backend.Stock.Proof.ForwardSource Backend.Stock.Proof.ConditionalValues

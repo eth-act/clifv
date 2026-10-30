@@ -1,5 +1,5 @@
-import FV.Backend.Proof.StockDivHelpers
 import FV.Backend.Proof.IselFamAluBBase
+import FV.Backend.Proof.StockAliasSemantics
 namespace Backend.Stock.Proof.ScalarDiv
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 private theorem fresh_reg {aliases : Array (Option Nat)} {d : Nat} (bounded : aliases.size ≤ d) :

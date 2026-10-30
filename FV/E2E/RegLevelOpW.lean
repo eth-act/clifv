@@ -1,6 +1,5 @@
 import FV.E2E.RegLevelOp
 import FV.E2E.RegLevelWrites
-import FV.E2E.RegLevelOpWrites
 
 /-!
 # Straight-line forms with their writes (A3, #412, slice F8b)

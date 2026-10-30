@@ -1,4 +1,4 @@
-import FV.Link.DeadCleanupExeInitRU
+import FV.Link.DeadCleanupExe
 import FV.E2E.DeadCleanupBinaryInitRC
 
 /-!

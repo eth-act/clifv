@@ -1,5 +1,8 @@
-import FV.Backend.Proof.StockCfgTotal
 import FV.Backend.Proof.StockEdgeCode
+import FV.Backend.Proof.StockEntryCode
+import FV.Backend.Proof.StockPrepareInputs
+import FV.Backend.SpillAlloc
+import FV.Backend.Proof.StockCriticalCode
 
 namespace Backend.Stock.Proof
 open Backend.Proof Backend.Proof.Driver

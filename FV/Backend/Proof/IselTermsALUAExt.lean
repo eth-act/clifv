@@ -1,4 +1,5 @@
-import FV.Backend.Proof.IselTermsALUAMul
+import FV.Backend.Proof.IselTermsALUA
+import FV.Arm.MinTheory
 
 /-!
 # Extended-register operands (`extended_value_from_value`): forward lemmas

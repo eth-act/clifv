@@ -1,4 +1,3 @@
-import FV.Backend.Proof.StockReturnHelpers
 import FV.Backend.Proof.StockSelectionReceipts
 import FV.Backend.Proof.StockCoverageTerms
 

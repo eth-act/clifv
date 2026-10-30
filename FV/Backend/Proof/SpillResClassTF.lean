@@ -1,4 +1,7 @@
-import FV.Backend.Proof.SpillResClassT
+import FV.Backend.Proof.RegallocOperands
+import FV.E2E.RegLevelPush
+import FV.Backend.Proof.IselCovTDriver
+import FV.Backend.Proof.SpillClassesT
 import FV.Backend.Proof.IselCovTFamCoverF
 
 /-!

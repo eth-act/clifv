@@ -1,4 +1,5 @@
 import FV.Opt.Proof.Sem
+import FV.Opt.Proof.SemSim
 import FV.Opt.Proof.Dom
 import FV.Clif.FloatFacts
 

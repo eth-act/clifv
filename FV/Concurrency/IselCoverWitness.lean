@@ -1,5 +1,5 @@
 import FV.Concurrency.IselCover
-import FV.Concurrency.IselClifWitness
+import FV.Concurrency.VCodeFrameWitness
 
 /-!
 # Non-vacuity of `IselCover` (T2h, #311)

@@ -1,3 +1,4 @@
+import FV.Opt.Licm
 import FV.Opt.Proof.CompleteLicm
 
 /-!

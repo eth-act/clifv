@@ -1,3 +1,5 @@
+import FV.Backend.Proof.StockEdgeCode
+import FV.Backend.Proof.StockReturnScanShape
 import FV.Backend.Proof.StockTerminalPlacement
 import FV.Backend.Proof.LowerLemmas
 namespace Backend.Stock.Proof

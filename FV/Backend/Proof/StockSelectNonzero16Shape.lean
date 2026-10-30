@@ -1,3 +1,4 @@
+import FV.Backend.Proof.StockCmpNonzeroNarrowCalls
 import FV.Backend.Proof.StockCmpNonzero16OriginalSelection
 namespace Backend.Stock.Proof.ScalarSelect
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

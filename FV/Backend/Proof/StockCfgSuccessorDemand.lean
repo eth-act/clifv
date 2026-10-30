@@ -1,4 +1,7 @@
-import FV.Backend.Proof.StockGuardedSuccessor
+import FV.Backend.Proof.StockSelectScanRefines
+import FV.Backend.Proof.StockSourceEdges
+import FV.Backend.Proof.StockPerEdgeValues
+import FV.Backend.Proof.StockSourceEdgeDFG
 
 namespace Backend.Stock.Proof.Control
 open Backend.Proof Backend.Proof.Driver

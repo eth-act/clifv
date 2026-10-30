@@ -1,4 +1,4 @@
-import FV.E2E.SemanticExecFrameSim
+import FV.E2E.SemanticExecStatic
 
 /-! # The error-guarded per-state hypothesis `RunOkN` (L3 (c))
 

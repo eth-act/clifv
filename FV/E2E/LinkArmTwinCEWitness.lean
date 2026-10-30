@@ -1,4 +1,4 @@
-import FV.E2E.LinkArmDetRunPRBCR
+import FV.E2E.LinkArmTwinCE
 import FV.E2E.LinkArmTwinCRun
 import FV.E2E.LinkArmTwinCLockLslWitness
 import FV.E2E.LinkArmStage2ZWitness

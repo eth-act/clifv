@@ -1,6 +1,5 @@
 import FV.E2E.DeadCleanupExecBytes
 import FV.E2E.CodeMap
-import FV.E2E.ExecStatic
 import FV.E2E.DeadCleanupBinary
 import FV.E2E.DeadCleanupBinCheck
 

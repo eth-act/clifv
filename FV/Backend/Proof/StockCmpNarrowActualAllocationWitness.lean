@@ -1,3 +1,4 @@
+import FV.Backend.Proof.StockAluSelectedValues
 import FV.Backend.Proof.StockCmpNarrowActualAllocation
 import FV.Backend.Proof.StockCmpNarrow8DriverRuns
 import FV.Backend.Proof.StockCmpNarrow16DriverRuns

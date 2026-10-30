@@ -1,3 +1,5 @@
+import FV.Backend.Proof.IselCtlRuleIds
+import FV.Backend.Proof.StockMinMaxRules
 import FV.Backend.Proof.StockMinMaxRegisterRuns
 import FV.Backend.Proof.StockRootOpcodeMatch
 namespace Backend.Stock.Proof.ScalarSelect
@@ -6,12 +8,6 @@ open MinMaxRegisterFixture
 set_option maxRecDepth 20000
 set_option maxHeartbeats 4000000
 attribute [local irreducible] Isle.Aarch64.program
-def minmaxRule (unsigned maximum : Bool) : Rule :=
-  if unsigned then (if maximum then rule_lower_1226 else rule_lower_1222) else (if maximum then rule_lower_1228 else rule_lower_1224)
-def minmaxFallback (unsigned maximum : Bool) : Rule :=
-  if unsigned then (if maximum then rule_lower_1251 else rule_lower_1239) else (if maximum then rule_lower_1245 else rule_lower_1233)
-def minmaxOpcode (unsigned maximum : Bool) : Nat :=
-  if unsigned then (if maximum then 23 else 21) else (if maximum then 22 else 20)
 def minmaxEnv (w x y : Nat) : Isle.Interp.Env V :=
   #[some (.ty (.int w)),some (.value x),some (.value y)]
 section Source

@@ -1,4 +1,4 @@
-import FV.Backend.Proof.StockCmpNonzero32RhsValues
+import FV.Backend.Proof.IselCovForm
 import FV.Backend.Proof.StockExtendRequests
 import FV.Backend.Proof.StockOverflowPatterns
 namespace Backend.Stock.Proof.ScalarCmp

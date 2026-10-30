@@ -1,5 +1,6 @@
+import FV.Backend.Proof.MemRefines
+import FV.Backend.Proof.StockScalarCheck
 import FV.Backend.Proof.StockLinearCfgTrapFixture
-import FV.Backend.Proof.StockLinearCfgReturn
 import FV.Backend.Proof.StockLinearCfgTrap
 import FV.Backend.Proof.RefinesCSem
 import FV.E2E.RegLevelDriverSem

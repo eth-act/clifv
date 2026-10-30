@@ -1,3 +1,5 @@
+import FV.Backend.Proof.RegallocOperands
+import FV.Backend.Proof.SpillLocal
 import FV.E2E.StockMaskChecks
 import FV.E2E.StockNarrowWitness
 

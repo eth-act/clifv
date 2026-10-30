@@ -9,7 +9,7 @@ Author(s): Nathan Wetzler
 -- MADD only), transcribed from the Arm ARM (DDI 0487) ASL (see `exec_data_processing_msub`,
 -- `exec_data_processing_maddl` and `exec_data_processing_mulh`).
 
-import FV.Arm.Decode
+import FV.Arm.Decode.DPR
 import FV.Arm.Insts.Common
 
 namespace Arm

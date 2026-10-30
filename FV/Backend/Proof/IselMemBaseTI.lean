@@ -1,4 +1,5 @@
-import FV.Backend.Proof.IselBaseTI
+import FV.Backend.Proof.IselMemRoots
+import FV.Backend.Proof.LowerContractT
 
 /-!
 # Integer memory roots over typed contexts: common facts (S11e5 Stage C, slice 7)

@@ -1,4 +1,3 @@
-import FV.Backend.Proof.StockBlockCode
 import FV.Backend.Proof.StockEdgeValues
 import FV.Backend.Proof.StockBranchArgumentCode
 

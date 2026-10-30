@@ -1,3 +1,4 @@
+import FV.Opt.Proof.CompleteSimpRunDef
 import FV.Opt.Proof.CompleteSimpInv
 
 /-!

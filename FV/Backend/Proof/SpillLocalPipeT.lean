@@ -2,7 +2,6 @@ import FV.Backend.Proof.SpillClassesT
 import FV.Backend.Proof.SpillAvail
 import FV.Backend.Proof.SpillInvariant
 import FV.Backend.Proof.SpillStep4
-import FV.Backend.Proof.SpillInstCheck
 
 /-!
 # The spill allocator's local facts and acceptance on the typed pipeline's output

@@ -1,5 +1,7 @@
-import FV.Backend.Proof.StockAddSubObserved
-import FV.Backend.Proof.StockRootOpcodeMatch
+import FV.Backend.Proof.IselCovForm
+import FV.Backend.Proof.IselFamALUAExt
+import FV.Backend.Proof.StockLogicalLookthrough
+import FV.Backend.Proof.StockAddSubRhs
 namespace Backend.Stock.Proof.ScalarAddSub
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 set_option maxRecDepth 20000

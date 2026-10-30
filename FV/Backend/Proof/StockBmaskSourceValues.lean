@@ -1,3 +1,4 @@
+import FV.Backend.Proof.StockAluOperandCoverage
 import FV.Backend.Proof.StockBmaskRecord
 import FV.Backend.Proof.StockGuardedRecordValues
 

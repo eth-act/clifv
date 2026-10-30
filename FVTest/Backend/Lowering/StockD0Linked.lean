@@ -1,4 +1,3 @@
-import FV.Backend
 import FV.Link.Compile
 import FV.Link.DeadCleanupCompile
 import FV.Link.Placed

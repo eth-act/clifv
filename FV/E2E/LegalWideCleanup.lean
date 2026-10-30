@@ -1,5 +1,6 @@
-import FV.E2E.DeadCleanupLegal
-import FV.E2E.LegalDirect
+import FV.E2E.Legal
+import FV.E2E.DeadCleanupFinal
+import FV.Opt.Proof.LegalComplete
 
 /-!
 # The widened `i128` theorems for the backend with the dead-instruction cleanup (S4)

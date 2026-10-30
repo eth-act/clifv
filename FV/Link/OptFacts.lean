@@ -1,5 +1,4 @@
 import FV.Link.OptCompile
-import FV.Link.ExeSource
 import FV.E2E.OptX
 
 /-! # The optimised input of the executable compiler: what it keeps

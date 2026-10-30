@@ -1,4 +1,5 @@
-import FV.Backend.Proof.StockSSAScanConnection
+import FV.Backend.Proof.StockSourceSSA
+import FV.Backend.Proof.StockAliasScanEntries
 import FV.Backend.Proof.StockEdgeAliasFrame
 import FV.Backend.Proof.StockBlockRanges
 

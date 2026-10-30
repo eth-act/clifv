@@ -1,4 +1,5 @@
-import FV.Backend.Proof.StockD0DispatchWitness
+import FV.Backend.Proof.StockD0Witness
+import FV.Backend.Proof.StockD0Dispatch
 
 namespace Backend.Stock.D0
 

@@ -1,4 +1,4 @@
-import FV.E2E.RegLevelTryNR
+import FV.E2E.RegLevelTryN
 import FV.E2E.RegLevelJTNA
 
 /-!

@@ -1,4 +1,5 @@
 import FV.Backend.Proof.StockTerminalRoots
+import FV.Backend.Proof.StockAluOperandCoverage
 import FV.Backend.Proof.StockSelectionReceipts
 
 /-! A complete driver actually sinks an atomic load through its extension

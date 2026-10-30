@@ -1,3 +1,6 @@
+import FV.Backend.Proof.StockSelectionReceipts
+import FV.Backend.Proof.StockAddSubSemantics
+import FV.Backend.Proof.StockAddSubObserved
 import FV.Backend.Proof.StockAddSubMatch
 namespace Backend.Stock.Proof.ScalarAddSub
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

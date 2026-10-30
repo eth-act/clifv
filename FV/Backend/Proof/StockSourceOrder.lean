@@ -1,4 +1,6 @@
-import FV.Backend.Proof.StockDFG
+import FV.Backend.Lowering.Stock
+import FV.Arm.MinTheory
+import FV.Backend.Proof.PrepareComplete
 
 namespace Backend.Stock.Proof
 open Backend.Proof Backend.Proof.Driver

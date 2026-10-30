@@ -1,6 +1,5 @@
-import FV.Concurrency.ArmAllocLines
-import FV.Concurrency.VCodeFrame
-import FV.E2E.RegLevelCorrect
+import FV.Concurrency.VCodeThread
+import FV.E2E.RegLevelOp
 
 /-!
 # The register-level relation with interference: patches and items (T2h, #311, layer 4b)

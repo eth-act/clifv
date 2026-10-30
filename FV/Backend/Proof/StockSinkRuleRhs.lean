@@ -1,5 +1,7 @@
 import FV.Backend.Proof.StockRuleFrame
-import FV.Backend.Proof.StockSinkFrame
+import FV.Backend.Proof.StockPolicy
+import FV.Arm.MinTheory
+import FV.Backend.Proof.IselInterp
 
 /-! State frames across the direct sink binding in generated rule RHSs. -/
 namespace Backend.Stock.Proof.SinkRules

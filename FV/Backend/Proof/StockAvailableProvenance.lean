@@ -1,6 +1,5 @@
 import FV.Backend.Proof.StockDFG
 import FV.Backend.Proof.LowerCertBase
-import FV.Backend.Proof.LowerDecide
 
 set_option maxRecDepth 4096
 

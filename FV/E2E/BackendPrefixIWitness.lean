@@ -1,5 +1,6 @@
 import FV.E2E.DeadCleanupPrefix
-import FV.E2E.IselSimIPrefixWitness
+import FV.E2E.IselSimIWitness
+import FV.E2E.BackendWorldCleanupIWitness
 
 /-!
 # Witnesses for the counted pipeline up to call `N` (`FV/E2E/BackendPrefixI.lean`,

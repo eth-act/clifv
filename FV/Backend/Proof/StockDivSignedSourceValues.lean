@@ -1,5 +1,4 @@
 import FV.Backend.Proof.StockDivSignedRecordValues
-import FV.Backend.Proof.StockUnarySourceValues
 namespace Backend.Stock.Proof.ScalarDiv
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 theorem stock_lower_sdiv_available_source {f : Clif.Function} {result : Result}

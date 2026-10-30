@@ -1,6 +1,5 @@
 import FV.Backend.Proof.StockMinMaxWideCalls
 import FV.Backend.Proof.StockMinMaxNarrowValues
-import FV.Backend.Proof.StockMinMaxNarrowAllocation
 namespace Backend.Stock.Proof.ScalarSelect
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 open MinMaxRegisterFixture Backend.Stock.Proof.ScalarCmp

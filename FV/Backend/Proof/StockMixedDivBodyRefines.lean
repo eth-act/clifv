@@ -1,10 +1,9 @@
-import FV.Backend.Proof.StockScalarContract
-import FV.Backend.Proof.StockDivReturnRefines
+import FV.Backend.Proof.StockDivScanRefines
 import FV.Backend.Proof.StockLocalSourceExecution
+import FV.Backend.Proof.StockPureReturnRefines
 import FV.Backend.Proof.StockPureNotrap
 import FV.Backend.Proof.StockScanSemantics
 import FV.Backend.Proof.IselCmpDiv
-import FV.Backend.Proof.StockDivBodyRefines
 import FV.Backend.Proof.StockHighMulBodyRefines
 import FV.Backend.Proof.StockGuardedOmission
 import FV.Backend.Proof.StockPureBodyFamilies

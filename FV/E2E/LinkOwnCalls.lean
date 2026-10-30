@@ -1,5 +1,7 @@
+import FV.Backend.Proof.LowerLoop
 import FV.E2E.LinkOwnCallsDefs
-import FV.E2E.SpillCtlCheck
+import FV.Backend.Proof.LowerDecide
+import FV.Backend.Proof.SpillLocal
 
 /-! # The call sites of the compiler's own output (`callRegs/blrRegs`; L2a)
 

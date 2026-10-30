@@ -1,5 +1,4 @@
 import FV.Backend.Proof.IselCovFns
-import FV.Backend.EmitOk
 
 /-!
 # Emission conditions of the ISLE lowering (V6c): the transfer functions

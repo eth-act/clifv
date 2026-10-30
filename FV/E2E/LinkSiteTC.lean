@@ -1,7 +1,5 @@
 import FV.E2E.LinkCheck
 import FV.E2E.LinkCheckFast
-import FV.E2E.CalleeWith
-import FV.Link.DeadCleanupImage
 import FV.Backend.Proof.IselCtlCallF
 
 /-! # The call-site checks with typed `try_call`s (S11e6, #419)

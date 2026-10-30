@@ -1,5 +1,4 @@
 import FV.Backend.Proof.KillOfV
-import FV.Backend.Proof.KillCtor
 import FV.Backend.Proof.DefRuns
 import FV.Backend.Proof.DefGenDom
 

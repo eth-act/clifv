@@ -7,7 +7,7 @@ Author(s): Shilpi Goel, Yan Peng
 -- Modified by fv-compiler-rust (2026): ported to Lean v4.34.1, module prefix FV.Arm, wrapped in
 -- namespace Arm; GPR transfer register 31 is XZR (ASL `X[t]`), upstream used SP.
 
-import FV.Arm.Decode
+import FV.Arm.Decode.LDST
 import FV.Arm.Insts.Common
 
 namespace Arm

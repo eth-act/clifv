@@ -1,4 +1,4 @@
-import FV.Backend.Proof.IselCmpMinMax
+import FV.Backend.Proof.IselCmpSelect
 
 /-!
 # Family C: vector min/max (1233/1239/1245/1251) are vacuous in E

@@ -1,3 +1,4 @@
+import Std.Data.HashMap
 import FV.Link.Ld.Write
 
 /-! # The ELF writer's output read back (L2b stage 3b)

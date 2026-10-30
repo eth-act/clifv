@@ -1,6 +1,5 @@
 import FV.Link.DeadCleanupExeTrapTWitness
 import FV.Link.DeadCleanupExeTrapTNB
-import FV.Link.DeadCleanupExeTrapPeakNBWitness
 
 /-!
 # Witness: the `try_call` callee-trap source theorems without the memory bound apply (A2/B1)

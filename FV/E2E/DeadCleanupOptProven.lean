@@ -1,4 +1,4 @@
-import FV.E2E.OptProven
+import FV.Opt.Proof.SimpPass
 import FV.E2E.DeadCleanupOpt
 
 namespace E2E

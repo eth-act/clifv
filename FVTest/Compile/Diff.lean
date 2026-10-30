@@ -1,4 +1,5 @@
-import FV.Compile
+import FV.Compile.Model
+import FV.Compile.Subset
 import FVTest.Compile.Cases
 
 /-!

@@ -1,4 +1,4 @@
-import FV.E2E.LinkArmIniOf
+import FV.E2E.LinkArmProphThm
 
 /-!
 # A certified evaluator of the linked machine (SEM1 #537, witnesses)

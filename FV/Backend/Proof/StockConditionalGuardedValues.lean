@@ -1,4 +1,5 @@
 import FV.Backend.Proof.StockConditionalBodyCalls
+import FV.Backend.Proof.StockConditionalNoDefs
 import FV.Backend.Proof.StockConditionalWideAllocation
 import FV.Backend.Proof.StockConditionalParameterSelection
 import FV.Backend.Proof.StockConditionalBodyRefines

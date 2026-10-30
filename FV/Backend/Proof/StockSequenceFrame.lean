@@ -1,4 +1,4 @@
-import FV.Backend.Proof.StockSequence
+import FV.Backend.Proof.IselCmpRun
 
 namespace Backend.Stock.Proof.Sequence
 open Backend Backend.Proof

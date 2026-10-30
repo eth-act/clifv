@@ -7,8 +7,6 @@ Author(s): Alex Keizer, Siddharth Bhat
 
 import FV.Arm.State
 import FV.Arm.Tactics.Common
-import FV.Arm.Tactics.Attr
-import FV.Arm.Tactics.Simp
 import FV.Arm.Tactics.Sym.Common
 
 import Std.Data.HashMap

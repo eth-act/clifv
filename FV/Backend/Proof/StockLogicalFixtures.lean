@@ -1,4 +1,5 @@
-import FV.Backend.Proof.StockLogicalObserved
+import FV.Backend.Proof.StockAliasSemantics
+import FV.Backend.Proof.LowerDecide
 
 /-! Shared actual logical-run fixtures; reused by helper, root and record witnesses. -/
 namespace Backend.Stock.Proof.LogicalSemantics

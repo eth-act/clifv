@@ -1,5 +1,5 @@
 import FV.Backend.Lowering.StockLogical
-import FV.Backend.StockMixedCheck
+import FV.Backend.StockArithmeticCheck
 
 namespace Backend.Stock.Logical
 open Backend.Proof.Driver

@@ -1,5 +1,5 @@
 import FV.E2E.BackendPairRunD
-import FV.E2E.BackendTwoRunS
+import FV.E2E.RegLevelTwoRunS
 
 /-!
 # Two activations along one CLIF run, the reads of the pair run guarded (SEM1 #537, #699)

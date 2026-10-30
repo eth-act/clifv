@@ -1,3 +1,4 @@
+import FV.Backend.Proof.StockSelectNonzeroActualValues
 import FV.Backend.Proof.StockSelectNonzeroAllocation
 import FV.Backend.Proof.StockSelectConditionCalls
 import FV.Backend.Proof.StockSelectOriginalSourceMatch

@@ -1,4 +1,5 @@
-import FV.Backend.Proof.StockCfgReturnBlockAt
+import FV.Backend.Proof.StockPerEdgeReturnContract
+import FV.Backend.Proof.StockCfgReturnBlock
 
 namespace Backend.Stock.Proof.CfgReturnAt
 open Backend.Proof Backend.Proof.Driver

@@ -1,5 +1,5 @@
 import FV.E2E.BackendTwoRunNIUP
-import FV.E2E.BackendTwoRunNIUWitness
+import FV.E2E.BackendTwoRunLRWitness
 
 /-!
 # Witness for the two-run lock with the first run's segment start and the return facts

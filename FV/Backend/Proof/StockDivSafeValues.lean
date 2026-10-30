@@ -1,4 +1,5 @@
-import FV.Backend.Proof.StockDivGeneralValues
+import FV.Backend.Proof.StockDivDividendValues
+import FV.Backend.Proof.StockDivUdivWideValues
 import FV.Backend.Proof.StockDivSafeObservations
 namespace Backend.Stock.Proof.ScalarDiv
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

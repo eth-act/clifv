@@ -1,6 +1,7 @@
+import FV.Backend.Proof.StockNoOpportunityPre
 import FV.Backend.Proof.IselCovTab
 import FV.Backend.Proof.IselCovSound
-import FV.Backend.Proof.StockOverflowPatterns
+import FV.Backend.Proof.StockDFG
 
 /-! Reuse the existing abstract coverage summaries while forbidding
 opportunistic-def constructor calls. This is a fixed-program proof table,
@@ -10,9 +11,6 @@ open Backend.Proof Backend.Proof.Cov Isle Isle.Interp Isle.Aarch64
 attribute [local irreducible] Isle.Aarch64.program
 set_option maxRecDepth 20000
 set_option maxHeartbeats 8000000
-
-def noOpportunityPre (t : TermId) (args : List AW) : Bool :=
-  t != TId.opportunistic_def && apre t args
 
 private def noOpportunityEntryOk (e : TermId × List AW × AW) : Bool :=
   (program.rulesOf e.1).all

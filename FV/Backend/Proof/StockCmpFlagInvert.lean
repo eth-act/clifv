@@ -1,4 +1,5 @@
-import FV.Backend.Proof.StockCmpPure
+import FV.Backend.Proof.StockProjection
+import FV.Backend.Proof.IselCtlTry
 namespace Backend.Stock.Proof.ScalarCmp
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 set_option maxRecDepth 20000

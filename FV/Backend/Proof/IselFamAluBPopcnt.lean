@@ -1,4 +1,4 @@
-import FV.Backend.Proof.IselFamAluBBfm
+import FV.Backend.Proof.IselFamAluBRotTerms
 
 /-!
 # Family B: `popcnt` (`lower.isle:2074–2092`)

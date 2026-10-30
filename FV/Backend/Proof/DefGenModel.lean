@@ -1,7 +1,7 @@
 import FV.Backend.Proof.DefGenOracle
 import FV.Backend.Proof.DefGenWrap
 import FV.Backend.Proof.DefGenSound
-import FV.Backend.Proof.KillDriver
+import FV.Backend.Proof.KillTermIds
 import FV.Backend.Proof.IselFlowData
 import FV.Backend.Proof.IselShpTotal
 import FV.Backend.Proof.IselShpOracle

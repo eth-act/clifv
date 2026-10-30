@@ -1,4 +1,5 @@
-import FV.E2E.LinkArmProgInst
+import FV.E2E.LinkArmCallDecode
+import FV.E2E.LinkArmTabCount
 import FV.E2E.LinkArmInvokedStep
 
 /-!

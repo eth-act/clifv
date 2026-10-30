@@ -1,4 +1,6 @@
+import FV.Backend.Proof.StockLinearCfgShape
 import FV.Backend.Proof.StockLinearCfgDemand
+import FV.Backend.Proof.StockCfgReturnTrapAt
 import FV.Backend.Proof.StockCfgJumpTrapAt
 import FV.Backend.Proof.StockJumpEntryPrelude
 

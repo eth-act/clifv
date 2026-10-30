@@ -1,4 +1,3 @@
-import FV.Backend.Proof.IselFamAluBShiftBase
 import FV.Backend.Proof.IselFamAluBIconst
 
 /-!

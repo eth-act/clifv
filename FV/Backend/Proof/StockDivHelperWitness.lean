@@ -1,5 +1,4 @@
 import FV.Backend.Proof.StockDivHelpers
-import FV.Backend.Proof.StockDivFlags
 namespace Backend.Stock.Proof.ScalarDiv
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 private def framed : State := {sinkState with demand := #[2,1],sunk := #[true,false]}

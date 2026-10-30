@@ -19,7 +19,6 @@ Released under Apache 2.0 license; see third_party/NOTICE-lnsym.md.
 --
 -- Half precision (`ftype = 11`) is not modelled. (VeriISLE has no spec for `MInst.FpuCSel*`.)
 
-import FV.Arm.Decode
 import FV.Arm.Insts.Common
 import FV.Arm.Insts.DPSFP.FP_data_processing_one_source
 

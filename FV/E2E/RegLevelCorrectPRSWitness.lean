@@ -1,5 +1,5 @@
 import FV.E2E.RegLevelCorrectPRS
-import FV.E2E.RegLevelCorrectPWitness
+import FV.E2E.RegLevelCorrectIWitness
 import FV.E2E.LinkArmProphReg
 
 /-!

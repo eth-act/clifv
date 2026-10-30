@@ -1,6 +1,6 @@
 import Lean
-import FV.Backend.Proof.StockPrologueInput
 import FV.Backend.Lowering.StockD0
+import FV.Backend.Lowering.StockPrologue
 
 set_option autoImplicit false
 namespace Backend.Stock.Prologue

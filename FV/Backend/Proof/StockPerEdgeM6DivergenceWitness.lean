@@ -1,6 +1,8 @@
+import FV.Backend.Proof.IselExtern
 import FV.Backend.Proof.PerEdgeRegallocSound
 import FV.Backend.Proof.RegallocCSem
-import FV.Backend.Proof.StockPerEdgeCheckerWitness
+import FV.Backend.Lowering.Stock
+import FV.Backend.Proof.LowerDecide
 namespace Backend.Stock.Proof.PerEdgeM6DivergenceWitness
 open Backend.Proof Backend.Proof.Driver
 set_option maxRecDepth 20000

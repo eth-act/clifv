@@ -543,7 +543,8 @@ fn export(args: &Args, tg: &Target) -> Result<()> {
     // Manifest: input hashes and per-file rule counts from the *AST* (the
     // parser's `Def::Rule`s, independent of the exported sema rules).
     {
-        let mut body = module_header(tg, &["FV.Isle.Syntax"]);
+        // Plain data (`List (String × Nat …)`): no import needed.
+        let mut body = module_header(tg, &[]);
         body.push_str(
             "/-- `(file, bytes, FNV-1a 64)` of every input with `;` comments removed, in load order. -/\n\
              def inputHashes : List (String × Nat × Nat) := [\n",

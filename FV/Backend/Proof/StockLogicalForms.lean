@@ -1,10 +1,11 @@
-import FV.Backend.Proof.StockLogicalRrr
+import FV.Backend.Proof.StockProjection
 import FV.Backend.Proof.StockValues
 import FV.Backend.Proof.IselScopedProjection
 import FV.Backend.Proof.IselFlowGen
 import FV.Backend.Proof.IselRulesALU
 import FV.Backend.Proof.IselFamily
-import FV.Backend.Proof.StockAliasSemantics
+import FV.Backend.Proof.IselTermsLogic
+import FV.Backend.Proof.IselCtlTry
 
 /-! Stock logical immediate and shifted-register helpers reuse pure ALU semantics.
 Actual RHS cases retain mapped registers while recording selected-code demand. -/

@@ -1,4 +1,4 @@
-import FV.Backend.Proof.StockPayloadAliasOrigins
+import FV.Backend.Proof.StockSourceTerminal
 import FV.Backend.Proof.StockCoverageRecords
 
 /-! Reuse the existing provenance-count rank for mapped Stock source aliases.

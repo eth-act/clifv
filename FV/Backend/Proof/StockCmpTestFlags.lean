@@ -1,4 +1,4 @@
-import FV.Backend.Proof.StockCmpFlags
+import FV.Backend.Proof.IselSemCmp
 namespace Backend.Stock.Proof.ScalarCmp
 open Backend.Proof Backend
 /-- Kernel-checked truth of the exact masked flag test used by8-bit comparisons. -/

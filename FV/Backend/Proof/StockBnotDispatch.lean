@@ -1,5 +1,4 @@
-import FV.Backend.Proof.StockBnotRecordValues
-import FV.Backend.Proof.StockLogicalNotXorRecord
+import FV.Backend.Proof.StockBnotMatch
 import FV.Backend.Proof.StockRootOpcodeMatch
 
 namespace Backend.Stock.Proof.BnotComplete

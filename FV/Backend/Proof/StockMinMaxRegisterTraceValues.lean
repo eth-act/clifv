@@ -1,6 +1,5 @@
 import FV.Backend.Proof.StockMinMaxRegisterValues
 import FV.Backend.Proof.StockSelectSourceValues
-import FV.Backend.Proof.IselCmpMinMax
 import FV.Backend.Proof.StockDemandMono
 namespace Backend.Stock.Proof.ScalarSelect
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

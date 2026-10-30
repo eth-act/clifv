@@ -34,17 +34,20 @@ theorem sw_wmb_cast {F : BitVec 64 → Prop} {s t : Arm.ArmState} {n m : Nat} (h
 attribute [local csimp_rules] wmb_cast Arm.BR.exec_barrier Arm.LDST.exec_reg_exclusive
   Insn.armFields.exclFields CTy.bits Arm.r_of_write_mem_bytes Arm.ldst_read Arm.read_mem_bytes_of_w
 
-/-- `sw_tac`, also matching equal stored values up to a width cast (`rfl`). -/
+/-- `sw_tac`, also matching equal stored values up to a width cast (`rfl`). The structural
+alternatives unify at reducible transparency: at the default one, a failing `assumption` or
+`SameWorld.w_*` unfolds `Arm.write_mem_bytes` into `ArmState` literals (8 bytes: 33 G heartbeats in
+`corr_storeRelease`, exponential in the byte count) before `sw_wmb_cast` applies. -/
 syntax "sw_tac_c" : tactic
 set_option hygiene false in
 macro_rules
   | `(tactic| sw_tac_c) => `(tactic| repeat (first
-    | assumption
+    | with_reducible assumption
     | contradiction
     | (refine SameWorld.ite_both (fun _ => ?_) (fun _ => ?_))
-    | (refine SameWorld.w_left ?_ ?_; · (simp [Masked]; try omega))
-    | (refine SameWorld.w_right ?_ ?_; · (simp [Masked]; try omega))
-    | (refine SameWorld.w_both' ?_ ?_; · veq_tac)
+    | ((with_reducible refine SameWorld.w_left ?_ ?_); · (simp [Masked]; try omega))
+    | ((with_reducible refine SameWorld.w_right ?_ ?_); · (simp [Masked]; try omega))
+    | ((with_reducible refine SameWorld.w_both' ?_ ?_); · veq_tac)
     | (refine sw_wmb_cast ?hc _ _ _ (by simp [BitVec.toNat_cast]) ?_; case hc => rfl)
     | (refine SameWorld.write_mem_bytes' ?_ ?_ ?_
        · first | (apply BitVec.eq_of_toNat_eq; simp [BitVec.toNat_cast]; done) | veq_tac

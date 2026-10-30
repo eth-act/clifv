@@ -1,5 +1,5 @@
 import FV.Backend.Proof.StockSelectDecodeFlags
-import FV.Backend.Proof.StockSelectObserved
+import FV.Backend.Proof.StockSelectRequests
 namespace Backend.Stock.Proof.ScalarSelect
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 set_option maxRecDepth 20000

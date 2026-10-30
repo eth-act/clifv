@@ -1,5 +1,6 @@
-import FV.Backend.Proof.StockEntryCode
 import Init.Data.Array.MapIdx
+import FV.Backend.Proof.StockEntryOrder
+import FV.Backend.Proof.StockEdgeCode
 
 namespace Backend.Stock.Proof
 open Backend.Proof Backend.Proof.Driver

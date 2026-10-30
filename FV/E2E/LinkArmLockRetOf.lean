@@ -1,11 +1,11 @@
 import FV.E2E.BackendTwoRunEitherK
 import FV.E2E.LinkArmDetRunTwin
+import FV.E2E.LinkArmLockedCallee
 import FV.E2E.LinkArmHCallLock
 import FV.E2E.LinkArmStage2E
 import FV.E2E.LinkArmIniOf
 import FV.E2E.IselCallsOneAll
 import FV.E2E.LinkArmXNIF
-import FV.E2E.LinkArmTwinCRun
 
 /-!
 # The lock to the return from the two-run theorem (SEM1 #537, #713, step 5)

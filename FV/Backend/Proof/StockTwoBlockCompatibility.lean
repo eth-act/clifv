@@ -1,3 +1,5 @@
+import FV.Backend.Proof.StockOutgoingVectors
+import FV.Backend.Proof.StockComputedCfg
 import FV.Backend.Proof.StockTwoBlockShape
 import FV.Backend.Proof.PerEdgeLegacyCompatible
 

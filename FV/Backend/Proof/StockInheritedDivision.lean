@@ -1,3 +1,4 @@
+import FV.Backend.Proof.StockInheritedBody
 import FV.Backend.Proof.StockInheritedFrame
 
 namespace Backend.Stock.Proof.Inherited

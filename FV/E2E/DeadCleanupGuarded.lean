@@ -1,5 +1,5 @@
 import FV.E2E.Guarded
-import FV.E2E.DeadCleanupContracts
+import FV.Backend.Proof.DeadCleanupAdapter
 
 namespace E2E
 open Backend Backend.Proof Backend.DeadCleanup

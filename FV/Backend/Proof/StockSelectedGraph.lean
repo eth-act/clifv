@@ -1,6 +1,8 @@
-import FV.Backend.Proof.StockOrderGraph
 import Init.Data.Array.MapIdx
 import FV.Backend.Proof.LowerLemmas
+import FV.Backend.Proof.LowerSim
+import FV.Backend.Proof.LowerCert
+import FV.Backend.Proof.StockEdgeCode
 namespace Backend.Stock.Proof
 open Backend.Proof Backend.Proof.Driver
 set_option maxRecDepth 20000

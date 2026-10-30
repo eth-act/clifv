@@ -1,5 +1,5 @@
-import FV.Backend.Proof.StockCmpMachineValues
 import FV.Backend.Proof.IselCmpSelect
+import FV.Backend.Proof.StockAliasSemantics
 namespace Backend.Stock.Proof.ScalarSelect
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 /-- A decoded flag producer and actual csel compute the selected original

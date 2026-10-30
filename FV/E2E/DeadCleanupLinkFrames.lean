@@ -1,7 +1,6 @@
 import FV.E2E.LinkOwnFrames
 import FV.E2E.LinkOwnRets
 import FV.Backend.Proof.DeadCleanupPrepareMap
-import FV.Backend.Proof.DeadCleanupPositions
 
 namespace E2E.LinkCheck
 open Backend Backend.Proof Backend.Proof.Driver Backend.DeadCleanup

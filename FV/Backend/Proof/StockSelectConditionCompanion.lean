@@ -1,4 +1,3 @@
-import FV.Backend.Proof.StockSelectConditionInvertShape
 import FV.Backend.Proof.StockCmpCondition
 namespace Backend.Stock.Proof.ScalarSelect
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

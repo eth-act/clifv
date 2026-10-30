@@ -1,5 +1,5 @@
-import FV.E2E.LinkArmProgramInitEX
-import FV.E2E.LinkArmTwinCE
+import FV.E2E.LinkArmIniOf
+import FV.E2E.LinkArmThmPRBG
 
 /-!
 # The linked program under the machine's own slot table, corrected determinism (SEM1 #537, #719, #716)

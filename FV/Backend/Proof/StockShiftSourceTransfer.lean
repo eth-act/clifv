@@ -1,6 +1,7 @@
-import FV.Backend.Proof.StockShiftDispatch
 import FV.Backend.Proof.StockGuardedRecordValues
 import FV.Backend.Proof.IselFamAluBShiftBase
+import FV.Backend.Proof.StockAluOperandCoverage
+import FV.Backend.Proof.StockShiftRecordValues
 namespace Backend.Stock.Proof.ShiftComplete
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 open Backend.Stock.Proof.ScalarShift

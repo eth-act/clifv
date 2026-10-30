@@ -1,3 +1,4 @@
+import FV.E2E.CompiledSemanticNI
 import FV.E2E.StockNarrowChecks
 namespace E2E.StockNarrowNIWitness
 open Backend Backend.Proof Backend.Proof.Driver Backend.Stock.D0

@@ -1,3 +1,5 @@
+import FV.Backend.Proof.StockSelectComparisonValues
+import FV.Backend.Proof.StockSelectConditionSuccess
 import FV.Backend.Proof.StockSelectComparisonActualFixture
 namespace Backend.Stock.Proof.ScalarSelect.ComparisonActualWitness
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

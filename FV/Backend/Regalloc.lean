@@ -1,3 +1,4 @@
+import FV.Backend.StackAlloc
 import FV.Backend.SpillAlloc
 import Lean.Data.Json
 import FV.Backend.Proof.PrepareCheck

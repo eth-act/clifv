@@ -1,7 +1,5 @@
-import FV.Backend.Proof.StockRotateNarrowImmSourceValues
-import FV.Backend.Proof.StockRotateWideImmSourceValues
-import FV.Backend.Proof.StockRotateNarrowSourceValues
-import FV.Backend.Proof.StockRotateWideSourceValues
+import FV.Backend.Proof.IselCtlRuleIds
+import FV.Backend.Proof.StockRotateMatch
 import FV.Backend.Proof.StockRootOpcodeMatch
 namespace Backend.Stock.Proof.ScalarRotate
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

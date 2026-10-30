@@ -3,7 +3,6 @@ import FV.Backend.Proof.DriverCheckT
 import FV.Backend.Proof.IselCtlUnmatchTI
 import FV.Backend.Proof.IselCtlTermTI
 import FV.Backend.Proof.IselCtlBranchTI
-import FV.Backend.Proof.IselCtlTryTI
 import FV.Compile.TryArgClass
 
 /-!

@@ -1,4 +1,4 @@
-import FV.Backend.ArithmeticProduction
+import FV.Backend.ScalarProduction
 import FV.Backend.Lowering.StockArithmeticNI
 
 namespace Backend

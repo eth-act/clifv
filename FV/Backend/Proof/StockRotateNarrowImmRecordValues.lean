@@ -1,3 +1,4 @@
+import FV.Backend.Proof.StockDemandExtent
 import FV.Backend.Proof.StockRotateNarrowValues
 import FV.Backend.Proof.StockGuardedRecordValues
 namespace Backend.Stock.Proof.ScalarRotate

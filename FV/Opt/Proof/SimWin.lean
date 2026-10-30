@@ -1,6 +1,5 @@
 import FV.Opt.Proof.SemSimX
 import FV.Opt.Proof.DomInv
-import FV.Opt.Proof.SimpSim
 
 /-!
 # Fresh-value windows: from pass simulations to `IsSimX`
