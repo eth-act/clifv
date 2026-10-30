@@ -67,6 +67,8 @@ import FVTest.Link.FloatScopeTotalT3F
 #print axioms E2E.ctlSpillB_of_TF
 #print axioms E2E.ctlInsts_pipelineTF
 #print axioms E2E.emitConds_lowerTF
+#print axioms E2E.poolReachB_of_sizeTF
+#print axioms E2E.LinkCheck.poolReachB_of_T3F
 #print axioms E2E.LinkCheck.resClassOkB_of_TF
 #print axioms E2E.LinkCheck.lowersTCB_of_T3F
 #print axioms E2E.LinkCheck.fnScopeInTCB_of_T3F

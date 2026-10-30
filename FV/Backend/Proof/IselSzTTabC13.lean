@@ -18,7 +18,7 @@ namespace Backend.Proof.CovT
 
 open Backend Backend.Proof Backend.Proof.Driver Isle Isle.Aarch64
 
-theorem szCTabT26_len : (szCTabT26).length ≤ 10 * 1 := by decide +kernel
+theorem szCTabT26_len : (szCTabT26).length ≤ 11 * 1 := by decide +kernel
 
 theorem szCTabT26_p0 : (((szCTabT26).drop (0 * 1)).take 1).all szEntryOkT = true := by
   decide +kernel
@@ -50,8 +50,11 @@ theorem szCTabT26_p8 : (((szCTabT26).drop (8 * 1)).take 1).all szEntryOkT = true
 theorem szCTabT26_p9 : (((szCTabT26).drop (9 * 1)).take 1).all szEntryOkT = true := by
   decide +kernel
 
+theorem szCTabT26_p10 : (((szCTabT26).drop (10 * 1)).take 1).all szEntryOkT = true := by
+  decide +kernel
+
 theorem szCTabT26_ok : (szCTabT26).all szEntryOkT = true :=
-  all_of_chunks _ _ 1 10 szCTabT26_len fun c hc => match c, hc with
+  all_of_chunks _ _ 1 11 szCTabT26_len fun c hc => match c, hc with
     | 0, _ => szCTabT26_p0
     | 1, _ => szCTabT26_p1
     | 2, _ => szCTabT26_p2
@@ -62,7 +65,8 @@ theorem szCTabT26_ok : (szCTabT26).all szEntryOkT = true :=
     | 7, _ => szCTabT26_p7
     | 8, _ => szCTabT26_p8
     | 9, _ => szCTabT26_p9
-    | _ + 10, hc => absurd hc (by omega)
+    | 10, _ => szCTabT26_p10
+    | _ + 11, hc => absurd hc (by omega)
 
 theorem tgCTabT0_len : (tgCTabT0).length ≤ 88 * 1 := by decide +kernel
 

@@ -18,7 +18,8 @@ typed scope's theorems, the run-time checks of the lowering's output hold:
   with `CovT.iselCtlOnF`);
 * of `prepare`'s output: `formsCoveredB` (`formsCoveredB_completeTF`), `ctlInstsB`
   (`ctlInsts_pipelineTF`), `emitCondsB` (`emitConds_lowerTF`; also after the dead-code cleanup,
-  `emitConds_cleanup_lowerTF`).
+  `emitConds_cleanup_lowerTF`), given the literal loads' reach `poolReachB` (#565; from the input
+  bound below `2 ^ 17` words by `poolReachB_of_sizeTF`).
 
 The analyses' tables cover the float families 31-35 of `CovT.famTab`; `prepare`'s domain comes
 from `Spill.prepDomain_ofTF` (no lowering validator).
@@ -82,33 +83,48 @@ theorem ctlInsts_pipelineTF {f : Clif.Function} {vc vcp : VCode} (hdom : dominat
   ctlInsts_pipelineG hs.externsE (CovT.iselCtlOnF hdom hs hfa hst hsel ha)
     (Spill.prepDomain_ofTF hs hl) hdom ha hec hl hp
 
-/-- **The size bound on the float scope** (`spillSizeOkB_of_sizeOkBT`). -/
+/-- **The size bound on the float scope** (`spillSizeOkB_of_sizeOkBT`), when the literal loads
+reach the pool (`hpool`: new with the literal pool, #565; `spillSizeOkB` now includes
+`poolReachB`). -/
 theorem spillSizeOkB_of_sizeOkBTF {f : Clif.Function} {vc vcp : VCode}
     (hdom : dominatedB f = true) (hs : LowerScopeTF f) (hfa : Compile.floatArgsTyped f = true)
     (hst : Compile.storeTypedB f = true) (hsel : Compile.selectTypedB f = true)
-    (hsz : sizeOkB f = true) (hl : lowerFunction f = .ok vc) (hp : Backend.prepare vc = .ok vcp) :
-    spillSizeOkB vcp = true := by
+    (hsz : sizeOkB f = true) (hl : lowerFunction f = .ok vc) (hp : Backend.prepare vc = .ok vcp)
+    (hpool : poolReachB vcp = true) : spillSizeOkB vcp = true := by
   have h := spillWordBound_le_sizeBoundInT (iselSzTF hdom hs hfa hst hsel) hs.externsE hl hp
   have hb : sizeBoundIn f < 2 ^ 24 := of_decide_eq_true hsz
-  exact decide_eq_true (by omega)
+  exact spillSizeOkB_of (by omega) hpool
 
 /-- `spillSizeOkB_of_sizeOkBTF` through the dead-code cleanup (`prepare (prune vc)`). -/
 theorem spillSizeOkB_cleanup_of_sizeOkBTF {f : Clif.Function} {vc vcp : VCode}
     (hdom : dominatedB f = true) (hs : LowerScopeTF f) (hfa : Compile.floatArgsTyped f = true)
     (hst : Compile.storeTypedB f = true) (hsel : Compile.selectTypedB f = true)
     (hsz : sizeOkB f = true) (hl : lowerFunction f = .ok vc)
-    (hp : Backend.prepare (prune vc) = .ok vcp) : spillSizeOkB vcp = true := by
+    (hp : Backend.prepare (prune vc) = .ok vcp) (hpool : poolReachB vcp = true) :
+    spillSizeOkB vcp = true := by
   have h := spillWordBound_cleanup_le_sizeBoundInT (iselSzTF hdom hs hfa hst hsel) hs.externsE hl hp
   have hb : sizeBoundIn f < 2 ^ 24 := of_decide_eq_true hsz
-  exact decide_eq_true (by omega)
+  exact spillSizeOkB_of (by omega) hpool
+
+/-- `poolReachB` from the input bound below `2 ^ 17` words (1 MiB) on the float scope
+(`poolReachB_of_sizeT`). -/
+theorem poolReachB_of_sizeTF {f : Clif.Function} {vc vcp : VCode}
+    (hdom : dominatedB f = true) (hs : LowerScopeTF f) (hfa : Compile.floatArgsTyped f = true)
+    (hst : Compile.storeTypedB f = true) (hsel : Compile.selectTypedB f = true)
+    (h17 : sizeBoundIn f < 2 ^ 17) (hl : lowerFunction f = .ok vc)
+    (hp : Backend.prepare vc = .ok vcp) : poolReachB vcp = true := by
+  have h := spillWordBound_le_sizeBoundInT (iselSzTF hdom hs hfa hst hsel) hs.externsE hl hp
+  simp only [poolReachB, Bool.or_eq_true, decide_eq_true_eq]
+  exact .inl (by omega)
 
 /-- **The emission conditions of the float scope's pipeline output** (`emitConds_lowerT`). -/
 theorem emitConds_lowerTF {f : Clif.Function} {vc vcp : VCode} (hdom : dominatedB f = true)
     (hs : LowerScopeTF f) (hfa : Compile.floatArgsTyped f = true)
     (hst : Compile.storeTypedB f = true) (hsel : Compile.selectTypedB f = true)
     (hw : extendsWidenB f = true) (hbw : bitcastWidthB f = true) (hsz : sizeOkB f = true)
-    (hl : lowerFunction f = .ok vc) (hp : Backend.prepare vc = .ok vcp) : emitCondsB vcp = true := by
-  have h0 := spillSizeOkB_of_sizeOkBTF hdom hs hfa hst hsel hsz hl hp
+    (hl : lowerFunction f = .ok vc) (hp : Backend.prepare vc = .ok vcp)
+    (hpool : poolReachB vcp = true) : emitCondsB vcp = true := by
+  have h0 := spillSizeOkB_of_sizeOkBTF hdom hs hfa hst hsel hsz hl hp hpool
   obtain ⟨h1, h2, h3⟩ := emitParts_lowerTF hs (iselEmitTF hdom hs hfa hst hsel hw hbw) hl hp
   simp [emitCondsB, h0, h1, h2, h3]
 
@@ -117,9 +133,9 @@ theorem emitConds_cleanup_lowerTF {f : Clif.Function} {vc vcp : VCode}
     (hdom : dominatedB f = true) (hs : LowerScopeTF f) (hfa : Compile.floatArgsTyped f = true)
     (hst : Compile.storeTypedB f = true) (hsel : Compile.selectTypedB f = true)
     (hw : extendsWidenB f = true) (hbw : bitcastWidthB f = true) (hsz : sizeOkB f = true)
-    (hl : lowerFunction f = .ok vc) (hp : Backend.prepare (prune vc) = .ok vcp) :
-    emitCondsB vcp = true := by
-  have h0 := spillSizeOkB_cleanup_of_sizeOkBTF hdom hs hfa hst hsel hsz hl hp
+    (hl : lowerFunction f = .ok vc) (hp : Backend.prepare (prune vc) = .ok vcp)
+    (hpool : poolReachB vcp = true) : emitCondsB vcp = true := by
+  have h0 := spillSizeOkB_cleanup_of_sizeOkBTF hdom hs hfa hst hsel hsz hl hp hpool
   obtain ⟨h1, h2, h3⟩ := emitParts_cleanup_lowerTF hs (iselEmitTF hdom hs hfa hst hsel hw hbw) hl hp
   simp [emitCondsB, h0, h1, h2, h3]
 
