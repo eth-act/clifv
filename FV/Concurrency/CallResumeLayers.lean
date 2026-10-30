@@ -49,6 +49,117 @@ theorem writeM_fun {V : Type} (g : Loc → V) :
 
 theorem calleeSaved_allocatable : ∀ c ∈ calleeSaved, c.allocatable = true := by decide
 
+/-! ## A call has at most one def operand per def (#587: `csem` keeps `info.defs.length` results) -/
+
+/-- The operand collector of `MInst.operands`. -/
+private def collectD (s : OpSpec) (r : Reg) : StateT (Array Operand) (Except String) Reg := do
+  match r with
+  | .vreg n cls => modify (·.push ⟨n, cls, s.kind, s.pos, s.con⟩); pure r
+  | _ =>
+    if r.allocatable then throw s!"allocatable real register {repr r} as an operand"
+    else pure r
+
+private theorem operands_eqD (i : MInst) :
+    i.operands = (do let (_, ops) ← (MInst.visitOperands collectD i).run #[]; pure ops) := rfl
+
+/-- The number of def operands. -/
+private def nDef (s : Array Operand) : Nat := (s.toList.filter Operand.isDef).length
+
+/-- A collector step pushes at most `k` def operands. -/
+private structure DefLe {α : Type} (k : Nat) (x : StateT (Array Operand) (Except String) α) :
+    Prop where
+  run : ∀ s a s', x.run s = .ok (a, s') → nDef s' ≤ nDef s + k
+
+private theorem DefLe.pure' {α : Type} (a : α) :
+    DefLe 0 (Pure.pure a : StateT (Array Operand) (Except String) α) :=
+  ⟨fun s c s' h => by cases h; omega⟩
+
+private theorem DefLe.bind {α β : Type} {k1 k2 : Nat} {x : StateT (Array Operand) (Except String) α}
+    {f : α → StateT (Array Operand) (Except String) β} (hx : DefLe k1 x)
+    (hf : ∀ a, DefLe k2 (f a)) : DefLe (k1 + k2) (x >>= f) := by
+  refine ⟨fun s c s'' h => ?_⟩
+  rw [StateT.run_bind] at h
+  cases hr : x.run s with
+  | error e => rw [hr] at h; cases h
+  | ok p =>
+    obtain ⟨a, s'⟩ := p
+    rw [hr] at h
+    have := hx.run s a s' hr
+    have := (hf a).run s' c s'' h
+    omega
+
+private theorem DefLe.map {α β : Type} {k : Nat} (g : α → β)
+    {x : StateT (Array Operand) (Except String) α} (hx : DefLe k x) : DefLe k (g <$> x) := by
+  rw [map_eq_pure_bind]
+  have := DefLe.bind hx fun a => DefLe.pure' (g a)
+  simpa using this
+
+private theorem DefLe.mono {α : Type} {k k' : Nat} {x : StateT (Array Operand) (Except String) α}
+    (hx : DefLe k x) (h : k ≤ k') : DefLe k' x :=
+  ⟨fun s a s' hr => by have := hx.run s a s' hr; omega⟩
+
+private theorem DefLe.collect (sp : OpSpec) (r : Reg) :
+    DefLe (if sp.kind = .def then 1 else 0) (collectD sp r) := by
+  refine ⟨fun s a s' h => ?_⟩
+  cases r
+  case vreg n c =>
+    simp only [collectD, StateT.run, modify, modifyGet, MonadStateOf.modifyGet] at h
+    cases h
+    simp only [nDef, Array.toList_push, List.filter_append, List.length_append]
+    cases hk : sp.kind <;> simp [List.filter_cons, Operand.isDef, hk]
+  all_goals
+    simp only [collectD] at h
+    split at h
+    · cases h
+    · cases h; omega
+
+private theorem DefLe.collectUse (sp : OpSpec) (r : Reg) (hk : sp.kind = .use) :
+    DefLe 0 (collectD sp r) := by
+  have := DefLe.collect sp r
+  rw [hk] at this
+  simpa using this
+
+private theorem DefLe.collectOne (sp : OpSpec) (r : Reg) : DefLe 1 (collectD sp r) :=
+  (DefLe.collect sp r).mono (by split <;> omega)
+
+private theorem DefLe.mapM' {α β : Type} {k : Nat} {F : α → StateT (Array Operand) (Except String) β}
+    (h : ∀ a, DefLe k (F a)) : ∀ l : List α, DefLe (k * l.length) (l.mapM F)
+  | [] => by simpa using DefLe.pure' ([] : List β)
+  | a :: l => by
+    rw [List.mapM_cons]
+    have := DefLe.bind (h a) fun b =>
+      DefLe.bind (DefLe.mapM' h l) fun bs => DefLe.pure' (b :: bs)
+    refine this.mono ?_
+    simp only [List.length_cons, Nat.mul_add, Nat.mul_one]
+    omega
+
+/-- **A call's def operands** are at most its defs (a def in a real register adds none). -/
+theorem call_defs_le {info : CallInfo} {ops : Array Operand}
+    (h : (MInst.call info).operands = .ok ops) :
+    (ops.toList.filter Operand.isDef).length ≤ info.defs.length := by
+  have hv : DefLe info.defs.length (MInst.visitOperands collectD (.call info)) := by
+    obtain ⟨dest, uses, defs⟩ := info
+    cases dest <;> simp only [MInst.visitOperands] <;> apply DefLe.mono <;>
+      (repeat'
+        first
+        | exact DefLe.pure' _
+        | exact DefLe.collectUse _ _ rfl
+        | exact DefLe.collectOne _ _
+        | apply DefLe.mapM'
+        | apply DefLe.map
+        | apply DefLe.bind
+        | intro _) <;>
+      simp [OpSpec.use, OpSpec.fixedUse, OpSpec.fixedDef]
+  rw [operands_eqD] at h
+  cases hr : (MInst.visitOperands collectD (.call info)).run #[] with
+  | error e => rw [hr] at h; cases h
+  | ok p =>
+    obtain ⟨i₀, ops'⟩ := p
+    rw [hr] at h
+    cases h
+    have := hv.run #[] i₀ ops hr
+    simpa [nDef] using this
+
 /-! ## Layer 4b to 4a: the allocated `call` step -/
 
 /-- **The allocated code's `call` step after the callee's return** (module doc). -/
@@ -93,9 +204,16 @@ theorem mstep_call {R : RL} {s y : ArmState} {b k : Nat} {allocs : Array Loc}
     fun p hp => hzip p ((List.mem_filter.mp hp).1)
   have hm1 := writeM_fun (locVal R.fr y) early m hearly
   have hm' := writeM_fun (locVal R.fr y) late m2 hlate
+  have hD : D.length ≤ info.defs.length := by
+    have := congrArg List.length (pairs_fst hsz.symm Operand.isDef)
+    rw [List.length_map] at this
+    rw [this]; exact call_defs_le hops
   refine ⟨writeM m2 late, ?_, fun l hv hlive => ?_⟩
   · refine MStep.op hvb hi hops hsz ?_ (by simp [outs, D]) (HavocOuts.refl _ _ _) ⟨?_, ?_⟩ (.next hk)
-    · simp [csem, xcallX, outs, D]
+    · have hO : outs.length ≤ info.defs.length := by simp only [outs, List.length_map]; exact hD
+      simp only [csem, xcallX, Option.map_some]
+      congr 2
+      exact List.take_of_length_le hO
     · intro l hl
       simp only [m2]
       rw [if_neg (fun ⟨c, hc, he⟩ => hl c hc he)]
