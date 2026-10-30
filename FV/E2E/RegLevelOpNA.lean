@@ -274,7 +274,7 @@ theorem realizes_op_nextNAF {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} (hYF :
       ⟨hst.world.1, fun a ha => hst.world.2.1 a (fun hf => ha (hYF a hf)), hst.world.2.2⟩
     have hY := hRd (allocOk_of_checkStatic hstat) hasg (hl1 {}) hswY herrw halw hsemY env
     exact fun k x t hk s1 hs1 env' a ha p hp q hq =>
-      .inr (.inr ⟨hF k x t hk s1 hs1 env' a ha p hp q hq, hY k x t hk s1 hs1 env' a ha p hp q hq⟩)
+      .inr (.inr (.inl ⟨hF k x t hk s1 hs1 env' a ha p hp q hq, hY k x t hk s1 hs1 env' a ha p hp q hq⟩))
   exact realizes_op_coreXNAF hR hq hvb hi hops hsz hsem hlen hk (exec := fun env => execMInst R.ctx env)
     (fun env => (((hOS env).at (fun _ => RL.FK_F) s).toI _).v R.gv) (Pre := fun u =>
       ∀ regs i' ls1, allocs = regs.map Loc.reg → i.assign regs = .ok i' →
