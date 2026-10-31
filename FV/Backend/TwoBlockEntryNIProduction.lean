@@ -15,7 +15,7 @@ def lowerCheckedTwoBlockEntryNI (f : Clif.Function) (verify : Bool) : Except Str
   | .error _ => lowerCheckedTwoBlockNI f verify
 
 def lowerForAllocationTwoBlockEntryNI (f : Clif.Function) (verify cleanup : Bool) : Except String VCode :=
-  (lowerCheckedTwoBlockEntryNI f verify).map (Stock.Arithmetic.stage cleanup)
+  (lowerCheckedTwoBlockEntryNI f verify).map (Stock.Arithmetic.stageV verify cleanup f)
 
 /-- Retry the previous complete CFG pipeline with the original input,
 allocator and settings if any new CFG attempt is unsupported or fails layout. -/
