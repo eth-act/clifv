@@ -15,6 +15,7 @@ import FV.Opt.Legalize128Pass
 import FVTest.Opt.Common
 import FV.Backend.Proof.IselPrgCtx
 import FV.Backend.Proof.SretStable
+import FV.Backend.CleanupStage
 
 /-!
 # The M7 validators on real code (`lake exe lean-e2e-check [FILE.clif...]`)
