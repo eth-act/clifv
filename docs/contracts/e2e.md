@@ -4805,6 +4805,34 @@ per-function theorem first needs a call semantics indexed by the actual run, thr
 reg-level simulation; new theorem variants will sit beside the existing ones. The heap-side gap
 (allocating externs) is separate: [#547](https://github.com/eth-act/clifv/issues/547) (SEM2).
 
+## Stack probes (unrolled form, #581)
+
+The prologue now emits Cranelift's unrolled stack probes for frames with
+`probeTotal = frameSize (+16 if the function calls)` in [4 KiB, 16 KiB) (`probeLines`,
+docs/contracts/backend.md). Each probe stores 4 zero bytes at `sp₁ - 4096·i` (`sp₁` the `sp`
+after the frame setup), below the frame by up to `probeBelow af` bytes. Statement changes, each
+because the old statement became false with probes (names kept):
+
+* `BodyEntry.mem : w₀.mem = probeMem af s` (was `= s.mem`): the probed bytes are 0 at body
+  entry and can lie in CLIF stack slots. Identical for a function without probes
+  (`probeMem_of_count`).
+* `StackAvail K af s := StackRoom (af.frameSize + 16 + K) s ∧ probeBelow af ≤ K` (the callees'
+  budget covers the probed bytes; `StackAvail.room`/`.frame`/`.probe`/`.of_room`).
+* The program-level budgets: the outside caller provides `frameDrop + (D * M + pbMax)` (peak:
+  `D * d + pbMax`) bytes of stack instead of `frameDrop + D * M`; `pbMax` is the largest
+  `probeBelow` of the program's functions (0 for programs without probing frames). This touches
+  the `_depth`/`_peak`/trap/source theorems of `Link`, `Link.DeadCleanup`, the typed `attemptT`
+  route and `E2E.binary_correct_*`.
+* `OutsideCall.bytes`/`EntryContract.ClifView.bytes`: CLIF slot bytes are read from the
+  post-probe memory (`probeMem (art I f).af r`); `OutsideCall.image` gets the premise that the
+  byte is not probed. `premises*` conclude `StackRoom (frameSize + 16 + K)`.
+* Linking: `LinkSys.Budget κ` also requires `probeBelow (L.A g).af ≤ κ M g` (`budget_K` gives
+  it for `κ = K M`); the machine-side slot-byte tables read `probeMem`. Concurrency:
+  `LinkOk(X).fn` bounds `frameSize + 16 + probeBelow ≤ Mx`.
+
+Frames of 16 KiB and more (Cranelift's `StackProbeLoop`) still get no probes; that form is a
+separate change.
+
 ## Remaining (precise)
 
 M4 (`LowerRulesCorrect` and the terminator statements) and M6 (`RegLevelCorrect`, `DriverSem`,
