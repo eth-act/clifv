@@ -1,0 +1,12 @@
+{
+  "utc": "2026-10-31T02:27:25.964372+00:00",
+  "status": "returned",
+  "memory": "2GiB",
+  "threads": 1,
+  "peer_gate_pid": 2307387,
+  "peer_budget": "14G",
+  "permission": "Standing permission after request853",
+  "own_tree_only": true,
+  "returned_utc": "2026-10-31T02:31:14.402077+00:00",
+  "result": "Direct execution and exact traces for all eleven helpers passed; twelve standard-only roots, all eight old sets exact"
+}

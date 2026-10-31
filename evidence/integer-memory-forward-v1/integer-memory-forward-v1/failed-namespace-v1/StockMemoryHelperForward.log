@@ -1,0 +1,6 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/integer-memory-forward-v1/source/FV/Backend/Proof/StockMemoryHelperForward.lean:29:70: error(lean.unknownIdentifier): Unknown identifier `Data`
+
+Note: It is not possible to treat `Data` as an implicitly bound variable here because the `autoImplicit` option is set to `false`.
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/integer-memory-forward-v1/source/FV/Backend/Proof/StockMemoryHelperForward.lean:61:72: error(lean.unknownIdentifier): Unknown identifier `Data`
+
+Note: It is not possible to treat `Data` as an implicitly bound variable here because the `autoImplicit` option is set to `false`.

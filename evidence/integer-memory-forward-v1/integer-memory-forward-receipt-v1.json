@@ -1,0 +1,85 @@
+{
+  "utc": "2026-10-31T02:32:40.203149+00:00",
+  "status": "passed focused verification; not integrated or landed",
+  "source_sha256": {
+    "StockMemoryHelperProjection.next.lean": "cda8093709f9653ac5947de4c64a2123a67fb27a11d8934bfbedb61ab0e318f8",
+    "StockMemoryHelperContracts.next.lean": "bdd702ef1b3145266bbb9548d12fd41c62c6382e8aebee18d8dc8c148c978fc1",
+    "StockMemoryHelperForward.next.lean": "ff109865da7576a9cc78ed7ecab793908a6fecadfb9b8621d9c603776cc55ebb",
+    "StockMemoryHelperWitness.next.lean": "90d5a936846829126a05bdcd757aba3a243efdce82394a51d9ed43edecfea0e9"
+  },
+  "load_variants": 7,
+  "store_variants": 4,
+  "axiom_sets": {
+    "Backend.Stock.Proof.MemoryHelpers.integer_helpers_project_and_preserve": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.MemoryHelpers.integer_helper_success": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.MemoryHelpers.integer_helper_replay": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.MemoryHelpers.integer_load_contract": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.MemoryHelpers.integer_store_contract": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.MemoryHelpers.integer_helpers_complete_witness": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.MemoryHelpers.integer_loads_complete_witness": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.MemoryHelpers.integer_stores_complete_witness": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.MemoryHelpers.integer_load_forward": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.MemoryHelpers.integer_store_forward": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.MemoryHelpers.integer_load_forward_witness": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.MemoryHelpers.integer_store_forward_witness": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ]
+  },
+  "old_axiom_sets_exact": 8,
+  "prior_witness_source_exact": true,
+  "constructive_contracts": [
+    "Every decoded integer load emits its exact instruction, returns the fresh register, preserves scheduling fields and appends its exact rule",
+    "Every integer store produces its exact side-effect payload, preserves the complete state and appends its exact rule"
+  ],
+  "memory_peak_bytes": 455974912,
+  "memory_oom": 0,
+  "loan_returned": true,
+  "source_gates_unchanged": true,
+  "scope": "Helper execution only; actual retained roots, source/machine memory effects and production activation remain unfinished"
+}

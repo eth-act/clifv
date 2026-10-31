@@ -1,0 +1,37 @@
+{
+  "status": "passed",
+  "records": [
+    {
+      "module": "IselScopedProjectionInv",
+      "returncode": 0,
+      "source_sha256": "10f819df131b084c011454be10576104f941f75608c162e7beaa7f458cba8192"
+    },
+    {
+      "module": "StockMemoryHelperProjection",
+      "returncode": 0,
+      "source_sha256": "cda8093709f9653ac5947de4c64a2123a67fb27a11d8934bfbedb61ab0e318f8"
+    },
+    {
+      "module": "StockMemoryHelperContracts",
+      "returncode": 0,
+      "source_sha256": "bdd702ef1b3145266bbb9548d12fd41c62c6382e8aebee18d8dc8c148c978fc1"
+    },
+    {
+      "module": "StockMemoryHelperForward",
+      "returncode": 0,
+      "source_sha256": "ff109865da7576a9cc78ed7ecab793908a6fecadfb9b8621d9c603776cc55ebb"
+    },
+    {
+      "module": "StockMemoryHelperWitness",
+      "returncode": 0,
+      "source_sha256": "90d5a936846829126a05bdcd757aba3a243efdce82394a51d9ed43edecfea0e9"
+    }
+  ],
+  "utc": "2026-10-31T02:30:18.888721+00:00",
+  "axiom_roots": 12,
+  "standard_only": true,
+  "load_variants": 7,
+  "store_variants": 4,
+  "source_gates_unchanged": true,
+  "scope": "Focused helper contracts, direct executions and witnesses only"
+}
