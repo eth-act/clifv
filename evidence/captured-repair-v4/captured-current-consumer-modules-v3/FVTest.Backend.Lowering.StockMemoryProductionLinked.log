@@ -1,0 +1,34 @@
+⚠ [844/1666] Replayed FV.E2E.PairDriverU
+warning: FV/E2E/PairDriverU.lean:49:14: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/PairDriverU.lean:49:14: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/PairDriverU.lean:60:14: `if_neg` has been deprecated: Use `ite_eq_right` instead
+⚠ [1490/1666] Replayed FV.E2E.LinkSemanticNI
+warning: FV/E2E/LinkSemanticNI.lean:218:34: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/E2E/LinkSemanticNI.lean:219:34: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/LinkSemanticNI.lean:439:38: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/E2E/LinkSemanticNI.lean:449:14: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/LinkSemanticNI.lean:457:42: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/E2E/LinkSemanticNI.lean:571:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/LinkSemanticNI.lean:613:59: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/LinkSemanticNI.lean:613:71: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/LinkSemanticNI.lean:754:47: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/E2E/LinkSemanticNI.lean:755:6: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/LinkSemanticNI.lean:1291:30: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/LinkSemanticNI.lean:1430:22: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/LinkSemanticNI.lean:1489:22: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/LinkSemanticNI.lean:1554:36: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/E2E/LinkSemanticNI.lean:1680:12: `if_pos` has been deprecated: Use `ite_eq_left` instead
+⚠ [1700/1702] Replayed FVTest.E2E.SemanticLinkProofWith
+warning: FVTest/E2E/SemanticLinkProofWith.lean:231:17: `String.dropRight` has been deprecated: Use `String.dropEnd` instead
+
+Note: The updated constant has a different type:
+  String → Nat → String.Slice
+instead of
+  String → Nat → String
+✖ [1702/1702] Building FVTest.Backend.Lowering.StockMemoryProductionLinked (1.2s)
+trace: .> LEAN_PATH=/home/lee/clifv/.worktrees/stock-cfg-source-20261025/.lake/packages/repl/.lake/build/lib/lean:/home/lee/clifv/.worktrees/stock-cfg-source-20261025/.lake/build/lib/lean /home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean -Dlinter.unusedSimpArgs=false -Dlinter.unusedVariables=false -Dlinter.unnecessarySimpa=false -Dlinter.unusedSectionVars=false -Dlinter.defProp=false -Dlinter.constructorNameAsVariable=false /home/lee/clifv/.worktrees/stock-cfg-source-20261025/FVTest/Backend/Lowering/StockMemoryProductionLinked.lean -o /home/lee/clifv/.worktrees/stock-cfg-source-20261025/.lake/build/lib/lean/FVTest/Backend/Lowering/StockMemoryProductionLinked.olean -i /home/lee/clifv/.worktrees/stock-cfg-source-20261025/.lake/build/lib/lean/FVTest/Backend/Lowering/StockMemoryProductionLinked.ilean -c /home/lee/clifv/.worktrees/stock-cfg-source-20261025/.lake/build/ir/FVTest/Backend/Lowering/StockMemoryProductionLinked.c --setup /home/lee/clifv/.worktrees/stock-cfg-source-20261025/.lake/build/ir/FVTest/Backend/Lowering/StockMemoryProductionLinked.setup.json --json
+error: FVTest/Backend/Lowering/StockMemoryProductionLinked.lean:119:11: Unknown identifier `SemanticStackBound.CompilerInput`
+error: FVTest/Backend/Lowering/StockMemoryProductionLinked.lean:120:15: Unknown identifier `SemanticStackBound.stackB`
+Some required targets logged failures:
+- FVTest.Backend.Lowering.StockMemoryProductionLinked
+error: build failed

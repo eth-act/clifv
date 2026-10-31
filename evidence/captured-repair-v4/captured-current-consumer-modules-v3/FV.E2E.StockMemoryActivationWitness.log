@@ -1,0 +1,19 @@
+⚠ [747/834] Replayed FV.E2E.PairDriverU
+warning: FV/E2E/PairDriverU.lean:49:14: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/PairDriverU.lean:49:14: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/PairDriverU.lean:60:14: `if_neg` has been deprecated: Use `ite_eq_right` instead
+✖ [834/834] Building FV.E2E.StockMemoryActivationWitness (20s)
+trace: .> LEAN_PATH=/home/lee/clifv/.worktrees/stock-cfg-source-20261025/.lake/packages/repl/.lake/build/lib/lean:/home/lee/clifv/.worktrees/stock-cfg-source-20261025/.lake/build/lib/lean /home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean -Dlinter.unusedSimpArgs=false -Dlinter.unusedVariables=false -Dlinter.unnecessarySimpa=false -Dlinter.unusedSectionVars=false -Dlinter.defProp=false -Dlinter.constructorNameAsVariable=false /home/lee/clifv/.worktrees/stock-cfg-source-20261025/FV/E2E/StockMemoryActivationWitness.lean -o /home/lee/clifv/.worktrees/stock-cfg-source-20261025/.lake/build/lib/lean/FV/E2E/StockMemoryActivationWitness.olean -i /home/lee/clifv/.worktrees/stock-cfg-source-20261025/.lake/build/lib/lean/FV/E2E/StockMemoryActivationWitness.ilean -c /home/lee/clifv/.worktrees/stock-cfg-source-20261025/.lake/build/ir/FV/E2E/StockMemoryActivationWitness.c --setup /home/lee/clifv/.worktrees/stock-cfg-source-20261025/.lake/build/ir/FV/E2E/StockMemoryActivationWitness.setup.json --json
+error: FV/E2E/StockMemoryActivationWitness.lean:24:68: unsolved goals
+result : Result
+actual :
+  (match Except.ok result with
+    | Except.ok result => Memory.effectsOnly result.code
+    | Except.error a => false) =
+    true
+run : lower function = Except.ok result
+checked : Memory.check function result.code = true
+⊢ (lowerCheck function result.code || (true || MemoryCfg.check function result.code)) = true
+Some required targets logged failures:
+- FV.E2E.StockMemoryActivationWitness
+error: build failed

@@ -1,0 +1,21 @@
+{
+  "status": "passed",
+  "records": [
+    {
+      "label": "targets",
+      "returncode": 0
+    },
+    {
+      "label": "old-audit",
+      "returncode": 0
+    }
+  ],
+  "utc": "2026-10-31T02:41:09.541899+00:00",
+  "axiom_roots": 105,
+  "old_axiom_sets_exact": true,
+  "source_sha256": {
+    "FV/E2E/StockMemoryActivationWitness.lean": "17c9d656f64dcaf8c1cad8e52b88b295ac78b44e48ece38612a0115a1bd4b5e8",
+    "FVTest/Backend/Lowering/StockMemoryProductionLinked.lean": "c221902ce1cc0c19199eb413502946259be4d75e0524c57e9aae021a1d5f6f7d"
+  },
+  "scope": "Three failed targets and exact old audit repaired; complete consumer gate still required"
+}

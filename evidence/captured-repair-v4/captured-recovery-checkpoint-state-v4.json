@@ -1,0 +1,140 @@
+{
+  "status": "passed",
+  "utc": "2026-10-31T02:56:31.139460+00:00",
+  "records": [
+    {
+      "label": "reverse-build",
+      "returncode": 0
+    },
+    {
+      "label": "build-lean-backend",
+      "returncode": 0
+    },
+    {
+      "label": "build-link-check",
+      "returncode": 0
+    },
+    {
+      "label": "build-lean-link",
+      "returncode": 0
+    },
+    {
+      "label": "build-lean-backend-lowering-trace",
+      "returncode": 0
+    },
+    {
+      "label": "build-stock-popcount-runtime",
+      "returncode": 0
+    },
+    {
+      "label": "build-stock-popcount-linked",
+      "returncode": 0
+    },
+    {
+      "label": "build-stock-minmax-runtime",
+      "returncode": 0
+    },
+    {
+      "label": "build-stock-minmax-linked",
+      "returncode": 0
+    },
+    {
+      "label": "build-stock-cmp-runtime",
+      "returncode": 0
+    },
+    {
+      "label": "build-stock-cmp-linked",
+      "returncode": 0
+    },
+    {
+      "label": "build-stock-highmul-runtime",
+      "returncode": 0
+    },
+    {
+      "label": "build-stock-highmul-linked",
+      "returncode": 0
+    },
+    {
+      "label": "build-stock-div-runtime",
+      "returncode": 0
+    },
+    {
+      "label": "build-stock-div-linked",
+      "returncode": 0
+    },
+    {
+      "label": "build-stock-mixed-div-runtime",
+      "returncode": 0
+    },
+    {
+      "label": "build-stock-mixed-div-linked",
+      "returncode": 0
+    },
+    {
+      "label": "build-stock-returned-div-runtime",
+      "returncode": 0
+    },
+    {
+      "label": "build-stock-returned-div-linked",
+      "returncode": 0
+    },
+    {
+      "label": "build-stock-general-div-runtime",
+      "returncode": 0
+    },
+    {
+      "label": "build-stock-general-div-linked",
+      "returncode": 0
+    },
+    {
+      "label": "build-stock-memory-linked",
+      "returncode": 0
+    },
+    {
+      "label": "build-stock-memory-retained",
+      "returncode": 0
+    },
+    {
+      "label": "old-memory-audit",
+      "returncode": 0
+    },
+    {
+      "label": "trace-regression",
+      "returncode": 0
+    },
+    {
+      "label": "integration-singleton",
+      "returncode": 0
+    },
+    {
+      "label": "integration-cfg",
+      "returncode": 0
+    }
+  ],
+  "reverse_roots": 235,
+  "executables": [
+    "lean-backend",
+    "link-check",
+    "lean-link",
+    "lean-backend-lowering-trace",
+    "stock-popcount-runtime",
+    "stock-popcount-linked",
+    "stock-minmax-runtime",
+    "stock-minmax-linked",
+    "stock-cmp-runtime",
+    "stock-cmp-linked",
+    "stock-highmul-runtime",
+    "stock-highmul-linked",
+    "stock-div-runtime",
+    "stock-div-linked",
+    "stock-mixed-div-runtime",
+    "stock-mixed-div-linked",
+    "stock-returned-div-runtime",
+    "stock-returned-div-linked",
+    "stock-general-div-runtime",
+    "stock-general-div-linked",
+    "stock-memory-linked",
+    "stock-memory-retained"
+  ],
+  "old_axioms_exact": true
+}

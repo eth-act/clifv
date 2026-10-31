@@ -1,0 +1,6 @@
+✖ [153/153] Building FV.Backend.Proof.IselShpTTabS5 (27s)
+trace: .> LEAN_PATH=/home/lee/clifv/.worktrees/stock-cfg-source-20261025/.lake/packages/repl/.lake/build/lib/lean:/home/lee/clifv/.worktrees/stock-cfg-source-20261025/.lake/build/lib/lean /home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean -Dlinter.unusedSimpArgs=false -Dlinter.unusedVariables=false -Dlinter.unnecessarySimpa=false -Dlinter.unusedSectionVars=false -Dlinter.defProp=false -Dlinter.constructorNameAsVariable=false /home/lee/clifv/.worktrees/stock-cfg-source-20261025/FV/Backend/Proof/IselShpTTabS5.lean -o /home/lee/clifv/.worktrees/stock-cfg-source-20261025/.lake/build/lib/lean/FV/Backend/Proof/IselShpTTabS5.olean -i /home/lee/clifv/.worktrees/stock-cfg-source-20261025/.lake/build/lib/lean/FV/Backend/Proof/IselShpTTabS5.ilean -c /home/lee/clifv/.worktrees/stock-cfg-source-20261025/.lake/build/ir/FV/Backend/Proof/IselShpTTabS5.c --setup /home/lee/clifv/.worktrees/stock-cfg-source-20261025/.lake/build/ir/FV/Backend/Proof/IselShpTTabS5.setup.json --json
+error: Lean exited with code 137
+Some required targets logged failures:
+- FV.Backend.Proof.IselShpTTabS5
+error: build failed

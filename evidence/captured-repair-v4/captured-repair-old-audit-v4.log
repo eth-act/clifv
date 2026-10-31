@@ -1,0 +1,147 @@
+'Backend.Stock.Memory.domain_of_scalar' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Memory.existing_source_witness' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Memory.load_source_result' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Memory.mapped_unscaled_address' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Memory.mapped_unscaled_load' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Memory.LoadFixture.source_load' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Memory.LoadFixture.memory_world' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Memory.LoadFixture.load_source_result_witness' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Memory.LoadFixture.mapped_load_witness' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Memory.stock_uload32_helper' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Memory.LoadFixture.selected_load_helper_witness' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Memory.load_source_seqRun' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Memory.mapped_unsigned_address' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Memory.stock_parameter_amode_zero' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Memory.stock_parameter_load_address' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Memory.stock_parameter_load_rhs' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Memory.LoadFixture.unsigned_load_witness' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Memory.LoadFixture.selected_load_rhs_witness' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Memory.LoadFixture.selected_load_address_witness' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Memory.stock_lower_parameter_load_record' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Memory.stock_lower_parameter_load_values' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Memory.LoadFixture.scope' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Memory.LoadFixture.dominated' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Memory.LoadFixture.record_observed' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Memory.LoadFixture.record_input' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Memory.LoadFixture.actual_load_record_witness' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Memory.LoadFixture.guarded_load_source_witness' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Memory.stock_match_load_i32' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Memory.stock_lower_load_selected_receipts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Memory.stock_lower_load_selected_values' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Memory.LoadFixture.RecordInput.selected' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Memory.LoadFixture.selected_receipts_witness' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Memory.stock_lower_parameter_load_record_full' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Memory.stock_lower_load_operand_coverage' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Memory.stock_lower_load_source_step' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Memory.stock_lower_load_scan_fall_refines' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Memory.LoadFixture.guarded_load_scan_witness' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.OrdinaryBody.actual_ordinary_source_step' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.OrdinaryBody.actual_ordinary_source_execution_frame' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Memory.LoadFixture.RecordInput.atBlock' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Memory.LoadFixture.RecordInput.body_split' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Memory.LoadFixture.RecordInput.body_record' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Memory.LoadFixture.RecordInput.body_records' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Memory.LoadFixture.ordinary_load_step_witness' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Memory.LoadFixture.ordinary_load_body_execution_witness' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.OrdinaryBody.actual_ordinary_return_refines_at' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.OrdinaryBody.actual_ordinary_entry_return_refines_frame' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Memory.EntryFixture.ordinary_entry_return_witness' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Memory.LoadFixture.actual_load_return_block_witness' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Memory.stock_selected_load_i32_rule' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Memory.stock_lower_load_i32_selected_id' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Memory.stock_lower_load_source_step_auto' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Memory.stock_lower_load_scan_fall_refines_auto' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Memory.stock_lower_parameter_load_sunk_eq' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Memory.LoadFixture.source_dispatch_witness' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Memory.LoadFixture.load_sunk_frame_witness' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.stock_lower_returned_definition_emitted' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Memory.stock_single_load_return_body' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.OrdinaryBody.ordinary_source_notrap' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Memory.domain_of_single_load_return' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Memory.SingleFixture.scope' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Memory.SingleFixture.dominated' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Memory.SingleFixture.lowered' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Memory.SingleFixture.domain' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Memory.SingleFixture.complete_load_function_witness' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Memory.initialized_load_value_eq' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Memory.load_source_result_pair' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Memory.load_source_result_pairR' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Memory.stock_lower_load_paired_record' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Memory.LoadFixture.paired_load_read_witness' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.StockMemoryReadWitness.guarded_paired_load_witness' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.StockMemoryReadWitness.guarded_actual_record_pair_witness' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'E2E.StockMemory.stock_lower_load_paired_source_step' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.StockMemory.stock_lower_load_scan_pair' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.StockMemory.stock_lower_load_paired_scan' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.StockMemoryReadWitness.guarded_actual_source_scan_pair_witness' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'E2E.StockMemoryReadWitness.pairsem_scan_interface_witness' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Memory.stock_lower_source_parameter_definition' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Memory.stock_single_load_return_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.StockMemory.stock_single_load_return_paired_body' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.StockMemoryReadWitness.complete_paired_body_witness' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.StockMemory.stock_lower_return_record_paired_runOk' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.StockMemory.actual_ordinary_paired_return_refines_at' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.StockMemoryReadWitness.complete_paired_return_block_witness' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'E2E.StockMemory.mapped_entry_register_prelude_paired_frame' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.StockMemory.stock_lower_entry_prelude_paired_frame' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.StockMemory.actual_ordinary_paired_entry_return_refines_frame' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'E2E.StockMemory.single_load_return_paired_function_seeded' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.StockMemory.single_load_return_paired_function' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.StockMemoryFunctionWitness.source_class_witness' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.StockMemoryFunctionWitness.complete_paired_load_function_witness' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Memory.SingleClass.domain' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.backend_correct_worldX_stock_memory' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.StockMemory.effectsOnly_instruction' depends on axioms: [propext, Quot.sound]
+'E2E.StockMemory.return_value' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.StockMemory.machine_return' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.backend_correct_world_niX_stock_memory' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Memory.sourceOk_sound' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Memory.check_sound' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.StockMemoryEffectKernel.source_checked' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.StockMemoryEffectKernel.source_checked._native.native_decide.ax_1]
+'E2E.StockMemoryEffectKernel.actual_effects' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Memory.effectsOnly_noTls' depends on axioms: [propext, Quot.sound]
+'E2E.StockMemoryActivationWitness.default_memory_route_witness' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.StockMemoryEffectKernel.source_checked._native.native_decide.ax_1]
+'Backend.Stock.Memory.previous_file_exact' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Memory.previous_file_exact_witness' depends on axioms: [propext, Classical.choice, Quot.sound]

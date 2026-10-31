@@ -1,0 +1,23 @@
+{
+  "utc": "2026-10-31T02:53:14.118532+00:00",
+  "status": "passed targeted repair; complete consumer validation running",
+  "only_source_changes": [
+    "FV/E2E/StockMemoryActivationWitness.lean",
+    "FVTest/Backend/Lowering/StockMemoryProductionLinked.lean"
+  ],
+  "source_changes": "One Boolean simp lemma and one explicit import; theorem statements and production guards unchanged",
+  "old_module_results": "2858/2874 pass; three failed targets repaired without discarding outputs",
+  "focused_repair": "1720/1720 passed, two leaf modules rebuilt; shape table already restored from shared cache",
+  "old_axiom_roots": 105,
+  "old_axiom_sets_exact": true,
+  "consumer_watcher": 2800617,
+  "input_watcher": 2802342,
+  "comparison_watcher": 2802644,
+  "candidate_files": 48,
+  "source_sha256": {
+    "FV/E2E/StockMemoryActivationWitness.lean": "17c9d656f64dcaf8c1cad8e52b88b295ac78b44e48ece38612a0115a1bd4b5e8",
+    "FVTest/Backend/Lowering/StockMemoryProductionLinked.lean": "c221902ce1cc0c19199eb413502946259be4d75e0524c57e9aae021a1d5f6f7d"
+  },
+  "loan_returned": true,
+  "production_source_unchanged": true
+}

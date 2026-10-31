@@ -1,0 +1,2 @@
+# Eight GiB was an observed OOM lower bound. Cap this retry at ten GiB.
+FV.Backend.Proof.IselShpTTabS5	8192	28

@@ -1,0 +1,9 @@
+1720 modules (0 heavy, 1719 without a record); critical path 1.83 h, serial 28.66 h (recorded)
+22:40:41 want 1720 modules (0 assumed built) budget=10G max_jobs=1 heavy>12G
+22:40:42 check (all) 1720 modules in 0.8s: 1718 up-to-date, 2 out of date, 0 wait for those
+22:40:42 start FV.E2E.StockMemoryActivationWitness cap=10G running=1 avail=223.3G
+22:41:06 done FV.E2E.StockMemoryActivationWitness rc=0 24s maxrss=7.8G cgpeak=5.8G built -> ok
+22:41:06 start FVTest.Backend.Lowering.StockMemoryProductionLinked cap=10G running=1 avail=222.5G
+22:41:08 done FVTest.Backend.Lowering.StockMemoryProductionLinked rc=0 2s maxrss=2.8G cgpeak=0.3G built -> ok
+22:41:08 2 batch checks, 1s; 0 modules restored after another worktree built them
+22:41:08 END 1720/1720 ok, 2 built, wall 0.5 min

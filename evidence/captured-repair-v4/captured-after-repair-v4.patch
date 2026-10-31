@@ -1,0 +1,3411 @@
+diff --git a/FV/Backend/Lowering/StockMemoryCfgNI.lean b/FV/Backend/Lowering/StockMemoryCfgNI.lean
+new file mode 100644
+index 00000000..53065392
+--- /dev/null
++++ b/FV/Backend/Lowering/StockMemoryCfgNI.lean
+@@ -0,0 +1,29 @@
++import FV.Backend.Lowering.StockMemoryNI
++import FV.Backend.StockMemoryCfgCheck
++
++namespace Backend.Stock.MemoryCfg
++set_option autoImplicit false
++
++/-- Attempt the first proved memory class, then preserve the complete previous
++provider on the original source when selection or validation fails. -/
++def lowerValidated (f : Clif.Function) : Except String VCode :=
++  if !eligible f then Memory.lowerValidated f
++  else
++    let attempt := do
++      let result ← Stock.lower f
++      if check f result.code then pure result.code
++      else throw "Stock memory candidate failed paired semantic validation"
++    match attempt with
++    | .ok vc => .ok vc
++    | .error _ => Memory.lowerValidated f
++
++/-- Retain published routes0–12; memory CFG delivery appends route13. -/
++def lowerRoutes : List (Clif.Function → Except String VCode) :=
++  Memory.lowerRoutes ++ [lowerValidated]
++
++def lowerWithRoutes (choices : List (String × Nat)) (f : Clif.Function) : Except String VCode :=
++  match choices.lookup f.name with
++  | none => lowerValidated f
++  | some index => ((lowerRoutes[index]?).getD ScalarAdd.lower) f
++
++end Backend.Stock.MemoryCfg
+diff --git a/FV/Backend/MemoryCfgNIProduction.lean b/FV/Backend/MemoryCfgNIProduction.lean
+new file mode 100644
+index 00000000..4309ca9b
+--- /dev/null
++++ b/FV/Backend/MemoryCfgNIProduction.lean
+@@ -0,0 +1,34 @@
++import FV.Backend.MemoryNIProduction
++import FV.Backend.Lowering.StockMemoryCfgNI
++
++namespace Backend
++set_option autoImplicit false
++
++def lowerCheckedMemoryCfgNI (f : Clif.Function) (verify : Bool) : Except String VCode :=
++  let attempt := do
++    let vc ← Stock.MemoryCfg.lowerValidated f
++    if verify && !SemanticNI.check f vc then
++      throw "lowering rejected by the paired CFG semantic lowering validator"
++    pure vc
++  match attempt with
++  | .ok vc => .ok vc
++  | .error _ => lowerCheckedMemoryNI f verify
++
++def lowerForAllocationMemoryCfgNI (f : Clif.Function) (verify cleanup : Bool) : Except String VCode :=
++  (lowerCheckedMemoryCfgNI f verify).map (Stock.Arithmetic.stage cleanup)
++
++/-- Retry the previous complete CFG pipeline with the original input,
++allocator and settings if any new CFG attempt is unsupported or fails layout. -/
++def compileFileMemoryCfgNIWhen {m : Type → Type} [Monad m] (enabled : Bool)
++    (alloc : Array VCode → m (Array (Except String AFunc))) (pf : Clif.ParsedFile)
++    (preUnverified : List (String × String) := []) (cleanup : Bool := true) : m FileAsm := do
++  if !enabled then return ← compileFileMemoryNIWhen false alloc pf preUnverified cleanup
++  if !(pf.funcs.any fun p => p.func.toOption.any Stock.MemoryCfg.eligible) then
++    return ← compileFileMemoryNIWhen true alloc pf preUnverified cleanup
++  let attempt ← compileFileWithLowering lowerForAllocationMemoryCfgNI VCode.rulesFired
++    alloc pf preUnverified cleanup
++  if !attempt.unsupported.isEmpty || !attempt.layout.isOk then
++    compileFileMemoryNIWhen true alloc pf preUnverified cleanup
++  else pure attempt
++
++end Backend
+diff --git a/FV/Backend/Proof/StockMemoryCapturedFixture.lean b/FV/Backend/Proof/StockMemoryCapturedFixture.lean
+new file mode 100644
+index 00000000..686c7f47
+--- /dev/null
++++ b/FV/Backend/Proof/StockMemoryCapturedFixture.lean
+@@ -0,0 +1,132 @@
++import FV.Backend.Proof.StockMemoryInput
++import FV.Backend.Proof.StockMemoryNopJumpSpec
++import FV.Backend.Proof.LowerDecide
++import FV.E2E.RegLevelDriverSem
++
++namespace Backend.Stock.Memory.CapturedFixture
++open Backend.Proof Backend.Proof.Driver Backend.Stock.Proof
++set_option autoImplicit false
++set_option Elab.async false
++set_option maxRecDepth 20000
++set_option maxHeartbeats 4000000
++
++def function : Clif.Function := { LoadFixture.function with
++  name := "_RNxC13h_dyn_generic12H3GPtIT8Zs5B"
++  blocks := [{id := 0,params := [(0,.i64)],body := [⟨[],.nop⟩],term := .jump ⟨1,[]⟩},
++    {id := 1,body := [⟨[],.nop⟩,⟨[2],.load .load .i32 LoadFixture.flags 0 0⟩],term := .ret [2]}] }
++
++private def original : Ctx × Array (Nat × Nat) × LState :=
++  (Backend.buildCtx function).toOption.getD (sinkCtx,#[],default)
++private theorem original_build : Backend.buildCtx function = .ok original := rfl
++
++theorem scope : LowerScope function := lowerScope_of rfl
++
++private theorem pointer_available : 0 ∈ (availIn function original.1).getD 1 [] := by
++  have good : FixOk function original.1 id (fun tl x => tl = 1 ∧ x = 0) := by
++    constructor
++    · intro tl x pair
++      obtain ⟨rfl,rfl⟩ := pair
++      exact ⟨by decide,by decide,by decide +kernel,by decide,by decide,by decide⟩
++    · intro tl x pair p predecessor
++      obtain ⟨rfl,rfl⟩ := pair
++      cases p with
++      | zero => exact Or.inl (by simp [parsOf,function])
++      | succ p => cases p <;> simp [succIdx,succIds,dests,function] at predecessor
++    · intro tl x pair y member
++      obtain ⟨rfl,rfl⟩ := pair
++      change y ∈ ([] : List Nat) at member
++      cases member
++  exact inFix_greatest good ⟨rfl,rfl⟩
++
++/-- Original SSA and dominance include the inherited pointer after both NOPs. -/
++theorem dominated : Dominated function := by
++  constructor
++  · change ([0,2] : List Nat).Nodup
++    decide +kernel
++  · intro ctx ranges st build bi b found
++    have context : ctx = original.1 := congrArg Prod.fst (Except.ok.inj (build.symm.trans original_build))
++    subst ctx
++    have bound : bi < 2 := by have h := lt_of_getElem? found; simpa [function] using h
++    have cases : bi = 0 ∨ bi = 1 := by omega
++    rcases cases with rfl | rfl
++    · simp [function] at found
++      subst b
++      constructor
++      · intro j stm present
++        cases j with
++        | zero =>
++          simp [function] at present
++          subst stm
++          intro x member
++          simp [Driver.instArgs] at member
++        | succ j => simp [function] at present
++      · intro x member
++        simp [abiTerm,Driver.termArgs,sretRet,sigRets,function] at member
++    · simp [function] at found
++      subst b
++      constructor
++      · intro j stm present
++        cases j with
++        | zero =>
++          simp [function] at present
++          subst stm
++          intro x member
++          simp [Driver.instArgs] at member
++        | succ j =>
++          cases j with
++          | zero =>
++            simp [function] at present
++            subst stm
++            intro x member
++            have equal : x = 0 := List.mem_singleton.mp member
++            subst x
++            have member := pointer_available
++            simpa [availOf,function,defsBefore,defsFrom] using member
++          | succ j => simp [function] at present
++      · intro x member
++        have equal : x = 2 := by simpa [abiTerm,Driver.termArgs,sretRet,sigRets,function,LoadFixture.function] using member
++        subst x
++        simp [availOf,function,defsBefore,defsFrom]
++  · intro ctx ranges st build tl x available notLocal y member
++    cases tl with
++    | zero =>
++      have fixed := (inFix_fixOk (f := function) (ctx := ctx) (gn := id)).cand 0 x available
++      omega
++    | succ tl =>
++      cases tl with
++      | zero => change y ∉ ([] : List Nat); simp
++      | succ tl => simp [parsOf,function]
++
++-- Fixed non-vacuity witness; no generic correctness theorem uses this check.
++private theorem lowered_entry : (match Stock.lower function with
++    | .error _ => false
++    | .ok result => decide (result.order.nodes[0]? = some (.original 0))) = true := by native_decide
++
++/-- The actual Stock driver accepts the nonempty captured shape. -/
++theorem lowered : (Stock.lower function).isOk = true := by
++  have checked := lowered_entry
++  cases run : Stock.lower function with
++  | error error => rw [run] at checked; cases checked
++  | ok result => rfl
++
++theorem entry_tag {result : Result} (run : Stock.lower function = .ok result) :
++    result.order.nodes[0]? = some (.original 0) := by
++  simpa only [run,decide_eq_true_eq] using lowered_entry
++
++/-- The NOP jump contract is inhabited while the successor contains an actual load. -/
++theorem nop_jump_witness (X : ExtSem) :
++    ∃ result, Stock.lower function = .ok result ∧
++      Nonempty (Control.JumpBodySpec function result function.blocks[0]! 0 0 ⟨1,[]⟩
++        (csem LoadFixture.relation.F ⟨0,0⟩ X) (LoadFixture.relation.holds function)
++        Clif.Env.empty {funcs := []}) := by
++  have success := lowered
++  cases run : Stock.lower function with
++  | error error => rw [run] at success; cases success
++  | ok result =>
++    refine ⟨result,rfl,?_⟩
++    exact Control.stock_lower_nop_jump_body_spec run scope dominated (entry_tag run) rfl
++      (by intro stm member; have equal : stm = ⟨[],.nop⟩ := by simpa [function] using member
++          subst stm; rfl)
++      rfl (driverSem_csem LoadFixture.relation.F ⟨0,0⟩ X) _ _
++
++end Backend.Stock.Memory.CapturedFixture
+diff --git a/FV/Backend/Proof/StockMemoryCapturedSource.lean b/FV/Backend/Proof/StockMemoryCapturedSource.lean
+new file mode 100644
+index 00000000..8c02553d
+--- /dev/null
++++ b/FV/Backend/Proof/StockMemoryCapturedSource.lean
+@@ -0,0 +1,28 @@
++import FV.Backend.Proof.StockMemoryCapturedFixture
++import FV.Backend.Proof.StockSourceEntry
++
++namespace Backend.Stock.Memory.CapturedFixture
++open Backend.Proof Backend.Proof.Driver Backend.Stock.Proof
++set_option autoImplicit false
++set_option Elab.async false
++set_option maxRecDepth 20000
++
++def initial : Clif.Frame := { LoadFixture.frame with
++  func := function
++  body := function.blocks[0]!.body
++  term := function.blocks[0]!.term }
++
++/-- The original ABI arguments enter the actual captured function. -/
++theorem source_entered :
++    Clif.enterFunc function [⟨.i64,4096⟩] LoadFixture.heap =
++      .ok (initial,LoadFixture.heap) := rfl
++
++/-- Five original source steps cross the jump and read the initialized heap. -/
++theorem source_returned :
++    Clif.runLoop Clif.Env.empty {funcs := []} 5 ⟨initial,[],LoadFixture.heap⟩ =
++      .returned [⟨.i32,2779096485⟩] LoadFixture.heap := rfl
++
++theorem source_entry : SourceEntry function [⟨.i64,4096⟩] initial :=
++  SourceEntry.of_enterFunc source_entered
++
++end Backend.Stock.Memory.CapturedFixture
+diff --git a/FV/Backend/Proof/StockMemoryCfgClass.lean b/FV/Backend/Proof/StockMemoryCfgClass.lean
+new file mode 100644
+index 00000000..3f702560
+--- /dev/null
++++ b/FV/Backend/Proof/StockMemoryCfgClass.lean
+@@ -0,0 +1,71 @@
++import FV.Backend.StockMemoryCfgCheck
++import FV.Backend.Proof.LowerDecide
++import FV.Backend.Proof.StockMemoryClass
++
++namespace Backend.Stock.MemoryCfg
++open Backend.Proof Backend.Proof.Driver Backend.Stock.Proof
++set_option autoImplicit false
++set_option Elab.async false
++set_option maxRecDepth 20000
++
++/-- Original source conditions for the captured memory CFG class. -/
++structure TwoBlockClass (f : Clif.Function) : Prop where
++  scope : LowerScope f
++  dominated : Dominated f
++  abi : sigAbiOk f.sig = true
++  ordinary : (sigRets f.sig).any (·.purpose == .sret) = false
++  registers : ∀ loc ∈ locsOf f.sig,∃ pin,loc = .reg pin
++  shape : ∃ (entry target : Clif.Block) (x z : Nat) (flags : Clif.MemFlags),
++    f.blocks = [entry,target] ∧ entry.body = [⟨[],.nop⟩] ∧
++      target.body = [⟨[],.nop⟩,⟨[z],.load .load .i32 flags x 0⟩] ∧
++      entry.term = .jump ⟨target.id,[]⟩ ∧ target.term = .ret [z] ∧
++      x ∈ entry.params.map (·.1) ∧ flags.trapCode = none
++
++/-- Source checks derive the class without requiring a compiled artifact. -/
++theorem sourceOk_sound {f : Clif.Function} (checked : sourceOk f = true) : TwoBlockClass f := by
++  simp only [sourceOk,Bool.and_eq_true,Bool.not_eq_true'] at checked
++  obtain ⟨⟨⟨⟨⟨shapeOk,scope⟩,dominated⟩,abi⟩,ordinary⟩,registers⟩ := checked
++  refine ⟨lowerScope_of scope,dominated_of dominated,abi,ordinary,?_,?_⟩
++  · intro loc member
++    have good := List.all_eq_true.mp registers loc member
++    cases loc with
++    | reg pin => exact ⟨pin,rfl⟩
++    | stack off => cases good
++  · unfold eligible at shapeOk
++    split at shapeOk
++    next entry target blocks =>
++      split at shapeOk
++      next z flags x dst ret entryBody targetBody jump terminal =>
++        simp only [Bool.and_eq_true,beq_iff_eq] at shapeOk
++        obtain ⟨⟨⟨destination,same⟩,parameter⟩,notrap⟩ := shapeOk
++        subst dst
++        subst ret
++        exact ⟨entry,target,x,z,flags,blocks,entryBody,targetBody,jump,terminal,
++          List.contains_iff_mem.mp parameter,Option.isNone_iff_eq_none.mp notrap⟩
++      next => cases shapeOk
++    next => cases shapeOk
++
++/-- Artifact validation binds the source class to the actual returned Stock code. -/
++theorem check_sound {f : Clif.Function} {vc : VCode} (checked : check f vc = true) :
++    ∃ result,TwoBlockClass f ∧ Stock.lower f = .ok result ∧ result.code = vc ∧ effectsOnly vc = true := by
++  simp only [check,Bool.and_eq_true] at checked
++  obtain ⟨source,lowered⟩ := checked
++  cases run : Stock.lower f with
++  | error error => rw [run] at lowered; cases lowered
++  | ok result =>
++    rw [run] at lowered
++    obtain ⟨equal,effects⟩ := Bool.and_eq_true_iff.mp lowered
++    exact ⟨result,sourceOk_sound source,rfl,of_decide_eq_true equal,effects⟩
++
++/-- The CFG whitelist excludes TLS helpers from the actual code. -/
++theorem effectsOnly_noTls {vc : VCode} (checked : effectsOnly vc = true) : vc.hasTls = false := by
++  rw [VCode.hasTls,Array.any_eq_false']
++  intro vb member
++  apply Bool.eq_false_iff.mp
++  apply Array.any_eq_false'.mpr
++  intro i present
++  have blocks := List.all_eq_true.mp checked vb (Array.mem_toList_iff.mpr member)
++  have good := List.all_eq_true.mp blocks i (Array.mem_toList_iff.mpr present)
++  cases i <;> simp_all [effectInstruction]
++
++end Backend.Stock.MemoryCfg
+diff --git a/FV/Backend/Proof/StockMemoryCfgCompatibility.lean b/FV/Backend/Proof/StockMemoryCfgCompatibility.lean
+new file mode 100644
+index 00000000..f9d8bbfd
+--- /dev/null
++++ b/FV/Backend/Proof/StockMemoryCfgCompatibility.lean
+@@ -0,0 +1,39 @@
++import FV.Backend.MemoryCfgNIProduction
++
++namespace Backend.Stock.MemoryCfg
++set_option autoImplicit false
++set_option maxRecDepth 20000
++set_option maxHeartbeats 4000000
++
++/-- Programs outside the optional memory selector use exactly the previous
++pipeline, including allocator effects, identities, output bytes and stages.
++This is a compatibility fact; it adds no compiler input requirement. -/
++theorem previous_file_exact {m : Type → Type} [Monad m]
++    (enabled : Bool) (allocate : Array VCode → m (Array (Except String AFunc)))
++    (pf : Clif.ParsedFile) (prior : List (String × String)) (cleanup : Bool)
++    (none : (pf.funcs.any fun p => p.func.toOption.any eligible) = false) :
++    compileFileMemoryCfgNIWhen enabled allocate pf prior cleanup =
++      compileFileMemoryNIWhen enabled allocate pf prior cleanup := by
++  cases enabled <;> simp [compileFileMemoryCfgNIWhen,none]
++
++/-- A nonempty ordinary return input inhabits the
++compatibility premise. The theorem holds for every allocator, not only this
++witness's choice. -/
++theorem previous_file_exact_witness :
++    ∃ pf : Clif.ParsedFile,
++      pf.funcs.length = 1 ∧ pf.funcs.all (·.func.isOk) = true ∧
++      (pf.funcs.any fun p => p.func.toOption.any eligible) = false ∧
++      compileFileMemoryCfgNIWhen (m := Id) true (fun _ => pure #[]) pf [] true =
++        compileFileMemoryNIWhen (m := Id) true (fun _ => pure #[]) pf [] true := by
++  let f : Clif.Function := {
++    name := "retained"
++    sig := { params := [⟨.i64,.none,.normal⟩], returns := [⟨.i64,.none,.normal⟩] }
++    blocks := [{ id := 0, params := [(0,.i64)], term := .ret [0] }] }
++  let pf : Clif.ParsedFile := {
++    header := [], funcs := [{ name := f.name, func := .ok f, runLines := 0 }] }
++  have count : pf.funcs.length = 1 := by rfl
++  have parsed : pf.funcs.all (·.func.isOk) = true := by rfl
++  have absent : (pf.funcs.any fun p => p.func.toOption.any eligible) = false := by rfl
++  exact ⟨pf,count,parsed,absent,previous_file_exact true (fun _ => pure #[]) pf [] true absent⟩
++
++end Backend.Stock.MemoryCfg
+diff --git a/FV/Backend/Proof/StockMemoryCfgJumpDefined.lean b/FV/Backend/Proof/StockMemoryCfgJumpDefined.lean
+new file mode 100644
+index 00000000..de237e70
+--- /dev/null
++++ b/FV/Backend/Proof/StockMemoryCfgJumpDefined.lean
+@@ -0,0 +1,56 @@
++import FV.Backend.Proof.StockInheritedJumpDefined
++
++/-! UNVALIDATED next-batch source. The frozen production packet excludes this file.
++Reuse the existing local jump composition without excluding memory instructions
++in other blocks. The caller must derive the entry body proof from actual records.
++Keep every existing public and private variant unchanged. -/
++namespace Backend.Stock.Proof.Inherited
++open Backend.Proof Backend.Proof.Driver
++set_option autoImplicit false
++set_option Elab.async false
++
++/-- Compose a proved local body and the actual jump while preserving source definedness. -/
++theorem local_jump_carry_returns_defined_of_body {f : Clif.Function} {result : Result}
++    (run : Stock.lower f = .ok result) (scope : LowerScope f) (dominated : Dominated f)
++    {b : Clif.Block} {label bi : Nat} {bc : Clif.BlockCall}
++    {F : BitVec 64 → Prop} {isem : Backend.Proof.Sem} (refines : Refines F isem)
++    (driver : DriverSem isem) {MR : MemRelT} (stable : MRStable F MR)
++    {env : Clif.Env} {cp : Clif.Program}
++    (spec : Control.JumpBodySpec f result b label bi bc isem MR env cp)
++    (jump : b.term = .jump bc)
++    (localFamily : ∀ stm ∈ b.body,LocalBody.LocalInst stm.inst)
++    {needed : Nat → Prop}
++    (available : ∀ x,needed x → x ∈ availOf f (availIn f result.ctx) spec.core.scan.block 0)
++    (bodyRefines : ∀ a a',SourceSteps (IndexedSourceInst env cp f spec.core.scan.ctx spec.core.scan.block)
++      (sourceBodyIndices f spec.core.scan.block b).reverse a a' → ∀ ρ w,
++      CarryRel f result spec.core.scan.ctx spec.core.scan.block MR needed spec.body.state a ρ w → ∃ ρ' w',
++        seqRun isem (spec.body.code.toList.map (·.mapRegs
++          (Backend.lowerFunction.resolve result.final.alias (result.final.alias.size+1)))) ρ w =
++            some (.fall ρ' w') ∧ CarryRel f result spec.core.scan.ctx spec.core.scan.block MR needed
++              spec.term.output.state a' ρ' w')
++    {fuel : Nat} {s : Clif.State} {vals : List Clif.Val} {cm : Clif.Mem}
++    (remaining : s.frame.body = b.body) (atTerm : s.frame.term = b.term)
++    (returned : Clif.runLoop env cp fuel s = .returned vals cm) {ρ : Nat → CV} {w : Arm.ArmState}
++    (held : CarryRel f result spec.core.scan.ctx spec.core.scan.block MR needed spec.core.scan.output.state
++      (0,s.frame,s.mem) ρ w)
++    (defined : SourceDefinedAt f result.ctx spec.core.scan.block 0 s.frame) :
++    ∃ t left ρ' w',left+b.body.length = fuel ∧ Clif.runLoop env cp left t = .returned vals cm ∧
++      t.frame.body = [] ∧ LocalBody.SourceFrameEq s t ∧
++      (∀ x,needed x → t.frame.regs x = s.frame.regs x) ∧ t.frame.term = .jump bc ∧
++      seqRun isem (spec.core.code.toList.map (·.mapRegs
++        (Backend.lowerFunction.resolve result.final.alias (result.final.alias.size+1)))) ρ w =
++          some (.stop spec.body.code.size (.jump spec.target) #[] ρ' w' [] w' (.goto 0)) ∧
++      CarryRel f result spec.core.scan.ctx spec.core.scan.block MR needed spec.term.output.state
++        (b.body.length,t.frame,t.mem) ρ' w' ∧
++      SourceDefinedAt f result.ctx spec.core.scan.block b.body.length t.frame := by
++  obtain ⟨t,left,total,continued,empty,steps,frame⟩ := LocalBody.actual_local_source_execution_frame
++    run spec.events spec.split localFamily (j := 0) (by omega) (by simpa using remaining) returned
++  obtain ⟨ρ',w',bodyRun,post⟩ := bodyRefines (0,s.frame,s.mem) (b.body.length,t.frame,t.mem)
++    (by simpa only [Nat.add_zero,Nat.sub_zero,List.range'_eq_map_range,sourceBodyIndices,List.reverse_reverse] using steps)
++    ρ w (by simpa only [spec.split.state] using held)
++  obtain ⟨sourceFrame,atJump,executed,tDefined⟩ := jump_continuation_defined run scope dominated driver spec jump
++    available (by simpa only [Nat.add_zero,Nat.sub_zero] using steps) frame atTerm bodyRun defined
++  exact ⟨t,left,ρ',w',by simpa using total,continued,empty,frame,sourceFrame,atJump,executed,post,tDefined⟩
++
++
++end Backend.Stock.Proof.Inherited
+diff --git a/FV/Backend/Proof/StockMemoryCfgJumpReturnAt.lean b/FV/Backend/Proof/StockMemoryCfgJumpReturnAt.lean
+new file mode 100644
+index 00000000..18d78e54
+--- /dev/null
++++ b/FV/Backend/Proof/StockMemoryCfgJumpReturnAt.lean
+@@ -0,0 +1,129 @@
++import FV.Backend.Proof.StockCfgSuccessorDemand
++import FV.Backend.Proof.StockMemoryCfgJumpDefined
++import FV.Backend.Proof.StockCfgDemandValues
++import FV.Backend.Proof.StockInheritedJumpDefined
++import FV.Backend.Proof.StockCfgReturnBlockAt
++import FV.Backend.Proof.LowerShapeOkFacts
++import FV.Backend.Proof.StockComputedCfg
++
++namespace Backend.Stock.Proof.Control
++open Backend.Proof Backend.Proof.Driver
++set_option autoImplicit false
++set_option Elab.async false
++set_option maxRecDepth 20000
++
++/-- Compose an independently proved actual jump body with a source-correct continuation at
++its successor. Only successor-demanded values cross the machine edge. -/
++theorem jump_body_returns_at_of_body {f : Clif.Function} {result : Result}
++    (run : Stock.lower f = .ok result) (scope : LowerScope f) (dominated : Dominated f)
++    {b targetBlock : Clif.Block} {label bi tl : Nat} {bc : Clif.BlockCall}
++    {F : BitVec 64 → Prop} {isem : Backend.Proof.Sem} (refines : Refines F isem)
++    (driver : DriverSem isem) {MR : MemRelT} (stable : MRStable F MR)
++    {env : Clif.Env} {cp : Clif.Program}
++    (spec : JumpBodySpec f result b label bi bc isem MR env cp)
++    (localFamily : ∀ stm ∈ b.body,LocalBody.LocalInst stm.inst)
++    (bodyRefines : ∀ a a',SourceSteps (IndexedSourceInst env cp f spec.core.scan.ctx spec.core.scan.block)
++      (sourceBodyIndices f spec.core.scan.block b).reverse a a' → ∀ ρ w,
++      Inherited.CarryRel f result spec.core.scan.ctx spec.core.scan.block MR (fun _ => False)
++        spec.body.state a ρ w → ∃ ρ' w',
++        seqRun isem (spec.body.code.toList.map (·.mapRegs
++          (Backend.lowerFunction.resolve result.final.alias (result.final.alias.size+1)))) ρ w =
++            some (.fall ρ' w') ∧
++        Inherited.CarryRel f result spec.core.scan.ctx spec.core.scan.block MR (fun _ => False)
++          spec.term.output.state a' ρ' w')
++    (tag : result.order.nodes[label]? = some (.original bi))
++    (jump : b.term = .jump bc)
++    (targetTag : result.order.nodes[spec.target]? = some (.original tl))
++    (targetIndex : blockIdx? f bc.block = some tl)
++    (target : f.block? bc.block = some targetBlock)
++    {next : BlockScanEvent} (nextEvent : next ∈ result.blockScans.toList) (nextBlock : next.block = tl)
++    (demand : ∀ (x : Nat),next.output.state.demand[x]! ≤ spec.term.output.state.demand[x]!)
++    {vals : List Clif.Val} {outMem : Clif.Mem}
++    (continuation : ∀ (fuel : Nat) (s : Clif.State) (ρ : Nat → CV) (w : Arm.ArmState),
++      s.frame.func = f → s.callers = [] → s.frame.body = targetBlock.body →
++      s.frame.term = targetBlock.term → SourceDefinedAt f result.ctx tl 0 s.frame →
++      Clif.runLoop env cp fuel s = .returned vals outMem →
++      GuardedScanRel f result next.ctx next.block MR next.output.state (0,s.frame,s.mem) ρ w →
++      RunOkABIAt f result.code result.edgeArgs isem MR s.frame.slots
++        ⟨spec.target,0,ρ,w⟩ (.returned vals outMem))
++    {fuel : Nat} {s : Clif.State} (callers : s.callers = [])
++    (remaining : s.frame.body = b.body) (atTerm : s.frame.term = b.term)
++    (defined : SourceDefinedAt f result.ctx spec.core.scan.block 0 s.frame)
++    (returned : Clif.runLoop env cp fuel s = .returned vals outMem)
++    {ρ : Nat → CV} {w : Arm.ArmState}
++    (held : GuardedScanRel f result spec.core.scan.ctx spec.core.scan.block MR spec.core.scan.output.state
++      (0,s.frame,s.mem) ρ w) :
++    RunOkABIAt f result.code result.edgeArgs isem MR s.frame.slots
++      ⟨label,spec.preludeCode.size,ρ,w⟩ (.returned vals outMem) := by
++  have source := spec.split.block
++  rw [spec.atBlock] at source
++  obtain ⟨t,left,ρ',w',total,continued,empty,frame,sourceFrame,atJump,executed,post,tDefined⟩ :=
++    Inherited.local_jump_carry_returns_defined_of_body run scope dominated refines driver stable spec jump
++      localFamily (needed := fun _ => False) (by intro x h; cases h) bodyRefines remaining atTerm returned
++      ⟨held,by intro x h; cases h⟩ defined
++  cases left with
++  | zero => cases continued
++  | succ left =>
++    have crossing : ∃ fr',Clif.enterBlock t.frame bc = .ok fr' := by
++      cases call : Clif.enterBlock t.frame bc with
++      | ok fr' => exact ⟨fr',rfl⟩
++      | trap code =>
++        rw [Clif.runLoop_succ] at continued
++        simp only [Clif.step,empty,atJump,Clif.stepTerm,call,Clif.StepResult.ofRes] at continued
++        cases continued
++      | stuck message =>
++        rw [Clif.runLoop_succ] at continued
++        simp only [Clif.step,empty,atJump,Clif.stepTerm,call,Clif.StepResult.ofRes] at continued
++        cases continued
++    obtain ⟨fr',crossed⟩ := crossing
++    have successor : result.order.successors[label]![0]? = some spec.target := by
++      have targets : result.order.successors[label]! = #[spec.target] := Array.toList_inj.mp spec.targets
++      rw [targets]; rfl
++    obtain ⟨ρnext,copied,nextDefined,nextHeld⟩ := direct_successor_guarded_of_demand run scope dominated
++      spec.events nextEvent tag source (by simp [jump,dests]) successor targetTag targetIndex target
++      spec.atBlock nextBlock post.1 (by simpa only [spec.atBlock] using tDefined) crossed
++      (jump_successor_values_of_demand run scope dominated spec jump targetTag targetIndex target nextBlock demand post.1)
++    have nextReturned : Clif.runLoop env cp left ⟨fr',[],t.mem⟩ = .returned vals outMem := by
++      rw [Clif.runLoop_succ] at continued
++      have tc : t.callers = [] := frame.1.trans callers
++      simpa only [Clif.step,empty,atJump,Clif.stepTerm,crossed,Clif.StepResult.ofRes,tc] using continued
++    have tFunc := post.1.1
++    obtain ⟨destination,args,regs,found,read,types,set,frEq⟩ := enterBlock_spec crossed
++    have destinationEq : destination = targetBlock := by
++      rw [tFunc] at found
++      exact Option.some.inj (found.symm.trans target)
++    have bodyEq : fr'.body = targetBlock.body := by rw [frEq,destinationEq]
++    have termEq : fr'.term = targetBlock.term := by rw [frEq,destinationEq]
++    have slotsEq : fr'.slots = s.frame.slots := by rw [frEq]; exact frame.2.2.1
++    have finished := continuation left ⟨fr',[],t.mem⟩ ρnext w' nextHeld.1 rfl bodyEq termEq
++      nextDefined nextReturned nextHeld
++    let resolve := Backend.lowerFunction.resolve result.final.alias (result.final.alias.size+1)
++    have segment : SegAt {spec.raw with
++        insts := spec.raw.insts.map (·.mapRegs resolve)
++        params := spec.raw.params.map resolve
++        branchArgs := spec.raw.branchArgs.map resolve}
++        spec.preludeCode.size (spec.core.code.toList.map (·.mapRegs resolve)) := by
++      intro k hk
++      have bound : k < spec.core.code.size := by simpa using hk
++      simp only [spec.rawCode,Array.map_append]
++      rw [Array.getElem?_append_right (by simpa only [Array.size_map] using Nat.le_add_right spec.preludeCode.size k)]
++      simp only [Array.size_map,Nat.add_sub_cancel_left]
++      simp [bound]
++    have last : spec.preludeCode.size+spec.body.code.size+1 =
++        (spec.raw.insts.map (·.mapRegs resolve)).size := by
++      simp only [spec.rawCode,spec.bodyCode,Array.size_map,Array.size_append,Array.size_singleton]
++      omega
++    obtain ⟨ps,cfg⟩ := stock_lower_computed_cfg run scope
++    have actualSuccessor : succOf result.code label 0 = some spec.target := by
++      cases row : result.order.successors[label]? with
++      | none =>
++        simp only [getElem!_def,row,Option.getD_none] at successor
++        change (#[] : Array Nat)[0]? = some spec.target at successor
++        cases successor
++      | some values => simpa [succOf,cfg,getElem!_def,row] using successor
++    have path := seqRun_goto_starAt spec.placed segment executed last actualSuccessor
++      (by simpa only [vdefUpd,writeV,List.foldl_nil,Array.toList_empty,List.filter_nil,List.zip_nil_left] using copied)
++    have whole := RunOkABIAt.prefix path finished
++    simpa only [slotsEq] using whole
++
++end Backend.Stock.Proof.Control
+diff --git a/FV/Backend/Proof/StockMemoryCfgNotrap.lean b/FV/Backend/Proof/StockMemoryCfgNotrap.lean
+new file mode 100644
+index 00000000..f8944786
+--- /dev/null
++++ b/FV/Backend/Proof/StockMemoryCfgNotrap.lean
+@@ -0,0 +1,145 @@
++import FV.Backend.Proof.StockMemoryNotrap
++import FV.Backend.Proof.StockMemoryCfgClass
++import FV.Backend.Proof.LowerLemmas
++
++namespace Backend.Stock.Proof.OrdinaryCfg
++open Backend.Proof Backend.Proof.Driver
++set_option autoImplicit false
++set_option Elab.async false
++set_option maxRecDepth 20000
++
++private theorem getMany_notrap (fr : Clif.Frame) (xs : List Nat) (c : Clif.TrapCode) :
++    fr.getMany xs ≠ .trap c := by
++  induction xs generalizing c with
++  | nil => simp [Clif.Frame.getMany]
++  | cons x xs ih =>
++    cases found : fr.get x with
++    | trap code => exact False.elim (fr.get_ne_trap x code found)
++    | stuck message => simp [Clif.Frame.getMany,found]
++    | ok value =>
++      cases rest : fr.getMany xs with
++      | trap code => exact False.elim ((ih code) rest)
++      | stuck message => simp [Clif.Frame.getMany,found,rest]
++      | ok values => simp [Clif.Frame.getMany,found,rest]
++
++private theorem enterBlock_notrap (fr : Clif.Frame) (bc : Clif.BlockCall) (c : Clif.TrapCode) :
++    Clif.enterBlock fr bc ≠ .trap c := by
++  intro trapped
++  unfold Clif.enterBlock at trapped
++  rcases Clif.res_bind_eq_trap trapped with bad | ⟨block,_,bad⟩
++  · exact Clif.Res.ofOption_ne_trap _ _ c bad
++  · rcases Clif.res_bind_eq_trap bad with bad | ⟨args,_,bad⟩
++    · exact getMany_notrap fr bc.args c bad
++    · rcases Clif.res_bind_eq_trap bad with bad | ⟨unit,_,bad⟩
++      · exact Clif.Res.check_ne_trap _ _ c bad
++      · rcases Clif.res_bind_eq_trap bad with bad | ⟨regs,_,bad⟩
++        · exact Clif.Res.ofOption_ne_trap _ _ c bad
++        · cases bad
++
++/-- Ordinary nontrapping bodies remain nontrapping across original jumps and returns. -/
++theorem ordinary_jump_return_notrap {env : Clif.Env} {cp : Clif.Program} {f : Clif.Function}
++    (family : ∀ b ∈ f.blocks,∀ stm ∈ b.body,OrdinaryBody.OrdinaryInst stm.inst ∧
++      ∀ fr cm c,Clif.evalInst fr cm stm.inst ≠ .trap c)
++    (terms : ∀ b ∈ f.blocks,(∃ bc,b.term = .jump bc) ∨ (∃ xs,b.term = .ret xs))
++    (fuel : Nat) (s : Clif.State) (func : s.frame.func = f) (callers : s.callers = [])
++    (body : ∀ stm ∈ s.frame.body,OrdinaryBody.OrdinaryInst stm.inst ∧
++      ∀ fr cm c,Clif.evalInst fr cm stm.inst ≠ .trap c)
++    (term : (∃ bc,s.frame.term = .jump bc) ∨ (∃ xs,s.frame.term = .ret xs))
++    (code : Clif.TrapCode) : Clif.runLoop env cp fuel s ≠ .trapped code := by
++  induction fuel generalizing s with
++  | zero => simp
++  | succ fuel ih =>
++    cases remaining : s.frame.body with
++    | nil =>
++      rcases term with ⟨bc,jump⟩ | ⟨xs,ret⟩
++      · rw [Clif.runLoop_succ,Clif.step_term env cp s remaining,jump,Clif.stepTerm]
++        cases entered : Clif.enterBlock s.frame bc with
++        | trap c => exact False.elim (enterBlock_notrap s.frame bc c entered)
++        | stuck message => simp only [Clif.StepResult.ofRes]; simp
++        | ok fr =>
++          simp only [Clif.StepResult.ofRes]
++          obtain ⟨block,args,regs,found,read,types,set,frame⟩ := enterBlock_spec entered
++          have member : block ∈ f.blocks := by
++            apply List.mem_of_find?_eq_some
++            simpa only [func,Clif.Function.block?] using found
++          apply ih {s with frame := fr} (by rw [frame]; exact func) callers
++          · intro stm present
++            apply family block member stm
++            simpa only [frame] using present
++          · simpa only [frame] using terms block member
++      · exact OrdinaryBody.ordinary_source_notrap (fuel+1) s callers body ret code
++    | cons stm rest =>
++      have here := body stm (by simp [remaining])
++      rw [Clif.runLoop_succ,Clif.step_inst env cp s stm rest remaining here.1.1 here.1.2]
++      cases evaluated : Clif.evalInst s.frame s.mem stm.inst with
++      | trap c => exact False.elim (here.2 s.frame s.mem c evaluated)
++      | stuck message => simp
++      | ok pair =>
++        rcases pair with ⟨values,cm⟩
++        simp only [Clif.StepResult.ofRes,Clif.continueWith]
++        cases written : s.frame.regs.setMany stm.results values with
++        | none => simp
++        | some regs =>
++          simp only
++          apply ih {s with frame := {s.frame with regs,body := rest},mem := cm} func callers ?_ term
++          intro other present
++          apply body other
++          rw [remaining]
++          exact List.mem_cons_of_mem _ present
++
++end Backend.Stock.Proof.OrdinaryCfg
++
++namespace Backend.Stock.MemoryCfg
++open Backend.Proof Backend.Proof.Driver Backend.Stock.Proof
++set_option autoImplicit false
++set_option Elab.async false
++
++/-- The captured source class cannot produce a trap, including after its jump. -/
++theorem TwoBlockClass.source_notrap {f : Clif.Function} (family : TwoBlockClass f)
++    {args : List Clif.Val} {fr : Clif.Frame} (entered : SourceEntry f args fr)
++    {env : Clif.Env} {cp : Clif.Program} {cm : Clif.Mem} (fuel : Nat) (code : Clif.TrapCode) :
++    Clif.runLoop env cp fuel ⟨fr,[],cm⟩ ≠ .trapped code := by
++  obtain ⟨entry,target,x,z,flags,blocks,entryBody,targetBody,jump,ret,parameter,notrap⟩ := family.shape
++  have nop (stm : Clif.Stmt) (isNop : stm.inst = .nop) : OrdinaryBody.OrdinaryInst stm.inst ∧
++      ∀ fr cm c,Clif.evalInst fr cm stm.inst ≠ .trap c := by
++    constructor
++    · simp [OrdinaryBody.OrdinaryInst,isNop]
++    · intro fr cm c trapped
++      rw [isNop] at trapped
++      cases trapped
++  have all : ∀ b ∈ f.blocks,∀ stm ∈ b.body,OrdinaryBody.OrdinaryInst stm.inst ∧
++      ∀ fr cm c,Clif.evalInst fr cm stm.inst ≠ .trap c := by
++    intro b present stm member
++    simp [blocks] at present
++    rcases present with rfl | rfl
++    · have equal : stm = ⟨[],.nop⟩ := by simpa only [entryBody,List.mem_singleton] using member
++      subst stm
++      exact nop _ rfl
++    · have cases : stm = ⟨[],.nop⟩ ∨ stm = ⟨[z],.load .load .i32 flags x 0⟩ := by
++        simpa [targetBody] using member
++      rcases cases with rfl | rfl
++      · exact nop _ rfl
++      · refine ⟨?_,?_⟩
++        · simp [OrdinaryBody.OrdinaryInst]
++        · intro fr cm c
++          exact Clif.evalInst_notrap rfl notrap c
++  have terms : ∀ b ∈ f.blocks,(∃ bc,b.term = .jump bc) ∨ (∃ xs,b.term = .ret xs) := by
++    intro b present
++    simp [blocks] at present
++    rcases present with rfl | rfl
++    · exact .inl ⟨_,jump⟩
++    · exact .inr ⟨_,ret⟩
++  obtain ⟨original,regs,first,argTypes,paramTypes,set,frame⟩ := entered
++  have source : f.blocks[0]? = some original := by
++    simpa only [Clif.Function.entry?,List.head?_eq_getElem?] using first
++  have member : original ∈ f.blocks := List.mem_of_getElem? source
++  have body : ∀ stm ∈ fr.body,OrdinaryBody.OrdinaryInst stm.inst ∧
++      ∀ fr cm c,Clif.evalInst fr cm stm.inst ≠ .trap c := by
++    intro stm present
++    apply all original member stm
++    rw [frame] at present
++    exact present
++  exact OrdinaryCfg.ordinary_jump_return_notrap all terms fuel ⟨fr,[],cm⟩
++    (by rw [frame]) rfl body (by rw [frame]; exact terms original member) code
++
++end Backend.Stock.MemoryCfg
+diff --git a/FV/Backend/Proof/StockMemoryCfgReturnRefinesAt.lean b/FV/Backend/Proof/StockMemoryCfgReturnRefinesAt.lean
+new file mode 100644
+index 00000000..5d4276df
+--- /dev/null
++++ b/FV/Backend/Proof/StockMemoryCfgReturnRefinesAt.lean
+@@ -0,0 +1,117 @@
++import FV.Backend.Proof.StockMemorySourceExecution
++import FV.Backend.Proof.StockArithmeticEntryRefines
++import FV.Backend.Proof.StockPerEdgeReturnContract
++
++/-! UNVALIDATED next-batch source. The frozen production packet excludes this file.
++Compose an ordinary memory-capable body under per-successor VCode semantics.
++Keep the existing public return theorem unchanged. -/
++namespace Backend.Stock.Proof.OrdinaryBody
++open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
++set_option autoImplicit false
++set_option Elab.async false
++set_option maxRecDepth 8192
++attribute [local irreducible] Isle.Aarch64.program Stock.runTerm
++
++private theorem return_done_of_runLoop {env : Clif.Env} {cp : Clif.Program}
++    {s : Clif.State} {xs : List Nat} {fuel : Nat} {vals : List Clif.Val} {mem : Clif.Mem}
++    (empty : s.frame.body = []) (callers : s.callers = []) (term : s.frame.term = .ret xs)
++    (returned : Clif.runLoop env cp fuel s = .returned vals mem) :
++    Clif.stepTerm env cp s (.ret xs) = .done vals mem := by
++  cases fuel with
++  | zero => cases returned
++  | succ fuel =>
++    rw [Clif.runLoop_succ,Clif.step_term env cp s empty,term] at returned
++    cases step : Clif.stepTerm env cp s (.ret xs) with
++    | next t => exact False.elim ((stepTerm_ret callers).1 t step)
++    | done vs cm =>
++      simp only [step,Clif.Outcome.returned.injEq] at returned
++      obtain ⟨rfl,rfl⟩ := returned
++      rfl
++    | trapped c => simp only [step] at returned; cases returned
++    | stuck message => simp only [step] at returned; cases returned
++
++private theorem factor_seg {vb : VBlock} {pre code post : Array MInst}
++    (parts : vb.insts = pre ++ code ++ post) : SegAt vb pre.size code.toList := by
++  intro k hk
++  have bound : k < code.size := by simpa using hk
++  rw [parts,Array.append_assoc,Array.getElem?_append_right (by omega)]
++  simp only [Nat.add_sub_cancel_left]
++  rw [Array.getElem?_append_left bound]
++  simp [bound]
++
++/-- Compose a proved ordinary body with its actual placed return segment. -/
++theorem actual_ordinary_return_refines_at_block {f : Clif.Function} {result : Result}
++    (run : Stock.lower f = .ok result) (scope : LowerScope f) (dominated : Dominated f)
++    (abi : sigAbiOk f.sig = true) {b : Clif.Block}
++    (family : ∀ stm ∈ b.body, OrdinaryInst stm.inst)
++    {xs : List Nat} (ret : b.term = .ret xs)
++    {event : BlockScanEvent} (events : event ∈ result.blockScans.toList)
++    {term : ScanRecord} {body : BlockScan} (split : SourceBodySplit f event b term body)
++    {env : Clif.Env} {cp : Clif.Program} {fuel : Nat} {s : Clif.State}
++    (func : s.frame.func = f) (callers : s.callers = [])
++    (remaining : s.frame.body = b.body) (terminal : s.frame.term = b.term)
++    (defined : SourceDefinedAt f result.ctx event.block 0 s.frame)
++    {vals : List Clif.Val} {mem : Clif.Mem}
++    (returned : Clif.runLoop env cp fuel s = .returned vals mem)
++    {F : BitVec 64 → Prop} {isem : Backend.Proof.Sem} (refines : Refines F isem)
++    {MR : MemRelT} (stable : MRStable F MR)
++    (bodyRun : ∀ s s', SourceSteps (IndexedSourceInst env cp f event.ctx event.block)
++        ((List.range b.body.length).map (blockStart f event.block + ·)) s s' →
++        ∀ ρ w, GuardedScanRel f result event.ctx event.block MR event.output.state s ρ w → ∃ ρ' w',
++          seqRun isem (body.code.toList.map (·.mapRegs
++            (Backend.lowerFunction.resolve result.final.alias (result.final.alias.size + 1)))) ρ w =
++            some (.fall ρ' w') ∧
++          GuardedScanRel f result event.ctx event.block MR term.output.state s' ρ' w')
++    {label : Nat} {vb : VBlock} {pre post : Array MInst}
++    (placed : result.code.blocks[label]? = some vb)
++    (code : vb.insts = pre ++ event.output.code.map (·.mapRegs
++      (Backend.lowerFunction.resolve result.final.alias (result.final.alias.size+1))) ++ post) :
++    ∀ ρ w, GuardedScanRel f result event.ctx event.block MR event.output.state
++      (0,s.frame,s.mem) ρ w →
++      RunOkABIAt f result.code result.edgeArgs isem MR s.frame.slots ⟨label,pre.size,ρ,w⟩ (.returned vals mem) := by
++  have start : s.frame.body = b.body.drop 0 := by simpa using remaining
++  obtain ⟨t,left,total,ends,empty,steps,frame⟩ := actual_ordinary_source_execution_frame
++    run events split family (j := 0) (by omega) start returned
++  have tDefined : SourceDefinedAt f result.ctx event.block b.body.length t.frame := by
++    apply ArithmeticBody.arithmetic_steps_defined run scope dominated events split.block
++      (env := env) (cp := cp) (s := (0,s.frame,s.mem)) (t := (b.body.length,t.frame,t.mem))
++      (j := 0) (n := b.body.length) (by omega) rfl ?_ defined
++    simpa only [Nat.add_zero,Nat.sub_zero] using steps
++  have tFunc : t.frame.func = f := frame.2.1.trans func
++  have tCallers : t.callers = [] := frame.1.trans callers
++  have tTerm : t.frame.term = .ret xs := frame.2.2.2.trans (terminal.trans ret)
++  have done := return_done_of_runLoop empty tCallers tTerm ends
++  let resolve := Backend.lowerFunction.resolve result.final.alias (result.final.alias.size+1)
++  have pieces : vb.insts = pre ++ body.code.map (·.mapRegs resolve) ++
++      (term.output.emitted.map (·.mapRegs resolve) ++ post) := by
++    simp only [code,split.code,Array.map_append,Array.append_assoc,resolve]
++  have bodySeg : SegAt vb pre.size (body.code.toList.map (·.mapRegs resolve)) := by
++    simpa only [Array.toList_map] using factor_seg pieces
++  have termPieces : vb.insts = (pre ++ body.code.map (·.mapRegs resolve)) ++
++      term.output.emitted.map (·.mapRegs resolve) ++ post := by
++    simpa only [Array.append_assoc] using pieces
++  have termSeg : SegAt vb (pre.size+body.code.size)
++      (term.output.emitted.toList.map (·.mapRegs resolve)) := by
++    simpa only [Array.size_append,Array.size_map,Array.toList_map] using factor_seg termPieces
++  have termMember : term ∈ event.output.records := by rw [split.records]; exact List.mem_cons_self
++  intro ρ w held
++  obtain ⟨ρ',w',executed,postHeld⟩ := bodyRun (0,s.frame,s.mem) (b.body.length,t.frame,t.mem)
++    (by simpa only [Nat.add_zero,Nat.sub_zero,List.range'_eq_map_range] using steps) ρ w held
++  obtain ⟨heldFunc,dfg,memory,values⟩ := postHeld
++  obtain ⟨step,rs,ps,extra,recorded,emitted,termCode,rest⟩ :=
++    stock_lower_return_record_source_run_auto run scope dominated abi events split.block ret
++      termMember split.termInst tFunc tCallers done tDefined values refines stable
++  have nonempty : 0 < term.output.emitted.size := by rw [termCode]; exact Nat.zero_lt_succ 0
++  have room : pre.size + (body.code.toList.map (·.mapRegs resolve)).length < vb.insts.size := by
++    have sizes := congrArg Array.size pieces
++    simp only [Array.size_append,Array.size_map] at sizes
++    simp only [List.length_map,Array.length_toList]
++    omega
++  have path := seqRun_fall_starAt (edges := result.edgeArgs) (vc := result.code) (sem := isem) placed bodySeg room executed
++  have finished := stock_lower_return_record_runOkAt run scope dominated abi events split.block ret
++    termMember split.termInst tFunc tCallers done tDefined values refines stable placed termSeg w' memory
++  have combined := RunOkABIAt.prefix path (by simpa only [List.length_map,Array.length_toList] using finished)
++  simpa only [frame.2.2.1] using combined
++
++
++end Backend.Stock.Proof.OrdinaryBody
+diff --git a/FV/Backend/Proof/StockMemoryCfgSourceWitness.lean b/FV/Backend/Proof/StockMemoryCfgSourceWitness.lean
+new file mode 100644
+index 00000000..5a58fb88
+--- /dev/null
++++ b/FV/Backend/Proof/StockMemoryCfgSourceWitness.lean
+@@ -0,0 +1,22 @@
++import FV.Backend.Proof.StockMemoryCfgClass
++import FV.Backend.Proof.StockMemoryCapturedFixture
++
++namespace Backend.Stock.MemoryCfg
++open Backend.Proof Backend.Proof.Driver Backend.Stock.Proof Backend.Stock.Memory
++set_option autoImplicit false
++set_option Elab.async false
++set_option maxRecDepth 20000
++
++/-- Existing source proofs positively inhabit the new memory CFG class. -/
++theorem captured_source_class : TwoBlockClass CapturedFixture.function := by
++  refine ⟨CapturedFixture.scope,CapturedFixture.dominated,rfl,rfl,?_,?_⟩
++  · intro loc member
++    change loc ∈ [ArgLoc.reg (.x 0)] at member
++    exact ⟨.x 0,List.mem_singleton.mp member⟩
++  · exact ⟨CapturedFixture.function.blocks[0]!,CapturedFixture.function.blocks[1]!,0,2,
++      LoadFixture.flags,rfl,rfl,rfl,rfl,rfl,by simp [CapturedFixture.function],rfl⟩
++
++-- Executable acceptance regression; this command adds no proof axiom.
++#guard Backend.Stock.MemoryCfg.sourceOk CapturedFixture.function
++
++end Backend.Stock.MemoryCfg
+diff --git a/FV/Backend/Proof/StockMemoryNopBody.lean b/FV/Backend/Proof/StockMemoryNopBody.lean
+new file mode 100644
+index 00000000..3747a41e
+--- /dev/null
++++ b/FV/Backend/Proof/StockMemoryNopBody.lean
+@@ -0,0 +1,46 @@
++import FV.Backend.Proof.StockMaskBlockRecords
++import FV.Backend.Proof.StockGuardedOmission
++
++/-! UNVALIDATED next-batch source. The frozen production packet excludes this file.
++Derive the entry NOP body from actual omitted records. Memory instructions in
++other original blocks do not add a global format restriction. -/
++namespace Backend.Stock.Memory
++open Backend.Proof Backend.Proof.Driver Backend.Stock.Proof
++set_option autoImplicit false
++set_option Elab.async false
++set_option maxRecDepth 20000
++
++/-- Original NOP syntax derives guarded execution of the actual body. -/
++theorem stock_nop_body {f : Clif.Function} {result : Result}
++    (run : Stock.lower f = .ok result) (scope : LowerScope f) (dominated : Dominated f)
++    {event : BlockScanEvent} (events : event ∈ result.blockScans.toList)
++    {b : Clif.Block} (block : f.blocks[event.block]? = some b)
++    (nops : ∀ stm ∈ b.body,stm.inst = .nop)
++    {isem : Backend.Proof.Sem} {MR : MemRelT} {env : Clif.Env} {cp : Clif.Program} :
++    ∃ (term : ScanRecord) (body : BlockScan),SourceBodySplit f event b term body ∧
++      ∀ s s',SourceSteps (IndexedSourceInst env cp f event.ctx event.block)
++        ((List.range b.body.length).map (blockStart f event.block+·)) s s' →
++        ∀ ρ w,GuardedScanRel f result event.ctx event.block MR event.output.state s ρ w →
++          ∃ ρ' w',seqRun isem (body.code.toList.map (·.mapRegs
++            (Backend.lowerFunction.resolve result.final.alias (result.final.alias.size+1)))) ρ w =
++              some (.fall ρ' w') ∧
++            GuardedScanRel f result event.ctx event.block MR term.output.state s' ρ' w' := by
++  obtain ⟨original,term,body,split⟩ := stock_lower_body_scan_split run scope events
++  have same : original = b := Option.some.inj (split.block.symm.trans block)
++  subst original
++  have each : ∀ record ∈ body.records,ScanFallRefines
++      (IndexedSourceInst env cp f event.ctx event.block) isem result.final.alias
++      (GuardedScanRel f result event.ctx event.block MR) record := by
++    intro record member
++    obtain ⟨j,stm,statement,current⟩ := split.positions record member
++    obtain ⟨step,recorded,omitted⟩ := MaskBody.actual_nop_record_at_block run scope events
++      split member statement current (nops stm (List.mem_of_getElem? statement))
++    exact stock_lower_omitted_scan_fall_refines run scope dominated events
++      (split.retained record member) split.block statement current recorded omitted
++  refine ⟨term,body,split,?_⟩
++  intro s s' steps ρ w held
++  apply split.scanned.fall_refines each s s'
++  · simpa only [sourceBodyIndices,List.reverse_reverse] using steps
++  · simpa only [split.state] using held
++
++end Backend.Stock.Memory
+diff --git a/FV/Backend/Proof/StockMemoryNopJumpSpec.lean b/FV/Backend/Proof/StockMemoryNopJumpSpec.lean
+new file mode 100644
+index 00000000..65da4aae
+--- /dev/null
++++ b/FV/Backend/Proof/StockMemoryNopJumpSpec.lean
+@@ -0,0 +1,110 @@
++import FV.Backend.Proof.StockJumpBodyRefines
++import FV.Backend.Proof.StockMemoryNopTrapBody
++
++namespace Backend.Stock.Proof.Control
++open Backend.Proof Backend.Proof.Driver
++set_option autoImplicit false
++set_option Elab.async false
++set_option maxRecDepth 20000
++attribute [local irreducible] Isle.Aarch64.program Stock.runTerm lowerBlockCore
++
++/-- Local NOP syntax derives the actual jump contract without restricting other blocks. -/
++theorem stock_lower_nop_jump_body_spec {f : Clif.Function} {result : Result}
++    (run : Stock.lower f = .ok result) (scope : LowerScope f) (dominated : Dominated f)
++    {label bi : Nat} {b : Clif.Block} {bc : Clif.BlockCall}
++    (tag : result.order.nodes[label]? = some (.original bi)) (source : f.blocks[bi]? = some b)
++    (nops : ∀ stm ∈ b.body,stm.inst = .nop) (jump : b.term = .jump bc)
++    {isem : Backend.Proof.Sem} (driver : DriverSem isem) {MR : MemRelT}
++    (env : Clif.Env) (cp : Clif.Program) :
++    Nonempty (JumpBodySpec f result b label bi bc isem MR env cp) := by
++  obtain ⟨ranges,params,input,data,core,raw,preludeCode,coreRun,assembled,build,sizes,prepared,
++    events,atBlock,rawCode,placed⟩ := stock_lower_original_block_scan_assembly run tag
++  have sourceValue : f.blocks[bi]! = b := by rw [List.getElem!_eq_getElem?_getD,source]; rfl
++  rw [sourceValue] at coreRun assembled prepared
++  have expected : Coverage.blockData f b.term =
++      .ok (.data 152 15 [.data 151 0 [],.blockCalls [0]]) := by
++    rw [jump]
++    with_unfolding_all rfl
++  have dataEq := Except.ok.inj (prepared.symm.trans expected)
++  subst data
++  obtain ⟨original,st0,oldBuild,ctxSpec,view⟩ := buildCtx_source build
++  have range : ranges[bi]! = (blockStart f bi,blockStart f bi+b.body.length+1) := by
++    simp only [getElem!_def,ctxSpec.ranges bi b source]
++  have placeholder : result.ctx.insts[blockStart f bi+b.body.length]? = some ⟨.op .unit,[],[],none⟩ := by
++    rw [view.insts]
++    exact ctxSpec.facts.term bi b source
++  have bound : ranges[bi]!.2-1 < result.ctx.insts.size := by
++    have inside := (Array.getElem?_eq_some_iff.mp placeholder).1
++    rw [range]
++    dsimp only
++    omega
++  obtain ⟨target,targets,branch,coreCode⟩ := stock_jump_core_code jump bound coreRun
++  obtain ⟨term,body,split,normal,trapping⟩ := Backend.Stock.Memory.stock_nop_body_with_traps
++    run scope dominated events (b := b) (by rw [atBlock]; exact source) nops
++    (isem := isem) (MR := MR) (env := env) (cp := cp)
++  have scanCode := (stock_branch_scan_body_code split branch).1
++  have bodyCode : core.code = body.code ++ #[.jump target] := by rw [coreCode,scanCode]
++  have localFamily : ∀ stm ∈ b.body,LocalBody.LocalInst stm.inst := by
++    intro stm member
++    simp [LocalBody.LocalInst,nops stm member]
++  let resolve := Backend.lowerFunction.resolve result.final.alias (result.final.alias.size+1)
++  have finish : ∀ ρ w ρ' w',seqRun isem (body.code.toList.map (·.mapRegs resolve)) ρ w = some (.fall ρ' w') →
++      seqRun isem (core.code.toList.map (·.mapRegs resolve)) ρ w =
++        some (.stop body.code.size (.jump target) #[] ρ' w' [] w' (.goto 0)) := by
++    intro ρ w ρ' w' executed
++    have bodyRun : seqRun isem (core.scan.output.code.map (·.mapRegs resolve)).toList ρ w = some (.fall ρ' w') := by
++      simpa only [Array.toList_map,scanCode] using executed
++    obtain ⟨next,labels,executed⟩ := stock_jump_core_seq jump bound coreRun driver.toDriverSemG resolve bodyRun
++    have same : next = target := (List.cons.inj (labels.symm.trans targets)).1
++    subst next
++    simpa only [Array.toList_map,scanCode] using executed
++  refine ⟨{
++    ranges := ranges
++    params := params
++    input := input
++    data := _
++    core := core
++    raw := raw
++    preludeCode := preludeCode
++    term := term
++    body := body
++    target := target
++    build := build
++    sizes := sizes
++    coreRun := coreRun
++    assembled := assembled
++    prepared := prepared
++    events := events
++    atBlock := atBlock
++    split := split
++    targets := targets
++    bodyCode := bodyCode
++    rawCode := rawCode
++    placed := placed
++    returns := ?_
++    traps := ?_}⟩
++  · intro fuel s vals cm remaining atTerm returned ρ w held
++    obtain ⟨t,left,total,continued,empty,steps,frame⟩ := LocalBody.actual_local_source_execution_frame
++      run events split localFamily (j := 0) (by omega) (by simpa using remaining) returned
++    obtain ⟨ρ',w',executed,post⟩ := normal (0,s.frame,s.mem) (b.body.length,t.frame,t.mem)
++      (by simpa only [Nat.add_zero,Nat.sub_zero,List.range'_eq_map_range] using steps) ρ w held
++    exact ⟨t,left,ρ',w',by simpa using total,continued,empty,frame,
++      frame.2.2.2.trans (atTerm.trans jump),finish ρ w ρ' w' executed,post⟩
++  · intro fuel s code remaining atTerm trapped ρ w held
++    rcases LocalBody.actual_local_source_trap_or_continue run events split localFamily
++      (j := 0) (by omega) (by simpa using remaining) trapped with failed | ⟨t,left,total,continued,empty,steps,frame⟩
++    · left
++      have failedRun := trapping (0,s.frame,s.mem) code
++        (by simpa only [Nat.add_zero,Nat.sub_zero,List.range'_eq_map_range] using failed) ρ w held
++      obtain ⟨k,i,ops,ρ',w',outs,w'',executed,coded⟩ := failedRun
++      refine ⟨k,i,ops,ρ',w',outs,w'',?_,coded⟩
++      rw [bodyCode,Array.toList_append,List.map_append]
++      exact seqRun_append_stop isem executed
++    · right
++      obtain ⟨ρ',w',executed,post⟩ := normal (0,s.frame,s.mem) (b.body.length,t.frame,t.mem)
++        (by simpa only [Nat.add_zero,Nat.sub_zero,List.range'_eq_map_range] using steps) ρ w held
++      exact ⟨t,left,ρ',w',by simpa using total,continued,empty,frame,
++        frame.2.2.2.trans (atTerm.trans jump),finish ρ w ρ' w' executed,post⟩
++
++
++end Backend.Stock.Proof.Control
+diff --git a/FV/Backend/Proof/StockMemoryNopReturnBody.lean b/FV/Backend/Proof/StockMemoryNopReturnBody.lean
+new file mode 100644
+index 00000000..02bf245d
+--- /dev/null
++++ b/FV/Backend/Proof/StockMemoryNopReturnBody.lean
+@@ -0,0 +1,57 @@
++import FV.Backend.Proof.StockMemoryAutoScan
++import FV.Backend.Proof.StockMemoryRetainedReturnSpec
++import FV.Backend.Proof.StockGuardedOmission
++
++/-! UNVALIDATED next-batch guarded body; excluded from frozen author HEAD. -/
++namespace Backend.Stock.Memory
++open Backend.Proof Backend.Proof.Driver Backend.Stock.Proof Isle Isle.Interp Isle.Aarch64
++set_option autoImplicit false
++set_option Elab.async false
++set_option maxRecDepth 20000
++set_option maxHeartbeats 4000000
++
++/-- Original returned-load/NOP syntax derives the complete guarded body
++proof, including retention, actual selection, result/pointer mappings and final
++aliases. The pointer can be inherited from a different original source block.
++No retained-record, selected-rule or emitted-code certificate is a premise. -/
++theorem stock_nop_load_return_body {f : Clif.Function} {result : Result}
++    (run : Stock.lower f = .ok result) (scope : LowerScope f) (dominated : Dominated f)
++    {event : BlockScanEvent} (events : event ∈ result.blockScans.toList)
++    {b : Clif.Block} (block : f.blocks[event.block]? = some b)
++    {loadIndex x z : Nat} {flags : Clif.MemFlags}
++    (statement : b.body[loadIndex]? = some ⟨[z],.load .load .i32 flags x 0⟩)
++    (shape : ∀ j stm,b.body[j]? = some stm → j = loadIndex ∨ stm.inst = .nop)
++    (ret : b.term = .ret [z])
++    {pi : Nat} {pb : Clif.Block} (parameterBlock : f.blocks[pi]? = some pb)
++    (parameter : x ∈ pb.params.map (·.1))
++    {F : BitVec 64 → Prop} {sb : Nat} {syms : String → Option Nat} {isem : Backend.Proof.Sem}
++    {MR : MemRelT} (stable : MRStable F MR) (memorySem : MemRefines F sb syms isem)
++    (memoryOk : MemRelOk F sb syms f MR) {env : Clif.Env} {cp : Clif.Program} :
++    ∃ (term : ScanRecord) (body : BlockScan),SourceBodySplit f event b term body ∧
++      ∀ s s',SourceSteps (IndexedSourceInst env cp f event.ctx event.block)
++        ((List.range b.body.length).map (blockStart f event.block+·)) s s' →
++        ∀ ρ w,GuardedScanRel f result event.ctx event.block MR event.output.state s ρ w →
++          ∃ ρ' w',seqRun isem (body.code.toList.map (·.mapRegs
++            (Backend.lowerFunction.resolve result.final.alias (result.final.alias.size+1)))) ρ w =
++              some (.fall ρ' w') ∧
++            GuardedScanRel f result event.ctx event.block MR term.output.state s' ρ' w' := by
++  obtain ⟨spec⟩ := stock_retained_load_return_spec run scope dominated events block statement ret parameterBlock parameter
++  have normal := stock_lower_load_scan_fall_refines_auto run scope dominated events spec.records block statement spec.current
++    spec.source spec.clif spec.results rfl spec.mapped spec.parameter spec.pointer spec.recorded spec.emitted
++    stable memorySem memoryOk (env := env) (cp := cp)
++  refine ⟨spec.term,spec.body,spec.split,?_⟩
++  have each : ∀ r ∈ spec.body.records,ScanFallRefines (IndexedSourceInst env cp f event.ctx event.block)
++      isem result.final.alias (GuardedScanRel f result event.ctx event.block MR) r := by
++    intro r present
++    rcases spec.nop_records run scope events shape r present with same | ⟨step,recorded,omitted⟩
++    · subst r
++      exact normal
++    · obtain ⟨j,stm,sourceStmt,current⟩ := spec.split.positions r present
++      exact stock_lower_omitted_scan_fall_refines run scope dominated events
++        (spec.split.retained r present) spec.split.block sourceStmt current recorded omitted
++  intro s s' steps ρ w held
++  apply spec.split.scanned.fall_refines each s s'
++  · simpa only [sourceBodyIndices,List.reverse_reverse] using steps
++  · simpa only [spec.split.state] using held
++
++end Backend.Stock.Memory
+diff --git a/FV/Backend/Proof/StockMemoryNopTrapBody.lean b/FV/Backend/Proof/StockMemoryNopTrapBody.lean
+new file mode 100644
+index 00000000..42062b44
+--- /dev/null
++++ b/FV/Backend/Proof/StockMemoryNopTrapBody.lean
+@@ -0,0 +1,62 @@
++import FV.Backend.Proof.StockMemoryNopBody
++import FV.Backend.Proof.StockLocalSourceTrap
++import FV.Backend.Proof.StockArithmeticBodyRefines
++
++namespace Backend.Stock.Memory
++open Backend.Proof Backend.Proof.Driver Backend.Stock.Proof
++set_option autoImplicit false
++set_option Elab.async false
++set_option maxRecDepth 20000
++
++/-- NOP body syntax supplies normal and trap composition without restricting successor blocks. -/
++theorem stock_nop_body_with_traps {f : Clif.Function} {result : Result}
++    (run : Stock.lower f = .ok result) (scope : LowerScope f) (dominated : Dominated f)
++    {event : BlockScanEvent} (events : event ∈ result.blockScans.toList)
++    {b : Clif.Block} (block : f.blocks[event.block]? = some b)
++    (nops : ∀ stm ∈ b.body,stm.inst = .nop)
++    {isem : Backend.Proof.Sem} {MR : MemRelT} {env : Clif.Env} {cp : Clif.Program} :
++    ∃ (term : ScanRecord) (body : BlockScan),SourceBodySplit f event b term body ∧
++      (∀ s s',SourceSteps (IndexedSourceInst env cp f event.ctx event.block)
++        ((List.range b.body.length).map (blockStart f event.block+·)) s s' →
++        ∀ ρ w,GuardedScanRel f result event.ctx event.block MR event.output.state s ρ w →
++          ∃ ρ' w',seqRun isem (body.code.toList.map (·.mapRegs
++            (Backend.lowerFunction.resolve result.final.alias (result.final.alias.size+1)))) ρ w =
++              some (.fall ρ' w') ∧
++            GuardedScanRel f result event.ctx event.block MR term.output.state s' ρ' w') ∧
++      (∀ s code,SourceTrapSteps (IndexedSourceInst env cp f event.ctx event.block)
++        (LocalBody.IndexedSourceTrap env cp f event.ctx event.block)
++        ((List.range b.body.length).map (blockStart f event.block+·)) s code →
++        ∀ ρ w,GuardedScanRel f result event.ctx event.block MR event.output.state s ρ w →
++          TrapRun isem (body.code.toList.map (·.mapRegs
++            (Backend.lowerFunction.resolve result.final.alias (result.final.alias.size+1)))) ρ w code) := by
++  obtain ⟨term,body,split,normal⟩ := stock_nop_body run scope dominated events block nops
++    (isem := isem) (MR := MR) (env := env) (cp := cp)
++  have each : ∀ record ∈ body.records,ScanFallRefines
++      (IndexedSourceInst env cp f event.ctx event.block) isem result.final.alias
++      (GuardedScanRel f result event.ctx event.block MR) record := by
++    intro record member
++    obtain ⟨j,stm,statement,current⟩ := split.positions record member
++    obtain ⟨step,recorded,omitted⟩ := MaskBody.actual_nop_record_at_block run scope events
++      split member statement current (nops stm (List.mem_of_getElem? statement))
++    exact stock_lower_omitted_scan_fall_refines run scope dominated events
++      (split.retained record member) split.block statement current recorded omitted
++  have traps : ∀ record ∈ body.records,LocalScanTrapRefines
++      (LocalBody.IndexedSourceTrap env cp f event.ctx event.block) isem result.final.alias
++      (GuardedScanRel f result event.ctx event.block MR) record := by
++    intro record member s code failed ρ w held
++    obtain ⟨j,stm,statement,current⟩ := split.positions record member
++    obtain ⟨info,source,clif,results⟩ := ArithmeticBody.body_source_info run events split statement current
++    obtain ⟨index,other,inst,rest,otherSource,otherClif,remaining,trapped⟩ := failed
++    have same : other = info := Option.some.inj (otherSource.symm.trans source)
++    subst other
++    have nop : inst = .nop :=
++      (Option.some.inj (otherClif.symm.trans clif)).trans (nops stm (List.mem_of_getElem? statement))
++    subst inst
++    cases trapped
++  refine ⟨term,body,split,normal,?_⟩
++  intro s code source ρ w held
++  apply split.scanned.local_trap_refines each traps s code
++  · simpa only [sourceBodyIndices,List.reverse_reverse] using source
++  · simpa only [split.state] using held
++
++end Backend.Stock.Memory
+diff --git a/FV/Backend/Proof/StockMemoryRetainedReturnSpec.lean b/FV/Backend/Proof/StockMemoryRetainedReturnSpec.lean
+new file mode 100644
+index 00000000..d4f877a7
+--- /dev/null
++++ b/FV/Backend/Proof/StockMemoryRetainedReturnSpec.lean
+@@ -0,0 +1,89 @@
++import FV.Backend.Proof.StockMemoryReturnSpec
++import FV.Backend.Proof.StockMaskBlockRecords
++import FV.Backend.Proof.StockScanTrapSemantics
++
++/-! UNVALIDATED next-batch source, excluded from the frozen production packet.
++The existing return-demand proof retains the real load at any body index, with
++arbitrary surrounding instructions. Subsequent body composition must discharge
++every other actual record; this packet alone does not admit those instructions. -/
++namespace Backend.Stock.Memory
++open Backend.Proof Backend.Proof.Driver Backend.Stock.Proof Isle Isle.Interp Isle.Aarch64
++set_option autoImplicit false
++set_option Elab.async false
++set_option maxRecDepth 20000
++set_option maxHeartbeats 4000000
++
++structure RetainedLoadReturnSpec (f : Clif.Function) (result : Result) (event : BlockScanEvent)
++    (b : Clif.Block) (j x z : Nat) (flags : Clif.MemFlags) where
++  term : ScanRecord
++  record : ScanRecord
++  body : BlockScan
++  step : Step
++  info : IInfo
++  resultReg : Nat
++  pointerReg : Nat
++  split : SourceBodySplit f event b term body
++  bodyMember : record ∈ body.records
++  current : record.inst = blockStart f event.block+j
++  records : record ∈ event.output.records
++  recorded : record.output.step = some step
++  emitted : step.decision = .emitted
++  source : event.ctx.insts[record.inst]? = some info
++  clif : info.clif = some (.load .load .i32 flags x 0)
++  results : info.results = [z]
++  mapped : event.ctx.valueReg? z = some (.vreg resultReg .int)
++  parameter : event.ctx.defInst? x = none
++  pointer : event.ctx.valueReg? x = some (.vreg pointerReg .int)
++
++
++/-- Derive the retained load at its original source position, including inherited parameter pointers. -/
++theorem stock_retained_load_return_spec {f : Clif.Function} {result : Result}
++    (run : Stock.lower f = .ok result) (scope : LowerScope f) (dominated : Dominated f)
++    {event : BlockScanEvent} (events : event ∈ result.blockScans.toList)
++    {b : Clif.Block} (block : f.blocks[event.block]? = some b)
++    {j x z : Nat} {flags : Clif.MemFlags}
++    (statement : b.body[j]? = some ⟨[z],.load .load .i32 flags x 0⟩) (ret : b.term = .ret [z])
++    {pi : Nat} {pb : Clif.Block} (parameterBlock : f.blocks[pi]? = some pb)
++    (parameter : x ∈ pb.params.map (·.1))
++    : Nonempty (RetainedLoadReturnSpec f result event b j x z flags) := by
++  obtain ⟨term,record,body,step,split,member,current,unsunk,actual,records,recorded,emitted⟩ :=
++    stock_lower_returned_definition_emitted run scope dominated events block statement (z := z)
++      (by simp) ret (by simp)
++  obtain ⟨info,source,clif,results⟩ := ArithmeticBody.body_source_info run events split statement current
++  obtain ⟨emission,emissionRun,scan⟩ := stock_emitted_scan actual recorded emitted
++  have atInst : event.ctx.insts[record.inst]! = info := by simp only [getElem!_def,source,Option.getD_some]
++  obtain ⟨r,mapped⟩ := ArithmeticBody.emission_result_mapped emissionRun (by rw [atInst,results])
++  have inv := (stock_lower_record_context run scope events).1
++  obtain ⟨a,rfl⟩ := inv.valueReg z r mapped
++  obtain ⟨nreg,pointer⟩ := inv.typedReg x _ (inv.addr64 _ _ _ x source clif rfl)
++  have noDefinition := stock_lower_source_parameter_definition run dominated events parameterBlock parameter
++  exact ⟨⟨term,record,body,step,info,a,nreg,split,member,current,records,recorded,emitted,
++    source,clif,results,mapped,noDefinition,pointer⟩⟩
++
++/-- Classify every actual body record from the original load/NOP syntax.
++The selected record identity follows from unique original scan positions. -/
++theorem RetainedLoadReturnSpec.nop_records
++    {f : Clif.Function} {result : Result} {event : BlockScanEvent}
++    {b : Clif.Block} {loadIndex x z : Nat} {flags : Clif.MemFlags}
++    (spec : RetainedLoadReturnSpec f result event b loadIndex x z flags)
++    (run : Stock.lower f = .ok result) (scope : LowerScope f)
++    (events : event ∈ result.blockScans.toList)
++    (shape : ∀ j stm,b.body[j]? = some stm → j = loadIndex ∨ stm.inst = .nop) :
++    ∀ record ∈ spec.body.records,record = spec.record ∨
++      ∃ step,record.output.step = some step ∧ step.decision = .omitted := by
++  have unique : (sourceBodyIndices f event.block b).Nodup := by
++    unfold sourceBodyIndices
++    apply List.pairwise_reverse.mpr
++    exact List.Pairwise.map (fun n => blockStart f event.block+n)
++      (fun a b different eq => different (Nat.add_left_cancel eq.symm)) List.nodup_range
++  intro record member
++  obtain ⟨j,stm,statement,current⟩ := spec.split.positions record member
++  rcases shape j stm statement with selected | nop
++  · left
++    subst j
++    exact spec.split.scanned.record_unique unique member spec.bodyMember
++      (current.trans spec.current.symm)
++  · right
++    exact MaskBody.actual_nop_record_at_block run scope events spec.split member statement current nop
++
++end Backend.Stock.Memory
+diff --git a/FV/Backend/SemanticNICheck.lean b/FV/Backend/SemanticNICheck.lean
+index 6cba0e17..23a4b0f8 100644
+--- a/FV/Backend/SemanticNICheck.lean
++++ b/FV/Backend/SemanticNICheck.lean
+@@ -12,6 +12,7 @@ import FV.Backend.StockMixedCheck
+ import FV.Backend.StockLogicalCheck
+ import FV.Backend.StockScalarCheck
+ import FV.Backend.StockMemoryCheck
++import FV.Backend.StockMemoryCfgCheck
+ import FV.Backend.ABIReadFlags
+ import FV.Backend.ABIReadScalar
+ import FV.Backend.ABIReadDiv
+@@ -33,6 +34,6 @@ def check (f : Clif.Function) (vc : VCode) : Bool :=
+       (Stock.ForwardCfg.check f vc && ABIReadCfg.check f.sig vc) ||
+       (Stock.ConditionalCfg.check f vc && ABIReadCfg.check f.sig vc) ||
+       (Stock.ConditionalCfg.rankedCheck f vc && ABIReadCfg.check f.sig vc) ||
+-      (Stock.ParameterCfg.check f vc && ABIReadCfg.check f.sig vc) || Stock.Memory.check f vc)
++      (Stock.ParameterCfg.check f vc && ABIReadCfg.check f.sig vc) || Stock.Memory.check f vc || Stock.MemoryCfg.check f vc)
+ 
+ end Backend.SemanticNI
+diff --git a/FV/Backend/StockMemoryCfgCheck.lean b/FV/Backend/StockMemoryCfgCheck.lean
+new file mode 100644
+index 00000000..0a628272
+--- /dev/null
++++ b/FV/Backend/StockMemoryCfgCheck.lean
+@@ -0,0 +1,33 @@
++import FV.Backend.StockMemoryCheck
++
++namespace Backend.Stock.MemoryCfg
++open Backend.Proof.Driver
++set_option autoImplicit false
++
++/-- The captured source shape uses one entry NOP and one inherited-pointer load. -/
++def eligible (f : Clif.Function) : Bool :=
++  match f.blocks with
++  | [entry,target] => match entry.body,target.body,entry.term,target.term with
++    | [⟨[],.nop⟩],[⟨[],.nop⟩,⟨[z],.load .load .i32 flags x 0⟩],.jump ⟨dst,[]⟩,.ret [ret] =>
++      dst == target.id && z == ret && (entry.params.map (·.1)).contains x && flags.trapCode.isNone
++    | _,_,_,_ => false
++  | _ => false
++
++def sourceOk (f : Clif.Function) : Bool :=
++  eligible f && lowerScopeB f && dominatedB f && sigAbiOk f.sig &&
++    !(sigRets f.sig).any (·.purpose == .sret) && Memory.registerEntry f.sig
++
++/-- The additive CFG whitelist also permits the actual direct jump. -/
++def effectInstruction : MInst → Bool
++  | .args .. | .load .. | .rets .. | .jump .. => true
++  | _ => false
++
++def effectsOnly (vc : VCode) : Bool :=
++  vc.blocks.toList.all (fun b => b.insts.toList.all effectInstruction)
++
++def check (f : Clif.Function) (vc : VCode) : Bool :=
++  sourceOk f && match Stock.lower f with
++  | .error _ => false
++  | .ok result => decide (result.code = vc) && effectsOnly vc
++
++end Backend.Stock.MemoryCfg
+diff --git a/FV/E2E/CompiledSemantic.lean b/FV/E2E/CompiledSemantic.lean
+index f9cac812..0ca3ad05 100644
+--- a/FV/E2E/CompiledSemantic.lean
++++ b/FV/E2E/CompiledSemantic.lean
+@@ -4,6 +4,7 @@ import FV.E2E.StockMixedWorldX
+ import FV.E2E.StockLogicalWorldX
+ import FV.E2E.StockScalarWorldX
+ import FV.E2E.StockMemoryWorldX
++import FV.E2E.StockMemoryCfgWorldX
+ 
+ namespace E2E
+ open Backend Backend.Proof Backend.Proof.Driver
+@@ -39,6 +40,11 @@ inductive CompiledSemantic (f : Clif.Function) (k : Nat) (vc vcp : VCode)
+       CompiledStockArithmeticStage f cleanup k result vcp rf af fa fb →
+       CompiledSemantic f k vc vcp rf af fa fb
+ 
++  | memoryCfg {cleanup : Bool} {result : Stock.Result} :
++      Stock.MemoryCfg.TwoBlockClass f → result.code = vc → Stock.MemoryCfg.effectsOnly vc = true →
++      CompiledStockArithmeticStage f cleanup k result vcp rf af fa fb →
++      CompiledSemantic f k vc vcp rf af fa fb
++
+ namespace CompiledSemantic
+ variable {f : Clif.Function} {k : Nat} {vc vcp : VCode} {rf : RFunc}
+   {af : AFunc} {fa : FnAsm} {fb : FnBin}
+@@ -70,6 +76,7 @@ theorem check (hc : CompiledSemantic f k vc vcp rf af fa fb) : Backend.checkAllo
+ 
+   | scalar _ _ h => exact h.check
+   | memory _ _ h => exact h.check
++  | memoryCfg _ _ _ h => exact h.check
+ 
+ theorem alloc (hc : CompiledSemantic f k vc vcp rf af fa fb) : lowerRFunc vcp rf = .ok af := by
+   cases hc with
+@@ -81,6 +88,7 @@ theorem alloc (hc : CompiledSemantic f k vc vcp rf af fa fb) : lowerRFunc vcp rf
+ 
+   | scalar _ _ h => exact h.alloc
+   | memory _ _ h => exact h.alloc
++  | memoryCfg _ _ _ h => exact h.alloc
+ 
+ theorem emit (hc : CompiledSemantic f k vc vcp rf af fa fb) : emitFunc k af = .ok fa := by
+   cases hc with
+@@ -92,6 +100,7 @@ theorem emit (hc : CompiledSemantic f k vc vcp rf af fa fb) : emitFunc k af = .o
+ 
+   | scalar _ _ h => exact h.emit
+   | memory _ _ h => exact h.emit
++  | memoryCfg _ _ _ h => exact h.emit
+ 
+ theorem layout (hc : CompiledSemantic f k vc vcp rf af fa fb) : fa.layout = .ok fb := by
+   cases hc with
+@@ -103,6 +112,7 @@ theorem layout (hc : CompiledSemantic f k vc vcp rf af fa fb) : fa.layout = .ok
+ 
+   | scalar _ _ h => exact h.layout
+   | memory _ _ h => exact h.layout
++  | memoryCfg _ _ _ h => exact h.layout
+ 
+ end CompiledSemantic
+ 
+@@ -164,4 +174,8 @@ theorem backend_correct_worldX_semantic {p : Clif.Program} {f : Clif.Function} {
+     subst vc
+     exact backend_correct_worldX_stock_memory domain h hcov hsym hslot hcs hrel hargs fuel
+ 
++  | memoryCfg family equal effects h =>
++    subst vc
++    exact backend_correct_worldX_stock_memory_cfg family effects h hcov hsym hslot hcs hrel hargs fuel
++
+ end E2E
+diff --git a/FV/E2E/CompiledSemanticNI.lean b/FV/E2E/CompiledSemanticNI.lean
+index f3f2953b..fe7deba7 100644
+--- a/FV/E2E/CompiledSemanticNI.lean
++++ b/FV/E2E/CompiledSemanticNI.lean
+@@ -1,3 +1,5 @@
++import FV.E2E.StockMemoryCfgNI
++import FV.Backend.Proof.StockMemoryCfgClass
+ import FV.Backend.Proof.StockParameterCheck
+ import FV.Backend.Proof.StockConditionalRankedCheck
+ import FV.E2E.StockCfgNI
+@@ -59,6 +61,11 @@ inductive CompiledSemanticNI (f : Clif.Function) (k : Nat) (vc vcp : VCode)
+       CompiledStockArithmeticStage f cleanup k result vcp rf af fa fb →
+       CompiledSemanticNI f k vc vcp rf af fa fb
+ 
++  | memoryCfg {cleanup : Bool} {result : Stock.Result} :
++      Stock.MemoryCfg.TwoBlockClass f → result.code = vc → Stock.MemoryCfg.effectsOnly vc = true →
++      CompiledStockArithmeticStage f cleanup k result vcp rf af fa fb →
++      CompiledSemanticNI f k vc vcp rf af fa fb
++
+ namespace CompiledSemanticNI
+ variable {f : Clif.Function} {k : Nat} {vc vcp : VCode} {rf : RFunc}
+   {af : AFunc} {fa : FnAsm} {fb : FnBin}
+@@ -77,6 +84,7 @@ theorem toSemantic (hc : CompiledSemanticNI f k vc vcp rf af fa fb) :
+   | scalarDiv domain equal _ h => exact .scalar domain equal h
+   | cfg domain equal _ h => exact .scalar domain equal h
+   | memory family equal _ h => exact .memory family.domain equal h
++  | memoryCfg family equal effects h => exact .memoryCfg family equal effects h
+ 
+ /-- All new semantic and paired premises come from executable checks and actual
+ pipeline observations, rather than new accepted-source assumptions. -/
+@@ -93,7 +101,7 @@ theorem of_checks {cleanup : Bool} (lower : SemanticNI.check f vc = true)
+     | true =>
+       exact .stockCleanup ⟨⟨legacy,prepared,prepOk,allocChecked_of_checkAlloc check,alloc,emit,layout⟩,check⟩
+   simp only [SemanticNI.check,Bool.or_eq_true,Bool.and_eq_true] at lower
+-  rcases lower with legacy | (((((((((((⟨semantic,reads⟩ | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | memory)
++  rcases lower with legacy | ((((((((((((⟨semantic,reads⟩ | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | memory) | memoryCfg)
+   · exact .compatible (retained legacy)
+   · rcases Stock.Arithmetic.check_sound semantic with legacy | ⟨result,domain,run,equal,_⟩
+     · exact .compatible (retained legacy)
+@@ -144,6 +152,10 @@ theorem of_checks {cleanup : Bool} (lower : SemanticNI.check f vc = true)
+     exact .memory family equal effects
+       ⟨run,by rwa [equal],by rwa [equal],check,alloc,emit,layout⟩
+ 
++  · obtain ⟨result,family,run,equal,effects⟩ := Stock.MemoryCfg.check_sound memoryCfg
++    exact .memoryCfg family equal effects
++      ⟨run,by rwa [equal],by rwa [equal],check,alloc,emit,layout⟩
++
+ end CompiledSemanticNI
+ 
+ /-- The complete paired linker consumer follows the actual checked artifact,
+@@ -252,4 +264,18 @@ theorem backend_correct_world_niX_semantic {p : Clif.Program} {f : Clif.Function
+         (backend_correct_worldX_stock_memory family.domain h hcov hsym hslot hcs hrel hargs fuel).1 vals cm returned
+       exact ⟨us,outs,w,pins,arity,values,memory,site,base,fun _ positive => False.elim (tls positive)⟩
+ 
++  | memoryCfg family equal effects h =>
++    subst vc
++    classical
++    by_cases tls : XTls F X
++    · intro vals cm returned
++      obtain ⟨us,outs,w,pins,arity,values,memory,site,base,paired⟩ :=
++        backend_correct_world_niX_stock_memory_cfg family effects h hcov hsym hslot tls hcs hrel hargs
++          fuel vals cm returned
++      exact ⟨us,outs,w,pins,arity,values,memory,site,base,fun _ _ => paired⟩
++    · intro vals cm returned
++      obtain ⟨us,outs,w,pins,arity,values,memory,site,base⟩ :=
++        (backend_correct_worldX_stock_memory_cfg family effects h hcov hsym hslot hcs hrel hargs fuel).1 vals cm returned
++      exact ⟨us,outs,w,pins,arity,values,memory,site,base,fun _ positive => False.elim (tls positive)⟩
++
+ end E2E
+diff --git a/FV/E2E/SemanticNIBoundary.lean b/FV/E2E/SemanticNIBoundary.lean
+index c2c121c6..53ed519c 100644
+--- a/FV/E2E/SemanticNIBoundary.lean
++++ b/FV/E2E/SemanticNIBoundary.lean
+@@ -90,6 +90,15 @@ theorem entryRegs (hc : CompiledSemanticNI f k vc vcp rf af fa fb) :
+     obtain ⟨n,bound,pin⟩ := regs r found
+     exact ⟨n,pin,bound⟩
+ 
++  | memoryCfg family equal effects h =>
++    intro loc member r located
++    have regs := (Spill.locsOf_regs (functionE_sig_int family.scope.subsetE).1
++      (Spill.sret_le_of_sigAbiOk family.abi)).2
++    have found : r ∈ Spill.locRegs (locsOf f.sig) :=
++      List.mem_filterMap.mpr ⟨loc,member,by rw [located]⟩
++    obtain ⟨n,bound,pin⟩ := regs r found
++    exact ⟨n,pin,bound⟩
++
+ /-- An ABI-read-only artifact contains no TLS helper; cleanup and checked
+ preparation preserve that exclusion. -/
+ theorem noTls {sig : Clif.Signature} {code : VCode}
+@@ -244,6 +253,17 @@ theorem hasTls_of_vcode_semantic {f : Clif.Function} {k : Nat} {vc vcp : VCode}
+     rw [prepared] at ht
+     cases ht
+ 
++  | @memoryCfg cleanup result family equal effects h =>
++    have raw := Stock.MemoryCfg.effectsOnly_noTls effects
++    have staged : (Stock.Arithmetic.stage cleanup result.code).hasTls = false := by
++      rw [equal]
++      cases cleanup with
++      | false => exact raw
++      | true => exact Backend.DeadCleanup.prune_noTls raw
++    have prepared := noTls_of_prepCheck h.prepOk staged
++    rw [prepared] at ht
++    cases ht
++
+ set_option maxHeartbeats 1000000 in
+ /-- Stack-argument avoidance follows from actual physical allocation and the
+ original hardware ABI entry; lowering provenance is irrelevant to the bound. -/
+diff --git a/FV/E2E/StockMemoryActivationWitness.lean b/FV/E2E/StockMemoryActivationWitness.lean
+index 724c1ef6..4faf8378 100644
+--- a/FV/E2E/StockMemoryActivationWitness.lean
++++ b/FV/E2E/StockMemoryActivationWitness.lean
+@@ -22,7 +22,7 @@ theorem default_memory_route_witness : ∃ result,Stock.lower function = .ok res
+     have checked : Memory.check function result.code = true := by
+       simp only [Memory.check,StockMemoryEffectKernel.source_checked,run,decide_true,Bool.true_and,actual]
+     have semantic : SemanticNI.check function result.code = true := by
+-      simp only [SemanticNI.check,checked,Bool.or_true]
++      simp only [SemanticNI.check,checked,Bool.or_true,Bool.true_or]
+     have chosen : Memory.lowerValidated function = .ok result.code := by
+       simp [Memory.lowerValidated,show Memory.eligible function = true from rfl,run,checked]
+     exact ⟨result,rfl,checked,semantic,chosen,StockMemoryFunctionWitness.source_class_witness⟩
+diff --git a/FV/E2E/StockMemoryCapturedPairedWitness.lean b/FV/E2E/StockMemoryCapturedPairedWitness.lean
+new file mode 100644
+index 00000000..9c26916e
+--- /dev/null
++++ b/FV/E2E/StockMemoryCapturedPairedWitness.lean
+@@ -0,0 +1,100 @@
++import FV.E2E.StockMemoryTwoBlockPaired
++import FV.Backend.Proof.StockMemoryCapturedSource
++
++namespace E2E.StockMemoryCapturedWitness
++open Backend Backend.Stock Backend.Proof Backend.Proof.Driver Backend.Stock.Proof Backend.Stock.Memory
++open Backend.Stock.Memory.CapturedFixture
++set_option autoImplicit false
++set_option Elab.async false
++set_option maxRecDepth 20000
++set_option maxHeartbeats 4000000
++
++private def world : Arm.ArmState := Arm.write_base_gpr 0#5 4096 LoadFixture.world
++
++private theorem memory : LoadFixture.relation.holds function initial.slots LoadFixture.heap world := by
++  refine ⟨⟨?_,LoadFixture.memory_world.1.valid,rfl⟩,?_,E2E.outRel_zero _ _ _⟩
++  · intro a b valid byte; exact LoadFixture.memory_world.1.bytes a b valid byte
++  · intro id b present; cases present
++
++private theorem arguments : ArgsAtEntry LoadFixture.relation.F function.sig [⟨.i64,4096⟩] world := by
++  intro loc value member
++  change (loc,value) ∈ [(.reg (.x 0),⟨.i64,4096⟩)] at member
++  cases List.mem_singleton.mp member
++  simp only [VHolds,regVal,world,Arm.r,Arm.read_base_gpr,Arm.write_base_gpr,Arm.read_store,Arm.write_store,rnum]
++  rfl
++
++
++private def otherWorld : Arm.ArmState := Arm.write_base_gpr 10#5 17 world
++private def noExternal : ExtSem := ⟨fun _ _ _ => none,fun _ _ => 0,0,fun _ _ => Arm.PState.zero⟩
++
++private theorem pairedMemory : MRP LoadFixture.relation function 0 (fun _ => True)
++    initial.slots LoadFixture.heap (world,otherWorld) := by
++  have same : SameWorld (Zof LoadFixture.relation.F (fun _ => True) LoadFixture.heap) world otherWorld := by
++    simpa only [otherWorld,Arm.w] using (SameWorld.refl _ world).w_right
++      (f := .GPR 10#5) (v := 17) (by change (10 < 29 ∧ 10 ≠ 18) ∨ 10 = 30; decide)
++  refine ⟨⟨memory,?_,?_⟩,⟨?_,?_,?_⟩,same⟩
++  · simp [spv,Arm.r,Arm.read_base_gpr,Arm.read_store,world,LoadFixture.world,Arm.write_base_gpr,Arm.write_store,Arm.ArmState.default]
++  · simp only [Arm.r,Arm.read_base_error,world,Arm.write_base_gpr,LoadFixture.world,Arm.ArmState.default]
++  · refine ⟨⟨?_,LoadFixture.memory_world.1.valid,rfl⟩,?_,outRel_zero _ _ _⟩
++    · intro a b valid byte; exact LoadFixture.memory_world.1.bytes a b valid byte
++    · intro id b present; cases present
++  · simp [spv,Arm.r,Arm.read_base_gpr,Arm.read_store,otherWorld,world,LoadFixture.world,Arm.write_base_gpr,Arm.write_store,Arm.ArmState.default]
++  · simp only [Arm.r,Arm.read_base_error,otherWorld,world,Arm.write_base_gpr,LoadFixture.world,Arm.ArmState.default]
++
++/-- Two distinct entry worlds execute the complete captured NOP/jump/load function from PC0.
++Only fixed driver acceptance uses the marked native witness; the generic theorem does not. -/
++theorem complete_captured_paired_function_witness :
++    Arm.r (.GPR 10#5) otherWorld ≠ Arm.r (.GPR 10#5) world ∧
++    ∃ result : Result,Stock.lower function = .ok result ∧
++      Clif.enterFunc function [⟨.i64,4096⟩] LoadFixture.heap = .ok (initial,LoadFixture.heap) ∧
++      RunOkABI function result.code
++        (pairSem (csem LoadFixture.relation.F ⟨0,0⟩ noExternal))
++        (MRP LoadFixture.relation function 0 (fun _ => True)) initial.slots
++        ⟨0,0,entrySeed result.ctx initial,(world,otherWorld)⟩
++        (.returned [⟨.i32,2779096485⟩] LoadFixture.heap) := by
++  refine ⟨by decide +kernel,?_⟩
++  have success := lowered
++  cases run : Stock.lower function with
++  | error err => rw [run] at success; cases success
++  | ok result =>
++    have registerOnly : ∀ loc ∈ locsOf function.sig,∃ pin,loc = .reg pin := by
++      intro loc member
++      change loc ∈ [ArgLoc.reg (.x 0)] at member
++      exact ⟨.x 0,List.mem_singleton.mp member⟩
++    have otherArguments : ArgsAtEntry LoadFixture.relation.F function.sig [⟨.i64,4096⟩] otherWorld := by
++      intro loc value member
++      change (loc,value) ∈ [(.reg (.x 0),⟨.i64,4096⟩)] at member
++      cases List.mem_singleton.mp member
++      simp only [VHolds,regVal,otherWorld,world,Arm.r,Arm.read_base_gpr,Arm.write_base_gpr,Arm.read_store,Arm.write_store,rnum]
++      rfl
++    have registers : ∀ (pin : Reg) (v : Clif.Val),(.reg pin,v) ∈ (locsOf function.sig).zip [⟨.i64,4096⟩] → regVal otherWorld pin = regVal world pin := by
++      intro pin v member
++      change (ArgLoc.reg pin,v) ∈ [(.reg (.x 0),⟨.i64,4096⟩)] at member
++      cases List.mem_singleton.mp member
++      simp [regVal,otherWorld,world,Arm.r,Arm.read_base_gpr,Arm.write_base_gpr,Arm.read_store,Arm.write_store,rnum]
++    have nops : ∀ stm ∈ function.blocks[0]!.body,stm.inst = .nop := by
++      intro stm member
++      have equal : stm = ⟨[],.nop⟩ := by simpa [function] using member
++      subst stm
++      rfl
++    have shape : ∀ j stm,function.blocks[1]!.body[j]? = some stm → j = 1 ∨ stm.inst = .nop := by
++      intro j stm found
++      cases j with
++      | zero =>
++        simp [function] at found
++        subst stm
++        exact .inr rfl
++      | succ j =>
++        cases j with
++        | zero => exact .inl rfl
++        | succ j => simp [function] at found
++    have finished := StockMemory.stock_two_block_load_return_paired_function run scope dominated rfl
++      (entry := function.blocks[0]!) (target := function.blocks[1]!) rfl nops rfl
++      (loadIndex := 1) (x := 0) (z := 2) (flags := LoadFixture.flags) rfl shape rfl
++      (by simp [function]) source_entry registerOnly
++      (Γ := LoadFixture.relation) (c := 0) (D := fun _ => True) (fc := ⟨0,0⟩) (X := noExternal)
++      rfl (fun _ _ h => by cases h) (by intro Z n w w' subset same; rfl)
++      source_returned pairedMemory arguments otherArguments registers
++    exact ⟨result,rfl,source_entered,finished⟩
++
++end E2E.StockMemoryCapturedWitness
+diff --git a/FV/E2E/StockMemoryCfgMachine.lean b/FV/E2E/StockMemoryCfgMachine.lean
+new file mode 100644
+index 00000000..e605d232
+--- /dev/null
++++ b/FV/E2E/StockMemoryCfgMachine.lean
+@@ -0,0 +1,52 @@
++import FV.E2E.StockMemoryCfgValue
++import FV.E2E.StockArithmeticStage
++import FV.E2E.DeadCleanupRegLevelX
++import FV.E2E.DeadCleanupGot
++
++namespace E2E.StockMemoryCfg
++open Backend Backend.Proof Backend.Proof.Driver Backend.DeadCleanup
++set_option autoImplicit false
++set_option Elab.async false
++
++/-- Actual effect-only Stock returns use the existing checked allocation,
++cleanup/preparation, encoding and machine consumer with exact value semantics. -/
++theorem machine_return {f : Clif.Function} {args : List Clif.Val}
++    {vc vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAsm} {fb : FnBin} {k : Nat}
++    {cleanup : Bool} (effects : effectsOnly vc = true)
++    (prep : prepCheck (Stock.Arithmetic.stage cleanup vc) vcp = true)
++    (check : checkAlloc vcp rf = .ok ()) (alloc : lowerRFunc vcp rf = .ok af)
++    (emit : emitFunc k af = .ok fa) (layout : fa.layout = .ok fb)
++    {X : ExtSem} {K : Nat} {F Z : BitVec 64 → Prop}
++    (frame : ∀ a, F a → Z a) (covered : FormsCovered ⟨fa.k,af.slotBase⟩ vcp)
++    {w final reference : Arm.ArmState} (arguments : ArgsAtEntry F f.sig args w)
++    (worlds : SameWorld Z final reference)
++    {ρ : Nat → CV} {us : List (Reg × Reg)} {outs : List CV}
++    (returned : VReturns vc (csem F ⟨fa.k,af.slotBase⟩ X) ρ w us outs final)
++    (H : ArmHooks) (G : BitVec 64 → Prop) (base ra : BitVec 64) (s : Arm.ArmState)
++    (entry : ActEntry vcp rf af fa fb K F G X H base ra s w) :
++    ∃ n, ActRet ra Z G us outs reference s (runX (ArmStepX X H fa) n s) ∧
++      PostTrace fa af base (ArmStepX X H fa) s n ∧
++      ∀ i < n, actGoodX vcp rf af fa fb base s X H K G (GotV vcp)
++        (runX (ArmStepX X H fa) i s) := by
++  have valueRun := return_value effects returned
++  let t := final
++  have finalWorld := worlds
++  have prepared := StockArithmeticStage_returns prep valueRun
++  have machine := regLevelCorrect_worldX_value check alloc emit layout
++    (X := X) (H := H) (K := K) (G := G) (gv := GotV vcp)
++    covered entry.abi entry.stack entry.gfree (by rw [entry.hF]; exact entry.calls)
++    (by rw [entry.hF]; exact entry.tries) (by rw [entry.hF]; exact entry.tls)
++    (by rw [entry.hF]; exact entry.body) ρ
++  rw [entry.hF] at machine
++  obtain ⟨n,⟨h1,h2,h3,h4,h5,h6,h7⟩,h8⟩ :=
++    machine.1 us outs t (vReturns_gotV_value prepared)
++  refine ⟨n,⟨h1,h2,?_,?_,h5,h6⟩,h7,h8⟩
++  · intro a outside
++    rw [h3 a (fun hf => outside (frame a hf))]
++    exact finalWorld.2.1 a outside
++  · intro field unmasked fp sp
++    rw [h4 field unmasked fp sp]
++    exact finalWorld.1 field unmasked
++
++
++end E2E.StockMemoryCfg
+diff --git a/FV/E2E/StockMemoryCfgNI.lean b/FV/E2E/StockMemoryCfgNI.lean
+new file mode 100644
+index 00000000..3a96a0b6
+--- /dev/null
++++ b/FV/E2E/StockMemoryCfgNI.lean
+@@ -0,0 +1,91 @@
++import FV.E2E.StockMemoryNI
++import FV.E2E.StockMemoryCfgMachine
++import FV.E2E.StockMemoryCfgPairedFunction
++
++namespace E2E
++open Backend Backend.Proof Backend.Proof.Driver Backend.Stock.Proof Backend.DeadCleanup
++set_option autoImplicit false
++set_option Elab.async false
++set_option maxHeartbeats 4000000
++
++/-- Complete source-to-machine paired correctness for the captured original
++NOP/jump/load/return class. Initialized original bytes determine both load outputs; the
++old source, ABI, linked-world and activation premises are preserved. -/
++theorem backend_correct_world_niX_stock_memory_cfg {p : Clif.Program} {f : Clif.Function} {k : Nat} {result : Stock.Result} {vcp : VCode}
++    {rf : RFunc} {af : AFunc} {fa : FnAsm} {fb : FnBin}
++    (family : Stock.MemoryCfg.TwoBlockClass f) {cleanup : Bool}
++    (readOnly : StockMemoryCfg.effectsOnly result.code = true)
++    (hc : CompiledStockArithmeticStage f cleanup k result vcp rf af fa fb)
++    {X : ExtSem} {syms : String → Option Nat} {slotOff : Nat} {env : Clif.Env} {K : Nat}
++    {F : BitVec 64 → Prop} {c : BitVec 64}
++    (hcov : FormsCovered ⟨fa.k, af.slotBase⟩ vcp)
++    (hsym : ∀ n b, syms n = some b → X.sym n 0 = BitVec.ofNat 64 b)
++    (hslot : af.slotBase = slotOff)
++    (hTls : XTls F X)
++    {w₀ : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State}
++    (hcs : ClifEntry f args cs)
++    (hrel : RelW ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c cs.frame.slots cs.mem w₀)
++    (hargs : ArgsAtEntry F f.sig args w₀)
++    (fuel : Nat) :
++    ∀ vals cm, Clif.runLoop env p fuel cs = .returned vals cm →
++      ∃ (us : List (Reg × Reg)) (outs : List CV) (w : Arm.ArmState),
++        us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
++        PrefixHold vals outs ∧ MemRel F syms cm w ∧ result.code.RetsSite us ∧
++        (∀ (H : ArmHooks) (G : BitVec 64 → Prop) (base ra : BitVec 64) (s : Arm.ArmState),
++          ActEntry vcp rf af fa fb K F G X H base ra s w₀ →
++          ∃ n, ActRet ra F G us outs w s (runX (ArmStepX X H fa) n s) ∧
++            PostTrace fa af base (ArmStepX X H fa) s n ∧
++            ∀ i < n, actGoodX vcp rf af fa fb base s X H K G (GotV vcp)
++              (runX (ArmStepX X H fa) i s)) ∧
++        (∀ (D : BitVec 64 → Prop) (w₀' : Arm.ArmState),
++          RelW ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c cs.frame.slots cs.mem w₀' →
++          SameWorld (fun b => F b ∨ D b) w₀ w₀' →
++          (∀ r v, (ArgLoc.reg r, v) ∈ (locsOf f.sig).zip args → regVal w₀' r = regVal w₀ r) →
++          (∀ off v, (ArgLoc.stack off, v) ∈ (locsOf f.sig).zip args → ∀ k < v.ty.bytes,
++            w₀'.mem (Arm.r (.GPR 29#5) w₀ + BitVec.ofInt 64 (16 + (off : Int)) + BitVec.ofNat 64 k) =
++              w₀.mem (Arm.r (.GPR 29#5) w₀ + BitVec.ofInt 64 (16 + (off : Int)) + BitVec.ofNat 64 k)) →
++          ∀ (H : ArmHooks) (G : BitVec 64 → Prop) (base ra : BitVec 64) (s : Arm.ArmState),
++            ActEntry vcp rf af fa fb K F G X H base ra s w₀' →
++            ∃ n, ActRet ra (fun a => F a ∨ D a) G us outs w s (runX (ArmStepX X H fa) n s) ∧
++              PostTrace fa af base (ArmStepX X H fa) s n ∧
++              ∀ i < n, actGoodX vcp rf af fa fb base s X H K G (GotV vcp)
++                (runX (ArmStepX X H fa) i s)) := by
++  intro vals cm returned
++  have state : (⟨cs.frame,[],cs.mem⟩ : Clif.State) = cs := by
++    have callers := hcs.callers
++    cases cs
++    cases callers
++    rfl
++  have sourceReturn : Clif.runLoop env p fuel ⟨cs.frame,[],cs.mem⟩ = .returned vals cm := by rwa [state]
++  have source := StockMemoryCfg.paired_returns family hc.lower hcs.stockSourceEntry sourceReturn (fc := ⟨fa.k,af.slotBase⟩) hslot hsym hTls
++    (D := fun _ => False) ⟨hrel,hrel,SameWorld.refl _ w₀⟩ hargs hargs (fun _ _ _ => rfl)
++  obtain ⟨us,outs,q,cm0,reached,pins,arity,values,memory,freed⟩ := source
++  have first := (vRetFrom_pair reached).1
++  have site : result.code.RetsSite us := by
++    obtain ⟨b,k,ρ,w₁,vb,ops,outs',_,hvb,hk,_⟩ := first
++    exact ⟨b,vb,k,hvb,hk⟩
++  have mem : MemRel F syms cm q.1 := by
++    rw [freed]
++    exact memRel_leave (memRel_free memory.1.1.1 _)
++  refine ⟨us,outs,q.1,pins.ordinary family.ordinary,arity,values,mem,site,?_,?_⟩
++  · intro H G base ra s he
++    exact StockMemoryCfg.machine_return readOnly hc.prepOk hc.check hc.alloc hc.emit hc.layout
++      (fun _ h => h) hcov hargs (SameWorld.refl F q.1) first H G base ra s he
++  · intro D w₀' hrel' hsw hreg hstk H G base ra s he
++    have arguments := ABIReadOnly.arguments_transport hargs hsw hreg hstk
++    have pairedMemory : MRP ⟨F,syms,slotOff,(RAFrame.compute vcp rf).intBase⟩ f c D
++        cs.frame.slots cs.mem (w₀,w₀') :=
++      ⟨hrel,hrel',sameWorld_zof hrel.1.1 hrel'.1.1 hsw (fun _ h => h)⟩
++    have paired := StockMemoryCfg.paired_returns family hc.lower hcs.stockSourceEntry sourceReturn (fc := ⟨fa.k,af.slotBase⟩) hslot hsym hTls
++      pairedMemory hargs arguments hreg
++    obtain ⟨us',outs',q',cm0',reached',pins',arity',values',memory',freed'⟩ := paired
++    obtain ⟨reference,other⟩ := vRetFrom_pair reached'
++    obtain ⟨samePins,sameOuts,sameWorld⟩ := vRetFrom_det first reference
++    rw [← samePins,← sameOuts] at other
++    have related : SameWorld (fun a => F a ∨ D a) q'.2 q.1 := by
++      rw [sameWorld]
++      exact (SameWorld.mono (zof_sub cm0') memory'.2.2).symm
++    exact StockMemoryCfg.machine_return readOnly hc.prepOk hc.check hc.alloc hc.emit hc.layout
++      (fun _ h => Or.inl h) hcov arguments related other H G base ra s he
++
++end E2E
+diff --git a/FV/E2E/StockMemoryCfgPairedFunction.lean b/FV/E2E/StockMemoryCfgPairedFunction.lean
+new file mode 100644
+index 00000000..774c9f62
+--- /dev/null
++++ b/FV/E2E/StockMemoryCfgPairedFunction.lean
+@@ -0,0 +1,46 @@
++import FV.E2E.StockMemoryTwoBlockPaired
++import FV.Backend.Proof.StockMemoryCfgClass
++
++namespace E2E.StockMemoryCfg
++open Backend Backend.Proof Backend.Proof.Driver Backend.Stock Backend.Stock.Proof
++set_option autoImplicit false
++set_option Elab.async false
++set_option maxRecDepth 20000
++
++/-- The source-only CFG class supplies the complete paired ABI execution. -/
++theorem paired_returns {f : Clif.Function} {result : Result}
++    (family : Backend.Stock.MemoryCfg.TwoBlockClass f) (run : Stock.lower f = .ok result)
++    {args : List Clif.Val} {cm : Clif.Mem} {fr : Clif.Frame} (entered : SourceEntry f args fr)
++    {env : Clif.Env} {cp : Clif.Program} {fuel : Nat} {vals : List Clif.Val} {mem : Clif.Mem}
++    (returned : Clif.runLoop env cp fuel ⟨fr,[],cm⟩ = .returned vals mem)
++    {Γ : Rel} {c : BitVec 64} {D : BitVec 64 → Prop} {fc : FnCtx} {X : ExtSem}
++    (slot : fc.slotBase = Γ.slotOff)
++    (symbols : ∀ n a,Γ.syms n = some a → X.sym n 0 = BitVec.ofNat 64 a)
++    (tls : XTls Γ.F X)
++    {w w' : Arm.ArmState} (memory : MRP Γ f c D fr.slots cm (w,w'))
++    (arguments : ArgsAtEntry Γ.F f.sig args w) (otherArguments : ArgsAtEntry Γ.F f.sig args w')
++    (registers : ∀ pin v,(.reg pin,v) ∈ (locsOf f.sig).zip args → regVal w' pin = regVal w pin) :
++    RunOkABI f result.code (pairSem (csem Γ.F fc X)) (MRP Γ f c D) fr.slots
++      ⟨0,0,entrySeed result.ctx fr,(w,w')⟩ (.returned vals mem) := by
++  obtain ⟨entry,target,x,z,flags,blocks,entryBody,targetBody,jump,ret,parameter,notrap⟩ := family.shape
++  have nops : ∀ stm ∈ entry.body,stm.inst = .nop := by
++    intro stm member
++    have equal : stm = ⟨[],.nop⟩ := by simpa only [entryBody,List.mem_singleton] using member
++    subst stm
++    rfl
++  have shape : ∀ j stm,target.body[j]? = some stm → j = 1 ∨ stm.inst = .nop := by
++    intro j stm found
++    cases j with
++    | zero =>
++      simp [targetBody] at found
++      subst stm
++      exact .inr rfl
++    | succ j =>
++      cases j with
++      | zero => exact .inl rfl
++      | succ j => simp [targetBody] at found
++  exact StockMemory.stock_two_block_load_return_paired_function run family.scope family.dominated family.abi
++    blocks nops jump (loadIndex := 1) (by rw [targetBody]; rfl) shape ret parameter entered family.registers
++    slot symbols tls returned memory arguments otherArguments registers
++
++end E2E.StockMemoryCfg
+diff --git a/FV/E2E/StockMemoryCfgTls.lean b/FV/E2E/StockMemoryCfgTls.lean
+new file mode 100644
+index 00000000..b21d6d69
+--- /dev/null
++++ b/FV/E2E/StockMemoryCfgTls.lean
+@@ -0,0 +1,51 @@
++import FV.E2E.StockMemoryCfgValue
++
++namespace E2E.StockMemoryCfg
++open Backend Backend.Proof Backend.Proof.Driver
++set_option autoImplicit false
++set_option Elab.async false
++
++/-- TLS flags are irrelevant to the checked CFG effects. -/
++def fixedTlsFlags (X : ExtSem) : ExtSem := {X with tlsFlags := fun _ _ => Arm.PState.zero}
++
++theorem fixedTlsFlags_ok (F : BitVec 64 → Prop) (X : ExtSem) : XTls F (fixedTlsFlags X) := by
++  intro Z n w w' subset same
++  rfl
++
++private theorem instruction_tls {vc : VCode} (checked : effectsOnly vc = true)
++    {b k : Nat} {vb : VBlock} {i : MInst}
++    (block : vc.blocks[b]? = some vb) (inst : vb.insts[k]? = some i)
++    (F : BitVec 64 → Prop) (fc : FnCtx) (X : ExtSem) :
++    csem F fc (fixedTlsFlags X) i = csem F fc X i := by
++  have blocks := List.all_eq_true.mp checked vb (by simpa using Array.mem_of_getElem? block)
++  have good := List.all_eq_true.mp blocks i (by simpa using Array.mem_of_getElem? inst)
++  cases i <;> simp only [Backend.Stock.MemoryCfg.effectInstruction] at good <;> try cases good
++  all_goals rfl
++
++private theorem step_tls {vc : VCode} (checked : effectsOnly vc = true)
++    {F : BitVec 64 → Prop} {fc : FnCtx} {X : ExtSem} {s t : VConf CV Arm.ArmState}
++    (step : VStep vc (csem F fc (fixedTlsFlags X)) s t) : VStep vc (csem F fc X) s t := by
++  cases step with
++  | step block inst operands run arity next =>
++    refine .step block inst operands ?_ arity next
++    rwa [instruction_tls checked block inst F fc X] at run
++
++private theorem star_tls {vc : VCode} (checked : effectsOnly vc = true)
++    {F : BitVec 64 → Prop} {fc : FnCtx} {X : ExtSem} {s t : VConf CV Arm.ArmState}
++    (steps : Star (VStep vc (csem F fc (fixedTlsFlags X))) s t) :
++    Star (VStep vc (csem F fc X)) s t := by
++  induction steps with
++  | refl => exact .refl _
++  | step first rest ih => exact .step (step_tls checked first) ih
++
++/-- The actual code returns identically with the original TLS flags, for any external semantics. -/
++theorem return_original_tls {vc : VCode} (checked : effectsOnly vc = true)
++    {F : BitVec 64 → Prop} {fc : FnCtx} {X : ExtSem} {vs : VState CV Arm.ArmState}
++    {us : List (Reg × Reg)} {outs : List CV} {world : Arm.ArmState}
++    (returned : VRetFrom vc (csem F fc (fixedTlsFlags X)) vs us outs world) :
++    VRetFrom vc (csem F fc X) vs us outs world := by
++  obtain ⟨b,k,ρ,w,vb,ops,results,path,block,inst,operands,values,run⟩ := returned
++  refine ⟨b,k,ρ,w,vb,ops,results,star_tls checked path,block,inst,operands,values,?_⟩
++  rwa [instruction_tls checked block inst F fc X] at run
++
++end E2E.StockMemoryCfg
+diff --git a/FV/E2E/StockMemoryCfgValue.lean b/FV/E2E/StockMemoryCfgValue.lean
+new file mode 100644
+index 00000000..ab81d004
+--- /dev/null
++++ b/FV/E2E/StockMemoryCfgValue.lean
+@@ -0,0 +1,58 @@
++import FV.E2E.StockMemoryValue
++import FV.Backend.StockMemoryCfgCheck
++
++namespace E2E.StockMemoryCfg
++open Backend Backend.Proof Backend.Proof.Driver Backend.DeadCleanup
++set_option autoImplicit false
++set_option Elab.async false
++
++/-- The memory CFG adapter only needs effects whose value semantics is their
++concrete semantics. This property is checked on the actual emitted artifact. -/
++abbrev effectsOnly := Backend.Stock.MemoryCfg.effectsOnly
++
++theorem effectsOnly_instruction {vc : VCode} (checked : effectsOnly vc = true)
++    {b k : Nat} {vb : VBlock} {i : MInst}
++    (block : vc.blocks[b]? = some vb) (inst : vb.insts[k]? = some i) :
++    pureForm i = false := by
++  have blocks := List.all_eq_true.mp checked vb (by simpa using Array.mem_of_getElem? block)
++  have instruction := List.all_eq_true.mp blocks i (by simpa using Array.mem_of_getElem? inst)
++  cases i <;> simp_all [Backend.Stock.MemoryCfg.effectInstruction,pureForm]
++
++/-- The checked effect whitelist also excludes the compare specifications added
++by the current cleanup semantics. The preserved pure-only variant stays above. -/
++private theorem effectsOnly_spec_instruction {vc : VCode} (checked : effectsOnly vc = true)
++    {b k : Nat} {vb : VBlock} {i : MInst}
++    (block : vc.blocks[b]? = some vb) (inst : vb.insts[k]? = some i) :
++    specForm i = false := by
++  have blocks := List.all_eq_true.mp checked vb (by simpa using Array.mem_of_getElem? block)
++  have instruction := List.all_eq_true.mp blocks i (by simpa using Array.mem_of_getElem? inst)
++  cases i <;> simp_all [Backend.Stock.MemoryCfg.effectInstruction,specForm,pureForm,cmpForm]
++
++private theorem value_step {vc : VCode} (checked : effectsOnly vc = true)
++    {F : BitVec 64 → Prop} {fc : FnCtx} {X : ExtSem} {s t : VConf CV Arm.ArmState}
++    (step : VStep vc (csem F fc X) s t) : VStep vc (valueSem F fc X) s t := by
++  cases step with
++  | step block inst operands run arity next =>
++    refine .step block inst operands ?_ arity next
++    simpa only [valueSem,effectsOnly_spec_instruction checked block inst,Bool.false_eq_true,ite_false] using run
++
++private theorem value_star {vc : VCode} (checked : effectsOnly vc = true)
++    {F : BitVec 64 → Prop} {fc : FnCtx} {X : ExtSem} {s t : VConf CV Arm.ArmState}
++    (path : Star (VStep vc (csem F fc X)) s t) : Star (VStep vc (valueSem F fc X)) s t := by
++  induction path with
++  | refl => exact .refl _
++  | step first rest ih => exact .step (value_step checked first) ih
++
++/-- On checked actual effect-only code, the production value consumer executes
++exactly the concrete run, including its final world and ABI output tuple. -/
++theorem return_value {vc : VCode} (checked : effectsOnly vc = true)
++    {F : BitVec 64 → Prop} {fc : FnCtx} {X : ExtSem} {vs : VState CV Arm.ArmState}
++    {us : List (Reg × Reg)} {outs : List CV} {world : Arm.ArmState}
++    (returned : VRetFrom vc (csem F fc X) vs us outs world) :
++    VRetFrom vc (valueSem F fc X) vs us outs world := by
++  obtain ⟨b,k,ρ,w,vb,ops,results,path,block,inst,operands,values,run⟩ := returned
++  have transferred := value_star checked path
++  refine ⟨b,k,ρ,w,vb,ops,results,transferred,block,inst,operands,values,?_⟩
++  simpa only [valueSem,effectsOnly_spec_instruction checked block inst,Bool.false_eq_true,ite_false] using run
++
++end E2E.StockMemoryCfg
+diff --git a/FV/E2E/StockMemoryCfgWorldX.lean b/FV/E2E/StockMemoryCfgWorldX.lean
+new file mode 100644
+index 00000000..a0e7b0f6
+--- /dev/null
++++ b/FV/E2E/StockMemoryCfgWorldX.lean
+@@ -0,0 +1,70 @@
++import FV.E2E.StockMemoryCfgNI
++import FV.E2E.StockMemoryCfgTls
++import FV.Backend.Proof.StockMemoryCfgNotrap
++
++namespace E2E
++open Backend Backend.Proof Backend.Proof.Driver Backend.Stock.Proof Backend.DeadCleanup
++set_option autoImplicit false
++set_option Elab.async false
++
++/-- The captured class satisfies the unchanged return-and-trap machine contract.
++The actual effect check removes any additional TLS-flags assumption. -/
++theorem backend_correct_worldX_stock_memory_cfg {p : Clif.Program} {f : Clif.Function} {k : Nat} {result : Stock.Result} {vcp : VCode}
++    {rf : RFunc} {af : AFunc} {fa : FnAsm} {fb : FnBin}
++    (family : Stock.MemoryCfg.TwoBlockClass f) {cleanup : Bool}
++    (effects : StockMemoryCfg.effectsOnly result.code = true)
++    (hc : CompiledStockArithmeticStage f cleanup k result vcp rf af fa fb)
++    {X : ExtSem} {syms : String → Option Nat} {slotOff : Nat} {env : Clif.Env} {K : Nat}
++    {F : BitVec 64 → Prop} {c : BitVec 64}
++    (hcov : FormsCovered ⟨fa.k, af.slotBase⟩ vcp)
++    (hsym : ∀ n b, syms n = some b → X.sym n 0 = BitVec.ofNat 64 b)
++    (hslot : af.slotBase = slotOff)
++    {w₀ : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State}
++    (hcs : ClifEntry f args cs)
++    (hrel : RelW ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c cs.frame.slots cs.mem w₀)
++    (hargs : ArgsAtEntry F f.sig args w₀)
++    (fuel : Nat) :
++    (∀ vals cm, Clif.runLoop env p fuel cs = .returned vals cm →
++      ∃ (us : List (Reg × Reg)) (outs : List CV) (w : Arm.ArmState),
++        us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
++        PrefixHold vals outs ∧ MemRel F syms cm w ∧ result.code.RetsSite us ∧
++        ∀ (H : ArmHooks) (G : BitVec 64 → Prop) (base ra : BitVec 64) (s : Arm.ArmState),
++          ActEntry vcp rf af fa fb K F G X H base ra s w₀ →
++          ∃ n, ActRet ra F G us outs w s (runX (ArmStepX X H fa) n s) ∧
++            PostTrace fa af base (ArmStepX X H fa) s n ∧
++            ∀ i < n, actGoodX vcp rf af fa fb base s X H K G (GotV vcp)
++              (runX (ArmStepX X H fa) i s)) ∧
++    (∀ c', Clif.runLoop env p fuel cs = .trapped c' →
++      ∀ (H : ArmHooks) (G : BitVec 64 → Prop) (base ra : BitVec 64) (s : Arm.ArmState),
++        ActEntry vcp rf af fa fb K F G X H base ra s w₀ →
++        ∃ n, TrapAt fb base c' (runX (ArmStepX X H fa) n s) ∧
++          (∀ i < n, actGoodX vcp rf af fa fb base s X H K G (GotV vcp)
++            (runX (ArmStepX X H fa) i s)) ∧
++          ∀ m, Arm.r .ERR (runX (ArmStepX X H fa) (n + m + 1) s) ≠ .None) := by
++  have state : (⟨cs.frame,[],cs.mem⟩ : Clif.State) = cs := by
++    have callers := hcs.callers
++    cases cs
++    cases callers
++    rfl
++  refine ⟨fun vals cm returned => ?_,fun code trapped H G base ra s he => ?_⟩
++  · have sourceReturn : Clif.runLoop env p fuel ⟨cs.frame,[],cs.mem⟩ = .returned vals cm := by
++      rwa [state]
++    have source := StockMemoryCfg.paired_returns family hc.lower hcs.stockSourceEntry sourceReturn
++      (fc := ⟨fa.k,af.slotBase⟩) (X := StockMemoryCfg.fixedTlsFlags X) hslot hsym
++      (StockMemoryCfg.fixedTlsFlags_ok F X) (D := fun _ => False)
++      ⟨hrel,hrel,SameWorld.refl _ w₀⟩ hargs hargs (fun _ _ _ => rfl)
++    obtain ⟨us,outs,q,cm0,reached,pins,arity,values,memory,freed⟩ := source
++    have first := StockMemoryCfg.return_original_tls effects (vRetFrom_pair reached).1
++    have site : result.code.RetsSite us := by
++      obtain ⟨b,k,ρ,w₁,vb,ops,outs',_,block,inst,_⟩ := first
++      exact ⟨b,vb,k,block,inst⟩
++    have mem : MemRel F syms cm q.1 := by
++      rw [freed]
++      exact memRel_leave (memRel_free memory.1.1.1 _)
++    refine ⟨us,outs,q.1,pins.ordinary family.ordinary,arity,values,mem,site,?_⟩
++    intro H G base ra s he
++    exact StockMemoryCfg.machine_return effects hc.prepOk hc.check hc.alloc hc.emit hc.layout
++      (fun _ h => h) hcov hargs (SameWorld.refl F q.1) first H G base ra s he
++  · exact False.elim ((family.source_notrap hcs.stockSourceEntry fuel code) (by rwa [state]))
++
++end E2E
+diff --git a/FV/E2E/StockMemoryNonentryPairedReturn.lean b/FV/E2E/StockMemoryNonentryPairedReturn.lean
+new file mode 100644
+index 00000000..79058ce2
+--- /dev/null
++++ b/FV/E2E/StockMemoryNonentryPairedReturn.lean
+@@ -0,0 +1,89 @@
++import FV.E2E.StockMemoryNopPairedBody
++import FV.E2E.StockMemoryPairedReturnEdgeBody
++import FV.Backend.Proof.StockCfgReturnBlock
++import FV.Backend.Proof.StockCfgTraversalScans
++
++namespace E2E.StockMemory
++open Backend Backend.Proof Backend.Proof.Driver Backend.Stock Backend.Stock.Proof
++set_option autoImplicit false
++set_option Elab.async false
++set_option maxRecDepth 20000
++set_option maxHeartbeats 4000000
++attribute [local irreducible] Isle.Aarch64.program Stock.runTerm lowerBlockCore
++
++private theorem assembled_nonentry {ctx : Ctx} {f : Clif.Function} {b : Clif.Block}
++    {bi label : Nat} {targets : Array Nat} {outgoing : Array (Array Reg)}
++    {params : List Nat} {uses : Array UseState} {code : Array MInst} {block : VBlock}
++    (nonentry : bi ≠ 0)
++    (run : assembleOriginalBlock ctx f b bi label targets outgoing params uses code = .ok block) :
++    block.insts = code := by
++  unfold assembleOriginalBlock at run
++  dsimp only at run
++  simp only [show (bi == 0) = false from by simp [nonentry],Bool.false_eq_true,ite_false] at run
++  repeat' first
++    | (solve | cases run)
++    | simp only [bind,Except.bind,pure,Except.pure] at run
++    | split at run
++  all_goals cases run; rfl
++
++/-- Original load/NOP/return syntax derives the placed successor run at instruction zero.
++The successful driver supplies scan identity and code placement internally. -/
++theorem actual_nonentry_paired_load_return {f : Clif.Function} {result : Result}
++    (run : Stock.lower f = .ok result) (scope : LowerScope f) (dominated : Dominated f)
++    (abi : sigAbiOk f.sig = true)
++    {label bi : Nat} {b : Clif.Block}
++    (tag : result.order.nodes[label]? = some (.original bi))
++    (source : f.blocks[bi]? = some b) (nonentry : bi ≠ 0)
++    {event : BlockScanEvent} (events : event ∈ result.blockScans.toList)
++    (eventBlock : event.block = bi)
++    {loadIndex x z : Nat} {flags : Clif.MemFlags}
++    (statement : b.body[loadIndex]? = some ⟨[z],.load .load .i32 flags x 0⟩)
++    (shape : ∀ j stm,b.body[j]? = some stm → j = loadIndex ∨ stm.inst = .nop)
++    (ret : b.term = .ret [z])
++    {pi : Nat} {pb : Clif.Block} (parameterBlock : f.blocks[pi]? = some pb)
++    (parameter : x ∈ pb.params.map (·.1))
++    {Γ : Rel} {c : BitVec 64} {D : BitVec 64 → Prop} {fc : FnCtx} {X : ExtSem}
++    (slot : fc.slotBase = Γ.slotOff)
++    (symbols : ∀ n a,Γ.syms n = some a → X.sym n 0 = BitVec.ofNat 64 a)
++    (tls : XTls Γ.F X)
++    {env : Clif.Env} {cp : Clif.Program} {fuel : Nat} {s : Clif.State}
++    (func : s.frame.func = f) (callers : s.callers = [])
++    (remaining : s.frame.body = b.body) (terminal : s.frame.term = b.term)
++    (defined : SourceDefinedAt f result.ctx event.block 0 s.frame)
++    {vals : List Clif.Val} {mem : Clif.Mem}
++    (returned : Clif.runLoop env cp fuel s = .returned vals mem)
++    {ρ : Nat → CV} {q : W2}
++    (held : PairedScanRel f result event.ctx event.block Γ c D event.output.state
++      (0,s.frame,s.mem) ρ q) :
++    RunOkABIAt f result.code result.edgeArgs (pairSem (csem Γ.F fc X)) (MRP Γ f c D)
++      s.frame.slots ⟨label,0,ρ,q⟩ (.returned vals mem) := by
++  obtain ⟨ranges,params,input,data,core,raw,prelude,coreRun,assembled,build,sizes,prepared,
++    actualEvents,atBlock,rawCode,placed⟩ := stock_lower_original_block_scan_assembly run tag
++  have sourceValue : f.blocks[bi]! = b := by
++    rw [List.getElem!_eq_getElem?_getD,source]
++    rfl
++  rw [sourceValue] at coreRun assembled
++  have same : core.scan = event := CfgTrace.actual_scan_unique run scope actualEvents events
++    (atBlock.trans eventBlock.symm)
++  obtain ⟨term,body,split,bodyRun⟩ := stock_nop_load_return_paired_body run scope dominated events
++    (by rw [eventBlock]; exact source) statement shape ret parameterBlock parameter slot symbols tls
++    (Γ := Γ) (c := c) (D := D) (env := env) (cp := cp)
++  have family : ∀ stm ∈ b.body,OrdinaryBody.OrdinaryInst stm.inst := by
++    intro stm member
++    obtain ⟨j,found⟩ := List.mem_iff_getElem?.mp member
++    rcases shape j stm found with selected | nop
++    · subst j
++      have equal := Option.some.inj (found.symm.trans statement)
++      subst stm
++      simp [OrdinaryBody.OrdinaryInst]
++    · simp [OrdinaryBody.OrdinaryInst,nop]
++  let resolve := Backend.lowerFunction.resolve result.final.alias (result.final.alias.size+1)
++  have actualCode : raw.insts.map (·.mapRegs resolve) = event.output.code.map (·.mapRegs resolve) := by
++    rw [assembled_nonentry nonentry assembled,CfgReturn.stock_return_core_code ret coreRun,same]
++  have finished := actual_ordinary_paired_return_refines_at_block run scope dominated abi family ret
++    events split func callers remaining terminal defined returned tls bodyRun
++    (pre := #[]) (post := #[]) placed (by simpa only [Array.empty_append,Array.append_empty] using actualCode)
++    ρ q held
++  simpa only [Array.size_empty] using finished
++
++end E2E.StockMemory
+diff --git a/FV/E2E/StockMemoryNopPairedBody.lean b/FV/E2E/StockMemoryNopPairedBody.lean
+new file mode 100644
+index 00000000..5371d855
+--- /dev/null
++++ b/FV/E2E/StockMemoryNopPairedBody.lean
+@@ -0,0 +1,70 @@
++import FV.Backend.Proof.StockMemoryRetainedReturnSpec
++import FV.E2E.StockMemoryOmittedPairedScan
++import FV.E2E.StockMemoryPairedScan
++
++/-! UNVALIDATED next-batch body composition; excluded from frozen author HEAD. -/
++namespace E2E.StockMemory
++open Backend Backend.Stock Backend.Proof Backend.Proof.Driver Backend.Stock.Proof Backend.Stock.Memory
++set_option autoImplicit false
++set_option Elab.async false
++set_option maxRecDepth 20000
++set_option maxHeartbeats 4000000
++
++private theorem records_execute {exec : Nat → State → Except String Scan}
++    {indices : List Nat} {input : State} {output : BlockScan}
++    (cert : ScansSpec exec indices input output) :
++    ∀ record ∈ output.records,exec record.inst record.input = .ok record.output := by
++  induction cert with
++  | nil input => simp
++  | cons head rest ih =>
++    intro record member
++    rcases List.mem_cons.mp member with rfl | member
++    · exact head
++    · exact ih record member
++
++/-- Original load/NOP/return body syntax derives the complete paired body execution.
++Both semantic consumers share the same retained-body derivation; neither a
++record nor selected root, code, alias or read-permission certificate is an input. -/
++theorem stock_nop_load_return_paired_body {f : Clif.Function} {result : Result}
++    (run : Stock.lower f = .ok result) (scope : LowerScope f) (dominated : Dominated f)
++    {event : BlockScanEvent} (events : event ∈ result.blockScans.toList)
++    {b : Clif.Block} (block : f.blocks[event.block]? = some b)
++    {loadIndex x z : Nat} {flags : Clif.MemFlags}
++    (statement : b.body[loadIndex]? = some ⟨[z],.load .load .i32 flags x 0⟩)
++    (shape : ∀ j stm,b.body[j]? = some stm → j = loadIndex ∨ stm.inst = .nop)
++    (ret : b.term = .ret [z])
++    {pi : Nat} {pb : Clif.Block} (parameterBlock : f.blocks[pi]? = some pb)
++    (parameter : x ∈ pb.params.map (·.1))
++    {Γ : Rel} {c : BitVec 64} {D : BitVec 64 → Prop} {fc : FnCtx} {X : ExtSem}
++    (slot : fc.slotBase = Γ.slotOff)
++    (symbols : ∀ n b,Γ.syms n = some b → X.sym n 0 = BitVec.ofNat 64 b)
++    (tls : XTls Γ.F X) {env : Clif.Env} {cp : Clif.Program} :
++    ∃ (term : ScanRecord) (body : BlockScan),SourceBodySplit f event b term body ∧
++      ∀ s s',SourceSteps (IndexedSourceInst env cp f event.ctx event.block)
++        ((List.range b.body.length).map (blockStart f event.block+·)) s s' →
++        ∀ ρ q,PairedScanRel f result event.ctx event.block Γ c D event.output.state s ρ q →
++          ∃ ρ' q',seqRun (pairSem (csem Γ.F fc X)) (body.code.toList.map (·.mapRegs
++            (Backend.lowerFunction.resolve result.final.alias (result.final.alias.size+1)))) ρ q =
++              some (.fall ρ' q') ∧
++            PairedScanRel f result event.ctx event.block Γ c D term.output.state s' ρ' q' := by
++  obtain ⟨spec⟩ := stock_retained_load_return_spec run scope dominated events block statement ret parameterBlock parameter
++  have normal := stock_lower_load_paired_scan run scope dominated events spec.records block statement spec.current
++    spec.source spec.clif spec.results rfl spec.mapped spec.parameter spec.pointer spec.recorded spec.emitted
++    slot symbols tls (env := env) (cp := cp) (c := c) (D := D)
++  refine ⟨spec.term,spec.body,spec.split,?_⟩
++  have each : ∀ r ∈ spec.body.records,ScanFallRefines (IndexedSourceInst env cp f event.ctx event.block)
++      (pairSem (csem Γ.F fc X)) result.final.alias (PairedScanRel f result event.ctx event.block Γ c D) r := by
++    intro r present
++    rcases spec.nop_records run scope events shape r present with same | ⟨step,recorded,omitted⟩
++    · subst r
++      exact normal
++    · obtain ⟨j,stm,sourceStmt,current⟩ := spec.split.positions r present
++      have executed := records_execute spec.split.scanned r present
++      exact stock_lower_omitted_paired_scan run scope dominated events
++        (spec.split.retained r present) spec.split.block sourceStmt current executed recorded omitted
++  intro s s' steps ρ q held
++  apply spec.split.scanned.fall_refines each s s'
++  · simpa only [sourceBodyIndices,List.reverse_reverse] using steps
++  · simpa only [spec.split.state] using held
++
++end E2E.StockMemory
+diff --git a/FV/E2E/StockMemoryNopPairedPrelude.lean b/FV/E2E/StockMemoryNopPairedPrelude.lean
+new file mode 100644
+index 00000000..5eaecc70
+--- /dev/null
++++ b/FV/E2E/StockMemoryNopPairedPrelude.lean
+@@ -0,0 +1,78 @@
++import FV.Backend.Proof.StockMaskBlockRecords
++import FV.E2E.StockMemoryOmittedPairedScan
++
++/-! UNVALIDATED next-batch source. The frozen production packet excludes this file.
++Derive the entry NOP body from actual omitted records. Memory instructions in
++other original blocks do not add a global format restriction. -/
++namespace E2E.StockMemory
++open Backend Backend.Stock Backend.Proof Backend.Proof.Driver Backend.Stock.Proof Backend.Stock.Memory
++set_option autoImplicit false
++set_option Elab.async false
++set_option maxRecDepth 20000
++
++private theorem records_execute {exec : Nat → State → Except String Scan}
++    {indices : List Nat} {input : State} {output : BlockScan}
++    (cert : ScansSpec exec indices input output) :
++    ∀ record ∈ output.records,exec record.inst record.input = .ok record.output := by
++  induction cert with
++  | nil input => simp
++  | cons head rest ih =>
++    intro record member
++    rcases List.mem_cons.mp member with rfl | member
++    · exact head
++    · exact ih record member
++
++/-- Use the exact body split from a jump specification. Original NOP syntax
++derives its paired execution without a global source-format restriction. -/
++theorem stock_nop_paired_body_of_split {f : Clif.Function} {result : Result}
++    (run : Stock.lower f = .ok result) (scope : LowerScope f) (dominated : Dominated f)
++    {event : BlockScanEvent} (events : event ∈ result.blockScans.toList)
++    {b : Clif.Block} (block : f.blocks[event.block]? = some b)
++    (nops : ∀ stm ∈ b.body,stm.inst = .nop)
++    {term : ScanRecord} {body : BlockScan} (split : SourceBodySplit f event b term body)
++    {Γ : Rel} {c : BitVec 64} {D : BitVec 64 → Prop} {fc : FnCtx} {X : ExtSem}
++    {env : Clif.Env} {cp : Clif.Program} :
++    ∀ s s',SourceSteps (IndexedSourceInst env cp f event.ctx event.block)
++        ((List.range b.body.length).map (blockStart f event.block+·)) s s' →
++        ∀ ρ w,PairedScanRel f result event.ctx event.block Γ c D event.output.state s ρ w →
++          ∃ ρ' w',seqRun (pairSem (csem Γ.F fc X)) (body.code.toList.map (·.mapRegs
++            (Backend.lowerFunction.resolve result.final.alias (result.final.alias.size+1)))) ρ w =
++              some (.fall ρ' w') ∧
++            PairedScanRel f result event.ctx event.block Γ c D term.output.state s' ρ' w' := by
++  have each : ∀ record ∈ body.records,ScanFallRefines
++      (IndexedSourceInst env cp f event.ctx event.block) (pairSem (csem Γ.F fc X)) result.final.alias
++      (PairedScanRel f result event.ctx event.block Γ c D) record := by
++    intro record member
++    obtain ⟨j,stm,statement,current⟩ := split.positions record member
++    obtain ⟨step,recorded,omitted⟩ := MaskBody.actual_nop_record_at_block run scope events
++      split member statement current (nops stm (List.mem_of_getElem? statement))
++    have executed := records_execute split.scanned record member
++    exact stock_lower_omitted_paired_scan run scope dominated events
++      (split.retained record member) split.block statement current executed recorded omitted
++  intro s s' steps ρ w held
++  apply split.scanned.fall_refines each s s'
++  · simpa only [sourceBodyIndices,List.reverse_reverse] using steps
++  · simpa only [split.state] using held
++
++/-- Original NOP syntax derives paired execution of the actual body. -/
++theorem stock_nop_paired_body {f : Clif.Function} {result : Result}
++    (run : Stock.lower f = .ok result) (scope : LowerScope f) (dominated : Dominated f)
++    {event : BlockScanEvent} (events : event ∈ result.blockScans.toList)
++    {b : Clif.Block} (block : f.blocks[event.block]? = some b)
++    (nops : ∀ stm ∈ b.body,stm.inst = .nop)
++    {Γ : Rel} {c : BitVec 64} {D : BitVec 64 → Prop} {fc : FnCtx} {X : ExtSem}
++    {env : Clif.Env} {cp : Clif.Program} :
++    ∃ (term : ScanRecord) (body : BlockScan),SourceBodySplit f event b term body ∧
++      ∀ s s',SourceSteps (IndexedSourceInst env cp f event.ctx event.block)
++        ((List.range b.body.length).map (blockStart f event.block+·)) s s' →
++        ∀ ρ w,PairedScanRel f result event.ctx event.block Γ c D event.output.state s ρ w →
++          ∃ ρ' w',seqRun (pairSem (csem Γ.F fc X)) (body.code.toList.map (·.mapRegs
++            (Backend.lowerFunction.resolve result.final.alias (result.final.alias.size+1)))) ρ w =
++              some (.fall ρ' w') ∧
++            PairedScanRel f result event.ctx event.block Γ c D term.output.state s' ρ' w' := by
++  obtain ⟨original,term,body,split⟩ := stock_lower_body_scan_split run scope events
++  have same : original = b := Option.some.inj (split.block.symm.trans block)
++  subst original
++  exact ⟨term,body,split,stock_nop_paired_body_of_split run scope dominated events block nops split⟩
++
++end E2E.StockMemory
+diff --git a/FV/E2E/StockMemoryOmittedPairedScan.lean b/FV/E2E/StockMemoryOmittedPairedScan.lean
+new file mode 100644
+index 00000000..e2d460be
+--- /dev/null
++++ b/FV/E2E/StockMemoryOmittedPairedScan.lean
+@@ -0,0 +1,53 @@
++import FV.E2E.StockMemoryPairedScan
++import FV.Backend.Proof.StockGuardedOmission
++
++/-! UNVALIDATED next-batch draft. Excluded from frozen production source. -/
++namespace E2E.StockMemory
++open Backend Backend.Stock Backend.Proof Backend.Proof.Driver Backend.Stock.Proof Backend.Stock.Memory Isle
++set_option autoImplicit false
++set_option Elab.async false
++
++/-- Reuse the existing original-source omission proof in both worlds. An
++actual omission emits no code and preserves source memory, so initialized-world
++agreement survives without an extra accepted-input condition. -/
++theorem stock_lower_omitted_paired_scan
++    {f : Clif.Function} {result : Result}
++    (run : Stock.lower f = .ok result) (scope : LowerScope f) (dominated : Dominated f)
++    {event : BlockScanEvent} {record : ScanRecord}
++    (events : event ∈ result.blockScans.toList) (records : record ∈ event.output.records)
++    {bi j : Nat} {b : Clif.Block} {stm : Clif.Stmt}
++    (block : f.blocks[bi]? = some b) (statement : b.body[j]? = some stm)
++    (current : record.inst = blockStart f bi+j)
++    (executed : scanInstruction event.ctx event.block record.inst event.termInst event.isBranch record.input = .ok record.output)
++    {step : Step} (recorded : record.output.step = some step) (omitted : step.decision = .omitted)
++    {Γ : Rel} {c : BitVec 64} {D : BitVec 64 → Prop} {fc : FnCtx} {X : ExtSem}
++    {env : Clif.Env} {cp : Clif.Program} :
++    ScanFallRefines (IndexedSourceInst env cp f event.ctx bi) (pairSem (csem Γ.F fc X))
++      result.final.alias (PairedScanRel f result event.ctx bi Γ c D) record := by
++  intro s s' sourceIndex ρ q before
++  obtain ⟨held,otherHeld,worlds⟩ := before
++  have facts := scan_omitted executed recorded omitted
++  have code : record.output.emitted = #[] := facts.2.2.2.2.2.2.2.1
++  have single := stock_lower_omitted_scan_fall_refines run scope dominated events records
++    block statement current recorded omitted (isem := csem Γ.F fc X) (MR := RelW Γ f c)
++    (env := env) (cp := cp)
++  obtain ⟨firstRegs,firstWorld,first,post⟩ := single s s' sourceIndex ρ q.1 held
++  obtain ⟨otherRegs,otherWorld,second,otherPost⟩ := single s s' sourceIndex ρ q.2 otherHeld
++  have firstEq : SeqEnd.fall ρ q.1 = SeqEnd.fall firstRegs firstWorld := by
++    apply Option.some.inj
++    simpa only [code,Array.toList_empty,List.map_nil,seqRun] using first
++  have secondEq : SeqEnd.fall ρ q.2 = SeqEnd.fall otherRegs otherWorld := by
++    apply Option.some.inj
++    simpa only [code,Array.toList_empty,List.map_nil,seqRun] using second
++  obtain ⟨file,world⟩ := SeqEnd.fall.inj firstEq
++  obtain ⟨otherFile,otherWorldEq⟩ := SeqEnd.fall.inj secondEq
++  rw [← file,← world] at post
++  rw [← otherFile,← otherWorldEq] at otherPost
++  obtain ⟨info,inst,vals,regs,rest,source,clif,body,outcome,set,updated⟩ := sourceIndex.2.2
++  have memory := (scan_omitted_semantic (ρ := fun k => ρ (aliasNum result.final.alias k))
++    executed recorded omitted source clif set).2.1 _ _ outcome
++  refine ⟨ρ,q,?_,post,otherPost,?_⟩
++  · simp only [code,Array.toList_empty,List.map_nil,seqRun]
++  · simpa only [memory] using worlds
++
++end E2E.StockMemory
+diff --git a/FV/E2E/StockMemoryOriginalEntryPaired.lean b/FV/E2E/StockMemoryOriginalEntryPaired.lean
+new file mode 100644
+index 00000000..b68587ec
+--- /dev/null
++++ b/FV/E2E/StockMemoryOriginalEntryPaired.lean
+@@ -0,0 +1,88 @@
++import FV.Backend.Proof.StockOriginalEntryPrelude
++import FV.E2E.StockMemoryPairedEntry
++
++namespace E2E.StockMemory
++open Backend Backend.Proof Backend.Proof.Driver Backend.Stock Backend.Stock.Proof Backend.Stock.Proof.Control
++set_option autoImplicit false
++set_option Elab.async false
++set_option maxRecDepth 20000
++
++/-- The chosen actual entry core supplies its paired ABI prefix and guarded values.
++Both worlds execute the same prefix with one shared virtual register file. -/
++theorem original_entry_prelude_paired {f : Clif.Function} {result : Result}
++    (run : Stock.lower f = .ok result) (scope : LowerScope f) (dominated : Dominated f)
++    {b : Clif.Block} (spec : EntryCoreSpec f result b)
++    {args : List Clif.Val} {cm : Clif.Mem} {fr : Clif.Frame}
++    (entered : SourceEntry f args fr)
++    (registerOnly : ∀ loc ∈ locsOf f.sig,∃ pin,loc = .reg pin)
++    {Γ : Rel} {c : BitVec 64} {D : BitVec 64 → Prop} {fc : FnCtx} {X : ExtSem}
++    (slot : fc.slotBase = Γ.slotOff)
++    (symbols : ∀ n a,Γ.syms n = some a → X.sym n 0 = BitVec.ofNat 64 a)
++    {w w' : Arm.ArmState} (memory : MRP Γ f c D fr.slots cm (w,w'))
++    (arguments : ArgsAtEntry Γ.F f.sig args w) (otherArguments : ArgsAtEntry Γ.F f.sig args w')
++    (registers : ∀ pin v,(.reg pin,v) ∈ (locsOf f.sig).zip args → regVal w' pin = regVal w pin) :
++    ∃ ρ',Star (VStepAt result.code result.edgeArgs (pairSem (csem Γ.F fc X)))
++      (.run ⟨0,0,entrySeed spec.core.scan.ctx fr,(w,w')⟩)
++      (.run ⟨0,spec.preludeCode.size,ρ',(w,w')⟩) ∧
++      PairedScanRel f result spec.core.scan.ctx spec.core.scan.block Γ c D
++        spec.core.scan.output.state (0,fr,cm) ρ' (w,w') := by
++  have inv := buildCtx_mappedInv scope spec.build
++  obtain ⟨locs,stack,rows,locations,mapped,ordered,lookups,rawCode⟩ :=
++    assemble_entry_source_rows spec.assembled
++  let prelude := entryPrelude (mappedEntryPairs rows) (mappedEntryLoads rows)
++  let resolve := Backend.lowerFunction.resolve result.final.alias (result.final.alias.size+1)
++  have fixed : prelude.map (·.mapRegs resolve) = prelude := by
++    apply mapped_entry_prelude_fixed resolve
++    intro row member
++    have original : row.input ∈ (b.params.zip locs).zip spec.params :=
++      ordered.subset (List.mem_map.mpr ⟨row,member,rfl⟩)
++    have parameter : row.input.1.1.1 ∈ b.params.map (·.1) :=
++      List.mem_map.mpr ⟨row.input.1.1,(List.of_mem_zip (List.of_mem_zip original).1).1,rfl⟩
++    obtain ⟨rowReg,rowMap⟩ := mapped_entry_reg inv mapped member
++    have alias := stock_lower_parameter_resolves run dominated.ssa spec.block parameter rowMap
++    rw [rowReg]
++    change Backend.lowerFunction.resolve result.final.alias (result.final.alias.size+1)
++      (.vreg (entryRowKey row) .int) = .vreg (entryRowKey row) .int
++    rw [resolve_vreg]
++    change Reg.vreg (aliasNum result.final.alias (entryRowKey row)) .int = _
++    rw [alias]
++  have maps := (stock_lower_record_context run scope spec.events).2.1
++  have held : ValuesHeld (fun _ => True) result.ctx fr (entrySeed spec.core.scan.ctx fr) := by
++    intro x _ v found
++    obtain ⟨key,mapped,value⟩ := entrySeed_entered_values_frame run scope dominated spec.events entered x trivial v found
++    exact ⟨key,by rwa [maps] at mapped,value⟩
++  obtain ⟨ρ',execution,values⟩ := mapped_entry_register_prelude_paired_frame inv entered dominated.ssa
++    spec.block locations spec.sizes mapped registerOnly slot symbols held memory arguments otherArguments registers
++  have preludeEq : spec.preludeCode = prelude :=
++    (Array.append_left_inj spec.core.code).mp (spec.rawCode.symm.trans (congrArg VBlock.insts rawCode))
++  let vb : VBlock := {spec.raw with
++    insts := spec.raw.insts.map (·.mapRegs resolve)
++    params := spec.raw.params.map resolve
++    branchArgs := spec.raw.branchArgs.map resolve}
++  have parts : vb.insts = prelude ++ spec.core.code.map (·.mapRegs resolve) := by
++    dsimp only [vb]
++    rw [rawCode]
++    change (prelude ++ spec.core.code).map (·.mapRegs resolve) = _
++    rw [Array.map_append,fixed]
++  have segment : SegAt vb 0 prelude.toList := by
++    intro k hk
++    have bound : k < prelude.size := by simpa using hk
++    simp only [Nat.zero_add,parts]
++    rw [Array.getElem?_append_left bound]
++    simp [bound]
++  have room : 0+prelude.toList.length < vb.insts.size := by
++    simp only [parts,Array.length_toList,Array.size_append,Array.size_map]
++    have nonempty := spec.nonempty
++    omega
++  have path := seqRun_fall_starAt (edges := result.edgeArgs) spec.placed segment room execution
++  have values' : ValuesHeld (fun _ => True) spec.core.scan.ctx fr ρ' := by
++    intro x needed v found
++    obtain ⟨key,mapped,value⟩ := values x needed v found
++    exact ⟨key,by rwa [← maps] at mapped,value⟩
++  refine ⟨ρ',?_,stock_lower_entered_values_guarded_frame run scope dominated spec.events entered
++    values' spec.core.scan.output.state w memory.1,
++    stock_lower_entered_values_guarded_frame run scope dominated spec.events entered
++    values' spec.core.scan.output.state w' memory.2.1,memory.2.2⟩
++  simpa only [preludeEq,Nat.zero_add,Array.length_toList] using path
++
++end E2E.StockMemory
+diff --git a/FV/E2E/StockMemoryPairedJump.lean b/FV/E2E/StockMemoryPairedJump.lean
+new file mode 100644
+index 00000000..03df88fd
+--- /dev/null
++++ b/FV/E2E/StockMemoryPairedJump.lean
+@@ -0,0 +1,163 @@
++import FV.Backend.Proof.StockMemoryCfgJumpReturnAt
++import FV.E2E.StockMemoryPairedScan
++import FV.E2E.PairDriver
++import FV.Backend.Proof.VCodeSemISeq
++
++namespace E2E.StockMemory
++open Backend Backend.Proof Backend.Proof.Driver Backend.Stock Backend.Stock.Proof Backend.Stock.Proof.Control
++set_option autoImplicit false
++set_option Elab.async false
++set_option maxRecDepth 20000
++
++private theorem pair_fall_first {sem : Sem} {ms : List MInst}
++    {ρ ρ' : Nat → CV} {q q' : W2}
++    (executed : seqRun (pairSem sem) ms ρ q = some (.fall ρ' q')) :
++    seqRun sem ms ρ q.1 = some (.fall ρ' q'.1) := by
++  exact seqRun_mapW (π := Prod.fst) (P := fun _ => True)
++    (fun i _ us w outs next ctl ran => (pairSem_inv ran).1)
++    ms (fun _ _ => True.intro) ρ q (.fall ρ' q') executed
++
++private theorem paired_jump_seq (Γ : Rel) (fc : FnCtx) (X : ExtSem)
++    (label : Nat) (ρ : Nat → CV) (q : W2) :
++    seqRun (pairSem (csem Γ.F fc X)) [.jump label] ρ q =
++      some (.stop 0 (.jump label) #[] ρ q [] q (.goto 0)) := by
++  simp only [seqRun,show (MInst.jump label).operands = .ok #[] from rfl,
++    show vuses (#[] : Array Operand) ρ = [] from rfl,(driverSemG_pair Γ.F fc X).jump]
++  rfl
++
++/-- A proved paired body crosses the actual jump with one shared virtual register file. -/
++theorem paired_jump_body_returns_at_of_body {f : Clif.Function} {result : Result}
++    (run : Stock.lower f = .ok result) (scope : LowerScope f) (dominated : Dominated f)
++    {b targetBlock : Clif.Block} {label bi tl : Nat} {bc : Clif.BlockCall}
++    {Γ : Rel} {c : BitVec 64} {D : BitVec 64 → Prop} {fc : FnCtx} {X : ExtSem}
++    {env : Clif.Env} {cp : Clif.Program}
++    (spec : JumpBodySpec f result b label bi bc (csem Γ.F fc X) (RelW Γ f c) env cp)
++    (localFamily : ∀ stm ∈ b.body,LocalBody.LocalInst stm.inst)
++    (bodyRefines : ∀ a a',SourceSteps (IndexedSourceInst env cp f spec.core.scan.ctx spec.core.scan.block)
++      (sourceBodyIndices f spec.core.scan.block b).reverse a a' → ∀ ρ q,
++      PairedScanRel f result spec.core.scan.ctx spec.core.scan.block Γ c D spec.body.state a ρ q → ∃ ρ' q',
++        seqRun (pairSem (csem Γ.F fc X)) (spec.body.code.toList.map (·.mapRegs
++          (Backend.lowerFunction.resolve result.final.alias (result.final.alias.size+1)))) ρ q =
++            some (.fall ρ' q') ∧
++        PairedScanRel f result spec.core.scan.ctx spec.core.scan.block Γ c D spec.term.output.state a' ρ' q')
++    (tag : result.order.nodes[label]? = some (.original bi))
++    (jump : b.term = .jump bc)
++    (targetTag : result.order.nodes[spec.target]? = some (.original tl))
++    (targetIndex : blockIdx? f bc.block = some tl)
++    (target : f.block? bc.block = some targetBlock)
++    {next : BlockScanEvent} (nextEvent : next ∈ result.blockScans.toList) (nextBlock : next.block = tl)
++    (demand : ∀ (x : Nat),next.output.state.demand[x]! ≤ spec.term.output.state.demand[x]!)
++    {vals : List Clif.Val} {outMem : Clif.Mem}
++    (continuation : ∀ (fuel : Nat) (s : Clif.State) (ρ : Nat → CV) (q : W2),
++      s.frame.func = f → s.callers = [] → s.frame.body = targetBlock.body →
++      s.frame.term = targetBlock.term → SourceDefinedAt f result.ctx tl 0 s.frame →
++      Clif.runLoop env cp fuel s = .returned vals outMem →
++      PairedScanRel f result next.ctx next.block Γ c D next.output.state (0,s.frame,s.mem) ρ q →
++      RunOkABIAt f result.code result.edgeArgs (pairSem (csem Γ.F fc X)) (MRP Γ f c D) s.frame.slots
++        ⟨spec.target,0,ρ,q⟩ (.returned vals outMem))
++    {fuel : Nat} {s : Clif.State} (callers : s.callers = [])
++    (remaining : s.frame.body = b.body) (atTerm : s.frame.term = b.term)
++    (defined : SourceDefinedAt f result.ctx spec.core.scan.block 0 s.frame)
++    (returned : Clif.runLoop env cp fuel s = .returned vals outMem)
++    {ρ : Nat → CV} {q : W2}
++    (held : PairedScanRel f result spec.core.scan.ctx spec.core.scan.block Γ c D spec.core.scan.output.state
++      (0,s.frame,s.mem) ρ q) :
++    RunOkABIAt f result.code result.edgeArgs (pairSem (csem Γ.F fc X)) (MRP Γ f c D) s.frame.slots
++      ⟨label,spec.preludeCode.size,ρ,q⟩ (.returned vals outMem) := by
++  have source := spec.split.block
++  rw [spec.atBlock] at source
++  obtain ⟨t,left,total,continued,empty,steps,frame⟩ := LocalBody.actual_local_source_execution_frame
++    run spec.events spec.split localFamily (j := 0) (by omega) (by simpa using remaining) returned
++  obtain ⟨ρ',q',bodyRun,postPair⟩ := bodyRefines (0,s.frame,s.mem) (b.body.length,t.frame,t.mem)
++    (by simpa only [Nat.add_zero,Nat.sub_zero,List.range'_eq_map_range,sourceBodyIndices,List.reverse_reverse] using steps)
++    ρ q (by simpa only [spec.split.state] using held)
++  obtain ⟨sourceFrame,atJump,firstRun,tDefined⟩ := Inherited.jump_continuation_defined run scope dominated
++    (driverSem_csem Γ.F fc X) spec jump (needed := fun _ => False)
++    (by intro x impossible; cases impossible) (by simpa only [Nat.add_zero,Nat.sub_zero] using steps)
++    frame atTerm (pair_fall_first bodyRun) defined
++  have coreCode : spec.core.code.toList.map (·.mapRegs
++      (Backend.lowerFunction.resolve result.final.alias (result.final.alias.size+1))) =
++      spec.body.code.toList.map (·.mapRegs
++        (Backend.lowerFunction.resolve result.final.alias (result.final.alias.size+1))) ++ [.jump spec.target] := by
++    rw [spec.bodyCode,Array.toList_append,List.map_append]
++    rfl
++  have executed := seqRun_append_fall_stop (pairSem (csem Γ.F fc X)) bodyRun
++    (paired_jump_seq Γ fc X spec.target ρ' q')
++  have executed : seqRun (pairSem (csem Γ.F fc X)) (spec.core.code.toList.map (·.mapRegs
++      (Backend.lowerFunction.resolve result.final.alias (result.final.alias.size+1)))) ρ q =
++        some (.stop spec.body.code.size (.jump spec.target) #[] ρ' q' [] q' (.goto 0)) := by
++    rw [coreCode]
++    simpa only [List.length_map,Array.length_toList,Nat.zero_add] using executed
++  cases left with
++  | zero => cases continued
++  | succ left =>
++    have crossing : ∃ fr',Clif.enterBlock t.frame bc = .ok fr' := by
++      cases call : Clif.enterBlock t.frame bc with
++      | ok fr' => exact ⟨fr',rfl⟩
++      | trap code =>
++        rw [Clif.runLoop_succ] at continued
++        simp only [Clif.step,empty,atJump,Clif.stepTerm,call,Clif.StepResult.ofRes] at continued
++        cases continued
++      | stuck message =>
++        rw [Clif.runLoop_succ] at continued
++        simp only [Clif.step,empty,atJump,Clif.stepTerm,call,Clif.StepResult.ofRes] at continued
++        cases continued
++    obtain ⟨fr',crossed⟩ := crossing
++    have successor : result.order.successors[label]![0]? = some spec.target := by
++      have targets : result.order.successors[label]! = #[spec.target] := Array.toList_inj.mp spec.targets
++      rw [targets]; rfl
++    obtain ⟨ρnext,copied,nextDefined,nextHeld⟩ := direct_successor_guarded_of_demand run scope dominated
++      spec.events nextEvent tag source (by simp [jump,dests]) successor targetTag targetIndex target
++      spec.atBlock nextBlock postPair.1 (by simpa only [spec.atBlock] using tDefined) crossed
++      (jump_successor_values_of_demand run scope dominated spec jump targetTag targetIndex target nextBlock demand postPair.1)
++    obtain ⟨otherNext,copiedOther,otherDefined,otherHeld⟩ := direct_successor_guarded_of_demand run scope dominated
++      spec.events nextEvent tag source (by simp [jump,dests]) successor targetTag targetIndex target
++      spec.atBlock nextBlock postPair.2.1 (by simpa only [spec.atBlock] using tDefined) crossed
++      (jump_successor_values_of_demand run scope dominated spec jump targetTag targetIndex target nextBlock demand postPair.2.1)
++    have copiedEq : otherNext = ρnext := Option.some.inj (copiedOther.symm.trans copied)
++    subst otherNext
++    have nextReturned : Clif.runLoop env cp left ⟨fr',[],t.mem⟩ = .returned vals outMem := by
++      rw [Clif.runLoop_succ] at continued
++      have tc : t.callers = [] := frame.1.trans callers
++      simpa only [Clif.step,empty,atJump,Clif.stepTerm,crossed,Clif.StepResult.ofRes,tc] using continued
++    have tFunc := postPair.1.1
++    obtain ⟨destination,args,regs,found,read,types,set,frEq⟩ := enterBlock_spec crossed
++    have destinationEq : destination = targetBlock := by
++      rw [tFunc] at found
++      exact Option.some.inj (found.symm.trans target)
++    have bodyEq : fr'.body = targetBlock.body := by rw [frEq,destinationEq]
++    have termEq : fr'.term = targetBlock.term := by rw [frEq,destinationEq]
++    have slotsEq : fr'.slots = s.frame.slots := by rw [frEq]; exact frame.2.2.1
++    have finished := continuation left ⟨fr',[],t.mem⟩ ρnext q' nextHeld.1 rfl bodyEq termEq
++      nextDefined nextReturned ⟨nextHeld,otherHeld,postPair.2.2⟩
++    let resolve := Backend.lowerFunction.resolve result.final.alias (result.final.alias.size+1)
++    have segment : SegAt {spec.raw with
++        insts := spec.raw.insts.map (·.mapRegs resolve)
++        params := spec.raw.params.map resolve
++        branchArgs := spec.raw.branchArgs.map resolve}
++        spec.preludeCode.size (spec.core.code.toList.map (·.mapRegs resolve)) := by
++      intro k hk
++      have bound : k < spec.core.code.size := by simpa using hk
++      simp only [spec.rawCode,Array.map_append]
++      rw [Array.getElem?_append_right (by simpa only [Array.size_map] using Nat.le_add_right spec.preludeCode.size k)]
++      simp only [Array.size_map,Nat.add_sub_cancel_left]
++      simp [bound]
++    have last : spec.preludeCode.size+spec.body.code.size+1 =
++        (spec.raw.insts.map (·.mapRegs resolve)).size := by
++      simp only [spec.rawCode,spec.bodyCode,Array.size_map,Array.size_append,Array.size_singleton]
++      omega
++    obtain ⟨ps,cfg⟩ := stock_lower_computed_cfg run scope
++    have actualSuccessor : succOf result.code label 0 = some spec.target := by
++      cases row : result.order.successors[label]? with
++      | none =>
++        simp only [getElem!_def,row,Option.getD_none] at successor
++        change (#[] : Array Nat)[0]? = some spec.target at successor
++        cases successor
++      | some values => simpa [succOf,cfg,getElem!_def,row] using successor
++    have path := seqRun_goto_starAt spec.placed segment executed last actualSuccessor
++      (by simpa only [vdefUpd,writeV,List.foldl_nil,Array.toList_empty,List.filter_nil,List.zip_nil_left] using copied)
++    have whole := RunOkABIAt.prefix path finished
++    simpa only [slotsEq] using whole
++
++
++end E2E.StockMemory
+diff --git a/FV/E2E/StockMemoryPairedNopJump.lean b/FV/E2E/StockMemoryPairedNopJump.lean
+new file mode 100644
+index 00000000..8e685669
+--- /dev/null
++++ b/FV/E2E/StockMemoryPairedNopJump.lean
+@@ -0,0 +1,59 @@
++import FV.E2E.StockMemoryPairedJump
++import FV.E2E.StockMemoryNopPairedPrelude
++import FV.Backend.Proof.StockCfgTraversalDemand
++
++namespace E2E.StockMemory
++open Backend Backend.Proof Backend.Proof.Driver Backend.Stock Backend.Stock.Proof Backend.Stock.Proof.Control
++set_option autoImplicit false
++set_option Elab.async false
++set_option maxRecDepth 20000
++
++/-- Original NOP syntax supplies the paired body required by the actual jump.
++The successor can contain memory instructions. No body-execution certificate is an input. -/
++theorem paired_nop_jump_body_returns_at {f : Clif.Function} {result : Result}
++    (run : Stock.lower f = .ok result) (scope : LowerScope f) (dominated : Dominated f)
++    {b targetBlock : Clif.Block} {label bi tl : Nat} {bc : Clif.BlockCall}
++    {Γ : Rel} {c : BitVec 64} {D : BitVec 64 → Prop} {fc : FnCtx} {X : ExtSem}
++    {env : Clif.Env} {cp : Clif.Program}
++    (spec : JumpBodySpec f result b label bi bc (csem Γ.F fc X) (RelW Γ f c) env cp)
++    (nops : ∀ stm ∈ b.body,stm.inst = .nop)
++    (tag : result.order.nodes[label]? = some (.original bi))
++    (jump : b.term = .jump bc)
++    (targetTag : result.order.nodes[spec.target]? = some (.original tl))
++    (targetIndex : blockIdx? f bc.block = some tl)
++    (target : f.block? bc.block = some targetBlock)
++    {next : BlockScanEvent} (nextEvent : next ∈ result.blockScans.toList) (nextBlock : next.block = tl)
++    (forward : label < spec.target)
++    {vals : List Clif.Val} {outMem : Clif.Mem}
++    (continuation : ∀ (fuel : Nat) (s : Clif.State) (ρ : Nat → CV) (q : W2),
++      s.frame.func = f → s.callers = [] → s.frame.body = targetBlock.body →
++      s.frame.term = targetBlock.term → SourceDefinedAt f result.ctx tl 0 s.frame →
++      Clif.runLoop env cp fuel s = .returned vals outMem →
++      PairedScanRel f result next.ctx next.block Γ c D next.output.state (0,s.frame,s.mem) ρ q →
++      RunOkABIAt f result.code result.edgeArgs (pairSem (csem Γ.F fc X)) (MRP Γ f c D) s.frame.slots
++        ⟨spec.target,0,ρ,q⟩ (.returned vals outMem))
++    {fuel : Nat} {s : Clif.State} (callers : s.callers = [])
++    (remaining : s.frame.body = b.body) (atTerm : s.frame.term = b.term)
++    (defined : SourceDefinedAt f result.ctx spec.core.scan.block 0 s.frame)
++    (returned : Clif.runLoop env cp fuel s = .returned vals outMem)
++    {ρ : Nat → CV} {q : W2}
++    (held : PairedScanRel f result spec.core.scan.ctx spec.core.scan.block Γ c D spec.core.scan.output.state
++      (0,s.frame,s.mem) ρ q) :
++    RunOkABIAt f result.code result.edgeArgs (pairSem (csem Γ.F fc X)) (MRP Γ f c D) s.frame.slots
++      ⟨label,spec.preludeCode.size,ρ,q⟩ (.returned vals outMem) := by
++  have localFamily : ∀ stm ∈ b.body,LocalBody.LocalInst stm.inst := by
++    intro stm member
++    simp [LocalBody.LocalInst,nops stm member]
++  have demand := CfgDemand.ordered_scan_demand_of_labels run scope
++    (Array.getElem?_eq_some_iff.mp targetTag).1 forward
++    (by simp only [getElem!_def,targetTag,Option.getD_some,nextBlock])
++    (by simp only [getElem!_def,tag,Option.getD_some,spec.atBlock]) nextEvent spec.events spec.split
++  apply paired_jump_body_returns_at_of_body run scope dominated spec localFamily
++    ?_ tag jump targetTag targetIndex target nextEvent nextBlock demand continuation
++    callers remaining atTerm defined returned held
++  intro a a' steps ρ q relation
++  exact stock_nop_paired_body_of_split run scope dominated spec.events spec.split.block nops spec.split a a'
++    (by simpa only [sourceBodyIndices,List.reverse_reverse] using steps) ρ q
++    (by simpa only [spec.split.state] using relation)
++
++end E2E.StockMemory
+diff --git a/FV/E2E/StockMemoryPairedReturnEdge.lean b/FV/E2E/StockMemoryPairedReturnEdge.lean
+new file mode 100644
+index 00000000..46d2bb96
+--- /dev/null
++++ b/FV/E2E/StockMemoryPairedReturnEdge.lean
+@@ -0,0 +1,74 @@
++import FV.E2E.StockMemoryPairedBody
++import FV.Backend.Proof.StockPerEdgeReturnContract
++
++namespace E2E.StockMemory
++open Backend Backend.Stock Backend.Proof Backend.Proof.Driver Backend.Stock.Proof
++set_option autoImplicit false
++set_option Elab.async false
++set_option maxRecDepth 20000
++set_option maxHeartbeats 4000000
++
++/-- The original actual source return supplies a paired ABI-aware observation.
++Existing source demand, pinning and value proofs are reused with guarded return
++semantics and the original initialized-memory pairing framework. -/
++theorem stock_lower_return_record_paired_runOkAt {f : Clif.Function} {result : Result}
++    (run : Stock.lower f = .ok result) (scope : LowerScope f) (dominated : Dominated f)
++    (abi : sigAbiOk f.sig = true) {event : BlockScanEvent} (events : event ∈ result.blockScans.toList)
++    {b : Clif.Block} (block : f.blocks[event.block]? = some b)
++    {xs : List Nat} (ret : b.term = .ret xs)
++    {record : ScanRecord} (records : record ∈ event.output.records) (terminal : record.inst = event.termInst)
++    {env : Clif.Env} {cp : Clif.Program} {s : Clif.State} {vals : List Clif.Val} {cm : Clif.Mem}
++    (func : s.frame.func = f) (callers : s.callers = [])
++    (done : Clif.stepTerm env cp s (.ret xs) = .done vals cm)
++    (defined : SourceDefinedAt f result.ctx event.block b.body.length s.frame)
++    {ρ : Nat → CV} (held : ValuesHeld (fun x => Demanded record.output.state x ∧
++      x ∈ availOf f (availIn f result.ctx) event.block b.body.length) event.ctx s.frame
++      (fun key => ρ (aliasNum result.final.alias key)))
++    {Γ : Rel} {c : BitVec 64} {D : BitVec 64 → Prop} {fc : FnCtx} {X : ExtSem}
++    (tls : XTls Γ.F X)
++    {label k : Nat} {vb : VBlock} (placed : result.code.blocks[label]? = some vb)
++    (segment : SegAt vb k (record.output.emitted.toList.map (·.mapRegs
++      (Backend.lowerFunction.resolve result.final.alias (result.final.alias.size+1)))))
++    (q : W2) (memory : MRP Γ f c D s.frame.slots s.mem q) :
++    RunOkABIAt f result.code result.edgeArgs (pairSem (csem Γ.F fc X)) (MRP Γ f c D)
++      s.frame.slots ⟨label,k,ρ,q⟩ (.returned vals cm) := by
++  let guarded := csemG Γ.F fc X (fun b => ¬ Zof Γ.F D s.mem b) Γ.syms [] [] 0 (fun _ _ _ _ => False)
++  obtain ⟨step,rs,ps,extra,recorded,emitted,code,root,mapped,pinned,count,read,execution⟩ :=
++    stock_lower_return_record_source_run_auto run scope dominated abi events block ret records terminal
++      func callers done defined held (isem := guarded) (MR := RelW Γ f c)
++      refines_csemG (mrStable_relW Γ f c)
++  let resolve := Backend.lowerFunction.resolve result.final.alias (result.final.alias.size+1)
++  let us : List (Reg × Reg) := (rs.zip ps).map (fun q => (resolve q.1,q.2))
++  have length : us.length = rs.length := by simp [us,List.length_zip,count]
++  have selected : ReturnABI f us := by
++    have second : us.map (·.2) = ps := by
++      simp only [us,List.map_map,Function.comp_def]
++      exact List.map_snd_zip (by omega)
++    unfold ReturnABI
++    rw [length,second]
++    exact pinned
++  have requested := stock_lower_return_guarded_operands run scope dominated events block ret records terminal
++    recorded emitted held
++  have sourceValues := requested_values_hold requested read mapped
++  have valueCount : (vals ++ extra).length = rs.length := by
++    simpa only [List.length_map] using sourceValues.1
++  obtain ⟨left,right,worlds⟩ := memory
++  obtain ⟨ops,t,first,values,memory'⟩ := execution q.1 left
++  obtain ⟨ops',t',second,otherValues,otherMemory'⟩ := execution q.2 right
++  have instruction : ((.rets (rs.zip ps) : MInst).mapRegs resolve) = .rets us := rfl
++  rw [instruction] at first second
++  let ms := record.output.emitted.toList.map (·.mapRegs resolve)
++  obtain ⟨otherPre,otherPost,equal,paired,relatedPre,relatedPost⟩ := pair_stop
++    (fun _ _ _ _ h => (csemG_sub h).2.2)
++    (guardedStep0 (D := D) (syms := Γ.syms) tls fc s.mem ms [] []) worlds first second
++  have preEq : q.2 = otherPre := congrArg (fun e => match e with
++    | .fall _ w => w | .stop _ _ _ _ w _ _ _ => w) equal
++  have postEq : t' = otherPost := congrArg (fun e => match e with
++    | .fall _ w => w | .stop _ _ _ _ _ _ w _ => w) equal
++  rw [← preEq,← postEq] at paired
++  rw [← postEq] at relatedPost
++  exact runOkABIAt_of_return_stop placed segment paired selected
++    (by have := values.1; omega) values.prefix_append ⟨memory',otherMemory',relatedPost⟩
++    ((stepTerm_ret callers).2.2 vals cm done).2
++
++end E2E.StockMemory
+diff --git a/FV/E2E/StockMemoryPairedReturnEdgeBody.lean b/FV/E2E/StockMemoryPairedReturnEdgeBody.lean
+new file mode 100644
+index 00000000..5e0227a9
+--- /dev/null
++++ b/FV/E2E/StockMemoryPairedReturnEdgeBody.lean
+@@ -0,0 +1,116 @@
++import FV.E2E.StockMemoryPairedReturnEdge
++import FV.Backend.Proof.StockMemoryReturnRefines
++
++namespace E2E.StockMemory
++open Backend Backend.Stock Backend.Proof Backend.Proof.Driver Backend.Stock.Proof
++set_option autoImplicit false
++set_option Elab.async false
++set_option maxRecDepth 20000
++set_option maxHeartbeats 4000000
++
++private theorem return_done_of_runLoop {env : Clif.Env} {cp : Clif.Program}
++    {s : Clif.State} {xs : List Nat} {fuel : Nat} {vals : List Clif.Val} {mem : Clif.Mem}
++    (empty : s.frame.body = []) (callers : s.callers = []) (term : s.frame.term = .ret xs)
++    (returned : Clif.runLoop env cp fuel s = .returned vals mem) :
++    Clif.stepTerm env cp s (.ret xs) = .done vals mem := by
++  cases fuel with
++  | zero => cases returned
++  | succ fuel =>
++    rw [Clif.runLoop_succ,Clif.step_term env cp s empty,term] at returned
++    cases step : Clif.stepTerm env cp s (.ret xs) with
++    | next t => exact False.elim ((stepTerm_ret callers).1 t step)
++    | done vs cm =>
++      simp only [step,Clif.Outcome.returned.injEq] at returned
++      obtain ⟨rfl,rfl⟩ := returned
++      rfl
++    | trapped c => simp only [step] at returned; cases returned
++    | stuck message => simp only [step] at returned; cases returned
++
++private theorem factor_seg {vb : VBlock} {pre code post : Array MInst}
++    (parts : vb.insts = pre ++ code ++ post) : SegAt vb pre.size code.toList := by
++  intro k hk
++  have bound : k < code.size := by simpa using hk
++  rw [parts,Array.append_assoc,Array.getElem?_append_right (by omega)]
++  simp only [Nat.add_sub_cancel_left]
++  rw [Array.getElem?_append_left bound]
++  simp [bound]
++
++/-- Compose a proved ordinary body with its actual placed return segment. -/
++theorem actual_ordinary_paired_return_refines_at_block {f : Clif.Function} {result : Result}
++    (run : Stock.lower f = .ok result) (scope : LowerScope f) (dominated : Dominated f)
++    (abi : sigAbiOk f.sig = true) {b : Clif.Block}
++    (family : ∀ stm ∈ b.body, OrdinaryBody.OrdinaryInst stm.inst)
++    {xs : List Nat} (ret : b.term = .ret xs)
++    {event : BlockScanEvent} (events : event ∈ result.blockScans.toList)
++    {term : ScanRecord} {body : BlockScan} (split : SourceBodySplit f event b term body)
++    {env : Clif.Env} {cp : Clif.Program} {fuel : Nat} {s : Clif.State}
++    (func : s.frame.func = f) (callers : s.callers = [])
++    (remaining : s.frame.body = b.body) (terminal : s.frame.term = b.term)
++    (defined : SourceDefinedAt f result.ctx event.block 0 s.frame)
++    {vals : List Clif.Val} {mem : Clif.Mem}
++    (returned : Clif.runLoop env cp fuel s = .returned vals mem)
++    {Γ : Rel} {c : BitVec 64} {D : BitVec 64 → Prop} {fc : FnCtx} {X : ExtSem}
++    (tls : XTls Γ.F X)
++    (bodyRun : ∀ s s', SourceSteps (IndexedSourceInst env cp f event.ctx event.block)
++        ((List.range b.body.length).map (blockStart f event.block + ·)) s s' →
++        ∀ ρ w, PairedScanRel f result event.ctx event.block Γ c D event.output.state s ρ w → ∃ ρ' w',
++          seqRun (pairSem (csem Γ.F fc X)) (body.code.toList.map (·.mapRegs
++            (Backend.lowerFunction.resolve result.final.alias (result.final.alias.size + 1)))) ρ w =
++            some (.fall ρ' w') ∧
++          PairedScanRel f result event.ctx event.block Γ c D term.output.state s' ρ' w')
++    {label : Nat} {vb : VBlock} {pre post : Array MInst}
++    (placed : result.code.blocks[label]? = some vb)
++    (code : vb.insts = pre ++ event.output.code.map (·.mapRegs
++      (Backend.lowerFunction.resolve result.final.alias (result.final.alias.size+1))) ++ post) :
++    ∀ ρ w, PairedScanRel f result event.ctx event.block Γ c D event.output.state
++      (0,s.frame,s.mem) ρ w →
++      RunOkABIAt f result.code result.edgeArgs (pairSem (csem Γ.F fc X)) (MRP Γ f c D) s.frame.slots ⟨label,pre.size,ρ,w⟩ (.returned vals mem) := by
++  have start : s.frame.body = b.body.drop 0 := by simpa using remaining
++  obtain ⟨t,left,total,ends,empty,steps,frame⟩ := OrdinaryBody.actual_ordinary_source_execution_frame
++    run events split family (j := 0) (by omega) start returned
++  have tDefined : SourceDefinedAt f result.ctx event.block b.body.length t.frame := by
++    apply ArithmeticBody.arithmetic_steps_defined run scope dominated events split.block
++      (env := env) (cp := cp) (s := (0,s.frame,s.mem)) (t := (b.body.length,t.frame,t.mem))
++      (j := 0) (n := b.body.length) (by omega) rfl ?_ defined
++    simpa only [Nat.add_zero,Nat.sub_zero] using steps
++  have tFunc : t.frame.func = f := frame.2.1.trans func
++  have tCallers : t.callers = [] := frame.1.trans callers
++  have tTerm : t.frame.term = .ret xs := frame.2.2.2.trans (terminal.trans ret)
++  have done := return_done_of_runLoop empty tCallers tTerm ends
++  let resolve := Backend.lowerFunction.resolve result.final.alias (result.final.alias.size+1)
++  have pieces : vb.insts = pre ++ body.code.map (·.mapRegs resolve) ++
++      (term.output.emitted.map (·.mapRegs resolve) ++ post) := by
++    simp only [code,split.code,Array.map_append,Array.append_assoc,resolve]
++  have bodySeg : SegAt vb pre.size (body.code.toList.map (·.mapRegs resolve)) := by
++    simpa only [Array.toList_map] using factor_seg pieces
++  have termPieces : vb.insts = (pre ++ body.code.map (·.mapRegs resolve)) ++
++      term.output.emitted.map (·.mapRegs resolve) ++ post := by
++    simpa only [Array.append_assoc] using pieces
++  have termSeg : SegAt vb (pre.size+body.code.size)
++      (term.output.emitted.toList.map (·.mapRegs resolve)) := by
++    simpa only [Array.size_append,Array.size_map,Array.toList_map] using factor_seg termPieces
++  have termMember : term ∈ event.output.records := by rw [split.records]; exact List.mem_cons_self
++  intro ρ w held
++  obtain ⟨ρ',w',executed,postHeld⟩ := bodyRun (0,s.frame,s.mem) (b.body.length,t.frame,t.mem)
++    (by simpa only [Nat.add_zero,Nat.sub_zero,List.range'_eq_map_range] using steps) ρ w held
++  obtain ⟨sourceGuard,otherGuard,worlds⟩ := postHeld
++  obtain ⟨heldFunc,dfg,memory,values⟩ := sourceGuard
++  have pairedMemory : MRP Γ f c D t.frame.slots t.mem w' := ⟨memory,otherGuard.2.2.1,worlds⟩
++  obtain ⟨step,rs,ps,extra,recorded,emitted,termCode,rest⟩ :=
++    stock_lower_return_record_source_run_auto run scope dominated abi events split.block ret
++      termMember split.termInst tFunc tCallers done tDefined values
++      (refines_csem Γ.F fc X) (mrStable_relW Γ f c)
++  have nonempty : 0 < term.output.emitted.size := by rw [termCode]; exact Nat.zero_lt_succ 0
++  have room : pre.size + (body.code.toList.map (·.mapRegs resolve)).length < vb.insts.size := by
++    have sizes := congrArg Array.size pieces
++    simp only [Array.size_append,Array.size_map] at sizes
++    simp only [List.length_map,Array.length_toList]
++    omega
++  have path := seqRun_fall_starAt (edges := result.edgeArgs) (vc := result.code) (sem := pairSem (csem Γ.F fc X)) placed bodySeg room executed
++  have finished := stock_lower_return_record_paired_runOkAt run scope dominated abi events split.block ret
++    termMember split.termInst tFunc tCallers done tDefined values (fc := fc) tls placed termSeg w' pairedMemory
++  have combined := RunOkABIAt.prefix path (by simpa only [List.length_map,Array.length_toList] using finished)
++  simpa only [frame.2.2.1] using combined
++
++
++end E2E.StockMemory
+diff --git a/FV/E2E/StockMemoryTwoBlockPaired.lean b/FV/E2E/StockMemoryTwoBlockPaired.lean
+new file mode 100644
+index 00000000..ca17ff47
+--- /dev/null
++++ b/FV/E2E/StockMemoryTwoBlockPaired.lean
+@@ -0,0 +1,163 @@
++import FV.Backend.Proof.StockJumpEntryPrelude
++import FV.E2E.StockMemoryOriginalEntryPaired
++import FV.E2E.StockMemoryNonentryPairedReturn
++import FV.E2E.StockMemoryPairedNopJump
++import FV.Backend.Proof.StockMemoryNopJumpSpec
++import FV.Backend.Proof.StockTwoBlockShape
++import FV.Backend.Proof.StockTwoBlockCompatibility
++
++namespace E2E.StockMemory
++open Backend Backend.Proof Backend.Proof.Driver Backend.Stock Backend.Stock.Proof Backend.Stock.Proof.Control
++set_option autoImplicit false
++set_option Elab.async false
++set_option maxRecDepth 20000
++set_option maxHeartbeats 4000000
++
++/-- Original two-block source syntax derives the complete paired run from PC0.
++The driver supplies order, retained records, code placement, and jump demands internally. -/
++theorem stock_two_block_load_return_paired {f : Clif.Function} {result : Result}
++    (run : Stock.lower f = .ok result) (scope : LowerScope f) (dominated : Dominated f)
++    (abi : sigAbiOk f.sig = true)
++    {entry target : Clif.Block} (blocks : f.blocks = [entry,target])
++    (nops : ∀ stm ∈ entry.body,stm.inst = .nop)
++    (jump : entry.term = .jump ⟨target.id,[]⟩)
++    {loadIndex x z : Nat} {flags : Clif.MemFlags}
++    (statement : target.body[loadIndex]? = some ⟨[z],.load .load .i32 flags x 0⟩)
++    (shape : ∀ j stm,target.body[j]? = some stm → j = loadIndex ∨ stm.inst = .nop)
++    (ret : target.term = .ret [z]) (parameter : x ∈ entry.params.map (·.1))
++    {args : List Clif.Val} {cm : Clif.Mem} {fr : Clif.Frame}
++    (entered : SourceEntry f args fr)
++    (registerOnly : ∀ loc ∈ locsOf f.sig,∃ pin,loc = .reg pin)
++    {Γ : Rel} {c : BitVec 64} {D : BitVec 64 → Prop} {fc : FnCtx} {X : ExtSem}
++    (slot : fc.slotBase = Γ.slotOff)
++    (symbols : ∀ n a,Γ.syms n = some a → X.sym n 0 = BitVec.ofNat 64 a)
++    (tls : XTls Γ.F X)
++    {env : Clif.Env} {cp : Clif.Program} {fuel : Nat} {vals : List Clif.Val} {mem : Clif.Mem}
++    (returned : Clif.runLoop env cp fuel ⟨fr,[],cm⟩ = .returned vals mem)
++    {w w' : Arm.ArmState} (memory : MRP Γ f c D fr.slots cm (w,w'))
++    (arguments : ArgsAtEntry Γ.F f.sig args w) (otherArguments : ArgsAtEntry Γ.F f.sig args w')
++    (registers : ∀ pin v,(.reg pin,v) ∈ (locsOf f.sig).zip args → regVal w' pin = regVal w pin) :
++    RunOkABIAt f result.code result.edgeArgs (pairSem (csem Γ.F fc X)) (MRP Γ f c D) fr.slots
++      ⟨0,0,entrySeed result.ctx fr,(w,w')⟩ (.returned vals mem) := by
++  have entrySource : f.blocks[0]? = some entry := by rw [blocks]; rfl
++  have targetSource : f.blocks[1]? = some target := by rw [blocks]; rfl
++  have different : entry.id ≠ target.id := by
++    intro same
++    have absent := scope.noEntryPred entry (by simp [blocks]) target.id
++      (by simp [succIds,dests,jump])
++    apply absent
++    simp [blockIdx?,blocks,List.findIdx?_cons,same]
++  have order : result.order = ⟨#[.original 0,.original 1],#[#[1],#[]]⟩ :=
++    Except.ok.inj ((stock_lower_order run).symm.trans
++      (TwoBlock.block_order blocks jump ret rfl different))
++  have tag : result.order.nodes[0]? = some (.original 0) := by rw [order]; rfl
++  obtain ⟨spec⟩ := stock_lower_nop_jump_body_spec run scope dominated tag entrySource nops jump
++    (driverSem_csem Γ.F fc X) (MR := RelW Γ f c) env cp
++  have targetEq : spec.target = 1 := by
++    have targets := spec.targets
++    rw [order] at targets
++    exact (List.cons.inj targets).1.symm
++  have targetTag : result.order.nodes[spec.target]? = some (.original 1) := by
++    rw [targetEq,order]
++    rfl
++  have index : blockIdx? f target.id = some 1 := by
++    simp [blockIdx?,blocks,List.findIdx?_cons,different,Ne.symm different]
++  obtain ⟨targetBlock,targetFound,found⟩ := block?_of_idx index
++  have sameTarget : targetBlock = target := Option.some.inj (found.symm.trans targetSource)
++  subst targetBlock
++  obtain ⟨ranges,params,input,data,core,raw,prelude,coreRun,assembled,build,sizes,prepared,
++    nextEvents,nextBlock,rawCode,placed⟩ := stock_lower_original_block_scan_assembly run targetTag
++  have nextSource : f.blocks[core.scan.block]? = some target := by rw [nextBlock]; exact targetSource
++  have nonempty : 0 < spec.core.code.size := by
++    rw [spec.bodyCode]
++    simp only [Array.size_append,Array.size_singleton]
++    omega
++  let entryCore : EntryCoreSpec f result entry := {
++    ranges := spec.ranges
++    params := spec.params
++    core := spec.core
++    raw := spec.raw
++    preludeCode := spec.preludeCode
++    build := spec.build
++    sizes := spec.sizes
++    assembled := spec.assembled
++    events := spec.events
++    block := entrySource
++    rawCode := spec.rawCode
++    placed := spec.placed
++    nonempty := nonempty }
++  obtain ⟨ρ',path,held⟩ := original_entry_prelude_paired run scope dominated entryCore entered
++    registerOnly slot symbols memory arguments otherArguments registers
++  have continuation : ∀ (left : Nat) (s : Clif.State) (ρ : Nat → CV) (q : W2),
++      s.frame.func = f → s.callers = [] → s.frame.body = target.body →
++      s.frame.term = target.term → SourceDefinedAt f result.ctx 1 0 s.frame →
++      Clif.runLoop env cp left s = .returned vals mem →
++      PairedScanRel f result core.scan.ctx core.scan.block Γ c D core.scan.output.state
++        (0,s.frame,s.mem) ρ q →
++      RunOkABIAt f result.code result.edgeArgs (pairSem (csem Γ.F fc X)) (MRP Γ f c D)
++        s.frame.slots ⟨spec.target,0,ρ,q⟩ (.returned vals mem) := by
++    intro left s ρ q func callers body terminal defined returned held
++    exact actual_nonentry_paired_load_return run scope dominated abi targetTag targetSource
++      (by decide) nextEvents nextBlock statement shape ret entrySource parameter slot symbols tls
++      func callers body terminal (by simpa only [nextBlock] using defined) returned held
++  have entryFacts := entered
++  obtain ⟨original,regs,entryLookup,argTypes,paramTypes,set,frame⟩ := entryFacts
++  have originalSource : f.blocks[0]? = some original := by
++    simpa only [Clif.Function.entry?,List.head?_eq_getElem?] using entryLookup
++  have sameEntry : original = entry := Option.some.inj (originalSource.symm.trans entrySource)
++  subst original
++  have defined : SourceDefinedAt f result.ctx spec.core.scan.block 0 fr := by
++    rw [spec.atBlock]
++    exact Control.source_defined_entry_frame dominated result.ctx entered
++  have finished := paired_nop_jump_body_returns_at run scope dominated spec nops tag jump
++    targetTag index targetFound nextEvents nextBlock (by rw [targetEq]; omega) continuation
++    (s := ⟨fr,[],cm⟩) rfl (by rw [frame]) (by rw [frame]) defined returned held
++  have seed : entrySeed spec.core.scan.ctx fr = entrySeed result.ctx fr := by
++    classical
++    let make (lookup : Nat → Option Reg) (key : Nat) : CV :=
++      if h : ∃ pair : Nat × Clif.Val,
++          lookup pair.1 = some (.vreg key .int) ∧ fr.regs pair.1 = some pair.2 then
++        (Classical.choose h).2.bits.setWidth 128
++      else 0
++    change make spec.core.scan.ctx.valueReg? = make result.ctx.valueReg?
++    rw [funext (stock_lower_record_context run scope spec.events).2.1]
++  rw [← seed]
++  exact RunOkABIAt.prefix path finished
++
++/-- The original source class also satisfies the unchanged compiler ABI contract. -/
++theorem stock_two_block_load_return_paired_function {f : Clif.Function} {result : Result}
++    (run : Stock.lower f = .ok result) (scope : LowerScope f) (dominated : Dominated f)
++    (abi : sigAbiOk f.sig = true)
++    {entry target : Clif.Block} (blocks : f.blocks = [entry,target])
++    (nops : ∀ stm ∈ entry.body,stm.inst = .nop)
++    (jump : entry.term = .jump ⟨target.id,[]⟩)
++    {loadIndex x z : Nat} {flags : Clif.MemFlags}
++    (statement : target.body[loadIndex]? = some ⟨[z],.load .load .i32 flags x 0⟩)
++    (shape : ∀ j stm,target.body[j]? = some stm → j = loadIndex ∨ stm.inst = .nop)
++    (ret : target.term = .ret [z]) (parameter : x ∈ entry.params.map (·.1))
++    {args : List Clif.Val} {cm : Clif.Mem} {fr : Clif.Frame}
++    (entered : SourceEntry f args fr)
++    (registerOnly : ∀ loc ∈ locsOf f.sig,∃ pin,loc = .reg pin)
++    {Γ : Rel} {c : BitVec 64} {D : BitVec 64 → Prop} {fc : FnCtx} {X : ExtSem}
++    (slot : fc.slotBase = Γ.slotOff)
++    (symbols : ∀ n a,Γ.syms n = some a → X.sym n 0 = BitVec.ofNat 64 a)
++    (tls : XTls Γ.F X)
++    {env : Clif.Env} {cp : Clif.Program} {fuel : Nat} {vals : List Clif.Val} {mem : Clif.Mem}
++    (returned : Clif.runLoop env cp fuel ⟨fr,[],cm⟩ = .returned vals mem)
++    {w w' : Arm.ArmState} (memory : MRP Γ f c D fr.slots cm (w,w'))
++    (arguments : ArgsAtEntry Γ.F f.sig args w) (otherArguments : ArgsAtEntry Γ.F f.sig args w')
++    (registers : ∀ pin v,(.reg pin,v) ∈ (locsOf f.sig).zip args → regVal w' pin = regVal w pin) :
++    RunOkABI f result.code (pairSem (csem Γ.F fc X)) (MRP Γ f c D) fr.slots
++      ⟨0,0,entrySeed result.ctx fr,(w,w')⟩ (.returned vals mem) := by
++  have executed := stock_two_block_load_return_paired run scope dominated abi blocks nops jump
++    statement shape ret parameter entered registerOnly slot symbols tls returned memory
++    arguments otherArguments registers
++  have different : entry.id ≠ target.id := by
++    intro same
++    have absent := scope.noEntryPred entry (by simp [blocks]) target.id
++      (by simp [succIds,dests,jump])
++    apply absent
++    simp [blockIdx?,blocks,List.findIdx?_cons,same]
++  exact RunOkABIAt.legacyCompatible (TwoBlock.legacy_compatible run scope blocks jump ret rfl different) executed
++
++end E2E.StockMemory
+diff --git a/FVTest/Backend/Lowering/StockMemoryProductionLinked.lean b/FVTest/Backend/Lowering/StockMemoryProductionLinked.lean
+index 06200247..642e90cd 100644
+--- a/FVTest/Backend/Lowering/StockMemoryProductionLinked.lean
++++ b/FVTest/Backend/Lowering/StockMemoryProductionLinked.lean
+@@ -1,7 +1,8 @@
+-import FV.Backend.Lowering.StockMemoryNI
+-import FV.Backend.MemoryNIProduction
++import FV.Backend.Lowering.StockMemoryCfgNI
++import FV.Backend.MemoryCfgNIProduction
+ import FVTest.Backend.Lowering.StockScalarTestSupport
+ import FV.E2E.SemanticChecksWith
++import FV.E2E.SemanticStackBound
+ import FV.Link.ProductionImageWith
+ import FV.Link.Ld.Spec
+ import FVTest.E2E.SemanticLinkProofWith
+@@ -32,23 +33,25 @@ private def plan (s : LinkSpec) : Link.Ld.Plan :=
+     syms := s.addrs.toArray.map fun (n, value) =>
+       {name := symName n, value, info := 18, shndx := 0xfff1} }
+ 
+-def fixture (name : String) (i : Nat) : String :=
++def fixture (cfg : Bool) (name : String) (i : Nat) : String :=
+   if i == 2 then
+     "function %" ++ name ++ "(i64) -> i64 system_v {\nblock0(v0: i64):\n    return v0\n}\n"
+   else
+     let params := if i == 0 then "i64" else "i64, i64"
+     let block := if i == 0 then "v0: i64" else "v0: i64, v1: i64"
+     let pointer := if i == 0 then "v0" else "v1"
+-    "function %" ++ name ++ "(" ++ params ++ ") -> i32 system_v {\nblock0(" ++ block ++ "):\n    v2 = load.i32 notrap " ++ pointer ++ "\n    return v2\n}\n"
++    "function %" ++ name ++ "(" ++ params ++ ") -> i32 system_v {\nblock0(" ++ block ++ "):\n" ++
++      (if cfg then "    nop\n    jump block1\nblock1:\n    nop\n" else "") ++
++      "    v2 = load.i32 notrap " ++ pointer ++ "\n    return v2\n}\n"
+ 
+-private def checkOne (out : System.FilePath) (cleanup fallback : Bool) : IO Unit := do
+-  let actualLower := Stock.Memory.lowerValidated
+-  let lowerName := "Backend.Stock.Memory.lowerValidated"
++private def checkOne (out : System.FilePath) (cfg cleanup fallback : Bool) : IO Unit := do
++  let actualLower := Stock.MemoryCfg.lowerValidated
++  let lowerName := "Backend.Stock.MemoryCfg.lowerValidated"
+   let names := ["memory_load0","memory_load1","memory_retained"]
+-  let fixtureSource := fixture
+-  let clif := String.join (names.zipIdx.map fun (name,i) => fixture name i)
++  let fixtureSource := fixture cfg
++  let clif := String.join (names.zipIdx.map fun (name,i) => fixture cfg name i)
+   let parsed := Clif.parseFile clif
+-  let production ← compileFileMemoryNIWhen true (fun vcs => do
++  let production ← compileFileMemoryCfgNIWhen true (fun vcs => do
+     for vc in vcs do
+       let some source := parsed.funcs.find? (fun p => p.name == vc.name)
+         | throw (IO.userError "allocator source missing")
+@@ -63,9 +66,10 @@ private def checkOne (out : System.FilePath) (cleanup fallback : Bool) : IO Unit
+   let stem := s!"memory-{if cleanup then "cleanup" else "plain"}"
+   IO.FS.writeBinFile (out / (stem ++ ".o")) (← get production.object)
+   IO.FS.writeFile (out / (stem ++ ".json")) production.tableJson
+-  let prior ← compileFileParameterCfgNIWhen true (fun vcs => pure (allocateLean vcs)) parsed [] cleanup
++  let prior ← if cfg then compileFileMemoryNIWhen true (fun vcs => pure (allocateLean vcs)) parsed [] cleanup
++    else compileFileParameterCfgNIWhen true (fun vcs => pure (allocateLean vcs)) parsed [] cleanup
+   let attempts ← IO.mkRef (0 : Nat)
+-  let retried ← compileFileMemoryNIWhen true (fun vcs => do
++  let retried ← compileFileMemoryCfgNIWhen true (fun vcs => do
+     let count ← attempts.get
+     attempts.set (count+1)
+     if count == 0 then pure (vcs.map fun _ => .error "forced memory-attempt failure")
+@@ -100,7 +104,7 @@ private def checkOne (out : System.FilePath) (cleanup fallback : Bool) : IO Unit
+     require (decide (a.vc = selected) && a.vc.rulesFired == selected.rulesFired) "actual memory artifact/history binding changed"
+     if i < 2 then
+       let raw ← get (Stock.lower fi.func)
+-      require (Stock.Memory.check fi.func raw.code && SemanticNI.check fi.func raw.code &&
++      require ((if cfg then Stock.MemoryCfg.check fi.func raw.code else Stock.Memory.check fi.func raw.code) && SemanticNI.check fi.func raw.code &&
+         decide (a.vc = raw.code) && !Backend.Proof.Driver.lowerCheck fi.func raw.code)
+         "memory class fell back or retained the legacy vreg mapping"
+     else
+@@ -152,19 +156,19 @@ private def checkOne (out : System.FilePath) (cleanup fallback : Bool) : IO Unit
+     for (path,text) in FVTest.E2E.SemanticLinkProofWith.leanFilesSemanticWith lowerName input names names
+         proof.toString label executable.toString cleanup true
+         (if perEntry then none else stack) (if perEntry then names else []) bg
+-        (lowerImport := "FV.Backend.Lowering.StockMemoryNI") do
++        (lowerImport := "FV.Backend.Lowering.StockMemoryCfgNI") do
+       if let some parent := (System.FilePath.mk path).parent then IO.FS.createDirAll parent
+       IO.FS.writeFile path text
+     IO.FS.writeFile (out / (label ++ ".clif")) clif
+     IO.println s!"ACTUAL_STOCK_MEMORY_LINK {label}: source/artifact/ELF/stack/proof emission passed"
+ 
+-def check (out : System.FilePath) : IO Unit := do
++def check (out : System.FilePath) (cfg : Bool := false) : IO Unit := do
+   IO.FS.createDirAll (out / "Crates")
+   for cleanup in [false,true] do
+-    for fallback in [false,true] do checkOne out cleanup fallback
++    for fallback in [false,true] do checkOne out cfg cleanup fallback
+ 
+ end FVTest.StockMemoryProductionLinked
+ 
+ def main (args : List String) : IO UInt32 := do
+-  FVTest.StockMemoryProductionLinked.check (System.FilePath.mk (args[0]?.getD "/tmp/stock-memory-linked"))
++  FVTest.StockMemoryProductionLinked.check (System.FilePath.mk (args[0]?.getD "/tmp/stock-memory-linked")) (args.contains "--memory-cfg")
+   pure 0
+diff --git a/FVTest/Backend/Lowering/Trace.lean b/FVTest/Backend/Lowering/Trace.lean
+index 7a6da208..4ece38c6 100644
+--- a/FVTest/Backend/Lowering/Trace.lean
++++ b/FVTest/Backend/Lowering/Trace.lean
+@@ -1,6 +1,6 @@
+ import FV.Backend
+ import FV.Backend.Lowering.StockReplay
+-import FV.Backend.MemoryNIProduction
++import FV.Backend.MemoryCfgNIProduction
+ import FV.Opt.Legalize128Pass
+ import FVTest.Backend.CraneliftInput
+ 
+@@ -113,7 +113,7 @@ def snapshot (f : Clif.Function) (stockSchedule : Bool) (deadCleanup : Bool := t
+     (routes : Bool := true) (verify : Bool := true) : Except String Json := do
+   let (ctx, ranges, initial) ← buildCtx f
+   let selected ← lowerFunction f
+-  let allocationSelected ← if routes then lowerForAllocationMemoryNI f verify deadCleanup
++  let allocationSelected ← if routes then lowerForAllocationMemoryCfgNI f verify deadCleanup
+     else lowerForAllocation f verify deadCleanup
+   let prepared ← prepare allocationSelected
+   let replay ← replayJson f ctx initial
+diff --git a/FVTest/Backend/Main.lean b/FVTest/Backend/Main.lean
+index c29e6867..5ba28100 100644
+--- a/FVTest/Backend/Main.lean
++++ b/FVTest/Backend/Main.lean
+@@ -1,5 +1,5 @@
+ import FV.Backend
+-import FV.Backend.MemoryNIProduction
++import FV.Backend.MemoryCfgNIProduction
+ import FV.Opt.Legalize128Pass
+ import FV.Opt.LegalExn
+ import FVTest.Opt.Common
+@@ -269,7 +269,7 @@ def run (input output : String) (o : Opts) : IO UInt32 := do
+     pure afs
+   let fa ← match stock with
+     | none => (if pipelineT then compileFileWith allocNone pf (unv128 ++ unvTry) false
+-        else compileFileMemoryNIWhen (!o.opt.isSome &&
++        else compileFileMemoryCfgNIWhen (!o.opt.isSome &&
+           !(pf.funcs.any fun p => p.func.toOption.any fun f => f.blocks.any (·.term.isTry)))
+           allocNone pf (unv128 ++ unvTry) o.deadCleanup)
+     | some c => (compileFileWith (StockConfig.allocate c clif rejected alloc) pf
+diff --git a/FVTest/E2E/LinkCheckMain.lean b/FVTest/E2E/LinkCheckMain.lean
+index c710c50b..6d1653b1 100644
+--- a/FVTest/E2E/LinkCheckMain.lean
++++ b/FVTest/E2E/LinkCheckMain.lean
+@@ -1,5 +1,5 @@
+ import FV.E2E.ProductionPipelineWith
+-import FV.Backend.Lowering.StockMemoryNI
++import FV.Backend.Lowering.StockMemoryCfgNI
+ import FV.Front.Read
+ import FVTest.E2E.LinkProof
+ import FVTest.E2E.SemanticLinkProofWith
+@@ -38,20 +38,20 @@ def main (args : List String) : IO UInt32 := do
+       let route (fi : FnInput) : Option (String × Nat) :=
+         let f := fi.func
+         if (Stock.Arithmetic.eligible f || Stock.Mixed.activationEligible f ||
+-            Stock.Logical.activationEligible f || Stock.Scalar.activationEligible f || (((Stock.Memory.eligible f || Stock.ParameterCfg.eligible f || Stock.ConditionalForwardCfg.eligible f) || Stock.ConditionalCfg.eligible f) || Stock.ForwardCfg.eligible f || Stock.LinearCfg.eligible f || Stock.TwoBlock.Entry.eligible f)) &&
++            Stock.Logical.activationEligible f || Stock.Scalar.activationEligible f || (((Stock.MemoryCfg.eligible f || Stock.Memory.eligible f || Stock.ParameterCfg.eligible f || Stock.ConditionalForwardCfg.eligible f) || Stock.ConditionalCfg.eligible f) || Stock.ForwardCfg.eligible f || Stock.LinearCfg.eligible f || Stock.TwoBlock.Entry.eligible f)) &&
+             !(Stock.D0.eligible f || Stock.ScalarAdd.activationEligible f) then
+           -- Probe each complete route before its transactional retry. A retained
+           -- logical/mixed artifact must not be skipped directly to legacy.
+-          let found := Stock.Memory.lowerRoutes.zipIdx.find? fun (lower, _) =>
++          let found := Stock.MemoryCfg.lowerRoutes.zipIdx.find? fun (lower, _) =>
+             match I0.pipeOfWithLowering lower (productionStage o.deadCleanup) fi with
+             | .error _ => false
+             | .ok a => artB I0 rd phs a
+           let idx := (found.map (·.2)).getD 4
+-          if idx != 0 || (((Stock.Memory.eligible f || Stock.ParameterCfg.eligible f || Stock.ConditionalForwardCfg.eligible f) || Stock.ConditionalCfg.eligible f) || Stock.ForwardCfg.eligible f || Stock.LinearCfg.eligible f || Stock.TwoBlock.Entry.eligible f) then some (f.name, idx) else none
++          if idx != 0 || (((Stock.MemoryCfg.eligible f || Stock.Memory.eligible f || Stock.ParameterCfg.eligible f || Stock.ConditionalForwardCfg.eligible f) || Stock.ConditionalCfg.eligible f) || Stock.ForwardCfg.eligible f || Stock.LinearCfg.eligible f || Stock.TwoBlock.Entry.eligible f) then some (f.name, idx) else none
+         else none
+       (Link.parMap route I0.funcs).filterMap id
+-  let actualLower := Stock.Memory.lowerWithRoutes choices
+-  let lowerName := "(Backend.Stock.Memory.lowerWithRoutes [" ++
++  let actualLower := Stock.MemoryCfg.lowerWithRoutes choices
++  let lowerName := "(Backend.Stock.MemoryCfg.lowerWithRoutes [" ++
+     ", ".intercalate (choices.map fun (name,idx) => "(" ++ leanStr name ++ ", " ++ toString idx ++ ")") ++ "])"
+   if o.profile then
+     -- the slowest functions: the pipeline, the lowering validator, the allocation checker
+@@ -397,7 +397,7 @@ def main (args : List String) : IO UInt32 := do
+     let stackAll := Pk.funcs.all fun g => (stackOf g).isSome
+     let stackS := if stackAll then some (Pk.funcs.foldl (fun x g => max x ((stackOf g).getD 0)) 0)
+       else none
+-    for (p, t) in FVTest.E2E.SemanticLinkProofWith.leanFilesSemanticWith lowerName I' (funcs.map (·.2)) entries out o.module exe o.deadCleanup noTls stackS stackGood bg (lowerImport := "FV.Backend.Lowering.StockMemoryNI") do
++    for (p, t) in FVTest.E2E.SemanticLinkProofWith.leanFilesSemanticWith lowerName I' (funcs.map (·.2)) entries out o.module exe o.deadCleanup noTls stackS stackGood bg (lowerImport := "FV.Backend.Lowering.StockMemoryCfgNI") do
+       if let some pd := (p : System.FilePath).parent then IO.FS.createDirAll pd
+       IO.FS.writeFile p t
+       IO.println s!"  wrote {p}"
+diff --git a/FVTest/Link/LeanLinkMain.lean b/FVTest/Link/LeanLinkMain.lean
+index 35fe1e33..10a35c71 100644
+--- a/FVTest/Link/LeanLinkMain.lean
++++ b/FVTest/Link/LeanLinkMain.lean
+@@ -1,4 +1,4 @@
+-import FV.Backend.Lowering.StockMemoryNI
++import FV.Backend.Lowering.StockMemoryCfgNI
+ import FV.Link.Compile
+ import FV.Link.DeadCleanupCompile
+ import FV.Link.DeadCleanupCompileT3
+@@ -461,15 +461,15 @@ def main (args0 : List String) : IO UInt32 := do
+   -- provider can require a different region size from the emitted objects.
+   -- Other exception, optimizer and tail-call variants retain their routes;
+   -- typed `--verified` (S11e6) keeps its own route below.
+-  let hasCfg := SC0.funcs.any (fun fi => (((Backend.Stock.Memory.eligible fi.func || Backend.Stock.ParameterCfg.eligible fi.func || Backend.Stock.ConditionalForwardCfg.eligible fi.func) || Backend.Stock.ConditionalCfg.eligible fi.func) || Backend.Stock.ForwardCfg.eligible fi.func || Backend.Stock.LinearCfg.eligible fi.func || Backend.Stock.TwoBlock.Entry.eligible fi.func))
+-  let stockEnabled := !typedV && !opt && !tailOn && SC0.funcs.any (fun fi => (((Backend.Stock.Memory.eligible fi.func || Backend.Stock.ParameterCfg.eligible fi.func || Backend.Stock.ConditionalForwardCfg.eligible fi.func) || Backend.Stock.ConditionalCfg.eligible fi.func) || Backend.Stock.ForwardCfg.eligible fi.func || Backend.Stock.LinearCfg.eligible fi.func || Backend.Stock.TwoBlock.Entry.eligible fi.func) || Backend.Stock.Scalar.activationEligible fi.func || Backend.Stock.Logical.activationEligible fi.func || Backend.Stock.Mixed.activationEligible fi.func || Backend.Stock.Arithmetic.eligible fi.func || Backend.Stock.ScalarAdd.activationEligible fi.func) &&
++  let hasCfg := SC0.funcs.any (fun fi => (((Backend.Stock.MemoryCfg.eligible fi.func || Backend.Stock.Memory.eligible fi.func || Backend.Stock.ParameterCfg.eligible fi.func || Backend.Stock.ConditionalForwardCfg.eligible fi.func) || Backend.Stock.ConditionalCfg.eligible fi.func) || Backend.Stock.ForwardCfg.eligible fi.func || Backend.Stock.LinearCfg.eligible fi.func || Backend.Stock.TwoBlock.Entry.eligible fi.func))
++  let stockEnabled := !typedV && !opt && !tailOn && SC0.funcs.any (fun fi => (((Backend.Stock.MemoryCfg.eligible fi.func || Backend.Stock.Memory.eligible fi.func || Backend.Stock.ParameterCfg.eligible fi.func || Backend.Stock.ConditionalForwardCfg.eligible fi.func) || Backend.Stock.ConditionalCfg.eligible fi.func) || Backend.Stock.ForwardCfg.eligible fi.func || Backend.Stock.LinearCfg.eligible fi.func || Backend.Stock.TwoBlock.Entry.eligible fi.func) || Backend.Stock.Scalar.activationEligible fi.func || Backend.Stock.Logical.activationEligible fi.func || Backend.Stock.Mixed.activationEligible fi.func || Backend.Stock.Arithmetic.eligible fi.func || Backend.Stock.ScalarAdd.activationEligible fi.func) &&
+     (hasCfg || !(SC0.funcs.any fun fi => fi.func.blocks.any fun b => b.term.isTry)) &&
+     -- #739: every route's `attempt` first checks `inScopePar` (`inScopeInPar` without the
+     -- cleanup) of its placed spec, whose per-function conjunct `fnScopeB` (`fnScopeInB`) does not
+     -- read the placement; when it fails, all routes fail and `compileWithRoutes` is `compile SC`,
+     -- so skip the routes' placements (each one the full pipeline)
+     (parMap (if deadCleanup then fnScopeB else fnScopeInB) SC0.input0.prog.funcs).all id
+-  let routes := [Backend.Stock.Memory.lowerValidated,Backend.Stock.ParameterCfg.lowerValidated,Backend.Stock.ConditionalForwardCfg.lowerValidated,Backend.Stock.ConditionalCfg.lowerValidated,Backend.Stock.ForwardCfg.lowerValidated,Backend.Stock.LinearCfg.lowerValidated,Backend.Stock.TwoBlock.Entry.lowerValidated,Backend.Stock.TwoBlock.lowerValidated,Backend.Stock.Scalar.lowerValidated,Backend.Stock.Logical.lowerValidated,Backend.Stock.Mixed.lowerValidated,
++  let routes := [Backend.Stock.MemoryCfg.lowerValidated,Backend.Stock.Memory.lowerValidated,Backend.Stock.ParameterCfg.lowerValidated,Backend.Stock.ConditionalForwardCfg.lowerValidated,Backend.Stock.ConditionalCfg.lowerValidated,Backend.Stock.ForwardCfg.lowerValidated,Backend.Stock.LinearCfg.lowerValidated,Backend.Stock.TwoBlock.Entry.lowerValidated,Backend.Stock.TwoBlock.lowerValidated,Backend.Stock.Scalar.lowerValidated,Backend.Stock.Logical.lowerValidated,Backend.Stock.Mixed.lowerValidated,
+     Backend.Stock.Arithmetic.lowerValidated]
+   -- typed `--verified`: `compileExeT` (S11e6, #419)
+   if typedV then
+diff --git a/scripts/audit/stock-memory-cfg-production.lean b/scripts/audit/stock-memory-cfg-production.lean
+new file mode 100644
+index 00000000..a0757f29
+--- /dev/null
++++ b/scripts/audit/stock-memory-cfg-production.lean
+@@ -0,0 +1,44 @@
++import FV.Backend.Proof.StockMemoryCfgCompatibility
++import FV.E2E.SemanticNIBoundary
++import FV.Backend.Proof.StockMemoryCfgNotrap
++import FV.E2E.StockMemoryCfgTls
++import FV.E2E.StockMemoryCfgWorldX
++import FV.Backend.Proof.StockMemoryCfgSourceWitness
++import FV.Backend.Proof.StockMemoryCfgClass
++import FV.E2E.StockMemoryCfgValue
++import FV.E2E.StockMemoryCfgMachine
++import FV.E2E.StockMemoryCfgPairedFunction
++import FV.E2E.StockMemoryCfgNI
++
++#print axioms Backend.Stock.MemoryCfg.sourceOk_sound
++#print axioms Backend.Stock.MemoryCfg.check_sound
++#print axioms Backend.Stock.MemoryCfg.effectsOnly_noTls
++#print axioms E2E.StockMemoryCfg.effectsOnly_instruction
++#print axioms E2E.StockMemoryCfg.return_value
++#print axioms E2E.StockMemoryCfg.machine_return
++#print axioms E2E.StockMemoryCfg.paired_returns
++#print axioms E2E.backend_correct_world_niX_stock_memory_cfg
++
++#print axioms Backend.Stock.MemoryCfg.captured_source_class
++
++#print axioms Backend.Stock.Proof.OrdinaryCfg.ordinary_jump_return_notrap
++#print axioms Backend.Stock.MemoryCfg.TwoBlockClass.source_notrap
++#print axioms E2E.StockMemoryCfg.fixedTlsFlags_ok
++#print axioms E2E.StockMemoryCfg.return_original_tls
++#print axioms E2E.backend_correct_worldX_stock_memory_cfg
++
++#print axioms Backend.Stock.MemoryCfg.previous_file_exact
++#print axioms Backend.Stock.MemoryCfg.previous_file_exact_witness
++#print axioms E2E.CompiledSemanticNI.of_checks
++#print axioms E2E.backend_correct_world_niX_semantic
++
++-- Executable checks add no axioms to the generic proofs above.
++#guard Backend.Stock.MemoryCfg.lowerRoutes.length == 14
++#guard match Backend.Stock.MemoryCfg.lowerValidated Backend.Stock.Memory.CapturedFixture.function,
++    Backend.Stock.lower Backend.Stock.Memory.CapturedFixture.function with
++  | .ok code, .ok result => decide (code = result.code)
++  | _, _ => false
++#guard (Backend.Stock.lower Backend.Stock.Memory.CapturedFixture.function).toOption.any
++  (fun result => Backend.SemanticNI.check Backend.Stock.Memory.CapturedFixture.function result.code)
++#guard (Backend.Stock.lower Backend.Stock.Memory.CapturedFixture.function).toOption.any
++  (fun result => Backend.Stock.MemoryCfg.check Backend.Stock.Memory.CapturedFixture.function result.code)
+diff --git a/scripts/audit/stock-memory-cfg-source.lean b/scripts/audit/stock-memory-cfg-source.lean
+new file mode 100644
+index 00000000..5fc25680
+--- /dev/null
++++ b/scripts/audit/stock-memory-cfg-source.lean
+@@ -0,0 +1,49 @@
++import FV.E2E.StockMemoryCapturedPairedWitness
++import FV.E2E.StockMemoryPairedNopJump
++import FV.Backend.Proof.StockMemoryRetainedReturnSpec
++import FV.E2E.StockMemoryOmittedPairedScan
++import FV.Backend.Proof.StockMemoryNopReturnBody
++import FV.E2E.StockMemoryNopPairedBody
++import FV.Backend.Proof.StockMemoryCfgReturnRefinesAt
++import FV.Backend.Proof.StockMemoryCfgJumpDefined
++import FV.Backend.Proof.StockMemoryCfgJumpReturnAt
++import FV.Backend.Proof.StockMemoryNopBody
++import FV.E2E.StockMemoryNopPairedPrelude
++import FV.Backend.Proof.StockMemoryNopTrapBody
++import FV.Backend.Proof.StockMemoryNopJumpSpec
++import FV.Backend.Proof.StockMemoryCapturedFixture
++import FV.E2E.StockMemoryPairedReturnEdge
++import FV.E2E.StockMemoryPairedReturnEdgeBody
++import FV.E2E.StockMemoryPairedJump
++#print axioms Backend.Stock.Memory.stock_retained_load_return_spec
++#print axioms Backend.Stock.Memory.RetainedLoadReturnSpec.nop_records
++#print axioms E2E.StockMemory.stock_lower_omitted_paired_scan
++#print axioms Backend.Stock.Memory.stock_nop_load_return_body
++#print axioms E2E.StockMemory.stock_nop_load_return_paired_body
++#print axioms Backend.Stock.Proof.OrdinaryBody.actual_ordinary_return_refines_at_block
++#print axioms Backend.Stock.Proof.Inherited.local_jump_carry_returns_defined_of_body
++#print axioms Backend.Stock.Proof.Control.jump_body_returns_at_of_body
++#print axioms Backend.Stock.Memory.stock_nop_body
++#print axioms E2E.StockMemory.stock_nop_paired_body
++#print axioms Backend.Stock.Memory.stock_nop_body_with_traps
++#print axioms Backend.Stock.Proof.Control.stock_lower_nop_jump_body_spec
++#print axioms Backend.Stock.Memory.CapturedFixture.scope
++#print axioms Backend.Stock.Memory.CapturedFixture.dominated
++#print axioms Backend.Stock.Memory.CapturedFixture.lowered -- witness: native_decide
++#print axioms Backend.Stock.Memory.CapturedFixture.entry_tag -- witness: native_decide
++#print axioms Backend.Stock.Memory.CapturedFixture.nop_jump_witness -- witness: native_decide
++#print axioms E2E.StockMemory.stock_lower_return_record_paired_runOkAt
++#print axioms E2E.StockMemory.actual_ordinary_paired_return_refines_at_block
++#print axioms E2E.StockMemory.paired_jump_body_returns_at_of_body
++
++#print axioms E2E.StockMemory.stock_nop_paired_body_of_split
++#print axioms E2E.StockMemory.paired_nop_jump_body_returns_at
++
++#print axioms Backend.Stock.Memory.CapturedFixture.source_entered
++#print axioms Backend.Stock.Memory.CapturedFixture.source_returned
++#print axioms Backend.Stock.Memory.CapturedFixture.source_entry
++#print axioms E2E.StockMemory.actual_nonentry_paired_load_return
++#print axioms E2E.StockMemory.original_entry_prelude_paired
++#print axioms E2E.StockMemory.stock_two_block_load_return_paired
++#print axioms E2E.StockMemory.stock_two_block_load_return_paired_function
++#print axioms E2E.StockMemoryCapturedWitness.complete_captured_paired_function_witness
+diff --git a/scripts/check-stock-memory-integration.py b/scripts/check-stock-memory-integration.py
+index da04bd62..68ebd857 100644
+--- a/scripts/check-stock-memory-integration.py
++++ b/scripts/check-stock-memory-integration.py
+@@ -12,6 +12,7 @@ import subprocess
+ def main():
+     parser = argparse.ArgumentParser(description=__doc__)
+     parser.add_argument('--output', required=True, type=Path)
++    parser.add_argument('--memory-cfg', action='store_true', help='exercise the captured two-block load class')
+     args = parser.parse_args()
+     root = Path(__file__).resolve().parents[1]
+     out = args.output.resolve()
+@@ -19,7 +20,7 @@ def main():
+         parser.error('output must be outside the source tree')
+     out.mkdir(parents=True, exist_ok=False)
+     generated = out / 'generated'
+-    env = dict(os.environ, OMP_NUM_THREADS='2', OMP_THREAD_LIMIT='2', LEAN_NUM_THREADS='2', FV_MEMCAP='8G')
++    env = dict(os.environ, OMP_NUM_THREADS='2', OMP_THREAD_LIMIT='2', LEAN_NUM_THREADS='2', FV_MEMCAP=os.environ.get('FV_MEMCAP', '8G'))
+     records = []
+     sha = lambda p: hashlib.sha256(Path(p).read_bytes()).hexdigest()
+ 
+@@ -35,7 +36,7 @@ def main():
+         return log.read_text()
+ 
+     try:
+-        run('fixture', [root / '.lake/build/bin/stock-memory-linked', generated])
++        run('fixture', [root / '.lake/build/bin/stock-memory-linked', generated, *(['--memory-cfg'] if args.memory_cfg else [])])
+         expected = {f'StockMemoryProduction{mode}{policy}{scope}' for mode in ('Plain', 'Cleanup')
+                     for policy in ('Strict', 'Fallback') for scope in ('Global', 'Entries')}
+         assert {p.stem for p in (generated / 'Crates').glob('*.lean')} == expected
+@@ -151,7 +152,7 @@ run_cmd do
+         assert 'STOCK_MEMORY_GENERATED_AXIOMS_PASS ' in run('generated-axioms', ['lean', '--root=' + str(out), audit])
+         report = dict(state='passed', generated_sources=built, native_calls=12288, initialized_loads=8192,
+                       native_reference='exact stored 32-bit source value, unaligned initialized address; unused first ABI argument',
+-                      cleanup_modes=2, generated_roots=sorted(expected), commands=records)
++                      cleanup_modes=2, memory_cfg=args.memory_cfg, generated_roots=sorted(expected), commands=records)
+     except BaseException as error:
+         report = dict(state='failed', error=repr(error), commands=records)
+         raise
+diff --git a/scripts/test_lowering_trace.py b/scripts/test_lowering_trace.py
+index a1462e91..0ea7f941 100644
+--- a/scripts/test_lowering_trace.py
++++ b/scripts/test_lowering_trace.py
+@@ -107,6 +107,22 @@ block0(v0: i64):
+                 self.check_compilation(source, cleanup)
+ 
+ 
++    def test_memory_cfg_production_diagnostics_match_allocator_input(self):
++        source = """function %memory_cfg(i64) -> i32 {
++block0(v0: i64):
++    nop
++    jump block1
++block1:
++    nop
++    v2 = load.i32 notrap v0
++    return v2
++}
++"""
++        for cleanup in (True, False):
++            with self.subTest(dead_cleanup=cleanup):
++                self.check_compilation(source, cleanup)
++
++
+ class StockLoweringTraceTests(unittest.TestCase):
+     def test_logging_preserves_stock_bytes_and_metadata(self):
+         exporter = ROOT / "tools/prejit-export/target/debug/prejit-export"

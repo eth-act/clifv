@@ -1,0 +1,35 @@
+22:46:23 want 2874 modules (0 assumed built) budget=8G max_jobs=1 heavy>12G
+22:46:24 check (all) 2874 modules in 0.5s: 2862 up-to-date, 1 out of date, 11 wait for those
+22:46:24 start FV.Backend.Proof.IselShpTDriver cap=8G running=1 avail=226.2G
+22:46:28 done FV.Backend.Proof.IselShpTDriver rc=0 4s maxrss=2.3G cgpeak=0.5G built -> ok
+22:46:28 check (ready) 2 modules in 0.3s: 0 up-to-date, 2 out of date, 0 wait for those
+22:46:28 start FV.Backend.Proof.IselDriversTF cap=8G running=1 avail=226.0G
+22:46:30 done FV.Backend.Proof.IselDriversTF rc=0 2s maxrss=2.2G cgpeak=0.3G built -> ok
+22:46:31 check (ready) 1 modules in 0.5s: 0 up-to-date, 1 out of date, 0 wait for those
+22:46:31 start FV.E2E.LinkScopeChecksTF cap=8G running=1 avail=225.6G
+22:46:33 done FV.E2E.LinkScopeChecksTF rc=0 2s maxrss=3.0G cgpeak=0.3G built -> ok
+22:46:33 check (ready) 1 modules in 0.5s: 0 up-to-date, 1 out of date, 0 wait for those
+22:46:33 start FV.E2E.LinkScopeTotalTF cap=8G running=1 avail=224.9G
+22:46:35 done FV.E2E.LinkScopeTotalTF rc=0 2s maxrss=3.0G cgpeak=0.3G built -> ok
+22:46:36 check (ready) 1 modules in 0.5s: 0 up-to-date, 1 out of date, 0 wait for those
+22:46:36 start FVTest.Link.FloatScopeTotalT3F cap=8G running=1 avail=225.3G
+22:46:38 done FVTest.Link.FloatScopeTotalT3F rc=0 2s maxrss=3.0G cgpeak=0.3G built -> ok
+22:46:38 start FV.E2E.LinkScopeCtlT2 cap=3G running=1 avail=225.4G
+22:46:40 done FV.E2E.LinkScopeCtlT2 rc=0 2s maxrss=2.4G cgpeak=0.3G built -> ok
+22:46:40 check (ready) 2 modules in 0.4s: 0 up-to-date, 2 out of date, 0 wait for those
+22:46:40 start FV.E2E.LinkScopeInputT3 cap=3G running=1 avail=225.8G
+22:46:42 done FV.E2E.LinkScopeInputT3 rc=0 2s maxrss=3.0G cgpeak=0.4G built -> ok
+22:46:43 check (ready) 2 modules in 0.5s: 0 up-to-date, 2 out of date, 0 wait for those
+22:46:43 start FV.Link.DeadCleanupCompileT3 cap=3G running=1 avail=225.5G
+22:46:45 done FV.Link.DeadCleanupCompileT3 rc=0 2s maxrss=3.1G cgpeak=0.3G built -> ok
+22:46:45 check (ready) 2 modules in 0.4s: 0 up-to-date, 2 out of date, 0 wait for those
+22:46:45 start FVTest.E2E.FloatScopeT3 cap=3G running=1 avail=225.9G
+22:46:47 done FVTest.E2E.FloatScopeT3 rc=0 2s maxrss=3.1G cgpeak=0.4G built -> ok
+22:46:47 start FVTest.Link.FloatCompileExeT3 cap=3G running=1 avail=225.6G
+22:46:50 done FVTest.Link.FloatCompileExeT3 rc=0 3s maxrss=3.1G cgpeak=0.4G built -> ok
+22:46:50 start FVTest.Link.LeanLinkMain cap=3G running=1 avail=225.6G
+22:46:53 done FVTest.Link.LeanLinkMain rc=0 3s maxrss=3.1G cgpeak=0.4G built -> ok
+22:46:53 start FVTest.E2E.FloatCtlT2 cap=3G running=1 avail=225.7G
+22:46:55 done FVTest.E2E.FloatCtlT2 rc=0 2s maxrss=2.9G cgpeak=0.3G built -> ok
+22:46:56 9 batch checks, 4s; 0 modules restored after another worktree built them
+22:46:56 END 2874/2874 ok, 12 built, wall 0.5 min

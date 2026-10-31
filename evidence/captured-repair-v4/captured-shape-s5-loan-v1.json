@@ -1,0 +1,14 @@
+{
+  "status": "returned",
+  "utc": "2026-10-31T02:38:13.799684+00:00",
+  "peer_gate_pid": 2307387,
+  "peer_budget": "14G",
+  "aggregate": "O18GiB/A14GiB",
+  "focused_cap": "10GiB",
+  "production_cap": "8GiB",
+  "threads": 1,
+  "permission": "Standing two-GiB focused-session permission after request853",
+  "source_module_unchanged": true,
+  "returned_utc": "2026-10-31T02:44:48.266224+00:00",
+  "result": "Shape table restored from shared cache; two repaired leaf targets compile; all105 prior axiom sets exact. No fresh shape-table memory measurement claimed."
+}
