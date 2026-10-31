@@ -122,6 +122,18 @@ block1:
             with self.subTest(dead_cleanup=cleanup):
                 self.check_compilation(source, cleanup)
 
+    def test_unsigned_memory_widths_match_actual_allocator_input(self):
+        for ty in ('i8', 'i16', 'i64'):
+            source = f"""function %memory_width(i64) -> {ty} {{
+block0(v0: i64):
+    v2 = load.{ty} notrap v0
+    return v2
+}}
+"""
+            for cleanup in (True, False):
+                with self.subTest(ty=ty, dead_cleanup=cleanup):
+                    self.check_compilation(source, cleanup)
+
 
 class StockLoweringTraceTests(unittest.TestCase):
     def test_logging_preserves_stock_bytes_and_metadata(self):

@@ -115,7 +115,9 @@ class StockConfiguredProviderTests(unittest.TestCase):
                              plain_object.function_relocations(plain_symbol, {}))
 
     def test_configured_compiler_uses_the_default_provider(self):
-        for source, stock_selected in ((MEMORY_CFG, True), (MEMORY, True), (RETAINED, False)):
+        fixtures = [(MEMORY_CFG, True), (MEMORY, True), (RETAINED, False)]
+        fixtures.extend((MEMORY.replace('i32', ty), True) for ty in ('i8', 'i16', 'i64'))
+        for source, stock_selected in fixtures:
             for cleanup in (False, True):
                 with self.subTest(source=source.splitlines()[0], cleanup=cleanup):
                     self.check_provider(source, cleanup, stock_selected=stock_selected)
