@@ -4520,7 +4520,7 @@ FV.Opt.Proof.RuleIcmp9	2364	20
 FV.Opt.Proof.RuleIcmpArithmetic	3252	66
 FV.Opt.Proof.RuleIcmpBounds	2122	14
 FV.Opt.Proof.RuleIcmpCompose	2016	29
-FV.Opt.Proof.RuleIcmpComposeEval	2093	581
+FV.Opt.Proof.RuleIcmpComposeEval	2161	55
 FV.Opt.Proof.RuleIcmpComposeGuard	2040	26
 FV.Opt.Proof.RuleIcmpComposeRhs	2390	212
 FV.Opt.Proof.RuleIcmpComposeWitness	1936	7
