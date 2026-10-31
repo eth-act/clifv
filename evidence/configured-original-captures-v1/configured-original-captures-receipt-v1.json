@@ -1,0 +1,21 @@
+{
+  "utc": "2026-10-31T02:21:17.439094+00:00",
+  "status": "Exact original configuration acceptance parity passed",
+  "sources": 4,
+  "cases": 8,
+  "accepted": 0,
+  "rejected_before_allocation": 8,
+  "object_count": 0,
+  "source_hashes_exact": true,
+  "settings_unchanged": true,
+  "reason": "tls_model=elf_gd; implemented policy is none",
+  "native_baseline_matches_interpreted_adapter": true,
+  "code_sha256": {
+    "BackendMainConfiguredProvider.next.lean": "e8a65e830f0617a3c567b455e52ba3dbf2c81cb9d38c0d32d6b0e2fc99bae4d2",
+    "StockConfigAllocateWith.next.lean": "dd2377dcea00a7931969a828b0b06640cc8fbe916c4281f2711cdaca6c06c266"
+  },
+  "memory_peak_bytes": 243916800,
+  "memory_oom": 0,
+  "loan_returned": true,
+  "scope": "These preserved crate functions remain outside the configured settings policy. Existing default-provider raw8/8 payload comparisons are separate. No settings contract, binary agreement gain or official-suite measurement is claimed."
+}

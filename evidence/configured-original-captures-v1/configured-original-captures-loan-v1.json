@@ -1,0 +1,12 @@
+{
+  "utc": "2026-10-31T02:18:14.766999+00:00",
+  "status": "returned",
+  "memory": "2GiB",
+  "threads": 1,
+  "peer_gate_pid": 2307387,
+  "peer_budget": "14G",
+  "permission": "Standing permission after request853",
+  "own_tree_only": true,
+  "returned_utc": "2026-10-31T02:19:51.839667+00:00",
+  "result": "Exact original requests preserve all eight existing settings rejections; no objects emitted"
+}
