@@ -206,6 +206,7 @@ theorem go_mono : ∀ {L : List Line} {off : Nat} {m lm : Std.HashMap Lbl Nat},
         · exact hv
     | ins i t => exact go_mono h l v hv
     | word a b => exact go_mono h l v hv
+    | data w => exact go_mono h l v hv
 
 /-- `labelOffsets` gives a label first defined after byte offset `off` an offset ≥ `off`. -/
 theorem go_ge : ∀ {L : List Line} {off : Nat} {m lm : Std.HashMap Lbl Nat} {l : Lbl} {v : Nat},
@@ -227,6 +228,7 @@ theorem go_ge : ∀ {L : List Line} {off : Nat} {m lm : Std.HashMap Lbl Nat} {l 
         · exact go_ge h (by rw [Std.HashMap.getElem?_insert]; simp [he, hn]) hv
     | ins i t => exact Nat.le_trans (Nat.le_add_right _ _) (go_ge h hn hv)
     | word a b => exact Nat.le_trans (Nat.le_add_right _ _) (go_ge h hn hv)
+    | data w => exact Nat.le_trans (Nat.le_add_right _ _) (go_ge h hn hv)
 
 /-- The emitted code: the entry label, the prologue's `stp`/`mov`, the rest. -/
 theorem lines_head {vc : VCode} {rf : RFunc} {af : AFunc} {k : Nat} {fa : FnAsm}
