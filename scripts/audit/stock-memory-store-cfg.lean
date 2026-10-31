@@ -86,8 +86,8 @@ import FV.Backend.Proof.StockMemoryStoreWitness
 
 #print axioms Backend.Stock.Memory.StoreCfgFixture.scope
 #print axioms Backend.Stock.Memory.StoreCfgFixture.dominated
-#print axioms Backend.Stock.Memory.StoreCfgFixture.lowered
-#print axioms E2E.StockMemoryStoreCfgFunctionWitness.complete_paired_integer_store_cfg_function_witness
+#print axioms Backend.Stock.Memory.StoreCfgFixture.lowered -- witness: native_decide
+#print axioms E2E.StockMemoryStoreCfgFunctionWitness.complete_paired_integer_store_cfg_function_witness -- witness: native_decide
 
 #print axioms Backend.Stock.Memory.stock_nop_body_of_split
 #print axioms Backend.Stock.Proof.Control.nop_jump_body_returns_at
@@ -96,4 +96,4 @@ import FV.Backend.Proof.StockMemoryStoreWitness
 #print axioms Backend.Stock.Memory.StoreRoots.two_block_store_return_function
 #print axioms Backend.Stock.Memory.StoreRoots.domain_of_two_block_store_return
 #print axioms Backend.Stock.Memory.StoreCfgFixture.domain
-#print axioms Backend.Stock.Memory.StoreCfgFixture.domain_and_lower_witness
+#print axioms Backend.Stock.Memory.StoreCfgFixture.domain_and_lower_witness -- witness: native_decide
