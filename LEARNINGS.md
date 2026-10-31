@@ -119,6 +119,11 @@ None of these weaken what is proven: every compiler theorem still prints only `p
 - `FV_LAKE_CACHE` points every worktree at one shared Lake artifact cache (hard links; same filesystem as the worktrees): a fresh worktree at a built commit needs no rebuild (#253).
 - `scripts/lake-serial-build.py` builds module by module with caps from recorded peaks, runs light modules packed and heavy ones alone (#258).
 
+### Heavy and retried modules hold their cap, not the whole machine
+- **Problem:** a heavy module (recorded peak above `--heavy`) or a module retried after a memcap kill ran alone: the scheduler drained everything else first and started nothing beside it. On the cold 8a70f34 workstation build the drains and solo runs added up to about 140 min, and before #808 most retries came from modules without a record.
+- **Trick:** the module's cap counts in the budget like any other; light modules keep running beside it while the budget allows, one heavy or retried module at a time. A module whose cap exceeds the budget, and a `--retry-failed` retry (a failure under load), still run alone (`scripts/lake-serial-build.py`).
+- **Numbers** (16-vCPU / 31 GB orb, `--budget 24G --max-jobs 8`, the 75-module importer cone of `RuleIntSplit` with `RuleExtends2` at an 18G cap and one forced memcap kill): 70.8 → 54.9 min wall. Before: `RuleExtends2` ran alone for 34 min while 12 ready modules waited, and the killed module drained and then ran alone for 11 min. After: only 0.7 min with a single module running.
+
 ### Ask Lake once which modules are out of date
 - **Problem:** with the shared cache 90–97% of a full `FV FVTest` build was already built, but the scheduler still started one memcapped `lake build <M>` per module (1–3 s each under load, 6 at a time). A warm build at a fully cached commit (5a76867c, 3,138 modules, 0 to build) took 27.5 min wall and 925 CPU-s; the main gate's 0-built runs took 7.5–27.5 min with 12 jobs.
 - **Trick:** one `lake build --no-build <all modules>` restores everything cached and lists the out-of-date modules (Lake stops there, so their dependents are checked the same way, in one batch, once their imports are built); only the listed modules get a `lake build <M>` (`scripts/lake-serial-build.py`, BuildInfra).

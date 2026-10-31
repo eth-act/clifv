@@ -1031,12 +1031,14 @@ mid-end is complete for every configuration: `Opt.optimize_complete_cfg`, `Opt.o
   a memcapped `lake build <M>` each, in import order: cap = recorded peak (`scripts/lake-module-peaks.tsv`,
   refreshed in `.lake/lake-module-peaks.tsv` with the scope's cgroup `memory.peak`) × 1.2 + 0.5 GB;
   light modules side by side (≤ 6) within the budget, critical path first, backfilling only modules
-  that cannot delay the next one; modules peaking above 12 GB alone, and only when ≥ 30 GB is
+  that cannot delay the next one; modules peaking above 12 GB one at a time (their cap counts in the
+  budget, so light modules keep running beside them), and only when ≥ 30 GB is
   available, no other job's memcap is above 12 GB and the module heads the machine-wide heavy queue
   (`/tmp/clifv-heavy-queue`, oldest first; every scheduler leaves room for the head); a module starts
   only if its recorded peak fits under `clifv.slice`'s MemoryHigh minus 4 GB (`--slice-margin`), counting
   the slice's non-file memory; nothing starts while less than 10 GB is available. A module killed at
-  its own cap (the scope's `memory.events` `oom`) is retried alone at twice the cap; one killed from
+  its own cap (the scope's `memory.events` `oom`) is retried at twice the cap, one retry or heavy module
+  at a time with light modules beside it within the budget; one killed from
   outside (systemd-oomd under memory pressure, the slice limit) is retried at the same cap (≤ 3 times).
   With the shared cache, a module another worktree is building at that moment (flock in
   `<cache>/.fv-inflight/`, keyed by the sources of the module and its imports plus toolchain and

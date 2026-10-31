@@ -32,7 +32,8 @@ imports (equal keys imply equal Lake input traces). If another scheduler holds i
 Launch rules (checked every second):
   * light modules (recorded peak <= --heavy, cap <= --budget): run concurrently while the sum of
     caps <= --budget and at most --max-jobs run;
-  * heavy modules (recorded peak > --heavy, or cap > --budget): run alone, and only when
+  * heavy modules (recorded peak > --heavy, or cap > --budget): one at a time, holding their cap
+    in the budget like light modules (a cap above --budget means alone), and only when
     MemAvailable >= --heavy-avail, no other lean process has RSS above --heavy and no other memcap
     scope has MemoryMax (with --others-by-usage: current usage) above --heavy; otherwise they are
     deferred while light work continues (a deferred module is first probed once with
@@ -46,14 +47,15 @@ Launch rules (checked every second):
     (above the limit, the kernel throttles every clifv build and systemd-oomd kills scopes);
   * nothing new starts while MemAvailable < --pause-avail;
   * a module killed at its own cap (its scope's memory.events `oom` > 0; without that information,
-    exit 137/143 or lean reporting signal 9) is retried alone at twice the cap (at most --max-cap);
+    exit 137/143 or lean reporting signal 9) is retried at twice the cap (at most --max-cap), as the
+    only retry or heavy module running, with light modules beside it while the budget allows;
     a module killed from outside (systemd-oomd under global memory pressure, the slice's limit) is
     retried at the same cap, up to 3 times; with --retry-failed, any other failed module is
-    retried once alone at its cap.
+    retried once alone at its cap (a failure under load, e.g. bv_decide's SAT timeout).
 Ready modules are started longest-remaining-critical-path first (recorded seconds); when the first
 one does not fit the budget, it reserves it and only modules that cannot delay it are backfilled.
-A module that must run alone (heavy, or a retry) keeps its turn once it starts draining: until the
-running modules finish, only modules whose recorded seconds end before theirs start.
+A heavy or retried module keeps its turn once it starts waiting for budget: it holds that
+reservation, and only modules that cannot delay it are backfilled.
 
 Logs: OUT/sched.log (one line per start/finish/check) and OUT/<module>.log / .time / .mem.
 """
@@ -258,7 +260,8 @@ def main():
     ap.add_argument("--out", default=None, help="log dir (default ${TMPDIR:-/tmp}/lake-serial-build-<pid>)")
     ap.add_argument("--budget", default="16G", help="sum of caps of concurrent light modules")
     ap.add_argument("--max-jobs", type=int, default=6)
-    ap.add_argument("--heavy", default="12G", help="caps above this run alone")
+    ap.add_argument("--heavy", default="12G",
+                    help="recorded peaks above this run one at a time, after the --heavy-avail gate")
     ap.add_argument("--heavy-avail", default="30G", help="MemAvailable needed to start a heavy module")
     ap.add_argument("--pause-avail", default="10G", help="start nothing while MemAvailable is below")
     ap.add_argument("--others-by-usage", action="store_true",
@@ -394,7 +397,7 @@ def main():
 
     status = {m: "ok" for m in assumed}  # m -> ok | fail | blocked
     running = {}           # m -> (Popen, t0, cap, unit)
-    solo_set = set()       # running modules that must run alone
+    solo_set = set()       # running heavy or retried modules (at most one at a time)
     retry_cap = {}         # m -> cap for the solo retry (after an OOM kill, or --retry-failed)
     retried = set()        # modules already retried alone after a failure (--retry-failed)
     external = {}          # m -> kills from outside (systemd-oomd, slice limit), retried at the same cap
@@ -786,19 +789,23 @@ def main():
                     room -= head[1]   # leave room for the oldest waiting heavy module
             if avail < pause_avail:
                 wait = f"paused: MemAvailable {gib(avail)} < {gib(pause_avail)}"
-            elif not (solo_set & running.keys()):
+            elif not (retried & running.keys()):
                 used = sum(c for (_, _, c, _) in running.values())
+                solo_running = bool(solo_set & running.keys())
                 now = time.time()
-                reserve = None  # (shadow time, spare budget then) held for the first light module that did not fit
-                # A solo module that is draining keeps its turn: it goes first, and until it starts
-                # only modules expected to finish before the running ones do (solo_shadow) start.
-                # Without this, modules ranked above it kept the scheduler busy and it never ran.
-                solo_shadow = None
+                reserve = None  # (shadow time, spare budget then) held for the first module that did not fit
+                # A solo module (heavy, or a retry after an OOM kill) holds its cap in the budget like
+                # any other module; light modules keep running beside it while the budget allows.
+                # At most one solo module runs at a time. One that is draining (waiting for budget)
+                # keeps its turn: it goes first and holds the reservation, so it is not starved.
                 if draining not in ready:
                     draining = None
                 for m in ([draining] if draining else []) + [m for m in ready if m != draining]:
                     c = retry_cap.get(m, cap[m])
                     est = est_peak(m, c)
+                    solo = m in retry_cap or is_heavy(m, c)
+                    if solo and solo_running:
+                        continue
                     if is_heavy(m, c):
                         others = other_heavy_scopes(my_pids(), heavy, a.others_by_usage)
                         queued = head is not None and head[0] != me
@@ -819,61 +826,53 @@ def main():
                                     f"{', queued behind ' + head[2] if queued else ''}"
                                     f"{', clifv slice room ' + gib(max(room, 0)) if room is not None and room < est else ''}")
                             continue
-                    elif m not in retry_cap:
-                        if len(running) >= a.max_jobs:
-                            break
-                        if solo_shadow is not None and now + secs[m] > solo_shadow:
-                            continue
-                        if room is not None and est > room:
-                            wait = f"clifv slice: room {gib(max(room, 0))} < {gib(est)} for {m}"
-                            break
-                        fits = used + c <= budget
-                        if reserve is None and not fits:
-                            # reserve the budget for m: when do enough running modules finish?
-                            free, shadow = budget - used, now
-                            for end, cc in sorted((max(now, t0 + secs[x]), cc)
-                                                  for x, (_, t0, cc, _) in running.items()):
-                                free, shadow = free + cc, end
-                                if free >= c:
-                                    break
-                            reserve = (shadow, free - c)
-                            continue
-                        if reserve is not None:
-                            # backfill only what cannot delay the reserved module
-                            shadow, spare = reserve
-                            if not fits or (now + secs[m] > shadow and c > spare):
-                                continue
-                            if now + secs[m] > shadow:
-                                reserve = (shadow, spare - c)
-                        if not claim(m):
-                            continue
-                        start(m, c)
-                        used += c
-                        if room is not None:
-                            room -= est
-                        if mem_available() < pause_avail:
-                            break
+                    if len(running) >= a.max_jobs:
+                        break
+                    if room is not None and est > room and not is_heavy(m, c):
+                        wait = f"clifv slice: room {gib(max(room, 0))} < {gib(est)} for {m}"
+                        break
+                    # a module larger than the whole budget, or retried after a failure that
+                    # was not a memory kill (--retry-failed: load), runs only with nothing else
+                    fits = not running if m in retried else (used + c <= budget or not running)
+                    if reserve is None and not fits:
+                        # reserve the budget for m: when do enough running modules finish?
+                        free, shadow = budget - used, now
+                        for end, cc in sorted((max(now, t0 + secs[x]), cc)
+                                              for x, (_, t0, cc, _) in running.items()):
+                            free, shadow = free + cc, end
+                            if free >= c and m not in retried:
+                                break
+                        reserve = (shadow, free - c)
+                        if solo:
+                            # our own modules hold the memory, not the machine: do not block the
+                            # other schedulers' heavy modules meanwhile (m keeps its queue place)
+                            if ticket and ticket[1] == m:
+                                dequeue()
+                            draining = m
+                            wait = f"draining for solo {m} ({gib(c)})"
                         continue
-                    # solo: heavy module (gate passed) or retry after an OOM kill; drain first
-                    if solo_shadow is not None:
-                        continue  # another solo module is draining
-                    if running:
-                        # our own light modules hold the memory, not the machine: do not block
-                        # the other schedulers' heavy modules meanwhile (m keeps its queue place)
-                        if ticket and ticket[1] == m:
-                            dequeue()
-                        draining = m
-                        solo_shadow = max(max(now, t0 + secs[x]) for x, (_, t0, _, _) in running.items())
-                        wait = f"draining for solo {m} ({gib(c)})"
-                        continue
+                    if reserve is not None:
+                        # backfill only what cannot delay the reserved module
+                        shadow, spare = reserve
+                        if not fits or (now + secs[m] > shadow and c > spare):
+                            continue
+                        if now + secs[m] > shadow:
+                            reserve = (shadow, spare - c)
                     if not claim(m):
                         continue
                     if ticket and ticket[1] == m:
                         dequeue()
                     start(m, c)
-                    solo_set.add(m)
-                    draining = None
-                    break
+                    used += c
+                    if room is not None:
+                        room -= est
+                    if solo:
+                        solo_set.add(m)
+                        solo_running = True
+                        if draining == m:
+                            draining = None
+                    if mem_available() < pause_avail:
+                        break
             key = re.sub(r"[\d.]+G", "", wait)
             if wait and key != last_wait:
                 say(wait)
